@@ -17,6 +17,7 @@ DOCBOOK = \
 	gfrep.1 \
 	gfrm.1 \
 	gfrmdir.1 \
+	gfront.1 \
 	gfrun.1 \
 	gfsched.1 \
 	gfsetdir.1 \
