@@ -13,9 +13,6 @@ char *program_name = "gfwhere";
 static int opt_size = 0;
 
 static char *
-display_replica_catalog(char *gfarm_url);
-
-static char *
 display_section_copies(char *gfarm_file, char *section)
 {
 	int ncopies, j;
@@ -28,11 +25,13 @@ display_section_copies(char *gfarm_file, char *section)
 	if (e != NULL)
 		return (e);
 
-	printf("%s", section);
 	if (opt_size) {
 		e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
 		if (e != NULL)
 			goto free_copy_info;
+	}
+	printf("%s", section);
+	if (opt_size) {
 		printf(" [%" PR_FILE_OFFSET " bytes]", sinfo.filesize);
 		gfarm_file_section_info_free(&sinfo);
 	}
@@ -40,7 +39,6 @@ display_section_copies(char *gfarm_file, char *section)
 	for (j = 0; j < ncopies; ++j)
 		printf(" %s", copies[j].hostname);
 	printf("\n");
-	e = NULL;
 free_copy_info:
 	gfarm_file_section_copy_info_free_all(ncopies, copies);
 	return (e);
@@ -67,7 +65,7 @@ display_replica_catalog_section(char *gfarm_url, char *section)
 static char *
 display_replica_catalog(char *gfarm_url)
 {
-	char *gfarm_file, *e;
+	char *gfarm_file, *e, *e_save;
 	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	struct gfs_stat st;
@@ -87,25 +85,27 @@ display_replica_catalog(char *gfarm_url)
 		return (e);
 
 	if ((mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) { /* program? */
-		e = gfarm_file_section_info_get_all_by_file(
+		e_save = gfarm_file_section_info_get_all_by_file(
 		    gfarm_file, &nsections, &sections);
 	} else {
-		e = gfarm_file_section_info_get_sorted_all_serial_by_file(
+		e_save = gfarm_file_section_info_get_sorted_all_serial_by_file(
 		    gfarm_file, &nsections, &sections);
 	}
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
+	if (e_save != NULL)
+		goto free_gfarm_file;
+
 	for (i = 0; i < nsections; i++) {
-		e = display_section_copies(
-			gfarm_file, sections[i].section);
-		if (e != NULL)
+		e = display_section_copies(gfarm_file, sections[i].section);
+		if (e != NULL) {
+			if (e_save == NULL)
+				e_save = e;
 			fprintf(stderr, "%s: %s\n", sections[i].section, e);
+		}
 	}
 	gfarm_file_section_info_free_all(nsections, sections);
+free_gfarm_file:
 	free(gfarm_file);
-	return (NULL);
+	return (e_save);
 }
 
 void
