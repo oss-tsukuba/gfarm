@@ -97,7 +97,7 @@ gfarm_global_to_local_username(char *global_user ,char **local_user)
 			g_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
 				goto finish;
-			if (global_user == NULL) /* blank or comment line */
+			if (g_user == NULL) /* blank or comment line */
 				continue;
 			l_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
@@ -196,7 +196,7 @@ gfarm_local_to_global_username(char *local_user, char **global_user)
 			g_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
 				goto finish;
-			if (global_user == NULL) /* blank or comment line */
+			if (g_user == NULL) /* blank or comment line */
 				continue;
 			l_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
