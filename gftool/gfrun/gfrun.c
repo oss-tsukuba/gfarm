@@ -15,6 +15,7 @@
 #include <gfarm/gfarm.h>
 #include "host.h"
 #include "gfj_client.h"
+#include "schedule.h"
 
 char *program_name = "gfrun";
 
@@ -53,7 +54,8 @@ usage()
 	fprintf(stderr,
 		"Usage: %s [-n] [-l <login>]"
 		" [-G <Gfarm file>]"
-		" [-H <hostfile>] command ...\n",
+		" [-H <hostfile>] command ...\n"
+		" [-N <number of hosts>] command ...\n",
 		program_name);
 	exit(1);
 }
@@ -200,6 +202,7 @@ main(int argc, char *argv[])
 	char *rsh_command, *rsh_flags;
 	int have_gfarm_url_prefix = 1, have_redirect_stdio_option = 1;
 	char *hostfile = NULL, *schedfile = NULL, *scheduling_file;
+	int nprocs = 0;
 	char *stdout_file = NULL, *stderr_file = NULL, *command_name;
 
 	/*
@@ -290,6 +293,23 @@ main(int argc, char *argv[])
 					hostfile = &argv[i][j + 1];
 				} else if (++i < argc) {
 					hostfile = argv[i];
+				} else {
+					fprintf(stderr, "%s: "
+						"missing argument to -%c\n",
+						program_name, argv[i - 1][j]);
+					usage();
+				}
+				goto skip_opt;
+			case 'N':
+				if (j > 1) {
+					argv[i][j] = '\0';
+					gfarm_stringlist_add(&option_list,
+						argv[i]);
+				}
+				if (argv[i][j + 1] != '\0') {
+					nprocs = atoi(&argv[i][j + 1]);
+				} else if (++i < argc) {
+					nprocs = atoi(argv[i]);
 				} else {
 					fprintf(stderr, "%s: "
 						"missing argument to -%c\n",
@@ -412,6 +432,16 @@ skip_opt: ;
 			exit(1);
 		}
 		scheduling_file = hostfile;
+	}
+	else if (nprocs > 0) {
+		nhosts = nprocs;
+		hosts = malloc(sizeof(char *) * nprocs);
+		if (hosts == NULL)
+			fputs("not enough memory", stderr), exit(1);	
+		e = gfarm_schedule_search_idle_by_all(nprocs, hosts);
+		if (e != NULL)
+			fprintf(stderr, "%s: %s\n", program_name, e);
+		scheduling_file = "none";
 	}
 	else if (gfarm_stringlist_length(&input_list) != 0) {
 		/* The first input file used for file-affinity scheduling. */
