@@ -814,7 +814,7 @@ gfarm_metadb_ldap_escape_pathname(const char *pathname)
 	*d++ = *s++;
 	while (*s) {
 		if (gfarm_metadb_ldap_need_escape(*s) ||
-		    (*s == ' ' && d > escaped_pathname && d[-1] == ' '))
+		    (*s == ' ' && d[-1] == ' '))
 			*d++ = '\\';
 		*d++ = *s++;
 	}
