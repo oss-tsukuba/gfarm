@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfs_opendir</TITLE
+>gfs_glob_add</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
@@ -16,9 +16,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFS-OPENDIR.3"
+NAME="GFS-GLOB-ADD.3"
 ></A
->gfs_opendir</H1
+>gfs_glob_add</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_opendir&nbsp;--&nbsp;ディレクトリのオープン</DIV
+>gfs_glob_add&nbsp;--&nbsp;adds the type of path name</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -62,17 +62,17 @@ CLASS="FUNCTION"
 ><SPAN
 CLASS="RETURNVALUE"
 >char *</SPAN
->gfs_opendir</TT
+>gfs_glob_add</TT
 ></CODE
->(const char * <TT
+>(gfs_glob_t * <TT
 CLASS="PARAMETER"
 ><I
->gfarm_url</I
+>listp</I
 ></TT
->, GFS_Dir * <TT
+>, int  <TT
 CLASS="PARAMETER"
 ><I
->dirp</I
+>dtype</I
 ></TT
 >);</CODE
 ></P
@@ -89,12 +89,20 @@ NAME="DESCRIPTION"
 >DESCRIPTION</H2
 ><P
 ><TT
+CLASS="FUNCTION"
+>gfs_glob_add()</TT
+> adds the type of path name
+<TT
 CLASS="PARAMETER"
 ><I
->gfarm_url</I
+>dtype</I
 ></TT
->
-で指定したディレクトリをオープンします。</P
+> to <TT
+CLASS="PARAMETER"
+><I
+>listp</I
+></TT
+>.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -115,7 +123,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->正常終了を示します。</P
+>The function terminated successfully.</P
 ></DD
 ><DT
 ><TT
@@ -124,46 +132,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->メモリ不足のため処理を中止しました。</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</TT
-></DT
-><DD
-><P
->gfmd(8) に対するユーザー認証が失敗しました。</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</TT
-></DT
-><DD
-><P
-><TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
-へアクセスする権限が、ありません。</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</TT
-></DT
-><DD
-><P
->指定されたディレクトリが存在しません。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。</P
+>Insufficient memory was available.</P
 ></DD
 ></DL
 ></DIV
@@ -180,14 +149,21 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfs_closedir</SPAN
+>gfs_glob_init</SPAN
 >(3)</SPAN
->,
+>
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfs_readdir</SPAN
+>gfs_glob</SPAN
+>(3)</SPAN
+>
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_free</SPAN
 >(3)</SPAN
 ></P
 ></DIV

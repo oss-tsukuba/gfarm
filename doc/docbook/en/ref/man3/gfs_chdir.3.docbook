@@ -78,8 +78,8 @@ points outside your accessible address space.</para>
 <para>A component of the path prefix is not a directory.</para>
 </listitem>
 </varlistentry>
-<varlistentry>
 
+<varlistentry>
 <term>Others</term>
 <listitem>
 <para>An error except the above occurred.  The reason is shown by its

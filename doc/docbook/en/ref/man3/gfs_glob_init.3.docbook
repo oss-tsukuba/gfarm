@@ -1,18 +1,18 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
-<refentry id='gfs-glob-add.3'>
+<refentry id='gfs-glob-init.3'>
 
-<refentryinfo><date>2 Sep 2003</date></refentryinfo>
+<refentryinfo><date>11 Sep 2003</date></refentryinfo>
 
 <refmeta>
-<refentrytitle>gfs_glob_add</refentrytitle>
+<refentrytitle>gfs_glob_init</refentrytitle>
 <manvolnum>3</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfs_glob_add</refname>
-<refpurpose>パスのタイプをリストに追加する</refpurpose>
+<refname>gfs_glob_init</refname>
+<refpurpose>allocates memory for types of path names</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -21,9 +21,8 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_add</function></funcdef>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_init</function></funcdef>
     <paramdef>gfs_glob_t * <parameter>listp</parameter></paramdef>
-    <paramdef>int  <parameter>dtype</parameter></paramdef>
 </funcprototype>
 
 </funcsynopsis>
@@ -32,25 +31,32 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数
-<parameter>listp</parameter>
-に引数
-<parameter>dtype</parameter>
-をパスのタイプとして追加します。</para>
-</refsect1>
+
+<para><function>gfs_glob_init()</function> allocates memory space for
+<function>gfs_glob(3)</function> and
+<function>gfs_glob_add(3)</function>.  The memory space is stored to
+<parameter>listp</parameter>.</para> </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>正常終了を示します。</para>
+<para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>メモリ不足のため処理を中止しました。</para>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by its
+pointed strings.</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -58,8 +64,8 @@
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<citerefentry><refentrytitle>gfs_glob_init</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 <citerefentry><refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfs_glob_add</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 <citerefentry><refentrytitle>gfs_glob_free</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 </para>
 </refsect1>

@@ -2,7 +2,7 @@
 
 <refentry id='gfs-glob-add.3'>
 
-<refentryinfo><date>2 Sep 2003</date></refentryinfo>
+<refentryinfo><date>11 Sep 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_glob_add</refentrytitle>
@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_glob_add</refname>
-<refpurpose>パスのタイプをリストに追加する</refpurpose>
+<refpurpose>adds the type of path name</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -32,11 +32,10 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数
-<parameter>listp</parameter>
-に引数
-<parameter>dtype</parameter>
-をパスのタイプとして追加します。</para>
+
+<para><function>gfs_glob_add()</function> adds the type of path name
+<parameter>dtype</parameter> to <parameter>listp</parameter>.</para>
+
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
@@ -44,13 +43,13 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>正常終了を示します。</para>
+<para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>メモリ不足のため処理を中止しました。</para>
+<para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
 </variablelist>

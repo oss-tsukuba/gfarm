@@ -5,7 +5,7 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFS_GLOB_ADD" "3" "11 September 2003" "Gfarm" ""
 .SH NAME
-gfs_glob_add \- パスのタイプをリストに追加する
+gfs_glob_add \- adds the type of path name
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -14,18 +14,15 @@ char *gfs_glob_add (gfs_glob_t * \fIlistp\fB, int  \fIdtype\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-引数
-\fIlistp\fR
-に引数
-\fIdtype\fR
-をパスのタイプとして追加します。
+\fBgfs_glob_add()\fR adds the type of path name
+\fIdtype\fR to \fIlistp\fR.
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-正常終了を示します。
+The function terminated successfully.
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-メモリ不足のため処理を中止しました。
+Insufficient memory was available.
 .SH "SEE ALSO"
 .PP
 \fBgfs_glob_init\fR(3)
