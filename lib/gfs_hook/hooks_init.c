@@ -21,6 +21,9 @@ gfs_hook_initialize(void)
 	if (e != NULL)
 		return (e);
 
+	if (gfs_pio_set_local_check() != NULL)
+		gfs_pio_set_local(0, 1);
+
 	return (NULL);
 #endif
 }
