@@ -22,6 +22,7 @@ static struct {
 			int readcount;
 			struct gfs_dirent *suspended;
 			struct gfs_stat gst;
+			char *canonical_path; /* for __fchdir() hook */
 		} *d;
 	} u;
 } _gfs_file_buf[MAX_GFS_FILE_BUF];
@@ -121,6 +122,12 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
         _gfs_file_buf[fd].u.d->readcount = 0;
         _gfs_file_buf[fd].u.d->suspended = NULL;
         e = gfs_stat(url, &_gfs_file_buf[fd].u.d->gst);
+	if (e != NULL)
+		return (-1);
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(url), 
+				 &_gfs_file_buf[fd].u.d->canonical_path);
+	if (e != NULL)
+		return (-1);
 	return (fd);
 }
 
@@ -144,6 +151,7 @@ gfs_hook_clear_gfs_file(int fd)
 		_gfs_file_buf[fd].u.d->readcount = 0;
 		_gfs_file_buf[fd].u.d->suspended = NULL;
 		gfs_stat_free(&_gfs_file_buf[fd].u.d->gst);
+		free(_gfs_file_buf[fd].u.d->canonical_path); 
 		free(_gfs_file_buf[fd].u.d); 
 		_gfs_file_buf[fd].u.d = NULL;
 	}
@@ -230,6 +238,12 @@ struct gfs_stat *
 gfs_hook_get_gfs_stat(int fd)
 {
 	return (&_gfs_file_buf[fd].u.d->gst);
+}
+
+char *
+gfs_hook_get_gfs_canonical_path(int fd)
+{
+	return (_gfs_file_buf[fd].u.d->canonical_path);
 }
 
 /*

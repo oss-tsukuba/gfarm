@@ -614,6 +614,60 @@ chdir(const char *path)
 }
 
 /*
+ * fchdir
+ */
+
+int
+__fchdir(int filedes)
+{
+	GFS_File gf;
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchdir(%d)\n", filedes));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return syscall(SYS_fchdir, filedes);
+
+	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+		goto error;
+	}	  
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __fchdir(%d)\n",
+								    filedes));
+
+	e = gfarm_path_canonical_to_url(
+		gfs_hook_get_gfs_canonical_path(filedes), &url);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_chdir(url);
+	free(url);	
+	if (e == NULL)
+		return (0);
+error:
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fchdir: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fchdir(int filedes)
+{
+	_gfs_hook_debug_v(fputs("Hooking _fchdir\n", stderr));
+	return (__fchdir(filedes));
+}
+
+int
+fchdir(int filedes)
+{
+	_gfs_hook_debug_v(fputs("Hooking fchdir\n", stderr));
+	return (__fchdir(filedes));
+}
+
+/*
  * definitions for "hooks_common.c"
  */
 
