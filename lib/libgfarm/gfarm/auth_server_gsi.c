@@ -117,14 +117,8 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 	}
 
 	if (switch_to) {
-#if 1
-		char *syslog_name;
-
-		syslog_name = strdup(userinfo->distName);
-		gflog_set_auxiliary_info(syslog_name);
-#else
 		gflog_set_auxiliary_info(global_username);
-#endif
+
 		/*
 		 * because the name returned by getlogin() is
 		 * an attribute of a session on 4.4BSD derived OSs,
