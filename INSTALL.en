@@ -73,7 +73,8 @@ Gfarm software consists of
 
   A syscall-hook library, gfs_hook.o, is provided for porting legacy
   applications.  Linking with gfs_hook.o and libgfarm.a, the legacy
-  applications can exploit the Gfarm filesystem.
+  applications can exploit the Gfarm filesystem.  For details, refer
+  to doc/README.hook.en.
 
  - gfmd - Gfarm filesystem metadata server
 
