@@ -140,7 +140,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 
 	len += sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
 	tmp = getenv("GFS_PWD");
-	if (tmp != NULL && tmp != env + sizeof(env_name) - 1) {
+	if (tmp == NULL || tmp != env + sizeof(env_name) - 1) {
 		/* changed by an application instead of this func */
 		/* probably already free()ed.  In this case realloc
 		 * does not work well at least using bash.  allocate again. */
