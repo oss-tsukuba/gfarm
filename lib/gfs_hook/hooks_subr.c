@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -22,6 +26,10 @@ gfs_hook_not_initialized(void)
 			"fatal error: gfarm_initialize() isn't called\n");
 	}
 }
+
+/*
+ * gfs_file_buf management
+ */
 
 int
 gfs_hook_insert_gfs_file(GFS_File gf)
@@ -122,4 +130,85 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 		return (1);
 	}
 	return (0);
+}
+
+/*
+ * default file view manipulation
+ */
+
+enum gfs_hook_file_view _gfs_hook_default_view = local_view;
+int _gfs_hook_index = 0;
+int _gfs_hook_num_fragments = GFARM_FILE_DONTCARE;
+
+void
+gfs_hook_set_default_view_local()
+{
+	_gfs_hook_default_view = local_view;
+}
+
+void
+gfs_hook_set_default_view_index(int index, int nfrags)
+{
+	_gfs_hook_default_view = index_view;
+	_gfs_hook_index = index;
+	_gfs_hook_num_fragments = nfrags;
+}
+
+void
+gfs_hook_set_default_view_global()
+{
+	_gfs_hook_default_view = global_view;
+}
+
+char *
+gfs_hook_set_view_local(int filedes, int flag)
+{
+	GFS_File gf;
+	char *e;
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return "not a Gfarm file";
+
+	if ((e = gfs_pio_set_view_local(gf, flag)) != NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: set_view_local: %s\n", e));
+		return e;
+	}
+	return NULL;
+}
+
+char *
+gfs_hook_set_view_index(int filedes, int nfrags, int index, 
+			char *host, int flags)
+{
+	GFS_File gf;
+	char *e;
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return "not a Gfarm file";
+
+	if ((e = gfs_pio_set_view_index(gf, nfrags, index, host, flags))
+	    != NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: set_view_index: %s\n", e));
+		return e;
+	}
+	return NULL;
+}
+
+char *
+gfs_hook_set_view_global(int filedes, int flags)
+{
+	GFS_File gf;
+	char *e;
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return "not a Gfarm file";
+
+	if ((e = gfs_pio_set_view_global(gf, flags)) != NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: set_view_global: %s\n", e));
+		return e;
+	}
+	return NULL;
 }

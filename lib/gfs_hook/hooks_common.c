@@ -1,4 +1,8 @@
 /*
+ * $Id$
+ */
+
+/*
  * open
  */
 
@@ -52,12 +56,26 @@ retry:
 		return (-1);
 	}
 
-	if (sec == NULL) {
+	if (sec != NULL || _gfs_hook_default_view == index_view) {
+		if (sec != NULL) {
+			e = gfs_pio_set_view_section(gf, sec, NULL, 0);
+			free(sec);
+		} else
+			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
+				_gfs_hook_index, NULL, 0);
+		if (e != NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+			    "GFS: set_view_section: %s\n", e));
+			gfs_pio_close(gf);
+			errno = gfarm_error_to_errno(e);
+			return (-1);
+		}
+	} else if (_gfs_hook_default_view == local_view) {
 		if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
 			    "GFS: set_view_local: %s\n", e));
 			gfs_pio_close(gf);
-			if (e = GFARM_ERR_NO_SUCH_OBJECT) {
+			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 				/*
 				 * corrupted GFarmPath entry,
 				 * possibly caused by coredump.
@@ -65,16 +83,6 @@ retry:
 				gfs_unlink(path); /* XXX - FIXME */
 				goto retry; /* XXX - FIXME */
 			}
-			errno = gfarm_error_to_errno(e);
-			return (-1);
-		}
-	} else {
-		e = gfs_pio_set_view_section(gf, sec, NULL, 0);
-		free(sec);
-		if (e != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_section: %s\n", e));
-			gfs_pio_close(gf);
 			errno = gfarm_error_to_errno(e);
 			return (-1);
 		}
@@ -146,20 +154,25 @@ FUNC___CREAT(const char *path, mode_t mode)
 		errno = gfarm_error_to_errno(e);
 		return (-1);
 	}
-	if (sec == NULL) {
-		if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
+
+	if (sec != NULL || _gfs_hook_default_view == index_view) {
+		if (sec != NULL) {
+			e = gfs_pio_set_view_section(gf, sec, NULL, 0);
+			free(sec);
+		} else
+			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
+				_gfs_hook_index, NULL, 0);
+		if (e != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_local: %s\n", e));
+			    "GFS: set_view_section: %s\n", e));
 			gfs_pio_close(gf);
 			errno = gfarm_error_to_errno(e);
 			return (-1);
 		}
-	} else {
-		e = gfs_pio_set_view_section(gf, sec, NULL, 0);
-		free(sec);
-		if (e != NULL) {
+	} else if (_gfs_hook_default_view == local_view) {
+		if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_section: %s\n", e));
+			    "GFS: set_view_local: %s\n", e));
 			gfs_pio_close(gf);
 			errno = gfarm_error_to_errno(e);
 			return (-1);
