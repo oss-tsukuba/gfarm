@@ -614,8 +614,6 @@ fi
 %endif
 
 %files gfptool
-%{prefix}/bin/gfsplck
-
 %{prefix}/bin/gfcombine
 %{prefix}/bin/gfcombine_hook
 %{prefix}/bin/gfcp
@@ -632,6 +630,7 @@ fi
 
 %files fsnode
 %{prefix}/bin/gfexec
+%{prefix}/bin/gfsplck
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
