@@ -12,7 +12,7 @@ char *program_name = "gfimport_fixed";
 
 void
 import_fixed(FILE *ifp, char *output, int len,
-	int nfrags, struct gfarm_import_fragment_table *fragtab)
+	int nfrags, char **hosttab, file_offset_t *sizetab)
 {
 	int i, c, n, rv;
 	char *e;
@@ -31,16 +31,17 @@ import_fixed(FILE *ifp, char *output, int len,
 			break;
 		ungetc(c, ifp);
 
-		e = gfs_pio_create(output, i, fragtab[i].hostname, &of);
+		e = gfs_pio_create(output, i, hosttab[i], &of);
 		if (e != NULL) {
 			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output, nfrags);
+			e = gfarm_url_fragment_cleanup(output,
+			    nfrags, hosttab);
 			free(buffer);
 			return;
 		}
 		size = 0;
 		for (;;) {
-			if (size >= fragtab[i].size) /* wrote enough */
+			if (size >= sizetab[i]) /* wrote enough */
 				break;
 			n = fread(buffer, 1, len, ifp);
 			if (n == 0) /* EOF */
@@ -53,7 +54,8 @@ import_fixed(FILE *ifp, char *output, int len,
 		e = gfs_pio_close(of);
 		if (e != NULL) {
 			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output, nfrags);
+			e = gfarm_url_fragment_cleanup(output,
+			    nfrags, hosttab);
 			free(buffer);
 			return;
 		}
@@ -83,7 +85,8 @@ main(argc, argv)
 	char *e, *config = NULL, *hostfile = NULL, *output = NULL, *iname;
 	int ch, nhosts, error_line, len = 1;
 	FILE *ifp;
-	struct gfarm_import_fragment_table *fragtab;
+	char **hosttab;
+	file_offset_t *sizetab;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -143,8 +146,8 @@ main(argc, argv)
 			program_name, hostfile, config);
 		exit(1);
 	} else if (config != NULL) {
-		e = gfarm_import_fragment_table_config(
-		    config, &nhosts, &fragtab, &error_line);
+		e = gfarm_import_fragment_config_read(
+		    config, &nhosts, &hosttab, &sizetab, &error_line);
 	} else if (hostfile != NULL) {
 		struct stat is;
 
@@ -156,8 +159,17 @@ main(argc, argv)
 			fprintf(stderr, "%s: size unknown\n", iname);
 			exit(1);
 		}
-		e = gfarm_import_fragment_table_config_host(
-		    hostfile, is.st_size, &nhosts, &fragtab, &error_line);
+		e = gfarm_paths_read(hostfile, &nhosts, &hosttab, &error_line);
+		if (e == NULL) {
+			sizetab = gfarm_import_fragment_size_alloc(
+			    is.st_size, nhosts);
+			if (sizetab == NULL) {
+				fprintf(stderr,
+					"%s: not enough memory for %d hosts\n",
+					program_name, nhosts);
+				exit(1);
+			}
+		}
 	} else /* if (hostfile == NULL && config == NULL) */ {
 		fprintf(stderr,
 			"%s: either -H <hostfile> or -f <config> expected\n",
@@ -173,7 +185,7 @@ main(argc, argv)
 				program_name, e);
 		return (1);
 	}
-	import_fixed(ifp, output, len, nhosts, fragtab);
+	import_fixed(ifp, output, len, nhosts, hosttab, sizetab);
 
 	e = gfarm_terminate();
 	if (e != NULL) {
