@@ -38,6 +38,7 @@
 #endif
 
 int gfarm_initialized = 0;
+int gfarm_is_active_file_system_node = 0;
 
 char *gfarm_config_file = GFARM_CONFIG;
 
@@ -879,6 +880,8 @@ gfarm_config_set_default_spool_on_client(void)
 			goto ignore_error;
 
 		e = gfs_client_get_spool_root(gfs_server, &gfarm_spool_root);
+		if (e == NULL)
+			gfarm_is_active_file_system_node = 1;
 	ignore_error:
 		;
 	}

@@ -43,6 +43,7 @@ char *gfarm_set_global_user_for_this_local_account(void);
 /* the following functions are for client, */
 /* server/daemon process shouldn't call follows: */
 extern int gfarm_initialized;
+extern int gfarm_is_active_file_system_node;
 char *gfarm_initialize(int *, char ***);
 char *gfarm_terminate(void);
 char *gfarm_config_read(void);
