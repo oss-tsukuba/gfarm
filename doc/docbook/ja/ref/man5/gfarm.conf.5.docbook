@@ -340,8 +340,8 @@ IPアドレスを通信に用いるかを指定します。
 	foobar foo
 	quux baz
 </literallayout>
-<para>この例の1行目の指定により、このノードのローカルユーザ名 foo に
-対してグローバルユーザ名 foobar が定義されます。</para>
+<para>この例の1行目の指定では、このノードのローカルユーザ名 foo に
+対してグローバルユーザ名 foobar が定義されています。</para>
 </listitem>
 </varlistentry>
 </variablelist>
