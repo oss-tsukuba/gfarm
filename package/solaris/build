@@ -1,49 +1,51 @@
 #!/bin/sh
 
-PATH=/usr/bin:/bin:/usr/ccs/bin:/opt/SUNWspro/bin:/usr/local/bin:/usr/ucb
+# /usr/local/bin must be before /bin, otherwise globus-makefile-header fails.
+PATH=/opt/SUNWspro/bin:/usr/ccs/bin:/usr/local/bin:/usr/bin:/bin:/usr/ucb
 export PATH
 
 version=1.0.4
-subpkgs='client devel doc fsnode gfptool server gfront'
+subpkgs='client devel doc fsnode gfptool libs server gfront'
 prefix=/usr/grid
+pkg_list='gfarm gfarm-gsi'
+cc_list='vendorcc gcc'
+# XXX gcc cannot link shared object. what's wrong?
+cc_list='vendorcc'
 
 srcdir=`pwd`
 work=$srcdir/..
-buildroot=$work/buildroot-$$
+buildrootbase=$work/buildroot-$$
 
 make=/usr/local/bin/make
 tar=/usr/local/bin/tar
 with_prefix=--prefix=$prefix
-with_globus=--with-globus=/usr/grid
-# XXX "unresolved symbol __eprintf" happens without --with-globus-shared.
-with_globus="$with_globus --with-globus-shared"
+with_globus=--with-globus=/opt/gt-2.4.3
+with_globus="$with_globus --with-globus-static"
 # XXX --with-mpi needs OPTFLAGS=-O with gcc (an error happens at gfs_hook_mpi).
 # XXX currently, MPICH isn't installed on the build-host.
 # XXX tar warns missing `gfwc', because it isn't built without --with-mpi.
 with_mpi= # --with-mpi=/usr/local/mpich
 
-vendorcc_pkg=/usr/users/soda/install/SunOS-5.8-SUWspro-6.2
-with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.1.17
-with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.7c
-# XXX only gcc32 flavor is installed on the build-host.
-with_vendorcc_globus_flavor=--with-globus-flavor=gcc32
+vendorcc_pkg=/home/soda/install/SunOS-5.9-SunONEStudio-8
+with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.1.30
+with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.7d
+with_vendorcc_globus_flavor= # --with-globus-flavor=vendorcc32 # not necessary
 
-gcc_pkg=/usr/users/soda/install/SunOS-5.8-gcc-3.3
-#with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.1.17
-# XXX need to update
-with_gcc_openldap=--with-openldap=/usr/users/soda/install/SunOS-5.8-gcc-2.95.2/openldap-2.1.17
-with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.7c
-with_gcc_globus_flavor=--with-globus-flavor=gcc32
+gcc_pkg=/home/soda/install/SunOS-5.9-gcc-3.3.2
+with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.1.30
+with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.7d
+with_gcc_globus_flavor= # --with-globus-flavor=gcc32 # not necessary
 
 case `whoami` in
 root)	;; # OK
-*)	echo "root privilege is needed to invoke this script" >&2
-	exit 1;;
+*)	echo "WARNING: root privilege is needed to invoke this script" >&2
+	# exit 1
+	;;
 esac
 
-for pkg in gfarm gfarm-gsi
+for pkg in $pkg_list
 do
-	for cc in vendorcc gcc
+	for cc in $cc_list
 	do
 		case ${pkg}-${cc} in
 		gfarm-vendorcc)
@@ -67,6 +69,7 @@ do
 		esac
 		$make
 
+		buildroot=${buildrootbase}-${pkg}-${cc}
 		rm -rf $buildroot
 		mkdir -p $buildroot $buildroot$prefix $buildroot/etc
 		$make prefix=$buildroot$prefix install
@@ -84,11 +87,12 @@ do
 		( cd $buildroot &&
 		  for s in $subpkgs
 		  do
+		    eval \
 			$tar zcf $work/${pkg}-${s}-${cc}-${version}.tar.gz \
 				`cat $srcdir/package/solaris/gfarm-${s}.files`
 		  done
 		)
-		rm -rf $buildroot
+		# rm -rf $buildroot
 	done
 done
 
