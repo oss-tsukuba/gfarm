@@ -67,6 +67,8 @@ char GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE[] =
 char GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH[] =
 	"fragment number does not match";
 char GFARM_ERR_AMBIGUOUS_RESULT[] = "ambiguous result";
+char GFARM_ERR_INCONSISTENT_RECOVERABLE[] =
+	"inconsistent metadata fixed, try again";
 char GFARM_ERR_UNKNOWN[] = "unknown error";
 
 /*

@@ -21,8 +21,8 @@
 #include "schedule.h"
 #include "timer.h"
 
-static char *
-gfs_stat_sub(char *gfarm_file, struct gfs_stat *s)
+char *
+gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 {
 	char *e;
 	int i, nsections;
@@ -82,7 +82,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	e = gfarm_canonical_path(path, &p);
 	if (e != NULL)
 		goto finish;
-	e = gfs_stat_sub(p, s);
+	e = gfs_stat_canonical_path(p, s);
 	free(p);
 	if (e == NULL)
 		goto finish;
@@ -376,6 +376,25 @@ gfarm_file_section_replicate_from_to_internal(
 	e = gfs_client_replicate_file(gfs_server,
 	    path_section, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
+	/* FT - the parent directory of the destination may be missing */
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		if (gfs_pio_remote_mkdir_parent_canonical_path(
+			    gfs_server, gfarm_file) == NULL)
+			e = gfs_client_replicate_file(
+				gfs_server, path_section, mode, file_size,
+				src_canonical_hostname, src_if_hostname);
+	}
+#if 0 /* XXX - not implemented yet */
+	/* FT - source file should be missing */
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* XXX - need to check explicitly */
+		if (gfs_client_exist() == GFARM_ERR_NO_SUCH_OBJECT)
+			/* Delete the section copy info */
+			if (gfarm_file_section_copy_info_remove(gfarm_file,
+				section, src_canonical_hostname) == NULL)
+				e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+	}
+#endif
 	gfs_client_disconnect(gfs_server);
 	if (e != NULL)
 		goto finish_path_section;
@@ -427,6 +446,7 @@ gfarm_url_section_replicate_from_to(char *gfarm_url, char *section,
 	struct sockaddr peer_addr;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
+	gfarm_mode_t mode_allowed = 0;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -447,10 +467,20 @@ gfarm_url_section_replicate_from_to(char *gfarm_url, char *section,
 	    &peer_addr, &if_hostname);
 	if (e != NULL)
 		goto finish_section_info;
-
+	/*
+	 * XXX - if the owner of a file is not the same, permit a
+	 * group/other write access - This should be fixed in the next
+	 * major release.
+	 */
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
+		e = gfarm_path_info_access(&pi, GFS_R_OK);
+		if (e != NULL)
+			goto finish_path_info;
+		mode_allowed = 022;
+	}
 	e = gfarm_file_section_replicate_from_to_internal(
 	    gfarm_file, section,
-	    pi.status.st_mode & GFARM_S_ALLPERM, si.filesize,
+	    (pi.status.st_mode | mode_allowed) & GFARM_S_ALLPERM, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
 
 	free(if_hostname);
@@ -472,6 +502,7 @@ gfarm_url_section_replicate_to(char *gfarm_url, char *section, char *dsthost)
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
+	gfarm_mode_t mode_allowed = 0;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -482,9 +513,20 @@ gfarm_url_section_replicate_to(char *gfarm_url, char *section, char *dsthost)
 	e = gfarm_file_section_info_get(gfarm_file, section, &si);
 	if (e != NULL)
 		goto finish_path_info;
+	/*
+	 * XXX - if the owner of a file is not the same, permit a
+	 * group/other write access - This should be fixed in the next
+	 * major release.
+	 */
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
+		e = gfarm_path_info_access(&pi, GFS_R_OK);
+		if (e != NULL)
+			goto finish_path_info;
+		mode_allowed = 022;
+	}
 	e = gfarm_file_section_replicate_to_internal(
 	    gfarm_file, section,
-	    pi.status.st_mode & GFARM_S_ALLPERM, si.filesize,
+	    (pi.status.st_mode | mode_allowed) & GFARM_S_ALLPERM, si.filesize,
 	    dsthost);
 
 	gfarm_file_section_info_free(&si);
@@ -655,10 +697,26 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		return (e);
 	}
 	mode = pi.status.st_mode;
-	gfarm_path_info_free(&pi);
-	if (!GFARM_S_IS_PROGRAM(mode))
+	if (!GFARM_S_IS_PROGRAM(mode)) {
+		gfarm_path_info_free(&pi);
+		free(gfarm_file);
 		return ("gfarm_url_program_deliver(): not a program");
-
+	}
+	/*
+	 * XXX - if the owner of a file is not the same, permit a
+	 * group/other write access - This should be fixed in the next
+	 * major release.
+	 */
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
+		e = gfarm_path_info_access(&pi, GFS_X_OK);
+		if (e != NULL) {
+			gfarm_path_info_free(&pi);
+			free(gfarm_file);
+			return (e);
+		}
+		mode |= 022;
+	}
+	gfarm_path_info_free(&pi);
 	dp = malloc(sizeof(char *) * (nhosts + 1));
 	if (dp == NULL) {
 		free(gfarm_file);
@@ -768,7 +826,20 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		goto finish_gfarm_file;
 	}
-
+	/*
+	 * XXX - if the owner of a file is not the same, permit a
+	 * group/other write access - This should be fixed in the next
+	 * major release.
+	 */
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
+		e = gfarm_path_info_access(&pi, GFS_R_OK);
+		if (e != NULL) {
+			gfarm_path_info_free(&pi);
+			free(gfarm_file);
+			return (e);
+		}
+		mode |= 022;
+	}
 	e = gfarm_url_hosts_schedule(gfarm_url, "", &nsrchosts, &srchosts);
 	if (e != NULL)
 		goto finish_gfarm_file;

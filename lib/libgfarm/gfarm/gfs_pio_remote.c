@@ -5,6 +5,8 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+#include <libgen.h>
 #include <sys/socket.h> /* struct sockaddr */
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
@@ -124,15 +126,97 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 		free(path_section);
 		return (e);
 	}
+	vc->storage_context = gfs_server;
 
 	e = gfs_client_open(gfs_server, path_section, gf->open_flags,
 			    gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
+	/* FT - the parent directory may be missing */
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		if (gfs_pio_remote_mkdir_parent_canonical_path(
+			    gfs_server, gf->pi.pathname) == NULL)
+			e = gfs_client_open(gfs_server, path_section,
+				gf->open_flags,
+				gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
+	/* FT - physical file should be missing */
+	if ((gf->open_flags & GFARM_FILE_CREATE) == 0
+	    && e == GFARM_ERR_NO_SUCH_OBJECT)
+		/* Delete the section copy info */
+		if (gfarm_file_section_copy_info_remove(gf->pi.pathname,
+			vc->section, vc->canonical_hostname) == NULL)
+			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+
 	free(path_section);
 	if (e != NULL)
 		return (e);
 
 	vc->ops = &gfs_pio_remote_storage_ops;
-	vc->storage_context = gfs_server;
 	vc->fd = fd;
 	return (NULL);
+}
+
+static char *
+gfs_pio_remote_mkdir_p(
+	struct gfs_connection *gfs_server, char *canonic_dir)
+{
+	struct gfs_stat stata;
+	gfarm_mode_t mode;
+	char *e, *user;
+
+	/* dirname(3) may return '.'.  This means the spool root directory. */
+	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
+		return (NULL); /* should exist */
+
+	e = gfs_stat_canonical_path(canonic_dir, &stata);
+	if (e != NULL)
+		return (e);
+	mode = stata.st_mode;
+	/*
+	 * XXX - if the owner of a directory is not the same, create a
+	 * directory with permission 0777 - This should be fixed in
+	 * the next major release.
+	 */
+	user = gfarm_get_global_username();
+	if (strcmp(stata.st_user, user) != 0)
+		mode |= 0777;
+	gfs_stat_free(&stata);
+	if (!GFARM_S_ISDIR(mode))
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+
+	if (gfs_client_exist(gfs_server, canonic_dir)
+	    == GFARM_ERR_NO_SUCH_OBJECT) {
+		char *par_dir, *saved_par_dir;
+
+		par_dir = saved_par_dir = strdup(canonic_dir);
+		if (par_dir == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		par_dir = dirname(par_dir);
+		e = gfs_pio_remote_mkdir_p(gfs_server, par_dir);
+		free(saved_par_dir);
+		if (e != NULL)
+			return (e);
+		
+		e = gfs_client_mkdir(gfs_server, canonic_dir, mode);
+	}
+	return (e);
+}
+
+char *
+gfs_pio_remote_mkdir_parent_canonical_path(
+	struct gfs_connection *gfs_server, char *canonic_dir)
+{
+	char *par_dir, *saved_par_dir, *e;
+
+	par_dir = saved_par_dir = strdup(canonic_dir);
+	if (par_dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	par_dir = dirname(par_dir);
+	if (gfs_client_exist(gfs_server, par_dir) == GFARM_ERR_NO_SUCH_OBJECT)
+		e = gfs_pio_remote_mkdir_p(gfs_server, par_dir);
+	else
+		e = GFARM_ERR_ALREADY_EXISTS;
+
+	free(saved_par_dir);
+
+	return (e);
 }

@@ -46,6 +46,7 @@ extern char GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING[];
 extern char GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE[];
 extern char GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH[];
 extern char GFARM_ERR_AMBIGUOUS_RESULT[];
+extern char GFARM_ERR_INCONSISTENT_RECOVERABLE[];
 extern char GFARM_ERR_UNKNOWN[];
 
 int gfarm_error_to_errno(const char *);

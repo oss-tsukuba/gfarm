@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
+#include <libgen.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
@@ -183,7 +185,26 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 
 	fd = open(local_path, open_flags,
 		  gf->pi.status.st_mode & GFARM_S_ALLPERM);
+	/* FT - the parent directory may be missing */
+	if (fd == -1
+	    && gfarm_errno_to_error(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+		if (gfs_pio_local_mkdir_parent_canonical_path(
+			    gf->pi.pathname) == NULL)
+			fd = open(local_path, open_flags,
+				  gf->pi.status.st_mode & GFARM_S_ALLPERM);
+	}
 	free(local_path);
+	/* FT - physical file should be missing */
+	if ((gf->open_flags & GFARM_FILE_CREATE) == 0 && fd == -1
+	    && gfarm_errno_to_error(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* Delete the section copy info */
+		char *localhost;
+		if (gfarm_host_get_canonical_self_name(&localhost) == NULL &&
+		    gfarm_file_section_copy_info_remove(
+			    gf->pi.pathname, vc->section, localhost) == NULL) {
+			return (GFARM_ERR_INCONSISTENT_RECOVERABLE);
+		}
+	}
 	if (fd == -1)
 		return (gfarm_errno_to_error(errno));
 
@@ -191,4 +212,86 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	vc->storage_context = NULL; /* not needed */
 	vc->fd = fd;
 	return (NULL);
+}
+
+static char *
+gfs_pio_local_mkdir_p(char *canonic_dir)
+{
+	struct gfs_stat stata;
+	struct stat statb;
+	gfarm_mode_t mode;
+	char *e, *local_path, *user;
+
+	/* dirname(3) may return '.'.  This means the spool root directory. */
+	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
+		return (NULL); /* should exist */
+
+	e = gfs_stat_canonical_path(canonic_dir, &stata);
+	if (e != NULL)
+		return (e);
+	mode = stata.st_mode;
+	/*
+	 * XXX - if the owner of a directory is not the same, create a
+	 * directory with permission 0777 - This should be fixed in
+	 * the next major release.
+	 */
+	user = gfarm_get_global_username();
+	if (strcmp(stata.st_user, user) != 0)
+		mode |= 0777;
+	gfs_stat_free(&stata);
+	if (!GFARM_S_ISDIR(mode))
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+
+	e = gfarm_path_localize(canonic_dir, &local_path);
+	if (e != NULL)
+		return (e);
+	if (stat(local_path, &statb)) {
+		char *par_dir, *saved_par_dir;
+
+		par_dir = saved_par_dir = strdup(canonic_dir);
+		if (par_dir == NULL) {
+			free(local_path);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		par_dir = dirname(par_dir);
+		e = gfs_pio_local_mkdir_p(par_dir);
+		free(saved_par_dir);
+		if (e != NULL) {
+			free(local_path);
+			return (e);
+		}
+		if (mkdir(local_path, mode) == -1) {
+			free(local_path);
+			return (gfarm_errno_to_error(errno));
+		}
+	}
+	free(local_path);
+	return (NULL);
+}
+
+char *
+gfs_pio_local_mkdir_parent_canonical_path(char *canonic_dir)
+{
+	char *par_dir, *saved_par_dir, *local_path, *e;
+	struct stat statb;
+
+	par_dir = saved_par_dir = strdup(canonic_dir);
+	if (par_dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	par_dir = dirname(par_dir);
+	e = gfarm_path_localize(par_dir, &local_path);
+	if (e != NULL)
+		goto finish_free_par_dir;
+
+	if (stat(local_path, &statb))
+		e = gfs_pio_local_mkdir_p(par_dir);
+	else
+		e = GFARM_ERR_ALREADY_EXISTS;
+
+	free(local_path);
+ finish_free_par_dir:
+	free(saved_par_dir);
+
+	return (e);
 }
