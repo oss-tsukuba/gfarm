@@ -726,33 +726,6 @@ Please try to access filesystem nodes in your system:
 
 	% gfhost | gfrun -H - hostname
 
-** Register Gfarm parallel commands
-
-The system administrator has to do this procedure once for each
-architecture.
-
-Register Gfarm parallel commands such as a parallel file copy command
-and a parallel grep command to the Gfarm filesystem by the
-'gfregister' command using user account of the administrator that has
-been signed-on.
-
-	% /usr/grid/sbin/gfregister
-
-All parallel commands will be registered in the gfarm:/bin directory.
-
-	% gfls -l gfarm:/bin
-	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
-	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
-	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
-	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
-	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
-	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-
-You can check which architecture of a binary program is registered
-using the gfwhere command.
-
-	% gfwhere gfarm:/bin/gfcp
-
 ** Execute sample programs
 
 This subsection shows several execution examples of sample programs.
@@ -861,29 +834,21 @@ This subsection shows several execution examples of sample programs.
 
  - gfgrep - parallel grep
 
-  At first, you should check where the gfgrep program is already
-  registered in the Gfarm filesystem.
+  At first, you need to register (or copy) the gfgrep program on one
+  of file system nodes.
 
-	% gfls -l gfarm:/bin/gfgrep
+	% gfreg /usr/bin/gfgrep gfarm:gfgrep
 
-  If not, request your system administrator to follow the
-  above "Register Gfarm parallel commands" procedure.
+  If you would like to register on a client node (not on a file system
+  node), it is necessary to specify a file system node by the -h
+  option or an architecture name by the -a option.
 
-  Or, You can register by yourself using the gfreg command
-  on a filesystem node.
-
-	% gfreg /usr/grid/bin/gfgrep gfarm:gfgrep
-
-  In this case, replace the following "gfarm:/bin/gfgrep"
-  by "gfarm:gfgrep".
-  If you would like to register a binary program not on a filesystem
-  node, the architecture name should be explicitly specified with the
-  -a option.
+	% gfreg -h linuxhost-1.example.com /usr/bin/gfgrep gfarm:gfgrep
 
   The gfrun command executes a parallel command on filesystem nodes
   with file-affinity scheduling.
 
-	% gfrun -G gfarm:text.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out \
+	% gfrun -G gfarm:text.txt gfarm:gfgrep -o gfarm:gfgrep.out \
 		regexp gfarm:test.txt
 
   You can check the result to compare the following outputs.
@@ -896,17 +861,14 @@ This subsection shows several execution examples of sample programs.
   This command only exists, if the --with-mpi option is specified at
   building binaries.
 
-  At first, you should check whether the gfwc program is already
-  registered or not in the Gfarm filesystem.
+  At first, you need to register the gfwc program on one of file
+  system nodes.
 
-	% gfls -l gfarm:/bin/gfwc
-
-  If not, request your system administrator to follow the
-  above "Register Gfarm parallel commands" procedure.
+	% gfreg /usr/bin/gfwc gfarm:gfwc
 
   Since gfwc is an MPI application, it is executed using gfmpirun_p4.
 
-	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:test.txt
+	% gfmpirun_p4 gfarm:gfwc gfarm:test.txt
 
   You can check the result.
 

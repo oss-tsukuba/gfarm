@@ -758,32 +758,6 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 	% gfhost | gfrun -H - hostname
 
-◇ Gfarm 並列コマンドの登録
-
-この項は，システム管理者が，ファイルシステムノードを構成するアーキ
-テクチャそれぞれについて，一度づつ実行する必要のある項目です．
-
-並列ファイルコピー，並列 grep などのコマンドを Gfarm ファイルシステム
-に登録するために，それぞれのアーキテクチャのファイルシステムノードで
-以下を実行します．以下は，上記のサインオンをすませた管理者のユーザ権
-限で実行する必要があります．
-
-	% /usr/grid/sbin/gfregister
-
-この結果，並列コマンドが gfarm:/bin ディレクトリに登録されます．
-
-	% gfls -l gfarm:/bin
-	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
-	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
-	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
-	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
-	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
-	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-
-登録されているアーキテクチャは gfwhere で確認できます．
-
-	% gfwhere gfarm:/bin/gfcp
-
 ◇ Gfarmファイルシステムの利用例
 
 以下に，Gfarmファイルシステムの利用例を示します．
@@ -899,26 +873,20 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 ・gfgrep - parallel grep
 
-  gfgrep プログラムが，gfarm:/bin/gfgrep という名称で登録されているこ
-  とを確認します．
+  まず gfreg コマンドを用いて，ファイルシステムノードで gfgrep プログラ
+  ムを登録します．
 
-	% gfls -l gfarm:/bin/gfgrep
+	% gfreg /usr/bin/gfgrep gfarm:gfgrep
 
-  もし登録されていないない場合は，システム管理者に，前述の
-  Gfarm 並列コマンドの登録の作業の実行を依頼します．
+  ファイルシステムノード以外からプログラムを登録する場合は，ファイルシ
+  ステムノード名を -h オプションで，あるいはアーキテクチャ名を -a オプ
+  ションで指定する必要があります．
 
-  あるいは，gfreg コマンドを用いて，自分自身で登録することもできます．
-
-	% gfreg /usr/grid/bin/gfgrep gfarm:gfgrep
-
-  この場合，下記の「gfarm:/bin/gfgrep」は「gfarm:gfgrep」で置き換えて
-  ください．
-  なお，ファイルシステムノード以外からプログラムを登録する場合は，
-  アーキテクチャ名を -a オプションで指定する必要があります．
+	% gfreg -h linuxhost-1.example.com /usr/bin/gfgrep gfarm:gfgrep
 
   登録されたら，実行してみましょう．
 
-	% gfrun -G gfarm:テスト.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out \
+	% gfrun -G gfarm:テスト.txt gfarm:gfgrep -o gfarm:gfgrep.out \
 		正規表現 gfarm:テスト.txt
 
   結果を確認してみましょう．
@@ -931,13 +899,13 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   このコマンドは，バイナリ作成時に --with-mpi オプションが指定されて
   いた場合のみ存在します．  
 
-  gfgrep と同様に gfwc プログラムが，gfarm:/bin/gfwc という名称で登録
-  されていることを確認し，登録されていない場合は，システム管理者に
-  Gfarm 並列コマンドの登録の作業の実行を依頼します．
+  gfgrep と同様に gfwc プログラムを gfarm:gfwc という名称で登録します．
+
+	% gfreg /usr/bin/gfwc gfarm:gfwc
 
   実行してみましょう．
 
-	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:テスト.txt
+	% gfmpirun_p4 gfarm:gfwc gfarm:テスト.txt
 
   結果を確認してみましょう．
 
