@@ -126,6 +126,15 @@ CLASS="PARAMETER"
 ><P
 >specifies all hosts belonging to the domain.name.</P
 ></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>*</I
+></DT
+><DD
+><P
+>specifies all hosts.</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -596,13 +605,14 @@ CLASS="PARAMETER"
 >When <SPAN
 CLASS="TOKEN"
 >LISTENER</SPAN
-> is specified by the second
-argument, the socket option is applied to the socket that listens to
-irrespective of the target hosts.</P
+> (all capital letter) is specified
+by the second argument, the socket option is applied to any socket
+in server side (accepting side).</P
 ><P
 >When the host specification is specified by the second argument,
-the socket option is applied to the socket that connects to hosts with
-the corresponding host specification.</P
+the socket option is applied to sockets that connect to specified host(s).
+If the second argument is "*", the socket option is applied to any
+hosts in client side (connecting side).</P
 ><P
 >If the second argument is omitted, the socket option is applied
 to every socket.</P
@@ -827,7 +837,7 @@ CLASS="LITERALLAYOUT"
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
-		&#60;hostname&#62;<br>
+		&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
 	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>

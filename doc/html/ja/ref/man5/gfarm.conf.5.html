@@ -126,6 +126,24 @@ CLASS="PARAMETER"
 >ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
 ホストを意味します。</P
 ></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>*</I
+></DT
+><DD
+><P
+>"*" と記述されている場合、全てのホストを意味します。</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>LISTENER</I
+></DT
+><DD
+><P
+>sockopt 文の場合、全て大文字で "LISTENER" と記述すると、されている場合、全てのホストを意味します。</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -376,7 +394,7 @@ CLASS="LITERALLAYOUT"
 >	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
 	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
 	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
-	auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
+	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ><P
 >この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
 除いた 192.168.0.0/24 ネットワークに属すホストには 
@@ -520,16 +538,19 @@ CLASS="PARAMETER"
 >通信 socket(2) に対して、setsockopt(2) システムコールを使って
 ソケット・オプションを指定します。</P
 ><P
->第2引数に <SPAN
+>第2引数に全て大文字で <SPAN
 CLASS="TOKEN"
 >LISTENER</SPAN
-> を指定した場合、サーバー側 (着呼側) の
-ソケットに指定するオプションになります。この場合、通信する相手に
-関係なく、一律にソケット・オプションが設定されます。</P
+> を指定した場合、
+サーバー側 (着呼側) のソケットに指定するオプションになります。
+この場合、通信する相手に関係なく、
+一律にソケット・オプションが設定されます。</P
 ><P
 >第2引数にホスト指定を記述した場合、クライアント側 (発呼側) の
 ソケットに指定するオプションになります。この場合、通信する相手毎に
-ソケット・オプションを変えることができます。</P
+ソケット・オプションを変えることができます。
+なお、第2引数に "*" と記述すると、クライアント側 (発呼側) の全ての
+ホストを意味することになり、サーバー側 (着呼側) には適用されません。</P
 ><P
 >第2引数を省略した場合、サーバー側とクライアント側の両方で、
 全ての通信相手に対して同じソケット・オプションを設定します。</P
@@ -699,7 +720,7 @@ CLASS="LITERALLAYOUT"
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
-		&#60;hostname&#62;<br>
+		&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
 	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
@@ -727,7 +748,7 @@ ldap_serverhost&nbsp;ldap.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
-auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
+auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

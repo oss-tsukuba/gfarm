@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "01 May 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "19 June 2003" "Gfarm" ""
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
 .SH "DESCRIPTION"
@@ -39,9 +39,15 @@ IP アドレスと、"/" で区切られた 0〜31 までの数字で、ネットワークを
 \fB\fIdomain.name\fB\fR
 ホスト名をドメイン名で指定します。
 .TP
-\fB.\fIdomain.name\fB\fR
+\fB .\fIdomain.name\fB\fR
 ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
 ホストを意味します。
+.TP
+\fB*\fR
+"*" と記述されている場合、全てのホストを意味します。
+.TP
+\fBLISTENER\fR
+sockopt 文の場合、全て大文字で "LISTENER" と記述すると、されている場合、全てのホストを意味します。
 .SH "文"
 .PP
 文には、下記の種類があります。
@@ -155,7 +161,7 @@ gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
-	auth enable gsi ALL
+	auth enable gsi *
 .fi
 
 この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
@@ -211,13 +217,16 @@ rate_limit。コネクション1本あたりの通信バンド幅を制限する
 通信 socket(2) に対して、setsockopt(2) システムコールを使って
 ソケット・オプションを指定します。
 
-第2引数に LISTENER を指定した場合、サーバー側 (着呼側) の
-ソケットに指定するオプションになります。この場合、通信する相手に
-関係なく、一律にソケット・オプションが設定されます。
+第2引数に全て大文字で LISTENER を指定した場合、
+サーバー側 (着呼側) のソケットに指定するオプションになります。
+この場合、通信する相手に関係なく、
+一律にソケット・オプションが設定されます。
 
 第2引数にホスト指定を記述した場合、クライアント側 (発呼側) の
 ソケットに指定するオプションになります。この場合、通信する相手毎に
 ソケット・オプションを変えることができます。
+なお、第2引数に "*" と記述すると、クライアント側 (発呼側) の全ての
+ホストを意味することになり、サーバー側 (着呼側) には適用されません。
 
 第2引数を省略した場合、サーバー側とクライアント側の両方で、
 全ての通信相手に対して同じソケット・オプションを設定します。
@@ -329,7 +338,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
-		<hostname>
+		<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
 	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
 	<hostname> ::= <hostname_character> <hostname_character>*
@@ -351,7 +360,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
-auth enable gsi ALL
+auth enable gsi *
 .fi
 .SH "FILES"
 .TP

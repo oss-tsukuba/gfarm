@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "19 May 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "19 June 2003" "Gfarm" ""
 .SH NAME
 gfarm.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
@@ -40,8 +40,11 @@ from 0 to 31 separated by "/".
 \fB\fIdomain.name\fB\fR
 specifies a host name.
 .TP
-\fB.\fIdomain.name\fB\fR
+\fB .\fIdomain.name\fB\fR
 specifies all hosts belonging to the domain.name.
+.TP
+\fB*\fR
+specifies all hosts.
 .SH "STATEMENT"
 .PP
 The following statements are supported.
@@ -229,13 +232,14 @@ For example,
 The sockopt parameter specifies the socket option
 \fIoption\fR via the setsockopt(2) system call.
 
-When LISTENER is specified by the second
-argument, the socket option is applied to the socket that listens to
-irrespective of the target hosts.
+When LISTENER (all capital letter) is specified
+by the second argument, the socket option is applied to any socket
+in server side (accepting side).
 
 When the host specification is specified by the second argument,
-the socket option is applied to the socket that connects to hosts with
-the corresponding host specification.
+the socket option is applied to sockets that connect to specified host(s).
+If the second argument is "*", the socket option is applied to any
+hosts in client side (connecting side).
 
 If the second argument is omitted, the socket option is applied
 to every socket.
@@ -354,7 +358,7 @@ notation.
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
-		<hostname>
+		<hostname> | "." <domain_name>  | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
 	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
 	<hostname> ::= <hostname_character> <hostname_character>*
