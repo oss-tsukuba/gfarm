@@ -172,9 +172,10 @@ cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_etc_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_etc_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_etc_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}
-cp -pr package/redhat/config ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}
-rm -f ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config/config-gfarm.in
+mkdir -p ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config
+cp -p package/redhat/config/config-{gfarm,gfsd} \
+	package/redhat/config/{gfarm-slapd,gfarm.conf,slapd.conf-2.[01]}.in \
+	${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config
 chmod +x ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config/config-*
 
 %clean
@@ -187,11 +188,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %post fsnode
 /sbin/chkconfig --add gfsd
 echo copy /etc/gfarm.conf from metadata server and
-echo run /usr/lib/gfarm/config/config-gfsd '<spool_directory>'
+echo run %{lib_gfarm_prefix}/config/config-gfsd '<spool_directory>'
 
 %post server
 /sbin/chkconfig --add gfmd
-echo run /usr/lib/gfarm/config/config-gfarm to configure Gfarm file system
+echo run %{lib_gfarm_prefix}/config/config-gfarm to configure Gfarm file system
 
 %preun fsnode
 if [ "$1" = 0 ]
@@ -548,6 +549,7 @@ fi
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
+%{doc_prefix}/INSTALL.RPM.ja
 %{doc_prefix}/LICENSE
 %{doc_prefix}/RELNOTES
 %{doc_prefix}/GUIDE.ja
