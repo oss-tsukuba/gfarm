@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "hash.h"
@@ -15,6 +16,7 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 	char *user, *canonic_path, *e;
 	struct gfarm_path_info pi;
 	struct timeval now;
+	mode_t mask;
 
 	user = gfarm_get_global_username();
 	if (user == NULL)
@@ -32,6 +34,10 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 		free(canonic_path);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+
+	mask = umask(0);
+	umask(mask);
+	mode &= ~mask;
 
 	gettimeofday(&now, NULL);
 	pi.pathname = canonic_path;
