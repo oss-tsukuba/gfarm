@@ -46,18 +46,15 @@
 <para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
-<listitem>
-<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
-</listitem>
-</varlistentry>
+
+<!--
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
@@ -65,18 +62,22 @@
 の親ディレクトリへ書き込みアクセスする権限がありません。</para>
 </listitem>
 </varlistentry>
+ -->
+
 <varlistentry>
 <term><constant>GFARM_ERR_DIRECTORY_NOT_EMPTY</constant></term>
 <listitem>
 <para>指定されたディレクトリが、空ではありません。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para>指定されたファイルが存在しません。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
@@ -84,6 +85,7 @@
 示します。</para>
 </listitem>
 </varlistentry>
+
 <!--
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
@@ -92,6 +94,7 @@
 </listitem>
 </varlistentry>
 -->
+
 <varlistentry>
 <term>その他</term>
 <listitem>

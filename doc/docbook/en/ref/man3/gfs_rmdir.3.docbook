@@ -33,10 +33,10 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>NOT SUPPORTED YET.</para>
 
-<para><function>gfs_rmdir()</function> deletes a directory whose name is the string
-specified by <parameter>gfarm_url</parameter>.  The directory must be empty.</para>
+<para><function>gfs_rmdir()</function> deletes a directory whose name
+is the string specified by <parameter>gfarm_url</parameter>.  The
+directory must be empty.</para>
 
 </refsect1>
 
@@ -48,18 +48,15 @@ specified by <parameter>gfarm_url</parameter>.  The directory must be empty.</pa
 <para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
-<listitem>
-<para>User authentication failed when connecting to gfmd(8).</para>
-</listitem>
-</varlistentry>
+
+<!--
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
@@ -67,18 +64,22 @@ specified by <parameter>gfarm_url</parameter>.  The directory must be empty.</pa
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>
+ -->
+
 <varlistentry>
 <term><constant>GFARM_ERR_DIRECTORY_NOT_EMPTY</constant></term>
 <listitem>
 <para>Directory is not empty.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para>Directory does not exist.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
