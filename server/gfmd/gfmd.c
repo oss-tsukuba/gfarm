@@ -530,10 +530,9 @@ gfj_server_info(struct xxx_connection *client)
 	if (e != NULL)
 		return (e);
 
-	jobs = malloc(sizeof(gfarm_int32_t) * n);
-	if (jobs == NULL) {
+	jobs = malloc(sizeof(*jobs) * n);
+	if (jobs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 
 	for (i = 0; i < n; i++) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &jobs[i]);
@@ -550,19 +549,26 @@ gfj_server_info(struct xxx_connection *client)
 		    job_table[jobs[i]] == NULL) {
 			e = gfj_server_put_reply(client, "info",
 						 GFJ_ERROR_NO_SUCH_OBJECT, "");
-			if (e != NULL)
+			if (e != NULL) {
+				free(jobs);
 				return (e);
+			}
 		} else {
 			e = gfj_server_put_reply(client, "info",
 						 GFJ_ERROR_NOERROR, "");
-			if (e != NULL)
+			if (e != NULL) {
+				free(jobs);
 				return (e);
+			}
 			e = gfj_server_put_info_entry(client,
 			      job_table[jobs[i]]->info);
-			if (e != NULL)
+			if (e != NULL) {
+				free(jobs);
 				return (e);
+			}
 		}
 	}
+	free(jobs);
 	return (NULL);
 }
 
