@@ -617,8 +617,7 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 	free(gfarm_file);
 	if (e != NULL)
 		return (e);
-	e = gfarm_path_info_access(&pi, GFS_W_OK);
-	if (e != NULL)
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0)
 		goto finish_free_path_info;
 
 	gettimeofday(&now, NULL);
