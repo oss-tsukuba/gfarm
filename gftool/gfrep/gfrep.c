@@ -516,6 +516,7 @@ usage()
 	fprintf(stderr, "\t-s src-node\n");
 	fprintf(stderr, "\t-d dest-node\n");
 	fprintf(stderr, "\t-l <fragment-dest-list-file>\n");
+	fprintf(stderr, "\t-P <host-pair-file>\n");
 	exit(EXIT_FAILURE);
 }
 
