@@ -1288,12 +1288,14 @@ gfarm_terminate(void)
 	if (gf_stdout != NULL) {
 		fflush(stdout);
 		e = gfs_pio_close(gf_stdout);
+		gf_stdout = NULL;
 		if (e != NULL)
 			return (e);
 	}
 	if (gf_stderr != NULL) {
 		fflush(stderr);
 		e = gfs_pio_close(gf_stderr);
+		gf_stderr = NULL;
 		if (e != NULL)
 			return (e);
 	}
