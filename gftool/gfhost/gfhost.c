@@ -652,6 +652,8 @@ char *(*opt_resolv_addr)(char *, struct sockaddr *, char **) =
 
 int opt_verbose = 0;
 
+#define round_loadavg(l) ((l) < 0.0 ? 0.0 : (l) > 9.99 ? 9.99 : (l))
+
 void
 callback_loadavg(void *closure, struct sockaddr *addr,
 	struct gfs_client_load *result, char *error)
@@ -663,9 +665,9 @@ callback_loadavg(void *closure, struct sockaddr *addr,
 		fprintf(stderr, "%s: %s\n", if_hostname, error);
 	} else {
 		printf("%4.2f/%4.2f/%4.2f %s(%s)\n",
-		    result->loadavg_1min,
-		    result->loadavg_5min,
-		    result->loadavg_15min,
+		    round_loadavg(result->loadavg_1min),
+		    round_loadavg(result->loadavg_5min),
+		    round_loadavg(result->loadavg_15min),
 		    if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	free(if_hostname);
@@ -728,9 +730,9 @@ callback_host_info_and_loadavg(void *closure, struct sockaddr *addr,
 			printf("x.xx/x.xx/x.xx ");
 	} else {
 		printf("%4.2f/%4.2f/%4.2f ",
-		    result->loadavg_1min,
-		    result->loadavg_5min,
-		    result->loadavg_15min);
+		    round_loadavg(result->loadavg_1min),
+		    round_loadavg(result->loadavg_5min),
+		    round_loadavg(result->loadavg_15min));
 	}
 	printf("%s %d %s", info->architecture, info->ncpu, info->hostname);
 	if (print_ifaddr && strcasecmp(info->hostname, c->if_hostname) == 0) {
