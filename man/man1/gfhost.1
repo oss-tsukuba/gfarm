@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "13 August 2003" "Gfarm" ""
+.TH "GFHOST" "1" "22 August 2003" "Gfarm" ""
+
 .SH NAME
 gfhost \- gfarm host maintenance command
 .SH SYNOPSIS
@@ -113,12 +114,15 @@ cannot be accessed by the port number configured in
 /etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
-The next field is the authenticaion method used with the
-host. `G' in this field means GSI authenticaion, `S' means
-gfarm sharedsecret authentication, `x' means that the
-authentication failed, and `-' means that the authentication
-wasn't actually tried. If -U option is specified, this
-authentication method field won't be provided.
+The next field is the authenticaion method used with the host.
+`G' in this field means GSI authenticaion and encryption,
+`g' means only authenticaion is performed by GSI and
+actual communication is unprotected plain data (gsi_auth),
+`s' means gfarm sharedsecret authentication,
+`x' means that the authentication failed,
+and `-' means that the authentication wasn't actually tried.
+If -U option is specified, this authentication method field
+won't be provided.
 
 Hostnames are displayed by alphabetical order, by default.
 .TP
@@ -142,12 +146,15 @@ cannot be accessed by the port number configured in
 /etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
-The next field is the authenticaion method used with the
-host. `G' in this field means GSI authenticaion, `S' means
-gfarm sharedsecret authentication, `x' means that the
-authentication failed, and `-' means that the authentication
-wasn't actually tried. If -U option is specified, this
-authentication method field won't be provided.
+The next field is the authenticaion method used with the host.
+`G' in this field means GSI authenticaion and encryption,
+`g' means only authenticaion is performed by GSI and
+actual communication is unprotected plain data (gsi_auth),
+`s' means gfarm sharedsecret authentication,
+`x' means that the authentication failed,
+and `-' means that the authentication wasn't actually tried.
+If -U option is specified, this authentication method field
+won't be provided.
 
 Hostnames are displayed by alphabetical order, by default.
 .TP

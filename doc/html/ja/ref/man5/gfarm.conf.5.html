@@ -352,6 +352,10 @@ CLASS="PARAMETER"
 >部には、<SPAN
 CLASS="TOKEN"
 >gsi</SPAN
+>、
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
 > ないし <SPAN
 CLASS="TOKEN"
 >sharedsecret</SPAN
@@ -377,14 +381,24 @@ CLASS="PARAMETER"
 複数の認証方法が候補となった場合、<SPAN
 CLASS="TOKEN"
 >sharedsecret</SPAN
-> による認証が 
+>、
 <SPAN
 CLASS="TOKEN"
+>gsi_auth</SPAN
+>、<SPAN
+CLASS="TOKEN"
 >gsi</SPAN
-> より優先して試されます。</P
+> 認証の順序で試みます。</P
 ><P
 >Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
-gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。</P
+GSI は利用できません。この場合、<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> および
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> 認証の指定は単に無視されます。</P
 ><P
 >この設定は必須です。</P
 ><P
@@ -394,6 +408,7 @@ CLASS="LITERALLAYOUT"
 >	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
 	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
 	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
 	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ><P
 >この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
@@ -404,11 +419,19 @@ CLASS="TOKEN"
 > と <SPAN
 CLASS="TOKEN"
 >gsi</SPAN
-> の両方を、それ以外の全てのホスト
-には <SPAN
+> の両方を、
+10.0.0.0/8 ネットワークに属すホストには <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> および
+<SPAN
 CLASS="TOKEN"
 >gsi</SPAN
-> 認証を試みます。
+> の両方を、
+それ以外の全てのホストには <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> 認証のみを試みます。
 すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
 <SPAN
 CLASS="TOKEN"
@@ -708,7 +731,7 @@ CLASS="LITERALLAYOUT"
 	&#60;auth_statement&#62;&nbsp;::=<br>
 		"auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"sharedsecret"<br>
+	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
 		"netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
 	&#60;netparam_option&#62;&nbsp;::=&nbsp;"parallel_streams"&nbsp;|&nbsp;"stripe_unit_size"&nbsp;|<br>
@@ -748,6 +771,7 @@ ldap_serverhost&nbsp;ldap.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
 auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ></DIV
 ><DIV

@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "19 June 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "22 August 2003" "Gfarm" ""
+
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
 .SH "DESCRIPTION"
@@ -133,7 +134,8 @@ LDAP データベースで保持するデータのキーの根となるノードの
 
 第1引数の\fI有効無効\fR部には、enable ないし disable
 キーワードを指定します。
-第2引数の\fI認証方法\fR部には、gsi ないし sharedsecret
+第2引数の\fI認証方法\fR部には、gsi、
+gsi_auth ないし sharedsecret
 キーワードを指定します。
 第3引数には、\fIホスト指定\fRを記述します。
 
@@ -147,11 +149,12 @@ LDAP データベースで保持するデータのキーの根となるノードの
 双方ともで有効になっている認証方法のみが用いられます。
 
 認証方法が異なるものに関しては、指定の順序は意味がありません。
-複数の認証方法が候補となった場合、sharedsecret による認証が 
-gsi より優先して試されます。
+複数の認証方法が候補となった場合、sharedsecret、
+gsi_auth、gsi 認証の順序で試みます。
 
 Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
-gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。
+GSI は利用できません。この場合、gsi および
+gsi_auth 認証の指定は単に無視されます。
 
 この設定は必須です。
 
@@ -161,13 +164,16 @@ gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
 	auth enable gsi *
 .fi
 
 この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
 除いた 192.168.0.0/24 ネットワークに属すホストには 
-sharedsecret と gsi の両方を、それ以外の全てのホスト
-には gsi 認証を試みます。
+sharedsecret と gsi の両方を、
+10.0.0.0/8 ネットワークに属すホストには gsi_auth および
+gsi の両方を、
+それ以外の全てのホストには gsi 認証のみを試みます。
 すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
 gsi認証のみを試みることになります。
 .TP
@@ -326,7 +332,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<auth_statement> ::=
 		"auth" <auth_command> <auth_method> <hostspec>
 	<auth_command> ::= "enable" | "disable"
-	<auth_method> ::= "gsi" | "sharedsecret"
+	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		"netparam" <netparam_option>=<number> [<hostspec>]
 	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
@@ -360,6 +366,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
+auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *
 .fi
 .SH "FILES"

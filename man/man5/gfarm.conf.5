@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "19 June 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "22 August 2003" "Gfarm" ""
+
 .SH NAME
 gfarm.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
@@ -41,7 +42,7 @@ from 0 to 31 separated by "/".
 specifies a host name.
 .TP
 \fB .\fIdomain.name\fB\fR
-specifies all hosts belonging to the domain.name.
+specifies all hosts which belong to the domain.name.
 .TP
 \fB*\fR
 specifies all hosts.
@@ -138,7 +139,8 @@ communicating with the host(s) specified by the third argument.
 The first argument should be enable or
 disable keyword.
 The second argument \fIauth method\fR should be
-gsi or sharedsecret keyword.
+gsi, gsi_auth or sharedsecret
+keyword.
 The third argument specifies the host(s) by \fIHost
 specification\fR.
 
@@ -156,13 +158,14 @@ tried.
 
 The order of statements with different authentication methods is
 not concerned.  When there are several candidates for authentication
-method, sharedsecret is tried first, and then
-gsi is tried.
+method for the host, the order the authentication trial is
+sharedsecret, gsi_auth
+and then gsi.
 
-The GSI authentication method is available if and only if the
---with-globus option is specified at the configure time.  When it is
+The GSI methods are available if and only if the
+--with-globus option is specified at the configure time.  When the methods are
 not available, the auth statement with
-gsi will be ignored.
+gsi or gsi_auth will be ignored.
 
 This statement cannot be omitted.
 
@@ -172,13 +175,18 @@ For example,
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
 	auth enable gsi ALL
 .fi
 
-In this example, all hosts belonging to the network address of
+In this example, all hosts which belong to the network address of
 192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
 will be tried to be authenticated by both sharedsecret
-and gsi, and all other hosts will be authenticated by
+and gsi,
+all hosts which belong to the network address of 10.0.0.0/8 will be
+tried to be authenticated by both
+gsi_auth and gsi,
+and all other hosts will be authenticated by
 gsi.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.
 .TP
@@ -346,7 +354,7 @@ notation.
 	<auth_statement> ::=
 		"auth" <auth_command> <auth_method> <hostspec>
 	<auth_command> ::= "enable" | "disable"
-	<auth_method> ::= "gsi" | "sharedsecret"
+	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		"netparam" <netparam_option>=<number> [<hostspec>]
 	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
@@ -380,6 +388,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
+auth enable gsi_auth 10.0.0.0/8
 auth enable gsi ALL
 .fi
 .SH "FILES"

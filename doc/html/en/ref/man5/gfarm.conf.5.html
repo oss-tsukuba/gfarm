@@ -124,7 +124,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies all hosts belonging to the domain.name.</P
+>specifies all hosts which belong to the domain.name.</P
 ></DD
 ><DT
 ><I
@@ -368,10 +368,14 @@ CLASS="PARAMETER"
 <SPAN
 CLASS="TOKEN"
 >gsi</SPAN
+>, <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
 > or <SPAN
 CLASS="TOKEN"
 >sharedsecret</SPAN
-> keyword.
+>
+keyword.
 The third argument specifies the host(s) by <TT
 CLASS="PARAMETER"
 ><I
@@ -403,17 +407,21 @@ tried.</P
 ><P
 >The order of statements with different authentication methods is
 not concerned.  When there are several candidates for authentication
-method, <SPAN
-CLASS="TOKEN"
->sharedsecret</SPAN
-> is tried first, and then
+method for the host, the order the authentication trial is
 <SPAN
 CLASS="TOKEN"
+>sharedsecret</SPAN
+>, <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>
+and then <SPAN
+CLASS="TOKEN"
 >gsi</SPAN
-> is tried.</P
+>.</P
 ><P
->The GSI authentication method is available if and only if the
---with-globus option is specified at the configure time.  When it is
+>The GSI methods are available if and only if the
+--with-globus option is specified at the configure time.  When the methods are
 not available, the <SPAN
 CLASS="TOKEN"
 >auth</SPAN
@@ -421,6 +429,9 @@ CLASS="TOKEN"
 <SPAN
 CLASS="TOKEN"
 >gsi</SPAN
+> or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
 > will be ignored.</P
 ><P
 >This statement cannot be omitted.</P
@@ -431,9 +442,10 @@ CLASS="LITERALLAYOUT"
 >	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
 	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
 	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
 	auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
 ><P
->In this example, all hosts belonging to the network address of
+>In this example, all hosts which belong to the network address of
 192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
 will be tried to be authenticated by both <SPAN
 CLASS="TOKEN"
@@ -442,7 +454,17 @@ CLASS="TOKEN"
 and <SPAN
 CLASS="TOKEN"
 >gsi</SPAN
->, and all other hosts will be authenticated by
+>,
+all hosts which belong to the network address of 10.0.0.0/8 will be
+tried to be authenticated by both
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> and <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>,
+and all other hosts will be authenticated by
 <SPAN
 CLASS="TOKEN"
 >gsi</SPAN
@@ -825,7 +847,7 @@ CLASS="LITERALLAYOUT"
 	&#60;auth_statement&#62;&nbsp;::=<br>
 		"auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"sharedsecret"<br>
+	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
 		"netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
 	&#60;netparam_option&#62;&nbsp;::=&nbsp;"parallel_streams"&nbsp;|&nbsp;"stripe_unit_size"&nbsp;|<br>
@@ -865,6 +887,7 @@ ldap_serverhost&nbsp;ldap.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
 auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
 ></DIV
 ><DIV
