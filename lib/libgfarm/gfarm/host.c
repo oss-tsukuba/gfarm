@@ -316,7 +316,7 @@ host_address_get(const char *name, int port,
 }
 
 static char *
-host_address_get_matched(char *name, int port,
+host_address_get_matched(const char *name, int port,
 	struct gfarm_hostspec *hostspec,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {
@@ -325,6 +325,9 @@ host_address_get_matched(char *name, int port,
 	struct hostent *hp = gethostbyname(name);
 	char *n;
 	int i;
+
+	if (hostspec == NULL)
+		return (host_address_get(name, port, peer_addr, if_hostnamep));
 
 	if (hp == NULL || hp->h_addrtype != AF_INET)
 		return (GFARM_ERR_UNKNOWN_HOST);
@@ -348,31 +351,84 @@ host_address_get_matched(char *name, int port,
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
+static char *
+host_info_address_get_matched(struct gfarm_host_info *info, int port,
+	struct gfarm_hostspec *hostspec,
+	struct sockaddr *peer_addr, char **if_hostnamep)
+{
+	char *e;
+	int i;
+
+	e = host_address_get_matched(info->hostname, port, hostspec,
+	    peer_addr, if_hostnamep);
+	if (e == NULL)
+		return (NULL);
+	for (i = 0; i < info->nhostaliases; i++) {
+		e = host_address_get_matched(info->hostaliases[i], port,
+		    hostspec, peer_addr, if_hostnamep);
+		if (e == NULL)
+			return (NULL);
+	}
+	return (e);
+}
+
+struct host_info_rec {
+	struct gfarm_host_info *info;
+	int tried, got;
+};
+
+static char *
+address_get_matched(const char *name, struct host_info_rec *hir, int port,
+	struct gfarm_hostspec *hostspec,
+	struct sockaddr *peer_addr, char **if_hostnamep)
+{
+	char *e;
+
+	e = host_address_get_matched(name, port, hostspec,
+	    peer_addr, if_hostnamep);
+	if (e == NULL)
+		return (NULL);
+	if (!hir->tried) {
+		hir->tried = 1;
+		if (gfarm_host_info_get_by_if_hostname(name, hir->info)== NULL)
+			hir->got = 1;
+	}
+	if (hir->got) {
+		e = host_info_address_get_matched(hir->info, port, hostspec,
+		    peer_addr, if_hostnamep);
+	}
+	return (e);
+}
+
+static char *
+address_get(const char *name, struct host_info_rec *hir, int port,
+	struct sockaddr *peer_addr, char **if_hostnamep)
+{
+	if (gfarm_host_address_use_config_list != NULL) {
+		struct gfarm_host_address_use_config *config;
+
+		for (config = gfarm_host_address_use_config_list;
+		    config != NULL; config = config->next) {
+			if (address_get_matched(
+			    name, hir, port, config->hostspec,
+			    peer_addr, if_hostnamep) == NULL)
+				return (NULL);
+		}
+	}
+	return (address_get_matched(name, hir, port, NULL,
+	    peer_addr, if_hostnamep));
+}
+
 char *
 gfarm_host_info_address_get(const char *host, int port,
 	struct gfarm_host_info *info,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {
-	int i;
-	char *n;
+	struct host_info_rec hir;
 
-	if (gfarm_host_address_use_config_list != NULL && info != NULL) {
-		struct gfarm_host_address_use_config *config;
-
-		for (config = gfarm_host_address_use_config_list;
-		    config != NULL; config = config->next) {
-			for (i = 0, n = info->hostname; n != NULL;
-			    n = i < info->nhostaliases ?
-			    info->hostaliases[i++] : NULL) {
-				if (host_address_get_matched(n, port,
-				    config->hostspec,
-				    peer_addr, if_hostnamep) == NULL) {
-					return (NULL);
-				}
-			}
-		}
-	}
-	return (host_address_get(host, port, peer_addr, if_hostnamep));
+	hir.info = info;
+	hir.tried = hir.got = 1;
+	return (address_get(host, &hir, port, peer_addr, if_hostnamep));
 }
 
 char *
@@ -381,14 +437,12 @@ gfarm_host_address_get(const char *host, int port,
 {
 	char *e;
 	struct gfarm_host_info info;
+	struct host_info_rec hir;
 
-	if (gfarm_host_address_use_config_list != NULL &&
-	    gfarm_host_info_get_by_if_hostname(host, &info) == NULL) {
-		e = gfarm_host_info_address_get(host, port, &info,
-		    peer_addr, if_hostnamep);
+	hir.info = &info;
+	hir.tried = hir.got = 0;
+	e = address_get(host, &hir, port, peer_addr, if_hostnamep);
+	if (hir.got)
 		gfarm_host_info_free(&info);
-		return (e);
-	}
-
-	return (host_address_get(host, port, peer_addr, if_hostnamep));
+	return (e);
 }
