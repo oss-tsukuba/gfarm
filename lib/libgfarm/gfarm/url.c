@@ -104,11 +104,14 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 {
 	const char *basename;
 	char *dir, *e, *dir_canonic;
+	const char *lastc, *ini_lastc;
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
+	/* Expand '~'. */
 	if (gfarm_file[0] == '~') {
 		char *expanded_gfarm_file;
+
 		e = gfarm_path_expand_home(gfarm_file, &expanded_gfarm_file);
 		if (e != NULL)
 			return (e);
@@ -116,6 +119,43 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		e = gfarm_canonical_path_for_creation(
 			expanded_gfarm_file, canonic_pathp);
 		free(expanded_gfarm_file);
+
+		return (e);
+	}
+
+	if (gfarm_file[0] == '\0')
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	/* Eliminate unnecessary '/'s following the basename. */
+	lastc = ini_lastc = &gfarm_file[strlen(gfarm_file) - 1];
+	while (gfarm_file < lastc && *lastc == '/')
+		--lastc;
+	if (gfarm_file == lastc) {
+		/*
+		 * In this case, given gfarm_file is '/' or contains
+		 * only several '/'s.  This means to attempt to create
+		 * the root directory.  Because the root directory
+		 * should exist, the attempt will fail with the error
+		 * of 'already exist'.  However, this case such that
+		 * the canonical name is "" causes many problems.
+		 * That is why the error of 'already exist' is
+		 * returned here.
+		 */
+		return (GFARM_ERR_ALREADY_EXISTS);
+	}
+	else if (lastc != ini_lastc) {
+		char *eliminated_gfarm_file;
+
+		++lastc;
+		eliminated_gfarm_file = malloc(lastc - gfarm_file + 1);
+		if (eliminated_gfarm_file == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		strncpy(eliminated_gfarm_file, gfarm_file, lastc - gfarm_file);
+		eliminated_gfarm_file[lastc - gfarm_file] = '\0';
+		e = gfarm_canonical_path_for_creation(
+			eliminated_gfarm_file, canonic_pathp);
+		free(eliminated_gfarm_file);
+
 		return (e);
 	}
 
