@@ -19,7 +19,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
-サーバー・プロセスである gfmd と gfsd は、デフォールトでは、
+サーバー・プロセスである gfmd と gfsd は、デフォルトでは、
 この /etc/gfarm.conf を設定ファイルとして参照します。
 なお、設定内容が読み込まれるのは起動時だけなので、
 設定内容を変更した場合、サーバーを再起動する必要があります。</para>
@@ -45,7 +45,7 @@
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter></term>
 <listitem>
-<para>"." で区切られた 0〜256 までの数字 4 つで、IP アドレスを指定します。</para>
+<para>"." で区切られた 0〜255 までの数字 4 つで、IP アドレスを指定します。</para>
 </listitem>
 </varlistentry>
 
@@ -96,7 +96,7 @@
 <term><token>spool_serverport</token> <parameter>gfsdポート番号</parameter></term>
 <listitem>
 <para>gfsdが利用するTCPおよびUDPポートの番号を指定します。
-省略時のデフォールト・ポート番号は600番です。</para>
+省略時のデフォルト・ポート番号は600番です。</para>
 <para>例:</para>
 <literallayout>
 	spool_serverport 600
@@ -120,7 +120,7 @@
 <term><token>metadb_serverport</token> <parameter>gfmdポート番号</parameter></term>
 <listitem>
 <para>gfmdが利用するTCPポートの番号を指定します。
-省略時のデフォールト・ポート番号は601番です。</para>
+省略時のデフォルト・ポート番号は601番です。</para>
 <para>例:</para>
 <literallayout>
 	metadb_serverport 601
@@ -144,7 +144,7 @@
 <varlistentry>
 <term><token>ldap_serverport</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
-<para>LDAP サーバーが動作しているホスト名を指定します。</para>
+<para>LDAP サーバーが利用するTCPポートの番号を指定します。</para>
 <para>現在のところ、この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
@@ -183,12 +183,12 @@
 有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
 場合、その認証方法は、候補になりません。</para>
 
-<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
-複数の認証方法が候補となった場合、<token>sharesecret</token> による認証が 
-<token>gsi</token> より優先して試されます。</para>
-
 <para>この指定は、サーバー側とクライアント側の両方で解釈され、
 双方ともで有効になっている認証方法のみが用いられます。</para>
+
+<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、<token>sharedsecret</token> による認証が 
+<token>gsi</token> より優先して試されます。</para>
 
 <para>Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
 gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。</para>
@@ -223,7 +223,7 @@ TCPのストリーム数を指定します。省略時は1です。
 このパラメータは、TCP の通信ウィンドウが十分なサイズ
 まで開かないような遠方との通信の際に、有効なことがあります。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1) コマンドを起動したホストのユーザー設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
@@ -239,7 +239,7 @@ TCPのストリーム数を指定します。省略時は1です。
 このパラメータは、上記の <token>parallel_streams</token> として 1 より大きな値
 を指定した通信のみで有効です。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1) コマンドを起動したホストのユーザー設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
@@ -309,7 +309,7 @@ TCPのストリーム数を指定します。省略時は1です。
 <para>ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
 IPアドレスを通信に用いるかを指定します。
 この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
-適合するアドレスがない場合でも、通信を行ないます。</para>
+適合するアドレスがない場合でも、通信を行います。</para>
 <para>例:</para>
 <literallayout>
 	address_use 192.168.0.0/24
