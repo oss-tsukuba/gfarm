@@ -1,6 +1,6 @@
 # $Id$
 
-top_objdir = ../../..
+top_objdir = ../..
 top_srcdir = $(top_objdir)
 srcdir = .
 
