@@ -492,7 +492,7 @@ The procedure to invoke gfmd by this script is as follows:
 If you would like to execute gfmd directly, you can do as follows:
 	% su
 	Password: 
-	# gfmd
+	# /usr/grid/sbin/gfmd
 
 For a testing purpose, gfmd can be executed as a non-privileged user
 process with the -f option (see man gfmd), although the shared secret
@@ -539,7 +539,7 @@ The procedure to invoke gfsd by this script is as follows:
 If you would like to execute gfsd directly, you can do as follows:
 	% su
 	Password: 
-	# gfsd
+	# /usr/grid/sbin/gfsd
 
 For a testing purpose, gfsd can be executed as a non-privileged user
 process with the -f option (see man gfsd), although the shared secret
@@ -581,6 +581,8 @@ In the case of the Bourne Shell:
 
 In the case of the csh:
 	alias gfcd 'eval `gfsetdir \!*`'
+
+Add /usr/grid/bin to the setting of the PATH environment variable.
 
 Then the user can use gfcd command to change the Gfarm working directory
 like the follows:
@@ -674,7 +676,7 @@ Register Gfarm parallel commands such as a parallel file copy command
 and a parallel grep command to the Gfarm filesystem by the
 'gfregister' command.
 
-	% gfregister
+	% /usr/grid/sbin/gfregister
 
 All parallel commands will be registered in the gfarm:/bin directory.
 
