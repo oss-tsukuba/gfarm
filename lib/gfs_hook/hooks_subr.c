@@ -41,7 +41,7 @@ static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 static void gfs_hook_set_current_view_local();
 static void gfs_hook_set_current_view_index(int, int);
 static void gfs_hook_set_current_view_global();
-static void gfs_hook_set_current_view_section(char *);
+static void gfs_hook_set_current_view_section(char *, int);
 static void gfs_hook_set_current_view_default();
 
 /*
@@ -571,7 +571,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			memcpy(sec, p, secsize);
 			sec[secsize] = '\0';
 			/* It is not necessary to free memory space of 'sec'. */
-			gfs_hook_set_current_view_section(sec);
+			gfs_hook_set_current_view_section(sec, 1);
 		}
 		else {
 			/*
@@ -695,12 +695,13 @@ gfs_hook_set_current_view_global()
 }
 
 static void
-gfs_hook_set_current_view_section(char *section)
+gfs_hook_set_current_view_section(char *section, int needfree)
 {
+	static int space_need_to_be_freeed;
 	_gfs_hook_current_view = section_view;
-	if (_gfs_hook_current_section != NULL
-	    && _gfs_hook_current_section != _gfs_hook_default_section)
+	if (_gfs_hook_current_section != NULL && space_need_to_be_freeed)
 		free(_gfs_hook_current_section);
+	space_need_to_be_freeed = needfree;
 	_gfs_hook_current_section = section;
 }
 
@@ -719,7 +720,7 @@ gfs_hook_set_current_view_default()
 		gfs_hook_set_current_view_global();
 		break;
 	case section_view:
-		gfs_hook_set_current_view_section(_gfs_hook_default_section);
+		gfs_hook_set_current_view_section(_gfs_hook_default_section, 0);
 		break;
 	}
 }
