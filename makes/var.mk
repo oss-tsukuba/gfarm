@@ -6,6 +6,7 @@ COMMON_LDFLAGS = $(largefile_ldflags)
 INCDIR = $(top_srcdir)/include
 GFD_DIR = $(top_srcdir)/gfarmd
 GFSD_DIR = $(top_srcdir)/gfsd
+GFARMLIB_DIR = $(top_srcdir)/gfarmlib
 
 NSLIB = -L$(top_objdir)/nslib -lns
 DEPNSLIB = $(top_objdir)/nslib/libns.a
