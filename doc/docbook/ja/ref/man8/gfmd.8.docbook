@@ -3,7 +3,7 @@
 
 <refentry id='gfmd.8'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>1 Dec 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmd</refentrytitle>
@@ -49,6 +49,14 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
+<listitem>
+<para>gfsd の process ID を、指定したファイルに記録します。</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
@@ -56,12 +64,14 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 プロセスとして立ち上がります。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-f</option> <parameter>設定ファイル</parameter></term>
 <listitem>
 <para>起動時に読み込む設定ファイルを指定します．</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-p</option> <parameter>ポート番号</parameter></term>
 <listitem>
@@ -71,6 +81,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 ただし、動作するユーザー権限は任意のもので構いません。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
@@ -78,12 +89,14 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 した場合には、local0 を使用します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 

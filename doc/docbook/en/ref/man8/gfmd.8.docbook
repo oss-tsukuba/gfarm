@@ -3,7 +3,7 @@
 
 <refentry id='gfmd.8'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>1 Dec 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmd</refentrytitle>
@@ -48,6 +48,13 @@ or <filename>/etc/gfarm.conf</filename> on a client node.</para>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-P</option> <parameter>pid-file</parameter></term>
+<listitem>
+<para>specifies a file name which records the process ID of gfsd.</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-d</option></term>

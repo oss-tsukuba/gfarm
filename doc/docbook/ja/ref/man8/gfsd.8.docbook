@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>1 Dec 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -51,6 +51,13 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <variablelist>
 
 <varlistentry>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
+<listitem>
+<para>gfsd の process ID を、指定したファイルに記録します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
@@ -87,6 +94,7 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 
