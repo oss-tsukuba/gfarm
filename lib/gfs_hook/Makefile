@@ -61,7 +61,11 @@ OBJS = getcwd.lo hooks_subr$(SUFFIX).lo \
 	hooks$(SUFFIX).lo \
 	$(largefile64_objs) \
 	$(SYSDEP_OBJS)
-EXTRA_CLEAN_TARGETS= hooks_init$(SUFFIX).lo $(mpi_objs)
+EXTRA_CLEAN_TARGETS= \
+	lib_tmp_gfs_hook$(SUFFIX).la \
+	lib_tmp_gfs_hook_no_init$(SUFFIX).la \
+	lib_tmp_gfs_hook_mpi$(SUFFIX).la \
+	hooks_init$(SUFFIX).lo $(mpi_objs)
 
 ###
 ### settings for test programs
@@ -87,25 +91,34 @@ all: subdir-all gfs-hooks debug-gfs-hooks
 gfs-hooks: $(LIBRARY_RESULT)
 
 
-libgfs_hook$(SUFFIX).la: $(OBJS) hooks_init$(SUFFIX).lo
-	$(LTLINK_SHARELIB) $(OBJS) hooks_init$(SUFFIX).lo $(LDLIBS)
-
-gfs_hook$(SUFFIX).o: $(OBJS) hooks_init.lo
+lib_tmp_gfs_hook$(SUFFIX).la: $(OBJS) hooks_init$(SUFFIX).lo
 	$(LTLINK) $(OBJS) hooks_init$(SUFFIX).lo
 
+gfs_hook$(SUFFIX).o: lib_tmp_gfs_hook$(SUFFIX).la
+	$(LTLINK) lib_tmp_gfs_hook$(SUFFIX).la
 
-libgfs_hook_no_init$(SUFFIX).la: $(OBJS)
-	$(LTLINK_SHARELIB) $(OBJS) $(LDLIBS)
+libgfs_hook$(SUFFIX).la: lib_tmp_gfs_hook$(SUFFIX).la
+	$(LTLINK_SHARELIB) lib_tmp_gfs_hook$(SUFFIX).la $(LDLIBS)
 
-gfs_hook_no_init$(SUFFIX).o: $(OBJS)
+
+lib_tmp_gfs_hook_no_init$(SUFFIX).la: $(OBJS)
 	$(LTLINK) $(OBJS)
 
+gfs_hook_no_init$(SUFFIX).o: lib_tmp_gfs_hook_no_init$(SUFFIX).la
+	$(LTLINK) lib_tmp_gfs_hook_no_init$(SUFFIX).la
 
-libgfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
-	$(LTLINK_SHARELIB) $(OBJS) hooks_init_mpi$(SUFFIX).lo $(LDLIBS)
+libgfs_hook_no_init$(SUFFIX).la: lib_tmp_gfs_hook_no_init$(SUFFIX).la
+	$(LTLINK_SHARELIB) lib_tmp_gfs_hook_no_init$(SUFFIX).la $(LDLIBS)
 
-gfs_hook_mpi$(SUFFIX).o: $(OBJS) hooks_init_mpi$(SUFFIX).lo
+
+lib_tmp_gfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
 	$(LTLINK) $(OBJS) hooks_init_mpi$(SUFFIX).lo
+
+gfs_hook_mpi$(SUFFIX).o: lib_tmp_gfs_hook_mpi$(SUFFIX).la
+	$(LTLINK) lib_tmp_gfs_hook_mpi$(SUFFIX).la
+
+libgfs_hook_mpi$(SUFFIX).la: lib_tmp_gfs_hook_mpi$(SUFFIX).la
+	$(LTLINK_SHARELIB) lib_tmp_gfs_hook_mpi$(SUFFIX).la $(LDLIBS)
 
 ###
 ### objects needed by $(LIBRARY_TARGET)
