@@ -614,7 +614,7 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
->local_usr_map</SPAN
+>local_user_map</SPAN
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -626,25 +626,29 @@ CLASS="PARAMETER"
 >グローバルユーザ名とローカルユーザ名の対応関係を記述した
 ユーザマップファイルパス名を指定します。</P
 ><P
->この設定は必須ではありませんが、ユーザ名の異なる
-ファイルシステムノードがある場合に、ファイルシステムノードごとに
-ユーザマップファイル指定とファイルが必要です。他ノードの異なる
-ローカルユーザ名に対しても同じグローバルユーザ名を定義すれば、
-あたかも同一ユーザとしてgfarm を利用することができます。</P
+>この設定は必須ではありませんが、同一ユーザーに対して、
+異なるアカウント名を与えているファイルシステムノードがある場合に、
+このファイルでユーザー名の変換を行うことができます。そのような場合、
+このファイルで、各ノードのローカルなユーザ名に対して、単一の
+グローバルユーザ名を定義してやることによって、UNIX 的なアカウント名が
+異なっても同一ユーザとしてgfarm を利用することができます。</P
 ><P
 >例:</P
 ><P
 CLASS="LITERALLAYOUT"
->	local_user_map&nbsp;/usr/grid/usermap</P
+>	local_user_map&nbsp;/etc/gfarm/gfarm-usermap</P
+><P
+>ユーザーマップファイルは、グローバルユーザー名と
+ローカルユーザー名を、空白で区切って各行に記述します。</P
 ><P
 >ユーザマップファイルの内容例:</P
 ><P
 CLASS="LITERALLAYOUT"
->	foogl&nbsp;foo<br>
-	barglobal&nbsp;bar</P
+>	foobar&nbsp;foo<br>
+	quux&nbsp;baz</P
 ><P
 >この例の1行目の指定により、このノードのローカルユーザ名 foo に
-対してグローバルユーザ名 foogl が定義されます。</P
+対してグローバルユーザ名 foobar が定義されます。</P
 ></DD
 ></DL
 ></DIV

@@ -712,6 +712,47 @@ target host has several IP addresses.</P
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>local_user_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>configuration of a file to map user name </I
+></TT
+></DT
+><DD
+><P
+>This directive specifies a file name to map global user names
+to local user names</P
+><P
+>This directive is optional. You can use this directive
+to map user names on filesystem node hosts which use different
+user account names for an identical user.
+One can use gfarm as an identical user by defining a mapping from
+an identical global user name to a local user name on each host
+which has different UNIX account name.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_user_map&nbsp;/etc/gfarm/gfarm-usermap</P
+><P
+>Each line of the user mapping file is consisted of two fields,
+first field is a global user name, and second field is a local user name,
+and those fields are separated by spaces.</P
+><P
+>Example of the user mapping file:</P
+><P
+CLASS="LITERALLAYOUT"
+>	foobar&nbsp;foo<br>
+	quux&nbsp;baz</P
+><P
+>In the first line of this mapping file, a user name "foobar"
+is defined as a global user name which corresponds to a local user
+name "foo" on this node.</P
+></DD
 ></DL
 ></DIV
 ></DIV
