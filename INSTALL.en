@@ -227,8 +227,12 @@ This section assumes the following setting.
 ** LDAP server
 
 In the current distribution, an LDAP server manages the Gfarm
-filesystem metadata.  This subsection describes the configuration for
-the Gfarm filesystem metadata.
+filesystem metadata.
+
+The Gfarm version 1.0 only supports OpenLDAP version 2.0.X.  Other
+versions or other LDAP servers are not tested yet.  This subsection
+describes the configuration for the Gfarm filesystem metadata for
+OpenLDAP version 2.0.X.
 
  - slapd.conf
 
