@@ -140,15 +140,6 @@ and Technology (AIST).  All Rights Reserved.
 	GSI に関する詳しい情報は，http://www.globus.org/ を参照し
 	てください．
 
-	sharesecret 認証や gsi_auth 手法を用いる場合，gfarm.conf で
-	例えば下記のように設定し，安全なローカルネットワーク内のみで
-	有効にしておくことをお勧めします．
-		auth enable sharedsecret 192.168.0.0/24
-		auth enable gsi_auth 10.0.0.0/8
-		auth enable gsi ALL
-	(この例では，192.168.0.0/24 および 10.0.0.0/8 が，firewall で
-	 守られたローカル・ネットワークであると仮定しています．)
-
 4. 制限事項
 ***********
   4.1 gfchmod, gfchown, gfmv 等はないのですか？

@@ -156,16 +156,6 @@ Table of Contents:
 	Please look at the following URL about the GSI:
 		http://www.globus.org/
 
-	If you use the sharedsecret authentication or gsi_auth method,
-	we recommend you to enable it only for a safe local network,
-	for example, by the following gfarm.conf
-	configuration:
-		auth enable sharedsecret 192.168.0.0/24
-		auth enable gsi_auth 10.0.0.0/8
-		auth enable gsi ALL
-	(This example assumes 192.168.0.0/24 and 10.0.0.0/8 are the
-	 local networks that are protected by firewalls.)
-
 4. Limitation
 *************
   4.1 Where are gfchmod, gfchown and gfmv?
