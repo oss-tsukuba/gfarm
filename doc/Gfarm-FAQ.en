@@ -68,14 +68,19 @@ Table of Contents:
 	(1) Is a valid entry included in the grid-mapfile on file
 	system nodes and file system metadata node?
 
-	(2) Are both user certificate and host certificates valid, and
+	(2) Are permissions of user certificate
+	 (~/.globus/usercert.pem) and/or host certificate
+	 (/etc/grid-security/hostcert.pem) not permissive?  Maximum
+	 allowable permissions are 644.
+
+	(3) Are both user certificate and host certificates valid, and
 	not expired?
 
-	(3) Is a valid certificate for the CAs that sign user or host
+	(4) Is a valid certificate for the CAs that sign user or host
 	certificate, registered in /etc/grid-security/certificates?
 	Is not it expired?
 
-	(4) Are the clocks of all file system nodes, file system
+	(5) Are the clocks of all file system nodes, file system
 	metadata node, and a client are synchronized?  The GSI library
 	provided by the Globus fails to authenticate each other when
 	the time difference is more than five minutes.
