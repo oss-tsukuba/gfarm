@@ -174,6 +174,10 @@ chmod +x ${RPM_BUILD_ROOT}%{profile_etc_prefix}/*
 %clean
 rm -rf ${RPM_BUILD_ROOT}
 
+%post libs -p /sbin/ldconfig
+
+%postun libs -p /sbin/ldconfig
+
 %post fsnode
 /sbin/chkconfig --add gfsd
 
