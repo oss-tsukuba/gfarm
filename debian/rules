@@ -17,9 +17,9 @@ export DH_OPTIONS
 
 export CC=gcc
 
-GFARM_CLIENT_PKG = gfarm-client
-GFARM_DOC_PKG = gfarm-doc
-GFARM_GFPTOOL_PKG = gfarm-gfptool
+CLIENT_PKG = gfarm-client
+DOC_PKG = gfarm-doc
+GFPTOOL_PKG = gfarm-gfptool
 GFARMD_PKG = gfarmd
 GFMD_PKG = gfmd
 GFSD_PKG=gfsd
@@ -47,8 +47,8 @@ configure-stamp:
 	install -d build && cd build && $(CONFIGURE) --prefix=`pwd`/../debian/tmp/usr 
 	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=`pwd`/../debian/tmp_gsi/usr 
 
-	ln -s $(GFARM_CLIENT_PKG).install	debian/$(CLIENT_GSI_PKG).install
-	ln -s $(GFARM_GFPTOOL_PKG).install	debian/$(GFPTOOL_GSI_PKG).install
+	ln -s $(CLIENT_PKG).install	debian/$(CLIENT_GSI_PKG).install
+	ln -s $(GFPTOOL_PKG).install	debian/$(GFPTOOL_GSI_PKG).install
 	ln -s $(GFMD_PKG).install		debian/$(GFMD_GSI_PKG).install
 	ln -s $(GFSD_PKG).install		debian/$(GFSD_GSI_PKG).install
 	ln -s $(LIBGFARM_DEV_PKG).install	debian/$(DEV_GSI_PKG).install
@@ -110,9 +110,9 @@ install: build
 	  mv debian/$$tmp_dir/etc/init.d/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
 	done
 
-	dh_install -p$(GFARM_CLIENT_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFARM_DOC_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFARM_GFPTOOL_PKG) --sourcedir=debian/tmp
+	dh_install -p$(CLIENT_PKG) --sourcedir=debian/tmp
+	dh_install -p$(DOC_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFPTOOL_PKG) --sourcedir=debian/tmp
 	dh_install -p$(GFMD_PKG) --sourcedir=debian/tmp
 	dh_install -p$(GFSD_PKG) --sourcedir=debian/tmp
 	dh_install -p$(LIBGFARM_DEV_PKG) --sourcedir=debian/tmp
@@ -176,33 +176,53 @@ binary-arch: build install
 #	dh_installcron
 
 # manpages for gfarm package
+	for pkg in $(GFPTOOL_PKG) $(GFPTOOL_GSI_PKG); do \
+	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	for man in $(GFARM_GFPTOOL_MAN1); do \
-	  dh_installman -p$(GFARM_GFPTOOL_PKG) man/man1/$$man man/man1/$$man; \
-	  dh_installman -p$(GFPTOOL_GSI_PKG) man/man1/$$man man/man1/$$man; \
+	  dh_installman -p$$pkg man/man1/$$man man/man1/$$man; \
+	  install -o root -g root -m 644 man/ja/man1/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
+	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man1/$$man; \
+	done; \
 	done
 
 # manpages for gfmd package
+	for pkg in $(GFMD_PKG) $(GFMD_GSI_PKG); do \
+	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	for man in $(GFMD_MAN8); do \
-	  dh_installman -p$(GFMD_PKG) man/man8/$$man man/man8/$$man; \
-	  dh_installman -p$(GFMD_GSI_PKG) man/man8/$$man man/man8/$$man; \
+	  dh_installman -p$$pkg man/man8/$$man man/man8/$$man; \
+	  install -o root -g root -m 644 man/ja/man8/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
+	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man8/$$man; \
+	done; \
 	done
 
 # manpages for gfarm-client package
+	for pkg in $(CLIENT_PKG) $(CLIENT_GSI_PKG); do \
+	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	for man in $(GFARM_CLIENT_MAN1); do \
-	  dh_installman -p$(GFARM_CLIENT_PKG) man/man1/$$man man/man1/$$man; \
-	  dh_installman -p$(CLIENT_GSI_PKG) man/man1/$$man man/man1/$$man; \
+	  dh_installman -p$$pkg man/man1/$$man man/man1/$$man; \
+	  install -o root -g root -m 644 man/ja/man1/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
+	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man1/$$man; \
+	done; \
 	done
 
 # manpages for gfsd
+	for pkg in $(GFSD_PKG) $(GFSD_GSI_PKG); do \
+	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	for man in $(GFSD_MAN8); do \
-	  dh_installman -p$(GFSD_PKG) man/man8/$$man man/man8/$$man; \
-	  dh_installman -p$(GFSD_GSI_PKG) man/man8/$$man man/man8/$$man; \
+	  dh_installman -p$$pkg man/man8/$$man man/man8/$$man; \
+	  install -o root -g root -m 644 man/ja/man8/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
+	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man8/$$man; \
+	done; \
 	done
 
 #	manpages for libgfarm-dev
+	for pkg in $(LIBGFARM_DEV_PKG) $(DEV_GSI_PKG); do \
+	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man3; \
 	for man in $(LIBGFARM_DEV_MAN3); do \
-	  dh_installman -p$(LIBGFARM_DEV_PKG) man/man3/$$man man/man3/$$man; \
-	  dh_installman -p$(DEV_GSI_PKG) man/man3/$$man man/man3/$$man; \
+	  dh_installman -p$$pkg man/man3/$$man man/man3/$$man; \
+	  install -o root -g root -m 644 man/ja/man3/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man3; \
+	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man3/$$man; \
+	done; \
 	done
 
 #	dh_installinfo
