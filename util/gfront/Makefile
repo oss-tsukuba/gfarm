@@ -25,7 +25,7 @@ install:
 clean:
 veryclean: clean
 distclean: veryclean
-	-rm -f gfront
+	-rm -f $(SCRIPTS)
 
 gfregister:
 man:
