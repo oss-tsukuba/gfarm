@@ -13,7 +13,8 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 {
 	const char *e;
 	char *url, *sec;
-#if 1
+	struct gfs_stat gs;
+#if 0
 	char *canonic_path, *abs_path;
 	int r, save_errno;
 #endif
@@ -27,13 +28,28 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)\n", path));
 
-#if 0 /* Not yet implemented. */
-	e = GFS_STAT(url, buf);
+#if 1
+	if (sec != NULL)
+		e = GFS_STAT_SECTION(url, sec, &gs);
+	else {
+		/* first try in local view. */
+		e = GFS_STAT_INDEX(url, gfarm_node, &gs);
+		if (e != NULL)
+			e = GFS_STAT(url, &gs);
+	}
 	free(url);
 	if (sec != NULL)
 		free(sec);
-	if (e == NULL)
+	if (e == NULL) {
+		buf->st_mode = gs.st_mode;
+		buf->st_atime = gs.st_atimespec.tv_sec;
+		buf->st_mtime = gs.st_mtimespec.tv_sec;
+		buf->st_ctime = gs.st_ctimespec.tv_sec;
+		buf->st_size = gs.st_size;
+		gfs_stat_free(&gs);
+
 		return (0);
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___STAT) ": %s\n", e));
 	errno = gfarm_error_to_errno(e);
@@ -125,7 +141,8 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 {
 	const char *e;
 	char *url, *sec;
-#if 1
+	struct gfs_stat gs;
+#if 0
 	char *canonic_path, *abs_path;
 	int r, save_errno;
 #endif
@@ -139,13 +156,28 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)\n", path));
 
-#if 0 /* Not yet implemented. */
-	e = gfs_stat(url, buf);
+#if 1
+	if (sec != NULL)
+		e = GFS_STAT_SECTION(url, sec, &gs);
+	else {
+		/* first try in local view. */
+		e = GFS_STAT_INDEX(url, gfarm_node, &gs);
+		if (e != NULL)
+			e = GFS_STAT(url, &gs);
+	}
 	free(url);
 	if (sec != NULL)
 		free(sec);
-	if (e == NULL)
+	if (e == NULL) {
+		buf->st_mode = gs.st_mode;
+		buf->st_atime = gs.st_atimespec.tv_sec;
+		buf->st_mtime = gs.st_mtimespec.tv_sec;
+		buf->st_ctime = gs.st_ctimespec.tv_sec;
+		buf->st_size = gs.st_size;
+		gfs_stat_free(&gs);
+
 		return (0);
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___XSTAT) ": %s\n", e));
 	errno = gfarm_error_to_errno(e);

@@ -379,6 +379,8 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC__STAT	_stat
 #define FUNC_STAT	stat
 #define GFS_STAT	gfs_stat
+#define GFS_STAT_SECTION gfs_stat_section
+#define GFS_STAT_INDEX	gfs_stat_index
 
 #ifdef _STAT_VER /* SVR4 or Linux */
 #define SYSCALL_XSTAT(ver, path, buf)	\
@@ -409,7 +411,7 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC___STAT	__lstat
 #define FUNC__STAT	_lstat
 #define FUNC_STAT	lstat
-#define GFS_STAT	gfs_lstat
+#define GFS_STAT	gfs_stat /* XXX - gfs_lstat is not implemented yet. */
 
 #ifdef _STAT_VER /* SVR4 or Linux */
 #define SYSCALL_XSTAT(ver, path, buf)	\
