@@ -47,8 +47,7 @@ retry:
 		    path, sec != NULL ? sec : "(null)", oflag));
 		e = gfs_pio_open(url, oflag, &gf);
 	}
-	if (sec != NULL)
-		free(url);
+	free(url);
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) ": %s\n", e));
@@ -146,8 +145,7 @@ FUNC___CREAT(const char *path, mode_t mode)
 	    "GFS: Hooking " S(FUNC___CREAT) "(%s:%s, 0%o)\n",
 	    path, sec != NULL ? sec : "(null)", mode));
 	e = gfs_pio_create(url, GFARM_FILE_WRONLY, mode, &gf);
-	if (sec != NULL)
-		free(url);
+	free(url);
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: " S(FUNC___CREAT) ": %s\n", e));
@@ -277,10 +275,9 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 
 #if 0 /* Not yet implemented. */
 	e = gfs_stat(url, buf);
-	if (sec != NULL) {
-	    free(url);
-	    free(sec);
-	}
+	free(url);
+	if (sec != NULL)
+		free(sec);
 	if (e == NULL)
 		return (0);
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___STAT) ": %s\n", e));
@@ -295,10 +292,9 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	 */
 
 	e = gfarm_url_make_path(url, &canonic_path);
-	if (sec != NULL) {
-	    free(url);
-	    free(sec);
-	}
+	free(url);
+	if (sec != NULL)
+		free(sec);
 	if (e != NULL) {
 		errno = gfarm_error_to_errno(e);
 		return (-1);
@@ -389,10 +385,9 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 
 #if 0 /* Not yet implemented. */
 	e = gfs_stat(url, buf);
-	if (sec != NULL) {
-		free(url);
+	free(url);
+	if (sec != NULL)
 		free(sec);
-	}
 	if (e == NULL)
 		return (0);
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___XSTAT) ": %s\n", e));
@@ -400,10 +395,9 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	return (-1);
 #else /* Temporary code until gfs_stat() will be implemented. */
 	e = gfarm_url_make_path(url, &canonic_path);
-	if (sec != NULL) {
-		free(url);
+	free(url);
+	if (sec != NULL)
 		free(sec);
-	}
 	if (e != NULL) {
 		errno = gfarm_error_to_errno(e);
 		return (-1);

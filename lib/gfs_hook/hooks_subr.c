@@ -84,12 +84,19 @@ gfs_hook_is_open(int fd)
  *
  *  Gfarm URL:  gfarm:[:section:]pathname
  *
- *  If *secp is not NULL, it is necessary to free the memory space for
- *  both *urlp and *secp.
+ *  It is necessary to free the memory space for *url.
+ *  Also, it's necessary to free the memory space for *secp,
+ *  if *secp is not NULL.
  */
 int
 gfs_hook_is_url(const char *path, char **urlp, char **secp)
 {
+	/*
+	 * ROOT patch:
+	 *   'gfarm@' is also considered as a Gfarm URL
+	 */
+	char *gfarm_url_prefix_for_root = "gfarm@";
+
 	*secp = NULL;
 	/*
 	 * Objectivity patch:
@@ -97,8 +104,12 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	 */
 	if (*path == '/')
 		++path;
-	if (gfarm_is_url(path)) {
+	if (gfarm_is_url(path) ||
+	    /* ROOT patch */
+	    memcmp(path, gfarm_url_prefix_for_root,
+	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
 		static char prefix[] = "gfarm:";
+
 		if (!gfarm_initialized) {
 			gfs_hook_not_initialized();
 			return (0); /* don't perform gfarm operation */
@@ -107,25 +118,44 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 		 * extension for accessing individual sections
 		 *   gfarm::section:pathname
 		 */
-		if (*(path + sizeof(prefix) - 1) == ':') {
-			char *loc = strchr(path + sizeof(prefix), ':');
-			int urlsize, secsize;
-			if (loc == NULL) /* no section or no pathname */
-				return (0);
-			urlsize = sizeof(prefix) - 1 + strlen(loc + 1);
-			secsize = strlen(path) - urlsize - 2;
-			*urlp = calloc(urlsize + 1, sizeof(char));
-			*secp = calloc(secsize + 1, sizeof(char));
-			strcat(*urlp, prefix);
-			strcat(*urlp, loc + 1);
-			strncpy(*secp, path + sizeof(prefix), secsize);
+		if (path[sizeof(prefix) - 1] == ':') {
+			const char *p = path + sizeof(prefix);
+			int secsize = strcspn(p, "/:");
+			int urlsize;
+
+			if (p[secsize] != ':')
+				return (0); /* gfarm::foo/:bar or gfarm::foo */
+			urlsize = sizeof(prefix) - 1 + strlen(p + secsize + 1);
+			*urlp = malloc(urlsize + 1);
+			*secp = malloc(secsize + 1);
+			if (*urlp == NULL || *secp == NULL) {
+				if (*urlp != NULL)
+					free(*urlp);
+				if (*secp != NULL)
+					free(*secp);
+				return (0); /* XXX - should return ENOMEM */
+			}
+			memcpy(*urlp, prefix, sizeof(prefix) - 1);
+			strcpy(*urlp + sizeof(prefix) - 1, p + secsize + 1);
+			memcpy(*secp, p, secsize);
+			(*secp)[secsize] = '\0';
 			/*
 			 * This case needs to free memory space of
 			 * both *urlp and *secp.
 			 */
 		}
 		else {
-			*urlp = path;
+			*urlp = malloc(strlen(path) + 1);
+			if (*urlp == NULL)
+				return (0) ; /* XXX - should return ENOMEM */
+			/*
+			 * the reason why we don't just call strcpy(*url, path)
+			 * is because the path may be "gfarm@path/name".
+			 * (ROOT patch)
+			 */
+			memcpy(*urlp, prefix, sizeof(prefix) - 1);
+			strcpy(*urlp + sizeof(prefix) - 1,
+			    path + sizeof(prefix) - 1);
 		}
 		return (1);
 	}

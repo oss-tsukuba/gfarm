@@ -13,6 +13,7 @@ int gfs_hook_insert_gfs_file(GFS_File);
 void gfs_hook_clear_gfs_file(int);
 GFS_File gfs_hook_is_open(int);
 int gfs_hook_is_url(const char *, char **, char **);
+int __syscall_close(int);
 
 enum gfs_hook_file_view {
 	local_view,

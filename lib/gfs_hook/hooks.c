@@ -191,12 +191,11 @@ __unlink(const char *path)
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink(%s)\n", path));
 	e = gfs_unlink(url);
-	if (sec != NULL) {
-	    free(url);
-	    free(sec);
-	}
+	free(url);
+	if (sec != NULL)
+		free(sec);
 	if (e == NULL)
-	    return (0);
+		return (0);
 	_gfs_hook_debug(fprintf(stderr, "GFS: __unlink: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
