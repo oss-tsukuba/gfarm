@@ -11,6 +11,7 @@
 #define _gfs_hook_debug_v(x)
 #endif
 
+char *gfs_hook_initialize(void);
 int gfs_hook_insert_gfs_file(GFS_File);
 void gfs_hook_clear_gfs_file(int);
 GFS_File gfs_hook_is_open(int);

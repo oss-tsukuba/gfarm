@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <gfarm.h>
+#include "hooks_subr.h"
 
 char *
 gfs_hook_initialize(void)

@@ -15,8 +15,6 @@
 
 static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
 
-extern char *gfs_hook_initialize();
-
 void
 gfs_hook_not_initialized(void)
 {
