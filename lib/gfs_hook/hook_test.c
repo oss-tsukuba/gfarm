@@ -328,5 +328,7 @@ main(int argc, char *argv[])
 
     test_unlink(filename);
 
+    gfarm_terminate();
+
     exit(0);
 }
