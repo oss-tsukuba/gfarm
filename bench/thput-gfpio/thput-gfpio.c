@@ -42,6 +42,24 @@ timerval_calibrate(void)
 		(s2.tv_sec - s1.tv_sec) +
 		(s2.tv_usec - s1.tv_usec) / 1000000.0);
 }
+
+#else /* gettimeofday */
+
+typedef struct timeval timerval_t;
+
+#define gettimerval(t1)		gettimeofday(t1, NULL)
+#define timerval_second(t1)	((double)(t1)->tv_sec \
+				 + (double)(t1)->tv_usec * .000001)
+#define timerval_sub(t1, t2)	\
+	(((double)(t1)->tv_sec - (double)(t2)->tv_sec)	\
+	+ ((double)(t1)->tv_usec - (double)(t2)->tv_usec) * .000001)
+
+void
+timerval_calibrate(void)
+{
+    timerval_calibration = 1.0;
+}
+
 #endif
 
 int tm_write_write_measured = 0;
