@@ -186,3 +186,7 @@ hooks_subr$(SUFFIX).lo: \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfs_pio.h
+
+# libtool sometimes fails to remove .libs, and leaves ".libs/lib*.so.*T"
+post-distclean-hook:
+	-rm -rf .libs
