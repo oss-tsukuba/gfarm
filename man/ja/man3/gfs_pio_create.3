@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "25 April 2003" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "17 September 2004" "Gfarm" ""
 .SH NAME
 gfs_pio_create \- Gfarmファイルの作成
 .SH SYNOPSIS
@@ -24,11 +24,12 @@ char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB
 \fIgfp\fR
 の指す先に返します。
 .PP
-引数
+gfarm-1.0.4 以降は、必要な場合、引数
 \fIflags\fR
-には 現時点では、常に
-\fIGFARM_FILE_WRONLY\fR
-を渡すようにしてください。
+に
+\fIGFARM_FILE_CREATE\fR
+を明示的に指定しなければならないのでご注意ください。
+以前のバージョンでは、暗黙裡にこれが仮定されていました。
 .PP
 gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 \fBgfs_pio_create()\fR

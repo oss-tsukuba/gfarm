@@ -128,21 +128,22 @@ CLASS="PARAMETER"
 >
 の指す先に返します。</P
 ><P
->引数
+>gfarm-1.0.4 以降は、必要な場合、引数
 <TT
 CLASS="PARAMETER"
 ><I
 >flags</I
 ></TT
 >
-には 現時点では、常に
+に
 <TT
 CLASS="PARAMETER"
 ><I
->GFARM_FILE_WRONLY</I
+>GFARM_FILE_CREATE</I
 ></TT
 >
-を渡すようにしてください。</P
+を明示的に指定しなければならないのでご注意ください。
+以前のバージョンでは、暗黙裡にこれが仮定されていました。</P
 ><P
 >gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <TT

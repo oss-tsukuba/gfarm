@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "25 April 2003" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "17 September 2004" "Gfarm" ""
 .SH NAME
 gfs_pio_create \- create a Gfarm file
 .SH SYNOPSIS
@@ -20,8 +20,12 @@ and returns a \fIGFS_File\fR structure to the address pointed to by
 \fIgfp\fR.  \fIMode\fR specifies the file permissions to be created,
 and is modified by the process's umask.
 .PP
-Currently, GFARM_FILE_WRONLY is only supported for values of
-\fIflags\fR.
+Note that
+\fIGFARM_FILE_TRUNC\fR
+must be explicitly specified as the
+\fIflags\fR
+argument since gfarm-1.0.4 if it's needed,
+although it was implicitly assumed once.
 .PP
 When \fBgfs_pio_create()\fR is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent

@@ -135,16 +135,22 @@ CLASS="VARNAME"
 >umask</TT
 >.</P
 ><P
->Currently, <TT
-CLASS="CONSTANT"
->GFARM_FILE_WRONLY</TT
-> is only supported for values of
+>Note that
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_TRUNC</I
+></TT
+>
+must be explicitly specified as the
 <TT
 CLASS="PARAMETER"
 ><I
 >flags</I
 ></TT
->.</P
+>
+argument since gfarm-1.0.4 if it's needed,
+although it was implicitly assumed once.</P
 ><P
 >When <TT
 CLASS="FUNCTION"
