@@ -1123,136 +1123,8 @@ fi
 done
 
 
-
-cat > conftest.$ac_ext <<EOF
-#line 1129 "configure"
-#include "confdefs.h"
-
-#include <sys/types.h>
-#include <pwd.h>
-int main() {
-
-int rv;
-struct passwd *pwd;
-char buffer[1024];
-
-rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
-
-; return 0; }
-EOF
-if { (eval echo configure:1144: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-  rm -rf conftest*
-  ax_cv_have_getpwnam_r=yes
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  ax_cv_have_getpwnam_r=no
-fi
-rm -f conftest*
-if test "$ax_cv_have_getpwnam_r" = yes; then
-  cat >> confdefs.h <<\EOF
-#define HAVE_GETPWNAM_R 1
-EOF
-
-fi
-
-
-cat > conftest.$ac_ext <<EOF
-#line 1163 "configure"
-#include "confdefs.h"
-
-#include <shadow.h>
-int main() {
-
-int rv;
-struct spwd *sp;
-char buffer[1024];
-
-rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
-
-; return 0; }
-EOF
-if { (eval echo configure:1177: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-  rm -rf conftest*
-  ax_cv_have_getspnam_r=yes
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  ax_cv_have_getspnam_r=no
-fi
-rm -f conftest*
-if test "$ax_cv_have_getspnam_r" = yes; then
-  cat >> confdefs.h <<\EOF
-#define HAVE_GETSPNAM_R 1
-EOF
-
-fi
-
-
-cat > conftest.$ac_ext <<EOF
-#line 1196 "configure"
-#include "confdefs.h"
-
-#include <sys/types.h>
-#include <sys/socket.h>
-int main() {
-
-int rv, s;
-struct sockaddr addr;
-socklen_t len;
-
-rv = bind(s, &addr, len);
-
-; return 0; }
-EOF
-if { (eval echo configure:1211: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-  rm -rf conftest*
-  ax_cv_have_socklen_t=yes
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  ax_cv_have_socklen_t=no
-fi
-rm -f conftest*
-if test "$ax_cv_have_socklen_t" = no; then
-  cat > conftest.$ac_ext <<EOF
-#line 1223 "configure"
-#include "confdefs.h"
-
-  #include <sys/types.h>
-  #include <sys/socket.h>
-int main() {
-
-  int rv, s;
-  struct sockaddr addr;
-  size_t len;
-
-  rv = bind(s, &addr, len);
-  
-; return 0; }
-EOF
-if { (eval echo configure:1238: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
-  rm -rf conftest*
-  ax_cv_socklen_t=size_t
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  ax_cv_socklen_t=int
-fi
-rm -f conftest*
-  cat >> confdefs.h <<EOF
-#define socklen_t $ax_cv_socklen_t
-EOF
-
-fi
-
-
 echo $ac_n "checking for gethostname in -lnsl""... $ac_c" 1>&6
-echo "configure:1256: checking for gethostname in -lnsl" >&5
+echo "configure:1128: checking for gethostname in -lnsl" >&5
 ac_lib_var=`echo nsl'_'gethostname | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1260,7 +1132,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lnsl  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1264 "configure"
+#line 1136 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1271,7 +1143,7 @@ int main() {
 gethostname()
 ; return 0; }
 EOF
-if { (eval echo configure:1275: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1147: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -1299,7 +1171,7 @@ else
 fi
 
 echo $ac_n "checking for socket in -lsocket""... $ac_c" 1>&6
-echo "configure:1303: checking for socket in -lsocket" >&5
+echo "configure:1175: checking for socket in -lsocket" >&5
 ac_lib_var=`echo socket'_'socket | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1307,7 +1179,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lsocket  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1311 "configure"
+#line 1183 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1318,7 +1190,7 @@ int main() {
 socket()
 ; return 0; }
 EOF
-if { (eval echo configure:1322: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1194: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -1346,7 +1218,7 @@ else
 fi
 
 echo $ac_n "checking for crypt in -lcrypt""... $ac_c" 1>&6
-echo "configure:1350: checking for crypt in -lcrypt" >&5
+echo "configure:1222: checking for crypt in -lcrypt" >&5
 ac_lib_var=`echo crypt'_'crypt | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1354,7 +1226,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lcrypt  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1358 "configure"
+#line 1230 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1365,7 +1237,7 @@ int main() {
 crypt()
 ; return 0; }
 EOF
-if { (eval echo configure:1369: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1241: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -1392,6 +1264,133 @@ else
   echo "$ac_t""no" 1>&6
 fi
 
+
+
+cat > conftest.$ac_ext <<EOF
+#line 1271 "configure"
+#include "confdefs.h"
+
+#include <sys/types.h>
+#include <pwd.h>
+int main() {
+
+int rv;
+struct passwd *pwd;
+char buffer[1024];
+
+rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
+
+; return 0; }
+EOF
+if { (eval echo configure:1286: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ax_cv_have_getpwnam_r=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ax_cv_have_getpwnam_r=no
+fi
+rm -f conftest*
+if test "$ax_cv_have_getpwnam_r" = yes; then
+  cat >> confdefs.h <<\EOF
+#define HAVE_GETPWNAM_R 1
+EOF
+
+fi
+
+
+cat > conftest.$ac_ext <<EOF
+#line 1305 "configure"
+#include "confdefs.h"
+
+#include <shadow.h>
+int main() {
+
+int rv;
+struct spwd *sp;
+char buffer[1024];
+
+rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
+
+; return 0; }
+EOF
+if { (eval echo configure:1319: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ax_cv_have_getspnam_r=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ax_cv_have_getspnam_r=no
+fi
+rm -f conftest*
+if test "$ax_cv_have_getspnam_r" = yes; then
+  cat >> confdefs.h <<\EOF
+#define HAVE_GETSPNAM_R 1
+EOF
+
+fi
+
+
+cat > conftest.$ac_ext <<EOF
+#line 1338 "configure"
+#include "confdefs.h"
+
+#include <sys/types.h>
+#include <sys/socket.h>
+int main() {
+
+int rv, s;
+struct sockaddr addr;
+socklen_t len;
+
+rv = bind(s, &addr, len);
+
+; return 0; }
+EOF
+if { (eval echo configure:1353: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ax_cv_have_socklen_t=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ax_cv_have_socklen_t=no
+fi
+rm -f conftest*
+if test "$ax_cv_have_socklen_t" = no; then
+  cat > conftest.$ac_ext <<EOF
+#line 1365 "configure"
+#include "confdefs.h"
+
+  #include <sys/types.h>
+  #include <sys/socket.h>
+int main() {
+
+  int rv, s;
+  struct sockaddr addr;
+  size_t len;
+
+  rv = bind(s, &addr, len);
+  
+; return 0; }
+EOF
+if { (eval echo configure:1380: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ax_cv_socklen_t=size_t
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ax_cv_socklen_t=int
+fi
+rm -f conftest*
+  cat >> confdefs.h <<EOF
+#define socklen_t $ax_cv_socklen_t
+EOF
+
+fi
 
 
 
