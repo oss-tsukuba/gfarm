@@ -1098,8 +1098,8 @@ char *gfs_client_command_request(struct gfs_connection *gfs_server,
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(xdisplay_name_cache, "%s%s", prefix, dpy);
 		xdisplay_env_cache = malloc(sizeof(xdisplay_env_format) +
-					    strlen(dpy));
-		if (xdisplay_name_cache == NULL) {
+					    strlen(xdisplay_name_cache));
+		if (xdisplay_env_cache == NULL) {
 			free(xdisplay_name_cache);
 			xdisplay_name_cache = NULL;
 			return (GFARM_ERR_NO_MEMORY);
