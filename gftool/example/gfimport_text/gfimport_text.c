@@ -14,7 +14,7 @@ void
 import_text(FILE *ifp, char *output,
 	int nfrags, struct gfarm_import_fragment_table *fragtab)
 {
-	int i, c, rv;
+	int i, c;
 	char *e;
 	struct gfs_file *of;
 	file_offset_t size;
@@ -138,7 +138,6 @@ main(argc, argv)
 		e = gfarm_import_fragment_table_config(
 		    config, &nhosts, &fragtab, &error_line);
 	} else if (hostfile != NULL) {
-		int i;
 		struct stat is;
 
 		if (fstat(fileno(ifp), &is) == -1) {
