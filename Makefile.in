@@ -27,3 +27,4 @@ post-distclean-hook:
 		Makefile makes/config.mk \
 		package/solaris/gfmd package/solaris/gfsd \
 		package/redhat/gfmd package/redhat/gfsd
+	-rm -rf autom4te.cache
