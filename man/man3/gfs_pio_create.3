@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "30 October 2004" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "31 October 2004" "Gfarm" ""
 
 .SH NAME
 gfs_pio_create \- create a Gfarm file
@@ -18,37 +18,34 @@ char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB
 \fBgfs_pio_create()\fR creates a new Gfarm file whose name is the
 string pointed to by \fIgfarm_url\fR with the access mode \fImode\fR,
 and returns a \fIGFS_File\fR structure to the address pointed to by
-\fIgfp\fR\&.  \fIMode\fR specifies the file permissions to be created,
-and is modified by the process's umask\&.
+\fIgfp\fR.  \fIMode\fR specifies the file permissions to be created,
+and is modified by the process's umask.
 .PP
 The
 \fIflags\fR
-argument has same meaning with the second argument of
+argument has the same meaning as the second argument of
 \fBgfs_pio_open()\fR, including the point
-that exactly one of
+such that exactly one of
 \fIGFARM_FILE_RDONLY\fR,
-\fIGFARM_FILE_WRONLY\fR or
+\fIGFARM_FILE_WRONLY\fR, and
 \fIGFARM_FILE_RDWR\fR
-must be specified.
-There is one other flag which is specific to 
-\fBgfs_pio_create()\fR\&.
-That is
-\fIGFARM_FILE_EXCLUSIVE\fR,
-and
+should be specified.
+In addition, it is possible to specify
+\fIGFARM_FILE_EXCLUSIVE\fR.
+With this flag, 
 \fBgfs_pio_create()\fR
-will fail, if this flag is specified and
-the file already exists.
+will fail when the file already exists.
 .PP
 Note that
 \fIGFARM_FILE_TRUNC\fR
-must be explicitly specified as the
+must be explicitly specified by the
 \fIflags\fR
 argument since gfarm-1.0.4, if it's needed.
 Although this was implicitly assumed before.
 .PP
 When \fBgfs_pio_create()\fR is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
-value for \fImode\fR\&.  The returned GFS_File structure of each
+value for \fImode\fR.  The returned GFS_File structure of each
 process has individual file pointers among parallel processes.
 .SH "RETURN VALUES"
 .TP
@@ -66,6 +63,9 @@ The requested access to the file is not allowed, or one of the
 directories in \fIgfarm_url\fR did not allow search (execute)
 permission, or the file did not exist yet and write access to the
 parent directory is not allowed.
+.TP
+\fBGFARM_ERR_ALREADY_EXISTS\fR
+\fIgfarm_url\fR already exists and GFARM_FILE_EXCLUSIVE was used.
 .TP
 \fBGFARM_ERR_IS_A_DIRECTORY\fR
 \fIgfarm_url\fR refers to a directory.

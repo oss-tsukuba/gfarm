@@ -5,7 +5,8 @@
 >gfs_pio_create</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -35,11 +36,11 @@ NAME="SYNOPSIS"
 >Synopsis</H2
 ><DIV
 CLASS="FUNCSYNOPSIS"
-><P
-></P
 ><A
 NAME="AEN12"
 ></A
+><P
+></P
 ><TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -129,9 +130,9 @@ CLASS="PARAMETER"
 >Mode</I
 ></TT
 > specifies the file permissions to be created,
-and is modified by the process's <VAR
+and is modified by the process's <TT
 CLASS="VARNAME"
->umask</VAR
+>umask</TT
 >.</P
 ><P
 >The
@@ -141,12 +142,12 @@ CLASS="PARAMETER"
 >flags</I
 ></TT
 >
-argument has same meaning with the second argument of
+argument has the same meaning as the second argument of
 <TT
 CLASS="FUNCTION"
 >gfs_pio_open()</TT
 >, including the point
-that exactly one of
+such that exactly one of
 <TT
 CLASS="PARAMETER"
 ><I
@@ -158,33 +159,27 @@ CLASS="PARAMETER"
 ><I
 >GFARM_FILE_WRONLY</I
 ></TT
-> or
+>, and
 <TT
 CLASS="PARAMETER"
 ><I
 >GFARM_FILE_RDWR</I
 ></TT
 >
-must be specified.
-There is one other flag which is specific to 
-<TT
-CLASS="FUNCTION"
->gfs_pio_create()</TT
->.
-That is
+should be specified.
+In addition, it is possible to specify
 <TT
 CLASS="PARAMETER"
 ><I
 >GFARM_FILE_EXCLUSIVE</I
 ></TT
->,
-and
+>.
+With this flag, 
 <TT
 CLASS="FUNCTION"
 >gfs_pio_create()</TT
 >
-will fail, if this flag is specified and
-the file already exists.</P
+will fail when the file already exists.</P
 ><P
 >Note that
 <TT
@@ -193,7 +188,7 @@ CLASS="PARAMETER"
 >GFARM_FILE_TRUNC</I
 ></TT
 >
-must be explicitly specified as the
+must be explicitly specified by the
 <TT
 CLASS="PARAMETER"
 ><I
@@ -213,9 +208,9 @@ CLASS="PARAMETER"
 ><I
 >mode</I
 ></TT
->.  The returned <CODE
+>.  The returned <TT
 CLASS="CONSTANT"
->GFS_File</CODE
+>GFS_File</TT
 > structure of each
 process has individual file pointers among parallel processes.</P
 ></DIV
@@ -232,36 +227,36 @@ NAME="RETURN-VALUES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->NULL</CODE
+>NULL</TT
 ></DT
 ><DD
 ><P
 >The function terminated successfully.</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</CODE
+>GFARM_ERR_NO_MEMORY</TT
 ></DT
 ><DD
 ><P
 >Insufficient memory was available.</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</CODE
+>GFARM_ERR_AUTHENTICATION</TT
 ></DT
 ><DD
 ><P
 >User authentication failed when connecting to gfmd(8) or gfsd(8).</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</CODE
+>GFARM_ERR_PERMISSION_DENIED</TT
 ></DT
 ><DD
 ><P
@@ -276,9 +271,23 @@ permission, or the file did not exist yet and write access to the
 parent directory is not allowed.</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_IS_A_DIRECTORY</CODE
+>GFARM_ERR_ALREADY_EXISTS</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> already exists and GFARM_FILE_EXCLUSIVE was used.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_IS_A_DIRECTORY</TT
 ></DT
 ><DD
 ><P
@@ -290,9 +299,9 @@ CLASS="PARAMETER"
 > refers to a directory.</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</CODE
+>GFARM_ERR_NO_SUCH_OBJECT</TT
 ></DT
 ><DD
 ><P
@@ -304,9 +313,9 @@ CLASS="PARAMETER"
 > does not exist.</P
 ></DD
 ><DT
-><CODE
+><TT
 CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</CODE
+>GFARM_ERR_NOT_A_DIRECTORY</TT
 ></DT
 ><DD
 ><P
