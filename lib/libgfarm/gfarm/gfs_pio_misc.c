@@ -1215,13 +1215,13 @@ gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 
 	e = gfarm_host_get_canonical_name(srchost, &canonical_hostname);
 	if (e != NULL)
-		goto finish_canonical_hostname;
+		goto finish_section_info;
 
 	/* reflect "address_use" directive in the `srchost' */
 	e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
 	    &peer_addr, &if_hostname);
 	if (e != NULL)
-		goto finish_section_info;
+		goto finish_canonical_hostname;
 	/*
 	 * XXX - if the owner of a file is not the same, permit a
 	 * group/other write access - This should be fixed in the next
@@ -1230,7 +1230,7 @@ gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
 		e = gfarm_path_info_access(&pi, GFS_R_OK);
 		if (e != NULL)
-			goto finish_path_info;
+			goto finish_if_hostname;
 		mode_allowed = 022;
 		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
@@ -1238,7 +1238,7 @@ gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 	    gfarm_file, section,
 	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
-
+finish_if_hostname:
 	free(if_hostname);
 finish_canonical_hostname:
 	free(canonical_hostname);
