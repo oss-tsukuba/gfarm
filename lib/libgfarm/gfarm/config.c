@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/wait.h>
@@ -350,6 +354,13 @@ static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 
+/* static variables */
+static enum {
+	gfarm_config_not_read,
+	gfarm_config_user_read,
+	gfarm_config_server_read
+} config_read = gfarm_config_not_read;
+
 static void
 gfarm_config_clear(void)
 {
@@ -386,6 +397,7 @@ gfarm_config_clear(void)
 		free(gfarm_ldap_base_dn);
 		gfarm_ldap_base_dn = NULL;
 	}
+	config_read = gfarm_config_not_read;
 }
 
 /*
@@ -949,12 +961,6 @@ gfarm_config_set_default_spool_on_server(void)
 		gfarm_spool_root = gfarm_spool_root_default;
 	}
 }
-
-static enum {
-	gfarm_config_not_read,
-	gfarm_config_user_read,
-	gfarm_config_server_read
-} config_read = gfarm_config_not_read;
 
 /*
  * the following function is for client,

@@ -23,7 +23,8 @@ static char progname[] = PROGRAM_NAME;
 static void
 print_usage()
 {
-	fprintf(stderr, "usage: %s <program> [-N <nodes>] [-I <index>] [-s] <args> ...\n", progname);
+	fprintf(stderr, "usage: %s <program> [-N <nodes>] [-I <index>] [-s] "
+			"<args> ...\n", progname);
 	exit(2);
 }
 
@@ -171,7 +172,6 @@ main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-
 	/*
 	 * the followings are only needed for pid==0 case.
 	 * but isn't it better to check errors before fork(2)?
@@ -224,7 +224,6 @@ main(int argc, char *argv[], char *envp[])
 	new_env[envc++] = cwd_env;
 	new_env[envc++] = NULL;
 
-
 	if (gf_stdout == NULL && gf_stderr == NULL) {
 		/* what we need is to call exec(2) */
 		pid = 0;
@@ -243,12 +242,11 @@ main(int argc, char *argv[], char *envp[])
 		status = 255;
 		break;
 	case 0:
-#if 0	/*
-	 * gfarm_terminate() should not be called here
-	 * because we need to keep the LDAP connection.
-	 */
 		if (gf_stdout == NULL && gf_stderr == NULL) {
-			/* not to display profile statistics on gfarm_terminate() */
+			/*
+			 * not to display profile statistics
+			 * on gfarm_terminate()
+			 */
 			gfs_profile(gf_profile = 0);
 
 			e = gfarm_terminate();
@@ -265,7 +263,6 @@ main(int argc, char *argv[], char *envp[])
 			 *   on the parent process.
 			 */
 		}
-#endif
 		execve(local_path, argv, new_env);
 		if (errno != ENOEXEC) {
 			perror(local_path);
