@@ -13,8 +13,9 @@ struct gfarm_auth_method_name_value {
 	char *name;
 	enum gfarm_auth_method method;
 } gfarm_auth_method_name_value_table[] = {
-	{ 'S', "sharedsecret", GFARM_AUTH_METHOD_SHAREDSECRET },
-	{ 'G', "gsi", GFARM_AUTH_METHOD_GSI },
+	{ 's', "sharedsecret",	GFARM_AUTH_METHOD_SHAREDSECRET },
+	{ 'G', "gsi",		GFARM_AUTH_METHOD_GSI },
+	{ 'g', "gsi_auth",	GFARM_AUTH_METHOD_GSI_AUTH },
 };
 
 enum gfarm_auth_config_command { GFARM_AUTH_ENABLE, GFARM_AUTH_DISABLE };
@@ -159,8 +160,12 @@ gfarm_auth_method_get_available(void)
 	for (i = GFARM_AUTH_METHOD_NONE + 1; i < GFARM_AUTH_METHOD_NUMBER;
 	    i++) {
 		switch (i) {
+		case GFARM_AUTH_METHOD_GSI_OLD: /* obsolete */
+			break;
 #ifndef HAVE_GSI
 		case GFARM_AUTH_METHOD_GSI:
+			break;
+		case GFARM_AUTH_METHOD_GSI_AUTH:
 			break;
 #endif
 		default:

@@ -2,7 +2,7 @@
 
 <refentry id='gfhost.1'>
 
-<refentryinfo><date>22 May 2003</date></refentryinfo>
+<refentryinfo><date>20 Aug 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -233,12 +233,15 @@ the default function of <command>gfhost</command>.
 	displayed.
       </para>
       <para>
-	The next field is the authenticaion method used with the
-	host. `G' in this field means GSI authenticaion, `S' means
-	gfarm sharedsecret authentication, `x' means that the
-	authentication failed, and `-' means that the authentication
-	wasn't actually tried. If -U option is specified, this
-	authentication method field won't be provided.
+	The next field is the authenticaion method used with the host.
+	`G' in this field means GSI authenticaion and encryption,
+	`g' means only authenticaion is performed by GSI and
+	actual communication is unprotected plain data (gsi_auth),
+	`s' means gfarm sharedsecret authentication,
+	`x' means that the authentication failed,
+	and `-' means that the authentication wasn't actually tried.
+	If -U option is specified, this	authentication method field
+	won't be provided.
       </para>
       <para>
 	Hostnames are displayed by alphabetical order, by default.
@@ -271,12 +274,15 @@ the default function of <command>gfhost</command>.
 	displayed.
       </para>
       <para>
-	The next field is the authenticaion method used with the
-	host. `G' in this field means GSI authenticaion, `S' means
-	gfarm sharedsecret authentication, `x' means that the
-	authentication failed, and `-' means that the authentication
-	wasn't actually tried. If -U option is specified, this
-	authentication method field won't be provided.
+	The next field is the authenticaion method used with the host.
+	`G' in this field means GSI authenticaion and encryption,
+	`g' means only authenticaion is performed by GSI and
+	actual communication is unprotected plain data (gsi_auth),
+	`s' means gfarm sharedsecret authentication,
+	`x' means that the authentication failed,
+	and `-' means that the authentication wasn't actually tried.
+	If -U option is specified, this	authentication method field
+	won't be provided.
       </para>
       <para>
 	Hostnames are displayed by alphabetical order, by default.

@@ -36,6 +36,10 @@ struct gfarm_auth_client_method {
 	  gfarm_auth_request_sharedsecret_multiplexed,
 	  gfarm_auth_result_sharedsecret_multiplexed },
 #ifdef HAVE_GSI
+	{ GFARM_AUTH_METHOD_GSI_AUTH,
+	  gfarm_auth_request_gsi_auth,
+	  gfarm_auth_request_gsi_auth_multiplexed,
+	  gfarm_auth_result_gsi_auth_multiplexed },
 	{ GFARM_AUTH_METHOD_GSI,
 	  gfarm_auth_request_gsi,
 	  gfarm_auth_request_gsi_multiplexed,

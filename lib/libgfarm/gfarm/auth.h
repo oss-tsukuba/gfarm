@@ -12,6 +12,7 @@ enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_SHAREDSECRET,
 	GFARM_AUTH_METHOD_GSI_OLD, /* not supported since 2003/07/09 */
 	GFARM_AUTH_METHOD_GSI,
+	GFARM_AUTH_METHOD_GSI_AUTH,
 
 	GFARM_AUTH_METHOD_NUMBER
 };
@@ -65,7 +66,7 @@ char *gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 char *gfarm_authorize(struct xxx_connection *, int, char **, char **,
 	enum gfarm_auth_method *);
 
-/* auth config */
+/* auth_config */
 struct gfarm_hostspec;
 
 char gfarm_auth_method_mnemonic(enum gfarm_auth_method);
@@ -93,9 +94,19 @@ char *gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *,
 	void **);
 char *gfarm_auth_result_gsi_multiplexed(void *);
 
+/* auth_client_gsi_auth */
+char *gfarm_auth_request_gsi_auth(struct xxx_connection *);
+char *gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *,
+	struct xxx_connection *, void (*)(void *), void *,
+	void **);
+char *gfarm_auth_result_gsi_auth_multiplexed(void *);
+
 /* auth_server_sharedsecret */
 char *gfarm_authorize_sharedsecret(struct xxx_connection *, int, char *,
         char **);
 
-char *gfarm_authorize_gsi(struct xxx_connection *, int, char *, char **);
 /* auth_server_gsi */
+char *gfarm_authorize_gsi(struct xxx_connection *, int, char *, char **);
+
+/* auth_server_gsi_auth */
+char *gfarm_authorize_gsi_auth(struct xxx_connection *, int, char *, char **);

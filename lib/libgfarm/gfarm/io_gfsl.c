@@ -99,6 +99,15 @@ gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
 	return (rv);
 }
 
+static void
+free_secsession(struct io_gfsl *io)
+{
+	gfarmSecSessionTerminate(io->session);
+	if (io->buffer != NULL)
+		free(io->buffer);
+	free(io);
+}
+
 /*
  * xxx_connection operation
  */
@@ -106,15 +115,10 @@ gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
 char *
 xxx_iobuffer_close_secsession_op(void *cookie, int fd)
 {
-	struct io_gfsl *io = cookie;
 	int rv;
 	char *e = NULL;
 
-	gfarmSecSessionTerminate(io->session);
-
-	if (io->buffer != NULL)
-		free(io->buffer);
-	free(io);
+	free_secsession(cookie);
 	rv = close(fd);
 	if (rv == -1)
 		e = gfarm_errno_to_error(errno);
@@ -193,13 +197,9 @@ xxx_connection_reset_secsession(struct xxx_connection *conn)
 {
 	struct io_gfsl *io = xxx_connection_cookie(conn);
 
-	if (io != NULL) {
-		if (io->buffer != NULL)
-			free(io->buffer);
-		free(io);
-	}
-	xxx_connection_set(conn, &xxx_secsession_iobuffer_ops,
-	    NULL, -1);
+	if (io != NULL)
+		free_secsession(io);
+	xxx_connection_set(conn, &xxx_secsession_iobuffer_ops, NULL, -1);
 }
 
 /*

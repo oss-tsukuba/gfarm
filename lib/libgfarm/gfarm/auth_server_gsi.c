@@ -46,9 +46,10 @@ gfarm_gsi_get_delegated_cred()
  *
  */
 
-char *
-gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
-		    char **global_usernamep)
+static char *
+gfarm_authorize_gsi_common(struct xxx_connection *conn,
+	int switch_to, char *hostname, char *auth_method_name,
+	char **global_usernamep)
 {
 	int fd = xxx_connection_fd(conn);
 	char *e, *e2, *global_username;
@@ -81,8 +82,6 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 		return (GFARM_ERR_AUTHENTICATION);
 		
 	}
-	xxx_connection_set_secsession(conn, session);
-
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
 #if 1 /* XXX - global name should be distinguished by DN (distinguish name) */
 	e = gfarm_local_to_global_username(
@@ -112,12 +111,14 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 
 		/* succeed, do logging */
 
-		static char method[] = "auth=gsi local_user=";
+		static char method_prefix[] = "auth=";
+		static char user_prefix[] = " local_user=";
 		static char dnb[] = " DN=\"";
 		static char dne[] = "\"";
 		char *aux = malloc(strlen(global_username) + 1 +
 		    strlen(hostname) + 1);
-		char *msg = malloc(sizeof(method) - 1 +
+		char *msg = malloc(sizeof(method_prefix) - 1 +
+		    strlen(auth_method_name) + sizeof(user_prefix) - 1 +
 		    strlen(userinfo->authData.userAuth.localName) +
 		    sizeof(dnb)-1 + strlen(userinfo->distName) + sizeof(dne));
 
@@ -133,8 +134,9 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 			sprintf(aux, "%s@%s", global_username, hostname);
 			gflog_set_auxiliary_info(aux);
 
-			sprintf(msg, "%s%s%s%s%s", method,
-			    userinfo->authData.userAuth.localName,
+			sprintf(msg, "%s%s%s%s%s%s%s",
+			    method_prefix, auth_method_name,
+			    user_prefix, userinfo->authData.userAuth.localName,
 			    dnb, userinfo->distName, dne);
 			gflog_notice("authenticated", msg);
 			free(msg);
@@ -146,6 +148,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 		}
 	}
 
+	xxx_connection_set_secsession(conn, session);
 	e2 = xxx_proto_send(conn, "i", error);
 	if (e2 != NULL) {
 		gflog_error("authorize_gsi: send reply", e2);
@@ -156,7 +159,6 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 	if (e != NULL || e2 != NULL) {
 		if (global_username != NULL)
 			free(global_username);
-		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
 		return (e);
@@ -193,4 +195,35 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 	else
 		free(global_username);
 	return (NULL);
+}
+
+/*
+ * "gsi" method
+ */
+char *
+gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
+	char **global_usernamep)
+{
+	return (gfarm_authorize_gsi_common(conn, switch_to, hostname, "gsi",
+	    global_usernamep));
+}
+
+/*
+ * "gsi_auth" method
+ */
+
+char *
+gfarm_authorize_gsi_auth(struct xxx_connection *conn,
+	int switch_to, char *hostname,
+	char **global_usernamep)
+{
+	char *e = gfarm_authorize_gsi_common(conn, switch_to, hostname,
+	    "gsi_auth", global_usernamep);
+	int fd = xxx_connection_fd(conn);
+
+	if (e == NULL) {
+		xxx_connection_reset_secsession(conn);
+		xxx_connection_set_fd(conn, fd);
+	}
+	return (e);
 }

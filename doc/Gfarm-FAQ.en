@@ -18,8 +18,8 @@ Table of Contents:
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
     a firewall?
-  3.2 What is the difference between GSI authentication and sharedsecret
-    authentication?
+  3.2 What is the difference in sharedsecret authentication,
+    gsi_auth method and gsi authentication?
 
 4. Limitation
   4.1 "drwxrwxrwx" is always displayed as permission of a directory by gfls.
@@ -83,47 +83,62 @@ Table of Contents:
 	contents.
 
 	Second problem is the way of authentication.
-	Gfarm-1.0 supports two authentication methods, namely
-	the sharedsecret authentication and the GSI authentication.
-	The sharedsecret authentication is not safe enough in
-	the Internet environment. Please refer to the next question
-	about this issue.
+	Gfarm-1.0 supports three authentication methods, namely
+	the sharedsecret authentication, gsi_auth method
+	and the gsi authentication.
+	The sharedsecret authentication and gsi_auth method are
+	not safe enough in the Internet environment.
+	Please refer to the next question about this issue.
 
-  3.2 What is the difference between GSI authentication and sharedsecret
-    authentication?
+  3.2 What is the difference in sharedsecret authentication,
+    gsi_auth method and gsi authentication?
 
-	The sharedsecret authentication in Gfarm is an authentication
+	The "sharedsecret" authentication in Gfarm is an authentication
 	based on a shared key, which provides only authentication
 	service not data signing and data encryption services. Thus,
-	this method still has a risk of packet sniffering and TCP
-	session hijacking.  Due to this reason, we recommend to use
-	the sharedsecret authentication only in a safe environment
-	protected by a firewall.  The reason why we provide this
-	authentication method is that it is fast and it does not
-	need you to acquire a public key.
+	this method still has risks of packet sniffering and TCP
+	session hijacking.
+	Due to this reason, we recommend to use the sharedsecret
+	authentication only in a safe environment protected by a
+	firewall.  The reason why we provide this authentication
+	method is that it is fast and it does not need you to acquire
+	a public key.
 
-	The GSI (Grid Security Infrastructure) authentication is an
+	The "gsi" (Grid Security Infrastructure) authentication is an
 	authentication based on a public key infrastructure.  Gfarm uses
 	the Globus GSI library for this authentication.  Because the
-	Globus GSI library supports data encryption, the GSI
+	Globus GSI library supports data encryption, the gsi
 	authentication is considered more secure than the sharedsecret
 	authentication in Gfarm.  But please note that some exportable
 	versions of Globus don't support encryption.  We recommend you
 	to confirm that your Globus version certainly supports
 	encryption.
 
-	The GSI authentication is only available, when you use the
-	--with-globus option at "configure" time.
-	Please look at the following URL for the GSI authentication:
+	The "gsi_auth" method uses the GSI library only for
+	the authentication. And actual data communication is not protected
+	by data signing and data encryption services with this method.
+	Thus, this gsi_auth method has risks of packet sniffering and
+	TCP session hijacking just like sharedsecret authentication.  
+	Due to this reason, we recommend to use the gsi_auth method
+	only in a safe environment protected by a firewall.
+	The reason why we provide this method is that it is fast
+	for data transfer.
+
+	The gsi authentication and gsi_auth method are only
+	available, when you use the --with-globus option at the source
+	code "configure" time.
+	Please look at the following URL about the GSI:
 		http://www.globus.org/
 
-	If you use the sharedsecret authentication, we recommend you
-	to enable it only for a safe local network, for example, by
-	the following gfarm.conf configuration:
+	If you use the sharedsecret authentication or gsi_auth method,
+	we recommend you to enable it only for a safe local network,
+	for example, by the following gfarm.conf
+	configuration:
 		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi_auth 10.0.0.0/8
 		auth enable gsi ALL
-	(This example assumes 192.168.0.0/24 is the local network
-	 that is protected by a firewall.)
+	(This example assumes 192.168.0.0/24 and 10.0.0.0/8 are the
+	 local networks that are protected by firewalls.)
 
 4. Limitation
 *************

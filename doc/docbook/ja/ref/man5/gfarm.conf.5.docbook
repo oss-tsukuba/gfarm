@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>20 Jan 2003</date></refentryinfo>
+<refentryinfo><date>20 Aug 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -187,7 +187,8 @@
 
 <para>第1引数の<parameter>有効無効</parameter>部には、<token>enable</token> ないし <token>disable</token>
 キーワードを指定します。
-第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token> ないし <token>sharedsecret</token>
+第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
+<token>gsi_auth</token> ないし <token>sharedsecret</token>
 キーワードを指定します。
 第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
 
@@ -201,11 +202,12 @@
 双方ともで有効になっている認証方法のみが用いられます。</para>
 
 <para>認証方法が異なるものに関しては、指定の順序は意味がありません。
-複数の認証方法が候補となった場合、<token>sharedsecret</token> による認証が 
-<token>gsi</token> より優先して試されます。</para>
+複数の認証方法が候補となった場合、<token>sharedsecret</token>、
+<token>gsi_auth</token>、<token>gsi</token> 認証の順序で試みます。</para>
 
 <para>Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
-gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。</para>
+GSI は利用できません。この場合、<token>gsi</token> および
+<token>gsi_auth</token> 認証の指定は単に無視されます。</para>
 
 <para>この設定は必須です。</para>
 <para>例:</para>
@@ -213,13 +215,16 @@ gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。</para>
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
 	auth enable gsi *
 </literallayout>
 
 <para>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
 除いた 192.168.0.0/24 ネットワークに属すホストには 
-<token>sharedsecret</token> と <token>gsi</token> の両方を、それ以外の全てのホスト
-には <token>gsi</token> 認証を試みます。
+<token>sharedsecret</token> と <token>gsi</token> の両方を、
+10.0.0.0/8 ネットワークに属すホストには <token>gsi_auth</token> および
+<token>gsi</token> の両方を、
+それ以外の全てのホストには <token>gsi</token> 認証のみを試みます。
 すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
 <token>gsi</token>認証のみを試みることになります。</para>
 
@@ -390,7 +395,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;auth_statement&gt; ::=
 		"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
-	&lt;auth_method&gt; ::= "gsi" | "sharedsecret"
+	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
 	&lt;netparam_statement&gt; ::=
 		"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
 	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" |
@@ -432,6 +437,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
+auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *
 </literallayout>
 

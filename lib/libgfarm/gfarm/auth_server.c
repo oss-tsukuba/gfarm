@@ -33,8 +33,10 @@ char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char *,
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_OLD */
 #ifdef HAVE_GSI
 	gfarm_authorize_gsi,		/* GFARM_AUTH_METHOD_GSI */
+	gfarm_authorize_gsi_auth,	/* GFARM_AUTH_METHOD_GSI_AUTH */
 #else
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI */
+	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_GSI_AUTH */
 #endif
 };
 

@@ -16,7 +16,7 @@ and Technology (AIST).  All Rights Reserved.
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
-  3.2 sharedsecret 認証と GSI 認証の違いは？
+  3.2 sharedsecret 認証、gsi_auth 手法、gsi 認証の違いは？
 
 4. 制限事項
   4.1 gfls をすると、ディレクトリのパーミッションが drwxrwxrwx と
@@ -77,13 +77,15 @@ and Technology (AIST).  All Rights Reserved.
 	のアクセスに関しては、常に認証が行われます。
 
 	もう一つの問題は、認証の問題です。
-	Gfarm-1.0 は、sharedsecret 認証と GSI 認証の 2 種類の認証方法を
-	サポートしていますが、Internet 環境では、sharedsecret 認証だと
-	安全とは言えません。これについては、次の項目を参照してください。
+	Gfarm-1.0 は、sharedsecret 認証、gsi_auth 手法、gsi 認証の
+	3 種類の認証方法をサポートしていますが、
+	Internet 環境では、sharedsecret 認証や gsi_auth 手法では
+	安全とは言えません。gsi 認証の利用を推奨します。
+	これについては、次の項目を参照してください。
 
-  3.2 sharedsecret 認証と GSI 認証の違いは？
+  3.2 sharedsecret 認証、gsi_auth 手法、gsi 認証の違いは？
 
-	sharedsecret 認証は、共有鍵を用いた認証です。
+	「sharedsecret」認証は、共有鍵を用いた認証です。
 	Gfarm の sharedsecret 認証の場合、提供しているサービスが認証だ
 	けであり、データに対する署名や暗号化を提供しているわけではあり
 	ませんから、パケット盗聴や、TCP セッションの乗っ取りなどの危険
@@ -92,25 +94,35 @@ and Technology (AIST).  All Rights Reserved.
 	す。sharedsecret 認証を提供している理由は、高速なことと、公開
 	鍵の取得の手間を省けることです。
 
-	GSI (Grid Security Infrastructure) 認証は、公開鍵に基づいた認
+	「gsi」(Grid Security Infrastructure) 認証は、公開鍵に基づいた認
 	証方法です。Gfarm は Globus の提供する GSI ライブラリを用いて
 	います。Globus がデータの暗号化をサポートしているため、
 	sharedsecret 認証よりも安全であると考えられます。ただし、輸出
 	版の Globus の場合、バージョンによっては暗号化をサポートしてい
 	ないことがあります。お使いの Globus が、暗号化をサポートしてい
 	るバージョンであるか確認しておくことをお勧めします。
-	GSI 認証は、configure 時に --with-globus を指定しないと、有効
-	になりません。
-	GSI 認証に関する詳しい情報は、http://www.globus.org/ を参照し
+
+	「gsi_auth」手法の場合、認証処理のみに GSI ライブラリを用い、
+	その後の通信にはデータに対する署名や暗号化処理による保護のない、
+	生のデータ転送を用います。このため sharedsecret 認証と同様、
+	パケット盗聴や、TCP セッションの乗っ取りなどの危険が残ります。
+	従って、firewall で守られている環境内のみでの利用をお勧めしま
+	す。gsi_auth 手法を提供している理由は、データ転送が高速なこと
+	です。
+
+	gsi 認証や gsi_auth 手法は、ソースコードの configure 時に
+	--with-globus オプションを指定しないと、有効になりません。
+	GSI に関する詳しい情報は、http://www.globus.org/ を参照し
 	てください。
 
-	sharesecret 認証を用いる場合、gfarm.conf で例えば下記のように
-	設定し、sharedsecret 認証は安全なローカルネットワーク内のみで
+	sharesecret 認証や gsi_auth 手法を用いる場合、gfarm.conf で
+	例えば下記のように設定し、安全なローカルネットワーク内のみで
 	有効にしておくことをお勧めします。
 		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi_auth 10.0.0.0/8
 		auth enable gsi ALL
-	(この例では、192.168.0.0/24 が、firewall で守られたローカル・
-	 ネットワークであると仮定しています。)
+	(この例では、192.168.0.0/24 および 10.0.0.0/8 が、firewall で
+	 守られたローカル・ネットワークであると仮定しています。)
 
 4. 制限事項
 ***********

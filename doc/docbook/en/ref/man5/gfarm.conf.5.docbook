@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>20 Jan 2003</date></refentryinfo>
+<refentryinfo><date>20 Aug 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -68,7 +68,7 @@ from 0 to 31 separated by "/".</para>
 <varlistentry>
 <term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
 <listitem>
-<para>specifies all hosts belonging to the domain.name.</para>
+<para>specifies all hosts which belong to the domain.name.</para>
 </listitem>
 </varlistentry>
 
@@ -189,7 +189,8 @@ communicating with the host(s) specified by the third argument.</para>
 <para>The first argument should be <token>enable</token> or
 <token>disable</token> keyword.
 The second argument <parameter>auth method</parameter> should be
-<token>gsi</token> or <token>sharedsecret</token> keyword.
+<token>gsi</token>, <token>gsi_auth</token> or <token>sharedsecret</token>
+keyword.
 The third argument specifies the host(s) by <parameter>Host
 specification</parameter>.</para>
 
@@ -207,13 +208,15 @@ tried.</para>
 
 <para>The order of statements with different authentication methods is
 not concerned.  When there are several candidates for authentication
-method, <token>sharedsecret</token> is tried first, and then
-<token>gsi</token> is tried.</para>
+method for the host, the order the authentication trial is
+<token>sharedsecret</token>, <token>gsi_auth</token>
+and then <token>gsi</token>.
+</para>
 
-<para>The GSI authentication method is available if and only if the
---with-globus option is specified at the configure time.  When it is
+<para>The GSI methods are available if and only if the
+--with-globus option is specified at the configure time.  When the methods are
 not available, the <token>auth</token> statement with
-<token>gsi</token> will be ignored.</para>
+<token>gsi</token> or <token>gsi_auth</token> will be ignored.</para>
 
 <para>This statement cannot be omitted.</para>
 <para>For example,</para>
@@ -221,13 +224,18 @@ not available, the <token>auth</token> statement with
 	auth disable sharedsecret 192.168.0.100
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
 	auth enable gsi ALL
 </literallayout>
 
-<para>In this example, all hosts belonging to the network address of
+<para>In this example, all hosts which belong to the network address of
 192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
 will be tried to be authenticated by both <token>sharedsecret</token>
-and <token>gsi</token>, and all other hosts will be authenticated by
+and <token>gsi</token>,
+all hosts which belong to the network address of 10.0.0.0/8 will be
+tried to be authenticated by both
+<token>gsi_auth</token> and <token>gsi</token>,
+and all other hosts will be authenticated by
 <token>gsi</token>.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.</para>
 
@@ -410,7 +418,7 @@ notation.</para>
 	&lt;auth_statement&gt; ::=
 		"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
-	&lt;auth_method&gt; ::= "gsi" | "sharedsecret"
+	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
 	&lt;netparam_statement&gt; ::=
 		"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
 	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" |
@@ -452,6 +460,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
+auth enable gsi_auth 10.0.0.0/8
 auth enable gsi ALL
 </literallayout>
 

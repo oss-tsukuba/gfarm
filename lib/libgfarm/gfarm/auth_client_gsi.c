@@ -9,6 +9,7 @@
 
 #include <gssapi.h>
 
+#include "gfutil.h"
 #include "gfevent.h"
 
 #include "gfarm_secure_session.h"
@@ -17,7 +18,6 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
-#include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
@@ -94,7 +94,6 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 
 	e = xxx_proto_recv(conn, 1, &eof, "i", &error);
 	if (e != NULL || eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
-		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
 		return (e != NULL ? e :
@@ -143,7 +142,6 @@ gfarm_auth_request_gsi_receive_result(int events, int fd, void *closure,
 	if (state->error == NULL && error != GFARM_AUTH_ERROR_NO_ERROR)
 		state->error = GFARM_ERR_AUTHENTICATION;
 	if (state->error != NULL) {
-		gfarmSecSessionTerminate(state->session);
 		xxx_connection_reset_secsession(state->conn);
 		xxx_connection_set_fd(state->conn, fd);
 	}
@@ -244,5 +242,47 @@ gfarm_auth_result_gsi_multiplexed(void *sp)
 
 	gfarm_event_free(state->readable);
 	free(state);
+	return (e);
+}
+
+/*
+ * "gsi_auth" method
+ */
+
+char *
+gfarm_auth_request_gsi_auth(struct xxx_connection *conn)
+{
+	char *e = gfarm_auth_request_gsi(conn);
+	int fd = xxx_connection_fd(conn);
+
+	if (e == NULL) {
+		xxx_connection_reset_secsession(conn);
+		xxx_connection_set_fd(conn, fd);
+	}
+	return (e);
+}
+
+char *
+gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
+	struct xxx_connection *conn,
+	void (*continuation)(void *), void *closure,
+	void **statepp)
+{
+	return (gfarm_auth_request_gsi_multiplexed(q, conn,
+	    continuation, closure, statepp));
+}
+
+char *
+gfarm_auth_result_gsi_auth_multiplexed(void *sp)
+{
+	struct gfarm_auth_request_gsi_state *state = sp;
+	struct xxx_connection *conn = state->conn;
+	int fd = xxx_connection_fd(conn);
+	char *e = gfarm_auth_result_gsi_multiplexed(sp);
+
+	if (e == NULL) {
+		xxx_connection_reset_secsession(conn);
+		xxx_connection_set_fd(conn, fd);
+	}
 	return (e);
 }
