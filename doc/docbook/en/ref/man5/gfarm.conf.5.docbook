@@ -336,8 +336,6 @@ target host has several IP addresses.</para>
 </literallayout>
 </listitem>
 </varlistentry>
-</variablelist>
-</refsect1>
 
 <varlistentry>
 <term><token>local_user_map</token> <parameter>configuration of a file to map user name </parameter></term>
