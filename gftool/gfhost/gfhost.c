@@ -349,7 +349,7 @@ timeval_add_microsec(struct timeval *t, long microsec)
 	if (t->tv_usec >= SECOND_BY_MICROSEC) {
 		n = t->tv_usec / SECOND_BY_MICROSEC;
 		t->tv_usec -= n * SECOND_BY_MICROSEC;
-		t->tv_sec -= n;
+		t->tv_sec += n;
 	}
 }
 
@@ -492,7 +492,8 @@ request_time_tick()
 		if (requests[i].sock == -1)
 			continue;
 #ifdef HAVE_POLL
-		if ((requests_poll_fds[nfds++].revents & POLLIN) != 0)
+		/* revents shows not only POLLIN, but also POLLERR. */
+		if (requests_poll_fds[nfds++].revents != 0)
 #else
 		if (FD_ISSET(requests[i].sock, &readable))
 #endif
