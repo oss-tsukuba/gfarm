@@ -39,6 +39,12 @@ gfs_pio_set_view_default(GFS_File gf)
 static char *
 gfs_pio_check_view_default(GFS_File gf)
 {
+	char *e;
+
+	e = gfs_pio_error(gf);
+	if (e != NULL)
+		return (e);
+
 	if (gf->view_context == NULL) /* view isn't set yet */
 		return (gfs_pio_set_view_global(gf, 0));
 	return (NULL);
@@ -350,17 +356,14 @@ gfs_pio_close(GFS_File gf)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e_save = gfs_pio_check_view_default(gf);
+	if (e_save == NULL) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			e_save = gfs_pio_flush(gf);
 
-	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
-		e = gfs_pio_flush(gf);
+		e = (*gf->ops->view_close)(gf);
 		if (e_save == NULL)
 			e_save = e;
 	}
-
-	e = (*gf->ops->view_close)(gf);
-	if (e_save == NULL)
-		e_save = e;
-
 	gfarm_path_info_free(&gf->pi);
 	free(gf->buffer);
 	free(gf);
