@@ -64,7 +64,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		return (e);
 	}
 
-	e = gfarm_gsi_initialize();
+	e = gfarm_gsi_server_initialize();
 	if (e != NULL) {
 		gflog_error("authorize_gsi: GSI initialize", e);
 		return (e);

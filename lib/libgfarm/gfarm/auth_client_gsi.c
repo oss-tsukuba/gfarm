@@ -27,24 +27,20 @@
 
 gss_cred_id_t gfarm_gsi_get_delegated_cred();	/* XXX */
 
-char *
-gfarm_gsi_initialize(void)
+static int gsi_initialized;
+static int gsi_server_initialized;
+
+static char *
+gfarm_gsi_client_initialize(void)
 {
-	static int initialized;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
 	int rv;
 
-	if (initialized)
+	if (gsi_initialized)
 		return (NULL);
 
-	if (geteuid() == 0) { /* XXX - kluge */
-		rv = gfarmSecSessionInitializeBoth(NULL, NULL,
-		    GFSL_CONF_USERMAP, &e_major, &e_minor);
-	} else {
-		rv = gfarmSecSessionInitializeInitiator(NULL, &e_major,
-		    &e_minor);
-	}
+	rv = gfarmSecSessionInitializeInitiator(NULL, &e_major, &e_minor);
 	if (rv <= 0) {
 		if (gfarm_authentication_verbose) {
 			gflog_error(
@@ -53,14 +49,43 @@ gfarm_gsi_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		if (geteuid() == 0) { /* XXX - kluge */
-			gfarmSecSessionFinalizeBoth();
-		} else {
-			gfarmSecSessionFinalizeInitiator();
-		}
+		gfarmSecSessionFinalizeInitiator();
 		return ("GSI credential initialization failed"); /* XXX */
 	}
-	initialized = 1;
+	gsi_initialized = 1;
+	gsi_server_initialized = 0;
+	return (NULL);
+}
+
+char *
+gfarm_gsi_server_initialize(void)
+{
+	OM_uint32 e_major;
+	OM_uint32 e_minor;
+	int rv;
+
+	if (gsi_initialized) {
+		if (gsi_server_initialized)
+			return (NULL);
+		gfarmSecSessionFinalizeInitiator();
+		gsi_initialized = 0;
+	}
+
+	rv = gfarmSecSessionInitializeBoth(NULL, NULL,
+	    GFSL_CONF_USERMAP, &e_major, &e_minor);
+	if (rv <= 0) {
+		if (gfarm_authentication_verbose) {
+			gflog_error(
+				"can't initialize GSI as both because of:",
+				NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+		gfarmSecSessionFinalizeBoth();
+		return ("GSI initialization failed"); /* XXX */
+	}
+	gsi_initialized = 1;
+	gsi_server_initialized = 1;
 	return (NULL);
 }
 
@@ -75,7 +100,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 	gfarm_int32_t error; /* enum gfarm_auth_error */
 	int eof;
 
-	e = gfarm_gsi_initialize();
+	e = gfarm_gsi_client_initialize();
 	if (e != NULL)
 		return (e);
 
@@ -188,7 +213,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfarm_auth_request_gsi_state *state;
 	OM_uint32 e_major, e_minor;
 
-	e = gfarm_gsi_initialize();
+	e = gfarm_gsi_client_initialize();
 	if (e != NULL)
 		return (e);
 
