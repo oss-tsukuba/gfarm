@@ -40,6 +40,7 @@ static char GFARM_ERR_GFSD_ABORTED[] = "gfsd aborted";
 
 struct gfs_connection {
 	struct xxx_connection *conn;
+	char *hostname; /* malloc()ed, if created by gfs_client_connect() */
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
 };
 
@@ -133,6 +134,7 @@ gfs_client_connection(const char *canonical_hostname,
 			    canonical_hostname, strlen(canonical_hostname)+1);
 			return (e);
 		}
+		gfs_server->hostname = gfarm_hash_entry_key(entry);
 	}
 	*gfs_serverp = gfs_server;
 	return (NULL);
@@ -154,8 +156,14 @@ gfs_client_connect(char *canonical_hostname, struct sockaddr *peer_addr,
 
 	if (gfs_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	gfs_server->hostname = strdup(canonical_hostname);
+	if (gfs_server->hostname == NULL) {
+		free(gfs_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
 	e = gfs_client_connection0(canonical_hostname, peer_addr, gfs_server);
 	if (e != NULL) {
+		free(gfs_server->hostname);
 		free(gfs_server);
 		return (e);
 	}
@@ -173,8 +181,15 @@ gfs_client_disconnect(struct gfs_connection *gfs_server)
 	char *e = xxx_connection_free(gfs_server->conn);
 
 	/* XXX - gfs_server->context should be NULL here */
+	free(gfs_server->hostname);
 	free(gfs_server);
 	return (e);
+}
+
+const char *
+gfs_client_hostname(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->hostname);
 }
 
 char *
@@ -1435,7 +1450,8 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 	 */
 	e = gfarm_metadb_initialize();
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		fprintf(stderr, "%s: metadb initialization error: %s\n",
+		    message, e);
 		_exit(1);
 	}
 
@@ -1443,25 +1459,27 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port, &addr,
 		NULL);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		fprintf(stderr, "%s: host %s: %s\n", message, hostname, e);
 		_exit(2);
 	}
 
 	e = gfs_client_connect(hostname, &addr, &conn);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		fprintf(stderr, "%s: connecting to %s: %s\n", message,
+		    hostname, e);
 		_exit(3);
 	}
 			
 	e = (*op)(conn, args);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
 		_exit(4);
 	}
 		
 	e = gfs_client_disconnect(conn);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		fprintf(stderr, "%s: disconnecting to %s: %s\n", message,
+		    hostname, e);
 		_exit(5);
 	}
 
@@ -1482,10 +1500,13 @@ wait_pid(int pids[], int num, int *nhosts_succeed)
 		if (rv == -1) {
 			if (e == NULL)
 				e = gfarm_errno_to_error(errno);
-		} else if (WIFEXITED(s) && WEXITSTATUS(s) != 0) {
-			e = "error happens on directory operatoin";
-		} else if (WIFEXITED(s) && WEXITSTATUS(s) == 0) {
-			(*nhosts_succeed)++;
+		} else if (WIFEXITED(s)) {
+			if (WEXITSTATUS(s) == 0)
+				(*nhosts_succeed)++;
+			else
+				e = "error happened on the operation";
+		} else {
+			e = "operation aborted abnormally";
 		}
 	}
 	return (e);
