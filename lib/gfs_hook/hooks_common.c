@@ -394,14 +394,15 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	STRUCT_DIRENT *bp;
 	
 	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %d)\n",
-	    filedes, buf, nbyte));
+	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
+	    filedes, buf, (unsigned long)nbyte));
 
 	if ((dir = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_GETDENTS(filedes, buf, nbyte));
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___GETDENTS) "(%d, %p, %d)\n", filedes, buf, nbyte));
+	    S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
+	    filedes, buf, (unsigned long)nbyte));
 
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
 		e = GFARM_ERR_NOT_A_DIRECTORY;

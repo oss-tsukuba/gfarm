@@ -53,23 +53,23 @@ __read(int filedes, void *buf, size_t nbyte)
 	char *e;
 	int n;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __read(%d, , %d)\n",
-	    filedes, nbyte));
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __read(%d, , %lu)\n",
+	    filedes, (unsigned long)nbyte));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return syscall(SYS_read, filedes, buf, nbyte);
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
 		_gfs_hook_debug(fprintf(stderr,
-					"GFS: Hooking __read(%d, , %d)\n",
-	    				filedes, nbyte));
+		    "GFS: Hooking __read(%d, , %lu)\n",
+		    filedes, (unsigned long)nbyte));
 
 		e = GFARM_ERR_IS_A_DIRECTORY;
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __read(%d(%d), , %d)\n",
-	    filedes, gfs_pio_fileno(gf), nbyte));
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __read(%d(%d), , %lu)\n",
+	    filedes, gfs_pio_fileno(gf), (unsigned long)nbyte));
 
 	e = gfs_pio_read(gf, buf, nbyte, &n);
 	if (e == NULL) {
@@ -120,8 +120,8 @@ __write(int filedes, const void *buf, size_t nbyte)
 	/* 
 	 * DO NOT put the following line here. This causes infinite loop!
 	 *
-	 * _gfs_hook_debug_v(fprintf(stderr, "Hooking __write(%d, , %d)\n",
-         *     filedes, nbyte));
+	 * _gfs_hook_debug_v(fprintf(stderr, "Hooking __write(%d, , %lu)\n",
+         *     filedes, (unsigned long)nbyte));
 	 */
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
@@ -140,8 +140,8 @@ __write(int filedes, const void *buf, size_t nbyte)
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __write(%d(%d), , %d)\n",
-	    filedes, gfs_pio_fileno(gf), nbyte));
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __write(%d(%d), , %lu)\n",
+	    filedes, gfs_pio_fileno(gf), (unsigned long)nbyte));
 
 	e = gfs_pio_write(gf, buf, nbyte, &n);
 	if (e == NULL) {
@@ -348,16 +348,16 @@ __mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 	int gfs_fd;
 
 	_gfs_hook_debug_v(fprintf(stderr,
-		"Hooking __mmap(%p, %d, %d, %d, %d, %d)\n",
-		addr, len, prot, flags, fildes, (int)off));
+		"Hooking __mmap(%p, %lu, %d, %d, %d, %ld)\n",
+		addr, (unsigned long)len, prot, flags, fildes, (long)off));
 
 	if ((gf = gfs_hook_is_open(fildes)) == NULL)
 		return (void *)syscall(
 			SYS_mmap, addr, len, prot, flags, fildes, off);
 
 	_gfs_hook_debug(fprintf(stderr,
-		"GFS: Hooking __mmap(%p, %d, %d, %d, %d, %d)\n",
-		addr, len, prot, flags, fildes, (int)off));
+		"GFS: Hooking __mmap(%p, %lu, %d, %d, %d, %ld)\n",
+		addr, (unsigned long)len, prot, flags, fildes, (long)off));
 
 	gfs_fd = gfs_pio_fileno(gf);
 	return (void *)syscall(SYS_mmap, addr, len, prot, flags, gfs_fd, off);
@@ -798,13 +798,13 @@ __getcwd(char *buf, size_t size)
 	const char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, 
-				  "Hooking __getcwd(%p, %d)\n", buf, size));
+	    "Hooking __getcwd(%p, %lu)\n", buf, (unsigned long)size));
 
 	if (!gfs_hook_get_cwd_is_gfarm())
 		return (gfs_hook_syscall_getcwd(buf, size));
 
 	_gfs_hook_debug(fprintf(stderr,
-			        "GFS: Hooking __getcwd(%p, %d)\n" ,buf, size));
+	    "GFS: Hooking __getcwd(%p, %lu)\n" ,buf, (unsigned long)size));
 
 	e = gfs_hook_get_prefix(buf, size);
 	if (e != NULL)
@@ -1003,15 +1003,15 @@ getxattr(const char *path, const char *name, void *value, size_t size)
 	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking getxattr(%s, %s, %p, %d)\n",
-				  path, name, value, size));
+				  "Hooking getxattr(%s, %s, %p, %lu)\n",
+				  path, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_getxattr, path, name, value, size);
 
 	_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking getxattr(%s, %s, %p, %d)\n",
-				path, name, value, size));
+				"GFS: Hooking getxattr(%s, %s, %p, %lu)\n",
+				path, name, value, (unsigned long)size));
 
 	e = gfarm_url_make_path(url, &gfarm_file);
 	free(url);
@@ -1036,15 +1036,15 @@ lgetxattr(const char *path, const char *name, void *value, size_t size)
 	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking lgetxattr(%s, %s, %p, %d)\n",
-				  path, name, value, size));
+				  "Hooking lgetxattr(%s, %s, %p, %lu)\n",
+				  path, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_lgetxattr, path, name, value, size);
 
 	_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking lgetxattr(%s, %s, %p, %d)\n",
-				path, name, value, size));
+				"GFS: Hooking lgetxattr(%s, %s, %p, %lu)\n",
+				path, name, value, (unsigned long)size));
 
 	e = gfarm_url_make_path(url, &gfarm_file);
 	free(url);
@@ -1068,15 +1068,15 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking fgetxattr(%d, %s, %p, %d)\n",
-				  filedes, name, value, size));
+				  "Hooking fgetxattr(%d, %s, %p, %lu)\n",
+				  filedes, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_open(filedes))
 		return syscall(SYS_fgetxattr, filedes, name, value, size);
 
 	_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking fgetxattr(%d, %s, %p, %d)\n",
-				filedes, name, value, size));
+				"GFS: Hooking fgetxattr(%d, %s, %p, %lu)\n",
+				filedes, name, value, (unsigned long)size));
 
 	e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	_gfs_hook_debug(fprintf(stderr, "GFS: fgetxattr: %s\n", e));
