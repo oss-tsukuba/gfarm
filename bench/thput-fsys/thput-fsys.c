@@ -5,10 +5,50 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+double timerval_calibration;
+
+#if defined(__linux__) && defined(i386)
+#include <asm/timex.h>
+
+typedef cycles_t timerval_t;
+
+#define gettimerval(tp)		(*(tp) = get_cycles())
+#define timerval_second(tp)	(*(tp) / timerval_calibration)
+#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) / timerval_calibration)
+
+void
+timerval_calibrate(void)
+{
+	timerval_t t1, t2;
+	struct timeval s1, s2;
+
+	gettimerval(&t1);
+	gettimeofday(&s1, NULL);
+	sleep(10);
+	gettimerval(&t2);
+	gettimeofday(&s2, NULL);
+
+	timerval_calibration = 
+		(t2 - t1) / (
+		(s2.tv_sec - s1.tv_sec) +
+		(s2.tv_usec - s1.tv_usec) / 1000000.0);
+}
+#endif /* defined(__linux__) && defined(i386) */
+
+int tm_write_write_measured = 0;
+timerval_t tm_write_open_0, tm_write_open_1;
+timerval_t tm_write_write_0, tm_write_write_1;
+timerval_t tm_write_close_0, tm_write_close_1;
+
+int tm_read_read_measured = 0;
+timerval_t tm_read_open_0, tm_read_open_1;
+timerval_t tm_read_read_0, tm_read_read_1;
+timerval_t tm_read_close_0, tm_read_close_1;
+
 #define ARRAY_LENGTH(array)	(sizeof(array)/sizeof(array[0]))
 
 #define MAX_BUFFER_SIZE_NUMBER	32
-#define MAX_BUFFER_SIZE		(1024*1024)
+#define MAX_BUFFER_SIZE		(8*1024*1024)
 
 char buffer[MAX_BUFFER_SIZE];
 
@@ -24,17 +64,27 @@ initbuffer(void)
 void
 writetest(char *ofile, int buffer_size, off_t file_size)
 {
-	int fd = open(ofile, O_CREAT|O_TRUNC|O_WRONLY, 0666);
-	int rv;
+	int fd, rv;
 	off_t residual;
 
+	gettimerval(&tm_write_open_0);
+	fd = open(ofile, O_CREAT|O_TRUNC|O_WRONLY, 0666);
+	gettimerval(&tm_write_open_1);
 	if (fd == -1) {
 		perror(ofile);
 		exit(1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
-		rv = write(fd, buffer,
+		if (!tm_write_write_measured) {
+			tm_write_write_measured = 1;
+			gettimerval(&tm_write_write_0);
+			rv = write(fd, buffer,
 			   buffer_size <= residual ? buffer_size : residual);
+			gettimerval(&tm_write_write_1);
+		} else {
+			rv = write(fd, buffer,
+			   buffer_size <= residual ? buffer_size : residual);
+		}
 		if (rv == -1) {
 			perror("write test");
 			break;
@@ -46,24 +96,37 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 		fprintf(stderr, "write test failed, residual = %ld\n",
 			(long)residual);
 	}
-	if (close(fd) == -1)
+	gettimerval(&tm_write_close_0);
+	rv = close(fd);
+	gettimerval(&tm_write_close_1);
+	if (rv == -1)
 		perror("write test close failed");
 }
 
 void
 readtest(char *ifile, int buffer_size, off_t file_size)
 {
-	int fd = open(ifile, O_RDONLY);
-	int rv;
+	int fd, rv;
 	off_t residual;
 
+	gettimerval(&tm_read_open_0);
+	fd = open(ifile, O_RDONLY);
+	gettimerval(&tm_read_open_1);
 	if (fd == -1) {
 		perror(ifile);
 		exit(1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
-		rv = read(fd, buffer,
+		if (!tm_read_read_measured) {
+			tm_read_read_measured = 1;
+			gettimerval(&tm_read_read_0);
+			rv = read(fd, buffer,
 			  buffer_size <= residual ? buffer_size : residual);
+			gettimerval(&tm_read_read_1);
+		} else {
+			rv = read(fd, buffer,
+			  buffer_size <= residual ? buffer_size : residual);
+		}
 		if (rv == 0)
 			break;
 		if (rv == -1) {
@@ -76,7 +139,10 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 		fprintf(stderr, "read test failed, residual = %ld\n",
 			(long)residual);
 	}
-	if (close(fd) == -1)
+	gettimerval(&tm_read_close_0);
+	rv = close(fd);
+	gettimerval(&tm_read_close_1);
+	if (rv == -1)
 		perror("read test closed failed");
 }
 
@@ -138,9 +204,10 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 #define TESTMODE_COPY	4
 
 #define FLAG_DONT_REMOVE	1
+#define FLAG_MEASURE_PRIMITIVES	2
 
 void
-test_title(int test_mode, off_t file_size)
+test_title(int test_mode, off_t file_size, int flags)
 {
 	fprintf(stdout, "testing with %d MB file\n", file_size);
 	printf("%-8s", "bufsize");
@@ -152,6 +219,10 @@ test_title(int test_mode, off_t file_size)
 		printf(" %20s", "copy [bytes/sec]");
 	printf("\n");
 	fflush(stdout);
+
+	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0 &&
+	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0)
+		fprintf(stderr, "timer/sec=%g\n", timerval_calibration);
 }
 
 void
@@ -194,6 +265,24 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 		if (test_mode & TESTMODE_COPY)
 			unlink(file2);
 	}
+	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0 &&
+	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0) {
+		fprintf(stderr, "%7d ", buffer_size);
+		if (test_mode & TESTMODE_WRITE)
+			fprintf(stderr, " %g %g %g",
+			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
+			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
+			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
+			);
+		if (test_mode & TESTMODE_READ)
+			fprintf(stderr, " %g %g %g",
+			    timerval_sub(&tm_read_open_1, &tm_read_open_0),
+			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
+			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
+			);
+		fprintf(stderr, "\n");
+		tm_write_write_measured = tm_read_read_measured = 0;
+	}
 }
 
 main(int argc, char **argv)
@@ -211,9 +300,9 @@ main(int argc, char **argv)
 		1024 * 1024,
 	};
 	off_t file_size = 1024;
-	int flag = 0;
+	int flags = 0;
 
-	while ((c = getopt(argc, argv, "b:s:wrcp")) != -1) {
+	while ((c = getopt(argc, argv, "b:s:wrcmp")) != -1) {
 		switch (c) {
 		case 'b':
 			if (buffer_sizec >= MAX_BUFFER_SIZE_NUMBER) {
@@ -242,8 +331,12 @@ main(int argc, char **argv)
 		case 'c':
 			test_mode |= TESTMODE_COPY;
 			break;
+		case 'm':
+			flags |= FLAG_MEASURE_PRIMITIVES;
+			timerval_calibrate();
+			break;
 		case 'p':
-			flag |= FLAG_DONT_REMOVE;
+			flags |= FLAG_DONT_REMOVE;
 			break;
 		case '?':
 		default:
@@ -271,7 +364,7 @@ main(int argc, char **argv)
 	if (test_mode == 0)
 		test_mode = TESTMODE_WRITE|TESTMODE_READ|TESTMODE_COPY;
 
-	test_title(test_mode, file_size);
+	test_title(test_mode, file_size, flags);
 
 	file_size *= 1024 * 1024;
 	initbuffer();
@@ -279,11 +372,11 @@ main(int argc, char **argv)
 	if (buffer_sizec == 0) {
 		for (i = 0; i < ARRAY_LENGTH(buffer_sizes_default); i++)
 			test(test_mode, file1, file2,
-			     buffer_sizes_default[i], file_size, flag);
+			     buffer_sizes_default[i], file_size, flags);
 	} else {
 		for (i = 0; i < buffer_sizec; i++)
 			test(test_mode, file1, file2,
-			     buffer_sizes[i], file_size, flag);
+			     buffer_sizes[i], file_size, flags);
 	}
 	return (0);
 }
