@@ -44,6 +44,7 @@ DOCBOOK = \
 	gfs_pio_set_local.3 \
 	gfs_pio_set_view_index.3 \
 	gfs_pio_set_view_local.3 \
+	gfs_pio_truncate.3 \
 	gfs_pio_ungetc.3 \
 	gfs_pio_write.3 \
 	gfs_readdir.3 \
