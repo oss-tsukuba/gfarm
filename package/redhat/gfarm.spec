@@ -14,20 +14,20 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Summary: document for gfarm
 Group: Documentation
 
-%package client
-Summary: clients for gfarm
+%package frontend
+Summary: frontends for gfarm
 Group: Applications/Internet
 
-%package server
-Summary: servers for gfarm
+%package client
+Summary: clients for gfarm
 Group: Applications/Internet
 
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
 
-%package gfmd
-Summary: gfmd for gfarm
+%package server
+Summary: server for gfarm
 Group: System Environment/Daemons
 
 %package devel
@@ -41,17 +41,17 @@ gfarm - Grid datafarm
 %description doc
 doc for gfarm
 
+%description frontend
+frontends for gfarm
+
 %description client
 clients for gfarm
-
-%description server
-servers for gfarm
 
 %description fsnode
 fsnode for gfarm
 
-%description gfmd
-gfmd for gfarm
+%description server
+metadb server for gfarm
 
 %description devel
 development library for gfarm
@@ -86,7 +86,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %post fsnode
 /sbin/chkconfig --add gfsd
 
-%post gfmd
+%post server
 /sbin/chkconfig --add gfmd
 /sbin/chkconfig --add gfarm-slapd
 
@@ -97,7 +97,7 @@ then
 	/sbin/chkconfig --del gfsd
 fi
 
-%preun gfmd
+%preun server
 if [ "$1" = 0 ]
 then
 	/sbin/service gfmd stop > /dev/null 2>&1 || :
@@ -234,8 +234,31 @@ fi
 /usr/share/man/ja/man8/gfmd.8.gz
 /usr/share/man/ja/man8/gfsd.8.gz
 
-%files client
+%files frontend
 /usr/bin/gfarm
+
+%files client
+/usr/bin/gfrsh
+/usr/bin/gfarmd
+/usr/bin/digest
+/usr/bin/gfexport
+/usr/bin/gfhost
+/usr/bin/gfkey
+/usr/bin/gfls
+/usr/bin/gfrcmd
+/usr/bin/gfreg
+/usr/bin/gfrep
+/usr/bin/gfrm
+/usr/bin/gfsched
+/usr/bin/gfmpirun
+/usr/bin/gfps
+/usr/bin/gfrun
+/usr/bin/gfssh
+/usr/bin/gfrshl
+/usr/bin/gfsshl
+/usr/bin/gfimport_fixed
+/usr/bin/gfimport_text
+/usr/bin/gfwhere
 /usr/bin/ns_put
 /usr/bin/ns_get
 /usr/bin/ns_stat
@@ -248,37 +271,15 @@ fi
 /usr/bin/ns_readlink
 /usr/bin/ns_readdir
 
-%files server
-/usr/bin/gfrsh
-/usr/bin/gfarmd
-/usr/bin/digest
-/usr/bin/gfexport
-/usr/bin/gfhost
-/usr/bin/gfkey
-/usr/bin/gfls
-/usr/bin/gfrcmd
-/usr/bin/gfrep
-/usr/bin/gfrm
-/usr/bin/gfsched
-/usr/bin/gfmpirun
-/usr/bin/gfps
-/usr/bin/gfrun
-/usr/bin/gfssh
-/usr/bin/gfrshl
-/usr/bin/gfsshl
-/usr/bin/gfimport_fixed
-/usr/bin/gfimport_text
-/usr/bin/gfgrep
-/usr/bin/gfwhere
-
 %files fsnode
 /usr/bin/gfsd
-/usr/bin/gfreg
+/usr/bin/gfgrep
+
 /etc/rc.d/init.d/gfsd
 
 #%config /etc/gfarm.conf
 
-%files gfmd
+%files server
 /usr/bin/gfmd
 /etc/rc.d/init.d/gfmd
 /etc/rc.d/init.d/gfarm-slapd
