@@ -94,18 +94,19 @@ main(int argc, char **argv)
 	}
 
 	if (shell_type == UNDECIDED) {
-		char *shell;
-		shell = getenv("SHELL");
-		if (strlen(shell) < 3 || 
-		    strncmp(shell + strlen(shell) - 3, "csh", 3))
+		char *shell = getenv("SHELL");
+		int shell_len = strlen(shell);
+		
+		if (shell_len < 3 || 
+		    memcmp(shell + shell_len - 3, "csh", 3) != 0)
 			shell_type = B_SHELL_LIKE;
 		else
 			shell_type = C_SHELL_LIKE;
 	}
 	if (shell_type == B_SHELL_LIKE)
-		printf("GFS_PWD=%s; export GFS_PWD", gfarm_path);
+		printf("GFS_PWD=%s; export GFS_PWD\n", gfarm_path);
 	else
-		printf("setenv GFS_PWD %s", gfarm_path);
+		printf("setenv GFS_PWD %s\n", gfarm_path);
 	fflush(stdout);
 	free(gfarm_path);
 	e = gfarm_terminate();
