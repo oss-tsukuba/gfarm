@@ -99,7 +99,7 @@ display_replica_catalog(char *gfarm_url)
 		e = gfarm_file_section_copy_info_get_all_by_section(
 		    gfarm_file, sections[i].section, &ncopies, &copies);
 		if (e != NULL) {
-			fprintf(stderr, "%d: %s\n", i, e);
+			fprintf(stderr, "%s: %s\n", sections[i].section, e);
 			if (e_save == NULL)
 				e_save = e;
 			continue;
