@@ -17,6 +17,10 @@ usr/bin/gfsched
 usr/bin/gfssh
 usr/bin/gfsshl
 usr/bin/gfwhere
+usr/bin/gfmkdir
+usr/bin/gfpwd
+usr/bin/gfrmdir
+usr/bin/gfsetdir
 usr/bin/pcat
 usr/bin/pcp
 usr/bin/pdel
