@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
 #include "gfs_pio.h"
@@ -28,7 +29,7 @@ gfs_pio_view_section_close(GFS_File gf)
 	char *e = NULL, *e_save = NULL;
 	int md_calculated = 1;
 	file_offset_t filesize;
-	unsigned int md_len;
+	size_t md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
 	/* calculate checksum */
@@ -49,7 +50,10 @@ gfs_pio_view_section_close(GFS_File gf)
 			write(2, message, sizeof(message) - 1);
 			abort(); /* XXX - not supported for now */
 		} else {
-			EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
+			unsigned int len;
+
+			EVP_DigestFinal(&vc->md_ctx, md_value, &len);
+			md_len = len;
 			filesize = gf->offset + gf->length;
 		}
 	} else {
