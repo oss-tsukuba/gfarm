@@ -6,6 +6,8 @@
 #include <gfarm/gfarm.h>
 #include "gfs_proto.h"
 
+char GFS_SERVICE_TAG[] = "gfarm-data";
+
 int gfs_proto_error_to_errno_map[] = {
 	0,
 	EPERM,

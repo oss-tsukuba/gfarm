@@ -20,11 +20,11 @@
 #include "hostspec.h"
 #include "auth.h"
 
-static char *gfarm_authorize_panic(struct xxx_connection *, int, char *,
-	char **);
+static char *gfarm_authorize_panic(struct xxx_connection *,
+	int, char *, char *, char **);
 
-char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char *,
-	char **) = {
+char *(*gfarm_authorization_table[])(struct xxx_connection *,
+	int, char *, char *, char **) = {
 	/*
 	 * This table entry should be ordered by enum gfarm_auth_method.
 	 */
@@ -42,7 +42,7 @@ char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char *,
 
 static char *
 gfarm_authorize_panic(struct xxx_connection *conn, int switch_to,
-	char *hostname, char **global_usernamep)
+	char *service_tag, char *hostname, char **global_usernamep)
 {
 	gflog_fatal("gfarm_authorize", "authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
@@ -183,7 +183,7 @@ gfarm_auth_sharedsecret_response(struct xxx_connection *conn, char *homedir)
 
 char *
 gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
-	char *hostname, char **global_usernamep)
+	char *service_tag, char *hostname, char **global_usernamep)
 {
 	char *e, *global_username, *local_username, *aux, *msg;
 	int eof;
@@ -323,7 +323,8 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
  * local account anyway even if the `switch_to' isn't set.
  */
 char *
-gfarm_authorize(struct xxx_connection *conn, int switch_to,
+gfarm_authorize(struct xxx_connection *conn,
+	int switch_to, char *service_tag,
 	char **global_usernamep, char **hostnamep, 
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -438,7 +439,7 @@ gfarm_authorize(struct xxx_connection *conn, int switch_to,
 		}
 
 		e = (*gfarm_authorization_table[method])(conn, switch_to,
-			hostname, global_usernamep);
+			service_tag, hostname, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
 		    e != GFARM_ERR_AUTHENTICATION) {

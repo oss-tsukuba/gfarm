@@ -24,3 +24,9 @@ enum gfm_proto_error {
 #define GFJ_ERROR_NOERROR		GFM_ERROR_NOERROR
 #define GFJ_ERROR_NO_MEMORY	 	GFM_ERROR_NO_MEMORY
 #define GFJ_ERROR_NO_SUCH_OBJECT	GFM_ERROR_NO_SUCH_OBJECT
+
+#if 0 /* There isn't gfm_proto.c for now. */
+extern char GFM_SERVICE_TAG[];
+#else
+#define GFM_SERVICE_TAG "gfarm-metadata"
+#endif

@@ -21,9 +21,9 @@
 
 struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
-	char *(*request)(struct xxx_connection *);
+	char *(*request)(struct xxx_connection *, char *, char *);
 	char *(*request_multiplexed)(struct gfarm_eventqueue *,
-		struct xxx_connection *,
+		struct xxx_connection *, char *, char *,
 		void (*)(void *), void *,
 		void **);
 	char *(*result_multiplexed)(void *);
@@ -49,7 +49,8 @@ struct gfarm_auth_client_method {
 };
 
 char *
-gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
+gfarm_auth_request_sharedsecret(struct xxx_connection *conn,
+	char *service_tag, char *hostname)
 {
 	/*
 	 * too weak authentication.
@@ -140,7 +141,7 @@ gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
 
 char *
 gfarm_auth_request(struct xxx_connection *conn,
-	char *name, struct sockaddr *addr,
+	char *service_tag, char *name, struct sockaddr *addr,
 	enum gfarm_auth_method *auth_methodp)
 {
 	char *e, *e_save = NULL;
@@ -197,7 +198,8 @@ gfarm_auth_request(struct xxx_connection *conn,
 			return (e_save != NULL ? e_save :
 			    "gfarm_auth_request: implementation error");
 		}
-		e = (*gfarm_auth_trial_table[i].request)(conn);
+		e = (*gfarm_auth_trial_table[i].request)(conn,
+		    service_tag, name);
 		if (e == NULL) {
 			if (auth_methodp != NULL)
 				*auth_methodp = method;
@@ -485,6 +487,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 char *
 gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	struct xxx_connection *conn,
+	char *service_tag, char *hostname,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -573,6 +576,7 @@ struct gfarm_auth_request_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
 	struct xxx_connection *conn;
+	char *service_tag;
 	char *name;
 	struct sockaddr *addr;
 	void (*continuation)(void *);
@@ -649,6 +653,7 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 			state->last_error =
 			    (*gfarm_auth_trial_table[state->auth_method_index].
 			    request_multiplexed)(state->q, state->conn,
+			    state->service_tag, state->name,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
 			if (state->last_error == NULL) {
@@ -753,7 +758,8 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 
 char *
 gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
-	struct xxx_connection *conn, char *name, struct sockaddr *addr,
+	struct xxx_connection *conn,
+	char *service_tag, char *name, struct sockaddr *addr,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)
 {
@@ -805,6 +811,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 
 	state->q = q;
 	state->conn = conn;
+	state->service_tag = service_tag;
 	state->name = name;
 	state->addr = addr;
 	state->methods = methods;

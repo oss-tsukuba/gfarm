@@ -25,32 +25,16 @@
 #include "io_fd.h"
 #include "io_gfsl.h"
 #include "auth.h"
+#include "auth_gsi.h"
 
 /*
- * Delegated credential
- */
-
-static gss_cred_id_t delegated_cred = GSS_C_NO_CREDENTIAL;
-
-void
-gfarm_gsi_set_delegated_cred(gss_cred_id_t cred)
-{
-	delegated_cred = cred;
-}
-
-gss_cred_id_t
-gfarm_gsi_get_delegated_cred()
-{
-	return (delegated_cred);
-}
-
-/*
- *
+ * server side authentication
  */
 
 static char *
 gfarm_authorize_gsi_common(struct xxx_connection *conn,
-	int switch_to, char *hostname, char *auth_method_name,
+	int switch_to, char *service_tag,
+	char *hostname, char *auth_method_name,
 	char **global_usernamep)
 {
 	int fd = xxx_connection_fd(conn);
@@ -59,6 +43,11 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
 	gfarm_int32_t error = GFARM_AUTH_ERROR_NO_ERROR; /* gfarm_auth_error */
+	enum gfarm_auth_cred_type cred_type =
+	    gfarm_auth_server_cred_type_get(service_tag);
+	char *cred_service = gfarm_auth_server_cred_service_get(service_tag);
+	char *cred_name = gfarm_auth_server_cred_name_get(service_tag);
+	gss_cred_id_t cred;
 
 	e = xxx_proto_flush(conn);
 	if (e != NULL) {
@@ -72,17 +61,61 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		return (e);
 	}
 
-	session = gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL,
-	    &e_major, &e_minor);
+	if (cred_type == GFARM_AUTH_CRED_TYPE_DEFAULT &&
+	    cred_service == NULL && cred_name == NULL) {
+		cred = GSS_C_NO_CREDENTIAL;
+	} else {
+		char *desired_name;
+		gss_OID desired_name_type;
+		int need_free, rv;
+
+		e = gfarm_gsi_cred_config_convert_to_name_and_type(
+		    cred_type, cred_service, cred_name, NULL,
+		    &desired_name, &desired_name_type, &need_free);
+		if (e != NULL) {
+			gflog_auth_error("Server credential configuration for",
+			    service_tag);
+			gflog_auth_error(e, hostname);
+			return (e);
+		}
+		rv = gfarmGssAcquireCredential(&cred,
+		    desired_name, desired_name_type, GSS_C_BOTH,
+		    &e_major, &e_minor, NULL);
+		if (need_free)
+			free(desired_name);
+		if (rv < 0) {
+			if (gflog_auth_get_verbose()) {
+				gflog_error("Can't get server credential for ",
+				   service_tag);
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+				gflog_error("GSI authentication error",
+				    hostname);
+			}
+			return (GFARM_ERR_AUTHENTICATION);
+		}
+	}
+
+	session = gfarmSecSessionAccept(fd, cred, NULL, &e_major, &e_minor);
+	if (cred != GSS_C_NO_CREDENTIAL) {
+		OM_uint32 e_major2, e_minor2;
+		
+		if (gfarmGssReleaseCredential(cred, &e_major2, &e_minor2) < 0
+		    && gflog_auth_get_verbose()) {
+			gflog_warning("Can't release credential "
+			    " because of:", NULL);
+			gfarmGssPrintMajorStatus(e_major2);
+			gfarmGssPrintMinorStatus(e_minor2);
+		}
+	}
 	if (session == NULL) {
-		if (gfarm_authentication_verbose) {
+		if (gflog_auth_get_verbose()) {
 			gflog_error("Can't accept session because of:", NULL);
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 			gflog_error("GSI authentication error", hostname);
 		}
 		return (GFARM_ERR_AUTHENTICATION);
-		
 	}
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
 #if 0 /* XXX - global name should be distinguished by DN (distinguish name) */
@@ -213,11 +246,12 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
  * "gsi" method
  */
 char *
-gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
+gfarm_authorize_gsi(struct xxx_connection *conn,
+	int switch_to, char *service_tag, char *hostname,
 	char **global_usernamep)
 {
-	return (gfarm_authorize_gsi_common(conn, switch_to, hostname, "gsi",
-	    global_usernamep));
+	return (gfarm_authorize_gsi_common(conn,
+	    switch_to, service_tag, hostname, "gsi", global_usernamep));
 }
 
 /*
@@ -226,11 +260,11 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 
 char *
 gfarm_authorize_gsi_auth(struct xxx_connection *conn,
-	int switch_to, char *hostname,
+	int switch_to, char *service_tag, char *hostname,
 	char **global_usernamep)
 {
-	char *e = gfarm_authorize_gsi_common(conn, switch_to, hostname,
-	    "gsi_auth", global_usernamep);
+	char *e = gfarm_authorize_gsi_common(conn,
+	    switch_to, service_tag, hostname, "gsi_auth", global_usernamep);
 
 	if (e == NULL)
 		xxx_connection_downgrade_to_insecure_session(conn);

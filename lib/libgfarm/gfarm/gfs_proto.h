@@ -116,6 +116,8 @@ enum gfs_proto_command_server {
 #define FDESC_STDERR	2
 #define NFDESC		3
 
+extern char GFS_SERVICE_TAG[];
+
 char *gfs_proto_error_string(enum gfs_proto_error);
 enum gfs_proto_error gfs_string_to_proto_error(char *);
 enum gfs_proto_error gfs_errno_to_proto_error(int);
