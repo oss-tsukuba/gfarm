@@ -354,10 +354,12 @@ skip_opt: ;
 		;
 	save_errno = errno;
 
+#if 0 /* XXX - temporary solution; it is not necessary for the output
+	 file to be the same number of fragments. */
 	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
 		gfarm_url_fragment_cleanup(
 		    gfarm_stringlist_elem(&output_list, i), nhosts, hosts);
-
+#endif
 	if (delivered_paths != NULL)
 		gfarm_strings_free_deeply(nhosts, delivered_paths);
 	gfarm_strings_free_deeply(nhosts, hosts);
