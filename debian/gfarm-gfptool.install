@@ -3,7 +3,6 @@ usr/bin/gfcombine_hook
 usr/bin/gfcp
 usr/bin/gfcp_hook
 usr/bin/gfgrep
-usr/bin/gfreg
 usr/bin/gfsplck
 usr/sbin/gfregister
 
