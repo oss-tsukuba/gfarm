@@ -248,7 +248,7 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 	}
 	hp = gethostbyaddr(addrp, addrlen, addrfamily);
 	if (hp == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return ("hostname is not provided");
 	name = strdup(hp->h_name);
 	if (name == NULL)
 		return (GFARM_ERR_NO_MEMORY);
