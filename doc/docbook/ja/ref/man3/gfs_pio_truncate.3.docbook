@@ -1,0 +1,85 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-truncate.3'>
+
+<refentryinfo><date>17 Nov 2004</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_truncate</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_truncate</refname>
+<refpurpose>指定した長さにファイル切り詰める。もしくは拡張する。</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_truncate</function></funcdef>
+    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+    <paramdef>file_offset_t <parameter>length</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+ファイル
+<parameter>gf</parameter>
+の長さを変更します。</para>
+<para>引数
+<parameter>length</parameter>
+がファイル
+<parameter>gf</parameter>
+よりも短かければ切り詰めます。</para>
+<para>引数
+<parameter>length</parameter>
+がファイル
+<parameter>gf</parameter>
+よりも長ければ拡張します。拡張された部分を読んだ場合はゼロを返します。
+</para>
+<para>ファイルポインタは変更しません。</para>
+<para>ファイルは書き込み用にオープンされていなければなりません。
+このため、オープン時に <constant>GFS_FILE_MODE_WRITE</constant> 
+フラグを指定する必要があります。</para>
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
