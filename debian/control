@@ -1,14 +1,14 @@
 Source: gfarm
 Section: net
 Priority: optional
-Maintainer: Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>
+Maintainer: Naotaka YAMAMOTO <naotaka@earth.nifty.jp>
 Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, bison
 Standards-Version: 3.5.10
 
 Package: gfarm-gfptool
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}, gfarm-client, libgfarm
+Depends: gfarm-client (= ${Source-Version})
 Conflicts: gfarm-gsi-gfptool
 Description: Parallel tools installed under the Gfarm filesystem
  Registration the Gfarm parallel commands such as a parallel file copy command
@@ -18,7 +18,7 @@ Description: Parallel tools installed under the Gfarm filesystem
 Package: gfmd
 Section: net
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm
+Depends: libgfarm (= ${Source-Version})
 Conflicts: gfmd-gsi
 Description: The Gfarm metadata server
  The Gfarm filesystem metadata server for accessing 
@@ -27,7 +27,7 @@ Description: The Gfarm metadata server
 Package: gfarm-client
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm
+Depends: libgfarm (= ${Source-Version})
 Conflicts: gfarm-gsi-client
 Description: The Gfarm clients
  This package contains client programs for the Gfarm.
@@ -35,7 +35,7 @@ Description: The Gfarm clients
 Package: gfarm-gfront
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}
+Depends: gfarm-gsi-client (= ${Source-Version}) | gfarm-client (= ${Source-Version})
 Description: Front-end java application for the Gfarm
  This package contains client and administrative front-end application
  fot the Gfarm using JAVA.
@@ -43,7 +43,7 @@ Description: Front-end java application for the Gfarm
 Package: gfsd
 Section: net
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm
+Depends: libgfarm (= ${Source-Version})
 Conflicts: gfsd-gsi
 Description: The Gfarm filesystem daemon
  A filesystem daemon for the Gfarm filesystem,
@@ -53,7 +53,7 @@ Description: The Gfarm filesystem daemon
 Package: libgfarm
 Section: libs
 Architecture: i386
-Depends: ${shlibs:Depends}
+Depends: libc6 (>= 2.3.2.ds1-4), libldap2 (>= 2.1.17-1), libssl0.9.7
 Conflicts: libgfarm-gsi
 Description: Runtime libraries for the Gfarm
  libgfarm is a library implementing interfaces for reading and writing
@@ -62,7 +62,7 @@ Description: Runtime libraries for the Gfarm
 Package: libgfarm-dev
 Section: devel
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm
+Depends: libgfarm (= ${Source-Version})
 Conflicts: libgfarm-gsi-dev
 Description: Development files for the Gfarm
  Install this package if you wish to develop your own programs using
@@ -71,14 +71,13 @@ Description: Development files for the Gfarm
 Package: gfarm-doc
 Section: doc
 Architecture: all
-Depends: ${shlibs:Depends}
 Description: Documents for the Gfarm
  Contains all README files and HTML documents.
 
 Package: gfarm-gsi-gfptool
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}, gfarm-gsi-client, libgfarm-gsi
+Depends: gfarm-gsi-client (= ${Source-Version})
 Conflicts: gfarm-gfptool
 Description: Parallel tools installed under the Gfarm filesystem with GSI
  Registration the Gfarm parallel commands such as a parallel file copy command
@@ -88,7 +87,7 @@ Description: Parallel tools installed under the Gfarm filesystem with GSI
 Package: gfmd-gsi
 Section: net
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm-gsi
+Depends: libgfarm-gsi (= ${Source-Version})
 Conflicts: gfmd
 Description: The Gfarm metadata server with GSI
  The Gfarm filesystem metadata server for accessing 
@@ -97,7 +96,7 @@ Description: The Gfarm metadata server with GSI
 Package: gfarm-gsi-client
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm-gsi
+Depends: libgfarm-gsi (= ${Source-Version})
 Conflicts: gfarm-client
 Description: The Gfarm clients with GSI
  This package contains client programs for the Gfarm.
@@ -105,7 +104,7 @@ Description: The Gfarm clients with GSI
 Package: gfsd-gsi
 Section: net
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm-gsi
+Depends: libgfarm-gsi (= ${Source-Version})
 Conflicts: gfsd
 Description: The Gfarm filesystem daemon with GSI
  A filesystem daemon for the Gfarm filesystem,
@@ -115,7 +114,7 @@ Description: The Gfarm filesystem daemon with GSI
 Package: libgfarm-gsi
 Section: libs
 Architecture: i386
-Depends: ${shlibs:Depends}
+Depends: libc6 (>= 2.3.2.ds1-4), libldap2 (>= 2.1.17-1)
 Conflicts: libgfarm
 Description: Runtime libraries for the Gfarm
  libgfarm is a library implementing interfaces for reading and writing
@@ -124,7 +123,7 @@ Description: Runtime libraries for the Gfarm
 Package: libgfarm-gsi-dev
 Section: devel
 Architecture: i386
-Depends: ${shlibs:Depends}, libgfarm-gsi
+Depends: libgfarm-gsi (= ${Source-Version})
 Conflicts: libgfarm-dev
 Description: Development files for the Gfarm with GSI
  Install this package if you wish to develop your own programs using
