@@ -2214,7 +2214,7 @@ if test -d ${srcdir}/ns; then
 		ns/gfarmd/Makefile
 		ns/nstool/file/Makefile'
 
-			test -d ns/gfarm || mkdir -p ns/gfarm
+			test -d ns/gfarmd || mkdir -p ns/gfarmd
 	test -d ns/nstool || mkdir -p ns/nstool
 fi
 
