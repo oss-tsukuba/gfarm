@@ -789,7 +789,7 @@ done
 
 
 if test x"${ac_cv_header_stdio_h}" != x"yes"; then
-	eval "echo compiler option error on: \"$ac_link\""
+	eval "echo preprocessor option error on: \"$ac_cpp\""
 	#exit 1
 fi
 
