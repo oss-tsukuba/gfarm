@@ -33,9 +33,9 @@
 <variablelist>
 
 <varlistentry>
-<term><option>-L</option></term>
+<term><option>-M</option></term>
 <listitem>
-<para>List metadata entries..</para>
+<para>List metadata entries.</para>
 </listitem>
 </varlistentry>
 

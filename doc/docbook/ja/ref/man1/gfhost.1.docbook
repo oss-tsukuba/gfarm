@@ -29,7 +29,7 @@
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-L</option></term>
+<term><option>-M</option></term>
 <listitem>
 <para>メタデータベースの内容を表示します。</para>
 </listitem>
