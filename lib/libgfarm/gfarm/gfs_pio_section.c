@@ -553,7 +553,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	       || gf_on_demand_replication ) &&  
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
-		e = replicate_section_to_local(gf, vc->section, if_hostname);
+		e = replicate_section_to_local(gf, vc->section,
+		    vc->canonical_hostname);
 		/* FT - inconsistent metadata has been fixed.  try again. */
 		if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
 		    && (flags & GFARM_FILE_NOT_RETRY) == 0
