@@ -12,6 +12,11 @@ gfrep \- replicate a Gfarm file
 .I gfarm-URL
 
 .B gfrep
+.B \-D
+.I domainname
+.I gfarm-URL
+
+.B gfrep
 .B \-I
 .I fragment-index
 [
@@ -24,10 +29,9 @@ gfrep \- replicate a Gfarm file
 
 .SH DESCRIPTION
 
-\fBgfrep\fP creates a replica of a Gfarm file \fIgfarm-URL\fP on
-filesystem nodes listed in the \fIhostfile\fP.  The total number of
-file fragments should be equal to the number of nodes listed in the
-\fIhostfile\fP.
+\fBgfrep\fP creates a replica of a Gfarm file \fIgfarm-URL\fP.
+Destination filesystem nodes can be specified by the \fIhostfile\fP or
+the \fIdomainname\fP.
 
 With the \fB-I\fP option, \fBgfrep\fP creates a replica of a specified
 file fragment \fIfragment-index\fP of a Gfarm file \fIgfarm-URL\fP on
@@ -42,9 +46,17 @@ the -s option is specified, the file fragment is copied from the
 .I hostfile
 .br
 specifies a list of filesystem nodes that will be replicated to.
-\fIhostfile\fP consists of a filesystem node in each line.
+\fIhostfile\fP consists of a filesystem node in each line.  The total
+number of file fragments should be equal to the number of nodes listed
+in the \fIhostfile\fP.
 .br
 if ``-'' is specified, standard input is used to read the host list.
+.TP
+.B \-D
+.I domainname
+.br
+specifies a domainname of filesystem nodes that will be replicated
+to.
 .TP
 .B \-I
 .I fragment-index

@@ -20,6 +20,7 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-H <hostfile>\t\treplicate a whole file\n");
+	fprintf(stderr, "\t-D <domainname>\t\treplicate a whole file\n");
 	fprintf(stderr, "\t-I fragment-index\treplicate a fragment"
 		" with -d option\n");
 	fprintf(stderr, "\t-s src-node\n");
@@ -39,13 +40,13 @@ main(argc, argv)
 	char *e, *hostfile = NULL;
 	int ch, nhosts, error_line;
 	char **hosttab;
-	char *index = NULL, *src = NULL, *dest = NULL;
+	char *index = NULL, *src = NULL, *dest = NULL, *domainname = NULL;
 	char *gfarm_url;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:I:s:d:")) != -1) {
+	while ((ch = getopt(argc, argv, "H:I:s:d:D:")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
@@ -58,6 +59,9 @@ main(argc, argv)
 			break;
 		case 'd':
 			dest = optarg;
+			break;
+		case 'D':
+			domainname = optarg;
 			break;
 		case '?':
 		default:
@@ -79,7 +83,7 @@ main(argc, argv)
 	if (index != NULL) {
 		/* replicate a section */
 		if (hostfile != NULL)
-			fprintf(stderr, "%s: Warning: -H option is ignored\n",
+			fprintf(stderr, "%s: warning: -H option is ignored\n",
 				program_name);
 		if (dest == NULL) {
 			fprintf(stderr, "%s: -d dest-node option is required\n",
@@ -94,23 +98,28 @@ main(argc, argv)
 				index, src, dest);
 	} else {
 		/* replicate a whole file */
-		if (hostfile == NULL) {
-			fprintf(stderr, "%s: -H <hostfile> is required\n",
-				program_name);
-			exit(1);
-		}
-		e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab,
-					&error_line);
-		if (e != NULL) {
-			if (error_line != -1)
-				fprintf(stderr, "%s: line %d: %s\n",
-					hostfile, error_line, e);
-			else
-				fprintf(stderr, "%s: %s\n",
-					program_name, e);
-			exit(1);
-		}
-		e = gfarm_url_fragments_replicate(gfarm_url, nhosts, hosttab);
+		if (hostfile != NULL) {
+			if (domainname != NULL)
+				fprintf(stderr, "%s: warning: -D is ignored\n",
+					program_name);
+			e = gfarm_hostlist_read(hostfile, &nhosts,
+				&hosttab, &error_line);
+			if (e != NULL) {
+				if (error_line != -1)
+					fprintf(stderr, "%s: line %d: %s\n",
+						hostfile, error_line, e);
+				else
+					fprintf(stderr, "%s: %s\n",
+						program_name, e);
+				exit(1);
+			}
+			e = gfarm_url_fragments_replicate(gfarm_url,
+				nhosts, hosttab);
+		} else if (domainname != NULL) {
+			e = gfarm_url_fragments_replicate_to_domainname(
+				gfarm_url, domainname);
+		} else
+			usage();
 	}
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, gfarm_url, e);
