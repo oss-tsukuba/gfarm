@@ -151,15 +151,23 @@ gfarm_eventqueue_free(struct gfarm_eventqueue *q)
  * but fixed-size fd_set cannot be used.
  */
 static int
-gfarm_eventqueue_realloc_fd_set(size_t fds_bytes, fd_set **fd_setpp)
+gfarm_eventqueue_realloc_fd_set(size_t old_bytes, size_t new_bytes,
+	fd_set **fd_setpp)
 {
 	fd_set *fsp;
 
 	if (*fd_setpp != NULL) {
-		fsp = realloc(*fd_setpp, fds_bytes);
+		fsp = realloc(*fd_setpp, new_bytes);
 		if (fsp == NULL)
 			return (0); /* failure */
 		*fd_setpp = fsp;
+		/*
+		 * We need to clear fd_set here, because
+		 * gfarm_eventqueue_add_event() may be called
+		 * from a callback in a loop of gfarm_eventqueue_turn().
+		 */
+		/* assumes always new_bytes > old_bytes */
+		memset((char *)fsp + old_bytes, 0, new_bytes - old_bytes);
 	}
 	return (1); /* success */
 }
@@ -180,13 +188,13 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 		    sizeof(fsp->fds_bits[0]) * CHAR_BIT);
 		fds_bytes = fds_array_length * sizeof(fsp->fds_bits[0]);
 
-		if (!gfarm_eventqueue_realloc_fd_set(fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->read_fd_set))
 			return (0); /* failure */
-		if (!gfarm_eventqueue_realloc_fd_set(fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->write_fd_set)) /* XXX wastes q->read_fd_set_value */
 			return (0); /* failure */
-		if (!gfarm_eventqueue_realloc_fd_set(fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->exception_fd_set))/*XXX wastes q->{r,w}*_fd_set_value*/
 			return (0); /* failure */
 
@@ -201,6 +209,12 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 		*fd_setpp = malloc(q->fd_set_bytes);
 		if (*fd_setpp == NULL)
 			return (0); /* failure */
+		/*
+		 * We need to clear fd_set here, because
+		 * gfarm_eventqueue_add_event() may be called
+		 * from a callback in a loop of gfarm_eventqueue_turn().
+		 */
+		memset(*fd_setpp, 0, q->fd_set_bytes);
 	}
 	return (1); /* success */
 }
