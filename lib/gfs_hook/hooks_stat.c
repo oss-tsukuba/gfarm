@@ -94,12 +94,22 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	}
 	free(url);
 	if (e == NULL) {
+		struct passwd *p;
+
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
 		buf->st_nlink = 1;
-		buf->st_uid = getuid();
-		buf->st_gid = getgid();
+
+		/* XXX FIXME: need to convert gfarm global user to UNIX uid */
+		p = getpwnam(gfarm_get_local_username());
+		if (p != NULL) {
+			buf->st_uid = p->pw_uid;
+			buf->st_gid = p->pw_gid;
+		} else {
+			buf->st_uid = getuid(); /* XXX */
+			buf->st_gid = getgid(); /* XXX */
+		}
 		buf->st_size = gs.st_size;
 		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gs.st_atimespec.tv_sec;
@@ -278,12 +288,22 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	}
 	free(url);
 	if (e == NULL) {
+		struct passwd *p;
+
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
 		buf->st_nlink = 1;
-		buf->st_uid = getuid();
-		buf->st_gid = getgid();
+
+		/* XXX FIXME: need to convert gfarm global user to UNIX uid */
+		p = getpwnam(gfarm_get_local_username());
+		if (p != NULL) {
+			buf->st_uid = p->pw_uid;
+			buf->st_gid = p->pw_gid;
+		} else {
+			buf->st_uid = getuid(); /* XXX */
+			buf->st_gid = getgid(); /* XXX */
+		}
 		buf->st_size = gs.st_size;
 		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gs.st_atimespec.tv_sec;
