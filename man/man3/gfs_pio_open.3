@@ -19,8 +19,8 @@ gfs_pio_open \- open a Gfarm file
 
 \fBgfs_pio_open()\fP opens the Gfarm file whose name is the string
 specified by \fIgfarm_url\fP, and returns a \fIGFS_File\fP structure
-to the address pointed by \fIgfp\fP.  Currently, \fIGFS_FILE_RDONLY\fP
-is only supported for values of \fIflags\fP.
+to the address pointed by \fIgfp\fP.  Currently,
+\fIGFARM_FILE_RDONLY\fP is only supported for values of \fIflags\fP.
 
 When \fBgfs_pio_open()\fP is used by parallel processes executed by
 gfrun(3) or gfmpirun(3), the returned \fIGFS_File\fP structure of each
