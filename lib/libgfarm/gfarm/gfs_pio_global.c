@@ -226,7 +226,7 @@ char *
 gfs_pio_set_view_global(GFS_File gf, int flags)
 {
 	struct gfs_file_global_context *gc;
-	char *e;
+	char *e, *arch;
 	int i, n;
 	struct gfarm_file_section_info *infos;
 	static char gfarm_url_prefix[] = "gfarm:/";
@@ -236,8 +236,10 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (e);
 
 	if (GFS_FILE_IS_PROGRAM(gf)) {
-		gf->error = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		return (gf->error);
+		e = gfarm_host_get_self_architecture(&arch);
+		if (e != NULL)
+			return (gf->error = GFARM_ERR_OPERATION_NOT_PERMITTED);
+		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
 	}
 
 	if ((gf->open_flags & GFARM_FILE_CREATE) != 0)
