@@ -53,8 +53,11 @@ __read(int filedes, void *buf, size_t nbyte)
 	    filedes, gfs_pio_fileno(gf), nbyte));
 
 	e = gfs_pio_read(gf, buf, nbyte, &n);
-	if (e == NULL)
+	if (e == NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking __read --> %d\n", n));
 		return (n);
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: __read: %s\n", e));
 	errno = gfarm_error_to_errno(e);
@@ -101,8 +104,11 @@ __write(int filedes, const void *buf, size_t nbyte)
 	    filedes, gfs_pio_fileno(gf), nbyte));
 
 	e = gfs_pio_write(gf, buf, nbyte, &n);
-	if (e == NULL)
+	if (e == NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking __write --> %d\n", n));
 		return (n);
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
 	errno = gfarm_error_to_errno(e);
@@ -194,6 +200,52 @@ __unlink(const char *path)
 	_gfs_hook_debug(fprintf(stderr, "GFS: __unlink: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
+}
+
+/*
+ *
+ */
+int
+__access(const char *path, int type)
+{
+	struct stat s;
+	int mask;
+
+	_gfs_hook_debug(fprintf(stderr, "Hooking __access(%s, %d)\n",
+	    path, type));
+
+	if (stat(path, &s) == -1)
+		return (-1);
+	if (s.st_uid != getuid()) {
+		/* XXX - FIXME */
+		/* currently only same uid is granted, this is bogus. */
+		return (-1);
+	}
+	/* XXX - FIXME : only uid is checked here. */
+	mask = 0;
+	if (type & 1)
+		mask |= 1;
+	if (type & 2)
+		mask |= 2;
+	if (type & 4)
+		mask |= 4;
+	if ((s.st_mode & mask) != mask)
+		return (-1);
+	return (0);
+}
+
+int
+_access(const char *path, int type)
+{
+	_gfs_hook_debug(fputs("Hooking _access\n", stderr));
+	return (__access(path, type));
+}
+
+int
+access(const char *path, int type)
+{
+	_gfs_hook_debug(fputs("Hooking __access\n", stderr));
+	return (__access(path, type));
 }
 
 /*
