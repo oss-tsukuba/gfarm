@@ -1202,7 +1202,7 @@ if test "${with_openldap+set}" = set; then
  ldap_libs="-lldap -llber"
  if test x"${with_openldap}" != x"/usr"; then
    ldap_includes="-I${ldap_includedir} ${ldap_includes}"
-   ldap_client_libs="-L${ldap_libdir} ${ldap_libs}"
+   ldap_libs="-L${ldap_libdir} ${ldap_libs}"
    if test x"${ld_rpath_flag}" != x; then
      ldap_libs="${ld_rpath_flag}${ldap_libdir} ${ldap_libs}"
    fi
