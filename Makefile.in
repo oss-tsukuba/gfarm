@@ -1,7 +1,6 @@
 top_builddir = .
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
-VPATH = @srcdir@
 
 include $(top_srcdir)/makes/var.mk
 
