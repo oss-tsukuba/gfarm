@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b7
+%define ver	1.0
 %define rel	1
 
 %define prefix		/usr/grid
@@ -187,6 +187,7 @@ fi
 %files doc
 %{man_prefix}/man1/digest.1.gz
 %{man_prefix}/man1/gfcd.1.gz
+%{man_prefix}/man1/gfexec.1.gz
 %{man_prefix}/man1/gfexport.1.gz
 %{man_prefix}/man1/gfgrep.1.gz
 %{man_prefix}/man1/gfhost.1.gz
@@ -209,6 +210,7 @@ fi
 %{man_prefix}/man1/gfsched.1.gz
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
+%{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
@@ -241,6 +243,7 @@ fi
 %{man_prefix}/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/man3/gfs_pio_write.3.gz
 %{man_prefix}/man3/gfs_readdir.3.gz
+%{man_prefix}/man3/gfs_realpath.3.gz
 %{man_prefix}/man3/gfs_stat.3.gz
 %{man_prefix}/man3/gfs_stat_free.3.gz
 %{man_prefix}/man3/gfs_unlink.3.gz
@@ -249,6 +252,7 @@ fi
 %{man_prefix}/man8/gfsd.8.gz
 %{man_prefix}/ja/man1/digest.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
+%{man_prefix}/ja/man1/gfexec.1.gz
 %{man_prefix}/ja/man1/gfexport.1.gz
 %{man_prefix}/ja/man1/gfgrep.1.gz
 %{man_prefix}/ja/man1/gfhost.1.gz
@@ -271,6 +275,7 @@ fi
 %{man_prefix}/ja/man1/gfsched.1.gz
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
+%{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_ELEM.3.gz
@@ -319,6 +324,7 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
 %{man_prefix}/ja/man3/gfs_readdir.3.gz
+%{man_prefix}/ja/man3/gfs_realpath.3.gz
 %{man_prefix}/ja/man3/gfs_stat.3.gz
 %{man_prefix}/ja/man3/gfs_stat_free.3.gz
 %{man_prefix}/ja/man3/gfs_unlink.3.gz
@@ -330,6 +336,7 @@ fi
 %{html_prefix}/en/ref/index.html
 %{html_prefix}/en/ref/man1/digest.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
+%{html_prefix}/en/ref/man1/gfexec.1.html
 %{html_prefix}/en/ref/man1/gfexport.1.html
 %{html_prefix}/en/ref/man1/gfgrep.1.html
 %{html_prefix}/en/ref/man1/gfhost.1.html
@@ -350,6 +357,7 @@ fi
 %{html_prefix}/en/ref/man1/gfrun.1.html
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
+%{html_prefix}/en/ref/man1/gfstat.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
@@ -382,6 +390,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/en/ref/man3/gfs_readdir.3.html
+%{html_prefix}/en/ref/man3/gfs_realpath.3.html
 %{html_prefix}/en/ref/man3/gfs_stat.3.html
 %{html_prefix}/en/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/en/ref/man3/gfs_unlink.3.html
@@ -391,6 +400,7 @@ fi
 %{html_prefix}/ja/ref/index.html
 %{html_prefix}/ja/ref/man1/digest.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
+%{html_prefix}/ja/ref/man1/gfexec.1.html
 %{html_prefix}/ja/ref/man1/gfexport.1.html
 %{html_prefix}/ja/ref/man1/gfgrep.1.html
 %{html_prefix}/ja/ref/man1/gfhost.1.html
@@ -411,6 +421,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfrun.1.html
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
+%{html_prefix}/ja/ref/man1/gfstat.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
@@ -459,6 +470,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/ja/ref/man3/gfs_readdir.3.html
+%{html_prefix}/ja/ref/man3/gfs_realpath.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/ja/ref/man3/gfs_unlink.3.html
@@ -502,9 +514,11 @@ fi
 %{prefix}/bin/gfrshl
 %{prefix}/bin/gfrun
 %{prefix}/bin/gfsched
+%{prefix}/bin/gfsck
 %{prefix}/bin/gfsetdir
 %{prefix}/bin/gfssh
 %{prefix}/bin/gfsshl
+%{prefix}/bin/gfstat
 %{prefix}/bin/gfwhere
 %{prefix}/bin/pcat
 %{prefix}/bin/pcp
@@ -546,6 +560,7 @@ fi
 %{prefix}/sbin/gfregister
 
 %files fsnode
+%{prefix}/bin/gfexec
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
