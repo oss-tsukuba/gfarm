@@ -776,11 +776,15 @@ __fchdir(int filedes)
 	GFS_File gf;
 	const char *e;
 	char *url;
+	int r;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchdir(%d)\n", filedes));
 
-	if ((gf = gfs_hook_is_open(filedes)) == NULL)
-		return syscall(SYS_fchdir, filedes);
+	if ((gf = gfs_hook_is_open(filedes)) == NULL) {
+		if ((r = syscall(SYS_fchdir, filedes)) == 0)
+			gfs_hook_set_cwd_is_gfarm(0);
+		return (r);
+	}
 
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
 		e = GFARM_ERR_NOT_A_DIRECTORY;
@@ -797,8 +801,10 @@ __fchdir(int filedes)
 
 	e = gfs_chdir(url);
 	free(url);	
-	if (e == NULL)
+	if (e == NULL) {
+		gfs_hook_set_cwd_is_gfarm(1);
 		return (0);
+	}
 error:
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: __fchdir: %s\n", e));
