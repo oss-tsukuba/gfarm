@@ -513,7 +513,7 @@ __utimes(const char *path, const struct timeval *tvp)
 {
 	char *e, *url, *sec;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %x)\n",
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %p)\n",
 	    path, tvp));
 
 	if (!gfs_hook_is_url(path, &url, &sec)) {
