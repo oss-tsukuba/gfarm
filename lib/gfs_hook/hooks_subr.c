@@ -14,7 +14,8 @@
 
 #define MAX_GFS_FILE_BUF	2048
 
-static struct {
+struct _gfs_file_descriptor {
+	int refcount;
 	unsigned char d_type;   /* file types in <gfarm/gfs.h> */
         union {
 		GFS_File f;
@@ -26,8 +27,8 @@ static struct {
 			char *canonical_path; /* for __fchdir() hook */
 		} *d;
 	} u;
-} _gfs_file_buf[MAX_GFS_FILE_BUF];
-static int _gfs_file_refcount[MAX_GFS_FILE_BUF];
+};
+static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 
 void
 gfs_hook_not_initialized(void)
@@ -80,14 +81,20 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		errno = EMFILE;
 		return (-1);
 	}
-	if (_gfs_file_buf[fd].u.f != NULL) {
+	if (_gfs_file_buf[fd] != NULL) {
 		__syscall_close(fd);
 		gfs_pio_close(gf);
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
 	}
-	_gfs_file_buf[fd].d_type = GFS_DT_REG;
-	_gfs_file_buf[fd].u.f = gf;
+	_gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
+	if (_gfs_file_buf[fd] == NULL) {
+		errno = ENOMEM;
+		return (-1);
+	}
+	_gfs_file_buf[fd]->refcount = 1;
+	_gfs_file_buf[fd]->d_type = GFS_DT_REG;
+	_gfs_file_buf[fd]->u.f = gf;
 	return (fd);
 }
 
@@ -116,28 +123,36 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 		errno = EMFILE;
 		return (-1);
 	}
-	if (_gfs_file_buf[fd].u.d != NULL) {
+	if (_gfs_file_buf[fd] != NULL) {
 		__syscall_close(fd);
 		gfs_closedir(dir);
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
 	}
-        _gfs_file_buf[fd].u.d = malloc(sizeof(*_gfs_file_buf[fd].u.d));
-        if (_gfs_file_buf[fd].u.d == NULL) {
+        _gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
+        if (_gfs_file_buf[fd] == NULL) {
 		__syscall_close(fd);
 		gfs_closedir(dir);
 		errno = ENOMEM;
 		return (-1);
         }
-	_gfs_file_buf[fd].d_type = GFS_DT_DIR;
-        _gfs_file_buf[fd].u.d->dir = dir;
-        _gfs_file_buf[fd].u.d->readcount = 0;
-        _gfs_file_buf[fd].u.d->suspended = NULL;
-        e = gfs_stat(url, &_gfs_file_buf[fd].u.d->gst);
+        _gfs_file_buf[fd]->u.d = malloc(sizeof(*_gfs_file_buf[fd]->u.d));
+	if (_gfs_file_buf[fd]->u.d == NULL) {
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = ENOMEM;
+		return (-1);
+        }
+	_gfs_file_buf[fd]->refcount = 1;
+	_gfs_file_buf[fd]->d_type = GFS_DT_DIR;
+	_gfs_file_buf[fd]->u.d->dir = dir;
+	_gfs_file_buf[fd]->u.d->readcount = 0;
+	_gfs_file_buf[fd]->u.d->suspended = NULL;
+	e = gfs_stat(url, &_gfs_file_buf[fd]->u.d->gst);
 	if (e != NULL)
 		return (-1);
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(url), 
-				 &_gfs_file_buf[fd].u.d->canonical_path);
+				 &_gfs_file_buf[fd]->u.d->canonical_path);
 	if (e != NULL)
 		return (-1);
 	return (fd);
@@ -146,60 +161,76 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 unsigned char
 gfs_hook_gfs_file_type(int fd)
 {
-	return (_gfs_file_buf[fd].d_type);
+	return (_gfs_file_buf[fd]->d_type);
 }
 
-int
+char *
 gfs_hook_clear_gfs_file(int fd)
 {
-	int ref;
+	GFS_File gf;
+	char *e = NULL;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
 
-	if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG)
-		_gfs_file_buf[fd].u.f = NULL;
-	else {
-		_gfs_file_buf[fd].u.d->dir = NULL;
-		_gfs_file_buf[fd].u.d->readcount = 0;
-		_gfs_file_buf[fd].u.d->suspended = NULL;
-		gfs_stat_free(&_gfs_file_buf[fd].u.d->gst);
-		free(_gfs_file_buf[fd].u.d->canonical_path); 
-		free(_gfs_file_buf[fd].u.d); 
-		_gfs_file_buf[fd].u.d = NULL;
+	gf = gfs_hook_is_open(fd);
+
+	if (--_gfs_file_buf[fd]->refcount > 0) {
+	  	/* fd is duplicated, skip closing the file. */
+		_gfs_hook_debug(fprintf(stderr,
+					"GFS: clear_gfs_file: skipped\n"));
+	} else {
+		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
+			e = gfs_pio_close(gf);
+		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
+			_gfs_file_buf[fd]->u.d->dir = NULL;
+			_gfs_file_buf[fd]->u.d->readcount = 0;
+			_gfs_file_buf[fd]->u.d->suspended = NULL;
+			gfs_stat_free(&_gfs_file_buf[fd]->u.d->gst);
+			free(_gfs_file_buf[fd]->u.d->canonical_path); 
+			free(_gfs_file_buf[fd]->u.d);
+			e = gfs_closedir((GFS_Dir)gf);
+		}
+
+		free(_gfs_file_buf[fd]);
 	}
 
-	_gfs_file_buf[fd].d_type = GFS_DT_UNKNOWN;
 	__syscall_close(fd);
-
-	ref = _gfs_file_refcount[fd];
-	if (ref > 0)
-		--_gfs_file_refcount[fd];
-
-	return ref;
+	_gfs_file_buf[fd] = NULL;
+	return (e);
 }
 
+struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
+{
+	if (gfs_hook_is_open(fd) == NULL)
+		return (NULL);
+	++_gfs_file_buf[fd]->refcount;
+	return (_gfs_file_buf[fd]);
+}
+
+void gfs_hook_set_descriptor(int fd, struct _gfs_file_descriptor *d)
+{
+	if (gfs_hook_is_open(fd) != NULL)
+		gfs_hook_clear_gfs_file(fd);
+	_gfs_file_buf[fd] = d;
+}
+
+#if 0
 int
-gfs_hook_insert_filedes(int oldfd, int newfd)
+gfs_hook_dup_filedes(int oldfd, int newfd)
 {
 	_gfs_hook_debug(
-	   fprintf(stderr, "GFS: insert_filedes: %d, %d\n", oldfd, newfd));
-			
-	if (_gfs_file_buf[newfd].u.f != NULL)
-		return (-1);
+	   fprintf(stderr, "GFS: dpu_filedes: %d, %d\n", oldfd, newfd));
 
-	_gfs_file_buf[newfd] = _gfs_file_buf[oldfd];
-	
+#if 0
+	if (_gfs_file_buf[oldfd] == _gfs_file_buf[newfd])
+		return (newfd);		
+#endif
+		_gfs_file_buf[newfd] = _gfs_file_buf[oldfd];
+	}
+
 	return (newfd);
 }
-
-void
-gfs_hook_inc_refcount(int fd)
-{
-	_gfs_hook_debug(
-		fprintf(stderr, "GFS: inc_refcount: %d\n", fd));
-
-	++_gfs_file_refcount[fd];
-}
+#endif
 
 /*  printf and puts should not be put into the following function. */
 void *
@@ -208,11 +239,14 @@ gfs_hook_is_open(int fd)
 	if (fd < 0 || fd >= MAX_GFS_FILE_BUF)
 		return (NULL);
 
+	if (_gfs_file_buf[fd] == NULL)
+		return (NULL);
+
 	switch (gfs_hook_gfs_file_type(fd)) {
 	case GFS_DT_REG:
-		return (_gfs_file_buf[fd].u.f);
+		return (_gfs_file_buf[fd]->u.f);
 	case GFS_DT_DIR:
-		return (_gfs_file_buf[fd].u.d->dir);
+		return (_gfs_file_buf[fd]->u.d->dir);
 	default:
 		return (NULL);
 	}
@@ -224,37 +258,37 @@ gfs_hook_inc_readcount(int fd)
 	_gfs_hook_debug(
 		fprintf(stderr, "GFS: inc_readount: %d\n", fd));
 
-	++_gfs_file_buf[fd].u.d->readcount;
+	++_gfs_file_buf[fd]->u.d->readcount;
 }
 
 int
 gfs_hook_is_read(int fd)
 {
-	return (_gfs_file_buf[fd].u.d->readcount > 0);
+	return (_gfs_file_buf[fd]->u.d->readcount > 0);
 }
 
 void
 gfs_hook_set_suspended_gfs_dirent(int fd, struct gfs_dirent *entry)
 {
-	_gfs_file_buf[fd].u.d->suspended = entry;
+	_gfs_file_buf[fd]->u.d->suspended = entry;
 }
 
 struct gfs_dirent *
 gfs_hook_get_suspended_gfs_dirent(int fd)
 {
-	return (_gfs_file_buf[fd].u.d->suspended);
+	return (_gfs_file_buf[fd]->u.d->suspended);
 }
 
 struct gfs_stat *
 gfs_hook_get_gfs_stat(int fd)
 {
-	return (&_gfs_file_buf[fd].u.d->gst);
+	return (&_gfs_file_buf[fd]->u.d->gst);
 }
 
 char *
 gfs_hook_get_gfs_canonical_path(int fd)
 {
-	return (_gfs_file_buf[fd].u.d->canonical_path);
+	return (_gfs_file_buf[fd]->u.d->canonical_path);
 }
 
 /*

@@ -186,72 +186,37 @@ int
 __close(int filedes)
 {
 	GFS_File gf;
-	GFS_Dir dir;
 	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __close(%d)\n", filedes));
 
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (__syscall_close(filedes));
+
 	switch (gfs_hook_gfs_file_type(filedes)) {
 	case GFS_DT_REG:
-		if ((gf = gfs_hook_is_open(filedes)) == NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking __close: couldn't get gf\n"));
-			errno = EBADF; /* XXX - something broken */
-			return (-1);			
-		}
-
 		_gfs_hook_debug(fprintf(stderr,
 					"GFS: Hooking __close(%d(%d))\n",
 					filedes, gfs_pio_fileno(gf)));
-
-		if (gfs_hook_clear_gfs_file(filedes) > 0) {
-		  	/* if filedes is duplicated, skip closing the file. */
-			  _gfs_hook_debug(fprintf(stderr,
-					  "GFS: Hooking __close: skipped\n"));
-
-			return (0);
-		}
-
-		e = gfs_pio_close(gf);
-	       
-		if (e == NULL)
-			return (0);
-
-		_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
-		errno = gfarm_error_to_errno(e);
-		return (-1);
+		break;
 	case GFS_DT_DIR:
-		if ((dir = gfs_hook_is_open(filedes)) == NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking __close: couldn't get dir\n"));
-			errno = EBADF; /* XXX - something broken */
-			return (-1);			
-		}
-
 		_gfs_hook_debug(fprintf(stderr,
 					"GFS: Hooking __close(%d)\n",
 					filedes));
-
-		if (gfs_hook_clear_gfs_file(filedes) > 0) {
-		  	/* if filedes is duplicated, skip closing the file. */
-			  _gfs_hook_debug(fprintf(stderr,
-					  "GFS: Hooking __close: skipped\n"));
-
-			return (0);
-		}
-
-		e = gfs_closedir(dir);
-	       
-		if (e == NULL)
-		return (0);
-
-		_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
-		errno = gfarm_error_to_errno(e);
-		return (-1);
+		break;
 	default:
-		return (__syscall_close(filedes));
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: Hooking __close: couldn't get gf or dir\n"));
+		errno = EBADF; /* XXX - something broken */
+		return (-1);			
 	}
 
+	e = gfs_hook_clear_gfs_file(filedes);
+	if (e == NULL)
+		return (0);
+	_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
 }
 
 int
@@ -420,27 +385,24 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 int
 __dup2(int oldfd, int newfd)
 {
-
+	struct _gfs_file_descriptor *d;
+	
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup2(%d, %d)\n",
 				  oldfd, newfd));
 
-	if (gfs_hook_is_open(oldfd) == NULL)
+	if (gfs_hook_is_open(oldfd) == NULL && gfs_hook_is_open(newfd) == NULL)
 		return syscall(SYS_dup2, oldfd, newfd);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
 				oldfd, newfd));
 
+	d = gfs_hook_dup_descriptor(oldfd);
+	gfs_hook_set_descriptor(newfd, d);
+
 	if (syscall(SYS_dup2, oldfd, newfd) == -1)
 		return (-1);
 
-	if (gfs_hook_insert_filedes(oldfd, newfd) == -1) {
-		close(newfd);
-		return (-1); /* XXX - no errno */
-	}
-
-	gfs_hook_inc_refcount(oldfd);
-
-	return (newfd);
+	return newfd;
 }
 
 int

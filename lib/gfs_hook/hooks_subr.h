@@ -21,10 +21,7 @@ char *gfs_hook_initialize(void);
 int gfs_hook_insert_gfs_file(struct gfs_file *);
 int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
 unsigned char gfs_hook_gfs_file_type(int);
-int gfs_hook_clear_gfs_file(int);
-
-int gfs_hook_insert_filedes(int, int);
-void gfs_hook_inc_refcount(int);
+char *gfs_hook_clear_gfs_file(int);
 
 void *gfs_hook_is_open(int);
 void gfs_hook_inc_readcount(int);
@@ -60,6 +57,10 @@ int gfs_hook_syscall_xstat64(int, const char *, struct stat64 *);
 int gfs_hook_syscall_lxstat64(int, const char *, struct stat64 *);
 int gfs_hook_syscall_fxstat64(int, int, struct stat64 *);
 char *gfs_hook_syscall_getcwd(char *, size_t);
+
+struct _gfs_file_descriptor;
+struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int);
+void gfs_hook_set_descriptor(int, struct _gfs_file_descriptor *);
 
 #ifdef _LARGEFILE64_SOURCE
 off64_t gfs_hook_syscall_lseek64(int, off64_t, int);
