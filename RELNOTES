@@ -4,9 +4,11 @@ Science and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.0.4
 ============================
 
-[2004.8.24]
+[2004.9.10]
 
 Updated Features
+
+ * Support of read-write mode and append mode.
 
  * New I/O functions; gfs_fchmod and gfs_rename.  Gfs_rename only
    supports to rename a file not a directory in this version.

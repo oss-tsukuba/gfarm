@@ -1,3 +1,176 @@
+2004-09-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_rmdir): gfs_closedir() is missing.
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.c, include/gfarm/gfs.h:
+	Added GFARM_FILE_APPEND.
+	XXX - in global file view, neither TRUNC nor APPEND is supported.
+	support (read-)write mode without truncation.  In this case, every other file copies except an updated copy will be deleted.  When closing the updated copy, checksum will be re-calculated.  This mode is expected to be used for a small file not a large file.
+
+2004-09-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink_every_other_replicas):
+	added for internal use.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c, include/gfarm/gfarm_metadb.h (gfarm_file_section_info_replace):
+	added.
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_open):
+	Check a condition to set GFS_FILE_MODE_READ.  Added GFS_W_OK check in write mode.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (gfs_pio_set_view_section):
+	fixed inexact conditions regarding open_flags and mode.
+
+	* lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink_section):
+	added a missing error check.
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	added gfs_hook_open_flags_gfarmize() to convert standard open flags to Gfarm flags.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Inserted the item 2.2; We cannot connect to file system nodes and/or a metadata server.
+
+	* doc/README.hook.en:
+	Added the description regarding GFARM_DIRCACHE_TIMEOUT and GFARM_FLAGS.
+
+2004-09-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: slight change
+
+2004-09-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_chmod(): not issue unnecessary error messages.
+
+2004-09-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	support a relative path case partially from a local file system.  XXX - Neither '..' nor '.' is properly handled.
+	(gfs_hook_is_url): fix a bug such that '/gfarm:section:' is not converted to 'gfarm:/'.
+
+	* lib/libgfarm/gfarm/config.c (gfarm_terminate):
+	unset gfarm_initialized.
+
+2004-08-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen (again)
+
+	* configure: regen
+
+	* configure.ac:
+	remove --with-globus-shared option (this option is enabled by default now)
+	add --with-globus-static option instead
+
+	* makes/config.mk.in: ${globus_shared} isn't needed any more
+
+	* package/redhat/gfarm.spec:
+	add ${GFARM_CONFIGURE_OPTION} as an option of configure
+
+2004-08-30  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en: change slightly
+
+2004-08-30  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.manpages, debian/libgfarm-dev.manpages, debian/rules, debian/control:
+	rewrote dependency.
+	added manpages
+
+2004-08-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	Replaced TO_UNEXECUTABLE with TO_NONEXECUTABLE.
+
+2004-08-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_chmod(): change 1-segment file's st_nsecntions 0->1 if all of its
+	execution permissions are off, 1->0 if some of them are on.
+
+2004-08-26  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: added new manpages
+
+	* debian/libgfarm-dev.install: forgot lib*.la
+
+2004-08-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	move libgfs_hook*_debug.so.* from gfarm-devel to gfarm-libs,
+	just like other shared objects.
+	discussed in gfarm-cvs.
+
+2004-08-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks.c:
+	Replaced 8 spaces with a tab.
+
+	* lib/gfs_hook/hooks.c:
+	Added vfork(2) hook entry to call SYS_fork instead of SYS_vfork.
+	This seems to be the only workaround to avoid segfault in Linux when calling vfork(2).
+
+2004-08-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	Do not use sizeof_prefix but sizeof_gfarm_prefix to copy the Gfarm prefix in relative path case, although this is not a bug but may be misleading.
+
+2004-08-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control, debian/libgfarm-dev.install, debian/libgfarm.install:
+	reconfigured dependency for shared library
+
+	* debian/control, debian/libgfarm-dev.install, debian/rules:
+	removed mpi dependency
+
+	* debian/libgfarm.install, debian/rules: fixed misses
+
+	* debian/README.Debian, debian/changelog, debian/control, debian/gfmd-gsi.postinst, debian/gfmd-gsi.postrm, debian/gfmd-gsi.prerm, debian/gfsd-gsi.postinst, debian/gfsd-gsi.postrm, debian/gfsd-gsi.prerm, debian/libgfarm.install, debian/rules:
+	update version for 1.0.4
+	  * removed unnessary files
+	  * added libgfarm.install for shared libray package
+	  * added comment for mpich
+	  * remove lam dependency
+
+2004-08-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/Makefile: fix a typo which caused the following error:
+	make[2]: *** No rule to make target `libgfs_hook_mpi.la', needed by `gfs-hooks'.
+
+	problem pointed out by naotaka-san
+
+	* package/solaris/build: change version from 1.0.3.1 to 1.0.4
+	XXX shared objects aren't added to *.files, yet.
+
+	* package/redhat/gfarm.spec: change version from 1.0.3.1-1 to 1.0.4
+
+2004-08-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c, gftool/gfexec/gfexec.c:
+	Do not call gfarm_terminate() before execve(2).  We need to maintain the LDAP connection when executing a program in a shell such as '% /gfarm/tatebe/hostname' and '% gfexec /gfarm/tatebe/hostname'.
+
+2004-08-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_set_current_view_section):
+	fixed memory space managemnet.  added one argument to identify a given memory space should be free'ed or not.
+
+	* doc/README.hook.en: replaced gfs_preload.so with libgfs_hook.so.0.
+
+	* lib/gfs_hook/hooks_common.c (FUNC___OPEN):
+	set errno just before return.
+
+	* RELNOTES: Added x86_64 support.
+	Added the -b option of gfrun.
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/html/en/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfrun.1, man/man1/gfrun.1:
+	Described the -b option of gfrun.
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	fix for the '-b' option of gfrun to set global file view as a default view.
+
+2004-08-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0.4.
+
 2004-08-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfarm/gfarm/auth_client_gsi.c (gfarm_auth_result_gsi_auth_multiplexed):
@@ -4353,7 +4526,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.30 2004/08/07 11:16:26 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.31 2004/08/22 16:14:28 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.

@@ -28,8 +28,8 @@ Table of Contents:
     gsi_auth method and gsi authentication?
 
 4. Performance Tuning
-  4.1 How to speed up writes to metadata database using OpenLDAP
-    version 2.1.X and Berkeley DB?
+  4.1 How to speed up reads and writes to metadata database using an
+    OpenLDAP server?
 
 5. Limitation
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -214,8 +214,8 @@ Table of Contents:
 
 4. Performance Tuning
 *********************
-  4.1 How to speed up writes to metadata database using OpenLDAP
-    version 2.1.X and Berkeley DB?
+  4.1 How to speed up reads and writes to metadata database using an
+    OpenLDAP server?
 
 	When you are using Berkeley DB as database backend, it is
 	possible to improve write performance significantly to tune
@@ -231,6 +231,19 @@ set_cachesize 0 536870912 2
 set_flags DB_TXN_NOSYNC
 -------------------------------- END --------------------------------
 
+	When you are using LDBM database backend, it is possible to
+	improve the performance by increasing the size of in-memory
+	cache.  The size of entries and the size in bytes of the
+	in-memory cache can be specified by 'cachesize' and
+	'dbcachesize', respectively, in slapd.conf.  The following
+	setting example sets both parameters 10 times larger than the
+	default.
+
+----------------------------- BEGIN HERE -----------------------------
+cachesize 10000
+dbcachesize 1000000
+-------------------------------- END --------------------------------
+
 5. Limitation
 *************
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -241,11 +254,10 @@ set_flags DB_TXN_NOSYNC
 
   5.2 Can I open a file in read-write mode?
 
-	Currently, no error happens even if you open a file in
-	read-write mode. But if there are some replicas of the file,
-	inconsistency may be caused by this operation.
-
-	We plan to fix this problem in the next major release.
+	Since the version 1.0.4, a file can be opened in read-write
+	mode.  When there are several replicas of the file, every
+	other replicas except the updated one will be automatically
+	deleted.
 
   5.3 Are file names case-sensitive in a Gfarm file system?
 
