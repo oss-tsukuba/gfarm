@@ -60,7 +60,7 @@ HandleCommonOptions(option, arg)
 	acceptorSpecified = 1;
 	break;
     case 'N':
-	acceptorName = GSS_C_NO_OID;
+	acceptorName = GSS_C_NO_NAME;
 	acceptorSpecified = 1;
 	break;
     case 'n':

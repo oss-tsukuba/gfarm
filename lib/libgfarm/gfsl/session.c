@@ -590,7 +590,7 @@ destroySecSession(ssPtr)
 	    }
 	    case GFARM_SS_ACCEPTOR: {
 		if (ssPtr->iOaInfo.acceptor.initiatorName != GSS_C_NO_NAME) {
-		    gfarmGssDeleteName(ssPtr->iOaInfo.acceptor.initiatorName,
+		    gfarmGssDeleteName(&ssPtr->iOaInfo.acceptor.initiatorName,
 				       NULL, NULL);
 		}
 		if (ssPtr->iOaInfo.acceptor.deleCred != GSS_C_NO_CREDENTIAL) {
@@ -1168,7 +1168,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 	free(peerName);
     }
     if (sCtx != GSS_C_NO_CONTEXT) {
-	gfarmGssDeleteSecurityContext(sCtx);
+	gfarmGssDeleteSecurityContext(&sCtx);
     }
     if (initiatorName != GSS_C_NO_NAME) {
 	gfarmGssDeleteName(&initiatorName, NULL, NULL);
@@ -1327,7 +1327,7 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
 	free(peerName);
     }
     if (sCtx != GSS_C_NO_CONTEXT) {
-	gfarmGssDeleteSecurityContext(sCtx);
+	gfarmGssDeleteSecurityContext(&sCtx);
     }
     if (acceptorNameResult != GSS_C_NO_NAME) {
 	gfarmGssDeleteName(&acceptorNameResult, NULL, NULL);
@@ -2279,7 +2279,7 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
 	    free(state->peerName);
 	}
 	if (state->sCtx != GSS_C_NO_CONTEXT) {
-	    gfarmGssDeleteSecurityContext(state->sCtx);
+	    gfarmGssDeleteSecurityContext(&state->sCtx);
 	}
 	if (state->acceptorNameResult != GSS_C_NO_NAME) {
 	    gfarmGssDeleteName(&state->acceptorNameResult, NULL, NULL);
