@@ -6,7 +6,7 @@ include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = html
 
-DOC =	../INSTALL.en ../INSTALL.ja ../LICENSE \
+DOC =	../INSTALL.en ../INSTALL.ja ../LICENSE ../RELNOTES \
 	GUIDE.ja Gfarm-FAQ.en Gfarm-FAQ.ja README.hook.en
 
 include $(top_srcdir)/makes/subdir.mk
