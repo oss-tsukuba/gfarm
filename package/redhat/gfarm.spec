@@ -9,11 +9,22 @@
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
 
+# whether "ns" is included in this release or not.
+%define have_ns	0
 
+#
+# check MPI
+#
+
+%define	mpi_prefix	/usr
+
+%define mpi	%(test -x %{mpi_prefix}/bin/mpicc && echo 1 || echo 0)
+
+#
+# check && enable/disable Globus
+#
 # do the followings to build gfarm-gsi-*.rpm:
-#
 #   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 rpmbuild -bb gfarm.spec
-#
 
 %define	globus_prefix	%(echo "${GLOBUS_PREFIX}")
 %define	globus_flavor	%(echo "${GLOBUS_FLAVOR}")
@@ -103,10 +114,10 @@ mkdir -p $RPM_BUILD_ROOT
 	--with-openldap=/usr \
 	--with-openssl=/usr \
 	--with-readline=/usr \
-	`test "%{globus}" -ne 0 && \
-	 echo --with-globus=%{globus_prefix} \
-		--with-globus-flavor=%{globus_flavor}`
-#	--with-mpi=/usr
+	`test "%{globus}" -ne 0 && echo	\
+		--with-globus=%{globus_prefix} \
+		--with-globus-flavor=%{globus_flavor}` \
+	`test "%{mpi}" -ne 0 && echo --with-mpi=%{mpi_prefix}`
 
 make
 
@@ -392,7 +403,9 @@ fi
 
 %files frontend
 
-#%{prefix}/bin/gfarm
+%if %{have_ns}
+%{prefix}/bin/gfarm
+%endif
 
 %files client
 %{prefix}/bin/gfrsh
@@ -415,20 +428,24 @@ fi
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %{prefix}/bin/gfwhere
-#%{prefix}/bin/gfwc
+%if %{mpi}
+%{prefix}/bin/gfwc
+%endif
 
-#%{prefix}/sbin/gfarmd
-#%{prefix}/bin/ns_put
-#%{prefix}/bin/ns_get
-#%{prefix}/bin/ns_stat
-#%{prefix}/bin/ns_lstat
-#%{prefix}/bin/ns_rename
-#%{prefix}/bin/ns_unlink
-#%{prefix}/bin/ns_unlink_dir
-#%{prefix}/bin/ns_mkdir
-#%{prefix}/bin/ns_symlink
-#%{prefix}/bin/ns_readlink
-#%{prefix}/bin/ns_readdir
+%if %{have_ns}
+%{prefix}/sbin/gfarmd
+%{prefix}/bin/ns_put
+%{prefix}/bin/ns_get
+%{prefix}/bin/ns_stat
+%{prefix}/bin/ns_lstat
+%{prefix}/bin/ns_rename
+%{prefix}/bin/ns_unlink
+%{prefix}/bin/ns_unlink_dir
+%{prefix}/bin/ns_mkdir
+%{prefix}/bin/ns_symlink
+%{prefix}/bin/ns_readlink
+%{prefix}/bin/ns_readdir
+%endif
 
 %files fsnode
 %{prefix}/sbin/gfsd
@@ -459,19 +476,23 @@ fi
 %{prefix}/include/gfarm/gfs_hook.h
 %{prefix}/lib/gfs_hook.o
 %{prefix}/lib/gfs_hook_debug.o
-#%{prefix}/lib/gfs_hook_mpi.o
-#%{prefix}/lib/gfs_hook_mpi_debug.o
 %{prefix}/lib/libgfarm.a
+%if %{mpi}
+%{prefix}/lib/gfs_hook_mpi.o
+%{prefix}/lib/gfs_hook_mpi_debug.o
+%endif
 
-#%{prefix}/include/gfarm/comm.h
-#%{prefix}/include/gfarm/debug.h
-#%{prefix}/include/gfarm/gflib.h
-#%{prefix}/include/gfarm/ns.h
-#%{prefix}/include/gfarm/nsclnt.h
-#%{prefix}/include/gfarm/nscom.h
-#%{prefix}/include/gfarm/nsexec.h
-#%{prefix}/include/gfarm/soc-lxdr.h
-#%{prefix}/include/gfarm/soc.h
-#%{prefix}/include/gfarm/type.h
-#%{prefix}/lib/libns.a
-#%{prefix}/lib/libnsexec.a
+%if %{have_ns}
+%{prefix}/include/gfarm/comm.h
+%{prefix}/include/gfarm/debug.h
+%{prefix}/include/gfarm/gflib.h
+%{prefix}/include/gfarm/ns.h
+%{prefix}/include/gfarm/nsclnt.h
+%{prefix}/include/gfarm/nscom.h
+%{prefix}/include/gfarm/nsexec.h
+%{prefix}/include/gfarm/soc-lxdr.h
+%{prefix}/include/gfarm/soc.h
+%{prefix}/include/gfarm/type.h
+%{prefix}/lib/libns.a
+%{prefix}/lib/libnsexec.a
+%endif
