@@ -1829,9 +1829,6 @@ server(int client_fd)
 	gfarm_int32_t request;
 	char buffer[GFARM_INT32STRLEN];
 
-	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	chdir(gfarm_spool_root);
-
 	e = xxx_fd_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
@@ -2065,6 +2062,10 @@ main(int argc, char **argv)
 	}
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
+
+	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
+	if (chdir(gfarm_spool_root) == -1)
+		gflog_fatal_errno(gfarm_spool_root);
 
 	accepting_sock = open_accepting_socket(gfarm_spool_server_port);
 	open_datagram_service_sockets(gfarm_spool_server_port,
