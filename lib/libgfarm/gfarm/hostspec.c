@@ -140,7 +140,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 	struct in_addr addr, mask;
 	unsigned long masklen;
 
-	if (strcmp(name, "ALL") == 0) {
+	if (strcmp(name, "*") == 0 || strcmp(name, "ALL") == 0) {
 		return (gfarm_hostspec_af_inet4_new(INADDR_ANY, INADDR_ANY,
 		    hostspecpp));
 	}
@@ -182,7 +182,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 
 	/*
 	 * We don't allow all capital domain name.
-	 * Such names are reserved for keywords like "ALL", "LISTENER".
+	 * Such names are reserved for keywords like "*", "LISTENER".
 	 */
 	if (gfarm_is_string_upper_case(name))
 		return ("unknown keyword");

@@ -459,7 +459,7 @@ parse_auth_arguments(char *p, char **op)
 		return (e);
 	if (auth == NULL)
 		return ("missing 2nd(auth-method) argument");
-	if (strcmp(auth, "ALL") == 0) {
+	if (strcmp(auth, "*") == 0 || strcmp(auth, "ALL") == 0) {
 		auth_method = GFARM_AUTH_METHOD_ALL;
 	} else {
 		e = gfarm_auth_method_parse(auth, &auth_method);
@@ -524,8 +524,8 @@ parse_netparam_arguments(char *p, char **op)
 	if (e != NULL)
 		return (e);
 	if (host == NULL) {
-		/* if 2nd argument is omitted, it is treated as "ALL". */
-		host = "ALL";
+		/* if 2nd argument is omitted, it is treated as "*". */
+		host = "*";
 	} else if (gfarm_strtoken(&p, &e) != NULL) {
 		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
 	}
@@ -574,7 +574,7 @@ parse_sockopt_arguments(char *p, char **op)
 	if (host == NULL) {
 		/*
 		 * if 2nd argument is omitted, it is treated as:
-		 *	"LISTENER" + "ALL".
+		 *	"LISTENER" + "*".
 		 */
 		is_listener = 1;
 	} else {
@@ -595,7 +595,7 @@ parse_sockopt_arguments(char *p, char **op)
 		}
 	}
 	if (host == NULL || !is_listener) {
-		e = gfarm_hostspec_parse(host != NULL ? host : "ALL",
+		e = gfarm_hostspec_parse(host != NULL ? host : "*",
 		    &hostspecp);
 		if (e != NULL) {
 			/*

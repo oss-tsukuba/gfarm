@@ -360,7 +360,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 163.220.31.0/24
-auth enable gsi ALL
+auth enable gsi *
 -------------------------------- END --------------------------------
 
 ** Register filesystem nodes
@@ -457,7 +457,7 @@ ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 163.220.31.0/24
-auth enable gsi ALL
+auth enable gsi *
 -------------------------------- END --------------------------------
 
 When filesystem nodes or metadata server nodes are used as a client

@@ -66,9 +66,16 @@ from 0 to 31 separated by "/".</para>
 </varlistentry>
 
 <varlistentry>
-<term><emphasis>.</emphasis><parameter>domain.name</parameter></term>
+<term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
 <listitem>
 <para>specifies all hosts belonging to the domain.name.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>*</emphasis></term>
+<listitem>
+<para>specifies all hosts.</para>
 </listitem>
 </varlistentry>
 
@@ -282,13 +289,15 @@ parameters.</para>
 <para>The <token>sockopt</token> parameter specifies the socket option
 <parameter>option</parameter> via the setsockopt(2) system call.</para>
 
-<para>When <token>LISTENER</token> is specified by the second
-argument, the socket option is applied to the socket that listens to
-irrespective of the target hosts.</para>
+<para>When <token>LISTENER</token> (all capital letter) is specified
+by the second argument, the socket option is applied to any socket
+in server side (accepting side).</para>
 
 <para>When the host specification is specified by the second argument,
-the socket option is applied to the socket that connects to hosts with
-the corresponding host specification.</para>
+the socket option is applied to sockets that connect to specified host(s).
+If the second argument is "*", the socket option is applied to any
+hosts in client side (connecting side).
+</para>
 
 <para>If the second argument is omitted, the socket option is applied
 to every socket.</para>
@@ -413,7 +422,7 @@ notation.</para>
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
-		&lt;hostname&gt;
+		&lt;hostname&gt; | "." &lt;domain_name&gt;  | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
 	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
 	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
