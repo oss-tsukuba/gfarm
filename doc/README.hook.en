@@ -1,21 +1,40 @@
+README for syscall-hooking library
+
 *** Trapping system calls for porting legacy or commercial
     applications
 
-To utilize a Gfarm filesystem by legacy or commercial applications,
-such as the Objectivity object database and the ROOT I/O, system call
-trapping of file I/O operations is provided.
+To utilize a Gfarm filesystem by legacy or commercial applications
+including the Objectivity object database and the ROOT I/O, system
+call trapping of file I/O operations is provided.
+
+This document shows how to compile applications to access Gfarm files
+on a Gfarm filesystem, and some extensions of Gfarm URL.  Also refer
+to sample programs in the gfptool/ directory and provided by
+http://datafarm.apgrid.org/
 
 ** C program
 
 To trap system calls, just link the application with gfs_hook.o.
 
-	% cc prog.c gfs_hook.o -lgfarm -lldap -llber
+	% cc prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber
 
 When you are using gcc and glibc version 2.2.91 or later, it is
 necessary to link statically with -static option.
 
-	% cc -static prog.c gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
+
+Or, with the Globus GSI library of the flavor gcc32,
+
+	% gcc -static prog.c -I/usr/grid/include/gcc32 -L/usr/grid/lib \
+		/usr/grid/lib/gfs_hook.o -lgfarm \
+		-lglobus_gssapi_gsi_gcc32 -lglobus_gsi_callback_gcc32 \
+		-lglobus_gsi_cert_utils_gcc32 -lglobus_gsi_proxy_core_gcc32 \
+		-lglobus_gsi_credential_gcc32 -lglobus_gsi_sysconfig_gcc32 \
+		-lldap_gcc32pthr -llber_gcc32pthr \
+		-lglobus_common_gcc32 -lglobus_oldgaa_gcc32 \
+		-lglobus_openssl_gcc32 -lglobus_openssl_error_gcc32 \
+		-lglobus_proxy_ssl_gcc32 -lssl_gcc32 -lcrypto_gcc32 -lsasl -ldl
 
 After linking with gfs_hook.o, it is possible to access Gfarm files
 via Gfarm URL like gfarm:foo.
@@ -51,9 +70,9 @@ otherwise, the default view is a global view.
 In the case of MPI applications, you do not need to modify your source
 code any more, just link with gfs_hook_mpi.o.
 
-	% mpicc prog.c gfs_hook_mpi.o -lgfarm -lldap -llber
+	% mpicc prog.c /usr/grid/lib/gfs_hook_mpi.o -lgfarm -lldap -llber
 
-	% mpicc -static prog.c gfs_hook.o -lgfarm -lldap -llber \
+	% mpicc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 ----------------------------------------------------------------------
