@@ -3,6 +3,7 @@ all:
 	cd gfexport && make $@
 	cd gfkey && make $@
 	cd gfreg && make $@
+	cd gfrep && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
 	cd gfrsh && make $@
@@ -13,6 +14,7 @@ install clean veryclean distclean:
 	cd gfexport && make $@
 	cd gfkey && make $@
 	cd gfreg && make $@
+	cd gfrep && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
 	cd gfrsh && make $@
