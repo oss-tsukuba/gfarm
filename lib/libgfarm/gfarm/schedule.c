@@ -1093,7 +1093,7 @@ url_hosts_schedule_filtered(struct gfarm_hash_table *hosts_state,
 }
 
 char *
-gfarm_url_hosts_schedule(char *gfarm_url, char *option,
+gfarm_url_hosts_schedule(const char *gfarm_url, char *option,
 	int *nhostsp, char ***hostsp)
 {
 	char *e, *gfarm_file, **hosts;

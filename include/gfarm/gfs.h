@@ -47,8 +47,8 @@ struct gfs_stat {
  */
 typedef struct gfs_file *GFS_File;
 
-char *gfs_pio_open(char *, int, GFS_File *);
-char *gfs_pio_create(char *, int, gfarm_mode_t mode, GFS_File *);
+char *gfs_pio_open(const char *, int, GFS_File *);
+char *gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 
 #define GFARM_FILE_RDONLY		0
 #define GFARM_FILE_WRONLY		1
@@ -69,7 +69,7 @@ char *gfs_pio_get_node_size(int *);
 
 char *gfs_pio_set_view_local(GFS_File, int);
 char *gfs_pio_set_view_index(GFS_File, int, int, char *, int);
-char *gfs_pio_set_view_section(GFS_File, char *, char *, int);
+char *gfs_pio_set_view_section(GFS_File, const char *, char *, int);
 char *gfs_pio_set_view_global(GFS_File, int);
 /* as total fragment number */
 #define GFARM_FILE_DONTCARE		(-1)
@@ -91,9 +91,9 @@ char *gfs_pio_write(GFS_File, const void *, int, int *);
 int gfs_pio_getc(GFS_File);
 int gfs_pio_ungetc(GFS_File, int);
 char *gfs_pio_putc(GFS_File, int);
-char *gfs_pio_puts(GFS_File, char *);
+char *gfs_pio_puts(GFS_File, const char *);
 char *gfs_pio_getline(GFS_File, char *, size_t, int *);
-char *gfs_pio_putline(GFS_File, char *);
+char *gfs_pio_putline(GFS_File, const char *);
 
 /*
  *  For legacy code
@@ -118,11 +118,11 @@ char *gfs_utimes(const char *, const struct gfarm_timespec *);
 char *gfs_rename(const char *, const char *);
 
 char *gfs_stat(const char *, struct gfs_stat *);
-char *gfs_stat_section(char *, char *, struct gfs_stat *);
+char *gfs_stat_section(const char *, const char *, struct gfs_stat *);
 char *gfs_stat_index(char *, int, struct gfs_stat *);
 char *gfs_fstat(GFS_File, struct gfs_stat *);
 void gfs_stat_free(struct gfs_stat *);
-char *gfs_access(char *, int);
+char *gfs_access(const char *, int);
 
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
@@ -158,9 +158,9 @@ enum { GFARM_REPLICATION_BOOTSTRAP_METHOD, GFARM_REPLICATION_NORMAL_METHOD };
 int  gfarm_replication_get_method(void);
 void gfarm_replication_set_method(int);
 
-char *gfarm_url_section_replicate_from_to(char *, char *, char *, char *);
-char *gfarm_url_section_replicate_to(char *, char *, char *);
-char *gfarm_url_program_register(char *, char *, char *, int);
+char *gfarm_url_section_replicate_from_to(const char *, char *, char *, char *);
+char *gfarm_url_section_replicate_to(const char *, char *, char *);
+char *gfarm_url_program_register(const char *, char *, char *, int);
 char *gfarm_url_program_deliver(const char *, int, char **, char ***);
-char *gfarm_url_fragments_replicate(char *, int, char **);
-char *gfarm_url_fragments_replicate_to_domainname(char *, const char *);
+char *gfarm_url_fragments_replicate(const char *, int, char **);
+char *gfarm_url_fragments_replicate_to_domainname(const char *, const char *);

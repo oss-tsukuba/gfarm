@@ -123,7 +123,7 @@ gfs_stat_free(struct gfs_stat *s)
 }
 
 char *
-gfs_stat_section(char *gfarm_url, char *section, struct gfs_stat *s)
+gfs_stat_section(const char *gfarm_url, const char *section, struct gfs_stat *s)
 {
 	char *e, *gfarm_file;
 	struct gfarm_file_section_info sinfo;
@@ -178,7 +178,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *status)
 }
 
 char *
-gfs_access(char *gfarm_url, int mode)
+gfs_access(const char *gfarm_url, int mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
@@ -495,7 +495,7 @@ finish:
 }
 
 char *
-gfarm_url_section_replicate_from_to(char *gfarm_url, char *section,
+gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 	char *srchost, char *dsthost)
 {
 	char *e, *gfarm_file, *canonical_hostname, *if_hostname;
@@ -554,7 +554,8 @@ finish:
 }
 
 char *
-gfarm_url_section_replicate_to(char *gfarm_url, char *section, char *dsthost)
+gfarm_url_section_replicate_to(
+	const char *gfarm_url, char *section, char *dsthost)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
@@ -597,8 +598,9 @@ finish:
 }
 
 char *
-gfarm_url_program_register(char *gfarm_url, char *architecture,
-			   char *filename, int nreplicas)
+gfarm_url_program_register(
+	const char *gfarm_url, char *architecture,
+	char *filename, int nreplicas)
 {
 	char *e, *e_save = NULL, *if_hostname, *gfarm_file;
 	int nhosts, fd, i;
@@ -868,7 +870,8 @@ error:
 }
 
 char *
-gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
+gfarm_url_fragments_replicate(
+	const char *gfarm_url, int ndsthosts, char **dsthosts)
 {
 	char *e, *gfarm_file, **srchosts, **edsthosts;
 	int nsrchosts;
@@ -1010,8 +1013,8 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 }
 
 char *
-gfarm_url_fragments_replicate_to_domainname(char *gfarm_url,
-	const char *domainname)
+gfarm_url_fragments_replicate_to_domainname(
+	const char *gfarm_url, const char *domainname)
 {
 	char *e, **dsthosts;
 	int nfrags;

@@ -136,7 +136,7 @@ static double gfs_pio_write_time;
 static double gfs_pio_getline_time;
 
 char *
-gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
+gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
@@ -256,7 +256,7 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 }
 
 char *
-gfs_pio_open(char *url, int flags, GFS_File *gfp)
+gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
@@ -737,7 +737,7 @@ gfs_pio_putc(GFS_File gf, int c)
 }
 
 char *
-gfs_pio_puts(GFS_File gf, char *s)
+gfs_pio_puts(GFS_File gf, const char *s)
 {
 	char *e = gfs_pio_check_view_default(gf);
 
@@ -798,7 +798,7 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 }
 
 char *
-gfs_pio_putline(GFS_File gf, char *s)
+gfs_pio_putline(GFS_File gf, const char *s)
 {
 	char *e = gfs_pio_check_view_default(gf);
 

@@ -335,7 +335,7 @@ finish_free_path_section:
 double gfs_pio_set_view_section_time;
 
 char *
-gfs_pio_set_view_section(GFS_File gf, char *section,
+gfs_pio_set_view_section(GFS_File gf, const char *section,
 			 char *if_hostname, int flags)
 {
 	struct gfs_file_section_context *vc;

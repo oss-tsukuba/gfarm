@@ -444,7 +444,7 @@ static void gfarm_host_info_set_field(void *info, char *attribute, char **vals);
 static int gfarm_host_info_validate(void *info);
 
 struct gfarm_host_info_key {
-	char *hostname;
+	const char *hostname;
 };
 
 static const struct gfarm_generic_info_ops gfarm_host_info_ops = {
@@ -540,7 +540,7 @@ gfarm_host_info_free(
 }
 
 char *gfarm_host_info_get(
-	char *hostname,
+	const char *hostname,
 	struct gfarm_host_info *info)
 {
 	struct gfarm_host_info_key key;
@@ -605,7 +605,7 @@ gfarm_host_info_update(
 }
 
 char *
-gfarm_host_info_remove_hostaliases(char *hostname)
+gfarm_host_info_remove_hostaliases(const char *hostname)
 {
 	int i;
 	LDAPMod *modv[2];
@@ -648,7 +648,7 @@ gfarm_host_info_replace(
 }
 
 char *
-gfarm_host_info_remove(char *hostname)
+gfarm_host_info_remove(const char *hostname)
 {
 	struct gfarm_host_info_key key;
 
@@ -751,7 +751,7 @@ gfarm_host_info_get_allhost_by_architecture(const char *architecture,
 }
 
 char *
-gfarm_host_info_get_architecture_by_host(char *hostname)
+gfarm_host_info_get_architecture_by_host(const char *hostname)
 {
 	char *error;
 	struct gfarm_host_info info;
@@ -779,7 +779,7 @@ static int gfarm_path_info_validate(void *info);
 struct gfarm_path_info;
 
 struct gfarm_path_info_key {
-	char *pathname;
+	const char *pathname;
 };
 
 static int
@@ -1009,7 +1009,7 @@ gfarm_path_info_free(
 }
 
 char *gfarm_path_info_get(
-	char *pathname,
+	const char *pathname,
 	struct gfarm_path_info *info)
 {
 	struct gfarm_path_info_key key;
@@ -1049,7 +1049,7 @@ gfarm_path_info_replace(
 }
 
 char *
-gfarm_path_info_remove(char *pathname)
+gfarm_path_info_remove(const char *pathname)
 {
 	struct gfarm_path_info_key key;
 
@@ -1270,8 +1270,8 @@ gfarm_file_section_info_free(struct gfarm_file_section_info *info)
 }
 
 char *gfarm_file_section_info_get(
-	char *pathname,
-	char *section,
+	const char *pathname,
+	const char *section,
 	struct gfarm_file_section_info *info)
 {
 	struct gfarm_file_section_info_key key;
@@ -1356,7 +1356,7 @@ gfarm_file_section_info_free_all(
 
 char *
 gfarm_file_section_info_get_all_by_file(
-	char *pathname,
+	const char *pathname,
 	int *np,
 	struct gfarm_file_section_info **infosp)
 {
@@ -1400,7 +1400,7 @@ gfarm_file_section_info_compare_serial(const void *d, const void *s)
 
 char *
 gfarm_file_section_info_get_sorted_all_serial_by_file(
-	char *pathname,
+	const char *pathname,
 	int *np,
 	struct gfarm_file_section_info **infosp)
 {
@@ -1420,7 +1420,7 @@ gfarm_file_section_info_get_sorted_all_serial_by_file(
 }
 
 char *
-gfarm_file_section_info_remove_all_by_file(char *pathname)
+gfarm_file_section_info_remove_all_by_file(const char *pathname)
 {
 	char *error, *error_save;
 	int i, n;
@@ -1550,9 +1550,9 @@ gfarm_file_section_copy_info_free(struct gfarm_file_section_copy_info *info)
 
 char *
 gfarm_file_section_copy_info_get(
-	char *pathname,
-	char *section,
-	char *hostname,
+	const char *pathname,
+	const char *section,
+	const char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
 	struct gfarm_file_section_copy_info_key key;
@@ -1661,7 +1661,7 @@ gfarm_file_section_copy_info_get_all_by_file(
 
 char *
 gfarm_file_section_copy_info_remove_all_by_file(
-	char *pathname)
+	const char *pathname)
 {
 	char *error, *error_save;
 	int i, n;
@@ -1753,7 +1753,7 @@ gfarm_file_section_copy_info_remove_all_by_section(
 
 char *
 gfarm_file_section_copy_info_get_all_by_host(
-	char *hostname,
+	const char *hostname,
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
@@ -1780,7 +1780,7 @@ gfarm_file_section_copy_info_get_all_by_host(
 
 char *
 gfarm_file_section_copy_info_remove_all_by_host(
-	char *hostname)
+	const char *hostname)
 {
 	char *error, *error_save;
 	int i, n;
@@ -1812,9 +1812,9 @@ gfarm_file_section_copy_info_remove_all_by_host(
 
 int
 gfarm_file_section_copy_info_does_exist(
-	char *pathname,
-	char *section,
-	char *hostname)
+	const char *pathname,
+	const char *section,
+	const char *hostname)
 {
 	struct gfarm_file_section_copy_info info;
 

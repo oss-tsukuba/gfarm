@@ -110,7 +110,7 @@ char *gfarm_schedule_search_idle_hosts(int, char **, int, char **);
 char *gfarm_schedule_search_idle_by_all(int, char **);
 char *gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
 char *gfarm_schedule_search_idle_by_program(char *, int, char **);
-char *gfarm_url_hosts_schedule(char *, char *, int *, char ***);
+char *gfarm_url_hosts_schedule(const char *, char *, int *, char ***);
 char *gfarm_url_hosts_schedule_by_program(char *, char *, char *,
 	int *, char ***);
 char *gfarm_file_section_host_schedule(char *, char *, char **);
@@ -123,7 +123,7 @@ char *gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
  * MetaDB utility
  */
 char *gfarm_url_fragment_cleanup(char *, int, char **);
-char *gfarm_url_fragment_number(char *, int *);
+char *gfarm_url_fragment_number(const char *, int *);
 
 /*
  * helper functions for import

@@ -99,7 +99,7 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 }
 
 char *
-gfarm_url_fragment_number(char *gfarm_url, int *np)
+gfarm_url_fragment_number(const char *gfarm_url, int *np)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
