@@ -27,7 +27,7 @@
 
 <cmdsynopsis>
   <command>gfreg</command>
-    <arg choice='opt'>-D <replaceable>domainname<replaceable></arg>
+    <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -74,9 +74,8 @@ node will be automatically decided by load average except that the
 <option>-h</option> option is explicitly specified.  When the gfreg
 command of this form is executed on a filesystem node, the local
 filesystem node is always selected rather than remote filesystem
-nodes.  In this case, the -h option helps to store files
-dispersively.</para>
+nodes.  In this case, the <option>-h</option> option helps to store
+files dispersively.</para>
 
 </refsect1>
 </refentry>
-
