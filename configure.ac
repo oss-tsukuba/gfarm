@@ -138,18 +138,17 @@ AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
 
 ###
-### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-shared
+### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
 
-AC_ARG_WITH(globus_shared,
-[  --with-globus-shared		link globus shared library instead of static library
+AC_ARG_WITH(globus_static,
+[  --with-globus-static		link static version of globus libraries instead of shared version
 				[[default=disable]]],
-[globus_shared="${withval}"
+[globus_static="${withval}"
 ],
-[globus_shared=""
+[globus_static=""
 ])
 
-AC_SUBST(globus_shared)
 
 
 AC_ARG_WITH(globus_flavor,
@@ -216,9 +215,9 @@ AC_ARG_WITH(globus,
 
  cfgmhtmp=/tmp/cfgmh$$
  AC_MSG_CHECKING([globus library names])
- if	case ${globus_shared} in
-	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
-	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
+ if	case ${globus_static} in
+	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
+	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
 	esac > $cfgmhtmp
  then
 	AC_MSG_RESULT([done])
@@ -228,8 +227,9 @@ AC_ARG_WITH(globus,
  fi
  globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
  rm -f $cfgmhtmp
- case ${globus_shared} in
- yes)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
+ case ${globus_static} in
+ yes)	:;;
+ *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
  esac
 
  # for conditional compilation which depends on whether globus is enabled or not
@@ -239,11 +239,11 @@ AC_ARG_WITH(globus,
  globus_targets='$(GLOBUS_TARGETS)'
 
  openssl_includes='$(globus_includes)'
- case ${globus_shared} in
- yes)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
-	AC_MSG_RESULT([using globus shared library: yes]);;
- *)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
-	AC_MSG_RESULT([using globus shared library: no]);;
+ case ${globus_static} in
+ yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
+	AC_MSG_RESULT([using globus static library: yes]);;
+ *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
+	AC_MSG_RESULT([using globus static library: no]);;
  esac
 
  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
