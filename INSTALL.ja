@@ -182,11 +182,11 @@ configure コマンドには、下記のオプションがあります。
 
 ・LDAP サーバーを実行するホスト
 
-	ldap.hpcc.jp
+	ldap.example.com
 
 ・LDAP サーバーの利用する TCP ポート番号
 
-	9000
+	389
 
 ・LDAP サーバーの設定ファイルを置くディレクトリ
 
@@ -202,12 +202,12 @@ configure コマンドには、下記のオプションがあります。
 
 ・LDAP の base distinguished name
 
-	dc=hpcc,dc=jp
+	dc=example,dc=com
 
   この値は、LDAP で保持する情報の根となるノードの名称です。
 
-  Gfarm システムを利用している組織のドメイン名が hpcc.jp であれば、
-  そのドメイン名の各構成要素を dc= に指定して「dc=hpcc,dc=jp」の
+  Gfarm システムを利用している組織のドメイン名が example.com であれば、
+  そのドメイン名の各構成要素を dc= に指定して「dc=example,dc=com」の
   ような名前を決め、これを base distinguished name に使うと良いでしょ
   う。
 
@@ -229,7 +229,7 @@ OpenLDAP 付属の LDAP サーバーの設定ファイルです。
 base distinguished name を、このファイルの suffix および 
 rootdn で参照しているのに注意してください。
 
-例えばホスト ldap.hpcc.jp の
+例えばホスト ldap.example.com の
 ファイル /etc/gfarm-ldap/slapd.conf に、
 下記のような内容を記述します。
 
@@ -256,8 +256,8 @@ sizelimit 2000000000
 
 database        ldbm
 
-suffix          "dc=hpcc, dc=jp"
-rootdn          "cn=root, dc=hpcc, dc=jp"
+suffix          "dc=example, dc=com"
+rootdn          "cn=root, dc=example, dc=com"
 
 directory       /var/gfarm-ldap
 rootpw          secret-ldap-password
@@ -277,7 +277,7 @@ dbnosync
 slapd.conf から include されているファイルです。
 
 下記の内容を、
-ホスト ldap.hpcc.jp の
+ホスト ldap.example.com の
 ファイル /etc/gfarm-ldap/gfarm.schema に置いてください。
 特にカスタマイズする項目はありません。
 
@@ -393,12 +393,12 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
 dn (distinguished name) 属性に base distinguished name を、
 また objectclass 属性に top を設定します。
 
-例えばホスト ldap.hpcc.jp の
+例えばホスト ldap.example.com の
 ファイル /etc/gfarm-ldap/initial.ldif に、
 下記のような内容を設定することになります。
 
 ------------------------------ ここから ------------------------------
-dn: dc=hpcc, dc=jp
+dn: dc=example, dc=com
 objectclass: top
 
 ------------------------------ ここまで ------------------------------
@@ -406,7 +406,7 @@ objectclass: top
 ▽ LDAP データベースの作成
 
 前節で作成したファイルシステムメタデータの初期情報を元に、LDAP データ
-ベースを作成します。これには、ホスト ldap.hpcc.jp で、下記のコマン
+ベースを作成します。これには、ホスト ldap.example.com で、下記のコマン
 ドを実行します。
 
 	% rm -f /var/gfarm-ldap/*
@@ -415,13 +415,13 @@ objectclass: top
 
 ▽ LDAP サーバーの起動
 
-ホスト ldap.hpcc.jp で、LDAP サーバーを起動します。
+ホスト ldap.example.com で、LDAP サーバーを起動します。
 下記のコマンドを実行します。
 
 	% cd /usr/local/openldap/libexec/
-	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:9000/
+	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
-このオプション -h で指定した 9000 が、LDAP サーバーのポート番号です。
+このオプション -h で指定した 389 が、LDAP サーバーのポート番号です。
 
 ▽ LDAP サーバーの動作試験
 
@@ -429,16 +429,16 @@ objectclass: top
 と同じ内容が表示されれば、正しく動作しています。
 
 Bourne Shell の場合:
-	% host=ldap.hpcc.jp
-	% port=9000
-	% basedn='dc=hpcc, dc=jp'
+	% host=ldap.example.com
+	% port=389
+	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 csh の場合:
-	% set host=ldap.hpcc.jp
-	% set port=9000
-	% set basedn='dc=hpcc, dc=jp'
+	% set host=ldap.example.com
+	% set port=389
+	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
@@ -478,19 +478,31 @@ LDAP サーバーを起動したら、gfhost コマンドを利用して、
 例えば下記のようなコマンドで設定することになります。
 オプション -c は、登録を指示するコマンドです。
 
-	% gfhost -c -a sparc-sun-solaris hpc420-1.hpcc.jp
-	% gfhost -c -a sparc-sun-solaris hpc420-2.hpcc.jp
-	% gfhost -c -a alpha-dec-osf wiz.etl.go.jp
-	% gfhost -c -a mips-sgi-irix -n 16 o2k.etl.go.jp
+	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-3.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-4.example.com
+	% gfhost -c -a i386-debian-linux -n 2 linuxhost-5.example.com
+	% gfhost -c -a i386-debian-linux -n 2 linuxhost-6.example.com
+	% gfhost -c -a sparc-sun-solaris solarishost-1.example.com
+	% gfhost -c -a sparc-sun-solaris solarishost-2.example.com
+	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
+	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
 登録結果は、オプション -l を指定して gfhost を実行することで、
 確認できます。
 
 	% gfhost -l
-	sparc-sun-solaris 1 hpc420-1.hpcc.jp
-	sparc-sun-solaris 1 hpc420-2.hpcc.jp
-	alpha-dec-osf 1 wiz.etl.go.jp
-	mips-sgi-irix 16 o2k.etl.go.jp
+	i386-redhat-linux 1 linuxhost-1.example.com
+	i386-redhat-linux 1 linuxhost-2.example.com
+	i386-redhat-linux 1 linuxhost-3.example.com
+	i386-redhat-linux 1 linuxhost-4.example.com
+	i386-debian-linux 2 linuxhost-5.example.com
+	i386-debian-linux 2 linuxhost-6.example.com
+	sparc-sun-solaris 1 solarishost-1.example.com
+	sparc-sun-solaris 1 solarishost-2.example.com
+	alpha-dec-osf 1 osfhost-1.example.com
+	mips-sgi-irix 16 irixhost-1.example.com
 
 ------------------------------------------------------------------------
 
@@ -524,10 +536,10 @@ LDAP サーバーを起動したら、gfhost コマンドを利用して、
 
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.hpcc.jp
-ldap_serverhost ldap.hpcc.jp
-ldap_serverport 9000
-ldap_base_dn "dc=hpcc, dc=jp"
+metadb_serverhost ldap.example.com
+ldap_serverhost ldap.example.com
+ldap_serverport 389
+ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret ALL
 ------------------------------ ここまで ------------------------------
 
@@ -560,10 +572,16 @@ gfsd が正しく起動されているかどうかは、オプションを指定せずに gfhost
 アベレージです。
 
 	% gfhost
-	0.10/0.00/0.00 sparc-sun-solaris 1 hpc420-1.hpcc.jp
-	0.00/0.01/0.10 sparc-sun-solaris 1 hpc420-2.hpcc.jp
-	0.00/0.00/0.00 alpha-dec-osf 1 wiz.etl.go.jp
-	0.35/0.58/0.21 mips-sgi-irix 16 o2k.etl.go.jp
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-2.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-3.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-4.example.com
+	0.40/0.45/0.42 i386-debian-linux 2 linuxhost-5.example.com
+	0.43/0.50/0.40 i386-debian-linux 2 linuxhost-6.example.com
+	0.10/0.00/0.00 sparc-sun-solaris 1 solarishost-1.example.com
+	0.00/0.01/0.10 sparc-sun-solaris 1 solarishost-2.example.com
+	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
+	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
 
 ========================================================================
 

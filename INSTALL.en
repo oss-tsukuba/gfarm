@@ -176,11 +176,11 @@ This section assumes the following setting.
 
  - hostname of a LDAP server
 
-	ldap.hpcc.jp
+	ldap.example.com
 
  - TCP port number of the LDAP server
 
-	9000
+	389
 
  - directory for configuration files of LDAP server
 
@@ -196,7 +196,11 @@ This section assumes the following setting.
 
  - base distinguished name of LDAP
 
-	dc=hpcc,dc=jp
+	dc=example,dc=com
+
+	It is recommended to choose the base distingush name by using
+	each component of the fully qualified domain name (FQDN) as
+	a right hand value of "dc=".
 
  - Gfarm spool directory on filesystem nodes
 
@@ -216,7 +220,7 @@ This is a configuration file for a LDAP server included in the
 OpenLDAP distribution.  Note that suffix and rootdn in this file
 refer to the base distinguished name.
 
-This is an example of /etc/gfarm-ldap/slapd.conf on ldap.hpcc.jp.
+This is an example of /etc/gfarm-ldap/slapd.conf on ldap.example.com.
 
 ----------------------------- BEGIN HERE -----------------------------
 #
@@ -241,8 +245,8 @@ sizelimit 2000000000
 
 database        ldbm
 
-suffix          "dc=hpcc, dc=jp"
-rootdn          "cn=root, dc=hpcc, dc=jp"
+suffix          "dc=example, dc=com"
+rootdn          "cn=root, dc=example, dc=com"
 
 directory       /var/gfarm-ldap
 rootpw          secret-ldap-password
@@ -261,7 +265,7 @@ dbnosync
 
 This is a schema file for the Gfarm filesystem metadata used by
 slapd.conf, which is located at /etc/gfarm-ldap/gfarm.schema on
-ldap.hpcc.jp.  There is no need to modify.
+ldap.example.com.  There is no need to modify.
 
 ----------------------------- BEGIN HERE -----------------------------
 #
@@ -374,10 +378,10 @@ Please specify the base distinguished name as a "dn" (distinguished name)
 attribute, and "top" as a "objectclass" attribute.
 
 This is a sample database file of /etc/gfarm-ldap/initial.ldif on
-ldap.hpcc.jp.
+ldap.example.com.
 
 ----------------------------- BEGIN HERE -----------------------------
-dn: dc=hpcc, dc=jp
+dn: dc=example, dc=com
 objectclass: top
 
 -------------------------------- END --------------------------------
@@ -385,7 +389,7 @@ objectclass: top
  - Creating a LDAP database
 
 To create an initial LDAP database using the above initial entries,
-execute the following commands on ldap.hpcc.jp.
+execute the following commands on ldap.example.com.
 
 	% rm -f /var/gfarm-ldap/*
 	% cd /etc/gfarm-ldap
@@ -393,10 +397,10 @@ execute the following commands on ldap.hpcc.jp.
 
  - Executing a LDAP server
 
-To execute a LDAP server on ldap.hpcc.jp, type the following commands,
+To execute a LDAP server on ldap.example.com, type the following commands,
 
 	% cd /usr/local/openldap/libexec/
-	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:9000/
+	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
 The -h option specifies a port number of the LDAP server.
 
@@ -406,16 +410,16 @@ Try to execute the following commands.  If the same content as the
 initial.ldif file is displayed, the test is passed.
 
 In the case of the Bourne Shell:
-	% host=ldap.hpcc.jp
-	% port=9000
-	% basedn='dc=hpcc, dc=jp'
+	% host=ldap.example.com
+	% port=389
+	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 In the case of the csh:
-	% set host=ldap.hpcc.jp
-	% set port=9000
-	% set basedn='dc=hpcc, dc=jp'
+	% set host=ldap.example.com
+	% set port=389
+	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
@@ -451,19 +455,31 @@ For each node, register the following information by the gfhost command.
 The followings are sample commands to register those information.
 The option -c means "create" a host information.
 
-	% gfhost -c -a sparc-sun-solaris hpc420-1.hpcc.jp
-	% gfhost -c -a sparc-sun-solaris hpc420-2.hpcc.jp
-	% gfhost -c -a alpha-dec-osf wiz.etl.go.jp
-	% gfhost -c -a mips-sgi-irix -n 16 o2k.etl.go.jp
+	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-3.example.com
+	% gfhost -c -a i386-redhat-linux linuxhost-4.example.com
+	% gfhost -c -a i386-debian-linux -n 2 linuxhost-5.example.com
+	% gfhost -c -a i386-debian-linux -n 2 linuxhost-6.example.com
+	% gfhost -c -a sparc-sun-solaris solarishost-1.example.com
+	% gfhost -c -a sparc-sun-solaris solarishost-2.example.com
+	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
+	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
 You can confirm the information by specifing -l option with
 the gfhost command:
 
 	% gfhost -l
-	sparc-sun-solaris 1 hpc420-1.hpcc.jp
-	sparc-sun-solaris 1 hpc420-2.hpcc.jp
-	alpha-dec-osf 1 wiz.etl.go.jp
-	mips-sgi-irix 16 o2k.etl.go.jp
+	i386-redhat-linux 1 linuxhost-1.example.com
+	i386-redhat-linux 1 linuxhost-2.example.com
+	i386-redhat-linux 1 linuxhost-3.example.com
+	i386-redhat-linux 1 linuxhost-4.example.com
+	i386-debian-linux 2 linuxhost-5.example.com
+	i386-debian-linux 2 linuxhost-6.example.com
+	sparc-sun-solaris 1 solarishost-1.example.com
+	sparc-sun-solaris 1 solarishost-2.example.com
+	alpha-dec-osf 1 osfhost-1.example.com
+	mips-sgi-irix 16 irixhost-1.example.com
 
 ------------------------------------------------------------------------
 
@@ -496,10 +512,10 @@ metadata server nodes, and client nodes.
 
 ----------------------------- BEGIN HERE -----------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.hpcc.jp
-ldap_serverhost ldap.hpcc.jp
-ldap_serverport 9000
-ldap_base_dn "dc=hpcc, dc=jp"
+metadb_serverhost ldap.example.com
+ldap_serverhost ldap.example.com
+ldap_serverport 389
+ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret ALL
 -------------------------------- END --------------------------------
 
@@ -529,10 +545,16 @@ gfhost command without any argument as follows. The 3 numbers at
 the beginning of each line are load averages of the host.
 
 	% gfhost
-	0.10/0.00/0.00 sparc-sun-solaris 1 hpc420-1.hpcc.jp
-	0.00/0.01/0.10 sparc-sun-solaris 1 hpc420-2.hpcc.jp
-	0.00/0.00/0.00 alpha-dec-osf 1 wiz.etl.go.jp
-	0.35/0.58/0.21 mips-sgi-irix 16 o2k.etl.go.jp
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-2.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-3.example.com
+	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-4.example.com
+	0.40/0.45/0.42 i386-debian-linux 2 linuxhost-5.example.com
+	0.43/0.50/0.40 i386-debian-linux 2 linuxhost-6.example.com
+	0.10/0.00/0.00 sparc-sun-solaris 1 solarishost-1.example.com
+	0.00/0.01/0.10 sparc-sun-solaris 1 solarishost-2.example.com
+	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
+	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
 
 ========================================================================
 
