@@ -70,8 +70,10 @@ remove_cwd_entries()
 		char *path = gfarm_stringlist_elem(&entry_list, i);
 
 		e = gfs_stat(path, &gs);
-		if (e != NULL)
+		if (e != NULL) {
 			fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+			continue;
+		}
 		if (GFARM_S_ISREG(gs.st_mode)) {
 			char *url;
 
