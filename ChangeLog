@@ -1,4 +1,349 @@
+2005-01-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c:
+	SuSE SLES-8 does not define SYS_getxattr but have getxattr() if attr package is installed.  However, in this case, we give up calling the original getxattr() via the syscall hook library but just return ENODATA.
+
+2005-01-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* configure: regen
+
+	* configure.ac: Added a run script for gneo_agent.
+
+2005-01-05  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	delete LDAP call timing print for tuning
+
+2004-12-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	Merged change of the gfarm_v1 main trunk.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c (gfarm_metadb_terminate):
+	Fixed typo.
+	(gfarm_metadb_check): Added NULL check.
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/schedule.c, man/ja/man1/gfrep.1, man/ja/man3/gfs_pio_truncate.3, man/man5/gfarm.conf.5, package/redhat/gfarm.patch, package/redhat/gfarm.spec, gfptool/gfsplck/gfsplck.c, gftool/gfreg/Makefile, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, include/gfarm/gfarm_metadb.h, include/gfarm/gfarm_misc.h, include/gfarm/gfs.h, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_stat.c, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfs_pio_truncate.3.docbook, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man3/gfs_pio_truncate.3.html, doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	Marged change of the gfarm_v1 main trunk on 28 December, 2004.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c, include/gfarm/gfarm_metadb.h (gfarm_metadb_check):
+	added for sanity check of gfarm metadb server (slapd).
+	(gfarm_metadb_initialize): call metadb_terminate() when metadb_initialize() fails.
+
+2004-12-27  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+
+	* server/gfmd/Makefile, server/gfmd/attr.c, server/gfmd/attr.h, server/gfmd/dents.c, server/gfmd/dents.h, server/gfmd/fs.c, server/gfmd/fsattr.c, server/gfmd/fsattr.h, server/gfmd/getdentsplus.c, server/gfmd/gfmd.c, server/gfmd/gneo_proto.h, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/process.c, server/gfmd/process.h, server/gfmd/rmdir.c, server/gfmd/xattr.c, server/gfmd/xattr.h, server/gfsd/gfsd.c:
+	GNEO extensions for Gfarm v2
+
+	* server/gfmd/attr.c, server/gfmd/attr.h, server/gfmd/dents.c, server/gfmd/dents.h, server/gfmd/fsattr.c, server/gfmd/fsattr.h, server/gfmd/getdentsplus.c, server/gfmd/gneo_proto.h, server/gfmd/rmdir.c, server/gfmd/xattr.c, server/gfmd/xattr.h:
+	New file.
+
+	* include/gfarm/error.h, lib/libgfarm/Makefile, lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfm_proto.h, lib/libgfarm/gfarm/gfp_fmt.c, lib/libgfarm/gfarm/gfp_fmt.h, lib/libgfarm/gfarm/gfp_xdr.c, lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.h, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/pack.c, lib/libgfarm/gfarm/pack.h, lib/libgfarm/gfarm/stailq.c, lib/libgfarm/gfarm/stailq.h, lib/libgfarm/gfarm/vbuf.c, lib/libgfarm/gfarm/vbuf.h:
+	GNEO extensions for Gfarm v2
+
+	* lib/libgfarm/gfarm/gfp_fmt.c, lib/libgfarm/gfarm/gfp_fmt.h, lib/libgfarm/gfarm/pack.c, lib/libgfarm/gfarm/pack.h, lib/libgfarm/gfarm/stailq.c, lib/libgfarm/gfarm/stailq.h, lib/libgfarm/gfarm/vbuf.c, lib/libgfarm/gfarm/vbuf.h:
+	New file.
+
+	* doc/gfarm_v2_geno.text: GNEO extensions for Gfarm v2
+
+	* doc/gfarm_v2_geno.text: New file.
+
+2004-12-24  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+
+	* gftool/gfrm/gfrm.c, gftool/gfmkdir/gfmkdir.c, gftool/example/gfimport_text/gfimport_text.c:
+	add error handling
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.h, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfutil/gfevent.c, lib/libgfarm/gfutil/gfevent.h, package/redhat/gfarm-slapd, server/gfsd/gfsd.c:
+	GNEO extension for Gfarm v1
+
+	* lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.h:
+	New file.
+
+	* include/gfarm/gfs.h, include/gfarm/gfs_hook.h, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, gftool/example/Makefile, Makefile.in, doc/conf/gfarm.schema:
+	GNEO extension for Gfarm v1
+
+	* gftool/Makefile: add gneo&gneo_agent to SUBDIRS
+
+2004-12-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_stat.c (__stat):
+	Get uid and gid from local user's password entry if possible.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c:
+	Added truncate()/truncate64() hooks.
+	Added ftruncate()/ftruncate64() hooks.
+	(__getdents/__getdents64): set values to struct dirent{,64}.d_off for user
+	level nfsd.
+
+2004-12-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: Fixed trivial typos.
+
+	* lib/libgfarm/gfsl/session.c:
+	Fixed a bug such that a service certificate cannot be used when host cert or user proxy cert is not available.
+
+2004-12-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c: support recursive replication for -P option
+
+2004-12-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c:
+	gfs_pio_view_global_ftruncate(): correct a local vaiable's type
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c:
+	change the function name gfs_pio_local_storage_truncate to
+	gfs_pio_local_storage_ftruncate to make consitent with other functions.
+
+2004-12-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/fs.c:
+	recover lines which were accidentally removed in revision 1.1.2.5
+
+	* server/gfmd/fs.c: fix two problems in gfm_server_getdirents()
+	- update atime
+	- fix an error about seek offset
+
+2004-12-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/fs.c:
+	check negative value, before passing it to malloc(3)
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfp_xdr.c, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/iobuffer.c, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/sockopt.c, lib/libgfarm/gfarm/stringlist.c, server/gfmd/dir.c, server/gfmd/fs.c, server/gfmd/host.c, server/gfmd/job.c, server/gfmd/process.c, server/gfmd/user.c:
+	fix warnings
+
+	* server/gfmd/Makefile, server/gfmd/dir.c, server/gfmd/dir.h, server/gfmd/fs.c, server/gfmd/fs.h, server/gfmd/gfmd.c, server/gfmd/group.c, server/gfmd/group.h, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/process.c, server/gfmd/process.h:
+	- make directories be able to be opened from a client,
+	  to support system call hook
+	  (discussed in a meeting with GNEO team)
+	- make directory sorted, by using red-black tree instead of hash table
+	  (required for GNEO)
+	- backout some changes in the following
+	  (sugested by MORIWAKE-san @ suri in [gfarm-cvs:03611]):
+		> soda  Tue Aug 10 01:01:01 JST 2004
+		>
+		> Update of /gfarm/server/gfmd
+		> In directory cvs.apgrid.org:/tmp/cvs-serv28263
+		>
+		> Modified Files:
+		>       Tag: gfarm_v2
+		>       fs.c gfmd.c inode.c inode.h peer.c process.c process.h
+		> Log Message:
+		> bug fix - deal with realloc().
+		> use internal_ino_t instead of "struct inode *" for long term use
+	- implement some more protocols
+
+	* server/gfmd/dir.c, server/gfmd/dir.h: New file.
+
+	* lib/libgfarm/gfarm/gfm_proto.h:
+	- make directories be able to be opened from a client,
+	  to support system call hook
+	  (discussed in a meeting with GNEO team)
+	- make directory sorted, by using red-black tree instead of hash table
+	  (required for GNEO)
+	- backout some changes in the following
+	  (sugested by MORIWAKE-san @ suri in [gfarm-cvs:03611]):
+		> soda  Tue Aug 10 01:01:01 JST 2004
+		>
+		> Update of /gfarm/server/gfmd
+		> In directory cvs.apgrid.org:/tmp/cvs-serv28263
+		>
+		> Modified Files:
+		>       Tag: gfarm_v2
+		>       fs.c gfmd.c inode.c inode.h peer.c process.c process.h
+		> Log Message:
+		> bug fix - deal with realloc().
+		> use internal_ino_t instead of "struct inode *" for long term use
+	- implement some more protocols
+
+	* lib/libgfarm/gfutil/tree.h:
+	splay tree and red-black tree macro library by Niels Provos, from NetBSD 2.0
+
+	* lib/libgfarm/gfutil/tree.h:
+	remove this from main trunk for gfarm v1, for now
+
+	* lib/libgfarm/gfutil/tree.h: New file.
+
+	* lib/libgfarm/gfutil/tree.h:
+	splay tree and red-black tree macro library by Niels Provos, from NetBSD 2.0
+
+2004-12-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c: travarese_file_tree_with_cwd():
+	- move out the same process in a loop
+	- add a error check
+
+2004-12-06  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c: support recursive replication for -d option
+
+2004-11-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* man/ja/man3/gfs_pio_truncate.3, doc/html/ja/ref/man3/gfs_pio_truncate.3.html:
+	generate from gfs_pio_truncate.3.docbook
+
+	* doc/docbook/ja/ref/man3/gfs_pio_truncate.3.docbook: New file.
+
+	* doc/docbook/ja/ref/man3/Makefile.inc: add gfs_pio_truncate.3
+
+2004-11-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch: Removed patches for $Id$ lines.
+
+2004-11-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* man/ja/man1/gfrep.1: regen
+
+2004-11-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfreg/gfreg.c: forgot to update an argument of getopt(3)
+
+	* gftool/gfreg/Makefile: add dependency
+
+	* gftool/gfreg/gfreg.c:
+	deal with the case where nhosts != nfragments in -H option handling
+
+	* gftool/gfreg/gfreg.c: add missing -H option parsing
+
+2004-11-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1: regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	- -D option: add description about the case none of the options speceify
+	  destination hosts or domain is used
+	- add usage -N option
+	- -H, -D option: add description in case of Gfarm-URL is a directory
+
+2004-11-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	- do not print "warning: -s src option is ignored",
+	  if "gfrep -s <src> -d <dst> <files>..." is specified.
+	- print usage instead of "warning: -N 1 (default) is meaningless",
+	  when no argument is specified.
+	- be more strict about invalid option.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	disable on-demand replication, if the host is not an active filesystem node.
+
+2004-11-10  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	implement -N <num-replicas option for a gfarm regular file
+
+2004-11-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	-support -N num-replicas option without -D domain option
+	-add cheking compatibility between -N and other options
+
+2004-11-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_unlink.c:
+	add functions to migrate replicas
+
+	* lib/libgfarm/gfarm/hostspec.c:
+	gfarm_host_is_in_domain(): treat null string domain as a special case
+		which matches with any hosts
+
+2004-11-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	gfarm_schedule_search_idle_acyclic_by_domainname(): fix a bug
+
+2004-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h:
+	const'ify
+
+	* gftool/gfrep/gfrep.c: change default number of replicas from 2 to 1
+
+2004-11-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch, package/redhat/gfarm.spec:
+	patch file until the change on Nov 7, 2004. (gfarm_schedule_search_idle_acyclic_by_domainname)
+	spec file for gfarm-1.0.4-3 to apply the above patch.
+
+2004-11-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	implement a option -N <number-of-replicas-per-fragment>
+
+	* lib/libgfarm/gfarm/schedule.c, include/gfarm/gfarm_misc.h:
+	add gfarm_schedule_search_idle_acyclic_by_domainname() for gfrep -N #replica
+
+2004-11-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrep/gfrep.c: plugged memory leak
+
+2004-11-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	guarantee that forked child processes never shared parent's LDAP connection,
+	because that not only makes the clients broken, but also makes slapd broken.
+
+2004-11-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c:
+	fixed a bug not to register a file that does not have fragment information.
+
+2004-11-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch, package/redhat/gfarm.spec:
+	patch file until the change on Nov 3, 2004
+	spec file for gfarm-1.0.4-2 to apply the above patch.
+
+2004-11-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	- get_fragment_number_in_domain() -> get_replica_number_in_domain()
+	- get_replica_number_in_domain(): plug a memory leak
+
+	* gftool/gfrep/gfrep.c:
+	support recursive replication for -H and -D option
+
+2004-11-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c (fixfrag): fixed a termination condition.
+
+	* gfptool/gfsplck/gfsplck.c (fixfrag):
+	search sectin part from the last not from the beginning.
+	filename may include ':'.
+
+2004-11-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfarm_url_section_replicate_from_to):
+	fixed a segfault bug in error case.
+
+2004-11-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man5/gfarm.conf.5:
+	recover truncated description in previous commit
+
+	* gftool/gfhost/gfhost.c:
+	fix long standing bug about -i option, when non-default spool_serverport
+	is specified in the configuration file.
+
+	* package/redhat/gfarm.spec:
+	ldconfig is needed, at least if shlibs are installed to /usr/lib,
+	reported by tatebe-san.
+
+	The reason we do this unconditionally (i.e. do not check whether
+	the target directory is /usr/lib or not) is because it's harmless,
+	even if the target isn't /usr/lib.
+
+	* package/solaris/build, package/solaris/gfarm-client.files, package/solaris/gfarm-devel.files, package/solaris/gfarm-doc.files, package/solaris/gfarm-fsnode.files, package/solaris/gfarm-gfptool.files, package/solaris/gfarm-gfront.files, package/solaris/gfarm-libs.files, package/solaris/gfarm-server.files:
+	- forgot to update *.files to reflect the change in revision 1.11 of build
+	  script (change the installation directory on Solaris from /usr/grid to
+	  /usr/local/gfarm).
+	- replace $prefix automatically, instead of hardcoding it in *.files
+
 2004-11-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Updated RELNOTES for the version 1.0.4 again.
 
 	* gftool/gfwhere/gfwhere.c (display_section_copies):
 	fixed output problem in error case.
@@ -5463,7 +5808,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.33 2004/10/05 14:32:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.34 2004/11/01 02:03:18 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
