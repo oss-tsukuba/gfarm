@@ -10,6 +10,11 @@ Updated Features
 
  * Client commands
 
+   * New command
+
+   - gfregister --- administration command to register standard Gfarm
+                    parallel commands to a Gfarm filesystem.
+
    * New feature
 
    (gfmpirun_p4)
