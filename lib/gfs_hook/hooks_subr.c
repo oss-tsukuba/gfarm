@@ -732,6 +732,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 	}
 	/* The current directory is in the Gfarm file system */
 	if (*path_save != '/' && gfs_hook_get_cwd_is_gfarm()) {
+		if (!gfarm_initialized && gfs_hook_initialize() != NULL) {
+			gfs_hook_not_initialized();
+			return (0); /* don't perform gfarm operation */
+		}
 		*urlp = malloc(sizeof_gfarm_prefix + strlen(path_save));
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
