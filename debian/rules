@@ -37,7 +37,7 @@ GFMD_MAN8=gfmd.8
 GFARM_CLIENT_MAN1=digest.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfstat.1 gfwhere.1 gfhost.1 gfls.1 gfcd.1 gfmkdir.1 gfpwd.1 gfrmdir.1 gfsetdir.1
 GFRONT_MAN1=gfront.1
 GFSD_MAN8=gfexec.1 gfsd.8
-LIBGFARM_DEV_MAN3=gfarm_initialize.3 gfarm_strings_free_deeply.3 gfarm_terminate.3 gfarm_url_hosts_schedule.3 gfs_chdir.3 gfs_chmod.3 gfs_chown.3 gfs_closedir.3 gfs_opendir.3 gfs_glob.3 gfs_glob_add.3 gfs_glob_free.3 gfs_glob_init.3 gfs_mkdir.3 gfs_pio_close.3 gfs_pio_create.3 gfs_pio_eof.3 gfs_pio_error.3 gfs_pio_flush.3 gfs_pio_getc.3 gfs_pio_getline.3 gfs_pio_open.3 gfs_pio_putc.3 gfs_pio_putline.3 gfs_pio_puts.3 gfs_pio_read.3 gfs_pio_seek.3 gfs_pio_set_local.3 gfs_pio_set_view_index.3 gfs_pio_set_view_local.3 gfs_pio_ungetc.3 gfs_pio_write.3 gfs_readdir.3 gfs_rename.3 gfs_rmdir.3 gfs_stat.3 gfs_stat_free.3 gfs_unlink.3 gfs_utimes.3
+LIBGFARM_DEV_MAN3=gfarm_initialize.3 gfarm_strings_free_deeply.3 gfarm_terminate.3 gfarm_url_hosts_schedule.3 gfs_chdir.3 gfs_closedir.3 gfs_opendir.3 gfs_glob.3 gfs_glob_add.3 gfs_glob_free.3 gfs_glob_init.3 gfs_pio_close.3 gfs_pio_create.3 gfs_pio_eof.3 gfs_pio_error.3 gfs_pio_flush.3 gfs_pio_getc.3 gfs_pio_getline.3 gfs_pio_open.3 gfs_pio_putc.3 gfs_pio_putline.3 gfs_pio_puts.3 gfs_pio_read.3 gfs_pio_seek.3 gfs_pio_set_local.3 gfs_pio_set_view_index.3 gfs_pio_set_view_local.3 gfs_pio_ungetc.3 gfs_pio_write.3 gfs_readdir.3 gfs_stat.3 gfs_stat_free.3 gfs_unlink.3 gfs_utimes.3
 
 CONFIGURE = ../configure --srcdir=$(PWD) --with-openldap=/usr --with-mpi=/usr
 
@@ -49,17 +49,14 @@ configure-stamp:
 	install -d build && cd build && $(CONFIGURE) --prefix=/usr
 	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=/usr
 
-#	sed -e 's/tmp/tmp_gsi/' debian/$(CLIENT_PKG).install > debian/$(CLIENT_GSI_PKG).install
-#	sed -e 's/tmp/tmp_gsi/' debian/$(GFPTOOL_PKG).install > debian/$(GFPTOOL_GSI_PKG).install
-#	sed -e 's/tmp/tmp_gsi/' debian/$(GFMD_PKG).install > debian/$(GFMD_GSI_PKG).install
-#	sed -e 's/tmp/tmp_gsi/' debian/$(GFSD_PKG).install > debian/$(GFSD_GSI_PKG).install
-#	sed -e 's/tmp/tmp_gsi/' debian/$(LIBGFARM_DEV_PKG).install > debian/$(DEV_GSI_PKG).install
-
 	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
 	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
 	ln -s $(GFMD_PKG).install  debian/$(GFMD_GSI_PKG).install
 	ln -s $(GFSD_PKG).install  debian/$(GFSD_GSI_PKG).install
 	ln -s $(LIBGFARM_DEV_PKG).install  debian/$(DEV_GSI_PKG).install
+
+	ln -s $(GFMD_PKG).conffiles  debian/$(GFMD_GSI_PKG).conffiles
+	ln -s $(GFSD_PKG).conffiles  debian/$(GFSD_GSI_PKG).conffiles
 
 	ln -s $(CLIENT_PKG).manpages debian/$(CLIENT_GSI_PKG).manpages
 	ln -s $(GFPTOOL_PKG).manpages debian/$(GFPTOOL_GSI_PKG).manpages
@@ -98,6 +95,9 @@ clean:
 	rm -f debian/$(GFSD_GSI_PKG).install
 	rm -f debian/$(DEV_GSI_PKG).install
 
+	rm -f debian/$(GFMD_GSI_PKG).conffiles
+	rm -f debian/$(GFSD_GSI_PKG).conffiles
+
 	rm -f debian/$(CLIENT_GSI_PKG).manpages
 	rm -f debian/$(GFPTOOL_GSI_PKG).manpages
 	rm -f debian/$(GFMD_GSI_PKG).manpages
@@ -117,7 +117,16 @@ install: build
 	cd build && $(MAKE) install prefix=`pwd`/../debian/tmp/usr
 	cd build_gsi && $(MAKE) install prefix=`pwd`/../debian/tmp_gsi/usr
 
+	rm -f  debian/tmp/usr/share/doc/gfarm/LICENSE
 	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
+
+	for tmp_dir in tmp tmp_gsi; do \
+	  install -d debian/$$tmp_dir/usr/lib/gfarm/bin; \
+	  mv debian/$$tmp_dir/usr/bin/{gfcombine,gfcombine_hook,gfcp,gfcp_hook,gfgrep,gfsplck} \
+	     debian/$$tmp_dir/usr/lib/gfarm/bin/; \
+	  mv debian/$$tmp_dir/usr/libexec debian/$$tmp_dir/usr/lib/gfarm/; \
+	  sed -e 's/@prefix@/\/usr\/lib\/gfarm/' gfptool/util/gfregister.in > debian/$$tmp_dir/usr/sbin/gfregister; \
+	done
 
 # hoax gfarm's Makefile.
 	for tmp_dir in tmp tmp_gsi; do \
@@ -189,7 +198,7 @@ binary-arch: build install
 	dh_testroot
 #	dh_installdebconf
 	dh_installdocs
-	dh_installexamples
+	dh_installexamples -pgfmd
 #	dh_installmenu
 #	dh_installemacsen
 #	dh_installpam
@@ -253,6 +262,36 @@ binary-arch: build install
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man3/$$man; \
 	done; \
 	done
+
+# symlinks
+	(cd ./debian/gfarm-client/usr/share/man/man1/; rm -f gfssh.1 gfsshl.1.gz gfrsh.1 gfrshl.1.gz; \
+	ln -s gfrun.1.gz gfssh.1.gz; ln -s gfrun.1.gz gfsshl.1.gz; \
+	ln -s gfrun.1.gz gfrsh.1.gz; ln -s gfrun.1.gz gfrshl.1.gz)
+	(cd ./debian/gfarm-gsi-client/usr/share/man/man1/; rm -f gfssh.1.gz gfsshl.1.gz gfrsh.1.gz gfrshl.1.gz; \
+	ln -s gfrun.1.gz gfssh.1.gz; ln -s gfrun.1.gz gfsshl.1.gz; \
+	ln -s gfrun.1.gz gfrsh.1.gz; ln -s gfrun.1.gz gfrshl.1.gz)
+
+# others
+	install -o root -g root -m 644 debian/man/gfregister.1 debian/gfarm-gfptool/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-gfptool/usr/share/man/man1/gfregister.1
+	install -o root -g root -m 644 debian/man/gfregister.1 debian/gfarm-gsi-gfptool/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-gsi-gfptool/usr/share/man/man1/gfregister.1
+
+	install -o root -g root -m 644 debian/man/gfsck.1 debian/gfarm-client/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-client/usr/share/man/man1/gfsck.1
+	install -o root -g root -m 644 debian/man/gfsck.1 debian/gfarm-gsi-client/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-gsi-client/usr/share/man/man1/gfsck.1
+
+	install -o root -g root -m 644 debian/man/ptool.1 debian/gfarm-client/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-client/usr/share/man/man1/ptool.1
+	install -o root -g root -m 644 debian/man/ptool.1 debian/gfarm-gsi-client/usr/share/man/man1/
+	gzip -f -9 debian/gfarm-gsi-client/usr/share/man/man1/ptool.1
+	(cd ./debian/gfarm-client/usr/share/man/man1/; \
+	ln -s ptool.1.gz prun.1.gz; ln -s ptool.1.gz pcp.1.gz; \
+	ln -s ptool.1.gz pcat.1.gz; ln -s ptool.1.gz pdel.1.gz; ln -s ptool.1.gz pdist.1.gz)
+	(cd ./debian/gfarm-gsi-client/usr/share/man/man1/; \
+	ln -s ptool.1.gz prun.1.gz; ln -s ptool.1.gz pcp.1.gz; \
+	ln -s ptool.1.gz pcat.1.gz; ln -s ptool.1.gz pdel.1.gz; ln -s ptool.1.gz pdist.1.gz)
 
 #	dh_installinfo
 #	dh_undocumented

@@ -9,10 +9,12 @@ man/man1/gfrcmd.1
 man/man1/gfreg.1
 man/man1/gfrep.1
 man/man1/gfrm.1
-man/man1/gfrsh.1
 man/man1/gfrun.1
 man/man1/gfsched.1
+man/man1/gfrsh.1
 man/man1/gfssh.1
+man/man1/gfrshl.1
+man/man1/gfsshl.1
 man/man1/gfstat.1
 man/man1/gfwhere.1
 man/man1/gfhost.1

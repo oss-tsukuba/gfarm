@@ -1,9 +1,9 @@
-debian/tmp/usr/bin/gfcombine
-debian/tmp/usr/bin/gfcombine_hook
-debian/tmp/usr/bin/gfcp
-debian/tmp/usr/bin/gfcp_hook
-debian/tmp/usr/bin/gfgrep
-debian/tmp/usr/bin/gfsplck
-debian/tmp/usr/libexec/gfrepbe_client
-debian/tmp/usr/libexec/gfrepbe_server
+debian/tmp/usr/lib/gfarm/bin/gfcombine
+debian/tmp/usr/lib/gfarm/bin/gfcombine_hook
+debian/tmp/usr/lib/gfarm/bin/gfcp
+debian/tmp/usr/lib/gfarm/bin/gfcp_hook
+debian/tmp/usr/lib/gfarm/bin/gfgrep
+debian/tmp/usr/lib/gfarm/bin/gfsplck
+debian/tmp/usr/lib/gfarm/libexec/gfrepbe_client
+debian/tmp/usr/lib/gfarm/libexec/gfrepbe_server
 debian/tmp/usr/sbin/gfregister
