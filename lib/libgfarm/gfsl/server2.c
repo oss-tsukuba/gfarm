@@ -19,70 +19,7 @@
 #include "gfarm_auth.h"
 #include "gfarm_secure_session.h"
 #include "tcputil.h"
-
-
-static int
-getInt(char *str, int *val)
-{
-    char *ePtr = NULL;
-    int ret = -1;
-    int t = 1;
-    char *buf = NULL;
-    int tmp;
-    int base = 10;
-    int len;
-    int neg = 1;
-
-    switch ((int)str[0]) {
-	case '-': {
-	    neg = -1;
-	    str++;
-	    break;
-	}
-	case '+': {
-	    str++;
-	    break;
-	}
-    }
-    if (strncmp(str, "0x", 2) == 0) {
-	base = 16;
-	str += 2;
-    }
-
-    buf = strdup(str);
-    if (buf == NULL) {
-	return -1;
-    }
-    len = strlen(buf);
-    if (len == 0) {
-	return -1;
-    }
-
-    if (base == 10) {
-	int lC = len - 1;
-	switch ((int)(buf[lC])) {
-	    case 'k': case 'K': {
-		t = 1024;
-		buf[lC] = '\0';
-		break;
-	    }
-	    case 'm': case 'M': {
-		t = 1024 * 1024;
-		buf[lC] = '\0';
-		break;
-	    }
-	}
-    }
-
-    tmp = (int)strtol(buf, &ePtr, base);
-    if (ePtr == (buf + len)) {
-	ret = 1;
-	*val = tmp * t * neg;
-    }
-
-    (void)free(buf);
-    return ret;
-}
+#include "misc.h"
 
 
 static int port = 0;
@@ -98,7 +35,7 @@ ParseArgs(argc, argv)
 		*argv[1] != '\0') {
 		int tmp;
 		argv++;
-		if (getInt(*argv, &tmp) < 0) {
+		if (gfarmGetInt(*argv, &tmp) < 0) {
 		    fprintf(stderr, "illegal port number.\n");
 		    return -1;
 		}
@@ -157,11 +94,11 @@ main(argc, argv)
     /*
      * Create a channel.
      */
-    bindFd = BindPort(port);
+    bindFd = gfarmTCPBindPort(port);
     if (bindFd < 0) {
 	goto Done;
     }
-    (void)GetNameOfSocket(bindFd, &port);
+    (void)gfarmIPGetNameOfSocket(bindFd, &port);
     fprintf(stderr, "Accepting port: %d\n", port);
 
     fd0 = accept(bindFd, (struct sockaddr *)&remote, &remLen);  

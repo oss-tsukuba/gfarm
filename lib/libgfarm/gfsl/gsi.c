@@ -12,7 +12,6 @@
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
-#include "gfarm_hash.h"
 #include "tcputil.h"
 
 
@@ -183,10 +182,10 @@ gfarmGssSendToken(fd, gsBuf)
      gss_buffer_t gsBuf;
 {
     int iLen = (int)(gsBuf->length);
-    if (WriteLongs(fd, (long *)&iLen, 1) != 1) {
+    if (gfarmWriteLongs(fd, (long *)&iLen, 1) != 1) {
 	return -1;
     }
-    if (WriteBytes(fd, (char *)(gsBuf->value), iLen) != iLen) {
+    if (gfarmWriteBytes(fd, (char *)(gsBuf->value), iLen) != iLen) {
 	return -1;
     }
     return iLen;
@@ -208,7 +207,7 @@ gfarmGssReceiveToken(fd, gsBuf)
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
-    if (ReadLongs(fd, (long *)&iLen, 1) != 1) {
+    if (gfarmReadLongs(fd, (long *)&iLen, 1) != 1) {
 	return -1;
     }
 
@@ -222,7 +221,7 @@ gfarmGssReceiveToken(fd, gsBuf)
 	return -1;
     }
 
-    if (ReadBytes(fd, buf, iLen) != iLen) {
+    if (gfarmReadBytes(fd, buf, iLen) != iLen) {
 	(void)free(buf);
 	return -1;
     }
@@ -610,7 +609,7 @@ gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
 	goto Done;
     }
 
-    if (WriteLongs(fd, (long *)&n, 1) != 1) {
+    if (gfarmWriteLongs(fd, (long *)&n, 1) != 1) {
 	majStat = GSS_S_CALL_INACCESSIBLE_WRITE;
 	goto Done;
     }
@@ -690,7 +689,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
      *		encrypted.
      */
 
-    i = ReadLongs(fd, (long *)&n, 1);
+    i = gfarmReadLongs(fd, (long *)&n, 1);
     if (i == 0) {
 	ret = 0;
 	n = 0;

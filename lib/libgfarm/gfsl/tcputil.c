@@ -39,7 +39,7 @@ isNonBlock(fd)
 
 
 int
-ConnectPort(addr, port)
+gfarmTCPConnectPort(addr, port)
      unsigned long addr;
      int port;
 {
@@ -80,7 +80,7 @@ ConnectPort(addr, port)
 
 
 int
-BindPort(port)
+gfarmTCPBindPort(port)
      int port;
 {
     struct sockaddr_in sin;
@@ -121,7 +121,7 @@ BindPort(port)
 
 
 unsigned long int
-GetIPAddressOfHost(host)
+gfarmIPGetAddressOfHost(host)
      char *host;
 {
     struct hostent *h = gethostbyname(host);
@@ -137,7 +137,7 @@ GetIPAddressOfHost(host)
 
 
 char *
-GetHostOfIPAddress(addr)
+gfarmIPGetHostOfAddress(addr)
      unsigned long int addr;
 {
     /*
@@ -175,7 +175,7 @@ GetHostOfIPAddress(addr)
 
 
 unsigned long int
-GetPeernameOfSocket(sock, portPtr)
+gfarmIPGetPeernameOfSocket(sock, portPtr)
      int sock;
      int *portPtr;
 {
@@ -197,7 +197,7 @@ GetPeernameOfSocket(sock, portPtr)
 
 
 unsigned long int
-GetNameOfSocket(sock, portPtr)
+gfarmIPGetNameOfSocket(sock, portPtr)
      int sock;
      int *portPtr;
 {
@@ -219,7 +219,7 @@ GetNameOfSocket(sock, portPtr)
 
 
 int
-WaitReadable(fd)
+gfarmWaitReadable(fd)
      int fd;
 {
     fd_set rFd;
@@ -244,7 +244,7 @@ WaitReadable(fd)
 
 
 int
-ReadBytes(fd, buf, len)
+gfarmReadBytes(fd, buf, len)
      int fd;
      char *buf;
      int len;
@@ -254,7 +254,7 @@ ReadBytes(fd, buf, len)
     int sel;
 
     do {
-	sel = WaitReadable(fd);
+	sel = gfarmWaitReadable(fd);
 	if (sel <= 0) {
 	    return sum;
 	}
@@ -272,7 +272,7 @@ ReadBytes(fd, buf, len)
 
 
 int
-ReadShorts(fd, buf, len)
+gfarmReadShorts(fd, buf, len)
      int fd;
      short *buf;
      int len;
@@ -282,7 +282,7 @@ ReadShorts(fd, buf, len)
     short s;
 
     for (i = 0; i < len; i++) {
-	n = ReadBytes(fd, (char *)&s, sizeof(short));
+	n = gfarmReadBytes(fd, (char *)&s, sizeof(short));
 	if (sizeof(short) != n) {
 	    return i;
 	}
@@ -294,7 +294,7 @@ ReadShorts(fd, buf, len)
 
 
 int
-ReadLongs(fd, buf, len)
+gfarmReadLongs(fd, buf, len)
      int fd;
      long *buf;
      int len;
@@ -304,7 +304,7 @@ ReadLongs(fd, buf, len)
     long l;
 
     for (i = 0; i < len; i++) {
-	n = ReadBytes(fd, (char *)&l, sizeof(long));
+	n = gfarmReadBytes(fd, (char *)&l, sizeof(long));
 	if (sizeof(long) != n) {
 	    return i;
 	}
@@ -316,7 +316,7 @@ ReadLongs(fd, buf, len)
 
 
 int
-WriteBytes(fd, buf, len)
+gfarmWriteBytes(fd, buf, len)
      int fd;
      char *buf;
      int len;
@@ -337,7 +337,7 @@ WriteBytes(fd, buf, len)
 
 
 int
-WriteShorts(fd, buf, len)
+gfarmWriteShorts(fd, buf, len)
      int fd;
      short *buf;
      int len;
@@ -348,7 +348,7 @@ WriteShorts(fd, buf, len)
     
     for (i = 0; i < len; i++) {
 	s = htons(buf[i]);
-	n = WriteBytes(fd, (char *)&s, sizeof(short));
+	n = gfarmWriteBytes(fd, (char *)&s, sizeof(short));
 	if (sizeof(short) != n) {
 	    return i;
 	}
@@ -358,7 +358,7 @@ WriteShorts(fd, buf, len)
 
 
 int
-WriteLongs(fd, buf, len)
+gfarmWriteLongs(fd, buf, len)
      int fd;
      long *buf;
      int len;
@@ -369,7 +369,7 @@ WriteLongs(fd, buf, len)
     
     for (i = 0; i < len; i++) {
 	l = htonl(buf[i]);
-	n = WriteBytes(fd, (char *)&l, sizeof(long));
+	n = gfarmWriteBytes(fd, (char *)&l, sizeof(long));
 	if (sizeof(long) != n) {
 	    return i;
 	}

@@ -11,74 +11,9 @@
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
 #include "tcputil.h"
+#include "misc.h"
 
 extern void	doClient(char *host, int port, gss_cred_id_t deleCred, int deleCheck);
-
-static int
-getInt(char *str, int *val)
-{
-    char *ePtr = NULL;
-    int ret = -1;
-    int t = 1;
-    char *buf = NULL;
-    int tmp;
-    int base = 10;
-    int len;
-    int neg = 1;
-
-    switch ((int)str[0]) {
-	case '-': {
-	    neg = -1;
-	    str++;
-	    break;
-	}
-	case '+': {
-	    str++;
-	    break;
-	}
-    }
-    if (strncmp(str, "0x", 2) == 0) {
-	base = 16;
-	str += 2;
-    }
-
-    buf = strdup(str);
-    if (buf == NULL) {
-	return -1;
-    }
-    len = strlen(buf);
-    if (len == 0) {
-	return -1;
-    }
-
-    if (base == 10) {
-	int lC = len - 1;
-	switch ((int)(buf[lC])) {
-	    case 'k': case 'K': {
-		t = 1024;
-		buf[lC] = '\0';
-		len--;
-		break;
-	    }
-	    case 'm': case 'M': {
-		t = 1024 * 1024;
-		buf[lC] = '\0';
-		len--;
-		break;
-	    }
-	}
-    }
-
-    tmp = (int)strtol(buf, &ePtr, base);
-    if (ePtr == (buf + len)) {
-	ret = 1;
-	*val = tmp * t * neg;
-    }
-
-    (void)free(buf);
-    return ret;
-}
-
 
 static int port = 0;
 static unsigned long int addr = 0L;
@@ -95,7 +30,7 @@ ParseArgs(argc, argv)
 	if (strcmp(*argv, "-p") == 0) {
 	    if (*(argv + 1) != NULL) {
 		int tmp;
-		if (getInt(*(++argv), &tmp) < 0) {
+		if (gfarmGetInt(*(++argv), &tmp) < 0) {
 		    fprintf(stderr, "illegal port number.\n");
 		    return -1;
 		}
@@ -112,7 +47,7 @@ ParseArgs(argc, argv)
 	    if (*(argv + 1) != NULL) {
 		unsigned long int tmp;
 		argv++;
-		tmp = GetIPAddressOfHost(*argv);
+		tmp = gfarmIPGetAddressOfHost(*argv);
 		if (tmp == ~0L || tmp == 0L) {
 		    fprintf(stderr, "Invalid hostname.\n");
 		    return -1;
@@ -123,7 +58,7 @@ ParseArgs(argc, argv)
 	} else if (strcmp(*argv, "-s") == 0) {
 	    if (*(argv + 1) != NULL) {
 		int tmp;
-		if (getInt(*(++argv), &tmp) < 0) {
+		if (gfarmGetInt(*(++argv), &tmp) < 0) {
 		    fprintf(stderr, "illegal buffer size.\n");
 		    return -1;
 		}

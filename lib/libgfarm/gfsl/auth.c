@@ -9,15 +9,12 @@
 #include <pwd.h>
 
 #include "gfsl_config.h"
-#include "gfarm_hash.h"
 #include "gfarm_auth.h"
+#include "hash.h"
+#include "misc.h"
 
-static int authInited = 0;
-static gfarm_HashTable authTable;
-
-extern char *	getGfarmEtcDir(void);
-extern int	getToken(char *buf, char *tokens[], int max);
-
+#define AUTH_TABLE_SIZE       139
+static struct gfarm_hash_table *authTable = NULL;
 
 #if 0
 static void
@@ -51,19 +48,19 @@ gfarmAuthInitialize(usermapFile)
      char *usermapFile;
 {
     int ret = 1;
-    if (authInited != 1) {
+    if (authTable == NULL) {
 	char mapFile[PATH_MAX];
 	FILE *mFd = NULL;
 	char lineBuf[65536];
 	gfarmAuthEntry *aePtr;
-	gfarm_HashEntry *ePtr;
+	struct gfarm_hash_entry *ePtr;
 
 	/*
 	 * Read global users -> local users mapping file
 	 * and create a translation table.
 	 */
 	if (usermapFile == NULL || usermapFile[0] == '\0') {
-	    char *confDir = getGfarmEtcDir();
+	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		ret = -1;
 		goto done;
@@ -74,13 +71,19 @@ gfarmAuthInitialize(usermapFile)
 	}
 	if ((mFd = fopen(usermapFile, "r")) == NULL) {
 	    ret = -1;
-	    goto initDone;
+	    goto done;
 	}
 
-	gfarm_InitHashTable(&authTable, GFARM_STRING_KEYS);
+	authTable = gfarm_hash_table_alloc(AUTH_TABLE_SIZE,
+					   gfarm_hash_default,
+					   gfarm_hash_key_equal_default);
+	if (authTable == NULL) { /* no memory */
+	    ret = -1;
+	    goto done;
+	}
 	while (fgets(lineBuf, 65536, mFd) != NULL) {
 	    char *token[64];
-	    int nToken = getToken(lineBuf, token, sizeof token);
+	    int nToken = gfarmGetToken(lineBuf, token, sizeof token);
 	    char *distName = NULL;
 	    char *mode = NULL;
 	    char *localName = NULL;
@@ -174,8 +177,21 @@ gfarmAuthInitialize(usermapFile)
 		continue;
 	    }
 
-	    ePtr = gfarm_CreateHashEntry(&authTable, aePtr->distName, &isNew);
-	    gfarm_SetHashValue(ePtr, (ClientData)aePtr);
+	    ePtr = gfarm_hash_enter(authTable, aePtr->distName,
+				    strlen(aePtr->distName) + 1,
+				    sizeof(aePtr), &isNew);
+	    if (ePtr == NULL) { /* no memory */
+		fprintf(stderr, "WARINIG: no memory for DN '%s'. Ignored.\n",
+			distName);
+		goto initDone;
+	    }
+	    if (!isNew) {
+		fprintf(stderr, "WARINIG: duplicate DN '%s'"
+			" for user '%s'. Ignored.\n",
+			distName, localName);
+		continue;
+	    }
+	    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;
 #if 0
 	    dumpAuthEntry(aePtr);
 #endif
@@ -187,18 +203,17 @@ gfarmAuthInitialize(usermapFile)
 	    /*
 	     * Destroy mapping table.
 	     */
-	    gfarm_HashSearch s;
-	    for (ePtr = gfarm_FirstHashEntry(&authTable, &s);
-		 ePtr != NULL;
-		 ePtr = gfarm_NextHashEntry(&s)) {
-		aePtr = (gfarmAuthEntry *)gfarm_GetHashValue(ePtr);
-		gfarm_DeleteHashEntry(ePtr);
+	    struct gfarm_hash_iterator it;
+	    for (gfarm_hash_iterator_begin(authTable, &it);
+		 !gfarm_hash_iterator_is_end(&it);
+		 gfarm_hash_iterator_next(&it)) {
+		aePtr = *(gfarmAuthEntry **)gfarm_hash_entry_data(
+			gfarm_hash_iterator_access(&it));
 		aePtr->orphaned = 1;
 		gfarmAuthDestroyUserEntry(aePtr);
 	    }
-	    gfarm_DeleteHashTable(&authTable);
-	} else {
-	    authInited = 1;
+	    gfarm_hash_table_free(authTable);
+	    authTable = NULL;
 	}
     }
 
@@ -210,15 +225,14 @@ gfarmAuthInitialize(usermapFile)
 void
 gfarmAuthFinalize()
 {
-    if (authInited == 1) {
+    if (authTable != NULL) {
 	gfarmAuthEntry *aePtr;
-	gfarm_HashEntry *ePtr;
-	gfarm_HashSearch s;
-	for (ePtr = gfarm_FirstHashEntry(&authTable, &s);
-	     ePtr != NULL;
-	     ePtr = gfarm_NextHashEntry(&s)) {
-	    aePtr = (gfarmAuthEntry *)gfarm_GetHashValue(ePtr);
-	    gfarm_DeleteHashEntry(ePtr);
+	struct gfarm_hash_iterator it;
+	for (gfarm_hash_iterator_begin(authTable, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+	    aePtr = *(gfarmAuthEntry **)gfarm_hash_entry_data(
+		    gfarm_hash_iterator_access(&it));
 	    if (aePtr->sesRefCount <= 0) {
 		/*
 		 * If any sessions reffer this entry, don't free it.
@@ -229,8 +243,8 @@ gfarmAuthFinalize()
 		aePtr->orphaned = 1;
 	    }
 	}
-	gfarm_DeleteHashTable(&authTable);
-	authInited = 0;
+	gfarm_hash_table_free(authTable);
+	authTable = NULL;
     }
 }
 
@@ -240,12 +254,15 @@ gfarmAuthGetUserEntry(distUserName)
      char *distUserName;
 {
     gfarmAuthEntry *ret = NULL;
-    if (authInited == 1) {
-	gfarm_HashEntry *ePtr = gfarm_FindHashEntry(&authTable, distUserName);
-	ret = (gfarmAuthEntry *)gfarm_GetHashValue(ePtr);
+    if (authTable != NULL) {
+	struct gfarm_hash_entry *ePtr = gfarm_hash_lookup(authTable,
+		distUserName, strlen(distUserName) + 1);
+	if (ePtr != NULL) {
+	    ret = *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr);
 #if 0
-	dumpAuthEntry(ret);
+	    dumpAuthEntry(ret);
 #endif
+	}
     }
     return ret;
 }
@@ -324,13 +341,12 @@ gfarmAuthMakeThisAlone(laePtr)
 	return;
     } else {
 	gfarmAuthEntry *aePtr;
-	gfarm_HashEntry *ePtr;
-	gfarm_HashSearch s;
-	for (ePtr = gfarm_FirstHashEntry(&authTable, &s);
-	     ePtr != NULL;
-	     ePtr = gfarm_NextHashEntry(&s)) {
-	    aePtr = (gfarmAuthEntry *)gfarm_GetHashValue(ePtr);
-	    gfarm_DeleteHashEntry(ePtr);
+	struct gfarm_hash_iterator it;
+	for (gfarm_hash_iterator_begin(authTable, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+	    aePtr = *(gfarmAuthEntry **)gfarm_hash_entry_data(
+		    gfarm_hash_iterator_access(&it));
 	    if (laePtr == aePtr) {
 		laePtr->orphaned = 1;
 	    } else {
@@ -352,7 +368,7 @@ gfarmAuthMakeThisAlone(laePtr)
 		gfarmAuthDestroyUserEntry(aePtr);
 	    }
 	}
+	gfarm_hash_table_free(authTable);
+	authTable = NULL;
     }
 }
-
-

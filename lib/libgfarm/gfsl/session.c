@@ -20,8 +20,8 @@
 #include "gssapi.h"
 
 #include "gfarm_secure_session.h"
-#include "gfarm_hash.h"
 #include "tcputil.h"
+#include "misc.h"
 
 #undef SS_DEBUG
 
@@ -62,10 +62,6 @@ static gfarmSecSession *	secSessionInitiate(int fd,
 				      gfarmSecSessionOption *ssOptPtr,
 				      OM_uint32 *statPtr,
 				      int needClose);
-
-extern char *	getGfarmEtcDir(void);
-extern int	getToken(char *buf, char *tokens[], int max);
-extern int	getInt(char *str, int *val);
 
 
 #ifdef SS_DEBUG
@@ -156,7 +152,7 @@ secSessionReadConfigFile(configFile, ssOptPtr)
     }
 
     while (fgets(lineBuf, 65536, fd) != NULL) {
-	nToken = getToken(lineBuf, token, 64);
+	nToken = gfarmGetToken(lineBuf, token, 64);
 	if (nToken <= 0) {
 	    continue;
 	}
@@ -187,7 +183,7 @@ secSessionReadConfigFile(configFile, ssOptPtr)
 		    ssTmp.maxTransSizeReq = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
 		} else {
 		    int val;
-		    if (getInt(token[i], &val) == 1) {
+		    if (gfarmGetInt(token[i], &val) == 1) {
 			if (val < 0) {
 			    val = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
 			}
@@ -324,15 +320,15 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, st
     unsigned int dMax = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
     unsigned int dConf = GFARM_SS_USE_ENCRYPTION;
 
-#define SendCmd(p) { if (WriteBytes(fd, (char *)&(p), 1) != 1) { break; }}
+#define SendCmd(p) { if (gfarmWriteBytes(fd, (char *)&(p), 1) != 1) { break; }}
 #define SendACK(dum) SendCmd(ACK)
 #define SendNACK(dum) SendCmd(NACK)
 #define SendNEGO(dum) SendCmd(NEGO)
 
-#define ReadCmd(p) { if (ReadBytes(fd, (char *)&(p), 1) != 1) { break; }}
+#define ReadCmd(p) { if (gfarmReadBytes(fd, (char *)&(p), 1) != 1) { break; }}
 
-#define SendParam(x) { if (WriteLongs(fd, (long *)&(x), 1) != 1) { break; }}
-#define ReadParam(x) { if (ReadLongs(fd, (long *)&(x), 1) != 1) { break; }}
+#define SendParam(x) {if (gfarmWriteLongs(fd, (long *)&(x), 1) != 1) {break;}}
+#define ReadParam(x) {if (gfarmReadLongs(fd, (long *)&(x), 1) != 1) {break;}}
 
     if (sCtx == GSS_C_NO_CONTEXT) {
 	return ret;
@@ -713,7 +709,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, statPtr)
 	 * Read config file.
 	 */
 	if (configFile == NULL || configFile[0] == '\0') {
-	    char *confDir = getGfarmEtcDir();
+	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		majStat = GSS_S_FAILURE;
 		ret = -1;
@@ -790,7 +786,7 @@ gfarmSecSessionInitializeInitiator(configFile, statPtr)
 	 * Read config file.
 	 */
 	if (configFile == NULL || configFile[0] == '\0') {
-	    char *confDir = getGfarmEtcDir();
+	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		majStat = GSS_S_FAILURE;
 		ret = -1;
@@ -875,7 +871,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
 	 */
 	if ((aConfigFile == NULL || aConfigFile[0] == '\0') ||
 	    (iConfigFile == NULL || iConfigFile[0] == '\0')) {
-	    confDir = getGfarmEtcDir();
+	    confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		majStat = GSS_S_FAILURE;
 		ret = -1;
@@ -1054,9 +1050,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
     /*
      * Get a peer information.
      */
-    rAddr = GetPeernameOfSocket(fd, &rPort);
+    rAddr = gfarmIPGetPeernameOfSocket(fd, &rPort);
     if (rAddr != 0 && rPort != 0) {
-	peerName = GetHostOfIPAddress(rAddr);
+	peerName = gfarmIPGetHostOfAddress(rAddr);
     }
 
     /*
@@ -1091,24 +1087,24 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
 	majStat = GSS_S_UNAUTHORIZED;
 	/* Send NACK. */
 	acknack = GFARM_SS_AUTH_NACK;
-	(void)WriteLongs(fd, (long *)&acknack, 1);
+	(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
 	goto Fail;
     } else {
 	int type = gfarmAuthGetAuthEntryType(entry);
 	if (type == GFARM_AUTH_USER) {
 	    /* Send ACK. */
 	    acknack = GFARM_SS_AUTH_ACK;
-	    (void)WriteLongs(fd, (long *)&acknack, 1);
+	    (void)gfarmWriteLongs(fd, (long *)&acknack, 1);
 	} else if (type == GFARM_AUTH_HOST) {
 	    /* check peer name is actually allowed */
 	    if (strcmp(peerName, entry->authData.hostAuth.FQDN) == 0) {
 		/* Send ACK. */
 		acknack = GFARM_SS_AUTH_ACK;
-		(void)WriteLongs(fd, (long *)&acknack, 1);
+		(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
 	    } else {
 		/* Send NACK. */
 		acknack = GFARM_SS_AUTH_NACK;
-		(void)WriteLongs(fd, (long *)&acknack, 1);
+		(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
 		goto Fail;
 	    }
 	}
@@ -1205,9 +1201,9 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
     /*
      * Get a peer information.
      */
-    rAddr = GetPeernameOfSocket(fd, &rPort);
+    rAddr = gfarmIPGetPeernameOfSocket(fd, &rPort);
     if (rAddr != 0 && rPort != 0) {
-	peerName = GetHostOfIPAddress(rAddr);
+	peerName = gfarmIPGetHostOfAddress(rAddr);
     }
 
     /*
@@ -1238,7 +1234,7 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (ReadLongs(fd, (long *)&acknack, 1) != 1) {
+    if (gfarmReadLongs(fd, (long *)&acknack, 1) != 1) {
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
     }
@@ -1316,7 +1312,7 @@ gfarmSecSessionInitiateByAddr(rAddr, port, cred, ssOptPtr, statPtr)
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *statPtr;
 {
-    int fd = ConnectPort(rAddr, port);
+    int fd = gfarmTCPConnectPort(rAddr, port);
     if (fd < 0) {
 	if (statPtr != NULL) {
 	    *statPtr = GSS_S_FAILURE;
@@ -1335,7 +1331,7 @@ gfarmSecSessionInitiateByName(hostname, port, cred, ssOptPtr, statPtr)
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *statPtr;
 {
-    unsigned long rAddr = GetIPAddressOfHost(hostname);
+    unsigned long rAddr = gfarmIPGetAddressOfHost(hostname);
     if (rAddr == ~0L || rAddr == 0L) {
 	if (statPtr != NULL) {
 	    *statPtr = GSS_S_FAILURE;

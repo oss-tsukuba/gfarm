@@ -9,12 +9,11 @@
 #include <pwd.h>
 
 #include "gfsl_config.h"
-#include "gfarm_hash.h"
 #include "gfarm_auth.h"
 
 
 int
-getInt(char *str, int *val)
+gfarmGetInt(char *str, int *val)
 {
     char *ePtr = NULL;
     int ret = -1;
@@ -80,7 +79,7 @@ getInt(char *str, int *val)
 
 
 int
-getToken(buf, tokens, max)
+gfarmGetToken(buf, tokens, max)
      char *buf;
      char *tokens[];
      int max;
@@ -140,7 +139,7 @@ getToken(buf, tokens, max)
 
 
 char *
-getGfarmEtcDir()
+gfarmGetEtcDir()
 {
     char buf[PATH_MAX];
     char *dir = getenv(GFARM_INSTALL_DIR_ENV);

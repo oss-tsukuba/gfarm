@@ -1,17 +1,17 @@
-extern int	ConnectPort(unsigned long addr, int port);
-extern int	BindPort(int port);
+extern int	gfarmTCPConnectPort(unsigned long addr, int port);
+extern int	gfarmTCPBindPort(int port);
 extern unsigned long int
-		GetIPAddressOfHost(char *host);
-extern char *	GetHostOfIPAddress(unsigned long int addr);
+		gfarmIPGetAddressOfHost(char *host);
+extern char *	gfarmIPGetHostOfAddress(unsigned long int addr);
 extern unsigned long int
-		GetNameOfSocket(int sock, int *portPtr);
+		gfarmIPGetNameOfSocket(int sock, int *portPtr);
 extern unsigned long int
-		GetPeernameOfSocket(int sock, int *portPtr);
+		gfarmIPGetPeernameOfSocket(int sock, int *portPtr);
 
-extern int	WaitReadable(int fd);
-extern int	ReadBytes(int fd, char *buf, int len);
-extern int	ReadShorts(int fd, short *buf, int len);
-extern int	ReadLongs(int fd, long *buf, int len);
-extern int	WriteBytes(int fd, char *buf, int len);
-extern int	WriteShorts(int fd, short *buf, int len);
-extern int	WriteLongs(int fd, long *buf, int len);
+extern int	gfarmWaitReadable(int fd);
+extern int	gfarmReadBytes(int fd, char *buf, int len);
+extern int	gfarmReadShorts(int fd, short *buf, int len);
+extern int	gfarmReadLongs(int fd, long *buf, int len);
+extern int	gfarmWriteBytes(int fd, char *buf, int len);
+extern int	gfarmWriteShorts(int fd, short *buf, int len);
+extern int	gfarmWriteLongs(int fd, long *buf, int len);
