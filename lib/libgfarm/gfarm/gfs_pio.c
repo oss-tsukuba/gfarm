@@ -740,13 +740,13 @@ gfs_pio_putline(GFS_File gf, char *s)
 void
 gfs_display_timers()
 {
-	printf("gfs_pio_create  : %g sec\n", gfs_pio_create_time);
-	printf("gfs_pio_open    : %g sec\n", gfs_pio_open_time);
-	printf("gfs_pio_close   : %g sec\n", gfs_pio_close_time);
-	printf("gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
-	printf("gfs_pio_read    : %g sec\n", gfs_pio_read_time);
-	printf("gfs_pio_write   : %g sec\n", gfs_pio_write_time);
-	printf("gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
-	printf("gfs_pio_set_view_local : %g sec\n",
-	       gfs_pio_set_view_local_time);
+	fprintf(stderr, "gfs_pio_create  : %g sec\n", gfs_pio_create_time);
+	fprintf(stderr, "gfs_pio_open    : %g sec\n", gfs_pio_open_time);
+	fprintf(stderr, "gfs_pio_close   : %g sec\n", gfs_pio_close_time);
+	fprintf(stderr, "gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
+	fprintf(stderr, "gfs_pio_read    : %g sec\n", gfs_pio_read_time);
+	fprintf(stderr, "gfs_pio_write   : %g sec\n", gfs_pio_write_time);
+	fprintf(stderr, "gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
+	fprintf(stderr, "gfs_pio_set_view_local : %g sec\n",
+		gfs_pio_set_view_local_time);
 }

@@ -1237,6 +1237,9 @@ gfarm_terminate(void)
 {
 	char *e;
 
+	if (gf_profile == 1)
+		gfs_display_timers();
+
 	if (gf_stdout != NULL) {
 		fflush(stdout);
 		e = gfs_pio_close(gf_stdout);
@@ -1252,9 +1255,6 @@ gfarm_terminate(void)
 	e = gfarm_metadb_terminate();
 	if (e != NULL)
 		return (e);
-
-	if (gf_profile == 1)
-		gfs_display_timers();
 
 	return (NULL);
 }
