@@ -163,8 +163,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		cwd = getenv("GFS_PWD");
 		if (cwd != NULL) {
 			gfarm_stringlist_add(&arg_list, "--gfarm_cwd");
-			gfarm_stringlist_add(&arg_list,
-				gfarm_url_prefix_skip(cwd));
+			gfarm_stringlist_add(&arg_list, cwd);
 		}
 	}
 	gfarm_stringlist_cat(&arg_list, argv);
