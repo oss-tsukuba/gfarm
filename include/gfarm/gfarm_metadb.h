@@ -93,6 +93,8 @@ char *gfarm_file_section_info_get(
 	const char *, const char *, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_set(
 	char *, char *, struct gfarm_file_section_info *);
+char *gfarm_file_section_info_replace(
+	char *, char *, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_remove(const char *, const char *);
 void gfarm_file_section_info_free_all(int, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_get_all_by_file(

@@ -1286,11 +1286,14 @@ char *gfarm_file_section_info_get(
 	    &gfarm_file_section_info_ops));
 }
 
-char *
-gfarm_file_section_info_set(
+static char *
+gfarm_file_section_info_update(
 	char *pathname,
 	char *section,
-	struct gfarm_file_section_info *info)
+	struct gfarm_file_section_info *info,
+	int mod_op,
+	char *(*update_op)(void *, LDAPMod **,
+	    const struct gfarm_generic_info_ops *))
 {
 	int i;
 	LDAPMod *modv[7];
@@ -1309,29 +1312,48 @@ gfarm_file_section_info_set(
 	sprintf(filesize_string, "%" PR_FILE_OFFSET,
 		CAST_PR_FILE_OFFSET info->filesize);
 	i = 0;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "objectclass", "GFarmFileSection", &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "pathname", pathname, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "section", section, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "filesize", filesize_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "checksumType", info->checksum_type, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "checksum", info->checksum, &storage[i]);
 	i++;
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_generic_info_set(&key, modv,
-	    &gfarm_file_section_info_ops));
+	return ((*update_op)(&key, modv, &gfarm_file_section_info_ops));
+}
+
+char *
+gfarm_file_section_info_set(
+	char *pathname,
+	char *section,
+	struct gfarm_file_section_info *info)
+{
+	return (gfarm_file_section_info_update(pathname, section, info,
+	    LDAP_MOD_ADD, gfarm_generic_info_set));
+}
+
+char *
+gfarm_file_section_info_replace(
+	char *pathname,
+	char *section,
+	struct gfarm_file_section_info *info)
+{
+	return (gfarm_file_section_info_update(pathname, section, info,
+	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
 }
 
 char *
