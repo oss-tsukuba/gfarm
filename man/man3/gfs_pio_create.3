@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "18 March 2003" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "25 April 2003" "Gfarm" ""
 .SH NAME
 gfs_pio_create \- create a Gfarm file
 .SH SYNOPSIS
@@ -24,7 +24,7 @@ Currently, GFARM_FILE_WRONLY is only supported for values of
 \fIflags\fR.
 .PP
 When \fBgfs_pio_create()\fR is used by parallel processes executed by
-gfrun(3) or gfmpirun(3), each process should specify a consistent
+gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
 value for \fImode\fR.  The returned GFS_File structure of each
 process has individual file pointers among parallel processes.
 .SH "RETURN VALUES"

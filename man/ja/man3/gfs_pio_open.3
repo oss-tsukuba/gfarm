@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "09 April 2003" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "25 April 2003" "Gfarm" ""
 .SH NAME
 gfs_pio_open \- Gfarmファイルのオープン
 .SH SYNOPSIS
@@ -25,7 +25,7 @@ char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\f
 GFARM_FILE_RDONLY
 を渡すようにしてください。
 .PP
-gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 \fBgfs_pio_open()\fR
 を呼ぶ場合、それぞれのプロセスの
 \fIGFS_File\fR

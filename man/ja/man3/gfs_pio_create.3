@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "18 March 2003" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "25 April 2003" "Gfarm" ""
 .SH NAME
 gfs_pio_create \- Gfarmファイルの作成
 .SH SYNOPSIS
@@ -30,7 +30,7 @@ char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB
 \fIGFARM_FILE_WRONLY\fR
 を渡すようにしてください。
 .PP
-gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 \fBgfs_pio_create()\fR
 を呼ぶ場合、それぞれのプロセスは引数
 \fImode\fR
