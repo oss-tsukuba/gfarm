@@ -250,8 +250,9 @@ replicate_section_to_local_internal(
 {
 	struct sockaddr peer_addr;
 	struct gfs_connection *peer_conn;
+	struct gfarm_file_section_copy_info ci;
 	int fd, peer_fd, saved_errno;
-	char *e;
+	char *e, *my_hostname;
 
 	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
 	    &peer_addr, NULL);
@@ -294,10 +295,18 @@ replicate_section_to_local_internal(
 	/* XXX FIXME: this should honor sync_rate */
 	e = gfs_client_copyin(peer_conn, peer_fd, fd, 0);
 	/* XXX - copyin() should return the digest value */
+	close(fd);
+#if 0   /* section info is already set. no need to call this here. */
 	if (e == NULL)
 		e = gfs_pio_set_fragment_info_local(local_path,
 		    pathname, section);    
-	close(fd);
+#endif
+	/* instead, just set a section copy info */
+	if (e == NULL)
+		e = gfarm_host_get_canonical_self_name(&my_hostname);
+	if (e == NULL)
+		e = gfarm_file_section_copy_info_set(
+			pathname, section, my_hostname, &ci);
 finish_peer_close:
 	gfs_client_close(peer_conn, peer_fd);
 	return (e);
