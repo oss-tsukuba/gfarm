@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "24 May 2003" "Gfarm" ""
+.TH "GFRUN" "1" "19 August 2003" "Gfarm" ""
+
 .SH NAME
 gfrun, gfrsh, gfssh \- run Gfarm parallel programs
 .SH SYNOPSIS
@@ -60,6 +61,10 @@ are selected by the increasing order of load average.  If the -G
 option or the -H option is specified with the -N option, this option
 is ignored.
 .TP
+\fB-r\fR
+specifies an on-demand replication mode.  In this mode, every
+file will be replicated before it will be accessed remotely.
+.TP
 \fB-o \fIgfarm-URL\fB\fR
 specifies a Gfarm file that the standard output of the executed
 program will be redirected to.
@@ -67,6 +72,18 @@ program will be redirected to.
 \fB-e \fIgfarm-URL\fB\fR
 specifies a Gfarm file that the standard error of the executed
 program will be redirected to.
+.TP
+\fB-I \fIfragment-index\fB\fR
+specifies a Gfarm fragment index executed by the gfrun command.
+It is necessary that a parallel process will be scheduled by
+file-affinity scheduling.
+.TP
+\fB-v\fR
+displays error message verbosely.
+.TP
+\fB-p\fR
+displays elapsed time of each Gfarm parallel I/O API after the
+program terminates.
 .TP
 \fB-g\fR
 explicitly specifies that the command is a Gfarm program.

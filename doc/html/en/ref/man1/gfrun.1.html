@@ -242,6 +242,16 @@ is ignored.</P
 ><DT
 ><TT
 CLASS="OPTION"
+>-r</TT
+></DT
+><DD
+><P
+>specifies an on-demand replication mode.  In this mode, every
+file will be replicated before it will be accessed remotely.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
 >-o</TT
 > <TT
 CLASS="PARAMETER"
@@ -268,6 +278,41 @@ CLASS="PARAMETER"
 ><P
 >specifies a Gfarm file that the standard error of the executed
 program will be redirected to.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>fragment-index</I
+></TT
+></DT
+><DD
+><P
+>specifies a Gfarm fragment index executed by the gfrun command.
+It is necessary that a parallel process will be scheduled by
+file-affinity scheduling.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-v</TT
+></DT
+><DD
+><P
+>displays error message verbosely.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-p</TT
+></DT
+><DD
+><P
+>displays elapsed time of each Gfarm parallel I/O API after the
+program terminates.</P
 ></DD
 ><DT
 ><TT
