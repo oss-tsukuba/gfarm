@@ -864,6 +864,12 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	if (e != NULL) 
 		return (e);
 	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
+	if (e != NULL) {
+		/* there may be inconsistency, refresh and lookup again. */
+		gfs_uncachedir();
+		if (gfs_refreshdir() == NULL)
+			e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
+	}
 	if (e != NULL)
 		return (e);
 	len = 0;
@@ -899,6 +905,13 @@ gfs_get_ino(const char *canonical_path, long *inop)
 	if (e != NULL) 
 		return (e);
 	e = lookup_relative(root, canonical_path, -1, GFARM_INODE_LOOKUP, &n);
+        if (e != NULL) {
+		/* there may be inconsistency, refresh and lookup again. */
+		gfs_uncachedir();
+		if (gfs_refreshdir() == NULL)
+			e = lookup_relative(root, canonical_path, -1,
+				GFARM_INODE_LOOKUP, &n);
+	}
         if (e != NULL)
 		return (e);
 	*inop = INUMBER(n);;

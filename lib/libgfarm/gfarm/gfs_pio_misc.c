@@ -34,11 +34,11 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 	struct gfarm_path_info pi;
 	long ino;
 
-	e = gfs_get_ino(gfarm_file, &ino);
+	e = gfarm_path_info_get(gfarm_file, &pi);
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_path_info_get(gfarm_file, &pi);
+	e = gfs_get_ino(gfarm_file, &ino);
 	if (e != NULL)
 		return (e);
 
