@@ -250,6 +250,7 @@ gfs_server_open(struct xxx_connection *client)
 	hostflag = gfs_open_flags_localize(netflag);
 	if (hostflag == -1) {
 		gfs_server_put_reply(client, "open", GFS_ERROR_INVAL, "");
+		free(file);
 		return;
 	}
 
