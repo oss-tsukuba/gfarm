@@ -168,7 +168,7 @@ secSessionReadConfigFile(configFile, ssOptPtr)
 		} else if (strcasecmp(token[i], "default") == 0 ||
 			   strcasecmp(token[i], "gfarm") == 0) {
 		    ssTmp.qOpReq = GFARM_GSS_DEFAULT_QOP;
-#ifdef USE_GLOBUS
+#if defined(USE_GLOBUS) && defined(GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG)
 		} else if (strcasecmp(token[i], "globus") == 0) {
 		    ssTmp.qOpReq = GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG;
 #endif /* USE_GLOBUS */

@@ -3,7 +3,7 @@
 
 #define USE_GLOBUS
 
-#if defined(USE_GLOBUS)
+#ifdef USE_GLOBUS
 /* draft-engert-ggf-gss-extensions @ IETF & draft-ggf-gss-extensions @ GGF */
 # define GFARM_GSS_EXPORT_CRED_ENABLED	1
 #else
@@ -12,7 +12,8 @@
 
 #if 0 /* defined(USE_GLOBUS) */ /* Now, Globus GSSAPI supports encryption */
 /*
- * Globus GSSAPI does not support confidentiality security service.
+ * Exportable version of Globus GSSAPI did not support confidentiality
+ * security service.
  */
 # define GFARM_GSS_ENCRYPTION_ENABLED	0
 #else
@@ -20,15 +21,20 @@
 #endif /* USE_GLOBUS */
 
 #if GFARM_GSS_ENCRYPTION_ENABLED
-#ifndef GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
-#define GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG	1
-#endif /* GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG */
-#define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
-#define GFARM_GSS_C_CONF_FLAG	0
+# define GFARM_GSS_C_CONF_FLAG	GSS_C_CONF_FLAG
 #else
+# define GFARM_GSS_C_CONF_FLAG	0
+# ifdef USE_GLOBUS
+#  ifndef GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
+#  define GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG	1
+#  endif /* GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG */
+#  define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
+# endif /* USE_GLOBUS */
+#endif /* GFARM_GSS_ENCRYPTION_ENABLED */
+
+#ifndef GFARM_GSS_DEFAULT_QOP
 #define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_DEFAULT
-#define GFARM_GSS_C_CONF_FLAG	GSS_C_CONF_FLAG
-#endif /* USE_GLOBUS */
+#endif
 
 #define GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG \
 	(OM_uint32)(GSS_C_DELEG_FLAG | 		/* delegation */ \
