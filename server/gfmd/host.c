@@ -77,12 +77,12 @@ host_init(void)
 {
 	host_hashtab =
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
-		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
+		hash_host, hash_key_equal_host);
 	if (host_hashtab == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	hostalias_hashtab =
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
-		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
+		hash_host, hash_key_equal_host);
 	if (hostalias_hashtab == NULL) {
 		gfarm_hash_table_free(host_hashtab);
 		return (GFARM_ERR_NO_MEMORY);
@@ -302,12 +302,15 @@ host_info_recv(struct gfp_xdr *client, struct gfarm_host_info *host)
 }
 
 gfarm_error_t
-gfm_server_host_info_get_all(struct peer *peer, int from_client)
+gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nhosts;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -339,7 +342,8 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_host_info_get_by_architecture(struct peer *peer, int from_client)
+gfm_server_host_info_get_by_architecture(struct peer *peer,
+	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
@@ -352,6 +356,10 @@ gfm_server_host_info_get_by_architecture(struct peer *peer, int from_client)
 	    "s", &architecture);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(architecture);
+		return (GFARM_ERR_NO_ERROR);
+	}
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -392,7 +400,8 @@ gfm_server_host_info_get_by_architecture(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_host_info_get_by_names_common(struct peer *peer, int from_client,
+gfm_server_host_info_get_by_names_common(struct peer *peer,
+	int from_client, int skip,
 	struct gfarm_hash_table *hashtab, char *diag)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -405,6 +414,8 @@ gfm_server_host_info_get_by_names_common(struct peer *peer, int from_client,
 	e = gfm_server_get_request(peer, diag, "i", &nhosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 	hosts = malloc(sizeof(*hosts) * nhosts);
 	if (hosts == NULL)
 		no_memory = 1;
@@ -470,21 +481,23 @@ gfm_server_host_info_get_by_names_common(struct peer *peer, int from_client,
 }
 
 gfarm_error_t
-gfm_server_host_info_get_by_names(struct peer *peer, int from_client)
+gfm_server_host_info_get_by_names(struct peer *peer, int from_client, int skip)
 {
 	return(gfm_server_host_info_get_by_names_common(
-	    peer, from_client, host_hashtab, "host_info_get_by_names"));
+	    peer, from_client, skip, host_hashtab, "host_info_get_by_names"));
 }
 
 gfarm_error_t
-gfm_server_host_info_get_by_namealises(struct peer *peer, int from_client)
+gfm_server_host_info_get_by_namealises(struct peer *peer,
+	int from_client, int skip)
 {
 	return(gfm_server_host_info_get_by_names_common(
-	    peer, from_client, hostalias_hashtab, "host_info_get_by_names"));
+	    peer, from_client, skip, hostalias_hashtab,
+	    "host_info_get_by_names"));
 }
 
 gfarm_error_t
-gfm_server_host_info_set(struct peer *peer, int from_client)
+gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	struct user *user = peer_get_user(peer);
@@ -496,6 +509,11 @@ gfm_server_host_info_set(struct peer *peer, int from_client)
 	    &hostname, &architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(hostname);
+		free(architecture);
+		return (GFARM_ERR_NO_ERROR);
+	}
 
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
@@ -522,7 +540,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_host_info_modify(struct peer *peer, int from_client)
+gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -536,7 +554,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_host_info_remove(struct peer *peer, int from_client)
+gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 

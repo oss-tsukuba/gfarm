@@ -23,6 +23,8 @@ struct host *peer_get_host(struct peer *);
 struct process;
 struct process *peer_get_process(struct peer *);
 void peer_set_process(struct peer *, struct process *);
+void peer_record_protocol_error(struct peer *);
+int peer_had_protocol_error(struct peer *);
 
 /* XXX */
 struct job_table_entry;

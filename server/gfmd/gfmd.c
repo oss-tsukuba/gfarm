@@ -32,8 +32,8 @@
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
-#include "config.h"
 #include "auth.h"
+#include "config.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
 
@@ -62,239 +62,253 @@ char *program_name = "gfmd";
 
 int debug_mode = 0;
 
-int
-protocol_service(struct peer *peer, int from_client)
+gfarm_error_t
+protocol_switch(struct peer *peer, int from_client, int skip, int level,
+	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gfarm_error_t e;
 	int eof;
 	gfarm_int32_t request;
 
 	e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "i", &request);
-	if (eof)
-		return (0); /* finish on eof */
+	if (eof) {
+		/* actually, this is not an error, but completion on eof */
+		peer_record_protocol_error(peer);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning("receiving request number",
 		    gfarm_error_string(e));
-		return (0); /* finish on error */
+		peer_record_protocol_error(peer);
+		return (e); /* finish on error */
 	}
 	switch (request) {
 	case GFM_PROTO_HOST_INFO_GET_ALL:
-		e = gfm_server_host_info_get_all(peer, from_client);
+		e = gfm_server_host_info_get_all(peer, from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE:
 		e = gfm_server_host_info_get_by_architecture(peer,
-		    from_client);
+		    from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_GET_BY_NAMES:
-		e = gfm_server_host_info_get_by_names(peer, from_client);
+		e = gfm_server_host_info_get_by_names(peer, from_client, skip);
 		break;
-	case GFM_PROTO_HOST_INFO_GET_BY_NAMEALISES:
-		e = gfm_server_host_info_get_by_namealises(peer, from_client);
+	case GFM_PROTO_HOST_INFO_GET_BY_NAMEALIASES:
+		e = gfm_server_host_info_get_by_namealises(peer,
+		    from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_SET:
-		e = gfm_server_host_info_set(peer, from_client);
+		e = gfm_server_host_info_set(peer, from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_MODIFY:
-		e = gfm_server_host_info_modify(peer, from_client);
+		e = gfm_server_host_info_modify(peer, from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_REMOVE:
-		e = gfm_server_host_info_remove(peer, from_client);
+		e = gfm_server_host_info_remove(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_GET_ALL:
-		e = gfm_server_user_info_get_all(peer, from_client);
+		e = gfm_server_user_info_get_all(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_GET_BY_NAMES:
-		e = gfm_server_user_info_get_by_names(peer, from_client);
+		e = gfm_server_user_info_get_by_names(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_SET:
-		e = gfm_server_user_info_set(peer, from_client);
+		e = gfm_server_user_info_set(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_MODIFY:
-		e = gfm_server_user_info_modify(peer, from_client);
+		e = gfm_server_user_info_modify(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_REMOVE:
-		e = gfm_server_user_info_remove(peer, from_client);
+		e = gfm_server_user_info_remove(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_GET_ALL:
-		e = gfm_server_group_info_get_all(peer, from_client);
+		e = gfm_server_group_info_get_all(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_GET_BY_NAMES:
-		e = gfm_server_group_info_get_by_names(peer, from_client);
+		e = gfm_server_group_info_get_by_names(peer,
+		    from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_SET:
-		e = gfm_server_group_info_set(peer, from_client);
+		e = gfm_server_group_info_set(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_MODIFY:
-		e = gfm_server_group_info_modify(peer, from_client);
+		e = gfm_server_group_info_modify(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_REMOVE:
-		e = gfm_server_group_info_remove(peer, from_client);
+		e = gfm_server_group_info_remove(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_ADD_USERS:
-		e = gfm_server_group_info_add_users(peer, from_client);
+		e = gfm_server_group_info_add_users(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_INFO_REMOVE_USERS:
-		e = gfm_server_group_info_remove_users(peer, from_client);
+		e = gfm_server_group_info_remove_users(peer,
+		    from_client, skip);
 		break;
 	case GFM_PROTO_GROUP_NAMES_GET_BY_USERS:
-		e = gfm_server_group_names_get_by_users(peer, from_client);
+		e = gfm_server_group_names_get_by_users(peer,
+		    from_client, skip);
 		break;
-	case GFM_PROTO_OPEN:
-		e = gfm_server_open(peer, from_client);
+	case GFM_PROTO_COMPOUND_BEGIN:
+		e = gfm_server_compound_begin(peer, from_client, skip, level);
 		break;
-	case GFM_PROTO_CLOSE_READ:
-		e = gfm_server_close_read(peer, from_client);
+	case GFM_PROTO_COMPOUND_END:
+		e = gfm_server_compound_end(peer, from_client, skip, level);
 		break;
-	case GFM_PROTO_FSTAT:
-		e = gfm_server_fstat(peer, from_client);
+	case GFM_PROTO_COMPOUND_ON_ERROR:
+		e = gfm_server_compound_on_error(peer, from_client, skip,
+		    level, on_errorp);
 		break;
-	case GFM_PROTO_FUTIMES:
-		e = gfm_server_futimes(peer, from_client);
+	case GFM_PROTO_PUSH_FD:
+		e = gfm_server_push_fd(peer, from_client, skip);
 		break;
-	case GFM_PROTO_FCHMOD:
-		e = gfm_server_fchmod(peer, from_client);
-		break;
-	case GFM_PROTO_FCHOWN:
-		e = gfm_server_fchown(peer, from_client);
-		break;
-	case GFM_PROTO_FCHDIR:
-		e = gfm_server_fchdir(peer, from_client);
-		break;
-	case GFM_PROTO_GETDIRENTS:
-		e = gfm_server_getdirents(peer, from_client);
-		break;
-	case GFM_PROTO_SEEK:
-		e = gfm_server_seek(peer, from_client);
-		break;
-	case GFM_PROTO_ACCESS:
-		e = gfm_server_access(peer, from_client);
-		break;
-	case GFM_PROTO_STAT:
-		e = gfm_server_stat(peer, from_client);
-		break;
-	case GFM_PROTO_UTIMES:
-		e = gfm_server_utimes(peer, from_client);
-		break;
-	case GFM_PROTO_CHMOD:
-		e = gfm_server_chmod(peer, from_client);
-		break;
-	case GFM_PROTO_CHOWN:
-		e = gfm_server_chown(peer, from_client);
-		break;
-	case GFM_PROTO_CHDIR:
-		e = gfm_server_chdir(peer, from_client);
-		break;
-	case GFM_PROTO_LSTAT:
-		e = gfm_server_lstat(peer, from_client);
-		break;
-	case GFM_PROTO_RENAME:
-		e = gfm_server_rename(peer, from_client);
-		break;
-	case GFM_PROTO_REMOVE:
-		e = gfm_server_remove(peer, from_client);
-		break;
-	case GFM_PROTO_MKDIR:
-		e = gfm_server_mkdir(peer, from_client);
-		break;
-	case GFM_PROTO_RMDIR:
-		e = gfm_server_rmdir(peer, from_client);
-		break;
-	case GFM_PROTO_LINK:
-		e = gfm_server_link(peer, from_client);
-		break;
-	case GFM_PROTO_SYMLINK:
-		e = gfm_server_symlink(peer, from_client);
-		break;
-	case GFM_PROTO_READLINK:
-		e = gfm_server_readlink(peer, from_client);
-		break;
-	case GFM_PROTO_GETCWD:
-		e = gfm_server_getcwd(peer, from_client);
-		break;
-	case GFM_PROTO_ABSPATH:
-		e = gfm_server_abspath(peer, from_client);
-		break;
-	case GFM_PROTO_REALPATH:
-		e = gfm_server_realpath(peer, from_client);
-		break;
-	case GFM_PROTO_GLOB:
-		e = gfm_server_glob(peer, from_client);
-		break;
-	case GFM_PROTO_REPLICA_LIST_BY_NAME:
-		e = gfm_server_replica_list_by_name(peer, from_client);
-		break;
-	case GFM_PROTO_REPLICA_LIST_BY_HOST:
-		e = gfm_server_replica_list_by_host(peer, from_client);
-		break;
-	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
-		e = gfm_server_replica_remove_by_host(peer, from_client);
+	case GFM_PROTO_SWAP_FD:
+		e = gfm_server_swap_fd(peer, from_client, skip);
 		break;
 	case GFM_PROTO_CREATE:
-		e = gfm_server_create(peer, from_client);
+		e = gfm_server_create(peer, from_client, skip);
+		break;
+	case GFM_PROTO_OPEN:
+		e = gfm_server_open(peer, from_client, skip);
+		break;
+	case GFM_PROTO_OPEN_ROOT:
+		e = gfm_server_open_root(peer, from_client, skip);
+		break;
+	case GFM_PROTO_CLOSE:
+		e = gfm_server_close(peer, from_client, skip);
+		break;
+	case GFM_PROTO_CLOSE_READ:
+		e = gfm_server_close_read(peer, from_client, skip);
 		break;
 	case GFM_PROTO_CLOSE_WRITE:
-		e = gfm_server_close_write(peer, from_client);
+		e = gfm_server_close_write(peer, from_client, skip);
+		break;
+	case GFM_PROTO_VERIFY_TYPE:
+		e = gfm_server_verify_type(peer, from_client, skip);
+		break;
+	case GFM_PROTO_VERIFY_TYPE_NOT:
+		e = gfm_server_verify_type_not(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FSTAT:
+		e = gfm_server_fstat(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FUTIMES:
+		e = gfm_server_futimes(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FCHMOD:
+		e = gfm_server_fchmod(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FCHOWN:
+		e = gfm_server_fchown(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SCHEDULE_FILE:
+		e = gfm_server_schedule_file(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM:
+		e = gfm_server_schedule_file_with_program(peer,
+		    from_client, skip);
+		break;
+	case GFM_PROTO_REMOVE:
+		e = gfm_server_remove(peer, from_client, skip);
+		break;
+	case GFM_PROTO_RMDIR:
+		e = gfm_server_rmdir(peer, from_client, skip);
+		break;
+	case GFM_PROTO_RENAME:
+		e = gfm_server_rename(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FLINK:
+		e = gfm_server_flink(peer, from_client, skip);
+		break;
+	case GFM_PROTO_MKDIR:
+		e = gfm_server_mkdir(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SYMLINK:
+		e = gfm_server_symlink(peer, from_client, skip);
+		break;
+	case GFM_PROTO_READLINK:
+		e = gfm_server_readlink(peer, from_client, skip);
+		break;
+	case GFM_PROTO_GETDIRPATH:
+		e = gfm_server_getdirpath(peer, from_client, skip);
+		break;
+	case GFM_PROTO_GETDIRENTS:
+		e = gfm_server_getdirents(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SEEK:
+		e = gfm_server_seek(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
-		e = gfm_server_lock(peer, from_client);
+		e = gfm_server_lock(peer, from_client, skip);
 		break;
 	case GFM_PROTO_TRYLOCK:
-		e = gfm_server_trylock(peer, from_client);
+		e = gfm_server_trylock(peer, from_client, skip);
 		break;
 	case GFM_PROTO_UNLOCK:
-		e = gfm_server_unlock(peer, from_client);
+		e = gfm_server_unlock(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK_INFO:
-		e = gfm_server_lock_info(peer, from_client);
+		e = gfm_server_lock_info(peer, from_client, skip);
 		break;
-	case GFM_PROTO_REPLICA_ADD:
-		e = gfm_server_replica_add(peer, from_client);
-		break;
-	case GFM_PROTO_REPLICA_REMOVE:
-		e = gfm_server_replica_remove(peer, from_client);
-		break;
-	case GFM_PROTO_PIO_OPEN:
-		e = gfm_server_pio_open(peer, from_client);
-		break;
-	case GFM_PROTO_PIO_SET_PATHS:
-		e = gfm_server_pio_set_paths(peer, from_client);
-		break;
-	case GFM_PROTO_PIO_CLOSE:
-		e = gfm_server_pio_close(peer, from_client);
-		break;
-	case GFM_PROTO_PIO_VISIT:
-		e = gfm_server_pio_visit(peer, from_client);
+	case GFM_PROTO_GLOB:
+		e = gfm_server_glob(peer, from_client, skip);
 		break;
 	case GFM_PROTO_SCHEDULE:
-		e = gfm_server_schedule(peer, from_client);
+		e = gfm_server_schedule(peer, from_client, skip);
+		break;
+	case GFM_PROTO_PIO_OPEN:
+		e = gfm_server_pio_open(peer, from_client, skip);
+		break;
+	case GFM_PROTO_PIO_SET_PATHS:
+		e = gfm_server_pio_set_paths(peer, from_client, skip);
+		break;
+	case GFM_PROTO_PIO_CLOSE:
+		e = gfm_server_pio_close(peer, from_client, skip);
+		break;
+	case GFM_PROTO_PIO_VISIT:
+		e = gfm_server_pio_visit(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_LIST_BY_NAME:
+		e = gfm_server_replica_list_by_name(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_LIST_BY_HOST:
+		e = gfm_server_replica_list_by_host(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
+		e = gfm_server_replica_remove_by_host(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_ADD:
+		e = gfm_server_replica_add(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_REMOVE:
+		e = gfm_server_replica_remove(peer, from_client, skip);
 		break;
 	case GFM_PROTO_PROCESS_ALLOC:
-		e = gfm_server_process_alloc(peer, from_client);
+		e = gfm_server_process_alloc(peer, from_client, skip);
 		break;
 	case GFM_PROTO_PROCESS_FREE:
-		e = gfm_server_process_free(peer, from_client);
+		e = gfm_server_process_free(peer, from_client, skip);
 		break;
 	case GFM_PROTO_PROCESS_SET:
-		e = gfm_server_process_set(peer, from_client);
+		e = gfm_server_process_set(peer, from_client, skip);
 		break;
 	case GFJ_PROTO_LOCK_REGISTER:
-		e = gfj_server_lock_register(peer, from_client); break;
+		e = gfj_server_lock_register(peer, from_client, skip); break;
 	case GFJ_PROTO_UNLOCK_REGISTER:
-		e = gfj_server_unlock_register(peer, from_client); break;
+		e = gfj_server_unlock_register(peer, from_client, skip); break;
 	case GFJ_PROTO_REGISTER:
-		e = gfj_server_register(peer, from_client);
+		e = gfj_server_register(peer, from_client, skip);
 		break;
 	case GFJ_PROTO_UNREGISTER:
-		e = gfj_server_unregister(peer, from_client);
+		e = gfj_server_unregister(peer, from_client, skip);
 		break;
 	case GFJ_PROTO_REGISTER_NODE:
-		e = gfj_server_register_node(peer, from_client); break;
+		e = gfj_server_register_node(peer, from_client, skip); break;
 	case GFJ_PROTO_LIST:
-		e = gfj_server_list(peer, from_client); break;
+		e = gfj_server_list(peer, from_client, skip); break;
 	case GFJ_PROTO_INFO:
-		e = gfj_server_info(peer, from_client); break;
+		e = gfj_server_info(peer, from_client, skip); break;
 	case GFJ_PROTO_HOSTINFO:
-		e = gfj_server_hostinfo(peer, from_client); break;
+		e = gfj_server_hostinfo(peer, from_client, skip); break;
 	default:
 		{
 			char buffer[GFARM_INT32STRLEN];
@@ -311,7 +325,80 @@ protocol_service(struct peer *peer, int from_client)
 	}
 
 	/* continue unless protocol error happens */
-	return (e == GFARM_ERR_NO_ERROR); 
+	return (e);
+}
+
+void
+compound_loop(struct peer *peer, int from_client, int skip_base, int level)
+{
+	gfarm_error_t e, cause = GFARM_ERR_NO_ERROR;
+	gfarm_error_t current_block = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t request;
+	int skip = skip_base;
+	
+	for (;;) {
+		e = protocol_switch(peer, from_client, skip, level,
+		    &request, &current_block);
+		if (peer_had_protocol_error(peer))
+			return; /* finish */
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (!skip) {
+				skip = 1;
+				cause = e;
+			}
+		} else if (request == GFM_PROTO_COMPOUND_END) {
+			break;
+		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {
+			break;
+#if 0 /* We don't allow COMPOUND nesting to prevent stack overflow */
+		} else if (request == GFM_PROTO_COMPOUND_BEGIN) {
+			compound_loop(peer, from_client, skip, level + 1);
+			if (peer_had_protocol_error(peer))
+				return; /* finish */
+#endif
+		}
+	}
+
+	skip = skip_base || current_block != cause;
+	for (;;) {
+		e = protocol_switch(peer, from_client, skip, level,
+		    &request, &current_block);
+		if (peer_had_protocol_error(peer))
+			return; /* finish */
+		if (e != GFARM_ERR_NO_ERROR) {
+			skip = 1;
+		} else if (request == GFM_PROTO_COMPOUND_END) {
+			break;
+		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {
+			skip = skip_base || current_block != cause;
+#if 0 /* We don't allow COMPOUND nesting to prevent stack overflow */
+		} else if (request == GFM_PROTO_COMPOUND_BEGIN) {
+			compound_loop(peer, from_client, skip, level + 1);
+			if (peer_had_protocol_error(peer))
+				return; /* finish */
+#endif
+		}
+	}
+}
+
+void
+protocol_service(struct peer *peer, int from_client)
+{
+	gfarm_error_t e, current_block = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t request;
+
+	for (;;) {
+		e = protocol_switch(peer, from_client, 0, 0,
+		    &request, &current_block);
+		if (peer_had_protocol_error(peer))
+			return; /* finish */
+		if (e == GFARM_ERR_NO_ERROR &&
+		    request == GFM_PROTO_COMPOUND_BEGIN) {
+			compound_loop(peer, from_client, 0, 1);
+			if (peer_had_protocol_error(peer))
+				return; /* finish */
+		}
+	}
 }
 
 /* this routine is called from gfarm_authorize() */
@@ -355,13 +442,7 @@ protocol_main(void *arg)
 	} else {
 		peer_authorized(peer,
 		    id_type, username, hostname, auth_method);
-		if (id_type == GFARM_AUTH_ID_TYPE_USER) {
-			while (protocol_service(peer, 1))
-				;
-		} else {
-			while (protocol_service(peer, 0))
-				;
-		}
+		protocol_service(peer, id_type == GFARM_AUTH_ID_TYPE_USER);
 	}
 	peer_free(peer);
 	/* this return value won't be used, because this thread is detached */

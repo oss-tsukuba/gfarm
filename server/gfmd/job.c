@@ -142,7 +142,7 @@ job_table_remove(int id, char *user, struct job_table_entry **listp)
 }
 
 gfarm_error_t
-gfj_server_lock_register(struct peer *peer, int from_client)
+gfj_server_lock_register(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
@@ -155,7 +155,7 @@ gfj_server_lock_register(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_unlock_register(struct peer *peer, int from_client)
+gfj_server_unlock_register(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
@@ -168,7 +168,7 @@ gfj_server_unlock_register(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_register(struct peer *peer, int from_client)
+gfj_server_register(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -245,7 +245,18 @@ gfj_server_register(struct peer *peer, int from_client)
 		info->nodes[i].state = GFJ_NODE_NONE;
 	}
 
-	if (!from_client) {
+	if (skip || !from_client) {
+		for (i = 0; i < total_nodes; i++)
+			free(info->nodes[i].hostname);
+		for (i = 0; i < argc; i++)
+			free(info->argv[i]);
+		free(info->job_type);
+		free(info->originate_host);
+		free(info->gfarm_url_for_scheduling);
+		free(info->argv);
+		free(info->nodes);
+		if (skip)
+			return (GFARM_ERR_NO_ERROR);
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		giant_lock();
@@ -263,7 +274,7 @@ gfj_server_register(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_unregister(struct peer *peer, int from_client)
+gfj_server_unregister(struct peer *peer, int from_client, int skip)
 {
 	char *user = peer_get_username(peer);
 	gfarm_error_t e;
@@ -273,6 +284,8 @@ gfj_server_unregister(struct peer *peer, int from_client)
 	e = gfj_server_get_request(peer, "unregister", "i", &job_id);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 	if (!from_client) {
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
@@ -286,7 +299,7 @@ gfj_server_unregister(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_register_node(struct peer *peer, int from_client)
+gfj_server_register_node(struct peer *peer, int from_client, int skip)
 {
 	/* XXX - NOT IMPLEMENTED */
 	gflog_fatal("register_node", "not implemented");
@@ -296,7 +309,7 @@ gfj_server_register_node(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_list(struct peer *peer, int from_client)
+gfj_server_list(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -307,6 +320,10 @@ gfj_server_list(struct peer *peer, int from_client)
 	e = gfj_server_get_request(peer, "list", "s", &user);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(user);
+		return (GFARM_ERR_NO_ERROR);
+	}
 
 	if (!from_client) {
 		e = gfj_server_put_reply(peer, "list",
@@ -382,7 +399,7 @@ gfj_server_put_info_entry(struct gfp_xdr *client,
 }
 
 gfarm_error_t
-gfj_server_info(struct peer *peer, int from_client)
+gfj_server_info(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -407,10 +424,12 @@ gfj_server_info(struct peer *peer, int from_client)
 		}
 	}
 
-	if (!from_client) {
+	if (skip || !from_client) {
+		free(jobs);
+		if (skip)
+			return (GFARM_ERR_NO_ERROR);
 		e = gfj_server_put_reply(peer, "info",
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
-		free(jobs);
 		return (e);
 	}
 
@@ -449,7 +468,7 @@ gfj_server_info(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfj_server_hostinfo(struct peer *peer, int from_client)
+gfj_server_hostinfo(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 

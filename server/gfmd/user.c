@@ -244,13 +244,16 @@ user_info_send(struct gfp_xdr *client, struct gfarm_user_info *ui)
 }
 
 gfarm_error_t
-gfm_server_user_info_get_all(struct peer *peer, int from_client)
+gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nusers;
 	struct user *u;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -283,7 +286,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_user_info_get_by_names(struct peer *peer, int from_client)
+gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
@@ -327,44 +330,47 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client)
 			users[i] = user;
 		}
 	}
-	e = gfm_server_put_reply(peer, "user_info_get_by_names", error, "");
-	if (error != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
-		if (users != NULL) {
-			for (i = 0; i < nusers; i++) {
-				if (users[i] != NULL)
-					free(users[i]);
+	if (!skip) {
+		e = gfm_server_put_reply(peer, "user_info_get_by_names", error,
+		    "");
+		if (error != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
+			if (users != NULL) {
+				for (i = 0; i < nusers; i++) {
+					if (users[i] != NULL)
+						free(users[i]);
+				}
+				free(users);
 			}
-			free(users);
+			return (e);
 		}
-		return (e);
-	}
-	giant_lock();
-	/* XXX FIXME too long giant lock */
-	for (i = 0; i < nusers; i++) {
-		u = user_lookup(users[i]);
-		if (u == NULL) {
-			e = gfm_server_put_reply(peer,
-			    "USER_INFO_GET_BY_NAMES/no-user",
-			    GFARM_ERR_NO_SUCH_OBJECT, "");
-		} else {
-			e = gfm_server_put_reply(peer,
-			    "USER_INFO_GET_BY_NAMES/send-reply",
-			    GFARM_ERR_NO_ERROR, "");
-			if (e == GFARM_ERR_NO_ERROR)
-				e = user_info_send(client, &u->ui);
+		giant_lock();
+		/* XXX FIXME too long giant lock */
+		for (i = 0; i < nusers; i++) {
+			u = user_lookup(users[i]);
+			if (u == NULL) {
+				e = gfm_server_put_reply(peer,
+				    "USER_INFO_GET_BY_NAMES/no-user",
+				    GFARM_ERR_NO_SUCH_OBJECT, "");
+			} else {
+				e = gfm_server_put_reply(peer,
+				    "USER_INFO_GET_BY_NAMES/send-reply",
+				    GFARM_ERR_NO_ERROR, "");
+				if (e == GFARM_ERR_NO_ERROR)
+					e = user_info_send(client, &u->ui);
+			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
 		}
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
+		giant_unlock();
 	}
 	for (i = 0; i < nusers; i++)
 		free(users[i]);
 	free(users);
-	giant_unlock();
 	return (e);
 }
 
 gfarm_error_t
-gfm_server_user_info_set(struct peer *peer, int from_client)
+gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 {
 	struct gfarm_user_info ui;
 	gfarm_error_t e;
@@ -374,6 +380,13 @@ gfm_server_user_info_set(struct peer *peer, int from_client)
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(ui.username);
+		free(ui.realname);
+		free(ui.homedir);
+		free(ui.gsi_dn);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -393,7 +406,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_user_info_modify(struct peer *peer, int from_client)
+gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 {
 	struct gfarm_user_info ui;
 	struct user *u, *user = peer_get_user(peer);
@@ -403,6 +416,13 @@ gfm_server_user_info_modify(struct peer *peer, int from_client)
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(ui.username);
+		free(ui.realname);
+		free(ui.homedir);
+		free(ui.gsi_dn);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -430,7 +450,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_user_info_remove(struct peer *peer, int from_client)
+gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 {
 	char *username;
 	gfarm_int32_t e;
@@ -440,6 +460,10 @@ gfm_server_user_info_remove(struct peer *peer, int from_client)
 	    "s", &username);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip) {
+		free(username);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

@@ -1,4 +1,3 @@
-typedef gfarm_int32_t gfarm_pid_t;
 struct process;
 
 struct inode;
@@ -53,6 +52,6 @@ gfarm_error_t process_close_file_write(struct process *, struct host *,
 	int, gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
 
 struct peer;
-gfarm_error_t gfm_server_process_alloc(struct peer *, int);
-gfarm_error_t gfm_server_process_free(struct peer *, int);
-gfarm_error_t gfm_server_process_set(struct peer *, int);
+gfarm_error_t gfm_server_process_alloc(struct peer *, int, int);
+gfarm_error_t gfm_server_process_free(struct peer *, int, int);
+gfarm_error_t gfm_server_process_set(struct peer *, int, int);

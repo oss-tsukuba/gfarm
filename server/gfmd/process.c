@@ -72,6 +72,7 @@ process_alloc(struct user *user,
 	struct process *process;
 	struct file_opening **filetab;
 	int fd;
+	gfarm_int32_t pid32;
 
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
@@ -85,13 +86,13 @@ process_alloc(struct user *user,
 	filetab = malloc(sizeof(*filetab) * FILETAB_INITIAL);
 	if (filetab == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	process = gfarm_id_alloc(process_id_table, &pid);
+	process = gfarm_id_alloc(process_id_table, &pid32);
 	if (process == NULL) {
 		free(filetab);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memcpy(process->sharedkey, sharedkey, keylen);
-	process->pid = pid;
+	process->pid = pid32;
 	process->user = user;
 	process->refcount = 0;
 	process->cwd = NULL;
@@ -101,7 +102,7 @@ process_alloc(struct user *user,
 		filetab[fd] = NULL;
 
 	*processp = process;
-	*pidp = pid;
+	*pidp = pid32;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -131,7 +132,7 @@ process_del_ref(struct process *process)
 		}
 		free(process->filetab);
 
-		gfarm_id_free(process_id_table, process->pid);
+		gfarm_id_free(process_id_table, (gfarm_int32_t)process->pid);
 	}
 }
 
@@ -324,7 +325,7 @@ process_lookup(gfarm_pid_t pid)
 {
 	if (process_id_table == NULL)
 		return (NULL);
-	return (gfarm_id_lookup(process_id_table, pid));
+	return (gfarm_id_lookup(process_id_table, (gfarm_int32_t)pid));
 }
 
 gfarm_error_t
@@ -332,7 +333,7 @@ process_does_match(gfarm_pid_t pid,
 	gfarm_int32_t keytype, size_t keylen, char *sharedkey,
 	struct process **processp)
 {
-	struct process *process = process_lookup(pid);
+	struct process *process = process_lookup((gfarm_int32_t)pid);
 
 	if (process == NULL)
 		return (GFARM_ERR_NO_SUCH_PROCESS);
@@ -415,7 +416,7 @@ process_close_file_write(struct process *process, struct host *spool_host,
  */
 
 gfarm_error_t
-gfm_server_process_alloc(struct peer *peer, int from_client)
+gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	struct user *user;
@@ -429,6 +430,8 @@ gfm_server_process_alloc(struct peer *peer, int from_client)
 	    "ib", &keytype, sizeof(sharedkey), &keylen, sharedkey);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
 	giant_lock();
 	if (peer_get_process(peer) != NULL) {
@@ -440,11 +443,11 @@ gfm_server_process_alloc(struct peer *peer, int from_client)
 		peer_set_process(peer, process);
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "process_alloc", e, "i", pid));
+	return (gfm_server_put_reply(peer, "process_alloc", e, "l", pid));
 }
 
 gfarm_error_t
-gfm_server_process_set(struct peer *peer, int from_client)
+gfm_server_process_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	gfarm_pid_t pid;
@@ -454,9 +457,11 @@ gfm_server_process_set(struct peer *peer, int from_client)
 	struct process *process;
 
 	e = gfm_server_get_request(peer, "process_set",
-	    "iib", &pid, &keytype, sizeof(sharedkey), &keylen, sharedkey);
+	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
 	giant_lock();
 	if (peer_get_process(peer) != NULL) {
@@ -475,7 +480,7 @@ gfm_server_process_set(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_process_free(struct peer *peer, int from_client)
+gfm_server_process_free(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 

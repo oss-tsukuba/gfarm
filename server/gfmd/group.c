@@ -239,13 +239,15 @@ group_info_send(struct gfp_xdr *client, struct group *g)
 }
 
 gfarm_error_t
-gfm_server_group_info_get_all(struct peer *peer, int from_client)
+gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t ngroups;
 
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 
@@ -276,7 +278,8 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_info_get_by_names(struct peer *peer, int from_client)
+gfm_server_group_info_get_by_names(struct peer *peer,
+	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
@@ -332,33 +335,35 @@ gfm_server_group_info_get_by_names(struct peer *peer, int from_client)
 		}
 		return (e);
 	}
-	/* XXX FIXME too long giant lock */
-	giant_lock();
-	for (i = 0; i < ngroups; i++) {
-		g = group_lookup(groups[i]);
-		if (g == NULL) {
-			e = gfm_server_put_reply(peer,
-			    "group_info_get_by_name",
-			    GFARM_ERR_NO_SUCH_OBJECT, "");
-		} else {
-			e = gfm_server_put_reply(peer,
-			    "group_info_get_by_name",
-			    GFARM_ERR_NO_ERROR, "");
-			if (e == GFARM_ERR_NO_ERROR)
-				e = group_info_send(client, g);
+	if (!skip) {
+		/* XXX FIXME too long giant lock */
+		giant_lock();
+		for (i = 0; i < ngroups; i++) {
+			g = group_lookup(groups[i]);
+			if (g == NULL) {
+				e = gfm_server_put_reply(peer,
+				    "group_info_get_by_name",
+				    GFARM_ERR_NO_SUCH_OBJECT, "");
+			} else {
+				e = gfm_server_put_reply(peer,
+				    "group_info_get_by_name",
+				    GFARM_ERR_NO_ERROR, "");
+				if (e == GFARM_ERR_NO_ERROR)
+					e = group_info_send(client, g);
+			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
 		}
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
+		giant_unlock();
 	}
 	for (i = 0; i < ngroups; i++)
 		free(groups[i]);
 	free(groups);
-	giant_unlock();
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfm_server_group_info_set(struct peer *peer, int from_client)
+gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -372,7 +377,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_info_modify(struct peer *peer, int from_client)
+gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -386,7 +391,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_info_remove(struct peer *peer, int from_client)
+gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -400,7 +405,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_info_add_users(struct peer *peer, int from_client)
+gfm_server_group_info_add_users(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -414,7 +419,8 @@ gfm_server_group_info_add_users(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_info_remove_users(struct peer *peer, int from_client)
+gfm_server_group_info_remove_users(struct peer *peer,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 
@@ -428,7 +434,8 @@ gfm_server_group_info_remove_users(struct peer *peer, int from_client)
 }
 
 gfarm_error_t
-gfm_server_group_names_get_by_users(struct peer *peer, int from_client)
+gfm_server_group_names_get_by_users(struct peer *peer,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 

@@ -33,6 +33,7 @@ struct peer {
 	struct user *user;
 	struct host *host;
 	struct process *process;
+	int protocol_error;
 
 	union {
 		struct {
@@ -62,6 +63,7 @@ peer_init(int max_peers)
 		peer_table[i].user = NULL;
 		peer_table[i].host = NULL;
 		peer_table[i].process = NULL;
+		peer_table[i].protocol_error = 0;
 		peer_table[i].u.client.jobs = NULL;
 	}
 }
@@ -89,6 +91,7 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->user = NULL;
 	peer->host = NULL;
 	peer->process = NULL;
+	peer->protocol_error = 0;
 	peer->u.client.jobs = NULL;
 
 	/* deal with reboots or network problems */
@@ -157,6 +160,7 @@ peer_free(struct peer *peer)
 		free(msg);
 	}
 
+	peer->protocol_error = 0;
 	if (peer->process != NULL) {
 		process_del_ref(peer->process); peer->process = NULL;
 	}
@@ -255,6 +259,18 @@ peer_set_process(struct peer *peer, struct process *process)
 		gflog_fatal("peer_set_process", "overriding process");
 	peer->process = process;
 	process_add_ref(process);
+}
+
+void
+peer_record_protocol_error(struct peer *peer)
+{
+	peer->protocol_error = 1;
+}
+
+int
+peer_had_protocol_error(struct peer *peer)
+{
+	return (peer->protocol_error);
 }
 
 struct job_table_entry **

@@ -56,10 +56,12 @@ gfm_server_get_request(struct peer *peer, char *diag, const char *format, ...)
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(diag, gfarm_error_string(e));
+		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (eof) {
 		gflog_warning(diag, "missing RPC argument");
+		peer_record_protocol_error(peer);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
@@ -69,7 +71,7 @@ gfm_server_get_request(struct peer *peer, char *diag, const char *format, ...)
 
 gfarm_error_t
 gfm_server_put_reply(struct peer *peer, char *diag,
-	int ecode, const char *format, ...)
+	gfarm_error_t ecode, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
@@ -80,6 +82,7 @@ gfm_server_put_reply(struct peer *peer, char *diag,
 	if (e != GFARM_ERR_NO_ERROR) {
 		va_end(ap);
 		gflog_warning(diag, gfarm_error_string(e));
+		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (ecode == GFARM_ERR_NO_ERROR) {
@@ -87,6 +90,7 @@ gfm_server_put_reply(struct peer *peer, char *diag,
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
 			gflog_warning(diag, gfarm_error_string(e));
+			peer_record_protocol_error(peer);
 			return (e);
 		}
 		if (*format != '\0')
@@ -95,5 +99,5 @@ gfm_server_put_reply(struct peer *peer, char *diag,
 	}
 	va_end(ap);
 
-	return (GFARM_ERR_NO_ERROR);
+	return (ecode);
 }
