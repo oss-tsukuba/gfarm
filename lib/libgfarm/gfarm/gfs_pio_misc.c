@@ -242,6 +242,30 @@ gfs_access(const char *gfarm_url, int mode)
 }
 
 char *
+gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
+{
+	char *e, *gfarm_file;
+	struct gfarm_path_info pi;
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	free(gfarm_file);
+	if (e != NULL)
+		return (e);
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else {
+		pi.status.st_mode &= ~GFARM_S_ALLPERM;
+		pi.status.st_mode |= (mode & GFARM_S_ALLPERM);
+		e = gfarm_path_info_replace(pi.pathname, &pi);
+	}
+	gfarm_path_info_free(&pi);
+	return (e);
+}
+
+char *
 gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 {
 	char *e, *gfarm_file;
