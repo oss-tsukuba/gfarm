@@ -16,7 +16,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	mode_t mode;
 	int filedes;
 	struct gfs_stat gs;
-	int file_exist, file_size = 0, is_directory = 0;
+	int is_directory, path_exist, save_errno;
 	int nf = -1, np;
 
 	va_start(ap, oflag);
@@ -33,109 +33,68 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		e = gfs_stat_section(url, gfs_hook_get_current_section(), &gs);
 	else
 		e = gfs_stat(url, &gs);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		file_exist = 0;
-	else if (e == NULL) {
-		file_exist = 1;
-		file_size = gs.st_size;
+	if (e == NULL) {
+		path_exist = 1;
 		is_directory = GFARM_S_ISDIR(gs.st_mode);
 		gfs_stat_free(&gs);
-	}
-	else {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n", e));
+	} else {
 		/* XXX - metadata may be incomplete. anyway, continue. */
-		file_exist = 1;
-		file_size = 0;
+		path_exist = 0;
 		/* XXX - metadata of a directory should not be imcomplete */
 		is_directory = 0; 
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
+			_gfs_hook_debug(fprintf(stderr,
+			    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n",
+			    e));
 	}
 
-	/*
-	 * XXX - stopgap implementation of O_WRONLY/O_RDWR, O_CREAT,
-	 * O_TRUNC flags
-	 */
-	if (!file_exist && (oflag & O_CREAT) != 0) {
+	if (is_directory) {
+		GFS_Dir dir;
 
+		_gfs_hook_debug(fprintf(stderr,
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x): dir\n",
+		    url, oflag));
+
+		if ((oflag & (O_CREAT|O_TRUNC)) != 0 ||
+		    (oflag & O_ACCMODE) != O_RDONLY) {
+			free(url);
+			errno = EISDIR;
+			return (-1);
+		}
+		e = gfs_opendir(url, &dir);
+		if (e == NULL) {
+			filedes = gfs_hook_insert_gfs_dir(dir, url);
+			save_errno = errno;
+			_gfs_hook_debug(
+				fprintf(stderr, "GFS: Hooking "
+				    S(FUNC___OPEN) " --> %d\n", filedes);
+			);
+			free(url);
+			if (filedes == -1)
+				errno = save_errno;
+			return (filedes);
+		}
+		free(url);
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+
+	if ((oflag & O_CREAT) != 0) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x, 0%o)\n",
 		    url, oflag, mode));
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_create(url, oflag, mode, &gf);
-		if (e == NULL)
+		if (e == NULL && !path_exist)
 			gfs_hook_add_creating_file(gf);
-	}
-	else if ((oflag & O_ACCMODE) == O_WRONLY
-		 || (oflag & O_ACCMODE) == O_RDWR) {
+	} else {
 
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x, 0%o)\n",
-		    url, oflag, mode));
-
-		if (file_exist && (file_size == 0 || (oflag & O_TRUNC) != 0)) {
-			/*
-			 * XXX - O_TRUNC is basically supported in
-			 * Gfarm v1 except in global file view.
-			 * This case needs to be implemented in
-			 * gfs_pio_set_view_global() in gfs_pio_global.c.
-			 */
-			if (gfs_hook_get_current_view() == global_view)
-				gfs_unlink(url); /* XXX - FIXME */
-			/*
-			 * gfs_pio_create assumes GFARM_FILE_TRUNC.
-			 * It is not necessary to set O_TRUNC explicitly.
-			 */
-			oflag = gfs_hook_open_flags_gfarmize(oflag);
-			e = gfs_pio_create(url, oflag, mode, &gf);
-			if (e == NULL)
-				gfs_hook_add_creating_file(gf);
-		}
-		else if (file_exist) { /* read-write mode */
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking " S(FUNC___OPEN)
-				": rw or append mode (flags 0%o)\n", oflag));
-			/* gfs_pio_open() does not support O_CREAT. */
-			oflag &= ~O_CREAT;
-			oflag = gfs_hook_open_flags_gfarmize(oflag);
-			e = gfs_pio_open(url, oflag, &gf);
-		}
-		else { /* no such file or directory */
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: Hooking " S(FUNC___OPEN)
-				": no such file or directory\n"));
-			free(url);
-			errno = ENOENT;
-			return (-1);
-		}
-	}
-	/* XXX - end of stopgap implementation */
-	else {
 		_gfs_hook_debug(fprintf(stderr,
 		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", url, oflag));
 
-		if (file_exist && is_directory) {
-			GFS_Dir dir;
-
-			e = gfs_opendir(url, &dir);
-                        if (e == NULL) {
-                                filedes = gfs_hook_insert_gfs_dir(dir, url);
-                                _gfs_hook_debug(
-                                        if (filedes != -1) {
-                                                fprintf(stderr,
-                                                    "GFS: Hooking "
-                                                    S(FUNC___OPEN)
-                                                    " --> %d\n", filedes);
-                                        }
-                                );
-                                free(url);
-                                return (filedes);
-			}
-		}
-		else {
-			oflag = gfs_hook_open_flags_gfarmize(oflag);
-			e = gfs_pio_open(url, oflag, &gf);
-		}
+		oflag = gfs_hook_open_flags_gfarmize(oflag);
+		e = gfs_pio_open(url, oflag, &gf);
 	}
 	free(url);
 	if (e != NULL) {
@@ -168,18 +127,24 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		 * number of parallel processes, or the file is not
 		 * fragmented, do not change to the local file view.
 		 */
-		if (gfs_pio_get_nfragment(gf, &nf) ==
+		if ((e = gfs_pio_get_nfragment(gf, &nf)) ==
 			GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
-		    (gfs_pio_get_node_size(&np) == NULL && nf == np)) {
+		    (e == NULL && gfs_pio_get_node_size(&np) == NULL &&
+		     nf == np)) {
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: set_view_local(%s (%d, %d))\n",
 					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_local(gf, 0);
-		}
-		else
+		} else {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: set_view_global(%s) - local %d/%d\n",
+					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_global(gf, 0);
+		}
 		break;
 	default:
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: set_view_global(%s)\n", path));
 		e = gfs_pio_set_view_global(gf, 0);
 	}
 	if (e != NULL) {
@@ -234,93 +199,29 @@ FUNC_OPEN(const char *path, int oflag, ...)
 int
 FUNC___CREAT(const char *path, mode_t mode)
 {
-	const char *e;
-	char *url;
-	GFS_File gf;
-	int filedes;
-
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___CREAT) "(%s, 0%o)\n", path, mode)); 
-
-	if (!gfs_hook_is_url(path, &url))
-		return (SYSCALL_CREAT(path, mode));
-
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___CREAT) "(%s, 0%o)\n", path, mode));
-	e = gfs_pio_create(url, GFARM_FILE_WRONLY, mode, &gf);
-	if (e == NULL)
-		gfs_hook_add_creating_file(gf);
-	free(url);
-	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: " S(FUNC___CREAT) ": %s\n", e));
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-
-	/* set file view */
-	switch (gfs_hook_get_current_view()) {
-	case section_view:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_section(%s, %s)\n",
-			path, gfs_hook_get_current_section()));
-		e = gfs_pio_set_view_section(
-			gf, gfs_hook_get_current_section(), NULL, 0);
-		break;
-	case index_view:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_index(%s, %d, %d)\n", path,
-			gfs_hook_get_current_nfrags(),
-			gfs_hook_get_current_index()));
-		e = gfs_pio_set_view_index(gf, gfs_hook_get_current_nfrags(),
-			gfs_hook_get_current_index(), NULL, 0);
-		break;
-	case local_view:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_local(%s)\n", path));
-		e = gfs_pio_set_view_local(gf, 0);
-		break;
-	default:
-		e = gfs_pio_set_view_global(gf, 0);
-	}
-	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-
-	filedes = gfs_hook_insert_gfs_file(gf);
-	_gfs_hook_debug(
-		if (filedes != -1) {
-			fprintf(stderr,
-			    "GFS: Hooking " S(FUNC___CREAT) " --> %d(%d)\n",
-			    filedes, gfs_pio_fileno(gf));
-		}
-	);
-	return (filedes);
+	_gfs_hook_debug_v(fputs("Hooking " S(FUNC___CREAT) "\n", stderr));
+	return (FUNC___OPEN(path, O_CREAT|O_TRUNC|O_WRONLY, mode));
 }
 
 int
 FUNC__CREAT(const char *path, mode_t mode)
 {
-    _gfs_hook_debug_v(fputs("Hooking " S(FUNC__CREAT) "\n", stderr));
-    return (FUNC___CREAT(path, mode));
+	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__CREAT) "\n", stderr));
+	return (FUNC___CREAT(path, mode));
 }
 
 int
 FUNC_CREAT(const char *path, mode_t mode)
 {
-    _gfs_hook_debug_v(fputs("Hooking " S(FUNC_CREAT) "\n", stderr));
-    return (FUNC___CREAT(path, mode));
+	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_CREAT) "\n", stderr));
+	return (FUNC___CREAT(path, mode));
 }
 
 int
 FUNC__LIBC_CREAT(const char *path, mode_t mode)
 {
-    _gfs_hook_debug_v(fputs("Hooking " S(FUNC_CREAT) "\n", stderr));
-    return (FUNC___CREAT(path, mode));
+	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__LIBC_CREAT) "\n", stderr));
+	return (FUNC___CREAT(path, mode));
 }
 
 /*
