@@ -1025,7 +1025,7 @@ rename(const char *oldpath, const char *newpath)
 /*
  * getxattr
  */
-
+#ifdef SYS_getxattr
 int
 getxattr(const char *path, const char *name, void *value, size_t size)
 {
@@ -1054,11 +1054,11 @@ getxattr(const char *path, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-
+#endif
 /*
  * lgetxattr
  */
-
+#ifdef SYS_lgetxattr
 int
 lgetxattr(const char *path, const char *name, void *value, size_t size)
 {
@@ -1087,11 +1087,11 @@ lgetxattr(const char *path, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-
+#endif
 /*
  * fgetxattr
  */
-
+#ifdef SYS_fgetxattr
 int
 fgetxattr(int filedes, const char *name, void *value, size_t size)
 {
@@ -1114,7 +1114,7 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 	return (-1);
 }
 #endif
-
+#endif /* __linux__ */
 /*
  * definitions for "hooks_common.c"
  */
