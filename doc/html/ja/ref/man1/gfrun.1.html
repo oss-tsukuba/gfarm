@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfrun, gfrsh, gfssh&nbsp;--&nbsp;ファイルシステムノードで、gfarm 並列コマンドを実行する</DIV
+>gfrun, gfrsh, gfssh&nbsp;--&nbsp;ファイルシステムノードで gfarm 並列コマンドを実行する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,15 +38,10 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrun</B
-> [-G <TT
+> [<TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->ホスト指定ファイル</I
+>オプション</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
@@ -63,15 +58,10 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrsh</B
-> [-G <TT
+> [<TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->ホスト指定ファイル</I
+>オプション</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
@@ -88,15 +78,10 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfssh</B
-> [-G <TT
+> [<TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->ホスト指定ファイル</I
+>オプション</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
@@ -119,41 +104,46 @@ NAME="DESCRIPTION"
 >DESCRIPTION</H2
 ><P
 >並列プログラムを実行します．実行されるファイルシステムノードは，
--G オプションで指定される Gfarm ファイル <TT
+-G オプション，-H オプションあるいは -N オプションにより決定されます．</P
+><P
+>-G オプションはファイル・アフィニティ・スケジューリングのための
+Gfarm ファイル <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
-> の
-ファイル・アフィニティ・スケジューリングにより決定されます．
+> を指定します．
 ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
 ファイルのそれぞれのファイル断片に対し，複製が格納されている
 ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
 同数のプロセスが，ファイル断片を格納しているノードで実行され
-るということになります．</P
-><P
->-H オプションで <TT
+るということになります．
+-H オプションは <TT
 CLASS="PARAMETER"
 ><I
 >ホスト指定ファイル</I
 ></TT
-> が指定された場合は，
-そのファイルに記述されたノードで並列プログラムを実行します．</P
+> を指定します．
+この場合，そのファイルに記述されたノードで並列プログラムを実行します．
+-N オプションは実行されるファイルシステムノードの
+<TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+> を指定します．</P
 ><P
->-Gオプションも-Hオプションも指定されない場合は，引数に指定され
-た既に存在するGfarmファイルのうち一番はじめのファイルを利用して，
-ファイル・アフィニティ・スケジューリングされます．</P
+>-G オプション，-H オプション，-N オプションがいずれも指定されない場合は，
+引数に指定された既に存在する Gfarmファイルのうち一番はじめのファイルを
+利用したファイル・アフィニティ・スケジューリングにより決定されます．
+引数中に既に存在する Gfarm ファイルが存在しない場合は，適当なノードが1
+ノード選択され，逐次実行となります．</P
 ><P
->指定されたファイルシステムノード群に対して、並列プログラムの
-それぞれのプロセスは
-「gfrcmd ホスト プログラム名 -N 全ノード数 -I ノード番号 引数…」
-で実行されます。</P
+>gfrsh や gfssh コマンドは，gfrcmd の代わりに rsh，ssh を
+利用することを除いて，gfrun と同様です．</P
 ><P
->gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を
-利用することを除いて、gfrun と同様です。</P
-><P
->プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
-も指定できます。</P
+>プログラム名としては，gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -195,11 +185,57 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >並列プログラムを実行するファイルシステムノード群を記載したファイル名を
-指定します。
-ホスト名は、各行に一ホストずつ記述します。</P
+指定します．
+ホスト名は，各行に一ホストずつ記述します．</P
 ><P
->ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。</P
+>ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．-G オプションと同時に指定された場合，-H オプションは無視
+されます．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
+-G オプションあるいは -H オプションと同時に指定された場合，-N オプショ
+ンは無視されます．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>実行される並列プログラムの標準出力を gfarm-URL に書き出します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-e</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．</P
 ></DD
 ><DT
 ><TT
@@ -208,7 +244,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->引数オプションを表示します。</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV
@@ -232,9 +268,8 @@ CLASS="ENVAR"
 ></DT
 ><DD
 ><P
->遠隔起動コマンドを指定します．globus-job-runを指定すれ
-ば，gfrunはglobus-job-run を使ってそれぞれのプロセスを
-起動します．</P
+>遠隔起動コマンドを指定します．例えば globus-job-run が指定された場合，
+gfrun は globus-job-run を使ってそれぞれのプロセスを起動します．</P
 ></DD
 ></DL
 ></DIV

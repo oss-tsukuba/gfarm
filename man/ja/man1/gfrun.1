@@ -3,47 +3,47 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "18 March 2003" "Gfarm" ""
+.TH "GFRUN" "1" "25 April 2003" "Gfarm" ""
 .SH NAME
-gfrun, gfrsh, gfssh \- ファイルシステムノードで、gfarm 並列コマンドを実行する
+gfrun, gfrsh, gfssh \- ファイルシステムノードで gfarm 並列コマンドを実行する
 .SH SYNOPSIS
 
-\fBgfrun\fR [ \fB-G \fIgfarm-URL\fB\fR | \fB-H \fIホスト指定ファイル\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
+\fBgfrun\fR [ \fB\fIオプション\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
 
 
-\fBgfrsh\fR [ \fB-G \fIgfarm-URL\fB\fR | \fB-H \fIホスト指定ファイル\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
+\fBgfrsh\fR [ \fB\fIオプション\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
 
 
-\fBgfssh\fR [ \fB-G \fIgfarm-URL\fB\fR | \fB-H \fIホスト指定ファイル\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
+\fBgfssh\fR [ \fB\fIオプション\fB\fR ] \fB\fIプログラム名\fB\fR \fB\fI引数\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
 並列プログラムを実行します．実行されるファイルシステムノードは，
--G オプションで指定される Gfarm ファイル \fIgfarm-URL\fR の
-ファイル・アフィニティ・スケジューリングにより決定されます．
+-G オプション，-H オプションあるいは -N オプションにより決定されます．
+.PP
+-G オプションはファイル・アフィニティ・スケジューリングのための
+Gfarm ファイル \fIgfarm-URL\fR を指定します．
 ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
 ファイルのそれぞれのファイル断片に対し，複製が格納されている
 ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
 同数のプロセスが，ファイル断片を格納しているノードで実行され
 るということになります．
+-H オプションは \fIホスト指定ファイル\fR を指定します．
+この場合，そのファイルに記述されたノードで並列プログラムを実行します．
+-N オプションは実行されるファイルシステムノードの
+\fIノード数\fR を指定します．
 .PP
--H オプションで \fIホスト指定ファイル\fR が指定された場合は，
-そのファイルに記述されたノードで並列プログラムを実行します．
+-G オプション，-H オプション，-N オプションがいずれも指定されない場合は，
+引数に指定された既に存在する Gfarmファイルのうち一番はじめのファイルを
+利用したファイル・アフィニティ・スケジューリングにより決定されます．
+引数中に既に存在する Gfarm ファイルが存在しない場合は，適当なノードが1
+ノード選択され，逐次実行となります．
 .PP
--Gオプションも-Hオプションも指定されない場合は，引数に指定され
-た既に存在するGfarmファイルのうち一番はじめのファイルを利用して，
-ファイル・アフィニティ・スケジューリングされます．
+gfrsh や gfssh コマンドは，gfrcmd の代わりに rsh，ssh を
+利用することを除いて，gfrun と同様です．
 .PP
-指定されたファイルシステムノード群に対して、並列プログラムの
-それぞれのプロセスは
-「gfrcmd ホスト プログラム名 -N 全ノード数 -I ノード番号 引数…」
-で実行されます。
-.PP
-gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を
-利用することを除いて、gfrun と同様です。
-.PP
-プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
-も指定できます。
+プログラム名としては，gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます．
 .SH "OPTIONS"
 .TP
 \fB-G \fIgfarm-URL\fB\fR
@@ -52,17 +52,29 @@ gfarm-URL のファイル・アフィニティ・スケジューリングにより
 .TP
 \fB-H \fIホスト指定ファイル\fB\fR
 並列プログラムを実行するファイルシステムノード群を記載したファイル名を
-指定します。
-ホスト名は、各行に一ホストずつ記述します。
+指定します．
+ホスト名は，各行に一ホストずつ記述します．
 
-ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。
+ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．-G オプションと同時に指定された場合，-H オプションは無視
+されます．
+.TP
+\fB-N \fIノード数\fB\fR
+並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
+-G オプションあるいは -H オプションと同時に指定された場合，-N オプショ
+ンは無視されます．
+.TP
+\fB-o \fIgfarm-URL\fB\fR
+実行される並列プログラムの標準出力を gfarm-URL に書き出します．
+.TP
+\fB-e \fIgfarm-URL\fB\fR
+実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．
 .TP
 \fB-?\fR
-引数オプションを表示します。
+引数オプションを表示します．
 .SH "ENVIROMNENT VARIABLES"
 .TP
 \fBGFRUN_CMD\fR
-遠隔起動コマンドを指定します．globus-job-runを指定すれ
-ば，gfrunはglobus-job-run を使ってそれぞれのプロセスを
-起動します．
+遠隔起動コマンドを指定します．例えば globus-job-run が指定された場合，
+gfrun は globus-job-run を使ってそれぞれのプロセスを起動します．
