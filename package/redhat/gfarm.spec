@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0.1
+%define ver	1.0.2
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -216,6 +216,7 @@ fi
 %{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
+%{man_prefix}/man1/gfwhoami.1.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
 %{man_prefix}/man3/gfarm_terminate.3.gz
@@ -282,6 +283,7 @@ fi
 %{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
+%{man_prefix}/ja/man1/gfwhoami.1.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_ELEM.3.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_STRARRAY.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
@@ -364,6 +366,7 @@ fi
 %{html_prefix}/en/ref/man1/gfstat.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
+%{html_prefix}/en/ref/man1/gfwhoami.1.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
@@ -429,6 +432,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfstat.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
+%{html_prefix}/ja/ref/man1/gfwhoami.1.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
@@ -525,6 +529,7 @@ fi
 %{prefix}/bin/gfsshl
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfwhere
+%{prefix}/bin/gfwhoami
 %{prefix}/bin/pcat
 %{prefix}/bin/pcp
 %{prefix}/bin/pdel
