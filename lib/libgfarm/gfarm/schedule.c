@@ -629,7 +629,7 @@ search_idle(int concurrency, int enough_number,
  * shuffle input-hosts before searching to avoid unbalanced search
  */
 
-/* #define USE_SHUFFLED */
+#define USE_SHUFFLED
 
 #ifdef USE_SHUFFLED
 
