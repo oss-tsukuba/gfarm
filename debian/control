@@ -2,7 +2,7 @@ Source: gfarm
 Section: net
 Priority: optional
 Maintainer: Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>
-Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, bison, mpich|lam-runtime
+Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, bison, mpich
 Standards-Version: 3.5.10
 
 Package: gfarm-gfptool
@@ -49,6 +49,15 @@ Description: The Gfarm filesystem daemon
  A filesystem daemon for the Gfarm filesystem,
  which has been running on every filesystem node,
  usually, with a root privilege.
+
+Package: libgfarm
+Section: libs
+Architecture: i386
+Depends: ${shlibs:Depends}
+Conflicts: libgfarm-gsi
+Description: Runtime libraries for the Gfarm
+ libgfarm is a library implementing interfaces for reading and writing
+ files on the Gfarm filesystem.
 
 Package: libgfarm-dev
 Section: devel
@@ -102,6 +111,15 @@ Description: The Gfarm filesystem daemon with GSI
  A filesystem daemon for the Gfarm filesystem,
  which has been running on every filesystem node,
  usually, with a root privilege.
+
+Package: libgfarm-gsi
+Section: libs
+Architecture: i386
+Depends: ${shlibs:Depends}
+Conflicts: libgfarm
+Description: Runtime libraries for the Gfarm
+ libgfarm is a library implementing interfaces for reading and writing
+ files on the Gfarm filesystem.
 
 Package: libgfarm-gsi-dev
 Section: devel
