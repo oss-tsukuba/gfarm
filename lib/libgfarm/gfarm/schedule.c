@@ -995,9 +995,19 @@ gfarm_file_section_host_schedule_with_priority_to_local(
 			if (strcasecmp(self_name, copies[i].hostname) == 0)
 				break;
 	}
-	if (i < ncopies) { /* local */
-		host = strdup(copies[i].hostname);
-	} else {
+	if (i < ncopies) {
+		/*
+		 * local host is found in a list of 'copies', but it
+		 * is necessary to make sure 'gfsd' is running or not.
+		 */
+		e = gfarm_schedule_search_idle_hosts(
+			1, &copies[i].hostname, 1, &host);
+		if (e != NULL) {
+			/* 'gfsd' is not running. */
+			i = ncopies;
+		}
+	}
+	if (i == ncopies) {
 		e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
 		if (e != NULL) {
 			gfarm_file_section_copy_info_free_all(ncopies, copies);

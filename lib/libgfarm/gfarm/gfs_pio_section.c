@@ -396,13 +396,14 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto finish;
 	} else if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
 		e = gfarm_host_get_canonical_self_name(&if_hostname);
-		if (e == NULL) {
-			vc->canonical_hostname = strdup(if_hostname);
-			if (vc->canonical_hostname == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				goto finish;
-			}
-		} else {
+		if (e == NULL)
+			e = gfarm_schedule_search_idle_hosts(
+				1, &if_hostname, 1, &vc->canonical_hostname);
+		if (e != NULL) {
+			/*
+			 * local host is not a file system node, or
+			 * 'gfsd' on a local host is not running.
+			 */
 			e = gfarm_schedule_search_idle_by_all(1, &if_hostname);
 			if (e != NULL)
 				goto finish;
