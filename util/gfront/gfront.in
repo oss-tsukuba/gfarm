@@ -1,0 +1,3 @@
+#! /bin/sh
+
+java -jar gfront.jar >& /dev/null
