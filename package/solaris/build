@@ -6,7 +6,7 @@ export PATH
 
 version=1.0.4
 subpkgs='client devel doc fsnode gfptool libs server gfront'
-prefix=/usr/grid
+prefix=/usr/local/gfarm
 pkg_list='gfarm gfarm-gsi'
 cc_list='vendorcc gcc'
 # XXX gcc cannot link shared object. what's wrong?
