@@ -28,3 +28,9 @@ GFARMLIB = -L$(top_objdir)/gfarmlib -lgfarm \
 	$(metadb_client_libs) $(gfsl_libs) $(openssl_libs)
 DEPGFARMLIB = $(top_objdir)/gfarmlib/libgfarm.a $(depgfsllib)
 DEPGFARMINC = $(INCDIR)/gfarm.h $(INCDIR)/gfarm_error.h $(INCDIR)/gfarm_metadb.h $(INCDIR)/gfarm_misc.h $(INCDIR)/gfarm_stringlist.h $(INCDIR)/gfs.h $(INCDIR)/gfs_glob.h
+
+DOCBOOK2MAN = jw -b man
+DOCBOOK2HTML = jw -b html -u
+srcsubst = dummy
+dstsubst = dummy
+

@@ -6,6 +6,7 @@ VPATH = @srcdir@
 GLOBUS_SUBDIRS = lib/libgfsl
 
 SUBDIRS = \
+	doc \
 	man \
 	include \
 	@globus_subdirs@ \

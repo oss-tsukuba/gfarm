@@ -4,6 +4,8 @@ clean: subdir-clean post-clean-hook
 veryclean: subdir-veryclean post-very-clean-hook
 distclean: subdir-distclean post-distclean-hook
 gfregister: subdir-gfregister post-gfregister-hook
+man: subdir-man
+html: subdir-html
 
 post-all-hook:
 post-install-hook:
@@ -12,7 +14,7 @@ post-very-clean-hook:
 post-distclean-hook:
 post-gfregister-hook:
 
-subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister:
+subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
 	for dir in / $(SUBDIRS); do \
 		case $${dir} in /) continue;; esac; \

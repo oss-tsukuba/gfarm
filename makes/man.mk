@@ -4,6 +4,8 @@ clean: man-clean post-clean-hook
 veryclean: man-veryclean post-very-clean-hook
 distclean: man-distclean post-distclean-hook
 gfregister: man-gfregister post-gfregister-hook
+man: man-man
+html: man-html
 
 post-all-hook:
 post-install-hook:
@@ -31,3 +33,14 @@ man-distclean: veryclean
 	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
 
 man-gfregister:
+
+$(dstsubst): $(srcsubst)
+	$(DOCBOOK2MAN) $(srcsubst)
+
+man-man:
+	for i in $(DOCBOOK); do \
+		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
+			dstsubst=$$i $$i; \
+	done
+
+man-html:
