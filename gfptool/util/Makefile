@@ -9,19 +9,7 @@ bindir = $(sbindir)
 
 SCRIPTS= gfregister
 
-all:
+include $(top_srcdir)/makes/script.mk
 
-install:
-	@for i in / $(SCRIPTS); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
-	done
-
-clean:
-veryclean: clean
-distclean: veryclean
+distclean:
 	-rm -f $(SCRIPTS)
-
-gfregister:
-man:
-html:

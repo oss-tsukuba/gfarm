@@ -10,23 +10,13 @@ include $(top_srcdir)/makes/var.mk
 SCRIPTS= gfront
 JAR= gfront.jar
 
-all:
+include $(top_srcdir)/makes/script.mk
 
 install:
-	@for i in / $(SCRIPTS); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_SCRIPT) $${i} $(bindir)/$${i} ); \
-	done
-	@for i in / $(JAR); do \
-		case $$i in /) continue;; esac; \
+	@for i in -- $(JAR); do \
+		case $$i in --) continue;; esac; \
 		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(javadir)/$${i} ); \
 	done
 
-clean:
-veryclean: clean
-distclean: veryclean
+distclean:
 	-rm -f $(SCRIPTS)
-
-gfregister:
-man:
-html:

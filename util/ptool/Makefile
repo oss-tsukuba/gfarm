@@ -4,19 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS= pcat pcp pdel pdist prun
+SCRIPTS= $(srcdir)/pcat $(srcdir)/pcp $(srcdir)/pdel $(srcdir)/pdist $(srcdir)/prun
 
-all:
-
-install:
-	@for i in / $(SCRIPTS); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_SCRIPT) $(srcdir)/$${i} $(bindir)/$${i} );\
-	done
-
-clean:
-veryclean: clean
-distclean: veryclean
-gfregister:
-man:
-html:
+include $(top_srcdir)/makes/script.mk
