@@ -471,14 +471,14 @@ Bourne Shell �̏ꍇ:
 	% port=9000
 	% basedn='dc=hpcc, dc=jp'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 csh �̏ꍇ:
 	% set host=ldap.hpcc.jp
 	% set port=9000
 	% set basedn='dc=hpcc, dc=jp'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 ------------------------------------------------------------------------
 
