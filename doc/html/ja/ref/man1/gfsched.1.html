@@ -38,7 +38,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsched</B
-> [-I <TT
+> [-U] [-I <TT
 CLASS="REPLACEABLE"
 ><I
 >フラグメント番号</I
@@ -63,7 +63,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfsched</B
->  -N <TT
+> [-U]  -N <TT
 CLASS="REPLACEABLE"
 ><I
 >ノード数</I
@@ -145,6 +145,17 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >特定のファイル断片についてホストを1つ選択します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-U</TT
+></DT
+><DD
+><P
+>そのホストに対して、認証が成功するか否かの確認を省略します。
+高速になりますが、認証不能なホストがスケジューリングされてしまう
+危険があります。</P
 ></DD
 ><DT
 ><TT

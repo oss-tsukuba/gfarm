@@ -38,7 +38,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsched</B
-> [-I <TT
+> [-U] [-I <TT
 CLASS="REPLACEABLE"
 ><I
 >fragment-index</I
@@ -63,7 +63,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfsched</B
->  -N <TT
+> [-U]  -N <TT
 CLASS="REPLACEABLE"
 ><I
 >number</I
@@ -166,6 +166,20 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >specifies the fragment index to be scheduled.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-U</TT
+></DT
+><DD
+><P
+>suppresses authentication check.
+Without this option, the scheduler checks whether the user will be 
+successfully authenticated with the hosts or not.
+This option omits the check to make scheduling faster,
+but that makes a risk that hosts which make authentication failure with
+the user may be scheduled.</P
 ></DD
 ><DT
 ><TT
