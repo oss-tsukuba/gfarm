@@ -62,5 +62,8 @@
 
 #define GFARM_DEFAULT_USERMAP_FILE		"gfarm-usermap"
 
+/* XXX - This depends on globus implementation - GLOBUS_SUCCESS (== 0) */
+#define GFSL_DEFAULT_MINOR_ERROR 0
+
 #endif /* _GFARM_GFSL_CONFIG_H_ */
 

@@ -319,9 +319,6 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 #define NEGO_PARAM_OTHER_CONFIG_FORCE	5
 #define NUM_NEGO_PARAM			6
   
-/* XXX - This depends on globus implementation - GLOBUS_SUCCESS (== 0) */
-#define GFSL_DEFAULT_MINOR_ERROR 0
-
     if (majStatPtr != NULL) {
 	*majStatPtr = GSS_S_FAILURE;
     }
