@@ -79,7 +79,8 @@ main(argc, argv)
 	if (index != NULL) {
 		/* replicate a section */
 		if (hostfile != NULL)
-			printf("Warning: -H option is ignored\n");
+			fprintf(stderr, "%s: Warning: -H option is ignored\n",
+				program_name);
 		if (dest == NULL) {
 			fprintf(stderr, "%s: -d dest-node option is required\n",
 				program_name);
@@ -91,8 +92,7 @@ main(argc, argv)
 		else
 			e = gfarm_url_section_replicate_from_to(gfarm_url,
 				index, src, dest);
-	}
-	else {
+	} else {
 		/* replicate a whole file */
 		if (hostfile == NULL) {
 			fprintf(stderr, "%s: -H <hostfile> option is required\n",
