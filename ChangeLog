@@ -1,3 +1,191 @@
+2002-10-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfm_client.c: fix error added at revision 1.12.
+	gfarm client doesn't have to be a compute host.
+
+2002-10-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/man1/Makefile, man/man1/gfls.1:
+	Added an manual page of gfls in English.
+
+2002-10-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/Makefile, gftool/gfls/Makefile, gftool/gfls/gfls.c, include/gfarm_metadb.h, include/gfs.h, gfarmlib/metadb_ldap.c:
+	add stopgap implementation of gfls
+
+	* gfarmlib/gfs_pio.c: fill st_ctime at file creation.
+	but st_mtime, st_atime and also st_ctime at other operations are not yet.
+
+	* gfarmlib/hash.c, gfarmlib/hash.h: add iterator functions.
+
+2002-10-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in:
+	not only `getconf LFS_CFLAGS`, but also -D_GNU_SOURCE is required to
+	make pwrite() 64bit-safe.
+
+2002-10-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	previous version checked other's permission, rather than user's permission
+
+	* lib/gfs_hook/hooks.c:
+	add simple (and stupid) access(2) hook, but it seems this hook isn't called
+	by goofy???
+
+	* gfarmlib/gfs_pio_misc.c:
+	gfs_unlink(3) couldn't remove inconsistent entry until this fix.
+
+	* lib/gfs_hook/hooks_common.c: yet another kluge to deal with ROOT I/O.
+
+	* gfarmlib/gfs_pio.c: fix typo
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c:
+	kluge for ROOT I/O.
+	XXX - a lot of warnings about const qualifier.
+
+	* gfarmlib/gfs_pio.c: changes for ROOT I/O
+
+	* lib/gfs_hook/Makefile.in: honor $(OPTFLAGS)
+
+	* lib/gfs_hook/hooks.c:
+	revive some harmless debug message in __write().
+	also note why I shouldn't add debug message bilindly here
+	(I should remember this, but....).
+
+	* lib/gfs_hook/hooks_common.c: more debug message
+
+	* lib/gfs_hook/Makefile.in: add dependency
+
+2002-10-13  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c (__write):
+	Removed debug printing code to avoid infinite loops.
+
+2002-10-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio_misc.c:
+	move replica existence check to more appropriate place
+
+	* gfarmlib/Makefile.in, gfarmlib/config.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_proto.h, gfarmlib/param.c, gfarmlib/param.h, gfarmlib/sockopt.c, gfsd/main.c:
+	network striping for replication controlled by the following directives:
+		netparam parallel_streams=STREAM_COUNT [NETWORK]
+		netparam stripe_unit_size=STRIPE_CHUNK_SIZE [NETWORK]
+
+	* include/gfs.h:
+	correct definitions of gfarm_url_section_replicate{_from}_to(3) API.
+
+	* gfmd/gfmd.c: just change #include order
+
+	* gfarmlib/gfs_pio_misc.c, man/ja/man3/gfarm_url_section_replicate_from_to.3, man/ja/man3/gfarm_url_section_replicate_to.3:
+	correct definitions of gfarm_url_section_replicate{_from}_to(3) API.
+
+	* bench/thput-fsstripe/thput-fsstripe.c:
+	make this looks like gfsd/main.c more
+
+	* configure, configure.in, gfarm_config.h.in: check pwrite(2)
+
+	* gfarmlib/error.c, include/gfarm_error.h:
+	add GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE which corresponds to ERANGE.
+
+	* include/Makefile.in: missing dependency
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c:
+	more debug message for gfs_hook functions.
+
+2002-10-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/Makefile.in: missing change in previous commitment
+
+	* lib/gfs_hook/Makefile.in:
+	compile & install gfs_hook_debug.o as well as gfs_hook.o by default.
+
+	* bench/thput-fsstripe/thput-fsstripe.c:
+	just tweak function parameter order
+
+2002-10-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-fsstripe/thput-fsstripe.c:
+	oops, descriptor shoudn't be shared.
+
+	* bench/thput-fsstripe/thput-fsstripe.c:
+	missing headers and missing argument.
+
+	* bench/Makefile, bench/thput-fsstripe/Makefile, bench/thput-fsstripe/thput-fsstripe.c:
+	a program t measure fs throughput with striping
+
+2002-10-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio.c (gfs_pio_create):
+	(quick hack) A RW mode checking code is commented out.  This is required for hooking ROOT I/O.
+
+2002-10-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/main.c: forgot to initialize
+
+	* gftool/gfmpirun/gfmpirun.c, gftool/gfrcmd/gfrcmd.c, gftool/gfreg/gfreg.c, gftool/gfrun/gfrun.c, include/gfarm_error.h, include/gfarm_metadb.h, gfarmlib/config.c, gfarmlib/error.c, gfarmlib/gfm_client.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_local.c, gfarmlib/gfs_pio_remote.c, gfarmlib/host.c, gfarmlib/host.h, gfarmlib/import_help.c, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, INSTALL.en, INSTALL.ja, bench/thput-gfpio/thput-gfpio.c, gfarmlib/Makefile.in:
+	make it possible to select multiple network interface
+
+	* gfarmlib/gfs_pio_section.c, include/gfarm_misc.h:
+	make it possible to select multiple network interface
+	add gfarm_file_section_host_schedule{,_with_priority_local}()
+
+	* gfarmlib/gfs_pio_misc.c:
+	- make it possible to select multiple network interface
+	- move gfarm_strings_free_deeply() from gfs_pio_misc.c to stringlist.c
+	- add gfarm_file_section_host_schedule{,_with_priority_local}()
+
+	* gfarmlib/schedule.c:
+	- make it possible to select multiple network interface
+	- fix several problems of the idle host search
+	- add gfarm_file_section_host_schedule{,_with_priority_local}()
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h:
+	- make it possible to select multiple network interface
+	- fix several problems in idle host search
+
+	* gfmd/gfmd.c: split open_accepting_socket() from main()
+
+	* gfsd/main.c: - make it possible to select multiple network interface
+	- bind each interface address for udp service
+	  to support multiple network interface.
+	- split open_accepting_socket() from main()
+
+	* gfsd/loadavg.c:
+	bug fix - previous version didn't correctly work except first call.
+
+	* gfarmlib/stringlist.c:
+	move gfarm_strings_free_deeply() from gfs_pio_misc.c to stringlist.c
+
+	* gfarmlib/auth_common.c: only call srandom(3) once.
+
+	* acconfig.h, configure, configure.in, gfarm_config.h.in:
+	deal with old BSDs which doesn't have strtoll() but does have strtoq()
+
+2002-10-08  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrm/gfrm.c, man/ja/man1/gfrm.1, man/man1/gfexport.1, man/man1/gfrm.1, gftool/gfexport/gfexport.c:
+	Improved the wording and fixed typos.
+
+2002-10-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in, nstool/file/Makefile.in:
+	correct nstool installation directory for the case that --prefix is omitted.
+
+	* man/man1/gfrep.1, man/man1/gfrun.1, man/ja/man1/gfexport.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfrep.1, man/ja/man1/gfrun.1, man/man1/gfexport.1, man/man1/gfimport_fixed.1, man/man1/gfimport_text.1:
+	describe ``-'' (standard input) for -H and -f option
+
+	* man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	document the way to remove replica
+
+	* gftool/gfexport/gfexport.c, gftool/gfrm/gfrm.c, man/ja/man1/gfexport.1, man/man1/gfexport.1:
+	change fragment option (from '-s' in gfexport and '-i' in gfrm) to '-I',
+	to make these consistent with gfreg.
+
+2002-10-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Chatched up with the current ChangeLog.
+
 2002-10-01  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfmd/gfmd.c: plug memory leak
