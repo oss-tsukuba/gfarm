@@ -759,7 +759,7 @@ gfs_pio_puts(GFS_File gf, const char *s)
 
 /* mostly compatible with fgets(3), but EOF check is done by *s == '\0' */
 char *
-gfs_pio_gets(GFS_File gf, char *s, int size)
+gfs_pio_gets(GFS_File gf, char *s, size_t size)
 {
 	char *e = gfs_pio_check_view_default(gf);
 	char *p = s;
@@ -861,11 +861,11 @@ gfs_pio_putline(GFS_File gf, const char *s)
  * 2. on error, *lenp isn't touched.
  */
 char *
-gfs_pio_readline(GFS_File gf, char **bufp, int *sizep, int *lenp)
+gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 {
 	char *e = gfs_pio_check_view_default(gf);
 	char *buf = *bufp, *p;
-	int size = *sizep, len = 0;
+	size_t size = *sizep, len = 0;
 	int c;
 	gfarm_timerval_t t1, t2;
 
@@ -935,12 +935,12 @@ gfs_pio_readline(GFS_File gf, char **bufp, int *sizep, int *lenp)
  * 2. on error, *lenp isn't touched.
  */
 char *
-gfs_pio_readdelim(GFS_File gf, char **bufp, int *sizep, int *lenp,
-	const char *delim, int delimlen)
+gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
+	const char *delim, size_t delimlen)
 {
 	char *e = gfs_pio_check_view_default(gf);
-	char *buf = *bufp, *p;
-	int size = *sizep, len = 0;
+	size_t *buf = *bufp, *p;
+	size_t size = *sizep, len = 0;
 	int c, delimtail;
 	static const char empty_line[] = "\n\n";
 	gfarm_timerval_t t1, t2;

@@ -93,11 +93,12 @@ int gfs_pio_getc(GFS_File);
 int gfs_pio_ungetc(GFS_File, int);
 char *gfs_pio_putc(GFS_File, int);
 char *gfs_pio_puts(GFS_File, const char *);
-char *gfs_pio_gets(GFS_File, char *, int);
+char *gfs_pio_gets(GFS_File, char *, size_t);
 char *gfs_pio_getline(GFS_File, char *, size_t, int *);
 char *gfs_pio_putline(GFS_File, const char *);
-char *gfs_pio_readline(GFS_File, char **, int *, int *);
-char *gfs_pio_readdelim(GFS_File, char **, int *, int *, const char *, int);
+char *gfs_pio_readline(GFS_File, char **, size_t *, size_t *);
+char *gfs_pio_readdelim(GFS_File, char **, size_t *, size_t *,
+	const char *, size_t);
 
 /*
  *  For legacy code
