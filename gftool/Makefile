@@ -1,6 +1,7 @@
 all:
 	cd digest && make $@
 	cd gfexport && make $@
+	cd gfkey && make $@
 	cd gfreg && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
@@ -10,6 +11,7 @@ all:
 install clean veryclean distclean:
 	cd digest && make $@
 	cd gfexport && make $@
+	cd gfkey && make $@
 	cd gfreg && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
