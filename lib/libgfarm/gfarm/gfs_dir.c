@@ -37,7 +37,7 @@ char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
 	const char *path;
-	char *default_cwd = NULL;
+	char *default_cwd = NULL, *e, *p;
 	int len;
 	
 	if (gfarm_current_working_directory != NULL)
@@ -52,6 +52,12 @@ gfs_getcwd(char *cwd, int cwdsize)
 			return (e);
 		path = default_cwd;
 	}
+
+	/* check the existence */
+	e = gfarm_canonical_path(path, &p);
+	if (e != NULL)
+		return (e);
+	free(p);
 
 	len = strlen(path);
 	if (len < cwdsize) {
