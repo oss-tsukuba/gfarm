@@ -1864,6 +1864,9 @@ server(int client_fd)
 	if (e != NULL)
 		gflog_fatal("gfarm_authorize", e);
 
+	/* set file creation mask */
+	umask(0);
+
 	for (;;) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &request);
 		if (e != NULL)
