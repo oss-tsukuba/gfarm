@@ -429,11 +429,11 @@ main(int argc, char *argv[])
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, e);
+		print_errmsg(progname, e);
 		exit(1);
 	}
 	if (!gfarm_is_active_file_system_node) {
-		fprintf(stderr, "%s: not a filesystem node\n", progname);
+		print_errmsg(progname, "not a filesystem node");
 		exit(1);
 	}
 	while ((c = getopt(argc, argv, "ad")) != EOF) {
@@ -468,7 +468,7 @@ main(int argc, char *argv[])
  finish:
 	e = gfarm_terminate();
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, e);
+		print_errmsg(progname, e);
 		exit(1);
 	}
 	exit(0);
