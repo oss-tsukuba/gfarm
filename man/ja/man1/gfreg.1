@@ -3,8 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREG" "1" "20 August 2003" "Gfarm" ""
-
+.TH "GFREG" "1" "27 November 2003" "Gfarm" ""
 .SH NAME
 gfreg \- Gfarm ファイルシステムへのプログラム、ファイルフラグメントの登録
 .SH SYNOPSIS
@@ -43,3 +42,7 @@ CPU負荷により選ばれますが、オプション -D により選択されるファイルシス
 ン -h により明示的に指定することができます。ただ、ファイルシステムノー
 ドで gfreg を実行した場合は常に自ノードが選ばれてしまうため、ファイル
 を分散させて配置したい場合はオプション -h を指定する必要があります．
+.SH "OPTIONS"
+.TP
+\fB-?\fR
+引数オプションを表示します。
