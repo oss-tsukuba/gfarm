@@ -132,7 +132,8 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 <para>指定されたフラグメント番号のプロセスだけが実行されます．
 このオプションは，<option>-G</option> オプションあるいは引数に与えた Gfarm
 ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
-場合のみ利用可能です．
+場合，および <option>-N</option> オプションが指定されている場合のみ利
+用可能です．
 </para>
 </listitem>
 </varlistentry>

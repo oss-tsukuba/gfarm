@@ -133,9 +133,9 @@ program will be redirected to.</para>
 <term><option>-I</option> <parameter>fragment-index</parameter></term>
 <listitem>
 <para>specifies a Gfarm fragment index executed by the gfrun command.
-This option is only available, when file-affinity scheduling is
+This option is available only when either file-affinity scheduling is
 selected by the <option>-G</option> option or a gfarm file in the
-argument list.</para>
+argument list, or the <option>-N</option> option is specified.</para>
 </listitem>
 </varlistentry>
 
