@@ -87,8 +87,11 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	if (gfarm_is_url(cmd)) {
 		e = gfarm_url_program_deliver(cmd, nhosts, hosts,
 		    &delivered_paths);
-		if (e != NULL)
+		if (e != NULL) {
+			fprintf(stderr, "%s: deliver %s: %s\n",
+			    program_name, cmd, e);
 			return (e);
+		}
 		cmd_type_guess = GFARM_COMMAND;
 	}
 	if (cmd_type == UNKNOWN_COMMAND)
@@ -167,8 +170,13 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		gfarm_strings_free_deeply(nhosts, delivered_paths);
 	gfarm_stringlist_free(&arg_list);
 
-	return (save_errno == ECHILD
-		? NULL : gfarm_errno_to_error(save_errno));
+	if (save_errno != ECHILD) {
+		e = gfarm_errno_to_error(save_errno);
+		fprintf(stderr, "%s: waiting child process: %s\n",
+		    program_name, e);
+		return (e);
+	}
+	return (NULL);
 }
 
 /*
@@ -268,7 +276,8 @@ schedule(char *command_name, struct gfrun_options *options,
 			    &nhosts, &hosts);
 		}
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", options->sched_file, e);
+			fprintf(stderr, "%s: scheduling by %s: %s\n",
+			    program_name, options->sched_file, e);
 			exit(1);
 		}
 		scheduling_file = options->sched_file;
@@ -306,7 +315,8 @@ schedule(char *command_name, struct gfrun_options *options,
 			e = gfarm_schedule_search_idle_by_all(nhosts, hosts);
 		}
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
+			fprintf(stderr, "%s: scheduling %d nodes: %s\n",
+			    program_name, options->nprocs, e);
 			exit(1);
 		}
 		scheduling_file = "";
@@ -351,7 +361,8 @@ schedule(char *command_name, struct gfrun_options *options,
 				e= gfarm_schedule_search_idle_by_all(1, hosts);
 			}
 			if (e != NULL) {
-				fprintf(stderr, "%s: %s\n", program_name, e);
+				fprintf(stderr, "%s: scheduling 1 host: %s\n",
+				    program_name, e);
 				exit(1);
 			}
 		}
@@ -661,9 +672,7 @@ main(int argc, char **argv)
 	    options.stdout_file, options.stderr_file, options.profile,
 	    nhosts, hosts,
 	    options.cmd_type, command_name, &argv[command_index + 1]);
-	if (e_save != NULL) {
-		fprintf(stderr, "%s: %s\n", command_name, e_save);
-	} else {
+	if (e_save == NULL) {
 		register_stdout_stderr(
 		    options.stdout_file, options.stderr_file,
 		    rsh_command, &rsh_options, nhosts, hosts);
@@ -679,7 +688,7 @@ main(int argc, char **argv)
 	gfarm_stringlist_free(&input_list);
 	gfarm_stringlist_free(&rsh_options);
 	if ((e = gfarm_terminate()) != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);
 		exit(1);
 	}
 	return (e_save == NULL ? 0 : 1);
