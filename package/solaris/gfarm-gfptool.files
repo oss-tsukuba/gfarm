@@ -3,7 +3,6 @@ usr/grid/bin/gfcombine_hook
 usr/grid/bin/gfcp
 usr/grid/bin/gfcp_hook
 usr/grid/bin/gfgrep
-usr/grid/bin/gfsplck
 usr/grid/bin/gfwc
 
 usr/grid/libexec/gfrepbe_client
