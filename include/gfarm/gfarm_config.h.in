@@ -43,6 +43,9 @@
 /* Define if you have the poll function.  */
 #undef HAVE_POLL
 
+/* Define if you have the pread function.  */
+#undef HAVE_PREAD
+
 /* Define if you have the printf function.  */
 #undef HAVE_PRINTF
 

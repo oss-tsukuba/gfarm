@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PTOOLS='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfreg gfsplck gfwc'
+PTOOLS='bin/gfcombine bin/gfcombine_hook bin/gfcp bin/gfcp_hook bin/gfgrep bin/gfrcmd bin/gfreg bin/gfsplck bin/gfwc libexec/gfrepbe_client libexec/gfrepbe_server'
 
 hostname=`hostname`
 arch=`gfhost -M $hostname | sed 's/ .*//'`
@@ -12,10 +12,10 @@ then
 	exit 1
 fi
 
-cd @prefix@/bin
+cd @prefix@
 
 echo Creating gfarm:/bin  ...
-if gfmkdir gfarm:/bin; then
+if gfmkdir gfarm:/bin gfarm:/libexec; then
 	:
 else
 	status=1
@@ -25,19 +25,19 @@ for cmd in $PTOOLS
 do
 	if test -f $cmd
 	then
-		if gfwhere -I $arch gfarm:/bin/$cmd >/dev/null 2>&1; then
+		if gfwhere -I $arch gfarm:/$cmd >/dev/null 2>&1; then
 			:
 		else
-			echo Registering gfarm:/bin/$cmd for $arch ...
-			if gfreg $cmd gfarm:/bin/$cmd; then
+			echo Registering gfarm:/$cmd for $arch ...
+			if gfreg $cmd gfarm:/$cmd; then
 				:
 			else
 				status=1
 			fi
 		fi
 		gfhost -a $arch | while read host; do
-			echo Replicating gfarm:/bin/${cmd}:${arch} to $host ...
-			if gfrep -I $arch -s $hostname -d $host gfarm:/bin/$cmd
+			echo Replicating gfarm:/${cmd}:${arch} to $host ...
+			if gfrep -b -I $arch -s $hostname -d $host gfarm:/$cmd
 			then
 				:
 			else

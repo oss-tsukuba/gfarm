@@ -124,14 +124,53 @@ gfarm_host_get_canonical_self_name(char **canonical_hostnamep)
 {
 	char *e;
 	static char *canonical_self_name = NULL;
+	static char *error_save = NULL;
 
 	if (canonical_self_name == NULL) {
+		if (error_save != NULL)
+			return (error_save);
 		e = gfarm_host_get_canonical_name(gfarm_host_get_self_name(),
 		    &canonical_self_name);
-		if (e != NULL)
-			return (e);			
+		if (e != NULL) {
+			error_save = e;
+			return (e);
+		}
 	}
 	*canonical_hostnamep = canonical_self_name;
+	return (NULL);
+}
+
+/*
+ * shouldn't free the return value of this function.
+ *
+ * NOTE: gfarm_error_initialize() and gfarm_metadb_initialize()
+ *	should be called before this function.
+ */
+char *
+gfarm_host_get_self_architecture(char **architecture)
+{
+	char *e;
+	char *canonical_self_name;
+	static char *self_architecture = NULL;
+	static char *error_save = NULL;
+
+	if (self_architecture == NULL) {
+		if (error_save != NULL)
+			return (error_save);
+		e = gfarm_host_get_canonical_self_name(&canonical_self_name);
+		if (e != NULL) {
+			error_save = e;
+			return (e);
+		}
+		self_architecture =
+		    gfarm_host_info_get_architecture_by_host(
+		    canonical_self_name);
+		if (self_architecture == NULL) {
+			error_save = GFARM_ERR_NO_SUCH_OBJECT;
+			return (error_save);
+		}
+	}
+	*architecture = self_architecture;
 	return (NULL);
 }
 

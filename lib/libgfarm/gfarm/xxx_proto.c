@@ -499,3 +499,38 @@ xxx_recv_partial(struct xxx_connection *conn, int just, void *data, int length)
 	return (gfarm_iobuffer_get_read_partial_x(
 			conn->recvbuffer, data, length, just));
 }
+
+/*
+ * lowest level interface,
+ * this does not wait to receive desired length, and
+ * this does not honor iobuffer.
+ */
+char *
+xxx_read_direct(struct xxx_connection *conn, void *data, int length,
+	int *resultp)
+{
+	int rv = (*conn->iob_ops->blocking_read)(conn->recvbuffer,
+	    conn->cookie, conn->fd, data, length);
+
+	if (rv == -1) {
+		*resultp = 0;
+		return (gfarm_iobuffer_get_error(conn->recvbuffer));
+	}
+	*resultp = rv;
+	return (NULL);
+}
+
+char *
+xxx_write_direct(struct xxx_connection *conn, void *data, int length,
+	int *resultp)
+{
+	int rv = (*conn->iob_ops->blocking_write)(conn->sendbuffer,
+	    conn->cookie, conn->fd, data, length);
+
+	if (rv == -1) {
+		*resultp = 0;
+		return (gfarm_iobuffer_get_error(conn->sendbuffer));
+	}
+	*resultp = rv;
+	return (NULL);
+}

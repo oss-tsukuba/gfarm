@@ -53,6 +53,8 @@ char *xxx_proto_vrpc(struct xxx_connection *,
 		     int, gfarm_int32_t, gfarm_int32_t *, char **, va_list *);
 
 int xxx_recv_partial(struct xxx_connection *, int, void *, int);
+char *xxx_read_direct(struct xxx_connection *, void *, int, int *);
+char *xxx_write_direct(struct xxx_connection *, void *, int, int *);
 
 /*
  * rpc format string mnemonic:

@@ -68,8 +68,8 @@ int debug_mode = 0;
 int restrict_user = 0;
 uid_t restricted_user = 0;
 
-long rate_limit = 0;
-long sync_rate;
+long file_read_size;
+long rate_limit;
 
 struct xxx_connection *credential_exported = NULL;
 
@@ -467,117 +467,6 @@ gfs_server_get_spool_root(struct xxx_connection *client)
 	    GFS_ERROR_NOERROR, "s", gfarm_spool_root);
 }
 
-#define USEC_SEC	1000000
-#define USEC_MILLISEC	1000
-
-int
-timeval_cmp(struct timeval *t1, struct timeval *t2)
-{
-	if (t1->tv_sec > t2->tv_sec)
-		return (1);
-	if (t1->tv_sec < t2->tv_sec)
-		return (-1);
-	if (t1->tv_usec > t2->tv_usec)
-		return (1);
-	if (t1->tv_usec < t2->tv_usec)
-		return (-1);
-	return (0);
-}
-
-void
-timeval_add_usec(struct timeval *t1, long usec)
-{
-	t1->tv_usec += usec;
-	if (t1->tv_usec >= USEC_SEC) {
-		t1->tv_usec -= USEC_SEC;
-		++t1->tv_sec;
-	}
-}
-
-void
-timeval_sub(struct timeval *t1, struct timeval *t2)
-{
-	t1->tv_sec -= t2->tv_sec;
-	t1->tv_usec -= t2->tv_usec;
-	if (t1->tv_usec < 0) {
-		t1->tv_usec += USEC_SEC;
-		--t1->tv_sec;
-	}
-}
-
-#define RATECTL_TICK		100		/* i.e. 1/100seconds */
-#define RTT			25		/* XXX - hardcoded 250ms RTT */
-#define USEC_RATECTL_TICK	(USEC_SEC / RATECTL_TICK)
-#define DEFAULT_MTU		1500
-
-struct rate_info {
-	long octets_per_tick;
-	long flow_limit;
-	long flow;
-	struct timeval period;
-	int tick;
-};
-
-void
-rate_init(struct rate_info *rinfo, long rate)
-{
-	rinfo->octets_per_tick = rate / 8 / RATECTL_TICK;
-	rinfo->flow_limit = DEFAULT_MTU;
-	rinfo->flow = 0;
-	gettimeofday(&rinfo->period, NULL);
-	timeval_add_usec(&rinfo->period, USEC_RATECTL_TICK);
-	rinfo->tick++;
-}
-
-void
-rate_control(struct rate_info *rinfo, long size)
-{
-	rinfo->flow += size;
-	/* XXX - it's inefficient to call usleep() multiple times. */
-	while (rinfo->flow >= rinfo->flow_limit) {
-		struct timeval now, interval;
-
-		gettimeofday(&now, NULL);
-		if (timeval_cmp(&now, &rinfo->period) < 0) {
-			interval = rinfo->period;
-			timeval_sub(&interval, &now);
-			usleep(interval.tv_sec * USEC_SEC + interval.tv_usec);
-#if 1
-			/* make this slow while slow starting */
-			rinfo->period = now;
-#endif
-		}
-
-#if 0
-		/*
-		 * We do update rinfo->period by current time here,
-		 * because our intention is to limit network flow.
-		 */
-		rinfo->period = now;
-#endif
-
-		timeval_add_usec(&rinfo->period, USEC_RATECTL_TICK);
-		rinfo->flow -= rinfo->flow_limit;
-
-		/* slow start */
-		if (rinfo->flow_limit < rinfo->octets_per_tick) {
-			if (++rinfo->tick >= RTT) {
-				rinfo->tick = 0;
-				rinfo->flow_limit <<= 1;
-				if (rinfo->flow_limit > rinfo->octets_per_tick)
-					rinfo->flow_limit =
-					    rinfo->octets_per_tick;
-			}
-		}
-	}
-}
-
-#if 0
-#define BULKREAD_SIZE	GFS_PROTO_MAX_IOSIZE
-#else
-#define BULKREAD_SIZE	4096
-#endif
-
 void
 gfs_server_bulkread(struct xxx_connection *client)
 {
@@ -585,16 +474,23 @@ gfs_server_bulkread(struct xxx_connection *client)
 	gfarm_int32_t fd;
 	ssize_t rv;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
-	char buffer[BULKREAD_SIZE];
-	struct rate_info rinfo;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct gfs_client_rep_rate_info *rinfo = NULL;
 
 	gfs_server_get_request(client, "bulkread", "i", &fd);
 
+	if (file_read_size >= sizeof(buffer))
+		file_read_size = sizeof(buffer);
+	if (rate_limit != 0) {
+		rinfo = gfs_client_rep_rate_info_alloc(rate_limit);
+		if (rinfo == NULL)
+			gflog_fatal("bulkread:rate_info_alloc",
+			    GFARM_ERR_NO_MEMORY);
+	}
+
 	fd = file_table_get(fd);
-	if (rate_limit != 0)
-		rate_init(&rinfo, rate_limit);
 	do {
-		rv = read(fd, buffer, BULKREAD_SIZE);
+		rv = read(fd, buffer, file_read_size);
 		if (rv <= 0) {
 			if (rv == -1)
 				error = gfs_errno_to_proto_error(errno);
@@ -605,17 +501,19 @@ gfs_server_bulkread(struct xxx_connection *client)
 			error = gfs_string_to_proto_error(e);
 			break;
 		}
-#if BULKREAD_SIZE < GFS_PROTO_MAX_IOSIZE
-		e = xxx_proto_flush(client);
-		if (e != NULL) {
-			error = gfs_string_to_proto_error(e);
-			break;
+		if (file_read_size < GFS_PROTO_MAX_IOSIZE) {
+			e = xxx_proto_flush(client);
+			if (e != NULL) {
+				error = gfs_string_to_proto_error(e);
+				break;
+			}
 		}
-#endif
 		if (rate_limit != 0)
-			rate_control(&rinfo, rv);
+			gfs_client_rep_rate_control(rinfo, rv);
 	} while (rv > 0);
 
+	if (rinfo != NULL)
+		gfs_client_rep_rate_info_free(rinfo);
 	/* send EOF mark */
 	e = xxx_proto_send(client, "b", 0, buffer);
 	if (e != NULL && error == GFS_ERROR_NOERROR)
@@ -633,25 +531,32 @@ gfs_server_striping_read(struct xxx_connection *client)
 	file_offset_t chunk_size;
 	ssize_t rv;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
-	char buffer[BULKREAD_SIZE];
-	struct rate_info rinfo;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct gfs_client_rep_rate_info *rinfo = NULL;
 
 	gfs_server_get_request(client, "striping_read", "iooio", &fd,
 	    &offset, &size, &interleave_factor, &full_stripe_size);
+
+	if (file_read_size >= sizeof(buffer))
+		file_read_size = sizeof(buffer);
+	if (rate_limit != 0) {
+		rinfo = gfs_client_rep_rate_info_alloc(rate_limit);
+		if (rinfo == NULL)
+			gflog_fatal("striping_read:rate_info_alloc",
+			    GFARM_ERR_NO_MEMORY);
+	}
 
 	fd = file_table_get(fd);
 	if (lseek(fd, (off_t)offset, SEEK_SET) == -1) {
 		error = gfs_errno_to_proto_error(errno);
 		goto finish;
 	}
-	if (rate_limit != 0)
-		rate_init(&rinfo, rate_limit);
 	for (;;) {
 		chunk_size = interleave_factor == 0 || size < interleave_factor
 		    ? size : interleave_factor;
 		for (; chunk_size > 0; chunk_size -= rv, size -= rv) {
-			rv = read(fd, buffer, chunk_size < BULKREAD_SIZE ?
-			    chunk_size : BULKREAD_SIZE);
+			rv = read(fd, buffer, chunk_size < file_read_size ?
+			    chunk_size : file_read_size);
 			if (rv <= 0) {
 				if (rv == -1)
 					error =
@@ -663,15 +568,15 @@ gfs_server_striping_read(struct xxx_connection *client)
 				error = gfs_string_to_proto_error(e);
 				goto finish;
 			}
-#if BULKREAD_SIZE < GFS_PROTO_MAX_IOSIZE
-			e = xxx_proto_flush(client);
-			if (e != NULL) {
-				error = gfs_string_to_proto_error(e);
-				goto finish;
+			if (file_read_size < GFS_PROTO_MAX_IOSIZE) {
+				e = xxx_proto_flush(client);
+				if (e != NULL) {
+					error = gfs_string_to_proto_error(e);
+					goto finish;
+				}
 			}
-#endif
 			if (rate_limit != 0)
-				rate_control(&rinfo, rv);
+				gfs_client_rep_rate_control(rinfo, rv);
 		}
 		if (size <= 0)
 			break;
@@ -682,6 +587,8 @@ gfs_server_striping_read(struct xxx_connection *client)
 		}
 	}
  finish:
+	if (rinfo != NULL)
+		gfs_client_rep_rate_info_free(rinfo);
 	/* send EOF mark */
 	e = xxx_proto_send(client, "b", 0, buffer);
 	if (e != NULL && error == GFS_ERROR_NOERROR)
@@ -697,6 +604,7 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 	gfarm_int32_t mode;
 	struct gfs_connection *src_conn;
 	int fd, src_fd;
+	long file_sync_rate;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
 	struct hostent *hp;
 	struct sockaddr_in peer_addr;
@@ -713,6 +621,12 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 		       sizeof(peer_addr.sin_addr));
 		peer_addr.sin_family = hp->h_addrtype;
 		peer_addr.sin_port = htons(gfarm_spool_server_port);
+
+		e = gfarm_netparam_config_get_long(
+		    &gfarm_netparam_file_sync_rate,
+		    src_host, (struct sockaddr *)&peer_addr, &file_sync_rate);
+		if (e != NULL) /* shouldn't happen */
+			gflog_warning("file_sync_rate", e);
 
 		/*
 		 * the following gfs_client_connect() accesses user & home
@@ -744,7 +658,7 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 				    "replicate_file_seq:local_open");
 			} else {
 				e = gfs_client_copyin(src_conn, src_fd, fd,
-				    sync_rate);
+				    file_sync_rate);
 				if (e != NULL) {
 					error = gfs_string_to_proto_error(e);
 					gflog_warning(
@@ -888,7 +802,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 	gfarm_int32_t ndivisions; /* parallel_streams */
 	gfarm_int32_t interleave_factor; /* stripe_unit_size, chuck size */
 	file_offset_t file_size;
-	long written;
+	long file_sync_rate, written;
 	int i, j, n, ofd;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
 	struct hostent *hp;
@@ -926,6 +840,12 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 	memcpy(&peer_addr.sin_addr, hp->h_addr, sizeof(peer_addr.sin_addr));
 	peer_addr.sin_family = hp->h_addrtype;
 	peer_addr.sin_port = htons(gfarm_spool_server_port);
+
+	e = gfarm_netparam_config_get_long(&gfarm_netparam_file_sync_rate,
+	    src_host, (struct sockaddr *)&peer_addr, &file_sync_rate);
+	if (e != NULL) /* shouldn't happen */
+		gflog_warning("file_sync_rate", e);
+
 	/* XXX - this should be done in parallel rather than sequential */
 	for (i = 0; i < ndivisions; i++) {
 
@@ -1037,10 +957,10 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 					if (e_save == NULL)
 						e_save = e;
 				}
-			} else if (sync_rate != 0) {
+			} else if (file_sync_rate != 0) {
 				written += rv;
-				if (written >= sync_rate) {
-					written -= sync_rate;
+				if (written >= file_sync_rate) {
+					written -= file_sync_rate;
 					fdatasync(ofd);
 				}
 			}
@@ -1675,7 +1595,7 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		free(xauth_command);
 	}
 #if 1	/*
-	 * To make bash execucute ~/.bashrc, because bash only executes it, if
+	 * To make bash execute ~/.bashrc, because bash only reads it, if
 	 *   1. $SSH_CLIENT/$SSH2_CLIENT is set, or stdin is a socket.
 	 * and
 	 *   2. $SHLVL < 2
@@ -2167,17 +2087,18 @@ main(int argc, char **argv)
 					close(datagram_socks[i]);
 
 				e = gfarm_netparam_config_get_long(
+				    &gfarm_netparam_file_read_size,
+				    NULL, (struct sockaddr *)&client_addr,
+				    &file_read_size);
+				if (e != NULL) /* shouldn't happen */
+					gflog_fatal("file_read_size", e);
+
+				e = gfarm_netparam_config_get_long(
 				    &gfarm_netparam_rate_limit,
 				    NULL, (struct sockaddr *)&client_addr,
 				    &rate_limit);
 				if (e != NULL) /* shouldn't happen */
-					gflog_warning("rate_limit", e);
-				e = gfarm_netparam_config_get_long(
-				    &gfarm_netparam_sync_rate,
-				    NULL, (struct sockaddr *)&client_addr,
-				    &sync_rate);
-				if (e != NULL) /* shouldn't happen */
-					gflog_warning("sync_rate", e);
+					gflog_fatal("rate_limit", e);
 
 				server(client);
 				/*NOTREACHED*/

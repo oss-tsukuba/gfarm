@@ -341,6 +341,52 @@ gfs_pio_set_fragment_info_local(char *filename,
 	return (e);
 }
 
+static char *
+gfarm_file_section_replicate_from_to_by_gfrepbe(
+	char *gfarm_file, char *section, char *srchost, char *dsthost)
+{
+	char *e;
+	char *e2;
+	gfarm_stringlist gfarm_file_list;
+	gfarm_stringlist section_list;
+
+	e = gfarm_stringlist_init(&gfarm_file_list);
+	if (e != NULL)
+		return (e);
+	e = gfarm_stringlist_init(&section_list);
+	if (e != NULL) {
+		gfarm_stringlist_free(&gfarm_file_list);
+		return (e);
+	}
+	e = gfarm_stringlist_add(&gfarm_file_list, gfarm_file);
+	e2 = gfarm_stringlist_add(&section_list, section);
+	if (e == NULL && e2 == NULL) {
+		e = gfarm_file_section_replicate_multiple(
+		    &gfarm_file_list, &section_list, srchost, dsthost, &e2);
+	}
+	gfarm_stringlist_free(&gfarm_file_list);
+	gfarm_stringlist_free(&section_list);
+	return (e != NULL ? e : e2);
+}
+
+/*
+ * 0: use gfrepbe_client/gfrepbe_server
+ * 1: use gfs_client_bootstrap_replicate_file()
+ */
+static int gfarm_replication_method = GFARM_REPLICATION_NORMAL_METHOD;
+
+int
+gfarm_replication_get_method(void)
+{
+	return (gfarm_replication_method);
+}
+
+void
+gfarm_replication_set_method(int method)
+{
+	gfarm_replication_method = method;
+}
+
 /*
  * `srchost' must already reflect "address_use" directive.
  */
@@ -362,6 +408,14 @@ gfarm_file_section_replicate_from_to_internal(
 	if (gfarm_file_section_copy_info_does_exist(gfarm_file, section,
 	    ci.hostname)) /* already exists, don't have to replicate */
 		goto finish_hostname;
+
+	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD) {
+		e = gfarm_file_section_replicate_from_to_by_gfrepbe(
+		    gfarm_file, section,
+		    src_canonical_hostname, ci.hostname);
+		goto finish_hostname;
+	}
+
 	e = gfarm_path_section(gfarm_file, section, &path_section);
 	if (e != NULL)
 		goto finish_hostname;
@@ -374,14 +428,14 @@ gfarm_file_section_replicate_from_to_internal(
 	e = gfs_client_connect(ci.hostname, &peer_addr, &gfs_server);
 	if (e != NULL)
 		goto finish_path_section;
-	e = gfs_client_replicate_file(gfs_server,
+	e = gfs_client_bootstrap_replicate_file(gfs_server,
 	    path_section, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
 	/* FT - the parent directory of the destination may be missing */
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		if (gfs_pio_remote_mkdir_parent_canonical_path(
 			    gfs_server, gfarm_file) == NULL)
-			e = gfs_client_replicate_file(
+			e = gfs_client_bootstrap_replicate_file(
 				gfs_server, path_section, mode, file_size,
 				src_canonical_hostname, src_if_hostname);
 	}
@@ -707,6 +761,11 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 	 * XXX - if the owner of a file is not the same, permit a
 	 * group/other write access - This should be fixed in the next
 	 * major release.
+	 */
+	/*
+	 * XXX FIXME
+	 * This may be called with GFARM_REPLICATION_BOOTSTRAP_METHOD
+	 * to deliver gfrepbe_client/gfrepbe_server.
 	 */
 	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
 		e = gfarm_path_info_access(&pi, GFS_X_OK);

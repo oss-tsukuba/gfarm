@@ -584,6 +584,13 @@ gfs_client_get_spool_root(struct gfs_connection *gfs_server,
 	return (*spool_rootp == NULL ? GFARM_ERR_NO_MEMORY : NULL);
 }
 
+/*
+ **********************************************************************
+ * Implementation of old (inner gfsd) replication protocol
+ **********************************************************************
+ */
+
+/* We keep this protocol for protocol compatibility and bootstrapping */
 char *
 gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 	long sync_rate)
@@ -708,6 +715,8 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 #endif
 	return (e);
 }
+
+/* We keep this protocol for protocol compatibility */
 
 struct gfs_client_striping_copyin_context {
 	int ofd;
@@ -892,8 +901,10 @@ gfs_client_striping_copyin(struct gfs_connection *gfs_server,
 	return (gfs_client_striping_copyin_result(gfs_server));
 }
 
+/* We keep this for bootstrapping */
 char *
-gfs_client_replicate_file_sequential_request(struct gfs_connection *gfs_server,
+gfs_client_bootstrap_replicate_file_sequential_request(
+	struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode,
 	char *srchost)
 {
@@ -902,8 +913,10 @@ gfs_client_replicate_file_sequential_request(struct gfs_connection *gfs_server,
 	    gfarm_file, mode, srchost));
 }
 
+/* Perhaps this isn't needed any more, or we can use this for bootstrapping */
 char *
-gfs_client_replicate_file_parallel_request(struct gfs_connection *gfs_server,
+gfs_client_bootstrap_replicate_file_parallel_request(
+	struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode, file_offset_t file_size,
 	gfarm_int32_t ndivisions, gfarm_int32_t interleave_factor,
 	char *srchost)
@@ -915,13 +928,13 @@ gfs_client_replicate_file_parallel_request(struct gfs_connection *gfs_server,
 }
 
 char *
-gfs_client_replicate_file_result(struct gfs_connection *gfs_server)
+gfs_client_bootstrap_replicate_file_result(struct gfs_connection *gfs_server)
 {
 	return (gfs_client_rpc_result(gfs_server, 0, ""));
 }
 
 char *
-gfs_client_replicate_file_request(struct gfs_connection *gfs_server,
+gfs_client_bootstrap_replicate_file_request(struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode, file_offset_t file_size,
 	char *src_canonical_hostname, char *src_if_hostname)
 {
@@ -951,7 +964,7 @@ gfs_client_replicate_file_request(struct gfs_connection *gfs_server,
 		return (e);
 
 	if (parallel_streams <= 1)
-		return (gfs_client_replicate_file_sequential_request(
+		return (gfs_client_bootstrap_replicate_file_sequential_request(
 		    gfs_server, gfarm_file, mode, src_if_hostname));
 
 	e = gfarm_netparam_config_get_long(
@@ -961,25 +974,32 @@ gfs_client_replicate_file_request(struct gfs_connection *gfs_server,
 	if (e != NULL) /* shouldn't happen */
 		return (e);
 
-	return (gfs_client_replicate_file_parallel_request(gfs_server,
+	return (
+	    gfs_client_bootstrap_replicate_file_parallel_request(gfs_server,
 	    gfarm_file, mode, file_size, parallel_streams, stripe_unit_size,
 	    src_if_hostname));
 }
 
 char *
-gfs_client_replicate_file(struct gfs_connection *gfs_server,
+gfs_client_bootstrap_replicate_file(struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode, file_offset_t file_size,
 	char *src_canonical_hostname, char *src_if_hostname)
 {
 	char *e;
 
-	e = gfs_client_replicate_file_request(gfs_server,
+	e = gfs_client_bootstrap_replicate_file_request(gfs_server,
 	    gfarm_file, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
 	if (e == NULL)
-		e = gfs_client_replicate_file_result(gfs_server);
+		e = gfs_client_bootstrap_replicate_file_result(gfs_server);
 	return (e);
 }
+
+/*
+ **********************************************************************
+ * Implementation of gfs_client_command()
+ **********************************************************************
+ */
 
 struct gfs_client_command_context {
 	struct gfarm_iobuffer *iobuffer[NFDESC];
@@ -1653,7 +1673,9 @@ gfs_client_command(struct gfs_connection *gfs_server,
 }
 
 /*
+ **********************************************************************
  * gfsd datagram service
+ **********************************************************************
  */
 
 int gfs_client_datagram_timeouts[] = {

@@ -10,9 +10,9 @@ VPATH=$(GFUTIL_SRCDIR):$(GFSL_SRCDIR):$(GFARMLIB_SRCDIR)
 
 LIB = gfarm
 
-CFLAGS = $(COMMON_CFLAGS) \
-	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(globus_cflags) \
-	$(metadb_client_includes) $(openssl_includes)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
+	-DINSTALL_ROOT=\"$(prefix)\"
 
 all: lib$(LIB).a
 

@@ -37,4 +37,8 @@ char *gfarm_netparam_config_get_long(struct gfarm_netparam_info *,
 extern struct gfarm_netparam_info gfarm_netparam_parallel_streams;
 extern struct gfarm_netparam_info gfarm_netparam_stripe_unit_size;
 extern struct gfarm_netparam_info gfarm_netparam_rate_limit;
-extern struct gfarm_netparam_info gfarm_netparam_sync_rate;
+extern struct gfarm_netparam_info gfarm_netparam_file_read_size;
+extern struct gfarm_netparam_info gfarm_netparam_file_sync_rate;
+extern struct gfarm_netparam_info gfarm_netparam_file_sync_stripe;
+extern struct gfarm_netparam_info gfarm_netparam_send_stripe_sync;
+extern struct gfarm_netparam_info gfarm_netparam_recv_stripe_sync;

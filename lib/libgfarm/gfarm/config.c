@@ -326,7 +326,9 @@ gfarm_set_global_user_for_this_local_account(void)
 	e = gfarm_local_to_global_username(local_user, &global_user);
 	if (e != NULL)
 		return (e);
+#ifdef HAVE_GSI
  set_global_username:
+#endif
 	e = gfarm_set_global_username(global_user);
 	gfarm_stringlist_free_deeply(&local_user_map_file_list);
 	return (e);

@@ -12,6 +12,8 @@ SUBDIRS = \
 	gfcp \
 	gfcp_hook \
 	gfgrep \
+	gfrepbe_client \
+	gfrepbe_server \
 	gfsplck \
 	$(mpi_subdirs) \
 	util

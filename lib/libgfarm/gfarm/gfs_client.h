@@ -49,6 +49,11 @@ char *gfs_client_digest(struct gfs_connection *, int, char *, size_t,
 			size_t *, unsigned char *, file_offset_t *);
 char *gfs_client_get_spool_root(struct gfs_connection *, char **);
 
+/* old interface. now mainly used for bootstrap. the followings */
+char *gfs_client_bootstrap_replicate_file(struct gfs_connection *,
+	char *, gfarm_int32_t, file_offset_t, char *, char *);
+
+/* old interface. now mainly used for bootstrap. these are only used by gfsd */
 char *gfs_client_copyin(struct gfs_connection *, int, int, long);
 char *gfs_client_striping_copyin_request(struct gfs_connection *, int, int,
 	file_offset_t, file_offset_t, int, file_offset_t);
@@ -56,8 +61,6 @@ char *gfs_client_striping_copyin_partial(struct gfs_connection *, int *);
 char *gfs_client_striping_copyin_result(struct gfs_connection *);
 char *gfs_client_striping_copyin(struct gfs_connection *, int, int,
 	file_offset_t, file_offset_t, int, file_offset_t);
-char *gfs_client_replicate_file(struct gfs_connection *,
-	char *, gfarm_int32_t, file_offset_t, char *, char *);
 
 #define GFS_CLIENT_COMMAND_FLAG_STDIN_EOF	0x01
 #define GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND	0x02
@@ -75,6 +78,67 @@ char *gfs_client_command_result(struct gfs_connection *,
 char *gfs_client_command(struct gfs_connection *,
 			 char *, char **, char **, int,
 			 int *, int *, int *);
+
+/*
+ * replicateion service
+ */
+
+#define GFS_CLIENT_REP_ALGORITHM_LATEST	1
+
+int gfs_client_rep_limit_division(int, int, file_offset_t);
+
+struct gfs_client_rep_transfer_state;
+
+char *gfs_client_rep_transfer_state_alloc(file_offset_t, int, int, int,
+	struct gfs_client_rep_transfer_state ***);
+void gfs_client_rep_transfer_state_free(int,
+	struct gfs_client_rep_transfer_state **);
+
+int gfs_client_rep_transfer_finished(struct gfs_client_rep_transfer_state *);
+size_t gfs_client_rep_transfer_length(struct gfs_client_rep_transfer_state *,
+	size_t);
+file_offset_t gfs_client_rep_transfer_offset(
+	struct gfs_client_rep_transfer_state *);
+void gfs_client_rep_transfer_progress(
+	struct gfs_client_rep_transfer_state *, size_t);
+
+int gfs_client_rep_transfer_stripe_finished(
+	struct gfs_client_rep_transfer_state *);
+int gfs_client_rep_transfer_stripe_offset(
+	struct gfs_client_rep_transfer_state *);
+void gfs_client_rep_transfer_stripe_progress(
+	struct gfs_client_rep_transfer_state *, size_t);
+void gfs_client_rep_transfer_stripe_next(
+	struct gfs_client_rep_transfer_state *);
+
+struct xxx_connection;
+struct gfarm_stringlist;
+struct gfs_client_rep_backend_state;
+char *gfs_client_rep_backend_invoke(char *, char *, char *, char *,
+	int, int, int, int, int, int, char *,
+	struct xxx_connection **, struct xxx_connection **,
+	struct gfs_client_rep_backend_state **);
+char *gfs_client_rep_backend_kill(struct gfs_client_rep_backend_state *);
+char *gfs_client_rep_filelist_send(char *server_name, struct xxx_connection *,
+	char *, int, struct gfarm_stringlist *, struct gfarm_stringlist *);
+char *gfs_client_rep_filelist_receive(struct xxx_connection *,
+	int *, struct gfarm_stringlist *, struct gfarm_stringlist *, char *);
+
+char *gfarm_file_section_replicate_multiple_request(
+	struct gfarm_stringlist *, struct gfarm_stringlist *, char *, char *,
+	struct gfs_client_rep_backend_state **);
+char *gfarm_file_section_replicate_multiple_result(
+	struct gfs_client_rep_backend_state *, char **);
+char *gfarm_file_section_replicate_multiple(
+	struct gfarm_stringlist *, struct gfarm_stringlist *, char *, char *,
+	char **);
+
+/* really experimental. Don't assume this works well. */
+
+struct gfs_client_rep_rate_info;
+struct gfs_client_rep_rate_info *gfs_client_rep_rate_info_alloc(long);
+void gfs_client_rep_rate_control(struct gfs_client_rep_rate_info *, long);
+void gfs_client_rep_rate_info_free(struct gfs_client_rep_rate_info *);
 
 /*
  * gfsd service on UDP port.

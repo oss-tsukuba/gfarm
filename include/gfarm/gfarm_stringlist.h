@@ -1,7 +1,7 @@
 /*
  * stringlist
  */
-typedef struct {
+typedef struct gfarm_stringlist {
 	char **array;
 	int length, size;
 } gfarm_stringlist;
