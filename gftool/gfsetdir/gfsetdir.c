@@ -27,7 +27,7 @@ int
 main(int argc, char **argv)
 {
 	struct gfs_stat gstat;
-	char *e, *nwdir, *canonic_path, *gfarm_path;
+	char *e, *nwdir, *gfarm_path;
 	extern int optind;
 	int ch;
 	enum { UNDECIDED,
@@ -73,7 +73,7 @@ main(int argc, char **argv)
 		usage();
 	}
 
-	/* check existence of the directory */
+	/* check whether it is a directory or not. */
 	e = gfs_stat(nwdir, &gstat);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", nwdir, e);
@@ -87,22 +87,12 @@ main(int argc, char **argv)
 	gfs_stat_free(&gstat);
 		
 	/* expand the path name */
-	e = gfarm_url_make_path(nwdir, &canonic_path);
-	/* We permit missing gfarm: prefix here as a special case */
-	if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
-		e = gfarm_canonical_path(nwdir, &canonic_path);
+	e = gfs_realpath(nwdir, &gfarm_path);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", nwdir, e);
 		exit(1);
 	}
 
-	/* translate to a Gfarm URL, i.e. add the prefix 'gfarm:' */
-	e = gfarm_path_canonical_to_url(canonic_path, &gfarm_path);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	free(canonic_path);
 	if (shell_type == UNDECIDED) {
 		char *shell;
 		shell = getenv("SHELL");
