@@ -16,11 +16,6 @@ Updated Features
  * Supported special characters; ' ', ',', '+', '"', '\', '<', '>',
    and ';' in file names. (bugzilla-ja #13)
 
- * Supported case sensitive pathname comparison.
-   This change has a side effect that all pathnames made before
-   this release are now considered lower-case only pathnames,
-   even if the pathname originally included upper-case character.
-
  * Syscall hooking libraries
 
    - Added system call hook entries for directory operations;
