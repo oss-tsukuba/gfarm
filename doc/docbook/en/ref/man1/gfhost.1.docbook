@@ -1,9 +1,8 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
 <refentry id='gfhost.1'>
-<!-- $Id$ -->
 
-<refentryinfo><date>25 Apr 2003</date></refentryinfo>
+<refentryinfo><date>22 May 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -13,39 +12,462 @@
 
 <refnamediv id='name'>
 <refname>gfhost</refname>
-<refpurpose>list gfarm hosts</refpurpose>
+<refpurpose>gfarm host maintenance command</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfhost</command>
+    <group choice='opt'>
+      <arg choice='plain'>-H</arg>
+      <arg choice='plain'>-l</arg>
+      <arg choice='plain'>-M</arg>
+    </group>
+<!-- <arg choice='opt'>-iLprUv</arg> XXX NOTYET: -U -->
+     <arg choice='opt'>-iLprv</arg>
+    <arg choice='opt'>-a <replaceable>archtecture</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>concurrency</replaceable></arg>
+<!-- <arg choice='opt'>-N <replaceable>number</replaceable></arg> XXX NOTYET -->
+    <arg choice='opt' rep='repeat'><replaceable>hostname</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhost</command>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'>-a<replaceable>architecture</replaceable></arg>
+    <arg choice='opt'  >-n<replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice='plain'><replaceable>hostname</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhost</command>
+    <arg choice='plain'>-m</arg>
+    <arg choice='opt'>-a<replaceable>architecture</replaceable></arg>
+    <arg choice='opt'>-n<replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice='opt'>-A</arg>
+    <arg choice='plain'><replaceable>hostname</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhost</command>
+    <arg choice='plain'>-d</arg>
+    <arg choice='plain' rep='repeat'><replaceable>hostname</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhost</command>
+    <arg choice='plain'>-R</arg>
+</cmdsynopsis>
+
+<!-- Options sorted by alphabetical order
+    (default)	<function> display hostname only
+    -A		alter hostname, for -m
+    -a <arch>	CPU architecture, for (default)/-c/-H/-l/-M/-m
+    -c		<function> create a host in MetaDB
+    -D <domain>	only display specified domain, for (default)/-H/-l/-M
+    -d		<function> delete a host from MetaDB
+    -f		XXX NOTYET ??? force ???, for -d
+    -H		<function> display information replied from the hosts
+    -i		ignore "address_use" directive, for (default)/-H/-l
+    -j <number>	concurrency, for (default)/-H/-l
+    -L		display by load average order, for (default)/-H/-l
+    -l		<function> display with long format
+    -M		<function> display hosts in MetaDB
+    -m		<function> modify a host in MetaDB
+    -N <number>	display N hosts which answered quickly, for (default)/-H/-l
+    -n <number>	number of CPUs, for -c/-m
+    -p		display by plain order (don't sort), for (default)/-H/-l/-M
+    -R		<function> restore hosts to MetaDB
+    -r		display by reverse order, for (default)/-H/-l/-M
+    -U		UDP only, do not try authentication, for (default)/-H/-l
+    -v		verbose, print error message, for (default)/-H/-l
+-->
+
+<!-- XXX NOTYET
+  host-type
+	- don't put any file data, use as a CPU server
+	- don't use CPU, use as a file server
+	  by setting ncpu==0, or arch==NIL?
+	- flag which means temporary unavailable, for hardware maintenance.
+	  reference from replication metadata still remains,
+	  but the host won't be accessed, if the flag is set.
+  capability
+	- CPU speed, integer/floating-point performance
+	- disk I/O speed / mount point
+	- disk capacity, free space reservation / mount point
+	- network I/O speed
+	- network topology, how?
+-->
+
 </refsynopsisdiv>
 
-<!-- body begins here -->
-
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfhost</command> displays gfarm hosts.</para>
+<para><command>gfhost</command> is used to display and maintain
+information about filesystem nodes. The function that 
+<command>gfhost</command> does is choosed by its option -c, -d,
+-H, -l, -M, -m, -R.
+Theses functions are mutually exclusive, and only one option
+of them can be specified.
+If none of them is specified, host name will be displayed as
+the default function of <command>gfhost</command>.
+</para>
+</refsect1>
 
+<refsect1 id='functions'><title>FUNCTIONS</title>
+<para>
+<!-- XXX "LDAP" should be removed, when metadata features are moved to gfmd -->
+  
+  Metadata in LDAP server will be accessed by function -c, -d, -M, -m and
+  -R. These functions add/delete/display/modify/restore host information
+  in the metadata.
+</para>
+<para>
+  If -H, -l or -M is specified, or none of functions are specified,
+  <command>gfhost</command> displays information of filesystem node.
+  -M function only accesses information in metadata server.
+  Display functions other than -M also access <command>gfsd</command>
+  which is running on filesystem nodes. When <command>gfhost</command>
+  accesses <command>gfsd</command>, its access option can be specified
+  by option -i, -j <!-- XXX NOTYET , -N, -U, --> and -v.
+  <!-- XXX FIXME -v should be applied to -H and the (default) case, too -->
+</para>
+<para>
+  You don't have to specify hostnames for display functions.
+  In that case, all hosts which are registered in metadata will be
+  tried to be displayed, and you can limit type of hosts to display
+  by -a or -D option.
+  By default, hosts are displayed by alphabetical order, but you can
+  change this by -L, -p, and -r options. Although -L option is ignored
+  in -M function <!-- XXX FIXME BEGIN --> and default function
+  <!-- FIXME END -->.
+</para>
+<para>
+  The followings are the list of functions of <command>gfhost</command>
+  command. You shouldn't specify more than one functions at once.
+</para>
+<variablelist>
+
+  <varlistentry>
+    <term>&lt;none&gt;</term>
+    <listitem>
+      <para>
+	If you don't specify none of the functions,
+	<command>gfhost</command> accesses <command>gfsd</command>,
+	and displays names of hosts which are available currently,
+	as its default function.
+	Hostnames are displayed by alphabetical order, by default.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-c</option></term>
+    <listitem>
+      <para>
+	Create metadata information for the host which is specified
+	in the argument.
+	Option -a is mandatory in this function, this option specifies
+	the architecture of the host.
+	Option -n may be used to specify number of CPU of the host,
+	and 1 CPU is assumed, if -n is omitted.
+      </para>
+      <para>
+	<!-- XXX FIXME check hostname duplication -->
+	You can specifiy multiple hostnames in this function.
+	In that case, first hostname is treated as the identifier of
+	the host, and the host identifier is used for replication
+	information management. Rest of hostnames are used as aliases
+	of the host.
+      </para>
+      <para>
+	If a host has multiple network interfaces, and each interface
+	has unique hostname, all of the hostnames must be registered
+	as either host identifier or host aliases.
+      </para>
+      <para>
+	If /etc/hosts or NIS hosts database doesn't contain DNS domain
+	name part in its hostnames (i.e. these hostnames are not Fully
+	Qualified Domain Names), you must register host alias.
+	In that case, you must register FQDN (hostname which contain
+	domain name part) as the host identifier, and 
+	register names without domain part as the host alias.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-d</option></term>
+    <listitem>
+      <para>
+	Delete host information from metadata.
+	<!-- XXX --> Currently, even hosts which are refered by
+	replica catalog can be deleted. But be careful, because
+	such deletion causes incosistency of metadata.
+	<!-- XXX??? must deny deletion, if the host is refered as replica ???
+	  In that case, provide -f option to delete hosts which are refered,
+	  even. Replication information will be deleted by the -f option.
+	  If one want to leave replication information, but don't want to
+	  make accesss to a host, use "temporary unavailable" flag. -->
+	<!-- XXX Currently --> Only host identifier can be used as hostname
+	  in this function.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-H</option></term>
+    <listitem>
+      <para>
+	Display load average <!-- XXX NOTYET and authentication method -->.
+	Exact hostname passed by command argument will be display
+	rather than canonical host identifier with this function.
+	IP address which is used to access <command>gfsd</command>
+	will be displayed in parentheses just after the hostname.
+	<!-- XXX FIXME
+	If the host cannot be accessed due to machine down or
+	network trouble etc., x.xx/x.xx/x.xx will be displayed in
+	the load average field.
+	If the host is up, but <command>gfsd</command> on the host
+	cannot be accessed by the port number configured in
+	/etc/gfarm.conf or $HOME/.gfarmrc, -.- -/-.- -/-.- - will be
+	displayed.
+	-->
+	Hostnames are displayed by alphabetical order, by default.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-l</option></term>
+    <listitem>
+      <para>
+	Display with long format, that means this displays load average,
+	 <!-- XXX NOTYET authentication method, -->
+	architecture name, number of CPUs, host identifier
+	and host aliases (if any).
+	IP address will be displayed in parentheses just after the
+	hostname used for the access to <command>gfsd</command>.
+	If the host cannot be accessed due to machine down or
+	network trouble etc., x.xx/x.xx/x.xx will be displayed in
+	the load average field.
+	If the host is up, but <command>gfsd</command> on the host
+	cannot be accessed by the port number configured in
+	/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+	displayed.
+	Hostnames are displayed by alphabetical order, by default.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-M</option></term>
+    <listitem>
+      <para>
+	Metadata information of the hosts will be displayed.
+	Hostnames are displayed by alphabetical order, by default.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-m</option></term>
+    <listitem>
+      <para>
+	Modify metadata information of the host, by specifying
+	the host identifier.
+	-a option and -n option overwrite current value of each option.
+	By contrast, host aliases will be added in this function by default.
+	If you want to replace or delete host aliases, please specify
+	-A option with this function. In that case, all host aliases
+	will be replaced by specified aliases (if any).
+	<!-- XXX FIXME check hostname duplication -->
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-R</option></term>
+    <listitem>
+      <para>
+	Restore metadata information read from standard input.
+	The format of the metadata is same with the format
+	that -M function displays.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-?</option></term>
+    <listitem>
+      <para>Print usage.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
-<varlistentry>
-<term><option>-M</option></term>
-<listitem>
-<para>List metadata entries.</para>
-</listitem>
-</varlistentry>
+  <varlistentry>
+    <term><option>-A</option></term>
+    <listitem>
+      <para>
+	Alter. This option is used with -m function to replace
+	host aliases, rather than adding.
+      </para>
+    </listitem>
+  </varlistentry>
 
-<varlistentry>
-<term><option>-?</option></term>
-<listitem>
-<para>displays a list of command options.</para>
-</listitem>
-</varlistentry>
+  <varlistentry>
+    <term><option>-a</option> <parameter>architecture</parameter></term>
+    <listitem>
+      <para>
+	This option specifies the CPU architecture by a format like
+	sparc-sun-solaris8 or i386-redhat8.0-linux, etc.
+	If this option is used with -c or -m function, this means
+	the architecture to add/modify the metadata information.
+	If this option is used with -H, -l, -M function or default function,
+	this limits hosts to the specified architecture.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-D</option> <parameter>domain-name</parameter></term>
+    <listitem>
+      <para>
+	This option is used with -H, -l, -M function or default function
+	to limit hosts to the specified domain.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-i</option></term>
+    <listitem>
+      <para>
+	There is "address_use" directive in /etc/gfarm.conf and
+	$HOME/.gfarmrc to give priorities of network addresses
+	for gfarm access.
+	This directive works with <command>gfhost</command> command,
+	but will be ignored, if you specified -i option with
+	<command>gfhost</command>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-j</option> <parameter>concurrency</parameter></term>
+    <listitem>
+      <para>
+	This option specifies concurrency used for the access to
+	<command>gfsd</command>.
+	The default value is 10.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-L</option></term>
+    <listitem>
+      <para>
+	Sort by load average order. This option is effective only with
+	-H and -l function <!-- XXX FIXME and default function -->.
+      </para>
+    </listitem>
+  </varlistentry>
+
+<!-- XXX NOTYET
+
+  <varlistentry>
+    <term><option>-N</option> <parameter>number-of-hosts</parameter></term>
+    <listitem>
+      <para>
+	With -H, -l function or default function, this option limits
+	number of hosts to be displayed.
+	In this case, both network access roundtrip time and
+	load average are used to choose hosts to be displaed.
+	XXX - If enouch number of hosts are not available?
+      </para>
+    </listitem>
+  </varlistentry>
+
+-->
+
+  <varlistentry>
+    <term><option>-n</option> <parameter>number-of-CPUs</parameter></term>
+    <listitem>
+      <para>
+	This option is used with -c or -m function, and specifies
+	number of CPUs of the host.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-p</option></term>
+    <listitem>
+      <para>
+	Plain order. This option stops sorting on -H, -l, -M function
+	or default function.
+
+	With -M function, command argument order (if any), or
+	order that metadata server answers is used for a display.
+
+	With -H, -l function or default function, the result
+	is displayed with the order that each <command>gfsd</command> answers.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-r</option></term>
+    <listitem>
+      <para>
+	Reverse the order of sort.
+      </para>
+    </listitem>
+  </varlistentry>
+
+ <!-- XXX NOTYET
+  <varlistentry>
+    <term><option>-U</option></term>
+    <listitem>
+      <para>
+	XXX UDP only, do not try authentication, for (default)/-H/-l
+      </para>
+    </listitem>
+  </varlistentry>
+-->
+
+  <varlistentry>
+    <term><option>-v</option></term>
+    <listitem>
+      <para>
+	<!-- FIXME -H, --> -l function <!-- FIXME and default function -->
+	doesn't <!-- FIXME don't --> display any message about
+	network error at <command>gfsd</command> accesss.
+	Such message will be displayed with this option.
+      </para>
+    </listitem>
+  </varlistentry>
 
 </variablelist>
 </refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
 </refentry>
