@@ -259,7 +259,7 @@ extern int gfs_hook_cwd_is_gfarm;
 static char *received_prefix = NULL;
 
 static int
-set_recieved_prefix(const char *path)
+set_received_prefix(const char *path)
 {
 	char *end, *p;
 	int len;
@@ -284,6 +284,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 {
 	static char prefix[] = "gfarm:";
 	const char *path_save;
+	int abs_path = 0;
 
 	/*
 	 * ROOT patch:
@@ -295,10 +296,16 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	/*
 	 * Objectivity patch:
 	 *   '/gfarm:' is also considered as a Gfarm URL
+	 *
+	 *   In this case, '/gfarm:' is considered to be the root
+	 *   directory in Gfarm file system instead of a current
+	 *   working directory.
 	 */
 	path_save = path;
-	if (*path == '/')
+	if (*path == '/') {
 		++path;
+		abs_path = 1;
+	}
 	if (gfarm_is_url(path) ||
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
@@ -321,7 +328,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			if (p[secsize] != ':')
 				return (0); /* gfarm::foo/:bar or gfarm::foo */
 			urlsize = sizeof(prefix) - 1 + strlen(p + secsize + 1);
-			*urlp = malloc(urlsize + 1);
+			*urlp = malloc(urlsize + 1 + abs_path);
 			*secp = malloc(secsize + 1);
 			if (*urlp == NULL || *secp == NULL) {
 				if (*urlp != NULL)
@@ -331,7 +338,10 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				return (0); /* XXX - should return ENOMEM */
 			}
 			memcpy(*urlp, prefix, sizeof(prefix) - 1);
-			strcpy(*urlp + sizeof(prefix) - 1, p + secsize + 1);
+			if (abs_path)
+				(*urlp)[sizeof(prefix) - 1] = '/';
+			strcpy(*urlp + sizeof(prefix) - 1 + abs_path,
+			       p + secsize + 1);
 			memcpy(*secp, p, secsize);
 			(*secp)[secsize] = '\0';
 			/*
@@ -340,7 +350,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 */
 		}
 		else {
-			*urlp = malloc(strlen(path) + 1);
+			*urlp = malloc(strlen(path) + 1 + abs_path);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
 			/*
@@ -349,10 +359,12 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 * (ROOT patch)
 			 */
 			memcpy(*urlp, prefix, sizeof(prefix) - 1);
-			strcpy(*urlp + sizeof(prefix) - 1,
+			if (abs_path)
+				(*urlp)[sizeof(prefix) - 1] = '/';
+			strcpy(*urlp + sizeof(prefix) - 1 + abs_path,
 			    path + sizeof(prefix) - 1);
 		}
-		if (!set_recieved_prefix(path_save))
+		if (!set_received_prefix(path_save))
 			return (0);
 		return (1);
 	}
