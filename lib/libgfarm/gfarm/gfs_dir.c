@@ -22,9 +22,10 @@ gfs_chdir(const char *dir)
 		gfarm_current_working_directory = NULL;
 	}
 	new_dir = malloc(strlen(canonic_path) + 2);
-	if (new_dir == NULL)
+	if (new_dir == NULL) {
+		free(canonic_path);
 		return (GFARM_ERR_NO_MEMORY);
-
+	}
 	sprintf(new_dir, "/%s", canonic_path);
 	free(canonic_path);
 	gfarm_current_working_directory = new_dir;
@@ -333,17 +334,25 @@ struct gfs_dir {
 char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e, *p;
+	char *e, *canonic_path, *abspath;
 	struct node *n;
 	struct gfs_dir *dir;
 
 	path = gfarm_url_prefix_skip(path);
-	e = gfarm_canonical_path(path, &p);
+	e = gfarm_canonical_path(path, &canonic_path);
 	if (e != NULL)
 		return (e);
 
-	e = lookup_path(p, 1, 0, &n);
-	free(p);
+	abspath = malloc(strlen(canonic_path) + 2);
+	if (abspath == NULL) {
+		free(canonic_path);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sprintf(abspath, "/%s", canonic_path);
+	free(canonic_path);
+
+	e = lookup_path(abspath, 1, 0, &n);
+	free(abspath);
 	if (e != NULL)
 		return (e);
 
