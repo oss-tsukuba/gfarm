@@ -26,6 +26,8 @@ usage()
     fprintf(stderr, "options:\n");
     fprintf(stderr, "\t-I <fragment>\tschedules a node"
 	    " using the specified fragment.\n");
+    fprintf(stderr, "\t-p <gfarm_url>\tprogram URL"
+	    " to process the file.\n");
     fflush(stderr);
 }
 
@@ -34,6 +36,7 @@ main(int argc, char * argv[])
 {
     char *gfarm_url = NULL;
     char *section = NULL;
+    char *program = NULL;
     char *e = NULL;
     FILE *outp = stdout;
     int errflg = 0;
@@ -53,10 +56,18 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-    while ((c = getopt(argc, argv, "I:?")) != EOF) {
+    while ((c = getopt(argc, argv, "I:p:?")) != EOF) {
 	switch (c) {
 	case 'I':
 	    section = optarg;
+	    break;
+	case 'p':
+	    program = optarg;
+	    if (!gfarm_is_url(program)) {
+		    fprintf(stderr, "%s: only gfarm-URL can be specified"
+			    " as a parameter of -p option\n", program_name);
+		    exit(2);
+	    }
 	    break;
 	case '?':
 	default:
@@ -86,8 +97,13 @@ main(int argc, char * argv[])
 
     if (section == NULL) {
 	/* file-affinity scheduling */
-	e = gfarm_url_hosts_schedule(gfarm_url, NULL,
-				     &nhosts, &hosts);
+	if (program != NULL) {
+	    e = gfarm_url_hosts_schedule_by_program(gfarm_url, program, NULL,
+						    &nhosts, &hosts);
+	} else {
+	    e = gfarm_url_hosts_schedule(gfarm_url, NULL,
+					 &nhosts, &hosts);
+	}
 	if (e != NULL) {
 	    fprintf(stderr, "%s: %s\n", program_name, e);
 	    exit(1);
@@ -103,7 +119,14 @@ main(int argc, char * argv[])
 	    fprintf(stderr, "%s: %s\n", program_name, e);
 	    exit(1);
 	}
-	e = gfarm_file_section_host_schedule(gfarm_file, section, &host);
+	if (program != NULL) {
+	    e = gfarm_file_section_host_schedule_by_program(gfarm_file,
+							    section,
+							    program,
+							    &host);
+	} else {
+	    e = gfarm_file_section_host_schedule(gfarm_file, section, &host);
+	}
 	if (e != NULL) {
 	    fprintf(stderr, "%s: %s:%s: %s\n", program_name,
 		    gfarm_url, section, e);
