@@ -19,11 +19,12 @@
 
 #include "gssapi.h"
 
+#include <gfarm/gfarm_config.h>
 #include "gfarm_secure_session.h"
 #include "tcputil.h"
 #include "misc.h"
 
-#undef SS_DEBUG
+/* #define SS_DEBUG */
 
 /*
  * Initial credential and its name.
@@ -715,7 +716,11 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, statPtr)
 		ret = -1;
 		goto Done;
 	    }
+#ifdef HAVE_SNPRINTF
+	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_ACCEPTOR_CONFIG_FILE);
+#else
 	    sprintf(confFile, "%s/%s", confDir, GFARM_DEFAULT_ACCEPTOR_CONFIG_FILE);
+#endif
 	    (void)free(confDir);
 	    configFile = confFile;
 	}
@@ -792,7 +797,11 @@ gfarmSecSessionInitializeInitiator(configFile, statPtr)
 		ret = -1;
 		goto Done;
 	    }
+#ifdef HAVE_SNPRINTF
+	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_INITIATOR_CONFIG_FILE);
+#else
 	    sprintf(confFile, "%s/%s", confDir, GFARM_DEFAULT_INITIATOR_CONFIG_FILE);
+#endif
 	    (void)free(confDir);
 	    configFile = confFile;
 	}
@@ -883,7 +892,11 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
 	 * Acceptor's configuration
 	 */
 	if (aConfigFile == NULL || aConfigFile[0] == '\0') {
+#ifdef HAVE_SNPRINTF
+	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_ACCEPTOR_CONFIG_FILE);
+#else
 	    sprintf(confFile, "%s/%s", confDir, GFARM_DEFAULT_ACCEPTOR_CONFIG_FILE);
+#endif
 	    aConfigFile = confFile;
 	}
 	if (secSessionReadConfigFile(aConfigFile, &acceptorSsOpt) < 0) {
@@ -896,7 +909,11 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
 	 * Initiator's configuration
 	 */
 	if (iConfigFile == NULL || iConfigFile[0] == '\0') {
+#ifdef HAVE_SNPRINTF
+	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_INITIATOR_CONFIG_FILE);
+#else
 	    sprintf(confFile, "%s/%s", confDir, GFARM_DEFAULT_INITIATOR_CONFIG_FILE);
+#endif
 	    iConfigFile = confFile;
 	}
 	if (secSessionReadConfigFile(iConfigFile, &initiatorSsOpt) < 0) {

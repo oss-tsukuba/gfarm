@@ -8,9 +8,12 @@
 #include <ctype.h>
 #include <pwd.h>
 
+#include <gfarm/gfarm_config.h>
+#include "hash.h"
+#include "gfutil.h"
+
 #include "gfsl_config.h"
 #include "gfarm_auth.h"
-#include "hash.h"
 #include "misc.h"
 
 #define AUTH_TABLE_SIZE       139
@@ -65,7 +68,12 @@ gfarmAuthInitialize(usermapFile)
 		ret = -1;
 		goto done;
 	    }
+#ifdef HAVE_SNPRINTF
+	    snprintf(mapFile, sizeof mapFile, "%s/%s",
+		     confDir, GFARM_DEFAULT_USERMAP_FILE);
+#else
 	    sprintf(mapFile, "%s/%s", confDir, GFARM_DEFAULT_USERMAP_FILE);
+#endif
 	    usermapFile = mapFile;
 	    (void)free(confDir);
 	}
@@ -81,7 +89,7 @@ gfarmAuthInitialize(usermapFile)
 	    ret = -1;
 	    goto done;
 	}
-	while (fgets(lineBuf, 65536, mFd) != NULL) {
+	while (fgets(lineBuf, sizeof lineBuf, mFd) != NULL) {
 	    char *token[64];
 	    int nToken = gfarmGetToken(lineBuf, token, sizeof token);
 	    char *distName = NULL;
@@ -107,9 +115,9 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (nToken == 0) {
 		continue;
 	    } else {
-		fprintf(stderr, "WARINIG: missing local username for '%s'."
-			" Ignored.\n",
-			distName);
+		gflog_warning(distName,
+			      "WARNING: missing local username for DN."
+			      " Ignored.")
 		continue;
 	    }
 
@@ -129,14 +137,15 @@ gfarmAuthInitialize(usermapFile)
 	    if (strcmp(mode, "@user@") == 0) {
 		pPtr = getpwnam(localName);
 		if (pPtr == NULL) {
-		    fprintf(stderr, "WARINIG: Can't determine account"
-			    " information of user '%s'. Ignored.\n",
-			    localName);
+		    gflog_warning(localName,
+				  "WARNING: Account doesn't exist."
+				  " Ignored.\n");
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
-		    fprintf(stderr, "WARNING: User '%s' is a super user. Ignored.\n",
-			    localName);
+		    gflog_warning(localName,
+				  "WARNING: This user is a super user."
+				  " Ignored.\n");
 		    continue;
 		}
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
@@ -171,9 +180,9 @@ gfarmAuthInitialize(usermapFile)
 		aePtr->distName = strdup(distName);
 		aePtr->authData.hostAuth.FQDN = strdup(localName);
 	    } else {
-		fprintf(stderr, "WARINIG: Unknown keyword '%s'"
-			" for user '%s'. Ignored.\n",
-			mode, localName);
+		gflog_warning(localName,
+			      "WARNING: Unknown keyword at second field."
+			      " Ignored.");
 		continue;
 	    }
 
@@ -181,14 +190,12 @@ gfarmAuthInitialize(usermapFile)
 				    strlen(aePtr->distName) + 1,
 				    sizeof(aePtr), &isNew);
 	    if (ePtr == NULL) { /* no memory */
-		fprintf(stderr, "WARINIG: no memory for DN '%s'. Ignored.\n",
-			distName);
+		gflog_warning(distName,
+			      "WARNING: no memory for DN. Ignored.");
 		goto initDone;
 	    }
 	    if (!isNew) {
-		fprintf(stderr, "WARINIG: duplicate DN '%s'"
-			" for user '%s'. Ignored.\n",
-			distName, localName);
+		gflog_warning(distName, "WARNING: duplicate DN. Ignored.");
 		continue;
 	    }
 	    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;

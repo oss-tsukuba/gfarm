@@ -16,6 +16,9 @@
 #include "globus_libc.h"
 #endif /* USE_GLOBUS_LIBC_HOOK */
 
+#include <gfarm/gfarm_config.h>
+#include "tcputil.h"
+
 #define MAX_BACKLOG	10
 
 static int	isNonBlock(int fd);
@@ -163,11 +166,19 @@ gfarmIPGetHostOfAddress(addr)
 	ret = strdup(h->h_name);
     } else {
 	char hostBuf[4096];
+#ifdef HAVE_SNPRINTF
+	snprintf(hostBuf, sizeof hostBuf, "%d.%d.%d.%d",
+		(int)((addr & 0xff000000) >> 24),
+		(int)((addr & 0x00ff0000) >> 16),
+		(int)((addr & 0x0000ff00) >> 8),
+		(int)(addr & 0x000000ff));
+#else
 	sprintf(hostBuf, "%d.%d.%d.%d",
 		(int)((addr & 0xff000000) >> 24),
 		(int)((addr & 0x00ff0000) >> 16),
 		(int)((addr & 0x0000ff00) >> 8),
 		(int)(addr & 0x000000ff));
+#endif
 	ret = strdup(hostBuf);
     }
     return ret;

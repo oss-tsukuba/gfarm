@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <pwd.h>
 
+#include <gfarm/gfarm_config.h>
 #include "gfsl_config.h"
 #include "gfarm_auth.h"
 
@@ -142,18 +143,23 @@ char *
 gfarmGetEtcDir()
 {
     char buf[PATH_MAX];
-    char *dir = getenv(GFARM_INSTALL_DIR_ENV);
+    char *dir = getenv(GFARM_INSTALL_DIR_ENV), *path;
     struct stat st;
 
     if (dir != NULL) {
+#ifdef HAVE_SNPRINTF
+	snprintf(buf, sizeof buf, "%s/%s", dir, GFARM_DEFAULT_INSTALL_ETC_DIR);
+#else
 	sprintf(buf, "%s/%s", dir, GFARM_DEFAULT_INSTALL_ETC_DIR);
+#endif
+	path = buf;
     } else {
-	strcpy(buf, GFARM_INSTALL_ETC_DIR);
+	path = GFARM_INSTALL_ETC_DIR;
     }
 
-    if (stat(buf, &st) == 0 &&
+    if (stat(path, &st) == 0 &&
 	S_ISDIR(st.st_mode)) {
-	return strdup(buf);
+	return strdup(path);
     }
 
     return NULL;
