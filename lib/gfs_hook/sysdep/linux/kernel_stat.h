@@ -20,13 +20,13 @@ struct kernel_stat
     unsigned long int st_size;
     unsigned long int st_blksize;
     unsigned long int st_blocks;
-    unsigned long int st_atime;
+    unsigned long int kernel_st_atime;
     unsigned long int __unused1;
 #define _HAVE___UNUSED1
-    unsigned long int st_mtime;
+    unsigned long int kernel_st_mtime;
     unsigned long int __unused2;
 #define _HAVE___UNUSED2
-    unsigned long int st_ctime;
+    unsigned long int kernel_st_ctime;
     unsigned long int __unused3;
 #define _HAVE___UNUSED3
     unsigned long int __unused4;
