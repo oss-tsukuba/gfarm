@@ -83,13 +83,6 @@ main(int argc, char * argv[])
 
     /* */
 
-    {
-	struct stat sb;
-
-	if (stat(filename, &sb))
-	    perror(filename);
-    }
-
     e = gfarm_initialize();
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
