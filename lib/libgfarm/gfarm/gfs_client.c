@@ -1469,7 +1469,7 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 }
 
 static char *
-wait_pid(int pids[], int num)
+wait_pid(int pids[], int num, int *nhosts_succeed)
 {
 	char *e;
 	int rv, s;
@@ -1484,6 +1484,8 @@ wait_pid(int pids[], int num)
 				e = gfarm_errno_to_error(errno);
 		} else if (WIFEXITED(s) && WEXITSTATUS(s) != 0) {
 			e = "error happens on directory operatoin";
+		} else if (WIFEXITED(s) && WEXITSTATUS(s) == 0) {
+			(*nhosts_succeed)++;
 		}
 	}
 	return (e);
@@ -1494,7 +1496,7 @@ wait_pid(int pids[], int num)
 char *
 gfs_client_apply_all_hosts(
 	char *(*op)(struct gfs_connection *, void *),
-	void *args, char *message)
+	void *args, char *message, int *nhosts_succeed)
 {
 	char *e;
 	int i, j, nhosts, pids[CONCURRENCY];
@@ -1512,17 +1514,18 @@ gfs_client_apply_all_hosts(
 	if (e != NULL)
 		goto finish_hosts;
         j = 0;
+	*nhosts_succeed = 0;
         for (i = 0; i < nhosts; i++) {
                 pids[j] = apply_one_host(op, hosts[i].hostname, args, message);
                 if (pids[j] < 0) /* fork error */
                         break;
                 if (++j == CONCURRENCY) {
-                        e = wait_pid(pids, j);
+                        e = wait_pid(pids, j, nhosts_succeed);
                         j = 0;
                 }
         }
         if (j > 0)
-                e = wait_pid(pids, j);
+                e = wait_pid(pids, j, nhosts_succeed);
 	/*
 	 * recover temporary closed metadb connection
 	 *

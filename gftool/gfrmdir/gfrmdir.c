@@ -7,6 +7,8 @@
 #include <string.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_metadb.h>
+#include <gfarm/gfarm_error.h>
 #include "gfs_client.h"
 
 char *program_name = "gfrmdir";
@@ -45,15 +47,57 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (i = 1; i < argc; i++) {
+		char *e;
 		struct args a;
+		struct gfarm_path_info pi;
+		GFS_Dir dir;
+		struct gfs_dirent *entry;
+		int nhosts_succeed;
 
 		e = gfarm_canonical_path_for_creation(argv[i], &canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
+			continue;
+		}
+		e = gfarm_path_info_get(canonic_path, &pi);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
+		if (!GFARM_S_ISDIR(pi.status.st_mode)) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+				GFARM_ERR_NOT_A_DIRECTORY);
+			free(canonic_path);
+			gfarm_path_info_free(&pi);
+			continue;
+		}
+		gfarm_path_info_free(&pi);
+		e = gfs_opendir(argv[i], &dir);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+				e);
+			exit(1);
+		}
+		e = gfs_readdir(dir, &entry);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+				e);
+			exit(1);
+		}
+		if (entry != NULL) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+				"directory not empty");
+			free(canonic_path);
+			continue;			
+		}
 		a.path = canonic_path;
-		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name);
+		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name,
+			&nhosts_succeed);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			exit(1);
+		}
+		e = gfarm_path_info_remove(canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);

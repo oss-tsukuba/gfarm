@@ -52,6 +52,7 @@ gfs_unlink(const char *gfarm_url)
 {
 	char *gfarm_file, *e, *e_save = NULL;
 	int i, j, nsections;
+	struct gfarm_path_info pi;
 	struct gfarm_file_section_info *sections;
 	gfarm_timerval_t t1, t2;
 
@@ -63,6 +64,14 @@ gfs_unlink(const char *gfarm_url)
 		gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 		return (e);
 	}
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	if (e != NULL)
+		return (e);
+	if (GFARM_S_ISDIR(pi.status.st_mode)) {
+		gfarm_path_info_free(&pi);
+		return GFARM_ERR_IS_A_DIRECTORY;
+	}
+	gfarm_path_info_free(&pi);
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
 	if (e != NULL) {
