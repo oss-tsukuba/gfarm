@@ -292,6 +292,10 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	struct timeval start_time, end_time, timeout_value, *timeout = NULL;
 	int events;
 
+	/* queue is empty? */
+	if (q->header.next == &q->header)
+		return (0); /* finished */
+
 	/*
 	 * prepare arguments for select(2)
 	 */
