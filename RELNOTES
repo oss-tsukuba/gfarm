@@ -8,8 +8,8 @@ Release note for Gfarm 1.0.3
 
 Updated Features
 
- * Added new I/O functions; gfs_mkdir, gfs_rmdir, gfs_pio_gets, and
-     gfs_pio_readline.
+ * Added new I/O functions; gfs_mkdir, gfs_rmdir, gfs_pio_gets,
+     gfs_pio_readline, gfs_pio_readdelim.
 
  * gfrmdir - it terminates very quickly. (Bugzilla-ja #20)
 
