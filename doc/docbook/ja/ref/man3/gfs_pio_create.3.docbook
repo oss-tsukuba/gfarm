@@ -48,7 +48,7 @@
 <para>
 引数
 <parameter>flags</parameter>
-には、
+は、
 <function>gfs_pio_open()</function>
 の第二引数と同じ意味を持ちます。
 <parameter>GFARM_FILE_RDONLY</parameter>、
@@ -111,17 +111,15 @@
 書き込み権限がありません。</para>
 </listitem>
 </varlistentry>
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
 <para><parameter>flags</parameter>引数に
 <constant>GFARM_FILE_EXCLUSIVE</constant>フラグが指定されたが、
-ファイルが既にそんざいしました。
+ファイルが既に存在しました。
 </para>
 </listitem>
 </varlistentry>
--->
 <varlistentry>
 <term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
 <listitem>
