@@ -1,40 +1,110 @@
 README for syscall-hooking library
 
-*** Limitation
+Gfarm syscall-hooking library enables every program to access Gfarm
+file system without any modification as if it is mounted at /gfarm.
 
-This syscall-hooking library does not work with newer version than
-glibc version 2.3.2 such as glibc included in Fedora Core 1.
+Basically the syscall-hooking library traps every system call for file
+access.  When a file is under the mount point /gfarm or a Gfarm URL
+starting with 'gfarm:' or 'gfarm@', appropriate Gfarm I/O APIs are
+called.
 
-*** Trapping system calls for porting legacy or commercial
-    applications
+*** glibc
 
-To utilize a Gfarm filesystem by legacy or commercial applications
-including the Objectivity object database, the ROOT I/O, and SAO ds9,
-system call trapping of file I/O operations is provided.
+When you are using glibc typically in Linux, it is necessary to
+replace it to enable necessary system calls to hook properly.  The
+change is just for a version script for ld to add necessary symbols to
+the dynamic symbol table.
 
-This document shows how to compile and run applications to access
-Gfarm files on a Gfarm filesystem, and some extensions of Gfarm URL.
+Binary packages of glibc is available from Gfarm web site
+(http://datafarm.apgrid.org/software/) for typical distribution of
+Linux.  If you need a glibc package other than provided, contact
+datafarm@apgrid.org.
 
-See also sample programs in the gfptool/ directory and at
-http://datafarm.apgrid.org/
+If you cannot replace glibc, follow the section of 'Running existing
+programs by statically linking with syscall-hooking library'.
 
-** How to build programs
+*** Running existing programs without any modification
+
+Every dynamically linked executable can access Gfarm file system by
+just specifying LD_PRELOAD environment variable in Linux and possibly
+in Solaris.
+
+In the case of sh or bash,
+
+	$ LD_PRELOAD=/usr/lib/gfs_preload.so
+	$ export LD_PRELOAD
+
+In the case of csh or tcsh,
+
+	% setenv LD_PRELOAD /usr/lib/gfs_preload.so
+
+You can specify the above in the shell rc file such as .bashrc and
+.cshrc.  However, tcsh is not tested well at this time.  We recommend
+to use bash.
+
+After specifying the environment variable, every program can access to
+Gfarm file system.  If you would like to access Gfarm file system in
+your login interactive shell, just execute bash again.
+
+	% exec bash -l
+
+Now, you can change the current working directory to /gfarm.
+
+	% cd /gfarm
+
+For MPI applications, it is necessary to generate gfs_preload.so for
+MPI library in your environment, or follow a section of either
+'Running existing programs by linking with syscall-hooking library' or
+'Running existing programs by statically linking with syscall-hooking
+library'.
+
+*** Running existing programs by linking with syscall-hooking library
+
+When your operating system does not support LD_PRELOAD, it is
+necessary to link with Gfarm syscall-hooking library to access Gfarm
+file system.
 
 * C program
 
-To trap system calls, just link the application with gfs_hook.o.
+	% cc prog.c /usr/lib/gfs_hook.o -lgfarm -lldap
 
-	% cc prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber
+or
 
-When you are using glibc version 2.2.91 or later, it is necessary to
-link statically with -static option.
+	% cc prog.c -I/usr/grid/include/gcc32 \
+		/usr/lib/gfs_hook.o -lgfarm \
+		-L/usr/grid/lib \
+		`globus-makefile-header -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
+		-lldap
 
-	% cc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
+* Fortran or C++ program
+
+Follows the section for 'C program' but with an appropriate compiler.
+
+* MPI program
+
+In the case of MPI programs, link with gfs_hook_no_init.o and
+hooks_init_mpi.c instead of gfs_hook.o.
+
+	% mpicc prog.c /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
+		-lgfarm -lldap
+
+*** Running existing programs by statically linking with
+    syscall-hooking library
+
+If you cannot replace glibc, or if a program is a statically linked
+executable, it is necessary to link statically with the Gfarm
+syscall-hook library and Gfarm I/O library.
+
+* C program
+
+Libraries that need to be linked with depend on the operating system.
+
+	% cc -static prog.c /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 or
 
-	% cc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.c /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
 
 Note that openldap libraries in a rpm package cannot be linked
@@ -48,71 +118,53 @@ authentication in RedHat-8.0 and RedHat-7.3.
 In the case with the Globus GSI library of the flavor gcc32,
 
 	% gcc -static prog.c -I/usr/grid/include/gcc32 -L/usr/grid/lib \
-		/usr/grid/lib/gfs_hook.o -lgfarm \
+		/usr/lib/gfs_hook.o -lgfarm \
 		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
 		-lldap -llber -lsasl -ldl
 
-After linking with gfs_hook.o, it is possible to access Gfarm files
-via Gfarm URL like gfarm:foo.
+* Fortran or C++ program
 
-For newly created files, the default file view is a local file view.
-For existent files, if the number of processes and the number of file
-fragments are the same, the default file view is a local file view,
-otherwise, the default view is a global view.
-
-* Fortran and C++ programs
-
-Follows the section for C programs but with an appropriate compiler.
+Follows the section for 'C program' but with an appropriate compiler.
 
 * MPI program
 
 In the case of MPI programs, link with gfs_hook_no_init.o and
 hooks_init_mpi.c instead of gfs_hook.o.
 
-	% mpicc prog.c /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
-		-lgfarm -lldap -llber
-
-or
-
 	% mpicc -static prog.c /usr/lib/gfs_hook_mpi.o \
 		/usr/lib/hooks_init_mpi.c -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
-** How to run programs
-
-Applications with a syscall-hook library are needed to be executed by
-gfrun command.
-
-      % gfrun gfarm:foo
-
-      % gfrun -G gfarm:input gfarm:foo gfarm:input
-
 ----------------------------------------------------------------------
+
+** File view semantics
+
+For newly created files, the default file view is a local file view.
+For existent files, if the number of processes and the number of file
+fragments are the same, the default file view is a local file view,
+otherwise, the default view is a global view.
 
 ** Extended Gfarm URL
 
-Some applications including Objectivity object database and SAO ds9
-require an absolute path name that should start with '/'.  Some
-applications like ROOT I/O cut off the filename before ':' without any
-investigation.  We provide a variety of Gfarm URL; 'gfarm@'.  For
-example, 'gfarm:~/foo.txt' is also referred to by 'gfarm@~/foo.txt'.
+Some applications like ROOT I/O cut off the filename before ':'
+without any investigation.  We provide a variety of Gfarm URL;
+'gfarm@'.  For example, 'gfarm:~/foo.txt' is also referred to by
+'gfarm@~/foo.txt'.
 
-Moreover, we provide a mount point for a Gfarm file system; '/gfarm'.
-'/gfarm/' is considered to be the root directory in Gfarm file system
-instead of a current working directory.  That is because applications
-usually assume that '/gfarm/' is an absolute path.  A home directory
-and the current directory can be specified by '/gfarm/~' and
-'/gfarm/.', respectively.
+Moreover, we provide a (quasi) mount point for a Gfarm file system;
+'/gfarm'.  A home directory in Gfarm file system and the current
+working directory can be specified by '/gfarm/~' and '/gfarm/.',
+respectively.
 
 We also provide a way to explicitly specify a fragment index (or
-section) of a Gfarm file by extending Gfarm URL.  'gfarm::0:foo.txt',
-'gfarm@:0:foo.txt', or '/gfarm:0:/./foo.txt' specifies the first
-fragment of 'gfarm:foo.txt'.
+section name) of a Gfarm file by extending Gfarm URL.
+'gfarm::0:foo.txt', 'gfarm@:0:foo.txt', or '/gfarm:0:/./foo.txt'
+specifies the first fragment of 'gfarm:foo.txt'.
 
 ** gfs_hook APIs
 
 Gfs_hook APIs are provided for further manipulation of file views
-beyond the default semantics for legacy applications.
+beyond the default semantics.
 
 * default file view
 
