@@ -231,30 +231,26 @@ unlink(const char *path)
 int
 __access(const char *path, int type)
 {
-	struct stat s;
-	int mask;
+	char *e, *url, *sec;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __access(%s, %d)\n",
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __access(%s, %d)\n",
 	    path, type));
 
-	if (stat(path, &s) == -1)
-		return (-1);
-	if (s.st_uid != getuid()) {
-		/* XXX - FIXME */
-		/* currently only same uid is granted, this is bogus. */
-		return (-1);
-	}
-	/* XXX - FIXME : only uid is checked here. */
-	mask = 0;
-	if (type & 1)
-		mask |= 0100;
-	if (type & 2)
-		mask |= 0200;
-	if (type & 4)
-		mask |= 0400;
-	if ((s.st_mode & mask) != mask)
-		return (-1);
-	return (0);
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_access, path, type);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __access(%s, %d)\n",
+				path, type));
+	e = gfs_access(url, type);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __access: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
 }
 
 int

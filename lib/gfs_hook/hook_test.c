@@ -7,7 +7,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/syscall.h>
 #include <pwd.h>
 #include <grp.h>
@@ -117,6 +119,17 @@ void test_fstat(int filedes)
 	perror("fstat");
     else
 	display_stat("test_fstat", &s);
+}
+
+int test_access(char *filename)
+{
+    int r;
+
+    printf("***** access(%s, %d)\n", filename, R_OK);
+    if ((r = access(filename, R_OK)))
+	perror(filename);
+
+    return r;
 }
 
 int test_open_create(char *filename)
@@ -293,6 +306,8 @@ main(int argc, char *argv[])
     test_lseek_set(fd, 0);
     test_fstat(fd);
     test_close(fd);
+
+    test_access(filename);
 
     test_stat(filename);
     test_lstat(filename);
