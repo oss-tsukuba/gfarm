@@ -865,7 +865,7 @@ __getcwd(char *buf, size_t size)
 	if (e != NULL)
 		goto error;
 	prefix_size = strlen(buf);
-	e = gfs_getcwd(buf + strlen(buf), size - strlen(buf));
+	e = gfs_getcwd(buf + prefix_size, size - prefix_size);
 	if (e == NULL) {
 		/* root in Gfarm FS is a special case. '/gfarm/' -> '/gfarm' */
 		if (buf[0] == '/' &&
