@@ -51,7 +51,7 @@ static void gfs_hook_set_current_view_default();
 /*
  *
  */
-void
+static void
 gfs_hook_not_initialized(void)
 {
 	static int printed = 0;
@@ -61,6 +61,28 @@ gfs_hook_not_initialized(void)
 		fprintf(stderr,
 			"fatal error: gfarm_initialize() isn't called\n");
 	}
+}
+
+/*
+ * open flag management
+ */
+int
+gfs_hook_open_flags_gfarmize(int open_flags)
+{
+	int gfs_flags;
+
+	switch (open_flags & O_ACCMODE) {
+	case O_RDONLY:	gfs_flags = GFARM_FILE_RDONLY; break;
+	case O_WRONLY:	gfs_flags = GFARM_FILE_WRONLY; break;
+	case O_RDWR:	gfs_flags = GFARM_FILE_RDWR; break;
+	default: return (-1);
+	}
+
+	if ((open_flags & O_CREAT) != 0)
+		gfs_flags |= GFARM_FILE_CREATE;
+	if ((open_flags & O_TRUNC) != 0)
+		gfs_flags |= GFARM_FILE_TRUNC;
+	return (gfs_flags);
 }
 
 /*

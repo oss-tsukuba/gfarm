@@ -61,6 +61,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x, 0%o)\n",
 		    url, oflag, mode));
 
+		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_create(url, oflag, mode, &gf);
 		if (e == NULL)
 			gfs_hook_add_creating_file(gf);
@@ -85,6 +86,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			 * gfs_pio_create assumes GFARM_FILE_TRUNC.
 			 * It is not necessary to set O_TRUNC explicitly.
 			 */
+			oflag = gfs_hook_open_flags_gfarmize(oflag);
 			e = gfs_pio_create(url, oflag, mode, &gf);
 			if (e == NULL)
 				gfs_hook_add_creating_file(gf);
@@ -109,7 +111,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	/* XXX - end of stopgap implementation */
 	else {
 		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", url, oflag));
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", url, oflag));
 
 		if (file_exist && is_directory) {
 			GFS_Dir dir;
@@ -129,8 +131,10 @@ FUNC___OPEN(const char *path, int oflag, ...)
                                 return (filedes);
 			}
 		}
-		else
+		else {
+			oflag = gfs_hook_open_flags_gfarmize(oflag);
 			e = gfs_pio_open(url, oflag, &gf);
+		}
 	}
 	free(url);
 	if (e != NULL) {

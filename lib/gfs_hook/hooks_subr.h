@@ -18,6 +18,8 @@ struct gfs_dirent;
 
 char *gfs_hook_initialize(void);
 
+int gfs_hook_open_flags_gfarmize(int);
+
 int gfs_hook_insert_gfs_file(struct gfs_file *);
 int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
 unsigned char gfs_hook_gfs_file_type(int);
