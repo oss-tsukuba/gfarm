@@ -2,13 +2,22 @@
 
 Gfarm is a reference implementation of the Grid Datafarm architecture
 designed for global petascale data-intensive computing.  It provides a
-global virtual file system (Gfarm file system) with online petascale
-storage, scalable I/O bandwidth, and scalable parallel processing, and
-it can exploit local I/O in a grid of clusters with tens of thousands
-of nodes.  Users or Grid applications access the Gfarm file system via
-POSIX file I/O APIs and Gfarm native file I/O APIs with extension of
-new file view semantics in a single filesystem image.  Fault tolerance
-and load balancing are automatically managed by file replicas.
+global virtual file system (Gfarm file system) having online petascale
+storage, scalable I/O bandwidth, and scalable parallel computing,
+federating and integrating local file system (or scratch disks) in
+PCs.  It also support high-performance parallel and distributed data
+computing exploiting local I/O in a grid of clusters with tens of
+thousands of nodes.
+
+Users or Grid applications access the Gfarm file system via POSIX file
+I/O APIs and Gfarm native file I/O APIs with extension of new file
+view semantics.  It is not necessary to recompile and re-link programs
+to access Gfarm file system.  Any binary program can access the Gfarm
+file system without any modification as if it is mounted at /gfarm.
+
+Automatic replica selection depending on CPU load average makes it
+fault tolerant and avoids access concentration, which is complete
+transparent to users.
 
 For a detailed information about the Grid Datafarm architecture and
 its preliminary performance evaluation, refer to the following paper.
@@ -43,8 +52,8 @@ Gfarm system consists of the following nodes
  - metadata server node
 
   Metadata server node manages Gfarm filesystem metadata and parallel
-  process information.  On the metadata server node, the Gfarm
-  filesystem metaserver, called gfmd, is running.
+  process information.  On the metadata server node, a Gfarm
+  filesystem metaserver, called gfmd, and an LDAP server are running.
 
 A file in the Gfarm filesystem is a large-scale file that is divided
 into fragments or a ranked group of files, and distributed across the
@@ -72,9 +81,16 @@ Gfarm software consists of
   new file views; index file view and local file view.
 
   A syscall-hook library, gfs_hook.o, is provided for porting legacy
-  applications.  Linking with gfs_hook.o and libgfarm.a, the legacy
-  applications can exploit the Gfarm filesystem.  For details, refer
-  to doc/README.hook.en.
+  applications.  Just linking with gfs_hook.o and libgfarm.a, the
+  legacy applications can exploit the Gfarm filesystem.
+
+  For Linux system, a dynamic library, gfs_preload.so, is also
+  provided for binary programs to access Gfarm file system without any
+  modification as well as re-linking.  Just set LD_PRELOAD environment
+  variable.
+
+  For details about a Gfarm syscall-hook library, refer to
+  doc/README.hook.en.
 
  - gfmd - Gfarm filesystem metadata server
 
@@ -83,8 +99,8 @@ Gfarm software consists of
   metadata server node in advance.
 
   In the current implementation, filesystem metadata is managed by an
-  LDAP server, which is also to be running on, typically, a metadata
-  server node.
+  LDAP server.  It is also needed to be running on, typically, a
+  metadata server node.
 
  - gfsd - Gfarm filesystem daemon
 
@@ -95,16 +111,16 @@ Gfarm software consists of
 
  - Gfarm command tools
 
-  Gfarm command tools consists of filesystem commands like gfls, gfrm,
-  gfwhere and gfrep, a filesystem node management tool like gfhost,
-  file management tools like gfreg and gfexport, session key
-  management tools like gfkey, and parallel process management tools
-  like gfps, gfrun and gfmpirun_p4, which are located in the directory
-  gftool/.
+  Gfarm command tools consist of filesystem commands such as gfls,
+  gfrm, gfwhere and gfrep, a filesystem node management tool such as
+  gfhost, file management tools such as gfreg and gfexport, session
+  key management tools such as gfkey, and parallel process management
+  tools such as gfps, gfrun and gfmpirun_p4.  All of them are located
+  in the directory gftool/.
 
   In the gfptool/ directory, there are parallel Gfarm commands; gfcp
-  for a parallel copy command, gfgrep for a parallel grep utility,
-  gfwc for a parallel word-counts utility, etc.
+  for a parallel copy, gfgrep for a parallel grep, gfwc for a parallel
+  word-counts, etc.
 
  - Gfarm sample programs
 
@@ -127,16 +143,11 @@ distribution.
 To build the Gfarm system, OpenLDAP and OpenSSL libraries are
 required.  To utilize the Grid Security Infrastructure (GSI) for
 authentication method, GSSAPI library is needed.  Currently, GSSAPI
-library provided by the Globus toolkit version 2 (GT2) is only
-supported by the configure.  When building a gfs_hook_mpi.o
+library provided by the Globus toolkit version 2 and 3 (GT2 and GT3)
+are supported by the configure.  When building a gfs_hook_mpi.o
 syscall-hook library for executing legacy MPI applications on the
 Gfarm filesystem, and when building sample MPI applications in this
 distribution, an MPI library is needed.
-
-On Linux distributions which use glibc-2.2.93, 2.3 or later,
-libattr and its development package are also needed.
-To take RedHat Linux distribution as an example, libattr and
-libattr-devel RPM packages are needed on RedHat 8 or later.
 
 Here are installation steps of the Gfarm system.
 
@@ -166,12 +177,12 @@ the --with-openldap option.
 
   --with-globus=directory
 
-  specifies an installation directory of GT2 to utilize GSI
-  authentication method.  When not specifying a directory,
-  environment variable GLOBUS_LOCATION is used.  This is optional.
-  By default, "gcc32" flavor is used to link the Globus toolkit
-  library. If you want to use other flavor of the library, you can
-  specify the flavor by --with-globus-flavor="gcc32dbg", for example.
+  specifies an installation directory of Globus Toolkit to utilize GSI
+  authentication method.  When not specifying a directory, environment
+  variable GLOBUS_LOCATION is used.  This is optional.  By default,
+  "gcc32" flavor is used to link the Globus toolkit library.  If you
+  want to use another flavor of the library, you can specify a flavor
+  by --with-globus-flavor="gcc32dbg", for example.
 
   --prefix=directory
 
@@ -242,21 +253,32 @@ This section assumes the following setting.
 In the current distribution, an LDAP server manages the Gfarm
 filesystem metadata.
 
-The Gfarm version 1.0.X only supports OpenLDAP version 2.0.X and
-version 2.1.X.  Other versions or other LDAP servers are not tested
-enough.
+The Gfarm version 1.0.X supports OpenLDAP version 2.0.X, 2.1.X, and
+2.2.X.  Other versions or other LDAP servers are not tested enough.
+
+ - gfarm.schema
+
+This is a schema file of Gfarm filesystem metadata for the LDAP
+server.  Copy the file doc/conf/gfarm.schema in the source
+distribution to /etc/gfarm-ldap/gfarm.schema on ldap.example.com.
+
+In the binary distribution, this file is installed to
+/etc/gfarm-ldap/gfarm.schema by the gfarm-server package.
+
+There is no need to modify.
 
  - slapd.conf
 
-This is a configuration file for an LDAP server included in the
-OpenLDAP distribution.  It is necessary to include a schema file for
-Gfarm file system.  Note that suffix and rootdn in this file refer to
-the base distinguished name.
+This is a configuration file of an LDAP server included in the
+OpenLDAP distribution.  It is necessary to include a schema file
+gfarm.schema for Gfarm file system.  Note that suffix and rootdn in
+this file refer to the base distinguished name.
 
-There are example files of /etc/gfarm-ldap/slapd.conf on
-ldap.example.com for OpenLDAP version 2.0.X and 2.1.X, respectively.
-The path name of core.schema on line 5 depends on the installation of
-the OpenLDAP.
+Here are example files of /etc/gfarm-ldap/slapd.conf on
+ldap.example.com for OpenLDAP versions 2.0.X, 2.1.X and 2.2.X.  Note
+that the path name of core.schema on line 5 depends on the
+installation of the OpenLDAP.  You need to specify a location of
+core.schema in your installation of OpenLDAP.
 
 --------------------- BEGIN HERE (OpenLDAP-2.0.X)--------------------
 #
@@ -297,7 +319,7 @@ index	hostname	pres,eq
 dbnosync
 -------------------------------- END --------------------------------
 
---------------------- BEGIN HERE (OpenLDAP-2.1.X)--------------------
+---------------- BEGIN HERE (OpenLDAP-2.1.X and 2.2.X)---------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
@@ -334,19 +356,6 @@ index	pathname	pres,eq
 index	section		pres,eq
 index	hostname	pres,eq
 -------------------------------- END --------------------------------
-
- - gfarm.schema
-
-This is a schema file for the Gfarm filesystem metadata used by
-slapd.conf.
-
-Please copy the file doc/conf/gfarm.schema in the source distribution to
-/etc/gfarm-ldap/gfarm.schema on ldap.example.com.
-
-In the binary distribution, this file is included as
-/etc/gfarm-ldap/gfarm.schema in the gfarm-server package.
-
-There is no need to modify.
 
  - Create the initial database file of filesystem metadata
 
@@ -414,8 +423,10 @@ In the case of the csh:
 
 ** ~/.gfarmrc
 
-On your client node, create the configuration file ~/.gfarmrc.  Here
-is an example.
+On a client node, you need to create a configuration file ~/.gfarmrc
+when you do not have /etc/gfarm.conf or when you need to overwrite the
+configuration of /etc/gfarm.conf.  Here is an example of the
+configuration file.
 
 ----------------------------- BEGIN HERE -----------------------------
 metadb_serverhost ldap.example.com
@@ -428,7 +439,7 @@ auth enable gsi *
 
 ** Register filesystem nodes
 
-Every filesystem node need to be registered to the Gfarm metadata.
+Every filesystem node needs to be registered to the Gfarm metadata.
 The 'gfhost -c' command is used to register the node information,
 which includes hostname, hostalias, architecture, and ncpu;
 
@@ -537,7 +548,7 @@ The procedure to invoke gfmd by this script is as follows:
 		% su
 		Password: 
 		# /sbin/chkconfig --add gfmd
-		# /etc/rc.d/init.d/gfmd start
+		# service gfmd start
 	Debian GNU/Linux:
 		% su
 		Password: 
@@ -553,9 +564,8 @@ If you would like to execute gfmd directly, you can do as follows:
 	# /usr/grid/sbin/gfmd
 
 For a testing purpose, gfmd can be executed as a non-privileged user
-process with the -f option (see man gfmd), although the shared secret
-key method ("sharedsecret") is the only authentication method that can
-be used without the root privilege.
+process with the -f option (see man gfmd), although only the user that
+executes the gfmd can be authenticated.
 
 To see whether gfmd is correctly executed or not, you can use the gfps
 command as follows.  If gfmd is correctly invoked, gfps immediately
@@ -585,7 +595,7 @@ The procedure to invoke gfsd by this script is as follows:
 		% su
 		Password: 
 		# /sbin/chkconfig --add gfsd
-		# /etc/rc.d/init.d/gfsd start
+		# service gfsd start
 	Debian GNU/Linux:
 		% su
 		Password: 
@@ -601,15 +611,14 @@ If you would like to execute gfsd directly, you can do as follows:
 	# /usr/grid/sbin/gfsd
 
 For a testing purpose, gfsd can be executed as a non-privileged user
-process with the -f option (see man gfsd), although the shared secret
-key method ("sharedsecret") is the only authentication method that can
-be used without the root privilege.
+process with the -f option (see man gfsd), although only the user that
+executes the gfmd can be authenticated.
 
 To see whether gfsd is correctly executed or not, you can use the
-gfhost command with the -l option as follows.  At the beginning of
-each line, system load averages of the host are shown for the past 1,
-5, and 15 minutes. Next one character field is an authentication
-method which is used for the communication with the host.
+gfhost command with the -l option as follows.  The first column shows
+system load averages of the host for the past 1, 5, and 15 minutes.
+Next column shows an authentication method which is used for the
+communication with the host.
 
 	% gfhost -l
 	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-1.example.com
@@ -618,7 +627,7 @@ method which is used for the communication with the host.
 	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-4.example.com
 	0.40/0.45/0.42 s i386-debian3.0-linux 2 linuxhost-5.example.com
 	0.43/0.50/0.40 s i386-debian3.0-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 s sparc-sun-solaris8 1 solarishost-1.example.com
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solarishost-1.example.com
 	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solarishost-2.example.com
 	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osfhost-1.example.com
 	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irixhost-1.example.com
@@ -626,20 +635,20 @@ method which is used for the communication with the host.
 In the above example, -.-- of linuxhost3.example.com shows there is no
 gfsd listening to the specified port on the machine.  x.xx of
 solarishost-2.example.com shows that it is impossible to communicate
-with the node. Usually this means the node or network is down.
-Please add "-v" option to investigate the reason of such failure,
-this option makes error messages appear.
+with the node.  Usually this means the node or network is down.  Add
+"-v" option to investigate the reason of such failure.  This option
+makes error messages appear.
 
 ** setting of each user
 
-Please add the following setting to the shell rc file (e.g. .bashrc,
-.cshrc) of each user.
+Add the following setting to the shell rc file (e.g. .bashrc, .cshrc)
+of each user.
 
 In the case of the Bourne Shell:
-	gfcd() { eval "`gfsetdir $1`"; }
+	gfcd() { eval "`gfsetdir -s $1`"; }
 
 In the case of the csh:
-	alias gfcd 'eval `gfsetdir \!*`'
+	alias gfcd 'eval `gfsetdir -c \!*`'
 
 Add /usr/grid/bin to the setting of the PATH environment variable.
 
@@ -723,7 +732,8 @@ architecture.
 
 Register Gfarm parallel commands such as a parallel file copy command
 and a parallel grep command to the Gfarm filesystem by the
-'gfregister' command.
+'gfregister' command using user account of the administrator that has
+been signed-on.
 
 	% /usr/grid/sbin/gfregister
 
