@@ -1728,7 +1728,7 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
 	(*state->continuation)(state->closure);
 }
 
-struct negotiateConfigParamInitiatorState *
+static struct negotiateConfigParamInitiatorState *
 negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure, majStatPtr, minStatPtr)
      struct gfarm_eventqueue *q;
      int fd;
@@ -1796,7 +1796,7 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
     return (state);
 }
 
-int
+static int
 negotiateConfigParamInitiatorResult(state, qOpPtr, maxTransPtr, configPtr, majStatPtr, minStatPtr)
      struct negotiateConfigParamInitiatorState *state;
      gss_qop_t *qOpPtr;
