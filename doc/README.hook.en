@@ -14,8 +14,8 @@ called.
 When you are using glibc typically in Linux, it is necessary to
 install a glibc-not-hidden package to enable necessary system calls to
 hook properly.  The change is just for a version script for ld to add
-necessary symbols (__lseek64, __getdents, and __getdents64) to the
-dynamic symbol table.
+necessary symbols (__lseek64, __getdents, __getdents64, and so on) to
+the dynamic symbol table.
 
 Binary and source packages of glibc-not-hidden are available from
 Gfarm web site (http://datafarm.apgrid.org/software/) for typical
@@ -34,16 +34,15 @@ in Solaris.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libc-not-hidden.so'
+	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libc-not-hidden.so'
+	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 You can specify the above in the shell rc file such as .bashrc and
-.cshrc.  However, tcsh and zsh are not tested well at this time.  We
-recommend to use bash.
+.cshrc.  We recommend to use bash because it is well tested.
 
 After specifying the environment variable, every program can access to
 Gfarm file system.  If you would like to access Gfarm file system in
@@ -111,11 +110,6 @@ or
 
 	% cc -static prog.c /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
-
-Note that openldap libraries in a rpm package cannot be linked
-statically in RedHat-9 and Fedora Core 1.  It results in segmentation
-fault.  In this case, you need to install openldap and required
-libraries such as Berkeley DB by yourself.
 
 Note that static linking results in segmentation fault when using LDAP
 authentication in RedHat-8.0 and RedHat-7.3.
