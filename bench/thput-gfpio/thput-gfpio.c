@@ -6,6 +6,46 @@
 #include <fcntl.h>
 #include "gfarm.h"
 
+double timerval_calibration;
+
+#if defined(__linux__) && defined(i386)
+#include <asm/timex.h>
+
+typedef cycles_t timerval_t;
+
+#define gettimerval(tp)		(*(tp) = get_cycles())
+#define timerval_second(tp)	(*(tp) / timerval_calibration)
+#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) / timerval_calibration)
+
+void
+timerval_calibrate(void)
+{
+	timerval_t t1, t2;
+	struct timeval s1, s2;
+
+	gettimerval(&t1);
+	gettimeofday(&s1, NULL);
+	sleep(10);
+	gettimerval(&t2);
+	gettimeofday(&s2, NULL);
+
+	timerval_calibration = 
+		(t2 - t1) / (
+		(s2.tv_sec - s1.tv_sec) +
+		(s2.tv_usec - s1.tv_usec) / 1000000.0);
+}
+#endif /* defined(__linux__) && defined(i386) */
+
+int tm_write_write_measured = 0;
+timerval_t tm_write_open_0, tm_write_open_1;
+timerval_t tm_write_write_0, tm_write_write_1;
+timerval_t tm_write_close_0, tm_write_close_1;
+
+int tm_read_read_measured = 0;
+timerval_t tm_read_open_0, tm_read_open_1;
+timerval_t tm_read_read_0, tm_read_read_1;
+timerval_t tm_read_close_0, tm_read_close_1;
+
 typedef struct gfs_file *GFS_File;
 
 char *program_name = "thput-gfpio";
@@ -28,18 +68,32 @@ void
 writetest(char *ofile, int buffer_size, off_t file_size)
 {
 	GFS_File gf;
-	char *e = gfs_pio_create_local(ofile, &gf);
+	char *e;
 	int rv;
 	off_t residual;
 
+	gettimerval(&tm_write_open_0);
+	e = gfs_pio_create_local(ofile, &gf);
+	gettimerval(&tm_write_open_1);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] %s: %s\n", node_index, ofile, e);
 		exit(1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
-		e = gfs_pio_write(gf, buffer,
-			buffer_size <= residual ? buffer_size : residual,
-			&rv);
+		if (!tm_write_write_measured) {
+			tm_write_write_measured = 1;
+			gettimerval(&tm_write_write_0);
+			e = gfs_pio_write(gf, buffer,
+				buffer_size <= residual ?
+				buffer_size : residual,
+				&rv);
+			gettimerval(&tm_write_write_1);
+		} else {
+			e = gfs_pio_write(gf, buffer,
+				buffer_size <= residual ?
+				buffer_size : residual,
+				&rv);
+		}
 		if (e != NULL) {
 			fprintf(stderr, "[%03d] write test: %s\n",
 				node_index, e);
@@ -52,7 +106,9 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 		fprintf(stderr, "[%03d] write test failed, residual = %ld\n",
 			node_index, (long)residual);
 	}
+	gettimerval(&tm_write_close_0);
 	e = gfs_pio_close(gf);
+	gettimerval(&tm_write_close_1);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] write test close failed: %s\n",
 			node_index, e);
@@ -63,18 +119,32 @@ void
 readtest(char *ifile, int buffer_size, off_t file_size)
 {
 	GFS_File gf;
-	char *e = gfs_pio_open_local(ifile, GFS_FILE_RDONLY, &gf);
+	char *e;
 	int rv;
 	off_t residual;
 
+	gettimerval(&tm_read_open_0);
+	e = gfs_pio_open_local(ifile, GFS_FILE_RDONLY, &gf);
+	gettimerval(&tm_read_open_1);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] %s: %s\n", node_index, ifile, e);
 		exit(1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
-		e = gfs_pio_read(gf, buffer,
-			buffer_size <= residual ? buffer_size : residual,
-			&rv);
+		if (!tm_read_read_measured) {
+			tm_read_read_measured = 1;
+			gettimerval(&tm_read_read_0);
+			e = gfs_pio_read(gf, buffer,
+				buffer_size <= residual ?
+				buffer_size : residual,
+				&rv);
+			gettimerval(&tm_read_read_1);
+		} else {
+			e = gfs_pio_read(gf, buffer,
+				buffer_size <= residual ?
+				buffer_size : residual,
+				&rv);
+		}
 		if (e != NULL) {
 			fprintf(stderr, "[%03d] read test: %s\n",
 				node_index, e);
@@ -88,7 +158,9 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 		fprintf(stderr, "[%03d] read test failed, residual = %ld\n",
 			node_index, (long)residual);
 	}
+	gettimerval(&tm_read_close_0);
 	e = gfs_pio_close(gf);
+	gettimerval(&tm_read_close_1);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] read test close failed: %s\n",
 			node_index, e);
@@ -157,10 +229,11 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 }
 
 enum testmode { TESTMODE_WRITE, TESTMODE_READ, TESTMODE_COPY };
+#define FLAG_MEASURE_PRIMITIVES	1
 
 void
 test(enum testmode test_mode, char *file1, char *file2,
-     int buffer_size, off_t file_size)
+     int buffer_size, off_t file_size, int flags)
 {
 	struct timeval t1, t2;
 	char *label;
@@ -192,6 +265,25 @@ test(enum testmode test_mode, char *file1, char *file2,
 	       node_index, (long)file_size, buffer_size, label,
 	       file_size / timeval_sub(&t2, &t1), gfarm_self_hostname);
 	fflush(stdout);
+
+	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
+		fprintf(stderr, "[%03d] %8ld %7d %-5s",
+		       node_index, (long)file_size, buffer_size, label);
+		if (test_mode == TESTMODE_WRITE)
+			fprintf(stderr, " %g %g %g",
+			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
+			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
+			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
+			);
+		if (test_mode == TESTMODE_READ)
+			fprintf(stderr, " %g %g %g",
+			    timerval_sub(&tm_read_open_1, &tm_read_open_0),
+			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
+			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
+			);
+		fprintf(stderr, " %s\n", gfarm_self_hostname);
+		tm_write_write_measured = tm_read_read_measured = 0;
+	}
 }
 
 int
@@ -202,11 +294,12 @@ main(int argc, char **argv)
 	int c, buffer_size = 1024 * 1024;
 	off_t file_size = 1024;
 	enum testmode test_mode = TESTMODE_WRITE;
+	int flags = 0;
 	char *e;
 
 	if (argc > 0)
 		program_name = argv[0];
-	while ((c = getopt(argc, argv, "I:N:b:s:wrcS:")) != -1) {
+	while ((c = getopt(argc, argv, "I:N:b:s:wrcmS:")) != -1) {
 		switch (c) {
 		case 'I':
 			node_index = strtol(optarg, NULL, 0);
@@ -233,6 +326,9 @@ main(int argc, char **argv)
 			break;
 		case 'c':
 			test_mode = TESTMODE_COPY;
+			break;
+		case 'm':
+			flags |= FLAG_MEASURE_PRIMITIVES;
 			break;
 		case 'S':
 			/*
@@ -284,10 +380,16 @@ main(int argc, char **argv)
 	if (argc > 1)
 		file2 = argv[1];
 
+	if (flags & FLAG_MEASURE_PRIMITIVES) {
+		timerval_calibrate();
+		fprintf(stderr, "[%03d] timer/sec=%g %s\n",
+			node_index, timerval_calibration, gfarm_self_hostname);
+	}
+
 	file_size *= 1024 * 1024;
 	initbuffer();
 
-	test(test_mode, file1, file2, buffer_size, file_size);
+	test(test_mode, file1, file2, buffer_size, file_size, flags);
 
 	e = gfarm_terminate();
 	if (e != NULL) {
