@@ -164,7 +164,7 @@ the --with-openldap option.
   $HOME directory.  This is optional.
 
 When you need to specify a compiler program explicitly, use the
-environment variable CC.  This is an example using gcc in the C shell.
+environment variable CC.  This is an example using gcc.
 
 	% env CC=gcc ./configure [options]
 
