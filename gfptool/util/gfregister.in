@@ -30,8 +30,8 @@ fi
 # force to register the commands, even if already registered,
 # because the binaries may be obsolete.
 echo Registering gfarm commands for $arch ...
-echo "( cd bin     && gfreg -f $PTOOLS_BIN     gfarm:/bin )"
-echo "( cd libexec && gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec )"
+( cd bin     && gfreg -f $PTOOLS_BIN     gfarm:/bin )
+( cd libexec && gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec )
 
 all_commands=''
 for cmd in $PTOOLS_BIN; do
@@ -43,7 +43,7 @@ done
 
 gfhost -a $arch | while read host; do
 	echo Replicating gfarm commands to $host ...
-	if echo "gfrep -b -I $arch -s $hostname -d $host $all_commands"
+	if gfrep -b -I $arch -s $hostname -d $host $all_commands
 	then
 		:
 	else
