@@ -15,7 +15,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	va_list ap;
 	mode_t mode;
 	int filedes;
-	int retry_count = 0, max_retry = 1;
 
 	va_start(ap, oflag);
 	mode = va_arg(ap, mode_t);
@@ -24,7 +23,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	_gfs_hook_debug_v(fprintf(stderr,
 	    "Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", path, oflag));
 
-retry:
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return (SYSCALL_OPEN(path, oflag, mode));
 
@@ -33,7 +31,7 @@ retry:
 	if ((oflag & O_CREAT) != 0 || (oflag & O_TRUNC) != 0) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
-		    path, sec != NULL ? sec : "(null)", oflag, mode));
+		    url, sec != NULL ? sec : "(null)", oflag, mode));
 		if (oflag & O_TRUNC) {
 			/*
 			 * Hooking open syscall does not mean to open
@@ -42,7 +40,7 @@ retry:
 			 * called in both views.
 			 */
 			if (_gfs_hook_default_view == global_view)
-				gfs_unlink(path); /* XXX - FIXME */
+				gfs_unlink(url); /* XXX - FIXME */
 			e = gfs_pio_create(url, oflag, mode, &gf);
 		} else {
 			e = gfs_pio_open(url, oflag, &gf);
@@ -52,7 +50,7 @@ retry:
 	} else {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x)\n",
-		    path, sec != NULL ? sec : "(null)", oflag));
+		    url, sec != NULL ? sec : "(null)", oflag));
 		e = gfs_pio_open(url, oflag, &gf);
 	}
 	free(url);
@@ -66,12 +64,12 @@ retry:
 	if (sec != NULL || _gfs_hook_default_view == index_view) {
 		if (sec != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_section(%s, %s)\n", path, sec));
+				"GFS: set_view_section(%s, %s)\n", url, sec));
 			e = gfs_pio_set_view_section(gf, sec, NULL, 0);
 			free(sec);
 		} else {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_index(%s, %d, %d)\n", path,
+				"GFS: set_view_index(%s, %d, %d)\n", url,
 				_gfs_hook_num_fragments, _gfs_hook_index));
 			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
 				_gfs_hook_index, NULL, 0);
@@ -95,25 +93,11 @@ retry:
 		    (gfs_pio_get_node_size(&np) == NULL && nf == np)) {
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: set_view_local(%s (%d, %d))\n",
-					path, gfarm_node, gfarm_nnode));
+					url, gfarm_node, gfarm_nnode));
 			if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
 				_gfs_hook_debug(fprintf(stderr,
 					"GFS: set_view_local: %s\n", e));
 				gfs_pio_close(gf);
-				if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-					/*
-					 * corrupted GFarmPath entry,
-					 * possibly caused by coredump.
-					 */
-					gfs_unlink(path); /* XXX - FIXME */
-					/*
-					 * When a spool directory is not
-					 * correctly set up, the retry results
-					 * in the infinite loop.
-					 */
-					if (retry_count++ < max_retry)
-						goto retry; /* XXX - FIXME */
-				}
 				errno = gfarm_error_to_errno(e);
 				return (-1);
 			}

@@ -296,6 +296,7 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 		goto profile_finish;
 	}
 
+ retry:
 	if (if_hostname != NULL) {
 		e = gfarm_host_get_canonical_name(if_hostname,
 		    &vc->canonical_hostname);
@@ -402,8 +403,23 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 	else
 		e = gfs_pio_open_remote_section(gf, if_hostname, flags);
 
+	/* if failed, try another replica */
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/*
+		 * Physical file is missing for some reason.  Delete
+		 * the section copy info, and try again.
+		 */
+		e = gfarm_file_section_copy_info_remove(
+			gf->pi.pathname, vc->section, if_hostname);
+		if (e != NULL)
+			goto free_host;
+
+		if_hostname = NULL;
+		free(vc->canonical_hostname);
+		goto retry;
+	}
+
 free_host:
-	/* XXX - if failed, try another replica */
 	if (e != NULL)
 		free(vc->canonical_hostname);
 
