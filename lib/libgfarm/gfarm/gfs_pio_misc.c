@@ -738,25 +738,26 @@ gfarm_url_fragments_replicate_to_domainname(char *gfarm_url,
 	const char *domainname)
 {
 	char *e, **dsthosts;
-	int ndomainhosts, nfrags;
-	char **domainhosts;
-
-	e = gfarm_host_domain_hosts_schedule(domainname,
-		&ndomainhosts, &domainhosts);
-	if (e != NULL)
-		return (e);
+	int nfrags;
 
 	e = gfarm_url_fragment_number(gfarm_url, &nfrags);
 	if (e != NULL)
 		return (e);
-	e = gfarm_hosts_schedule_expand_cyclic(nfrags, &dsthosts,
-		ndomainhosts, domainhosts);
+
+	dsthosts = malloc(nfrags * sizeof(char *));
+	if (dsthosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfarm_schedule_search_idle_by_domainname(domainname,
+		nfrags, dsthosts);
 	if (e != NULL)
-		return (e);
+		goto free_dsthosts;
 
 	e = gfarm_url_fragments_replicate(gfarm_url, nfrags, dsthosts);
 
-	gfarm_strings_free_deeply(ndomainhosts, domainhosts);
+	while (--nfrags >= 0)
+		free(dsthosts[nfrags]);
+ free_dsthosts:
 	free(dsthosts);
 
 	return (e);

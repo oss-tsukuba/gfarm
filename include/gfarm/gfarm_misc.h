@@ -93,6 +93,7 @@ extern char GFARM_URL_PREFIX[];
  * Pool Host Scheduling
  * XXX - will be separated to <gfarm_schedule.h>?
  */
+char *gfarm_schedule_search_idle_by_all(int, char **);
 char *gfarm_url_hosts_schedule(char *, char *, int *, char ***);
 char *gfarm_file_section_host_schedule(char *, char *, char **);
 char *gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
