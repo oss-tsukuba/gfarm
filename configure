@@ -646,7 +646,7 @@ if test "${with_readline+set}" = set; then
 else
   with_readline=
  readline_includes=
- readline_libs=-lcrypto
+ readline_libs=
 
 fi
 
@@ -1432,6 +1432,36 @@ cat > conftest.$ac_ext <<EOF
 #line 1433 "configure"
 #include "confdefs.h"
 
+#include <stdio.h>
+#include <errno.h>
+int main() {
+
+int i = sys_nerr;
+
+; return 0; }
+EOF
+if { (eval echo configure:1444: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ax_cv_have_sys_nerr=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ax_cv_have_sys_nerr=no
+fi
+rm -f conftest*
+if test "$ax_cv_have_sys_nerr" = yes; then
+  cat >> confdefs.h <<\EOF
+#define HAVE_SYS_NERR 1
+EOF
+
+fi
+
+
+cat > conftest.$ac_ext <<EOF
+#line 1463 "configure"
+#include "confdefs.h"
+
 #include <sys/types.h>
 #include <pwd.h>
 int main() {
@@ -1444,7 +1474,7 @@ rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1448: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1478: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_getpwnam_r=yes
 else
@@ -1463,7 +1493,7 @@ fi
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1467 "configure"
+#line 1497 "configure"
 #include "confdefs.h"
 
 #include <shadow.h>
@@ -1477,7 +1507,7 @@ rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1481: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1511: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_getspnam_r=yes
 else
@@ -1496,7 +1526,7 @@ fi
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1500 "configure"
+#line 1530 "configure"
 #include "confdefs.h"
 
 #include <sys/types.h>
@@ -1511,7 +1541,7 @@ rv = bind(s, &addr, len);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1515: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1545: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_socklen_t=yes
 else
@@ -1526,7 +1556,7 @@ if test "$ax_cv_have_socklen_t" = no; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 1530 "configure"
+#line 1560 "configure"
 #include "confdefs.h"
 
 # include <sys/types.h>
@@ -1544,7 +1574,7 @@ else
   }
   
 EOF
-if { (eval echo configure:1548: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:1578: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ax_cv_socklen_t=int
 else

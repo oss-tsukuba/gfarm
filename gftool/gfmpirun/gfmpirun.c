@@ -123,7 +123,7 @@ main(argc, argv)
 				argv[i - 1]);
 		}
 		gfarm_stringlist_add(&optlist_size, &option_list, argv[i]);
-skip_opt:
+skip_opt: ;
 	}
 	command_index = i;
 	if (command_index >= argc) /* no command name */

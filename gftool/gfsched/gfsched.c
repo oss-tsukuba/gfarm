@@ -25,7 +25,7 @@ int
 main(int argc, char * argv[])
 {
     int argc_save = argc;
-    char * argv_save = argv;
+    char **argv_save = argv;
     char * gfarm_url = (char *)NULL, * gfarm_file = (char *)NULL;
     char * e = (char *)NULL;
     int filep = 0;

@@ -28,7 +28,7 @@ int
 main(int argc, char * argv[])
 {
     int argc_save = argc;
-    char * argv_save = argv;
+    char **argv_save = argv;
     char * filename, * gfarm_url;
     int node_index = -1, total_nodes = -1;
     char * e = (char *)NULL, * architecture = NULL;
