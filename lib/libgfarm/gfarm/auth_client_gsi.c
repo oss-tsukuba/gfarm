@@ -30,7 +30,9 @@ gss_cred_id_t gfarm_gsi_get_delegated_cred();	/* XXX */
 static int gsi_initialized;
 static int gsi_server_initialized;
 
-static char *
+static char *gsi_client_cred_name;
+
+char *
 gfarm_gsi_client_initialize(void)
 {
 	OM_uint32 e_major;
@@ -54,7 +56,14 @@ gfarm_gsi_client_initialize(void)
 	}
 	gsi_initialized = 1;
 	gsi_server_initialized = 0;
+	gsi_client_cred_name = gfarmSecSessionGetInitiatorCredName();
 	return (NULL);
+}
+
+char *
+gfarm_gsi_client_cred_name(void)
+{
+	return (gsi_client_cred_name);
 }
 
 char *

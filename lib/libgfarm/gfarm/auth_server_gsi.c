@@ -83,7 +83,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		
 	}
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
-#if 1 /* XXX - global name should be distinguished by DN (distinguish name) */
+#if 0 /* XXX - global name should be distinguished by DN (distinguish name) */
 	e = gfarm_local_to_global_username(
 	    userinfo->authData.userAuth.localName, &global_username);
 	if (e != NULL) {
@@ -97,8 +97,18 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	/*
 	 * We DO need GSI authentication to access user database in this case,
 	 * otherwise GSI authentcation depends on weak protocol.
+	 *
+	 * XXX - local_user_map file is used for mapping from DN to a
+	 *       global user name, instead of accessing to a meta db.
 	 */
-	e = gfarm_DN_to_global_username(userinfo->distName, &global_username);
+	e = gfarm_local_to_global_username(
+		userinfo->distName, &global_username);
+	if (e == NULL && strcmp(userinfo->distName, global_username) == 0) {
+		free(global_username);
+		e = gfarm_local_to_global_username(
+			userinfo->authData.userAuth.localName,
+			&global_username);
+	}
 	if (e != NULL) {
 		global_username = NULL;
 		error = GFARM_AUTH_ERROR_DENIED;

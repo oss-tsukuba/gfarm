@@ -12,6 +12,7 @@
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 #include "gfs_client.h"
+#include "auth.h"
 
 char *program_name = "gfrcmd";
 
@@ -184,6 +185,10 @@ main(argc, argv)
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e == NULL)
 		e = gfarm_config_read();
+#ifdef HAVE_GSI
+	if (e == NULL)
+		(void*)gfarm_gsi_client_initialize();
+#endif
 	if (e == NULL)
 		e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL) {

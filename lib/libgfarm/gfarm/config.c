@@ -302,10 +302,31 @@ gfarm_set_global_user_for_this_local_account(void)
 {
 	char *e, *local_user, *global_user;
 
+#ifdef HAVE_GSI
+	/*
+	 * Global user name determined by the distinguished name.
+	 *
+	 * XXX - Currently, a local user map is used.
+	 */
+	local_user = gfarm_gsi_client_cred_name();
+	if (local_user != NULL) {
+		e = gfarm_local_to_global_username(local_user, &global_user);
+		if (e == NULL)
+			if (strcmp(local_user, global_user) == 0)
+				free(global_user);
+				/* continue to the next method */
+			else
+				goto set_global_username;
+		else
+			return (e);
+	}
+#endif
+	/* Global user name determined by the local user account. */
 	local_user = gfarm_get_local_username();
 	e = gfarm_local_to_global_username(local_user, &global_user);
 	if (e != NULL)
 		return (e);
+ set_global_username:
 	e = gfarm_set_global_username(global_user);
 	gfarm_stringlist_free_deeply(&local_user_map_file_list);
 	return (e);
@@ -1199,6 +1220,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 	e = gfarm_config_read();
 	if (e != NULL)
 		return (e);
+#ifdef HAVE_GSI
+	(void*)gfarm_gsi_client_initialize();
+#endif
 	e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL)
 		return (e);
