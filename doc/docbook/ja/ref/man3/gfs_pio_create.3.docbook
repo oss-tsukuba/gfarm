@@ -46,12 +46,25 @@
 の指す先に返します。</para>
 
 <para>
-gfarm-1.0.4 以降は、必要な場合、引数
+引数
 <parameter>flags</parameter>
-に
+には、
+<function>gfs_pio_open()</function>
+の第二引数と同じ意味を持ちます。
+ただし、
+<function>gfs_pio_create()</function>
+に特有のフラグとして、
+<parameter>GFARM_FILE_EXCLUSIVE</parameter>
+を指定することができます。この指定を行なった場合、
+ファイルが既に存在する場合は、ファイルのオープンに失敗します。
+</para>
+<para>
+以前のバージョンでは、引数
+<parameter>flags</parameter>
+の値として
 <parameter>GFARM_FILE_TRUNC</parameter>
-を明示的に指定しなければならないのでご注意ください。
-以前のバージョンでは、暗黙裡にこれが仮定されていました。
+が暗黙裡に仮定されていましたが、gfarm-1.0.4 以降は、
+明示的に指定しなければならなくなりましたので、ご注意ください。
 </para>
 
 <para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで

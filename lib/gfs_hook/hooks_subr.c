@@ -84,8 +84,10 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 	default: return (-1);
 	}
 
+#if 0 /* this is unnecessary */
 	if ((open_flags & O_CREAT) != 0)
 		gfs_flags |= GFARM_FILE_CREATE;
+#endif
 	if ((open_flags & O_TRUNC) != 0)
 		gfs_flags |= GFARM_FILE_TRUNC;
 	if ((open_flags & O_APPEND) != 0)

@@ -62,12 +62,6 @@ three values should be specified:
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><constant>GFARM_FILE_CREATE</constant></term>
-<listitem>
-<para>If the file does not exist, it will be created.</para>
-</listitem>
-</varlistentry>
-<varlistentry>
 <term><constant>GFARM_FILE_TRUNC</constant></term>
 <listitem>
 <para>If the file already exist and is a regular file, it will be
@@ -78,13 +72,6 @@ truncated to length 0 if the open mode allows writing.</para>
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>The file is opened in append mode.</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_FILE_EXCLUSIVE</constant></term>
-<listitem>
-<para>When used with <constant>GFARM_FILE_CREATE</constant>, if the
-file already exists the open will fail with an error.</para>
 </listitem>
 </varlistentry>
 </variablelist>

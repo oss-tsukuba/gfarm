@@ -9,6 +9,7 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include "gfs_proto.h"	/* GFARM_FILE_CREATE */
 #include "gfs_pio.h"
 
 struct gfs_file_global_context {

@@ -96,6 +96,9 @@ enum gfs_proto_error {
 
 #define GFS_PROTO_MAX_IOSIZE	65536
 
+/* other flags are defined in <gfarm/gfs.h> */
+#define GFARM_FILE_CREATE		0x00000200
+
 /*
  * sub protocols of GFS_PROTO_COMMAND
  */

@@ -14,7 +14,7 @@
 #include <libgen.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
-#include "gfs_proto.h" /* for gfs_digest_calculate_local() */
+#include "gfs_proto.h" /* GFARM_FILE_CREATE, gfs_digest_calculate_local() */
 #include "gfs_pio.h"
 
 int gfarm_node = -1;

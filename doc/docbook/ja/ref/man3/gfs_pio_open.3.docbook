@@ -66,12 +66,6 @@
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><constant>GFARM_FILE_CREATE</constant></term>
-<listitem>
-<para>ファイルが存在しない場合、ファイルを作成します。</para>
-</listitem>
-</varlistentry>
-<varlistentry>
 <term><constant>GFARM_FILE_TRUNC</constant></term>
 <listitem>
 <para>ファイルが存在し，レギュラーファイルで、書込みが許される場合、ファイルサイズを0にします。</para>
@@ -81,12 +75,6 @@
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>ファイルをアペンドモードでオープンします。</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_FILE_EXCLUSIVE</constant></term>
-<listitem>
-<para><constant>GFARM_FILE_CREATE</constant>と共に指定され、ファイルが既に存在する場合は、ファイルのオープンに失敗します。</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include "gfs_proto.h"
 #include "gfs_pio.h"
 #include "timer.h"
 

@@ -43,12 +43,24 @@ and returns a <parameter>GFS_File</parameter> structure to the address pointed t
 and is modified by the process's <varname>umask</varname>.</para>
 
 <para>
+The
+<parameter>flags</parameter>
+argument has same meaning with the second argument of
+<function>gfs_pio_open()</function>.
+There is one other flag which is specific to 
+<function>gfs_pio_create()</function>.
+That is
+<parameter>GFARM_FILE_EXCLUSIVE</parameter>,
+and this function will fail, if this flag is specified and
+the file already exists.
+</para>
+<para>
 Note that
 <parameter>GFARM_FILE_TRUNC</parameter>
 must be explicitly specified as the
 <parameter>flags</parameter>
-argument since gfarm-1.0.4 if it's needed,
-although it was implicitly assumed once.
+argument since gfarm-1.0.4, if it's needed.
+Although this was implicitly assumed before.
 </para>
 
 <para>When <function>gfs_pio_create()</function> is used by parallel processes executed by
