@@ -58,7 +58,7 @@ gfs_unlink(const char *gfarm_url)
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	e = gfarm_url_make_path_for_creation(gfarm_url, &gfarm_file);
 	if (e != NULL) {
 		gfs_profile(gfarm_gettimerval(&t2));
 		gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
