@@ -15,6 +15,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	va_list ap;
 	mode_t mode;
 	int filedes;
+	int retry_count = 0, max_retry = 1;
 
 	va_start(ap, oflag);
 	mode = va_arg(ap, mode_t);
@@ -105,7 +106,13 @@ retry:
 					 * possibly caused by coredump.
 					 */
 					gfs_unlink(path); /* XXX - FIXME */
-					goto retry; /* XXX - FIXME */
+					/*
+					 * When a spool directory is not
+					 * correctly set up, the retry results
+					 * in the infinite loop.
+					 */
+					if (retry_count++ < max_retry)
+						goto retry; /* XXX - FIXME */
 				}
 				errno = gfarm_error_to_errno(e);
 				return (-1);
