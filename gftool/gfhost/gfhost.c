@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <gfarm/gfarm.h>
 #include "gfs_client.h"
+#include "host.h" /* gfarm_host_info_address_get() */
 
 char *program_name = "gfhost";
 
@@ -329,6 +330,15 @@ resolv_addr_with_address_use(char *hostname,
 }
 
 char *
+resolv_addr_by_host_info_with_address_use(
+	char *hostname, struct gfarm_host_info *info,
+	struct sockaddr *addr, char **if_hostnamep)
+{
+	return (gfarm_host_info_address_get(hostname, gfarm_spool_server_port,
+	    info, addr, if_hostnamep));
+}
+
+char *
 resolv_addr_without_address_use(char *hostname,
 	struct sockaddr *addr, char **if_hostnamep)
 {
@@ -352,8 +362,18 @@ resolv_addr_without_address_use(char *hostname,
 	return (NULL);
 }
 
+char *
+resolv_addr_by_host_info_without_address_use(
+	char *hostname, struct gfarm_host_info *info,
+	struct sockaddr *addr, char **if_hostnamep)
+{
+	return (resolv_addr_without_address_use(hostname, addr, if_hostnamep));
+}
+
 char *(*opt_resolv_addr)(char *, struct sockaddr *, char **) =
 	resolv_addr_with_address_use;
+char *(*opt_resolv_addr_by_host_info)(char *, struct gfarm_host_info *,
+    struct sockaddr *, char **) = resolv_addr_by_host_info_with_address_use;
 
 /*
  * listing options.
@@ -391,7 +411,13 @@ print_loadavg(struct gfarm_host_info *info,
 	char *hostname = info->hostname;
 	char *if_hostname;
 
-	e = (*opt_resolv_addr)(hostname, &addr, &if_hostname);
+	
+	if (info->architecture == NULL) { /* XXX faked host_info? */
+		e = (*opt_resolv_addr)(hostname, &addr, &if_hostname);
+	} else {
+		e = (*opt_resolv_addr_by_host_info)(hostname, info,
+		    &addr, &if_hostname);
+	}
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", hostname, e);
 		return (e);
@@ -411,6 +437,7 @@ list_loadavg(int nhosts, char **hosts,
 
 	for (i = 0; i < nhosts; i++) {
 		host.hostname = hosts[i];
+		host.architecture = NULL; /* XXX mark as a faked host_info */
 		e = print_loadavg(&host, udp_requests);
 		if (e_save == NULL)
 			e_save = e;
@@ -505,7 +532,7 @@ print_host_info_and_loadavg(struct gfarm_host_info *host_info,
 		return (e);
 	}
 
-	e = (*opt_resolv_addr)(host_info->hostname,
+	e = (*opt_resolv_addr_by_host_info)(host_info->hostname, host_info,
 	    &addr, &closure->if_hostname);
 	if (e != NULL) {
 		closure->if_hostname = NULL;
@@ -552,7 +579,7 @@ print_up(struct gfarm_host_info *host_info,
 		return (e);
 	}
 
-	e = (*opt_resolv_addr)(hostname, &addr, NULL);
+	e = (*opt_resolv_addr_by_host_info)(hostname, host_info, &addr, NULL);
 	if (e != NULL) {
 		callback_up(hostname, NULL, NULL, e);
 		return (e);
@@ -813,6 +840,8 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			opt_resolv_addr = resolv_addr_without_address_use;
+			opt_resolv_addr_by_host_info =
+			    resolv_addr_by_host_info_without_address_use;
 			break;
 		case 'j':
 			opt_concurrency = parse_opt_long(optarg,
