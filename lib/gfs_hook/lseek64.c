@@ -14,6 +14,7 @@
 #undef syscall
 
 #include "hooks_subr.h"
+#include <gfarm/gfarm_config.h>
 
 off64_t syscall();
 
@@ -36,6 +37,8 @@ gfs_hook_syscall_lseek64(int filedes, off64_t offset, int whence)
 	rv = syscall(SYS__llseek, filedes, (int)(offset >> 32), (int)offset,
 	    &result, whence);
 	return (rv ? rv : result);
+#elif defined(__linux__) && SIZEOF_LONG == 8 && defined(__NR_lseek)
+	return (syscall(__NR_lseek, filedes, offset, whence));
 #else
 #error do not know how to implement lseek64
 #endif
