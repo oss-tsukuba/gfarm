@@ -44,9 +44,13 @@ enum gfs_hook_file_view {
 extern int _gfs_hook_index;
 extern int _gfs_hook_num_fragments;
 
+struct dirent;
+struct dirent64;
 struct stat;
 struct stat64;
 int gfs_hook_syscall_open(const char *, int, mode_t);
+int gfs_hook_syscall_getdents(int, struct dirent *, size_t);
+int gfs_hook_syscall_getdents64(int, struct dirent64 *, size_t);
 int gfs_hook_syscall_xstat(int, const char *, struct stat *);
 int gfs_hook_syscall_lxstat(int, const char *, struct stat *);
 int gfs_hook_syscall_fxstat(int, int, struct stat *);

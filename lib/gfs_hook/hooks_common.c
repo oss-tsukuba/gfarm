@@ -320,8 +320,13 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
  * getdents
  */
 
-#ifndef __linux__ /* doesn't work on Linux yet */
-int
+#ifdef __linux__
+# define internal_function __attribute__ ((regparm (3), stdcall))
+#else
+# define internal_function /* empty */
+#endif
+
+int internal_function
 FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 {
 	GFS_Dir dir;
@@ -426,7 +431,7 @@ error:
 	return (-1);
 }
 
-int
+int internal_function
 FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 {
 	_gfs_hook_debug_v(fprintf(stderr,
@@ -435,7 +440,7 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	return (FUNC___GETDENTS(filedes, buf, nbyte));
 }
 
-int
+int internal_function
 #if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
 #else
@@ -447,4 +452,3 @@ FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 				  filedes));
 	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte));
 }
-#endif

@@ -62,6 +62,18 @@ gfs_hook_syscall_creat64(const char *path, mode_t mode)
 #endif
 }
 
+#ifndef __linux__
+int
+gfs_hook_syscall_getdents64(int filedes, struct dirent64 *buf, size_t nbyte)
+{
+# ifdef SYS_getdents64
+	return (syscall(SYS_getdents64, filedes, buf, nbyte));
+# else
+	return (gfs_hook_syscall_getdents(filedes, buf, nbyte));
+# endif
+}
+#endif
+
 /* see lseek64.c for gfs_hook_syscall_lseek64() implementation */
 
 int
@@ -130,16 +142,6 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #endif
 }
 #endif
-
-int
-gfs_hook_syscall_getdents64(int filedes, struct dirent64 *buf, size_t nbyte)
-{
-#ifdef SYS_getdents64
-	return (syscall(SYS_getdents64, filedes, buf, nbyte));
-#else
-	return (gfs_hook_syscall_getdents(filedes, buf, nbyte));
-#endif
-}
 
 #define OFF_T off64_t
 

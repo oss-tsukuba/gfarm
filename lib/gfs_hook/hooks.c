@@ -595,6 +595,14 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 #endif
 }
 
+#ifndef __linux__
+int
+gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
+{
+	return (syscall(SYS_getdents, filedes, buf, nbyte));
+}
+#endif
+
 int
 gfs_hook_syscall_stat(const char *path, struct stat *buf)
 {
@@ -653,12 +661,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 
 }
 #endif /* defined(_STAT_VER) && defined(SYS_xstat) */
-
-int
-gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
-{
-	return (syscall(SYS_getdents, filedes, buf, nbyte));
-}
 
 #define OFF_T off_t
 

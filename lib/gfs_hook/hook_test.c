@@ -288,14 +288,16 @@ main(int argc, char *argv[])
      * If gfarm_initialize() is not called, this program is assumed
      * to be a serial program, i.e. gfs_pio_set_local(0, 1) is
      * automatically called.
-     */
+
     e = gfarm_initialize(&argc, &argv);
     if (e != NULL)
 	fprintf(stderr, "%s: %s\n", argv[0], e), exit(1);
+    */
 
     if (argc > 1)
 	filename = argv[1];
 
+#if 0
     /* create a file */
 
     if (test_stat(filename) == 0)
@@ -343,7 +345,80 @@ main(int argc, char *argv[])
 
     test_unlink(filename);
 
-    gfarm_terminate();
+    /* read the dirctory entries */
+    int i;
 
+    for (i = 0; i < 1000000; i++) {
+	fd = test_open_rdonly(filename);
+    	test_close(fd);
+    }
+#endif
+    
+#include <dirent.h>
+
+#define STRUCT_DIRENT	struct dirent
+#define FUNC_GETDENTS	getdents
+
+#if 0
+    char buff[1024];
+    STRUCT_DIRENT *p;
+    int rcount;
+    
+    fd = test_open_rdonly(filename);
+    while((rcount=FUNC_GETDENTS(fd, (STRUCT_DIRENT *)buff, 256)) > 0) {
+
+	xdump( buff, rcount );
+
+	printf("rcount:%d\n", rcount);
+            for ( p = (STRUCT_DIRENT *)buff ; (char *)p < &buff[rcount] ;
+		 p = (STRUCT_DIRENT *)((char *)p + p->d_reclen)) {
+
+                printf("p:%d, ", (char *)p - buff );
+                printf("off:%u, ", p->d_off );  /* long */
+                printf("ino:%u, ", p->d_ino );  /* unsigned long */
+                printf("reclen:%d, ", p->d_reclen );
+                printf("name:%s\n", p->d_name );
+            }
+    }
+
+    test_close(fd);
+#else
+	DIR *dirp;
+	struct dirent *dp;
+
+	if (argc < 2)
+		dirp = opendir(".");
+	else
+		dirp = opendir(argv[1]);
+	if (dirp != NULL) {
+		while ((dp = readdir(dirp)) != NULL)
+			printf("%s\n", dp->d_name);
+		(void)closedir(dirp);
+	}
+#endif
+
+    /* "Is a directory" check */
+
+    fd = test_open_rdonly(argv[1]);
+    /* test_lseek_set(fd, 0); */
+    test_close(fd);
+
+    /* fd = dup2(fd, 7); */
+    /* printf("%d\n", fd); */
+
+    /* test_read_string(fd); */
+    /* test_write_string(fd, teststring); */
+    /* test_unlink(argv[1]); */
+    /* test_access(argv[1]); */
+    /* fd = creat(argv[1], 0664); */
+
+    /* static char *execve_argv[] = { NULL, NULL }; */
+    /* static char *execve_envp[] = { NULL }; */
+    /* execve_argv[0] = argv[1]; */
+    /* execve(argv[1], execve_argv, execve_envp); */
+    /* utimes(argv[1], NULL); */
+
+    gfarm_terminate();
+    perror("");
     exit(0);
 }
