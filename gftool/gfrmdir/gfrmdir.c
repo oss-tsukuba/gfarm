@@ -69,7 +69,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-	for (i = 1; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		char *e;
 		struct args a;
 		struct gfarm_path_info pi;
