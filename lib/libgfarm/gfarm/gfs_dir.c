@@ -115,17 +115,23 @@ gfs_rmdir(const char *pathname)
 char *
 gfs_chdir_canonical(const char *canonic_dir)
 {
-	char *new_dir;
+	static char *dir;
+	static int dir_len;
+	int len;
 
-	if (gfarm_current_working_directory != NULL) {
-		free(gfarm_current_working_directory);
-		gfarm_current_working_directory = NULL;
+	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
+	if (dir_len < len) {
+		dir = realloc(dir, len);
+		if (dir == NULL) {
+			dir_len = 0;
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		dir_len = len;
 	}
-	new_dir = malloc(strlen(canonic_dir) + 2);
-	if (new_dir == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	sprintf(new_dir, "/%s", canonic_dir);
-	gfarm_current_working_directory = new_dir;
+
+	sprintf(dir, "%s/%s", GFARM_URL_PREFIX, canonic_dir);
+	gfarm_current_working_directory = dir + GFARM_URL_PREFIX_LENGTH;
+	setenv("GFS_PWD", dir, 1);
 
 	return (NULL);
 }
