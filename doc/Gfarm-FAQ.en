@@ -27,8 +27,8 @@ Table of Contents:
     gsi_auth method and gsi authentication?
 
 4. Performance Tuning
-  4.1 How to speed up writes to metadata databse using OpenLDAP
-    version 2.1.X and Berlekey DB?
+  4.1 How to speed up writes to metadata database using OpenLDAP
+    version 2.1.X and Berkeley DB?
 
 5. Limitation
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -92,27 +92,21 @@ Table of Contents:
 	gfarm:/bin/gfsplck is prepared for checking and deleting these
 	unregistered files in a spool directory on filesystem nodes.
 	You can check which files are unregistered or not by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck gfarm:~
 	After checking files, you can delete them by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d gfarm:~
 	The above command examples do not check the file integrity.
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad gfarm:~
 
   2.4 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
-	For all data files except execution programs, there is nothing
-	you need to do.  When opening these missing files, the Gfarm
-	system detects that, and opens the other file replica
-	automatically.  On the other hand, it is necessary to execute
-	the 'gfsck' command explicitly for execution programs.  The
-	below example shows fixing the inconsistency for the program
-	'gfarm:command'.
-		% gfsck gfarm:command
-
-	This inconvenience will be removed in the next major release.
+	For all data files including execution programs, there is
+	nothing you need to do.  When opening these missing files, the
+	Gfarm system detects that, and opens the other file replica
+	automatically, or replicates it dynamically.
 
 3. Security
 ***********
@@ -199,8 +193,8 @@ Table of Contents:
 
 4. Performance Tuning
 *********************
-  4.1 How to speed up writes to metadata databse using OpenLDAP
-    version 2.1.X and Berlekey DB?
+  4.1 How to speed up writes to metadata database using OpenLDAP
+    version 2.1.X and Berkeley DB?
 
 	When you are using Berkeley DB as database backend, it is
 	possible to improve write performance significantly to tune
@@ -234,13 +228,11 @@ set_flags DB_TXN_NOT_DURABLE
 
   5.3 Are file names case-sensitive in a Gfarm file system?
 
-	Currently, it is case-insensitive because virtual path names
-	are managed by distinguished name of the LDAP database.  This
-	limitation will be removed in the next major release.
+	File names became case-sensitive in Gfarm version 1.0.2 or
+	later.  Files created by the version 1.0.1 or earlier can be
+	accessed by a path name with all lower-case letters.
 
   5.4 Can a file name include ',' or '+'?
 
-	Currently, a file name in Gfarm file system cannot include
-	',', '+', '"', '\', '>', '<', and ';'.  Moreover, the file
-	name cannot start with either ' ' or '#'.  This limitation
-	will be removed in the next release.
+	Gfarm version 1.0.2 or later can include '#', ' ', ',', '+',
+	'"', '\', '>', '<', and ';' in a file name.
