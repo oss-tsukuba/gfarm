@@ -142,26 +142,13 @@ Table of Contents:
 
 4. Limitation
 *************
-  4.1 "drwxrwxrwx" is always displayed as permission of a directory by gfls.
-    What is this?
+  4.1 Where are gfchmod, gfchown and gfmv?
 
-	This is a limitation caused by the fact that currently
-	the LDAP server for Gfarm doesn't hold any information about
-	directories. Actually, not every user can create a file,
-	but only users who are permitted by the owner and the mode of
-	the directory can create a file.
+	Unfortunately, not implemented yet.
 
-	We plan to fix this problem in next major release.
+	We plan to add these commands in the next major release.
 
-  4.2 Where is gfmkdir, gfrmdir and gfmv?
-
-	There isn't such program currently unfortunately.
-	Please use command like the follows for this issue for now.
-		prun -a mkdir /var/spool/gfarm/$USER/dir
-
-	We plan to fix this problem in the next major release.
-
-  4.3 Can I open a file with read-write mode?
+  4.2 Can I open a file with read-write mode?
 
 	Currently, no error happens even if you open a file with
 	read-write mode. But if there are some replicas of the file,
