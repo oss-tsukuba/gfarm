@@ -37,8 +37,8 @@ usage()
 #define GFS_FILE_BUFSIZE 65536
 
 static char *
-gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
-	int nfrags, char *filename)
+gfarm_url_fragment_register(char *gfarm_url, char *section, int nfrags,
+	char *hostname, char *filename)
 {
 	char *e, *e_save = NULL;
 	int fd;
@@ -48,26 +48,40 @@ gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
 	struct stat s;
 	char buffer[GFS_FILE_BUFSIZE];
 
-	if (stat(filename, &s) == -1)
-		return "no such file or directory";
-
 	/*
 	 * register the fragment
 	 */
-	fd = open(filename, O_RDONLY);
-	if (fd == -1)
-		return "cannot open";
-
+	if (strcmp(filename, "-") == 0) {
+		fd = 0;			/* stdin */
+		s.st_mode = 0664;	/* XXX */
+	}
+	else {
+		if (stat(filename, &s) == -1)
+			return "no such file or directory";
+		fd = open(filename, O_RDONLY);
+		if (fd == -1)
+			return "cannot open";
+	}
 	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY,
 		s.st_mode & GFARM_S_ALLPERM, &gf);
 	if (e != NULL) {
 		close(fd);
 		return (e);
 	}
-	e = gfs_pio_set_view_index(gf, nfrags, index, hostname, 0);
+	if (nfrags == GFARM_FILE_DONTCARE)
+		e = gfs_pio_set_view_section(gf, section, hostname, 0);
+	else
+		e = gfs_pio_set_view_index(gf, nfrags,
+			strtol(section, NULL, 0), hostname, 0);
 	if (e != NULL) {
+		char *gfarm_file;
 		gfs_pio_close(gf);
 		close(fd);
+		/* try to unlink path info when there is no fragment file */
+		if (gfarm_url_make_path(gfarm_url, &gfarm_file) == NULL) {
+			(void)gfarm_path_info_remove(gfarm_file);
+			free(gfarm_file);
+		}
 		return (e);
 	}
 	for (;;) {
@@ -100,16 +114,18 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 	char *e, *target_url = NULL;
 	int executable_file = 0;
 
-	if (stat(filename, &s) == -1) {
+	if (stat(filename, &s) == 0) {
+		if (!S_ISREG(s.st_mode)) {
+			fprintf(stderr, "%s: not a regular file", filename);
+			return (-1);
+		}
+		if ((s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0)
+			executable_file = 1;
+	}
+	else if (strcmp(filename, "-")) {
 		perror(filename);
 		return (-1);
 	}
-	if (!S_ISREG(s.st_mode)) {
-		fprintf(stderr, "%s: not a regular file", filename);
-		return (-1);
-	}
-	if ((s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0)
-		executable_file = 1;
 
 	e = gfs_stat(gfarm_url, &gs);
 	if (e == NULL && GFARM_S_ISDIR(gs.st_mode)) {
@@ -159,20 +175,44 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 
 	if (executable_file) {
 		/* register a binary executable. */
+
+		/*
+		 * In auto index case, node_index does not stand for
+		 * architecture.
+		 */
 		if (auto_index)
 			node_index = NULL;
 
 		if (node_index == NULL) {
-			char *self_name;
+			if (hostname == NULL) {
+				char *self_name;
 
-			e = gfarm_host_get_canonical_self_name(&self_name);
-			if (e == NULL)
+				e = gfarm_host_get_canonical_self_name(
+					&self_name);
+				if (e != NULL) {
+					fprintf(stderr, "%s: %s\n",
+						gfarm_host_get_self_name(), e);
+					return (-1);
+				}
 				node_index =
 				    gfarm_host_info_get_architecture_by_host(
 					    self_name);
-			else
-				fprintf(stderr, "%s: %s\n",
-					gfarm_host_get_self_name(), e);
+			}
+			else {
+				char *c_name;
+
+				e = gfarm_host_get_canonical_name(
+					hostname, &c_name);
+				if (e != NULL) {
+					fprintf(stderr, "%s: %s\n",
+						hostname, e);
+					return (-1);
+				}
+				node_index = 
+				    gfarm_host_info_get_architecture_by_host(
+					    c_name);
+				free(c_name);
+			}
 		}
 		if (node_index == NULL) {
 			fprintf(stderr,
@@ -197,12 +237,20 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 			}
 		}
 
-		e = gfarm_url_program_register(target_url, node_index,
-			filename, total_nodes);
+		e = gfarm_url_fragment_register(target_url, node_index,
+			GFARM_FILE_DONTCARE, hostname, filename);
+		/*
+		 * XXX - gfarm_url_replicate() to replicate
+		 * 'total_nodes' copies of target_url.
+		 */
+
 	} else {
-		int index;
+		char index_str[GFARM_INT32STRLEN + 1];
+
 		/* register a file fragment. */
 		if (node_index == NULL) {
+			int index;
+
 			e = gfs_pio_get_node_rank(&index);
 			if (e != NULL) {
 				fprintf(stderr,
@@ -210,9 +258,9 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 					program_name);
 				return (-1);
 			}
+			sprintf(index_str, "%d", index);
+			node_index = index_str;
 		}
-		else
-			index = strtol(node_index, NULL, 0);
 
 		if (total_nodes <= 0) {
 			e = gfs_pio_get_node_size(&total_nodes);
@@ -228,15 +276,16 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 		if (!opt_force) {
 			struct gfs_stat s;
 
-			if (gfs_stat_index(target_url, index, &s) == NULL) {
+			if (gfs_stat_section(target_url, node_index, &s)
+			    == NULL) {
 				gfs_stat_free(&s);
 				e = "already exist";
 				goto finish;
 			}
 		}
 
-		e = gfarm_url_fragment_register(target_url, index, hostname,
-			total_nodes, filename);
+		e = gfarm_url_fragment_register(target_url, node_index,
+			total_nodes, hostname, filename);
 	}
  finish:
 	if (e != NULL) {
@@ -302,7 +351,8 @@ main(int argc, char *argv[])
 			program_name);
 		usage();
 	}
-	if (argc > 1 && total_nodes < 0 && node_index == NULL) {
+	if ((argc > 2 || hostname == NULL)
+	    && (argc > 1 && total_nodes < 0 && node_index == NULL)) {
 		total_nodes = argc - 1;
 		auto_index = 1;
 
