@@ -28,7 +28,7 @@ Or, with the Globus GSI library of the flavor gcc32,
 
 	% gcc -static prog.c -I/usr/grid/include/gcc32 -L/usr/grid/lib \
 		/usr/grid/lib/gfs_hook.o -lgfarm \
-		`globus-make-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'`\
+		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
 		-lldap -llber -lsasl -ldl
 
 After linking with gfs_hook.o, it is possible to access Gfarm files
