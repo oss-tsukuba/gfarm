@@ -218,6 +218,7 @@ replicate_so_and_symlink(char *dir, size_t size)
 			break;
 		e = gfarm_url_execfile_replicate_to_local(gfarm_so, &lpath);
 		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", gfarm_so, e);
 			if (e_save == NULL)
 				e_save = e;
 			if (e == GFARM_ERR_NO_MEMORY)
@@ -228,6 +229,7 @@ replicate_so_and_symlink(char *dir, size_t size)
 		/* create a symlink */
 		e = gfarm_url_localize(gfarm_so, &local_so);
 		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", gfarm_so, e);
 			if (e_save == NULL)
 				e_save = e;
 			if (e == GFARM_ERR_NO_MEMORY)
@@ -237,9 +239,11 @@ replicate_so_and_symlink(char *dir, size_t size)
 		}
 		unlink(local_so);
 		rv = symlink(lpath, local_so);
-		if (rv == -1)
+		if (rv == -1) {
+			perror(local_so);
 			if (e_save == NULL)
 				e_save = gfarm_errno_to_error(errno);
+		}
 		free(local_so);
 		free(lpath);
 	}
@@ -434,7 +438,7 @@ main(int argc, char *argv[], char *envp[])
 	}
 
 	e = modify_ld_library_path();
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+	if (e != NULL) {
 		fprintf(stderr, "%s: modify_ld_library_path: %s\n",
 			progname, e);
 		/* continue */
