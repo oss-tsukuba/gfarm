@@ -518,7 +518,7 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 		a.path = pi->pathname;
 		a.mode = mode;
 		e = gfs_client_apply_all_hosts(chmod_dir_request_parallel,
-					 &a, "gfs_chmod", &nhosts_succeed);
+					 &a, NULL, &nhosts_succeed);
 		return (e);
 	}
 

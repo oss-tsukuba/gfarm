@@ -1982,8 +1982,9 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 	 */
 	e = gfarm_metadb_initialize();
 	if (e != NULL) {
-		fprintf(stderr, "%s: metadb initialization error: %s\n",
-		    message, e);
+		if (message != NULL)
+			fprintf(stderr, "%s: metadb initialization error: %s\n",
+			    message, e);
 		_exit(1);
 	}
 
@@ -1991,27 +1992,32 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port, &addr,
 		NULL);
 	if (e != NULL) {
-		fprintf(stderr, "%s: host %s: %s\n", message, hostname, e);
+		if (message != NULL)
+			fprintf(stderr, "%s: host %s: %s\n",
+			    message, hostname, e);
 		_exit(2);
 	}
 
 	e = gfs_client_connect(hostname, &addr, &conn);
 	if (e != NULL) {
-		fprintf(stderr, "%s: connecting to %s: %s\n", message,
-		    hostname, e);
+		if (message != NULL)
+			fprintf(stderr, "%s: connecting to %s: %s\n", message,
+			    hostname, e);
 		_exit(3);
 	}
 			
 	e = (*op)(conn, args);
 	if (e != NULL) {
-		fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
+		if (message != NULL)
+			fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
 		_exit(4);
 	}
 		
 	e = gfs_client_disconnect(conn);
 	if (e != NULL) {
-		fprintf(stderr, "%s: disconnecting to %s: %s\n", message,
-		    hostname, e);
+		if (message != NULL)
+			fprintf(stderr, "%s: disconnecting to %s: %s\n",
+			    message, hostname, e);
 		_exit(5);
 	}
 
