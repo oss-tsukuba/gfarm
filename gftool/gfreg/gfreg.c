@@ -1,7 +1,5 @@
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -9,7 +7,7 @@
 #include <gfarm/gfarm.h>
 
 /*
- *  Register a local file to the Gfarm Meta DB.
+ *  Register a local file to Gfarm filesystem
  *
  *  gfreg <local_filename> <gfarm_url>
  */
@@ -19,23 +17,22 @@ char *program_name = "gfreg";
 void
 usage()
 {
-    fprintf(stderr, "Usage: %s <local_filename> <gfarm_url>\n",
+    fprintf(stderr, "Usage: %s [option] <local_filename> <gfarm_url>\n",
 	    program_name);
-    fprintf(stderr, "Register a local file to the Gfarm Meta DB.\n\n");
+    fprintf(stderr, "Register a local file to Gfarm filesystem.\n\n");
     fprintf(stderr, "option:\n");
-    fprintf(stderr, "\t-I fragment-index\tregiste a fragment\n");
-    fprintf(stderr, "\t-N number\t\tnumber of fragment\n");
-    fprintf(stderr, "\t-a architecture\t\tarchitecture\n");
-    fprintf(stderr, "\t-h hostname\t\tspecify hostname\n");
+    fprintf(stderr, "\t-I fragment-index\tspecify a fragment index\n");
+    fprintf(stderr, "\t-N number\t\ttotal number of fragments\n");
+    fprintf(stderr, "\t-a architecture\t\tspecify an architecture\n");
+    fprintf(stderr, "\t-h hostname\t\tspecify a hostname\n");
     exit(1);
 }
 
 #define GFS_FILE_BUFSIZE 65536
 
 char *
-gfarm_url_fragment_register(char *gfarm_url, int index, 
-			    char *hostname, int nfrags,
-			    char *filename)
+gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
+	int nfrags, char *filename)
 {
 	char *e, *e_save = NULL;
 	int fd;
@@ -99,36 +96,33 @@ gfarm_url_fragment_register(char *gfarm_url, int index,
 int
 main(int argc, char *argv[])
 {
-    int argc_save = argc;
-    char **argv_save = argv;
     char *filename, *gfarm_url;
-    char *node_index = NULL;
-    char *hostname = NULL;
+    char *node_index = NULL, *hostname = NULL, *e;
     int total_nodes = -1;
-    char *e = NULL, *architecture = NULL;
     struct stat s;
     extern char *optarg;
     extern int optind;
     int c;
 
-    /*  Command options  */
+    e = gfarm_initialize(&argc, &argv);
+    if (e != NULL) {
+	fprintf(stderr, "%s: %s\n", program_name, e);
+	exit(1);
+    }
 
-    if (argc >= 1)
-	program_name = argv[0];
+    /*  Command options  */
 
     while ((c = getopt(argc, argv, "I:N:a:h:")) != -1) {
 	switch (c) {
-	case 'h':
-            hostname = optarg;
-	    break;
 	case 'I':
+	case 'a':
 	    node_index = optarg;
 	    break;
 	case 'N':
 	    total_nodes = strtol(optarg, NULL, 0);
 	    break;
-	case 'a':
-	    architecture = optarg;
+	case 'h':
+	    hostname = optarg;
 	    break;
 	case '?':
 	default:
@@ -143,7 +137,6 @@ main(int argc, char *argv[])
 		"%s: missing a local filename\n",
 		program_name);
 	usage();
-	exit(1);
     }
     filename = argv[0];
     argc--;
@@ -154,7 +147,6 @@ main(int argc, char *argv[])
 		"%s: missing a Gfarm URL\n",
 		program_name);
 	usage();
-	exit(1);
     }
     gfarm_url = argv[0];
     argc--;
@@ -162,55 +154,59 @@ main(int argc, char *argv[])
 
     /* */
 
-    e = gfarm_initialize(&argc_save, &argv_save);
-    if (e != NULL) {
-	fprintf(stderr, "%s: %s\n", program_name, e);
-	exit(1);
-    }
-
     if (stat(filename, &s) == -1) {
 	perror(filename);
 	usage();
-	exit(1);
     }
 
-    if (S_ISREG(s.st_mode) &&
-	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index == NULL) {
-	if (architecture == NULL) {
+    if (S_ISREG(s.st_mode) && (s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) {
+	/* register a binary executable. */
+	if (node_index == NULL) {
 	    char *self_name;
 
 	    e = gfarm_host_get_canonical_self_name(&self_name);
-	    if (e != NULL) {
+	    if (e == NULL)
+		node_index = gfarm_host_info_get_architecture_by_host(
+		    self_name);
+	    else
 		fprintf(stderr, "%s: %s\n", gfarm_host_get_self_name(), e);
-		exit(1);
-	    }
-	    architecture = gfarm_host_info_get_architecture_by_host(self_name);
 	}
-	if (architecture == NULL) {
-	    fprintf(stderr, "%s: missing -a <architecture> for %s\n",
-		    program_name, gfarm_host_get_self_name());
-	    usage();
-	    exit(1);
-	}
-	if (total_nodes <= 0)
-	    total_nodes = 1;
-	e = gfarm_url_program_register(gfarm_url, architecture,
-				       filename, total_nodes);
-    } else {
-	int index;
 	if (node_index == NULL) {
-	    fprintf(stderr, "%s: missing -I <Gfarm index>\n",
-		    program_name);
-	    usage();
+	    fprintf(stderr, "%s: cannot determine the architecture of %s.\n",
+		    program_name, gfarm_host_get_self_name());
 	    exit(1);
 	}
 	if (total_nodes <= 0) {
-	    fprintf(stderr, "%s: missing -N <total num of fragments>\n",
-		    program_name);
-	    usage();
-	    exit(1);
+	    e = gfs_pio_get_node_size(&total_nodes);
+	    if (e != NULL)
+		total_nodes = 1;
 	}
-	index = strtol(node_index, NULL, 0);
+
+	e = gfarm_url_program_register(gfarm_url, node_index,
+				       filename, total_nodes);
+    } else {
+	int index;
+	/* register a file fragment. */
+	if (node_index == NULL) {
+	    e = gfs_pio_get_node_rank(&index);
+	    if (e != NULL) {
+		fprintf(stderr, "%s: missing -I <Gfarm index>\n",
+			program_name);
+		exit(1);
+	    }
+	}
+	else
+	    index = strtol(node_index, NULL, 0);
+
+	if (total_nodes <= 0) {
+	    e = gfs_pio_get_node_size(&total_nodes);
+	    if (e != NULL) {
+		fprintf(stderr, "%s: missing -N <total num of fragments>\n",
+			program_name);
+		exit(1);
+	    }
+	}
+
 	e = gfarm_url_fragment_register(gfarm_url, index, hostname,
 					total_nodes, filename);
     }
