@@ -21,6 +21,7 @@
 #include "param.h"
 #include "sockopt.h"
 #include "auth.h"
+#include "config.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
@@ -37,6 +38,21 @@ char *program_name = "gfrepbe_server";
 char *my_name; /* == gfarm_host_get_self_name() */
 
 long rate_limit;
+
+/*
+ * XXX
+ * The definition of GFREPBE_SERVICE_TAG and gfrepbe_auth_initialize() in
+ * gfrepbe_server.c and gfrepbe_client.c must be factored out.
+ */
+
+#define GFREPBE_SERVICE_TAG "gfarm-replication-backend"
+
+char *
+gfrepbe_auth_initialize(void)
+{
+	return (gfarm_auth_server_cred_type_set(GFREPBE_SERVICE_TAG,
+	    GFARM_AUTH_CRED_TYPE_USER));
+}
 
 void fatal(void)
 {
@@ -595,7 +611,8 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 			     program_name, i, my_name, e);
 			fatal();
 		}
-		e = gfarm_authorize(conns[i], 1, NULL, NULL, NULL);
+		e = gfarm_authorize(conns[i], 1, GFREPBE_SERVICE_TAG,
+		    NULL, NULL, NULL);
 		if (e != NULL) {
 			fprintf(stderr,
 			    "%s: authorization on %s: %s\n",
@@ -770,6 +787,11 @@ main(int argc, char **argv)
 	e = gfarm_server_initialize();
 	if (e != NULL) {
 		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
+		exit(1);
+	}
+	e = gfrepbe_auth_initialize();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_auth_initialize: %s\n", e);
 		exit(1);
 	}
 
