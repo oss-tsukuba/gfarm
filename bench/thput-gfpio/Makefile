@@ -8,6 +8,7 @@ include $(top_srcdir)/makes/var.mk
 
 CFLAGS = $(COMMON_CFLAGS)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
+DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = thput-gfpio
 OBJS = thput-gfpio.o
