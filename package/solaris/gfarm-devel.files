@@ -1,5 +1,5 @@
-usr/grid/include
-usr/grid/lib/*.a
-usr/grid/lib/*.la
-usr/grid/lib/*.o
-usr/grid/lib/*.so
+@PREFIX@/include
+@PREFIX@/lib/*.a
+@PREFIX@/lib/*.la
+@PREFIX@/lib/*.o
+@PREFIX@/lib/*.so

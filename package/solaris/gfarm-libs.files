@@ -1,1 +1,1 @@
-usr/grid/lib/*.so.*
+@PREFIX@/lib/*.so.*

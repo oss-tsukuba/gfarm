@@ -1,7 +1,7 @@
-usr/grid/bin/gfexec
-usr/grid/bin/gfsplck
-usr/grid/bin/thput-gfpio
-usr/grid/sbin/gfsd
+@PREFIX@/bin/gfexec
+@PREFIX@/bin/gfsplck
+@PREFIX@/bin/thput-gfpio
+@PREFIX@/sbin/gfsd
 etc/rc3.d/S99gfsd
 etc/rc3.d/K97gfsd
 etc/gfarm.conf.sample

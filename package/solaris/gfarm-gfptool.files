@@ -1,10 +1,10 @@
-usr/grid/bin/gfcombine
-usr/grid/bin/gfcombine_hook
-usr/grid/bin/gfcp
-usr/grid/bin/gfcp_hook
-usr/grid/bin/gfgrep
-usr/grid/bin/gfwc
+@PREFIX@/bin/gfcombine
+@PREFIX@/bin/gfcombine_hook
+@PREFIX@/bin/gfcp
+@PREFIX@/bin/gfcp_hook
+@PREFIX@/bin/gfgrep
+@PREFIX@/bin/gfwc
 
-usr/grid/libexec/gfrepbe_client
-usr/grid/libexec/gfrepbe_server
-usr/grid/sbin/gfregister
+@PREFIX@/libexec/gfrepbe_client
+@PREFIX@/libexec/gfrepbe_server
+@PREFIX@/sbin/gfregister
