@@ -1,3 +1,12 @@
+gfarm (1.0b1-4) unstable; urgency=low
+
+  * fixed some bugs in these packages
+    * missing directory in gfarm-doc
+    * japanese manpages were installed in default path
+    * rewriten init.d script for gfmd and gfsd 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 14 May 2003 10:22:22 +0900
+
 gfarm (1.0b1-3) unstable; urgency=low
 
   * faild dependencies
