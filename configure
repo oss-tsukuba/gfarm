@@ -18223,7 +18223,7 @@ fi
 
 
 ###
-### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-shared
+### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
 
 
@@ -18344,11 +18344,11 @@ echo "$as_me: error: failed to call globus-makefile-header, aborted" >&2;}
  openssl_includes='$(globus_includes)'
  case ${globus_static} in
  yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
-	echo "$as_me:$LINENO: result: using globus shared library: no" >&5
-echo "${ECHO_T}using globus shared library: no" >&6;;
+	echo "$as_me:$LINENO: result: using globus static library: yes" >&5
+echo "${ECHO_T}using globus static library: yes" >&6;;
  *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
-	echo "$as_me:$LINENO: result: using globus shared library: yes" >&5
-echo "${ECHO_T}using globus shared library: yes" >&6;;
+	echo "$as_me:$LINENO: result: using globus static library: no" >&5
+echo "${ECHO_T}using globus static library: no" >&6;;
  esac
 
 
