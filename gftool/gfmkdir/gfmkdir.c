@@ -68,6 +68,13 @@ main(int argc, char **argv)
 				e);
 			exit(1);
 		}
+		if (gfarm_path_info_get(canonic_path, &pi) == 0) {
+			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
+			    GFARM_ERR_ALREADY_EXISTS);
+			gfarm_path_info_free(&pi);
+			continue;
+		}
+
 		a.path = canonic_path;
 		a.mode = 0755;
 		e = gfs_client_apply_all_hosts(gfmkdir, &a, program_name,

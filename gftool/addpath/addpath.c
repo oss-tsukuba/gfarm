@@ -43,6 +43,11 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	if (pw == NULL)
 		return "no such user";
 
+	if (gfarm_path_info_get(pathname, &pi) == NULL) {
+		gfarm_path_info_free(&pi);
+		return (GFARM_ERR_ALREADY_EXISTS);
+	}
+
 	pi.pathname = pathname;
 	pi.status.st_mode = GFARM_S_IFREG | (sb.st_mode & GFARM_S_ALLPERM);
 	pi.status.st_user = strdup(pw->pw_name); /* XXX NULL check */
@@ -57,6 +62,7 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	pi.status.st_nsections = nfrags;
 
 	e = gfarm_path_info_set(pi.pathname, &pi);
+	gfarm_path_info_free(&pi);
 	return (e);
 }
 
@@ -64,7 +70,15 @@ static char *
 gfarm_path_info_remove_all(char *pathname)
 {
 	char *e, *e_save = NULL;
+	struct gfarm_path_info pi;
 
+	if (gfarm_path_info_get(pathname, &pi) == NULL) {
+		if (GFARM_S_ISDIR(pi.status.st_mode)) {
+			gfarm_path_info_free(&pi);
+			return (GFARM_ERR_IS_A_DIRECTORY);
+		}
+		gfarm_path_info_free(&pi);
+	}
 	e = gfarm_file_section_copy_info_remove_all_by_file(pathname);
 	if (e != NULL)
 		e_save = e;
