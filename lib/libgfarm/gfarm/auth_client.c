@@ -166,8 +166,10 @@ gfarm_auth_request(struct xxx_connection *conn,
 		if (e != NULL)
 			return (e);
 		e = xxx_proto_recv(conn, 1, &eof, "i", &error);
-		if (error != GFARM_AUTH_ERROR_NO_ERROR)
-			return (GFARM_ERR_PROTOCOL);
+		if (e != NULL)
+			return (e);
+		if (eof || error != GFARM_AUTH_ERROR_NO_ERROR)
+			return (GFARM_ERR_PROTOCOL); /* shouldn't happen */
 		if (method == GFARM_AUTH_METHOD_NONE) {
 			/* give up */
 			if (server_methods == 0)
