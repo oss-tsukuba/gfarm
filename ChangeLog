@@ -1,3 +1,64 @@
+2002-06-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* auth_client.c, auth_client_gsi.c, auth_server.c, auth_server_gsi.c, gfm_client.c, gfs_client.c, auth.h:
+	remove symbol GFARM_AUTH_H_CLIENT and GFARM_AUTH_H_SERVER
+
+	* io_fd.c: missing reference to INFTIM in last commitment
+
+	* io_fd.c:
+	use -1 instead of INFTIM, because linux doesn't define INFTIM.
+
+2002-06-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* auth_server_gsi.c: bug fix
+	- xxx_proto_flush() should be called before calling GFSL routines
+	- condition about global_username was opposite
+
+	* auth_client_gsi.c:
+	remove unnecessary line (these lines are traces of gfarm_auth_request_simple())
+
+2002-06-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* auth_client_gsi.c, auth_server_gsi.c, io_gfsl.h:
+	forgot to switch to secure session
+
+	* io_gfsl.h, Makefile.in, auth.h, auth_client.c, auth_client_gsi.c, auth_server.c, auth_server_gsi.c, io_gfsl.c:
+	link Globus GSI and libgfsl.a, when --with-globus is specified with configure.
+
+	* io_fd.c:
+	SVR4 (including Solaris, IRIX) requires <stropts.h> for INFTIM
+
+	* gfm_client.c, gfs_client.c, io_fd.c, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h:
+	- close underlying stream in xxx_connection_free()
+	- explicitly pass fd parameter to iobuffer read/write/close function,
+	  to reduce number of function calls
+	- use "char *" rather than "int" for iobuffer error status interface
+	- use poll in io_fd.c
+
+	* gfs_pio_global.c, gfs_pio_misc.c:
+	workaround type mismatch in Solaris 7
+
+	* io_fd.c, io_fd.h, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h, Makefile.in, gfm_client.c, gfs_client.c:
+	modify xxx_connection API again, to prepare GFSL integration.
+	suggested by tatebe-san.
+
+2002-06-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* iobuffer.c: remove obsolete comment
+
+2002-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfs_client.c, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h:
+	modify gfarm_iobuffer API to prepare GFSL integration.
+
+2002-05-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* error.c:
+	add some errors (some of them will be used only internally in libgfarm)
+
+	* gfs_client.c, import_help.c, stringlist.c:
+	adapt to new stringlist API described in man pages
+
 2002-04-19  Noriyuki Soda  <soda@sra.co.jp>
 
 	* INSTALL.ja:
