@@ -150,7 +150,7 @@ and <token>spool_server_cred_name</token> statement as follows:
 </para>
 <variablelist>
 <varlistentry>
-<term><token>type</token></term>
+<term><token>self</token></term>
 <listitem>
 <para>
 This keyword specifies that a certificate that currently the user
@@ -201,9 +201,9 @@ This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
 <listitem>
 <para>
 This keyword specifies that a user certificate is used.
-The accout name of the user may be specified by 
+The account name of the user may be specified by 
 <token>spool_server_cred_name</token> statement.
-If the accout name is omitted, the user who invoked the command
+If the account name is omitted, the user who invoked the command
 will be used by default.
 You must not specify a service name by
 <token>spool_server_cred_service</token> statement, if you are using
@@ -244,7 +244,7 @@ You must not specify a service name by
 this type.
 </para>
 <para>
-This feature corresponds to a case that GSS_C_NT_USER_NAME is specified
+This feature corresponds to a case that GSS_C_NO_OID is specified
 as a Name Type in GSSAPI (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
