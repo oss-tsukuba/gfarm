@@ -5,6 +5,7 @@ top_srcdir = $(top_objdir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
+include $(srcdir)/../Makefile.inc
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)

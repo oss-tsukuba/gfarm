@@ -402,7 +402,7 @@ fi
 /usr/bin/gfwhere
 #/usr/bin/gfwc
 
-#/usr/bin/gfarmd
+#/usr/sbin/gfarmd
 #/usr/bin/ns_put
 #/usr/bin/ns_get
 #/usr/bin/ns_stat
@@ -416,7 +416,7 @@ fi
 #/usr/bin/ns_readdir
 
 %files fsnode
-/usr/bin/gfsd
+/usr/sbin/gfsd
 /usr/bin/gfgrep
 /usr/bin/gfcombine
 /usr/bin/gfcombine_hook
@@ -427,7 +427,7 @@ fi
 #%config /etc/gfarm.conf
 
 %files server
-/usr/bin/gfmd
+/usr/sbin/gfmd
 /etc/rc.d/init.d/gfmd
 /etc/rc.d/init.d/gfarm-slapd
 /usr/bin/gfsplck
