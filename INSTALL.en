@@ -119,6 +119,10 @@ Gfarm software consists of
 This distribution is fully tested on Linux.  Building test is done on
 NetBSD, Solaris.
 
+This section describe a way to build Gfarm binary from its source
+distribution. You can skip to read this section, if you use a binary
+distribution.
+
 To build the Gfarm system, OpenLDAP and OpenSSL libraries are
 required.  To utilize the Grid Security Infrastructure (GSI) for
 authentication method, GSSAPI library is needed.  Currently, GSSAPI
@@ -153,6 +157,8 @@ the --with-openldap option.
   the directory is specified, ${directory}/bin/mpicc is used to
   compile MPI applications.  Otherwise, mpicc is used.  This is
   optional.
+  MPICH/p4 is the only MPI implementation which is currently
+  supported.
 
   --with-globus=directory
 
@@ -427,21 +433,11 @@ On each filesystem node, create a spool root directory
 /var/spool/gfarm.  Moreover, under the spool root directory, create a
 bin/ directory and every user directory, although user directories
 will be automatically created by the 'gfrun' command described later.
-The following example creates user directories for three users;
-morita, tatebe, and soda.
 
 	% su
 	Password: 
-	# sh
 	# mkdir /var/spool/gfarm
 	# chmod 1777 /var/spool/gfarm
-	# mkdir /var/spool/gfarm/bin
-	# chmod 1777 /var/spool/gfarm/bin
-	# for u in morita tatebe soda; do
-	>   mkdir /var/spool/gfarm/$u
-	>   chown ${u} /var/spool/gfarm/$u
-	> done
-	# exit
 	# exit
 	% 
 
@@ -469,13 +465,41 @@ read /etc/gfarm.conf.
 On a metadata server node, execute gfmd with a root privilege.  Gfmd
 reads the configuration file /etc/gfarm.conf described above.
 
+If you are using a binary distribution, the following scripts are
+provided to invoked gfmd.
+	RedHat Linux:		/etc/rc.d/init.d/gfmd
+	Debian GNU/Linux:	/etc/init.d/gfmd
+	Solaris:		/etc/rc3.d/S98gfmd
+
+If you are using a source distribution, the start-up script will
+be created at package/<OS>/gfmd except Debian GNU/Linux system,
+when Gfarm is built. On Debian GNU/Linux system, the location
+is debian/gfsd.init. Please copy this script to the location
+mentioned in the above description of a binary distribution.
+
+The procedure to invoke gfmd by this script is as follows:
+	RedHat Linux:
+		% su
+		Password: 
+		# /etc/rc.d/init.d/gfmd start
+	Debian GNU/Linux:
+		% su
+		Password: 
+		# /etc/init.d/gfmd start
+	Solaris:
+		% su
+		Password: 
+		# /etc/rc3.d/S98gfmd start
+
+If you'd like to invoke gfmd directory, you can do as follows:
 	% su
 	Password: 
 	# gfmd
 
-You can find a sample start-up script at package/<OS>/gfmd.  For
-a testing purpose, gfmd can be executed as a non-privileged user
-process with the -f option (see man gfmd).
+For a testing purpose, gfmd can be executed as a non-privileged user
+process with the -f option (see man gfmd). But the shared secret key
+method ("sharedsecret") is the only authenticaion method which can
+be used without root privilege.
 
 To see whether gfmd is correctly executed or not, you can use the gfps
 command as follows.  If gfmd is correctly invoked, gfps immediately
@@ -488,11 +512,41 @@ exits without any warning message.
 On every filesystem node, execute gfsd with a root privilege.  Gfsd
 reads the configuration file /etc/gfarm.conf described above.
 
-	% gfsd
+If you are using a binary distribution, the following scripts are
+provided to invoked gfsd.
+	RedHat Linux:		/etc/rc.d/init.d/gfsd
+	Debian GNU/Linux:	/etc/init.d/gfsd
+	Solaris:		/etc/rc3.d/S99gfsd
 
-You can find a sample start-up script at package/<OS>/gfsd.  For
-a testing purpose, gfsd can be executed as a non-privileged user
-process with the -f option (see man gfsd).
+If you are using a source distribution, the start-up script will
+be created at package/<OS>/gfsd except Debian GNU/Linux system,
+when Gfarm is built. On Debian GNU/Linux system, the location
+is debian/gfsd.init. Please copy this script to the location
+mentioned in the above description of a binary distribution.
+
+The procedure to invoke gfsd by this script is as follows:
+	RedHat Linux:
+		% su
+		Password: 
+		# /etc/rc.d/init.d/gfsd start
+	Debian GNU/Linux:
+		% su
+		Password: 
+		# /etc/init.d/gfsd start
+	Solaris:
+		% su
+		Password: 
+		# /etc/rc3.d/S99gfsd start
+
+If you'd like to invoke gfsd directory, you can do as follows:
+	% su
+	Password: 
+	# gfsd
+
+For a testing purpose, gfsd can be executed as a non-privileged user
+process with the -f option (see man gfsd). But the shared secret key
+method ("sharedsecret") is the only authenticaion method which can
+be used without root privilege.
 
 To see whether gfsd is correctly executed or not, you can use the
 gfhost command with the -l option as follows.  At the beginning of
@@ -519,30 +573,6 @@ with the node. Usually this means the node or network is down.
 Please add "-v" option to investigate the reason of such failure,
 this option makes error messages appear.
 
-** Register Gfarm parallel commands
-
-Register Gfarm parallel commands like a parallel file copy command and
-a parallel grep command to the Gfarm filesystem on a filesystem node
-of every architecture.
-
-	% make gfregister
-
-All parallel commands will be registered in the gfarm:/bin directory.
-
-	% gfls -l gfarm:/bin
-	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
-	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
-	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
-	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
-	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
-	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
-
-You can check which architecture of a binary program is registered
-using the gfwhere command.
-
-	% gfwhere gfarm:/bin/gfcp
-
 ** setting of each user
 
 Please add the following setting to the shell rc file (e.g. .bashrc,
@@ -562,6 +592,13 @@ like the follows:
 Current working directory can be displayed by gfpwd commadn.
 
 	% gfpwd
+
+** Other settings
+
+Then, the following procedures are needed.
+Each Gfarm user has to create his working directory.
+The system administrator has to register Gfarm parallel commands.
+Both of these procedures are described in next section.
 
 ========================================================================
 
@@ -606,6 +643,55 @@ Please look at the following WWW page for the detail of GSI.
 Then, create a user proxy certificate.
 
 	% grid-proxy-init
+
+** Create a working directory of each user
+
+Each user has to do this procedure at first.
+
+Or, every time when some filesystem nodes are added, each user has to
+do this again. (This limitation will be removed at later release.)
+
+	% gfmkdir gfarm:/$USER
+
+For example, if the user name is "tatebe", please do as follows:
+
+	% gfmkdir gfarm:/tatebe
+
+** Confirmation
+
+Please try to access filesystem nodes in your system:
+
+	% gfhost | gfrun -H - hostname
+
+** Register Gfarm parallel commands
+
+The system administrator has to do this procedure once for each
+architecture.
+
+Or, every time when some filesystem nodes are added, the system
+administrator has to do this again for each newly added architecture.
+
+Register Gfarm parallel commands like a parallel file copy command and
+a parallel grep command to the Gfarm filesystem on a filesystem node
+of every architecture as follows:
+
+	% gfregister
+
+All parallel commands will be registered in the gfarm:/bin directory.
+
+	% gfls -l gfarm:/bin
+	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
+	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
+	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
+	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
+	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
+	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
+	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
+
+You can check which architecture of a binary program is registered
+using the gfwhere command.
+
+	% gfwhere gfarm:/bin/gfcp
 
 ** Execute sample programs
 
@@ -720,18 +806,23 @@ This subsection shows several execution examples of sample programs.
 
 	% gfls -l gfarm:/bin/gfgrep
 
-  If not, you can register by yourself using the gfreg command, or
-  'make gfregister' on a filesystem node.
+  If not, please request your system administrator to follow the
+  above "Register Gfarm parallel commands" procedure.
 
-	% gfreg /usr/grid/bin/gfgrep gfarm:/bin/gfgrep
+  Or, You can register by yourself using the gfreg command
+  on a filesystem node.
 
-  When you would like to register a binary program not on a filesystem
+	% gfreg /usr/grid/bin/gfgrep gfarm:gfgrep
+
+  In this case, please replace the following "gfarm:/bin/gfgrep"
+  by "gfarm:gfgrep".
+  If you would like to register a binary program not on a filesystem
   node, the architecture name should be specified with the -a option.
 
   The gfrun command executes a parallel command on filesystem nodes
   with file-affinity scheduling.
 
-	% gfrun -G gfarm:text.txt gfarm:gfgrep -o gfarm:gfgrep.out \
+	% gfrun -G gfarm:text.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out \
 		regexp gfarm:test.txt
 
   You can check the result to compare the following outputs.
@@ -741,9 +832,16 @@ This subsection shows several execution examples of sample programs.
 
  - gfwc - parallel word counts
 
-  When gfarm:/bin/gfwc is not registered, register it as follows.
+  This command only exists, if --with-mpi option is specified at
+  building binaries.
 
-	% gfreg /usr/grid/bin/gfwc gfarm:/bin/gfwc
+  At first, you should check where the gfwc program is already
+  registered in the Gfarm filesystem.
+
+	% gfls -l gfarm:/bin/gfwc
+
+  If not, please request your system administrator to follow the
+  above "Register Gfarm parallel commands" procedure.
 
   Since gfwc is an MPI application, it is executed using gfmpirun_p4.
 
