@@ -244,10 +244,17 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			comboUptimeSelection = new JComboBox();
 			comboUptimeSelection.setRenderer(new HostOidCellRenderer());
 
-			defineNewComboBox(comboUptimeSelection, dtSpace.getEvents());
+			//defineNewComboBox(comboUptimeSelection, dtSpace.getEvents());
+			DefaultComboBoxModel emodel = (DefaultComboBoxModel) comboEvent.getModel();
+			DefaultComboBoxModel cmodel = (DefaultComboBoxModel) comboUptimeSelection.getModel();			
+			int count = emodel.getSize();
+			for(int i=0; i < count; i++){
+				cmodel.addElement(emodel.getElementAt(i));
+			}
+			//comboUptimeSelection.setModel(cmodel);
+			
 			for(int i=0; i < comboUptimeSelection.getItemCount(); i++){
 	  			Object sel = comboUptimeSelection.getItemAt(i);
-				//if("uptime".equals((String) sel)){
 				if(((String)sel).startsWith("uptime")){
 					comboUptimeSelection.setSelectedItem(sel);
 					break;
@@ -770,7 +777,8 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			} catch (NumberFormatException e) {
 				System.out.println("invalid Time Range.");
 			} catch (Exception e) {
-				System.out.println("");
+//				System.out.println("");
+				e.printStackTrace();
 			}
 			lockTimer = false;
 		}
@@ -867,6 +875,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			}
 			setTargetHostName = (String) comboHostname.getSelectedItem();
 			if(disableComboEvent == false){
+				defineNewComboBox(comboEvent, dtSpace.getEvents());
 				paintGraphAccordingToCurrentGUIStatus();
 			}
 		}
@@ -879,6 +888,9 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			System.gc();
+			defineNewComboBox(comboHostname, dtSpace.getHostnames());
+			defineNewComboBox(comboEvent, dtSpace.getEvents());
+			setComboTargets();
 			if(menuItemAutoUpdate.isSelected()){
 				timer.stop();
 				timer.start();
@@ -912,9 +924,9 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		for(int i = 0; i < items.length; i++){
 			cmodel.addElement(items[i]);
 		}
-		if(items.length > 0){
-			cmodel.setSelectedItem(items[0]);
-		}
+//		if(items.length > 0){
+//			cmodel.setSelectedItem(items[0]);
+//		}
 		box.setModel(cmodel);
 	}
 
@@ -1002,6 +1014,8 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			return;
 		}
 //System.out.println("Refresh");
+		checkHostFlag = true;
+		checkEventFlag = true;
 		lockRefresh = true;
 		paintGraphAccordingToCurrentGUIStatus2();
 		lockRefresh = false;
@@ -1116,12 +1130,15 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 				// null clear.
 				//e.printStackTrace();
 //System.out.println("no data: " + host + " / " + event + "");
+
+				// next event
 				int id = comboEvent.getSelectedIndex();
+				comboEvent.removeItemAt(id);
 				if(checkEventFlag){
 					id = 0;
 					checkEventFlag = false;
 				} else {
-					id++;
+//					id++;
 				}
 				if(id < comboEvent.getItemCount()){
 					disableComboEvent = true;
@@ -1130,19 +1147,22 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 					paintGraphAccordingToCurrentGUIStatus2();
 					return;
 				}
+				defineNewComboBox(comboEvent, dtSpace.getEvents());
 				
+				// next host
 				checkEventFlag = true;
 
 				disableComboEvent = true;
 				comboEvent.setSelectedIndex(0);
 				disableComboEvent = false;
 				
-				id = comboHostname.getSelectedIndex();
+				id = comboHostname.getSelectedIndex();		
+				comboHostname.removeItemAt(id);
 				if(checkHostFlag){
 					id = 0;
 					checkHostFlag = false;
 				} else {
-					id++;
+//					id++;
 				}
 				if(id < comboHostname.getItemCount()){
 					disableComboEvent = true;
@@ -1164,13 +1184,11 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 					menuItemTotal.setSelected(false);
 					comboHostname.setEnabled(true);
 				}
-				checkHostFlag = true;
-				checkEventFlag = true;
+//				checkHostFlag = true;
+//				checkEventFlag = true;
 				return;
 			}
 		}
-		checkHostFlag = true;
-		checkEventFlag = true;
 		
 		if(totalmode == true){
 			rawDataSeries = totalofRawDataSeries(rawDataSeries);
@@ -1487,7 +1505,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 //System.out.println((String)comboHostname.getItemAt(i));					
 				//if(setTargetHostName.equals((String)comboHostname.getItemAt(i))){
 				Object chn = comboHostname.getItemAt(i);
-				if(chn != null && ((String)chn).indexOf(setTargetHostName) > 0){
+				if(chn != null && ((String)chn).indexOf(setTargetHostName) >= 0){
 					comboHostname.setSelectedItem(chn);
 					break;
 				}
@@ -1499,7 +1517,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 //System.out.println((String)comboEvent.getItemAt(i));
 				//if(setTargetEventName.equals((String)comboEvent.getItemAt(i))){
 				Object ce = comboEvent.getItemAt(i);
-				if(ce != null && ((String)ce).indexOf(setTargetEventName) > 0){
+				if(ce != null && ((String)ce).indexOf(setTargetEventName) >= 0){
 					comboEvent.setSelectedItem(ce);
 					break;
 				}
