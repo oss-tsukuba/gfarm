@@ -2189,7 +2189,7 @@ case ${gfs_hook_sysdep_subdir} in
 	then
 		gfs_hook_sysdep_makefile=lib/gfs_hook/${gfs_hook_sysdep_subdir}/Makefile
 
-								test -d lib/gfs_hook/sysdep || mkdir lib/gfs_hook/sysdep
+								test -d lib/gfs_hook/sysdep || mkdir -p lib/gfs_hook/sysdep
 	fi
 	;;
 esac
@@ -2198,7 +2198,7 @@ esac
 
 
 
-test -d lib/gfs_hook || mkdir -p lib/gfs_hook
+test -d lib || mkdir -p lib
 test -d gfarm || mkdir gfarm
 test -d nstool || mkdir nstool
 
