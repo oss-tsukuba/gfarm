@@ -14,6 +14,7 @@
 
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include "config.h"
 #include "gfs_pio.h" /* gfs_realpath_canonical */
 
 /*

@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 #include "host.h"
+#include "config.h"
 #include "gfj_client.h"
 
 char *program_name = "gfmpirun_p4";

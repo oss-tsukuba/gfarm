@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "host.h"
+#include "config.h"
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
 #include "gfs_client.h"
 #include "gfs_pio.h"

@@ -20,6 +20,7 @@
 #include "gfevent.h"
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "auth.h"
+#include "config.h"
 #include "gfs_client.h"
 
 char *program_name = "gfhost";

@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/gfptool.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h

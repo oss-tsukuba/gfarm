@@ -10,13 +10,20 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h> /* PATH_MAX */
+
 #include <gfarm/gfarm.h>
-#include "hooks_subr.h"
+
 /* for creating_file hash -- XXX: Gfarm v2 may make this stuff obsolete */
 #include "hash.h"
+
+#include "config.h"
+
 #include <openssl/evp.h>
 #include "gfs_pio.h"
+
 #include <gfarm/gfs_hook.h>
+
+#include "hooks_subr.h"
 
 #define MAX_GFS_FILE_BUF	2048
 

@@ -16,6 +16,7 @@
 #include <errno.h>
 #include "gfs_pio.h"
 #include "host.h"
+#include "config.h"
 #include "schedule.h"
 #include "gfs_client.h"
 #include "gfs_proto.h"

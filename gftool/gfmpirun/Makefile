@@ -22,4 +22,5 @@ include $(top_srcdir)/makes/prog.mk
 $(OBJS): $(DEPGFARMINC)
 $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/host.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h

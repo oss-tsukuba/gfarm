@@ -180,7 +180,9 @@ test-veryclean:
 include $(top_srcdir)/makes/subdir.mk
 include $(top_srcdir)/makes/lib.mk
 
-$(OBJS): $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfs.h hooks_subr.h
+$(OBJS) hooks_64$(SUFFIX).lo: $(DEPGFARMINC) hooks_subr.h
 
-hooks$(SUFFIX).lo hooks_64$(SUFFIX).lo: hooks_subr.h hooks_common.c hooks_stat.c hooks_fstat.c
-hooks_subr$(SUFFIX).lo: hooks_subr.h
+hooks_subr$(SUFFIX).lo: \
+	$(GFUTIL_SRCDIR)/hash.h \
+	$(GFARMLIB_SRCDIR)/config.h \
+	$(GFARMLIB_SRCDIR)/gfs_pio.h

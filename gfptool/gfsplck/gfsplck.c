@@ -13,6 +13,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "config.h"
+
 char *progname = "gfsplck";
 
 static int check_all = 0;

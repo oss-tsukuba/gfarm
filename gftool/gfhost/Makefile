@@ -19,4 +19,9 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/gfevent.h $(GFARMLIB_SRCDIR)/gfs_client.h $(GFARMLIB_SRCDIR)/host.h 
+$(OBJS): $(DEPGFARMINC) \
+	$(GFUTIL_SRCDIR)/gfevent.h \
+	$(GFARMLIB_SRCDIR)/host.h  \
+	$(GFARMLIB_SRCDIR)/auth.h  \
+	$(GFARMLIB_SRCDIR)/config.h  \
+	$(GFARMLIB_SRCDIR)/gfs_client.h

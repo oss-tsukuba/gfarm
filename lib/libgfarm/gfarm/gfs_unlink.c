@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include "config.h"
 #include "gfs_client.h"
 #include "gfs_pio.h"	/* gfs_profile */
 #include "timer.h"

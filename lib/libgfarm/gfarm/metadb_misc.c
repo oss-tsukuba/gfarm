@@ -6,6 +6,7 @@
 #include <string.h>
 #include <gfarm/gfarm.h>
 #include "host.h"
+#include "config.h"
 #include "gfs_client.h"
 
 char *

@@ -13,6 +13,7 @@
 #include <ldap.h>
 #include <gfarm/gfarm.h>
 
+#include "config.h"
 #include "dircache.h"
 
 /* old openldap does not have ldap_memfree. */

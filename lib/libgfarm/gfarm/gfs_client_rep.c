@@ -20,6 +20,7 @@
 #include "host.h"
 #include "param.h"
 #include "auth.h"
+#include "config.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
