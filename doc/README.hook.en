@@ -84,7 +84,7 @@ code any more, just link with gfs_hook_mpi.o.
 
 	% mpicc prog.c /usr/grid/lib/gfs_hook_mpi.o -lgfarm -lldap -llber
 
-	% mpicc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% mpicc -static prog.c /usr/grid/lib/gfs_hook_mpi.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 ----------------------------------------------------------------------
