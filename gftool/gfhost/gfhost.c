@@ -3,14 +3,10 @@
  */
 
 #include <assert.h>
-#include <sys/types.h> /* fd_set */
-#include <sys/time.h>
 #include <sys/wait.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,14 +15,11 @@
 #include <limits.h>
 #include <errno.h>
 #include <gfarm/gfarm.h>
-#ifdef HAVE_POLL
-#include <poll.h>
-#endif
 #include "gfs_client.h"
 
 char *program_name = "gfhost";
 
-char *
+static char *
 update_host(char *hostname, int nhostaliases, char **hostaliases,
 	char *architecture, int ncpu,
 	char *(*update_op)(char *, struct gfarm_host_info *))
@@ -41,7 +34,7 @@ update_host(char *hostname, int nhostaliases, char **hostaliases,
 	return ((*update_op)(hostname, &hi));
 }
 
-char *
+static char *
 check_hostname(char *hostname)
 {
 	char *e, *n;
@@ -55,7 +48,7 @@ check_hostname(char *hostname)
 	return (NULL);
 }
 
-char *
+static char *
 check_hostaliases(int nhostaliases, char **hostaliases)
 {
 	int i;
@@ -68,7 +61,8 @@ check_hostaliases(int nhostaliases, char **hostaliases)
 }
 
 char *
-add_host(char *hostname, char **hostaliases, char *architecture, int ncpu)
+add_host(char *hostname, char **hostaliases, char *architecture,
+	int ncpu)
 {
 	int nhostaliases = gfarm_strarray_length(hostaliases);
 	char *e;
@@ -85,8 +79,8 @@ add_host(char *hostname, char **hostaliases, char *architecture, int ncpu)
 }
 
 char *
-modify_host(char *hostname, char **hostaliases, char *architecture, int ncpu,
-	int add_aliases)
+gfarm_modify_host(char *hostname, char **hostaliases, char *architecture,
+	int ncpu, int add_aliases)
 {
 	char *e;
 	struct gfarm_host_info hi;
@@ -321,295 +315,6 @@ register_db(void)
 }
 
 /*
- * concurrent processing of
- *	gfs_client_get_load_request()/gfs_client_get_load_result()
- */
-
-#define MILLISEC_BY_MICROSEC	1000
-#define SECOND_BY_MICROSEC	1000000
-
-int
-timeval_cmp(struct timeval *t1, struct timeval *t2)
-{
-	if (t1->tv_sec > t2->tv_sec)
-		return (1);
-	if (t1->tv_sec < t2->tv_sec)
-		return (-1);
-	if (t1->tv_usec > t2->tv_usec)
-		return (1);
-	if (t1->tv_usec < t2->tv_usec)
-		return (-1);
-	return (0);
-}
-
-void
-timeval_add_microsec(struct timeval *t, long microsec)
-{
-	int n;
-
-	t->tv_usec += microsec;
-	if (t->tv_usec >= SECOND_BY_MICROSEC) {
-		n = t->tv_usec / SECOND_BY_MICROSEC;
-		t->tv_usec -= n * SECOND_BY_MICROSEC;
-		t->tv_sec += n;
-	}
-}
-
-void
-timeval_sub(struct timeval *t1, struct timeval *t2)
-{
-	t1->tv_sec -= t2->tv_sec;
-	t1->tv_usec -= t2->tv_usec;
-	if (t1->tv_usec < 0) {
-		--t1->tv_sec;
-		t1->tv_usec += SECOND_BY_MICROSEC;
-	}
-}
-
-char *requests_save_error;
-int nrequests, requests_free;
-
-struct gfs_datagram_request {
-	int sock;
-	void *closure;
-	void (*callback)(void *, struct sockaddr *,
-	    struct gfs_client_load *, char *);
-	struct sockaddr addr;
-	int try;
-	struct timeval timeout;
-} *requests;
-
-#ifdef HAVE_POLL
-struct pollfd *requests_poll_fds;
-#endif
-
-char *
-init_requests(int max_requests)
-{
-	int i;
-
-	requests = malloc(sizeof(*requests) * max_requests);
-	if (requests == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	requests_poll_fds = malloc(sizeof(*requests_poll_fds) * max_requests);
-	if (requests_poll_fds == NULL) {
-		free(requests);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	for (i = 0; i < max_requests; i++)
-		requests[i].sock = -1;
-	nrequests = requests_free = max_requests;
-	requests_save_error = NULL;
-	return (NULL);
-}
-
-void
-request_callback(int i, struct gfs_client_load *result, char *e)
-{
-	if (requests_save_error == NULL)
-		requests_save_error = e;
-	(*requests[i].callback)(requests[i].closure, &requests[i].addr,
-	    result, e);
-	close(requests[i].sock);
-	requests[i].sock = -1;
-	requests_free++;
-}
-
-void
-request_time_tick()
-{
-	char *e;
-	int i, rv;
-	struct timeval now, timeout;
-	struct gfs_client_load result;
-#ifdef HAVE_POLL
-	int to, nfds = 0;
-#else
-	int max_fd = -1;
-	fd_set readable;
-
-	FD_ZERO(&readable);
-#endif
-
-	timeout.tv_sec = LONG_MAX;
-	timeout.tv_usec = SECOND_BY_MICROSEC - 1;
-	for (i = 0; i < nrequests; i++) {
-		if (requests[i].sock == -1)
-			continue;
-		if (timeval_cmp(&timeout, &requests[i].timeout) > 0)
-			timeout = requests[i].timeout;
-#ifdef HAVE_POLL
-		requests_poll_fds[nfds].fd = requests[i].sock;
-		requests_poll_fds[nfds].events = POLLIN;
-		nfds++;
-#else
-		if (max_fd < requests[i].sock) {
-			max_fd = requests[i].sock;
-			if (max_fd >= FD_SETSIZE) {
-				fprintf(stderr, "%s: "
-				    "FD_SETSIZE (%d) is too small, "
-				    "increase it to more than %d\n",
-				    program_name, FD_SETSIZE, max_fd);
-				exit(1);
-			}
-		}
-		FD_SET(requests[i].sock, &readable);
-#endif
-	}
-
-	gettimeofday(&now, NULL);
-	if (timeval_cmp(&timeout, &now) <= 0) {
-#ifdef HAVE_POLL
-		to = 0;
-#else
-		timeout.tv_sec = timeout.tv_usec = 0;
-#endif
-	} else {
-		timeval_sub(&timeout, &now);
-#ifdef HAVE_POLL
-		to = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
-#endif
-	}
-#ifdef HAVE_POLL
-	rv = poll(requests_poll_fds, nfds, to);
-#else
-	rv = select(max_fd + 1, &readable, NULL, NULL, &timeout);
-#endif
-	if (rv == -1) {
-		if (errno != EINTR && errno != EAGAIN) {
-#ifdef HAVE_POLL
-			perror("poll");
-#else
-			perror("select");
-#endif
-		}
-		return;
-	}
-
-	gettimeofday(&now, NULL);
-#ifdef HAVE_POLL
-	nfds = 0;
-#endif
-	for (i = 0; i < nrequests; i++) {
-		if (requests[i].sock == -1)
-			continue;
-#ifdef HAVE_POLL
-		/* revents shows not only POLLIN, but also POLLERR. */
-		if (requests_poll_fds[nfds++].revents != 0)
-#else
-		if (FD_ISSET(requests[i].sock, &readable))
-#endif
-		{
-			e = gfs_client_get_load_result(
-			    requests[i].sock, NULL, NULL, &result);
-			if (e != NULL) {
-				request_callback(i, NULL, e);
-				continue;
-			}
-			request_callback(i, &result, NULL);
-			continue;
-		}
-		if (timeval_cmp(&requests[i].timeout, &now) > 0)
-			continue;
-
-		++requests[i].try;
-		if (requests[i].try >= gfs_client_datagram_ntimeouts) {
-			request_callback(i, NULL,
-			    GFARM_ERR_CONNECTION_TIMED_OUT);
-			continue;
-		}
-		timeval_add_microsec(&requests[i].timeout,
-		    gfs_client_datagram_timeouts[requests[i].try] *
-		    MILLISEC_BY_MICROSEC);
-		e = gfs_client_get_load_request(requests[i].sock,
-		    NULL, 0);
-		if (e != NULL) {
-			request_callback(i, NULL, e);
-			continue;
-		}
-	}
-}
-
-void
-wait_request_reply(void)
-{
-	int initial = requests_free;
-
-	if (requests_free >= nrequests)
-		return;
-	while (requests_free <= initial)
-		request_time_tick();
-}
-
-char *
-wait_all_request_reply(void)
-{
-	while (requests_free < nrequests)
-		wait_request_reply();
-	return (requests_save_error);
-}
-
-int
-free_request(void)
-{
-	int i;
-
-	if (requests_free <= 0)
-		wait_request_reply();
-	for (i = 0; i < nrequests; i++)
-		if (requests[i].sock == -1)
-			return (i);
-	assert(0);
-	/*NOTREACHED*/
-	return (-1);
-}
-
-void
-add_request(struct sockaddr *peer_addr, void *closure,
-	void (*callback)(void *, struct sockaddr *, struct gfs_client_load *,
-	    char *))
-{
-	int i = free_request();
-	/* use different socket each time, to identify error code */
-	int sock = socket(PF_INET, SOCK_DGRAM, 0);
-	char *e;
-
-	if (sock == -1) {
-		e = gfarm_errno_to_error(errno);
-		(*callback)(closure, peer_addr, NULL, e);
-		if (requests_save_error == NULL)
-			requests_save_error = e;
-		return;
-	}
-	/* connect UDP socket, to get error code */
-	if (connect(sock, peer_addr, sizeof(*peer_addr)) == -1) {
-		e = gfarm_errno_to_error(errno);
-		close(sock);
-		(*callback)(closure, peer_addr, NULL, e);
-		if (requests_save_error == NULL)
-			requests_save_error = e;
-		return;
-	}
-	e = gfs_client_get_load_request(sock, NULL, 0);
-	if (e != NULL) {
-		close(sock);
-		(*callback)(closure, peer_addr, NULL, e);
-		if (requests_save_error == NULL)
-			requests_save_error = e;
-		return;
-	}
-	requests[i].sock = sock;
-	requests[i].closure = closure;
-	requests[i].callback = callback;
-	requests[i].addr = *peer_addr;
-	requests[i].try = 0;
-	gettimeofday(&requests[i].timeout, NULL);
-	timeval_add_microsec(&requests[i].timeout,
-	    gfs_client_datagram_timeouts[0] * MILLISEC_BY_MICROSEC);
-	--requests_free;
-}
-
-/*
  * handle option "-i" (ignore "address_use" directive in gfarm.conf(5))
  */
 
@@ -676,7 +381,8 @@ callback_loadavg(void *closure, struct sockaddr *addr,
 }
 
 char *
-print_loadavg(struct gfarm_host_info *info)
+print_loadavg(struct gfarm_host_info *info,
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e;
 	struct sockaddr addr;
@@ -688,12 +394,14 @@ print_loadavg(struct gfarm_host_info *info)
 		fprintf(stderr, "%s: %s\n", hostname, e);
 		return (e);
 	}
-	add_request(&addr, if_hostname, callback_loadavg);
+	gfarm_client_add_load_request(udp_requests, &addr, if_hostname,
+		callback_loadavg);
 	return (NULL);
 }
 
 char *
-list_loadavg(int nhosts, char **hosts)
+list_loadavg(int nhosts, char **hosts,
+	struct gfs_client_udp_requests* udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -701,7 +409,7 @@ list_loadavg(int nhosts, char **hosts)
 
 	for (i = 0; i < nhosts; i++) {
 		host.hostname = hosts[i];
-		e = print_loadavg(&host);
+		e = print_loadavg(&host, udp_requests);
 		if (e_save == NULL)
 			e_save = e;
 	}
@@ -761,7 +469,8 @@ callback_host_info_and_loadavg(void *closure, struct sockaddr *addr,
 }
 
 char *
-print_host_info_and_loadavg(struct gfarm_host_info *host_info)
+print_host_info_and_loadavg(struct gfarm_host_info *host_info,
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e;
 	struct sockaddr addr;
@@ -802,7 +511,8 @@ print_host_info_and_loadavg(struct gfarm_host_info *host_info)
 		return (e);
 	}
 
-	add_request(&addr, closure, callback_host_info_and_loadavg);
+	gfarm_client_add_load_request(udp_requests, &addr, closure, 
+		callback_host_info_and_loadavg);
 	return (NULL);
 }
 
@@ -826,7 +536,8 @@ callback_up(void *closure, struct sockaddr *addr,
 }
 
 char *
-print_up(struct gfarm_host_info *host_info)
+print_up(struct gfarm_host_info *host_info,
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e, *hostname;
 	struct sockaddr addr;
@@ -845,7 +556,8 @@ print_up(struct gfarm_host_info *host_info)
 		return (e);
 	}
 
-	add_request(&addr, hostname, callback_up);
+	gfarm_client_add_load_request(udp_requests, &addr, hostname,
+		callback_up);
 	return (NULL);
 }
 
@@ -862,7 +574,9 @@ print_host_info(struct gfarm_host_info *info)
 }
 
 char *
-list_all(char *(*print_op)(struct gfarm_host_info *))
+list_all(char *(*print_op)(struct gfarm_host_info *,
+			   struct gfs_client_udp_requests *),
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i, nhosts;
@@ -874,7 +588,7 @@ list_all(char *(*print_op)(struct gfarm_host_info *))
 		return (e);
 	}
 	for (i = 0; i < nhosts; i++) {
-		e = (*print_op)(&hosts[i]);
+		e = (*print_op)(&hosts[i], udp_requests);
 		if (e_save == NULL)
 			e_save = e;
 	}
@@ -883,7 +597,10 @@ list_all(char *(*print_op)(struct gfarm_host_info *))
 }
 
 char *
-list(int nhosts, char **hosts, char *(*print_op)(struct gfarm_host_info *))
+list(int nhosts, char **hosts,
+	char *(*print_op)(struct gfarm_host_info *,
+		struct gfs_client_udp_requests* udp_requests),
+	struct gfs_client_udp_requests* udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -896,7 +613,7 @@ list(int nhosts, char **hosts, char *(*print_op)(struct gfarm_host_info *))
 			if (e_save == NULL)
 				e_save = e;
 		} else {
-			e = (*print_op)(&hi);
+			e = (*print_op)(&hi, udp_requests);
 			if (e_save == NULL)
 				e_save = e;
 			gfarm_host_info_free(&hi);
@@ -1033,6 +750,7 @@ main(int argc, char **argv)
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
 	int i, c, sort_pid, need_metadb = 1;
+	struct gfs_client_udp_requests *udp_requests;
 
 #ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
 	sort_pid = 0;
@@ -1149,7 +867,7 @@ main(int argc, char **argv)
 		break;
 	case OP_MODIFY_ENTRY:
 		if (argc > 0) {
-			e_save = modify_host(argv[0], &argv[1],
+			e_save = gfarm_modify_host(argv[0], &argv[1],
 			    opt_architecture, opt_ncpu, !opt_alter_aliases);
 			if (e_save != NULL)
 				fprintf(stderr, "%s: %s\n", argv[0], e_save);
@@ -1176,17 +894,18 @@ main(int argc, char **argv)
 	case OP_LIST_LOADAVG:
 		if (!opt_plain_order)
 			sort_pid = setup_sort("+1");
-		e = init_requests(opt_concurrency);
+		e = gfarm_client_init_load_requests(
+			opt_concurrency, &udp_requests);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_loadavg);
+			e_save = list_all(print_loadavg, udp_requests);
 		} else {
-			e_save = list_loadavg(argc, argv);
+			e_save = list_loadavg(argc, argv, udp_requests);
 		}
-		e = wait_all_request_reply();
+		e = gfarm_client_wait_all_load_results(udp_requests);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {
@@ -1198,17 +917,18 @@ main(int argc, char **argv)
 	case OP_LIST_UP:
 		if (!opt_plain_order)
 			sort_pid = setup_sort("+1");
-		e = init_requests(opt_concurrency);
+		e = gfarm_client_init_load_requests(
+			opt_concurrency, &udp_requests);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_up);
+			e_save = list_all(print_up, udp_requests);
 		} else {
-			e_save = list(argc, argv, print_up);
+			e_save = list(argc, argv, print_up, udp_requests);
 		}
-		e = wait_all_request_reply();
+		e = gfarm_client_wait_all_load_results(udp_requests);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {
@@ -1220,17 +940,20 @@ main(int argc, char **argv)
 	case OP_DEFAULT:
 		if (!opt_plain_order)
 			sort_pid = setup_sort("+3");
-		e = init_requests(opt_concurrency);
+		e = gfarm_client_init_load_requests(
+			opt_concurrency, &udp_requests);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_host_info_and_loadavg);
+			e_save = list_all(print_host_info_and_loadavg,
+				udp_requests);
 		} else {
-			e_save = list(argc, argv, print_host_info_and_loadavg);
+			e_save = list(argc, argv, print_host_info_and_loadavg,
+					udp_requests);
 		}
-		e = wait_all_request_reply();
+		e = gfarm_client_wait_all_load_results(udp_requests);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {
@@ -1241,9 +964,10 @@ main(int argc, char **argv)
 		break;
 	case OP_LIST_DB:
 		if (argc == 0) {
-			e_save = list_all(print_host_info);
+			e_save = list_all(print_host_info, udp_requests);
 		} else {
-			e_save = list(argc, argv, print_host_info);
+			e_save = list(argc, argv, print_host_info,
+					udp_requests);
 		}
 		break;
 	}
