@@ -1141,25 +1141,25 @@ main(int argc, char **argv)
 		}
 	}
 
+	e = gfarm_initialize(&argc_save, &argv_save);
 	if (opt_operation == OP_LIST_GFSD_INFO && argc > 0 &&
 	    opt_resolv_addr == resolv_addr_without_address_use) {
 		/*
 		 * An implicit feature to access gfsd directly
 		 * without having working gfmd.
-		 * e.g. gfhost -Li <hostname>
+		 * e.g. gfhost -Hi <hostname>
 		 *
 		 * XXX	should describe this in the manual?
 		 *	or use explicit and different option?
+		 *
+		 * NOTE: We have to call gfarm_initialize() anyway
+		 *	to initialize gfarm_spool_server_port.
 		 */
-		gfarm_error_initialize();
 		opt_use_metadb = 0;
 		opt_resolv_addr = resolv_addr_without_metadb;
-	} else {
-		e = gfarm_initialize(&argc_save, &argv_save);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
+	} else if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
 	}
 
 	switch (opt_operation) {
