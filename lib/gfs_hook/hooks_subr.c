@@ -307,7 +307,7 @@ static char *received_prefix = NULL;
 static int
 gfs_hook_is_null_or_slash(const char c)
 {
-	return (c == '\0' || c == '/' || c == ':' || c == '~');
+	return (c == '\0' || c == '/' || c == ':');
 }
 
 static int
@@ -356,8 +356,8 @@ set_received_prefix(const char *path)
  * When the Gfarm path starts with '<mount_point>', the path is
  * considered to be an absolute path instead of a relative path.
  *
- * '<mount_point>~home' such as '/gfarm~tatebe' can be used as a
- * special case to specify a home directory.
+ * '<mount_point>/~username' such as '/gfarm/~tatebe' can be used to
+ * specify a home directory in Gfarm file system.
  */
 int
 gfs_hook_is_url(const char *path, char **urlp, char **secp)
@@ -366,7 +366,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	int sizeof_gfarm_prefix = sizeof(prefix);
 	int sizeof_prefix = sizeof_gfarm_prefix;
 	const char *path_save;
-	int is_mount_point = 0, add_slash = 0;
+	int is_mount_point = 0, remove_slash = 0;
 	/*
 	 * ROOT patch:
 	 *   'gfarm@' is also considered as a Gfarm URL
@@ -377,7 +377,6 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	path_save = path;
 	if (gfs_hook_is_mount_point(path)) {
 		is_mount_point = 1;
-		add_slash = 1;
 		sizeof_prefix = sizeof(gfs_mntdir);
 	}
 	if (is_mount_point || gfarm_is_url(path) ||
@@ -401,13 +400,15 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			if (p[secsize] != ':')
 				return (0); /* gfarm::foo/:bar or gfarm::foo */
 
-			/* 'path' is an absolute path. */
-			if (p[secsize + 1] == '/' || p[secsize + 1] == '~')
-				add_slash = 0;
+			/* '/gfarm/~' will be translated to 'gfarm:~'. */
+			if (is_mount_point
+			    && p[secsize + 1] == '/'
+			    && p[secsize + 2] == '~')
+				remove_slash = 1;
 
 			urlsize = sizeof_gfarm_prefix - 1
-				+ strlen(p + secsize + 1);
-			*urlp = malloc(urlsize + 1 + add_slash);
+				+ strlen(p + secsize + remove_slash + 1);
+			*urlp = malloc(urlsize + 1);
 			*secp = malloc(secsize + 1);
 			if (*urlp == NULL || *secp == NULL) {
 				if (*urlp != NULL)
@@ -417,10 +418,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				return (0); /* XXX - should return ENOMEM */
 			}
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
-			if (add_slash)
-				(*urlp)[sizeof_gfarm_prefix - 1] = '/';
-			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
-			       p + secsize + 1);
+			strcpy(*urlp + sizeof_gfarm_prefix - 1,
+			       p + secsize + remove_slash + 1);
 			memcpy(*secp, p, secsize);
 			(*secp)[secsize] = '\0';
 			/*
@@ -429,14 +428,15 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 */
 		}
 		else {
-			/* 'path' is an absolute path. */
-			if (path[sizeof_prefix - 1] == '/' || 
-			    path[sizeof_prefix - 1] == '~')
-				add_slash = 0;
+			/* '/gfarm/~' will be translated to 'gfarm:~'. */
+			if (is_mount_point
+			    && path[sizeof_prefix - 1] == '/'
+			    && path[sizeof_prefix] == '~')
+				remove_slash = 1;
 
 			*urlp = malloc(sizeof_gfarm_prefix - 1
-				       + strlen(path + sizeof_prefix - 1)
-				       + 1 + add_slash);
+				       + strlen(path + sizeof_prefix
+						+ remove_slash - 1) + 1);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
 			/*
@@ -445,10 +445,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 * (ROOT patch)
 			 */
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
-			if (add_slash)
-				(*urlp)[sizeof_gfarm_prefix - 1] = '/';
-			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
-			    path + sizeof_prefix - 1);
+			strcpy(*urlp + sizeof_gfarm_prefix - 1,
+			    path + sizeof_prefix + remove_slash - 1);
 		}
 		if (!set_received_prefix(path_save))
 			return (0);
