@@ -12,6 +12,7 @@
 #include <gfarm/gfarm.h>
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
 #include "gfs_pio.h"
+#include "timer.h"
 
 int gfarm_node = -1;
 int gfarm_nnode = -1;
@@ -57,15 +58,26 @@ gfs_pio_get_node_size(int *nnode)
 	return (NULL);
 }
 
+double gfs_pio_set_view_local_time;
+
 char *
 gfs_pio_set_view_local(GFS_File gf, int flags)
 {
-	char *e = gfs_pio_set_local_check();
+	char *e;
+	gfarm_timerval_t t1, t2;
 
+	gfarm_gettimerval(&t1);
+
+	e = gfs_pio_set_local_check();
 	if (e != NULL)
 		return (e);
-	return (gfs_pio_set_view_index(gf, gfarm_nnode, gfarm_node,
-				       NULL, flags));
+
+	e = gfs_pio_set_view_index(gf, gfarm_nnode, gfarm_node, NULL, flags);
+
+	gfarm_gettimerval(&t2);
+	gfs_pio_set_view_local_time += gfarm_timerval_sub(&t2, &t1);
+
+	return (e);
 }
 
 /***********************************************************************/
