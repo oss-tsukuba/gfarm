@@ -747,7 +747,7 @@ parse_opt_long(char *option, int option_char, char *argument_name)
 }
 
 
-#define DEFAULT_CONCURRENCY 10
+#define DEFAULT_CONCURRENCY 10 /* reflect this value to gfhost.1.docbook */
 
 int
 main(int argc, char **argv)
