@@ -1,0 +1,27 @@
+all:
+	cd nslib; make $@
+	cd gfarmlib; make $@
+	cd gfarmd; make $@
+	cd gfarm; make $@
+
+clean veryclean:
+	cd nslib; make $@
+	cd gfarmlib; make $@
+	cd gfarmd; make $@
+	cd gfarm; make $@
+
+install:
+	cd include; make $@
+	cd nslib; make $@
+	cd gfarmlib; make $@
+	cd gfarmd; make $@
+	cd gfarm; make $@
+
+distclean:
+	cd include; make $@
+	cd nslib; make $@
+	cd gfarmlib; make $@
+	cd gfarmd; make $@
+	cd gfarm; make $@
+	rm -f config.log config.status config.cache \
+		gfarm_config.h Makefile makes/config.mk

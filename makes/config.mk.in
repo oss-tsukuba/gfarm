@@ -1,0 +1,19 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+exec_includedir = @exec_includedir@
+SYSTEM = @SYSTEM@
+
+CC = @CC@
+OPTFLAGS = @CFLAGS@
+LEX = @LEX@
+LEXLIB = @LEXLIB@
+YACC = @YACC@
+RANLIB = @RANLIB@
+
+LIBS = @LIBS@
+
+metadb_client_includes = @metadb_client_includes@
+metadb_client_libs = @metadb_client_libs@
