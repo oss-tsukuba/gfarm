@@ -576,3 +576,13 @@ gfs_closedir(GFS_Dir dir)
 	--opendir_count;
 	return (NULL);
 }
+
+/*
+ * gfs_dirname()
+ */
+
+char *
+gfs_dirname(GFS_Dir dir)
+{
+  	return (dir->dir->name);
+}

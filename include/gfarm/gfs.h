@@ -148,6 +148,7 @@ typedef struct gfs_dir *GFS_Dir;
 char *gfs_opendir(const char *, GFS_Dir *);
 char *gfs_readdir(GFS_Dir, struct gfs_dirent **);
 char *gfs_closedir(GFS_Dir);
+char *gfs_dirname(GFS_Dir);
 char *gfs_realpath(const char *, char **);
 
 void gfs_uncachedir(void);
