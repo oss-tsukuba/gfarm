@@ -23,7 +23,7 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	struct stat sb;
 	struct passwd *pw;
 	struct gfarm_path_info pi;
-	char *e, *p;
+	char *e, *p, *username;
 
 	if (stat(pathname, &sb))
 		return "no such file";
@@ -48,9 +48,13 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 
+	e = gfarm_local_to_global_username(pw->pw_name, &username);
+	if (e != NULL)
+		return (e);
+
 	pi.pathname = pathname;
 	pi.status.st_mode = GFARM_S_IFREG | (sb.st_mode & GFARM_S_ALLPERM);
-	pi.status.st_user = strdup(pw->pw_name); /* XXX NULL check */
+	pi.status.st_user = username;
 	pi.status.st_group = strdup("*"); /* XXX for now */
 	pi.status.st_atimespec.tv_sec = sb.st_atime;
 	pi.status.st_mtimespec.tv_sec = sb.st_mtime;
@@ -63,6 +67,7 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 
 	e = gfarm_path_info_set(pi.pathname, &pi);
 	gfarm_path_info_free(&pi);
+
 	return (e);
 }
 
