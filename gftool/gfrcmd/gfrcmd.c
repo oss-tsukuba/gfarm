@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
@@ -25,6 +26,7 @@ usage()
 
 char *opt_username; /* ignored for now */
 int opt_no_stdin = 0;
+int opt_raw_command = 0;
 int opt_xdpy_env = 0;
 int opt_xauth_copy = 0;
 
@@ -40,6 +42,7 @@ parse_option(int *argcp, char ***argvp)
 		for (s = &argv[0][1]; *s; s++) {
 			switch (*s) {
 			case 'l':
+				/* XXX: FIXME. `opt_username' isn't used yet */
 				if (s[1]) {
 					opt_username = &s[1];
 					s += strlen(s) - 1;
@@ -53,6 +56,9 @@ parse_option(int *argcp, char ***argvp)
 				break;
 			case 'n':
 				opt_no_stdin = 1;
+				break;
+			case 'r':
+				opt_raw_command = 1;
 				break;
 			case 'y':
 				opt_xdpy_env = 1;
@@ -93,6 +99,15 @@ concat(int argc, char **argv)
 	return (s);
 }
 
+int passing_signals[] = { SIGINT, SIGQUIT, SIGTERM };
+volatile int send_signal = 0;
+
+void
+record_signal(int sig)
+{
+	send_signal = sig;
+}
+
 int
 main(argc, argv)
 	int argc;
@@ -101,9 +116,9 @@ main(argc, argv)
 	char *e, *user, *hostname, *command;
 	char *args[2];
 	char *envs[2];
-	char **envp = NULL;
+	char **argp, **envp = NULL;
 	struct gfs_connection *gfs_server;
-	int sig, status, coredump;
+	int i, remote_pid, sig, status, coredump;
 	struct hostent *hp;
 	struct sockaddr_in peer_addr;
 
@@ -132,9 +147,15 @@ main(argc, argv)
 		envp = envs;
 	}
 
-	command = concat(argc, argv);
-	args[0] = command;
-	args[1] = NULL;
+	if (opt_raw_command) {
+		argp = argv;
+		command = argv[0];
+	} else {
+		args[0] = concat(argc, argv);
+		args[1] = NULL;
+		argp = args;
+		command = args[0];
+	}
 
 	/*
 	 * initialization
@@ -191,15 +212,43 @@ main(argc, argv)
 	e = gfs_client_mkdir(gfs_server, user, 0755);
 	e = gfs_client_chdir(gfs_server, user);
 
-	e = gfs_client_command(gfs_server, args[0], args, envp,
-			       GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND |
-			       (opt_no_stdin ?
-				GFS_CLIENT_COMMAND_FLAG_STDIN_EOF : 0) |
-			       (opt_xdpy_env ?
-				GFS_CLIENT_COMMAND_FLAG_XENVCOPY : 0) |
-			       (opt_xauth_copy ?
-				GFS_CLIENT_COMMAND_FLAG_XAUTHCOPY : 0),
-			       &sig, &status, &coredump);
+	/* for gfs_client_command_send_signal() */
+	for (i = 0; i < GFARM_ARRAY_LENGTH(passing_signals); i++) {
+		struct sigaction sa;
+
+		/*
+		 * DO NOT set SA_RESTART here, because we rely on the fact
+		 * that select(2) breaks with EINTR.
+		 * XXX - This is not so portable. Use siglongjmp() instead?
+		 */
+		sa.sa_handler = record_signal;
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sigaction(passing_signals[i], &sa, NULL);
+	}
+
+	e = gfs_client_command_request(gfs_server, command, argp, envp,
+	    (opt_raw_command ? 0 : GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND) |
+	    (opt_no_stdin ? GFS_CLIENT_COMMAND_FLAG_STDIN_EOF : 0) |
+	    (opt_xdpy_env ? GFS_CLIENT_COMMAND_FLAG_XENVCOPY : 0) |
+	    (opt_xauth_copy ? GFS_CLIENT_COMMAND_FLAG_XAUTHCOPY : 0),
+	    &remote_pid);
+	if (e == NULL) {
+		char *e2;
+
+		while (gfs_client_command_is_running(gfs_server)) {
+			e = gfs_client_command_io(gfs_server, NULL);
+			if (e == NULL && send_signal != 0) {
+				e = gfs_client_command_send_signal(
+				    gfs_server, send_signal);
+				send_signal = 0;
+			}
+		}
+		e2 = gfs_client_command_result(gfs_server,
+		    &sig, &status, &coredump);
+		if (e == NULL)
+			e = e2;
+	}
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", argv[0], e);
 		exit(1);
