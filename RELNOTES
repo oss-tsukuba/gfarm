@@ -1,6 +1,57 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0b2
+============================
+
+[2003.5.19]
+
+Updated Features
+
+ * Client commands
+
+   (gfreg) A new feature is added to register multiple local files.
+
+   (gfrun) The executed process can be suspended or executed in the
+           background.
+
+   (gfrcmd) A delegated credential is exported to be delegated by a
+            invoked child process by gfrcmd.
+
+ * Servers (gfsd and gfmd)
+
+   Information about authentication and disconnection is now logged.
+
+ * Parallel I/O Library
+
+   Only available filesystem nodes are selected by every command.
+   Node selection algorithm by load average is improved.
+
+   Flags, GFARM_FILE_REPLICATE and GFARM_FILE_NOT_REPLICATE, for
+   gfs_pio_set_view_{local,index,global} are implemented.
+
+ * Documentation
+
+   (README.hook) An example of static compilation with the Globus
+                 library is added.
+
+   (INSTALL, GUIDE) Examples of the gfreg command are updated.
+
+   (Gfarm-FAQ) Deleted the item 2.1, and added a new item 2.1.
+
+ * Bug fix
+
+   (gfls) Changed an inappropriate error message from "not a
+          directory" to "no fragment information".
+
+   (gfrep) A bug of buffer overrun is fixed.
+
+   (gfsd) Resource and memory leaks are plugged.
+
+   (gfmd) Resource and memory leaks are plugged.
+          A minor race condition is fixed.
+          Fix a bug which made gfmd core dump at authentication failure.
+
 Release note for Gfarm 1.0b1
 ============================
 
