@@ -19,12 +19,13 @@ test -f $CONF || exit 0
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $NAME"
-	start-stop-daemon --start --exec $DAEMON
+	start-stop-daemon --quiet --start \
+             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE
 	echo "."
 	;;
   stop)
 	echo -n "Stopping gfarm server: $NAME"
-	start-stop-daemon --stop --oknodo --exec $DAEMON
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
 	echo "."
 	;;
   restart|force-reload)
