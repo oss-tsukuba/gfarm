@@ -11,12 +11,13 @@ Table of Contents:
   1.2 Where can I download Gfarm?
 
 2. Trouble Shooting
-  2.1 [GSI authentication] "Authentication error" or "no filesystem
+  2.1 'gfls' results in 'gfarm:.: no such object'.
+  2.2 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
-  2.2 Unregistered or unnecessary files seem to remain in a spool
+  2.3 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.3 Due to disk crash, files in a file system node are lost.  What
+  2.4 Due to disk crash, files in a file system node are lost.  What
      we need to do?
 
 3. Security
@@ -43,7 +44,16 @@ Table of Contents:
 
 2. Trouble Shooting
 *******************
-  2.1 [GSI authentication] "Authentication error" or "no filesystem
+  2.1 'gfls' results in 'gfarm:.: no such object'.
+
+	The error message indicates there is no current working
+	directory.  When you start using a Gfarm file system without
+	creating your home directory, you always encounter this error
+	message.  In this case, it is necessary to create a home
+	directory.
+		% gfmkdir gfarm:~
+
+  2.2 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
 
 	Verbose error messages are displayed with the -v option of
@@ -66,7 +76,7 @@ Table of Contents:
 	provided by the Globus fails to authenticate each other when
 	the time difference is more than five minutes.
 
-  2.2 Unregistered or unnecessary files seem to remain in a spool
+  2.3 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -86,7 +96,7 @@ Table of Contents:
 	with the -a option.
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
 
-  2.3 Due to disk crash, all files in a file system node are lost.
+  2.4 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
 	For all data files except execution programs, there is nothing
