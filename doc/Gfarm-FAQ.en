@@ -11,6 +11,11 @@ Table of Contents:
   1.2 Where can I download Gfarm?
 
 2. Trouble Shooting
+  2.1 There is a file displayed as "not a directory" using gfls.  What
+     is it?
+  2.2 There remain unregistered files in a spool directory on filesystem
+     nodes due to the interruption of file creation and so on.  How do
+     I delete these unregistered files?
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -43,6 +48,21 @@ Table of Contents:
 	may remain when interrupting a parallel program.  This bug
 	will be fixed by the next release.  When there is a file
 	displayed as "not a directory", delete the entry using gfrm.
+
+  2.2 There remain unregistered files in a spool directory on filesystem
+     nodes due to the interruption of file creation and so on.  How do
+     I delete these unregistered files?
+
+	gfarm:/bin/gfsplck is prepared for checking and deleting these
+	unregistered files in a spool directory on filesystem nodes.
+	You can check which files are unregistered or not by
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck
+	After checking files, you can delete them by
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d
+	The above command examples do not check the file integrity.
+	When you want to check it by calculating md5 checksum, execute
+	with the -a option.
+		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
 
 3. Security
 ***********
