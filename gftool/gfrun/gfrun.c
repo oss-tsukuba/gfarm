@@ -244,6 +244,9 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 	char *e, *gfarm_files[3];
 	int i = 0;
 
+	/* purge the directory-tree cache. */
+	gfs_uncachedir();
+
 	if (stdout_file != NULL) {
 		e = gfs_stat(stdout_file, &sb);
 		if (e != NULL)
