@@ -2,14 +2,15 @@
 #
 # gfarm-slapd
 #
-# chkconfig: 2345 55 25
+# chkconfig: 2345 85 15
 # description: LDAP slapd for Gfarm
 # processname: slapd
 # pidfile: /var/run/gfarm-slapd.pid
 # config: /etc/gfarm-ldap/slapd.conf
 
+bindir=/usr/sbin
 config=/etc/gfarm-ldap/slapd.conf
-port=9000
+port=389
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -23,7 +24,7 @@ then
 	exit 0
 fi
 
-[ -f /usr/sbin/slapd ] || exit 0
+[ -f $bindir/slapd ] || exit 0
 [ -f $config ] || exit 0
 
 RETVAL=0
@@ -32,7 +33,7 @@ RETVAL=0
 case "$1" in
   start)
 	echo -n "Starting Gfarm LDAP services: "
-	daemon /usr/sbin/slapd -f $config -h ldap://:$port/
+	daemon $bindir/slapd -f $config -h ldap://:$port/
 	RETVAL=$?
 
 	echo
