@@ -45,7 +45,7 @@ char *
 gfrepbe_auth_initialize(void)
 {
 	return (gfarm_auth_server_cred_type_set(GFREPBE_SERVICE_TAG,
-	    GFARM_AUTH_CRED_TYPE_USER));
+	    GFARM_AUTH_CRED_TYPE_SELF));
 }
 
 void fatal(void)
