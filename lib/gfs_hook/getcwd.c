@@ -44,14 +44,22 @@
 #include <sys/syscall.h>
 #include "hooks_subr.h"
 
-/*#ifdef SYS_getcwd*/
-#if 0
-/* This results in segmentation fault at least in RH-8.0 and RH-7.3. */
+#ifdef SYS_getcwd
 
 char *
 gfs_hook_syscall_getcwd(char *buf, size_t size)
 {
-	return ((char *)syscall(SYS_getcwd, buf, size));
+	int errno_save;
+	size_t sz;
+
+	errno_save = errno;
+	errno = 0;
+	sz = syscall(SYS_getcwd, buf, size);
+	if (errno == 0) {
+		errno = errno_save;
+		return (buf);
+	}
+	return (NULL);
 }
 
 #else /* do not have SYS_getcwd */
