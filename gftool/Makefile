@@ -4,9 +4,11 @@ all:
 	cd gfkey && make $@
 	cd gfreg && make $@
 	cd gfrep && make $@
+	cd gfrm && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
 	cd gfrsh && make $@
+	cd gfwhere && make $@
 	cd example && make $@
 
 install clean veryclean distclean:
@@ -15,7 +17,9 @@ install clean veryclean distclean:
 	cd gfkey && make $@
 	cd gfreg && make $@
 	cd gfrep && make $@
+	cd gfrm && make $@
 	cd gfsched && make $@
 	cd gfmpirun && make $@
 	cd gfrsh && make $@
+	cd gfwhere && make $@
 	cd example && make $@
