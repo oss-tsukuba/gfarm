@@ -1,0 +1,9 @@
+gfarm (0.0.cvs20010901-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>  Mon, 10 Sep 2001 02:57:35 +0900
+
+Local variables:
+mode: debian-changelog
+End:

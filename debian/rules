@@ -1,0 +1,247 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper. 
+# GNU copyright 1997 by Joey Hess.
+#
+# This version is for a hypothetical package that builds an
+# architecture-dependant package, as well as an architecture-independent
+# package.
+
+# Uncomment this to turn on verbose mode. 
+#export DH_VERBOSE=1
+
+# This is the debhelper compatability version to use.
+export DH_COMPAT=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+
+	./configure --with-openssl=/usr/include/openssl --with-openldap=/usr/lib \
+	--with-readline="" --prefix=/ --with-default-ns-exec-root=\$${prefix}/var/lib/gfarm \
+	--mandir=\$${prefix}/usr/share/man --infodir=\$${prefix}/usr/share/info
+
+	# Add here commands to compile the package.
+	$(MAKE)
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp 
+
+	# Add here commands to clean up after the build process.
+	-$(MAKE) clean
+	-$(MAKE) distclean
+	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
+	dh_clean 
+
+install: DH_OPTIONS=
+install: install-stamp
+install-stamp: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+
+	# Add here commands to install the package into debian/tmp.
+	# !!FIXME!! there is no install target for gftools.
+	-$(MAKE) install prefix=`pwd`/debian/tmp
+	touch install-stamp
+
+# Build architecture-independent files here.
+# Pass -i to all debhelper commands in this target to reduce clutter.
+binary-indep: DH_OPTIONS=-i
+binary-indep: build install gfarm-doc
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+# Pass -a to all debhelper commands in this target to reduce clutter.
+binary-arch: DH_OPTIONS=-a
+binary-arch: build install gfarm-pool gfarm-client libgfarm-dev gfarm-server
+
+gfarm-server: build
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir -pgfarm-server
+	dh_testroot -pgfarm-server
+#	dh_clean -pgfarm-server -k
+	# Add command to install the files into debian/tmp
+	install -d debian/tmp/usr/sbin
+	mv debian/tmp/bin/gfarmd debian/tmp/usr/sbin
+	install -d debian/tmp/etc/init.d/
+	install -o root -g root debian/gfarm-server.init debian/tmp/etc/init.d/gfarm-server
+	rm -rf debian/tmp/lib debian/tmp/include debian/tmp/bin
+
+#	dh_installinit -pgfarm-server
+	dh_installmanpages -pgfarm-server
+	dh_installchangelogs -pgfarm-server 
+	dh_strip -pgfarm-server
+	dh_compress -pgfarm-server
+	dh_fixperms -pgfarm-server
+	dh_installdeb -pgfarm-server
+	dh_shlibdeps -pgfarm-server
+	dh_gencontrol -pgfarm-server
+	dh_md5sums -pgfarm-server
+	dh_builddeb -pgfarm-server
+
+#	dh_installdebconf -pgfarm-server
+#	dh_installdocs -pgfarm-server
+#	dh_installexamples -pgfarm-server
+#	dh_installmenu -pgfarm-server
+#	dh_installpam -pgfarm-server
+#	dh_installinit -pgfarm-server
+#	dh_installcron -pgfarm-server
+
+#	dh_installinfo -pgfarm-server
+#	dh_undocumented -pgfarm-server
+#	dh_link -pgfarm-server
+	# You may want to make some executables suid here.
+#	dh_suidregister -pgfarm-server
+#	dh_makeshlibs -pgfarm-server
+#	dh_perl -pgfarm-server
+
+gfarm-client: build
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir -pgfarm-client
+	dh_testroot -pgfarm-client
+#	dh_clean -pgfarm-client -k
+	# Add command to install the files into debian/tmp
+	install -d debian/gfarm-client/usr/bin
+	cp debian/tmp/bin/gfarm debian/gfarm-client/usr/bin
+	cp nstool/file/put debian/gfarm-client/usr/bin
+	cp nstool/file/get debian/gfarm-client/usr/bin
+
+	dh_installmanpages -pgfarm-client
+	dh_installchangelogs -pgfarm-client 
+	dh_strip -pgfarm-client
+	dh_compress -pgfarm-client
+	dh_fixperms -pgfarm-client
+	dh_installdeb -pgfarm-client
+	dh_shlibdeps -pgfarm-client
+	dh_gencontrol -pgfarm-client
+	dh_md5sums -pgfarm-client
+#	dh_builddeb -pgfarm-client
+
+#	dh_installdebconf -pgfarm-client
+#	dh_installdocs -pgfarm-client
+#	dh_installexamples -pgfarm-client
+#	dh_installmenu -pgfarm-client
+#	dh_installpam -pgfarm-client
+#	dh_installinit -pgfarm-client
+#	dh_installcron -pgfarm-client
+
+#	dh_installinfo -pgfarm-client
+#	dh_undocumented -pgfarm-client
+#	dh_link -pgfarm-client
+	# You may want to make some executables suid here.
+#	dh_suidregister -pgfarm-client
+#	dh_makeshlibs -pgfarm-client
+#	dh_perl -pgfarm-client
+
+gfarm-pool: build
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir -pgfarm-pool
+	dh_testroot -pgfarm-pool
+#	dh_clean -pgfarm-pool -k
+	# Add command to install the files into debian/tmp
+	install -d debian/gfarm-pool/usr/sbin
+	cp debian/tmp/bin/gfsd debian/gfarm-pool/usr/sbin
+	install -d debian/gfarm-pool/etc/init.d
+	install doc/gfarm.conf debian/gfarm-pool/etc/gfarm.conf
+	install -o root -g root debian/gfarm-pool.init debian/gfarm-pool/etc/init.d/gfarm-pool
+
+#	dh_installinit -pgfarm-pool
+	dh_installmanpages -pgfarm-pool
+	dh_installchangelogs -pgfarm-pool 
+	dh_strip -pgfarm-pool
+	dh_compress -pgfarm-pool
+	dh_fixperms -pgfarm-pool
+	dh_installdeb -pgfarm-pool
+	dh_shlibdeps -pgfarm-pool
+	dh_gencontrol -pgfarm-pool
+	dh_md5sums -pgfarm-pool
+#	dh_builddeb -pgfarm-pool
+
+#	dh_installdebconf -pgfarm-pool
+#	dh_installdocs -pgfarm-pool
+#	dh_installexamples -pgfarm-pool
+#	dh_installmenu -pgfarm-pool
+#	dh_installpam -pgfarm-pool
+#	dh_installinit -pgfarm-pool
+#	dh_installcron -pgfarm-pool
+
+#	dh_installinfo -pgfarm-pool
+#	dh_undocumented -pgfarm-pool
+#	dh_link -pgfarm-pool
+	# You may want to make some executables suid here.
+#	dh_suidregister -pgfarm-pool
+#	dh_makeshlibs -pgfarm-pool
+#	dh_perl -pgfarm-pool
+
+
+libgfarm-dev: build
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir -plibgfarm-dev
+	dh_testroot -plibgfarm-dev
+#	dh_clean -plibgfarm-dev -k -V
+	# Add command to install the files into debian/tmp
+	install -d debian/libgfarm-dev/usr/include/gfarm
+	cp debian/tmp/include/gfarm/* debian/libgfarm-dev/usr/include/gfarm # header files
+	install -d debian/libgfarm-dev/usr/lib
+	cp debian/tmp/lib/* debian/libgfarm-dev/usr/lib # *.a files
+
+	dh_installmanpages -plibgfarm-dev
+	dh_installchangelogs -plibgfarm-dev 
+	dh_strip -plibgfarm-dev
+	dh_compress -plibgfarm-dev
+	dh_fixperms -plibgfarm-dev
+	dh_installdeb -plibgfarm-dev
+	dh_shlibdeps -plibgfarm-dev
+	dh_gencontrol -plibgfarm-dev
+	dh_md5sums -plibgfarm-dev
+#	dh_builddeb -plibgfarm-dev
+
+#	dh_installdebconf -plibgfarm-dev
+#	dh_installdocs -plibgfarm-dev
+#	dh_installexamples -plibgfarm-dev
+#	dh_installmenu -plibgfarm-dev
+#	dh_installpam -plibgfarm-dev
+#	dh_installinit -plibgfarm-dev
+#	dh_installcron -plibgfarm-dev
+
+#	dh_installinfo -plibgfarm-dev
+#	dh_undocumented -plibgfarm-dev
+#	dh_link -plibgfarm-dev
+	# You may want to make some executables suid here.
+#	dh_suidregister -plibgfarm-dev
+#	dh_makeshlibs -plibgfarm-dev
+#	dh_perl -plibgfarm-dev
+
+gfarm-doc: build
+	# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir -pgfarm-doc
+	dh_testroot -pgfarm-doc
+#	dh_clean -pgfarm-doc -k -V
+	# Add command to install the files into debian/tmp
+	install -d debian/gfarm-doc/usr/share/doc/gfarm-doc
+	cp -r doc/* debian/gfarm-doc/usr/share/doc/gfarm-doc # Copy HTML Docs
+
+	dh_installchangelogs -pgfarm-doc 
+#	dh_installdocs -pgfarm-doc
+	dh_installinfo -pgfarm-doc
+	dh_compress -pgfarm-doc
+	dh_fixperms -pgfarm-doc
+	dh_installdeb -pgfarm-doc
+	dh_gencontrol -pgfarm-doc
+	dh_md5sums -pgfarm-doc
+	dh_builddeb -pgfarm-doc
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary
