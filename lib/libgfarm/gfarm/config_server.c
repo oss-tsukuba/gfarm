@@ -7,6 +7,7 @@
 
 #include "gfutil.h"
 #include "liberror.h"
+#include "auth.h"
 #include "config.h"
 
 static void
