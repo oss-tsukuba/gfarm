@@ -65,6 +65,8 @@ char *gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 #define GFARM_FILE_NOT_REPLICATE	0x04000000
 #define GFARM_FILE_NOT_RETRY		0x08000000
 
+char *gfs_pio_truncate(GFS_File, file_offset_t);
+
 char *gfs_pio_set_local(int, int);
 char *gfs_pio_set_local_check(void);
 char *gfs_pio_get_node_rank(int *);

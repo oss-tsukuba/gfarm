@@ -508,6 +508,14 @@ gfs_client_seek(struct gfs_connection *gfs_server,
 }
 
 char *
+gfs_client_ftruncate(struct gfs_connection *gfs_server,
+		    gfarm_int32_t fd, file_offset_t length)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FTRUNCATE, "io/",
+			       fd, length));
+}
+
+char *
 gfs_client_read(struct gfs_connection *gfs_server,
 		gfarm_int32_t fd, void *buffer, size_t size, size_t *np)
 {

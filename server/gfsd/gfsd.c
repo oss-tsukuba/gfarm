@@ -298,6 +298,21 @@ gfs_server_seek(struct xxx_connection *client)
 }
 
 void
+gfs_server_ftruncate(struct xxx_connection *client)
+{
+	int fd;
+	file_offset_t length;
+	int save_errno = 0;
+
+	gfs_server_get_request(client, "ftruncate", "io", &fd, &length);
+
+	if (ftruncate(fd, length) == -1)
+		save_errno = errno;
+
+	gfs_server_put_reply_with_errno(client, "ftruncate", save_errno, "");
+}
+
+void
 gfs_server_read(struct xxx_connection *client)
 {
 	ssize_t rv;
@@ -1861,6 +1876,8 @@ server(int client_fd)
 		case GFS_PROTO_OPEN:	gfs_server_open(client); break;
 		case GFS_PROTO_CLOSE:	gfs_server_close(client); break;
 		case GFS_PROTO_SEEK:	gfs_server_seek(client); break;
+		case GFS_PROTO_FTRUNCATE:
+			gfs_server_ftruncate(client); break;
 		case GFS_PROTO_READ:	gfs_server_read(client); break;
 		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
 		case GFS_PROTO_UNLINK:	gfs_server_unlink(client); break;

@@ -35,6 +35,8 @@ char *gfs_client_close(struct gfs_connection *, gfarm_int32_t);
 char *gfs_client_seek(struct gfs_connection *,
 		      gfarm_int32_t, file_offset_t, gfarm_int32_t,
 		      file_offset_t *);
+char *gfs_client_ftruncate(struct gfs_connection *,
+			   gfarm_int32_t, file_offset_t);
 char *gfs_client_read(struct gfs_connection *,
 		      gfarm_int32_t, void *, size_t, size_t *);
 char *gfs_client_write(struct gfs_connection *,

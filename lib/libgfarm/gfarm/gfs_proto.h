@@ -28,7 +28,8 @@ enum gfs_proto_command {
 	GFS_PROTO_STRIPING_READ,
 	GFS_PROTO_EXIST,
 	GFS_PROTO_RENAME,
-	GFS_PROTO_LINK
+	GFS_PROTO_LINK,
+	GFS_PROTO_FTRUNCATE
 };
 
 enum gfs_proto_error {

@@ -192,6 +192,49 @@ gfs_pio_view_global_seek(GFS_File gf, file_offset_t offset, int whence,
 	return (NULL);
 }
 
+static char *
+gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
+{
+	struct gfs_file_global_context *gc = gf->view_context;
+	char *e;
+	int i, fragment, nsections, section_length;
+	struct gfarm_file_section_info *sections;
+	char section_string[GFARM_INT32STRLEN + 1];
+
+	if (length < 0)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	if (length >= gc->offsets[gf->pi.status.st_nsections - 1])
+		fragment  = gf->pi.status.st_nsections - 1;
+	else
+		fragment = gfs_pio_view_global_bsearch(
+		    length, gc->offsets, gf->pi.status.st_nsections - 1);
+
+	section_length = length - gc->offsets[fragment];
+
+	e = gfs_pio_view_global_move_to(gf, fragment);
+	if (e != NULL)
+		return (e);
+	e = gfs_pio_truncate(gc->fragment_gf, section_length);
+	if (e != NULL)
+		return (e);
+
+	gf->pi.status.st_size = length;
+	gf->pi.status.st_nsections = fragment + 1;
+	e = gfarm_file_section_info_get_sorted_all_serial_by_file(
+		gf->pi.pathname, &nsections, &sections);
+	if (e != NULL)
+		return (e);
+	sections[fragment].filesize = section_length;
+	sprintf(section_string, "%d", fragment);
+	e = gfarm_file_section_info_replace(gf->pi.pathname, section_string,
+					    &sections[fragment]);
+	for (i = fragment + 1; i < nsections; i++)
+		(void)gfs_unlink_section(gf->pi.pathname, sections[i].section);
+	gfarm_file_section_info_free_all(nsections, sections);
+	
+	return (e);
+}
+
 static int
 gfs_pio_view_global_fd(GFS_File gf)
 {
@@ -218,6 +261,7 @@ struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_write,
 	gfs_pio_view_global_read,
 	gfs_pio_view_global_seek,
+	gfs_pio_view_global_ftruncate,
 	gfs_pio_view_global_fd,
 	gfs_pio_view_global_stat
 };

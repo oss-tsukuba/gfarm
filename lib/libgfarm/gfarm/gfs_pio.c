@@ -186,6 +186,7 @@ static double gfs_pio_create_time;
 static double gfs_pio_open_time;
 static double gfs_pio_close_time;
 static double gfs_pio_seek_time;
+static double gfs_pio_truncate_time;
 static double gfs_pio_read_time;
 static double gfs_pio_write_time;
 static double gfs_pio_getline_time;
@@ -593,6 +594,41 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+char *
+gfs_pio_truncate(GFS_File gf, file_offset_t length)
+{
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		goto finish;
+
+	CHECK_WRITABLE(gf);
+
+	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+
+	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
+		e = gfs_pio_flush(gf);
+		if (e != NULL)
+			goto finish;
+	}
+
+	gf->error = NULL; /* purge EOF/error state */
+	gfs_pio_purge(gf);
+
+	e = (*gf->ops->view_ftruncate)(gf, length);
+	if (e != NULL)
+		gf->error = e;
+finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_truncate_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -1075,6 +1111,7 @@ gfs_display_timers()
 	fprintf(stderr, "gfs_pio_open    : %g sec\n", gfs_pio_open_time);
 	fprintf(stderr, "gfs_pio_close   : %g sec\n", gfs_pio_close_time);
 	fprintf(stderr, "gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
+	fprintf(stderr, "gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
 	fprintf(stderr, "gfs_pio_read    : %g sec\n", gfs_pio_read_time);
 	fprintf(stderr, "gfs_pio_write   : %g sec\n", gfs_pio_write_time);
 	fprintf(stderr, "gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
