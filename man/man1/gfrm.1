@@ -10,21 +10,28 @@ gfrm \- remove Gfarm files
 [
 .B \-h
 .I filesystem-node
+]
+.IR gfarm-URL " .\|.\|."
+.in
+
+.B gfrm
+.B \-h
+.I filesystem-node
 .B -I
 .I fragment-index
-]
-.in +.5i
 .IR gfarm-URL " .\|.\|."
 .in
 
 .SH DESCRIPTION
 
-\fBgfrm\fP removes each specified file.
+\fBgfrm\fP removes each specified file.  With the \fB-h\fP option,
+\fBgfrm\fP removes file replicas of each specified file on the
+specified filesystem node(s).
 .PP
 When both \fB-h\fP and \fB-I\fP options are specified, \fBgfrm\fP
-removes a replicated file fragment \fIfragment-index\fP on the
+removes a file replica specified by \fIfragment-index\fP on the
 filesystem nodes \fIfilesystem-node\fP.  It is not allowed to remove
-the last repilcated file fragment.
+the last file repilca.
 
 .SH OPTIONS
 
@@ -32,10 +39,10 @@ the last repilcated file fragment.
 .B \-h
 .I filesystem-node
 .br
-specifies a filesystem node on which a replicated file fragment will
-be removed.  This option needs to be specified with the -I option.
-This option can be used more than once to remove a fragment on several
-filesystem nodes at once.
+specifies a filesystem node on which file replicas will be removed.
+With the -I option, a file raplica of the specified file fragment will
+be removed.  This option can be used more than once to remove file
+replicas on several filesystem nodes at once.
 .TP
 .B \-I
 .I fragment-index
