@@ -539,6 +539,26 @@ using the gfwhere command.
 
 	% gfwhere gfarm:/bin/gfcp
 
+** setting of each user
+
+Please add the following setting to the shell rc file (e.g. .bashrc,
+.cshrc) of each user.
+
+In the case of the Bourne Shell:
+	gfcd() { eval "`gfsetdir $1`"; }
+
+In the case of the csh:
+	alias gfcd 'eval `gfsetdir \!*`'
+
+Then the user can use gfcd command to change the Gfarm working directory
+like the follows:
+
+	% gfcd foo
+
+Current working directory can be displayed by gfpwd commadn.
+
+	% gfpwd
+
 ========================================================================
 
 *** Examples
