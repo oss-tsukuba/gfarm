@@ -137,7 +137,15 @@ configure コマンドには、下記のオプションがあります。
 
 ・--with-mpi=ディレクトリ
 
-  MPICH  のインストールされているディレクトリを指定します。
+  MPICH のインストールされているディレクトリを指定します。
+  このオプションは省略可能です。
+
+・--with-globus=ディレクトリ
+
+  Globus toolkit version 2 (GT2) の GSS API ライブラリを利用した，Grid
+  Security Infrastructure 上位互換の GFSL ライブラリを組み込みます．ディ
+  レクトリを指定しないと，GLOBUS_LOCATION の示すディレクトリにある GT2 
+  が指定されます．
   このオプションは省略可能です。
 
 ・--prefix=ディレクトリ
