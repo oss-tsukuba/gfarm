@@ -2137,7 +2137,7 @@ main(int argc, char **argv)
 	if (table_size > FILE_TABLE_LIMIT)
 		table_size = FILE_TABLE_LIMIT;
 	file_table_init(table_size);
-	SSLeay_add_all_algorithms(); /* for EVP_get_digestbyname() */
+	OpenSSL_add_all_digests(); /* for EVP_get_digestbyname() */
 
 	/*
 	 * Because SA_NOCLDWAIT is not implemented on some OS,
