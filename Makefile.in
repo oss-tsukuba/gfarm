@@ -3,14 +3,18 @@ all:
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
+	cd gfsd; make $@
 	cd nstool; make $@
+	cd gftool; make $@
 
 clean veryclean:
 	cd nslib; make $@
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
+	cd gfsd; make $@
 	cd nstool; make $@
+	cd gftool; make $@
 
 install:
 	cd include; make $@
@@ -18,7 +22,9 @@ install:
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
+	cd gfsd; make $@
 	cd nstool; make $@
+	cd gftool; make $@
 
 distclean:
 	cd include; make $@
@@ -26,6 +32,8 @@ distclean:
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
+	cd gfsd; make $@
 	cd nstool; make $@
+	cd gftool; make $@
 	rm -f config.log config.status config.cache \
 		gfarm_config.h Makefile makes/config.mk

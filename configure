@@ -1595,7 +1595,7 @@ done
 
 ac_given_srcdir=$srcdir
 
-trap 'rm -fr `echo "Makefile makes/config.mk include/Makefile nslib/Makefile gfarmlib/Makefile gfarmd/Makefile gfarm/Makefile gfsd/Makefile nstool/file/Makefile gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile makes/config.mk include/Makefile nslib/Makefile gfarmlib/Makefile gfarmd/Makefile gfarm/Makefile gfsd/Makefile nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile gftool/gfmpirun/Makefile gftool/gfrsh/Makefile gftool/example/gfimport_fixed/Makefile gftool/example/gfimport_text/Makefile gftool/example/gfgrep/Makefile gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1687,7 +1687,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk include/Makefile nslib/Makefile gfarmlib/Makefile gfarmd/Makefile gfarm/Makefile gfsd/Makefile nstool/file/Makefile"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk include/Makefile nslib/Makefile gfarmlib/Makefile gfarmd/Makefile gfarm/Makefile gfsd/Makefile nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile gftool/gfmpirun/Makefile gftool/gfrsh/Makefile gftool/example/gfimport_fixed/Makefile gftool/example/gfimport_text/Makefile gftool/example/gfgrep/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
