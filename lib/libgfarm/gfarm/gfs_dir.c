@@ -140,22 +140,14 @@ gfs_chdir_canonical(const char *canonic_dir)
 	    GFARM_URL_PREFIX, canonic_dir);
 
 	len += sizeof(env_name) - 1;
-	if (env_len < len) {
-		tmp = getenv("GFS_PWD");
-		if (tmp == NULL) {
-			need_realloc = 1;
-			if (env != NULL) /* probably already free()ed */
-				env = NULL;
-		} else if (tmp == env) {
-			need_realloc = 1; /* not changed by an application */
-		} else {
-			env = tmp; /* probably already free()ed */
-			env_len = strlen(env) + 1;
-			if (env_len < len) {
-				/* XXX It's unsure whether realloc() is ok */
-				need_realloc = 1;
-			}
-		}
+	tmp = getenv("GFS_PWD");
+	if (tmp == env) { /* not changed by an application */
+		need_realloc = env_len < len;
+	} else {
+		env = tmp; /* probably already free()ed */
+		env_len = env == NULL ? 0 : strlen(env) + 1;
+		/* XXX It's unsure whether realloc() is ok or not */
+		need_realloc = env_len < len;
 	}
 	if (need_realloc) {
 		tmp = realloc(env, len);
