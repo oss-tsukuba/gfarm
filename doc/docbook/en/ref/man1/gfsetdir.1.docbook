@@ -1,0 +1,95 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfsetdir.1'>
+
+<refentryinfo><date>2 Jul 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsetdir</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfsetdir</refname>
+<refpurpose>helper command for gfcd</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfsetdir</command>
+    <group choice='opt'>
+      <arg choice='plain'>-s</arg>
+      <arg choice='plain'>-c</arg>
+    </group>
+    <arg choice='opt'><replaceable>directory</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfsetdir</command> prints shell commands which change
+Gfarm working directory to the directory specified in the argument.
+If no argument is specified, it prints commands which change
+the working directory to the user's home directory
+that is gfarm:/<replaceable>global_user_name</replaceable>.
+</para>
+<para>
+This command automatically detects user's shell type, and
+prints appropriate commands for the shell.
+</para>
+<para>
+Please add the following definition to the shell rc file of each user,
+to define <command>gfcd</command> command.
+</para>
+<variablelist>
+  <varlistentry>
+    <term>for shells derived from Bourne shell</term>
+    <listitem>
+      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>for csh or tcsh</term>
+    <listitem>
+      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>generates Bourne shell commands.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>generates C-shell commands.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfcd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfpwd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>

@@ -1,0 +1,63 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfcd.1'>
+
+<refentryinfo><date>2 Jul 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfcd</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfcd</refname>
+<refpurpose>change Gfarm working directory</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfcd</command>
+    <arg choice='opt'><replaceable>directory</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfcd</command> changes Gfarm working directory 
+to the directory specified in the argument.
+If no argument is specified, working directory is changed to
+the user's home directory that is gfarm:/<replaceable>global_user_name</replaceable>.
+</para>
+<para>
+To use this command, please add the following setting to 
+the shell rc file of each user.
+</para>
+<variablelist>
+  <varlistentry>
+    <term>for shells derived from Bourne shell</term>
+    <listitem>
+      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>for csh or tcsh</term>
+    <listitem>
+      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfpwd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsetdir</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>
