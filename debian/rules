@@ -15,7 +15,7 @@ export DH_COMPAT=2
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-CC = gcc
+export CC=gcc
 
 GFARM_MAN1=gfgrep.1 gfhost.1 gfls.1
 GFMD_MAN8=gfmd.8
