@@ -1433,7 +1433,7 @@ setxattr(const char *path, const char *name, void *value, size_t size,
 		return syscall(SYS_setxattr, path, name, value, size, flags);
 #else
 	{
-		errno = ENODATA;
+		errno = ENOTSUP;
 		return (-1);
 	}
 #endif
@@ -1475,7 +1475,7 @@ lsetxattr(const char *path, const char *name, void *value, size_t size,
 		return syscall(SYS_lsetxattr, path, name, value, size, flags);
 #else
 	{
-		errno = ENODATA;
+		errno = ENOTSUP;
 		return (-1);
 	}
 #endif
@@ -1515,7 +1515,7 @@ fsetxattr(int filedes, const char *name, void *value, size_t size, int flags)
 			       flags);
 #else
 	{
-		errno = ENODATA;
+		errno = ENOTSUP;
 		return (-1);
 	}
 #endif
