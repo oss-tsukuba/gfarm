@@ -66,10 +66,14 @@ main(int argc, char **argv)
 	canonic_path = NULL;
 	switch (argc) {
 	case 0:
+		/* home directory */
 		canonic_path = gfarm_get_global_username();
 		break;
 	case 1:
-		e = gfarm_canonical_path(argv[0], &canonic_path);
+		e = gfarm_url_make_path(argv[0], &canonic_path);
+		/* We permit missing gfarm: prefix here as a special case */
+		if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
+			e = gfarm_canonical_path(argv[0], &canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);

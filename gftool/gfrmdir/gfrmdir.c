@@ -54,7 +54,11 @@ main(int argc, char **argv)
 		struct gfs_dirent *entry;
 		int nhosts_succeed;
 
-		e = gfarm_canonical_path_for_creation(argv[i], &canonic_path);
+		e = gfarm_url_make_path_for_creation(argv[i], &canonic_path);
+		/* We permit missing gfarm: prefix here as a special case */
+		if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
+			e = gfarm_canonical_path_for_creation(argv[i],
+			    &canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			continue;
