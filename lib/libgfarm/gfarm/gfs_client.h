@@ -13,6 +13,7 @@ char *gfs_client_connection(const char *, struct sockaddr *,
 char *gfs_client_connect(char *, struct sockaddr *,
 	struct gfs_connection **);
 char *gfs_client_disconnect(struct gfs_connection *);
+const char *gfs_client_hostname(struct gfs_connection *);
 char *gfs_client_create(struct gfs_connection *, char *, gfarm_int32_t, int *);
 char *gfs_client_open(struct gfs_connection *,
 		      char *, gfarm_int32_t, gfarm_int32_t, gfarm_int32_t *);
