@@ -615,6 +615,8 @@ gfs_hook_check_hook_disabled()
  *
  * '<mount_point>/~username' such as '/gfarm/~tatebe' can be used to
  * specify a home directory in Gfarm file system.
+ *
+ * '/gfarm' is a special point to force to uncache directory cache.
  */
 int
 gfs_hook_is_url(const char *path, char **urlp)
@@ -667,9 +669,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 			    && (p[secsize + 2] == '~' || p[secsize + 2] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
-			if (is_mount_point && p[secsize + 1] == '\0')
+			if (is_mount_point && p[secsize + 1] == '\0') {
 				add_slash = 1;
-
+				gfs_uncachedir();
+			}
 			urlsize = sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(p + secsize + remove_slash + 1);
 			*urlp = malloc(urlsize + 1);
@@ -700,9 +703,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 			    && (path[1] == '~' || path[1] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
-			if (is_mount_point && path[0] == '\0')
+			if (is_mount_point && path[0] == '\0') {
 				add_slash = 1;
-
+				gfs_uncachedir();
+			}
 			*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
 				       + strlen(path + remove_slash) + 1);
 			if (*urlp == NULL)
@@ -748,9 +752,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 		if (path[0] == '/' && (path[1] == '~' || path[1] == '.'))
 			remove_slash = 1;
 		/* '/gfarm' will be translated to 'gfarm:/'. */
-		if (path[0] == '\0')
+		if (path[0] == '\0') {
 			add_slash = 1;
-
+			gfs_uncachedir();
+		}
 		*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
 			       + strlen(path + remove_slash) + 1);
 		if (*urlp == NULL)
