@@ -637,7 +637,7 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 {
 	int i, rv, eof;
 	long written;
-	char *e;
+	char *e, *e_tmp;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
 #ifdef XXX_MEASURE_CKSUM_COST
 	/* XXX: should be passed from caller */
@@ -753,7 +753,8 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 	/* should be returned to caller */
 	EVP_DigestFinal(&md_ctx, md_value, &md_len);
 #endif
-	return (e);
+	e_tmp = gfs_client_rpc_result(gfs_server, 0, "");
+	return (e != NULL ? e : e_tmp);
 }
 
 /* We keep this protocol for protocol compatibility */
