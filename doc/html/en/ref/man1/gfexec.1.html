@@ -38,7 +38,17 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfexec</B
->  <TT
+> [-N <TT
+CLASS="REPLACEABLE"
+><I
+>number-of-nodes</I
+></TT
+>] [-I <TT
+CLASS="REPLACEABLE"
+><I
+>node-index</I
+></TT
+>] [-s]  <TT
 CLASS="REPLACEABLE"
 ><I
 >command</I
@@ -67,6 +77,84 @@ CLASS="COMMAND"
 >gfexec</B
 > is needed to be executed on a
 file system node.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>number-of-nodes</I
+></TT
+></DT
+><DD
+><P
+>changes the number of nodes for the invoked program to the argument.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>node-index</I
+></TT
+></DT
+><DD
+><P
+>changes the index of the node for the invoked program to the argument.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+></DT
+><DD
+><P
+>This option is equivalent to 
+``<TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>1</I
+></TT
+> <TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>0</I
+></TT
+>'' option.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>prints usage.</P
+></DD
+></DL
+></DIV
 ></DIV
 ></BODY
 ></HTML
