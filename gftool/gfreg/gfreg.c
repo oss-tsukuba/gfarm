@@ -141,8 +141,8 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 		}
 
 		strcpy(target_url, gfarm_url);
-		if (strcmp(target_url, gfarm_prefix) != 0
-		    && target_url[strlen(target_url) - 1] != '/')
+		if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(target_url))
+		    != '\0')
 			strcat(target_url, "/");
 		strcat(target_url, bname);
 	}
