@@ -10,7 +10,7 @@
 
 char *program_name = "gfimport_text";
 
-void
+char *
 import_text(FILE *ifp, char *output,
 	int nfrags, char **hosttab, file_offset_t *sizetab)
 {
@@ -21,25 +21,15 @@ import_text(FILE *ifp, char *output,
 
 	e = gfs_pio_create(output, O_WRONLY, 0666, &of);
 	if (e != NULL) {
-		fprintf(stderr, "%s, %s\n", output, e);
-		return;
+		fprintf(stderr, "%s: %s\n", output, e);
+		return (e);
 	}
 
 	for (i = 0; i < nfrags; i++) {
-		c = getc(ifp);
-		if (c == EOF)
-			break;
-		ungetc(c, ifp);
-
 		e = gfs_pio_set_view_index(of, nfrags, i, hosttab[i],
-					   GFARM_FILE_SEQUENTIAL);
-		if (e != NULL) {
-			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output,
-			    nfrags, hosttab);
-			gfs_pio_close(of);
-			return;
-		}
+		    GFARM_FILE_SEQUENTIAL);
+		if (e != NULL)
+			goto error_on_fragment;
 		size = 0;
 		for (;;) {
 			if (size >= sizetab[i]) /* wrote enough */
@@ -49,7 +39,9 @@ import_text(FILE *ifp, char *output,
 				c = getc(ifp);
 				if (c == EOF)
 					break;
-				gfs_pio_putc(of, c);
+				e = gfs_pio_putc(of, c);
+				if (e != NULL)
+					goto error_on_fragment;
 				size++;
 				if (c == '\n')
 					break;
@@ -60,11 +52,18 @@ import_text(FILE *ifp, char *output,
 	}
 	e = gfs_pio_close(of);
 	if (e != NULL) {
-		fprintf(stderr, "%s, %s\n", output, e);
-		e = gfarm_url_fragment_cleanup(output,
-		    nfrags, hosttab);
-		return;
+		fprintf(stderr, "%s: %s\n", output, e);
+		goto error_on_close;
 	}
+	return (NULL);
+
+error_on_fragment:
+	fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
+	gfs_pio_close(of);
+error_on_close:
+	gfarm_url_fragment_cleanup(output, nfrags, hosttab);
+	gfs_unlink(output);
+	return (e);
 }
 
 void

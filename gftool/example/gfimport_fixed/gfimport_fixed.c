@@ -10,11 +10,11 @@
 
 char *program_name = "gfimport_fixed";
 
-void
+char *
 import_fixed(FILE *ifp, char *output, int len,
 	int nfrags, char **hosttab, file_offset_t *sizetab)
 {
-	int i, c, n, rv;
+	int i, n, rv;
 	char *e;
 	struct gfs_file *of;
 	char *buffer = malloc(len);
@@ -22,31 +22,21 @@ import_fixed(FILE *ifp, char *output, int len,
 
 	if (buffer == NULL) {
 		fprintf(stderr, "no memory\n");
-		return;
+		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	e = gfs_pio_create(output, GFARM_FILE_WRONLY, 0666, &of);
 	if (e != NULL) {
-		fprintf(stderr, "%s, %s\n", output, e);
+		fprintf(stderr, "%s: %s\n", output, e);
 		free(buffer);
-		return;
+		return (e);
 	}
-	for (i = 0; i < nfrags; i++) {
-		c = getc(ifp);
-		if (c == EOF)
-			break;
-		ungetc(c, ifp);
 
+	for (i = 0; i < nfrags; i++) {
 		e = gfs_pio_set_view_index(of, nfrags, i, hosttab[i],
-					   GFARM_FILE_SEQUENTIAL);
-		if (e != NULL) {
-			gfs_pio_close(of);
-			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output,
-			    nfrags, hosttab);
-			free(buffer);
-			return;
-		}
+		    GFARM_FILE_SEQUENTIAL);
+		if (e != NULL)
+			goto error_on_fragment;
 		size = 0;
 		for (;;) {
 			if (size >= sizetab[i]) /* wrote enough */
@@ -54,19 +44,30 @@ import_fixed(FILE *ifp, char *output, int len,
 			n = fread(buffer, 1, len, ifp);
 			if (n == 0) /* EOF */
 				break;
-			gfs_pio_write(of, buffer, n, &rv);
+			e = gfs_pio_write(of, buffer, n, &rv);
+			if (e != NULL)
+				goto error_on_fragment;
 			size += n;
 			if (n < len) /* EOF */
 				break;
 		}
 	}
 	e = gfs_pio_close(of);
-	if (e != NULL) {
-		fprintf(stderr, "%s, %s\n", output, e);
-		e = gfarm_url_fragment_cleanup(output,
-		    nfrags, hosttab);
-	}
 	free(buffer);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", output, e);
+		goto error_on_close;
+	}
+	return (NULL);
+
+error_on_fragment:
+	fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
+	gfs_pio_close(of);
+	free(buffer);
+error_on_close:
+	gfarm_url_fragment_cleanup(output, nfrags, hosttab);
+	gfs_unlink(output);
+	return (e);
 }
 
 void
