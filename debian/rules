@@ -104,6 +104,9 @@ clean:
 	rm -f debian/$(GFSD_GSI_PKG).manpages
 	rm -f debian/$(DEV_GSI_PKG).manpages
 
+#### FIEXME
+	rm -f debian/gf{s,m}d-gsi.p*
+
 	dh_clean
 
 install: DH_OPTIONS=
