@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 
 #include <gfarm/gfarm.h>
+#include <openssl/evp.h>/* EVP_MD_CTX */
+#include "gfs_pio.h"	/* gfs_profile */
 
 char *
 gfs_execve(const char *filename, char *const argv [], char *const envp[])
@@ -110,6 +112,10 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 		free(localpath);
 		return (e);
 	}
+
+	/* clean up the client environment */
+	gfs_profile(gf_profile = 0); /* not to display profile statistics */
+	(void)gfarm_terminate();
 
 	execve(localpath, argv, envp);
 	return gfarm_errno_to_error(errno);
