@@ -19,7 +19,14 @@
  */
 
 /* Don't permit set[ug]id bit for now */
-#define FILE_MODE_MASK	0777
+#define FILE_MODE_MASK		0777
+
+/*
+ * This value is only used as a last resort,
+ * when the local file argument is "-" only,
+ * and if `gfarm_url' is a directory or doesn't exist.
+ */
+#define DEFAULT_FILE_MODE	0644
 
 char *program_name = "gfreg";
 
@@ -291,7 +298,7 @@ main(int argc, char *argv[])
 	char *domainname = NULL;
 
 	char *e, *gfarm_url, *file_mode_arg;
-	gfarm_mode_t file_mode = 0644; /* last resort, if arg is "-" only */
+	gfarm_mode_t file_mode = DEFAULT_FILE_MODE;
 	int c, i, is_dir, index;
 	struct gfs_stat gs;
 
@@ -413,7 +420,10 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		if (S_ISREG(m)) {
 			if (file_mode_arg == NULL) {
-				/* NOTE: this mode may be used for gfarm_url */
+				/*
+				 * NOTE: this mode may be used for the mode
+				 * to create the gfarm file.
+				 */
 				file_mode_arg = argv[i];
 				file_mode = m & FILE_MODE_MASK;
 			}
