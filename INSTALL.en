@@ -213,13 +213,17 @@ This section assumes the following setting.
 
 	/var/gfarm-ldap
 
- - base distinguished name of LDAP
+ - base distinguished name for LDAP database
 
 	dc=example,dc=com
 
 	It is recommended to choose the base distinguish name by using
 	each component of the fully qualified domain name (FQDN) as
 	a right hand value of "dc=".
+
+ - organization name for LDAP database
+
+	Example Com
 
  - Gfarm spool directory on filesystem nodes
 
@@ -232,22 +236,22 @@ This section assumes the following setting.
 In the current distribution, an LDAP server manages the Gfarm
 filesystem metadata.
 
-The Gfarm version 1.0 only supports OpenLDAP version 2.0.X.  Other
-versions or other LDAP servers are not tested yet.  This subsection
-describes the configuration for the Gfarm filesystem metadata for
-OpenLDAP version 2.0.X.
+The Gfarm version 1.0.X only supports OpenLDAP version 2.0.X.  Other
+versions or other LDAP servers are not tested enough.
 
  - slapd.conf
 
 This is a configuration file for an LDAP server included in the
-OpenLDAP distribution.  Note that suffix and rootdn in this file
-refer to the base distinguished name.
+OpenLDAP distribution.  It is necessary to include a schema file for
+Gfarm file system.  Note that suffix and rootdn in this file refer to
+the base distinguished name.
 
-This is an example of /etc/gfarm-ldap/slapd.conf on ldap.example.com.
+There are example files of /etc/gfarm-ldap/slapd.conf on
+ldap.example.com for OpenLDAP version 2.0.X and 2.1.X, respectively.
 The path name of core.schema on line 5 depends on the installation of
 the OpenLDAP.
 
------------------------------ BEGIN HERE -----------------------------
+--------------------- BEGIN HERE (OpenLDAP-2.0.X)--------------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
@@ -286,6 +290,44 @@ index	hostname	pres,eq
 dbnosync
 -------------------------------- END --------------------------------
 
+--------------------- BEGIN HERE (OpenLDAP-2.1.X)--------------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include         /etc/openldap/schema/core.schema
+include         /etc/gfarm-ldap/gfarm.schema
+
+pidfile         /var/run/gfarm-slapd.pid
+argsfile        /var/gfarm-ldap/slapd.args
+
+# enable global write access for now. XXX
+allow bind_anon_dn update_anon
+access to * by anonymous write
+
+# unlimit search result
+sizelimit 2000000000
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        bdb
+
+suffix          "dc=example, dc=com"
+rootdn          "cn=root, dc=example, dc=com"
+
+directory       /var/gfarm-ldap
+rootpw          secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+-------------------------------- END --------------------------------
+
  - gfarm.schema
 
 This is a schema file for the Gfarm filesystem metadata used by
@@ -311,8 +353,11 @@ ldap.example.com.
 
 ----------------------------- BEGIN HERE -----------------------------
 dn: dc=example, dc=com
+objectclass: dcObject
+objectclass: organization
 objectclass: top
-
+dc: example
+o: Example Com
 -------------------------------- END --------------------------------
 
  - Create an LDAP database
@@ -348,7 +393,7 @@ In the case of the Bourne Shell:
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 In the case of the csh:
 
@@ -356,7 +401,7 @@ In the case of the csh:
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 ------------------------------------------------------------------------
 

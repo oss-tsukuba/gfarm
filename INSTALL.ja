@@ -239,6 +239,10 @@ configure コマンドには，下記のオプションがあります．
   ような名前を決め，これを base distinguished name に使うと良いでしょ
   う．
 
+・LDAP の organization name
+
+	Example Com
+
 ・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクト
   リ
 
@@ -251,21 +255,24 @@ configure コマンドには，下記のオプションがあります．
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
 LDAP サーバーを用意する必要があります．
 
-現在，利用可能な LDAP サーバは，OpenLDAP version 2.0.X であり，version
-2.1.X およびそれ以外の LDAP サーバでは動作確認ができていません．以下は 
-OpenLDAP version 2.0.X の設定です．
+Gfarm バージョン 1.0.X では，利用可能な LDAP サーバは，OpenLDAP
+version 2.0.X であり，version 2.1.X およびそれ以外の LDAP サーバでは動
+作確認が十分にできていません．
 
 ▽ slapd.conf
 
-OpenLDAP 付属の LDAP サーバーの設定ファイルです．base distinguished
+OpenLDAP 付属の LDAP サーバーの設定ファイルです．Gfarm ファイルシステ
+ムのためのスキーマファイルを include します．また，base distinguished
 name を，このファイルの suffix および rootdn で参照しているのに注意し
 てください．
 
-例えばホスト ldap.example.com のファイル /etc/gfarm-ldap/slapd.conf に，
-下記のような内容を記述します．設定ファイル中で include している 
-core.schema のパス名は OpenLDAP のインストレーションにより変わります．
+以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X のそれぞれの場
+合における，ホスト ldap.example.com のファイル 
+/etc/gfarm-ldap/slapd.conf 設定例を示します．設定ファイル中で include 
+している core.schema のパス名は OpenLDAP のインストレーションにより変
+わりますので気を付けてください．
 
------------------------------- ここから ------------------------------
+------------------ ここから （OpenLDAP-2.0.X の場合）-----------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
@@ -304,6 +311,44 @@ index	hostname	pres,eq
 dbnosync
 ------------------------------ ここまで ------------------------------
 
+------------------ ここから （OpenLDAP-2.1.X の場合）-----------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include         /etc/openldap/schema/core.schema
+include         /etc/gfarm-ldap/gfarm.schema
+
+pidfile         /var/run/gfarm-slapd.pid
+argsfile        /var/gfarm-ldap/slapd.args
+
+# enable global write access for now. XXX
+allow bind_anon_dn update_anon
+access to * by anonymous write
+
+# unlimit search result
+sizelimit 2000000000
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        bdb
+
+suffix          "dc=example, dc=com"
+rootdn          "cn=root, dc=example, dc=com"
+
+directory       /var/gfarm-ldap
+rootpw          secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+------------------------------ ここまで ------------------------------
+
 ▽ gfarm.schema
 
 slapd.conf から include されているファイルです．
@@ -330,8 +375,11 @@ name) 属性に base distinguished name を，また objectclass 属性に top
 
 ------------------------------ ここから ------------------------------
 dn: dc=example, dc=com
+objectclass: dcObject
+objectclass: organization
 objectclass: top
-
+dc: example
+o: Example Com
 ------------------------------ ここまで ------------------------------
 
 ▽ LDAP データベースの作成
@@ -366,14 +414,14 @@ Bourne Shell の場合:
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 csh の場合:
 	% set host=ldap.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
-	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 ◇ ~/.gfarmrc
 
