@@ -41,6 +41,9 @@ sig_ignore(int signum)
 void
 usage()
 {
+	fprintf(stderr,
+		"Usage: %s [-H <hostfile>] [<mpirun_options>] command...\n",
+		program_name);
 	exit(1);
 }
 
@@ -49,18 +52,21 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	gfarm_stringlist input_list, output_list, arg_list;
-	int ilist_size, olist_size, alist_size;
+	gfarm_stringlist input_list, output_list, arg_list, option_list;
+	int ilist_size, olist_size, alist_size, optlist_size;
+	int command_index;
 	int pid, status;
 	int i, nhosts, nfrags, save_errno;
 	char *e, **hosts;
-	struct gfarm_file_fragment_info *frags;
 	static char gfarm_prefix[] = "gfarm:";
 #	define GFARM_PREFIX_LEN (sizeof(gfarm_prefix) - 1)
 	static char template[] = "/tmp/mpXXXXXX";
 	char filename[sizeof(template)];
 	FILE *fp;
 	char total_nodes[GFARM_INT32STRLEN];
+
+	char *hostfile = NULL;
+	char *command_name, **delivered_paths = NULL;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -70,16 +76,65 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
+	gfarm_stringlist_init(&optlist_size, &option_list);
+
+	/*
+	 * parse and skip/record options
+	 */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] != '-')
+			break;
+		if (argv[i][1] == 'H') {
+			if (argv[i][2] != '\0') {
+				hostfile = &argv[i][2];
+			} else if (++i < argc) {
+				hostfile = argv[i];
+			} else {
+				fprintf(stderr, "%s: "
+					"missing argument to %s\n",
+					program_name, argv[i - 1]);
+				usage();
+			}
+			goto skip_opt;
+		}
+		if (strcmp(argv[i], "-arch") == 0 ||
+		    strcmp(argv[i], "-np") == 0 ||
+		    strcmp(argv[i], "-stdin") == 0 ||
+		    strcmp(argv[i], "-stdout") == 0 ||
+		    strcmp(argv[i], "-stderr") == 0 ||
+		    strcmp(argv[i], "-nexuspg") == 0 ||
+		    strcmp(argv[i], "-nexusdb") == 0 ||
+		    strcmp(argv[i], "-p4pg") == 0 ||
+		    strcmp(argv[i], "-tcppg") == 0 ||
+		    strcmp(argv[i], "-p4ssport") == 0 ||
+		    strcmp(argv[i], "-mvback") == 0 ||
+		    strcmp(argv[i], "-maxtime") == 0 ||
+		    strcmp(argv[i], "-mem") == 0 ||
+		    strcmp(argv[i], "-cpu") == 0) {
+			/* an option which does have an argument */
+			if (++i >= argc) {
+				fprintf(stderr, "%s: "
+					"missing argument to %s\n",
+					program_name, argv[i - 1]);
+				usage();
+			}
+			gfarm_stringlist_add(&optlist_size, &option_list,
+				argv[i - 1]);
+		}
+		gfarm_stringlist_add(&optlist_size, &option_list, argv[i]);
+skip_opt:
+	}
+	command_index = i;
+	if (command_index >= argc) /* no command name */
+		usage();
+	command_name = argv[command_index];
+
 	gfarm_stringlist_init(&ilist_size, &input_list);
 	gfarm_stringlist_init(&olist_size, &output_list);
-	for (i = 1; i < argc; i++) {
+	for (i = command_index + 1; i < argc; i++) {
 		if (strncmp(argv[i], gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
-			e = gfarm_file_fragment_info_get_all_by_file(
-				argv[i] + GFARM_PREFIX_LEN,
-				&nfrags, &frags);
+			e = gfarm_url_fragment_number(argv[i], &nfrags);
 			if (e == NULL) {
-				gfarm_file_fragment_info_free_all(
-				    nfrags, frags);
 				gfarm_stringlist_add(&ilist_size, &input_list,
 						     argv[i]);
 			} else {
@@ -88,19 +143,46 @@ main(argc, argv)
 			}
 		}
 	}
-	if (gfarm_stringlist_length(input_list) == 0) {
-		fprintf(stderr, "%s: no input file\n", program_name);
-		exit(1);
+
+	if (hostfile == NULL) {
+		if (gfarm_stringlist_length(input_list) == 0) {
+			fprintf(stderr, "%s: no input file\n", program_name);
+			exit(1);
+		}
+		/* XXX - this is only using first input file for scheduling */
+		e = gfarm_url_hosts_schedule(input_list[0], NULL,
+					     &nhosts, &hosts);
+
+		fp = fdopen(mkstemp(strcpy(filename, template)), "w");
+		for (i = 0; i < nhosts; i++)
+			fprintf(fp, "%s\n", hosts[i]);
+		fclose(fp);
+		hostfile = filename;
+	} else {
+		int error_line;
+
+		e = gfarm_hostlist_read(hostfile,
+					&nhosts, &hosts, &error_line);
+		if (e != NULL) {
+			if (error_line != -1)
+				fprintf(stderr, "%s: %s: line %d: %s\n",
+					program_name, hostfile, error_line, e);
+			else
+				fprintf(stderr, "%s: %s: %s\n",
+					program_name, hostfile, e);
+			exit(1);
+		}
 	}
-	/* XXX - use first input file only for scheduling */
-	e = gfarm_url_hosts_schedule(input_list[0], NULL, &nhosts, &hosts);
 
-	/* XXX - deliver binaries */
-
-	fp = fdopen(mkstemp(strcpy(filename, template)), "w");
-	for (i = 0; i < nhosts; i++)
-		fprintf(fp, "%s\n", hosts[i]);
-	fclose(fp);
+	if (strncmp(command_name, gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
+		e = gfarm_url_program_deliver(command_name, nhosts, hosts,
+					      &delivered_paths);
+		if (e != NULL) {
+			fprintf(stderr, "%s: deliver %s: %s\n",
+				program_name, command_name, e);
+			exit(1);
+		}
+	}
 
 	sprintf(total_nodes, "%d", nhosts);
 
@@ -117,10 +199,20 @@ main(argc, argv)
 	gfarm_stringlist_add(&alist_size, &arg_list, "-nolocal");
 #endif
 	gfarm_stringlist_add(&alist_size, &arg_list, "-machinefile");
-	gfarm_stringlist_add(&alist_size, &arg_list, filename);
+	gfarm_stringlist_add(&alist_size, &arg_list, hostfile);
 	gfarm_stringlist_add(&alist_size, &arg_list, "-np");
 	gfarm_stringlist_add(&alist_size, &arg_list, total_nodes);
-	gfarm_stringlist_cat(&alist_size, &arg_list, &argv[1]);
+	gfarm_stringlist_cat(&alist_size, &arg_list, option_list);
+	if (delivered_paths == NULL) {
+		gfarm_stringlist_add(&alist_size, &arg_list, command_name);
+	} else {
+		/*
+		 * XXX assumes that all nodes have same gfarm_root!
+		 * XXX really broken.
+		 */
+		gfarm_stringlist_add(&alist_size,&arg_list,delivered_paths[0]);
+	}
+	gfarm_stringlist_cat(&alist_size, &arg_list, &argv[command_index + 1]);
 
 	switch (pid = fork()) {
 	case 0:
@@ -143,12 +235,16 @@ main(argc, argv)
 
 	for (i = 0; output_list[i] != NULL; i++)
 		gfarm_url_fragment_cleanup(output_list[i], nhosts, hosts);
-	unlink(filename);
+	if (hostfile == filename)
+		unlink(filename);
 
+	if (delivered_paths != NULL)
+		gfarm_strings_free_deeply(nhosts, delivered_paths);
 	gfarm_strings_free_deeply(nhosts, hosts);
 	gfarm_stringlist_free(alist_size, arg_list);
 	gfarm_stringlist_free(olist_size, output_list);
 	gfarm_stringlist_free(ilist_size, input_list);
+	gfarm_stringlist_free(optlist_size, option_list);
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
