@@ -1,5 +1,9 @@
 all:
 	cd nslib; make $@
+	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
+		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
+		cd gfarmlib/@sysdep_dir@; make $@; \
+	fi)
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
@@ -9,6 +13,10 @@ all:
 
 clean veryclean:
 	cd nslib; make $@
+	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
+		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
+		cd gfarmlib/@sysdep_dir@; make $@; \
+	fi)
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
@@ -19,6 +27,10 @@ clean veryclean:
 install:
 	cd include; make $@
 	cd nslib; make $@
+	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
+		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
+		cd gfarmlib/@sysdep_dir@; make $@; \
+	fi)
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
@@ -29,6 +41,10 @@ install:
 distclean:
 	cd include; make $@
 	cd nslib; make $@
+	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
+		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
+		cd gfarmlib/@sysdep_dir@; make $@; \
+	fi)
 	cd gfarmlib; make $@
 	cd gfarmd; make $@
 	cd gfarm; make $@
