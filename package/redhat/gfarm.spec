@@ -60,6 +60,10 @@ Group: Applications/Internet
 Summary: clients for gfarm
 Group: Applications/Internet
 
+%package gfptool
+Summary: parallel tools installed under gfarm:/bin/
+Group: System Environment/Daemons
+
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
@@ -84,6 +88,9 @@ frontends for gfarm
 
 %description client
 clients for gfarm
+
+%description gfptool
+parallel tools installed under gfarm:/bin
 
 %description fsnode
 fsnode for gfarm
@@ -396,6 +403,7 @@ fi
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/LICENSE
+%{doc_prefix}/RELNOTES
 %{doc_prefix}/GUIDE.ja
 %{doc_prefix}/Gfarm-FAQ.en
 %{doc_prefix}/Gfarm-FAQ.ja
@@ -428,9 +436,6 @@ fi
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %{prefix}/bin/gfwhere
-%if %{mpi}
-%{prefix}/bin/gfwc
-%endif
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
@@ -447,13 +452,21 @@ fi
 %{prefix}/bin/ns_readdir
 %endif
 
-%files fsnode
-%{prefix}/sbin/gfsd
-%{prefix}/bin/gfgrep
+%files gfptool
+%{prefix}/bin/gfsplck
+
 %{prefix}/bin/gfcombine
 %{prefix}/bin/gfcombine_hook
 %{prefix}/bin/gfcp
 %{prefix}/bin/gfcp_hook
+
+%{prefix}/bin/gfgrep
+%if %{mpi}
+%{prefix}/bin/gfwc
+%endif
+
+%files fsnode
+%{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
 #%config /etc/gfarm.conf
@@ -462,7 +475,6 @@ fi
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
 %{rc_prefix}/gfarm-slapd
-%{prefix}/bin/gfsplck
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
