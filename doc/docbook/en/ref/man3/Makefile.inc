@@ -14,11 +14,14 @@ DOCBOOK = \
 	gfs_pio_flush.3 \
 	gfs_pio_getc.3 \
 	gfs_pio_getline.3 \
+	gfs_pio_gets.3 \
 	gfs_pio_open.3 \
 	gfs_pio_putc.3 \
 	gfs_pio_putline.3 \
 	gfs_pio_puts.3 \
 	gfs_pio_read.3 \
+	gfs_pio_readdelim.3 \
+	gfs_pio_readline.3 \
 	gfs_pio_seek.3 \
 	gfs_pio_set_local.3 \
 	gfs_pio_set_view_index.3 \
