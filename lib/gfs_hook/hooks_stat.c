@@ -35,7 +35,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
 				url, sec));
 			e = GFS_STAT_SECTION(url, sec, &gs);
-			free(sec);
+			free(sec); /* 'sec' is free'ed here */
 		} else {
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
@@ -92,9 +92,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);
 	}
-	free(url);
-	if (sec != NULL)
-		free(sec);
+	free(url); /* 'sec' is already free'ed */
 	if (e == NULL) {
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
@@ -224,7 +222,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
 				url, sec));
 			e = GFS_STAT_SECTION(url, sec, &gs);
-			free(sec);
+			free(sec); /* 'sec' is free'ed here */
 		} else {
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
@@ -280,9 +278,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);
 	}
-	free(url);
-	if (sec != NULL)
-		free(sec);
+	free(url); /* 'sec' is already free'ed */
 	if (e == NULL) {
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
