@@ -60,6 +60,10 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Summary: document for gfarm
 Group: Documentation
 
+%package libs
+Summary: runtime libraries for gfarm
+Group: System Environment/Libraries
+
 %package frontend
 Summary: frontends for gfarm
 Group: Applications/Internet
@@ -94,6 +98,9 @@ gfarm - Grid datafarm
 
 %description doc
 doc for gfarm
+
+%description libs
+runtime libraries for gfarm
 
 %description frontend
 frontends for gfarm
@@ -520,6 +527,24 @@ fi
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/README.hook.en
 
+%files libs
+%{prefix}/lib/libgfarm.so.0
+%{prefix}/lib/libgfarm.so.0.0.0
+%{prefix}/lib/libgfs_hook.so.0
+%{prefix}/lib/libgfs_hook.so.0.0.0
+%{prefix}/lib/libgfs_hook_no_init.so.0
+%{prefix}/lib/libgfs_hook_no_init.so.0.0.0
+%if %{mpi}
+%{prefix}/lib/libgfs_hook_mpi.so.0
+%{prefix}/lib/libgfs_hook_mpi.so.0.0.0
+%endif
+%if %{have_ns}
+%{prefix}/lib/libns.so.0
+%{prefix}/lib/libns.so.0.0.0
+%{prefix}/lib/libnsexec.so.0
+%{prefix}/lib/libnsexec.so.0.0.0
+%endif
+
 %files frontend
 
 %if %{have_ns}
@@ -625,10 +650,37 @@ fi
 %{prefix}/lib/gfs_hook_no_init_debug.o
 %{prefix}/lib/hooks_init_mpi.c
 %{prefix}/lib/libgfarm.a
+%{prefix}/lib/libgfarm.la
+%{prefix}/lib/libgfarm.so
+%{prefix}/lib/libgfs_hook.a
+%{prefix}/lib/libgfs_hook.la
+%{prefix}/lib/libgfs_hook.so
+%{prefix}/lib/libgfs_hook_debug.a
+%{prefix}/lib/libgfs_hook_debug.la
+%{prefix}/lib/libgfs_hook_debug.so
+%{prefix}/lib/libgfs_hook_debug.so.0
+%{prefix}/lib/libgfs_hook_debug.so.0.0.0
+%{prefix}/lib/libgfs_hook_no_init.a
+%{prefix}/lib/libgfs_hook_no_init.la
+%{prefix}/lib/libgfs_hook_no_init.so
+%{prefix}/lib/libgfs_hook_no_init_debug.a
+%{prefix}/lib/libgfs_hook_no_init_debug.la
+%{prefix}/lib/libgfs_hook_no_init_debug.so
+%{prefix}/lib/libgfs_hook_no_init_debug.so.0
+%{prefix}/lib/libgfs_hook_no_init_debug.so.0.0.0
 %if %{mpi}
 %{prefix}/lib/gfs_hook_mpi.o
 %{prefix}/lib/gfs_hook_mpi_debug.o
+%{prefix}/lib/libgfs_hook_mpi.a
+%{prefix}/lib/libgfs_hook_mpi.la
+%{prefix}/lib/libgfs_hook_mpi.so
+%{prefix}/lib/libgfs_hook_mpi_debug.a
+%{prefix}/lib/libgfs_hook_mpi_debug.la
+%{prefix}/lib/libgfs_hook_mpi_debug.so
+%{prefix}/lib/libgfs_hook_mpi_debug.so.0
+%{prefix}/lib/libgfs_hook_mpi_debug.so.0.0.0
 %endif
+
 
 %if %{have_ns}
 %{prefix}/include/gfarm/comm.h
@@ -642,7 +694,11 @@ fi
 %{prefix}/include/gfarm/soc.h
 %{prefix}/include/gfarm/type.h
 %{prefix}/lib/libns.a
+%{prefix}/lib/libns.la
+%{prefix}/lib/libns.so
 %{prefix}/lib/libnsexec.a
+%{prefix}/lib/libnsexec.la
+%{prefix}/lib/libnsexec.so
 %endif
 
 %files gfront
