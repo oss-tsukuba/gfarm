@@ -251,7 +251,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    &e_major, &e_minor);
 	if (state->gfsl_state == NULL) {
 		/* XXX e_major/e_minor should be used */
-		e = "cannote initiate GSI connection";
+		e = "cannot initiate GSI connection";
 		goto error_free_readable;
 	}
 
