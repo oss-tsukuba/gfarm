@@ -51,7 +51,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 		    char **global_usernamep)
 {
 	int fd = xxx_connection_fd(conn);
-	char *e, *global_username;
+	char *e, *e2, *global_username;
 	OM_uint32 e_major;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
@@ -78,26 +78,26 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
 
 #if 1 /* XXX - global name should be distinguished by DN (distinguish name) */
-	global_username = gfarm_local_to_global_username(
-	    userinfo->authData.userAuth.localName);
-	if (global_username == NULL) {
-		e = xxx_proto_send(conn, "i", GFARM_AUTH_ERROR_DENIED);
-		if (e == NULL)
-			e = xxx_proto_flush(conn);
+	e = gfarm_local_to_global_username(
+	    userinfo->authData.userAuth.localName, &global_username);
+	if (e != NULL) {
+		e2 = xxx_proto_send(conn, "i", GFARM_AUTH_ERROR_DENIED);
+		if (e2 == NULL)
+			e2 = xxx_proto_flush(conn);
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
 		log_error("authorize_gsi: "
 		    "cannot map global username into local username",
 		    userinfo->authData.userAuth.localName);
-		return (e != NULL ? e : GFARM_ERR_AUTHENTICATION);
+		return (e);
 	}
 #else
-	global_username = gfarm_DN_to_global_username(userinfo->distName);
-	if (global_username == NULL) {
-		e = xxx_proto_send(conn, "i", GFARM_AUTH_ERROR_DENIED);
-		if (e == NULL)
-			e = xxx_proto_flush(conn);
+	e = gfarm_DN_to_global_username(userinfo->distName, &global_username);
+	if (e != NULL) {
+		e2 = xxx_proto_send(conn, "i", GFARM_AUTH_ERROR_DENIED);
+		if (e2 == NULL)
+			e2 = xxx_proto_flush(conn);
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
