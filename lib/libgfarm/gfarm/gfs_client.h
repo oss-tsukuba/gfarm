@@ -119,7 +119,7 @@ char *gfs_client_rep_backend_invoke(char *, char *, char *, char *,
 	struct xxx_connection **, struct xxx_connection **,
 	struct gfs_client_rep_backend_state **);
 char *gfs_client_rep_backend_kill(struct gfs_client_rep_backend_state *);
-char *gfs_client_rep_filelist_send(char *server_name, struct xxx_connection *,
+char *gfs_client_rep_filelist_send(char *, struct xxx_connection *,
 	char *, int, struct gfarm_stringlist *, struct gfarm_stringlist *);
 char *gfs_client_rep_filelist_receive(struct xxx_connection *,
 	int *, struct gfarm_stringlist *, struct gfarm_stringlist *, char *);
