@@ -35,7 +35,6 @@ gfarm_metadb_initialize(void)
 	int rv;
 	int port;
 	char *e;
-	LDAPMessage *res;
 
 	if (gfarm_ldap_server_name == NULL)
 		return ("gfarm.conf: ldap_serverhost is missing");
@@ -78,18 +77,16 @@ gfarm_metadb_initialize(void)
 				&version);
 		rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL); 
 	}
-	if (rv != LDAP_SUCCESS)
-		return (ldap_err2string(rv));
-
-	/* sanity check. base_dn can be accessed? */
-	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
-	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
-		if (rv == LDAP_NO_SUCH_OBJECT)
-			return ("gfarm meta-db ldap_base_dn not found");
-		return ("gfarm meta-db ldap_base_dn access failed");
+		(void)gfarm_metadb_terminate();
+		return (ldap_err2string(rv));
 	}
-	ldap_msgfree(res);
+	/* sanity check. base_dn can be accessed? */
+	e = gfarm_metadb_check();
+	if (e != NULL) {
+		(void)gfarm_metadb_terminate();
+		return (e);
+	}
 
 	gfarm_ldap_client_pid = getpid();
 	return (NULL);
@@ -110,6 +107,25 @@ gfarm_metadb_terminate(void)
 	if (rv != LDAP_SUCCESS)
 		return (ldap_err2string(rv));
 
+	return (NULL);
+}
+
+char *
+gfarm_metadb_check(void)
+{
+	int rv;
+	LDAPMessage *res;
+
+	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
+	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
+	if (rv != LDAP_SUCCESS) {
+		if (rv == LDAP_SERVER_DOWN)
+			return ("can't contact gfarm meta-db server");
+		if (rv == LDAP_NO_SUCH_OBJECT)
+			return ("gfarm meta-db ldap_base_dn not found");
+		return ("gfarm meta-db ldap_base_dn access failed");
+	}
+	ldap_msgfree(res);
 	return (NULL);
 }
 

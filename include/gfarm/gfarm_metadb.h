@@ -6,6 +6,7 @@
 
 char *gfarm_metadb_initialize(void);
 char *gfarm_metadb_terminate(void);
+char *gfarm_metadb_check(void);
 
 /* ---------------------------------------- */
 
