@@ -1,4 +1,259 @@
+2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfsetdir/gfsetdir.c:
+	use gfs_realpath().  Client commands should not use canonical path name explicitly.
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/url.c:
+	gfs_realpath: now it expands '~' (instead of shells) from a given Gfarm URL not a given canonical path name.
+
+2003-09-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c:
+	Changed the order of include file <gssapi.h> to eliminate a warning '"IOV_MAX" redefined'.  This is caused by the change of globus_common.h of gpt-3.0.
+
+2003-09-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/io_gfsl.h:
+	make server-side GSI-auth work with user's credential.
+	XXX - this is a temporary workaround, we really need to check server's DN.
+
+2003-09-22  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* snmptool/gmonitor3/.cvsignore, snmptool/gmonitor3/.project:
+	Added a project file for Eclipse.
+
+	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherApp.java, snmptool/gmonitor3/gmonitor/app/SimpleGrapherBaseUI.java, snmptool/gmonitor3/.cvsignore, snmptool/gmonitor3/Makefile, snmptool/gmonitor3/UTYTest.java, snmptool/gmonitor3/build.xml, snmptool/gmonitor3/gmonitor.mani, snmptool/gmonitor3/gmonitor/gui/DataTimeSpace.java, snmptool/gmonitor3/gmonitor/gui/GraphMonitor.java, snmptool/gmonitor3/gmonitor/gui/GraphMonitorModel.java, snmptool/gmonitor3/gmonitor/gui/RawData.java, snmptool/gmonitor3/gmonitor/gui/RawDataElement.java, snmptool/gmonitor3/gmonitor/gui/ViewData.java, snmptool/gmonitor3/gmonitor/gui/ViewDataElement.java, snmptool/gmonitor3/gmonitor/logdata/BinaryBlock.java, snmptool/gmonitor3/gmonitor/logdata/CachedSeekableFile.java, snmptool/gmonitor3/gmonitor/logdata/DataBlock.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroup.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroupElement.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroupTable.java, snmptool/gmonitor3/gmonitor/logdata/DataElement.java, snmptool/gmonitor3/gmonitor/logdata/DataFile.java, snmptool/gmonitor3/gmonitor/logdata/FirstMetaBlock.java, snmptool/gmonitor3/gmonitor/logdata/HostDefBlock.java, snmptool/gmonitor3/gmonitor/logdata/HostDefElement.java, snmptool/gmonitor3/gmonitor/logdata/HttpSeekableFile.java, snmptool/gmonitor3/gmonitor/logdata/IntervalDefBlock.java, snmptool/gmonitor3/gmonitor/logdata/IntervalDefElement.java, snmptool/gmonitor3/gmonitor/logdata/LocalSeekableFile.java, snmptool/gmonitor3/gmonitor/logdata/OIDDefBlock.java, snmptool/gmonitor3/gmonitor/logdata/OIDDefElement.java, snmptool/gmonitor3/gmonitor/logdata/SecondMetaBlock.java, snmptool/gmonitor3/gmonitor/logdata/SeekableFile.java, snmptool/gmonitor3/gmonitor/logdata/SeekableFileFactory.java, snmptool/gmonitor3/gmonitor/logdata/UTY.java, snmptool/gmonitor3/gmonitor/tools/DumpLogFile.java, snmptool/gmonitor3/gmonitor/tools/GlogDump.java, snmptool/gmonitor3/gmonitor/tools/ScanLogDir.java, snmptool/gmonitor3/gmonitor/tools/SumRawDataSeries.java:
+	initial import of gmonitor3
+
+2003-09-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c:
+	Set 0 to the file creation mask during open() and mkdir().
+
+	* server/gfsd/gfsd.c:
+	Set file creation mask to 0 to avoid modification by process's file mode creation mask.
+
+	* gftool/gfsetdir/gfsetdir.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/url.c:
+	Fixed a bug such that gfcd accepts a file as a new working directory.  This bug is substantially introduced in the previous commit.
+	(gfarm_path_canonical_to_url): Added in url.c.  It translates a canonical path to a Gfarm URL.
+
+2003-09-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c:
+	Removed the error check after gfs_client_apply_all_hosts().
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	Added a new error; GFARM_ERR_INCONSISTENT_RECOVERABLE, to show a recoverable error after deleting inconsistent metadata.
+	Added gfs_pio_{local,remote}_mkdir_parent_canonical_path() to create the parent directory.  XXX - if the directory is owned by the different user, create a directory with the permission 0777.  This should be removed in the next major release.
+	(gfs_pio_open_{local,remote}_section): FT - if missing, create the parent directory.  If a physical file is missing, delete the metadata and return GFARM_ERR_INCONSISTENT_RECOVERABLE.
+	(gfarm_file_section_replicate_from_to_internal): FT - if missing, create the parent directory.
+	If creating a replica that owned by the different user, add a group/other write access permission if it is allowed.  XXX - this should be removed in the next major release.
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/gfsd.c:
+	Added gfs_{client,server}_exist(), which is a light-weight version of gfs_client_stat() to check the existence.
+
+2003-09-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir): Plugged a memory leak.
+	(gfs_opendir): Fixed a lookup bug.
+
+	* lib/libgfarm/gfarm/Makefile.inc:
+	Updated dependencies of object files on include files.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	Updated a comment for including "gfs_pio.h".
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	Moved gfs_stat() and related functions from gfs_dir.c to gfs_pio_misc.c.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_stat, gfs_opendir):
+	expand '~' by gfarm_canonical_path().
+	(gfs_stat): gfs_stat() and related functions will be moved back to gfs_pio_misc.c in the next commit.
+
+	* gftool/addpath/addpath.c:
+	Removed a directory check for removal of metadata.  It is not necessary.
+
+2003-09-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/addpath/addpath.c:
+	use a global name rather than a local name for the file owner.
+
+	* lib/libgfarm/gfutil/daemon.c: Added a missing include file.
+
+	* gftool/gfrun/gfrun.c:
+	GFS_PWD is passed without stripping the Gfarm prefix.
+
+	* doc/docbook/ja/ref/man3/gfs_glob.3.docbook, doc/docbook/ja/ref/man3/gfs_glob_add.3.docbook, doc/docbook/ja/ref/man3/gfs_opendir.3.docbook, doc/docbook/ja/ref/man3/gfs_stat.3.docbook, doc/html/en/ref/man3/gfs_glob.3.html, doc/html/en/ref/man3/gfs_glob_add.3.html, doc/html/en/ref/man3/gfs_glob_free.3.html, doc/html/en/ref/man3/gfs_glob_init.3.html, doc/html/en/ref/man3/gfs_opendir.3.html, doc/html/en/ref/man3/gfs_stat.3.html, doc/html/ja/ref/man3/gfs_glob.3.html, doc/html/ja/ref/man3/gfs_opendir.3.html, doc/html/ja/ref/man3/gfs_stat.3.html, man/ja/man3/gfs_glob.3, man/ja/man3/gfs_glob_add.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_stat.3, man/man3/gfs_glob.3, man/man3/gfs_glob_add.3, man/man3/gfs_glob_free.3, man/man3/gfs_glob_init.3, man/man3/gfs_opendir.3, man/man3/gfs_stat.3, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfs_chdir.3.docbook, doc/docbook/en/ref/man3/gfs_glob.3.docbook, doc/docbook/en/ref/man3/gfs_glob_add.3.docbook, doc/docbook/en/ref/man3/gfs_glob_free.3.docbook, doc/docbook/en/ref/man3/gfs_glob_init.3.docbook, doc/docbook/en/ref/man3/gfs_opendir.3.docbook, doc/docbook/en/ref/man3/gfs_stat.3.docbook:
+	Added manual page related gfs_glob() in English.
+	For other functions, function prototypes are modified related to the const type qualifier.
+
+	* doc/html/en/ref/index.html, doc/html/en/ref/man3/gfs_chdir.3.html, doc/html/ja/ref/index.html, doc/html/ja/ref/man3/gfs_chdir.3.html, man/ja/man3/gfs_chdir.3, man/man3/gfs_chdir.3, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfs_chdir.3.docbook, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfs_chdir.3.docbook:
+	Manual page for gfs_chdir(3)
+
+	* include/gfarm/gfarm_misc.h, include/gfarm/gfs.h, include/gfarm/gfs_glob.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/url.c (gfs_chdir):
+	the argument of this function can be a Gfarm URL not only a canonical (relative) path name.
+	Other files are modified to eliminate warnings related to the const type qualifier.
+
+	* gftool/gfsetdir/gfsetdir.c:
+	use gfarm_canonical_path("~") instead of direct use of gfarm_get_global_username() to obtain the home directory.
+	Eliminated a check code whether the specified directory in a spool directory exists or not.  The almost same check is done in gfarm_canonical_path().
+
+	* gftool/gfrun/gfrun.c, lib/libgfarm/gfarm/config.c:
+	The current working directory in a Gfarm file system is passed to remote parallel processes.
+
+	* lib/libgfarm/gfarm/gfs_dir.c: Added a new function, gfs_chdir().
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/url.c (gfs_getcwd):
+	Fixed a bug in the default case.  Use the common function to expand a user's home directory.
+	(gfarm_canonical_path_for_creation): 'gfmkdir gfarm:' now works fine.
+
+	* lib/libgfarm/gfarm/url.c:
+	Backed out the previous change.  It is not necessary, sorry.
+
+	* lib/libgfarm/gfarm/url.c:
+	Fixed a possible segfault that is introduced in the previous commit.
+	[cvs log in the revision 1.9] plugged a memory leak. (I forget to mention.)
+
+2003-09-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrmdir/gfrmdir.c, gftool/gfmkdir/gfmkdir.c:
+	Added the -h option, which is requested by the Bug #3 in bugzilla-ja.
+
+	* gftool/gfls/gfls.c:
+	Fixed a multi-column display format bug with the -F option reported by Bug 5 in Gfarm bugzills-ja.
+	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=5
+
+	* lib/libgfarm/gfarm/url.c:
+	Took care of the case such that a new directory is specified with trailing '/'s, such as 'gfmkdir /tatebe/abc/' and 'gfmkdir /tatebe/abc///'.
+	This change also includes a checking code for attempting to create the root directory in gfarm_canonical_path_for_creation().  Although this check should not be necessary here, it is needed to prevent succeeding errors due to lack of care of this case mainly in gfs_client.c.
+
+2003-09-10  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.install, debian/gfarm-gfptool.install:
+	moved gfreg command from gfptool to client package
+
+	* debian/control:
+	Added dependecy of 'gfptool' package on 'client' packeage.
+
+2003-09-10  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	Added dependecy of 'gfptool' package on 'client' packeage.
+
+2003-09-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	Modified the section related to a creation of user's working directory.
+	It should be created by 'gfmkdir gfarm:~' or 'gfmkdir gfarm:' instead of 'gfmkdir gfarm:/$USER'.
+
+	* lib/libgfarm/gfarm/url.c:
+	Fixed a bug such that gfmkdir gfarm:~ or gfmkdir gfarm:~username does not work.
+
+2003-09-10  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: added manpages for gfcd,gfmkdir,gfpwd,gfrmdir,gfsetdir
+
+	* debian/gfarm-client.install:
+	added gfmkdir,gfpwd,gfrmdir,gfsetdir to client package
+
+	* debian/changelog: fixed a missing
+
+2003-09-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	- explicitly specify /usr/grid/sbin about the tools in this directory.
+	- mention $PATH in users' setting section.
+
+	* debian/gfarm-gfptool.install, gfptool/util/Makefile, package/redhat/gfarm.spec, package/solaris/gfarm-gfptool.files:
+	change installation directory of gfregister from $prefix/bin to $prefix/sbin,
+	because the purpose of this command is administration only.
+
 2003-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Added the description for a new command 'gfregister'.
+
+	* INSTALL.en: Improved the wording.
+
+2003-09-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.in:
+	change the order to call AC_CHECK_LIB(nsl, gethostname) and
+	AC_CHECK_LIB(socket, socket).
+	OpenLDAP cannot be linked on Solaris without this fix.
+
+	* INSTALL.ja: - use gfmkdir to create users' working directories.
+	- add "gfhost | gfrun -H - hostname" for installation confirmation.
+	- deprecate "make gfregister", and introduce "gfregister" command.
+	- mention actual name of startup scripts.
+	- mention that sharesecret is the only authenticaion for a non-privileged user.
+	- change "yu-za-" (in Japanese) to "yu-za"
+	- change some japanese punctuations to "," and ".".
+
+	* INSTALL.en: - use gfmkdir to create users' working directories.
+	- add "gfhost | gfrun -H - hostname" for installation confirmation.
+	- deprecate "make gfregister", and introduce "gfregister" command.
+	- mention actual name of startup scripts.
+	- mention that sharesecret is the only authenticaion for a non-privileged user.
+
+	* configure: regen
+
+	* configure.in: forgot to mkdir in previous change
+
+	* configure: regen
+
+	* debian/gfarm-client.install, debian/gfarm-gfptool.install, debian/rules, package/solaris/gfarm-client.files, package/solaris/gfarm-gfptool.files, package/redhat/gfarm.spec:
+	change "gfreg" from a client tool to a gfptool,
+	as described in its Makefile and INSTALL.{ja,en}.
+
+	* configure.in, debian/gfarm-gfptool.install, gfptool/Makefile, gfptool/util/Makefile, gfptool/util/gfregister.in, package/redhat/gfarm.spec, package/solaris/gfarm-gfptool.files:
+	introduce an administration tool "gfregister".
+	this tool makes "make gfregister" obsolete.
+
+	* lib/libgfarm/gfarm/url.c:
+	use a light way to compare a string with "".
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	make gfs_realpath() really work with path="/".
+	previous version returns "gfarm:" instead of "gfarm:/" for root directory.
+
+	gfmkdir cannot create toplevel directory without this fix.
+
+2003-09-05  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: add man pages for libgfarm
+
+2003-09-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* util/gfront/Makefile:
+	use a shell variable instead of a hardcoded name
+
+2003-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* server/gfsd/gfsd.c:
+	Added an existence check of the spool directory at the startup time.
+
+2003-09-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.in: - automatically search openldap
+	- make configure script fail, if openldap isn't found
+	- make configure script fail, if globus-makefile-header fails.
+	- use AC_MSG_*(), instead of echo
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/io_fd.h, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/io_gfsl.h:
+	fix for Bugzilla Bug 2: gsi_auth mode does not deligate the user credential
+
+2003-09-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: change version number from 1.0b3 to 1.0b4
+	add some man files and html files
+
+2003-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0b4.
 
 	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
 
@@ -1998,7 +2253,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.18 2003/08/20 12:07:00 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.19 2003/09/05 10:22:38 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
