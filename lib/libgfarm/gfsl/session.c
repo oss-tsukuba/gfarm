@@ -331,7 +331,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
     }
 
     switch (which) {
-	long param[NUM_NEGO_PARAM];
+	gfarm_int32_t param[NUM_NEGO_PARAM];
 
 	case GFARM_SS_ACCEPTOR: {
 	    int iQOP, iQOPF;
@@ -339,7 +339,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    int iMaxF;
 	    int iConf, iConfF;
 	   
-	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
+	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
 	         goto Done;
 	    iQOP = param[NEGO_PARAM_QOP];
 	    iQOPF = param[NEGO_PARAM_QOP_FORCE];
@@ -408,7 +408,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 
 	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
 
-	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
+	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
 		goto Done;
 
 	    /* End of acceptor side negotiation. */
@@ -423,10 +423,10 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
 	    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
-	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
+	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
 		goto Done;
 
-	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
+	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
 		goto Done;
 
 	    retQOP = param[NEGO_PARAM_QOP];
@@ -980,7 +980,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     char *initiatorDistName = NULL;
     gss_cred_id_t deleCred = GSS_C_NO_CREDENTIAL;
     char *credName = NULL;
-    int acknack = GFARM_SS_AUTH_NACK;
+    gfarm_int32_t acknack = GFARM_SS_AUTH_NACK;
 
     gss_qop_t qOp;
     unsigned int maxTransSize;
@@ -1040,24 +1040,24 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 	majStat = GSS_S_UNAUTHORIZED;
 	/* Send NACK. */
 	acknack = GFARM_SS_AUTH_NACK;
-	(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
+	(void)gfarmWriteInt32(fd, &acknack, 1);
 	goto Fail;
     } else {
 	int type = gfarmAuthGetAuthEntryType(entry);
 	if (type == GFARM_AUTH_USER) {
 	    /* Send ACK. */
 	    acknack = GFARM_SS_AUTH_ACK;
-	    (void)gfarmWriteLongs(fd, (long *)&acknack, 1);
+	    (void)gfarmWriteInt32(fd, &acknack, 1);
 	} else if (type == GFARM_AUTH_HOST) {
 	    /* check peer name is actually allowed */
 	    if (strcmp(peerName, entry->authData.hostAuth.FQDN) == 0) {
 		/* Send ACK. */
 		acknack = GFARM_SS_AUTH_ACK;
-		(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
+		(void)gfarmWriteInt32(fd, &acknack, 1);
 	    } else {
 		/* Send NACK. */
 		acknack = GFARM_SS_AUTH_NACK;
-		(void)gfarmWriteLongs(fd, (long *)&acknack, 1);
+		(void)gfarmWriteInt32(fd, &acknack, 1);
 		goto Fail;
 	    }
 	}
@@ -1138,7 +1138,7 @@ secSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr, needClose)
     gss_ctx_id_t sCtx = GSS_C_NO_CONTEXT;
     char *acceptorDistName = NULL;
     char *credName = NULL;
-    int acknack = GFARM_SS_AUTH_NACK;
+    gfarm_int32_t acknack = GFARM_SS_AUTH_NACK;
 
     gss_qop_t qOp;
     unsigned int maxTransSize;
@@ -1194,7 +1194,7 @@ secSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr, needClose)
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (gfarmReadLongs(fd, (long *)&acknack, 1) != 1) {
+    if (gfarmReadInt32(fd, &acknack, 1) != 1) {
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
     }
@@ -1668,14 +1668,14 @@ negotiateConfigParamInitiatorReceive(events, fd, closure, t)
      const struct timeval *t;
 {
     struct negotiateConfigParamInitiatorState *state = closure;
-    long param[NUM_NEGO_PARAM];
+    gfarm_int32_t param[NUM_NEGO_PARAM];
 
     if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 	assert(events == GFARM_EVENT_TIMEOUT);
 	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
     } else {
 	assert(events == GFARM_EVENT_READ);
-	if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
+	if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
 	    state->retQOP = param[NEGO_PARAM_QOP];
 	    state->retMaxT = param[NEGO_PARAM_MAX_TRANS_SIZE];
 	    state->retConf = param[NEGO_PARAM_OTHER_CONFIG];
@@ -1699,7 +1699,7 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
 {
     struct negotiateConfigParamInitiatorState *state = closure;
     gfarmSecSessionOption *canPtr = state->canPtr;
-    long param[NUM_NEGO_PARAM];
+    gfarm_int32_t param[NUM_NEGO_PARAM];
     struct timeval timeout;
     int rv;
 
@@ -1710,7 +1710,7 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
     param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
     param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
-    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
+    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
 	timeout.tv_sec = GFARM_GSS_AUTH_TIMEOUT; timeout.tv_usec = 0;
 	rv = gfarm_eventqueue_add_event(state->q, state->readable, &timeout);
 	if (rv == 0) {
@@ -1908,7 +1908,7 @@ secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
      const struct timeval *t;
 {
     struct gfarmSecSessionInitiateState *state = closure;
-    int acknack;
+    gfarm_int32_t acknack;
 
     if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 	assert(events == GFARM_EVENT_TIMEOUT);
@@ -1918,7 +1918,7 @@ secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
 	/*
 	 * Phase 2: Receive authorization acknowledgement.
 	 */
-	if (gfarmReadLongs(fd, (long *)&acknack, 1) != 1) {
+	if (gfarmReadInt32(fd, &acknack, 1) != 1) {
 	    state->majStat = GSS_S_UNAUTHORIZED;
 	} else if (acknack == GFARM_SS_AUTH_NACK) {
 	    state->majStat = GSS_S_UNAUTHORIZED;

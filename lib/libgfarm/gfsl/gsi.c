@@ -219,11 +219,12 @@ gfarmGssSendToken(fd, gsBuf)
      int fd;
      gss_buffer_t gsBuf;
 {
-    int iLen = (int)(gsBuf->length);
-    if (gfarmWriteLongs(fd, (long *)&iLen, 1) != 1) {
+    gfarm_int32_t iLen = (gfarm_int32_t)(gsBuf->length);
+
+    if (gfarmWriteInt32(fd, &iLen, 1) != 1) {
 	return -1;
     }
-    if (gfarmWriteBytes(fd, (char *)(gsBuf->value), iLen) != iLen) {
+    if (gfarmWriteInt8(fd, (gfarm_int8_t *)(gsBuf->value), iLen) != iLen) {
 	return -1;
     }
     return iLen;
@@ -235,8 +236,8 @@ gfarmGssReceiveToken(fd, gsBuf)
      int fd;
      gss_buffer_t gsBuf;
 {
-    int iLen;
-    char *buf = NULL;
+    gfarm_int32_t iLen;
+    gfarm_int8_t *buf = NULL;
 
     if (gsBuf->value != NULL) {
 	OM_uint32 minStat;
@@ -245,7 +246,7 @@ gfarmGssReceiveToken(fd, gsBuf)
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
-    if (gfarmReadLongs(fd, (long *)&iLen, 1) != 1) {
+    if (gfarmReadInt32(fd, &iLen, 1) != 1) {
 	return -1;
     }
 
@@ -259,7 +260,7 @@ gfarmGssReceiveToken(fd, gsBuf)
 	return -1;
     }
 
-    if (gfarmReadBytes(fd, buf, iLen) != iLen) {
+    if (gfarmReadInt8(fd, buf, iLen) != iLen) {
 	(void)free(buf);
 	return -1;
     }
@@ -645,6 +646,7 @@ gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
     int sum = 0;
     int rem = n;
     int len;
+    gfarm_int32_t n_buf = n;
 
     /*
      * Send a length of a PLAIN TEXT.
@@ -659,7 +661,7 @@ gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
 	goto Done;
     }
 
-    if (gfarmWriteLongs(fd, (long *)&n, 1) != 1) {
+    if (gfarmWriteInt32(fd, &n_buf, 1) != 1) {
 	majStat = GSS_S_CALL_INACCESSIBLE_WRITE;
 	goto Done;
     }
@@ -724,7 +726,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
     gss_buffer_desc outputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t otPtr = &outputToken;
 
-    int n;
+    gfarm_int32_t n;
     int sum = 0;
     int rem;
     int len;
@@ -739,7 +741,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
      *		encrypted.
      */
 
-    i = gfarmReadLongs(fd, (long *)&n, 1);
+    i = gfarmReadInt32(fd, &n, 1);
     if (i == 0) {
 	ret = 0;
 	n = 0;

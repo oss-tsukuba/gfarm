@@ -21,6 +21,9 @@
 
 #define MAX_BACKLOG	10
 
+#define	OCTETS_PER_32BIT	4	/* 32/8 */
+#define	OCTETS_PER_16BIT	2	/* 16/8 */
+
 static int	isNonBlock(int fd);
 
 static int
@@ -255,9 +258,9 @@ gfarmWaitReadable(fd)
 
 
 int
-gfarmReadBytes(fd, buf, len)
+gfarmReadInt8(fd, buf, len)
      int fd;
-     char *buf;
+     gfarm_int8_t *buf;
      int len;
 {
     int sum = 0;
@@ -283,18 +286,18 @@ gfarmReadBytes(fd, buf, len)
 
 
 int
-gfarmReadShorts(fd, buf, len)
+gfarmReadInt16(fd, buf, len)
      int fd;
-     short *buf;
+     gfarm_int16_t *buf;
      int len;
 {
     int i;
     int n;
-    short s;
+    gfarm_int16_t s;
 
     for (i = 0; i < len; i++) {
-	n = gfarmReadBytes(fd, (char *)&s, sizeof(short));
-	if (sizeof(short) != n) {
+	n = gfarmReadInt8(fd, (gfarm_int8_t *)&s, OCTETS_PER_16BIT);
+	if (n != OCTETS_PER_16BIT) {
 	    return i;
 	}
 	buf[i] = ntohs(s);
@@ -305,18 +308,18 @@ gfarmReadShorts(fd, buf, len)
 
 
 int
-gfarmReadLongs(fd, buf, len)
+gfarmReadInt32(fd, buf, len)
      int fd;
-     long *buf;
+     gfarm_int32_t *buf;
      int len;
 {
     int i;
     int n;
-    long l;
+    gfarm_int32_t l;
 
     for (i = 0; i < len; i++) {
-	n = gfarmReadBytes(fd, (char *)&l, sizeof(long));
-	if (sizeof(long) != n) {
+	n = gfarmReadInt8(fd, (gfarm_int8_t *)&l, OCTETS_PER_32BIT);
+	if (n != OCTETS_PER_32BIT) {
 	    return i;
 	}
 	buf[i] = ntohl(l);
@@ -327,9 +330,9 @@ gfarmReadLongs(fd, buf, len)
 
 
 int
-gfarmWriteBytes(fd, buf, len)
+gfarmWriteInt8(fd, buf, len)
      int fd;
-     char *buf;
+     gfarm_int8_t *buf;
      int len;
 {
     int sum = 0;
@@ -348,19 +351,19 @@ gfarmWriteBytes(fd, buf, len)
 
 
 int
-gfarmWriteShorts(fd, buf, len)
+gfarmWriteInt16(fd, buf, len)
      int fd;
-     short *buf;
+     gfarm_int16_t *buf;
      int len;
 {
     int i;
     int n;
-    short s;
+    gfarm_int16_t s;
     
     for (i = 0; i < len; i++) {
 	s = htons(buf[i]);
-	n = gfarmWriteBytes(fd, (char *)&s, sizeof(short));
-	if (sizeof(short) != n) {
+	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&s, OCTETS_PER_16BIT);
+	if (n != OCTETS_PER_16BIT) {
 	    return i;
 	}
     }
@@ -369,19 +372,19 @@ gfarmWriteShorts(fd, buf, len)
 
 
 int
-gfarmWriteLongs(fd, buf, len)
+gfarmWriteInt32(fd, buf, len)
      int fd;
-     long *buf;
+     gfarm_int32_t *buf;
      int len;
 {
     int i;
     int n;
-    long l;
+    gfarm_int32_t l;
     
     for (i = 0; i < len; i++) {
 	l = htonl(buf[i]);
-	n = gfarmWriteBytes(fd, (char *)&l, sizeof(long));
-	if (sizeof(long) != n) {
+	n = gfarmWriteInt8(fd, (gfarm_int8_t *)&l, OCTETS_PER_32BIT);
+	if (n != OCTETS_PER_32BIT) {
 	    return i;
 	}
     }
