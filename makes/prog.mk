@@ -2,11 +2,13 @@ install: all prog-install post-install-hook
 clean: prog-clean post-clean-hook
 veryclean: prog-veryclean post-veryclean-hook
 distclean: prog-distclean post-distclean-hook
+gfregister: prog-gfregister post-gfregister-hook
 
 post-install-hook:
 post-clean-hook:
 post-veryclean-hook:
 post-distclean-hook:
+post-gfregister-hook:
 
 $(PROGRAM): $(OBJS) $(DEPLIBS)
 	$(CC) -o $(PROGRAM) $(CFLAGS) $(OBJS) $(LDLIBS)
@@ -22,3 +24,5 @@ prog-veryclean: clean
 
 prog-distclean: veryclean
 	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
+
+prog-gfregister:

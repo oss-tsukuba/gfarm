@@ -1,4 +1,6 @@
+gfregister: prog-gfregister gfptool-gfregister post-gfregister-hook
+
 include $(top_srcdir)/makes/prog.mk
 
-gfregister: $(PROGRAM)
+gfptool-gfregister: $(PROGRAM)
 	-gfreg $(PROGRAM) gfarm:/bin/$(PROGRAM)

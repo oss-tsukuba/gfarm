@@ -3,12 +3,14 @@ install: man-install post-install-hook
 clean: man-clean post-clean-hook
 veryclean: man-veryclean post-very-clean-hook
 distclean: man-distclean post-distclean-hook
+gfregister: man-gfregister post-gfregister-hook
 
 post-all-hook:
 post-install-hook:
 post-clean-hook:
 post-very-clean-hook:
 post-distclean-hook:
+post-gfregister-hook:
 
 man-all:
 
@@ -27,3 +29,5 @@ man-veryclean: clean
 
 man-distclean: veryclean
 	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
+
+man-gfregister:
