@@ -35,6 +35,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gsp->st_size;
+		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gsp->st_atimespec.tv_sec;
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
@@ -57,6 +58,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	buf->st_uid = getuid();
 	buf->st_gid = getgid();
 	buf->st_size = status.st_size;
+	buf->st_blksize = GFS_BLKSIZE;
 	buf->st_atime = status.st_atimespec.tv_sec;
 	buf->st_mtime = status.st_mtimespec.tv_sec;
 	buf->st_ctime = status.st_ctimespec.tv_sec;
@@ -145,6 +147,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gsp->st_size;
+		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gsp->st_atimespec.tv_sec;
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
@@ -167,6 +170,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	buf->st_uid = getuid();
 	buf->st_gid = getgid();
 	buf->st_size = status.st_size;
+	buf->st_blksize = GFS_BLKSIZE;
 	buf->st_atime = status.st_atimespec.tv_sec;
 	buf->st_mtime = status.st_mtimespec.tv_sec;
 	buf->st_ctime = status.st_ctimespec.tv_sec;

@@ -46,6 +46,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gs.st_size;
+		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
@@ -177,6 +178,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gs.st_size;
+		buf->st_blksize = GFS_BLKSIZE;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
