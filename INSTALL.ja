@@ -247,6 +247,9 @@ argsfile        /var/gfarm-ldap/slapd.args
 # enable global write access for now. XXX
 defaultaccess write
 
+# unlimit search result
+sizelimit 2000000000
+
 #######################################################################
 # ldbm database definitions
 #######################################################################
