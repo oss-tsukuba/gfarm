@@ -125,25 +125,47 @@ gfs_server_get_request(struct xxx_connection *client, char *diag,
 }
 
 void
-gfs_server_put_reply(struct xxx_connection *client, char *diag,
-	int ecode, char *format, ...)
+gfs_server_put_reply_common(struct xxx_connection *client, char *diag,
+	int ecode, char *format, va_list *app)
 {
-	va_list ap;
 	char *e;
 
-	va_start(ap, format);
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL)
 		fatal_proto(diag, e);
 	if (ecode == 0) {
-		e = xxx_proto_vsend(client, &format, &ap);
+		e = xxx_proto_vsend(client, &format, app);
 		if (e != NULL)
 			fatal_proto(diag, e);
 	}
-	va_end(ap);
 
 	if (ecode == 0 && *format != '\0')
 		fatal(diag, "invalid format character to put reply");
+}
+
+void
+gfs_server_put_reply(struct xxx_connection *client, char *diag,
+	int ecode, char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gfs_server_put_reply_common(client, diag, ecode, format, &ap);
+	va_end(ap);
+}
+
+void
+gfs_server_put_reply_with_errno(struct xxx_connection *client, char *diag,
+	int eno, char *format, ...)
+{
+	va_list ap;
+	int ecode = gfs_errno_to_proto_error(eno);
+
+	if (ecode == GFS_ERROR_UNKNOWN)
+		gflog_info(diag, strerror(eno));
+	va_start(ap, format);
+	gfs_server_put_reply_common(client, diag, ecode, format, &ap);
+	va_end(ap);
 }
 
 int file_table_free = 0;
@@ -239,8 +261,7 @@ gfs_server_open(struct xxx_connection *client)
 	}
 	free(path);
 
-	gfs_server_put_reply(client, "open",
-	    gfs_errno_to_proto_error(save_errno), "i", fd);
+	gfs_server_put_reply_with_errno(client, "open", save_errno, "i", fd);
 }
 
 void
@@ -252,8 +273,7 @@ gfs_server_close(struct xxx_connection *client)
 
 	save_errno = file_table_close(fd);
 
-	gfs_server_put_reply(client, "close",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "close", save_errno, "");
 }
 
 void
@@ -271,8 +291,8 @@ gfs_server_seek(struct xxx_connection *client)
 	else
 		offset = rv;
 
-	gfs_server_put_reply(client, "seek",
-	    gfs_errno_to_proto_error(save_errno), "o", offset);
+	gfs_server_put_reply_with_errno(client, "seek", save_errno,
+	    "o", offset);
 }
 
 void
@@ -289,8 +309,8 @@ gfs_server_read(struct xxx_connection *client)
 		size = GFS_PROTO_MAX_IOSIZE;
 	rv = read(file_table_get(fd), buffer, size);
 
-	gfs_server_put_reply(client, "read",
-	    rv == -1 ? gfs_errno_to_proto_error(errno) : 0, "b", rv, buffer);
+	gfs_server_put_reply_with_errno(client, "read", rv == -1 ? errno : 0,
+	    "b", rv, buffer);
 }
 
 void
@@ -313,8 +333,7 @@ gfs_server_write(struct xxx_connection *client)
 		size = GFS_PROTO_MAX_IOSIZE;
 	rv = write(file_table_get(fd), buffer, size);
 
-	gfs_server_put_reply(client, "write",
-	    rv == -1 ? gfs_errno_to_proto_error(errno) : 0,
+	gfs_server_put_reply_with_errno(client, "write", rv == -1 ? errno : 0,
 	    "i", (gfarm_int32_t)rv);
 }
 
@@ -333,8 +352,7 @@ gfs_server_link(struct xxx_connection *client)
 	free(fpath);
 	free(tpath);
 
-	gfs_server_put_reply(client, "link",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "link", save_errno, "");
 }
 
 void
@@ -350,8 +368,7 @@ gfs_server_unlink(struct xxx_connection *client)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply(client, "unlink",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "unlink", save_errno, "");
 }
 
 void
@@ -369,8 +386,7 @@ gfs_server_rename(struct xxx_connection *client)
 	free(fpath);
 	free(tpath);
 
-	gfs_server_put_reply(client, "rename",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "rename", save_errno, "");
 }
 
 void
@@ -387,8 +403,7 @@ gfs_server_mkdir(struct xxx_connection *client)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply(client, "mkdir",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "mkdir", save_errno, "");
 }
 
 void
@@ -404,8 +419,7 @@ gfs_server_rmdir(struct xxx_connection *client)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply(client, "rmdir",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "rmdir", save_errno, "");
 }
 
 void
@@ -422,8 +436,7 @@ gfs_server_chmod(struct xxx_connection *client)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply(client, "chmod",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "chmod", save_errno, "");
 }
 
 void
@@ -445,8 +458,7 @@ gfs_server_chgrp(struct xxx_connection *client)
 	free(path);
 	free(group);
 
-	gfs_server_put_reply(client, "chgrp",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "chgrp", save_errno, "");
 }
 
 void
@@ -464,8 +476,7 @@ gfs_server_exist(struct xxx_connection *client)
 	}
 	free(path);
 
-	gfs_server_put_reply(client, "exist",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "exist", save_errno, "");
 }
 
 void
@@ -496,8 +507,7 @@ gfs_server_digest(struct xxx_connection *client)
 	}
 	free(digest_type);
 
-	gfs_server_put_reply(client, "digest",
-	    gfs_errno_to_proto_error(save_errno),
+	gfs_server_put_reply_with_errno(client, "digest", save_errno,
 	    "bo", digest_length, digest_value, filesize);
 }
 
@@ -1042,8 +1052,7 @@ gfs_server_chdir(struct xxx_connection *client)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply(client, "chdir",
-	    gfs_errno_to_proto_error(save_errno), "");
+	gfs_server_put_reply_with_errno(client, "chdir", save_errno, "");
 }
 
 struct gfs_server_command_context {
