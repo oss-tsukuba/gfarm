@@ -38,7 +38,7 @@ public class DataTimeSpace {
 	long largestGroupInterval = 1;
 	long smallestGroupInterval = 1;
 	
-	private long COUNTMAX = 4294967295L; // 32bit
+	private long COUNTMAX = 4294967296L; // 32bit
 	private long MAXbps = 1500L*1000L*1000L;  // 1.5Gbps
 	
 	public long getBeginDateTime() throws IOException
@@ -51,7 +51,7 @@ public class DataTimeSpace {
 			throw new IOException();
 		}
 	}
-		
+	
 	public long getLatestDateTime() throws IOException
 	{
 		if(files != null && files.size() > 0 ){
@@ -284,8 +284,8 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 					value = COUNTMAX + value;  // MAX - prev + now
 				}
 				value = (long) Math.rint((double)(value * 1000) / (double)during); // per second (v / (d / 1000));
-				if(value >= 0 && (value * 8L) <= MAXbps){	
-//				if(value >= 0){	
+//				if(value >= 0 && (value * 8L) <= MAXbps){	
+				if(value >= 0){	
 					re.setValid(true);
 				} else {
 					System.out.println("invalid value: " + (value * 8L));
