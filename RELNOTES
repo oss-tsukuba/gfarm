@@ -1,6 +1,45 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0.3
+============================
+
+[2004.5.18]
+
+Updated Features
+
+ * Added new I/O functions; gfs_mkdir, gfs_rmdir, gfs_pio_gets, and
+     gfs_pio_readline.
+
+ * gfrmdir - it terminates very quickly. (Bugzilla-ja #20)
+
+ * gfstat - it also displays the information of assumed fragment
+     number. (Bugzilla-ja #16)
+
+ * gfexec - The way to pass node number and other information to a
+     gfarm process is changed again to be able to be inherited by any
+     child process.  This has a side effect that all gfarm
+     applications need to be re-compiled.
+
+     '-s', '-I', '-N' options are added.
+
+ * Bug fix
+
+   (libgfarm.a)
+
+   - Fixed a segfault problem especially when using syscall hooking
+     library.
+
+   (gfs_hook.o)
+
+   - Fixed a bug such that select() results in timeout when checking
+     readability of a file descriptor for a remote Gfarm file.
+
+   - Fixed a bug such that a parallel process cannot be executed
+     correctly, which was introduced in the version 1.0.2.
+
+   - Fixed a bug when hooking fstat().
+
 Release note for Gfarm 1.0.2
 ============================
 

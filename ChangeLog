@@ -1,4 +1,219 @@
+2004-05-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	change version number from 1.0.2.1 to 1.0.3
+
+2004-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfcp_hook/gfcp_hook.c: Deleted Gfarm related APIs.
+
+2004-05-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_fstat.c:
+	(__fstat(64)/__fxstat(64)): fixed a bug they refer file type before checking
+	whether file/directory is opened.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h (__close):
+	skips gfs_pio_close()/gfs_closedir() it file/dirctory is refered
+	by multiple descriptor.
+
+2004-04-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio.c:
+	- add gfs_pio_gets() to make conversion from fgets() easy.
+	- add gfs_pio_readline() to deal with the following report:
+		http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=24
+	  this implementation may not be completed, because the detail of
+	  the function specification is somewhat different from the report
+	  in bugzilla.
+
+2004-04-26  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	__dup2() hook duplicates Gfarm directory's descriptor
+
+2004-04-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_fstat.c:
+	Changed nlink from 1 to 2 for a directory.  It should be at least 2.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_stat_section):
+	fixed a bug not to return NULL when the section is created but not closed yet.
+
+2004-04-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfexec.1.html, man/ja/man1/gfexec.1, man/man1/gfexec.1, doc/html/en/ref/man1/gfexec.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfexec.1.docbook, doc/docbook/ja/ref/man1/gfexec.1.docbook, gftool/gfexec/gfexec.c:
+	- make any child process inherit its parent's node size and rank,
+	  as discussed in gfarm-cvs mailing list.
+	- add -s, -I, -N option to gfexec to explicitly change node size and rank.
+
+	* lib/libgfarm/gfarm/config.c:
+	make any child process inherit its parent's node size and rank,
+	as discussed in gfarm-cvs mailing list.
+
+2004-04-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (gfs_pio_view_section_stat):
+	fixed a bug not to return NULL when the section is created but not closed yet.  It is also necessary to fix gfs_stat() and gfs_stat_section(), but it is not done yet because we need to figure out the side effect.
+
+2004-04-19  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: new release version
+
+2004-04-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	change version number from 1.0.2 to 1.0.2.1
+
+2004-04-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_init.c (gfs_hook_initialize):
+	When gfs_pio_set_local() is not called after gfarm_initialize(), assume gfs_pio_set_local(0, 1).
+
+	* lib/gfs_hook/hooks_init.c (gfs_hook_initialize):
+	Fixed oops.  gfs_pio_set_local(0, 1) should not be called here.
+
+2004-04-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* debian/libgfarm-dev.manpages, package/redhat/gfarm.spec:
+	Added manual pages of gfs_mkdir and gfs_rmdir.
+
+	* lib/libgfarm/gfarm/config.c (gfarm_initialize):
+	Fixed a segfault problem especially when using syscall hooking library.
+
+2004-04-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_rmdir.3, man/man3/gfs_mkdir.3, man/man3/gfs_rmdir.3, doc/html/en/ref/index.html, doc/html/en/ref/man3/gfs_mkdir.3.html, doc/html/en/ref/man3/gfs_rmdir.3.html, doc/html/ja/ref/index.html, doc/html/ja/ref/man3/gfs_mkdir.3.html, doc/html/ja/ref/man3/gfs_rmdir.3.html:
+	Added gfs_mkdir and gfs_rmdir in index.html.
+	regen.
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfs_mkdir.3.docbook, doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfs_mkdir.3.docbook, doc/docbook/ja/ref/man3/gfs_rmdir.3.docbook:
+	Deleted 'NOT SUPPORTED YET'.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_mkdir): honor umask.
+
+	* gftool/gfstat/gfstat.c:
+	Take care of the case of program (not a fragmented file).
+
+	* gftool/gfstat/gfstat.c:
+	Display the information of assumed fragment number. [Bugzilla-ja #16]
+
+	* gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c, lib/libgfarm/gfarm/gfs_dir.c:
+	Added gfs_mkdir() and gfs_rmdir().
+	gfrmdir now does not remove physical directories in spool directories without new '-a' option.
+
+2004-04-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	do not return real file descriptor for remote GFS_File,
+	but return a descriptor of "/dev/null",
+	to make select(2) work with this descriptor.
+	idea from tatebe-san.
+
+2004-04-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* LICENSE: Added 2004.
+
+2004-04-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexec/gfexec.c: if fork() isn't used, call gfarm_terminate().
+
+2004-04-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en, doc/GUIDE.ja:
+	Deleted the description the option 'u' of gfrun command.  It is obsolete.
+
+	* INSTALL.en, INSTALL.ja:
+	Added the reference to README.hook.en regarding syscall-hook library.
+
+	* gftool/gfexec/gfexec.c:
+	Take care the case when gfexec is executed without gfarm related options.
+
+2004-04-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* RELNOTES, gftool/gfexec/gfexec.c, gftool/gfrun/gfrun.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio.h:
+	change the default way to pass node number and other information to
+	a gfarm application. Now those are passed by environment variables by default.
+	this change makes gfarm_initialize()/gfarm_terminiate() optional for
+	applications which use gfs_hook.
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_exec.c:
+	remove gfs_execve_legacy(), and
+	export gfs_execve_replicate_to_local() as gfarm_url_program_get_local_path().
+
+	* gftool/gfsetdir/gfsetdir.c: output newline
+
+2004-04-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrun/gfrun.c:
+	rename options->deliver to options->use_gfexec, and reverse the meaning.
+	i.e. options->use_gfexec means options->deliver == 0 in old revision.
+
+2004-04-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfcp/gfcp.c:
+	Added -I option to specify a fragment index or an architecture for copying a program.
+
+2004-04-12  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog, debian/gfarm-client.install, debian/gfarm-client.manpages, debian/rules:
+	updated for 1.0.2
+
+2004-04-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/GUIDE.ja: minor modification
+
+	* doc/README.hook.en:
+	Added the limitation of glibc included in Fedora Core 1.
+
+2004-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	mention that older openldap doesn't support case sensitive pathname
+
+	* lib/libgfarm/gfarm/metadb_ldap.c, RELNOTES:
+	backout previous change to support case-sensitive pathname,
+	because newer openldap (at least since 2.1.25) does support it
+	without previous change, and it seems newer version does the right thing.
+
 2004-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfreg.1.html, man/ja/man1/gfreg.1, man/man1/gfreg.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook:
+	Added -h option for program registration.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Updated the description in limitation section regarding case-sensitive issue and meta character issue.
+
+2004-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* RELNOTES:
+	mention case sensitive pathname comparison and its side effect
+
+	* package/solaris/build: change version number from 1.0.1 to 1.0.2
+
+	* package/solaris/gfarm-client.files: add gfwhoami
+
+2004-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/GUIDE.ja:
+	Updated the description regarding gfhost, gfrun, and gfrep.
+
+2004-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	support case sensitive pathnames by using "$xx" (hexdecimal code) as DN.
+	uppercase pathnames made before this change are now all treated as
+	lowercase pathnames.
+
+2004-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0.2.
 
 	* doc/README.hook.en:
 	Removed the description of source code modification to insert gfarm_initialize() and gfarm_terminate() because it is not necessary now.
@@ -3430,7 +3645,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.25 2003/12/08 09:23:18 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.26 2004/04/09 10:51:26 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
