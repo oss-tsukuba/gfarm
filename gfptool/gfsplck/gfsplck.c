@@ -132,11 +132,7 @@ unlink_dir(const char *src)
 		perror(src);
 		return (1);
 	}
-	if (S_ISREG(sb.st_mode) && unlink(src)) {
-		perror(src);
-		return (1);
-	}
-	else if (S_ISDIR(sb.st_mode)) {
+	if (S_ISDIR(sb.st_mode)) {
 		DIR *dirp;
 		struct dirent *dp;
 
@@ -170,6 +166,11 @@ unlink_dir(const char *src)
 			perror(src);
 			return (1);
 		}
+	}
+	else if (unlink(src)) {
+		/* if 'src' is not a directory, try to unlink. */
+		perror(src);
+		return (1);
 	}
 	return (0);
 }
