@@ -28,10 +28,8 @@ int
 main(int argc, char **argv)
 {
 	extern int optind;
-	char *e, *canonic_path, *gfarm_path, *peer_hostname;
+	char *e, *canonic_path, *gfarm_path;
 	int ch;
-	struct sockaddr peer_addr;
-	struct gfs_connection *peer_conn;
 	enum { UNDECIDED,
 	       B_SHELL_LIKE,
 	       C_SHELL_LIKE
@@ -64,11 +62,14 @@ main(int argc, char **argv)
 	 * Get absolute path from the argument directory name.
 	 * If no arugument is passed, generate gfarm:/"global username".
 	 */
-	canonic_path = NULL;
 	switch (argc) {
 	case 0:
 		/* home directory */
-		canonic_path = gfarm_get_global_username();
+		e = gfarm_canonical_path("~", &canonic_path);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			exit(1);
+		}
 		break;
 	case 1:
 		e = gfarm_url_make_path(argv[0], &canonic_path);
@@ -82,37 +83,6 @@ main(int argc, char **argv)
 		break;
 	default:
 		usage();
-	}
-
-	/*
-	 * Check existence of the absolute path in a host.
-	 */
-	e = gfarm_schedule_search_idle_by_all(1, &peer_hostname);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	e = gfs_client_connect(peer_hostname, &peer_addr, &peer_conn);
-	free(peer_hostname);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	e = gfs_client_chdir(peer_conn, canonic_path);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	e = gfs_client_disconnect(peer_conn);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
 	}
 
 	gfarm_path = malloc(strlen(GFARM_URL_PREFIX) + strlen(canonic_path) +
