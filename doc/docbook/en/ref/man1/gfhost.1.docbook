@@ -1,0 +1,51 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfhost.1'>
+<!-- $Id$ -->
+
+<refentryinfo><date>25 Apr 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfhost</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfhost</refname>
+<refpurpose>list gfarm hosts</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfhost</command>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfhost</command> displays gfarm hosts.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-L</option></term>
+<listitem>
+<para>List metadata entries..</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>

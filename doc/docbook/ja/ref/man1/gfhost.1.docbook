@@ -1,0 +1,48 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfhost.1'>
+
+<refentryinfo><date>25 Apr 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfhost</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfhost</refname>
+<refpurpose>gfarm ホストのリストを表示する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfhost</command>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfhost</command>は、gfarm で管理しているホストのリストを
+表示します。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-L</option></term>
+<listitem>
+<para>メタデータベースの内容を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</refsect1>
+</refentry>
+

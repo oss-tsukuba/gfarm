@@ -2,6 +2,7 @@ DOCBOOK = \
 	digest.1 \
 	gfexport.1 \
 	gfgrep.1 \
+	gfhost.1 \
 	gfimport_fixed.1 \
 	gfimport_text.1 \
 	gfkey.1 \
