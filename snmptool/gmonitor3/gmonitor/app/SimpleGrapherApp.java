@@ -104,6 +104,8 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 
 	private long magnificationY = 1;  // Y scale
 
+	private boolean disableComboEvent = false;
+
 /*
 	private static final String[] UNIT_PREFIX_TABLE = new String[]{
 		"", //10^0
@@ -557,7 +559,7 @@ System.out.println("ResampleResolution " + interval);
 					} catch (IOException e) {
 						path = currentDirectoryPath;
 					}
-System.out.println(path);
+//System.out.println(path);
 					dialogDirOpen.setCurrentDirectory(new File(path));
 				}
 				int ret = dialogDirOpen.showOpenDialog(appFrame);
@@ -578,7 +580,7 @@ System.out.println(path);
 					checkAutoUpdate.setSelected(false);
 					return;
 				}
-				System.out.println(selectedDir.getPath());
+				//System.out.println(selectedDir.getPath());
 			}
 
 			if(selectedDir == null){
@@ -602,7 +604,7 @@ System.out.println(path);
 			//	timer.setInitialDelay(initialDelay * 1000);
 			//	initialDelay = -1;
 			//} else {
-				timer.setInitialDelay(0);
+				//timer.setInitialDelay(0);
 			//}
 			// start Swing timer to update.
 			timerInitFlag = false;
@@ -682,7 +684,7 @@ System.out.println("AutoUpdate: no .glg file");
 				String msg = "File open error.";
 				//JOptionPane.showMessageDialog(appFrame, msg);
 				System.out.println(msg);				
-				//e.printStackTrace();
+				e.printStackTrace();
 				
 //				checkAutoUpdate.setSelected(false);
 //				menuItemTotal.setSelected(false);
@@ -762,7 +764,9 @@ System.out.println("AutoUpdate: no .glg file");
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			setTargetEventName = (String) comboEvent.getSelectedItem();
-			paintGraphAccordingToCurrentGUIStatus();
+			if(disableComboEvent == false){
+				paintGraphAccordingToCurrentGUIStatus();
+			}
 		}
 	}
 	/*
@@ -773,7 +777,9 @@ System.out.println("AutoUpdate: no .glg file");
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			setTargetHostName = (String) comboHostname.getSelectedItem();
-			paintGraphAccordingToCurrentGUIStatus();
+			if(disableComboEvent == false){
+				paintGraphAccordingToCurrentGUIStatus();
+			}
 		}
 	}
 	/*
@@ -990,7 +996,7 @@ System.out.println("AutoUpdate: no .glg file");
 				// cannot create model because specified time is out of range.
 				// null clear.
 				//e.printStackTrace();
-System.out.println("no data: " + host + " / " + event + "");
+//System.out.println("no data: " + host + " / " + event + "");
 				int id = comboEvent.getSelectedIndex();
 				if(checkEventFlag){
 					id = 0;
@@ -999,13 +1005,18 @@ System.out.println("no data: " + host + " / " + event + "");
 					id++;
 				}
 				if(id < comboEvent.getItemCount()){
+					disableComboEvent = true;
 					comboEvent.setSelectedIndex(id);
+					disableComboEvent = false;
 					paintGraphAccordingToCurrentGUIStatus();
 					return;
 				}
 				
 				checkEventFlag = true;
+
+				disableComboEvent = true;
 				comboEvent.setSelectedIndex(0);
+				disableComboEvent = false;
 				
 				id = comboHostname.getSelectedIndex();
 				if(checkHostFlag){
@@ -1015,17 +1026,18 @@ System.out.println("no data: " + host + " / " + event + "");
 					id++;
 				}
 				if(id < comboHostname.getItemCount()){
+					disableComboEvent = true;
 					comboHostname.setSelectedIndex(id);
+					disableComboEvent = false;
 					paintGraphAccordingToCurrentGUIStatus();
 					return;
 				}
-				checkHostFlag = true;
 				
 				actionAutoUpdate(false, false);
 				checkAutoUpdate.setSelected(false);
 				menuItemTotal.setSelected(false);
 				JOptionPane.showMessageDialog(appFrame,
-					"The corresponding data is not found.");
+					"Error: no data");
 				gm.setModel(null);
 				if(totalmode == true){
 					// total off
@@ -1033,6 +1045,8 @@ System.out.println("no data: " + host + " / " + event + "");
 					menuItemTotal.setSelected(false);
 					comboHostname.setEnabled(true);
 				}
+				checkHostFlag = true;
+				checkEventFlag = true;
 				return;
 			}
 		}
@@ -1193,7 +1207,7 @@ System.out.println("no data: " + host + " / " + event + "");
 				} catch (IOException e) {
 					path = currentDirectoryPath;
 				}
-System.out.println(path);
+//System.out.println(path);
 				dialogFileOpen.setCurrentDirectory(new File(path));
 			}
 			int ret = dialogFileOpen.showOpenDialog(appFrame);
@@ -1201,7 +1215,8 @@ System.out.println(path);
 				// rebuild data-time space because files are specified.
 				File[] files = dialogFileOpen.getSelectedFiles();
 				selectedDir = files[0].getParentFile();
-				currentDirectoryPath = selectedDir.getParent();
+				//currentDirectoryPath = selectedDir.getParent();
+				currentDirectoryPath = selectedDir.getAbsolutePath();
 				String[] filenames = new String[files.length];
 				for(int i = 0; i < files.length; i++){
 					filenames[i] = files[i].getPath();
@@ -1214,7 +1229,7 @@ System.out.println(path);
 					textBeginTime.setText(dt);
 					long r =(latest-begin)/1000;
 					textRange.setText(""+r);
-//System.out.println("dtSpace.getBeginDateTime() " + begin);
+//System.out.println("dtSpace.getBeginDateTime(): " + begin + " -> " + latest);
 					
 					defineNewComboBox(comboHostname, dtSpace.getHostnames());
 					defineNewComboBox(comboEvent, dtSpace.getEvents());
@@ -1247,8 +1262,8 @@ e.printStackTrace();
 		String str = "usage: java -jar gmonitor3.jar [ -d TargetAutoUpdateDirectory ]" + ls;
 		str += "       [ -h TargetHostname ] [ -e TargetEventNickName ] " + ls;
 		str += "       [ -u UnitName(bps/KB/Load) ] [ --help ]" + ls;
-		str += "       [ --line ] [ --bar ] [ --plot ]" + ls;
-		str += "       [ --information ] [ --style ] [ --unit ] [ --controller ]";
+		str += "       [ --no-line ] [ --no-bar ] [ --no-plot ]" + ls;
+		str += "       [ --no-information ] [ --no-style ] [ --no-unit ] [ --no-controller ]";
 		System.err.println(str);
 	}
 
@@ -1274,21 +1289,6 @@ e.printStackTrace();
 						System.exit(1);
 					}
 				}
-/*
-				else if(opt.startsWith("d")){
-					if(++i < len){
-						try {
-							initialDelay = Integer.parseInt(args[i]);
-						} catch(NumberFormatException e){
-							// do nothing
-						}
-					} else {
-						System.err.println("");
-						printHelp();
-						System.exit(1);
-					}
-				}
-*/
 				else if(opt.startsWith("h")){
 					if(++i < len){
 						setTargetHostName = args[i];
@@ -1315,25 +1315,25 @@ e.printStackTrace();
 					}
 				} else if(opt.startsWith("-")){
 					String longopt = opt.substring(1);
-					if(longopt.equals("line")){
+					if(longopt.equals("no-line")){
 						menuItemGraphStyleLine.setSelected(false);
 						checkGraphStyleLine.setSelected(false);
-					} else if(longopt.equals("bar")){
+					} else if(longopt.equals("no-bar")){
 						menuItemGraphStyleBar.setSelected(false);
 						checkGraphStyleBar.setSelected(false);
-					} else if(longopt.equals("plot")){
+					} else if(longopt.equals("no-plot")){
 						menuItemGraphStylePlot.setSelected(false);
 						checkGraphStylePlot.setSelected(false);
-					} else if(longopt.equals("information")){
+					} else if(longopt.equals("no-information")){
 						panelInformation.setVisible(false);
 						menuItemVisInfo.setSelected(false);
-					} else if(longopt.equals("style")){
+					} else if(longopt.equals("no-style")){
 						panelGraphStyle.setVisible(false);
 						menuItemVisGraphStyle.setSelected(false);
-					} else if(longopt.equals("unit")){
+					} else if(longopt.equals("no-unit")){
 						panelUnit.setVisible(false);
 						menuItemVisUnit.setSelected(false);
-					} else if(longopt.equals("controller")){
+					} else if(longopt.equals("no-controller")){
 						panelController.setVisible(false);
 						menuItemVisController.setSelected(false);
 					} else if(longopt.equals("help")){
@@ -1355,8 +1355,10 @@ e.printStackTrace();
 		if(currentDirectoryPath != null){
 			checkAutoUpdate.setSelected(true);
 			menuItemAutoUpdate.setSelected(true);
+			timer.setInitialDelay(1000);
 			actionAutoUpdate(true, false);
 		}
+		timer.setInitialDelay(0);
 	}
 
 	public void setComboTargets(){
@@ -1445,6 +1447,7 @@ e.printStackTrace();
 
 		app.setTitle("GMonitor");
 		app.pack();
+		app.setOptions(args);
 
 		try {
 			Dimension d = app.appFrame.getSize();
@@ -1453,7 +1456,6 @@ e.printStackTrace();
 		} catch(Exception e){
 		}
 		app.show();
-		app.setOptions(args);		
 	}
 	/**
 	 * set frame size.
