@@ -89,7 +89,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		if (e == NULL && !path_exist)
 			gfs_hook_add_creating_file(gf);
 	} else {
-
 		_gfs_hook_debug(fprintf(stderr,
 		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", url, oflag));
 
@@ -132,12 +131,12 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		    (e == NULL && gfs_pio_get_node_size(&np) == NULL &&
 		     nf == np)) {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_local(%s (%d, %d))\n",
+				"GFS: set_view_local(%s) @ %d/%d\n",
 					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_local(gf, 0);
 		} else {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_global(%s) - local %d/%d\n",
+				"GFS: set_view_global(%s) @ %d/%d\n",
 					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_global(gf, 0);
 		}
