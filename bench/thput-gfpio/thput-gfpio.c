@@ -22,8 +22,8 @@ get_cycles(void)
 }
 
 #define gettimerval(tp)		(*(tp) = get_cycles())
-#define timerval_second(tp)	(*(tp) / timerval_calibration)
-#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) / timerval_calibration)
+#define timerval_second(tp)	(*(tp) * timerval_calibration)
+#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) * timerval_calibration)
 
 void
 timerval_calibrate(void)
@@ -40,7 +40,8 @@ timerval_calibrate(void)
 	timerval_calibration = 
 		(t2 - t1) / (
 		(s2.tv_sec - s1.tv_sec) +
-		(s2.tv_usec - s1.tv_usec) / 1000000.0);
+		(s2.tv_usec - s1.tv_usec) * .000001);
+	timerval_calibration = 1.0 / timerval_calibration;
 }
 
 #else /* gettimeofday */
@@ -276,8 +277,8 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 double
 timeval_sub(struct timeval *t1, struct timeval *t2)
 {
-	return ((t1->tv_sec + t1->tv_usec / 1000000.0) -
-		(t2->tv_sec + t2->tv_usec / 1000000.0));
+	return ((t1->tv_sec + t1->tv_usec * .000001) -
+		(t2->tv_sec + t2->tv_usec * .000001));
 }
 
 enum testmode { TESTMODE_WRITE, TESTMODE_READ, TESTMODE_COPY };
@@ -291,7 +292,6 @@ test(enum testmode test_mode, char *file1, char *file2,
 	char *label;
 
 	gettimeofday(&t1, NULL);
-
 	switch (test_mode) {
 	case TESTMODE_WRITE:
 		writetest(file1, buffer_size, file_size);
@@ -310,17 +310,16 @@ test(enum testmode test_mode, char *file1, char *file2,
 			node_index, test_mode);
 		exit(1);
 	}
-
 	gettimeofday(&t2, NULL);
 
-	printf("[%03d] %8ld %7d %-5s %10.0f %s\n",
-	       node_index, (long)file_size, buffer_size, label,
+	printf("[%03d] %lld %7d %-5s %10.0f %s\n",
+	       node_index, (long long)file_size, buffer_size, label,
 	       file_size / timeval_sub(&t2, &t1), gfarm_self_hostname);
 	fflush(stdout);
 
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
-		fprintf(stderr, "[%03d] %8ld %7d %-5s",
-		       node_index, (long)file_size, buffer_size, label);
+		fprintf(stderr, "[%03d] %lld %7d %-5s",
+		       node_index, (long long)file_size, buffer_size, label);
 		if (test_mode == TESTMODE_WRITE)
 			fprintf(stderr, " %g %g %g",
 			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
@@ -435,7 +434,7 @@ main(int argc, char **argv)
 	if (flags & FLAG_MEASURE_PRIMITIVES) {
 		timerval_calibrate();
 		fprintf(stderr, "[%03d] timer/sec=%g %s\n",
-			node_index, timerval_calibration, gfarm_self_hostname);
+			node_index, 1.0 / timerval_calibration, gfarm_self_hostname);
 	}
 
 	file_size *= 1024 * 1024;
