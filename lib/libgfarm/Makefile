@@ -1,7 +1,7 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
@@ -19,16 +19,13 @@ include $(srcdir)/gfutil/Makefile.inc
 include $(srcdir)/gfsl/Makefile.inc
 include $(srcdir)/gfarm/Makefile.inc
 
-LDAP_SRCS = $(GFARM_LDAP_SRCS)
-LDAP_OBJS = $(GFARM_LDAP_OBJS)
-
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes) \
 	-DGLOBUS_BUG=1 # see gfsl/gsi.c
 GLOBUS_SRCS = $(GFSL_SRCS) $(GFARM_GLOBUS_SRCS)
 GLOBUS_OBJS = $(GFSL_OBJS) $(GFARM_GLOBUS_OBJS)
 
-SRCS =	$(GFUTIL_SRCS) $(GFARM_SRCS) $(ldap_srcs) $(globus_srcs)
-OBJS =	$(GFUTIL_OBJS) $(GFARM_OBJS) $(ldap_objs) $(globus_objs)
+SRCS =	$(GFUTIL_SRCS) $(GFARM_SRCS) $(globus_srcs)
+OBJS =	$(GFUTIL_OBJS) $(GFARM_OBJS) $(globus_objs)
 
 lib$(LIB).a: $(OBJS)
 	ar rucv lib$(LIB).a $(OBJS)
