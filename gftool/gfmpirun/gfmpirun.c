@@ -19,7 +19,7 @@ setsig(int signum, void (*handler)(int))
 	act.sa_handler = handler;
 	sigemptyset(&act.sa_mask);
 	/* do not set SA_RESTART to make interrupt at waitpid(2) */
-	act.sa_flags = SA_RESETHAND;
+	act.sa_flags = 0;
 	if (sigaction(signum, &act, NULL) == -1) {
 		fprintf(stderr, "%s: sigaction(%d): %s\n",
 			program_name, signum, strerror(errno));
