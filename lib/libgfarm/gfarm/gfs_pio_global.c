@@ -254,8 +254,8 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gf->error);
 	}
 
-	e = gfarm_file_section_info_get_all_by_file(gf->pi.pathname,
-	    &n, &infos);
+	e = gfarm_file_section_info_get_sorted_all_serial_by_file(
+		gf->pi.pathname, &n, &infos);
 	if (e != NULL) {
 		free(gc);
 		gf->error = e;
