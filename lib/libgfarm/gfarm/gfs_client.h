@@ -54,6 +54,9 @@ char *gfs_client_exist(struct gfs_connection *, char *);
 char *gfs_client_digest(struct gfs_connection *, int, char *, size_t,
 			size_t *, unsigned char *, file_offset_t *);
 char *gfs_client_get_spool_root(struct gfs_connection *, char **);
+char *gfs_client_statfs(struct gfs_connection *, char *, gfarm_int32_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
 
 /* old interface. now mainly used for bootstrap. the followings */
 char *gfs_client_bootstrap_replicate_file(struct gfs_connection *,

@@ -42,6 +42,8 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
+#include "gfsd_subr.h"
+
 #define COMPAT_OLD_GFS_PROTOCOL
 
 #ifndef DEFAULT_PATH
@@ -533,6 +535,26 @@ gfs_server_get_spool_root(struct xxx_connection *client)
 {
 	gfs_server_put_reply(client, "get_spool_root",
 	    GFS_ERROR_NOERROR, "s", gfarm_spool_root);
+}
+
+void
+gfs_server_statfs(struct xxx_connection *client)
+{
+	char *dir, *path;
+	int save_errno = 0;
+	gfarm_int32_t bsize;
+	file_offset_t blocks, bfree, bavail, files, ffree, favail;
+
+	gfs_server_get_request(client, "stafs", "s", &dir);
+
+	local_path(dir, &path, "statfs");
+	save_errno = gfsd_statfs(path, &bsize,
+	    &blocks, &bfree, &bavail,
+	    &files, &ffree, &favail);
+	free(path);
+
+	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
+	    "ioooooo", bsize, blocks, bfree, bavail, files, ffree, favail);
 }
 
 void
@@ -1991,6 +2013,7 @@ server(int client_fd)
 			break;
 		case GFS_PROTO_RENAME:	gfs_server_rename(client); break;
 		case GFS_PROTO_LINK:	gfs_server_link(client); break;  
+		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;  
 		default:
 			sprintf(buffer, "%d", (int)request);
 			gflog_warning("unknown request", buffer);

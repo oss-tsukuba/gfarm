@@ -14,8 +14,8 @@ LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfsd
-SRCS =	gfsd.c loadavg.c
-OBJS =	gfsd.o loadavg.o
+SRCS =	gfsd.c loadavg.c statfs.c
+OBJS =	gfsd.o loadavg.o statfs.o
 
 all: $(PROGRAM)
 
@@ -24,6 +24,7 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
+	$(srcdir)/gfsd_subr.h \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/iobuffer.h \
 	$(GFARMLIB_SRCDIR)/xxx_proto.h \

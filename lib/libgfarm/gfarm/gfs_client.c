@@ -634,6 +634,18 @@ gfs_client_get_spool_root(struct gfs_connection *gfs_server,
 	return (*spool_rootp == NULL ? GFARM_ERR_NO_MEMORY : NULL);
 }
 
+char *
+gfs_client_statfs(struct gfs_connection *gfs_server, char *path,
+	gfarm_int32_t *bsizep,
+	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
+	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_STATFS, "s/ioooooo",
+			       path, bsizep,
+			       blocksp, bfreep, bavailp,
+			       filesp, ffreep, favailp));
+}
+
 /*
  **********************************************************************
  * Implementation of old (inner gfsd) replication protocol
