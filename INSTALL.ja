@@ -120,6 +120,9 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
 
 ● 構築方法
 
+この項では，ソースからの構築について説明します．
+バイナリ配布を利用されている方は，この項の説明は読み飛ばして構いません．
+
 今回のシステムは，Linux 上で実行テストされています．
 構築に関しては NetBSD, Solaris 上でテストされています．
 
@@ -156,6 +159,7 @@ configure コマンドには，下記のオプションがあります．
   テムコールをフックするためのライブラリをコンパイルします．ディレクト
   リを指定した場合はコンパイラとして ${ディレクトリ}/bin/mpicc が利用
   され，省略時は mpicc は利用されます．このオプションは省略可能です．
+  現在サポートされている MPI の実装は，MPICH/p4 のみです．
 
 ・--with-globus=ディレクトリ
 
@@ -295,7 +299,7 @@ slapd.conf から include されているファイルです．
 ホスト ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 
 バイナリ配布の場合，gfarm-server パッケージ中の
-/etc/gfarm-ldap/gfarm.schema に，このファイルが含まれています。
+/etc/gfarm-ldap/gfarm.schema に，このファイルが含まれています．
 
 特にカスタマイズする項目はありません．
 
@@ -440,22 +444,11 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，
 ファイルシステムノード上の全ホストで，スプール・ルート・ディレクトリ
 /var/spool/gfarm を作成します．また，スプール・ルート・ディレクトリの
 下に，バイナリ用のディレクトリおよびユーザ別のディレクトリを作成します．
-下記の例では，ユーザー morita，tatebe，soda のディレクトリを作成してい
-ます．ユーザ別ディレクトリは以下で紹介する gfrun コマンドでも自動的に
-作成されます．
 
 	% su
 	Password: 
-	# sh
 	# mkdir /var/spool/gfarm
 	# chmod 1777 /var/spool/gfarm
-	# mkdir /var/spool/gfarm/bin
-	# chmod 1777 /var/spool/gfarm/bin
-	# for u in morita tatebe soda; do
-	>   mkdir /var/spool/gfarm/$u
-	>   chown ${u} /var/spool/gfarm/$u
-	> done
-	# exit
 	# exit
 	% 
 
@@ -483,14 +476,41 @@ auth enable sharedsecret *
 gfmd は，前節で解説した /etc/gfarm.conf ファイルを設定ファイルとして
 読み込みます．
 
+バイナリ配布を利用している場合，スタートアップ用に，次のスクリプト
+が用意されています．
+	RedHat Linux:		/etc/rc.d/init.d/gfmd
+	Debian GNU/Linux:	/etc/init.d/gfmd
+	Solaris:		/etc/rc3.d/S98gfmd
+
+ソース配布を利用している場合，make が完了すると package/<OS>/gfmd に
+スタートアップスクリプトが作成されます．ただし Debian GNU/Linux の
+場合，debian/gfmd.init にスタートアップスクリプトがあります．
+このスクリプトを，上記バイナリ配布の記述にあるファイル名にコピーして
+chmod +x してください．
+
+スタートアップスクリプトを用いて起動する手順は下記の通りとなります．
+	RedHat Linux:
+		% su
+		Password: 
+		# /etc/rc.d/init.d/gfmd start
+	Debian GNU/Linux:
+		% su
+		Password: 
+		# /etc/init.d/gfmd start
+	Solaris:
+		% su
+		Password: 
+		# /etc/rc3.d/S98gfmd start
+
+スクリプトを使わずに直接起動する場合には，下記の手順になります．
 	% su
 	Password: 
 	# gfmd
 
-スタートアップスクリプトのサンプルファイルが package/<OS>/gfmd に
-あります．なお，テストなどの目的で gfmd をユーザ権限で立ち上げたい
-場合は -f オプションをつけて設定ファイルを指定して立ち上げます．詳細は 
-man gfmd を参照してください．
+なお，テストなどの目的で gfmd をユーザ権限で立ち上げたい場合は -f 
+オプションをつけて設定ファイルを指定して立ち上げます．詳細は
+man gfmd を参照してください．gfmd をユーザ権限で立ち上げた場合に
+利用可能な認証方式は，共有秘密鍵方式 (sharedsecret) のみです．
 
 gfmd が正しく起動されているかどうかは，オプションを指定せずに gfps
 コマンドを実行することで確認できます．正しく起動されている場合は，
@@ -504,14 +524,41 @@ gfmd が正しく起動されているかどうかは，オプションを指定せずに gfps
 立ち上げます．gfsd は，前節で解説した /etc/gfarm.conf ファイルを設定ファ
 イルとして読み込みます．
 
+バイナリ配布を利用している場合，スタートアップ用に，次のスクリプト
+が用意されています．
+	RedHat Linux:		/etc/rc.d/init.d/gfsd
+	Debian GNU/Linux:	/etc/init.d/gfsd
+	Solaris:		/etc/rc3.d/S99gfsd
+
+ソース配布を利用している場合，make が完了すると package/<OS>/gfsd に
+スタートアップスクリプトが作成されます．ただし Debian GNU/Linux の
+場合，debian/gfsd.init にスタートアップスクリプトがあります．
+このスクリプトを，上記バイナリ配布の記述にあるファイル名にコピーして
+chmod +x してください．
+
+スタートアップスクリプトを用いて起動する手順は下記の通りとなります．
+	RedHat Linux:
+		% su
+		Password: 
+		# /etc/rc.d/init.d/gfsd start
+	Debian GNU/Linux:
+		% su
+		Password: 
+		# /etc/init.d/gfsd start
+	Solaris:
+		% su
+		Password: 
+		# /etc/rc3.d/S99gfsd start
+
+スクリプトを使わずに直接起動する場合には，下記の手順になります．
 	% su
 	Password: 
 	# gfsd
 
-スタートアップスクリプトのサンプルファイルが package/<OS>/gfsd に
-あります．なお，テストなどの目的で gfsd をユーザ権限で立ち上げたい
-場合は -f オプションをつけて設定ファイルを指定して立ち上げます．詳細は 
-man gfsd を参照してください．
+なお，テストなどの目的で gfsd をユーザ権限で立ち上げたい場合は -f 
+オプションをつけて設定ファイルを指定して立ち上げます．詳細は
+man gfsd を参照してください．gfsd をユーザ権限で立ち上げた場合に
+利用可能な認証方式は，共有秘密鍵方式 (sharedsecret) のみです．
 
 gfsd が正しく起動されているかどうかは，オプション -l を指定して gfhost 
 を実行することで確認できます．行頭に表示されている3つの数字はロード・
@@ -532,33 +579,10 @@ gfsd が正しく起動されているかどうかは，オプション -l を指定して gfhost
 linuxhost-3.example.com の -.-- は，このノード上に（指定したポートで） 
 gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
 のノードに接続できない（ノードかネットワークが落ちている）ことを示し
-ています．このような問題を追及するには、"-v" オプションを追加して
-エラーメッセージを表示させるようにしてください。
+ています．このような問題を追及するには，"-v" オプションを追加して
+エラーメッセージを表示させるようにしてください．
 
-◇ Gfarm 並列コマンドの登録
-
-並列ファイルコピー，並列 grep などのコマンドを Gfarm ファイルシステム
-に登録するために，それぞれのアーキテクチャのファイルシステムノードで以
-下を実行します．
-
-	% make gfregister
-
-並列コマンドは gfarm:/bin ディレクトリに登録されます．
-
-	% gfls -l gfarm:/bin
-	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
-	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
-	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
-	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
-	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
-	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
-
-登録されているアーキテクチャは gfwhere で確認できます．
-
-	% gfwhere gfarm:/bin/gfcp
-
-◇ 各ユーザーの設定
+◇ 各ユーザの設定
 
 各ユーザのシェル設定ファイル (.bashrc, .cshrc など) に以下の定義を追加します．
 
@@ -577,11 +601,17 @@ csh の場合:
 
 	% gfpwd
 
+◇ その他の設定
+
+この後，各ユーザは，各自の作業ディレクトリを作成する必要があります．
+また，システム管理者が，Gfarm 並列コマンドの登録を行う必要があります．
+この２つの作業に関しては，次の実行方法の項で説明します．
+
 =======================================================================
 
 ● 実行方法
 
-この章では，各ユーザーによる，サンプルの実行例を説明します．詳しくはユー
+この章では，各ユーザによる，サンプルの実行例を説明します．詳しくはユー
 ザーガイド doc/GUIDE.ja をご覧下さい．
 
 ◇ サインオン
@@ -616,14 +646,63 @@ csh の場合:
 
 GSI を利用する場合は，ユーザ証明書と，利用するファイルシステムノードお
 よびメタデータサーバのホスト証明書が必要になります．
-さらに，全てのノードの /etc/grid-security/grid-mapfile に，ユーザー
-証明書のサブジェクト名とUNIXユーザー名の対応を定義する必要があります．
+さらに，全てのノードの /etc/grid-security/grid-mapfile に，ユーザ
+証明書のサブジェクト名とUNIXユーザ名の対応を定義する必要があります．
 GSI の詳細は，下記の WWW ページを参照してください．
 	http://www.globus.org/security/
 
 GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 	% grid-proxy-init
+
+◇ 各ユーザの作業ディレクトリの登録
+
+この項は，各ユーザ，最初に一度だけ実行する必要のある項目です．
+
+ただし，ファイルシステムノードに追加があった場合，各ユーザは，
+そのたびに，この項目を実行する必要があります．
+(この制限事項は，将来削除される予定です．)
+
+	% gfmkdir gfarm:/ユーザ名
+
+例えば，ユーザ名が tatebe だった場合，次のようにします．
+
+	% gfmkdir gfarm:/tatebe
+
+◇ 実行確認
+
+各ファイルシステムノードにアクセス可能かどうか確認してみましょう．
+
+	% gfhost | gfrun -H - hostname
+
+◇ Gfarm 並列コマンドの登録
+
+この項は，システム管理者が，ファイルシステムノードを構成するアーキ
+テクチャそれぞれについて，一度づつ実行する必要のある項目です．
+
+ただし，ファイルシステムノードに追加があった場合，システム管理者は，
+そのたびに，この項目を実行する必要があります．
+
+並列ファイルコピー，並列 grep などのコマンドを Gfarm ファイルシステム
+に登録するために，それぞれのアーキテクチャのファイルシステムノードで
+以下を実行します．
+
+	% gfregister
+
+この結果，並列コマンドが gfarm:/bin ディレクトリに登録されます．
+
+	% gfls -l gfarm:/bin
+	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
+	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
+	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
+	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
+	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
+	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
+	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
+
+登録されているアーキテクチャは gfwhere で確認できます．
+
+	% gfwhere gfarm:/bin/gfcp
 
 ◇ Gfarmファイルシステムの利用例
 
@@ -745,17 +824,22 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 	% gfls -l gfarm:/bin/gfgrep
 
-  もし登録されていないない場合は，ファイルシステムノードで 'make
-  gfregister' を実行するか gfreg コマンドを利用して登録します．
+  もし登録されていないない場合は，システム管理者に，前述の
+  Gfarm 並列コマンドの登録の作業の実行を依頼します．
 
-	% gfreg /usr/grid/bin/gfgrep gfarm:/bin
+  あるいは，gfreg コマンドを用いて，自分自身で登録することもできます．
 
-  ファイルシステムノード以外で gfreg を実行する場合は -a オプションで
-  プログラムのアーキテクチャ名を指定する必要があります．
+	% gfreg /usr/grid/bin/gfgrep gfarm:gfgrep
 
-  実行してみましょう．
+  この場合，下記の「gfarm:/bin/gfgrep」は「gfarm:gfgrep」で置き換えて
+  ください．
+  なお，ファイルシステムノード以外からプログラムを登録する場合は，
+  アーキテクチャ名を -a オプションで指定する必要があります．
 
-	% gfrun gfarm:/bin/gfgrep -o gfarm:gfgrep.out 正規表現 gfarm:テスト.txt
+  登録されたら，実行してみましょう．
+
+	% gfrun -G gfarm:テスト.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out \
+		正規表現 gfarm:テスト.txt
 
   結果を確認してみましょう．
 
@@ -764,10 +848,12 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 ・gfwc - parallel word counts
 
-  gfgrep と同様に gfwc プログラムが，gfarm:/bin/gfwc という名称で登録
-  されていることを確認し，登録されていない場合は登録します．
+  このコマンドは，バイナリ作成時に --with-mpi オプションが指定されて
+  いた場合のみ存在します．  
 
-	% gfreg /usr/grid/bin/gfwc gfarm:/bin/gfwc
+  gfgrep と同様に gfwc プログラムが，gfarm:/bin/gfwc という名称で登録
+  されていることを確認し，登録されていない場合は，システム管理者に
+  Gfarm 並列コマンドの登録の作業の実行を依頼します．
 
   実行してみましょう．
 
