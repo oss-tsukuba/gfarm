@@ -63,6 +63,16 @@ OBJS = getcwd.lo hooks_subr$(SUFFIX).lo \
 	$(SYSDEP_OBJS)
 EXTRA_CLEAN_TARGETS= hooks_init$(SUFFIX).lo $(mpi_objs)
 
+###
+### settings for test programs
+###
+
+TEST_LDLIBS = $(GFARMLIB)
+
+###
+### main rule
+###
+
 .SUFFIXES: .a .la .ln .o _debug.lo .lo .s .S .c .cc .f .y .l
 
 .c_debug.lo:
