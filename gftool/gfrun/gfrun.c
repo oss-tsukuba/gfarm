@@ -149,7 +149,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	sig_ignore(SIGQUIT);
 	sig_ignore(SIGTERM);
 	sig_ignore(SIGTSTP);
-	while (waitpid(-1, &status, 0) != -1)
+	while (waitpid(-1, &status, 0) != -1 || errno == EINTR)
 		;
 	save_errno = errno;
 
