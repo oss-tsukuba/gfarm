@@ -96,18 +96,21 @@ char *
 gfarm_metadb_terminate(void)
 {
 	int rv;
+	char *e = NULL;
 
 	if (gfarm_ldap_server == NULL)
 		return ("metadb connection already disconnected");
 
 	/* close and free connection resources */
-	rv = ldap_unbind(gfarm_ldap_server);
+	if (getpid() == gfarm_ldap_client_pid) {
+		rv = ldap_unbind(gfarm_ldap_server);
+		if (rv != LDAP_SUCCESS)
+			e = ldap_err2string(rv);
+	}
 	gfarm_ldap_server = NULL;
 	gfarm_ldap_client_pid = 0;
-	if (rv != LDAP_SUCCESS)
-		return (ldap_err2string(rv));
 
-	return (NULL);
+	return (e);
 }
 
 char *
