@@ -220,6 +220,10 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 
 	gf->pi.status.st_size = length;
 	gf->pi.status.st_nsections = fragment + 1;
+	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
+	if (e != NULL)
+		return (e);
+	
 	e = gfarm_file_section_info_get_sorted_all_serial_by_file(
 		gf->pi.pathname, &nsections, &sections);
 	if (e != NULL)
