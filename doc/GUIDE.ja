@@ -1,144 +1,151 @@
-Gfarm システム ユ〖ザ〖ガイド
+Gfarm 僔僗僥儉 儐乕僓乕僈僀僪
 
-迫惟乖蜡恕客缓度祷窖另圭甫垫疥
-グリッド甫垫センタ〖
-2003 钳 4 奉 25 泣
+撈棫峴惌朄恖嶻嬈媄弍憤崌尋媶強
+僌儕僢僪尋媶僙儞僞乕
+2003 擭 4 寧 25 擔
 
 
-1.はじめに
-1.1.塑今の柒推
-塑今は·Gfarm をはじめて蝗う客羹けに·ユ〖ザとして Gfarm の网脱数恕を
-澄千したり·サンプルプログラムを瘤らせて瓢侯を悄爱したりするための缄
-界を淡したものですˉ络惮滔事误ファイルシステム·Grid Datafarm 霹に簇
-する答塑弄な车前については、簇息する侠矢霹を徊救してください。
-また·塑今では UNIX ライクなオペレ〖ティングシステムの奶撅の拎侯につい
-ては棱汤しませんˉ奶撅のファイルシステムにおけるファイルの艰り胺いや称
-硷コマンドについては·マニュアル霹を徊救してくださいˉRedHat Linux で
-Gfarm の泣塑胳マニュアルを粕むには·茨董恃眶 LANG を ja_JP.ujis に肋年
-してくださいˉ
+1.偼偠傔偵
+1.1.杮彂偺撪梕
+杮彂偼丆Gfarm 傪偼偠傔偰巊偆恖岦偗偵丆儐乕僓偲偟偰 Gfarm 偺棙梡曽朄傪
+妋擣偟偨傝丆僒儞僾儖僾儘僌儔儉傪憱傜偣偰摦嶌傪攃埇偟偨傝偡傞偨傔偺庤
+弴傪婰偟偨傕偺偱偡丏戝婯柾暲楍僼傽僀儖僔僗僥儉丆Grid Datafarm 摍偵娭
+偡傞婎杮揑側奣擮偵偮偄偰偼丄娭楢偡傞榑暥摍傪嶲徠偟偰偔偩偝偄丅
+傑偨丆杮彂偱偼 UNIX 儔僀僋側僆儁儗乕僥傿儞僌僔僗僥儉偺捠忢偺憖嶌偵偮偄
+偰偼愢柧偟傑偣傫丏捠忢偺僼傽僀儖僔僗僥儉偵偍偗傞僼傽僀儖偺庢傝埖偄傗奺
+庬僐儅儞僪偵偮偄偰偼丆儅僯儏傾儖摍傪嶲徠偟偰偔偩偝偄丏RedHat Linux 偱
+Gfarm 偺擔杮岅儅僯儏傾儖傪撉傓偵偼丆娐嫬曄悢 LANG 傪 ja_JP.ujis 偵愝掕
+偟偰偔偩偝偄丏
 
-なお·すでに Gfarm がインスト〖ルされ·努磊に肋年されていることを
-涟捏としていますˉインスト〖ルや肋年に簇しては·Gfarm 芹烧パッケ〖ジ
-柒の INSTALL.ja, INSTALL.en を徊救してくださいˉ
+側偍丆偡偱偵 Gfarm 偑僀儞僗僩乕儖偝傟丆揔愗偵愝掕偝傟偰偄傞偙偲傪
+慜採偲偟偰偄傑偡丏僀儞僗僩乕儖傗愝掕偵娭偟偰偼丆Gfarm 攝晅僷僢働乕僕
+撪偺 INSTALL.ja, INSTALL.en 傪嶲徠偟偰偔偩偝偄丏
 
-1.2.悸赋茨董
-塑今では·笆布のような茨董を毋に刁げて棱汤しますˉ
+1.2.幚尡娐嫬
+杮彂偱偼丆埲壓偺傛偆側娐嫬傪椺偵嫇偘偰愢柧偟傑偡丏
 
-    メタデ〖タサ〖バ       : gfms1
-    Gfarm インスト〖ル黎   : /usr/local/gfarm
-    Gfarm 肋年ファイル     : /etc/gfarm.conf
+    儊僞僨乕僞僒乕僶       : gfms1
+    Gfarm 僀儞僗僩乕儖愭   : /usr/local/gfarm
+    Gfarm 愝掕僼傽僀儖     : /etc/gfarm.conf
 
-どのコマンド悸乖毋も·クライアントノ〖ドで悸乖することを涟捏としていま
-すˉファイルシステムノ〖ドで悸乖すると·棱汤している奶りの瓢侯にはなり
-ませんˉクライアントノ〖ドで悸乖してくださいˉ
+僐儅儞僪幚峴椺偱偼丆Gfarm 傪棙梡偟傛偆偲偡傞儂僗僩(埲壓丆僋儔僀傾儞僩
+儂僗僩偲昞婰)偱幚峴偡傞偙偲傪慜採偲偟偰偄傑偡丏僼傽僀儖僔僗僥儉僲乕僪
+偱幚峴偡傞偲丆愢柧偟偰偄傞捠傝偺摦嶌偵偼側傝傑偣傫丏僋儔僀傾儞僩儂僗僩
+偱幚峴偟偰偔偩偝偄丏
 
-1.3.Gfarm のユ〖ザ肋年の澄千
-Gfarm を网脱しようとするホスト(笆布·クライアントホストと山淡)において·
-ユ〖ザが赖しく Gfarm を网脱できるよう肋年されていることを澄千しますˉ
-Gfarm の肋年ファイルは /etc/gfarm.conf もしくは ~/.gfarmrc ですˉこれら
-のファイルが赂哼するかを澄千しますˉ
+1.3.Gfarm 偺儐乕僓愝掕偺妋擣
+僋儔僀傾儞僩儂僗僩偵偍偄偰丆儐乕僓偑惓偟偔 Gfarm 傪棙梡偱偒傞傛偆愝掕
+偝傟偰偄傞偙偲傪妋擣偟傑偡丏Gfarm 偺愝掕僼傽僀儖偼 /etc/gfarm.conf 傕
+偟偔偼 ~/.gfarmrc 偱偡丏偙傟傜偺僼傽僀儖偑懚嵼偡傞偐傪妋擣偟傑偡丏
 
  % ls /etc/gfarm.conf
  % ls ~/.gfarmrc
 
-これらのファイルが尉数赂哼する眷圭は·~/.gfarmrc が庭黎されますˉ
-どちらのファイルも赂哼しない眷圭·Gfarm を网脱することができませんˉ
-瓷妄荚に陵锰してくださいˉこれらのファイルが赂哼し·赖しく肋年されていれ
-ば·Gfarm を网脱することができますˉファイル柒推の拒嘿については·
-man gfarm.conf を徊救してくださいˉ
-
-2.千沮
-Gfarm を网脱するためには·まず呵介に千沮を乖なう涩妥がありますˉ笆布
-の企つの千沮数及があり·インスト〖ルされている Gfarm の肋年ファイルで
-回年されますˉ
-
- (1) 鼎铜入泰赴数及
- (2) GSI (Grid Security Infrastructure) 千沮数及の眷圭
-
-网脱している Gfarm がどちらの千沮数及を何脱しているか尸からない眷圭は·
-Gfarm 肋年ファイル /etc/gfarm.conf を徊救してくださいˉgfarm.conf の
-今及については·man gfarm.conf を徊雇にしてくださいˉ
+偙傟傜偺僼傽僀儖偑椉曽懚嵼偡傞応崌偼丆~/.gfarmrc 偑桪愭偝傟傑偡丏
+偳偪傜偺僼傽僀儖傕懚嵼偟側偄応崌丆Gfarm 傪棙梡偡傞偙偲偑偱偒傑偣傫丏
+娗棟幰偵憡択偟偰偔偩偝偄丏偙傟傜偺僼傽僀儖偑懚嵼偟丆惓偟偔愝掕偝傟偰偄
+傟偽丆Gfarm 傪棙梡偡傞偙偲偑偱偒傑偡丏僼傽僀儖撪梕偺徻嵶偵偮偄偰偼丆
+man gfarm.conf 傪嶲徠偟偰偔偩偝偄丏
 
 
-2.1.鼎铜入泰赴数及の眷圭
-鼎铜入泰赴数及は·ホ〖ムディレクトリに赴ファイルを侯喇し·その柒推で千
-沮を乖う数及ですˉ
+2.擣徹
+Gfarm 傪棙梡偡傞偨傔偵偼丆傑偢嵟弶偵擣徹傪峴側偆昁梫偑偁傝傑偡丏埲壓
+偺擇偮偺擣徹曽幃偑偁傝丆僀儞僗僩乕儖偝傟偰偄傞 Gfarm 偺愝掕僼傽僀儖偱
+巜掕偝傟傑偡丏
 
-(ホ〖ムディレクトリが鼎铜されている眷圭)
-ホ〖ムディレクトリが鼎铜されている眷圭には·极瓢弄に Gfarm の赴ファイル
-が侯喇され·构糠されますˉ千沮が涩妥な Gfarm コマンドを悸乖した狠·赴
-ファイルがなければ侯喇されますˉすでに赂哼する赴ファイルが痰跟であった
-眷圭·极瓢弄に赴ファイルを构糠してリトライされますˉこのため·驴くの眷
-圭·Gfarm の赴ファイルについて罢急する涩妥はありませんˉ
+ (1) 嫟桳旈枾尞擣徹曽幃
+ (2) GSI (Grid Security Infrastructure) 擣徹曽幃
 
-ホ〖ムディレクトリの鼎铜に觅变がある·ホ〖ムディレクトリを鼎铜していな
-いノ〖ドが崔まれる霹·赴ファイルの极瓢栏喇や极瓢构糠がうまくいかない眷
-圭は·笆布のような数恕で赴ファイルを构糠してくださいˉ
-ⅷ极瓢栏喇や极瓢构糠がうまく瓢く眷圭は·これらの缄界を悸乖する涩妥はあ
-りませんˉ
+棙梡偟偰偄傞 Gfarm 娐嫬偑偳偪傜偺擣徹曽幃傪嵦梡偟偰偄傞偐暘偐傜側偄応
+崌偼丆Gfarm 愝掕僼傽僀儖 /etc/gfarm.conf 傪嶲徠偟偰偔偩偝偄丏
+gfarm.conf 偺彂幃偵偮偄偰偼丆man gfarm.conf 傪嶲峫偵偟偰偔偩偝偄丏
 
- (1) 赴ファイルの栏喇または构糠
-     笆布のコマンドを悸乖しますˉ
+儊僞僨乕僞僒乕僶偲偦傟偧傟偺僼傽僀儖僔僗僥儉僲乕僪偺擣徹曽幃偑丆(1)偲
+(2)偺椉曽幃偱崿嵼偟偰偄傞応崌偑偁傝傑偡丏偦偺応崌偼丆僋儔僀傾儞僩儂僗
+僩懁偱埲壓偺 2.1 偲 2.2 偺椉曽傪弨旛偟偰偍偔昁梫偑偁傝傑偡丏
+
+2.1.嫟桳旈枾尞曽幃偺応崌
+嫟桳旈枾尞曽幃偼丆儂乕儉僨傿儗僋僩儕偵尞僼傽僀儖傪嶌惉偟丆偦偺撪梕偱擣
+徹傪峴偆曽幃偱偡丏
+
+(儂乕儉僨傿儗僋僩儕偑嫟桳偝傟偰偄傞応崌)
+儂乕儉僨傿儗僋僩儕偑嫟桳偝傟偰偄傞応崌偵偼丆帺摦揑偵 Gfarm 偺尞僼傽僀儖
+偑嶌惉偝傟丆峏怴偝傟傑偡丏擣徹偑昁梫側 Gfarm 僐儅儞僪傪幚峴偟偨嵺丆尞
+僼傽僀儖偑側偗傟偽嶌惉偝傟傑偡丏偡偱偵懚嵼偡傞尞僼傽僀儖偑柍岠偱偁偭偨
+応崌丆帺摦揑偵尞僼傽僀儖傪峏怴偟偰儕僩儔僀偝傟傑偡丏偙偺偨傔丆懡偔偺応
+崌丆Gfarm 偺尞僼傽僀儖偵偮偄偰堄幆偡傞昁梫偼偁傝傑偣傫丏
+
+儂乕儉僨傿儗僋僩儕偺嫟桳偵抶墑偑偁傞丆儂乕儉僨傿儗僋僩儕傪嫟桳偟偰偄側
+偄僲乕僪偑娷傑傟傞摍丆尞僼傽僀儖偺帺摦惗惉傗帺摦峏怴偑偆傑偔偄偐側偄応
+崌偼丆埲壓偺傛偆側曽朄偱尞僼傽僀儖傪峏怴偟偰偔偩偝偄丏
+仸帺摦惗惉傗帺摦峏怴偑偆傑偔摦偔応崌偼丆偙傟傜偺庤弴傪幚峴偡傞昁梫偼偁
+傝傑偣傫丏
+
+ (1) 尞僼傽僀儖偺惗惉傑偨偼峏怴
+     埲壓偺僐儅儞僪傪幚峴偟傑偡丏
 
      % gfkey -f
 
-    このコマンドを悸乖すると·ホ〖ムディレクトリに .gfarm_shared_key
-    という叹涟の赴ファイルが栏喇されますˉ-f オプションは·涩ず糠惮の
-    赴を侯喇するオプションですˉこの赴ファイルは·侯喇されてから 24 箕
-    粗铜跟ですˉ24 箕粗を臂えて Gfarm を网脱する眷圭は·赴ファイルが痰
-    跟になるまえに浩刨赴ファイルを栏喇してくださいˉ
-    -f オプションの洛わりに -c オプションを蝗うと·すでに赴ファイルが
-    ある眷圭には部もせず·赴ファイルがない眷圭だけ栏喇を乖いますˉ
-    拒嘿は man gfkey を徊救してくださいˉ
+    偙偺僐儅儞僪傪幚峴偡傞偲丆儂乕儉僨傿儗僋僩儕偵 .gfarm_shared_key
+    偲偄偆柤慜偺尞僼傽僀儖偑惗惉偝傟傑偡丏-f 僆僾僔儑儞偼丆昁偢怴婯偺
+    尞傪嶌惉偡傞僆僾僔儑儞偱偡丏偙偺尞僼傽僀儖偼丆嶌惉偝傟偰偐傜 24 帪
+    娫桳岠偱偡丏24 帪娫傪墇偊偰 Gfarm 傪棙梡偡傞応崌偼丆尞僼傽僀儖偑柍
+    岠偵側傞傑偊偵嵞搙尞僼傽僀儖傪惗惉偟偰偔偩偝偄丏
+    -f 僆僾僔儑儞偺戙傢傝偵 -c 僆僾僔儑儞傪巊偆偲丆偡偱偵尞僼傽僀儖偑
+    偁傞応崌偵偼壗傕偣偢丆尞僼傽僀儖偑側偄応崌偩偗惗惉傪峴偄傑偡丏
+    徻嵶偼 man gfkey 傪嶲徠偟偰偔偩偝偄丏
 
- (2) 赴ファイルのコピ〖
-     肌の灌誊≈ホ〖ムディレクトリが鼎铜されていない眷圭∽の棱汤に骄い·
-     栏喇/构糠した .gfarm_shared_key ファイルをすべてのファイルシステム
-     ノ〖ドのホ〖ムディレクトリにコピ〖してくださいˉまた、メタデ〖タ
-     サ〖バのホ〖ムディレクトリにもコピ〖してくださいˉ
+ (2) 尞僼傽僀儖偺僐僺乕
+     師偺崁栚乽儂乕儉僨傿儗僋僩儕偑嫟桳偝傟偰偄側偄応崌乿偺愢柧偵廬偄丆
+     惗惉/峏怴偟偨 .gfarm_shared_key 僼傽僀儖傪偡傋偰偺僼傽僀儖僔僗僥儉
+     僲乕僪偺儂乕儉僨傿儗僋僩儕偵僐僺乕偟偰偔偩偝偄丏傑偨丄儊僞僨乕僞
+     僒乕僶偺儂乕儉僨傿儗僋僩儕偵傕僐僺乕偟偰偔偩偝偄丏
 
-(ホ〖ムディレクトリが鼎铜されていない眷圭)
-ホ〖ムディレクトリが鼎铜されていない眷圭には·まず赴ファイル
-.gfarm_shared_key を栏喇し、そのあと·さらにそのファイルを奥链にコピ〖
-しておく涩妥がありますˉ赴ファイルの栏喇数恕は·涟揭の≈ホ〖ムディレク
-トリが鼎铜されている眷圭∽の (1) 赴ファイルの栏喇または构糠を徊救して
-くださいˉ
+(儂乕儉僨傿儗僋僩儕偑嫟桳偝傟偰偄側偄応崌)
+儂乕儉僨傿儗僋僩儕偑嫟桳偝傟偰偄側偄応崌偵偼丆傑偢尞僼傽僀儖
+.gfarm_shared_key 傪惗惉偟丄偦偺偁偲丆偝傜偵偦偺僼傽僀儖傪埨慡偵僐僺乕
+偟偰偍偔昁梫偑偁傝傑偡丏尞僼傽僀儖偺惗惉曽朄偼丆慜弎偺乽儂乕儉僨傿儗僋
+僩儕偑嫟桳偝傟偰偄傞応崌乿偺 (1) 尞僼傽僀儖偺惗惉傑偨偼峏怴傪嶲徠偟偰
+偔偩偝偄丏
 
-ファイルシステムノ〖ドのホストすべてにコピ〖してくださいˉたとえば
-シェルが bash の眷圭·笆布のようにコマンドを悸乖しますˉ
+僼傽僀儖僔僗僥儉僲乕僪偺儂僗僩偡傋偰偵僐僺乕偟偰偔偩偝偄丏偨偲偊偽
+僔僃儖偑 bash 偺応崌丆埲壓偺傛偆偵僐儅儞僪傪幚峴偟傑偡丏
 
- % gfkey -f                            赴ファイルの栏喇
- % scp ~/.gfarm_shared_key gfm1:       メタデ〖タサ〖バに赴をコピ〖
+ % gfkey -f                           仼 尞僼傽僀儖偺惗惉
+ % scp ~/.gfarm_shared_key gfm1:      仼 儊僞僨乕僞僒乕僶偵尞傪僐僺乕
  % for n in `gfhost` ; do scp ~/.gfarm_shared_key $n: ; done
-                                       网脱材墙なノ〖ドに赴をコピ〖
+                                      仾 棙梡壜擻側僲乕僪偵尞傪僐僺乕
 
+2.2.GSI 擣徹曽幃偺応崌
+GSI (Grid Security Infrastructure) 擣徹曽幃偼丆儐乕僓徹柧彂傪擣徹嬊傛
+傝庢摼偟丆偦偺戙棟徹柧彂傪嶌惉偡傞偙偲偱僔儞僌儖僒僀儞僆儞傪幚尰偡傞擣
+徹曽幃偱偡丏
 
-2.2.GSI 千沮数及の眷圭
-GSI (Grid Security Infrastructure) 千沮数及は·ユ〖ザ沮汤今を千沮渡よ
-り艰评し·その洛妄沮汤今を侯喇することでシングルサインオンを悸附する千
-沮数及ですˉ
-
-GSI 千沮が铜跟になっている眷圭は·ユ〖ザ洛妄沮汤今を侯喇することで千沮
-が窗位しますˉ
-恶挛弄には·笆布のようにコマンドを悸乖しますˉ
+GSI 擣徹偑桳岠偵側偭偰偄傞応崌偼丆儐乕僓戙棟徹柧彂傪嶌惉偡傞偙偲偱擣徹
+偑姰椆偟傑偡丏
+嬶懱揑偵偼丆埲壓偺傛偆偵僐儅儞僪傪幚峴偟傑偡丏
 
  % grid-proxy-init
 
-このコマンドを悸乖すると·Grid Security Infrastructure における洛妄沮汤
-今が侯喇され·千沮が窗位しますˉ拒嘿は Grid Security Infrastructure や
-Globus Toolkit に簇する获瘟を徊救してくださいˉ
+偙偺僐儅儞僪傪幚峴偡傞偲丆Grid Security Infrastructure 偵偍偗傞戙棟徹柧
+彂偑嶌惉偝傟丆擣徹偑姰椆偟傑偡丏徻嵶偼 Grid Security Infrastructure 傗
+Globus Toolkit 偵娭偡傞帒椏傪嶲徠偟偰偔偩偝偄丏
 
 
-3.Gfarm 茨董の澄千
-Gfarm が赖しく肋年されているか·Gfarm ファイルシステムが赖しく瓢侯してい
-るかを澄千しますˉユ〖ザ茨董で徊救される肋年ファイルの柒推を澄千しますˉ
-また·Gfarm コマンドを蝗って称ノ〖ドの瓢侯觉斗を澄千しますˉ
-肌鞠のサンプルプログラムを悸乖する涟に·この澄千を乖って布さいˉ
+3.Gfarm 娐嫬偺妋擣
+Gfarm 偑惓偟偔愝掕偝傟偰偄傞偐丆Gfarm 僼傽僀儖僔僗僥儉偑惓偟偔摦嶌偟偰偄
+傞偐傪妋擣偟傑偡丏儐乕僓娐嫬偱嶲徠偝傟傞愝掕僼傽僀儖偺撪梕傪妋擣偟傑偡丏
 
-3.1.ファイルシステムの柒推と事误コマンドの澄千(gfls)
-この稿のサンプルの悸乖に涩妥な事误コマンドが Gfarm ファイルシステムに
-判峡されていることを澄千しますˉgfls コマンドを蝗って·Gfarm ファイル
-システムの柒推を办枉山绩することができますˉ
+傑偨丆Gfarm 偺僐儅儞僪傪巊偭偰奺僲乕僪偺摦嶌忬嫷傪妋擣偟傑偡丏師復偺僒
+儞僾儖僾儘僌儔儉傪幚峴偡傞慜偵丆偙偺妋擣傪峴偭偰壓偝偄丏
+
+仸Gfarm 偺僐儅儞僪傪巊梡偡傞慜偵丆Gfarm 偺僐儅儞僪偑攝抲偝傟偰偄傞僨傿
+儗僋僩儕傪丆昁偢 PATH 娐嫬曄悢偵捛壛偟偰偍偄偰偔偩偝偄丏
+
+3.1.僼傽僀儖僔僗僥儉偺撪梕偲暲楍僐儅儞僪偺妋擣(gfls)
+偙偺屻偺僒儞僾儖偺幚峴偵昁梫側暲楍僐儅儞僪偑 Gfarm 僼傽僀儖僔僗僥儉偵
+搊榐偝傟偰偄傞偙偲傪妋擣偟傑偡丏gfls 僐儅儞僪傪巊偭偰丆Gfarm 僼傽僀儖
+僔僗僥儉偺撪梕傪堦棗昞帵偡傞偙偲偑偱偒傑偡丏
 
  % gfls -l gfarm:/bin
  -rwxrwxr-x tatebe   *            616482 Apr  3 19:30 gfcombine
@@ -151,15 +158,15 @@ Gfarm が赖しく肋年されているか·Gfarm ファイルシステムが赖しく瓢侯してい
  -rwxrwxr-x tatebe   *            809797 Apr  3 19:31 gfwc
  -rwxrwxr-x tatebe   *            663226 Apr  3 19:31 thput-gfpio
 
-肌鞠のサンプル悸乖には·gfgrep と gfwc コマンドが判峡されていることが
-涩妥ですˉこの 2 つのコマンドが惧淡 gfls の叫蜗に崔まれない眷圭は·瓷
-妄荚に陵锰してくださいˉgfls の拒嘿については man gfls を徊救してくだ
-さいˉ
+師復偺僒儞僾儖幚峴偵偼丆gfgrep 偲 gfwc 僐儅儞僪偑搊榐偝傟偰偄傞偙偲偑
+昁梫偱偡丏偙偺 2 偮偺僐儅儞僪偑忋婰 gfls 偺弌椡偵娷傑傟側偄応崌偼丆娗
+棟幰偵憡択偟偰偔偩偝偄丏gfls 偺徻嵶偵偮偄偰偼 man gfls 傪嶲徠偟偰偔偩
+偝偄丏
 
-3.2.ファイルシステムノ〖ドの澄千(gfhost)
-Gfarm ファイルシステムを菇喇しているファイルシステムノ〖ドが赖しく弹瓢
-しているかどうかを澄千しますˉ笆布のように gfhost コマンドを蝗って·ファ
-イルシステムノ〖ドの觉斗を拇べますˉ
+3.2.僼傽僀儖僔僗僥儉僲乕僪偺妋擣(gfhost)
+Gfarm 僼傽僀儖僔僗僥儉傪峔惉偟偰偄傞僼傽僀儖僔僗僥儉僲乕僪偑惓偟偔婲摦
+偟偰偄傞偐偳偆偐傪妋擣偟傑偡丏埲壓偺傛偆偵 gfhost 僐儅儞僪傪巊偭偰丆僼傽
+僀儖僔僗僥儉僲乕僪偺忬嫷傪挷傋傑偡丏
 
  % gfhost -l
  0.00/0.00/0.00 i386-redhat-linux 1 gfm01.somewhere.com
@@ -173,20 +180,20 @@ Gfarm ファイルシステムを菇喇しているファイルシステムノ〖ドが赖しく弹瓢
  0.00/0.00/0.00 i386-redhat-linux 1 gfm09.somewhere.com
  0.00/0.00/0.00 i386-redhat-linux 1 gfm10.somewhere.com
 
-ファイルシステムを菇喇するファイルシステムノ〖ドが办枉山绩されれば·
-Gfarm が赖しく瓢侯していますˉこのとき·称乖の罢蹋は笆布の奶りですˉ
+僼傽僀儖僔僗僥儉傪峔惉偡傞僼傽僀儖僔僗僥儉僲乕僪偑堦棗昞帵偝傟傟偽丆
+Gfarm 偑惓偟偔摦嶌偟偰偄傑偡丏偙偺偲偒丆奺峴偺堄枴偼埲壓偺捠傝偱偡丏
 
- - 乖片の 3 つの眶机は·そのノ〖ドのロ〖ドアベレ〖ジですˉ
- - ロ〖ドアベレ〖ジが -.-- という妨及になっている乖は·澈碰ノ〖ドの
-   ファイルシステムノ〖ドに儡鲁できないことを绩しますˉおそらく澈碰
-   ノ〖ドの gfsd が皖ちていますˉ
- - i386-redhat-linux というカラムでは·澈碰ノ〖ドのア〖キテクチャや
-   OS が山绩されますˉ
- - その肌のカラムでは·澈碰ノ〖ドの CPU 眶が山绩されますˉ
- - 呵稿のカラムには·ノ〖ドの叹涟が山绩されますˉ
+ - 峴摢偺 3 偮偺悢帤偼丆偦偺僲乕僪偺儘乕僪傾儀儗乕僕偱偡丏
+ - 儘乕僪傾儀儗乕僕偑 -.-- 偲偄偆宍幃偵側偭偰偄傞峴偼丆奩摉僲乕僪偺
+   僼傽僀儖僔僗僥儉僲乕僪偵愙懕偱偒側偄偙偲傪帵偟傑偡丏偍偦傜偔奩摉
+   僲乕僪偺 gfsd 偑棊偪偰偄傑偡丏
+ - i386-redhat-linux 偲偄偆僇儔儉偱偼丆奩摉僲乕僪偺傾乕僉僥僋僠儍傗
+   OS 偑昞帵偝傟傑偡丏
+ - 偦偺師偺僇儔儉偱偼丆奩摉僲乕僪偺 CPU 悢偑昞帵偝傟傑偡丏
+ - 嵟屻偺僇儔儉偵偼丆僲乕僪偺柤慜偑昞帵偝傟傑偡丏
 
-gfhost コマンドをオプションなしで悸乖すると·帽にファイルシステムノ〖
-ドの办枉を山绩しますˉ
+gfhost 僐儅儞僪傪僆僾僔儑儞側偟偱幚峴偡傞偲丆扨偵僼傽僀儖僔僗僥儉僲乕
+僪偺堦棗傪昞帵偟傑偡丏
 gfm01.somewhere.com
 gfm02.somewhere.com
 gfm03.somewhere.com
@@ -198,10 +205,10 @@ gfm08.somewhere.com
 gfm09.somewhere.com
 gfm10.somewhere.com
 
-3.3.网脱材墙なファイルシステムノ〖ドの澄千(gfrun)
-千沮が姜わった箕爬で·ユ〖ザとして网脱材墙なファイルシステムノ〖ドを澄
-千してみますˉ笆布のように gfhost と gfrun コマンドを蝗って·网脱材墙か
-どうかを拇べることができますˉ
+3.3.棙梡壜擻側僼傽僀儖僔僗僥儉僲乕僪偺妋擣(gfrun)
+擣徹偑廔傢偭偨帪揰偱丆儐乕僓偲偟偰棙梡壜擻側僼傽僀儖僔僗僥儉僲乕僪傪妋
+擣偟偰傒傑偡丏埲壓偺傛偆偵 gfhost 偲 gfrun 僐儅儞僪傪巊偭偰丆棙梡壜擻偐
+偳偆偐傪挷傋傞偙偲偑偱偒傑偡丏
 
  % gfhost | gfrun -H - hostname
  gfm01.somewhere.com
@@ -210,79 +217,78 @@ gfm10.somewhere.com
  gfm04.somewhere.com
  gfm05.somewhere.com
 
-このコマンドを悸乖した客が网脱材墙なファイルシステムノ〖ドの办枉が山绩
-されますˉ3.2.で山绩されるファイルシステムノ〖ドのリストとは般い·ここ
-で山绩されているノ〖ドについては·赖しくユ〖ザ千沮が乖われることも瘦沮
-されていますˉこの毋では、gfm01 × gfm05 というホストがユ〖ザに网脱材墙
-となっていることが山绩されています。
-このとき gfrun コマンドは·gfhost の叫蜗するすべてのノ〖ドで hostname
-コマンドを悸乖していますˉ
+偙偺僐儅儞僪傪幚峴偟偨恖偑棙梡壜擻側僼傽僀儖僔僗僥儉僲乕僪偺堦棗偑昞帵
+偝傟傑偡丏3.2.偱昞帵偝傟傞僼傽僀儖僔僗僥儉僲乕僪偺儕僗僩偲偼堘偄丆偙偙
+偱昞帵偝傟偰偄傞僲乕僪偵偮偄偰偼丆惓偟偔儐乕僓擣徹偑峴傢傟傞偙偲傕曐徹
+偝傟偰偄傑偡丏偙偺椺偱偼丄gfm01 乣 gfm05 偲偄偆儂僗僩偑儐乕僓偵棙梡壜擻
+偲側偭偰偄傞偙偲偑昞帵偝傟偰偄傑偡丅
+偙偺偲偒 gfrun 僐儅儞僪偼丆gfhost 偺弌椡偡傞偡傋偰偺僲乕僪偱 hostname
+僐儅儞僪傪幚峴偟偰偄傑偡丏
 
-
-3.4.メタデ〖タサ〖バの澄千(gfps)
-Gfarm ファイルシステムのメタデ〖タサ〖バが赖しく弹瓢されているかどうかを
-澄千しますˉオプションを回年せずに gfps コマンドを悸乖し·部も山绩されず
-に篓郝に姜位すれば·メタデ〖タサ〖バが赖しく瓢侯していますˉ
+3.4.儊僞僨乕僞僒乕僶偺妋擣(gfps)
+Gfarm 僼傽僀儖僔僗僥儉偺儊僞僨乕僞僒乕僶偑惓偟偔婲摦偝傟偰偄傞偐偳偆偐傪
+妋擣偟傑偡丏僆僾僔儑儞傪巜掕偣偢偵 gfps 僐儅儞僪傪幚峴偟丆壗傕昞帵偝傟偢
+偵懄嵗偵廔椆偡傟偽丆儊僞僨乕僞僒乕僶偑惓偟偔摦嶌偟偰偄傑偡丏
 
  % gfps
 
 
-4.ファイルの拎侯
-塑鞠は Gfarm ファイルシステムのファイルを拎侯するためのコマンドにつ
-いて棱汤しますˉ缄傅にある奶撅のファイルシステム面のファイルを Gfarm
-ファイルシステムにコピ〖したり·Gfarm ファイルシステムの觉轮を拇べたり
-するコマンド霹を悸狠に悸乖してみますˉ
+4.僼傽僀儖偺憖嶌
+杮復偼 Gfarm 僼傽僀儖僔僗僥儉偺僼傽僀儖傪憖嶌偡傞偨傔偺僐儅儞僪偵偮
+偄偰愢柧偟傑偡丏庤尦偵偁傞捠忢偺僼傽僀儖僔僗僥儉拞偺僼傽僀儖傪 Gfarm
+僼傽僀儖僔僗僥儉偵僐僺乕偟偨傝丆Gfarm 僼傽僀儖僔僗僥儉偺忬懺傪挷傋偨傝
+偡傞僐儅儞僪摍傪幚嵺偵幚峴偟偰傒傑偡丏
 
-4.1.奶撅ファイルを帽办の Gfarm ファイルとして判峡する
-缄傅の奶撅ファイルシステムにあるファイルを·そのまま Gfarm ファイルシ
-ステムに艰り哈んでみますˉこれには gfreg コマンドを蝗いますˉ奶撅ファ
-イル sample.file を gfarm:sample.file というような Gfarm ファイルとし
-て判峡するには·笆布のようなコマンドを悸乖しますˉ
+4.1.捠忢僼傽僀儖傪扨堦偺 Gfarm 僼傽僀儖偲偟偰搊榐偡傞
+庤尦偺捠忢僼傽僀儖僔僗僥儉偵偁傞僼傽僀儖傪丆偦偺傑傑 Gfarm 僼傽僀儖僔
+僗僥儉偵庢傝崬傫偱傒傑偡丏偙傟偵偼 gfreg 僐儅儞僪傪巊偄傑偡丏捠忢僼傽
+僀儖 sample.file 傪 gfarm:sample.file 偲偄偆傛偆側 Gfarm 僼傽僀儖偲偟
+偰搊榐偡傞偵偼丆埲壓偺傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
  % gfreg -I 0 -N 1 sample.file gfarm:sample.file
 
-このコマンドを悸乖すると·sample.file が Gfarm ファイルシステム面に侯
-喇されますˉgfls コマンドを蝗って·ファイルが侯喇されたことを澄千して
-みますˉ
+偙偺僐儅儞僪傪幚峴偡傞偲丆sample.file 偑 Gfarm 僼傽僀儖僔僗僥儉拞偵嶌
+惉偝傟傑偡丏gfls 僐儅儞僪傪巊偭偰丆僼傽僀儖偑嶌惉偝傟偨偙偲傪妋擣偟偰
+傒傑偡丏
 
  % gfls -l
  -rw-r--r-- tatebe   *              1206 Apr 16 13:48 sample.file
 
-ファイルが侯喇されていることが尸かりますˉこのファイルの柒推が赖しく艰
-り哈まれているかを澄千してみるために·浩び奶撅ファイルシステムに艰り叫
-してみますˉGfarm ファイルシステムからファイル柒推を艰り叫すには·
-gfexport コマンドを蝗いますˉgfarm:sample.file の柒推を sample.exported
-というファイルに艰り叫すには·笆布のコマンドを悸乖しますˉ
+僼傽僀儖偑嶌惉偝傟偰偄傞偙偲偑暘偐傝傑偡丏偙偺僼傽僀儖偺撪梕偑惓偟偔庢
+傝崬傑傟偰偄傞偐傪妋擣偟偰傒傞偨傔偵丆嵞傃捠忢僼傽僀儖僔僗僥儉偵庢傝弌
+偟偰傒傑偡丏Gfarm 僼傽僀儖僔僗僥儉偐傜僼傽僀儖撪梕傪庢傝弌偡偵偼丆
+gfexport 僐儅儞僪傪巊偄傑偡丏gfarm:sample.file 偺撪梕傪 sample.exported
+偲偄偆僼傽僀儖偵庢傝弌偡偵偼丆埲壓偺僐儅儞僪傪幚峴偟傑偡丏
 
  % gfexport gfarm:sample.file > sample.exported
 
-gfexport コマンドは筛洁叫蜗にファイルの柒推を叫蜗するので·これをリダイ
-レクトして sample.exported ファイルに今き哈んでいますˉ傅のファイルとの
-汗尸をとって·柒推に恃步がないことを澄千しますˉ
+gfexport 僐儅儞僪偼昗弨弌椡偵僼傽僀儖偺撪梕傪弌椡偡傞偺偱丆偙傟傪儕僟僀
+儗僋僩偟偰 sample.exported 僼傽僀儖偵彂偒崬傫偱偄傑偡丏尦偺僼傽僀儖偲偺
+嵎暘傪偲偭偰丆撪梕偵曄壔偑側偄偙偲傪妋擣偟傑偡丏
 
  % diff sample.file sample.exported
 
-傅のファイルと Gfarm ファイルシステムから艰り叫したファイルとの粗には·
-部も恃步がないことが尸かりますˉ
+尦偺僼傽僀儖偲 Gfarm 僼傽僀儖僔僗僥儉偐傜庢傝弌偟偨僼傽僀儖偲偺娫偵偼丆
+壗傕曄壔偑側偄偙偲偑暘偐傝傑偡丏
 
-4.2.剩眶の奶撅ファイルを办つの Gfarm ファイルとして判峡する
-1 つの Gfarm ファイルは·1 つ笆惧のファイル们室から菇喇されますˉGfarm
-ファイルシステムでは·剩眶のファイル们室を剩眶のホスト(ファイルシステム
-ノ〖ド)に尸欢して芹弥しておくことができ·これらのファイル们室は·Gfarm
-ファイルシステム面では·すべての们室を息冯した 1 つの Gfarm ファイルに斧
-えますˉ
+4.2.暋悢偺捠忢僼傽僀儖傪堦偮偺 Gfarm 僼傽僀儖偲偟偰搊榐偡傞
+1 偮偺 Gfarm 僼傽僀儖偼丆1 偮埲忋偺僼傽僀儖抐曅偐傜峔惉偝傟傑偡丏Gfarm
+僼傽僀儖僔僗僥儉偱偼丆暋悢偺僼傽僀儖抐曅傪暋悢偺儂僗僩(僼傽僀儖僔僗僥儉
+僲乕僪)偵暘嶶偟偰攝抲偟偰偍偔偙偲偑偱偒丆偙傟傜偺僼傽僀儖抐曅偼丆Gfarm
+僼傽僀儖僔僗僥儉拞偱偼丆偡傋偰偺抐曅傪楢寢偟偨 1 偮偺 Gfarm 僼傽僀儖偵尒
+偊傑偡丏
 
-奶撅のファイルを剩眶のファイル们室から菇喇される Gfarm ファイルとして
-Gfarm ファイルシステム面に判峡するには·gfreg コマンドを蝗って笆布のよ
-うな缄界を悸乖しますˉ
+捠忢偺僼傽僀儖傪暋悢偺僼傽僀儖抐曅偐傜峔惉偝傟傞 Gfarm 僼傽僀儖偲偟偰
+Gfarm 僼傽僀儖僔僗僥儉拞偵搊榐偡傞偵偼丆gfreg 僐儅儞僪傪巊偭偰埲壓偺傛
+偆側庤弴傪幚峴偟傑偡丏
 
- (1) 奶撅ファイルを尸充する
-     Gfarm ファイルシステムに艰り哈みたいファイルを·奶撅のファイルシ
-     ステム面で尸充しておきますˉどのようにファイルを尸充するべきかは·
-     アプリケ〖ションに巴赂しますˉ
-     この毋では·sample.file というファイルを split コマンドで尸充して
-     おきますˉsplit コマンドは OS によって刁瓢が般うことがありますの
-     で·拒嘿については man split を徊救してくださいˉ
+ (1) 捠忢僼傽僀儖傪暘妱偡傞
+     Gfarm 僼傽僀儖僔僗僥儉偵庢傝崬傒偨偄僼傽僀儖傪丆捠忢偺僼傽僀儖僔
+     僗僥儉拞偱暘妱偟偰偍偒傑偡丏偳偺傛偆偵僼傽僀儖傪暘妱偡傞傋偒偐偼丆
+     傾僾儕働乕僔儑儞偵埶懚偟傑偡丏
+     偙偺椺偱偼丆sample.file 偲偄偆僼傽僀儖傪 split 僐儅儞僪偱暘妱偟偰
+     偍偒傑偡丏split 僐儅儞僪偼 OS 偵傛偭偰嫇摦偑堘偆偙偲偑偁傝傑偡偺
+     偱丆徻嵶偵偮偄偰偼 man split 傪嶲徠偟偰偔偩偝偄丏
 
      % split -b 4096 sample.file sample.frags.
      % ls -l sample.frags.*
@@ -294,13 +300,13 @@ Gfarm ファイルシステム面に判峡するには·gfreg コマンドを蝗って笆布のよ
      -rw-r--r--   1 tatebe        4096 Apr 16 16:58 sample.frags.af
      -rw-r--r--   1 tatebe         843 Apr 16 16:58 sample.frags.ag
 
-     この眷圭·7 つのファイルに尸充されていますˉこれらの尸充された
-     ファイルを称」ファイル们室として Gfarm ファイルシステムに芹弥し·
-     Gfarm ファイルを菇喇しますˉ
+     偙偺応崌丆7 偮偺僼傽僀儖偵暘妱偝傟偰偄傑偡丏偙傟傜偺暘妱偝傟偨
+     僼傽僀儖傪奺乆僼傽僀儖抐曅偲偟偰 Gfarm 僼傽僀儖僔僗僥儉偵攝抲偟丆
+     Gfarm 僼傽僀儖傪峔惉偟傑偡丏
 
- (2) 尸充したファイルを称」 gfreg で判峡する
-     gfreg を蝗って·(1) で尸充した 7 つのファイルを Gfarm ファイルシ
-     ステムに艰り哈みますˉ笆布のようなコマンドを悸乖しますˉ
+ (2) 暘妱偟偨僼傽僀儖傪奺乆 gfreg 偱搊榐偡傞
+     gfreg 傪巊偭偰丆(1) 偱暘妱偟偨 7 偮偺僼傽僀儖傪 Gfarm 僼傽僀儖僔
+     僗僥儉偵庢傝崬傒傑偡丏埲壓偺傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
      % gfreg -I 0 -N 7 sample.frags.aa gfarm:sample.file
      % gfreg -I 1 -N 7 sample.frags.ab gfarm:sample.file
@@ -310,24 +316,24 @@ Gfarm ファイルシステム面に判峡するには·gfreg コマンドを蝗って笆布のよ
      % gfreg -I 5 -N 7 sample.frags.af gfarm:sample.file
      % gfreg -I 6 -N 7 sample.frags.ag gfarm:sample.file
 
-     これらのコマンドを悸乖すると·称ファイルはファイルシステムノ〖ド
-     のロ〖ドアベレ〖ジに答づいて尸欢して芹弥されますˉ恶挛弄には·ロ〖
-     ドアベレ〖ジのもっとも你いノ〖ドに判峡されますˉ
-     このとき·称コマンドラインオプションの罢蹋は笆布の奶りですˉ
+     偙傟傜偺僐儅儞僪傪幚峴偡傞偲丆奺僼傽僀儖偼僼傽僀儖僔僗僥儉僲乕僪
+     偺儘乕僪傾儀儗乕僕偵婎偯偄偰暘嶶偟偰攝抲偝傟傑偡丏嬶懱揑偵偼丆儘乕
+     僪傾儀儗乕僕偺傕偭偲傕掅偄僲乕僪偵搊榐偝傟傑偡丏
+     偙偺偲偒丆奺僐儅儞僪儔僀儞僆僾僔儑儞偺堄枴偼埲壓偺捠傝偱偡丏
 
-     - "-I 眶机"
-       このコマンドで判峡するファイルがいくつめのファイル们室かを回年し
-       ますˉ
+     - "-I 悢帤"
+       偙偺僐儅儞僪偱搊榐偡傞僼傽僀儖偑偄偔偮傔偺僼傽僀儖抐曅偐傪巜掕偟
+       傑偡丏
 
-     - "-N 眶机"
-       判峡するファイルが·圭纷いくつのファイル们室から菇喇されているの
-       かを回年しますˉ
+     - "-N 悢帤"
+       搊榐偡傞僼傽僀儖偑丆崌寁偄偔偮偺僼傽僀儖抐曅偐傜峔惉偝傟偰偄傞偺
+       偐傪巜掕偟傑偡丏
 
-     ロ〖ドアベレ〖ジによってファイルを尸欢するだけでなく·汤绩弄にファ
-     イルを芹弥することもできますˉ-h オプションで·称ファイルをどのノ〖
-     ドに芹弥するかを回年しますˉ惧淡の毋は·毋えば笆布のようになりますˉ
-     ⅷこのとき回年するファイルシステムノ〖ドは·祸涟に gfhost などで
-       网脱材墙であることを澄千しておく涩妥がありますˉ
+     儘乕僪傾儀儗乕僕偵傛偭偰僼傽僀儖傪暘嶶偡傞偩偗偱側偔丆柧帵揑偵僼傽
+     僀儖傪攝抲偡傞偙偲傕偱偒傑偡丏-h 僆僾僔儑儞偱丆奺僼傽僀儖傪偳偺僲乕
+     僪偵攝抲偡傞偐傪巜掕偟傑偡丏忋婰偺椺偼丆椺偊偽埲壓偺傛偆偵側傝傑偡丏
+     仸偙偺偲偒巜掕偡傞僼傽僀儖僔僗僥儉僲乕僪偼丆帠慜偵 gfhost 側偳偱
+       棙梡壜擻偱偁傞偙偲傪妋擣偟偰偍偔昁梫偑偁傝傑偡丏
 
      % gfreg -I 0 -N 7 -h gfm01.somewhere.com sample.frags.aa gfarm:sample.file
      % gfreg -I 1 -N 7 -h gfm02.somewhere.com sample.frags.ab gfarm:sample.file
@@ -337,27 +343,27 @@ Gfarm ファイルシステム面に判峡するには·gfreg コマンドを蝗って笆布のよ
      % gfreg -I 5 -N 7 -h gfm06.somewhere.com sample.frags.af gfarm:sample.file
      % gfreg -I 6 -N 7 -h gfm07.somewhere.com sample.frags.ag gfarm:sample.file
 
-     -h オプションでは·ファイル们室を芹弥したいファイルシステムノ〖ド
-     のホスト叹を回年しますˉあらかじめ gfhost などを蝗って·网脱材墙な
-     ファイルシステムノ〖ドであることを澄千して布さいˉ
+     -h 僆僾僔儑儞偱偼丆僼傽僀儖抐曅傪攝抲偟偨偄僼傽僀儖僔僗僥儉僲乕僪
+     偺儂僗僩柤傪巜掕偟傑偡丏偁傜偐偠傔 gfhost 側偳傪巊偭偰丆棙梡壜擻側
+     僼傽僀儖僔僗僥儉僲乕僪偱偁傞偙偲傪妋擣偟偰壓偝偄丏
 
-     gfreg でファイル们室を判峡する狠の拒嘿については·man gfreg を徊救し
-     て布さいˉ
+     gfreg 偱僼傽僀儖抐曅傪搊榐偡傞嵺偺徻嵶偵偮偄偰偼丆man gfreg 傪嶲徠偟
+     偰壓偝偄丏
 
 
- (3) 赖しく判峡できたことを澄千する
-    gfls コマンドで·Gfarm ファイル gfarm:sample.file が判峡されたこと
-    を澄千しますˉ
+ (3) 惓偟偔搊榐偱偒偨偙偲傪妋擣偡傞
+    gfls 僐儅儞僪偱丆Gfarm 僼傽僀儖 gfarm:sample.file 偑搊榐偝傟偨偙偲
+    傪妋擣偟傑偡丏
 
     % gfls -l gfarm:sample.file
     -rw-r--r-- tatebe   *             25419 Apr 16 13:48 sample.file
 
-    尸充した sample.frags.* が·帽办のファイル gfarm:sample.file として
-    判峡されたことが澄千できますˉ
+    暘妱偟偨 sample.frags.* 偑丆扨堦偺僼傽僀儖 gfarm:sample.file 偲偟偰
+    搊榐偝傟偨偙偲偑妋擣偱偒傑偡丏
 
- (4) 赖しく芹弥されたことを澄千する
-     gfwhere コマンドで·Gfarm ファイル gfarm:sample.file がどのように
-     芹弥されているかを澄千しますˉ
+ (4) 惓偟偔攝抲偝傟偨偙偲傪妋擣偡傞
+     gfwhere 僐儅儞僪偱丆Gfarm 僼傽僀儖 gfarm:sample.file 偑偳偺傛偆偵
+     攝抲偝傟偰偄傞偐傪妋擣偟傑偡丏
 
      % gfwhere gfarm:sample.file
      0: gfm01.somewhere.com
@@ -368,198 +374,198 @@ Gfarm ファイルシステム面に判峡するには·gfreg コマンドを蝗って笆布のよ
      5: gfm06.somewhere.com
      6: gfm07.somewhere.com
 
-     gfarm:sample.file という帽办ファイルに斧えるものが·7 つの们室に
-     尸充され·称」が侍のホスト惧に芹弥されていることが澄千できますˉ
+     gfarm:sample.file 偲偄偆扨堦僼傽僀儖偵尒偊傞傕偺偑丆7 偮偺抐曅偵
+     暘妱偝傟丆奺乆偑暿偺儂僗僩忋偵攝抲偝傟偰偄傞偙偲偑妋擣偱偒傑偡丏
 
- (5) ファイル链挛を艰り叫す
-     gfexport コマンドで帽办の Gfarm ファイル gfarm:sample.file を艰り
-     叫せますˉ笆布の毋では·gfarm:sample.file を 1 つの奶撅ファイルと
-     して艰り叫し·傅のファイルと孺秤していますˉ
+ (5) 僼傽僀儖慡懱傪庢傝弌偡
+     gfexport 僐儅儞僪偱扨堦偺 Gfarm 僼傽僀儖 gfarm:sample.file 傪庢傝
+     弌偣傑偡丏埲壓偺椺偱偼丆gfarm:sample.file 傪 1 偮偺捠忢僼傽僀儖偲
+     偟偰庢傝弌偟丆尦偺僼傽僀儖偲斾妑偟偰偄傑偡丏
 
      % gfexport gfarm:sample.file > sample.whole_gfarmfrags
      % diff sample.file sample.whole_gfarmfrags
 
-     尸充涟のファイルと票办柒推であることが澄千できますˉ
+     暘妱慜偺僼傽僀儖偲摨堦撪梕偱偁傞偙偲偑妋擣偱偒傑偡丏
 
- (6) ファイルの们室を艰り叫す
-     gfexport コマンドを蝗って·Gfarm ファイルの们室を艰り叫すこともで
-     きますˉ惧淡の毋では Gfarm ファイル gfarm:sample.file は 7 つの们
-     室から菇喇されていますが·2 戎のファイル们室を艰り叫すには·笆布の
-     ようなコマンドを悸乖しますˉ
+ (6) 僼傽僀儖偺抐曅傪庢傝弌偡
+     gfexport 僐儅儞僪傪巊偭偰丆Gfarm 僼傽僀儖偺抐曅傪庢傝弌偡偙偲傕偱
+     偒傑偡丏忋婰偺椺偱偼 Gfarm 僼傽僀儖 gfarm:sample.file 偼 7 偮偺抐
+     曅偐傜峔惉偝傟偰偄傑偡偑丆2 斣偺僼傽僀儖抐曅傪庢傝弌偡偵偼丆埲壓偺
+     傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
      % gfexport -I 2 gfarm:sample.file > sample.frags.ac_exported
 
-     -I オプションで艰り叫すべき们室のインデクス戎规を回年しますˉ们室の
-     剩澜が剩眶ある眷圭は·极瓢弄に泼年のホストにある们室が联ばれますˉ     
-     (-H オプションで汤绩することもできます)
+     -I 僆僾僔儑儞偱庢傝弌偡傋偒抐曅偺僀儞僨僋僗斣崋傪巜掕偟傑偡丏抐曅偺
+     暋惢偑暋悢偁傞応崌偼丆帺摦揑偵摿掕偺儂僗僩偵偁傞抐曅偑慖偽傟傑偡丏     
+     (-H 僆僾僔儑儞偱柧帵偡傞偙偲傕偱偒傑偡)
 
-     インデクス 2 は sample.frags.ac を判峡したものですので·いま艰り叫
-     した们室と sample.frags.ac とを孺秤してみますˉ
+     僀儞僨僋僗 2 偼 sample.frags.ac 傪搊榐偟偨傕偺偱偡偺偱丆偄傑庢傝弌
+     偟偨抐曅偲 sample.frags.ac 偲傪斾妑偟偰傒傑偡丏
 
      % diff sample.frags.ac sample.frags.ac_exported
 
-     判峡涟の们室と票办柒推であることが澄千できますˉ
+     搊榐慜偺抐曅偲摨堦撪梕偱偁傞偙偲偑妋擣偱偒傑偡丏
 
-     gfexport コマンドの拒嘿については·man gfexport を徊救してくださいˉ
+     gfexport 僐儅儞僪偺徻嵶偵偮偄偰偼丆man gfexport 傪嶲徠偟偰偔偩偝偄丏
 
-4.1. で棱汤したファイル艰り哈み数恕は·1 つの奶撅ファイルを 1 つのファ
-イル们室として Gfarm ファイルシステムに艰り哈んだものですˉこの眷圭は·
-Gfarm ファイルは·1 つのファイル们室から菇喇される Gfarm ファイルとして
-菇喇されていることになりますˉ
+4.1. 偱愢柧偟偨僼傽僀儖庢傝崬傒曽朄偼丆1 偮偺捠忢僼傽僀儖傪 1 偮偺僼傽
+僀儖抐曅偲偟偰 Gfarm 僼傽僀儖僔僗僥儉偵庢傝崬傫偩傕偺偱偡丏偙偺応崌偼丆
+Gfarm 僼傽僀儖偼丆1 偮偺僼傽僀儖抐曅偐傜峔惉偝傟傞 Gfarm 僼傽僀儖偲偟偰
+峔惉偝傟偰偄傞偙偲偵側傝傑偡丏
 
-テキストファイルや·盖年墓のバイナリファイルを们室步して判峡するときは·
-サンプルプログラムとして捏丁されている gfimport_text や gfimport_fixed
-を蝗うのが推白ですˉgfimport_text や gfimport_fixed は·ユ〖ザが尸充の
-数恕を回年して·们室步と判峡を乖うサンプルのツ〖ルですˉこの 2 つのツ〖
-ル笆嘲の尸充数恕や·アプリケ〖ション盖铜の尸充を乖いたい眷圭は·これら
-のツ〖ルのソ〖スを徊救してくださいˉ
+僥僉僗僩僼傽僀儖傗丆屌掕挿偺僶僀僫儕僼傽僀儖傪抐曅壔偟偰搊榐偡傞偲偒偼丆
+僒儞僾儖僾儘僌儔儉偲偟偰採嫙偝傟偰偄傞 gfimport_text 傗 gfimport_fixed
+傪巊偆偺偑梕堈偱偡丏gfimport_text 傗 gfimport_fixed 偼丆儐乕僓偑暘妱偺
+曽朄傪巜掕偟偰丆抐曅壔偲搊榐傪峴偆僒儞僾儖偺僣乕儖偱偡丏偙偺 2 偮偺僣乕
+儖埲奜偺暘妱曽朄傗丆傾僾儕働乕僔儑儞屌桳偺暘妱傪峴偄偨偄応崌偼丆偙傟傜
+偺僣乕儖偺僜乕僗傪嶲徠偟偰偔偩偝偄丏
 
-4.3.Gfarm ファイルの剩澜を侯る
-Gfarm ファイルは·Gfarm ファイルシステム面に 1 つ笆惧の剩澜を积つこと
-ができますˉ帽に gfls しただけでは剩澜の赂哼は尸かりませんが·gfwhere
-コマンドを蝗うと·ファイルがいくつものファイルシステムノ〖ドに尸欢して
-剩澜されていることがわかりますˉ剩澜を侯っておく罢蹋は·肩に·票じファ
-イルを借妄する事误コマンドを跟唯よく剩眶のノ〖ドで瓢かしたり·卵肝俱拉
-を羹惧したりすることにありますˉ
+4.3.Gfarm 僼傽僀儖偺暋惢傪嶌傞
+Gfarm 僼傽僀儖偼丆Gfarm 僼傽僀儖僔僗僥儉拞偵 1 偮埲忋偺暋惢傪帩偮偙偲
+偑偱偒傑偡丏扨偵 gfls 偟偨偩偗偱偼暋惢偺懚嵼偼暘偐傝傑偣傫偑丆gfwhere
+僐儅儞僪傪巊偆偲丆僼傽僀儖偑偄偔偮傕偺僼傽僀儖僔僗僥儉僲乕僪偵暘嶶偟偰
+暋惢偝傟偰偄傞偙偲偑傢偐傝傑偡丏暋惢傪嶌偭偰偍偔堄枴偼丆庡偵丆摨偠僼傽
+僀儖傪張棟偡傞暲楍僐儅儞僪傪岠棪傛偔暋悢偺僲乕僪偱摦偐偟偨傝丆懴屘忈惈
+傪岦忋偟偨傝偡傞偙偲偵偁傝傑偡丏
 
-ファイルの剩澜を侯るには·gfrep コマンドを蝗いますˉ笆布のような缄鲁き
-で·gfarm:sample.file ファイルを剩澜し·剩澜されていることを澄千するこ
-とができますˉ
+僼傽僀儖偺暋惢傪嶌傞偵偼丆gfrep 僐儅儞僪傪巊偄傑偡丏埲壓偺傛偆側庤懕偒
+偱丆gfarm:sample.file 僼傽僀儖傪暋惢偟丆暋惢偝傟偰偄傞偙偲傪妋擣偡傞偙
+偲偑偱偒傑偡丏
 
- (1) Gfarm ファイルの芹弥を澄千する
-     gfwhere コマンドで·Gfarm ファイル gfarm:sample.file がどのファイ
-     ルシステムノ〖ドに赂哼しているのかを澄千しておきますˉ
+ (1) Gfarm 僼傽僀儖偺攝抲傪妋擣偡傞
+     gfwhere 僐儅儞僪偱丆Gfarm 僼傽僀儖 gfarm:sample.file 偑偳偺僼傽僀
+     儖僔僗僥儉僲乕僪偵懚嵼偟偰偄傞偺偐傪妋擣偟偰偍偒傑偡丏
 
       % gfwhere gfarm:sample.file
       0: gfm01.somewhere.com
 
-     このことから·
-      - このファイルがたったひとつのファイル们室から菇喇されていること
-      - ファイル们室が gfm01.somewhere.com というファイルシステムノ〖ド
-        に赂哼していること
-     が尸かりますˉ
+     偙偺偙偲偐傜丆
+      - 偙偺僼傽僀儖偑偨偭偨傂偲偮偺僼傽僀儖抐曅偐傜峔惉偝傟偰偄傞偙偲
+      - 僼傽僀儖抐曅偑 gfm01.somewhere.com 偲偄偆僼傽僀儖僔僗僥儉僲乕僪
+        偵懚嵼偟偰偄傞偙偲
+     偑暘偐傝傑偡丏
 
- (2) Gfarm ファイルを剩澜する
-     gfrep コマンドで·Gfarm ファイルの剩澜を侯喇しますˉ剩澜にあたって·
-     どのファイルシステムノ〖ドに剩澜を侯喇するのかをあらかじめ疯めてお
-     く涩妥がありますˉこの毋では·gfm02.somewhere.com に剩澜を侯喇する
-     ことにしますˉ
+ (2) Gfarm 僼傽僀儖傪暋惢偡傞
+     gfrep 僐儅儞僪偱丆Gfarm 僼傽僀儖偺暋惢傪嶌惉偟傑偡丏暋惢偵偁偨偭偰丆
+     偳偺僼傽僀儖僔僗僥儉僲乕僪偵暋惢傪嶌惉偡傞偺偐傪偁傜偐偠傔寛傔偰偍
+     偔昁梫偑偁傝傑偡丏偙偺椺偱偼丆gfm02.somewhere.com 偵暋惢傪嶌惉偡傞
+     偙偲偵偟傑偡丏
 
       % echo gfm02.somewhere.com | gfrep -H -gfarm:sample.file
 
-     剩澜を弥くべきファイルシステムノ〖ドの眶は·Gfarm ファイルを菇喇す
-     るファイルの们室眶と办米していなければいけませんˉこの毋では 1 つ
-     のファイル们室から菇喇されているため·剩澜黎として·ただ 1 つのファ
-     イルシステムノ〖ドを回年していますˉ
-     剩眶のファイルシステムノ〖ドを回年するには·gfhost コマンドの叫蜗
-     を蝗ってホスト年盗ファイルを侯り·-H オプションに回年しますˉ
+     暋惢傪抲偔傋偒僼傽僀儖僔僗僥儉僲乕僪偺悢偼丆Gfarm 僼傽僀儖傪峔惉偡
+     傞僼傽僀儖偺抐曅悢偲堦抳偟偰偄側偗傟偽偄偗傑偣傫丏偙偺椺偱偼 1 偮
+     偺僼傽僀儖抐曅偐傜峔惉偝傟偰偄傞偨傔丆暋惢愭偲偟偰丆偨偩 1 偮偺僼傽
+     僀儖僔僗僥儉僲乕僪傪巜掕偟偰偄傑偡丏
+     暋悢偺僼傽僀儖僔僗僥儉僲乕僪傪巜掕偡傞偵偼丆gfhost 僐儅儞僪偺弌椡
+     傪巊偭偰儂僗僩掕媊僼傽僀儖傪嶌傝丆-H 僆僾僔儑儞偵巜掕偟傑偡丏
 
- (3) 剩澜が侯喇されていることを澄千する
-     (1) と票屯にして·gfwhere コマンドで Gfarm ファイルの芹弥を澄千しま
-     すˉ
+ (3) 暋惢偑嶌惉偝傟偰偄傞偙偲傪妋擣偡傞
+     (1) 偲摨條偵偟偰丆gfwhere 僐儅儞僪偱 Gfarm 僼傽僀儖偺攝抲傪妋擣偟傑
+     偡丏
 
       % gfwhere gfarm:sample.file
       0: gfm01.somewhere.com gfm02.somewhere.com
 
-     ファイル们室 0 が gfm01 だけでなく·gfm02 にも弥かれていることが尸
-     かりますˉ
+     僼傽僀儖抐曅 0 偑 gfm01 偩偗偱側偔丆gfm02 偵傕抲偐傟偰偄傞偙偲偑暘
+     偐傝傑偡丏
 
-gfrep コマンドは·ファイル链挛を剩澜するだけでなく·ファイル面の泼年の
-ファイル们室だけを剩澜することもできますˉ泼年の们室を剩澜するには·-I
-オプションを脱いて笆布のようなコマンドを悸乖しますˉ
+gfrep 僐儅儞僪偼丆僼傽僀儖慡懱傪暋惢偡傞偩偗偱側偔丆僼傽僀儖拞偺摿掕偺
+僼傽僀儖抐曅偩偗傪暋惢偡傞偙偲傕偱偒傑偡丏摿掕偺抐曅傪暋惢偡傞偵偼丆-I
+僆僾僔儑儞傪梡偄偰埲壓偺傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
  % gfrep -I 2 -s gfm03.somewhere.com -d gfm04.somewhere.com gfarm:sample.file
 
-この眷圭·Gfarm ファイル gfarm:sample.file を菇喇する们室のうち·
-gfm03.somewhere.com 惧にあるインデクス戎规 2 のファイル们室を·
-gfm04.somewhere.com に剩澜しますˉ
-gfrep コマンドの拒嘿については·man gfrep を徊救してくださいˉ
+偙偺応崌丆Gfarm 僼傽僀儖 gfarm:sample.file 傪峔惉偡傞抐曅偺偆偪丆
+gfm03.somewhere.com 忋偵偁傞僀儞僨僋僗斣崋 2 偺僼傽僀儖抐曅傪丆
+gfm04.somewhere.com 偵暋惢偟傑偡丏
+gfrep 僐儅儞僪偺徻嵶偵偮偄偰偼丆man gfrep 傪嶲徠偟偰偔偩偝偄丏
 
-4.4.Gfarm ファイルを猴近する
-Gfarm ファイルシステム面のファイルを猴近するには·gfrm コマンドを蝗いま
-すˉgfarm:sample.file を猴近する眷圭は·肌のコマンドを悸乖しますˉ
+4.4.Gfarm 僼傽僀儖傪嶍彍偡傞
+Gfarm 僼傽僀儖僔僗僥儉拞偺僼傽僀儖傪嶍彍偡傞偵偼丆gfrm 僐儅儞僪傪巊偄傑
+偡丏gfarm:sample.file 傪嶍彍偡傞応崌偼丆師偺僐儅儞僪傪幚峴偟傑偡丏
 
  % gfrm gfarm:sample.file
 
-このコマンドを悸乖すると·Gfarm ファイルシステム面に赂哼する
-gfarm:sample.file ファイルが猴近されますˉファイル们室の剩澜が赂哼して
-いた眷圭·すべての们室がすべてのファイルシステムノ〖ドから猴近されますˉ
-ファイルが猴近されたことを gfls で澄千してみますˉ
+偙偺僐儅儞僪傪幚峴偡傞偲丆Gfarm 僼傽僀儖僔僗僥儉拞偵懚嵼偡傞
+gfarm:sample.file 僼傽僀儖偑嶍彍偝傟傑偡丏僼傽僀儖抐曅偺暋惢偑懚嵼偟偰
+偄偨応崌丆偡傋偰偺抐曅偑偡傋偰偺僼傽僀儖僔僗僥儉僲乕僪偐傜嶍彍偝傟傑偡丏
+僼傽僀儖偑嶍彍偝傟偨偙偲傪 gfls 偱妋擣偟偰傒傑偡丏
 
  % gfls -l
 
-sample.file がファイルリストから猴近されていることが尸かりますˉ
+sample.file 偑僼傽僀儖儕僗僩偐傜嶍彍偝傟偰偄傞偙偲偑暘偐傝傑偡丏
 
-gfrm コマンドはファイル链挛を猴近するだけでなく·ファイル面の泼年のファ
-イル们室だけを猴近することもできますˉファイル们室が剩澜され·剩眶の
-ファイルシステムノ〖ドに赂哼する眷圭でも·泼年の们室だけを猴近できますˉ
-gfrm の拒嘿については·man gfrm を徊救してくださいˉ
+gfrm 僐儅儞僪偼僼傽僀儖慡懱傪嶍彍偡傞偩偗偱側偔丆僼傽僀儖拞偺摿掕偺僼傽
+僀儖抐曅偩偗傪嶍彍偡傞偙偲傕偱偒傑偡丏僼傽僀儖抐曅偑暋惢偝傟丆暋悢偺
+僼傽僀儖僔僗僥儉僲乕僪偵懚嵼偡傞応崌偱傕丆摿掕偺抐曅偩偗傪嶍彍偱偒傑偡丏
+gfrm 偺徻嵶偵偮偄偰偼丆man gfrm 傪嶲徠偟偰偔偩偝偄丏
 
 
-5.サンプルプログラムの悸乖
-Gfarm を蝗ったサンプルプログラムの悸乖毋を棱汤しますˉこの鞠のサンプル
-を悸乖する涟に·涟の鞠の棱汤にしたがって Gfarm が赖しく瓢侯しているこ
-とを澄千しておいてくださいˉ
+5.僒儞僾儖僾儘僌儔儉偺幚峴
+Gfarm 傪巊偭偨僒儞僾儖僾儘僌儔儉偺幚峴椺傪愢柧偟傑偡丏偙偺復偺僒儞僾儖
+傪幚峴偡傞慜偵丆慜偺復偺愢柧偵偟偨偑偭偰 Gfarm 偑惓偟偔摦嶌偟偰偄傞偙
+偲傪妋擣偟偰偍偄偰偔偩偝偄丏
 
-5.1.テキストファイルの艰り哈み(gfimport_text)
-奶撅のファイルシステムに赂哼するテキストファイルを Gfarm ファイルシステ
-ムに艰り哈んでみますˉこのためには·gfimport_text コマンドを蝗いますˉ
-このコマンドは·奶撅のファイルを尸充して们室步し·Gfarm ファイルシステ
-ム惧に判峡するためのサンプルですˉ们室步の狠·テキストの乖の庞面で尸充
-が弹きないように借妄を乖っていますˉ
+5.1.僥僉僗僩僼傽僀儖偺庢傝崬傒(gfimport_text)
+捠忢偺僼傽僀儖僔僗僥儉偵懚嵼偡傞僥僉僗僩僼傽僀儖傪 Gfarm 僼傽僀儖僔僗僥
+儉偵庢傝崬傫偱傒傑偡丏偙偺偨傔偵偼丆gfimport_text 僐儅儞僪傪巊偄傑偡丏
+偙偺僐儅儞僪偼丆捠忢偺僼傽僀儖傪暘妱偟偰抐曅壔偟丆Gfarm 僼傽僀儖僔僗僥
+儉忋偵搊榐偡傞偨傔偺僒儞僾儖偱偡丏抐曅壔偺嵺丆僥僉僗僩偺峴偺搑拞偱暘妱
+偑婲偒側偄傛偆偵張棟傪峴偭偰偄傑偡丏
 
- (1) ホスト年盗ファイルを脱罢する
-     ファイルを们室步して Gfarm ファイルシステムに判峡する狠·改」の
-     ファイル们室をどのファイルシステムノ〖ドにファイル们室を芹弥する
-     のかを回年する涩妥がありますˉこの攫鼠を今いたファイルをホスト年
-     盗ファイルと钙びますˉホスト年盗ファイルを侯喇するには·笆布のよ
-     うなコマンドを悸乖しますˉ
+ (1) 儂僗僩掕媊僼傽僀儖傪梡堄偡傞
+     僼傽僀儖傪抐曅壔偟偰 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偡傞嵺丆屄乆偺
+     僼傽僀儖抐曅傪偳偺僼傽僀儖僔僗僥儉僲乕僪偵僼傽僀儖抐曅傪攝抲偡傞
+     偺偐傪巜掕偡傞昁梫偑偁傝傑偡丏偙偺忣曬傪彂偄偨僼傽僀儖傪儂僗僩掕
+     媊僼傽僀儖偲屇傃傑偡丏儂僗僩掕媊僼傽僀儖傪嶌惉偡傞偵偼丆埲壓偺傛
+     偆側僐儅儞僪傪幚峴偟傑偡丏
 
      % gfhost | gfrun -H - hostname > hostdef
 
-     このコマンドで·hostdef という叹涟のホスト年盗ファイルが栏喇
-     されますˉホスト年盗ファイルの今及については INSTALL.ja を徊救し
-     てくださいˉ
-     塑鞠では·ホスト年盗ファイルとして惧淡の数恕で栏喇した hostdef
-     というファイルを蝗って棱汤しますˉ
-     ⅷこの数恕の戮に·今及にしたがったホスト年盗ファイルをエディタ霹で
-       侯喇する数恕もありますが·澈碰ノ〖ドが网脱できない眷圭に疙瓢侯し·
-       デ〖タが赖しく艰り胺えない错副拉がありますˉ
+     偙偺僐儅儞僪偱丆hostdef 偲偄偆柤慜偺儂僗僩掕媊僼傽僀儖偑惗惉
+     偝傟傑偡丏儂僗僩掕媊僼傽僀儖偺彂幃偵偮偄偰偼 INSTALL.ja 傪嶲徠偟
+     偰偔偩偝偄丏
+     杮復偱偼丆儂僗僩掕媊僼傽僀儖偲偟偰忋婰偺曽朄偱惗惉偟偨 hostdef
+     偲偄偆僼傽僀儖傪巊偭偰愢柧偟傑偡丏
+     仸偙偺曽朄偺懠偵丆彂幃偵偟偨偑偭偨儂僗僩掕媊僼傽僀儖傪僄僨傿僞摍偱
+       嶌惉偡傞曽朄傕偁傝傑偡偑丆奩摉僲乕僪偑棙梡偱偒側偄応崌偵岆摦嶌偟丆
+       僨乕僞偑惓偟偔庢傝埖偊側偄婋尟惈偑偁傝傑偡丏
 
- (2) gfimport_text を悸乖する
-     テキストファイル textfile.txt を Gfarm ファイルシステムに判峡するた
-     めには·笆布のようなコマンドを悸乖しますˉ
+ (2) gfimport_text 傪幚峴偡傞
+     僥僉僗僩僼傽僀儖 textfile.txt 傪 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偡傞偨
+     傔偵偼丆埲壓偺傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
      % gfimport_text -H hostdef -o gfarm:textfile.txt textfile.txt
 
-     この毋では·缄もとの奶撅ファイル textfile.txt を们室步し·Gfarm ファ
-     イルシステム惧に textfile.txt という叹涟(票叹です)で艰り哈んでいま
-     すˉ
-     このときファイル们室は·hostdef というホスト年盗ファイルに淡揭
-     されたホスト惧に芹弥されますˉ
-     また·惧淡コマンド面の gfarm:textfile.txt は gfarm url と钙ばれ·
-     Gfarm ファイルシステム面のファイルを山す山附ですˉ
+     偙偺椺偱偼丆庤傕偲偺捠忢僼傽僀儖 textfile.txt 傪抐曅壔偟丆Gfarm 僼傽
+     僀儖僔僗僥儉忋偵 textfile.txt 偲偄偆柤慜(摨柤偱偡)偱庢傝崬傫偱偄傑
+     偡丏
+     偙偺偲偒僼傽僀儖抐曅偼丆hostdef 偲偄偆儂僗僩掕媊僼傽僀儖偵婰弎
+     偝傟偨儂僗僩忋偵攝抲偝傟傑偡丏
+     傑偨丆忋婰僐儅儞僪拞偺 gfarm:textfile.txt 偼 gfarm url 偲屇偽傟丆
+     Gfarm 僼傽僀儖僔僗僥儉拞偺僼傽僀儖傪昞偡昞尰偱偡丏
 
-     gfimport_text コマンドが喇根すると·泼に部のメッセ〖ジも叫蜗されず
-     に姜位しますˉ
+     gfimport_text 僐儅儞僪偑惉岟偡傞偲丆摿偵壗偺儊僢僙乕僕傕弌椡偝傟偢
+     偵廔椆偟傑偡丏
 
- (3) ファイルが Gfarm ファイルシステムに侯られたかを gfls で澄千する
-     gfimport_text が喇根したら·赖しく Gfarm ファイルシステムに判峡さ
-     れていることを gfls で澄千してみますˉ
+ (3) 僼傽僀儖偑 Gfarm 僼傽僀儖僔僗僥儉偵嶌傜傟偨偐傪 gfls 偱妋擣偡傞
+     gfimport_text 偑惉岟偟偨傜丆惓偟偔 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偝
+     傟偰偄傞偙偲傪 gfls 偱妋擣偟偰傒傑偡丏
 
      % gfls -l
      -rw-rw-r-- user      *             16710 Apr 10 16:19 textfile.txt
 
-     缄もとの奶撅ファイルと孺べてファイルサイズ霹が恃わっていないことを
-     澄千できますˉ
+     庤傕偲偺捠忢僼傽僀儖偲斾傋偰僼傽僀儖僒僀僘摍偑曄傢偭偰偄側偄偙偲傪
+     妋擣偱偒傑偡丏
 
- (4) ファイル们室の疥哼を gfwhere で澄千する
-     Gfarm ファイルシステム面に艰り哈んだテキストファイルは·悸狠には
-     ファイルシステムノ〖ドに尸欢して赂哼していますˉ悸狠に艰り哈んだ
-     ファイルがどのように尸欢しているのかを gfwhere コマンドで澄千して
-     みますˉ笆布の毋のように gfwhere コマンドを悸乖すると·
-     gfarm:textfile.txt で山される Gfarm ファイルがどのように尸欢してい
-     るかを山绩しますˉ
+ (4) 僼傽僀儖抐曅偺強嵼傪 gfwhere 偱妋擣偡傞
+     Gfarm 僼傽僀儖僔僗僥儉拞偵庢傝崬傫偩僥僉僗僩僼傽僀儖偼丆幚嵺偵偼
+     僼傽僀儖僔僗僥儉僲乕僪偵暘嶶偟偰懚嵼偟偰偄傑偡丏幚嵺偵庢傝崬傫偩
+     僼傽僀儖偑偳偺傛偆偵暘嶶偟偰偄傞偺偐傪 gfwhere 僐儅儞僪偱妋擣偟偰
+     傒傑偡丏埲壓偺椺偺傛偆偵 gfwhere 僐儅儞僪傪幚峴偡傞偲丆
+     gfarm:textfile.txt 偱昞偝傟傞 Gfarm 僼傽僀儖偑偳偺傛偆偵暘嶶偟偰偄
+     傞偐傪昞帵偟傑偡丏
 
      % gfwhere gfarm:textfile.txt
      0: gfm01.somewhere.com
@@ -568,68 +574,68 @@ Gfarm を蝗ったサンプルプログラムの悸乖毋を棱汤しますˉこの鞠のサンプル
      3: gfm04.somewhere.com
      4: gfm05.somewhere.com
 
-     この叫蜗毋では·もとのファイル textfile.txt が 0 × 4 の 5 つのファ
-     イル们室に尸充され·侍のホストにそれぞれの们室が尸欢している屯灰が
-     尸かりますˉ
-     gfwhere コマンドの拒嘿については·man gfwhere を徊救してくださいˉ
+     偙偺弌椡椺偱偼丆傕偲偺僼傽僀儖 textfile.txt 偑 0 乣 4 偺 5 偮偺僼傽
+     僀儖抐曅偵暘妱偝傟丆暿偺儂僗僩偵偦傟偧傟偺抐曅偑暘嶶偟偰偄傞條巕偑
+     暘偐傝傑偡丏
+     gfwhere 僐儅儞僪偺徻嵶偵偮偄偰偼丆man gfwhere 傪嶲徠偟偰偔偩偝偄丏
 
- (5) Gfarm ファイルシステムからファイルを艰り叫す
-     们室步され·Gfarm ファイルシステムに判峡されたファイルを·もう办刨
-     奶撅のファイルシステムに艰り叫してみますˉこのために gfexport コマ
-     ンドを蝗いますˉgfexport コマンドは Gfarm ファイルシステムのファイ
-     ル柒推を筛洁叫蜗に叫蜗するので·これをリダイレクトして奶撅のファイ
-     ルシステムにファイルを艰り叫せますˉ
+ (5) Gfarm 僼傽僀儖僔僗僥儉偐傜僼傽僀儖傪庢傝弌偡
+     抐曅壔偝傟丆Gfarm 僼傽僀儖僔僗僥儉偵搊榐偝傟偨僼傽僀儖傪丆傕偆堦搙
+     捠忢偺僼傽僀儖僔僗僥儉偵庢傝弌偟偰傒傑偡丏偙偺偨傔偵 gfexport 僐儅
+     儞僪傪巊偄傑偡丏gfexport 僐儅儞僪偼 Gfarm 僼傽僀儖僔僗僥儉偺僼傽僀
+     儖撪梕傪昗弨弌椡偵弌椡偡傞偺偱丆偙傟傪儕僟僀儗僋僩偟偰捠忢偺僼傽僀
+     儖僔僗僥儉偵僼傽僀儖傪庢傝弌偣傑偡丏
 
      % gfexport gfarm:textfile.txt > exported-file.txt
 
-     惧の毋では·Gfarm ファイルシステムから gfarm:textfile.txt の柒推を
-     艰り叫し·カレントディレクトリの exported-file.txt というファイルに
-     今き哈んでいますˉgfexport の拒嘿については·man gfexport を徊救し
-     てくださいˉ
+     忋偺椺偱偼丆Gfarm 僼傽僀儖僔僗僥儉偐傜 gfarm:textfile.txt 偺撪梕傪
+     庢傝弌偟丆僇儗儞僩僨傿儗僋僩儕偺 exported-file.txt 偲偄偆僼傽僀儖偵
+     彂偒崬傫偱偄傑偡丏gfexport 偺徻嵶偵偮偄偰偼丆man gfexport 傪嶲徠偟
+     偰偔偩偝偄丏
 
-     diff コマンド霹を脱いて傅のテキストファイルと孺秤してみると·柒推に
-     恃步がないことがわかりますˉ
+     diff 僐儅儞僪摍傪梡偄偰尦偺僥僉僗僩僼傽僀儖偲斾妑偟偰傒傞偲丆撪梕偵
+     曄壔偑側偄偙偲偑傢偐傝傑偡丏
 
      % diff textfile.txt exported-file.txt
 
-5.2.盖年墓レコ〖ドファイルの艰り哈み(gfimport_fixed)
-盖年墓レコ〖ドのバイナリファイルについても·4.1. と票屯に Gfarm ファイル
-システムに判峡することができますˉこのためには gfimport_fixed コマンドを
-蝗いますˉこのコマンドは·奶撅のファイルを盖年墓で尸充して们室步し·Gfarm
-ファイルシステム惧に判峡するためのサンプルですˉ
+5.2.屌掕挿儗僐乕僪僼傽僀儖偺庢傝崬傒(gfimport_fixed)
+屌掕挿儗僐乕僪偺僶僀僫儕僼傽僀儖偵偮偄偰傕丆4.1. 偲摨條偵 Gfarm 僼傽僀儖
+僔僗僥儉偵搊榐偡傞偙偲偑偱偒傑偡丏偙偺偨傔偵偼 gfimport_fixed 僐儅儞僪傪
+巊偄傑偡丏偙偺僐儅儞僪偼丆捠忢偺僼傽僀儖傪屌掕挿偱暘妱偟偰抐曅壔偟丆Gfarm
+僼傽僀儖僔僗僥儉忋偵搊榐偡傞偨傔偺僒儞僾儖偱偡丏
 
- (1) ホスト年盗ファイルを脱罢する
-     4.1.(1) と票屯に·ホスト年盗ファイル hostdef を脱罢しますˉ
+ (1) 儂僗僩掕媊僼傽僀儖傪梡堄偡傞
+     4.1.(1) 偲摨條偵丆儂僗僩掕媊僼傽僀儖 hostdef 傪梡堄偟傑偡丏
 
- (2) gfimport_fixed を悸乖する
-     盖年墓レコ〖ドファイル testfile.bin を Gfarm ファイルシステムに艰り
-     哈むためには·笆布のようなコマンドを悸乖しますˉ
+ (2) gfimport_fixed 傪幚峴偡傞
+     屌掕挿儗僐乕僪僼傽僀儖 testfile.bin 傪 Gfarm 僼傽僀儖僔僗僥儉偵庢傝
+     崬傓偨傔偵偼丆埲壓偺傛偆側僐儅儞僪傪幚峴偟傑偡丏
 
      % gfimport_fixed -H hostdef -o gfarm:testfile.bin -l 100 testfile.bin
 
-     この毋では·缄もとの奶撅ファイル testfile.bin を们室步し·Gfarm ファ
-     イルシステム惧に testfile.bin という叹涟(票叹です)で艰り哈んでいますˉ
-     ファイルの们室步に狠して·レコ〖ドの络きさが 100 バイトごとであること
-     を -l オプションで回年していますˉこれは·ファイル们室步を 100 バイト
-     の腊眶擒の舱疥で乖うこととし·レコ〖ドの庞面で尸充されないことを罢蹋
-     しますˉgfimport_fixed の拒嘿は man gfimport_fixed を徊救してくださいˉ
+     偙偺椺偱偼丆庤傕偲偺捠忢僼傽僀儖 testfile.bin 傪抐曅壔偟丆Gfarm 僼傽
+     僀儖僔僗僥儉忋偵 testfile.bin 偲偄偆柤慜(摨柤偱偡)偱庢傝崬傫偱偄傑偡丏
+     僼傽僀儖偺抐曅壔偵嵺偟偰丆儗僐乕僪偺戝偒偝偑 100 僶僀僩偛偲偱偁傞偙偲
+     傪 -l 僆僾僔儑儞偱巜掕偟偰偄傑偡丏偙傟偼丆僼傽僀儖抐曅壔傪 100 僶僀僩
+     偺惍悢攞偺売強偱峴偆偙偲偲偟丆儗僐乕僪偺搑拞偱暘妱偝傟側偄偙偲傪堄枴
+     偟傑偡丏gfimport_fixed 偺徻嵶偼 man gfimport_fixed 傪嶲徠偟偰偔偩偝偄丏
 
-     gfimport_fixed コマンドが喇根すると·泼に部のメッセ〖ジも叫蜗されず
-     に姜位しますˉ
+     gfimport_fixed 僐儅儞僪偑惉岟偡傞偲丆摿偵壗偺儊僢僙乕僕傕弌椡偝傟偢
+     偵廔椆偟傑偡丏
 
- (3) ファイルが Gfarm ファイルシステムに侯られたかを gfls で澄千する
-     4.1.(3) と票屯に·gfls コマンドでファイルが艰り哈まれたことを澄千して
-     みますˉ
+ (3) 僼傽僀儖偑 Gfarm 僼傽僀儖僔僗僥儉偵嶌傜傟偨偐傪 gfls 偱妋擣偡傞
+     4.1.(3) 偲摨條偵丆gfls 僐儅儞僪偱僼傽僀儖偑庢傝崬傑傟偨偙偲傪妋擣偟偰
+     傒傑偡丏
 
      % gfls -l
      -rw-rw-r-- user      *             16710 Apr 10 16:19 textfile.txt
      -rw-rw-r-- user      *             39167 Apr 10 16:19 testfile.bin
 
-     缄もとの奶撅ファイルと孺べてファイルサイズ霹が恃わっていないことを
-     澄千できますˉ
+     庤傕偲偺捠忢僼傽僀儖偲斾傋偰僼傽僀儖僒僀僘摍偑曄傢偭偰偄側偄偙偲傪
+     妋擣偱偒傑偡丏
 
- (4) ファイル们室の疥哼を gfwhere で澄千する
-     4.1.(4) と票屯に·们室步されたファイルの悸狠の疥哼を澄千してみますˉ
+ (4) 僼傽僀儖抐曅偺強嵼傪 gfwhere 偱妋擣偡傞
+     4.1.(4) 偲摨條偵丆抐曅壔偝傟偨僼傽僀儖偺幚嵺偺強嵼傪妋擣偟偰傒傑偡丏
 
      % gfwhere gfarm:testfile.bin
      0: gfm01.somewhere.com
@@ -638,138 +644,138 @@ Gfarm を蝗ったサンプルプログラムの悸乖毋を棱汤しますˉこの鞠のサンプル
      3: gfm04.somewhere.com
      4: gfm05.somewhere.com
 
-     この叫蜗毋では·5 つのファイル们室が 5 つのホストに尸欢している屯灰
-     が尸かりますˉ
+     偙偺弌椡椺偱偼丆5 偮偺僼傽僀儖抐曅偑 5 偮偺儂僗僩偵暘嶶偟偰偄傞條巕
+     偑暘偐傝傑偡丏
 
- (5) Gfarm ファイルシステムからファイルを艰り叫す
-     4.1.(5) 票屯·gfimport_fixed で Gfarm ファイルシステムに艰り哈んだ
-     ファイルを奶撅のファイルとして艰り叫すことができますˉgfexport コ
-     マンドを笆布のように悸乖しますˉ
+ (5) Gfarm 僼傽僀儖僔僗僥儉偐傜僼傽僀儖傪庢傝弌偡
+     4.1.(5) 摨條丆gfimport_fixed 偱 Gfarm 僼傽僀儖僔僗僥儉偵庢傝崬傫偩
+     僼傽僀儖傪捠忢偺僼傽僀儖偲偟偰庢傝弌偡偙偲偑偱偒傑偡丏gfexport 僐
+     儅儞僪傪埲壓偺傛偆偵幚峴偟傑偡丏
 
      % gfexport gfarm:testfile.bin > exported-file.bin
 
-     この毋では·gfarm:testfile.bin として艰り哈んだファイルを·カレント
-     ディレクトリに exported-file.bin という叹涟で艰り叫していますˉ
-     cmp コマンド霹を脱いて傅のテキストファイルと孺秤してみると·柒推に
-     恃步がないことが尸かりますˉ
+     偙偺椺偱偼丆gfarm:testfile.bin 偲偟偰庢傝崬傫偩僼傽僀儖傪丆僇儗儞僩
+     僨傿儗僋僩儕偵 exported-file.bin 偲偄偆柤慜偱庢傝弌偟偰偄傑偡丏
+     cmp 僐儅儞僪摍傪梡偄偰尦偺僥僉僗僩僼傽僀儖偲斾妑偟偰傒傞偲丆撪梕偵
+     曄壔偑側偄偙偲偑暘偐傝傑偡丏
 
      % cmp testfile.bin exported-file.bin
 
-5.3.事误 grep を悸乖する(gfgrep)
-ファイルアフィニティスケジュ〖リングのサンプルとして·称ファイルシステ
-ムノ〖ドで事误に grep を悸乖する gfgrep コマンドが捏丁されていますˉ
+5.3.暲楍 grep 傪幚峴偡傞(gfgrep)
+僼傽僀儖傾僼傿僯僥傿僗働僕儏乕儕儞僌偺僒儞僾儖偲偟偰丆奺僼傽僀儖僔僗僥
+儉僲乕僪偱暲楍偵 grep 傪幚峴偡傞 gfgrep 僐儅儞僪偑採嫙偝傟偰偄傑偡丏
 
-このサンプルを悸乖する涟に·grep したいファイルをあらかじめ Gfarm ファ
-イルシステムに芹弥しておく涩妥がありますˉこのとき·ファイルは们室步し
-て剩眶のファイルシステムノ〖ドに芹弥しておくと·ファイル们室の尸欢に圭
-わせて grep の事误刨も惧がりますˉgrep の冯蔡は Gfarm ファイルに今き哈
-まれますˉここでは testfile.txt というファイルを gfarm:testfile.txt と
-して·あらかじめ gfimport_text して Gfarm ファイルシステムに芹弥してい
-ることを涟捏としていますˉ
+偙偺僒儞僾儖傪幚峴偡傞慜偵丆grep 偟偨偄僼傽僀儖傪偁傜偐偠傔 Gfarm 僼傽
+僀儖僔僗僥儉偵攝抲偟偰偍偔昁梫偑偁傝傑偡丏偙偺偲偒丆僼傽僀儖偼抐曅壔偟
+偰暋悢偺僼傽僀儖僔僗僥儉僲乕僪偵攝抲偟偰偍偔偲丆僼傽僀儖抐曅偺暘嶶偵崌
+傢偣偰 grep 偺暲楍搙傕忋偑傝傑偡丏grep 偺寢壥偼 Gfarm 僼傽僀儖偵彂偒崬
+傑傟傑偡丏偙偙偱偼 testfile.txt 偲偄偆僼傽僀儖傪 gfarm:testfile.txt 偲
+偟偰丆偁傜偐偠傔 gfimport_text 偟偰 Gfarm 僼傽僀儖僔僗僥儉偵攝抲偟偰偄
+傞偙偲傪慜採偲偟偰偄傑偡丏
 
-笆布のような缄界にしたがって gfgrep を悸乖してくださいˉ
+埲壓偺傛偆側庤弴偵偟偨偑偭偰 gfgrep 傪幚峴偟偰偔偩偝偄丏
 
- (1) gfgrep プログラムが判峡されていることを澄千
-     gfgrep プログラムが·gfarm:/bin/gfgrep という叹疚で判峡されている
-     ことを澄千しますˉ
+ (1) gfgrep 僾儘僌儔儉偑搊榐偝傟偰偄傞偙偲傪妋擣
+     gfgrep 僾儘僌儔儉偑丆gfarm:/bin/gfgrep 偲偄偆柤徧偱搊榐偝傟偰偄傞
+     偙偲傪妋擣偟傑偡丏
 
       % gfls -l gfarm:/bin/gfgrep
       -rwxrwxr-x tatebe   *            618384 Apr  3 19:30 gfgrep
 
-     もし判峡されていない眷圭は·瓷妄荚に陵锰してくださいˉ
+     傕偟搊榐偝傟偰偄側偄応崌偼丆娗棟幰偵憡択偟偰偔偩偝偄丏
 
- (2) gfgrep の悸乖
-     事误プログラム gfgrep は·笆布のように gfrun コマンドを蝗って悸乖
-     しますˉ
+ (2) gfgrep 偺幚峴
+     暲楍僾儘僌儔儉 gfgrep 偼丆埲壓偺傛偆偵 gfrun 僐儅儞僪傪巊偭偰幚峴
+     偟傑偡丏
 
-      % gfrun -G gfarm:testfile.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out 赖惮山附 gfarm:testfile.txt
+      % gfrun -G gfarm:testfile.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out 惓婯昞尰 gfarm:testfile.txt
 
-     ここで悸乖されているコマンドは·笆布のような罢蹋になっていますˉ
+     偙偙偱幚峴偝傟偰偄傞僐儅儞僪偼丆埲壓偺傛偆側堄枴偵側偭偰偄傑偡丏
 
        - "-G gfarm:testfile.txt"
-         gfrun コマンドに滦する苞眶で·事误コマンドのスケジュ〖リングを
-         回年しますˉこの毋の回年数恕では·Gfarm ファイル
-         gfarm:testfile.txt のファイル们室を网脱して·事误コマンドを弹瓢
-         すべきホストを疯年していますˉ
+         gfrun 僐儅儞僪偵懳偡傞堷悢偱丆暲楍僐儅儞僪偺僗働僕儏乕儕儞僌傪
+         巜掕偟傑偡丏偙偺椺偺巜掕曽朄偱偼丆Gfarm 僼傽僀儖
+         gfarm:testfile.txt 偺僼傽僀儖抐曅傪棙梡偟偰丆暲楍僐儅儞僪傪婲摦
+         偡傋偒儂僗僩傪寛掕偟偰偄傑偡丏
 
        - "gfarm:/bin/gfgrep"
-         gfrun コマンドに滦する苞眶で·弹瓢すべき事误コマンドが箭められ
-         ている Gfarm ファイルを回年しますˉこの毋では·Gfarm ファイル
-         システム面の /bin/gfgrep を弹瓢するよう回年していますˉ
+         gfrun 僐儅儞僪偵懳偡傞堷悢偱丆婲摦偡傋偒暲楍僐儅儞僪偑廂傔傜傟
+         偰偄傞 Gfarm 僼傽僀儖傪巜掕偟傑偡丏偙偺椺偱偼丆Gfarm 僼傽僀儖
+         僔僗僥儉拞偺 /bin/gfgrep 傪婲摦偡傞傛偆巜掕偟偰偄傑偡丏
 
        - "-o gfarm:gfgrep.out"
-         gfgrep 事误コマンドに滦する苞眶で·grep した冯蔡を呈羌する Gfarm
-         ファイルを回年しますˉこの眷圭·gfarm:gfgrep.out ファイルに gfgrep
-         の冯蔡が呈羌されることになりますˉ
+         gfgrep 暲楍僐儅儞僪偵懳偡傞堷悢偱丆grep 偟偨寢壥傪奿擺偡傞 Gfarm
+         僼傽僀儖傪巜掕偟傑偡丏偙偺応崌丆gfarm:gfgrep.out 僼傽僀儖偵 gfgrep
+         偺寢壥偑奿擺偝傟傞偙偲偵側傝傑偡丏
 
-       - 赖惮山附
-         gfgrep 事误コマンドに滦する苞眶で·grep したい山附を赖惮山附で
-         回年しますˉ
+       - 惓婯昞尰
+         gfgrep 暲楍僐儅儞僪偵懳偡傞堷悢偱丆grep 偟偨偄昞尰傪惓婯昞尰偱
+         巜掕偟傑偡丏
 
        - gfarm:testfile.txt
-         gfgrep 事误コマンドに滦する苞眶で·grep したい Gfarm ファイルを
-         回年しますˉこの毋では·gfarm:testfile.txt を滦据として gfgrep
-         が悸乖されますˉ
+         gfgrep 暲楍僐儅儞僪偵懳偡傞堷悢偱丆grep 偟偨偄 Gfarm 僼傽僀儖傪
+         巜掕偟傑偡丏偙偺椺偱偼丆gfarm:testfile.txt 傪懳徾偲偟偰 gfgrep
+         偑幚峴偝傟傑偡丏
 
-     称コマンドのオプションの拒嘿については·man gfrun や man gfgrep を徊
-     救してくださいˉ
+     奺僐儅儞僪偺僆僾僔儑儞偺徻嵶偵偮偄偰偼丆man gfrun 傗 man gfgrep 傪嶲
+     徠偟偰偔偩偝偄丏
 
- (3) 冯蔡の澄千
-     grep した冯蔡が Gfarm ファイルに叫蜗されていることを澄千しますˉ
+ (3) 寢壥偺妋擣
+     grep 偟偨寢壥偑 Gfarm 僼傽僀儖偵弌椡偝傟偰偄傞偙偲傪妋擣偟傑偡丏
 
       % gfls -l gfarm:gfgrep.out
       -rwxrwxr-x tatebe   *             13836 Apr 11 11:02 gfgrep.out
 
-     Gfarm ファイルが栏喇されていることがわかりますˉこのファイルを奶撅
-     ファイルシステムに艰り叫して·柒推を澄千してみますˉ
+     Gfarm 僼傽僀儖偑惗惉偝傟偰偄傞偙偲偑傢偐傝傑偡丏偙偺僼傽僀儖傪捠忢
+     僼傽僀儖僔僗僥儉偵庢傝弌偟偰丆撪梕傪妋擣偟偰傒傑偡丏
 
       % gfexport gfarm:gfgrep.out > gfgrep.out
-      % grep 赖惮山附 testfile.txt > grep.out
+      % grep 惓婯昞尰 testfile.txt > grep.out
       % diff grep.out gfgrep.out
 
-     冯蔡が办米し·赖しく grep が悸乖されたことがわかりますˉ
+     寢壥偑堦抳偟丆惓偟偔 grep 偑幚峴偝傟偨偙偲偑傢偐傝傑偡丏
 
-5.4.アプリケ〖ションプログラムを判峡(gfreg)·悸乖する(gfrun)
-极尸で侯喇したアプリケ〖ションプログラムを Gfarm ファイルシステムで悸乖
-するには·まずプログラムを Gfarm ファイルシステムに判峡しておき·判峡し
-たプログラムを gfrun コマンドで悸乖しますˉ
-ここでは毋として·/bin/echo コマンドを判峡し·悸乖しますˉecho コマンド
-は Gfarm アプリケ〖ションではありませんが·Gfarm 惧で悸乖できますˉ
+5.4.傾僾儕働乕僔儑儞僾儘僌儔儉傪搊榐(gfreg)丆幚峴偡傞(gfrun)
+帺暘偱嶌惉偟偨傾僾儕働乕僔儑儞僾儘僌儔儉傪 Gfarm 僼傽僀儖僔僗僥儉偱幚峴
+偡傞偵偼丆傑偢僾儘僌儔儉傪 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偟偰偍偒丆搊榐偟
+偨僾儘僌儔儉傪 gfrun 僐儅儞僪偱幚峴偟傑偡丏
+偙偙偱偼椺偲偟偰丆/bin/echo 僐儅儞僪傪搊榐偟丆幚峴偟傑偡丏echo 僐儅儞僪
+偼 Gfarm 傾僾儕働乕僔儑儞偱偼偁傝傑偣傫偑丆Gfarm 忋偱幚峴偱偒傑偡丏
 
- (1) /bin/echo コマンドの判峡
-     gfreg で /bin/echo を Gfarm ファイルシステムに判峡しますˉ
+ (1) /bin/echo 僐儅儞僪偺搊榐
+     gfreg 偱 /bin/echo 傪 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偟傑偡丏
 
      % gfreg /bin/echo gfarm:/bin/echo
 
-     gfls で赖しく判峡されていることが澄千できますˉ
+     gfls 偱惓偟偔搊榐偝傟偰偄傞偙偲偑妋擣偱偒傑偡丏
 
      % gfls gfarm:/bin/echo
      -rwxrwxr-x tatebe   *             11832 Apr  3 19:31 echo
 
-     gfreg コマンドでは·-a オプションを蝗って扦罢のア〖キテクチャのプロ
-     グラムを判峡することができますˉファイルシステムノ〖ドが剩眶のア〖キ
-     テクチャで菇喇されている眷圭に·佰なるア〖キテクチャのノ〖ドで票じ
-     プログラムを悸乖するときに网脱しますˉ
-     また·剩眶のファイルシステムノ〖ドに剩澜を芹弥しておくこともできますˉ
+     gfreg 僐儅儞僪偱偼丆-a 僆僾僔儑儞傪巊偭偰擟堄偺傾乕僉僥僋僠儍偺僾儘
+     僌儔儉傪搊榐偡傞偙偲偑偱偒傑偡丏僼傽僀儖僔僗僥儉僲乕僪偑暋悢偺傾乕僉
+     僥僋僠儍偱峔惉偝傟偰偄傞応崌偵丆堎側傞傾乕僉僥僋僠儍偺僲乕僪偱摨偠
+     僾儘僌儔儉傪幚峴偡傞偲偒偵棙梡偟傑偡丏
+     傑偨丆暋悢偺僼傽僀儖僔僗僥儉僲乕僪偵暋惢傪攝抲偟偰偍偔偙偲傕偱偒傑偡丏
 
      % gfreg -a i386-redhat-linux -N 64 /bin/echo gfarm:/bin/echo
 
-     -a オプションでア〖キテクチャを·-N オプションで剩澜の改眶を回年して
-     いますˉ/bin/echo ファイルを i386-redhat-linux ア〖キテクチャの悸乖妨
-     及として·gfarm:/bin/echo に判峡しますˉこのとき·剩澜を 64 改侯喇し·
-     ファイルシステムノ〖ドに芹弥しますˉ
-     gfreg コマンドの拒嘿は man gfreg を徊救してくださいˉ
+     -a 僆僾僔儑儞偱傾乕僉僥僋僠儍傪丆-N 僆僾僔儑儞偱暋惢偺屄悢傪巜掕偟偰
+     偄傑偡丏/bin/echo 僼傽僀儖傪 i386-redhat-linux 傾乕僉僥僋僠儍偺幚峴宍
+     幃偲偟偰丆gfarm:/bin/echo 偵搊榐偟傑偡丏偙偺偲偒丆暋惢傪 64 屄嶌惉偟丆
+     僼傽僀儖僔僗僥儉僲乕僪偵攝抲偟傑偡丏
+     gfreg 僐儅儞僪偺徻嵶偼 man gfreg 傪嶲徠偟偰偔偩偝偄丏
 
- (2) コマンドの悸乖
-     gfrun コマンドで Gfarm ファイルシステムに判峡したコマンドを悸乖し
-     ますˉ
+ (2) 僐儅儞僪偺幚峴
+     gfrun 僐儅儞僪偱 Gfarm 僼傽僀儖僔僗僥儉偵搊榐偟偨僐儅儞僪傪幚峴偟
+     傑偡丏
 
      % gfrun -N 1 gfarm:/bin/echo "Hello"
      --gfarm_nfrags 1 --gfarm_index 0 Hello
 
-     gfrun から悸乖されるアプリケ〖ションには·极瓢弄に --gfarm_nfrags と
-     --gfarm_index という 2 つのオプションが畔されますˉGfarm アプリケ〖
-     ションはこれらのオプションを豺坚する涩妥がありますが·echo コマンドは
-     Gfarm アプリケ〖ションではないため·これらのオプションがそのままコマン
-     ドに畔されてしますˉこの冯蔡·--gfarm_nfrags 1 --gfarm_index 0 Hello
-     という苞眶が echo で借妄され·このような叫蜗になっていますˉ
+     gfrun 偐傜幚峴偝傟傞傾僾儕働乕僔儑儞偵偼丆帺摦揑偵 --gfarm_nfrags 偲
+     --gfarm_index 偲偄偆 2 偮偺僆僾僔儑儞偑搉偝傟傑偡丏Gfarm 傾僾儕働乕
+     僔儑儞偼偙傟傜偺僆僾僔儑儞傪夝庍偡傞昁梫偑偁傝傑偡偑丆echo 僐儅儞僪偼
+     Gfarm 傾僾儕働乕僔儑儞偱偼側偄偨傔丆偙傟傜偺僆僾僔儑儞偑偦偺傑傑僐儅儞
+     僪偵搉偝傟偰偟傑偡丏偙偺寢壥丆--gfarm_nfrags 1 --gfarm_index 0 Hello
+     偲偄偆堷悢偑 echo 偱張棟偝傟丆偙偺傛偆側弌椡偵側偭偰偄傑偡丏
