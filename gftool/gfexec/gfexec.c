@@ -348,17 +348,18 @@ modify_ld_library_path(void)
 int
 main(int argc, char *argv[], char *envp[])
 {
-	char *e, *gfarm_url, *local_path, **new_env, *cwd_env;
+	char *e, *gfarm_url, *local_path, **new_env, *cwd_env, *pwd_env;
 	int i, j, status, envc, rank = -1, nodes = -1;
 	pid_t pid;
 	static const char env_node_rank[] = "GFARM_NODE_RANK=";
 	static const char env_node_size[] = "GFARM_NODE_SIZE=";
 	static const char env_flags[] = "GFARM_FLAGS=";
 	static const char env_gfs_pwd[] = "GFS_PWD=";
+	static const char env_pwd[] = "PWD=";
 	char rankbuf[sizeof(env_node_rank) + GFARM_INT64STRLEN];
 	char nodesbuf[sizeof(env_node_size) + GFARM_INT64STRLEN];
 	char flagsbuf[sizeof(env_flags) + 3];
-	char cwdbuf[PATH_MAX * 2];
+	char cwdbuf[PATH_MAX * 2], pwdbuf[PATH_MAX * 2];
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
@@ -461,8 +462,10 @@ main(int argc, char *argv[], char *envp[])
 	}
 	for (envc = 0; envp[envc] != NULL; envc++)
 		;
-	new_env = malloc(sizeof(*new_env) * (envc + 4 + 1));
-	e = gfs_getcwd(cwdbuf, sizeof cwdbuf);
+	new_env = malloc(sizeof(*new_env) * (envc + 5 + 1));
+	memcpy(cwdbuf, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
+	e = gfs_getcwd(cwdbuf + GFARM_URL_PREFIX_LENGTH,
+		sizeof(cwdbuf) - GFARM_URL_PREFIX_LENGTH);
 	if (e != NULL) {
 		fprintf(stderr, "%s: cannot get current directory: %s\n",
 		    progname, e);
@@ -473,12 +476,21 @@ main(int argc, char *argv[], char *envp[])
 		    progname, env_gfs_pwd, cwdbuf);
 		exit(1);
 	}
+	(void)chdir(cwdbuf); /* rely on syscall hook. it is ok if it fails */
+	getcwd(pwdbuf, sizeof pwdbuf);
+	pwd_env = malloc(strlen(pwdbuf) + sizeof(env_pwd));
+	if (pwd_env == NULL) {
+		fprintf(stderr, "%s: no memory for %s%s\n",
+		    progname, env_pwd, pwdbuf);
+		exit(1);
+	}
 	envc = 0;
 	for (i = 0; (e = envp[i]) != NULL; i++) {
 		if (memcmp(e, env_node_rank, sizeof(env_node_rank) -1 ) != 0 &&
 		    memcmp(e, env_node_size, sizeof(env_node_size) -1 ) != 0 &&
 		    memcmp(e, env_flags, sizeof(env_flags) - 1 ) != 0 &&
-		    memcmp(e, env_gfs_pwd, sizeof(env_gfs_pwd) - 1) != 0)
+		    memcmp(e, env_gfs_pwd, sizeof(env_gfs_pwd) - 1) != 0 &&
+		    memcmp(e, env_pwd, sizeof(env_pwd) - 1 ) != 0)
 			new_env[envc++] = e;
 	}
 	sprintf(rankbuf, "%s%d", env_node_rank, rank);
@@ -492,6 +504,8 @@ main(int argc, char *argv[], char *envp[])
 	new_env[envc++] = flagsbuf;
 	sprintf(cwd_env, "%s%s", env_gfs_pwd, cwdbuf);
 	new_env[envc++] = cwd_env;
+	sprintf(pwd_env, "%s%s", env_pwd, pwdbuf);
+	new_env[envc++] = pwd_env;
 	new_env[envc++] = NULL;
 
 	if (gf_stdout == NULL && gf_stderr == NULL) {
