@@ -294,7 +294,7 @@ fixdir(char *dir, char *gfarm_prefix)
 	struct stat sb;
 	char *dir1;
 
-	if (stat(dir, &sb)) {
+	if (lstat(dir, &sb)) {
 		perror(dir);
 		return (1);
 	}
@@ -366,11 +366,7 @@ fixdir(char *dir, char *gfarm_prefix)
 
 		free(dir1);
 	}
-	closedir(dirp);
-	if (dirp != NULL)
-		return (1);
-
-	return (0);
+	return (closedir(dirp));
 }
 
 /*
