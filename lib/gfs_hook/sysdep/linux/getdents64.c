@@ -16,10 +16,6 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-#include "getdents.h"
-
-#define OFF_T off64_t
-
 #define SYSCALL_GETDENTS(filedes, buf, nbyte) \
 	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 
