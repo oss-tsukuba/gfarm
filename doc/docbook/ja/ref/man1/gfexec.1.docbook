@@ -18,7 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfexec</command>
-	<arg choice='plan'><replaceable>プログラム名</replaceable></arg>
+	<arg choice='plain'><replaceable>プログラム名</replaceable></arg>
 	<arg choice='opt' rep='repeat'><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
