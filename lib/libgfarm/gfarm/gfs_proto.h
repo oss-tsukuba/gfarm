@@ -124,4 +124,4 @@ enum gfs_proto_error gfs_errno_to_proto_error(int);
 int gfs_open_flags_localize(int);
 int gfs_digest_calculate_local(int, char *, size_t,
 	const EVP_MD *, EVP_MD_CTX *,
-	unsigned int *, unsigned char *, file_offset_t *);
+	unsigned int *, unsigned char *, gfarm_off_t *);

@@ -11,8 +11,9 @@
 #include <fcntl.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include "liberror.h"
 #include "auth.h"
 
 #define GFARM_AUTH_EXPIRE_DEFAULT	(24 * 60 * 60) /* 1 day */
@@ -125,7 +126,7 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 }
 
-char *
+gfarm_error_t
 gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 			  char *home, int create)
 {
@@ -143,23 +144,20 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
 			fclose(fp);
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
-				": invalid expire field");
+			return (GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD);
 		}
 		expire = ntohl(expire);
 		if (skip_space(fp) ||
 		    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN)) {
 			fclose(fp);
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
-				": invalid key field");
+			return (GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD);
 		}
 	}
 	if (fp == NULL) {
 		if (create == GFARM_AUTH_SHARED_KEY_GET) {
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
-				": not exist");
+			return (GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST);
 		}
 		fp = fopen(keyfilename, "w+");
 		if (fp == NULL) {
@@ -197,7 +195,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	fclose(fp);
 	free(keyfilename);
 	*expirep = expire;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void

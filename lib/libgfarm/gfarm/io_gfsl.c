@@ -13,13 +13,14 @@
 #include <gssapi.h>
 
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
 #include "gfarm_secure_session.h"
 
+#include "liberror.h"
 #include "iobuffer.h"
-#include "xxx_proto.h"
+#include "gfp_xdr.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
 
@@ -116,14 +117,14 @@ free_secsession(struct io_gfsl *io)
 }
 
 /*
- * xxx_connection operation
+ * gfp_xdr operation
  */
 
-char *
-xxx_iobuffer_close_secsession_op(void *cookie, int fd)
+gfarm_error_t
+gfp_iobuffer_close_secsession_op(void *cookie, int fd)
 {
 	int rv;
-	char *e = NULL;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	free_secsession(cookie);
 	rv = close(fd);
@@ -132,8 +133,8 @@ xxx_iobuffer_close_secsession_op(void *cookie, int fd)
 	return (e);
 }
 
-char *
-xxx_iobuffer_export_credential_secsession_op(void *cookie)
+gfarm_error_t
+gfp_iobuffer_export_credential_secsession_op(void *cookie)
 {
 	struct io_gfsl *io = cookie;
 	OM_uint32 e_major;
@@ -141,27 +142,27 @@ xxx_iobuffer_export_credential_secsession_op(void *cookie)
        
 	cred = gfarmSecSessionGetDelegatedCredential(io->session);
 	if (cred == GSS_C_NO_CREDENTIAL)
-		return ("GSI delegated credential doesn't exist");
+		return (GFARM_ERRMSG_GSI_DELEGATED_CREDENTIAL_NOT_EXIST);
 	io->exported_credential = gfarmGssExportCredential(cred, &e_major);
 	if (io->exported_credential == NULL)
-		return ("cannot export GSI delegated credential");
-	return (NULL);
+		return (GFARM_ERRMSG_GSI_DELEGATED_CREDENTIAL_CANNOT_EXPORT);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
-xxx_iobuffer_delete_credential_secsession_op(void *cookie)
+gfarm_error_t
+gfp_iobuffer_delete_credential_secsession_op(void *cookie)
 {
 	struct io_gfsl *io = cookie;
 
 	if (io->exported_credential == NULL)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	gfarmGssDeleteExportedCredential(io->exported_credential);
 	io->exported_credential = NULL;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 char *
-xxx_iobuffer_env_for_credential_secsession_op(void *cookie)
+gfp_iobuffer_env_for_credential_secsession_op(void *cookie)
 {
 	struct io_gfsl *io = cookie;
 
@@ -170,19 +171,19 @@ xxx_iobuffer_env_for_credential_secsession_op(void *cookie)
 	return (gfarmGssEnvForExportedCredential(io->exported_credential));
 }
 
-struct xxx_iobuffer_ops xxx_secsession_iobuffer_ops = {
-	xxx_iobuffer_close_secsession_op,
-	xxx_iobuffer_export_credential_secsession_op,
-	xxx_iobuffer_delete_credential_secsession_op,
-	xxx_iobuffer_env_for_credential_secsession_op,
+struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
+	gfp_iobuffer_close_secsession_op,
+	gfp_iobuffer_export_credential_secsession_op,
+	gfp_iobuffer_delete_credential_secsession_op,
+	gfp_iobuffer_env_for_credential_secsession_op,
 	gfarm_iobuffer_read_secsession_op,
 	gfarm_iobuffer_write_secsession_op,
 	gfarm_iobuffer_read_secsession_op,
 	gfarm_iobuffer_write_secsession_op
 };
 
-char *
-xxx_connection_set_secsession(struct xxx_connection *conn,
+gfarm_error_t
+gfp_xdr_set_secsession(struct gfp_xdr *conn,
 	gfarmSecSession *secsession)
 {
 	struct io_gfsl *io = malloc(sizeof(struct io_gfsl));
@@ -193,20 +194,20 @@ xxx_connection_set_secsession(struct xxx_connection *conn,
 	io->exported_credential = NULL;
 	io->buffer = NULL;
 	io->p = io->residual = 0;
-	xxx_connection_set(conn, &xxx_secsession_iobuffer_ops,
+	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops,
 	    io, secsession->fd);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-/* free resources which were allocated by xxx_connection_set_secsession() */
+/* free resources which were allocated by gfp_xdr_set_secsession() */
 void
-xxx_connection_reset_secsession(struct xxx_connection *conn)
+gfp_xdr_reset_secsession(struct gfp_xdr *conn)
 {
-	struct io_gfsl *io = xxx_connection_cookie(conn);
+	struct io_gfsl *io = gfp_xdr_cookie(conn);
 
 	if (io != NULL)
 		free_secsession(io);
-	xxx_connection_set(conn, &xxx_secsession_iobuffer_ops, NULL, -1);
+	gfp_xdr_set(conn, &gfp_xdr_secsession_iobuffer_ops, NULL, -1);
 }
 
 /*
@@ -217,9 +218,9 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd)
 {
 	struct io_gfsl *io = cookie;
-	char *e = xxx_iobuffer_close_secsession_op(io, fd);
+	gfarm_error_t e = gfp_iobuffer_close_secsession_op(io, fd);
 
-	if (e != NULL && gfarm_iobuffer_get_error(b) == 0)
+	if (e != GFARM_ERR_NO_ERROR && gfarm_iobuffer_get_error(b) == 0)
 		gfarm_iobuffer_set_error(b, e);
 }
 
@@ -227,11 +228,11 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
  * for "gsi_auth" method
  */
 
-struct xxx_iobuffer_ops xxx_insecure_gsi_session_iobuffer_ops = {
-	xxx_iobuffer_close_secsession_op,
-	xxx_iobuffer_export_credential_secsession_op,
-	xxx_iobuffer_delete_credential_secsession_op,
-	xxx_iobuffer_env_for_credential_secsession_op,
+struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
+	gfp_iobuffer_close_secsession_op,
+	gfp_iobuffer_export_credential_secsession_op,
+	gfp_iobuffer_delete_credential_secsession_op,
+	gfp_iobuffer_env_for_credential_secsession_op,
 	/* NOTE: the following assumes that these functions don't use cookie */
 	gfarm_iobuffer_nonblocking_read_fd_op,
 	gfarm_iobuffer_nonblocking_write_fd_op,
@@ -241,13 +242,13 @@ struct xxx_iobuffer_ops xxx_insecure_gsi_session_iobuffer_ops = {
 
 /*
  * downgrade
- * from a "gsi" connection which is created by xxx_connection_set_secsession()
+ * from a "gsi" connection which is created by gfp_xdr_set_secsession()
  * to a "gsi_auth" connection.
  */
 
 void
-xxx_connection_downgrade_to_insecure_session(struct xxx_connection *conn)
+gfp_xdr_downgrade_to_insecure_session(struct gfp_xdr *conn)
 {
-	xxx_connection_set(conn, &xxx_insecure_gsi_session_iobuffer_ops,
-	    xxx_connection_cookie(conn), xxx_connection_fd(conn));
+	gfp_xdr_set(conn, &gfp_xdr_insecure_gsi_session_iobuffer_ops,
+	    gfp_xdr_cookie(conn), gfp_xdr_fd(conn));
 }

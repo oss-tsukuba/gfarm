@@ -6,11 +6,12 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include "liberror.h"
 #include "gfutil.h"
 #include "gfevent.h"
-#include "xxx_proto.h"
+#include "gfp_xdr.h"
 #include "auth.h"
 
 /*
@@ -21,12 +22,12 @@
 
 struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
-	char *(*request)(struct xxx_connection *);
-	char *(*request_multiplexed)(struct gfarm_eventqueue *,
-		struct xxx_connection *,
+	gfarm_error_t (*request)(struct gfp_xdr *, enum gfarm_auth_id_type);
+	gfarm_error_t (*request_multiplexed)(struct gfarm_eventqueue *,
+		struct gfp_xdr *, enum gfarm_auth_id_type,
 		void (*)(void *), void *,
 		void **);
-	char *(*result_multiplexed)(void *);
+	gfarm_error_t (*result_multiplexed)(void *);
 } gfarm_auth_trial_table[] = {
 	/*
 	 * This table entry should be prefered order
@@ -48,14 +49,16 @@ struct gfarm_auth_client_method {
 	{ GFARM_AUTH_METHOD_NONE,	  NULL, NULL, NULL }	/* sentinel */
 };
 
-char *
-gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
+gfarm_error_t
+gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
+	enum gfarm_auth_id_type self_type)
 {
 	/*
 	 * too weak authentication.
 	 * assumes shared home directory.
 	 */
-	char *e, *e_save = NULL, *user, *home;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	char *user, *home;
 	unsigned int expire;
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	char challenge[GFARM_AUTH_CHALLENGE_LEN];
@@ -65,68 +68,67 @@ gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
 	int eof, key_create = GFARM_AUTH_SHARED_KEY_CREATE;
 	int try = 0;
 
+	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	user = gfarm_get_global_username();
 	home = gfarm_get_local_homedir();
 	if (user == NULL || home == NULL)
-		return (
-		    "gfarm_auth_request_sharedsecret(): programming error, "
-		    "gfarm library isn't properly initialized");
+		return (GFARM_ERRMSG_AUTH_REQUEST_SHAREDSECRET_IMPLEMENTATION_ERROR);
 
-	e = xxx_proto_send(conn, "s", user);
-	if (e != NULL)
+	e = gfp_xdr_send(conn, "s", user);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	do {
 		e = gfarm_auth_shared_key_get(&expire, shared_key, home,
 		    key_create);
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			e_save = e;
 			break;
 		}
-		e = xxx_proto_send(conn, "i", GFARM_AUTH_SHAREDSECRET_MD5);
-		if (e != NULL)
+		e = gfp_xdr_send(conn, "i", GFARM_AUTH_SHAREDSECRET_MD5);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		e = xxx_proto_recv(conn, 0, &eof, "i", &error);
-		if (e != NULL)
+		e = gfp_xdr_recv(conn, 0, &eof, "i", &error);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (eof)
 			return (GFARM_ERR_PROTOCOL);
 		if (error != GFARM_AUTH_ERROR_NO_ERROR)
 			break;
 
-		e = xxx_proto_recv(conn, 0, &eof, "b",
+		e = gfp_xdr_recv(conn, 0, &eof, "b",
 		    sizeof(challenge), &len, challenge);
-		if (e != NULL)
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (eof)
 			return (GFARM_ERR_PROTOCOL);
 		gfarm_auth_sharedsecret_response_data(shared_key, challenge,
 		    response);
-		e = xxx_proto_send(conn, "ib",
+		e = gfp_xdr_send(conn, "ib",
 		    expire, sizeof(response), response);
-		if (e != NULL)
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		e = xxx_proto_recv(conn, 1, &eof, "i", &error);
-		if (e != NULL)
+		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (eof)
 			return (GFARM_ERR_PROTOCOL);
 		if (error == GFARM_AUTH_ERROR_NO_ERROR)
-			return (NULL); /* success */
+			return (GFARM_ERR_NO_ERROR); /* success */
 	} while (++try < GFARM_AUTH_RETRY_MAX &&
 	    error == GFARM_AUTH_ERROR_EXPIRED);
 
-	e = xxx_proto_send(conn, "i", GFARM_AUTH_SHAREDSECRET_GIVEUP);
-	if (e != NULL)
+	e = gfp_xdr_send(conn, "i", GFARM_AUTH_SHAREDSECRET_GIVEUP);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = xxx_proto_recv(conn, 0, &eof, "i", &error_ignore);
-	if (e != NULL)
+	e = gfp_xdr_recv(conn, 0, &eof, "i", &error_ignore);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
 
-	if (e_save != NULL)
+	if (e_save != GFARM_ERR_NO_ERROR)
 		return (e_save);
 	switch (error) {
 	case GFARM_AUTH_ERROR_NOT_SUPPORTED:
@@ -138,12 +140,12 @@ gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
 	}
 }
 
-char *
-gfarm_auth_request(struct xxx_connection *conn,
-	char *name, struct sockaddr *addr,
+gfarm_error_t
+gfarm_auth_request(struct gfp_xdr *conn, char *name, struct sockaddr *addr,
+	enum gfarm_auth_id_type self_type,
 	enum gfarm_auth_method *auth_methodp)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i, eof;
 	gfarm_int32_t methods, server_methods; /* bitset */
 	gfarm_int32_t method; /* enum gfarm_auth_method */
@@ -155,14 +157,14 @@ gfarm_auth_request(struct xxx_connection *conn,
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(name, addr);
 	if (methods == 0)
-		return ("gfarm auth method isn't available for the host");
+		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	methods &= gfarm_auth_method_get_available();
 	if (methods == 0)
-		return ("usable auth-method isn't configured");
+		return (GFARM_ERRMSG_USABLE_AUTH_METHOD_IS_NOT_CONFIGURED);
 
-	e = xxx_proto_recv(conn, 0, &eof, "b", sizeof(methods_buffer),
+	e = gfp_xdr_recv(conn, 0, &eof, "b", sizeof(methods_buffer),
 	    &nmethods, methods_buffer);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
@@ -180,11 +182,11 @@ gfarm_auth_request(struct xxx_connection *conn,
 		if (method != GFARM_AUTH_METHOD_NONE &&
 		    (methods & server_methods & (1 << method)) == 0)
 			continue;
-		e = xxx_proto_send(conn, "i", method);
-		if (e != NULL)
+		e = gfp_xdr_send(conn, "i", method);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		e = xxx_proto_recv(conn, 1, &eof, "i", &error);
-		if (e != NULL)
+		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (eof || error != GFARM_AUTH_ERROR_NO_ERROR)
 			return (GFARM_ERR_PROTOCOL); /* shouldn't happen */
@@ -194,14 +196,14 @@ gfarm_auth_request(struct xxx_connection *conn,
 				return (GFARM_ERR_PERMISSION_DENIED);
 			if ((methods & server_methods) == 0)
 				return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
-			return (e_save != NULL ? e_save :
-			    "gfarm_auth_request: implementation error");
+			return (e_save != GFARM_ERR_NO_ERROR ? e_save :
+			    GFARM_ERRMSG_AUTH_REQUEST_IMPLEMENTATION_ERROR);
 		}
-		e = (*gfarm_auth_trial_table[i].request)(conn);
-		if (e == NULL) {
+		e = (*gfarm_auth_trial_table[i].request)(conn, self_type);
+		if (e == GFARM_ERR_NO_ERROR) {
 			if (auth_methodp != NULL)
 				*auth_methodp = method;
-			return (NULL); /* success */
+			return (GFARM_ERR_NO_ERROR); /* success */
 		}
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
@@ -221,7 +223,7 @@ gfarm_auth_request(struct xxx_connection *conn,
 struct gfarm_auth_request_sharedsecret_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
-	struct xxx_connection *conn;
+	struct gfp_xdr *conn;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -233,7 +235,7 @@ struct gfarm_auth_request_sharedsecret_state {
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 
 	/* results */
-	char *error, *error_save;
+	gfarm_error_t error, error_save;
 	gfarm_int32_t proto_error; /* enum gfarm_auth_error */
 };
 
@@ -247,19 +249,19 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 0, &eof, "i",
+	state->error = gfp_xdr_recv(state->conn, 0, &eof, "i",
 	    &error_ignore);
-	if (state->error == NULL && eof)
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error != NULL)
+	if (state->error != GFARM_ERR_NO_ERROR)
 		;
-	else if (state->error_save != NULL) {
+	else if (state->error_save != GFARM_ERR_NO_ERROR) {
 		state->error = state->error_save;
 	} else {
 		switch (state->proto_error) {
@@ -286,10 +288,10 @@ gfarm_auth_request_sharedsecret_send_giveup(int events, int fd,
 	int rv;
 	struct timeval timeout;
 
-	state->error = xxx_proto_send(state->conn, "i",
+	state->error = gfp_xdr_send(state->conn, "i",
 	    GFARM_AUTH_SHAREDSECRET_GIVEUP);
-	if (state->error == NULL &&
-	    (state->error = xxx_proto_flush(state->conn)) == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR &&
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_sharedsecret_receive_fin, state);
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
@@ -317,17 +319,17 @@ gfarm_auth_request_sharedsecret_receive_result(int events, int fd,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 1, &eof, "i",
+	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i",
 	    &state->proto_error);
-	if (state->error == NULL && eof)
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR) {
 		if (state->proto_error != GFARM_AUTH_ERROR_NO_ERROR) {
 			gfarm_fd_event_set_callback(state->writable,
 			    (++state->try < GFARM_AUTH_RETRY_MAX &&
@@ -359,24 +361,25 @@ gfarm_auth_request_sharedsecret_receive_challenge(int events, int fd,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 0, &eof, "b",
+	state->error = gfp_xdr_recv(state->conn, 0, &eof, "b",
 	    sizeof(challenge), &len, challenge);
-	if (state->error == NULL && eof)
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR) {
 		/* XXX It's better to check writable event here */
 		gfarm_auth_sharedsecret_response_data(
 		    state->shared_key, challenge, response);
-		state->error = xxx_proto_send(state->conn, "ib",
+		state->error = gfp_xdr_send(state->conn, "ib",
 		    state->expire, sizeof(response), response);
-		if (state->error == NULL &&
-		    (state->error = xxx_proto_flush(state->conn)) == NULL) {
+		if (state->error == GFARM_ERR_NO_ERROR &&
+		    (state->error = gfp_xdr_flush(state->conn)) ==
+		    GFARM_ERR_NO_ERROR) {
 			gfarm_fd_event_set_callback(state->readable,
 			   gfarm_auth_request_sharedsecret_receive_result,
 			   state);
@@ -405,18 +408,18 @@ gfarm_auth_request_sharedsecret_receive_keytype(int events, int fd,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
 	/* We need just==1 here, because we may wait an event next. */
-	state->error = xxx_proto_recv(state->conn, 1, &eof, "i",
+	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i",
 	    &state->proto_error);
-	if (state->error == NULL && eof)
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR) {
 		if (state->proto_error != GFARM_AUTH_ERROR_NO_ERROR) {
 			gfarm_fd_event_set_callback(state->writable,
 			    gfarm_auth_request_sharedsecret_send_giveup,
@@ -460,15 +463,15 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    state->try == 0 ?
 	    GFARM_AUTH_SHARED_KEY_CREATE :
 	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE);
-	if (state->error_save != NULL) {
+	if (state->error_save != GFARM_ERR_NO_ERROR) {
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,
 		    closure, t);
 		return;
 	}
-	state->error = xxx_proto_send(state->conn, "i",
+	state->error = gfp_xdr_send(state->conn, "i",
 	    GFARM_AUTH_SHAREDSECRET_MD5);
-	if (state->error == NULL &&
-	    (state->error = xxx_proto_flush(state->conn)) == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR &&
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout)) == 0) {
@@ -482,26 +485,26 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 		(*state->continuation)(state->closure);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
-	struct xxx_connection *conn,
+	struct gfp_xdr *conn, enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
-	char *e, *user, *home;
+	gfarm_error_t e;
+	char *user, *home;
 	struct gfarm_auth_request_sharedsecret_state *state;
-	int rv, sock = xxx_connection_fd(conn);
+	int rv, sock = gfp_xdr_fd(conn);
 
+	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	user = gfarm_get_global_username();
 	home = gfarm_get_local_homedir();
-	if (user == NULL || home == NULL)
-		return (
-		    "gfarm_auth_request_sharedsecret(): programming error, "
-		    "gfarm library isn't properly initialized");
+	if (user == NULL || home == NULL) /* not properly initialized */
+		return (GFARM_ERRMSG_AUTH_REQUEST_SHAREDSECRET_MULTIPLEXED_IMPLEMENTATION_ERROR);
 
 	/* XXX It's better to check writable event here */
-	e = xxx_proto_send(conn, "s", user);
-	if (e != NULL)
+	e = gfp_xdr_send(conn, "s", user);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	state = malloc(sizeof(*state));
@@ -540,9 +543,9 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	state->closure = closure;
 	state->home = home;
 	state->try = 0;
-	state->error = state->error_save = NULL;
+	state->error = state->error_save = GFARM_ERR_NO_ERROR;
 	*statepp = state;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 
 error_free_readable:
 	gfarm_event_free(state->readable);
@@ -553,11 +556,11 @@ error_free_state:
 	return (e);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_result_sharedsecret_multiplexed(void *sp)
 {
 	struct gfarm_auth_request_sharedsecret_state *state = sp;
-	char *e = state->error;
+	gfarm_error_t e = state->error;
 
 	gfarm_event_free(state->readable);
 	gfarm_event_free(state->writable);
@@ -572,9 +575,10 @@ gfarm_auth_result_sharedsecret_multiplexed(void *sp)
 struct gfarm_auth_request_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
-	struct xxx_connection *conn;
+	struct gfp_xdr *conn;
 	char *name;
 	struct sockaddr *addr;
+	enum gfarm_auth_id_type self_type;
 	void (*continuation)(void *);
 	void *closure;
 
@@ -583,10 +587,10 @@ struct gfarm_auth_request_state {
 	/* loop state */
 	int auth_method_index;
 	void *method_state;
-	char *last_error;
+	gfarm_error_t last_error;
 
 	/* results */
-	char *error;
+	gfarm_error_t error;
 };
 
 static void
@@ -594,7 +598,7 @@ gfarm_auth_request_next_method(struct gfarm_auth_request_state *state)
 {
 	int rv;
 
-	if (state->last_error == NULL ||
+	if (state->last_error == GFARM_ERR_NO_ERROR ||
 	    (state->last_error != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 	     state->last_error != GFARM_ERR_EXPIRED &&
 	     state->last_error != GFARM_ERR_AUTHENTICATION)) {
@@ -632,26 +636,28 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 1, &eof, "i", &error);
-	if (state->error == NULL && eof)
+	state->error = gfp_xdr_recv(state->conn, 1, &eof, "i", &error);
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL && error != GFARM_AUTH_ERROR_NO_ERROR)
+	if (state->error == GFARM_ERR_NO_ERROR &&
+	    error != GFARM_AUTH_ERROR_NO_ERROR)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR) {
 		if (gfarm_auth_trial_table[state->auth_method_index].method
 		    != GFARM_AUTH_METHOD_NONE) {
 			state->last_error =
 			    (*gfarm_auth_trial_table[state->auth_method_index].
-			    request_multiplexed)(state->q, state->conn,
+			    request_multiplexed)(state->q,
+			    state->conn, state->self_type,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
-			if (state->last_error == NULL) {
+			if (state->last_error == GFARM_ERR_NO_ERROR) {
 				/*
 				 * call gfarm_auth_request_$method, then
 				 * go to gfarm_auth_request_dispatch_result()
@@ -667,10 +673,10 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 		} else if ((state->methods & state->server_methods) == 0) {
 			state->error = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
 		} else {
-			state->error = state->last_error != NULL ?
+			state->error =
+			    state->last_error != GFARM_ERR_NO_ERROR ?
 			    state->last_error :
-			    "gfarm_auth_request_multiplexed: "
-			    "implementation error";
+			    GFARM_ERRMSG_AUTH_REQUEST_MULTIPLEXED_MPLEMENTATION_ERROR;
 		}
 	}
 	if (state->continuation != NULL)
@@ -692,9 +698,9 @@ gfarm_auth_request_loop_ask_method(int events, int fd, void *closure,
 		method =
 		    gfarm_auth_trial_table[++state->auth_method_index].method;
 	}
-	state->error = xxx_proto_send(state->conn, "i", method);
-	if (state->error == NULL &&
-	    (state->error = xxx_proto_flush(state->conn)) == NULL) {
+	state->error = gfp_xdr_send(state->conn, "i", method);
+	if (state->error == GFARM_ERR_NO_ERROR &&
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_dispatch_method, state);
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
@@ -720,17 +726,17 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
-		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
 		if (state->continuation != NULL)
 			(*state->continuation)(state->closure);
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 0, &eof, "b",
+	state->error = gfp_xdr_recv(state->conn, 0, &eof, "b",
 	    sizeof(methods_buffer), &nmethods, methods_buffer);
-	if (state->error == NULL && eof)
+	if (state->error == GFARM_ERR_NO_ERROR && eof)
 		state->error = GFARM_ERR_PROTOCOL;
-	if (state->error == NULL) {
+	if (state->error == GFARM_ERR_NO_ERROR) {
 		state->server_methods = 0;
 		for (i = 0; i < nmethods; i++) {
 			if (methods_buffer[i] <= GFARM_AUTH_METHOD_NONE ||
@@ -740,7 +746,7 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 		}
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->writable, NULL)) == 0) {
-			state->last_error = NULL;
+			state->last_error = GFARM_ERR_NO_ERROR;
 			state->auth_method_index = 0;
 			/* go to gfarm_auth_request_loop_ask_method() */
 			return;
@@ -751,14 +757,15 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 		(*state->continuation)(state->closure);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
-	struct xxx_connection *conn, char *name, struct sockaddr *addr,
+	struct gfp_xdr *conn, char *name, struct sockaddr *addr,
+	enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)
 {
-	char *e;
-	int rv, sock = xxx_connection_fd(conn);
+	gfarm_error_t e;
+	int rv, sock = gfp_xdr_fd(conn);
 	struct gfarm_auth_request_state *state;
 	gfarm_int32_t methods; /* bitset */
 	struct timeval timeout;
@@ -767,10 +774,10 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(name, addr);
 	if (methods == 0)
-		return ("gfarm auth method isn't available for the host");
+		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	methods &= gfarm_auth_method_get_available();
 	if (methods == 0)
-		return ("usable auth-method isn't configured");
+		return (GFARM_ERRMSG_USABLE_AUTH_METHOD_IS_NOT_CONFIGURED);
 
 	state = malloc(sizeof(*state));
 	if (state == NULL)
@@ -807,12 +814,13 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	state->conn = conn;
 	state->name = name;
 	state->addr = addr;
+	state->self_type = self_type;
 	state->methods = methods;
 	state->continuation = continuation;
 	state->closure = closure;
-	state->error = NULL;
+	state->error = GFARM_ERR_NO_ERROR;
 	*statepp = state;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 
 error_free_readable:
 	gfarm_event_free(state->readable);
@@ -823,13 +831,13 @@ error_free_state:
 	return (e);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 	enum gfarm_auth_method *auth_methodp)
 {
-	char *e = state->error;
+	gfarm_error_t e = state->error;
 
-	if (e == NULL) {
+	if (e == GFARM_ERR_NO_ERROR) {
 		if (auth_methodp != NULL)
 			*auth_methodp = gfarm_auth_trial_table[
 			    state->auth_method_index].method;

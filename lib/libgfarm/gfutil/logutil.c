@@ -3,15 +3,16 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "gfutil.h"
 
-static char *log_identifier = "libgfarm";
+static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 
 void
-gflog_message(int priority, char *message, char *status)
+gflog_message(int priority, const char *message, const char *status)
 {
 	if (log_auxiliary_info != NULL) {
 		if (status != NULL) {
@@ -53,56 +54,56 @@ gflog_message(int priority, char *message, char *status)
 }
 
 void
-gflog_error(char *message, char *status)
+gflog_error(const char *message, const char *status)
 {
 	gflog_message(LOG_ERR, message, status);
 }
 
 void
-gflog_warning(char *message, char *status)
+gflog_warning(const char *message, const char *status)
 {
 	gflog_message(LOG_WARNING, message, status);
 }
 
 void
-gflog_notice(char *message, char *status)
+gflog_notice(const char *message, const char *status)
 {
 	gflog_message(LOG_NOTICE, message, status);
 }
 
 void
-gflog_info(char *message, char *status)
+gflog_info(const char *message, const char *status)
 {
 	gflog_message(LOG_INFO, message, status);
 }
 
 void
-gflog_debug(char *message, char *status)
+gflog_debug(const char *message, const char *status)
 {
 	gflog_message(LOG_DEBUG, message, status);
 }
 
 void
-gflog_warning_errno(char *message)
+gflog_warning_errno(const char *message)
 {
 	gflog_warning(message, strerror(errno));
 }
 
 void
-gflog_fatal(char *message, char *status)
+gflog_fatal(const char *message, const char *status)
 {
 	gflog_error(message, status);
 	exit(2);
 }
 
 void
-gflog_fatal_errno(char *message)
+gflog_fatal_errno(const char *message)
 {
 	gflog_fatal(message, strerror(errno));
 }
 
 void
-gflog_set_identifier(char *identifier)
+gflog_set_identifier(const char *identifier)
 {
 	log_identifier = identifier;
 }
@@ -127,11 +128,11 @@ gflog_syslog_open(int syslog_option, int syslog_facility)
 }
 
 int
-gflog_syslog_name_to_facility(char *name)
+gflog_syslog_name_to_facility(const char *name)
 {
 	int i;
 	struct {
-		char *name;
+		const char *name;
 		int facility;
 	} syslog_facilities[] = {
 		{ "kern",	LOG_KERN },

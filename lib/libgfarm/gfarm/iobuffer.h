@@ -55,8 +55,8 @@ struct gfarm_iobuffer;
 struct gfarm_iobuffer *gfarm_iobuffer_alloc(int);
 void gfarm_iobuffer_free(struct gfarm_iobuffer *);
 
-void gfarm_iobuffer_set_error(struct gfarm_iobuffer *, char *);
-char *gfarm_iobuffer_get_error(struct gfarm_iobuffer *);
+void gfarm_iobuffer_set_error(struct gfarm_iobuffer *, int);
+int gfarm_iobuffer_get_error(struct gfarm_iobuffer *);
 
 int gfarm_iobuffer_empty(struct gfarm_iobuffer *);
 int gfarm_iobuffer_full(struct gfarm_iobuffer *);
@@ -79,7 +79,7 @@ void gfarm_iobuffer_set_read(struct gfarm_iobuffer *,
 void *gfarm_iobuffer_get_read_cookie(struct gfarm_iobuffer *);
 int gfarm_iobuffer_get_read_fd(struct gfarm_iobuffer *);
 void gfarm_iobuffer_read(struct gfarm_iobuffer *, int *);
-int gfarm_iobuffer_put(struct gfarm_iobuffer *, void *, int);
+int gfarm_iobuffer_put(struct gfarm_iobuffer *, const void *, int);
 
 /* dequeue */
 void gfarm_iobuffer_set_write_close(struct gfarm_iobuffer *,
@@ -95,7 +95,7 @@ int gfarm_iobuffer_get(struct gfarm_iobuffer *, void *, int);
 void gfarm_iobuffer_flush_write(struct gfarm_iobuffer *);
 
 /* enqueue by memory copy, dequeue by write */
-int gfarm_iobuffer_put_write(struct gfarm_iobuffer *, void *, int);
+int gfarm_iobuffer_put_write(struct gfarm_iobuffer *, const void *, int);
 /* enqueue by read, dequeue by purge */
 int gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *, int, int);
 /* enqueue by read, dequeue by memory copy */

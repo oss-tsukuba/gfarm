@@ -11,8 +11,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h> /* gfarm_host_is_in_domain() */
+#include "liberror.h"
 #include "hostspec.h"
 
 #define IS_DNS_LABEL_CHAR(c)	(isalnum(c) || (c) == '-')
@@ -28,7 +29,7 @@ struct gfarm_hostspec {
 	} u;
 };
 
-char *
+gfarm_error_t
 gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 {
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
@@ -39,10 +40,10 @@ gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 	hsp->type = GFHS_NAME;
 	strcpy(hsp->u.name, name);
 	*hostspecpp = hsp;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_hostspec_af_inet4_new(gfarm_int32_t addr, gfarm_int32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
@@ -55,7 +56,7 @@ gfarm_hostspec_af_inet4_new(gfarm_int32_t addr, gfarm_int32_t mask,
 	hsp->u.in4_addr.addr.s_addr = addr;
 	hsp->u.in4_addr.mask.s_addr = mask;
 	*hostspecpp = hsp;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -72,41 +73,41 @@ gfarm_hostspec_free(struct gfarm_hostspec *hostspecp)
  * NOTE: this function stores address of first invalid charactor to *endptr,
  *	even if this function reports error as its return value.
  */
-char *
+gfarm_error_t
 gfarm_string_to_in4addr(char *s, char **endptr, struct in_addr *addrp)
 {
-	char *e, *ep;
+	gfarm_error_t e;
+	char *ep;
 	gfarm_int32_t addr;
 	unsigned long byte;
 	int i;
-	static char invalid_char[] = "invalid character in IP address";
-	static char too_big_byte[] = "too big byte value in IP address";
 
 	byte = strtoul(s, &ep, 10);
 	if (ep == s) {
-		e = *s == '\0' ? "IP address expected" : invalid_char;
+		e = *s == '\0' ? GFARM_ERRMSG_IP_ADDRESS_EXPECTED :
+		    GFARM_ERRMSG_INVALID_CHAR_IN_IP;
 		goto bad;
 	}
 	if (byte >= 256) {
 		ep = s;
-		e = too_big_byte;
+		e = GFARM_ERRMSG_TOO_BIG_BYTE_IN_IP;
 		goto bad;
 	}
 	addr = byte;
 	for (i = 0; i < 3; i++) {
 		if (*ep != '.') {
-			e = "IP address less than 4 bytes";
+			e = GFARM_ERRMSG_IP_ADDRESS_TOO_SHORT;
 			goto bad;
 		}
 		s = ep + 1;
 		byte = strtoul(s, &ep, 10);
 		if (ep == s) {
-			e = invalid_char;
+			e = GFARM_ERRMSG_INVALID_CHAR_IN_IP;
 			goto bad;
 		}
 		if (byte >= 256) {
 			ep = s;
-			e = too_big_byte;
+			e = GFARM_ERRMSG_TOO_BIG_BYTE_IN_IP;
 			goto bad;
 		}
 		addr = (addr << 8) | byte;
@@ -114,7 +115,7 @@ gfarm_string_to_in4addr(char *s, char **endptr, struct in_addr *addrp)
 	addrp->s_addr = htonl(addr);
 	if (endptr != NULL)
 		*endptr = ep;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 bad:
 	if (endptr != NULL)
 		*endptr = ep;
@@ -133,7 +134,7 @@ gfarm_is_string_upper_case(char *s)
 	return (1);
 }
 
-char *
+gfarm_error_t
 gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 {
 	char *end1p, *end2p;
@@ -154,7 +155,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 			    (masklen = strtoul(end1p + 1, &end2p, 10),
 			     *end2p == '\0')) {
 				if (masklen > AF_INET4_BIT)
-					return ("too big netmask");
+					return (GFARM_ERRMSG_TOO_BIG_NETMASK);
 				if (masklen == 0) {
 					mask.s_addr = INADDR_ANY;
 				} else {
@@ -174,19 +175,19 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 		}
 		if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) &&
 		    *end1p != '.')
-			return ("invalid character in IP address");
+			return (GFARM_ERRMSG_INVALID_CHAR_IN_IP);
 	}
 	if (*name == '\0')
-		return ("hostname or IP address expected");
+		return (GFARM_ERRMSG_HOSTNAME_OR_IP_EXPECTED);
 	if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) && *end1p != '.')
-		return ("invalid character in hostname");
+		return (GFARM_ERRMSG_INVALID_CHAR_IN_HOSTNAME);
 
 	/*
 	 * We don't allow all capital domain name.
 	 * Such names are reserved for keywords like "*", "LISTENER".
 	 */
 	if (gfarm_is_string_upper_case(name))
-		return ("unknown keyword");
+		return (GFARM_ERRMSG_UNKNOWN_KEYWORD);
 
 	return (gfarm_hostspec_name_new(name, hostspecpp));
 }
@@ -231,7 +232,7 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	return (0);
 }
 
-char *
+gfarm_error_t
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {
 	int i, addrlen, addrfamily = addr->sa_family;
@@ -259,20 +260,20 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 #endif
 	if (hp == NULL) {
 		free(name);
-		return ("reverse-lookup-name isn't resolvable");
+		return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_IS_NOT_RESOLVABLE);
 	}
 	if (hp->h_addrtype != addrfamily || hp->h_length != addrlen) {
 		free(name);
-		return ("invalid name record");
+		return (GFARM_ERRMSG_INVALID_NAME_RECORD);
 	}
 	for (i = 0; hp->h_addr_list[i] != NULL; i++) {
 		if (memcmp(hp->h_addr_list[i], addrp, addrlen) == 0) {
 			*namep = name;
-			return (NULL); /* success */
+			return (GFARM_ERR_NO_ERROR); /* success */
 		}
 	}
 	free(name);
-	return ("reverse-lookup-name doesn't match, possibly forged");
+	return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_DOES_NOT_MATCH);
 }
 
 void

@@ -3,6 +3,9 @@
  */
 
 #include <gfarm/gfarm_config.h>
+
+#include <pthread.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,15 +22,30 @@
 #include <libgen.h>
 #include <pwd.h>
 #include <grp.h>
-#include <gfarm/gfarm_error.h>
+
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
+
+#include "liberror.h"
 #include "gfutil.h"
-#include "xxx_proto.h"
+#include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
+#include "config.h"
 #include "auth.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
+
+#include "subr.h"
+#include "host.h"
+#include "user.h"
+#include "group.h"
+#include "peer.h"
+#include "process.h"
+#include "inode.h"
+#include "fs.h"
+#include "job.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -44,652 +62,310 @@ char *program_name = "gfmd";
 
 int debug_mode = 0;
 
-char *
-gfm_server_get_request(struct xxx_connection *client, char *diag,
-	char *format, ...)
-{
-	va_list ap;
-	char *e;
-	int eof;
-
-	va_start(ap, format);
-	e = xxx_proto_vrecv(client, 0, &eof, &format, &ap);
-	va_end(ap);
-
-	if (e != NULL) {
-		gflog_warning(diag, e);
-		return (e);
-	}
-	if (eof) {
-		gflog_warning(diag, "missing RPC argument");
-		return (GFARM_ERR_PROTOCOL);
-	}
-	if (*format != '\0')
-		gflog_fatal(diag, "invalid format character to get request");
-	return (NULL);
-}
-
-char *
-gfm_server_put_reply(struct xxx_connection *client, char *diag,
-	int ecode, char *format, ...)
-{
-	va_list ap;
-	char *e;
-
-	va_start(ap, format);
-	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
-	if (e != NULL) {
-		gflog_warning(diag, e);
-		return (e);
-	}
-	if (ecode == GFJ_ERROR_NOERROR) {
-		e = xxx_proto_vsend(client, &format, &ap);
-		if (e != NULL) {
-			gflog_warning(diag, e);
-			return (e);
-		}
-	}
-	va_end(ap);
-
-	if (ecode == 0 && *format != '\0')
-		gflog_fatal(diag, "invalid format character to put reply");
-	return (NULL);
-}
-
-#define gfj_server_get_request	gfm_server_get_request
-#define gfj_server_put_reply	gfm_server_put_reply
-
-void
-gfarm_job_info_clear(struct gfarm_job_info *infos, int n)
-{
-	memset(infos, 0, sizeof(struct gfarm_job_info) * n);
-}
-
-void
-gfarm_job_info_server_free_contents(struct gfarm_job_info *infos, int n)
-{
-	int i, j;
-	struct gfarm_job_info *info;
-
-	for (i = 0; i < n; i++) {
-		info = &infos[i];
-		/*
-		 * DO NOT free info->user on gfmd,
-		 * because it is shared with file_table[].user.
-		 *
-		 * if (info->user != NULL)
-		 * 	free(info->user);
-		 */
-		free(info->job_type);
-		free(info->originate_host);
-		free(info->gfarm_url_for_scheduling);
-		for (j = 0; j < info->argc; j++)
-			free(info->argv[j]);
-		free(info->argv);
-		for (j = 0; j < info->total_nodes; j++)
-			free(info->nodes[j].hostname);
-		free(info->nodes);
-	}
-}
-
-struct job_table_entry {
-	/* linked list of jobs which were registered by same file descriptor */
-	struct job_table_entry *next;
-
-	int id;
-	struct gfarm_job_info *info;
-};
-
-#define JOB_ID_MIN	1	/* we won't use job id 0 */
-int job_table_free = JOB_ID_MIN;
-int job_table_size = 2048;
-struct job_table_entry **job_table;
-
-void
-job_table_init(int table_size)
-{
-	int i;
-
-	job_table = malloc(sizeof(struct job_table_entry *)
-			   * table_size);
-	if (job_table == NULL) {
-		errno = ENOMEM; gflog_fatal_errno("job table");
-	}
-	for (i = 0; i < table_size; i++)
-		job_table[i] = NULL;
-	job_table_size = table_size;
-}
-
 int
-job_table_add(struct gfarm_job_info *info,
-	      struct job_table_entry **listp)
+protocol_service(struct peer *peer, int from_client)
 {
-	int id;
-
-	if (job_table_free >= job_table_size) {
-		for (job_table_free = JOB_ID_MIN;
-		     job_table_free < job_table_size; job_table_free++)
-			if (job_table[job_table_free] == NULL)
-				break;
-		if (job_table_free >= job_table_size)
-			return (-1);
-	}
-
-	id = job_table_free;
-	job_table[id] = malloc(sizeof(struct job_table_entry));
-	if (job_table[id] == NULL)
-		return (-1);
-	job_table[id]->id = id;
-	job_table[id]->info = info;
-	job_table[id]->next = *listp;
-	*listp = job_table[id];
-
-	for (++job_table_free;
-	     job_table_free < job_table_size; ++job_table_free)
-		if (job_table[job_table_free] == NULL)
-			break;
-	return (id);
-}
-
-int
-job_table_remove(int id, char *user, struct job_table_entry **listp)
-{
-	struct job_table_entry **pp = listp;
-
-	if (id >= job_table_size || job_table[id] == NULL)
-		return (EBADF);
-	if (strcmp(job_table[id]->info->user, user) != 0)
-		return (EPERM);
-
-	for (; *pp != NULL; pp = &(*pp)->next)
-		if ((*pp)->id == id)
-			break;
-	if (*pp == NULL) /* cannot find the id on the list */
-		return (EBADF);
-
-	/* assert(*pp == job_table[id]); */
-	*pp = job_table[id]->next;
-	gfarm_job_info_server_free_contents(job_table[id]->info, 1);
-	free(job_table[id]);
-	job_table[id] = NULL;
-
-	return (0);
-}
-
-struct file_table_entry {
-	struct xxx_connection *conn;
-	char *user, *host;
-	struct job_table_entry *jobs;
-} *file_table;
-int file_table_size;
-int file_table_max = -1;
-
-void
-file_table_init(int table_size)
-{
-	int i;
-
-	file_table = malloc(sizeof(struct file_table_entry) * table_size);
-	if (file_table == NULL) {
-		errno = ENOMEM; gflog_fatal_errno("job table");
-	}
-	for (i = 0; i < table_size; i++) {
-		file_table[i].conn = NULL;
-		file_table[i].user = NULL;
-		file_table[i].jobs = NULL;
-	}
-	file_table_size = table_size;	     
-}
-
-int
-file_table_add(struct xxx_connection *client, char *username, char *hostname)
-{
-	int fd = xxx_connection_fd(client);
-
-	if (fd < 0)
-		return (EINVAL);
-	if (fd >= file_table_size)
-		return (EMFILE);
-
-	file_table[fd].conn = client;
-	file_table[fd].user = username;
-	file_table[fd].host = hostname;
-	if (fd > file_table_max)
-		file_table_max = fd;
-	return (0);
-}
-
-int
-file_table_close(int fd)
-{
-	static char m1[] = "(";
-	static char m2[] = "@";
-	static char m3[] = ") disconnected";
-	char *msg;
-
-	if (fd < 0 || fd >= file_table_size || file_table[fd].conn == NULL)
-		return (EBADF);
-
-	/* disconnect, do logging */
-	msg = malloc(sizeof(m1) - 1 + strlen(file_table[fd].user) +
-	    sizeof(m2) - 1 + strlen(file_table[fd].host) + sizeof(m3));
-	if (msg == NULL) {
-		gflog_notice("(:@not enough memory) disconnected",
-		    file_table[fd].user);
-	} else {
-		sprintf(msg, "%s%s%s%s%s", m1, file_table[fd].user,
-		    m2, file_table[fd].host, m3);
-		gflog_notice(msg, NULL);
-		free(msg);
-	}
-
-	while (file_table[fd].jobs != NULL)
-		job_table_remove(file_table[fd].jobs->id, file_table[fd].user,
-				 &file_table[fd].jobs);
-	file_table[fd].jobs = NULL;
-
-	free(file_table[fd].user);
-	file_table[fd].user = NULL;
-
-	free(file_table[fd].host);
-	file_table[fd].host = NULL;
-
-	xxx_connection_free(file_table[fd].conn);
-	file_table[fd].conn = NULL;
-
-	if (fd == file_table_max) {
-		while (--file_table_max >= 0)
-			if (file_table[file_table_max].conn != NULL)
-				break;
-	}
-	return (0);
-}
-
-void
-file_table_fd_set(fd_set *set)
-{
-	int fd;
-
-	for (fd = 0; fd <= file_table_max; fd++) {
-		if (file_table[fd].conn != NULL)
-			FD_SET(fd, set);
-	}
-}
-
-char *
-gfj_server_lock_register(struct xxx_connection *client)
-{
-	/* XXX - NOT IMPLEMENTED */
-
-	return (gfj_server_put_reply(client, "lock_register",
-	    GFJ_ERROR_NOERROR, ""));
-}
-
-char *
-gfj_server_unlock_register(struct xxx_connection *client)
-{
-	/* XXX - NOT IMPLEMENTED */
-
-	return (gfj_server_put_reply(client, "unlock_register",
-	    GFJ_ERROR_NOERROR, ""));
-}
-
-char *
-gfj_server_register(int client_socket)
-{
-	struct xxx_connection *client = file_table[client_socket].conn;
-	char *user = file_table[client_socket].user;
-	char *e;
-	int i, eof;
-	gfarm_int32_t flags, total_nodes, argc, job_id, error;
-	struct gfarm_job_info *info;
-
-	info = malloc(sizeof(struct gfarm_job_info));
-	if (info == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	gfarm_job_info_clear(info, 1);
-	e = gfj_server_get_request(client, "register", "iisssi",
-				   &flags,
-				   &total_nodes,
-				   &info->job_type,
-				   &info->originate_host,
-				   &info->gfarm_url_for_scheduling,
-				   &argc);
-	if (e != NULL)
-		return (e);
-	/* XXX - currently `flags' is just igored */
-	info->total_nodes = total_nodes;
-	info->argc = argc;
-	info->argv = malloc(sizeof(char *) * (argc + 1));
-	info->nodes = malloc(sizeof(struct gfarm_job_node_info) * total_nodes);
-	if (info->argv == NULL || info->nodes == NULL) {
-		free(info->job_type);
-		free(info->originate_host);
-		free(info->gfarm_url_for_scheduling);
-		if (info->argv != NULL)
-			free(info->argv);
-		if (info->nodes != NULL)
-			free(info->nodes);
-		free(info);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	for (i = 0; i < argc; i++) {
-		e = xxx_proto_recv(client, 0, &eof, "s", &info->argv[i]);
-		if (e != NULL || eof) {
-			if (e == NULL)
-				e = GFARM_ERR_PROTOCOL;
-			while (--i >= 0)
-				free(info->argv[i]);
-			free(info->job_type);
-			free(info->originate_host);
-			free(info->gfarm_url_for_scheduling);
-			free(info->argv);
-			free(info->nodes);
-			return (e);
-		}
-	}
-	info->argv[i] = NULL;
-	info->user = user; /* shared with file_table[].user */
-	for (i = 0; i < total_nodes; i++) {
-		e = xxx_proto_recv(client, 0, &eof, "s",
-				   &info->nodes[i].hostname);
-		if (e != NULL || eof) {
-			if (e == NULL)
-				e = GFARM_ERR_PROTOCOL;
-			while (--i >= 0)
-				free(info->nodes[i].hostname);
-			for (i = 0; i < argc; i++)
-				free(info->argv[i]);
-			free(info->job_type);
-			free(info->originate_host);
-			free(info->gfarm_url_for_scheduling);
-			free(info->argv);
-			free(info->nodes);
-			return (e);
-		}
-		info->nodes[i].pid = 0;
-		info->nodes[i].state = GFJ_NODE_NONE;
-	}
-
-	job_id = job_table_add(info, &file_table[client_socket].jobs);
-	if (job_id < JOB_ID_MIN) {
-		job_id = 0;
-		error = GFJ_ERROR_TOO_MANY_JOBS;
-	} else {
-		error = GFJ_ERROR_NOERROR;
-	}
-	return (gfj_server_put_reply(client, "register",
-	    error, "i", job_id));
-}
-
-char *
-gfj_server_unregister(int client_socket)
-{
-	struct xxx_connection *client = file_table[client_socket].conn;
-	char *user = file_table[client_socket].user;
-	char *e;
-	gfarm_int32_t error;
-	gfarm_int32_t job_id;
-
-	e = gfj_server_get_request(client, "unregister", "i",
-				   &job_id);
-	if (e != NULL)
-		return (e);
-	error = job_table_remove(job_id, user,
-				 &file_table[client_socket].jobs);
-	return (gfj_server_put_reply(client, "unregister",
-	    error, ""));
-}
-
-char *
-gfj_server_register_node(struct xxx_connection *client)
-{
-	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("register_node", "not implemented");
-
-	return (gfj_server_put_reply(client, "register_node",
-	    GFJ_ERROR_NOERROR, ""));
-}
-
-char *
-gfj_server_list(struct xxx_connection *client)
-{
-	char *e, *user;
-	int i;
-	gfarm_int32_t n;
-
-	e = gfj_server_get_request(client, "list", "s", &user);
-	if (e != NULL)
-		return (e);
-
-	n = 0;
-	for (i = 0; i < job_table_size; i++) {
-		if (job_table[i] != NULL &&
-		    (*user == '\0' ||
-		     strcmp(user, job_table[i]->info->user) == 0))
-			n++;
-	}
-
-	e = gfj_server_put_reply(client, "register",
-	    GFJ_ERROR_NOERROR, "i", n);
-	if (e != NULL)
-		return (e);
-
-	for (i = 0; i < job_table_size; i++) {
-		if (job_table[i] != NULL &&
-		    (*user == '\0' ||
-		     strcmp(user, job_table[i]->info->user) == 0)) {
-			e = xxx_proto_send(client, "i", (gfarm_int32_t)i);
-			if (e != NULL)
-				return (e);
-		}
-	}
-	free(user);
-	return (NULL);
-}
-
-char *
-gfj_server_put_info_entry(struct xxx_connection *client,
-			  struct gfarm_job_info *info)
-{
-	char *e;
-	int i;
-
-	e = xxx_proto_send(client, "issssi",
-			   info->total_nodes,
-			   info->user,
-			   info->job_type,
-			   info->originate_host,
-			   info->gfarm_url_for_scheduling,
-			   info->argc);
-	if (e != NULL)
-		return (e);
-	for (i = 0; i < info->argc; i++) {
-		e = xxx_proto_send(client, "s", info->argv[i]);
-		if (e != NULL)
-			return (e);
-	}
-	for (i = 0; i < info->total_nodes; i++) {
-		e = xxx_proto_send(client, "sii",
-				   info->nodes[i].hostname,
-				   info->nodes[i].pid, info->nodes[i].state);
-		if (e != NULL)
-			return (e);
-	}
-	return (NULL);
-}
-
-char *
-gfj_server_info(struct xxx_connection *client)
-{
-	char *e;
-	int i, eof;
-	gfarm_int32_t n, *jobs;
-
-	e = gfj_server_get_request(client, "info", "i", &n);
-	if (e != NULL)
-		return (e);
-
-	jobs = malloc(sizeof(gfarm_int32_t) * n);
-	if (jobs == NULL) {
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	for (i = 0; i < n; i++) {
-		e = xxx_proto_recv(client, 0, &eof, "i", &jobs[i]);
-		if (e != NULL || eof) {
-			if (e == NULL)
-				e = GFARM_ERR_PROTOCOL;
-			free(jobs);
-			return (e);
-		}
-	}
-
-	for (i = 0; i < n; i++) {
-		if (jobs[i] < 0 || jobs[i] >= job_table_size ||
-		    job_table[jobs[i]] == NULL) {
-			e = gfj_server_put_reply(client, "info",
-						 GFJ_ERROR_NO_SUCH_OBJECT, "");
-			if (e != NULL)
-				return (e);
-		} else {
-			e = gfj_server_put_reply(client, "info",
-						 GFJ_ERROR_NOERROR, "");
-			if (e != NULL)
-				return (e);
-			e = gfj_server_put_info_entry(client,
-			      job_table[jobs[i]]->info);
-			if (e != NULL)
-				return (e);
-		}
-	}
-	return (NULL);
-}
-
-char *
-gfj_server_hostinfo(struct xxx_connection *client)
-{
-	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("host_info", "not implemented");
-
-	return (gfj_server_put_reply(client, "host_info",
-	    GFJ_ERROR_NOERROR, ""));
-}
-
-void
-service(int client_socket)
-{
-	struct xxx_connection *client;
-	char *e;
+	gfarm_error_t e;
 	int eof;
 	gfarm_int32_t request;
-	char buffer[GFARM_INT32STRLEN];
 
-	client = file_table[client_socket].conn;
-	e = xxx_proto_recv(client, 0, &eof, "i", &request);
-	if (eof) {
-		file_table_close(client_socket);
-		return;
-	}
-	if (e != NULL) {
-		gflog_warning("request number", e);
-		return;
+	e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "i", &request);
+	if (eof)
+		return (0); /* finish on eof */
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning("receiving request number",
+		    gfarm_error_string(e));
+		return (0); /* finish on error */
 	}
 	switch (request) {
+	case GFM_PROTO_HOST_INFO_GET_ALL:
+		e = gfm_server_host_info_get_all(peer, from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE:
+		e = gfm_server_host_info_get_by_architecture(peer,
+		    from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_GET_BY_NAMES:
+		e = gfm_server_host_info_get_by_names(peer, from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_GET_BY_NAMEALISES:
+		e = gfm_server_host_info_get_by_namealises(peer, from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_SET:
+		e = gfm_server_host_info_set(peer, from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_MODIFY:
+		e = gfm_server_host_info_modify(peer, from_client);
+		break;
+	case GFM_PROTO_HOST_INFO_REMOVE:
+		e = gfm_server_host_info_remove(peer, from_client);
+		break;
+	case GFM_PROTO_USER_INFO_GET_ALL:
+		e = gfm_server_user_info_get_all(peer, from_client);
+		break;
+	case GFM_PROTO_USER_INFO_GET_BY_NAMES:
+		e = gfm_server_user_info_get_by_names(peer, from_client);
+		break;
+	case GFM_PROTO_USER_INFO_SET:
+		e = gfm_server_user_info_set(peer, from_client);
+		break;
+	case GFM_PROTO_USER_INFO_MODIFY:
+		e = gfm_server_user_info_modify(peer, from_client);
+		break;
+	case GFM_PROTO_USER_INFO_REMOVE:
+		e = gfm_server_user_info_remove(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_GET_ALL:
+		e = gfm_server_group_info_get_all(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_GET_BY_NAMES:
+		e = gfm_server_group_info_get_by_names(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_SET:
+		e = gfm_server_group_info_set(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_MODIFY:
+		e = gfm_server_group_info_modify(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_REMOVE:
+		e = gfm_server_group_info_remove(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_ADD_USERS:
+		e = gfm_server_group_info_add_users(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_INFO_REMOVE_USERS:
+		e = gfm_server_group_info_remove_users(peer, from_client);
+		break;
+	case GFM_PROTO_GROUP_NAMES_GET_BY_USERS:
+		e = gfm_server_group_names_get_by_users(peer, from_client);
+		break;
+	case GFM_PROTO_CHMOD:
+		e = gfm_server_chmod(peer, from_client);
+		break;
+	case GFM_PROTO_CHOWN:
+		e = gfm_server_chown(peer, from_client);
+		break;
+	case GFM_PROTO_STAT:
+		e = gfm_server_stat(peer, from_client);
+		break;
+	case GFM_PROTO_RENAME:
+		e = gfm_server_rename(peer, from_client);
+		break;
+	case GFM_PROTO_REMOVE:
+		e = gfm_server_remove(peer, from_client);
+		break;
+	case GFM_PROTO_MKDIR:
+		e = gfm_server_mkdir(peer, from_client);
+		break;
+	case GFM_PROTO_RMDIR:
+		e = gfm_server_rmdir(peer, from_client);
+		break;
+	case GFM_PROTO_CHDIR:
+		e = gfm_server_chdir(peer, from_client);
+		break;
+	case GFM_PROTO_GETCWD:
+		e = gfm_server_getcwd(peer, from_client);
+		break;
+	case GFM_PROTO_ABSPATH:
+		e = gfm_server_abspath(peer, from_client);
+		break;
+	case GFM_PROTO_REALPATH:
+		e = gfm_server_realpath(peer, from_client);
+		break;
+	case GFM_PROTO_GETDIRENTS:
+		e = gfm_server_getdirents(peer, from_client);
+		break;
+	case GFM_PROTO_GLOB:
+		e = gfm_server_glob(peer, from_client);
+		break;
+	case GFM_PROTO_REPLICA_LIST_BY_NAME:
+		e = gfm_server_replica_list_by_name(peer, from_client);
+		break;
+	case GFM_PROTO_REPLICA_LIST_BY_HOST:
+		e = gfm_server_replica_list_by_host(peer, from_client);
+		break;
+	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
+		e = gfm_server_replica_remove_by_host(peer, from_client);
+		break;
+	case GFM_PROTO_MOUNT:
+		e = gfm_server_mount(peer, from_client);
+		break;
+	case GFM_PROTO_MOUNT_LIST:
+		e = gfm_server_mount_list(peer, from_client);
+		break;
+	case GFM_PROTO_OPEN:
+		e = gfm_server_open(peer, from_client);
+		break;
+	case GFM_PROTO_CLOSE_READ:
+		e = gfm_server_close_read(peer, from_client);
+		break;
+	case GFM_PROTO_CLOSE_WRITE:
+		e = gfm_server_close_write(peer, from_client);
+		break;
+	case GFM_PROTO_FSTAT:
+		e = gfm_server_fstat(peer, from_client);
+		break;
+	case GFM_PROTO_FUTIMES:
+		e = gfm_server_futimes(peer, from_client);
+		break;
+	case GFM_PROTO_LOCK:
+		e = gfm_server_lock(peer, from_client);
+		break;
+	case GFM_PROTO_TRYLOCK:
+		e = gfm_server_trylock(peer, from_client);
+		break;
+	case GFM_PROTO_UNLOCK:
+		e = gfm_server_unlock(peer, from_client);
+		break;
+	case GFM_PROTO_LOCK_INFO:
+		e = gfm_server_lock_info(peer, from_client);
+		break;
+	case GFM_PROTO_REPLICA_ADD:
+		e = gfm_server_replica_add(peer, from_client);
+		break;
+	case GFM_PROTO_REPLICA_REMOVE:
+		e = gfm_server_replica_remove(peer, from_client);
+		break;
+	case GFM_PROTO_PIO_OPEN:
+		e = gfm_server_pio_open(peer, from_client);
+		break;
+	case GFM_PROTO_PIO_SET_PATHS:
+		e = gfm_server_pio_set_paths(peer, from_client);
+		break;
+	case GFM_PROTO_PIO_CLOSE:
+		e = gfm_server_pio_close(peer, from_client);
+		break;
+	case GFM_PROTO_PIO_VISIT:
+		e = gfm_server_pio_visit(peer, from_client);
+		break;
+	case GFM_PROTO_SCHEDULE:
+		e = gfm_server_schedule(peer, from_client);
+		break;
+	case GFM_PROTO_PROCESS_ALLOC:
+		e = gfm_server_process_alloc(peer, from_client);
+		break;
+	case GFM_PROTO_PROCESS_FREE:
+		e = gfm_server_process_free(peer, from_client);
+		break;
+	case GFM_PROTO_PROCESS_SET:
+		e = gfm_server_process_set(peer, from_client);
+		break;
 	case GFJ_PROTO_LOCK_REGISTER:
-		e = gfj_server_lock_register(client); break;
+		e = gfj_server_lock_register(peer, from_client); break;
 	case GFJ_PROTO_UNLOCK_REGISTER:
-		e = gfj_server_unlock_register(client); break;
+		e = gfj_server_unlock_register(peer, from_client); break;
 	case GFJ_PROTO_REGISTER:
-		e = gfj_server_register(client_socket);
+		e = gfj_server_register(peer, from_client);
 		break;
 	case GFJ_PROTO_UNREGISTER:
-		e = gfj_server_unregister(client_socket);
+		e = gfj_server_unregister(peer, from_client);
 		break;
 	case GFJ_PROTO_REGISTER_NODE:
-		e = gfj_server_register_node(client); break;
+		e = gfj_server_register_node(peer, from_client); break;
 	case GFJ_PROTO_LIST:
-		e = gfj_server_list(client); break;
+		e = gfj_server_list(peer, from_client); break;
 	case GFJ_PROTO_INFO:
-		e = gfj_server_info(client); break;
+		e = gfj_server_info(peer, from_client); break;
 	case GFJ_PROTO_HOSTINFO:
-		e = gfj_server_hostinfo(client); break;
+		e = gfj_server_hostinfo(peer, from_client); break;
 	default:
-		sprintf(buffer, "%d", request);
-		gflog_warning("unknown request", buffer);
+		{
+			char buffer[GFARM_INT32STRLEN];
+
+			sprintf(buffer, "%d", request);
+			gflog_warning("unknown request", buffer);
+		}
+		e = GFARM_ERR_PROTOCOL;
 	}
-	if (e == NULL)
-		e = xxx_proto_flush(client);
-	if (e != NULL)
-		file_table_close(client_socket);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfp_xdr_flush(peer_get_conn(peer));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_warning("protocol flush", gfarm_error_string(e));
+	}
+
+	/* continue unless protocol error happens */
+	return (e == GFARM_ERR_NO_ERROR); 
+}
+
+/* this routine is called from gfarm_authorize() */
+/* the return value of the following function should be free(3)ed */
+gfarm_error_t
+gfarm_global_to_local_username(char *global_user, char **local_user_p)
+{
+	if (user_lookup(global_user) == NULL)
+		return (GFARM_ERR_AUTHENTICATION);
+	return (gfarm_username_map_global_to_local(global_user, local_user_p));
+}
+
+/* this routine is called from gfarm_authorize() */
+/* the return value of the following function should be free(3)ed */
+gfarm_error_t
+gfarm_local_to_global_username(char *local_user, char **global_user_p)
+{
+	gfarm_error_t e = gfarm_username_map_local_to_global(local_user,
+	    global_user_p);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (user_lookup(*global_user_p) == NULL)
+		return (GFARM_ERR_AUTHENTICATION);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void *
+protocol_main(void *arg)
+{
+	gfarm_error_t e;
+	struct peer *peer = arg;
+	enum gfarm_auth_id_type id_type;
+	char *username, *hostname;
+	enum gfarm_auth_method auth_method;
+
+	e = gfarm_authorize(peer_get_conn(peer), 0,
+	    &id_type, &username, &hostname, &auth_method);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning("authorize", gfarm_error_string(e));
+	} else {
+		peer_authorized(peer,
+		    id_type, username, hostname, auth_method);
+		if (id_type == GFARM_AUTH_ID_TYPE_USER) {
+			while (protocol_service(peer, 1))
+				;
+		} else {
+			while (protocol_service(peer, 0))
+				;
+		}
+	}
+	peer_free(peer);
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
 }
 
 void
 main_loop(int accepting_socket)
 {
-	char *e, *username, *hostname;
-	int max_fd, nfound, client_socket, fd;
-	struct xxx_connection *client_conn;
+	gfarm_error_t e;
+	int client_socket;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
-	fd_set readable;
-
-	/*
-	 * To deal with race condition which may be caused by RST,
-	 * listening socket must be O_NONBLOCK, if the socket will be
-	 * used as a file descriptor for select(2) .
-	 * See section 15.6 of "UNIX NETWORK PROGRAMMING, Volume1,
-	 * Second Edition" by W. Richard Stevens, for detail.
-	 * We do report such case by gflog_warning_errno("accept");
-	 */
-	if (fcntl(accepting_socket, F_SETFL,
-	    fcntl(accepting_socket, F_GETFL, NULL) | O_NONBLOCK) == -1)
-		gflog_warning_errno("accepting_socket O_NONBLOCK");
+	struct peer *peer;
 
 	for (;;) {
-		FD_ZERO(&readable);
-		FD_SET(accepting_socket, &readable);
-		file_table_fd_set(&readable);
-		max_fd = file_table_max >= accepting_socket ?
-			file_table_max : accepting_socket;
-		nfound = select(max_fd + 1, &readable, NULL, NULL, 0);
-		if (nfound <= 0)
-			continue;
-		if (FD_ISSET(accepting_socket, &readable)) {
-			client_addr_size = sizeof(client_addr);
-			client_socket = accept(accepting_socket,
-			   (struct sockaddr *)&client_addr, &client_addr_size);
-			if (client_socket < 0) {
-				if (errno != EINTR)
-					gflog_warning_errno("accept");
-			} else if ((e = xxx_fd_connection_new(client_socket,
-			    &client_conn)) != NULL) {
-				gflog_warning("fd_connection_new", e);
-				close(client_socket);
-			} else if ((e = gfarm_authorize(client_conn, 0,
-			    &username, &hostname, NULL)) != NULL) {
-				gflog_warning("authorize", e);
-				xxx_connection_free(client_conn);
-			} else if ((errno = file_table_add(client_conn,
-			    username, hostname)) != 0) {
-				gflog_warning_errno("file_table_add");
-				xxx_connection_free(client_conn);
-				free(username);
-				free(hostname);
-			} else {
-				int sockopt = 1;
-
-				/* deal with reboots or network problems */
-				if (setsockopt(client_socket,
-				    SOL_SOCKET, SO_KEEPALIVE,
-				    &sockopt, sizeof(sockopt)) == -1)
-					gflog_warning_errno("SO_KEEPALIVE");
-			}
-		}
-		for (fd = 0; fd <= file_table_max; fd++) {
-			if (file_table[fd].conn != NULL &&
-			    FD_ISSET(fd, &readable))
-				service(fd);
+		client_addr_size = sizeof(client_addr);
+		client_socket = accept(accepting_socket,
+		   (struct sockaddr *)&client_addr, &client_addr_size);
+		if (client_socket < 0) {
+			if (errno != EINTR)
+				gflog_warning_errno("accept");
+		} else if ((e = peer_alloc(client_socket, &peer)) !=
+		    GFARM_ERR_NO_ERROR) {
+			gflog_warning("peer_alloc", gfarm_error_string(e));
+			close(client_socket);
+		} else if ((e = peer_schedule(peer, protocol_main)) !=
+		    GFARM_ERR_NO_ERROR) {
+			gflog_warning("peer_schedule: authorize",
+			    gfarm_error_string(e));
+			peer_free(peer);
 		}
 	}
 }
@@ -697,7 +373,7 @@ main_loop(int accepting_socket)
 int
 open_accepting_socket(int port)
 {
-	char *e;
+	gfarm_error_t e;
 	struct sockaddr_in self_addr;
 	socklen_t self_addr_size;
 	int sock, sockopt;
@@ -717,8 +393,8 @@ open_accepting_socket(int port)
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
 		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
-	if (e != NULL)
-		gflog_warning("setsockopt", e);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("setsockopt", gfarm_error_string(e));
 	if (listen(sock, LISTEN_BACKLOG) < 0)
 		gflog_fatal_errno("listen");
 	return (sock);
@@ -742,7 +418,8 @@ main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
-	char *e, *config_file = NULL, *port_number = NULL, *pid_file = NULL;
+	gfarm_error_t e;
+	char *config_file = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
@@ -785,8 +462,9 @@ main(int argc, char **argv)
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
 	e = gfarm_server_initialize();
-	if (e != NULL) {
-		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "gfarm_server_initialize: %s\n",
+		    gfarm_error_string(e));
 		exit(1);
 	}
 	if (port_number != NULL)
@@ -815,11 +493,23 @@ main(int argc, char **argv)
 		fclose(pid_fp);
 	}
 
+	giant_init();
+
 	table_size = GFMD_CONNECTION_LIMIT;
 	gfarm_unlimit_nofiles(&table_size);
 	if (table_size > GFMD_CONNECTION_LIMIT)
 		table_size = GFMD_CONNECTION_LIMIT;
-	file_table_init(table_size);
+
+	host_init();
+	user_init();
+	group_init();
+	grpassign_init();
+	inode_init();
+	dir_entry_init();
+	file_copy_init();
+	dead_file_copy_init();
+
+	peer_init(table_size);
 	job_table_init(table_size);
 
 	/*

@@ -12,10 +12,11 @@ typedef struct gfarm_stringlist {
 #define gfarm_stringlist_elem(stringlist, i)	\
 	GFARM_STRINGLIST_ELEM(*(stringlist), i)
 
-char *gfarm_stringlist_init(gfarm_stringlist *);
-char *gfarm_stringlist_add_list(gfarm_stringlist *, gfarm_stringlist *);
-char *gfarm_stringlist_add(gfarm_stringlist *, char *);
-char *gfarm_stringlist_cat(gfarm_stringlist *, char **);
+gfarm_error_t gfarm_stringlist_init(gfarm_stringlist *);
+gfarm_error_t gfarm_stringlist_add_list(gfarm_stringlist *,
+	gfarm_stringlist *);
+gfarm_error_t gfarm_stringlist_add(gfarm_stringlist *, char *);
+gfarm_error_t gfarm_stringlist_cat(gfarm_stringlist *, char **);
 void gfarm_stringlist_free(gfarm_stringlist *);
 void gfarm_stringlist_free_deeply(gfarm_stringlist *);
 

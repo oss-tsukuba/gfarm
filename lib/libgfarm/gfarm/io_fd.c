@@ -15,10 +15,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
-#include "xxx_proto.h"
+#include "gfp_xdr.h"
 #include "io_fd.h"
 
 /*
@@ -160,53 +160,55 @@ gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 }
 
 /*
- * xxx_connection operation
+ * gfp_xdr operation
  */
 
-char *
-xxx_iobuffer_close_fd_op(void *cookie, int fd)
+gfarm_error_t
+gfp_iobuffer_close_fd_op(void *cookie, int fd)
 {
-	return (close(fd) == -1 ? gfarm_errno_to_error(errno) : NULL);
+	return (close(fd) == -1 ? gfarm_errno_to_error(errno) :
+	    GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_iobuffer_export_credential_fd_op(void *cookie)
+{
+	/* it's already exported, or no way to export it. */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_iobuffer_delete_credential_fd_op(void *cookie)
+{
+	return (GFARM_ERR_NO_ERROR);
 }
 
 char *
-xxx_iobuffer_export_credential_fd_op(void *cookie)
-{
-	return (NULL); /* it's already exported, or no way to export it. */
-}
-
-char *
-xxx_iobuffer_delete_credential_fd_op(void *cookie)
+gfp_iobuffer_env_for_credential_fd_op(void *cookie)
 {
 	return (NULL);
 }
 
-char *
-xxx_iobuffer_env_for_credential_fd_op(void *cookie)
-{
-	return (NULL);
-}
-
-struct xxx_iobuffer_ops xxx_fd_iobuffer_ops = {
-	xxx_iobuffer_close_fd_op,
-	xxx_iobuffer_export_credential_fd_op,
-	xxx_iobuffer_delete_credential_fd_op,
-	xxx_iobuffer_env_for_credential_fd_op,
+struct gfp_iobuffer_ops gfp_xdr_fd_iobuffer_ops = {
+	gfp_iobuffer_close_fd_op,
+	gfp_iobuffer_export_credential_fd_op,
+	gfp_iobuffer_delete_credential_fd_op,
+	gfp_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_nonblocking_read_fd_op,
 	gfarm_iobuffer_nonblocking_write_fd_op,
 	gfarm_iobuffer_blocking_read_fd_op,
 	gfarm_iobuffer_blocking_write_fd_op
 };
 
-char *
-xxx_fd_connection_new(int fd, struct xxx_connection **connp)
+gfarm_error_t
+gfp_xdr_new_fd(int fd, struct gfp_xdr **connp)
 {
-	return (xxx_connection_new(&xxx_fd_iobuffer_ops, NULL, fd, connp));
+	return (gfp_xdr_new(&gfp_xdr_fd_iobuffer_ops, NULL, fd, connp));
 }
 
-char *
-xxx_connection_set_fd(struct xxx_connection *conn, int fd)
+gfarm_error_t
+gfp_xdr_set_fd(struct gfp_xdr *conn, int fd)
 {
-	xxx_connection_set(conn, &xxx_fd_iobuffer_ops, NULL, fd);
+	gfp_xdr_set(conn, &gfp_xdr_fd_iobuffer_ops, NULL, fd);
 	return (NULL);
 }

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfarm_stringlist.h>
 
@@ -11,7 +11,7 @@
 
 /* gfarm_stringlist: variable size string array */
 
-char *
+gfarm_error_t
 gfarm_stringlist_init(gfarm_stringlist *listp)
 {
 	char **v;
@@ -23,7 +23,7 @@ gfarm_stringlist_init(gfarm_stringlist *listp)
 	listp->length = 0;
 	listp->array = v;
 	v[0] = NULL;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -49,7 +49,7 @@ gfarm_stringlist_free_deeply(gfarm_stringlist *listp)
 	gfarm_stringlist_free(listp);
 }
 
-char *
+gfarm_error_t
 gfarm_stringlist_add_strings(gfarm_stringlist *listp, int al, char **av)
 {
 	int ll = gfarm_stringlist_length(listp);
@@ -69,17 +69,17 @@ gfarm_stringlist_add_strings(gfarm_stringlist *listp, int al, char **av)
 	}
 	memcpy(&listp->array[ll], av, sizeof(char *) * al);
 	listp->length += al;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_stringlist_add_list(gfarm_stringlist *listp, gfarm_stringlist *addp)
 {
 	return (gfarm_stringlist_add_strings(listp,
 	    gfarm_stringlist_length(addp), addp->array));
 }
 
-char *
+gfarm_error_t
 gfarm_stringlist_add(gfarm_stringlist *listp, char *s)
 {
 	int length = gfarm_stringlist_length(listp);
@@ -95,10 +95,10 @@ gfarm_stringlist_add(gfarm_stringlist *listp, char *s)
 	}
 	listp->array[length] = s;
 	listp->length++;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_stringlist_cat(gfarm_stringlist *listp, char **v)
 {
 	return (gfarm_stringlist_add_strings(listp,
@@ -107,7 +107,7 @@ gfarm_stringlist_cat(gfarm_stringlist *listp, char **v)
 
 /* gfarm_fixedstrings: fixed length array of dynamically allocated strings */
 
-char *
+gfarm_error_t
 gfarm_fixedstrings_dup(int n, char **dst, char **src)
 {
 	int i;
@@ -122,7 +122,7 @@ gfarm_fixedstrings_dup(int n, char **dst, char **src)
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 

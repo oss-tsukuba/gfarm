@@ -1,0 +1,29 @@
+gfarm_error_t group_init(void);
+gfarm_error_t grpassign_init(void);
+
+struct user;
+struct group;
+
+struct group_assignment {
+	/* end marker: {ga->user_prev, ga->user_next} == &ga->g->users */
+	struct group_assignment *user_prev, *user_next;
+	
+	/* end marker: {ga->group_prev, ga->group_next} == &ga->u->groups */
+	struct group_assignment *group_prev, *group_next;
+
+	struct user *u;
+	struct group *g;
+};
+
+struct group *group_lookup(const char *);
+void grpassign_remove(struct group_assignment *);
+
+struct peer;
+gfarm_error_t gfm_server_group_info_get_all(struct peer *, int);
+gfarm_error_t gfm_server_group_info_get_by_names(struct peer *, int);
+gfarm_error_t gfm_server_group_info_set(struct peer *, int);
+gfarm_error_t gfm_server_group_info_modify(struct peer *, int);
+gfarm_error_t gfm_server_group_info_remove(struct peer *, int);
+gfarm_error_t gfm_server_group_info_add_users(struct peer *, int);
+gfarm_error_t gfm_server_group_info_remove_users(struct peer *, int);
+gfarm_error_t gfm_server_group_names_get_by_users(struct peer *, int);

@@ -21,7 +21,7 @@ struct gfarm_iobuffer {
 
 	int read_eof; /* eof is detected on read side */
 	int write_eof; /* eof reached on write side */
-	char *error;
+	int error;
 };
 
 struct gfarm_iobuffer *
@@ -51,7 +51,7 @@ gfarm_iobuffer_alloc(int bufsize)
 
 	b->read_eof = 0;
 	b->write_eof = 0;
-	b->error = NULL;
+	b->error = 0;
 
 	return (b);
 }
@@ -64,12 +64,12 @@ gfarm_iobuffer_free(struct gfarm_iobuffer *b)
 }
 
 void
-gfarm_iobuffer_set_error(struct gfarm_iobuffer *b, char *error)
+gfarm_iobuffer_set_error(struct gfarm_iobuffer *b, int error)
 {
 	b->error = error;
 }
 
-char *
+int
 gfarm_iobuffer_get_error(struct gfarm_iobuffer *b)
 {
 	return (b->error);
@@ -244,7 +244,7 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp)
 }
 
 int
-gfarm_iobuffer_put(struct gfarm_iobuffer *b, void *data, int len)
+gfarm_iobuffer_put(struct gfarm_iobuffer *b, const void *data, int len)
 {
 	int space, iolen;
 
@@ -398,9 +398,9 @@ gfarm_iobuffer_flush_write(struct gfarm_iobuffer *b)
 }
 
 int
-gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, void *data, int len)
+gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len)
 {
-	char *p;
+	const char *p;
 	int rv, residual;
 
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {

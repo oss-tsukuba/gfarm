@@ -7,6 +7,11 @@ enum gfarm_auth_error {
 	GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE,
 };
 
+enum gfarm_auth_id_type {
+	GFARM_AUTH_ID_TYPE_USER,
+	GFARM_AUTH_ID_TYPE_SPOOL_HOST,
+};
+
 enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_NONE, /* never used */
 	GFARM_AUTH_METHOD_SHAREDSECRET,
@@ -30,10 +35,10 @@ void gfarm_random_initialize(void);
 void gfarm_auth_random(void *, size_t);
 void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
-char *gfarm_gsi_server_initialize(void);
-char *gfarm_gsi_client_initialize(void);
+gfarm_error_t gfarm_gsi_server_initialize(void);
+gfarm_error_t gfarm_gsi_client_initialize(void);
 
-char *gfarm_auth_shared_key_get(unsigned int *, char *, char *, int);
+gfarm_error_t gfarm_auth_shared_key_get(unsigned int *, char *, char *, int);
 #define GFARM_AUTH_SHARED_KEY_GET		0
 #define GFARM_AUTH_SHARED_KEY_CREATE		1
 #define GFARM_AUTH_SHARED_KEY_CREATE_FORCE	2
@@ -52,31 +57,33 @@ enum gfarm_auth_sharedsecret_request {
 
 /* auth_client */
 
-struct xxx_connection;
+struct gfp_xdr;
 struct sockaddr;
 struct gfarm_eventqueue;
 struct gfarm_auth_request_state;
 
-char *gfarm_authorize_log_connected(struct xxx_connection *, char *, char *);
-char *gfarm_auth_request(struct xxx_connection *, char *, struct sockaddr *,
-	enum gfarm_auth_method *);
-char *gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
-	struct xxx_connection *, char *, struct sockaddr *,
+gfarm_error_t gfarm_authorize_log_connected(struct gfp_xdr *, char *, char *);
+gfarm_error_t gfarm_auth_request(struct gfp_xdr *, char *, struct sockaddr *,
+	enum gfarm_auth_id_type, enum gfarm_auth_method *);
+gfarm_error_t gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
+	struct gfp_xdr *, char *, struct sockaddr *, enum gfarm_auth_id_type,
 	void (*)(void *), void *,
 	struct gfarm_auth_request_state **);
-char *gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
+gfarm_error_t gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 	enum gfarm_auth_method *);
-char *gfarm_authorize(struct xxx_connection *, int, char **, char **,
-	enum gfarm_auth_method *);
+gfarm_error_t gfarm_authorize(struct gfp_xdr *, int,
+	enum gfarm_auth_id_type *, char **, char **, enum gfarm_auth_method *);
 
 /* auth_config */
 struct gfarm_hostspec;
 
 char gfarm_auth_method_mnemonic(enum gfarm_auth_method);
 char *gfarm_auth_method_name(enum gfarm_auth_method);
-char *gfarm_auth_method_parse(char *, enum gfarm_auth_method *);
-char *gfarm_auth_enable(enum gfarm_auth_method, struct gfarm_hostspec *);
-char *gfarm_auth_disable(enum gfarm_auth_method, struct gfarm_hostspec *);
+gfarm_error_t gfarm_auth_method_parse(char *, enum gfarm_auth_method *);
+gfarm_error_t gfarm_auth_enable(
+	enum gfarm_auth_method, struct gfarm_hostspec *);
+gfarm_error_t gfarm_auth_disable(
+	enum gfarm_auth_method, struct gfarm_hostspec *);
 
 /* this i/f have to be changed, if we support more than 31 auth methods */
 gfarm_int32_t gfarm_auth_method_get_enabled_by_name_addr(
@@ -84,34 +91,41 @@ gfarm_int32_t gfarm_auth_method_get_enabled_by_name_addr(
 gfarm_int32_t gfarm_auth_method_get_available(void);
 
 /* auth_client_sharedsecret */
-char *gfarm_auth_request_sharedsecret(struct xxx_connection *);
-char *gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *,
-	struct xxx_connection *, void (*)(void *), void *,
+gfarm_error_t gfarm_auth_request_sharedsecret(struct gfp_xdr *,
+	enum gfarm_auth_id_type);
+gfarm_error_t gfarm_auth_request_sharedsecret_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, enum gfarm_auth_id_type, void (*)(void *), void *,
 	void **);
-char *gfarm_auth_result_sharedsecret_multiplexed(void *);
+gfarm_error_t gfarm_auth_result_sharedsecret_multiplexed(void *);
 
 /* auth_client_gsi */
-char *gfarm_auth_request_gsi(struct xxx_connection *);
-char *gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *,
-	struct xxx_connection *, void (*)(void *), void *,
+gfarm_error_t gfarm_auth_request_gsi(struct gfp_xdr *,
+	enum gfarm_auth_id_type);
+gfarm_error_t gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *,
+	struct gfp_xdr *, enum gfarm_auth_id_type, void (*)(void *), void *,
 	void **);
-char *gfarm_auth_result_gsi_multiplexed(void *);
+gfarm_error_t gfarm_auth_result_gsi_multiplexed(void *);
 
 char *gfarm_gsi_client_cred_name(void);
 
 /* auth_client_gsi_auth */
-char *gfarm_auth_request_gsi_auth(struct xxx_connection *);
-char *gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *,
-	struct xxx_connection *, void (*)(void *), void *,
+gfarm_error_t gfarm_auth_request_gsi_auth(struct gfp_xdr *,
+	enum gfarm_auth_id_type);
+gfarm_error_t gfarm_auth_request_gsi_auth_multiplexed(
+	struct gfarm_eventqueue *,
+	struct gfp_xdr *, enum gfarm_auth_id_type, void (*)(void *), void *,
 	void **);
-char *gfarm_auth_result_gsi_auth_multiplexed(void *);
+gfarm_error_t gfarm_auth_result_gsi_auth_multiplexed(void *);
 
 /* auth_server_sharedsecret */
-char *gfarm_authorize_sharedsecret(struct xxx_connection *, int, char *,
-        char **);
+gfarm_error_t gfarm_authorize_sharedsecret(struct gfp_xdr *, int, char *,
+	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi */
-char *gfarm_authorize_gsi(struct xxx_connection *, int, char *, char **);
+gfarm_error_t gfarm_authorize_gsi(struct gfp_xdr *, int, char *,
+	enum gfarm_auth_id_type *, char **);
 
 /* auth_server_gsi_auth */
-char *gfarm_authorize_gsi_auth(struct xxx_connection *, int, char *, char **);
+gfarm_error_t gfarm_authorize_gsi_auth(struct gfp_xdr *, int, char *,
+	enum gfarm_auth_id_type *, char **);

@@ -12,17 +12,18 @@ struct gfarm_param_type {
 	void *extension;
 };
 
-char *gfarm_param_config_parse_long(int, struct gfarm_param_type *, char *,
-	int *, long *);
-char *gfarm_param_config_add_long(struct gfarm_param_config ***,
+gfarm_error_t gfarm_param_config_parse_long(int, struct gfarm_param_type *,
+	char *, int *, long *);
+gfarm_error_t gfarm_param_config_add_long(struct gfarm_param_config ***,
 	int, long, struct gfarm_hostspec *);
-char *gfarm_param_apply_long_by_name_addr(struct gfarm_param_config *,
-	const char *, struct sockaddr *, char *(*)(void *, int, long), void *);
-char *gfarm_param_apply_long(struct gfarm_param_config *,
-	char *(*)(void *, int, long), void *);
-char *gfarm_param_get_long_by_name_addr(struct gfarm_param_config *, int,
-	char *, struct sockaddr *, long *);
-char *gfarm_param_get_long(struct gfarm_param_config *, int, long *);
+gfarm_error_t gfarm_param_apply_long_by_name_addr(struct gfarm_param_config *,
+	const char *, struct sockaddr *,
+	gfarm_error_t (*)(void *, int, long), void *);
+gfarm_error_t gfarm_param_apply_long(struct gfarm_param_config *,
+	gfarm_error_t (*)(void *, int, long), void *);
+gfarm_error_t gfarm_param_get_long_by_name_addr(struct gfarm_param_config *,
+	int, char *, struct sockaddr *, long *);
+gfarm_error_t gfarm_param_get_long(struct gfarm_param_config *, int, long *);
 
 /*
  * netparam
@@ -30,8 +31,8 @@ char *gfarm_param_get_long(struct gfarm_param_config *, int, long *);
 
 struct gfarm_netparam_info;
 
-char *gfarm_netparam_config_add_long(char *, struct gfarm_hostspec *);
-char *gfarm_netparam_config_get_long(struct gfarm_netparam_info *,
+gfarm_error_t gfarm_netparam_config_add_long(char *, struct gfarm_hostspec *);
+gfarm_error_t gfarm_netparam_config_get_long(struct gfarm_netparam_info *,
 	char *, struct sockaddr *, long *);
 
 extern struct gfarm_netparam_info gfarm_netparam_parallel_streams;

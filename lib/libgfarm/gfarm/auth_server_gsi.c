@@ -14,14 +14,15 @@
 #include <stdio.h>
 
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
+#include "liberror.h"
 #include "gfutil.h"
-#include "xxx_proto.h"
+#include "gfp_xdr.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
 #include "auth.h"
@@ -48,27 +49,30 @@ gfarm_gsi_get_delegated_cred()
  *
  */
 
-static char *
-gfarm_authorize_gsi_common(struct xxx_connection *conn,
+static gfarm_error_t
+gfarm_authorize_gsi_common(struct gfp_xdr *conn,
 	int switch_to, char *hostname, char *auth_method_name,
-	char **global_usernamep)
+	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
-	int fd = xxx_connection_fd(conn);
-	char *e, *e2, *global_username;
+	int fd = gfp_xdr_fd(conn);
+	gfarm_error_t e, e2;
+	char *global_username;
 	OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
 	gfarm_int32_t error = GFARM_AUTH_ERROR_NO_ERROR; /* gfarm_auth_error */
 
-	e = xxx_proto_flush(conn);
-	if (e != NULL) {
-		gflog_error("authorize_gsi: protocol drain ", e);
+	e = gfp_xdr_flush(conn);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error("authorize_gsi: protocol drain ",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
 	e = gfarm_gsi_server_initialize();
-	if (e != NULL) {
-		gflog_error("authorize_gsi: GSI initialize", e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error("authorize_gsi: GSI initialize",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -84,11 +88,12 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		return (GFARM_ERR_AUTHENTICATION);
 		
 	}
+	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
 #if 0 /* XXX - global name should be distinguished by DN (distinguish name) */
 	e = gfarm_local_to_global_username(
 	    userinfo->authData.userAuth.localName, &global_username);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		global_username = NULL;
 		error = GFARM_AUTH_ERROR_DENIED;
 		gflog_error("authorize_gsi: "
@@ -105,13 +110,14 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	 */
 	e = gfarm_local_to_global_username(
 		userinfo->distName, &global_username);
-	if (e == NULL && strcmp(userinfo->distName, global_username) == 0) {
+	if (e == GFARM_ERR_NO_ERROR &&
+	    strcmp(userinfo->distName, global_username) == 0) {
 		free(global_username);
 		e = gfarm_local_to_global_username(
 			userinfo->authData.userAuth.localName,
 			&global_username);
 	}
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		global_username = NULL;
 		error = GFARM_AUTH_ERROR_DENIED;
 		gflog_error("authorize_gsi: "
@@ -119,7 +125,8 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		    userinfo->distName);
 	}
 #endif
-	if (e == NULL) { /* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
+	if (e == GFARM_ERR_NO_ERROR) {
+		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
 
@@ -141,7 +148,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 				free(aux);
 			if (msg != NULL)
 				free(msg);
-			gflog_error("authorize_gsi", e);
+			gflog_error("authorize_gsi", gfarm_error_string(e));
 		} else {
 			sprintf(aux, "%s@%s", global_username, hostname);
 			gflog_set_auxiliary_info(aux);
@@ -160,19 +167,21 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		}
 	}
 
-	xxx_connection_set_secsession(conn, session);
-	e2 = xxx_proto_send(conn, "i", error);
-	if (e2 != NULL) {
-		gflog_error("authorize_gsi: send reply", e2);
-	} else if ((e2 = xxx_proto_flush(conn)) != NULL) {
-		gflog_error("authorize_gsi: completion", e2);
+	gfp_xdr_set_secsession(conn, session);
+	e2 = gfp_xdr_send(conn, "i", error);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_error("authorize_gsi: send reply",
+		    gfarm_error_string(e2));
+	} else if ((e2 = gfp_xdr_flush(conn)) != GFARM_ERR_NO_ERROR) {
+		gflog_error("authorize_gsi: completion",
+		    gfarm_error_string(e2));
 	}
 
-	if (e != NULL || e2 != NULL) {
+	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
 		if (global_username != NULL)
 			free(global_username);
-		xxx_connection_reset_secsession(conn);
-		xxx_connection_set_fd(conn, fd);
+		gfp_xdr_reset_secsession(conn);
+		gfp_xdr_set_fd(conn, fd);
 		return (e);
 	}
 
@@ -202,37 +211,40 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		    gfarmSecSessionGetDelegatedCredential(session));
 	}
 
+	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
+	if (peer_typep != NULL)
+		*peer_typep = GFARM_AUTH_ID_TYPE_USER;
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
 	else
 		free(global_username);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
  * "gsi" method
  */
-char *
-gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
-	char **global_usernamep)
+gfarm_error_t
+gfarm_authorize_gsi(struct gfp_xdr *conn, int switch_to, char *hostname,
+	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn, switch_to, hostname, "gsi",
-	    global_usernamep));
+	    peer_typep, global_usernamep));
 }
 
 /*
  * "gsi_auth" method
  */
 
-char *
-gfarm_authorize_gsi_auth(struct xxx_connection *conn,
+gfarm_error_t
+gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
 	int switch_to, char *hostname,
-	char **global_usernamep)
+	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
-	char *e = gfarm_authorize_gsi_common(conn, switch_to, hostname,
-	    "gsi_auth", global_usernamep);
+	gfarm_error_t e = gfarm_authorize_gsi_common(conn, switch_to, hostname,
+	    "gsi_auth", peer_typep, global_usernamep);
 
-	if (e == NULL)
-		xxx_connection_downgrade_to_insecure_session(conn);
+	if (e == GFARM_ERR_NO_ERROR)
+		gfp_xdr_downgrade_to_insecure_session(conn);
 	return (e);
 }

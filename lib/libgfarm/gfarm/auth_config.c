@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include "liberror.h"
 #include "hostspec.h"
 #include "auth.h"
 
@@ -60,10 +61,10 @@ gfarm_auth_method_name(enum gfarm_auth_method method)
 		if (entry->method == method)
 			return (entry->name);
 	}
-	return ("unknown auth method");
+	return (NULL);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_method_parse(char *name, enum gfarm_auth_method *methodp)
 {
 	int i;
@@ -74,13 +75,13 @@ gfarm_auth_method_parse(char *name, enum gfarm_auth_method *methodp)
 		    == 0) {
 			*methodp =
 			    gfarm_auth_method_name_value_table[i].method;
-			return (NULL);
+			return (GFARM_ERR_NO_ERROR);
 		}
 	}
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_config_add(
 	enum gfarm_auth_config_command command,
 	enum gfarm_auth_method method,
@@ -98,17 +99,17 @@ gfarm_auth_config_add(
 
 	*gfarm_auth_config_last = acp;
 	gfarm_auth_config_last = &acp->next;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_auth_enable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
 {
 	return (gfarm_auth_config_add(GFARM_AUTH_ENABLE,
 	    method, hsp));
 }
 
-char *
+gfarm_error_t
 gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
 {
 	return (gfarm_auth_config_add(GFARM_AUTH_DISABLE,

@@ -16,26 +16,18 @@
 #include <time.h>
 #include <pwd.h>
 #include <gfarm/gfarm.h>
+#include "gfutil.h"
+#include "liberror.h"
 #include "hostspec.h"
-#include "host.h"
 #include "param.h"
 #include "sockopt.h"
+#if 0 /* XXX address_use is disabled for now */
+#include "host.h"
+#endif
 #include "auth.h"
-#include "gfm_proto.h"
-#include "gfs_proto.h"
-#include "gfs_client.h"
-#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers, ... */
-#include "timer.h"
-
-#ifndef GFARM_CONFIG
-#define GFARM_CONFIG	"/etc/gfarm.conf"
-#endif
-#ifndef GFARM_CLIENT_RC
-#define GFARM_CLIENT_RC		".gfarmrc"
-#endif
-#ifndef GFARM_SPOOL_ROOT
-#define GFARM_SPOOL_ROOT	"/var/spool/gfarm"
-#endif
+#include "config.h"
+#include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
+#include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
 
 int gfarm_initialized = 0;
 
@@ -49,69 +41,51 @@ gfarm_config_set_filename(char *filename)
 
 int gfarm_authentication_verbose = 0;
 
+/* XXX move actual function definition here */
+static gfarm_error_t gfarm_strtoken(char **, char **);
+
 /*
  * GFarm username handling
  */
 
 static gfarm_stringlist local_user_map_file_list;
 
-static char GFARM_ERR_TOO_MANY_ARGUMENTS[] = "too many arguments";
-static char GFARM_ERR_LOCAL_USER_REDEFIEND[] = "local user name redifined";
-static char GFARM_ERR_GLOBAL_USER_REDEFIEND[] = "global user name redifined";
-
 /* the return value of the following function should be free(3)ed */
-static char *
+static gfarm_error_t
 map_user(char *from, char **to_p,
-	char *(mapping)(char *, char *, char *), char *error_redefined)
+	char *(mapping)(char *, char *, char *), gfarm_error_t error_redefined)
 {
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	FILE *map = NULL;
 	char *mapfile = NULL;
 	int i, list_len, mapfile_mapped_index;
-	char buffer[1024], *g_user, *l_user, *mapped, *e;
+	char buffer[1024], *g_user, *l_user, *mapped, *tmp;
 	int lineno = 0;
-	static char fmt_open_error[] = "%s: %s";
-	static char fmt_config_error[] = "%s: line %d: %s";
-	static char error[256];
 
-	e = NULL;
 	*to_p = NULL;
 	list_len = gfarm_stringlist_length(&local_user_map_file_list);
 	mapfile_mapped_index = list_len;
 	for (i = 0; i < list_len; i++) {
 		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
-			e = "cannot read"; 
-#ifdef HAVE_SNPRINTF
-			snprintf(error, sizeof(error), fmt_open_error,
-			    mapfile, e);
-			e = error;
-#else
-			if (strlen(fmt_open_error) +
-			    strlen(mapfile) + strlen(e) < sizeof(error)) {
-				sprintf(error, "%s: %s", mapfile, e);
-				e = error;
-			} else {
-				/* XXX: no file name */
-				e = "cannot read local_user_map file";
-			}
-#endif
-			return (e);
+			gflog_error(mapfile, strerror(errno));
+			return (GFARM_ERR_CANT_OPEN);
 		}
 		lineno = 0;
 		while (fgets(buffer, sizeof buffer, map) != NULL) {
 			char *bp = buffer;
 
 			lineno++;
-			g_user = gfarm_strtoken(&bp, &e);
-			if (e != NULL)
+			e = gfarm_strtoken(&bp, &g_user);
+			if (e != GFARM_ERR_NO_ERROR)
 				goto finish;
 			if (g_user == NULL) /* blank or comment line */
 				continue;
-			l_user = gfarm_strtoken(&bp, &e);
-			if (e != NULL)
+			e = gfarm_strtoken(&bp, &l_user);
+			if (e != GFARM_ERR_NO_ERROR)
 				goto finish;
 			if (l_user == NULL) {
-				e = "missing second field (local user)";
+				e = GFARM_ERRMSG_MISSING_LOCAL_USER;
 				goto finish;
 			}
 			mapped = (*mapping)(from, g_user, l_user);
@@ -131,8 +105,11 @@ map_user(char *from, char **to_p,
 				}
 				mapfile_mapped_index = i;
 			}
-			if (gfarm_strtoken(&bp, &e) != NULL) {
-				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
+			e = gfarm_strtoken(&bp, &tmp);
+			if (e != GFARM_ERR_NO_ERROR)
+				goto finish;
+			if (tmp != NULL) {
+				e = GFARM_ERRMSG_TOO_MANY_ARGUMENTS;
 				goto finish;
 			}
 		}
@@ -147,24 +124,19 @@ map_user(char *from, char **to_p,
 finish:	
 	if (map != NULL)
 		fclose(map);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
+		char *msgbuf = malloc(strlen(mapfile) + 6 /* " line " */
+		    + GFARM_INT64STRLEN + 1);
+
 		if (*to_p != NULL)	 
 			free(*to_p);
-#ifdef HAVE_SNPRINTF
-		snprintf(error, sizeof(error), fmt_config_error,
-		    mapfile, lineno, e);
-		e = error;
-#else
-		if (strlen(fmt_config_error) + strlen(mapfile) +
-		    GFARM_INT32STRLEN + strlen(e) <
-		    sizeof(error)) {
-			sprintf(error, fmt_config_error, mapfile, lineno, e);
-			e = error;
+		if (msgbuf == NULL) {
+			gflog_error("gfarm: map_user", gfarm_error_string(e));
 		} else {
-			/* XXX: no file name, no line number */
-			/* leave `e' as is */
+			sprintf(msgbuf, "%s line %d", mapfile, lineno);
+			gflog_error(msgbuf, gfarm_error_string(e));
+			free(msgbuf);
 		}
-#endif
 	}
 	return (e);
 }
@@ -178,11 +150,11 @@ map_global_to_local(char *from, char *global_user, char *local_user)
 }
 
 /* the return value of the following function should be free(3)ed */
-char *
-gfarm_global_to_local_username(char *global_user, char **local_user_p)
+gfarm_error_t
+gfarm_username_map_global_to_local(char *global_user, char **local_user_p)
 {
 	return (map_user(global_user, local_user_p,
-	    map_global_to_local, GFARM_ERR_GLOBAL_USER_REDEFIEND));
+	    map_global_to_local, GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
 }
 
 static char *
@@ -194,14 +166,14 @@ map_local_to_global(char *from, char *global_user, char *local_user)
 }
 
 /* the return value of the following function should be free(3)ed */
-char *
-gfarm_local_to_global_username(char *local_user, char **global_user_p)
+gfarm_error_t
+gfarm_username_map_local_to_global(char *local_user, char **global_user_p)
 {
 	return (map_user(local_user, global_user_p,
-	    map_local_to_global, GFARM_ERR_LOCAL_USER_REDEFIEND));
+	    map_local_to_global, GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
 }
 
-static char *
+static gfarm_error_t
 set_string(char **var, char *value)
 {
 	if (*var != NULL)
@@ -209,7 +181,7 @@ set_string(char **var, char *value)
 	*var = strdup(value);
 	if (*var == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -219,7 +191,7 @@ static char *gfarm_global_username = NULL;
 static char *gfarm_local_username = NULL;
 static char *gfarm_local_homedir = NULL;
 
-char *
+gfarm_error_t
 gfarm_set_global_username(char *global_username)
 {
 	return (set_string(&gfarm_global_username, global_username));
@@ -231,7 +203,7 @@ gfarm_get_global_username(void)
 	return (gfarm_global_username);
 }
 
-char *
+gfarm_error_t
 gfarm_set_local_username(char *local_username)
 {
 	return (set_string(&gfarm_local_username, local_username));
@@ -243,7 +215,7 @@ gfarm_get_local_username(void)
 	return (gfarm_local_username);
 }
 
-char *
+gfarm_error_t
 gfarm_set_local_homedir(char *local_homedir)
 {
 	return (set_string(&gfarm_local_homedir, local_homedir));
@@ -259,10 +231,10 @@ gfarm_get_local_homedir(void)
  * We should not trust gfarm_get_*() values as a result of this function
  * (because it may be forged).
  */
-char *
+gfarm_error_t
 gfarm_set_local_user_for_this_local_account(void)
 {
-	char *error;
+	gfarm_error_t error;
 	char *user;
 	char *home;
 	struct passwd *pwd;
@@ -276,18 +248,19 @@ gfarm_set_local_user_for_this_local_account(void)
 		home = "/";
 	}
 	error = gfarm_set_local_username(user);
-	if (error != NULL)
+	if (error != GFARM_ERR_NO_ERROR)
 		return (error);
 	error = gfarm_set_local_homedir(home);
-	if (error != NULL)
+	if (error != GFARM_ERR_NO_ERROR)
 		return (error);
 	return (error);
 }
 
-char *
+gfarm_error_t
 gfarm_set_global_user_for_this_local_account(void)
 {
-	char *e, *local_user, *global_user;
+	gfarm_error_t e;
+	char *local_user, *global_user;
 
 #ifdef HAVE_GSI
 	/*
@@ -311,7 +284,7 @@ gfarm_set_global_user_for_this_local_account(void)
 	/* Global user name determined by the local user account. */
 	local_user = gfarm_get_local_username();
 	e = gfarm_local_to_global_username(local_user, &global_user);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 #ifdef HAVE_GSI
  set_global_username:
@@ -345,7 +318,7 @@ char *gfarm_ldap_base_dn = NULL;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 
-static void
+void
 gfarm_config_clear(void)
 {
 	if (gfarm_spool_root != NULL) {
@@ -406,18 +379,18 @@ gfarm_config_clear(void)
  *		error message
  */
 
-char *
-gfarm_strtoken(char **cursorp, char **errorp)
+gfarm_error_t
+gfarm_strtoken(char **cursorp, char **tokenp)
 {
 	unsigned char *top, *p, *s = *(unsigned char **)cursorp;
 
-	*errorp = NULL;
 	while (*s != '\n' && isspace(*s))
 		s++;
 	if (*s == '\0' || *s == '\n' || *s == '#') {
 		/* end of line */
 		*cursorp = (char *)s;
-		return (NULL);
+		*tokenp = NULL;
+		return (GFARM_ERR_NO_ERROR);
 	}
 	top = s;
 	p = s;
@@ -428,10 +401,8 @@ gfarm_strtoken(char **cursorp, char **errorp)
 			for (;;) {
 				if (*s == '\'')
 					break;
-				if (*s == '\0' || *s == '\n') {
-					*errorp = "unterminated single quote";
-					return (NULL);
-				}
+				if (*s == '\0' || *s == '\n')
+					return (GFARM_ERRMSG_UNTERMINATED_SINGLE_QUOTE);
 				*p++ = *s++;
 			}
 			s++;
@@ -441,16 +412,11 @@ gfarm_strtoken(char **cursorp, char **errorp)
 			for (;;) {
 				if (*s == '"')
 					break;
-				if (*s == '\0' || *s == '\n') {
-					*errorp = "unterminated double quote";
-					return (NULL);
-				}
+				if (*s == '\0' || *s == '\n')
+					return (GFARM_ERRMSG_UNTERMINATED_DOUBLE_QUOTE);
 				if (*s == '\\') {
-					if (s[1] == '\0' || s[1] == '\n') {
-						*errorp =
-						   "unterminated double quote";
-						return (NULL);
-					}
+					if (s[1] == '\0' || s[1] == '\n')
+						return (GFARM_ERRMSG_UNTERMINATED_DOUBLE_QUOTE);
 					/*
 					 * only interpret `\"' and `\\'
 					 * in double quotation.
@@ -464,10 +430,8 @@ gfarm_strtoken(char **cursorp, char **errorp)
 			break;
 		case '\\':
 			s++;
-			if (*s == '\0' || *s == '\n') {
-				*errorp = "incomplete escape: \\";
-				return (NULL);
-			}
+			if (*s == '\0' || *s == '\n')
+				return (GFARM_ERRMSG_INCOMPLETE_ESCAPE);
 			*p++ = *s++;
 			break;
 		case '\n':	
@@ -475,12 +439,14 @@ gfarm_strtoken(char **cursorp, char **errorp)
 		case '\0':
 			*p = '\0';
 			*cursorp = (char *)s;
-			return ((char *)top);
+			*tokenp = (char *)top;
+			return (GFARM_ERR_NO_ERROR);
 		default:
 			if (isspace(*s)) {
 				*p = '\0';
 				*cursorp = (char *)(s + 1);
-				return ((char *)top);
+				*tokenp = (char *)top;
+				return (GFARM_ERR_NO_ERROR);
 			}
 			*p++ = *s++;
 			break;
@@ -488,26 +454,27 @@ gfarm_strtoken(char **cursorp, char **errorp)
 	}
 }
 
-static char *
+static gfarm_error_t
 parse_auth_arguments(char *p, char **op)
 {
-	char *e, *command, *auth, *host;
+	gfarm_error_t e;
+	char *tmp, *command, *auth, *host;
 	enum gfarm_auth_method auth_method;
 	struct gfarm_hostspec *hostspecp;
 
 	/* assert(strcmp(*op, "auth") == 0); */
 
-	command = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &command);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (command == NULL)
-		return ("missing 1st(auth-command) argument");
+		return (GFARM_ERRMSG_MISSING_AUTH_COMMAND_ARGUMENT);
 
-	auth = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &auth);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (auth == NULL)
-		return ("missing 2nd(auth-method) argument");
+		return (GFARM_ERRMSG_MISSING_AUTH_METHOD_ARGUMENT);
 	if (strcmp(auth, "*") == 0 || strcmp(auth, "ALL") == 0) {
 		auth_method = GFARM_AUTH_METHOD_ALL;
 	} else {
@@ -515,20 +482,23 @@ parse_auth_arguments(char *p, char **op)
 		if (e != NULL) {
 			*op = "2nd(auth-method) argument";
 			if (e == GFARM_ERR_NO_SUCH_OBJECT)
-				e = "unknown authentication method";
+				e = GFARM_ERRMSG_UNKNOWN_AUTH_METHOD;
 			return (e);
 		}
 	}
 
-	host = gfarm_strtoken(&p, &e);
+	e = gfarm_strtoken(&p, &host);
 	if (e != NULL)
 		return (e);
 	if (host == NULL)
-		return ("missing 3rd(host-spec) argument");
-	if (gfarm_strtoken(&p, &e) != NULL)
-		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+		return (GFARM_ERRMSG_MISSING_HOST_SPEC_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	e = gfarm_hostspec_parse(host, &hostspecp);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * we don't return `host' to *op here,
 		 * because it may be too long.
@@ -548,39 +518,42 @@ parse_auth_arguments(char *p, char **op)
 		 */
 		*op = "1st(auth-command) argument";
 		gfarm_hostspec_free(hostspecp);
-		return ("unknown auth subcommand");
+		return (GFARM_ERRMSG_UNKNOWN_AUTH_SUBCOMMAND);
 	}
 	if (e != NULL)
 		gfarm_hostspec_free(hostspecp);
 	return (e);
 }
 
-static char *
+static gfarm_error_t
 parse_netparam_arguments(char *p, char **op)
 {
-	char *e, *option, *host;
+	gfarm_error_t e;
+	char *tmp, *option, *host;
 	struct gfarm_hostspec *hostspecp;
 
 	/* assert(strcmp(*op, "netparam") == 0); */
 
-	option = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &option);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (option == NULL)
-		return ("missing 1st(netparam-option) argument");
+		return (GFARM_ERRMSG_MISSING_NETPARAM_OPTION_ARGUMENT);
 
-	host = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &host);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (host == NULL) {
 		/* if 2nd argument is omitted, it is treated as "*". */
 		host = "*";
-	} else if (gfarm_strtoken(&p, &e) != NULL) {
-		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+	} else if ((e = gfarm_strtoken(&p, &tmp)) != GFARM_ERR_NO_ERROR) {
+		return (e);
+	} else if (tmp != NULL) {
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
 	
 	e = gfarm_hostspec_parse(host, &hostspecp);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * we don't return `host' to *op here,
 		 * because it may be too long.
@@ -590,7 +563,7 @@ parse_netparam_arguments(char *p, char **op)
 	}
 
 	e = gfarm_netparam_config_add_long(option, hostspecp);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * we don't return `option' to *op here,
 		 * because it may be too long.
@@ -599,26 +572,27 @@ parse_netparam_arguments(char *p, char **op)
 		gfarm_hostspec_free(hostspecp);
 		return (e);
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-static char *
+static gfarm_error_t
 parse_sockopt_arguments(char *p, char **op)
 {
-	char *e, *option, *host;
+	gfarm_error_t e;
+	char *tmp, *option, *host;
 	struct gfarm_hostspec *hostspecp;
 	int is_listener;
 
 	/* assert(strcmp(*op, "sockopt") == 0); */
 
-	option = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &option);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (option == NULL)
-		return ("missing 1st(sockopt-option) argument");
+		return (GFARM_ERRMSG_MISSING_SOCKOPT_OPTION_ARGUMENT);
 
-	host = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &host);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (host == NULL) {
 		/*
@@ -628,13 +602,15 @@ parse_sockopt_arguments(char *p, char **op)
 		is_listener = 1;
 	} else {
 		is_listener = strcmp(host, "LISTENER") == 0;
-		if (gfarm_strtoken(&p, &e) != NULL)
-			return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+		if ((e = gfarm_strtoken(&p, &tmp)) != GFARM_ERR_NO_ERROR)
+			return (e);
+		if (tmp != NULL)
+			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
 	
 	if (is_listener) {
 		e = gfarm_sockopt_listener_config_add(option);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			/*
 			 * we don't return `option' to *op here,
 			 * because it may be too long.
@@ -646,7 +622,7 @@ parse_sockopt_arguments(char *p, char **op)
 	if (host == NULL || !is_listener) {
 		e = gfarm_hostspec_parse(host != NULL ? host : "*",
 		    &hostspecp);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			/*
 			 * we don't return `host' to *op here,
 			 * because it may be too long.
@@ -656,7 +632,7 @@ parse_sockopt_arguments(char *p, char **op)
 		}
 
 		e = gfarm_sockopt_config_add(option, hostspecp);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			/*
 			 * we don't return `option' to *op here,
 			 * because it may be too long.
@@ -666,27 +642,32 @@ parse_sockopt_arguments(char *p, char **op)
 			return (e);
 		}
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-static char *
+#if 0 /* XXX address_use is disabled for now */
+static gfarm_error_t
 parse_address_use_arguments(char *p, char **op)
 {
-	char *e, *address;
+	gfarm_error_t e;
+	char *tmp, *address;
 	struct gfarm_hostspec *hostspecp;
 
 	/* assert(strcmp(*op, "address_use") == 0); */
 
-	address = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &address);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (address == NULL)
-		return ("missing <address> argument");
-	if (gfarm_strtoken(&p, &e) != NULL)
-		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+		return (GFARM_ERRMSG_MISSING_ADDRESS_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 
 	e = gfarm_hostspec_parse(address, &hostspecp);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * we don't return `host' to *op here,
 		 * because it may be too long.
@@ -696,7 +677,7 @@ parse_address_use_arguments(char *p, char **op)
 	}
 
 	e = gfarm_host_address_use(hostspecp);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		/*
 		 * we don't return `option' to *op here,
 		 * because it may be too long.
@@ -705,53 +686,65 @@ parse_address_use_arguments(char *p, char **op)
 		gfarm_hostspec_free(hostspecp);
 		return (e);
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
+#endif
 
-static char *
+static gfarm_error_t
 parse_local_user_map(char *p, char **op)
 {
-	char *e, *mapfile;
+	gfarm_error_t e;
+	char *tmp, *mapfile;
 
-	mapfile = gfarm_strtoken(&p, &e);
+	e = gfarm_strtoken(&p, &mapfile);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (mapfile == NULL)
-		return ("missing <user map file> argument");
-	if (gfarm_strtoken(&p, &e) != NULL)
-		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+		return (GFARM_ERRMSG_MISSING_USER_MAP_FILE_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	mapfile = strdup(mapfile);
 	if (mapfile == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = gfarm_stringlist_add(&local_user_map_file_list, mapfile);
-	return(e);
+	return (e);
 }
 
-static char *
+static gfarm_error_t
 get_one_argument(char *p, char **rv)
 {
-	char *s, *e;
+	gfarm_error_t e;
+	char *tmp, *s;
 
-	s = gfarm_strtoken(&p, &e);
-	if (e != NULL)
+	e = gfarm_strtoken(&p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (s == NULL)
-		return ("missing argument");
-	if (gfarm_strtoken(&p, &e) != NULL)
-		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+		return (GFARM_ERRMSG_MISSING_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 
 	if (*rv != NULL) /* first line has precedence */
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 
 	s = strdup(s);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	*rv = s;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-static char *
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
-	char *e, *o;
+	gfarm_error_t e;
+	char *o;
 
 	if (strcmp(s, o = "spool") == 0) {
 		e = get_one_argument(p, &gfarm_spool_root);
@@ -773,64 +766,58 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_netparam_arguments(p, &o);
 	} else if (strcmp(s, o = "sockopt") == 0) {
 		e = parse_sockopt_arguments(p, &o);
+#if 0 /* XXX address_use is disabled for now */
 	} else if (strcmp(s, o = "address_use") == 0) {
 		e = parse_address_use_arguments(p, &o);
+#endif
 	} else if (strcmp(s, o = "local_user_map") == 0) {
 		e = parse_local_user_map(p, &o);
 	} else {
 		o = s;
-		e = "unknown keyword";
+		e = GFARM_ERRMSG_UNKNOWN_KEYWORD;
 	}
 	*op = o;
 	return (e);
 }
 
-static char *
-gfarm_config_read_file(FILE *config, char *config_file)
+gfarm_error_t
+gfarm_init_user_map(void)
 {
+	gfarm_stringlist_init(&local_user_map_file_list);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_config_read_file(FILE *config, char *config_file, int *lineno_p)
+{
+	gfarm_error_t e;
 	int lineno = 0;
-	char *s, *p, *e, *o, buffer[1024];
-	static char format[] = "%s: line %d: %s: %s\n";
-	static char error[256];
+	char *s, *p, *o, buffer[1024];
 
 	while (fgets(buffer, sizeof buffer, config) != NULL) {
 		lineno++;
 		p = buffer;
-		s = gfarm_strtoken(&p, &e);
+		e = gfarm_strtoken(&p, &s);
 
-		if (e == NULL) {
+		if (e == GFARM_ERR_NO_ERROR) {
 			if (s == NULL) /* blank or comment line */
 				continue;
 			e = parse_one_line(s, p, &o);
 		}
-		if (e != NULL) {
-#ifdef HAVE_SNPRINTF
-			snprintf(error, sizeof(error),
-				 format, config_file, lineno, o, e);
-			e = error;
-#else
-			if (strlen(format) + strlen(config_file) +
-			    GFARM_INT32STRLEN + strlen(o) + strlen(e) <
-			    sizeof(error)) {
-				sprintf(error,
-					format, config_file, lineno, o, e);
-				e = error;
-			} else {
-				/* XXX: no file name, no line number */
-			}
-#endif
+		if (e != GFARM_ERR_NO_ERROR) {
 			fclose(config);
+			*lineno_p = lineno;
 			return (e);
 		}
 	}
 	fclose(config);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
  * set default value of configurations.
  */
-static void
+void
 gfarm_config_set_default_ports(void)
 {
 	if (gfarm_spool_server_portname != NULL) {
@@ -855,155 +842,6 @@ gfarm_config_set_default_ports(void)
 	}
 }
 
-static void
-gfarm_config_set_default_spool_on_client(void)
-{
-	char *host, *e;
-	/*
-	 * When this node is a filesystem node,
-	 * gfarm_spool_root should be obtained by gfsd
-	 * not by the config file.
-	 */
-	e = gfarm_host_get_canonical_self_name(&host);
-	if (e == NULL && gfarm_host_is_local(host)) {
-		struct sockaddr peer_addr;
-		struct gfs_connection *gfs_server;
-
-		e = gfarm_host_address_get(host,
-			gfarm_spool_server_port, &peer_addr, NULL);
-		if (e != NULL)
-			goto ignore_error;
-
-		e = gfs_client_connection(host, &peer_addr, &gfs_server);
-		if (e != NULL)
-			goto ignore_error;
-
-		e = gfs_client_get_spool_root(gfs_server, &gfarm_spool_root);
-	ignore_error:
-		;
-	}
-	if (gfarm_spool_root == NULL)
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = gfarm_spool_root_default;
-}
-
-static void
-gfarm_config_set_default_spool_on_server(void)
-{
-	if (gfarm_spool_root == NULL) {
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = gfarm_spool_root_default;
-	}
-}
-
-static enum {
-	gfarm_config_not_read,
-	gfarm_config_user_read,
-	gfarm_config_server_read
-} config_read = gfarm_config_not_read;
-
-/*
- * the following function is for client,
- * server/daemon process shouldn't call it.
- * Because this function may read incorrect setting from user specified
- * $USER or $HOME.
- */
-char *
-gfarm_config_read(void)
-{
-	char *e, *home;
-	FILE *config;
-	int user_config_errno;
-	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
-	char *rc;
-
-	switch (config_read) {
-	case gfarm_config_not_read:
-		config_read = gfarm_config_user_read;
-		break;
-	case gfarm_config_user_read:
-		return (NULL);
-	case gfarm_config_server_read:
-		return ("gfarm_config_read() is called "
-			"after gfarm_server_config_read() is called. "
-			"something wrong");
-	}
-
-	/*
-	 * result of gfarm_get_local_homedir() should not be trusted.
-	 * (maybe forged)
-	 */
-	home = gfarm_get_local_homedir();
-
-	rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
-	if (rc == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	sprintf(rc, "%s/%s", home, gfarm_client_rc);
-	gfarm_stringlist_init(&local_user_map_file_list);
-	if ((config = fopen(rc, "r")) == NULL) {
-		user_config_errno = errno;
-	} else {
-		user_config_errno = 0;
-		/*
-		 * The reason why we don't just pass `rc' as the
-		 * second argument of gfarm_config_read_file() is
-		 * because `rc' may be too long name to generate error
-		 * message.
-		 */
-		e = gfarm_config_read_file(config, "~/" GFARM_CLIENT_RC);
-		if (e != NULL) {
-			free(rc);
-			return (e);
-		}
-	}
-	free(rc);
-
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
-		if (user_config_errno != 0)
-			return ("gfarm.conf: cannot read");
-	} else {
-		e = gfarm_config_read_file(config, gfarm_config_file);
-		if (e != NULL)
-			return (e);
-	}
-
-	gfarm_config_set_default_ports();
-
-	return (NULL);
-}
-
-/* the following function is for server. */
-char *
-gfarm_server_config_read(void)
-{
-	char *e;
-	FILE *config;
-
-	switch (config_read) {
-	case gfarm_config_not_read:
-		config_read = gfarm_config_server_read;
-		break;
-	case gfarm_config_user_read:
-		return ("gfarm_server_config_read() is called "
-			"after gfarm_config_read() is called. "
-			"something wrong");
-	case gfarm_config_server_read:
-		return (NULL);
-	}
-
-	gfarm_stringlist_init(&local_user_map_file_list);
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
-		return ("gfarm.conf: cannot read");
-	}
-	e = gfarm_config_read_file(config, gfarm_config_file);
-	if (e != NULL)
-		return (e);
-
-	gfarm_config_set_default_ports();
-
-	return (NULL);
-}
-
 #ifdef STRTOKEN_TEST
 main()
 {
@@ -1019,396 +857,5 @@ main()
 		else
 			printf("error: %s\n", error);
 	}
-}
-#endif
-
-char *gfarm_debug_command;
-char gfarm_debug_pid[GFARM_INT64STRLEN];
-
-static int
-gfarm_call_debugger(void)
-{
-	int pid;
-
-	if ((pid = fork()) == 0) {
-		execlp("xterm", "xterm", "-e", "gdb",
-		       gfarm_debug_command, gfarm_debug_pid, NULL);
-		perror("xterm");
-		_exit(1);
-	}
-	return (pid);
-}
-
-int
-gfarm_attach_debugger(void)
-{
-	int pid = gfarm_call_debugger();
-
-	/* not really correct way to wait until attached, but... */
-	sleep(5);
-	return (pid);
-}
-
-void
-gfarm_sig_debug(int sig)
-{
-	int pid, status;
-	static int already_called = 0;
-	static char message[] = "signal 00 caught\n";
-
-	message[7] = sig / 10 + '0';
-	message[8] = sig % 10 + '0';
-	write(2, message, sizeof(message) - 1);
-
-	if (already_called)
-		abort();
-	already_called = 1;
-
-	pid = gfarm_call_debugger();
-	if (pid == -1) {
-		perror("fork"); /* XXX dangerous to call from signal handler */
-		abort();
-	} else {
-		waitpid(pid, &status, 0);
-		_exit(1);
-	}
-}
-
-void
-gfarm_debug_initialize(char *command)
-{
-	gfarm_debug_command = command;
-	sprintf(gfarm_debug_pid, "%ld", (long)getpid());
-
-	signal(SIGQUIT, gfarm_sig_debug);
-	signal(SIGILL,  gfarm_sig_debug);
-	signal(SIGTRAP, gfarm_sig_debug);
-	signal(SIGABRT, gfarm_sig_debug);
-	signal(SIGFPE,  gfarm_sig_debug);
-	signal(SIGBUS,  gfarm_sig_debug);
-	signal(SIGSEGV, gfarm_sig_debug);
-}
-
-/*
- * redirect stdout
- */
-
-static char *
-gfarm_redirect_file(int fd, char *file, GFS_File *gf)
-{
-	int nfd;
-	char *e;
-
-	if (file == NULL)
-		return (NULL);
-
-	e = gfs_pio_create(file, GFARM_FILE_WRONLY, 0644, gf);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_pio_set_view_local(*gf, 0);
-	if (e != NULL)
-		return (e);
-
-	nfd = gfs_pio_fileno(*gf);
-	if (nfd == -1)
-		return (gfarm_errno_to_error(errno));
-
-	/*
-	 * This assumes the file fragment is created in the local
-	 * spool.
-	 */
-	if (dup2(nfd, fd) == -1)
-		e = gfarm_errno_to_error(errno);
-
-	/* XXX - apparently violate the layer */
-	((struct gfs_file_section_context *)(*gf)->view_context)->fd = fd;
-	(*gf)->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-
-	close(nfd);
-
-	return (e);
-}
-
-GFS_File gf_stdout, gf_stderr;
-int gf_profile;
-int gf_on_demand_replication;
-
-static int total_nodes = -1, node_index = -1;
-static char *stdout_file = NULL, *stderr_file = NULL;
-
-static char *
-gfarm_parse_env(void)
-{
-	char *env;
-
-	if ((env = getenv("GFARM_NODE_RANK")) != NULL)
-		node_index = strtol(env, NULL, 0);
-
-	if ((env = getenv("GFARM_NODE_SIZE")) != NULL)
-		total_nodes = strtol(env, NULL, 0);
-
-	if ((env = getenv("GFARM_FLAGS")) != NULL) {
-		for (; *env; env++) {
-			switch (*env) {
-			case 'p': gf_profile = 1; break;
-			case 'r': gf_on_demand_replication = 1; break;
-			}
-		}
-	}
-
-	return (NULL);
-}
-
-/*
- * eliminate arguments added by the gfrun command.
- * this way is only used when the gfarm program is invoked directly,
- * or invoked via "gfrun -S".
- * if the gfarm program is invoked via gfexec, gfarm_parse_env() is
- * used instead.
- */
-
-static char *
-gfarm_parse_argv(int *argcp, char ***argvp)
-{
-	int argc = *argcp;
-	char **argv = *argvp;
-	char *argv0 = *argv;
-	char *e;
-
-	--argc;
-	++argv;
-	while (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-') {
-		if (strcmp(&argv[0][2], "gfarm_index") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				node_index = strtol(*argv, NULL, 0);
-		}
-		else if (strcmp(&argv[0][2], "gfarm_nfrags") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				total_nodes = strtol(*argv, NULL, 0);
-		}
-		else if (strcmp(&argv[0][2], "gfarm_stdout") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				stdout_file = *argv;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_stderr") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				stderr_file = *argv;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_profile") == 0)
-			gf_profile = 1;
-		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
-			gf_on_demand_replication = 1;
-		else if (strcmp(&argv[0][2], "gfarm_cwd") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0) {
-				e = gfs_chdir(*argv);
-				if (e != NULL)
-					return (e);
-			}
-		}
-		else
-			break;
-		--argc;
-		++argv;
-	}
-
-	++argc;
-	--argv;
-
-	*argcp = argc;
-	*argv = argv0;
-	*argvp = argv;
-
-	return (NULL);
-}
-
-static char *
-gfarm_eval_env_arg(void)
-{
-	char *e;
-
-	if (node_index != -1 && total_nodes != -1) {
-		e = gfs_pio_set_local(node_index, total_nodes);
-		if (e != NULL)
-			return (e);
-	}
-
-	/* redirect stdout and stderr */
-	if (stdout_file != NULL) {
-		e = gfarm_redirect_file(1, stdout_file, &gf_stdout);
-		if (e != NULL)
-			return (e);
-	}
-	if (stderr_file != NULL) {
-		e = gfarm_redirect_file(2, stderr_file, &gf_stderr);
-		if (e != NULL)
-			return (e);
-	}
-
-	gfs_profile(gfarm_timerval_calibrate());
-
-	return (NULL);
-}
-
-/*
- * the following function is for client,
- * server/daemon process shouldn't call it.
- * Because this function may read incorrect setting from user specified
- * $USER or $HOME.
- */
-char *
-gfarm_initialize(int *argcp, char ***argvp)
-{
-	char *e;
-#ifdef HAVE_GSI
-	int saved_auth_verb;
-#endif
-	gfarm_error_initialize();
-
-	e = gfarm_set_local_user_for_this_local_account();
-	if (e != NULL)
-		return (e);
-	e = gfarm_config_read();
-	if (e != NULL)
-		return (e);
-#ifdef HAVE_GSI
-	/*
-	 * Suppress verbose error messages.  The message will be
-	 * displayed later in gfarm_auth_request_gsi().
-	 */
-	saved_auth_verb = gfarm_authentication_verbose;
-	gfarm_authentication_verbose = 0;
-	(void*)gfarm_gsi_client_initialize();
-	gfarm_authentication_verbose = saved_auth_verb;
-#endif
-	e = gfarm_set_global_user_for_this_local_account();
-	if (e != NULL)
-		return (e);
- 	e = gfarm_metadb_initialize();
-	if (e != NULL)
-		return (e);
-
-	gfarm_config_set_default_spool_on_client();
-
-	if (getenv("DISPLAY") != NULL && argvp != NULL)
-		gfarm_debug_initialize((*argvp)[0]);
-
-	e = gfarm_parse_env();
-	if (e != NULL)
-		return (e);
-	if (argvp != NULL) { /* not called from gfs_hook */
-		/* command line arguments take precedence over environments */
-		e = gfarm_parse_argv(argcp, argvp);
-		if (e != NULL)
-			return (e);
-	}
-	e = gfarm_eval_env_arg();
-	if (e != NULL)
-		return (e);
-			
-	gfarm_initialized = 1;
-
-	return (NULL);
-}
-
-/* the following function is for server. */
-char *
-gfarm_server_initialize(void)
-{
-	char *e;
-
-	gfarm_error_initialize();
-
-	e = gfarm_server_config_read();
-	if (e != NULL)
-		return (e);
-
-	gfarm_config_set_default_spool_on_server();
-
-	return (NULL);
-}
-
-/*
- * the following function is for client,
- * server/daemon process shouldn't call it.
- * Because this function may read incorrect setting from user specified
- * $USER or $HOME.
- */
-char *
-gfarm_terminate(void)
-{
-	char *e, *e_save = NULL;
-
-	gfs_profile(gfs_display_timers());
-
-	if (gf_stdout != NULL) {
-		fflush(stdout);
-		e = gfs_pio_close(gf_stdout);
-		gf_stdout = NULL;
-		if (e_save == NULL)
-			e_save = e;
-	}
-	if (gf_stderr != NULL) {
-		fflush(stderr);
-		e = gfs_pio_close(gf_stderr);
-		gf_stderr = NULL;
-		if (e_save == NULL)
-			e_save = e;
-	}
-	gfs_client_terminate();
-	e = gfarm_metadb_terminate();
-	if (e_save == NULL)
-		e_save = e;
-	gfarm_config_clear();
-
-	return (e_save);
-}
-
-/* the following function is for server. */
-char *
-gfarm_server_terminate(void)
-{
-	gfs_client_terminate();
-	gfarm_config_clear();
-	return (NULL);
-}
-
-#ifdef CONFIG_TEST
-main()
-{
-	char *e;
-
-	gfarm_error_initialize();
-	e = gfarm_set_local_user_for_this_local_account();
-	if (e) {
-		fprintf(stderr,
-			"gfarm_set_local_user_for_this_local_account(): %s\n",
-			e);
-		exit(1);
-	}
-	e = gfarm_config_read();
-	if (e) {
-		fprintf(stderr, "gfarm_config_read(): %s\n", e);
-		exit(1);
-	}
-	printf("gfarm_spool_root = <%s>\n", gfarm_spool_root);
-	printf("gfarm_spool_server_port = <%d>\n", gfarm_spool_server_port);
-	printf("gfarm_metadb_server_name = <%s>\n", gfarm_metadb_server_name);
-	printf("gfarm_metadb_server_port = <%d>\n", gfarm_metadb_server_name);
-
-	printf("gfarm_ldap_server_name = <%s>\n", gfarm_ldap_server_name);
-	printf("gfarm_ldap_server_port = <%s>\n", gfarm_ldap_server_port);
-	printf("gfarm_ldap_base_dn = <%s>\n", gfarm_ldap_base_dn);
-	return (0);
 }
 #endif

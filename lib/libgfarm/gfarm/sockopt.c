@@ -9,8 +9,9 @@
 #include <netdb.h>		/* getprotobyname() */
 #include <errno.h>
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include "liberror.h"
 #include "hostspec.h"
 #include "param.h"
 #include "sockopt.h"
@@ -49,18 +50,18 @@ struct gfarm_param_config *gfarm_sockopt_listener_config_list = NULL;
 struct gfarm_param_config **gfarm_sockopt_listener_config_last =
     &gfarm_sockopt_listener_config_list;
 
-char *
+gfarm_error_t
 gfarm_sockopt_initialize(void)
 {
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i;
 	struct gfarm_param_type *type;
 	struct gfarm_sockopt_info *info;
 	struct protoent *proto;
-	char *e = NULL;
 	static int initialized = 0;
 
 	if (initialized)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 
 	for (i = 0; i < NSOCKOPTS; i++) {
 		type = &gfarm_sockopt_type_table[i];
@@ -68,7 +69,7 @@ gfarm_sockopt_initialize(void)
 		if (info->proto != NULL) {
 			proto = getprotobyname(info->proto);
 			if (proto == NULL)
-				e = "getprotobyname(3) failed";
+				e = GFARM_ERRMSG_GETPROTOBYNAME_FAILED;
 			else
 				info->level = proto->p_proto;
 		}
@@ -77,11 +78,11 @@ gfarm_sockopt_initialize(void)
 	return (e);
 }
 
-char *
+gfarm_error_t
 gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
 	char *config, struct gfarm_hostspec *hsp)
 {
-	char *e;
+	gfarm_error_t e;
 	int param_type_index;
 	long value;
 
@@ -91,28 +92,28 @@ gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
 	e = gfarm_param_config_parse_long(NSOCKOPTS, gfarm_sockopt_type_table,
 	    config, &param_type_index, &value);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		return ("unknown socket option");
+		return (GFARM_ERRMSG_UNKNOWN_SOCKET_OPTION);
 	if (e != NULL)
 		return (e);
 	return (gfarm_param_config_add_long(lastp,
 	    param_type_index, value, hsp));
 }
 
-char *
+gfarm_error_t
 gfarm_sockopt_config_add(char *option, struct gfarm_hostspec *hsp)
 {
 	return (gfarm_sockopt_config_add_internal(
 	    &gfarm_sockopt_config_last, option, hsp));
 }
 
-char *
+gfarm_error_t
 gfarm_sockopt_listener_config_add(char *option)
 {
 	return (gfarm_sockopt_config_add_internal(
 	    &gfarm_sockopt_listener_config_last, option, NULL));
 }
 
-static char *
+static gfarm_error_t
 gfarm_sockopt_set(void *closure, int param_type_index, long value)
 {
 	int fd = *(int *)closure, v = value;
@@ -122,10 +123,10 @@ gfarm_sockopt_set(void *closure, int param_type_index, long value)
 
 	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1)
 		return (gfarm_errno_to_error(errno));
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_sockopt_apply_by_name_addr(int fd, const char *name,
 	struct sockaddr *addr)
 {
@@ -133,7 +134,7 @@ gfarm_sockopt_apply_by_name_addr(int fd, const char *name,
 	    name, addr, gfarm_sockopt_set, &fd));
 }
 
-char *
+gfarm_error_t
 gfarm_sockopt_apply_listener(int fd)
 {
 	return (gfarm_param_apply_long(gfarm_sockopt_listener_config_list,

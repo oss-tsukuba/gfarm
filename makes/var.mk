@@ -21,7 +21,7 @@ GFARMLIB = -L$(top_objdir)/lib/libgfarm -lgfarm \
 INC_SRCDIR = $(top_srcdir)/include/gfarm
 INC_OBJDIR = $(top_objdir)/include/gfarm
 DEPGFARMLIB = $(top_objdir)/lib/libgfarm/libgfarm.a
-DEPGFARMINC = $(INC_OBJDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_metadb.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
+DEPGFARMINC = $(INC_OBJDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/error.h $(INC_SRCDIR)/gfarm_metadb.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
 
 # ns
 

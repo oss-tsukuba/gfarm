@@ -16,23 +16,23 @@ void gfarm_unlimit_nofiles(int *);
 #define GFARM_DEFAULT_FACILITY	LOG_LOCAL0
 #endif
 
-void gflog_message(int, char *, char *);
-void gflog_error(char *, char *);
-void gflog_warning(char *, char *);
-void gflog_notice(char *, char *);
-void gflog_info(char *, char *);
-void gflog_debug(char *, char *);
-void gflog_warning_errno(char *);
+void gflog_message(int, const char *, const char *);
+void gflog_error(const char *, const char *);
+void gflog_warning(const char *, const char *);
+void gflog_notice(const char *, const char *);
+void gflog_info(const char *, const char *);
+void gflog_debug(const char *, const char *);
+void gflog_warning_errno(const char *);
 
-void gflog_fatal(char *, char *);
-void gflog_fatal_errno(char *);
+void gflog_fatal(const char *, const char *);
+void gflog_fatal_errno(const char *);
 
-void gflog_set_identifier(char *);
+void gflog_set_identifier(const char *);
 void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int); 
 
-int gflog_syslog_name_to_facility(char *);
+int gflog_syslog_name_to_facility(const char *);
 
 /* timeval */
 
