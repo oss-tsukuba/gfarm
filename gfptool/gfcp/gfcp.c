@@ -69,20 +69,20 @@ main(int argc, char *argv[])
 	--argc;
 
 	e = gfs_stat(output, &gstat);
-	if (e == NULL && GFARM_S_ISDIR(gstat.st_mode)) {
-		fprintf(stderr, "%s: is a directory, not supported yet\n",
-			output);
-		exit(1);
+	if (e == NULL) {
+		if (GFARM_S_ISDIR(gstat.st_mode)) {
+			fprintf(stderr, "%s: is a directory, "
+				"not supported yet\n", output);
+			exit(1);
+		}
+		/*
+		 * XXX - gfs_stat() may return a non-null pointer because
+		 * a process in the same parallel process might create
+		 * it but a different file fragment already.
+		 */
+		/* fprintf(stderr, "%s: already exist\n", output); */
+		gfs_stat_free(&gstat);
 	}
-#if 0   /*  XXX - gfs_stat() may return a non-null pointer because
-	    a process in the same parallel process might create it
-	    already. */
-	else if (e == NULL) {
-		fprintf(stderr, "%s: already exist\n", output);
-		exit(1);
-	}
-#endif
-	gfs_stat_free(&gstat);
 
 	e = gfs_realpath(*argv, &input);
 	if (e != NULL) {
@@ -113,8 +113,7 @@ main(int argc, char *argv[])
 	if (gfarm_index == NULL) {
 		e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
 		if (e != NULL) {
-			fprintf(stderr,
-				"%s: set_view_local(%s): %s\n",
+			fprintf(stderr, "%s: set_view_local(%s): %s\n",
 				program_name, input, e);
 			exit(1);
 		}
@@ -123,8 +122,7 @@ main(int argc, char *argv[])
 		e = gfs_pio_set_view_section(
 			igf, gfarm_index, NULL, GFARM_FILE_SEQUENTIAL);
 		if (e != NULL) {
-			fprintf(stderr,
-				"%s: set_view_section(%s, %s): %s\n",
+			fprintf(stderr, "%s: set_view_section(%s, %s): %s\n",
 				program_name, input, gfarm_index, e);
 			exit(1);
 		}
@@ -172,10 +170,10 @@ main(int argc, char *argv[])
 
 	e = gfs_pio_close(igf);
 	if (e != NULL)
-	    fprintf(stderr, "%s: close failed: %s\n", input, e);
+		fprintf(stderr, "%s: close failed: %s\n", input, e);
 	e = gfs_pio_close(ogf);
 	if (e != NULL)
-	    fprintf(stderr, "%s: close failed: %s\n", output, e);
+		fprintf(stderr, "%s: close failed: %s\n", output, e);
 
 	if (flag_preserve) {
 		e = gfs_utimes(output, gtspec);
