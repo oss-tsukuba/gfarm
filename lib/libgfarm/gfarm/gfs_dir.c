@@ -287,6 +287,10 @@ gfs_uncachedir(void)
 	}
 }
 
+/*
+ * 'path' is '/' + canonical path, or a relative path.  It is not the
+ * same as a canonical path.
+ */
 char *
 gfs_realpath_canonical(const char *path, char **abspathp)
 {
@@ -321,7 +325,7 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	return (NULL);
 }
 
-char *gfs_get_ino(const char *path, long *inop)
+char *gfs_get_ino(const char *canonical_path, long *inop)
 {
 	struct node *n;
 	char *e;
@@ -329,7 +333,7 @@ char *gfs_get_ino(const char *path, long *inop)
 	e = gfs_cachedir();
 	if (e != NULL)
 		return (e);
-	e = lookup_path(path, -1, 0, &n);
+	e = lookup_relative(root, canonical_path, -1, 0, &n);
         if (e != NULL)
 		return (e);
 	*inop = (long)n;

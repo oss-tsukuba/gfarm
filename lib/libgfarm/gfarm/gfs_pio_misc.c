@@ -28,12 +28,18 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	struct gfarm_path_info pi;
+	long ino;
+
+	e = gfs_get_ino(gfarm_file, &ino);
+	if (e != NULL)
+		return (e);
 
 	e = gfarm_path_info_get(gfarm_file, &pi);
 	if (e != NULL)
 		return (e);
 
 	*s = pi.status;
+	s->st_ino = ino;
 	s->st_user = strdup(s->st_user);
 	s->st_group = strdup(s->st_group);
 	gfarm_path_info_free(&pi);
@@ -84,19 +90,18 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	if (e != NULL)
 		goto finish;
 	e = gfs_stat_canonical_path(p, s);
-	free(p);
 	if (e == NULL)
-		goto finish;
+		goto finish_free_p;
 	if (e != GFARM_ERR_NO_SUCH_OBJECT)
-		goto finish;
+		goto finish_free_p;
 
 	/*
 	 * XXX - assume that it's a directory that does not have the
 	 * path info.
 	 */
-	e = gfs_get_ino(path, &ino);
+	e = gfs_get_ino(p, &ino);
 	if (e != NULL)
-		goto finish;
+		goto finish_free_p;
 	s->st_ino = ino;
 	s->st_mode = GFARM_S_IFDIR | 0777;
 	s->st_user = strdup("root");
@@ -111,6 +116,8 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	s->st_nsections = 0;
 
 	e = NULL;
+ finish_free_p:
+	free(p);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
@@ -133,10 +140,16 @@ gfs_stat_section(const char *gfarm_url, const char *section, struct gfs_stat *s)
 	char *e, *gfarm_file;
 	struct gfarm_file_section_info sinfo;
 	struct gfarm_path_info pi;
+	long ino;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
+	e = gfs_get_ino(gfarm_file, &ino);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (e);
+	}
 	e = gfarm_path_info_get(gfarm_file, &pi);
 	if (e != NULL) {
 		free(gfarm_file);
@@ -144,6 +157,7 @@ gfs_stat_section(const char *gfarm_url, const char *section, struct gfs_stat *s)
 	}
 
 	*s = pi.status;
+	s->st_ino = ino;
 	s->st_user = strdup(s->st_user);
 	s->st_group = strdup(s->st_group);
 	gfarm_path_info_free(&pi);

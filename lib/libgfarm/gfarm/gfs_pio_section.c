@@ -175,9 +175,15 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfarm_file_section_info sinfo;
+	long ino;
 	char *e;
 
+	e = gfs_get_ino(gf->pi.pathname, &ino);
+	if (e != NULL)
+		return (e);
+
 	*status = gf->pi.status;
+	status->st_ino = ino;
 	status->st_user = strdup(status->st_user);
 	if (status->st_user == NULL)
 		return (GFARM_ERR_NO_MEMORY);
