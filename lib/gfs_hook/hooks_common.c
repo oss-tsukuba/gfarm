@@ -22,11 +22,20 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return (SYSCALL_OPEN(path, oflag, mode));
 
-	if (oflag & O_CREAT) {
+	/* XXX - ROOT I/O creates a new file with O_CREAT|O_RDWR mode. */
+	/* XXX - FIXME */
+	if ((oflag & O_CREAT) != 0 || (oflag & O_TRUNC) != 0) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
 		    path, sec != NULL ? sec : "(null)", oflag, mode));
-		e = gfs_pio_create(url, oflag, mode, &gf);
+		if (oflag & O_TRUNC) {
+			gfs_unlink(path); /* XXX - FIXME */
+			e = gfs_pio_create(url, oflag, mode, &gf);
+		} else {
+			e = gfs_pio_open(url, oflag, &gf);
+			if (e == GFARM_ERR_NO_SUCH_OBJECT) /* XXX - FIXME */
+				e = gfs_pio_create(url, oflag, mode, &gf);
+		}
 	} else {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x)\n",
