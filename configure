@@ -1675,7 +1675,8 @@ trap 'rm -fr `echo "Makefile makes/config.mk include/Makefile nslib/Makefile
     gfarmlib/Makefile ${sysdep_output}
     gfarmd/Makefile gfarm/Makefile gfsd/Makefile 
     nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile
-    gftool/gfkey/Makefile gftool/gfreg/Makefile gftool/gfrep/Makefile
+    gftool/gfkey/Makefile gftool/gfrcmd/Makefile
+    gftool/gfreg/Makefile gftool/gfrep/Makefile
     gftool/gfrm/Makefile gftool/gfsched/Makefile gftool/gfmpirun/Makefile
     gftool/gfrsh/Makefile gftool/gfwhere/Makefile
     gftool/example/gfimport_fixed/Makefile
@@ -1781,7 +1782,8 @@ CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk include/Makefile nslib/Ma
     gfarmlib/Makefile ${sysdep_output}
     gfarmd/Makefile gfarm/Makefile gfsd/Makefile 
     nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile
-    gftool/gfkey/Makefile gftool/gfreg/Makefile gftool/gfrep/Makefile
+    gftool/gfkey/Makefile gftool/gfrcmd/Makefile
+    gftool/gfreg/Makefile gftool/gfrep/Makefile
     gftool/gfrm/Makefile gftool/gfsched/Makefile gftool/gfmpirun/Makefile
     gftool/gfrsh/Makefile gftool/gfwhere/Makefile
     gftool/example/gfimport_fixed/Makefile
