@@ -1664,7 +1664,7 @@ fi
 done
 
 
-for ac_func in poll pwrite snprintf gethostbyname2 getpassphrase strtoll strtoq setrlimit daemon getloadavg
+for ac_func in poll pwrite snprintf gethostbyname2 getpassphrase setlogin strtoll strtoq setrlimit daemon getloadavg
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
 echo "configure:1671: checking for $ac_func" >&5
