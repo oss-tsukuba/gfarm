@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 					total_nodes, filename);
     }
     if (e != NULL) {
-	fprintf(stderr, "%s: %s\n", program_name, e);
+	fprintf(stderr, "%s: %s\n", gfarm_url, e);
 	exit(1);
     }
 
