@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 double timerval_calibration;
 

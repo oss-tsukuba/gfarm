@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 char *program_name = "gfreplicate";
 

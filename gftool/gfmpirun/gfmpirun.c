@@ -7,7 +7,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 char *program_name = "gfmpirun";
 

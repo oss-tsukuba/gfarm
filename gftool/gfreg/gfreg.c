@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 #include "gfs_client.h" /* XXX - for gfs_canonical_my_hostname() */
 
 /*
