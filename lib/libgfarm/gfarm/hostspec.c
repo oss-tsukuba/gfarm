@@ -200,6 +200,8 @@ gfarm_host_is_in_domain(const char *hostname, const char *domainname)
 		return (0);
 	if (hlen == dlen)
 		return (strcasecmp(hostname, domainname) == 0);
+	if (dlen == 0)
+		return (1); /* null string matches with all hosts */
 	if (hlen == dlen + 1)
 		return (0);
 	return (hostname[hlen - (dlen + 1)] == '.' &&
