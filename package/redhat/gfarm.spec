@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b1
-%define	rel	2
+%define ver	1.0b2
+%define rel	1
 
 %define prefix		/usr/grid
 %define man_prefix	/usr/share/man
