@@ -34,6 +34,13 @@ void gflog_syslog_open(int, int);
 
 int gflog_syslog_name_to_facility(char *);
 
+/* logutil - gflog_auth_*() */
+
+int gflog_auth_set_verbose(int);
+int gflog_auth_get_verbose(void);
+void gflog_auth_error(char *, char *);
+void gflog_auth_warning(char *, char *);
+
 /* timeval */
 
 #define GFARM_MILLISEC_BY_MICROSEC	1000

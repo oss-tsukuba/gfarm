@@ -166,3 +166,39 @@ gflog_syslog_name_to_facility(char *name)
 	}
 	return (-1); /* not found */
 }
+
+/*
+ * authentication log
+ */
+
+static int authentication_verbose;
+
+int
+gflog_auth_set_verbose(int verbose)
+{
+	int old = authentication_verbose;
+
+	authentication_verbose = verbose;
+	return (old);
+}
+
+int
+gflog_auth_get_verbose(void)
+{
+	return (authentication_verbose);
+}
+
+void
+gflog_auth_error(char *message, char *status)
+{
+	if (authentication_verbose)
+		gflog_error(message, status);
+}
+
+void
+gflog_auth_warning(char *message, char *status)
+{
+	if (authentication_verbose)
+		gflog_warning(message, status);
+}
+
