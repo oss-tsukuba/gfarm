@@ -1,0 +1,41 @@
+.Id $Id$
+.TH gfsched 1 "1 May 2002"
+.SH NAME
+
+gfsched \- ファイル・アフィニティ・スケジューリングにより
+ホストリストを作成
+
+.SH SYNOPSIS
+
+.B gfsched
+[
+.B \-I
+.I フラグメント番号
+]
+.I gfarm-URL
+[
+.I output-hostfile
+]
+.in
+
+.SH DESCRIPTION
+
+指定した \fIgfarm-URL\fP を利用してファイル・アフィニティ・スケジュー
+リングによりホストリストを作成します。
+\fIoutput-hostfile\fP が省略された場合、標準出力にホストリストを表示し
+ます。
+
+.SH OPTIONS
+
+.TP
+.B \-I
+.I フラグメント番号
+.br
+特定のファイル断片についてホストリストを作成します。
+実行形式のファイルの場合には、このオプションで実行アーキ
+テクチャ(例 「sparc\-sun-solaris」) を指定することによっ
+て、指定したアーキテクチャのホストリストを作成できます。
+.TP
+.B \-?
+.br
+引数オプションを表示します。

@@ -12,8 +12,8 @@
 /*
  *  Create a hostfile.
  *
- *  gfsched <gfarm_url> [<hostfile>]
- *  gfsched -f <gfarm_file> [<hostfile>]
+ *  gfsched <gfarm_url> [<output_hostfile>]
+ *  gfsched -f <gfarm_file> [<output_hostfile>]
  */
 
 char *program_name = "gfsched";
@@ -21,28 +21,32 @@ char *program_name = "gfsched";
 void
 usage()
 {
-    fprintf(stderr, "usage: %s [-f] gfarm_file [hostfile]\n",
+    fprintf(stderr, "usage: %s [options] gfarm_url [output_hostfile]\n",
 	    program_name);
+    fprintf(stderr, "options:\n");
+    fprintf(stderr, "\t-I <fragment>\tschedules a node"
+	    " using the specified fragment.\n");
     fflush(stderr);
 }
 
 int
 main(int argc, char * argv[])
 {
-    char * gfarm_url = (char *)NULL;
-    char * section = (char *)NULL;
-    char * e = (char *)NULL;
-    FILE * outp = stdout;
+    char *gfarm_url = NULL;
+    char *section = NULL;
+    char *e = NULL;
+    FILE *outp = stdout;
     int errflg = 0;
     extern int optind;
     int nhosts;
     char **hosts;
-    char * gfarm_file;
-    char * host;
+    char *gfarm_file;
+    char *host;
     int c, i;
 
     if (argc >= 1)
 	program_name = basename(argv[0]);
+
     e = gfarm_initialize(&argc, &argv);
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
@@ -51,7 +55,7 @@ main(int argc, char * argv[])
 
     while ((c = getopt(argc, argv, "I:?")) != EOF) {
 	switch (c) {
-	case 'I': /* This is not for casual use, but for debugging purpose. */
+	case 'I':
 	    section = optarg;
 	    break;
 	case '?':
@@ -74,14 +78,15 @@ main(int argc, char * argv[])
     ++optind;
     if (optind < argc) {
 	outp = fopen(argv[optind], "w");
-	if (outp == (FILE *)NULL) {
+	if (outp == NULL) {
 	    perror(argv[optind]);
 	    exit(1);
 	}
     }
 
     if (section == NULL) {
-	e = gfarm_url_hosts_schedule(gfarm_url, (char *)NULL,
+	/* file-affinity scheduling */
+	e = gfarm_url_hosts_schedule(gfarm_url, NULL,
 				     &nhosts, &hosts);
 	if (e != NULL) {
 	    fprintf(stderr, "%s: %s\n", program_name, e);
@@ -92,8 +97,7 @@ main(int argc, char * argv[])
 	    fprintf(outp, "%s\n", hosts[i]);
     }
     else {
-	/* This is not for casual use, but for debugging purpose. */
-
+	/* schedule a node using the specific file fragment. */
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
 	    fprintf(stderr, "%s: %s\n", program_name, e);
