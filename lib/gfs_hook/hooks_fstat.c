@@ -98,8 +98,8 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	struct gfs_stat status;
 	char *e;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%s)\n",
-	    path));
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%d)\n",
+	    filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_FXSTAT(ver, filedes, buf));

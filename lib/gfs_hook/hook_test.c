@@ -166,7 +166,7 @@ void test_read_string(int fd)
 void test_lseek_set(int fd, off_t offset)
 {
     printf("***** lseek(%d, %d, SEEK_SET)\n", fd, (int)offset);
-    if (lseek(fd, offset, SEEK_SET))
+    if (lseek(fd, offset, SEEK_SET) == -1)
 	perror("lseek"), exit(1);
 }
 
