@@ -82,7 +82,7 @@ struct gfrun_options {
 	int authentication_verbose_mode;
 	int profile;
 	int replicate;
-	int deliver;
+	int use_gfexec;
 };
 
 static void
@@ -99,7 +99,7 @@ default_gfrun_options(struct gfrun_options *options)
 	options->authentication_verbose_mode = 0;
 	options->profile = 0;
 	options->replicate = 0;
-	options->deliver = 0;
+	options->use_gfexec = 1;
 }
 
 char *
@@ -122,7 +122,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	 * deliver gfarm:program.
 	 */
 	if (gfarm_is_url(cmd)) {
-		if (options->deliver) {
+		if (!options->use_gfexec) {
 			e = gfarm_url_program_deliver(cmd, nhosts, hosts,
 				&delivered_paths);
 			if (e != NULL) {
@@ -145,14 +145,14 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (rsh_options != NULL)
 		gfarm_stringlist_add_list(&arg_list, rsh_options);
-	if (options->deliver == 0) {
+	if (options->use_gfexec) {
 		gfarm_stringlist_add(&arg_list, gfexec_command);
 		if (cmd_type == USUAL_COMMAND)
 			gfarm_stringlist_add(&arg_list, "-u");
 	}
 	command_alist_index = gfarm_stringlist_length(&arg_list);
 	gfarm_stringlist_add(&arg_list, "(dummy)");
-	if (options->deliver == 0 || cmd_type == GFARM_COMMAND) {
+	if (options->use_gfexec || cmd_type == GFARM_COMMAND) {
 		char *cwd;
 
 		gfarm_stringlist_add(&arg_list, "--gfarm_nfrags");
@@ -646,7 +646,7 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 				return (0);
 			break;
 		case 'S':
-			options->deliver = 1;
+			options->use_gfexec = 0;
 			if (remove_option(arg, &i))
 				return (0);
 			break;
