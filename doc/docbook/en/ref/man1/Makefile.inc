@@ -22,5 +22,6 @@ DOCBOOK = \
 	gfrun.1 \
 	gfsetdir.1 \
 	gfsched.1 \
+	gfstat.1 \
 	gfwc.1 \
 	gfwhere.1

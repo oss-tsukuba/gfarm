@@ -1,0 +1,33 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfstat.1'>
+
+<refentryinfo><date>12 Nov 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfstat</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfstat</refname>
+<refpurpose>Gfarm ファイルまたはディレクトリの情報を表示する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfstat</command>
+	<arg choice='opt' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>gfarm-URL に指定したファイルあるいはディレクトリの情報を表示しま
+す．</para>
+
+</refsect1>
+</refentry>
