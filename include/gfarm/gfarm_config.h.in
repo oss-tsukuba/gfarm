@@ -67,6 +67,9 @@
 /* Define if you have the strtoq function.  */
 #undef HAVE_STRTOQ
 
+/* Define if you have the <attr/xattr.h> header file.  */
+#undef HAVE_ATTR_XATTR_H
+
 /* Define if you have the <crypt.h> header file.  */
 #undef HAVE_CRYPT_H
 
