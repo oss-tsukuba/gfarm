@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "15 November 2004" "Gfarm" ""
+.TH "GFREP" "1" "14 January 2005" "Gfarm" ""
 .SH NAME
 gfrep \- Gfarm ファイルの複製を作成する．
 .SH SYNOPSIS
@@ -72,6 +72,9 @@ gfrep \- Gfarm ファイルの複製を作成する．
 
 ファイル名として ``-'' を指定した場合，標準入力からホス
 ト名のリストを読み込みます．
+
+指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．
 .TP
 \fB-d \fI複製先ホスト\fB\fR
 複製先のホストを1つだけ指定します．
@@ -79,6 +82,9 @@ gfrep \- Gfarm ファイルの複製を作成する．
 このオプションは，通常 \fB-I\fR オプションとともに用いる
 必要がありますが，それを省略できる場合もあります．
 詳しくは \fB-I\fR オプションの項を参照してください．
+
+指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．
 .TP
 \fB-s \fI複製元ホスト\fB\fR
 ファイルフラグメントの複製元のホストを指定します．
