@@ -1,0 +1,195 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='glogger_logdata.5'>
+
+<refentryinfo><date>18 Sep 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>glogger_logdata</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>glogger_logdata</refname>
+<refpurpose>GLogger 出力データ形式</refpurpose>
+</refnamediv>
+
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+GLogger が出力するファイルのデータ構造です。
+</para>
+
+<variablelist>
+<varlistentry>
+<term>ファイルのデータ構造</term>
+<listitem>
+<para>GLoggerの観測ログデータファイルは、メタデータブロックと
+データブロックグループの連続で構成されます。</para>
+<para>メタデータブロックは、ファイルの先頭に 1つ存在します。</para>
+<para>データブロックグループは、複数のデータブロックで構成されます。</para>
+<para>データブロックは、時刻とその時刻の観測データ値の列です。</para>
+<para>データブロックの出現順序と、観測事象の種類との関係は、
+メタデータブロック内で対応を定義します。</para>
+<para>データブロックグループのサイズは、固定長であり、
+メタデータブロックで定義します。</para>
+<para>たとえば 1時間単位でファイルを切り替えなければならないといった
+制約はなく、最大サイズはファイルシステムに依存します。
+(GLogger では、指定ファイルサイズで新しいファイルへ出力するように
+切り替えることが可能です)</para>
+<para>このデータ構造のログファイルに追記はできません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>メタデータブロック</term>
+<listitem>
+<para>固定長部分と可変長部分に分けています。</para>
+<para>
+<literallayout>
+1: メタデータブロック 1        [24bytes]
+2: メタデータブロック 2        [ 可変長]
+</literallayout>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>メタデータブロック 1</term>
+<listitem>
+<para>
+<literallayout>
+1: メタデータブロック 1 のサイズ(以下何bytes続くか)   [ 2bytes]
+2: バージョン番号                                     [ 2bytes]
+3: データブロックグループのサイズ                     [ 4bytes]
+4: このファイルの計測開始日時(UNIX time 秒)           [ 4bytes]
+5: このファイルの計測開始日時(UNIX time マイクロ秒)   [ 4bytes]
+6: データブロックグループひとつの時間間隔(秒)         [ 4bytes]
+7: データブロックグループひとつの時間間隔(マイクロ秒) [ 4bytes]
+8: 予約領域
+</literallayout>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>メタデータブロック 2</term>
+<listitem>
+<para>
+<literallayout>
+1: メタデータブロック 2 のサイズ(以下何bytes続くか)   [ 4bytes]
+2: 観測対象ホスト定義部分
+   計測対象ホストの IP アドレスリストと
+   ホスト名 (FQDN)と略称のリストとコミュニティストリング
+   →並び順にインデックス番号(1,2,...)                [ 可変長]
+3: OID 定義部分
+   OID と OID 名と OID 略称と
+   →並び順に OID インデックス番号(1,2,...)           [ 可変長]
+4: 測定インターバル表
+   上で定義したホストインデックス番号と
+   OID インデックス番号の組合せごとの
+   測定インターバル(秒+マイクロ秒)                    [ 可変長]
+5: データブロックグループ対応表                       [ 可変長]
+6: 予約領域                                           [ 可変長] 
+</literallayout>
+</para>
+<para>
+[可変長]は、サイズを2bytesで表して先頭に付加し、以降任意データが続きます。
+この2bytes自身のサイズは含まれません。
+</para>
+
+<para><emphasis>ホスト定義部分:</emphasis>
+{IPアドレス(文字列)}{NULL}{FQDN}{NULL}{略称}{NULL}{community string}{NULL}
+の繰り返しです。IPアドレス部分は 192.168.0.1 のような表記です。
+</para>
+
+<para><emphasis>OID定義部分:</emphasis>
+{OID名(設定ファイルで指定した文字列)}{NULL}{略称}{NULL}
+の繰り返しです。
+</para>
+<para><emphasis>測定インターバル表:</emphasis>
+{ホストインデックス番号}{OIDインデックス番号}{時間(8bytes)} の繰り返しです。
+ 時間は秒が 4bytes, マイクロ秒が 4bytesの順で合計 8bytes です。
+</para>
+<para><emphasis>データブロックグループ対応表:</emphasis>
+{個数(n個) 2bytes}{(ホストインデックス番号 + OIDインデックス番号) * n}
+の繰り返しです。
+1つのデータブロックグループ内のデータブロックの出現順序を
+定義した表になっています。
+個数は、対応するデータブロック内のデータの個数(ホストインデックス番号と
+OIDインデックス番号の組あわせの個数)を示します。
+個数が 0の場合、そのタイミングではデータブロックが出現しない
+(時刻データすら出現しない)ことを示し、対応するデータブロックは存在しません。
+</para>
+<para>
+インデックス番号は、2bytes = 0〜65535 です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>データブロックグループ</term>
+<listitem>
+<para>
+データブロックグループ対応表の順番に、データブロックが続きます。
+すべてのデータブロックの種類の出現パターン 1周期を示します。
+(データブロックには、同時刻の計測データがまとめられています。)
+この論理的にまとめた 1周期をデータブロックグループとしています。
+よってデータブロックグループと次のデータブロックグループの間には、
+区切りのためのデータは存在しません。
+</para>
+<para>
+<literallayout>
+1: データブロック
+2: 以下、データブロックの繰り返し
+</literallayout>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>データブロック</term>
+<listitem>
+<para>
+同時刻の各測定値が一つにまとまったデータの組になっています。
+計測データの無い時刻には、データブロックは出現しません
+(時刻データも出現しません)。
+</para>
+<para>
+ひとつのデータブロックは可変長ですが、データブロックグループ対応表から、
+サイズが決定できます。
+ひとつのデータブロックサイズ = 時刻データ 8bytes + 計測データの個数(n個) * 5bytes となっています。
+計測データが無い時刻のデータブロックは存在しません。
+</para>
+<para>
+<literallayout>
+1: このデータブロックの計測時刻(UNIX time 秒)         [ 4bytes]
+2: このデータブロックの計測時刻(UNIX time マイクロ秒) [ 4bytes]
+3: 1番目の計測データフラグ                            [ 1bytes]
+4: 1番目の計測データ                                  [ 4bytes]
+5: 以下同一時刻の計測データフラグ、データの繰り返し
+n: 予約領域
+</literallayout>
+</para>
+<para>※ 例: 256 ノードの場合、合計 1288 バイト</para>
+<para>
+<literallayout>
+データフラグの各ビットの意味(下位ビットから順に)
+データ有効 1 無効 0 (タイムアウトの場合も有効)
+測定成功   1 失敗 0 (タイムアウトは失敗)
+</literallayout>
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>glogger</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

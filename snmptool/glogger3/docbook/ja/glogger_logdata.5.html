@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>glogger_logdata</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GLOGGER_LOGDATA.5"
+></A
+>glogger_logdata</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>glogger_logdata&nbsp;--&nbsp;GLogger 出力データ形式</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>GLogger が出力するファイルのデータ構造です。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>ファイルのデータ構造</DT
+><DD
+><P
+>GLoggerの観測ログデータファイルは、メタデータブロックと
+データブロックグループの連続で構成されます。</P
+><P
+>メタデータブロックは、ファイルの先頭に 1つ存在します。</P
+><P
+>データブロックグループは、複数のデータブロックで構成されます。</P
+><P
+>データブロックは、時刻とその時刻の観測データ値の列です。</P
+><P
+>データブロックの出現順序と、観測事象の種類との関係は、
+メタデータブロック内で対応を定義します。</P
+><P
+>データブロックグループのサイズは、固定長であり、
+メタデータブロックで定義します。</P
+><P
+>たとえば 1時間単位でファイルを切り替えなければならないといった
+制約はなく、最大サイズはファイルシステムに依存します。
+(GLogger では、指定ファイルサイズで新しいファイルへ出力するように
+切り替えることが可能です)</P
+><P
+>このデータ構造のログファイルに追記はできません。</P
+></DD
+><DT
+>メタデータブロック</DT
+><DD
+><P
+>固定長部分と可変長部分に分けています。</P
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;メタデータブロック&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[24bytes]<br>
+2:&nbsp;メタデータブロック&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]</P
+></P
+></DD
+><DT
+>メタデータブロック 1</DT
+><DD
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;メタデータブロック&nbsp;1&nbsp;のサイズ(以下何bytes続くか)&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
+2:&nbsp;バージョン番号&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;2bytes]<br>
+3:&nbsp;データブロックグループのサイズ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+4:&nbsp;このファイルの計測開始日時(UNIX&nbsp;time&nbsp;秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+5:&nbsp;このファイルの計測開始日時(UNIX&nbsp;time&nbsp;マイクロ秒)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+6:&nbsp;データブロックグループひとつの時間間隔(秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+7:&nbsp;データブロックグループひとつの時間間隔(マイクロ秒)&nbsp;[&nbsp;4bytes]<br>
+8:&nbsp;予約領域</P
+></P
+></DD
+><DT
+>メタデータブロック 2</DT
+><DD
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;メタデータブロック&nbsp;2&nbsp;のサイズ(以下何bytes続くか)&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+2:&nbsp;観測対象ホスト定義部分<br>
+&nbsp;&nbsp;&nbsp;計測対象ホストの&nbsp;IP&nbsp;アドレスリストと<br>
+&nbsp;&nbsp;&nbsp;ホスト名&nbsp;(FQDN)と略称のリストとコミュニティストリング<br>
+&nbsp;&nbsp;&nbsp;→並び順にインデックス番号(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+3:&nbsp;OID&nbsp;定義部分<br>
+&nbsp;&nbsp;&nbsp;OID&nbsp;と&nbsp;OID&nbsp;名と&nbsp;OID&nbsp;略称と<br>
+&nbsp;&nbsp;&nbsp;→並び順に&nbsp;OID&nbsp;インデックス番号(1,2,...)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+4:&nbsp;測定インターバル表<br>
+&nbsp;&nbsp;&nbsp;上で定義したホストインデックス番号と<br>
+&nbsp;&nbsp;&nbsp;OID&nbsp;インデックス番号の組合せごとの<br>
+&nbsp;&nbsp;&nbsp;測定インターバル(秒+マイクロ秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+5:&nbsp;データブロックグループ対応表&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]<br>
+6:&nbsp;予約領域&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;可変長]&nbsp;</P
+></P
+><P
+>[可変長]は、サイズを2bytesで表して先頭に付加し、以降任意データが続きます。
+この2bytes自身のサイズは含まれません。</P
+><P
+><I
+CLASS="EMPHASIS"
+>ホスト定義部分:</I
+>
+{IPアドレス(文字列)}{NULL}{FQDN}{NULL}{略称}{NULL}{community string}{NULL}
+の繰り返しです。IPアドレス部分は 192.168.0.1 のような表記です。</P
+><P
+><I
+CLASS="EMPHASIS"
+>OID定義部分:</I
+>
+{OID名(設定ファイルで指定した文字列)}{NULL}{略称}{NULL}
+の繰り返しです。</P
+><P
+><I
+CLASS="EMPHASIS"
+>測定インターバル表:</I
+>
+{ホストインデックス番号}{OIDインデックス番号}{時間(8bytes)} の繰り返しです。
+ 時間は秒が 4bytes, マイクロ秒が 4bytesの順で合計 8bytes です。</P
+><P
+><I
+CLASS="EMPHASIS"
+>データブロックグループ対応表:</I
+>
+{個数(n個) 2bytes}{(ホストインデックス番号 + OIDインデックス番号) * n}
+の繰り返しです。
+1つのデータブロックグループ内のデータブロックの出現順序を
+定義した表になっています。
+個数は、対応するデータブロック内のデータの個数(ホストインデックス番号と
+OIDインデックス番号の組あわせの個数)を示します。
+個数が 0の場合、そのタイミングではデータブロックが出現しない
+(時刻データすら出現しない)ことを示し、対応するデータブロックは存在しません。</P
+><P
+>インデックス番号は、2bytes = 0〜65535 です。</P
+></DD
+><DT
+>データブロックグループ</DT
+><DD
+><P
+>データブロックグループ対応表の順番に、データブロックが続きます。
+すべてのデータブロックの種類の出現パターン 1周期を示します。
+(データブロックには、同時刻の計測データがまとめられています。)
+この論理的にまとめた 1周期をデータブロックグループとしています。
+よってデータブロックグループと次のデータブロックグループの間には、
+区切りのためのデータは存在しません。</P
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;データブロック<br>
+2:&nbsp;以下、データブロックの繰り返し</P
+></P
+></DD
+><DT
+>データブロック</DT
+><DD
+><P
+>同時刻の各測定値が一つにまとまったデータの組になっています。
+計測データの無い時刻には、データブロックは出現しません
+(時刻データも出現しません)。</P
+><P
+>ひとつのデータブロックは可変長ですが、データブロックグループ対応表から、
+サイズが決定できます。
+ひとつのデータブロックサイズ = 時刻データ 8bytes + 計測データの個数(n個) * 5bytes となっています。
+計測データが無い時刻のデータブロックは存在しません。</P
+><P
+><P
+CLASS="LITERALLAYOUT"
+>1:&nbsp;このデータブロックの計測時刻(UNIX&nbsp;time&nbsp;秒)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+2:&nbsp;このデータブロックの計測時刻(UNIX&nbsp;time&nbsp;マイクロ秒)&nbsp;[&nbsp;4bytes]<br>
+3:&nbsp;1番目の計測データフラグ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;1bytes]<br>
+4:&nbsp;1番目の計測データ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;4bytes]<br>
+5:&nbsp;以下同一時刻の計測データフラグ、データの繰り返し<br>
+n:&nbsp;予約領域</P
+></P
+><P
+>※ 例: 256 ノードの場合、合計 1288 バイト</P
+><P
+><P
+CLASS="LITERALLAYOUT"
+>データフラグの各ビットの意味(下位ビットから順に)<br>
+データ有効&nbsp;1&nbsp;無効&nbsp;0&nbsp;(タイムアウトの場合も有効)<br>
+測定成功&nbsp;&nbsp;&nbsp;1&nbsp;失敗&nbsp;0&nbsp;(タイムアウトは失敗)</P
+></P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>glogger</SPAN
+>(8)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

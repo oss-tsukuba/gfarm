@@ -1,0 +1,107 @@
+GLogger 3.0
+
+目次
+* インストール方法
+* snmpd の設定、起動の例
+* デーモン起動方法
+
+----------------------------------------------------------------------------
+* インストール方法
+
+GLogger をビルドするには、 net-snmp または ucd-snmp
+(http://net-snmp.sourceforge.net/) のライブラリ、ヘッダが必要です。
+現在、net-snmp 5.0.8 または ucd-snmp 4.2.6 のライブラリを使って、
+Linux と FreeBSD 環境でのみ動作確認しています。
+
+以下の手順でインストールできます。
+
+  $ ./configure [オプション]
+  $ make
+  $ make install
+
+glogger と glogdump コマンドが $(prefix)/bin/ にインストールされます。
+$(prefix)/man/ にマニュアルがインストールされます。
+
+sample.conf を参考に設定ファイルを記述し、確認します。
+
+  $ glogger -checkconf -config [設定ファイル]
+
+編集した設定ファイルを指定して起動します。
+
+  $ glogger -config [設定ファイル]
+
+
+configure には以下のオプションを指定できます。
+
+・--prefix=ディレクトリ
+  
+  インストール先のディレクトリを指定します。このオプションを省略した場
+  合は /usr/local ディレクトリの下にインストールします。
+  このオプションは省略可能です。
+
+・--enable-printtime
+  
+  動作タイミングの時刻を表示するようになります。
+
+・--enable-hook_snmp_free_pdu
+
+  snmp_free_pdu() を実行されないようにし、snmpライブラリがリクエスト用に
+  確保したメモリを再利用するようになります。
+  リクエストにかかる時間が少し短くなります。
+
+・--with-dlopen=libsnmp.so(またはlibnetsnmp.so)までのパス
+
+  --enable-hook_snmp_free_pdu を指定したときは、snmp_free_pdu() を使わずに
+  自前でメモリを解放しています。このオプションを指定すると、オリジナルの
+  snmp_free_pdu() を呼んでメモリを解放するようになります。
+  しかし libsnmp.so が2度読み込まれることになってしまいます。
+
+環境変数 CPPFLAGS と LDFLAGS を指定して、net-snmp をインストールした
+ディレクトリを指定することもできます。
+(glogger は一般ユーザ権限だけでも、インストール、実行ができます)
+
+configure 実行例
+$ env CPPFLAGS='-I/home/foo/snmp/include' \
+      LDFLAGS='-L/home/foo/snmp/lib -Wl,-rpath,/home/foo/snmp/lib' \
+      ./configure --prefix=/home/foo --enable-printtime \
+      --enable-hook_snmp_free_pdu \
+      --with-dlopen=/home/foo/snmp/lib/libsnmp.so
+
+----------------------------------------------------------------------------
+* snmpd の設定、起動
+
+snmpd デフォルトの snmpd.conf から追加、修正する項目の例です。
+
+    com2sec notConfigUser  localhost             public
+    com2sec notConfigUser  192.168.1.0/24        public
+    group   notConfigGroup  v1              notConfigUser
+    group   notConfigGroup  v2c             notConfigUser
+    view    glogger         included    .1        80
+    access  notConfigGroup ""  any       noauth  exact  glogger none none
+    disk /raid
+
+以上の設定で、192.168.1.0/24 から、コミュニティストリング public で、
+SNMPv1 と SNMPv2c によるアクセスを許可し、/raid ディレクトリがあるパー
+ティションの情報が見えるようにします。以上の様な設定を、glogger で計測
+する対象の各ノードに設定し、それぞれ snmpd を起動します。
+
+----------------------------------------------------------------------------
+* デーモン起動方法
+
+glogd ファイルを参考に起動スクリプトを作成します。
+例えば Red Hat Linux ならば /etc/rc.d/init.d/glogd へ配置します。
+
+マシン起動時に GLogger が起動するようにする例
+# /sbin/checkconfig --add glogd
+
+起動する場合
+# glogd start
+
+停止する場合
+# glogd stop
+
+再起動する場合
+# glogd restart
+
+強制起動する場合(PIDファイルが残っている場合)
+# glogd forcestart

@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>glogger</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GLOGGER.8"
+></A
+>glogger</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>glogger&nbsp;--&nbsp;SNMP の GET リクエストで各ホストの情報を集める</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>glogger</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>プログラム glogger は、SNMP GETリクエストを使って、ネットワーク上
+    にある各ホストから情報を集め、観測データとしてファイルへ出力します。
+    設定ファイルで指定した観測インターバルごとに、各ホストに対して
+    GETリクエストし、反応の早かったホストから順番に受信、出力処理をします。
+    一つのホストに対して、複数のOIDを一つのパケットでリクエストし、一つの
+    パケットで MIBからの値を受信します。
+    観測対象のホスト、スイッチなどは、それぞれ SNMPエージェントが動作し、
+    観測する MIBツリーの OIDを GLogger を動作させるホストから参照できるように
+    しておく必要があります。
+    SNMPのバージョンは SNMPv1 固定です。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-config [input configuration file name]</TT
+></DT
+><DD
+><P
+>GLogger の設定ファイルを指定します。
+        設定ファイルが見つからない場合はエラー終了です。設定ファイル
+        の指定が省略された場合は /etc/glogger/glogger.conf を読み込みます。
+        ファイル名の代わりにハイフン "-" を指定すると、標準入力から設定
+        ファイルとして読み込みます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+> -daemon [output PID file name]</TT
+></DT
+><DD
+><P
+>GLogger をデーモン化します。PIDを保存するファイルを指定します。
+このオプションが指定されない場合は、呼び出されたシェルからは
+fork() せず、標準出力に動作ログが表示されます。
+glogger コマンド自体で同時起動確認は行ないません。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+> -mmap [output filename]</TT
+></DT
+><DD
+><P
+>mmap()関数を使い、-maxsize オプションで指定したファイルサイズの
+ファイルを確保してから、そのファイルへ出力します。
+設定ファイルの path 項(後述)の設定は無視され、出力先は output filename
+の 1箇所へまとめて出力されるので注意が必要です。
+-maxsize オプションを指定していないときは、約 5KB のファイルを確保し、
+それに出力して終了します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-maxsize [output file size]</TT
+></DT
+><DD
+><P
+>output file size の大きさに出力ファイルサイズを制限します。
+設定ファイルの maxfilesize よりも優先されます。
+このサイズを超えると、新しくファイルを作成し、そのファイルへ出力先を
+切り替えて、出力を続けます。
+設定ファイルの path 設定のルールで時刻を用いても、その時刻ごとの
+タイミングではなく、output file size を超えたときのみ、出力先のファイル
+を切り替えるようになります。
+-mmap モードの時は、ここで指定したサイズのファイルが作成されます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-checkconf</TT
+></DT
+><DD
+><P
+>設定ファイルの内容をテキストで標準出力へ出力します。
+設定ファイルの記述が間違っていれば、エラーメッセージを出力し、終了
+します。設定ファイルを指定する場合は、-config オプションで指定します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SIGNAL"
+></A
+><H2
+>SIGNAL</H2
+><P
+>gloggerプロセスはシグナル受領時、以下のように動作します。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>SIGHUP</TT
+></DT
+><DD
+><P
+>まだ応答が返ってきていない計測対象ホストに関しては、このシグナ
+ルを受けた時点で中断し(タイムアウト扱いにし)、計測データをファ
+イルへ出力してから、再起動します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>SIGINT</TT
+></DT
+><DD
+><P
+>まだ応答が返ってきていない計測対象ホストに関しては、このシグナ
+ルを受けた時点で中断し(タイムアウト扱いにし)、計測データをファ
+イルへ出力して終了します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>glogdump</SPAN
+>(8)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>glogger.conf</SPAN
+>(5)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>glogger_logdata</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

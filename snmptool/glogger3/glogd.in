@@ -1,0 +1,150 @@
+#!/bin/bash
+#
+# Init file for glogger
+#
+# chkconfig: 2345 90 90
+# description: glogger logging daemon.
+#
+# processname: /usr/sbin/...
+# config: /etc/...
+# pidfile: /var/run/...
+
+# source function library
+#. /etc/init.d/functions
+
+progname="glogger"
+program=@prefix@/bin/glogger
+vardir=/tmp
+conffile=./sample.conf
+pidfile=${vardir}/${progname}.pid
+#sudo="sudo -u nobody"
+sudo=""
+
+OPTIONS="-config ${conffile} -daemon ${pidfile}"
+RETVAL=0
+
+check_process() {
+    if [ ! -f  ${pidfile} ]; then
+	echo No ${progname} is running.
+	return 1
+    fi
+    pid=`cat ${pidfile}`
+  
+    if [ -z ${pid} ]; then
+	RETVAL=1
+    else
+	ps ${pid} > /dev/null
+	RETVAL=$?
+    fi
+
+    if [ $RETVAL -eq 1 ]; then
+	echo "No such process"
+	rm -f ${pidfile}
+	return 1
+    fi
+    return $RETVAL
+}
+
+exec_glogger(){
+    echo -n $"Starting ${progname}: "
+    ${sudo} ${program} ${OPTIONS}
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+	echo "Fail stating glogger ($RETVAL)"
+	return $RETVAL
+    fi
+    pid=`cat ${pidfile}`
+    echo "PID: ${pid}"
+}
+
+start() {
+    if [ -f  ${pidfile} ]; then
+	echo ${progname} is running.
+	return 0
+    fi
+    exec_glogger
+    RETVAL=$?
+    return $RETVAL
+}
+
+forcestart() {
+    if [ -f  ${pidfile} ]; then
+	echo ${progname} is running.
+	stop
+	start
+	return 0
+    fi
+    exec_glogger
+    RETVAL=$?
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping ${progname}: "
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	return 1;
+    fi
+
+    kill -SIGINT `cat ${pidfile}`
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+	echo stopped: PID `cat ${pidfile}`
+	rm -f ${pidfile}
+	return $RETVAL
+    fi
+
+    # No such process
+    rm -f ${pidfile}
+    return $RETVAL
+}
+
+restart() {
+    echo -n $"Restarting ${progname}: "
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	return 1;
+    fi
+
+    oldpid=`cat ${pidfile}`
+    kill -SIGHUP `cat ${pidfile}`
+    newpid=`cat ${pidfile}`
+    echo -n PID ${oldpid} -> ${newpid}
+    return 0
+}
+
+status() {
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	return 1;
+    fi
+
+    echo $progname is running. PID: `cat ${pidfile}`
+    return 0
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  forcestart)
+	forcestart
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	restart
+        ;;
+  status)
+	status
+        ;;
+  *)
+	echo $"Usage: $0 {start|forcestart|stop|status|restart}"
+	RETVAL=1
+esac
+
+exit $RETVAL
