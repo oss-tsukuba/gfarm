@@ -400,7 +400,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			if (s[0] == '.' && (s[1] == '\0' ||
 			    (s[1] == '.' && s[2] == '\0')))
 				continue; /* "." or ".." */
-			if (!option_all && entry->d_name[0] == '.')
+			if (!option_all && s[0] == '.')
 				continue;
 			if (gfs_glob_elem(&types, i) == GFS_DT_DIR) {
 				e = list_dirs(path, 1, &s, need_newline);
