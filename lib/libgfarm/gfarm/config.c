@@ -187,9 +187,23 @@ set_string(char **var, char *value)
 /*
  * client side variables
  */
+static enum gfarm_auth_id_type gfarm_auth_type = GFARM_AUTH_ID_TYPE_USER;
 static char *gfarm_global_username = NULL;
 static char *gfarm_local_username = NULL;
 static char *gfarm_local_homedir = NULL;
+
+gfarm_error_t
+gfarm_set_auth_id_type(enum gfarm_auth_id_type type)
+{
+	gfarm_auth_type = type;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+enum gfarm_auth_id_type
+gfarm_get_auth_id_type(void)
+{
+	return (gfarm_auth_type);
+}
 
 gfarm_error_t
 gfarm_set_global_username(char *global_username)
