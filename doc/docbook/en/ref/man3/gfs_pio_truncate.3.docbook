@@ -1,0 +1,76 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-truncate.3'>
+
+<refentryinfo><date>12 Jan 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_truncate</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_truncate</refname>
+<refpurpose>truncate a file to a specified length</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_truncate</function></funcdef>
+    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+    <paramdef>file_offset_t <parameter>length</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>The <function>gfs_pio_truncate()</function> function truncates the
+regular file <parameter>gf</parameter> to the <parameter>length</parameter>
+bytes.</para>
+<para>If the file was previously shorter than the length, it is extended,
+and the extended part is filled by zero bytes.</para>
+<para>The file pointer is not changed.</para>
+<para>You must specify <constant>GFS_FILE_MODE_WRITE</constant> in opening
+the file, because it must be open for writing.
+</para>
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by its
+pointed strings.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
