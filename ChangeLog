@@ -1,63 +1,147 @@
+2002-06-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_server_gsi.c:
+	delegated credential should be used only for `switch_to' case.
+	(i.e. only for gfsd case. and shouldn't be used for gfmd case.)
+
+2002-06-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, ChangeLog:
+	Sessions should be initiated with the delegated credential.  gfrep now works fine using GSI!
+
 2002-06-19  Noriyuki Soda  <soda@sra.co.jp>
 
-	* auth_client.c, auth_client_gsi.c, auth_server.c, auth_server_gsi.c, gfm_client.c, gfs_client.c, auth.h:
+	* gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfmd/gfmd.c, gfsd/main.c, gfarmlib/auth.h:
 	remove symbol GFARM_AUTH_H_CLIENT and GFARM_AUTH_H_SERVER
 
-	* io_fd.c: missing reference to INFTIM in last commitment
+	* gfarmlib/io_fd.c: missing reference to INFTIM in last commitment
 
-	* io_fd.c:
+	* configure, configure.in, gfarm_config.h.in, gfarmlib/io_fd.c:
 	use -1 instead of INFTIM, because linux doesn't define INFTIM.
 
 2002-06-17  Noriyuki Soda  <soda@sra.co.jp>
 
-	* auth_server_gsi.c: bug fix
+	* gfarmlib/auth_server_gsi.c: bug fix
 	- xxx_proto_flush() should be called before calling GFSL routines
 	- condition about global_username was opposite
 
-	* auth_client_gsi.c:
+	* gfarmlib/auth_client_gsi.c:
 	remove unnecessary line (these lines are traces of gfarm_auth_request_simple())
+
+	* lib/libgfsl/Makefile.gt1:
+	leave original Makefile for Globus-1.x with different name.
 
 2002-06-14  Noriyuki Soda  <soda@sra.co.jp>
 
-	* auth_client_gsi.c, auth_server_gsi.c, io_gfsl.h:
+	* gfsd/main.c:
+	forgot to deal with multiple connection type on server side
+
+	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.h:
 	forgot to switch to secure session
 
-	* io_gfsl.h, Makefile.in, auth.h, auth_client.c, auth_client_gsi.c, auth_server.c, auth_server_gsi.c, io_gfsl.c:
+	* lib/libgfsl/gfarm_secure_session.h:
+	add struct tag name `gfarmSecSession' to type gfarmSecSession,
+	to make opaque reference easy.
+
+	* gfarmlib/io_gfsl.h, lib/libgfsl/Makefile, makes/config.mk.in, makes/var.mk, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.c, Makefile.in, acconfig.h, configure, configure.in, gfarm_config.h.in:
 	link Globus GSI and libgfsl.a, when --with-globus is specified with configure.
 
-	* io_fd.c:
+	* gfarmlib/io_fd.c, configure, configure.in, gfarm_config.h.in:
 	SVR4 (including Solaris, IRIX) requires <stropts.h> for INFTIM
 
-	* gfm_client.c, gfs_client.c, io_fd.c, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h:
+	* gfmd/gfmd.c, gfsd/main.c, configure, configure.in, gfarm_config.h.in, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfarmlib/io_fd.c, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
 	- close underlying stream in xxx_connection_free()
 	- explicitly pass fd parameter to iobuffer read/write/close function,
 	  to reduce number of function calls
 	- use "char *" rather than "int" for iobuffer error status interface
 	- use poll in io_fd.c
 
-	* gfs_pio_global.c, gfs_pio_misc.c:
+	* gfarmlib/gfs_pio_global.c: workaround type mismatch in Solaris 7
+
+	* lib/libgfsl/gfarm-usermap: add my entry
+
+	* gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_misc.c:
 	workaround type mismatch in Solaris 7
 
-	* io_fd.c, io_fd.h, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h, Makefile.in, gfm_client.c, gfs_client.c:
+	* configure, configure.in:
+	change default DEFAULT_NS_EXEC_ROOT from /var/tmp to ${prefix},
+	approved by tatebe-san.
+
+	* configure, configure.in: reorder some checks
+
+	* gfarmlib/io_fd.c, gfarmlib/io_fd.h, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfmd/gfmd.c, gfsd/main.c, gfarmlib/Makefile.in, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c:
 	modify xxx_connection API again, to prepare GFSL integration.
 	suggested by tatebe-san.
 
 2002-06-13  Noriyuki Soda  <soda@sra.co.jp>
 
-	* iobuffer.c: remove obsolete comment
+	* gfarmlib/iobuffer.c: remove obsolete comment
 
 2002-06-11  Noriyuki Soda  <soda@sra.co.jp>
 
-	* gfs_client.c, iobuffer.c, iobuffer.h, xxx_proto.c, xxx_proto.h:
+	* gfarmlib/gfs_client.c, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
 	modify gfarm_iobuffer API to prepare GFSL integration.
+
+2002-05-20  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/get.c, nstool/file/put.c, nstool/file/stat.c:
+	Added an error checking code for remote execution.
+
+2002-05-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-fsys/thput-fsys.c:
+	- remove limitation of maximum buffer size
+	- make this program work with linux raw device
+	 (i.e. ensure 512byte aligned buffer)
+
+	* bench/Makefile: add bwlat-syscache
+
+	* bench/bwlat-syscache/Makefile, bench/bwlat-syscache/bwlat-syscache.c:
+	New file.
+
+	* bench/bwlat-syscache/Makefile, bench/bwlat-syscache/bwlat-syscache.c:
+	benchmark program which reads same disk block repeatedly.
+	bandwidth and latency between disk controller and cpu can be measured
+	by specifying raw disk device with this program.
+
+2002-05-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man3/Makefile: Fixed a typo of a filename.
 
 2002-05-07  Noriyuki Soda  <soda@sra.co.jp>
 
-	* error.c:
+	* gfarmlib/error.c, include/gfarm_error.h:
 	add some errors (some of them will be used only internally in libgfarm)
 
-	* gfs_client.c, import_help.c, stringlist.c:
+	* gftool/gfmpirun/gfmpirun.c, gftool/gfrun/gfrun.c, include/gfarm_misc.h, gfarmlib/gfs_client.c, gfarmlib/import_help.c, gfarmlib/stringlist.c, gftool/gfexport/gfexport.c:
 	adapt to new stringlist API described in man pages
+
+	* Makefile.in, makes/config.mk.in: changes for man pages
+
+	* makes/man.mk, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3, man/ja/man3/Makefile, man/ja/man3/gfarm_import_fragment_size_alloc.3, man/ja/man3/gfarm_stringlist_cat.3, man/ja/man3/gfarm_stringlist_elem.3, man/ja/man3/gfarm_stringlist_free_deeply.3, man/ja/man3/gfarm_stringlist_length.3, man/ja/man3/gfarm_strings_free_deeply.3, man/ja/man3/gfs_pio_close.3, man/ja/man3/gfs_pio_eof.3, man/ja/man3/gfs_pio_error.3, man/ja/man8/Makefile, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8:
+	New file.
+
+	* makes/man.mk, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3, man/ja/man3/Makefile, man/ja/man3/gfarm_import_fragment_size_alloc.3, man/ja/man3/gfarm_stringlist_cat.3, man/ja/man3/gfarm_stringlist_elem.3, man/ja/man3/gfarm_stringlist_free_deeply.3, man/ja/man3/gfarm_stringlist_length.3, man/ja/man3/gfarm_strings_free_deeply.3, man/ja/man3/gfs_pio_close.3, man/ja/man3/gfs_pio_eof.3, man/ja/man3/gfs_pio_error.3, man/ja/man8/Makefile, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8:
+	man pages of libgfarm and gftools
+
+	* man/Makefile, man/ja/Makefile, man/ja/Makefile.inc, man/ja/man1/Makefile, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrsh.1, man/ja/man1/gfrun.1, man/ja/man1/gfssh.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3:
+	New file.
+
+	* man/Makefile, man/ja/Makefile, man/ja/Makefile.inc, man/ja/man1/Makefile, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrsh.1, man/ja/man1/gfrun.1, man/ja/man1/gfssh.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3:
+	man pages of libgfarm and gftools
+
+2002-04-24  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/Makefile, lib/libgfsl/README:
+	Added a compile option for static linking.
+
+2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/stat.c, nstool/file/Makefile.in:
+	Added a ns client program stat.
+
+	* ChangeLog, INSTALL.ja:
+	Fixed a careless miss of a gfgrep command-line example.
 
 2002-04-19  Noriyuki Soda  <soda@sra.co.jp>
 
@@ -441,11 +525,6 @@
 
 2001-12-19  Noriyuki Soda  <soda@sra.co.jp>
 
-	* gftool/gfrsh/gfrsh.c:
-	- forgot to initialize job_info.nodes, when hostnames are added
-	- add (currently unused) flag parameter to gfj_client_register(),
-	  and pass 0 to the parameter.
-
 	* gfmd/gfmd.c: - permit that one client registers multiple jobs
 	- forgot to add the code which actually passes hostnames of nodes
 	- add (currently unused) flag parameter to gfj_client_register()
@@ -470,9 +549,6 @@
 	* Makefile.in: add gfmd
 
 	* gftool/gfkey/gfkey.c: s/GFS_AUTH/GFRAM_AUTH/g
-
-	* gftool/gfrsh/Makefile, gftool/gfrsh/gfrsh.c:
-	add a hook for job manager
 
 	* gftool/gfps/Makefile, gftool/gfps/gfps.c:
 	get process status from job manager
@@ -555,7 +631,7 @@
 
 2001-10-15  Noriyuki Soda  <soda@sra.co.jp>
 
-	* makes/config.mk.in, makes/prog.mk, makes/subdir.mk, makes/var.mk, nslib/Makefile.in, nstool/Makefile, nstool/file/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, gftool/gfreg/gfreg.c, gftool/gfrep/Makefile, gftool/gfrm/Makefile, gftool/gfrsh/Makefile, gftool/gfsched/Makefile, gftool/gfwhere/Makefile, include/Makefile.in, gftool/digest/Makefile, gftool/example/Makefile, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_text/Makefile, gftool/example/gfwc/Makefile, gftool/gfexport/Makefile, gftool/gfkey/Makefile, gftool/gfmpirun/Makefile, config.sub, configure, configure.in, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in, gfsd/Makefile, gftool/Makefile, install-sh, Makefile.in:
+	* makes/config.mk.in, makes/prog.mk, makes/subdir.mk, makes/var.mk, nslib/Makefile.in, nstool/Makefile, nstool/file/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, gftool/gfreg/gfreg.c, gftool/gfrep/Makefile, gftool/gfrm/Makefile, gftool/gfsched/Makefile, gftool/gfwhere/Makefile, include/Makefile.in, gftool/digest/Makefile, gftool/example/Makefile, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_text/Makefile, gftool/example/gfwc/Makefile, gftool/gfexport/Makefile, gftool/gfkey/Makefile, gftool/gfmpirun/Makefile, config.sub, configure, configure.in, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in, gfsd/Makefile, gftool/Makefile, install-sh, Makefile.in:
 	support --srcdir option for configure, to make it possible to build/test
 	multiple architectures from single source directories.
 	this change introduces $(srcdir), $(obj_srcdir) in addition to $(src_topdir).
@@ -572,7 +648,7 @@
 	* acconfig.h:
 	forgot to commit this, when HAVE_SYS_NERR was added for Solaris 7.
 
-	* gftool/gfrsh/Makefile.in, gftool/gfsched/Makefile, gftool/gfsched/Makefile.in, gftool/gfwhere/Makefile, gftool/gfwhere/Makefile.in, makes/prog.mk, gftool/gfmpirun/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfrcmd/Makefile.in, gftool/gfreg/Makefile, gftool/gfreg/Makefile.in, gftool/gfrep/Makefile, gftool/gfrep/Makefile.in, gftool/gfrm/Makefile, gftool/gfrm/Makefile.in, gftool/gfrsh/Makefile, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_fixed/Makefile.in, gftool/example/gfimport_text/Makefile, gftool/example/gfimport_text/Makefile.in, gftool/example/gfwc/Makefile, gftool/example/gfwc/Makefile.in, gftool/gfexport/Makefile, gftool/gfexport/Makefile.in, gftool/gfkey/Makefile, gftool/gfkey/Makefile.in, configure, configure.in, gfarm/Makefile, gfarm/Makefile.in, gfsd/Makefile, gfsd/Makefile.in, gftool/digest/Makefile, gftool/digest/Makefile.in, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfgrep/Makefile.in:
+	* gftool/gfsched/Makefile, gftool/gfsched/Makefile.in, gftool/gfwhere/Makefile, gftool/gfwhere/Makefile.in, makes/prog.mk, gftool/gfmpirun/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfrcmd/Makefile.in, gftool/gfreg/Makefile, gftool/gfreg/Makefile.in, gftool/gfrep/Makefile, gftool/gfrep/Makefile.in, gftool/gfrm/Makefile, gftool/gfrm/Makefile.in, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_fixed/Makefile.in, gftool/example/gfimport_text/Makefile, gftool/example/gfimport_text/Makefile.in, gftool/example/gfwc/Makefile, gftool/example/gfwc/Makefile.in, gftool/gfexport/Makefile, gftool/gfexport/Makefile.in, gftool/gfkey/Makefile, gftool/gfkey/Makefile.in, configure, configure.in, gfarm/Makefile, gfarm/Makefile.in, gfsd/Makefile, gfsd/Makefile.in, gftool/digest/Makefile, gftool/digest/Makefile.in, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfgrep/Makefile.in:
 	- repair missing "install" target.
 	 (example programs are installed under bin/example/, currently...)
 	- use makes/prog.mk for common rule for program Makefiles.
@@ -609,7 +685,7 @@
 
 2001-10-09  Noriyuki Soda  <soda@sra.co.jp>
 
-	* gftool/gfrsh/gfrsh.c, gftool/gfsched/gfsched.c, nslib/soc.c, configure, configure.in, gfarm_config.h.in, gfarmlib/error.c, gftool/gfmpirun/gfmpirun.c, gftool/gfreg/gfreg.c:
+	* gftool/gfsched/gfsched.c, nslib/soc.c, configure, configure.in, gfarm_config.h.in, gfarmlib/error.c, gftool/gfmpirun/gfmpirun.c, gftool/gfreg/gfreg.c:
 	fix compile error on Solaris 7
 
 	* configure.in, gftool/Makefile, configure: add gftools/gfrcmd/
@@ -617,7 +693,7 @@
 	* gftool/gfmpirun/gfmpirun.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfsched/gfsched.c, gftool/gfwhere/gfwhere.c, gftool/example/gfgrep/gfgrep.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/example/gfwc/gfwc.c, gftool/gfexport/gfexport.c:
 	add argc/argv parameter to gfarm_initialize().
 
-	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfsd/main.c, gftool/gfrcmd/Makefile.in, gftool/gfrcmd/gfrcmd.c, gftool/gfrsh/gfrsh.c:
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfsd/main.c, gftool/gfrcmd/Makefile.in, gftool/gfrcmd/gfrcmd.c:
 	- add command invocation feature to gfsd
 	- add rsh-like command `gfrcmd' which uses the gfsd command invocation
 
@@ -753,10 +829,10 @@
 
 	* gfarmlib/import_help.c: forgot to canonicalize hostname here.
 
-	* gftool/gfreplicate/Makefile.in, gftool/gfreplicate/gfreplicate.c, configure, configure.in, gftool/Makefile, gftool/gfrep/Makefile.in, gftool/gfrep/gfrep.c:
+	* configure, configure.in, gftool/Makefile, gftool/gfrep/Makefile.in, gftool/gfrep/gfrep.c:
 	rename "gfreplicate" to "gfrep", suggested by tatebe-san
 
-	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfsd/main.c, gftool/gfreplicate/Makefile.in, gftool/gfreplicate/gfreplicate.c, include/gfs.h, configure, configure.in:
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfsd/main.c, include/gfs.h, configure, configure.in:
 	add a simple tool to create replica.
 
 2001-06-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
@@ -777,8 +853,7 @@
 
 2001-05-16  Noriyuki Soda  <soda@sra.co.jp>
 
-	* gftool/gfmpirun/gfmpirun.c, gftool/gfrsh/gfrsh.c:
-	SA_RESETHAND is not needed, and harmful.
+	* gftool/gfmpirun/gfmpirun.c: SA_RESETHAND is not needed, and harmful.
 
 2001-05-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
 
@@ -822,8 +897,6 @@
 	- do not do ad hoc parsing, but call gfarm_url_fragment_number().
 	  (similar change with gfrsh.c revision 1.2 and 1.4)
 	- enable to specify gfarm url as program name.
-
-	* gftool/gfrsh/gfrsh.c: enable to specify gfarm url as program name
 
 	* gftool/gfreg/gfreg.c:
 	add a feature to register program binary to gfarm spool.
@@ -900,10 +973,6 @@
 	- split unlimit_nofiles() to limit.c
 	to share these functions with gfarmd.
 
-	* gftool/gfrsh/Makefile.in, gftool/gfrsh/gfrsh.c, gftool/gfrsh/gfrshl.c, gftool/gfrsh/gfssh.c, gftool/gfrsh/gfsshl.c:
-	- merge gfrsh.c, gfssh.c, gfrshl.c and gfsshl.c to gfrsh.c
-	- add "-H" option to specify host file (XXX - this should be first option)
-
 	* gfsd/main.c, gfsd/logutil.c:
 	use GFARM_ARRAY_LENGTH() rather than home grown ARRAY_LENGTH().
 
@@ -961,12 +1030,7 @@
 	* gftool/gfreg/gfreg.c (main):
 	Deleted a file existence check because the gfarm spool root directory should be added prior to the path name of the file.
 
-	* gftool/gfrsh/gfrshl.c, gftool/gfrsh/gfsshl.c:
-	gfrshl.c, gfsshl.c: Added -N and -I options when executing the remote program.
-
 2001-03-10  Tatebe Osamu  <tatebe@etl.go.jp>
-
-	* gftool/gfrsh/Makefile.in, gftool/gfrsh/gfssh.c: gfssh.c: Added.
 
 	* gfarmd/gfd_auth.c (gfarmd_login): Set the environment variable HOME.
 
@@ -999,17 +1063,6 @@
 	change error message of gfarm_url_make_path() from "invalid argument"to
 	"invalid gfarm URL" as suggested by tatebe-san
 
-2001-03-01  Tatebe Osamu  <tatebe@etl.go.jp>
-
-	* gftool/gfrsh/gfrsh.c (main):
-	Use gfarm_url_make_path() instead of an ad hoc solution.
-
-	* gftool/gfrsh/Makefile.in, gftool/gfrsh/gfrshl.c, gftool/gfrsh/gfsshl.c:
-	gfsshl: Added.
-	gfrshl: Use gfarm_url_make_path() instead of an adhoc solution.
-
-2001-03-01  Noriyuki Soda  <soda@sra.co.jp>
-
 	* gfarmlib/url.c:
 	fix problem about "~" expansion in "gfarm:~/path/name".
 	pointed out by tatebe-san.
@@ -1023,13 +1076,6 @@
 	fix privilege to read ~/.gfarm_shared_key, this was `root' and that didn't
 	work with NFS shared home directory, if root access to the home directory
 	is not permitted.
-
-2001-03-01  Tatebe Osamu  <tatebe@etl.go.jp>
-
-	* gftool/gfrsh/Makefile.in, gftool/gfrsh/gfrshl.c:
-	gftool/gfrsh/gfrshl.c: Added.  This rsh is intended for legacy applications.
-
-2001-03-01  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfsd/main.c: - fix false error message
 	- report authentication error in detail
@@ -1088,7 +1134,7 @@
 	* gftool/example/gfgrep/Makefile.in, gftool/example/gfgrep/gfgrep.c:
 	sample program for gfrsh
 
-	* gftool/Makefile, gftool/example/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfmpirun/gfmpirun.c, gftool/gfrsh/Makefile.in, gftool/gfrsh/gfrsh.c:
+	* gftool/Makefile, gftool/example/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfmpirun/gfmpirun.c:
 	very bare bone gfmpirun and gfrsh.
 	(history handling is not implemented, yet)
 
