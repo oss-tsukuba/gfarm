@@ -14,6 +14,7 @@ SUBDIRS = \
 	gfrm \
 	gfsched \
 	gfmpirun \
+	gfps \
 	gfrsh \
 	gfwhere \
 	example
