@@ -137,7 +137,7 @@ gfs_pio_local_storage_calculate_digest(GFS_File gf, char *digest_type,
 	static int openssl_initialized = 0;
 
 	if (!openssl_initialized) {
-		SSLeay_add_all_algorithms(); /* for EVP_get_digestbyname() */
+		OpenSSL_add_all_digests(); /* for EVP_get_digestbyname() */
 		openssl_initialized = 1;
 	}
 	if ((md_type = EVP_get_digestbyname(digest_type)) == NULL)
