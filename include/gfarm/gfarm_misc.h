@@ -149,6 +149,7 @@ char *gfarm_host_get_self_name(void);
 char *gfarm_host_get_canonical_name(const char *, char **);
 char *gfarm_host_get_canonical_names(int, char **, char ***);
 char *gfarm_host_get_canonical_self_name(char **);
+char *gfarm_host_get_self_architecture(char **);
 struct sockaddr;
 char *gfarm_host_address_get(const char *, int, struct sockaddr *, char **);
 
