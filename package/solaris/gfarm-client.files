@@ -10,6 +10,7 @@ usr/grid/bin/gfrm
 usr/grid/bin/gfsched
 usr/grid/bin/gfmpirun_p4
 usr/grid/bin/gfps
+usr/grid/bin/gfreg
 usr/grid/bin/gfrun
 usr/grid/bin/gfssh
 usr/grid/bin/gfrshl
