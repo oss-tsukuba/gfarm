@@ -69,9 +69,22 @@ usage()
 	exit(1);
 }
 
+struct gfrun_options {
+	char *user_name;
+	char *stdout_file;
+	char *stderr_file;
+	char *sched_file;	/* -G <sched_file> */
+	char *hosts_file;	/* -H <hosts_file> */
+	int nprocs;		/* -N <nprocs> */
+	enum command_type cmd_type;
+	int authentication_verbose_mode;
+	int profile;
+	int replicate;
+};
+
 char *
 gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
-	char *stdout_file, char *stderr_file, int profile_mode,
+	struct gfrun_options *options,
 	int nhosts, char **hosts,
 	enum command_type cmd_type, char *cmd, char **argv)
 {
@@ -80,6 +93,10 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	char total_nodes[GFARM_INT32STRLEN], node_index[GFARM_INT32STRLEN];
 	char **delivered_paths = NULL, *e;
 	enum command_type cmd_type_guess = USUAL_COMMAND;
+	char *stdout_file = options->stdout_file;
+	char *stderr_file = options->stderr_file;
+	int profile_mode = options->profile;
+	int replication_mode = options->replicate;
 
 	/*
 	 * deliver gfarm:program.
@@ -121,6 +138,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		}
 		if (profile_mode)
 			gfarm_stringlist_add(&arg_list, "--gfarm_profile");
+		if (replication_mode)
+			gfarm_stringlist_add(&arg_list, "--gfarm_replicate");
 	}
 	gfarm_stringlist_cat(&arg_list, argv);
 	gfarm_stringlist_add(&arg_list, NULL);
@@ -211,6 +230,8 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 	gfarm_files[i] = NULL;
 
 	if (i > 0) {
+		struct gfrun_options options;
+
 		e = gfs_stat(gfsplck_cmd, &sb);
 		if (e != NULL) {
 			fprintf(stderr,
@@ -221,7 +242,10 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 		}
 		gfs_stat_free(&sb);
 
-		e = gfrun(rsh_command, rsh_options, NULL, NULL, 0,
+		options.stdout_file = options.stderr_file = NULL;
+		options.profile = options.replicate = 0;
+
+		e = gfrun(rsh_command, rsh_options, &options,
 		    nhosts, hosts, GFARM_COMMAND, gfsplck_cmd, gfarm_files);
 		if (e != NULL)
 			fprintf(stderr,
@@ -229,18 +253,6 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 				"%s\n", program_name, e);
 	}
 }
-
-struct gfrun_options {
-	char *user_name;
-	char *stdout_file;
-	char *stderr_file;
-	char *sched_file;	/* -G <sched_file> */
-	char *hosts_file;	/* -H <hosts_file> */
-	int nprocs;		/* -N <nprocs> */
-	enum command_type cmd_type;
-	int authentication_verbose_mode;
-	int profile;
-};
 
 /* Process scheduling */
 void
@@ -549,6 +561,11 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 			if (remove_option(arg, &i))
 				return (0);
 			break;
+		case 'r':
+			options->replicate = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
 		case 'o':
 			return (option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &options->stdout_file));
@@ -599,6 +616,7 @@ parse_options(int argc, char **argv,
 	options->cmd_type = UNKNOWN_COMMAND;
 	options->authentication_verbose_mode = 0;
 	options->profile = 0;
+	options->replicate = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
@@ -668,9 +686,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	e_save = gfrun(rsh_command, &rsh_options,
-	    options.stdout_file, options.stderr_file, options.profile,
-	    nhosts, hosts,
+	e_save = gfrun(rsh_command, &rsh_options, &options, nhosts, hosts,
 	    options.cmd_type, command_name, &argv[command_index + 1]);
 	if (e_save == NULL) {
 		register_stdout_stderr(
