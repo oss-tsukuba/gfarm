@@ -23,24 +23,6 @@ usage()
 	exit(1);
 }
 
-struct args {
-	char *path;
-	gfarm_int32_t mode;
-	int may_exist;
-};
-
-char *
-gfmkdir(struct gfs_connection *gfs_server, void *args)
-{
-	struct args *a = args;
-	char *e;
-
-	e = gfs_client_mkdir(gfs_server, a->path, a->mode);
-	if (a->may_exist && e == GFARM_ERR_ALREADY_EXISTS)
-		return (NULL);
-	return (e);
-}
-
 int
 main(int argc, char **argv)
 {
@@ -76,10 +58,8 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (i = 0; i < argc; i++) {
-		struct args a;
 		struct gfarm_path_info pi;
 		struct timeval now;
-		int nhosts_succeed;
 
 		e = gfarm_url_make_path_for_creation(argv[i], &canonic_path);
 		/* We permit missing gfarm: prefix here as a special case */
@@ -92,50 +72,16 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (gfarm_path_info_get(canonic_path, &pi) == 0) {
-			/*
-			 * XXX We should make this error,
-			 * even if it's GFARM_S_ISDIR() case.
-			 * But We cannot actually do it,
-			 * becauase currently we don't record directory
-			 * operation failure in anywhere.
-			 * Thus, we must permit user to retry the gfmkdir
-			 * operation.
-			 */
-			if (!GFARM_S_ISDIR(pi.status.st_mode)) {
-				fprintf(stderr, "%s: %s: %s\n",
-				    program_name, argv[i],
-				    GFARM_ERR_ALREADY_EXISTS);
-				gfarm_path_info_free(&pi);
-				continue;
-			}
+			fprintf(stderr, "%s: %s: %s\n",
+				program_name, argv[i],
+				GFARM_ERR_ALREADY_EXISTS);
 			gfarm_path_info_free(&pi);
-			/*
-			 * don't report error,
-			 * if the directory already exists
-			 */
-			a.may_exist = 1;
-		} else {
-			a.may_exist = 0;
+			continue;
 		}
 
-		a.path = canonic_path;
-		a.mode = 0755;
-		e = gfs_client_apply_all_hosts(gfmkdir, &a, program_name,
-			&nhosts_succeed);
-#if 0 /* XXX - gfmkdir may fail.  However, it will be created by the
-       * following open operation. */
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-				e);
-			if (nhosts_succeed == 0) {
-				free(canonic_path);			
-				continue;
-			}
-		}
-#endif
 		gettimeofday(&now, NULL);
 		pi.pathname = canonic_path;
-		pi.status.st_mode = (GFARM_S_IFDIR | a.mode);
+		pi.status.st_mode = (GFARM_S_IFDIR | 0755);
 		pi.status.st_user = user;
 		pi.status.st_group = "*"; /* XXX for now */
 		pi.status.st_atimespec.tv_sec =
