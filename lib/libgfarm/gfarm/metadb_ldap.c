@@ -85,8 +85,12 @@ char *gfarm_metadb_terminate(void)
 {
 	int rv;
 
+	if (gfarm_ldap_server == NULL)
+		return ("metadb connection alrady disconnected");
+
 	/* close and free connection resources */
 	rv = ldap_unbind(gfarm_ldap_server);
+	gfarm_ldap_server = NULL;
 	if (rv != LDAP_SUCCESS)
 		return (ldap_err2string(rv));
 
