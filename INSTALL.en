@@ -71,9 +71,9 @@ Gfarm software consists of
   file-affinity process scheduling.  Parallel I/O extensions provide
   new file views; index file view and local file view.
 
-  gfs_hook.o is provided for porting legacy applications.  Linking
-  with gfs_hook.o and libgfarm.a, the legacy applications can exploit
-  the Gfarm filesystem.
+  A syscall-hook library, gfs_hook.o, is provided for porting legacy
+  applications.  Linking with gfs_hook.o and libgfarm.a, the legacy
+  applications can exploit the Gfarm filesystem.
 
  - gfmd - Gfarm metadata server
 
@@ -123,8 +123,10 @@ To build the Gfarm system, OpenLDAP and OpenSSL libraries are
 required.  To utilize the Grid Security Infrastructure (GSI) for
 authentication method, GSSAPI library is needed.  Currently, GSSAPI
 library provided by the Globus toolkit version 2 (GT2) is only
-supported by the configure.  When building sample MPI applications,
-an MPI library is needed.
+supported by the configure.  When building a gfs_hook_mpi.o
+syscall-hook library for executing legacy MPI applications on the
+Gfarm filesystem, and when building sample MPI applications in this
+distribution, an MPI library is needed.
 
 Here are the installation steps of the Gfarm system.
 
