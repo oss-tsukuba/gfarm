@@ -5,8 +5,7 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -272,7 +271,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><SPAN
 CLASS="TOKEN"
->type</SPAN
+>self</SPAN
 ></DT
 ><DD
 ><P
@@ -353,12 +352,12 @@ CLASS="TOKEN"
 ><DD
 ><P
 >This keyword specifies that a user certificate is used.
-The accout name of the user may be specified by 
+The account name of the user may be specified by 
 <SPAN
 CLASS="TOKEN"
 >spool_server_cred_name</SPAN
 > statement.
-If the accout name is omitted, the user who invoked the command
+If the account name is omitted, the user who invoked the command
 will be used by default.
 You must not specify a service name by
 <SPAN
@@ -410,7 +409,7 @@ CLASS="TOKEN"
 > statement, if you are using
 this type.</P
 ><P
->This feature corresponds to a case that GSS_C_NT_USER_NAME is specified
+>This feature corresponds to a case that GSS_C_NO_OID is specified
 as a Name Type in GSSAPI (RFC2743/RFC2744).</P
 ><P
 >Example:</P
@@ -1013,9 +1012,9 @@ to every socket.</P
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_DEBUG</TT
+>SO_DEBUG</CODE
 > socket
 option is specified.  The <TT
 CLASS="PARAMETER"
@@ -1028,9 +1027,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_KEEPALIVE</TT
+>SO_KEEPALIVE</CODE
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"
@@ -1043,9 +1042,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_SNDBUF</TT
+>SO_SNDBUF</CODE
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -1057,9 +1056,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_RCVBUF</TT
+>SO_RCVBUF</CODE
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -1071,9 +1070,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->TCP_NODELAY</TT
+>TCP_NODELAY</CODE
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"
