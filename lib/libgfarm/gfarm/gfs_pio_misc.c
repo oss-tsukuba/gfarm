@@ -253,7 +253,7 @@ change_path_info_mode(struct gfarm_path_info *p, gfarm_mode_t mode)
 enum exec_change {
 	EXECUTABILITY_NOT_CHANGED,
 	TO_EXECUTABLE,	
-	TO_UNEXECUTABLE
+	TO_NONEXECUTABLE
 };
 
 static char *
@@ -266,7 +266,7 @@ change_path_info_mode_nsections(
 	case TO_EXECUTABLE:
 		p->status.st_nsections = 0;
 		break;
-	case TO_UNEXECUTABLE:
+	case TO_NONEXECUTABLE:
 		p->status.st_nsections = 1;
 		break;
 	default:
@@ -283,7 +283,7 @@ diff_exec(gfarm_mode_t old, gfarm_mode_t new)
 	if ((old & xmask) == 0 && (new & xmask) != 0)
 		return (TO_EXECUTABLE);
 	else if ((old & xmask) != 0 && (new & xmask) == 0)
-		return (TO_UNEXECUTABLE);
+		return (TO_NONEXECUTABLE);
 	else
 		return (EXECUTABILITY_NOT_CHANGED);
 }
@@ -327,7 +327,7 @@ get_new_section_name(enum exec_change change,
 {
 	if (change == TO_EXECUTABLE)
 		return get_architecture_name(ncopy, copies);
-	else /* change == TO_UNEXECUTABLE */
+	else /* change == TO_NONEXECUTABLE */
 		return strdup("0");
 }	
 
@@ -405,7 +405,7 @@ gfs_chmod_file_spool(
 
 		e = gfarm_path_section(sections[i].pathname,
 				       sections[i].section,
-			       	       &from_path_section);
+				       &from_path_section);
 		if (e != NULL) 
 			return (e);
 
@@ -689,7 +689,7 @@ gfs_rename_file_spool(
 	for (i = 0; i < nsection; i++) {
 		e = gfarm_path_section(sections[i].pathname,
 				       sections[i].section,
-			       	       &from_path_section);
+				       &from_path_section);
 		if (e != NULL)
 			return (e); /* XXX this leaves inconsistent state */
 
@@ -722,7 +722,7 @@ gfs_rename_file_spool(
 					     		to_path_section);
 			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 				if (gfs_pio_remote_mkdir_parent_canonical_path(
-			    	    gfs_server, to_path_section) == NULL)
+				    gfs_server, to_path_section) == NULL)
 					e = gfs_client_link(gfs_server,
 							    from_path_section,
 							    to_path_section);
@@ -882,7 +882,7 @@ gfs_rename_file(struct gfarm_path_info *from_pi, const char *to_url)
 							sections[i].section);
 			if (e2 != NULL)
 				gflog_warning("gfs_rename_file:"
-			      	  "gfarm_file_section_info_remove()", e2);
+				  "gfarm_file_section_info_remove()", e2);
 			if (e == NULL && e2 != NULL)
 				e = e2;
 		}
