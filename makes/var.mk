@@ -1,5 +1,8 @@
 include $(top_objdir)/makes/config.mk
 
+COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) -I$(top_objdir) -I$(INCDIR)
+COMMON_LDFLAGS = $(largefile_ldflags)
+
 INCDIR = $(top_srcdir)/include
 GFD_DIR = $(top_srcdir)/gfarmd
 GFSD_DIR = $(top_srcdir)/gfsd

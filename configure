@@ -1757,6 +1757,20 @@ EOF
 fi
 
 
+if ( getconf LFS_CFLAGS && getconf LFS_LDFLAGS &&
+		getconf LFS_LIBS ) > /dev/null 2>&1; then
+	largefile_cflags="`getconf LFS_CFLAGS`"
+	largefile_ldflags="`getconf LFS_LDFLAGS`"
+	LIBS="$LIBS `getconf LFS_LIBS`"
+else
+	largefile_cflags=
+	largefile_ldflags=
+fi
+
+
+
+
+
 if test "x${sysdep_dir}" != "x" \
     -a -f "${srcdir}/gfarmlib/${sysdep_dir}/Makefile.in"
 then
@@ -1937,6 +1951,8 @@ s%@INSTALL_PROGRAM@%$INSTALL_PROGRAM%g
 s%@INSTALL_SCRIPT@%$INSTALL_SCRIPT%g
 s%@INSTALL_DATA@%$INSTALL_DATA%g
 s%@CPP@%$CPP%g
+s%@largefile_cflags@%$largefile_cflags%g
+s%@largefile_ldflags@%$largefile_ldflags%g
 
 CEOF
 EOF

@@ -9,8 +9,8 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfrcmd.c
 OBJS = gfrcmd.o
 PROGRAM = gfrcmd
-CFLAGS = -I$(top_objdir) -I$(INCDIR) -I$(top_srcdir)/gfarmlib $(OPTFLAGS)
-LDLIBS = $(GFARMLIB) $(LIBS)
+CFLAGS = $(COMMON_CFLAGS) -I$(top_srcdir)/gfarmlib
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)

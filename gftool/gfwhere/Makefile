@@ -9,8 +9,8 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfwhere.c
 OBJS = gfwhere.o
 PROGRAM = gfwhere
-CFLAGS = -I$(top_objdir) -I$(INCDIR) $(OPTFLAGS)
-LDLIBS = $(GFARMLIB) $(LIBS)
+CFLAGS = $(COMMON_CFLAGS)
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)

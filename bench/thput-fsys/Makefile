@@ -6,17 +6,12 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SRCS = gfrm.c
-OBJS = gfrm.o
-PROGRAM = gfrm
 CFLAGS = $(COMMON_CFLAGS)
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
-DEPLIBS = $(DEPGFARMLIB)
+LDLIBS = $(COMMON_LDFLAGS) $(LIBS)
+
+PROGRAM = thput-fsys
+OBJS = thput-fsys.o
 
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
-
-###
-
-$(OBJS): $(DEPGFARMINC)

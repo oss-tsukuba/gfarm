@@ -10,8 +10,8 @@ include $(srcdir)/../Makefile.inc
 SRCS = gfimport_text.c
 OBJS = gfimport_text.o
 PROGRAM = gfimport_text
-CFLAGS = -I$(top_objdir) -I$(INCDIR) $(OPTFLAGS)
-LDLIBS = $(GFARMLIB) $(LIBS)
+CFLAGS = $(COMMON_CFLAGS)
+LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)

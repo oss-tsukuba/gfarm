@@ -33,3 +33,6 @@ openssl_libs = @openssl_libs@
 
 readline_includes = @readline_includes@
 readline_libs = @readline_libs@
+
+largefile_cflags = @largefile_cflags@
+largefile_ldflags = @largefile_ldflags@

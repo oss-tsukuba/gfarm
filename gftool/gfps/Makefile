@@ -9,9 +9,8 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfps.c
 OBJS = gfps.o
 PROGRAM = gfps
-CFLAGS = $(openssl_includes) -I$(top_objdir) -I$(INCDIR) \
-	-I$(top_srcdir)/gfarmlib $(OPTFLAGS)
-LDLIBS = $(GFARMLIB) $(LIBS)
+CFLAGS = $(COMMON_CFLAGS) -I$(top_srcdir)/gfarmlib $(openssl_includes)
+LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)
