@@ -154,7 +154,7 @@ char *
 xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap = *app;
+	va_list ap;
 	gfarm_uint8_t c;
 	gfarm_int16_t h;
 	gfarm_int32_t i, n;
@@ -165,6 +165,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 #endif
 	char *s;
 
+	va_copy(ap, *app);
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
@@ -241,7 +242,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 	}
  finish:
 	*formatp = format;
-	*app = ap;
+	va_copy(*app, ap);
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
@@ -250,7 +251,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap = *app;
+	va_list ap;
 	gfarm_int8_t *cp;
 	gfarm_int16_t *hp;
 	gfarm_int32_t *ip, i;
@@ -263,6 +264,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	size_t *szp, sz;
 	char *e;
 
+	va_copy(ap, *app);
 	e = xxx_proto_flush(conn);
 	if (e != NULL)
 		return (e);
@@ -367,7 +369,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	}
  finish:
 	*formatp = format;
-	*app = ap;
+	va_copy(*app, ap);
 	*eofp = 0;
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
