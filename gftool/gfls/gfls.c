@@ -4,13 +4,9 @@
 #include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
-#include <sys/stat.h> /* XXX */
-#include <errno.h> /* XXX */
-#include <sys/ioctl.h> /* TIOCGWISZ, struct winsize */
 #include <sys/time.h>
 #include <time.h>
 #include <gfarm/gfarm.h>
-#include "hash.h"
 
 char *program_name = "gfls";
 
@@ -31,399 +27,6 @@ int option_directory_itself = 0;	/* -d */
 int option_reverse_sort = 0;		/* -r */
 
 int screen_width = 80; /* default */
-
-char *
-gfs_getcwd(char *cwd, int cwdsize)
-{
-	char *user = gfarm_get_global_username();
-	int len = strlen(user);
-
-	if (len < cwdsize) {
-		strcpy(cwd, user);
-	} else {
-		memcpy(cwd, user, cwdsize - 1);
-		cwd[cwdsize - 1] = '\0';
-	}
-	return (NULL);
-}
-
-static char gfarm_prefix[] = "gfarm:";
-
-void
-skip_gfarm_prefix(char **path)
-{
-	char *p = *path;
-
-	if (memcmp(p, gfarm_prefix, GFARM_ARRAY_LENGTH(gfarm_prefix) - 1) == 0)
-		p += GFARM_ARRAY_LENGTH(gfarm_prefix) - 1;
-	*path = p;
-}
-
-/*
- * directory tree, opendir/readdir/closedir
- */
-struct node {
-	struct node *parent;
-	char *name;
-	int is_dir;
-	union node_u {
-		struct dir {
-			struct gfarm_hash_table *children;
-		} d;
-	} u;
-};
-
-#define NODE_HASH_SIZE 53 /* prime */
-
-struct node *root;
-
-struct node *
-init_node_name(struct node *n, char *name, int len)
-{
-	n->name = malloc(len + 1);
-	if (n->name == NULL)
-		return (NULL);
-	memcpy(n->name, name, len);
-	n->name[len] = '\0';
-	return (n);
-}
-
-#define DIR_NODE_SIZE \
-	(sizeof(struct node) - sizeof(union node_u) + sizeof(struct dir))
-
-struct node *
-init_dir_node(struct node *n, char *name, int len)
-{
-	if (init_node_name(n, name, len) == NULL)
-		return (NULL);
-	n->is_dir = 1;
-	n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
-	    gfarm_hash_default, gfarm_hash_key_equal_default);
-	return (n);
-}
-
-#define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
-
-struct node *
-init_file_node(struct node *n, char *name, int len)
-{
-	if (init_node_name(n, name, len) == NULL)
-		return (NULL);
-	n->is_dir = 0;
-	return (n);
-}
-
-struct node *
-lookup_node(struct node *parent, char *name, int len, int is_dir, int create)
-{
-	struct gfarm_hash_entry *entry;
-	int created;
-	struct node *n;
-
-	if (!parent->is_dir)
-		return (NULL); /* not a directory */
-	if (len == 0) {
-		return (parent);
-	} else if (len == 1 && name[0] == '.') {
-		return (parent);
-	} else if (len == 2 && name[0] == '.' && name[1] == '.') {
-		return (parent->parent);
-	}
-	if (len > GFS_MAXNAMLEN)
-		len = GFS_MAXNAMLEN;
-	if (!create) {
-		entry = gfarm_hash_lookup(parent->u.d.children, name, len);
-		return (entry == NULL ? NULL : gfarm_hash_entry_data(entry));
-	}
-
-	entry = gfarm_hash_enter(parent->u.d.children, name, len,
-	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE, &created);
-	n = gfarm_hash_entry_data(entry);
-	if (!created)
-		return (n);
-	if (is_dir)
-		init_dir_node(n, name, len);
-	else
-		init_file_node(n, name, len);
-	if (n == NULL) {
-		gfarm_hash_purge(parent->u.d.children, name, len);
-		return (NULL);
-	}
-	n->parent = parent;
-	return (n);
-}
-
-/* if (!create), (is_dir) may be -1, and that means "don't care". */
-char *
-lookup_relative(struct node *n, char *path, int is_dir, int create,
-	struct node **np)
-{
-	int len;
-
-	if (!n->is_dir)
-		return (GFARM_ERR_NOT_A_DIRECTORY);
-	for (;;) {
-		while (*path == '/')
-			path++;
-		for (len = 0; path[len] != '/'; len++) {
-			if (path[len] == '\0') {
-				n = lookup_node(n, path, len, is_dir, create);
-				if (n == NULL)
-					return (create ? GFARM_ERR_NO_MEMORY :
-					    GFARM_ERR_NO_SUCH_OBJECT);
-				if (is_dir != -1 && n->is_dir != is_dir)
-					return (n->is_dir ?
-					    GFARM_ERR_IS_A_DIRECTORY :
-					    GFARM_ERR_NOT_A_DIRECTORY);
-				if (np != NULL)
-					*np = n;
-				return (NULL);
-			}
-		}
-		n = lookup_node(n, path, len, 1, /* XXX */ create);
-		if (n == NULL)
-			return (create ? GFARM_ERR_NO_MEMORY :
-			    GFARM_ERR_NO_SUCH_OBJECT);
-		if (!n->is_dir)
-			return (GFARM_ERR_NOT_A_DIRECTORY);
-		path += len;
-	}
-}
-
-/* if (!create), (is_dir) may be -1, and that means "don't care". */
-char *
-lookup_path(char *path, int is_dir, int create,	struct node **np)
-{
-	struct node *n;
-
-	if (path[0] == '/') {
-		n = root;
-	} else {
-		char *e;
-		char cwd[PATH_MAX + 1];
-
-		e = gfs_getcwd(cwd, sizeof(cwd));
-		if (e != NULL)
-			return (e);
-		e = lookup_relative(root, cwd, 1, /* XXX */ 1, &n);
-		if (e != NULL)
-			return (e);
-	}
-	return (lookup_relative(n, path, is_dir, create, np));
-}
-
-char *
-root_node(void)
-{
-	root = malloc(DIR_NODE_SIZE);
-	if (root == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	init_dir_node(root, "", 0);
-	root->parent = root;
-	return (NULL);
-}
-
-void
-remember_path(void *closure, struct gfarm_path_info *info)
-{
-	lookup_relative(root, info->pathname,
-	    GFARM_S_ISDIR(info->status.st_mode), 1, NULL);
-}
-
-void
-remember_dirtree(void)
-{
-	char *e = root_node();
-
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(EXIT_FAILURE);
-	}
-	gfarm_path_info_get_all_foreach(remember_path, NULL);
-}
-
-char *
-get_abspath(char *path, char **abspathp)
-{
-	struct node *n, *p;
-	char *e, *abspath;
-	int l, len;
-
-	e = lookup_path(path, -1, 0, &n);
-	if (e != NULL)
-		return (e);
-	len = 0;
-	for (p = n; p != root; p = p->parent)
-		len += strlen(p->name) + 1;
-	len += GFARM_ARRAY_LENGTH(gfarm_prefix) - 1;
-	abspath = malloc(len + 1);
-	if (abspath == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	abspath[len] = '\0';
-	for (p = n; p != root; p = p->parent) {
-		l = strlen(p->name);
-		len -= l;
-		memcpy(abspath + len, p->name, l);
-		abspath[--len] = '/';
-	}
-	memcpy(abspath, gfarm_prefix, GFARM_ARRAY_LENGTH(gfarm_prefix) - 1);
-	*abspathp = abspath;
-	return (NULL);
-}
-
-/*
- * gfs_opendir()/readdir()/closedir()
- */
-
-struct gfs_dir {
-	struct node *dir;
-	struct gfarm_hash_iterator iterator;
-	struct gfs_dirent buffer;
-};
-
-char *
-gfs_opendir(char *path, GFS_Dir *dirp)
-{
-	char *e;
-	struct node *n;
-	struct gfs_dir *dir;
-
-	skip_gfarm_prefix(&path);
-	e = lookup_path(path, 1, 0, &n);
-	if (e != NULL)
-		return (e);
-	dir = malloc(sizeof(struct gfs_dir));
-	if (dir == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	dir->dir = n;
-	gfarm_hash_iterator_begin(n->u.d.children, &dir->iterator);
-	*dirp = dir;
-	return (NULL);
-}
-
-char *
-gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
-{
-	struct gfarm_hash_entry *he;
-	struct node *n;
-
-	he = gfarm_hash_iterator_access(&dir->iterator);
-	if (he == NULL) {
-		*entry = NULL;
-		return (NULL);
-	}
-	n = gfarm_hash_entry_data(he);
-	gfarm_hash_iterator_next(&dir->iterator);
-	dir->buffer.d_fileno = 1; /* XXX */
-	dir->buffer.d_type = n->is_dir ? GFS_DT_DIR : GFS_DT_REG;
-	dir->buffer.d_namlen = gfarm_hash_entry_key_length(he);
-	memcpy(dir->buffer.d_name, gfarm_hash_entry_key(he),
-	    dir->buffer.d_namlen);
-	dir->buffer.d_name[dir->buffer.d_namlen] = '\0';
-	*entry = &dir->buffer;
-	return (NULL);
-}
-
-char *
-gfs_closedir(GFS_Dir dir)
-{
-	free(dir);
-	return (NULL);
-}
-
-char *
-gfs_stat_fake(char *path, struct gfs_stat *s)
-{
-	char *e, *p;
-	struct node *n;
-
-	skip_gfarm_prefix(&path);
-	e = get_abspath(path, &p);
-	if (e != NULL)
-		return (e);
-	e = gfs_stat(p, s);
-	free(p);
-	if (e == NULL || e != GFARM_ERR_NO_SUCH_OBJECT)
-		return (e);
-	/* XXX */
-	e = lookup_path(path, 1, 0, &n);
-	if (e != NULL)
-		return (e);
-	s->st_mode = GFARM_S_IFDIR | 0777;
-	s->st_user = strdup("root");
-	s->st_group = strdup("gfarm");
-	s->st_atimespec.tv_sec = 0;
-	s->st_atimespec.tv_nsec = 0;
-	s->st_mtimespec.tv_sec = 0;
-	s->st_mtimespec.tv_nsec = 0;
-	s->st_ctimespec.tv_sec = 0;
-	s->st_ctimespec.tv_nsec = 0;
-	s->st_size = 0;
-	s->st_nsections = 0;
-	return (NULL);
-}
-
-/*
- * gfarm_dtypelist
- */
-
-#define GFARM_DTYPELIST_INITIAL	200
-#define GFARM_DTYPELIST_DELTA	200
-typedef struct {
-	unsigned char *array;
-	int length, size;
-} gfarm_dtypelist;
-
-#define GFARM_DTYPELIST_ARRAY(dtypelist)	(dtypelist).array
-#define GFARM_DTYPELIST_ELEM(dtypelist, i)	(dtypelist).array[i]
-#define gfarm_dtypelist_length(dtypelist)	(dtypelist)->length
-#define gfarm_dtypelist_elem(dtypelist, i) \
-	GFARM_DTYPELIST_ELEM(*(dtypelist), i)
-
-char *
-gfarm_dtypelist_init(gfarm_dtypelist *listp)
-{
-	unsigned char *v;
-
-	v = malloc(sizeof(unsigned char) * GFARM_DTYPELIST_INITIAL);
-	if (v == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	listp->size = GFARM_DTYPELIST_INITIAL;
-	listp->length = 0;
-	listp->array = v;
-	return (NULL);
-}
-
-void
-gfarm_dtypelist_free(gfarm_dtypelist *listp)
-{
-	free(listp->array);
-
-	/* the following is not needed, but to make erroneous program abort */
-	listp->size = 0;
-	listp->length = 0;
-	listp->array = NULL;
-}
-
-char *
-gfarm_dtypelist_add(gfarm_dtypelist *listp, int dtype)
-{
-	int length = gfarm_dtypelist_length(listp);
-
-	if (length >= listp->size) {
-		int n = listp->size + GFARM_DTYPELIST_DELTA;
-		unsigned char *t = realloc(listp->array,
-		    sizeof(unsigned char) * n);
-
-		if (t == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		listp->size = n;
-		listp->array = t;
-	}
-	listp->array[length] = dtype;
-	listp->length++;
-	return (NULL);
-}
 
 /*
  * gfls implementation
@@ -542,7 +145,7 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			memcpy(namep, files[i], space);
 			namep[space] = '\0';
 		}
-		e = gfs_stat_fake(buffer, &stats[i]);
+		e = gfs_stat(buffer, &stats[i]);
 		if (e != NULL) {
 fprintf(stderr, "XXX<%s>", prefix);
 			fprintf(stderr, "%s: %s\n", buffer, e);
@@ -707,7 +310,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 {
 	char *e, *s, *path, *e_save = NULL;
 	gfarm_stringlist names;
-	gfarm_dtypelist types;
+	gfarm_glob_t types;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
@@ -722,7 +325,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		free(path);
 		return (e);
 	}
-	e = gfarm_dtypelist_init(&types);
+	e = gfarm_glob_init(&types);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		gfarm_stringlist_free(&names);
@@ -732,7 +335,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	e = gfs_opendir(path, &dir);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", path, e);
-		gfarm_dtypelist_free(&types);
+		gfarm_glob_free(&types);
 		gfarm_stringlist_free(&names);
 		free(path);
 		return (e);
@@ -744,7 +347,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			break;
 		}
 		gfarm_stringlist_add(&names, s);
-		gfarm_dtypelist_add(&types, entry->d_type);
+		gfarm_glob_add(&types, entry->d_type);
 	}
 	if (e != NULL) {
 		fprintf(stderr, "%s%s: %s\n", prefix, dirname, e);
@@ -767,14 +370,14 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			if (s[0] == '.' && (s[1] == '\0' ||
 			    (s[1] == '.' && s[2] == '\0')))
 				continue;
-			if (gfarm_dtypelist_elem(&types, i) == GFS_DT_DIR) {
+			if (gfarm_glob_elem(&types, i) == GFS_DT_DIR) {
 				e = list_dirs(path, 1, &s, need_newline);
 				if (e_save == NULL)
 					e_save = e;
 			}
 		}
 	}
-	gfarm_dtypelist_free(&types);
+	gfarm_glob_free(&types);
 	gfarm_stringlist_free_deeply(&names);
 	free(path);
 	return (e_save);
@@ -816,11 +419,11 @@ list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 }
 
 char *
-list(gfarm_stringlist *paths, gfarm_dtypelist *types, int *need_newline)
+list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
 {
 	char *e, *e_save = NULL;
 	gfarm_stringlist dirs, files;
-	gfarm_dtypelist filetypes;
+	gfarm_glob_t filetypes;
 	int i, nfiles, ndirs;
 
 	if (option_directory_itself) {
@@ -839,7 +442,7 @@ list(gfarm_stringlist *paths, gfarm_dtypelist *types, int *need_newline)
 		gfarm_stringlist_free(&dirs);
 		return (e);
 	}
-	e = gfarm_dtypelist_init(&filetypes);
+	e = gfarm_glob_init(&filetypes);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		gfarm_stringlist_free(&files);
@@ -849,7 +452,7 @@ list(gfarm_stringlist *paths, gfarm_dtypelist *types, int *need_newline)
 	for (i = 0; i < gfarm_stringlist_length(paths); i++) {
 		char *path = gfarm_stringlist_elem(paths, i);
 
-		if (gfarm_dtypelist_elem(types, i) == GFS_DT_DIR)
+		if (gfarm_glob_elem(types, i) == GFS_DT_DIR)
 			gfarm_stringlist_add(&dirs, path);
 		else
 			gfarm_stringlist_add(&files, path);
@@ -864,7 +467,7 @@ list(gfarm_stringlist *paths, gfarm_dtypelist *types, int *need_newline)
 		if (e_save == NULL)
 			e_save = e;
 	}
-	gfarm_dtypelist_free(&filetypes);
+	gfarm_glob_free(&filetypes);
 	gfarm_stringlist_free(&files);
 
 	if (nfiles == 0 && ndirs == 1) {
@@ -883,321 +486,6 @@ list(gfarm_stringlist *paths, gfarm_dtypelist *types, int *need_newline)
 	return (e_save);
 }
 
-/*
- * gfs_glob
- */
-void
-glob_pattern_to_name(char *name, char *pattern, int length)
-{
-	int i, j;
-
-	for (i = j = 0; j < length; i++, j++) {
-		if (pattern[j] == '\\') {
-			if (pattern[j + 1] != '\0' &&
-			    pattern[j + 1] != '/')
-				j++;
-		}
-		name[i] = pattern[j];
-	}
-	name[i] = '\0';
-}
-
-int
-glob_charset_parse(char *pattern, int index, int *ip)
-{
-	int i = index;
-
-	if (pattern[i] == '!')
-		i++;
-	if (pattern[i] != '\0') {
-		if (pattern[i + 1] == '-' && pattern[i + 2] != '\0')
-			i += 3;
-		else
-			i++;
-	}
-	while (pattern[i] != ']') {
-		if (pattern[i] == '\0') {
-			/* end of charset isn't found */
-			if (ip != NULL)
-				*ip = index;
-			return (0);
-		}
-		if (pattern[i + 1] == '-' && pattern[i + 2] != '\0')
-			i += 3;
-		else
-			i++;
-	}
-	if (ip != NULL)
-		*ip = i;
-	return (1);
-}
-
-int
-glob_charset_match(int ch, char *pattern, int pattern_length)
-{
-	int i = 0, negate = 0;
-	unsigned char c = ch, *p = (unsigned char *)pattern;
-
-	if (p[i] == '!') {
-		negate = 1;
-		i++;
-	}
-	while (i < pattern_length) {
-		if (p[i + 1] == '-' && p[i + 2] != '\0') {
-			if (p[i] <= c && c <= p[i + 2])
-				return (!negate);
-			i += 3;
-		} else {
-			if (c == p[i])
-				return (!negate);
-			i++;
-		}
-	}
-	return (negate);
-}
-
-int
-glob_name_submatch(char *name, char *pattern, int namelen)
-{
-	int w;
-
-	for (; --namelen >= 0; name++, pattern++){
-		if (*pattern == '?')
-			continue;
-		if (*pattern == '[' &&
-		    glob_charset_parse(pattern, 1, &w)) {
-			if (glob_charset_match(*(unsigned char *)name,
-			    pattern + 1, w - 1)) {
-				pattern += w;
-				continue;
-			}
-			return (0);
-		}
-		if (*pattern == '\\' &&
-		    pattern[1] != '\0' && pattern[1] != '/') {
-			if (*name == pattern[1]) {
-				pattern++;
-				continue;
-			}
-		}
-		if (*name != *pattern)
-			return (0);
-	}
-	return (1);
-}
-
-int
-glob_prefix_length_to_asterisk(char *pattern, int pattern_length,
-	char **asterisk)
-{
-	int i, length = 0;
-
-	for (i = 0; i < pattern_length; length++, i++) {
-		if (pattern[i] == '\\') {
-			if (i + 1 < pattern_length  &&
-			    pattern[i + 1] != '/')
-				i++;
-		} else if (pattern[i] == '*') {
-			*asterisk = &pattern[i];
-			return (length);
-		} else if (pattern[i] == '[') {
-			glob_charset_parse(pattern, i + 1, &i);
-		}
-	}
-	*asterisk = &pattern[i];
-	return (length);
-}
-
-int
-glob_name_match(char *name, char *pattern, int pattern_length)
-{
-	char *asterisk;
-	int residual = strlen(name);
-	int sublen = glob_prefix_length_to_asterisk(pattern, pattern_length,
-	    &asterisk);
-
-	if (residual < sublen || !glob_name_submatch(name, pattern, sublen))
-		return (0);
-	if (*asterisk == '\0')
-		return (residual == sublen);
-	for (;;) {
-		name += sublen; residual -= sublen;
-		pattern_length -= asterisk + 1 - pattern;
-		pattern = asterisk + 1;
-		sublen = glob_prefix_length_to_asterisk(pattern,
-		    pattern_length, &asterisk);
-		if (*asterisk == '\0')
-			break;
-		for (;; name++, --residual){
-			if (residual < sublen)
-				return (0);
-			if (glob_name_submatch(name, pattern, sublen))
-				break;
-		}
-	}
-	return (residual >= sublen &&
-	    glob_name_submatch(name + residual - sublen, pattern, sublen));
-}
-
-char *
-strdup_gfarm_prefix(char *s)
-{
-	char *p = malloc(strlen(s) + GFARM_ARRAY_LENGTH(gfarm_prefix));
-
-	if (p == NULL)
-		return (NULL);
-	memcpy(p, gfarm_prefix, GFARM_ARRAY_LENGTH(gfarm_prefix) - 1);
-	strcpy(p + GFARM_ARRAY_LENGTH(gfarm_prefix) - 1, s);
-	return (p);
-}
-
-char GFARM_ERR_PATHNAME_TOO_LONG[] = "pathname too long";
-
-#define GLOB_PATH_BUFFER_SIZE	(PATH_MAX * 2)
-
-char *
-gfs_glob_sub(char *path_buffer, char *path_tail, char *pattern,
-	gfarm_stringlist *paths, gfarm_dtypelist *types)
-{
-	char *s, *e, *e_save = NULL;
-	int i, nomagic, dirpos = -1;
-	GFS_Dir dir;
-	struct gfs_dirent *entry;
-	struct gfs_stat st;
-
-	for (i = 0; pattern[i] != '\0'; i++) {
-		if (pattern[i] == '\\') {
-			if (pattern[i + 1] != '\0' &&
-			    pattern[i + 1] != '/')
-				i++;
-		} else if (pattern[i] == '/') {
-			dirpos = i;
-		} else if (pattern[i] == '?' || pattern[i] == '*') {
-			break;
-		} else if (pattern[i] == '[') {
-			if (glob_charset_parse(pattern, i + 1, NULL))
-				break;
-		}
-	}
-	if (pattern[i] == '\0') { /* no magic */
-		if (path_tail - path_buffer + strlen(pattern) >
-		    GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
-		glob_pattern_to_name(path_tail, pattern, strlen(pattern));
-		e = gfs_stat_fake(path_buffer, &st);
-		if (e != NULL)
-			return (e);
-		s = strdup_gfarm_prefix(path_buffer);
-		if (s == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		gfarm_stringlist_add(paths, s);
-		if (GFARM_S_ISDIR(st.st_mode))
-			gfarm_dtypelist_add(types, GFS_DT_DIR);
-		else
-			gfarm_dtypelist_add(types, GFS_DT_REG);
-		return (NULL);
-	}
-	nomagic = i;
-	if (dirpos >= 0) {
-		int dirlen = dirpos == 0 ? 1 : dirpos;
-
-		if (path_tail - path_buffer + dirlen > GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
-		glob_pattern_to_name(path_tail, pattern, dirlen);
-		path_tail += strlen(path_tail);
-	}
-	dirpos++;
-	for (i = nomagic; pattern[i] != '\0'; i++) {
-		if (pattern[i] == '\\') {
-			if (pattern[i + 1] != '\0' &&
-			    pattern[i + 1] != '/')
-				i++;
-		} else if (pattern[i] == '/') {
-			break;
-		} else if (pattern[i] == '?' || pattern[i] == '*') {
-		} else if (pattern[i] == '[') {
-			glob_charset_parse(pattern, i + 1, &i);
-		}
-	}
-	e = gfs_opendir(path_buffer, &dir);
-	if (e != NULL)
-		return (e);
-	if (path_tail > path_buffer && path_tail[-1] != '/') {
-		if (path_tail - path_buffer + 1 > GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
-		*path_tail++ = '/';
-	}
-	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
-		if (!glob_name_match(entry->d_name, &pattern[dirpos],
-		    i - dirpos))
-			continue;
-		if (path_tail - path_buffer + strlen(entry->d_name) >
-		    GLOB_PATH_BUFFER_SIZE) {
-			if (e_save == NULL)
-				e_save = GFARM_ERR_PATHNAME_TOO_LONG;
-			continue;
-		}
-		strcpy(path_tail, entry->d_name);
-		if (pattern[i] == '\0') {
-			s = strdup_gfarm_prefix(path_buffer);
-			if (s == NULL)
-				return (GFARM_ERR_NO_MEMORY);
-			gfarm_stringlist_add(paths, s);
-			gfarm_dtypelist_add(types, entry->d_type);
-			continue;
-		}
-		e = gfs_glob_sub(path_buffer, path_tail + strlen(path_tail),
-		    pattern + i, paths, types);
-		if (e_save == NULL)
-			e_save = e;
-	}
-	gfs_closedir(dir);
-	return (e_save);
-}
-
-char *
-gfs_glob(char *pattern,	gfarm_stringlist *paths, gfarm_dtypelist *types)
-{
-	char *s, *p = NULL, *e = NULL;
-	int len, n = gfarm_stringlist_length(paths);
-	char path_buffer[GLOB_PATH_BUFFER_SIZE + 1];
-
-	skip_gfarm_prefix(&pattern);
-	if (*pattern == '~') {
-		if (pattern[1] == '\0' || pattern[1] == '/') {
-			s = gfarm_get_global_username();
-			len = strlen(s);
-			pattern++;
-		} else {
-			s = pattern + 1;
-			len = strcspn(s, "/");
-			pattern += 1 + len;
-		}
-		p = malloc(1 + len + strlen(pattern));
-		if (p == NULL) {
-			e = GFARM_ERR_PATHNAME_TOO_LONG;
-		} else {
-			p[0] = '/';
-			memcpy(p + 1, s, len);
-			strcpy(p + 1 + len, pattern);
-			pattern = p;
-		}
-	} else {
-		strcpy(path_buffer, ".");
-	}
-	if (e == NULL) {
-		e = gfs_glob_sub(path_buffer, path_buffer, pattern,
-		    paths, types);
-	}
-	if (gfarm_stringlist_length(paths) <= n) {
-		gfarm_stringlist_add(paths, strdup_gfarm_prefix(pattern));
-		gfarm_dtypelist_add(types, GFS_DT_UNKNOWN);
-	}
-	if (p != NULL)
-		free(p);
-	return (e);
-}
-
 void
 usage(void)
 {
@@ -1210,7 +498,7 @@ main(int argc, char **argv)
 {
 	char *e;
 	gfarm_stringlist paths;
-	gfarm_dtypelist types;
+	gfarm_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
 	extern char *optarg;
 
@@ -1259,21 +547,19 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	remember_dirtree();
-
 	e = gfarm_stringlist_init(&paths);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
-	e = gfarm_dtypelist_init(&types);
+	e = gfarm_glob_init(&types);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
 		gfarm_stringlist_add(&paths, "gfarm:.");
-		gfarm_dtypelist_add(&types, GFS_DT_DIR);
+		gfarm_glob_add(&types, GFS_DT_DIR);
 	} else {
 		for (i = 0; i < argc; i++) {
 			int last;
@@ -1281,8 +567,8 @@ main(int argc, char **argv)
 			/* do not treat glob error as an error */
 			gfs_glob(argv[i], &paths, &types);
 
-			last = gfarm_dtypelist_length(&types) - 1;
-			if (last >= 0 && gfarm_dtypelist_elem(&types, last) ==
+			last = gfarm_glob_length(&types) - 1;
+			if (last >= 0 && gfarm_glob_elem(&types, last) ==
 			    GFS_DT_UNKNOWN) {
 				/*
 				 * this only happens if argv[i] doesn't
@@ -1294,7 +580,7 @@ main(int argc, char **argv)
 				char *path = gfarm_stringlist_elem(&paths,
 				    last);
 
-				e = gfs_stat_fake(path, &s);
+				e = gfs_stat(path, &s);
 				if (e != NULL) {
 					fprintf(stderr, "%s: %s\n", path, e);
 					exit_code = EXIT_FAILURE;
@@ -1304,7 +590,7 @@ main(int argc, char **argv)
 					paths.length--;
 					types.length--;
 				} else {
-					GFARM_DTYPELIST_ELEM(types, last) =
+					GFARM_GLOB_ELEM(types, last) =
 					    GFARM_S_ISDIR(s.st_mode) ?
 					    GFS_DT_DIR : GFS_DT_REG;
 					gfs_stat_free(&s);
