@@ -636,10 +636,12 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 	if (e != NULL)
 		goto finish_gfarm_file;
 
-	e = gfarm_hosts_schedule_expand_cyclic(nsrchosts, &edsthosts,
-		ndsthosts, dsthosts);
-	if (e != NULL)
+	edsthosts = malloc(sizeof(*edsthosts) * nsrchosts);
+	if (edsthosts == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
 		goto finish_srchosts;
+	}
+	gfarm_strings_expand_cyclic(ndsthosts, dsthosts, nsrchosts, edsthosts);
 
 	pids = malloc(sizeof(int) * nsrchosts);
 	if (pids == NULL) {

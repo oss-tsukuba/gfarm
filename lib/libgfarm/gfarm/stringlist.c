@@ -9,6 +9,8 @@
 #define GFARM_STRINGLIST_INITIAL	50
 #define GFARM_STRINGLIST_DELTA		50
 
+/* gfarm_stringlist: variable size string array */
+
 char *
 gfarm_stringlist_init(gfarm_stringlist *listp)
 {
@@ -103,6 +105,29 @@ gfarm_stringlist_cat(gfarm_stringlist *listp, char **v)
 	    gfarm_strarray_length(v), v));
 }
 
+/* gfarm_fixedstrings: fixed length array of dynamically allocated strings */
+
+char *
+gfarm_fixedstrings_dup(int n, char **dst, char **src)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		dst[i] = strdup(src[i]);
+		if (dst[i] == NULL) {
+			while (--i >= 0) {
+				free(dst[i]);
+				dst[i] = NULL;
+			}
+			return (GFARM_ERR_NO_MEMORY);
+		}
+	}
+	return (NULL);
+}
+
+
+/* gfarm_strings: dynamically allocated string array and array contents */
+
 char **
 gfarm_strings_alloc_from_stringlist(gfarm_stringlist *listp)
 {
@@ -114,6 +139,20 @@ gfarm_strings_alloc_from_stringlist(gfarm_stringlist *listp)
 	memcpy(t, listp->array, sizeof(char *) * n);
 	return (t);
 }
+
+void
+gfarm_strings_free_deeply(int n, char **strings)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		if (strings[i] != NULL)
+			free(strings[i]);
+	}
+	free(strings);
+}
+
+/* gfarm_array: NULL terminated gfarm_strings */
 
 int
 gfarm_strarray_length(char **array)
@@ -128,21 +167,14 @@ gfarm_strarray_length(char **array)
 char **
 gfarm_strarray_dup(char **array)
 {
-	int i, n = gfarm_strarray_length(array);
+	int n = gfarm_strarray_length(array);
 	char **v = malloc(sizeof(char *) * (n + 1));
 
 	if (v == NULL)
 		return (v);
-	for (i = 0; i < n; i++) {
-		v[i] = strdup(array[i]);
-		if (v[i] == NULL) {
-			for (--i; i >= 0; --i)
-				free(v[i]);
-			free(v);
-			return (NULL);
-		}
-	}
-	v[i] = NULL;
+	if (gfarm_fixedstrings_dup(n, v, array) != NULL)
+		return (NULL);
+	v[n] = NULL;
 	return (v);
 }
 
@@ -154,16 +186,4 @@ gfarm_strarray_free(char **array)
 	for (i = 0; array[i] != NULL; i++)
 		free(array[i]);
 	free(array);
-}
-
-void
-gfarm_strings_free_deeply(int n, char **strings)
-{
-	int i;
-
-	for (i = 0; i < n; i++) {
-		if (strings[i] != NULL)
-			free(strings[i]);
-	}
-	free(strings);
 }
