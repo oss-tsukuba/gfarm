@@ -13,7 +13,6 @@ gfarm_url_section_replicate_from_to \- 各フラグメントのレプリカを作成する
 .BI "gfarm_url_section_replicate_from_to(char *" gfarm_url ,
 .in +.5i
 .BI "char *" section ,
-.BI "gfarm_mode_t" mode ,
 .BI "char *" srchost ,
 .br
 .BI "char *" dsthost );
@@ -39,13 +38,6 @@ gfarm_url_section_replicate_from_to \- 各フラグメントのレプリカを作成する
 指定した
 .I srchost
 レプリカが存在しなかった場合にはエラーになります。
-
-ファイル
-.I gfarm_url
-のモードを、引数
-.I mode
-で指定する必要があります。
-なお、この引数は、将来のバージョンで削除される予定です。
 
 .SH "RETURN VALUES"
 

@@ -13,7 +13,6 @@ gfarm_url_section_replicate_to \- 各フラグメントのレプリカを作成する
 .BI "gfarm_url_section_replicate_to(char *" gfarm_url ,
 .in +.5i
 .BI "char *" section ,
-.BI "gfarm_mode_t " mode ,
 .br
 .BI "char *" dsthost );
 .in
@@ -32,13 +31,6 @@ gfarm_url_section_replicate_to \- 各フラグメントのレプリカを作成する
 .I section
 で指定する必要があることに注意してください。また、またこの文字列は、
 余分な空白や、先行 0 を含んではいけません。
-
-ファイル
-.I gfarm_url
-のモードを、引数
-.I mode
-で指定する必要があります。
-なお、この引数は、将来のバージョンで削除される予定です。
 
 .SH "RETURN VALUES"
 
