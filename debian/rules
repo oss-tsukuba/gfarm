@@ -17,6 +17,14 @@ export DH_OPTIONS
 
 export CC=gcc
 
+GFARM_CLIENT_PKG = gfarm-client
+GFARM_DOC_PKG = gfarm-doc
+GFARM_PKG = gfarm
+GFARMD_PKG = gfarmd
+GFMD_PKG = gfmd
+GFSD_PKG=gfsd
+LIBGFARM_DEV_PKG = libgfarm-dev
+
 GFARM_MAN1=gfgrep.1 gfhost.1 gfls.1
 GFMD_MAN8=gfmd.8
 GFARM_CLIENT_MAN1=digest.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfwhere.1
@@ -123,27 +131,27 @@ binary-arch: build install
 
 	# manpages for gfarm package
 	for man in $(GFARM_MAN1); do \
-	  dh_installman -pgfarm man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFARM_PKG) man/ja/man1/$$man man/man1/$$man; \
 	done
 
 	# manpages for gfmd package
 	for man in $(GFMD_MAN8); do \
-	  dh_installman -pgfmd man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFMD_PKG) man/ja/man8/$$man man/man8/$$man; \
 	done
 
 	# manpages for gfarm-client package
 	for man in $(GFARM_CLIENT_MAN1); do \
-	  dh_installman -pgfarm-client man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFARM_CLIENT_PKG) man/ja/man1/$$man man/man1/$$man; \
 	done
 
 	# manpages for gfsd
 	for man in $(GFSD_MAN8); do \
-	  dh_installman -pgfsd man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFSD_PKG) man/ja/man8/$$man man/man8/$$man; \
 	done
 
-	# manpages for libgfarm-dev
+#	manpages for libgfarm-dev
 	for man in $(LIBGFARM_DEV_MAN3); do \
-	  dh_installman -plibgfarm-dev man/ja/man3/$$man man/man3/$$man; \
+	  dh_installman -p$(LIBGFARM_DEV_PKG) man/ja/man3/$$man man/man3/$$man; \
 	done
 
 #	dh_installinfo
