@@ -151,7 +151,7 @@ validate_architecture(char *architecture)
 
 	while ((c = *s++) != '\0') {
 		if (!isalnum(c) && c != '-' && c != '_' && c != '.')
-			return (s - 1);
+			return ((char *)s - 1);
 	}
 	return (NULL);
 }
@@ -163,7 +163,7 @@ validate_hostname(char *hostname)
 
 	while ((c = *s++) != '\0') {
 		if (!isalnum(c) && c != '-' && c != '.')
-			return (s - 1);
+			return ((char *)s - 1);
 	}
 	return (NULL);
 }
