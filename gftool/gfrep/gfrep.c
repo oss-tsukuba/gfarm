@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 #include <gfarm/gfarm.h>
 
 #include "gfs_client.h"
@@ -333,7 +334,7 @@ replication_job_list_execute(struct replication_job_list *list)
 
 	if (replication_pair_results(&transfers))
 		error_happend = 1;
-		
+
 	return (error_happend);
 }
 
@@ -567,6 +568,317 @@ get_default_section(char *file, char *dest)
 	}
 }
 
+static void
+traverse_file_tree(char *(*file_processor)(char *, char *, void *),
+		   void *closure)
+{
+	char *e;
+	char cwdbf[PATH_MAX * 2];
+	int i;
+	GFS_Dir dir;
+	struct gfs_dirent *entry;
+	gfarm_stringlist entry_list;
+
+	e = gfs_getcwd(cwdbf, sizeof(cwdbf));
+	if (e != NULL) {
+		fprintf(stderr, "%s\n", e);
+		return;
+	}
+	e = gfs_opendir(".", &dir);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		return;
+	}
+	e = gfarm_stringlist_init(&entry_list);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		return;
+	}
+	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		char *p;
+
+		if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' ||
+		    (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
+			continue; /* "." or ".." */
+		p = strdup(entry->d_name);
+		if (p == NULL) {
+			fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+			exit (1);
+		}
+		e = gfarm_stringlist_add(&entry_list, p);
+		if (e != NULL) {
+			fprintf(stderr, "%s/%s: %s\n",
+					cwdbf, entry->d_name, e);
+		}
+	}
+	if (e != NULL)
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+	gfs_closedir(dir);
+	for (i = 0; i < gfarm_stringlist_length(&entry_list); i++) {
+		struct gfs_stat gs;
+		char *path = gfarm_stringlist_elem(&entry_list, i);
+
+		e = gfs_stat(path, &gs);
+		if (e != NULL) {
+			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+			continue;
+		}
+		if (GFARM_S_ISREG(gs.st_mode)) {
+			e = (*file_processor)(cwdbf, path, closure);
+			if (e != NULL) {
+				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+				continue;
+			}
+		} else if (GFARM_S_ISDIR(gs.st_mode)) {
+			e = gfs_chdir(path);
+			if (e != NULL) {
+				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+				continue;
+			}
+			traverse_file_tree(file_processor, closure);
+			e = gfs_chdir("..");
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n", cwdbf, e);
+				exit (1);
+			}
+		}
+		gfs_stat_free(&gs);
+	}
+	gfarm_stringlist_free_deeply(&entry_list);
+}
+
+struct replicate_to_hosts_closure {
+	int nhosts;
+	char **hosttab;
+};
+
+static char *
+replicate_to_hosts_callback(char *cwd, char *path, void *closure) {
+	struct replicate_to_hosts_closure *c = closure;
+	char *e, *url;
+
+	url = gfarm_url_prefix_add(path);
+	if (url == NULL) {
+		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		exit (1);
+	}
+	e = gfarm_url_fragments_replicate(url, c->nhosts, c->hosttab);
+	free(url);
+	return (e);
+}
+
+static char *
+replicate_files_to_hosts(char *path, int nhosts, char **hosttab)
+{
+	char *e;
+	struct gfs_stat gs;
+	char cwdbuf[PATH_MAX * 2];
+	struct replicate_to_hosts_closure c;
+
+	e = gfs_stat(path, &gs);
+	if (e != NULL)
+		return (e);
+
+	if (GFARM_S_ISREG(gs.st_mode)) {
+		e = gfarm_url_fragments_replicate(path, nhosts, hosttab);
+	} else if (GFARM_S_ISDIR(gs.st_mode)) {
+		e = gfs_getcwd(cwdbuf, sizeof(cwdbuf));
+		if (e != NULL)
+			goto free_gs;
+		e = gfs_chdir(path);
+		if (e != NULL)
+			goto free_gs;
+		c.nhosts = nhosts;
+		c.hosttab = hosttab;
+		traverse_file_tree(replicate_to_hosts_callback, &c);
+		e = gfs_chdir_canonical(cwdbuf);
+	}
+free_gs:
+	gfs_stat_free(&gs);
+	return (e);
+}
+
+static char *
+collect_file_paths_callback(char *cwd, char *path, void *closure)
+{
+	gfarm_stringlist *path_list = closure;
+	char *p, *url;
+
+	p = malloc(strlen(cwd) + strlen(path) + 2);
+	if (p == NULL) {
+		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		exit (1);
+	}
+	sprintf(p, "%s/%s", cwd, path);
+	url = gfarm_url_prefix_add(p);
+	free(p);
+	if (url == NULL) {
+		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		exit (1);
+	}
+	return(gfarm_stringlist_add(path_list, url));
+}
+
+static char *
+get_fragment_number_in_domain(
+	char *url, char *section,
+	char *domainname,
+	int *nfragments)
+{
+	char *e, *gfarm_file;
+	int i, ncinfos;
+	struct gfarm_file_section_copy_info *cinfos;
+
+	*nfragments = 0;
+	e = gfarm_url_make_path(url, &gfarm_file);
+	if (e != NULL)
+		return(e);
+	e = gfarm_file_section_copy_info_get_all_by_section(
+				 gfarm_file, section, &ncinfos, &cinfos);
+	if (e != NULL)
+		return(e);
+	for (i = 0; i < ncinfos; i++)
+		if (gfarm_host_is_in_domain(cinfos[i].hostname, domainname))
+			(*nfragments)++;
+	free(gfarm_file);
+	return(NULL);
+}
+
+static char *
+replicate_files_to_domain(char *path, char *domainname)
+{
+	char *e;
+	struct gfs_stat gs;
+	char cwdbuf[PATH_MAX * 2];
+	int i, j, k;
+
+	e = gfs_stat(path, &gs);
+	if (e != NULL)
+		return (e);
+
+	if (GFARM_S_ISREG(gs.st_mode)) {
+		e = gfarm_url_fragments_replicate_to_domainname(path,
+								domainname);
+	} else if (GFARM_S_ISDIR(gs.st_mode)) {
+		gfarm_stringlist path_list;
+		int *nfragments, nhosts;
+		char **hosts = NULL;
+		struct gfarm_file_section_info **sinfos;
+
+		e = gfs_getcwd(cwdbuf, sizeof(cwdbuf));
+		if (e != NULL)
+			goto free_gs;
+		e = gfs_chdir(path);
+		if (e != NULL)
+			goto free_gs;
+		e = gfarm_stringlist_init(&path_list);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", path, e);
+			exit(1);
+		}
+		traverse_file_tree(collect_file_paths_callback, &path_list);
+		nfragments = malloc(sizeof(*nfragments) *
+				gfarm_stringlist_length(&path_list));
+		if (nfragments == NULL) {
+			fprintf(stderr, "%s: %s\n", path, GFARM_ERR_NO_MEMORY);
+			exit(1);
+		}
+		sinfos = malloc(sizeof(*sinfos) *
+				gfarm_stringlist_length(&path_list));
+		if (sinfos == NULL) {
+			fprintf(stderr, "%s: %s\n", path, GFARM_ERR_NO_MEMORY);
+			exit(1);
+		}
+		nhosts = 0;
+		for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
+			char *e, *url, *gfarm_file;
+
+			url = gfarm_stringlist_elem(&path_list, i);
+			e = gfarm_url_make_path(url, &gfarm_file);
+			if (e != NULL) {
+				fprintf(stderr,
+				"%s: %s: %s\n",	program_name, url, e);
+				continue;
+			}
+			e = gfarm_file_section_info_get_all_by_file(
+				gfarm_file,
+				&nfragments[i], &sinfos[i]);
+			free(gfarm_file);
+			if (e != NULL) {
+				fprintf(stderr,
+				"%s: %s: %s\n",	program_name, url, e);
+				continue;
+			}
+			nhosts += nfragments[i];
+		}
+		hosts = malloc(sizeof(*hosts) * nhosts);
+		if (hosts == NULL) {
+			fprintf(stderr, "%s: %s\n", program_name,
+			    GFARM_ERR_NO_MEMORY);
+			exit(1);
+		}
+		e = gfarm_schedule_search_idle_by_domainname(domainname,
+			nhosts, hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name,
+			    GFARM_ERR_NO_MEMORY);
+			exit(1);
+		}
+		k = 0;
+		for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
+			char *file_path;
+			int n, ncinfos, min_fragments = 1;
+			struct gfarm_file_section_copy_info *cinfos;
+
+			file_path = gfarm_stringlist_elem(&path_list, i);
+			for (j = 0; j < nfragments[i]; j++) {
+				e = get_fragment_number_in_domain(
+					file_path, sinfos[i][j].section,
+					domainname, &n);
+				if (e != NULL) {
+					fprintf(stderr,
+			"%s: get_fragment_number_in_domain %s: %s: %s\n",
+						program_name,
+						file_path,
+						sinfos[i][j].section,
+						e);
+					continue;
+				}
+				if (n >= min_fragments) /* already exist */
+					continue;
+				e = gfarm_url_section_replicate_to(
+					file_path, sinfos[i][j].section,
+					hosts[k]);
+				if (e != NULL) {
+					fprintf(stderr,
+			"%s: gfarm_url_section_replicate_to %s: %s: %s\n",
+						program_name,
+						file_path,
+						sinfos[i][j].section,
+						e);
+					continue;
+				}
+			}
+			/*
+			 * for defence in case of another process deletes
+			 * host information
+			 */
+			k = (k + 1) % nhosts;
+
+			gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
+		}
+		gfarm_strings_free_deeply(nhosts, hosts);
+		for (i = 0; i < gfarm_stringlist_length(&path_list); i++)
+			gfarm_file_section_info_free_all(nfragments[i],
+							 sinfos[i]);
+		free(nfragments);
+		gfarm_stringlist_free_deeply(&path_list);
+		e = gfs_chdir_canonical(cwdbuf);
+	}
+free_gs:
+	gfs_stat_free(&gs);
+	return (e);
+}
 
 void
 usage()
@@ -691,7 +1003,7 @@ main(argc, argv)
 	}
 	for (i = 0; i < argc; i++)
 		gfs_glob(argv[i], &paths, &types);
-		
+
 	if (hostfile != NULL) {
 		char **hosttab;
 		int nhosts, error_line;
@@ -710,8 +1022,7 @@ main(argc, argv)
 		}
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			file = gfarm_stringlist_elem(&paths, i);
-			e = gfarm_url_fragments_replicate(file,
-			    nhosts, hosttab);
+			e = replicate_files_to_hosts(file, nhosts, hosttab);
 			if (e != NULL) {
 				fprintf(stderr, "%s: %s: %s\n",
 				    program_name, file, e);
@@ -722,8 +1033,7 @@ main(argc, argv)
 		/* replicate a whole file */
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			file = gfarm_stringlist_elem(&paths, i);
-			e= gfarm_url_fragments_replicate_to_domainname(
-			    file, domainname);
+			e = replicate_files_to_domain(file, domainname);
 			if (e != NULL) {
 				fprintf(stderr, "%s: %s: %s\n",
 				    program_name, file, e);
@@ -790,7 +1100,7 @@ main(argc, argv)
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
 	}
-	gfs_glob_free(&types);		
+	gfs_glob_free(&types);
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
