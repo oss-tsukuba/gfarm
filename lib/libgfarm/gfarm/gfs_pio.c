@@ -757,13 +757,12 @@ char *
 gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 {
 	char *e = gfs_pio_check_view_default(gf);
-
-	if (e != NULL)
-		return (e);
-
 	char *p = s;
 	int c;
 	gfarm_timerval_t t1, t2;
+
+	if (e != NULL)
+		return (e);
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
