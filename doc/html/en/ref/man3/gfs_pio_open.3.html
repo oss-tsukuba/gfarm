@@ -113,16 +113,149 @@ CLASS="PARAMETER"
 ><I
 >gfp</I
 ></TT
->.  Currently,
-<TT
-CLASS="CONSTANT"
->GFARM_FILE_RDONLY</TT
-> is only supported for values of <TT
+>.
+Values of <TT
 CLASS="PARAMETER"
 ><I
 >flags</I
 ></TT
->.</P
+> are constructed by a
+bitwise-inclusive-OR of the following list.  Exactly one of the first
+three values should be specified:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_RDONLY</TT
+></DT
+><DD
+><P
+>Open for reading only.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_WRONLY</TT
+></DT
+><DD
+><P
+>Open for writing only.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_RDWR</TT
+></DT
+><DD
+><P
+>Open for reading and writing.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_CREATE</TT
+></DT
+><DD
+><P
+>If the file does not exist, it will be created.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_TRUNC</TT
+></DT
+><DD
+><P
+>If the file already exist and is a regular file, it will be
+truncated to length 0 if the open mode allows writing.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_APPEND</TT
+></DT
+><DD
+><P
+>The file is opened in append mode.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_EXCLUSIVE</TT
+></DT
+><DD
+><P
+>When used with <TT
+CLASS="CONSTANT"
+>GFARM_FILE_CREATE</TT
+>, if the
+file already exists the open will fail with an error.</P
+></DD
+></DL
+></DIV
+><P
+>The following may be specified as a hint for efficient execution:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_SEQUENTIAL</TT
+></DT
+><DD
+><P
+>File will be accessed sequentially.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_REPLICATION</TT
+></DT
+><DD
+><P
+>File may be replicated to a local filesystem when accessing
+remotely.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_NOT_REPLICATION</TT
+></DT
+><DD
+><P
+>File may not be replicated to a local filesystem when accessing
+remotely.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_NOT_RETRY</TT
+></DT
+><DD
+><P
+>When the selected file replica does not exist or cannot be
+accessed by some reason, open will fail without trying to access
+another file replica.</P
+></DD
+></DL
+></DIV
+><P
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_REPLICATION</TT
+> and
+<TT
+CLASS="CONSTANT"
+>GFARM_FILE_NOT_REPLICATION</TT
+> cannot be specified at
+the same time.</P
 ><P
 >When <TT
 CLASS="FUNCTION"

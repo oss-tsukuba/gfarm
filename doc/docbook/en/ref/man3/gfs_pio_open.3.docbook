@@ -37,8 +37,95 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><function>gfs_pio_open()</function> opens the Gfarm file whose name is the string
 specified by <parameter>gfarm_url</parameter>, and returns a <parameter>GFS_File</parameter> structure
-to the address pointed by <parameter>gfp</parameter>.  Currently,
-<constant>GFARM_FILE_RDONLY</constant> is only supported for values of <parameter>flags</parameter>.</para>
+to the address pointed by <parameter>gfp</parameter>.
+Values of <parameter>flags</parameter> are constructed by a
+bitwise-inclusive-OR of the following list.  Exactly one of the first
+three values should be specified:
+</para>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_FILE_RDONLY</constant></term>
+<listitem>
+<para>Open for reading only.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_WRONLY</constant></term>
+<listitem>
+<para>Open for writing only.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_RDWR</constant></term>
+<listitem>
+<para>Open for reading and writing.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_CREATE</constant></term>
+<listitem>
+<para>If the file does not exist, it will be created.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_TRUNC</constant></term>
+<listitem>
+<para>If the file already exist and is a regular file, it will be
+truncated to length 0 if the open mode allows writing.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_APPEND</constant></term>
+<listitem>
+<para>The file is opened in append mode.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_EXCLUSIVE</constant></term>
+<listitem>
+<para>When used with <constant>GFARM_FILE_CREATE</constant>, if the
+file already exists the open will fail with an error.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+The following may be specified as a hint for efficient execution:
+</para>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_FILE_SEQUENTIAL</constant></term>
+<listitem>
+<para>File will be accessed sequentially.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_REPLICATION</constant></term>
+<listitem>
+<para>File may be replicated to a local filesystem when accessing
+remotely.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_NOT_REPLICATION</constant></term>
+<listitem>
+<para>File may not be replicated to a local filesystem when accessing
+remotely.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_NOT_RETRY</constant></term>
+<listitem>
+<para>When the selected file replica does not exist or cannot be
+accessed by some reason, open will fail without trying to access
+another file replica.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+<constant>GFARM_FILE_REPLICATION</constant> and
+<constant>GFARM_FILE_NOT_REPLICATION</constant> cannot be specified at
+the same time.
+</para>
 
 <para>When <function>gfs_pio_open()</function> is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), the returned <structname>GFS_File</structname> structure of each
