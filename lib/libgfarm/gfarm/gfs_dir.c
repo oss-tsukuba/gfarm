@@ -8,7 +8,7 @@ char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
 	char *path;
-	int *len;
+	int len;
 	
 	if ((path = getenv("GFS_PWD")) != NULL)
 		path = gfarm_url_prefix_skip(path);
