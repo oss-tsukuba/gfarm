@@ -107,19 +107,14 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	char *e, *path_section;
 	struct gfs_connection *gfs_server;
 	/*
-	 * - We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
-	 *   level access (at least for now) to avoid the effect of
-	 *   remaining junk files.
-	 *   It's already handled anyway at the metadata level.
-	 * - GFARM_FILE_CREATE is needed for the case that its location
-	 *   is changed, when GFARM_FILE_TRUNC is specified or new fragment
-	 *   is added.
+	 * We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
+	 * level access (at least for now) to avoid the effect of
+	 * remaining junk files.
+	 * It's already handled anyway at the metadata level.
 	 *
 	 * NOTE: Same thing must be done in gfs_pio_local.c.
 	 */
-	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE) |
-	    ((gf->mode & GFS_FILE_MODE_SECTION_CREATED) != 0 ?
-	     GFARM_FILE_CREATE : 0);
+	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE);
 	int fd;
 	struct sockaddr peer_addr;
 

@@ -38,7 +38,7 @@ gfs_pio_view_section_close(GFS_File gf)
 		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
 		    ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 		     (gf->error != GFS_FILE_ERROR_EOF) &&
-		     (gf->mode & GFS_FILE_MODE_SECTION_CREATED) != 0)) {
+		     (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) != 0)) {
 			/* we have to read rest of the file in this case */
 #if 0
 			char message[] = "gfarm: writing without truncation"
@@ -71,8 +71,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			filesize = gf->offset + gf->length;
 		}
 	} else {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		    (gf->mode & GFS_FILE_MODE_SECTION_CREATED) == 0) {
+		if ((gf->mode & GFS_FILE_MODE_UPDATE_METADATA) == 0) {
 			/*
 			 * random-access and read-only case,
 			 * we don't confirm checksum for this case,
@@ -106,33 +105,31 @@ gfs_pio_view_section_close(GFS_File gf)
 			sprintf(&md_value_string[i + i], "%02x",
 				md_value[i]);
 
-		if (gf->mode & GFS_FILE_MODE_SECTION_CREATED) {
+		if (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) {
 			fi.filesize = filesize;
 			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi.checksum = md_value_string;
 				
 			e = gfarm_file_section_info_set(
 				gf->pi.pathname, vc->section, &fi);
-			if (e == NULL || e == GFARM_ERR_ALREADY_EXISTS) {
+			if (e == GFARM_ERR_ALREADY_EXISTS)
+				e = gfarm_file_section_info_replace(
+				    gf->pi.pathname, vc->section, &fi);
+			if (e == NULL) {
 				fci.hostname = vc->canonical_hostname;
 				e = gfarm_file_section_copy_info_set(
 				    gf->pi.pathname, vc->section,
 				    fci.hostname, &fci);
+				if (e == GFARM_ERR_ALREADY_EXISTS)
+					e = NULL;
 			}
-		} else if (gf->mode & GFS_FILE_MODE_WRITE) {
-			fi.filesize = filesize;
-			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi.checksum = md_value_string;
-				
-			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi);
 		} else {
 			e = gfarm_file_section_info_get(
-				gf->pi.pathname, vc->section, &fi);
+			    gf->pi.pathname, vc->section, &fi);
 			if (filesize != fi.filesize)
 				e = "filesize mismatch";
 			else if (strcasecmp(fi.checksum_type,
-				       GFS_DEFAULT_DIGEST_NAME) != 0 ||
+			    GFS_DEFAULT_DIGEST_NAME) != 0 ||
 			    strcasecmp(fi.checksum, md_value_string) != 0)
 				e = "checksum mismatch";
 		}
@@ -148,7 +145,7 @@ gfs_pio_view_section_close(GFS_File gf)
 	free(vc->section);
 	free(vc);
 	gf->view_context = NULL;
-	gf->mode &= ~GFS_FILE_MODE_SECTION_CREATED;
+	gf->mode &= ~GFS_FILE_MODE_UPDATE_METADATA;
 	gfs_pio_set_view_default(gf);
 	return (e_save);
 }
@@ -408,6 +405,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		goto profile_finish;
 	}
 
+	/* determine vc->canonical_hostname, GFS_FILE_MODE_UPDATE_METADATA */
  retry:
 	if (if_hostname != NULL) {
 		e = gfarm_host_get_canonical_name(if_hostname,
@@ -429,18 +427,20 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if (e != NULL)
 			goto finish;
 		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		   (gf->open_flags & GFARM_FILE_TRUNC) ||
-		   !gfarm_file_section_info_does_exist(
-			gf->pi.pathname, vc->section)) {
-			gf->mode |= GFS_FILE_MODE_SECTION_CREATED;
+		    (gf->open_flags & GFARM_FILE_TRUNC) ||
+		    ((gf->open_flags & GFARM_FILE_CREATE) &&
+		     !gfarm_file_section_info_does_exist(
+			gf->pi.pathname, vc->section))) {
+			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 		} else if (!gfarm_file_section_copy_info_does_exist(
 		    gf->pi.pathname, vc->section, vc->canonical_hostname)) {
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 			goto free_host;
-		}
+		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
 		   (gf->open_flags & GFARM_FILE_TRUNC) ||
-		   ((gf->mode & GFS_FILE_MODE_WRITE) &&
+		   ((gf->open_flags & GFARM_FILE_CREATE) &&
 		    !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
 		if (gfarm_is_active_file_system_node &&
@@ -460,7 +460,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 				goto finish;
 			vc->canonical_hostname = if_hostname;
 		}
-		gf->mode |= GFS_FILE_MODE_SECTION_CREATED;
+		gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else {
 		e = gfarm_file_section_host_schedule_with_priority_to_local(
 		    gf->pi.pathname, vc->section, &if_hostname);
@@ -468,9 +468,12 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto finish;
 		vc->canonical_hostname = if_hostname; /* must be already
 							 canonical */
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	}
+
 	is_local_host = gfarm_canonical_hostname_is_local(
-					vc->canonical_hostname);
+	    vc->canonical_hostname);
 
 	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
 		struct gfarm_path_info pi;
@@ -578,10 +581,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		goto retry;
 	}
 
-	if (gf->open_flags & GFARM_FILE_APPEND) {
-		file_offset_t result;
-		e = gfs_pio_seek(gf, 0, SEEK_END, &result);
-	}
+	if (e == NULL && (gf->open_flags & GFARM_FILE_APPEND))
+		e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
 
 free_host:
 	if (e != NULL)
