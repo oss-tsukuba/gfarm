@@ -70,6 +70,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
                                         }
                                 );
                                 free(url);
+				if (sec != NULL)
+					free(sec);
                                 return (filedes);
 			}
 		}
@@ -79,18 +81,20 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) ": %s\n", e));
 		errno = gfarm_error_to_errno(e);
+		if (sec != NULL)
+			free(sec);
 		return (-1);
 	}
 
 	if (sec != NULL || _gfs_hook_default_view == index_view) {
 		if (sec != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_section(%s, %s)\n", url, sec));
+				"GFS: set_view_section(%s, %s)\n", path, sec));
 			e = gfs_pio_set_view_section(gf, sec, NULL, 0);
 			free(sec);
 		} else {
 			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_index(%s, %d, %d)\n", url,
+				"GFS: set_view_index(%s, %d, %d)\n", path,
 				_gfs_hook_num_fragments, _gfs_hook_index));
 			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
 				_gfs_hook_index, NULL, 0);
@@ -114,7 +118,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		    (gfs_pio_get_node_size(&np) == NULL && nf == np)) {
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: set_view_local(%s (%d, %d))\n",
-					url, gfarm_node, gfarm_nnode));
+					path, gfarm_node, gfarm_nnode));
 			if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
 				_gfs_hook_debug(fprintf(stderr,
 					"GFS: set_view_local: %s\n", e));
@@ -188,6 +192,8 @@ FUNC___CREAT(const char *path, mode_t mode)
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: " S(FUNC___CREAT) ": %s\n", e));
 		errno = gfarm_error_to_errno(e);
+		if (sec != NULL)
+			free(sec);
 		return (-1);
 	}
 
