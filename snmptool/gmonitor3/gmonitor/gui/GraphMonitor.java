@@ -80,7 +80,7 @@ public class GraphMonitor extends JPanel implements ComponentListener {
 	private String[] unitLabelY;
 
 	/**
-	 * グリッドの縦線の横方向のオフセット(スクロール用) // TODO 要再考: ここにあるべきではないような気がする
+	 * グリッドの縦線の横方向のオフセット(スクロール用)
 	 */
 	private int offsetX;
 

@@ -103,7 +103,7 @@ public class DataFile implements Comparable {
 	protected DataFile(String url) throws IOException{
 		this.url = url;
 		SeekableFile f = SeekableFileFactory.create(url);
-//		file = new CachedSeekableFile(f); // TODO: CachedSeekableFile ‚ª‚¨‚©‚µ‚¢
+//		file = new CachedSeekableFile(f); // TODO: CachedSeekableFile
 file = f;
 		initialize();
 	}

@@ -1151,7 +1151,6 @@ System.out.println(path);
 			int ret = dialogFileOpen.showOpenDialog(appFrame);
 			if(ret == JFileChooser.APPROVE_OPTION){
 				// rebuild data-time space because files are specified.
-				// TODO このとき、GUI の開始時刻フィールド値も更新する。時間幅フィールドを参考に、最新n秒がでるように。
 				File[] files = dialogFileOpen.getSelectedFiles();
 				selectedDir = files[0].getParentFile();
 				String[] filenames = new String[files.length];
@@ -1537,7 +1536,7 @@ e.printStackTrace();
 	{
 		for(int i = 0; i < rda.length; i++){
 			RawDataElement[] rde = rda[i].getData();
-			endTime[i] = rde[rde.length - 1].getTime(); // TODO 有効な最後のデータを参照すること
+			endTime[i] = rde[rde.length - 1].getTime();
 		}
 		return;
 	}

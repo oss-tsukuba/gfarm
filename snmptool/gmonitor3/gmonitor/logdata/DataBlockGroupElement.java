@@ -5,7 +5,7 @@
  * Window>Preferences>Java>Code Generation>Code and Comments
  */
 package gmonitor.logdata;
-//TODO: このクラス、immutableにできるんじゃないか。DataBlockGroupTableとあわせて改造。
+//TODO: Is this changed into immutable? (and DataBlockGroupTable)
 /**
  * @author hkondo
  *
