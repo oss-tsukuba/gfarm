@@ -10,6 +10,8 @@
 
 #include "gssapi.h"
 
+#include "gfutil.h"
+
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "tcputil.h"
