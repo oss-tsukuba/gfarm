@@ -275,6 +275,8 @@ access(const char *path, int type)
  * XXX - just print out the information.
  */
 
+#if 0 /* XXX - Linux causes a segfault while loading a shared library.
+	       Should we call old_map() instead of syscall(SYS_mmap)??? */
 void *
 __mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
@@ -310,6 +312,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 	_gfs_hook_debug_v(fputs("Hooking mmap\n", stderr));
 	return (__mmap(addr, len, prot, flags, fildes, off));
 }
+#endif
 
 /*
  * dup2
