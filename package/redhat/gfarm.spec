@@ -13,6 +13,7 @@
 %define rc_prefix	/etc/rc.d/init.d
 %define etc_prefix	/etc
 %define ldap_etc_prefix	%{etc_prefix}/gfarm-ldap
+%define profile_etc_prefix %{etc_prefix}/profile.d
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
@@ -155,6 +156,9 @@ mkdir -p ${RPM_BUILD_ROOT}%{etc_prefix}
 cp -p doc/conf/gfarm.conf ${RPM_BUILD_ROOT}%{etc_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
 cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
+mkdir -p ${RPM_BUILD_ROOT}%{profile_etc_prefix}
+cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_etc_prefix}
+chmod +x ${RPM_BUILD_ROOT}%{profile_etc_prefix}/*
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -556,6 +560,8 @@ fi
 # %{prefix}/bin/pdiff
 %{prefix}/bin/pdist
 %{prefix}/bin/prun
+%{profile_etc_prefix}/gfarm.sh
+%{profile_etc_prefix}/gfarm.csh
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
