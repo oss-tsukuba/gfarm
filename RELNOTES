@@ -15,7 +15,7 @@ Updated Features
  * Fault Tolerance Improvement
 
    Inconsistency between a metadata and the corresponding physical
-   file in a local spool are automatically fixed during on-demand
+   file in a local spool is automatically fixed during on-demand
    replication.
 
  * Servers (gfsd and gfmd)
@@ -45,7 +45,8 @@ Updated Features
 
    (INSTALL) Updated the description.
 
-   (Gfarm-FAQ) Added limitations in Gfarm file system.
+   (Gfarm-FAQ) Added limitations and frequent errors in Gfarm file
+	       system.
 
 Release note for Gfarm 1.0
 ==========================
