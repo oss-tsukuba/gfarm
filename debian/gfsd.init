@@ -41,11 +41,9 @@ case "$1" in
 	#	just the same as "restart".
 	#
 	echo -n "Restarting $DESC: "
-#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON
         # to avoid post-installation script abort on non-zero return value.
-	echo `killall $NAME`&>/dev/null 
-	sleep 1
-	start-stop-daemon --start --quiet --exec $DAEMON
+	$0 stop
+	$0 start
 	echo "$NAME."
 	;;
   *)
