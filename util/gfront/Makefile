@@ -15,7 +15,7 @@ all:
 install:
 	@for i in / $(SCRIPTS); do \
 		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
+		( set -x; $(INSTALL_SCRIPT) $${i} $(bindir)/$${i} ); \
 	done
 	@for i in / $(JAR); do \
 		case $$i in /) continue;; esac; \
