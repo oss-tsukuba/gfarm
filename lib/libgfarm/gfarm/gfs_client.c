@@ -196,7 +196,7 @@ gfs_client_connection(const char *canonical_hostname,
  * resolve hostname. (to check host_alias for "address_use" directive.)
  */
 char *
-gfs_client_connect(char *canonical_hostname, struct sockaddr *peer_addr,
+gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 	struct gfs_connection **gfs_serverp)
 {
 	struct gfs_connection *gfs_server =
@@ -299,7 +299,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 
 char *
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
-	char *canonical_hostname, struct sockaddr *peer_addr,
+	const char *canonical_hostname, struct sockaddr *peer_addr,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_connect_state **statepp)
 {

@@ -18,10 +18,10 @@ enum gfarm_auth_method gfs_client_connection_auth_method(
 const char *gfs_client_hostname(struct gfs_connection *);
 char *gfs_client_connection(const char *, struct sockaddr *,
 	struct gfs_connection **);
-char *gfs_client_connect(char *, struct sockaddr *,
+char *gfs_client_connect(const char *, struct sockaddr *,
 	struct gfs_connection **);
 char *gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
-	char *, struct sockaddr *,
+	const char *, struct sockaddr *,
 	void (*)(void *), void *,
 	struct gfs_client_connect_state **);
 char *gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *,
