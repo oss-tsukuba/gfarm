@@ -140,6 +140,14 @@ static void
 gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
 {
 	/*
+	 * We won't use O_EXCL for actual storage level access
+	 * (at least for now) to avoid the effect of remaining junk files.
+	 * Rather we handle the flag at metadata level.
+	 * Also, the flag is a NOP with gfs_pio_open().
+	 */
+	flags &= ~GFARM_FILE_EXCLUSIVE;
+
+	/*
 	 * It may be necessary to calculate checksum of the
 	 * whole file when closing on either random access case
 	 * or even sequential access without truncation,
@@ -227,6 +235,10 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	}
 	if (e == NULL) {
 		free(pathname);
+		if ((flags & GFARM_FILE_EXCLUSIVE) != 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			goto free_gf_pi;
+		}
 		e = gfs_pio_open_check_perm(gf);
 		if (e != NULL)
 			goto free_gf_pi;

@@ -83,6 +83,8 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 		gfs_flags |= GFARM_FILE_TRUNC;
 	if ((open_flags & O_APPEND) != 0)
 		gfs_flags |= GFARM_FILE_APPEND;
+	if ((open_flags & O_EXCL) != 0)
+		gfs_flags |= GFARM_FILE_EXCLUSIVE;
 	return (gfs_flags);
 }
 

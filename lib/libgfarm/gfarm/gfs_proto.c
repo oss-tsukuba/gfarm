@@ -198,6 +198,8 @@ gfs_open_flags_localize(int open_flags)
 		local_flags |= O_TRUNC;
 	if ((open_flags & GFARM_FILE_APPEND) != 0)
 		local_flags |= O_APPEND;
+	if ((open_flags & GFARM_FILE_EXCLUSIVE) != 0)
+		local_flags |= O_EXCL;
 	return (local_flags);
 }
 
