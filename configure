@@ -2383,6 +2383,7 @@ ac_given_INSTALL="$INSTALL"
 trap 'rm -fr `echo "Makefile makes/config.mk
 	lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
 	${ns_makefiles}
+	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
 	util/gfront/gfront
@@ -2527,6 +2528,7 @@ cat >> $CONFIG_STATUS <<EOF
 CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk
 	lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
 	${ns_makefiles}
+	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
 	util/gfront/gfront
