@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <libgen.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <gfarm/gfarm.h>
@@ -10,6 +12,8 @@
  *  Register a local file to Gfarm filesystem
  *
  *  gfreg <local_filename> <gfarm_url>
+ *
+ *  $Id$
  */
 
 char *program_name = "gfreg";
@@ -42,32 +46,27 @@ gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
 	struct stat s;
 	char buffer[GFS_FILE_BUFSIZE];
 
-	if (stat(filename, &s) == -1) {
-		perror(filename);
+	if (stat(filename, &s) == -1)
 		return "no such file or directory";
-	}
 
 	/*
 	 * register the fragment
 	 */
 	fd = open(filename, O_RDONLY);
-	if (fd == -1) {
-		perror(filename);
+	if (fd == -1)
 		return "cannot open";
-	}
+
 	/* XXX - overwrite case */
 	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY,
-	    s.st_mode & GFARM_S_ALLPERM, &gf);
+		s.st_mode & GFARM_S_ALLPERM, &gf);
 	if (e != NULL) {
 		close(fd);
-		fprintf(stderr, "%s\n", e);
 		return e;
 	}
 	e = gfs_pio_set_view_index(gf, nfrags, index, hostname, 0);
 	if (e != NULL) {
 		gfs_pio_close(gf);
 		close(fd);
-		fprintf(stderr, "%s\n", e);
 		return e;
 	}
 	for (;;) {
@@ -82,26 +81,24 @@ gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
 	e_save = e;
 	e = gfs_pio_close(gf);
 	close(fd);
-	if (e_save != NULL) {
-		fprintf(stderr, "%s\n", e_save);
+
+	if (e_save != NULL)
 		return e_save;
-	}
-	if (e != NULL) {
-		fprintf(stderr, "%s\n", e);
-		return e;
-	}
+
 	return e;
 }
 
 int
 main(int argc, char *argv[])
 {
-    char *filename, *gfarm_url;
+    char *filename, *gfarm_url, *target_url;
     char *node_index = NULL, *hostname = NULL, *e;
     int total_nodes = -1;
     struct stat s;
+    struct gfs_stat gs;
     extern char *optarg;
     extern int optind;
+    static const char gfarm_prefix[] = "gfarm:";
     int c;
 
     e = gfarm_initialize(&argc, &argv);
@@ -156,22 +153,42 @@ main(int argc, char *argv[])
 
     if (stat(filename, &s) == -1) {
 	perror(filename);
-	usage();
+	exit(1);
+    }
+    if (!S_ISREG(s.st_mode)) {
+	    fprintf(stderr, "%s: not a regular file\n", filename);
+	    exit(1);
     }
 
-    /* check only "gfarm:" */
-    if( strcmp(gfarm_url, "gfarm:") == 0 ) {
-      static char tmp_url[1024];
-      char *s = NULL;
+    e = gfs_stat(gfarm_url, &gs);
+    if (e == NULL && GFARM_S_ISDIR(gs.st_mode)
+#if 1 /* XXX - Currently, GFARM_S_ISDIR cannot work correctly... */
+	|| (e == GFARM_ERR_NO_SUCH_OBJECT
+	    && (strcmp(gfarm_url, gfarm_prefix) == 0
+		|| gfarm_url[strlen(gfarm_url) - 1] == '/'))
+#endif
+	) {
+	/* gfarm_url is a directory */
+	char *bname = basename(filename);
 
-      tmp_url[0] = tmp_url[1020] = '\0';
-      strncpy( tmp_url, gfarm_url, 1020 );
-      s = strrchr( filename, '/' );  /* in case of "gfreg hoge_dir/foo_dir/bar.bin gfarm:" */
-      if( s != NULL )
-	strcat( tmp_url, s+1 );
-      else
-	strcat( tmp_url, filename );
-      gfarm_url = tmp_url;
+	target_url = malloc(strlen(gfarm_url) + strlen(bname) + 2);
+	if (target_url == NULL)
+	    fputs("not enough memory", stderr), exit(1);
+
+	strcpy(target_url, gfarm_url);
+	if (strcmp(target_url, gfarm_prefix) != 0
+	    && target_url[strlen(target_url) - 1] != '/')
+	    strcat(target_url, "/");
+	strcat(target_url, bname);
+    }
+    else if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+	fprintf(stderr, "%s: %s\n", gfarm_url, e);
+	exit(1);
+    }
+    else {
+	target_url = strdup(gfarm_url);
+	if (target_url == NULL)
+	    fputs("not enough memory", stderr), exit(1);
     }
 
     if (S_ISREG(s.st_mode) && (s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) {
@@ -197,7 +214,7 @@ main(int argc, char *argv[])
 		total_nodes = 1;
 	}
 
-	e = gfarm_url_program_register(gfarm_url, node_index,
+	e = gfarm_url_program_register(target_url, node_index,
 				       filename, total_nodes);
     } else {
 	int index;
@@ -222,13 +239,15 @@ main(int argc, char *argv[])
 	    }
 	}
 
-	e = gfarm_url_fragment_register(gfarm_url, index, hostname,
+	e = gfarm_url_fragment_register(target_url, index, hostname,
 					total_nodes, filename);
     }
     if (e != NULL) {
-	fprintf(stderr, "%s: %s\n", gfarm_url, e);
+	fprintf(stderr, "%s: %s\n", target_url, e);
 	exit(1);
     }
+
+    free(target_url);
 
     e = gfarm_terminate();
     if (e != NULL) {
