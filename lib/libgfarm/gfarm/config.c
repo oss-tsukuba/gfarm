@@ -322,6 +322,7 @@ gfarm_set_global_user_for_this_local_account(void)
  * If you would like to provide default value other than NULL, set the
  * value at the end of gfarm_config_read().
  */
+static const char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 char *gfarm_spool_root = NULL;
 static char *gfarm_spool_server_portname = NULL;
 
@@ -345,7 +346,7 @@ gfarm_config_clear(void)
 		 * In case of the default spool root, do not free the
 		 * memory space becase it is statically allocated.
 		 */
-		if (gfarm_spool_root != GFARM_SPOOL_ROOT)
+		if (gfarm_spool_root != gfarm_spool_root_default)
 			free(gfarm_spool_root);
 		gfarm_spool_root = NULL;
 	}
@@ -879,7 +880,7 @@ gfarm_config_set_default_spool_on_client(void)
 		}
 		if (gfarm_spool_root == NULL)
 			/* XXX - this case is not recommended. */
-			gfarm_spool_root = GFARM_SPOOL_ROOT;
+			gfarm_spool_root = gfarm_spool_root_default;
 	}
 }
 
@@ -888,7 +889,7 @@ gfarm_config_set_default_spool_on_server(void)
 {
 	if (gfarm_spool_root == NULL) {
 		/* XXX - this case is not recommended. */
-		gfarm_spool_root = GFARM_SPOOL_ROOT;
+		gfarm_spool_root = gfarm_spool_root_default;
 	}
 }
 
