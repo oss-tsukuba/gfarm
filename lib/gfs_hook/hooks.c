@@ -317,6 +317,46 @@ dup2(int oldfd, int newfd)
 }
 
 /*
+ * execve
+ */
+
+int
+__execve(const char *filename, char *const argv [], char *const envp[])
+{
+	char *url, *sec, *e;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __execve(%s)\n", filename));
+
+	if (!gfs_hook_is_url(filename, &url, &sec))
+		return syscall(SYS_execve, filename, argv, envp);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __execve(%s)\n", url));
+	e = gfs_execve(url, argv, envp);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+	_gfs_hook_debug(fprintf(stderr, "GFS: __execve: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_execve(const char *filename, char *const argv [], char *const envp[])
+{
+	_gfs_hook_debug_v(fputs("Hooking _execve\n", stderr));
+	return (__execve(filename, argv, envp));
+}
+
+int
+execve(const char *filename, char *const argv [], char *const envp[])
+{
+	_gfs_hook_debug_v(fputs("Hooking execve\n", stderr));
+	return (__execve(filename, argv, envp));
+}
+
+/*
  * definitions for "hooks_common.c"
  */
 
