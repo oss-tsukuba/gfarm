@@ -6,13 +6,17 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-CFLAGS = $(COMMON_CFLAGS)
+SRCS = gfsplck.c
+OBJS = gfsplck.o
+PROGRAM = gfsplck
+CFLAGS = $(COMMON_CFLAGS) -I$(top_srcdir)/gfarmlib
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
-
-PROGRAM = thput-gfpio
-OBJS = thput-gfpio.o
 
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/gfptool.mk
+
+###
+
+$(OBJS): $(DEPGFARMINC)
