@@ -1,0 +1,53 @@
+.TH gfgrep 1 "1 May 2002"
+.SH NAME
+
+gfgrep \- 並列ファイルを grep する
+
+.SH SYNOPSIS
+
+.B gfgrep
+.B \-o
+.I 出力gfarm-URL
+.I 正規表現
+.I 入力gfarm-URL
+.br
+
+.B gfgrep
+.B \-o
+.I 出力gfarm-URL
+.B -e
+.I 正規表現
+.I 入力gfarm-URL
+
+.SH DESCRIPTION
+
+gfrun から呼び出されるアプリケーションのサンプル・プログラムです。
+
+また、並列ファイルに出力する例にもなっています。
+
+入力 gfarm-URL から正規表現を検索し、結果を 出力 gfarm-URL に出力し
+ます。
+
+ソースを見ると分かる通り、gfrun から呼び出されるアプリケーションは、
+\-I および \-N オプションを解釈し、ここから得た値で
+gfs_pio_set_local() を呼び出す必要があります。
+
+.SH OPTIONS
+
+.TP
+.B \-e
+.I 正規表現
+.br
+「\-」で始まる正規表現を指定したい場合に用います。
+.TP
+.B \-o
+.I gfarm-URL
+.br
+出力 Gfarm ファイルの URL を指定します。
+.TP
+.B \-?
+.br
+引数オプションを表示します。
+
+
+

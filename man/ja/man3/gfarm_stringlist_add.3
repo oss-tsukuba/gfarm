@@ -1,0 +1,48 @@
+.TH gfarm_stringlist_add 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_stringlist_add \- stringlist に文字列を追加する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_stringlist_add(gfarm_stringlist *" listp ,
+.in +.5i
+.BI "char *" s );
+.in
+
+.SH DESCRIPTION
+
+.I listp
+の表す文字列配列の末尾に、文字列
+.I s
+を追加します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR GFARM_STRINGLIST_ELEM (3),
+.BR GFARM_STRINGLIST_STRARRAY (3) ,
+.BR gfarm_stringlist_cat (3),
+.BR gfarm_stringlist_elem (3),
+.BR gfarm_stringlist_free (3),
+.BR gfarm_stringlist_free_deeply (3),
+.BR gfarm_stringlist_init (3),
+.BR gfarm_stringlist_length (3)

@@ -1,0 +1,41 @@
+.TH gfs_pio_putc 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_putc \- 一文字書き込み
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_putc(GFS_File " gf ,
+.BI "int " c );
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+に 1バイト (1文字) の値
+.I c
+を書き込みます。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3)

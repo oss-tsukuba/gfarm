@@ -1,0 +1,58 @@
+.TH gfs_pio_getline 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_getline \- 一行読み込み
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_getline(GFS_File "gf ,
+.BI "char *" s ,
+.BI "size_t " size ,
+.in +.5i
+.BI "int *" eofp );
+.in
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+から、文字列
+.I s
+に、一行読み込みます。
+引数
+.I size
+に文字配列
+.I s
+の大きさを指定します。行が
+.I size
+を越えた場合と、一行の長さがちょうど
+.I size
+\- 1 だった場合を区別することはできません。
+.SM EOF
+の場合には
+.I eofp
+の指す先に 1 を返し、さもなくば 0 を返します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3)

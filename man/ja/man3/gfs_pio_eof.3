@@ -1,0 +1,35 @@
+.TH gfs_pio_eof 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_eof \- ファイル末尾判別
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B int
+.br
+.BI "gfs_pio_eof(GFS_File " gf );
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+の読み込み処理が、ファイル末尾に達したか否かを示します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB 0
+.br
+まだ末尾に達していません。
+.TP
+その他
+.br
+ファイルの末尾に達したことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_error (3),
+.BR gfs_pio_open (3)

@@ -1,0 +1,41 @@
+.TH gfs_pio_getc 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_getc \- 一文字読み込み
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B int
+.br
+.BI "gfs_pio_getc(GFS_File " gf );
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+から一文字読み込みます。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB EOF
+.br
+ファイルの末尾に達した場合、あるいはエラーが生じた場合、<stdio.h> で
+定義されている定数 EOF を返します。
+ファイル末尾なのか、エラーなのかは、関数 gfs_pio_error(3) で知る
+ことができます。
+.TP
+その他
+.br
+ファイルから読み込んだ文字を返します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_eof (3),
+.BR gfs_pio_error (3),
+.BR gfs_pio_open (3),
+.BR gfs_pio_ungetc (3)
+

@@ -1,0 +1,51 @@
+.TH gfarm_url_hosts_schedule 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_url_hosts_schedule \- gfarm タスクをスケジュールする
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_url_hosts_schedule(char *" gfarm_url ,
+.BI "char *" option ,
+.in +.5i
+.BI "int *" nhostsp ,
+.BI "char ***" hostsp );
+.in
+
+.SH DESCRIPTION
+
+指定した Gfarm URL をアクセスするタスクを実行するのに適した
+ホストの配列を
+.I hostsp
+の指す先に返します。ホスト数は
+.I nhostsp
+の指す先に返ります。
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH NOTES
+
+引数 
+.I option
+には、スケジューリングに関するオプションを指定しますが、
+現在の実装では、この引数は利用されていません。

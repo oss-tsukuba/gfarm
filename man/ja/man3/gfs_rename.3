@@ -1,0 +1,69 @@
+.TH gfs_rename 3 "1 May 2002"
+
+.SH NAME
+
+gfs_rename \- 改名
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_rename(char *" gfarm_url_from ,
+.BI "char *" gfarm_url_to );
+
+.SH DESCRIPTION
+
+ファイル
+.I gfarm_url_from
+を
+.I gfarm_url_to
+に改名します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_AUTHENTICATION
+.br
+gfmd(8) に対するユーザー認証が失敗しました。
+.TP
+.SB GFARM_ERR_PERMISSION_DENIED
+.br
+親ディレクトリへ書き込みアクセスする権限がありません。
+.TP
+.SB GFARM_ERR_ALREADY_EXISTS
+パス
+.I gfarm_url_to
+が既に存在します。
+.TP
+.SB GFARM_ERR_INVALID_ARGUMENT
+.br
+パス
+.I gfarm_url_to
+が、ディレクトリ
+.I gfarm_url_from
+の内部にあります。
+.TP
+.SB GFARM_ERR_NO_SUCH_OBJECT
+.br
+指定されたパス
+.I gfarm_url_from
+が存在しません。
+.\" .TP
+.\" .SB GFARM_ERR_READ_ONLY_FILE_SYSTEM
+.\" .br
+.\" リードオンリー export サポート時には、これが必要になる。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+

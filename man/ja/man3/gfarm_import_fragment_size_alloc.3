@@ -1,0 +1,52 @@
+.TH gfarm_import_fragment_size_alloc 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_import_fragment_size_alloc \- フラグメントサイズの配列を割り当てる
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "file_offset_t *"
+.br
+.BI "gfarm_import_fragment_size_alloc(file_offset_t " total_size , 
+.in +.5i
+.BI "int " n );
+.in
+
+.SH DESCRIPTION
+
+Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。
+
+インポート処理には、ファイルを、どれくらいのサイズのフラグメントに
+分割するかという情報が必要です。元ファイルのサイズを引数
+.I total_size
+に、フラグメント数を引数
+.I n
+に与えると、この関数は結果として、各フラグメントの分割サイズの目安を、
+要素数
+.I n
+の配列として返します。
+
+この関数と gfarm_hostlist_read(3) 関数の結果を組み合わせることによって、
+gfarm_import_fragment_config_read(3) 関数が返すフラグメント分割情報
+と同じ形式の情報を得ることができます。
+
+この関数で得た配列は free(3) を用いて解放する必要があります。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+処理に成功した場合、
+file_offset_t 型の配列の先頭要素へのポインタを返します。
+
+.SH "SEE ALSO"
+.BR gfarm_hostlist_read (3),
+.BR gfarm_import_fragment_config_read (3)

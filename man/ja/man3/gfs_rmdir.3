@@ -1,0 +1,61 @@
+.TH gfs_rmdir 3 "1 May 2002"
+
+.SH NAME
+
+gfs_rmdir \- ディレクトリ削除
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_rmdir(char *" gfarm_url );
+
+.SH DESCRIPTION
+
+引数
+.I gfarm_url
+に指定した名前のディレクトリを削除します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_AUTHENTICATION
+.br
+gfmd(8) に対するユーザー認証が失敗しました。
+.TP
+.SB GFARM_ERR_PERMISSION_DENIED
+.br
+.I gfarm_url
+の親ディレクトリへ書き込みアクセスする権限がありません。
+.TP
+.SB GFARM_ERR_DIRECTORY_NOT_EMPTY
+指定されたディレクトリが、空ではありません。
+.TP
+.SB GFARM_ERR_NO_SUCH_OBJECT
+.br
+指定されたファイルが存在しません。
+.TP
+.SB GFARM_ERR_NOT_A_DIRECTORY
+.br
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
+.\" .TP
+.\" .SB GFARM_ERR_READ_ONLY_FILE_SYSTEM
+.\" .br
+.\" リードオンリー export サポート時には、これが必要になる。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+

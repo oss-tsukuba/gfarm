@@ -1,0 +1,20 @@
+.TH gfs_stat_free 3 "1 May 2002"
+
+.SH NAME
+
+gfs_stat_free \- ファイル属性情報解放
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "void"
+.br
+.BI "gfs_stat_free(struct gfs_stat *" status );
+
+.SH DESCRIPTION
+
+gfs_stat(3) で取得した属性情報の保持するメモリを解放します。
+
+.SH "SEE ALSO"
+.BR gfs_stat (3)

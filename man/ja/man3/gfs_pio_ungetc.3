@@ -1,0 +1,43 @@
+.TH gfs_pio_ungetc 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_ungetc \- 読み込んだ文字を戻す
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "int"
+.br
+.BI "gfs_pio_ungetc(GFS_File " gf ,
+.BI "int " c );
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+から読み込んだ文字
+.I c
+を、読み込まなかったことにします。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB EOF
+.br
+gfs_pio_ungetc() は、関数 gfs_pio_getc(3) の呼びだしの直後にしか
+呼ぶことができません。この制約に反した場合、
+.SM EOF
+をエラーとして返します。
+.TP
+その他
+.br
+正常に処理が完了したことを示します。
+
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_error (3),
+.BR gfs_pio_getc (3),
+.BR gfs_pio_open (3)

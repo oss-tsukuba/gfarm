@@ -1,0 +1,62 @@
+.TH gfs_stat 3 "1 May 2002"
+
+.SH NAME
+
+gfs_stat \- ファイル属性取得
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_stat(char *" gfarm_url ,
+.BI "struct gfs_stat *" status );
+
+.SH DESCRIPTION
+
+引数
+.I gfarm_url
+のファイル属性を
+.I status
+の指す先に取得します。
+
+.I status
+には、動的に確保されたメモリへのポインタが含まれるので、
+この後、gfs_stat_free(3) を使ってそのメモリを解放する必要が
+あります。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_AUTHENTICATION
+.br
+gfmd(8) に対するユーザー認証が失敗しました。
+.TP
+.SB GFARM_ERR_PERMISSION_DENIED
+.br
+指定されたパスへアクセスする権限が、ありません。
+.TP
+.SB GFARM_ERR_NO_SUCH_OBJECT
+.br
+指定されたパス名が存在しません。
+.TP
+.SB GFARM_ERR_NOT_A_DIRECTORY
+.br
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_stat_free (3)

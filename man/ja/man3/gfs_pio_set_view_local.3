@@ -1,0 +1,77 @@
+.TH gfs_pio_set_view_local 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_set_view_local
+\- 並列プロセスに対応した fragment 単位のアクセスを行う
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_set_view_index(GFS_File " gf ,
+.BI "int " flags );
+
+.SH DESCRIPTION
+
+ファイルをフラグメント単位でアクセスすることを指定します。
+
+アクセスするフラグメントは、Gfarm並列プロセスのノード番号に対応した
+ものになります。すなわち、関数 gfs_pio_set_local(3) の
+.I node
+引数に指定したフラグメントです。
+
+フラグメントの総数は、Gfarm並列プロセスのノードの総数、すなわち 
+gfs_pio_set_local(3) の
+.I nnode
+引数と同一になります。
+もし、既存のファイルを開くときに、フラグメントの総数とノードの総数が
+異なった場合には、この関数はエラーとなります。
+
+引数
+.I fragment_index
+には、 アクセスするフラグメントの番号を指定します。 
+
+引数
+.I flag
+には、
+.SM GFARM_FILE_SEQUENTIAL 、
+.SM GFARM_FILE_REPLICATE 、
+.SM GFARM_FILE_NOT_REPLICATE
+の論理和が指定できます。
+値の意味は gfs_pio_set_view_index(3) の解説を参照ください。
+
+この関数を呼ばない状態では、Gfarmファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_OPERATION_NOT_PERMITTED
+.br
+指定したパス名が、フラグメント化ファイルではありません。
+.TP
+.SB GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH
+.br
+ノード数と、フラグメント総数が、適合しません。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3),
+.BR gfs_pio_set_local (3),
+.BR gfs_pio_set_view_index (3)

@@ -1,0 +1,37 @@
+.TH gfarm_stringlist_free 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_stringlist_free, gfarm_stringlist_free_deeply  \- stringlist を解放する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B void
+.br
+.BI "gfarm_stringlist_free(gfarm_stringlist *" listp );
+.LP
+.B void
+.br
+.BI "gfarm_stringlist_free_deeply(gfarm_stringlist *" listp );
+
+.SH DESCRIPTION
+
+動的に確保したメモリを解放します。
+
+関数 gfarm_stringlist_free() は、変数
+.I listp
+が表す文字列配列の要素である各文字列については解放しません。
+
+これに対し、関数 gfarm_stringlist_free_deeply() は、文字列配列の要素で
+ある各文字列も解放します。
+
+.SH "SEE ALSO"
+.BR GFARM_STRINGLIST_ELEM (3),
+.BR GFARM_STRINGLIST_STRARRAY (3) ,
+.BR gfarm_stringlist_add (3),
+.BR gfarm_stringlist_cat (3),
+.BR gfarm_stringlist_elem (3),
+.BR gfarm_stringlist_init (3),
+.BR gfarm_stringlist_length (3)

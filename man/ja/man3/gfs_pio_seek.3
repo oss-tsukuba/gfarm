@@ -1,0 +1,62 @@
+.TH gfs_pio_seek 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_seek \- 指定した位置にシークする
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.BI "gfs_pio_seek(GFS_File " gf ,
+.BI "file_offset_t " offset ,
+.in +.5i
+.BI "int " whence ,
+.BI "file_offset_t *" result );
+.in
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+を、
+.I whence
+と
+.I offset
+で指定した位置にシークします。
+引数
+.I offset
+は、
+.I whence
+が
+0 の場合にはファイル先頭から、
+1 の場合には現在のシーク位置から、
+2 の場合にはファイル末尾からのオフセットです。
+
+引数
+.I result
+が
+.SM NULL
+でない場合には、移動後の位置を
+.I result
+の指す先に返します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3)

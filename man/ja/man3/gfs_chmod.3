@@ -1,0 +1,68 @@
+.TH gfs_chmod 3 "1 May 2002"
+
+.SH NAME
+
+gfs_chmod \- モード変更
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_chmod(char *" gfarm_url ,
+.BI "mode_t " mode );
+
+.SH DESCRIPTION
+
+引数
+.I gfarm_url
+に指定した名前のファイル・ディレクトリのモードを、
+.I mode
+に変更します。なお、実行属性のあるファイルから、実行属性を
+すべて落すことはできません。少なくとも一つの実行ビットは残しておく
+必要があります。また、実行属性の全くないファイルに対して、実行属性を
+立てることはできません。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_AUTHENTICATION
+.br
+gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。
+.TP
+.SB GFARM_ERR_PERMISSION_DENIED
+.br
+指定したパス名の親ディレクトリへのアクセスする権限がありません。
+.TP
+.SB GFARM_ERR_OPERATION_NOT_PERMITTED
+.br
+プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
+でもありません。
+.TP
+.SB GFARM_ERR_NO_SUCH_OBJECT
+.br
+指定されたパス名が存在しません。
+.TP
+.SB GFARM_ERR_NOT_A_DIRECTORY
+.br
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
+.\" .TP
+.\" .SB GFARM_ERR_READ_ONLY_FILE_SYSTEM
+.\" .br
+.\" リードオンリー export サポート時には、これが必要になる。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+

@@ -1,0 +1,37 @@
+.TH gfs_pio_set_local 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_set_local \- 計算プール上のプログラムの初期化
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_set_local(int " node ,
+.BI "int " nnode );
+
+.SH DESCRIPTION
+
+計算プール上で動作する並列プロセスは、その処理の最初に、
+そのノードのノード番号を
+.I node
+に、並列プロセスを構成する総ノード数を
+.I nnode
+に与えて、この関数を呼び出します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_set_view_index (3)

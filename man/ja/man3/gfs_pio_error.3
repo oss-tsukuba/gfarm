@@ -1,0 +1,35 @@
+.TH gfs_pio_error 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_error \- エラー状況
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_error(GFS_File " gf );
+
+.SH DESCRIPTION
+
+ファイル
+.I gf
+のエラー状況を示します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+特にエラーは、生じていません。
+.TP
+その他
+.br
+エラーが生じています。エラーを示す文字列へのポインタを返します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_eof (3),
+.BR gfs_pio_open (3),

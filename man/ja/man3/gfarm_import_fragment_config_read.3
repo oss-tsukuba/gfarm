@@ -1,0 +1,63 @@
+.TH gfarm_import_fragment_config_read 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_import_fragment_config_read \- フラグメント構成ファイルを読み込む
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_import_fragment_config_read(char *" config ,
+.in +.5i
+.BI "int *" np ,
+.br
+.BI "char ***" host_table_p ,
+.br
+.BI "file_offset_t **" size_table_p ,
+.br
+.BI "int *" error_line_p );
+.in
+
+.SH DESCRIPTION
+
+Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。
+
+import の構成ファイル名を
+.I config
+に指定すると、そのファイルから、
+ホストの配列を
+.I host_table_p
+の指す先に、また、サイズの配列を
+.I size_table_p
+の指す先に返します。構成ファイルに構文エラーが生じた場合には、
+.I error_line_p
+の指す先に、ファイルの行番号を返します。この値が \-1 
+の場合には、構文以外のエラー原因です。
+
+構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。
+
+ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。
+また、ここで得たサイズの配列は free() を用いて解放する必要があります。
+
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfarm_hostlist_read (3)

@@ -1,0 +1,108 @@
+.TH gfs_pio_set_view_index 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_set_view_index \- fragment 単位のアクセスを指定する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_set_view_index(GFS_File " gf ,
+.in +.5i
+.BI "int " fragment_number ,
+.BI "int "fragment_index ,
+.BI "char *" host ,
+.br
+.BI "int " flags );
+.in
+
+.SH DESCRIPTION
+
+ファイルをフラグメント単位でアクセスすることを指定します。
+
+新規作成したファイルの場合、必ず引数
+.I fragment_number
+にフラグメント
+の総数を指定する必要があります。この値は、この並列ファイルを開く全て
+のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
+ここに
+.SM GFARM_FILE_DONTCARE
+と書けば、指定を省略できます。もし
+もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。
+
+引数
+.I fragment_index
+には、 アクセスするフラグメントの番号を指定します。 
+
+引数
+.I host
+は、アクセスしたいホストを明示的に指定したい時に利用します。
+指定が不要なら
+.SM NULL
+を渡せば省略できます。
+
+引数
+.I flag
+には、
+.SM GFARM_FILE_SEQUENTIAL 、
+.SM GFARM_FILE_REPLICATE 、
+.SM GFARM_FILE_NOT_REPLICATE
+の論理和が指定できます。
+これらは、下記を意味します。
+.TP
+.SB GFARM_FILE_SEQUENTIAL
+.br
+このフラグメントに関してはシーケンシャル・アクセスのみを行なうこと
+を示します。
+.TP
+.SB GFARM_FILE_REPLICATE
+.br
+あらかじめ、ローカル・ノードにレプリカを用意してからアクセスすることを
+指定します。GFARM_FILE_NOT_REPLICATE とは排他的なオプションです。
+.TP
+.SB GFARM_FILE_NOT_REPLICATE
+.br
+既にレプリカがある場合を除き、このノードにレプリカを用意しないこと
+を指定します。GFARM_FILE_REPLICATE とは排他的なオプションです。
+
+.LP
+この関数を呼ばない状態では、Gfarm ファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_OPERATION_NOT_PERMITTED
+.br
+指定したパス名が、フラグメント化ファイルではありません。
+.TP
+.SB GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH
+.br
+指定したフラグメント総数が、不適切です。
+.TP
+.SB GFARM_ERR_INVALID_ARGUMENT
+.br
+関数引数が不適切です。たとえば、ファイルの新規作成時に、
+フラグメント総数として
+.SB GFARM_FILE_DONTCARE
+を指定すると、このエラーが生じます。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3),
+.BR gfs_pio_set_view_local (3)

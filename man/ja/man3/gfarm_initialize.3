@@ -1,0 +1,41 @@
+.TH gfarm_initialize 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_initialize \- Gfarm ライブラリを初期化する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_initialize(int *" argcp ,
+.BI "char ***" argvp );
+
+.SH DESCRIPTION
+
+Gfarm ライブラリを、Gfarm アプリケーション用に初期化します。
+引数には、プログラムの main 関数の
+.I argc 
+引数へのポインタと、
+.I argv
+引数へのポインタを渡します。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfarm_terminate (3)

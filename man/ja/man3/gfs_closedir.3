@@ -1,0 +1,34 @@
+.TH gfs_closedir 3 "1 May 2002"
+
+.SH NAME
+
+gfs_closedir \- ディレクトリをクローズする
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_closedir(GFS_Dir " dir );
+
+.SH DESCRIPTION
+
+引数
+.I dir
+で指定したディレクトリをクローズします。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_opendir (3),
+.BR gfs_readdir (3)

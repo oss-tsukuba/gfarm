@@ -1,0 +1,23 @@
+.TH gfarm_strings_free_deeply 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_strings_free_deeply \- 文字列を解放する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B void
+.br
+.BI "gfarm_strings_free_deeply(int " n ,
+.BI "char **" strings );
+
+.SH DESCRIPTION
+
+要素数 
+.I n
+の文字列配列
+.I strings
+を解放します。
+また、配列要素の各文字列も、解放します。

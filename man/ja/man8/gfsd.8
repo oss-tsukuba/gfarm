@@ -1,0 +1,49 @@
+.TH gfsd 8 "1 May 2002"
+.SH NAME
+
+gfsd(8) \- Gfarm 並列ファイルシステム・デーモン
+
+.SH SYNOPSIS
+
+.B gfsd
+[
+.I オプション
+]
+
+.SH DESCRIPTION
+
+gfsd は、Gfarm ライブラリと協調して動作し、Gfarm 並列ファイルシステ
+ムを実現するデーモンプログラムです。gfsd は計算プールの全ホスト上で、 
+root 権限であらかじめ立ち上げておく必要があります。
+
+gfsd が提供するのは、ファイル・フラグメントの実体へのアクセスです。
+
+.SH OPTIONS
+
+.TP
+.B \-d
+.br
+デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。
+.TP
+.B \-p ポート番号
+.br
+gfsd が利用する TCP および UDP のポート番号を指定します。
+省略した場合には 600 番を使用します。
+.TP
+.B \-s syslogファシリティ
+.br
+gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
+した場合には、local0 を使用します。
+.TP
+.B \-?
+.br
+引数オプションを表示します。
+
+.SH FILES
+.SB "/etc/gfarm.conf"
+
+gfsd が参照する設定ファイルです。
+
+.\" .SH SEE ALSO
+.\" .BR gfarm.conf (5)

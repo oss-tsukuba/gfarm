@@ -1,0 +1,31 @@
+.TH gfarm_terminate 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_terminate \- gfarm ライブラリに関する終了処理をする
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI gfarm_terminate(void);
+
+.SH DESCRIPTION
+
+Gfarm ライブラリについて、終了処理を行います。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfarm_initialize (3)

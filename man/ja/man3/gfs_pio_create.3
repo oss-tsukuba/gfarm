@@ -1,0 +1,109 @@
+.TH gfs_pio_create 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_create \- Gfarmファイルの作成
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_create(char *" gfarm_url ,
+.BI "int " flags ,
+.BI "mode_t " mode ,
+.in +.5i
+.BI "GFS_File *" gfp );
+.in
+
+.SH DESCRIPTION
+
+指定した
+.I gfarm_url
+に、モード
+.I mode
+でファイルを新規作成し、
+.I GFS_File
+構造体を
+.I gfp
+の指す先に返します。
+
+引数
+.I flags
+には 現時点では、常に
+.I GFS_FILE_WRONLY
+を渡すようにしてください。
+
+gfrun(3) や gfmpirun(3) で起動された並列プロセスは、引数
+.I mode
+に、一貫した値を指定しなければなりません。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+.SB GFARM_ERR_AUTHENTICATION
+.br
+gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。
+.TP
+.SB GFARM_ERR_PERMISSION_DENIED
+.br
+.I gfarm_url
+へ、
+.I flags
+で指定されたモードでアクセスする権限がないか、その親ディレクトリへの
+書き込み権限がありません。
+.\" .TP
+.\" .GB GFARM_ERR_ALREADY_EXISTS
+.\" .br
+.\" O_EXCL サポート時には、これが必要になる。
+.TP
+.SB GFARM_ERR_IS_A_DIRECTORY
+.br
+指定された
+.I gfarm_url
+は、ディレクトリです。
+.TP
+.SB GFARM_ERR_NO_SUCH_OBJECT
+.br
+指定したパス名の親ディレクトリが、実際には存在しなかったことを示します。
+.TP
+.SB GFARM_ERR_NOT_A_DIRECTORY
+.br
+指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。
+.\" .TP
+.\" .SB GFARM_ERR_READ_ONLY_FILE_SYSTEM
+.\" .br
+.\" リードオンリー export サポート時には、これが必要になる。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_pio_close (3),
+.BR gfs_pio_create (3),
+.BR gfs_pio_eof (3),
+.BR gfs_pio_error (3),
+.BR gfs_pio_flush (3),
+.BR gfs_pio_getc (3),
+.BR gfs_pio_getline (3),
+.BR gfs_pio_open (3),
+.BR gfs_pio_putc (3),
+.BR gfs_pio_putline (3),
+.BR gfs_pio_puts (3),
+.BR gfs_pio_read (3),
+.BR gfs_pio_seek (3),
+.BR gfs_pio_set_view_index (3),
+.BR gfs_pio_set_view_local (3),
+.BR gfs_pio_ungetc (3),
+.BR gfs_pio_write (3)

@@ -1,0 +1,36 @@
+.TH gfarm_stringlist_elem 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_stringlist_elem \- stringlist の要素文字を返す
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B int
+.br
+.BI "gfarm_stringlist_elem(gfarm_stringlist *" listp ,
+.BI "int " i );
+
+.SH DESCRIPTION
+
+.I listp
+の
+.I i
+番目の配列要素を返します。
+
+.SH "RETURN VALUES"
+
+文字列配列の要素です。
+
+.SH "SEE ALSO"
+.BR GFARM_STRINGLIST_ELEM (3),
+.BR GFARM_STRINGLIST_STRARRAY (3) ,
+.BR gfarm_stringlist_add (3),
+.BR gfarm_stringlist_cat (3),
+.BR gfarm_stringlist_free (3),
+.BR gfarm_stringlist_free_deeply (3),
+.BR gfarm_stringlist_init (3),
+.BR gfarm_stringlist_length (3)
+

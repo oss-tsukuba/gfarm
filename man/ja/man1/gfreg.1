@@ -1,0 +1,44 @@
+.TH gfreg 1 "1 May 2002"
+.SH NAME
+
+gfreg \- Gfarm プログラムの登録、Gfarm へのファイルの強制登録
+
+.SH SYNOPSIS
+
+.B gfreg
+[
+.B \-a
+.I architecture
+]
+.I program
+.I gfarm-URL
+.br
+
+.B gfreg
+.B \-N
+.I フラグメント数
+.B \-I
+.I フラグメント番号
+.in +0.5i
+.I localfile
+.I gfarm-URL
+.in
+
+.SH DESCRIPTION
+
+第1の形式の場合、引数 program に指定したローカルディスク上の
+プログラム・ファイルを、gfarm-URL に登録します。この時、Gfarm の計算プー
+ル上に、このプログラム・ファイルのレプリカが作られます。これ以降、
+gfrun および gfmpirun で指定するプログラム名として、この URL が
+使えるようになります。オプション \-a でプログラムの動作するアーキテク
+チャを指定しなかった場合には、gfreg コマンドを実行したホストのアーキ
+テクチャと同じであると仮定します。ただし、そのホストが Gfarm のメタ
+DB に登録されている必要があります。
+
+第2の形式の場合、localfileを強制的にgfarmのフラグメントであるとして
+登録します。オプション \-N と \-I で、総フラグメント数と、この
+localfileのフラグメント番号を必ず指定する必要があります。
+現在localfileは、gfarmスプールからの相対的なパス名ですが、これは変更
+の予定です。
+
+

@@ -1,0 +1,43 @@
+.TH gfs_readdir 3 "1 May 2002"
+
+.SH NAME
+
+gfs_readdir \- ディレクトリ内容読み込み
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_readdir(GFS_Dir " dir ,
+.BI "char **" entryp );
+
+.SH DESCRIPTION
+
+引数
+.I dir
+で指定したディレクトリから、1 つのディレクトリ・エントリ
+を読み込み、そのポインタを
+.I entryp
+の指す先に返します。
+.I entryp
+の指す領域は、次に同じ
+.I dir
+引数で gfs_readdir() ないし gfs_closedir() を呼び出した時に失われます。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfs_closedir (3),
+.BR gfs_opendir (3),
+.BR gfs_readdir (3)
