@@ -25,7 +25,7 @@ gfs_hook_initialize(void)
 	 */
 	fd = open("/dev/null", O_RDWR);
 	while (fd < 7)
-		fd = open("/dev/null", O_RDWR);
+		fd = dup(fd);
 	close(fd);
 
 	e = gfarm_initialize(NULL, NULL);
