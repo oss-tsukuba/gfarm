@@ -136,19 +136,16 @@ main(int argc, char *argv[], char *envp[])
 	/*
 	 * the followings are only needed for pid==0 case.
 	 * but isn't it better to check errors before fork(2)?
+	 *
+	 * If gfs_pio_get_node_{rank,size}() fails, continue to
+	 * execute as a single process (not parallel processes).
 	 */
 	e = gfs_pio_get_node_rank(&rank);
-	if (e != NULL) {
-		fprintf(stderr, "%s: cannot determine node rank: %s\n",
-		    progname, e);
-		exit(1);
-	}
+	if (e != NULL)
+		rank = 0;
 	e = gfs_pio_get_node_size(&nodes);
-	if (e != NULL) {
-		fprintf(stderr, "%s: cannot determine node size: %s\n",
-		    progname, e);
-		exit(1);
-	}
+	if (e != NULL)
+		nodes = 1;
 	for (envc = 0; envp[envc] != NULL; envc++)
 		;
 	new_env = malloc(sizeof(*new_env) * (envc + 4 + 1));
