@@ -2228,7 +2228,7 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 	     * Phase 1: Initiate a security context.
 	     */
 	    state->secCtxState = gfarmGssInitiateSecurityContextRequest(q,
-		fd, acceptorName, cred, reqFlag,
+		fd, acceptorName, state->cred, reqFlag,
 		secSessionInitiateWaitAuthorizationAck, state,
 		&majStat, &minStat);
 	    if (state->secCtxState != NULL) {
