@@ -75,7 +75,7 @@ worker(char *filename,
 }
 
 void
-simple_division(char *filename, int n, off_t file_size)
+simple_division(char *filename, off_t file_size, int n)
 {
 	off_t offset = 0, residual = file_size;
 	off_t size_per_division = file_size / n;
@@ -108,7 +108,7 @@ simple_division(char *filename, int n, off_t file_size)
 }
 
 void
-striping(char *filename, int n, off_t file_size, off_t interleave_factor)
+striping(char *filename, off_t file_size, int n, off_t interleave_factor)
 {
 	off_t full_stripe_size = (off_t)interleave_factor * n;
 	off_t stripe_number = file_size / full_stripe_size;
@@ -282,9 +282,9 @@ main(int argc, char **argv)
 
 	gettimeofday(&t1, NULL);
 	if (full_stripe_size == 0 && interleave_factor == 0) {
-		simple_division(filename, parallelism, file_size);
+		simple_division(filename, file_size, parallelism);
 	} else if (interleave_factor != 0) {
-		striping(filename, parallelism, file_size, interleave_factor);
+		striping(filename, file_size, parallelism, interleave_factor);
 	} else {
 		interleave_factor = full_stripe_size / parallelism;
 		if ((interleave_factor / iosize_alignment) * iosize_alignment
@@ -292,7 +292,7 @@ main(int argc, char **argv)
 			interleave_factor =
 			    ((interleave_factor / iosize_alignment) + 1) *
 			    iosize_alignment;
-		striping(filename, parallelism, file_size, interleave_factor);
+		striping(filename, file_size, parallelism, interleave_factor);
 	}
 	while (waitpid(-1, &sv, 0) != -1 || errno != ECHILD)
 		;
