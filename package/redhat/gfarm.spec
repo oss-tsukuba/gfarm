@@ -11,6 +11,7 @@
 %define man_prefix	%{_mandir}
 %define doc_prefix	/usr/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
+%define lib_gfarm_prefix %{_libdir}/gfarm
 %define rc_prefix	/etc/rc.d/init.d
 %define etc_prefix	/etc
 %define ldap_etc_prefix	%{etc_prefix}/gfarm-ldap
@@ -86,7 +87,7 @@ Summary: gfsd for gfarm
 Group: System Environment/Daemons
 
 %package server
-Summary: server for gfarm
+Summary: metadata server for gfarm
 Group: System Environment/Daemons
 
 %package devel
@@ -119,7 +120,7 @@ parallel tools installed under gfarm:/bin
 fsnode for gfarm
 
 %description server
-metadb server for gfarm
+metadata server for gfarm
 
 %description devel
 development library for gfarm
@@ -163,16 +164,18 @@ make prefix=${RPM_BUILD_ROOT}%{prefix} \
 	default_mandir=${RPM_BUILD_ROOT}%{man_prefix} \
 	example_bindir=${RPM_BUILD_ROOT}%{prefix}/bin install 
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
-cp -p package/redhat/gfmd package/redhat/gfsd package/redhat/gfarm-slapd \
+cp -p package/redhat/gfmd package/redhat/gfsd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{etc_prefix}
-cp -p doc/conf/gfarm.conf ${RPM_BUILD_ROOT}%{etc_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
 cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_etc_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_etc_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_etc_prefix}/*
+mkdir -p ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}
+cp -pr package/redhat/config ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}
+rm -f ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config/config-gfarm.in
+chmod +x ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config/config-*
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -183,10 +186,12 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %post fsnode
 /sbin/chkconfig --add gfsd
+echo copy /etc/gfarm.conf from metadata server and
+echo run /usr/lib/gfarm/config/config-gfsd '<spool_directory>'
 
 %post server
 /sbin/chkconfig --add gfmd
-/sbin/chkconfig --add gfarm-slapd
+echo run /usr/lib/gfarm/config/config-gfarm to configure Gfarm file system
 
 %preun fsnode
 if [ "$1" = 0 ]
@@ -199,9 +204,9 @@ fi
 if [ "$1" = 0 ]
 then
 	/sbin/service gfmd stop > /dev/null 2>&1 || :
-	/sbin/service gfarm-slpad stop > /dev/null 2>&1 || :
 	/sbin/chkconfig --del gfmd
-	/sbin/chkconfig --del gfarm-slapd
+	echo do not forget \'service gfarm-slapd stop\' and
+	echo \'chkconfig gfarm-slapd --del\'
 fi
 
 # Part 3  file list
@@ -273,6 +278,7 @@ fi
 %{man_prefix}/man3/gfs_pio_write.3.gz
 %{man_prefix}/man3/gfs_readdir.3.gz
 %{man_prefix}/man3/gfs_realpath.3.gz
+%{man_prefix}/man3/gfs_rename.3.gz
 %{man_prefix}/man3/gfs_rmdir.3.gz
 %{man_prefix}/man3/gfs_stat.3.gz
 %{man_prefix}/man3/gfs_stat_free.3.gz
@@ -364,6 +370,7 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
 %{man_prefix}/ja/man3/gfs_readdir.3.gz
 %{man_prefix}/ja/man3/gfs_realpath.3.gz
+%{man_prefix}/ja/man3/gfs_rename.3.gz
 %{man_prefix}/ja/man3/gfs_rmdir.3.gz
 %{man_prefix}/ja/man3/gfs_stat.3.gz
 %{man_prefix}/ja/man3/gfs_stat_free.3.gz
@@ -439,6 +446,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/en/ref/man3/gfs_readdir.3.html
 %{html_prefix}/en/ref/man3/gfs_realpath.3.html
+%{html_prefix}/en/ref/man3/gfs_rename.3.html
 %{html_prefix}/en/ref/man3/gfs_rmdir.3.html
 %{html_prefix}/en/ref/man3/gfs_stat.3.html
 %{html_prefix}/en/ref/man3/gfs_stat_free.3.html
@@ -529,6 +537,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/ja/ref/man3/gfs_readdir.3.html
 %{html_prefix}/ja/ref/man3/gfs_realpath.3.html
+%{html_prefix}/ja/ref/man3/gfs_rename.3.html
 %{html_prefix}/ja/ref/man3/gfs_rmdir.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat_free.3.html
@@ -650,15 +659,22 @@ fi
 %{prefix}/bin/thput-gfpio
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
-
-%config(noreplace) %{etc_prefix}/gfarm.conf
+%dir %{lib_gfarm_prefix}
+%dir %{lib_gfarm_prefix}/config
+%{lib_gfarm_prefix}/config/config-gfsd
 
 %files server
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
-%{rc_prefix}/gfarm-slapd
 %dir %{ldap_etc_prefix}
 %{ldap_etc_prefix}/gfarm.schema
+%dir %{lib_gfarm_prefix}
+%dir %{lib_gfarm_prefix}/config
+%{lib_gfarm_prefix}/config/config-gfarm
+%{lib_gfarm_prefix}/config/gfarm-slapd.in
+%{lib_gfarm_prefix}/config/slapd.conf-2.0.in
+%{lib_gfarm_prefix}/config/slapd.conf-2.1.in
+%{lib_gfarm_prefix}/config/gfarm.conf.in
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
