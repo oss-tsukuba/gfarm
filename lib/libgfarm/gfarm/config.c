@@ -21,6 +21,7 @@
 #include "param.h"
 #include "sockopt.h"
 #include "auth.h"
+#include "config.h"
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
@@ -47,8 +48,6 @@ gfarm_config_set_filename(char *filename)
 {
 	gfarm_config_file = filename;
 }
-
-int gfarm_authentication_verbose = 0;
 
 /*
  * GFarm username handling
@@ -328,9 +327,9 @@ gfarm_set_global_user_for_this_local_account(void)
  * These initial values should be NULL, otherwise the value incorrectly
  * free(3)ed in the get_one_argument() function below.
  * If you would like to provide default value other than NULL, set the
- * value at the end of gfarm_config_read().
+ * value at gfarm_config_set_default*().
  */
-static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
+/* GFS dependent */
 char *gfarm_spool_root = NULL;
 static char *gfarm_spool_server_portname = NULL;
 
@@ -343,6 +342,7 @@ char *gfarm_ldap_server_name = NULL;
 char *gfarm_ldap_server_port = NULL;
 char *gfarm_ldap_base_dn = NULL;
 
+static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 
@@ -727,9 +727,9 @@ parse_local_user_map(char *p, char **op)
 }
 
 static char *
-get_one_argument(char *p, char **rv)
+get_one_argument(char *p, char **sp)
 {
-	char *s, *e;
+	char *e, *s;
 
 	s = gfarm_strtoken(&p, &e);
 	if (e != NULL)
@@ -738,10 +738,23 @@ get_one_argument(char *p, char **rv)
 		return ("missing argument");
 	if (gfarm_strtoken(&p, &e) != NULL)
 		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+	if (e != NULL)
+		return (e);
+	*sp = s;
+	return (NULL);
+}
+
+static char *
+parse_set_var(char *p, char **rv)
+{
+	char *e, *s;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
 
 	if (*rv != NULL) /* first line has precedence */
 		return (NULL);
-
 	s = strdup(s);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -750,24 +763,58 @@ get_one_argument(char *p, char **rv)
 }
 
 static char *
+parse_cred_config(char *p, char *service,
+	char *(*set)(char *, char *))
+{
+	char *e, *s;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	return ((*set)(service, s));
+}
+
+static char *
 parse_one_line(char *s, char *p, char **op)
 {
 	char *e, *o;
 
 	if (strcmp(s, o = "spool") == 0) {
-		e = get_one_argument(p, &gfarm_spool_root);
+		e = parse_set_var(p, &gfarm_spool_root);
 	} else if (strcmp(s, o = "spool_serverport") == 0) {
-		e = get_one_argument(p, &gfarm_spool_server_portname);
+		e = parse_set_var(p, &gfarm_spool_server_portname);
+	} else if (strcmp(s, o = "spool_server_cred_type") == 0) {
+		e = parse_cred_config(p, GFS_SERVICE_TAG,
+		    gfarm_auth_server_cred_type_set_by_string);
+	} else if (strcmp(s, o = "spool_server_cred_service") == 0) {
+		e = parse_cred_config(p, GFS_SERVICE_TAG,
+		    gfarm_auth_server_cred_service_set);
+	} else if (strcmp(s, o = "spool_server_cred_name") == 0) {
+		e = parse_cred_config(p, GFS_SERVICE_TAG,
+		    gfarm_auth_server_cred_name_set);
+
 	} else if (strcmp(s, o = "metadb_serverhost") == 0) {
-		e = get_one_argument(p, &gfarm_metadb_server_name);
+		e = parse_set_var(p, &gfarm_metadb_server_name);
 	} else if (strcmp(s, o = "metadb_serverport") == 0) {
-		e = get_one_argument(p, &gfarm_metadb_server_portname);
+		e = parse_set_var(p, &gfarm_metadb_server_portname);
+	} else if (strcmp(s, o = "metadb_server_cred_type") == 0) {
+		e = parse_cred_config(p, GFM_SERVICE_TAG,
+		    gfarm_auth_server_cred_type_set_by_string);
+	} else if (strcmp(s, o = "metadb_server_cred_service") == 0) {
+		e = parse_cred_config(p, GFM_SERVICE_TAG,
+		    gfarm_auth_server_cred_service_set);
+	} else if (strcmp(s, o = "metadb_server_cred_name") == 0) {
+		e = parse_cred_config(p, GFM_SERVICE_TAG,
+		    gfarm_auth_server_cred_name_set);
+
 	} else if (strcmp(s, o = "ldap_serverhost") == 0) {
-		e = get_one_argument(p, &gfarm_ldap_server_name);
+		e = parse_set_var(p, &gfarm_ldap_server_name);
 	} else if (strcmp(s, o = "ldap_serverport") == 0) {
-		e = get_one_argument(p, &gfarm_ldap_server_port);
+		e = parse_set_var(p, &gfarm_ldap_server_port);
 	} else if (strcmp(s, o = "ldap_base_dn") == 0) {
-		e = get_one_argument(p, &gfarm_ldap_base_dn);
+		e = parse_set_var(p, &gfarm_ldap_base_dn);
+
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
 	} else if (strcmp(s, o = "netparam") == 0) {
@@ -1293,10 +1340,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 	 * Suppress verbose error messages.  The message will be
 	 * displayed later in gfarm_auth_request_gsi().
 	 */
-	saved_auth_verb = gfarm_authentication_verbose;
-	gfarm_authentication_verbose = 0;
+	saved_auth_verb = gflog_auth_set_verbose(0);
 	(void*)gfarm_gsi_client_initialize();
-	gfarm_authentication_verbose = saved_auth_verb;
+	gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL)
