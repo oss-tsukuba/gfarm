@@ -308,9 +308,12 @@ char *
 gfarm_auth_result_gsi_auth_multiplexed(void *sp)
 {
 	struct gfarm_auth_request_gsi_state *state = sp;
+	/* sp will be free'ed in gfarm_auth_result_gsi_multiplexed().
+	 * state->conn should be saved before calling it. */
+	struct xxx_connection *conn = state->conn;
 	char *e = gfarm_auth_result_gsi_multiplexed(sp);
 
 	if (e == NULL)
-		xxx_connection_downgrade_to_insecure_session(state->conn);
+		xxx_connection_downgrade_to_insecure_session(conn);
 	return (e);
 }
