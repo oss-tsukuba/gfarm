@@ -67,6 +67,7 @@ Group: Applications/Internet
 %package gfptool
 Summary: parallel tools installed under gfarm:/bin/
 Group: System Environment/Daemons
+Requires: %{package_name}-client
 
 %package fsnode
 Summary: gfsd for gfarm
