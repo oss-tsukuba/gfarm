@@ -1682,10 +1682,57 @@ else
   echo "$ac_t""no" 1>&6
 fi
 
+echo $ac_n "checking for basename in -lgen""... $ac_c" 1>&6
+echo "configure:1687: checking for basename in -lgen" >&5
+ac_lib_var=`echo gen'_'basename | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lgen  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 1695 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char basename();
+
+int main() {
+basename()
+; return 0; }
+EOF
+if { (eval echo configure:1706: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo gen | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lgen $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1689 "configure"
+#line 1736 "configure"
 #include "confdefs.h"
 
 #include <stdio.h>
@@ -1696,7 +1743,7 @@ int i = sys_nerr;
 
 ; return 0; }
 EOF
-if { (eval echo configure:1700: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1747: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_sys_nerr=yes
 else
@@ -1715,7 +1762,7 @@ fi
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1719 "configure"
+#line 1766 "configure"
 #include "confdefs.h"
 
 #include <sys/types.h>
@@ -1730,7 +1777,7 @@ rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1734: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1781: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_getpwnam_r=yes
 else
@@ -1749,7 +1796,7 @@ fi
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1753 "configure"
+#line 1800 "configure"
 #include "confdefs.h"
 
 #include <shadow.h>
@@ -1763,7 +1810,7 @@ rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1767: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1814: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_getspnam_r=yes
 else
@@ -1782,7 +1829,7 @@ fi
 
 
 cat > conftest.$ac_ext <<EOF
-#line 1786 "configure"
+#line 1833 "configure"
 #include "confdefs.h"
 
 #include <sys/types.h>
@@ -1797,7 +1844,7 @@ rv = bind(s, &addr, len);
 
 ; return 0; }
 EOF
-if { (eval echo configure:1801: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1848: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ax_cv_have_socklen_t=yes
 else
@@ -1812,7 +1859,7 @@ if test "$ax_cv_have_socklen_t" = no; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 1816 "configure"
+#line 1863 "configure"
 #include "confdefs.h"
 
 # include <sys/types.h>
@@ -1830,7 +1877,7 @@ else
   }
   
 EOF
-if { (eval echo configure:1834: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:1881: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ax_cv_socklen_t=int
 else
