@@ -17,12 +17,14 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 {
 	char *hostname, *e;
 	char *localpath, *url, *arch, *gfarm_file;
+	const char *path;
 	struct gfs_stat gstat;
 
 	e = gfs_realpath(filename, &url);
 	if (e != NULL) {
-		execve(filename, argv, envp);
-		return gfarm_errno_to_error(errno);
+		/* not found in Gfarm file system */
+		path = filename;
+		goto clean_up_and_exec;
 	}
 	/* check the permission */
 	e = gfs_access(url, X_OK);
@@ -119,11 +121,12 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 		free(localpath);
 		return (e);
 	}
-
+	path = localpath;
+ clean_up_and_exec:
 	/* clean up the client environment */
 	gfs_profile(gf_profile = 0); /* not to display profile statistics */
 	(void)gfarm_terminate();
 
-	execve(localpath, argv, envp);
+	execve(path, argv, envp);
 	return gfarm_errno_to_error(errno);
 }
