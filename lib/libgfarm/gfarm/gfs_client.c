@@ -1961,7 +1961,7 @@ gfs_client_get_load_result_multiplexed(
 
 static int
 apply_one_host(char *(*op)(struct gfs_connection *, void *),
-	char *hostname, void *args, char *message)
+	char *hostname, void *args, char *message, int tolerant)
 {
 	char *e;
 	int pid;
@@ -2000,17 +2000,20 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 
 	e = gfs_client_connect(hostname, &addr, &conn);
 	if (e != NULL) {
-		if (message != NULL)
+		/* if tolerant, we allow failure to connect the host */
+		if (message != NULL && !tolerant)
 			fprintf(stderr, "%s: connecting to %s: %s\n", message,
 			    hostname, e);
-		_exit(3);
+		_exit(tolerant ? 0 : 3);
 	}
 			
 	e = (*op)(conn, args);
 	if (e != NULL) {
-		if (message != NULL)
+		/* if tolerant, we allow "no such file or directory" */
+		if (message != NULL &&
+		    (!tolerant || e != GFARM_ERR_NO_SUCH_OBJECT))
 			fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
-		_exit(4);
+		_exit(tolerant && e == GFARM_ERR_NO_SUCH_OBJECT ? 0 : 4);
 	}
 		
 	e = gfs_client_disconnect(conn);
@@ -2055,7 +2058,7 @@ wait_pid(int pids[], int num, int *nhosts_succeed)
 char *
 gfs_client_apply_all_hosts(
 	char *(*op)(struct gfs_connection *, void *),
-	void *args, char *message, int *nhosts_succeed)
+	void *args, char *message, int tolerant, int *nhosts_succeed)
 {
 	char *e;
 	int i, j, nhosts, pids[CONCURRENCY];
@@ -2075,7 +2078,8 @@ gfs_client_apply_all_hosts(
         j = 0;
 	*nhosts_succeed = 0;
         for (i = 0; i < nhosts; i++) {
-                pids[j] = apply_one_host(op, hosts[i].hostname, args, message);
+                pids[j] = apply_one_host(op, hosts[i].hostname, args,
+		    message, tolerant);
                 if (pids[j] < 0) /* fork error */
                         break;
                 if (++j == CONCURRENCY) {
