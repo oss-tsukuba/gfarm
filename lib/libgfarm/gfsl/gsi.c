@@ -10,13 +10,16 @@
 
 #include "gssapi.h"
 
-#include "gfutil.h"
 #include "gfevent.h"
+#include "gfutil.h"
 
 #include "tcputil.h"
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+#include "gfarm_auth.h"
+#endif
 
 
 static char *	gssName2Str(gss_name_t name);
@@ -165,10 +168,98 @@ gfarmGssPrintMinorStatus(minStat)
     gfarmGssFreeCrackedStatus(list);
 }
 
+static int
+#if ! GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+gfarmGssImportName(namePtr, nameString, nameType, majStatPtr, minStatPtr)
+#else /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+gfarmGssImportNameGlobus(namePtr, nameString, nameType, toAcquire, majStatPtr, minStatPtr)
+     int toAcquire;
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+     gss_name_t *namePtr;
+     char *nameString;
+     gss_OID nameType;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    OM_uint32 majStat = 0;
+    OM_uint32 minStat = 0;
+    int ret = -1;
+
+    if (nameType == GSS_C_NO_OID && nameString == NULL) {
+	/* This is GFSL specific interpretation. */
+	*namePtr = GSS_C_NO_NAME;
+    } else {
+	gss_buffer_desc buf;
+
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	if (nameType == GSS_C_NT_USER_NAME) {
+	    static char proxySuffix[] = "/CN=proxy";
+	    gfarmAuthEntry *aePtr;
+
+	    aePtr = gfarmAuthGetLocalUserEntry(nameString);
+	    if (aePtr == NULL) {
+		gflog_auth_error(nameString, "ERROR: cannot convert "
+				 "this user name to X.509 Distinguish name");
+		majStat = GSS_S_FAILURE;
+		minStat = GFSL_DEFAULT_MINOR_ERROR;
+		goto Done;
+	    }
+	    assert(aePtr->authType == GFARM_AUTH_USER);
+	    if (toAcquire) {
+		/*
+		 * Globus doesn't support to read user credential via
+		 * gss_acquire_cred(), but it supports to read
+		 * proxy credential of the user.
+		 */
+		nameString = malloc(strlen(aePtr->distName) +
+				    sizeof(proxySuffix));
+		if (nameString == NULL) {
+		    gflog_auth_error(nameString,
+				     "gfarmGssImportNameGlobus() - no memory");
+		    majStat = GSS_S_FAILURE;
+		    minStat = GFSL_DEFAULT_MINOR_ERROR;
+		    goto Done;
+		}
+		sprintf(nameString, "%s%s", aePtr->distName, proxySuffix);
+	    } else {
+		nameString = aePtr->distName;
+	    }
+	    nameType = GSS_C_NO_OID; /* mechanism specific */
+	}
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+	buf.length = strlen(nameString);
+	buf.value = nameString;
+	majStat = gss_import_name(&minStat, &buf, nameType, namePtr);
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	if (nameType == GSS_C_NT_USER_NAME && toAcquire) {
+	    free(nameString);
+	}
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+	if (majStat != GSS_S_COMPLETE)
+	    goto Done;
+    }
+    ret = 1; /* OK */
+
+    Done:
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }
+    return ret;
+}
+
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+#define gfarmGssImportName(namePtr, nameString, nameType, majStatPtr, minStatPtr) \
+	gfarmGssImportNameGlobus(namePtr, nameString, nameType, 0, majStatPtr, minStatPtr)
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 
 int
-gfarmGssAcquireCredential(credPtr, credUsage, majStatPtr, minStatPtr, credNamePtr)
+gfarmGssAcquireCredential(credPtr, desiredNameString, desiredNameType, credUsage, majStatPtr, minStatPtr, credNamePtr)
      gss_cred_id_t *credPtr;
+     char *desiredNameString;
+     gss_OID desiredNameType;
      gss_cred_usage_t credUsage;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
@@ -176,25 +267,35 @@ gfarmGssAcquireCredential(credPtr, credUsage, majStatPtr, minStatPtr, credNamePt
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
+    OM_uint32 minStat2;
     int ret = -1;
+    gss_name_t desiredName;
     
     *credPtr = GSS_C_NO_CREDENTIAL;
 
+#if ! GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+    if (gfarmGssImportName(&desiredName, desiredNameString, desiredNameType,
+			   &majStat, &minStat) < 0)
+#else /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+    if (gfarmGssImportNameGlobus(&desiredName,
+				 desiredNameString, desiredNameType, 1,
+				 &majStat, &minStat) < 0)
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+    {
+	goto Done;
+    }
     majStat = gss_acquire_cred(&minStat,
-			       GSS_C_NO_NAME,
+			       desiredName,
 			       GSS_C_INDEFINITE,
 			       GSS_C_NO_OID_SET,
 			       credUsage,
 			       credPtr,
 			       NULL,
 			       NULL);
-    if (majStatPtr != NULL) {
-	*majStatPtr = majStat;
+    if (desiredName != GSS_C_NO_NAME) {
+	(void)gss_release_name(&minStat2, &desiredName);
     }
-    if (minStatPtr != NULL) {
-	*minStatPtr = minStat;
-    }	
-
+    
     /*
      * Check validness.
      */
@@ -211,9 +312,39 @@ gfarmGssAcquireCredential(credPtr, credUsage, majStatPtr, minStatPtr, credNamePt
 	}
     }
 
+    Done:
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }	
     return ret;
 }
 
+int
+gfarmGssReleaseCredential(cred, majStatPtr, minStatPtr)
+     gss_cred_id_t cred;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    OM_uint32 majStat = 0;
+    OM_uint32 minStat = 0;
+    int ret = -1;
+
+    majStat = gss_release_cred(&minStat, &cred);
+    if (majStat == GSS_S_COMPLETE) {
+	ret = 1; /* valid */
+    }
+
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }	
+    return ret;
+}
 
 int
 gfarmGssSendToken(fd, gsBuf)
@@ -273,13 +404,14 @@ gfarmGssReceiveToken(fd, gsBuf)
 
 
 int
-gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNamePtr, remoteCredPtr)
+gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNamePtr, exportedNamePtr, remoteCredPtr)
      int fd;
      gss_cred_id_t cred;
      gss_ctx_id_t *scPtr;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
      char **remoteNamePtr;
+     char **exportedNamePtr;
      gss_cred_id_t *remoteCredPtr;
 {
     OM_uint32 majStat;
@@ -298,6 +430,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
     gss_OID mechType = GSS_C_NO_OID;
     OM_uint32 timeRet;
 
+    OM_uint32 majStat2;
     OM_uint32 minStat2;
     int tknStat;
 
@@ -342,8 +475,8 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 	if (GSS_ERROR(majStat)) {
 	    if (*scPtr != GSS_C_NO_CONTEXT) {
 		(void)gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
-		break;
 	    }
+	    break;
 	}
 
     } while (majStat & GSS_S_CONTINUE_NEEDED);
@@ -426,6 +559,25 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 	*minStatPtr = minStat;
     }
     
+    if (majStat == GSS_S_COMPLETE && ret == 1 && exportedNamePtr != NULL) {
+	if (initiatorName == GSS_C_NO_NAME) {
+	    *exportedNamePtr = NULL;
+	} else {
+	    gss_buffer_desc nameBuf;
+	    char *ret;
+
+	    majStat2 = gss_export_name(&minStat2, initiatorName, &nameBuf);
+	    ret = malloc(nameBuf.length + 1);
+	    if (ret == NULL) { /* XXX */
+		*exportedNamePtr = NULL;
+	    } else {
+		memcpy(ret, nameBuf.value, nameBuf.length);
+		ret[nameBuf.length] = '\0';
+		gss_release_buffer(&minStat2, (gss_buffer_t)&nameBuf);
+		*exportedNamePtr = ret;
+	    }
+	}
+    }
     if (initiatorName != GSS_C_NO_NAME) {
 	(void)gss_release_name(&minStat2, &initiatorName);
     }
@@ -441,8 +593,10 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 
 
 int
-gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr,remoteNamePtr)
+gfarmGssInitiateSecurityContext(fd, acceptorNameString, acceptorNameType, cred, reqFlag, scPtr, majStatPtr, minStatPtr,remoteNamePtr)
      int fd;
+     char *acceptorNameString;
+     gss_OID acceptorNameType;
      gss_cred_id_t cred;
      OM_uint32 reqFlag;
      gss_ctx_id_t *scPtr;
@@ -453,7 +607,7 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr
     OM_uint32 majStat;
     OM_uint32 minStat;
     OM_uint32 retFlag = 0;
-    gss_name_t acceptorName = GSS_C_NO_NAME;
+    gss_name_t acceptorName;
 
     gss_buffer_desc inputToken = GSS_C_EMPTY_BUFFER;
     gss_buffer_t itPtr = &inputToken;
@@ -470,6 +624,11 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr
     int ret = -1;
 
     *scPtr = GSS_C_NO_CONTEXT;
+
+    if (gfarmGssImportName(&acceptorName, acceptorNameString, acceptorNameType,
+			   &majStat, &minStat) < 0) {
+	goto Done;
+    }
 
     /*
      * Implementation specification:
@@ -507,8 +666,8 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr
 	if (GSS_ERROR(majStat)) {
 	    if (*scPtr != GSS_C_NO_CONTEXT) {
 		(void)gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
-		break;
 	    }
+	    break;
 	}
     
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
@@ -527,6 +686,9 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr
     }
     if (otPtr->length > 0) {
 	(void)gss_release_buffer(&minStat2, otPtr);
+    }
+    if (acceptorName != GSS_C_NO_NAME) {
+	(void)gss_release_name(&minStat2, &acceptorName);
     }
 
     if (majStat == GSS_S_COMPLETE) {
@@ -558,6 +720,7 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr
 	}
     }
 
+    Done:
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
     }
@@ -938,23 +1101,27 @@ gssInitiateSecurityContextSwitch(state)
      struct gfarmGssInitiateSecurityContextState *state;
 {
     OM_uint32 minStat2;
+    int rv;
     struct timeval timeout;
 
     if (GSS_ERROR(state->majStat)) {
 	if (state->sc != GSS_C_NO_CONTEXT) {
 	    (void)gss_delete_sec_context(&minStat2, &state->sc,
 					 GSS_C_NO_BUFFER);
-	    return;
 	}
+	return;
     }
 
     if (state->majStat & GSS_S_CONTINUE_NEEDED) {
 	timeout.tv_sec = GFARM_GSS_AUTH_TIMEOUT;
 	timeout.tv_usec = 0;
-	if (gfarm_eventqueue_add_event(state->q, state->readable, &timeout) == 0) {
+	rv = gfarm_eventqueue_add_event(state->q, state->readable, &timeout);
+	if (rv == 0) {
 	    /* go to gfarmGssInitiateSecurityContextRecieveToken() */
 	    return;
 	}
+	gflog_auth_error("gfarm:gssInitiateSecurityContextSwitch()",
+			 strerror(rv));
 	state->majStat = GSS_S_FAILURE;
 	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
     } else {
@@ -967,6 +1134,7 @@ gssInitiateSecurityContextNext(state)
      struct gfarmGssInitiateSecurityContextState *state;
 {
     OM_uint32 minStat2;
+    int rv;
 
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
@@ -987,10 +1155,13 @@ gssInitiateSecurityContextNext(state)
     }
 
     if (state->otPtr->length > 0) {
-	if (gfarm_eventqueue_add_event(state->q, state->writable, NULL) == 0) {
+	rv = gfarm_eventqueue_add_event(state->q, state->writable, NULL);
+	if (rv == 0) {
 	    /* go to gfarmGssInitiateSecurityContextSendToken() */
 	    return;
 	}
+	gflog_auth_error("gfarm:gssInitiateSecurityContextNext()",
+			 strerror(rv));
 	state->majStat = GSS_S_FAILURE;
 	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
     }
@@ -1055,9 +1226,11 @@ gfarmGssInitiateSecurityContextReceiveToken(events, fd, closure, t)
 }
 
 struct gfarmGssInitiateSecurityContextState *
-gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closure, majStatPtr, minStatPtr)
+gfarmGssInitiateSecurityContextRequest(q, fd, acceptorNameString, acceptorNameType, cred, reqFlag, continuation, closure, majStatPtr, minStatPtr)
      struct gfarm_eventqueue *q;
      int fd;
+     char *acceptorNameString;
+     gss_OID acceptorNameType;
      gss_cred_id_t cred;
      OM_uint32 reqFlag;
      void (*continuation)(void *);
@@ -1066,9 +1239,12 @@ gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closu
      OM_uint32 *minStatPtr;
 {
     struct gfarmGssInitiateSecurityContextState *state;
+    OM_uint32 minStat2;
 
     state = malloc(sizeof(*state));
     if (state == NULL) {
+	gflog_auth_error("gfarmGssInitiateSecurityContextRequest()",
+			 "no memory");
 	if (majStatPtr != NULL) {
 	    *majStatPtr = GSS_S_FAILURE;
 	}
@@ -1087,6 +1263,8 @@ gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closu
 			     gfarmGssInitiateSecurityContextSendToken,
 			     state);
     if (state->writable == NULL) {
+	gflog_auth_error("gfarmGssInitiateSecurityContextRequest()",
+			 "no memory");
 	state->majStat = GSS_S_FAILURE;
 	goto freeState;
     }
@@ -1100,8 +1278,15 @@ gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closu
 			     gfarmGssInitiateSecurityContextReceiveToken,
 			     state);
     if (state->readable == NULL) {
+	gflog_auth_error("gfarmGssInitiateSecurityContextRequest()",
+			 "no memory");
 	state->majStat = GSS_S_FAILURE;
 	goto freeWritable;
+    }
+    if (gfarmGssImportName(&state->acceptorName,
+			   acceptorNameString, acceptorNameType,
+			   &state->majStat, &state->minStat) < 0) {
+	goto freeReadable;
     }
 
     state->q = q;
@@ -1112,7 +1297,6 @@ gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closu
     state->closure = closure;
 
     state->retFlag = 0;
-    state->acceptorName = GSS_C_NO_NAME;
 
     /* GSS_C_EMPTY_BUFFER */
     state->inputToken.length = 0; state->inputToken.value = NULL;
@@ -1144,6 +1328,10 @@ gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closu
 	return (state);
     }
 
+    if (state->acceptorName != GSS_C_NO_NAME) {
+	(void)gss_release_name(&minStat2, &state->acceptorName);
+    }
+freeReadable:
     gfarm_event_free(state->readable);
 freeWritable:
     gfarm_event_free(state->writable);
@@ -1176,6 +1364,9 @@ gfarmGssInitiateSecurityContextResult(state, scPtr, majStatPtr, minStatPtr, remo
     }
     if (state->otPtr->length > 0) {
 	(void)gss_release_buffer(&minStat2, state->otPtr);
+    }
+    if (state->acceptorName != GSS_C_NO_NAME) {
+	(void)gss_release_name(&minStat2, &state->acceptorName);
     }
 
     if (state->majStat == GSS_S_COMPLETE) {
