@@ -676,6 +676,14 @@ main_loop(int accepting_socket)
 				xxx_connection_free(client_conn);
 				free(username);
 				free(hostname);
+			} else {
+				int sockopt = 1;
+
+				/* deal with reboots or network problems */
+				if (setsockopt(client_socket,
+				    SOL_SOCKET, SO_KEEPALIVE,
+				    &sockopt, sizeof(sockopt)) == -1)
+					gflog_warning_errno("SO_KEEPALIVE");
 			}
 		}
 		for (fd = 0; fd <= file_table_max; fd++) {
