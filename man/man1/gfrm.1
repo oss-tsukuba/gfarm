@@ -7,14 +7,46 @@ gfrm \- remove Gfarm files
 .SH SYNOPSIS
 
 .B gfrm
-.I gfarm-URL...
+[
+.B \-H
+.I hostfile
+.B -I
+.I fragment-index
+]
+.in +.5i
+.I gfarm-URL
+.in
 
 .SH DESCRIPTION
 
 \fBgfrm\fP removes each specified file.
+.PP
+\fBgfrm\fP can be used to remove specific replicas, 
+by specifying both
+.B \-H
+option and
+.B \-I
+option.
 
 .SH OPTIONS
 
+.TP
+.B \-H
+.I hostfile
+.br
+specifies a hostname list to remove replicas.
+\fIhostfile\fP consists of a filesystem node in each line.
+.br
+if ``-'' is specified, standard input is used to read the host list.
+.TP
+.B \-I
+.I fragment-index
+.br
+specifies fragment index to be removed.
+
+If the \fIgfarm-URL\fP is an executable file, an architecture name,
+for example, sparc-sun-solaris, can be used to specify an executable
+architecture to be removed.
 .TP
 .B \-?
 .br
