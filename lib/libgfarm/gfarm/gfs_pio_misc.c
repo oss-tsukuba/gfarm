@@ -20,6 +20,7 @@
 #include "gfs_pio.h"
 #include "schedule.h"
 #include "timer.h"
+#include "gfutil.h"
 
 char *
 gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
@@ -241,11 +242,240 @@ gfs_access(const char *gfarm_url, int mode)
 	return (e);
 }
 
+static char *
+change_path_info_mode(struct gfarm_path_info *p, gfarm_mode_t mode)
+{
+	p->status.st_mode &= ~GFARM_S_ALLPERM;
+	p->status.st_mode |= (mode & GFARM_S_ALLPERM);
+	return (gfarm_path_info_replace(p->pathname, p));
+}
+
+enum exec_change {
+	EXECUTABILITY_NOT_CHANGED,
+	TO_EXECUTABLE,	
+	TO_UNEXECUTABLE
+};
+
+static enum exec_change
+diff_exec(gfarm_mode_t old, gfarm_mode_t new)
+{
+	gfarm_mode_t xmask = 0111;
+
+	if ((old & xmask) == 0 && (new & xmask) != 0)
+		return (TO_EXECUTABLE);
+	else if ((old & xmask) != 0 && (new & xmask) == 0)
+		return (TO_UNEXECUTABLE);
+	else
+		return (EXECUTABILITY_NOT_CHANGED);
+}
+
+static char *
+get_architecture_name(int ncopy, struct gfarm_file_section_copy_info *copies)
+{
+	/* XXX - this selection of architecture is stopgap. */
+
+	char *e, *hostname;
+	int i;
+
+	e = gfarm_host_get_canonical_self_name(&hostname);
+	if (e != NULL)
+		hostname = copies[0].hostname;
+	for (i = 0; i < ncopy; i++)
+		if (strcmp(copies[i].hostname, hostname) == 0) 
+			break;
+	if (i >= ncopy)
+		hostname = copies[0].hostname;
+	return gfarm_host_info_get_architecture_by_host(hostname);
+}
+
+struct gfs_chmod_args {
+	char *path;
+	gfarm_mode_t mode;
+};
+
+static char *
+chmod_request_parallel(struct gfs_connection *gfs_server, void *args)
+{
+	struct gfs_chmod_args *a = args;
+
+	return (gfs_client_chmod(gfs_server, a->path, a->mode));
+}
+
+static char *
+get_new_section_name(enum exec_change change,
+	int ncopy, 
+	struct gfarm_file_section_copy_info *copies)
+{
+	if (change == TO_EXECUTABLE)
+		return get_architecture_name(ncopy, copies);
+	else /* change == TO_UNEXECUTABLE */
+		return strdup("0");
+}	
+
+static char *
+gfs_chmod_execfile_metadata(
+	struct gfarm_path_info *pi,
+	gfarm_mode_t mode,
+	struct gfarm_file_section_info *from_section,
+	int ncopy,
+	struct gfarm_file_section_copy_info *copies,
+	enum exec_change change)
+{
+	struct gfarm_file_section_info to_section;
+	char *e;
+	int i;
+
+	to_section = *from_section;
+	to_section.section = get_new_section_name(change, ncopy, copies);
+	if (to_section.section == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfarm_file_section_info_set(to_section.pathname,
+					to_section.section,
+					&to_section);
+	if (e != NULL)
+		goto finish_free_to_section_section;
+
+	e = change_path_info_mode(pi, mode);
+	if (e != NULL) {
+		char *e2;
+		e2 = gfarm_file_section_info_remove(
+				to_section.pathname, to_section.section);
+		gflog_warning("gfs_chmod: gfarm_file_section_info_remove()",
+			      e2);
+		goto finish_free_to_section_section;
+	}
+
+	for (i = 0; i < ncopy; i++) {
+		e = gfarm_file_section_copy_info_remove(copies[i].pathname,
+							copies[i].section,
+							copies[i].hostname);
+		if (e != NULL)
+			gflog_warning(
+			  "gfs_chmod:gfarm_file_section_copy_info_remove()",
+			  e);
+	}
+
+	e = gfarm_file_section_info_remove(from_section->pathname,
+					   from_section->section);
+	if (e != NULL)
+		gflog_warning("gfs_chmod:gfarm_file_section_info_remove()",
+		e);		
+
+finish_free_to_section_section:
+	free(to_section.section);
+	return(e);
+}
+
+static char *
+gfs_chmod_file_spool(
+	gfarm_mode_t mode,
+	int nsection,
+	struct gfarm_file_section_info *sections,
+	int *ncopy, 
+	struct gfarm_file_section_copy_info **copies,
+	enum exec_change change)
+{
+	int i, j;
+	char *e;
+	char *from_path_section, *to_path_section;
+	struct gfarm_file_section_copy_info new_copy;
+
+	for (i = 0; i < nsection; i++) {
+		char *section; 
+
+		e = gfarm_path_section(sections[i].pathname,
+				       sections[i].section,
+			       	       &from_path_section);
+		if (e != NULL) 
+			return (e);
+
+		section = get_new_section_name(
+					change, ncopy[i], copies[i]); 
+		if (section == NULL) {
+			free(from_path_section); 
+			return (GFARM_ERR_NO_MEMORY);
+		}
+
+		e = gfarm_path_section(sections[i].pathname, section,
+				       &to_path_section);
+		if (e != NULL) {
+			free(section);
+			free(from_path_section);
+			return (e);
+		}
+
+		for (j = 0; j < ncopy[i]; j++) {
+			struct gfs_connection *gfs_server;
+			struct sockaddr peer_addr;
+
+			e = gfarm_host_address_get(copies[i][j].hostname,
+				gfarm_spool_server_port, &peer_addr, NULL);
+			if (e != NULL) {
+				gflog_warning(
+				  "gfs_chmod:gfarm_host_address_get()", e);
+				continue;
+			}
+
+			e = gfs_client_connect(copies[i][j].hostname,
+						 &peer_addr, &gfs_server);
+			if (e != NULL) {
+				gflog_warning(
+				  "gfs_chmod:gfarm_client_connection()", e);
+				continue;
+			}
+
+			e = gfs_client_chmod(gfs_server, from_path_section,
+					     mode);
+			if (e != NULL) {
+				gflog_warning("gfs_chmod:gfs_client_chmod()",
+					      e);
+				gfs_client_disconnect(gfs_server);
+				continue;
+			}
+			if (change != EXECUTABILITY_NOT_CHANGED) {
+				e = gfs_client_rename(gfs_server,
+						      from_path_section,
+						      to_path_section);
+				if (e != NULL) {
+					gflog_warning(
+					  "gfs_chmod:gfs_client_rename()", e);
+					gfs_client_disconnect(gfs_server);
+					continue;
+				}
+
+				new_copy = copies[i][j];
+				new_copy.section = section;
+				e = gfarm_file_section_copy_info_set(
+							new_copy.pathname,
+							new_copy.section,
+							new_copy.hostname,
+							&new_copy);
+				if (e != NULL) {
+					gflog_warning(
+					  "gfs_chmod:"
+					  "gfarm_file_section_copy_info_set()",
+					  e);
+				}
+			}
+			gfs_client_disconnect(gfs_server);
+		}
+		free(to_path_section);
+		free(section);
+		free(from_path_section);
+	}
+	return (NULL);
+}
+
 char *
 gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
+	int nsection, *ncopy, i;
+	struct gfarm_file_section_info *sections;
+	struct gfarm_file_section_copy_info **copies;
+	enum exec_change change;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -254,13 +484,78 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 	free(gfarm_file);
 	if (e != NULL)
 		return (e);
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0)
+	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else {
-		pi.status.st_mode &= ~GFARM_S_ALLPERM;
-		pi.status.st_mode |= (mode & GFARM_S_ALLPERM);
-		e = gfarm_path_info_replace(pi.pathname, &pi);
+		goto finish_free_path_info;
+	} 
+	
+	if (GFARM_S_ISDIR(pi.status.st_mode)) {
+		struct gfs_chmod_args a;
+		int nhosts_succeed;
+
+		e = change_path_info_mode(&pi, mode);
+		if (e != NULL)
+			goto finish_free_path_info;
+		a.path = pi.pathname;
+		a.mode = mode;
+		e = gfs_client_apply_all_hosts(chmod_request_parallel,
+					 &a, "gfs_chmod", &nhosts_succeed);
+		goto finish_free_path_info;
 	}
+
+	e = gfarm_file_section_info_get_all_by_file(pi.pathname,
+					 	    &nsection, &sections);
+	if (e != NULL)
+		goto finish_free_path_info;
+
+	change = diff_exec(pi.status.st_mode, mode);
+	if (change != EXECUTABILITY_NOT_CHANGED && nsection > 1) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;	
+		goto finish_free_section_info;
+	}
+	
+	ncopy = malloc(nsection * sizeof(*ncopy));
+	if (ncopy == NULL)
+		goto finish_free_section_info;
+
+	copies = malloc(nsection * sizeof(*copies));
+	if (copies == NULL)			
+		goto finish_free_ncopy;
+
+	for (i = 0; i < nsection; i++) {
+		e = gfarm_file_section_copy_info_get_all_by_section(
+			sections[i].pathname, sections[i].section,
+			&ncopy[i], &copies[i]);
+		if (e != NULL) {
+			while (i--)
+				gfarm_file_section_copy_info_free_all(
+							ncopy[i], copies[i]);
+			goto finish_free_copies;
+		}
+	}
+
+	if (change == EXECUTABILITY_NOT_CHANGED) {
+		e = change_path_info_mode(&pi, mode);
+	} else {
+		e = gfs_chmod_execfile_metadata(&pi, mode, &sections[0],
+						ncopy[0], copies[0], change);
+	}
+	if (e != NULL)
+		goto finish_free_section_copy_info;
+
+	e = gfs_chmod_file_spool(mode, nsection, sections, ncopy, copies,
+				 change);
+
+finish_free_section_copy_info:
+	for (i = 0; i < nsection; i++)
+		gfarm_file_section_copy_info_free_all(ncopy[i], copies[i]);
+finish_free_copies:
+	free(copies);
+finish_free_ncopy:
+	free(ncopy);
+finish_free_section_info:
+	gfarm_file_section_info_free_all(nsection, sections);
+finish_free_path_info:
 	gfarm_path_info_free(&pi);
 	return (e);
 }
