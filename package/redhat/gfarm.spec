@@ -1,5 +1,5 @@
 # Part 1 data definition
-%define ver	1.0
+%define ver	1.0b1
 %define	rel	1
 
 Summary: Grid Datafarm
@@ -61,7 +61,7 @@ development library for gfarm
 
 %changelog
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
-- first public release for version 1.0
+- first public release for version 1.0b1
 
 * Wed Nov 27 2002 Tohru Sotoyama <sotoyama@sra.co.jp>
 - first release for version 0.1
@@ -75,7 +75,7 @@ mkdir -p $RPM_BUILD_ROOT
 #%patch -p1
 
 %build
-./configure --prefix=/usr/local/gfarm \
+./configure --prefix=/usr/grid \
 	--with-globus=/usr/grid --with-globus-flavor=gcc32 \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
