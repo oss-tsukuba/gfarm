@@ -336,6 +336,25 @@ gfs_server_unlink(struct xxx_connection *client)
 }
 
 void
+gfs_server_rename(struct xxx_connection *client)
+{
+	char *from, *to, *fpath, *tpath;
+	int save_errno = 0;
+
+	gfs_server_get_request(client, "rename", "ss", &from, &to);
+
+	local_path(from, &fpath, "rename");
+	local_path(to, &tpath, "rename");
+	if (rename(fpath, tpath) == -1)
+		save_errno = errno;
+	free(fpath);
+	free(tpath);
+
+	gfs_server_put_reply(client, "rename",
+	    gfs_errno_to_proto_error(save_errno), "");
+}
+
+void
 gfs_server_mkdir(struct xxx_connection *client)
 {
 	char *gpath, *path;
@@ -1845,6 +1864,7 @@ server(int client_fd)
 			    credential_exported == NULL ? NULL :
 			    xxx_connection_env_for_credential(client));
 			break;
+		case GFS_PROTO_RENAME:	gfs_server_rename(client); break;
 		default:
 			sprintf(buffer, "%d", (int)request);
 			gflog_warning("unknown request", buffer);

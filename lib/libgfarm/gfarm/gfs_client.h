@@ -40,6 +40,7 @@ char *gfs_client_read(struct gfs_connection *,
 char *gfs_client_write(struct gfs_connection *,
 		       gfarm_int32_t, const void *, size_t, size_t *);
 char *gfs_client_unlink(struct gfs_connection *, char *);
+char *gfs_client_rename(struct gfs_connection *, char *, char *);
 char *gfs_client_chdir(struct gfs_connection *, char *);
 char *gfs_client_mkdir(struct gfs_connection *, char *, gfarm_int32_t);
 char *gfs_client_rmdir(struct gfs_connection *, char *);

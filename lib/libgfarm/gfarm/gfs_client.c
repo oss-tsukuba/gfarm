@@ -546,6 +546,13 @@ gfs_client_unlink(struct gfs_connection *gfs_server, char *path)
 }
 
 char *
+gfs_client_rename(struct gfs_connection *gfs_server, char *from, char *to)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_RENAME, "ss/",
+			       from, to));
+}
+
+char *
 gfs_client_chdir(struct gfs_connection *gfs_server, char *dir)
 {
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_CHDIR, "s/", dir));
