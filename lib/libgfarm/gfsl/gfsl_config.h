@@ -1,21 +1,24 @@
-#ifndef _GFARM_CONFIG_H_
-#define _GFARM_CONFIG_H_
+#ifndef _GFARM_GFSL_CONFIG_H_
+#define _GFARM_GFSL_CONFIG_H_
 
-/* Now, Globus GSSAPI seems to support the encryption feature. */
-/*#define USE_GLOBUS*/
+#define USE_GLOBUS
 
-#ifdef USE_GLOBUS
+#if 0 /* defined(USE_GLOBUS) */ /* Now, Globus GSSAPI supports encryption */
 /*
  * Globus GSSAPI does not support confidentiality security service.
  */
-#define GFARM_GSS_ENCRYPTION_ENABLED	0
+# define GFARM_GSS_ENCRYPTION_ENABLED	0
+#else
+# define GFARM_GSS_ENCRYPTION_ENABLED	1
+#endif /* USE_GLOBUS */
+
+#if GFARM_GSS_ENCRYPTION_ENABLED
 #ifndef GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
 #define GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG	1
 #endif /* GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG */
 #define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_GLOBUS_GSSAPI_SSLEAY_BIG
 #define GFARM_GSS_C_CONF_FLAG	0
 #else
-#define GFARM_GSS_ENCRYPTION_ENABLED	1
 #define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_DEFAULT
 #define GFARM_GSS_C_CONF_FLAG	GSS_C_CONF_FLAG
 #endif /* USE_GLOBUS */
@@ -46,5 +49,5 @@
 
 #define GFARM_DEFAULT_USERMAP_FILE		"gfarm-usermap"
 
-#endif /* _GFARM_CONFIG_H_ */
+#endif /* _GFARM_GFSL_CONFIG_H_ */
 
