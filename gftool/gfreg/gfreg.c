@@ -8,7 +8,7 @@
 /*
  *  Register a local file to the Gfarm Meta DB.
  *
- *  gfreg <local_filename> <gfarm_url> [<index>]
+ *  gfreg <local_filename> <gfarm_url>
  */
 
 char *program_name = "gfreg";
@@ -16,7 +16,7 @@ char *program_name = "gfreg";
 void
 usage()
 {
-    fprintf(stderr, "Usage: %s <local_filename> <gfarm_url> [<index>]\n",
+    fprintf(stderr, "Usage: %s <local_filename> <gfarm_url>\n",
 	    program_name);
     exit(1);
 }
@@ -27,7 +27,6 @@ main(int argc, char * argv[])
     char * filename, * gfarm_url;
     int node_index = -1, total_nodes = -1;
     char * e = (char *)NULL;
-    struct stat sb;
     extern char * optarg;
     extern int optind;
     int c;
@@ -75,24 +74,21 @@ main(int argc, char * argv[])
     argc--;
     argv++;
 
-    if (argc == 0) {
-	if (node_index < 0) {
-	    fprintf(stderr, "%s: missing a Gfarm index\n",
-		    program_name);
-	    usage();
-	    exit(1);
-	}
-    }
-    else {
-	node_index = strtol(argv[0], NULL, 0);
-	argc--;
-	argv++;
+    if (node_index < 0) {
+	fprintf(stderr, "%s: missing a Gfarm index\n",
+		program_name);
+	usage();
+	exit(1);
     }
 
     /* */
 
-    if (stat(filename, &sb))
-	perror(filename);
+    {
+	struct stat sb;
+
+	if (stat(filename, &sb))
+	    perror(filename);
+    }
 
     e = gfarm_initialize();
     if (e != NULL) {
