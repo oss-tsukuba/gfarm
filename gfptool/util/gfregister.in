@@ -2,9 +2,9 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-default_sbindir=@sbindir@
-default_bindir=@bindir@
-default_libexecdir=@libexecdir@
+sbindir=@sbindir@
+bindir=@bindir@
+libexecdir=@libexecdir@
 
 PATH=${bindir}:${PATH}; export PATH
 
