@@ -547,7 +547,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
-	if (!is_local_host && 
+	if (!is_local_host && gfarm_is_active_file_system_node &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&  
