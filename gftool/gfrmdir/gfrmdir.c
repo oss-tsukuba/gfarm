@@ -48,6 +48,7 @@ main(int argc, char **argv)
 {
 	char *e, *canonic_path;
 	int i, c;
+	extern int optind;
 
 	if (argc <= 1)
 		usage();
@@ -60,6 +61,8 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
+	argc -= optind;
+	argv += optind;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
