@@ -120,7 +120,7 @@ gfarm_auth_random(void *buffer, size_t length)
 #ifdef HAVE_RANDOM
 		p[i] = random();
 #else
-		p[i] = (double)rand() * 256 / RAND_MAX;
+		p[i] = rand() / (RAND_MAX + 1.0) * 256;
 #endif
 	}
 }
