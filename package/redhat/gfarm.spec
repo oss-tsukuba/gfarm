@@ -482,9 +482,10 @@ fi
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
-%config %{etc_prefix}/gfarm.conf
+%config(noreplace) %{etc_prefix}/gfarm.conf
 
 %files server
+%dir %{etc_prefix}/gfarm-ldap
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
 %{rc_prefix}/gfarm-slapd
