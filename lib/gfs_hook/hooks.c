@@ -935,6 +935,62 @@ fchmod(int filedes, mode_t mode)
 	return (__fchmod(filedes, mode));
 }
 
+/*
+ * rename
+ */
+
+int
+__rename(const char *oldpath, const char *newpath)
+{
+	const char *e;
+	char *oldurl, *newurl;
+        int old_is_url, new_is_url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __rename(%s, %s)\n",
+				  oldpath, newpath));
+
+        old_is_url = gfs_hook_is_url(oldpath, &oldurl);
+        new_is_url = gfs_hook_is_url(newpath, &newurl);
+        if (!old_is_url || !new_is_url) {
+                if (old_is_url)
+			free(oldurl);
+		if (new_is_url)	
+			free(newurl);
+                if (old_is_url != new_is_url) {
+                        errno = EXDEV;
+                        return (-1);
+                }
+                return (syscall(SYS_rename, oldpath, newpath));
+        }
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __rename(%s, %s)\n",
+				oldpath, newpath));
+
+	e = gfs_rename(oldurl, newurl);
+	free(oldurl);
+	free(newurl);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __rename: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_rename(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking _rename\n", stderr));
+	return (__rename(oldpath, newpath));
+}
+
+int
+rename(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking rename\n", stderr));
+	return (_rename(oldpath, newpath));
+}
+
 #ifdef __linux__
 /*
  * getxattr
