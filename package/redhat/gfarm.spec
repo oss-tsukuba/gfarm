@@ -1,11 +1,10 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0
+%define ver	1.0.1
 %define rel	1
 
-#%define pkgver	%{ver}
-# to make RPM version number greater than 1.0b5
-%define pkgver	%{ver}r
+# a hook to make RPM version number different from %{ver}
+%define pkgver	%{ver}
 
 %define prefix		/usr/grid
 %define man_prefix	/usr/share/man
