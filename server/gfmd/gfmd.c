@@ -738,7 +738,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "df:p:s:")) != -1) {
+	while ((ch = getopt(argc, argv, "df:p:s:v")) != -1) {
 		switch (ch) {
 		case 'd':
 			debug_mode = 1;
@@ -754,6 +754,9 @@ main(int argc, char **argv)
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
 				gflog_fatal(optarg, "unknown syslog facility");
+			break;
+		case 'v':
+			gfarm_authentication_verbose = 1;
 			break;
 		case '?':
 		default:

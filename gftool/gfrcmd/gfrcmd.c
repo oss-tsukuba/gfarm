@@ -25,6 +25,9 @@ usage()
 	fprintf(stderr, "\t-y: inherits the environment variable DISPLAY.\n");
 	fprintf(stderr, "\t-X: inherits the authentication info of the "
 			"X Window System.\n");
+#ifdef HAVE_GSI
+	fprintf(stderr, "\t-v: display GSS minor status error.\n");
+#endif
 	exit(1);
 }
 
@@ -33,6 +36,7 @@ int opt_no_stdin = 0;
 int opt_raw_command = 0;
 int opt_xdpy_env = 0;
 int opt_xauth_copy = 0;
+int opt_auth_verbose = 0;
 
 void
 parse_option(int *argcp, char ***argvp)
@@ -69,6 +73,9 @@ parse_option(int *argcp, char ***argvp)
 				break;
 			case 'X':
 				opt_xauth_copy = 1;
+				break;
+			case 'v':
+				opt_auth_verbose = 1;
 				break;
 			case '?':
 			default:
@@ -160,6 +167,9 @@ main(argc, argv)
 		argp = args;
 		command = args[0];
 	}
+
+	if (opt_auth_verbose)
+		gfarm_authentication_verbose = 1;
 
 	/*
 	 * initialization

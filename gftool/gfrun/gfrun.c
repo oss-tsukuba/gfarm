@@ -57,7 +57,11 @@ void
 usage()
 {
 	fprintf(stderr,
+#ifdef HAVE_GSI
+		"Usage: %s [-gnuv] [-l <login>]\n"
+#else		
 		"Usage: %s [-gnu] [-l <login>]\n"
+#endif
 		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>]\n"
 		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
 		" command ...\n",
@@ -224,6 +228,7 @@ struct gfrun_options {
 	char *hosts_file;	/* -H <hosts_file> */
 	int nprocs;		/* -N <nprocs> */
 	enum command_type cmd_type;
+	int authentication_verbose_mode;
 };
 
 /* Process scheduling */
@@ -520,6 +525,11 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 			if (remove_option(arg, &i))
 				return (0);
 			break;
+		case 'v':
+			options->authentication_verbose_mode = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
 		case 'o':
 			return (option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &options->stdout_file));
@@ -568,6 +578,7 @@ parse_options(int argc, char **argv,
 	options->hosts_file = NULL;
 	options->nprocs = 0;
 	options->cmd_type = UNKNOWN_COMMAND;
+	options->authentication_verbose_mode = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
@@ -592,6 +603,15 @@ main(int argc, char **argv)
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
+	gfarm_stringlist_init(&rsh_options);
+	decide_rsh_command(program_name, &rsh_command, &rsh_options,
+	    &remove_gfarm_url_prefix);
+	command_index = parse_options(argc, argv, &rsh_options, &options);
+	if (command_index >= argc) /* no command name */
+		usage();
+	command_name = argv[command_index];
+	if (options.authentication_verbose_mode)
+		gfarm_authentication_verbose = 1;
 	if ((e = gfarm_initialize(&argc, &argv)) != NULL) {
 		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
 		exit(1);
@@ -600,15 +620,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: job manager: %s\n", program_name, e);
 		exit(1);
 	}
-
-	gfarm_stringlist_init(&rsh_options);
-	decide_rsh_command(program_name, &rsh_command, &rsh_options,
-	    &remove_gfarm_url_prefix);
-
-	command_index = parse_options(argc, argv, &rsh_options, &options);
-	if (command_index >= argc) /* no command name */
-		usage();
-	command_name = argv[command_index];
 
 	gfarm_stringlist_init(&input_list);
 	gfarm_stringlist_init(&output_list);

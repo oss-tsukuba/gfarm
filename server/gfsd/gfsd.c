@@ -1967,7 +1967,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "df:p:s:u")) != -1) {
+	while ((ch = getopt(argc, argv, "df:p:s:uv")) != -1) {
 		switch (ch) {
 		case 'd':
 			debug_mode = 1;
@@ -1987,6 +1987,9 @@ main(int argc, char **argv)
 		case 'u':
 			restrict_user = 1;
 			restricted_user = getuid();
+			break;
+		case 'v':
+			gfarm_authentication_verbose = 1;
 			break;
 		case '?':
 		default:
