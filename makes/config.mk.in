@@ -48,6 +48,11 @@ globus_subdirs = @globus_subdirs@
 
 globus_flavor = @globus_flavor@
 
+MPICC = @mpicc@
+mpi_srcs = @mpi_srcs@
+mpi_objs = @mpi_objs@
+mpi_subdirs = @mpi_subdirs@
+
 gfsl_includes = @gfsl_includes@
 gfsl_libs = @gfsl_libs@
 depgfsllib = @depgfsllib@
