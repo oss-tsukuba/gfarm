@@ -399,6 +399,10 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		if (e == NULL)
 			e = gfarm_schedule_search_idle_hosts(
 				1, &if_hostname, 1, &vc->canonical_hostname);
+		if (e == NULL)
+			e = gfarm_fixedstrings_dup(
+				1, &vc->canonical_hostname,
+				   &vc->canonical_hostname);
 		if (e != NULL) {
 			/*
 			 * local host is not a file system node, or
