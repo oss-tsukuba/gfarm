@@ -7,6 +7,7 @@
 #include <gfarm/gfarm.h>
 #include "hash.h"
 #include "gfs_pio.h"	/* gfarm_path_expand_home */
+#include "gfutil.h"
 
 static char *gfarm_current_working_directory;
 
@@ -29,7 +30,7 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 	if (e != NULL)
 		return (e);
 
-	if (gfarm_path_info_get(canonic_path, &pi) == 0) {
+	if (gfarm_path_info_get(canonic_path, &pi) == NULL) {
 		gfarm_path_info_free(&pi);
 		free(canonic_path);
 		return (GFARM_ERR_ALREADY_EXISTS);
@@ -387,14 +388,57 @@ free_node(struct node *n)
 	free(n->name);
 }
 
+/* to inhibit dirctory uncaching while some directories are opened */
+static int opendir_count = 0;
+static int need_to_clear_cache = 0;
+
 void
 gfs_uncachedir(void)
 {
-	if (root != NULL) {
+	if (opendir_count > 0) { /* We cannot clear cache for now */
+		need_to_clear_cache = 1; /* schedule it later */
+	} else if (root != NULL) {
+		need_to_clear_cache = 0;
 		free_node(root);
 		free(root);
 		root = NULL;
 	}
+}
+
+struct timeval gfarm_dircache_timeout = { 60, 0 }; /* default 60sec. */
+static struct timeval last_dircache = {0, 0};
+
+char *
+gfs_refreshdir(void)
+{
+	static int initialized = 0;
+	struct timeval now, elapsed;
+	char *s;
+
+	if (!initialized) {
+		if ((s = getenv("GFARM_DIRCACHE_TIMEOUT")) != NULL)
+			gfarm_dircache_timeout.tv_sec = atoi(s);
+		gfarm_dircache_timeout.tv_usec = 0;
+		initialized = 1;
+	}
+	gettimeofday(&now, NULL);
+	if (root == NULL) {
+		/* assert(need_to_clear_cache == 0); */
+		last_dircache = now;
+		return (gfs_cachedir());
+	}
+	if (opendir_count > 0) /* We cannot clear cache for now */
+		return (NULL);
+	elapsed = now;
+	gfarm_timeval_sub(&elapsed, &last_dircache);
+	if (need_to_clear_cache ||
+	    gfarm_timeval_cmp(&elapsed, &gfarm_dircache_timeout) >= 0) {
+		need_to_clear_cache = 0;
+		gfs_uncachedir();
+		last_dircache = now;
+		return (gfs_cachedir());
+	}
+	return (NULL);
 }
 
 /*
@@ -408,7 +452,7 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	char *e, *abspath;
 	int l, len;
 
-	e = gfs_cachedir();
+	e = gfs_refreshdir();
 	if (e != NULL) 
 		return (e);
 	e = lookup_path(path, -1, 0, &n);
@@ -440,8 +484,8 @@ char *gfs_get_ino(const char *canonical_path, long *inop)
 	struct node *n;
 	char *e;
 	
-	e = gfs_cachedir();
-	if (e != NULL)
+	e = gfs_refreshdir();
+	if (e != NULL) 
 		return (e);
 	e = lookup_relative(root, canonical_path, -1, 0, &n);
         if (e != NULL)
@@ -492,6 +536,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	gfarm_hash_iterator_begin(n->u.d.children, &dir->iterator);
 	*dirp = dir;
 
+	++opendir_count;
 	return (NULL);
 }
 
@@ -522,5 +567,6 @@ char *
 gfs_closedir(GFS_Dir dir)
 {
 	free(dir);
+	--opendir_count;
 	return (NULL);
 }
