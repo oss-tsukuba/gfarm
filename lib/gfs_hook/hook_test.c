@@ -17,9 +17,6 @@
 
 #include <stdio.h>
 
-#include <gfarm/gfarm.h>
-#include <gfarm/gfs_hook.h>
-
 /*
  *  Display struct stat.
  *
@@ -284,15 +281,6 @@ main(int argc, char *argv[])
 
     setvbuf(stdout, NULL, _IONBF, 0); /* to sync with truss/strace output */
 
-    /*
-     * If gfarm_initialize() is not called, this program is assumed
-     * to be a serial program, i.e. gfs_pio_set_local(0, 1) is
-     * automatically called.
-     */
-    e = gfarm_initialize(&argc, &argv);
-    if (e != NULL)
-	fprintf(stderr, "%s: %s\n", argv[0], e), exit(1);
-
     if (argc > 1)
 	filename = argv[1];
 
@@ -342,8 +330,6 @@ main(int argc, char *argv[])
     test_fclose(f);
 
     test_unlink(filename);
-
-    gfarm_terminate();
 
     exit(0);
 }
