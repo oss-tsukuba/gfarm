@@ -675,8 +675,16 @@ This subsection shows several execution examples of sample programs.
 
   In this example, textfile in a local filesystem is divided to file
   fragments which will be stored on currently available filesystem
-  nodes listed by the gfhost command.  Using the gfwhere command, you
-  can see which filesystem node each file fragment is stored on.
+  nodes listed by the gfhost command.
+
+	% gfsched -N 8 | gfimport_text -H - -o gfarm:test.txt textfile
+
+  In this example, textfile in a local filesystem is divided to 8 file
+  fragments, and each fragment file will be stored on 8 hosts which are
+  choosed by the gfsched command.
+
+  Using the gfwhere command, you can see which filesystem node each
+  file fragment is stored on.
 
 	% gfwhere gfarm:test.txt
 
@@ -692,7 +700,7 @@ This subsection shows several execution examples of sample programs.
 
  - Importing a fixed-size record file
 
-	% gfhost | gfimport_fixed -H - -o gfarm:test.bin \
+	% gfsched -N 8 | gfimport_fixed -H - -o gfarm:test.bin \
                          -l 100 fixed-size-record-file
 
   You can check whether gfimport_fixed correctly copies the
