@@ -750,28 +750,37 @@ gfs_refreshdir(void)
 char *
 gfarm_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
-	char *e = gfs_refreshdir();
+	char *e = gfs_refreshdir(), *e2;
 	struct node *n;
 
 	if (e != NULL)
 		return (e);
 
+	/* real metadata */
 	e = gfarm_metadb_path_info_get(pathname, info);
-	if (e == NULL) {
-		e = lookup_relative(root, pathname,
-		    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
-		    GFARM_INODE_LOOKUP, &n);
-		 /* refresh the dircache, if there is inconsistency. */
-		if (e != NULL ||
-		    (GFARM_S_ISDIR(info->status.st_mode) &&
-		    (n->u.d.mtime.tv_sec != info->status.st_mtimespec.tv_sec ||
-		     n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
-		         / GFARM_MILLISEC_BY_MICROSEC))) {
-			gfs_uncachedir();
-			e = gfs_refreshdir();
-		}
+
+	/* cached metadata */
+	e2 = lookup_relative(root, pathname,
+	    e != NULL ? -1 :
+	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
+	    GFARM_INODE_LOOKUP, &n);
+
+	/* real and cache do agree, and the metadata does not exist  */
+	if ((e == NULL) == (e2 == NULL) && e != NULL)
+		return (e);
+
+	if ((e == NULL) != (e2 == NULL) ||
+	    GFARM_S_ISDIR(info->status.st_mode) !=
+		((n->flags & NODE_FLAG_IS_DIR) != 0) ||
+	    ((n->flags & NODE_FLAG_IS_DIR) != 0 &&
+	     (n->u.d.mtime.tv_sec != info->status.st_mtimespec.tv_sec ||
+	      n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
+		/ GFARM_MILLISEC_BY_MICROSEC))) {
+		/* there is inconsistency, refresh the dircache. */
+		gfs_uncachedir();
+		e2 = gfs_refreshdir();
 	}
-	return (e);
+	return (e != NULL ? e : e2);
 }
 
 char *
