@@ -967,10 +967,9 @@ main(int argc, char **argv)
 		break;
 	case OP_LIST_DB:
 		if (argc == 0) {
-			e_save = list_all(print_host_info, udp_requests);
+			e_save = list_all(print_host_info, NULL);
 		} else {
-			e_save = list(argc, argv, print_host_info,
-					udp_requests);
+			e_save = list(argc, argv, print_host_info, NULL);
 		}
 		break;
 	}
