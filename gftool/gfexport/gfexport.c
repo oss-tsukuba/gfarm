@@ -40,7 +40,7 @@ gfexport_section(char *gfarm_url, char *section, FILE *ofp)
 }
 
 char *
-gfexport(char *gfarm_url, FILE *ofp, int nhosts, gfarm_stringlist hostlist)
+gfexport(char *gfarm_url, FILE *ofp, int nhosts, char **hostlist)
 {
 	char *e;
 	GFS_File gf;
@@ -121,7 +121,7 @@ main(argc, argv)
 	char **argv_save = argv;
 	char *e, *hostfile = NULL, *section = NULL;
 	int ch, error_line, n = 0, default_view = 0, global_view = 0;
-	gfarm_stringlist hostlist = NULL;
+	char **hostlist = NULL;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);

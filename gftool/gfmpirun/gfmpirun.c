@@ -56,7 +56,6 @@ main(argc, argv)
 	char **argv;
 {
 	gfarm_stringlist input_list, output_list, arg_list, option_list;
-	int ilist_size, olist_size, alist_size, optlist_size;
 	int command_index;
 	int pid, status;
 	int i, nhosts, job_id, nfrags, save_errno;
@@ -68,7 +67,7 @@ main(argc, argv)
 	FILE *fp;
 	char total_nodes[GFARM_INT32STRLEN];
 
-	char *hostfile = NULL;
+	char *hostfile = NULL, *scheduling_file;
 	char *command_name, **delivered_paths = NULL;
 
 	if (argc >= 1)
@@ -84,7 +83,7 @@ main(argc, argv)
 		fprintf(stderr, "%s: job manager: %s\n", program_name, e);
 		exit(1);
 	}
-	gfarm_stringlist_init(&optlist_size, &option_list);
+	gfarm_stringlist_init(&option_list);
 
 	/*
 	 * parse and skip/record options
@@ -126,10 +125,9 @@ main(argc, argv)
 					program_name, argv[i - 1]);
 				usage();
 			}
-			gfarm_stringlist_add(&optlist_size, &option_list,
-				argv[i - 1]);
+			gfarm_stringlist_add(&option_list, argv[i - 1]);
 		}
-		gfarm_stringlist_add(&optlist_size, &option_list, argv[i]);
+		gfarm_stringlist_add(&option_list, argv[i]);
 skip_opt: ;
 	}
 	command_index = i;
@@ -137,29 +135,28 @@ skip_opt: ;
 		usage();
 	command_name = argv[command_index];
 
-	gfarm_stringlist_init(&ilist_size, &input_list);
-	gfarm_stringlist_init(&olist_size, &output_list);
+	gfarm_stringlist_init(&input_list);
+	gfarm_stringlist_init(&output_list);
 	for (i = command_index + 1; i < argc; i++) {
 		if (strncmp(argv[i], gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
 			e = gfarm_url_fragment_number(argv[i], &nfrags);
 			if (e == NULL) {
-				gfarm_stringlist_add(&ilist_size, &input_list,
-						     argv[i]);
+				gfarm_stringlist_add(&input_list, argv[i]);
 			} else {
-				gfarm_stringlist_add(&olist_size, &output_list,
-						     argv[i]);
+				gfarm_stringlist_add(&output_list, argv[i]);
 			}
 		}
 	}
 
 	if (hostfile == NULL) {
-		if (gfarm_stringlist_length(input_list) == 0) {
+		if (gfarm_stringlist_length(&input_list) == 0) {
 			fprintf(stderr, "%s: no input file\n", program_name);
 			exit(1);
 		}
 		/* XXX - this is only using first input file for scheduling */
-		e = gfarm_url_hosts_schedule(input_list[0], NULL,
-					     &nhosts, &hosts);
+		scheduling_file = gfarm_stringlist_elem(&input_list, 0);
+		e = gfarm_url_hosts_schedule(scheduling_file, NULL,
+		    &nhosts, &hosts);
 		if (e != NULL) {
 			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
 			exit(1);
@@ -184,14 +181,14 @@ skip_opt: ;
 					program_name, hostfile, e);
 			exit(1);
 		}
+		scheduling_file = hostfile;
 	}
 
 	/*
 	 * register job manager
 	 */
 	e = gfarm_user_job_register(nhosts, hosts, program_name,
-	    hostfile == NULL ? input_list[0] : hostfile,
-	    argc - command_index, &argv[command_index],
+	    scheduling_file, argc - command_index, &argv[command_index],
 	    &job_id);
 	if (e != NULL) {
 		fprintf(stderr, "%s: job register: %s\n", program_name, e);
@@ -213,8 +210,8 @@ skip_opt: ;
 
 	sprintf(total_nodes, "%d", nhosts);
 
-	gfarm_stringlist_init(&alist_size, &arg_list);
-	gfarm_stringlist_add(&alist_size, &arg_list, "mpirun");
+	gfarm_stringlist_init(&arg_list);
+	gfarm_stringlist_add(&arg_list, "mpirun");
 #if 1
 	/*
 	 * without this option, the machine which is running gfmpirun
@@ -223,28 +220,29 @@ skip_opt: ;
 	 * regardless whether machine file includes this host or not.
 	 * XXX - this option is only available on mpich/p4.
 	 */
-	gfarm_stringlist_add(&alist_size, &arg_list, "-nolocal");
+	gfarm_stringlist_add(&arg_list, "-nolocal");
 #endif
-	gfarm_stringlist_add(&alist_size, &arg_list, "-machinefile");
-	gfarm_stringlist_add(&alist_size, &arg_list, hostfile);
-	gfarm_stringlist_add(&alist_size, &arg_list, "-np");
-	gfarm_stringlist_add(&alist_size, &arg_list, total_nodes);
-	gfarm_stringlist_cat(&alist_size, &arg_list, option_list);
+	gfarm_stringlist_add(&arg_list, "-machinefile");
+	gfarm_stringlist_add(&arg_list, hostfile);
+	gfarm_stringlist_add(&arg_list, "-np");
+	gfarm_stringlist_add(&arg_list, total_nodes);
+	gfarm_stringlist_add_list(&arg_list, &option_list);
 	if (delivered_paths == NULL) {
-		gfarm_stringlist_add(&alist_size, &arg_list, command_name);
+		gfarm_stringlist_add(&arg_list, command_name);
 	} else {
 		/*
 		 * XXX This assumes that all nodes are same architecture
 		 * XXX and all nodes have same gfarm_root!
 		 * XXX really broken.
 		 */
-		gfarm_stringlist_add(&alist_size,&arg_list,delivered_paths[0]);
+		gfarm_stringlist_add(&arg_list, delivered_paths[0]);
 	}
-	gfarm_stringlist_cat(&alist_size, &arg_list, &argv[command_index + 1]);
+	gfarm_stringlist_cat(&arg_list, &argv[command_index + 1]);
+	gfarm_stringlist_add(&arg_list, NULL);
 
 	switch (pid = fork()) {
 	case 0:
-		execvp("mpirun", arg_list);
+		execvp("mpirun", GFARM_STRINGLIST_STRARRAY(arg_list));
 		perror("mpirun");
 		exit(1);
 	case -1:
@@ -261,18 +259,19 @@ skip_opt: ;
 		;
 	save_errno = errno;
 
-	for (i = 0; output_list[i] != NULL; i++)
-		gfarm_url_fragment_cleanup(output_list[i], nhosts, hosts);
+	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
+		gfarm_url_fragment_cleanup(
+		    gfarm_stringlist_elem(&output_list, i), nhosts, hosts);
 	if (hostfile == filename)
 		unlink(filename);
 
 	if (delivered_paths != NULL)
 		gfarm_strings_free_deeply(nhosts, delivered_paths);
 	gfarm_strings_free_deeply(nhosts, hosts);
-	gfarm_stringlist_free(alist_size, arg_list);
-	gfarm_stringlist_free(olist_size, output_list);
-	gfarm_stringlist_free(ilist_size, input_list);
-	gfarm_stringlist_free(optlist_size, option_list);
+	gfarm_stringlist_free(&arg_list);
+	gfarm_stringlist_free(&output_list);
+	gfarm_stringlist_free(&input_list);
+	gfarm_stringlist_free(&option_list);
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
