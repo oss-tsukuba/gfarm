@@ -22,7 +22,7 @@
 Gfarm server processes such as gfmd and gfsd refer to /etc/gfarm.conf
 by default.  Since this configuration file is only read at the startup
 time, it is necessary to restart servers when updating the content of
-the configuraiton file.</para>
+the configuration file.</para>
 
 <para>Application programs such as gfls and gfhost refer to both
 /etc/gfarm.conf and ~/.gfarmrc in a user's home directory as a
@@ -61,7 +61,7 @@ from 0 to 31 separated by "/".</para>
 <varlistentry>
 <term><parameter>domain.name</parameter></term>
 <listitem>
-<para>specifes a host name.</para>
+<para>specifies a host name.</para>
 </listitem>
 </varlistentry>
 
@@ -186,10 +186,10 @@ The second argument <parameter>auth method</parameter> should be
 The third argument specifies the host(s) by <parameter>Host
 specification</parameter>.</para>
 
-<para>The <token>auth</token> stetement may be specified any number of
+<para>The <token>auth</token> statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the taget host has
-the <token>enable</token> keyword.  When there is no correnponding
+the first entry whose host specification matches the target host has
+the <token>enable</token> keyword.  When there is no corresponding
 entry, or when the first corresponding entry has the
 <token>disable</token> keyword, the authentication method does not
 become a candidate.</para>
@@ -205,8 +205,8 @@ method, <token>sharedsecret</token> is tried first, and then
 
 <para>The GSI authentication method is available if and only if the
 --with-globus option is specified at the configure time.  When it is
-not available, the auth statement with <token>gsi</token> will be
-ignored.</para>
+not available, the <token>auth</token> statement with
+<token>gsi</token> will be ignored.</para>
 
 <para>This statement cannot be omitted.</para>
 <para>For example,</para>
@@ -230,8 +230,8 @@ and <token>gsi</token>, and all other hosts will be authenticated by
 <varlistentry>
 <term><token>netparam</token><parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter><emphasis>[</emphasis><parameter>Host specification</parameter><emphasis>]</emphasis></term>
 <listitem>
-<para>The netparm statement specifies several communication parameters
-listed below.</para>
+<para>The <token>netparam</token> statement specifies several
+communication parameters listed below.</para>
 
 <para><token>parallel_streams</token>.  This parameter specifies the
 number of tcp streams.  The default is a single stream.  This
