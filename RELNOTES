@@ -4,7 +4,7 @@ Science and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.0.4
 ============================
 
-[2004.8.23]
+[2004.8.24]
 
 Updated Features
 
@@ -16,7 +16,13 @@ Updated Features
  * gfs_chmod(3) - allows to change execution bits if it has only one
    file fragment.
 
+ * x86_64 support
+
  * Shared library support
+
+ * gfrun - added the -b option to specify global file view as a
+   default file view for programs linked with Gfarm syscall-hooking
+   library.
 
  * gfsd - added new protocols for creating a hard link and renaming a file.
 
