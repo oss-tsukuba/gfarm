@@ -2127,6 +2127,12 @@ if ( getconf LFS_CFLAGS && getconf LFS_LDFLAGS &&
 	largefile_cflags="`getconf LFS_CFLAGS`"
 	largefile_ldflags="`getconf LFS_LDFLAGS`"
 	LIBS="$LIBS `getconf LFS_LIBS`"
+
+	if test x"$target_os" = x"linux-gnu"; then
+		# glibc requires _GNU_SOURCE for pwrite64(2)
+		largefile_cflags="${largefile_cflags} -D_GNU_SOURCE"
+	fi
+
 else
 	largefile_cflags=
 	largefile_ldflags=
