@@ -19,7 +19,7 @@ export CC=gcc
 
 GFARM_CLIENT_PKG = gfarm-client
 GFARM_DOC_PKG = gfarm-doc
-GFARM_PKG = gfarm
+GFARM_PKG = gfarm-gfptool
 GFARMD_PKG = gfarmd
 GFMD_PKG = gfmd
 GFSD_PKG=gfsd
