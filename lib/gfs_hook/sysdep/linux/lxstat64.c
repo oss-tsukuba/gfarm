@@ -31,14 +31,20 @@
 
 #include "hooks_subr.h"
 
+#if defined(__i386__)
 #define NEEDS_XSTAT64_CONV
+#endif
+
+#ifdef NEEDS_XSTAT64_CONV
 #include "xstatconv.c"
+#endif
 
 /* Get information about the file NAME in BUF.  */
 
 int
 gfs_hook_syscall_lxstat64 (int vers, const char *name, struct stat64 *buf)
 {
+#ifdef NEEDS_XSTAT64_CONV
   int result;
 
 # if defined SYS_stat64
@@ -66,10 +72,13 @@ gfs_hook_syscall_lxstat64 (int vers, const char *name, struct stat64 *buf)
   {
     struct kernel_stat kbuf;
 
-    result = syscall (lstat, name, &kbuf);
+    result = syscall (SYS_lstat, name, &kbuf);
     if (result == 0)
       result = xstat64_conv (vers, &kbuf, buf);
   }
 
   return result;
+#else /* NEEDS_XSTAT64_CONV */
+  return syscall (SYS_lstat, name, buf);
+#endif
 }
