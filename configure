@@ -2331,6 +2331,7 @@ trap 'rm -fr `echo "Makefile makes/config.mk
 	${ns_makefiles}
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
+	util/gfront/gfront
  include/gfarm/gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
@@ -2474,6 +2475,7 @@ CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk
 	${ns_makefiles}
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
+	util/gfront/gfront
 "}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
