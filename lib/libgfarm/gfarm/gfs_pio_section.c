@@ -478,6 +478,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 
 		e = gfarm_path_info_set(gf->pi.pathname, &gf->pi);
 		if (e == GFARM_ERR_ALREADY_EXISTS &&
+		    (gf->open_flags & GFARM_FILE_EXCLUSIVE) != 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			goto free_host;
+		}
+		if (e == GFARM_ERR_ALREADY_EXISTS &&
 		    (e = gfarm_path_info_get(gf->pi.pathname, &pi)) == NULL) {
 			if (GFS_FILE_IS_PROGRAM(gf) !=
 			    GFARM_S_IS_PROGRAM(pi.status.st_mode))
