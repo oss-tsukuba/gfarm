@@ -94,8 +94,13 @@ extern char GFARM_URL_PREFIX[];
  * XXX - will be separated to <gfarm_schedule.h>?
  */
 char *gfarm_schedule_search_idle_by_all(int, char **);
+char *gfarm_schedule_search_idle_by_program(char *, int, char **);
 char *gfarm_url_hosts_schedule(char *, char *, int *, char ***);
+char *gfarm_url_hosts_schedule_by_program(char *, char *, char *,
+	int *, char ***);
 char *gfarm_file_section_host_schedule(char *, char *, char **);
+char *gfarm_file_section_host_schedule_by_program(char *, char *, char *,
+	char **);
 char *gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
 	char **);
 
@@ -113,6 +118,11 @@ char *gfarm_import_fragment_config_read(char *,
 	int *, char ***, file_offset_t **, int *);
 file_offset_t *gfarm_import_fragment_size_alloc(file_offset_t, int);
 char *gfarm_hostlist_read(char *, int *, char ***, int *);
+
+/*
+ * hostspec
+ */
+int gfarm_host_is_in_domain(const char *, const char *);
 
 /*
  * host
@@ -135,8 +145,9 @@ char *gfarm_host_address_get(const char *, int, struct sockaddr *, char **);
 
 #define GFARM_ARRAY_LENGTH(array)	(sizeof(array)/sizeof(array[0]))
 
+char *gfarm_fixedstrings_dup(int, char **, char **);
+void gfarm_strings_free_deeply(int, char **);
 int gfarm_strarray_length(char **);
 char **gfarm_strarray_dup(char **);
 void gfarm_strarray_free(char **);
-void gfarm_strings_free_deeply(int, char **);
 int gfarm_attach_debugger(void);
