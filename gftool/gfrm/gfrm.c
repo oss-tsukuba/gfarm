@@ -60,28 +60,31 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (hostfile != NULL && section == NULL) {
-		fprintf(stderr,
-		    "%s: -i <fragment> option is required with -H\n",
-		    program_name);
-		exit(1);
-	}
-	e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab, &error_line);
-	if (e != NULL) {
-		if (error_line != -1)
-			fprintf(stderr, "%s: line %d: %s\n",
-				hostfile, error_line, e);
-		else
-			fprintf(stderr, "%s: %s\n",
-				program_name, e);
-		exit(1);
-	}
-
-	if (section != NULL && hostfile == NULL) {
-		fprintf(stderr,
-		    "%s: -H <hostfile> option is required with -i\n",
-		    program_name);
-		exit(1);
+	if (hostfile == NULL) {
+		if (section != NULL) {
+			fprintf(stderr,
+			    "%s: -H <hostfile> option is required with -i\n",
+			    program_name);
+			exit(1);
+		}
+	} else {
+		if (section == NULL) {
+			fprintf(stderr,
+			    "%s: -i <fragment> option is required with -H\n",
+			    program_name);
+			exit(1);
+		}
+		e = gfarm_hostlist_read(hostfile,
+		    &nhosts, &hosttab, &error_line);
+		if (e != NULL) {
+			if (error_line != -1)
+				fprintf(stderr, "%s: line %d: %s\n",
+					hostfile, error_line, e);
+			else
+				fprintf(stderr, "%s: %s\n",
+					program_name, e);
+			exit(1);
+		}
 	}
 
 	for (i = 0; i < argc; i++) {
