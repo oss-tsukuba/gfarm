@@ -23,8 +23,10 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
-static char *gfrcmd_local_path = INSTALL_ROOT "/bin/gfrcmd";
-static char *gfrep_backend_client = "gfarm:/libexec/gfrepbe_client";
+#define GFRCMD_URL	"gfarm:/bin/gfrcmd"
+
+static char *gfrcmd_path = "gfrcmd"; /* i.e. search this from $PATH */
+static char *gfrep_backend_client_url = "gfarm:/libexec/gfrepbe_client";
 
 /*
  **********************************************************************
@@ -141,7 +143,7 @@ struct gfs_client_rep_backend_state {
 
 char *
 gfs_client_rep_backend_invoke(char *canonical_hostname,
-	char *gfrcmd_path, char *program, char *arg,
+	char *gfrcmd, char *program, char *arg,
 	int algorithm_version,
 	int ndivisions, int interleave_factor,
 	int file_sync_stripe, int send_stripe_sync, int recv_stripe_sync,
@@ -228,8 +230,8 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	}
 	if ((state->pid = fork()) == -1) {
 		e = gfarm_errno_to_error(errno);
-		fprintf(stderr, "%s: fork(2) for %s: %s\n",
-		    message_prefix, canonical_hostname, e);
+		fprintf(stderr, "%s: fork(2) for %s %s: %s\n",
+		    message_prefix, gfrcmd, canonical_hostname, e);
 		close(stdin_pipe[0]);
 		close(stdin_pipe[1]);
 		close(stdout_pipe[0]);
@@ -247,10 +249,10 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 		/* close other streams, if any */
 		for (i = 3; i < stdout_pipe[1]; i++)
 			close(i);
-		execv(gfrcmd_path, args);
+		execvp(gfrcmd, args);
 		e = gfarm_errno_to_error(errno);
-		fprintf(stderr, "%s: %s for %s: %s\n",
-		    message_prefix, gfrcmd_path, canonical_hostname, e);
+		fprintf(stderr, "%s: invoking %s %s: %s\n",
+		    message_prefix, gfrcmd, canonical_hostname, e);
 		_exit(EXIT_FAILURE);
 	}
 	/* parent */
@@ -259,8 +261,8 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 
 	e = xxx_fd_connection_new(stdin_pipe[1], &state->out);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s for pipe to %s\n",
-		    message_prefix, e, canonical_hostname);
+		fprintf(stderr, "%s: allocating memory for pipe to %s: %s\n",
+		    message_prefix, canonical_hostname, e);
 		close(stdin_pipe[1]);
 		close(stdout_pipe[0]);
 		kill(SIGTERM, state->pid);
@@ -269,8 +271,8 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	}
 	e = xxx_fd_connection_new(stdout_pipe[0], &state->in);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s for pipe from %s\n",
-		    message_prefix, e, canonical_hostname);
+		fprintf(stderr, "%s: allocating memory for pipe from %s: %s\n",
+		    message_prefix, canonical_hostname, e);
 		xxx_connection_free(state->out);
 		close(stdout_pipe[0]);
 		kill(SIGTERM, state->pid);
@@ -444,6 +446,7 @@ gfarm_file_section_replicate_multiple_request(
 	struct gfs_client_rep_backend_state *state;
 	struct xxx_connection *from_server, *to_server;
 	int replication_method_save;
+	static char *gfrcmd = NULL; /* cache */
 
 	if (gfarm_stringlist_length(gfarm_file_list) !=
 	    gfarm_stringlist_length(section_list))
@@ -498,16 +501,40 @@ gfarm_file_section_replicate_multiple_request(
 	if (e != NULL) /* shouldn't happen */
 		return (e);
 
+	if (gfrcmd == NULL) { /* if `gfrcmd' is not cached */
+		char *self_canonical, **gfrcmd_real_paths;
+
+		if (gfarm_host_get_canonical_self_name(&self_canonical)!= NULL)
+			gfrcmd = gfrcmd_path; /* not a filesystem node */
+		else {
+			replication_method_save =
+			    gfarm_replication_get_method();
+			gfarm_replication_set_method(
+			    GFARM_REPLICATION_BOOTSTRAP_METHOD);
+			e = gfarm_url_program_deliver(GFRCMD_URL,
+			    1, &self_canonical, &gfrcmd_real_paths);
+			gfarm_replication_set_method(
+			    replication_method_save);
+			if (e != NULL)
+				return ("cannot replicate " GFRCMD_URL
+				    " to this host");
+			gfrcmd = strdup(gfrcmd_real_paths[0]);
+			gfarm_strings_free_deeply(1, gfrcmd_real_paths);
+			if (gfrcmd == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		}
+	}
+
 	replication_method_save = gfarm_replication_get_method();
 	gfarm_replication_set_method(GFARM_REPLICATION_BOOTSTRAP_METHOD);
-	e = gfarm_url_program_deliver(gfrep_backend_client,
+	e = gfarm_url_program_deliver(gfrep_backend_client_url,
 	    1, &dst_canonical, &gfrep_backend_client_paths);
-	gfarm_replication_set_method(GFARM_REPLICATION_BOOTSTRAP_METHOD);
+	gfarm_replication_set_method(replication_method_save);
 	if (e != NULL)
 		return (e);
 
 	e = gfs_client_rep_backend_invoke(dst_canonical,
-	    gfrcmd_local_path, gfrep_backend_client_paths[0],
+	    gfrcmd, gfrep_backend_client_paths[0],
 	    src_canonical, -1,
 	    parallel_streams, stripe_unit_size,
 	    file_sync_stripe, send_stripe_sync, recv_stripe_sync,
