@@ -1001,7 +1001,7 @@ main(argc, argv)
 	gfs_glob_t types;
 	int error_happened = 0, min_replicas = 1;
 
-	char *hostfile = NULL, *domainname = "", *index = NULL;
+	char *hostfile = NULL, *domainname = NULL, *index = NULL;
 	char *src = NULL, *dest = NULL, *fragment_dest_list = NULL;
 	char *pair_list = NULL;
 
@@ -1031,21 +1031,20 @@ main(argc, argv)
 			domainname = optarg; conflict_check(&mode_ch, ch);
 			break;
 		case 'I':
-			index = optarg; conflict_check(&mode_ch, ch);
+			index = optarg;
 			break;
 		case 's':
 			src = optarg;
 			break;
 		case 'd':
-			dest = optarg;
+			dest = optarg; conflict_check(&mode_ch, ch);
 			break;
 		case 'l':
 			fragment_dest_list = optarg;
 			conflict_check(&mode_ch, ch);
 			break;
 		case 'P':
-			pair_list = optarg;
-			conflict_check(&mode_ch, ch);
+			pair_list = optarg; conflict_check(&mode_ch, ch);
 			break;
 		case 'N':
 			min_replicas = strtol(optarg, NULL, 0);
@@ -1061,35 +1060,31 @@ main(argc, argv)
 	if (bootstrap_method)
 		gfarm_replication_set_method(
 		    GFARM_REPLICATION_BOOTSTRAP_METHOD);
-	if (src != NULL &&
-	    (hostfile != NULL || domainname != NULL || pair_list != NULL)) {
+	if (src != NULL && dest == NULL && fragment_dest_list == NULL) {
 		fprintf(stderr,
-		    "%s: warning: -s src option is ignored with -%c option\n",
-		    program_name, mode_ch);
+		    "%s: -s <src> option only works with -d or -l option\n",
+		    program_name);
+		exit(EXIT_FAILURE);
 	}
-	if (dest != NULL && mode_ch != 'I' && mode_ch != 0) {
+	if (index != NULL && dest == NULL) {
 		fprintf(stderr,
-		    "%s: warning: -d dest option is ignored with -%c option\n",
-		    program_name, mode_ch);
+		    "%s: -I <index> option only works with -d option\n",
+		    program_name);
+		exit(EXIT_FAILURE);
 	}
-	if (min_replicas == 1 && mode_ch == 0 && dest == NULL) {
-		fprintf(stderr,
-		    "%s: warning: -N 1 (default) is meaningless "
-		    "without another option\n", program_name);
-		exit(EXIT_SUCCESS);
-	}
-	if (min_replicas > 1 &&
-	     (mode_ch == 'I' || mode_ch == 'l' || mode_ch == 'P'
-					       || dest != NULL)) {
+	if (min_replicas > 1 && mode_ch != 0 && mode_ch != 'D') {
 		fprintf(stderr,
 		    "%s: error: -N num-replica option is unavailable "
-		    "with -%c option\n", program_name, 
-				dest != NULL ? 'd' : mode_ch);
-			
+		    "with -%c option\n", program_name, mode_ch);
 		exit(EXIT_FAILURE); 
 	}
 	if (argc == 0 && fragment_dest_list == NULL)
 		usage();
+	if (min_replicas == 1 && mode_ch == 0) {
+		fprintf(stderr, "%s: warning: -N 1 (default) is meaningless "
+		    "without another option\n", program_name);
+		exit(EXIT_SUCCESS);
+	}
 
 	e = gfarm_stringlist_init(&paths);
 	if (e != NULL) {
@@ -1183,6 +1178,8 @@ main(argc, argv)
 			error_happened = 1;
 	} else {
 		/* replicate directories and whole files */
+		if (domainname == NULL)
+			domainname = "";
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			file = gfarm_stringlist_elem(&paths, i);
 			e = replicate_files_to_domain(file, min_replicas,
