@@ -1,14 +1,19 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
-#include <gfarm/gfs.h>
+#include <stdlib.h>
+#include <gfarm/gfarm.h>
 #include "hooks_subr.h"
 
 #define MAX_GFS_FILE_BUF	2048
 
 static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
+
+void
+gfs_hook_not_intialized(void)
+{
+	fprintf(stderr, "fatal error: gfarm_initialized() isn't called\n");
+}
 
 int
 gfs_hook_insert_gfs_file(GFS_File gf)
@@ -53,6 +58,11 @@ gfs_hook_clear_gfs_file(int fd)
 GFS_File
 gfs_hook_is_open(int fd)
 {
+	if (!gfarm_initialized) {
+		gfs_hook_not_initialized();
+		return (NULL); /* don't perform gfarm operation */
+	}
+
 	if (fd >= 0 && fd < MAX_GFS_FILE_BUF)
 		return (_gfs_file_buf[fd]);
 	return (NULL);
@@ -68,6 +78,10 @@ gfs_hook_is_url(const char *path, const char **urlp)
 	if (*path == '/')
 		++path;
 	if (gfarm_is_url(path)) {
+		if (!gfarm_initialized) {
+			gfs_hook_not_initialized();
+			return (0); /* don't perform gfarm operation */
+		}
 		*urlp = path;
 		return (1);
 	}
