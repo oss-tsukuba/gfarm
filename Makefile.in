@@ -26,5 +26,6 @@ post-distclean-hook:
 		$(INC_BUILDDIR)/gfarm_config.h \
 		Makefile makes/config.mk \
 		package/solaris/gfmd package/solaris/gfsd \
-		package/redhat/gfmd package/redhat/gfsd
+		package/redhat/gfmd package/redhat/gfsd \
+		libtool
 	-rm -rf autom4te.cache
