@@ -2222,6 +2222,7 @@ fi
 
 test -d include || mkdir -p include
 test -d lib || mkdir -p lib
+test -d package || mkdir -p package
 
 
 trap '' 1 2 15
@@ -2326,8 +2327,11 @@ ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
 trap 'rm -fr `echo "Makefile makes/config.mk
-    lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
-    ${ns_makefiles}  include/gfarm/gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+	lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
+	${ns_makefiles}
+	package/solaris/gfmd package/solaris/gfsd
+	package/redhat/gfmd package/redhat/gfsd
+ include/gfarm/gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -2466,8 +2470,11 @@ EOF
 cat >> $CONFIG_STATUS <<EOF
 
 CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk
-    lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
-    ${ns_makefiles} "}
+	lib/gfs_hook/Makefile ${gfs_hook_sysdep_makefile}
+	${ns_makefiles}
+	package/solaris/gfmd package/solaris/gfsd
+	package/redhat/gfmd package/redhat/gfsd
+"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
