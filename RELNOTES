@@ -28,7 +28,8 @@ Updated Features
    Node selection algorithm by load average is improved.
 
    Flags, GFARM_FILE_REPLICATE and GFARM_FILE_NOT_REPLICATE, for
-   gfs_pio_set_view_{local,index,global} are implemented.
+   gfs_pio_{open,create} and gfs_pio_set_view_{local,index,global} are
+   implemented.
 
  * Documentation
 
