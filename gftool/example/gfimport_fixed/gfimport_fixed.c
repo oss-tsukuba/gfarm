@@ -146,7 +146,6 @@ main(argc, argv)
 		e = gfarm_import_fragment_table_config(
 		    config, &nhosts, &fragtab, &error_line);
 	} else if (hostfile != NULL) {
-		int i;
 		struct stat is;
 
 		if (fstat(fileno(ifp), &is) == -1) {
