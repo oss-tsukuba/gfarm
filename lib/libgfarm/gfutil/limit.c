@@ -12,13 +12,13 @@
  *   if it is available, otherwise do not touch that.
  */
 void
-unlimit_nofiles(int *file_table_size_p)
+gfarm_unlimit_nofiles(int *file_table_size_p)
 {
 #ifdef HAVE_SETRLIMIT
 	struct rlimit limit;
 
 	if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
-		log_warning_errno("getrlimit");
+		gflog_warning_errno("getrlimit");
 		return;
 	}
 	if (limit.rlim_cur != limit.rlim_max) {
@@ -28,7 +28,7 @@ unlimit_nofiles(int *file_table_size_p)
 		limit.rlim_cur = limit.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
 			limit = save_current;
-			log_warning_errno("setrlimit");
+			gflog_warning_errno("setrlimit");
 		}
 	}
 	if (limit.rlim_cur != RLIM_INFINITY)

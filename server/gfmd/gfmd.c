@@ -57,15 +57,15 @@ gfm_server_get_request(struct xxx_connection *client, char *diag,
 	va_end(ap);
 
 	if (e != NULL) {
-		log_warning(diag, e);
+		gflog_warning(diag, e);
 		return (e);
 	}
 	if (eof) {
-		log_warning(diag, "missing RPC argument");
+		gflog_warning(diag, "missing RPC argument");
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
-		fatal(diag, "invalid format character to get request");
+		gflog_fatal(diag, "invalid format character to get request");
 	return (NULL);
 }
 
@@ -79,20 +79,20 @@ gfm_server_put_reply(struct xxx_connection *client, char *diag,
 	va_start(ap, format);
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL) {
-		log_warning(diag, e);
+		gflog_warning(diag, e);
 		return (e);
 	}
 	if (ecode == GFJ_ERROR_NOERROR) {
 		e = xxx_proto_vsend(client, &format, &ap);
 		if (e != NULL) {
-			log_warning(diag, e);
+			gflog_warning(diag, e);
 			return (e);
 		}
 	}
 	va_end(ap);
 
 	if (ecode == 0 && *format != '\0')
-		fatal(diag, "invalid format character to put reply");
+		gflog_fatal(diag, "invalid format character to put reply");
 	return (NULL);
 }
 
@@ -153,7 +153,7 @@ job_table_init(int table_size)
 	job_table = malloc(sizeof(struct job_table_entry *)
 			   * table_size);
 	if (job_table == NULL) {
-		errno = ENOMEM; fatal_errno("job table");
+		errno = ENOMEM; gflog_fatal_errno("job table");
 	}
 	for (i = 0; i < table_size; i++)
 		job_table[i] = NULL;
@@ -231,7 +231,7 @@ file_table_init(int table_size)
 
 	file_table = malloc(sizeof(struct file_table_entry) * table_size);
 	if (file_table == NULL) {
-		errno = ENOMEM; fatal_errno("job table");
+		errno = ENOMEM; gflog_fatal_errno("job table");
 	}
 	for (i = 0; i < table_size; i++) {
 		file_table[i].conn = NULL;
@@ -426,7 +426,7 @@ char *
 gfj_server_register_node(struct xxx_connection *client)
 {
 	/* XXX - NOT IMPLEMENTED */
-	fatal("register_node", "not implemented");
+	gflog_fatal("register_node", "not implemented");
 
 	return (gfj_server_put_reply(client, "register_node",
 	    GFJ_ERROR_NOERROR, ""));
@@ -551,7 +551,7 @@ char *
 gfj_server_hostinfo(struct xxx_connection *client)
 {
 	/* XXX - NOT IMPLEMENTED */
-	fatal("host_info", "not implemented");
+	gflog_fatal("host_info", "not implemented");
 
 	return (gfj_server_put_reply(client, "host_info",
 	    GFJ_ERROR_NOERROR, ""));
@@ -573,7 +573,7 @@ service(int client_socket)
 		return;
 	}
 	if (e != NULL) {
-		log_warning("request number", e);
+		gflog_warning("request number", e);
 		return;
 	}
 	switch (request) {
@@ -597,7 +597,7 @@ service(int client_socket)
 		e = gfj_server_hostinfo(client); break;
 	default:
 		sprintf(buffer, "%d", request);
-		log_warning("unknown request", buffer);
+		gflog_warning("unknown request", buffer);
 	}
 	if (e == NULL)
 		e = xxx_proto_flush(client);
@@ -630,17 +630,17 @@ main_loop(int accepting_socket)
 					&client_addr_size);
 			if (client_socket < 0) {
 				if (errno != EINTR)
-					log_warning_errno("accept");
+					gflog_warning_errno("accept");
 			} else {
 				errno = file_table_add(client_socket);
 				if (errno != 0)
-					log_warning_errno("file_table_add");
+					gflog_warning_errno("file_table_add");
 				else {
 					e = gfarm_authorize(
 					    file_table[client_socket].conn,
 					    0, &username);
 					if (e != NULL) {
-						log_warning("authorize", e);
+						gflog_warning("authorize", e);
 					} else {
 						file_table[client_socket].user
 							= username;
@@ -671,18 +671,18 @@ open_accepting_socket(int port)
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		fatal_errno("accepting socket");
+		gflog_fatal_errno("accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
-		log_warning_errno("SO_REUSEADDR");
+		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		fatal_errno("bind accepting socket");
+		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != NULL)
-		log_warning("setsockopt", e);
+		gflog_warning("setsockopt", e);
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		fatal_errno("listen");
+		gflog_fatal_errno("listen");
 	return (sock);
 }
 
@@ -706,7 +706,7 @@ main(int argc, char **argv)
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
-	log_set_identifier(program_name);
+	gflog_set_identifier(program_name);
 
 	while ((ch = getopt(argc, argv, "df:p:s:")) != -1) {
 		switch (ch) {
@@ -720,9 +720,10 @@ main(int argc, char **argv)
 			port_number = optarg;
 			break;
 		case 's':
-			syslog_facility = syslog_name_to_facility(optarg);
+			syslog_facility =
+			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				fatal(optarg, "unknown syslog facility");
+				gflog_fatal(optarg, "unknown syslog facility");
 			break;
 		case '?':
 		default:
@@ -743,12 +744,12 @@ main(int argc, char **argv)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	sock = open_accepting_socket(gfarm_metadb_server_port);
 	if (!debug_mode) {
-		log_open_syslog(LOG_PID, syslog_facility);
-		daemon(0, 0);
+		gflog_syslog_open(LOG_PID, syslog_facility);
+		gfarm_daemon(0, 0);
 	}
 
 	table_size = GFMD_CONNECTION_LIMIT;
-	unlimit_nofiles(&table_size);
+	gfarm_unlimit_nofiles(&table_size);
 	if (table_size > GFMD_CONNECTION_LIMIT)
 		table_size = GFMD_CONNECTION_LIMIT;
 	file_table_init(table_size);

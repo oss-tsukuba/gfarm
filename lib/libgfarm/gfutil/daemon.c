@@ -1,10 +1,11 @@
 #include <gfarm/gfarm_config.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "gfutil.h"
 
 #ifndef HAVE_DAEMON
 int
-daemon(int not_chdir, int not_close)
+gfarm_daemon(int not_chdir, int not_close)
 {
 	switch (fork()) {
 	case -1:

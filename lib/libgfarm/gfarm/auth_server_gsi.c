@@ -87,7 +87,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
-		log_error("authorize_gsi: "
+		gflog_error("authorize_gsi: "
 		    "cannot map global username into local username",
 		    userinfo->authData.userAuth.localName);
 		return (e);
@@ -101,7 +101,8 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
-		log_error("authorize_gsi: cannot map DN into global username",
+		gflog_error(
+		    "authorize_gsi: cannot map DN into global username",
 		    userinfo->distName);
 		return (e != NULL ? e : GFARM_ERR_AUTHENTICATION);
 	}
@@ -116,7 +117,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 	}
 
 	if (switch_to) {
-		log_set_auxiliary_info(global_username);
+		gflog_set_auxiliary_info(global_username);
 
 		/*
 		 * because the name returned by getlogin() is
@@ -148,7 +149,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 
 	/*
 	 * global_username may continue to be refered,
-	 * if (switch_to) as log_set_auxiliary_info()
+	 * if (switch_to) as gflog_set_auxiliary_info()
 	 * else if (global_usernamep != NULL) as *global_usernamep
 	 */
 	if (global_usernamep != NULL)

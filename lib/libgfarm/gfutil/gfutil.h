@@ -1,4 +1,10 @@
-void unlimit_nofiles(int *);
+#ifndef HAVE_DAEMON
+int gfarm_daemon(int, int);
+#else
+#define gfarm_daemon	daemon
+#endif
+
+void gfarm_unlimit_nofiles(int *);
 
 /* logutil */
 
@@ -6,16 +12,16 @@ void unlimit_nofiles(int *);
 #define GFARM_DEFAULT_FACILITY	LOG_LOCAL0
 #endif
 
-void log_message(int, char *, char *);
-void log_error(char *, char *);
-void log_warning(char *, char *);
-void log_warning_errno(char *);
+void gflog_message(int, char *, char *);
+void gflog_error(char *, char *);
+void gflog_warning(char *, char *);
+void gflog_warning_errno(char *);
 
-void fatal(char *, char *);
-void fatal_errno(char *);
+void gflog_fatal(char *, char *);
+void gflog_fatal_errno(char *);
 
-void log_set_identifier(char *);
-void log_set_auxiliary_info(char *);
-void log_open_syslog(int, int); 
+void gflog_set_identifier(char *);
+void gflog_set_auxiliary_info(char *);
+void gflog_syslog_open(int, int); 
 
-int syslog_name_to_facility(char *);
+int gflog_syslog_name_to_facility(char *);

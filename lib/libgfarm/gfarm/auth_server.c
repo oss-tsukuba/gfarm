@@ -44,7 +44,7 @@ static char *
 gfarm_authorize_panic(struct xxx_connection *conn, int switch_to,
 	char **global_usernamep)
 {
-	fatal("gfarm_authorize", "authorization assertion failed");
+	gflog_fatal("gfarm_authorize", "authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
 
@@ -67,11 +67,11 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 		++try;
 		e = xxx_proto_recv(conn, 0, &eof, "i", &request);
 		if (e != NULL) {
-			log_error("auth_simple-request", e);
+			gflog_error("auth_simple-request", e);
 			return (e);
 		}
 		if (eof) {
-			log_error("auth_simple-request", "unexpected EOF");
+			gflog_error("auth_simple-request", "unexpected EOF");
 			return (GFARM_ERR_PROTOCOL);
 		}
 		if (request != GFARM_AUTH_SIMPLE_GIVEUP &&
@@ -108,11 +108,11 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 		e = xxx_proto_recv(conn, 0, &eof, "ib",
 		    &expire, sizeof(response), &len, response);
 		if (e != NULL) {
-			log_error("auth_simple-response", e);
+			gflog_error("auth_simple-response", e);
 			return (e);
 		}
 		if (eof) {
-			log_error("auth_simple-response", "unexpected EOF");
+			gflog_error("auth_simple-response", "unexpected EOF");
 			return (GFARM_ERR_PROTOCOL);
 		}
 		/*
@@ -127,11 +127,11 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 					GFARM_AUTH_SHARED_KEY_GET)) != NULL &&
 			   e != GFARM_ERR_EXPIRED) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			log_error("auth_simple: read-key", e);
+			gflog_error("auth_simple: read-key", e);
 		} else if (time(0) >= expire) {
 			/* may reach here if (e == GFARM_ERR_EXPIRED) */
 			error = GFARM_AUTH_ERROR_EXPIRED;
-			log_warning("auth_simple", "key expired");
+			gflog_warning("auth_simple", "key expired");
 		} else {
 			/* may also reach here if (e == GFARM_ERR_EXPIRED) */
 			gfarm_auth_simple_response_data(
@@ -139,12 +139,13 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 			    response_expected);
 			if (expire != expire_expected) {
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-				log_error("auth_simple",
-					  "expire time mismatch");
+				gflog_error("auth_simple",
+				    "expire time mismatch");
 			} else if (memcmp(response, response_expected,
 			    sizeof(response)) != 0) {
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-				log_error("auth_simple", "response mismatch");
+				gflog_error("auth_simple",
+				    "response mismatch");
 			} else {
 				error = GFARM_AUTH_ERROR_NO_ERROR;
 			}
@@ -176,26 +177,26 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 #endif
 	e = xxx_proto_recv(conn, 0, &eof, "s", &global_username);
 	if (e != NULL) {
-		log_error("authorize_simple", "reading username");
+		gflog_error("authorize_simple", "reading username");
 		return (e);
 	}
 	if (eof) {
-		log_error("authorize_simple", "unexpected EOF");
+		gflog_error("authorize_simple", "unexpected EOF");
 		return (GFARM_ERR_PROTOCOL);
 	}
 
-	log_set_auxiliary_info(global_username);
+	gflog_set_auxiliary_info(global_username);
 
 	e = gfarm_global_to_local_username(global_username, &local_username);
 	if (e != NULL) {
 		pwd = NULL;
-		log_error("authorize_simple",
-			  "cannot map global username into local username");
+		gflog_error("authorize_simple",
+		    "cannot map global username into local username");
 	} else {
 		pwd = getpwnam(local_username);
 		if (pwd == NULL)
-			log_error(local_username, "authorize_simple: "
-				  "local account doesn't exist");
+			gflog_error(local_username, "authorize_simple: "
+			    "local account doesn't exist");
 	}
 
 	if (pwd != NULL) {
@@ -225,7 +226,7 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 	}
 	/* if (pwd == NULL), (e != NULL) must be true */
 	if (e != NULL) {
-		log_set_auxiliary_info(NULL);
+		gflog_set_auxiliary_info(NULL);
 		free(global_username);
 		if (local_username != NULL)
 			free(local_username);
@@ -251,13 +252,13 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 		gfarm_set_local_username(local_username);
 		gfarm_set_local_homedir(pwd->pw_dir);
 	} else {
-		log_set_auxiliary_info(NULL);
+		gflog_set_auxiliary_info(NULL);
 		if (global_usernamep == NULL) /* see below */
 			free(global_username);
 	}
 	/*
 	 * global_username may continue to be refered,
-	 * if (switch_to) as log_set_auxiliary_info()
+	 * if (switch_to) as gflog_set_auxiliary_info()
 	 * else if (global_usernamep != NULL) as *global_usernamep
 	 */
 	free(local_username);
@@ -269,7 +270,7 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 /*
  * the `switch_to' flag has the following side effects:
  *	- the privilege of this program will switch to the authenticated user.
- *	- `global_username' will be recorded by log_set_auxiliary_info().
+ *	- `global_username' will be recorded by gflog_set_auxiliary_info().
  * and
  *	- gfarm_get_local_username(), gfarm_get_local_homedir() and
  *	  gfarm_get_global_username() become available.
@@ -308,18 +309,18 @@ gfarm_authorize(struct xxx_connection *conn, int switch_to,
 		strcpy(namebuf, name_header);
 		gfarm_sockaddr_to_string(&addr,
 		    namebuf + sizeof(name_header) - 1, GFARM_SOCKADDR_STRLEN);
-		log_warning(namebuf, e);
+		gflog_warning(namebuf, e);
 		log_header = namebuf;
 		name = NULL;
 	}
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(name, &addr);
 	if (methods == 0) {
-		log_error(log_header, "access refused");
+		gflog_error(log_header, "access refused");
 	} else {
 		methods &= gfarm_auth_method_get_available();
 		if (methods == 0)
-			log_error(log_header, "auth-method not configured");
+			gflog_error(log_header, "auth-method not configured");
 	}
 
 	nmethods = 0;
@@ -362,13 +363,14 @@ gfarm_authorize(struct xxx_connection *conn, int switch_to,
 				 * there is no usable auth-method
 				 * between client and server.
 				 */
-				log_error(log_header, "auth-method not match");
+				gflog_error(log_header,
+				    "auth-method not match");
 				return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 			}
 			return (GFARM_ERR_AUTHENTICATION);
 		}
 		if (error != GFARM_AUTH_ERROR_NO_ERROR) {
-			log_error(log_header, "incorrect auth-method reply");
+			gflog_error(log_header, "incorrect auth-method reply");
 			return (GFARM_ERR_PROTOCOL);
 		}
 

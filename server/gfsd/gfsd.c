@@ -70,7 +70,7 @@ uid_t restricted_user = 0;
 
 long rate_limit = 0;
 
-#define fatal_proto(proto, status)	fatal(proto, status)
+#define gflog_fatal_proto(proto, status)	gflog_fatal(proto, status)
 
 void
 gfs_server_get_request(struct xxx_connection *client, char *diag,
@@ -85,11 +85,11 @@ gfs_server_get_request(struct xxx_connection *client, char *diag,
 	va_end(ap);
 
 	if (e != NULL)
-		fatal_proto(diag, e);
+		gflog_fatal_proto(diag, e);
 	if (eof)
-		fatal_proto(diag, "missing RPC argument");
+		gflog_fatal_proto(diag, "missing RPC argument");
 	if (*format != '\0')
-		fatal(diag, "invalid format character to get request");
+		gflog_fatal(diag, "invalid format character to get request");
 }
 
 void
@@ -102,16 +102,16 @@ gfs_server_put_reply(struct xxx_connection *client, char *diag,
 	va_start(ap, format);
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL)
-		fatal_proto(diag, e);
+		gflog_fatal_proto(diag, e);
 	if (ecode == 0) {
 		e = xxx_proto_vsend(client, &format, &ap);
 		if (e != NULL)
-			fatal_proto(diag, e);
+			gflog_fatal_proto(diag, e);
 	}
 	va_end(ap);
 
 	if (ecode == 0 && *format != '\0')
-		fatal(diag, "invalid format character to put reply");
+		gflog_fatal(diag, "invalid format character to put reply");
 }
 
 int file_table_free = 0;
@@ -125,7 +125,7 @@ file_table_init(int table_size)
 
 	file_table = malloc(sizeof(int) * table_size);
 	if (file_table == NULL) {
-		errno = ENOMEM; fatal_errno("file table");
+		errno = ENOMEM; gflog_fatal_errno("file table");
 	}
 	for (i = 0; i < table_size; i++)
 		file_table[i] = -1;
@@ -181,7 +181,7 @@ local_path(char *file, char **pathp, char *diag)
 	e = gfarm_path_localize(file, pathp);
 	free(file);
 	if (e != NULL)
-		fatal(diag, e);
+		gflog_fatal(diag, e);
 }
 
 void
@@ -678,27 +678,27 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 	free(src_host);
 	if (e != NULL) {
 		error = gfs_string_to_proto_error(e);
-		log_warning("replicate_file_seq:remote_connect", e);
+		gflog_warning("replicate_file_seq:remote_connect", e);
 	} else {
 		e = gfs_client_open(src_conn, file, GFARM_FILE_RDONLY, 0,
 				    &src_fd);
 		if (e != NULL) {
 			error = gfs_string_to_proto_error(e);
-			log_warning("replicate_file_seq:remote_open", e);
+			gflog_warning("replicate_file_seq:remote_open", e);
 		} else {
 			e = gfarm_path_localize(file, &path);
 			if (e != NULL)
-				fatal("replicate_file_seq:path", e);
+				gflog_fatal("replicate_file_seq:path", e);
 			fd = open(path, O_WRONLY|O_CREAT|O_TRUNC, mode);
 			if (fd < 0) {
 				error = gfs_errno_to_proto_error(errno);
-				log_warning_errno(
+				gflog_warning_errno(
 				    "replicate_file_seq:local_open");
 			} else {
 				e = gfs_client_copyin(src_conn, src_fd, fd);
 				if (e != NULL) {
 					error = gfs_string_to_proto_error(e);
-					log_warning(
+					gflog_warning(
 					    "replicate_file_seq:copyin", e);
 				}
 				close(fd);
@@ -755,7 +755,7 @@ simple_division(int ofd, struct parallel_stream *divisions,
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
-			log_warning("replicate_file_division:copyin", e);
+			gflog_warning("replicate_file_division:copyin", e);
 			divisions[i].state = GSRFP_FINISH;
 			continue;
 		}
@@ -807,7 +807,7 @@ striping(int ofd, struct parallel_stream *divisions,
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
-			log_warning("replicate_file_stripe:copyin", e);
+			gflog_warning("replicate_file_stripe:copyin", e);
 			divisions[i].state = GSRFP_FINISH;
 			continue;
 		}
@@ -850,12 +850,12 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 
 	e = gfarm_path_localize(file, &path);
 	if (e != NULL)
-		fatal("replicate_file_par", e);
+		gflog_fatal("replicate_file_par", e);
 	ofd = open(path, O_WRONLY|O_CREAT|O_TRUNC, mode);
 	free(path);
 	if (ofd == -1) {
 		error = gfs_errno_to_proto_error(errno);
-		log_warning_errno("replicate_file_par:local_open");
+		gflog_warning_errno("replicate_file_par:local_open");
 		goto finish;
 	}
 
@@ -884,7 +884,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
-			log_warning("replicate_file_par:remote_connect", e);
+			gflog_warning("replicate_file_par:remote_connect", e);
 			break;
 		}
 	}
@@ -902,7 +902,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
-			log_warning("replicate_file_par:remote_open", e);
+			gflog_warning("replicate_file_par:remote_open", e);
 
 			/*
 			 * XXX - this should be done in parallel
@@ -944,7 +944,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 			fd = gfs_client_connection_fd(divisions[i].src_conn);
 			/* XXX - prevent this happens */
 			if (fd >= FD_SETSIZE) {
-				fatal("replicate_file_par",
+				gflog_fatal("replicate_file_par",
 				    "too big file descriptor");
 			}
 			FD_SET(fd, &readable);
@@ -956,7 +956,8 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 		nfound = select(max_fd + 1, &readable, NULL, NULL, NULL);
 		if (nfound <= 0) {
 			if (nfound == -1 && errno != EINTR && errno != EAGAIN)
-				log_warning_errno("replicate_file_par:select");
+				gflog_warning_errno(
+				    "replicate_file_par:select");
 			continue;
 		}
 		for (i = 0; i < n; i++) {
@@ -1151,22 +1152,24 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 
 			e = xxx_proto_recv(client, 1, &eof, "i", &cmd);
 			if (e != NULL)
-				fatal_proto("command:client subcommand", e);
+				gflog_fatal_proto("command:client subcommand",
+				    e);
 			if (eof)
-				fatal_proto("command:client subcommand",
+				gflog_fatal_proto("command:client subcommand",
 					    "eof");
 			switch (cmd) {
 			case GFS_PROTO_COMMAND_EXIT_STATUS:
-				fatal_proto("command:client subcommand",
+				gflog_fatal_proto("command:client subcommand",
 					    "unexpected exit_status");
 				break;
 			case GFS_PROTO_COMMAND_SEND_SIGNAL:
 				e = xxx_proto_recv(client, 1, &eof, "i", &sig);
 				if (e != NULL)
-					fatal_proto("command_send_signal", e);
+					gflog_fatal_proto(
+					    "command_send_signal", e);
 				if (eof)
-					fatal_proto("command_send_signal",
-						    "eof");
+					gflog_fatal_proto(
+					    "command_send_signal", "eof");
 				/* "-" is to send it to the process group */
 				kill(-cc->pid, sig);
 				break;
@@ -1174,12 +1177,15 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 				e = xxx_proto_recv(client, 1, &eof,
 						   "ii", &fd, &len);
 				if (e != NULL)
-					fatal_proto("command_fd_input", e);
+					gflog_fatal_proto("command_fd_input",
+					    e);
 				if (eof)
-					fatal_proto("command_fd_input", "eof");
+					gflog_fatal_proto("command_fd_input",
+					    "eof");
 				if (fd != FDESC_STDIN) {
 					/* XXX - something wrong */
-					fatal_proto("command_fd_input", "fd");
+					gflog_fatal_proto("command_fd_input",
+				           "fd");
 
 				}
 				if (len <= 0) {
@@ -1194,7 +1200,7 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 				break;
 			default:
 				/* XXX - something wrong */
-				fatal_proto("command_io",
+				gflog_fatal_proto("command_io",
 					    "unknown subcommand");
 				break;
 			}
@@ -1207,7 +1213,8 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 					GFS_COMMAND_CLIENT_STATE_NEUTRAL;
 			if (gfarm_iobuffer_is_read_eof(
 					cc->iobuffer[FDESC_STDIN])) {
-				fatal_proto("command_fd_input_content", "eof");
+				gflog_fatal_proto("command_fd_input_content",
+				    "eof");
 			}
 		}
 	}
@@ -1338,21 +1345,21 @@ gfs_server_client_command_result(struct xxx_connection *client)
 	 * Now, we recover the connection file descriptor blocking mode.
 	 */
 	if (fcntl(xxx_connection_fd(client), F_SETFL, 0) == -1)
-		log_warning("command-result:block", strerror(errno));
+		gflog_warning("command-result:block", strerror(errno));
 
 	/* make cc->client_state neutral */
 	if (cc->client_state == GFS_COMMAND_CLIENT_STATE_OUTPUT) {
 		e = xxx_proto_purge(client, 0, cc->client_output_residual);
 		if (e != NULL)
-			fatal_proto("command_fd_input:purge", e);
+			gflog_fatal_proto("command_fd_input:purge", e);
 	}
 
 	for (finish = 0; !finish; ) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &cmd);
 		if (e != NULL)
-			fatal_proto("command:client subcommand", e);
+			gflog_fatal_proto("command:client subcommand", e);
 		if (eof)
-			fatal_proto("command:client subcommand", "eof");
+			gflog_fatal_proto("command:client subcommand", "eof");
 		switch (cmd) {
 		case GFS_PROTO_COMMAND_EXIT_STATUS:
 			finish = 1;
@@ -1360,27 +1367,27 @@ gfs_server_client_command_result(struct xxx_connection *client)
 		case GFS_PROTO_COMMAND_SEND_SIGNAL:
 			e = xxx_proto_recv(client, 0, &eof, "i", &sig);
 			if (e != NULL)
-				fatal_proto("command_send_signal", e);
+				gflog_fatal_proto("command_send_signal", e);
 			if (eof)
-				fatal_proto("command_send_signal", "eof");
+				gflog_fatal_proto("command_send_signal","eof");
 			break;
 		case GFS_PROTO_COMMAND_FD_INPUT:
 			e = xxx_proto_recv(client, 0, &eof, "ii", &fd, &len);
 			if (e != NULL)
-				fatal_proto("command_fd_input", e);
+				gflog_fatal_proto("command_fd_input", e);
 			if (eof)
-				fatal_proto("command_fd_input", "eof");
+				gflog_fatal_proto("command_fd_input", "eof");
 			if (fd != FDESC_STDIN) {
 				/* XXX - something wrong */
-				fatal_proto("command_fd_input", "fd");
+				gflog_fatal_proto("command_fd_input", "fd");
 			}
 			e = xxx_proto_purge(client, 0, len);
 			if (e != NULL)
-				fatal_proto("command_fd_input:purge", e);
+				gflog_fatal_proto("command_fd_input:purge", e);
 			break;
 		default:
 			/* XXX - something wrong */
-			fatal_proto("command_io", "unknown subcommand");
+			gflog_fatal_proto("command_io", "unknown subcommand");
 			break;
 		}
 	}
@@ -1660,7 +1667,7 @@ rpc_reply:
 	 * Now, we set the connection file descriptor non-blocking mode.
 	 */
 	if (fcntl(conn_fd, F_SETFL, O_NONBLOCK) == -1) /* shouldn't fail */
-		log_warning("command-start:nonblock", strerror(errno));
+		gflog_warning("command-start:nonblock", strerror(errno));
 
 	siz = sizeof(i);
 	if (getsockopt(conn_fd, SOL_SOCKET, SO_RCVBUF, &i, &siz))
@@ -1733,7 +1740,7 @@ server(int client_fd)
 	e = xxx_fd_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
-		fatal("xxx_connection_new", e);
+		gflog_fatal("xxx_connection_new", e);
 	}
 	/*
 	 * The following function switches deamon's privilege
@@ -1744,12 +1751,12 @@ server(int client_fd)
 	 */
 	e = gfarm_authorize(client, 1, NULL);
 	if (e != NULL)
-		fatal("gfarm_authorize", e);
+		gflog_fatal("gfarm_authorize", e);
 
 	for (;;) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &request);
 		if (e != NULL)
-			fatal_proto("request number", e);
+			gflog_fatal_proto("request number", e);
 		if (eof)
 			exit(0);
 		switch (request) {
@@ -1778,7 +1785,7 @@ server(int client_fd)
 		case GFS_PROTO_COMMAND:	gfs_server_command(client); break;
 		default:
 			sprintf(buffer, "%d", (int)request);
-			log_warning("unknown request", buffer);
+			gflog_warning("unknown request", buffer);
 			exit(1);
 		}
 	}
@@ -1804,7 +1811,7 @@ datagram_server(int sock)
 		return;
 	rv = getloadavg(loadavg, GFARM_ARRAY_LENGTH(loadavg));
 	if (rv == -1) {
-		log_warning("datagram_server", "cannot get load average");
+		gflog_warning("datagram_server", "cannot get load average");
 		return;
 	}
 #ifndef WORDS_BIGENDIAN
@@ -1831,18 +1838,18 @@ open_accepting_socket(int port)
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		fatal_errno("accepting socket");
+		gflog_fatal_errno("accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
-		log_warning_errno("SO_REUSEADDR");
+		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		fatal_errno("bind accepting socket");
+		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != NULL)
-		log_warning("setsockopt", e);
+		gflog_warning("setsockopt", e);
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		fatal_errno("listen");
+		gflog_fatal_errno("listen");
 	return (sock);
 }
 
@@ -1857,10 +1864,10 @@ open_datagram_service_sockets(int port, int *countp, int **socketsp)
 
 	e = gfarm_get_ip_addresses(&self_addresses_count, &self_addresses);
 	if (e != NULL)
-		fatal("get_ip_addresses", e);
+		gflog_fatal("get_ip_addresses", e);
 	sockets = malloc(sizeof(*sockets) * self_addresses_count);
 	if (sockets == NULL)
-		fatal_errno("malloc datagram sockets");
+		gflog_fatal_errno("malloc datagram sockets");
 	for (i = 0; i < self_addresses_count; i++) {
 		memset(&bind_addr, 0, sizeof(bind_addr));
 		bind_addr.sin_family = AF_INET;
@@ -1869,9 +1876,9 @@ open_datagram_service_sockets(int port, int *countp, int **socketsp)
 		bind_addr_size = sizeof(bind_addr);
 		s = socket(PF_INET, SOCK_DGRAM, 0);
 		if (s < 0)
-			fatal_errno("datagram socket");
+			gflog_fatal_errno("datagram socket");
 		if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
-			fatal_errno("datagram bind");
+			gflog_fatal_errno("datagram bind");
 		sockets[i] = s;
 	}
 	*countp = self_addresses_count;
@@ -1905,7 +1912,7 @@ main(int argc, char **argv)
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
-	log_set_identifier(program_name);
+	gflog_set_identifier(program_name);
 
 	while ((ch = getopt(argc, argv, "df:p:s:u")) != -1) {
 		switch (ch) {
@@ -1919,9 +1926,10 @@ main(int argc, char **argv)
 			port_number = optarg;
 			break;
 		case 's':
-			syslog_facility = syslog_name_to_facility(optarg);
+			syslog_facility =
+			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				fatal(optarg, "unknown syslog facility");
+				gflog_fatal(optarg, "unknown syslog facility");
 			break;
 		case 'u':
 			restrict_user = 1;
@@ -1955,15 +1963,15 @@ main(int argc, char **argv)
 			max_fd = datagram_socks[i];
 	}
 	if (max_fd > FD_SETSIZE)
-		fatal("datagram_service", "too big file descriptor");
+		gflog_fatal("datagram_service", "too big file descriptor");
 
 	if (!debug_mode) {
-		log_open_syslog(LOG_PID, syslog_facility);
-		daemon(0, 0);
+		gflog_syslog_open(LOG_PID, syslog_facility);
+		gfarm_daemon(0, 0);
 	}
 
 	table_size = FILE_TABLE_LIMIT;
-	unlimit_nofiles(&table_size);
+	gfarm_unlimit_nofiles(&table_size);
 	if (table_size > FILE_TABLE_LIMIT)
 		table_size = FILE_TABLE_LIMIT;
 	file_table_init(table_size);
@@ -1991,7 +1999,7 @@ main(int argc, char **argv)
 		if (nfound <= 0) {
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno("select");
+			gflog_fatal_errno("select");
 		}
 
 		if (FD_ISSET(accepting_sock, &requests)) {
@@ -2001,7 +2009,7 @@ main(int argc, char **argv)
 			if (client < 0) {
 				if (errno == EINTR)
 					continue;
-				fatal_errno("accept");
+				gflog_fatal_errno("accept");
 			}
 #ifndef GFSD_DEBUG
 			switch (fork()) {
@@ -2015,12 +2023,12 @@ main(int argc, char **argv)
 				    NULL, (struct sockaddr *)&client_addr,
 				    &rate_limit);
 				if (e != NULL) /* shouldn't happen */
-					log_warning("rate_limit", e);
+					gflog_warning("rate_limit", e);
 				server(client);
 				/*NOTREACHED*/
 #ifndef GFSD_DEBUG
 			case -1:
-				log_warning_errno("fork");
+				gflog_warning_errno("fork");
 				/*FALLTHROUGH*/
 			default:
 				close(client);

@@ -11,7 +11,7 @@ static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 
 void
-log_message(int priority, char *message, char *status)
+gflog_message(int priority, char *message, char *status)
 {
 	if (log_auxiliary_info != NULL) {
 		if (status != NULL) {
@@ -53,57 +53,57 @@ log_message(int priority, char *message, char *status)
 }
 
 void
-log_error(char *message, char *status)
+gflog_error(char *message, char *status)
 {
-	log_message(LOG_ERR, message, status);
+	gflog_message(LOG_ERR, message, status);
 }
 
 void
-log_warning(char *message, char *status)
+gflog_warning(char *message, char *status)
 {
-	log_message(LOG_WARNING, message, status);
+	gflog_message(LOG_WARNING, message, status);
 }
 
 void
-log_warning_errno(char *message)
+gflog_warning_errno(char *message)
 {
-	log_warning(message, strerror(errno));
+	gflog_warning(message, strerror(errno));
 }
 
 void
-fatal(char *message, char *status)
+gflog_fatal(char *message, char *status)
 {
-	log_error(message, status);
+	gflog_error(message, status);
 	exit(2);
 }
 
 void
-fatal_errno(char *message)
+gflog_fatal_errno(char *message)
 {
-	fatal(message, strerror(errno));
+	gflog_fatal(message, strerror(errno));
 }
 
 void
-log_set_identifier(char *identifier)
+gflog_set_identifier(char *identifier)
 {
 	log_identifier = identifier;
 }
 
 void
-log_set_auxiliary_info(char *aux_info)
+gflog_set_auxiliary_info(char *aux_info)
 {
 	log_auxiliary_info = aux_info;
 }
 
 void
-log_open_syslog(int syslog_option, int syslog_facility)
+gflog_syslog_open(int syslog_option, int syslog_facility)
 {
 	openlog(log_identifier, syslog_option, syslog_facility);
 	log_use_syslog = 1;
 }
 
 int
-syslog_name_to_facility(char *name)
+gflog_syslog_name_to_facility(char *name)
 {
 	int i;
 	struct {
