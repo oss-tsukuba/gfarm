@@ -61,7 +61,7 @@ fixurl(char *gfarm_url)
 	if (e != NULL) {
 		fprintf(stderr, "%s on %s: %s\n", gfarm_url,
 			gfarm_host_get_self_name(), e);
-		return 1;
+		return (1);
 	}
 
 	/* check whether gfarm_url is directory or not. */
@@ -124,15 +124,67 @@ fixurl(char *gfarm_url)
 }
 
 static int
+unlink_dir(const char *src)
+{
+	struct stat sb;
+
+	if (lstat(src, &sb)) {
+		perror(src);
+		return (1);
+	}
+	if (S_ISREG(sb.st_mode) && unlink(src)) {
+		perror(src);
+		return (1);
+	}
+	else if (S_ISDIR(sb.st_mode)) {
+		DIR *dirp;
+		struct dirent *dp;
+
+		dirp = opendir(src);
+		if (dirp == NULL) {
+			perror(src);
+			return (1);
+		}
+		while ((dp = readdir(dirp)) != NULL) {
+			char *f;
+
+			if (strcmp(dp->d_name, ".") == 0
+			    || strcmp(dp->d_name, "..") == 0 || dp->d_ino == 0)
+				continue;
+
+			f = malloc(strlen(src) + 1 + strlen(dp->d_name) + 1);
+			if (f == NULL) {
+				fputs("not enough memory", stderr);
+				return (1);
+			}
+			strcpy(f, src);
+			strcat(f, "/");
+			strcat(f, dp->d_name);
+
+			(void)unlink_dir(f);
+
+			free(f);
+		}
+		closedir(dirp);
+		if (rmdir(src)) {
+			perror(src);
+			return (1);
+		}
+	}
+	return (0);
+}
+
+static int
 fixfrag(char *pathname, char *gfarm_prefix)
 {
 	char *gfarm_url, *sec, *gfarm_file, *e;
+	struct gfs_stat gst;
 	int r = 0;
 
 	gfarm_url = malloc(strlen(gfarm_prefix) + strlen(pathname) + 2);
 	if (gfarm_url == NULL) {
 		fputs("not enough memory", stderr);
-		return 1;
+		return (1);
 	}
 	strcpy(gfarm_url, gfarm_prefix);
 	if (gfarm_url[strlen(gfarm_url) - 1] != '/'
@@ -153,9 +205,41 @@ fixfrag(char *pathname, char *gfarm_prefix)
 	if (*sec == '\0') {
 		fprintf(stderr, "%s on %s: invalid filename\n", pathname,
 			gfarm_host_get_self_name());
+		if (delete_invalid_file) {
+			if (unlink_dir(pathname) == 0)
+				printf("%s on %s: deleted\n",
+				       pathname, gfarm_host_get_self_name());
+			else
+				fprintf(stderr, "%s on %s: cannot delete\n",
+					pathname, gfarm_host_get_self_name());
+		}
 		free(gfarm_url);
-		return 1;
+		return (1);
 	}
+
+	e = gfs_stat(gfarm_url, &gst);
+	if (e == NULL) {
+		if (!GFARM_S_ISREG(gst.st_mode)) {
+			gfs_stat_free(&gst);
+			fprintf(stderr, "%s: not a regular file\n", gfarm_url);
+			if (delete_invalid_file) {
+				if (unlink_dir(pathname) == 0)
+					printf("%s on %s: deleted\n",
+					       pathname,
+					       gfarm_host_get_self_name());
+				else
+					fprintf(stderr, "%s on %s: "
+						"cannot delete\n",
+						pathname,
+						gfarm_host_get_self_name());
+			}
+			free(gfarm_url);
+			return (1);
+		}
+		gfs_stat_free(&gst);
+	}
+	else
+		/* permit no fragment case */;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
@@ -169,7 +253,7 @@ fixfrag(char *pathname, char *gfarm_prefix)
 				perror(pathname);
 		}
 		free(gfarm_url);
-		return 1;
+		return (1);
 	}
 
 	/* check whether the fragment is already registered. */
@@ -211,15 +295,51 @@ fixdir(char *dir, char *gfarm_prefix)
 
 	if (stat(dir, &sb)) {
 		perror(dir);
-		return 1;
+		return (1);
 	}
 	if (S_ISREG(sb.st_mode))
-		return fixfrag(dir, gfarm_prefix);
+		return (fixfrag(dir, gfarm_prefix));
+
+	if (S_ISDIR(sb.st_mode)) {
+		char *gfarm_url, *gfarm_file, *e;
+
+		gfarm_url = malloc(strlen(gfarm_prefix) + strlen(dir) + 2);
+		if (gfarm_url == NULL) {
+			fputs("not enough memory", stderr);
+			return (1);
+		}
+		strcpy(gfarm_url, gfarm_prefix);
+		if (gfarm_url[strlen(gfarm_url) - 1] != '/'
+		    && gfarm_url[strlen(gfarm_url) - 1] != ':')
+			strcat(gfarm_url, "/");
+		strcat(gfarm_url, dir);
+
+		e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+		if (e != NULL) {
+			fprintf(stderr, "%s on %s: %s\n", gfarm_url, 
+				gfarm_host_get_self_name(), e);
+			if (delete_invalid_file) {
+				if (unlink_dir(dir) == 0)
+					printf("%s on %s: deleted\n",
+					       dir, gfarm_host_get_self_name());
+				else
+					fprintf(stderr,
+						"%s on %s: cannot delete\n",
+						dir,
+						gfarm_host_get_self_name());
+			}
+			free(gfarm_file);
+			free(gfarm_url);
+			return (1);
+		}
+		free(gfarm_file);
+		free(gfarm_url);
+	}
 
 	dirp = opendir(dir);
 	if (dirp == NULL) {
 		perror(dir);
-		return 1;
+		return (1);
 	}
 
 	if (strcmp(dir, ".") == 0)
@@ -234,7 +354,7 @@ fixdir(char *dir, char *gfarm_prefix)
 		if (dir1 == NULL) {
 			fputs("not enough memory", stderr);
 			closedir(dirp);
-			return 1;
+			return (1);
 		}
 		strcpy(dir1, dir);
 		if (strcmp(dir, ""))
@@ -247,9 +367,9 @@ fixdir(char *dir, char *gfarm_prefix)
 	}
 	closedir(dirp);
 	if (dirp != NULL)
-		return 1;
+		return (1);
 
-	return 0;
+	return (0);
 }
 
 /*
