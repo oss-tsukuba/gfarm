@@ -52,7 +52,8 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 	pi.status.st_ctimespec.tv_sec = now.tv_sec;
 	pi.status.st_atimespec.tv_nsec =
 	pi.status.st_mtimespec.tv_nsec =
-	pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+	pi.status.st_ctimespec.tv_nsec =
+	    now.tv_usec * GFARM_MILLISEC_BY_MICROSEC;
 	pi.status.st_size = 0;
 	pi.status.st_nsections = 0;
 
@@ -207,6 +208,8 @@ struct node {
 	union node_u {
 		struct dir {
 			struct gfarm_hash_table *children;
+
+			struct timeval mtime;
 		} d;
 	} u;
 };
@@ -237,6 +240,7 @@ init_dir_node(struct node *n, const char *name, int len)
 	n->flags = NODE_FLAG_IS_DIR;
 	n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
+	n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
 	return (n);
 }
 
@@ -266,6 +270,7 @@ change_file_node_to_dir(struct node *n)
 	if (n->u.d.children == NULL) {
 		n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
 		    gfarm_hash_default, gfarm_hash_key_equal_default);
+		n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
 	}
 }
 
@@ -564,25 +569,68 @@ free_all_nodes(void)
 }
 #endif
 
-static void
-remember_path(void *closure, struct gfarm_path_info *info)
+static char *
+gfs_dircache_modify_parent(const char *pathname)
 {
-	lookup_relative(root, info->pathname,
-	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
-	    GFARM_INODE_MARK, NULL);
+	char *e = NULL;
+	char *parent = strdup(pathname), *b;
+	struct gfarm_path_info pi;
+	struct timeval now;
+
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* create parent directory canonic path */
+	for (b = (char *)gfarm_path_dir_skip(parent);
+	    b > parent && b[-1] == '/'; --b)
+		;
+	*b = '\0';
+
+	/* NOTE: We don't have path_info for the root directory */
+	if (b > parent &&
+	    (e = gfarm_metadb_path_info_get(parent, &pi)) == NULL) {
+		gettimeofday(&now, NULL);
+		pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		pi.status.st_mtimespec.tv_nsec = now.tv_usec *
+		    GFARM_MILLISEC_BY_MICROSEC;
+		/* the following calls gfs_dircache_enter_path() internally */
+		e = gfarm_path_info_replace(parent, &pi);
+		gfarm_path_info_free(&pi);
+	}
+	free(parent);
+	return (e);
 }
 
 static char *
-gfs_cachedir(void)
+gfs_dircache_enter_path(enum gfarm_node_lookup_op op,
+	const char *pathname, struct gfarm_path_info *info)
 {
-	char *e;
+	struct node *n;
+	char *e = lookup_relative(root, info->pathname,
+	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
+	    op, &n);
 
-	/* assert(root == NULL); */
-	e = root_node();
 	if (e != NULL)
 		return (e);
-	gfarm_path_info_get_all_foreach(remember_path, NULL);
+	if (GFARM_S_ISDIR(info->status.st_mode)) {
+		n->u.d.mtime.tv_sec = info->status.st_mtimespec.tv_sec;
+		n->u.d.mtime.tv_usec = info->status.st_mtimespec.tv_nsec /
+		    GFARM_MILLISEC_BY_MICROSEC;
+	}
 	return (NULL);
+}
+
+static char *
+gfs_dircache_purge_path(const char *pathname)
+{
+	return (lookup_relative(root, pathname, -1,
+	    GFARM_INODE_REMOVE, NULL));
+}
+
+static void
+mark_path(void *closure, struct gfarm_path_info *info)
+{
+	gfs_dircache_enter_path(GFARM_INODE_MARK, info->pathname, info);
 }
 
 static void
@@ -620,25 +668,22 @@ sweep_nodes(struct node *n)
 	}
 }
 
-static void
-mark_path(void *closure, struct gfarm_path_info *info)
-{
-	lookup_relative(root, info->pathname,
-	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
-	    GFARM_INODE_MARK, NULL);
-}
+/* refresh directories as soon as possible */
+static int need_to_clear_cache = 0;
+
+struct timeval gfarm_dircache_timeout = { 60, 0 }; /* default 60sec. */
+static struct timeval last_dircache = {0, 0};
 
 static char *
-gfs_recachedir(void)
+gfs_cachedir(struct timeval *now)
 {
 	/* assert(root != NULL); */
 	gfarm_path_info_get_all_foreach(mark_path, NULL);
 	sweep_nodes(root);
+	need_to_clear_cache = 0;
+	last_dircache = *now;
 	return (NULL);
 }
-
-/* refresh directories as soon as possible */
-static int need_to_clear_cache = 0;
 
 void
 gfs_uncachedir(void)
@@ -646,43 +691,20 @@ gfs_uncachedir(void)
 	need_to_clear_cache = 1;
 }
 
-static char *
-gfs_dircache_enter_dir(const char *gfarm_file)
-{
-	return (lookup_relative(root, gfarm_file, NODE_FLAG_IS_DIR,
-	    GFARM_INODE_CREATE, NULL));
-}
-
-static char *
-gfs_dircache_enter_file(const char *gfarm_file)
-{
-	return (lookup_relative(root, gfarm_file, 0,
-	    GFARM_INODE_CREATE, NULL));
-}
-
-static char *
-gfs_dircache_purge_path(const char *gfarm_file)
-{
-	return (lookup_relative(root, gfarm_file, -1,
-	    GFARM_INODE_REMOVE, NULL));
-}
-
-struct timeval gfarm_dircache_timeout = { 10, 0 }; /* default 10sec. */
-static struct timeval last_dircache = {0, 0};
-
 void
 gfs_dircache_set_timeout(struct gfarm_timespec *timeout)
 {
 	gfarm_dircache_timeout.tv_sec = timeout->tv_sec;
-	gfarm_dircache_timeout.tv_usec = timeout->tv_nsec / 1000;
+	gfarm_dircache_timeout.tv_usec =
+	    timeout->tv_nsec / GFARM_MILLISEC_BY_MICROSEC;
 }
 
 static char *
 gfs_refreshdir(void)
 {
+	char *e, *s;
 	static int initialized = 0;
 	struct timeval now, elapsed;
-	char *s;
 
 	if (!initialized) {
 		if ((s = getenv("GFARM_DIRCACHE_TIMEOUT")) != NULL)
@@ -692,22 +714,17 @@ gfs_refreshdir(void)
 	}
 	gettimeofday(&now, NULL);
 	if (root == NULL) {
-		need_to_clear_cache = 0;
-		last_dircache = now;
-		return (gfs_cachedir());
+		e = root_node();
+		if (e != NULL)
+			return (e);
+		return (gfs_cachedir(&now));
 	}
-	if (need_to_clear_cache) {
-		need_to_clear_cache = 0;
-		last_dircache = now;
-		return (gfs_recachedir());
-	}
+	if (need_to_clear_cache)
+		return (gfs_cachedir(&now));
 	elapsed = now;
 	gfarm_timeval_sub(&elapsed, &last_dircache);
-	if (gfarm_timeval_cmp(&elapsed, &gfarm_dircache_timeout) >= 0) {
-		need_to_clear_cache = 0;
-		last_dircache = now;
-		return (gfs_recachedir());
-	}
+	if (gfarm_timeval_cmp(&elapsed, &gfarm_dircache_timeout) >= 0)
+		return (gfs_cachedir(&now));
 	return (NULL);
 }
 
@@ -718,19 +735,41 @@ gfs_refreshdir(void)
 char *
 gfarm_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
-	return (gfarm_metadb_path_info_get(pathname, info));
+	char *e = gfs_refreshdir();
+	struct node *n;
+
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_metadb_path_info_get(pathname, info);
+	if (e == NULL) {
+		e = lookup_relative(root, pathname,
+		    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
+		    GFARM_INODE_LOOKUP, &n);
+		 /* refresh the dircache, if there is inconsistency. */
+		if (e != NULL ||
+		    (GFARM_S_ISDIR(info->status.st_mode) &&
+		    (n->u.d.mtime.tv_sec != info->status.st_mtimespec.tv_sec ||
+		     n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
+		         / GFARM_MILLISEC_BY_MICROSEC))) {
+			gfs_uncachedir();
+			e = gfs_refreshdir();
+		}
+	}
+	return (e);
 }
 
 char *
 gfarm_path_info_set(char *pathname, struct gfarm_path_info *info)
 {
-	char *e = gfarm_metadb_path_info_set(pathname, info);
+	char *e = gfs_refreshdir();
 
-	if (e == NULL && (e = gfs_refreshdir()) == NULL) {
-		if (GFARM_S_ISDIR(info->status.st_mode))
-			gfs_dircache_enter_dir(pathname);
-		else
-			gfs_dircache_enter_file(pathname);
+	if (e != NULL)
+		return (e);
+	e = gfarm_metadb_path_info_set(pathname, info);
+	if (e == NULL) {
+		gfs_dircache_enter_path(GFARM_INODE_CREATE, pathname, info);
+		gfs_dircache_modify_parent(pathname);
 	}
 	return (e);
 }
@@ -738,17 +777,35 @@ gfarm_path_info_set(char *pathname, struct gfarm_path_info *info)
 char *
 gfarm_path_info_replace(char *pathname,	struct gfarm_path_info *info)
 {
-	/* This isn't used to change a dir to a file, or a file to a dir */
-	return (gfarm_metadb_path_info_replace(pathname, info));
+	char *e = gfs_refreshdir();
+
+	if (e != NULL)
+		return (e);
+	e = gfarm_metadb_path_info_replace(pathname, info);
+	if (e == NULL) {
+		e = gfs_dircache_enter_path(GFARM_INODE_LOOKUP,
+		    pathname, info);
+		if (e != NULL) {
+			gfs_uncachedir();
+			e = gfs_refreshdir();
+		}
+	}
+	return (e);
 }
 
 char *
 gfarm_path_info_remove(const char *pathname)
 {
-	char *e = gfarm_path_info_remove(pathname);
+	char *e = gfs_refreshdir();
 
-	if (e == NULL && (e = gfs_refreshdir()) == NULL)
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_metadb_path_info_remove(pathname);
+	if (e == NULL) {
 		gfs_dircache_purge_path(pathname);
+		gfs_dircache_modify_parent(pathname);
+	}
 	return (e);
 }
 
@@ -821,7 +878,8 @@ struct gfs_dir {
 char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e, *canonic_path, *abspath;
+	char *e, *canonic_path;
+	struct gfarm_path_info pi;
 	struct node *n;
 	struct gfs_dir *dir;
 
@@ -831,16 +889,25 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	if (e != NULL)
 		return (e);
 
-	abspath = malloc(strlen(canonic_path) + 2);
-	if (abspath == NULL) {
-		free(canonic_path);
-		return (GFARM_ERR_NO_MEMORY);
+	/* NOTE: We don't have path_info for the root directory */
+	if (*canonic_path != '\0') {
+		/* gfarm_path_info_get() makes the dircache consistent */
+		e = gfarm_path_info_get(canonic_path, &pi);
+		if (e != NULL) {
+			free(canonic_path);
+			return (e);
+		}
+		if (!GFARM_S_ISDIR(pi.status.st_mode)) {
+			gfarm_path_info_free(&pi);
+			free(canonic_path);
+			return (GFARM_ERR_NOT_A_DIRECTORY);
+		}
+		gfarm_path_info_free(&pi);
 	}
-	sprintf(abspath, "/%s", canonic_path);
-	free(canonic_path);
 
-	e = lookup_path(abspath, NODE_FLAG_IS_DIR, GFARM_INODE_LOOKUP, &n);
-	free(abspath);
+	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
+	    GFARM_INODE_LOOKUP, &n);
+	free(canonic_path);
 	if (e != NULL)
 		return (e);
 
