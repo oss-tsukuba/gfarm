@@ -10,6 +10,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	char *url, *sec;
 	va_list ap;
 	mode_t mode;
+	int filedes;
 
 	va_start(ap, oflag);
 	mode = va_arg(ap, mode_t);
@@ -60,7 +61,15 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			return (-1);
 		}
 	}
-	return (gfs_hook_insert_gfs_file(gf));
+	filedes = gfs_hook_insert_gfs_file(gf);
+	_gfs_hook_debug(
+		if (filedes != -1) {
+			fprintf(stderr,
+			    "GFS: Hooking " S(FUNC___OPEN) " --> %d(%d)\n",
+			    filedes, gfs_pio_fileno(gf));
+		}
+	);
+	return (filedes);
 }
 
 int
@@ -99,6 +108,7 @@ FUNC___CREAT(const char *path, mode_t mode)
 	const char *e;
 	char *url, *sec;
 	GFS_File gf;
+	int filedes;
 
 	_gfs_hook_debug(fprintf(stderr,
 	    "Hooking " S(FUNC___CREAT) "(%s, 0%o)\n", path, mode)); 
@@ -137,7 +147,15 @@ FUNC___CREAT(const char *path, mode_t mode)
 			return (-1);
 		}
 	}
-	return (gfs_hook_insert_gfs_file(gf));
+	filedes = gfs_hook_insert_gfs_file(gf);
+	_gfs_hook_debug(
+		if (filedes != -1) {
+			fprintf(stderr,
+			    "GFS: Hooking " S(FUNC___OPEN) " --> %d(%d)\n",
+			    filedes, gfs_pio_fileno(gf));
+		}
+	);
+	return (filedes);
 }
 
 int
