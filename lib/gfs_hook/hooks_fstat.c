@@ -44,8 +44,8 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___FSTAT) " locally: %d\n",
-	    gfs_pio_fileno(gfs)));
-	r = SYSCALL_FSTAT(gfs_pio_fileno(gfs), buf);
+	    gfs_pio_fileno(gf)));
+	r = SYSCALL_FSTAT(gfs_pio_fileno(gf), buf);
 	return (r);
 #endif
 }
