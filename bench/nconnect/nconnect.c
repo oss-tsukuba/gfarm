@@ -511,6 +511,8 @@ Bool enqueue(q, fd)		/* if success (not end-of-file) then YES */
 	return done > 0;
 }
 
+int sync_rate = 0;
+
 void dequeue(q, fd)
 	Queue *q;
 	int fd;
@@ -527,6 +529,15 @@ void dequeue(q, fd)
 		fatal("dequeue");
 	}
 	q->point += done;
+	if (sync_rate != 0 && fd == 1) { /* only for stdout */
+		static int written = 0;
+
+		written += done;
+		if (written >= sync_rate) {
+			written -= sync_rate;
+			fdatasync(fd);
+		}
+	}
 }
 
 /*** sockopts ************************************************/
@@ -866,6 +877,16 @@ int main(argc, argv)
 			static char end_loop[] = ".";
 
 			switch(*s) {
+			case 'S':
+				if (s[1] != '\0') {
+					sync_rate = strtol(&s[1], NULL, 0);
+				} else {
+					if (--argc <= 0)
+						usage();
+					sync_rate = strtol(*++argv, NULL, 0);
+				}
+				s = end_loop;
+				break;
 			case 'd':
 				debug_flag = YES;
 				break;
