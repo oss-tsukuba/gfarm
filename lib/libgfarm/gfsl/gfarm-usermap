@@ -1,0 +1,12 @@
+"/C=US/O=Globus/O=Electrotechnical Laboratory/CN=Yoshio Tanaka"	yoshio
+"/C=US/O=Globus/O=Real World Computing Partnership/OU=Tsukuba Research Center/CN=Yoshio Tanaka" yoshio
+"/O=Grid/O=Globus/OU=trc.rwcp.or.jp/CN=Mitsuhisa Sato" msato
+"/O=Grid/O=Globus/OU=is.titech.ac.jp/CN=Toyotaro Suzumura" suzumura
+"/O=Grid/O=Globus/OU=etl.go.jp/CN=Hidemoto Nakada" nakada
+"/O=Grid/O=Globus/OU=etl.go.jp/CN=Masahiro KAWATO" m-kawato
+"/O=Grid/O=Globus/OU=hpcc.gr.jp/CN=Motonori Hirano" m-hirano
+"/O=Grid/O=Globus/CN=host/hpc.a02.aist.go.jp" @host@ hpc.a02.aist.go.jp
+"/O=Grid/O=Globus/CN=host/eldorado.a02.aist.go.jp" @host@ eldorado.a02.aist.go.jp
+"/O=Grid/O=Globus/OU=hpcc.gr.jp/CN=Tatebe Osamu" tatebe
+"/O=Grid/O=Globus/OU=apgrid.org/CN=Osamu Tatebe" tatebe
+"/O=Grid/O=Globus/OU=hpcc.jp/CN=Noriyuki Soda" soda

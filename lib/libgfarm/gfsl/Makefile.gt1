@@ -1,0 +1,104 @@
+#
+# Makefile for the gss tutorial programs
+#
+#
+# Requires that the GLOBUS_DEVELOPMENT_PATH variables is set. This 
+# environment variable must point to the Globus development directory
+# containing the flavor or libraries, etc. that you wish to use when
+# building this example.  This environment variable should be set in
+# the shell prior to envoking make.  The utility program
+# $GLOBUS_PATH/globus-development-path can be used to assist you in
+# determining the correct setting. For usage information type
+# $GLOBUS_PATH/globus-development-path -help 
+#
+# For example:
+# 
+# SH:
+#
+# Non-threaded: 
+#
+# GLOBUS_DEVELOPMENT_PATH = `$GLOBUS_PATH/globus-development-path -nothreads`
+# export GLOBUS_DEVELOPMENT_PATH
+#
+# Threaded:
+#
+# GLOBUS_DEVELOPMENT_PATH = `$GLOBUS_PATH/globus-development-path -threads`
+# export GLOBUS_DEVELOPMENT_PATH
+#
+# CSH:
+#
+# Non-threaded:
+#
+# setenv GLOBUS_DEVELOPMENT_PATH \
+#	`$GLOBUS_PATH/globus-development-path -nothreads`
+# 
+# Threaded:
+#
+# setenv GLOBUS_DEVELOPMENT_PATH \
+# 	`$GLOBUS_PATH/globus-development-path -threads`
+#
+
+#
+# Read the makefile header containing build specific definitions
+#
+
+include $(GLOBUS_DEVELOPMENT_PATH)/etc/makefile_header
+
+#
+# NOTE: our application uses the COMMON and the GSSAPI modules! 
+#
+
+#PURE	= /usr/local/rational/releases/purify.sol.2001a.04.00/purify
+
+TARGETLIB = libgfsl.a
+
+CC=gcc
+MYCFLAGS  = 	-Wall -g \
+		-I$(includedir) $(CFLAGS) \
+		$(GLOBUS_COMMON_CFLAGS)   \
+		$(GLOBUS_GSSAPI_CFLAGS)
+
+MYLDFLAGS = 	-g \
+		-L$(libdir) $(LDFLAGS)    \
+		$(GLOBUS_COMMON_LDFLAGS)  \
+		$(GLOBUS_GSSAPI_LDFLAGS)
+
+MYLIBS    =	-L. -lgfsl \
+		$(GLOBUS_COMMON_LIBS)  \
+		$(GLOBUS_GSSAPI_LIBS)  \
+	 	$(LIBS)
+
+EXECS = server client server2 client2
+
+LIBOBJS	= gsi.o tcputil.o gfarm_hash.o auth.o session.o misc.o
+
+SCOBJS = scsub.o
+
+.c.o:
+	$(CC) $(MYCFLAGS) -c $<
+
+all:	$(TARGETLIB) $(EXECS) 
+
+$(TARGETLIB):	$(LIBOBJS)
+	rm -f $@
+	ar clq $@ $(LIBOBJS)
+	ranlib $@
+
+server:	server.o $(SCOBJS) $(TARGETLIB)
+	rm -f $@
+	$(PURE) $(CC) $(MYCFLAGS) $(MYLDFLAGS) -o server server.o $(SCOBJS) $(MYLIBS)
+
+client:	client.o $(SCOBJS) $(TARGETLIB)
+	rm -f $@
+	$(PURE) $(CC) $(MYCFLAGS) $(MYLDFLAGS) -o client client.o $(SCOBJS) $(MYLIBS)
+
+server2:	server2.o $(COBJS) $(TARGETLIB)
+	rm -f $@
+	$(PURE) $(CC) $(MYCFLAGS) $(MYLDFLAGS) -o server2 server2.o $(MYLIBS)
+
+client2:	client2.o $(COBJS) $(TARGETLIB)
+	rm -f $@
+	$(PURE) $(CC) $(MYCFLAGS) $(MYLDFLAGS) -o client2 client2.o $(MYLIBS)
+
+clean:
+	$(RM) -f $(EXECS) $(TARGETLIB) *.o *~ core *.core
