@@ -14,6 +14,9 @@
 
 char *progname = "gfsplck";
 
+static int check_all = 0;
+static int delete_invalid_file = 0;
+
 static char *
 check_path_info(char *gfarm_file)
 {
@@ -21,11 +24,11 @@ check_path_info(char *gfarm_file)
 	char *e;
 
 	/* check whether the path info is already registered. */
-
 	e = gfarm_path_info_get(gfarm_file, &p_info);
 	if (e != NULL)
 		return (e);
 
+	gfarm_path_info_free(&p_info);
 	return (NULL);
 }
 
@@ -35,22 +38,23 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 	char *hostname, *e;
 	struct gfarm_file_section_copy_info sc_info;
 
-	/* check whether the fragment is already registered. */
-
-	e = gfarm_host_get_canonical_self_name(&hostname);
-	if (e == NULL) {
-		e = gfarm_file_section_copy_info_get(
-			gfarm_file, sec, hostname, &sc_info);
+	if (check_all == 0) {
+		/* check whether the fragment is already registered. */
+		e = gfarm_host_get_canonical_self_name(&hostname);
 		if (e == NULL) {
-			/* already exist */
-			return (GFARM_ERR_ALREADY_EXISTS);
+			e = gfarm_file_section_copy_info_get(
+				gfarm_file, sec, hostname, &sc_info);
+			if (e == NULL) {
+				/* already exist */
+				gfarm_file_section_copy_info_free(&sc_info);
+				return (GFARM_ERR_ALREADY_EXISTS);
+			}
+			if (e != GFARM_ERR_NO_SUCH_OBJECT)
+				return (e);
 		}
-		if (e != GFARM_ERR_NO_SUCH_OBJECT)
-			return (e);
 	}
 
 	/* register the section info */
-
 	e = gfs_pio_set_fragment_info_local(pathname, gfarm_file, sec);
 	if (e != NULL)
 		return (e);
@@ -112,6 +116,13 @@ fixurl(char *gfarm_url)
 	if (e != NULL) {
 		fprintf(stderr, "%s on %s: %s\n", gfarm_url,
 			gfarm_host_get_self_name(), e);
+		if (delete_invalid_file) {
+			if (unlink(local_path) == 0)
+				printf("%s on %s: deleted\n",
+				       local_path, gfarm_host_get_self_name());
+			else
+				perror(local_path);
+		}
 		goto error_local_path;
 	}
 
@@ -120,6 +131,13 @@ fixurl(char *gfarm_url)
 	if (e != NULL && e != GFARM_ERR_ALREADY_EXISTS) {
 		fprintf(stderr, "%s (%s) on %s: %s\n", gfarm_url, sec,
 			gfarm_host_get_self_name(), e);
+		if (delete_invalid_file) {
+			if (unlink(local_path) == 0)
+				printf("%s on %s: deleted\n",
+				       local_path, gfarm_host_get_self_name());
+			else
+				perror(local_path);
+		}
 		goto error_local_path;
 	}
 
@@ -152,7 +170,6 @@ fixfrag(char *pathname, char *gfarm_prefix)
 	strcat(gfarm_url, pathname);
 
 	/* divide into file and section parts. */
-
 	sec = gfarm_url + strlen(gfarm_prefix);
 	while (*sec) {
 		if (*sec == ':') {
@@ -178,22 +195,35 @@ fixfrag(char *pathname, char *gfarm_prefix)
 	}
 
 	/* check whether the path info is already registered. */
-
 	e = check_path_info(gfarm_file);
 	if (e != NULL) {
 		fprintf(stderr, "%s (%s) on %s: %s\n", gfarm_url, sec,
 			gfarm_host_get_self_name(), e);
+		if (delete_invalid_file) {
+			if (unlink(pathname) == 0)
+				printf("%s on %s: deleted\n",
+				       pathname, gfarm_host_get_self_name());
+			else
+				perror(pathname);
+		}
 		r = 1;
 		goto finish;
 	}
 
 	/* check whether the fragment is already registered. */
-
 	e = fixfrag_i(pathname, gfarm_file, sec);
 	if (e != NULL) {
 		if (e != GFARM_ERR_ALREADY_EXISTS) {
 			fprintf(stderr, "%s on %s: %s\n", pathname,
 				gfarm_host_get_self_name(), e);
+			if (delete_invalid_file) {
+				if (unlink(pathname) == 0)
+					printf("%s on %s: deleted\n",
+					       pathname,
+					       gfarm_host_get_self_name());
+				else
+					perror(pathname);
+			}
 			r = 1;
 		}
 		else
@@ -261,18 +291,48 @@ fixdir(char *dir, char *gfarm_prefix)
 	return 0;
 }
 
+/*
+ *
+ */
+
+void
+usage()
+{
+	fprintf(stderr, "usage: %s [ -a ] [ -d ] [ Gfarm directory . . . ]\n",
+		progname);
+	fprintf(stderr, "options:\n");
+	fprintf(stderr, "\t-a\tcheck all files\n");
+	fprintf(stderr, "\t-d\tdelete invalid files\n");
+	exit(1);
+}
+
 int
 main(int argc, char *argv[])
 {
 	char *e, *gfarm_prefix;
+	extern int optind;
+	int c;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", progname, e);
 	}
 
-	argc--;
-	argv++;
+	while ((c = getopt(argc, argv, "ad")) != EOF) {
+		switch (c) {
+		case 'a':
+			check_all = 1;
+			break;
+		case 'd':
+			delete_invalid_file = 1;
+			break;
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
 	if (argc > 0) {
 		while (argc-- > 0 && fixurl(*argv++) == 0);
 		goto finish;
