@@ -416,8 +416,8 @@ search_idle_load_callback(void *closure)
 		search_idle_record_host(c->state,
 		    c->ah.host_state, c->ah.hostname);
 	}
-	free(c);
 	c->state->concurrency--;
+	free(c);
 }
 
 static void
@@ -434,8 +434,8 @@ search_idle_connect_callback(void *closure)
 		    c->ah.host_state, c->ah.hostname);
 		gfs_client_disconnect(gfs_server);
 	}
-	free(c);
 	c->state->concurrency--;
+	free(c);
 }
 
 static void
@@ -459,8 +459,8 @@ search_idle_load_and_connect_callback(void *closure)
 			return; /* request continues */
 		}
 	}
-	free(c);
 	c->state->concurrency--;
+	free(c);
 }
 
 static int
