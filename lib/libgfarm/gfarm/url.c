@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
+#include <assert.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
@@ -45,12 +46,16 @@
 
 char GFARM_URL_PREFIX[] = "gfarm:";
 
-char *
-gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
+/*
+ * Expand '~'.  Currently, '~/...' or '~username/...' is transformed
+ * to '/username/...'.
+ */
+static char *
+gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 {
-	char *s, *user, *e, *t;
+	char *s, *user;
 
-	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
+	*pathp = NULL; /* cause SEGV, if return value is ignored */
 
 	if (gfarm_file[0] == '~' &&
 	    (gfarm_file[1] == '\0' || gfarm_file[1] == '/')) {
@@ -65,7 +70,24 @@ gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 			return (GFARM_ERR_NO_MEMORY);
 		if (gfarm_file[0] == '~') /* ~username/... */
 			*s = '/';
+		/* XXX - it is necessary to check the user name. */
 	}
+	*pathp = s;
+
+	return (NULL);
+}
+
+char *
+gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
+{
+	char *s, *e, *t;
+
+	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
+
+	e = gfarm_path_expand_home(gfarm_file, &s);
+	if (e != NULL)
+		return (e);
+
 	e = gfs_realpath(s, &t);
 	free(s);
 	if (e != NULL)
@@ -85,6 +107,18 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
+	if (gfarm_file[0] == '~') {
+		char *expanded_gfarm_file;
+		e = gfarm_path_expand_home(gfarm_file, &expanded_gfarm_file);
+		if (e != NULL)
+			return (e);
+		assert(expanded_gfarm_file[0] != '~');
+		e = gfarm_canonical_path_for_creation(
+			expanded_gfarm_file, canonic_pathp);
+		free(expanded_gfarm_file);
+		return (e);
+	}
+
 	basename = gfarm_path_dir_skip(gfarm_file);
 	dir = NULL;
 	if (basename == gfarm_file) { /* "filename" */ 
@@ -102,14 +136,18 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		strncpy(dir, gfarm_file, basename - 2 - gfarm_file + 1);
 		dir[basename - 2 - gfarm_file + 1] = '\0';
 	}
+
+	/* Check the existence of the parent directory. */
 	e = gfarm_canonical_path(dir, &dir_canonic);
-	if (e != NULL)
-		return(e);
 	free(dir);
+	if (e != NULL)
+		return (e);
+
 	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
 				strlen(basename) + 1); 
 	if (*canonic_pathp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+
 	/*
 	 * When the 'dir_canonic' is a null string, *canonic_pathp
 	 * will start with '/' incorrectly.
@@ -119,6 +157,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 	else
 		sprintf(*canonic_pathp, "%s/%s", dir_canonic, basename);
 	free(dir_canonic);
+
 	return (NULL);
 }
 
