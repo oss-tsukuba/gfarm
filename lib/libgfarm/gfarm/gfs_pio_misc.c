@@ -313,11 +313,20 @@ struct gfs_chmod_args {
 };
 
 static char *
-chmod_request_parallel(struct gfs_connection *gfs_server, void *args)
+chmod_dir_request_parallel(struct gfs_connection *gfs_server, void *args)
 {
 	struct gfs_chmod_args *a = args;
+	char *e;
 
-	return (gfs_client_chmod(gfs_server, a->path, a->mode));
+	/*
+	 *  XXX - Not to issue a error message "no such object" for directory.
+	 *        A directory in spool is created on demand, so generally it 
+	 *        does not exist in spool though its meta data exits.
+	 */
+	e = gfs_client_chmod(gfs_server, a->path, a->mode);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) 
+		e = NULL;	
+	return (e);
 }
 
 static char *
@@ -508,7 +517,7 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 			return (e);
 		a.path = pi->pathname;
 		a.mode = mode;
-		e = gfs_client_apply_all_hosts(chmod_request_parallel,
+		e = gfs_client_apply_all_hosts(chmod_dir_request_parallel,
 					 &a, "gfs_chmod", &nhosts_succeed);
 		return (e);
 	}
