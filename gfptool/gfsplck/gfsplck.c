@@ -258,7 +258,7 @@ fixurl(const char *gfarm_url)
 static int
 fixfrag(char *pathname, const char *gfarm_prefix)
 {
-	char *gfarm_url, *sec, *gfarm_file, *e;
+	char *gfarm_url, *sec, *pname, *gfarm_file, *e;
 	struct gfs_stat gst;
 	int r = 1;
 
@@ -270,7 +270,8 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 
 	/* divide into file and section parts. */
 	sec = &gfarm_url[strlen(gfarm_url) - 1];
-	while (*sec) {
+	pname = sec - strlen(pathname) + 1;
+	while (sec > pname && *sec != '/') {
 		if (*sec == ':') {
 			*sec = '\0';
 			++sec;
@@ -278,7 +279,7 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 		}
 		--sec;
 	}
-	if (*sec == '\0') {
+	if (sec == pname || *sec == '/') {
 		print_errmsg(pathname, "invalid filename");
 		delete_invalid_file_or_directory(pathname);
 		goto error_gfarm_url;
