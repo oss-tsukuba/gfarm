@@ -29,7 +29,7 @@ ac_help="$ac_help
 				[default=5000]"
 ac_help="$ac_help
   --with-default-ns-exec-root=dir	default top directory of ns_exec
-				[default=/var/tmp]"
+				[default=PREFIX]"
 ac_help="$ac_help
   --with-gfarm-rsh=rsh		command name equivalent to rsh
 				[default=rsh]"
@@ -1315,7 +1315,7 @@ if test "${with_default_ns_exec_root+set}" = set; then
   withval="$with_default_ns_exec_root"
   default_ns_exec_root="${withval}"
 else
-  default_ns_exec_root='/var/tmp'
+  default_ns_exec_root='$(prefix)'
 fi
 
 
