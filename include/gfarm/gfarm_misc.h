@@ -14,6 +14,8 @@ typedef char		gfarm_int8_t;
 typedef short		gfarm_int16_t;
 typedef int		gfarm_int32_t;
 
+typedef gfarm_int64_t gfarm_pid_t; /* XXX - need better place */
+
 /*
  * username handling
  */
