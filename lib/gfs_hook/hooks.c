@@ -476,8 +476,6 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 	free(url);
 	if (sec != NULL)
 		free(sec);
-	if (e == NULL)
-		return (0);
 	_gfs_hook_debug(fprintf(stderr, "GFS: __execve: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
