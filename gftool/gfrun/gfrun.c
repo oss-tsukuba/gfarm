@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 #include "gfj_client.h"
 
 char *program_name = "gfrun";
@@ -249,12 +249,7 @@ skip_opt: ;
 	 */
 	gfarm_job_info_clear(&job_info, 1);
 	job_info.total_nodes = nhosts;
-	{
-		char *user, *home;
-
-		gfarm_user_home_get(&user, &home);
-		job_info.user = user;
-	}
+	job_info.user = gfarm_get_global_username();
 	job_info.job_type = program_name;
 	job_info.originate_host = gfarm_self_hostname;
 	job_info.gfarm_url_for_scheduring =

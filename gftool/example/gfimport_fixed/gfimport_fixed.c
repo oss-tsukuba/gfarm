@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 char *program_name = "gfimport_fixed";
 
@@ -25,14 +25,22 @@ import_fixed(FILE *ifp, char *output, int len,
 		return;
 	}
 
+	e = gfs_pio_create(output, GFARM_FILE_WRONLY, 0666, &of);
+	if (e != NULL) {
+		fprintf(stderr, "%s, %s\n", output, e);
+		free(buffer);
+		return;
+	}
 	for (i = 0; i < nfrags; i++) {
 		c = getc(ifp);
 		if (c == EOF)
 			break;
 		ungetc(c, ifp);
 
-		e = gfs_pio_create(output, i, hosttab[i], &of);
+		e = gfs_pio_set_view_index(of, nfrags, i, hosttab[i],
+					   GFARM_FILE_SEQUENTIAL);
 		if (e != NULL) {
+			gfs_pio_close(of);
 			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
 			e = gfarm_url_fragment_cleanup(output,
 			    nfrags, hosttab);
@@ -51,14 +59,12 @@ import_fixed(FILE *ifp, char *output, int len,
 			if (n < len) /* EOF */
 				break;
 		}
-		e = gfs_pio_close(of);
-		if (e != NULL) {
-			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output,
-			    nfrags, hosttab);
-			free(buffer);
-			return;
-		}
+	}
+	e = gfs_pio_close(of);
+	if (e != NULL) {
+		fprintf(stderr, "%s, %s\n", output, e);
+		e = gfarm_url_fragment_cleanup(output,
+		    nfrags, hosttab);
 	}
 	free(buffer);
 }

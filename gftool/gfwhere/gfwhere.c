@@ -6,48 +6,67 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 char *program_name = "gfwhere";
 
 char *
-where_is_fragment_copy(char *gfarm_url)
+where_is_section_copy(char *gfarm_url)
 {
 	char *gfarm_file, *e, *e_save = NULL;
-	int i, j, nfrags;
-	struct gfarm_file_fragment_info *frags;
+	int i, j, nsections;
+	struct gfarm_file_section_info *sections;
+	struct gfs_stat st;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, e);
 		return (e);
 	}
-	e = gfarm_file_fragment_info_get_all_by_file(gfarm_file,
-	    &nfrags, &frags);
+	e = gfs_stat(gfarm_url, &st);
 	if (e != NULL) {
 		free(gfarm_file);
 		fprintf(stderr, "%s: %s\n", gfarm_url, e);
 		return (e);
 	}
-	for (i = 0; i < nfrags; i++) {
+	if (!GFARM_S_ISREG(st.st_mode)) {
+		free(gfarm_file);
+		gfs_stat_free(&st);
+		fprintf(stderr, "%s: not a file\n", gfarm_url);
+		return (e);
+	}
+	if ((st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) { /* program? */
+		e = gfarm_file_section_info_get_all_by_file(
+		    gfarm_file, &nsections, &sections);
+	} else {
+		e = gfarm_file_section_info_get_sorted_all_serial_by_file(
+		    gfarm_file, &nsections, &sections);
+	}
+	if (e != NULL) {
+		free(gfarm_file);
+		gfs_stat_free(&st);
+		fprintf(stderr, "%s: %s\n", gfarm_url, e);
+		return (e);
+	}
+	for (i = 0; i < nsections; i++) {
 		int ncopies;
-		struct gfarm_file_fragment_copy_info *copies;
+		struct gfarm_file_section_copy_info *copies;
 
-		e = gfarm_file_fragment_copy_info_get_all_by_fragment(
-		    gfarm_file, i, &ncopies, &copies);
+		e = gfarm_file_section_copy_info_get_all_by_section(
+		    gfarm_file, sections[i].section, &ncopies, &copies);
 		if (e != NULL) {
 			fprintf(stderr, "%d: %s\n", i, e);
 			if (e_save == NULL)
 				e_save = e;
 			continue;
 		}
-		printf("%d:", i);
+		printf("%s:", sections[i].section);
 		for (j = 0; j < ncopies; j++)
 			printf(" %s", copies[j].hostname);
-		gfarm_file_fragment_copy_info_free_all(ncopies, copies);
+		gfarm_file_section_copy_info_free_all(ncopies, copies);
 		printf("\n");
 	}
-	gfarm_file_fragment_info_free_all(nfrags, frags);
+	gfarm_file_section_info_free_all(nsections, sections);
 	free(gfarm_file);
 	return (e_save);	
 }
@@ -93,7 +112,7 @@ main(int argc, char **argv)
 	for (i = 0; i < argc; i++) {
 		if (argc > 1)
 			printf("%s:\n", argv[i]);
-		if (where_is_fragment_copy(argv[i]) != NULL)
+		if (where_is_section_copy(argv[i]) != NULL)
 			error = 1;
 		if (argc > 1 && i < argc - 1)
 			printf("\n");

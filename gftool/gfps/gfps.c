@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
-#include "gfarm_config.h"
-#include "gfarm_error.h"
-#include "gfarm_misc.h"
+#include <gfarm/gfarm_config.h>
+#include <gfarm/gfarm_error.h>
+#include <gfarm/gfarm_misc.h>
 #include "gfj_client.h"
 #include "auth.h"
 
@@ -71,15 +71,10 @@ main(argc, argv)
 		}
 		for (i = 0; i < argc; i++)
 			joblist[i] = atoi(argv[i]);
-	} else if (do_all) {
-		e = gfj_client_list(gfarm_jobmanager_server,
-				    "", &n, &joblist);
 	} else {
-		char *user, *home;
-
-		gfarm_user_home_get(&user, &home);
 		e = gfj_client_list(gfarm_jobmanager_server,
-				    user, &n, &joblist);
+				    do_all ? "" : gfarm_get_global_username(),
+				    &n, &joblist);
 	}
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
@@ -97,8 +92,7 @@ main(argc, argv)
 		exit(1);
 	}
 	for (i = 0; i < n; i++) {
-		struct gfarm_job_info *info = &infos[i];
-
+		info = &infos[i];
 		printf("%6d %8s@%-10.10s %-8s %4d", joblist[i],
 		       info->user, info->originate_host,
 		       info->job_type, info->total_nodes);

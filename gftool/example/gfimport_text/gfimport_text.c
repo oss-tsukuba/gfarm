@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 char *program_name = "gfimport_text";
 
@@ -19,17 +19,25 @@ import_text(FILE *ifp, char *output,
 	struct gfs_file *of;
 	file_offset_t size;
 
+	e = gfs_pio_create(output, O_WRONLY, 0666, &of);
+	if (e != NULL) {
+		fprintf(stderr, "%s, %s\n", output, e);
+		return;
+	}
+
 	for (i = 0; i < nfrags; i++) {
 		c = getc(ifp);
 		if (c == EOF)
 			break;
 		ungetc(c, ifp);
 
-		e = gfs_pio_create(output, i, hosttab[i], &of);
+		e = gfs_pio_set_view_index(of, nfrags, i, hosttab[i],
+					   GFARM_FILE_SEQUENTIAL);
 		if (e != NULL) {
 			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
 			e = gfarm_url_fragment_cleanup(output,
 			    nfrags, hosttab);
+			gfs_pio_close(of);
 			return;
 		}
 		size = 0;
@@ -49,13 +57,13 @@ import_text(FILE *ifp, char *output,
 			if (c == EOF)
 				break;
 		}
-		e = gfs_pio_close(of);
-		if (e != NULL) {
-			fprintf(stderr, "%s, fragment %d: %s\n", output, i, e);
-			e = gfarm_url_fragment_cleanup(output,
-			    nfrags, hosttab);
-			return;
-		}
+	}
+	e = gfs_pio_close(of);
+	if (e != NULL) {
+		fprintf(stderr, "%s, %s\n", output, e);
+		e = gfarm_url_fragment_cleanup(output,
+		    nfrags, hosttab);
+		return;
 	}
 }
 

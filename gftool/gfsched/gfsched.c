@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 
 /*
  *  Create a hostfile.
@@ -26,9 +26,8 @@ main(int argc, char * argv[])
 {
     int argc_save = argc;
     char **argv_save = argv;
-    char * gfarm_url = (char *)NULL, * gfarm_file = (char *)NULL;
+    char * gfarm_url = (char *)NULL;
     char * e = (char *)NULL;
-    int filep = 0;
     FILE * outp = stdout;
     int errflg = 0;
     extern int optind;
@@ -36,11 +35,8 @@ main(int argc, char * argv[])
     char **hosts;
     int c, i;
 
-    while ((c = getopt(argc, argv, "f")) != EOF) {
+    while ((c = getopt(argc, argv, "?")) != EOF) {
 	switch (c) {
-	case 'f':
-	    filep = 1;
-	    break;
 	case '?':
 	default:
 	    ++errflg;
@@ -52,16 +48,7 @@ main(int argc, char * argv[])
     }
 
     if (optind < argc) {
-	if (filep)
-	    gfarm_file = argv[optind];
-	else {
-	    gfarm_url = argv[optind];
-	    e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	    if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	    }
-	}
+	gfarm_url = argv[optind];
     }
     else {
 	usage();
@@ -82,8 +69,8 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-    e = gfarm_hosts_schedule(gfarm_file, (char *)NULL,
-			     &nhosts, &hosts);
+    e = gfarm_url_hosts_schedule(gfarm_url, (char *)NULL,
+				 &nhosts, &hosts);
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
 	exit(1);

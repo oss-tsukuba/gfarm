@@ -2,9 +2,9 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
-#include "gfarm_config.h"
-#include "gfarm_error.h"
-#include "gfarm_misc.h"
+#include <gfarm/gfarm_config.h>
+#include <gfarm/gfarm_error.h>
+#include <gfarm/gfarm_misc.h>
 #include "auth.h"
 
 char *program_name = "gfkey";
@@ -38,7 +38,7 @@ main(argc, argv)
 {
 	extern int optind;
 	int ch, do_list = 0, do_expire_report = 0;
-	char *e, *user, *home;
+	char *e, *home;
 	unsigned int expire;
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	int mode = GFARM_AUTH_SHARED_KEY_GET;
@@ -72,7 +72,14 @@ main(argc, argv)
 	     !do_list && !do_expire_report))
 		usage();
 
-	gfarm_user_home_get(&user, &home);
+	gfarm_error_initialize();
+	e = gfarm_set_user_for_this_local_account();
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
+	}
+	home = gfarm_get_local_homedir();
+
 	e = gfarm_auth_shared_key_get(&expire, shared_key, home, mode);
 	if (e != NULL) {
 		fprintf(stderr, "%s\n", e);

@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include "gfarm.h"
+#include <gfarm/gfarm.h>
 #include "gfs_client.h"
 
 char *program_name = "gfrcmd";
@@ -95,7 +95,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char *e, *user, *home, *hostname, *command;
+	char *e, *user, *hostname, *command;
 	char *args[4];
 	char *envs[2];
 	char **envp = NULL;
@@ -136,9 +136,17 @@ main(argc, argv)
 
 	/*
 	 * initialization
+	 *
+	 * XXX
+	 * The reason we don't call gfarm_initialize() here is that
+	 * we'd like to avoid overhead to access meta database.
+	 * but we may have to access meta database eventually
+	 * for GSI DN <-> gfarm global username mapping.
 	 */
 	gfarm_error_initialize();
-	e = gfarm_config_read();
+	e = gfarm_set_user_for_this_local_account();
+	if (e == NULL)
+		e = gfarm_config_read();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
@@ -150,9 +158,9 @@ main(argc, argv)
 		exit(1);
 	}
 
-	gfarm_user_home_get(&user, &home);
+	user = gfarm_get_global_username();
 	/* XXX - kluge */
-	e = gfs_client_mkdir(gfs_server, user);
+	e = gfs_client_mkdir(gfs_server, user, 0755);
 	e = gfs_client_chdir(gfs_server, user);
 
 	e = gfs_client_command(gfs_server, args[0], args, envp,
