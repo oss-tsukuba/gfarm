@@ -462,7 +462,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL ldap_includes ldap_libs openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1033,8 +1033,6 @@ Optional Packages:
                           both]
   --with-tags[=TAGS]
                           include additional configurations [automatic]
-  --with-openldap=OpenLDAP_ROOT	openldap root directory
-				[default=guessed]
   --with-openssl=OpenSSL_ROOT	openssl root directory
 				[default=/usr]
   --with-globus-static		link static version of globus libraries instead of shared version
@@ -1057,6 +1055,8 @@ Optional Packages:
 				[default=rsh]
   --with-gfarmd-username=DIR	default username of gfarmd
 				[default=nobody]
+  --with-openldap=OpenLDAP_ROOT	openldap root directory
+				[default=guessed]
 
 Some influential environment variables:
   CC          C compiler command
@@ -18075,123 +18075,7 @@ LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 ###### parsing command line options
 ######
 
-###
-### --with-openldap=OpenLDAP_ROOT
-###
-
-
-# Check whether --with-openldap or --without-openldap was given.
-if test "${with_openldap+set}" = set; then
-  withval="$with_openldap"
-  with_openldap="${withval}"
-
-else
-  with_openldap=
-
-fi;
-
-openldap_found=
-if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
-  for d in /usr/local/openldap /usr/local /usr/pkg /usr
-  do
-    if test -f $d/include/ldap.h; then
-	with_openldap=$d
-	openldap_found=yes
-	break
-    fi
-  done
-  if test x"${openldap_found}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: openldap is not found, aborted" >&5
-echo "$as_me: error: openldap is not found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-fi
-echo "$as_me:$LINENO: result: using \"${with_openldap}\" as openldap root directory" >&5
-echo "${ECHO_T}using \"${with_openldap}\" as openldap root directory" >&6
-
-ldap_libs="-lldap -llber"
-if test x"${with_openldap}" = x"/usr"; then
-  ldap_includes=""
-else
-  ldap_includes="-I${with_openldap}/include"
-  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
-fi
-
-# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
-# configured, and DNS resolver library doesn't belongs to libc on some
-# systems.
-# But we cannot blindly link libresolv, because it may change behaviour
-# of gethostbyname() and friends.
-
-CPPFLAGS_SAVE="$CPPFLAGS"
-LIBS_SAVE="$LIBS"
-
-openldap_found=
-for extra_lib in "" "-lresolv" "-lbind"; do
-
-CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="$LIBS_SAVE ${ldap_libs} ${extra_lib}"
-
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#include <lber.h>
-#include <ldap.h>
-int
-main ()
-{
-
-	LDAP *ldap_server = ldap_open("example.com", 389);
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-
-	if test x"${extra_lib}" != x; then
-		echo "$as_me:$LINENO: result: using ${extra_lib} for LDAP" >&5
-echo "${ECHO_T}using ${extra_lib} for LDAP" >&6
-		ldap_libs="${ldap_libs} ${extra_lib}"
-	fi
-	openldap_found=yes
-	break
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-
-done
-if test x"${openldap_found}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: openldap cannot be linked, aborted" >&5
-echo "$as_me: error: openldap cannot be linked, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-CPPFLAGS="$CPPFLAGS_SAVE"
-LIBS="$LIBS_SAVE"
-
-
-
+### --with-openldap is handled later, because it needs AC_CHECK_LIB(nsl, ...)
 
 ###
 ### --with-openssl=OpenSSL_ROOT
@@ -19236,6 +19120,124 @@ fi
 
 # for conditional compilation which depends on _LARGEFILE64_SOURCE API
 
+
+
+
+
+###
+### --with-openldap=OpenLDAP_ROOT
+###
+
+
+# Check whether --with-openldap or --without-openldap was given.
+if test "${with_openldap+set}" = set; then
+  withval="$with_openldap"
+  with_openldap="${withval}"
+
+else
+  with_openldap=
+
+fi;
+
+openldap_found=
+if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
+  for d in /usr/local/openldap /usr/local /usr/pkg /usr
+  do
+    if test -f $d/include/ldap.h; then
+	with_openldap=$d
+	openldap_found=yes
+	break
+    fi
+  done
+  if test x"${openldap_found}" != x"yes"; then
+	{ { echo "$as_me:$LINENO: error: openldap is not found, aborted" >&5
+echo "$as_me: error: openldap is not found, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+fi
+echo "$as_me:$LINENO: result: using \"${with_openldap}\" as openldap root directory" >&5
+echo "${ECHO_T}using \"${with_openldap}\" as openldap root directory" >&6
+
+ldap_libs="-lldap -llber"
+if test x"${with_openldap}" = x"/usr"; then
+  ldap_includes=""
+else
+  ldap_includes="-I${with_openldap}/include"
+  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
+fi
+
+# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
+# configured, and DNS resolver library doesn't belongs to libc on some
+# systems.
+# But we cannot blindly link libresolv, because it may change behaviour
+# of gethostbyname() and friends.
+
+CPPFLAGS_SAVE="$CPPFLAGS"
+LIBS_SAVE="$LIBS"
+
+openldap_found=
+for extra_lib in "" "-lresolv" "-lbind"; do
+
+CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
+LIBS="$LIBS_SAVE ${ldap_libs} ${extra_lib}"
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <lber.h>
+#include <ldap.h>
+int
+main ()
+{
+
+	LDAP *ldap_server = ldap_open("example.com", 389);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+	if test x"${extra_lib}" != x; then
+		echo "$as_me:$LINENO: result: using ${extra_lib} for LDAP" >&5
+echo "${ECHO_T}using ${extra_lib} for LDAP" >&6
+		ldap_libs="${ldap_libs} ${extra_lib}"
+	fi
+	openldap_found=yes
+	break
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+
+done
+if test x"${openldap_found}" != x"yes"; then
+	{ { echo "$as_me:$LINENO: error: openldap cannot be linked, aborted" >&5
+echo "$as_me: error: openldap cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+CPPFLAGS="$CPPFLAGS_SAVE"
+LIBS="$LIBS_SAVE"
 
 
 
@@ -21417,8 +21419,6 @@ s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@LIBTOOL@,$LIBTOOL,;t t
-s,@ldap_includes@,$ldap_includes,;t t
-s,@ldap_libs@,$ldap_libs,;t t
 s,@openssl_includes@,$openssl_includes,;t t
 s,@openssl_libs@,$openssl_libs,;t t
 s,@globus_flavor@,$globus_flavor,;t t
@@ -21448,6 +21448,8 @@ s,@largefile64_srcs@,$largefile64_srcs,;t t
 s,@largefile64_objs@,$largefile64_objs,;t t
 s,@largefile64_cflags@,$largefile64_cflags,;t t
 s,@largefile64_targets@,$largefile64_targets,;t t
+s,@ldap_includes@,$ldap_includes,;t t
+s,@ldap_libs@,$ldap_libs,;t t
 s,@gfs_hook_sysdep_subdir@,$gfs_hook_sysdep_subdir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
