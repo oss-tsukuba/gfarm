@@ -48,12 +48,19 @@ public class DataBlockGroupElement {
 		oidIndex = i;
 	}
 
-	public boolean isPairOfHIDandOID(int hidx, int oidx)
+	public boolean isPairOfHIDandOID(int hidx, String event, OIDDefBlock odb)
 	{
-		if( (hidx == hostIndex) && (oidx == oidIndex) ){
-			return true;
-		}else{
-			return false;
+		int next = 1;
+		int oidx;
+		while(true){
+			oidx = odb.getOIDIndexNext(event, next);
+			if(oidx == -1){
+				return false;
+			} else if( (hidx == hostIndex) && (oidx == oidIndex) ){
+				return true;
+			} else{
+				next++;
+			}
 		}
 	}
 }

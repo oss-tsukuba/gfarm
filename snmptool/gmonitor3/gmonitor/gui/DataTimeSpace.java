@@ -450,11 +450,16 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			ArrayList dbgeList = (ArrayList) tbl.getDataBlockGroupElements();
 			int dbgCount = dbgeList.size();
 			while(true){
+				if(file.readDataBlock(db_idx) == null){  // end
+					break;
+				}
+				
 				long dbg_idx = db_idx % dbgCount;
 				DataBlockGroupElement row[] = (DataBlockGroupElement[]) dbgeList.get((int)dbg_idx);
 				int columns = -1;
+
 				for(int j = 0; j < row.length; j++){
-					boolean matched = row[j].isPairOfHIDandOID(hidx, oidx);
+					boolean matched = row[j].isPairOfHIDandOID(hidx, event, odb);
 					if(matched == true){
 						columns = j;
 						break;
@@ -501,7 +506,7 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 				DataBlockGroupElement[] row = (DataBlockGroupElement[]) rows.get(dbg_idx);
 				int columns = -1;
 				for(int j = 0; j < row.length; j++){
-					boolean matched = row[j].isPairOfHIDandOID(hidx, oidx);
+					boolean matched = row[j].isPairOfHIDandOID(hidx, event, odb);
 					if(matched == true){
 						columns = j;
 						break;

@@ -82,6 +82,29 @@ public class OIDDefBlock extends BinaryBlock {
 		return idx;
 	}
 
+	public int getOIDIndexNext(String nick, int next)
+	{
+		int idx = -1;
+		if(nick == null){
+			return idx;
+		}
+		synchronized(definition){
+			for(int i = 0; i < definition.size(); i++){
+				OIDDefElement e = (OIDDefElement) definition.get(i);
+				String n = e.getNickname();
+				if(n.equals(nick) == true){
+					if(next <= 1){
+						idx = i;
+						break;
+					} else {
+						next--;
+					}
+				}
+			}
+		}
+		return idx;
+	}
+
 	public OIDDefElement getOIDDefElement(int idx)
 	{
 		OIDDefElement e = null;
