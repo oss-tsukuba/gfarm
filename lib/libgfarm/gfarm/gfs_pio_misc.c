@@ -1505,7 +1505,7 @@ gfs_rename(const char *from_url, const char *to_url)
 	char *e, *from_canonical_path, *to_canonical_path;
 	struct gfarm_path_info from_pi, to_pi;
 
-	e = gfarm_url_make_path_for_creation(from_url, &from_canonical_path);
+	e = gfarm_url_make_path(from_url, &from_canonical_path);
 	if (e != NULL)
 		return (e);
 	e = gfarm_path_info_get(from_canonical_path, &from_pi);
@@ -1530,7 +1530,8 @@ gfs_rename(const char *from_url, const char *to_url)
 			}
 			gfarm_path_info_free(&to_pi);
 			e = gfs_unlink(to_url);
-			if (e != NULL)
+			/* FT - allows no physical file case */
+			if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
 				goto free_to_canonical_path;
 		}
 		e = rename_single_file(&from_pi, to_canonical_path);
@@ -1556,6 +1557,8 @@ gfs_rename(const char *from_url, const char *to_url)
 		e = rename_dir(from_url, to_url,
 			       from_canonical_path, to_canonical_path);
 	} else {
+		if (e == NULL)
+			gfarm_path_info_free(&to_pi);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	}
 
