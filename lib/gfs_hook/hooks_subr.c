@@ -105,6 +105,7 @@ gfs_hook_open_flags_gfarmize(int open_flags)
  */
 
 static int _gfs_hook_num_gfs_files;
+static int _gfs_hook_gfs_files_max;
 
 static void
 gfs_hook_num_gfs_files_check(void)
@@ -124,9 +125,11 @@ gfs_hook_num_gfs_files(void)
 }
 
 static void
-gfs_hook_num_gfs_files_inc(void)
+gfs_hook_num_gfs_files_inc(int fd)
 {
 	gfs_hook_num_gfs_files_check();
+	if (fd > _gfs_hook_gfs_files_max)
+		_gfs_hook_gfs_files_max = fd;
 	++_gfs_hook_num_gfs_files;
 }
 
@@ -199,10 +202,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	fd = gfs_pio_fileno(gf);
 	if (fstat(fd, &st) == -1) {
 		save_errno = errno;
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = save_errno;
-		return (-1);
+		goto error_close_gf;
 	}
 	if (S_ISREG(st.st_mode))
 		fd = fcntl(fd, F_DUPFD, GFS_HOOK_MIN_FD);
@@ -210,38 +210,34 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		fd = gfs_hook_adjust_fd(open("/dev/null", O_RDWR));
 	if (fd == -1) {
 		save_errno = errno;
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = save_errno;
-		return (-1);
+		goto error_close_gf;
 	}
 	if (fd >= MAX_GFS_FILE_BUF) {
-		__syscall_close(fd);
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = EMFILE;
-		return (-1);
+		save_errno = EMFILE;
+		goto error_close_fd;
 	}
 	if (_gfs_file_buf[fd] != NULL) {
-		__syscall_close(fd);
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = EBADF; /* XXX - something broken */
-		return (-1);
+		save_errno = EBADF; /* XXX - something broken */
+		goto error_close_fd;
 	}
 	_gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
 	if (_gfs_file_buf[fd] == NULL) {
-		__syscall_close(fd);
-		gfs_hook_delete_creating_file(gf);
-		gfs_pio_close(gf);
-		errno = ENOMEM;
-		return (-1);
+		save_errno = ENOMEM;
+		goto error_close_fd;
 	}
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_REG;
 	_gfs_file_buf[fd]->u.f = gf;
-	gfs_hook_num_gfs_files_inc();
+	gfs_hook_num_gfs_files_inc(fd);
 	return (fd);
+
+error_close_fd:
+	__syscall_close(fd);
+error_close_gf:
+	gfs_hook_delete_creating_file(gf);
+	gfs_pio_close(gf);
+	errno = save_errno;
+	return (-1);
 }
 
 int
@@ -259,58 +255,36 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	fd = gfs_hook_adjust_fd(open("/dev/null", O_RDONLY));
 	if (fd == -1) {
 		save_errno = errno;
-		gfs_closedir(dir);
-		errno = save_errno;
-		return (-1);
+		goto error_closedir;
 	}
 	if (fd >= MAX_GFS_FILE_BUF) {
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = EMFILE;
-		return (-1);
+		save_errno = EMFILE;
+		goto error_close_fd;
 	}
 	if (_gfs_file_buf[fd] != NULL) {
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = EBADF; /* XXX - something broken */
-		return (-1);
+		save_errno = EBADF; /* XXX - something broken */
+		goto error_close_fd;
 	}
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(url),
 	    &canonical_path);
 	if (e != NULL) {
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = gfarm_error_to_errno(e);
-		return (-1);
+		save_errno = gfarm_error_to_errno(e);
+		goto error_close_fd;
 	}
         _gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
         if (_gfs_file_buf[fd] == NULL) {
-		free(canonical_path);
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = ENOMEM;
-		return (-1);
+		save_errno = ENOMEM;
+		goto error_free_path;
         }
         _gfs_file_buf[fd]->u.d = malloc(sizeof(*_gfs_file_buf[fd]->u.d));
 	if (_gfs_file_buf[fd]->u.d == NULL) {
-		free(_gfs_file_buf[fd]);
-		_gfs_file_buf[fd] = NULL;
-		free(canonical_path);
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = ENOMEM;
-		return (-1);
+		save_errno = ENOMEM;
+		goto error_free_file_buf;
         }
 	e = gfs_stat(url, &_gfs_file_buf[fd]->u.d->gst);
 	if (e != NULL) {
-		free(_gfs_file_buf[fd]->u.d);
-		free(_gfs_file_buf[fd]);
-		_gfs_file_buf[fd] = NULL;
-		free(canonical_path);
-		__syscall_close(fd);
-		gfs_closedir(dir);
-		errno = gfarm_error_to_errno(e);
-		return (-1);
+		save_errno = gfarm_error_to_errno(e);
+		goto error_free_file_buf_u_d;
 	}
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_DIR;
@@ -318,6 +292,20 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	_gfs_file_buf[fd]->u.d->suspended = NULL;
 	_gfs_file_buf[fd]->u.d->canonical_path = canonical_path;
 	return (fd);
+
+error_free_file_buf_u_d:
+	free(_gfs_file_buf[fd]->u.d);
+error_free_file_buf:
+	free(_gfs_file_buf[fd]);
+	_gfs_file_buf[fd] = NULL;
+error_free_path:
+	free(canonical_path);
+error_close_fd:
+	__syscall_close(fd);
+error_closedir:
+	gfs_closedir(dir);
+	errno = save_errno;
+	return (-1);
 }
 
 unsigned char
@@ -382,7 +370,7 @@ gfs_hook_mode_calc_digest_all(void)
 	int fd;
 	GFS_File gf;
 
-	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd)
+	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd)
 		if (((gf = gfs_hook_is_open(fd)) != NULL) &&
 		    (gfs_hook_gfs_file_type(fd) == GFS_DT_REG))
 			gfs_hook_mode_calc_digest(gf);
@@ -396,7 +384,7 @@ gfs_hook_flush_all(void)
 	char *e, *e_save = NULL;
 	GFS_File gf;
 
-	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd) {
+	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd) {
 		if ((gf = gfs_hook_is_open(fd)) != NULL) {
 			e = gfs_pio_flush(gf);
 			if (e_save == NULL)
@@ -412,7 +400,7 @@ gfs_hook_close_all(void)
 	int fd;
 	char *e, *e_save = NULL;
 
-	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd) {
+	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd) {
 		if (gfs_hook_is_open(fd)) {
 			e = gfs_hook_clear_gfs_file(fd);
 			if (e_save == NULL)
