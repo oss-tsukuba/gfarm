@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "11 December 2003" "Gfarm" ""
+.TH "GFREP" "1" "14 January 2005" "Gfarm" ""
 .SH NAME
 gfrep \- replicate Gfarm files
 .SH SYNOPSIS
@@ -11,7 +11,7 @@ gfrep \- replicate Gfarm files
 \fBgfrep\fR \fB-H \fIhostfile\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-D \fIdomainname\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-D \fIdomainname\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
 \fBgfrep\fR \fB-P \fIhost-pair-file\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
@@ -35,10 +35,34 @@ is less than the total number of file fragments,
 it is treated as if the node names are specified repeatedly.
 
 if ``-'' is specified, standard input is used to read the host list.
+
+If the specified \fIGfarm-URL\fR is a directory,
+it will be copied recursively.
 .TP
 \fB-D \fIdomainname\fB\fR
 specifies a domainname of destination filesystem nodes
 where the replica will be made on.
+
+If none of this and other options for the destination host is specified, 
+the replica will be copied to any of hosts in meta data.
+But, in this case, you need to specify the number of replicas greater than
+or equal to 2 using -N option. 
+Please refer the description of the \fB-N\fR for detail.
+
+If the specified \fIGfarm-URL\fR is a directory,
+it will be copied recursively.
+.TP
+\fB-N \fInum-of-replicas\fB\fR
+specifies the number of file replicas, counting already existing ones.
+If replicas of a \fIGfarm-URL\fR file fragment is more than
+this parameter, the file fragment won't be copied and its replicas won't be
+removed.
+
+This option must be sepcified singuraly or with \fB-D\fR
+option.
+
+If \fB-N\fR option is omitted,  this works as if
+\fB-N 1\fR is specified.
 .TP
 \fB-P \fIhost-pair-file\fB\fR
 specifies a file which describes hostname pairs of
@@ -47,6 +71,9 @@ The \fIhost-pair-file\fR consists of a pair
 of a source node name and a destination node name in this order in each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.
+
+If the specified \fIGfarm-URL\fR is a directory,
+it will be copied recursively.
 .TP
 \fB-d \fIdestination-node\fB\fR
 specifies one destination filesystem node where the file will be
@@ -54,6 +81,9 @@ copied to.
 This option also needs \fB-I\fR usually,
 but there are conditions that \fB-I\fR option can be omitted.
 Please refer the description of the \fB-I\fR for detail.
+
+If the specified \fIGfarm-URL\fR is a directory,
+it will be copied recursively.
 .TP
 \fB-s \fIsource-node\fB\fR
 specifies a source filesystem node where the file will be copied from.
@@ -74,7 +104,7 @@ If specified \fIGfarm-URL\fR is an usual file
 and it's consists of just one file fragment, this option can
 be omitted, and works as if option \fB-I 0\fR is specified.
 If specified \fIGfarm-URL\fR is a program,
-This works as if the architecture of the destination filesystem node
+this works as if the architecture of the destination filesystem node
 is specified.
 .TP
 \fB-?\fR
