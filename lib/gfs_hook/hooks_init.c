@@ -14,6 +14,9 @@ gfs_hook_initialize(void)
 #else
 	char *e;
 
+	_gfs_hook_debug(fprintf(stderr,
+			"GFS: gfs_hook_initialize: set_local(0, 1)\n"));
+
 	e = gfarm_initialize(NULL, NULL);
 	if (e != NULL)
 		return e;
