@@ -494,6 +494,7 @@ fi
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
 %{prefix}/bin/gfrcmd
+%{prefix}/bin/gfreg
 %{prefix}/bin/gfrep
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
@@ -539,8 +540,6 @@ fi
 %if %{mpi}
 %{prefix}/bin/gfwc
 %endif
-
-%{prefix}/bin/gfreg
 
 %{prefix}/sbin/gfregister
 
