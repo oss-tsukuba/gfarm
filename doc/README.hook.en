@@ -53,6 +53,25 @@ Now, you can change the current working directory to /gfarm.
 
 	% cd /gfarm
 
+When you encounter a problem such that a newly created file cannot be
+accessed by other applications, you need to decrease the timeout of
+Gfarm metadata cache at the client side by the environment variable
+GFARM_DIRCACHE_TIMEOUT.  When you would like to set 10 seconds,
+
+	% export GFARM_DIRCACHE_TIMEOUT=10
+
+Default is 60 seconds.
+
+When you would like to use on-demand replication feature, it is
+possible to be specified by GFARM_FLAGS.
+
+	% export GFARM_FLAGS=r
+
+In this case, every file will be replicated to the local file system
+on demand instead of accessing remotely.  This flag is also required
+for a program whose child process reads or writes a file opened by the
+parent process such as 'tar zxfp'.
+
 For MPI applications, it is necessary to generate libgfs_hook.so for
 MPI library in your environment, or follow a section of either
 'Running existing programs by linking with syscall-hooking library' or
