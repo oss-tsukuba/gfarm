@@ -17,7 +17,7 @@ typedef unsigned int gfarm_mode_t;
 #define	GFARM_S_IFDIR	0040000		/* directory */
 #define	GFARM_S_IFREG	0100000		/* regular file */
 #if 0
-#define	GAFRM_S_IFLNK	0120000		/* symbolic link */
+#define	GFARM_S_IFLNK	0120000		/* symbolic link */
 #endif
 #define	GFARM_S_ISDIR(m) (((m) & GFARM_S_IFMT) == GFARM_S_IFDIR)
 #define	GFARM_S_ISREG(m) (((m) & GFARM_S_IFMT) == GFARM_S_IFREG)
