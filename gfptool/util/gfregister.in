@@ -1,6 +1,12 @@
 #!/bin/sh
 
-PTOOLS='bin/gfcombine bin/gfcombine_hook bin/gfcp bin/gfcp_hook bin/gfgrep bin/gfrcmd bin/gfreg bin/gfsplck bin/gfwc libexec/gfrepbe_client libexec/gfrepbe_server'
+PTOOLS_BIN='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfrcmd gfreg gfsplck'
+PTOOLS_LIBEXEC='gfrepbe_client gfrepbe_server'
+
+# gfwc may not be included in a release binary
+if [ -f @prefix@/bin/gfwc ]; then
+	PTOOLS_BIN="$PTOOLS_BIN gfwc"
+fi
 
 hostname=`hostname`
 arch=`gfhost -M $hostname | sed 's/ .*//'`
@@ -14,36 +20,34 @@ fi
 
 cd @prefix@
 
-echo Creating gfarm:/bin  ...
+echo Creating gfarm:/bin gfarm:/libexec ...
 if gfmkdir gfarm:/bin gfarm:/libexec; then
 	:
 else
 	status=1
 fi
 
-for cmd in $PTOOLS
-do
-	if test -f $cmd
+# force to register the commands, even if already registered,
+# because the binaries may be obsolete.
+echo Registering gfarm commands for $arch ...
+echo "( cd bin     && gfreg -f $PTOOLS_BIN     gfarm:/bin )"
+echo "( cd libexec && gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec )"
+
+all_commands=''
+for cmd in $PTOOLS_BIN; do
+	all_commands="$all_commands gfarm:/bin/$cmd"
+done
+for cmd in $PTOOLS_LIBEXEC; do
+	all_commands="$all_commands gfarm:/libexec/$cmd"
+done
+
+gfhost -a $arch | while read host; do
+	echo Replicating gfarm commands to $host ...
+	if echo "gfrep -b -I $arch -s $hostname -d $host $all_commands"
 	then
-		if gfwhere -I $arch gfarm:/$cmd >/dev/null 2>&1; then
-			:
-		else
-			echo Registering gfarm:/$cmd for $arch ...
-			if gfreg $cmd gfarm:/$cmd; then
-				:
-			else
-				status=1
-			fi
-		fi
-		gfhost -a $arch | while read host; do
-			echo Replicating gfarm:/${cmd}:${arch} to $host ...
-			if gfrep -b -I $arch -s $hostname -d $host gfarm:/$cmd
-			then
-				:
-			else
-				status=1
-			fi
-		done
+		:
+	else
+		status=1
 	fi
 done
 
