@@ -8,6 +8,8 @@
 %define doc_prefix	/usr/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
+%define etc_prefix	/etc
+%define ldap_etc_prefix	/etc/gfarm-ldap
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
@@ -136,6 +138,10 @@ make prefix=${RPM_BUILD_ROOT}%{prefix} \
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd package/redhat/gfarm-slapd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
+mkdir -p ${RPM_BUILD_ROOT}%{etc_prefix}
+cp -p doc/conf/gfarm.conf ${RPM_BUILD_ROOT}%{etc_prefix}
+mkdir -p ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
+cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -475,12 +481,13 @@ fi
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
-#%config /etc/gfarm.conf
+%config %{etc_prefix}/gfarm.conf
 
 %files server
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
 %{rc_prefix}/gfarm-slapd
+%{ldap_etc_prefix}/gfarm.schema
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
