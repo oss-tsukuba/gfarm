@@ -118,37 +118,32 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 char *
 gfarm_url_make_path(const char *gfarm_url, char **canonic_pathp)
 {
-	const char *url = gfarm_url;
-
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	if (strncmp(url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH) != 0)
-		return ("invalid gfarm URL");
-	url += GFARM_URL_PREFIX_LENGTH;
+	if (!gfarm_is_url(gfarm_url))
+		return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
+	gfarm_url += GFARM_URL_PREFIX_LENGTH;
 
-	return (gfarm_canonical_path(url, canonic_pathp));
+	return (gfarm_canonical_path(gfarm_url, canonic_pathp));
 }
 
 char *
 gfarm_url_make_path_for_creation(const char *gfarm_url, char **canonic_pathp)
 {
-	const char *url = gfarm_url;
-
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	if (strncmp(url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH) != 0)
-		return ("invalid gfarm URL");
-	url += GFARM_URL_PREFIX_LENGTH;
+	if (!gfarm_is_url(gfarm_url))
+		return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
+	gfarm_url += GFARM_URL_PREFIX_LENGTH;
 
-	return (gfarm_canonical_path_for_creation(url, canonic_pathp));
+	return (gfarm_canonical_path_for_creation(gfarm_url, canonic_pathp));
 }
 
 int
 gfarm_is_url(const char *gfarm_url)
 {
-	const char *url = gfarm_url;
-
-	return (strncmp(url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH) == 0);
+	return (memcmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH)
+	    == 0);
 }
 
 /*
