@@ -1,9 +1,0 @@
-debian/tmp/usr/lib/gfs_hook.o
-debian/tmp/usr/lib/gfs_hook_debug.o
-debian/tmp/usr/lib/gfs_hook_no_init.o
-debian/tmp/usr/lib/gfs_hook_no_init_debug.o
-debian/tmp/usr/lib/hooks_init_mpi.c
-debian/tmp/usr/lib/gfs_hook_mpi.o
-debian/tmp/usr/lib/gfs_hook_mpi_debug.o
-debian/tmp/usr/lib/libgfarm.a
-debian/tmp/usr/include/
