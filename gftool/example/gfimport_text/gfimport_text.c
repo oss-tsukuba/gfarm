@@ -19,7 +19,8 @@ import_text(FILE *ifp, char *output,
 	struct gfs_file *of;
 	file_offset_t size;
 
-	e = gfs_pio_create(output, O_WRONLY, 0666, &of);
+	e = gfs_pio_create(output, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	    &of);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", output, e);
 		return (e);

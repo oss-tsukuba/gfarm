@@ -42,8 +42,14 @@ and returns a <parameter>GFS_File</parameter> structure to the address pointed t
 <parameter>gfp</parameter>.  <parameter>Mode</parameter> specifies the file permissions to be created,
 and is modified by the process's <varname>umask</varname>.</para>
 
-<para>Currently, <constant>GFARM_FILE_WRONLY</constant> is only supported for values of
-<parameter>flags</parameter>.</para>
+<para>
+Note that
+<parameter>GFARM_FILE_TRUNC</parameter>
+must be explicitly specified as the
+<parameter>flags</parameter>
+argument since gfarm-1.0.4 if it's needed,
+although it was implicitly assumed once.
+</para>
 
 <para>When <function>gfs_pio_create()</function> is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent

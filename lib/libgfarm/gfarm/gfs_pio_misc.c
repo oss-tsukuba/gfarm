@@ -1375,7 +1375,7 @@ gfarm_url_program_register(
 		goto finish_if_hostname;
 	}
 	/* XXX - overwrite case */
-	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY,
+	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC,
 	    s.st_mode & GFARM_S_ALLPERM, &gf);
 	if (e != NULL) {
 		close(fd);

@@ -25,7 +25,8 @@ import_fixed(FILE *ifp, char *output, int len,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	e = gfs_pio_create(output, GFARM_FILE_WRONLY, 0666, &of);
+	e = gfs_pio_create(output, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	    &of);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", output, e);
 		free(buffer);

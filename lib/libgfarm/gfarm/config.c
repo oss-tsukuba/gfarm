@@ -1105,7 +1105,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
 	if (file == NULL)
 		return (NULL);
 
-	e = gfs_pio_create(file, GFARM_FILE_WRONLY, 0644, gf);
+	e = gfs_pio_create(file, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0644, gf);
 	if (e != NULL)
 		return (e);
 

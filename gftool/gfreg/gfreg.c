@@ -208,8 +208,8 @@ register_program(int is_dir, char *gfarm_url, char *section, char *hostname,
 		goto finish;
 
 	if (opt_force || section_does_not_exists(target_url, section)) {
-		e = gfs_pio_create(target_url, GFARM_FILE_WRONLY, file_mode,
-		    &gf);
+		e = gfs_pio_create(target_url,
+		    GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, file_mode, &gf);
 		if (e != NULL) {
 			fprintf(stderr, "%s: cannot open %s: %s\n",
 			    program_name, target_url, e);
@@ -261,8 +261,8 @@ register_fragment(int is_dir, char *gfarm_url, int index, int nfragments,
 
 	sprintf(section, "%d", index);
 	if (opt_force || section_does_not_exists(target_url, section)) {
-		e = gfs_pio_create(target_url, GFARM_FILE_WRONLY, file_mode,
-		    &gf);
+		e = gfs_pio_create(target_url,
+		    GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, file_mode, &gf);
 		if (e != NULL) {
 			fprintf(stderr, "%s: cannot open %s: %s\n",
 			    program_name, target_url, e);

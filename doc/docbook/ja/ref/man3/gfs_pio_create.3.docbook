@@ -45,11 +45,14 @@
 <parameter>gfp</parameter>
 の指す先に返します。</para>
 
-<para>引数
+<para>
+gfarm-1.0.4 以降は、必要な場合、引数
 <parameter>flags</parameter>
-には 現時点では、常に
-<parameter>GFARM_FILE_WRONLY</parameter>
-を渡すようにしてください。</para>
+に
+<parameter>GFARM_FILE_CREATE</parameter>
+を明示的に指定しなければならないのでご注意ください。
+以前のバージョンでは、暗黙裡にこれが仮定されていました。
+</para>
 
 <para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <function>gfs_pio_create()</function>

@@ -107,7 +107,8 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	off_t residual;
 
 	gettimerval(&tm_write_open_0);
-	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &gf);
+	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	    &gf);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
 			node_index, ofile, e, gfarm_host_get_self_name());
@@ -256,7 +257,8 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 			node_index, ifile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
-	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &ogf);
+	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	    &ogf);
 	if (e != NULL) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
 			node_index, ofile, e, gfarm_host_get_self_name());
