@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -47,8 +51,9 @@ void
 usage()
 {
 	fprintf(stderr,
-		"Usage: %s [-H <hostfile>] [<mpirun_options>] command...\n",
+		"Usage: %s [-G <Gfarm file>|-N <# nodes>|-H <hostfile>]\n",
 		program_name);
+	fprintf(stderr, "\t[<mpirun_options>] command...\n");
 	exit(1);
 }
 
@@ -62,14 +67,13 @@ main(argc, argv)
 	int pid, status;
 	int i, nhosts, job_id, nfrags, save_errno;
 	char *e, **hosts;
-	static char gfarm_prefix[] = "gfarm:";
-#	define GFARM_PREFIX_LEN (sizeof(gfarm_prefix) - 1)
 	static char template[] = "/tmp/mpXXXXXX";
 	char filename[sizeof(template)];
 	FILE *fp;
 	char total_nodes[GFARM_INT32STRLEN];
 
-	char *hostfile = NULL, *scheduling_file;
+	int nprocs = -1, sched_nopt = 0, spooled_command = 0;
+	char *hostfile = NULL, *scheduling_file = NULL;
 	char *command_name, **delivered_paths = NULL;
 
 	if (argc >= 1)
@@ -93,7 +97,34 @@ main(argc, argv)
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
 			break;
-		if (argv[i][1] == 'H') {
+		switch (argv[i][1]) {
+		case 'G':
+			if (argv[i][2] != '\0') {
+				scheduling_file = &argv[i][2];
+			} else if (++i < argc) {
+				scheduling_file = argv[i];
+			} else {
+				fprintf(stderr, "%s: "
+					"missing argument to %s\n",
+					program_name, argv[i - 1]);
+				usage();
+			}
+			++sched_nopt;
+			goto skip_opt;
+		case 'N':
+			if (argv[i][2] != '\0') {
+				nprocs = atoi(&argv[i][2]);
+			} else if (++i < argc) {
+				nprocs = atoi(argv[i]);
+			} else {
+				fprintf(stderr, "%s: "
+					"missing argument to %s\n",
+					program_name, argv[i - 1]);
+				usage();
+			}
+			++sched_nopt;
+			goto skip_opt;
+		case 'H':
 			if (argv[i][2] != '\0') {
 				hostfile = &argv[i][2];
 			} else if (++i < argc) {
@@ -104,6 +135,7 @@ main(argc, argv)
 					program_name, argv[i - 1]);
 				usage();
 			}
+			++sched_nopt;
 			goto skip_opt;
 		}
 		if (strcmp(argv[i], "-arch") == 0 ||
@@ -132,15 +164,19 @@ main(argc, argv)
 		gfarm_stringlist_add(&option_list, argv[i]);
 skip_opt: ;
 	}
+	if (sched_nopt > 1)
+		usage();
+
 	command_index = i;
 	if (command_index >= argc) /* no command name */
 		usage();
 	command_name = argv[command_index];
+	spooled_command = gfarm_is_url(command_name);
 
 	gfarm_stringlist_init(&input_list);
 	gfarm_stringlist_init(&output_list);
 	for (i = command_index + 1; i < argc; i++) {
-		if (strncmp(argv[i], gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
+		if (gfarm_is_url(argv[i])) {
 			e = gfarm_url_fragment_number(argv[i], &nfrags);
 			if (e == NULL) {
 				gfarm_stringlist_add(&input_list, argv[i]);
@@ -150,20 +186,8 @@ skip_opt: ;
 		}
 	}
 
-	if (hostfile == NULL) {
-		if (gfarm_stringlist_length(&input_list) == 0) {
-			fprintf(stderr, "%s: no input file\n", program_name);
-			exit(1);
-		}
-		/* XXX - this is only using first input file for scheduling */
-		scheduling_file = gfarm_stringlist_elem(&input_list, 0);
-		e = gfarm_url_hosts_schedule(scheduling_file, NULL,
-		    &nhosts, &hosts);
-		if (e != NULL) {
-			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
-			exit(1);
-		}
-	} else {
+	/* schedule nodes */
+	if (hostfile != NULL) {
 		int error_line;
 
 		e = gfarm_hostlist_read(hostfile,
@@ -179,6 +203,52 @@ skip_opt: ;
 		}
 		scheduling_file = hostfile;
 	}
+	else if (nprocs > 0) {
+		nhosts = nprocs;
+		hosts = malloc(sizeof(*hosts) * nhosts);
+		if (hosts == NULL) {
+			fprintf(stderr, "%s: not enough memory for %d hosts",
+			    program_name, nhosts);
+			exit(1);
+		}
+		if (spooled_command)
+			e = gfarm_schedule_search_idle_by_program(
+			    command_name, nhosts, hosts);
+		else
+			e = gfarm_schedule_search_idle_by_all(nhosts, hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: scheduling %d nodes: %s\n",
+				program_name, nprocs, e);
+			exit(1);
+		}
+		scheduling_file = "";
+	}
+	else if (scheduling_file != NULL ||
+		 gfarm_stringlist_length(&input_list) != 0) {
+		/* file-affinity scheduling */
+		if (scheduling_file == NULL)
+			scheduling_file = gfarm_stringlist_elem(
+				&input_list, 0);
+		if (spooled_command)
+			e = gfarm_url_hosts_schedule_by_program(
+				scheduling_file, command_name, NULL,
+				&nhosts, &hosts);
+		else
+			e = gfarm_url_hosts_schedule(scheduling_file,
+				NULL, &nhosts, &hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: scheduling by %s: %s\n",
+				program_name, scheduling_file, e);
+			exit(1);
+		}
+	}
+	else {
+		fprintf(stderr, "%s: no way to schedule nodes\n",
+			program_name);
+		exit(1);
+	}
+
+	/* create a machine file */
 	fp = fdopen(mkstemp(strcpy(filename, template)), "w");
 	if (fp == NULL) {
 		fprintf(stderr, "%s: cannot create tempfile \"%s\"\n",
@@ -215,7 +285,7 @@ skip_opt: ;
 	/*
 	 * deliver gfarm:program.
 	 */
-	if (strncmp(command_name, gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
+	if (gfarm_is_url(command_name)) {
 		e = gfarm_url_program_deliver(command_name, nhosts, hosts,
 					      &delivered_paths);
 		if (e != NULL) {
