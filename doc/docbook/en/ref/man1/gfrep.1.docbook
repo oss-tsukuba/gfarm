@@ -24,7 +24,8 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
@@ -67,6 +68,8 @@ it is treated as if the node names are specified repeatedly.
 </para>
 <para>
 if ``-'' is specified, standard input is used to read the host list.</para>
+<para>If the specified <parameter>Gfarm-URL</parameter> is a directory,
+it will be copied recursively.</para>
 </listitem>
 </varlistentry>
 
@@ -76,6 +79,29 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 <para>specifies a domainname of destination filesystem nodes
 where the replica will be made on.
 </para>
+<para>
+If none of this and other options for the destination host is specified, 
+the replica will be copied to any of hosts in meta data.
+But, in this case, you need to specify the number of replicas greater than
+or equal to 2 using -N option. 
+Please refer the description of the <option>-N</option> for detail.
+</para>
+<para>If the specified <parameter>Gfarm-URL</parameter> is a directory,
+it will be copied recursively.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option> <parameter>num-of-replicas</parameter></term>
+<listitem>
+<para>specifies the number of file replicas, counting already existing ones.
+If replicas of a <parameter>Gfarm-URL</parameter> file fragment is more than
+this parameter, the file fragment won't be copied and its replicas won't be
+removed.</para>
+<para>This option must be sepcified singuraly or with <option>-D</option>
+option.</para>
+<para>If <option>-N</option> option is omitted,  this works as if
+<option>-N 1</option> is specified.</para>
 </listitem>
 </varlistentry>
 
@@ -89,6 +115,8 @@ of a source node name and a destination node name in this order in each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.
 </para>
+<para>If the specified <parameter>Gfarm-URL</parameter> is a directory,
+it will be copied recursively.</para>
 </listitem>
 </varlistentry>
 
@@ -101,6 +129,8 @@ This option also needs <option>-I</option> usually,
 but there are conditions that <option>-I</option> option can be omitted.
 Please refer the description of the <option>-I</option> for detail.
 </para>
+<para>If the specified <parameter>Gfarm-URL</parameter> is a directory,
+it will be copied recursively.</para>
 </listitem>
 </varlistentry>
 
@@ -131,7 +161,7 @@ If specified <parameter>Gfarm-URL</parameter> is an usual file
 and it's consists of just one file fragment, this option can
 be omitted, and works as if option <option>-I 0</option> is specified.
 If specified <parameter>Gfarm-URL</parameter> is a program,
-This works as if the architecture of the destination filesystem node
+this works as if the architecture of the destination filesystem node
 is specified.
 </para>
 </listitem>
@@ -147,4 +177,3 @@ is specified.
 </variablelist>
 </refsect1>
 </refentry>
-
