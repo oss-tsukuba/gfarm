@@ -51,14 +51,29 @@ gfs_hook_syscall_getcwd(char *buf, size_t size)
 {
 	int errno_save;
 	size_t sz;
+	int allocated = 0;
 
 	errno_save = errno;
 	errno = 0;
+	if (buf == NULL) {
+		if (size > 0)
+			buf = malloc(size);
+		else {
+			buf = malloc(PATH_MAX);
+			size = PATH_MAX;
+		}
+		if (buf == NULL)
+			return (NULL);
+		allocated = 1;
+	}
+
 	sz = syscall(SYS_getcwd, buf, size);
 	if (errno == 0) {
 		errno = errno_save;
 		return (buf);
 	}
+	if (allocated)
+		free(buf);
 	return (NULL);
 }
 
