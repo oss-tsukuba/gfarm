@@ -44,7 +44,9 @@
 #include <sys/syscall.h>
 #include "hooks_subr.h"
 
-#ifdef SYS_getcwd
+/*#ifdef SYS_getcwd*/
+#if 0
+/* This results in segmentation fault at least in RH-8.0 and RH-7.3. */
 
 char *
 gfs_hook_syscall_getcwd(char *buf, size_t size)
