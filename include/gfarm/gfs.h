@@ -171,6 +171,7 @@ char *gfarm_url_section_replicate_from_to(const char *, char *, char *, char *);
 char *gfarm_url_section_replicate_to(const char *, char *, char *);
 char *gfarm_url_program_register(const char *, char *, char *, int);
 char *gfarm_url_program_deliver(const char *, int, char **, char ***);
+char *gfarm_url_execfile_replicate_to_local(const char *, char **);
 char *gfarm_url_program_get_local_path(const char *, char **);
 char *gfarm_url_fragments_replicate(const char *, int, char **);
 char *gfarm_url_fragments_replicate_to_domainname(const char *, const char *);

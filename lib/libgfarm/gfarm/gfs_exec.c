@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -14,7 +15,7 @@
 #include "gfs_lock.h"
 
 char *
-gfarm_url_program_get_local_path(const char *url, char **local_path)
+gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 {
 	char *hostname, *e;
 	char *arch, *gfarm_file, *localpath;
@@ -22,13 +23,9 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 	file_offset_t gsize;
 	struct stat st;		
 	int metadata_exist, localfile_exist, replication_needed = 0;
+	struct gfs_stat gs;
 
 	*local_path = NULL;
-
-	/* check the permission */
-	e = gfs_access(url, X_OK);
-	if (e != NULL)
-		return (e);
 
 	/* determine the architecture */
 	e = gfarm_host_get_canonical_self_name(&hostname);
@@ -36,10 +33,20 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 		return ("not file system node");
 	else if (e != NULL)
 		return (e);
-
-	arch = gfarm_host_info_get_architecture_by_host(hostname);
-	if (arch == NULL)
-		return ("not file system node");
+	
+	e = gfs_stat(url, &gs);
+	if (e != NULL)
+		return (e);	  
+	
+	if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
+		arch = gfarm_host_info_get_architecture_by_host(hostname);
+		if (arch == NULL)
+			return ("not file system node");
+	} else {
+		arch = strdup("0");
+		if (arch == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
 
 	/* check the metadata */
 	e = gfs_stat_section(url, arch, &gstat);
@@ -114,6 +121,21 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 	}
 	*local_path = localpath;
 	return (NULL);
+}
+
+char *
+gfarm_url_program_get_local_path(const char *url, char **local_path)
+{
+	char *e;
+
+	*local_path = NULL;
+
+	/* check the permission */
+	e = gfs_access(url, X_OK);
+	if (e != NULL)
+		return (e);
+
+	return (gfarm_url_execfile_replicate_to_local(url, local_path));
 }
 
 char *

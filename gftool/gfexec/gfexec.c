@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -80,6 +81,159 @@ finish:
 		exit(1);
 	}
 	return (result);
+}
+
+static char gfarm_prefix[] = "/gfarm";
+
+/*
+ * Shared objects in gfarm file system cannot be dynamically linked 
+ * because _dl_*() defined in /lib/ld-linux cannot be hooked.
+ * So, we replicate shared objects to local machine and rewrite paths in
+ * LD_LIBRARY_PATH to local spool directory path, for example,
+ * /gfarm/lib -> /var/spool/gfarm/lib.
+ */
+char *
+replicate_so_from_dir_to_local(char **dirp)
+{
+	char *e, *so_pat, *local_path, *local_dir;
+	int i, rv;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
+	static char so_pat_template[] = "gfarm:%s/*.so*";
+
+	e = gfarm_stringlist_init(&paths);
+	if (e != NULL)
+		goto finish;
+	e = gfs_glob_init(&types);
+	if (e != NULL)
+		goto free_paths;
+	so_pat = malloc(strlen(*dirp) + sizeof(so_pat_template)
+			- sizeof(gfarm_prefix) + 1);	
+	if (so_pat == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_types;
+	}
+	sprintf(so_pat, so_pat_template, *dirp + sizeof(gfarm_prefix) - 1);
+	e = gfs_glob(so_pat, &paths, &types);
+	if (e != NULL)
+		goto free_so_pat;
+	local_dir = NULL;
+	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+		char *p;
+
+		p = gfarm_stringlist_elem(&paths, i);
+		if (strcmp(p, so_pat) == 0) /* no "*.so*" file in dir */
+			goto free_so_pat;
+		e = gfarm_url_execfile_replicate_to_local(p, &local_path);
+		if (e == GFARM_ERR_NO_MEMORY) {
+			if (local_dir != NULL)
+				free (local_dir);
+			goto free_so_pat;
+		} else if (e != NULL) {
+			/* XXX - error message should be displayed */
+			continue;
+		}
+		p = strdup(local_path);
+		if (p == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			if (local_dir != NULL)
+				free (local_dir);
+			goto free_so_pat;
+		}
+		p[strcspn(local_path, ":")] = '\0';
+		unlink(p);
+		rv = symlink(local_path, p);
+		if (rv == -1) {
+			perror(p);
+			free(local_path);
+			free(p);
+			continue;
+		}
+		free(local_path);
+		if (local_dir == NULL) {
+			local_dir = strdup(dirname(p));
+			if (local_dir == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				free(p);
+				goto free_so_pat;
+			}
+		}
+		free(p);
+	}
+	if (local_dir != NULL) {
+		free(*dirp);	
+		*dirp = local_dir;
+	}
+
+free_so_pat:
+	free(so_pat);
+free_types:
+	gfs_glob_free(&types);
+free_paths:
+	gfarm_stringlist_free_deeply(&paths);
+finish:
+	return (e);
+}
+
+static char *
+replicate_so()
+{
+	char *e, *ld_path, *new_ld_path, *dir;
+	int new_ld_path_len, last_len, new_dir_len, rv;
+	size_t dir_len;
+
+	e = NULL;
+	new_ld_path_len = sizeof("LD_LIBRARY_PATH=") - 1;
+	new_ld_path = malloc(new_ld_path_len + 1);
+	if (new_ld_path == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	strcpy(new_ld_path, "LD_LIBRARY_PATH=");
+	ld_path = getenv("LD_LIBRARY_PATH");
+	while (*ld_path != '\0') {
+		char *p;
+
+		dir_len = strcspn(ld_path, ":");
+		dir = malloc(dir_len + 1);
+		if (dir == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto finish;
+		}
+		memcpy(dir, ld_path, dir_len);
+		dir[dir_len] = '\0';
+		new_dir_len = dir_len;
+		if (memcmp(dir, gfarm_prefix, sizeof(gfarm_prefix) - 1) == 0) {
+			e = replicate_so_from_dir_to_local(&dir);
+			if (e != NULL) {
+				free(dir);
+				goto finish;
+			}
+			new_dir_len = strlen(dir);
+		}			
+		last_len = new_ld_path_len;
+		new_ld_path_len += new_dir_len;
+		p = realloc(new_ld_path, new_ld_path_len + 1);		
+		if (p == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			free(dir);
+			goto finish;
+		}
+		new_ld_path = p;
+		strcpy(new_ld_path + last_len, dir);
+		free(dir);
+		ld_path += dir_len;
+		if (*ld_path == '\0') {
+			new_ld_path[new_ld_path_len] = '\0';
+		} else {
+			new_ld_path[new_ld_path_len] = ':';
+			new_ld_path_len += 1;
+			ld_path += 1;
+		}
+	}
+	rv = putenv(new_ld_path);
+	if (rv == -1)
+		e = strerror(errno);
+finish:
+	return (e);
 }
 
 int
@@ -170,6 +324,13 @@ main(int argc, char *argv[], char *envp[])
 			    progname, gfarm_url, e);
 			exit(1);
 		}
+	}
+
+	e = replicate_so();
+	if (e != NULL) {
+		fprintf(stderr, "%s: replicate_so: %s\n",
+		    progname, e);
+		exit(1);
 	}
 
 	/*
