@@ -44,24 +44,29 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para><command>gfrun</command> executes a parallel command on
-filesystem nodes, which is determined by the -G option, the -H option,
-or the -N option.</para>
+filesystem nodes, which is determined by the <option>-G</option>
+option, the <option>-H</option> option, or the <option>-N</option>
+option.</para>
 
-<para>The -G option specifies the <parameter>gfarm-URL</parameter>,
-which will be used by the file-affinity scheduling.  In this case,
-<command>gfrun</command> schedules the same number of filesystem nodes
-as the number of the Gfarm fragments, taking into consideration the
-physical locations of each fragment replicas of the Gfarm file, and
-filesystem node status.  The -H option specifies the
-<parameter>hostfile</parameter> that lists filesystem nodes.  The -N
-option specifies the number of filesystem nodes.</para>
+<para>The <option>-G</option> option specifies the
+<parameter>gfarm-URL</parameter>, which will be used by the
+file-affinity scheduling.  In this case, <command>gfrun</command>
+schedules the same number of filesystem nodes as the number of the
+Gfarm fragments, taking into consideration the physical locations of
+each fragment replicas of the Gfarm file, and filesystem node status.
+The <option>-H</option> option specifies the
+<parameter>hostfile</parameter> that lists filesystem nodes.  The
+<option>-N</option> option specifies the number of filesystem
+nodes.</para>
 
-<para>When none of -G, -H, and -N options are not specified,
-<command>gfrun</command> schedules filesystem nodes by the
-file-affinity scheduling using the first existent Gfarm file in the
-argument list <parameter>args</parameter>.  If there is no existent
-Gfarm file in the argument list, an appropriate filesystem node is
-selected to be executed.</para>
+<para><option>-G</option>, <option>-H</option>, and
+<option>-N</option> options are exclusive.  When none of
+<option>-G</option>, <option>-H</option>, and <option>-N</option>
+options are not specified, <command>gfrun</command> schedules
+filesystem nodes by the file-affinity scheduling using the first
+existent Gfarm file in the argument list <parameter>args</parameter>.
+If there is no existent Gfarm file in the argument list, an
+appropriate filesystem node is selected to be executed.</para>
 
 <para><command>gfrsh</command> and <command>gfssh</command> utilizes
 rsh and ssh, respectively, instead of gfrcmd.</para>
@@ -77,15 +82,15 @@ that is registered using gfreg(1).</para>
 <varlistentry>
 <term><option>-G</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>specifies a Gfarm file <parameter>gfarm-URL</parameter> for file-affinity scheduling.</para>
+<para>specifies a Gfarm file <parameter>gfarm-URL</parameter> for
+file-affinity scheduling.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>
 <listitem>
-<para>specifies a <parameter>hostfile</parameter> that lists filesystem nodes.  If the -G
-option is specified with the -H option, this option is ignored.
+<para>specifies a <parameter>hostfile</parameter> that lists filesystem nodes.
 </para>
 <para>
 if ``-'' is specified, standard input is used to read the host list.</para>
@@ -96,9 +101,7 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 <term><option>-N</option> <parameter>np</parameter></term>
 <listitem>
 <para>specifies the number of nodes <parameter>np</parameter>, which
-are selected by the increasing order of load average.  If the -G
-option or the -H option is specified with the -N option, this option
-is ignored.</para>
+are selected by the increasing order of load average.</para>
 </listitem>
 </varlistentry>
 
