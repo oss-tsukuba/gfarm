@@ -74,7 +74,7 @@ install: build
 
 	# hoax gfarm's Makefile.
 	install -d debian/tmp/etc/
-	install doc/conf/gfarm.conf debian/tmp/etc/
+	install -m 444 doc/conf/gfarm.conf debian/tmp/etc/
 	install -d debian/tmp/usr/share/doc/gfarm/
 
 
