@@ -736,6 +736,7 @@ gfs_pio_putc(GFS_File gf, int c)
 	return (NULL);
 }
 
+/* mostly compatible with fgets(3) */
 char *
 gfs_pio_puts(GFS_File gf, const char *s)
 {
@@ -753,6 +754,44 @@ gfs_pio_puts(GFS_File gf, const char *s)
 			return (e);
 		s++;
 	}
+	return (NULL);
+}
+
+/* mostly compatible with fgets(3), but EOF check is done by *s == '\0' */
+char *
+gfs_pio_gets(GFS_File gf, char *s, int size)
+{
+	char *e = gfs_pio_check_view_default(gf);
+	char *p = s;
+	int c;
+	gfarm_timerval_t t1, t2;
+
+	if (e != NULL)
+		return (e);
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+#ifdef __GNUC__ /* workaround gcc warning: unused variable */
+	c = EOF;
+#endif
+	CHECK_READABLE(gf);
+
+	if (size <= 1) {
+		gf->error = GFARM_ERR_INVALID_ARGUMENT;
+		return (gf->error);
+	}
+	--size; /* for '\0' */
+	for (; size > 0 && (c = gfs_pio_getc(gf)) != EOF; --size) {
+		*p++ = c;
+		if (c == '\n')
+			break;
+	}
+	*p++ = '\0';
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	/* XXX should introduce gfs_pio_gets_time??? */
+	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+
 	return (NULL);
 }
 
@@ -811,6 +850,193 @@ gfs_pio_putline(GFS_File gf, const char *s)
 	if (e != NULL)
 		return (e);
 	return (gfs_pio_putc(gf, '\n'));
+}
+
+#define ALLOC_SIZE_INIT	220
+
+/*
+ * mostly compatible with getline(3) in glibc,
+ * but there are the following differences:
+ * 1. on EOF, *lenp == 0
+ * 2. on error, *lenp isn't touched.
+ */
+char *
+gfs_pio_readline(GFS_File gf, char **bufp, int *sizep, int *lenp)
+{
+	char *e = gfs_pio_check_view_default(gf);
+	char *buf = *bufp, *p;
+	int size = *sizep, len = 0;
+	int c;
+	gfarm_timerval_t t1, t2;
+
+	if (e != NULL)
+		return (e);
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+#ifdef __GNUC__ /* workaround gcc warning: unused variable */
+	c = EOF;
+#endif
+	CHECK_READABLE(gf);
+
+	if (buf == NULL || size <= 1) {
+		if (size <= 1)
+			size = ALLOC_SIZE_INIT;
+		buf = realloc(buf, size);
+		if (buf == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
+	for (;;) {
+		c = gfs_pio_getc(gf);
+		if (c == EOF)
+			break;
+		if (size <= len) {
+			p = realloc(buf, size + size);
+			if (p == NULL) {
+				*bufp = buf;
+				*sizep = size;
+				return (GFARM_ERR_NO_MEMORY);
+			}
+			buf = p;
+			size += size;
+		}
+		buf[len++] = c;
+		if (c == '\n')
+			break;
+	}
+	if (size <= len) {
+		p = realloc(buf, size + size);
+		if (p == NULL) {
+			*bufp = buf;
+			*sizep = size;
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		buf = p;
+		size += size;
+	}
+	buf[len] = '\0';
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	/* XXX should introduce gfs_pio_readline_time??? */
+	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+
+	*bufp = buf;
+	*sizep = size;
+	*lenp = len;
+	
+
+	return (NULL);
+}
+
+/*
+ * mostly compatible with getdelim(3) in glibc,
+ * but there are the following differences:
+ * 1. on EOF, *lenp == 0
+ * 2. on error, *lenp isn't touched.
+ */
+char *
+gfs_pio_readdelim(GFS_File gf, char **bufp, int *sizep, int *lenp,
+	const char *delim, int delimlen)
+{
+	char *e = gfs_pio_check_view_default(gf);
+	char *buf = *bufp, *p;
+	int size = *sizep, len = 0;
+	int c, delimtail;
+	static const char empty_line[] = "\n\n";
+	gfarm_timerval_t t1, t2;
+
+	if (e != NULL)
+		return (e);
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+#ifdef __GNUC__ /* workaround gcc warning: unused variable */
+	c = EOF;
+#endif
+	CHECK_READABLE(gf);
+
+	if (delim == NULL) { /* special case 1 */
+		delimtail = 0; /* workaround gcc warning */
+	} else {
+		if (delimlen == 0) { /* special case 2 */
+			delim = empty_line;
+			delimlen = 2;
+		}
+		delimtail = delim[delimlen - 1];
+	}
+	if (buf == NULL || size <= 1) {
+		if (size <= 1)
+			size = ALLOC_SIZE_INIT;
+		buf = realloc(buf, size);
+		if (buf == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
+	for (;;) {
+		c = gfs_pio_getc(gf);
+		if (c == EOF)
+			break;
+		if (size <= len) {
+			p = realloc(buf, size + size);
+			if (p == NULL) {
+				*bufp = buf;
+				*sizep = size;
+				return (GFARM_ERR_NO_MEMORY);
+			}
+			buf = p;
+			size += size;
+		}
+		buf[len++] = c;
+		if (delim == NULL) /* special case 1: no delimiter */
+			continue;
+		if (len >= delimlen && c == delimtail &&
+		    memcmp(&buf[len - delimlen], delim, delimlen) == 0) {
+			if (delim == empty_line) { /* special case 2 */
+				for (;;) {
+					c = gfs_pio_getc(gf);
+					if (c == EOF)
+						break;
+					if (c != '\n') {
+						gfs_pio_ungetc(gf, c);
+						break;
+					}
+					if (size <= len) {
+						p = realloc(buf, size + size);
+						if (p == NULL) {
+							*bufp = buf;
+							*sizep = size;
+							return (
+							  GFARM_ERR_NO_MEMORY);
+						}
+						buf = p;
+						size += size;
+					}
+					buf[len++] = c;
+				}
+			}
+			break;
+		}
+	}
+	if (size <= len) {
+		p = realloc(buf, size + size);
+		if (p == NULL) {
+			*bufp = buf;
+			*sizep = size;
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		buf = p;
+		size += size;
+	}
+	buf[len] = '\0';
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	/* XXX should introduce gfs_pio_readdelim_time??? */
+	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+
+	*bufp = buf;
+	*sizep = size;
+	*lenp = len;
+
+	return (NULL);
 }
 
 void
