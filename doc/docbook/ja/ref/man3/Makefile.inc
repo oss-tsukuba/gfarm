@@ -48,6 +48,7 @@ DOCBOOK = \
 	gfs_pio_ungetc.3 \
 	gfs_pio_write.3 \
 	gfs_readdir.3 \
+	gfs_rename.3 \
 	gfs_realpath.3 \
 	gfs_rmdir.3 \
 	gfs_stat.3 \
