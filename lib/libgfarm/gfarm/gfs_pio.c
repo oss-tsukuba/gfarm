@@ -20,15 +20,20 @@ char GFS_FILE_ERROR_EOF[] = "end of file";
 char *
 gfs_pio_set_view_default(GFS_File gf)
 {
-	char *e = NULL;
+	char *e, *e_save = NULL;
 
-	if (gf->view_context != NULL)
+	if (gf->view_context != NULL) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
+		if (e_save == NULL)
+			e_save = e;
+	}
 	gf->ops = NULL;
 	gf->view_context = NULL;
 	gf->view_flags = 0;
-	gf->error = e;
-	return (e);
+	gf->error = e_save;
+	return (e_save);
 }
 
 static char *
