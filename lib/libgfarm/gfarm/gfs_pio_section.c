@@ -315,7 +315,22 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 	if (if_hostname != NULL) {
 		e = gfarm_host_get_canonical_name(if_hostname,
 		    &vc->canonical_hostname);
-		if (e != NULL)
+		if (e == GFARM_ERR_UNKNOWN_HOST) {
+			/* FT - invalid hostname, delete section copy info */
+			if (gfarm_file_section_copy_info_remove(
+				    gf->pi.pathname, vc->section, if_hostname)
+			    == NULL)
+				e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+
+			if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
+			    && (flags & GFARM_FILE_NOT_RETRY) == 0
+			    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
+				if_hostname = NULL;
+				goto retry;
+			}
+			goto finish;
+		}
+		else if (e != NULL)
 			goto finish;
 	} else if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
 		e = gfarm_host_get_canonical_self_name(&if_hostname);
@@ -400,8 +415,8 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 		e = replicate_section_to_local(gf, vc->section, if_hostname);
 		/* FT - inconsistent metadata has been fixed.  try again. */
 		if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
-		    && ((flags & GFARM_FILE_NOT_RETRY) == 0
-			|| (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0)) {
+		    && (flags & GFARM_FILE_NOT_RETRY) == 0
+		    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
 			if_hostname = NULL;
 			free(vc->canonical_hostname);
 			goto retry;
@@ -428,8 +443,8 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 
 	/* FT - inconsistent metadata has been fixed.  try again. */
 	if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
-	    && ((flags & GFARM_FILE_NOT_RETRY) == 0
-		|| (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0)) {
+	    && (flags & GFARM_FILE_NOT_RETRY) == 0
+	    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
 		if_hostname = NULL;
 		free(vc->canonical_hostname);
 		goto retry;
