@@ -24,7 +24,7 @@ Gfarm の日本語マニュアルを読むには，環境変数 LANG を ja_JP.ujis に設定
 1.2.実験環境
 本書では，以下のような環境を例に挙げて説明します．
 
-    メタデータサーバ       : gfms1
+    メタデータサーバ       : ldap.example.com
     Gfarm インストール先   : /usr/local/gfarm
     Gfarm 設定ファイル     : /etc/gfarm.conf
 
@@ -169,16 +169,16 @@ Gfarm ファイルシステムを構成しているファイルシステムノードが正しく起動
 イルシステムノードの状況を調べます．
 
  % gfhost -l
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm01.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm02.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm03.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm04.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm05.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm06.somewhere.com
- -.--/-.--/-.-- i386-redhat-linux 1 gfm07.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm08.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm09.somewhere.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm10.somewhere.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm01.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm02.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm03.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm04.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm05.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm06.example.com
+ -.--/-.--/-.-- i386-redhat-linux 1 gfm07.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm08.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm09.example.com
+ 0.00/0.00/0.00 i386-redhat-linux 1 gfm10.example.com
 
 ファイルシステムを構成するファイルシステムノードが一覧表示されれば，
 Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
@@ -194,16 +194,16 @@ Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
 
 gfhost コマンドをオプションなしで実行すると，単にファイルシステムノー
 ドの一覧を表示します．
-gfm01.somewhere.com
-gfm02.somewhere.com
-gfm03.somewhere.com
-gfm04.somewhere.com
-gfm05.somewhere.com
-gfm06.somewhere.com
-gfm07.somewhere.com
-gfm08.somewhere.com
-gfm09.somewhere.com
-gfm10.somewhere.com
+gfm01.example.com
+gfm02.example.com
+gfm03.example.com
+gfm04.example.com
+gfm05.example.com
+gfm06.example.com
+gfm07.example.com
+gfm08.example.com
+gfm09.example.com
+gfm10.example.com
 
 3.3.利用可能なファイルシステムノードの確認(gfrun)
 認証が終わった時点で，ユーザとして利用可能なファイルシステムノードを確
@@ -211,11 +211,11 @@ gfm10.somewhere.com
 どうかを調べることができます．
 
  % gfhost | gfrun -H - hostname
- gfm01.somewhere.com
- gfm02.somewhere.com
- gfm03.somewhere.com
- gfm04.somewhere.com
- gfm05.somewhere.com
+ gfm01.example.com
+ gfm02.example.com
+ gfm03.example.com
+ gfm04.example.com
+ gfm05.example.com
 
 このコマンドを実行した人が利用可能なファイルシステムノードの一覧が表示
 されます．3.2.で表示されるファイルシステムノードのリストとは違い，ここ
@@ -335,13 +335,13 @@ Gfarm ファイルシステム中に登録するには，gfreg コマンドを使って以下のよ
      ※このとき指定するファイルシステムノードは，事前に gfhost などで
        利用可能であることを確認しておく必要があります．
 
-     % gfreg -I 0 -N 7 -h gfm01.somewhere.com sample.frags.aa gfarm:sample.file
-     % gfreg -I 1 -N 7 -h gfm02.somewhere.com sample.frags.ab gfarm:sample.file
-     % gfreg -I 2 -N 7 -h gfm03.somewhere.com sample.frags.ac gfarm:sample.file
-     % gfreg -I 3 -N 7 -h gfm04.somewhere.com sample.frags.ad gfarm:sample.file
-     % gfreg -I 4 -N 7 -h gfm05.somewhere.com sample.frags.ae gfarm:sample.file
-     % gfreg -I 5 -N 7 -h gfm06.somewhere.com sample.frags.af gfarm:sample.file
-     % gfreg -I 6 -N 7 -h gfm07.somewhere.com sample.frags.ag gfarm:sample.file
+     % gfreg -I 0 -N 7 -h gfm01.example.com sample.frags.aa gfarm:sample.file
+     % gfreg -I 1 -N 7 -h gfm02.example.com sample.frags.ab gfarm:sample.file
+     % gfreg -I 2 -N 7 -h gfm03.example.com sample.frags.ac gfarm:sample.file
+     % gfreg -I 3 -N 7 -h gfm04.example.com sample.frags.ad gfarm:sample.file
+     % gfreg -I 4 -N 7 -h gfm05.example.com sample.frags.ae gfarm:sample.file
+     % gfreg -I 5 -N 7 -h gfm06.example.com sample.frags.af gfarm:sample.file
+     % gfreg -I 6 -N 7 -h gfm07.example.com sample.frags.ag gfarm:sample.file
 
      -h オプションでは，ファイル断片を配置したいファイルシステムノード
      のホスト名を指定します．あらかじめ gfhost などを使って，利用可能な
@@ -366,13 +366,13 @@ Gfarm ファイルシステム中に登録するには，gfreg コマンドを使って以下のよ
      配置されているかを確認します．
 
      % gfwhere gfarm:sample.file
-     0: gfm01.somewhere.com
-     1: gfm02.somewhere.com
-     2: gfm03.somewhere.com
-     3: gfm04.somewhere.com
-     4: gfm05.somewhere.com
-     5: gfm06.somewhere.com
-     6: gfm07.somewhere.com
+     0: gfm01.example.com
+     1: gfm02.example.com
+     2: gfm03.example.com
+     3: gfm04.example.com
+     4: gfm05.example.com
+     5: gfm06.example.com
+     6: gfm07.example.com
 
      gfarm:sample.file という単一ファイルに見えるものが，7 つの断片に
      分割され，各々が別のホスト上に配置されていることが確認できます．
@@ -437,21 +437,21 @@ Gfarm ファイルは，Gfarm ファイルシステム中に 1 つ以上の複製を持つこと
      ルシステムノードに存在しているのかを確認しておきます．
 
       % gfwhere gfarm:sample.file
-      0: gfm01.somewhere.com
+      0: gfm01.example.com
 
      このことから，
       - このファイルがたったひとつのファイル断片から構成されていること
-      - ファイル断片が gfm01.somewhere.com というファイルシステムノード
+      - ファイル断片が gfm01.example.com というファイルシステムノード
         に存在していること
      が分かります．
 
  (2) Gfarm ファイルを複製する
      gfrep コマンドで，Gfarm ファイルの複製を作成します．複製にあたって，
      どのファイルシステムノードに複製を作成するのかをあらかじめ決めてお
-     く必要があります．この例では，gfm02.somewhere.com に複製を作成する
+     く必要があります．この例では，gfm02.example.com に複製を作成する
      ことにします．
 
-      % echo gfm02.somewhere.com | gfrep -H -gfarm:sample.file
+      % echo gfm02.example.com | gfrep -H -gfarm:sample.file
 
      複製を置くべきファイルシステムノードの数は，Gfarm ファイルを構成す
      るファイルの断片数と一致していなければいけません．この例では 1 つ
@@ -465,7 +465,7 @@ Gfarm ファイルは，Gfarm ファイルシステム中に 1 つ以上の複製を持つこと
      す．
 
       % gfwhere gfarm:sample.file
-      0: gfm01.somewhere.com gfm02.somewhere.com
+      0: gfm01.example.com gfm02.example.com
 
      ファイル断片 0 が gfm01 だけでなく，gfm02 にも置かれていることが分
      かります．
@@ -474,11 +474,11 @@ gfrep コマンドは，ファイル全体を複製するだけでなく，ファイル中の特定の
 ファイル断片だけを複製することもできます．特定の断片を複製するには，-I
 オプションを用いて以下のようなコマンドを実行します．
 
- % gfrep -I 2 -s gfm03.somewhere.com -d gfm04.somewhere.com gfarm:sample.file
+ % gfrep -I 2 -s gfm03.example.com -d gfm04.example.com gfarm:sample.file
 
 この場合，Gfarm ファイル gfarm:sample.file を構成する断片のうち，
-gfm03.somewhere.com 上にあるインデクス番号 2 のファイル断片を，
-gfm04.somewhere.com に複製します．
+gfm03.example.com 上にあるインデクス番号 2 のファイル断片を，
+gfm04.example.com に複製します．
 gfrep コマンドの詳細については，man gfrep を参照してください．
 
 4.4.Gfarm ファイルを削除する
@@ -568,11 +568,11 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
      るかを表示します．
 
      % gfwhere gfarm:textfile.txt
-     0: gfm01.somewhere.com
-     1: gfm02.somewhere.com
-     2: gfm03.somewhere.com
-     3: gfm04.somewhere.com
-     4: gfm05.somewhere.com
+     0: gfm01.example.com
+     1: gfm02.example.com
+     2: gfm03.example.com
+     3: gfm04.example.com
+     4: gfm05.example.com
 
      この出力例では，もとのファイル textfile.txt が 0 ～ 4 の 5 つのファ
      イル断片に分割され，別のホストにそれぞれの断片が分散している様子が
@@ -638,11 +638,11 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
      4.1.(4) と同様に，断片化されたファイルの実際の所在を確認してみます．
 
      % gfwhere gfarm:testfile.bin
-     0: gfm01.somewhere.com
-     1: gfm02.somewhere.com
-     2: gfm03.somewhere.com
-     3: gfm04.somewhere.com
-     4: gfm05.somewhere.com
+     0: gfm01.example.com
+     1: gfm02.example.com
+     2: gfm03.example.com
+     3: gfm04.example.com
+     4: gfm05.example.com
 
      この出力例では，5 つのファイル断片が 5 つのホストに分散している様子
      が分かります．
