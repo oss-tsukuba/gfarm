@@ -124,6 +124,7 @@ fi
 /usr/share/man/man1/digest.1.gz
 /usr/share/man/man1/gfexport.1.gz
 /usr/share/man/man1/gfgrep.1.gz
+/usr/share/man/man1/gfhost.1.gz
 /usr/share/man/man1/gfimport_fixed.1.gz
 /usr/share/man/man1/gfimport_text.1.gz
 /usr/share/man/man1/gfkey.1.gz
@@ -173,6 +174,7 @@ fi
 /usr/share/man/ja/man1/digest.1.gz
 /usr/share/man/ja/man1/gfexport.1.gz
 /usr/share/man/ja/man1/gfgrep.1.gz
+/usr/share/man/ja/man1/gfhost.1.gz
 /usr/share/man/ja/man1/gfimport_fixed.1.gz
 /usr/share/man/ja/man1/gfimport_text.1.gz
 /usr/share/man/ja/man1/gfkey.1.gz
@@ -241,6 +243,7 @@ fi
 /usr/doc/%{name}-%{version}/html/en/ref/man1/digest.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfexport.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfgrep.1.html
+/usr/doc/%{name}-%{version}/html/en/ref/man1/gfhost.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfimport_fixed.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfimport_text.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfkey.1.html
@@ -289,6 +292,7 @@ fi
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/digest.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfexport.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfgrep.1.html
+/usr/doc/%{name}-%{version}/html/ja/ref/man1/gfhost.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfimport_fixed.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfimport_text.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfkey.1.html

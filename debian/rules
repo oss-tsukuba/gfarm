@@ -17,7 +17,7 @@ export DH_OPTIONS
 
 CC = gcc
 
-GFARM_MAN1=gfgrep.1 gfls.1
+GFARM_MAN1=gfgrep.1 gfhost.1 gfls.1
 GFMD_MAN8=gfmd.8
 GFARM_CLIENT_MAN1=digest.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfwhere.1
 GFSD_MAN8=gfsd.8
