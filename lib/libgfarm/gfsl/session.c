@@ -674,6 +674,14 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
     return ret;
 }
 
+char *
+gfarmSecSessionGetInitiatorCredName()
+{
+    if (initiatorInitialized)
+	return (initiatorInitialCredName);
+    else
+	return (NULL);
+}
 
 int
 gfarmSecSessionInitializeInitiator(configFile, majStatPtr, minStatPtr)

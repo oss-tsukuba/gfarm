@@ -151,6 +151,8 @@ extern void	gfarmSecSessionFinalizeAcceptor(void);
 extern void	gfarmSecSessionFinalizeInitiator(void);
 extern void	gfarmSecSessionFinalizeBoth(void);
 
+extern char *	gfarmSecSessionGetInitiatorCredName(void);
+
 extern gfarmSecSession *	gfarmSecSessionAccept(int fd,
 						      gss_cred_id_t cred,
 						      gfarmSecSessionOption *ssOptPtr,
