@@ -29,6 +29,7 @@ usage()
     fprintf(stderr, "\t-N number\t\ttotal number of fragments\n");
     fprintf(stderr, "\t-a architecture\t\tspecify an architecture\n");
     fprintf(stderr, "\t-h hostname\t\tspecify a hostname\n");
+    fprintf(stderr, "\t-f \t\t\tforce to register\n");
     exit(1);
 }
 
@@ -56,7 +57,6 @@ gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
 	if (fd == -1)
 		return "cannot open";
 
-	/* XXX - overwrite case */
 	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY,
 		s.st_mode & GFARM_S_ALLPERM, &gf);
 	if (e != NULL) {
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 {
     char *filename, *gfarm_url, *target_url;
     char *node_index = NULL, *hostname = NULL, *e;
-    int total_nodes = -1;
+    int total_nodes = -1, opt_force = 0;
     struct stat s;
     struct gfs_stat gs;
     extern char *optarg;
@@ -109,7 +109,7 @@ main(int argc, char *argv[])
 
     /*  Command options  */
 
-    while ((c = getopt(argc, argv, "I:N:a:h:")) != -1) {
+    while ((c = getopt(argc, argv, "I:N:a:h:f")) != -1) {
 	switch (c) {
 	case 'I':
 	case 'a':
@@ -120,6 +120,9 @@ main(int argc, char *argv[])
 	    break;
 	case 'h':
 	    hostname = optarg;
+	    break;
+	case 'f':
+	    opt_force = 1;
 	    break;
 	case '?':
 	default:
@@ -209,13 +212,24 @@ main(int argc, char *argv[])
 	    exit(1);
 	}
 	if (total_nodes <= 0) {
-	    e = gfs_pio_get_node_size(&total_nodes);
-	    if (e != NULL)
+	    if (gfs_pio_get_node_size(&total_nodes) != NULL)
 		total_nodes = 1;
 	}
 
+	if (!opt_force) {
+	    struct gfs_stat s;
+	    char *tmp_e;
+
+	    tmp_e = gfs_stat_section(target_url, node_index, &s);
+	    gfs_stat_free(&s);
+	    if (tmp_e == NULL) {
+		e = "already exist";
+		goto finish;
+	    }
+	}
+
 	e = gfarm_url_program_register(target_url, node_index,
-				       filename, total_nodes);
+		filename, total_nodes);
     } else {
 	int index;
 	/* register a file fragment. */
@@ -239,9 +253,22 @@ main(int argc, char *argv[])
 	    }
 	}
 
+	if (!opt_force) {
+	    struct gfs_stat s;
+	    char *tmp_e;
+
+	    tmp_e = gfs_stat_index(target_url, index, &s);
+	    gfs_stat_free(&s);
+	    if (tmp_e == NULL) {
+		e = "already exist";
+		goto finish;
+	    }
+	}
+
 	e = gfarm_url_fragment_register(target_url, index, hostname,
 					total_nodes, filename);
     }
+  finish:
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", target_url, e);
 	exit(1);
