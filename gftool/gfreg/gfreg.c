@@ -91,15 +91,14 @@ gfarm_url_fragment_register(char *gfarm_url, int index, char *hostname,
 int
 main(int argc, char *argv[])
 {
-    char *filename, *gfarm_url, *target_url;
+    char *filename, *gfarm_url, *target_url = NULL;
     char *node_index = NULL, *hostname = NULL, *e;
-    int total_nodes = -1, opt_force = 0;
+    int total_nodes = -1, opt_force = 0, c;
     struct stat s;
     struct gfs_stat gs;
     extern char *optarg;
     extern int optind;
     static const char gfarm_prefix[] = "gfarm:";
-    int c;
 
     e = gfarm_initialize(&argc, &argv);
     if (e != NULL) {
@@ -165,7 +164,7 @@ main(int argc, char *argv[])
 
     e = gfs_stat(gfarm_url, &gs);
     if (e == NULL && GFARM_S_ISDIR(gs.st_mode)
-#if 1 /* XXX - Currently, GFARM_S_ISDIR cannot work correctly... */
+#if 1 /* XXX - Currently, GFARM_S_ISDIR may not work correctly... */
 	|| (e == GFARM_ERR_NO_SUCH_OBJECT
 	    && (strcmp(gfarm_url, gfarm_prefix) == 0
 		|| gfarm_url[strlen(gfarm_url) - 1] == '/'))
@@ -184,11 +183,10 @@ main(int argc, char *argv[])
 	    strcat(target_url, "/");
 	strcat(target_url, bname);
     }
-    else if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
-	fprintf(stderr, "%s: %s\n", gfarm_url, e);
-	exit(1);
-    }
-    else {
+    if (e == NULL)
+	gfs_stat_free(&gs);
+
+    if (target_url == NULL) {
 	target_url = strdup(gfarm_url);
 	if (target_url == NULL)
 	    fputs("not enough memory", stderr), exit(1);
@@ -218,10 +216,8 @@ main(int argc, char *argv[])
 
 	if (!opt_force) {
 	    struct gfs_stat s;
-	    char *tmp_e;
 
-	    tmp_e = gfs_stat_section(target_url, node_index, &s);
-	    if (tmp_e == NULL) {
+	    if (gfs_stat_section(target_url, node_index, &s) == NULL) {
 		gfs_stat_free(&s);
 		e = "already exist";
 		goto finish;
@@ -255,10 +251,8 @@ main(int argc, char *argv[])
 
 	if (!opt_force) {
 	    struct gfs_stat s;
-	    char *tmp_e;
 
-	    tmp_e = gfs_stat_index(target_url, index, &s);
-	    if (tmp_e == NULL) {
+	    if (gfs_stat_index(target_url, index, &s) == NULL) {
 		gfs_stat_free(&s);
 		e = "already exist";
 		goto finish;
