@@ -158,7 +158,7 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 
 	user = gfarm_get_global_username();
 	if (user == NULL) {
-		e = "gfarm_pio_create(): programming error, "
+		e = "gfs_pio_create(): programming error, "
 		    "gfarm library isn't properly initialized";
 		goto finish;
 	}
@@ -290,33 +290,42 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		goto finish;
 	}
 	gf->open_flags = flags;
-	gf->mode |= GFS_FILE_MODE_READ;
+	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
+	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
+		gf->mode |= GFS_FILE_MODE_READ;
 	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
 	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY))
 		gf->mode |= GFS_FILE_MODE_WRITE;
 	e = gfarm_path_info_get(pathname, &gf->pi);
 	free(pathname);
 	if (e != NULL)
-		goto finish;
-	e = gfarm_path_info_access(&gf->pi, GFS_R_OK);
-	if (e != NULL) {
-		gfarm_path_info_free(&gf->pi);
-		gfs_file_free(gf);
-		goto finish;
+		goto free_gf;
+	if (gf->mode & GFS_FILE_MODE_READ) {
+		e = gfarm_path_info_access(&gf->pi, GFS_R_OK);
+		if (e != NULL)
+			goto free_gf_pi;
+	}
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		e = gfarm_path_info_access(&gf->pi, GFS_W_OK);
+		if (e != NULL)
+			goto free_gf_pi;
 	}
 	if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
 		if (GFARM_S_ISDIR(gf->pi.status.st_mode))
 			e = GFARM_ERR_IS_A_DIRECTORY;
 		else
 			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		gfarm_path_info_free(&gf->pi);
-		gfs_file_free(gf);
-		goto finish;
+		goto free_gf_pi;
 	}
 	gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
 	*gfp = gf;
 
 	e = NULL;
+	goto finish;
+free_gf_pi:
+	gfarm_path_info_free(&gf->pi);
+free_gf:
+	gfs_file_free(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));
@@ -374,8 +383,7 @@ gfs_pio_close(GFS_File gf)
 			e_save = e;
 	}
 	gfarm_path_info_free(&gf->pi);
-	free(gf->buffer);
-	free(gf);
+	gfs_file_free(gf);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
