@@ -91,7 +91,13 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-    if (stat(filename, &s) != -1 && S_ISREG(s.st_mode) &&
+    if (stat(filename, &s) == -1) {
+	perror(filename);
+	usage();
+	exit(1);
+    }
+
+    if (S_ISREG(s.st_mode) &&
 	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index < 0) {
 	if (architecture == NULL) {
 	    architecture =
