@@ -351,8 +351,6 @@ schedule(char *command_name, struct gfrun_options *options,
 			    program_name, nhosts);
 			exit(1);
 		}
-		/* XXX - it is necessary to choose nodes such that
-		   user authentication succeeds. */
 		if (spooled_command) {
 			e = gfarm_schedule_search_idle_by_program(
 			    command_name, nhosts, hosts);
@@ -435,8 +433,6 @@ schedule(char *command_name, struct gfrun_options *options,
 				exit(1);
 			}
 		} else {
-			/* XXX - it is necessary to choose nodes such
-			   that user authentication succeeds. */
 			if (spooled_command) {
 				e = gfarm_schedule_search_idle_by_program(
 				    command_name, 1, hosts);
@@ -697,7 +693,7 @@ parse_options(int argc, char **argv,
 int
 main(int argc, char **argv)
 {
-	char *e, *e_save;
+	char *e, *e_save, *command_url;
 	char **hosts, *rsh_command, *command_name, *scheduling_file;
 	int i, command_index, nhosts, job_id, nfrags;
 	struct gfrun_options options;
@@ -737,7 +733,37 @@ main(int argc, char **argv)
 				argv[i] += GFARM_URL_PREFIX_LENGTH;
 		}
 	}
-	schedule(command_name, &options, &input_list,
+	/* command name */
+	e = gfs_realpath(command_name, &command_url);
+	if (e == NULL) {
+		struct gfs_stat gsb;
+
+		e = gfs_stat(command_url, &gsb);
+		if (e == NULL) {
+			if (!GFARM_S_IS_PROGRAM(gsb.st_mode)) {
+				fprintf(stderr, "%s: not an executable\n",
+					command_url);
+				gfs_stat_free(&gsb);
+				free(command_url);
+				exit(1);
+			}
+			gfs_stat_free(&gsb);
+		}
+		else {
+			fprintf(stderr, "%s: %s\n", command_url, e);
+			free(command_url);
+			exit(1);
+		}
+	}
+	else {
+		if (gfarm_is_url(command_name)) {
+			fprintf(stderr, "%s: %s\n", command_name, e);
+			exit(1);
+		}
+		/* not a command in Gfarm file system */
+		command_url = command_name;
+	}
+	schedule(command_url, &options, &input_list,
 	    &nhosts, &hosts, &scheduling_file);
 
 	/*
@@ -752,7 +778,7 @@ main(int argc, char **argv)
 	}
 
 	e_save = gfrun(rsh_command, &rsh_options, &options, nhosts, hosts,
-	    options.cmd_type, command_name, &argv[command_index + 1]);
+	    options.cmd_type, command_url, &argv[command_index + 1]);
 	if (e_save == NULL) {
 		register_stdout_stderr(
 		    options.stdout_file, options.stderr_file,
