@@ -169,16 +169,16 @@ Gfarm ファイルシステムを構成しているファイルシステムノードが正しく起動
 イルシステムノードの状況を調べます．
 
  % gfhost -l
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm01.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm02.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm03.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm04.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm05.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm06.example.com
- -.--/-.--/-.-- i386-redhat-linux 1 gfm07.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm08.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm09.example.com
- 0.00/0.00/0.00 i386-redhat-linux 1 gfm10.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm01.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm02.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm03.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm04.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm05.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm06.example.com
+ -.--/-.--/-.-- i386-redhat8.0-linux 1 gfm07.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm08.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm09.example.com
+ 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm10.example.com
 
 ファイルシステムを構成するファイルシステムノードが一覧表示されれば，
 Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
@@ -187,7 +187,7 @@ Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
  - ロードアベレージが -.-- という形式になっている行は，該当ノードの
    ファイルシステムノードに接続できないことを示します．おそらく該当
    ノードの gfsd が落ちています．
- - i386-redhat-linux というカラムでは，該当ノードのアーキテクチャや
+ - i386-redhat8.0-linux というカラムでは，該当ノードのアーキテクチャや
    OS が表示されます．
  - その次のカラムでは，該当ノードの CPU 数が表示されます．
  - 最後のカラムには，ノードの名前が表示されます．
@@ -779,10 +779,10 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
      プログラムを実行するときに利用します．
      また，複数のファイルシステムノードに複製を配置しておくこともできます．
 
-     % gfreg -a i386-redhat-linux -N 64 /bin/echo gfarm:/bin/echo
+     % gfreg -a i386-redhat8.0-linux -N 64 /bin/echo gfarm:/bin/echo
 
      -a オプションでアーキテクチャを，-N オプションで複製の個数を指定して
-     います．/bin/echo ファイルを i386-redhat-linux アーキテクチャの実行形
+     います．/bin/echo ファイルを i386-redhat8.0-linux アーキテクチャの実行形
      式として，gfarm:/bin/echo に登録します．このとき，複製を 64 個作成し，
      ファイルシステムノードに配置します．
      gfreg コマンドの詳細は man gfreg を参照してください．

@@ -394,7 +394,7 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，
 
 ・architecture
 
-    計算機アーキテクチャを表す名称を sparc-sun-solaris のような
+    計算機アーキテクチャを表す名称を sparc-sun-solaris8 のような
     形式で記述します．
     gfhost コマンドの -a オプションの引数として指定します．
 
@@ -407,31 +407,31 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，
 例えば下記のようなコマンドで設定することになります．
 オプション -c は，登録を指示するコマンドです．
 
-	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-3.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-4.example.com
-	% gfhost -c -a i386-debian-linux -n 2 linuxhost-5.example.com
-	% gfhost -c -a i386-debian-linux -n 2 linuxhost-6.example.com
-	% gfhost -c -a sparc-sun-solaris solarishost-1.example.com
-	% gfhost -c -a sparc-sun-solaris solarishost-2.example.com
-	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
-	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-1.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-2.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-3.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-4.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-5.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-6.example.com
+	% gfhost -c -a sparc-sun-solaris8 solarishost-1.example.com
+	% gfhost -c -a sparc-sun-solaris8 solarishost-2.example.com
+	% gfhost -c -a alpha-dec-osf5.0 osfhost-1.example.com
+	% gfhost -c -a mips-sgi-irix6.5 -n 16 irixhost-1.example.com
 
 登録結果は，オプション -M を指定して gfhost を実行することで，
 確認できます．
 
 	% gfhost -M
-	i386-redhat-linux 1 linuxhost-1.example.com
-	i386-redhat-linux 1 linuxhost-2.example.com
-	i386-redhat-linux 1 linuxhost-3.example.com
-	i386-redhat-linux 1 linuxhost-4.example.com
-	i386-debian-linux 2 linuxhost-5.example.com
-	i386-debian-linux 2 linuxhost-6.example.com
-	sparc-sun-solaris 1 solarishost-1.example.com
-	sparc-sun-solaris 1 solarishost-2.example.com
-	alpha-dec-osf 1 osfhost-1.example.com
-	mips-sgi-irix 16 irixhost-1.example.com
+	i386-redhat8.0-linux 1 linuxhost-1.example.com
+	i386-redhat8.0-linux 1 linuxhost-2.example.com
+	i386-redhat8.0-linux 1 linuxhost-3.example.com
+	i386-redhat8.0-linux 1 linuxhost-4.example.com
+	i386-debian3.0-linux 2 linuxhost-5.example.com
+	i386-debian3.0-linux 2 linuxhost-6.example.com
+	sparc-sun-solaris8 1 solarishost-1.example.com
+	sparc-sun-solaris8 1 solarishost-2.example.com
+	alpha-dec-osf5.0 1 osfhost-1.example.com
+	mips-sgi-irix6.5 16 irixhost-1.example.com
 
 ------------------------------------------------------------------------
 
@@ -518,16 +518,16 @@ gfsd が正しく起動されているかどうかは，オプション -l を指定して gfhost
 アベレージです．
 
 	% gfhost -l
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-2.example.com
-	-.--/-.--/-.-- i386-redhat-linux 1 linuxhost-3.example.com
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-4.example.com
-	0.40/0.45/0.42 i386-debian-linux 2 linuxhost-5.example.com
-	0.43/0.50/0.40 i386-debian-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 sparc-sun-solaris 1 solarishost-1.example.com
-	x.xx/x.xx/x.xx sparc-sun-solaris 1 solarishost-2.example.com
-	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
-	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-1.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-2.example.com
+	-.--/-.--/-.-- i386-redhat8.0-linux 1 linuxhost-3.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-4.example.com
+	0.40/0.45/0.42 i386-debian3.0-linux 2 linuxhost-5.example.com
+	0.43/0.50/0.40 i386-debian3.0-linux 2 linuxhost-6.example.com
+	0.10/0.00/0.00 sparc-sun-solaris8 1 solarishost-1.example.com
+	x.xx/x.xx/x.xx sparc-sun-solaris8 1 solarishost-2.example.com
+	0.00/0.00/0.00 alpha-hp-osf5.0 1 osfhost-1.example.com
+	0.35/0.58/0.21 mips-sgi-irix6.5 16 irixhost-1.example.com
 
 linuxhost-3.example.com の -.-- は，このノード上に（指定したポートで） 
 gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ

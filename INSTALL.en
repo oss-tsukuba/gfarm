@@ -383,7 +383,7 @@ which includes hostname, hostalias, architecture, and ncpu;
 
   -- architecture
 
-    architecture name like sparc-sun-solaris, which is specified by
+    architecture name like sparc-sun-solaris8, which is specified by
     the -a option.
 
   -- ncpu
@@ -393,31 +393,31 @@ which includes hostname, hostalias, architecture, and ncpu;
 
 The followings are sample commands to register those information.
 
-	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-3.example.com
-	% gfhost -c -a i386-redhat-linux linuxhost-4.example.com
-	% gfhost -c -a i386-debian-linux -n 2 linuxhost-5.example.com
-	% gfhost -c -a i386-debian-linux -n 2 linuxhost-6.example.com
-	% gfhost -c -a sparc-sun-solaris solarishost-1.example.com
-	% gfhost -c -a sparc-sun-solaris solarishost-2.example.com
-	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
-	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-1.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-2.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-3.example.com
+	% gfhost -c -a i386-redhat8.0-linux linuxhost-4.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-5.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-6.example.com
+	% gfhost -c -a sparc-sun-solaris8 solarishost-1.example.com
+	% gfhost -c -a sparc-sun-solaris8 solarishost-2.example.com
+	% gfhost -c -a alpha-hp-osf5.0 osfhost-1.example.com
+	% gfhost -c -a mips-sgi-irix6.5 -n 16 irixhost-1.example.com
 
 You can confirm the filesystem node information by specifying the -M
 option with the gfhost command:
 
 	% gfhost -M
-	i386-redhat-linux 1 linuxhost-1.example.com
-	i386-redhat-linux 1 linuxhost-2.example.com
-	i386-redhat-linux 1 linuxhost-3.example.com
-	i386-redhat-linux 1 linuxhost-4.example.com
-	i386-debian-linux 2 linuxhost-5.example.com
-	i386-debian-linux 2 linuxhost-6.example.com
-	sparc-sun-solaris 1 solarishost-1.example.com
-	sparc-sun-solaris 1 solarishost-2.example.com
-	alpha-dec-osf 1 osfhost-1.example.com
-	mips-sgi-irix 16 irixhost-1.example.com
+	i386-redhat8.0-linux 1 linuxhost-1.example.com
+	i386-redhat8.0-linux 1 linuxhost-2.example.com
+	i386-redhat8.0-linux 1 linuxhost-3.example.com
+	i386-redhat8.0-linux 1 linuxhost-4.example.com
+	i386-debian3.0-linux 2 linuxhost-5.example.com
+	i386-debian3.0-linux 2 linuxhost-6.example.com
+	sparc-sun-solaris8 1 solarishost-1.example.com
+	sparc-sun-solaris8 1 solarishost-2.example.com
+	alpha-hp-osf5.0 1 osfhost-1.example.com
+	mips-sgi-irix6.5 16 irixhost-1.example.com
 
 ------------------------------------------------------------------------
 
@@ -500,16 +500,16 @@ each line, system load averages of the host are shown for the past 1,
 5, and 15 minutes.
 
 	% gfhost -l
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-2.example.com
-	-.--/-.--/-.-- i386-redhat-linux 1 linuxhost-3.example.com
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-4.example.com
-	0.40/0.45/0.42 i386-debian-linux 2 linuxhost-5.example.com
-	0.43/0.50/0.40 i386-debian-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 sparc-sun-solaris 1 solarishost-1.example.com
-	x.xx/x.xx/x.xx sparc-sun-solaris 1 solarishost-2.example.com
-	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
-	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-1.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-2.example.com
+	-.--/-.--/-.-- i386-redhat8.0-linux 1 linuxhost-3.example.com
+	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-4.example.com
+	0.40/0.45/0.42 i386-debian3.0-linux 2 linuxhost-5.example.com
+	0.43/0.50/0.40 i386-debian3.0-linux 2 linuxhost-6.example.com
+	0.10/0.00/0.00 sparc-sun-solaris8 1 solarishost-1.example.com
+	x.xx/x.xx/x.xx sparc-sun-solaris8 1 solarishost-2.example.com
+	0.00/0.00/0.00 alpha-hp-osf5.0 1 osfhost-1.example.com
+	0.35/0.58/0.21 mips-sgi-irix6.5 16 irixhost-1.example.com
 
 In the above example, -.-- of linuxhost3.example.com shows there is no
 gfsd listening to the specified port on the machine.  x.xx of
