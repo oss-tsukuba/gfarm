@@ -400,6 +400,13 @@ gfs_hook_close_all(void)
 	int fd;
 	char *e, *e_save = NULL;
 
+	/*
+	 * flush stdio buffer.  this is needed especially by flex
+	 * that creates the output file via stdout.
+	 */
+	fflush(stdout);
+	fflush(stderr);
+
 	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd) {
 		if (gfs_hook_is_open(fd)) {
 			e = gfs_hook_clear_gfs_file(fd);
