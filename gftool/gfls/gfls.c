@@ -561,10 +561,12 @@ main(int argc, char **argv)
 			if (last >= 0 && gfs_glob_elem(&types, last) ==
 			    GFS_DT_UNKNOWN) {
 				/*
-				 * this only happens if there is no file
-				 * which matches with argv[i].
+				 * Currently, this only happens if there is
+				 * no file which matches with argv[i].
 				 * In such case, the number of entries which
 				 * were added by gfs_glob() is 1.
+				 * But also please note that GFS_DT_UNKNOWN
+				 * may happen on other case in future.
 				 */
 				struct gfs_stat s;
 				char *path = gfarm_stringlist_elem(&paths,
