@@ -1,3 +1,70 @@
+2004-05-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/url.c:
+	check whether parent directory is writable or not at file/directory creation
+	(this is not enough, though)
+
+	* lib/libgfarm/gfarm/gfs_client.c: fix again (with comments)
+
+	* lib/libgfarm/gfarm/gfs_client.c: fix obvious mistake again
+
+	* lib/libgfarm/gfarm/gfs_client.c: fix obvious mistake
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h:
+	changes for gfhook'ed gsiftpd, based on the patch by Itthichok-san
+	- use effective uid for file access
+	- make gfarm_initialize()/gfarm_terminate() callable multiple times
+
+2004-05-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	Added a manual entry of gfwhoami in index.html.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_stat_section):
+	revert to the revision 1.17 because there is no way to check whether the specified section is opened or not in the current implementation.
+
+2004-05-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_fileno):
+	Fixed a segfault bug reported by [Bugzilla-ja #25].
+	(gfs_pio_readdelim): Fixed a type mismatch.
+
+2004-05-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/docbook/ja/ref/man3/Makefile.inc:
+	recover a line which was removed by accident
+
+	* package/solaris/build: change version number from 1.0.2 to 1.0.3
+
+	* debian/libgfarm-dev.manpages, debian/rules, package/redhat/gfarm.spec:
+	add manual files for newly added functions
+
+	* RELNOTES: mention gfs_pio_readdelim()
+
+	* doc/html/ja/ref/index.html, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc, doc/html/en/ref/index.html:
+	add links to newly added functions
+
+	* doc/html/en/ref/man3/gfs_pio_gets.3.html, doc/html/en/ref/man3/gfs_pio_readdelim.3.html, doc/html/en/ref/man3/gfs_pio_readline.3.html, doc/html/ja/ref/man3/gfs_pio_gets.3.html, doc/html/ja/ref/man3/gfs_pio_readdelim.3.html, doc/html/ja/ref/man3/gfs_pio_readline.3.html, man/ja/man3/gfs_pio_gets.3, man/ja/man3/gfs_pio_readdelim.3, man/ja/man3/gfs_pio_readline.3, man/man3/gfs_pio_gets.3, man/man3/gfs_pio_readdelim.3, man/man3/gfs_pio_readline.3:
+	regen
+
+	* doc/docbook/en/ref/man3/gfs_pio_gets.3.docbook, doc/docbook/en/ref/man3/gfs_pio_readdelim.3.docbook, doc/docbook/en/ref/man3/gfs_pio_readline.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_gets.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_readdelim.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_readline.3.docbook:
+	add manual pages of recently added functions
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio.c:
+	change some parameters in gfs_pio_gets(), gfs_pio_readline() and
+	gfs_pio_readdelim() from int to size_t, because size_t is already
+	used in other place in <gfarm/gfs.h>, so no need to worry about
+	include extra header like <stddef.h>.
+	pointed out by ikegami-san.
+
+2004-05-13  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: changed version to 1.0.3
+
+2004-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0.3.
+
 2004-05-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* package/redhat/gfarm.spec:
@@ -3645,7 +3712,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.26 2004/04/09 10:51:26 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.27 2004/05/13 07:44:03 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.

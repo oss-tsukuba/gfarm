@@ -4,7 +4,7 @@ and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.0.3
 ============================
 
-[2004.5.18]
+[2004.5.25]
 
 Updated Features
 
@@ -29,6 +29,8 @@ Updated Features
 
    - Fixed a segfault problem especially when using syscall hooking
      library.
+
+   - Fixed a segfault bug in gfs_pio_fileno(). (Bugzilla-ja #25)
 
    (gfs_hook.o)
 
