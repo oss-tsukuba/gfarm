@@ -315,7 +315,7 @@ test(enum testmode test_mode, char *file1, char *file2,
 	printf("[%03d] %" PR_FILE_OFFSET " %7d %-5s %10.0f %s\n",
 	       node_index, CAST_PR_FILE_OFFSET (file_offset_t)file_size,
 	       buffer_size, label,
-	       file_size / timeval_sub(&t2, &t1), gfarm_self_hostname);
+	       file_size / timeval_sub(&t2, &t1), gfarm_host_get_self_name());
 	fflush(stdout);
 
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
@@ -334,7 +334,7 @@ test(enum testmode test_mode, char *file1, char *file2,
 			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
 			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
 			);
-		fprintf(stderr, " %s\n", gfarm_self_hostname);
+		fprintf(stderr, " %s\n", gfarm_host_get_self_name());
 		tm_write_write_measured = tm_read_read_measured = 0;
 	}
 }
@@ -436,7 +436,8 @@ main(int argc, char **argv)
 	if (flags & FLAG_MEASURE_PRIMITIVES) {
 		timerval_calibrate();
 		fprintf(stderr, "[%03d] timer/sec=%g %s\n",
-			node_index, 1.0 / timerval_calibration, gfarm_self_hostname);
+			node_index, 1.0 / timerval_calibration,
+			gfarm_host_get_self_name());
 	}
 
 	file_size *= 1024 * 1024;

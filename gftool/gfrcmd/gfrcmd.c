@@ -20,7 +20,7 @@ usage()
 	exit(1);
 }
 
-char *opt_username; /* ignored for now */
+char *opt_username = NULL;
 int opt_no_stdin = 0;
 int opt_xdpy_env = 0;
 int opt_xauth_copy = 0;
@@ -152,7 +152,10 @@ main(argc, argv)
 		exit(1);
 	}
 
-	e = gfs_client_connection(hostname, &gfs_server);
+	if (opt_username == NULL)
+		opt_username = gfarm_get_global_username();
+
+	e = gfs_client_connection(hostname, opt_username, &gfs_server);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", hostname, e);
 		exit(1);
