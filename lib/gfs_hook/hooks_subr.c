@@ -45,14 +45,14 @@ static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 /*
  * static function definitions
  */
-static void gfs_hook_disable_hook();
-static void gfs_hook_enable_hook();
-static int gfs_hook_check_hook_disabled();
-static void gfs_hook_set_current_view_local();
+static void gfs_hook_disable_hook(void);
+static void gfs_hook_enable_hook(void);
+static int gfs_hook_check_hook_disabled(void);
+static void gfs_hook_set_current_view_local(void);
 static void gfs_hook_set_current_view_index(int, int);
-static void gfs_hook_set_current_view_global();
+static void gfs_hook_set_current_view_global(void);
 static void gfs_hook_set_current_view_section(char *, int);
-static void gfs_hook_set_current_view_default();
+static void gfs_hook_set_current_view_default(void);
 
 /*
  *
@@ -444,7 +444,7 @@ gfs_hook_set_cwd_is_gfarm(int c)
 }
 
 static void
-gfs_hook_check_cwd_is_gfarm()
+gfs_hook_check_cwd_is_gfarm(void)
 {
 	char *cwd;
 	/*
@@ -467,7 +467,7 @@ gfs_hook_check_cwd_is_gfarm()
 }
 
 int
-gfs_hook_get_cwd_is_gfarm()
+gfs_hook_get_cwd_is_gfarm(void)
 {
 	if (_gfs_hook_cwd_is_gfarm == -1)
 		gfs_hook_check_cwd_is_gfarm();
@@ -599,7 +599,7 @@ set_received_prefix(const char *path)
 static int _gfs_hook_disable_hook = 0;
 
 static void
-gfs_hook_disable_hook()
+gfs_hook_disable_hook(void)
 {
 	_gfs_hook_disable_hook = 1;
 }
@@ -819,7 +819,7 @@ static int _gfs_hook_current_nfrags = GFARM_FILE_DONTCARE;
 static char *_gfs_hook_current_section = NULL;
 
 void
-gfs_hook_set_default_view_local()
+gfs_hook_set_default_view_local(void)
 {
 	_gfs_hook_default_view = local_view;
 }
@@ -833,7 +833,7 @@ gfs_hook_set_default_view_index(int index, int nfrags)
 }
 
 void
-gfs_hook_set_default_view_global()
+gfs_hook_set_default_view_global(void)
 {
 	_gfs_hook_default_view = global_view;
 }
@@ -848,7 +848,7 @@ gfs_hook_set_default_view_section(char *section)
 }
 
 static void
-gfs_hook_set_current_view_local()
+gfs_hook_set_current_view_local(void)
 {
 	_gfs_hook_current_view = local_view;
 }
@@ -862,7 +862,7 @@ gfs_hook_set_current_view_index(int index, int nfrags)
 }
 
 static void
-gfs_hook_set_current_view_global()
+gfs_hook_set_current_view_global(void)
 {
 	_gfs_hook_current_view = global_view;
 }
@@ -879,7 +879,7 @@ gfs_hook_set_current_view_section(char *section, int needfree)
 }
 
 static void
-gfs_hook_set_current_view_default()
+gfs_hook_set_current_view_default(void)
 {
 	switch (_gfs_hook_default_view) {
 	case local_view:
@@ -899,24 +899,24 @@ gfs_hook_set_current_view_default()
 }
 
 enum gfs_hook_file_view
-gfs_hook_get_current_view()
+gfs_hook_get_current_view(void)
 {
 	return (_gfs_hook_current_view);
 }
 
 int
-gfs_hook_get_current_index()
+gfs_hook_get_current_index(void)
 {
 	return (_gfs_hook_current_index);
 }
 
 int
-gfs_hook_get_current_nfrags() {
+gfs_hook_get_current_nfrags(void) {
 	return (_gfs_hook_current_nfrags);
 }
 
 char *
-gfs_hook_get_current_section() {
+gfs_hook_get_current_section(void) {
 	return (_gfs_hook_current_section);
 }
 
