@@ -95,8 +95,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int argc_save = argc;
-	char **argv_save = argv;
 	char *e, *user, *home, *hostname, *command;
 	char *args[4];
 	char *envs[2];
