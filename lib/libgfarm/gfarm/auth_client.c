@@ -612,7 +612,6 @@ static void
 gfarm_auth_request_dispatch_result(void *closure)
 {
 	struct gfarm_auth_request_state *state = closure;
-	int rv;
 
 	state->last_error = (*gfarm_auth_trial_table[state->auth_method_index].
 	    result_multiplexed)(state->method_state);
