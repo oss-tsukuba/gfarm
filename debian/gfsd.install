@@ -1,2 +1,3 @@
+usr/bin/gfexec
 usr/sbin/gfsd
 etc/init.d/gfsd

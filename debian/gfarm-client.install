@@ -15,8 +15,10 @@ usr/bin/gfrsh
 usr/bin/gfrshl
 usr/bin/gfrun
 usr/bin/gfsched
+usr/bin/gfsck
 usr/bin/gfssh
 usr/bin/gfsshl
+usr/bin/gfstat
 usr/bin/gfwhere
 usr/bin/gfmkdir
 usr/bin/gfpwd
