@@ -146,7 +146,8 @@ struct gfarm_generic_info_ops {
 	char *dn_template;
 	char *(*make_dn)(void *key);
 	void (*clear)(void *info);
-	void (*set_field)(void *info, char *attribute, char **vals);
+	void (*set_field)(LDAPMessage *,
+	    void *info, char *attribute, char **vals);
 	int (*validate)(void *info);
 	void (*free)(void *info);
 };
@@ -188,7 +189,7 @@ gfarm_generic_info_get(
 	    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 		vals = ldap_get_values(gfarm_ldap_server, e, a);
 		if (vals[0] != NULL)
-			ops->set_field(info, a, vals);
+			ops->set_field(e, info, a, vals);
 		ldap_value_free(vals);
 		ldap_memfree(a);
 	}
@@ -341,7 +342,7 @@ gfarm_generic_info_get_all(
 		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
 			if (vals[0] != NULL)
-				ops->set_field(tmp_info, a, vals);
+				ops->set_field(e, tmp_info, a, vals);
 			ldap_value_free(vals);
 			ldap_memfree(a);
 		}
@@ -412,7 +413,7 @@ gfarm_generic_info_get_foreach(
 		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
 			if (vals[0] != NULL)
-				ops->set_field(tmp_info, a, vals);
+				ops->set_field(e, tmp_info, a, vals);
 			ldap_value_free(vals);
 			ldap_memfree(a);
 		}
@@ -440,7 +441,7 @@ gfarm_generic_info_get_foreach(
 
 static char *gfarm_host_info_make_dn(void *vkey);
 static void gfarm_host_info_clear(void *info);
-static void gfarm_host_info_set_field(void *info, char *attribute, char **vals);
+static void gfarm_host_info_set_field(LDAPMessage *entry, void *info, char *attribute, char **vals);
 static int gfarm_host_info_validate(void *info);
 
 struct gfarm_host_info_key {
@@ -488,6 +489,7 @@ gfarm_host_info_clear(void *vinfo)
 
 static void
 gfarm_host_info_set_field(
+	LDAPMessage *entry,
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -774,7 +776,7 @@ gfarm_host_info_get_architecture_by_host(const char *hostname)
 
 static char *gfarm_path_info_make_dn(void *vkey);
 static void gfarm_path_info_clear(void *info);
-static void gfarm_path_info_set_field(void *info, char *attribute, char **vals);
+static void gfarm_path_info_set_field(LDAPMessage *entry, void *info, char *attribute, char **vals);
 static int gfarm_path_info_validate(void *info);
 struct gfarm_path_info;
 
@@ -793,30 +795,61 @@ gfarm_metadb_ldap_need_escape(char c)
 	return (0);
 }
 
+static int
+gfarm_metadb_ldap_hexchar(int c)
+{
+	if (c < 10) {
+		return (c + '0');
+	} else {
+		/*
+		 * the following must return lower case character
+		 * to make dn_has_obsolete_uppercase_pathname() work
+		 */
+		return (c - 10 + 'a');
+	}
+}
+
+#define UPPERCASE_ESCAPE '$'
+
 static char *
 gfarm_metadb_ldap_escape_pathname(const char *pathname)
 {
-	const char *s = pathname;
+	const unsigned char *s = (const unsigned char *)pathname;
 	char *escaped_pathname, *d;
 
 	/* if pathname is a null string, return immediately */
 	if (*s == '\0')
 		return (NULL);
 
-	escaped_pathname = malloc(strlen(pathname) * 3);
+	escaped_pathname = malloc(strlen(pathname) * 3 + 1);
 	if (escaped_pathname == NULL)
 		return (escaped_pathname);
 
 	d = escaped_pathname;
 	/* Escape the first character; ' ', '#', and need_escape(). */
-	if (*s == ' ' || *s == '#' || gfarm_metadb_ldap_need_escape(*s))
+	if (*s == ' ' || *s == '#' || gfarm_metadb_ldap_need_escape(*s)) {
 		*d++ = '\\';
-	*d++ = *s++;
+		*d++ = *s++;
+	} else if (isupper(*s) || *s == UPPERCASE_ESCAPE) {
+		*d++ = UPPERCASE_ESCAPE;
+		*d++ = gfarm_metadb_ldap_hexchar(*s >> 4);
+		*d++ = gfarm_metadb_ldap_hexchar(*s & 0x0f);
+		s++;
+	} else
+		*d++ = *s++;
 	while (*s) {
 		if (gfarm_metadb_ldap_need_escape(*s) ||
-		    (*s == ' ' && d[-1] == ' '))
+		    (*s == ' ' && d[-1] == ' ')) {
 			*d++ = '\\';
-		*d++ = *s++;
+			*d++ = *s++;
+		} else if (isupper(*s) || *s == UPPERCASE_ESCAPE) {
+			*d++ = UPPERCASE_ESCAPE;
+			*d++ = gfarm_metadb_ldap_hexchar(*s >> 4);
+			*d++ = gfarm_metadb_ldap_hexchar(*s & 0x0f);
+			s++;
+		} else {
+			*d++ = *s++;
+		}
 	}
 	/*
 	 * Escape the last 'space' character.  pathname should have a
@@ -829,6 +862,31 @@ gfarm_metadb_ldap_escape_pathname(const char *pathname)
 	}
 	*d = '\0';
 	return (escaped_pathname);
+}
+
+/* for backward compatibility */
+static int
+dn_has_obsolete_uppercase_pathname(const char *dn)
+{
+	static const char key[] = "pathname=";
+
+	if (memcmp(dn, key, sizeof(key) - 1) != 0) /* XXX something wrong */
+		return (0);
+	dn += sizeof(key) - 1;
+	while (*dn && *dn != ',') {
+		if (*dn == '\\' && dn[1]) {
+			dn += 2;
+		} else if (isupper(*dn)) {
+			/*
+			 * this DN is made before the support of
+			 * uppercase pathnames.
+			 */
+			return (1);
+		} else { /* no need to handle UPPERCASE_ESCAPE specially */
+			dn++;
+		}
+	}
+	return (0);
 }
 
 static const struct gfarm_generic_info_ops gfarm_path_info_ops = {
@@ -874,6 +932,7 @@ gfarm_path_info_clear(void *vinfo)
 
 static void
 gfarm_path_info_set_field(
+	LDAPMessage *entry, 
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -883,7 +942,28 @@ gfarm_path_info_set_field(
 	/* XXX - info->status.st_ino is set not here but at upper level */
 
 	if (strcasecmp(attribute, "pathname") == 0) {
+		char *dn;
 		info->pathname = strdup(vals[0]);
+		/*
+		 * A hack for backward compatibility
+		 * to support uppercase character in pathnames.
+		 *
+		 * There may be a DN which was made before
+		 * the support of uppercase pathnames.
+		 * Such record contains uppercase characters in its DN
+		 * and "pathname" attribute, but we treat it as just
+		 * all lowercase pathname.
+		 */
+		dn = ldap_get_dn(gfarm_ldap_server, entry);
+		if (dn != NULL && dn_has_obsolete_uppercase_pathname(dn)) {
+			/* We treat this as all lowercase pathname. */
+			unsigned char *s = info->pathname;
+
+			for (; *s; s++)
+				*s = tolower(*s);
+		}
+		if (dn != NULL)
+			ldap_memfree(dn);
 	} else if (strcasecmp(attribute, "mode") == 0) {
 		info->status.st_mode = strtol(vals[0], NULL, 8);
 	} else if (strcasecmp(attribute, "user") == 0) {
@@ -1177,7 +1257,7 @@ gfarm_file_history_get_allfile_by_file(
 
 static char *gfarm_file_section_info_make_dn(void *vkey);
 static void gfarm_file_section_info_clear(void *info);
-static void gfarm_file_section_info_set_field(void *info, char *attribute, char **vals);
+static void gfarm_file_section_info_set_field(LDAPMessage *entry, void *info, char *attribute, char **vals);
 static int gfarm_file_section_info_validate(void *info);
 
 struct gfarm_file_section_info_key {
@@ -1229,6 +1309,7 @@ gfarm_file_section_info_clear(void *vinfo)
 
 static void
 gfarm_file_section_info_set_field(
+	LDAPMessage *entry,
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1458,7 +1539,7 @@ gfarm_file_section_info_remove_all_by_file(const char *pathname)
 
 static char *gfarm_file_section_copy_info_make_dn(void *vkey);
 static void gfarm_file_section_copy_info_clear(void *info);
-static void gfarm_file_section_copy_info_set_field(void *info, char *attribute, char **vals);
+static void gfarm_file_section_copy_info_set_field(LDAPMessage *entry, void *info, char *attribute, char **vals);
 static int gfarm_file_section_copy_info_validate(void *info);
 
 struct gfarm_file_section_copy_info_key {
@@ -1513,6 +1594,7 @@ gfarm_file_section_copy_info_clear(void *vinfo)
 
 static void
 gfarm_file_section_copy_info_set_field(
+	LDAPMessage *entry,
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1832,7 +1914,7 @@ gfarm_file_section_copy_info_does_exist(
 
 static char *gfarm_file_history_make_dn(void *vkey);
 static void gfarm_file_history_clear(void *info);
-static void gfarm_file_history_set_field(void *info, char *attribute, char **vals);
+static void gfarm_file_history_set_field(LDAPMessage *entry, void *info, char *attribute, char **vals);
 static int gfarm_file_history_validate(void *info);
 
 struct gfarm_file_history_key {
@@ -1875,6 +1957,7 @@ gfarm_file_history_clear(void *vinfo)
 
 static void
 gfarm_file_history_set_field(
+	LDAPMessage *entry,
 	void *vinfo,
 	char *attribute,
 	char **vals)
