@@ -19,25 +19,33 @@ export CC=gcc
 
 GFARM_CLIENT_PKG = gfarm-client
 GFARM_DOC_PKG = gfarm-doc
-GFARM_PKG = gfarm-gfptool
+GFARM_GFPTOOL_PKG = gfarm-gfptool
 GFARMD_PKG = gfarmd
 GFMD_PKG = gfmd
 GFSD_PKG=gfsd
 LIBGFARM_DEV_PKG = libgfarm-dev
 
-GFARM_MAN1=gfgrep.1 gfhost.1 gfls.1
+CLIENT_GSI_PKG = gfarm-gsi-client
+GFPTOOL_GSI_PKG = gfarm-gsi-gfptool
+GFMD_GSI_PKG = gfmd-gsi
+GFSD_GSI_PKG=gfsd-gsi
+DEV_GSI_PKG = libgfarm-gsi-dev
+
+GFARM_GFPTOOL_MAN1=gfgrep.1
 GFMD_MAN8=gfmd.8
-GFARM_CLIENT_MAN1=digest.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfwhere.1
+GFARM_CLIENT_MAN1=digest.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfwhere.1 gfhost.1 gfls.1
 GFSD_MAN8=gfsd.8
 LIBGFARM_DEV_MAN3=gfarm_initialize.3 gfarm_strings_free_deeply.3 gfarm_terminate.3 gfarm_url_hosts_schedule.3 gfs_closedir.3 gfs_opendir.3 gfs_pio_close.3 gfs_pio_create.3 gfs_pio_eof.3 gfs_pio_error.3 gfs_pio_flush.3 gfs_pio_getc.3 gfs_pio_getline.3 gfs_pio_open.3 gfs_pio_putc.3 gfs_pio_putline.3 gfs_pio_puts.3 gfs_pio_read.3 gfs_pio_seek.3 gfs_pio_set_local.3 gfs_pio_set_view_index.3 gfs_pio_set_view_local.3 gfs_pio_ungetc.3 gfs_pio_write.3 gfs_readdir.3 gfs_stat.3 gfs_stat_free.3 gfs_unlink.3 
 
+CONFIGURE = ../configure --srcdir=$(PWD) --with-openldap=/usr --with-mpi=/usr
 
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.
+# Add here commands to configure the package.
 	-rm -rf ns/
-	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/../debian/tmp/usr --with-mpi=/usr
+	install -d build && cd build && $(CONFIGURE) --prefix=`pwd`/../debian/tmp/usr 
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=`pwd`/../debian/tmp_gsi/usr 
 
 	touch configure-stamp
 
@@ -45,8 +53,9 @@ build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
 
-	# Add here commands to compile the package.
+# Add here commands to compile the package.
 	cd build && $(MAKE)
+	cd build_gsi && $(MAKE)
 
 	touch build-stamp
 
@@ -55,10 +64,11 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	# Add here commands to clean up after the build process.
+# Add here commands to clean up after the build process.
 	-cd build && $(MAKE) distclean
+	-cd build_gsi && $(MAKE) distclean
 	-rm -f configure-stamp
-	-rm -rf build
+	-rm -rf build build_gsi
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
 	dh_clean 
 
@@ -69,25 +79,43 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	# Add here commands to install the package into debian/tmp.
+# Add here commands to install the package into debian/tmp.
 	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
+	cd build_gsi && $(MAKE) install DESTDIR=`pwd`/../debian/tmp_gsi
 
-	# hoax gfarm's Makefile.
-	install -d debian/tmp/etc/init.d/
-	install -m 444 doc/conf/gfarm.conf debian/tmp/etc/
-	install -d debian/tmp/usr/share/doc/gfarm/
+# hoax gfarm's Makefile.
+	for tmp_dir in tmp tmp_gsi; do \
+	  install -d debian/$$tmp_dir/etc/init.d/; \
+	  install -m 444 doc/conf/gfarm.conf debian/$$tmp_dir/etc/; \
+	  install -d debian/$$tmp_dir/usr/share/doc/gfarm/; \
+	  install debian/gfsd.init debian/$$tmp_dir/etc/init.d/; \
+	  mv debian/$$tmp_dir/etc/init.d/gfsd.init debian/$$tmp_dir/etc/init.d/gfsd; \
+	  install debian/gfmd.init debian/$$tmp_dir/etc/init.d/; \
+	  mv debian/$$tmp_dir/etc/init.d/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
+	done
 
-	cp debian/gfsd.init debian/tmp/etc/init.d/gfsd
-	cp debian/gfmd.init debian/tmp/etc/init.d/gfmd
+	dh_install -p$(GFARM_CLIENT_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFARM_DOC_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFARM_GFPTOOL_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFMD_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFSD_PKG) --sourcedir=debian/tmp
+	dh_install -p$(LIBGFARM_DEV_PKG) --sourcedir=debian/tmp
 
-	dh_install --sourcedir=debian/tmp
-	-dh_movefiles
+	mv debian/tmp debian/tmp_nogsi
+	mv debian/tmp_gsi debian/tmp
+
+	dh_install -p$(CLIENT_GSI_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFPTOOL_GSI_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFMD_GSI_PKG) --sourcedir=debian/tmp
+	dh_install -p$(GFSD_GSI_PKG) --sourcedir=debian/tmp
+	dh_install -p$(DEV_GSI_PKG) --sourcedir=debian/tmp
+#	-dh_movefiles
 
 # Build architecture-independent files here.
 # Pass -i to all debhelper commands in this target to reduce clutter.
 binary-indep: DH_OPTIONS=-i
 binary-indep: build install
-	# Need this version of debhelper for DH_OPTIONS to work.
+# Need this version of debhelper for DH_OPTIONS to work.
 	dh_testversion 1.1.17
 	dh_testdir
 	dh_testroot
@@ -106,8 +134,8 @@ binary-indep: build install
 	dh_link
 	dh_compress
 	dh_fixperms
-	# You may want to make some executables suid here.
-	# dh_suidregister
+# You may want to make some executables suid here.
+# dh_suidregister
 	dh_installdeb
 #	dh_perl
 	dh_gencontrol
@@ -118,7 +146,7 @@ binary-indep: build install
 # Pass -a to all debhelper commands in this target to reduce clutter.
 # binary-arch: DH_OPTIONS=-a
 binary-arch: build install
-	# Need this version of debhelper for DH_OPTIONS to work.
+# Need this version of debhelper for DH_OPTIONS to work.
 	dh_testversion 1.1.17
 	dh_testdir
 	dh_testroot
@@ -131,29 +159,34 @@ binary-arch: build install
 #	dh_installinit
 #	dh_installcron
 
-	# manpages for gfarm package
-	for man in $(GFARM_MAN1); do \
-	  dh_installman -p$(GFARM_PKG) man/ja/man1/$$man man/man1/$$man; \
+# manpages for gfarm package
+	for man in $(GFARM_GFPTOOL_MAN1); do \
+	  dh_installman -p$(GFARM_GFPTOOL_PKG) man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFPTOOL_GSI_PKG) man/ja/man1/$$man man/man1/$$man; \
 	done
 
-	# manpages for gfmd package
+# manpages for gfmd package
 	for man in $(GFMD_MAN8); do \
 	  dh_installman -p$(GFMD_PKG) man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFMD_GSI_PKG) man/ja/man8/$$man man/man8/$$man; \
 	done
 
-	# manpages for gfarm-client package
+# manpages for gfarm-client package
 	for man in $(GFARM_CLIENT_MAN1); do \
 	  dh_installman -p$(GFARM_CLIENT_PKG) man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(CLIENT_GSI_PKG) man/ja/man1/$$man man/man1/$$man; \
 	done
 
-	# manpages for gfsd
+# manpages for gfsd
 	for man in $(GFSD_MAN8); do \
 	  dh_installman -p$(GFSD_PKG) man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFSD_GSI_PKG) man/ja/man8/$$man man/man8/$$man; \
 	done
 
 #	manpages for libgfarm-dev
 	for man in $(LIBGFARM_DEV_MAN3); do \
 	  dh_installman -p$(LIBGFARM_DEV_PKG) man/ja/man3/$$man man/man3/$$man; \
+	  dh_installman -p$(DEV_GSI_PKG) man/ja/man3/$$man man/man3/$$man; \
 	done
 
 #	dh_installinfo
@@ -163,8 +196,8 @@ binary-arch: build install
 	dh_link
 	dh_compress
 	dh_fixperms
-	# You may want to make some executables suid here.
-	# dh_suidregister
+# You may want to make some executables suid here.
+# dh_suidregister
 	dh_installdeb
 	dh_makeshlibs
 #	dh_perl

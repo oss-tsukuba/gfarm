@@ -1,3 +1,10 @@
+gfarm (1.0b1-2) unstable; urgency=low
+
+  * change package name to gfarm-gfptool from gfarm 
+  * build --with-globus packages
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 28 Apr 2003 10:57:22 +0900
+
 gfarm (1.0b1-1) unstable; urgency=low
 
   * beta release version 

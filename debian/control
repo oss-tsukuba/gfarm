@@ -46,3 +46,38 @@ Architecture: all
 Depends: ${shlibs:Depends}
 Description: Documents for the gfarm.
  Documents for the gfarm. 
+
+Package: gfarm-gsi-gfptool
+Section: util
+Architecture: i386
+Depends: ${shlibs:Depends}, gfarmd, gfmd
+Description: The gfarm server.
+ The gfarm tools.
+
+Package: gfmd-gsi
+Section: net
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: The gfarm server.
+ The gfmd server.
+
+Package: gfarm-gsi-client
+Section: util
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: The gfarm client.
+ The gfarm client.
+
+Package: gfsd-gsi
+Section: net
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: The gfarm fsnode daemon. 
+ The gfarm fsnode daemon.
+
+Package: libgfarm-gsi-dev
+Section: devel
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: Development files for the gfarm.
+ Development files for the gfarm. 
