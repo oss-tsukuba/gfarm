@@ -154,10 +154,10 @@ AC_SUBST(globus_shared)
 
 AC_ARG_WITH(globus_flavor,
 [  --with-globus-flavor=FLAVOR	globus flavor name
-				[[default=gcc32]]],
+				[[default=guessed]]],
 [globus_flavor="${withval}"
 ],
-[globus_flavor=gcc32
+[globus_flavor=
 ])
 
 AC_SUBST(globus_flavor)
@@ -169,8 +169,47 @@ AC_ARG_WITH(globus,
 [globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
- AC_MSG_RESULT([using \"${globus_location}\" as globus root directory])
- AC_MSG_RESULT([using globus flavor: \"${globus_flavor}\"])
+ AC_MSG_CHECKING([globus])
+ GLBlocation_candidates=${globus_location:-/usr/grid}
+ if test -n "$globus_flavor"; then
+	GLBflavor_candidates="$globus_flavor"
+ else
+	GLBflavor_candidates=
+	if test x"$GCC" = x"yes"; then
+		tmp='gcc vendorcc'
+	else
+		tmp='vendorcc gcc'
+	fi
+	for GLBbits in 32; do
+		for GLBcc in $tmp; do
+			for GLBdebug in "" dbg; do
+				for GLBpthread in "" pthr; do
+					GLBflavor_candidates="$GLBflavor_candidates $GLBcc$GLBbits$GLBdebug$GLBpthread"
+				done
+			done
+		done
+	done
+ fi
+ globus_found=
+ for d in ${GLBlocation_candidates}; do
+	for f in ${GLBflavor_candidates}; do
+		if test -f "$d/include/$f/gssapi.h"; then
+			globus_location=$d
+			globus_flavor=$f
+			globus_found=yes
+			break
+		fi
+	done
+	if test x"$globus_found" = x"yes"; then break; fi
+ done
+ if test x"$globus_found" != x"yes"; then
+	AC_MSG_RESULT([not found])
+	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
+	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
+	AC_MSG_ERROR([aborted])
+	exit 1
+ fi
+ AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
  globus_includes='-I$(globus_location)/include/$(globus_flavor)'
  globus_libdir='$(globus_location)/lib'
@@ -378,7 +417,7 @@ AC_SUBST(gfarmd_username)
 
 AC_CHECK_HEADERS(stdio.h)
 if test x"${ac_cv_header_stdio_h}" != x"yes"; then
-	AC_MSG_RESULT(["echo preprocessor option error on: \"$ac_cpp\""])
+	AC_MSG_RESULT([preprocessor option error on: \"$ac_cpp\"])
 	#exit 1
 fi
 
@@ -386,7 +425,7 @@ fi
 
 AC_CHECK_FUNCS(printf)
 if test x"${ac_cv_func_printf}" != x"yes"; then
-	eval "echo linker option error on: \"$ac_link\""
+	AC_MSG_RESULT([linker option error on: \"$ac_link\"])
 	exit 1
 fi
 
