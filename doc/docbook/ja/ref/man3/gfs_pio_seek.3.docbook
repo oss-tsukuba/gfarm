@@ -1,0 +1,94 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-seek.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_seek</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_seek</refname>
+<refpurpose>指定した位置にシークする</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char * </returnvalue>gfs_pio_seek</function></funcdef>
+    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+    <paramdef>file_offset_t <parameter>offset</parameter></paramdef>
+    <paramdef>int <parameter>whence</parameter></paramdef>
+    <paramdef>file_offset_t * <parameter>result</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイル
+<parameter>gf</parameter>
+を、
+<parameter>whence</parameter>
+と
+<parameter>offset</parameter>
+で指定した位置にシークします。
+引数
+<parameter>offset</parameter>
+は、
+<parameter>whence</parameter>
+が
+0 の場合にはファイル先頭から、
+1 の場合には現在のシーク位置から、
+2 の場合にはファイル末尾からのオフセットです。</para>
+
+<para>引数
+<parameter>result</parameter>
+が
+<acronym>NULL</acronym>
+でない場合には、移動後の位置を
+<parameter>result</parameter>
+の指す先に返します。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

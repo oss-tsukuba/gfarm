@@ -1,0 +1,165 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-create.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_create</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_create</refname>
+<refpurpose>Gfarmファイルの作成</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_create</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter>flags</parameter></paramdef>
+    <paramdef>mode_t <parameter>mode</parameter></paramdef>
+    <paramdef>GFS_File * <parameter>gfp</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>指定した
+<parameter>gfarm_url</parameter>
+に、モード
+<parameter>mode</parameter>
+でファイルを新規作成し、
+<parameter>GFS_File</parameter>
+構造体を
+<parameter>gfp</parameter>
+の指す先に返します。</para>
+
+<para>引数
+<parameter>flags</parameter>
+には 現時点では、常に
+<parameter>GFARM_FILE_WRONLY</parameter>
+を渡すようにしてください。</para>
+
+<para>gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+<function>gfs_pio_create()</function>
+を呼ぶ場合、それぞれのプロセスは引数
+<parameter>mode</parameter>
+に、一貫した値を指定しなければなりません。
+また、この場合それぞれのプロセスの
+<parameter>GFS_File</parameter>
+構造体は個別ファイルポインタを持ちます。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>へ、
+<parameter>flags</parameter>
+で指定されたモードでアクセスする権限がないか、その親ディレクトリへの
+書き込み権限がありません。</para>
+</listitem>
+</varlistentry>
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
+<listitem>
+<para><parameter>flags</parameter>引数に
+<constant>GFARM_FILE_EXCLUSIVE</constant>フラグが指定されたが、
+ファイルが既にそんざいしました。
+</para>
+</listitem>
+</varlistentry>
+-->
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定された
+<parameter>gfarm_url</parameter>
+は、ディレクトリです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリが、実際には存在しなかったことを示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
+</listitem>
+</varlistentry>
+-->
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_close</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_eof</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_error</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_getc</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_putc</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_putline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_puts</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_seek</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_ungetc</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

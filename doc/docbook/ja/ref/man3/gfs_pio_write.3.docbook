@@ -1,0 +1,80 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-write.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_write</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_write</refname>
+<refpurpose>ファイルの書き込み</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_write</function></funcdef>
+    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+    <paramdef>void * <parameter>buffer</parameter></paramdef>
+    <paramdef>int <parameter>size</parameter></paramdef>
+    <paramdef>int * <parameter>np</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><parameter>buffer</parameter>から
+<parameter>size</parameter>
+バイトだけ、ファイル
+<parameter>gf</parameter>
+へ書き込みます。
+実際に書き込まれたバイト数は
+<parameter>np</parameter>
+の指す先に返します。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,70 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfls.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfls</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfls</refname>
+<refpurpose>Gfarm ディレクトリの内容を表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfls</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm-URL に指定したファイルないしディレクトリの名前と
+関連する情報を表示します。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>-l オプションと同時に指定した場合、更新時刻ではなく、ファイルの属
+性情報の変化した時刻を表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>そのディレクトリに属する内容ではなく、ディレクトリ自身を表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>ファイルのサイズ、所有者、グループ、更新時刻などの属性情報も
+表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>-l オプションと同時に指定した場合、更新時刻ではなくアクセス時刻を
+表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,65 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfexport.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfexport</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfexport</refname>
+<refpurpose>Gfarm ファイルを通常のファイルに変換する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfexport</command>
+    <arg choice='opt'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>指定した Gfarm URL の表す Gfarm 並列ファイルを、通常のファイルに変換
+して標準出力に出力します。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<listitem>
+<para>フラグメントを取り出すホスト名のリストを指定します。
+ホスト名は、各行に一ホストずつ記述します。
+省略した場合には、自動的に選ばれたホストからフラグメントを得ます。
+</para>
+<para>
+ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter>
+</term>
+<listitem>
+<para>並列ファイル中の、指定したフラグメントのみを取り出します。
+実行形式のファイルの場合には、このオプションで実行アーキテクチャ
+(例 「sparc-sun-solaris」) を指定することによって、指定したアーキ
+テクチャの実行ファイルを取り出せます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

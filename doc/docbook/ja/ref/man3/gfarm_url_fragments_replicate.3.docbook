@@ -1,0 +1,89 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-url-fragments-replicate.3'>
+
+<refentryinfo><date>10 Sep 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_url_fragments_replicate</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_url_fragments_replicate</refname>
+<refpurpose>ファイルのレプリカを作成する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_fragments_replicate</function></funcdef>
+    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter>ndsthosts</parameter></paramdef>
+    <paramdef>char **<parameter>dsthosts</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイル<parameter>gfarm_url</parameter>
+を構成する、
+<parameter>ndsthosts</parameter>
+個のフラグメントのレプリカを、文字列配列
+<parameter>dsthosts</parameter>
+で指定したホストに作成します。
+N 番目のフラグメントは、配列
+<parameter>dsthosts</parameter>
+の N 番目の要素で指定したホストに複製されます。</para>
+
+<para>フラグメントの数と異なる値を
+<parameter>ndsthosts</parameter>
+に指定した場合には、エラーとなります。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para>引数として、フラグメント化ファイル以外のファイルを指定しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

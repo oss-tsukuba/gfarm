@@ -1,0 +1,82 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-url-section-replicate-to.3'>
+
+<refentryinfo><date>10 Sep 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_url_section_replicate_to</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_url_section_replicate_to</refname>
+<refpurpose>各フラグメントのレプリカを作成する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_section_replicate_to</function></funcdef>
+    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>char *<parameter>section</parameter></paramdef>
+    <paramdef>char *<parameter>dsthost</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイル
+<parameter>gfarm_url</parameter>
+のフラグメント
+<parameter>section</parameter>
+のレプリカを、
+<parameter>dsthost</parameter>
+に作成します。</para>
+
+<para>この関数では、フラグメント番号を整数ではなく、文字列
+<parameter>section</parameter>
+で指定する必要があることに注意してください。また、またこの文字列は、
+余分な空白や、先行 0 を含んではいけません。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_url_fragments_replicate</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

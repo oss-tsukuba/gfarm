@@ -1,0 +1,64 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-stringlist-free.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_stringlist_free</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_stringlist_free</refname>
+<refname>gfarm_stringlist_free_deeply</refname>
+<refpurpose>stringlist を解放する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>void </returnvalue>gfarm_stringlist_free</function></funcdef>
+    <paramdef>gfarm_stringlist * <parameter>listp</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+  <funcdef><function><returnvalue>void </returnvalue>gfarm_stringlist_free_deeply</function></funcdef>
+    <paramdef>gfarm_stringlist * <parameter>listp</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>動的に確保したメモリを解放します。</para>
+
+<para>関数 gfarm_stringlist_free() は、変数
+<parameter>listp</parameter>
+が表す文字列配列の要素である各文字列については解放しません。</para>
+
+<para>これに対し、関数 gfarm_stringlist_free_deeply() は、文字列配列の要素で
+ある各文字列も解放します。</para>
+
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>GFARM_STRINGLIST_ELEM</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>GFARM_STRINGLIST_STRARRAY</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_stringlist_add</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_stringlist_cat</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_stringlist_elem</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_stringlist_init</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_stringlist_length</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

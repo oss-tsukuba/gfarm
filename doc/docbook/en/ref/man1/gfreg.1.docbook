@@ -1,0 +1,61 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfreg.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfreg</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfreg</refname>
+<refpurpose>register a Gfarm program or a Gfarm file fragment</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfreg</command>
+    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
+    <arg choice='plain'><replaceable>program</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfreg</command>
+    <arg choice='plain'>-N <replaceable>total-num-of-fragments</replaceable></arg>
+    <arg choice='plain'>-I <replaceable>fragment-index</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <arg choice='plain'><replaceable>localfile</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>The first form copies and registers the program <parameter>program</parameter> as a
+Gfarm file <parameter>gfarm-URL</parameter> in the Gfarm filesystem.  After this
+registration, the <parameter>gfarm-URL</parameter> can be specified as a program name
+of gfrun(1) and gfmpirun(1).  Without the <option>-a</option> option,
+architecture of
+the specified program is assumed to be the same architecture as the
+client host on that gfreg(1) is executed, which is obtained by the
+Gfarm metaserver.  The <option>-N</option> option specifies the number of file
+replicas.  When it is omitted, one file replica is created.  The
+destination filesystem node is automatically selected among filesystem
+nodes of the same architecture.</para>
+
+<para>The second form registers <parameter>localfile</parameter> as a file fragment of a
+Gfarm file.  The total number of fragments and the fragment index
+are specified by the <option>-N</option> option and the <option>-I</option>
+option, respectively.
+By default, the destination filesystem node is the client host on the
+gfreg(1) is executed, although which is changed by the <option>-h</option>
+option.</para>
+</refsect1>
+</refentry>
+

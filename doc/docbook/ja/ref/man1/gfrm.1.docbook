@@ -1,0 +1,79 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfrm.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrm</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfrm</refname>
+<refpurpose>Gfarm ファイルを削除する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrm</command>
+    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrm</command>
+    <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm-URL に指定したファイルを削除します。<option>-h</option> オプションで
+ファイルシステムノードを指定することにより、特定のファイル
+システムノードに存在するファイル断片の複製を削除することが
+できます。</para>
+
+<para>また、
+<option>-h</option>
+オプションと
+<option>-I</option>
+オプションの両方を指定すること
+により、特定のファイル断片の複製を削除することができます。
+ただし、複製が一つしかない場合は削除することができません。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
+<listitem>
+<para>複製を削除するファイルシステムノード名を指定します。
+-I オプションと共に指定することにより、特定のファイル断片を
+削除することができます。複数のファイルシステムノードか
+ら同じファイル断片の複製を一度に削除するためには，このオ
+プションを複数回指定します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<listitem>
+<para>複製を削除するフラグメント番号を指定します。
+実行形式のファイルの場合には、このオプションで実行アーキ
+テクチャ(例 「sparc-sun-solaris」) を指定することによっ
+て、指定したアーキテクチャの複製を削除できます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

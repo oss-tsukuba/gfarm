@@ -1,0 +1,416 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm.conf.5'>
+
+<refentryinfo><date>20 Jan 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm.conf</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm.conf</refname>
+<refpurpose>Gfarm 設定ファイル</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
+サーバー・プロセスである gfmd と gfsd は、デフォールトでは、
+この /etc/gfarm.conf を設定ファイルとして参照します。
+なお、設定内容が読み込まれるのは起動時だけなので、
+設定内容を変更した場合、サーバーを再起動する必要があります。</para>
+
+<para>アプリケーションプログラムは、/etc/gfarm.conf と、ユーザーの
+ホームディレクトリにある .gfarmrc ファイルを、設定ファイル
+として参照します。.gfarmrc ファイルは、/etc/gfarm.conf と
+同一の形式で記述します。.gfarmrc と /etc/gfarm.conf では、
+ .gfarmrc の方が優先されます。</para>
+
+<para>gfarm.conf は、一行に一文の形式で設定します。
+ただし、行末に文字 ``\'' を記述することによって、行を継続させることが
+できます。また、文字 ``#'' から行末までは、コメントとして扱われ、無視
+されます。</para>
+
+</refsect1>
+
+<refsect1 id='hostspecification'><title>ホスト指定</title>
+<para>引数として、<parameter>ホスト指定</parameter> を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。</para>
+<variablelist>
+
+<varlistentry>
+<term><parameter>III.JJJ.KKK.LLL</parameter></term>
+<listitem>
+<para>"." で区切られた 0〜256 までの数字 4 つで、IP アドレスを指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
+<listitem>
+<para>IP アドレスと、"/" で区切られた 0〜31 までの数字で、ネットワークを
+指定します。"/" 以降の数字は netmask のビット長です。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>domain.name</parameter></term>
+<listitem>
+<para>ホスト名をドメイン名で指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>.</emphasis><parameter>domain.name</parameter></term>
+<listitem>
+<para>ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
+ホストを意味します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='statement'><title>文</title>
+<para>文には、下記の種類があります。</para>
+<variablelist>
+
+<varlistentry>
+<term><token>spool</token> <parameter>gfsdスプール・ディレクトリ</parameter></term>
+<listitem>
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
+指定します。
+ファイルシステムノードではこの設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	spool /var/spool/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_serverport</token> <parameter>gfsdポート番号</parameter></term>
+<listitem>
+<para>gfsdが利用するTCPおよびUDPポートの番号を指定します。
+省略時のデフォールト・ポート番号は600番です。</para>
+<para>例:</para>
+<literallayout>
+	spool_serverport 600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_serverhost</token> <parameter>gfmdホスト名</parameter></term>
+<listitem>
+<para>gfmdが動作しているホスト名を指定します。</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	metadb_serverhost ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_serverport</token> <parameter>gfmdポート番号</parameter></term>
+<listitem>
+<para>gfmdが利用するTCPポートの番号を指定します。
+省略時のデフォールト・ポート番号は601番です。</para>
+<para>例:</para>
+<literallayout>
+	metadb_serverport 601
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_serverhost</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
+<listitem>
+<para>LDAP サーバーが動作しているホスト名を指定します。</para>
+<para>この設定は必須です。</para>
+
+<para>例:</para>
+<literallayout>
+	ldap_serverhost ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_serverport</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
+<listitem>
+<para>LDAP サーバーが動作しているホスト名を指定します。</para>
+<para>現在のところ、この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	ldap_serverport 389
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
+<listitem>
+<para>LDAP データベースで保持するデータのキーの根となるノードの
+名称、base distinguished name を指定します。</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	ldap_base_dn "dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>auth</token> <parameter>有効無効</parameter> <parameter>認証方法</parameter> <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
+
+<para>第1引数の<parameter>有効無効</parameter>部には、<token>enable</token> ないし <token>disable</token>
+キーワードを指定します。
+第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token> ないし <token>sharedsecret</token>
+キーワードを指定します。
+第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
+
+<para>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
+適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が
+利用候補になります。有効であるとの指定に適合しない場合や、あるいは
+有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
+場合、その認証方法は、候補になりません。</para>
+
+<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、<token>sharesecret</token> による認証が 
+<token>gsi</token> より優先して試されます。</para>
+
+<para>この指定は、サーバー側とクライアント側の両方で解釈され、
+双方ともで有効になっている認証方法のみが用いられます。</para>
+
+<para>Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
+gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。</para>
+
+<para>この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi ALL
+</literallayout>
+
+<para>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
+除いた 192.168.0.0/24 ネットワークに属すホストには 
+<token>sharedsecret</token> と <token>gsi</token> の両方を、それ以外の全てのホスト
+には <token>gsi</token> 認証を試みます。
+すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+<token>gsi</token>認証のみを試みることになります。</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>netparam</token> <parameter>パラメータ</parameter><emphasis>=</emphasis><parameter>値</parameter> <emphasis>[</emphasis><parameter>ホスト指定</parameter><emphasis>]</emphasis></term>
+<listitem>
+<para>ネットワーク通信に用いる各種パラメータを指定します。
+パラメータには下記のものがあります。</para>
+
+<para><token>parallel_streams</token>。このパラメータは、通信に利用する
+TCPのストリーム数を指定します。省略時は1です。
+このパラメータは、TCP の通信ウィンドウが十分なサイズ
+まで開かないような遠方との通信の際に、有効なことがあります。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
+
+<para><token>stripe_unit_size</token>。このパラメータは、通信に複数の TCP ストリーム
+を利用する場合に、どのように転送内容を分割するかを指定します。
+もしこの指定がない場合、転送内容を単に <token>parallel_streams</token> 個に
+分割して送信します。
+これに対し、<token>stripe_unit_size</token> を指定した場合は、このパラメータ
+で指定したバイト数を単位としてストライピングして送信します。
+通常、単なる分割よりもストライピングの方が性能的に有利です。
+</para>
+<para>
+このパラメータは、上記の <token>parallel_streams</token> として 1 より大きな値
+を指定した通信のみで有効です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
+
+<para><token>rate_limit</token>。コネクション1本あたりの通信バンド幅を制限する
+実験的な機能です。指定する値の単位は bps (bit per second) です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、複製元のホスト上の gfsd の設定ファイルが用いられます。
+ホスト指定と比較されるのは、複製先のホストです。</para>
+
+<para>例:</para>
+<literallayout>
+	netparam parallel_streams=2	10.0.0.0/8
+	netparam stripe_unit_size=8192	10.0.0.0/8
+	netparam rate_limit=750000	192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>sockopt </token><parameter>オプション</parameter><emphasis>[=</emphasis><parameter>値</parameter><emphasis>] [<token>LISTENER</token> | <parameter>ホスト指定</parameter>]</emphasis></term>
+<listitem>
+<para>通信 socket(2) に対して、setsockopt(2) システムコールを使って
+ソケット・オプションを指定します。</para>
+
+<para>第2引数に <token>LISTENER</token> を指定した場合、サーバー側 (着呼側) の
+ソケットに指定するオプションになります。この場合、通信する相手に
+関係なく、一律にソケット・オプションが設定されます。</para>
+<para>
+第2引数にホスト指定を記述した場合、クライアント側 (発呼側) の
+ソケットに指定するオプションになります。この場合、通信する相手毎に
+ソケット・オプションを変えることができます。
+</para>
+<para>
+第2引数を省略した場合、サーバー側とクライアント側の両方で、
+全ての通信相手に対して同じソケット・オプションを設定します。</para>
+
+<para>指定可能なソケット・オプションには次のものがあります。</para>
+
+<para><token>debug</token>。setsockopt(2) システムコールで、<constant>SO_DEBUG</constant> ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para><token>keepalive</token>。setsockopt(2) システムコールで、<constant>SO_KEEPALIVE</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para><token>sndbuf</token>。setsockopt(2) システムコールで、<constant>SO_SNDBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
+
+<para><token>rcvbuf</token>。setsockopt(2) システムコールで、<constant>SO_RCVBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
+
+<para><token>tcp_nodelay</token>。setsockopt(2) システムコールで、<constant>TCP_NODELAY</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para>例:</para>
+<literallayout>
+	sockopt tcp_nodelay 192.168.0.0/24
+	sockopt sndbuf=1048576 10.0.0.0/8
+	sockopt sndbuf=1048576 LISTENER
+	sockopt rcvbuf=1048576 10.0.0.0/8
+	sockopt rcvbuf=1048576 LISTENER
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>address_use</token> <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
+IPアドレスを通信に用いるかを指定します。
+この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
+適合するアドレスがない場合でも、通信を行ないます。</para>
+<para>例:</para>
+<literallayout>
+	address_use 192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='grammar'><title>GRAMMAR</title>
+<para>gfarm.conf の文法をBNFで記述すると、下記のようになります。</para>
+<literallayout>
+	&lt;statement&gt; ::=
+		&lt;spool_statement&gt; |
+		&lt;spool_serverport_statement&gt; |
+		&lt;metadb_serverhost_statement&gt; |
+		&lt;metadb_serverport_statement&gt; |
+		&lt;ldap_serverhost_statement&gt; |
+		&lt;ldap_serverport_statement&gt; |
+		&lt;ldap_base_dn_statement&gt; |
+		&lt;auth_statement&gt; |
+		&lt;netparam_statement&gt; |
+		&lt;sockopt_statement&gt; |
+		&lt;address_use_statement&gt;
+	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
+	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
+	&lt;metadb_serverhost_statement&gt; ::= "metadb_serverhost" &lt;hostname&gt;
+	&lt;metadb_serverport_statement&gt; ::= "metadb_serverport" &lt;portnumber&gt;
+	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
+	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
+	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;auth_statement&gt; ::=
+		"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
+	&lt;auth_command&gt; ::= "enable" | "disable"
+	&lt;auth_method&gt; ::= "gsi" | "sharedsecret"
+	&lt;netparam_statement&gt; ::=
+		"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
+	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" |
+		"rate_limit"
+	&lt;sockopt_statement&gt; ::=
+		"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
+	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+		"tcp_nodelay"
+	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
+	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
+		&lt;hostname&gt;
+	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
+	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
+	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
+	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
+	&lt;portnumber&gt; ::= &lt;number&gt;
+	&lt;number&gt; ::= &lt;digit&gt; [&lt;digit&gt;*]
+	&lt;digit&gt; ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	&lt;string&gt; ::= """ &lt;double_quoted_character&gt;* """
+<!-- 	&lt;string&gt; ::= &lt;string_component&gt; &lt;string_component&gt;* -->
+<!-- 	&lt;string_component&gt; ::= &lt;pathname&gt; | -->
+<!-- 		"'" &lt;single_quoted_character&gt;* "'" | -->
+<!-- 		""" &lt;double_quoted_character&gt;* """ -->
+<!-- 	&lt;single_quoted_character&gt; ::= -->
+<!-- 		&lt;any_character_except_single_quotation&gt; -->
+	&lt;double_quoted_character&gt; ::=
+		&lt;any_character_except_backslash_and_double_quotation&gt; |
+		"\\" | "\""
+</literallayout>
+
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+<literallayout>
+spool /var/spool/gfarm
+metadb_serverhost ldap.example.com
+ldap_serverhost ldap.example.com
+ldap_serverport 389
+ldap_base_dn "dc=example, dc=com"
+auth enable sharedsecret 192.168.0.0/24
+auth enable gsi ALL
+</literallayout>
+
+
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+
+<varlistentry>
+<term><filename>/etc/gfarm.conf</filename></term>
+<listitem><para></para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term><filename>$HOME/.gfarmrc</filename></term>
+<listitem><para></para></listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
+</refsect1>
+</refentry>
+

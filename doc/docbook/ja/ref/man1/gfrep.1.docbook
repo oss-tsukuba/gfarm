@@ -1,0 +1,102 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfrep.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrep</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfrep</refname>
+<refpurpose>Gfarm ファイルのレプリカを作成する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
+    <arg choice='plain'>-d <replaceable>複製先ホスト</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数 Gfarm-URL の複製を、ホスト指定ファイルに記述されたホス
+トあるいは指定されたドメイン名のホストに作成します。</para>
+
+<para>-I オプションでフラグメント番号あるいはセクション名を指定し
+た場合は，指定したファイルフラグメントの複製を -d オプション
+で指定したホストに作成します．-s オプションが指定された場合
+は，指定されたホストからファイルの複製を作成します．</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<listitem>
+<para>各フラグメントの複製を作成するホスト名のリストを指定します。
+ホスト名は、各行に一ホストずつ記述します。ホストファイル中
+のホスト名の数は、フラグメントの数と一致している必要があり
+ます。
+</para>
+<para>
+ファイル名として ``-'' を指定した場合、標準入力からホス
+ト名のリストを読み込みます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-D</option> <parameter>ドメイン名</parameter></term>
+<listitem>
+<para>各フラグメントの複製を作成するホストのドメイン名を指定します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<listitem>
+<para>複製を作成するファイルフラグメントを指定します。
+ファイルフラグメントはフラグメント番号あるいはアーキテク
+チャなどのセクション名です．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-s</option> <parameter>複製元ホスト</parameter></term>
+<listitem>
+<para>-I オプションと共に指定し，ファイルフラグメントの複製元
+のホストを指定します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-d</option> <parameter>複製先ホスト</parameter></term>
+<listitem>
+<para>-I オプションと共に指定し，ファイルフラグメントの複製先
+のホストを指定します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,69 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfwhere.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfwhere</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfwhere</refname>
+<refpurpose>Gfarm ファイルのレプリカの所在を表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfwhere</command>
+    <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>指定した Gfarm-URL を構成するファイルについて、レプリカの所在を表示
+します。</para>
+
+<para>フラグメント化されたファイルの場合、各行は、下記の形式になります。</para>
+
+<!-- .in +.5i -->
+<literallayout>
+フラグメント番号: レプリカのあるホスト名....
+</literallayout>
+<!-- .in -->
+
+<para>また、実行ファイルの場合、各行は、下記の形式になります。</para>
+
+<!-- .in +.5i -->
+<literallayout>
+アーキテクチャ: レプリカのあるホスト名....
+</literallayout>
+<!-- .in -->
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<listitem>
+<para>レプリカの所在を表示するフラグメントを指定します。
+実行形式のファイルの場合には、このオプションで実行アーキ
+テクチャ(例 「sparc-sun-solaris」) を指定することによっ
+て、指定したアーキテクチャのレプリカの所在を表示できます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,61 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfreg.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfreg</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfreg</refname>
+<refpurpose>Gfarm ファイルシステムへのプログラム、ファイルフラグメントの登録</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfreg</command>
+    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>複製の数</replaceable></arg>
+    <arg choice='plain'><replaceable>program</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfreg</command>
+    <arg choice='plain'>-N <replaceable>フラグメント総数</replaceable></arg>
+    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <arg choice='plain'><replaceable>localfile</replaceable></arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>第1の形式の場合、引数 program に指定したローカルディスク上の
+プログラム・ファイルを、gfarm-URL に登録します。この時、Gfarm ファイル
+システムのファイルシステムノード上に、このプログラム・ファイルの複製が
+作られます。これ以降、
+gfrun および gfmpirun で指定するプログラム名として、この URL が
+使えるようになります。オプション -a でプログラムの動作するアーキテク
+チャを指定しなかった場合には、gfreg コマンドを実行したホストのアーキ
+テクチャと同じであると仮定します。ただし、そのホストが Gfarm メタサー
+バに登録されている必要があります。
+オプション -N により，複製の数を指定することができます。指定しない場
+合は 1 となります。</para>
+
+
+<para>第2の形式の場合、localfileをGfarmファイルのフラグメントとして
+登録します。オプション -N と -I で、総フラグメント数と、この
+localfileのフラグメント番号を必ず指定する必要があります。
+デフォルトでは gfreg を実行したマシンに複製を作成しますが、
+オプション -h により任意のファイルシステムノードを指定することができ
+ます。</para>
+</refsect1>
+</refentry>
+

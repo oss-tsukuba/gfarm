@@ -1,0 +1,127 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfrun.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrun</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfrun</refname>
+<refname>gfrsh</refname>
+<refname>gfssh</refname>
+<refpurpose>run Gfarm parallel programs</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrun</command>
+    <group choice='opt'>
+	<arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg>
+	<arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+    </group>
+    <arg choice='plain'><replaceable>command</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>arg</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrsh</command>
+    <group choice='opt'>
+	<arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg>
+	<arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+    </group>
+    <arg choice='plain'><replaceable>command</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>arg</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfssh</command>
+    <group choice='opt'><arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg><arg choice='plain'>-H <replaceable>hostfile</replaceable></arg></group>
+    <arg choice='plain'><replaceable>command</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>arg</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfrun</command> executes a parallel command on filesystem nodes.
+Filesystem nodes are allocated by file-affinity scheduling using the
+<parameter>gfarm-URL</parameter>, or by the <parameter>hostfile</parameter> explicitly that lists
+filesystem nodes.  In the case of the file-affinity scheduling,
+<command>gfrun</command> schedules the same number of filesystem nodes as the
+number of the Gfarm fragments, taking into consideration the physical
+locations of each fragment replicas of the Gfarm file, and filesystem
+node status.</para>
+
+<para>If the -H option is missing, a Gfarm file used by file-affinity
+scheduling is specified by the first existent Gfarm file in the
+argument list <parameter>args</parameter>.</para>
+
+<para>To inform the node index (node) and the total number of nodes
+(nnode), each process is executed by the following command:
+"gfrcmd hostname command -N nnode -I node args"
+</para>
+
+<para><command>gfrsh</command> and <command>gfssh</command> utilizes rsh and ssh, respectively,
+instead of gfrcmd.</para>
+
+<para><parameter>Command</parameter> can be specified by a gfarm-URL that is registered using
+gfreg(1).</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-G</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>specifies a Gfarm file <parameter>gfarm-URL</parameter> for file-affinity scheduling.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter>hostfile</parameter></term>
+<listitem>
+<para>specifies a <parameter>hostfile</parameter> that lists filesystem nodes.  If the -G
+option is specified with the -H option, this option is ignored.
+</para>
+<para>
+if ``-'' is specified, standard input is used to read the host list.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='enviromnent-variables'><title>ENVIROMNENT VARIABLES</title>
+<variablelist>
+
+<varlistentry>
+<term><envar>GFRUN_CMD</envar></term>
+<listitem>
+<para>specifies a remote shell command.  If globus-job-run is specified,
+gfrun executes each process using globus-job-run.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfmpirun</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>
+

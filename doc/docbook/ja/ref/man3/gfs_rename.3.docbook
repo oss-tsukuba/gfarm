@@ -1,0 +1,113 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-rename.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_rename</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_rename</refname>
+<refpurpose>改名</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_rename</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url_from</parameter></paramdef>
+    <paramdef>char * <parameter>gfarm_url_to</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイル
+<parameter>gfarm_url_from</parameter>
+を
+<parameter>gfarm_url_to</parameter>
+に改名します。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>親ディレクトリへ書き込みアクセスする権限がありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
+<listitem>
+<para>パス
+<parameter>gfarm_url_to</parameter>
+が既に存在します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
+<listitem>
+<para>パス
+<parameter>gfarm_url_to</parameter>
+が、ディレクトリ
+<parameter>gfarm_url_from</parameter>
+の内部にあります。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定されたパス
+<parameter>gfarm_url_from</parameter>
+が存在しません。</para>
+</listitem>
+</varlistentry>
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
+</listitem>
+</varlistentry>
+-->
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

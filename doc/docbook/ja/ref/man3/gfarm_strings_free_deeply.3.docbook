@@ -1,0 +1,44 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-strings-free-deeply.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_strings_free_deeply</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_strings_free_deeply</refname>
+<refpurpose>文字列を解放する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>void </returnvalue>gfarm_strings_free_deeply</function></funcdef>
+    <paramdef>int <parameter>n</parameter></paramdef>
+    <paramdef>char ** <parameter>strings</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>要素数 
+<parameter>n</parameter>
+の文字列配列
+<parameter>strings</parameter>
+を解放します。
+また、配列要素の各文字列も、解放します。</para>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,72 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfgrep.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfgrep</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfgrep</refname>
+<refpurpose>並列ファイルを grep する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrun</command>
+    <arg choice='req'>gfarm:gfgrep</arg>
+    <arg choice='plain'>-o <replaceable>出力gfarm-URL</replaceable></arg>
+    <arg choice='plain'><replaceable>正規表現</replaceable></arg>
+    <arg choice='plain' rep=repeat><replaceable>入力gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrun</command>
+    <arg choice='req'>gfarm:gfgrep</arg>
+    <arg choice='plain'>-o <replaceable>出力gfarm-URL</replaceable></arg>
+    <arg choice='plain'>-e <replaceable>正規表現</replaceable></arg>
+    <arg choice='plain' rep=repeat><replaceable>入力gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>gfrun から呼び出されるアプリケーションのサンプル・プログラムです。</para>
+
+<para>また、ローカルファイルビューを利用して Gfarm ファイルに出力する例にも
+なっています。</para>
+
+<para>入力 gfarm-URL から正規表現を検索し、結果を 出力 gfarm-URL に出力し
+ます。</para>
+
+<para>ソースを見ると分かる通り、<command>gfrun</command> から呼び出されるアプリケーションは、
+-I および -N オプションを解釈し、ここから得た値で
+<function>gfs_pio_set_local()</function> を呼び出す必要があります。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-e</option> <parameter>正規表現</parameter></term>
+<listitem>
+<para>「-」で始まる正規表現を指定したい場合に用います。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>出力 Gfarm ファイルの URL を指定します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

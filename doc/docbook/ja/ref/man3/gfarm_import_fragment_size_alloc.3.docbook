@@ -1,0 +1,81 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-import-fragment-size-alloc.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_import_fragment_size_alloc</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_import_fragment_size_alloc</refname>
+<refpurpose>フラグメントサイズの配列を割り当てる</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>file_offset_t  *</returnvalue>gfarm_import_fragment_size_alloc</function></funcdef>
+    <paramdef>file_offset_t <parameter>total_size</parameter></paramdef>
+    <paramdef>int <parameter>n</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</para>
+
+<para>インポート処理には、ファイルを、どれくらいのサイズのフラグメントに
+分割するかという情報が必要です。元ファイルのサイズを引数
+<parameter>total_size</parameter>
+に、フラグメント数を引数
+<parameter>n</parameter>
+に与えると、この関数は結果として、各フラグメントの分割サイズの目安を、
+要素数
+<parameter>n</parameter>
+の配列として返します。</para>
+
+<para>この関数と gfarm_hostlist_read(3) 関数の結果を組み合わせることによって、
+gfarm_import_fragment_config_read(3) 関数が返すフラグメント分割情報
+と同じ形式の情報を得ることができます。</para>
+
+<para>この関数で得た配列は free(3) を用いて解放する必要があります。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>処理に成功した場合、
+file_offset_t 型の配列の先頭要素へのポインタを返します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_hostlist_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

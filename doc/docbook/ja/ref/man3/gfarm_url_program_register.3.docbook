@@ -1,0 +1,90 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-url-program-register.3'>
+
+<refentryinfo><date>10 Sep 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_url_program_register</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_url_program_register</refname>
+<refpurpose>プログラムを登録する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_program_register</function></funcdef>
+    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>char *<parameter>architecture</parameter></paramdef>
+    <paramdef>char *<parameter>filename</parameter></paramdef>
+    <paramdef>int <parameter>nreplicas</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数
+<parameter>architecture</parameter>
+で指定した機種向けの実行形式ファイル
+<parameter>filename</parameter>
+を、
+<parameter>gfarm_url</parameter>
+で指定したパス名に登録します。
+また、
+<parameter>nreplicas</parameter>
+に、作成するレプリカの数を指定します。</para>
+
+<para>引数
+<parameter>nreplicas</parameter>
+は、将来のバージョンで削除される予定です。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para>指定したファイルに、実行可能ビットが立っていませんでした。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

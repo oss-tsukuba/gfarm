@@ -1,0 +1,86 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-hostlist-read.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_hostlist_read</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_hostlist_read</refname>
+<refpurpose>ホスト構成ファイルを読み込む</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfarm_hostlist_read</function></funcdef>
+    <paramdef>char *<parameter>filename</parameter></paramdef>
+    <paramdef>int *<parameter>np</parameter></paramdef>
+    <paramdef>char ***<parameter>line_table_p</parameter></paramdef>
+    <paramdef>int *<parameter>error_line_p</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarmファイルをインポートするアプリケーション用の補助関数の一つです。</para>
+
+<para>ホスト構成ファイル名を
+<parameter>filename</parameter>
+に指定すると、そのファイルから、
+ホストの配列を
+<parameter>line_table_p</parameter>
+の指す先にに返します。
+構成ファイルに構文エラーが生じた場合には、
+<parameter>error_line_p</parameter>
+の指す先に、ファイルの行番号を返します。この値が -1 
+の場合には、構文以外のエラー原因です。</para>
+
+<para>ここで得たホストの配列は gfarm_strings_free_deeply() を用いて解放
+する必要があります。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_import_fragment_size_alloc</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,123 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfmd.8'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmd</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmd(8)</refname>
+<refpurpose>Gfarm metadata server</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmd</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfmd</command> is a Gfarm filesystem metadata server for accessing
+filesystem metadata of the Gfarm filesystem.  <command>gfmd</command> is needed to
+be running on a metadata server node in advance.</para>
+
+<para>It is possible for <command>gfmd</command> to be executed as a non-privileged user
+process although other users cannot use it.  Moreover, a <command>gfmd</command>
+with a user privilege cannot authenticate using the GSI.</para>
+
+<para>In order to execute <command>gfmd</command> as a non-privileged user process, a
+configuration file for a user needs to be specified by the -f option.
+At least, the port number used by <command>gfmd</command> should be altered to a
+non-privileged port number by metadb_serverport statement in the
+configuration file or the -p option.</para>
+
+<para>In this case, the altered port number of <command>gfmd</command> should be
+specified by the metadb_serverport statement in <filename>~/.gfarmrc</filename>
+or <filename>/etc/gfarm.conf</filename> on a client node.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>specifies the debug mode.  With the -d option, gfmd is running as a
+foreground process not a daemon.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>config-file</parameter></term>
+<listitem>
+<para>specifies a configuration file that is read instead of the default
+configuration file.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>port</parameter></term>
+<listitem>
+<para>specifies a port number used by gfmd.  By default, 601 is used.</para>
+<para>Default port requires the root privilege, although privileged ports
+are not necessary to execute gfmd.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter>syslog-facility</parameter></term>
+<listitem>
+<para>specifies a syslog facility to report errors by gfmd.  By default,
+local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option> <parameter></parameter></term>
+<listitem>
+<para>specifies a syslog facility to report errors by gfmd.  By default,
+local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>/etc/gfarm.conf</filename></term>
+<listitem>
+<para>configuration file</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<!--
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfmd.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
+</refsect1>
+-->
+
+</refentry>
+

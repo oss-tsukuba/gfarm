@@ -1,0 +1,88 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfkey.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfkey</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfkey</refname>
+<refpurpose>gfsd のセッション・キー管理コマンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfkey</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>信頼された環境で gfsd をアクセスするのに必要なセッション・
+キー・ファイル 
+<option>$HOME/.gfarm_shared_key</option>
+を扱うコマンドです。</para>
+
+<para>ホーム・ディレクトリを共有している環境では、このコマンドを使う必要性
+はあまりありませんが、そうでない環境では、このコマンドでキーを生成し
+た後、全ファイルシステムノードにキーを配付する必要があります。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>このオプションを指定すると、有効なセッション・キーがない場合に、セッ
+ション・キー・ファイルを作成します。既に有効なセッション・キーが存
+在する場合には何もしません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>強制的にセッション・キーを作成します。
+既に有効なセッション・キーが存在する場合でも、そのキーを捨てて新た
+にキーを作成します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>現在のキーを表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-e</option></term>
+<listitem>
+<para>現在のキーの期限が切れる時刻を表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>$HOME/.gfarm_shared_key</filename></term>
+<listitem>
+<para>セッション・キー・ファイルです。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+
