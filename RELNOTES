@@ -23,11 +23,17 @@ Features
    gfcd, gfchdir, gfpwd,
    gfcp, gfdf, gfsck.
 
+ * Gfarm filesystem
+
+   Gfarm filesystem supports a Gfarm file that is a group of ranked
+   files.  Each file of a Gfarm file can be replicated and stored in
+   any filesystem node.
+
  * Gfarm filesystem daemon (gfsd)
 
    Gfsd has a capability of remote file operations, user
-   authentication, file replication, remote program
-   invocation, and node status monitoring.
+   authentication, file replication, remote program invocation, and
+   node status monitoring.
 
  * Gfarm job-management daemon (gfmd)
 
@@ -40,15 +46,14 @@ Features
 
  * Syscall hooking libraries
 
-   Legacy applications can utilize a Gfarm filesystem just
-   linking with syscall-hooking library, gfs_hook.o or
-   gfs_hook_mpi.o.
+   Legacy applications can utilize a Gfarm filesystem just linking
+   with syscall-hooking library, gfs_hook.o or gfs_hook_mpi.o.
 
  * Sample Gfarm parallel commands
 
    gfgrep    - parallel grep
    gfwc      - parallel word count
-   gfcp      - parallel copy   
-   gfcombine - reduce the number of fragments by combining file fragments.
+   gfcp      - parallel copy
+   gfcombine - reduce the number of fragments by combining file fragments
 
 $Id$
