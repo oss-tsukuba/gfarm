@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b3
+%define ver	1.0b4
 %define rel	1
 
 %define prefix		/usr/grid
@@ -289,6 +289,10 @@ fi
 %{man_prefix}/ja/man3/gfarm_url_section_replicate_to.3.gz
 %{man_prefix}/ja/man3/gfs_closedir.3.gz
 %{man_prefix}/ja/man3/gfs_opendir.3.gz
+%{man_prefix}/ja/man3/gfs_glob.3.gz
+%{man_prefix}/ja/man3/gfs_glob_add.3.gz
+%{man_prefix}/ja/man3/gfs_glob_free.3.gz
+%{man_prefix}/ja/man3/gfs_glob_init.3.gz
 %{man_prefix}/ja/man3/gfs_pio_close.3.gz
 %{man_prefix}/ja/man3/gfs_pio_create.3.gz
 %{man_prefix}/ja/man3/gfs_pio_eof.3.gz
@@ -311,6 +315,7 @@ fi
 %{man_prefix}/ja/man3/gfs_stat.3.gz
 %{man_prefix}/ja/man3/gfs_stat_free.3.gz
 %{man_prefix}/ja/man3/gfs_unlink.3.gz
+%{man_prefix}/ja/man3/gfs_utimes.3.gz
 %{man_prefix}/ja/man5/gfarm.conf.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
@@ -418,6 +423,10 @@ fi
 %{html_prefix}/ja/ref/man3/gfarm_url_section_replicate_to.3.html
 %{html_prefix}/ja/ref/man3/gfs_closedir.3.html
 %{html_prefix}/ja/ref/man3/gfs_opendir.3.html
+%{html_prefix}/ja/ref/man3/gfs_glob.3.html
+%{html_prefix}/ja/ref/man3/gfs_glob_add.3.html
+%{html_prefix}/ja/ref/man3/gfs_glob_free.3.html
+%{html_prefix}/ja/ref/man3/gfs_glob_init.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_create.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_eof.3.html
@@ -440,6 +449,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_stat.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/ja/ref/man3/gfs_unlink.3.html
+%{html_prefix}/ja/ref/man3/gfs_utimes.3.html
 %{html_prefix}/ja/ref/man5/gfarm.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
