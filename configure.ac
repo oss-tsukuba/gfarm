@@ -709,7 +709,7 @@ AC_CONFIG_FILES(Makefile makes/config.mk
 	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
-	package/redhat/config/config-gfarm
+	package/redhat/config/config-gfarm package/redhat/config/config-gfsd
 	util/gfront/gfront
 )
 AC_OUTPUT

@@ -9,13 +9,13 @@
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
 %define man_prefix	%{_mandir}
-%define doc_prefix	/usr/share/doc/%{name}-%{ver}
+%define share_prefix	%{prefix}/share/%{pkg}
+%define doc_prefix	%{prefix}/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
-%define lib_gfarm_prefix %{_libdir}/gfarm
-%define rc_prefix	/etc/rc.d/init.d
 %define etc_prefix	/etc
-%define ldap_etc_prefix	%{etc_prefix}/gfarm-ldap
-%define profile_etc_prefix %{etc_prefix}/profile.d
+%define rc_prefix	%{etc_prefix}/rc.d/init.d
+%define ldap_prefix	%{etc_prefix}/%{pkg}-ldap
+%define profile_prefix	%{etc_prefix}/profile.d
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
@@ -167,16 +167,19 @@ mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
-cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
-mkdir -p ${RPM_BUILD_ROOT}%{profile_etc_prefix}
-cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_etc_prefix}
-chmod +x ${RPM_BUILD_ROOT}%{profile_etc_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config
+mkdir -p ${RPM_BUILD_ROOT}%{ldap_prefix}
+cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_prefix}
+mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
+cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
+chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
+mkdir -p ${RPM_BUILD_ROOT}%{share_prefix}/config
+cp -p package/redhat/config/{gfarm-slapd,gfmd,gfsd}.in \
+	${RPM_BUILD_ROOT}%{share_prefix}/config
+cp -p package/redhat/config/{gfarm.conf,slapd.conf-2.[01]}.in \
+	${RPM_BUILD_ROOT}%{share_prefix}/config
 cp -p package/redhat/config/config-{gfarm,gfsd} \
-	package/redhat/config/{gfarm-slapd,gfarm.conf,slapd.conf-2.[01]}.in \
-	${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config
-chmod +x ${RPM_BUILD_ROOT}%{lib_gfarm_prefix}/config/config-*
+	${RPM_BUILD_ROOT}%{prefix}/bin
+chmod +x ${RPM_BUILD_ROOT}%{prefix}/bin/config-{gfarm,gfsd}
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -188,11 +191,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %post fsnode
 /sbin/chkconfig --add gfsd
 echo copy /etc/gfarm.conf from metadata server and
-echo run %{lib_gfarm_prefix}/config/config-gfsd '<spool_directory>'
+echo run %{prefix}/bin/config-gfsd '<spool_directory>'
 
 %post server
 /sbin/chkconfig --add gfmd
-echo run %{lib_gfarm_prefix}/config/config-gfarm to configure Gfarm file system
+echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 
 %preun fsnode
 if [ "$1" = 0 ]
@@ -622,8 +625,8 @@ fi
 # %{prefix}/bin/pdiff
 %{prefix}/bin/pdist
 %{prefix}/bin/prun
-%{profile_etc_prefix}/gfarm.sh
-%{profile_etc_prefix}/gfarm.csh
+%{profile_prefix}/gfarm.sh
+%{profile_prefix}/gfarm.csh
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
@@ -661,22 +664,24 @@ fi
 %{prefix}/bin/thput-gfpio
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
-%dir %{lib_gfarm_prefix}
-%dir %{lib_gfarm_prefix}/config
-%{lib_gfarm_prefix}/config/config-gfsd
+%{prefix}/bin/config-gfsd
+%dir %{share_prefix}
+%dir %{share_prefix}/config
+%{share_prefix}/config/gfsd.in
 
 %files server
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
-%dir %{ldap_etc_prefix}
-%{ldap_etc_prefix}/gfarm.schema
-%dir %{lib_gfarm_prefix}
-%dir %{lib_gfarm_prefix}/config
-%{lib_gfarm_prefix}/config/config-gfarm
-%{lib_gfarm_prefix}/config/gfarm-slapd.in
-%{lib_gfarm_prefix}/config/slapd.conf-2.0.in
-%{lib_gfarm_prefix}/config/slapd.conf-2.1.in
-%{lib_gfarm_prefix}/config/gfarm.conf.in
+%dir %{ldap_prefix}
+%{ldap_prefix}/gfarm.schema
+%{prefix}/bin/config-gfarm
+%dir %{share_prefix}
+%dir %{share_prefix}/config
+%{share_prefix}/config/gfarm-slapd.in
+%{share_prefix}/config/gfmd.in
+%{share_prefix}/config/slapd.conf-2.0.in
+%{share_prefix}/config/slapd.conf-2.1.in
+%{share_prefix}/config/gfarm.conf.in
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
