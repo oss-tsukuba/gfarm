@@ -33,7 +33,7 @@ CFLAGS = $(OPTFLAGS) $(DEBUG_CFLAGS) -I$(srcdir) \
 # dependency only on libgfarm here, is because the other dependencies
 # will be automatically added by libtool. And because using $(GFARMLIB)
 # automatically adds $(globus_gssapi_libs), and that may add statically
-# linked globus libraries to the gfs_hook.so.
+# linked globus libraries to the libgfs_hook.a.
 LDLIBS = $(top_builddir)/lib/libgfarm/libgfarm.la
 
 # to not use default $(LIBRARY) target in lib.mk
