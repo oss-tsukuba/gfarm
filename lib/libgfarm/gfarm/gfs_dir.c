@@ -1,12 +1,109 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <sys/time.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "hash.h"
 #include "gfs_pio.h"	/* gfarm_path_expand_home */
 
 static char *gfarm_current_working_directory;
+
+char *
+gfs_mkdir(const char *pathname, gfarm_mode_t mode)
+{
+	char *user, *canonic_path, *e;
+	struct gfarm_path_info pi;
+	struct timeval now;
+
+	user = gfarm_get_global_username();
+	if (user == NULL)
+		return ("unknown user");
+
+	e = gfarm_url_make_path_for_creation(pathname, &canonic_path);
+	/* We permit missing gfarm: prefix here as a special case */
+	if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
+		e = gfarm_canonical_path_for_creation(pathname, &canonic_path);
+	if (e != NULL)
+		return (e);
+
+	if (gfarm_path_info_get(canonic_path, &pi) == 0) {
+		gfarm_path_info_free(&pi);
+		free(canonic_path);
+		return (GFARM_ERR_ALREADY_EXISTS);
+	}
+
+	gettimeofday(&now, NULL);
+	pi.pathname = canonic_path;
+	pi.status.st_mode = (GFARM_S_IFDIR | mode);
+	pi.status.st_user = user;
+	pi.status.st_group = "*"; /* XXX for now */
+	pi.status.st_atimespec.tv_sec =
+	pi.status.st_mtimespec.tv_sec =
+	pi.status.st_ctimespec.tv_sec = now.tv_sec;
+	pi.status.st_atimespec.tv_nsec =
+	pi.status.st_mtimespec.tv_nsec =
+	pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+	pi.status.st_size = 0;
+	pi.status.st_nsections = 0;
+
+	e = gfarm_path_info_set(canonic_path, &pi);
+	free(canonic_path);
+
+	gfs_uncachedir();
+
+	return (e);
+}
+
+char *
+gfs_rmdir(const char *pathname)
+{
+	char *canonic_path, *e;
+	struct gfarm_path_info pi;
+	GFS_Dir dir;
+	struct gfs_dirent *entry;
+
+	e = gfarm_url_make_path(pathname, &canonic_path);
+	/* We permit missing gfarm: prefix here as a special case */
+	if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
+		e = gfarm_canonical_path(pathname, &canonic_path);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_info_get(canonic_path, &pi);
+	if (e != NULL) {
+		free(canonic_path);
+		return (e);
+	}
+	if (!GFARM_S_ISDIR(pi.status.st_mode)) {
+		free(canonic_path);
+		gfarm_path_info_free(&pi);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	gfarm_path_info_free(&pi);
+
+	e = gfs_opendir(pathname, &dir);
+	if (e != NULL) {
+		free(canonic_path);
+		return (e);
+	}
+	e = gfs_readdir(dir, &entry);
+	if (e != NULL) {
+		free(canonic_path);
+		return (e);
+	}
+	if (entry != NULL) {
+		free(canonic_path);
+		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
+	}
+
+	e = gfarm_path_info_remove(canonic_path);
+	free(canonic_path);
+
+	gfs_uncachedir();
+
+	return (e);
+}
 
 char *
 gfs_chdir(const char *dir)

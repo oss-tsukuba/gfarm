@@ -47,16 +47,20 @@ int
 main(int argc, char **argv)
 {
 	char *e, *canonic_path;
-	int i, c;
+	int i, c, remove_directory_in_spool = 0;
 	extern int optind;
 
 	if (argc <= 1)
 		usage();
 	program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "h")) != EOF) {
+	while ((c = getopt(argc, argv, "ah?")) != EOF) {
 		switch (c) {
+		case 'a':
+			remove_directory_in_spool = 1;
+			break;
 		case 'h':
+		case '?':
 		default:
 			usage();
 		}
@@ -72,51 +76,31 @@ main(int argc, char **argv)
 	for (i = 0; i < argc; i++) {
 		char *e;
 		struct args a;
-		struct gfarm_path_info pi;
-		GFS_Dir dir;
-		struct gfs_dirent *entry;
 		int nhosts_succeed;
 
+		/*
+		 * canonic_path is needed to be obtained before
+		 * gfs_rmdir() for gfs_client_apply_all_hosts().
+		 */
 		e = gfarm_url_make_path(argv[i], &canonic_path);
-		/* We permit missing gfarm: prefix here as a special case */
+		/* Permit missing gfarm: prefix as a special case */
 		if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
-			e = gfarm_canonical_path(argv[i],
-			    &canonic_path);
+			e = gfarm_canonical_path(argv[i], &canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			continue;
 		}
-		e = gfarm_path_info_get(canonic_path, &pi);
+		e = gfs_rmdir(argv[i]);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
-		if (!GFARM_S_ISDIR(pi.status.st_mode)) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-				GFARM_ERR_NOT_A_DIRECTORY);
 			free(canonic_path);
-			gfarm_path_info_free(&pi);
 			continue;
 		}
-		gfarm_path_info_free(&pi);
-		e = gfs_opendir(argv[i], &dir);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-				e);
-			exit(1);
-		}
-		e = gfs_readdir(dir, &entry);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-				e);
-			exit(1);
-		}
-		if (entry != NULL) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-				"directory not empty");
+		if (!remove_directory_in_spool) {
 			free(canonic_path);
-			continue;			
+			continue;
 		}
+
 		a.path = canonic_path;
 		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name,
 			&nhosts_succeed);
@@ -128,11 +112,6 @@ main(int argc, char **argv)
 			exit(1);
 		}
 #endif
-		e = gfarm_path_info_remove(canonic_path);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
 		free(canonic_path);
 	}
 	e = gfarm_terminate();
