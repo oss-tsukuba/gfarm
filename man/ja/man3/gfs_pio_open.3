@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "01 October 2004" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "30 October 2004" "Gfarm" ""
 
 .SH NAME
 gfs_pio_open \- Gfarmファイルのオープン
@@ -34,17 +34,11 @@ char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\f
 \fBGFARM_FILE_RDWR\fR
 読み書きモードでファイルをオープンします。
 .TP
-\fBGFARM_FILE_CREATE\fR
-ファイルが存在しない場合、ファイルを作成します。
-.TP
 \fBGFARM_FILE_TRUNC\fR
 ファイルが存在し，レギュラーファイルで、書込みが許される場合、ファイルサイズを0にします。
 .TP
 \fBGFARM_FILE_APPEND\fR
 ファイルをアペンドモードでオープンします。
-.TP
-\fBGFARM_FILE_EXCLUSIVE\fR
-GFARM_FILE_CREATEと共に指定され、ファイルが既に存在する場合は、ファイルのオープンに失敗します。
 .PP
 以下のフラグは効率的な実行のためのヒントとして指定することができます。
 .TP

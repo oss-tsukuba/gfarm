@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "01 October 2004" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "30 October 2004" "Gfarm" ""
 
 .SH NAME
 gfs_pio_open \- open a Gfarm file
@@ -17,7 +17,7 @@ char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\f
 .PP
 \fBgfs_pio_open()\fR opens the Gfarm file whose name is the string
 specified by \fIgfarm_url\fR, and returns a \fIGFS_File\fR structure
-to the address pointed by \fIgfp\fR.
+to the address pointed by \fIgfp\fR\&.
 Values of \fIflags\fR are constructed by a
 bitwise-inclusive-OR of the following list.  Exactly one of the first
 three values should be specified:
@@ -31,19 +31,12 @@ Open for writing only.
 \fBGFARM_FILE_RDWR\fR
 Open for reading and writing.
 .TP
-\fBGFARM_FILE_CREATE\fR
-If the file does not exist, it will be created.
-.TP
 \fBGFARM_FILE_TRUNC\fR
 If the file already exist and is a regular file, it will be
 truncated to length 0 if the open mode allows writing.
 .TP
 \fBGFARM_FILE_APPEND\fR
 The file is opened in append mode.
-.TP
-\fBGFARM_FILE_EXCLUSIVE\fR
-When used with GFARM_FILE_CREATE, if the
-file already exists the open will fail with an error.
 .PP
 The following may be specified as a hint for efficient execution:
 .TP

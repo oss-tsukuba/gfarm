@@ -5,8 +5,7 @@
 >gfs_pio_open</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,11 +35,11 @@ NAME="SYNOPSIS"
 >Synopsis</H2
 ><DIV
 CLASS="FUNCSYNOPSIS"
+><P
+></P
 ><A
 NAME="AEN12"
 ></A
-><P
-></P
 ><TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -128,45 +127,36 @@ three values should be specified:</P
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_RDONLY</TT
+>GFARM_FILE_RDONLY</CODE
 ></DT
 ><DD
 ><P
 >Open for reading only.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_WRONLY</TT
+>GFARM_FILE_WRONLY</CODE
 ></DT
 ><DD
 ><P
 >Open for writing only.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_RDWR</TT
+>GFARM_FILE_RDWR</CODE
 ></DT
 ><DD
 ><P
 >Open for reading and writing.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_CREATE</TT
-></DT
-><DD
-><P
->If the file does not exist, it will be created.</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_FILE_TRUNC</TT
+>GFARM_FILE_TRUNC</CODE
 ></DT
 ><DD
 ><P
@@ -174,26 +164,13 @@ CLASS="CONSTANT"
 truncated to length 0 if the open mode allows writing.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_APPEND</TT
+>GFARM_FILE_APPEND</CODE
 ></DT
 ><DD
 ><P
 >The file is opened in append mode.</P
-></DD
-><DT
-><TT
-CLASS="CONSTANT"
->GFARM_FILE_EXCLUSIVE</TT
-></DT
-><DD
-><P
->When used with <TT
-CLASS="CONSTANT"
->GFARM_FILE_CREATE</TT
->, if the
-file already exists the open will fail with an error.</P
 ></DD
 ></DL
 ></DIV
@@ -205,18 +182,18 @@ file already exists the open will fail with an error.</P
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_SEQUENTIAL</TT
+>GFARM_FILE_SEQUENTIAL</CODE
 ></DT
 ><DD
 ><P
 >File will be accessed sequentially.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_REPLICATION</TT
+>GFARM_FILE_REPLICATION</CODE
 ></DT
 ><DD
 ><P
@@ -224,9 +201,9 @@ CLASS="CONSTANT"
 remotely.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_NOT_REPLICATION</TT
+>GFARM_FILE_NOT_REPLICATION</CODE
 ></DT
 ><DD
 ><P
@@ -234,9 +211,9 @@ CLASS="CONSTANT"
 remotely.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_NOT_RETRY</TT
+>GFARM_FILE_NOT_RETRY</CODE
 ></DT
 ><DD
 ><P
@@ -247,13 +224,13 @@ another file replica.</P
 ></DL
 ></DIV
 ><P
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_FILE_REPLICATION</TT
+>GFARM_FILE_REPLICATION</CODE
 > and
-<TT
+<CODE
 CLASS="CONSTANT"
->GFARM_FILE_NOT_REPLICATION</TT
+>GFARM_FILE_NOT_REPLICATION</CODE
 > cannot be specified at
 the same time.</P
 ><P
@@ -261,9 +238,9 @@ the same time.</P
 CLASS="FUNCTION"
 >gfs_pio_open()</TT
 > is used by parallel processes executed by
-gfrun(3) or gfmpirun_p4(3), the returned <SPAN
+gfrun(3) or gfmpirun_p4(3), the returned <CODE
 CLASS="STRUCTNAME"
->GFS_File</SPAN
+>GFS_File</CODE
 > structure of each
 process has individual file pointers among parallel processes.</P
 ></DIV
@@ -280,36 +257,36 @@ NAME="RETURN-VALUES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->NULL</TT
+>NULL</CODE
 ></DT
 ><DD
 ><P
 >The function terminated successfully.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</TT
+>GFARM_ERR_NO_MEMORY</CODE
 ></DT
 ><DD
 ><P
 >Insufficient memory was available.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</TT
+>GFARM_ERR_AUTHENTICATION</CODE
 ></DT
 ><DD
 ><P
 >User authentication failed when connecting to gfmd(8) or gfsd(8).</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</TT
+>GFARM_ERR_PERMISSION_DENIED</CODE
 ></DT
 ><DD
 ><P
@@ -323,9 +300,9 @@ CLASS="PARAMETER"
 permission.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_IS_A_DIRECTORY</TT
+>GFARM_ERR_IS_A_DIRECTORY</CODE
 ></DT
 ><DD
 ><P
@@ -337,9 +314,9 @@ CLASS="PARAMETER"
 > refers to a directory.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</TT
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
 ></DT
 ><DD
 ><P
@@ -351,9 +328,9 @@ CLASS="PARAMETER"
 > does not exist.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</TT
+>GFARM_ERR_NOT_A_DIRECTORY</CODE
 ></DT
 ><DD
 ><P

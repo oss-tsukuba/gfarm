@@ -5,8 +5,7 @@
 >gfs_pio_create</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,11 +35,11 @@ NAME="SYNOPSIS"
 >Synopsis</H2
 ><DIV
 CLASS="FUNCSYNOPSIS"
+><P
+></P
 ><A
 NAME="AEN12"
 ></A
-><P
-></P
 ><TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -130,10 +129,37 @@ CLASS="PARAMETER"
 >Mode</I
 ></TT
 > specifies the file permissions to be created,
-and is modified by the process's <TT
+and is modified by the process's <VAR
 CLASS="VARNAME"
->umask</TT
+>umask</VAR
 >.</P
+><P
+>The
+<TT
+CLASS="PARAMETER"
+><I
+>flags</I
+></TT
+>
+argument has same meaning with the second argument of
+<TT
+CLASS="FUNCTION"
+>gfs_pio_open()</TT
+>.
+There is one other flag which is specific to 
+<TT
+CLASS="FUNCTION"
+>gfs_pio_create()</TT
+>.
+That is
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_EXCLUSIVE</I
+></TT
+>,
+and this function will fail, if this flag is specified and
+the file already exists.</P
 ><P
 >Note that
 <TT
@@ -149,8 +175,8 @@ CLASS="PARAMETER"
 >flags</I
 ></TT
 >
-argument since gfarm-1.0.4 if it's needed,
-although it was implicitly assumed once.</P
+argument since gfarm-1.0.4, if it's needed.
+Although this was implicitly assumed before.</P
 ><P
 >When <TT
 CLASS="FUNCTION"
@@ -162,9 +188,9 @@ CLASS="PARAMETER"
 ><I
 >mode</I
 ></TT
->.  The returned <TT
+>.  The returned <CODE
 CLASS="CONSTANT"
->GFS_File</TT
+>GFS_File</CODE
 > structure of each
 process has individual file pointers among parallel processes.</P
 ></DIV
@@ -181,36 +207,36 @@ NAME="RETURN-VALUES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->NULL</TT
+>NULL</CODE
 ></DT
 ><DD
 ><P
 >The function terminated successfully.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</TT
+>GFARM_ERR_NO_MEMORY</CODE
 ></DT
 ><DD
 ><P
 >Insufficient memory was available.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_AUTHENTICATION</TT
+>GFARM_ERR_AUTHENTICATION</CODE
 ></DT
 ><DD
 ><P
 >User authentication failed when connecting to gfmd(8) or gfsd(8).</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</TT
+>GFARM_ERR_PERMISSION_DENIED</CODE
 ></DT
 ><DD
 ><P
@@ -225,9 +251,9 @@ permission, or the file did not exist yet and write access to the
 parent directory is not allowed.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_IS_A_DIRECTORY</TT
+>GFARM_ERR_IS_A_DIRECTORY</CODE
 ></DT
 ><DD
 ><P
@@ -239,9 +265,9 @@ CLASS="PARAMETER"
 > refers to a directory.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</TT
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
 ></DT
 ><DD
 ><P
@@ -253,9 +279,9 @@ CLASS="PARAMETER"
 > does not exist.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</TT
+>GFARM_ERR_NOT_A_DIRECTORY</CODE
 ></DT
 ><DD
 ><P
