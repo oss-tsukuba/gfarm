@@ -12,20 +12,24 @@ Description: The gfarm server.
 
 Package: gfarm-client
 Architecture: i386
+Depends: ${shlibs:Depends}
 Description: The gfarm client.
  The gfarm client.
 
-Package: gfarm-pool
+Package: gfarm-fsnode
 Architecture: i386
-Description: The gfarm pool.
- The gfarm pool.
+Depends: ${shlibs:Depends}
+Description: The gfarm fsnode.
+ The gfarm fsnode.
 
 Package: libgfarm-dev
 Architecture: i386
+Depends: ${shlibs:Depends}
 Description: Development files for the gfarm.
  Development files for the gfarm. 
 
 Package: gfarm-doc
 Architecture: all
-Description: Documents and Papers for the gfarm.
- Documents and Papers for the gfarm. 
+Depends: ${shlibs:Depends}
+Description: Documents for the gfarm.
+ Documents for the gfarm. 

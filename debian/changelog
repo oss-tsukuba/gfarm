@@ -1,9 +1,13 @@
-gfarm (0.0.cvs20010901-1) unstable; urgency=low
+gfarm (0.0.cvs20021101-1) unstable; urgency=low
 
-  * Initial Release.
+  * New upstream release.
 
- -- Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>  Mon, 10 Sep 2001 02:57:35 +0900
+ -- Yasuhito Takamiya <takamiya@lucie.is.titech.ac.jp>  Fri,  1 Nov 2002 17:57:31 +0900
 
-Local variables:
-mode: debian-changelog
-End:
+gfarm (0.0.cvs20021005-1) unstable; urgency=low
+
+  * cvs 20021005 release.
+
+ -- Yasuhito Takamiya <takamiya@lucie.is.titech.ac.jp>  Fri,  1 Nov 2002 17:56:29 +0900
+
+

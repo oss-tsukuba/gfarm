@@ -54,13 +54,14 @@ install-stamp: build
 # Build architecture-independent files here.
 # Pass -i to all debhelper commands in this target to reduce clutter.
 binary-indep: DH_OPTIONS=-i
+# binary-indep: build install gfarm-doc
 binary-indep: build install gfarm-doc
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.
 # Pass -a to all debhelper commands in this target to reduce clutter.
 binary-arch: DH_OPTIONS=-a
-binary-arch: build install gfarm-pool gfarm-client libgfarm-dev gfarm-server
+binary-arch: build install gfarm-fsnode gfarm-client libgfarm-dev gfarm-server 
 
 gfarm-server: build
 	# Need this version of debhelper for DH_OPTIONS to work.
@@ -71,12 +72,15 @@ gfarm-server: build
 	# Add command to install the files into debian/tmp
 	install -d debian/tmp/usr/sbin
 	mv debian/tmp/bin/gfarmd debian/tmp/usr/sbin
+	cp gfmd/gfmd debian/tmp/usr/sbin
 	install -d debian/tmp/etc/init.d/
 	install -o root -g root debian/gfarm-server.init debian/tmp/etc/init.d/gfarm-server
-	rm -rf debian/tmp/lib debian/tmp/include debian/tmp/bin
+	install debian/gfarm.conf debian/tmp/etc/gfarm.conf
+	cp -r debian/tmp/usr/share/man debian/doc
+	rm -rf debian/tmp/lib debian/tmp/include debian/tmp/bin debian/tmp/usr/share/man
 
 #	dh_installinit -pgfarm-server
-	dh_installmanpages -pgfarm-server
+#	dh_installmanpages -pgfarm-server
 	dh_installchangelogs -pgfarm-server 
 	dh_strip -pgfarm-server
 	dh_compress -pgfarm-server
@@ -112,10 +116,41 @@ gfarm-client: build
 	# Add command to install the files into debian/tmp
 	install -d debian/gfarm-client/usr/bin
 	cp debian/tmp/bin/gfarm debian/gfarm-client/usr/bin
+	# install nstools
 	cp nstool/file/put debian/gfarm-client/usr/bin
 	cp nstool/file/get debian/gfarm-client/usr/bin
-
-	dh_installmanpages -pgfarm-client
+	cp nstool/file/ns_get debian/gfarm-client/usr/bin
+	cp nstool/file/ns_lstat debian/gfarm-client/usr/bin
+	cp nstool/file/ns_mkdir debian/gfarm-client/usr/bin
+	cp nstool/file/ns_put debian/gfarm-client/usr/bin
+	cp nstool/file/ns_readdir debian/gfarm-client/usr/bin
+	cp nstool/file/ns_readlink debian/gfarm-client/usr/bin
+	cp nstool/file/ns_rename debian/gfarm-client/usr/bin
+	cp nstool/file/ns_stat debian/gfarm-client/usr/bin
+	cp nstool/file/ns_symlink debian/gfarm-client/usr/bin
+	cp nstool/file/ns_unlink debian/gfarm-client/usr/bin
+	cp nstool/file/ns_unlink_dir debian/gfarm-client/usr/bin
+	# install gftools
+	cp gftool/digest/digest debian/gfarm-client/usr/bin
+	cp gftool/gfexport/gfexport debian/gfarm-client/usr/bin
+	cp gftool/gfmpirun/gfmpirun debian/gfarm-client/usr/bin	
+	cp gftool/gfrcmd/gfrcmd     debian/gfarm-client/usr/bin	
+	cp gftool/gfrep/gfrep       debian/gfarm-client/usr/bin	
+	cp gftool/gfrm/gfrm         debian/gfarm-client/usr/bin	
+	cp gftool/gfrun/gfrun       debian/gfarm-client/usr/bin	
+	cp gftool/gfwhere/gfwhere   debian/gfarm-client/usr/bin	
+	cp gftool/gfkey/gfkey       debian/gfarm-client/usr/bin	
+	cp gftool/gfps/gfps         debian/gfarm-client/usr/bin	
+	cp gftool/gfreg/gfreg       debian/gfarm-client/usr/bin	
+#	cp gftool/gfreplicate/gfreplicate debian/gfarm-client/usr/bin	
+#	cp debian/tmp/bin/gfrsh       debian/gfarm-client/usr/bin	
+	cp gftool/gfsched/gfsched   debian/gfarm-client/usr/bin	
+	cp gftool/example/gfgrep/gfgrep   debian/gfarm-client/usr/bin	
+	cp gftool/example/gfimport_fixed/gfimport_fixed   debian/gfarm-client/usr/bin	
+	cp gftool/example/gfimport_text/gfimport_text     debian/gfarm-client/usr/bin	
+#	cp gftool/example/gfwc/gfwc                       debian/gfarm-client/usr/bin	
+# 	
+#	dh_installmanpages -pgfarm-client
 	dh_installchangelogs -pgfarm-client 
 	dh_strip -pgfarm-client
 	dh_compress -pgfarm-client
@@ -142,46 +177,46 @@ gfarm-client: build
 #	dh_makeshlibs -pgfarm-client
 #	dh_perl -pgfarm-client
 
-gfarm-pool: build
+gfarm-fsnode: build
 	# Need this version of debhelper for DH_OPTIONS to work.
 	dh_testversion 1.1.17
-	dh_testdir -pgfarm-pool
-	dh_testroot -pgfarm-pool
-#	dh_clean -pgfarm-pool -k
+	dh_testdir -pgfarm-fsnode
+	dh_testroot -pgfarm-fsnode
+#	dh_clean -pgfarm-fsnode -k
 	# Add command to install the files into debian/tmp
-	install -d debian/gfarm-pool/usr/sbin
-	cp debian/tmp/bin/gfsd debian/gfarm-pool/usr/sbin
-	install -d debian/gfarm-pool/etc/init.d
-	install doc/gfarm.conf debian/gfarm-pool/etc/gfarm.conf
-	install -o root -g root debian/gfarm-pool.init debian/gfarm-pool/etc/init.d/gfarm-pool
+	install -d debian/gfarm-fsnode/usr/sbin
+	cp debian/tmp/bin/gfsd debian/gfarm-fsnode/usr/sbin
+	install -d debian/gfarm-fsnode/etc/init.d
+	install debian/gfarm.conf debian/gfarm-fsnode/etc/gfarm.conf
+	install -o root -g root debian/gfarm-fsnode.init debian/gfarm-fsnode/etc/init.d/gfarm-fsnode
 
-#	dh_installinit -pgfarm-pool
-	dh_installmanpages -pgfarm-pool
-	dh_installchangelogs -pgfarm-pool 
-	dh_strip -pgfarm-pool
-	dh_compress -pgfarm-pool
-	dh_fixperms -pgfarm-pool
-	dh_installdeb -pgfarm-pool
-	dh_shlibdeps -pgfarm-pool
-	dh_gencontrol -pgfarm-pool
-	dh_md5sums -pgfarm-pool
-#	dh_builddeb -pgfarm-pool
+#	dh_installinit -pgfarm-fsnode
+#	dh_installmanpages -pgfarm-fsnode
+	dh_installchangelogs -pgfarm-fsnode 
+	dh_strip -pgfarm-fsnode
+	dh_compress -pgfarm-fsnode
+	dh_fixperms -pgfarm-fsnode
+	dh_installdeb -pgfarm-fsnode
+	dh_shlibdeps -pgfarm-fsnode
+	dh_gencontrol -pgfarm-fsnode
+	dh_md5sums -pgfarm-fsnode
+#	dh_builddeb -pgfarm-fsnode
 
-#	dh_installdebconf -pgfarm-pool
-#	dh_installdocs -pgfarm-pool
-#	dh_installexamples -pgfarm-pool
-#	dh_installmenu -pgfarm-pool
-#	dh_installpam -pgfarm-pool
-#	dh_installinit -pgfarm-pool
-#	dh_installcron -pgfarm-pool
+#	dh_installdebconf -pgfarm-fsnode
+#	dh_installdocs -pgfarm-fsnode
+#	dh_installexamples -pgfarm-fsnode
+#	dh_installmenu -pgfarm-fsnode
+#	dh_installpam -pgfarm-fsnode
+#	dh_installinit -pgfarm-fsnode
+#	dh_installcron -pgfarm-fsnode
 
-#	dh_installinfo -pgfarm-pool
-#	dh_undocumented -pgfarm-pool
-#	dh_link -pgfarm-pool
+#	dh_installinfo -pgfarm-fsnode
+#	dh_undocumented -pgfarm-fsnode
+#	dh_link -pgfarm-fsnode
 	# You may want to make some executables suid here.
-#	dh_suidregister -pgfarm-pool
-#	dh_makeshlibs -pgfarm-pool
-#	dh_perl -pgfarm-pool
+#	dh_suidregister -pgfarm-fsnode
+#	dh_makeshlibs -pgfarm-fsnode
+#	dh_perl -pgfarm-fsnode
 
 
 libgfarm-dev: build
@@ -196,7 +231,7 @@ libgfarm-dev: build
 	install -d debian/libgfarm-dev/usr/lib
 	cp debian/tmp/lib/* debian/libgfarm-dev/usr/lib # *.a files
 
-	dh_installmanpages -plibgfarm-dev
+#	dh_installmanpages -plibgfarm-dev
 	dh_installchangelogs -plibgfarm-dev 
 	dh_strip -plibgfarm-dev
 	dh_compress -plibgfarm-dev
@@ -231,7 +266,7 @@ gfarm-doc: build
 #	dh_clean -pgfarm-doc -k -V
 	# Add command to install the files into debian/tmp
 	install -d debian/gfarm-doc/usr/share/doc/gfarm-doc
-	cp -r doc/* debian/gfarm-doc/usr/share/doc/gfarm-doc # Copy HTML Docs
+	cp -r debian/doc/* debian/gfarm-doc/usr/share/
 
 	dh_installchangelogs -pgfarm-doc 
 #	dh_installdocs -pgfarm-doc
@@ -243,5 +278,5 @@ gfarm-doc: build
 	dh_md5sums -pgfarm-doc
 	dh_builddeb -pgfarm-doc
 
-binary: binary-indep binary-arch
+binary: binary-arch binary-indep 
 .PHONY: build clean binary-indep binary-arch binary
