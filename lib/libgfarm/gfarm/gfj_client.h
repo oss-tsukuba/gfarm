@@ -1,5 +1,5 @@
 /*
- * $Id
+ * $Id$
  */
 
 struct gfarm_job_info {
