@@ -1,149 +1,149 @@
-Gfarm FAQ - Gfarm ‚ÉŠÖ‚·‚é‚æ‚­‚ ‚éŽ¿–â
+Gfarm FAQ - Gfarm ¤Ë´Ø¤¹¤ë¤è¤¯¤¢¤ë¼ÁÌä
 
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
-–ÚŽŸ:
+ÌÜ¼¡:
 *****
-1. ˆê”Ê
-  1.1 Gfarm ‚Æ‚Í‰½‚Å‚·‚©H
-  1.2 Gfarm ‚Í‚Ç‚±‚©‚çƒ_ƒEƒ“ƒ[ƒh‚Å‚«‚Ü‚·‚©H
+1. °ìÈÌ
+  1.1 Gfarm ¤È¤Ï²¿¤Ç¤¹¤«¡©
+  1.2 Gfarm ¤Ï¤É¤³¤«¤é¥À¥¦¥ó¥í¡¼¥É¤Ç¤­¤Þ¤¹¤«¡©
 
-2. ƒgƒ‰ƒuƒ‹EƒVƒ…[ƒeƒBƒ“ƒO
-  2.1 gfls ‚ð‚·‚é‚Æ not a directory ‚Æ•\Ž¦‚³‚ê‚éƒtƒ@ƒCƒ‹‚ª‚ ‚è‚Ü‚·‚ªC
-     ‚±‚ê‚Í‰½‚Å‚µ‚å‚¤‚©H
-  2.2 ƒtƒ@ƒCƒ‹ƒVƒXƒeƒ€ƒm[ƒh‚ÌƒXƒv[ƒ‹ƒfƒBƒŒƒNƒgƒŠ‚É Gfarm ƒtƒ@ƒCƒ‹ƒV
-     ƒXƒeƒ€‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢ƒtƒ@ƒCƒ‹‚ªŽc‚Á‚Ä‚¢‚é‚æ‚¤‚Å‚·DÁ‚µ‚½‚¢‚Ì
-     ‚Å‚·‚ªC‚Ç‚¤‚µ‚½‚ç‚¢‚¢‚Å‚µ‚å‚¤‚©H
+2. ¥È¥é¥Ö¥ë¡¦¥·¥å¡¼¥Æ¥£¥ó¥°
+  2.1 gfls ¤ò¤¹¤ë¤È not a directory ¤ÈÉ½¼¨¤µ¤ì¤ë¥Õ¥¡¥¤¥ë¤¬¤¢¤ê¤Þ¤¹¤¬¡¤
+     ¤³¤ì¤Ï²¿¤Ç¤·¤ç¤¦¤«¡©
+  2.2 ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Î¥¹¥×¡¼¥ë¥Ç¥£¥ì¥¯¥È¥ê¤Ë Gfarm ¥Õ¥¡¥¤¥ë¥·
+     ¥¹¥Æ¥à¤ËÅÐÏ¿¤µ¤ì¤Æ¤¤¤Ê¤¤¥Õ¥¡¥¤¥ë¤¬»Ä¤Ã¤Æ¤¤¤ë¤è¤¦¤Ç¤¹¡¥¾Ã¤·¤¿¤¤¤Î
+     ¤Ç¤¹¤¬¡¤¤É¤¦¤·¤¿¤é¤¤¤¤¤Ç¤·¤ç¤¦¤«¡©
 
-3. ƒZƒLƒ…ƒŠƒeƒB
-  3.1 Gfarm ‚Í firewall ‚ÉŽç‚ç‚ê‚Ä‚¢‚È‚¢ŠÂ‹«‚ÅˆÀ‘S‚É‰^—p‚Å‚«‚Ü‚·‚©H
-  3.2 sharedsecret ”FØ‚Æ GSI ”FØ‚Ìˆá‚¢‚ÍH
+3. ¥»¥­¥å¥ê¥Æ¥£
+  3.1 Gfarm ¤Ï firewall ¤Ë¼é¤é¤ì¤Æ¤¤¤Ê¤¤´Ä¶­¤Ç°ÂÁ´¤Ë±¿ÍÑ¤Ç¤­¤Þ¤¹¤«¡©
+  3.2 sharedsecret Ç§¾Ú¤È GSI Ç§¾Ú¤Î°ã¤¤¤Ï¡©
 
-4. §ŒÀŽ–€
-  4.1 gfls ‚ð‚·‚é‚ÆAƒfƒBƒŒƒNƒgƒŠ‚Ìƒp[ƒ~ƒbƒVƒ‡ƒ“‚ª drwxrwxrwx ‚Æ
-     •\Ž¦‚³‚ê‚é‚Ì‚Å‚·‚ªH
-  4.2 gfmkdir, gfrmdir, gfmv “™‚Í‚È‚¢‚Ì‚Å‚·‚©H
-  4.3 ƒtƒ@ƒCƒ‹‚ð“Ç‚Ý‘‚«‰Â”\‚Èó‘Ô‚ÅƒI[ƒvƒ“‚Å‚«‚Ü‚·‚©H
+4. À©¸Â»ö¹à
+  4.1 gfls ¤ò¤¹¤ë¤È¡¢¥Ç¥£¥ì¥¯¥È¥ê¤Î¥Ñ¡¼¥ß¥Ã¥·¥ç¥ó¤¬ drwxrwxrwx ¤È
+     É½¼¨¤µ¤ì¤ë¤Î¤Ç¤¹¤¬¡©
+  4.2 gfmkdir, gfrmdir, gfmv Åù¤Ï¤Ê¤¤¤Î¤Ç¤¹¤«¡©
+  4.3 ¥Õ¥¡¥¤¥ë¤òÆÉ¤ß½ñ¤­²ÄÇ½¤Ê¾õÂÖ¤Ç¥ª¡¼¥×¥ó¤Ç¤­¤Þ¤¹¤«¡©
 
-1. ˆê”Ê
+1. °ìÈÌ
 **********
-  1.1 Gfarm ‚Æ‚Í‰½‚Å‚·‚©H
-	‰º‹L‚Ì URL ‚ð‚²——‚­‚¾‚³‚¢B
+  1.1 Gfarm ¤È¤Ï²¿¤Ç¤¹¤«¡©
+	²¼µ­¤Î URL ¤ò¤´Í÷¤¯¤À¤µ¤¤¡£
 		http://datafarm.apgrid.org/
 
-  1.2 Gfarm ‚Í‚Ç‚±‚©‚çƒ_ƒEƒ“ƒ[ƒh‚Å‚«‚Ü‚·‚©H
-	‰º‹L‚Ì URL ‚©‚ç”z•z‚³‚ê‚Ä‚¢‚Ü‚·B
+  1.2 Gfarm ¤Ï¤É¤³¤«¤é¥À¥¦¥ó¥í¡¼¥É¤Ç¤­¤Þ¤¹¤«¡©
+	²¼µ­¤Î URL ¤«¤éÇÛÉÛ¤µ¤ì¤Æ¤¤¤Þ¤¹¡£
 		http://datafarm.apgrid.org/software/
 
-2. ƒgƒ‰ƒuƒ‹EƒVƒ…[ƒeƒBƒ“ƒO
+2. ¥È¥é¥Ö¥ë¡¦¥·¥å¡¼¥Æ¥£¥ó¥°
 *******************
-  2.1 gfls ‚ð‚·‚é‚Æ not a directory ‚Æ•\Ž¦‚³‚ê‚éƒtƒ@ƒCƒ‹‚ª‚ ‚è‚Ü‚·‚ªC
-     ‚±‚ê‚Í‰½‚Å‚µ‚å‚¤‚©H
+  2.1 gfls ¤ò¤¹¤ë¤È not a directory ¤ÈÉ½¼¨¤µ¤ì¤ë¥Õ¥¡¥¤¥ë¤¬¤¢¤ê¤Þ¤¹¤¬¡¤
+     ¤³¤ì¤Ï²¿¤Ç¤·¤ç¤¦¤«¡©
 
-	Gfarm 1.0b1 ‚Å‚ÍCƒvƒƒOƒ‰ƒ€‚ðŽÀs“r’†‚Å’†’f‚·‚é‚Æƒtƒ@ƒCƒ‹ƒVƒX
-	ƒeƒ€ƒƒ^ƒf[ƒ^‚É‚²‚Ý‚ªŽc‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·DŽŸ‰ñ‚Ìƒo[ƒWƒ‡ƒ“ˆÈ~
-	‚Å‚ÍC³—\’è‚Å‚·‚ªC‚à‚µ not a directory ‚Æ•\Ž¦‚³‚ê‚½ê‡C
-	gfrm ‚Å‚»‚Ìƒtƒ@ƒCƒ‹‚ðÁ‹Ž‚µ‚Ä‚­‚¾‚³‚¢D
+	Gfarm 1.0b1 ¤Ç¤Ï¡¤¥×¥í¥°¥é¥à¤ò¼Â¹ÔÅÓÃæ¤ÇÃæÃÇ¤¹¤ë¤È¥Õ¥¡¥¤¥ë¥·¥¹
+	¥Æ¥à¥á¥¿¥Ç¡¼¥¿¤Ë¤´¤ß¤¬»Ä¤ë¤³¤È¤¬¤¢¤ê¤Þ¤¹¡¥¼¡²ó¤Î¥Ð¡¼¥¸¥ç¥ó°Ê¹ß
+	¤Ç¤Ï½¤ÀµÍ½Äê¤Ç¤¹¤¬¡¤¤â¤· not a directory ¤ÈÉ½¼¨¤µ¤ì¤¿¾ì¹ç¡¤
+	gfrm ¤Ç¤½¤Î¥Õ¥¡¥¤¥ë¤ò¾Ãµî¤·¤Æ¤¯¤À¤µ¤¤¡¥
 
-  2.2 ƒtƒ@ƒCƒ‹ƒVƒXƒeƒ€ƒm[ƒh‚ÌƒXƒv[ƒ‹ƒfƒBƒŒƒNƒgƒŠ‚É Gfarm ƒtƒ@ƒCƒ‹ƒV
-     ƒXƒeƒ€‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢ƒtƒ@ƒCƒ‹‚ªŽc‚Á‚Ä‚¢‚é‚æ‚¤‚Å‚·DÁ‚µ‚½‚¢‚Ì
-     ‚Å‚·‚ªC‚Ç‚¤‚µ‚½‚ç‚¢‚¢‚Å‚µ‚å‚¤‚©H
+  2.2 ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Î¥¹¥×¡¼¥ë¥Ç¥£¥ì¥¯¥È¥ê¤Ë Gfarm ¥Õ¥¡¥¤¥ë¥·
+     ¥¹¥Æ¥à¤ËÅÐÏ¿¤µ¤ì¤Æ¤¤¤Ê¤¤¥Õ¥¡¥¤¥ë¤¬»Ä¤Ã¤Æ¤¤¤ë¤è¤¦¤Ç¤¹¡¥¾Ã¤·¤¿¤¤¤Î
+     ¤Ç¤¹¤¬¡¤¤É¤¦¤·¤¿¤é¤¤¤¤¤Ç¤·¤ç¤¦¤«¡©
 
-	ƒtƒ@ƒCƒ‹¶¬’†‚ÌƒvƒƒOƒ‰ƒ€‚Ì‹­§’†’fCƒtƒ@ƒCƒ‹Á‹ŽŽž‚Éƒtƒ@ƒCƒ‹
-	ƒVƒXƒeƒ€ƒm[ƒh‚ª—˜—p•s‰Â‚È‚Ç‚ÌŒ´ˆö‚ÅC•K—v‚Ì‚È‚¢ƒtƒ@ƒCƒ‹‚ªƒXƒv[
-	ƒ‹ƒfƒBƒŒƒNƒgƒŠ‚ÉŽc‚é‚±‚Æ‚ª‚ ‚è‚Ü‚·D
+	¥Õ¥¡¥¤¥ëÀ¸À®Ãæ¤Î¥×¥í¥°¥é¥à¤Î¶¯À©ÃæÃÇ¡¤¥Õ¥¡¥¤¥ë¾Ãµî»þ¤Ë¥Õ¥¡¥¤¥ë
+	¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬ÍøÍÑÉÔ²Ä¤Ê¤É¤Î¸¶°ø¤Ç¡¤É¬Í×¤Î¤Ê¤¤¥Õ¥¡¥¤¥ë¤¬¥¹¥×¡¼
+	¥ë¥Ç¥£¥ì¥¯¥È¥ê¤Ë»Ä¤ë¤³¤È¤¬¤¢¤ê¤Þ¤¹¡¥
 
-	gfarm:/bin/gfsplck ‚Æ‚¢‚¤ƒvƒƒOƒ‰ƒ€‚ÅC“o˜^‚³‚ê‚Ä‚¢‚È‚¢ƒtƒ@ƒC
-	ƒ‹‚ÌŠm”FCÁ‹Ž‚ª‚Å‚«‚Ü‚·D‚Ü‚¸CˆÈ‰º‚ÌƒRƒ}ƒ“ƒh‚Å“o˜^‚³‚ê‚Ä‚¢‚È
-	‚¢ƒtƒ@ƒCƒ‹‚ªŠm”F‚µ‚Ä‚­‚¾‚³‚¢D
+	gfarm:/bin/gfsplck ¤È¤¤¤¦¥×¥í¥°¥é¥à¤Ç¡¤ÅÐÏ¿¤µ¤ì¤Æ¤¤¤Ê¤¤¥Õ¥¡¥¤
+	¥ë¤Î³ÎÇ§¡¤¾Ãµî¤¬¤Ç¤­¤Þ¤¹¡¥¤Þ¤º¡¤°Ê²¼¤Î¥³¥Þ¥ó¥É¤ÇÅÐÏ¿¤µ¤ì¤Æ¤¤¤Ê
+	¤¤¥Õ¥¡¥¤¥ë¤¬³ÎÇ§¤·¤Æ¤¯¤À¤µ¤¤¡¥
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck
-	Šm”F‚µ‚½‚çCˆÈ‰º‚ÌƒRƒ}ƒ“ƒh‚ÅÁ‹Ž‚µ‚Ü‚·D	
+	³ÎÇ§¤·¤¿¤é¡¤°Ê²¼¤Î¥³¥Þ¥ó¥É¤Ç¾Ãµî¤·¤Þ¤¹¡¥	
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d
-	‚È‚¨Cã‹LƒRƒ}ƒ“ƒh‚Å‚ÍCmd5ƒ`ƒFƒbƒNƒTƒ€‚É‚æ‚éƒtƒ@ƒCƒ‹‚ÌˆêŠÑ«
-	ƒ`ƒFƒbƒN‚ðs‚¢‚Ü‚¹‚ñDŠ®‘S‚Èƒ`ƒFƒbƒN‚ðs‚Á‚ÄCƒtƒ@ƒCƒ‹‚ðÁ‹Ž‚·
-	‚é‚½‚ß‚É‚ÍCˆÈ‰º‚Ì‚æ‚¤‚É -a ƒIƒvƒVƒ‡ƒ“‚ð‚Â‚¯‚ÄŽÀs‚µ‚Ü‚·D
+	¤Ê¤ª¡¤¾åµ­¥³¥Þ¥ó¥É¤Ç¤Ï¡¤md5¥Á¥§¥Ã¥¯¥µ¥à¤Ë¤è¤ë¥Õ¥¡¥¤¥ë¤Î°ì´ÓÀ­
+	¥Á¥§¥Ã¥¯¤ò¹Ô¤¤¤Þ¤»¤ó¡¥´°Á´¤Ê¥Á¥§¥Ã¥¯¤ò¹Ô¤Ã¤Æ¡¤¥Õ¥¡¥¤¥ë¤ò¾Ãµî¤¹
+	¤ë¤¿¤á¤Ë¤Ï¡¤°Ê²¼¤Î¤è¤¦¤Ë -a ¥ª¥×¥·¥ç¥ó¤ò¤Ä¤±¤Æ¼Â¹Ô¤·¤Þ¤¹¡¥
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
 
-3. ƒZƒLƒ…ƒŠƒeƒB
+3. ¥»¥­¥å¥ê¥Æ¥£
 ***************
-  3.1 Gfarm ‚Í firewall ‚ÉŽç‚ç‚ê‚Ä‚¢‚È‚¢ŠÂ‹«‚ÅˆÀ‘S‚É‰^—p‚Å‚«‚Ü‚·‚©H
+  3.1 Gfarm ¤Ï firewall ¤Ë¼é¤é¤ì¤Æ¤¤¤Ê¤¤´Ä¶­¤Ç°ÂÁ´¤Ë±¿ÍÑ¤Ç¤­¤Þ¤¹¤«¡©
 
-	Œ»Ý‚Ì‚Æ‚±‚ëA2‚Â‚Ì–â‘è‚ª‚ ‚è‚Ü‚·B
+	¸½ºß¤Î¤È¤³¤í¡¢2¤Ä¤ÎÌäÂê¤¬¤¢¤ê¤Þ¤¹¡£
 
-	ˆê‚Â‚ÍAGfarm-1.0 ‚Ì•W€‚ÌƒCƒ“ƒXƒgƒŒ[ƒVƒ‡ƒ“‚Å‚ÍA‘‚«ž‚Ý‰Â”\
-	‚ÈLDAP ƒT[ƒo[‚ðA”FØ‚È‚µ‚Å‰^—p‚·‚é‚±‚Æ‚É‚È‚é“_‚Å‚·B‚±‚ê‚ÍA
-	ƒzƒXƒgî•ñAƒtƒ@ƒCƒ‹–¼Aƒtƒ@ƒCƒ‹‚ÌƒI[ƒi[A‚¨‚æ‚Ñƒtƒ@ƒCƒ‹‚ÌŠ
-	Ý‚Æ‚¢‚Á‚½î•ñ‚Ì“Ç‚Ý‘‚«‚ªA’N‚Å‚à‚Å‚«‚é‚±‚Æ‚ðˆÓ–¡‚µ‚Ü‚·‚©‚çA
-	‘S‚­ˆÀ‘S‚Å‚Í‚ ‚è‚Ü‚¹‚ñB
-	‚±‚Ì–â‘è‚ª‚ ‚é‚½‚ßA‚±‚Ìƒo[ƒWƒ‡ƒ“‚Å‚ÍA‚Å‚«‚éŒÀ‚è firewall ‚Ì
-	“à‘¤‚Å‚Ì‰^—p‚ðŠ©‚ß‚Ü‚·B
-	‚ ‚é‚¢‚ÍAÅ’áŒÀAƒpƒPƒbƒgEƒtƒBƒ‹ƒ^ (Linux ‚Ìê‡ iptable) “™
-	‚ð—p‚¢‚ÄALDAP ƒT[ƒo[‚Ìƒ|[ƒg‚ðAM—Š‚Å‚«‚éƒzƒXƒg‚©‚ç‚ÌƒAƒN
-	ƒZƒX‚¾‚¯‚É§ŒÀ‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B‚½‚¾‚µAƒpƒPƒbƒgƒtƒBƒ‹ƒ^‚Ì‚Ý
-	‚Å‚ÍAƒpƒPƒbƒg“’®‚âATCP ƒZƒbƒVƒ‡ƒ“‚Ìæ‚ÁŽæ‚è‚È‚Ç‚ÌŠëŒ¯‚ªŽc‚è
-	‚Ü‚·B
-	‚È‚¨Agfsd ‚Æ gfmd ‚É‚ÍA‚±‚Ì–â‘è‚Í‚ ‚è‚Ü‚¹‚ñ‚Ì‚ÅAŽÀƒf[ƒ^‚Ö
-	‚ÌƒAƒNƒZƒX‚ÉŠÖ‚µ‚Ä‚ÍAí‚É”FØ‚ªs‚í‚ê‚Ü‚·B
+	°ì¤Ä¤Ï¡¢Gfarm-1.0 ¤ÎÉ¸½à¤Î¥¤¥ó¥¹¥È¥ì¡¼¥·¥ç¥ó¤Ç¤Ï¡¢½ñ¤­¹þ¤ß²ÄÇ½
+	¤ÊLDAP ¥µ¡¼¥Ð¡¼¤ò¡¢Ç§¾Ú¤Ê¤·¤Ç±¿ÍÑ¤¹¤ë¤³¤È¤Ë¤Ê¤ëÅÀ¤Ç¤¹¡£¤³¤ì¤Ï¡¢
+	¥Û¥¹¥È¾ðÊó¡¢¥Õ¥¡¥¤¥ëÌ¾¡¢¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥Ê¡¼¡¢¤ª¤è¤Ó¥Õ¥¡¥¤¥ë¤Î½ê
+	ºß¤È¤¤¤Ã¤¿¾ðÊó¤ÎÆÉ¤ß½ñ¤­¤¬¡¢Ã¯¤Ç¤â¤Ç¤­¤ë¤³¤È¤ò°ÕÌ£¤·¤Þ¤¹¤«¤é¡¢
+	Á´¤¯°ÂÁ´¤Ç¤Ï¤¢¤ê¤Þ¤»¤ó¡£
+	¤³¤ÎÌäÂê¤¬¤¢¤ë¤¿¤á¡¢¤³¤Î¥Ð¡¼¥¸¥ç¥ó¤Ç¤Ï¡¢¤Ç¤­¤ë¸Â¤ê firewall ¤Î
+	ÆâÂ¦¤Ç¤Î±¿ÍÑ¤ò´«¤á¤Þ¤¹¡£
+	¤¢¤ë¤¤¤Ï¡¢ºÇÄã¸Â¡¢¥Ñ¥±¥Ã¥È¡¦¥Õ¥£¥ë¥¿ (Linux ¤Î¾ì¹ç iptable) Åù
+	¤òÍÑ¤¤¤Æ¡¢LDAP ¥µ¡¼¥Ð¡¼¤Î¥Ý¡¼¥È¤ò¡¢¿®Íê¤Ç¤­¤ë¥Û¥¹¥È¤«¤é¤Î¥¢¥¯
+	¥»¥¹¤À¤±¤ËÀ©¸Â¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£¤¿¤À¤·¡¢¥Ñ¥±¥Ã¥È¥Õ¥£¥ë¥¿¤Î¤ß
+	¤Ç¤Ï¡¢¥Ñ¥±¥Ã¥ÈÅðÄ°¤ä¡¢TCP ¥»¥Ã¥·¥ç¥ó¤Î¾è¤Ã¼è¤ê¤Ê¤É¤Î´í¸±¤¬»Ä¤ê
+	¤Þ¤¹¡£
+	¤Ê¤ª¡¢gfsd ¤È gfmd ¤Ë¤Ï¡¢¤³¤ÎÌäÂê¤Ï¤¢¤ê¤Þ¤»¤ó¤Î¤Ç¡¢¼Â¥Ç¡¼¥¿¤Ø
+	¤Î¥¢¥¯¥»¥¹¤Ë´Ø¤·¤Æ¤Ï¡¢¾ï¤ËÇ§¾Ú¤¬¹Ô¤ï¤ì¤Þ¤¹¡£
 
-	‚à‚¤ˆê‚Â‚Ì–â‘è‚ÍA”FØ‚Ì–â‘è‚Å‚·B
-	Gfarm-1.0 ‚ÍAsharedsecret ”FØ‚Æ GSI ”FØ‚Ì 2 Ží—Þ‚Ì”FØ•û–@‚ð
-	ƒTƒ|[ƒg‚µ‚Ä‚¢‚Ü‚·‚ªAInternet ŠÂ‹«‚Å‚ÍAsharedsecret ”FØ‚¾‚Æ
-	ˆÀ‘S‚Æ‚ÍŒ¾‚¦‚Ü‚¹‚ñB‚±‚ê‚É‚Â‚¢‚Ä‚ÍAŽŸ‚Ì€–Ú‚ðŽQÆ‚µ‚Ä‚­‚¾‚³‚¢B
+	¤â¤¦°ì¤Ä¤ÎÌäÂê¤Ï¡¢Ç§¾Ú¤ÎÌäÂê¤Ç¤¹¡£
+	Gfarm-1.0 ¤Ï¡¢sharedsecret Ç§¾Ú¤È GSI Ç§¾Ú¤Î 2 ¼ïÎà¤ÎÇ§¾ÚÊýË¡¤ò
+	¥µ¥Ý¡¼¥È¤·¤Æ¤¤¤Þ¤¹¤¬¡¢Internet ´Ä¶­¤Ç¤Ï¡¢sharedsecret Ç§¾Ú¤À¤È
+	°ÂÁ´¤È¤Ï¸À¤¨¤Þ¤»¤ó¡£¤³¤ì¤Ë¤Ä¤¤¤Æ¤Ï¡¢¼¡¤Î¹àÌÜ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 
-  3.2 sharedsecret ”FØ‚Æ GSI ”FØ‚Ìˆá‚¢‚ÍH
+  3.2 sharedsecret Ç§¾Ú¤È GSI Ç§¾Ú¤Î°ã¤¤¤Ï¡©
 
-	sharedsecret ”FØ‚ÍA‹¤—LŒ®‚ð—p‚¢‚½”FØ‚Å‚·B
-	Gfarm ‚Ì sharedsecret ”FØ‚Ìê‡A’ñ‹Ÿ‚µ‚Ä‚¢‚éƒT[ƒrƒX‚ª”FØ‚¾
-	‚¯‚Å‚ ‚èAƒf[ƒ^‚É‘Î‚·‚é–¼‚âˆÃ†‰»‚ð’ñ‹Ÿ‚µ‚Ä‚¢‚é‚í‚¯‚Å‚Í‚ ‚è
-	‚Ü‚¹‚ñ‚©‚çAƒpƒPƒbƒg“’®‚âATCP ƒZƒbƒVƒ‡ƒ“‚Ìæ‚ÁŽæ‚è‚È‚Ç‚ÌŠëŒ¯
-	‚ªŽc‚è‚Ü‚·B
-	]‚Á‚ÄAfirewall ‚ÅŽç‚ç‚ê‚Ä‚¢‚éŠÂ‹«“à‚Ì‚Ý‚Å‚Ì—˜—p‚ð‚¨Š©‚ß‚µ‚Ü
-	‚·Bsharedsecret ”FØ‚ð’ñ‹Ÿ‚µ‚Ä‚¢‚é——R‚ÍA‚‘¬‚È‚±‚Æ‚ÆAŒöŠJ
-	Œ®‚ÌŽæ“¾‚ÌŽèŠÔ‚ðÈ‚¯‚é‚±‚Æ‚Å‚·B
+	sharedsecret Ç§¾Ú¤Ï¡¢¶¦Í­¸°¤òÍÑ¤¤¤¿Ç§¾Ú¤Ç¤¹¡£
+	Gfarm ¤Î sharedsecret Ç§¾Ú¤Î¾ì¹ç¡¢Äó¶¡¤·¤Æ¤¤¤ë¥µ¡¼¥Ó¥¹¤¬Ç§¾Ú¤À
+	¤±¤Ç¤¢¤ê¡¢¥Ç¡¼¥¿¤ËÂÐ¤¹¤ë½ðÌ¾¤ä°Å¹æ²½¤òÄó¶¡¤·¤Æ¤¤¤ë¤ï¤±¤Ç¤Ï¤¢¤ê
+	¤Þ¤»¤ó¤«¤é¡¢¥Ñ¥±¥Ã¥ÈÅðÄ°¤ä¡¢TCP ¥»¥Ã¥·¥ç¥ó¤Î¾è¤Ã¼è¤ê¤Ê¤É¤Î´í¸±
+	¤¬»Ä¤ê¤Þ¤¹¡£
+	½¾¤Ã¤Æ¡¢firewall ¤Ç¼é¤é¤ì¤Æ¤¤¤ë´Ä¶­Æâ¤Î¤ß¤Ç¤ÎÍøÍÑ¤ò¤ª´«¤á¤·¤Þ
+	¤¹¡£sharedsecret Ç§¾Ú¤òÄó¶¡¤·¤Æ¤¤¤ëÍýÍ³¤Ï¡¢¹âÂ®¤Ê¤³¤È¤È¡¢¸ø³«
+	¸°¤Î¼èÆÀ¤Î¼ê´Ö¤ò¾Ê¤±¤ë¤³¤È¤Ç¤¹¡£
 
-	GSI (Grid Security Infrastructure) ”FØ‚ÍAŒöŠJŒ®‚ÉŠî‚Ã‚¢‚½”F
-	Ø•û–@‚Å‚·BGfarm ‚Í Globus ‚Ì’ñ‹Ÿ‚·‚é GSI ƒ‰ƒCƒuƒ‰ƒŠ‚ð—p‚¢‚Ä
-	‚¢‚Ü‚·BGlobus ‚ªƒf[ƒ^‚ÌˆÃ†‰»‚ðƒTƒ|[ƒg‚µ‚Ä‚¢‚é‚½‚ßA
-	sharedsecret ”FØ‚æ‚è‚àˆÀ‘S‚Å‚ ‚é‚Æl‚¦‚ç‚ê‚Ü‚·B‚½‚¾‚µA—Ao
-	”Å‚Ì Globus ‚Ìê‡Aƒo[ƒWƒ‡ƒ“‚É‚æ‚Á‚Ä‚ÍˆÃ†‰»‚ðƒTƒ|[ƒg‚µ‚Ä‚¢
-	‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·B‚¨Žg‚¢‚Ì Globus ‚ªAˆÃ†‰»‚ðƒTƒ|[ƒg‚µ‚Ä‚¢
-	‚éƒo[ƒWƒ‡ƒ“‚Å‚ ‚é‚©Šm”F‚µ‚Ä‚¨‚­‚±‚Æ‚ð‚¨Š©‚ß‚µ‚Ü‚·B
-	GSI ”FØ‚ÍAconfigure Žž‚É --with-globus ‚ðŽw’è‚µ‚È‚¢‚ÆA—LŒø
-	‚É‚È‚è‚Ü‚¹‚ñB
-	GSI ”FØ‚ÉŠÖ‚·‚éÚ‚µ‚¢î•ñ‚ÍAhttp://www.globus.org/ ‚ðŽQÆ‚µ
-	‚Ä‚­‚¾‚³‚¢B
+	GSI (Grid Security Infrastructure) Ç§¾Ú¤Ï¡¢¸ø³«¸°¤Ë´ð¤Å¤¤¤¿Ç§
+	¾ÚÊýË¡¤Ç¤¹¡£Gfarm ¤Ï Globus ¤ÎÄó¶¡¤¹¤ë GSI ¥é¥¤¥Ö¥é¥ê¤òÍÑ¤¤¤Æ
+	¤¤¤Þ¤¹¡£Globus ¤¬¥Ç¡¼¥¿¤Î°Å¹æ²½¤ò¥µ¥Ý¡¼¥È¤·¤Æ¤¤¤ë¤¿¤á¡¢
+	sharedsecret Ç§¾Ú¤è¤ê¤â°ÂÁ´¤Ç¤¢¤ë¤È¹Í¤¨¤é¤ì¤Þ¤¹¡£¤¿¤À¤·¡¢Í¢½Ð
+	ÈÇ¤Î Globus ¤Î¾ì¹ç¡¢¥Ð¡¼¥¸¥ç¥ó¤Ë¤è¤Ã¤Æ¤Ï°Å¹æ²½¤ò¥µ¥Ý¡¼¥È¤·¤Æ¤¤
+	¤Ê¤¤¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£¤ª»È¤¤¤Î Globus ¤¬¡¢°Å¹æ²½¤ò¥µ¥Ý¡¼¥È¤·¤Æ¤¤
+	¤ë¥Ð¡¼¥¸¥ç¥ó¤Ç¤¢¤ë¤«³ÎÇ§¤·¤Æ¤ª¤¯¤³¤È¤ò¤ª´«¤á¤·¤Þ¤¹¡£
+	GSI Ç§¾Ú¤Ï¡¢configure »þ¤Ë --with-globus ¤ò»ØÄê¤·¤Ê¤¤¤È¡¢Í­¸ú
+	¤Ë¤Ê¤ê¤Þ¤»¤ó¡£
+	GSI Ç§¾Ú¤Ë´Ø¤¹¤ë¾Ü¤·¤¤¾ðÊó¤Ï¡¢http://www.globus.org/ ¤ò»²¾È¤·
+	¤Æ¤¯¤À¤µ¤¤¡£
 
-	sharesecret ”FØ‚ð—p‚¢‚éê‡Agfarm.conf ‚Å—á‚¦‚Î‰º‹L‚Ì‚æ‚¤‚É
-	Ý’è‚µAsharedsecret ”FØ‚ÍˆÀ‘S‚Èƒ[ƒJƒ‹ƒlƒbƒgƒ[ƒN“à‚Ì‚Ý‚Å
-	—LŒø‚É‚µ‚Ä‚¨‚­‚±‚Æ‚ð‚¨Š©‚ß‚µ‚Ü‚·B
+	sharesecret Ç§¾Ú¤òÍÑ¤¤¤ë¾ì¹ç¡¢gfarm.conf ¤ÇÎã¤¨¤Ð²¼µ­¤Î¤è¤¦¤Ë
+	ÀßÄê¤·¡¢sharedsecret Ç§¾Ú¤Ï°ÂÁ´¤Ê¥í¡¼¥«¥ë¥Í¥Ã¥È¥ï¡¼¥¯Æâ¤Î¤ß¤Ç
+	Í­¸ú¤Ë¤·¤Æ¤ª¤¯¤³¤È¤ò¤ª´«¤á¤·¤Þ¤¹¡£
 		auth enable sharedsecret 192.168.0.0/24
 		auth enable gsi ALL
-	(‚±‚Ì—á‚Å‚ÍA192.168.0.0/24 ‚ªAfirewall ‚ÅŽç‚ç‚ê‚½ƒ[ƒJƒ‹E
-	 ƒlƒbƒgƒ[ƒN‚Å‚ ‚é‚Æ‰¼’è‚µ‚Ä‚¢‚Ü‚·B)
+	(¤³¤ÎÎã¤Ç¤Ï¡¢192.168.0.0/24 ¤¬¡¢firewall ¤Ç¼é¤é¤ì¤¿¥í¡¼¥«¥ë¡¦
+	 ¥Í¥Ã¥È¥ï¡¼¥¯¤Ç¤¢¤ë¤È²¾Äê¤·¤Æ¤¤¤Þ¤¹¡£)
 
-4. §ŒÀŽ–€
+4. À©¸Â»ö¹à
 ***********
-  4.1 gfls ‚ð‚·‚é‚ÆAƒfƒBƒŒƒNƒgƒŠ‚Ìƒp[ƒ~ƒbƒVƒ‡ƒ“‚ª drwxrwxrwx ‚Æ
-     •\Ž¦‚³‚ê‚é‚Ì‚Å‚·‚ªH
+  4.1 gfls ¤ò¤¹¤ë¤È¡¢¥Ç¥£¥ì¥¯¥È¥ê¤Î¥Ñ¡¼¥ß¥Ã¥·¥ç¥ó¤¬ drwxrwxrwx ¤È
+     É½¼¨¤µ¤ì¤ë¤Î¤Ç¤¹¤¬¡©
 
-	Œ»ÝALDAP ƒT[ƒo[ã‚ÅAƒfƒBƒŒƒNƒgƒŠ‚ÉŠÖ‚·‚éî•ñ‚ð•ÛŽ‚µ‚Ä
-	‚¢‚È‚¢‚±‚Æ‚É‚æ‚é§ŒÀ‚Å‚·BŽÀÛ‚É‚Í’N‚Å‚àƒtƒ@ƒCƒ‹‚ðì¬‚Å‚«‚é
-	‚í‚¯‚Å‚Í‚È‚­Aì¬‚ÍAŠeƒtƒ@ƒCƒ‹ƒVƒXƒeƒ€ƒm[ƒhã‚ÌŽÀÛ‚Ì
-	ƒfƒBƒŒƒNƒgƒŠ‚ÌƒI[ƒi[‚Æƒ‚[ƒh‚É‚æ‚Á‚Ä§ŒÀ‚³‚ê‚Ü‚·B
+	¸½ºß¡¢LDAP ¥µ¡¼¥Ð¡¼¾å¤Ç¡¢¥Ç¥£¥ì¥¯¥È¥ê¤Ë´Ø¤¹¤ë¾ðÊó¤òÊÝ»ý¤·¤Æ
+	¤¤¤Ê¤¤¤³¤È¤Ë¤è¤ëÀ©¸Â¤Ç¤¹¡£¼ÂºÝ¤Ë¤ÏÃ¯¤Ç¤â¥Õ¥¡¥¤¥ë¤òºîÀ®¤Ç¤­¤ë
+	¤ï¤±¤Ç¤Ï¤Ê¤¯¡¢ºîÀ®¤Ï¡¢³Æ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¾å¤Î¼ÂºÝ¤Î
+	¥Ç¥£¥ì¥¯¥È¥ê¤Î¥ª¡¼¥Ê¡¼¤È¥â¡¼¥É¤Ë¤è¤Ã¤ÆÀ©¸Â¤µ¤ì¤Þ¤¹¡£
 
-	‚±‚Ì–â‘è‚ÍAŽŸŠúƒƒWƒƒ[ƒŠƒŠ[ƒX‚Å‰ðŒˆ‚·‚é—\’è‚Å‚·B
+	¤³¤ÎÌäÂê¤Ï¡¢¼¡´ü¥á¥¸¥ã¡¼¥ê¥ê¡¼¥¹¤Ç²ò·è¤¹¤ëÍ½Äê¤Ç¤¹¡£
 
-  4.2 gfmkdir, gfrmdir, gfmv “™‚Í‚È‚¢‚Ì‚Å‚·‚©H
+  4.2 gfmkdir, gfrmdir, gfmv Åù¤Ï¤Ê¤¤¤Î¤Ç¤¹¤«¡©
 
-	‚ ‚è‚Ü‚¹‚ñB
-	‰º‹L‚Ì‚æ‚¤‚ÈƒRƒ}ƒ“ƒh‚Å‘Îˆ‚µ‚Ä‚­‚¾‚³‚¢B
+	¤¢¤ê¤Þ¤»¤ó¡£
+	²¼µ­¤Î¤è¤¦¤Ê¥³¥Þ¥ó¥É¤ÇÂÐ½è¤·¤Æ¤¯¤À¤µ¤¤¡£
 		prun -a mkdir /var/spool/gfarm/$USER/dir
-	‚±‚Ì–â‘è‚ÍAŽŸŠúƒƒWƒƒ[ƒŠƒŠ[ƒX‚Å‰ðŒˆ‚·‚é—\’è‚Å‚·B
+	¤³¤ÎÌäÂê¤Ï¡¢¼¡´ü¥á¥¸¥ã¡¼¥ê¥ê¡¼¥¹¤Ç²ò·è¤¹¤ëÍ½Äê¤Ç¤¹¡£
 
-  4.3 ƒtƒ@ƒCƒ‹‚ð“Ç‚Ý‘‚«‰Â”\‚Èó‘Ô‚ÅƒI[ƒvƒ“‚Å‚«‚Ü‚·‚©H
+  4.3 ¥Õ¥¡¥¤¥ë¤òÆÉ¤ß½ñ¤­²ÄÇ½¤Ê¾õÂÖ¤Ç¥ª¡¼¥×¥ó¤Ç¤­¤Þ¤¹¤«¡©
 
-	Œ»ÝAƒtƒ@ƒCƒ‹‚ð“Ç‚Ý‘‚«‰Â”\‚Èó‘Ô‚ÅƒI[ƒvƒ“‚µ‚Ä‚àƒGƒ‰[‚É‚Í
-	‚µ‚Ä‚¢‚Ü‚¹‚ñ‚ªA‚»‚Ìƒtƒ@ƒCƒ‹‚ÉƒŒƒvƒŠƒJ‚ª‘¶Ý‚·‚éê‡A
-	ƒŒƒvƒŠƒJ‚Ìó‘Ô‚É•s®‡‚ª¶‚¶‚Ü‚·B
-	‚±‚Ì–â‘è‚ÍAŽŸŠúƒƒWƒƒ[ƒŠƒŠ[ƒX‚Å‰ðŒˆ‚·‚é—\’è‚Å‚·B
+	¸½ºß¡¢¥Õ¥¡¥¤¥ë¤òÆÉ¤ß½ñ¤­²ÄÇ½¤Ê¾õÂÖ¤Ç¥ª¡¼¥×¥ó¤·¤Æ¤â¥¨¥é¡¼¤Ë¤Ï
+	¤·¤Æ¤¤¤Þ¤»¤ó¤¬¡¢¤½¤Î¥Õ¥¡¥¤¥ë¤Ë¥ì¥×¥ê¥«¤¬Â¸ºß¤¹¤ë¾ì¹ç¡¢
+	¥ì¥×¥ê¥«¤Î¾õÂÖ¤ËÉÔÀ°¹ç¤¬À¸¤¸¤Þ¤¹¡£
+	¤³¤ÎÌäÂê¤Ï¡¢¼¡´ü¥á¥¸¥ã¡¼¥ê¥ê¡¼¥¹¤Ç²ò·è¤¹¤ëÍ½Äê¤Ç¤¹¡£

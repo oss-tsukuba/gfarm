@@ -1,254 +1,254 @@
-僌儕僢僪僨乕僞僼傽乕儉僔僗僥儉僜僼僩僂僃傾 Gfarm
+グリッドデ〖タファ〖ムシステムソフトウェア Gfarm
 
-仠 Gfarm 僔僗僥儉偺奣梫
+↑ Gfarm システムの车妥
 
-Gfarm 僔僗僥儉偼戝婯柾僨乕僞張棟僒乕價僗丆僨乕僞僀儞僥儞僔僽僐儞僺儏乕
-僥傿儞僌娐嫬傪僌儕僢僪忋偱幚尰偡傞偨傔偺僔僗僥儉僜僼僩僂僃傾偱偡丏僨乕
-僞嶲徠嬊強惈偺偁傞戝婯柾僨乕僞張棟偱偼丆僨乕僞偺僱僢僩儚乕僋堏摦傪梷偊
-傞偙偲偵傛傝丆崅懍擖弌椡丆崅懍暲楍張棟傪幚尰偟傑偡丏Gfarm 僔僗僥儉偼丆
-埲壓偱峔惉偝傟傑偡丏
+Gfarm システムは络惮滔デ〖タ借妄サ〖ビス·デ〖タインテンシブコンピュ〖
+ティング茨董をグリッド惧で悸附するためのシステムソフトウェアですˉデ〖
+タ徊救渡疥拉のある络惮滔デ〖タ借妄では·デ〖タのネットワ〖ク败瓢を娃え
+ることにより·光庐掐叫蜗·光庐事误借妄を悸附しますˉGfarm システムは·
+笆布で菇喇されますˉ
 
-  1) 峀堟暲楍僼傽僀儖僔僗僥儉 (Gfarm 僼傽僀儖僔僗僥儉)
-  2) 暲楍擖弌椡 API           (Gfarm 暲楍擖弌椡 API)
-  3) 僾儘僙僗儅僱乕僕儍       (Gfarm 僾儘僙僗儅僱乕僕儍)
+  1) 弓拌事误ファイルシステム (Gfarm ファイルシステム)
+  2) 事误掐叫蜗 API           (Gfarm 事误掐叫蜗 API)
+  3) プロセスマネ〖ジャ       (Gfarm プロセスマネ〖ジャ)
 
-Gfarm 僼傽僀儖僔僗僥儉偼丆峀堟偵暋悢懚嵼偡傞 PC 僋儔僗僞僲乕僪偺儘乕僇
-儖僨傿僗僋傪棙梡偟偰峔惉偝傟傞暲楍僼傽僀儖僔僗僥儉偱偡丏偦傟偧傟偺僲乕
-僪偱偼 gfsd 偲屇偽傟傞 I/O 僨乕儌儞偑憱傝丆儘乕僇儖僨傿僗僋傊偺傾僋僙
-僗傪埨慡偐偮岠棪揑偵壜擻偲偟傑偡丏僼傽僀儖偼丆暔棟揑偵偼擟堄僒僀僘偺僼傽
-僀儖抐曅偵暘妱偝傟丆偦傟偧傟偺儘乕僇儖僨傿僗僋偵暘嶶攝抲偝傟傑偡丏傑偨丆
-偦傟傜僼傽僀儖抐曅偼暋惢傪帩偮偙偲傕偱偒丆懴屘忈惈偍傛傃晧壸僶儔儞僗傪
-岦忋偝偣傞偙偲偑偱偒傑偡丏偦傟傜僼傽僀儖僔僗僥儉儊僞僨乕僞偼丆Gfarm 儊
-僞僨乕僞僒乕僶偵傛傝娗棟偝傟傑偡丏
+Gfarm ファイルシステムは·弓拌に剩眶赂哼する PC クラスタノ〖ドのロ〖カ
+ルディスクを网脱して菇喇される事误ファイルシステムですˉそれぞれのノ〖
+ドでは gfsd と钙ばれる I/O デ〖モンが瘤り·ロ〖カルディスクへのアクセ
+スを奥链かつ跟唯弄に材墙としますˉファイルは·湿妄弄には扦罢サイズのファ
+イル们室に尸充され·それぞれのロ〖カルディスクに尸欢芹弥されますˉまた·
+それらファイル们室は剩澜を积つこともでき·卵肝俱拉および砷操バランスを
+羹惧させることができますˉそれらファイルシステムメタデ〖タは·Gfarm メ
+タデ〖タサ〖バにより瓷妄されますˉ
 
-Gfarm 暲楍擖弌椡 API 偼丆Gfarm 僼傽僀儖僔僗僥儉傪扨堦僔僗僥儉僀儊乕僕
-偱岠棪揑偵棙梡偡傞偨傔偺暲楍擖弌椡 API 偱偡丏Gfarm 僼傽僀儖僔僗僥儉偱
-偼丆僼傽僀儖偼擟堄僒僀僘偺僼傽僀儖抐曅偵暘妱偟偰奿擺偝傟傑偡偑丆偦偺僼傽
-僀儖抐曅傪娙扨偵傾僾儕働乕僔儑儞偑埖偆偨傔偺 API 側偳偑奼挘偝傟偰傑偡丏
-偙偺 API 偼廬棃偺擖弌椡 API 偐傜傕棙梡偡傞偙偲偑偱偒丆廬棃偺傾僾儕働乕
-僔儑儞傕娙扨偵 Gfarm 僼傽僀儖僔僗僥儉傪棙梡偡傞偙偲偑偱偒傑偡丏
+Gfarm 事误掐叫蜗 API は·Gfarm ファイルシステムを帽办システムイメ〖ジ
+で跟唯弄に网脱するための事误掐叫蜗 API ですˉGfarm ファイルシステムで
+は·ファイルは扦罢サイズのファイル们室に尸充して呈羌されますが·そのファ
+イル们室を词帽にアプリケ〖ションが胺うための API などが橙磨されてますˉ
+この API は骄丸の掐叫蜗 API からも网脱することができ·骄丸のアプリケ〖
+ションも词帽に Gfarm ファイルシステムを网脱することができますˉ
 
-Gfarm 僾儘僙僗儅僱乕僕儍偼丆僼傽僀儖抐曅偺暘嶶傪婎偵偟偨僼傽僀儖傾僼傿
-僯僥傿僗働僕儏乕儔丆僾儘僙僗娗棟丆悢愮丆悢枩僾儘僙僗偺崅懍僾儘僙僗婲摦
-偱峔惉偝傟傑偡丏
-
-========================================================================
-
-仠 Gfarm 僔僗僥儉偺峔惉梫慺
-
-Gfarm 僔僗僥儉偼丆壓婰偺庬椶偺儂僗僩偐傜峔惉偝傟傑偡丏
-
-丒僋儔僀傾儞僩
-
-  儐乕僓偑 Gfarm 僔僗僥儉偵儕僋僄僗僩傪憲傞偺偵梡偄傞儂僗僩偱偡丏
-
-丒僼傽僀儖僔僗僥儉僲乕僪
-
-  寁嶼帒尮偲丆Gfarm 僼傽僀儖僔僗僥儉偺僨傿僗僋傪採嫙偡傞儂僗僩孮偱偡丏
-  峀堟偵懚嵼偡傞悢愮僲乕僪丆悢枩僲乕僪偑憐掕偝傟偰偄傑偡丏偦傟偧傟偺僲乕
-  僪忋偱偼 gfsd 偑憱傝傑偡丏
-
-丒儊僞僨乕僞僒乕僶
-
-  Gfarm 僼傽僀儖僔僗僥儉偺儊僞僨乕僞偲丆儐乕僓偑儕僋僄僗僩偟偨暲楍僾儘
-  僙僗傪娗棟偡傞儂僗僩偱偡丏暲楍僾儘僙僗偼僼傽僀儖僔僗僥儉僲乕僪偺儂僗
-  僩孮偱幚峴偝傟傞偙偲偵側傝傑偡丏儂僗僩忋偱偼 gfmd 偑憱傝傑偡丏
-
-Gfarm 僼傽僀儖僔僗僥儉偼丆戝梕検僼傽僀儖傪丆僼傽僀儖僔僗僥儉僲乕僪忋偺
-暋悢偺儂僗僩偵暘嶶偟偰攝抲偟傑偡丏偙偺暘嶶偝傟偨僼傽僀儖偺屄乆傪僼傽僀
-儖抐曅偲屇傃傑偡丏僼傽僀儖僔僗僥儉僲乕僪忋偺儂僗僩偦傟偧傟偑丆帺儂僗僩
-忋偵懚嵼偡傞僼傽僀儖抐曅傪張棟偡傞傛偆側丆僨乕僞暲楍張棟傾僾儕働乕僔儑
-儞傪僌儕僢僪僒乕價僗偲偟偰巟墖偡傞偙偲偑丆Gfarm 僔僗僥儉偺庡側栚揑偱偡丏
-
-椺偊偽丆僋儔僀傾儞僩偱乽gfmpirun_p4 gfarm:gfwc gfarm:file乿傪幚峴偡傞偲丆
-堷悢偱巜掕偟偨 Gfarm 僼傽僀儖 ``gfarm:file'' 偺僼傽僀儖抐曅偑懚嵼偡傞
-僼傽僀儖僔僗僥儉僲乕僪忋偱丆MPI 暲楍僐儅儞僪 gfwc 偑幚峴偝傟傑偡丏
-
-偁傞偄偼丆乽gfrun gfarm:gfgrep -o gfarm:output 惓婯昞尰 gfarm:input乿
-傪幚峴偡傞偲丆堷悢偱巜掕偟偨 Gfarm 僼傽僀儖偺僼傽僀儖抐曅偑懚嵼偡傞僼傽
-僀儖僔僗僥儉僲乕僪忋偱丆僐儅儞僪 gfgrep 偑暲楍幚峴偝傟傑偡丏
+Gfarm プロセスマネ〖ジャは·ファイル们室の尸欢を答にしたファイルアフィ
+ニティスケジュ〖ラ·プロセス瓷妄·眶篱·眶它プロセスの光庐プロセス弹瓢
+で菇喇されますˉ
 
 ========================================================================
 
-仠 僜僼僩僂僃傾峔惉
+↑ Gfarm システムの菇喇妥燎
 
-Gfarm 僜僼僩僂僃傾偼丆戝偒偔壓婰偺崁栚偵暘椶偝傟傑偡丏
+Gfarm システムは·布淡の硷梧のホストから菇喇されますˉ
 
-丒libgfarm.a 儔僀僽儔儕
+ˇクライアント
 
-  Gfarm 偺傕偲偱憱傞傾僾儕働乕僔儑儞丒僾儘僌儔儉偵儕儞僋偝傟傞
-  儔僀僽儔儕偱偡丏Gfarm 偺暲楍僼傽僀儖僔僗僥儉偺儔僀僽儔儕丒僀儞僞僼僃乕
-  僗傗丆儐乕僥傿儕僥傿娭悢偐傜側傝傑偡丏
+  ユ〖ザが Gfarm システムにリクエストを流るのに脱いるホストですˉ
 
-  暲楍僼傽僀儖僔僗僥儉偼丆撪晹揑偵偼 LDAP 僒乕僶乕傪棙梡偟偨丆Gfarm 儊
-  僞僨乕僞儀乕僗丒儔僀僽儔儕傪梡偄偰幚憰偝傟偰偄傑偡丏
+ˇファイルシステムノ〖ド
 
-  婛懚傾僾儕働乕僔儑儞偱 Gfarm 僼傽僀儖僔僗僥儉傪棙梡偡傞偨傔偺儔僀僽
-  儔儕 gfs_hook.o 傕弨旛偝傟偰偄傑偡丏偙偺応崌丆僾儘僌儔儉儕儞僋帪偵 
-  gfs_hook.o 偲 libgfarm.a 傪偄偭偟傚偵儕儞僋偡傞偩偗偱丆Gfarm 僼傽僀
-  儖僔僗僥儉偑棙梡偱偒傞傛偆偵側傝傑偡丏
+  纷换获富と·Gfarm ファイルシステムのディスクを捏丁するホスト凡ですˉ
+  弓拌に赂哼する眶篱ノ〖ド·眶它ノ〖ドが鳞年されていますˉそれぞれのノ〖
+  ド惧では gfsd が瘤りますˉ
 
-丒gfmd - Gfarm 儊僞僨乕僞僒乕僶
+ˇメタデ〖タサ〖バ
 
-  儊僞僨乕僞僒乕僶丒儅僔儞忋偱摦嶌偡傞僨乕儌儞僾儘僌儔儉偱偡丏
-  尰忬偺幚憰偱偼丆幚峴拞偺僾儘僙僗忣曬偺傒傪娗棟偟偰偍傝丆
-  僼傽僀儖僔僗僥儉儊僞僨乕僞僒乕僶偺婡擻偼壥偨偟偰偄傑偣傫丏僼傽僀儖僔
-  僗僥儉儊僞僨乕僞僒乕僶偼 LDAP 僒乕僶傪捈愙棙梡偟偰偄傑偡丏
+  Gfarm ファイルシステムのメタデ〖タと·ユ〖ザがリクエストした事误プロ
+  セスを瓷妄するホストですˉ事误プロセスはファイルシステムノ〖ドのホス
+  ト凡で悸乖されることになりますˉホスト惧では gfmd が瘤りますˉ
 
-丒gfsd - Gfarm 僼傽僀儖僔僗僥儉丒僨乕儌儞
+Gfarm ファイルシステムは·络推翁ファイルを·ファイルシステムノ〖ド惧の
+剩眶のホストに尸欢して芹弥しますˉこの尸欢されたファイルの改」をファイ
+ル们室と钙びますˉファイルシステムノ〖ド惧のホストそれぞれが·极ホスト
+惧に赂哼するファイル们室を借妄するような·デ〖タ事误借妄アプリケ〖ショ
+ンをグリッドサ〖ビスとして毁辩することが·Gfarm システムの肩な誊弄ですˉ
 
-  僼傽僀儖僔僗僥儉僲乕僪忋偺慡儂僗僩偱摦嶌偡傞僨乕儌儞僾儘僌儔儉偱偡丏
-  Gfarm 僼傽僀儖偺傾僋僙僗婡擻傪採嫙偟丆Gfarm 僼傽僀儖僔僗僥儉傪峔惉偟
-  傑偡丏
+毋えば·クライアントで≈gfmpirun_p4 gfarm:gfwc gfarm:file∽を悸乖すると·
+苞眶で回年した Gfarm ファイル ``gfarm:file'' のファイル们室が赂哼する
+ファイルシステムノ〖ド惧で·MPI 事误コマンド gfwc が悸乖されますˉ
 
-丒Gfarm 僐儅儞僪僣乕儖
+あるいは·≈gfrun gfarm:gfgrep -o gfarm:output 赖惮山附 gfarm:input∽
+を悸乖すると·苞眶で回年した Gfarm ファイルのファイル们室が赂哼するファ
+イルシステムノ〖ド惧で·コマンド gfgrep が事误悸乖されますˉ
 
-  gfls, gfrm, gfwhere, gfrep 側偳偺僼傽僀儖僔僗僥儉僐儅儞僪丆gfreg,
-  gfexport 側偳偺僼傽僀儖娗棟僐儅儞僪丆gfps, gfrun 側偳偺僾儘僙僗娗棟丆
-  幚峴僐儅儞僪丆偍傛傃僼傽僀儖僔僗僥儉僲乕僪娗棟僐儅儞僪 gfhost丆擣徹
-  僉乕娗棟僣乕儖 gfkey 側偳偐傜側傝傑偡丏
+========================================================================
+
+↑ ソフトウェア菇喇
+
+Gfarm ソフトウェアは·络きく布淡の灌誊に尸梧されますˉ
+
+ˇlibgfarm.a ライブラリ
+
+  Gfarm のもとで瘤るアプリケ〖ションˇプログラムにリンクされる
+  ライブラリですˉGfarm の事误ファイルシステムのライブラリˇインタフェ〖
+  スや·ユ〖ティリティ簇眶からなりますˉ
+
+  事误ファイルシステムは·柒婶弄には LDAP サ〖バ〖を网脱した·Gfarm メ
+  タデ〖タベ〖スˇライブラリを脱いて悸刘されていますˉ
+
+  贷赂アプリケ〖ションで Gfarm ファイルシステムを网脱するためのライブ
+  ラリ gfs_hook.o も洁洒されていますˉこの眷圭·プログラムリンク箕に 
+  gfs_hook.o と libgfarm.a をいっしょにリンクするだけで·Gfarm ファイ
+  ルシステムが网脱できるようになりますˉ
+
+ˇgfmd - Gfarm メタデ〖タサ〖バ
+
+  メタデ〖タサ〖バˇマシン惧で瓢侯するデ〖モンプログラムですˉ
+  附觉の悸刘では·悸乖面のプロセス攫鼠のみを瓷妄しており·
+  ファイルシステムメタデ〖タサ〖バの怠墙は蔡たしていませんˉファイルシ
+  ステムメタデ〖タサ〖バは LDAP サ〖バを木儡网脱していますˉ
+
+ˇgfsd - Gfarm ファイルシステムˇデ〖モン
+
+  ファイルシステムノ〖ド惧の链ホストで瓢侯するデ〖モンプログラムですˉ
+  Gfarm ファイルのアクセス怠墙を捏丁し·Gfarm ファイルシステムを菇喇し
+  ますˉ
+
+ˇGfarm コマンドツ〖ル
+
+  gfls, gfrm, gfwhere, gfrep などのファイルシステムコマンド·gfreg,
+  gfexport などのファイル瓷妄コマンド·gfps, gfrun などのプロセス瓷妄·
+  悸乖コマンド·およびファイルシステムノ〖ド瓷妄コマンド gfhost·千沮
+  キ〖瓷妄ツ〖ル gfkey などからなりますˉ
   
-  偝傜偵丆gfptool/ 僨傿儗僋僩儕埲壓偵偼丆gfcp, gfgrep 側偳偺暲楍 Gfarm
-  僐儅儞僪偑偁傝傑偡丏
+  さらに·gfptool/ ディレクトリ笆布には·gfcp, gfgrep などの事误 Gfarm
+  コマンドがありますˉ
 
-丒Gfarm 僒儞僾儖丒僾儘僌儔儉
+ˇGfarm サンプルˇプログラム
 
-  Gfarm 暲楍僼傽僀儖僔僗僥儉偵僼傽僀儖傪庢傝崬傓僐儅儞僪偺僐乕僨傿儞僌
-  椺偲偟偰丆gfimport_fixed 偍傛傃 gfimport_text 傪梡堄偟傑偟偨丏
+  Gfarm 事误ファイルシステムにファイルを艰り哈むコマンドのコ〖ディング
+  毋として·gfimport_fixed および gfimport_text を脱罢しましたˉ
 
 ========================================================================
 
-仠 峔抸曽朄
+↑ 菇蜜数恕
 
-崱夞偺僔僗僥儉偼丆Linux 忋偱幚峴僥僗僩偝傟偰偄傑偡丏
-峔抸偵娭偟偰偼 NetBSD, Solaris 忋偱僥僗僩偝傟偰偄傑偡丏
+海搀のシステムは·Linux 惧で悸乖テストされていますˉ
+菇蜜に簇しては NetBSD, Solaris 惧でテストされていますˉ
 
-僔僗僥儉偺峔抸偺偨傔偵偼丆OpenLDAP 偲 OpenSSL 儔僀僽儔儕偑昁梫偱偡丏擣
-徹曽幃偲偟偰 GSI 傪棙梡偡傞偨傔偵偼丆GSSAPI 儔僀僽儔儕偑昁梫偲側傝傑偡丏
-尰嵼偺 configure 偱偼 GSSAPI 儔僀僽儔儕偲偟偰 Globus toolkit version 2
-(GT2) 偵娷傑傟傞儔僀僽儔儕傪僒億乕僩偟偰偄傑偡丏傑偨丆婛懚偺 MPI 傾僾
-儕働乕僔儑儞偱 Gfarm 僼傽僀儖僔僗僥儉傪棙梡偡傞偨傔偺儔僀僽儔儕
-gfs_hook_mpi.o 偺峔抸丆偍傛傃 MPI 僒儞僾儖傾僾儕働乕僔儑儞偺峔抸丆幚峴
-偡傞偨傔偵偼 MPI 偑昁梫偲側傝傑偡丏
+システムの菇蜜のためには·OpenLDAP と OpenSSL ライブラリが涩妥ですˉ千
+沮数及として GSI を网脱するためには·GSSAPI ライブラリが涩妥となりますˉ
+附哼の configure では GSSAPI ライブラリとして Globus toolkit version 2
+(GT2) に崔まれるライブラリをサポ〖トしていますˉまた·贷赂の MPI アプ
+リケ〖ションで Gfarm ファイルシステムを网脱するためのライブラリ
+gfs_hook_mpi.o の菇蜜·および MPI サンプルアプリケ〖ションの菇蜜·悸乖
+するためには MPI が涩妥となりますˉ
 
-崱夞偺僔僗僥儉傪峔抸偡傞偵偼丆壓婰偺傛偆偵偟傑偡丏
+海搀のシステムを菇蜜するには·布淡のようにしますˉ
 
-	% ./configure [僆僾僔儑儞]
+	% ./configure [オプション]
 	% make
 	% make install
 
-configure 僐儅儞僪偵偼丆壓婰偺僆僾僔儑儞偑偁傝傑偡丏
-偙偺偆偪丆--with-openldap 偼昁恵偱偡丏
+configure コマンドには·布淡のオプションがありますˉ
+このうち·--with-openldap は涩寇ですˉ
 
-丒--with-openldap=僨傿儗僋僩儕
+ˇ--with-openldap=ディレクトリ
 
-  OpenLDAP 偺僀儞僗僩乕儖偝傟偰偄傞僨傿儗僋僩儕傪巜掕偟傑偡丏
-  偙偺僆僾僔儑儞偼昁偢巜掕偟偰偔偩偝偄丏
+  OpenLDAP のインスト〖ルされているディレクトリを回年しますˉ
+  このオプションは涩ず回年してくださいˉ
 
-丒--with-openssl=僨傿儗僋僩儕
+ˇ--with-openssl=ディレクトリ
 
-  OpenSSL 偺僀儞僗僩乕儖偝傟偰偄傞僨傿儗僋僩儕傪巜掕偟傑偡丏
-  僆僾僔儑儞徣棯帪偼 /usr 偑巜掕偝傟傑偡丏
+  OpenSSL のインスト〖ルされているディレクトリを回年しますˉ
+  オプション臼维箕は /usr が回年されますˉ
 
-丒--with-mpi=僨傿儗僋僩儕
+ˇ--with-mpi=ディレクトリ
 
-  MPI 傾僾儕働乕僔儑儞偺僒儞僾儖僾儘僌儔儉偍傛傃 MPI 僾儘僌儔儉偺僔僗
-  僥儉僐乕儖傪僼僢僋偡傞偨傔偺儔僀僽儔儕傪僐儞僷僀儖偟傑偡丏僨傿儗僋僩
-  儕傪巜掕偟偨応崌偼僐儞僷僀儔偲偟偰 ${僨傿儗僋僩儕}/bin/mpicc 偑棙梡
-  偝傟丆徣棯帪偼 mpicc 偼棙梡偝傟傑偡丏偙偺僆僾僔儑儞偼徣棯壜擻偱偡丏
+  MPI アプリケ〖ションのサンプルプログラムおよび MPI プログラムのシス
+  テムコ〖ルをフックするためのライブラリをコンパイルしますˉディレクト
+  リを回年した眷圭はコンパイラとして ${ディレクトリ}/bin/mpicc が网脱
+  され·臼维箕は mpicc は网脱されますˉこのオプションは臼维材墙ですˉ
 
-丒--with-globus=僨傿儗僋僩儕
+ˇ--with-globus=ディレクトリ
 
-  擣徹曽幃偲偟偰 GSI 傪壜擻偲偟傑偡丏僨傿儗僋僩儕偼 Globus toolkit
-  version 2 (GT2) 偺僀儞僗僩乕儖偝傟偰偄傞僨傿儗僋僩儕傪巜掕偟傑偡丏
-  GT2 偺偆偪 GSSAPI 儔僀僽儔儕偑昁梫偲側傝傑偡丏僨傿儗僋僩儕傪巜掕偟側
-  偄偲丆娐嫬曄悢 GLOBUS_LOCATION 偺帵偡僨傿儗僋僩儕偑棙梡偝傟傑偡丏
-  偙偺僆僾僔儑儞偼徣棯壜擻偱偡丏
+  千沮数及として GSI を材墙としますˉディレクトリは Globus toolkit
+  version 2 (GT2) のインスト〖ルされているディレクトリを回年しますˉ
+  GT2 のうち GSSAPI ライブラリが涩妥となりますˉディレクトリを回年しな
+  いと·茨董恃眶 GLOBUS_LOCATION の绩すディレクトリが网脱されますˉ
+  このオプションは臼维材墙ですˉ
 
-丒--prefix=僨傿儗僋僩儕
+ˇ--prefix=ディレクトリ
 
-  僀儞僗僩乕儖愭偺僨傿儗僋僩儕傪巜掕偟傑偡丏偙偺僆僾僔儑儞傪徣棯偟偨応
-  崌偼 $HOME 僨傿儗僋僩儕偺壓偵僀儞僗僩乕儖偟傑偡丏
-  偙偺僆僾僔儑儞偼徣棯壜擻偱偡丏
+  インスト〖ル黎のディレクトリを回年しますˉこのオプションを臼维した眷
+  圭は $HOME ディレクトリの布にインスト〖ルしますˉ
+  このオプションは臼维材墙ですˉ
 
-棙梡偡傞僐儞僷僀儔傪柧帵偟偨偄応崌偵偼丆娐嫬曄悢 CC 偵丆僐儞僷僀儔偺僐
-儅儞僪柤傪巜掕偟偰 configure 傪幚峴偟偰偔偩偝偄丏埲壓偼 gcc 傪巜掕偡傞
-椺偱偡丏
+网脱するコンパイラを汤绩したい眷圭には·茨董恃眶 CC に·コンパイラのコ
+マンド叹を回年して configure を悸乖してくださいˉ笆布は gcc を回年する
+毋ですˉ
 
 	% env CC=gcc ./configure [options]
 
 ========================================================================
 
-仠 愝掕曽朄
+↑ 肋年数恕
 
-偙偺復偱偼丆娗棟幰偑嵟弶偵偳傫側愝掕傪峴偆昁梫偑偁傞偐傪夝愢偟傑偡丏
+この鞠では·瓷妄荚が呵介にどんな肋年を乖う涩妥があるかを豺棱しますˉ
 
-埲壓偱偼丆壓婰偺傛偆側峔惉傪壖掕偟偰夝愢偟傑偡丏
+笆布では·布淡のような菇喇を簿年して豺棱しますˉ
 
-丒Gfarm 僀儞僗僩乕儖丒僨傿儗僋僩儕
+ˇGfarm インスト〖ルˇディレクトリ
 
 	/usr/grid
 
-丒OpenLDAP 僀儞僗僩乕儖丒僨傿儗僋僩儕
+ˇOpenLDAP インスト〖ルˇディレクトリ
 
 	/usr/local/openldap
 
-丒LDAP 僒乕僶乕傪幚峴偡傞儂僗僩
+ˇLDAP サ〖バ〖を悸乖するホスト
 
 	ldap.example.com
 
-丒LDAP 僒乕僶乕偺棙梡偡傞 TCP 億乕僩斣崋
+ˇLDAP サ〖バ〖の网脱する TCP ポ〖ト戎规
 
 	389
 
-丒LDAP 僒乕僶乕偺愝掕僼傽僀儖傪抲偔僨傿儗僋僩儕
+ˇLDAP サ〖バ〖の肋年ファイルを弥くディレクトリ
 
 	/etc/gfarm-ldap
 
-丒LDAP 僨乕僞儀乕僗偺弶婜愝掕撪梕傪婰弎偡傞僼傽僀儖
+ˇLDAP デ〖タベ〖スの介袋肋年柒推を淡揭するファイル
 
 	/etc/gfarm-ldap/initial.ldif
 
-丒LDAP 偺僨乕僞儀乕僗丒僼傽僀儖傪抲偔僨傿儗僋僩儕
+ˇLDAP のデ〖タベ〖スˇファイルを弥くディレクトリ
 
 	/var/gfarm-ldap
 
-丒LDAP 偺 base distinguished name
+ˇLDAP の base distinguished name
 
 	dc=example,dc=com
 
-  偙偺抣偼丆LDAP 偱曐帩偡傞忣曬偺崻偲側傞僲乕僪偺柤徧偱偡丏
+  この猛は·LDAP で瘦积する攫鼠の含となるノ〖ドの叹疚ですˉ
 
-  Gfarm 僔僗僥儉傪棙梡偟偰偄傞慻怐偺僪儊僀儞柤偑 example.com 偱偁傟偽丆
-  偦偺僪儊僀儞柤偺奺峔惉梫慺傪 dc= 偵巜掕偟偰乽dc=example,dc=com乿偺
-  傛偆側柤慜傪寛傔丆偙傟傪 base distinguished name 偵巊偆偲椙偄偱偟傚
-  偆丏
+  Gfarm システムを网脱している寥骏のドメイン叹が example.com であれば·
+  そのドメイン叹の称菇喇妥燎を dc= に回年して≈dc=example,dc=com∽の
+  ような叹涟を疯め·これを base distinguished name に蝗うと紊いでしょ
+  うˉ
 
-丒僼傽僀儖僔僗僥儉僲乕僪偵抲偔丆僨乕僞丒僼傽僀儖梡僗僾乕儖丒僨傿儗僋僩
-  儕
+ˇファイルシステムノ〖ドに弥く·デ〖タˇファイル脱スプ〖ルˇディレクト
+  リ
 
 	/var/spool/gfarm
 
 ------------------------------------------------------------------------
 
-仦 LDAP 僒乕僶乕
+〓 LDAP サ〖バ〖
 
-傑偢丆Gfarm 僼傽僀儖僔僗僥儉偺僼傽僀儖僔僗僥儉儊僞僨乕僞傪曐帩偡傞 
-LDAP 僒乕僶乕傪梡堄偡傞昁梫偑偁傝傑偡丏偙傟偵偼壓婰偺愝掕偑昁梫偱偡丏
+まず·Gfarm ファイルシステムのファイルシステムメタデ〖タを瘦积する 
+LDAP サ〖バ〖を脱罢する涩妥がありますˉこれには布淡の肋年が涩妥ですˉ
 
-仱 slapd.conf
+ⅵ slapd.conf
 
-OpenLDAP 晅懏偺 LDAP 僒乕僶乕偺愝掕僼傽僀儖偱偡丏
-base distinguished name 傪丆偙偺僼傽僀儖偺 suffix 偍傛傃 
-rootdn 偱嶲徠偟偰偄傞偺偵拲堄偟偰偔偩偝偄丏
+OpenLDAP 烧掳の LDAP サ〖バ〖の肋年ファイルですˉ
+base distinguished name を·このファイルの suffix および 
+rootdn で徊救しているのに庙罢してくださいˉ
 
-椺偊偽儂僗僩 ldap.example.com 偺
-僼傽僀儖 /etc/gfarm-ldap/slapd.conf 偵丆
-壓婰偺傛偆側撪梕傪婰弎偟傑偡丏
-愝掕僼傽僀儖拞偱 include 偟偰偄傞 core.schema 偺僷僗柤偼 OpenLDAP 偺僀
-儞僗僩儗乕僔儑儞偵傛傝曄傢傝傑偡丏
+毋えばホスト ldap.example.com の
+ファイル /etc/gfarm-ldap/slapd.conf に·
+布淡のような柒推を淡揭しますˉ
+肋年ファイル面で include している core.schema のパス叹は OpenLDAP のイ
+ンストレ〖ションにより恃わりますˉ
 
------------------------------- 偙偙偐傜 ------------------------------
+------------------------------ ここから ------------------------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
@@ -285,127 +285,127 @@ index	section		pres,eq
 index	hostname	pres,eq
 #
 dbnosync
------------------------------- 偙偙傑偱 ------------------------------
+------------------------------ ここまで ------------------------------
 
-仱 gfarm.schema
+ⅵ gfarm.schema
 
-slapd.conf 偐傜 include 偝傟偰偄傞僼傽僀儖偱偡丏
+slapd.conf から include されているファイルですˉ
 
-僜乕僗攝晍拞偺僼傽僀儖 doc/conf/gfarm.schema 傪丆
-儂僗僩 ldap.example.com 偺 /etc/gfarm-ldap/gfarm.schema 偵抲偄偰偔偩偝偄丏
+ソ〖ス芹邵面のファイル doc/conf/gfarm.schema を·
+ホスト ldap.example.com の /etc/gfarm-ldap/gfarm.schema に弥いてくださいˉ
 
-僶僀僫儕攝晍偺応崌丆gfarm-server 僷僢働乕僕拞偺
-/etc/gfarm-ldap/gfarm.schema 偵丆偙偺僼傽僀儖偑娷傑傟偰偄傑偡丅
+バイナリ芹邵の眷圭·gfarm-server パッケ〖ジ面の
+/etc/gfarm-ldap/gfarm.schema に·このファイルが崔まれています。
 
-摿偵僇僗僞儅僀僘偡傞崁栚偼偁傝傑偣傫丏
+泼にカスタマイズする灌誊はありませんˉ
 
-仱 僼傽僀儖僔僗僥儉儊僞僨乕僞偺弶婜忣曬傪嶌傞
+ⅵ ファイルシステムメタデ〖タの介袋攫鼠を侯る
 
-師偵丆儊僞僨乕僞僒乕僶偵搊榐偡傞忣曬偺弶婜愝掕傪丆
-傾僗僉乕僼傽僀儖偱嶌惉偟傑偡丏
+肌に·メタデ〖タサ〖バに判峡する攫鼠の介袋肋年を·
+アスキ〖ファイルで侯喇しますˉ
 
-偙偺僼傽僀儖偵偼丆LDAP 偺崻偲側傞僲乕僪偺忣曬偲偟偰丆
-dn (distinguished name) 懏惈偵 base distinguished name 傪丆
-傑偨 objectclass 懏惈偵 top 傪愝掕偟傑偡丏
+このファイルには·LDAP の含となるノ〖ドの攫鼠として·
+dn (distinguished name) 掳拉に base distinguished name を·
+また objectclass 掳拉に top を肋年しますˉ
 
-椺偊偽儂僗僩 ldap.example.com 偺
-僼傽僀儖 /etc/gfarm-ldap/initial.ldif 偵丆
-壓婰偺傛偆側撪梕傪愝掕偡傞偙偲偵側傝傑偡丏
+毋えばホスト ldap.example.com の
+ファイル /etc/gfarm-ldap/initial.ldif に·
+布淡のような柒推を肋年することになりますˉ
 
------------------------------- 偙偙偐傜 ------------------------------
+------------------------------ ここから ------------------------------
 dn: dc=example, dc=com
 objectclass: top
 
------------------------------- 偙偙傑偱 ------------------------------
+------------------------------ ここまで ------------------------------
 
-仱 LDAP 僨乕僞儀乕僗偺嶌惉
+ⅵ LDAP デ〖タベ〖スの侯喇
 
-慜愡偱嶌惉偟偨僼傽僀儖僔僗僥儉儊僞僨乕僞偺弶婜忣曬傪尦偵丆LDAP 僨乕僞
-儀乕僗傪嶌惉偟傑偡丏偙傟偵偼丆儂僗僩 ldap.example.com 偱丆壓婰偺僐儅儞
-僪傪幚峴偟傑偡丏
+涟泪で侯喇したファイルシステムメタデ〖タの介袋攫鼠を傅に·LDAP デ〖タ
+ベ〖スを侯喇しますˉこれには·ホスト ldap.example.com で·布淡のコマン
+ドを悸乖しますˉ
 
 	% rm -f /var/gfarm-ldap/*
 	% cd /etc/gfarm-ldap
 	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
-仱 LDAP 僒乕僶乕偺婲摦
+ⅵ LDAP サ〖バ〖の弹瓢
 
-儂僗僩 ldap.example.com 偱丆LDAP 僒乕僶乕傪婲摦偟傑偡丏
-壓婰偺僐儅儞僪傪幚峴偟傑偡丏
+ホスト ldap.example.com で·LDAP サ〖バ〖を弹瓢しますˉ
+布淡のコマンドを悸乖しますˉ
 
 	% cd /usr/local/openldap/libexec/
 	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
-偙偺僆僾僔儑儞 -h 偱巜掕偟偨 389 偑丆LDAP 僒乕僶乕偺億乕僩斣崋偱偡丏
-億乕僩斣崋偲偟偰丆偙偺椺偺傛偆偵1024斣枹枮傪棙梡偡傞応崌丆slapd 偺
-婲摦傪 root 尃尷偱峴側偆昁梫偑偁傝傑偡丏
+このオプション -h で回年した 389 が·LDAP サ〖バ〖のポ〖ト戎规ですˉ
+ポ〖ト戎规として·この毋のように1024戎踏塔を网脱する眷圭·slapd の
+弹瓢を root 涪嘎で乖なう涩妥がありますˉ
 
-仱 LDAP 僒乕僶乕偺摦嶌帋尡
+ⅵ LDAP サ〖バ〖の瓢侯活赋
 
-壓婰偺僐儅儞僪傪幚峴偟偰傒傑偟傚偆丏initial.ldif 僼傽僀儖偵愝掕偟偨偺
-偲摨偠撪梕偑昞帵偝傟傟偽丆惓偟偔摦嶌偟偰偄傑偡丏
+布淡のコマンドを悸乖してみましょうˉinitial.ldif ファイルに肋年したの
+と票じ柒推が山绩されれば·赖しく瓢侯していますˉ
 
-Bourne Shell 偺応崌:
+Bourne Shell の眷圭:
 	% host=ldap.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
-csh 偺応崌:
+csh の眷圭:
 	% set host=ldap.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
-仦 ~/.gfarmrc
+〓 ~/.gfarmrc
 
-僋儔僀傾儞僩儂僗僩偱 ~/.gfarmrc 傪壓婰偺傛偆偵愝掕偟傑偡丏
+クライアントホストで ~/.gfarmrc を布淡のように肋年しますˉ
 
------------------------------- 偙偙偐傜 ------------------------------
+------------------------------ ここから ------------------------------
 metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret ALL
------------------------------- 偙偙傑偱 ------------------------------
+------------------------------ ここまで ------------------------------
 
-仱 僼傽僀儖僔僗僥儉僲乕僪偺搊榐
+ⅵ ファイルシステムノ〖ドの判峡
 
-LDAP 僒乕僶乕傪婲摦偟偨傜丆gfhost 僐儅儞僪傪棙梡偟偰丆
-僼傽僀儖僔僗僥儉僲乕僪偺忣曬傪搊榐偟傑偡丏
+LDAP サ〖バ〖を弹瓢したら·gfhost コマンドを网脱して·
+ファイルシステムノ〖ドの攫鼠を判峡しますˉ
 
-僼傽僀儖僔僗僥儉僲乕僪傪峔惉偡傞儂僗僩偺忣曬偵偼丆壓婰偺傛偆側崁栚偑
-偁傝傑偡丏
+ファイルシステムノ〖ドを菇喇するホストの攫鼠には·布淡のような灌誊が
+ありますˉ
 
-丒hostname
+ˇhostname
 
-    gfhost 僐儅儞僪偺堷悢偲偟偰巜掕偟傑偡丏
-    FQDN (fully qualified domain name) 偱巜掕偟偰偔偩偝偄丏
+    gfhost コマンドの苞眶として回年しますˉ
+    FQDN (fully qualified domain name) で回年してくださいˉ
 
-丒hostalias
+ˇhostalias
 
-    暋悢偺僱僢僩儚乕僋僀儞僞乕僼僃乕僗傪帩偪丆偦傟偧傟偺僀儞僞乕僼僃乕僗
-    偵堎側傞儂僗僩柤偑梌偊傜傟偰偄傞応崌丆gfhost 僐儅儞僪偺丆hostname
-    偵懕偔堷悢偱丆偦傟傜偺儂僗僩柤傪巜掕偡傞偙偲偑偱偒傑偡丏
-    暔棟揑側僱僢僩儚乕僋僀儞僞乕僼僃乕僗偑侾偮偩偗偟偐側偄儂僗僩偱偼丆
-    摿偵巜掕偟傑偣傫丏
+    剩眶のネットワ〖クインタ〖フェ〖スを积ち·それぞれのインタ〖フェ〖ス
+    に佰なるホスト叹が涂えられている眷圭·gfhost コマンドの·hostname
+    に鲁く苞眶で·それらのホスト叹を回年することができますˉ
+    湿妄弄なネットワ〖クインタ〖フェ〖スが１つだけしかないホストでは·
+    泼に回年しませんˉ
 
-丒architecture
+ˇarchitecture
 
-    寁嶼婡傾乕僉僥僋僠儍傪昞偡柤徧傪 sparc-sun-solaris 偺傛偆側
-    宍幃偱婰弎偟傑偡丏
-    gfhost 僐儅儞僪偺 -a 僆僾僔儑儞偺堷悢偲偟偰巜掕偟傑偡丏
+    纷换怠ア〖キテクチャを山す叹疚を sparc-sun-solaris のような
+    妨及で淡揭しますˉ
+    gfhost コマンドの -a オプションの苞眶として回年しますˉ
 
-丒ncpu
+ˇncpu
 
-    偦偺僐儞僺儏乕僞偺CPU悢傪婰弎偟傑偡丏
-    gfhost 僐儅儞僪偺 -n 僆僾僔儑儞偺堷悢偲偟偰巜掕偟傑偡丏
-    偙偺僆僾僔儑儞偼徣棯壜擻偱偡丏
+    そのコンピュ〖タのCPU眶を淡揭しますˉ
+    gfhost コマンドの -n オプションの苞眶として回年しますˉ
+    このオプションは臼维材墙ですˉ
 
-椺偊偽壓婰偺傛偆側僐儅儞僪偱愝掕偡傞偙偲偵側傝傑偡丏
-僆僾僔儑儞 -c 偼丆搊榐傪巜帵偡傞僐儅儞僪偱偡丏
+毋えば布淡のようなコマンドで肋年することになりますˉ
+オプション -c は·判峡を回绩するコマンドですˉ
 
 	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
 	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
@@ -418,8 +418,8 @@ LDAP 僒乕僶乕傪婲摦偟偨傜丆gfhost 僐儅儞僪傪棙梡偟偰丆
 	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
 	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
-搊榐寢壥偼丆僆僾僔儑儞 -D 傪巜掕偟偰 gfhost 傪幚峴偡傞偙偲偱丆
-妋擣偱偒傑偡丏
+判峡冯蔡は·オプション -D を回年して gfhost を悸乖することで·
+澄千できますˉ
 
 	% gfhost -D
 	i386-redhat-linux 1 linuxhost-1.example.com
@@ -435,14 +435,14 @@ LDAP 僒乕僶乕傪婲摦偟偨傜丆gfhost 僐儅儞僪傪棙梡偟偰丆
 
 ------------------------------------------------------------------------
 
-仦 gfsd 僗僾乕儖丒僨傿儗僋僩儕偺嶌惉
+〓 gfsd スプ〖ルˇディレクトリの侯喇
 
-僼傽僀儖僔僗僥儉僲乕僪忋偺慡儂僗僩偱丆僗僾乕儖丒儖乕僩丒僨傿儗僋僩儕
-/var/spool/gfarm 傪嶌惉偟傑偡丏傑偨丆僗僾乕儖丒儖乕僩丒僨傿儗僋僩儕偺
-壓偵丆僶僀僫儕梡偺僨傿儗僋僩儕偍傛傃儐乕僓暿偺僨傿儗僋僩儕傪嶌惉偟傑偡丏
-壓婰偺椺偱偼丆儐乕僓乕 morita丆tatebe丆soda 偺僨傿儗僋僩儕傪嶌惉偟偰偄
-傑偡丏儐乕僓暿僨傿儗僋僩儕偼埲壓偱徯夘偡傞 gfrun 僐儅儞僪偱傕帺摦揑偵
-嶌惉偝傟傑偡丏
+ファイルシステムノ〖ド惧の链ホストで·スプ〖ルˇル〖トˇディレクトリ
+/var/spool/gfarm を侯喇しますˉまた·スプ〖ルˇル〖トˇディレクトリの
+布に·バイナリ脱のディレクトリおよびユ〖ザ侍のディレクトリを侯喇しますˉ
+布淡の毋では·ユ〖ザ〖 morita·tatebe·soda のディレクトリを侯喇してい
+ますˉユ〖ザ侍ディレクトリは笆布で疽拆する gfrun コマンドでも极瓢弄に
+侯喇されますˉ
 
 	% su
 	Password: 
@@ -459,63 +459,63 @@ LDAP 僒乕僶乕傪婲摦偟偨傜丆gfhost 僐儅儞僪傪棙梡偟偰丆
 	# exit
 	% 
 
-仦 /etc/gfarm.conf
+〓 /etc/gfarm.conf
 
-儊僞僨乕僞僒乕僶偺儂僗僩偲丆僼傽僀儖僔僗僥儉僲乕僪忋偺慡儂僗僩偱丆
-/etc/gfarm.conf 傪壓婰偺傛偆偵愝掕偟傑偡丏
+メタデ〖タサ〖バのホストと·ファイルシステムノ〖ド惧の链ホストで·
+/etc/gfarm.conf を布淡のように肋年しますˉ
 
------------------------------- 偙偙偐傜 ------------------------------
+------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
 metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret ALL
------------------------------- 偙偙傑偱 ------------------------------
+------------------------------ ここまで ------------------------------
 
-儊僞僨乕僞僒乕僶偺儂僗僩偁傞偄偼僼傽僀儖僔僗僥儉僲乕僪偑僋儔僀傾儞僩偲
-側傞応崌偼丆僋儔僀傾儞僩僾儘僌儔儉偼傑偢 ~/.gfarmrc 傪撉傒崬傒丆師偵
-/etc/gfarm.conf 傪撉傒崬傒傑偡丏
+メタデ〖タサ〖バのホストあるいはファイルシステムノ〖ドがクライアントと
+なる眷圭は·クライアントプログラムはまず ~/.gfarmrc を粕み哈み·肌に
+/etc/gfarm.conf を粕み哈みますˉ
 
-仦 gfmd
+〓 gfmd
 
-儊僞僨乕僞僒乕僶梡儅僔儞忋偱丆root 尃尷偱 gfmd 傪棫偪忋偘傑偡丏
-gfmd 偼丆慜愡偱夝愢偟偨 /etc/gfarm.conf 僼傽僀儖傪愝掕僼傽僀儖偲偟偰
-撉傒崬傒傑偡丏
+メタデ〖タサ〖バ脱マシン惧で·root 涪嘎で gfmd を惟ち惧げますˉ
+gfmd は·涟泪で豺棱した /etc/gfarm.conf ファイルを肋年ファイルとして
+粕み哈みますˉ
 
 	% su
 	Password: 
 	# gfmd
 
-僗僞乕僩傾僢僾僗僋儕僾僩偺僒儞僾儖僼傽僀儖偑 package/<OS>/gfmd 偵
-偁傝傑偡丏側偍丆僥僗僩側偳偺栚揑偱 gfmd 傪儐乕僓尃尷偱棫偪忋偘偨偄
-応崌偼 -f 僆僾僔儑儞傪偮偗偰愝掕僼傽僀儖傪巜掕偟偰棫偪忋偘傑偡丏徻嵶偼 
-man gfmd 傪嶲徠偟偰偔偩偝偄丏
+スタ〖トアップスクリプトのサンプルファイルが package/<OS>/gfmd に
+ありますˉなお·テストなどの誊弄で gfmd をユ〖ザ涪嘎で惟ち惧げたい
+眷圭は -f オプションをつけて肋年ファイルを回年して惟ち惧げますˉ拒嘿は 
+man gfmd を徊救してくださいˉ
 
-gfmd 偑惓偟偔婲摦偝傟偰偄傞偐偳偆偐偼丆僆僾僔儑儞傪巜掕偣偢偵 gfps
-僐儅儞僪傪幚峴偡傞偙偲偱妋擣偱偒傑偡丏惓偟偔婲摦偝傟偰偄傞応崌偼丆
-側偵傕昞帵偣偢偵丆懄嵗偵幚峴傪姰椆偟傑偡丏
+gfmd が赖しく弹瓢されているかどうかは·オプションを回年せずに gfps
+コマンドを悸乖することで澄千できますˉ赖しく弹瓢されている眷圭は·
+なにも山绩せずに·篓郝に悸乖を窗位しますˉ
 
 	% gfps
 
-仦 gfsd
+〓 gfsd
 
-僼傽僀儖僔僗僥儉僲乕僪傪峔惉偡傞慡儂僗僩偵偍偄偰丆root 尃尷偱 gfsd 傪
-棫偪忋偘傑偡丏gfsd 偼丆慜愡偱夝愢偟偨 /etc/gfarm.conf 僼傽僀儖傪愝掕僼傽
-僀儖偲偟偰撉傒崬傒傑偡丏
+ファイルシステムノ〖ドを菇喇する链ホストにおいて·root 涪嘎で gfsd を
+惟ち惧げますˉgfsd は·涟泪で豺棱した /etc/gfarm.conf ファイルを肋年ファ
+イルとして粕み哈みますˉ
 
 	% su
 	Password: 
 	# gfsd
 
-僗僞乕僩傾僢僾僗僋儕僾僩偺僒儞僾儖僼傽僀儖偑 package/<OS>/gfsd 偵
-偁傝傑偡丏側偍丆僥僗僩側偳偺栚揑偱 gfsd 傪儐乕僓尃尷偱棫偪忋偘偨偄
-応崌偼 -f 僆僾僔儑儞傪偮偗偰愝掕僼傽僀儖傪巜掕偟偰棫偪忋偘傑偡丏徻嵶偼 
-man gfsd 傪嶲徠偟偰偔偩偝偄丏
+スタ〖トアップスクリプトのサンプルファイルが package/<OS>/gfsd に
+ありますˉなお·テストなどの誊弄で gfsd をユ〖ザ涪嘎で惟ち惧げたい
+眷圭は -f オプションをつけて肋年ファイルを回年して惟ち惧げますˉ拒嘿は 
+man gfsd を徊救してくださいˉ
 
-gfsd 偑惓偟偔婲摦偝傟偰偄傞偐偳偆偐偼丆僆僾僔儑儞 -l 傪巜掕偟偰 gfhost 
-傪幚峴偡傞偙偲偱妋擣偱偒傑偡丏峴摢偵昞帵偝傟偰偄傞3偮偺悢帤偼儘乕僪丒
-傾儀儗乕僕偱偡丏
+gfsd が赖しく弹瓢されているかどうかは·オプション -l を回年して gfhost 
+を悸乖することで澄千できますˉ乖片に山绩されている3つの眶机はロ〖ドˇ
+アベレ〖ジですˉ
 
 	% gfhost -l
 	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
@@ -529,19 +529,19 @@ gfsd 偑惓偟偔婲摦偝傟偰偄傞偐偳偆偐偼丆僆僾僔儑儞 -l 傪巜掕偟偰 gfhost
 	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
 	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
 
-linuxhost-3.example.com 偺 -.-- 偼丆偙偺僲乕僪忋偵乮巜掕偟偨億乕僩偱乯 
-gfsd 偑摦偄偰偄側偄偙偲傪帵偟丆solarishost-2.example.com 偺 x.xx 偼偙
-偺僲乕僪偵愙懕偱偒側偄乮棊偪偰偄傞壜擻惈偑戝乯偙偲傪帵偟偰偄傑偡丏
+linuxhost-3.example.com の -.-- は·このノ〖ド惧に∈回年したポ〖トで∷ 
+gfsd が瓢いていないことを绩し·solarishost-2.example.com の x.xx はこ
+のノ〖ドに儡鲁できない∈皖ちている材墙拉が络∷ことを绩していますˉ
 
-仦 Gfarm 暲楍僐儅儞僪偺搊榐
+〓 Gfarm 事误コマンドの判峡
 
-暲楍僼傽僀儖僐僺乕丆暲楍 grep 側偳偺僐儅儞僪傪 Gfarm 僼傽僀儖僔僗僥儉
-偵搊榐偡傞偨傔偵丆偦傟偧傟偺傾乕僉僥僋僠儍偺僼傽僀儖僔僗僥儉僲乕僪偱埲
-壓傪幚峴偟傑偡丏
+事误ファイルコピ〖·事误 grep などのコマンドを Gfarm ファイルシステム
+に判峡するために·それぞれのア〖キテクチャのファイルシステムノ〖ドで笆
+布を悸乖しますˉ
 
 	% make gfregister
 
-暲楍僐儅儞僪偼 gfarm:/bin 僨傿儗僋僩儕偵搊榐偝傟傑偡丏
+事误コマンドは gfarm:/bin ディレクトリに判峡されますˉ
 
 	% gfls -l gfarm:/bin
 	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
@@ -552,155 +552,155 @@ gfsd 偑摦偄偰偄側偄偙偲傪帵偟丆solarishost-2.example.com 偺 x.xx 偼偙
 	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
 	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
 
-搊榐偝傟偰偄傞傾乕僉僥僋僠儍偼 gfwhere 偱妋擣偱偒傑偡丏
+判峡されているア〖キテクチャは gfwhere で澄千できますˉ
 
 	% gfwhere gfarm:/bin/gfcp
 
 ========================================================================
 
-仠 幚峴曽朄
+↑ 悸乖数恕
 
-偙偺復偱偼丆奺儐乕僓乕偵傛傞丆僒儞僾儖偺幚峴椺傪愢柧偟傑偡丏
+この鞠では·称ユ〖ザ〖による·サンプルの悸乖毋を棱汤しますˉ
 
-仦 僒僀儞僆儞
+〓 サインオン
 
-尰嵼丆擣徹曽幃偲偟偰嫟捠旈枾尞曽幃偲僌儕僢僪丒僙僉儏儕僥傿丒僀儞僼儔僗
-僩儔僋僠儍(GSI)傪僒億乕僩偟偰偄傑偡丏偳偺擣徹曽幃傪棙梡偡傞偐偼愝掕僼傽
-僀儖偱巜掕偟傑偡丏
+附哼·千沮数及として鼎奶入泰赴数及とグリッドˇセキュリティˇインフラス
+トラクチャ(GSI)をサポ〖トしていますˉどの千沮数及を网脱するかは肋年ファ
+イルで回年しますˉ
 
-丒嫟桳旈枾尞曽幃
+ˇ鼎铜入泰赴数及
 
-嫟桳旈枾尞曽幃偼儂乕儉僨傿儗僋僩儕傪嫟桳偟偰偄傞怣棅偝傟偨娐嫬偱梡偄傞
-偙偲傪壖掕偟偰偄傑偡丏偙偺曽幃偱偼丆旈枾尞偑儂乕儉僨傿儗僋僩儕忋偵帺摦
-揑偵嶌惉偝傟丆偡傋偰偺僲乕僪偱嫟桳偝傟傑偡丏偙偺娐嫬偱棙梡偡傞尷傝丆摿
-暿側僒僀儞僆儞憖嶌偼昁梫偁傝傑偣傫丏
+鼎铜入泰赴数及はホ〖ムディレクトリを鼎铜している慨完された茨董で脱いる
+ことを簿年していますˉこの数及では·入泰赴がホ〖ムディレクトリ惧に极瓢
+弄に侯喇され·すべてのノ〖ドで鼎铜されますˉこの茨董で网脱する嘎り·泼
+侍なサインオン拎侯は涩妥ありませんˉ
 
-儂乕儉僨傿儗僋僩儕傪嫟桳偟偰偄側偄娐嫬丆偁傞偄偼峀堟娐嫬偱丆偙偺曽幃傪
-棙梡偡傞応崌偼丆埲壓偺庤弴偱旈枾尞偲偟偰棙梡偟偰偄傞擣徹梡僙僢僔儑儞丒
-僉乕丒僼傽僀儖傪偁傜偐偠傔埨慡偵僐僺乕偟偰偍偔昁梫偑偁傝傑偡丏
+ホ〖ムディレクトリを鼎铜していない茨董·あるいは弓拌茨董で·この数及を
+网脱する眷圭は·笆布の缄界で入泰赴として网脱している千沮脱セッションˇ
+キ〖ˇファイルをあらかじめ奥链にコピ〖しておく涩妥がありますˉ
 
-1. 僋儔僀傾儞僩忋偱壓婰偺僐儅儞僪傪幚峴偟偰丆乽~/.gfarm_shared_key乿偵
-  擣徹梡僙僢僔儑儞丒僉乕丒僼傽僀儖傪嶌惉偡傞丏
+1. クライアント惧で布淡のコマンドを悸乖して·≈~/.gfarm_shared_key∽に
+  千沮脱セッションˇキ〖ˇファイルを侯喇するˉ
 
 	% gfkey -c
 
-2. 乽~/.gfarm_shared_key乿傪丆儊僞僨乕僞僒乕僶偺儂僗僩偲僼傽僀儖僔僗僥
-  儉僲乕僪偺慡儂僗僩偺儂乕儉僨傿儗僋僩儕偵 scp 側偳偱僐僺乕偡傞丏
+2. ≈~/.gfarm_shared_key∽を·メタデ〖タサ〖バのホストとファイルシステ
+  ムノ〖ドの链ホストのホ〖ムディレクトリに scp などでコピ〖するˉ
 
-偙偙偱嶌惉偝傟偨僙僢僔儑儞丒僉乕丒僼傽僀儖偼嶌惉偝傟偰偐傜24帪娫桳岠偱
-偡丏
+ここで侯喇されたセッションˇキ〖ˇファイルは侯喇されてから24箕粗铜跟で
+すˉ
 
-丒GSI
+ˇGSI
 
-GSI 傪棙梡偡傞応崌偼丆儐乕僓徹柧彂偲偡傋偰偺僼傽僀儖僔僗僥儉僲乕僪偍傛
-傃儊僞僨乕僞僒乕僶偺儂僗僩徹柧彂傪偲偭偰偍偔昁梫偑偁傝傑偡丏偝傜偵丆偡
-傋偰偺僲乕僪偺僌儕僢僪丒儅僢僾丒僼傽僀儖偵僄儞僩儕偑偁傞昁梫偑偁傝傑偡丏
+GSI を网脱する眷圭は·ユ〖ザ沮汤今とすべてのファイルシステムノ〖ドおよ
+びメタデ〖タサ〖バのホスト沮汤今をとっておく涩妥がありますˉさらに·す
+べてのノ〖ドのグリッドˇマップˇファイルにエントリがある涩妥がありますˉ
 
-GSI 偱偼儐乕僓戙棟徹柧彂傪嶌惉偡傞偙偲偱僒僀儞僆儞偑姰椆偟傑偡丏
+GSI ではユ〖ザ洛妄沮汤今を侯喇することでサインオンが窗位しますˉ
 
 	% grid-proxy-init
 
-仦 僒儞僾儖丒僾儘僌儔儉偺幚峴
+〓 サンプルˇプログラムの悸乖
 
-埲壓偵丆僒儞僾儖丒僾儘僌儔儉偺幚峴椺傪帵偟傑偡丏
+笆布に·サンプルˇプログラムの悸乖毋を绩しますˉ
 
-丒僥僉僗僩僼傽僀儖偺僀儞億乕僩
+ˇテキストファイルのインポ〖ト
 
-  gfimport_text 偼堷悢偵巜掕偟偨僥僉僗僩丒僼傽僀儖傪丆堦峴傪暋悢偺僼儔
-  僌儊儞僩偵暘妱偡傞偙偲偺側偄傛偆偵暘妱偟偰 Gfarm 僼傽僀儖僔僗僥儉偵
-  庢傝崬傓僒儞僾儖僾儘僌儔儉偱偡丏
+  gfimport_text は苞眶に回年したテキストˇファイルを·办乖を剩眶のフラ
+  グメントに尸充することのないように尸充して Gfarm ファイルシステムに
+  艰り哈むサンプルプログラムですˉ
 
-	% gfimport_text -H 儂僗僩掕媊僼傽僀儖 -o gfarm:僥僗僩.txt 僥僉僗僩僼傽僀儖
+	% gfimport_text -H ホスト年盗ファイル -o gfarm:テスト.txt テキストファイル
 
-  忋婰乽-H乿僆僾僔儑儞偱巜掕偡傞乽儂僗僩掕媊僼傽僀儖乿偼丆import 偟偨
-  僼傽僀儖偺僼傽僀儖抐曅傪抲偔僼傽僀儖僔僗僥儉僲乕僪偺儂僗僩柤傪婰弎偟
-  偨僼傽僀儖柤偱偡丏
-  堦峴偵堦儂僗僩偺宍幃偱巜掕偟偰偔偩偝偄丏巜掕偟偨儂僗僩偵丆擖椡僥僉僗
-  僩僼傽僀儖傪摍暘妱偟偰 import 偟傑偡丏
+  惧淡≈-H∽オプションで回年する≈ホスト年盗ファイル∽は·import した
+  ファイルのファイル们室を弥くファイルシステムノ〖ドのホスト叹を淡揭し
+  たファイル叹ですˉ
+  办乖に办ホストの妨及で回年してくださいˉ回年したホストに·掐蜗テキス
+  トファイルを霹尸充して import しますˉ
 
-  儂僗僩掕媊僼傽僀儖偼乽-乿傪巜掕偡傞偙偲偵傛傝昗弨擖椡傪巜掕偡傞偙偲
-  偑偱偒丆偙偺応崌 gfhost 僐儅儞僪偲慻傒崌傢偣偰埲壓偺傛偆偵巜掕偡傞偙
-  偲傕偱偒傑偡丏
+  ホスト年盗ファイルは≈-∽を回年することにより筛洁掐蜗を回年すること
+  ができ·この眷圭 gfhost コマンドと寥み圭わせて笆布のように回年するこ
+  ともできますˉ
 
-	% gfhost | gfimport_text -H - -o gfarm:僥僗僩.txt 僥僉僗僩僼傽僀儖
+	% gfhost | gfimport_text -H - -o gfarm:テスト.txt テキストファイル
 
-  乽-H 儂僗僩掕媊僼傽僀儖乿偺戙傢傝偵乽-f 僼儔僌儊儞僩掕媊僼傽僀儖乿傪
-  巜掕偡傞偙偲傕偱偒傑偡丏偙偺応崌丆奺峴傪壓婰偺宍幃偱婰弎偟傑偡丏
-	偦偺僼儔僌儊儞僩偺僶僀僩悢  儂僗僩柤
+  ≈-H ホスト年盗ファイル∽の洛わりに≈-f フラグメント年盗ファイル∽を
+  回年することもできますˉこの眷圭·称乖を布淡の妨及で淡揭しますˉ
+	そのフラグメントのバイト眶  ホスト叹
 
-  寢壥傪妋擣偟偰傒傑偟傚偆丏
+  冯蔡を澄千してみましょうˉ
 
-	% gfexport gfarm:僥僗僩.txt | diff -c - 僥僉僗僩僼傽僀儖
+	% gfexport gfarm:テスト.txt | diff -c - テキストファイル
 
-  gfwhere 僐儅儞僪傪棙梡偡傞偲丆偦傟偧傟偺僼傽僀儖抐曅偑幚嵺偵偳偺僼傽
-  僀儖僔僗僥儉僲乕僪偵奿擺偝傟偰偄傞偐暘偐傝傑偡丏
+  gfwhere コマンドを网脱すると·それぞれのファイル们室が悸狠にどのファ
+  イルシステムノ〖ドに呈羌されているか尸かりますˉ
 
-	% gfwhere gfarm:僥僗僩.txt
+	% gfwhere gfarm:テスト.txt
 
-  偝傜偵 gfls 僐儅儞僪傪棙梡偡傞偙偲偱丆僨傿儗僋僩儕撪梕傪堦棗昞帵偝偣
-  傞偙偲偑偱偒傑偡丏
+  さらに gfls コマンドを网脱することで·ディレクトリ柒推を办枉山绩させ
+  ることができますˉ
 
 	% gfls -l
 
-丒屌掕挿儗僐乕僪僼傽僀儖偺僀儞億乕僩
+ˇ盖年墓レコ〖ドファイルのインポ〖ト
 
-	% gfimport_fixed -H 儂僗僩掕媊僼傽僀儖 -o gfarm:僥僗僩.bin -l 100 屌掕挿儗僐乕僪僼傽僀儖
+	% gfimport_fixed -H ホスト年盗ファイル -o gfarm:テスト.bin -l 100 盖年墓レコ〖ドファイル
 
-  寢壥傪妋擣偟偰傒傑偟傚偆丏
+  冯蔡を澄千してみましょうˉ
 
-	% gfexport gfarm:僥僗僩.bin | cmp - 屌掕挿儗僐乕僪僼傽僀儖
+	% gfexport gfarm:テスト.bin | cmp - 盖年墓レコ〖ドファイル
 
-丒暋悢僼傽僀儖傪僀儞億乕僩
+ˇ剩眶ファイルをインポ〖ト
 
-  暋悢偺僼傽僀儖傪堦偮偺僼傽僀儖偲偟偰埖偄偨偄応崌偼丆gfreg 傪棙梡偟偰
-  僼傽僀儖傪僀儞億乕僩偟傑偡丏埲壓偺椺偼丆file01 偐傜 file10 傑偱偺僼傽
-  僀儖傪 gfarm:file 偲偟偰搊榐偟偰偄傑偡丏
+  剩眶のファイルを办つのファイルとして胺いたい眷圭は·gfreg を网脱して
+  ファイルをインポ〖トしますˉ笆布の毋は·file01 から file10 までのファ
+  イルを gfarm:file として判峡していますˉ
 
-	% gfreg -I 0 -N 10 [ -h 儂僗僩 ] file01 gfarm:file
-	% gfreg -I 1 -N 10 [ -h 儂僗僩 ] file02 gfarm:file
+	% gfreg -I 0 -N 10 [ -h ホスト ] file01 gfarm:file
+	% gfreg -I 1 -N 10 [ -h ホスト ] file02 gfarm:file
 	% ...
-	% gfreg -I 9 -N 10 [ -h 儂僗僩 ] file10 gfarm:file
+	% gfreg -I 9 -N 10 [ -h ホスト ] file10 gfarm:file
 
-  僼傽僀儖僔僗僥儉僲乕僪埲奜偱幚峴偡傞応崌偼 -h 僆僾僔儑儞偱儂僗僩柤傪
-  巜掕偡傞昁梫偑偁傝傑偡丏
+  ファイルシステムノ〖ド笆嘲で悸乖する眷圭は -h オプションでホスト叹を
+  回年する涩妥がありますˉ
 
-丒gfgrep - parallel grep
+ˇgfgrep - parallel grep
 
-  gfgrep 僾儘僌儔儉偑丆gfarm:/bin/gfgrep 偲偄偆柤徧偱搊榐偝傟偰偄傞偙
-  偲傪妋擣偟傑偡丏
+  gfgrep プログラムが·gfarm:/bin/gfgrep という叹疚で判峡されているこ
+  とを澄千しますˉ
 
 	% gfls -l gfarm:/bin/gfgrep
 
-  傕偟搊榐偝傟偰偄側偄側偄応崌偼丆僼傽僀儖僔僗僥儉僲乕僪偱 'make
-  gfregister' 傪幚峴偡傞偐 gfreg 僐儅儞僪傪棙梡偟偰搊榐偟傑偡丏
+  もし判峡されていないない眷圭は·ファイルシステムノ〖ドで 'make
+  gfregister' を悸乖するか gfreg コマンドを网脱して判峡しますˉ
 
 	% gfreg /usr/grid/bin/gfgrep gfarm:/bin/gfgrep
 
-  僼傽僀儖僔僗僥儉僲乕僪埲奜偱 gfreg 傪幚峴偡傞応崌偼 -a 僆僾僔儑儞偱
-  僾儘僌儔儉偺傾乕僉僥僋僠儍柤傪巜掕偡傞昁梫偑偁傝傑偡丏
+  ファイルシステムノ〖ド笆嘲で gfreg を悸乖する眷圭は -a オプションで
+  プログラムのア〖キテクチャ叹を回年する涩妥がありますˉ
 
-  幚峴偟偰傒傑偟傚偆丏
+  悸乖してみましょうˉ
 
-	% gfrun gfarm:/bin/gfgrep -o gfarm:gfgrep.out 惓婯昞尰 gfarm:僥僗僩.txt
+	% gfrun gfarm:/bin/gfgrep -o gfarm:gfgrep.out 赖惮山附 gfarm:テスト.txt
 
-  寢壥傪妋擣偟偰傒傑偟傚偆丏
+  冯蔡を澄千してみましょうˉ
 
 	% gfexport gfarm:gfgrep.out
-	% grep 惓婯昞尰 僥僉僗僩僼傽僀儖
+	% grep 赖惮山附 テキストファイル
 
-丒gfwc - parallel word counts
+ˇgfwc - parallel word counts
 
-  gfgrep 偲摨條偵 gfwc 僾儘僌儔儉偑丆gfarm:/bin/gfwc 偲偄偆柤徧偱搊榐
-  偝傟偰偄傞偙偲傪妋擣偟丆搊榐偝傟偰偄側偄応崌偼搊榐偟傑偡丏
+  gfgrep と票屯に gfwc プログラムが·gfarm:/bin/gfwc という叹疚で判峡
+  されていることを澄千し·判峡されていない眷圭は判峡しますˉ
 
 	% gfreg /usr/grid/bin/gfwc gfarm:/bin/gfwc
 
-  幚峴偟偰傒傑偟傚偆丏
+  悸乖してみましょうˉ
 
-	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:僥僗僩.txt
+	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:テスト.txt
 
-  寢壥傪妋擣偟偰傒傑偟傚偆丏
+  冯蔡を澄千してみましょうˉ
 
-	% wc 僥僉僗僩僼傽僀儖
+	% wc テキストファイル
 
 $Id$
