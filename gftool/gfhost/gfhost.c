@@ -596,7 +596,8 @@ list_all(const char *architecture, const char *domainname,
 		return (e);
 	}
 	for (i = 0; i < nhosts; i++) {
-		if (strstr(hosts[i].hostname, domainname)) {
+		if (domainname == NULL ||
+	 	    strstr(hosts[i].hostname, domainname)) {
 			e = (*print_op)(&hosts[i], udp_requests);
 			if (e_save == NULL)
 				e_save = e;
