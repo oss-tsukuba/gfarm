@@ -1,6 +1,30 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0
+==========================
+
+[2003.11.25]
+
+Updated Features
+
+ * Client commands
+
+  * New features
+
+   (gfreg)
+
+   - A binary registration can also be registered by specifying the
+     target hostname, as suggested by Bugzilla-ja #8.  This case
+     assumes the registered binary should run on the target host.
+   - Supported '-' for an input file.
+
+ * Bug fix
+
+   (gfreg)
+
+   - Fixed a bug to leave an invalid metadata entry.
+
 Release note for Gfarm 1.0b5
 ============================
 
