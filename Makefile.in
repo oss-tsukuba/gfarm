@@ -13,7 +13,8 @@ SUBDIRS = \
 	`[ -d $(srcdir)/ns ] && echo ns` \
 	server \
 	gftool \
-	gfptool
+	gfptool \
+	util/ptool
 
 all:
 
