@@ -42,13 +42,14 @@ __read(int filedes, void *buf, size_t nbyte)
 	char *e;
 	int n;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __read: %d\n", filedes));
+	_gfs_hook_debug(fprintf(stderr, "Hooking __read(%d, , %d)\n",
+	    filedes, nbyte));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return syscall(SYS_read, filedes, buf, nbyte);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __read: %d %d\n",
-	    filedes, gfs_pio_fileno(gf)));
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __read(%d(%d), , %d)\n",
+	    filedes, gfs_pio_fileno(gf), nbyte));
 
 	e = gfs_pio_read(gf, buf, nbyte, &n);
 	if (e == NULL)
@@ -85,12 +86,20 @@ __write(int filedes, const void *buf, size_t nbyte)
 	char *e;
 	int n;
 
+	_gfs_hook_debug(fprintf(stderr, "Hooking __write(%d, , %d)\n",
+	    filedes, nbyte));
+
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (syscall(SYS_write, filedes, buf, nbyte));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __write(%d(%d), , %d)\n",
+	    filedes, gfs_pio_fileno(gf), nbyte));
 
 	e = gfs_pio_write(gf, buf, nbyte, &n);
 	if (e == NULL)
 		return (n);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -123,12 +132,12 @@ __close(int filedes)
 	GFS_File gf;
 	char *e;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __close: %d\n", filedes));
+	_gfs_hook_debug(fprintf(stderr, "Hooking __close(%d)\n", filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (__syscall_close(filedes));
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __close: %d %d\n",
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __close(%d(%d))\n",
 	    filedes, gfs_pio_fileno(gf)));
 
 	gfs_hook_clear_gfs_file(filedes);
@@ -164,12 +173,12 @@ __unlink(const char *path)
 	const char *e;
 	char *url, *sec;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __unlink: %s\n", path));
+	_gfs_hook_debug(fprintf(stderr, "Hooking __unlink(%s)\n", path));
 
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return syscall(SYS_unlink, path);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink: %s\n", path));
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink(%s)\n", path));
 	e = gfs_unlink(url);
 	if (sec != NULL) {
 	    free(url);
