@@ -248,7 +248,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	 * ROOT patch:
 	 *   'gfarm@' is also considered as a Gfarm URL
 	 */
-	char *gfarm_url_prefix_for_root = "gfarm@";
+	static char gfarm_url_prefix_for_root[] = "gfarm@";
 
 	*secp = NULL;
 	/*
