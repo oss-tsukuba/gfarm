@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 #include <lber.h>
 #include <ldap.h>
@@ -26,8 +27,10 @@
 /**********************************************************************/
 
 static LDAP *gfarm_ldap_server = NULL;
+static pid_t gfarm_ldap_client_pid;
 
-char *gfarm_metadb_initialize(void)
+char *
+gfarm_metadb_initialize(void)
 {
 	int rv;
 	int port;
@@ -88,10 +91,12 @@ char *gfarm_metadb_initialize(void)
 	}
 	ldap_msgfree(res);
 
+	gfarm_ldap_client_pid = getpid();
 	return (NULL);
 }
 
-char *gfarm_metadb_terminate(void)
+char *
+gfarm_metadb_terminate(void)
 {
 	int rv;
 
@@ -101,11 +106,28 @@ char *gfarm_metadb_terminate(void)
 	/* close and free connection resources */
 	rv = ldap_unbind(gfarm_ldap_server);
 	gfarm_ldap_server = NULL;
+	gfarm_ldap_client_pid = 0;
 	if (rv != LDAP_SUCCESS)
 		return (ldap_err2string(rv));
 
 	return (NULL);
 }
+
+/*
+ * LDAP connection cannot be used from forked children.
+ * This routine guarantees that never happens.
+ */
+static char *
+gfarm_ldap_check(void)
+{
+	if (getpid() == gfarm_ldap_client_pid)
+		return (NULL);
+	/* XXX close the file descriptor for gfarm_ldap_server */
+	gfarm_ldap_server = NULL;
+	gfarm_ldap_client_pid = 0;
+	return (gfarm_metadb_initialize());
+}
+
 /**********************************************************************/
 
 struct ldap_string_modify {
@@ -166,9 +188,12 @@ gfarm_generic_info_get(
 	BerElement *ber;
 	char **vals;
 	char *dn = ops->make_dn(key);
+	char *error;
 
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	rv = ldap_search_s(gfarm_ldap_server, dn, 
 	    LDAP_SCOPE_BASE, ops->query_type, NULL, 0, &res);
 	free(dn);
@@ -219,9 +244,12 @@ gfarm_generic_info_set(
 {
 	int rv;
 	char *dn = ops->make_dn(key);
+	char *error;
 
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	rv = ldap_add_s(gfarm_ldap_server, dn, modv);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
@@ -240,9 +268,12 @@ gfarm_generic_info_modify(
 {
 	int rv;
 	char *dn = ops->make_dn(key);
+	char *error;
 
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	rv = ldap_modify_s(gfarm_ldap_server, dn, modv);
 	free(dn);
 	switch (rv) {
@@ -264,9 +295,12 @@ gfarm_generic_info_remove(
 {
 	int rv;
 	char *dn = ops->make_dn(key);
+	char *error;
 
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	rv = ldap_delete_s(gfarm_ldap_server, dn);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
@@ -308,7 +342,10 @@ gfarm_generic_info_get_all(
 	BerElement *ber;
 	char **vals;
 	char *infos, *tmp_info;
+	char *error;
 
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	/* search for entries, return all attrs  */
 	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
@@ -394,7 +431,10 @@ gfarm_generic_info_get_foreach(
 	char *a;
 	BerElement *ber;
 	char **vals;
+	char *error;
 
+	if ((error = gfarm_ldap_check()) != NULL)
+		return (error);
 	/* search for entries, return all attrs  */
 	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
