@@ -187,7 +187,7 @@ configure コマンドには，下記のオプションがあります．
 
 ・Gfarm インストール・ディレクトリ
 
-	/usr/local/gfarm
+	/usr/grid
 
 ・OpenLDAP インストール・ディレクトリ
 
@@ -774,7 +774,7 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   もし登録されていないない場合は，ファイルシステムノードで 'make
   gfregister' を実行するか gfreg コマンドを利用して登録します．
 
-	% gfreg /usr/local/gfarm/bin/gfgrep gfarm:/bin/gfgrep
+	% gfreg /usr/grid/bin/gfgrep gfarm:/bin/gfgrep
 
   ファイルシステムノード以外で gfreg を実行する場合は -a オプションで
   プログラムのアーキテクチャ名を指定する必要があります．
@@ -793,7 +793,7 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   gfgrep と同様に gfwc プログラムが，gfarm:/bin/gfwc という名称で登録
   されていることを確認し，登録されていない場合は登録します．
 
-	% gfreg /usr/local/gfarm/bin/gfwc gfarm:/bin/gfwc
+	% gfreg /usr/grid/bin/gfwc gfarm:/bin/gfwc
 
   実行してみましょう．
 

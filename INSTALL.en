@@ -180,7 +180,7 @@ This section assumes the following setting.
 
  - Gfarm installation directory
 
-	/usr/local/gfarm
+	/usr/grid
 
  - OpenLDAP installation directory
 
@@ -741,7 +741,7 @@ This subsection shows several execution examples of sample programs.
   If not, you can register by yourself using the gfreg command, or
   'make gfregister' on a filesystem node.
 
-	% gfreg /usr/local/gfarm/bin/gfgrep gfarm:/bin/gfgrep
+	% gfreg /usr/grid/bin/gfgrep gfarm:/bin/gfgrep
 
   When you would like to register a binary program not on a filesystem
   node, the architecture name should be specified with the -a option.
@@ -761,7 +761,7 @@ This subsection shows several execution examples of sample programs.
 
   When gfarm:/bin/gfwc is not registered, register it as follows.
 
-	% gfreg /usr/local/gfarm/bin/gfwc gfarm:/bin/gfwc
+	% gfreg /usr/grid/bin/gfwc gfarm:/bin/gfwc
 
   Since gfwc is an MPI application, it is executed using gfmpirun_p4.
 
