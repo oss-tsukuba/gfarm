@@ -256,6 +256,28 @@ gfs_hook_get_gfs_canonical_path(int fd)
  *  if *secp is not NULL.
  */
 extern int gfs_hook_cwd_is_gfarm;
+static char *received_prefix = NULL;
+
+static int
+set_recieved_prefix(const char *path)
+{
+	char *end, *p;
+	int len;
+
+	if ((end = strchr(path, ':')) == NULL)
+		end = strchr(path, '@');
+
+	len = end - path + 1;
+	p = malloc(len + 1);
+	if (p == NULL)
+		return (0); /* XXX - should return ENOMEM */
+	if (received_prefix != NULL)
+		free(received_prefix);
+	received_prefix = p;
+	strncpy(received_prefix, path, len);
+	received_prefix[len] = '\0';
+	return (1);
+}
 
 int
 gfs_hook_is_url(const char *path, char **urlp, char **secp)
@@ -330,6 +352,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			strcpy(*urlp + sizeof(prefix) - 1,
 			    path + sizeof(prefix) - 1);
 		}
+		if (!set_recieved_prefix(path_save))
+			return (0);
 		return (1);
 	}
 	if (gfs_hook_cwd_is_gfarm && *path_save != '/') {
@@ -346,11 +370,11 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 char *
 gfs_hook_get_prefix(char *buf, size_t size)
 {
-	static char prefix[] = "gfarm:";
-		
-	if (size < sizeof(prefix))
+	if (received_prefix == NULL)
+		return GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING;
+	if (size < strlen(received_prefix))
 		return GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE;
-	strcpy(buf, prefix);
+	strcpy(buf, received_prefix);
 	return (NULL);
 }	
 
