@@ -7,7 +7,7 @@
 	<property name="build.dest" value="GFront/classes"/>
 
 	<!-- Jar file directory -->
-	<property name="build.jar" value="${project}.jar"/>
+	<property name="build.jar" value="gfront.jar"/>
 
 	<!-- Javadoc file directory -->
 	<property name="javadoc.dest" value="GFront/api"/>
@@ -16,7 +16,8 @@
 		<target name="jar" depends="compile">
 			<jar
 				jarfile="${build.jar}"
-				basedir="${build.dest}">
+				basedir="${build.dest}"
+				manifest="gfront.mani">
 			</jar>
 		</target>
 
