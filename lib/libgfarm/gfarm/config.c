@@ -357,7 +357,7 @@ int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 char *
 gfarm_strtoken(char **cursorp, char **errorp)
 {
-	unsigned char *top, *p, *s = *(unsigned char *)cursorp;
+	unsigned char *top, *p, *s = *(unsigned char **)cursorp;
 
 	*errorp = NULL;
 	while (*s != '\n' && isspace(*s))
