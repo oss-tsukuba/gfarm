@@ -13,8 +13,8 @@
 #include "gfs_pio.h"	/* gfs_profile */
 #include "gfs_lock.h"
 
-static char *
-gfs_execve_replicate_to_local(const char *url, char **local_path)
+char *
+gfarm_url_program_get_local_path(const char *url, char **local_path)
 {
 	char *hostname, *e;
 	char *arch, *gfarm_file, *localpath;
@@ -126,7 +126,7 @@ gfs_execve(const char *filename, char *const argv[], char *const envp[])
 	if (e != NULL)
 		return (e);
 
-	e = gfs_execve_replicate_to_local(url, &localpath);
+	e = gfarm_url_program_get_local_path(url, &localpath);
 	free(url);
 	if (e != NULL)
 		return (e);
@@ -138,40 +138,4 @@ gfs_execve(const char *filename, char *const argv[], char *const envp[])
 
 	execve(path, argv, envp);
 	return gfarm_errno_to_error(errno);
-}
-
-/*
- * gfs_execve_legacy() is used to execute a non-gfarm program that does not
- * call both gfarm_initialize() and gfarm_terminate().
- */
-char *
-gfs_execve_legacy(const char *filename, char *const argv[], char *const envp[])
-{
-	char *localpath, *url, *e;
-	const char *path;
-	pid_t pid;
-	int status;
-
-	e = gfs_realpath(filename, &url);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_execve_replicate_to_local(url, &localpath);
-	free(url);
-	if (e != NULL)
-		return (e);
-	path = localpath;
-
-	pid = fork();
-	if (pid == 0) {
-		execve(path, argv, envp);
-		_exit(1);
-	}
-	else
-		waitpid(pid, &status, 0);
-
-	e = gfarm_terminate();
-	if (e != NULL)
-		return (e);
-	exit(status);
 }
