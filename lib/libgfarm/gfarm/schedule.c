@@ -385,12 +385,17 @@ search_idle_callback(void *closure, struct sockaddr *addr,
 		
 		h->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
 		h->loadavg = loadavg = load->loadavg_1min;
-		loadavg /= h->host_info->ncpu;
-		if (loadavg <= SEMI_IDLE_LOAD_AVERAGE) {
+		/*
+		 * We don't use (loadavg / h->host_info->ncpu) to count
+		 * semi_idle_hosts here for now, because it is possible
+		 * that there is a process which is consuming 100% of
+		 * memory or 100% of I/O bandwidth on the host.
+		 */
+		if (loadavg <= SEMI_IDLE_LOAD_AVERAGE)
 			s->semi_idle_hosts_number++;
-			if (loadavg <= IDLE_LOAD_AVERAGE)
-				s->idle_hosts_number++;
-		}
+		loadavg /= h->host_info->ncpu;
+		if (loadavg <= IDLE_LOAD_AVERAGE)
+			s->idle_hosts_number++;
 	}
 	free(c);
 }
