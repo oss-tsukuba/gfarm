@@ -213,17 +213,74 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_stat
 };
 
-static char *
-replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 
+static char *
+replicate_section_to_local_internal(
+	char *pathname, char *section, gfarm_mode_t st_mode,
+	char *local_path, char *path_section, char *peer_hostname)
 {
-	char *e;
 	struct sockaddr peer_addr;
 	struct gfs_connection *peer_conn;
-	char *path_section;
-	char *local_path;
 	int fd, peer_fd;
+	char *e;
+
+	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		return (e);
+
+	e = gfs_client_connection(peer_hostname, &peer_addr, &peer_conn);
+	if (e != NULL)
+		return (e);
+
+	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
+	    &peer_fd);
+	/* FT - source file should be missing */
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		/* Delete the section copy info */
+		if (gfarm_file_section_copy_info_remove(pathname,
+			section, peer_hostname) == NULL)
+			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+	if (e != NULL)
+		return (e);
+
+	fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC, st_mode);
+	/* FT - the parent directory may be missing */
+	if (fd == -1
+	    && gfs_proto_error_string(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+		if (gfs_pio_local_mkdir_parent_canonical_path(
+			    pathname) == NULL)
+			fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC,
+				  st_mode);
+	}
+	if (fd < 0) {
+		e = gfs_proto_error_string(errno);
+		goto finish_peer_close;
+	}
+
+	/* XXX FIXME: this should honor sync_rate */
+	e = gfs_client_copyin(peer_conn, peer_fd, fd, 0);
+	/* XXX - copyin() should return the digest value */
+	if (e == NULL)
+		e = gfs_pio_set_fragment_info_local(local_path,
+		    pathname, section);    
+	close(fd);
+finish_peer_close:
+	gfs_client_close(peer_conn, peer_fd);
+	return (e);
+}
+
+static char *
+replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
+{
+	char *e;
+	char *path_section, *local_path, *my_hostname;
+	int metadata_exist, localfile_exist, replication_needed = 0;
 	struct stat sb;
+
+	e = gfarm_host_get_canonical_self_name(&my_hostname);
+	if (e != NULL)
+		return (e);
 
 	e = gfarm_path_section(gf->pi.pathname, section, &path_section);
 	if (e != NULL) 
@@ -236,53 +293,36 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	/* critical section starts */
 	gfs_lock_local_path_section(local_path);
 
-	if (!stat(local_path, &sb)) /* already exist */
-		goto finish_critical_section;
+	/* FT - check existence of the local file and its metadata */
+	metadata_exist =
+		gfarm_file_section_copy_info_does_exist(
+			gf->pi.pathname, section, my_hostname);
+	localfile_exist = !stat(local_path, &sb);
 
-	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL)
-		goto finish_critical_section;
-
-	e = gfs_client_connection(peer_hostname, &peer_addr, &peer_conn);
-	if (e != NULL)
-		goto finish_critical_section;
-
-	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
-	    &peer_fd);
-	/* FT - source file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		/* Delete the section copy info */
-		if (gfarm_file_section_copy_info_remove(gf->pi.pathname,
-			section, peer_hostname) == NULL)
-			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
-	if (e != NULL)
-		goto finish_critical_section;
-
-	fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC, gf->pi.status.st_mode);
-	/* FT - the parent directory may be missing */
-	if (fd == -1
-	    && gfs_proto_error_string(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
-		if (gfs_pio_local_mkdir_parent_canonical_path(
-			    gf->pi.pathname) == NULL)
-			fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC,
-				  gf->pi.status.st_mode);
+	if (metadata_exist && localfile_exist) {
+		/* already exist */
+		/* XXX - need integrity check */
 	}
-	if (fd < 0) {
-		e = gfs_proto_error_string(errno);
-		goto finish_peer_close;
+	else if (localfile_exist) {
+		/* FT - unknown local file.  delete it */
+		unlink(local_path);
+		replication_needed = 1;
 	}
+	else if (metadata_exist) {
+		/* FT - local file is missing.  delete the metadata */
+		e = gfarm_file_section_copy_info_remove(
+			gf->pi.pathname, section, my_hostname);
+		if (e == NULL)
+			replication_needed = 1;
+	}
+	else
+		replication_needed = 1;
 
-	/* XXX FIXME: this should honor sync_rate */
-	e = gfs_client_copyin(peer_conn, peer_fd, fd, 0);
-	/* XXX - copyin() should return the digest value */
-	if (e == NULL)
-		e = gfs_pio_set_fragment_info_local(local_path,
-		    gf->pi.pathname, section);    
-	close(fd);
-finish_peer_close:
-	gfs_client_close(peer_conn, peer_fd);
-finish_critical_section:
+	if (replication_needed)
+		e = replicate_section_to_local_internal(
+			gf->pi.pathname, section, gf->pi.status.st_mode,
+			local_path, path_section, peer_hostname);
+
 	gfs_unlock_local_path_section(local_path);
 	/* critical section ends */
 

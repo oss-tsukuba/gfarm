@@ -19,6 +19,8 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 	char *localpath, *url, *arch, *gfarm_file;
 	const char *path;
 	struct gfs_stat gstat;
+	struct stat st;		
+	int metadata_exist, localfile_exist, replication_needed = 0;
 
 	e = gfs_realpath(filename, &url);
 	if (e != NULL) {
@@ -85,30 +87,32 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 	gfs_lock_local_path_section(localpath);
 
 	/* replicate the program if needed */
-	if (gfarm_file_section_copy_info_does_exist(
-		    gfarm_file, arch, hostname)) {
-		struct stat st;		
-		/*
-		 * FT - already exists in metadata, but need check
-		 * whether it really exists or not.
-		 */
-		if (stat(localpath, &st)) {
-			/* not exist.  delete the metadata, and try to
-			 * replicate the binary */
-			e = gfarm_file_section_copy_info_remove(
-				gfarm_file, arch, hostname);
-			if (e != NULL) {
-				free(localpath);
-				free(gfarm_file);
-				free(arch);
-				free(url);
-				return (e);
-			}
-			e = gfarm_url_section_replicate_to(url, arch, hostname);		}
-		/* the replica of the program already exists */
+	metadata_exist =
+		gfarm_file_section_copy_info_does_exist(
+			gfarm_file, arch, hostname);
+	localfile_exist = !stat(localpath, &st);
+
+	/* FT - check existence of the local file and its metadata */
+	if (metadata_exist && localfile_exist) {
+		/* already exist */
 		/* XXX - need integrity check */
 	}
+	else if (localfile_exist) {
+		/* FT - unknown local file.  delete it */
+		unlink(localpath);
+		replication_needed = 1;
+	}
+	else if (metadata_exist) {
+		/* FT - local file is missing.  delete the metadata */
+		e = gfarm_file_section_copy_info_remove(
+			gfarm_file, arch, hostname);
+		if (e == NULL)
+			replication_needed = 1;
+	}
 	else
+		replication_needed = 1;
+
+	if (replication_needed)
 		e = gfarm_url_section_replicate_to(url, arch, hostname);
 
 	gfs_unlock_local_path_section(localpath);
