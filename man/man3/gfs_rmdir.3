@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_RMDIR" "3" "17 April 2004" "Gfarm" ""
+.TH "GFS_RMDIR" "3" "02 July 2004" "Gfarm" ""
 
 .SH NAME
 gfs_rmdir \- delete a directory
@@ -16,7 +16,7 @@ char *gfs_rmdir (char * \fIgfarm_url\fB);
 .SH "DESCRIPTION"
 .PP
 \fBgfs_rmdir()\fR deletes a directory whose name
-is the string specified by \fIgfarm_url\fR.  The
+is the string specified by \fIgfarm_url\fR\&.  The
 directory must be empty.
 .SH "RETURN VALUES"
 .TP
@@ -25,6 +25,10 @@ The function terminated successfully.
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
 Insufficient memory was available.
+.TP
+\fBGFARM_ERR_PERMISSION_DENIED\fR
+\fIgfarm_url\fR
+points outside your accessible address space.
 .TP
 \fBGFARM_ERR_DIRECTORY_NOT_EMPTY\fR
 Directory is not empty.

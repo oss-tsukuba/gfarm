@@ -5,8 +5,7 @@
 >gfs_rmdir</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,11 +35,11 @@ NAME="SYNOPSIS"
 >Synopsis</H2
 ><DIV
 CLASS="FUNCSYNOPSIS"
+><P
+></P
 ><A
 NAME="AEN12"
 ></A
-><P
-></P
 ><TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -108,45 +107,60 @@ NAME="RETURN-VALUES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->NULL</TT
+>NULL</CODE
 ></DT
 ><DD
 ><P
 >The function terminated successfully.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</TT
+>GFARM_ERR_NO_MEMORY</CODE
 ></DT
 ><DD
 ><P
 >Insufficient memory was available.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_DIRECTORY_NOT_EMPTY</TT
+>GFARM_ERR_PERMISSION_DENIED</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+points outside your accessible address space.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_DIRECTORY_NOT_EMPTY</CODE
 ></DT
 ><DD
 ><P
 >Directory is not empty.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</TT
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
 ></DT
 ><DD
 ><P
 >Directory does not exist.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NOT_A_DIRECTORY</TT
+>GFARM_ERR_NOT_A_DIRECTORY</CODE
 ></DT
 ><DD
 ><P
