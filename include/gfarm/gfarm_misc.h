@@ -99,6 +99,7 @@ extern char GFARM_URL_PREFIX[];
  */
 char *gfarm_schedule_search_idle_hosts(int, char **, int, char **);
 char *gfarm_schedule_search_idle_by_all(int, char **);
+char *gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
 char *gfarm_schedule_search_idle_by_program(char *, int, char **);
 char *gfarm_url_hosts_schedule(char *, char *, int *, char ***);
 char *gfarm_url_hosts_schedule_by_program(char *, char *, char *,
