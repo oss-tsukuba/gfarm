@@ -3,16 +3,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <gssapi.h>
 #include <limits.h>
-
-#include "gssapi.h"
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
 #include "tcputil.h"
 #include "misc.h"
-
 
 static int port = 0;
 static unsigned long int addr = 0L;

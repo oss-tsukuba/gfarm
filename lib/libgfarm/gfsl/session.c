@@ -4,10 +4,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <limits.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+
+#include <gssapi.h>
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -17,8 +18,6 @@
 #include <netdb.h>
 
 #include <sys/time.h>
-
-#include "gssapi.h"
 
 #include <gfarm/gfarm_config.h>
 

@@ -4,6 +4,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <gssapi.h>
+
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,8 +13,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <limits.h>
-
-#include "gssapi.h"
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"

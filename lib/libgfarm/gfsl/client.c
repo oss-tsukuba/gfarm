@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <limits.h>
 
-#include "gssapi.h"
+#include <gssapi.h>
+#include <limits.h>
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
