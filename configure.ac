@@ -445,12 +445,12 @@ if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
 fi
 AC_MSG_RESULT([using \"${with_openldap}\" as openldap root directory])
 
-ldap_libs="-lldap -llber"
 if test x"${with_openldap}" = x"/usr"; then
   ldap_includes=""
+  ldflags=""
 else
   ldap_includes="-I${with_openldap}/include"
-  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
+  ldflags="-R${with_openldap}/lib -L${with_openldap}/lib"
 fi
 
 # OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
@@ -463,10 +463,11 @@ CPPFLAGS_SAVE="$CPPFLAGS"
 LIBS_SAVE="$LIBS"
 
 openldap_found=
+for libs in "-lldap -llber" "-lldap"; do
 for extra_lib in "" "-lresolv" "-lbind"; do
 
 CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="${ldap_libs} ${extra_lib} $LIBS_SAVE"
+LIBS="${ldflags} ${libs} ${extra_lib} $LIBS_SAVE"
 
 AC_TRY_LINK([
 #include <lber.h>
@@ -475,16 +476,20 @@ AC_TRY_LINK([
 ], [
 	if test x"${extra_lib}" != x; then
 		AC_MSG_RESULT([using ${extra_lib} for LDAP])
-		ldap_libs="${ldap_libs} ${extra_lib}"
+		ldap_libs="${ldflags} ${libs} ${extra_lib}"
+	else
+		ldap_libs="${ldflags} ${libs}"
 	fi
 	openldap_found=yes
-	break
+	break 2
  ], [])
 
-done
+done # extra_lib
+done # libs
 if test x"${openldap_found}" != x"yes"; then
 	AC_MSG_ERROR([openldap cannot be linked, aborted])
 fi
+AC_MSG_RESULT([using \"${ldap_includes} ${ldap_libs}\" for ldap])
 
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
