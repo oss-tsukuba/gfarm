@@ -18,7 +18,7 @@ import java.util.Date;
 public class DataBlockGroup extends ArrayList {
 
 	// ここで戻される ArrayList は、必ず java.util.Date と DataElement が組になっている。
-	public ArrayList pickData(DataBlockGroupTable tbl, int hidx, int oidx, OIDDefBlock odb)
+	public ArrayList pickData(DataBlockGroupTable tbl, int hidx, int oidx)
 	{
 		// hidx と oidx にマッチするデータを検索して取り出す。
 		ArrayList ret = new ArrayList();
@@ -27,7 +27,7 @@ public class DataBlockGroup extends ArrayList {
 			for(int i = 0; i < rows.size(); i++){
 				DataBlockGroupElement[] row = (DataBlockGroupElement[]) rows.get(i);
 				for(int j = 0; j < row.length; j++){
-					if(row[j].isPairOfHIDandOID(hidx, null, odb) == true){
+					if(row[j].isPairOfHIDandOID(hidx, oidx) == true){
 						// この row にペアを発見した
 						DataBlock db = (DataBlock) this.get(i);
 						long t = db.getTime();

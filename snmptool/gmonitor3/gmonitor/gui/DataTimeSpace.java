@@ -434,6 +434,8 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		// 1.まず開始時点を探す。
 		int startingFileIndex = -1;
 		long db_idx = 0;
+
+		int saveOIDindex = -1;
 		for(int i = 0; i < c_list.size(); i++){
 			if(startingFileIndex >= 0){
 				// 開始時点を含むファイルを検出したので、探索終了。
@@ -457,12 +459,20 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 				long dbg_idx = db_idx % dbgCount;
 				DataBlockGroupElement row[] = (DataBlockGroupElement[]) dbgeList.get((int)dbg_idx);
 				int columns = -1;
-
 				for(int j = 0; j < row.length; j++){
-					boolean matched = row[j].isPairOfHIDandOID(hidx, event, odb);
-					if(matched == true){
-						columns = j;
-						break;
+					if(saveOIDindex == -1) {
+						int matched = row[j].seekPairOfHIDandOID(hidx, event, odb);
+						if(matched >= 0){
+							columns = j;
+							saveOIDindex = matched;
+							break;
+						}
+					} else {
+						boolean matched = row[j].isPairOfHIDandOID(hidx, saveOIDindex);
+						if(matched == true){
+							columns = j;
+							break;
+						}
 					}
 				}
 				if(columns >= 0){
@@ -495,8 +505,8 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			SecondMetaBlock smb = file.getSecondMetaBlock();
 			HostDefBlock hdb = smb.getHostDefBlock();
 			int hidx = hdb.getHostIndex(host);
-			OIDDefBlock odb = smb.getOIDDefBlock();
-			int oidx = odb.getOIDIndex(event);
+			//OIDDefBlock odb = smb.getOIDDefBlock();
+			//int oidx = odb.getOIDIndex(event);
 			DataBlockGroupTable tbl = smb.getDataBlockGroupTable();
 			ArrayList rows = (ArrayList) tbl.getDataBlockGroupElements();
 			int dbgCount = rows.size();
@@ -504,9 +514,10 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			while(true){
 				int dbg_idx = (int) (dbidx % dbgCount);
 				DataBlockGroupElement[] row = (DataBlockGroupElement[]) rows.get(dbg_idx);
+
 				int columns = -1;
 				for(int j = 0; j < row.length; j++){
-					boolean matched = row[j].isPairOfHIDandOID(hidx, event, odb);
+					boolean matched = row[j].isPairOfHIDandOID(hidx, saveOIDindex);
 					if(matched == true){
 						columns = j;
 						break;
