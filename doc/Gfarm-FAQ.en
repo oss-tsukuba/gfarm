@@ -115,10 +115,9 @@ Table of Contents:
 
   2.4 It is not possible to access files that should be created.
 
-	Files that are not closed by a creating process, and a file
-	that is created by redirecting the output of an external
-	program are not registered correctly to metadata since the
-	file close operation in Gfarm I/O library cannot be called.
+	Files that are not closed by a creating process are not
+	registered correctly to metadata since the file close
+	operation in Gfarm I/O library cannot be called.
 
 	Such files are displayed as "no fragment information" by 'gfls
 	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
