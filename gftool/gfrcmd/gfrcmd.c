@@ -174,6 +174,18 @@ main(argc, argv)
 	}
 
 	/*
+	 * Because gflog_auth_set_verbose() is called here, the call of
+	 * gfarm_gsi_client_initialize() below may display verbose
+	 * error messages, which will be displayed later again in
+	 * gfarm_auth_request_gsi().
+	 * But unless it's called here, some error messages (e.g. 
+	 * errors in gfarmAuthInitialize()) won't be displayed at all.
+	 * Thus, we go the noisy way, because that's better than nothing.
+	 */
+	if (opt_auth_verbose)
+		gflog_auth_set_verbose(1);
+
+	/*
 	 * initialization
 	 *
 	 * XXX
@@ -186,7 +198,7 @@ main(argc, argv)
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e == NULL)
 		e = gfarm_config_read();
-#ifdef HAVE_GSI
+#ifdef HAVE_GSI /* XXX this initialization must be removed eventually */
 	if (e == NULL)
 		(void*)gfarm_gsi_client_initialize();
 #endif
@@ -196,15 +208,6 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-
-	/*
-	 * gflog_auth_set_verbose() is called here because the above
-	 * call of gfarm_gsi_client_initialize() may display verbose
-	 * error messages, which will be displayed later again in
-	 * gfarm_auth_request_gsi().
-	 */
-	if (opt_auth_verbose)
-		gflog_auth_set_verbose(1);
 
 #if 0 /* XXX - We cannot do this, because we don't access meta database. */
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
