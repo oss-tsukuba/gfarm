@@ -11,9 +11,7 @@ Table of Contents:
   1.2 Where can I download Gfarm?
 
 2. Trouble Shooting
-  2.1 There is a file displayed as "not a directory" using gfls.  What
-     is it?
-  2.2 Unregistered or unnecessary files seem to remain in a spool
+  2.1 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -41,15 +39,7 @@ Table of Contents:
 
 2. Trouble Shooting
 *******************
-  2.1 There is a file displayed as "not a directory" using gfls.  What
-     is it?
-
-	Gfarm 1.0b1 has a bug such that incomplete filesystem metadata
-	may remain when interrupting a parallel program.  This bug
-	will be fixed by the next release.  When there is a file
-	displayed as "not a directory", delete the entry using gfrm.
-
-  2.2 Unregistered or unnecessary files seem to remain in a spool
+  2.1 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
