@@ -1,0 +1,49 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfront.1'>
+
+<refentryinfo><date>19 Aug 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfront</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfront</refname>
+<refpurpose>Gfarm file system browser</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfront</command>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para> GFront is a GUI application to operate a gfarm filie system.
+GFront makes it possible that a user operates a gfarm file system interactively.
+Each operation for gfarm file system is already implemented as commands, and provide a front end function to execute a function equivalent to commands of gfarm in GFront.
+</para>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfexport</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfrm</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>
