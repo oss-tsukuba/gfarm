@@ -113,13 +113,10 @@ CLASS="PARAMETER"
 >specifies a host name.</P
 ></DD
 ><DT
-><I
-CLASS="EMPHASIS"
->.</I
 ><TT
 CLASS="PARAMETER"
 ><I
->domain.name</I
+>.domain.name</I
 ></TT
 ></DT
 ><DD
@@ -159,7 +156,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->gfsd spool directory</I
+>directory</I
 ></TT
 ></DT
 ><DD
@@ -183,7 +180,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->gfsd port number</I
+>port</I
 ></TT
 ></DT
 ><DD
@@ -207,7 +204,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->gfmd hostname</I
+>hostname</I
 ></TT
 ></DT
 ><DD
@@ -232,7 +229,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->gfmd port number</I
+>port</I
 ></TT
 ></DT
 ><DD
@@ -256,7 +253,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->LDAP server hostname</I
+>hostname</I
 ></TT
 ></DT
 ><DD
@@ -281,7 +278,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->LDAP server port number</I
+>port</I
 ></TT
 ></DT
 ><DD
@@ -338,7 +335,7 @@ CLASS="PARAMETER"
 <TT
 CLASS="PARAMETER"
 ><I
->auth method</I
+>method</I
 ></TT
 > <TT
 CLASS="PARAMETER"
@@ -443,7 +440,7 @@ CLASS="LITERALLAYOUT"
 	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
 	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
 	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
-	auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
+	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ><P
 >In this example, all hosts which belong to the network address of
 192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
@@ -475,7 +472,7 @@ CLASS="TOKEN"
 ><SPAN
 CLASS="TOKEN"
 >netparam</SPAN
-><TT
+> <TT
 CLASS="PARAMETER"
 ><I
 >parameter</I
@@ -488,7 +485,7 @@ CLASS="PARAMETER"
 ><I
 >value</I
 ></TT
-><I
+> <I
 CLASS="EMPHASIS"
 >[</I
 ><TT
@@ -888,7 +885,7 @@ ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
 auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
-auth&nbsp;enable&nbsp;gsi&nbsp;ALL</P
+auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

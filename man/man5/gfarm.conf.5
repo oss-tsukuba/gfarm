@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "22 August 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "05 September 2003" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -41,7 +41,7 @@ from 0 to 31 separated by "/".
 \fB\fIdomain.name\fB\fR
 specifies a host name.
 .TP
-\fB .\fIdomain.name\fB\fR
+\fB \fI.domain.name\fB\fR
 specifies all hosts which belong to the domain.name.
 .TP
 \fB*\fR
@@ -50,7 +50,7 @@ specifies all hosts.
 .PP
 The following statements are supported.
 .TP
-\fBspool \fIgfsd spool directory\fB\fR
+\fBspool \fIdirectory\fB\fR
 The spool statement specifies a spool directory
 for a Gfarm filesystem on this filesystem node.  On the filesystem
 node, this statement should be specified.
@@ -61,7 +61,7 @@ For example,
 	spool /var/spool/gfarm
 .fi
 .TP
-\fBspool_serverport \fIgfsd port number\fB\fR
+\fBspool_serverport \fIport\fB\fR
 The spool_serverport statement specifies the tcp
 and udp port number the gfsd is listening on.  The default port number
 is 600.
@@ -72,7 +72,7 @@ For example,
 	spool_serverport 600
 .fi
 .TP
-\fBmetadb_serverhost \fIgfmd hostname\fB\fR
+\fBmetadb_serverhost \fIhostname\fB\fR
 The metadb_serverhost statement specifies the
 host name on which gfmd is running.
 
@@ -84,7 +84,7 @@ For example,
 	metadb_serverhost ldap.example.com
 .fi
 .TP
-\fBmetadb_serverport \fIgfmd port number\fB\fR
+\fBmetadb_serverport \fIport\fB\fR
 The metadb_serverport statement specifies the tcp
 port number the gfsd is listening on.  The default port number is
 601.
@@ -95,7 +95,7 @@ For example,
 	metadb_serverport 601
 .fi
 .TP
-\fBldap_serverhost \fILDAP server hostname\fB\fR
+\fBldap_serverhost \fIhostname\fB\fR
 The ldap_serverhost statement specifies the host
 name on which LDAP server for filesystem metadata is running.
 
@@ -107,7 +107,7 @@ For example,
 	ldap_serverhost ldap.example.com
 .fi
 .TP
-\fBldap_serverport \fILDAP server port number\fB\fR
+\fBldap_serverport \fIport\fB\fR
 The ldap_serverport statement specifies the tcp
 port number of LDAP server.
 
@@ -132,7 +132,7 @@ For example,
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fIenable/disable\fB \fIauth method\fB \fIHost specification\fB\fR
+\fBauth \fIenable/disable\fB \fImethod\fB \fIHost specification\fB\fR
 This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.
 
@@ -176,7 +176,7 @@ For example,
 	auth disable sharedsecret 192.168.0.101
 	auth enable sharedsecret 192.168.0.0/24
 	auth enable gsi_auth 10.0.0.0/8
-	auth enable gsi ALL
+	auth enable gsi *
 .fi
 
 In this example, all hosts which belong to the network address of
@@ -190,7 +190,7 @@ and all other hosts will be authenticated by
 gsi.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.
 .TP
-\fBnetparam\fIparameter\fB=\fIvalue\fB[\fIHost specification\fB]\fR
+\fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost specification\fB]\fR
 The netparam statement specifies several
 communication parameters listed below.
 
@@ -389,7 +389,7 @@ ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8
-auth enable gsi ALL
+auth enable gsi *
 .fi
 .SH "FILES"
 .TP
