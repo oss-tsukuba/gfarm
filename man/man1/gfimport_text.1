@@ -26,12 +26,16 @@ file fragments by the line and registering it to the Gfarm filesystem.
 specifies a list of filesystem nodes.  The \fIhostfile\fP consists of
 a hostname of a filesystem node in each line.  The file is almost
 uniformly divided into file fragments.
+.br
+if ``-'' is specified, standard input is used to read the host list.
 .TP
 .B \-f
 .I fragment-file
 .br
 specifies a \fIfragment-file\fP that consists of a fragment size in
 byte and a filesystem node separated by a white space in each line.
+.br
+if ``-'' is specified, standard input is used.
 .TP
 .B \-o
 .I gfarm-URL

@@ -27,12 +27,16 @@ specifies a hostname list of filesystem nodes.  The \fIhostfile\fP
 consists of a hostname of a filesystem node in each line.  The file is
 uniformly divided into file fragments, each file fragment except the
 last one having the same size.
+.br
+if ``-'' is specified, standard input is used to read the host list.
 .TP
 .B \-f
 .I fragment file
 .br
 specifies a \fIfragment file\fP that consists of a fragment size and a
 filesystem node separated by a white space in each line.
+.br
+if ``-'' is specified, standard input is used.
 .TP
 .B \-l
 .I record size
