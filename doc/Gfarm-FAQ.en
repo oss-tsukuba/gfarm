@@ -1,0 +1,40 @@
+Gfarm FAQ - Frequently Asked Questions about Gfarm
+
+Copyright (c) 2003 National Institute of Advanced Industrial Science
+and Technology (AIST).  All Rights Reserved.
+
+Table of Contents:
+******************
+
+1. General
+  1.1 What is Gfarm?
+  1.2 Where can I download Gfarm?
+
+2. Trouble Shooting
+
+3. Security
+  3.1 It is safe to use Gfarm in the environment which is NOT protected by
+    a firewall?
+  3.2 What is the difference between GSI authentication and sharedsecret
+    authentication?
+
+4. Limitation
+
+1. General
+**********
+  1.1 What is Gfarm?
+  1.2 Where can I download Gfarm?
+
+
+2. Trouble Shooting
+*******************
+
+3. Security
+***********
+  3.1 It is safe to use Gfarm in the environment which is NOT protected by
+    a firewall?
+  3.2 What is the difference between GSI authentication and sharedsecret
+    authentication?
+
+4. Limitation
+*************
