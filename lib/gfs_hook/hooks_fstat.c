@@ -12,22 +12,42 @@ int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
-	GFS_Dir dir;
-	struct gfs_stat status;
-	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FSTAT) "(%d)\n",
 	    filedes));
 
-	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (SYSCALL_FSTAT(filedes, buf));
 
+	_gfs_hook_debug(fprintf(stderr,
+	    "GFS: Hooking " S(FUNC___FSTAT) "(%d)\n", filedes));
+
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
+		char *e;
+		struct gfs_stat status;
+
+		e = gfs_fstat(gf, &status);
+		if (e != NULL)
+			return (-1);
+
+		buf->st_dev = GFS_DEV;
+		buf->st_ino = status.st_ino;
+		buf->st_mode = status.st_mode;
+		buf->st_nlink = 1;
+		buf->st_uid = getuid();
+		buf->st_gid = getgid();
+		buf->st_size = status.st_size;
+		buf->st_blksize = GFS_BLKSIZE;
+		buf->st_atime = status.st_atimespec.tv_sec;
+		buf->st_mtime = status.st_mtimespec.tv_sec;
+		buf->st_ctime = status.st_ctimespec.tv_sec;
+
+		gfs_stat_free(&status);
+	} else {
 		struct gfs_stat *gsp;
 
-		if ((dir = gfs_hook_is_open(filedes)) == NULL)
-			return (SYSCALL_FSTAT(filedes, buf));
-		
-		_gfs_hook_debug(fprintf(stderr, "GFS: Hooking " S(FUNC___FSTAT)
-		    "(%d)\n", filedes));
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___FSTAT) "(%d)\n", filedes));
 
 		gsp = gfs_hook_get_gfs_stat(filedes);
 		buf->st_dev = GFS_DEV;
@@ -41,34 +61,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		buf->st_atime = gsp->st_atimespec.tv_sec;
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
-
-		return(0);			  
 	}
-
-	if ((gf = gfs_hook_is_open(filedes)) == NULL)
-		return (SYSCALL_FSTAT(filedes, buf));
-
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking " S(FUNC___FSTAT)
-	    "(%d(%d))\n", filedes, gfs_pio_fileno(gf)));
-
-	e = gfs_fstat(gf, &status);
-	if (e != NULL)
-		return (-1);
-
-	buf->st_dev = GFS_DEV;
-	buf->st_ino = status.st_ino;
-	buf->st_mode = status.st_mode;
-	buf->st_nlink = 1;
-	buf->st_uid = getuid();
-	buf->st_gid = getgid();
-	buf->st_size = status.st_size;
-	buf->st_blksize = GFS_BLKSIZE;
-	buf->st_atime = status.st_atimespec.tv_sec;
-	buf->st_mtime = status.st_mtimespec.tv_sec;
-	buf->st_ctime = status.st_ctimespec.tv_sec;
-
-	gfs_stat_free(&status);
-
 	return (0);
 }
 
@@ -128,20 +121,40 @@ int
 FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
-	GFS_Dir dir;
-	struct gfs_stat status;
-	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%d)\n",
 	    filedes));
 
-	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (SYSCALL_FXSTAT(ver, filedes, buf));
 
+	_gfs_hook_debug(fprintf(stderr,
+	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
+
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
+		char *e;
+		struct gfs_stat status;
+
+		e = gfs_fstat(gf, &status);
+		if (e != NULL)
+			return (-1);
+
+		buf->st_dev = GFS_DEV;
+		buf->st_ino = status.st_ino;
+		buf->st_mode = status.st_mode;
+		buf->st_nlink = 1;
+		buf->st_uid = getuid();
+		buf->st_gid = getgid();
+		buf->st_size = status.st_size;
+		buf->st_blksize = GFS_BLKSIZE;
+		buf->st_atime = status.st_atimespec.tv_sec;
+		buf->st_mtime = status.st_mtimespec.tv_sec;
+		buf->st_ctime = status.st_ctimespec.tv_sec;
+
+		gfs_stat_free(&status);
+	} else {
 		struct gfs_stat *gsp;
 
-		if ((dir = gfs_hook_is_open(filedes)) == NULL)
-			return (SYSCALL_FXSTAT(ver, filedes, buf));
-		
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
 
@@ -157,34 +170,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		buf->st_atime = gsp->st_atimespec.tv_sec;
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
-
-		return(0);			  
 	}
-
-	if ((gf = gfs_hook_is_open(filedes)) == NULL)
-		return (SYSCALL_FXSTAT(ver, filedes, buf));
-
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
-
-	e = gfs_fstat(gf, &status);
-	if (e != NULL)
-		return (-1);
-
-	buf->st_dev = GFS_DEV;
-	buf->st_ino = status.st_ino;
-	buf->st_mode = status.st_mode;
-	buf->st_nlink = 1;
-	buf->st_uid = getuid();
-	buf->st_gid = getgid();
-	buf->st_size = status.st_size;
-	buf->st_blksize = GFS_BLKSIZE;
-	buf->st_atime = status.st_atimespec.tv_sec;
-	buf->st_mtime = status.st_mtimespec.tv_sec;
-	buf->st_ctime = status.st_ctimespec.tv_sec;
-
-	gfs_stat_free(&status);
-
 	return (0);
 }
 
