@@ -163,7 +163,7 @@ main(int argc, char *argv[])
     }
 
     e = gfs_stat(gfarm_url, &gs);
-    if (e == NULL && GFARM_S_ISDIR(gs.st_mode)
+    if ((e == NULL && GFARM_S_ISDIR(gs.st_mode))
 #if 1 /* XXX - Currently, GFARM_S_ISDIR may not work correctly... */
 	|| (e == GFARM_ERR_NO_SUCH_OBJECT
 	    && (strcmp(gfarm_url, gfarm_prefix) == 0

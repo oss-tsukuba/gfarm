@@ -107,6 +107,9 @@ ls_sort(int n, struct ls_entry *ls)
 {
 	int (*compare)(const void *, const void *);
 
+#ifdef __GNUC__ /* workaround gcc warning: unused variable */
+	compare = NULL;
+#endif
 	if (option_reverse_sort) {
 		switch (option_sort_order) {
 		case SO_NAME: compare = compare_name_r; break;
