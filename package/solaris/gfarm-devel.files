@@ -1,2 +1,5 @@
 usr/grid/include
-usr/grid/lib
+usr/grid/lib/*.a
+usr/grid/lib/*.la
+usr/grid/lib/*.o
+usr/grid/lib/*.so
