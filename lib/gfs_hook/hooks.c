@@ -1,7 +1,7 @@
 /*
- *  Hooking system calls to utilize Gfarm file system.
+ * Hooking system calls to utilize Gfarm file system.
  *
- *  $Id$
+ * $Id$
  */
 
 #include <stdarg.h>
@@ -37,9 +37,9 @@
 #endif
 
 /*
- *  XXX - quite naive implementation
+ * XXX - quite naive implementation
  *
- *  It is necessary to re-implement more cleverly.
+ * It is necessary to re-implement more cleverly.
  */
 
 /*
@@ -121,7 +121,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 	 * DO NOT put the following line here. This causes infinite loop!
 	 *
 	 * _gfs_hook_debug_v(fprintf(stderr, "Hooking __write(%d, , %lu)\n",
-         *     filedes, (unsigned long)nbyte));
+	 *     filedes, (unsigned long)nbyte));
 	 */
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
@@ -178,7 +178,7 @@ _libc_write(int filedes, const void *buf, size_t nbyte)
 }
 
 /*
- *  close
+ * close
  */
 
 int
@@ -783,10 +783,10 @@ __fchdir(int filedes)
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
 		e = GFARM_ERR_NOT_A_DIRECTORY;
 		goto error;
-	}	  
+	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __fchdir(%d)\n",
-								    filedes));
+	_gfs_hook_debug(
+		fprintf(stderr, "GFS: Hooking __fchdir(%d)\n", filedes));
 
 	e = gfarm_path_canonical_to_url(
 		gfs_hook_get_gfs_canonical_path(filedes), &url);
@@ -974,14 +974,14 @@ __rename(const char *oldpath, const char *newpath)
 {
 	const char *e;
 	char *oldurl, *newurl;
-        int old_is_url, new_is_url;
+	int old_is_url, new_is_url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __rename(%s, %s)\n",
 				  oldpath, newpath));
 
-        old_is_url = gfs_hook_is_url(oldpath, &oldurl);
-        new_is_url = gfs_hook_is_url(newpath, &newurl);
-        if (!old_is_url || !new_is_url) {
+	old_is_url = gfs_hook_is_url(oldpath, &oldurl);
+	new_is_url = gfs_hook_is_url(newpath, &newurl);
+	if (!old_is_url || !new_is_url) {
 		if (old_is_url)
 			free(oldurl);
 		if (new_is_url)	

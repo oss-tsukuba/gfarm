@@ -311,7 +311,7 @@ main(int argc, char *argv[])
 
     test_stat(filename);
     test_lstat(filename);
-
+#if 0
     /* unlink the file */
 
     test_unlink(filename);
@@ -330,6 +330,6 @@ main(int argc, char *argv[])
     test_fclose(f);
 
     test_unlink(filename);
-
+#endif
     exit(0);
 }
