@@ -22,7 +22,7 @@ script-install:
 	@set -x; \
 	for i in -- $(SCRIPTS); do \
 		case $$i in --) continue;; esac; \
-		$(INSTALL_SCRIPT) $$i $(bindir)/$$i; \
+		$(INSTALL_SCRIPT) $$i $(bindir)/`basename $$i`; \
 	done
 
 script-clean:

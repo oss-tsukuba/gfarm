@@ -66,7 +66,7 @@ EXTRA_CLEAN_TARGETS= hooks_init$(SUFFIX).lo $(mpi_objs)
 .SUFFIXES: .a .la .ln .o _debug.lo .lo .s .S .c .cc .f .y .l
 
 .c_debug.lo:
-	$(LTCOMPILE) -c $*.c -o $*_debug.lo
+	$(LTCOMPILE) -c $(srcdir)/$*.c -o $*_debug.lo
 
 all: subdir-all gfs-hooks debug-gfs-hooks
 
@@ -129,7 +129,8 @@ veryclean: debug-lib-veryclean
 
 debug-gfs-hooks debug-lib-install debug-lib-clean debug-lib-veryclean:
 	@target=`expr $@ : 'debug-\(.*\)'`; \
-	echo '[' making $@ ']'; set -x; $(MAKE) $(DEBUG_MAKEFLAGS) $${target}
+	echo '[' making $@ ']'; set -x; \
+	$(MAKE) -f $(srcdir)/Makefile $(DEBUG_MAKEFLAGS) $${target}
 
 ###
 ### test programs, these won't be installed.

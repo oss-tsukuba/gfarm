@@ -76,4 +76,4 @@ LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 .SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l
 
 .c.lo:
-	$(LTCOMPILE) -c $*.c
+	$(LTCOMPILE) -c $(srcdir)/$*.c
