@@ -201,7 +201,8 @@ gfs_access(const char *gfarm_url, int mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
-	int nsections;
+	gfarm_mode_t stat_mode;
+	int stat_nsections, nsections;
 	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
@@ -212,6 +213,18 @@ gfs_access(const char *gfarm_url, int mode)
 		free(gfarm_file);
 		return (e);
 	}
+	stat_mode = pi.status.st_mode;
+	stat_nsections = pi.status.st_nsections;
+	e = gfarm_path_info_access(&pi, mode);
+	gfarm_path_info_free(&pi);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (e);
+	}
+	if (GFARM_S_ISDIR(stat_mode)) {
+		free(gfarm_file);
+		return (NULL);
+	}
 	/*
 	 * Check all fragments are ready or not.
 	 * XXX - is this check necessary?
@@ -220,15 +233,11 @@ gfs_access(const char *gfarm_url, int mode)
 		gfarm_file, &nsections, &sections);
 	free(gfarm_file);
 	if (e != NULL)
-		goto finish_free_path_info;
+		return (e);
 	gfarm_file_section_info_free_all(nsections, sections);
-	if (!GFARM_S_IS_PROGRAM(pi.status.st_mode)
-	    && nsections != pi.status.st_nsections)
+	if (!GFARM_S_IS_PROGRAM(stat_mode)
+	    && nsections != stat_nsections)
 		e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
-	if (e != NULL)
-		e = gfarm_path_info_access(&pi, mode);
- finish_free_path_info:
-	gfarm_path_info_free(&pi);
 	return (e);
 }
 
