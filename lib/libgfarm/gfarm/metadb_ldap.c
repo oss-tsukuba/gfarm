@@ -18,7 +18,9 @@
 #include "dircache.h"
 
 /* old openldap does not have ldap_memfree. */
+#ifndef HAVE_LDAP_MEMFREE
 #define	ldap_memfree(a)
+#endif /* HAVE_LDAP_MEMFREE */
 
 #define INT32STRLEN	GFARM_INT32STRLEN
 #define INT64STRLEN	GFARM_INT64STRLEN
