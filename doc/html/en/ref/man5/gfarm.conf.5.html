@@ -481,19 +481,22 @@ communication parameters listed below.</P
 CLASS="TOKEN"
 >parallel_streams</SPAN
 >.  This parameter specifies the
-number of tcp streams.  The default is a single stream.  This
-parameter may improve the file transfer performance especially when
-connecting to a far distant site such that tcp congestion window size
-will not increase enough.  In the current implementation, this
-parameter is only effective on a client node where gfrep(1) command is
-executed.  <TT
+number of tcp streams.  The default is a single stream.  The
+<SPAN
+CLASS="TOKEN"
+>parallel_streams</SPAN
+> parameter may improve the file
+transfer performance especially when connecting to a far distant site
+(i.e. high bandwidth-delay product network) such that tcp congestion
+window size will not increase enough.  This parameter is only
+effective on a client node where gfrep(1) command is executed.
+<TT
 CLASS="PARAMETER"
 ><I
 >Host specification</I
 ></TT
-> specifies the
-source host(s) of file replication instead of the destination
-host(s).</P
+> specifies the source host(s)
+of file replication instead of the destination host(s).</P
 ><P
 ><SPAN
 CLASS="TOKEN"
@@ -514,32 +517,32 @@ parameter.</P
 by the <SPAN
 CLASS="TOKEN"
 >parallel_streams</SPAN
-> parameter.  In the current
-implementation, this parameter is only effective on a client node
-where gfrep(1) command is executed.  <TT
+> parameter.  This parameter is
+only effective on a client node where gfrep(1) command is executed.
+<TT
 CLASS="PARAMETER"
 ><I
->Host
-specification</I
+>Host specification</I
 ></TT
-> specifies the source host(s) of file
-replication instead of the destination host(s).</P
+> specifies the source host(s)
+of file replication instead of the destination host(s).</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >rate_limit</SPAN
 >.  This parameter specifies the maximum
 transfer rate (bps; bit per second) for a single connection, which is
-introduced experimentally.  In the current implementation, this
-parameter is only effective on a client node where gfrep(1) command is
-executed.  <TT
+introduced experimentally.  The parameter on a source filesystem node
+is effective during parallel file replication.  <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host
+specification</I
 ></TT
-> specifies the
-source host(s) of file replication instead of the destination
-host(s).</P
+> specifies the destination host(s) of file
+replication.  Note that this parameter needs to be specified on a
+source filesystem node not on a client host unlike the other
+parameters.</P
 ><P
 >For example,</P
 ><P
