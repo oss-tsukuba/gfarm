@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -8,14 +12,18 @@
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 
-char *program_name = "gfreplicate";
+char *program_name = "gfrep";
 
 void
 usage()
 {
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-H <hostfile>\n");
+	fprintf(stderr, "\t-H <hostfile>\t\treplicate a whole file\n");
+	fprintf(stderr, "\t-I fragment-index\treplicate a fragment"
+		" with -d option\n");
+	fprintf(stderr, "\t-s src-node\n");
+	fprintf(stderr, "\t-d dest-node\n");
 	exit(1);
 }
 
@@ -31,14 +39,25 @@ main(argc, argv)
 	char *e, *hostfile = NULL;
 	int ch, nhosts, error_line;
 	char **hosttab;
+	char *index = NULL, *src = NULL, *dest = NULL;
+	char *gfarm_url;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:")) != -1) {
+	while ((ch = getopt(argc, argv, "H:I:s:d:")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
+			break;
+		case 'I':
+			index = optarg;
+			break;
+		case 's':
+			src = optarg;
+			break;
+		case 'd':
+			dest = optarg;
 			break;
 		case '?':
 		default:
@@ -49,6 +68,7 @@ main(argc, argv)
 	argv += optind;
 	if (argc != 1)
 		usage();
+	gfarm_url = argv[0];
 
 	e = gfarm_initialize(&argc_save, &argv_save);
 	if (e != NULL) {
@@ -56,24 +76,43 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (hostfile == NULL) {
-		fprintf(stderr, "%s: -H <hostfile> option is required\n",
-			program_name);
-		exit(1);
-	}
-	e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab, &error_line);
-	if (e != NULL) {
-		if (error_line != -1)
-			fprintf(stderr, "%s: line %d: %s\n",
-				hostfile, error_line, e);
+	if (index != NULL) {
+		/* replicate a section */
+		if (hostfile != NULL)
+			printf("Warning: -H option is ignored\n");
+		if (dest == NULL) {
+			fprintf(stderr, "%s: -d dest-node option is required\n",
+				program_name);
+			exit(1);
+		}
+		if (src == NULL)
+			e = gfarm_url_section_replicate_to(gfarm_url,
+				index, dest);
 		else
-			fprintf(stderr, "%s: %s\n",
-				program_name, e);
-		exit(1);
+			e = gfarm_url_section_replicate_from_to(gfarm_url,
+				index, src, dest);
 	}
-	e = gfarm_url_fragments_replicate(argv[0], nhosts, hosttab);
+	else {
+		/* replicate a whole file */
+		if (hostfile == NULL) {
+			fprintf(stderr, "%s: -H <hostfile> option is required\n",
+				program_name);
+			exit(1);
+		}
+		e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab, &error_line);
+		if (e != NULL) {
+			if (error_line != -1)
+				fprintf(stderr, "%s: line %d: %s\n",
+					hostfile, error_line, e);
+			else
+				fprintf(stderr, "%s: %s\n",
+					program_name, e);
+			exit(1);
+		}
+		e = gfarm_url_fragments_replicate(gfarm_url, nhosts, hosttab);
+	}
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, argv[0], e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, gfarm_url, e);
 		exit(1);
 	}
 	e = gfarm_terminate();
