@@ -466,7 +466,7 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
- * utimes
+ * utimes & utime
  */
 
 int
@@ -530,6 +530,138 @@ utimes(const char *path, const struct timeval *tvp)
 	return (__utimes(path, tvp));
 }
 
+int
+__utime(const char *path, const struct utimbuf *buf)
+{
+	char *e, *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utime(%s, %p)\n",
+	    path, buf));
+
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_utime, path, buf);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __utime(%s)\n", url));
+	if (buf == NULL)
+		e = gfs_utimes(url, NULL);
+	else {
+		struct gfarm_timespec gt[2];
+		
+		gt[0].tv_sec = buf[0].actime;
+		gt[0].tv_nsec= 0;
+		gt[1].tv_sec = buf[1].modtime;
+		gt[1].tv_nsec= 0;
+		e = gfs_utimes(url, gt);
+	}
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __utime: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int 
+_utime(const char *path, const struct utimbuf *buf)
+{
+	_gfs_hook_debug_v(fputs("Hooking _utime\n", stderr));
+	return (__utime(path, buf));
+}
+
+int 
+utime(const char *path, const struct utimbuf *buf)
+{
+	_gfs_hook_debug_v(fputs("Hooking utime\n", stderr));
+	return (__utime(path, buf));
+}
+/*
+ * mkdir
+ */
+
+int
+__mkdir(const char *path, mode_t mode)
+{
+	const char *e;
+	char *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __mkdir(%s, 0%o)\n",
+				path, mode));
+
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_mkdir, path, mode);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __mkdir(%s, 0%o)\n",
+				path, mode));
+	e = gfs_mkdir(url, mode);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __mkdir: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_mkdir(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking _mkdir\n", stderr));
+	return (__mkdir(path, mode));
+}
+
+int
+mkdir(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking mkdir\n", stderr));
+	return (__mkdir(path, mode));
+}
+
+/*
+ * rmdir
+ */
+
+int
+__rmdir(const char *path)
+{
+	const char *e;
+	char *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __rmdir(%s)\n", path));
+
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_rmdir, path);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __rmdir(%s)\n", path));
+	e = gfs_rmdir(url);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __rmdir: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_rmdir(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking _rmdir\n", stderr));
+	return (__rmdir(path));
+}
+
+int
+rmdir(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking rmdir\n", stderr));
+	return (__rmdir(path));
+}
 
 /*
  * chdir
