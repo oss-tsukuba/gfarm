@@ -14,6 +14,8 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include "gfutil.h"
+
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
@@ -21,39 +23,22 @@
 #include "gfarm_secure_session.h"
 #include "misc.h"
 
-
-static int port = 0;
+#include "scarg.h"
 
 static int
 ParseArgs(argc, argv)
      int argc;
      char *argv[];
 {
-    while (*argv != NULL) {
-	if (strcmp(*argv, "-p") == 0) {
-	    if (argv[1] != NULL &&
-		*argv[1] != '\0') {
-		int tmp;
-		argv++;
-		if (gfarmGetInt(*argv, &tmp) < 0) {
-		    fprintf(stderr, "illegal port number.\n");
-		    return -1;
-		}
-		if (tmp <= 0) {
-		    fprintf(stderr, "port number must be > 0.\n");
-		    return -1;
-		} else if (tmp > 65535) {
-		    fprintf(stderr, "port number must be < 65536.\n");
-		    return -1;
-		}
-		port = tmp;
-	    } else {
-		fprintf(stderr, "a port number must be specified.\n");
-		return -1;
-	    }
-	}
+    int c;
 
-	argv++;
+    while ((c = getopt(argc, argv, COMMON_OPTIONS)) != -1) {
+	if (HandleCommonOptions(c, optarg) != 0)
+	    return -1;
+    }
+    if (optind < argc) {
+	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
+	return -1;
     }
     
     return 0;
@@ -72,6 +57,7 @@ main(argc, argv)
     int fd0 = -1;
     int fd1 = -1;
     OM_uint32 majStat, minStat;
+    gss_cred_id_t myCred;
     gfarmSecSession *ss0 = NULL;
     gfarmSecSession *ss1 = NULL;
     int sel;
@@ -81,16 +67,34 @@ main(argc, argv)
 
     gfarmSecSession *ssList[2];
 
-    if (ParseArgs(argc - 1, argv + 1) != 0) {
+    if (ParseArgs(argc, argv) != 0) {
 	goto Done;
     }
 
+    gflog_auth_set_verbose(1);
     if (gfarmSecSessionInitializeAcceptor(NULL, NULL,
 					  &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as acceptor because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
+    }
+
+    if (!acceptorSpecified) {
+	myCred = GSS_C_NO_CREDENTIAL;
+    } else {
+	char *credName;
+
+	if (gfarmGssAcquireCredential(&myCred,
+				      acceptorNameString, acceptorNameType,
+				      GSS_C_ACCEPT,
+				      &majStat, &minStat, &credName) <= 0) {
+	    fprintf(stderr, "can't acquire credential because of:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    goto Done;
+	}
+	fprintf(stderr, "Acceptor Credential: '%s'\n", credName);
     }
 
     /*
@@ -108,8 +112,7 @@ main(argc, argv)
 	perror("accept");
 	goto Done;
     }
-    ss0 = gfarmSecSessionAccept(fd0, GSS_C_NO_CREDENTIAL, NULL,
-				&majStat, &minStat);
+    ss0 = gfarmSecSessionAccept(fd0, myCred, NULL, &majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
@@ -122,7 +125,7 @@ main(argc, argv)
 	perror("accept");
 	goto Done;
     }
-    ss1 = gfarmSecSessionAccept(fd1, GSS_C_NO_CREDENTIAL, NULL,
+    ss1 = gfarmSecSessionAccept(fd1, myCred, NULL,
 				&majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");

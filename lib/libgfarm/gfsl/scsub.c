@@ -21,16 +21,21 @@
 
 gfarm_int32_t testBufSize = 4096;
 
-void	doServer(int fd, char *host, int port);
+void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
+		 char *acceptorNameString, gss_OID acceptorNameType);
 void	doClient(char *host, int port,
+		 char *acceptorNameString, gss_OID acceptorNameType,
 		 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
 
 void
-doServer(fd, hostname, port)
+doServer(fd, hostname, port, myCred, acceptorNameString, acceptorNameType)
      int fd;
      char *hostname;
      int port;
+     gss_cred_id_t myCred;
+     char *acceptorNameString;
+     gss_OID acceptorNameType;
 {
     OM_uint32 majStat, minStat;
     char *rBuf = NULL;
@@ -42,8 +47,7 @@ doServer(fd, hostname, port)
     gfarmAuthEntry *aePtr = NULL;
 
     gfarmSecSession *initialSession =
-    	gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL, &majStat,
-			     &minStat);
+    	gfarmSecSessionAccept(fd, myCred, NULL, &majStat, &minStat);
     int x;
 
     if (initialSession == NULL) {
@@ -113,7 +117,8 @@ doServer(fd, hostname, port)
 	gss_cred_id_t deleCred = gfarmSecSessionGetDelegatedCredential(initialSession);
 	if (deleCred != GSS_C_NO_CREDENTIAL) {
 	    fprintf(stderr, "\nDelegation check.\n");
-	    doClient(hostname, port, deleCred, 0);
+	    doClient(hostname, port, acceptorNameString, acceptorNameType,
+		     deleCred, 0);
 	}
     }
 
@@ -143,9 +148,11 @@ randomizeIt(buf, len)
 
 
 void
-doClient(hostname, port, deleCred, deleCheck)
+doClient(hostname, port, acceptorNameString, acceptorNameType, deleCred, deleCheck)
      char *hostname;
      int port;
+     char *acceptorNameString;
+     gss_OID acceptorNameType;
      gss_cred_id_t deleCred;
      gfarm_int32_t deleCheck;
 {
@@ -155,7 +162,9 @@ doClient(hostname, port, deleCred, deleCheck)
     OM_uint32 majStat;
     OM_uint32 minStat;
     gfarmSecSession *ss =
-    	gfarmSecSessionInitiateByName(hostname, port, deleCred, NULL,
+    	gfarmSecSessionInitiateByName(hostname, port,
+				      acceptorNameString, acceptorNameType,
+				      deleCred, NULL,
 				      &majStat, &minStat);
 
     if (ss == NULL) {
@@ -163,6 +172,18 @@ doClient(hostname, port, deleCred, deleCheck)
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
 	return;
+    }
+
+    if (ss->credName == NULL) {
+	fprintf(stderr, "Initiator: NULL\n");
+    } else {
+	fprintf(stderr, "Initiator: '%s'\n", ss->credName);
+    }
+    if (ss->iOaInfo.initiator.acceptorDistName == NULL) {
+	fprintf(stderr, "Acceptor: NULL\n");
+    } else {
+	fprintf(stderr, "Acceptor: '%s'\n",
+	    ss->iOaInfo.initiator.acceptorDistName);
     }
 
     /*

@@ -14,6 +14,8 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include "gfutil.h"
+
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
@@ -21,48 +23,39 @@
 #include "gfarm_secure_session.h"
 #include "misc.h"
 
+#include "scarg.h"
 
-static int port = 0;
+static char *hostname = NULL;
 
 static int
 ParseArgs(argc, argv)
      int argc;
      char *argv[];
 {
-    while (*argv != NULL) {
-	if (strcmp(*argv, "-p") == 0) {
-	    if (argv[1] != NULL &&
-		*argv[1] != '\0') {
-		int tmp;
-		argv++;
-		if (gfarmGetInt(*argv, &tmp) < 0) {
-		    fprintf(stderr, "illegal port number.\n");
-		    return -1;
-		}
-		if (tmp <= 0) {
-		    fprintf(stderr, "port number must be > 0.\n");
-		    return -1;
-		} else if (tmp > 65535) {
-		    fprintf(stderr, "port number must be < 65536.\n");
-		    return -1;
-		}
-		port = tmp;
-	    } else {
-		fprintf(stderr, "a port number must be specified.\n");
-		return -1;
-	    }
-	}
+    int c;
 
-	argv++;
+    while ((c = getopt(argc, argv, "h:" COMMON_OPTIONS)) != -1) {
+	switch (c) {
+	case 'h':
+	    hostname = optarg;
+	    break;
+	default:
+	    if (HandleCommonOptions(c, optarg) != 0)
+		return -1;
+	    break;
+	}
+    }
+    if (optind < argc) {
+	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
+	return -1;
     }
     
     return 0;
 }
 
 
-extern void	doServer(int fd, char *host, int port);
-extern void	doClient(char *host, int port, gss_cred_id_t sCtx, int deleCheck);
-
+void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
+		 char *acceptorNameString, gss_OID acceptorNameType);
 
 int
 main(argc, argv)
@@ -74,19 +67,24 @@ main(argc, argv)
     int remLen = sizeof(struct sockaddr_in);
     int fd = -1;
     OM_uint32 majStat, minStat;
-    unsigned long int rAddr, myAddr;
+    unsigned long int rAddr;
     char *rHost;
     char myHostname[4096];
+    gss_cred_id_t myCred;
 
-    if (ParseArgs(argc - 1, argv + 1) != 0) {
+    if (ParseArgs(argc, argv) != 0) {
 	return 1;
     }
 
-    if (gethostname(myHostname, 4096) < 0) {
-	return 1;
+    if (hostname == NULL) {
+	if (gethostname(myHostname, 4096) < 0) {
+	    perror("gethostname");
+	    return 1;
+	}
+	hostname = myHostname;
     }
-    myAddr = gfarmIPGetAddressOfHost(myHostname);
 
+    gflog_auth_set_verbose(1);
     if (gfarmSecSessionInitializeBoth(NULL, NULL, NULL,
 				      &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as both role because of:\n");
@@ -94,6 +92,30 @@ main(argc, argv)
 	gfarmGssPrintMinorStatus(minStat);
 	gfarmSecSessionFinalizeBoth();
 	return 1;
+    }
+
+    if (!acceptorSpecified) {
+	myCred = GSS_C_NO_CREDENTIAL;
+	acceptorNameString = malloc(sizeof("host@") + strlen(hostname));
+	if (acceptorNameString == NULL) {
+	    fprintf(stderr, "no memory\n");
+	    return 1;
+	}
+	sprintf(acceptorNameString, "host@%s", hostname);
+	acceptorNameType = GSS_C_NT_HOSTBASED_SERVICE;
+    } else {
+	char *credName;
+
+	if (gfarmGssAcquireCredential(&myCred,
+				      acceptorNameString, acceptorNameType,
+				      GSS_C_BOTH,
+				      &majStat, &minStat, &credName) <= 0) {
+	    fprintf(stderr, "can't acquire credential because of:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    return 1;
+	}
+	fprintf(stderr, "Acceptor Credential: '%s'\n", credName);
     }
 
     /*
@@ -130,7 +152,8 @@ main(argc, argv)
 	    return 1;
 	} else if (pid == 0) {
 	    (void)close(bindFd);
-	    doServer(fd, myHostname, port);
+	    doServer(fd, hostname, port, myCred,
+		     acceptorNameString, acceptorNameType);
 	    (void)close(fd);
 	    exit(0);
 	} else {
