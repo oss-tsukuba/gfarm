@@ -133,7 +133,7 @@ gfsck_file(char *gfarm_url)
 				e_save = e;
 		}
 	}
-	if (valid_nsections < nsections) {
+	else if (valid_nsections < nsections) {
 		printf("%s: warning: number of file sections reduced\n",
 		       gfarm_url);
 	}
@@ -207,7 +207,7 @@ char *program_name = "gfsck";
 static void
 usage()
 {
-	fprintf(stderr, "Usage: %s path ...\n", program_name);
+	fprintf(stderr, "Usage: %s [-vh] path ...\n", program_name);
 	exit(1);
 }
 
@@ -215,19 +215,22 @@ int
 main(int argc, char *argv[])
 {
 	extern int optind;
-	int c;
+	int c, i, error = 0;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
 	char *e;
 
 	if (argc <= 1)
 		usage();
 	program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "hv")) != EOF) {
+	while ((c = getopt(argc, argv, "hv?")) != EOF) {
 		switch (c) {
 		case 'v':
 			option_verbose = 1;
 			break;
 		case 'h':
+		case '?':
 		default:
 			usage();
 		}
@@ -241,26 +244,35 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (*argv) {
-		char *url;
-
-		e = gfs_realpath(*argv, &url);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", *argv, e);
-			++argv;
-			continue;
-		}
-		e = gfsck_dir("", url);
-		if (e != NULL)
-			fprintf(stderr, "%s: %s\n", url, e);
-		free(url);
-		++argv;
+	e = gfarm_stringlist_init(&paths);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
 	}
+	e = gfs_glob_init(&types);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < argc; i++)
+		gfs_glob(argv[i], &paths, &types);
+
+	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+		char *url = gfarm_stringlist_elem(&paths, i);
+
+		e = gfsck_dir("", url);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", url, e);
+			error = 1;
+		}
+	}
+	gfs_glob_free(&types);
+	gfarm_stringlist_free_deeply(&paths);
 
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-	exit(0);
+	exit(error);
 }
