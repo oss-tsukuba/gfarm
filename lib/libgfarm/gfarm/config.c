@@ -390,7 +390,7 @@ gfarm_strtoken(char **cursorp, char **errorp)
 		s++;
 	if (*s == '\0' || *s == '\n' || *s == '#') {
 		/* end of line */
-		*cursorp = s;
+		*cursorp = (char *)s;
 		return (NULL);
 	}
 	top = s;
@@ -448,13 +448,13 @@ gfarm_strtoken(char **cursorp, char **errorp)
 		case '#':
 		case '\0':
 			*p = '\0';
-			*cursorp = s;
-			return (top);
+			*cursorp = (char *)s;
+			return ((char *)top);
 		default:
 			if (isspace(*s)) {
 				*p = '\0';
-				*cursorp = s + 1;
-				return (top);
+				*cursorp = (char *)(s + 1);
+				return ((char *)top);
 			}
 			*p++ = *s++;
 			break;

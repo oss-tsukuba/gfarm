@@ -247,7 +247,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    xxx_connection_fd(conn), gfarm_gsi_get_delegated_cred(), NULL,
 	    gfarm_auth_request_gsi_wait_result, state,
 	    &e_major, &e_minor);
-	if (state->gfsl_state < 0) {
+	if (state->gfsl_state == NULL) {
 		/* XXX e_major/e_minor should be used */
 		e = "cannote initiate GSI connection";
 		goto error_free_readable;
