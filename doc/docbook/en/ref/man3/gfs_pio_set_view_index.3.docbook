@@ -26,7 +26,7 @@
   <function><returnvalue>char *</returnvalue>gfs_pio_set_view_index</function></funcdef>
     <paramdef>GFS_File <parameter>gf</parameter></paramdef>
     <paramdef>int <parameter>fragment_number</parameter></paramdef>
-    <paramdef>int <parameter>ragment_index</parameter></paramdef>
+    <paramdef>int <parameter>fragment_index</parameter></paramdef>
     <paramdef>char *<parameter>host</parameter></paramdef>
     <paramdef>int <parameter>flags</parameter></paramdef>
 </funcprototype>
