@@ -28,6 +28,7 @@ Table of Contents:
 4. Limitation
   4.1 Where are gfchmod, gfchown and gfmv?
   4.2 Can I open a file with read-write mode?
+  4.3 Are file names case-sensitive in a Gfarm file system?
 
 1. General
 **********
@@ -196,3 +197,9 @@ Table of Contents:
 	inconsistency may be caused by this operation.
 
 	We plan to fix this problem in the next major release.
+
+  4.3 Are file names case-sensitive in a Gfarm file system?
+
+	Currently, it is case-insensitive because virtual path names
+	are managed by distinguished name of the LDAP database.  This
+	limitation will be removed in the next major release.
