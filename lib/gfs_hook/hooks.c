@@ -547,9 +547,9 @@ __utime(const char *path, const struct utimbuf *buf)
 	else {
 		struct gfarm_timespec gt[2];
 		
-		gt[0].tv_sec = buf[0].actime;
+		gt[0].tv_sec = buf->actime;
 		gt[0].tv_nsec= 0;
-		gt[1].tv_sec = buf[1].modtime;
+		gt[1].tv_sec = buf->modtime;
 		gt[1].tv_nsec= 0;
 		e = gfs_utimes(url, gt);
 	}
