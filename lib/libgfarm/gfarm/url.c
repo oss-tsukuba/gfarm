@@ -103,6 +103,8 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		dir[basename - 2 - gfarm_file + 1] = '\0';
 	}
 	e = gfarm_canonical_path(dir, &dir_canonic);
+	if (e != NULL)
+		return(e);
 	free(dir);
 	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
 				strlen(basename) + 1); 
