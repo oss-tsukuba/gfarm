@@ -540,6 +540,13 @@ gfs_client_write(struct gfs_connection *gfs_server,
 }
 
 char *
+gfs_client_link(struct gfs_connection *gfs_server, char *from, char *to)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_LINK, "ss/",
+			       from, to));
+}
+
+char *
 gfs_client_unlink(struct gfs_connection *gfs_server, char *path)
 {
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_UNLINK, "s/", path));
