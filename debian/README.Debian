@@ -1,7 +1,7 @@
 gfarm for Debian
 ------------------
 
-  The gfarm support globus toolkit(GT), this package is not support GT.
-If you need GRAM on GT, you should re-build.
+The pdiff command provided by gfarm source tar ball is not included in 
+Debian package due to conflict with a2ps/pdiff task.
 
- -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Tue, 25 Mar 2003 21:17:41 +0900
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Wed, 20 Aug 2003 17:00:00 +0900

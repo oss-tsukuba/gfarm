@@ -2,7 +2,7 @@ Source: gfarm
 Section: net
 Priority: optional
 Maintainer: Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>
-Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, flex, bison
+Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, flex, bison, mpich
 Standards-Version: 3.5.2
 
 Package: gfarm-gfptool
@@ -28,6 +28,13 @@ Depends: ${shlibs:Depends}
 Conflicts: gfarm-gsi-client
 Description: The gfarm client.
  The gfarm client.
+
+Package: gfarm-gfront
+Section: utils
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: The gfarm front-end
+ The gfarm front-end.
 
 Package: gfsd
 Section: net
