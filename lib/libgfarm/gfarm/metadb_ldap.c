@@ -146,7 +146,7 @@ gfarm_generic_info_get(
 	LDAPMessage *res, *e;
 	int n, rv;
 	char *a;
-	BerElement *ptr;
+	BerElement *ber;
 	char **vals;
 	char *dn = ops->make_dn(key);
 
@@ -168,19 +168,17 @@ gfarm_generic_info_get(
 	}
 	ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
-	for (a = ldap_first_attribute(gfarm_ldap_server, e, &ptr); a != NULL;
-	    a = ldap_next_attribute(gfarm_ldap_server, e, ptr)) {
-
+	ber = NULL;
+	for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber); a != NULL;
+	    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 		vals = ldap_get_values(gfarm_ldap_server, e, a);
-		if (vals[0] == NULL) {
-			ldap_value_free(vals);
-			continue;
-		}
-
-		ops->set_field(info, a, vals);
-
+		if (vals[0] != NULL)
+			ops->set_field(info, a, vals);
 		ldap_value_free(vals);
+		ldap_memfree(a);
 	}
+	if (ber != NULL)
+		ber_free(ber, 0);
 
 	/* free the search results */
 	ldap_msgfree(res);
@@ -289,7 +287,7 @@ gfarm_generic_info_get_all(
 	LDAPMessage *res, *e;
 	int i, n, rv;
 	char *a;
-	BerElement *ptr;
+	BerElement *ber;
 	char **vals;
 	char *infos, *tmp_info;
 
@@ -322,18 +320,18 @@ gfarm_generic_info_get_all(
 
 		ops->clear(tmp_info);
 
-		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ptr);
+		ber = NULL;
+		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber);
 		    a != NULL;
-		    a = ldap_next_attribute(gfarm_ldap_server, e, ptr)) {
+		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
-
-			if (vals[0] == NULL) {
-				ldap_value_free(vals);
-				continue;
-			}
-			ops->set_field(tmp_info, a, vals);
+			if (vals[0] != NULL)
+				ops->set_field(tmp_info, a, vals);
 			ldap_value_free(vals);
+			ldap_memfree(a);
 		}
+		if (ber != NULL)
+			ber_free(ber, 0);
 
 		if (!ops->validate(tmp_info)) {
 			/* invalid record */
@@ -346,6 +344,7 @@ gfarm_generic_info_get_all(
 		}
 		i++;
 	}
+
 	/* free the search results */
 	ldap_msgfree(res);
 
@@ -375,7 +374,7 @@ gfarm_generic_info_get_foreach(
 	LDAPMessage *res, *e;
 	int i, rv;
 	char *a;
-	BerElement *ptr;
+	BerElement *ber;
 	char **vals;
 
 	/* search for entries, return all attrs  */
@@ -392,18 +391,18 @@ gfarm_generic_info_get_foreach(
 
 		ops->clear(tmp_info);
 
-		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ptr);
+		ber = NULL;
+		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber);
 		    a != NULL;
-		    a = ldap_next_attribute(gfarm_ldap_server, e, ptr)) {
+		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
-
-			if (vals[0] == NULL) {
-				ldap_value_free(vals);
-				continue;
-			}
-			ops->set_field(tmp_info, a, vals);
+			if (vals[0] != NULL)
+				ops->set_field(tmp_info, a, vals);
 			ldap_value_free(vals);
+			ldap_memfree(a);
 		}
+		if (ber != NULL)
+			ber_free(ber, 0);
 
 		if (!ops->validate(tmp_info)) {
 			/* invalid record */
