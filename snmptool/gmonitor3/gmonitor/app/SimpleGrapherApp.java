@@ -100,7 +100,6 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	private double savedInfoHeight = 0;
 	private Dimension savedDimension = null;
 	private Dimension savedDimension2 = null;
-	private boolean repaintFlag = false;
 
 	private long magnificationY = 1;  // Y scale
 
@@ -159,7 +158,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		buttonFileOpen.addActionListener(a);
 		menuItemFileAutoUpdate.addActionListener(new FileAutoUpdateAction());
 		menuItemFileExit.addActionListener(new MenuItemFileExitAction());
-		buttonUpdateNow.addActionListener(new RepaintRepack());
+		buttonUpdateNow.addActionListener(new RepaintAction());
 		comboEvent.addActionListener(new ComboEventSelectionAction());
 		comboHostname.addActionListener(new ComboHostnameSelectionAction());
 		checkGraphStyleBar.addActionListener(new CheckBoxBarAction());
@@ -193,7 +192,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		menuItemAutoUpdateInterval.setText(menuStrAutoUpdateInterval + " ("+String.valueOf(autoUpdateInterval)+")");
 		menuItemResolution.addActionListener(new ResampleResoAction());
 		menuItemResolution.setText(menuStrResolution + " ("+String.valueOf(resampleResolution)+")");
-		menuItemRepaint.addActionListener(new RepaintRepack());
+		menuItemRepaint.addActionListener(new RepaintAction());
 
 		RepaintNow rn = new RepaintNow();
 		menuItemRaw.addActionListener(rn);
@@ -869,13 +868,16 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	 * "Repaint" Event handler of Button.
 	 * @author hkondo
 	 */
-	class RepaintRepack implements ActionListener
+	class RepaintAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			System.gc();
-			repaintFlag = true;
-			paintGraphAccordingToCurrentGUIStatus();
-			repaintFlag = false;
+			if(menuItemAutoUpdate.isSelected()){
+				timer.stop();
+				timer.start();
+			} else{
+				paintGraphAccordingToCurrentGUIStatus();
+			}
 		}
 	}
 	
@@ -885,7 +887,6 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
-
 	
 	/*
 	 * "File" - "Exit" Event handler of Menu item.
@@ -1213,17 +1214,15 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		gm.setAxisLabelX(labelAxisX); // set label of x-axis
 		gm.setAxisLabelY(labelAxisY); // set label of y-axis
 
-		String ls = System.getProperty("line.separator");
-		DecimalFormat df   = new DecimalFormat("###,###,##0");
 		Document doc = txtInfo.getDocument();
 		String info = "";
-		info += "Latest (" + dateString(model.getLatestValueTime()) + "): "+ df.format(model.getLatestValue()) + unit + ls;
- 		info += "Max (" + dateString(model.getMaxValueTime()) + "): " + df.format(model.getMaxValue()) + unit + ls;
-		info += "Min (" + dateString(model.getMinValueTime()) + "): " + df.format(model.getMinValue()) + unit + ls;
+		info += "Latest (" + dateString(model.getLatestValueTime()) + "): "+ decimalf.format(model.getLatestValue()) + unit + lineSep;
+ 		info += "Max (" + dateString(model.getMaxValueTime()) + "): " + decimalf.format(model.getMaxValue()) + unit + lineSep;
+		info += "Min (" + dateString(model.getMinValueTime()) + "): " + decimalf.format(model.getMinValue()) + unit + lineSep;
 		//info += "min (" + dateString(model.getMinValueTime()) + "): " + df.format(Long.MAX_VALUE) + unit + ls;
-		info += "Average: " + df.format((long) Math.rint(model.getAvgValue())) + unit;
+		info += "Average: " + decimalf.format((long) Math.rint(model.getAvgValue())) + unit;
 		if(totalmode == true){
-			info += ls + "Total: " + event + " (";
+			info += lineSep + "Total: " + event + " (";
 			int i = 0;
 			while(true){
 				info += selectedHostsForTotal[i];
@@ -1242,17 +1241,13 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		if(initFlag){
 			initFlag = false;
 		}
-//		if(repaintFlag) {
-//			//txtInfoScroll.setMinimumSize(txtInfo.getSize());
-//			Dimension windowSize = appFrame.getSize(); // save
-//			appFrame.pack();
-//			appFrame.setSize(windowSize);
-//			//System.out.println(windowSize.getWidth() + " " + windowSize.getHeight());
-//		}
 
 		//gm.repaint();
 		appFrame.repaint();
 	}
+	
+	String lineSep = System.getProperty("line.separator");
+	DecimalFormat decimalf   = new DecimalFormat("###,###,##0");
 	
 	public static String dateString(long t){
 		DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
