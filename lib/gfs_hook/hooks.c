@@ -1075,6 +1075,7 @@ __chown(const char *path, uid_t owner, gid_t group)
 {
 	const char *e;
 	char *url;
+	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chown(%s, %d, %d)\n",
 				  path, uid, group));
@@ -1084,8 +1085,14 @@ __chown(const char *path, uid_t owner, gid_t group)
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chown(%s, %d, %d)\n",
 				path, owner, group));
-	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	e = gfs_stat(url, &s);
 	free(url);
+	if (e == NULL) {
+		if (strcmp(s.st_user, gfarm_get_global_username()) != 0)
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+		/* XXX - do nothing */
+		gfs_stat_free(&s);
+	}	
 	if (e == NULL)
 		return (0);
 
@@ -1123,6 +1130,7 @@ __lchown(const char *path, uid_t owner, gid_t group)
 {
 	const char *e;
 	char *url;
+	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __lchown(%s, %d, %d)\n",
 				  path, uid, group));
@@ -1132,8 +1140,15 @@ __lchown(const char *path, uid_t owner, gid_t group)
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __lchown(%s, %d, %d)\n",
 				path, owner, group));
-	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	/* XXX - gfs_lstat is not supported */
+	e = gfs_stat(url, &s);
 	free(url);
+	if (e == NULL) {
+		if (strcmp(s.st_user, gfarm_get_global_username()) != 0)
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+		/* XXX - do nothing */
+		gfs_stat_free(&s);
+	}	
 	if (e == NULL)
 		return (0);
 
@@ -1169,17 +1184,25 @@ __syscall_fchown(int fd, uid_t owner, gid_t group)
 int
 __fchown(int fd, uid_t owner, gid_t group)
 {
+	GFS_File gf;
 	const char *e;
+	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchown(%d, %d, %d)\n",
 				  fd, uid, group));
 
-	if (gfs_hook_is_open(fd) == NULL)
+	if ((gf = gfs_hook_is_open(fd)) == NULL)
 		return (__syscall_fchown(fd, owner, group));
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __fchown(%d, %d, %d)\n",
 				fd, owner, group));
-	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	e = gfs_fstat(gf, &s);
+	if (e == NULL) {
+		if (strcmp(s.st_user, gfarm_get_global_username()) != 0)
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+		/* XXX - do nothing */
+		gfs_stat_free(&s);
+	}	
 	if (e == NULL)
 		return (0);
 
