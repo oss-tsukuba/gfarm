@@ -19,9 +19,11 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfreg</command>
+    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>複製の数</replaceable></arg>
+    <!-- arg choice='opt'>-N <replaceable>複製の数</replaceable></arg -->
     <arg choice='plain'><replaceable>program</replaceable></arg>
+    <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
@@ -37,6 +39,7 @@
     <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
     <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
+    <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -45,16 +48,19 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>第1の形式の場合、引数 program に指定したローカルディスク上の
-プログラム・ファイルを、gfarm-URL に登録します。この時、Gfarm ファイル
-システムのファイルシステムノード上に、このプログラム・ファイルの複製が
-作られます。これ以降、
+プログラム・ファイルを、gfarm-URL に登録します。gfarm-URL がディレクト
+リの場合は、複数の program を指定することができます。これ以降、
 gfrun および gfmpirun_p4 で指定するプログラム名として、この URL が
 使えるようになります。オプション -a でプログラムの動作するアーキテク
-チャを指定しなかった場合には、gfreg コマンドを実行したホストのアーキ
-テクチャと同じであると仮定します。ただし、そのホストが Gfarm メタサー
+チャを指定しなかった場合、あるいはオプション -h で登録するファイルシス
+テムノードを指定しなかった場合には、gfreg コマンドを実行したホストのアー
+キテクチャと同じであると仮定します。ただし、そのホストが Gfarm メタサー
 バに登録されている必要があります。
+<!--
 オプション -N により，複製の数を指定することができます。指定しない場
-合は 1 となります。</para>
+合は 1 となります。
+  -->
+</para>
 
 <para>第2の形式の場合、一つ以上の複数のlocalfileをGfarmファイルとして
 登録します。ファイルの複製が作成されるファイルシステムノードは自動的に
@@ -63,11 +69,12 @@ CPU負荷により選ばれますが、オプション -D により選択されるファイルシス
 
 <para>第3の形式の場合、localfileをGfarmファイルのフラグメントとして登
 録します。オプション -N と -I で、総フラグメント数と、このlocalfileの
-フラグメント番号を必ず指定する必要があります。ファイルの複製が作成され
-るファイルシステムノードは自動的にCPU負荷により選ばれますが、オプショ
-ン -h により明示的に指定することができます。ただ、ファイルシステムノー
-ドで gfreg を実行した場合は常に自ノードが選ばれてしまうため、ファイル
-を分散させて配置したい場合はオプション -h を指定する必要があります．
+フラグメント番号を必ず指定する必要があります。Gfarm-URL がディレクトリ
+の場合は localfile を複数指定することが可能です．ファイルの複製が作成
+されるファイルシステムノードは自動的にCPU負荷により選ばれますが、オプ
+ション -h により明示的に指定することもできます。ただ、ファイルシステム
+ノードで gfreg を実行した場合は常に自ノードが選ばれてしまうため、ファ
+イルを分散させて配置したい場合はオプション -h を指定する必要があります．
 </para>
 
 </refsect1>

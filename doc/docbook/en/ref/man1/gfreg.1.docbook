@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>9 Apr 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -19,9 +19,11 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfreg</command>
+    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
+    <!-- arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg -->
     <arg choice='plain'><replaceable>program</replaceable></arg>
+    <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 
@@ -39,6 +41,7 @@
     <arg choice='plain'>-I <replaceable>fragment-index</replaceable></arg>
     <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
+    <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -49,32 +52,42 @@
 
 <para>The first form copies and registers the program
 <parameter>program</parameter> as a Gfarm file
-<parameter>gfarm-URL</parameter> in the Gfarm filesystem.  After this
+<parameter>gfarm-URL</parameter> in the Gfarm filesystem.  When
+<parameter>gfarm-URL</parameter> is a directory, multiple programs
+can be specified.  After the
 registration, the <parameter>gfarm-URL</parameter> can be specified as
 a program name of gfrun(1) and gfmpirun_p4(1).  Without the
-<option>-a</option> option, architecture of the specified program is
+<option>-a</option> option or the <option>-h</option> option,
+architecture of the <parameter>program</parameter> is
 assumed to be the same architecture as the client host on that
-gfreg(1) is executed, which is obtained by the Gfarm metaserver.  The
+gfreg(1) is executed, which is obtained by the Gfarm metaserver.
+<!--
+The
 <option>-N</option> option specifies the number of file replicas.
 When it is omitted, one file replica is created.  The destination
-filesystem node is automatically selected among filesystem nodes of
-the same architecture.</para>
+filesystem nodes are automatically selected among filesystem nodes of
+the same architecture.
+ -->
+</para>
 
 <para>The second form registers one or more
 <parameter>localfile</parameter>s as a single Gfarm file.  The
-destination filesystem node will be automatically selected by load
-average.  With the <option>-D</option> option, the filesystem node
-selection is limited in the specified domain name.</para>
+destination filesystem node will be automatically selected by CPU load
+average.  With the <option>-D</option> option, the selection of
+filesystem nodes is limited in the specified domain name.</para>
 
 <para>The third form registers <parameter>localfile</parameter> as a
 file fragment of a Gfarm file.  The total number of fragments and the
 fragment index are specified by the <option>-N</option> option and the
-<option>-I</option> option, respectively.  The destination filesystem
-node will be automatically decided by load average except that the
+<option>-I</option> option, respectively.  When
+<parameter>gfarm-URL</parameter> is a directory, multiple
+<parameter>localfile</parameter>s can be specified.
+The destination filesystem
+node will be automatically decided by CPU load average except that the
 <option>-h</option> option is explicitly specified.  When the gfreg
 command of this form is executed on a filesystem node, the local
-filesystem node is always selected rather than remote filesystem
-nodes.  In this case, the <option>-h</option> option helps to store
+filesystem node is always selected rather than a remote filesystem
+node.  In this case, the <option>-h</option> option helps to store
 files dispersively.</para>
 
 </refsect1>
