@@ -127,7 +127,7 @@ public class GraphMonitorModel {
 			if(rde[(int)i].isValid() == false){
 				invalidCount++;
 			} else {
-				avg = (avg * i + (double)rde[(int)i].getValue()) / (i+1-invalidCount) ;
+				avg = (avg * (i-invalidCount) + (double)rde[(int)i].getValue()) / (i+1-invalidCount) ;
 			}
 //System.out.print(avg + " ");
 		}
