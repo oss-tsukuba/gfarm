@@ -54,8 +54,6 @@ timerval_t tm_read_open_0, tm_read_open_1;
 timerval_t tm_read_read_0, tm_read_read_1;
 timerval_t tm_read_close_0, tm_read_close_1;
 
-typedef struct gfs_file *GFS_File;
-
 char *program_name = "thput-gfpio";
 int node_index = -1, total_nodes = -1;
 
@@ -81,12 +79,19 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	off_t residual;
 
 	gettimerval(&tm_write_open_0);
-	e = gfs_pio_create_local(ofile, &gf);
-	gettimerval(&tm_write_open_1);
+	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &gf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: %s\n", node_index, ofile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s\n",
+			node_index, ofile, e);
 		exit(1);
 	}
+	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
+			node_index, ofile, e);
+		exit(1);
+	}
+	gettimerval(&tm_write_open_1);
 	for (residual = file_size; residual > 0; residual -= rv) {
 		if (!tm_write_write_measured) {
 			tm_write_write_measured = 1;
@@ -132,12 +137,19 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	off_t residual;
 
 	gettimerval(&tm_read_open_0);
-	e = gfs_pio_open_local(ifile, GFS_FILE_RDONLY, &gf);
-	gettimerval(&tm_read_open_1);
+	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &gf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: %s\n", node_index, ifile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s\n",
+			node_index, ifile, e);
 		exit(1);
 	}
+	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
+			node_index, ifile, e);
+		exit(1);
+	}
+	gettimerval(&tm_read_open_1);
 	for (residual = file_size; residual > 0; residual -= rv) {
 		if (!tm_read_read_measured) {
 			tm_read_read_measured = 1;
@@ -183,14 +195,28 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 	int rv, osize;
 	off_t residual;
 
-	e = gfs_pio_open_local(ifile, GFS_FILE_RDONLY, &igf);
+	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &igf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: %s\n", node_index, ifile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s\n",
+			node_index, ifile, e);
 		exit(1);
 	}
-	e = gfs_pio_create_local(ofile, &ogf);
+	e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: %s\n", node_index, ofile, e);
+		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
+			node_index, ifile, e);
+		exit(1);
+	}
+	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &ogf);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] cannot open %s: %s\n",
+			node_index, ofile, e);
+		exit(1);
+	}
+	e = gfs_pio_set_view_local(ogf, GFARM_FILE_SEQUENTIAL);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
+			node_index, ofile, e);
 		exit(1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
