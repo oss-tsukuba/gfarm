@@ -253,19 +253,27 @@ gfs_realpath(char *path, char **abspathp)
 	e = lookup_path(path, -1, 0, &n);
 	if (e != NULL)
 		return (e);
-	len = 0;
-	for (p = n; p != root; p = p->parent)
-		len += strlen(p->name) + 1;
+	if (n == root) {
+		len = 1;
+	} else {
+		len = 0;
+		for (p = n; p != root; p = p->parent)
+			len += strlen(p->name) + 1;
+	}
 	len += GFARM_URL_PREFIX_LENGTH;
 	abspath = malloc(len + 1);
 	if (abspath == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	abspath[len] = '\0';
-	for (p = n; p != root; p = p->parent) {
-		l = strlen(p->name);
-		len -= l;
-		memcpy(abspath + len, p->name, l);
-		abspath[--len] = '/';
+	if (n == root) {
+		abspath[GFARM_URL_PREFIX_LENGTH] = '/';
+	} else {
+		for (p = n; p != root; p = p->parent) {
+			l = strlen(p->name);
+			len -= l;
+			memcpy(abspath + len, p->name, l);
+			abspath[--len] = '/';
+		}
 	}
 	memcpy(abspath, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
 	*abspathp = abspath;
