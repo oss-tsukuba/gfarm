@@ -10,109 +10,102 @@
 
 char *program_name = "gfwhere";
 
+static int opt_size = 0;
+
 static char *
 display_replica_catalog(char *gfarm_url);
+
+static char *
+display_section_copies(char *gfarm_file, char *section)
+{
+	int ncopies, j;
+	struct gfarm_file_section_copy_info *copies;
+	struct gfarm_file_section_info sinfo;
+	char *e;
+
+	e = gfarm_file_section_copy_info_get_all_by_section(
+		gfarm_file, section, &ncopies, &copies);
+	if (e != NULL)
+		return (e);
+
+	printf("%s", section);
+	if (opt_size) {
+		e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
+		if (e != NULL)
+			goto free_copy_info;
+		printf(" [%" PR_FILE_OFFSET " bytes]", sinfo.filesize);
+		gfarm_file_section_info_free(&sinfo);
+	}
+	printf(":");
+	for (j = 0; j < ncopies; ++j)
+		printf(" %s", copies[j].hostname);
+	printf("\n");
+	e = NULL;
+free_copy_info:
+	gfarm_file_section_copy_info_free_all(ncopies, copies);
+	return (e);
+}
 
 static char *
 display_replica_catalog_section(char *gfarm_url, char *section)
 {
 	char *gfarm_file, *e;
-	int j, ncopies;
-	struct gfarm_file_section_copy_info *copies;
-	struct gfs_stat st;
 
 	if (section == NULL)
-		return (display_replica_catalog(gfarm_url));
-
-	e = gfs_stat(gfarm_url, &st);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", gfarm_url, e);
-		return (e);
-	}
-	gfs_stat_free(&st);
+		return ("invalid section");
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", gfarm_url, e);
+	if (e != NULL)
 		return (e);
-	}
-	e = gfarm_file_section_copy_info_get_all_by_section(
-		gfarm_file, section, &ncopies, &copies);
-	if (e != NULL) {
-		fprintf(stderr, "%s\n", e);
-		free(gfarm_file);
-		return (e);
-	}
-	j = 0;
-	printf("%s", copies[j].hostname);
-	for (++j; j < ncopies; ++j)
-		printf(" %s", copies[j].hostname);
-	printf("\n");
-	gfarm_file_section_copy_info_free_all(ncopies, copies);
-	free(gfarm_file);
 
-	return (NULL);
+	e = display_section_copies(gfarm_file, section);
+
+	free(gfarm_file);
+	return (e);
 }
 
 static char *
 display_replica_catalog(char *gfarm_url)
 {
-	char *gfarm_file, *e, *e_save = NULL;
-	int i, j, nsections;
+	char *gfarm_file, *e;
+	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	struct gfs_stat st;
+	gfarm_mode_t mode;
+
+	e = gfs_stat(gfarm_url, &st);
+	if (e != NULL)
+		return (e);
+	mode = st.st_mode;
+	gfs_stat_free(&st);
+
+	if (!GFARM_S_ISREG(mode))
+		return ("not a regular file");
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", gfarm_url, e);
+	if (e != NULL)
 		return (e);
-	}
-	e = gfs_stat(gfarm_url, &st);
-	if (e != NULL) {
-		free(gfarm_file);
-		fprintf(stderr, "%s: %s\n", gfarm_url, e);
-		return (e);
-	}
-	if (!GFARM_S_ISREG(st.st_mode)) {
-		free(gfarm_file);
-		gfs_stat_free(&st);
-		fprintf(stderr, "%s: not a file\n", gfarm_url);
-		return (e);
-	}
-	if ((st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) { /* program? */
+
+	if ((mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) { /* program? */
 		e = gfarm_file_section_info_get_all_by_file(
 		    gfarm_file, &nsections, &sections);
 	} else {
 		e = gfarm_file_section_info_get_sorted_all_serial_by_file(
 		    gfarm_file, &nsections, &sections);
 	}
-	gfs_stat_free(&st);
 	if (e != NULL) {
 		free(gfarm_file);
-		fprintf(stderr, "%s: %s\n", gfarm_url, e);
 		return (e);
 	}
 	for (i = 0; i < nsections; i++) {
-		int ncopies;
-		struct gfarm_file_section_copy_info *copies;
-
-		e = gfarm_file_section_copy_info_get_all_by_section(
-		    gfarm_file, sections[i].section, &ncopies, &copies);
-		if (e != NULL) {
+		e = display_section_copies(
+			gfarm_file, sections[i].section);
+		if (e != NULL)
 			fprintf(stderr, "%s: %s\n", sections[i].section, e);
-			if (e_save == NULL)
-				e_save = e;
-			continue;
-		}
-		printf("%s:", sections[i].section);
-		for (j = 0; j < ncopies; j++)
-			printf(" %s", copies[j].hostname);
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
-		printf("\n");
 	}
 	gfarm_file_section_info_free_all(nsections, sections);
 	free(gfarm_file);
-	return (e_save);	
+	return (NULL);
 }
 
 void
@@ -122,6 +115,8 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-I <fragment>\t"
 		"display filesystem nodes specified by <fragment>\n");
+	fprintf(stderr, "\t-s\t\t"
+		"display file size of each file fragment\n");
 	exit(1);
 }
 
@@ -141,10 +136,13 @@ main(int argc, char **argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "I:?")) != -1) {
+	while ((ch = getopt(argc, argv, "I:s?")) != -1) {
 		switch (ch) {
 		case 'I':
 			section = optarg;
+			break;
+		case 's':
+			opt_size = 1;
 			break;
 		case '?':
 		default:
@@ -182,8 +180,15 @@ main(int argc, char **argv)
 
 		if (argc_expanded > 1)
 			printf("%s:\n", p);
-		if (display_replica_catalog_section(p, section) != NULL)
+		if (section != NULL)
+			e = display_replica_catalog_section(p, section);
+		else
+			e = display_replica_catalog(p);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n",
+				section == NULL ? p : section, e);
 			error = 1;
+		}
 		if (argc_expanded > 1 && i < argc_expanded - 1)
 			printf("\n");
 	}
