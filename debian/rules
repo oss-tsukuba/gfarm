@@ -28,8 +28,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-	# install -d build && cd build && CC=gcc ../configure --with-openldap=/usr --prefix=`pwd`/debian/tmp/usr
-	../configure --with-openldap=/usr --prefix=`pwd`/debian/tmp/usr
+	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/debian/tmp/usr
 
 	touch configure-stamp
 
@@ -38,8 +37,7 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	# cd build && $(MAKE)
-	$(MAKE)
+	cd build && $(MAKE)
 
 	touch build-stamp
 
@@ -49,9 +47,9 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
-	# -rm -rf build
-#	-$(MAKE) distclean
+	-$(MAKE) distclean
+	-rm -f configure-stamp
+	-rm -rf build
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
 	dh_clean 
 
