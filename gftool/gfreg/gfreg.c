@@ -253,7 +253,7 @@ int
 main(int argc, char *argv[])
 {
 	char *gfarm_url, *node_index = NULL;
-	char *hostname = NULL, **auto_hosts, *e;
+	char *hostname = NULL, **auto_hosts = NULL, *e;
 	int total_nodes = -1, c, auto_index = 0;
 	extern char *optarg;
 	extern int optind;
