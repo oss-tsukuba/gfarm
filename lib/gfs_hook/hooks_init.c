@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gfs_hook.h>
 #include "hooks_subr.h"
@@ -15,20 +16,16 @@ char *
 gfs_hook_initialize(void)
 {
 	char *e;
-	int fd;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_initialize\n"));
 
 	/*
-	 * Reserve several file descriptors for applications.  At least,
-	 * 'configure' uses 5 and 6.  Maybe, tcsh and zsh also.
+	 * allocate file descriptor greater than MIN_FD defined in
+	 * hooks_subr.c for connection to metadata server.
 	 */
-	fd = open("/dev/null", O_RDWR);
-	while (fd < 7)
-		fd = dup(fd);
-	close(fd);
-
+	gfs_hook_reserve_fd();
 	e = gfarm_initialize(NULL, NULL);
+	gfs_hook_release_fd();
 	if (e != NULL)
 		return (e);
 
@@ -37,6 +34,10 @@ gfs_hook_initialize(void)
 
 	if (gfs_pio_set_local_check() != NULL)
 		gfs_pio_set_local(0, 1);
+
+	/* exexute close_all() and gfarm_terminate() at program termination */
+	atexit(gfarm_terminate);
+	atexit(gfs_hook_close_all);
 
 	return (NULL);
 }

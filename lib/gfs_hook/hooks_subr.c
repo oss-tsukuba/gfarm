@@ -99,14 +99,97 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 
 /*
  * gfs_file_buf management
+ *
+ * XXX - need to manage list of file descriptors exactly and more efficiently.
  */
 
 static int _gfs_hook_num_gfs_files;
 
+static void
+gfs_hook_num_gfs_files_check(void)
+{
+	static pid_t client_pid = 0;
+	pid_t pid = getpid();
+
+	if (pid != client_pid) {
+		_gfs_hook_num_gfs_files = 0;
+		client_pid = pid;
+	}
+}
+
 int
 gfs_hook_num_gfs_files(void)
 {
+	gfs_hook_num_gfs_files_check();
 	return (_gfs_hook_num_gfs_files);
+}
+
+static void
+gfs_hook_num_gfs_files_inc(void)
+{
+	gfs_hook_num_gfs_files_check();
+	++_gfs_hook_num_gfs_files;
+}
+
+static void
+gfs_hook_num_gfs_files_dec(void)
+{
+#if 0
+	/*
+	 * XXX - To decrease the number of file descriptors opened by
+	 * this process, we need to manage list of file descriptors
+	 * not just the number.
+	 */
+	gfs_hook_num_gfs_files_check();
+	if (_gfs_hook_num_gfs_files > 0)
+		--_gfs_hook_num_gfs_files;
+#endif
+}
+
+/*
+ * Reserve several file descriptors for applications.  At least,
+ * 'configure' uses 5 and 6.  Maybe, tcsh and zsh also.
+ */
+#define GFS_HOOK_MIN_FD	10
+static int _gfs_hook_reserved_fd[GFS_HOOK_MIN_FD + 1];
+
+void
+gfs_hook_reserve_fd()
+{
+	int i, fd;
+
+	i = 0;
+	fd = open("/dev/null", O_WRONLY);
+	while (fd >= 0 && fd < GFS_HOOK_MIN_FD) {
+		_gfs_hook_reserved_fd[i++] = fd;
+		fd = dup(fd);
+	}
+	_gfs_hook_reserved_fd[i] = -1;
+	if (fd >= 0)
+		close(fd);
+}
+
+void
+gfs_hook_release_fd()
+{
+	int i;
+
+	for (i = 0; _gfs_hook_reserved_fd[i] >= 0; ++i)
+		close(_gfs_hook_reserved_fd[i]);
+}
+
+/* re-assign a file descriptor greater than MIN_FD */
+int
+gfs_hook_replace_large_fd(int fd)
+{
+	int fd2;
+
+	if (fd >= 0 && fd < GFS_HOOK_MIN_FD) {
+		fd2 = fcntl(fd, F_DUPFD, GFS_HOOK_MIN_FD);
+		close(fd);
+		fd = fd2;
+	}
+	return (fd);
 }
 
 int
@@ -130,9 +213,9 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		return (-1);
 	}
 	if (S_ISREG(st.st_mode))
-		fd = dup(fd);
+		fd = fcntl(fd, F_DUPFD, GFS_HOOK_MIN_FD);
 	else /* don't return a socket, to make select(2) work with this fd */
-		fd = open("/dev/null", O_RDWR);
+		fd = gfs_hook_replace_large_fd(open("/dev/null", O_RDWR));
 	if (fd == -1) {
 		save_errno = errno;
 		gfs_hook_delete_creating_file(gf);
@@ -165,7 +248,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_REG;
 	_gfs_file_buf[fd]->u.f = gf;
-	++_gfs_hook_num_gfs_files;
+	gfs_hook_num_gfs_files_inc();
 	return (fd);
 }
 
@@ -181,7 +264,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	 * A new file descriptor is needed to identify a hooked file
 	 * descriptor.
 	 */
-	fd = open("/dev/null", O_RDONLY);
+	fd = gfs_hook_replace_large_fd(open("/dev/null", O_RDONLY));
 	if (fd == -1) {
 		save_errno = errno;
 		gfs_closedir(dir);
@@ -270,11 +353,13 @@ gfs_hook_clear_gfs_file(int fd)
 	  	/* fd is duplicated, skip closing the file. */
 		_gfs_hook_debug(fprintf(stderr,
 					"GFS: clear_gfs_file: skipped\n"));
+		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG)
+			gfs_hook_num_gfs_files_dec();
 	} else {
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
 			gfs_hook_delete_creating_file(gf);
 			e = gfs_pio_close(gf);
-			--_gfs_hook_num_gfs_files;
+			gfs_hook_num_gfs_files_dec();
 		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
 			_gfs_file_buf[fd]->u.d->dir = NULL;
 			_gfs_file_buf[fd]->u.d->suspended = NULL;
@@ -305,6 +390,23 @@ gfs_hook_mode_calc_digest_force(void)
 }
 
 char *
+gfs_hook_flush_all(void)
+{
+	int fd;
+	char *e, *e_save = NULL;
+	GFS_File gf;
+
+	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd) {
+		if ((gf = gfs_hook_is_open(fd)) != NULL) {
+			e = gfs_pio_flush(gf);
+			if (e_save == NULL)
+				e_save = e;
+		}
+	}
+	return (e_save);
+}
+
+char *
 gfs_hook_close_all(void)
 {
 	int fd;
@@ -313,7 +415,7 @@ gfs_hook_close_all(void)
 	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd) {
 		if (gfs_hook_is_open(fd)) {
 			e = gfs_hook_clear_gfs_file(fd);
-			if (e != NULL && e_save == NULL)
+			if (e_save == NULL)
 				e_save = e;
 		}
 	}
@@ -325,6 +427,7 @@ struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
 	if (gfs_hook_is_open(fd) == NULL)
 		return (NULL);
 	++_gfs_file_buf[fd]->refcount;
+	gfs_hook_num_gfs_files_inc();
 	return (_gfs_file_buf[fd]);
 }
 

@@ -21,11 +21,14 @@ char *gfs_hook_initialize(void);
 int gfs_hook_open_flags_gfarmize(int);
 
 int gfs_hook_num_gfs_files(void);
+void gfs_hook_reserve_fd(void);
+void gfs_hook_release_fd(void);
 int gfs_hook_insert_gfs_file(struct gfs_file *);
 int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
 unsigned char gfs_hook_gfs_file_type(int);
 char *gfs_hook_clear_gfs_file(int);
 void gfs_hook_mode_calc_digest_force(void);
+char *gfs_hook_flush_all(void);
 char *gfs_hook_close_all(void);
 
 void *gfs_hook_is_open(int);
