@@ -137,7 +137,7 @@ gfarm_auth_request_gsi_receive_result(int events, int fd, void *closure,
 		return;
 	}
 	assert(events == GFARM_EVENT_READ);
-	state->error = xxx_proto_recv(state->conn, 0, &eof, "i", &error);
+	state->error = xxx_proto_recv(state->conn, 1, &eof, "i", &error);
 	if (state->error == NULL && eof)
 		state->error = GFARM_ERR_PROTOCOL;
 	if (state->error == NULL && error != GFARM_AUTH_ERROR_NO_ERROR)
