@@ -25,8 +25,8 @@ typedef struct gfarmSecSession {
      */
     gss_cred_id_t cred;		/* The credential used for the
 				   session. */
-    char *credName;		/* Name of the credential.
-				   Heap alloc'd. */
+    gss_name_t credName;	/* Name of the credential.
+				   Need to release. */
     gss_ctx_id_t sCtx;		/* A secure context for the session. */
 
     /*
@@ -42,8 +42,7 @@ typedef struct gfarmSecSession {
 	struct initiatorSessionInfo {
 	    OM_uint32 reqFlag;		/* Security context
 					   initiation flag. */
-	    char *acceptorDistName;	/* Acceptor's DN.
-					   Heap alloc'd. */
+	    gss_name_t acceptorName;	/* Need to release */
 	} initiator;
 
 	/*
@@ -52,7 +51,7 @@ typedef struct gfarmSecSession {
 	struct acceptorSessionInfo {
 	    gfarmAuthEntry *mappedUser;	/* Authenticated
 					   user information. */
-	    char *exportedName;		/* initiator GSS_C_NT_EXPORT_NAME */
+	    gss_name_t initiatorName;	/* Need to release */
 	    gss_cred_id_t deleCred;	/* A credential
 					   delegated from
 					   the initiator. */
@@ -153,7 +152,7 @@ extern void	gfarmSecSessionFinalizeAcceptor(void);
 extern void	gfarmSecSessionFinalizeInitiator(void);
 extern void	gfarmSecSessionFinalizeBoth(void);
 
-extern char *	gfarmSecSessionGetInitiatorCredName(void);
+extern int	gfarmSecSessionGetInitiatorInitialCredName(gss_name_t *namePtr);
 
 extern gfarmSecSession *	gfarmSecSessionAccept(int fd,
 						      gss_cred_id_t cred,
@@ -161,25 +160,25 @@ extern gfarmSecSession *	gfarmSecSessionAccept(int fd,
 						      OM_uint32 *majStatPtr,
 						      OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiate(int fd,
-							char *acceptorNameString,
-							gss_OID acceptorNameType,
+							const gss_name_t acceptorName,
 							gss_cred_id_t cred,
+							OM_uint32 reqFlag,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByAddr(unsigned long rAddr,
 							int port,
-							char *acceptorNameString,
-							gss_OID acceptorNameType,
+							const gss_name_t acceptorName,
 							gss_cred_id_t cred,
+							OM_uint32 reqFlag,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByName(char *hostname,
 							int port,
-							char *acceptorNameString,
-							gss_OID acceptorNameType,
+							const gss_name_t acceptorName,
 							gss_cred_id_t cred,
+							OM_uint32 reqFlag,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
@@ -187,7 +186,9 @@ extern void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
 
 extern gss_cred_id_t		gfarmSecSessionGetDelegatedCredential(gfarmSecSession *ssPtr);
 
-extern char *			gfarmSecSessionGetInitiatorExportedName(gfarmSecSession *ssPtr);
+extern int			gfarmSecSessionGetInitiatorName(
+							gfarmSecSession *ssPtr,
+							gss_name_t *namePtr);
 
 extern gfarmAuthEntry *		gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
 
@@ -239,9 +240,9 @@ struct gfarmSecSessionInitiateState;
 extern struct gfarmSecSessionInitiateState *gfarmSecSessionInitiateRequest(
 							struct gfarm_eventqueue *q,
 							int fd,
-							char *acceptorNameString,
-							gss_OID acceptorNameType,
+							const gss_name_t acceptorName,
 							gss_cred_id_t cred,
+							OM_uint32 reqFlag,
 							gfarmSecSessionOption *ssOptPtr,
 							void (*continuation)(void *),
 							void *closure,

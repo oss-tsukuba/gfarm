@@ -26,7 +26,7 @@ ParseArgs(argc, argv)
      int argc;
      char *argv[];
 {
-    int c, tmp;
+    int c;
 
     while ((c = getopt(argc, argv, "h:"  COMMON_OPTIONS)) != -1) {
 	switch (c) {
@@ -77,10 +77,6 @@ main(argc, argv)
     int ret = 1;
     int len;
 
-    if (ParseArgs(argc, argv) != 0) {
-	goto Done;
-    }
-
     gflog_auth_set_verbose(1);
     if (gfarmSecSessionInitializeInitiator(NULL, NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
@@ -89,24 +85,35 @@ main(argc, argv)
 	goto Done;
     }
 
-    if (!acceptorSpecified) {
-	acceptorNameString = malloc(sizeof("host@") + strlen(hostname));
-	if (acceptorNameString == NULL) {
-	    fprintf(stderr, "no memory\n");
-	    goto Done;
-	}
-	sprintf(acceptorNameString, "host@%s", hostname);
-	acceptorNameType = GSS_C_NT_HOSTBASED_SERVICE;
+    if (ParseArgs(argc, argv) != 0) {
+	goto Done;
     }
 
-    ss0 = gfarmSecSessionInitiateByAddr(addr, port, acceptorNameString, acceptorNameType, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
+    if (!acceptorSpecified) {
+	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
+				     &majStat, &minStat) < 0) {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    goto Done;
+	}
+    }
+
+    ss0 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+					GSS_C_NO_CREDENTIAL,
+					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+					NULL,
+					&majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't initiate session 0 because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
-    ss1 = gfarmSecSessionInitiateByAddr(addr, port, acceptorNameString, acceptorNameType, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
+    ss1 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+					GSS_C_NO_CREDENTIAL,
+					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+					NULL,
+					&majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't initiate session 1 because of:\n");
 	gfarmGssPrintMajorStatus(majStat);

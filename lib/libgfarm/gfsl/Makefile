@@ -53,17 +53,22 @@ include $(top_srcdir)/makes/lib.mk
 auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
 auth.lo: gfsl_config.h gfarm_auth.h misc.h
 gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
-gsi.lo: gfsl_config.h gfarm_gsi.h tcputil.h
+gsi.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+gsi.lo: gfsl_config.h gfarm_gsi.h gfarm_auth.h
 misc.lo: gfsl_config.h gfarm_auth.h
 session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
-session.lo: gfarm_secure_session.h tcputil.h misc.h
-tcputil.lo: $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
+session.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+session.lo: gfarm_secure_session.h misc.h
+tcputil.lo: $(GFUTIL_SRCDIR)/gfutil.h
+tcputil.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
-    tcputil.h gfsl_config.h gfarm_gsi.h gfarm_secure_session.h misc.h scarg.h
+    $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
+    gfsl_config.h gfarm_gsi.h gfarm_secure_session.h misc.h scarg.h
 server.o server2.o: gfarm_auth.h
-scarg.o: misc.h scarg.h
-scsub.o: tcputil.h gfarm_secure_session.h gfarm_auth.h
+scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfarm_gsi.h misc.h scarg.h
+scsub.o: gfarm_secure_session.h gfarm_auth.h \
+    $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs
 

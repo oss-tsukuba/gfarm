@@ -67,10 +67,6 @@ main(argc, argv)
 
     gfarmSecSession *ssList[2];
 
-    if (ParseArgs(argc, argv) != 0) {
-	goto Done;
-    }
-
     gflog_auth_set_verbose(1);
     if (gfarmSecSessionInitializeAcceptor(NULL, NULL,
 					  &majStat, &minStat) <= 0) {
@@ -80,21 +76,34 @@ main(argc, argv)
 	goto Done;
     }
 
+    if (ParseArgs(argc, argv) != 0) {
+	goto Done;
+    }
+
     if (!acceptorSpecified) {
 	myCred = GSS_C_NO_CREDENTIAL;
     } else {
-	char *credName;
+	gss_name_t credName;
+	char *credString;
 
 	if (gfarmGssAcquireCredential(&myCred,
-				      acceptorNameString, acceptorNameType,
-				      GSS_C_ACCEPT,
+				      acceptorName, GSS_C_ACCEPT,
 				      &majStat, &minStat, &credName) <= 0) {
 	    fprintf(stderr, "can't acquire credential because of:\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
-	    goto Done;
+	    return 1;
 	}
-	fprintf(stderr, "Acceptor Credential: '%s'\n", credName);
+	credString = gfarmGssNewDisplayName(credName, &majStat,&minStat, NULL);
+	if (credString == NULL) {
+	    fprintf(stderr, "can't convert acquired credential to string:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    return 1;
+	}
+	fprintf(stderr, "Acceptor Credential: '%s'\n", credString);
+	free(credString);
+	gfarmGssDeleteName(&credName, NULL, NULL);
     }
 
     /*
@@ -125,8 +134,7 @@ main(argc, argv)
 	perror("accept");
 	goto Done;
     }
-    ss1 = gfarmSecSessionAccept(fd1, myCred, NULL,
-				&majStat, &minStat);
+    ss1 = gfarmSecSessionAccept(fd1, myCred, NULL, &majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
 	gfarmGssPrintMajorStatus(majStat);

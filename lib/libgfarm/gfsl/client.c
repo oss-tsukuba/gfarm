@@ -17,7 +17,8 @@
 
 #include "scarg.h"
 
-extern void	doClient(char *host, int port, char *acceptorNameString, gss_OID acceptorNameType, gss_cred_id_t deleCred, int deleCheck);
+extern void	doClient(char *host, int port, gss_name_t acceptorName,
+			 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
 static unsigned long int addr = 0L;
 static char *hostname = NULL;
@@ -85,10 +86,6 @@ main(argc, argv)
     OM_uint32 majStat;
     OM_uint32 minStat;
 
-    if (ParseArgs(argc, argv) != 0) {
-	return 1;
-    }
-
     gflog_auth_set_verbose(1);
     if (gfarmSecSessionInitializeInitiator(NULL, NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
@@ -98,18 +95,20 @@ main(argc, argv)
 	return 1;
     }
 
-    if (!acceptorSpecified) {
-	acceptorNameString = malloc(sizeof("host@") + strlen(hostname));
-	if (acceptorNameString == NULL) {
-	    fprintf(stderr, "no memory\n");
-	    return 1;
-	}
-	sprintf(acceptorNameString, "host@%s", hostname);
-	acceptorNameType = GSS_C_NT_HOSTBASED_SERVICE;
+    if (ParseArgs(argc, argv) != 0) {
+	return 1;
     }
 
-    doClient(hostname, port, acceptorNameString, acceptorNameType,
-	     GSS_C_NO_CREDENTIAL, 1);
+    if (!acceptorSpecified) {
+	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
+				     &majStat, &minStat) < 0) {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    return 1;
+	}
+    }
+
+    doClient(hostname, port, acceptorName, GSS_C_NO_CREDENTIAL, 1);
     gfarmSecSessionFinalizeInitiator();
 
     return 0;

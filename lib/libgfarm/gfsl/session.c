@@ -35,8 +35,8 @@
  */
 static gss_cred_id_t initiatorInitialCred = GSS_C_NO_CREDENTIAL;
 static gss_cred_id_t acceptorInitialCred = GSS_C_NO_CREDENTIAL;
-static char *initiatorInitialCredName = NULL;
-static char *acceptorInitialCredName = NULL;
+static gss_name_t initiatorInitialCredName = GSS_C_NO_NAME;
+static gss_name_t acceptorInitialCredName = GSS_C_NO_NAME;
 
 static int initiatorInitialized = 0;
 static int acceptorInitialized = 0;
@@ -64,13 +64,58 @@ static int			negotiateConfigParam(int fd,
 				      OM_uint32 *majStatPtr,
 				      OM_uint32 *minStatPtr);
 static gfarmSecSession *	secSessionInitiate(int fd,
-				      char *acceptorNameString,
-				      gss_OID acceptorNameType,
+				      const gss_name_t acceptorName,
 				      gss_cred_id_t cred,
+				      OM_uint32 reqFlag,
 				      gfarmSecSessionOption *ssOptPtr,
 				      OM_uint32 *majStatPtr,
 				      OM_uint32 *minStatPtr,
 				      int needClose);
+
+static void negotiateConfigParamInitiatorReceive(int events,
+						 int fd,
+						 void *closure,
+						 const struct timeval *t);
+static void negotiateConfigParamInitiatorSend(int events,
+					      int fd,
+					      void *closure,
+					      const struct timeval *t);
+static struct negotiateConfigParamInitiatorState *
+	negotiateConfigParamInitiatorRequest(struct gfarm_eventqueue *q,
+					     int fd,
+					     gss_ctx_id_t sCtx,
+					     gfarmSecSessionOption *canPtr,
+					     void (*continuation)(void *),
+					     void *closure,
+					     OM_uint32 *majStatPtr,
+					     OM_uint32 *minStatPtr);
+static int negotiateConfigParamInitiatorResult(struct negotiateConfigParamInitiatorState *state,
+					       gss_qop_t *qOpPtr,
+					       unsigned int *maxTransPtr,
+					       unsigned int *configPtr,
+					       OM_uint32 *majStatPtr,
+					       OM_uint32 *minStatPtr);
+static void secSessionInitiateCleanup(void *closure);
+static void secSessionInitiateReceiveAuthorizationAck(int events,
+						      int fd,
+						      void *closure,
+						      const struct timeval *t);
+static void secSessionInitiateWaitAuthorizationAck(void *closure);
+static struct gfarmSecSessionInitiateState *
+	secSessionInitiateRequest(struct gfarm_eventqueue *q,
+				  int fd,
+				  const gss_name_t acceptorName,
+				  gss_cred_id_t cred,
+				  OM_uint32 reqFlag,
+				  gfarmSecSessionOption *ssOptPtr,
+				  void (*continuation)(void *),
+				  void *closure,
+				  OM_uint32 *majStatPtr,
+				  OM_uint32 *minStatPtr,
+				  int needClose);
+static gfarmSecSession *secSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
+						 OM_uint32 *majStatPtr,
+						 OM_uint32 *minStatPtr);
 
 
 #ifdef SS_DEBUG
@@ -503,9 +548,11 @@ allocSecSession(which)
     (void)memset((void *)ret, 0, sizeof(gfarmSecSession));
     switch (which) {
 	case GFARM_SS_INITIATOR: {
+	    ret->iOaInfo.initiator.acceptorName = GSS_C_NO_NAME;
 	    break;
 	}
 	case GFARM_SS_ACCEPTOR: {
+	    ret->iOaInfo.acceptor.initiatorName = GSS_C_NO_NAME;
 	    ret->iOaInfo.acceptor.deleCred = GSS_C_NO_CREDENTIAL;
 	    break;
 	}
@@ -534,24 +581,26 @@ destroySecSession(ssPtr)
 	if (ssPtr->peerName != NULL) {
 	    (void)free(ssPtr->peerName);
 	}
-	if (ssPtr->credName != NULL) {
-	    (void)free(ssPtr->credName);
+	if (ssPtr->credName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&ssPtr->credName, NULL, NULL);
 	}
 
 	switch (ssPtr->iOa) {
 	    case GFARM_SS_INITIATOR: {
-		if (ssPtr->iOaInfo.initiator.acceptorDistName != NULL) {
-		    (void)free(ssPtr->iOaInfo.initiator.acceptorDistName);
+		if (ssPtr->iOaInfo.initiator.acceptorName != GSS_C_NO_NAME) {
+		    gfarmGssDeleteName(&ssPtr->iOaInfo.initiator.acceptorName,
+				       NULL, NULL);
 		}
 		break;
 	    }
 	    case GFARM_SS_ACCEPTOR: {
+		if (ssPtr->iOaInfo.acceptor.initiatorName != GSS_C_NO_NAME) {
+		    gfarmGssDeleteName(ssPtr->iOaInfo.acceptor.initiatorName,
+				       NULL, NULL);
+		}
 		if (ssPtr->iOaInfo.acceptor.deleCred != GSS_C_NO_CREDENTIAL) {
 		    (void)gss_release_cred(&minStat,
 					   &(ssPtr->iOaInfo.acceptor.deleCred));
-		}
-		if (ssPtr->iOaInfo.acceptor.exportedName != NULL) {
-		    free(ssPtr->iOaInfo.acceptor.exportedName);
 		}
 		if (ssPtr->iOaInfo.acceptor.mappedUser != NULL) {
 		    /*
@@ -629,13 +678,10 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	 * Get a credential.
 	 */
 	if (acceptorInitialCred == GSS_C_NO_CREDENTIAL &&
-	    acceptorInitialCredName == NULL) {
+	    acceptorInitialCredName == GSS_C_NO_NAME) {
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
-					  NULL,
-					  GSS_C_NO_OID,
-					  GSS_C_ACCEPT,
-					  &majStat,
-					  &minStat,
+					  GSS_C_NO_NAME, GSS_C_ACCEPT,
+					  &majStat, &minStat,
 					  &acceptorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
@@ -687,9 +733,10 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 		(void)gss_release_cred(&minStat, &acceptorInitialCred);
 		acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 	    }
-	    if (acceptorInitialCredName != NULL) {
-		(void)free(acceptorInitialCredName);
-		acceptorInitialCredName = NULL;
+	    if (acceptorInitialCredName != GSS_C_NO_NAME) {
+		(void)gfarmGssDeleteName(&acceptorInitialCredName,
+					  NULL, NULL);
+		acceptorInitialCredName = GSS_C_NO_NAME;
 	    }
 	} else {
 	    acceptorInitialized = 1;
@@ -705,13 +752,12 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
     return ret;
 }
 
-char *
-gfarmSecSessionGetInitiatorCredName()
+int
+gfarmSecSessionGetInitiatorInitialCredName(namePtr)
+     gss_name_t *namePtr;
 {
-    if (initiatorInitialized)
-	return (initiatorInitialCredName);
-    else
-	return (NULL);
+    *namePtr = initiatorInitialCredName;
+    return initiatorInitialized ? 1 : -1;
 }
 
 int
@@ -732,13 +778,10 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	 * Get a credential.
 	 */
 	if (initiatorInitialCred == GSS_C_NO_CREDENTIAL &&
-	    initiatorInitialCredName == NULL) {
+	    initiatorInitialCredName == GSS_C_NO_NAME) {
 	    if (gfarmGssAcquireCredential(&initiatorInitialCred,
-					  NULL,
-					  GSS_C_NO_OID,
-					  GSS_C_INITIATE,
-					  &majStat,
-  					  &minStat,
+					  GSS_C_NO_NAME, GSS_C_INITIATE,
+					  &majStat, &minStat,
 					  &initiatorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
@@ -798,8 +841,9 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 		(void)gss_release_cred(&minStat, &initiatorInitialCred);
 		initiatorInitialCred = GSS_C_NO_CREDENTIAL;
 	    }
-	    if (initiatorInitialCredName != NULL) {
-		(void)free(initiatorInitialCredName);
+	    if (initiatorInitialCredName != GSS_C_NO_NAME) {
+		(void)gfarmGssDeleteName(&initiatorInitialCredName,
+					  NULL, NULL);
 		initiatorInitialCredName = NULL;
 	    }
 	} else {
@@ -848,19 +892,16 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	char *confDir = NULL;
 
 	if (acceptorInitialCred == GSS_C_NO_CREDENTIAL &&
-	    acceptorInitialCredName == NULL) {
+	    acceptorInitialCredName == GSS_C_NO_NAME) {
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
-					  NULL,
-					  GSS_C_NO_OID,
-					  GSS_C_BOTH,
-					  &majStat,
-					  &minStat,
+					  GSS_C_NO_NAME, GSS_C_BOTH,
+					  &majStat, &minStat,
 					  &acceptorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
 	    }
 	    initiatorInitialCred = acceptorInitialCred;
-	    initiatorInitialCredName = strdup(acceptorInitialCredName);
+	    initiatorInitialCredName = acceptorInitialCredName;
 	}
 
 	/*
@@ -931,19 +972,15 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	}
 	if (ret == -1) {
 	    if (acceptorInitialCred != GSS_C_NO_CREDENTIAL) {
-		OM_uint32 minStat;
-		(void)gss_release_cred(&minStat, &acceptorInitialCred);
+		gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
 		acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 	    }
-	    if (acceptorInitialCredName != NULL) {
-		(void)free(acceptorInitialCredName);
-		acceptorInitialCredName = NULL;
-	    }
-	    if (initiatorInitialCredName != NULL) {
-		(void)free(initiatorInitialCredName);
-		initiatorInitialCredName = NULL;
+	    if (acceptorInitialCredName != GSS_C_NO_NAME) {
+		gfarmGssDeleteName(&acceptorInitialCredName, NULL, NULL);
+		acceptorInitialCredName = GSS_C_NO_NAME;
 	    }
 	    initiatorInitialCred = GSS_C_NO_CREDENTIAL;
+	    initiatorInitialCredName = GSS_C_NO_NAME;
 	} else {
 	    initiatorInitialized = 1;
 	    acceptorInitialized = 1;
@@ -965,13 +1002,12 @@ gfarmSecSessionFinalizeInitiator()
 {
     if (initiatorInitialized == 1) {
 	if (initiatorInitialCred != GSS_C_NO_CREDENTIAL) {
-	    OM_uint32 minStat;
-	    (void)gss_release_cred(&minStat, &initiatorInitialCred);
+	    gfarmGssDeleteCredential(&initiatorInitialCred, NULL, NULL);
 	    initiatorInitialCred = GSS_C_NO_CREDENTIAL;
 	}
-	if (initiatorInitialCredName != NULL) {
-	    (void)free(initiatorInitialCredName);
-	    initiatorInitialCredName = NULL;
+	if (initiatorInitialCredName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(initiatorInitialCredName, NULL, NULL);
+	    initiatorInitialCredName = GSS_C_NO_NAME;
 	}
 	initiatorInitialized = 0;
     }
@@ -983,13 +1019,12 @@ gfarmSecSessionFinalizeAcceptor()
 {
     if (acceptorInitialized == 1) {
 	if (acceptorInitialCred != GSS_C_NO_CREDENTIAL) {
-	    OM_uint32 minStat;
-	    (void)gss_release_cred(&minStat, &acceptorInitialCred);
+	    gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
 	    acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 	}
-	if (acceptorInitialCredName != NULL) {
-	    (void)free(acceptorInitialCredName);
-	    acceptorInitialCredName = NULL;
+	if (acceptorInitialCredName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&acceptorInitialCredName, NULL, NULL);
+	    acceptorInitialCredName = GSS_C_NO_NAME;
 	}
 	gfarmAuthFinalize();
 	acceptorInitialized = 0;
@@ -1002,19 +1037,15 @@ gfarmSecSessionFinalizeBoth()
 {
     if (initiatorInitialized == 1 && acceptorInitialized == 1) {
 	if (acceptorInitialCred != GSS_C_NO_CREDENTIAL) {
-	    OM_uint32 minStat;
-	    (void)gss_release_cred(&minStat, &acceptorInitialCred);
+	    gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
 	    acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 	}
-	if (acceptorInitialCredName != NULL) {
-	    (void)free(acceptorInitialCredName);
-	    acceptorInitialCredName = NULL;
+	if (acceptorInitialCredName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&acceptorInitialCredName, NULL, NULL);
+	    acceptorInitialCredName = GSS_C_NO_NAME;
 	}
-	if (initiatorInitialCredName != NULL) {
-	    (void)free(initiatorInitialCredName);
-	    initiatorInitialCredName = NULL;
-	    initiatorInitialCred = GSS_C_NO_CREDENTIAL;
-	}
+	initiatorInitialCred = GSS_C_NO_CREDENTIAL;
+	initiatorInitialCredName = GSS_C_NO_NAME;
 	gfarmAuthFinalize();
 	acceptorInitialized = 0;
 	initiatorInitialized = 0;
@@ -1037,14 +1068,15 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     unsigned long int rAddr = INADDR_ANY;
     int rPort = 0;
     char *peerName = NULL;
+    gss_name_t credName = GSS_C_NO_NAME;
 
     OM_uint32 majStat = GSS_S_FAILURE;
     OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
     gss_ctx_id_t sCtx = GSS_C_NO_CONTEXT;
+    gss_name_t initiatorName = GSS_C_NO_NAME;
+    gss_OID initiatorNameType;
     char *initiatorDistName = NULL;
-    char *initiatorExportedName = NULL;
     gss_cred_id_t deleCred = GSS_C_NO_CREDENTIAL;
-    char *credName = NULL;
     gfarm_int32_t acknack = GFARM_SS_AUTH_NACK;
 
     gss_qop_t qOp;
@@ -1079,23 +1111,31 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      */
     if (cred == GSS_C_NO_CREDENTIAL) {
 	cred = acceptorInitialCred;
-	credName = strdup(acceptorInitialCredName);
+	if (gfarmGssDuplicateName(&credName, acceptorInitialCredName,
+				  &majStat, &minStat) < 0) {
+	    goto Fail;
+	}
     } else {
-	credName = gfarmGssGetCredentialName(cred);
+	if (gfarmGssNewCredentialName(&credName, cred,
+				      &majStat, &minStat) < 0) {
+	    goto Fail;
+	}
     }
 
     /*
      * Phase 1: Accept a security context.
      */
     if (gfarmGssAcceptSecurityContext(fd, cred, &sCtx,
-				      &majStat,
-				      &minStat,
-				      &initiatorDistName,
-				      &initiatorExportedName,
-				      &deleCred) < 0) {
+				      &majStat, &minStat,
+				      &initiatorName, &deleCred) < 0) {
 	goto Fail;
     }
-    if (initiatorDistName == NULL || initiatorDistName[0] == '\0') {
+    if (initiatorName == GSS_C_NO_NAME ||
+	(initiatorDistName =
+	 gfarmGssNewDisplayName(initiatorName, &majStat, &minStat,
+				&initiatorNameType)) == NULL ||
+	initiatorDistName[0] == '\0' ||
+	initiatorNameType == GSS_C_NT_ANONYMOUS) {
 	gflog_auth_error("gfarmSecSessionAccept()", "no DN from initiator");
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
@@ -1126,8 +1166,8 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 		(void)gfarmWriteInt32(fd, &acknack, 1);
 	    } else {
 		gflog_auth_error(initiatorDistName, "hostname doesn't match");
-		/* Send NACK. */
 		majStat = GSS_S_UNAUTHORIZED;
+		/* Send NACK. */
 		acknack = GFARM_SS_AUTH_NACK;
 		(void)gfarmWriteInt32(fd, &acknack, 1);
 		goto Fail;
@@ -1162,7 +1202,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     ret->iOa = GFARM_SS_ACCEPTOR;
     ret->iOaInfo.acceptor.mappedUser = entry;
     ret->iOaInfo.acceptor.mappedUser->sesRefCount++;
-    ret->iOaInfo.acceptor.exportedName = initiatorExportedName;
+    ret->iOaInfo.acceptor.initiatorName = initiatorName;
     ret->iOaInfo.acceptor.deleCred = deleCred;
     ret->qOp = qOp;
     ret->maxTransSize = maxTransSize;
@@ -1171,13 +1211,24 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     goto Done;
 
     Fail:
-    if (initiatorExportedName != NULL) {
-	free(initiatorExportedName);
-	initiatorExportedName = NULL;
-    }
     if (ret != NULL) {
 	destroySecSession(ret);
 	ret = NULL;
+    }
+    if (peerName != NULL) {
+	free(peerName);
+    }
+    if (credName != GSS_C_NO_NAME) {
+	gfarmGssDeleteName(&credName, NULL, NULL);
+    }
+    if (sCtx != GSS_C_NO_CONTEXT) {
+	gfarmGssDeleteSecurityContext(sCtx);
+    }
+    if (initiatorName != GSS_C_NO_NAME) {
+	gfarmGssDeleteName(&initiatorName, NULL, NULL);
+    }
+    if (deleCred != GSS_C_NO_CREDENTIAL) {
+	gfarmGssDeleteCredential(&deleCred, NULL, NULL);
     }
 
     Done:
@@ -1195,11 +1246,11 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 
 
 static gfarmSecSession *
-secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, majStatPtr, minStatPtr, needClose)
+secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr, needClose)
      int fd;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
@@ -1215,8 +1266,10 @@ secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, maj
     OM_uint32 majStat = GSS_S_FAILURE;
     OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
     gss_ctx_id_t sCtx = GSS_C_NO_CONTEXT;
+    gss_name_t acceptorNameResult = GSS_C_NO_NAME;
     char *acceptorDistName = NULL;
-    char *credName = NULL;
+    gss_OID acceptorNameType = GSS_C_NO_OID;
+    gss_name_t credName = GSS_C_NO_NAME;
     gfarm_int32_t acknack = GFARM_SS_AUTH_NACK;
 
     gss_qop_t qOp;
@@ -1251,25 +1304,31 @@ secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, maj
      */
     if (cred == GSS_C_NO_CREDENTIAL) {
 	cred = initiatorInitialCred;
-	credName = strdup(initiatorInitialCredName);
+	if (gfarmGssDuplicateName(&credName, initiatorInitialCredName,
+				  &majStat, &minStat) < 0) {
+	    goto Fail;
+	}
     } else {
-	credName = gfarmGssGetCredentialName(cred);
+	if (gfarmGssNewCredentialName(&credName, cred,
+				      &majStat, &minStat) < 0) {
+	    goto Fail;
+	}
     }
 
     /*
      * Phase 1: Initiate a security context.
      */
-    if (gfarmGssInitiateSecurityContext(fd,
-					acceptorNameString, acceptorNameType,
-					cred,
-					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
-					&sCtx,
-					&majStat,
-					&minStat,
-					&acceptorDistName) < 0) {
+    if (gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, &sCtx,
+					&majStat, &minStat,
+					&acceptorNameResult) < 0) {
 	goto Fail;
     }
-    if (acceptorDistName == NULL || acceptorDistName[0] == '\0') {
+    if (acceptorNameResult == GSS_C_NO_NAME ||
+	(acceptorDistName =
+	 gfarmGssNewDisplayName(acceptorNameResult, &majStat, &minStat,
+				&acceptorNameType)) == NULL ||
+	acceptorDistName[0] == '\0' ||
+	acceptorNameType == GSS_C_NT_ANONYMOUS) {
 	gflog_auth_error("gfarm:secSessionInitiate()", "no DN from acceptor");
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
@@ -1316,8 +1375,8 @@ secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, maj
     ret->credName = credName;
     ret->sCtx = sCtx;
     ret->iOa = GFARM_SS_INITIATOR;
-    ret->iOaInfo.initiator.reqFlag = GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG;
-    ret->iOaInfo.initiator.acceptorDistName = strdup(acceptorDistName);
+    ret->iOaInfo.initiator.reqFlag = reqFlag;
+    ret->iOaInfo.initiator.acceptorName = acceptorNameResult;
     ret->qOp = qOp;
     ret->maxTransSize = maxTransSize;
     ret->config = config;
@@ -1328,6 +1387,18 @@ secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, maj
     if (ret != NULL) {
 	destroySecSession(ret);
 	ret = NULL;
+    }
+    if (peerName != NULL) {
+	free(peerName);
+    }
+    if (credName != GSS_C_NO_NAME) {
+	gfarmGssDeleteName(&credName, NULL, NULL);
+    }
+    if (sCtx != GSS_C_NO_CONTEXT) {
+	gfarmGssDeleteSecurityContext(sCtx);
+    }
+    if (acceptorNameResult != GSS_C_NO_NAME) {
+	gfarmGssDeleteName(&acceptorNameResult, NULL, NULL);
     }
 
     Done:
@@ -1345,27 +1416,27 @@ secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, maj
 
 
 gfarmSecSession *
-gfarmSecSessionInitiate(fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, majStatPtr, minStatPtr)
+gfarmSecSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
      int fd;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
 {
-    return secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred,
+    return secSessionInitiate(fd, acceptorName, cred, reqFlag,
 			      ssOptPtr, majStatPtr, minStatPtr, 0);
 }
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByAddr(rAddr, port, acceptorNameString, acceptorNameType, cred, ssOptPtr, majStatPtr, minStatPtr)
+gfarmSecSessionInitiateByAddr(rAddr, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
      unsigned long rAddr;
      int port;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
@@ -1380,18 +1451,18 @@ gfarmSecSessionInitiateByAddr(rAddr, port, acceptorNameString, acceptorNameType,
 	}
 	return NULL;
     }
-    return secSessionInitiate(fd, acceptorNameString, acceptorNameType, cred,
+    return secSessionInitiate(fd, acceptorName, cred, reqFlag,
 			      ssOptPtr, majStatPtr, minStatPtr, 1);
 }
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByName(hostname, port, acceptorNameString, acceptorNameType, cred, ssOptPtr, majStatPtr, minStatPtr)
+gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
      char *hostname;
      int port;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
@@ -1407,7 +1478,7 @@ gfarmSecSessionInitiateByName(hostname, port, acceptorNameString, acceptorNameTy
 	return NULL;
     }
     return gfarmSecSessionInitiateByAddr(rAddr, port,
-					 acceptorNameString, acceptorNameType, cred,
+					 acceptorName, cred, reqFlag,
 					 ssOptPtr, majStatPtr, minStatPtr);
 }
 
@@ -1430,13 +1501,16 @@ gfarmSecSessionGetDelegatedCredential(ssPtr)
     return ssPtr->iOaInfo.acceptor.deleCred;
 }
 
-char *
-gfarmSecSessionGetInitiatorExportedName(gfarmSecSession *ssPtr)
+int
+gfarmSecSessionGetInitiatorName(ssPtr, namePtr)
+     gfarmSecSession *ssPtr;
+     gss_name_t *namePtr;
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
-	return NULL;
+	return -1;
     }
-    return ssPtr->iOaInfo.acceptor.exportedName;
+    *namePtr = ssPtr->iOaInfo.acceptor.initiatorName;
+    return 1;
 }
 
 gfarmAuthEntry *
@@ -2010,13 +2084,16 @@ struct gfarmSecSessionInitiateState {
     unsigned long int rAddr;
     int rPort;
     char *peerName;
+    gss_name_t credName;
     struct gfarm_event *readable;
     struct gfarmGssInitiateSecurityContextState *secCtxState;
     struct negotiateConfigParamInitiatorState *negoCfgState;
 
     gss_ctx_id_t sCtx;
+    OM_uint32 reqFlag;
+    gss_name_t acceptorNameResult;
     char *acceptorDistName;
-    char *credName;
+    gss_OID acceptorNameType;
 
     gss_qop_t qOp;
     unsigned int maxTransSize;
@@ -2110,9 +2187,14 @@ secSessionInitiateWaitAuthorizationAck(closure)
 
     if (gfarmGssInitiateSecurityContextResult(
 	state->secCtxState, &state->sCtx, &state->majStat, &state->minStat,
-	&state->acceptorDistName) >= 0) {
-	if (state->acceptorDistName == NULL ||
-	    state->acceptorDistName[0] == '\0') {
+	&state->acceptorNameResult) >= 0) {
+	if (state->acceptorNameResult == GSS_C_NO_NAME ||
+	    (state->acceptorDistName =
+	     gfarmGssNewDisplayName(state->acceptorNameResult,
+				    &state->majStat, &state->minStat,
+				    &state->acceptorNameType)) == NULL ||
+	    state->acceptorDistName[0] == '\0' ||
+	    state->acceptorNameType == GSS_C_NT_ANONYMOUS) {
 	    gflog_auth_error("gfarm:secSessionInitiateWaitAuthorizationAck()",
 			     "no DN from acceptor");
 	    state->majStat = GSS_S_UNAUTHORIZED; /* failure */
@@ -2136,18 +2218,18 @@ secSessionInitiateWaitAuthorizationAck(closure)
 }
 
 static struct gfarmSecSessionInitiateState *
-secSessionInitiateRequest(q, fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, continuation, closure, needClose, majStatPtr, minStatPtr)
+secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continuation, closure, majStatPtr, minStatPtr, needClose)
      struct gfarm_eventqueue *q;
      int fd;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      void (*continuation)(void *);
      void *closure;
-     int needClose;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
+     int needClose;
 {
     struct gfarmSecSessionInitiateState *state = NULL;
     gfarmSecSession *ret = NULL;
@@ -2179,8 +2261,9 @@ secSessionInitiateRequest(q, fd, acceptorNameString, acceptorNameType, cred, ssO
 	state->peerName = NULL;
 
 	state->sCtx = GSS_C_NO_CONTEXT;
+	state->reqFlag = reqFlag;
+	state->acceptorNameResult = GSS_C_NO_NAME;
 	state->acceptorDistName = NULL;
-	state->credName = NULL;
 
 	state->majStat = GSS_S_COMPLETE;
 	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -2199,43 +2282,53 @@ secSessionInitiateRequest(q, fd, acceptorNameString, acceptorNameType, cred, ssO
 	 */
 	if (cred == GSS_C_NO_CREDENTIAL) {
 	    state->cred = initiatorInitialCred;
-	    state->credName = strdup(initiatorInitialCredName);
+	    if (gfarmGssDuplicateName(&state->credName,
+				      initiatorInitialCredName,
+				      &majStat, &minStat) < 0) {
+		state->credName = GSS_C_NO_NAME;
+	    }
 	} else {
-	    state->credName = gfarmGssGetCredentialName(cred);
+	    state->cred = cred;
+	    if (gfarmGssNewCredentialName(&state->credName, cred,
+					  &majStat, &minStat) < 0) {
+		state->credName = GSS_C_NO_NAME;
+	    }
 	}
 
-	state->readable = gfarm_fd_event_alloc(
-	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
-	    secSessionInitiateReceiveAuthorizationAck, state);
-
-	if (state->readable == NULL) {
+	if (majStat == GSS_S_COMPLETE) {
+	    state->readable = gfarm_fd_event_alloc(
+		GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+		secSessionInitiateReceiveAuthorizationAck, state);
+	    if (state->readable != NULL) {
+		/*
+		 * Phase 1: Initiate a security context.
+		 */
+		state->secCtxState = gfarmGssInitiateSecurityContextRequest(q,
+		    fd, acceptorName, cred, reqFlag,
+		    secSessionInitiateWaitAuthorizationAck, state,
+		    &majStat, &minStat);
+		if (state->secCtxState != NULL) {
+		    if (majStatPtr != NULL) {
+			*majStatPtr = GSS_S_COMPLETE;
+		    }
+		    if (minStatPtr != NULL) {
+			*minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
+		    }
+		    return (state); /* success */
+		}
+	    }
 	    gflog_auth_error("gfarm:secSessionInitiateRequest()", "no memory");
-	} else {
-	    /*
-	     * Phase 1: Initiate a security context.
-	     */
-	    state->secCtxState = gfarmGssInitiateSecurityContextRequest(q,
-		fd, acceptorNameString, acceptorNameType, cred,
-		GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
-		secSessionInitiateWaitAuthorizationAck, state,
-		majStatPtr, minStatPtr);
-	    if (state->secCtxState != NULL)
-		return (state); /* success */
-
-	    gflog_auth_error("gfarm:secSessionInitiateRequest()", "no memory");
-	    majStat = *majStatPtr;
-	    minStat = *minStatPtr;
+	    majStat = GSS_S_FAILURE;
+	    minStat = GFSL_DEFAULT_MINOR_ERROR;
+	    gfarm_event_free(state->readable);
 	}
 
 	/* failure */
-	if (state->readable != NULL) {
-	    gfarm_event_free(state->readable);
+	if (state->credName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&state->credName, NULL, NULL);
 	}
 	if (state->peerName != NULL) {
 	    free(state->peerName);
-	}
-	if (state->credName != NULL) {
-	    free(state->credName);
 	}
     }
 
@@ -2263,8 +2356,22 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
     gfarmSecSession *ret = state->session;
 
     if (GSS_ERROR(state->majStat)) {
-	destroySecSession(ret);
-	ret = NULL;
+	if (ret != NULL) {
+	    destroySecSession(ret);
+	    ret = NULL;
+	}
+	if (state->peerName != NULL) {
+	    free(state->peerName);
+	}
+	if (state->credName != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&state->credName, NULL, NULL);
+	}
+	if (state->sCtx != GSS_C_NO_CONTEXT) {
+	    gfarmGssDeleteSecurityContext(state->sCtx);
+	}
+	if (state->acceptorNameResult != GSS_C_NO_NAME) {
+	    gfarmGssDeleteName(&state->acceptorNameResult, NULL, NULL);
+	}
     } else {
 #if 0
 	fprintf(stderr, "Initiator config:\n");
@@ -2282,9 +2389,8 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
 	ret->credName = state->credName;
 	ret->sCtx = state->sCtx;
 	ret->iOa = GFARM_SS_INITIATOR;
-	ret->iOaInfo.initiator.reqFlag = GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG;
-	ret->iOaInfo.initiator.acceptorDistName =
-	    strdup(state->acceptorDistName);
+	ret->iOaInfo.initiator.reqFlag = state->reqFlag;
+	ret->iOaInfo.initiator.acceptorName = state->acceptorNameResult;
 	ret->qOp = state->qOp;
 	ret->maxTransSize = state->maxTransSize;
 	ret->config = state->config;
@@ -2311,21 +2417,20 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
  */
 
 struct gfarmSecSessionInitiateState *
-gfarmSecSessionInitiateRequest(q, fd, acceptorNameString, acceptorNameType, cred, ssOptPtr, continuation, closure, majStatPtr, minStatPtr)
+gfarmSecSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continuation, closure, majStatPtr, minStatPtr)
      struct gfarm_eventqueue *q;
      int fd;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     const gss_name_t acceptorName;
      gss_cred_id_t cred;
+     OM_uint32 reqFlag;
      gfarmSecSessionOption *ssOptPtr;
      void (*continuation)(void *);
      void *closure;
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
 {
-    return secSessionInitiateRequest(q,
-				     fd, acceptorNameString, acceptorNameType,
-				     cred, ssOptPtr,
+    return secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag,
+				     ssOptPtr,
 				     continuation, closure,
 				     majStatPtr, minStatPtr, 0);
 }

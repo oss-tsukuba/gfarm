@@ -22,20 +22,18 @@
 gfarm_int32_t testBufSize = 4096;
 
 void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
-		 char *acceptorNameString, gss_OID acceptorNameType);
-void	doClient(char *host, int port,
-		 char *acceptorNameString, gss_OID acceptorNameType,
+		 gss_name_t acceptorName);
+void	doClient(char *host, int port, gss_name_t acceptorName,
 		 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
 
 void
-doServer(fd, hostname, port, myCred, acceptorNameString, acceptorNameType)
+doServer(fd, hostname, port, myCred, acceptorName)
      int fd;
      char *hostname;
      int port;
      gss_cred_id_t myCred;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     gss_name_t acceptorName;
 {
     OM_uint32 majStat, minStat;
     char *rBuf = NULL;
@@ -45,6 +43,7 @@ doServer(fd, hostname, port, myCred, acceptorNameString, acceptorNameType)
     int dCheck = 0;
     gfarm_int32_t *tmpBuf;
     gfarmAuthEntry *aePtr = NULL;
+    char *name;
 
     gfarmSecSession *initialSession =
     	gfarmSecSessionAccept(fd, myCred, NULL, &majStat, &minStat);
@@ -56,8 +55,18 @@ doServer(fd, hostname, port, myCred, acceptorNameString, acceptorNameType)
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
+    name = gfarmGssNewDisplayName(initialSession->credName,
+				  &majStat, &minStat, NULL);
+    if (name == NULL) {
+	fprintf(stderr, "cannot convert acceptor credential to name:\n");
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
+	goto Done;
+    }
+    fprintf(stderr, "Accept => Acceptor: '%s'\n", name);
+    free(name);
     aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
-    fprintf(stderr, "Initiator: '%s' -> '%s'\n",
+    fprintf(stderr, "Accept => Initiator: '%s' -> '%s'\n",
 	    aePtr->distName,
 	    (aePtr->authType == GFARM_AUTH_USER) ?
 	    aePtr->authData.userAuth.localName :
@@ -117,8 +126,7 @@ doServer(fd, hostname, port, myCred, acceptorNameString, acceptorNameType)
 	gss_cred_id_t deleCred = gfarmSecSessionGetDelegatedCredential(initialSession);
 	if (deleCred != GSS_C_NO_CREDENTIAL) {
 	    fprintf(stderr, "\nDelegation check.\n");
-	    doClient(hostname, port, acceptorNameString, acceptorNameType,
-		     deleCred, 0);
+	    doClient(hostname, port, acceptorName, deleCred, 0);
 	}
     }
 
@@ -148,24 +156,23 @@ randomizeIt(buf, len)
 
 
 void
-doClient(hostname, port, acceptorNameString, acceptorNameType, deleCred, deleCheck)
+doClient(hostname, port, acceptorName, deleCred, deleCheck)
      char *hostname;
      int port;
-     char *acceptorNameString;
-     gss_OID acceptorNameType;
+     gss_name_t acceptorName;
      gss_cred_id_t deleCred;
      gfarm_int32_t deleCheck;
 {
     char *sBuf = NULL;
     char *rBuf = NULL;
+    char *name;
     int rSz = -1;
     OM_uint32 majStat;
     OM_uint32 minStat;
     gfarmSecSession *ss =
-    	gfarmSecSessionInitiateByName(hostname, port,
-				      acceptorNameString, acceptorNameType,
-				      deleCred, NULL,
-				      &majStat, &minStat);
+    	gfarmSecSessionInitiateByName(hostname, port, acceptorName, deleCred,
+				      GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+				      NULL, &majStat, &minStat);
 
     if (ss == NULL) {
 	fprintf(stderr, "Can't create initiator session because of:\n");
@@ -174,16 +181,32 @@ doClient(hostname, port, acceptorNameString, acceptorNameType, deleCred, deleChe
 	return;
     }
 
-    if (ss->credName == NULL) {
-	fprintf(stderr, "Initiator: NULL\n");
+    if (ss->credName == GSS_C_NO_NAME) {
+	fprintf(stderr, "Initiate => Initiator: NULL\n");
     } else {
-	fprintf(stderr, "Initiator: '%s'\n", ss->credName);
+	name = gfarmGssNewDisplayName(ss->credName, &majStat, &minStat, NULL);
+	if (name == NULL) {
+	    fprintf(stderr, "cannot convert initiator credential to name:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    goto Done;
+	}
+	fprintf(stderr, "Initiate => Initiator: '%s'\n", name);
+	free(name);
     }
-    if (ss->iOaInfo.initiator.acceptorDistName == NULL) {
-	fprintf(stderr, "Acceptor: NULL\n");
+    if (ss->iOaInfo.initiator.acceptorName == GSS_C_NO_NAME) {
+	fprintf(stderr, "Initiate => Acceptor: NULL\n");
     } else {
-	fprintf(stderr, "Acceptor: '%s'\n",
-	    ss->iOaInfo.initiator.acceptorDistName);
+	name = gfarmGssNewDisplayName(ss->iOaInfo.initiator.acceptorName,
+				      &majStat, &minStat, NULL);
+	if (name == NULL) {
+	    fprintf(stderr, "cannot convert acceptor to name:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    goto Done;
+	}
+	fprintf(stderr, "Initiate => Acceptor: '%s'\n", name);
+	free(name);
     }
 
     /*

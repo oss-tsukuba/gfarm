@@ -55,7 +55,7 @@ ParseArgs(argc, argv)
 
 
 void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
-		 char *acceptorNameString, gss_OID acceptorNameType);
+		 gss_name_t acceptorName);
 
 int
 main(argc, argv)
@@ -71,10 +71,6 @@ main(argc, argv)
     char *rHost;
     char myHostname[4096];
     gss_cred_id_t myCred;
-
-    if (ParseArgs(argc, argv) != 0) {
-	return 1;
-    }
 
     if (hostname == NULL) {
 	if (gethostname(myHostname, 4096) < 0) {
@@ -94,28 +90,40 @@ main(argc, argv)
 	return 1;
     }
 
+    if (ParseArgs(argc, argv) != 0) {
+	return 1;
+    }
+
     if (!acceptorSpecified) {
-	myCred = GSS_C_NO_CREDENTIAL;
-	acceptorNameString = malloc(sizeof("host@") + strlen(hostname));
-	if (acceptorNameString == NULL) {
-	    fprintf(stderr, "no memory\n");
+	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
+				     &majStat, &minStat) < 0) {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
 	    return 1;
 	}
-	sprintf(acceptorNameString, "host@%s", hostname);
-	acceptorNameType = GSS_C_NT_HOSTBASED_SERVICE;
+	myCred = GSS_C_NO_CREDENTIAL;
     } else {
-	char *credName;
+	gss_name_t credName;
+	char *credString;
 
 	if (gfarmGssAcquireCredential(&myCred,
-				      acceptorNameString, acceptorNameType,
-				      GSS_C_BOTH,
+				      acceptorName, GSS_C_BOTH,
 				      &majStat, &minStat, &credName) <= 0) {
 	    fprintf(stderr, "can't acquire credential because of:\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return 1;
 	}
-	fprintf(stderr, "Acceptor Credential: '%s'\n", credName);
+	credString = gfarmGssNewDisplayName(credName, &majStat,&minStat, NULL);
+	if (credString == NULL) {
+	    fprintf(stderr, "can't convert acquired credential to string:\n");
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    return 1;
+	}
+	fprintf(stderr, "Acceptor Credential: '%s'\n", credString);
+	free(credString);
+	gfarmGssDeleteName(&credName, NULL, NULL);
     }
 
     /*
@@ -152,8 +160,7 @@ main(argc, argv)
 	    return 1;
 	} else if (pid == 0) {
 	    (void)close(bindFd);
-	    doServer(fd, hostname, port, myCred,
-		     acceptorNameString, acceptorNameType);
+	    doServer(fd, hostname, port, myCred, acceptorName);
 	    (void)close(fd);
 	    exit(0);
 	} else {

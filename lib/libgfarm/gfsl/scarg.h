@@ -3,7 +3,6 @@
 extern int port;
 
 extern int acceptorSpecified;
-extern char *acceptorNameString;
-extern gss_OID acceptorNameType;
+extern gss_name_t acceptorName;
 
 int HandleCommonOptions(int, char *);
