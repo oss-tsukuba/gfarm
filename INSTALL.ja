@@ -389,42 +389,9 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
 次に、メタデータサーバに登録する情報の初期設定を、
 アスキーファイルで作成します。
 
-このファイルには、LDAP の根となるノードの情報と、ファイルシステムノー
-ドを構成するホスト群の情報を記述します。
-
-・LDAP の根となるノードの情報
-
-  dn (distinguished name) 属性に、base distinguished name を
-  設定します。
-
-・ファイルシステムノードのホスト情報
-
-  ホスト毎に、下記の属性を設定します。
-
-  -- dn
-
-    下記のような値を設定します。
-
-	hostname=そのホストのホスト名(FQDN), dc=hpcc,dc=jp
-
-  -- objectclass
-
-    下記の値を設定します。
-
-	GFarmHost
-
-  -- hostname
-
-    dn 属性の hostname に設定したのと同じ値を設定します。
-
-  -- architecture
-
-    計算機アーキテクチャを表す名称を sparc-sun-solaris のような
-    形式で記述します。
-
-  -- ncpu
-
-    そのコンピュータのCPU数を記述します。
+このファイルには、LDAP の根となるノードの情報として、
+dn (distinguished name) 属性に base distinguished name を、
+また objectclass 属性に top を設定します。
 
 例えばホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/initial.ldif に、
@@ -434,29 +401,6 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
 dn: dc=hpcc, dc=jp
 objectclass: top
 
-dn: hostname=hpc420-1.hpcc.jp, dc=hpcc,dc=jp
-objectclass: GFarmHost
-hostname: hpc420-1.hpcc.jp
-architecture: sparc-sun-solaris
-ncpu: 1
-
-dn: hostname=hpc420-2.hpcc.jp, dc=hpcc,dc=jp
-objectclass: GFarmHost
-hostname: hpc420-2.hpcc.jp
-architecture: sparc-sun-solaris
-ncpu: 1
-
-dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=jp
-objectclass: GFarmHost
-hostname: wiz.etl.go.jp
-architecture: alpha-dec-osf
-ncpu: 1
-
-dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=jp
-objectclass: GFarmHost
-hostname: o2k.etl.go.jp
-architecture: mips-sgi-irix
-ncpu: 16
 ------------------------------ ここまで ------------------------------
 
 ▽ LDAP データベースの作成
@@ -497,6 +441,56 @@ csh の場合:
 	% set basedn='dc=hpcc, dc=jp'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+
+▽ ファイルシステムノードの登録
+
+LDAP サーバーを起動したら、gfhost コマンドを利用して、
+ファイルシステムノードの情報を登録します。
+
+ファイルシステムノードを構成するホストの情報には、下記のような項目が
+あります。
+
+・hostname
+
+    gfhost コマンドの引数として指定します。
+    FQDN (fully qualified domain name) で指定してください。
+
+・hostalias
+
+    複数のネットワークインターフェースを持ち、それぞれのインターフェース
+    に異なるホスト名が与えられている場合、gfhost コマンドの、hostname
+    に続く引数で、それらのホスト名を指定することができます。
+    物理的なネットワークインターフェースが１つだけしかないホストでは、
+    特に指定しません。
+
+・architecture
+
+    計算機アーキテクチャを表す名称を sparc-sun-solaris のような
+    形式で記述します。
+    gfhost コマンドの -a オプションの引数として指定します。
+
+・ncpu
+
+    そのコンピュータのCPU数を記述します。
+    gfhost コマンドの -n オプションの引数として指定します。
+    このオプションは省略可能です。
+
+例えば下記のようなコマンドで設定することになります。
+オプション -c は、登録を指示するコマンドです。
+
+	% gfhost -c -a sparc-sun-solaris hpc420-1.hpcc.jp
+	% gfhost -c -a sparc-sun-solaris hpc420-2.hpcc.jp
+	% gfhost -c -a alpha-dec-osf wiz.etl.go.jp
+	% gfhost -c -a mips-sgi-irix -n 16 o2k.etl.go.jp
+
+登録結果は、オプション -l を指定して gfhost を実行することで、
+確認できます。
+
+	% gfhost -l
+	sparc-sun-solaris 1 hpc420-1.hpcc.jp
+	sparc-sun-solaris 1 hpc420-2.hpcc.jp
+	alpha-dec-osf 1 wiz.etl.go.jp
+	mips-sgi-irix 16 o2k.etl.go.jp
 
 ------------------------------------------------------------------------
 
@@ -549,11 +543,27 @@ auth enable sharedsecret ALL
 gfmd は、前節で解説した /etc/gfarm.conf ファイルを設定ファイルとして
 読み込みます。
 
+gfsd が正しく起動されているかどうかは、オプションを指定せずに gfps
+コマンドを実行することで確認できます。正しく起動されている場合は、
+なにも表示せずに、即座に実行を完了します。
+
+	% gfps
+
 ◇ gfsd
 
 ファイルシステムノードを構成する全ホストにおいて、root 権限で gfsd を
 立ち上げます。gfsd は、前節で解説した /etc/gfarm.conf ファイルを設定ファ
 イルとして読み込みます。
+
+gfsd が正しく起動されているかどうかは、オプションを指定せずに gfhost 
+を実行することで確認できます。行頭に表示されている3つの数字はロード・
+アベレージです。
+
+	% gfhost
+	0.10/0.00/0.00 sparc-sun-solaris 1 hpc420-1.hpcc.jp
+	0.00/0.01/0.10 sparc-sun-solaris 1 hpc420-2.hpcc.jp
+	0.00/0.00/0.00 alpha-dec-osf 1 wiz.etl.go.jp
+	0.35/0.58/0.21 mips-sgi-irix 16 o2k.etl.go.jp
 
 ========================================================================
 
