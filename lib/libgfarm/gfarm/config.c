@@ -56,38 +56,41 @@ static char GFARM_ERR_LOCAL_USER_REDEFIEND[] = "local user name redifined";
 static char GFARM_ERR_GLOBAL_USER_REDEFIEND[] = "global user name redifined";
 
 /* the return value of the following function should be free(3)ed */
-char *
-gfarm_global_to_local_username(char *global_user ,char **local_user)
+static char *
+map_user(char *from, char **to_p,
+	char *(mapping)(char *, char *, char *), char *error_redefined)
 {
 	FILE *map = NULL;
 	char *mapfile = NULL;
 	int i, list_len;
-	char buffer[1024], *g_user, *l_user, *e;
+	char buffer[1024], *g_user, *l_user, *mapped, *e;
 	int lineno = 0;
-	static char format[] = "%s: line %d: %s";
+	static char fmt_open_error[] = "%s: %s";
+	static char fmt_config_error[] = "%s: line %d: %s";
 	static char error[256];
 
 	e = NULL;
-	*local_user = NULL;
+	*to_p = NULL;
 	list_len = gfarm_stringlist_length(&local_user_map_file_list);
 	for (i = 0; i < list_len; i++) {
 		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
 			e = "cannot read"; 
 #ifdef HAVE_SNPRINTF
-			snprintf(error, sizeof(error),
-				 "%s: %s", mapfile, e);
+			snprintf(error, sizeof(error), fmt_open_error,
+			    mapfile, e);
+			e = error;
 #else
-			if (strlen(format) + strlen(mapfile) + strlen(e) <
-			    sizeof(error)) {
-				sprintf(error,
-					"%s: %s", mapfile, e);
+			if (strlen(fmt_open_error) +
+			    strlen(mapfile) + strlen(e) < sizeof(error)) {
+				sprintf(error, "%s: %s", mapfile, e);
+				e = error;
 			} else {
 				/* XXX: no file name */
-				strcpy(error, "user map file cannot read");
+				e = "cannot read local_user_map file";
 			}
 #endif
-			return (error);
+			return (e);
 		}
 		lineno = 0;
 		while (fgets(buffer, sizeof buffer, map) != NULL) {
@@ -103,17 +106,18 @@ gfarm_global_to_local_username(char *global_user ,char **local_user)
 			if (e != NULL)
 				goto finish;
 			if (l_user == NULL) {
-				e = "local user name undefined";
+				e = "missing second field (local user)";
 				goto finish;
 			}
-			if (strcmp(g_user, global_user) == 0) {
-				if (*local_user != NULL &&
-				    strcmp(l_user, *local_user) != 0) {
-					e = GFARM_ERR_GLOBAL_USER_REDEFIEND;
+			mapped = (*mapping)(from, g_user, l_user);
+			if (mapped != NULL) {
+				if (*to_p != NULL &&
+				    strcmp(mapped, *to_p) != 0) {
+					e = error_redefined;
 					goto finish;
 				}
-				*local_user = strdup(l_user);
-				if (*local_user == NULL) {
+				*to_p = strdup(mapped);
+				if (*to_p == NULL) {
 					e = GFARM_ERR_NO_MEMORY;
 					goto finish;
 				}
@@ -126,9 +130,9 @@ gfarm_global_to_local_username(char *global_user ,char **local_user)
 		fclose(map);
 		map = NULL;
 	}	
-	if (*local_user == NULL) { /* not found */
-	 	*local_user = strdup(global_user);
-		if (*local_user == NULL)
+	if (*to_p == NULL) { /* not found */
+	 	*to_p = strdup(from);
+		if (*to_p == NULL)
 			e = GFARM_ERR_NO_MEMORY;
 	}	
 finish:	
@@ -136,121 +140,54 @@ finish:
 		fclose(map);
 	if (e != NULL) {
 #ifdef HAVE_SNPRINTF
-		snprintf(error, sizeof(error),
-			 format, mapfile, lineno, e);
+		snprintf(error, sizeof(error), fmt_config_error,
+		    mapfile, lineno, e);
+		e = error;
 #else
-		if (strlen(format) + strlen(mapfile) +
+		if (strlen(fmt_config_error) + strlen(mapfile) +
 		    GFARM_INT32STRLEN + strlen(e) <
 		    sizeof(error)) {
-			sprintf(error,
-				format, mapfile, lineno, e);
+			sprintf(error, fmt_config_error, mapfile, lineno, e);
+			e = error;
 		} else {
 			/* XXX: no file name, no line number */
-			strcpy(error, "user map file read error");
+			/* leave `e' as is */
 		}
 #endif
-		e = error;
 	}
 	return (e);
 }
 
+static char *
+map_global_to_local(char *from, char *global_user, char *local_user)
+{
+	if (strcmp(from, global_user) == 0)
+		return (local_user);
+	return (NULL);
+}
+
 /* the return value of the following function should be free(3)ed */
 char *
-gfarm_local_to_global_username(char *local_user, char **global_user)
+gfarm_global_to_local_username(char *global_user, char **local_user_p)
 {
-	FILE *map = NULL;
-	char *mapfile = NULL;
-	int i, list_len;
-	char buffer[1024], *g_user, *l_user, *e;
-	int lineno = 0;
-	static char format[] = "%s: line %d: %s";
-	static char error[256];
+	return (map_user(global_user, local_user_p,
+	    map_global_to_local, GFARM_ERR_GLOBAL_USER_REDEFIEND));
+}
 
-	e = NULL;
-	*global_user = NULL;
-	list_len = gfarm_stringlist_length(&local_user_map_file_list);
-	for (i = 0; i < list_len; i++) {
-		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
-		if ((map = fopen(mapfile, "r")) == NULL) {
-			e = "cannot read"; 
-#ifdef HAVE_SNPRINTF
-			snprintf(error, sizeof(error),
-				 "%s: %s", mapfile, e);
-#else
-			if (strlen(format) + strlen(mapfile) + strlen(e) <
-			    sizeof(error)) {
-				sprintf(error,
-					"%s: %s", mapfile, e);
-			} else {
-				/* XXX: no file name */
-				strcpy(error, "user map file cannot read");
-			}
-#endif
-			return (error);
-		}
-		lineno = 0;
-		while (fgets(buffer, sizeof buffer, map) != NULL) {
-			char *bp = buffer;
+static char *
+map_local_to_global(char *from, char *global_user, char *local_user)
+{
+	if (strcmp(from, local_user) == 0)
+		return (global_user);
+	return (NULL);
+}
 
-			lineno++;
-			g_user = gfarm_strtoken(&bp, &e);
-			if (e != NULL)
-				goto finish;
-			if (g_user == NULL) /* blank or comment line */
-				continue;
-			l_user = gfarm_strtoken(&bp, &e);
-			if (e != NULL)
-				goto finish;
-			if (l_user == NULL) {
-				e = "local user name undefined";
-				goto finish;
-			}
-			if (strcmp(l_user, local_user) == 0) {
-				if (*global_user != NULL &&
-				    strcmp(g_user, *global_user) != 0) {
-					e = GFARM_ERR_LOCAL_USER_REDEFIEND;
-					goto finish;
-				}
-				*global_user = strdup(g_user);
-				if (*global_user == NULL) {
-					e = GFARM_ERR_NO_MEMORY;
-					goto finish;
-				}
-			}
-			if (gfarm_strtoken(&bp, &e) != NULL) {
-				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
-				goto finish;
-			}
-		}
-		fclose(map);
-		map = NULL;
-	}	
-	if (*global_user == NULL) { /* not found */
-	 	*global_user = strdup(local_user);
-		if (*global_user == NULL)
-			e = GFARM_ERR_NO_MEMORY;
-	}	
-finish:	
-	if (map != NULL)
-		fclose(map);
-	if (e != NULL) {
-#ifdef HAVE_SNPRINTF
-		snprintf(error, sizeof(error),
-			 format, mapfile, lineno, e);
-#else
-		if (strlen(format) + strlen(mapfile) +
-		    GFARM_INT32STRLEN + strlen(e) <
-		    sizeof(error)) {
-			sprintf(error,
-				format, mapfile, lineno, e);
-		} else {
-			/* XXX: no file name, no line number */
-			strcpy(error, "user map file read error");
-		}
-#endif
-		e = error;
-	}
-	return (e);
+/* the return value of the following function should be free(3)ed */
+char *
+gfarm_local_to_global_username(char *local_user, char **global_user_p)
+{
+	return (map_user(local_user, global_user_p,
+	    map_local_to_global, GFARM_ERR_LOCAL_USER_REDEFIEND));
 }
 
 static char *
