@@ -285,6 +285,8 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		*path_tail++ = '/';
 	}
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		if (entry->d_name[0] == '.' && pattern[dirpos] != '.')
+			continue; /* initial '.' must be literally matched */
 		if (!glob_name_match(entry->d_name, &pattern[dirpos],
 		    i - dirpos))
 			continue;
