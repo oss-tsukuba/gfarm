@@ -720,27 +720,28 @@ collect_file_paths_callback(char *cwd, char *path, void *closure)
 }
 
 static char *
-get_fragment_number_in_domain(
+get_replica_number_in_domain(
 	char *url, char *section,
 	char *domainname,
-	int *nfragments)
+	int *nreplicas)
 {
 	char *e, *gfarm_file;
 	int i, ncinfos;
 	struct gfarm_file_section_copy_info *cinfos;
 
-	*nfragments = 0;
+	*nreplicas = 0;
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
 		return(e);
 	e = gfarm_file_section_copy_info_get_all_by_section(
 				 gfarm_file, section, &ncinfos, &cinfos);
+	free(gfarm_file);
 	if (e != NULL)
 		return(e);
 	for (i = 0; i < ncinfos; i++)
 		if (gfarm_host_is_in_domain(cinfos[i].hostname, domainname))
-			(*nfragments)++;
-	free(gfarm_file);
+			(*nreplicas)++;
+	gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
 	return(NULL);
 }
 
@@ -827,12 +828,11 @@ replicate_files_to_domain(char *path, char *domainname)
 		k = 0;
 		for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
 			char *file_path;
-			int n, ncinfos, min_fragments = 1;
-			struct gfarm_file_section_copy_info *cinfos;
+			int n, min_replicas = 1;
 
 			file_path = gfarm_stringlist_elem(&path_list, i);
 			for (j = 0; j < nfragments[i]; j++) {
-				e = get_fragment_number_in_domain(
+				e = get_replica_number_in_domain(
 					file_path, sinfos[i][j].section,
 					domainname, &n);
 				if (e != NULL) {
@@ -844,7 +844,7 @@ replicate_files_to_domain(char *path, char *domainname)
 						e);
 					continue;
 				}
-				if (n >= min_fragments) /* already exist */
+				if (n >= min_replicas) /* already exist */
 					continue;
 				e = gfarm_url_section_replicate_to(
 					file_path, sinfos[i][j].section,
@@ -864,8 +864,6 @@ replicate_files_to_domain(char *path, char *domainname)
 			 * host information
 			 */
 			k = (k + 1) % nhosts;
-
-			gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
 		}
 		gfarm_strings_free_deeply(nhosts, hosts);
 		for (i = 0; i < gfarm_stringlist_length(&path_list); i++)
