@@ -170,8 +170,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			/* Serial execution case with section name */
 			int nfrags;
 
-			/* XXX - need to check the string size */
-			sprintf(node_index, "%s", options->section);
+			sprintf(node_index, "%d", atoi(options->section));
 			if (options->sched_file != NULL) {
 				e = gfarm_url_fragment_number(
 					options->sched_file, &nfrags);
