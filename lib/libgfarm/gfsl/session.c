@@ -676,8 +676,11 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
 					  GSS_C_NO_NAME, GSS_C_ACCEPT,
 					  &majStat, &minStat, NULL) < 0) {
-		ret = -1;
-		goto Done;
+		/*
+		 * This initial credential is just a default credential,
+		 * which may be used by gfarmSecSessionAccept() when
+		 * GSS_C_NO_CREDENTIAL is specified.
+		 */
 	    }
 	}
 
@@ -769,8 +772,11 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    if (gfarmGssAcquireCredential(&initiatorInitialCred,
 					  GSS_C_NO_NAME, GSS_C_INITIATE,
 					  &majStat, &minStat, NULL) < 0) {
-		ret = -1;
-		goto Done;
+		/*
+		 * This initial credential is just a default credential,
+		 * which may be used by gfarmSecSessionInitiate() when
+		 * GSS_C_NO_CREDENTIAL is specified.
+		 */
 	    }
 	}
 
@@ -872,8 +878,11 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
 					  GSS_C_NO_NAME, GSS_C_BOTH,
 					  &majStat, &minStat, NULL) < 0) {
-		ret = -1;
-		goto Done;
+		/*
+		 * This initial credential is just a default credential,
+		 * which may be used by gfarmSecSessionAccept() when
+		 * GSS_C_NO_CREDENTIAL is specified.
+		 */
 	    }
 	    initiatorInitialCred = acceptorInitialCred;
 	}
