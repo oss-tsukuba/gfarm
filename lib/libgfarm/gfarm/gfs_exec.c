@@ -131,11 +131,14 @@ gfs_execve(const char *filename, char *const argv[], char *const envp[])
 	if (e != NULL)
 		return (e);
 	path = localpath;
-
+#if 0	/*
+	 * gfarm_terminate() should not be called here
+	 * because we need to keep the LDAP connection.
+	 */
 	/* clean up the client environment */
 	gfs_profile(gf_profile = 0); /* not to display profile statistics */
 	(void)gfarm_terminate();
-
+#endif
 	execve(path, argv, envp);
 	return gfarm_errno_to_error(errno);
 }

@@ -240,6 +240,10 @@ main(int argc, char *argv[], char *envp[])
 		status = 255;
 		break;
 	case 0:
+#if 0	/*
+	 * gfarm_terminate() should not be called here
+	 * because we need to keep the LDAP connection.
+	 */
 		if (gf_stdout == NULL && gf_stderr == NULL) {
 			/* not to display profile statistics on gfarm_terminate() */
 			gfs_profile(gf_profile = 0);
@@ -258,6 +262,7 @@ main(int argc, char *argv[], char *envp[])
 			 *   on the parent process.
 			 */
 		}
+#endif
 		execve(local_path, argv, new_env);
 		perror(local_path);
 		_exit(255);
