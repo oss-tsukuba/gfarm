@@ -445,7 +445,7 @@ fi
 %{prefix}/bin/pcat
 %{prefix}/bin/pcp
 %{prefix}/bin/pdel
-%{prefix}/bin/pdiff
+# %{prefix}/bin/pdiff
 %{prefix}/bin/pdist
 %{prefix}/bin/prun
 

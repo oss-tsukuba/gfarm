@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS= pcat pcp pdel pdiff pdist prun
+SCRIPTS= pcat pcp pdel pdist prun
 
 all:
 
