@@ -4,16 +4,28 @@
 
 struct sockaddr;
 struct timeval;
+struct gfarm_eventqueue;
 struct gfs_connection;
 struct gfs_stat;
+enum gfarm_auth_method;
+struct gfs_client_connect_state;
 
 int gfs_client_connection_fd(struct gfs_connection *);
+enum gfarm_auth_method gfs_client_connection_auth_method(
+	struct gfs_connection *);
+const char *gfs_client_hostname(struct gfs_connection *);
 char *gfs_client_connection(const char *, struct sockaddr *,
 	struct gfs_connection **);
 char *gfs_client_connect(char *, struct sockaddr *,
 	struct gfs_connection **);
+char *gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
+	char *, struct sockaddr *,
+	void (*)(void *), void *,
+	struct gfs_client_connect_state **);
+char *gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *,
+	struct gfs_connection **);
+
 char *gfs_client_disconnect(struct gfs_connection *);
-const char *gfs_client_hostname(struct gfs_connection *);
 char *gfs_client_create(struct gfs_connection *, char *, gfarm_int32_t, int *);
 char *gfs_client_open(struct gfs_connection *,
 		      char *, gfarm_int32_t, gfarm_int32_t, gfarm_int32_t *);
@@ -70,8 +82,6 @@ char *gfs_client_command(struct gfs_connection *,
 extern int gfs_client_datagram_timeouts[]; /* milli seconds */
 extern int gfs_client_datagram_ntimeouts;
 
-#define GFS_CLIENT_TIMEOUT_INDEFINITE	-1
-
 struct gfs_client_load {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
 };
@@ -80,13 +90,13 @@ char *gfs_client_get_load_request(int, struct sockaddr *, int);
 char *gfs_client_get_load_result(int, struct sockaddr *, int *,
 	struct gfs_client_load *);
 
-struct gfs_client_udp_requests;
-
-char *gfarm_client_init_load_requests(int, struct gfs_client_udp_requests **);
-char *gfarm_client_wait_all_load_results(struct gfs_client_udp_requests *);
-char *gfarm_client_add_load_request(struct gfs_client_udp_requests *,
-	struct sockaddr *, void *,
-	void (*)(void *, struct sockaddr *, struct gfs_client_load *, char *));
+struct gfs_client_get_load_state;
+char *gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *,
+	struct sockaddr *,
+	void (*)(void *), void *,
+	struct gfs_client_get_load_state **);
+char *gfs_client_get_load_result_multiplexed(
+	struct gfs_client_get_load_state *, struct gfs_client_load *);
 
 char *gfs_client_apply_all_hosts(
 	char *(*)(struct gfs_connection *, void *), void *, char *, int *);

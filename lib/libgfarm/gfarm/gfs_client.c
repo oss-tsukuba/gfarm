@@ -19,14 +19,19 @@
 #include <fcntl.h>
 #include <time.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/gfarm_metadb.h>
+
+#include "gfutil.h"
+#include "gfevent.h"
+#include "hash.h"
+
 #include "iobuffer.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
-#include "hash.h"
 #include "host.h"
 #include "param.h"
 #include "sockopt.h"
@@ -40,7 +45,9 @@ static char GFARM_ERR_GFSD_ABORTED[] = "gfsd aborted";
 
 struct gfs_connection {
 	struct xxx_connection *conn;
+	enum gfarm_auth_method auth_method;
 	char *hostname; /* malloc()ed, if created by gfs_client_connect() */
+
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
 };
 
@@ -52,6 +59,18 @@ int
 gfs_client_connection_fd(struct gfs_connection *gfs_server)
 {
 	return (xxx_connection_fd(gfs_server->conn));
+}
+
+enum gfarm_auth_method
+gfs_client_connection_auth_method(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->auth_method);
+}
+
+const char *
+gfs_client_hostname(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->hostname);
 }
 
 static char *
@@ -69,8 +88,9 @@ gfs_client_connection0(const char *canonical_hostname,
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
 
 	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		e = gfarm_errno_to_error(errno);
 		close(sock);
-		return (gfarm_errno_to_error(errno));
+		return (e);
 	}
 	e = xxx_fd_connection_new(sock, &gfs_server->conn);
 	if (e != NULL) {
@@ -88,7 +108,8 @@ gfs_client_connection0(const char *canonical_hostname,
 		xxx_connection_free(gfs_server->conn);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_auth_request(gfs_server->conn, host_fqdn, peer_addr);
+	e = gfarm_auth_request(gfs_server->conn, host_fqdn, peer_addr,
+	    &gfs_server->auth_method);
 	free(host_fqdn);
 	if (e != NULL) {
 		xxx_connection_free(gfs_server->conn);
@@ -141,6 +162,7 @@ gfs_client_connection(const char *canonical_hostname,
 }
 
 /*
+ * XXX FIXME
  * `hostname' to `addr' conversion really should be done in this function,
  * rather than a caller of this function.
  * but currently gfsd cannot access gfmd, and we need to access gfmd to
@@ -186,11 +208,194 @@ gfs_client_disconnect(struct gfs_connection *gfs_server)
 	return (e);
 }
 
-const char *
-gfs_client_hostname(struct gfs_connection *gfs_server)
+/*
+ * multiplexed version of gfs_client_connect() for parallel authentication
+ */
+
+struct gfs_client_connect_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable;
+	struct sockaddr peer_addr;
+	void (*continuation)(void *);
+	void *closure;
+
+	struct gfs_connection *gfs_server;
+
+	struct gfarm_auth_request_state *auth_state;
+
+	/* results */
+	char *error;
+};
+
+static void
+gfs_client_connect_end_auth(void *closure)
 {
-	return (gfs_server->hostname);
+	struct gfs_client_connect_state *state = closure;
+
+	state->error = gfarm_auth_result_multiplexed(
+	    state->auth_state,
+	    &state->gfs_server->auth_method);
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
 }
+
+static void
+gfs_client_connect_start_auth(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_connect_state *state = closure;
+	int error;
+	socklen_t error_size = sizeof(error);
+	int rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
+
+	if (rv == -1) { /* Solaris, see UNP by rstevens */
+		state->error = gfarm_errno_to_error(errno);
+	} else if (error != 0) {
+		state->error = gfarm_errno_to_error(error);
+	} else { /* successfully connected */
+		state->error = gfarm_auth_request_multiplexed(state->q,
+		    state->gfs_server->conn,
+		    state->gfs_server->hostname, &state->peer_addr,
+		    gfs_client_connect_end_auth, state,
+		    &state->auth_state);
+		if (state->error == NULL) {
+			/*
+			 * call auth_request,
+			 * then go to gfs_client_connect_end_auth()
+			 */
+			return;
+		}
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+char *
+gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
+	char *canonical_hostname, struct sockaddr *peer_addr,
+	void (*continuation)(void *), void *closure,
+	struct gfs_client_connect_state **statepp)
+{
+	char *e;
+	int rv, sock;
+	struct gfs_connection *gfs_server;
+	struct gfs_client_connect_state *state;
+	int connection_in_progress;
+
+	/* clone of gfs_client_connection0() */
+
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
+
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		if (errno != EINPROGRESS) {
+			e = gfarm_errno_to_error(errno);
+			close(sock);
+			return (e);
+		}
+		connection_in_progress = 1;
+	} else {
+		connection_in_progress = 0;
+	}
+	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+
+	gfs_server = malloc(sizeof(*gfs_server));
+	if (gfs_server == NULL) {
+		close(sock);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	e = xxx_fd_connection_new(sock, &gfs_server->conn);
+	if (e != NULL) {
+		free(gfs_server);
+		close(sock);
+		return (e);
+	}
+	gfs_server->context = NULL;
+	gfs_server->hostname = strdup(canonical_hostname);
+	if (gfs_server->hostname == NULL) {
+		xxx_connection_free(gfs_server->conn);
+		free(gfs_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	state = malloc(sizeof(*state));
+	if (state == NULL) {
+		free(gfs_server->hostname);
+		xxx_connection_free(gfs_server->conn);
+		free(gfs_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	state->q = q;
+	state->peer_addr = *peer_addr;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->gfs_server = gfs_server;
+	state->auth_state = NULL;
+	state->error = NULL;
+	if (connection_in_progress) {
+		state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
+		    sock, gfs_client_connect_start_auth, state);
+		if (state->writable == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else if ((rv = gfarm_eventqueue_add_event(q, state->writable,
+		    NULL)) == 0) {
+			*statepp = state;
+			/* go to gfs_client_connect_start_auth() */
+			return (0);
+		} else {
+			e = gfarm_errno_to_error(rv);
+			gfarm_event_free(state->writable);
+		}
+	} else {
+		state->writable = NULL;
+		e = gfarm_auth_request_multiplexed(q,
+		    gfs_server->conn,
+		    gfs_server->hostname, &state->peer_addr,
+		    gfs_client_connect_end_auth, state,
+		    &state->auth_state);
+		if (e == NULL) {
+			*statepp = state;
+			/*
+			 * call gfarm_auth_request,
+			 * then go to gfs_client_connect_end_auth()
+			 */
+			return (0);
+		}
+	}
+	free(state);
+	free(gfs_server->hostname);
+	xxx_connection_free(gfs_server->conn);
+	free(gfs_server);
+	return (e);
+}
+
+char *
+gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
+	struct gfs_connection **gfs_serverp)
+{
+	char *e = state->error;
+	struct gfs_connection *gfs_server = state->gfs_server;
+
+	if (state->writable != NULL)
+		gfarm_event_free(state->writable);
+	free(state);
+	if (e != NULL) {
+		gfs_client_disconnect(gfs_server);
+		return (e);
+	}
+	*gfs_serverp = gfs_server;
+	return (NULL);
+}
+
+/*
+ * gfs_client RPC
+ */
 
 char *
 gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
@@ -1475,7 +1680,7 @@ gfs_client_get_load_result(int sock,
 #endif
 
 	if (server_addr == NULL || server_addr_sizep == NULL) {
-		/* using connected UDP socket */
+		/* caller doesn't need server_addr */
 		rv = read(sock, nloadavg, sizeof(nloadavg));
 	} else {
 		rv = recvfrom(sock, nloadavg, sizeof(nloadavg), 0,
@@ -1494,6 +1699,178 @@ gfs_client_get_load_result(int sock,
 	result->loadavg_15min = loadavg[2];
 	return (NULL);
 }
+
+/*
+ * multiplexed version of gfs_client_get_load()
+ */
+
+struct gfs_client_get_load_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable, *readable;
+	void (*continuation)(void *);
+	void *closure;
+
+	int sock;
+	int try;
+
+	/* results */
+	char *error;
+	struct gfs_client_load load;
+};
+
+static void
+gfs_client_get_load_send(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_get_load_state *state = closure;
+	int rv;
+	struct timeval timeout;
+
+	state->error = gfs_client_get_load_request(state->sock, NULL, 0);
+	if (state->error == NULL) {
+		timeout.tv_sec = timeout.tv_usec = 0;
+		gfarm_timeval_add_microsec(&timeout, 
+		    gfs_client_datagram_timeouts[state->try] *
+		    GFARM_MILLISEC_BY_MICROSEC);
+		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
+		    &timeout)) == 0) {
+			/* go to gfs_client_get_load_receive() */
+			return;
+		}
+		state->error = gfarm_errno_to_error(rv);
+	}
+	close(state->sock);
+	state->sock = -1;
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static void
+gfs_client_get_load_receive(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_get_load_state *state = closure;
+	int rv;
+
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		++state->try;
+		if (state->try >= gfs_client_datagram_ntimeouts) {
+			state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+		} else if ((rv = gfarm_eventqueue_add_event(state->q,
+		    state->writable, NULL)) == 0) {
+			/* go to gfs_client_get_load_send() */
+			return;
+		} else {
+			state->error = gfarm_errno_to_error(rv);
+		}
+	} else {
+		assert(events == GFARM_EVENT_READ);
+		state->error = gfs_client_get_load_result(state->sock,
+		    NULL, NULL, &state->load);
+	}
+	close(state->sock);
+	state->sock = -1;
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+char *
+gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
+	struct sockaddr *peer_addr,
+	void (*continuation)(void *), void *closure,
+	struct gfs_client_get_load_state **statepp)
+{
+	char *e;
+	int rv, sock;
+	struct gfs_client_get_load_state *state;
+
+	/* use different socket for each peer, to identify error code */
+	sock = socket(PF_INET, SOCK_DGRAM, 0);
+	if (sock == -1) {
+		e = gfarm_errno_to_error(errno);
+		goto error_return;
+	}
+	/* connect UDP socket, to get error code */
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) == -1) {
+		e = gfarm_errno_to_error(errno);
+		goto error_close_sock;
+	}
+
+	state = malloc(sizeof(*state));
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_close_sock;
+	}
+
+	state->writable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_WRITE, sock,
+	    gfs_client_get_load_send, state);
+	if (state->writable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_state;
+	}
+	/*
+	 * We cannot use two independent events (i.e. a fd_event with
+	 * GFARM_EVENT_READ flag and a timer_event) here, because
+	 * it's possible that both event handlers are called at once.
+	 */
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock,
+	    gfs_client_get_load_receive, state);
+	if (state->readable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_writable;
+	}
+	/* go to gfs_client_get_load_send() */
+	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+	if (rv != 0) {
+		e = gfarm_errno_to_error(rv);
+		goto error_free_readable;
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->sock = sock;
+	state->try = 0;
+	state->error = NULL;
+	*statepp = state;
+	return (NULL);
+
+error_free_readable:
+	gfarm_event_free(state->readable);
+error_free_writable:
+	gfarm_event_free(state->writable);
+error_free_state:
+	free(state);
+error_close_sock:
+	close(sock);
+error_return:
+	return (e);
+}
+
+char *
+gfs_client_get_load_result_multiplexed(
+	struct gfs_client_get_load_state *state, struct gfs_client_load *loadp)
+{
+	char *error = state->error;
+
+	if (state->sock >= 0) { /* sanity */
+		close(state->sock);
+		state->sock = -1;
+	}
+	if (error == NULL)
+		*loadp = state->load;
+	gfarm_event_free(state->readable);
+	gfarm_event_free(state->writable);
+	free(state);
+	return (error);
+}
+
+/*
+ * gfs_client_apply_all_hosts()
+ */
 
 static int
 apply_one_host(char *(*op)(struct gfs_connection *, void *),
