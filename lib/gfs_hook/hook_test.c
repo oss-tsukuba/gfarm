@@ -263,6 +263,8 @@ main(int argc, char *argv[])
     int fd;
     FILE *f;
 
+    setvbuf(stdout, NULL, _IONBF, 0); /* to sync with truss/strace output */
+
     /*
      * If gfarm_initialize() is not called, this program is assumed
      * to be a serial program, i.e. gfs_pio_set_local(0, 1) is
