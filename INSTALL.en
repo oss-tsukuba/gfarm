@@ -84,7 +84,7 @@ Gfarm software consists of
   applications.  Just linking with gfs_hook.o and libgfarm.a, the
   legacy applications can exploit the Gfarm filesystem.
 
-  For Linux system, a dynamic library, gfs_preload.so, is also
+  For Linux system, a dynamic library, libgfs_hook.so, is also
   provided for binary programs to access Gfarm file system without any
   modification as well as re-linking.  Just set LD_PRELOAD environment
   variable.
