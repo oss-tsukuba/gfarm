@@ -1,9 +1,12 @@
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include <errno.h>
 #include <gfarm/gfarm_error.h>
@@ -128,6 +131,16 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 }
 #endif
 
+int
+gfs_hook_syscall_getdents64(int filedes, struct dirent64 *buf, size_t nbyte)
+{
+#ifdef SYS_getdents64
+	return (syscall(SYS_getdents64, filedes, buf, nbyte));
+#else
+	return (gfs_hook_syscall_getdents(filedes, buf, nbyte));
+#endif
+}
+
 #define OFF_T off64_t
 
 #define SYSCALL_OPEN(path, oflag, mode)	\
@@ -136,6 +149,8 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 	gfs_hook_syscall_creat64(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek64(filedes, offset, whence)
+#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
+	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 
 #define FUNC___OPEN	__open64
 #define FUNC__OPEN	_open64
@@ -143,9 +158,17 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define FUNC___CREAT	__creat64
 #define FUNC__CREAT	_creat64
 #define FUNC_CREAT	creat64
+#define FUNC__LIBC_CREAT	_libc_creat64
 #define FUNC___LSEEK	__lseek64
 #define FUNC__LSEEK	_lseek64
 #define FUNC_LSEEK	lseek64
+#define FUNC___GETDENTS	__getdents64
+#define FUNC__GETDENTS	_getdents64
+#define FUNC_GETDENTS	getdents64
+
+#define STRUCT_DIRENT	struct dirent64
+#define ALIGNMENT 8
+#define ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
 #include "hooks_common.c"
 

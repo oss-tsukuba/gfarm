@@ -5,11 +5,14 @@
  */
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include <errno.h>
 #include <gfarm/gfarm_error.h>
@@ -85,6 +88,13 @@ read(int filedes, void *buf, size_t nbyte)
 	return (__read(filedes, buf, nbyte));
 }
 
+ssize_t
+_libc_read(int filedes, void *buf, size_t nbyte)
+{
+	_gfs_hook_debug_v(fputs("Hooking _libc_read\n", stderr));
+	return (__read(filedes, buf, nbyte));
+}
+
 /*
  * write
  */
@@ -134,6 +144,12 @@ write(int filedes, const void *buf, size_t nbyte)
 	return (__write(filedes, buf, nbyte));
 }
 
+ssize_t
+_libc_write(int filedes, const void *buf, size_t nbyte)
+{
+	return (__write(filedes, buf, nbyte));
+}
+
 /*
  *  close
  */
@@ -148,31 +164,72 @@ int
 __close(int filedes)
 {
 	GFS_File gf;
+	GFS_Dir dir;
 	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __close(%d)\n", filedes));
 
-	if ((gf = gfs_hook_is_open(filedes)) == NULL)
-		return (__syscall_close(filedes));
+	switch (gfs_hook_gfs_file_type(filedes)) {
+	case GFS_DT_REG:
+		if ((gf = gfs_hook_is_open(filedes)) == NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking __close: couldn't get gf\n"));
+			errno = EBADF; /* XXX - something broken */
+			return (-1);			
+		}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __close(%d(%d))\n",
-	    filedes, gfs_pio_fileno(gf)));
+		_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __close(%d(%d))\n",
+					filedes, gfs_pio_fileno(gf)));
 
-	if (gfs_hook_clear_gfs_file(filedes) > 0) {
-		/* if filedes is duplicated, skip closing the file. */
-		_gfs_hook_debug(
-			fprintf(stderr, "GFS: Hooking __close: skipped\n"));
+		if (gfs_hook_clear_gfs_file(filedes) > 0) {
+		  	/* if filedes is duplicated, skip closing the file. */
+			  _gfs_hook_debug(fprintf(stderr,
+					  "GFS: Hooking __close: skipped\n"));
 
+			return (0);
+		}
+
+		e = gfs_pio_close(gf);
+	       
+		if (e == NULL)
+			return (0);
+
+		_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	case GFS_DT_DIR:
+		if ((dir = gfs_hook_is_open(filedes)) == NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking __close: couldn't get dir\n"));
+			errno = EBADF; /* XXX - something broken */
+			return (-1);			
+		}
+
+		_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __close(%d)\n",
+					filedes));
+
+		if (gfs_hook_clear_gfs_file(filedes) > 0) {
+		  	/* if filedes is duplicated, skip closing the file. */
+			  _gfs_hook_debug(fprintf(stderr,
+					  "GFS: Hooking __close: skipped\n"));
+
+			return (0);
+		}
+
+		e = gfs_closedir(dir);
+	       
+		if (e == NULL)
 		return (0);
+
+		_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	default:
+		return (__syscall_close(filedes));
 	}
 
-	e = gfs_pio_close(gf);
-	if (e == NULL)
-		return (0);
-
-	_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
-	errno = gfarm_error_to_errno(e);
-	return (-1);
 }
 
 int
@@ -184,6 +241,20 @@ _close(int filedes)
 
 int
 close(int filedes)
+{
+	_gfs_hook_debug_v(fputs("Hooking close\n", stderr));
+	return (__close(filedes));
+}
+
+int
+_libc_close(int filedes)
+{
+	_gfs_hook_debug_v(fputs("Hooking close\n", stderr));
+	return (__close(filedes));
+}
+
+int
+_private_close(int filedes)
 {
 	_gfs_hook_debug_v(fputs("Hooking close\n", stderr));
 	return (__close(filedes));
@@ -406,6 +477,13 @@ execve(const char *filename, char *const argv [], char *const envp[])
 	return (__execve(filename, argv, envp));
 }
 
+int
+_private_execve(const char *filename, char *const argv [], char *const envp[])
+{
+	_gfs_hook_debug_v(fputs("Hooking execve\n", stderr));
+	return (__execve(filename, argv, envp));
+}
+
 /*
  * utimes
  */
@@ -556,6 +634,12 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 }
 #endif /* defined(_STAT_VER) && defined(SYS_xstat) */
 
+int
+gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
+{
+	return (syscall(SYS_getdents, filedes, buf, nbyte));
+}
+
 #define OFF_T off_t
 
 #define SYSCALL_OPEN(path, oflag, mode)	\
@@ -564,6 +648,8 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	gfs_hook_syscall_creat(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek(filedes, offset, whence)
+#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
+	gfs_hook_syscall_getdents(filedes, buf, nbyte)
 
 #define FUNC___OPEN	__open
 #define FUNC__OPEN	_open
@@ -571,11 +657,22 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC___CREAT	__creat
 #define FUNC__CREAT	_creat
 #define FUNC_CREAT	creat
+#define FUNC__LIBC_CREAT	_libc_creat
 #define FUNC___LSEEK	__lseek
 #define FUNC__LSEEK	_lseek
 #define FUNC_LSEEK	lseek
 
+#define FUNC___GETDENTS	__getdents
+#define FUNC__GETDENTS	_getdents
+#define FUNC_GETDENTS	getdents
+
+#define STRUCT_DIRENT	struct dirent
+#define ALIGNMENT 8
+#define ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
+
 #include "hooks_common.c"
+
+#undef ALIGNMENT
 
 /* stat */
 

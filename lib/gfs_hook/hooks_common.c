@@ -51,7 +51,28 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x)\n",
 		    url, sec != NULL ? sec : "(null)", oflag));
+
 		e = gfs_pio_open(url, oflag, &gf);
+		if (e == GFARM_ERR_IS_A_DIRECTORY ||
+		    e == GFARM_ERR_NO_SUCH_OBJECT) { /* may be root */
+
+			GFS_Dir dir;
+
+			e = gfs_opendir(url, &dir);
+                        if (e == NULL) {
+                                filedes = gfs_hook_insert_gfs_dir(dir, url);
+                                _gfs_hook_debug(
+                                        if (filedes != -1) {
+                                                fprintf(stderr,
+                                                    "GFS: Hooking "
+                                                    S(FUNC___OPEN)
+                                                    " --> %d\n", filedes);
+                                        }
+                                );
+                                free(url);
+                                return (filedes);
+			}
+		}
 	}
 	free(url);
 	if (e != NULL) {
@@ -226,6 +247,13 @@ FUNC_CREAT(const char *path, mode_t mode)
     return (FUNC___CREAT(path, mode));
 }
 
+int
+FUNC__LIBC_CREAT(const char *path, mode_t mode)
+{
+    _gfs_hook_debug_v(fputs("Hooking " S(FUNC_CREAT) "\n", stderr));
+    return (FUNC___CREAT(path, mode));
+}
+
 /*
  * lseek
  */
@@ -272,3 +300,131 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
+
+/*
+ * getdents
+ */
+
+#ifndef __linux__ /* doesn't work on Linux yet */
+int
+FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
+{
+	GFS_Dir dir;
+	const char *e;
+	unsigned short reclen;
+	struct gfs_dirent *entry;
+	STRUCT_DIRENT *bp;
+	
+	_gfs_hook_debug_v(fprintf(stderr,
+	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %d)\n",
+	    filedes, buf, nbyte));
+
+	if ((dir = gfs_hook_is_open(filedes)) == NULL)
+		return (SYSCALL_GETDENTS(filedes, buf, nbyte));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
+	    S(FUNC___GETDENTS) "(%d, %p, %d)\n", filedes, buf, nbyte));
+
+	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+		goto finish;
+	}	  
+
+	bp = buf;
+	if (!gfs_hook_is_read(filedes)) { /* for the first time */
+		static const char dot[] = ".";
+		static const char dotdot[] = "..";
+
+		e = NULL;
+		reclen = ALIGN(		
+			offsetof(STRUCT_DIRENT, d_name) + sizeof(dot));
+		if ((char *)bp + reclen > (char *)buf + nbyte) {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			goto finish;
+		}
+		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
+		bp->d_ino = 1; /* XXX */
+		bp->d_reclen = reclen;
+		strcpy(bp->d_name, dot);
+		memset(bp->d_name + sizeof(dot) - 1, 0,
+	         reclen - (offsetof(STRUCT_DIRENT, d_name) + sizeof(dot) - 1));
+		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
+
+		reclen = ALIGN(		
+			offsetof(STRUCT_DIRENT, d_name) + sizeof(dotdot));
+		if ((char *)bp + reclen > (char *)buf + nbyte) {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			goto finish;
+		}
+		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
+		bp->d_ino = 1; /* XXX */
+		bp->d_reclen = reclen;
+		strcpy(bp->d_name, dotdot);
+		memset(bp->d_name + sizeof(dotdot) - 1, 0,
+	         reclen -
+		  (offsetof(STRUCT_DIRENT, d_name) + sizeof(dotdot) - 1));
+		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
+	}
+	if ((entry = gfs_hook_get_suspended_gfs_dirent(filedes)) != NULL) {
+		reclen = ALIGN(
+			offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen + 1);
+		if ((char *)bp + reclen > (char *)buf + nbyte) {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			goto finish;
+		}
+		gfs_hook_set_suspended_gfs_dirent(filedes, NULL);
+		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
+		bp->d_ino = 1; /* XXX */ 
+		bp->d_reclen = reclen;
+		memcpy(bp->d_name, entry->d_name, entry->d_namlen);
+		memset(bp->d_name + entry->d_namlen, 0,
+		 reclen - (offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen));
+		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
+	}
+	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		reclen = ALIGN(
+			offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen + 1);
+		if ((char *)bp + reclen > (char *)buf + nbyte) {
+			gfs_hook_set_suspended_gfs_dirent(filedes, entry);
+			goto finish;
+		}
+		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
+		bp->d_ino = 1; /* XXX */ 
+		bp->d_reclen = reclen;
+		memcpy(bp->d_name, entry->d_name, entry->d_namlen);
+		memset(bp->d_name + entry->d_namlen, 0,
+		 reclen - (offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen));
+		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
+	}
+ finish:
+	if (e == NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___GETDENTS) " --> %d\n", filedes));
+		gfs_hook_inc_readcount(filedes);
+		return ((char *)bp - (char *)buf);
+	}
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(FUNC___GETDENTS) ": %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
+{
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking " S(FUNC__GETDENTS) ": %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, buf, nbyte));
+}
+
+int
+FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
+{
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking " S(FUNC_GETDENTS) ": %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, buf, nbyte));
+}
+#endif
