@@ -408,6 +408,25 @@ gfs_server_chgrp(struct xxx_connection *client)
 }
 
 void
+gfs_server_exist(struct xxx_connection *client)
+{
+	char *file, *path;
+	int save_errno = 0;
+	struct stat buf;
+
+	gfs_server_get_request(client, "exist", "s", &file);
+
+	local_path(file, &path, "exist");
+	if (stat(path, &buf) == -1) {
+		save_errno = errno;
+	}
+	free(path);
+
+	gfs_server_put_reply(client, "exist",
+	    gfs_errno_to_proto_error(save_errno), "");
+}
+
+void
 gfs_server_digest(struct xxx_connection *client)
 {
 	char *digest_type;
@@ -1864,6 +1883,7 @@ server(int client_fd)
 		case GFS_PROTO_RMDIR:	gfs_server_rmdir(client); break;
 		case GFS_PROTO_CHMOD:	gfs_server_chmod(client); break;
 		case GFS_PROTO_CHGRP:	gfs_server_chgrp(client); break;
+		case GFS_PROTO_EXIST:	gfs_server_exist(client); break;
 		case GFS_PROTO_DIGEST:	gfs_server_digest(client); break;
 		case GFS_PROTO_GET_SPOOL_ROOT:
 			gfs_server_get_spool_root(client); break;

@@ -555,6 +555,13 @@ gfs_client_chgrp(struct gfs_connection *gfs_server, char *path, char *group)
 }
 
 char *
+gfs_client_exist(struct gfs_connection *gfs_server, char *path)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_EXIST, "s/",
+			       path));
+}
+
+char *
 gfs_client_digest(struct gfs_connection *gfs_server,
 		  int fd, char *digest_type,
 		  size_t digest_size, size_t *digest_length,
