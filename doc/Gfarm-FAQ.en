@@ -14,6 +14,8 @@ Table of Contents:
   2.1 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
+  2.2 Due to disk crash, files in a file system node are lost.  What
+     we need to do?
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -22,10 +24,8 @@ Table of Contents:
     gsi_auth method and gsi authentication?
 
 4. Limitation
-  4.1 "drwxrwxrwx" is always displayed as permission of a directory by gfls.
-    What is this?
-  4.2 Where is gfmkdir, gfrmdir and gfmv?
-  4.3 Can I open a file with read-write mode?
+  4.1 Where are gfchmod, gfchown and gfmv?
+  4.2 Can I open a file with read-write mode?
 
 1. General
 **********
@@ -58,6 +58,20 @@ Table of Contents:
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
+
+  2.2 Due to disk crash, all files in a file system node are lost.
+     What we need to do?
+
+	For all data files except execution programs, there is nothing
+	you need to do.  When opening these missing files, the Gfarm
+	system detects that, and opens the other file replica
+	automatically.  On the other hand, it is necessary to execute
+	the 'gfsck' command explicitly for execution programs.  The
+	below example shows fixing the inconsistency for the program
+	'gfarm:command'.
+		% gfsck gfarm:command
+
+	This inconvenience will be removed in the next major release.
 
 3. Security
 ***********
