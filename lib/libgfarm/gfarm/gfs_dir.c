@@ -321,6 +321,21 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	return (NULL);
 }
 
+char *gfs_get_ino(const char *path, long *inop)
+{
+	struct node *n;
+	char *e;
+	
+	e = gfs_cachedir();
+	if (e != NULL)
+		return (e);
+	e = lookup_path(path, -1, 0, &n);
+        if (e != NULL)
+		return (e);
+	*inop = (long)n;
+	return (NULL);
+}
+
 /*
  * gfs_opendir()/readdir()/closedir()
  */

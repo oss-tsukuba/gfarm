@@ -33,6 +33,7 @@ void gfs_hook_set_suspended_gfs_dirent(int, struct gfs_dirent *);
 struct gfs_dirent *gfs_hook_get_suspended_gfs_dirent(int);
 struct gfs_stat *gfs_hook_get_gfs_stat(int);
 int gfs_hook_is_url(const char *, char **, char **);
+char *gfs_hook_make_url(const char *, char **, char **);
 int __syscall_close(int);
 
 enum gfs_hook_file_view {
@@ -61,3 +62,5 @@ int gfs_hook_syscall_fxstat64(int, int, struct stat64 *);
 #ifdef _LARGEFILE64_SOURCE
 off64_t gfs_hook_syscall_lseek64(int, off64_t, int);
 #endif
+
+#define GFS_DEV	(dev_t)-1

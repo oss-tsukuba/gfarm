@@ -32,6 +32,7 @@ typedef unsigned int gfarm_mode_t;
 
 
 struct gfs_stat {
+	long st_ino;
 	gfarm_mode_t st_mode;
 	char *st_user;
 	char *st_group;

@@ -879,6 +879,8 @@ gfarm_path_info_set_field(
 {
 	struct gfarm_path_info *info = vinfo;
 
+	/* XXX - info->status.st_ino is set not here but at upper level */
+
 	if (strcasecmp(attribute, "pathname") == 0) {
 		info->pathname = strdup(vals[0]);
 	} else if (strcasecmp(attribute, "mode") == 0) {

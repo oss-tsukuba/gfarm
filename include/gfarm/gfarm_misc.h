@@ -90,6 +90,7 @@ char *gfarm_path_localize(char *, char **);
 char *gfarm_path_localize_file_section(char *, char *, char **);
 char *gfarm_path_localize_file_fragment(char *, int, char **);
 const char *gfarm_url_prefix_skip(const char *);
+char *gfarm_url_prefix_add(const char *);
 const char *gfarm_path_dir_skip(const char *);
 
 extern char GFARM_URL_PREFIX[];

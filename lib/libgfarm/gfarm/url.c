@@ -425,6 +425,18 @@ gfarm_url_prefix_skip(const char *gfarm_url)
 	return (gfarm_url);
 }
 
+char *
+gfarm_url_prefix_add(const char *s)
+{
+	char *p = malloc(GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
+
+	if (p == NULL)
+		return (NULL);
+	memcpy(p, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
+	strcpy(p + GFARM_URL_PREFIX_LENGTH, s);
+	return (p);
+}
+
 /*
  * Skip directory in the pathname.
  * We want traditional basename(3) here, rather than weird XPG one.

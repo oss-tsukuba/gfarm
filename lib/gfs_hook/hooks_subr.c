@@ -241,9 +241,14 @@ gfs_hook_get_gfs_stat(int fd)
  *  Also, it's necessary to free the memory space for *secp,
  *  if *secp is not NULL.
  */
+extern int gfs_hook_cwd_is_gfarm;
+
 int
 gfs_hook_is_url(const char *path, char **urlp, char **secp)
 {
+	static char prefix[] = "gfarm:";
+	const char *path_save;
+
 	/*
 	 * ROOT patch:
 	 *   'gfarm@' is also considered as a Gfarm URL
@@ -255,13 +260,13 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	 * Objectivity patch:
 	 *   '/gfarm:' is also considered as a Gfarm URL
 	 */
+	path_save = path;
 	if (*path == '/')
 		++path;
 	if (gfarm_is_url(path) ||
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
-		static char prefix[] = "gfarm:";
 
 		if (!gfarm_initialized &&
 		    gfs_hook_initialize() != NULL) {
@@ -311,6 +316,14 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			strcpy(*urlp + sizeof(prefix) - 1,
 			    path + sizeof(prefix) - 1);
 		}
+		return (1);
+	}
+	if (gfs_hook_cwd_is_gfarm && *path_save != '/') {
+		*urlp = malloc(strlen(prefix) + strlen(path_save) + 1);
+		if (*urlp == NULL)
+			return (0) ; /* XXX - should return ENOMEM */
+		memcpy(*urlp, prefix, sizeof(prefix) - 1);
+		strcpy(*urlp + sizeof(prefix) - 1, path_save);
 		return (1);
 	}
 	return (0);

@@ -208,18 +208,6 @@ glob_name_match(char *name, const char *pattern, int pattern_length)
 	    glob_name_submatch(name + residual - sublen, pattern, sublen));
 }
 
-static char *
-gfarm_url_prefix_add(const char *s)
-{
-	char *p = malloc(GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
-
-	if (p == NULL)
-		return (NULL);
-	memcpy(p, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
-	strcpy(p + GFARM_URL_PREFIX_LENGTH, s);
-	return (p);
-}
-
 static char GFARM_ERR_PATHNAME_TOO_LONG[] = "pathname too long";
 
 #define GLOB_PATH_BUFFER_SIZE	(PATH_MAX * 2)

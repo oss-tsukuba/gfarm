@@ -75,6 +75,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 {
 	char *e, *p;
 	gfarm_timerval_t t1, t2;
+	long ino;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -93,6 +94,10 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	 * XXX - assume that it's a directory that does not have the
 	 * path info.
 	 */
+	e = gfs_get_ino(path, &ino);
+	if (e != NULL)
+		goto finish;
+	s->st_ino = ino;
 	s->st_mode = GFARM_S_IFDIR | 0777;
 	s->st_user = strdup("root");
 	s->st_group = strdup("gfarm");

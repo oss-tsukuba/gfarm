@@ -36,6 +36,8 @@
 #include <utime.h>
 #endif
 
+int gfs_hook_cwd_is_gfarm = 0;
+
 /*
  *  XXX - quite naive implementation
  *
@@ -565,6 +567,50 @@ utimes(const char *path, const struct timeval *tvp)
 {
 	_gfs_hook_debug_v(fputs("Hooking utimes\n", stderr));
 	return (__utimes(path, tvp));
+}
+
+/*
+ * chdir
+ */
+
+int
+__chdir(const char *path)
+{
+	const char *e;
+	char *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chdir(%s)\n", path));
+
+	gfs_hook_cwd_is_gfarm = gfs_hook_is_url(path, &url, &sec);
+	if (!gfs_hook_cwd_is_gfarm)
+		return syscall(SYS_chdir, path);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chdir(%s)\n", path));
+
+	e = gfs_chdir(url);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __chdir: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_chdir(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking _chdir\n", stderr));
+	return (__chdir(path));
+}
+
+int
+chdir(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking chdir\n", stderr));
+	return (__chdir(path));
 }
 
 /*

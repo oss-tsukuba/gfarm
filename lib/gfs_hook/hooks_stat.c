@@ -41,6 +41,8 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	if (sec != NULL)
 		free(sec);
 	if (e == NULL) {
+		buf->st_dev = GFS_DEV;	  
+		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
 		buf->st_nlink = 1;
 		buf->st_uid = getuid();
@@ -173,6 +175,8 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	if (sec != NULL)
 		free(sec);
 	if (e == NULL) {
+		buf->st_dev = GFS_DEV;	  
+		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
 		buf->st_nlink = 1;
 		buf->st_uid = getuid();
