@@ -293,7 +293,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 				if (option_type_suffix)
 					len_suffix = put_suffix(&ls[k]);
 				printf("%*s",
-				    max_width - strlen(ls[k].path)
+				       column_width - strlen(ls[k].path)
 				       - len_suffix + 1, "");
 			}
 			putchar('\n');
