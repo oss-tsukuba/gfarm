@@ -3,7 +3,8 @@ enum gfarm_auth_error {
 	GFARM_AUTH_ERROR_DENIED,
 	GFARM_AUTH_ERROR_NOT_SUPPORTED,
 	GFARM_AUTH_ERROR_INVALID_CREDENTIAL,
-	GFARM_AUTH_ERROR_EXPIRED
+	GFARM_AUTH_ERROR_EXPIRED,
+	GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE,
 };
 
 enum gfarm_auth_method {
@@ -46,7 +47,7 @@ struct sockaddr;
 
 char *gfarm_authorize_log_connected(struct xxx_connection *, char *, char *);
 char *gfarm_auth_request(struct xxx_connection *, char *, struct sockaddr *);
-char *gfarm_authorize(struct xxx_connection *, int, char **);
+char *gfarm_authorize(struct xxx_connection *, int, char **, char **);
 
 /* auth config */
 struct gfarm_hostspec;

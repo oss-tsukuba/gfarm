@@ -80,6 +80,7 @@ cleanup(void)
 		xxx_connection_delete_credential(credential_exported);
 	credential_exported = NULL;
 	
+	/* disconnect, do logging */
 	gflog_notice("disconnected", NULL);
 }
 
@@ -1775,7 +1776,7 @@ server(int client_fd)
 	 * gfarm_get_local_homedir() which are necessary for
 	 * gfs_client_connect() called from gfs_server_replicate_file().
 	 */
-	e = gfarm_authorize(client, 1, NULL);
+	e = gfarm_authorize(client, 1, NULL, NULL);
 	if (e != NULL)
 		gflog_fatal("gfarm_authorize", e);
 

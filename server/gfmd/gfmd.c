@@ -218,7 +218,7 @@ job_table_remove(int id, char *user, struct job_table_entry **listp)
 
 struct file_table_entry {
 	struct xxx_connection *conn;
-	char *user;
+	char *user, *host;
 	struct job_table_entry *jobs;
 } *file_table;
 int file_table_size;
@@ -265,19 +265,37 @@ file_table_add(int fd)
 int
 file_table_close(int fd)
 {
+	static char m1[] = "(";
+	static char m2[] = "@";
+	static char m3[] = ") disconnected";
+	char *msg;
+
 	if (fd < 0 || fd >= file_table_size || file_table[fd].conn == NULL)
 		return (EBADF);
 
-	gflog_notice("disconnected", file_table[fd].user);
+	/* disconnect, do logging */
+	msg = malloc(sizeof(m1) - 1 + strlen(file_table[fd].user) +
+	    sizeof(m2) - 1 + strlen(file_table[fd].host) + sizeof(m3));
+	if (msg == NULL) {
+		gflog_notice("(:@not enough memory) disconnected",
+		    file_table[fd].user);
+	} else {
+		sprintf(msg, "%s%s%s%s%s", m1, file_table[fd].user,
+		    m2, file_table[fd].host, m3);
+		gflog_notice(msg, NULL);
+		free(msg);
+	}
 
 	while (file_table[fd].jobs != NULL)
 		job_table_remove(file_table[fd].jobs->id, file_table[fd].user,
 				 &file_table[fd].jobs);
-
 	file_table[fd].jobs = NULL;
 
 	free(file_table[fd].user);
 	file_table[fd].user = NULL;
+
+	free(file_table[fd].host);
+	file_table[fd].host = NULL;
 
 	xxx_connection_free(file_table[fd].conn);
 	file_table[fd].conn = NULL;
@@ -612,7 +630,7 @@ service(int client_socket)
 void
 main_loop(int accepting_socket)
 {
-	char *e, *username;
+	char *e, *username, *hostname;
 	int max_fd, nfound, client_socket, fd;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
@@ -642,12 +660,14 @@ main_loop(int accepting_socket)
 				else {
 					e = gfarm_authorize(
 					    file_table[client_socket].conn,
-					    0, &username);
+					    0, &username, &hostname);
 					if (e != NULL) {
 						gflog_warning("authorize", e);
 					} else {
 						file_table[client_socket].user
 							= username;
+						file_table[client_socket].host
+							= hostname;
 					}
 				}
 			}
