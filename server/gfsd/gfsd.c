@@ -69,6 +69,7 @@ int restrict_user = 0;
 uid_t restricted_user = 0;
 
 long rate_limit = 0;
+long sync_rate;
 
 struct xxx_connection *credential_exported = NULL;
 
@@ -742,7 +743,8 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 				gflog_warning_errno(
 				    "replicate_file_seq:local_open");
 			} else {
-				e = gfs_client_copyin(src_conn, src_fd, fd);
+				e = gfs_client_copyin(src_conn, src_fd, fd,
+				    sync_rate);
 				if (e != NULL) {
 					error = gfs_string_to_proto_error(e);
 					gflog_warning(
@@ -886,6 +888,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 	gfarm_int32_t ndivisions; /* parallel_streams */
 	gfarm_int32_t interleave_factor; /* stripe_unit_size, chuck size */
 	file_offset_t file_size;
+	long written;
 	int i, j, n, ofd;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
 	struct hostent *hp;
@@ -974,6 +977,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 	}
 	e_save = e;
 
+	written = 0;
 	/*
 	 * XXX - we cannot stop here, even if e_save != NULL,
 	 * because currently there is no way to cancel
@@ -1032,6 +1036,12 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 					    divisions[i].src_fd);
 					if (e_save == NULL)
 						e_save = e;
+				}
+			} else if (sync_rate != 0) {
+				written += rv;
+				if (written >= sync_rate) {
+					written -= sync_rate;
+					fdatasync(ofd);
 				}
 			}
 			if (--nfound <= 0)
@@ -2155,12 +2165,20 @@ main(int argc, char **argv)
 				close(accepting_sock);
 				for (i = 0; i < datagram_socks_count; i++)
 					close(datagram_socks[i]);
+
 				e = gfarm_netparam_config_get_long(
 				    &gfarm_netparam_rate_limit,
 				    NULL, (struct sockaddr *)&client_addr,
 				    &rate_limit);
 				if (e != NULL) /* shouldn't happen */
 					gflog_warning("rate_limit", e);
+				e = gfarm_netparam_config_get_long(
+				    &gfarm_netparam_sync_rate,
+				    NULL, (struct sockaddr *)&client_addr,
+				    &sync_rate);
+				if (e != NULL) /* shouldn't happen */
+					gflog_warning("sync_rate", e);
+
 				server(client);
 				/*NOTREACHED*/
 #ifndef GFSD_DEBUG

@@ -188,10 +188,19 @@ struct gfarm_netparam_info gfarm_netparam_rate_limit = {
 	&gfarm_netparam_rate_limit.list,
 };
 
+struct gfarm_netparam_info gfarm_netparam_sync_rate = {
+	/* minimum */ 0,
+	/* maximum */ INT_MAX,
+	/* default */ 0,
+	NULL,
+	&gfarm_netparam_sync_rate.list,
+};
+
 struct gfarm_param_type gfarm_netparam_type_table[] = {
     { "parallel_streams", 0, &gfarm_netparam_parallel_streams },
     { "stripe_unit_size", 0, &gfarm_netparam_stripe_unit_size },
     { "rate_limit", 0, &gfarm_netparam_rate_limit },
+    { "sync_rate", 0, &gfarm_netparam_sync_rate },
 };
 
 #define NNETPARAMS GFARM_ARRAY_LENGTH(gfarm_netparam_type_table)

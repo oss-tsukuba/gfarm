@@ -585,9 +585,11 @@ gfs_client_get_spool_root(struct gfs_connection *gfs_server,
 }
 
 char *
-gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd)
+gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
+	long sync_rate)
 {
 	int i, rv, eof;
+	long written;
 	char *e;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
 #ifdef XXX_MEASURE_CKSUM_COST
@@ -603,6 +605,7 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd)
 	e = xxx_proto_send(gfs_server->conn, "ii", GFS_PROTO_BULKREAD, src_fd);
 	if (e != NULL)
 		return (e);
+	written = 0;
 	for (;;) {
 #ifdef XXX_SLOW
 		size_t size;
@@ -624,6 +627,13 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd)
 			rv = write(fd, buffer + i, size - i);
 			if (rv <= 0)
 				break;
+			if (sync_rate != 0) {
+				written += rv;
+				if (written >= sync_rate) {
+					written -= sync_rate;
+					fdatasync(fd);
+				}
+			}
 		}
 		if (i < size) {
 			/*
@@ -668,6 +678,13 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd)
 				rv = write(fd, buffer + i, partial - i);
 				if (rv <= 0)
 					break;
+				if (sync_rate != 0) {
+					written += rv;
+					if (written >= sync_rate) {
+						written -= sync_rate;
+						fdatasync(fd);
+					}
+				}
 			}
 			if (i < partial) {
 				/*

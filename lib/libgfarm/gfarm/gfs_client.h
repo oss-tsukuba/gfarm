@@ -49,7 +49,7 @@ char *gfs_client_digest(struct gfs_connection *, int, char *, size_t,
 			size_t *, unsigned char *, file_offset_t *);
 char *gfs_client_get_spool_root(struct gfs_connection *, char **);
 
-char *gfs_client_copyin(struct gfs_connection *, int, int);
+char *gfs_client_copyin(struct gfs_connection *, int, int, long);
 char *gfs_client_striping_copyin_request(struct gfs_connection *, int, int,
 	file_offset_t, file_offset_t, int, file_offset_t);
 char *gfs_client_striping_copyin_partial(struct gfs_connection *, int *);
