@@ -808,6 +808,49 @@ getcwd(char *buf, size_t size)
 }
 
 /*
+ * chmod
+ */
+
+int
+__chmod(const char *path, mode_t mode)
+{
+	const char *e;
+	char *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chmod(%s, 0%o)\n",
+				path, mode));
+
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_chmod, path, mode);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chmod(%s, 0%o)\n",
+				path, mode));
+	e = gfs_chmod(url, mode);
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __chmod: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_chmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking _chmod\n", stderr));
+	return (__chmod(path, mode));
+}
+
+int
+chmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking chmod\n", stderr));
+	return (__chmod(path, mode));
+}
+/*
  * definitions for "hooks_common.c"
  */
 
