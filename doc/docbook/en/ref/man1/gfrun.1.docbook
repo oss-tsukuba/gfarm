@@ -103,6 +103,14 @@ is ignored.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>specifies an on-demand replication mode.  In this mode, every
+file will be replicated before it will be accessed remotely.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-o</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
 <para>specifies a Gfarm file that the standard output of the executed
@@ -115,6 +123,32 @@ program will be redirected to.</para>
 <listitem>
 <para>specifies a Gfarm file that the standard error of the executed
 program will be redirected to.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I</option> <parameter>fragment-index</parameter></term>
+<listitem>
+<para>specifies a Gfarm fragment index executed by the gfrun command.
+It is necessary that a parallel process will be scheduled by
+file-affinity scheduling.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>displays error message verbosely.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>displays elapsed time of each Gfarm parallel I/O API after the
+program terminates.
+</para>
 </listitem>
 </varlistentry>
 
