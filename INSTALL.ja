@@ -484,6 +484,7 @@ metadb_serverhost ldap.hpcc.gr.jp
 ldap_serverhost ldap.hpcc.gr.jp
 ldap_serverport 9000
 ldap_base_dn "dc=hpcc, dc=gr, dc=jp"
+auth enable sharedsecret ALL
 ------------------------------ ここまで ------------------------------
 
 クライアントのホスト上では、~/.gfarmrc に設定することもできます。
