@@ -124,7 +124,7 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	umask(mask);
 	mode &= ~mask;
 
-	e = gfarm_url_make_path(url, &pathname);
+	e = gfarm_url_make_path_for_creation(url, &pathname);
 	if (e != NULL)
 		return (e);
 	e = gfs_file_alloc(&gf);

@@ -75,6 +75,7 @@ extern char *gfarm_ldap_base_dn;
 
 char *gfarm_canonical_path(const char *, char **);
 char *gfarm_url_make_path(const char *, char **);
+char *gfarm_url_make_path_for_creation(const char *, char **);
 int gfarm_is_url(const char *);
 #if 0
 char *gfarm_url_make_localized_path(char *, char **);
