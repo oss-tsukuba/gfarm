@@ -15,7 +15,7 @@
  */
 
 void
-display_stat(char *fn, struct gfs_stat *st)
+display_stat(char *fn, struct gfs_stat *st, int nfrags)
 {
 	printf("  File: \"%s\"\n", fn);
 	printf("  Size: %-12" PR_FILE_OFFSET " Filetype: ", st->st_size);
@@ -29,7 +29,7 @@ display_stat(char *fn, struct gfs_stat *st)
 	default:
 		printf("unknown\n");
 	}
-	printf("  Num of sections: %d\n", st->st_nsections);
+	printf("  Num of sections: %d/%d\n", st->st_nsections, nfrags);
 	printf("  Mode: (%04o) Uid: (%8s) Gid: (%8s)\n",
 	       st->st_mode & GFARM_S_ALLPERM,
 	       st->st_user, st->st_group);
@@ -59,7 +59,7 @@ main(int argc, char *argv[])
 	extern int optind;
 	int r = 0;
 
-	while ((c = getopt(argc, argv, "h")) != -1) {
+	while ((c = getopt(argc, argv, "h?")) != -1) {
 		switch (c) {
 		case 'h':
 		case '?':
@@ -79,15 +79,15 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (*argv) {
+	for (; *argv; ++argv) {
 		struct gfs_stat st;
 		char *url;
+		int nfrags;
 
 		e = gfs_realpath(*argv, &url);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", *argv, e);
 			r = 1;
-			++argv;
 			continue;
 		}
 
@@ -96,14 +96,18 @@ main(int argc, char *argv[])
 			fprintf(stderr, "%s: %s\n", url, e);
 			r = 1;
 			free(url);
-			++argv;
 			continue;
 		}
-		display_stat(url, &st);
+		e = gfarm_url_fragment_number(url, &nfrags);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", url, e);
+			r = 1;
+		}
+		else
+			display_stat(url, &st, nfrags);
 
 		gfs_stat_free(&st);
 		free(url);
-		++argv;
 	}
 
 	e = gfarm_terminate();
