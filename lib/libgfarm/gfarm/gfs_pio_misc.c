@@ -467,48 +467,39 @@ gfs_chmod_file_spool(
 	return (NULL);
 }
 
-char *
-gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
+static char *
+gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 {
-	char *e, *gfarm_file;
-	struct gfarm_path_info pi;
+	char *e;
 	int nsection, *ncopy, i;
 	struct gfarm_file_section_info *sections;
 	struct gfarm_file_section_copy_info **copies;
 	enum exec_change change;
 
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL)
-		return (e);
-	e = gfarm_path_info_get(gfarm_file, &pi);
-	free(gfarm_file);
-	if (e != NULL)
-		return (e);
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		goto finish_free_path_info;
+	if (strcmp(pi->status.st_user, gfarm_get_global_username()) != 0) {
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	} 
 	
-	if (GFARM_S_ISDIR(pi.status.st_mode)) {
+	if (GFARM_S_ISDIR(pi->status.st_mode)) {
 		struct gfs_chmod_args a;
 		int nhosts_succeed;
 
-		e = change_path_info_mode(&pi, mode);
+		e = change_path_info_mode(pi, mode);
 		if (e != NULL)
-			goto finish_free_path_info;
-		a.path = pi.pathname;
+			return (e);
+		a.path = pi->pathname;
 		a.mode = mode;
 		e = gfs_client_apply_all_hosts(chmod_request_parallel,
 					 &a, "gfs_chmod", &nhosts_succeed);
-		goto finish_free_path_info;
+		return (e);
 	}
 
-	e = gfarm_file_section_info_get_all_by_file(pi.pathname,
+	e = gfarm_file_section_info_get_all_by_file(pi->pathname,
 					 	    &nsection, &sections);
 	if (e != NULL)
-		goto finish_free_path_info;
+		return (e);
 
-	change = diff_exec(pi.status.st_mode, mode);
+	change = diff_exec(pi->status.st_mode, mode);
 	if (change != EXECUTABILITY_NOT_CHANGED && nsection > 1) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;	
 		goto finish_free_section_info;
@@ -535,9 +526,9 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 	}
 
 	if (change == EXECUTABILITY_NOT_CHANGED) {
-		e = change_path_info_mode(&pi, mode);
+		e = change_path_info_mode(pi, mode);
 	} else {
-		e = gfs_chmod_execfile_metadata(&pi, mode, &sections[0],
+		e = gfs_chmod_execfile_metadata(pi, mode, &sections[0],
 						ncopy[0], copies[0], change);
 	}
 	if (e != NULL)
@@ -555,7 +546,25 @@ finish_free_ncopy:
 	free(ncopy);
 finish_free_section_info:
 	gfarm_file_section_info_free_all(nsection, sections);
-finish_free_path_info:
+	return (e);
+}
+
+char *
+gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
+{
+	char *e, *gfarm_file;
+	struct gfarm_path_info pi;
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	free(gfarm_file);
+	if (e != NULL)
+		return (e);
+
+	e = gfs_chmod_internal(&pi, mode);	
 	gfarm_path_info_free(&pi);
 	return (e);
 }
@@ -563,12 +572,7 @@ finish_free_path_info:
 char *
 gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
 {
-	if (strcmp(gf->pi.status.st_user, gfarm_get_global_username()) != 0)
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-
-	gf->pi.status.st_mode &= ~GFARM_S_ALLPERM;
-	gf->pi.status.st_mode |= (mode & GFARM_S_ALLPERM);
-	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
+	return (gfs_chmod_internal(&gf->pi, mode));
 }
 
 char *
