@@ -1,5 +1,3 @@
-char *gfarm_host_get_self_architecture(char **);
-
 int gfarm_canonical_hostname_is_local(char *);
 int gfarm_host_is_local(char *);
 
