@@ -3,10 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRM" "1" "24 May 2003" "Gfarm" ""
+.TH "GFRM" "1" "30 September 2004" "Gfarm" ""
 .SH NAME
 gfrm \- remove Gfarm files
 .SH SYNOPSIS
+
+\fBgfrm\fR [ \fB-r\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+
 
 \fBgfrm\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
@@ -24,6 +27,10 @@ removes a file replica specified by \fIfragment-index\fR on the
 filesystem nodes \fIfilesystem-node\fR.  It is not allowed to remove
 the last file repilca.
 .SH "OPTIONS"
+.TP
+\fB-r\fR
+If an argument is a directory, remove all entries under the directory
+recursively.
 .TP
 \fB-h \fIfilesystem-node\fB\fR
 specifies a filesystem node on which file replicas will be removed.
