@@ -310,6 +310,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
     gss_qop_t retQOP = GFARM_GSS_DEFAULT_QOP;
     unsigned int retMaxT = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
     unsigned int retConf = GFARM_SS_USE_ENCRYPTION;
+    OM_uint32 majStat, minStat;
 
 #define NEGO_PARAM_QOP			0
 #define NEGO_PARAM_QOP_FORCE		1
@@ -318,6 +319,13 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 #define NEGO_PARAM_OTHER_CONFIG		4
 #define NEGO_PARAM_OTHER_CONFIG_FORCE	5
 #define NUM_NEGO_PARAM			6
+  
+    if (majStatPtr != NULL) {
+	*majStatPtr = GSS_S_FAILURE;
+    }
+    if (minStatPtr != NULL) {
+	 *minStatPtr = GSS_S_FAILURE;
+    }
 
     if (sCtx == GSS_C_NO_CONTEXT) {
 	return -1;
@@ -432,7 +440,6 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
     }
 
     {
-	OM_uint32 majStat, minStat;
 	unsigned int maxMsgSize;
 	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     			(isBitSet(retConf,
