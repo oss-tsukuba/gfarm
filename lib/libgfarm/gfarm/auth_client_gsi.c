@@ -88,11 +88,12 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 	xxx_connection_set_secsession(conn, session);
 
 	e = xxx_proto_recv(conn, 1, &eof, "i", &error);
-	if (e != NULL || error != GFARM_AUTH_ERROR_NO_ERROR) {
+	if (e != NULL || eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
-		return (e != NULL ? e : GFARM_ERR_AUTHENTICATION);
+		return (e != NULL ? e :
+		    eof ? GFARM_ERR_PROTOCOL : GFARM_ERR_AUTHENTICATION);
 	}
 	return (NULL);
 }
