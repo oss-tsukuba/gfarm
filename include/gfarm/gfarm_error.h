@@ -7,6 +7,7 @@
 /* classic errno (1..10, 12..34) */
 extern char GFARM_ERR_OPERATION_NOT_PERMITTED[]; /* forbidden entirely */
 extern char GFARM_ERR_NO_SUCH_OBJECT[];
+extern char GFARM_ERR_INTERRUPTED_SYSTEM_CALL[];
 extern char GFARM_ERR_INPUT_OUTPUT[];
 extern char GFARM_ERR_NO_MEMORY[];
 extern char GFARM_ERR_PERMISSION_DENIED[]; /* prohibited by access control */
@@ -16,6 +17,9 @@ extern char GFARM_ERR_IS_A_DIRECTORY[];
 extern char GFARM_ERR_INVALID_ARGUMENT[];
 extern char GFARM_ERR_NO_SPACE[];
 extern char GFARM_ERR_READ_ONLY_FILE_SYSTEM[];
+
+/* non classic, non-blocking and interrupt i/o */
+extern char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[];
 
 /* non classic, filesystem related errors */
 extern char GFARM_ERR_DISK_QUOTA_EXCEEDED[];

@@ -23,6 +23,7 @@
 /* classic errno (1..10, 12..34) */
 char GFARM_ERR_OPERATION_NOT_PERMITTED[] = "operation not permitted";
 char GFARM_ERR_NO_SUCH_OBJECT[] = "no such object";
+char GFARM_ERR_INTERRUPTED_SYSTEM_CALL[] = "interrupted system call";
 char GFARM_ERR_INPUT_OUTPUT[] = "input/output error";
 char GFARM_ERR_NO_MEMORY[] = "not enough memory";
 char GFARM_ERR_PERMISSION_DENIED[] = "permission denied";
@@ -32,6 +33,10 @@ char GFARM_ERR_IS_A_DIRECTORY[] = "is a directory";
 char GFARM_ERR_INVALID_ARGUMENT[] = "invalid argument";
 char GFARM_ERR_NO_SPACE[] = "no space";
 char GFARM_ERR_READ_ONLY_FILE_SYSTEM[] = "read-only file system";
+
+/* non classic, non-blocking and interrupt i/o */
+char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[] =
+	"resource temporarily unavailable";
 
 /* non classic, filesystem related errors */
 char GFARM_ERR_DISK_QUOTA_EXCEEDED[] = "disk quota exceeded";
@@ -87,6 +92,7 @@ struct {
 	 */
 	{ EPERM,	GFARM_ERR_OPERATION_NOT_PERMITTED },
 	{ ENOENT,	GFARM_ERR_NO_SUCH_OBJECT },
+	{ EINTR,	GFARM_ERR_INTERRUPTED_SYSTEM_CALL },
 	{ EIO,		GFARM_ERR_INPUT_OUTPUT },
 	{ ENOMEM,	GFARM_ERR_NO_MEMORY },
 	{ EACCES,	GFARM_ERR_PERMISSION_DENIED },
@@ -96,6 +102,11 @@ struct {
 	{ EINVAL,	GFARM_ERR_INVALID_ARGUMENT },
 	{ ENOSPC,	GFARM_ERR_NO_SPACE },
 	{ EROFS,	GFARM_ERR_READ_ONLY_FILE_SYSTEM },
+
+	/*
+	 * non classic, non-blocking and interrupt i/o
+	 */
+	{ EAGAIN,	GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE },
 
 	/*
 	 * non classic, filesystem related errors
