@@ -289,7 +289,7 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
  * getdents
  */
 
-#ifdef __linux__
+#if defined(__linux__) && defined(__i386__)
 # define internal_function __attribute__ ((regparm (3), stdcall))
 #else
 # define internal_function /* empty */
