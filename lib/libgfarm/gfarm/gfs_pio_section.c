@@ -440,8 +440,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		}
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
 		   (gf->open_flags & GFARM_FILE_TRUNC) ||
-		   !gfarm_file_section_info_does_exist(
-			gf->pi.pathname, vc->section)) {
+		   ((gf->mode & GFS_FILE_MODE_WRITE) &&
+		    !gfarm_file_section_info_does_exist(
+			gf->pi.pathname, vc->section))) {
 		if (gfarm_is_active_file_system_node &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
 			vc->canonical_hostname = strdup(if_hostname);
