@@ -16,8 +16,8 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-H <hostfile>\t"
-	    "remove replica, -i is needed, too.\n");
-	fprintf(stderr, "\t-i <fragment>\t"
+	    "remove replica, -I is needed, too.\n");
+	fprintf(stderr, "\t-I <fragment>\t"
 	    "remove replica, -H is needed, too.\n");
 	exit(1);
 }
@@ -38,12 +38,12 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:i:fr")) != -1) {
+	while ((ch = getopt(argc, argv, "H:I:fr")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
 			break;
-		case 'i':
+		case 'I':
 			section = optarg;
 			break;
 		case '?':

@@ -106,7 +106,7 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-H <hostfile>\n");
-	fprintf(stderr, "\t-s <section>\n");
+	fprintf(stderr, "\t-I <fragment>\n");
 	exit(1);
 }
 
@@ -126,19 +126,19 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:dgs:")) != -1) {
+	while ((ch = getopt(argc, argv, "H:I:dg")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
+			break;
+		case 'I':
+			section = optarg;
 			break;
 		case 'd':
 			default_view = 1;
 			break;
 		case 'g':
 			global_view = 1;
-			break;
-		case 's':
-			section = optarg;
 			break;
 		case '?':
 		default:
