@@ -310,7 +310,6 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
     gss_qop_t retQOP = GFARM_GSS_DEFAULT_QOP;
     unsigned int retMaxT = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
     unsigned int retConf = GFARM_SS_USE_ENCRYPTION;
-    OM_uint32 majStat, minStat;
 
 #define NEGO_PARAM_QOP			0
 #define NEGO_PARAM_QOP_FORCE		1
@@ -320,11 +319,14 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 #define NEGO_PARAM_OTHER_CONFIG_FORCE	5
 #define NUM_NEGO_PARAM			6
   
+/* XXX - This depends on globus implementation - GLOBUS_SUCCESS (== 0) */
+#define GFSL_DEFAULT_MINOR_ERROR 0
+
     if (majStatPtr != NULL) {
 	*majStatPtr = GSS_S_FAILURE;
     }
     if (minStatPtr != NULL) {
-	 *minStatPtr = GSS_S_FAILURE;
+	*minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
     }
 
     if (sCtx == GSS_C_NO_CONTEXT) {
@@ -441,6 +443,8 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 
     {
 	unsigned int maxMsgSize;
+	OM_uint32 majStat, minStat;
+
 	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     			(isBitSet(retConf,
 				  GFARM_SS_USE_ENCRYPTION) ? 1 : 0);
