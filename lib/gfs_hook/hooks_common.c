@@ -24,7 +24,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	va_end(ap);
 
 	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", path, oflag));
+	    "Hooking " S(FUNC___OPEN) "(%s, 0%o)\n", path, oflag));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_OPEN(path, oflag, mode));
@@ -52,7 +52,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		GFS_Dir dir;
 
 		_gfs_hook_debug(fprintf(stderr,
-		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x): dir\n",
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o): dir\n",
 		    url, oflag));
 
 		if ((oflag & (O_CREAT|O_TRUNC)) != 0 ||
@@ -81,7 +81,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 
 	if ((oflag & O_CREAT) != 0) {
 		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x, 0%o)\n",
+		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o, 0%o)\n",
 		    url, oflag, mode));
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
@@ -90,7 +90,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			gfs_hook_add_creating_file(gf);
 	} else {
 		_gfs_hook_debug(fprintf(stderr,
-		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", url, oflag));
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o)\n", url, oflag));
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_open(url, oflag, &gf);
