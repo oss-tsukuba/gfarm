@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -34,7 +35,6 @@
 #endif
 
 #ifdef SYS_utime
-#include <sys/types.h>
 #include <utime.h>
 #endif
 
@@ -471,12 +471,52 @@ int
 __execve(const char *filename, char *const argv [], char *const envp[])
 {
 	char *url, *e;
+	int status, r;
+	pid_t pid;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __execve(%s)\n", filename));
 
-	if (!gfs_hook_is_url(filename, &url))
-		return syscall(SYS_execve, filename, argv, envp);
+	if (!gfs_hook_is_url(filename, &url)) {
+		if (gfs_hook_num_gfs_files() > 0) {
+			gfs_hook_mode_calc_digest_force();
+			pid = fork();
+		}
+		else
+			pid = 0;
 
+		switch (pid) {
+		case -1:
+			_gfs_hook_debug(perror("fork"));
+			status = 255;
+			break;
+		case 0:
+			r = syscall(SYS_execve, filename, argv, envp);
+			if (gfs_hook_num_gfs_files() == 0)
+				return (r);
+			_gfs_hook_debug(perror(filename));
+			_exit(255);
+		default:
+			if (waitpid(pid, &status, 0) == -1) {
+				_gfs_hook_debug(perror("waitpid"));
+				status = 255;
+			}
+			else if (WIFSIGNALED(status)) {
+				_gfs_hook_debug(
+				 fprintf(stderr, "%s: signal %d received%s.\n",
+				  gfarm_host_get_self_name(), WTERMSIG(status),
+				  WCOREDUMP(status) ? " (core dumped)" : ""));
+				status = 255;
+			}
+			else {
+				status = WEXITSTATUS(status);
+			}
+			break;
+		}
+		e = gfs_hook_close_all();
+		if (e != NULL)
+			_gfs_hook_debug(fprintf(stderr, "close_all: %s\n", e));
+		exit(status);
+	}
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __execve(%s)\n", url));
 	e = gfs_execve(url, argv, envp);
 	free(url);

@@ -101,6 +101,14 @@ gfs_hook_open_flags_gfarmize(int open_flags)
  * gfs_file_buf management
  */
 
+static int _gfs_hook_num_gfs_files;
+
+int
+gfs_hook_num_gfs_files(void)
+{
+	return (_gfs_hook_num_gfs_files);
+}
+
 int
 gfs_hook_insert_gfs_file(GFS_File gf)
 {
@@ -157,6 +165,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_REG;
 	_gfs_file_buf[fd]->u.f = gf;
+	++_gfs_hook_num_gfs_files;
 	return (fd);
 }
 
@@ -265,6 +274,7 @@ gfs_hook_clear_gfs_file(int fd)
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
 			gfs_hook_delete_creating_file(gf);
 			e = gfs_pio_close(gf);
+			--_gfs_hook_num_gfs_files;
 		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
 			_gfs_file_buf[fd]->u.d->dir = NULL;
 			_gfs_file_buf[fd]->u.d->suspended = NULL;
@@ -278,6 +288,36 @@ gfs_hook_clear_gfs_file(int fd)
 	__syscall_close(fd);
 	_gfs_file_buf[fd] = NULL;
 	return (e);
+}
+
+/* XXX - apparently violate the layer */
+void
+gfs_hook_mode_calc_digest_force(void)
+{
+	int fd;
+	GFS_File gf;
+
+	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd)
+		if (((gf = gfs_hook_is_open(fd)) != NULL) &&
+		    (gfs_hook_gfs_file_type(fd) == GFS_DT_REG))
+			gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+	return;
+}
+
+char *
+gfs_hook_close_all(void)
+{
+	int fd;
+	char *e, *e_save = NULL;
+
+	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd) {
+		if (gfs_hook_is_open(fd)) {
+			e = gfs_hook_clear_gfs_file(fd);
+			if (e != NULL && e_save == NULL)
+				e_save = e;
+		}
+	}
+	return (e_save);
 }
 
 struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
