@@ -18,11 +18,11 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+#include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
 #include "auth.h"
-#include "gfutil.h"
 
 /*
  * Delegated credential
