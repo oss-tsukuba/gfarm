@@ -21,4 +21,4 @@
 
 #define DIRENT_TYPE struct dirent64
 
-#include "getdents_common.c"
+#include "getdents.c"

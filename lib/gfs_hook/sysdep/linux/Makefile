@@ -15,7 +15,7 @@ LIBRARY_RESULT = # do not install
 LARGEFILE64_SRCS = getdents64.c xstat64.c lxstat64.c fxstat64.c
 LARGEFILE64_OBJS = getdents64.lo xstat64.lo lxstat64.lo fxstat64.lo
 
-SRCS = getdents.c getdents_common.c xstat.c lxstat.c fxstat.c xstatconv.c \
+SRCS = getdents.c xstat.c lxstat.c fxstat.c xstatconv.c \
 	${largefile64_srcs}
 OBJS = getdents.lo xstat.lo lxstat.lo fxstat.lo \
 	${largefile64_objs}
@@ -24,9 +24,9 @@ all:	$(LIBRARY)
 
 include $(top_srcdir)/makes/lib.mk
 
-getdents.lo: getdents.c getdents_common.c
+getdents.lo: getdents.c
 
-getdents64.lo: getdents64.c getdents_common.c
+getdents64.lo: getdents64.c getdents.c
 	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -c $(srcdir)/getdents64.c
 
 xstat.lo: xstat.c xstatconv.c
