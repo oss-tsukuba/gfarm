@@ -265,6 +265,7 @@ fi
 %{man_prefix}/man3/gfs_pio_set_local.3.gz
 %{man_prefix}/man3/gfs_pio_set_view_index.3.gz
 %{man_prefix}/man3/gfs_pio_set_view_local.3.gz
+%{man_prefix}/man3/gfs_pio_truncate.3.gz
 %{man_prefix}/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/man3/gfs_pio_write.3.gz
 %{man_prefix}/man3/gfs_readdir.3.gz
@@ -430,6 +431,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_set_local.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_set_view_index.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_set_view_local.3.html
+%{html_prefix}/en/ref/man3/gfs_pio_truncate.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/en/ref/man3/gfs_readdir.3.html
