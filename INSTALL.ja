@@ -1,0 +1,620 @@
+● Gfarm システム
+
+Gfarm システムは Grid 上に大規模データ処理サービス，データインテンシブ
+コンピューティング環境をグリッドサービスとして提供するものです．データ
+参照局所性のある大規模データ処理では，データのネットワーク移動を抑える
+ことにより，スケーラブル入出力性能，スケーラブル並列処理性能を実現しま
+す．Gfarm システムは，以下で構成されます．
+
+  1) 広域並列ファイルシステム (Gfarm ファイルシステム)
+  2) 並列 I/O API             (Gfarm 並列 I/O API)
+  3) プロセスマネージャ       (Gfarm プロセスマネージャ)
+
+Gfarm ファイルシステムは，広域における PC クラスタノードのローカルディ
+スク，PC のローカルディスクを利用して構成される並列ファイルシステムで
+す．それぞれのノードでは gfsd と呼ばれる I/O デーモンが走り，ローカル
+ディスクへのアクセスを安全かつ効率的に可能とします．ファイルは，物理的
+には任意サイズのファイル断片に分割され，それぞれのローカルディスクに分
+散配置されます．また，それぞれのファイル断片は複製を持つこともできます．
+それらファイルシステムメタデータは，Gfarm メタサーバにより管理されます．
+
+Gfarm 並列 I/O API は，Gfarm ファイルシステムを単一システムイメージで
+効率的に利用するための並列 I/O API です．Gfarm ファイルシステムでは，
+ファイルは任意サイズのファイル断片に分割して格納されますが，そのファイ
+ル断片を簡単にアプリケーションが扱うための API などが拡張されてます．
+
+Gfarm プロセスマネージャは，ファイル断片の分散を基にしたファイルアフィ
+ニティスケジューラ，プロセス管理，数千，数万プロセスの高速プロセス起動
+で構成されます．
+
+========================================================================
+
+● Gfarm システムの構成要素
+
+Gfarm システムは、下記の種類のホストから構成されます．
+
+・クライアント
+
+  ユーザーが Gfarm システムにリクエストを送るのに用いるホストです。
+
+・ファイルシステムノード
+
+  計算資源と、Gfarm ファイルシステムのディスクを提供するホスト群です。
+  広域に存在する数千ノード，数万ノードが想定されています．それぞれのノー
+  ド上では gfsd が走ります．
+
+・マネージャ
+
+  Gfarm ファイルシステムのメタデータと，ユーザがリクエストした並列プロ
+  セスを管理するホストです。並列プロセスはファイルシステムノードのホス
+  ト群で実行されることになります．ホスト上では gfmd が走ります．
+
+Gfarm ファイルシステムは、大容量ファイルを、ファイルシステムノード上の
+複数のホストに分散して配置します。この分散されたファイルのの個々をファ
+イル断片と呼びます。ファイルシステムノード上のホストそれぞれが、自ホス
+ト上に存在するファイル断片を処理するような、データ並列処理アプリケーショ
+ンをグリッドサービスとして支援することが、Gfarm システムの主な目的です。
+
+例えば、クライアントで「gfmpirun gfarm:gfwc gfarm:file」を実行すると、
+引数で指定した Gfarm ファイル ``gfarm:file'' のファイル断片が存在する
+ファイルシステムノード上で、MPI 並列コマンド gfwc が実行されます。
+
+あるいは、サーバー上で「gfrun gfarm:gfgrep -o gfarm:output 正規表現 
+gfarm:input」を実行すると、引数で指定した Gfarm ファイルのファイル断片
+が存在するファイルシステムノード上で、コマンド gfgrep が並列実行されま
+す。
+
+========================================================================
+
+● ソフトウェア構成
+
+Gfarm ソフトウェアは、大きく下記の項目に分類されます。
+
+・libgfarm.a ライブラリ
+
+  Gfarm のもとで走るアプリケーション・プログラムにリンクされる
+  ライブラリです。Gfarm の並列ファイルシステムのライブラリ・インターフェー
+  スや、ユーティリティ関数からなります。
+
+  並列ファイルシステムは、内部的には LDAP サーバーを利用した、Gfarm メ
+  タデータベース・ライブラリを用いて実装されています。
+
+・gfmd - Gfarm マネージャ
+
+  マネージャ・マシン上で動作するデーモンプログラムです。
+  現状の実装では、実行中のプロセス情報のみを管理しており、
+  ファイルシステムメタデータサーバの機能は果たしていません。ファイルシ
+  ステムメタデータサーバは LDAP サーバを直接利用しています．
+
+・gfsd - Gfarm 並列ファイルシステム・デーモン
+
+  ファイルシステムノード上の全ホストで動作するデーモンプログラムです。
+  Gfarm ファイルのアクセス機能を提供し、Gfarm ファイルシステムを構成し
+  ます。
+
+・Gfarm 管理ツール
+
+  データ管理ツール digest, gfexport、認証キー管理ツール gfkey、
+  並列タスク実行ツール gfmpirun, gfrun からなります。
+  
+・Gfarm サンプル・プログラム
+
+  Gfarm 並列ファイルシステムにファイルを取り込むコマンドのコーディング
+  例として、gfimport_fixed および gfimport_text を用意しました。
+
+  Gfarm アプリケーションのサンプルプログラムとして、MPI 並列プログラム
+  gfwc および、並列プログラム gfgrep を用意しました。
+
+  これらのサンプルプログラムは、gftool/example の下にあります。
+
+========================================================================
+
+● 構築方法
+
+今回のシステムは、Linux 上で実行テストされています。
+構築に関しては NetBSD, Solaris, Tru64 UNIX 上でテストされています。
+また、IRIX でも、gfsd を除くコマンドはテストされていますので、サーバー・
+ホストに関しては IRIX を用いることもできます。
+
+今回のシステムを構築するには、下記のようにします。
+
+	% ./configure [オプション]
+	% make
+	% make install
+
+configure コマンドには、下記のオプションがあります。
+このうち、--with-openldap および --with-openssl は、必須です。
+
+・--with-openldap=ディレクトリ
+
+  OpenLDAP のインストールされているディレクトリを指定します。
+  このオプションは必ず指定してください。
+
+・--with-openssl=ディレクトリ
+
+  OpenSSL のインストールされているディレクトリを指定します。
+  このオプションは必ず指定してください。
+
+・--with-mpi=ディレクトリ
+
+  MPICH  のインストールされているディレクトリを指定します。
+  このオプションは省略可能です。
+
+・--prefix=ディレクトリ
+
+  インストール先のディレクトリを指定します。このオプションを省略した場
+  合は $HOME ディレクトリの下にインストールします。
+
+利用するコンパイラを明示したい場合には、環境変数 CC に、コンパイラのコ
+マンド名を指定して configure を実行してください。
+
+========================================================================
+
+● 設定方法
+
+この章では、管理者が最初にどんな設定を行う必要があるかを解説します。
+
+以下では、下記のような構成を仮定して解説します。
+
+・Gfarm インストール・ディレクトリ
+
+	/usr/local/gfarm
+
+・OpenLDAP インストール・ディレクトリ
+
+	/usr/local/openldap
+
+・LDAP サーバーを実行するホスト
+
+	ldap.hpcc.jp
+
+・LDAP サーバーの利用する TCP ポート番号
+
+	9000
+
+・LDAP サーバーの設定ファイルを置くディレクトリ
+
+	/etc/gfarm-ldap
+
+・LDAP データベースの初期設定内容を記述するファイル
+
+	/etc/gfarm-ldap/initial.ldif
+
+・LDAP のデータベース・ファイルを置くディレクトリ
+
+	/var/gfarm-ldap
+
+・LDAP の base distinguished name
+
+	dc=hpcc,gc=jp
+
+  この値は、LDAP で保持する情報の根となるノードの名称です。
+
+  Gfarm システムを利用している組織のドメイン名が hpcc.jp であれば、
+  そのドメイン名の各構成要素を dc= に指定して「dc=hpcc,gc=jp」の
+  ような名前を決め、これを base distinguished name に使うと良いでしょ
+  う。
+
+
+・ファイルシステムノードに置く、データ・ファイル用スプール・ディレクト
+  リ
+
+	/var/spool/gfarm
+
+------------------------------------------------------------------------
+
+◇ LDAP サーバー
+
+まず、Gfarm ファイルシステムのファイルシステムメタデータを保持する 
+LDAP サーバーを用意する必要があります。これには下記の設定が必要です。
+
+▽ slapd.conf
+
+OpenLDAP 付属の LDAP サーバーの設定ファイルです。
+base distinguished name を、このファイルの suffix および 
+rootdn で参照しているのに注意してください。
+
+例えばホスト ldap.hpcc.jp の
+ファイル /etc/gfarm-ldap/slapd.conf に、
+下記のような内容を記述します。
+
+------------------------------ ここから ------------------------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include         /usr/local/openldap/etc/openldap/schema/core.schema
+include         /etc/gfarm-ldap/gfarm.schema
+
+pidfile         /var/gfarm-ldap/slapd.pid
+argsfile        /var/gfarm-ldap/slapd.args
+
+# enable global write access for now. XXX
+defaultaccess write
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        ldbm
+
+suffix          "dc=hpcc, dc=jp"
+rootdn          "cn=root, dc=hpcc, dc=jp"
+
+directory       /var/gfarm-ldap
+rootpw          secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+#
+dbnosync
+------------------------------ ここまで ------------------------------
+
+▽ gfarm.schema
+
+slapd.conf から include されているファイルです。
+
+下記の内容を、
+ホスト ldap.hpcc.jp の
+ファイル /etc/gfarm-ldap/gfarm.schema に置いてください。
+特にカスタマイズする項目はありません。
+
+------------------------------ ここから ------------------------------
+#
+# OID Base is:
+#	iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) 
+#		sra(13122) experimental(2) user(1) 
+#			soda(2924) gfarm(100)
+# i.e. gfarm schema OID base is 1.3.6.1.4.1.13122.2.1.2924.100
+#
+# gfarm schema:
+#	1.3.6.1.4.1.13122.2.1.2924.100.1.x attribute syntax
+#	1.3.6.1.4.1.13122.2.1.2924.100.2.x attribute type
+#	1.3.6.1.4.1.13122.2.1.2924.100.3.x object class
+
+# Attribute Type Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.2.x
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.1 NAME 'hostname'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.2 NAME 'hostalias'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.3 NAME 'architecture'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.4 NAME 'ncpu'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.6 NAME 'mode'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.7 NAME 'user'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.8 NAME 'group'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.9 NAME 'atimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.10 NAME 'atimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.11 NAME 'mtimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.12 NAME 'mtimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.13 NAME 'ctimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.14 NAME 'ctimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.15 NAME 'nsections'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.16 NAME 'section'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.17 NAME 'filesize'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.18 NAME 'checksumType'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.19 NAME 'checksum'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+# Object Class Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.3.x
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.1
+	NAME 'GFarmHost' SUP top STRUCTURAL
+	MUST ( hostname $ architecture )
+	MAY ( ncpu ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.2
+	NAME 'GFarmPath' SUP top STRUCTURAL
+	MUST ( pathname )
+	MAY (	mode $ user $ group $
+		atimesec $ atimensec $
+		mtimesec $ mtimensec $
+		ctimesec $ ctimensec $
+		nsections ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.3
+	NAME 'GFarmFileSection' SUP top STRUCTURAL
+	MUST ( pathname $ section )
+	MAY ( filesize $ checksumType $ checksum ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
+	NAME 'GFarmFileSectionCopy' SUP top STRUCTURAL
+	MUST ( pathname $ section $ hostname ) )
+------------------------------ ここまで ------------------------------
+
+▽ ファイルシステムメタデータの初期情報を作る
+
+次に、メタサーバに登録する情報の初期設定を、
+アスキーファイルで作成します。
+
+このファイルには、LDAP の根となるノードの情報と、ファイルシステムノー
+ドを構成するホスト群の情報を記述します。
+
+・LDAP の根となるノードの情報
+
+  dn (distinguished name) 属性に、base distinguished name を
+  設定します。
+
+・ファイルシステムノードのホスト情報
+
+  ホスト毎に、下記の属性を設定します。
+
+  -- dn
+
+    下記のような値を設定します。
+
+	hostname=そのホストのホスト名(FQDN), dc=hpcc,gc=jp
+
+  -- objectclass
+
+    下記の値を設定します。
+
+	GFarmHost
+
+  -- hostname
+
+    dn 属性の hostname に設定したのと同じ値を設定します。
+
+  -- architecture
+
+    計算機アーキテクチャを表す名称を sparc-sun-solaris のような
+    形式で記述します。
+
+  -- ncpu
+
+    そのコンピュータのCPU数を記述します。
+
+例えばホスト ldap.hpcc.jp の
+ファイル /etc/gfarm-ldap/initial.ldif に、
+下記のような内容を設定することになります。
+
+------------------------------ ここから ------------------------------
+dn: dc=hpcc, dc=jp
+objectclass: top
+
+dn: hostname=hpc420-1.hpcc.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: hpc420-1.hpcc.jp
+architecture: sparc-sun-solaris
+ncpu: 1
+
+dn: hostname=hpc420-2.hpcc.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: hpc420-2.hpcc.jp
+architecture: sparc-sun-solaris
+ncpu: 1
+
+dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: wiz.etl.go.jp
+architecture: alpha-dec-osf
+ncpu: 1
+
+dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: o2k.etl.go.jp
+architecture: mips-sgi-irix
+ncpu: 16
+------------------------------ ここまで ------------------------------
+
+▽ LDAP データベースの作成
+
+前節で作成したファイルシステムメタデータの初期情報を元に、LDAP データ
+ベースを作成します。これには、ホスト ldap.hpcc.jp で、下記のコマン
+ドを実行します。
+
+	% rm -f /var/gfarm-ldap/*
+	% cd /etc/gfarm-ldap
+	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+
+▽ LDAP サーバーの起動
+
+ホスト ldap.hpcc.jp で、LDAP サーバーを起動します。
+下記のコマンドを実行します。
+
+	% /usr/local/openldap/libexec/
+	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:9000/
+
+このオプション -h で指定した 9000 が、LDAP サーバーのポート番号です。
+
+▽ LDAP サーバーの動作試験
+
+下記のコマンドを実行してみましょう。initial.ldif ファイルに設定したの
+と同じ内容が表示されれば、正しく動作しています。
+
+Bourne Shell の場合:
+	% host=ldap.hpcc.jp
+	% port=9000
+	% basedn='dc=hpcc, dc=jp'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+
+csh の場合:
+	% set host=ldap.hpcc.jp
+	% set port=9000
+	% set basedn='dc=hpcc, dc=jp'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+
+------------------------------------------------------------------------
+
+◇ gfsd スプール・ディレクトリの作成
+
+ファイルシステムノード上の全ホストで、スプール・ディレクトリ
+/var/spool/gfarm を作成します。
+また、スプール・ディレクトリの下に、各ユーザー別にディレクトリを
+作成することにします。下記の例では、ユーザー morita、tatebe、soda
+のディレクトリを作成しています。
+
+	% su
+	Password: 
+	# sh
+	# mkdir /var/spool/gfarm
+	# chmod 1777 /var/spool/gfarm
+	# for u in morita tatebe soda; do
+	>   mkdir /var/spool/gfarm/$u
+	>   chown ${u} /var/spool/gfarm/$u
+	> done
+	# exit
+	# exit
+	% 
+
+------------------------------------------------------------------------
+
+◇ /etc/gfarm.conf
+
+クライアント，マネージャのホストと、ファイルシステムノード上の全ホスト
+で、/etc/gfarm.conf を下記のように設定します。
+
+------------------------------ ここから ------------------------------
+spool /var/spool/gfarm
+metadb_serverhost ldap.hpcc.jp
+ldap_serverhost ldap.hpcc.jp
+ldap_serverport 9000
+ldap_base_dn "dc=hpcc, dc=jp"
+auth enable sharedsecret ALL
+------------------------------ ここまで ------------------------------
+
+クライアントのホスト上では、~/.gfarmrc に設定することもできます。
+ファイルシステムノードのホスト上では、/etc/gfarm.conf に設定しないとい
+けません。
+
+------------------------------------------------------------------------
+
+◇ gfmd
+
+マネージャ用マシン上で、、root 権限で gfmd を立ち上げます。
+gfmd は、前節で解説した /etc/gfarm.conf ファイルを設定ファイルとして
+読み込みます。
+
+◇ gfsd
+
+ファイルシステムノードを構成する全ホストにおいて、root 権限で gfsd を
+立ち上げます。gfsd は、前節で解説した /etc/gfarm.conf ファイルを設定ファ
+イルとして読み込みます。
+
+========================================================================
+
+● 実行方法
+
+この章では、各ユーザーによる、サンプルの実行例を説明します。
+
+◇ 認証用セッションキー作成
+
+サーバーと計算プールのホストが、全てホーム・ディレクトリを共有している
+場合には、この節は無視して構いません。
+
+さもなくば、Gfarm のアプリケーションを実行しようとする各ユーザーは、下
+記を実行しておく必要があります。
+
+1. あらかじめクライアント上で下記のコマンドを実行して、
+  「~/.gfarm_shared_key」に認証用セッション・キー・ファイルを
+  作成する。
+
+	% gfkey -c
+
+2. 「~/.gfarm_shared_key」を、マネジャーのホストとファイルシステムノー
+  ドの全ホストのホームディレクトリにコピーする。
+
+◇ サンプル・プログラムの実行
+
+以下に、サンプル・プログラムの実行例を示します。
+
+・テキストファイルのインポート
+
+	% gfimport_text -H ホスト定義ファイル -o gfarm:テスト.txt テキストファイル
+
+  上記「-H」オプションで指定する「ホスト定義ファイル」は、import した
+  ファイルのファイル断片を置くファイルシステムノードのホスト名を記述し
+  たファイル名です。
+  一行に一ホストの形式で指定してください。指定したホストに、入力テキス
+  トファイルを等分割して import します。
+
+  「-H ホスト定義ファイル」の代わりに「-f フラグメント定義ファイル」を
+  指定することもできます。この場合、各行を下記の形式で記述します。
+	そのフラグメントのバイト数  ホスト名
+
+  結果を確認してみましょう。
+
+	% gfexport gfarm:テスト.txt | diff -c - テキストファイル
+
+・固定長レコードファイルのインポート
+
+	% gfimport_text -H ホスト定義ファイル -o gfarm:テスト.bin -l 100 固定長レコードファイル
+
+  結果を確認してみましょう。
+
+	% gfexport gfarm:テスト.bin | cmp - 固定長レコードファイル
+
+・gfgrep
+
+  gfgrep プログラムを、gfarm:gfgrep という名称で gfarm に登録します。
+
+	% gfreg /usr/local/gfarm/bin/example/gfgrep gfarm:gfgrep
+
+  実行してみましょう。
+
+	% gfrun gfarm:gfgrep -o gfarm:gfgrep.out 正規表現 gfarm:テスト.txt
+
+  結果を確認してみましょう。
+
+	% gfexport gfarm:gfgrep.out
+	% grep 正規表現 テキストファイル
+
+・gfwc
+
+  gfwc プログラムを、gfarm:gfwc という名称で gfarm に登録します。
+
+	% gfreg /usr/local/gfarm/bin/example/gfwc gfarm:gfwc
+
+  実行してみましょう。
+
+	% gfmpirun gfarm:gfwc gfarm:テスト.txt
+
+  結果を確認してみましょう。
+
+	% wc テキストファイル

@@ -14,12 +14,9 @@ man-all:
 
 man-install:
 	@for i in / $(MAN); do \
-		case $$i in \
-		/)	;; \
-		*)	suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
-			( set -x; \
-			$(INSTALL_DATA) $$i $(mandir)/man$$suffix/$$i );; \
-		esac; \
+		case $$i in /) continue;; esac; \
+		suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
+		( set -x; $(INSTALL_DATA) $$i $(mandir)/man$$suffix/$$i ); \
 	done
 
 man-clean:

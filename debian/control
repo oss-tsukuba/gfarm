@@ -1,0 +1,31 @@
+Source: gfarm
+Section: devel
+Priority: optional
+Maintainer: Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>
+Standards-Version: 3.0.1
+
+Package: gfarm-server
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: The gfarm server.
+ The gfarm server.
+
+Package: gfarm-client
+Architecture: i386
+Description: The gfarm client.
+ The gfarm client.
+
+Package: gfarm-pool
+Architecture: i386
+Description: The gfarm pool.
+ The gfarm pool.
+
+Package: libgfarm-dev
+Architecture: i386
+Description: Development files for the gfarm.
+ Development files for the gfarm. 
+
+Package: gfarm-doc
+Architecture: all
+Description: Documents and Papers for the gfarm.
+ Documents and Papers for the gfarm. 
