@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+
+char *program_name = "thput-fsstripe.c";
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) \
     || defined(__bsdi__)
@@ -164,7 +168,7 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [options]\n");
+	fprintf(stderr, "Usage: %s [options]\n", program_name);
 	fprintf(stderr, "\t-a <iosize_alignment>\n");
 	fprintf(stderr, "\t-b <blocking_size>\n");
 	fprintf(stderr, "\t-g <full_stripe_size> (gap between stripe)\n");
@@ -179,6 +183,7 @@ usage(void)
 extern char *optarg;
 extern int optind;
 
+int
 main(int argc, char **argv)
 {
 	int full_stripe_size = 0;
@@ -191,6 +196,8 @@ main(int argc, char **argv)
 	struct stat s;
 	struct timeval t1, t2;
 
+	if (argc > 0)
+		program_name = argv[0];
 	while ((ch = getopt(argc, argv, "a:b:g:i:m:o:p:s:")) != -1) {
 		switch (ch) {
 		case 'a':
