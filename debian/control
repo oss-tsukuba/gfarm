@@ -53,7 +53,7 @@ Description: The Gfarm filesystem daemon
 Package: libgfarm
 Section: libs
 Architecture: i386
-Depends: libc6 (>= 2.3.2.ds1-4), libldap2 (>= 2.1.17-1), libssl0.9.7
+Depends: ${shlibs:Depends}
 Conflicts: libgfarm-gsi
 Description: Runtime libraries for the Gfarm
  libgfarm is a library implementing interfaces for reading and writing
@@ -114,7 +114,7 @@ Description: The Gfarm filesystem daemon with GSI
 Package: libgfarm-gsi
 Section: libs
 Architecture: i386
-Depends: libc6 (>= 2.3.2.ds1-4), libldap2 (>= 2.1.17-1)
+Depends: ${shlibs:Depends}
 Conflicts: libgfarm
 Description: Runtime libraries for the Gfarm
  libgfarm is a library implementing interfaces for reading and writing
