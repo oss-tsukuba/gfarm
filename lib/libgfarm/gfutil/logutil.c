@@ -65,6 +65,24 @@ gflog_warning(char *message, char *status)
 }
 
 void
+gflog_notice(char *message, char *status)
+{
+	gflog_message(LOG_NOTICE, message, status);
+}
+
+void
+gflog_info(char *message, char *status)
+{
+	gflog_message(LOG_INFO, message, status);
+}
+
+void
+gflog_debug(char *message, char *status)
+{
+	gflog_message(LOG_DEBUG, message, status);
+}
+
+void
 gflog_warning_errno(char *message)
 {
 	gflog_warning(message, strerror(errno));
@@ -93,6 +111,12 @@ void
 gflog_set_auxiliary_info(char *aux_info)
 {
 	log_auxiliary_info = aux_info;
+}
+
+char *
+gflog_get_auxiliary_info(void)
+{
+	return log_auxiliary_info;
 }
 
 void

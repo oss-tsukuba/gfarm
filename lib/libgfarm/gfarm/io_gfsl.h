@@ -4,7 +4,7 @@ struct gfarm_iobuffer;
 
 char *gfarm_gsi_initialize(void);
 char *gfarm_auth_request_gsi(struct xxx_connection *);
-char *gfarm_authorize_gsi(struct xxx_connection *, int, char **);
+char *gfarm_authorize_gsi(struct xxx_connection *, int, char *, char **);
 
 char *xxx_connection_set_secsession(struct xxx_connection *,
 	struct gfarmSecSession *);

@@ -79,6 +79,8 @@ cleanup(void)
 	if (credential_exported != NULL)
 		xxx_connection_delete_credential(credential_exported);
 	credential_exported = NULL;
+	
+	gflog_notice("disconnected", NULL);
 }
 
 #define fatal_proto(proto, status)	fatal(proto, status)
@@ -1764,7 +1766,7 @@ server(int client_fd)
 	e = xxx_fd_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
-		fatal("xxx_connection_new", e);
+		gflog_fatal("xxx_connection_new", e);
 	}
 	/*
 	 * The following function switches deamon's privilege
@@ -1775,7 +1777,7 @@ server(int client_fd)
 	 */
 	e = gfarm_authorize(client, 1, NULL);
 	if (e != NULL)
-		fatal("gfarm_authorize", e);
+		gflog_fatal("gfarm_authorize", e);
 
 	for (;;) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &request);
@@ -1877,18 +1879,18 @@ open_accepting_socket(int port)
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		fatal_errno("accepting socket");
+		gflog_fatal_errno("accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
 		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		fatal_errno("bind accepting socket");
+		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != NULL)
 		gflog_warning("setsockopt", e);
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		fatal_errno("listen");
+		gflog_fatal_errno("listen");
 	return (sock);
 }
 
@@ -1903,10 +1905,10 @@ open_datagram_service_sockets(int port, int *countp, int **socketsp)
 
 	e = gfarm_get_ip_addresses(&self_addresses_count, &self_addresses);
 	if (e != NULL)
-		fatal("get_ip_addresses", e);
+		gflog_fatal("get_ip_addresses", e);
 	sockets = malloc(sizeof(*sockets) * self_addresses_count);
 	if (sockets == NULL)
-		fatal_errno("malloc datagram sockets");
+		gflog_fatal_errno("malloc datagram sockets");
 	for (i = 0; i < self_addresses_count; i++) {
 		memset(&bind_addr, 0, sizeof(bind_addr));
 		bind_addr.sin_family = AF_INET;
@@ -1915,9 +1917,9 @@ open_datagram_service_sockets(int port, int *countp, int **socketsp)
 		bind_addr_size = sizeof(bind_addr);
 		s = socket(PF_INET, SOCK_DGRAM, 0);
 		if (s < 0)
-			fatal_errno("datagram socket");
+			gflog_fatal_errno("datagram socket");
 		if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
-			fatal_errno("datagram bind");
+			gflog_fatal_errno("datagram bind");
 		sockets[i] = s;
 	}
 	*countp = self_addresses_count;
@@ -1968,7 +1970,7 @@ main(int argc, char **argv)
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				fatal(optarg, "unknown syslog facility");
+				gflog_fatal(optarg, "unknown syslog facility");
 			break;
 		case 'u':
 			restrict_user = 1;
@@ -2002,7 +2004,7 @@ main(int argc, char **argv)
 			max_fd = datagram_socks[i];
 	}
 	if (max_fd > FD_SETSIZE)
-		fatal("datagram_service", "too big file descriptor");
+		gflog_fatal("datagram_service", "too big file descriptor");
 
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
@@ -2038,7 +2040,7 @@ main(int argc, char **argv)
 		if (nfound <= 0) {
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno("select");
+			gflog_fatal_errno("select");
 		}
 
 		if (FD_ISSET(accepting_sock, &requests)) {
@@ -2048,7 +2050,7 @@ main(int argc, char **argv)
 			if (client < 0) {
 				if (errno == EINTR)
 					continue;
-				fatal_errno("accept");
+				gflog_fatal_errno("accept");
 			}
 #ifndef GFSD_DEBUG
 			switch (fork()) {

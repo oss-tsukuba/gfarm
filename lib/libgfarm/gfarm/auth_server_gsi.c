@@ -47,7 +47,7 @@ gfarm_gsi_get_delegated_cred()
  */
 
 char *
-gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
+gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 		    char **global_usernamep)
 {
 	int fd = xxx_connection_fd(conn);
@@ -57,17 +57,22 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 	gfarmAuthEntry *userinfo;
 
 	e = xxx_proto_flush(conn);
-	if (e != NULL)
+	if (e != NULL) {
+		gflog_error("authorize_gsi: proto_flush: ", e);
 		return (e);
+	}
 
 	e = gfarm_gsi_initialize();
-	if (e != NULL)
+	if (e != NULL) {
+		gflog_error("authorize_gsi: gsi_initialize: ", e);
 		return (e);
+	}
 
 	session = gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL,
 	    &e_major);
 	if (session == NULL) {
 #if 1 /* XXX for debugging */
+		gflog_error("authorize_gsi: ", "error in  SecSessionAccept");
 		fprintf(stderr, "Can't accept session because of:\n");
 		gfarmGssPrintStatus(stderr, e_major);
 #endif
@@ -116,9 +121,27 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 		return (e);
 	}
 
-	if (switch_to) {
-		gflog_set_auxiliary_info(global_username);
+	char *aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
+	if (aux == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(aux, "%s@%s", global_username, hostname);
+	gflog_set_auxiliary_info(aux);
 
+	static char method[] = "auth=gsi local_user=";
+	static char dnb[] = " DN=\"";
+	static char dne[] = "\"";
+	char *msg = malloc(sizeof(method) +
+		strlen(userinfo->authData.userAuth.localName) +
+		sizeof(dnb) + strlen(userinfo->distName) + sizeof(dne));
+	if (msg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(msg, "%s%s%s%s%s", method,
+		userinfo->authData.userAuth.localName, dnb, 
+		userinfo->distName, dne);
+	gflog_notice("authenticated", msg);
+	free(msg);
+
+	if (switch_to) {
 		/*
 		 * because the name returned by getlogin() is
 		 * an attribute of a session on 4.4BSD derived OSs,
@@ -143,6 +166,8 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to,
 		gfarm_gsi_set_delegated_cred(
 		    gfarmSecSessionGetDelegatedCredential(session));
 	} else {
+		free(gflog_get_auxiliary_info());
+		gflog_set_auxiliary_info(NULL);
 		if (global_usernamep == NULL) /* see below */
 			free(global_username);
 	}

@@ -8,7 +8,7 @@ enum gfarm_auth_error {
 
 enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_NONE, /* never used */
-	GFARM_AUTH_METHOD_SIMPLE,
+	GFARM_AUTH_METHOD_SHAREDSECRET,
 	GFARM_AUTH_METHOD_GSI,
 
 	GFARM_AUTH_METHOD_NUMBER
@@ -17,12 +17,12 @@ enum gfarm_auth_method {
 #define GFARM_AUTH_METHOD_ALL	GFARM_AUTH_METHOD_NONE
 
 /*
- * GFARM_AUTH_METHOD_SIMPLE dependent constants.
+ * GFARM_AUTH_METHOD_SHAREDSECRET dependent constants.
  * 	note that this is too weak authentication for the Internet.
  */
 
 void gfarm_auth_random(void *, size_t);
-void gfarm_auth_simple_response_data(char *, char *, char *);
+void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
 char *gfarm_auth_shared_key_get(unsigned int *, char *, char *, int);
 #define GFARM_AUTH_SHARED_KEY_GET		0
@@ -30,9 +30,9 @@ char *gfarm_auth_shared_key_get(unsigned int *, char *, char *, int);
 #define GFARM_AUTH_SHARED_KEY_CREATE_FORCE	2
 
 /* request */
-enum gfarm_auth_simple_request {
-	GFARM_AUTH_SIMPLE_GIVEUP,
-	GFARM_AUTH_SIMPLE_MD5
+enum gfarm_auth_sharedsecret_request {
+	GFARM_AUTH_SHAREDSECRET_GIVEUP,
+	GFARM_AUTH_SHAREDSECRET_MD5
 };
 
 /* key */
@@ -44,6 +44,7 @@ enum gfarm_auth_simple_request {
 struct xxx_connection;
 struct sockaddr;
 
+char *gfarm_authorize_log_connected(struct xxx_connection *, char *, char *);
 char *gfarm_auth_request(struct xxx_connection *, char *, struct sockaddr *);
 char *gfarm_authorize(struct xxx_connection *, int, char **);
 

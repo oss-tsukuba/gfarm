@@ -194,8 +194,8 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 }
 
 void
-gfarm_auth_simple_response_data(char *shared_key, char *challenge,
-				char *response)
+gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
+				      char *response)
 {
 	EVP_MD_CTX mdctx;
 	unsigned int md_len;
@@ -206,7 +206,7 @@ gfarm_auth_simple_response_data(char *shared_key, char *challenge,
 	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
 
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
-		fprintf(stderr, "gfarm_auth_simple_response_data:"
+		fprintf(stderr, "gfarm_auth_sharedsecret_response_data:"
 			"md5 digest length should be %d, but %d\n",
 			GFARM_AUTH_RESPONSE_LEN, md_len);
 		abort();

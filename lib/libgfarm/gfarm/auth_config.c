@@ -12,7 +12,7 @@ struct gfarm_auth_method_name_value {
 	char *name;
 	enum gfarm_auth_method method;
 } gfarm_auth_method_name_value_table[] = {
-	{ "sharedsecret", GFARM_AUTH_METHOD_SIMPLE },
+	{ "sharedsecret", GFARM_AUTH_METHOD_SHAREDSECRET },
 	{ "gsi", GFARM_AUTH_METHOD_GSI },
 };
 

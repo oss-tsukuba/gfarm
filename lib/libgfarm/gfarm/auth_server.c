@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include <assert.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
@@ -24,15 +24,18 @@
 #include "io_gfsl.h" /* XXX - gfarm_authorize_gsi() */
 #endif
 
-static char *gfarm_authorize_panic(struct xxx_connection *, int, char **);
-static char *gfarm_authorize_simple(struct xxx_connection *, int, char **);
+static char *gfarm_authorize_panic(struct xxx_connection *, int, char *,
+	char **);
+static char *gfarm_authorize_sharedsecret(struct xxx_connection *, int, char *,
+        char **);
 
-char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char **) = {
+char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char *,
+	char **) = {
 	/*
 	 * This table entry should be ordered by enum gfarm_auth_method.
 	 */
 	gfarm_authorize_panic,		/* GFARM_AUTH_METHOD_NONE */
-	gfarm_authorize_simple,		/* GFARM_AUTH_METHOD_SIMPLE */
+	gfarm_authorize_sharedsecret,	/* GFARM_AUTH_METHOD_SHAREDSECRET */
 #ifdef HAVE_GSI
 	gfarm_authorize_gsi,		/* GFARM_AUTH_METHOD_GSI */
 #else
@@ -42,14 +45,14 @@ char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char **) = {
 
 static char *
 gfarm_authorize_panic(struct xxx_connection *conn, int switch_to,
-	char **global_usernamep)
+	char *hostname, char **global_usernamep)
 {
 	gflog_fatal("gfarm_authorize", "authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
 
 static char *
-gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
+gfarm_auth_sharedsecret_response(struct xxx_connection *conn, char *homedir)
 {
 	char *e;
 	gfarm_uint32_t request, expire, expire_expected;
@@ -67,15 +70,16 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 		++try;
 		e = xxx_proto_recv(conn, 0, &eof, "i", &request);
 		if (e != NULL) {
-			gflog_error("auth_simple-request", e);
+			gflog_error("auth_sharedsecret_request", e);
 			return (e);
 		}
 		if (eof) {
-			gflog_error("auth_simple-request", "unexpected EOF");
+			gflog_error("auth_sharedsecret-request",
+			    "unexpected EOF");
 			return (GFARM_ERR_PROTOCOL);
 		}
-		if (request != GFARM_AUTH_SIMPLE_GIVEUP &&
-		    request != GFARM_AUTH_SIMPLE_MD5) {
+		if (request != GFARM_AUTH_SHAREDSECRET_GIVEUP &&
+		    request != GFARM_AUTH_SHAREDSECRET_MD5) {
 			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 			e = xxx_proto_send(conn, "i", error);
 			if (e != NULL)
@@ -85,7 +89,7 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 		e = xxx_proto_send(conn, "i", GFARM_AUTH_ERROR_NO_ERROR);
 		if (e != NULL)
 			return (e);
-		if (request == GFARM_AUTH_SIMPLE_GIVEUP) {
+		if (request == GFARM_AUTH_SHAREDSECRET_GIVEUP) {
 			e = xxx_proto_flush(conn);
 			if (e != NULL)
 				return (e);
@@ -108,11 +112,12 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 		e = xxx_proto_recv(conn, 0, &eof, "ib",
 		    &expire, sizeof(response), &len, response);
 		if (e != NULL) {
-			gflog_error("auth_simple-response", e);
+			gflog_error("auth_sharedsecret_response", e);
 			return (e);
 		}
 		if (eof) {
-			gflog_error("auth_simple-response", "unexpected EOF");
+			gflog_error("auth_sharedsecret_response",
+				"unexpected EOF");
 			return (GFARM_ERR_PROTOCOL);
 		}
 		/*
@@ -127,24 +132,24 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 					GFARM_AUTH_SHARED_KEY_GET)) != NULL &&
 			   e != GFARM_ERR_EXPIRED) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			gflog_error("auth_simple: read-key", e);
+			gflog_error("auth_sharedsecret: read-key", e);
 		} else if (time(0) >= expire) {
 			/* may reach here if (e == GFARM_ERR_EXPIRED) */
 			error = GFARM_AUTH_ERROR_EXPIRED;
-			gflog_warning("auth_simple", "key expired");
+			gflog_warning("auth_sharedsecret", "key expired");
 		} else {
 			/* may also reach here if (e == GFARM_ERR_EXPIRED) */
-			gfarm_auth_simple_response_data(
+			gfarm_auth_sharedsecret_response_data(
 			    shared_key_expected, challenge,
 			    response_expected);
 			if (expire != expire_expected) {
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-				gflog_error("auth_simple",
+				gflog_error("auth_sharedsecret",
 				    "expire time mismatch");
 			} else if (memcmp(response, response_expected,
 			    sizeof(response)) != 0) {
 				error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-				gflog_error("auth_simple",
+				gflog_error("auth_sharedsecret",
 				    "response mismatch");
 			} else {
 				error = GFARM_AUTH_ERROR_NO_ERROR;
@@ -163,8 +168,8 @@ gfarm_auth_simple_response(struct xxx_connection *conn, char *homedir)
 }
 
 static char *
-gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
-	char **global_usernamep)
+gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
+	char *hostname, char **global_usernamep)
 {
 	char *e, *global_username, *local_username;
 	int eof;
@@ -177,25 +182,29 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 #endif
 	e = xxx_proto_recv(conn, 0, &eof, "s", &global_username);
 	if (e != NULL) {
-		gflog_error("authorize_simple", "reading username");
+		gflog_error("authorize_sharedsecret", "reading username");
 		return (e);
 	}
 	if (eof) {
-		gflog_error("authorize_simple", "unexpected EOF");
+		gflog_error("authorize_sharedsecret", "unexpected EOF");
 		return (GFARM_ERR_PROTOCOL);
 	}
 
-	gflog_set_auxiliary_info(global_username);
+	char *aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
+	if (aux == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(aux, "%s@%s", global_username, hostname);
+	gflog_set_auxiliary_info(aux);
 
 	e = gfarm_global_to_local_username(global_username, &local_username);
 	if (e != NULL) {
 		pwd = NULL;
-		gflog_error("authorize_simple",
+		gflog_error("authorize_sharedsecret",
 		    "cannot map global username into local username");
 	} else {
 		pwd = getpwnam(local_username);
 		if (pwd == NULL)
-			gflog_error(local_username, "authorize_simple: "
+			gflog_error(local_username, "authorize_sharedsecret: "
 			    "local account doesn't exist");
 	}
 
@@ -210,8 +219,8 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 		 *
 		 * Do not switch the user ID of the current process here
 		 * even in the switch_to case, because it is necessary to
-		 * switch back to the original user ID when gfarm_auth_simple
-		 * fails.
+		 * switch back to the original user ID when
+		 * gfarm_auth_sharedsecret fails.
 		 */
 		o_gid = getegid();
 		o_uid = geteuid();
@@ -219,19 +228,29 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 		setegid(pwd->pw_gid);
 		seteuid(pwd->pw_uid);
 	}
-	e = gfarm_auth_simple_response(conn, pwd == NULL ? NULL : pwd->pw_dir);
+	e = gfarm_auth_sharedsecret_response(conn,
+		pwd == NULL ? NULL : pwd->pw_dir);
 	if (pwd != NULL) {
 		setegid(o_gid);
 		seteuid(o_uid);
 	}
 	/* if (pwd == NULL), (e != NULL) must be true */
 	if (e != NULL) {
+		free(gflog_get_auxiliary_info());
 		gflog_set_auxiliary_info(NULL);
 		free(global_username);
 		if (local_username != NULL)
 			free(local_username);
 		return (e);
 	}
+
+	static char method[] = "auth=sharedsecret local_user=";
+	char *msg = malloc(sizeof(method) + strlen(local_username));
+	if (msg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(msg, "%s%s", method, local_username);
+	gflog_notice("authenticated", msg);
+	free(msg);
 
 	if (switch_to) {
 		/*
@@ -252,6 +271,7 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 		gfarm_set_local_username(local_username);
 		gfarm_set_local_homedir(pwd->pw_dir);
 	} else {
+		free(gflog_get_auxiliary_info());
 		gflog_set_auxiliary_info(NULL);
 		if (global_usernamep == NULL) /* see below */
 			free(global_username);
@@ -269,15 +289,18 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 
 /*
  * the `switch_to' flag has the following side effects:
- *	- the privilege of this program will switch to the authenticated user.
- *	- `global_username' will be recorded by gflog_set_auxiliary_info().
- * and
- *	- gfarm_get_local_username(), gfarm_get_local_homedir() and
- *	  gfarm_get_global_username() become available.
- * 
+ *      - the privilege of this program will switch to the authenticated user.
+ *      - gflog_set_auxiliary_info("user@hostname") will be called.
+ *        thus, the caller of gfarm_authorize() must call the following later:
+ *              char *aux = gflog_get_auxiliary_info();
+ *              gflog_get_auxiliary_info(NULL);
+ *              free(aux);
+ *      - gfarm_get_local_username(), gfarm_get_local_homedir() and
+ *        gfarm_get_global_username() become available.
+ *
  * note that the user's account is not always necessary on this host,
  * if the `switch_to' flag isn't set. but also note that some
- * authentication methods (e.g. gfarm-simple-auth) require the user's
+ * authentication methods (e.g. gfarm-sharedsecret-auth) require the user's
  * local account anyway even if the `switch_to' isn't set.
  */
 char *
@@ -375,7 +398,7 @@ gfarm_authorize(struct xxx_connection *conn, int switch_to,
 		}
 
 		e = (*gfarm_authorization_table[method])(conn, switch_to,
-		    global_usernamep);
+			log_header, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
 		    e != GFARM_ERR_AUTHENTICATION) {

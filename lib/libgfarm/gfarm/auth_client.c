@@ -19,7 +19,7 @@
  */
 #define GFARM_AUTH_METHODS_BUFFER_SIZE	256
 
-char *gfarm_auth_request_simple(struct xxx_connection *);
+char *gfarm_auth_request_sharedsecret(struct xxx_connection *);
 
 struct {
 	enum gfarm_auth_method method;
@@ -28,15 +28,15 @@ struct {
 	/*
 	 * This table entry should be prefered order
 	 */
-	{ GFARM_AUTH_METHOD_SIMPLE,	gfarm_auth_request_simple },
+	{ GFARM_AUTH_METHOD_SHAREDSECRET, gfarm_auth_request_sharedsecret },
 #ifdef HAVE_GSI
-	{ GFARM_AUTH_METHOD_GSI,	gfarm_auth_request_gsi },
+	{ GFARM_AUTH_METHOD_GSI,	  gfarm_auth_request_gsi },
 #endif
-	{ GFARM_AUTH_METHOD_NONE,	NULL }	/* sentinel */
+	{ GFARM_AUTH_METHOD_NONE,	  NULL }	/* sentinel */
 };
 
 char *
-gfarm_auth_request_simple(struct xxx_connection *conn)
+gfarm_auth_request_sharedsecret(struct xxx_connection *conn)
 {
 	/*
 	 * too weak authentication.
@@ -55,15 +55,16 @@ gfarm_auth_request_simple(struct xxx_connection *conn)
 	user = gfarm_get_global_username();
 	home = gfarm_get_local_homedir();
 	if (user == NULL || home == NULL)
-		return ("gfarm_auth_request_simple(): programming error, "
-			"gfarm library isn't properly initialized");
+		return (
+		    "gfarm_auth_request_sharedsecret(): programming error, "
+		    "gfarm library isn't properly initialized");
 
 	e = xxx_proto_send(conn, "s", user);
 	if (e != NULL)
 		return (e);
 
 	do {
-		e = xxx_proto_send(conn, "i", GFARM_AUTH_SIMPLE_MD5);
+		e = xxx_proto_send(conn, "i", GFARM_AUTH_SHAREDSECRET_MD5);
 		if (e != NULL)
 			return (e);
 		e = xxx_proto_recv(conn, 0, &eof, "i", &error);
@@ -85,7 +86,7 @@ gfarm_auth_request_simple(struct xxx_connection *conn)
 			return (e);
 		if (eof)
 			return (GFARM_ERR_PROTOCOL);
-		gfarm_auth_simple_response_data(shared_key, challenge,
+		gfarm_auth_sharedsecret_response_data(shared_key, challenge,
 						response);
 		e = xxx_proto_send(conn, "ib",
 		    expire, sizeof(response), response);
@@ -101,7 +102,7 @@ gfarm_auth_request_simple(struct xxx_connection *conn)
 	} while (++try < GFARM_AUTH_RETRY_MAX &&
 	    error == GFARM_AUTH_ERROR_EXPIRED);
 
-	e = xxx_proto_send(conn, "i", GFARM_AUTH_SIMPLE_GIVEUP);
+	e = xxx_proto_send(conn, "i", GFARM_AUTH_SHAREDSECRET_GIVEUP);
 	if (e != NULL)
 		return (e);
 	e = xxx_proto_recv(conn, 0, &eof, "i", &error_ignore);
