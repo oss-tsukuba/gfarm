@@ -74,7 +74,19 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
+#if 0
+		/* XXX e_major/e_minor should be used */
 		return (GFARM_ERR_AUTHENTICATION);
+#else
+		/*
+		 * We don't return GFARM_ERR_AUTHENTICATION for now,
+		 * to prevent the caller -- gfarm_auth_request()
+		 * -- from trying next auth_method, because currently
+		 * GFSL protocol doesn't guarantee to gracefully continue
+		 * further communication on error cases.
+		 */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+#endif
 	}
 	xxx_connection_set_secsession(conn, session);
 
@@ -147,8 +159,19 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 	state->session = gfarmSecSessionInitiateResult(state->gfsl_state,
 	    &e_major, &e_minor);
 	if (state->session == NULL) {
+#if 0
 		/* XXX e_major/e_minor should be used */
 		state->error = GFARM_ERR_AUTHENTICATION;
+#else
+		/*
+		 * We don't return GFARM_ERR_AUTHENTICATION for now,
+		 * to prevent the caller -- gfarm_auth_request_next_method()
+		 * -- from trying next auth_method, because currently
+		 * GFSL protocol doesn't guarantee to gracefully continue
+		 * further communication on error cases.
+		 */
+		state->error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+#endif
 	} else {
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
 		rv = gfarm_eventqueue_add_event(state->q,
