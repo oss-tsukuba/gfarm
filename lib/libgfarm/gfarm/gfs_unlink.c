@@ -139,6 +139,8 @@ gfs_unlink_section(const char *gfarm_file, const char *section)
 		e = gfarm_file_section_info_remove(gfarm_file, section);
 		return (e == NULL || e == GFARM_ERR_NO_SUCH_OBJECT ? NULL : e);
 	}
+	if (e != NULL)
+		return (e);
 
 	for (j = 0; j < ncopies; j++) {
 		e = gfs_unlink_replica_internal(gfarm_file, section,
