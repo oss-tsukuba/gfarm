@@ -386,6 +386,12 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+	e = gfarm_initialize(&argc, &argv);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] %s: gfarm_initalize(): %s\n",
+			node_index, program_name, e);
+		exit(1);
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -401,12 +407,6 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	
-	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: gfarm_initalize(): %s\n",
-			node_index, program_name, e);
-		exit(1);
-	}
 	gfs_pio_set_local(node_index, total_nodes);
 
 	if (argc > 0)
