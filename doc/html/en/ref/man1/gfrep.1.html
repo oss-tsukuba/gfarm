@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfrep&nbsp;--&nbsp;replicate a Gfarm file</DIV
+>gfrep&nbsp;--&nbsp;replicate Gfarm files</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -48,7 +48,7 @@ CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
 ></TT
-> </P
+>... </P
 ><P
 ><B
 CLASS="COMMAND"
@@ -63,32 +63,47 @@ CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
 ></TT
-> </P
+>... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -I <TT
+>  -P <TT
 CLASS="REPLACEABLE"
 ><I
->fragment-index</I
-></TT
->  [-s <TT
-CLASS="REPLACEABLE"
-><I
->src-node</I
-></TT
->]  -d <TT
-CLASS="REPLACEABLE"
-><I
->dest-node</I
+>host-pair-file</I
 ></TT
 >   <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
 ></TT
-> </P
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -d <TT
+CLASS="REPLACEABLE"
+><I
+>destination-node</I
+></TT
+>  [-s <TT
+CLASS="REPLACEABLE"
+><I
+>source-node</I
+></TT
+>] [-I <TT
+CLASS="REPLACEABLE"
+><I
+>fragment-index</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+>... </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -101,71 +116,13 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> creates a replica of a Gfarm file
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.  Destination filesystem nodes can be
+> creates a replica of Gfarm files
 specified by the <TT
 CLASS="PARAMETER"
 ><I
->hostfile</I
-></TT
-> or the
-<TT
-CLASS="PARAMETER"
-><I
->domainname</I
-></TT
->.</P
-><P
->With the <TT
-CLASS="OPTION"
->-I</TT
-> option, <B
-CLASS="COMMAND"
->gfrep</B
->
-creates a replica of a specified file fragment
-<TT
-CLASS="PARAMETER"
-><I
->fragment-index</I
-></TT
-> of a Gfarm file
-<TT
-CLASS="PARAMETER"
-><I
 >gfarm-URL</I
 ></TT
-> on the filesystem node
-<TT
-CLASS="PARAMETER"
-><I
->dest-node</I
-></TT
-> specified by the <TT
-CLASS="OPTION"
->-d</TT
->
-option.  With the <TT
-CLASS="OPTION"
->-s</TT
-> option, it is possible to
-explicitly specify the source node <TT
-CLASS="PARAMETER"
-><I
->src-node</I
-></TT
->
-where the file fragment is copied from.  When the specified Gfarm file
-has only one fragment, it is not necessary to specify the
-<TT
-CLASS="OPTION"
->-I</TT
-> option.</P
+>. </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -191,20 +148,23 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a list of filesystem nodes that will be replicated to.
-<TT
+>specifies a file which describes hostnames of
+destination filesystem nodes where the replica will be made on.
+The <TT
 CLASS="PARAMETER"
 ><I
 >hostfile</I
 ></TT
-> consists of a filesystem node in each line.  The total
-number of file fragments should be equal to the number of nodes listed
-in the <TT
+> consists of a filesystem node name
+in each line.
+If the number of nodes listed in the <TT
 CLASS="PARAMETER"
 ><I
 >hostfile</I
 ></TT
->.</P
+>
+is less than the total number of file fragments,
+it is treated as if the node names are specified repeatedly.</P
 ><P
 >if ``-'' is specified, standard input is used to read the host list.</P
 ></DD
@@ -220,8 +180,80 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a domainname of filesystem nodes that will be replicated
-to.</P
+>specifies a domainname of destination filesystem nodes
+where the replica will be made on.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-P</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>host-pair-file</I
+></TT
+></DT
+><DD
+><P
+>specifies a file which describes hostname pairs of
+source nodes and destination nodes.
+The <TT
+CLASS="PARAMETER"
+><I
+>host-pair-file</I
+></TT
+> consists of a pair
+of a source node name and a destination node name in this order in each line.
+The replica will be copied to the destination node, only if it exists
+on the source node of the pair.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-d</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>destination-node</I
+></TT
+></DT
+><DD
+><P
+>specifies one destination filesystem node where the file will be
+copied to.
+This option also needs <TT
+CLASS="OPTION"
+>-I</TT
+> usually,
+but there are conditions that <TT
+CLASS="OPTION"
+>-I</TT
+> option can be omitted.
+Please refer the description of the <TT
+CLASS="OPTION"
+>-I</TT
+> for detail.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>source-node</I
+></TT
+></DT
+><DD
+><P
+>specifies a source filesystem node where the file will be copied from.
+This option is used with the <TT
+CLASS="OPTION"
+>-d</TT
+> option.</P
+><P
+>If this option is omitted, the source filesystem node is choosed
+automatically.</P
 ></DD
 ><DT
 ><TT
@@ -235,46 +267,45 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file fragment.  It is a fragment index or a section name
-describing its architecture.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-s</TT
-> <TT
+>specifies a file fragment number,
+if the <TT
 CLASS="PARAMETER"
 ><I
->src-node</I
+>Gfarm-URL</I
 ></TT
-></DT
-><DD
-><P
->specifies a source filesystem node from which the file fragment will
-be copied.  This option needs to be specified with the <TT
-CLASS="OPTION"
->-I</TT
->
-option.</P
-></DD
-><DT
-><TT
+> is an usual file.
+If the <TT
+CLASS="PARAMETER"
+><I
+>Gfarm-URL</I
+></TT
+> is a program,
+this option specifies an architecture name of the program.
+This option is used with the <TT
 CLASS="OPTION"
 >-d</TT
-> <TT
+> option.</P
+><P
+>It is possible to omit this option in the following cases.
+If specified <TT
 CLASS="PARAMETER"
 ><I
->dest-node</I
+>Gfarm-URL</I
 ></TT
-></DT
-><DD
-><P
->specifies a destination filesystem node to which the file fragment
-will be copied.  This option needs to be specified with the <TT
+> is an usual file
+and it's consists of just one file fragment, this option can
+be omitted, and works as if option <TT
 CLASS="OPTION"
->-I</TT
->
-option.</P
+>-I 0</TT
+> is specified.
+If specified <TT
+CLASS="PARAMETER"
+><I
+>Gfarm-URL</I
+></TT
+> is a program,
+This works as if the architecture of the destination filesystem node
+is specified.</P
 ></DD
 ><DT
 ><TT

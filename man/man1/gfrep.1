@@ -3,64 +3,79 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "20 August 2003" "Gfarm" ""
-
+.TH "GFREP" "1" "11 December 2003" "Gfarm" ""
 .SH NAME
-gfrep \- replicate a Gfarm file
+gfrep \- replicate Gfarm files
 .SH SYNOPSIS
 
-\fBgfrep\fR \fB-H \fIhostfile\fB\fR \fB\fIgfarm-URL\fB\fR
+\fBgfrep\fR \fB-H \fIhostfile\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-D \fIdomainname\fB\fR \fB\fIgfarm-URL\fB\fR
+\fBgfrep\fR \fB-D \fIdomainname\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-I \fIfragment-index\fB\fR [ \fB-s \fIsrc-node\fB\fR ] \fB-d \fIdest-node\fB\fR \fB\fIgfarm-URL\fB\fR
+\fBgfrep\fR \fB-P \fIhost-pair-file\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+
+
+\fBgfrep\fR \fB-d \fIdestination-node\fB\fR [ \fB-s \fIsource-node\fB\fR ] [ \fB-I \fIfragment-index\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrep\fR creates a replica of a Gfarm file
-\fIgfarm-URL\fR.  Destination filesystem nodes can be
-specified by the \fIhostfile\fR or the
-\fIdomainname\fR.
-.PP
-With the \fB-I\fR option, \fBgfrep\fR
-creates a replica of a specified file fragment
-\fIfragment-index\fR of a Gfarm file
-\fIgfarm-URL\fR on the filesystem node
-\fIdest-node\fR specified by the \fB-d\fR
-option.  With the \fB-s\fR option, it is possible to
-explicitly specify the source node \fIsrc-node\fR
-where the file fragment is copied from.  When the specified Gfarm file
-has only one fragment, it is not necessary to specify the
-\fB-I\fR option.
+\fBgfrep\fR creates a replica of Gfarm files
+specified by the \fIgfarm-URL\fR. 
 .SH "OPTIONS"
 .TP
 \fB-H \fIhostfile\fB\fR
-specifies a list of filesystem nodes that will be replicated to.
-\fIhostfile\fR consists of a filesystem node in each line.  The total
-number of file fragments should be equal to the number of nodes listed
-in the \fIhostfile\fR.
+specifies a file which describes hostnames of
+destination filesystem nodes where the replica will be made on.
+The \fIhostfile\fR consists of a filesystem node name
+in each line.
+If the number of nodes listed in the \fIhostfile\fR
+is less than the total number of file fragments,
+it is treated as if the node names are specified repeatedly.
 
 if ``-'' is specified, standard input is used to read the host list.
 .TP
 \fB-D \fIdomainname\fB\fR
-specifies a domainname of filesystem nodes that will be replicated
-to.
+specifies a domainname of destination filesystem nodes
+where the replica will be made on.
+.TP
+\fB-P \fIhost-pair-file\fB\fR
+specifies a file which describes hostname pairs of
+source nodes and destination nodes.
+The \fIhost-pair-file\fR consists of a pair
+of a source node name and a destination node name in this order in each line.
+The replica will be copied to the destination node, only if it exists
+on the source node of the pair.
+.TP
+\fB-d \fIdestination-node\fB\fR
+specifies one destination filesystem node where the file will be
+copied to.
+This option also needs \fB-I\fR usually,
+but there are conditions that \fB-I\fR option can be omitted.
+Please refer the description of the \fB-I\fR for detail.
+.TP
+\fB-s \fIsource-node\fB\fR
+specifies a source filesystem node where the file will be copied from.
+This option is used with the \fB-d\fR option.
+
+If this option is omitted, the source filesystem node is choosed
+automatically.
 .TP
 \fB-I \fIfragment-index\fB\fR
-specifies a file fragment.  It is a fragment index or a section name
-describing its architecture.
-.TP
-\fB-s \fIsrc-node\fB\fR
-specifies a source filesystem node from which the file fragment will
-be copied.  This option needs to be specified with the \fB-I\fR
-option.
-.TP
-\fB-d \fIdest-node\fB\fR
-specifies a destination filesystem node to which the file fragment
-will be copied.  This option needs to be specified with the \fB-I\fR
-option.
+specifies a file fragment number,
+if the \fIGfarm-URL\fR is an usual file.
+If the \fIGfarm-URL\fR is a program,
+this option specifies an architecture name of the program.
+This option is used with the \fB-d\fR option.
+
+It is possible to omit this option in the following cases.
+If specified \fIGfarm-URL\fR is an usual file
+and it's consists of just one file fragment, this option can
+be omitted, and works as if option \fB-I 0\fR is specified.
+If specified \fIGfarm-URL\fR is a program,
+This works as if the architecture of the destination filesystem node
+is specified.
 .TP
 \fB-?\fR
 displays a list of command options.
