@@ -47,7 +47,7 @@ char *gfarm_metadb_initialize(void)
 	 */
 
 	/* open a connection */
-	gfarm_ldap_server = ldap_open(gfarm_ldap_server_name, port);
+	gfarm_ldap_server = ldap_init(gfarm_ldap_server_name, port);
 	if (gfarm_ldap_server == NULL) {
 		switch (errno) {
 		case EHOSTUNREACH:
@@ -65,6 +65,13 @@ char *gfarm_metadb_initialize(void)
 
 	/* authenticate as nobody */
 	rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL); 
+	if (rv == LDAP_PROTOCOL_ERROR) {
+		/* Try the version 3 */
+		int version = LDAP_VERSION3;
+		ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION,
+				&version);
+		rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL); 
+	}
 	if (rv != LDAP_SUCCESS)
 		return (ldap_err2string(rv));
 
@@ -952,7 +959,16 @@ char *gfarm_path_info_get(
 {
 	struct gfarm_path_info_key key;
 
-	key.pathname = pathname;
+	/*
+	 * This case intends to investigate the root directory.  Because
+	 * Gfarm-1.0.x does not have an entry for the root directory, and
+	 * moreover, because OpenLDAP-2.1.X does not accept a dn such as
+	 * 'pathname=, dc=xxx', return immediately with an error.
+	 */
+	if (pathname[0] == '\0')
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	else
+		key.pathname = pathname;
 
 	return (gfarm_generic_info_get(&key, info,
 	    &gfarm_path_info_ops));
