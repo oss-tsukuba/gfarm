@@ -167,14 +167,17 @@ gfs_stat_section(const char *gfarm_url, const char *section, struct gfs_stat *s)
 		return (NULL);
 	}
 
+	s->st_size = 0;
+	s->st_nsections = 1;
 	e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
 	free(gfarm_file);
-	if (e != NULL)
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* this section is created but not closed yet. */
+		return (NULL);
+	}
+	else if (e != NULL)
 		return (e);
-
 	s->st_size = sinfo.filesize;
-	s->st_nsections = 1;
-
 	gfarm_file_section_info_free(&sinfo);
 
 	return (NULL);
