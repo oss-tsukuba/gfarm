@@ -646,29 +646,23 @@ gfs_uncachedir(void)
 	need_to_clear_cache = 1;
 }
 
-char *
+static char *
 gfs_dircache_enter_dir(const char *gfarm_file)
 {
-	if (root == NULL) /* not cached yet, no need to handle */
-		return (NULL);
 	return (lookup_relative(root, gfarm_file, NODE_FLAG_IS_DIR,
 	    GFARM_INODE_CREATE, NULL));
 }
 
-char *
+static char *
 gfs_dircache_enter_file(const char *gfarm_file)
 {
-	if (root == NULL) /* not cached yet, no need to handle */
-		return (NULL);
 	return (lookup_relative(root, gfarm_file, 0,
 	    GFARM_INODE_CREATE, NULL));
 }
 
-char *
+static char *
 gfs_dircache_purge_path(const char *gfarm_file)
 {
-	if (root == NULL) /* not cached yet, no need to handle */
-		return (NULL);
 	return (lookup_relative(root, gfarm_file, -1,
 	    GFARM_INODE_REMOVE, NULL));
 }
@@ -715,6 +709,47 @@ gfs_refreshdir(void)
 		return (gfs_recachedir());
 	}
 	return (NULL);
+}
+
+/*
+ * metadatabase interface wrappers provided by dircache layer.
+ */
+
+char *
+gfarm_path_info_get(const char *pathname, struct gfarm_path_info *info)
+{
+	return (gfarm_metadb_path_info_get(pathname, info));
+}
+
+char *
+gfarm_path_info_set(char *pathname, struct gfarm_path_info *info)
+{
+	char *e = gfarm_metadb_path_info_set(pathname, info);
+
+	if (e == NULL && (e = gfs_refreshdir()) == NULL) {
+		if (GFARM_S_ISDIR(info->status.st_mode))
+			gfs_dircache_enter_dir(pathname);
+		else
+			gfs_dircache_enter_file(pathname);
+	}
+	return (e);
+}
+
+char *
+gfarm_path_info_replace(char *pathname,	struct gfarm_path_info *info)
+{
+	/* This isn't used to change a dir to a file, or a file to a dir */
+	return (gfarm_metadb_path_info_replace(pathname, info));
+}
+
+char *
+gfarm_path_info_remove(const char *pathname)
+{
+	char *e = gfarm_path_info_remove(pathname);
+
+	if (e == NULL && (e = gfs_refreshdir()) == NULL)
+		gfs_dircache_purge_path(pathname);
+	return (e);
 }
 
 /*
