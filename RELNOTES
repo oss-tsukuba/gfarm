@@ -4,22 +4,28 @@ Science and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.0.4
 ============================
 
-[2004.10.6]
+[2004.11.1]
 
 Updated Features
 
- * Support of read-write mode and append mode.  Support of exclusive
-   flag.
+ * gfs_pio_open(3), gfs_pio_create(3) - supports the read-write mode
+   and the append mode.
 
- * New I/O functions; gfs_fchmod and gfs_rename.  Gfs_rename only
-   supports to rename a file not a directory in this version.
+ * gfs_pio_create(3) - supports the exclusive flag.
+
+ * New client command; gfdf --- reports Gfarm file system disk space
+   usage.
+
+ * New I/O functions; gfs_fchmod, gfs_rename, gfs_pio_truncate.
+   Gfs_rename only supports to rename a file not a directory in this
+   version.
 
  * Global and local file view enhancement for executable files.
 
  * gfs_chmod(3) - allows to change execution bits if it has only one
    file fragment.
 
- * x86_64 support
+ * x86_64 and ia64 supports
 
  * Shared library support
 
@@ -29,11 +35,21 @@ Updated Features
 
  * gfls - added the -a and -i options.
 
+ * gfwhere - added the -s option to display the file segment size.
+
  * gfexec - shell script can be executed without "#!/bin/sh".
 
- * gfsd - added new protocols for creating a hard link and renaming a file.
+ * gfrcmd - added the -N option to specify a target name of GSI
+   authentication.
+
+ * gfsd - added new protocols to create a hard link, to rename a file,
+   to truncate a file, and to get file system statistics.
 
  * libgfarm - improved metadata cache management.
+
+ * gfarm.conf - added a set of statements to specify a target name of
+   gfsd and gfmd.  This is required by the security fix regarding GSI
+   authentication described in the 'Bug fix' section below.
 
  * Syscall hooking library
 
@@ -48,7 +64,14 @@ Updated Features
     working directory by 'cd' such as 'cd /gfarm/~'.  For more
     details, refer to README.hook.en document.
 
+  - Shared libraries in Gfarm file system can be opened by specifying
+    pathnames such as /gfarm/lib:/gfarm/~/lib in LD_LIBRARY_PATH.
+
  * Bug fix
+
+  - *SECURITY FIX* - In GSI authentication, the remote party does not
+    authorized.  This fix makes it possible to link Gfarm with the
+    GSSAPI library in Globus Toolkit version 3.2.1 or later.
 
   - gfrm cannot remove a file that has invalid metadata. (Bugzilla #12)
 
@@ -61,11 +84,17 @@ Updated Features
 
   - Inactive local file system node may be selected. (Bugzilla-ja #31)
 
-  - 'rm -r' cannot remove a directory (Bugzilla #13)
+  - 'rm -r' cannot remove a directory. (Bugzilla #13)
+
+  - gfsplck registers a lock file by mistake. (Bugzilla-ja #18)
 
   - Fixed a segfault problem during parallel gsi_auth authentications.
 
   - Fixed a problem of on-demand replication failure.
+
+  - Fixed a hang problem during scheduling file system nodes or gfhost.
+
+  - Fixed a segfault problem when using syscall hooking library.
 
  * Documentation
 

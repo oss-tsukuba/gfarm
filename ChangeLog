@@ -1,4 +1,678 @@
+2004-11-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfwhere/gfwhere.c (display_section_copies):
+	fixed output problem in error case.
+	(display_replica_catalog): return the error string of the first
+	failure not NULL.
+
+2004-10-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfdf/gfdf.c:
+	the hostname argument of gfs_client_connection() must be canonical hostname now.
+
+2004-10-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfwhere.1.html, doc/html/ja/ref/man1/gfwhere.1.html, man/man1/gfwhere.1, man/ja/man1/gfwhere.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/ja/ref/man1/gfwhere.1.docbook:
+	Added the description of the -s option that displays the file segment size.
+
+2004-10-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfdf/Makefile, gftool/gfdf/gfdf.c, package/redhat/gfarm.spec, package/solaris/gfarm-client.files, doc/html/en/ref/man1/gfdf.1.html, doc/html/ja/ref/index.html, doc/html/ja/ref/man1/gfdf.1.html, gftool/Makefile, man/ja/man1/gfdf.1, man/man1/gfdf.1, debian/gfarm-client.install, debian/gfarm-client.manpages, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfdf.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfdf.1.docbook, doc/html/en/ref/index.html:
+	add gfdf command to see the result of GFS_PROTO_STATFS protocol
+
+	* include/gfarm/gfarm_config.h.in, configure: regen
+
+	* configure.ac, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/Makefile, server/gfsd/gfsd.c, server/gfsd/gfsd_subr.h, server/gfsd/statfs.c:
+	add GFS_PROTO_STATFS protocol to deal with disk full problem at gfrep
+
+2004-10-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfwhere/gfwhere.c:
+	added -s option to display each file section size.
+	improved readability.
+
+2004-10-30  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_create.3.html, man/ja/man3/gfs_pio_create.3, man/man3/gfs_pio_create.3:
+	regen
+
+	* doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook:
+	uncomment the description about GFARM_ERR_ALREADY_EXISTS.
+	improved wording.
+
+2004-10-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_create.3.html, man/ja/man3/gfs_pio_create.3, man/man3/gfs_pio_create.3:
+	regen
+
+	* doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook:
+	mention that one of GFARM_FILE_RDONLY, GFARM_FILE_WRONLY or GFARM_FILE_RDWR
+	flag is needed. suggested by tatebe-san.
+
+	* doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook:
+	update date
+
+	* doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/ja/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_open.3.html, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3:
+	regen
+
+	* lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_proto.h, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook, include/gfarm/gfs.h:
+	do not export GFARM_FILE_CREATE, this flag is for internal use.
+
+	* gftool/gfexec/gfexec.c:
+	- fix LP64 problem (sizeof(int) != sizeof(size_t)) in sprintf argument.
+	- use strcspn() instead of own loop.
+
+2004-10-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja: Updated the introduction part.
+	Updated description about command-line options of configure.
+	Added 'mkdir /var/gfarm-ldap' in the 'Create an LDAP database' section.
+
+2004-10-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/gfarm-gfptool.install, debian/gfsd.install, package/solaris/gfarm-fsnode.files, package/solaris/gfarm-gfptool.files:
+	- move gfsplck from gfarm-gfptool package to gfarm-fsnode package,
+	- add bench/thput-gfpio to gfarm-fsnode package
+	requested by tatebe-san
+
+	* Makefile.in, package/redhat/gfarm.spec:
+	add bench/thput-gfpio to gfarm-fsnode package, requested by tatebe-san
+
+	* gfptool/util/gfregister.in, package/redhat/gfarm.spec:
+	move gfsplck from gfarm-gfptool package to gfarm-fsnode package,
+	requested by tatebe-san
+
+2004-10-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	increment release number, because some sites already installed
+	gfarm-1.0.4 RC5 as gfarm-*-1.0.4-0.i386.rpm.
+
+	* gftool/gfhost/gfhost.c:
+	There was no reason to make opt_use_metadb global.
+
+	* gftool/gfhost/gfhost.c:
+	- the hostname argument of gfs_client_connection() must be
+	  canonical hostname now, due to requirement of GSI authentication.
+	- some cleanup about the case where opt_use_metadb == 0
+
+2004-10-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfexec/gfexec.c:
+	display errors during replication of so files.
+
+	* lib/libgfarm/gfarm/gfs_exec.c: just removed unnecessary tabs.
+
+	* gftool/gfexec/gfexec.c:
+	Introduce systematic handling of naming conversion to gfarm URLs and robust error handling for rewriting LD_LIBRARY_PATH environment variable and replicating .so files.
+
+2004-10-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfexec/gfexec.c (replicate_so):
+	Fixed a segfault bug when LD_LIBRARY_PATH is not defined.
+
+	* lib/libgfarm/gfarm/gfs_exec.c:
+	plugged a memory leak introduced by the previous commit.
+
+2004-10-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/gfsd.c:
+	add new replication protocol to gfsd,
+	to pass both canonical_hostname and if_hostname,
+	because the hostname argument of gfs_client_connection() must be
+	canonical hostname now, due to requirement of GSI authentication.
+
+	* lib/libgfarm/gfarm/gfs_client_rep.c:
+	pass both canonical_hostname and if_hostname to gfrcmd
+
+2004-10-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/digest/digest.c, server/gfsd/gfsd.c:
+	Replaced SSLeay_add_all_algorithms with OpenSSL_add_all_digests because openssl library in Globus-3.2 does not have it.
+
+2004-10-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	the hostname argument of gfs_client_connection() must be canonical hostname now.
+
+	* lib/libgfarm/gfarm/schedule.c:
+	note that input hostnames for gfarm_schedule_search_idle_hosts()
+	must be all canonical hostnames now.
+
+	* gftool/gfhost/gfhost.c:
+	rename some print_*() to request_*(), to reflect reality
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c:
+	honor gflog_auth_get_verbose() in multiplexed case,
+	to make it possible to enable the verbose flag in a debugger.
+
+2004-10-26  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfs.h, gftool/gfexec/gfexec.c, lib/libgfarm/gfarm/gfs_exec.c:
+	gfexec:
+	Shared objects in gfarm file system cannot be dynamically linked
+	because _dl_*() defined in /lib/ld-linux cannot be hooked.
+	So, we replicate shared objects to local machine and rewrite paths in
+	LD_LIBRARY_PATH to local spool directories path, for example,
+	/gfarm/lib -> /var/spool/gfarm/lib.
+
+2004-10-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_subr.h: provide some function prototypes.
+	NOTE: "func()" isn't a prototype, "func(void)" should be used instead.
+
+	* lib/gfs_hook/hooks.c: allow getcwd(NULL, 0), because it's legal.
+
+	* lib/gfs_hook/hooks_subr.c: fix off by one error
+
+	* lib/gfs_hook/hooks_subr.c: provide missing function prototypes
+
+	* lib/gfs_hook/hooks_subr.c: fix infinite recursive call like follows:
+	stat64(".", ...") -> gfs_hook_is_url() -> gfs_hook_get_cwd_is_gfarm()
+	-> gfs_hook_check_cwd_is_gfarm() -> gfs_hook_is_url()
+	-> gfs_hook_initialize() -> gfarm_initialize() -> gfarm_gsi_client_initialize()
+	-> gfarmSecSessionInitializeInitiator() -> gfarmGssAcquireCredential()
+	-> gss_acquire_cred() -> globus_i_gsi_gss_cred_read()
+	-> globus_i_gsi_gss_create_cred() -> globus_i_gsi_gssapi_init_ssl_context()
+	-> globus_gsi_sysconfig_get_ca_cert_files_unix() ->
+	-> globus_gsi_sysconfig_file_exists_unix(".", ...)
+	-> stat64(".", ...) -> gfs_hook_is_url() ...
+
+	this can be be caused by "cd /gfarm; gfpwd".
+
+2004-10-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfexec/gfexec.c, lib/libgfarm/gfarm/config.c:
+	config.c (gfarm_config_clear): reset 'config_read'.  This makes it possible to call gfarm_initialize() again.
+	gfexec.c: call gfarm_terminate() before execve(2).  This fix basically undoes the change on Aug 24, 2004.
+
+2004-10-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c:
+	Do not try next authentication method, if a trial failed during
+	GSI authentication, because currently GFSL doesn't guarantee
+	further graceful communication on error cases.
+	For example, I observed the following scenario with "gfhost -l":
+	1. gfarm_authorize_gsi_common() in server side (gfsd) returns
+	  GFARM_ERR_AUTHENTICATION, before calling gfarmSecSessionAccept() even,
+	  because it failed to acquire a credential.
+	2. gfarmGssReceiveToken() in client side ("gfhost -l") returns -1
+	  with errno == ECONNRESET, because gfsd disappeared.
+	3. gfarmSecSessionInitiateResult() returns an error.
+	4. gfarm_auth_result_gsi_multiplexed() returns GFARM_ERR_AUTHENTICATION.
+	5. gfarm_auth_request_next_method() adds an event for writing to schedule
+	  gfarm_auth_request_loop_ask_method().
+	6. gfarm_eventqueue_turn() in gfhost never returns, because the descriptor
+	  never becomes writable, since its peer is already dead.
+
+	This fixes a hang during scheduling or gfhost.
+
+	side effect: a failure during GSI authentication now returns
+		GFARM_ERR_OPERATION_NOT_PERMITTED
+
+2004-10-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/auth.c:
+	remove unnecessary newline from warning messages.
+
+	* lib/libgfarm/gfsl/auth.c:
+	remove "WARNING: Account doesn't exist. Ignored." message about
+	/etc/grid-security/grid-mapfile by default, unless verbose mode is specified.
+
+	* lib/gfs_hook/hooks_common.c:
+	special calling convention of getdents() is only necessary on Linux/i386.
+
+	* lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/sysdep.h:
+	Eliminate INLINE_SYSCALL() and use syscall() instead, to make this portable.
+
+	Now getdents() hook basically works on IA64 as well, if statically linked.
+	Although it's not really usable yet, because it's hard to link a program
+	completely statically, thus, getdents() won't be called via readdir().
+	The glibc-not-hidden package is need to make it usable.
+
+	* lib/libgfarm/gfarm/hostspec.c: better error message
+
+2004-10-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/session.c:
+	the change for GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS made
+	/etc/grid-security/grid-mapfile mandatory even on an initator side.
+	this removes the requirement.
+
+	* lib/libgfarm/gfsl/scarg.c, lib/libgfarm/gfsl/session.c:
+	fix type mismatch which aren't usually reported by either gcc or SUNWspro,
+	reported by tatebe-san.
+	Some of those had existed since the first version.
+
+2004-10-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_common_gsi.c:
+	- Remove gfarmGssDuplicateName(), because Globus does not implement
+	  gss_duplicate_name().
+	  As the result, remove a credential name from gfarmSecSession structure,
+	  because the member isn't used any more.
+
+	* lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/REFERENCE, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scarg.c, lib/libgfarm/gfsl/scarg.h, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c:
+	- Remove gfarmGssDuplicateName(), because Globus does not implement
+	  gss_duplicate_name().
+	  As the result, remove a credential name from gfarmSecSession structure,
+	  because the member isn't used any more.
+
+	scarg.[ch], scsub.c, server{,2}.[ch]:
+	- add newStringOfName() and newStringOfCredential() to scarg.c
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common_gsi.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_gsi.h, lib/libgfarm/gfarm/auth_server_gsi.c:
+	auth.h, auth_config.c, auth_common_gsi.c:
+	- Implement cred_type "self".
+	  This requirement was pointed out by tatebe-san
+
+	auth_gsi.h, auth_common_gsi.c, auth_server_gsi.c, auth_client_gsi.c:
+	- Use gss_name_t in the GFSL interface, instead of the pair of
+	  GSS_C_NT_* and char *.
+	  The reason why this is necessary is because GSS_C_NT_EXPORT_NAME
+	  is not always C string (i.e. not always NUL terminated string).
+	  Also, change the type of a return value of the following functions
+	  from char* (X.509 DN) to gss_name_t, because gss_name_t is more useful:
+		gfarmGssNewCredentialName()
+		gfarmGssAcquireCredential()
+		gfarmGssAcceptSecurityContext()
+		gfarmGssInitiateSecurityContext()
+		gfarmSecSessionGetInitiatorInitialCredName()
+	  gss_name_t can be used as an input argument of gfarmGssAcquireCredential(),
+	  gfarmGssInitiateSecurityContext() and gfarmSecSessionInitiate*(),
+	  but a DN can not (or, at least such usage is not portable to other GSSAPI).
+	  gss_name_t now can be converted to a display name (i.e. X.509 DN in Globus)
+	  by using gfarmGssNewDisplayName()
+	  discussed with m-hirano san
+
+	auth_client_gsi.c:
+	- Pass GSS_C_*_FLAG explicitly in gfarmSecSessionInitiate*() interface.
+	  discussed with m-hirano san
+
+	auth_server_gsi.c:
+	- remove LDAP access in server side, when cred_type "host" is specified.
+
+	* lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/REFERENCE, lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scarg.c, lib/libgfarm/gfsl/scarg.h, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c:
+	- Pass GSS_C_*_FLAG explicitly via gfarmSecSessionInitiate*() interface.
+	  discussed with m-hirano san
+	- Use gss_name_t in the GFSL interface, instead of the pair of
+	  GSS_C_NT_* and char *.
+	  The reason why this is necessary is because a Name String for
+	  GSS_C_NT_EXPORT_NAME is not always NUL terminated string.
+	  Also, change the type of a return value of the following functions
+	  from char* (X.509 DN) to gss_name_t, because gss_name_t is more useful:
+		gfarmGssNewCredentialName()
+		gfarmGssAcquireCredential()
+		gfarmGssAcceptSecurityContext()
+		gfarmGssInitiateSecurityContext()
+		gfarmSecSessionGetInitiatorInitialCredName()
+	  gss_name_t can be used as an input argument of gfarmGssAcquireCredential(),
+	  gfarmGssInitiateSecurityContext() and gfarmSecSessionInitiate*(),
+	  but a DN can not (or, at least such usage is not portable to other GSSAPI).
+	  gss_name_t now can be converted to a display name (i.e. X.509 DN in Globus)
+	  by using gfarmGssNewDisplayName()
+	  discussed with m-hirano san
+
+	gsi.c:
+	- Fix state transition problem during GSI parallel authentication.
+	  This problem might cause core dump, because released resource
+	  might be accessed. This had existed since 2003/08/12.
+	- Make gfarmGssAcquireCredential() not rely on "/CN=proxy" handling on Globus.
+	  suggested by tatebe-san
+
+	session.c:
+	- Fix arguments order of secSessionInitiateRequest(),
+	  This bug might cause core dump during GSI parallel authentication
+	  This had existed since 2003/08/12.
+	- Fix some memory leaks on error cases.
+	- Pass GSS_C_*_FLAG explicitly in gfarmSecSessionInitiate*() interface.
+	  discussed with m-hirano san
+
+	* gfptool/gfrepbe_server/gfrepbe_server.c, gfptool/gfrepbe_client/gfrepbe_client.c:
+	- Implement cred_type "self".
+	  This requirement was pointed out by tatebe-san
+
+	* lib/libgfarm/gfarm/gfs_client.c: use NULL for a pointer, instead of 0
+
+	* man/ja/man5/gfarm.conf.5, man/man5/gfarm.conf.5, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	- describe cred_type "self"
+	- mention GSSAPI GSS_C_NT_*
+
+2004-10-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c: gfs_pio_view_global_ftruncate():
+	save path info accoring to tatebe-san's remark.
+
+2004-10-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* server/gfsd/gfsd.c: gfs_server_ftruncate():
+	correct an error pointed out by Ohkubo-san(ohkubo-k@suri.co.jp)
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/gfsd.c, include/gfarm/gfs.h:
+	add gfs_pio_truncate() and its sub functions
+
+2004-10-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/config.c:
+	make config.c include "gfutil.h" for function prototype of
+	gflog_auth_set_verbose()
+
+	* gftool/gfrun/gfrun.c, gftool/gfrcmd/gfrcmd.c:
+	add "-N" option to gfrcmd to specify canonical hostname for GSI authentication.
+
+2004-10-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/Makefile: do "rm -rf .libs" at post-distclean-hook,
+	because libtool sometimes fails to remove the .libs directory.
+
+	* lib/libgfarm/gfsl/session.c: correct error message
+
+	* gftool/gfrcmd/gfrcmd.c:
+	call gflog_auth_set_verbose(1) at earlier stage.
+	this may make GSI error messages displayed twice,
+	but otherwise some error messages (e.g. errors in gfarmAuthInitialize())
+	won't be displayed.
+	the duplicated message is noisy, but better than nothing.
+
+	* lib/libgfarm/gfsl/auth.c:
+	use gflog_auth_warning() instead of gflog_warning() to suppress the following
+	noisy warning message by default:
+
+	<username>: WARNING: multiple X.509 Distinguish name for a UNIX user account. Ignored.
+
+	* man/man5/gfarm.conf.5, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	add description about credential configuration which is introduce by
+	recent SECURITY FIX for GSI authentication.
+
+	* server/gfsd/Makefile, gftool/gfmpirun/Makefile, gftool/gfmpirun/gfmpirun.c, gftool/gfrcmd/Makefile, gftool/gfrun/Makefile, lib/gfs_hook/Makefile, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/url.c, server/gfmd/Makefile, gfptool/gfrepbe_client/Makefile, gfptool/gfrepbe_server/Makefile, gfptool/gfsplck/Makefile, gfptool/gfsplck/gfsplck.c, gftool/gfhost/Makefile, gftool/gfhost/gfhost.c:
+	- remove global variables from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+
+	* lib/libgfarm/gfarm/gfs_client.h:
+	- remove global variables and unnecessary enum definition from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+
+	* gftool/gfrcmd/gfrcmd.c, gftool/gfrun/gfrun.c, include/gfarm/gfarm_misc.h:
+	- remove global variables and unnecessary enum definition from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+	  notably, there isn't gfarm_authentication_verbose variable anymore, and
+	  newly added gflog_auth_*() functions should be used instead.
+
+	* gfptool/gfrepbe_client/gfrepbe_client.c:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- Specify the type of a target name, because GFSL now requires it,
+	  and gfrepbe_server use a user credential instead of (default)
+	  host credential.
+
+	- remove global variables from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+
+	* gftool/gfsched/gfsched.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/schedule.c:
+	- remove unnecessary enum definition from public headers,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+
+	* server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+
+	* gfptool/gfrepbe_server/gfrepbe_server.c:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- Specify the type of a target name, because GFSL now requires it,
+	  and gfrepbe_server use a user credential instead of (default)
+	  host credential.
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_client.c:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  introduce "{metadb,spool}_server_cred_{type,service,name}" directives
+	  to gfarm.conf, and implement a machinery to represent the server
+	  credential namings.
+
+	- remove global variables and unnecessary enum definition from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+
+	* lib/libgfarm/gfarm/config.c: - SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  introduce "{metadb,spool}_server_cred_{type,service,name}" directives
+	  to gfarm.conf, and implement a machinery to represent the server
+	  credential namings.
+
+	- remove global variables and unnecessary enum definition from a public header,
+	  as a preparation of gfarm-1.0.4 release which supplies shared objects.
+	  notably, there isn't gfarm_authentication_verbose variable anymore, and
+	  newly added gflog_auth_*() functions should be used instead.
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common_gsi.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_gsi.h, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/gfm_proto.h, lib/libgfarm/gfarm/gfs_proto.c, lib/libgfarm/gfarm/gfs_proto.h:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  introduce "{metadb,spool}_server_cred_{type,service,name}" directives
+	  to gfarm.conf, and implement a machinery to represent the server
+	  credential namings.
+
+	* lib/libgfarm/gfsl/Makefile:
+	- as a part of the SECURITY FIX for GSI authentication,
+	  add several options to {server,client}{,2} to specify server credential
+	  names, although -U option doesn't work, because Globus GSSAPI does not
+	  support GSS_C_NT_STRING_UID_NAME for now.
+
+	* lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/scarg.c, lib/libgfarm/gfsl/scarg.h, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  add several options to {server,client}{,2} to specify server credential
+	  names, although -U option doesn't work, because Globus GSSAPI does not
+	  support GSS_C_NT_STRING_UID_NAME for now.
+
+	* lib/libgfarm/gfsl/REFERENCE, lib/libgfarm/gfsl/gfarm_auth.h, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gfsl_config.h:
+	- SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  implement GSS_C_NT_USER_NAME feature of GSSAPI in GFSL layer, because
+	  Globus doesn't support the feature for now,
+	  this is controled by GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS macro.
+	  note that:
+		o gfarmAuthMakeThisAlone() will not be called with this macro,
+		  because an initiator needs the authentication information
+		  in grid-mapfile to use GSS_C_NT_USER_NAME.
+		o if there is multiple X.509 Distinguish name for a UNIX user
+		  account, GSS_C_NT_USER_NAME may not work.
+
+	* lib/libgfarm/gfsl/session.c: - SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  implement GSS_C_NT_USER_NAME feature of GSSAPI in GFSL layer, because
+	  Globus doesn't support the feature for now,
+	  this is controled by GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS macro.
+	  note that:
+		o gfarmAuthMakeThisAlone() will not be called with this macro,
+		  because an initiator needs the authentication information
+		  in grid-mapfile to use GSS_C_NT_USER_NAME.
+		o if there is multiple X.509 Distinguish name for a UNIX user
+		  account, GSS_C_NT_USER_NAME may not work.
+	- add several calls to gflog_auth_error() for errors which are detected
+	  at GFSL layer (not GSSAPI layer), because gfarmGssPrintMinorStatus()
+	  cannot produces any useful output for those errors.
+
+	* lib/libgfarm/gfsl/gsi.c: - SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  implement GSS_C_NT_USER_NAME feature of GSSAPI in GFSL layer, because
+	  Globus doesn't support the feature for now,
+	  this is controled by GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS macro.
+	  note that:
+		o gfarmAuthMakeThisAlone() will not be called with this macro,
+		  because an initiator needs the authentication information
+		  in grid-mapfile to use GSS_C_NT_USER_NAME.
+		o if there is multiple X.509 Distinguish name for a UNIX user
+		  account, GSS_C_NT_USER_NAME may not work.
+	- add several calls to gflog_auth_error() for errors which are detected
+	  at GFSL layer (not GSSAPI layer), because gfarmGssPrintMinorStatus()
+	  cannot produces any useful output for those errors.
+	- correct some conditions to exit loop of gss_{accept,init}_sec_context()
+	  to make the conditions match with RFC2744
+
+	* lib/libgfarm/gfsl/auth.c: - SECURITY FIX for GSI authentication:
+	  make GFSL Gfarm*Initiate*() functions actually supply a target name for
+	  authorization, because these function currently always do delegation.
+	  Globus since 3.2.1 requires this, because otherwise malicious remote
+	  user can obtain arbitrary proxy credentials by forging an acceptor.
+	- as a part of the SECURITY FIX for GSI authentication,
+	  implement GSS_C_NT_USER_NAME feature of GSSAPI in GFSL layer, because
+	  Globus doesn't support the feature for now,
+	  this is controled by GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS macro.
+	  note that:
+		o gfarmAuthMakeThisAlone() will not be called with this macro,
+		  because an initiator needs the authentication information
+		  in grid-mapfile to use GSS_C_NT_USER_NAME.
+		o if there is multiple X.509 Distinguish name for a UNIX user
+		  account, GSS_C_NT_USER_NAME may not work.
+	- plug some resource leaks
+
+	* lib/libgfarm/gfsl/tcputil.c:
+	do not use perror(), but use gflog_error()
+
+	* lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c:
+	remove global variables and unnecessary enum definition from a public header,
+	as a preparation of gfarm-1.0.4 release which supplies shared objects.
+	notably, there isn't gfarm_authentication_verbose variable anymore, and
+	newly added gflog_auth_*() functions should be used instead.
+
+2004-10-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.ja, doc/Gfarm-FAQ.en:
+	Inserted the item 2.4; Is it not possible to access files that should be created.
+	Added the subject name change issue between GT2 and GT3.
+
+	* lib/gfs_hook/hooks.c: RH7.2 does not have SYS_getxattr, ....
+
+	* lib/gfs_hook/hooks_subr.c:
+	Discard the previous commit, and leave the comment.
+
+2004-10-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	add check whether gfarm_initialized is called or
+	not in the relative path case from a directory in the Gfarm file
+	system.  This may fix a problem such that bash often aborts.
+
+	* gfptool/gfsplck/gfsplck.c:
+	display a hostname not only an error message for gfarm_initialize,
+	gfarm_is_active..., and gfarm_terminate.
+
+	* gfptool/gfsplck/gfsplck.c:
+	do not register a lock file. it will be deleted with the -d
+	option. [Bugzilla-ja #18]
+
+2004-10-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c:
+	support to check a specific gfarm file such as gfsplck gfarm:file
+
+2004-10-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/README:
+	correct misspell about the filename "gfarm-usermap".
+
+2004-10-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c: just delete unnecessary spaces and tabs.
+
+2004-10-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	refresh the dircache, if there is inconsistency between real metadata
+	and the dircache about the result of gfarm_path_info_get().
+	this fixes the following problem under gfs_hook'ed bash:
+		bash$ echo a > a
+		bash$ rm -f a
+		bash$ echo a > a
+		bash: a: Is a directory
+	the problem was reported by tatebe-san.
+
+2004-10-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c: simplify a code.
+	plug a memory leak.
+
+	* gfptool/gfsplck/gfsplck.c (fixdir): stat() should be lstat().
+
+2004-10-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build:
+	change the installation directory on Solaris from /usr/grid to /usr/local/gfarm
+	approved by tatebe-san
+
+	* lib/gfs_hook/Makefile:
+	gfs_hook.o was broken if it's configured as --disable-shared.
+	this fixes the problem by using temporary convenience library.
+	problem pointed out by tatebe-san.
+
+	* package/solaris/gfarm-devel.files, package/solaris/gfarm-libs.files:
+	add shared object for gfarm-1.0.4 release
+
+	* package/solaris/build:
+	- add gfarm-libs subpackage, and "eval" (to expand shell meta-characters)
+	- changes for the environment on plum.hpcc.jp
+	  XXX	currently gcc packages are disabled and only vendorcc packages are
+	  	enabled, because gcc fails to link shared objects.
+
+2004-10-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexport/gfexport.c: report error of gfs_pio_close()
+
+	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	rename GFS_FILE_MODE_SECTION_CREATED flag to GFS_FILE_MODE_UPDATE_METADATA,
+	and revise its usage.
+	this recovers gfarm-1.0.3 behavior that sections are only created if
+	gfs_pio_create() are called, and also fixes several corner cases,
+
 2004-10-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Updated RELNOTES for the version 1.0.4.
 
 	* server/gfsd/gfsd.c (gfs_server_open): plug memory leak in error case.
 
@@ -4789,7 +5463,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.32 2004/09/09 09:14:03 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.33 2004/10/05 14:32:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
