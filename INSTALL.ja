@@ -208,138 +208,162 @@ configure コマンドには、下記のオプションがあります。
 まず、Gfarm ファイルシステムのファイルシステムメタデータを保持する 
 LDAP サーバーを用意する必要があります。これには下記の設定が必要です。
 
-▽ slapd-master.conf
+▽ slapd.conf
 
 OpenLDAP 付属の LDAP サーバーの設定ファイルです。
 base distinguished name を、このファイルの suffix および 
 rootdn で参照しているのに注意してください。
 
 例えばホスト ldap.hpcc.jp の
-ファイル /etc/gfarm-ldap/slapd-master.conf に、
+ファイル /etc/gfarm-ldap/slapd.conf に、
 下記のような内容を記述します。
 
 ------------------------------ ここから ------------------------------
 #
-# master slapd config -- for testing
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
 #
-include         /etc/gfarm-ldap/slapd.at.conf
-include         /etc/gfarm-ldap/slapd.oc.conf
-#schemacheck    on
+include         /usr/local/openldap/etc/openldap/schema/core.schema
+include         /etc/gfarm-ldap/gfarm.schema
+
 pidfile         /var/gfarm-ldap/slapd.pid
 argsfile        /var/gfarm-ldap/slapd.args
+
+# enable global write access for now. XXX
+defaultaccess write
 
 #######################################################################
 # ldbm database definitions
 #######################################################################
 
 database        ldbm
+
 suffix          "dc=hpcc, dc=jp"
-directory       /var/gfarm-ldap
 rootdn          "cn=root, dc=hpcc, dc=jp"
+
+directory       /var/gfarm-ldap
 rootpw          secret-ldap-password
-defaultaccess   write
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
 #
-index           hostname
-index           default none
-#
-dbcacheNoWsync
+dbnosync
 ------------------------------ ここまで ------------------------------
 
-▽ slapd.at.conf
+▽ gfarm.schema
 
-slapd-master.conf から include されているファイルです。
+slapd.conf から include されているファイルです。
 
-OpenLDAP にサンプルとして付属する slapd.at.conf に、
-下記の内容を追加したものを、
+下記の内容を、
 ホスト ldap.hpcc.jp の
-ファイル /etc/gfarm-ldap/slapd.ac.conf に
-置いてください。
+ファイル /etc/gfarm-ldap/gfarm.schema に置いてください。
 特にカスタマイズする項目はありません。
 
 ------------------------------ ここから ------------------------------
 #
-# GFarm
+# OID Base is:
+#	iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) 
+#		sra(13122) experimental(2) user(1) 
+#			soda(2924) gfarm(100)
+# i.e. gfarm schema OID base is 1.3.6.1.4.1.13122.2.1.2924.100
 #
-attribute	hostname				cis
-attribute	pathname				ces
-attribute	section					ces
-attribute	architecture				ces
-attribute	ncpu					ces
-attribute	mode					ces
-attribute	user					ces
-attribute	group					ces
-attribute	atimespec_sec				ces
-attribute	atimespec_nsec				ces
-attribute	mtimespec_sec				ces
-attribute	mtimespec_nsec				ces
-attribute	ctimespec_sec				ces
-attribute	ctimespec_nsec				ces
-attribute	nsections				ces
-attribute	filesize				ces
-attribute	checksumType				ces
-attribute	checksum				ces
-attribute	generatorProgram			ces
-attribute	generatorInputGFarmFiles		ces
-attribute	generatorParameter			ces
------------------------------- ここまで ------------------------------
+# gfarm schema:
+#	1.3.6.1.4.1.13122.2.1.2924.100.1.x attribute syntax
+#	1.3.6.1.4.1.13122.2.1.2924.100.2.x attribute type
+#	1.3.6.1.4.1.13122.2.1.2924.100.3.x object class
 
-▽ slapd.oc.conf
+# Attribute Type Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.2.x
 
-slapd-master.conf から include されているファイルです。
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.1 NAME 'hostname'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.2 NAME 'hostalias'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.3 NAME 'architecture'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.4 NAME 'ncpu'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
 
-OpenLDAP にサンプルとして付属する slapd.oc.conf に、
-下記の内容を追加したものを、
-ホスト ldap.hpcc.jp の
-ファイル /etc/gfarm-ldap/slapd.oc.conf に
-置いてください。
-特にカスタマイズする項目はありません。
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.6 NAME 'mode'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.7 NAME 'user'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.8 NAME 'group'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.9 NAME 'atimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.10 NAME 'atimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.11 NAME 'mtimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.12 NAME 'mtimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.13 NAME 'ctimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.14 NAME 'ctimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.15 NAME 'nsections'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
 
------------------------------- ここから ------------------------------
-#
-# GFarm
-#
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.16 NAME 'section'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.17 NAME 'filesize'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.18 NAME 'checksumType'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.19 NAME 'checksum'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
 
-objectclass GFarmPath
-	requires
-		objectClass
-	allows
-		pathname,
-		mode,
-		user,
-		group,
-		atimespec_sec,
-		atimespec_nsec,
-		mtimespec_sec,
-		mtimespec_nsec,
-		ctimespec_sec,
-		ctimespec_nsec,
-		nsections
+# Object Class Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.3.x
 
-objectclass GFarmFileSection
-	requires
-		objectClass
-	allows
-		pathname,
-		section,
-		filesize,
-		checksumType,
-		checksum
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.1
+	NAME 'GFarmHost' SUP top STRUCTURAL
+	MUST ( hostname $ architecture )
+	MAY ( ncpu ) )
 
-objectclass GFarmFileSectionCopy
-	requires
-		objectClass
-	allows
-		pathname,
-		section,
-		hostname
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.2
+	NAME 'GFarmPath' SUP top STRUCTURAL
+	MUST ( pathname )
+	MAY (	mode $ user $ group $
+		atimesec $ atimensec $
+		mtimesec $ mtimensec $
+		ctimesec $ ctimensec $
+		nsections ) )
 
-objectclass GFarmHost
-	requires
-		objectClass
-	allows
-		hostname,
-		architecture,
-		ncpu
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.3
+	NAME 'GFarmFileSection' SUP top STRUCTURAL
+	MUST ( pathname $ section )
+	MAY ( filesize $ checksumType $ checksum ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
+	NAME 'GFarmFileSectionCopy' SUP top STRUCTURAL
+	MUST ( pathname $ section $ hostname ) )
 ------------------------------ ここまで ------------------------------
 
 ▽ ファイルシステムメタデータの初期情報を作る
@@ -375,11 +399,14 @@ objectclass GFarmHost
 
     dn 属性の hostname に設定したのと同じ値を設定します。
 
-  ・architecture
+  -- architecture
 
     計算機アーキテクチャを表す名称を sparc-sun-solaris のような
     形式で記述します。
 
+  -- ncpu
+
+    そのコンピュータのCPU数を記述します。
 
 例えばホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/initial.ldif に、
@@ -388,30 +415,30 @@ objectclass GFarmHost
 ------------------------------ ここから ------------------------------
 dn: dc=hpcc, dc=jp
 objectclass: top
-objectclass: organization
-objectclass: domainRelatedObject
-objectclass: quipuObject
-objectclass: quipuNonLeafObject
 
 dn: hostname=hpc420-1.hpcc.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: hpc420-1.hpcc.jp
 architecture: sparc-sun-solaris
+ncpu: 1
 
 dn: hostname=hpc420-2.hpcc.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: hpc420-2.hpcc.jp
 architecture: sparc-sun-solaris
+ncpu: 1
 
 dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: wiz.etl.go.jp
 architecture: alpha-dec-osf
+ncpu: 1
 
 dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: o2k.etl.go.jp
 architecture: mips-sgi-irix
+ncpu: 16
 ------------------------------ ここまで ------------------------------
 
 ▽ LDAP データベースの作成
@@ -420,19 +447,19 @@ architecture: mips-sgi-irix
 ベースを作成します。これには、ホスト ldap.hpcc.jp で、下記のコマン
 ドを実行します。
 
-     % rm -f /var/gfarm-ldap/*
-     % cd /etc/gfarm-ldap
-     % /usr/local/openldap/sbin/ldif2ldbm -f slapd-master.conf -i initial.ldif
+	% rm -f /var/gfarm-ldap/*
+	% cd /etc/gfarm-ldap
+	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
 ▽ LDAP サーバーの起動
 
 ホスト ldap.hpcc.jp で、LDAP サーバーを起動します。
 下記のコマンドを実行します。
 
-	% cd /usr/local/openldap/libexec
-	% ./slapd -f /etc/gfarm-ldap/slapd-master.conf -p 9000
+	% /usr/local/openldap/libexec/
+	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:9000/
 
-このオプション -p で指定した 9000 が、LDAP サーバーのポート番号です。
+このオプション -h で指定した 9000 が、LDAP サーバーのポート番号です。
 
 ▽ LDAP サーバーの動作試験
 
