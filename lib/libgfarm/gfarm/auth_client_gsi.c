@@ -58,7 +58,7 @@ gfarm_gsi_initialize(void)
 		} else {
 			gfarmSecSessionFinalizeInitiator();
 		}
-		return (GFARM_ERR_UNKNOWN); /* XXX */
+		return ("GSI credential initialization failed"); /* XXX */
 	}
 	initialized = 1;
 	return (NULL);
