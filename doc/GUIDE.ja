@@ -25,7 +25,7 @@ Gfarm の日本語マニュアルを読むには，環境変数 LANG を ja_JP.ujis に設定
 本書では，以下のような環境を例に挙げて説明します．
 
     メタデータサーバ       : ldap.example.com
-    Gfarm インストール先   : /usr/local/gfarm
+    Gfarm インストール先   : /usr/grid
     Gfarm 設定ファイル     : /etc/gfarm.conf
 
 コマンド実行例では，Gfarm を利用しようとするホスト(以下，クライアント
