@@ -117,7 +117,7 @@ gfarmAuthInitialize(usermapFile)
 	    } else {
 		gflog_warning(distName,
 			      "WARNING: missing local username for DN."
-			      " Ignored.")
+			      " Ignored.");
 		continue;
 	    }
 
