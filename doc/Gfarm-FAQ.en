@@ -12,12 +12,13 @@ Table of Contents:
 
 2. Trouble Shooting
   2.1 'gfls' results in 'gfarm:.: no such object'.
-  2.2 [GSI authentication] "Authentication error" or "no filesystem
+  2.2 We cannot connect to file system nodes and/or a metadata server.
+  2.3 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
-  2.3 Unregistered or unnecessary files seem to remain in a spool
+  2.4 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.4 Due to disk crash, files in a file system node are lost.  What
+  2.5 Due to disk crash, files in a file system node are lost.  What
      we need to do?
 
 3. Security
@@ -57,7 +58,21 @@ Table of Contents:
 	directory.
 		% gfmkdir gfarm:~
 
-  2.2 [GSI authentication] "Authentication error" or "no filesystem
+  2.2 We cannot connect to file system nodes and/or a metadata server.
+
+	By default setting, 600/tcp and 600/udp need to be opened for
+	file system nodes, and 601/tcp and 389/tcp need to be opened
+	for a metadata server.
+
+	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these file system
+	nodes cannot be connected by the client using 600/udp.
+
+	The port number can be specified by a Gfarm configuration file
+	or a command-line option for gfsd and gfmd.  For details,
+	refer to the installation manual and manual pages of gfsd(8),
+	gfmd(8) and gfarm.conf(5).
+
+  2.3 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
 
 	Verbose error messages are displayed with the -v option of
@@ -85,7 +100,7 @@ Table of Contents:
 	provided by the Globus fails to authenticate each other when
 	the time difference is more than five minutes.
 
-  2.3 Unregistered or unnecessary files seem to remain in a spool
+  2.4 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -105,7 +120,7 @@ Table of Contents:
 	with the -a option.
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad gfarm:~
 
-  2.4 Due to disk crash, all files in a file system node are lost.
+  2.5 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
 	For all data files including execution programs, there is
