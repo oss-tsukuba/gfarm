@@ -13,7 +13,7 @@ char *program_name = "gfdf";
 char *
 print_space(char *host, int print_inode)
 {
-	char *e;
+	char *e, *canonical_hostname;
 	struct gfs_connection *gfs_server;
 	struct sockaddr peer_addr;
 	gfarm_int32_t bsize;
@@ -25,10 +25,15 @@ print_space(char *host, int print_inode)
 		fprintf(stderr, "%s: %s: %s\n", program_name, host, e);
 		return (e);
 	}
-	e = gfs_client_connect(host, &peer_addr, &gfs_server);
+	e = gfarm_host_get_canonical_name(host, &canonical_hostname);
+	if (e != NULL)
+		canonical_hostname = host;
+	e = gfs_client_connect(canonical_hostname, &peer_addr, &gfs_server);
 	if (e != NULL) {
 		fprintf(stderr, "%s: connect to %s: %s\n", program_name, host,
 		    e);
+		if (canonical_hostname != host)
+			free(canonical_hostname);
 		return (e);
 	}
 
@@ -52,6 +57,8 @@ print_space(char *host, int print_inode)
 		    host);
 	}
 	gfs_client_disconnect(gfs_server);
+	if (canonical_hostname != host)
+		free(canonical_hostname);
 	return (e);
 }
 
