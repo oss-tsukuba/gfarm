@@ -826,6 +826,8 @@ char *
 __getcwd(char *buf, size_t size)
 {
 	const char *e;
+	char *p;
+	int alloced = 0;
 
 	_gfs_hook_debug_v(fprintf(stderr, 
 	    "Hooking __getcwd(%p, %lu)\n", buf, (unsigned long)size));
@@ -836,14 +838,30 @@ __getcwd(char *buf, size_t size)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking __getcwd(%p, %lu)\n" ,buf, (unsigned long)size));
 
+	if (buf == NULL) {
+		size = 2048;
+		buf = malloc(size);
+		if (buf == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
+		}
+		alloced = 1;
+	}
 	e = gfs_hook_get_prefix(buf, size);
 	if (e != NULL)
 		goto error;
 	e = gfs_getcwd(buf + strlen(buf), size - strlen(buf));
-	if (e == NULL)
+	if (e == NULL) {
+		if (alloced) {
+			p = realloc(buf, strlen(buf) + 1);
+			if (p != NULL)
+				return (p);
+		}
 		return (buf);
+	}
 error:
-
+	if (alloced)
+		free(buf);
 	_gfs_hook_debug(fprintf(stderr, "GFS: __getcwd: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (NULL);
