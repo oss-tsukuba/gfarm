@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfcd&nbsp;--&nbsp;Gfarm 作業ディレクトリを変更する。</DIV
+>gfcd&nbsp;--&nbsp;change Gfarm working directory</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -41,7 +41,7 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->ディレクトリ</I
+>directory</I
 ></TT
 >]</P
 ></DIV
@@ -53,24 +53,28 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm 作業ディレクトリを 指定したディレクトリに変更します。
-ディレクトリを指定しない場合は、ユーザの Gfarm ホームディレクトリである
-gfarm:/<TT
+><B
+CLASS="COMMAND"
+>gfcd</B
+> changes Gfarm working directory 
+to the directory specified in the argument.
+If no argument is specified, working directory is changed to
+the user's home directory that is gfarm:/<TT
 CLASS="REPLACEABLE"
 ><I
->グローバルユーザ</I
+>global_user_name</I
 ></TT
-> に変更します。</P
+>.</P
 ><P
->各Gfarm コマンドが作業ディレクトリを参照できるように、各ユーザの
-シェル設定ファイルに以下の定義を追加してください。</P
+>To use this command, please add the following setting to 
+the shell rc file of each user.</P
 ><P
 ></P
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->Bourne shell 系シェルの場合</DT
+>for shells derived from Bourne shell</DT
 ><DD
 ><TABLE
 BORDER="0"
@@ -86,7 +90,7 @@ CLASS="SCREEN"
 ></TABLE
 ></DD
 ><DT
->csh  系シェルの場合</DT
+>for csh or tcsh</DT
 ><DD
 ><TABLE
 BORDER="0"

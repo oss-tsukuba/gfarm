@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSETDIR" "1" "02 7月 2003" "Gfarm" ""
+.TH "GFSETDIR" "1" "02 July 2003" "Gfarm" ""
 .SH NAME
 gfsetdir \- Gfarm 作業ディレクトリを変更するコマンド列を出力する。
 .SH SYNOPSIS
@@ -25,12 +25,15 @@ gfarm:/\fIグローバルユーザ\fR に変更する
 \fBgfcd\fR
 を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
 ください。
-
+.TP
+\fBBourne shell 系シェルの場合\fR
 .nf
-	Bourne shell 系シェルの場合:
-		gfcd() { eval "`gfsetdir $1`"; }
-	csh 系シェルの場合:
-		alias gfcd 'eval `gfsetdir \\!*`'
+gfcd() { eval "`gfsetdir $1`"; }
+.fi
+.TP
+\fBcsh  系シェルの場合\fR
+.nf
+alias gfcd 'eval `gfsetdir \\!*`'
 .fi
 .SH "OPTIONS"
 .TP
@@ -44,5 +47,5 @@ csh 系シェル用のコマンドを出力します。
 引数オプションを表示します。
 .SH "SEE ALSO"
 .PP
-\fBgfd\fR(1),
+\fBgfcd\fR(1),
 \fBgfpwd\fR(1)

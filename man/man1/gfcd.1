@@ -5,26 +5,27 @@
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
 .TH "GFCD" "1" "02 July 2003" "Gfarm" ""
 .SH NAME
-gfcd \- Gfarm 作業ディレクトリを変更する。
+gfcd \- change Gfarm working directory
 .SH SYNOPSIS
 
-\fBgfcd\fR [ \fB\fIディレクトリ\fB\fR ]
+\fBgfcd\fR [ \fB\fIdirectory\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
-Gfarm 作業ディレクトリを 指定したディレクトリに変更します。
-ディレクトリを指定しない場合は、ユーザの Gfarm ホームディレクトリである
-gfarm:/\fIグローバルユーザ\fR に変更します。
+\fBgfcd\fR changes Gfarm working directory 
+to the directory specified in the argument.
+If no argument is specified, working directory is changed to
+the user's home directory that is gfarm:/\fIglobal_user_name\fR.
 .PP
-各Gfarm コマンドが作業ディレクトリを参照できるように、各ユーザの
-シェル設定ファイルに以下の定義を追加してください。
+To use this command, please add the following setting to 
+the shell rc file of each user.
 .TP
-\fBBourne shell 系シェルの場合\fR
+\fBfor shells derived from Bourne shell\fR
 .nf
 gfcd() { eval "`gfsetdir $1`"; }
 .fi
 .TP
-\fBcsh  系シェルの場合\fR
+\fBfor csh or tcsh\fR
 .nf
 alias gfcd 'eval `gfsetdir \\!*`'
 .fi
