@@ -102,8 +102,7 @@ concat_dir_name(const char *gfarm_url, const char *base_name,
 		error_happened = 1;
 		return (0);
 	}
-	if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(gfarm_url))
-	    != '\0')
+	if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(gfarm_url)) != '\0')
 		sprintf(target_url, "%s/%s", gfarm_url, base_name);
 	else
 		sprintf(target_url, "%s%s", gfarm_url, base_name);
@@ -249,8 +248,8 @@ register_fragment(int is_dir, char *gfarm_url, int index, int nfragments,
 	    &target_url))
 		goto finish;
 
-	if (nfragments == GFARM_FILE_DONTCARE && !
-	    get_nsections(target_url, &nfragments))
+	if (nfragments == GFARM_FILE_DONTCARE &&
+	    !get_nsections(target_url, &nfragments))
 		goto finish_url;
 
 	sprintf(section, "%d", index);
