@@ -11,8 +11,9 @@ bindir = $(default_libexecdir)
 PROGRAM = gfrepbe_server
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(openssl_includes)
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(openssl_libs) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)
