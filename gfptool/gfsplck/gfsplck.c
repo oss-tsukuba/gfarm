@@ -18,21 +18,6 @@ static int check_all = 0;
 static int delete_invalid_file = 0;
 
 static char *
-check_path_info(char *gfarm_file)
-{
-	struct gfarm_path_info p_info;
-	char *e;
-
-	/* check whether the path info is already registered. */
-	e = gfarm_path_info_get(gfarm_file, &p_info);
-	if (e != NULL)
-		return (e);
-
-	gfarm_path_info_free(&p_info);
-	return (NULL);
-}
-
-static char *
 fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 {
 	char *hostname, *e;
@@ -110,20 +95,6 @@ fixurl(char *gfarm_url)
 		fprintf(stderr, "%s on %s: %s\n", gfarm_url,
 			gfarm_host_get_self_name(), e);
 		goto error_gfarm_file;
-	}
-
-	e = check_path_info(gfarm_file);
-	if (e != NULL) {
-		fprintf(stderr, "%s on %s: %s\n", gfarm_url,
-			gfarm_host_get_self_name(), e);
-		if (delete_invalid_file) {
-			if (unlink(local_path) == 0)
-				printf("%s on %s: deleted\n",
-				       local_path, gfarm_host_get_self_name());
-			else
-				perror(local_path);
-		}
-		goto error_local_path;
 	}
 
 	sprintf(sec, "%d", rank);
