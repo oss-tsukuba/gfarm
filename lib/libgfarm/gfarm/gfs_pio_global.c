@@ -23,13 +23,7 @@ static char *
 gfs_pio_view_global_close(GFS_File gf)
 {
 	struct gfs_file_global_context *gc = gf->view_context;
-	char *e, *e_save = NULL;
-
-	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
-		e = gfs_pio_flush(gf);
-		if (e != NULL)
-			e_save = e;
-	}
+	char *e;
 
 	e = gfs_pio_close(gc->fragment_gf);
 	free(gc->url);
@@ -37,7 +31,7 @@ gfs_pio_view_global_close(GFS_File gf)
 	free(gc);
 	gf->view_context = NULL;
 	gfs_pio_set_view_default(gf);
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 /*
@@ -110,6 +104,7 @@ gfs_pio_view_global_write(GFS_File gf, const char *buffer, size_t size,
 	e = gfs_pio_write(gc->fragment_gf, buffer, size, &length);
 	if (e != NULL)
 		return (e);
+	/* XXX - should notify this change to all of the parallel process. */
 	if (gc->fragment_index == gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset + length > gc->offsets[gf->pi.status.st_nsections])
 		gc->offsets[gf->pi.status.st_nsections] =

@@ -22,6 +22,28 @@ int gfs_pio_fileno(GFS_File gf)
 	return ((*gf->ops->view_fd)(gf));
 }
 
+char *
+gfs_pio_set_view_default(GFS_File gf)
+{
+	char *e = NULL;
+
+	if (gf->view_context != NULL)
+		e = (*gf->ops->view_close)(gf);
+	gf->ops = NULL;
+	gf->view_context = NULL;
+	gf->view_flags = 0;
+	gf->error = e;
+	return (e);
+}
+
+static char *
+gfs_pio_check_view_default(GFS_File gf)
+{
+	if (gf->view_context == NULL) /* view isn't set yet */
+		return (gfs_pio_set_view_global(gf, 0));
+	return (NULL);
+}
+
 static char *
 gfs_file_alloc(GFS_File *gfp)
 {
@@ -322,25 +344,22 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 char *
 gfs_pio_close(GFS_File gf)
 {
-	char *e;
+	char *e, *e_save;
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e = (*gf->ops->view_close)(gf);
+	e_save = gfs_pio_check_view_default(gf);
 
-	if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
-		struct gfarm_path_info pi;
-		char *e2;
-
-		e2 = gfarm_path_info_get(gf->pi.pathname, &pi);
-		if (e2 == GFARM_ERR_NO_SUCH_OBJECT) {
-			/* create 0 byte file in this case */
-			e2 = gfs_pio_set_view_global(gf, 0);
-			if (e2 == NULL)
-				e2 = (*gf->ops->view_close)(gf);
-		}
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
+		e = gfs_pio_flush(gf);
+		if (e_save == NULL)
+			e_save = e;
 	}
+
+	e = (*gf->ops->view_close)(gf);
+	if (e_save == NULL)
+		e_save = e;
 
 	gfarm_path_info_free(&gf->pi);
 	free(gf->buffer);
@@ -349,7 +368,7 @@ gfs_pio_close(GFS_File gf)
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
 
-	return (e);
+	return (e_save);
 }
 
 char *
@@ -412,7 +431,7 @@ gfs_pio_fillbuf(GFS_File gf)
 	return (NULL);
 }
 
-/* unlike other functions, this returns `*writtenp' even if error happen */
+/* unlike other functions, this returns `*writtenp' even if an error happens */
 static char *
 do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 {
@@ -451,8 +470,11 @@ do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 char *
 gfs_pio_flush(GFS_File gf)
 {
-	char *e;
+	char *e = gfs_pio_check_view_default(gf);
 	size_t written;
+
+	if (e != NULL)
+		return (e);
 
 	CHECK_WRITABLE(gf);
 
@@ -478,6 +500,10 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		return (e);
 
 	if (whence == SEEK_SET || whence == SEEK_CUR) {
 		file_offset_t tmp_offset = offset;
@@ -542,13 +568,17 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 char *
 gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 {
-	char *e = NULL;
+	char *e;
 	char *p = buffer;
 	int n = 0;
 	int length;
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		return (e);
 
 	CHECK_READABLE(gf);
 
@@ -586,6 +616,10 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		return (e);
 
 	CHECK_WRITABLE(gf);
 
@@ -633,6 +667,13 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 int
 gfs_pio_getc(GFS_File gf)
 {
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL) {
+		gf->error = e;
+		return (EOF);
+	}
+
 	CHECK_READABLE_EOF(gf);
 
 	if (gf->p >= gf->length) {
@@ -647,18 +688,34 @@ gfs_pio_getc(GFS_File gf)
 int
 gfs_pio_ungetc(GFS_File gf, int c)
 {
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL) {
+		gf->error = e;
+		return (EOF);
+	}
+
 	CHECK_READABLE_EOF(gf);
 
-	if (gf->p == 0) /* cannot unget */
-		return (EOF);
-	/* We do not mark this buffer dirty here. */
-	gf->buffer[--gf->p] = c;
+	if (c != EOF) {
+		if (gf->p == 0) { /* cannot unget - XXX should permit this? */
+			gf->error = GFARM_ERR_NO_SPACE;
+			return (EOF);
+		}
+		/* We do not mark this buffer dirty here. */
+		gf->buffer[--gf->p] = c;
+	}
 	return (c);
 }
 
 char *
 gfs_pio_putc(GFS_File gf, int c)
 {
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL)
+		return (e);
+
 	CHECK_WRITABLE(gf);
 
 	if (gf->p >= GFS_FILE_BUFSIZE) {
@@ -679,6 +736,11 @@ gfs_pio_putc(GFS_File gf, int c)
 char *
 gfs_pio_puts(GFS_File gf, char *s)
 {
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL)
+		return (e);
+
 	CHECK_WRITABLE(gf);
 
 	while (*s != '\0') {
@@ -694,6 +756,11 @@ gfs_pio_puts(GFS_File gf, char *s)
 char *
 gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 {
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL)
+		return (e);
+
 	char *p = s;
 	int c;
 	gfarm_timerval_t t1, t2;
@@ -731,7 +798,10 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 char *
 gfs_pio_putline(GFS_File gf, char *s)
 {
-	char *e;
+	char *e = gfs_pio_check_view_default(gf);
+
+	if (e != NULL)
+		return (e);
 
 	CHECK_WRITABLE(gf);
 

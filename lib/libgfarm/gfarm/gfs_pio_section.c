@@ -31,12 +31,6 @@ gfs_pio_view_section_close(GFS_File gf)
 	unsigned int md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 
-	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
-		e = gfs_pio_flush(gf);
-		if (e != NULL)
-			goto finish;
-	}
-
 	/* calculate checksum */
 	if ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
@@ -50,6 +44,9 @@ gfs_pio_view_section_close(GFS_File gf)
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
 		    (gf->open_flags & GFARM_FILE_TRUNC) == 0) {
 			/* we have to read rest of the file in this case */
+			char message[] = "gfarm: writing without truncation"
+			    " isn't supported yet\n";
+			write(2, message, sizeof(message) - 1);
 			abort(); /* XXX - not supported for now */
 		} else {
 			EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
@@ -114,8 +111,6 @@ gfs_pio_view_section_close(GFS_File gf)
 				e = "checksum mismatch";
 		}
 	}
-
-finish:
 	if (e_save == NULL)
 		e_save = e;
 
