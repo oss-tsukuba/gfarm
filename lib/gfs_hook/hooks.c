@@ -59,6 +59,15 @@ __read(int filedes, void *buf, size_t nbyte)
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return syscall(SYS_read, filedes, buf, nbyte);
 
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+		_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __read(%d, , %d)\n",
+	    				filedes, nbyte));
+
+		e = GFARM_ERR_IS_A_DIRECTORY;
+		goto error;
+	}
+
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __read(%d(%d), , %d)\n",
 	    filedes, gfs_pio_fileno(gf), nbyte));
 
@@ -68,6 +77,7 @@ __read(int filedes, void *buf, size_t nbyte)
 		    "GFS: Hooking __read --> %d\n", n));
 		return (n);
 	}
+error:
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: __read: %s\n", e));
 	errno = gfarm_error_to_errno(e);
@@ -117,6 +127,15 @@ __write(int filedes, const void *buf, size_t nbyte)
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (syscall(SYS_write, filedes, buf, nbyte));
 
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+		_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __write(%d, , %d)\n",
+	    				filedes, nbyte));
+
+		e = GFARM_ERR_IS_A_DIRECTORY;
+		goto error;
+	}
+
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __write(%d(%d), , %d)\n",
 	    filedes, gfs_pio_fileno(gf), nbyte));
 
@@ -126,6 +145,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 		    "GFS: Hooking __write --> %d\n", n));
 		return (n);
 	}
+error:
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
 	errno = gfarm_error_to_errno(e);
