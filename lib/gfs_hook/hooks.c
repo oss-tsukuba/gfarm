@@ -31,7 +31,7 @@
 #define SYS_lstat SYS___lstat13
 #endif
 
-#ifdef __linux__
+#ifdef SYS_utime
 #include <sys/types.h>
 #include <utime.h>
 #endif
@@ -513,7 +513,9 @@ __utimes(const char *path, const struct timeval *tvp)
 	    path, tvp));
 
 	if (!gfs_hook_is_url(path, &url)) {
-#ifdef __linux__
+#ifdef SYS_utimes
+		return syscall(SYS_utimes, path, tvp);
+#else /* e.g. linux */
 		if (tvp == NULL) {
 			return syscall(SYS_utime, path, NULL);
 		} else {
@@ -523,8 +525,6 @@ __utimes(const char *path, const struct timeval *tvp)
 			ut.modtime = tvp[1].tv_sec;
 			return syscall(SYS_utime, path, &ut);
 		}
-#else
-		return syscall(SYS_utimes, path, tvp);
 #endif
 	}
 
@@ -563,6 +563,7 @@ utimes(const char *path, const struct timeval *tvp)
 	return (__utimes(path, tvp));
 }
 
+#ifdef SYS_utime
 int
 __utime(const char *path, const struct utimbuf *buf)
 {
@@ -608,6 +609,7 @@ utime(const char *path, const struct utimbuf *buf)
 	_gfs_hook_debug_v(fputs("Hooking utime\n", stderr));
 	return (__utime(path, buf));
 }
+#endif /* SYS_utime */
 
 /*
  * mkdir
