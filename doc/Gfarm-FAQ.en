@@ -64,7 +64,7 @@ Table of Contents:
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
     a firewall?
 
-	There are two problems for now.
+	There are three problems for now.
 
 	First, with standard installation of Gfarm-1.0, the LDAP
 	server for Gfarm works as everyone-writable without any
@@ -82,7 +82,19 @@ Table of Contents:
 	authentication is always performed whenever accessing file
 	contents.
 
-	Second problem is the way of authentication.
+	Second problem is file/directory ownership and mode on
+	creating replica. If replication is done by the owner of
+	the file or directory, there isn't any problem. But if
+	replication is done by different user from its owner,
+	the ownership of the replica is set to the user who did
+	the replication instead of the original owner. And also
+	the mode of the file/directory isn't maintained in that
+	case, it becomes group/other writable, if replication is
+	done by different user from its owner.
+
+	We plan to fix above problems in the next major release.
+
+	Third problem is the way of authentication.
 	Gfarm-1.0 supports three authentication methods, namely
 	the sharedsecret authentication, gsi_auth method
 	and the gsi authentication.
