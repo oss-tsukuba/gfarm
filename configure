@@ -1595,9 +1595,9 @@ fi
 
 if test "x${sysdep_dir}" != "x" -a -f "gfarmlib/${sysdep_dir}/Makefile.in"
 then
-   sysdep_output=gfarmlib/${sysdep_dir}/Makefile
+   sysdep_makefile=gfarmlib/${sysdep_dir}/Makefile
 else
-   sysdep_output=
+   sysdep_makefile=
 fi
 
 
@@ -1702,16 +1702,7 @@ done
 ac_given_srcdir=$srcdir
 
 trap 'rm -fr `echo "Makefile makes/config.mk include/Makefile nslib/Makefile 
-    gfarmlib/Makefile ${sysdep_output}
-    gfarmd/Makefile gfarm/Makefile gfsd/Makefile 
-    nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile
-    gftool/gfkey/Makefile gftool/gfrcmd/Makefile
-    gftool/gfreg/Makefile gftool/gfrep/Makefile
-    gftool/gfrm/Makefile gftool/gfsched/Makefile gftool/gfmpirun/Makefile
-    gftool/gfrsh/Makefile gftool/gfwhere/Makefile
-    gftool/example/gfimport_fixed/Makefile
-    gftool/example/gfimport_text/Makefile
-    gftool/example/gfgrep/Makefile gftool/example/gfwc/Makefile gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+    gfarmlib/Makefile ${sysdep_makefile} gfarmd/Makefile nstool/file/Makefile gfarm_config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1809,16 +1800,7 @@ EOF
 cat >> $CONFIG_STATUS <<EOF
 
 CONFIG_FILES=\${CONFIG_FILES-"Makefile makes/config.mk include/Makefile nslib/Makefile 
-    gfarmlib/Makefile ${sysdep_output}
-    gfarmd/Makefile gfarm/Makefile gfsd/Makefile 
-    nstool/file/Makefile gftool/digest/Makefile gftool/gfexport/Makefile
-    gftool/gfkey/Makefile gftool/gfrcmd/Makefile
-    gftool/gfreg/Makefile gftool/gfrep/Makefile
-    gftool/gfrm/Makefile gftool/gfsched/Makefile gftool/gfmpirun/Makefile
-    gftool/gfrsh/Makefile gftool/gfwhere/Makefile
-    gftool/example/gfimport_fixed/Makefile
-    gftool/example/gfimport_text/Makefile
-    gftool/example/gfgrep/Makefile gftool/example/gfwc/Makefile"}
+    gfarmlib/Makefile ${sysdep_makefile} gfarmd/Makefile nstool/file/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
