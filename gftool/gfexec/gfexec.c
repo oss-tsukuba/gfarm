@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,8 @@
 
 #define PROGRAM_NAME "gfexec"
 static char progname[] = PROGRAM_NAME;
+
+#define BOURNE_SHELL "/bin/sh"
 
 static void
 print_usage()
@@ -264,7 +267,17 @@ main(int argc, char *argv[], char *envp[])
 		}
 #endif
 		execve(local_path, argv, new_env);
-		perror(local_path);
+		if (errno != ENOEXEC) {
+			perror(local_path);
+		} else {
+			/*
+			 * argv[-1] must be available,
+			 * because there should be "gfexec" at least.
+			 */
+			argv[-1] = BOURNE_SHELL;
+			argv[0] = local_path;
+			execve(BOURNE_SHELL, argv - 1, new_env);
+		}
 		_exit(255);
 	default:
 		if (waitpid(pid, &status, 0) == -1) {
