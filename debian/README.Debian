@@ -7,4 +7,7 @@ Debian package due to conflict with a2ps/pdiff task.
 If you use MPI application on the Gfarm filesystem, you should compile
 by /usr/bin/mpicc.mpich etc.
 
- -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Wed, 25 Aug 2004 09:00:00 +0900
+If you want to build with globus toolkit libraries as a static link,
+try to debuild with '--set-envvar GFARM_CONFIGURE_OPTION=--with-globus-static'.
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Tue, 30 Mar 2005 14:45:00 +0900
