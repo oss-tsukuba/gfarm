@@ -390,16 +390,26 @@ int
 __dup2(int oldfd, int newfd)
 {
 	struct _gfs_file_descriptor *d;
+	GFS_File gf1, gf2;
 	
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup2(%d, %d)\n",
 				  oldfd, newfd));
 
-	if (gfs_hook_is_open(oldfd) == NULL && gfs_hook_is_open(newfd) == NULL)
+	gf1 = gfs_hook_is_open(oldfd);
+	gf2 = gfs_hook_is_open(newfd);
+	if (gf1 == NULL && gf2 ==  NULL)
 		return syscall(SYS_dup2, oldfd, newfd);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
 				oldfd, newfd));
 
+	if (gf1 != NULL) {
+		/* flush the buffer */
+		(void)gfs_pio_flush(gf1);
+		if (gf2 == NULL)
+			/* this file may be accessed by the child process */
+			gfs_hook_mode_calc_digest(gf1);
+	}
 	d = gfs_hook_dup_descriptor(oldfd);
 	gfs_hook_set_descriptor(newfd, d);
 	/*
@@ -433,13 +443,19 @@ __dup(int oldfd)
 {
 	struct _gfs_file_descriptor *d;
 	int newfd;
+	GFS_File gf;
 	
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup(%d)\n", oldfd));
 
-	if (gfs_hook_is_open(oldfd) == NULL)
+	if ((gf = gfs_hook_is_open(oldfd)) == NULL)
 		return syscall(SYS_dup, oldfd);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup(%d)\n", oldfd));
+
+	/* flush the buffer */
+	(void)gfs_pio_flush(gf);
+	/* this file may be accessed by the child process */
+	gfs_hook_mode_calc_digest(gf);
 
 	newfd = syscall(SYS_dup, oldfd);
 	if (newfd == -1)
@@ -475,14 +491,17 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 	int status, r;
 	pid_t pid;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __execve(%s)\n", filename));
+	_gfs_hook_debug(fprintf(stderr, "Hooking __execve(%s)\n", filename));
 
 	if (!gfs_hook_is_url(filename, &url)) {
 		if (gfs_hook_num_gfs_files() > 0) {
 			_gfs_hook_debug(
-			    fprintf(stderr, "GFS: __execve(%s) - fork\n",
-			    filename));
-			gfs_hook_mode_calc_digest_force();
+			    fprintf(stderr, "GFS: __execve(%s) - fork : %d\n",
+				    filename, gfs_hook_num_gfs_files()));
+			/* flush all of buffer */
+			gfs_hook_flush_all();
+			/* all files may be accessed by the child process */
+			gfs_hook_mode_calc_digest_all();
 			pid = fork();
 		}
 		else
@@ -549,14 +568,44 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
- * vfork - this entry is needed for linux to avoid segfault.
+ * fork - flush all of iobuffer before fork().  This is necessary to
+ * correctly execute a shell script such as 'configure'.
  */
+pid_t
+__fork(void)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fork()\n"));
+	/* flush all of buffer */
+	gfs_hook_flush_all();
+	return syscall(SYS_fork);
+}
+
+pid_t
+_fork(void)
+{
+	_gfs_hook_debug_v(fputs("Hooking _fork\n", stderr));
+	return (__fork());
+}
+
+pid_t
+fork(void)
+{
+	_gfs_hook_debug_v(fputs("Hooking fork\n", stderr));
+	return (__fork());
+}
+
 #ifdef SYS_vfork
 pid_t
 __vfork(void)
 {
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __vfork()\n"));
-	/* SYS_fork is called instead of SYS_vfork. */
+	/* flush all of buffer */
+	gfs_hook_flush_all();
+	/* 
+	 * SYS_fork is called instead of SYS_vfork.  This is needed
+	 * for linux to avoid segfault in wrong configuration,
+	 * e.g. libpthread-not-hidden is not pre-loaded.
+	 */
 	return syscall(SYS_fork);
 }
 

@@ -100,7 +100,8 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 /*
  * gfs_file_buf management
  *
- * XXX - need to manage list of file descriptors exactly and more efficiently.
+ * XXX - need to manage list of opened file descriptors exactly to
+ * efficiently execute *_all() functions.
  */
 
 static int _gfs_hook_num_gfs_files;
@@ -108,13 +109,11 @@ static int _gfs_hook_num_gfs_files;
 static void
 gfs_hook_num_gfs_files_check(void)
 {
-	static pid_t client_pid = 0;
-	pid_t pid = getpid();
-
-	if (pid != client_pid) {
-		_gfs_hook_num_gfs_files = 0;
-		client_pid = pid;
-	}
+	/*
+	 * The number of file descriptors is not necessary to be
+	 * reset even when the process is forked.  Opened files by
+	 * the parent process can be accessed by the descendants.
+	 */
 }
 
 int
@@ -134,16 +133,9 @@ gfs_hook_num_gfs_files_inc(void)
 static void
 gfs_hook_num_gfs_files_dec(void)
 {
-#if 0
-	/*
-	 * XXX - To decrease the number of file descriptors opened by
-	 * this process, we need to manage list of file descriptors
-	 * not just the number.
-	 */
 	gfs_hook_num_gfs_files_check();
 	if (_gfs_hook_num_gfs_files > 0)
 		--_gfs_hook_num_gfs_files;
-#endif
 }
 
 /*
@@ -179,8 +171,8 @@ gfs_hook_release_fd()
 }
 
 /* re-assign a file descriptor greater than MIN_FD */
-int
-gfs_hook_replace_large_fd(int fd)
+static int
+gfs_hook_adjust_fd(int fd)
 {
 	int fd2;
 
@@ -215,7 +207,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	if (S_ISREG(st.st_mode))
 		fd = fcntl(fd, F_DUPFD, GFS_HOOK_MIN_FD);
 	else /* don't return a socket, to make select(2) work with this fd */
-		fd = gfs_hook_replace_large_fd(open("/dev/null", O_RDWR));
+		fd = gfs_hook_adjust_fd(open("/dev/null", O_RDWR));
 	if (fd == -1) {
 		save_errno = errno;
 		gfs_hook_delete_creating_file(gf);
@@ -264,7 +256,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	 * A new file descriptor is needed to identify a hooked file
 	 * descriptor.
 	 */
-	fd = gfs_hook_replace_large_fd(open("/dev/null", O_RDONLY));
+	fd = gfs_hook_adjust_fd(open("/dev/null", O_RDONLY));
 	if (fd == -1) {
 		save_errno = errno;
 		gfs_closedir(dir);
@@ -353,8 +345,6 @@ gfs_hook_clear_gfs_file(int fd)
 	  	/* fd is duplicated, skip closing the file. */
 		_gfs_hook_debug(fprintf(stderr,
 					"GFS: clear_gfs_file: skipped\n"));
-		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG)
-			gfs_hook_num_gfs_files_dec();
 	} else {
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
 			gfs_hook_delete_creating_file(gf);
@@ -377,7 +367,17 @@ gfs_hook_clear_gfs_file(int fd)
 
 /* XXX - apparently violate the layer */
 void
-gfs_hook_mode_calc_digest_force(void)
+gfs_hook_mode_calc_digest(GFS_File gf)
+{
+	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+}
+
+/*
+ * XXX - need to manage list of opened file descriptors exactly to
+ * efficiently execute *_all() functions.
+ */
+void
+gfs_hook_mode_calc_digest_all(void)
 {
 	int fd;
 	GFS_File gf;
@@ -385,7 +385,7 @@ gfs_hook_mode_calc_digest_force(void)
 	for (fd = 0; fd < MAX_GFS_FILE_BUF; ++fd)
 		if (((gf = gfs_hook_is_open(fd)) != NULL) &&
 		    (gfs_hook_gfs_file_type(fd) == GFS_DT_REG))
-			gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+			gfs_hook_mode_calc_digest(gf);
 	return;
 }
 
@@ -427,7 +427,6 @@ struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
 	if (gfs_hook_is_open(fd) == NULL)
 		return (NULL);
 	++_gfs_file_buf[fd]->refcount;
-	gfs_hook_num_gfs_files_inc();
 	return (_gfs_file_buf[fd]);
 }
 

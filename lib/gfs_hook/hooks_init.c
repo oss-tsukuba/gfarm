@@ -35,8 +35,10 @@ gfs_hook_initialize(void)
 	if (gfs_pio_set_local_check() != NULL)
 		gfs_pio_set_local(0, 1);
 
-	/* exexute close_all() and gfarm_terminate() at program termination */
-	atexit(gfarm_terminate);
+	/*
+	 * execute close_all() at program termination.
+	 * registering gfarm_terminate() will cause a problem of no such file.
+	 */
 	atexit(gfs_hook_close_all);
 
 	return (NULL);
