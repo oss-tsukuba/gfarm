@@ -12,7 +12,8 @@ post-distclean-hook:
 
 subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
-	for dir in $(SUBDIRS); do \
+	for dir in / $(SUBDIRS); do \
+		case $${dir} in /) continue;; esac; \
 		echo '[' making $${dir} ']'; \
 		if test -f $(srcdir)/$${dir}/Makefile.in; then \
 			( cd $${dir} && \

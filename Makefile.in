@@ -6,20 +6,18 @@ VPATH = @srcdir@
 GLOBUS_SUBDIRS = lib/libgfsl
 
 SUBDIRS = \
+	man \
 	include \
 	@globus_subdirs@ \
 	nslib \
-	`if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
-		-a -f "gfarmlib/@sysdep_dir@/Makefile"; \
-	 then echo gfarmlib/@sysdep_dir@; fi` \
+	lib \
 	gfarmlib \
 	gfarmd \
 	gfarm \
 	gfmd \
 	gfsd \
 	nstool \
-	gftool \
-	man
+	gftool
 
 include $(top_srcdir)/makes/subdir.mk
 
