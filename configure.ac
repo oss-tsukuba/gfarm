@@ -466,7 +466,7 @@ openldap_found=
 for extra_lib in "" "-lresolv" "-lbind"; do
 
 CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="$LIBS_SAVE ${ldap_libs} ${extra_lib}"
+LIBS="${ldap_libs} ${extra_lib} $LIBS_SAVE"
 
 AC_TRY_LINK([
 #include <lber.h>
