@@ -995,7 +995,7 @@ main(int argc, char **argv)
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMRUa:cdij:lmn:prv")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMRUa:cdij:lmn:prv?")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;

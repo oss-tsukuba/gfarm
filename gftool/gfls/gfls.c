@@ -531,7 +531,7 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1CFRSTdlrt")) != -1) {
+	while ((c = getopt(argc, argv, "1CFRSTdlrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
 		case 'C': option_output_format = OF_MULTI_COLUMN; break;

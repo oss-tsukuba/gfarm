@@ -34,7 +34,7 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "al")) != -1) {
+	while ((ch = getopt(argc, argv, "al?")) != -1) {
 		switch (ch) {
 		case 'a':
 			do_all = 1;

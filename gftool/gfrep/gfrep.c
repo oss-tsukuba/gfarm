@@ -559,7 +559,7 @@ main(argc, argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((ch = getopt(argc, argv, "bvH:D:I:s:d:l:P:")) != -1) {
+	while ((ch = getopt(argc, argv, "bvH:D:I:s:d:l:P:?")) != -1) {
 		switch (ch) {
 		case 'b':
 			bootstrap_method = 1;

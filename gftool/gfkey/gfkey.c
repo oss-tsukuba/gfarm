@@ -51,7 +51,7 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "cefl")) != -1) {
+	while ((ch = getopt(argc, argv, "cefl?")) != -1) {
 		switch (ch) {
 		case 'c':
 			mode = GFARM_AUTH_SHARED_KEY_CREATE;

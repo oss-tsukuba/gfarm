@@ -47,7 +47,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	while ((ch = getopt(argc, argv, "h:I:fr")) != -1) {
+	while ((ch = getopt(argc, argv, "h:I:fr?")) != -1) {
 		switch (ch) {
 		case 'h':
 			e = gfarm_stringlist_add(&host_list, optarg);

@@ -141,7 +141,7 @@ main(int argc, char **argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "I:")) != -1) {
+	while ((ch = getopt(argc, argv, "I:?")) != -1) {
 		switch (ch) {
 		case 'I':
 			section = optarg;

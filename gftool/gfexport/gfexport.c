@@ -127,7 +127,7 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:I:dg")) != -1) {
+	while ((ch = getopt(argc, argv, "H:I:dg?")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
