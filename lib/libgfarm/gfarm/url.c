@@ -185,11 +185,32 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 	free(dir);
 	if (e != NULL)
 		return (e);
+	/*
+	 * check whether parent directory is writable or not.
+	 * XXX this isn't enough yet, due to missing X-bits check.
+	 */
+	if (dir_canonic[0] != '\0') { /* XXX "/" is always OK for now */
+		struct gfarm_path_info pi;
+
+		e = gfarm_path_info_get(dir_canonic, &pi);
+		if (e != NULL) {
+			free(dir_canonic);
+			return (e);
+		}
+		e = gfarm_path_info_access(&pi, GFS_W_OK);
+		gfarm_path_info_free(&pi);
+		if (e != NULL) {
+			free(dir_canonic);
+			return (e);
+		}
+	}
 
 	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
 				strlen(basename) + 1); 
-	if (*canonic_pathp == NULL)
+	if (*canonic_pathp == NULL) {
+		free(dir_canonic);
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	/*
 	 * When the 'dir_canonic' is a null string, *canonic_pathp
