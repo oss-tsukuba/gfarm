@@ -163,7 +163,7 @@ the --with-openldap option.
   --prefix=directory
 
   specifies a destination directory for installation.  Default is
-  $HOME directory.  This is optional.
+  /usr/local directory.  This is optional.
 
 When you need to specify a compiler program explicitly, use the
 environment variable CC.  This is an example using gcc.
