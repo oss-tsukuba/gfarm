@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>16 Oct 2003</date></refentryinfo>
+<refentryinfo><date>21 Oct 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -139,10 +139,11 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 </para>
 <para>例:</para>
 <literallayout>
-	spool_server_cred_type user
+	spool_server_cred_type self
 </literallayout>
 <para>
 指定可能な <parameter>cred_type</parameter> としては、
+「<token>self</token>」、
 「<token>host</token>」、「<token>user</token>」、
 「<token>mechanism-specific</token>」があり、
 <token>spool_server_cred_service</token> および
@@ -150,6 +151,18 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 下記のように用います。
 </para>
 <variablelist>
+<varlistentry>
+<term><token>self</token></term>
+<listitem>
+<para>
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+<token>spool_server_cred_service</token> および
+<token>spool_server_cred_name</token> の
+指定を行ってはいけません。
+</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><token>host</token></term>
 <listitem>
@@ -169,6 +182,10 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 あります。また、ホスト名は、<command>gfhost</command> コマンドで指定した
 正式名と正確に一致している必要があります。ホスト別名は許されません。
 </para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_HOSTBASED_SERVICE に
+対応する機能です。
+</para>
 <para>例:</para>
 <literallayout>
 	spool_server_cred_type host
@@ -183,16 +200,23 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 ユーザ証明書を用いることを示します。
 ユーザのアカウント名を <token>spool_server_cred_name</token> で指定します。
 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
-現在、ユーザ名はローカルホストのアカウント名として解釈されますが、
-これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
-</para>
-<para>
-なお、ユーザ名と証明書の Distinguished Name の対応をとるため、
-``<filename>/etc/grid-security/grid-mapfile</filename>'' を用います。
-このファイルに、同一のユーザアカウントに対して2つ以上の Distinguished Name が
-設定されていた場合、2つ名以降の設定は無視されます。
 この指定を利用する際には、<token>spool_server_cred_service</token> の
 指定を行ってはいけません。
+</para>
+<para>
+現時点では、この機能の実装に、いくつかの実装上の制限事項があります。
+まず、ユーザ名はローカルホストのアカウント名として解釈されますが、
+これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
+ユーザ名と証明書の Distinguished Name の対応をとるため、
+``<filename>/etc/grid-security/grid-mapfile</filename>'' を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
+さらに、このファイル中で、同一のユーザアカウントに対して2つ以上の
+Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
+しまいます。
+</para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_USER_NAME に対応する機能です。
 </para>
 <para>例:</para>
 <literallayout>
@@ -209,6 +233,10 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 直接指定します。
 この指定を利用する際には、<token>spool_server_cred_service</token> の
 指定を行ってはいけません。
+</para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744) で Name Type として GSS_C_NO_OID を
+指定した場合に対応する機能です。
 </para>
 <para>例:</para>
 <literallayout>

@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>16 Oct 2004</date></refentryinfo>
+<refentryinfo><date>21 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -138,16 +138,30 @@ side needs to specify the following one line.
 </para>
 <para>Example:</para>
 <literallayout>
-	spool_server_cred_type user
+	spool_server_cred_type self
 </literallayout>
 <para>
 The possible types of the <parameter>cred_type</parameter> are
+``<token>self</token>'', 
 ``<token>host</token>'', ``<token>user</token>'' and 
 ``<token>mechanism-specific</token>''.
 And those are used with <token>spool_server_cred_service</token>
 and <token>spool_server_cred_name</token> statement as follows:
 </para>
 <variablelist>
+<varlistentry>
+<term><token>type</token></term>
+<listitem>
+<para>
+This keyword specifies that a certificate that currently the user
+has is used.
+You must not use either
+<token>spool_server_cred_service</token> or
+<token>spool_server_cred_name</token> statement,
+if you are using this type.
+</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><token>host</token></term>
 <listitem>
@@ -171,6 +185,10 @@ And the Common Name field must be ``CN=SERVERNAME/HOSTNAME'' format.
 Also the hostname must exactly match with the canonical name configured by
 the <command>gfhost</command> command. Any alias hostnames are not allowed.
 </para>
+<para>
+This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
+(RFC2743/RFC2744).
+</para>
 <para>Example:</para>
 <literallayout>
 	spool_server_cred_type host
@@ -187,19 +205,26 @@ The accout name of the user may be specified by
 <token>spool_server_cred_name</token> statement.
 If the accout name is omitted, the user who invoked the command
 will be used by default.
-Currently, the account name is interpreted as an account on the local host,
-but this is a bug, and will be changed to a gfarm global user name
-in the future.
-</para>
-<para>
-To map from the account name to a Distinguished Name of a certificate,
-file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
-If there are multiple Distinguished Names per one account in this file,
-only first Distinguished Name is used, and rest Distinguished Names for
-the account are ignored.
 You must not specify a service name by
 <token>spool_server_cred_service</token> statement, if you are using
 any user certificate.
+</para>
+<para>
+Currently, there are several implementation limits in this feature.
+First, the account name is interpreted as an account on the local host,
+but this is a bug, and will be changed to a gfarm global user name
+in the future.
+Second, to map from the account name to a Distinguished Name of a certificate,
+file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
+Thus, if there isn't such file, or if the user isn't specified in this file,
+this feature cannot be used.
+Third, if there are multiple Distinguished Names per one account in this file,
+only first Distinguished Name is used, and rest Distinguished Names for
+the account are ignored.
+</para>
+<para>
+This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
+(RFC2743/RFC2744).
 </para>
 <para>Example:</para>
 <literallayout>
@@ -217,6 +242,10 @@ is treated as a raw X.509 Distinguished Name as a server's certificate.
 You must not specify a service name by
 <token>spool_server_cred_service</token> statement, if you are using
 this type.
+</para>
+<para>
+This feature corresponds to a case that GSS_C_NT_USER_NAME is specified
+as a Name Type in GSSAPI (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
 <literallayout>
