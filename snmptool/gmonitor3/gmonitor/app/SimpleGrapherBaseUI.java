@@ -93,7 +93,7 @@ public class SimpleGrapherBaseUI {
 	JCheckBoxMenuItem menuItemDifferentialMode = new JCheckBoxMenuItem("Diff");
 	JCheckBoxMenuItem menuItemTotal = new JCheckBoxMenuItem("Total...");
 	JCheckBoxMenuItem menuItemAutoUpdate = new JCheckBoxMenuItem("AutoUpdate...");
-	JMenuItem menuItemRepaint = new JMenuItem("Redraw");
+	JMenuItem menuItemRepaint = new JMenuItem("Refresh");
 
 	// panelUnit
 	JCheckBox checkTotal = new JCheckBox("Total...");
@@ -129,7 +129,7 @@ public class SimpleGrapherBaseUI {
 	JLabel labelSecond = new JLabel("Sec.");
 	JTextField textBeginTime = new JTextField(10);
 	JTextField textRange = new JTextField(10);
-	JButton buttonUpdateNow = new JButton("Redraw");
+	JButton buttonUpdateNow = new JButton("Refresh");
 	JButton buttonFileOpen = new JButton("Open Files...");
 
 	// export to be controlled component.
@@ -198,7 +198,7 @@ public class SimpleGrapherBaseUI {
 		menuItemRaw.setToolTipText("Do not resample");
 		menuItemInterpolate.setToolTipText("v=v0+(v1-v0)/(t1-t0)*(t-t0), t0<t<=t1");
 		menuItemBefore.setToolTipText("v=v0, t0<=t<t1");
-		menuItemRepaint.setToolTipText("Redraw graph and Fix window");
+		menuItemRepaint.setToolTipText("Refresh graph");
 		
 		// graph
 		graphPane.setToolTipText("Left double click: x2, Right single click: /2, Right double click: Reset");
@@ -214,8 +214,8 @@ public class SimpleGrapherBaseUI {
 		checkDifferentialMode.setToolTipText(menuItemDifferentialMode.getToolTipText());
 		checkAutoUpdate.setToolTipText(menuItemFileAutoUpdate.getToolTipText());
 		
-		textBeginTime.setToolTipText("Set \"yyyy/MM/dd HH:mm:ss\" and click Redraw");
-		textRange.setToolTipText("Set range (second) to display and click Redraw");
+		textBeginTime.setToolTipText("Set \"yyyy/MM/dd HH:mm:ss\" and click Refresh");
+		textRange.setToolTipText("Set range (second) to display and click Refresh");
 		buttonFileOpen.setToolTipText(menuItemFileOpen.getToolTipText());
 		buttonUpdateNow.setToolTipText(menuItemRepaint.getToolTipText());
 	}
