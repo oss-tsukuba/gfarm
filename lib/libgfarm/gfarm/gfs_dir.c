@@ -125,7 +125,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 	static char env_name[] = "GFS_PWD=";
 	static char *env = NULL;
 	static int env_len = 0;
-	int len, need_realloc = 0;
+	int len;
 	char *tmp;
 
 	len = 1 + strlen(canonic_dir) + 1;
@@ -145,8 +145,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 		env_len = env == NULL ? 0 : strlen(env) + 1;
 		/* XXX It's unsure whether realloc() is ok or not */
 	}
-	need_realloc = env_len < len;
-	if (need_realloc) {
+	if (env_len < len) {
 		tmp = realloc(env, len);
 		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
