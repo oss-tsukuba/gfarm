@@ -95,11 +95,12 @@ main(argc, argv)
 	} else {
 		/* replicate a whole file */
 		if (hostfile == NULL) {
-			fprintf(stderr, "%s: -H <hostfile> option is required\n",
+			fprintf(stderr, "%s: -H <hostfile> is required\n",
 				program_name);
 			exit(1);
 		}
-		e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab, &error_line);
+		e = gfarm_hostlist_read(hostfile, &nhosts, &hosttab,
+					&error_line);
 		if (e != NULL) {
 			if (error_line != -1)
 				fprintf(stderr, "%s: line %d: %s\n",

@@ -11,12 +11,29 @@ gfrep \- replicate a Gfarm file
 .I hostfile
 .I gfarm-URL
 
+.B gfrep
+.B \-I
+.I fragment-index
+[
+.B \-s
+.I src-node
+]
+.B \-d
+.I dest-node
+.I gfarm-URL
+
 .SH DESCRIPTION
 
-\fBgfrep\fP create a replica of a Gfarm file \fIgfarm-URL\fP on
+\fBgfrep\fP creates a replica of a Gfarm file \fIgfarm-URL\fP on
 filesystem nodes listed in the \fIhostfile\fP.  The total number of
 file fragments should be equal to the number of nodes listed in the
 \fIhostfile\fP.
+
+With the \fB-I\fP option, \fBgfrep\fP creates a replica of a specified
+file fragment \fIfragment-index\fP of a Gfarm file \fIgfarm-URL\fP on
+the filesystem node \fIdest-node\fP specified by the -d option.  When
+the -s option is specified, the file fragment is copied from the
+\fIsrc-node\fP.
 
 .SH OPTIONS
 
@@ -28,6 +45,24 @@ specifies a list of filesystem nodes that will be replicated to.
 \fIhostfile\fP consists of a filesystem node in each line.
 .br
 if ``-'' is specified, standard input is used to read the host list.
+.TP
+.B \-I
+.I fragment-index
+.br
+specifies a file fragment.  It is a fragment index or a section name
+describing its architecture.
+.TP
+.B \-s
+.I src-node
+.br
+specifies a source filesystem node from which the file fragment will
+be copied.
+.TP
+.B \-d
+.I dest-node
+.br
+specifies a destination filesystem node to which the file fragment
+will be copied.
 .TP
 .B \-?
 .br
