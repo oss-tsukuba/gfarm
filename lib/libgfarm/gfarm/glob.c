@@ -342,7 +342,7 @@ gfs_glob(char *pattern,	gfarm_stringlist *paths, gfs_glob_t *types)
 			len = strcspn(s, "/");
 			pattern += 1 + len;
 		}
-		p = malloc(1 + len + strlen(pattern));
+		p = malloc(1 + len + strlen(pattern) + 1);
 		if (p == NULL) {
 			e = GFARM_ERR_PATHNAME_TOO_LONG;
 		} else {
