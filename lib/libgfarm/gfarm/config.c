@@ -1023,7 +1023,7 @@ main()
 #endif
 
 char *gfarm_debug_command;
-char gfarm_debug_pid[GFARM_INT64STRLEN];
+char gfarm_debug_pid[GFARM_INT64STRLEN + 1];
 
 static int
 gfarm_call_debugger(void)
