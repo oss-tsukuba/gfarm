@@ -42,9 +42,9 @@ where_is_section_copy(char *gfarm_url)
 		e = gfarm_file_section_info_get_sorted_all_serial_by_file(
 		    gfarm_file, &nsections, &sections);
 	}
+	gfs_stat_free(&st);
 	if (e != NULL) {
 		free(gfarm_file);
-		gfs_stat_free(&st);
 		fprintf(stderr, "%s: %s\n", gfarm_url, e);
 		return (e);
 	}
