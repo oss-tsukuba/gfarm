@@ -19158,12 +19158,12 @@ fi
 echo "$as_me:$LINENO: result: using \"${with_openldap}\" as openldap root directory" >&5
 echo "${ECHO_T}using \"${with_openldap}\" as openldap root directory" >&6
 
-ldap_libs="-lldap -llber"
 if test x"${with_openldap}" = x"/usr"; then
   ldap_includes=""
+  ldflags=""
 else
   ldap_includes="-I${with_openldap}/include"
-  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
+  ldflags="-R${with_openldap}/lib -L${with_openldap}/lib"
 fi
 
 # OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
@@ -19176,10 +19176,11 @@ CPPFLAGS_SAVE="$CPPFLAGS"
 LIBS_SAVE="$LIBS"
 
 openldap_found=
+for libs in "-lldap -llber" "-lldap"; do
 for extra_lib in "" "-lresolv" "-lbind"; do
 
 CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="${ldap_libs} ${extra_lib} $LIBS_SAVE"
+LIBS="${ldflags} ${libs} ${extra_lib} $LIBS_SAVE"
 
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19217,10 +19218,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
 	if test x"${extra_lib}" != x; then
 		echo "$as_me:$LINENO: result: using ${extra_lib} for LDAP" >&5
 echo "${ECHO_T}using ${extra_lib} for LDAP" >&6
-		ldap_libs="${ldap_libs} ${extra_lib}"
+		ldap_libs="${ldflags} ${libs} ${extra_lib}"
+	else
+		ldap_libs="${ldflags} ${libs}"
 	fi
 	openldap_found=yes
-	break
+	break 2
 
 else
   echo "$as_me: failed program was:" >&5
@@ -19229,12 +19232,15 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 
-done
+done # extra_lib
+done # libs
 if test x"${openldap_found}" != x"yes"; then
 	{ { echo "$as_me:$LINENO: error: openldap cannot be linked, aborted" >&5
 echo "$as_me: error: openldap cannot be linked, aborted" >&2;}
    { (exit 1); exit 1; }; }
 fi
+echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs}\" for ldap" >&5
+echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs}\" for ldap" >&6
 
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
