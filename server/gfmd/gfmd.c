@@ -265,22 +265,14 @@ file_table_add(int fd)
 int
 file_table_close(int fd)
 {
-	char *msg;
-	static char ub[] = "(";
-	static char ue[] = ") disconnected";
-
 	if (fd < 0 || fd >= file_table_size || file_table[fd].conn == NULL)
 		return (EBADF);
+
+	gflog_notice("disconnected", file_table[fd].user);
+
 	while (file_table[fd].jobs != NULL)
 		job_table_remove(file_table[fd].jobs->id, file_table[fd].user,
 				 &file_table[fd].jobs);
-	msg = malloc(sizeof(ub) - 1 + strlen(file_table[fd].user) +
-		sizeof(ue) - 1);
-	sprintf(msg, "%s%s%s", ub, file_table[fd].user, ue);
-	if (msg == NULL)	     
-		return (1);	
-	gflog_notice(msg, NULL);
-	free (msg);
 
 	file_table[fd].jobs = NULL;
 
