@@ -37,7 +37,7 @@ configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
 	-rm -rf ns/
-	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/../debian/tmp/usr
+	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/../debian/tmp/usr --with-mpi=/usr
 
 	touch configure-stamp
 
