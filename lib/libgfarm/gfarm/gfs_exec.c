@@ -30,7 +30,7 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	/* determine the architecture */
 	e = gfarm_host_get_canonical_self_name(&hostname);
 	if (e == GFARM_ERR_UNKNOWN_HOST)
-		return ("not file system node");
+		return ("not a file system node");
 	else if (e != NULL)
 		return (e);
 	
@@ -41,12 +41,15 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
 		arch = gfarm_host_info_get_architecture_by_host(hostname);
 		if (arch == NULL)
-			return ("not file system node");
+			e = "not a file system node";
 	} else {
 		arch = strdup("0");
 		if (arch == NULL)
-			return (GFARM_ERR_NO_MEMORY);
+			e = GFARM_ERR_NO_MEMORY;
 	}
+	gfs_stat_free(&gs);
+	if (e != NULL)
+		return (e);
 
 	/* check the metadata */
 	e = gfs_stat_section(url, arch, &gstat);
