@@ -140,9 +140,10 @@ gfs_chdir_canonical(const char *canonic_dir)
 
 	len += sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
 	tmp = getenv("GFS_PWD");
-	if (tmp != env) { /* changed by an application instead of this func */
+	if (tmp != NULL && tmp != env + sizeof(env_name) - 1) {
+		/* changed by an application instead of this func */
 		env = tmp; /* probably already free()ed */
-		env_len = env == NULL ? 0 : strlen(env) + 1;
+		env_len = strlen(tmp) + 1;
 		/* XXX It's unsure whether realloc() is ok or not */
 	}
 	if (env_len < len) {
