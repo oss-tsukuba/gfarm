@@ -561,8 +561,8 @@ main(int argc, char **argv)
 			if (last >= 0 && gfs_glob_elem(&types, last) ==
 			    GFS_DT_UNKNOWN) {
 				/*
-				 * this only happens if argv[i] doesn't
-				 * contain any meta character.
+				 * this only happens if there is no file
+				 * which matches with argv[i].
 				 * In such case, the number of entries which
 				 * were added by gfs_glob() is 1.
 				 */
