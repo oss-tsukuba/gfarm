@@ -1,0 +1,367 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_pio_readline</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-PIO-READLINE.3"
+></A
+>gfs_pio_readline</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_pio_readline&nbsp;--&nbsp;一行読み込み</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_pio_readline</TT
+></CODE
+>(GFS_File <TT
+CLASS="PARAMETER"
+><I
+>f</I
+></TT
+>, char **<TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>, size_t *<TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+>, size_t *<TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>ファイル <TT
+CLASS="PARAMETER"
+><I
+>gf</I
+></TT
+>
+から、一行読み込みます。</P
+><P
+>引数 <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>
+は、最初は NULL で初期化されたポインタ変数のアドレスを指定します。
+関数 <TT
+CLASS="FUNCTION"
+>gfs_pio_readline()</TT
+> は、入出力に用いる
+バッファを動的に割り当て、そのアドレスをこのポインタ変数に記録します。
+引数 <TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+> は、0 で初期化した size_t 型の変数
+のアドレスを指定します。この変数は、バッファのサイズを記録するために
+使われます。
+あるいは、malloc(3) で割り当てたバッファを指すポインタのアドレスを
+引数 <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>
+に指定することもできます。この場合、
+引数 <TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+> 
+は、割り当てたバッファのサイズで初期化しておきます。
+行の長さがバッファのサイズを越える場合には、バッファは自動的に
+realloc(3) され、
+引数 <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>
+および
+引数 <TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+> 
+で指定された変数もそれに従って更新されます。
+ファイルを読み終わったら、このポインタを free(3) で解放する必要が
+あります。</P
+><P
+>引数 <TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>
+の指す変数には、読み込んだ長さを返します。
+この長さには、行末記号の分も含みます。</P
+><P
+>関数 gfs_pio_gets(3) と同様、この関数は行末の改行記号を削除しません。
+また、文字列の終わりを示す '\0' 文字を、常に付加します。
+また、
+引数 <TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>
+の指す変数に返った値を使えば、文字 '\0' を含む行を扱うこともできます。</P
+><P
+><SPAN
+CLASS="ACRONYM"
+>EOF</SPAN
+>
+は、入力の長さが 0 文字であることで判断します。</P
+><P
+>この関数は、gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1) と
+等価です。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>正常終了を示します。</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>メモリ不足のため処理を中止しました。</P
+><P
+>この場合も、<TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+> の指すポインタ変数の
+指す領域を free(3) する必要がありますから注意してください。</P
+></DD
+><DT
+>その他</DT
+><DD
+><P
+>上記以外のエラーが生じたことを示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN66"
+></A
+><P
+><B
+>Example 1. <TT
+CLASS="FUNCTION"
+>gfs_pio_readline</TT
+> 関数の使用例</B
+></P
+><P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;stdio.h&#62;
+#include &#60;stdlib.h&#62;
+#include &#60;gfarm/gfarm.h&#62;
+
+int
+main(int argc, char **argv)
+{
+	char *e;
+	GFS_File gf;
+	size_t bufsize = 0, len;
+	char *buffer = NULL;
+
+	e = gfarm_initialize(&#38;argc, &#38;argv);
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	if (argc &#60;= 1) {
+		fprintf(stderr, "missing gfarm filename\n");
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_open(argv[1], GFARM_FILE_RDONLY, &#38;gf);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[1], e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_set_view_global(gf, 0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_set_view_global: %s\n",
+		    argv[1], e);
+		return (EXIT_FAILURE);
+	}
+
+	while ((e = gfs_pio_readline(gf, &#38;buffer, &#38;bufsize, &#38;len))
+	    == NULL &#38;&#38; len &#62; 0) {
+		printf("&#60;%6d/%6d &#62;%s", len, bufsize, buffer);
+	}
+	if (buffer != NULL)
+		free(buffer);
+	if (e != NULL) {
+		fprintf(stderr, "ERROR: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_close(gf);
+	if (e != NULL) {
+		fprintf(stderr, "gfs_pio_close: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	return (EXIT_SUCCESS);
+}</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getline</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_gets</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readdelim</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>
