@@ -1,3 +1,9 @@
+gfarm (1.0b1-3) unstable; urgency=low
+
+  * faild dependencies
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 28 Apr 2003 15:13:12 +0900
+
 gfarm (1.0b1-2) unstable; urgency=low
 
   * change package name to gfarm-gfptool from gfarm 
