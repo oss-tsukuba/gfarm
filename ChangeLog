@@ -1,4 +1,353 @@
+2003-02-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* README.hook.en: README file for gfs_hook libraries.
+
+	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks.c (__access):
+	use gfs_access().
+
+	* gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_misc.c, include/gfs.h:
+	Added gfs_access().
+
+	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks_fstat.c:
+	Fixed a type mismatch of a debug message.
+
+	* lib/gfs_hook/hooks.c: Added a hook entry for execve.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	Added a hook entry for dup2().
+
+2003-02-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio_section.c (gfs_pio_view_section_close):
+	Fixed a bug such that file size in filesystem metadata is not correct when file offset is not set to the last of the file.
+
+2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_fstat.c: Use gfs_fstat().
+
+	* gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_pio_section.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_global.c, include/gfs.h:
+	Added gfs_fstat().
+	gfs_pio_misc.c (gfs_stat_section): Plugged a memory leak.
+
+2003-02-14  soto  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_pio_misc.c: - fixed memory leak.
+	- returns error when #replied hosts < #requested hosts
+
+2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hook_test.c: Just fixed a typo.
+
+2003-02-14  soto  <sotoyama@sra.co.jp>
+
+	* gfarmlib/schedule.c:
+	Fixed bug gfreg faults. In previous revision, freed area not allocated.
+
+2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_unlink.c:
+	Even when deletion of some file fragments fails, delete the section information when there is no section copy information.
+
+	* lib/gfs_hook/hook_test.c:
+	Don't display user name and group name since both uid and gid are not obtained by gfs_stat().
+
+	* gfptool/gfcp/gfcp.c: Added a missing header file.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_stat.c (__stat, __lstat):
+	use gfs_stat, gfs_stat_section, or gfs_stat_index depending on the sitution.
+
+	* gfarmlib/gfs_pio_misc.c, include/gfs.h:
+	Added new functions: gfs_stat_section() and gfs_stat_index().
+
+	* gfarmlib/gfs_unlink.c:
+	Clean up collapsed filesystem metadata that does not have any section copy information.
+
+	* gfarmlib/gfs_unlink.c, gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	When removing all file replicas, remove the section information also.
+
+	* gfarmlib/gfs_unlink.c, gftool/gfrm/gfrm.c, include/gfs.h:
+	Added the -f option.  With -f option, delete file fragments even if they are the last fragments.
+
+	* lib/gfs_hook/hooks_64.c:
+	Deleted an entry of _IO_file_seek to avoid duplicate definition when compiling statically.
+	According to the ChangeLog of glibc, even __open, __close, __write, and __read cannot be hooked whenever they are called within the glibc library after the change at August 2, 2002.  The only way to hook them seems to be a static compilation.
+
+2003-02-13  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfreg/gfreg.c: Initial support for a directory destination.
+	XXX - Since gfs_stat() cannot work correctly for a directory at this time, there is an ad hoc code to check it.
+
+	* INSTALL.en, INSTALL.ja:
+	Updated the description; make gfregister, sign-on, and import from a group of files.
+
+	* gftool/gfreg/Makefile: include gfptool.mk instead of prog.mk.
+
+	* man/man8/gfmd.8, man/man8/gfsd.8, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8:
+	Added the description how to execute as a user process.
+
+	* man/ja/man5/gfarm.conf.5: Fixed a typo.
+
+2003-02-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c:
+	fix longstanding bugs. found by sotoyama-san's test case.
+
+2003-02-10  soto  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_pio_misc.c, gfarmlib/schedule.c, gfarmlib/schedule.h:
+	Added gfarm_schedule_search_idle_new() to schedule.c that searches near hosts using functions defined in gfs_client_udp.c.
+
+2003-02-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/gfptool.mk, makes/man.mk, makes/prog.mk, makes/subdir.mk, nslib/Makefile.in, nstool/file/Makefile.in, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, include/Makefile.in, lib/gfs_hook/Makefile.in, lib/gfs_hook/sysdep/linux/Makefile.in:
+	make "make gfregister" work recursively from the top directory
+
+2003-02-07  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* gftool/gfreg/gfreg.c:
+	When going "gfreg foo gfarm:", the previous version create blank file name gfarm file.
+	In this case, create gfarm:foo assumed as "foo".
+
+2003-02-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja, debian/rules, makes/var.mk:
+	move example binaries from $(prefix)/bin/example/ to $(prefix)/bin/
+
+	* makes/gfptool.mk: do not call "gfreg" at "make install", because:
+	- it is impossible to make gfarm binary package (e.g. rpm, deb) with that way.
+	- it is inconsistent with our current INSTALL.* document.
+	  (Our installation document says that gfmd and gfsd should be run
+	   after "make install").
+	add "make gfregister" target for "gfreg".
+
+2003-02-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3:
+	GFS_FILE_RDONLY should be GFARM_FILE_RDONLY.
+
+	* gfarmlib/config.c:
+	Added redirection feature of stdout and stderr to a gfarm file.
+	XXX - This redirection relys on the current implementation of local storage manupulation and check-sum calculation.
+	XXX - When gfarm_terminate() is not called, a redirected gfarm file will not be a complete file, although can be fixed by gfrun.
+	usage: prog --gfarm_index <index> --gfarm_nfrags <nfrags> --gfarm_stdout gfarm:out --gfarm_stderr gfarm:err
+
+2003-02-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hook_test.c: Added gfarm_terminate().
+
+	* lib/gfs_hook/hooks_fstat.c: Eliminated compiler warnings.
+
+	* lib/gfs_hook/hooks_subr.c: Added a comment.
+	Changed debug messages slightly.
+
+	* lib/gfs_hook/hooks_fstat.c: Fixed a compile error.
+
+	* lib/gfs_hook/sysdep/linux/Makefile.in, lib/gfs_hook/sysdep/linux/fxstat.c, lib/gfs_hook/sysdep/linux/fxstat64.c, lib/gfs_hook/sysdep/linux/lxstat.c, lib/gfs_hook/sysdep/linux/lxstat64.c, lib/gfs_hook/sysdep/linux/xstat64.c, lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	Added lstat and fstat hooks.
+
+2003-02-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/main.c: add more comments about the race condition.
+
+	* gfsd/main.c:
+	Fix a race condition that SIGCHLD is delivered just before select(2)
+	in gfs_server_command_io(). If this happens, gfsd waits forever at
+	the select(2). Problem reported by naotaka-san.
+
+2003-02-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks_common.c:
+	Changed a behavior for hooking the open syscall.
+	If the number of fragments is not the same as the number of parallel processes, do not change to the local file view.
+
+	* lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c:
+	Fixed a compile error.
+
+2003-02-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	declare gfs_hook_initialize() in hooks_subr.h
+
+	* lib/gfs_hook/hooks_64.c: - hook _IO_file_seek() on linux,
+	  otherwise __llseek() called by _IO_file_seek() cannot be hooked,
+	  probably because of symbol versioning reason.
+	  XXX - it is better to find cleaner way...
+	- hook llseek()
+	- hook __libc_lseek64() on linux
+
+	* lib/gfs_hook/Makefile.in: add some missing dependency.
+	fix a problem that -DDEBUG wasn't passed for hooks_64.do.
+
+	* lib/gfs_hook/hook_test.c:
+	unbuffer stdout to make the output sync with truss/strace even if redirected
+
+	* include/gfs_hook.h, lib/gfs_hook/hooks_subr.c: do not hook fseek()
+
+2003-02-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfhost/gfhost.c:
+	Fixed a segfault when the -D option is not specified.
+
+	* gfarmlib/auth_server.c:
+	Fixed a bug of a log message when the authentication fails.
+
+	* include/Makefile.in:
+	Even if removing symlinks fail, continue to 'make'.
+
+	* gftool/gfreg/gfreg.c:
+	Modified an error message for the resistration failure.
+
+	* gftool/gfhost/gfhost.c, gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	Added the -a <architecture> option and -D <domainname> option for listing hosts.
+	The -D option to dump the filesystem node information is replaced with the -M option.
+
+	* include/gfs_hook.h:
+	fstat() can be hooked by lstat() on at least a solaris platform.
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/Makefile.in, lib/gfs_hook/hook_test.c, lib/gfs_hook/hook_test_mpi.c, lib/gfs_hook/hooks.c:
+	Added test programs for syscall hooking, which are generated by 'make test' or 'make mpitest'.
+	More quiet debug messages when linking gfs_hook_debug.o or gfs_hook_mpi_debug.o.
+	Added hook functions for unlink and _unlink.
+
+2003-01-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* include/gfs_hook.h, lib/gfs_hook/hooks_subr.c:
+	Added gfs_fseek_hook().
+
+	* Makefile.in: Added gfptool.
+
+2003-01-30  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* makes/gfptool.mk, gftool/example/Makefile, gfptool/gfsplck/gfsplck.c, gfptool/gfwc/Makefile, gfptool/gfwc/gfwc.c, gfptool/gfcp_hook/Makefile, gfptool/gfcp_hook/gfcp_hook.c, gfptool/gfgrep/Makefile, gfptool/gfgrep/gfgrep.c, gfptool/gfsplck/Makefile, gfptool/gfcombine/gfcombine.c, gfptool/gfcombine_hook/Makefile, gfptool/gfcombine_hook/gfcombine_hook.c, gfptool/gfcp/Makefile, gfptool/gfcp/gfcp.c, bench/thput-gfpio/Makefile, gfptool/Makefile, gfptool/gfcombine/Makefile:
+	Moved gfarm parallel tools to a new location, gfptool.
+
+	* gfarmlib/config.c:
+	Fixed a problem such that gfsd and gfmd result in segfault.
+
+	* gfarmlib/config.c:
+	When a client node is also a filesystem node, try to obtain gfarm_spool_root by locally-running gfsd instead of the default path.
+
+2003-01-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/error.c:
+	try to avoid a compilation error reported by yamamoto-san
+
+2003-01-29  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c:
+	Fixed a problem such that a program whose fopen("w") is hooked creates an incomplete Gfarm file.
+
+	* INSTALL.en, INSTALL.ja:
+	Catched up with the modification of command-line arguments of gfhost.
+
+2003-01-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client_udp.c: - remove obsolete code fragments.
+	- add missing "static" for an internal function.
+	- do not output anything to stderr in a library function.
+
+	* gfarmlib/error.c:
+	use strerror() if linux && glibc>=3.2, to shut up the following warnings
+	on RedHat-8.0:
+	`sys_errlist' is deprecated; use `strerror' or `strerror_r' instead
+	`sys_nerr' is deprecated; use `strerror' or `strerror_r' instead
+
+	XXX - perhaps it's time to switch traditional error number scheme?
+
+	* gftool/gfhost/gfhost.c:
+	change meanings of some options as discussed with tatebe-san.
+	(default):	list with long format	->	list hosts which are up
+	-l:		dump metadb		->	list with long format
+	-u:		list hosts which are up	->	<not used>
+	-L:		list load average	->	sort by load average
+	-r:		register/restore metadb	->	reverse order sort
+	-D:		<not used>		->	dump metadb
+	-H:		<not used>		->	list load average
+	-R:		<not used>		->	register/restore metadb
+
+2003-01-28  soto  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_client_udp.c: fix warning at compile on linux.
+
+2003-01-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfhost/gfhost.c:
+	just a cosmetic fix: do not access uninitialized variable.
+
+	* gftool/gfhost/gfhost.c: portability fix:
+	<sys/socket.h> is needed for AF_INET and struct sockaddr,
+	although compilation doesn't fail on linux.
+
+	* gftool/gfhost/gfhost.c: fix warning at compile on linux.
+
+2003-01-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man1/gfreg.1, man/man1/gfreg.1: Updated the description.
+
+	* gftool/gfkey/gfkey.c: Added a missing include file.
+
+	* gfarmd/gfd_cmd.y, gfarm/cmd.y: Added a missing semicolon.
+
+	* gfarmlib/hostspec.h, gfarmlib/metadb_ldap.c, gfarmlib/param.c, gfarmlib/param.h, gfarmlib/sockopt.c, gfarmlib/sockopt.h, gfarmlib/url.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_local.c, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_pio_remote.c, gfarmlib/gfs_pio_section.c, gfarmlib/host.c, gfarmlib/hostspec.c, gfarmlib/error.c, include/gfarm_error.h, include/gfarm_metadb.h, include/gfarm_misc.h, include/gfs.h:
+	Eliminated warnings related to the const qualifier.
+
+	* gftool/gfreg/gfreg.c: Fixed typo.
+	Try to determine index and nfrags using gfs_pio_get_node_{rank,size}.
+
+2003-01-27  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* gftool/gfreg/gfreg.c: vailable -h option to specify hostname.
+	change usage()
+
+2003-01-27  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfsched/gfsched.c, man/ja/man1/Makefile, man/ja/man1/gfsched.1, man/man1/Makefile, man/man1/gfsched.1:
+	Added a manual page for gfsched.
+
+	* man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	Added the description about the -h option.
+
+	* gftool/gfrm/gfrm.c:
+	'gfrm -h hostname gfarm_url' removes file replicas of gfarm_url on hostname.
+
+	* gfarmlib/Makefile.in, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_unlink.c, include/gfs.h:
+	gfs_unlink() and gfs_unlink_section_replica() are moved to gfs_unlink.c.
+	gfs_unlink_replicas_on_host() is added to remove file replicas of a file on a specific filesystem node.
+
+	* gfsd/main.c:
+	Reverted to the version 1.41.  Without a connection to a meta server, it is not possible to replicate a binary executable before execution.
+
+2003-01-24  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/Makefile.in, gfarmlib/gfs_exec.c, include/gfs.h, gfsd/main.c:
+	Added a new function, gfs_execve, to execute a Gfarm file.
+	XXX - no test yet.
+
+2003-01-23  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_client_gsi.c:
+	Changed the default gfarm-usermap file to /etc/grid-security/grid-mapfile.
+
+	* gfarmlib/gfs_pio_misc.c (gfarm_url_fragments_replicate):
+	When the number of destination filesystem nodes is not the same as the number of source filesystem nodes, the hostlist of destination nodes will be expanded in a cyclic manner.  Before this revison, it is errorous.
+
+2003-01-22  soto  <sotoyama@sra.co.jp>
+
+	* gftool/gfhost/gfhost.c:
+	moved load average handling functions to gfarmlib/gfs_client_udp.c
+
+	* gfarmlib/gfs_client_udp.c:
+	moved load average handliing functions from gftool/gfhost/gfhost.c
+
+	* gfarmlib/gfs_client.h:
+	moved load average handling functions from gftool/gfhost/gfhost.c
+
+	* gfarmlib/Makefile.in:
+	mov load average handling functions from gftool/gfhost/gfhost.c
+
 2003-01-22  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* man/ja/man1/gfwhere.1, man/man1/gfwhere.1:
 	Added the description of the -I option.
@@ -88,21 +437,21 @@
 
 	* gftool/example/gfcp/gfcp.c: Fixed a fatal typo, strcmp vs strcpy.
 
-2002-12-09  takamiya  <takamiya@b1k-1.a02.aist.go.jp>
+2002-12-09  takamiya  <takamiya@matsulab.is.titech.ac.jp>
 
 	* debian/changelog, debian/control, debian/gfarm-server.init, debian/rules:
 	cvs 20021101 upstream release.
 
-2002-12-06  soto  <soto@b1k-1.a02.aist.go.jp>
+2002-12-06  soto  <sotoyama@sra.co.jp>
 
 	* package/redhat/gfarm.spec: change package category
 
-2002-12-05  soto  <soto@b1k-1.a02.aist.go.jp>
+2002-12-05  soto  <sotoyama@sra.co.jp>
 
 	* gfarmlib/gfs_pio_misc.c: change program registratin priority
 	use local host first
 
-2002-12-04  soto  <soto@b1k-1.a02.aist.go.jp>
+2002-12-04  soto  <sotoyama@sra.co.jp>
 
 	* package/redhat/gfarm.spec: gfarm rpm spec file for:
 		gfarm-doc
