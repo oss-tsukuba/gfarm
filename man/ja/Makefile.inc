@@ -1,1 +1,1 @@
-mandir = $(default_mandir)/ja
+mandir = $(ja_mandir)
