@@ -479,6 +479,9 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 
 	if (!gfs_hook_is_url(filename, &url)) {
 		if (gfs_hook_num_gfs_files() > 0) {
+			_gfs_hook_debug(
+			    fprintf(stderr, "GFS: __execve(%s) - fork\n",
+			    filename));
 			gfs_hook_mode_calc_digest_force();
 			pid = fork();
 		}
