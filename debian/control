@@ -12,13 +12,6 @@ Depends: ${shlibs:Depends}, gfarmd, gfmd
 Description: The gfarm server.
  The gfarm tools.
 
-Package: gfarmd
-Section: net
-Architecture: i386
-Depends: ${shlibs:Depends}
-Description: The gfarm server.
- The gfarm server.
-
 Package: gfmd
 Section: net
 Architecture: i386
