@@ -247,7 +247,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		gf->pi.status.st_nsections = 0;
 	}
 	*gfp = gf;
-	gfs_uncachedir();
 
 	e = NULL;
  finish:

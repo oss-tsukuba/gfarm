@@ -9,6 +9,8 @@
 #include "gfs_pio.h"	/* gfarm_path_expand_home */
 #include "gfutil.h"
 
+#include "dircache.h"
+
 static char *gfarm_current_working_directory;
 
 char *
@@ -57,8 +59,6 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 	e = gfarm_path_info_set(canonic_path, &pi);
 	free(canonic_path);
 
-	gfs_uncachedir();
-
 	return (e);
 }
 
@@ -66,7 +66,6 @@ char *
 gfs_rmdir(const char *pathname)
 {
 	char *canonic_path, *e, *e_tmp;
-	int need_uncachedir = 0;
 	struct gfarm_path_info pi;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
@@ -100,16 +99,11 @@ gfs_rmdir(const char *pathname)
 		goto error_closedir;
 	}
 	e = gfarm_path_info_remove(canonic_path);
-	if (e == NULL)
-		need_uncachedir = 1;
 
  error_closedir:
 	e_tmp = gfs_closedir(dir);
 	if (e == NULL)
 		e = e_tmp;
-	/* gfs_uncachedir() needs to be called after gfs_closedir() */
-	if (need_uncachedir)
-		gfs_uncachedir();
  error_free_canonic_path:
 	free(canonic_path);
 	return (e);
@@ -199,7 +193,9 @@ finish:
 struct node {
 	struct node *parent;
 	char *name;
-	int is_dir;
+	int flags;
+#define		NODE_FLAG_IS_DIR	1
+#define		NODE_FLAG_MARKED	2
 	union node_u {
 		struct dir {
 			struct gfarm_hash_table *children;
@@ -230,7 +226,7 @@ init_dir_node(struct node *n, const char *name, int len)
 {
 	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
-	n->is_dir = 1;
+	n->flags = NODE_FLAG_IS_DIR;
 	n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
 	return (n);
@@ -243,71 +239,155 @@ init_file_node(struct node *n, const char *name, int len)
 {
 	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
-	n->is_dir = 0;
+	n->flags = 0;
 	return (n);
 }
 
-static struct node *
+static void
+for_each_node(struct node *n, void (*f)(void *, struct node *), void *cookie)
+{
+	if ((n->flags & NODE_FLAG_IS_DIR) != 0) {
+		struct gfarm_hash_iterator i;
+		struct gfarm_hash_entry *child;
+
+		for (gfarm_hash_iterator_begin(n->u.d.children, &i);
+		    (child = gfarm_hash_iterator_access(&i)) != NULL;
+		    gfarm_hash_iterator_next(&i)) {
+			for_each_node(gfarm_hash_entry_data(child), f, cookie);
+		}
+	}
+	(*f)(cookie, n);
+}
+
+static void
+free_node(void *cookie, struct node *n)
+{
+	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
+		gfarm_hash_table_free(n->u.d.children);
+	free(n->name);
+}
+
+static void
+recursive_free_nodes(struct node *n)
+{
+	for_each_node(n, free_node, NULL);
+}
+
+enum gfarm_node_lookup_op {
+	GFARM_INODE_LOOKUP,
+	GFARM_INODE_CREATE,
+	GFARM_INODE_REMOVE,
+	GFARM_INODE_MARK
+};
+
+/*
+ * if (op != GFARM_INODE_CREATE), (is_dir) may be -1,
+ * and that means "don't care".
+ */
+char *
 lookup_node(struct node *parent, const char *name,
-	    int len, int is_dir, int create)
+	int len, int is_dir, enum gfarm_node_lookup_op op,
+	struct node **np)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
 	struct node *n;
 
-	if (!parent->is_dir)
-		return (NULL); /* not a directory */
+	if ((parent->flags & NODE_FLAG_IS_DIR) == 0)
+		return (GFARM_ERR_NOT_A_DIRECTORY);
 	if (len == 0) {
-		return (parent);
+		/* We don't handle GFARM_INODE_MARK for this case */
+		if (op == GFARM_INODE_REMOVE)
+			return (GFARM_ERR_INVALID_ARGUMENT);
+		*np = parent;
+		return (NULL);
 	} else if (len == 1 && name[0] == '.') {
-		return (parent);
+		/* We don't handle GFARM_INODE_MARK for this case */
+		if (op == GFARM_INODE_REMOVE)
+			return (GFARM_ERR_INVALID_ARGUMENT);
+		*np = parent;
+		return (NULL);
 	} else if (len == 2 && name[0] == '.' && name[1] == '.') {
-		return (parent->parent);
+		/* We don't handle GFARM_INODE_MARK for this case */
+		if (op == GFARM_INODE_REMOVE)
+			return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
+		*np = parent->parent;
+		return (NULL);
 	}
 	if (len > GFS_MAXNAMLEN)
 		len = GFS_MAXNAMLEN;
-	if (!create) {
+	if (op == GFARM_INODE_MARK) {
 		entry = gfarm_hash_lookup(parent->u.d.children, name, len);
-		return (entry == NULL ? NULL : gfarm_hash_entry_data(entry));
+		if (entry != NULL) {
+			n = gfarm_hash_entry_data(entry);
+			if ((n->flags & NODE_FLAG_IS_DIR) == is_dir) {
+				n->flags |= NODE_FLAG_MARKED;
+				*np = n;
+				return (NULL);
+			}
+			recursive_free_nodes(n);
+			gfarm_hash_purge(parent->u.d.children, name, len);
+		}
+		/* do create */
+	} else if (op != GFARM_INODE_CREATE) {
+		entry = gfarm_hash_lookup(parent->u.d.children, name, len);
+		if (entry == NULL)
+			return (GFARM_ERR_NO_SUCH_OBJECT);
+		if (op == GFARM_INODE_REMOVE) {
+			recursive_free_nodes(gfarm_hash_entry_data(entry));
+			gfarm_hash_purge(parent->u.d.children, name, len);
+			*np = NULL;
+			return (NULL);
+		}
+		*np = gfarm_hash_entry_data(entry);
+		return (NULL);
 	}
 
 	entry = gfarm_hash_enter(parent->u.d.children, name, len,
 	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE, &created);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	n = gfarm_hash_entry_data(entry);
-	if (!created)
-		return (n);
+	n->flags |= NODE_FLAG_MARKED;
+	if (!created) {
+		*np = n;
+		return (NULL);
+	}
 	if (is_dir)
 		init_dir_node(n, name, len);
 	else
 		init_file_node(n, name, len);
-	if (n == NULL) {
-		gfarm_hash_purge(parent->u.d.children, name, len);
-		return (NULL);
-	}
 	n->parent = parent;
-	return (n);
+	*np = n;
+	return (NULL);
 }
 
-/* if (!create), (is_dir) may be -1, and that means "don't care". */
+/*
+ * is_dir must be -1 (don't care), 0 (not a dir) or NODE_FLAG_IS_DIR.
+ *
+ * if (op != GFARM_INODE_CREATE), (is_dir) may be -1,
+ * and that means "don't care".
+ */
 static char *
-lookup_relative(struct node *n, const char *path, int is_dir, int create,
-	struct node **np)
+lookup_relative(struct node *n, const char *path, int is_dir,
+	enum gfarm_node_lookup_op op, struct node **np)
 {
+	char *e;
 	int len;
 
-	if (!n->is_dir)
+	if ((n->flags & NODE_FLAG_IS_DIR) == 0)
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	for (;;) {
 		while (*path == '/')
 			path++;
 		for (len = 0; path[len] != '/'; len++) {
 			if (path[len] == '\0') {
-				n = lookup_node(n, path, len, is_dir, create);
-				if (n == NULL)
-					return (create ? GFARM_ERR_NO_MEMORY :
-					    GFARM_ERR_NO_SUCH_OBJECT);
-				if (is_dir != -1 && n->is_dir != is_dir)
-					return (n->is_dir ?
+				e = lookup_node(n, path, len, is_dir, op, &n);
+				if (e != NULL)
+					return (e);
+				if (is_dir != -1 &&
+				    (n->flags & NODE_FLAG_IS_DIR) != is_dir)
+					return ((n->flags & NODE_FLAG_IS_DIR) ?
 					    GFARM_ERR_IS_A_DIRECTORY :
 					    GFARM_ERR_NOT_A_DIRECTORY);
 				if (np != NULL)
@@ -315,19 +395,24 @@ lookup_relative(struct node *n, const char *path, int is_dir, int create,
 				return (NULL);
 			}
 		}
-		n = lookup_node(n, path, len, 1, /* XXX */ create);
-		if (n == NULL)
-			return (create ? GFARM_ERR_NO_MEMORY :
-			    GFARM_ERR_NO_SUCH_OBJECT);
-		if (!n->is_dir)
+		e = lookup_node(n, path, len, NODE_FLAG_IS_DIR,
+		    op == GFARM_INODE_MARK ?
+		    GFARM_INODE_MARK : GFARM_INODE_LOOKUP, &n);
+		if (e != NULL)
+			return (e);
+		if ((n->flags & NODE_FLAG_IS_DIR) == 0)
 			return (GFARM_ERR_NOT_A_DIRECTORY);
 		path += len;
 	}
 }
 
-/* if (!create), (is_dir) may be -1, and that means "don't care". */
+/*
+ * if (op != GFARM_INODE_CREATE), (is_dir) may be -1,
+ * and that means "don't care".
+ */
 static char *
-lookup_path(const char *path, int is_dir, int create, struct node **np)
+lookup_path(const char *path, int is_dir, enum gfarm_node_lookup_op op,
+	struct node **np)
 {
 	struct node *n;
 
@@ -340,11 +425,12 @@ lookup_path(const char *path, int is_dir, int create, struct node **np)
 		e = gfs_getcwd(cwd, sizeof(cwd));
 		if (e != NULL)
 			return (e);
-		e = lookup_relative(root, cwd, 1, 0, &n);
+		e = lookup_relative(root, cwd, NODE_FLAG_IS_DIR,
+		    GFARM_INODE_LOOKUP, &n);
 		if (e != NULL)
 			return (e);
 	}
-	return (lookup_relative(n, path, is_dir, create, np));
+	return (lookup_relative(n, path, is_dir, op, np));
 }
 
 static char *
@@ -358,11 +444,24 @@ root_node(void)
 	return (NULL);
 }
 
+#if 0 /* not used */
+static void
+free_all_nodes(void)
+{
+	if (root != NULL) {
+		recursive_free_nodes(root);
+		free(root);
+		root = NULL;
+	}
+}
+#endif
+
 static void
 remember_path(void *closure, struct gfarm_path_info *info)
 {
 	lookup_relative(root, info->pathname,
-	    GFARM_S_ISDIR(info->status.st_mode), 1, NULL);
+	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
+	    GFARM_INODE_MARK, NULL);
 }
 
 static char *
@@ -370,9 +469,7 @@ gfs_cachedir(void)
 {
 	char *e;
 
-	if (root != NULL)
-		return (NULL);
-
+	/* assert(root == NULL); */
 	e = root_node();
 	if (e != NULL)
 		return (e);
@@ -381,41 +478,102 @@ gfs_cachedir(void)
 }
 
 static void
-free_node(struct node *n)
+unmark_node(void *cookie, struct node *n)
 {
-	if (n->is_dir) {
-		struct gfarm_hash_iterator i;
-		struct gfarm_hash_entry *child;
-
-		for (gfarm_hash_iterator_begin(n->u.d.children, &i);
-		    (child = gfarm_hash_iterator_access(&i)) != NULL;
-		    gfarm_hash_iterator_next(&i)) {
-			free_node(gfarm_hash_entry_data(child));
-		}
-		gfarm_hash_table_free(n->u.d.children);
-	}
-	free(n->name);
+	n->flags &= ~NODE_FLAG_MARKED;
 }
 
-/* to inhibit dirctory uncaching while some directories are opened */
-static int opendir_count = 0;
+static void
+sweep_nodes(struct node *n)
+{
+	struct gfarm_hash_iterator i;
+	struct gfarm_hash_entry *child;
+
+	/* assert((n->flags & NODE_FLAG_IS_DIR) == 0); */
+
+	for (gfarm_hash_iterator_begin(n->u.d.children, &i);
+	    (child = gfarm_hash_iterator_access(&i)) != NULL;
+	    gfarm_hash_iterator_next(&i)) {
+		struct node *c = gfarm_hash_entry_data(child);
+
+		if ((c->flags & NODE_FLAG_MARKED) == 0) {
+			recursive_free_nodes(c);
+			gfarm_hash_iterator_purge(&i);
+		} else if ((c->flags & NODE_FLAG_IS_DIR) != 0)
+			sweep_nodes(c);
+	}
+}
+
+static void
+mark_path(void *closure, struct gfarm_path_info *info)
+{
+	lookup_relative(root, info->pathname,
+	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
+	    GFARM_INODE_MARK, NULL);
+}
+
+static char *
+gfs_recachedir(void)
+{
+	/* assert(root != NULL); */
+	for_each_node(root, unmark_node, NULL);
+	gfarm_path_info_get_all_foreach(mark_path, NULL);
+	sweep_nodes(root);
+	return (NULL);
+}
+
+/* refresh directories as soon as possible */
 static int need_to_clear_cache = 0;
 
 void
 gfs_uncachedir(void)
 {
-	if (opendir_count > 0) { /* We cannot clear cache for now */
-		need_to_clear_cache = 1; /* schedule it later */
-	} else if (root != NULL) {
-		need_to_clear_cache = 0;
-		free_node(root);
-		free(root);
-		root = NULL;
-	}
+	need_to_clear_cache = 1;
 }
 
-struct timeval gfarm_dircache_timeout = { 60, 0 }; /* default 60sec. */
+/* to inhibit dirctory uncaching while some directories are opened */
+static int opendir_count = 0;
+
+char *
+gfs_dircache_enter_dir(const char *gfarm_file)
+{
+	if (root == NULL) /* not cached yet, no need to handle */
+		return (NULL);
+	return (lookup_relative(root, gfarm_file, NODE_FLAG_IS_DIR,
+	    GFARM_INODE_CREATE, NULL));
+}
+
+char *
+gfs_dircache_enter_file(const char *gfarm_file)
+{
+	if (root == NULL) /* not cached yet, no need to handle */
+		return (NULL);
+	return (lookup_relative(root, gfarm_file, 0,
+	    GFARM_INODE_CREATE, NULL));
+}
+
+char *
+gfs_dircache_purge_path(const char *gfarm_file)
+{
+	if (root == NULL) /* not cached yet, no need to handle */
+		return (NULL);
+	if (opendir_count > 0) { /* do it later */
+		gfs_uncachedir();
+		return (NULL);
+	}
+	return (lookup_relative(root, gfarm_file, -1,
+	    GFARM_INODE_REMOVE, NULL));
+}
+
+struct timeval gfarm_dircache_timeout = { 10, 0 }; /* default 10sec. */
 static struct timeval last_dircache = {0, 0};
+
+void
+gfs_dircache_set_timeout(struct gfarm_timespec *timeout)
+{
+	gfarm_dircache_timeout.tv_sec = timeout->tv_sec;
+	gfarm_dircache_timeout.tv_usec = timeout->tv_nsec / 1000;
+}
 
 static char *
 gfs_refreshdir(void)
@@ -432,20 +590,23 @@ gfs_refreshdir(void)
 	}
 	gettimeofday(&now, NULL);
 	if (root == NULL) {
-		/* assert(need_to_clear_cache == 0); */
+		need_to_clear_cache = 0;
 		last_dircache = now;
 		return (gfs_cachedir());
 	}
 	if (opendir_count > 0) /* We cannot clear cache for now */
 		return (NULL);
+	if (need_to_clear_cache) {
+		need_to_clear_cache = 0;
+		last_dircache = now;
+		return (gfs_recachedir());
+	}
 	elapsed = now;
 	gfarm_timeval_sub(&elapsed, &last_dircache);
-	if (need_to_clear_cache ||
-	    gfarm_timeval_cmp(&elapsed, &gfarm_dircache_timeout) >= 0) {
+	if (gfarm_timeval_cmp(&elapsed, &gfarm_dircache_timeout) >= 0) {
 		need_to_clear_cache = 0;
-		gfs_uncachedir();
 		last_dircache = now;
-		return (gfs_cachedir());
+		return (gfs_recachedir());
 	}
 	return (NULL);
 }
@@ -464,7 +625,7 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	e = gfs_refreshdir();
 	if (e != NULL) 
 		return (e);
-	e = lookup_path(path, -1, 0, &n);
+	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	if (e != NULL)
 		return (e);
 	len = 0;
@@ -488,7 +649,8 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	return (NULL);
 }
 
-char *gfs_get_ino(const char *canonical_path, long *inop)
+char *
+gfs_get_ino(const char *canonical_path, long *inop)
 {
 	struct node *n;
 	char *e;
@@ -496,7 +658,7 @@ char *gfs_get_ino(const char *canonical_path, long *inop)
 	e = gfs_refreshdir();
 	if (e != NULL) 
 		return (e);
-	e = lookup_relative(root, canonical_path, -1, 0, &n);
+	e = lookup_relative(root, canonical_path, -1, GFARM_INODE_LOOKUP, &n);
         if (e != NULL)
 		return (e);
 	*inop = (long)n;
@@ -521,6 +683,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	struct gfs_dir *dir;
 
 	path = gfarm_url_prefix_skip(path);
+	/* gfs_refreshdir() will be called from here */
 	e = gfarm_canonical_path(path, &canonic_path);
 	if (e != NULL)
 		return (e);
@@ -533,7 +696,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	sprintf(abspath, "/%s", canonic_path);
 	free(canonic_path);
 
-	e = lookup_path(abspath, 1, 0, &n);
+	e = lookup_path(abspath, NODE_FLAG_IS_DIR, GFARM_INODE_LOOKUP, &n);
 	free(abspath);
 	if (e != NULL)
 		return (e);
@@ -546,6 +709,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 	*dirp = dir;
 
 	++opendir_count;
+	/* XXX if someone removed a path, while opening a directory... */
 	return (NULL);
 }
 
@@ -563,7 +727,8 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 	n = gfarm_hash_entry_data(he);
 	gfarm_hash_iterator_next(&dir->iterator);
 	dir->buffer.d_fileno = 1; /* XXX */
-	dir->buffer.d_type = n->is_dir ? GFS_DT_DIR : GFS_DT_REG;
+	dir->buffer.d_type = (n->flags & NODE_FLAG_IS_DIR) ?
+	    GFS_DT_DIR : GFS_DT_REG;
 	dir->buffer.d_namlen = gfarm_hash_entry_key_length(he);
 	memcpy(dir->buffer.d_name, gfarm_hash_entry_key(he),
 	    dir->buffer.d_namlen);

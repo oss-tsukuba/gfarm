@@ -113,7 +113,6 @@ gfs_unlink(const char *gfarm_url)
 	e = gfarm_path_info_remove(gfarm_file);
 	if (e != NULL)
 		e_save = e;
-	gfs_uncachedir();
 
 finish_free_gfarm_file:
 	free(gfarm_file);

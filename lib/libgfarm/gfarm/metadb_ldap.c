@@ -13,6 +13,8 @@
 #include <ldap.h>
 #include <gfarm/gfarm.h>
 
+#include "dircache.h"
+
 /* old openldap does not have ldap_memfree. */
 #define	ldap_memfree(a)
 
@@ -1038,8 +1040,16 @@ gfarm_path_info_set(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
-	return (gfarm_path_info_update(pathname, info,
-	    LDAP_MOD_ADD, gfarm_generic_info_set));
+	char *e = gfarm_path_info_update(pathname, info,
+	    LDAP_MOD_ADD, gfarm_generic_info_set);
+
+	if (e == NULL) {
+		if (GFARM_S_ISDIR(info->status.st_mode))
+			gfs_dircache_enter_dir(pathname);
+		else
+			gfs_dircache_enter_file(pathname);
+	}
+	return (e);
 }
 
 char *
@@ -1047,6 +1057,7 @@ gfarm_path_info_replace(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
+	/* This isn't used to change a dir to a file, or a file to a dir */
 	return (gfarm_path_info_update(pathname, info,
 	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
 }
@@ -1054,12 +1065,16 @@ gfarm_path_info_replace(
 char *
 gfarm_path_info_remove(const char *pathname)
 {
+	char *e;
 	struct gfarm_path_info_key key;
 
 	key.pathname = pathname;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_path_info_ops));
+	e = gfarm_generic_info_remove(&key,
+	    &gfarm_path_info_ops);
+	if (e == NULL)
+		gfs_dircache_purge_path(pathname);
+	return (e);
 }
 
 void
