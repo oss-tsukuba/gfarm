@@ -334,23 +334,27 @@ struct gfs_dir {
 char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e;
+	char *e, *p;
 	struct node *n;
 	struct gfs_dir *dir;
 
-	e = gfs_cachedir();
-	if (e != NULL) 
-		return (e);
 	path = gfarm_url_prefix_skip(path);
-	e = lookup_path(path, 1, 0, &n);
+	e = gfarm_canonical_path(path, &p);
 	if (e != NULL)
 		return (e);
+
+	e = lookup_path(p, 1, 0, &n);
+	free(p);
+	if (e != NULL)
+		return (e);
+
 	dir = malloc(sizeof(struct gfs_dir));
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	dir->dir = n;
 	gfarm_hash_iterator_begin(n->u.d.children, &dir->iterator);
 	*dirp = dir;
+
 	return (NULL);
 }
 
@@ -385,21 +389,16 @@ gfs_closedir(GFS_Dir dir)
 }
 
 static char *
-gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
+gfs_stat_sub(char *gfarm_file, struct gfs_stat *s)
 {
-	char *e, *gfarm_file;
+	char *e;
 	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	struct gfarm_path_info pi;
 
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	e = gfarm_path_info_get(gfarm_file, &pi);
 	if (e != NULL)
 		return (e);
-	e = gfarm_path_info_get(gfarm_file, &pi);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
 
 	*s = pi.status;
 	s->st_user = strdup(s->st_user);
@@ -407,18 +406,15 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 	gfarm_path_info_free(&pi);
 	if (s->st_user == NULL || s->st_group == NULL) {
 		gfs_stat_free(s);
-		free(gfarm_file);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	if (!GFARM_S_ISREG(s->st_mode)) {
-		free(gfarm_file);
+	if (!GFARM_S_ISREG(s->st_mode))
 		return (NULL);
-	}
 
+	/* regular file */
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
-	free(gfarm_file);
 	if (e != NULL) {
 		gfs_stat_free(s);
 		/*
@@ -435,6 +431,7 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 	s->st_nsections = nsections;
 
 	gfarm_file_section_info_free_all(nsections, sections);
+
 	return (NULL);
 }
 
@@ -444,16 +441,12 @@ char *
 gfs_stat(const char *path, struct gfs_stat *s)
 {
 	char *e, *p;
-	struct node *n;
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e = gfs_cachedir();
-	if (e != NULL) 
-		goto finish;
 	path = gfarm_url_prefix_skip(path);
-	e = gfs_realpath(path, &p);
+	e = gfarm_canonical_path(path, &p);
 	if (e != NULL)
 		goto finish;
 	e = gfs_stat_sub(p, s);
@@ -462,10 +455,11 @@ gfs_stat(const char *path, struct gfs_stat *s)
 		goto finish;
 	if (e != GFARM_ERR_NO_SUCH_OBJECT)
 		goto finish;
-	/* XXX - assume that it's a directory. */
-	e = lookup_path(path, 1, 0, &n);
-	if (e != NULL)
-		goto finish;
+
+	/*
+	 * XXX - assume that it's a directory that does not have the
+	 * path info.
+	 */
 	s->st_mode = GFARM_S_IFDIR | 0777;
 	s->st_user = strdup("root");
 	s->st_group = strdup("gfarm");
