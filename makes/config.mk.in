@@ -17,3 +17,6 @@ LIBS = @LIBS@
 
 metadb_client_includes = @metadb_client_includes@
 metadb_client_libs = @metadb_client_libs@
+
+openssl_includes = @openssl_includes@
+openssl_libs = @openssl_libs@
