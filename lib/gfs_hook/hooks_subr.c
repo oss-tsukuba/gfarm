@@ -531,11 +531,13 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 
 			if (p[secsize] != ':')
 				return (0); /* gfarm::foo/:bar or gfarm::foo */
-
-			/* '/gfarm/~' will be translated to 'gfarm:~'. */
+			/*
+			 * '/gfarm/~' and '/gfarm/.' will be translated
+			 * to 'gfarm:~' and 'gfarm:.', respectively.
+			 */
 			if (is_mount_point
 			    && p[secsize + 1] == '/'
-			    && p[secsize + 2] == '~')
+			    && (p[secsize + 2] == '~' || p[secsize + 2] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
 			if (is_mount_point && path[secsize + 1] == '\0')
@@ -565,10 +567,14 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 */
 		}
 		else {
-			/* '/gfarm/~' will be translated to 'gfarm:~'. */
+			/*
+			 * '/gfarm/~' and '/gfarm/.' will be translated
+			 * to 'gfarm:~' and 'gfarm:.', respectively.
+			 */
 			if (is_mount_point
 			    && path[sizeof_prefix - 1] == '/'
-			    && path[sizeof_prefix] == '~')
+			    && (path[sizeof_prefix] == '~'
+				|| path[sizeof_prefix] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
 			if (is_mount_point
