@@ -8,7 +8,8 @@ Standards-Version: 3.5.2
 Package: gfarm-gfptool
 Section: util
 Architecture: i386
-Depends: ${shlibs:Depends}, gfarmd, gfmd
+Depends: ${shlibs:Depends}
+Conflicts: gfarm-gsi-gfptool
 Description: The gfarm server.
  The gfarm tools.
 
@@ -16,6 +17,7 @@ Package: gfmd
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfmd-gsi
 Description: The gfarm server.
  The gfmd server.
 
@@ -23,6 +25,7 @@ Package: gfarm-client
 Section: util
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfarm-gsi-client
 Description: The gfarm client.
  The gfarm client.
 
@@ -30,6 +33,7 @@ Package: gfsd
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfsd-gsi
 Description: The gfarm fsnode daemon. 
  The gfarm fsnode daemon.
 
@@ -37,6 +41,7 @@ Package: libgfarm-dev
 Section: devel
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: libgfarm-gsi-dev
 Description: Development files for the gfarm.
  Development files for the gfarm. 
 
@@ -50,7 +55,8 @@ Description: Documents for the gfarm.
 Package: gfarm-gsi-gfptool
 Section: util
 Architecture: i386
-Depends: ${shlibs:Depends}, gfarmd, gfmd
+Depends: ${shlibs:Depends}
+Conflicts: gfarm-gfptool
 Description: The gfarm server.
  The gfarm tools.
 
@@ -58,6 +64,7 @@ Package: gfmd-gsi
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfmd
 Description: The gfarm server.
  The gfmd server.
 
@@ -65,6 +72,7 @@ Package: gfarm-gsi-client
 Section: util
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfarm-client
 Description: The gfarm client.
  The gfarm client.
 
@@ -72,6 +80,7 @@ Package: gfsd-gsi
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: gfsd
 Description: The gfarm fsnode daemon. 
  The gfarm fsnode daemon.
 
@@ -79,5 +88,6 @@ Package: libgfarm-gsi-dev
 Section: devel
 Architecture: i386
 Depends: ${shlibs:Depends}
+Conflicts: libgfarm-dev
 Description: Development files for the gfarm.
  Development files for the gfarm. 
