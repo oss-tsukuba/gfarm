@@ -634,6 +634,18 @@ main_loop(int accepting_socket)
 	socklen_t client_addr_size;
 	fd_set readable;
 
+	/*
+	 * To deal with race condition which may be caused by RST,
+	 * listening socket must be O_NONBLOCK, if the socket will be
+	 * used as a file descriptor for select(2) .
+	 * See section 15.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * Second Edition" by W. Richard Stevens, for detail.
+	 * We do report such case by gflog_warning_errno("accept");
+	 */
+	if (fcntl(accepting_socket, F_SETFL,
+	    fcntl(accepting_socket, F_GETFL, NULL) | O_NONBLOCK) == -1)
+		gflog_warning_errno("accepting_socket O_NONBLOCK");
+
 	for (;;) {
 		FD_ZERO(&readable);
 		FD_SET(accepting_socket, &readable);
@@ -650,8 +662,8 @@ main_loop(int accepting_socket)
 			if (client_socket < 0) {
 				if (errno != EINTR)
 					gflog_warning_errno("accept");
-			} else if ((e = xxx_fd_connection_new(
-			    client_socket, &client_conn)) != NULL) {
+			} else if ((e = xxx_fd_connection_new(client_socket,
+			    &client_conn)) != NULL) {
 				gflog_warning("fd_connection_new", e);
 				close(client_socket);
 			} else if ((e = gfarm_authorize(client_conn, 0,
