@@ -342,13 +342,16 @@ skip_opt: ;
 	sig_ignore(SIGQUIT);
 	sig_ignore(SIGTERM);
 	sig_ignore(SIGTSTP);
-	while (waitpid(-1, &status, 0) != -1)
+	while (waitpid(-1, &status, 0) != -1 || errno == EINTR)
 		;
 	save_errno = errno;
 
+#if 0 /* XXX - temporary solution; it is not necessary for the output
+	 file to be the same number of fragments. */
 	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
 		gfarm_url_fragment_cleanup(
 		    gfarm_stringlist_elem(&output_list, i), nhosts, hosts);
+#endif
 	unlink(filename);
 
 	if (delivered_paths != NULL)
