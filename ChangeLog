@@ -1,3 +1,143 @@
+2002-08-29  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* INSTALL.ja:
+	Added a description of --with-globus for incorporating GFSL library.
+
+	* man/man3/gfs_rmdir.3, man/man3/gfs_stat.3, man/man3/gfs_stat_free.3, man/man3/gfs_unlink.3, man/man8/Makefile, man/man8/gfmd.8, man/man8/gfsd.8, man/man3/gfs_pio_puts.3, man/man3/gfs_pio_read.3, man/man3/gfs_pio_seek.3, man/man3/gfs_pio_set_local.3, man/man3/gfs_pio_set_view_index.3, man/man3/gfs_pio_set_view_local.3, man/man3/gfs_pio_ungetc.3, man/man3/gfs_pio_write.3, man/man3/gfs_readdir.3, man/man3/gfs_rename.3, man/man3/gfs_pio_close.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_eof.3, man/man3/gfs_pio_error.3, man/man3/gfs_pio_flush.3, man/man3/gfs_pio_getc.3, man/man3/gfs_pio_getline.3, man/man3/gfs_pio_open.3, man/man3/gfs_pio_putc.3, man/man3/gfs_pio_putline.3, man/man3/Makefile, man/man3/gfarm_initialize.3, man/man3/gfarm_strings_free_deeply.3, man/man3/gfarm_terminate.3, man/man3/gfarm_url_hosts_schedule.3, man/man3/gfs_chmod.3, man/man3/gfs_chown.3, man/man3/gfs_closedir.3, man/man3/gfs_mkdir.3, man/man3/gfs_opendir.3, man/man1/gfreg.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfrsh.1, man/man1/gfrun.1, man/man1/gfssh.1, man/man1/gfwc.1, man/man1/gfwhere.1, man/ja/man3/gfs_pio_set_view_local.3, man/man1/Makefile, man/man1/digest.1, man/man1/gfexport.1, man/man1/gfgrep.1, man/man1/gfimport_fixed.1, man/man1/gfimport_text.1, man/man1/gfkey.1, man/man1/gfmpirun.1, man/man1/gfps.1, man/man1/gfrcmd.1, man/Makefile, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_set_local.3:
+	Added english man pages.
+
+2002-08-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man1/gfrun.1, gftool/gfrun/gfrun.c:
+	Changed the command option from -H gfarm-URL to -G gfarm-URL.
+
+2002-08-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/var.mk, gftool/gfps/Makefile, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, lib/Makefile, Makefile.in, gfmd/Makefile, gfsd/Makefile, gftool/gfkey/Makefile:
+	gfarmlib -> lib/libgfarm
+
+	* include/gfs.h, makes/config.mk.in, gftool/gfrcmd/gfrcmd.c, gftool/gfreg/gfreg.c, include/gfarm_error.h, include/gfarm_metadb.h, include/gfarm_misc.h, bench/thput-gfpio/thput-gfpio.c:
+	missing files when metadb development branch was imported
+
+2002-08-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfmd/ptcompat.h, gfsd/main.c: snapshot of metadb development branch
+
+	* gfmd/metadb_ldap.c, gfmd/ptcompat.c, gfmd/ptcompat.h: New file.
+
+	* gfmd/metadb.h, gfmd/metadb_ldap.c, gfmd/ptcompat.c:
+	snapshot of metadb development branch
+
+	* gfmd/inode.h, gfmd/job_table.c, gfmd/job_table.h, gfmd/metadb.h:
+	New file.
+
+	* gfmd/inode.h, gfmd/job_table.c, gfmd/job_table.h:
+	snapshot of metadb development branch
+
+	* gfmd/id_table.c, gfmd/id_table.h, gfmd/inode.c: New file.
+
+	* gfmd/gfmd.c, gfmd/id_table.c, gfmd/id_table.h, gfmd/inode.c:
+	snapshot of metadb development branch
+
+	* gfmd/gflimits.h, gfmd/gfm_server.c, gfmd/gfm_server.h: New file.
+
+	* gfmd/gflimits.h, gfmd/gfm_server.c, gfmd/gfm_server.h:
+	snapshot of metadb development branch
+
+	* gfmd/file.h, gfmd/gfj_server.c, gfmd/gfj_server.h: New file.
+
+	* gfmd/file.c, gfmd/file.h, gfmd/gfj_server.c, gfmd/gfj_server.h:
+	snapshot of metadb development branch
+
+	* gfmd/client_table.c, gfmd/client_table.h, gfmd/file.c: New file.
+
+	* gfmd/Makefile, gfmd/client_table.c, gfmd/client_table.h, configure, configure.in:
+	snapshot of metadb development branch
+
+	* gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/stringlist.c, gfarmlib/url.c, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfarmlib/hash.h, gfarmlib/hostspec.c, gfarmlib/hostspec.h, gfarmlib/import_help.c, gfarmlib/io_fd.c, gfarmlib/io_fd.h, gfarmlib/io_gfsl.c, gfarmlib/io_gfsl.h, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/logutil.c, gfarmlib/logutil.h, gfarmlib/metadb_ldap.c, gfarmlib/gfm_proto.h, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_local.c, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_pio_remote.c, gfarmlib/gfs_pio_section.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/hash.c, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_common.c, gfarmlib/auth_config.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/config.c, gfarmlib/error.c, gfarmlib/gfj_client.h, gfarmlib/gfm_client.c:
+	move this directory to ../lib/libgfarm/
+
+2002-07-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja: add "-x" option to ldapsearch.
+	this workarounds "ldap_sasl_interactive_bind_s: No such attribute" error
+	which happens on certain configuration ("configure --with-cyrus-sasl"?).
+	problem reported by morita-san.
+
+2002-07-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja: openldap-1.x -> openldap-2.x configuration file changes
+
+	* INSTALL.ja: change domain name of examples: hpcc.gr.jp -> hpcc.jp
+
+	* gfarmlib/metadb_ldap.c: remove "_" from attribute name, because:
+	- it's illegal.
+	- it doesn't work with slapd of openldap-2.x.
+
+	* lib/gfs_hook/hooks_subr.c: reimplement warning output again.
+	- don't have to check gfarm_initialized in gfs_hook_is_open(),
+	  because _gfs_file_buf[fd] is always NULL, if !gfarm_initialized.
+	  this change prevents infinite recursion as well.
+	- print the warning message only once,
+	  this also should prevent infinite recursion.
+
+2002-07-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_not_initialized):
+	Fixed typo.  Commented out fprintf("...") to avoid infinite recursive calls.
+
+	* gfarmlib/auth_server.c:
+	Added #include <limits.h> that should be needed on Solaris.
+
+2002-07-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c, include/gfarm_misc.h, lib/gfs_hook/hooks_subr.c:
+	do not segfault, but print warning and ignore gfarm: prefix,
+	when gfarm_initialized() isn't called.
+
+2002-07-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client.c: forgot to call strdup()
+
+	* gfarmlib/gfs_client.c:
+	gfs_canonical_hostname() always should return hostname,
+	even if gethostbyname(3) failed.
+	this is a workaround for strange configuration(?) of padXXX.is.titech.ac.jp.
+
+	* gfsd/main.c: forgot to remove moved lines in last commit.
+	(to make gfsd runnable with non-root user)
+
+2002-06-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in: just a comment change
+
+2002-06-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.c:
+	fix memory leak
+
+	* gfarmlib/xxx_proto.c: fix fatal typo, this repairs gfrcmd.
+	now gfrcmd works over GSI.
+
+	* configure.in, gftool/example/Makefile, gftool/example/gfwc/Makefile, makes/config.mk.in, configure:
+	add "--with-mpi=<MPICH-root-directory" option to configure script.
+	"gftool/example/gfwc" is compiled, only if this option is specified.
+
+	* gfarmlib/config.c, gfmd/gfmd.c, gfsd/main.c, include/gfarm_misc.h:
+	add '-f' option to gfmd and gfsd for configuration pathname
+
+	* INSTALL.ja, gfarmlib/xxx_proto.c, makes/var.mk, gfarmlib/auth_config.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/config.c, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfarmlib/hostspec.c, gfarmlib/hostspec.h, gfarmlib/io_fd.c, gfarmlib/io_fd.h, configure, configure.in, gfarm_config.h.in, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_common.c:
+	add "auth enable <auth-method> <host>" and "auth disable <auth-method> <host>"
+	config directive to select authentication method.
+	(default: NONE)
+
+2002-06-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/sysdep/linux/xstatconv.c, makes/man.mk, makes/subdir.mk, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/sysdep/linux/Makefile.in, lib/gfs_hook/sysdep/linux/kernel_stat.h, lib/gfs_hook/sysdep/linux/xstat.c, lib/gfs_hook/sysdep/linux/xstat64.c, include/gfs.h, lib/Makefile, lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/url.c, Makefile.in, configure, configure.in:
+	Added gfs_hook.o that is a modified version by soda-san.
+
+	* ChangeLog: Update ChangeLog.
+
 2002-06-21  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfarmlib/auth_server_gsi.c:
