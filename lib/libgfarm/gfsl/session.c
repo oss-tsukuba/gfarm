@@ -57,11 +57,13 @@ static int			negotiateConfigParam(int fd,
 				      gss_qop_t *qOpPtr,
 				      unsigned int *maxTransPtr,
 				      unsigned int *configPtr,
-				      OM_uint32 *statPtr);
+				      OM_uint32 *majStatPtr,
+				      OM_uint32 *minStatPtr);
 static gfarmSecSession *	secSessionInitiate(int fd,
 				      gss_cred_id_t cred,
 				      gfarmSecSessionOption *ssOptPtr,
-				      OM_uint32 *statPtr,
+				      OM_uint32 *majStatPtr,
+				      OM_uint32 *minStatPtr,
 				      int needClose);
 
 
@@ -294,7 +296,7 @@ canonicSecSessionOpt(which, reqPtr, canPtr)
 
 
 static int
-negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, statPtr)
+negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, majStatPtr, minStatPtr)
      int fd;
      gss_ctx_id_t sCtx;
      int which;
@@ -302,7 +304,8 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, st
      gss_qop_t *qOpPtr;
      unsigned int *maxTransPtr;
      unsigned int *configPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
 #define SS_CONF_ACK	1
 #define SS_CONF_NACK	0
@@ -519,22 +522,28 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, st
 
     Done:
     if (negoPhase >= 3) {
-	OM_uint32 majStat;
+	OM_uint32 majStat, minStat;
 	unsigned int maxMsgSize;
 	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     			(isBitSet(retConf,
 				  GFARM_SS_USE_ENCRYPTION) ? 1 : 0);
 	if (gfarmGssConfigureMessageSize(sCtx, doEncrypt,
 					 retQOP, retMaxT, &maxMsgSize,
-					 &majStat) < 0) {
-	    if (statPtr != NULL) {
-		*statPtr = majStat;
+					 &majStat, &minStat) < 0) {
+	    if (majStatPtr != NULL) {
+		*majStatPtr = majStat;
+	    }
+	    if (minStatPtr != NULL) {
+		*minStatPtr = minStat;
 	    }
 	    return ret;
 	}
 
-	if (statPtr != NULL) {
-	    *statPtr = majStat;
+	if (majStatPtr != NULL) {
+	    *majStatPtr = majStat;
+	}
+	if (minStatPtr != NULL) {
+	    *minStatPtr = minStat;
 	}
 	if (qOpPtr != NULL) {
 	    *qOpPtr = retQOP;
@@ -659,7 +668,7 @@ char **
 gfarmSecSessionCrackStatus(ssPtr)
      gfarmSecSession *ssPtr;
 {
-    return gfarmGssCrackStatus(ssPtr->gssLastStat);
+    return gfarmGssCrackMajorStatus(ssPtr->gssLastStat);
 }
 
 
@@ -672,22 +681,23 @@ gfarmSecSessionFreeCrackedStatus(strPtr)
 
 
 void
-gfarmSecSessionPrintStatus(fd, ssPtr)
-     FILE *fd;
+gfarmSecSessionPrintStatus(ssPtr)
      gfarmSecSession *ssPtr;
 {
-    gfarmGssPrintStatus(fd, ssPtr->gssLastStat);
+    gfarmGssPrintMajorStatus(ssPtr->gssLastStat);
 }
 
 
 int
-gfarmSecSessionInitializeAcceptor(configFile, usermapFile, statPtr)
+gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPtr)
      char *configFile;
      char *usermapFile;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
+    OM_uint32 minStat = GSS_S_COMPLETE;
 
     if (acceptorInitialized == 0) {
 	char confFile[PATH_MAX];
@@ -700,6 +710,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, statPtr)
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
 					  GSS_C_ACCEPT,
 					  &majStat,
+					  &minStat,
 					  &acceptorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
@@ -755,20 +766,25 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, statPtr)
 	}
     }
 
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     return ret;
 }
 
 
 int
-gfarmSecSessionInitializeInitiator(configFile, statPtr)
+gfarmSecSessionInitializeInitiator(configFile, majStatPtr, minStatPtr)
      char *configFile;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
+    OM_uint32 minStat = GSS_S_COMPLETE;
 
     if (initiatorInitialized == 0) {
 	char confFile[PATH_MAX];
@@ -781,6 +797,7 @@ gfarmSecSessionInitializeInitiator(configFile, statPtr)
 	    if (gfarmGssAcquireCredential(&initiatorInitialCred,
 					  GSS_C_INITIATE,
 					  &majStat,
+  					  &minStat,
 					  &initiatorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
@@ -827,22 +844,27 @@ gfarmSecSessionInitializeInitiator(configFile, statPtr)
 	}
     }
 
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     return ret;
 }
 
 
 int
-gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
+gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr, minStatPtr)
      char *iConfigFile;
      char *aConfigFile;
      char *usermapFile;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
+    OM_uint32 minStat = GSS_S_COMPLETE;
 
     /*
      * If the process's effective user is root (getuid()==0):
@@ -867,6 +889,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
 	    if (gfarmGssAcquireCredential(&acceptorInitialCred,
 					  GSS_C_BOTH,
 					  &majStat,
+					  &minStat,
 					  &acceptorInitialCredName) < 0) {
 		ret = -1;
 		goto Done;
@@ -956,8 +979,11 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, statPtr)
 	}
     }
 
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     return ret;
 }
@@ -1026,11 +1052,12 @@ gfarmSecSessionFinalizeBoth()
 
 
 gfarmSecSession *
-gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
+gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      int fd;
      gss_cred_id_t cred;
      gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
@@ -1041,6 +1068,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
     char *peerName = NULL;
 
     OM_uint32 majStat = GSS_S_FAILURE;
+    OM_uint32 minStat = GSS_S_COMPLETE;
     gss_ctx_id_t sCtx = GSS_C_NO_CONTEXT;
     char *initiatorDistName = NULL;
     gss_cred_id_t deleCred = GSS_C_NO_CREDENTIAL;
@@ -1087,6 +1115,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
      */
     if (gfarmGssAcceptSecurityContext(fd, cred, &sCtx,
 				      &majStat,
+				      &minStat,
 				      &initiatorDistName,
 				      &deleCred) < 0) {
 	goto Fail;
@@ -1132,7 +1161,8 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
      * with the initiator.
      */
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_ACCEPTOR, &canOpt,
-			     &qOp, &maxTransSize, &config, &majStat) < 0) {
+			     &qOp, &maxTransSize, &config, &majStat,
+			     &minStat) < 0) {
 	goto Fail;
     }
 #if 0
@@ -1170,19 +1200,23 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, statPtr)
     if (initiatorDistName != NULL) {
 	(void)free(initiatorDistName);
     }
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     return ret;
 }
 
 
 static gfarmSecSession *
-secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
+secSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr, needClose)
      int fd;
      gss_cred_id_t cred;
      gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
      int needClose;
 {
     gfarmSecSession *ret = NULL;
@@ -1193,6 +1227,7 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
     char *peerName = NULL;
 
     OM_uint32 majStat = GSS_S_FAILURE;
+    OM_uint32 minStat = GSS_S_COMPLETE;
     gss_ctx_id_t sCtx = GSS_C_NO_CONTEXT;
     char *acceptorDistName = NULL;
     char *credName = NULL;
@@ -1240,6 +1275,7 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
 					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
 					&sCtx,
 					&majStat,
+					&minStat,
 					&acceptorDistName) < 0) {
 	goto Fail;
     }
@@ -1265,7 +1301,8 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
      * with the acceptor.
      */
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_INITIATOR, &canOpt,
-			     &qOp, &maxTransSize, &config, &majStat) < 0) {
+			     &qOp, &maxTransSize, &config, &majStat,
+			     &minStat) < 0) {
 	goto Fail;
     }
 #if 0
@@ -1303,59 +1340,67 @@ secSessionInitiate(fd, cred, ssOptPtr, statPtr, needClose)
     if (acceptorDistName != NULL) {
 	(void)free(acceptorDistName);
     }
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     return ret;
 }
 
 
 gfarmSecSession *
-gfarmSecSessionInitiate(fd, cred, ssOptPtr, statPtr)
+gfarmSecSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      int fd;
      gss_cred_id_t cred;
      gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
-    return secSessionInitiate(fd, cred, ssOptPtr, statPtr, 0);
+    return secSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr, 0);
 }
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByAddr(rAddr, port, cred, ssOptPtr, statPtr)
+gfarmSecSessionInitiateByAddr(rAddr, port, cred, ssOptPtr, majStatPtr, minStatPtr)
      unsigned long rAddr;
      int port;
      gss_cred_id_t cred;
      gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     int fd = gfarmTCPConnectPort(rAddr, port);
     if (fd < 0) {
-	if (statPtr != NULL) {
-	    *statPtr = GSS_S_FAILURE;
+	if (majStatPtr != NULL) {
+	    *majStatPtr = GSS_S_FAILURE;
 	}
 	return NULL;
     }
-    return secSessionInitiate(fd, cred, ssOptPtr, statPtr, 1);
+    return secSessionInitiate(fd, cred, ssOptPtr, majStatPtr, minStatPtr, 1);
 }
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByName(hostname, port, cred, ssOptPtr, statPtr)
+gfarmSecSessionInitiateByName(hostname, port, cred, ssOptPtr, majStatPtr, minStatPtr)
      char *hostname;
      int port;
      gss_cred_id_t cred;
      gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     unsigned long rAddr = gfarmIPGetAddressOfHost(hostname);
     if (rAddr == ~0L || rAddr == 0L) {
-	if (statPtr != NULL) {
-	    *statPtr = GSS_S_FAILURE;
+	if (majStatPtr != NULL) {
+	    *majStatPtr = GSS_S_FAILURE;
+	    *minStatPtr = GSS_S_COMPLETE;
 	}
 	return NULL;
     }
-    return gfarmSecSessionInitiateByAddr(rAddr, port, cred, ssOptPtr, statPtr);
+    return gfarmSecSessionInitiateByAddr(rAddr, port, cred, ssOptPtr,
+					 majStatPtr, minStatPtr);
 }
 
 

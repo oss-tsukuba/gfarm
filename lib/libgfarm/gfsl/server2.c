@@ -71,7 +71,7 @@ main(argc, argv)
     int remLen = sizeof(struct sockaddr_in);
     int fd0 = -1;
     int fd1 = -1;
-    OM_uint32 majStat;
+    OM_uint32 majStat, minStat;
     gfarmSecSession *ss0 = NULL;
     gfarmSecSession *ss1 = NULL;
     int sel;
@@ -85,9 +85,11 @@ main(argc, argv)
 	goto Done;
     }
 
-    if (gfarmSecSessionInitializeAcceptor(NULL, NULL, &majStat) <= 0) {
+    if (gfarmSecSessionInitializeAcceptor(NULL, NULL,
+					  &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as acceptor because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 
@@ -106,10 +108,12 @@ main(argc, argv)
 	perror("accept");
 	goto Done;
     }
-    ss0 = gfarmSecSessionAccept(fd0, GSS_C_NO_CREDENTIAL, NULL, &majStat);
+    ss0 = gfarmSecSessionAccept(fd0, GSS_C_NO_CREDENTIAL, NULL,
+				&majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 
@@ -118,10 +122,12 @@ main(argc, argv)
 	perror("accept");
 	goto Done;
     }
-    ss1 = gfarmSecSessionAccept(fd1, GSS_C_NO_CREDENTIAL, NULL, &majStat);
+    ss1 = gfarmSecSessionAccept(fd1, GSS_C_NO_CREDENTIAL, NULL,
+				&majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 
@@ -150,7 +156,7 @@ main(argc, argv)
 		    break;
 		} else if (i < 0) {
 		    fprintf(stderr, "1st session receive failed because of:\n");
-		    gfarmSecSessionPrintStatus(stderr, ss0);
+		    gfarmSecSessionPrintStatus(ss0);
 		    break;
 		} else {
 		    fprintf(stderr, "0: got %5d '", n);
@@ -165,7 +171,7 @@ main(argc, argv)
 		    break;
 		} else if (i < 0) {
 		    fprintf(stderr, "2nd session receive failed because of:\n");
-		    gfarmSecSessionPrintStatus(stderr, ss0);
+		    gfarmSecSessionPrintStatus(ss0);
 		    break;
 		} else {
 		    fprintf(stderr, "1: got %5d '", n);

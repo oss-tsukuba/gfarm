@@ -8,28 +8,33 @@ typedef struct gfarmExportedCredential gfarmExportedCredential;
  * Prototype
  */
 extern char *	gfarmGssGetCredentialName(gss_cred_id_t cred);
-extern char **	gfarmGssCrackStatus(OM_uint32 majStat);
+extern char **	gfarmGssCrackMajorStatus(OM_uint32 majStat);
+extern char **	gfarmGssCrackMinorStatus(OM_uint32 minStat);
 extern void	gfarmGssFreeCrackedStatus(char **strPtr);
-extern void	gfarmGssPrintStatus(FILE *fd, OM_uint32 majStat);
+extern void	gfarmGssPrintMajorStatus(OM_uint32 majStat);
+extern void	gfarmGssPrintMinorStatus(OM_uint32 minStat);
 
 extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf);
 extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf);
 
 extern int	gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
 					  gss_cred_usage_t credUsage,
-					  OM_uint32 *statPtr,
+					  OM_uint32 *majStatPtr,
+  					  OM_uint32 *minStatPtr,
 					  char **credNamePtr);
 extern int	gfarmGssAcceptSecurityContext(int fd,
 					      gss_cred_id_t cred,
 					      gss_ctx_id_t *scPtr,
-					      OM_uint32 *statPtr,
+					      OM_uint32 *majStatPtr,
+     					      OM_uint32 *minStatPtr,
 					      char **remoteNamePtr,
 					      gss_cred_id_t *remoteCredPtr);
 extern int	gfarmGssInitiateSecurityContext(int fd,
 						gss_cred_id_t cred,
 						OM_uint32 reqFlag,
 						gss_ctx_id_t *scPtr,
-						OM_uint32 *statPtr,
+						OM_uint32 *majStatPtr,
+						OM_uint32 *minSstatPtr,
 						char **remoteNamePtr);
 
 extern void	gfarmGssDeleteSecurityContext(gss_ctx_id_t *scPtr);
@@ -39,7 +44,8 @@ extern int	gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx,
 					     gss_qop_t qopReq,
 					     unsigned int reqOutSz,
 					     unsigned int *maxInSzPtr,
-					     OM_uint32 *statPtr);
+					     OM_uint32 *majStatPtr,
+					     OM_uint32 *minStatPtr);
 
 extern int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 			     int doEncrypt,

@@ -26,6 +26,7 @@ gfarm_gsi_initialize(void)
 {
 	static int initialized;
 	OM_uint32 e_major;
+	OM_uint32 e_minor;
 	int rv;
 
 	if (initialized)
@@ -33,15 +34,19 @@ gfarm_gsi_initialize(void)
 
 	if (geteuid() == 0) { /* XXX - kluge */
 		rv = gfarmSecSessionInitializeBoth(NULL, NULL,
-		    GFSL_CONF_USERMAP, &e_major);
+		    GFSL_CONF_USERMAP, &e_major, &e_minor);
 	} else {
-		rv = gfarmSecSessionInitializeInitiator(NULL, &e_major);
+		rv = gfarmSecSessionInitializeInitiator(NULL, &e_major,
+		    &e_minor);
 	}
 	if (rv <= 0) {
-#if 1 /* XXX for debugging */
-		fprintf(stderr, "can't initialize as initiator because of:\n");
-		gfarmGssPrintStatus(stderr, e_major);
-#endif
+		if (gfarm_authentication_verbose) {
+			gflog_error(
+				"can't initialize as initiator because of:",
+				NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
 		if (geteuid() == 0) { /* XXX - kluge */
 			gfarmSecSessionFinalizeBoth();
 		} else {
@@ -59,6 +64,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 	int fd = xxx_connection_fd(conn);
 	char *e;
 	OM_uint32 e_major;
+	OM_uint32 e_minor;
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
 	int eof;
@@ -68,12 +74,14 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 		return (e);
 
 	session = gfarmSecSessionInitiate(fd,
-	    gfarm_gsi_get_delegated_cred(), NULL, &e_major);
+	    gfarm_gsi_get_delegated_cred(), NULL, &e_major, &e_minor);
 	if (session == NULL) {
-#if 1 /* XXX for debugging */
-		fprintf(stderr, "Can't initiate session because of:\n");
-		gfarmGssPrintStatus(stderr, e_major);
-#endif
+		if (gfarm_authentication_verbose) {
+			gflog_error("Can't initiate session because of:",
+				    NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	xxx_connection_set_secsession(conn, session);

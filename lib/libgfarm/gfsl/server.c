@@ -73,7 +73,7 @@ main(argc, argv)
     struct sockaddr_in remote;
     int remLen = sizeof(struct sockaddr_in);
     int fd = -1;
-    OM_uint32 majStat;
+    OM_uint32 majStat, minStat;
     unsigned long int rAddr, myAddr;
     char *rHost;
     char myHostname[4096];
@@ -87,9 +87,11 @@ main(argc, argv)
     }
     myAddr = gfarmIPGetAddressOfHost(myHostname);
 
-    if (gfarmSecSessionInitializeBoth(NULL, NULL, NULL, &majStat) <= 0) {
+    if (gfarmSecSessionInitializeBoth(NULL, NULL, NULL,
+				      &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as both role because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	gfarmSecSessionFinalizeBoth();
 	return 1;
     }

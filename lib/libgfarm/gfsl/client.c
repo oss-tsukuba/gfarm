@@ -91,14 +91,16 @@ main(argc, argv)
      char *argv[];
 {
     OM_uint32 majStat;
+    OM_uint32 minStat;
 
     if (ParseArgs(argc - 1, argv + 1) != 0) {
 	return 1;
     }
 
-    if (gfarmSecSessionInitializeInitiator(NULL, &majStat) <= 0) {
+    if (gfarmSecSessionInitializeInitiator(NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	gfarmSecSessionFinalizeInitiator();
 	return 1;
     }

@@ -53,6 +53,8 @@ char *gfarm_server_terminate(void);
 char *gfarm_server_config_read(void);
 void gfarm_config_set_filename(char *);
 
+extern int gfarm_authentication_verbose;
+
 char *gfarm_strtoken(char **, char **);
 
 extern char *gfarm_spool_root;

@@ -30,7 +30,7 @@ doServer(fd, hostname, port)
      char *hostname;
      int port;
 {
-    OM_uint32 majStat;
+    OM_uint32 majStat, minStat;
     char *rBuf = NULL;
     int tBufSz = -1;
     int n = -1;
@@ -40,12 +40,14 @@ doServer(fd, hostname, port)
     gfarmAuthEntry *aePtr = NULL;
 
     gfarmSecSession *initialSession =
-    	gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL, &majStat);
+    	gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL, &majStat,
+			     &minStat);
     int x;
 
     if (initialSession == NULL) {
 	fprintf(stderr, "Can't create acceptor session because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
     aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
@@ -70,7 +72,7 @@ doServer(fd, hostname, port)
     x = gfarmSecSessionReceiveLongs(initialSession, (long **)&tmpBuf, &n);
     if (x != 1) {
 	fprintf(stderr, "can't receive test buffer size because of:\n");
-	gfarmSecSessionPrintStatus(stderr, initialSession);
+	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
     tBufSz = *tmpBuf;
@@ -79,7 +81,7 @@ doServer(fd, hostname, port)
 
     if (gfarmSecSessionReceiveBytes(initialSession, &rBuf, &rSz) <= 0) {
 	fprintf(stderr, "test buffer receive failed because of:\n");
-	gfarmSecSessionPrintStatus(stderr, initialSession);
+	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
 
@@ -94,14 +96,14 @@ doServer(fd, hostname, port)
 
     if (gfarmSecSessionSendBytes(initialSession, rBuf, rSz) != rSz) {
 	fprintf(stderr, "test buffer send failed because of:\n");
-	gfarmSecSessionPrintStatus(stderr, initialSession);
+	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
     (void)free(rBuf);
 
     if (gfarmSecSessionReceiveLongs(initialSession, (long **)&tmpBuf, &n) != 1) {
 	fprintf(stderr, "can't receive delegation check flag because of:\n");
-	gfarmSecSessionPrintStatus(stderr, initialSession);
+	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
     dCheck = (int)*tmpBuf;
@@ -149,12 +151,15 @@ doClient(hostname, port, deleCred, deleCheck)
     char *rBuf = NULL;
     int rSz = -1;
     OM_uint32 majStat;
+    OM_uint32 minStat;
     gfarmSecSession *ss =
-    	gfarmSecSessionInitiateByName(hostname, port, deleCred, NULL, &majStat);
+    	gfarmSecSessionInitiateByName(hostname, port, deleCred, NULL,
+				      &majStat, &minStat);
 
     if (ss == NULL) {
 	fprintf(stderr, "Can't create initiator session because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	return;
     }
 
@@ -170,20 +175,20 @@ doClient(hostname, port, deleCred, deleCheck)
 
     if (gfarmSecSessionSendLongs(ss, (long *)&testBufSize, 1) != 1) {
 	fprintf(stderr, "can't send test buffer size because of:\n");
-	gfarmSecSessionPrintStatus(stderr, ss);
+	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
     fprintf(stderr, "Send buffer size: %d\n", testBufSize);
 
     if (gfarmSecSessionSendBytes(ss, sBuf, testBufSize) != testBufSize) {
 	fprintf(stderr, "test buffer send failed because of:\n");
-	gfarmSecSessionPrintStatus(stderr, ss);
+	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
 
     if (gfarmSecSessionReceiveBytes(ss, &rBuf, &rSz) <= 0) {
 	fprintf(stderr, "test buffer receive failed because of:\n");
-	gfarmSecSessionPrintStatus(stderr, ss);
+	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
 

@@ -63,9 +63,10 @@ gfarmGssGetCredentialName(cred)
 }
 
 
-char **
-gfarmGssCrackStatus(majStat)
-     OM_uint32 majStat;
+static char **
+gssCrackStatus(statValue, statType)
+     OM_uint32 statValue;
+     int statType;
 {
     OM_uint32 msgCtx;
     OM_uint32 minStat;
@@ -78,8 +79,8 @@ gfarmGssCrackStatus(majStat)
     while (1) {
 	msgCtx = 0;
 	(void)gss_display_status(&minStat,
-				 majStat,
-				 GSS_C_GSS_CODE,
+				 statValue,
+				 statType,
 				 GSS_C_NO_OID,
 				 &msgCtx,
 				 &stStr);
@@ -112,30 +113,61 @@ gfarmGssFreeCrackedStatus(strPtr)
 }
 
 
-void
-gfarmGssPrintStatus(fd, majStat)
-     FILE *fd;
+char **
+gfarmGssCrackMajorStatus(majStat)
      OM_uint32 majStat;
 {
-    char **list = gfarmGssCrackStatus(majStat);
+    return gssCrackStatus(majStat, GSS_C_GSS_CODE);
+}
+
+
+char **
+gfarmGssCrackMinorStatus(minStat)
+     OM_uint32 minStat;
+{
+    return gssCrackStatus(minStat, GSS_C_MECH_CODE);
+}
+
+
+void
+gfarmGssPrintMajorStatus(majStat)
+     OM_uint32 majStat;
+{
+    char **list = gfarmGssCrackMajorStatus(majStat);
     char **lP = list;
     if (*lP != NULL) {
 	while (*lP != NULL) {
-	    fprintf(fd, "%s\n", *lP++);
+	    gflog_error("", *lP++);
 	}
     } else {
-	fprintf(fd, "UNKNOWN\n");
+	gflog_error("GSS Major Status Error:", " UNKNOWN\n");
     }
-    fflush(fd);
+    gfarmGssFreeCrackedStatus(list);
+}
+
+
+void
+gfarmGssPrintMinorStatus(minStat)
+     OM_uint32 minStat;
+{
+    char **list = gfarmGssCrackMinorStatus(minStat); 
+    char **lP = list;
+    if (*lP != NULL) {
+	while (*lP != NULL)
+	    gflog_error("", *lP++);
+    } else {
+	gflog_error("GSS Minor Status Error:", " UNKNOWN\n");
+    }
     gfarmGssFreeCrackedStatus(list);
 }
 
 
 int
-gfarmGssAcquireCredential(credPtr, credUsage, statPtr, credNamePtr)
+gfarmGssAcquireCredential(credPtr, credUsage, majStatPtr, minStatPtr, credNamePtr)
      gss_cred_id_t *credPtr;
      gss_cred_usage_t credUsage;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
      char **credNamePtr;
 {
     OM_uint32 majStat = 0;
@@ -152,9 +184,12 @@ gfarmGssAcquireCredential(credPtr, credUsage, statPtr, credNamePtr)
 			       credPtr,
 			       NULL,
 			       NULL);
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
     }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }	
 
     /*
      * Check validness.
@@ -233,11 +268,12 @@ gfarmGssReceiveToken(fd, gsBuf)
 
 
 int
-gfarmGssAcceptSecurityContext(fd, cred, scPtr, statPtr, remoteNamePtr, remoteCredPtr)
+gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNamePtr, remoteCredPtr)
      int fd;
      gss_cred_id_t cred;
      gss_ctx_id_t *scPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
      char **remoteNamePtr;
      gss_cred_id_t *remoteCredPtr;
 {
@@ -378,8 +414,11 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, statPtr, remoteNamePtr, remoteCre
 	}
     }
 
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     
     if (initiatorName != GSS_C_NO_NAME) {
@@ -397,12 +436,13 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, statPtr, remoteNamePtr, remoteCre
 
 
 int
-gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, statPtr, remoteNamePtr)
+gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, majStatPtr, minStatPtr,remoteNamePtr)
      int fd;
      gss_cred_id_t cred;
      OM_uint32 reqFlag;
      gss_ctx_id_t *scPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
      char **remoteNamePtr;
 {
     OM_uint32 majStat;
@@ -453,7 +493,7 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, statPtr, remoteNamePtr
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
-	    (void)gss_release_buffer(&minStat, otPtr);
+	    (void)gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 	    }
@@ -513,8 +553,11 @@ gfarmGssInitiateSecurityContext(fd, cred, reqFlag, scPtr, statPtr, remoteNamePtr
 	}
     }
 
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
 
     if (ret == -1) {
@@ -540,13 +583,14 @@ gfarmGssDeleteSecurityContext(scPtr)
 
 
 int
-gfarmGssConfigureMessageSize(sCtx, doEncrypt, qopReq, reqOutSz, maxInSzPtr, statPtr)
+gfarmGssConfigureMessageSize(sCtx, doEncrypt, qopReq, reqOutSz, maxInSzPtr, majStatPtr, minStatPtr)
      gss_ctx_id_t sCtx;
      int doEncrypt;
      gss_qop_t qopReq;
      unsigned int reqOutSz;
      unsigned int *maxInSzPtr;
-     OM_uint32 *statPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
 {
     int ret = -1;
 
@@ -558,8 +602,11 @@ gfarmGssConfigureMessageSize(sCtx, doEncrypt, qopReq, reqOutSz, maxInSzPtr, stat
 
     majStat = gss_wrap_size_limit(&minStat, sCtx, doEncrypt, qopReq,
 				  oReqSz, &oMaxSz);
-    if (statPtr != NULL) {
-	*statPtr = majStat;
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
     }
     if (majStat == GSS_S_COMPLETE) {
 	ret = 1;

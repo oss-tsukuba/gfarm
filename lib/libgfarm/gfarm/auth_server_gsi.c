@@ -52,7 +52,7 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 {
 	int fd = xxx_connection_fd(conn);
 	char *e, *e2, *global_username;
-	OM_uint32 e_major;
+	OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
 	gfarm_int32_t error = GFARM_AUTH_ERROR_NO_ERROR; /* gfarm_auth_error */
@@ -70,14 +70,16 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 	}
 
 	session = gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL,
-	    &e_major);
+	    &e_major, &e_minor);
 	if (session == NULL) {
-#if 1 /* XXX for debugging */
-		fprintf(stderr, "Can't accept session because of:\n");
-		gfarmGssPrintStatus(stderr, e_major);
-#endif
-		gflog_error("GSI authentication error", hostname);
+		if (gfarm_authentication_verbose) {
+			gflog_error("Can't accept session because of:", NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+			gflog_error("GSI authentication error", hostname);
+		}
 		return (GFARM_ERR_AUTHENTICATION);
+		
 	}
 	xxx_connection_set_secsession(conn, session);
 

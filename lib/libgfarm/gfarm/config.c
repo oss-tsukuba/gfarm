@@ -45,6 +45,8 @@ gfarm_config_set_filename(char *filename)
 	gfarm_config_file = filename;
 }
 
+int gfarm_authentication_verbose = 0;
+
 /*
  * GFarm username handling
  */

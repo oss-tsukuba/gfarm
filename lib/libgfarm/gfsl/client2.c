@@ -76,6 +76,7 @@ main(argc, argv)
      char *argv[];
 {
     OM_uint32 majStat;
+    OM_uint32 minStat;
     gfarmSecSession *ss0 = NULL;
     gfarmSecSession *ss1 = NULL;
     char buf[4096];
@@ -87,22 +88,25 @@ main(argc, argv)
 	goto Done;
     }
 
-    if (gfarmSecSessionInitializeInitiator(NULL, &majStat) <= 0) {
+    if (gfarmSecSessionInitializeInitiator(NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 
-    ss0 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat);
+    ss0 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't initiate session 0 because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
-    ss1 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat);
+    ss1 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't initiate session 1 because of:\n");
-	gfarmGssPrintStatus(stderr, majStat);
+	gfarmGssPrintMajorStatus(majStat);
+	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 

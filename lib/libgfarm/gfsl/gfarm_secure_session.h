@@ -132,17 +132,20 @@ typedef struct {
 
 extern char **	gfarmSecSessionCrackStatus(gfarmSecSession *ssPtr);
 extern void	gfarmSecSessionFreeCrackedStatus(char **strPtr);
-extern void	gfarmSecSessionPrintStatus(FILE *fd, gfarmSecSession *ssPtr);
+extern void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
 
 extern int	gfarmSecSessionInitializeAcceptor(char *configFile,
 						  char *usermapFile,
-						  OM_uint32 *statPtr);
+						  OM_uint32 *majStatPtr,
+  						  OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeInitiator(char *configFile,
-						   OM_uint32 *statPtr);
+						   OM_uint32 *majStatPtr,
+						   OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeBoth(char *iConfigFile,
 					      char *aConfigFile,
 					      char *usermapFile,
-					      OM_uint32 *statPtr);
+					      OM_uint32 *majstatPtr,
+					      OM_uint32 *minstatPtr);
 
 extern void	gfarmSecSessionFinalizeAcceptor(void);
 extern void	gfarmSecSessionFinalizeInitiator(void);
@@ -151,22 +154,25 @@ extern void	gfarmSecSessionFinalizeBoth(void);
 extern gfarmSecSession *	gfarmSecSessionAccept(int fd,
 						      gss_cred_id_t cred,
 						      gfarmSecSessionOption *ssOptPtr,
-						      OM_uint32 *statPtr);
+						      OM_uint32 *majStatPtr,
+						      OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
-							OM_uint32 *statPtr);
+							OM_uint32 *majStatPtr,
+							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByAddr(unsigned long rAddr,
 							int port,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
-							OM_uint32 *statPtr);
+							OM_uint32 *majStatPtr,
+							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByName(char *hostname,
 							int port,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
-							OM_uint32 *statPtr);
-
+							OM_uint32 *majStatPtr,
+							OM_uint32 *minStatPtr);
 extern void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
 
 extern gss_cred_id_t		gfarmSecSessionGetDelegatedCredential(gfarmSecSession *ssPtr);
