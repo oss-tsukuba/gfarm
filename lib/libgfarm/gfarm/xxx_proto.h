@@ -6,6 +6,9 @@ struct gfarm_iobuffer;
 
 struct xxx_iobuffer_ops {
 	char *(*close)(void *, int);
+	char *(*export_credential)(void *);
+	char *(*delete_credential)(void *);
+	char *(*env_for_credential)(void *);
 	int (*nonblocking_read)(struct gfarm_iobuffer *, void *, int,
 	    void *, int);
 	int (*nonblocking_write)(struct gfarm_iobuffer *, void *, int,
@@ -26,6 +29,10 @@ void *xxx_connection_cookie(struct xxx_connection *);
 int xxx_connection_fd(struct xxx_connection *);
 void xxx_connection_set(struct xxx_connection *,
 	struct xxx_iobuffer_ops *, void *, int);
+
+char *xxx_connection_export_credential(struct xxx_connection *);
+char *xxx_connection_delete_credential(struct xxx_connection *);
+char *xxx_connection_env_for_credential(struct xxx_connection *);
 
 void gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *,
 	struct xxx_connection *);

@@ -169,8 +169,29 @@ xxx_iobuffer_close_fd_op(void *cookie, int fd)
 	return (close(fd) == -1 ? gfarm_errno_to_error(errno) : NULL);
 }
 
+char *
+xxx_iobuffer_export_credential_fd_op(void *cookie)
+{
+	return (NULL); /* it's already exported, or no way to export it. */
+}
+
+char *
+xxx_iobuffer_delete_credential_fd_op(void *cookie)
+{
+	return (NULL);
+}
+
+char *
+xxx_iobuffer_env_for_credential_fd_op(void *cookie)
+{
+	return (NULL);
+}
+
 struct xxx_iobuffer_ops xxx_fd_iobuffer_ops = {
 	xxx_iobuffer_close_fd_op,
+	xxx_iobuffer_export_credential_fd_op,
+	xxx_iobuffer_delete_credential_fd_op,
+	xxx_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_nonblocking_read_fd_op,
 	gfarm_iobuffer_nonblocking_write_fd_op,
 	gfarm_iobuffer_blocking_read_fd_op,

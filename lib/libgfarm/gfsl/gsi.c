@@ -760,3 +760,91 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
     return ret;
 }
 
+#if GFARM_GSS_EXPORT_CRED_ENABLED
+
+struct gfarmExportedCredential {
+    char *env;
+    char *filename;
+};
+
+gfarmExportedCredential *
+gfarmGssExportCredential(cred, statPtr)
+     gss_cred_id_t cred;
+     OM_uint32 *statPtr;
+{
+    gfarmExportedCredential *exportedCred = NULL;
+    OM_uint32 majStat = 0;
+    OM_uint32 minStat = 0;
+    gss_buffer_desc buf = GSS_C_EMPTY_BUFFER;
+    char *exported, *filename, *env;
+    static char exported_name[] = "X509_USER_DELEG_PROXY=";
+    static char env_name[] = "X509_USER_PROXY=";
+    static char file_prefix[] = "FILE:";
+
+    majStat = gss_export_cred(&minStat, cred, GSS_C_NO_OID, 1, &buf);
+    if (GSS_ERROR(majStat))
+	goto Done;
+
+    exported = (char *)buf.value;
+    for (filename = exported; *filename != '\0'; filename++)
+	if (!isalnum(*(unsigned char *)filename) && *filename != '_')
+	    break;
+    if (*filename != '=') { /* not an environment variable */
+	majStat = GSS_S_UNAVAILABLE;
+	goto Done;
+    }
+    filename++;
+    if (memcmp(exported, exported_name, sizeof(exported_name) - 1) == 0) {
+	env = malloc(sizeof(env_name) + strlen(filename));
+	if (env == NULL) {
+	    majStat = GSS_S_FAILURE;
+	    goto Done;
+	}
+	memcpy(env, env_name, sizeof(env_name) - 1);
+	strcpy(env + sizeof(env_name) - 1, filename);
+	filename = env + sizeof(env_name) - 1;
+    } else {
+	env = strdup(exported);
+	if (env == NULL) {
+	    majStat = GSS_S_FAILURE;
+	    goto Done;
+	}
+	filename = env + (filename - exported);
+    }
+    if (memcmp(filename, file_prefix, sizeof(file_prefix) - 1) == 0)
+	filename += sizeof(file_prefix) - 1;
+
+    exportedCred = malloc(sizeof(*exportedCred));
+    if (exportedCred == NULL) {
+	free(env);
+	majStat = GSS_S_FAILURE;
+	goto Done;
+    }
+    exportedCred->env = env;
+    exportedCred->filename = access(filename, R_OK) == 0 ? filename : NULL;
+
+    Done:
+    gss_release_buffer(&minStat, &buf);
+    if (statPtr != NULL)
+	*statPtr = majStat;
+    return exportedCred;
+}
+
+char *
+gfarmGssEnvForExportedCredential(exportedCred)
+    gfarmExportedCredential *exportedCred;
+{
+    return exportedCred->env;
+}
+
+void
+gfarmGssDeleteExportedCredential(exportedCred)
+    gfarmExportedCredential *exportedCred;
+{
+    if (exportedCred->filename != NULL)
+	unlink(exportedCred->filename);
+    free(exportedCred->env);
+    free(exportedCred);
+}
+
+#endif /* GFARM_GSS_EXPORT_CRED_ENABLED */

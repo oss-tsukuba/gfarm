@@ -3,6 +3,13 @@
 
 #define USE_GLOBUS
 
+#if defined(USE_GLOBUS)
+/* draft-engert-ggf-gss-extensions @ IETF & draft-ggf-gss-extensions @ GGF */
+# define GFARM_GSS_EXPORT_CRED_ENABLED	1
+#else
+# define GFARM_GSS_EXPORT_CRED_ENABLED	0
+#endif /* USE_GLOBUS */
+
 #if 0 /* defined(USE_GLOBUS) */ /* Now, Globus GSSAPI supports encryption */
 /*
  * Globus GSSAPI does not support confidentiality security service.

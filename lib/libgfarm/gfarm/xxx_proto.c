@@ -23,6 +23,8 @@ struct xxx_connection {
 	struct gfarm_iobuffer *sendbuffer;
 
 	struct xxx_iobuffer_ops *iob_ops;
+	void *cookie;
+	int fd;
 };
 
 /*
@@ -33,11 +35,13 @@ void xxx_connection_set(struct xxx_connection *conn,
 	struct xxx_iobuffer_ops *ops, void *cookie, int fd)
 {
 	conn->iob_ops = ops;
+	conn->cookie = cookie;
+	conn->fd = fd;
 
-	gfarm_iobuffer_set_read(conn->recvbuffer,
-	    ops->blocking_read, cookie, fd);
-	gfarm_iobuffer_set_write(conn->sendbuffer,
-	    ops->blocking_write, cookie, fd);
+	gfarm_iobuffer_set_read(conn->recvbuffer, ops->blocking_read,
+	    cookie, fd);
+	gfarm_iobuffer_set_write(conn->sendbuffer, ops->blocking_write,
+	    cookie, fd);
 }
 
 char *
@@ -70,16 +74,12 @@ char *
 xxx_connection_free(struct xxx_connection *conn)
 {
 	char *e, *e_save;
-	void *cookie = gfarm_iobuffer_get_read_cookie(conn->recvbuffer);
-		 /* == gfarm_iobuffer_get_write_cookie(conn->sendbuffer) */
-	int fd = gfarm_iobuffer_get_read_fd(conn->recvbuffer);
-	   /* == gfarm_iobuffer_get_write_fd(conn->sendbuffer) */
 
 	e_save = xxx_proto_flush(conn);
 	gfarm_iobuffer_free(conn->sendbuffer);
 	gfarm_iobuffer_free(conn->recvbuffer);
 
-	e = (*conn->iob_ops->close)(cookie, fd);
+	e = (*conn->iob_ops->close)(conn->cookie, conn->fd);
 	if (e_save == NULL)
 		e_save = e;
 
@@ -90,35 +90,49 @@ xxx_connection_free(struct xxx_connection *conn)
 void *
 xxx_connection_cookie(struct xxx_connection *conn)
 {
-	return (gfarm_iobuffer_get_read_cookie(conn->recvbuffer));
-	  /* == gfarm_iobuffer_get_write_cookie(conn->sendbuffer) */
+	return (conn->cookie);
 }
 
 int
 xxx_connection_fd(struct xxx_connection *conn)
 {
-	return (gfarm_iobuffer_get_read_fd(conn->recvbuffer));
-	  /* == gfarm_iobuffer_get_write_fd(conn->sendbuffer) */
+	return (conn->fd);
 }
+
+
+char *
+xxx_connection_export_credential(struct xxx_connection *conn)
+{
+	return ((*conn->iob_ops->export_credential)(conn->cookie));
+}
+
+char *
+xxx_connection_delete_credential(struct xxx_connection *conn)
+{
+	return ((*conn->iob_ops->delete_credential)(conn->cookie));
+}
+
+char *
+xxx_connection_env_for_credential(struct xxx_connection *conn)
+{
+	return ((*conn->iob_ops->env_for_credential)(conn->cookie));
+}
+
 
 void
 gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *b, 
 	struct xxx_connection *conn)
 {
-	gfarm_iobuffer_set_read(b,
-	    conn->iob_ops->nonblocking_read,
-	    gfarm_iobuffer_get_read_cookie(conn->recvbuffer),
-	    gfarm_iobuffer_get_read_fd(conn->recvbuffer));
+	gfarm_iobuffer_set_read(b, conn->iob_ops->nonblocking_read,
+	    conn->cookie, conn->fd);
 }
 
 void
 gfarm_iobuffer_set_nonblocking_write_xxx(struct gfarm_iobuffer *b,
 	struct xxx_connection *conn)
 {
-	gfarm_iobuffer_set_write(b,
-	    conn->iob_ops->nonblocking_write,
-	    gfarm_iobuffer_get_write_cookie(conn->sendbuffer),
-	    gfarm_iobuffer_get_write_fd(conn->sendbuffer));
+	gfarm_iobuffer_set_write(b, conn->iob_ops->nonblocking_write,
+	    conn->cookie, conn->fd);
 }
 
 char *
