@@ -1,1 +1,1 @@
-gfcd() { eval "`gfsetdir $1`"; }
+gfcd() { eval "`gfsetdir -s $1`"; }

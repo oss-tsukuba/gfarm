@@ -1,1 +1,1 @@
-alias gfcd 'eval `gfsetdir \!*`'
+alias gfcd 'eval `gfsetdir -c \!*`'
