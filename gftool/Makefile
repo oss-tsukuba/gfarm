@@ -8,6 +8,7 @@ SUBDIRS = \
 	digest \
 	gfexport \
 	gfkey \
+	gfls \
 	gfrcmd \
 	gfreg \
 	gfrep \
