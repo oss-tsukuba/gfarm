@@ -55,7 +55,7 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	pi.pathname = pathname;
 	pi.status.st_mode = GFARM_S_IFREG | (sb.st_mode & GFARM_S_ALLPERM);
 	pi.status.st_user = username;
-	pi.status.st_group = strdup("*"); /* XXX for now */
+	pi.status.st_group = "*"; /* XXX for now */
 	pi.status.st_atimespec.tv_sec = sb.st_atime;
 	pi.status.st_mtimespec.tv_sec = sb.st_mtime;
 	pi.status.st_ctimespec.tv_sec = sb.st_ctime;
@@ -66,7 +66,7 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	pi.status.st_nsections = nfrags;
 
 	e = gfarm_path_info_set(pi.pathname, &pi);
-	gfarm_path_info_free(&pi);
+	free(username);
 
 	return (e);
 }
@@ -75,11 +75,11 @@ static char *
 gfarm_path_info_remove_all(char *pathname)
 {
 	char *e, *e_save = NULL;
+#if 0
 	struct gfarm_path_info pi;
 
-#if 0
 	/*
-	 * It is not necessary to chech whether pathname is a
+	 * It is not necessary to check whether pathname is a
 	 * directory or not.  This function would like to force to
 	 * remove the path information from file system metadata.
 	 */
