@@ -316,6 +316,9 @@ main(int argc, char *argv[])
 		case 'a':
 			section = optarg;
 			break;
+		case 'H':
+			hostfile = optarg;
+			break;
 		case 'N':
 			nfragments = strtol(optarg, NULL, 0);
 			break;
