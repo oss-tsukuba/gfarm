@@ -435,7 +435,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				add_slash = 0;
 
 			*urlp = malloc(sizeof_gfarm_prefix - 1
-				       + strlen(path + sizeof_prefix)
+				       + strlen(path + sizeof_prefix - 1)
 				       + 1 + add_slash);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
