@@ -421,40 +421,6 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	}	  
 
 	bp = buf;
-	if (!gfs_hook_is_read(filedes)) { /* for the first time */
-		static const char dot[] = ".";
-		static const char dotdot[] = "..";
-
-		e = NULL;
-		reclen = ALIGN(		
-			offsetof(STRUCT_DIRENT, d_name) + sizeof(dot));
-		if ((char *)bp + reclen > (char *)buf + nbyte) {
-			e = GFARM_ERR_INVALID_ARGUMENT;
-			goto finish;
-		}
-		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
-		bp->d_ino = 1; /* XXX */
-		bp->d_reclen = reclen;
-		strcpy(bp->d_name, dot);
-		memset(bp->d_name + sizeof(dot) - 1, 0,
-	         reclen - (offsetof(STRUCT_DIRENT, d_name) + sizeof(dot) - 1));
-		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
-
-		reclen = ALIGN(		
-			offsetof(STRUCT_DIRENT, d_name) + sizeof(dotdot));
-		if ((char *)bp + reclen > (char *)buf + nbyte) {
-			e = GFARM_ERR_INVALID_ARGUMENT;
-			goto finish;
-		}
-		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
-		bp->d_ino = 1; /* XXX */
-		bp->d_reclen = reclen;
-		strcpy(bp->d_name, dotdot);
-		memset(bp->d_name + sizeof(dotdot) - 1, 0,
-	         reclen -
-		  (offsetof(STRUCT_DIRENT, d_name) + sizeof(dotdot) - 1));
-		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
-	}
 	if ((entry = gfs_hook_get_suspended_gfs_dirent(filedes)) != NULL) {
 		reclen = ALIGN(
 			offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen + 1);
@@ -464,7 +430,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		}
 		gfs_hook_set_suspended_gfs_dirent(filedes, NULL);
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
-		bp->d_ino = 1; /* XXX */ 
+		bp->d_ino = entry->d_fileno;
 		bp->d_reclen = reclen;
 		memcpy(bp->d_name, entry->d_name, entry->d_namlen);
 		memset(bp->d_name + entry->d_namlen, 0,
@@ -479,7 +445,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 			goto finish;
 		}
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
-		bp->d_ino = 1; /* XXX */ 
+		bp->d_ino = entry->d_fileno;
 		bp->d_reclen = reclen;
 		memcpy(bp->d_name, entry->d_name, entry->d_namlen);
 		memset(bp->d_name + entry->d_namlen, 0,
@@ -490,7 +456,6 @@ finish:
 	if (e == NULL) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___GETDENTS) " --> %d\n", filedes));
-		gfs_hook_inc_readcount(filedes);
 		return ((char *)bp - (char *)buf);
 	}
 error:

@@ -27,7 +27,6 @@ struct _gfs_file_descriptor {
 		GFS_File f;
 		struct {
 			GFS_Dir dir;
-			int readcount;
 			struct gfs_dirent *suspended;
 			struct gfs_stat gst;
 			char *canonical_path; /* for __fchdir() hook */
@@ -195,7 +194,6 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_DIR;
 	_gfs_file_buf[fd]->u.d->dir = dir;
-	_gfs_file_buf[fd]->u.d->readcount = 0;
 	_gfs_file_buf[fd]->u.d->suspended = NULL;
 	e = gfs_stat(url, &_gfs_file_buf[fd]->u.d->gst);
 	if (e != NULL)
@@ -238,7 +236,6 @@ gfs_hook_clear_gfs_file(int fd)
 			e = gfs_pio_close(gf);
 		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
 			_gfs_file_buf[fd]->u.d->dir = NULL;
-			_gfs_file_buf[fd]->u.d->readcount = 0;
 			_gfs_file_buf[fd]->u.d->suspended = NULL;
 			gfs_stat_free(&_gfs_file_buf[fd]->u.d->gst);
 			free(_gfs_file_buf[fd]->u.d->canonical_path); 
@@ -382,21 +379,6 @@ gfs_hook_delete_creating_file(GFS_File gf)
 	gfarm_hash_purge(creating_file_hashtab, 
 	    gf->pi.pathname, strlen(gf->pi.pathname) + 1);
 	return;
-}
-
-void
-gfs_hook_inc_readcount(int fd)
-{
-	_gfs_hook_debug(
-		fprintf(stderr, "GFS: inc_readount: %d\n", fd));
-
-	++_gfs_file_buf[fd]->u.d->readcount;
-}
-
-int
-gfs_hook_is_read(int fd)
-{
-	return (_gfs_file_buf[fd]->u.d->readcount > 0);
 }
 
 void
