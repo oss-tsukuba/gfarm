@@ -1175,11 +1175,17 @@ main(int argc, char **argv)
 				} else {
 					sort_pid = setup_sort("+0n");
 				}
-			} else {
+			} else if (opt_udp_only) {
 				if (opt_sort_reverse) {
 					sort_pid = setup_sort("+1r");
 				} else {
 					sort_pid = setup_sort("+1");
+				}
+			} else {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+2r");
+				} else {
+					sort_pid = setup_sort("+2");
 				}
 			}
 		}
@@ -1239,11 +1245,17 @@ main(int argc, char **argv)
 				} else {
 					sort_pid = setup_sort("+0n");
 				}
-			} else {
+			} else if (opt_udp_only) {
 				if (opt_sort_reverse) {
 					sort_pid = setup_sort("+3r");
 				} else {
 					sort_pid = setup_sort("+3");
+				}
+			} else {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+4r");
+				} else {
+					sort_pid = setup_sort("+4");
 				}
 			}
 		}
