@@ -66,8 +66,8 @@ usage()
 #else		
 		"Usage: %s [-bghnuprS] [-l <login>]\n"
 #endif
-		"\t[-G <Gfarm file> [ -I <section> ]|-H <hostfile>|"
-		"-N <number of hosts>]\n"
+		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>] "
+		"[-I <section>]\n"
 		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
 		" command ...\n",
 		program_name);
@@ -214,6 +214,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 					return (e);
 				sprintf(total_nodes, "%d", nfrags);
 			}
+			else if (options->nprocs > 0)
+				sprintf(total_nodes, "%d", options->nprocs);
 		}
 		else
 			sprintf(node_index, "%d", i);
@@ -391,10 +393,10 @@ schedule(char *command_name, struct gfrun_options *options,
 		scheduling_file = options->hosts_file;
 	} else if (options->nprocs > 0) {
 		if (options->section != NULL)
-			fprintf(stderr, "%s: warning: -I option is ignored\n",
-				program_name);
-
-		nhosts = options->nprocs;
+			/* schedule a process for specified section */
+			nhosts = 1;
+		else
+			nhosts = options->nprocs;
 		hosts = malloc(sizeof(*hosts) * nhosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: not enough memory for %d hosts",
@@ -409,7 +411,7 @@ schedule(char *command_name, struct gfrun_options *options,
 		}
 		if (e != NULL) {
 			fprintf(stderr, "%s: scheduling %d nodes: %s\n",
-			    program_name, options->nprocs, e);
+			    program_name, nhosts, e);
 			exit(1);
 		}
 		scheduling_file = "";
