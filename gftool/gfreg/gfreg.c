@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include <gfarm/gfarm.h>
+#include "schedule.h" /* gfarm_strings_expand_cyclic() */
 
 /*
  *  Register a local file to Gfarm filesystem
@@ -580,6 +581,18 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: %s: %s\n",
 					    program_name, hostfile, e);
 				exit(EXIT_FAILURE);
+			}
+			if (nhosts < nfragments) {
+				hosts = realloc(hosts,
+				    sizeof(*hosts) * nfragments);
+				if (hosts == NULL) {
+					fprintf(stderr, "%s: %s\n",
+					    program_name,
+					    GFARM_ERR_NO_MEMORY);
+					exit(EXIT_FAILURE);
+				}
+				gfarm_strings_expand_cyclic(nhosts, hosts,
+				    nfragments - nhosts, &hosts[nhosts]);
 			}
 		} else {
 			hosts = malloc(sizeof(*hosts) * nfragments);
