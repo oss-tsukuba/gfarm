@@ -1,6 +1,6 @@
 VPATH=$(srcdir)
 
-include $(top_objdir)/makes/config.mk
+include $(top_builddir)/makes/config.mk
 
 ja_mandir = $(default_mandir)/ja
 
@@ -13,29 +13,29 @@ metadb_client_libs = $(ldap_libs)
 RM = rm
 
 COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
-	-I$(top_objdir)/include -I$(top_srcdir)/include
+	-I$(top_builddir)/include -I$(top_srcdir)/include
 COMMON_LDFLAGS = $(largefile_ldflags)
-GFARMLIB = -L$(top_objdir)/lib/libgfarm -lgfarm \
+GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
 	$(metadb_client_libs) $(globus_gssapi_libs) $(openssl_libs)
 
 INC_SRCDIR = $(top_srcdir)/include/gfarm
-INC_OBJDIR = $(top_objdir)/include/gfarm
-DEPGFARMLIB = $(top_objdir)/lib/libgfarm/libgfarm.a
-DEPGFARMINC = $(INC_OBJDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_metadb.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
+INC_BUILDDIR = $(top_builddir)/include/gfarm
+DEPGFARMLIB = $(top_builddir)/lib/libgfarm/libgfarm.a
+DEPGFARMINC = $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_metadb.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
 
 # ns
 
 NS_COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
-	-I$(top_objdir)/include \
-	-I$(top_objdir)/ns/include -I$(top_srcdir)/ns/include
-NSLIB = -L$(top_objdir)/ns/nslib -lns
-NSEXECLIB = -L$(top_objdir)/ns/nslib -lnsexec
+	-I$(top_builddir)/include \
+	-I$(top_builddir)/ns/include -I$(top_srcdir)/ns/include
+NSLIB = -L$(top_builddir)/ns/nslib -lns
+NSEXECLIB = -L$(top_builddir)/ns/nslib -lnsexec
 
 NSINC_SRCDIR = $(top_srcdir)/ns/include/gfarm
-NSINC_OBJDIR = $(top_objdir)/ns/include/gfarm
+NSINC_BUILDDIR = $(top_builddir)/ns/include/gfarm
 GFD_SRCDIR = $(top_srcdir)/ns/gfarmd
-DEPNSLIB = $(top_objdir)/ns/nslib/libns.a
-DEPNSEXECLIB = $(top_objdir)/ns/nslib/libnsexec.a
+DEPNSLIB = $(top_builddir)/ns/nslib/libns.a
+DEPNSEXECLIB = $(top_builddir)/ns/nslib/libnsexec.a
 
 # gfsl
 
