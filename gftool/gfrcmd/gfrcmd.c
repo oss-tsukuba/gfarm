@@ -167,9 +167,11 @@ main(argc, argv)
 	 * for GSI DN <-> gfarm global username mapping.
 	 */
 	gfarm_error_initialize();
-	e = gfarm_set_user_for_this_local_account();
+	e = gfarm_set_local_user_for_this_local_account();
 	if (e == NULL)
 		e = gfarm_config_read();
+	if (e == NULL)
+		e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);

@@ -49,18 +49,208 @@ gfarm_config_set_filename(char *filename)
  * GFarm username handling
  */
 
+static gfarm_stringlist local_user_map_file_list;
+
+static char GFARM_ERR_TOO_MANY_ARGUMENTS[] = "too many arguments";
+static char GFARM_ERR_LOCAL_USER_REDEFIEND[] = "local user name redifined";
+static char GFARM_ERR_GLOBAL_USER_REDEFIEND[] = "global user name redifined";
+
 /* the return value of the following function should be free(3)ed */
 char *
-gfarm_global_to_local_username(char *global_user)
+gfarm_global_to_local_username(char *global_user ,char **local_user)
 {
-	return (strdup(global_user)); /* XXX - for now */
+	FILE *map = NULL;
+	char *mapfile = NULL;
+	int i, list_len;
+	char buffer[1024], *g_user, *l_user, *e;
+	int lineno = 0;
+	static char format[] = "%s: line %d: %s";
+	static char error[256];
+
+	e = NULL;
+	*local_user = NULL;
+	list_len = gfarm_stringlist_length(&local_user_map_file_list);
+	for (i = 0; i < list_len; i++) {
+		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
+		if ((map = fopen(mapfile, "r")) == NULL) {
+			e = "cannot read"; 
+#ifdef HAVE_SNPRINTF
+			snprintf(error, sizeof(error),
+				 "%s: %s", mapfile, e);
+#else
+			if (strlen(format) + strlen(mapfile) + strlen(e) <
+			    sizeof(error)) {
+				sprintf(error,
+					"%s: %s", mapfile, e);
+			} else {
+				/* XXX: no file name */
+				strcpy(error, "user map file cannot read");
+			}
+#endif
+			return (error);
+		}
+		lineno = 0;
+		while (fgets(buffer, sizeof buffer, map) != NULL) {
+			char *bp = buffer;
+
+			lineno++;
+			g_user = gfarm_strtoken(&bp, &e);
+			if (e != NULL)
+				goto finish;
+			if (global_user == NULL) /* blank or comment line */
+				continue;
+			l_user = gfarm_strtoken(&bp, &e);
+			if (e != NULL)
+				goto finish;
+			if (l_user == NULL) {
+				e = "local user name undefined";
+				goto finish;
+			}
+			if (strcmp(g_user, global_user) == 0) {
+				if (*local_user != NULL &&
+				    strcmp(l_user, *local_user) != 0) {
+					e = GFARM_ERR_GLOBAL_USER_REDEFIEND;
+					goto finish;
+				}
+				*local_user = strdup(l_user);
+				if (*local_user == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					goto finish;
+				}
+			}
+			if (gfarm_strtoken(&bp, &e) != NULL) {
+				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
+				goto finish;
+			}
+		}
+		fclose(map);
+		map = NULL;
+	}	
+	if (*local_user == NULL) { /* not found */
+	 	*local_user = strdup(global_user);
+		if (*local_user == NULL)
+			e = GFARM_ERR_NO_MEMORY;
+	}	
+finish:	
+	if (map != NULL)
+		fclose(map);
+	if (e != NULL) {
+#ifdef HAVE_SNPRINTF
+		snprintf(error, sizeof(error),
+			 format, mapfile, lineno, e);
+#else
+		if (strlen(format) + strlen(mapfile) +
+		    GFARM_INT32STRLEN + strlen(e) <
+		    sizeof(error)) {
+			sprintf(error,
+				format, mapfile, lineno, e);
+		} else {
+			/* XXX: no file name, no line number */
+			strcpy(error, "user map file read error");
+		}
+#endif
+		e = error;
+	}
+	return (e);
 }
 
 /* the return value of the following function should be free(3)ed */
 char *
-gfarm_local_to_global_username(char *local_user)
+gfarm_local_to_global_username(char *local_user, char **global_user)
 {
-	return (strdup(local_user)); /* XXX - for now */
+	FILE *map = NULL;
+	char *mapfile = NULL;
+	int i, list_len;
+	char buffer[1024], *g_user, *l_user, *e;
+	int lineno = 0;
+	static char format[] = "%s: line %d: %s";
+	static char error[256];
+
+	e = NULL;
+	*global_user = NULL;
+	list_len = gfarm_stringlist_length(&local_user_map_file_list);
+	for (i = 0; i < list_len; i++) {
+		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
+		if ((map = fopen(mapfile, "r")) == NULL) {
+			e = "cannot read"; 
+#ifdef HAVE_SNPRINTF
+			snprintf(error, sizeof(error),
+				 "%s: %s", mapfile, e);
+#else
+			if (strlen(format) + strlen(mapfile) + strlen(e) <
+			    sizeof(error)) {
+				sprintf(error,
+					"%s: %s", mapfile, e);
+			} else {
+				/* XXX: no file name */
+				strcpy(error, "user map file cannot read");
+			}
+#endif
+			return (error);
+		}
+		lineno = 0;
+		while (fgets(buffer, sizeof buffer, map) != NULL) {
+			char *bp = buffer;
+
+			lineno++;
+			g_user = gfarm_strtoken(&bp, &e);
+			if (e != NULL)
+				goto finish;
+			if (global_user == NULL) /* blank or comment line */
+				continue;
+			l_user = gfarm_strtoken(&bp, &e);
+			if (e != NULL)
+				goto finish;
+			if (l_user == NULL) {
+				e = "local user name undefined";
+				goto finish;
+			}
+			if (strcmp(l_user, local_user) == 0) {
+				if (*global_user != NULL &&
+				    strcmp(g_user, *global_user) != 0) {
+					e = GFARM_ERR_LOCAL_USER_REDEFIEND;
+					goto finish;
+				}
+				*global_user = strdup(g_user);
+				if (*global_user == NULL) {
+					e = GFARM_ERR_NO_MEMORY;
+					goto finish;
+				}
+			}
+			if (gfarm_strtoken(&bp, &e) != NULL) {
+				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
+				goto finish;
+			}
+		}
+		fclose(map);
+		map = NULL;
+	}	
+	if (*global_user == NULL) { /* not found */
+	 	*global_user = strdup(local_user);
+		if (*global_user == NULL)
+			e = GFARM_ERR_NO_MEMORY;
+	}	
+finish:	
+	if (map != NULL)
+		fclose(map);
+	if (e != NULL) {
+#ifdef HAVE_SNPRINTF
+		snprintf(error, sizeof(error),
+			 format, mapfile, lineno, e);
+#else
+		if (strlen(format) + strlen(mapfile) +
+		    GFARM_INT32STRLEN + strlen(e) <
+		    sizeof(error)) {
+			sprintf(error,
+				format, mapfile, lineno, e);
+		} else {
+			/* XXX: no file name, no line number */
+			strcpy(error, "user map file read error");
+		}
+#endif
+		e = error;
+	}
+	return (e);
 }
 
 static char *
@@ -122,13 +312,12 @@ gfarm_get_local_homedir(void)
  * (because it may be forged).
  */
 char *
-gfarm_set_user_for_this_local_account(void)
+gfarm_set_local_user_for_this_local_account(void)
 {
 	char *error = NULL;
 	char *user;
 	char *home;
 	struct passwd *pwd;
-	char *global_user;
 
 	user = getenv("USER");
 	if (user == NULL)
@@ -159,14 +348,6 @@ gfarm_set_user_for_this_local_account(void)
 				home = "/";
 		}
 	}
-	global_user = gfarm_local_to_global_username(user);
-	if (global_user == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	error = gfarm_set_global_username(global_user);
-	free(global_user);
-	if (error != NULL)
-		return (error);
-
 	error = gfarm_set_local_username(user);
 	if (error != NULL)
 		return (error);
@@ -174,6 +355,20 @@ gfarm_set_user_for_this_local_account(void)
 	if (error != NULL)
 		return (error);
 	return (error);
+}
+
+char *
+gfarm_set_global_user_for_this_local_account(void)
+{
+	char *e, *local_user, *global_user;
+
+	local_user = gfarm_get_local_username();
+	e = gfarm_local_to_global_username(local_user, &global_user);
+	if (e != NULL)
+		return (e);
+	e = gfarm_set_global_username(global_user);
+	gfarm_stringlist_free_deeply(&local_user_map_file_list);
+	return (e);
 }
 
 /*
@@ -303,8 +498,6 @@ gfarm_strtoken(char **cursorp, char **errorp)
 		}
 	}
 }
-
-static char GFARM_ERR_TOO_MANY_ARGUMENTS[] = "too many arguments";
 
 static char *
 parse_auth_arguments(char *p, char **op)
@@ -527,6 +720,23 @@ parse_address_use_arguments(char *p, char **op)
 }
 
 static char *
+parse_local_user_map(char *p, char **op)
+{
+	char *e, *mapfile;
+
+	mapfile = gfarm_strtoken(&p, &e);
+	if (mapfile == NULL)
+		return ("missing <user map file> argument");
+	if (gfarm_strtoken(&p, &e) != NULL)
+		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+	mapfile = strdup(mapfile);
+	if (mapfile == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = gfarm_stringlist_add(&local_user_map_file_list, mapfile);
+	return(e);
+}
+
+static char *
 get_one_argument(char *p, char **rv)
 {
 	char *s, *e;
@@ -576,6 +786,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_sockopt_arguments(p, &o);
 	} else if (strcmp(s, o = "address_use") == 0) {
 		e = parse_address_use_arguments(p, &o);
+	} else if (strcmp(s, o = "local_user_map") == 0) {
+		e = parse_local_user_map(p, &o);
 	} else {
 		o = s;
 		e = "unknown keyword";
@@ -742,6 +954,7 @@ gfarm_config_read(void)
 	if (rc == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(rc, "%s/%s", home, gfarm_client_rc);
+	gfarm_stringlist_init(&local_user_map_file_list);
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
@@ -793,6 +1006,7 @@ gfarm_server_config_read(void)
 		return (NULL);
 	}
 
+	gfarm_stringlist_init(&local_user_map_file_list);
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
 		return ("gfarm.conf: cannot read");
 	}
@@ -1013,10 +1227,13 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	gfarm_error_initialize();
 
-	e = gfarm_set_user_for_this_local_account();
+	e = gfarm_set_local_user_for_this_local_account();
 	if (e != NULL)
 		return (e);
 	e = gfarm_config_read();
+	if (e != NULL)
+		return (e);
+	e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL)
 		return (e);
  	e = gfarm_metadb_initialize();
@@ -1096,10 +1313,11 @@ main()
 	char *e;
 
 	gfarm_error_initialize();
-	e = gfarm_set_user_for_this_local_account();
+	e = gfarm_set_local_user_for_this_local_account();
 	if (e) {
 		fprintf(stderr,
-			"gfarm_set_user_for_this_local_account(): %s\n", e);
+			"gfarm_set_local_user_for_this_local_account(): %s\n",
+			e);
 		exit(1);
 	}
 	e = gfarm_config_read();

@@ -186,8 +186,8 @@ gfarm_authorize_simple(struct xxx_connection *conn, int switch_to,
 
 	log_set_auxiliary_info(global_username);
 
-	local_username = gfarm_global_to_local_username(global_username);
-	if (local_username == NULL) {
+	e = gfarm_global_to_local_username(global_username, &local_username);
+	if (e != NULL) {
 		pwd = NULL;
 		log_error("authorize_simple",
 			  "cannot map global username into local username");

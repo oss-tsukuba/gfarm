@@ -19,8 +19,8 @@ typedef int		gfarm_int32_t;
  */
 
 /* the return value of the following functions should be free(3)ed */
-char *gfarm_global_to_local_username(char *);
-char *gfarm_local_to_global_username(char *);
+char *gfarm_global_to_local_username(char *, char **);
+char *gfarm_local_to_global_username(char *, char **);
 
 /*
  * the return value of the following gfarm_get_*() funtions should not be
@@ -33,7 +33,8 @@ char *gfarm_set_local_username(char *);
 char *gfarm_get_local_username(void);
 char *gfarm_set_local_homedir(char *);
 char *gfarm_get_local_homedir(void);
-char *gfarm_set_user_for_this_local_account(void);
+char *gfarm_set_local_user_for_this_local_account(void);
+char *gfarm_set_global_user_for_this_local_account(void);
 
 /*
  * gfarm.conf
