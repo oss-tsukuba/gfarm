@@ -19,12 +19,20 @@ Table of Contents:
     authentication?
 
 4. Limitation
+  4.1 "drwxrwxrwx" is always displayed as permisson of a directory with gfls.
+    What is this?
+  4.2 Where is gfmkdir, gfrmdir and gfmv?
+  4.3 Can I open a file with read-write mode?
 
 1. General
 **********
   1.1 What is Gfarm?
-  1.2 Where can I download Gfarm?
+	Please look at the following URL:
+		http://datafarm.apgrid.org/index.ja.html
 
+  1.2 Where can I download Gfarm?
+	It is delivered from the following URL:
+		http://datafarm.apgrid.org/software/
 
 2. Trouble Shooting
 *******************
@@ -33,8 +41,92 @@ Table of Contents:
 ***********
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
     a firewall?
+
+	There are two problems for now.
+
+	First, with standard installation of Gfarm-1.0, the LDAP
+	server for Gfarm works as everyone-writable without any
+	authentication. Because this means host information,
+	filenames, owners of files and location of files are all
+	writable from anyone, this is entirely insecure.  Due to this
+	this problem, We strongly recommend to use Gfarm-1.0 inside of
+	a firewall.
+	Or perhaps, you must use packet filtering (e.g. iptable on
+	Linux) to permit access to the port of LDAP server only from
+	trusted hosts. But attacks like packet sniffering and TCP
+	session hijacking cannot be avoided by packet filtering.
+	BTW, gfsd and gfmd don't have this problem, so, authentication
+	is always performed at access to file contents.
+
+	Second problem is the way of authentication.
+	Gfarm-1.0 supports two authenticaion methods, namely
+	the sharedsecret authentication and the GSI authenticaion.
+	And sharedsecret authentication is not safe enough on
+	the Interent environment. Please refer next question
+	about this issue.
+
   3.2 What is the difference between GSI authentication and sharedsecret
     authentication?
 
+	The sharedsecret authenticaion in Gfarm is an authentcation
+	which is based on a shared key. In this authenticaion in
+	Gfarm, only authenticaion service is provided, and data
+	signing and data encryption are not provided. Thus, this
+	method still has a risk of packet sniffering and TCP session
+	hijacking.  Due to this reason, we recommend to use
+	sharedsecret authenticaion only on an environments which is
+	protected by a firewall.  The reasons why we provides this
+	authentication are because this is fast, and you don't have to
+	acquire a public key.
+
+	The GSI (Grid Security Infrastructure) authenticaion is an
+	authentcaion which is based on a public key infrastructure.
+	Gfarm uses the Globus GSI library for this authenticaion.
+	Because the Globus provides data encryption, the GSI
+	authenticaion is considered more secure than the sharedsecret
+	authenticaion in Gfarm. But please note that some exportable
+	versons of Globus don't support encryption. We recommend you
+	to confirm that your Globus version certainly supports
+	encryption.
+
+	The GSI authentication is only available, when you use --
+	with-globus option at "configure" time.
+	Please look at the following URL for the GSI authenticaion:
+		http://www.globus.org/
+
+	If you use the sharedsecret authenticaion, we recommmend you
+	to enable it only for safe local network like the following
+	gfarm.conf configuraton:
+		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi ALL
+	(This example assumes 192.168.0.0/24 is the local network
+	 which is protected by a firewall.)
+
 4. Limitation
 *************
+  4.1 "drwxrwxrwx" is always displayed as permisson of a directory with gfls.
+    What is this?
+
+	This is a limitation caused by the fact that currently
+	the LDAP server for Gfarm doesn't hold any information about
+	directories. Actually, not every user can create a file,
+	but only users who are permitted by the owner and the mode of
+	the directory can carete a file.
+
+	We plan to fix this problem in next major release.
+
+  4.2 Where is gfmkdir, gfrmdir and gfmv?
+
+	There isn't such program currently unfortunately.
+	Please use command like the follows for this issue for now.
+		prun -a mkdir /var/spool/gfarm/$USER/dir
+
+	We plan to fix this problem in next major release.
+
+  4.3 Can I open a file with read-write mode?
+
+	Currently, no error happens even if you open a file with
+	read-write mode. But if there are some replicas of the file,
+	inconsistency may be caused by this operation.
+
+	We plan to fix this problem in next major release.
