@@ -214,7 +214,7 @@ lookup_path(const char *path, int is_dir, int create, struct node **np)
 		e = gfs_getcwd(cwd, sizeof(cwd));
 		if (e != NULL)
 			return (e);
-		e = lookup_relative(root, cwd, 1, /* XXX */ 1, &n);
+		e = lookup_relative(root, cwd, 1, 0, &n);
 		if (e != NULL)
 			return (e);
 	}
