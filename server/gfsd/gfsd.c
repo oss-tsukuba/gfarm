@@ -1098,6 +1098,17 @@ sigchld_handler(int sig)
 	}
 }
 
+void
+fatal_command(char *message, char *status)
+{
+	struct gfs_server_command_context *cc = &server_command_context;
+
+	/* "-" is to send it to the process group */
+	kill(-cc->pid, SIGTERM);
+
+	fatal_proto(message, status);
+}
+
 char *
 gfs_server_command_fd_set(struct xxx_connection *client,
 			  fd_set *readable, fd_set *writable, int *max_fdp)
@@ -1152,50 +1163,67 @@ char *
 gfs_server_command_io_fd_set(struct xxx_connection *client,
 			     fd_set *readable, fd_set *writable)
 {
+	char *e;
 	struct gfs_server_command_context *cc = &server_command_context;
-	int fd, conn_fd = xxx_connection_fd(client);
+	int i, fd, conn_fd = xxx_connection_fd(client);
 
 	fd = gfarm_iobuffer_get_write_fd(cc->iobuffer[FDESC_STDIN]);
 	if (FD_ISSET(fd, writable)) {
 		assert(gfarm_iobuffer_is_writable(cc->iobuffer[FDESC_STDIN]));
 		gfarm_iobuffer_write(cc->iobuffer[FDESC_STDIN], NULL);
+		e = gfarm_iobuffer_get_error(cc->iobuffer[FDESC_STDIN]);
+		if (e != NULL) {
+			/* just purge the content */
+			gfarm_iobuffer_purge(cc->iobuffer[FDESC_STDIN], NULL);
+			gflog_warning("command: abandon stdin", e);
+			gfarm_iobuffer_set_error(cc->iobuffer[FDESC_STDIN],
+			    NULL);
+		}
 		if (gfarm_iobuffer_is_eof(cc->iobuffer[FDESC_STDIN]))
 			close(fd);
 	}
 
-	fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDOUT]);
-	if (FD_ISSET(fd, readable))
-		gfarm_iobuffer_read(cc->iobuffer[FDESC_STDOUT], NULL);
-
-	fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDERR]);
-	if (FD_ISSET(fd, readable))
-		gfarm_iobuffer_read(cc->iobuffer[FDESC_STDERR], NULL);
+	for (i = FDESC_STDOUT; i <= FDESC_STDERR; i++) {
+		fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[i]);
+		if (!FD_ISSET(fd, readable))
+			continue;
+		gfarm_iobuffer_read(cc->iobuffer[i], NULL);
+		e = gfarm_iobuffer_get_error(cc->iobuffer[i]);
+		if (e == NULL)
+			continue;
+		/* treat this as eof */
+		gfarm_iobuffer_set_read_eof(cc->iobuffer[i]);
+		gflog_warning(i == FDESC_STDOUT ?
+		    "command: reading stdout" :
+		    "command: reading stderr",
+		     e);
+		gfarm_iobuffer_set_error(cc->iobuffer[i], NULL);
+	}
 
 	if (FD_ISSET(conn_fd, readable) &&
 	    cc->server_state != GFS_COMMAND_SERVER_STATE_EXITED) {
 		if (cc->client_state == GFS_COMMAND_CLIENT_STATE_NEUTRAL) {
 			gfarm_int32_t cmd, fd, len, sig;
 			int eof;
-			char *e;
 
 			e = xxx_proto_recv(client, 1, &eof, "i", &cmd);
 			if (e != NULL)
-				fatal_proto("command:client subcommand",
-				    e);
+				fatal_command("command:client subcommand", e);
 			if (eof)
-				fatal_proto("command:client subcommand",
-					    "eof");
+				fatal_command("command:client subcommand",
+				    "eof");
 			switch (cmd) {
 			case GFS_PROTO_COMMAND_EXIT_STATUS:
-				fatal_proto("command:client subcommand",
-					    "unexpected exit_status");
+				fatal_command("command:client subcommand",
+				    "unexpected exit_status");
 				break;
 			case GFS_PROTO_COMMAND_SEND_SIGNAL:
 				e = xxx_proto_recv(client, 1, &eof, "i", &sig);
 				if (e != NULL)
-					fatal_proto("command_send_signal", e);
+					fatal_command(
+					    "command_send_signal", e);
 				if (eof)
-					fatal_proto(
+					fatal_command(
 					    "command_send_signal", "eof");
 				/* "-" is to send it to the process group */
 				kill(-cc->pid, sig);
@@ -1204,13 +1232,14 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 				e = xxx_proto_recv(client, 1, &eof,
 						   "ii", &fd, &len);
 				if (e != NULL)
-					fatal_proto("command_fd_input", e);
+					fatal_command("command_fd_input", e);
 				if (eof)
-					fatal_proto("command_fd_input",
+					fatal_command("command_fd_input",
 					    "eof");
 				if (fd != FDESC_STDIN) {
 					/* XXX - something wrong */
-					fatal_proto("command_fd_input", "fd");
+					fatal_command(
+					    "command_fd_input", "fd");
 				}
 				if (len <= 0) {
 					/* notify closed */
@@ -1224,27 +1253,35 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 				break;
 			default:
 				/* XXX - something wrong */
-				fatal_proto("command_io",
+				fatal_command("command_io",
 					    "unknown subcommand");
 				break;
 			}
-		}
-		if (cc->client_state == GFS_COMMAND_CLIENT_STATE_OUTPUT) {
+		} else if (cc->client_state==GFS_COMMAND_CLIENT_STATE_OUTPUT) {
 			gfarm_iobuffer_read(cc->iobuffer[FDESC_STDIN],
 				&cc->client_output_residual);
 			if (cc->client_output_residual == 0)
 				cc->client_state =
 					GFS_COMMAND_CLIENT_STATE_NEUTRAL;
+			e = gfarm_iobuffer_get_error(
+			    cc->iobuffer[FDESC_STDIN]);
+			if (e != NULL) {
+				/* treat this as eof */
+				gfarm_iobuffer_set_read_eof(
+				    cc->iobuffer[FDESC_STDIN]);
+				gflog_warning("command: receiving stdin", e);
+				gfarm_iobuffer_set_error(
+				    cc->iobuffer[FDESC_STDIN], NULL);
+			}
 			if (gfarm_iobuffer_is_read_eof(
 					cc->iobuffer[FDESC_STDIN])) {
-				fatal_proto("command_fd_input_content", "eof");
+				fatal_command("command_fd_input_content",
+				    "eof");
 			}
 		}
 	}
 	if (FD_ISSET(conn_fd, writable)) {
 		if (cc->server_state == GFS_COMMAND_SERVER_STATE_NEUTRAL) {
-			char *e;
-
 			if (gfarm_iobuffer_is_writable(
 				cc->iobuffer[FDESC_STDERR]) ||
 			    gfarm_iobuffer_is_writable(
@@ -1265,24 +1302,36 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 					GFS_PROTO_COMMAND_FD_OUTPUT,
 					cc->server_output_fd,
 					cc->server_output_residual);
-				xxx_proto_flush(client);
+				if (e != NULL ||
+				    (e = xxx_proto_flush(client)) != NULL)
+					fatal_command("command: fd_output", e);
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_OUTPUT;
 			} else if (!COMMAND_IS_RUNNING()) {
 				e = xxx_proto_send(client, "i",
 					GFS_PROTO_COMMAND_EXITED);
-				xxx_proto_flush(client);
+				if (e != NULL ||
+				    (e = xxx_proto_flush(client)) != NULL)
+					fatal_proto("command: report exit", e);
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_EXITED;
 			}
-		}
-		if (cc->server_state == GFS_COMMAND_SERVER_STATE_OUTPUT) {
+		} else if (cc->server_state==GFS_COMMAND_SERVER_STATE_OUTPUT) {
 			gfarm_iobuffer_write(
 				cc->iobuffer[cc->server_output_fd],
 				&cc->server_output_residual);
 			if (cc->server_output_residual == 0)
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_NEUTRAL;
+			e = gfarm_iobuffer_get_error(
+			    cc->iobuffer[cc->server_output_fd]);
+			if (e != NULL) {
+				fatal_command(
+				    cc->server_output_fd == FDESC_STDOUT ?
+				    "command: sending stdout" :
+				    "command: sending stderr",
+				    e);
+			}
 		}
 	}
 	return (NULL);
@@ -1363,6 +1412,10 @@ gfs_server_client_command_result(struct xxx_connection *client)
 
 	while (cc->server_state != GFS_COMMAND_SERVER_STATE_EXITED)
 		gfs_server_command_io(client, NULL);
+	/*
+	 * Because COMMAND_IS_RUNNING() must be false here,
+	 * we don't have to call fatal_command() from now on.
+	 */
 
 	/*
 	 * Now, we recover the connection file descriptor blocking mode.
@@ -1643,6 +1696,10 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 			close(i);
 		/* re-install default signal handler (see main) */
 		signal(SIGPIPE, SIG_DFL);
+		/*
+		 * create a process group
+		 * to make it possible to send a signal later
+		 */
 		setpgid(0, getpid());
 		execve(command, argv_storage, envp);
 		fprintf(stderr, "%s: ", gfarm_host_get_self_name());
