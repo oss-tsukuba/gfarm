@@ -2,7 +2,7 @@
 
 <refentry id='gfcd.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>2 Jul 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfcd</refentrytitle>
@@ -32,13 +32,21 @@ gfarm:/<replaceable>グローバルユーザ</replaceable> に変更します。
 <para>
 各Gfarm コマンドが作業ディレクトリを参照できるように、各ユーザの
 シェル設定ファイルに以下の定義を追加してください。
-<screen>
-	Bourne shell 系シェルの場合:
-		gfcd() { eval "`gfsetdir $1`"; }
-	csh  系シェルの場合:
-		alias gfcd 'eval `gfsetdir \!*`'
-</screen>
 </para>
+<variablelist>
+  <varlistentry>
+    <term>Bourne shell 系シェルの場合</term>
+    <listitem>
+      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>csh  系シェルの場合</term>
+    <listitem>
+      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+    </listitem>
+  </varlistentry>
+</variablelist>
 </refsect1>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
