@@ -11,7 +11,6 @@
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
-#include "gfs_client.h"
 
 char *program_name = "gfsetdir";
 
@@ -27,8 +26,9 @@ usage()
 int
 main(int argc, char **argv)
 {
+	struct gfs_stat gstat;
+	char *e, *nwdir, *canonic_path, *gfarm_path;
 	extern int optind;
-	char *e, *canonic_path, *gfarm_path;
 	int ch;
 	enum { UNDECIDED,
 	       B_SHELL_LIKE,
@@ -62,36 +62,46 @@ main(int argc, char **argv)
 	 * Get absolute path from the argument directory name.
 	 * If no arugument is passed, generate gfarm:/"global username".
 	 */
+	nwdir = "gfarm:~"; /* home directory */
 	switch (argc) {
 	case 0:
-		/* home directory */
-		e = gfarm_canonical_path("~", &canonic_path);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
 		break;
 	case 1:
-		e = gfarm_url_make_path(argv[0], &canonic_path);
-		/* We permit missing gfarm: prefix here as a special case */
-		if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
-			e = gfarm_canonical_path(argv[0], &canonic_path);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
+		nwdir = argv[0];
 		break;
 	default:
 		usage();
 	}
 
-	gfarm_path = malloc(strlen(GFARM_URL_PREFIX) + strlen(canonic_path) +
-		     2);
-	if (gfarm_path == NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
+	/* check existence of the directory */
+	e = gfs_stat(nwdir, &gstat);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", nwdir, e);
 		exit(1);
 	}
-	sprintf(gfarm_path, "%s/%s", GFARM_URL_PREFIX, canonic_path);
+	if (!GFARM_S_ISDIR(gstat.st_mode)) {
+		fprintf(stderr, "%s: not a directory\n", nwdir);
+		gfs_stat_free(&gstat);
+		exit(1);
+	}
+	gfs_stat_free(&gstat);
+		
+	/* expand the path name */
+	e = gfarm_url_make_path(nwdir, &canonic_path);
+	/* We permit missing gfarm: prefix here as a special case */
+	if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
+		e = gfarm_canonical_path(nwdir, &canonic_path);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", nwdir, e);
+		exit(1);
+	}
+
+	/* translate to a Gfarm URL, i.e. add the prefix 'gfarm:' */
+	e = gfarm_path_canonical_to_url(canonic_path, &gfarm_path);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
+	}
 	free(canonic_path);
 	if (shell_type == UNDECIDED) {
 		char *shell;

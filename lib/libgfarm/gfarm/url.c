@@ -239,6 +239,29 @@ gfarm_is_url(const char *gfarm_url)
 }
 
 /*
+ * Translate a canonical path to a Gfarm URL.
+ */
+char *
+gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
+{
+	char *url;
+
+	*gfarm_url = NULL;
+
+	url = malloc(GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
+	if (url == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	memcpy(url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
+	url[GFARM_URL_PREFIX_LENGTH] = '/';
+	strcpy(url + GFARM_URL_PREFIX_LENGTH + 1, canonic_path);
+
+	*gfarm_url = url;
+
+	return (NULL);
+}
+
+/*
  * Append section suffix to pathname.
  * Return malloc(3)ed string, thus caller should free(3) the memory.
  * i.e.

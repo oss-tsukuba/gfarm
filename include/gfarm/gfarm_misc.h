@@ -78,6 +78,8 @@ char *gfarm_canonical_path_for_creation(const char *, char **);
 char *gfarm_url_make_path(const char *, char **);
 char *gfarm_url_make_path_for_creation(const char *, char **);
 int gfarm_is_url(const char *);
+char *gfarm_path_canonical_to_url(const char *, char **);
+
 #if 0
 char *gfarm_url_make_localized_path(char *, char **);
 char *gfarm_url_make_localized_file_fragment_path(char *, int, char **);
