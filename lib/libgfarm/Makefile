@@ -23,7 +23,8 @@ include $(srcdir)/gfarm/Makefile.inc
 LDAP_SRCS = $(GFARM_LDAP_SRCS)
 LDAP_OBJS = $(GFARM_LDAP_OBJS)
 
-GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
+GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes) \
+	-DGLOBUS_BUG=1 # see gfsl/gsi.c
 GLOBUS_SRCS = $(GFSL_SRCS) $(GFARM_GLOBUS_SRCS)
 GLOBUS_OBJS = $(GFSL_OBJS) $(GFARM_GLOBUS_OBJS)
 
