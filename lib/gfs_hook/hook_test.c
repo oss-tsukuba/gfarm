@@ -62,11 +62,11 @@ display_stat(char *fn, struct stat *st)
     default:
 	printf("unknown\n");
     }
+#if 0
     printf("  Mode: (%04o) Uid: (%5d/%8s) Gid: (%5d/%8s)\n",
 	   st->st_mode & S_IAMB, st->st_uid,
 	   getpwuid(st->st_uid)->pw_name,
 	   st->st_gid, getgrgid(st->st_gid)->gr_name);
-#if 0
     printf("Device: %d,%d Inode: %ld Links: %d\n",
 	   st->st_dev, st->st_rdev, st->st_ino, st->st_nlink);
 #endif
