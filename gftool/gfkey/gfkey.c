@@ -78,7 +78,7 @@ main(argc, argv)
 		usage();
 
 	gfarm_error_initialize();
-	e = gfarm_set_user_for_this_local_account();
+	e = gfarm_set_local_user_for_this_local_account();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
