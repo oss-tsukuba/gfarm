@@ -9,7 +9,7 @@
 
 	* configure.ac: Added a run script for gneo_agent.
 
-2005-01-05  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+2005-01-05  Katsuhiko Ohkubo  <ohkubo-k@suri.co.jp>
 
 	* lib/libgfarm/gfarm/metadb_ldap.c:
 	delete LDAP call timing print for tuning
@@ -30,7 +30,7 @@
 	added for sanity check of gfarm metadb server (slapd).
 	(gfarm_metadb_initialize): call metadb_terminate() when metadb_initialize() fails.
 
-2004-12-27  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+2004-12-27  Katsuhiko Ohkubo  <ohkubo-k@suri.co.jp>
 
 	* server/gfmd/Makefile, server/gfmd/attr.c, server/gfmd/attr.h, server/gfmd/dents.c, server/gfmd/dents.h, server/gfmd/fs.c, server/gfmd/fsattr.c, server/gfmd/fsattr.h, server/gfmd/getdentsplus.c, server/gfmd/gfmd.c, server/gfmd/gneo_proto.h, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/process.c, server/gfmd/process.h, server/gfmd/rmdir.c, server/gfmd/xattr.c, server/gfmd/xattr.h, server/gfsd/gfsd.c:
 	GNEO extensions for Gfarm v2
@@ -48,7 +48,7 @@
 
 	* doc/gfarm_v2_geno.text: New file.
 
-2004-12-24  Katsuhiko Ohkubo  <ohkubo-k@amethyst.hpcc.jp>
+2004-12-24  Katsuhiko Ohkubo  <ohkubo-k@suri.co.jp>
 
 	* gftool/gfrm/gfrm.c, gftool/gfmkdir/gfmkdir.c, gftool/example/gfimport_text/gfimport_text.c:
 	add error handling
@@ -190,7 +190,7 @@
 
 2004-11-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
-	* package/redhat/gfarm.patch: Removed patches for $Id$ lines.
+	* package/redhat/gfarm.patch: Removed patches for $Id: ChangeLog,v 1.35 2005/01/11 13:33:15 tatebe Exp $ lines.
 
 2004-11-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
@@ -5808,7 +5808,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.34 2004/11/01 02:03:18 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.35 2005/01/11 13:33:15 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
