@@ -492,7 +492,7 @@ do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 	if (gf->io_offset != gf->offset) {
 		/* this happens when switching from reading to writing */
 		gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-		e = (*gf->ops->view_seek)(gf, SEEK_SET, gf->offset, NULL);
+		e = (*gf->ops->view_seek)(gf, gf->offset, SEEK_SET, NULL);
 		if (e != NULL) {
 			gf->error = e;
 			*writtenp = 0;
