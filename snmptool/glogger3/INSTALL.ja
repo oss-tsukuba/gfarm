@@ -19,8 +19,8 @@ Linux と FreeBSD 環境でのみ動作確認しています。
   $ make
   $ make install
 
-glogger と glogdump コマンドが $(prefix)/bin/ にインストールされます。
-$(prefix)/man/ にマニュアルがインストールされます。
+glogger と glogdump コマンドが $(prefix)/bin にインストールされます。
+$(prefix)/man にマニュアルがインストールされます。
 
 sample.conf を参考に設定ファイルを記述し、確認します。
 
@@ -89,19 +89,19 @@ SNMPv1 と SNMPv2c によるアクセスを許可し、/raid ディレクトリがあるパー
 * デーモン起動方法
 
 glogd ファイルを参考に起動スクリプトを作成します。
-例えば Red Hat Linux ならば /etc/rc.d/init.d/glogd へ配置します。
+例えば Red Hat Linux ならば /etc/init.d/glogd へ配置します。
 
 マシン起動時に GLogger が起動するようにする例
-# /sbin/checkconfig --add glogd
+# /sbin/chkconfig --add glogd
 
 起動する場合
-# glogd start
+# /etc/init.d/glogd start
 
 停止する場合
-# glogd stop
+# /etc/init.d/glogd stop
 
 再起動する場合
-# glogd restart
+# /etc/init.d/glogd restart
 
 強制起動する場合(PIDファイルが残っている場合)
-# glogd forcestart
+# /etc/init.d/glogd forcestart
