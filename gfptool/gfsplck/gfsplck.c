@@ -188,12 +188,17 @@ fixurl(const char *gfarm_url)
 		/* check it is a directory or not */
 		e = gfs_stat(gfarm_url, &gs);
 		if (e != NULL) {
-			/* maybe permission denied */
-			print_errmsg(gfarm_url, e);
-			goto error_gfarm_file;
+			if (e != GFARM_ERR_NO_FRAGMENT_INFORMATION) {
+				/* maybe permission denied */
+				print_errmsg(gfarm_url, e);
+				goto error_gfarm_file;
+			}
+			/* no fragment information case */
 		}
-		is_directory = GFARM_S_ISDIR(gs.st_mode);
-		gfs_stat_free(&gs);
+		else {
+			is_directory = GFARM_S_ISDIR(gs.st_mode);
+			gfs_stat_free(&gs);
+		}
 	}
 	/*
 	 * Check local_path; if it is invalid or not a directory,
@@ -242,10 +247,15 @@ fixurl(const char *gfarm_url)
 			continue;
 		}
 		e = fixfrag_i(*pathp, gfarm_file, sec);
-		if (e != NULL && e != GFARM_ERR_ALREADY_EXISTS) {
-			print_errmsg_with_section(gfarm_url, sec, e);
-			delete_invalid_file_or_directory(*pathp);
+		if (e != NULL) {
+			if (e != GFARM_ERR_ALREADY_EXISTS) {
+				print_errmsg_with_section(gfarm_url, sec, e);
+				delete_invalid_file_or_directory(*pathp);
+			}
 		}
+		else
+			printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
+			       gfarm_host_get_self_name());
 		++pathp;
 	}
 	globfree(&pglob);
@@ -309,7 +319,7 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 	e = fixfrag_i(pathname, gfarm_file, sec);
 	if (e != NULL) {
 		if (e != GFARM_ERR_ALREADY_EXISTS) {
-			print_errmsg(pathname, e);
+			print_errmsg_with_section(pathname, sec, e);
 			delete_invalid_file_or_directory(pathname);
 			goto error_gfarm_file;
 		}
