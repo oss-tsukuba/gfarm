@@ -58,11 +58,12 @@ usage()
 {
 	fprintf(stderr,
 #ifdef HAVE_GSI
-		"Usage: %s [-gnupv] [-l <login>]\n"
+		"Usage: %s [-gnuprv] [-l <login>]\n"
 #else		
-		"Usage: %s [-gnup] [-l <login>]\n"
+		"Usage: %s [-gnupr] [-l <login>]\n"
 #endif
-		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>]\n"
+		"\t[-G <Gfarm file> [ -I <section> ]|-H <hostfile>|"
+		"-N <number of hosts>]\n"
 		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
 		" command ...\n",
 		program_name);
@@ -76,11 +77,28 @@ struct gfrun_options {
 	char *sched_file;	/* -G <sched_file> */
 	char *hosts_file;	/* -H <hosts_file> */
 	int nprocs;		/* -N <nprocs> */
+	char *section;		/* -I <index> */
 	enum command_type cmd_type;
 	int authentication_verbose_mode;
 	int profile;
 	int replicate;
 };
+
+static void
+default_gfrun_options(struct gfrun_options *options)
+{
+	options->user_name = NULL;
+	options->stdout_file = NULL;
+	options->stderr_file = NULL;
+	options->sched_file = NULL;
+	options->hosts_file = NULL;
+	options->nprocs = 0;
+	options->section = NULL;
+	options->cmd_type = UNKNOWN_COMMAND;
+	options->authentication_verbose_mode = 0;
+	options->profile = 0;
+	options->replicate = 0;
+}
 
 char *
 gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
@@ -148,7 +166,12 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		char *if_hostname;
 		struct sockaddr peer_addr;
 
-		sprintf(node_index, "%d", i);
+		if (options->section != NULL && nhosts == 1) {
+			/* XXX - need to check the string size */
+			sprintf(node_index, "%s", options->section);
+		}
+		else
+			sprintf(node_index, "%d", i);
 
 		/* reflect "address_use" directive in the `if_hostname'  */
 		e = gfarm_host_address_get(hosts[i],
@@ -242,8 +265,7 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 		}
 		gfs_stat_free(&sb);
 
-		options.stdout_file = options.stderr_file = NULL;
-		options.profile = options.replicate = 0;
+		default_gfrun_options(&options);
 
 		e = gfrun(rsh_command, rsh_options, &options,
 		    nhosts, hosts, GFARM_COMMAND, gfsplck_cmd, gfarm_files);
@@ -278,22 +300,10 @@ schedule(char *command_name, struct gfrun_options *options,
 		usage();
 	}
 
-	if (options->sched_file != NULL) { /* File-affinity scheduling */
-		if (spooled_command) {
-			e = gfarm_url_hosts_schedule_by_program(
-			    options->sched_file, command_name, NULL,
-			    &nhosts, &hosts);
-		} else {
-			e = gfarm_url_hosts_schedule(options->sched_file, NULL,
-			    &nhosts, &hosts);
-		}
-		if (e != NULL) {
-			fprintf(stderr, "%s: scheduling by %s: %s\n",
-			    program_name, options->sched_file, e);
-			exit(1);
-		}
-		scheduling_file = options->sched_file;
-	} else if (options->hosts_file != NULL) { /* Hostfile scheduling */
+	if (options->hosts_file != NULL) { /* Hostfile scheduling */
+		if (options->section != NULL)
+			fprintf(stderr, "%s: warning: -I option is ignored\n",
+				program_name);
 		/*
 		 * Is it necessary to access a Gfarm hostfile?
 		 */
@@ -311,6 +321,10 @@ schedule(char *command_name, struct gfrun_options *options,
 		}
 		scheduling_file = options->hosts_file;
 	} else if (options->nprocs > 0) {
+		if (options->section != NULL)
+			fprintf(stderr, "%s: warning: -I option is ignored\n",
+				program_name);
+
 		nhosts = options->nprocs;
 		hosts = malloc(sizeof(*hosts) * nhosts);
 		if (hosts == NULL) {
@@ -332,16 +346,54 @@ schedule(char *command_name, struct gfrun_options *options,
 			exit(1);
 		}
 		scheduling_file = "";
-	} else if (gfarm_stringlist_length(input_list) != 0) {
-		/* The first input file used for file-affinity scheduling. */
-		scheduling_file = gfarm_stringlist_elem(input_list, 0);
-		if (spooled_command) {
-			e = gfarm_url_hosts_schedule_by_program(
-			    scheduling_file, command_name, NULL,
-			    &nhosts, &hosts);
-		} else {
-			e = gfarm_url_hosts_schedule(scheduling_file, NULL,
-			    &nhosts, &hosts);
+	} else if (options->sched_file != NULL ||
+		   gfarm_stringlist_length(input_list) != 0) {
+		/*
+		 * File-affinity scheduling
+		 *
+		 * If scheduling file is not explicitly specified, the
+		 * first input file used for file-affinity scheduling.
+		 */
+		if (options->sched_file != NULL)
+			scheduling_file = options->sched_file;
+		else
+			scheduling_file = gfarm_stringlist_elem(input_list, 0);
+
+		if (options->section != NULL) {
+			/* schedule a process for specified section */
+			char *gfarm_file;
+
+			nhosts = 1;
+			hosts = malloc(sizeof(*hosts));
+			if (hosts == NULL) {
+				fprintf(stderr, "%s: not enough memory",
+					program_name);
+				exit(1);
+			}
+			e = gfarm_url_make_path(scheduling_file, &gfarm_file);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s", program_name, e);
+				exit(1);
+			}
+
+			if (spooled_command)
+				e = gfarm_file_section_host_schedule_by_program(
+					gfarm_file, options->section,
+					command_name, hosts);
+			else
+				e = gfarm_file_section_host_schedule(
+					gfarm_file, options->section,
+					hosts);
+			free(gfarm_file);
+		}
+		else {
+			if (spooled_command)
+				e = gfarm_url_hosts_schedule_by_program(
+					scheduling_file, command_name, NULL,
+					&nhosts, &hosts);
+			else
+				e = gfarm_url_hosts_schedule(scheduling_file,
+					NULL, &nhosts, &hosts);
 		}
 		if (e != NULL) {
 			fprintf(stderr, "%s: scheduling by %s: %s\n",
@@ -578,6 +630,9 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 		case 'H':
 			return (option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &options->hosts_file));
+		case 'I':
+			return (option_param(is_last_arg, arg, next_arg, i,
+			    rsh_options, &options->section));
 		case 'N':
 			skip_next = option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &s);
@@ -607,16 +662,7 @@ parse_options(int argc, char **argv,
 {
 	int i;
 
-	options->user_name = NULL;
-	options->stdout_file = NULL;
-	options->stderr_file = NULL;
-	options->sched_file = NULL;
-	options->hosts_file = NULL;
-	options->nprocs = 0;
-	options->cmd_type = UNKNOWN_COMMAND;
-	options->authentication_verbose_mode = 0;
-	options->profile = 0;
-	options->replicate = 0;
+	default_gfrun_options(options);
 
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
