@@ -102,7 +102,7 @@ group_lookup(const char *groupname)
 }
 
 gfarm_error_t
-group_enter(const char *groupname, struct group **gpp)
+group_enter(char *groupname, struct group **gpp)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
@@ -155,6 +155,12 @@ group_remove(const char *groupname)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+char *
+group_name(struct group *g)
+{
+	return (g->groupname);
+}
+
 /*
  * I/O
  */
@@ -203,6 +209,7 @@ gfarm_error_t
 group_info_close_for_seq_write(void)
 {
 	fclose(group_fp);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 #ifndef TEST

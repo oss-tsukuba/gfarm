@@ -139,14 +139,53 @@ protocol_service(struct peer *peer, int from_client)
 	case GFM_PROTO_GROUP_NAMES_GET_BY_USERS:
 		e = gfm_server_group_names_get_by_users(peer, from_client);
 		break;
+	case GFM_PROTO_OPEN:
+		e = gfm_server_open(peer, from_client);
+		break;
+	case GFM_PROTO_CLOSE_READ:
+		e = gfm_server_close_read(peer, from_client);
+		break;
+	case GFM_PROTO_FSTAT:
+		e = gfm_server_fstat(peer, from_client);
+		break;
+	case GFM_PROTO_FUTIMES:
+		e = gfm_server_futimes(peer, from_client);
+		break;
+	case GFM_PROTO_FCHMOD:
+		e = gfm_server_fchmod(peer, from_client);
+		break;
+	case GFM_PROTO_FCHOWN:
+		e = gfm_server_fchown(peer, from_client);
+		break;
+	case GFM_PROTO_FCHDIR:
+		e = gfm_server_fchdir(peer, from_client);
+		break;
+	case GFM_PROTO_GETDIRENTS:
+		e = gfm_server_getdirents(peer, from_client);
+		break;
+	case GFM_PROTO_SEEK:
+		e = gfm_server_seek(peer, from_client);
+		break;
+	case GFM_PROTO_ACCESS:
+		e = gfm_server_access(peer, from_client);
+		break;
+	case GFM_PROTO_STAT:
+		e = gfm_server_stat(peer, from_client);
+		break;
+	case GFM_PROTO_UTIMES:
+		e = gfm_server_utimes(peer, from_client);
+		break;
 	case GFM_PROTO_CHMOD:
 		e = gfm_server_chmod(peer, from_client);
 		break;
 	case GFM_PROTO_CHOWN:
 		e = gfm_server_chown(peer, from_client);
 		break;
-	case GFM_PROTO_STAT:
-		e = gfm_server_stat(peer, from_client);
+	case GFM_PROTO_CHDIR:
+		e = gfm_server_chdir(peer, from_client);
+		break;
+	case GFM_PROTO_LSTAT:
+		e = gfm_server_lstat(peer, from_client);
 		break;
 	case GFM_PROTO_RENAME:
 		e = gfm_server_rename(peer, from_client);
@@ -160,8 +199,14 @@ protocol_service(struct peer *peer, int from_client)
 	case GFM_PROTO_RMDIR:
 		e = gfm_server_rmdir(peer, from_client);
 		break;
-	case GFM_PROTO_CHDIR:
-		e = gfm_server_chdir(peer, from_client);
+	case GFM_PROTO_LINK:
+		e = gfm_server_link(peer, from_client);
+		break;
+	case GFM_PROTO_SYMLINK:
+		e = gfm_server_symlink(peer, from_client);
+		break;
+	case GFM_PROTO_READLINK:
+		e = gfm_server_readlink(peer, from_client);
 		break;
 	case GFM_PROTO_GETCWD:
 		e = gfm_server_getcwd(peer, from_client);
@@ -171,9 +216,6 @@ protocol_service(struct peer *peer, int from_client)
 		break;
 	case GFM_PROTO_REALPATH:
 		e = gfm_server_realpath(peer, from_client);
-		break;
-	case GFM_PROTO_GETDIRENTS:
-		e = gfm_server_getdirents(peer, from_client);
 		break;
 	case GFM_PROTO_GLOB:
 		e = gfm_server_glob(peer, from_client);
@@ -187,26 +229,11 @@ protocol_service(struct peer *peer, int from_client)
 	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
 		e = gfm_server_replica_remove_by_host(peer, from_client);
 		break;
-	case GFM_PROTO_MOUNT:
-		e = gfm_server_mount(peer, from_client);
-		break;
-	case GFM_PROTO_MOUNT_LIST:
-		e = gfm_server_mount_list(peer, from_client);
-		break;
-	case GFM_PROTO_OPEN:
-		e = gfm_server_open(peer, from_client);
-		break;
-	case GFM_PROTO_CLOSE_READ:
-		e = gfm_server_close_read(peer, from_client);
+	case GFM_PROTO_CREATE:
+		e = gfm_server_create(peer, from_client);
 		break;
 	case GFM_PROTO_CLOSE_WRITE:
 		e = gfm_server_close_write(peer, from_client);
-		break;
-	case GFM_PROTO_FSTAT:
-		e = gfm_server_fstat(peer, from_client);
-		break;
-	case GFM_PROTO_FUTIMES:
-		e = gfm_server_futimes(peer, from_client);
 		break;
 	case GFM_PROTO_LOCK:
 		e = gfm_server_lock(peer, from_client);

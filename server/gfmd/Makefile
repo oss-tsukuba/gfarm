@@ -15,10 +15,10 @@ DEPLIBS = $(DEPGFARMLIB)
 PROGRAM = gfmd
 SRCS =	gfmd.c \
 	subr.c id_table.c user.c group.c host.c peer.c process.c job.c \
-	inode.c fs.c
+	dir.c inode.c fs.c
 OBJS =	gfmd.o \
 	subr.o id_table.o user.o group.o host.o peer.o process.o job.o \
-	inode.o fs.o
+	dir.o inode.o fs.o
 
 all: $(PROGRAM)
 
@@ -28,6 +28,8 @@ include $(top_srcdir)/makes/prog.mk
 
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
+	$(GFUTIL_SRCDIR)/hash.h \
+	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
@@ -35,4 +37,4 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	subr.h id_table.h user.h group.h host.h peer.h process.h job.h \
-	inode.h fs.h
+	dir.h inode.h fs.h

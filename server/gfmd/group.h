@@ -17,6 +17,7 @@ struct group_assignment {
 
 struct group *group_lookup(const char *);
 void grpassign_remove(struct group_assignment *);
+char *group_name(struct group *);
 
 struct peer;
 gfarm_error_t gfm_server_group_info_get_all(struct peer *, int);
