@@ -9,9 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "param.h"
@@ -719,6 +721,9 @@ main(int argc, char **argv)
 	int c, n;
 	gfarm_stringlist files, sections;
 
+	/* should be read from /etc/gfarm.conf */
+	int syslog_facility = GFARM_DEFAULT_FACILITY;
+
 	while ((c = getopt(argc, argv, "a:i:n:sS:")) != -1) {
 		switch (c) {
 		case 'a':
@@ -787,6 +792,9 @@ main(int argc, char **argv)
 	    &n, &files, &sections, program_name);
 	if (e != NULL)
 		fatal();
+
+	gflog_set_identifier(program_name);
+	gflog_syslog_open(LOG_PID, syslog_facility);
 
 	session(from_client, to_client,
 	    algorithm_version, ndivisions, interleave_factor, send_stripe_sync,

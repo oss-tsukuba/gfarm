@@ -11,7 +11,7 @@ bindir = $(default_libexecdir)
 PROGRAM = gfrepbe_server
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -22,6 +22,7 @@ include $(top_srcdir)/makes/gfptool.mk
 ###
 
 $(OBJS): \
+	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/xxx_proto.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/param.h \
