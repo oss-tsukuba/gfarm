@@ -105,7 +105,7 @@ gfs_hook_open_flags_gfarmize(int open_flags)
  */
 
 static int _gfs_hook_num_gfs_files;
-static int _gfs_hook_gfs_files_max;
+static int _gfs_hook_gfs_files_max_plus_one;
 
 static void
 gfs_hook_num_gfs_files_check(void)
@@ -128,8 +128,8 @@ static void
 gfs_hook_num_gfs_files_inc(int fd)
 {
 	gfs_hook_num_gfs_files_check();
-	if (fd > _gfs_hook_gfs_files_max)
-		_gfs_hook_gfs_files_max = fd;
+	if (fd >= _gfs_hook_gfs_files_max_plus_one)
+		_gfs_hook_gfs_files_max_plus_one = fd + 1;
 	++_gfs_hook_num_gfs_files;
 }
 
@@ -370,7 +370,7 @@ gfs_hook_mode_calc_digest_all(void)
 	int fd;
 	GFS_File gf;
 
-	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd)
+	for (fd = 0; fd < _gfs_hook_gfs_files_max_plus_one; ++fd)
 		if (((gf = gfs_hook_is_open(fd)) != NULL) &&
 		    (gfs_hook_gfs_file_type(fd) == GFS_DT_REG))
 			gfs_hook_mode_calc_digest(gf);
@@ -384,7 +384,7 @@ gfs_hook_flush_all(void)
 	char *e, *e_save = NULL;
 	GFS_File gf;
 
-	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd) {
+	for (fd = 0; fd < _gfs_hook_gfs_files_max_plus_one; ++fd) {
 		if ((gf = gfs_hook_is_open(fd)) != NULL) {
 			e = gfs_pio_flush(gf);
 			if (e_save == NULL)
@@ -407,7 +407,7 @@ gfs_hook_close_all(void)
 	fflush(stdout);
 	fflush(stderr);
 
-	for (fd = 0; fd <= _gfs_hook_gfs_files_max; ++fd) {
+	for (fd = 0; fd < _gfs_hook_gfs_files_max_plus_one; ++fd) {
 		if (gfs_hook_is_open(fd)) {
 			e = gfs_hook_clear_gfs_file(fd);
 			if (e_save == NULL)
