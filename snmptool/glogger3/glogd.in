@@ -8,7 +8,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 
-progname=`basename $0`
+progname=glogd
 conffile=@confdir@/${progname}.conf
 vardir=/tmp
 
