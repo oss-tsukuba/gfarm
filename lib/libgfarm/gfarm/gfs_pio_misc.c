@@ -854,29 +854,25 @@ gfs_rename_file(struct gfarm_path_info *from_pi, const char *to_url)
 		if (e2 != NULL)
 			gflog_warning("gfs_rename_file:"
 				      "gfarm_path_info_remove()", e2);
-
-		goto finish_free_copies;
 	} else {		
-		char *e_save;
-
 		e = gfarm_file_section_copy_info_remove_all_by_file(
 							from_pi->pathname);
 		for (i = 0; i < nsection; i++) {
-			e_save = gfarm_file_section_info_remove(
+			e2 = gfarm_file_section_info_remove(
 							sections[i].pathname,
 							sections[i].section);
-			if (e_save != NULL)
+			if (e2 != NULL)
 				gflog_warning("gfs_rename_file:"
-			      	  "gfarm_file_section_info_remove()", e_save);
-			if (e == NULL && e_save != NULL)
-				e = e_save;
+			      	  "gfarm_file_section_info_remove()", e2);
+			if (e == NULL && e2 != NULL)
+				e = e2;
 		}
-		e_save = gfarm_path_info_remove(from_pi->pathname);
-		if (e_save != NULL)
+		e2 = gfarm_path_info_remove(from_pi->pathname);
+		if (e2 != NULL)
 			gflog_warning("gfs_rename_file:"
-			      "gfarm_file_path_info_remove()", e);
-		if (e == NULL && e_save != NULL)
-			e = e_save;
+			      "gfarm_file_path_info_remove()", e2);
+		if (e == NULL && e2 != NULL)
+			e = e2;
 	}
 	for (i = 0; i < nsection; i++)
 		gfarm_file_section_copy_info_free_all(ncopy[i], copies[i]);
