@@ -48,7 +48,8 @@ void
 usage()
 {
 	fprintf(stderr,
-		"Usage: %s [-n] [-l <login>] [-H <hostfile>] command...\n",
+		"Usage: %s [-n] [-l <login>]"
+		" [-H <hostfile or Gfarm file>] command...\n",
 		program_name);
 	exit(1);
 }
@@ -212,6 +213,21 @@ skip_opt: ;
 		/* XXX - this is only using first input file for scheduling */
 		e = gfarm_url_hosts_schedule(input_list[0], NULL,
 					     &nhosts, &hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			exit(1);
+		}
+	} else if (gfarm_is_url(hostfile)) {
+		/*
+		 * If hostfile is a Gfarm file, schedule using the
+		 * distribution of the Gfarm file.
+		 */
+		e = gfarm_url_hosts_schedule(hostfile, NULL,
+					     &nhosts, &hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", hostfile, e);
+			exit(1);
+		}
 	} else {
 		int error_line;
 
