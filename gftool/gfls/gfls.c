@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -163,15 +167,20 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 	return (e_save);
 }
 
-void
+int
 put_suffix(struct ls_entry *ls)
 {
 	struct gfs_stat *st = ls->st;
 
-	if (GFARM_S_ISDIR(st->st_mode))
+	if (GFARM_S_ISDIR(st->st_mode)) {
 		putchar('/');
-	else if (GFARM_S_IS_PROGRAM(st->st_mode))
+		return 1;
+	}
+	else if (GFARM_S_IS_PROGRAM(st->st_mode)) {
 		putchar('*');
+		return 1;
+	}
+	return 0;
 }
 
 void
@@ -276,14 +285,16 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 			lines++;
 		for (i = 0; i < lines; i++) {
 			for (j = 0; j < columns; j++) {
+				int len_suffix = 0;
 				k = i + j * lines;
 				if (k >= n)
 					break;
 				fputs(ls[k].path, stdout);
 				if (option_type_suffix)
-					put_suffix(&ls[k]);
+					len_suffix = put_suffix(&ls[k]);
 				printf("%*s",
-				    max_width - strlen(ls[k].path) + 1, "");
+				    max_width - strlen(ls[k].path)
+				       - len_suffix + 1, "");
 			}
 			putchar('\n');
 		}				
@@ -293,7 +304,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 				put_stat(ls[i].st);
 			fputs(ls[i].path, stdout);
 			if (option_type_suffix)
-				put_suffix(&ls[i]);
+				(void)put_suffix(&ls[i]);
 			putchar('\n');
 		}
 	}
