@@ -1,10 +1,10 @@
-#include <sys/types.h>
-#include <sys/stat.h>
+/*
+ * $Id$
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 
@@ -15,10 +15,10 @@ usage()
 {
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-H <hostfile>\t"
-	    "remove replicated fragments on nodes listed in hostfile\n");
+	fprintf(stderr, "\t-h <host>\t"
+	    "remove a replicated fragment specified on <host>\n");
 	fprintf(stderr, "\t-I <fragment>\t"
-	    "remove the specified fragment replica with -H option\n");
+	    "remove a replicated fragment specified by <fragment>\n");
 	exit(1);
 }
 
@@ -31,17 +31,30 @@ main(argc, argv)
 	extern int optind;
 	int argc_save = argc;
 	char **argv_save = argv;
-	char *e, *hostfile = NULL, *section = NULL;
-	int i, ch, nhosts, error_line;
+	char *e, *section = NULL;
+	int ch, nhosts = 0;
 	char **hosttab;
+	gfarm_stringlist host_list;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:I:fr")) != -1) {
+	e = gfarm_stringlist_init(&host_list);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
+	}
+
+	while ((ch = getopt(argc, argv, "h:I:fr")) != -1) {
 		switch (ch) {
-		case 'H':
-			hostfile = optarg;
+		case 'h':
+			e = gfarm_stringlist_add(&host_list, optarg);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n",
+					program_name, e);
+				exit(1);
+			}
+			++nhosts;
 			break;
 		case 'I':
 			section = optarg;
@@ -59,42 +72,41 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-
-	if (hostfile == NULL) {
-		if (section != NULL) {
-			fprintf(stderr,
-			    "%s: the -I option requires the -H <hostfile> option\n",
-			    program_name);
-			exit(1);
-		}
-	} else {
-		if (section == NULL) {
-			fprintf(stderr,
-			    "%s: the -H option requires the -I <fragment> option\n",
-			    program_name);
-			exit(1);
-		}
-		e = gfarm_hostlist_read(hostfile,
-		    &nhosts, &hosttab, &error_line);
-		if (e != NULL) {
-			if (error_line != -1)
-				fprintf(stderr, "%s: line %d: %s\n",
-					hostfile, error_line, e);
-			else
-				fprintf(stderr, "%s: %s\n",
-					program_name, e);
-			exit(1);
-		}
+	if (argc == 0) {
+		fprintf(stderr, "%s: too few arguments\n",
+			program_name);
+		exit(1);
 	}
 
-	for (i = 0; i < argc; i++) {
-		if (hostfile != NULL && section != NULL)
-			e = gfs_unlink_section_replica(argv[i], section,
-			    nhosts, hosttab);
-		else
+	if (section == NULL) {
+		int i;
+		/* remove a whole file */
+		if (nhosts != 0)
+			fprintf(stderr, "%s: warning: -h option is ignored\n", 
+				program_name);
+		for (i = 0; i < argc; i++) {
 			e = gfs_unlink(argv[i]);
-		if (e != NULL)
-			fprintf(stderr, "%s: %s\n", argv[i], e);
+			if (e != NULL)
+				fprintf(stderr, "%s: %s\n", argv[i], e);
+		}
+	} else {
+		int i;
+		/* remove a file fragment */
+		if (nhosts == 0) {
+			fprintf(stderr, "%s: -h option should be specified\n", 
+				program_name);
+			exit(1);
+		}
+		/* assert(nhosts == gfarm_stringlist_length(&host_list)); */
+		hosttab = gfarm_strings_alloc_from_stringlist(&host_list);
+		gfarm_stringlist_free(&host_list);
+
+		for (i = 0; i < argc; i++) {
+			e = gfs_unlink_section_replica(argv[i], section,
+				nhosts, hosttab);
+			if (e != NULL)
+				fprintf(stderr, "%s: %s\n", argv[i], e);
+		}
 	}
 	e = gfarm_terminate();
 	if (e != NULL) {

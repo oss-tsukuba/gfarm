@@ -8,37 +8,34 @@ gfrm \- remove Gfarm files
 
 .B gfrm
 [
-.B \-H
-.I hostfile
+.B \-h
+.I filesystem-node
 .B -I
 .I fragment-index
 ]
 .in +.5i
-.I gfarm-URL
+.IR gfarm-URL " .\|.\|."
 .in
 
 .SH DESCRIPTION
 
 \fBgfrm\fP removes each specified file.
 .PP
-When both \fB-H\fP and \fB-I\fP options are specified, \fBgfrm\fP
-removes replicated file fragments of the fragment index
-\fIfragment-index\fP on the filesystem nodes listed in the host file
-\fIhostfile\fP.  It is not allowed to remove the last repilcated file
-fragment.
+When both \fB-h\fP and \fB-I\fP options are specified, \fBgfrm\fP
+removes a replicated file fragment \fIfragment-index\fP on the
+filesystem nodes \fIfilesystem-node\fP.  It is not allowed to remove
+the last repilcated file fragment.
 
 .SH OPTIONS
 
 .TP
-.B \-H
-.I hostfile
+.B \-h
+.I filesystem-node
 .br
-specifies a list of filesystem nodes on which a replicated file
-fragment will be removed.
-\fIhostfile\fP consists of a filesystem node in each line.
-.br
-if ``-'' is specified, the standard input is used to read the host
-list.
+specifies a filesystem node on which a replicated file fragment will
+be removed.  This option needs to be specified with the -I option.
+This option can be used more than once to remove a fragment on several
+filesystem nodes at once.
 .TP
 .B \-I
 .I fragment-index
