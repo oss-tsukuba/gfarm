@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b4
+%define ver	1.0b5
 %define rel	1
 
 %define prefix		/usr/grid
