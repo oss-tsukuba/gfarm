@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <pwd.h>
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -1133,6 +1135,7 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 }
 #endif
 #endif /* __linux__ */
+
 /*
  * definitions for "hooks_common.c"
  */
@@ -1165,6 +1168,34 @@ gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
 {
 	return (syscall(SYS_getdents, filedes, buf, nbyte));
 }
+#endif
+
+#ifdef SYS_truncate
+int
+gfs_hook_syscall_truncate(const char *path, off_t length)
+{
+	return (syscall(SYS_truncate, path, length));
+}
+
+#define SYSCALL_TRUNCATE(path, length) \
+	gfs_hook_syscall_truncate(path, length)
+#define FUNC___TRUNCATE	__truncate
+#define FUNC__TRUNCATE	_truncate
+#define FUNC_TRUNCATE	truncate
+#endif
+
+#ifdef SYS_ftruncate
+int
+gfs_hook_syscall_ftruncate(int filedes, off_t length)
+{
+	return (syscall(SYS_ftruncate, filedes, length));
+}
+
+#define SYSCALL_FTRUNCATE(filedes, length) \
+	gfs_hook_syscall_ftruncate(filedes, length)
+#define FUNC___FTRUNCATE	__ftruncate
+#define FUNC__FTRUNCATE		_ftruncate
+#define FUNC_FTRUNCATE		ftruncate
 #endif
 
 int

@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <pwd.h>
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -72,6 +74,34 @@ gfs_hook_syscall_getdents64(int filedes, struct dirent64 *buf, size_t nbyte)
 	return (gfs_hook_syscall_getdents(filedes, buf, nbyte));
 # endif
 }
+#endif
+
+#ifdef SYS_truncate64
+int
+gfs_hook_syscall_truncate64(const char *path, off64_t length)
+{
+	return (syscall(SYS_truncate64, path, length));
+}
+
+#define SYSCALL_TRUNCATE(path, length) \
+	gfs_hook_syscall_truncate64(path, length)
+#define FUNC___TRUNCATE	__truncate64
+#define FUNC__TRUNCATE	_truncate64
+#define FUNC_TRUNCATE	truncate64
+#endif
+
+#ifdef SYS_ftruncate64
+int
+gfs_hook_syscall_ftruncate64(int filedes, off64_t length)
+{
+	return (syscall(SYS_ftruncate64, filedes, length));
+}
+
+#define SYSCALL_FTRUNCATE(filedes, length) \
+	gfs_hook_syscall_ftruncate64(filedes, length)
+#define FUNC___FTRUNCATE	__ftruncate64
+#define FUNC__FTRUNCATE		_ftruncate64
+#define FUNC_FTRUNCATE		ftruncate64
 #endif
 
 /* see lseek64.c for gfs_hook_syscall_lseek64() implementation */
