@@ -338,33 +338,36 @@ target host has several IP addresses.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>configuration of a file to map user name </parameter></term>
+<term><token>local_user_map</token> <parameter>user-map-file</parameter></term>
 <listitem>
-<para>This directive specifies a file name to map global user names
+<para>This directive specifies a file name
+<parameter>user-map-file</parameter> for mapping global user names
 to local user names</para>
-<para>This directive is optional. You can use this directive
-to map user names on filesystem node hosts which use different
-user account names for an identical user.
-One can use gfarm as an identical user by defining a mapping from
-an identical global user name to a local user name on each host
-which has different UNIX account name.
+
+<para>This directive is optional.  The
+<parameter>user-map-file</parameter> is needed when you need to use
+the sharedsecret authentication method in the case that you have
+different unix account names on different filesystem nodes.  In this
+case, the <parameter>user-map-file</parameter> on each filesystem node
+should have an entry from a unique global user name to each local user
+name.
 </para>
 <para>Example:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
-<para>Each line of the user mapping file is consisted of two fields,
-first field is a global user name, and second field is a local user name,
-and those fields are separated by spaces.</para>
-<para>Example of the user mapping file:</para>	
+<para>Each line of the <parameter>user-map-file</parameter> consists
+of two fields separated by spaces; the first field is a global user
+name, and the second field is a local user name.</para>
+
+<para>Example of the user mapping file:</para>
 <literallayout>
 	foobar foo
 	quux baz
 </literallayout>
-<para>In the first line of this mapping file, a user name "foobar"
-is defined as a global user name which corresponds to a local user
-name "foo" on this node.
+<para>According to the first line of this mapping file, a global user
+name "foobar" is mapped to a local user name "foo" on this node.
 </para>
 </listitem>
 </varlistentry>
