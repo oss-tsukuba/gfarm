@@ -198,14 +198,15 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 {
 	struct gfs_file_global_context *gc = gf->view_context;
 	char *e;
-	int i, fragment, nsections, section_length;
+	int i, fragment, nsections;
+	file_offset_t section_length;
 	struct gfarm_file_section_info *sections;
 	char section_string[GFARM_INT32STRLEN + 1];
 
 	if (length < 0)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	if (length >= gc->offsets[gf->pi.status.st_nsections - 1])
-		fragment  = gf->pi.status.st_nsections - 1;
+		fragment = gf->pi.status.st_nsections - 1;
 	else
 		fragment = gfs_pio_view_global_bsearch(
 		    length, gc->offsets, gf->pi.status.st_nsections - 1);
