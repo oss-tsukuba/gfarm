@@ -14,6 +14,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
+	int nf = -1, np;
 #if 0
 	char *canonic_path, *abs_path;
 	int r, save_errno;
@@ -29,20 +30,20 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)\n", path));
 
 #if 1
-	if (_gfs_hook_default_view == section_view) {
+	switch (gfs_hook_get_current_view()) {
+	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
-			url, _gfs_hook_section));
-		e = GFS_STAT_SECTION(url, _gfs_hook_section, &gs);
-	}
-	else if (_gfs_hook_default_view == index_view) {
+			url, gfs_hook_get_current_section()));
+		e = GFS_STAT_SECTION(url, gfs_hook_get_current_section(), &gs);
+		break;
+	case index_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
-			url, _gfs_hook_index));
-		e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
-	}
-	else if (_gfs_hook_default_view == local_view) {
-		int nf = -1, np;
+			url, gfs_hook_get_current_index()));
+		e = GFS_STAT_INDEX(url, gfs_hook_get_current_index(), &gs);
+		break;
+	case local_view:
 		/*
 		 * If the number of fragments is not the same as the
 		 * number of parallel processes, or the file is not
@@ -85,8 +86,8 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 			else
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 		}
-	}
-	else {
+		break;
+	default:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);
@@ -198,6 +199,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
+	int nf = -1, np;
 #if 0
 	char *canonic_path, *abs_path;
 	int r, save_errno;
@@ -213,20 +215,20 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)\n", path));
 
 #if 1
-	if (_gfs_hook_default_view == section_view) {
+	switch (gfs_hook_get_current_view()) {
+	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
-			url, _gfs_hook_section));
-		e = GFS_STAT_SECTION(url, _gfs_hook_section, &gs);
-	}
-	else if (_gfs_hook_default_view == index_view) {
+			url, gfs_hook_get_current_section()));
+		e = GFS_STAT_SECTION(url, gfs_hook_get_current_section(), &gs);
+		break;
+	case index_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
-			url, _gfs_hook_index));
-		e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
-	}
-	else if (_gfs_hook_default_view == local_view) {
-		int nf = -1, np;
+			url, gfs_hook_get_current_index()));
+		e = GFS_STAT_INDEX(url, gfs_hook_get_current_index(), &gs);
+		break;
+	case local_view:
 		/*
 		 * If the number of fragments is not the same as the
 		 * number of parallel processes, or the file is not
@@ -268,8 +270,8 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 			else
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 		}
-	}
-	else {
+		break;
+	default:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);

@@ -35,6 +35,18 @@ struct _gfs_file_descriptor {
 };
 static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 
+/*
+ * static function definitions
+ */
+static void gfs_hook_set_current_view_local();
+static void gfs_hook_set_current_view_index(int, int);
+static void gfs_hook_set_current_view_global();
+static void gfs_hook_set_current_view_section(char *);
+static void gfs_hook_set_current_view_default();
+
+/*
+ *
+ */
 void
 gfs_hook_not_initialized(void)
 {
@@ -559,7 +571,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			memcpy(sec, p, secsize);
 			sec[secsize] = '\0';
 			/* It is not necessary to free memory space of 'sec'. */
-			gfs_hook_set_default_view_section(sec);
+			gfs_hook_set_current_view_section(sec);
 		}
 		else {
 			/*
@@ -592,7 +604,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
 			    path + sizeof_prefix + remove_slash - 1);
 
-			gfs_hook_set_default_view_local();
+			gfs_hook_set_current_view_default();
 		}
 		if (!set_received_prefix(path_save))
 			return (0);
@@ -621,13 +633,17 @@ gfs_hook_get_prefix(char *buf, size_t size)
 }	
 
 /*
- * default file view manipulation
+ * default and current file view manipulation
  */
+static enum gfs_hook_file_view _gfs_hook_default_view = local_view;
+static int _gfs_hook_default_index = 0;
+static int _gfs_hook_default_nfrags = GFARM_FILE_DONTCARE;
+static char *_gfs_hook_default_section = NULL;
 
-enum gfs_hook_file_view _gfs_hook_default_view = local_view;
-int _gfs_hook_index = 0;
-int _gfs_hook_num_fragments = GFARM_FILE_DONTCARE;
-char *_gfs_hook_section = NULL;
+static enum gfs_hook_file_view _gfs_hook_current_view = local_view;
+static int _gfs_hook_current_index = 0;
+static int _gfs_hook_current_nfrags = GFARM_FILE_DONTCARE;
+static char *_gfs_hook_current_section = NULL;
 
 void
 gfs_hook_set_default_view_local()
@@ -639,8 +655,8 @@ void
 gfs_hook_set_default_view_index(int index, int nfrags)
 {
 	_gfs_hook_default_view = index_view;
-	_gfs_hook_index = index;
-	_gfs_hook_num_fragments = nfrags;
+	_gfs_hook_default_index = index;
+	_gfs_hook_default_nfrags = nfrags;
 }
 
 void
@@ -653,11 +669,86 @@ void
 gfs_hook_set_default_view_section(char *section)
 {
 	_gfs_hook_default_view = section_view;
-	if (_gfs_hook_section != NULL)
-		free(_gfs_hook_section);
-	_gfs_hook_section = section;
+	if (_gfs_hook_default_section != NULL)
+		free(_gfs_hook_current_section);
+	_gfs_hook_default_section = strdup(section);
 }
 
+static void
+gfs_hook_set_current_view_local()
+{
+	_gfs_hook_current_view = local_view;
+}
+
+static void
+gfs_hook_set_current_view_index(int index, int nfrags)
+{
+	_gfs_hook_current_view = index_view;
+	_gfs_hook_current_index = index;
+	_gfs_hook_current_nfrags = nfrags;
+}
+
+static void
+gfs_hook_set_current_view_global()
+{
+	_gfs_hook_current_view = global_view;
+}
+
+static void
+gfs_hook_set_current_view_section(char *section)
+{
+	_gfs_hook_current_view = section_view;
+	if (_gfs_hook_current_section != NULL
+	    && _gfs_hook_current_section != _gfs_hook_default_section)
+		free(_gfs_hook_current_section);
+	_gfs_hook_current_section = section;
+}
+
+static void
+gfs_hook_set_current_view_default()
+{
+	switch (_gfs_hook_default_view) {
+	case local_view:
+		gfs_hook_set_current_view_local();
+		break;
+	case index_view:
+		gfs_hook_set_current_view_index(
+			_gfs_hook_default_index, _gfs_hook_default_nfrags);
+		break;
+	case global_view:
+		gfs_hook_set_current_view_global();
+		break;
+	case section_view:
+		gfs_hook_set_current_view_section(_gfs_hook_default_section);
+		break;
+	}
+}
+
+enum gfs_hook_file_view
+gfs_hook_get_current_view()
+{
+	return (_gfs_hook_current_view);
+}
+
+int
+gfs_hook_get_current_index()
+{
+	return (_gfs_hook_current_index);
+}
+
+int
+gfs_hook_get_current_nfrags() {
+	return (_gfs_hook_current_nfrags);
+}
+
+char *
+gfs_hook_get_current_section() {
+	return (_gfs_hook_current_section);
+}
+
+/*
+ * gfs_hook_set_view
+ */
 char *
 gfs_hook_set_view_local(int filedes, int flag)
 {

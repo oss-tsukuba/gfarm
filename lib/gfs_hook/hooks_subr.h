@@ -44,11 +44,12 @@ enum gfs_hook_file_view {
 	index_view,
 	global_view,
 	section_view
-} _gfs_hook_default_view;
+};
 
-extern int _gfs_hook_index;
-extern int _gfs_hook_num_fragments;
-extern char *_gfs_hook_section;
+enum gfs_hook_file_view gfs_hook_get_current_view();
+int gfs_hook_get_current_index();
+int gfs_hook_get_current_nfrags();
+char *gfs_hook_get_current_section();
 
 struct dirent;
 struct dirent64;

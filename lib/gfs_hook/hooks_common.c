@@ -17,6 +17,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	int filedes;
 	struct gfs_stat gs;
 	int file_exist, file_size = 0, is_directory = 0;
+	int nf = -1, np;
 
 	va_start(ap, oflag);
 	mode = va_arg(ap, mode_t);
@@ -28,8 +29,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_OPEN(path, oflag, mode));
 
-	if (_gfs_hook_default_view == section_view)
-		e = gfs_stat_section(url, _gfs_hook_section, &gs);
+	if (gfs_hook_get_current_view() == section_view)
+		e = gfs_stat_section(url, gfs_hook_get_current_section(), &gs);
 	else
 		e = gfs_stat(url, &gs);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
@@ -78,7 +79,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			 * This case needs to be implemented in
 			 * gfs_pio_set_view_global() in gfs_pio_global.c.
 			 */
-			if (_gfs_hook_default_view == global_view)
+			if (gfs_hook_get_current_view() == global_view)
 				gfs_unlink(url); /* XXX - FIXME */
 			/*
 			 * gfs_pio_create assumes GFARM_FILE_TRUNC.
@@ -140,21 +141,23 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	}
 
 	/* set file view */
-	if (_gfs_hook_default_view == section_view) {
+	switch (gfs_hook_get_current_view()) {
+	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_section(%s, %s)\n",
-			path, _gfs_hook_section));
-		e = gfs_pio_set_view_section(gf, _gfs_hook_section, NULL, 0);
-	}
-	else if (_gfs_hook_default_view == index_view) {
+			path, gfs_hook_get_current_section()));
+		e = gfs_pio_set_view_section(
+			gf, gfs_hook_get_current_section(), NULL, 0);
+		break;
+	case index_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_index(%s, %d, %d)\n", path,
-			_gfs_hook_num_fragments, _gfs_hook_index));
-		e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
-			_gfs_hook_index, NULL, 0);
-	}
-	else if (_gfs_hook_default_view == local_view) {
-		int nf = -1, np;
+			gfs_hook_get_current_nfrags(),
+			gfs_hook_get_current_index()));
+		e = gfs_pio_set_view_index(gf, gfs_hook_get_current_nfrags(),
+			gfs_hook_get_current_index(), NULL, 0);
+		break;
+	case local_view:
 		/*
 		 * If the number of fragments is not the same as the
 		 * number of parallel processes, or the file is not
@@ -170,10 +173,10 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		}
 		else
 			e = gfs_pio_set_view_global(gf, 0);
-	}
-	else
+		break;
+	default:
 		e = gfs_pio_set_view_global(gf, 0);
-
+	}
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
 		gfs_hook_delete_creating_file(gf);
@@ -251,27 +254,30 @@ FUNC___CREAT(const char *path, mode_t mode)
 	}
 
 	/* set file view */
-	if (_gfs_hook_default_view == section_view) {
+	switch (gfs_hook_get_current_view()) {
+	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_section(%s, %s)\n",
-			path, _gfs_hook_section));
-		e = gfs_pio_set_view_section(gf, _gfs_hook_section, NULL, 0);
-	}
-	else if (_gfs_hook_default_view == index_view) {
+			path, gfs_hook_get_current_section()));
+		e = gfs_pio_set_view_section(
+			gf, gfs_hook_get_current_section(), NULL, 0);
+		break;
+	case index_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_index(%s, %d, %d)\n", path,
-			_gfs_hook_num_fragments, _gfs_hook_index));
-		e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
-			_gfs_hook_index, NULL, 0);
-	}
-	else if (_gfs_hook_default_view == local_view) {
+			gfs_hook_get_current_nfrags(),
+			gfs_hook_get_current_index()));
+		e = gfs_pio_set_view_index(gf, gfs_hook_get_current_nfrags(),
+			gfs_hook_get_current_index(), NULL, 0);
+		break;
+	case local_view:
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_local(%s)\n", path));
 		e = gfs_pio_set_view_local(gf, 0);
-	}
-	else
+		break;
+	default:
 		e = gfs_pio_set_view_global(gf, 0);
-
+	}
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
 		gfs_hook_delete_creating_file(gf);
