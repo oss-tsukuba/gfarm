@@ -976,7 +976,7 @@ main(int argc, char **argv)
 	char *e, *e_save = NULL;
 	char opt_operation = OP_DEFAULT;
 	int opt_concurrency = DEFAULT_CONCURRENCY;
-	int opt_add_aliases = 0;
+	int opt_alter_aliases = 0;
 	char *opt_architecture = NULL;
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
@@ -995,7 +995,7 @@ main(int argc, char **argv)
 	while ((c = getopt(argc, argv, "ALa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
-			opt_add_aliases = 1;
+			opt_alter_aliases = 1;
 			break;
 		case 'L':
 		case 'c':
@@ -1054,13 +1054,13 @@ main(int argc, char **argv)
 		if (opt_ncpu == 0) {
 			opt_ncpu = 1;
 		}
-		/* opt_add_aliases is meaningless, but allowed */
+		/* opt_alter_aliases is meaningless, but allowed */
 	} else if (opt_operation != OP_MODIFY_ENTRY) {
 		if (opt_architecture != NULL)
 			invalid_option('a');
 		if (opt_ncpu != 0)
 			invalid_option('n');
-		if (opt_add_aliases)
+		if (opt_alter_aliases)
 			invalid_option('A');
 	}
 
@@ -1086,7 +1086,7 @@ main(int argc, char **argv)
 	case OP_MODIFY_ENTRY:
 		if (argc > 0) {
 			e_save = modify_host(argv[0], &argv[1],
-			    opt_architecture, opt_ncpu, opt_add_aliases);
+			    opt_architecture, opt_ncpu, !opt_alter_aliases);
 			if (e_save != NULL)
 				fprintf(stderr, "%s: %s\n", argv[0], e_save);
 		}
