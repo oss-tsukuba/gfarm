@@ -6,9 +6,9 @@
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
 
-%define prefix		/usr/grid
+%define prefix		/usr
 %define man_prefix	/usr/share/man
-%define doc_prefix	/usr/doc/%{name}-%{ver}
+%define doc_prefix	/usr/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
 %define etc_prefix	/etc
@@ -611,6 +611,9 @@ fi
 %{prefix}/include/gfarm/gfs_hook.h
 %{prefix}/lib/gfs_hook.o
 %{prefix}/lib/gfs_hook_debug.o
+%{prefix}/lib/gfs_hook_no_init.o
+%{prefix}/lib/gfs_hook_no_init_debug.o
+%{prefix}/lib/hooks_init_mpi.c
 %{prefix}/lib/libgfarm.a
 %if %{mpi}
 %{prefix}/lib/gfs_hook_mpi.o
