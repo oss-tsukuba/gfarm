@@ -1094,7 +1094,52 @@ int
 rename(const char *oldpath, const char *newpath)
 {
 	_gfs_hook_debug_v(fputs("Hooking rename\n", stderr));
-	return (_rename(oldpath, newpath));
+	return (__rename(oldpath, newpath));
+}
+
+/*
+ * symlink
+ */
+
+int
+__symlink(const char *oldpath, const char *newpath)
+{
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __symlink(%s, %s)\n",
+				  oldpath, newpath));
+
+	if (!gfs_hook_is_url(newpath, &url))
+		return (syscall(SYS_symlink, oldpath, newpath));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __symlink(%s, %s)\n",
+				oldpath, newpath));
+
+	/*
+	 * Gfarm file system does not support the creation of
+	 * symbolic link yet.
+	 */
+	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	free(url);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __symlink: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_symlink(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking _symlink\n", stderr));
+	return (__symlink(oldpath, newpath));
+}
+
+int
+symlink(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking symlink\n", stderr));
+	return (__symlink(oldpath, newpath));
 }
 
 #ifdef HAVE_ATTR_XATTR_H
