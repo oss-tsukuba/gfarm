@@ -648,6 +648,8 @@ char *(*opt_resolv_addr)(char *, struct sockaddr *, char **) =
  * listing options.
  */
 
+int opt_verbose = 0;
+
 void
 callback_loadavg(void *closure, struct sockaddr *addr,
 	struct gfs_client_load *result, char *error)
@@ -716,8 +718,12 @@ callback_host_info_and_loadavg(void *closure, struct sockaddr *addr,
 	int i, print_ifaddr = c->if_hostname != NULL;
 
 	if (error != NULL) {
-		fprintf(stderr, "%s: %s\n", info->hostname, error);
-		printf("-.--/-.--/-.-- ");
+		if (opt_verbose)
+			fprintf(stderr, "%s: %s\n", info->hostname, error);
+		if (error == GFARM_ERR_CONNECTION_REFUSED) /* machine is up */
+			printf("-.--/-.--/-.-- ");
+		else
+			printf("x.xx/x.xx/x.xx ");
 	} else {
 		printf("%4.2f/%4.2f/%4.2f ",
 		    result->loadavg_1min,
@@ -903,7 +909,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
-	    program_name, "[-lL] [-j <concurrency>] [-ip]",
+	    program_name, "[-lL] [-j <concurrency>] [-ipv]",
 	    program_name,
 	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
 	    program_name,
@@ -986,7 +992,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-	while ((c = getopt(argc, argv, "ALa:cdij:lmn:pr")) != -1) {
+	while ((c = getopt(argc, argv, "ALa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_add_aliases = 1;
@@ -1028,6 +1034,9 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			opt_plain_order = 1;
+			break;
+		case 'v':
+			opt_verbose = 1;
 			break;
 		case '?':
 			usage();
