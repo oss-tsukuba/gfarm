@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.0.4
-%define rel	1
+%define rel	2
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -53,7 +53,7 @@ Name: %{package_name}
 Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
-#Patch: 
+Patch: %{pkg}.patch
 Copyright: National Institute of Advanced Industrial Science and Technology
 Group: Local
 Packager: Tohru Sotoyama <sotoyama@sra.co.jp>
@@ -139,7 +139,7 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-#%patch -p1
+%patch -p1
 
 %build
 ./configure --prefix=%{prefix} \
