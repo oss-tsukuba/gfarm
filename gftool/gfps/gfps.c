@@ -93,6 +93,12 @@ main(argc, argv)
 	}
 	for (i = 0; i < n; i++) {
 		info = &infos[i];
+		/*
+		 * infos[i] may be invalid when there is no process
+		 * having the specified process id.
+		 */
+		if (info->user == NULL)
+			continue;
 		printf("%6d %8s@%-10.10s %-8s %4d", joblist[i],
 		       info->user, info->originate_host,
 		       info->job_type, info->total_nodes);
