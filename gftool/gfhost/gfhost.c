@@ -975,6 +975,8 @@ parse_opt_long(char *option, int option_char, char *argument_name)
 int
 main(int argc, char **argv)
 {
+	int argc_save = argc;
+	char **argv_save = argv;
 	char *e, *e_save = NULL;
 	char opt_operation = OP_DEFAULT;
 	int opt_concurrency = DEFAULT_CONCURRENCY;
@@ -982,18 +984,13 @@ main(int argc, char **argv)
 	char *opt_architecture = NULL;
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
-	int i, c, sort_pid;
+	int i, c, sort_pid, need_metadb = 1;
 
 #ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
 	sort_pid = 0;
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
 	while ((c = getopt(argc, argv, "ALa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
@@ -1072,6 +1069,22 @@ main(int argc, char **argv)
 			fprintf(stderr, "%s: "
 			    "invalid character '%c' in hostname \"%s\"\n",
 			    program_name, *e, argv[i]);
+			exit(1);
+		}
+	}
+
+	if (opt_operation == OP_LIST_LOADAVG && argc > 0 &&
+	    opt_resolv_addr == resolv_addr_without_address_use) {
+		/*
+		 * We don't have to initialize metadb in this case.
+		 * e.g. gfhost -Li <hostname>
+		 */
+		need_metadb = 0;
+		gfarm_error_initialize();
+	} else {
+		e = gfarm_initialize(&argc_save, &argv_save);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 	}
@@ -1163,10 +1176,12 @@ main(int argc, char **argv)
 		}
 		break;
 	}
-	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
+	if (need_metadb) {
+		e = gfarm_terminate();
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			exit(1);
+		}
 	}
 	exit(e_save == NULL ? 0 : 1);
 }
