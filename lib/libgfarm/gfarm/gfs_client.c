@@ -1050,6 +1050,7 @@ gfs_client_command_fd_set(struct gfs_connection *gfs_server,
 		fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDIN]);
 		if (fd < 0) {
 			gfarm_iobuffer_read(cc->iobuffer[FDESC_STDIN], NULL);
+			/* XXX - if the callback sets an error? */
 		} else {
 			FD_SET(fd, readable);
 			if (*max_fdp < fd)
@@ -1062,6 +1063,7 @@ gfs_client_command_fd_set(struct gfs_connection *gfs_server,
 			fd = gfarm_iobuffer_get_write_fd(cc->iobuffer[i]);
 			if (fd < 0) {
 				gfarm_iobuffer_write(cc->iobuffer[i], NULL);
+				/* XXX - if the callback sets an error? */
 			} else {
 				FD_SET(fd, writable);
 				if (*max_fdp < fd)
@@ -1076,20 +1078,36 @@ char *
 gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 			     fd_set *readable, fd_set *writable)
 {
+	char *e;
 	struct gfs_client_command_context *cc = gfs_server->context;
-	int fd, conn_fd = xxx_connection_fd(gfs_server->conn);
+	int i, fd, conn_fd = xxx_connection_fd(gfs_server->conn);
 
 	fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDIN]);
-	if (fd >= 0 && FD_ISSET(fd, readable))
+	if (fd >= 0 && FD_ISSET(fd, readable)) {
 		gfarm_iobuffer_read(cc->iobuffer[FDESC_STDIN], NULL);
+		e = gfarm_iobuffer_get_error(cc->iobuffer[FDESC_STDIN]);
+		if (e != NULL) {
+			/* treat this as eof */
+			gfarm_iobuffer_set_read_eof(cc->iobuffer[FDESC_STDIN]);
+			/* XXX - how to report this error? */
+			gfarm_iobuffer_set_error(cc->iobuffer[FDESC_STDIN],
+			    NULL);
+		}
+	}
 
-	fd = gfarm_iobuffer_get_write_fd(cc->iobuffer[FDESC_STDOUT]);
-	if (fd >= 0 && FD_ISSET(fd, writable))
-		gfarm_iobuffer_write(cc->iobuffer[FDESC_STDOUT], NULL);
-
-	fd = gfarm_iobuffer_get_write_fd(cc->iobuffer[FDESC_STDERR]);
-	if (fd >= 0 && FD_ISSET(fd, writable))
-		gfarm_iobuffer_write(cc->iobuffer[FDESC_STDERR], NULL);
+	for (i = FDESC_STDOUT; i <= FDESC_STDERR; i++) {
+		fd = gfarm_iobuffer_get_write_fd(cc->iobuffer[i]);
+		if (fd < 0 || !FD_ISSET(fd, writable))
+			continue;
+		gfarm_iobuffer_write(cc->iobuffer[i], NULL);
+		e = gfarm_iobuffer_get_error(cc->iobuffer[i]);
+		if (e == NULL)
+			continue;
+		/* XXX - just purge the content */
+		gfarm_iobuffer_purge(cc->iobuffer[i], NULL);
+		/* XXX - how to report this error? */
+		gfarm_iobuffer_set_error(cc->iobuffer[i], NULL);
+	}
 
 	if (FD_ISSET(conn_fd, readable)) {
 		if (cc->server_state == GFS_COMMAND_SERVER_STATE_NEUTRAL) {
@@ -1144,13 +1162,24 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				    GFS_COMMAND_SERVER_STATE_ABORTED;
 				return ("unknown gfsd reply");
 			}
-		}
-		if (cc->server_state == GFS_COMMAND_SERVER_STATE_OUTPUT) {
+		} else if (cc->server_state==GFS_COMMAND_SERVER_STATE_OUTPUT) {
 			gfarm_iobuffer_read(cc->iobuffer[cc->server_output_fd],
 				&cc->server_output_residual);
 			if (cc->server_output_residual == 0)
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_NEUTRAL;
+			e = gfarm_iobuffer_get_error(
+			    cc->iobuffer[cc->server_output_fd]);
+			if (e != NULL) {
+				/* treat this as eof */
+				gfarm_iobuffer_set_read_eof(
+				    cc->iobuffer[cc->server_output_fd]);
+				gfarm_iobuffer_set_error(
+				    cc->iobuffer[cc->server_output_fd], NULL);
+				cc->server_state =
+					GFS_COMMAND_SERVER_STATE_ABORTED;
+				return (e);
+			}
 			if (gfarm_iobuffer_is_read_eof(
 					cc->iobuffer[cc->server_output_fd])) {
 				cc->server_state =
@@ -1162,15 +1191,18 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 	if (FD_ISSET(conn_fd, writable) &&
 	    gfs_client_command_is_running(gfs_server)) {
 		if (cc->client_state == GFS_COMMAND_CLIENT_STATE_NEUTRAL) {
-			char *e;
-
 			if (cc->pending_signal) {
 				e = xxx_proto_send(gfs_server->conn, "ii",
 					GFS_PROTO_COMMAND_SEND_SIGNAL,
 					cc->pending_signal);
-				xxx_proto_flush(gfs_server->conn);
-			}
-			if (gfarm_iobuffer_is_writable(
+				if (e != NULL ||
+				    (e = xxx_proto_flush(gfs_server->conn))
+				    != NULL) {
+					cc->server_state =
+					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					return (e);
+				}
+			} else if (gfarm_iobuffer_is_writable(
 			    cc->iobuffer[FDESC_STDIN])) {
 				/*
 				 * cc->client_output_residual may be 0,
@@ -1183,17 +1215,31 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 					GFS_PROTO_COMMAND_FD_INPUT,
 					FDESC_STDIN,
 					cc->client_output_residual);
-				xxx_proto_flush(gfs_server->conn);
+				if (e != NULL ||
+				    (e = xxx_proto_flush(gfs_server->conn))
+				    != NULL) {
+					cc->server_state =
+					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					return (e);
+				}
 				cc->client_state =
 				    GFS_COMMAND_CLIENT_STATE_OUTPUT;
 			}
-		}
-		if (cc->client_state == GFS_COMMAND_CLIENT_STATE_OUTPUT) {
+		} else if (cc->client_state==GFS_COMMAND_CLIENT_STATE_OUTPUT) {
 			gfarm_iobuffer_write(cc->iobuffer[FDESC_STDIN],
 				&cc->client_output_residual);
 			if (cc->client_output_residual == 0)
 				cc->client_state =
 					GFS_COMMAND_CLIENT_STATE_NEUTRAL;
+			e = gfarm_iobuffer_get_error(
+			    cc->iobuffer[FDESC_STDIN]);
+			if (e != NULL) {
+				cc->server_state =
+					GFS_COMMAND_SERVER_STATE_ABORTED;
+				gfarm_iobuffer_set_error(
+				    cc->iobuffer[FDESC_STDIN], NULL);
+				return (e);
+			}
 		}
 	}
 	return (NULL);
@@ -1218,9 +1264,12 @@ gfs_client_command_io(struct gfs_connection *gfs_server,
 	if (max_fd >= 0) {
 		nfound = select(max_fd + 1,
 				&readable, &writable, NULL, timeout);
-		if (nfound > 0)
+		if (nfound > 0) {
 			e = gfs_client_command_io_fd_set(gfs_server,
 							 &readable, &writable);
+		} else if (nfound == -1 && errno != EINTR) {
+			e = gfarm_errno_to_error(errno);
+		}
 	}
 
 	return (e);
@@ -1240,6 +1289,7 @@ gfs_client_command_send_stdin(struct gfs_connection *gfs_server,
 		p += rv;
 		residual -= rv;
 		gfs_client_command_io(gfs_server, NULL);
+		/* XXX - how to report this error? */
 	}
 	return (len - residual);
 }
@@ -1255,18 +1305,20 @@ gfs_client_command_close_stdin(struct gfs_connection *gfs_server)
 char *
 gfs_client_command_send_signal(struct gfs_connection *gfs_server, int sig)
 {
+	char *e;
 	struct gfs_client_command_context *cc = gfs_server->context;
 
 	while (gfs_client_command_is_running(gfs_server) &&
 	       cc->pending_signal != 0) {
-		gfs_client_command_io(gfs_server, NULL);
+		e = gfs_client_command_io(gfs_server, NULL);
+		if (e != NULL)
+			return (e);
 	}
 	if (!gfs_client_command_is_running(gfs_server))
 		return (gfarm_errno_to_error(ESRCH));
 	cc->pending_signal = sig;
 	/* make a chance to send the signal immediately */
-	gfs_client_command_io(gfs_server, NULL);
-	return (NULL);
+	return (gfs_client_command_io(gfs_server, NULL));
 }
 
 char *
@@ -1274,9 +1326,12 @@ gfs_client_command_result(struct gfs_connection *gfs_server,
 	int *term_signal, int *exit_status, int *exit_flag)
 {
 	struct gfs_client_command_context *cc = gfs_server->context;
+	char *e;
 
-	while (gfs_client_command_is_running(gfs_server))
+	while (gfs_client_command_is_running(gfs_server)) {
 		gfs_client_command_io(gfs_server, NULL);
+		/* XXX - how to report this error? */
+	}
 
 	/*
 	 * flush stdout/stderr
@@ -1294,6 +1349,9 @@ gfs_client_command_result(struct gfs_connection *gfs_server,
 				if (fd < 0) {
 					gfarm_iobuffer_write(cc->iobuffer[i],
 					    NULL);
+					/*
+					 * XXX - if the callback sets an error?
+					 */
 				} else {
 					FD_SET(fd, &writable);
 					if (max_fd < fd)
@@ -1306,13 +1364,23 @@ gfs_client_command_result(struct gfs_connection *gfs_server,
 			continue;
 
 		nfound = select(max_fd + 1, NULL, &writable, NULL, NULL);
+		if (nfound == -1 && errno != EINTR)
+			break;
 
 		if (nfound > 0) {
 			for (i = FDESC_STDOUT; i <= FDESC_STDERR; i++) {
 				fd = gfarm_iobuffer_get_write_fd(
 				    cc->iobuffer[i]);
-				if (fd >= 0 && FD_ISSET(fd, &writable))
-					gfarm_iobuffer_write(cc->iobuffer[i], NULL);
+				if (fd < 0 || !FD_ISSET(fd, &writable))
+					continue;
+				gfarm_iobuffer_write(cc->iobuffer[i], NULL);
+				e = gfarm_iobuffer_get_error(cc->iobuffer[i]);
+				if (e == NULL)
+					continue;
+				/* XXX - just purge the content */
+				gfarm_iobuffer_purge(cc->iobuffer[i], NULL);
+				/* XXX - how to report this error? */
+				gfarm_iobuffer_set_error(cc->iobuffer[i],NULL);
 			}
 		}
 	}
