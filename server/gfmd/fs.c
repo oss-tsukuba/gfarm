@@ -416,6 +416,9 @@ gfm_server_getdirents(struct peer *peer, int from_client)
 		return (e);
 	giant_lock();
 
+	if (n > GFM_PROTO_MAX_DIRENT)
+		n = GFM_PROTO_MAX_DIRENT;
+
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
