@@ -1,0 +1,3 @@
+** install jar and manual for gmonitor3
+$ ./configure --prefix=/(install dir)
+$ make install

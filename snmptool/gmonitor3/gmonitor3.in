@@ -1,0 +1,5 @@
+#!/bin/sh
+
+GMONITOR=@prefix@/share/java/gmonitor3.jar
+
+java -jar ${GMONITOR} $@ > /dev/null

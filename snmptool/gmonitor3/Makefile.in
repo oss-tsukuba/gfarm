@@ -1,0 +1,46 @@
+top_objdir = @top_objdir@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+
+include config.mk
+
+javadir = $(prefix)/share/java
+
+SCRIPT = gmonitor3
+JAR = gmonitor3.jar
+CLASS = gmonitor/*/*.class
+SRC = gmonitor/*/*.java
+
+all:
+	@echo "make (ant, jar, install, doc, clean) ?"
+
+ant:
+	ant
+
+jar: javac
+	jar cvfm $(JAR) gmonitor.mani $(CLASS)
+
+javac:
+	javac $(SRC)
+
+doc:
+	(cd docbook; $(MAKE))
+
+install:
+	(cd docbook; $(MAKE) install)
+	@for i in / $(SCRIPT); do \
+		case $$i in /) continue;; esac; \
+		( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
+	done
+	@for i in / $(JAR); do \
+		case $$i in /) continue;; esac; \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(javadir)/$${i} ); \
+	done
+
+clean:
+	rm -rf $(CLASS) class/ *~
+
+distclean: clean
+	(cd docbook; $(MAKE) clean)
+	rm -f config.status config.log \
+	Makefile config.mk docbook/doc.mk gmonitor3

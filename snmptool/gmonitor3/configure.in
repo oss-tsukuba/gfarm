@@ -1,0 +1,10 @@
+AC_INIT(gmonitor.mani)
+AC_CONFIG_SRCDIR(gmonitor.mani)
+
+top_objdir=`pwd`
+AC_SUBST(top_objdir)
+
+AC_PROG_INSTALL
+
+AC_CONFIG_FILES(Makefile config.mk docbook/doc.mk gmonitor3)
+AC_OUTPUT
