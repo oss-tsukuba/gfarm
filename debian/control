@@ -8,7 +8,7 @@ Standards-Version: 3.5.2
 Package: gfarm-gfptool
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, gfarm-client
 Conflicts: gfarm-gsi-gfptool
 Description: The gfarm server.
  The gfarm tools.
@@ -62,7 +62,7 @@ Description: Documents for the gfarm.
 Package: gfarm-gsi-gfptool
 Section: utils
 Architecture: i386
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, gfarm-gsi-client
 Conflicts: gfarm-gfptool
 Description: The gfarm server.
  The gfarm tools.
