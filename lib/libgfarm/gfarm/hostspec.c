@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gfarm/gfarm_error.h>
-#include <gfarm/gfarm_misc.h>
+#include <gfarm/gfarm_misc.h> /* gfarm_host_is_in_domain() */
 #include "hostspec.h"
 
 #define IS_DNS_LABEL_CHAR(c)	(isalnum(c) || (c) == '-')
@@ -191,6 +191,21 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 }
 
 int
+gfarm_host_is_in_domain(const char *hostname, const char *domainname)
+{
+	int hlen = strlen(hostname), dlen = strlen(domainname);
+
+	if (hlen < dlen)
+		return (0);
+	if (hlen == dlen)
+		return (strcasecmp(hostname, domainname) == 0);
+	if (hlen == dlen + 1)
+		return (0);
+	return (hostname[hlen - (dlen + 1)] == '.' &&
+	    strcasecmp(&hostname[hlen - dlen], domainname) == 0);
+}
+
+int
 gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	const char *name, struct sockaddr *addr)
 {
@@ -199,13 +214,8 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 		if (name == NULL)
 			return (0);
 		if (hostspecp->u.name[0] == '.') {
-			int nlen = strlen(name),
-			    slen = strlen(hostspecp->u.name);
-
-			if (nlen <= slen)
-				return (0);
-			return (strcasecmp(&name[nlen - slen],
-			    hostspecp->u.name) == 0);
+			return (gfarm_host_is_in_domain(name, 
+			    &hostspecp->u.name[1]));
 		} else {
 			return (strcasecmp(name, hostspecp->u.name) == 0);
 		}
