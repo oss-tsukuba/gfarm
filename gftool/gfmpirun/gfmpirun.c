@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+#include "host.h"
 #include "gfj_client.h"
 
 char *program_name = "gfmpirun";
@@ -161,12 +163,6 @@ skip_opt: ;
 			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
 			exit(1);
 		}
-
-		fp = fdopen(mkstemp(strcpy(filename, template)), "w");
-		for (i = 0; i < nhosts; i++)
-			fprintf(fp, "%s\n", hosts[i]);
-		fclose(fp);
-		hostfile = filename;
 	} else {
 		int error_line;
 
@@ -183,6 +179,27 @@ skip_opt: ;
 		}
 		scheduling_file = hostfile;
 	}
+	fp = fdopen(mkstemp(strcpy(filename, template)), "w");
+	if (fp == NULL) {
+		fprintf(stderr, "%s: cannot create tempfile \"%s\"\n",
+			program_name, filename);
+		exit(1);
+	}
+	for (i = 0; i < nhosts; i++) {
+		char *if_hostname;
+		struct sockaddr peer_addr;
+
+		/* reflect "address_use" directive in the `if_hostname' */
+		e = gfarm_host_address_get(hosts[i],
+		    gfarm_spool_server_port, &peer_addr, &if_hostname);
+		if (e != NULL) {
+			fprintf(fp, "%s\n", hosts[i]);
+		} else {
+			fprintf(fp, "%s\n", if_hostname);
+			free(if_hostname);
+		}
+	}
+	fclose(fp);
 
 	/*
 	 * register job manager
@@ -223,7 +240,7 @@ skip_opt: ;
 	gfarm_stringlist_add(&arg_list, "-nolocal");
 #endif
 	gfarm_stringlist_add(&arg_list, "-machinefile");
-	gfarm_stringlist_add(&arg_list, hostfile);
+	gfarm_stringlist_add(&arg_list, filename);
 	gfarm_stringlist_add(&arg_list, "-np");
 	gfarm_stringlist_add(&arg_list, total_nodes);
 	gfarm_stringlist_add_list(&arg_list, &option_list);
@@ -262,8 +279,7 @@ skip_opt: ;
 	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
 		gfarm_url_fragment_cleanup(
 		    gfarm_stringlist_elem(&output_list, i), nhosts, hosts);
-	if (hostfile == filename)
-		unlink(filename);
+	unlink(filename);
 
 	if (delivered_paths != NULL)
 		gfarm_strings_free_deeply(nhosts, delivered_paths);

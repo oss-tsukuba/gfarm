@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <gfarm/gfarm.h>
-#include "gfs_client.h" /* XXX - for gfs_canonical_my_hostname() */
 
 /*
  *  Register a local file to the Gfarm Meta DB.
@@ -100,13 +99,18 @@ main(int argc, char * argv[])
     if (S_ISREG(s.st_mode) &&
 	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index < 0) {
 	if (architecture == NULL) {
-	    architecture =
-		gfarm_host_info_get_architecture_by_host(
-		    gfs_canonical_my_hostname());
+	    char *self_name;
+
+	    e = gfarm_host_get_canonical_self_name(&self_name);
+	    if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", gfarm_host_get_self_name(), e);
+		exit(1);
+	    }
+	    architecture = gfarm_host_info_get_architecture_by_host(self_name);
 	}
 	if (architecture == NULL) {
 	    fprintf(stderr, "%s: missing -a <architecture> for %s\n",
-		    program_name, gfs_canonical_my_hostname());
+		    program_name, gfarm_host_get_self_name());
 	    usage();
 	    exit(1);
 	}

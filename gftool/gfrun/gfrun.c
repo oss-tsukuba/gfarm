@@ -3,6 +3,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <errno.h>
@@ -12,6 +13,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+#include "host.h"
 #include "gfj_client.h"
 
 char *program_name = "gfrun";
@@ -311,8 +313,17 @@ skip_opt: ;
 	gfarm_stringlist_add(&arg_list, NULL);
 
 	for (i = 0; i < nhosts; i++) {
+		char *if_hostname;
+		struct sockaddr peer_addr;
+
 		sprintf(node_index, "%d", i);
-		GFARM_STRINGLIST_ELEM(arg_list, 1) = hosts[i];
+
+		/* reflect "address_use" directive in the `if_hostname'  */
+		e = gfarm_host_address_get(hosts[i],
+		    gfarm_spool_server_port, &peer_addr, &if_hostname);
+		GFARM_STRINGLIST_ELEM(arg_list, 1) =
+		    e == NULL ? if_hostname : hosts[i];
+
 		if (delivered_paths == NULL) {
 			GFARM_STRINGLIST_ELEM(arg_list, command_alist_index) =
 			    command_name;
@@ -330,6 +341,8 @@ skip_opt: ;
 			perror("fork");
 			exit(1);
 		}
+		if (e == NULL)
+			free(if_hostname);
 	}
 
 	sig_ignore(SIGHUP);

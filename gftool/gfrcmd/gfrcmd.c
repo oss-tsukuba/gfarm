@@ -1,4 +1,7 @@
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,6 +104,8 @@ main(argc, argv)
 	char **envp = NULL;
 	struct gfs_connection *gfs_server;
 	int sig, status, coredump;
+	struct hostent *hp;
+	struct sockaddr_in peer_addr;
 
 	if (argc <= 0)
 		usage();
@@ -109,14 +114,13 @@ main(argc, argv)
 	argc--, argv++;
 
 	parse_option(&argc, &argv);
+	if (argc <= 0)
+		usage();
 
-	if (argc > 0) {
-		hostname = argv[0];
-		argc--, argv++;
-	}
+	hostname = argv[0];
+	argc--, argv++;
 
 	parse_option(&argc, &argv);
-
 	if (argc <= 0)
 		usage();
 
@@ -152,7 +156,33 @@ main(argc, argv)
 		exit(1);
 	}
 
-	e = gfs_client_connection(hostname, &gfs_server);
+#if 0 /* XXX - We cannot do this, because we don't access meta database. */
+	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e == NULL) {
+		char *canonical_name;
+
+		e = gfarm_host_get_canonical_name(hostname, &canonical_name);
+		if (e == NULL) {
+			e = gfs_client_connect(canonical_name,
+			    (struct sockaddr *)&peer_addr, &gfs_server);
+		}
+	}
+#else
+	hp = gethostbyname(hostname);
+	if (hp == NULL || hp->h_addrtype != AF_INET) {
+		e = GFARM_ERR_UNKNOWN_HOST;
+	} else {
+		memset(&peer_addr, 0, sizeof(peer_addr));
+		memcpy(&peer_addr.sin_addr, hp->h_addr,
+		       sizeof(peer_addr.sin_addr));
+		peer_addr.sin_family = hp->h_addrtype;
+		peer_addr.sin_port = htons(gfarm_spool_server_port);
+		/* XXX - `hostname' may not be a canonical_hostname. */
+		e = gfs_client_connect(hostname, (struct sockaddr *)&peer_addr,
+		    &gfs_server);
+	}
+#endif
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", hostname, e);
 		exit(1);
