@@ -150,7 +150,7 @@ gfs_mntpath_canonicalize(char *dir, size_t size, char **canonic_path)
 	gfarm_file = malloc(size + 1);
 	if (gfarm_file == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	sprintf(gfarm_file, "%.*s", size, dir);
+	sprintf(gfarm_file, "%.*s", (int)size, dir);
 	
 	e = gfarm_canonical_path(gfarm_file, canonic_path);
 	free(gfarm_file);
@@ -295,9 +295,7 @@ modify_ld_library_path(void)
 		char *local_dir;
 		int is_valid_local_dir = 0;
 
-		dirlen = 0;
-		while (ldpath[dirlen] && ldpath[dirlen] != ':')
-			++dirlen;
+		dirlen = strcspn(ldpath, ":");
 		if (is_mount_point(ldpath)) {
 			e = gfs_mntpath_localize(ldpath, dirlen, &local_dir);
 			if (e != NULL) {
