@@ -24,15 +24,16 @@ usage()
 }
 
 int
-main(int argc, char * argv[])
+main(int argc, char *argv[])
 {
     int argc_save = argc;
     char **argv_save = argv;
-    char * filename, * gfarm_url;
-    int node_index = -1, total_nodes = -1;
-    char * e = (char *)NULL, * architecture = NULL;
+    char *filename, *gfarm_url;
+    char *node_index = NULL;
+    int total_nodes = -1;
+    char *e = NULL, *architecture = NULL;
     struct stat s;
-    extern char * optarg;
+    extern char *optarg;
     extern int optind;
     int c;
 
@@ -44,7 +45,7 @@ main(int argc, char * argv[])
     while ((c = getopt(argc, argv, "I:N:a:")) != -1) {
 	switch (c) {
 	case 'I':
-	    node_index = strtol(optarg, NULL, 0);
+	    node_index = optarg;
 	    break;
 	case 'N':
 	    total_nodes = strtol(optarg, NULL, 0);
@@ -97,7 +98,7 @@ main(int argc, char * argv[])
     }
 
     if (S_ISREG(s.st_mode) &&
-	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index < 0) {
+	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index == NULL) {
 	if (architecture == NULL) {
 	    char *self_name;
 
@@ -119,7 +120,7 @@ main(int argc, char * argv[])
 	e = gfarm_url_program_register(gfarm_url, architecture,
 				       filename, total_nodes);
     } else {
-	if (node_index < 0) {
+	if (node_index == NULL) {
 	    fprintf(stderr, "%s: missing -I <Gfarm index>\n",
 		    program_name);
 	    usage();
