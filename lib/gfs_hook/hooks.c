@@ -577,6 +577,7 @@ utime(const char *path, const struct utimbuf *buf)
 	_gfs_hook_debug_v(fputs("Hooking utime\n", stderr));
 	return (__utime(path, buf));
 }
+
 /*
  * mkdir
  */
@@ -760,7 +761,6 @@ fchdir(int filedes)
 	_gfs_hook_debug_v(fputs("Hooking fchdir\n", stderr));
 	return (__fchdir(filedes));
 }
-
 
 /*
  * getcwd

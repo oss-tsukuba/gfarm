@@ -29,13 +29,68 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)\n", path));
 
 #if 1
-	if (sec != NULL)
-		e = GFS_STAT_SECTION(url, sec, &gs);
-	else {
-		/* first try in local view. */
-		e = GFS_STAT_INDEX(url, gfarm_node, &gs);
-		if (e != NULL)
+	if (sec != NULL || _gfs_hook_default_view == index_view) {
+		if (sec != NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
+				url, sec));
+			e = GFS_STAT_SECTION(url, sec, &gs);
+			free(sec);
+		} else {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+				url, _gfs_hook_index));
+			e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
+		}
+	} else if (_gfs_hook_default_view == local_view) {
+		int nf = -1, np;
+		/*
+		 * If the number of fragments is not the same as the
+		 * number of parallel processes, or the file is not
+		 * fragmented, do not change to the local file view.
+		 */
+		if (gfarm_url_fragment_number(url, &nf) == NULL) {
+			if (gfs_pio_get_node_size(&np) == NULL && nf == np) {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+					url, gfarm_node));
+				e = GFS_STAT_INDEX(url, gfarm_node, &gs);
+			}
+			else {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: " S(GFS_STAT) "(%s)\n", url));
+				e = GFS_STAT(url, &gs);
+			}
+		}
+		else {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT) "(%s)\n", url));
 			e = GFS_STAT(url, &gs);
+		}
+		if (e != NULL) {
+			/* someone is possibly creating the file right now */
+			/*
+			 * XXX - there is no way to determine other
+			 * processes are now creating the
+			 * corresponding section or not in Gfarm v1.
+			 * However, at least, it is possible to
+			 * determine this process is now creating the
+			 * section or not.
+			 */
+			GFS_File gf;
+			if ((gf = gfs_hook_is_now_creating(url)) != NULL) {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: gfs_fstat(%p (%s))\n", gf, url));
+				e = gfs_fstat(gf, &gs);
+			}
+			else
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+		}
+	}
+	else {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT) "(%s)\n", url));
+		e = GFS_STAT(url, &gs);
 	}
 	free(url);
 	if (sec != NULL)
@@ -163,13 +218,67 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)\n", path));
 
 #if 1
-	if (sec != NULL)
-		e = GFS_STAT_SECTION(url, sec, &gs);
-	else {
-		/* first try in local view. */
-		e = GFS_STAT_INDEX(url, gfarm_node, &gs);
-		if (e != NULL)
+	if (sec != NULL || _gfs_hook_default_view == index_view) {
+		if (sec != NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
+				url, sec));
+			e = GFS_STAT_SECTION(url, sec, &gs);
+			free(sec);
+		} else {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+				url, _gfs_hook_index));
+			e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
+		}
+	} else if (_gfs_hook_default_view == local_view) {
+		int nf = -1, np;
+		/*
+		 * If the number of fragments is not the same as the
+		 * number of parallel processes, or the file is not
+		 * fragmented, do not change to the local file view.
+		 */
+		if (gfarm_url_fragment_number(url, &nf) == NULL) {
+			if (gfs_pio_get_node_size(&np) == NULL && nf == np) {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+					url, gfarm_node));
+				e = GFS_STAT_INDEX(url, gfarm_node, &gs);
+			}
+			else {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: " S(GFS_STAT) "(%s)\n", url));
+				e = GFS_STAT(url, &gs);
+			}
+		}
+		else {
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: " S(GFS_STAT) "(%s)\n", url));
 			e = GFS_STAT(url, &gs);
+		}
+		if (e != NULL) {
+			/* someone is possibly creating the file right now */
+			/*
+			 * XXX - there is no way to determine other
+			 * processes are now creating the corresponding
+			 * section or not.  However, at least, it is
+			 * possible to determine this process is now
+			 * creating the section or not.
+			 */
+			GFS_File gf;
+			if ((gf = gfs_hook_is_now_creating(url)) != NULL) {
+				_gfs_hook_debug(fprintf(stderr,
+					"GFS: gfs_fstat(%p (%s))\n", gf, url));
+				e = gfs_fstat(gf, &gs);
+			}
+			else
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+		}
+	}
+	else {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT) "(%s)\n", url));
+		e = GFS_STAT(url, &gs);
 	}
 	free(url);
 	if (sec != NULL)

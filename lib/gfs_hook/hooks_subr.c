@@ -11,6 +11,10 @@
 #include <string.h>
 #include <gfarm/gfarm.h>
 #include "hooks_subr.h"
+/* for creating_file hash -- XXX: Gfarm v2 may make this stuff obsolete */
+#include "hash.h"
+#include <openssl/evp.h>
+#include "gfs_pio.h"
 
 #define MAX_GFS_FILE_BUF	2048
 
@@ -61,6 +65,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	fd = gfs_pio_fileno(gf);
 	if (fstat(fd, &st) == -1) {
 		save_errno = errno;
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = save_errno;
 		return (-1);
@@ -71,18 +76,21 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		fd = open("/dev/null", O_RDWR);
 	if (fd == -1) {
 		save_errno = errno;
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = save_errno;
 		return (-1);
 	}
 	if (fd >= MAX_GFS_FILE_BUF) {
 		__syscall_close(fd);
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = EMFILE;
 		return (-1);
 	}
 	if (_gfs_file_buf[fd] != NULL) {
 		__syscall_close(fd);
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
@@ -180,6 +188,7 @@ gfs_hook_clear_gfs_file(int fd)
 					"GFS: clear_gfs_file: skipped\n"));
 	} else {
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
+			gfs_hook_delete_creating_file(gf);
 			e = gfs_pio_close(gf);
 		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
 			_gfs_file_buf[fd]->u.d->dir = NULL;
@@ -250,6 +259,85 @@ gfs_hook_is_open(int fd)
 	default:
 		return (NULL);
 	}
+}
+
+/*
+ * hash table for files under creation
+ *
+ * This hash maintains a list of filenames that is created by this
+ * process but not closed yet.  This hash is needed to 'stat' these
+ * files in Gfarm v1 API.
+ */
+#define CREATING_FILE_HASHTAB_SIZE	53	/* prime number */
+static struct gfarm_hash_table *creating_file_hashtab = NULL;
+
+char *
+gfs_hook_add_creating_file(GFS_File gf)
+{
+	struct gfarm_hash_entry *entry;
+	int created;
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: add_creating_file: %p (%s)\n",
+				gf, gf->pi.pathname));
+
+	if (creating_file_hashtab == NULL) {
+		creating_file_hashtab =
+		    gfarm_hash_table_alloc(CREATING_FILE_HASHTAB_SIZE,
+			gfarm_hash_default, gfarm_hash_key_equal_default);
+		if (creating_file_hashtab == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
+
+	entry = gfarm_hash_enter(creating_file_hashtab,
+	    gf->pi.pathname, strlen(gf->pi.pathname) + 1,
+	    sizeof(GFS_File), &created);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	/* always update */
+	*(GFS_File *)gfarm_hash_entry_data(entry) = gf;
+	return (NULL);
+}
+
+GFS_File
+gfs_hook_is_now_creating(const char *url)
+{
+	char *pathname, *e;
+	struct gfarm_hash_entry *entry;
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: is_now_creating: %s\n", url));
+
+	if (creating_file_hashtab == NULL)
+		return (NULL);
+
+	e = gfarm_url_make_path(url, &pathname);
+	if (e != NULL)
+		return (NULL);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: is_now_creating: %s\n",
+				pathname));
+
+	entry = gfarm_hash_lookup(creating_file_hashtab,
+	    pathname, strlen(pathname) + 1);
+	free(pathname);
+	if (entry == NULL)
+		return (NULL);
+	else
+		return *(GFS_File *)gfarm_hash_entry_data(entry);
+}
+
+void
+gfs_hook_delete_creating_file(GFS_File gf)
+{
+	_gfs_hook_debug(fprintf(stderr, "GFS: delete_creating_file: %p (%s)\n",
+				gf, gf->pi.pathname));
+
+	if (creating_file_hashtab == NULL)
+		return;
+
+	gfarm_hash_purge(creating_file_hashtab, 
+	    gf->pi.pathname, strlen(gf->pi.pathname) + 1);
+	return;
 }
 
 void

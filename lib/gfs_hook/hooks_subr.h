@@ -24,6 +24,9 @@ unsigned char gfs_hook_gfs_file_type(int);
 char *gfs_hook_clear_gfs_file(int);
 
 void *gfs_hook_is_open(int);
+char *gfs_hook_add_creating_file(struct gfs_file *);
+struct gfs_file *gfs_hook_is_now_creating(const char *);
+void gfs_hook_delete_creating_file(struct gfs_file *);
 void gfs_hook_inc_readcount(int);
 int gfs_hook_is_read(int);
 void gfs_hook_set_suspended_gfs_dirent(int, struct gfs_dirent *);

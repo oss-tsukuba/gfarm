@@ -60,6 +60,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		    url, sec != NULL ? sec : "(null)", oflag, mode));
 
 		e = gfs_pio_create(url, oflag, mode, &gf);
+		if (e == NULL)
+			gfs_hook_add_creating_file(gf);
 	}
 	else if ((oflag & O_ACCMODE) == O_WRONLY
 		 || (oflag & O_ACCMODE) == O_RDWR) {
@@ -81,6 +83,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			else
 				/* XXX - unlink the corresponding section */;
 			e = gfs_pio_create(url, oflag, mode, &gf);
+			if (e == NULL)
+				gfs_hook_add_creating_file(gf);
 		}
 		else if (file_exist) { /* read-write mode: not supported yet */
 			_gfs_hook_debug(fprintf(stderr,
@@ -179,6 +183,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = gfarm_error_to_errno(e);
 		return (-1);
@@ -243,6 +248,8 @@ FUNC___CREAT(const char *path, mode_t mode)
 	    "GFS: Hooking " S(FUNC___CREAT) "(%s:%s, 0%o)\n",
 	    path, sec != NULL ? sec : "(null)", mode));
 	e = gfs_pio_create(url, GFARM_FILE_WRONLY, mode, &gf);
+	if (e == NULL)
+		gfs_hook_add_creating_file(gf);
 	free(url);
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr,
@@ -276,6 +283,7 @@ FUNC___CREAT(const char *path, mode_t mode)
 
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
+		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = gfarm_error_to_errno(e);
 		return (-1);
