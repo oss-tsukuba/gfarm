@@ -9,6 +9,7 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <errno.h>
