@@ -119,6 +119,24 @@ program will be redirected to.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>explicitly specifies that the command is a Gfarm program.
+Gfarm specific options will be passed to the command as the result.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>explicitly specifies that the command is an usual program, and
+does not take Gfarm specific options.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>displays a list of command options.</para>

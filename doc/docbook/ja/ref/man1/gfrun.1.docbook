@@ -120,6 +120,22 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </listitem>
 </varlistentry>
 <varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>実行されるプログラムを gfarm 化されたプログラムだと明示的に指定します.
+この結果, プログラムには Gfarm 特有のオプションが渡されます.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>実行されるプログラムを通常のプログラムであると明示的に指定します.
+この場合, プログラムに Gfarm 特有のオプションが渡されることはありません.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>
