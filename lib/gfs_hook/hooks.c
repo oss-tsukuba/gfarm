@@ -12,6 +12,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -498,17 +499,15 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 		default:
 			if (waitpid(pid, &status, 0) == -1) {
 				_gfs_hook_debug(perror("waitpid"));
-				status = 255;
+				/* execve fails. call again to set errno. */
+				r = syscall(SYS_execve, filename, argv, envp);
+				return (r);
 			}
 			else if (WIFSIGNALED(status)) {
 				_gfs_hook_debug(
 				 fprintf(stderr, "%s: signal %d received%s.\n",
 				  gfarm_host_get_self_name(), WTERMSIG(status),
 				  WCOREDUMP(status) ? " (core dumped)" : ""));
-				status = 255;
-			}
-			else {
-				status = WEXITSTATUS(status);
 			}
 			break;
 		}
