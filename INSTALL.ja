@@ -238,10 +238,10 @@ rootdn Ç≈éQè∆ÇµÇƒÇ¢ÇÈÇÃÇ…íçà”ÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /usr/local/openldap/etc/openldap/schema/core.schema
+include         /etc/openldap/schema/core.schema
 include         /etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/gfarm-ldap/slapd.pid
+pidfile         /var/run/gfarm-slapd.pid
 argsfile        /var/gfarm-ldap/slapd.args
 
 # enable global write access for now. XXX
