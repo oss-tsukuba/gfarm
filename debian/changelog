@@ -1,3 +1,9 @@
+gfarm (1.0b1-1) unstable; urgency=low
+
+  * beta release version 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Sat, 26 Apr 2003 01:38:57 +0900
+
 gfarm (0.0.cvs20030409-1) unstable; urgency=low
 
   * new cvs version and re-packaging. 
