@@ -1294,7 +1294,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	gfarm_config_set_default_spool_on_client();
 
-	if (getenv("DISPLAY") != NULL)
+	if (getenv("DISPLAY") != NULL && argvp != NULL)
 		gfarm_debug_initialize((*argvp)[0]);
 
 	e = gfarm_parse_env();
