@@ -168,6 +168,7 @@ gfarm_generic_info_get(
 	}
 	ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
+
 	ber = NULL;
 	for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber); a != NULL;
 	    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
