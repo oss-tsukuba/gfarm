@@ -1,4 +1,5 @@
 usr/grid/bin/digest
+usr/grid/bin/gfdf
 usr/grid/bin/gfexport
 usr/grid/bin/gfhost
 usr/grid/bin/gfimport_fixed

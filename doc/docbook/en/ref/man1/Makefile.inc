@@ -1,6 +1,7 @@
 DOCBOOK = \
 	digest.1 \
 	gfcd.1 \
+	gfdf.1 \
 	gfexec.1 \
 	gfexport.1 \
 	gfgrep.1 \

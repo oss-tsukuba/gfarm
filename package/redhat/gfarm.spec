@@ -201,6 +201,7 @@ fi
 %files doc
 %{man_prefix}/man1/digest.1.gz
 %{man_prefix}/man1/gfcd.1.gz
+%{man_prefix}/man1/gfdf.1.gz
 %{man_prefix}/man1/gfexec.1.gz
 %{man_prefix}/man1/gfexport.1.gz
 %{man_prefix}/man1/gfgrep.1.gz
@@ -274,6 +275,7 @@ fi
 %{man_prefix}/man8/gfsd.8.gz
 %{man_prefix}/ja/man1/digest.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
+%{man_prefix}/ja/man1/gfdf.1.gz
 %{man_prefix}/ja/man1/gfexec.1.gz
 %{man_prefix}/ja/man1/gfexport.1.gz
 %{man_prefix}/ja/man1/gfgrep.1.gz
@@ -365,6 +367,7 @@ fi
 %{html_prefix}/en/ref/index.html
 %{html_prefix}/en/ref/man1/digest.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
+%{html_prefix}/en/ref/man1/gfdf.1.html
 %{html_prefix}/en/ref/man1/gfexec.1.html
 %{html_prefix}/en/ref/man1/gfexport.1.html
 %{html_prefix}/en/ref/man1/gfgrep.1.html
@@ -437,6 +440,7 @@ fi
 %{html_prefix}/ja/ref/index.html
 %{html_prefix}/ja/ref/man1/digest.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
+%{html_prefix}/ja/ref/man1/gfdf.1.html
 %{html_prefix}/ja/ref/man1/gfexec.1.html
 %{html_prefix}/ja/ref/man1/gfexport.1.html
 %{html_prefix}/ja/ref/man1/gfgrep.1.html
@@ -563,6 +567,7 @@ fi
 
 %files client
 %{prefix}/bin/digest
+%{prefix}/bin/gfdf
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
 %{prefix}/bin/gfimport_fixed

@@ -1,4 +1,5 @@
 debian/tmp/usr/bin/digest
+debian/tmp/usr/bin/gfdf
 debian/tmp/usr/bin/gfexport
 debian/tmp/usr/bin/gfhost
 debian/tmp/usr/bin/gfimport_fixed
