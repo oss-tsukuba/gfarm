@@ -36,8 +36,12 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 {
 	int fd, save_errno;
 
-	_gfs_hook_debug(fprintf(stderr, "gfs_hook_insert_gfs_file: %p\n", gf));
+	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_file: %p\n", gf));
 
+	/*
+	 * A new file descriptor is needed to identify a hooked file
+	 * descriptor.
+	 */
 	fd = dup(gfs_pio_fileno(gf));
 	if (fd == -1) {
 		save_errno = errno;
@@ -64,7 +68,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 void
 gfs_hook_clear_gfs_file(int fd)
 {
-	_gfs_hook_debug(fprintf(stderr, "gfs_hook_clear_gfs_file: %d\n", fd));
+	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
 
 	_gfs_file_buf[fd] = NULL;
 	__syscall_close(fd);
