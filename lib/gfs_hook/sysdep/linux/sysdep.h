@@ -16,6 +16,10 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#define __alloca(size)	__builtin_alloca (size)
+#define __set_errno(val) (errno = (val))
+#define internal_function /* empty */
+
 #if defined(__i386__)
 
 /* We need some help from the assembler to generate optimal code.  We
@@ -102,15 +106,6 @@ asm (".L__X'%ebx = 1\n\t"
 	, "aD" (arg1), "c" (arg2), "d" (arg3), "S" (arg4)
 #define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \
 	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)
-
-
-#define __alloca(size)	__builtin_alloca (size)
-
-
-#define __set_errno(val) (errno = (val))
-
-
-#define internal_function /* empty */
 
 /* -- end of defined(__i386__) -- */
 
