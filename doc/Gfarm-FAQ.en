@@ -11,10 +11,12 @@ Table of Contents:
   1.2 Where can I download Gfarm?
 
 2. Trouble Shooting
-  2.1 Unregistered or unnecessary files seem to remain in a spool
+  2.1 [GSI authentication] "Authentication error" or "no filesystem
+     node" error happens when executing programs or replicating files.
+  2.2 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.2 Due to disk crash, files in a file system node are lost.  What
+  2.3 Due to disk crash, files in a file system node are lost.  What
      we need to do?
 
 3. Security
@@ -39,7 +41,30 @@ Table of Contents:
 
 2. Trouble Shooting
 *******************
-  2.1 Unregistered or unnecessary files seem to remain in a spool
+  2.1 [GSI authentication] "Authentication error" or "no filesystem
+     node" error happens when executing programs or replicating files.
+
+	Verbose error messages are displayed with the -v option of
+	'gfrcmd', which help to find the reason for the authentication
+	error.  Although detailed descriptions are available at
+	http://www.globus.org, here are typical cases for the error:
+
+	(1) Is a valid entry included in the grid-mapfile on file
+	system nodes and file system metadata node?
+
+	(2) Are both user certificate and host certificates valid, and
+	not expired?
+
+	(3) Is a valid certificate for the CAs that sign user or host
+	certificate, registered in /etc/grid-security/certificates?
+	Is not it expired?
+
+	(4) Are the clocks of all file system nodes, file system
+	metadata node, and a client are synchronized?  The GSI library
+	provided by the Globus fails to authenticate each other when
+	the time difference is more than five minutes.
+
+  2.2 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -59,7 +84,7 @@ Table of Contents:
 	with the -a option.
 		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad
 
-  2.2 Due to disk crash, all files in a file system node are lost.
+  2.3 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
 	For all data files except execution programs, there is nothing
