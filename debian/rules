@@ -68,7 +68,6 @@ install: build
 	install -d debian/tmp/etc/
 	install doc/conf/gfarm.conf debian/tmp/etc/
 	install -d debian/tmp/usr/share/doc/gfarm/
-	cp -pr debian/tmp/usr/html/ debian/tmp/usr/share/doc/gfarm/
 
 
 	dh_install --sourcedir=debian/tmp

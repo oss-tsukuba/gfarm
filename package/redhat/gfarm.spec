@@ -112,7 +112,7 @@ make
 
 %install
 make prefix=${RPM_BUILD_ROOT}%{prefix} \
-	default_htmldir=${RPM_BUILD_ROOT}%{html_prefix} \
+	default_docdir=${RPM_BUILD_ROOT}%{doc_prefix} \
 	default_mandir=${RPM_BUILD_ROOT}%{man_prefix} \
 	example_bindir=${RPM_BUILD_ROOT}%{prefix}/bin install 
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
@@ -382,6 +382,13 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
+%{doc_prefix}/INSTALL.en
+%{doc_prefix}/INSTALL.ja
+%{doc_prefix}/LICENSE
+%{doc_prefix}/GUIDE.ja
+%{doc_prefix}/Gfarm-FAQ.en
+%{doc_prefix}/Gfarm-FAQ.ja
+%{doc_prefix}/README.hook.en
 
 %files frontend
 
