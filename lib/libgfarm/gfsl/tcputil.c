@@ -17,6 +17,9 @@
 #endif /* USE_GLOBUS_LIBC_HOOK */
 
 #include <gfarm/gfarm_config.h>
+
+#include "gfutil.h"
+
 #include "tcputil.h"
 
 #define MAX_BACKLOG	10
@@ -32,7 +35,7 @@ isNonBlock(fd)
 {
     int stat = fcntl(fd, F_GETFL, 0);
     if (stat < 0) {
-	perror("fcntl");
+	gflog_error("fcntl", strerror(errno));
 	return 0;
     } else {
 	if (stat & O_NONBLOCK) {
@@ -55,7 +58,7 @@ gfarmTCPConnectPort(addr, port)
     memset((void *)&sin, 0, sizeof(struct sockaddr_in));
 
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	perror("socket");
+	gflog_error("socket", strerror(errno));
 	return -1;
     }
 
@@ -77,7 +80,7 @@ gfarmTCPConnectPort(addr, port)
 	    }
 	} else {
 	    Error:
-	    perror("connect");
+	    gflog_error("connect", strerror(errno));
 	    return -1;
 	}
     }
@@ -96,7 +99,7 @@ gfarmTCPBindPort(port)
     memset((void *)&sin, 0, sizeof(struct sockaddr_in));
 
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	perror("socket");
+	gflog_error("socket", strerror(errno));
 	return -1;
     }
 
@@ -105,19 +108,19 @@ gfarmTCPBindPort(port)
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) != 0) {
-	perror("setsockopt");
+	gflog_error("setsockopt", strerror(errno));
 	close(sock);
 	return -1;
     }
     
     if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-	perror("bind");
+	gflog_error("bind", strerror(errno));
 	close(sock);
 	return -1;
     }
 
     if (listen(sock, MAX_BACKLOG) != 0) {
-	perror("listen");
+	gflog_error("listen", strerror(errno));
 	close(sock);
 	return -1;
     }
@@ -197,7 +200,7 @@ gfarmIPGetPeernameOfSocket(sock, portPtr)
     int slen = sizeof(sin);
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	perror("getpeername");
+	gflog_error("getpeername", strerror(errno));
 	if (portPtr != NULL) {
 	    *portPtr = 0;
 	}
@@ -219,7 +222,7 @@ gfarmIPGetNameOfSocket(sock, portPtr)
     int slen = sizeof(sin);
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	perror("getsockname");
+	gflog_error("getsockname", strerror(errno));
 	if (portPtr != NULL) {
 	    *portPtr = 0;
 	}
@@ -249,7 +252,7 @@ gfarmWaitReadable(fd)
 	if (errno == EINTR) {
 	    goto SelectAgain;
 	} else {
-	    perror("select");
+	    gflog_error("select", strerror(errno));
 	    return sel;
 	}
     }
@@ -274,7 +277,7 @@ gfarmReadInt8(fd, buf, len)
 	}
 	cur = read(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    perror("read");
+	    gflog_error("read", strerror(errno));
 	    return sum;
 	} else if (cur == 0) {
 	    break;
@@ -341,7 +344,7 @@ gfarmWriteInt8(fd, buf, len)
     do {
 	cur = write(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    perror("write");
+	    gflog_error("write", strerror(errno));
 	    return sum;
 	}
 	sum += cur;
