@@ -17,6 +17,7 @@ Features
    security - gfkey, digest
 
  * Unsupported client commands
+
    gfmkdir, gfrmdir,
    gfchmod, gfchown, gfchgrp,
    gfcd, gfchdir, gfpwd,
@@ -42,5 +43,12 @@ Features
    Legacy applications can utilize a Gfarm filesystem just
    linking with syscall-hooking library, gfs_hook.o or
    gfs_hook_mpi.o.
+
+ * Sample Gfarm parallel commands
+
+   gfgrep    - parallel grep
+   gfwc      - parallel word count
+   gfcp      - parallel copy   
+   gfcombine - reduce the number of fragments by combining file fragments.
 
 $Id$
