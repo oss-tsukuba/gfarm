@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfrep&nbsp;--&nbsp;Gfarm ファイルのレプリカを作成する．</DIV
+>gfrep&nbsp;--&nbsp;Gfarm ファイルの複製を作成する．</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -53,12 +53,17 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -D <TT
+> [-D <TT
 CLASS="REPLACEABLE"
 ><I
 >ドメイン名</I
 ></TT
->   <TT
+>] [-N <TT
+CLASS="REPLACEABLE"
+><I
+>複製数</I
+></TT
+>]  <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
@@ -149,6 +154,9 @@ CLASS="PARAMETER"
 ><P
 >ファイル名として ``-'' を指定した場合，標準入力からホス
 ト名のリストを読み込みます．</P
+><P
+>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</P
 ></DD
 ><DT
 ><TT
@@ -163,6 +171,49 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >各フラグメントの複製を作成するホストのドメイン名を指定します．</P
+><P
+>このオプションを省略し，他の複製先ホストを指定するオプションも
+使用しない場合は，メタデータに登録にされているすべてのホストのいずれかに
+複製を作成します．ただし，この場合に<TT
+CLASS="OPTION"
+>-N</TT
+>オプションで
+2以上の複製数を指定しないと複製を行いません．
+詳しくは <TT
+CLASS="OPTION"
+>-N</TT
+> オプションの項を参照してください．</P
+><P
+>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>複製数</I
+></TT
+></DT
+><DD
+><P
+>フラグメントごとに作成する複製の数を指定します．
+この数には既存の複製も含まれます．既にこの数以上の複製が存在する
+場合は，そのフラグメントについて複製の作成も削除も行いません．</P
+><P
+>このオプションは単独で，あるいは，<TT
+CLASS="OPTION"
+>-D</TT
+> オプションと
+ともに用います．</P
+><P
+>このオプションを省略すると，<TT
+CLASS="OPTION"
+>-N 1</TT
+> と指定されたものと
+みなされます．</P
 ></DD
 ><DT
 ><TT

@@ -3,15 +3,15 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "11 December 2003" "Gfarm" ""
+.TH "GFREP" "1" "11 11月 2004" "Gfarm" ""
 .SH NAME
-gfrep \- Gfarm ファイルのレプリカを作成する．
+gfrep \- Gfarm ファイルの複製を作成する．
 .SH SYNOPSIS
 
 \fBgfrep\fR \fB-H \fIホスト指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-D \fIドメイン名\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-D \fIドメイン名\fB\fR ] [ \fB-N \fI複製数\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
 \fBgfrep\fR \fB-P \fIホスト対指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
@@ -35,9 +35,32 @@ gfrep \- Gfarm ファイルのレプリカを作成する．
 
 ファイル名として ``-'' を指定した場合，標準入力からホス
 ト名のリストを読み込みます．
+
+指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．
 .TP
 \fB-D \fIドメイン名\fB\fR
 各フラグメントの複製を作成するホストのドメイン名を指定します．
+
+このオプションを省略し，他の複製先ホストを指定するオプションも
+使用しない場合は，メタデータに登録にされているすべてのホストのいずれかに
+複製を作成します．ただし，この場合に\fB-N\fRオプションで
+2以上の複製数を指定しないと複製を行いません．
+詳しくは \fB-N\fR オプションの項を参照してください．
+
+指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．
+.TP
+\fB-N \fI複製数\fB\fR
+フラグメントごとに作成する複製の数を指定します．
+この数には既存の複製も含まれます．既にこの数以上の複製が存在する
+場合は，そのフラグメントについて複製の作成も削除も行いません．
+
+このオプションは単独で，あるいは，\fB-D\fR オプションと
+ともに用います．
+
+このオプションを省略すると，\fB-N 1\fR と指定されたものと
+みなされます．
 .TP
 \fB-P \fIホスト対ファイル\fB\fR
 複製元のホストと複製先のホストの対のリストを記述した
