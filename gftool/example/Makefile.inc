@@ -1,1 +1,1 @@
-bindir = $(default_bindir)/example
+bindir = $(example_bindir)
