@@ -803,7 +803,7 @@ main(int argc, char **argv)
 		 * We do this after calling gfarm_daemon(),
 		 * because it changes pid.
 		 */
-		fprintf(pid_fp, "%d\n", getpid());
+		fprintf(pid_fp, "%ld\n", (long)getpid());
 		fclose(pid_fp);
 	}
 

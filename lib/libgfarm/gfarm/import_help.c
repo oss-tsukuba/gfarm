@@ -55,14 +55,14 @@ gfarm_import_fragment_config_read(char *config,
 			*error_linep = i + 1;
 			goto error;
 		}
-		while (isspace(*s))
+		while (isspace(*(unsigned char *)s))
 			s++;
 		if (*s == '\0') {
 			e = "fragment hostname expected";
 			*error_linep = i + 1;
 			goto error;
 		}
-		for (t = s; *t != '\0' && !isspace(*t); t++)
+		for (t = s; *t != '\0' && !isspace(*(unsigned char *)t); t++)
 			;
 		*t = '\0';
 		host = strdup(s);
@@ -186,14 +186,14 @@ gfarm_hostlist_read(char *filename,
 
 		if (l > 0 && line[l - 1] == '\n')
 			line[--l] = '\0';
-		for (s = line; isspace(*s); s++)
+		for (s = line; isspace(*(unsigned char *)s); s++)
 			;
 		if (*s == '\0') {
 			e = "hostname expected";
 			*error_linep = i + 1;
 			goto error;
 		}
-		for (t = s; *t != '\0' && !isspace(*t); t++)
+		for (t = s; *t != '\0' && !isspace(*(unsigned char *)t); t++)
 			;
 		*t = '\0';
 		host = strdup(s);

@@ -435,6 +435,9 @@ session(char *server_name, struct sockaddr *server_addr,
 	struct sockaddr_in *sin = (struct sockaddr_in *)server_addr;
 	file_offset_t size;
 
+#ifdef __GNUC__ /* workaround gcc warning:  might be used uninitialized */
+	ofd = -1;
+#endif
 	socks = malloc(sizeof(*socks) * ndivisions);
 	conns = malloc(sizeof(*conns) * ndivisions);
 	if (socks == NULL || conns == NULL) {

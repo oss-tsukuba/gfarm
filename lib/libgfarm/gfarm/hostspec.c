@@ -150,7 +150,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 			    addr.s_addr, INADDR_BROADCAST, hostspecpp));
 		}
 		if (*end1p == '/') {
-			if (isdigit(end1p[1]) &&
+			if (isdigit(((unsigned char *)end1p)[1]) &&
 			    (masklen = strtoul(end1p + 1, &end2p, 10),
 			     *end2p == '\0')) {
 				if (masklen > AF_INET4_BIT)
@@ -172,12 +172,13 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 				    hostspecpp));
 			}
 		}
-		if (!IS_DNS_LABEL_CHAR(*end1p) && *end1p != '.')
+		if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) &&
+		    *end1p != '.')
 			return ("invalid character in IP address");
 	}
 	if (*name == '\0')
 		return ("hostname or IP address expected");
-	if (!IS_DNS_LABEL_CHAR(*end1p) && *end1p != '.')
+	if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) && *end1p != '.')
 		return ("invalid character in hostname");
 
 	/*
