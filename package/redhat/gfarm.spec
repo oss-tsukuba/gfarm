@@ -169,6 +169,7 @@ fi
 /usr/share/man/man3/gfs_stat.3.gz
 /usr/share/man/man3/gfs_stat_free.3.gz
 /usr/share/man/man3/gfs_unlink.3.gz
+/usr/share/man/man5/gfarm.conf.5.gz
 /usr/share/man/man8/gfmd.8.gz
 /usr/share/man/man8/gfsd.8.gz
 /usr/share/man/ja/man1/digest.1.gz
@@ -286,6 +287,7 @@ fi
 /usr/doc/%{name}-%{version}/html/en/ref/man3/gfs_stat.3.html
 /usr/doc/%{name}-%{version}/html/en/ref/man3/gfs_stat_free.3.html
 /usr/doc/%{name}-%{version}/html/en/ref/man3/gfs_unlink.3.html
+/usr/doc/%{name}-%{version}/html/en/ref/man5/gfarm.conf.5.html
 /usr/doc/%{name}-%{version}/html/en/ref/man8/gfmd.8.html
 /usr/doc/%{name}-%{version}/html/en/ref/man8/gfsd.8.html
 /usr/doc/%{name}-%{version}/html/ja/ref/index.html
