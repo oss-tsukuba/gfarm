@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "12 August 2003" "Gfarm" ""
+.TH "GFHOST" "1" "13 August 2003" "Gfarm" ""
 .SH NAME
 gfhost \- gfarm host maintenance command
 .SH SYNOPSIS
@@ -42,8 +42,8 @@ If -H, -l or -M is specified, or none of functions are specified,
 \fBgfhost\fR displays information of filesystem node.
 -M function only accesses information in metadata server.
 Display functions other than -M also access \fBgfsd\fR
-which is running on filesystem nodes. When \fBgfhost\fR
-accesses \fBgfsd\fR, its access option can be specified
+which is running on filesystem nodes. For functions which access
+\fBgfhost\fR, the access option can be specified
 by option -i, -j, -U and -v.
 .PP
 You don't have to specify hostnames for display functions.
@@ -99,11 +99,27 @@ Only host identifier can be used as hostname
 in this function.
 .TP
 \fB-H\fR
-Display load average .
-Exact hostname passed by command argument will be display
-rather than canonical host identifier with this function.
-IP address which is used to access \fBgfsd\fR
-will be displayed in parentheses just after the hostname.
+Display load average and authentication method.
+With this function, the exact hostname passed by gfhost command
+arguments will be displayed instead of canonical host identifier.
+Also, this function displays the IP address which is used to
+access \fBgfsd\fR in parentheses just after the hostname.
+
+If the host cannot be accessed due to machine down or
+network trouble etc., x.xx/x.xx/x.xx will be displayed in
+the load average field.
+If the host is up, but \fBgfsd\fR on the host
+cannot be accessed by the port number configured in
+/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+displayed.
+
+The next field is the authenticaion method used with the
+host. `G' in this field means GSI authenticaion, `S' means
+gfarm sharedsecret authentication, `x' means that the
+authentication failed, and `-' means that the authentication
+wasn't actually tried. If -U option is specified, this
+authentication method field won't be provided.
+
 Hostnames are displayed by alphabetical order, by default.
 .TP
 \fB-l\fR
@@ -214,10 +230,9 @@ If -l function is specified, this option makes the authentication
 method field disappear.
 .TP
 \fB-v\fR
--l function 
-doesn't  display any message about
-network error at \fBgfsd\fR accesss.
-Such message will be displayed with this option.
+-H, -l function and default function don't produce any error
+report about the \fBgfsd\fR accesss.
+Such error report will be produced by this option.
 .SH "SEE ALSO"
 .PP
 \fBgfarm.conf\fR(5),

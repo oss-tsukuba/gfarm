@@ -174,16 +174,12 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfsd</B
 >
-  which is running on filesystem nodes. When <B
+  which is running on filesystem nodes. For functions which access
+  <B
 CLASS="COMMAND"
 >gfhost</B
->
-  accesses <B
-CLASS="COMMAND"
->gfsd</B
->, its access option can be specified
-  by option -i, -j, -U and -v.
-  </P
+>, the access option can be specified
+  by option -i, -j, -U and -v.</P
 ><P
 >  You don't have to specify hostnames for display functions.
   In that case, all hosts which are registered in metadata will be
@@ -280,16 +276,37 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->	Display load average .
-	Exact hostname passed by command argument will be display
-	rather than canonical host identifier with this function.
-	IP address which is used to access <B
+>	Display load average and authentication method.
+	With this function, the exact hostname passed by gfhost command
+	arguments will be displayed instead of canonical host identifier.
+	Also, this function displays the IP address which is used to
+	access <B
 CLASS="COMMAND"
 >gfsd</B
->
-	will be displayed in parentheses just after the hostname.
-	
-	Hostnames are displayed by alphabetical order, by default.
+> in parentheses just after the hostname.
+      </P
+><P
+>	If the host cannot be accessed due to machine down or
+	network trouble etc., x.xx/x.xx/x.xx will be displayed in
+	the load average field.
+	If the host is up, but <B
+CLASS="COMMAND"
+>gfsd</B
+> on the host
+	cannot be accessed by the port number configured in
+	/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+	displayed.
+      </P
+><P
+>	The next field is the authenticaion method used with the
+	host. `G' in this field means GSI authenticaion, `S' means
+	gfarm sharedsecret authentication, `x' means that the
+	authentication failed, and `-' means that the authentication
+	wasn't actually tried. If -U option is specified, this
+	authentication method field won't be provided.
+      </P
+><P
+>	Hostnames are displayed by alphabetical order, by default.
       </P
 ></DD
 ><DT
@@ -568,13 +585,12 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->	 -l function 
-	doesn't  display any message about
-	network error at <B
+>	-H, -l function and default function don't produce any error
+	report about the <B
 CLASS="COMMAND"
 >gfsd</B
 > accesss.
-	Such message will be displayed with this option.
+	Such error report will be produced by this option.
       </P
 ></DD
 ></DL
