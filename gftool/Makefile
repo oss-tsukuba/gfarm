@@ -16,6 +16,7 @@ SUBDIRS = \
 	gfrcmd \
 	gfreg \
 	gfrep \
+	gfrepconfig \
 	gfrm \
 	gfrmdir \
 	gfsched \
