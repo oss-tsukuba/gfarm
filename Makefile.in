@@ -33,4 +33,5 @@ make-link:
 
 post-distclean-hook:
 	rm -f config.log config.status config.cache \
-		gfarm_config.h Makefile makes/config.mk
+		gfarm_config.h $(OBJINCDIR)/gfarm_config.h \
+		Makefile makes/config.mk
