@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b2
+%define ver	1.0b3
 %define rel	1
 
 %define prefix		/usr/grid
@@ -78,6 +78,11 @@ Group: System Environment/Daemons
 Summary: development library for gfarm
 Group: Development/Libraries
 
+%if !%{globus}
+%package gfront
+Summary: file system browser for gfarm
+Group: Applications/Internet
+%endif
 
 %description
 gfarm - Grid datafarm 
@@ -102,6 +107,11 @@ metadb server for gfarm
 
 %description devel
 development library for gfarm
+
+%if !%{globus}
+%description gfront
+file system browser for gfarm
+%endif
 
 %changelog
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
@@ -192,6 +202,7 @@ fi
 %{man_prefix}/man1/gfssh.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
+%{man_prefix}/man1/gfront.1.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
 %{man_prefix}/man3/gfarm_terminate.3.gz
@@ -243,6 +254,7 @@ fi
 %{man_prefix}/ja/man1/gfssh.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
+%{man_prefix}/ja/man1/gfront.1.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_ELEM.3.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_STRARRAY.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
@@ -310,6 +322,7 @@ fi
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
+%{html_prefix}/en/ref/man1/gfront.1.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
@@ -360,6 +373,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
+%{html_prefix}/ja/ref/man1/gfront.1.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
@@ -507,6 +521,12 @@ fi
 %if %{mpi}
 %{prefix}/lib/gfs_hook_mpi.o
 %{prefix}/lib/gfs_hook_mpi_debug.o
+%endif
+
+%if !%{globus}
+%files gfront
+%{prefix}/bin/gfront
+%{prefix}/share/java/gfront.jar
 %endif
 
 %if %{have_ns}
