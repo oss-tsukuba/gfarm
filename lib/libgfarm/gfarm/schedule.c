@@ -1009,25 +1009,21 @@ gfarm_file_section_host_schedule_with_priority_to_local(
 	}
 	if (i == ncopies) {
 		e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
-		if (e != NULL) {
-			gfarm_file_section_copy_info_free_all(ncopies, copies);
-			return (e);
-		}
+		if (e != NULL)
+			goto free_copies;
 		e = search_idle_by_section_copy_info(hosts_state,
 		    ncopies, copies, &null_filter,
 		    1, &host);
 		free_hosts_state(n_all_hosts, all_hosts, hosts_state);
-		if (e != NULL) {
-			gfarm_file_section_copy_info_free_all(ncopies, copies);
-			return (e);
-		}
+		if (e != NULL)
+			goto free_copies;
 	}
-
+	e = gfarm_fixedstrings_dup(1, &host, &host);
+ free_copies:
 	gfarm_file_section_copy_info_free_all(ncopies, copies);
-	if (host == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	*hostp = host;
-	return (NULL);
+	if (e == NULL)
+		*hostp = host;
+	return (e);
 }
 
 static char *
