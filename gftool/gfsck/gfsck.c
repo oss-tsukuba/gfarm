@@ -58,15 +58,14 @@ gfsck_file(char *gfarm_url)
 			if (e == NULL) {
 				printf("%s (%s): invalid metadata deleted\n",
 				       gfarm_url, section);
-				break;
 			}
 			else {
 				fprintf(stderr, "%s (%s): %s\n",
 					gfarm_url, section, e);
 				if (e_save == NULL)
 					e_save = e;
-				continue;
 			}
+			continue;
 		}
 		if (e != NULL) {
 			fprintf(stderr, "%s (%s): %s\n",
