@@ -49,7 +49,7 @@
 gfarm-1.0.4 以降は、必要な場合、引数
 <parameter>flags</parameter>
 に
-<parameter>GFARM_FILE_CREATE</parameter>
+<parameter>GFARM_FILE_TRUNC</parameter>
 を明示的に指定しなければならないのでご注意ください。
 以前のバージョンでは、暗黙裡にこれが仮定されていました。
 </para>
