@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include "gfarm.h"
 
@@ -12,6 +13,15 @@
 
 char *program_name = "gfsched";
 
+void
+usage()
+{
+    fprintf(stderr, "usage: %s [-f] gfarm_file [hostfile]\n",
+	    program_name);
+    fflush(stderr);
+}
+
+int
 main(int argc, char * argv[])
 {
     char * gfarm_url = (char *)NULL, * gfarm_file = (char *)NULL;
@@ -35,9 +45,7 @@ main(int argc, char * argv[])
 	}
     }
     if (errflg) {
-	fprintf(stderr, "usage: %s [-f] gfarm_file [hostfile]\n",
-		program_name);
-	fflush(stderr);
+	usage();
 	exit(2);
     }
 
@@ -52,6 +60,10 @@ main(int argc, char * argv[])
 		exit(1);
 	    }
 	}
+    }
+    else {
+	usage();
+	exit(2);
     }
     ++optind;
     if (optind < argc) {
