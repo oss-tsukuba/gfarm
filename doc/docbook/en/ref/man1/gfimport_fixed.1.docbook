@@ -3,7 +3,7 @@
 
 <refentry id='gfimport-fixed.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>5 Jun 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfimport_fixed</refentrytitle>
@@ -83,5 +83,67 @@ Default size is 1.</para>
 
 </variablelist>
 </refsect1>
-</refentry>
 
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<example role="example">
+<title>Importing by splitting to specified number of fragments</title>
+<para>
+The following is an example using <command>gfimport_fixed</command> 
+to import a <replaceable>source_file</replaceable> 
+as <replaceable>gfarm:file</replaceable> 
+by splitting to 8 fragments.
+<screen>
+gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>Importing by splitting to specified number of fragments
+  for particular program
+</title>
+<para>
+The following is an example using <command>gfimport_fixed</command> 
+to import a <replaceable>source_file</replaceable> 
+as <replaceable>gfarm:file</replaceable> 
+by splitting to 8 fragments
+to be processed by <replaceable>gfarm:prog</replaceable> program.
+<screen>
+gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>Importing into same disposition with an existing gfarm file</title>
+<para>
+The following is an example using <command>gfimport_fixed</command>
+to import a <replaceable>source_file</replaceable> 
+as <replaceable>gfarm:file</replaceable> 
+into same disposition with existing file
+<replaceable>gfarm:template</replaceable>.
+<screen>
+gfsched gfarm:template | gfimport_fixed -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfimport_text</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsched</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

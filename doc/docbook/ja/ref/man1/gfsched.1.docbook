@@ -3,7 +3,7 @@
 
 <refentry id='gfsched.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>5 Jun 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsched</refentrytitle>
@@ -12,10 +12,13 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfsched</refname>
-<refpurpose>ファイル・アフィニティ・スケジューリングにより ホストリストを作成</refpurpose>
+<refpurpose>
+ファイル・アフィニティ・スケジューリングによりホストリストを作成
+</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
+
 <cmdsynopsis>
   <command>gfsched</command>
     <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
@@ -23,15 +26,36 @@
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
     <arg choice='opt'><replaceable>output-hostfile</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfsched</command>
+    <arg choice='plain'>-N <replaceable>ノード数</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>ホスト名</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>指定した <parameter>gfarm-URL</parameter> を利用してファイル・アフィニティ・スケジュー
-リングによりホストリストを作成します。
-<parameter>output-hostfile</parameter> が省略された場合、標準出力にホストリストを表示し
-ます。</para>
+<para>
+  <parameter>gfarm-URL</parameter> を指定した場合、
+  そのgfarmファイルに対する
+  ファイル・アフィニティ・スケジューリングによりホストリストを作成します。
+  すなわち、そのgfarmファイル・フラグメントを保持するホストをできる限り
+  優先して、フラグメント数と等しい数のホストを選んで表示します。
+  <parameter>output-hostfile</parameter> が省略された場合、
+  標準出力にホストリストを表示します。
+</para>
+
+<para>
+  <parameter>gfarm-URL</parameter> を指定するのではなく、
+  <option>-N</option> でホスト数を指定した場合、
+  引数で指定したホストの中から、指定した数のホストを選んで表示します。
+  ホストの指定を省略した場合、登録されている全てのホストから指定した
+  数のホストを選びます。
+</para>
 
 </refsect1>
 

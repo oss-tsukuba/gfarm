@@ -2,7 +2,7 @@
 
 <refentry id='gfimport-text.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>5 Jun 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfimport_text</refentrytitle>
@@ -74,5 +74,60 @@
 </varlistentry>
 </variablelist>
 </refsect1>
-</refentry>
 
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<example role="example">
+<title>指定した個数に分割して取り込む</title>
+<para>
+以下は、ファイルを8個のフラグメントに分割し、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>処理するプログラムを指定し、特定の個数に分割して取り込む</title>
+<para>
+以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <replaceable>gfarm:prog</replaceable> を実行可能なホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>既存の gfarm ファイルと同じ配置で取り込む</title>
+<para>
+以下は、既存の gfarm ファイル <replaceable>gfarm:template</replaceable> と
+同じ個数のフラグメントに分割し、
+<replaceable>gfarm:template</replaceable> が存在するのと同じホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsched</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

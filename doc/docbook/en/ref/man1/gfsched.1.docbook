@@ -3,7 +3,7 @@
 
 <refentry id='gfsched.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>5 Jun 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsched</refentrytitle>
@@ -17,20 +17,45 @@
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
+
 <cmdsynopsis>
   <command>gfsched</command>
     <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
     <arg choice='opt'><replaceable>output-hostfile</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfsched</command>
+    <arg choice='plain'>-N <replaceable>number</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
+</cmdsynopsis>
+
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfsched</command> creates a host file using the file-affinity scheduing of
-<parameter>gfarm-URL</parameter>.  When <parameter>output-hostfile</parameter> is omitted, <command>gfsched</command>
-displays to the standard output.</para>
+<para>
+  <command>gfsched</command> creates a host file
+  using the file-affinity scheduing of <parameter>gfarm-URL</parameter>.
+  In other words, <command>gfsched</command> chooses and displays
+  hostnames of the same number with the fragments of
+  the <parameter>gfarm-URL</parameter>, with giving priority to
+  the hosts which has the fragment as far as possible.
+  When <parameter>output-hostfile</parameter> is omitted,
+  <command>gfsched</command> displays to the standard output.
+</para>
+
+<para>
+  If <option>-N</option> is specified instead of 
+  <parameter>gfarm-URL</parameter>, <command>gfsched</command> chooses and
+  displays specified number of hosts from the hosts in the arguments.
+  If no host is specified in the argument, <command>gfsched</command>
+  chooses hosts from all registered hosts.
+</para>
 
 </refsect1>
 
