@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
@@ -20,6 +21,8 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
+#include <gfarm/gfarm_metadb.h>
 #include "iobuffer.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
@@ -1407,4 +1410,131 @@ gfs_client_get_load_result(int sock,
 	result->loadavg_5min = loadavg[1];
 	result->loadavg_15min = loadavg[2];
 	return (NULL);
+}
+
+static int
+apply_one_host(char *(*op)(struct gfs_connection *, void *),
+	char *hostname, void *args, char *message)
+{
+	char *e;
+	int pid;
+	struct sockaddr addr;
+	struct gfs_connection *conn;
+
+	pid = fork();
+	if (pid) {
+		/* parent or error */
+		return pid;
+	}
+	/* child */
+
+	/*
+	 * use different connection for each metadb access.
+	 *
+	 * XXX: FIXME layering violation
+	 */
+	e = gfarm_metadb_initialize();
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		_exit(1);
+	}
+
+	/* reflect "address_use" directive in the `hostname' */
+	e = gfarm_host_address_get(hostname, gfarm_spool_server_port, &addr,
+		NULL);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		_exit(2);
+	}
+
+	e = gfs_client_connect(hostname, &addr, &conn);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		_exit(3);
+	}
+			
+	e = (*op)(conn, args);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		_exit(4);
+	}
+		
+	e = gfs_client_disconnect(conn);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s %s\n", message, hostname, e);
+		_exit(5);
+	}
+
+	_exit(0);
+}
+
+static char *
+wait_pid(int pids[], int num)
+{
+	char *e;
+	int rv, s;
+
+	e = NULL;
+	while (--num >= 0) {
+		while ((rv = waitpid(pids[num], &s, 0)) == -1 &&
+		        errno == EINTR)
+				;
+		if (rv == -1) {
+			if (e == NULL)
+				e = gfarm_errno_to_error(errno);
+		} else if (WIFEXITED(s) && WEXITSTATUS(s) != 0) {
+			e = "error happens on directory operatoin";
+		}
+	}
+	return (e);
+}
+
+#define CONCURRENCY	25
+
+char *
+gfs_client_apply_all_hosts(
+	char *(*op)(struct gfs_connection *, void *),
+	void *args, char *message)
+{
+	char *e;
+	int i, j, nhosts, pids[CONCURRENCY];
+	struct gfarm_host_info *hosts;
+		
+	e = gfarm_host_info_get_all(&nhosts, &hosts);
+	if (e != NULL)
+		return (e);
+	/*
+	 * To use different connection for each metadb access.
+	 *
+	 * XXX: FIXME layering violation
+	 */
+	e = gfarm_metadb_terminate();
+	if (e != NULL)
+		goto finish_hosts;
+        j = 0;
+        for (i = 0; i < nhosts; i++) {
+                pids[j] = apply_one_host(op, hosts[i].hostname, args, message);
+                if (pids[j] < 0) /* fork error */
+                        break;
+                if (++j == CONCURRENCY) {
+                        e = wait_pid(pids, j);
+                        j = 0;
+                }
+        }
+        if (j > 0)
+                e = wait_pid(pids, j);
+	/*
+	 * recover temporary closed metadb connection
+	 *
+	 * XXX: FIXME layering violation
+	 */
+	if (e != NULL) {
+		gfarm_metadb_initialize();
+	} else {
+		e = gfarm_metadb_initialize();
+	}
+
+ finish_hosts:
+	gfarm_host_info_free_all(nhosts, hosts);
+	return (e);
 }

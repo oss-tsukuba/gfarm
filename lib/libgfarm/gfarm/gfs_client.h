@@ -86,3 +86,6 @@ char *gfarm_client_wait_all_load_results(struct gfs_client_udp_requests *);
 char *gfarm_client_add_load_request(struct gfs_client_udp_requests *,
 	struct sockaddr *, void *,
 	void (*)(void *, struct sockaddr *, struct gfs_client_load *, char *));
+
+char *gfs_client_apply_all_hosts(
+	char *(*)(struct gfs_connection *, void *), void *, char *message);

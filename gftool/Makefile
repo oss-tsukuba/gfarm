@@ -10,11 +10,13 @@ SUBDIRS = \
 	gfhost \
 	gfkey \
 	gfls \
+	gfmkdir \
 	gfpwd \
 	gfrcmd \
 	gfreg \
 	gfrep \
 	gfrm \
+	gfrmdir \
 	gfsched \
 	gfsetdir \
 	gfmpirun \
