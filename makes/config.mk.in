@@ -33,13 +33,20 @@ LIBS = @LIBS@
 
 ld_rpath_flag = @ld_rpath_flag@
 
-metadb_client_includes = @metadb_client_includes@
-metadb_client_libs = @metadb_client_libs@
+ldap_includes = @ldap_includes@
+ldap_libs = @ldap_libs@
+ldap_srcs = @ldap_srcs@
+ldap_objs = @ldap_objs@
+ldap_cflags = @ldap_cflags@
 
 openssl_includes = @openssl_includes@
 openssl_libs = @openssl_libs@
 openssl_ssl = @openssl_ssl@
 openssl_crypto = @openssl_crypto@
+openssl_srcs = @openssl_srcs@
+openssl_objs = @openssl_objs@
+openssl_subdirs = @openssl_subdirs@
+openssl_cflags = @openssl_cflags@
 
 globus_location = @globus_location@
 globus_includedir = @globus_includedir@
@@ -49,6 +56,7 @@ globus_gssapi_libs = @globus_gssapi_libs@
 globus_srcs = @globus_srcs@
 globus_objs = @globus_objs@
 globus_subdirs = @globus_subdirs@
+globus_cflags = @globus_cflags@
 
 globus_flavor = @globus_flavor@
 
@@ -56,10 +64,7 @@ MPICC = @mpicc@
 mpi_srcs = @mpi_srcs@
 mpi_objs = @mpi_objs@
 mpi_subdirs = @mpi_subdirs@
-
-gfsl_includes = @gfsl_includes@
-gfsl_libs = @gfsl_libs@
-depgfsllib = @depgfsllib@
+mpi_cflags = @mpi_cflags@
 
 readline_includes = @readline_includes@
 readline_libs = @readline_libs@

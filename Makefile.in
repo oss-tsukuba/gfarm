@@ -5,33 +5,20 @@ VPATH = @srcdir@
 
 include $(top_srcdir)/makes/var.mk
 
-GLOBUS_SUBDIRS = lib/libgfsl
-
 SUBDIRS = \
 	doc \
 	man \
-	include \
-	@globus_subdirs@ \
-	nslib \
+	include/gfarm \
 	lib \
-	gfarmlib \
-	gfarmd \
-	gfarm \
-	gfmd \
-	gfsd \
-	nstool \
+	server \
 	gftool \
 	gfptool
 
-all: make-link
+all:
 
 include $(top_srcdir)/makes/subdir.mk
 
-make-link:
-	-rm -f $(OBJINCDIR)/gfarm_config.h; \
-		ln -s ../gfarm_config.h $(OBJINCDIR)
-
 post-distclean-hook:
 	rm -f config.log config.status config.cache \
-		gfarm_config.h $(OBJINCDIR)/gfarm_config.h \
+		$(INC_OBJDIR)/gfarm_config.h \
 		Makefile makes/config.mk
