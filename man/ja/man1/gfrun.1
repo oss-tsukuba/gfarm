@@ -1,32 +1,65 @@
-.TH gfrun(1), gfrsh(1), gfssh 1 "1 May 2002"
+.TH gfrun 1 "1 May 2002"
 .SH NAME
 
-gfrun, gfrsh, gfssh \- 計算プールで、gfarm 並列コマンドを実行する
+gfrun, gfrsh, gfssh \- ファイルシステムノードで、gfarm 並列コマンドを実行する
 
 .SH SYNOPSIS
 
 .B gfrun
+[ -G
+.I gfarm-URL
+| -H
+.I hostfile
+]
 .I プログラム名
 .I 引数…
 .br
 
 .B gfrsh
+[ -G
+.I gfarm-URL
+| -H
+.I hostfile
+]
 .I プログラム名
 .I 引数…
 .br
 
 .B gfssh
+[ -G
+.I gfarm-URL
+| -H
+.I hostfile
+]
 .I プログラム名
 .I 引数…
 .br
 
 .SH DESCRIPTION
 
-引数に指定した Gfarm入力ファイル の存在する計算プールのホスト群に対して、
-「gfrcmd ホスト プログラム名 \-N 全ノード数 \-I ノード番号」を実行します。
+並列プログラムを実行します．実行されるファイルシステムノードは，
+\-G オプションで指定される Gfarm ファイル \fIgfarm-URL\fP の
+ファイルアフィニティスケジューリングにより決定されます．
+ファイルアフィニティスケジューリングでは，指定された Gfarm
+ファイルのそれぞれのファイル断片に対し，複製が格納されている
+ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
+同数のプロセスが，ファイル断片を格納しているノードで実行され
+るということになります．
 
-gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を利用すること
-を除いて、gfrun と同様です。
+\-H オプションでホストファイル \fIhostfile\fP が指定された場合は，
+\fIhostfile\fP で記述されるノードで並列プログラムを実行します．
+
+\-Gオプションも\-Hオプションも指定されない場合は，引数に指定され
+た既に存在するGfarmファイルのうち一番はじめのファイルを利用して，
+ファイルアフィニティスケジューリングされます．
+
+指定されたファイルシステムノード群に対して、並列プログラムの
+それぞれのプロセスは
+「gfrcmd ホスト プログラム名 \-N 全ノード数 \-I ノード番号 引数…」
+で実行されます。
+
+gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を
+利用することを除いて、gfrun と同様です。
 
 プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
 も指定できます。
@@ -34,22 +67,27 @@ gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を利用すること
 .SH OPTIONS
 
 .TP
-.B \-H
-.I パス名
+.B \-G
+.I gfarm-URL
 .br
-Gfarm入力ファイルの存在するホスト群の代わりに、パス名で指定したファイル
-に記述されたホスト群でコマンドを実行します。
-パス名として、gfarm-URL を指定すると、その Gfarm ファイルの存在す
-るホスト群でコマンドを実行します。
+gfarm-URL のファイルアフィニティスケジューリングにより
+並列プログラムを実行します．
+.TP
+.B \-H
+.I hostfile
+.br
+hostfile に記述されたファイルシステムノード群で並列プロ
+グラムを実行します。
 .TP
 .B \-?
 .br
 引数オプションを表示します。
 
-.SH BUGS
+.SH ENVIROMNENT VARIABLES
 
-入力ファイルか否かは、単に、指定された Gfarm URL が既に存在するかど
-うかだけで判断するので、Gfarm URL の綴りを間違えると、意図したホスト
-で実行されません。確実に指定したい場合には \-H オプションをご利用く
-ださい。
-
+.TP
+.B GFRUN_CMD
+.br
+遠隔起動コマンドを指定します．globus-job-runを指定すれ
+ば，gfrunはglobus-job-run を使ってそれぞれのプロセスを
+起動します．

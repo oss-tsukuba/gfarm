@@ -50,7 +50,8 @@ usage()
 {
 	fprintf(stderr,
 		"Usage: %s [-n] [-l <login>]"
-		" [-H <hostfile or Gfarm file>] command...\n",
+		" [-G <Gfarm file>]"
+		" [-H <hostfile>] command ...\n",
 		program_name);
 	exit(1);
 }
@@ -74,7 +75,7 @@ main(argc, argv)
 
 	char *rsh_command, *rsh_flags;
 	int have_gfarm_url_prefix = 1;
-	char *hostfile = NULL, *scheduling_file;
+	char *hostfile = NULL, *schedfile = NULL, *scheduling_file;
 	char *command_name, **delivered_paths = NULL;
 	int have_redirect_stdio_option = 1;
 
@@ -136,6 +137,23 @@ main(argc, argv)
 			break;
 		for (j = 1; argv[i][j] != '\0'; j++) {
 			switch (argv[i][j]) {
+			case 'G':
+				if (j > 1) {
+					argv[i][j] = '\0';
+					gfarm_stringlist_add(&option_list,
+						argv[i]);
+				}
+				if (argv[i][j + 1] != '\0') {
+					schedfile = &argv[i][j + 1];
+				} else if (++i < argc) {
+					schedfile = argv[i];
+				} else {
+					fprintf(stderr, "%s: "
+						"missing argument to -%c\n",
+						program_name, argv[i - 1][j]);
+					usage();
+				}
+				goto skip_opt;
 			case 'H':
 				if (j > 1) {
 					argv[i][j] = '\0';
@@ -200,34 +218,28 @@ skip_opt: ;
 		}
 	}
 
-	if (hostfile == NULL) {
-		if (gfarm_stringlist_length(&input_list) == 0) {
-			fprintf(stderr, "%s: no input file\n", program_name);
-			exit(1);
+	/*
+	 * Process scheduling
+	 */
+	if (schedfile != NULL) {
+		/* File-affinity scheduling */
+		if (hostfile != NULL) {
+			fprintf(stderr, "%s: -H option is ignored.\n", program_name);
 		}
-		/* XXX - this is only using first input file for scheduling */
-		scheduling_file = gfarm_stringlist_elem(&input_list, 0);
-		e = gfarm_url_hosts_schedule(scheduling_file, NULL,
-		    &nhosts, &hosts);
-		if (e != NULL) {
-			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
-			exit(1);
-		}
-	} else if (gfarm_is_url(hostfile)) {
-		/*
-		 * If hostfile is a Gfarm file, schedule using the
-		 * distribution of the Gfarm file.
-		 */
-		e = gfarm_url_hosts_schedule(hostfile, NULL,
+		e = gfarm_url_hosts_schedule(schedfile, NULL,
 					     &nhosts, &hosts);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", hostfile, e);
+			fprintf(stderr, "%s: %s\n", schedfile, e);
 			exit(1);
 		}
-		scheduling_file = hostfile;
-	} else {
+		scheduling_file = schedfile;
+	}
+	else if (hostfile != NULL) {
+		/* Hostfile scheduling */
 		int error_line;
-
+		/*
+		 * Is it necessary to access a Gfarm hostfile?
+		 */
 		e = gfarm_hostlist_read(hostfile,
 					&nhosts, &hosts, &error_line);
 		if (e != NULL) {
@@ -240,6 +252,21 @@ skip_opt: ;
 			exit(1);
 		}
 		scheduling_file = hostfile;
+	}
+	else {
+		/* Both -G and -H options are not specified. */
+		if (gfarm_stringlist_length(&input_list) == 0) {
+			fprintf(stderr, "%s: no input file\n", program_name);
+			exit(1);
+		}
+		/* The first input file used for file-affinity scheduling. */
+		scheduling_file = gfarm_stringlist_elem(&input_list, 0);
+		e = gfarm_url_hosts_schedule(scheduling_file, NULL,
+		    &nhosts, &hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
+			exit(1);
+		}
 	}
 
 	/*
