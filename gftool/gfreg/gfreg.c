@@ -21,13 +21,20 @@ usage()
 {
     fprintf(stderr, "Usage: %s <local_filename> <gfarm_url>\n",
 	    program_name);
+    fprintf(stderr, "Register a local file to the Gfarm Meta DB.\n\n");
+    fprintf(stderr, "option:\n");
+    fprintf(stderr, "\t-I fragment-index\tregiste a fragment\n");
+    fprintf(stderr, "\t-N number\t\tnumber of fragment\n");
+    fprintf(stderr, "\t-a architecture\t\tarchitecture\n");
+    fprintf(stderr, "\t-h hostname\t\tspecify hostname\n");
     exit(1);
 }
 
 #define GFS_FILE_BUFSIZE 65536
 
 char *
-gfarm_url_fragment_register(char *gfarm_url, int index, int nfrags,
+gfarm_url_fragment_register(char *gfarm_url, int index, 
+			    char *hostname, int nfrags,
 			    char *filename)
 {
 	char *e, *e_save = NULL;
@@ -59,7 +66,7 @@ gfarm_url_fragment_register(char *gfarm_url, int index, int nfrags,
 		fprintf(stderr, "%s\n", e);
 		return e;
 	}
-	e = gfs_pio_set_view_index(gf, nfrags, index, NULL, 0);
+	e = gfs_pio_set_view_index(gf, nfrags, index, hostname, 0);
 	if (e != NULL) {
 		gfs_pio_close(gf);
 		close(fd);
@@ -96,6 +103,7 @@ main(int argc, char *argv[])
     char **argv_save = argv;
     char *filename, *gfarm_url;
     char *node_index = NULL;
+    char *hostname = NULL;
     int total_nodes = -1;
     char *e = NULL, *architecture = NULL;
     struct stat s;
@@ -108,8 +116,11 @@ main(int argc, char *argv[])
     if (argc >= 1)
 	program_name = argv[0];
 
-    while ((c = getopt(argc, argv, "I:N:a:")) != -1) {
+    while ((c = getopt(argc, argv, "I:N:a:h:")) != -1) {
 	switch (c) {
+	case 'h':
+            hostname = optarg;
+	    break;
 	case 'I':
 	    node_index = optarg;
 	    break;
@@ -200,7 +211,7 @@ main(int argc, char *argv[])
 	    exit(1);
 	}
 	index = strtol(node_index, NULL, 0);
-	e = gfarm_url_fragment_register(gfarm_url, index,
+	e = gfarm_url_fragment_register(gfarm_url, index, hostname,
 					total_nodes, filename);
     }
     if (e != NULL) {
