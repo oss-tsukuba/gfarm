@@ -1951,8 +1951,11 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-p <port>\n");
-	fprintf(stderr, "\t-r	rsh invocation (not deadmon)\n");
+	fprintf(stderr, "\t-s <syslog-facility>\n");
+	fprintf(stderr, "\t-v>\n");
 	exit(1);
 }
 
@@ -1963,7 +1966,8 @@ main(int argc, char **argv)
 	extern int optind;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
-	char *e, *config_file = NULL, *port_number = NULL;
+	char *e, *config_file = NULL, *port_number = NULL, *pid_file = NULL;
+	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, table_size, datagram_socks_count, i, nfound;
 	int accepting_sock, *datagram_socks, client, max_fd;
@@ -1974,8 +1978,11 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "df:p:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "P:df:p:s:uv")) != -1) {
 		switch (ch) {
+		case 'P':
+			pid_file = optarg;
+			break;
 		case 'd':
 			debug_mode = 1;
 			break;
@@ -2032,9 +2039,26 @@ main(int argc, char **argv)
 	if (max_fd > FD_SETSIZE)
 		gflog_fatal("datagram_service", "too big file descriptor");
 
+	if (pid_file != NULL) {
+		/*
+		 * We do this before calling gfarm_daemon()
+		 * to print the error message to stderr.
+		 */
+		pid_fp = fopen(pid_file, "w");
+		if (pid_fp == NULL)
+			gflog_fatal_errno(pid_file);
+	}
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		gfarm_daemon(0, 0);
+	}
+	if (pid_file != NULL) {
+		/*
+		 * We do this after calling gfarm_daemon(),
+		 * because it changes pid.
+		 */
+		fprintf(pid_fp, "%d\n", getpid());
+		fclose(pid_fp);
 	}
 
 	table_size = FILE_TABLE_LIMIT;
