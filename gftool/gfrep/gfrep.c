@@ -581,17 +581,17 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 
 	e = gfs_getcwd(cwdbf, sizeof(cwdbf));
 	if (e != NULL) {
-		fprintf(stderr, "%s\n", e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, cwdbf ,e);
 		return;
 	}
 	e = gfs_opendir(".", &dir);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, cwdbf, e);
 		return;
 	}
 	e = gfarm_stringlist_init(&entry_list);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, cwdbf, e);
 		return;
 	}
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
@@ -602,13 +602,14 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 			continue; /* "." or ".." */
 		p = strdup(entry->d_name);
 		if (p == NULL) {
-			fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+			fprintf(stderr, "%s: %s\n",
+					program_name, GFARM_ERR_NO_MEMORY);
 			exit (1);
 		}
 		e = gfarm_stringlist_add(&entry_list, p);
 		if (e != NULL) {
-			fprintf(stderr, "%s/%s: %s\n",
-					cwdbf, entry->d_name, e);
+			fprintf(stderr, "%s: %s/%s: %s\n",
+					program_name, cwdbf, entry->d_name, e);
 		}
 	}
 	if (e != NULL)
@@ -621,7 +622,8 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 
 		e = gfs_stat(path, &gs);
 		if (e != NULL) {
-			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+			fprintf(stderr, "%s: %s/%s: %s\n",
+					program_name, cwdbf, path, e);
 			continue;
 		}
 		mode = gs.st_mode;
@@ -629,19 +631,22 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 		if (GFARM_S_ISREG(mode)) {
 			e = (*file_processor)(cwdbf, path, closure);
 			if (e != NULL) {
-				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+				fprintf(stderr, "%s: %s/%s: %s\n",
+					program_name, cwdbf, path, e);
 				continue;
 			}
 		} else if (GFARM_S_ISDIR(mode)) {
 			e = gfs_chdir(path);
 			if (e != NULL) {
-				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
+				fprintf(stderr, "%s: %s/%s: %s\n",
+					program_name, cwdbf, path, e);
 				continue;
 			}
 			traverse_file_tree(file_processor, closure);
 			e = gfs_chdir("..");
 			if (e != NULL) {
-				fprintf(stderr, "%s: %s\n", cwdbf, e);
+				fprintf(stderr, "%s: %s/..: %s\n",
+						program_name, cwdbf, e);
 				exit (1);
 			}
 		}
@@ -661,7 +666,8 @@ replicate_to_hosts_callback(char *cwd, char *path, void *closure) {
 
 	url = gfarm_url_prefix_add(path);
 	if (url == NULL) {
-		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		fprintf(stderr, "%s: %s\n",
+				program_name, GFARM_ERR_NO_MEMORY);
 		exit (1);
 	}
 	e = gfarm_url_fragments_replicate(url, c->nhosts, c->hosttab);
@@ -708,30 +714,31 @@ collect_file_paths_callback(char *cwd, char *path, void *closure)
 
 	p = malloc(strlen(cwd) + strlen(path) + 2);
 	if (p == NULL) {
-		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		fprintf(stderr, "%s: %s\n",
+				program_name, GFARM_ERR_NO_MEMORY);
 		exit (1);
 	}
 	sprintf(p, "%s/%s", cwd, path);
 	url = gfarm_url_prefix_add(p);
 	free(p);
 	if (url == NULL) {
-		fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+		fprintf(stderr, "%s: %s\n",
+				program_name, GFARM_ERR_NO_MEMORY);
 		exit (1);
 	}
 	return(gfarm_stringlist_add(path_list, url));
 }
 
 static char *
-get_replica_number_in_domain(
+get_hosts_have_replica_in_domain(
 	char *url, char *section,
 	char *domainname,
-	int *nreplicas)
+	int *nrhosts, char ***rhosts)
 {
-	char *e, *gfarm_file;
-	int i, ncinfos;
+	char *e, *gfarm_file, **hosts;
+	int i, ncinfos, nhosts;
 	struct gfarm_file_section_copy_info *cinfos;
 
-	*nreplicas = 0;
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
 		return(e);
@@ -740,20 +747,78 @@ get_replica_number_in_domain(
 	free(gfarm_file);
 	if (e != NULL)
 		return(e);
+	hosts = malloc(sizeof(*hosts) * ncinfos);
+	if (hosts == NULL) {
+		fprintf(stderr, "%s: %s\n",
+				program_name, GFARM_ERR_NO_MEMORY);
+		exit (1);
+	}
+	nhosts = 0;
 	for (i = 0; i < ncinfos; i++)
-		if (gfarm_host_is_in_domain(cinfos[i].hostname, domainname))
-			(*nreplicas)++;
+		if (gfarm_host_is_in_domain(cinfos[i].hostname, domainname)) {
+			char *p = strdup(cinfos[i].hostname);
+			if (p == NULL) {
+				fprintf(stderr, "%s: %s\n",
+					program_name, GFARM_ERR_NO_MEMORY);
+				exit (1);
+			}
+			hosts[nhosts] = p;
+			nhosts++;
+		}
 	gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
+	*nrhosts = nhosts;
+	*rhosts = hosts;
 	return(NULL);
 }
 
+#define min(a,b) (((a)<(b))?(a):(b))
+
+static int
+search_not_have_replica_host(int pos,
+			     int ndhosts, char **dhosts,
+			     int *nrhosts,  char ***rhosts)
+{
+	int i, j, exist_in_rhosts;
+
+	for (i = 0; i < ndhosts; i++) {
+		exist_in_rhosts = 0;
+		for (j = 0; j < *nrhosts; j++) {
+			if (strcasecmp(dhosts[pos], (*rhosts)[j]) == 0) {
+				exist_in_rhosts = 1;
+				break;
+			}
+		}
+		if (exist_in_rhosts == 0) { /* found a host */
+			char **p;
+
+			(*nrhosts)++;
+			p = realloc(*rhosts, sizeof(**rhosts) * (*nrhosts));
+			if (p == NULL) {
+				fprintf(stderr, "%s: %s\n",
+					program_name, GFARM_ERR_NO_MEMORY);
+				exit (1);
+			}
+			p[*nrhosts - 1] = strdup(dhosts[pos]);
+			if (p[*nrhosts - 1] == NULL) {
+				fprintf(stderr, "%s: %s\n",
+					program_name, GFARM_ERR_NO_MEMORY);
+				exit (1);
+			}
+			*rhosts = p;
+			return (pos);
+		}
+		pos = (pos + 1) % ndhosts;
+	}
+	return (-1);
+}
+
 static char *
-replicate_files_to_domain(char *path, char *domainname)
+replicate_files_to_domain(char *path, int min_replicas, char *domainname)
 {
 	char *e;
 	struct gfs_stat gs;
 	char cwdbuf[PATH_MAX * 2];
-	int i, j, k;
+	int i, j, k, k2, m;
 
 	e = gfs_stat(path, &gs);
 	if (e != NULL)
@@ -776,14 +841,15 @@ replicate_files_to_domain(char *path, char *domainname)
 			goto free_gs;
 		e = gfarm_stringlist_init(&path_list);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", path, e);
+			fprintf(stderr, "%s %s: %s\n", program_name, path, e);
 			exit(1);
 		}
 		traverse_file_tree(collect_file_paths_callback, &path_list);
 		nfragments = malloc(sizeof(*nfragments) *
 				gfarm_stringlist_length(&path_list));
 		if (nfragments == NULL) {
-			fprintf(stderr, "%s: %s\n", path, GFARM_ERR_NO_MEMORY);
+			fprintf(stderr, "%s: %s\n",
+					program_name, GFARM_ERR_NO_MEMORY);
 			exit(1);
 		}
 		sinfos = malloc(sizeof(*sinfos) *
@@ -810,67 +876,89 @@ replicate_files_to_domain(char *path, char *domainname)
 			if (e != NULL) {
 				fprintf(stderr,
 				"%s: %s: %s\n",	program_name, url, e);
+				nfragments[i] = 0;
+				sinfos[i] = NULL;
 				continue;
 			}
 			nhosts += nfragments[i];
 		}
+		nhosts *= min_replicas;
 		hosts = malloc(sizeof(*hosts) * nhosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: %s\n", program_name,
 			    GFARM_ERR_NO_MEMORY);
 			exit(1);
 		}
-		e = gfarm_schedule_search_idle_by_domainname(domainname,
-			nhosts, hosts);
+		e = gfarm_schedule_search_idle_acyclic_by_domainname(
+			domainname, &nhosts, hosts);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name,
-			    GFARM_ERR_NO_MEMORY);
+			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
+		if (nhosts < min_replicas)
+			fprintf(stderr,
+				"%s: warning: #host in domain(%d) < "
+					     "#replica required(%d)\n",
+				program_name, nhosts, min_replicas);
 		k = 0;
 		for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
-			char *file_path;
-			int n, min_replicas = 1;
+			char *file_path, **rhosts;
+			int nrhosts;
 
 			file_path = gfarm_stringlist_elem(&path_list, i);
 			for (j = 0; j < nfragments[i]; j++) {
-				e = get_replica_number_in_domain(
+				e = get_hosts_have_replica_in_domain(
 					file_path, sinfos[i][j].section,
-					domainname, &n);
+					domainname, &nrhosts, &rhosts);
 				if (e != NULL) {
 					fprintf(stderr,
-			"%s: get_fragment_number_in_domain %s: %s: %s\n",
+						"%s: "
+						"get_hosts_replica_in_domain :"
+						" %s: %s: %s\n",
 						program_name,
 						file_path,
 						sinfos[i][j].section,
 						e);
 					continue;
 				}
-				if (n >= min_replicas) /* already exist */
-					continue;
-				e = gfarm_url_section_replicate_to(
-					file_path, sinfos[i][j].section,
-					hosts[k]);
-				if (e != NULL) {
-					fprintf(stderr,
-			"%s: gfarm_url_section_replicate_to %s: %s: %s\n",
-						program_name,
-						file_path,
-						sinfos[i][j].section,
-						e);
+				m = min(min_replicas, nhosts) - nrhosts;
+				if (m <= 0) {
+					gfarm_strings_free_deeply(
+							nrhosts, rhosts);
 					continue;
 				}
+				while (m--) {
+					k2 = search_not_have_replica_host(
+					  k, nhosts, hosts, &nrhosts, &rhosts);
+					if (k2 == -1) /* not found */
+						break;
+					k = k2;
+					e = gfarm_url_section_replicate_to(
+						file_path,
+						sinfos[i][j].section,
+						hosts[k]);
+					if (e != NULL) {
+						fprintf(stderr,
+							"%s: "
+							"gfarm_url_section_"
+							"replicate_to "
+							"%s: %s: %s\n",
+							program_name,
+							file_path,
+							sinfos[i][j].section,
+							e);
+						continue;
+					}
+					k = (k + 1) % nhosts;
+				}
+				gfarm_strings_free_deeply(nrhosts, rhosts);
 			}
-			/*
-			 * for defence in case of another process deletes
-			 * host information
-			 */
-			k = (k + 1) % nhosts;
 		}
 		gfarm_strings_free_deeply(nhosts, hosts);
 		for (i = 0; i < gfarm_stringlist_length(&path_list); i++)
-			gfarm_file_section_info_free_all(nfragments[i],
-							 sinfos[i]);
+			if (sinfos[i] != NULL)
+				gfarm_file_section_info_free_all(nfragments[i],
+							sinfos[i]);
 		free(nfragments);
 		gfarm_stringlist_free_deeply(&path_list);
 		e = gfs_chdir_canonical(cwdbuf);
@@ -895,6 +983,7 @@ usage()
 	fprintf(stderr, "\t-d dest-node\n");
 	fprintf(stderr, "\t-l <fragment-dest-list-file>\n");
 	fprintf(stderr, "\t-P <host-pair-file>\n");
+	fprintf(stderr, "\t-N <number-of-replicas-per-fragment>\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -918,7 +1007,7 @@ main(argc, argv)
 	int i, ch, mode_ch = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	int error_happened = 0;
+	int error_happened = 0, min_replicas = 2;
 
 	char *hostfile = NULL, *domainname = NULL, *index = NULL;
 	char *src = NULL, *dest = NULL, *fragment_dest_list = NULL;
@@ -932,7 +1021,7 @@ main(argc, argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((ch = getopt(argc, argv, "bXvH:D:I:s:d:l:P:?")) != -1) {
+	while ((ch = getopt(argc, argv, "bXvH:D:I:s:d:l:P:N:?")) != -1) {
 		switch (ch) {
 		case 'b':
 			bootstrap_method = 1;
@@ -965,6 +1054,9 @@ main(argc, argv)
 		case 'P':
 			pair_list = optarg;
 			conflict_check(&mode_ch, ch);
+			break;
+		case 'N':
+			min_replicas = strtol(optarg, NULL, 0);
 			break;
 		case '?':
 		default:
@@ -1033,7 +1125,8 @@ main(argc, argv)
 		/* replicate a whole file */
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			file = gfarm_stringlist_elem(&paths, i);
-			e = replicate_files_to_domain(file, domainname);
+			e = replicate_files_to_domain(file, min_replicas,
+							domainname);
 			if (e != NULL) {
 				fprintf(stderr, "%s: %s: %s\n",
 				    program_name, file, e);
