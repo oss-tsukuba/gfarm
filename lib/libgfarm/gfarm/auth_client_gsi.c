@@ -83,7 +83,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn)
 		gfarmSecSessionTerminate(session);
 		xxx_connection_reset_secsession(conn);
 		xxx_connection_set_fd(conn, fd);
-		if (e != NULL ? e : GFARM_ERR_AUTHENTICATION);
+		return (e != NULL ? e : GFARM_ERR_AUTHENTICATION);
 	}
 	return (NULL);
 }
