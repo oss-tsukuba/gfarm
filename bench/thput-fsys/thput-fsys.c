@@ -7,10 +7,18 @@
 
 double timerval_calibration;
 
-#if defined(__linux__) && defined(i386)
-#include <asm/timex.h>
+#ifdef i386
 
-typedef cycles_t timerval_t;
+typedef unsigned long long timerval_t;
+
+unsigned long long
+get_cycles(void)
+{
+	unsigned long long rv;
+
+	__asm __volatile("rdtsc" : "=A" (rv));
+	return (rv);
+}
 
 #define gettimerval(tp)		(*(tp) = get_cycles())
 #define timerval_second(tp)	(*(tp) / timerval_calibration)
@@ -33,7 +41,7 @@ timerval_calibrate(void)
 		(s2.tv_sec - s1.tv_sec) +
 		(s2.tv_usec - s1.tv_usec) / 1000000.0);
 }
-#endif /* defined(__linux__) && defined(i386) */
+#endif
 
 int tm_write_write_measured = 0;
 timerval_t tm_write_open_0, tm_write_open_1;
@@ -150,7 +158,7 @@ void
 copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 {
 	int ifd, ofd;
-	int rv, osize, i;
+	int rv, osize;
 	off_t residual;
 
 	ifd = open(ifile, O_RDONLY);
@@ -209,7 +217,7 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 void
 test_title(int test_mode, off_t file_size, int flags)
 {
-	fprintf(stdout, "testing with %d MB file\n", file_size);
+	fprintf(stdout, "testing with %d MB file\n", (int)file_size);
 	printf("%-8s", "bufsize");
 	if (test_mode & TESTMODE_WRITE)
 		printf(" %20s", "write [bytes/sec]");
@@ -285,6 +293,7 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 	}
 }
 
+int
 main(int argc, char **argv)
 {
 	char *file1 = "test.file1";
