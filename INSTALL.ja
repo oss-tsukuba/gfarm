@@ -561,10 +561,10 @@ gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
 
 各ユーザのシェル設定ファイル (.bashrc, .cshrc など) に以下の定義を追加します．
 
-    Bourne shell 系シェルの場合:
+Bourne Shell の場合:
 	gfcd() { eval "`gfsetdir $1`"; }
 
-    csh 系シェルの場合:
+csh の場合:
 	alias gfcd 'eval `gfsetdir \!*`'
 
 この設定を行うことにより gfcd コマンドで Gfarm 作業ディレクトリの変更が
