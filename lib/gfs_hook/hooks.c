@@ -872,6 +872,101 @@ chmod(const char *path, mode_t mode)
 	_gfs_hook_debug_v(fputs("Hooking chmod\n", stderr));
 	return (__chmod(path, mode));
 }
+
+#ifdef __linux__
+/*
+ * getxattr
+ */
+
+int
+getxattr(const char *path, const char *name, void *value, size_t size)
+{
+	char *e, *gfarm_file;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking getxattr(%s, %s, %p, %d)\n",
+				  path, name, value, size));
+
+	if (!gfs_hook_is_url(path, &url))
+		return syscall(SYS_getxattr, path, name, value, size);
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking getxattr(%s, %s, %p, %d)\n",
+				path, name, value, size));
+
+	e = gfarm_url_make_path(url, &gfarm_file);
+	free(url);
+	if (e == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		free(gfarm_file);
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: getxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+/*
+ * lgetxattr
+ */
+
+int
+lgetxattr(const char *path, const char *name, void *value, size_t size)
+{
+	char *e, *gfarm_file;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking lgetxattr(%s, %s, %p, %d)\n",
+				  path, name, value, size));
+
+	if (!gfs_hook_is_url(path, &url))
+		return syscall(SYS_lgetxattr, path, name, value, size);
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking lgetxattr(%s, %s, %p, %d)\n",
+				path, name, value, size));
+
+	e = gfarm_url_make_path(url, &gfarm_file);
+	free(url);
+	if (e == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		free(gfarm_file);
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: lgetxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+/*
+ * fgetxattr
+ */
+
+int
+fgetxattr(int filedes, const char *name, void *value, size_t size)
+{
+	char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking fgetxattr(%d, %s, %p, %d)\n",
+				  filedes, name, value, size));
+
+	if (!gfs_hook_is_open(filedes))
+		return syscall(SYS_fgetxattr, filedes, name, value, size);
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking fgetxattr(%d, %s, %p, %d)\n",
+				filedes, name, value, size));
+
+	e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	_gfs_hook_debug(fprintf(stderr, "GFS: fgetxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+#endif
+
 /*
  * definitions for "hooks_common.c"
  */
