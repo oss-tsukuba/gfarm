@@ -93,7 +93,7 @@ modify_host(char *hostname, char **hostaliases, char *architecture, int ncpu,
 	int host_info_needs_free = 0;
 	gfarm_stringlist aliases;
 
-	if (hostaliases == NULL || architecture == NULL || ncpu < 1 ||
+	if (*hostaliases == NULL || architecture == NULL || ncpu < 1 ||
 	    add_aliases) {
 		e = gfarm_host_info_get(hostname, &hi);
 		if (e != NULL)
@@ -137,6 +137,8 @@ modify_host(char *hostname, char **hostaliases, char *architecture, int ncpu,
 	    gfarm_strarray_length(hostaliases), hostaliases,
 	    architecture, ncpu,
 	    gfarm_host_info_replace);
+	if (e == NULL && !add_aliases && *hostaliases == NULL)
+		e = gfarm_host_info_remove_hostaliases(hostname);
  free_aliases:
 	if (add_aliases)
 		gfarm_stringlist_free(&aliases);
