@@ -549,7 +549,7 @@ main(argc, argv)
 	int i, ch, mode_ch = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	int error_happened = 1;
+	int error_happened = 0;
 
 	char *hostfile = NULL, *domainname = NULL, *index = NULL;
 	char *src = NULL, *dest = NULL, *fragment_dest_list = NULL;
