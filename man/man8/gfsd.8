@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "01 December 2003" "Gfarm" ""
+.TH "GFSD" "8" "10 August 2004" "Gfarm" ""
+
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
 .SH SYNOPSIS
@@ -20,8 +21,8 @@ Gfarm filesystem as well as user authentication, file replication,
 fast invocation, node resource status monitoring.
 .PP
 It is possible for \fBgfsd\fR to be executed as a non-privileged user
-process although other users cannot use it.  Moreover, a \fBgfsd\fR
-with a user privilege cannot authenticate using the GSI.
+process although only the user that executes the \fBgfsd\fR can be authenticated.
+Other users cannot use it.
 .PP
 In order to execute \fBgfsd\fR as a non-privileged user process, a
 configuration file for a user needs to be specified by the -f option.
