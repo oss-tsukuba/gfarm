@@ -195,12 +195,24 @@ main(int argc, char *argv[], char *envp[])
 		new_env[envc++] = cwd_env;
 		new_env[envc++] = NULL;
 
-		/*
-		 * don't call gfarm_terminate() here, because:
-		 * - it closes gf_stdout and gf_stderr.
-		 * - it causes "gfarm_terminate: Can't contact LDAP server"
-		 *   on the parent process.
-		 */
+		if (gf_stdout == NULL && gf_stderr == NULL) {
+			/* not to display profile statistics on gfarm_terminate() */
+			gfs_profile(gf_profile = 0);
+
+			e = gfarm_terminate();
+			if (e != NULL)
+				fprintf(stderr,
+				    "%s (child): gfarm_terminate: %s\n",
+				    progname, e);
+		} else {
+			/*
+			 * otherwise don't call gfarm_terminate(), because:
+			 * - it closes gf_stdout and gf_stderr.
+			 * - it causes:
+			 *   "gfarm_terminate: Can't contact LDAP server"
+			 *   on the parent process.
+			 */
+		}
 		execve(local_path, argv, new_env);
 		perror(local_path);
 		_exit(255);
