@@ -15,10 +15,11 @@ Table of Contents:
   2.2 We cannot connect to file system nodes and/or a metadata server.
   2.3 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
-  2.4 Unregistered or unnecessary files seem to remain in a spool
+  2.4 It is not possible to access files that should be created.
+  2.5 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.5 Due to disk crash, files in a file system node are lost.  What
+  2.6 Due to disk crash, files in a file system node are lost.  What
      we need to do?
 
 3. Security
@@ -83,6 +84,13 @@ Table of Contents:
 	(1) Is a valid entry included in the grid-mapfile on file
 	system nodes and file system metadata node?
 
+	Note that the subject names displayed for certain certificates
+	changed between Globus Toolkit version 2 (GT2) and the version
+	3 (GT3).  'Email' field in GT2 becomes 'emailAddress' in GT3.
+	'USERID' field in GT2 becomes 'UID' in GT3.  For
+	compatibility, you need to register both entries in
+	grid-mapfile.
+
 	(2) Are permissions of user certificate
 	 (~/.globus/usercert.pem) and/or host certificate
 	 (/etc/grid-security/hostcert.pem) not permissive?  Maximum
@@ -95,12 +103,29 @@ Table of Contents:
 	certificate, registered in /etc/grid-security/certificates?
 	Is not it expired?
 
+	Note that CA subject name in signing_policy files is also
+	affected the same as (1).  If you would like to use the same
+	signing_policy file for GT2 and GT3, you need both entries in
+	a signing_policy file.
+
 	(5) Are the clocks of all file system nodes, file system
 	metadata node, and a client are synchronized?  The GSI library
 	provided by the Globus fails to authenticate each other when
 	the time difference is more than five minutes.
 
-  2.4 Unregistered or unnecessary files seem to remain in a spool
+  2.4 It is not possible to access files that should be created.
+
+	Files that are not closed by a creating process, and a file
+	that is created by redirecting the output of an external
+	program are not registered correctly to metadata since the
+	file close operation in Gfarm I/O library cannot be called.
+
+	Such files are displayed as "no fragment information" by 'gfls
+	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
+	be used.  When gfarm:file needs to be registered, execute
+		% gfhost | gfrun -H - gfsplck gfarm:file
+
+  2.5 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -109,18 +134,18 @@ Table of Contents:
 	file, unnecessary files may remain in a spool directory on
 	filesystem nodes.
 
-	gfarm:/bin/gfsplck is prepared for checking and deleting these
+	'gfsplck' is prepared for checking and deleting these
 	unregistered files in a spool directory on filesystem nodes.
 	You can check which files are unregistered or not by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck gfarm:~
+		% gfhost | gfrun -H - gfsplck gfarm:~
 	After checking files, you can delete them by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d gfarm:~
+		% gfhost | gfrun -H - gfsplck -d gfarm:~
 	The above command examples do not check the file integrity.
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad gfarm:~
+		% gfhost | gfrun -H - gfsplck -ad gfarm:~
 
-  2.5 Due to disk crash, all files in a file system node are lost.
+  2.6 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
 	For all data files including execution programs, there is
