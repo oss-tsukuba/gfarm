@@ -117,7 +117,7 @@ Gfarm software consists of
 *** Installation
 
 This distribution is fully tested on Linux.  Building test is done on
-NetBSD, Solaris, Tru64.  IRIX is fully tested except the gfsd command.
+NetBSD, Solaris.
 
 To build the Gfarm system, OpenLDAP and OpenSSL libraries are
 required.  To utilize the Grid Security Infrastructure (GSI) for
