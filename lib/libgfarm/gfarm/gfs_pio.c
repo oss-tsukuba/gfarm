@@ -577,9 +577,16 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	    
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
-		if (e != NULL)
+		if (e != NULL) {
+			gf->error = e;
 			goto finish;
+		}
 	}
+
+	if (whence == SEEK_CUR)
+		/* modify offset based on io_offset */
+		offset += gf->offset + gf->p - gf->io_offset;
+
 	gf->error = NULL; /* purge EOF/error state */
 	gfs_pio_purge(gf);
 	e = (*gf->ops->view_seek)(gf, offset, whence, &where);
