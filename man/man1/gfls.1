@@ -1,0 +1,74 @@
+.Id $Id$
+.TH gfls 1 "1 May 2002"
+.SH NAME
+
+gfls \- list contents of Gfarm directory
+
+.SH SYNOPSIS
+
+.B gfls
+[
+.I options
+]
+.IR gfarm-URL " .\|.\|."
+
+.SH DESCRIPTION
+
+List information of files or contents of directories specified by
+\fIGfarm-URL\fP.
+
+.SH OPTIONS
+
+.\" .TP
+.\" .B \-c
+.\" .br
+.\" With the \-l option, show ctime not mtime.
+.TP
+.B \-C
+.br
+Multi-column output.  This is the default output format.
+.TP
+.B \-d
+.br
+List directory entries instead of the contents.
+.TP
+.B \-F
+.br
+Append indicator (one of */=@|) to entries.
+.TP
+.B \-l
+.br
+List in long format, including mode, owner, group, size in bytes, time
+of last modification for each file.
+.TP
+.B \-r
+.br
+Reverse the order while sorting.
+.TP
+.B \-R
+.br
+Recursively lists subdirectories encountered.
+.TP
+.B \-S
+.br
+Sort by file size.
+.TP
+.B \-t
+.br
+Sort by time stamp instead of by name.
+.TP
+.B \-T
+.br
+With the -l option, show complete date format.
+.\" .TP
+.\" .B \-u
+.\" .br
+.\" With the \-l option, show atime not mtime.
+.TP
+.B \-1
+.br
+Prints one entry per line of output.
+.TP
+.B \-?
+.br
+displays a list of command options.
