@@ -383,7 +383,7 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 #endif
 
 /*
- * dup2
+ * dup2 and dup
  */
 
 #ifdef SYS_dup2
@@ -401,13 +401,13 @@ __dup2(int oldfd, int newfd)
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
 				oldfd, newfd));
 
-	d = gfs_hook_dup_descriptor(oldfd);
-	gfs_hook_set_descriptor(newfd, d);
-
 	if (syscall(SYS_dup2, oldfd, newfd) == -1)
 		return (-1);
 
-	return newfd;
+	d = gfs_hook_dup_descriptor(oldfd);
+	gfs_hook_set_descriptor(newfd, d);
+
+	return (newfd);
 }
 
 int
@@ -424,6 +424,42 @@ dup2(int oldfd, int newfd)
 	return (__dup2(oldfd, newfd));
 }
 #endif /* SYS_dup2 */
+
+int
+__dup(int oldfd)
+{
+	struct _gfs_file_descriptor *d;
+	int newfd;
+	
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup(%d)\n", oldfd));
+
+	if (gfs_hook_is_open(oldfd) == NULL)
+		return syscall(SYS_dup, oldfd);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup(%d)\n", oldfd));
+
+	newfd = syscall(SYS_dup, oldfd);
+	if (newfd == -1)
+		return (-1);
+	d = gfs_hook_dup_descriptor(oldfd);
+	gfs_hook_set_descriptor(newfd, d);
+
+	return (newfd);
+}
+
+int
+_dup(int oldfd)
+{
+	_gfs_hook_debug_v(fputs("Hooking _dup\n", stderr));
+	return (__dup(oldfd));
+}
+
+int
+dup(int oldfd)
+{
+	_gfs_hook_debug_v(fputs("Hooking dup\n", stderr));
+	return (__dup(oldfd));
+}
 
 /*
  * execve
