@@ -505,7 +505,11 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 	long file_read_size;
 	struct xxx_connection **conns;
 	struct gfs_client_rep_rate_info **rinfos = NULL;
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	file_offset_t file_size = 0;
+#else
 	file_offset_t file_size;
+#endif
 	struct stat st;
 
 	struct sockaddr_in listen_addr, client_addr;
