@@ -1,3 +1,99 @@
+2003-05-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfcp/gfcp.c:
+	Display an error message when file transfer error happens.
+
+	* gftool/gfreg/gfreg.c:
+	Fixed a bug such that the following cases do not work well;
+	% gfreg file gfarm:dir
+	% gfreg excutable ... gfarm:dir
+
+2003-05-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/auth_server_gsi.c:
+	revert to the previous version 1.3 due to the unwilling commit.
+
+	* lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/schedule.c (gfarm_schedule_search_idle_hosts):
+	plugged a memory leak.
+	Improved the wording of the error messages.
+
+	* gftool/gfreg/gfreg.c:
+	Added a new feature to register multiple local files.
+	For example,
+
+	% gfreg -I 0 -N 1 file1 file2 file3 gfarm:
+	% gfls
+	file1 file2 file3
+	% gfreg file1 file2 file3 gfarm:file
+	% gfwhere file
+	0: gfm01.apgrid.org
+	1: gfm02.apgrid.org
+	2: gfm03.apgrid.org
+	% gfreg gf* gfarm:/bin
+	% gfls /bin
+	gfcombine      gfcp           gfgrep         gfsplck
+	gfcombine_hook gfcp_hook      gfreg
+
+	In the second case, each file fragment will be stored on different filesystem nodes if available.
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h (gfarm_schedule_search_idle_hosts):
+	Even if enough number of hosts are not available, select requested number of hosts by re-using available hosts in the cyclic manner.
+	schedule.c: Even if available number of hosts is the same as the requested number of hosts, check the availability of hosts.
+	gfarm_host_domain_hosts_schedule() is replaced by gfarm_schedule_search_idle_by_domainname() that calls gfarm_schedule_search_idle_hosts() internally to select only available hosts.
+
+2003-05-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: use macro, more
+
+2003-05-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: fsnode: does not replace /etc/gfarm.conf
+	server: remove empty /etc/gfarm-ldap directory
+
+2003-05-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c: cvs-log test again.
+
+	* doc/html/ja/ref/man5/gfarm.conf.5.html: regen
+
+	* man/ja/man5/gfarm.conf.5: regen
+	cvs-log test again.  This mail should be sent from o.tatebe@aist.go.jp not tatebe@cvs.apgrid.org.
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	cvs-log test.  This mail should be sent from o.tatebe@aist.go.jp not tatebe@cvs.apgrid.org.
+
+	* man/man8/Makefile, man/ja/man1/Makefile, man/ja/man3/Makefile, man/ja/man5/Makefile, man/ja/man8/Makefile, man/man1/Makefile, man/man3/Makefile, man/man5/Makefile:
+	Added EXTRA_CLEAN_TARGETS to clean up manpage.links and manpage.refs.
+
+2003-05-01  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* util/gfsuites/src/gfsuites/common/GFWHEREParser.java, util/gfsuites/src/sample.html:
+	fix 'somewhere.com' -> 'example.com'
+
+2003-05-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfrcmd.1.html, doc/html/ja/ref/man1/gfrcmd.1.html, man/ja/man1/gfrcmd.1, man/man1/gfrcmd.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/ja/ref/man1/gfrcmd.1.docbook, gftool/gfrcmd/gfrcmd.c:
+	Updated the description about command-line options.
+
+	* lib/libgfarm/gfarm/config.c:
+	(gfarm_strtoken) Fixed a trivial cast error.
+
+2003-04-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c:
+	- fix signed vs unsigned char * warning with gcc on solaris
+	- fix printf format string warning with gcc on solaris
+
+	* lib/libgfarm/gfarm/hostspec.c:
+	fix signed vs unsigned char * warning with gcc on solaris
+
+2003-04-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2003-04-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* lib/libgfarm/gfarm/config.c:
@@ -923,7 +1019,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.13 2003/04/16 04:55:44 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.14 2003/04/28 09:01:15 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
