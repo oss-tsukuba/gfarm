@@ -586,13 +586,10 @@ struct gfarm_auth_request_state {
 };
 
 static void
-gfarm_auth_request_dispatch_result(void *closure)
+gfarm_auth_request_next_method(struct gfarm_auth_request_state *state)
 {
-	struct gfarm_auth_request_state *state = closure;
 	int rv;
 
-	state->last_error = (*gfarm_auth_trial_table[state->auth_method_index].
-	    result_multiplexed)(state->method_state);
 	if (state->last_error == NULL ||
 	    (state->last_error != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 	     state->last_error != GFARM_ERR_EXPIRED &&
@@ -609,6 +606,17 @@ gfarm_auth_request_dispatch_result(void *closure)
 	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
+}
+
+static void
+gfarm_auth_request_dispatch_result(void *closure)
+{
+	struct gfarm_auth_request_state *state = closure;
+	int rv;
+
+	state->last_error = (*gfarm_auth_trial_table[state->auth_method_index].
+	    result_multiplexed)(state->method_state);
+	gfarm_auth_request_next_method(state);
 }
 
 static void
@@ -635,18 +643,20 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 	if (state->error == NULL) {
 		if (gfarm_auth_trial_table[state->auth_method_index].method
 		    != GFARM_AUTH_METHOD_NONE) {
-			state->error =
+			state->last_error =
 			    (*gfarm_auth_trial_table[state->auth_method_index].
 			    request_multiplexed)(state->q, state->conn,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
-			if (state->error == NULL) {
+			if (state->last_error == NULL) {
 				/*
 				 * call gfarm_auth_request_$method, then
 				 * go to gfarm_auth_request_dispatch_result()
 				 */
 				return;
 			}
+			gfarm_auth_request_next_method(state);
+			return;
 		}
 		/* give up */
 		if (state->server_methods == 0) {
