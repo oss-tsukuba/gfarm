@@ -194,6 +194,7 @@ struct gfarm_auth_cred_type_name_value {
 	{ "mechanism-specific",	GFARM_AUTH_CRED_TYPE_MECHANISM_SPECIFIC },
 	{ "host",		GFARM_AUTH_CRED_TYPE_HOST },
 	{ "user",		GFARM_AUTH_CRED_TYPE_USER },
+	{ "self",		GFARM_AUTH_CRED_TYPE_SELF },
 };
 
 char *

@@ -39,9 +39,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
 	char *e;
-	char *acceptor_name;
-	gss_OID acceptor_name_type;
-	int need_free;
+	gss_name_t acceptor_name = GSS_C_NO_NAME;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
 	gfarmSecSession *session;
@@ -52,23 +50,23 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_gsi_cred_config_convert_to_name_and_type(
+	e = gfarm_gsi_cred_config_convert_to_name(
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
 	    serv_service, serv_name,
 	    hostname,
-	    &acceptor_name, &acceptor_name_type, &need_free);
+	    &acceptor_name);
 	if (e != NULL) {
 		gflog_auth_error("Server credential configuration for",
 		    service_tag);
 		gflog_auth_error(e, hostname);
 		return (e);
 	}
-	session = gfarmSecSessionInitiate(fd,
-	    acceptor_name, acceptor_name_type,
-	    gfarm_gsi_get_delegated_cred(), NULL, &e_major, &e_minor);
-	if (need_free)
-		free(acceptor_name);
+	session = gfarmSecSessionInitiate(fd, acceptor_name,
+	    gfarm_gsi_get_delegated_cred(),
+	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL, &e_major, &e_minor);
+	if (acceptor_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error("Can't initiate session because of:",
@@ -101,6 +99,7 @@ struct gfarm_auth_request_gsi_state {
 	void (*continuation)(void *);
 	void *closure;
 
+	gss_name_t acceptor_name;
 	struct gfarmSecSessionInitiateState *gfsl_state;
 	gfarmSecSession *session;
 
@@ -179,9 +178,6 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_server_cred_type_get(service_tag);
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
-	char *acceptor_name;
-	gss_OID acceptor_name_type;
-	int need_free;
 	OM_uint32 e_major, e_minor;
 
 	e = gfarm_gsi_client_initialize();
@@ -205,25 +201,25 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		goto error_free_state;
 	}
 
-	e = gfarm_gsi_cred_config_convert_to_name_and_type(
+	e = gfarm_gsi_cred_config_convert_to_name(
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
 	    serv_service, serv_name,
 	    hostname,
-	    &acceptor_name, &acceptor_name_type, &need_free);
+	    &state->acceptor_name);
 	if (e != NULL) {
 		gflog_auth_error("Server credential configuration for",
 		    service_tag);
 		gflog_auth_error(e, hostname);
 		goto error_free_readable;
 	}
+
 	state->gfsl_state = gfarmSecSessionInitiateRequest(q,
-	    xxx_connection_fd(conn), acceptor_name, acceptor_name_type,
-	    gfarm_gsi_get_delegated_cred(), NULL,
+	    xxx_connection_fd(conn), state->acceptor_name,
+	    gfarm_gsi_get_delegated_cred(),
+	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL,
 	    gfarm_auth_request_gsi_wait_result, state,
 	    &e_major, &e_minor);
-	if (need_free)
-		free(acceptor_name);
 	if (state->gfsl_state == NULL) {
 		/* XXX e_major/e_minor should be used */
 		e = "cannote initiate GSI connection";
@@ -251,6 +247,8 @@ gfarm_auth_result_gsi_multiplexed(void *sp)
 	struct gfarm_auth_request_gsi_state *state = sp;
 	char *e = state->error;
 
+	if (state->acceptor_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&state->acceptor_name, NULL, NULL);
 	gfarm_event_free(state->readable);
 	free(state);
 	return (e);

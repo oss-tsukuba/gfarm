@@ -65,13 +65,22 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	    cred_service == NULL && cred_name == NULL) {
 		cred = GSS_C_NO_CREDENTIAL;
 	} else {
-		char *desired_name;
-		gss_OID desired_name_type;
-		int need_free, rv;
+		gss_name_t desired_name = GSS_C_NO_NAME;
+		int rv;
 
-		e = gfarm_gsi_cred_config_convert_to_name_and_type(
-		    cred_type, cred_service, cred_name, NULL,
-		    &desired_name, &desired_name_type, &need_free);
+		/*
+		 * It is desired to try gfarm_host_get_canonical_self_name()
+		 * before calling gfarm_host_get_self_name(), but it is not
+		 * possible for now, because currently there is no LDAP
+		 * connection in server side.
+		 * XXX FIXME
+		 * This can be done in gfarm_gsi_cred_config_convert_to_name()
+		 * with gfarm v2.
+		 */
+		e = gfarm_gsi_cred_config_convert_to_name(
+		    cred_type, cred_service, cred_name,
+		    gfarm_host_get_self_name(),
+		    &desired_name);
 		if (e != NULL) {
 			gflog_auth_error("Server credential configuration for",
 			    service_tag);
@@ -79,10 +88,10 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 			return (e);
 		}
 		rv = gfarmGssAcquireCredential(&cred,
-		    desired_name, desired_name_type, GSS_C_BOTH,
+		    desired_name, GSS_C_BOTH,
 		    &e_major, &e_minor, NULL);
-		if (need_free)
-			free(desired_name);
+		if (desired_name != GSS_C_NO_NAME)
+			gfarmGssDeleteName(&desired_name, NULL, NULL);
 		if (rv < 0) {
 			if (gflog_auth_get_verbose()) {
 				gflog_error("Can't get server credential for ",
@@ -100,7 +109,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	if (cred != GSS_C_NO_CREDENTIAL) {
 		OM_uint32 e_major2, e_minor2;
 		
-		if (gfarmGssReleaseCredential(cred, &e_major2, &e_minor2) < 0
+		if (gfarmGssDeleteCredential(&cred, &e_major2, &e_minor2) < 0
 		    && gflog_auth_get_verbose()) {
 			gflog_warning("Can't release credential "
 			    " because of:", NULL);
