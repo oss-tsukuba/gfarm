@@ -132,29 +132,15 @@ gfs_pio_local_storage_seek(GFS_File gf, file_offset_t offset, int whence,
 }
 
 static char *
-gfs_pio_local_storage_truncate(GFS_File gf, file_offset_t length)
+gfs_pio_local_storage_ftruncate(GFS_File gf, file_offset_t length)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	int rv;
 
-#if 0
-	e = gfarm_path_section(gf->pi.pathname,	vc->section, &path_section);
-	if (e != NULL)
-		return (e);
-	e = gfarm_path_localize(path_section, &local_path);
-	free(path_section);
-	if (e != NULL)
-		return (e);
-	rv = truncate(local_path, length);
-	free(local_path);
-	if (rv == -1)
-		return (gfarm_errno_to_error(errno));
-#else
 	rv = ftruncate(vc->fd, length);
 	if (rv == -1)
 		return (gfarm_errno_to_error(errno));
 	return (NULL);
-#endif
 }
 
 static char *
@@ -199,7 +185,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_write,
 	gfs_pio_local_storage_read,
 	gfs_pio_local_storage_seek,
-	gfs_pio_local_storage_truncate,
+	gfs_pio_local_storage_ftruncate,
 	gfs_pio_local_storage_calculate_digest,
 	gfs_pio_local_storage_fd,
 };
