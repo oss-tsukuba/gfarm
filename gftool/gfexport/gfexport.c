@@ -46,34 +46,32 @@ gfexport(char *gfarm_url, FILE *ofp, int nhosts, gfarm_stringlist hostlist)
 	GFS_File gf;
 	int i, nfrags;
 
-	e = gfarm_url_fragment_number(gfarm_url, &nfrags);
+	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
 	if (e != NULL)
 		return (e);
+	e = gfs_pio_get_nfragment(gf, &nfrags);
+	if (e != NULL) {
+		gfs_pio_close(gf);
+		return (e);
+	}
 
 	if (hostlist != NULL && nhosts != nfrags) {
-		fprintf(stderr, "%s: specified host ignored, "
-			"because host number %d does't match "
-			"fragment number %d\n",
+		fprintf(stderr, "%s: specified hosts are ignored, because "
+			"host number %d does't match fragment number %d\n",
 			program_name, nhosts, nfrags);
 		hostlist = NULL;
 	}
 
 	for (i = 0; i < nfrags; i++) {
-		e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-		if (e != NULL)
-			return (e);
 		e = gfs_pio_set_view_index(gf, nfrags, i,
-					   hostlist != NULL ?
-					   hostlist[i] : NULL,
-					   GFARM_FILE_SEQUENTIAL);
-		if (e != NULL) {
-			gfs_pio_close(gf);
-			return (e);
-		}
+		    hostlist != NULL ? hostlist[i] : NULL,
+		    GFARM_FILE_SEQUENTIAL);
+		if (e != NULL)
+			break;
 		gfprint(gf, ofp);
-		gfs_pio_close(gf);
 	}
-	return (NULL);
+	gfs_pio_close(gf);
+	return (e);
 }
 
 /* just a test routine for global view (and default view) */
@@ -191,7 +189,7 @@ main(argc, argv)
 		e = gfexport(argv[0], stdout, n, hostlist);
 	}
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, argv[0], e);
 		exit(1);
 	}
 	e = gfarm_terminate();
