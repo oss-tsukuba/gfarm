@@ -56,7 +56,6 @@ directory must be empty.</para>
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
@@ -64,7 +63,6 @@ directory must be empty.</para>
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>
- -->
 
 <varlistentry>
 <term><constant>GFARM_ERR_DIRECTORY_NOT_EMPTY</constant></term>

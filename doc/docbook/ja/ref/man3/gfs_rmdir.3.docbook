@@ -54,7 +54,6 @@
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
@@ -62,7 +61,6 @@
 の親ディレクトリへ書き込みアクセスする権限がありません。</para>
 </listitem>
 </varlistentry>
- -->
 
 <varlistentry>
 <term><constant>GFARM_ERR_DIRECTORY_NOT_EMPTY</constant></term>
