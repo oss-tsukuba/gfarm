@@ -320,7 +320,7 @@ schedule(char *command_name, struct gfrun_options *options,
 	gfarm_stringlist *input_list,
 	int *nhostsp, char ***hostsp, char **scheduling_filep)
 {
-	char *e, *self_name, *scheduling_file, **hosts;
+	char *e, *scheduling_file, **hosts;
 	int error_line, nhosts;
 	int spooled_command = gfarm_is_url(command_name);
 	int nopts = 0;
@@ -443,26 +443,15 @@ schedule(char *command_name, struct gfrun_options *options,
 			fprintf(stderr, "%s: not enough memory", program_name);
 			exit(1);
 		}
-		e = gfarm_host_get_canonical_self_name(&self_name);
-		if (e == NULL) {
-			hosts[0] = strdup(self_name);
-			if (hosts[0] == NULL) {
-				fprintf(stderr, "%s: not enough memory",
-				    program_name);
-				exit(1);
-			}
-		} else {
-			if (spooled_command) {
-				e = gfarm_schedule_search_idle_by_program(
-				    command_name, 1, hosts);
-			} else {
-				e= gfarm_schedule_search_idle_by_all(1, hosts);
-			}
-			if (e != NULL) {
-				fprintf(stderr, "%s: scheduling 1 host: %s\n",
-				    program_name, e);
-				exit(1);
-			}
+		if (spooled_command)
+			e = gfarm_schedule_search_idle_by_program(
+				command_name, 1, hosts);
+		else
+			e= gfarm_schedule_search_idle_by_all(1, hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: scheduling 1 host: %s\n",
+				program_name, e);
+			exit(1);
 		}
 		scheduling_file = "";
 	}
