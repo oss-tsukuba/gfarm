@@ -86,13 +86,24 @@ __write(int filedes, const void *buf, size_t nbyte)
 	char *e;
 	int n;
 
+	/* 
+	 * DO NOT put the following line here. This causes infinite loop!
+	 *
+	 * _gfs_hook_debug(fprintf(stderr, "Hooking __write(%d, , %d)\n",
+         *     filedes, nbyte));
+	 */
+
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (syscall(SYS_write, filedes, buf, nbyte));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __write(%d(%d), , %d)\n",
+	    filedes, gfs_pio_fileno(gf), nbyte));
 
 	e = gfs_pio_write(gf, buf, nbyte, &n);
 	if (e == NULL)
 		return (n);
 
+	_gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
