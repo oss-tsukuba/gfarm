@@ -104,16 +104,12 @@ gfs_unlink(const char *gfarm_url)
 	}
 	if (sections != NULL)
 		gfarm_file_section_info_free_all(nsections, sections);
-	if (e_save == NULL) {
-		e = gfarm_file_section_info_remove_all_by_file(gfarm_file);
-		if (e != NULL)
-			e_save = e;
-	}
-	if (e_save == NULL) {
-		e = gfarm_path_info_remove(gfarm_file);
-		if (e != NULL)
-			e_save = e;
-	}
+	e = gfarm_file_section_info_remove_all_by_file(gfarm_file);
+	if (e != NULL)
+		e_save = e;
+	e = gfarm_path_info_remove(gfarm_file);
+	if (e != NULL)
+		e_save = e;
 	free(gfarm_file);
 	gfs_uncachedir();
 
