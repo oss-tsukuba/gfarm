@@ -65,12 +65,13 @@ clean:
 	rm -f build-stamp 
 
 # Add here commands to clean up after the build process.
-	-cd build && $(MAKE) distclean
-	-cd build_gsi && $(MAKE) distclean
+#	-cd build && $(MAKE) distclean
+#	-cd build_gsi && $(MAKE) distclean
 	-rm -f configure-stamp
 	-rm -rf build build_gsi
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
-	dh_clean 
+	-rm -rf debian/tmp_gsi debian/tmp_nogsi
+	dh_clean
 
 install: DH_OPTIONS=
 install: build
