@@ -1,3 +1,9 @@
+gfarm (1:1.1.0-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 16 Feb 2005 13:36:17 +0900
+
 gfarm (1:1.0.4-1) unstable; urgency=low
 
   * New upstream release
