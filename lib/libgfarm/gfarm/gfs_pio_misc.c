@@ -888,8 +888,8 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 		goto finish_gfarm_file;
 
 	mode = pi.status.st_mode;
-	gfarm_path_info_free(&pi);
 	if (!GFARM_S_IS_FRAGMENTED_FILE(mode)) {
+		gfarm_path_info_free(&pi);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		goto finish_gfarm_file;
 	}
@@ -908,6 +908,7 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 		mode |= 022;
 		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
+	gfarm_path_info_free(&pi);
 	e = gfarm_url_hosts_schedule(gfarm_url, "", &nsrchosts, &srchosts);
 	if (e != NULL)
 		goto finish_gfarm_file;
