@@ -17,11 +17,6 @@
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
 
-int gfs_pio_fileno(GFS_File gf)
-{
-	return ((*gf->ops->view_fd)(gf));
-}
-
 char *
 gfs_pio_set_view_default(GFS_File gf)
 {
@@ -48,6 +43,15 @@ gfs_pio_check_view_default(GFS_File gf)
 	if (gf->view_context == NULL) /* view isn't set yet */
 		return (gfs_pio_set_view_global(gf, 0));
 	return (NULL);
+}
+
+int gfs_pio_fileno(GFS_File gf)
+{
+	char *e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		return (-1);
+
+	return ((*gf->ops->view_fd)(gf));
 }
 
 static char *
@@ -939,7 +943,7 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	const char *delim, size_t delimlen)
 {
 	char *e = gfs_pio_check_view_default(gf);
-	size_t *buf = *bufp, *p;
+	char *buf = *bufp, *p;
 	size_t size = *sizep, len = 0;
 	int c, delimtail;
 	static const char empty_line[] = "\n\n";
