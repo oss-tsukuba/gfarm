@@ -46,8 +46,8 @@ configure-stamp:
 	dh_testdir
 # Add here commands to configure the package.
 	-rm -rf ns/
-	install -d build && cd build && $(CONFIGURE) --prefix=`pwd`/../debian/tmp/usr 
-	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=`pwd`/../debian/tmp_gsi/usr 
+	install -d build && cd build && $(CONFIGURE) --prefix=/usr
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=/usr
 
 #	sed -e 's/tmp/tmp_gsi/' debian/$(CLIENT_PKG).install > debian/$(CLIENT_GSI_PKG).install
 #	sed -e 's/tmp/tmp_gsi/' debian/$(GFPTOOL_PKG).install > debian/$(GFPTOOL_GSI_PKG).install
@@ -114,8 +114,8 @@ install: build
 	dh_installdirs
 
 # Add here commands to install the package into debian/tmp.
-	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
-	cd build_gsi && $(MAKE) install DESTDIR=`pwd`/../debian/tmp_gsi
+	cd build && $(MAKE) install prefix=`pwd`/../debian/tmp/usr
+	cd build_gsi && $(MAKE) install prefix=`pwd`/../debian/tmp_gsi/usr
 
 	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
 
