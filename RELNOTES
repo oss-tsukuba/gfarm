@@ -10,20 +10,46 @@ Updated Features
 
  * Client commands
 
-  * New features
+   * New command
+
+   - gfsck --- administration command fixing inconsistency between
+	       file system metadata and physical file locations when
+	       disk crash happens.
+
+   - gfexec --- executes Gfarm command on a file system node.
+
+   - gfstat --- displays Gfarm file or directory status.
+
+   * New features
 
    (gfreg)
 
    - A binary registration can also be registered by specifying the
-     target hostname, as suggested by Bugzilla-ja #8.  This case
-     assumes the registered binary should run on the target host.
+     target hostname. (Bugzilla-ja #8) This case assumes the
+     registered binary should run on the target host.
    - Supported '-' for an input file.
+
+   (gfrun)
+
+   - Added an existence check for a command. (Bugzilla-ja #12)
 
  * Bug fix
 
-   (gfreg)
+   (gfreg) Fixed a bug to leave an invalid metadata entry.
 
-   - Fixed a bug to leave an invalid metadata entry.
+   (gfls) Fixed a bug related to spacing with the -F
+          option. (Bugzilla-ja #5)
+
+   (gfps) Fixed a segfault problem when specifying invalid job-ids.
+
+   (gfhost) Fixed missing variable initialization which makes gfhost
+	    and scheduling functions hang.
+
+   (libgfarm.a)
+
+   - Fixed a critical bug related to global file view. (Bugzilla-ja #11)
+   - (gfs_utimes) Fixed a bug such that an uninitialized value will
+     be set to ctimespec.
 
 Release note for Gfarm 1.0b5
 ============================
