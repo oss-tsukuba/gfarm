@@ -1,3 +1,82 @@
+2003-12-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added the item 2.1 such that 'gfls' results in 'no such object'.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added the item 4.4 for special character issue of file names.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_access, gfs_utimes):
+	Plugged a memory leak.
+
+	* lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	Rewrote the FT code to use the same FT strategy for both cases; gfexec and on-demand replication mode.
+
+	* gftool/gfexec/gfexec.c:
+	Do not call gfarm_terminate() in the main function, because it is already called in gfs_execve().
+	When the specified command does not exist in Gfarm file system, execute it in a local file system.
+
+	* lib/libgfarm/gfarm/gfs_exec.c (gfs_execve):
+	call gfarm_terminate() also before execve() when the specified url does not exist in Gfarm file system.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c (gfarm_metadb_terminate):
+	when the connection has been disconnected, return the error instead of segfault.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfarm_url_fragments_replicate):
+	Fixed a bug of accessing free'ed memory space.
+
+2003-12-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_lock.c, lib/libgfarm/gfarm/gfs_lock.h, lib/libgfarm/gfarm/gfs_pio_section.c:
+	locks in the on-demand replication mode to avoid race condition.
+
+2003-12-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c:
+	locks during replication of a program to avoid race condition.
+
+2003-12-05  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules:
+	there is a mistake for init script for gfsd-gsi and gfmd-gsi
+	FIXME ... shouled be enabled auto load init scripts when installing packages
+
+	* debian/gfarm-gfptool.install: changed installed dir
+
+	* debian/rules: supported libexecdir
+
+2003-12-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfptool/util/gfregister.in: fix yet another trivial mistake...
+
+	* gfptool/util/gfregister.in: fix trivial mistake in previous commit
+
+	* gfptool/util/gfregister.in:
+	honor --bindir and --libexecdir option of configure
+
+2003-12-05  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfmd-gsi.postinst, debian/gfmd-gsi.postrm, debian/gfmd-gsi.prerm, debian/gfsd-gsi.postinst, debian/gfsd-gsi.postrm, debian/gfsd-gsi.prerm:
+	supported gfmd-gsi and gfsd-gsi init.d scripts
+
+2003-12-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added the item 4.3 for the case-insensitive issue of file names.
+
+	* INSTALL.en:
+	Removed the word 'library' in the explanation of command-line arguments of --with-openldap=directory and --with-openssl=directory.
+
+	* INSTALL.ja: Updated the description of overview.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_getcwd):
+	when the current working directory does not exist, return an error.
+
+	* package/redhat/gfsd.in:
+	Fixed a wrong option '-p', which should be '-P'.
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2003-12-04  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfptool/gfrepbe_client/gfrepbe_client.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c:
@@ -3027,7 +3106,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.23 2003/12/04 05:43:20 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.24 2003/12/04 15:42:17 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.

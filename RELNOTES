@@ -1,6 +1,52 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0.1
+============================
+
+[2003.12.8]
+
+Updated Features
+
+ * Performance Improvement
+
+   (gfrun) Parallel program execution overhead is extremely reduced.
+
+ * Fault Tolerance Improvement
+
+   Inconsistency between a metadata and the corresponding physical
+   file in a local spool are automatically fixed during on-demand
+   replication.
+
+ * Servers (gfsd and gfmd)
+
+   Added the -P option to specify a 'pid' file.
+
+ * Bug fix
+
+   (gfreg) Fixed a broken gfrep command included in version 1.0.
+
+   (gfexec) Closed all connections before execution of a program.
+
+   (gfrep) Fixed a bug such that the replication often fails with
+	   permission denied, introduced in 1.0b5.
+
+   (libgfarm.a)
+
+   - Fixed a race condition during on-demand replication.
+
+   - Fixed a bug such that a file with one-letter file name such as
+     'gfarm:a' cannot be created.
+
+   - Added an error check of existence of the current working
+     directory.
+
+ * Documentation
+
+   (INSTALL) Updated the description.
+
+   (Gfarm-FAQ) Added limitations in Gfarm file system.
+
 Release note for Gfarm 1.0
 ==========================
 
