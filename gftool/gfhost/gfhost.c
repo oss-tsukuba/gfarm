@@ -627,7 +627,7 @@ callback_gfsd_info(void *closure, char *if_hostname, struct sockaddr *peer_addr,
 }
 
 char *
-print_gfsd_info(struct gfarm_host_info *info,
+request_gfsd_info(struct gfarm_host_info *info,
 	struct gfarm_paraccess *pa)
 {
 	char *e;
@@ -660,7 +660,7 @@ list_gfsd_info(int nhosts, char **hosts,
 	for (i = 0; i < nhosts; i++) {
 		host.hostname = hosts[i];
 		host.architecture = NULL; /* XXX mark as a faked host_info */
-		e = print_gfsd_info(&host, pa);
+		e = request_gfsd_info(&host, pa);
 		if (e_save == NULL)
 			e_save = e;
 	}
@@ -705,7 +705,7 @@ callback_long_format(
 }
 
 char *
-print_long_format(struct gfarm_host_info *host_info,
+request_long_format(struct gfarm_host_info *host_info,
 	struct gfarm_paraccess *pa)
 {
 	char *e;
@@ -764,7 +764,7 @@ callback_nodename(void *closure, char *hostname, struct sockaddr *peer_addr,
 }
 
 char *
-print_nodename(struct gfarm_host_info *host_info,
+request_nodename(struct gfarm_host_info *host_info,
 	struct gfarm_paraccess *pa)
 {
 	char *e, *hostname;
@@ -803,8 +803,8 @@ print_host_info(struct gfarm_host_info *info,
 
 char *
 list_all(const char *architecture, const char *domainname,
-	char *(*print_op)(struct gfarm_host_info *,
-			  struct gfarm_paraccess *),
+	char *(*request_op)(struct gfarm_host_info *,
+	    struct gfarm_paraccess *),
 	struct gfarm_paraccess *pa)
 {
 	char *e, *e_save = NULL;
@@ -823,7 +823,7 @@ list_all(const char *architecture, const char *domainname,
 	for (i = 0; i < nhosts; i++) {
 		if (domainname == NULL ||
 	 	    gfarm_host_is_in_domain(hosts[i].hostname, domainname)) {
-			e = (*print_op)(&hosts[i], pa);
+			e = (*request_op)(&hosts[i], pa);
 			if (e_save == NULL)
 				e_save = e;
 		}
@@ -834,7 +834,7 @@ list_all(const char *architecture, const char *domainname,
 
 char *
 list(int nhosts, char **hosts,
-	char *(*print_op)(struct gfarm_host_info *,
+	char *(*request_op)(struct gfarm_host_info *,
 	    struct gfarm_paraccess *),
 	struct gfarm_paraccess *pa)
 {
@@ -849,7 +849,7 @@ list(int nhosts, char **hosts,
 			if (e_save == NULL)
 				e_save = e;
 		} else {
-			e = (*print_op)(&hi, pa);
+			e = (*request_op)(&hi, pa);
 			if (e_save == NULL)
 				e_save = e;
 			gfarm_host_info_free(&hi);
@@ -1198,7 +1198,7 @@ main(int argc, char **argv)
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname, 
-				print_gfsd_info, pa);
+				request_gfsd_info, pa);
 		} else {
 			e_save = list_gfsd_info(argc, argv, pa);
 		}
@@ -1226,9 +1226,9 @@ main(int argc, char **argv)
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname,
-				print_nodename, pa);
+				request_nodename, pa);
 		} else {
-			e_save = list(argc, argv, print_nodename, pa);
+			e_save = list(argc, argv, request_nodename, pa);
 		}
 		e = gfarm_paraccess_free(pa);
 		if (e_save == NULL)
@@ -1268,10 +1268,9 @@ main(int argc, char **argv)
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname,
-				print_long_format, pa);
+				request_long_format, pa);
 		} else {
-			e_save = list(argc, argv, print_long_format,
-			    pa);
+			e_save = list(argc, argv, request_long_format, pa);
 		}
 		e = gfarm_paraccess_free(pa);
 		if (e_save == NULL)
