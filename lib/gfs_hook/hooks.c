@@ -533,7 +533,7 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 					 fprintf(stderr, "%s(%d): %s\n",
 					 "GFS: waitpid", pid, "status 255"));
 					/* XXX - need to obtain from child */
-					errno = EPERM;
+					errno = ENOENT;
 					return (-1);
 				default:
 					status = WEXITSTATUS(status);
