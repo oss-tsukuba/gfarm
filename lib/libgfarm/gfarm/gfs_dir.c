@@ -121,26 +121,51 @@ gfs_rmdir(const char *pathname)
 char *
 gfs_chdir_canonical(const char *canonic_dir)
 {
+	static int cwd_len = 0;
 	static char env_name[] = "GFS_PWD=";
 	static char *env = NULL;
 	static int env_len = 0;
-	int len;
+	int len, need_realloc = 0;
+	char *tmp;
 
-	len = sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH + 1 +
-	    strlen(canonic_dir) + 1;
-	if (env_len < len) {
-		char *tmp_env;
-
-		tmp_env = realloc(env, len);
-		if (tmp_env == NULL)
+	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
+	if (cwd_len < len) {
+		tmp = realloc(gfarm_current_working_directory, len);
+		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		env = tmp_env;
+		gfarm_current_working_directory = tmp;
+		cwd_len = len;
+	}
+	sprintf(gfarm_current_working_directory, "%s/%s",
+	    GFARM_URL_PREFIX, canonic_dir);
+
+	len += sizeof(env_name) - 1;
+	if (env_len < len) {
+		tmp = getenv("GFS_PWD");
+		if (tmp == NULL) {
+			need_realloc = 1;
+			if (env != NULL) /* probably already free()ed */
+				env = NULL;
+		} else if (tmp == env) {
+			need_realloc = 1; /* not changed by an application */
+		} else {
+			env = tmp; /* probably already free()ed */
+			env_len = strlen(env) + 1;
+			if (env_len < len) {
+				/* XXX It's unsure whether realloc() is ok */
+				need_realloc = 1;
+			}
+		}
+	}
+	if (need_realloc) {
+		tmp = realloc(env, len);
+		if (tmp == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		env = tmp;
 		env_len = len;
 	}
+	sprintf(env, "%s%s", env_name, gfarm_current_working_directory);
 
-	sprintf(env, "%s%s/%s", env_name, GFARM_URL_PREFIX, canonic_dir);
-	gfarm_current_working_directory = env +
-	    sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
 	if (putenv(env) != 0)
 		return (gfarm_errno_to_error(errno));
 
