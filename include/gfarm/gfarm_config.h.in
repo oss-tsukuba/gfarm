@@ -1,0 +1,138 @@
+/* include/gfarm/gfarm_config.h.in.  Generated automatically from configure.in by autoheader.  */
+#ifndef GFARM_CONFIG_H
+#define GFARM_CONFIG_H
+
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
+
+/* Grid Security Infrastructure exists */
+#undef HAVE_GSI
+
+/* 5 arguments getpwnam_r() which is compatible with SUSv2 exists */
+#undef HAVE_GETPWNAM_R
+
+/* 5 arguments getspnam_r() exists */
+#undef HAVE_GETSPNAM_R
+
+/* sys_nerr is defined */
+#undef HAVE_SYS_NERR
+
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
+#undef socklen_t
+
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* Define if you have the daemon function.  */
+#undef HAVE_DAEMON
+
+/* Define if you have the gethostbyname2 function.  */
+#undef HAVE_GETHOSTBYNAME2
+
+/* Define if you have the getloadavg function.  */
+#undef HAVE_GETLOADAVG
+
+/* Define if you have the getpassphrase function.  */
+#undef HAVE_GETPASSPHRASE
+
+/* Define if you have the poll function.  */
+#undef HAVE_POLL
+
+/* Define if you have the printf function.  */
+#undef HAVE_PRINTF
+
+/* Define if you have the pwrite function.  */
+#undef HAVE_PWRITE
+
+/* Define if you have the setlogin function.  */
+#undef HAVE_SETLOGIN
+
+/* Define if you have the setrlimit function.  */
+#undef HAVE_SETRLIMIT
+
+/* Define if you have the snprintf function.  */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the strtoll function.  */
+#undef HAVE_STRTOLL
+
+/* Define if you have the strtoq function.  */
+#undef HAVE_STRTOQ
+
+/* Define if you have the <crypt.h> header file.  */
+#undef HAVE_CRYPT_H
+
+/* Define if you have the <inttypes.h> header file.  */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the <machine/endian.h> header file.  */
+#undef HAVE_MACHINE_ENDIAN_H
+
+/* Define if you have the <shadow.h> header file.  */
+#undef HAVE_SHADOW_H
+
+/* Define if you have the <stdio.h> header file.  */
+#undef HAVE_STDIO_H
+
+/* Define if you have the compat library (-lcompat).  */
+#undef HAVE_LIBCOMPAT
+
+/* Define if you have the crypt library (-lcrypt).  */
+#undef HAVE_LIBCRYPT
+
+/* Define if you have the gen library (-lgen).  */
+#undef HAVE_LIBGEN
+
+/* Define if you have the nsl library (-lnsl).  */
+#undef HAVE_LIBNSL
+
+/* Define if you have the socket library (-lsocket).  */
+#undef HAVE_LIBSOCKET
+
+#if SIZEOF_LONG == 8
+	typedef long file_offset_t;
+#	define FILE_OFFSET_T_IS_FLOAT		0
+#	define FILE_OFFSET_T_MAX		0x7fffffffffffffffL
+#	define file_offset_floor(offset)	(offset)
+#	define PR_FILE_OFFSET "ld"
+#	define CAST_PR_FILE_OFFSET
+#	define string_to_file_offset(s, endptr)	strtol(s, endptr, 0)
+#elif SIZEOF_LONG_LONG == 8
+	typedef long long file_offset_t;
+#	define FILE_OFFSET_T_IS_FLOAT		0
+#	define FILE_OFFSET_T_MAX		0x7fffffffffffffffLL
+#	define file_offset_floor(offset)	(offset)
+#  if defined(HAVE_STRTOLL) || defined(HAVE_STRTOQ)
+#	define PR_FILE_OFFSET "lld"
+#	define CAST_PR_FILE_OFFSET
+#    if defined(HAVE_STRTOLL)
+#	define string_to_file_offset(s, endptr)	strtoll(s, endptr, 0)
+#    else
+#	define string_to_file_offset(s, endptr)	strtoq(s, endptr, 0)
+#    endif
+#  else
+#	define PR_FILE_OFFSET ".0f"
+#	define CAST_PR_FILE_OFFSET		(double)
+#	define string_to_file_offset(s, endptr)	(long long)strtod(s, endptr)
+#  endif
+#else
+	/*
+	 * With IEEE floating point, usually double has 53bits fraction,
+	 * 10bits biased exponent, and 1 sign bit.
+	 * Thus, this can represent -8192T (== -2^53) ... +8192T (== 2^53).
+	 */
+	typedef double file_offset_t;
+#	define FILE_OFFSET_T_IS_FLOAT		1
+#	define FILE_OFFSET_T_MAX		9007199254740991.0 /* 2^53-1 */
+#	define file_offset_floor(offset)	floor(offset)
+#	define PR_FILE_OFFSET ".0f"
+#	define CAST_PR_FILE_OFFSET
+#	define string_to_file_offset(s, endptr)	strtod(s, endptr)
+#endif
+
+#endif /* GFARM_CONFIG_H */
