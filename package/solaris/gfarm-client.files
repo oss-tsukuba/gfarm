@@ -15,9 +15,13 @@ usr/grid/bin/gfrun
 usr/grid/bin/gfssh
 usr/grid/bin/gfrshl
 usr/grid/bin/gfsshl
-usr/grid/bin/gfwhere
 usr/grid/bin/gfimport_fixed
 usr/grid/bin/gfimport_text
+usr/grid/bin/gfwhere
+usr/grid/bin/gfmkdir
+usr/grid/bin/gfpwd
+usr/grid/bin/gfrmdir
+usr/grid/bin/gfsetdir
 usr/grid/bin/pcat
 usr/grid/bin/pcp
 usr/grid/bin/pdel
