@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfmpirun</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFMPIRUN.1"
+></A
+>gfmpirun</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfmpirun&nbsp;--&nbsp;mpirun コマンドの Gfarm 用フロントエンド</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmpirun</B
+>  <TT
+CLASS="REPLACEABLE"
+><I
+>プログラム名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>引数</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>引数に指定した Gfarm入力ファイル の存在する計算プールのホスト群に対して、
+mpirun を実行します。</P
+><P
+>プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="BUGS"
+></A
+><H2
+>BUGS</H2
+><P
+>入力ファイルか否かは、単に、指定された Gfarm-URL が既に存在するかど
+うかだけで判断するので、Gfarm-URL の綴りを間違えると、意図したホスト
+で実行されません。</P
+><P
+>現バージョンは、MPI-CH/p4 との組合せでないと動作しません。</P
+></DIV
+></BODY
+></HTML
+>

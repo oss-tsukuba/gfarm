@@ -6,7 +6,7 @@ DOCBOOK = \
 	gfimport_text.1 \
 	gfkey.1 \
 	gfls.1 \
-	gfmpirun.1 \
+	gfmpirun_p4.1 \
 	gfps.1 \
 	gfrcmd.1 \
 	gfreg.1 \

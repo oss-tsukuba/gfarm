@@ -51,7 +51,7 @@
 <parameter>GFARM_FILE_WRONLY</parameter>
 を渡すようにしてください。</para>
 
-<para>gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+<para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <function>gfs_pio_create()</function>
 を呼ぶ場合、それぞれのプロセスは引数
 <parameter>mode</parameter>

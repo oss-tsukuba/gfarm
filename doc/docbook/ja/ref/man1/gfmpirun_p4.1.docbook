@@ -1,0 +1,43 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfmpirun_p4.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmpirun_p4</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmpirun_p4</refname>
+<refpurpose>mpirun コマンドの Gfarm 用フロントエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmpirun_p4</command>
+    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数に指定した Gfarm入力ファイル の存在する計算プールのホスト群に対して、
+mpirun を実行します。</para>
+
+<para>プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます。</para>
+
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>入力ファイルか否かは、単に、指定された Gfarm-URL が既に存在するかど
+うかだけで判断するので、Gfarm-URL の綴りを間違えると、意図したホスト
+で実行されません。</para>
+
+<para>現バージョンは、MPI-CH/p4 との組合せでないと動作しません。</para>
+</refsect1>
+</refentry>
+

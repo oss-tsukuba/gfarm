@@ -128,7 +128,7 @@ fi
 /usr/share/man/man1/gfimport_text.1.gz
 /usr/share/man/man1/gfkey.1.gz
 /usr/share/man/man1/gfls.1.gz
-/usr/share/man/man1/gfmpirun.1.gz
+/usr/share/man/man1/gfmpirun_p4.1.gz
 /usr/share/man/man1/gfps.1.gz
 /usr/share/man/man1/gfrcmd.1.gz
 /usr/share/man/man1/gfreg.1.gz
@@ -183,7 +183,7 @@ fi
 /usr/share/man/ja/man1/gfkey.1.gz
 /usr/share/man/ja/man1/gfls.1.gz
 /usr/share/man/ja/man1/gfmkdir.1.gz
-/usr/share/man/ja/man1/gfmpirun.1.gz
+/usr/share/man/ja/man1/gfmpirun_p4.1.gz
 /usr/share/man/ja/man1/gfps.1.gz
 /usr/share/man/ja/man1/gfrcmd.1.gz
 /usr/share/man/ja/man1/gfreg.1.gz
@@ -257,7 +257,7 @@ fi
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfimport_text.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfkey.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfls.1.html
-/usr/doc/%{name}-%{version}/html/en/ref/man1/gfmpirun.1.html
+/usr/doc/%{name}-%{version}/html/en/ref/man1/gfmpirun_p4.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfps.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfrcmd.1.html
 /usr/doc/%{name}-%{version}/html/en/ref/man1/gfreg.1.html
@@ -311,7 +311,7 @@ fi
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfkey.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfls.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfmkdir.1.html
-/usr/doc/%{name}-%{version}/html/ja/ref/man1/gfmpirun.1.html
+/usr/doc/%{name}-%{version}/html/ja/ref/man1/gfmpirun_p4.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfps.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfrcmd.1.html
 /usr/doc/%{name}-%{version}/html/ja/ref/man1/gfreg.1.html
@@ -391,7 +391,7 @@ fi
 /usr/bin/gfrep
 /usr/bin/gfrm
 /usr/bin/gfsched
-/usr/bin/gfmpirun
+/usr/bin/gfmpirun_p4
 /usr/bin/gfps
 /usr/bin/gfrun
 /usr/bin/gfssh

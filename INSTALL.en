@@ -98,7 +98,7 @@ Gfarm software consists of
   gfwhere and gfrep, a filesystem node management tool like gfhost,
   file management tools like gfreg and gfexport, session key
   management tools like gfkey, and parallel process management tools
-  like gfps, gfrun and gfmpirun, which are located in the directory
+  like gfps, gfrun and gfmpirun_p4, which are located in the directory
   gftool/.
 
   In the gfptool/ directory, there are parallel Gfarm commands; gfcp
@@ -763,9 +763,9 @@ This subsection shows several execution examples of sample programs.
 
 	% gfreg /usr/local/gfarm/bin/gfwc gfarm:/bin/gfwc
 
-  Since gfwc is an MPI application, it is executed using gfmpirun.
+  Since gfwc is an MPI application, it is executed using gfmpirun_p4.
 
-	% gfmpirun gfarm:/bin/gfwc gfarm:test.txt
+	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:test.txt
 
   You can check the result.
 

@@ -18,7 +18,7 @@
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
-  <command>gfmpirun</command>
+  <command>gfmpirun_p4</command>
     <arg choice='req'>gfarm:gfwc</arg>
     <arg choice='plain'><replaceable>input-gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -27,7 +27,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>This is a sample application invoked with gfmpirun(1).</para>
+<para>This is a sample application invoked with gfmpirun_p4(1).</para>
 
 <para><command>gfwc</command> reads from <parameter>input-gfarm-URL</parameter> and prints the numbers of
 bytes, words, and lines to the standard output.</para>

@@ -45,7 +45,7 @@
 <constant>GFARM_FILE_RDONLY</constant>
 を渡すようにしてください。</para>
 
-<para>gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+<para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <function>gfs_pio_open()</function>
 を呼ぶ場合、それぞれのプロセスの
 <parameter>GFS_File</parameter>

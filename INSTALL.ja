@@ -60,7 +60,7 @@ Gfarm ファイルシステムは，大容量ファイルを，ファイルシステムノード上の
 上に存在するファイル断片を処理するような，データ並列処理アプリケーショ
 ンをグリッドサービスとして支援することが，Gfarm システムの主な目的です．
 
-例えば，クライアントで「gfmpirun gfarm:gfwc gfarm:file」を実行すると，
+例えば，クライアントで「gfmpirun_p4 gfarm:gfwc gfarm:file」を実行すると，
 引数で指定した Gfarm ファイル ``gfarm:file'' のファイル断片が存在する
 ファイルシステムノード上で，MPI 並列コマンド gfwc が実行されます．
 
@@ -797,7 +797,7 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
   実行してみましょう．
 
-	% gfmpirun gfarm:/bin/gfwc gfarm:テスト.txt
+	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:テスト.txt
 
   結果を確認してみましょう．
 

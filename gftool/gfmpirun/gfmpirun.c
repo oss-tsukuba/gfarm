@@ -12,7 +12,7 @@
 #include "host.h"
 #include "gfj_client.h"
 
-char *program_name = "gfmpirun";
+char *program_name = "gfmpirun_p4";
 
 void
 setsig(int signum, void (*handler)(int))
@@ -231,7 +231,7 @@ skip_opt: ;
 	gfarm_stringlist_add(&arg_list, "mpirun");
 #if 1
 	/*
-	 * without this option, the machine which is running gfmpirun
+	 * without this option, the machine which is running gfmpirun_p4
 	 * always becomes node 0. and total number of nodes becomes
 	 * ``1 + total_nodesprocesses'' because this host will be included
 	 * regardless whether machine file includes this host or not.

@@ -40,7 +40,7 @@
 <para>The first form copies and registers the program <parameter>program</parameter> as a
 Gfarm file <parameter>gfarm-URL</parameter> in the Gfarm filesystem.  After this
 registration, the <parameter>gfarm-URL</parameter> can be specified as a program name
-of gfrun(1) and gfmpirun(1).  Without the <option>-a</option> option,
+of gfrun(1) and gfmpirun_p4(1).  Without the <option>-a</option> option,
 architecture of
 the specified program is assumed to be the same architecture as the
 client host on that gfreg(1) is executed, which is obtained by the

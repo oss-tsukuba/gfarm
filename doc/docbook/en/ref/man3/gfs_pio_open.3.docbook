@@ -41,7 +41,7 @@ to the address pointed by <parameter>gfp</parameter>.  Currently,
 <constant>GFARM_FILE_RDONLY</constant> is only supported for values of <parameter>flags</parameter>.</para>
 
 <para>When <function>gfs_pio_open()</function> is used by parallel processes executed by
-gfrun(3) or gfmpirun(3), the returned <structname>GFS_File</structname> structure of each
+gfrun(3) or gfmpirun_p4(3), the returned <structname>GFS_File</structname> structure of each
 process has individual file pointers among parallel processes.</para>
 
 </refsect1>

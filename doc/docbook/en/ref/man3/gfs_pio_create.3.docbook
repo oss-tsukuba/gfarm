@@ -46,7 +46,7 @@ and is modified by the process's <varname>umask</varname>.</para>
 <parameter>flags</parameter>.</para>
 
 <para>When <function>gfs_pio_create()</function> is used by parallel processes executed by
-gfrun(3) or gfmpirun(3), each process should specify a consistent
+gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
 value for <parameter>mode</parameter>.  The returned <constant>GFS_File</constant> structure of each
 process has individual file pointers among parallel processes.</para>
 

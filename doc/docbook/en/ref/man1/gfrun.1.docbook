@@ -119,7 +119,7 @@ gfrun executes each process using globus-job-run.</para>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<citerefentry><refentrytitle>gfmpirun</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfmpirun_p4</refentrytitle><manvolnum>1</manvolnum></citerefentry>
 </para>
 </refsect1>
 
