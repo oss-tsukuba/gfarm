@@ -145,7 +145,8 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 		return (gfarm_hostspec_af_inet4_new(INADDR_ANY, INADDR_ANY,
 		    hostspecpp));
 	}
-	if (gfarm_string_to_in4addr(name, &end1p, &addr) == NULL) {
+	if (gfarm_string_to_in4addr(name, &end1p, &addr)
+	    == GFARM_ERR_NO_ERROR) {
 		if (*end1p == '\0') {
 			return (gfarm_hostspec_af_inet4_new(
 			    addr.s_addr, INADDR_BROADCAST, hostspecpp));
@@ -167,7 +168,8 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 				return (gfarm_hostspec_af_inet4_new(
 				    addr.s_addr, mask.s_addr, hostspecpp));
 			} else if (gfarm_string_to_in4addr(end1p + 1,
-			    &end2p, &mask) == NULL && *end2p == '\0') {
+			    &end2p, &mask) == GFARM_ERR_NO_ERROR &&
+			    *end2p == '\0') {
 				return (gfarm_hostspec_af_inet4_new(
 				    addr.s_addr, mask.s_addr,
 				    hostspecpp));

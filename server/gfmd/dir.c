@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -234,11 +235,11 @@ rbdir_entry_prev(DirEntry entry)
 		while (RB_RIGHT(entry, node))
 			entry = RB_RIGHT(entry, node);
 	} else if (RB_PARENT(entry, node) != NULL &&
-	    (entry == RB_RIGHT(RB_PARENT(entry, node), node)) != NULL) {
+	    entry == RB_RIGHT(RB_PARENT(entry, node), node)) {
 		entry = RB_PARENT(entry, node);
 	} else {
 		while (RB_PARENT(entry, node) != NULL &&
-		    (entry == RB_LEFT(RB_PARENT(entry, node), node)) != NULL)
+		    entry == RB_LEFT(RB_PARENT(entry, node), node))
 			entry = RB_PARENT(entry, node);
 		entry = RB_PARENT(entry, node);
 	}

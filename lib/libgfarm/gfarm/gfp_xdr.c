@@ -69,7 +69,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	gfp_xdr_set(conn, ops, cookie, fd);
 
 	*connp = conn;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -82,7 +82,7 @@ gfp_xdr_free(struct gfp_xdr *conn)
 	gfarm_iobuffer_free(conn->recvbuffer);
 
 	e = (*conn->iob_ops->close)(conn->cookie, conn->fd);
-	if (e_save == NULL)
+	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
 
 	free(conn);
@@ -149,7 +149,7 @@ gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
 		return (GFARM_ERR_PROTOCOL); /* unexpected eof */
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -267,7 +267,7 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	gfarm_error_t e;
 
 	e = gfp_xdr_flush(conn);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	*eofp = 1;
@@ -278,20 +278,20 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			cp = va_arg(ap, gfarm_int8_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    cp, sizeof(*cp), just) != sizeof(*cp))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			break;
 		case 'h':
 			hp = va_arg(ap, gfarm_int16_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    hp, sizeof(*hp), just) != sizeof(*hp))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			*hp = ntohs(*hp);
 			break;
 		case 'i':
 			ip = va_arg(ap, gfarm_int32_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    ip, sizeof(*ip), just) != sizeof(*ip))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			*ip = ntohl(*ip);
 			break;
 		case 'l':
@@ -303,7 +303,7 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			op = va_arg(ap, gfarm_int64_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    lv, sizeof(lv), just) != sizeof(lv))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			lv[0] = ntohl(lv[0]);
 			lv[1] = ntohl(lv[1]);
 #if INT64T_IS_FLOAT
@@ -325,14 +325,14 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			sp = va_arg(ap, char **);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			i = ntohl(i);
 			*sp = malloc(i + 1);
 			if (*sp != NULL) {
 				/* caller should check whether *sp == NULL */
 				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 				    *sp, i, just) != i)
-					return (NULL);
+					return (GFARM_ERR_NO_ERROR);
 				(*sp)[i] = '\0';
 			}
 			break;
@@ -347,21 +347,21 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			s = va_arg(ap, char *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
-				return (NULL);
+				return (GFARM_ERR_NO_ERROR);
 			i = ntohl(i);
 			*szp = i;
 			if (i <= sz) {
 				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 				    s, i, just) != i)
-					return (NULL);
+					return (GFARM_ERR_NO_ERROR);
 			} else {
 				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 				    s, sz, just) != sz)
-					return (NULL);
+					return (GFARM_ERR_NO_ERROR);
 				/* abandon (i - sz) bytes */
 				if (gfarm_iobuffer_purge_read_x(
 				    conn->recvbuffer, i - sz, just) != i - sz)
-					return (NULL);
+					return (GFARM_ERR_NO_ERROR);
 			}
 			break;
 		default:
@@ -385,11 +385,11 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	e = gfp_xdr_vsend(conn, &format, &ap);
 	va_end(ap);
 
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (*format != '\0')
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -403,13 +403,13 @@ gfp_xdr_recv(struct gfp_xdr *conn,
 	e = gfp_xdr_vrecv(conn, just, eofp, &format, &ap);
 	va_end(ap);
 
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (*eofp)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	if (*format != '\0')
 		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -425,12 +425,12 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	 * send request
 	 */
 	e = gfp_xdr_send(conn, "i", command);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfp_xdr_vsend(conn, formatp, app);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -447,18 +447,18 @@ gfp_xdr_vrpc_result(struct gfp_xdr *conn,
 	 * receive response
 	 */
 	e = gfp_xdr_recv(conn, just, &eof, "i", errorp);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc status missing */
-	if (*errorp != 0)
-		return (NULL); /* should examine error in this case */
+	if (eof) /* rpc status missing */
+		return (GFARM_ERR_PROTOCOL);
+	if (*errorp != 0) /* should examine error in this case */
+		return (GFARM_ERR_NO_ERROR);
 	e = gfp_xdr_vrecv(conn, just, &eof, formatp, app);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL); /* rpc return value missing */
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -474,7 +474,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	 * send request
 	 */
 	e = gfp_xdr_vrpc_request(conn, command, formatp, app);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	if (**formatp != '/')
@@ -482,15 +482,15 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	(*formatp)++;
 
 	e = gfp_xdr_vrpc_result(conn, just, errorp, formatp, app);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (*errorp != 0)
-		return (NULL); /* should examine error in this case */
+	if (*errorp != 0) /* should examine error in this case */
+		return (GFARM_ERR_NO_ERROR);
 
 	if (**formatp != '\0')
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -520,7 +520,7 @@ gfp_xdr_read_direct(struct gfp_xdr *conn, void *data, int length,
 		return (gfarm_iobuffer_get_error(conn->recvbuffer));
 	}
 	*resultp = rv;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -535,5 +535,5 @@ gfp_xdr_write_direct(struct gfp_xdr *conn, void *data, int length,
 		return (gfarm_iobuffer_get_error(conn->sendbuffer));
 	}
 	*resultp = rv;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }

@@ -87,13 +87,13 @@ gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
 	long value;
 
 	e = gfarm_sockopt_initialize();
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfarm_param_config_parse_long(NSOCKOPTS, gfarm_sockopt_type_table,
 	    config, &param_type_index, &value);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		return (GFARM_ERRMSG_UNKNOWN_SOCKET_OPTION);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	return (gfarm_param_config_add_long(lastp,
 	    param_type_index, value, hsp));

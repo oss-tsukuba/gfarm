@@ -100,7 +100,8 @@ gfarm_param_apply_long_by_name_addr(struct gfarm_param_config *list,
 				continue; /* use first match only */
 			done |= (1 << list->param_type_index);
 			e = (*f)(closure, list->param_type_index, list->value);
-			if (e != NULL && e_save == NULL)
+			if (e != GFARM_ERR_NO_ERROR &&
+			    e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 		}
 	}
@@ -120,7 +121,7 @@ gfarm_param_apply_long(struct gfarm_param_config *list,
 			continue; /* use first match only */
 		done |= (1 << list->param_type_index);
 		e = (*f)(closure, list->param_type_index,  list->value);
-		if (e != NULL && e_save == NULL)
+		if (e != GFARM_ERR_NO_ERROR && e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	return (e_save);
@@ -255,7 +256,7 @@ gfarm_netparam_config_add_long(char *config, struct gfarm_hostspec *hsp)
 	    config, &param_type_index, &value);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		return (GFARM_ERRMSG_UNKNOWN_PARAMETER);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	info = gfarm_netparam_type_table[param_type_index].extension;
 	if (value < info->minimum || value > info->maximum)
@@ -275,7 +276,7 @@ gfarm_netparam_config_get_long(struct gfarm_netparam_info *info,
 	    &value);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		*valuep = info->default_value;
-	} else if (e != NULL) {
+	} else if (e != GFARM_ERR_NO_ERROR) {
 		return (e);
 	} else {
 		*valuep = value;

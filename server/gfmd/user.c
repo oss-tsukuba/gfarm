@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h> /* fd_set for "filetab.h" */
@@ -278,7 +279,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client)
 	}
 
 	giant_unlock();
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

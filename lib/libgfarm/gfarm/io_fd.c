@@ -155,7 +155,7 @@ gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 {
 	int rv = close(fd);
 
-	if (rv == -1 && gfarm_iobuffer_get_error(b) == NULL)
+	if (rv == -1 && gfarm_iobuffer_get_error(b) == GFARM_ERR_NO_ERROR)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
 }
 
@@ -210,5 +210,5 @@ gfarm_error_t
 gfp_xdr_set_fd(struct gfp_xdr *conn, int fd)
 {
 	gfp_xdr_set(conn, &gfp_xdr_fd_iobuffer_ops, NULL, fd);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }

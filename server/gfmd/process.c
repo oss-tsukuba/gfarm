@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>

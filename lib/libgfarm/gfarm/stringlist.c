@@ -172,7 +172,7 @@ gfarm_strarray_dup(char **array)
 
 	if (v == NULL)
 		return (v);
-	if (gfarm_fixedstrings_dup(n, v, array) != NULL)
+	if (gfarm_fixedstrings_dup(n, v, array) != GFARM_ERR_NO_ERROR)
 		return (NULL);
 	v[n] = NULL;
 	return (v);

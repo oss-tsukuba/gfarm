@@ -393,7 +393,7 @@ gfarm_iobuffer_get(struct gfarm_iobuffer *b, void *data, int len)
 void
 gfarm_iobuffer_flush_write(struct gfarm_iobuffer *b)
 {
-	while (!IOBUFFER_IS_EMPTY(b) && b->error == NULL)
+	while (!IOBUFFER_IS_EMPTY(b) && b->error == 0)
 		gfarm_iobuffer_write(b, NULL);
 }
 

@@ -479,7 +479,7 @@ parse_auth_arguments(char *p, char **op)
 		auth_method = GFARM_AUTH_METHOD_ALL;
 	} else {
 		e = gfarm_auth_method_parse(auth, &auth_method);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			*op = "2nd(auth-method) argument";
 			if (e == GFARM_ERR_NO_SUCH_OBJECT)
 				e = GFARM_ERRMSG_UNKNOWN_AUTH_METHOD;
@@ -488,7 +488,7 @@ parse_auth_arguments(char *p, char **op)
 	}
 
 	e = gfarm_strtoken(&p, &host);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (host == NULL)
 		return (GFARM_ERRMSG_MISSING_HOST_SPEC_ARGUMENT);
@@ -520,7 +520,7 @@ parse_auth_arguments(char *p, char **op)
 		gfarm_hostspec_free(hostspecp);
 		return (GFARM_ERRMSG_UNKNOWN_AUTH_SUBCOMMAND);
 	}
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		gfarm_hostspec_free(hostspecp);
 	return (e);
 }
