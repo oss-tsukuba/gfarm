@@ -156,7 +156,7 @@ the --with-openldap option.
 
   specifies an installation directory of GT2 to utilize GSI
   authentication method.  When not specifying a directory,
-  GLOBUS_LOCATION is used.  This is optional.
+  environment variable GLOBUS_LOCATION is used.  This is optional.
 
   --prefix=directory
 
@@ -417,6 +417,8 @@ An LDAP server is invoked by the 'slapd' command.
 
 The -h option specifies a listening port number of the LDAP server.  A
 sample start-up script can be found at package/<arch>/gfarm-slapd.
+If you choose a port number less than 1024 like this example, you
+have to do above with the root privilege.
 
  - Test the LDAP server
 
@@ -561,9 +563,11 @@ read /etc/gfarm.conf.
 On a metadata server node, execute gfmd with a root privilege.  Gfmd
 reads the configuration file /etc/gfarm.conf described above.
 
-	% gfmd
+	% su
+	Password: 
+	# gfmd
 
-You can find a sample start-up script at package/<arch>/gfmd.  For
+You can find a sample start-up script at package/<OS>/gfmd.  For
 a testing purpose, gfmd can be executed as a non-privileged user
 process with the -f option (see man gfmd).
 
@@ -580,7 +584,7 @@ reads the configuration file /etc/gfarm.conf described above.
 
 	% gfsd
 
-You can find a sample start-up script in package/<arch>/gfsd.  For
+You can find a sample start-up script at package/<OS>/gfsd.  For
 a testing purpose, gfsd can be executed as a non-privileged user
 process with the -f option (see man gfsd).
 
