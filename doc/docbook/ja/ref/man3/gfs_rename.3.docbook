@@ -2,7 +2,7 @@
 
 <refentry id='gfs-rename.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>21 Feb 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_rename</refentrytitle>
@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_rename</refname>
-<refpurpose>改名</refpurpose>
+<refpurpose>ファイルを改名する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -33,12 +33,26 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>ファイル
+<para>ファイルまたはディレクトリ
 <parameter>gfarm_url_from</parameter>
 を
 <parameter>gfarm_url_to</parameter>
 に改名します。</para>
 
+<para><parameter>gfarm_url_to</parameter>
+が既存の場合は削除されます。このとき
+<parameter>gfarm_url_from</parameter>
+がファイルならば
+<parameter>gfarm_url_to</parameter>
+もファイル、
+<parameter>gfarm_url_from</parameter>
+がディレクトリならば
+<parameter>gfarm_url_to</parameter>
+もディレクトリで、しかも空でなければなりません。</para>
+
+<para>ディレクトリ
+<parameter>gfarm_url_from</parameter>
+をそのサブディレクトリに改名することはできません。</para>
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
@@ -68,21 +82,11 @@
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
-<listitem>
-<para>パス
-<parameter>gfarm_url_to</parameter>
-が既に存在します。</para>
-</listitem>
-</varlistentry>
-<varlistentry>
 <term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para>パス
-<parameter>gfarm_url_to</parameter>
-が、ディレクトリ
+<para>ディレクトリ
 <parameter>gfarm_url_from</parameter>
-の内部にあります。</para>
+を、それ自身のサブディレクトリに変更しようとしました。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -91,6 +95,26 @@
 <para>指定されたパス
 <parameter>gfarm_url_from</parameter>
 が存在しません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>
+<parameter>gfarm_url_from</parameter>
+がファイルであるのに、
+<parameter>gfarm_url_to</parameter>
+は既存のディレクトリです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_NOT_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>
+<parameter>gfarm_url_from</parameter>
+がディレクトリであるのに、
+<parameter>gfarm_url_to</parameter>
+は既存のファイルです。</para>
 </listitem>
 </varlistentry>
 <!--
