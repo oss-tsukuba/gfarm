@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <gfarm/gfarm.h>
 #include "hooks_subr.h"
 
@@ -10,9 +11,10 @@
 static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
 
 void
-gfs_hook_not_intialized(void)
+gfs_hook_not_initialized(void)
 {
-	fprintf(stderr, "fatal error: gfarm_initialized() isn't called\n");
+	/*  printf and puts should not be put into the following function. */
+	/* fprintf(stderr, "fatal error: gfarm_initialize() isn't called\n"); */
 }
 
 int
