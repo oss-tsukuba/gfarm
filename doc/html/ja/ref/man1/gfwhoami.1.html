@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfexec</TITLE
+>gfwhoami</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFEXEC.1"
+NAME="GFWHOAMI.1"
 ></A
->gfexec</H1
+>gfwhoami</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfexec&nbsp;--&nbsp;Gfarm ファイルシステムのプログラムを実行する</DIV
+>gfwhoami&nbsp;--&nbsp;Gfarm グローバルユーザ名を表示します</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,14 +36,11 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfexec</B
->   <VAR
-CLASS="REPLACEABLE"
->プログラム名</VAR
+>gfwhoami</B
 >  [<VAR
 CLASS="REPLACEABLE"
->引数</VAR
->...]</P
+>オプション</VAR
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -53,8 +50,42 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm ファイルシステムのプログラムを実行します．本コマンドはファ
-イルシステムノード上で実行する必要があります．</P
+>Gfarm ファイルシステム上で用いられるグローバルユーザ名を
+表示します。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-v</VAR
+></DT
+><DD
+><P
+>GSI 認証を用いている場合ローカルユーザ名である
+Subject DN も同時に表示します。</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-h</VAR
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
 ></DIV
 ></BODY
 ></HTML

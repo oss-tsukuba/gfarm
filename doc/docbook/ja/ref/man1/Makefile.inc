@@ -24,4 +24,5 @@ DOCBOOK = \
 	gfsetdir.1 \
 	gfstat.1 \
 	gfwc.1 \
-	gfwhere.1
+	gfwhere.1 \
+	gfwhoami.1
