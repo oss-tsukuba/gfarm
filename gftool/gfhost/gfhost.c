@@ -637,9 +637,11 @@ resolv_addr_without_address_use(char *hostname,
 	    sizeof(addr_in->sin_addr));
 	addr_in->sin_family = hp->h_addrtype;
 	addr_in->sin_port = htons(gfarm_spool_server_port);
-	*if_hostnamep = strdup(hostname);
-	if (*if_hostnamep == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+	if (if_hostnamep != NULL) {
+		*if_hostnamep = strdup(hostname);
+		if (*if_hostnamep == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
 	return (NULL);
 }
 
@@ -804,6 +806,49 @@ print_host_info_and_loadavg(struct gfarm_host_info *host_info)
 	return (NULL);
 }
 
+struct closure_for_up {
+	struct gfarm_host_info host_info;
+	char *if_hostname;
+};
+
+void
+callback_up(void *closure, struct sockaddr *addr,
+	struct gfs_client_load *result, char *error)
+{
+	char *hostname = closure;
+
+	if (error != NULL) {
+		fprintf(stderr, "%s: %s\n", hostname, error);
+	} else {
+		puts(hostname);
+	}
+	free(hostname);
+}
+
+char *
+print_up(struct gfarm_host_info *host_info)
+{
+	char *e, *hostname;
+	struct sockaddr addr;
+
+	/* dup `*host_info' -> `closure->host_info' */
+	hostname = strdup(host_info->hostname);
+	if (hostname == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		return (e);
+	}
+
+	e = (*opt_resolv_addr)(hostname, &addr, NULL);
+	if (e != NULL) {
+		callback_up(hostname, NULL, NULL, e);
+		return (e);
+	}
+
+	add_request(&addr, hostname, callback_up);
+	return (NULL);
+}
+
 char *
 print_host_info(struct gfarm_host_info *info)
 {
@@ -913,7 +958,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
-	    program_name, "[-lL] [-j <concurrency>] [-ipv]",
+	    program_name, "[-lLu] [-j <concurrency>] [-ipv]",
 	    program_name,
 	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
 	    program_name,
@@ -926,6 +971,7 @@ usage(void)
 #define OP_DEFAULT	'\0'
 #define OP_LIST_LOADAVG	'L'
 #define OP_LIST_DB	'l'
+#define OP_LIST_UP	'u'
 #define OP_REGISTER_DB	'r'
 #define OP_CREATE_ENTRY	'c'
 #define OP_DELETE_ENTRY	'd'
@@ -993,7 +1039,7 @@ main(int argc, char **argv)
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "ALa:cdij:lmn:prv")) != -1) {
+	while ((c = getopt(argc, argv, "ALa:cdij:lmn:pruv")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
@@ -1004,6 +1050,7 @@ main(int argc, char **argv)
 		case 'l':
 		case 'm':
 		case 'r':
+		case 'u':
 			if (opt_operation != OP_DEFAULT && opt_operation != c)
 				inconsistent_option(opt_operation, c);
 			opt_operation = c;
@@ -1138,6 +1185,28 @@ main(int argc, char **argv)
 			e_save = list_all(print_loadavg);
 		} else {
 			e_save = list_loadavg(argc, argv);
+		}
+		e = wait_all_request_reply();
+		if (e_save == NULL)
+			e_save = e;
+		if (!opt_plain_order && sort_pid != -1) {
+			e = wait_sort(sort_pid);
+			if (e_save == NULL)
+				e_save = e;
+		}
+		break;
+	case OP_LIST_UP:
+		if (!opt_plain_order)
+			sort_pid = setup_sort("+1");
+		e = init_requests(opt_concurrency);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			exit(1);
+		}
+		if (argc == 0) {
+			e_save = list_all(print_up);
+		} else {
+			e_save = list(argc, argv, print_up);
 		}
 		e = wait_all_request_reply();
 		if (e_save == NULL)
