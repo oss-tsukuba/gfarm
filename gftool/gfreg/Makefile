@@ -9,7 +9,7 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfreg.c
 OBJS = gfreg.o
 PROGRAM = gfreg
-CFLAGS = $(COMMON_CFLAGS) -I$(top_srcdir)/gfarmlib
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_DIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
