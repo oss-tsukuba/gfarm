@@ -617,6 +617,8 @@ traverse_file_tree_with_cwd(char *cwd,
 	if (GFARM_S_ISREG(mode)) {
 		return ((*file_processor)(cwd, path, closure));
 	} else if (GFARM_S_ISDIR(mode)) {
+		char *ncwd;
+
 		e = gfs_chdir(path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: gfs_chdir: %s: %s\n",
@@ -629,16 +631,16 @@ traverse_file_tree_with_cwd(char *cwd,
 							program_name, path, e);
 			return (1);
 		}
+		ncwd = add_cwd_to_relative_path(cwd, path);
 		while ((e = gfs_readdir(dir, &entry)) == NULL &&
 				entry != NULL) {
-			char *ncwd, *url; 
+			char *url; 
 
 			if (strcmp(entry->d_name, ".") == 0 ||
 			    strcmp(entry->d_name, "..") == 0) { 
 				continue;
 			}
-			ncwd = add_cwd_to_relative_path(cwd, path);
-			url = gfarm_url_prefix_add(entry->d_name);	
+			url = gfarm_url_prefix_add(entry->d_name);
 			if (url == NULL) {
 				fprintf(stderr, "%s: %s\n",
 					 program_name, GFARM_ERR_NO_MEMORY);
@@ -649,7 +651,12 @@ traverse_file_tree_with_cwd(char *cwd,
 				error_happend = 1;
 			}
 			free(url);
-			free(ncwd);
+		}
+		free(ncwd);
+		if (e != NULL) {
+			fprintf(stderr, "%s: gfs_readdir: %s: %s\n",
+							program_name, path, e);
+			return (1);
 		}
 		e = gfs_chdir("..");
 		if (e != NULL) {
@@ -832,7 +839,7 @@ replicate_files_to_domain(char *path, int min_replicas, char *domainname)
 	}
 
 	if (traverse_file_tree(path, collect_file_paths_callback, &path_list))
- 		error_happend = 1;
+		error_happend = 1;
 
 	nfragments = malloc(sizeof(*nfragments) *
 			gfarm_stringlist_length(&path_list));
