@@ -27,8 +27,6 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 					top_srcdir=$(top_srcdir) \
 					top_objdir=$(top_objdir) \
 					srcdir=$(srcdir)/$${dir} \
-					vpath='$$(srcdir)' \
-					VPATH='$$(srcdir)' \
 					$${target};; \
 			  esac; \
 			) || exit 1; \
@@ -41,8 +39,6 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 					top_srcdir=$(top_srcdir) \
 					top_objdir=$(top_objdir) \
 					srcdir=$(srcdir)/$${dir} \
-					vpath='$$(srcdir)' \
-					VPATH='$$(srcdir)' \
 					$${target};; \
 			  esac; \
 			) || exit 1; \

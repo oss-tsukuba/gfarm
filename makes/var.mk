@@ -1,3 +1,5 @@
+VPATH=$(srcdir)
+
 include $(top_objdir)/makes/config.mk
 
 ja_mandir = $(default_mandir)/ja

@@ -30,7 +30,7 @@ include-install: all
 include-clean:
 
 include-veryclean: clean
-	rm -f $(EXECHEADERS)
+	-rm -f $(EXECHEADERS)
 
 include-distclean: veryclean
 

@@ -3,11 +3,10 @@
 top_objdir = ../..
 top_srcdir = $(top_objdir)
 srcdir = .
-vpath = .
-
-VPATH=${vpath}:$(GFUTIL_SRCDIR):$(GFSL_SRCDIR):$(GFARMLIB_SRCDIR)
 
 include $(top_srcdir)/makes/var.mk
+
+VPATH=$(GFUTIL_SRCDIR):$(GFSL_SRCDIR):$(GFARMLIB_SRCDIR)
 
 LIB = gfarm
 
