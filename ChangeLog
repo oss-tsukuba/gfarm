@@ -1,4 +1,328 @@
+2004-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en:
+	Removed the description of source code modification to insert gfarm_initialize() and gfarm_terminate() because it is not necessary now.
+	Added the description about semantic change about '/gfarm:'.
+	Added how to execute applications.  Applications are needed to be executed with the '-u' option.
+
+	* lib/gfs_hook/hooks_subr.c:
+	Fixed a bug to add '/' after '/gfarm:' even in the case of '/gfarm:~'.
+
+2004-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	remove unneeded check. pointed out by tatebe-san
+
+2004-04-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	- change version number from 1.0.1 to 1.0.2.
+	- add gfwhoami and its manuals.
+
+2004-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	make it possible to have multiple contiguous spaces in pathname.
+	XXX - this change breaks backward compatibility, if there are such pathname
+	   in the past. (such pathnames were treated as if it had single space)
+
+2004-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* man/man1/gfrun.1: revert
+
+	* man/man1/gfrun.1, man/man1/gfwhoami.1, doc/html/en/ref/man1/gfwhoami.1.html, doc/html/ja/ref/man1/gfwhoami.1.html, man/ja/man1/gfwhoami.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfwhoami.1.docbook, doc/docbook/ja/ref/man1/gfwhoami.1.docbook:
+	Subject DN is not a local user name.
+
+2004-04-02  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* man/ja/man1/gfwhoami.1, man/man1/gfwhoami.1, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfwhoami.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfwhoami.1.docbook, doc/html/en/ref/man1/gfwhoami.1.html, doc/html/ja/ref/man1/gfexec.1.html, doc/html/ja/ref/man1/gfwhoami.1.html:
+	new docbook for gfwhoami
+
+2004-04-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_access() doesn't check fragments of a directory.
+
+2004-03-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/docbook/ja/ref/man1/gfexec.1.docbook: fix XML constraint error
+
+2004-03-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	Modified semantics of '/gfarm:'.  It is considered to be the root directory in Gfarm file system instead of a current working directory.  Applications do not assume '/gfarm:' indicates a current working directory in Gfarm file system.
+
+2004-03-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/getcwd.c: minor clean up
+
+	* lib/gfs_hook/Makefile.in, lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.h:
+	make getcwd() hook work on solaris
+
+	* lib/gfs_hook/getcwd.c: New file.
+
+	* lib/gfs_hook/getcwd.c: getcwd(3) implemntaion from NetBSD repository
+
+2004-03-24  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	getcwd() hook returns prefix chdir() hook received.
+	In previous revision, it always returned "gfarm:...".
+
+	* lib/gfs_hook/hooks.c:
+	Fixed a bug getcwd returned wrong value if it called syscall.
+
+2004-03-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/libgfarm/gfarm/gfs_dir.c:
+	Added getcwd() hook. This works only on Linux for now.
+
+2004-03-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	Set st_ino and st_dev when hooking fstat().
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	Set st_ino in gfs_stat_canonical_path() and gfs_stat_section().
+	The first argument of gfs_get_ino() is now a canonical pathname not a pathname.
+
+2004-03-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	Added fchdir() hook.
+
+2004-03-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/url.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, include/gfarm/gfarm_misc.h, include/gfarm/gfs.h:
+	Added chdir(2) hook and enabled to find files in Gfarm filesystem.
+
+2004-03-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	Fixed a bug in ROOT patch in gfs_hook_is_url().
+
+2004-03-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	don't provide xstat(), lxstat() and fxstat() in gfs_hook.
+	because libc doesn't these functions even on linux,
+	and those function names belong to application namespace.
+
+2004-03-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfwhoami/gfwhoami.c:
+	Fixed a problem such that the previous version requires GSI to compile.
+
+	* gftool/gfexec/gfexec.c, gftool/gfrun/gfrun.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_exec.c:
+	Added gfs_execve_legacy() that is used to invoke a legacy application linking with the gfarm syscall-hook library but that calls neither gfarm_initialize() nor gfarm_terminate().
+	'gfrun -u' (and 'gfexec -u') is now used to invoke such a legacy application.
+
+	* lib/gfs_hook/hooks.c (__execve):
+	gfs_execve() only returns if it fails.
+
+	* gftool/Makefile, gftool/gfwhoami/Makefile, gftool/gfwhoami/gfwhoami.c:
+	Contributed program by Naotaka Yamamoto.
+	Display global user name.
+
+2004-03-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hook_test.c: Retrurned to revision 1.8.
+
+	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	Fixed a bug caused opendir(3) to return ENOMEM.
+	Fxstat()/fxstat64() hooks set nothing to no_blksize field in struct stat
+	and opendir() refered it.
+
+2004-02-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfarm_metadb.h, include/gfarm/gfarm_misc.h, include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/schedule.c:
+	Added a 'const' modifier.
+
+	* lib/libgfarm/gfarm/config.c (gfarm_terminate):
+	set NULL to gf_stdout and gf_stderr after closing a redirected file.
+
+2004-02-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/getdents64.c, lib/gfs_hook/sysdep/linux/getdents_common.c:
+	Fixed a bug in gfs_hook_syscall_getdents64().
+
+2004-02-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c:
+	Fixed a segfault problem when opening a file in global file view.
+	gfs_pio_set_view_global() needed to be called explicitly after gfs_pio.c revision 1.9.
+
+2004-02-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c: Plugged memory leak.
+
+	* lib/gfs_hook/hooks.c (__utimes):
+	Fixed a type mismatch in printf() for a debug message.
+
+2004-02-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_unlink.c: backout previous change, because:
+	- the change makes a invalid path (e.g. a path which doesn't have copy_info)
+	  unremovable.
+	- the reason of the symptom wasn't openldap-2.1 (it was 2.0), and it seemed
+	  to be a race codition bug of slapd.
+
+2004-02-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_unlink.c: Fixed oops.
+
+	* lib/libgfarm/gfarm/gfs_unlink.c:
+	Do not delete path_info and/or section_info metadata when error happens.
+	It seems that openldap-2.1.x can remove a parent entry even when its child entries exist, although I have not confirmed yet.  If it is true, this will fix a problem reported by [gfarm-cvs:02918].
+
+2004-02-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hook_test.c: Returned to revision 1.8.
+
+	* lib/gfs_hook/sysdep/linux/bp-checks.h, lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/getdents.h, lib/gfs_hook/sysdep/linux/getdents64.c, lib/gfs_hook/sysdep/linux/getdents_common.c, lib/gfs_hook/sysdep/linux/kernel-features.h, lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/sysdep/linux/Makefile.in:
+	Implemented getdents() and getdents64() hooks for Linux.
+
+2004-02-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_common.c:
+	Added file type check to __lseek() and __lseek64() because they still don't
+	work it the file descripor reafers to a directory.
+
+	* lib/gfs_hook/hooks.c:
+	Added file type check to __read() and __write(). They return error if
+	the file descriptor refers to a directory.
+
+2004-02-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfwhere/gfwhere.c:
+	Fixed a problem such that displayed fragment number is not correct when its section copy info does not exist.
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_check_view_default):
+	check file I/O error.
+	(gfs_pio_close): Fixed a segfault problem reported by bugzilla-ja #19.
+
+	* gftool/gfsck/gfsck.c:
+	Fixed a bug not to inspect the following file fragments when a section copy info is missing.
+
+2004-02-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	OpenLDAP-2.1.X are now officially supported.
+	(Gfarm-FAQ) Added section for performance tuning.
+
+2004-01-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_common.c: - fix the following gcc warning:
+	  warning: `bp' might be used uninitialized in this function
+	- make this compile on 4.4bsd derived OSes.
+
+2004-01-26  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c:
+	-Implemented getdents()/getdents64() for Solaris.
+	 They don't work on Linux yet.
+	-Added directory operation for open()/open64()/close().
+
+	* lib/gfs_hook/hooks_fstat.c: Added directory operation.
+
+	* lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	Added entry for directory for file descriptor table and interface
+	functions.
+
+	* include/gfarm/gfs.h: Added comment about file type GFS_DT_UNKNOWN.
+
+2004-01-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	(gfs_pio_getline) Fixed a compilation error by applying a patch reported by bugzilla-ja #17.
+
+2004-01-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	Escaped special characters; ',', '+', '"', '\', '<', '>', and ';', in an attribute value field in distinguishied name.
+	This will fix a problem reported by bugzilla-ja #13.
+
+2004-01-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_default.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	fix problems when I/O is issued without calling gfs_pio_set_view_*().
+	in that case, buffer state (gf->p, gf->offset, gf->length) was silently
+	abandoned.
+
+	this fixes the following problem:
+	http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=4
+	(does not flush in default mode when closing a file)
+
+2004-01-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfrun.1, man/man1/gfrun.1, doc/html/en/ref/man1/gfrun.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	make the description of -I option understandable for me...
+
+	* include/gfarm/gfs.h: typo in a comment
+
+2003-12-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	Added an example configuration file for OpenLDAP-2.1.X.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c (gfarm_path_info_get):
+	Fixed a bug reported by [gfarm-discuss:00055].
+	(gfarm_metadb_initialize): Added a feature to connect to an LDAPv3 server, but still using simple authentication.
+
+2003-12-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (replicate_section_to_local_internal):
+	save errno of open(2) during fault tolerance process to return a right error message.
+
+	* lib/libgfarm/gfarm/url.c (gfarm_url_prefix_skip):
+	use gfarm_is_url() not memcmp(3).
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c (gfs_pio_open_local_section):
+	save errno of open(2) during fault tolerance process to return a right error message.
+
+2003-12-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1, man/man1/gfrep.1:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook:
+	reflect current reality
+
+2003-12-09  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules:
+	added --with-globus-flavor=gcc32dbg at configure options
+
 2003-12-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c (gfs_execve):
+	filename starting with 'gfarm:' should be errornous, when it does not exist in a Gfarm file system.  execve() with the filename results in an infinite recursion in syscall hook case.
+
+2003-12-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexec/gfexec.c: <unistd.h> is needed to call execvp(2)
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	fix compilation error on Solaris
+
+	* INSTALL.en, INSTALL.ja:
+	add a description about --with-globus-flavor option
+
+	* configure: regen
+
+	* configure.in: change default globus flavor from "gcc32dbg" to "gcc32"
+
+2003-12-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Fixed bad grammar.
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0.1.
 
 	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
 	Added the item 2.1 such that 'gfls' results in 'no such object'.
@@ -3106,7 +3430,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.24 2003/12/04 15:42:17 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.25 2003/12/08 09:23:18 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.

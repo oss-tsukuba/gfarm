@@ -1,6 +1,58 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0.2
+============================
+
+[2004.4.9]
+
+Updated Features
+
+ * Added a new client command; gfwhoami --- prints effective user
+   name.
+
+ * Supported OpenLDAP-2.1.X or later (LDAPv3).
+
+ * Supported special characters; ' ', ',', '+', '"', '\', '<', '>',
+   and ';' in file names. (bugzilla-ja #13)
+
+ * Syscall hooking libraries
+
+   - Added system call hook entries for directory operations;
+     dgetents, dgetents64, open, open64, close, stat, fstat, chdir,
+     fchdir, getpwd, and access.
+
+   - Modified semantics of '/gfarm:'.  It is considered to be the root
+     directory in Gfarm file system instead of a current working
+     directory.  Applications do not assume '/gfarm:' indicates a
+     current working directory in Gfarm file system.
+
+   - Added initialization and termination functionalities in 'gfexec'
+     with the -u option.  *** You do not need to modify application
+     source codes any more to utilize Gfarm file system.  Just link
+     with gfs_hook.o. ***
+
+ * Bug fix
+
+   (libgfarm.a)
+
+   - Fixed a bug such that gfs_pio_set_view_*() occasionally returns
+     the error message "Success" even when opening a file fails.
+
+   - Fixed a bug of default file view. (Bugzilla #4)
+
+   (gfs_hook.o)
+
+   - Plugged memory leak.
+
+ * Documentation
+
+   (INSTALL) Added the description related to OpenLDAP-2.1.X or later.
+
+   (Gfarm-FAQ) Added section for performance tuning.
+
+   (README.hook) Updated the description.
+
 Release note for Gfarm 1.0.1
 ============================
 
@@ -71,9 +123,10 @@ Updated Features
 
    (gfreg)
 
-   - A binary registration can also be registered by specifying the
-     target hostname. (Bugzilla-ja #8) This case assumes the
-     registered binary should run on the target host.
+   - A binary program can be registered by specifying the target
+     hostname not only by specifying the target architecture.
+     (Bugzilla-ja #8) This case assumes the registered binary should
+     be executed on the target host.
    - Supported '-' for an input file.
 
    (gfrun)
