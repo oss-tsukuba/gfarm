@@ -1,9 +1,12 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "gfarm.h"
+#include "gfarmlib/gfs_client.h" /* XXX - for gfs_canonical_my_hostname() */
 
 /*
  *  Register a local file to the Gfarm Meta DB.
@@ -26,7 +29,8 @@ main(int argc, char * argv[])
 {
     char * filename, * gfarm_url;
     int node_index = -1, total_nodes = -1;
-    char * e = (char *)NULL;
+    char * e = (char *)NULL, * architecture = NULL;
+    struct stat s;
     extern char * optarg;
     extern int optind;
     int c;
@@ -36,13 +40,16 @@ main(int argc, char * argv[])
     if (argc >= 1)
 	program_name = argv[0];
 
-    while ((c = getopt(argc, argv, "I:N:")) != -1) {
+    while ((c = getopt(argc, argv, "I:N:a:")) != -1) {
 	switch (c) {
 	case 'I':
 	    node_index = strtol(optarg, NULL, 0);
 	    break;
 	case 'N':
 	    total_nodes = strtol(optarg, NULL, 0);
+	    break;
+	case 'a':
+	    architecture = optarg;
 	    break;
 	case '?':
 	default:
@@ -74,11 +81,11 @@ main(int argc, char * argv[])
     argc--;
     argv++;
 
-    if (node_index < 0) {
-	fprintf(stderr, "%s: missing a Gfarm index\n",
-		program_name);
-	usage();
-	exit(1);
+    if (stat(filename, &s) == -1) {
+	    fprintf(stderr, "%s: %s: %s\n",
+		    program_name, filename, strerror(errno));
+	    usage();
+	    exit(1);
     }
 
     /* */
@@ -89,7 +96,33 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-    e = gfs_pio_set_fragment_info_local(filename, gfarm_url, node_index);
+
+    if (S_ISREG(s.st_mode) && (s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 &&
+	node_index < 0) {
+	if (architecture == NULL) {
+	    architecture =
+		gfarm_host_info_get_architecture_by_host(
+		    gfs_canonical_my_hostname());
+	}
+	if (architecture == NULL) {
+	    fprintf(stderr, "%s: missing -a <architecture> for %s\n",
+		    program_name, gfs_canonical_my_hostname());
+	    usage();
+	    exit(1);
+	}
+	if (total_nodes <= 0)
+	    total_nodes = 1;
+	e = gfarm_url_program_register(gfarm_url, architecture,
+				       filename, total_nodes);
+    } else {
+	if (node_index < 0) {
+	    fprintf(stderr, "%s: missing -I <Gfarm index>\n",
+		    program_name);
+	    usage();
+	    exit(1);
+	}
+	e = gfs_pio_set_fragment_info_local(filename, gfarm_url, node_index);
+    }
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
 	exit(1);
