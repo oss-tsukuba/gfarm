@@ -101,7 +101,7 @@ gfs_hook_no_init$(SUFFIX).o: $(OBJS)
 	$(LTLINK) $(OBJS)
 
 
-gfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
+libgfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
 	$(LTLINK_SHARELIB) $(OBJS) hooks_init_mpi$(SUFFIX).lo $(LDLIBS)
 
 gfs_hook_mpi$(SUFFIX).o: $(OBJS) hooks_init_mpi$(SUFFIX).lo
