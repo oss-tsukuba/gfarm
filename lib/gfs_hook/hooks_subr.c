@@ -15,6 +15,8 @@
 
 static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
 
+extern char *gfs_hook_initialize();
+
 void
 gfs_hook_not_initialized(void)
 {
@@ -110,7 +112,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
 		static char prefix[] = "gfarm:";
 
-		if (!gfarm_initialized) {
+		if (!gfarm_initialized &&
+		    gfs_hook_initialize() != NULL) {
 			gfs_hook_not_initialized();
 			return (0); /* don't perform gfarm operation */
 		}
