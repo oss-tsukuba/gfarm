@@ -41,7 +41,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		/* XXX - metadata may be incomplete. anyway, continue. */
 		path_exist = 0;
 		/* XXX - metadata of a directory should not be imcomplete */
-		is_directory = 0; 
+		is_directory = 0;
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
 			_gfs_hook_debug(fprintf(stderr,
 			    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n",
@@ -240,7 +240,7 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_LSEEK(filedes, offset, whence));
-	
+
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
 		_gfs_hook_debug(fprintf(stderr,
 		"GFS: Hooking " S(FUNC___LSEEK)
@@ -303,7 +303,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	unsigned short reclen;
 	struct gfs_dirent *entry;
 	STRUCT_DIRENT *bp;
-	
+
 	_gfs_hook_debug_v(fprintf(stderr,
 	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
 	    filedes, buf, (unsigned long)nbyte));
@@ -318,7 +318,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
 		e = GFARM_ERR_NOT_A_DIRECTORY;
 		goto error;
-	}	  
+	}
 
 	bp = buf;
 	if ((entry = gfs_hook_get_suspended_gfs_dirent(filedes)) != NULL) {
