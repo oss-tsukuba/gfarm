@@ -196,6 +196,8 @@ gfs_open_flags_localize(int open_flags)
 		local_flags |= O_CREAT;
 	if ((open_flags & GFARM_FILE_TRUNC) != 0)
 		local_flags |= O_TRUNC;
+	if ((open_flags & GFARM_FILE_APPEND) != 0)
+		local_flags |= O_APPEND;
 	return (local_flags);
 }
 

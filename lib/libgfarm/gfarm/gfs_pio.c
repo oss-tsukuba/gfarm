@@ -162,13 +162,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		    "gfarm library isn't properly initialized";
 		goto finish;
 	}
-#if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
-	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_WRONLY) {
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED; /* XXX */
-		goto finish;
-	}
-#endif
-
 	mask = umask(0);
 	umask(mask);
 	mode &= ~mask;
@@ -273,14 +266,18 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY) {
-#if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED; /* XXX */
+	if (flags & GFARM_FILE_CREATE) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		goto finish;
-#else
-		flags |= GFARM_FILE_CREATE;
-#endif
 	}
+	/*
+	 * In this case, it is necessary to calculate checksum of the
+	 * whole file when closing, which requires a read mode.
+	 */
+	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY
+	    && (flags & GFARM_FILE_TRUNC) == 0)
+		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
+
 	e = gfarm_url_make_path(url, &pathname);
 	if (e != NULL)
 		goto finish;

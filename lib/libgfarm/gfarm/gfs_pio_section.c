@@ -45,10 +45,21 @@ gfs_pio_view_section_close(GFS_File gf)
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
 		    (gf->open_flags & GFARM_FILE_TRUNC) == 0) {
 			/* we have to read rest of the file in this case */
+#if 0
 			char message[] = "gfarm: writing without truncation"
 			    " isn't supported yet\n";
 			write(2, message, sizeof(message) - 1);
 			abort(); /* XXX - not supported for now */
+#endif
+			/* re-read whole file to calculate digest value */
+			e = (*vc->ops->storage_calculate_digest)(gf,
+			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
+			    &md_len, md_value, &filesize);
+			if (e != NULL) {
+				md_calculated = 0;
+				if (e_save == NULL)
+					e_save = e;
+			}
 		} else {
 			unsigned int len;
 
@@ -104,6 +115,13 @@ gfs_pio_view_section_close(GFS_File gf)
 				    gf->pi.pathname, vc->section,
 				    fci.hostname, &fci);
 			}
+		} else if (gf->mode & GFS_FILE_MODE_WRITE) {
+			fi.filesize = filesize;
+			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
+			fi.checksum = md_value_string;
+				
+			e = gfarm_file_section_info_replace(
+				gf->pi.pathname, vc->section, &fi);
 		} else {
 			e = gfarm_file_section_info_get(
 				gf->pi.pathname, vc->section, &fi);
@@ -398,7 +416,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		}
 		else if (e != NULL)
 			goto finish;
-	} else if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
+	} else if ((gf->mode & GFS_FILE_MODE_WRITE)
+		   && (gf->open_flags & GFARM_FILE_TRUNC)) {
 		e = gfarm_host_get_canonical_self_name(&if_hostname);
 		if (e == NULL)
 			e = gfarm_schedule_search_idle_hosts(
@@ -465,9 +484,18 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	/* delete the file section when opening with a truncation flag. */
-	if (gf->open_flags & GFARM_FILE_TRUNC)
-		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
+	/* In write mode, delete appropreate file copies */
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		if (gf->open_flags & GFARM_FILE_TRUNC)
+			/* with truncation flag, delete all file copies */
+			(void)gfs_unlink_section(gf->pi.pathname, vc->section);
+		else
+			/* otherwise, delete every other file copies */
+			(void)gfs_unlink_every_other_replicas(
+				gf->pi.pathname, vc->section,
+				vc->canonical_hostname);
+		/* XXX - need to figure out ignorable error or not */
+	}
 
 	gf->ops = &gfs_pio_view_section_ops;
 	gf->view_context = vc;
@@ -479,7 +507,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
 	if (!is_local_host && 
-	    (gf->open_flags & GFARM_FILE_CREATE) == 0 &&
+	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&  
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
@@ -520,6 +548,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		if_hostname = NULL;
 		free(vc->canonical_hostname);
 		goto retry;
+	}
+
+	if (gf->open_flags & GFARM_FILE_APPEND) {
+		file_offset_t result;
+		e = gfs_pio_seek(gf, 0, SEEK_END, &result);
 	}
 
 free_host:

@@ -82,6 +82,8 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 		gfs_flags |= GFARM_FILE_CREATE;
 	if ((open_flags & O_TRUNC) != 0)
 		gfs_flags |= GFARM_FILE_TRUNC;
+	if ((open_flags & O_APPEND) != 0)
+		gfs_flags |= GFARM_FILE_APPEND;
 	return (gfs_flags);
 }
 
@@ -220,6 +222,11 @@ gfs_hook_clear_gfs_file(int fd)
 	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
 
 	gf = gfs_hook_is_open(fd);
+	if (gf == NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: ERROR: not a Gfarm file: %d\n", fd));
+		return ("not a Gfarm file");
+	}
 
 	if (--_gfs_file_buf[fd]->refcount > 0) {
 	  	/* fd is duplicated, skip closing the file. */
@@ -238,10 +245,8 @@ gfs_hook_clear_gfs_file(int fd)
 			free(_gfs_file_buf[fd]->u.d);
 			e = gfs_closedir((GFS_Dir)gf);
 		}
-
 		free(_gfs_file_buf[fd]);
 	}
-
 	__syscall_close(fd);
 	_gfs_file_buf[fd] = NULL;
 	return (e);

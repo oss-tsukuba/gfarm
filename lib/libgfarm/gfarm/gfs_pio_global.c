@@ -245,6 +245,12 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 	if ((gf->open_flags & GFARM_FILE_CREATE) != 0)
 		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
 
+	/* XXX - GFARM_FILE_TRUNC and GFARM_FILE_APPEND are not supported */
+	if (gf->open_flags & (GFARM_FILE_TRUNC|GFARM_FILE_APPEND)) {
+		gf->error = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		return (gf->error);
+	}
+
 	gc = malloc(sizeof(struct gfs_file_global_context));
 	if (gc == NULL) {
 		gf->error = GFARM_ERR_NO_MEMORY;

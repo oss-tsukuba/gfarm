@@ -57,6 +57,7 @@ char *gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 #define GFARM_FILE_ACCMODE		3	/* RD/WR/RDWR mode mask */
 #define GFARM_FILE_CREATE		0x00000200
 #define GFARM_FILE_TRUNC		0x00000400
+#define GFARM_FILE_APPEND		0x00000800
 /* the followings are just hints */
 #define GFARM_FILE_SEQUENTIAL		0x01000000
 #define GFARM_FILE_REPLICATE		0x02000000

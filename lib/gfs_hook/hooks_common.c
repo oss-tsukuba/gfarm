@@ -91,13 +91,14 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			if (e == NULL)
 				gfs_hook_add_creating_file(gf);
 		}
-		else if (file_exist) { /* read-write mode: not supported yet */
+		else if (file_exist) { /* read-write mode */
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking " S(FUNC___OPEN)
-				": unsupported flags 0%o\n", oflag));
-			free(url);
-			errno = ENOSYS;
-			return (-1);
+				": rw or append mode (flags 0%o)\n", oflag));
+			/* gfs_pio_open() does not support O_CREAT. */
+			oflag &= ~O_CREAT;
+			oflag = gfs_hook_open_flags_gfarmize(oflag);
+			e = gfs_pio_open(url, oflag, &gf);
 		}
 		else { /* no such file or directory */
 			_gfs_hook_debug(fprintf(stderr,
