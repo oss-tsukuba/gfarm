@@ -1,4 +1,81 @@
+2002-10-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfmd/gfmd.c: plug memory leak
+
+2002-09-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c: make 2nd argument of "sockopt" optional.
+	in that case, the configuration means for ALL + LISTENER.
+
+2002-09-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfarmlib/auth_server.c, gfarmlib/config.c, gfarmlib/sockopt.h:
+	minor clean up for #include
+
+2002-09-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c: add comments
+
+	* gfarmlib/io_fd.c, gfarmlib/io_fd.h, gfarmlib/io_gfsl.c, gfarmlib/sockopt.c, gfarmlib/Makefile.in:
+	clean up includes
+
+	* gfsd/main.c:
+	decrease disk i/o block size for GFS_PROTO_BULKREAD from 64KB to 4KB.
+	this increase gfrep bandwidth from 59MB/sec to 62MB/sec on
+	Appro 1224X + e1000 + 3w-xxxx with default SO_RCVBUF (87380 bytes).
+
+2002-09-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfarmlib/hostspec.c, gfarmlib/sockopt.c, gfarmlib/sockopt.h, gfmd/gfmd.c, gfsd/main.c:
+	add a feature to configure socket options by the following syntax:
+	connect(2) side:
+	        sockopt rcvbuf=1048576 192.168.1.0/24
+	listen(2)/accept(2) side:
+	        sockopt rcvbuf=1048576 LISTENER
+
+	* gfarmlib/auth_client.c, gfarmlib/auth_server.c:
+	backout previous change, this timing is too late.
+	socket buffer size is needed at TCP 3way handshake, since this information
+	is needed for window scale option.
+
+	this means listen/accept side only can use an option for "ALL",
+	rather than per-peer setting.
+
+	* gfarmlib/config.c: missing change in previous commit
+
+	* gfarmlib/sockopt.c, gfarmlib/sockopt.h, gfarmlib/Makefile.in, gfarmlib/auth_client.c, gfarmlib/auth_server.c, gfarmlib/config.c:
+	add feature to configure socket options by the following syntax:
+		sockopt rcvbuf=1048576 192.168.1.0/24
+
+	* bench/nconnect/nconnect.c:
+	forgot to call apply_sockopts() when -b option is not specified.
+
+2002-09-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/main.c:
+	revert experimental code which was committed in revision 1.34 by accident.
+
+	* gftool/gfrm/gfrm.c: thinko
+
+	* gfarmlib/gfs_pio_misc.c: plug memory leak
+
+	* gfarmlib/gfs_pio_misc.c, gfsd/main.c, gftool/gfrm/gfrm.c, include/gfs.h:
+	add a feature to remove replica.
+	API:		gfs_unlink_section_replica()
+	command:	gfrm -i <fragment> -H <hostfile>
+
+2002-09-12  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man3/Makefile: Added new man pages.
+
+2002-09-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/ja/man3/gfarm_url_fragments_replicate.3, man/ja/man3/gfarm_url_program_deliver.3, man/ja/man3/gfarm_url_program_register.3, man/ja/man3/gfarm_url_section_replicate_from_to.3, man/ja/man3/gfarm_url_section_replicate_to.3:
+	add man pages for replication & program registration APIs
+
 2002-09-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* man/man1/gfimport_text.1, man/man8/gfmd.8, INSTALL.en, INSTALL.ja:
 	Added an installation manual in English.
