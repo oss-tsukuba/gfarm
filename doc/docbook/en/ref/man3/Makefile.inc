@@ -4,6 +4,7 @@ DOCBOOK = \
 	gfarm_terminate.3 \
 	gfarm_url_hosts_schedule.3 \
 	gfs_chdir.3 \
+	gfs_chmod.3 \
 	gfs_closedir.3 \
 	gfs_mkdir.3 \
 	gfs_opendir.3 \

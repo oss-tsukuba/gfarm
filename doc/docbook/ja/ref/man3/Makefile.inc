@@ -20,6 +20,7 @@ DOCBOOK = \
 	gfarm_url_section_replicate_from_to.3 \
 	gfarm_url_section_replicate_to.3 \
 	gfs_chdir.3 \
+	gfs_chmod.3 \
 	gfs_closedir.3 \
 	gfs_mkdir.3 \
 	gfs_opendir.3 \
