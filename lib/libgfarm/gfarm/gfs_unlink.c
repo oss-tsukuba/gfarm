@@ -380,3 +380,53 @@ gfs_unlink_replicas_on_host(const char *gfarm_url,
 	free(gfarm_file);
 	return (e_save);	
 }
+
+/*
+ * internal use - eliminate all file replicas that are not stored on
+ * the specified host.
+ */
+char *
+gfs_unlink_every_other_replicas(const char *gfarm_file, const char *section,
+	const char *hostname)
+{
+	char *e, *e_save = NULL;
+	int j, ncopies;
+	char *c_hname;
+	struct gfarm_file_section_copy_info *copies;
+	struct gfarm_file_section_copy_info info;
+
+	e = gfarm_host_get_canonical_name(hostname, &c_hname);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_file_section_copy_info_get(
+		gfarm_file, section, c_hname, &info);
+	if (e != NULL) {
+		free(c_hname);
+		return (e);
+	}
+	gfarm_file_section_copy_info_free(&info);
+
+	e = gfarm_file_section_copy_info_get_all_by_section(
+		gfarm_file, section, &ncopies, &copies);
+	if (e != NULL) {
+		free(c_hname);
+		return (e);
+	}
+	for (j = 0; j < ncopies; j++) {
+		/* skip when the specified node. */
+		if (strcmp(c_hname, copies[j].hostname) == 0)
+			continue;
+
+		e = gfs_unlink_replica_internal(gfarm_file,
+			section, copies[j].hostname);
+		if (e != NULL) {
+			if (e_save == NULL)
+				e_save = e;
+			continue;
+		}
+	}
+	gfarm_file_section_copy_info_free_all(ncopies, copies);
+	free(c_hname);
+	return (e_save);	
+}

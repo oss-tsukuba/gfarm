@@ -48,6 +48,8 @@ struct gfs_file {
 };
 
 char *gfs_unlink_section(const char *, const char *);
+char *gfs_unlink_every_other_replicas(
+	const char *, const char *, const char *);
 
 #define GFS_F_OK	0
 #define GFS_X_OK	1
