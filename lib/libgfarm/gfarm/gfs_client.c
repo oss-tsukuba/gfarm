@@ -60,7 +60,7 @@ gfs_client_terminate(void)
 {
 	struct gfarm_hash_iterator it;
 
-	if (gfs_server_hashtab != NULL)
+	if (gfs_server_hashtab == NULL)
 		return;
 	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);
