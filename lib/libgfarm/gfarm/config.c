@@ -779,7 +779,7 @@ gfarm_config_read_file(FILE *config, char *config_file)
  * set default value of configurations.
  */
 static void
-gfarm_config_set_default1(void)
+gfarm_config_set_default_ports(void)
 {
 	if (gfarm_spool_server_portname != NULL) {
 		int p = strtol(gfarm_spool_server_portname, NULL, 0);
@@ -804,7 +804,7 @@ gfarm_config_set_default1(void)
 }
 
 static void
-gfarm_config_set_default2(void)
+gfarm_config_set_default_spool_on_client(void)
 {
 	if (gfarm_spool_root == NULL) {
 		/*
@@ -840,7 +840,7 @@ gfarm_config_set_default2(void)
 }
 
 static void
-gfarm_config_set_default2_server(void)
+gfarm_config_set_default_spool_on_server(void)
 {
 	if (gfarm_spool_root == NULL) {
 		/* XXX - this case is not recommended. */
@@ -919,7 +919,7 @@ gfarm_config_read(void)
 			return (e);
 	}
 
-	gfarm_config_set_default1();
+	gfarm_config_set_default_ports();
 
 	return (NULL);
 }
@@ -951,7 +951,7 @@ gfarm_server_config_read(void)
 	if (e != NULL)
 		return (e);
 
-	gfarm_config_set_default1();
+	gfarm_config_set_default_ports();
 
 	return (NULL);
 }
@@ -1005,17 +1005,25 @@ void
 gfarm_sig_debug(int sig)
 {
 	int pid, status;
+	static int already_called = 0;
 	static char message[] = "signal 00 caught\n";
 
 	message[7] = sig / 10 + '0';
 	message[8] = sig % 10 + '0';
 	write(2, message, sizeof(message) - 1);
 
+	if (already_called)
+		abort();
+	already_called = 1;
+
 	pid = gfarm_call_debugger();
-	if (pid == -1)
-		perror("fork");
-	else
+	if (pid == -1) {
+		perror("fork"); /* XXX dangerous to call from signal handler */
+		abort();
+	} else {
 		waitpid(pid, &status, 0);
+		_exit(1);
+	}
 }
 
 void
@@ -1177,10 +1185,11 @@ gfarm_initialize(int *argcp, char ***argvp)
 	if (e != NULL)
 		return (e);
 
-	gfarm_config_set_default2();
+	gfarm_config_set_default_spool_on_client();
 
 	if (argvp != NULL) {
-		gfarm_debug_initialize((*argvp)[0]);
+		if (getenv("DISPLAY") != NULL)
+			gfarm_debug_initialize((*argvp)[0]);
 		e = gfarm_parse_argv(argcp, argvp);
 		if (e != NULL)
 			return (e);
@@ -1202,7 +1211,7 @@ gfarm_server_initialize(void)
 	if (e != NULL)
 		return (e);
 
-	gfarm_config_set_default2_server();
+	gfarm_config_set_default_spool_on_server();
 
 	return (NULL);
 }
