@@ -304,18 +304,10 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 				goto finish;
 			}
 		} else {
-			char **hostnames;
-
-			hostnames = malloc(sizeof(char *));
-			if (hostnames == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				goto finish;
-			}
-			e = gfarm_schedule_search_idle_by_all(1, hostnames);
+			e = gfarm_schedule_search_idle_by_all(1, &if_hostname);
 			if (e != NULL)
 				goto finish;
-			vc->canonical_hostname = if_hostname = hostnames[0];
-			free(hostnames);
+			vc->canonical_hostname = if_hostname;
 		}
 	} else {
 		e = gfarm_file_section_host_schedule_with_priority_to_local(
