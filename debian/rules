@@ -29,7 +29,7 @@ configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
 	-rm -rf ns/
-	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/debian/tmp/usr
+	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/../debian/tmp/usr
 
 	touch configure-stamp
 
@@ -62,8 +62,7 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/tmp.
-	# -$(MAKE) -C build install DESTDIR=`pwd`/debian/tmp
-	cd build && $(MAKE) install DESTDIR=`pwd`/debian/tmp
+	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
 
 	# hoax gfarm's Makefile.
 	install -d debian/tmp/etc/
@@ -73,7 +72,7 @@ install: build
 
 
 	dh_install --sourcedir=debian/tmp
-	dh_movefiles
+	-dh_movefiles
 
 # Build architecture-independent files here.
 # Pass -i to all debhelper commands in this target to reduce clutter.
