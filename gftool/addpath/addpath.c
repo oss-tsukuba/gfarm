@@ -23,10 +23,21 @@ gfarm_path_info_set_from_file(char *pathname, int nfrags)
 	struct stat sb;
 	struct passwd *pw;
 	struct gfarm_path_info pi;
-	char *e;
+	char *e, *p;
 
 	if (stat(pathname, &sb))
 		return "no such file";
+
+	/* remove a section part. */
+
+	p = pathname;
+	while (*p) {
+		if (*p == ':') {
+			*p = '\0';
+			break;
+		}
+		++p;
+	}
 
 	pw = getpwuid(sb.st_uid);
 	if (pw == NULL)
@@ -75,17 +86,16 @@ static char *progname = "addpath";
 void
 usage()
 {
-	fprintf(stderr, "usage: %s pathname nfrags\n",
+	fprintf(stderr, "usage: %s pathname:sec nfrags\n",
 		progname);
 	fprintf(stderr, "       %s -d pathname\n",
 		progname);
-	exit(1);
 }
 
 int
 main(int argc, char *argv[])
 {
-	char *pathname, *p;
+	char *pathname;
 	int nfrags;
 	char *e;
 	extern int optind;
@@ -104,6 +114,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			usage();
+			exit(1);
 		}
 	}
 	argc -= optind;
@@ -114,27 +125,19 @@ main(int argc, char *argv[])
 	else {
 		fprintf(stderr, "%s: too few arguments\n", progname);
 		usage();
+		exit(1);
 	}
 	--argc;
 	++argv;
-
-	/* remove a section part. */
-
-	p = pathname;
-	while (*p) {
-		if (*p == ':') {
-			*p = '\0';
-			break;
-		}
-		++p;
-	}
 
 	switch (mode) {
 	case add:
 		if (argc == 1)
 			nfrags = atoi(argv[0]);
-		else
+		else {
 			usage();
+			exit(1);
+		}
 		e = gfarm_path_info_set_from_file(pathname, nfrags);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", pathname, e);
