@@ -198,8 +198,8 @@ Table of Contents:
 
 	When you are using Berkeley DB as database backend, it is
 	possible to improve write performance significantly to tune
-	cache size and to suppress creation of transaction log
-	records.  These are specified in the
+	cache size and not to synchronously flush the log on
+	transaction commit.  These are specified in the
 	/var/gfarm-ldap/DB_CONFIG.  In the following configuration
 	example, the size of the cache is specified as 512 MB.  It is
 	necessary to restart slapd after the modification of the
@@ -207,7 +207,7 @@ Table of Contents:
 
 ----------------------------- BEGIN HERE -----------------------------
 set_cachesize 0 536870912 2
-set_flags DB_TXN_NOT_DURABLE
+set_flags DB_TXN_NOSYNC
 -------------------------------- END --------------------------------
 
 5. Limitation
