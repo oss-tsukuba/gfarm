@@ -21,12 +21,11 @@ gfrm \- remove Gfarm files
 
 \fBgfrm\fP removes each specified file.
 .PP
-\fBgfrm\fP can be used to remove specific replicas, 
-by specifying both
-.B \-H
-option and
-.B \-I
-option.
+When both \fB-H\fP and \fB-I\fP options are specified, \fBgfrm\fP
+removes replicated file fragments of the fragment index
+\fIfragment-index\fP on the filesystem nodes listed in the host file
+\fIhostfile\fP.  It is not allowed to remove the last repilcated file
+fragment.
 
 .SH OPTIONS
 
@@ -34,18 +33,20 @@ option.
 .B \-H
 .I hostfile
 .br
-specifies a hostname list to remove replicas.
+specifies a list of filesystem nodes on which a replicated file
+fragment will be removed.
 \fIhostfile\fP consists of a filesystem node in each line.
 .br
-if ``-'' is specified, standard input is used to read the host list.
+if ``-'' is specified, the standard input is used to read the host
+list.
 .TP
 .B \-I
 .I fragment-index
 .br
-specifies fragment index to be removed.
+specifies the fragment index to be removed.
 
 If the \fIgfarm-URL\fP is an executable file, an architecture name,
-for example, sparc-sun-solaris, can be used to specify an executable
+for example, sparc-sun-solaris, can be used to specify the executable
 architecture to be removed.
 .TP
 .B \-?

@@ -16,9 +16,9 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-H <hostfile>\t"
-	    "remove replica, -I is needed, too.\n");
+	    "remove replicated fragments on nodes listed in hostfile\n");
 	fprintf(stderr, "\t-I <fragment>\t"
-	    "remove replica, -H is needed, too.\n");
+	    "remove the specified fragment replica with -H option\n");
 	exit(1);
 }
 
@@ -63,14 +63,14 @@ main(argc, argv)
 	if (hostfile == NULL) {
 		if (section != NULL) {
 			fprintf(stderr,
-			    "%s: -H <hostfile> option is required with -i\n",
+			    "%s: the -I option requires the -H <hostfile> option\n",
 			    program_name);
 			exit(1);
 		}
 	} else {
 		if (section == NULL) {
 			fprintf(stderr,
-			    "%s: -i <fragment> option is required with -H\n",
+			    "%s: the -H option requires the -I <fragment> option\n",
 			    program_name);
 			exit(1);
 		}

@@ -56,8 +56,9 @@ gfexport(char *gfarm_url, FILE *ofp, int nhosts, char **hostlist)
 	}
 
 	if (hostlist != NULL && nhosts != nfrags) {
-		fprintf(stderr, "%s: specified hosts are ignored, because "
-			"host number %d does't match fragment number %d\n",
+		fprintf(stderr, "%s: specified hostlist are ignored, because "
+			"the number of hosts %d doesn't match "
+			"the number of fragments %d.\n",
 			program_name, nhosts, nfrags);
 		hostlist = NULL;
 	}
@@ -155,7 +156,7 @@ main(argc, argv)
 	}
 	if (hostfile != NULL && section != NULL) {
 		fprintf(stderr,
-			"%s: error: option -H and option -s are exclusive\n",
+			"%s: error: option -H and option -I are exclusive\n",
 			program_name);
 		exit(1);
 	}
