@@ -1414,6 +1414,124 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 }
 
 /*
+ * setxattr
+ */
+int
+setxattr(const char *path, const char *name, void *value, size_t size,
+	int flags)
+{
+	char *e, *gfarm_file;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking setxattr(%s, %s, %p, %lu, %d)\n",
+				  path, name, value, (unsigned long)size,
+				  flags));
+
+	if (!gfs_hook_is_url(path, &url))
+#ifdef SYS_setxattr
+		return syscall(SYS_setxattr, path, name, value, size, flags);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking setxattr(%s, %s, %p, %lu, %d)\n",
+				path, name, value, (unsigned long)size,
+				flags));
+
+	e = gfarm_url_make_path(url, &gfarm_file);
+	free(url);
+	if (e == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		free(gfarm_file);
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: setxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+/*
+ * lsetxattr
+ */
+int
+lsetxattr(const char *path, const char *name, void *value, size_t size,
+	int flags)
+{
+	char *e, *gfarm_file;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking lsetxattr(%s, %s, %p, %lu, %d)\n",
+				  path, name, value, (unsigned long)size,
+				  flags));
+
+	if (!gfs_hook_is_url(path, &url))
+#ifdef SYS_lsetxattr
+		return syscall(SYS_lsetxattr, path, name, value, size, flags);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking lsetxattr(%s, %s, %p, %lu, %d)\n",
+				path, name, value, (unsigned long)size, flags));
+
+	e = gfarm_url_make_path(url, &gfarm_file);
+	free(url);
+	if (e == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		free(gfarm_file);
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: lsetxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+/*
+ * fsetxattr
+ */
+int
+fsetxattr(int filedes, const char *name, void *value, size_t size, int flags)
+{
+	char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking fsetxattr(%d, %s, %p, %lu, %d)\n",
+				  filedes, name, value, (unsigned long)size,
+				  flags));
+
+	if (!gfs_hook_is_open(filedes))
+#ifdef SYS_fsetxattr
+		return syscall(SYS_fsetxattr, filedes, name, value, size, 
+			       flags);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking fsetxattr(%d, %s, %p, %lu, %d)\n",
+				filedes, name, value, (unsigned long)size,
+				flags));
+
+	e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	_gfs_hook_debug(fprintf(stderr, "GFS: fsetxattr: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+/*
  * definitions for "hooks_common.c"
  */
 
