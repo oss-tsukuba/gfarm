@@ -114,7 +114,7 @@ void test_fstat(int filedes)
 
     printf("***** fstat(%d)\n", filedes);
     if (fstat(filedes, &s))
-	perror("fstast");
+	perror("fstat");
     else
 	display_stat("test_fstat", &s);
 }
