@@ -12,8 +12,8 @@ DOC =	../INSTALL.en ../INSTALL.ja ../LICENSE ../RELNOTES \
 include $(top_srcdir)/makes/subdir.mk
 
 install:
-	@for i in / $(DOC); do \
-		case $$i in /) continue;; esac; \
+	@for i in -- $(DOC); do \
+		case $$i in --) continue;; esac; \
 		( set -x; \
 		  $(INSTALL_DATA) $(srcdir)/$${i} $(docdir)/`basename $${i}` \
 		); \
