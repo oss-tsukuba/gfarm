@@ -81,13 +81,6 @@ main(int argc, char * argv[])
     argc--;
     argv++;
 
-    if (stat(filename, &s) == -1) {
-	    fprintf(stderr, "%s: %s: %s\n",
-		    program_name, filename, strerror(errno));
-	    usage();
-	    exit(1);
-    }
-
     /* */
 
     e = gfarm_initialize();
@@ -96,9 +89,8 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-
-    if (S_ISREG(s.st_mode) && (s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 &&
-	node_index < 0) {
+    if (stat(filename, &s) != -1 && S_ISREG(s.st_mode) &&
+	(s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0 && node_index < 0) {
 	if (architecture == NULL) {
 	    architecture =
 		gfarm_host_info_get_architecture_by_host(
