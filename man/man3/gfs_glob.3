@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_GLOB" "3" "11 September 2003" "Gfarm" ""
+.TH "GFS_GLOB" "3" "30 September 2003" "Gfarm" ""
+
 .SH NAME
 gfs_glob \- find path names matching a pattern
 .SH SYNOPSIS
@@ -21,8 +22,9 @@ and returns \fIpaths\fR.
 The returned path names are accessed by
 gfarm_stringlist_length(3) and gfarm_stringlist_elem(3).
 .PP
-It is necessary to dynamically allocate memory space pointed to
-by \fItypes\fR before calling
+It is necessary to allocate memory space dynamically pointed to
+by \fItypes\fR using
+\fBgfs_glob_init(3)\fR before calling
 \fBgfs_glob(3)\fR.  The allocated memory space needs to
 be free'ed by gfs_glob_free(3).
 .SH "RETURN VALUES"

@@ -41,8 +41,9 @@ and returns <parameter>paths</parameter>.</para>
 <para>The returned path names are accessed by
 gfarm_stringlist_length(3) and gfarm_stringlist_elem(3).</para>
 
-<para>It is necessary to dynamically allocate memory space pointed to
-by <parameter>types</parameter> before calling
+<para>It is necessary to allocate memory space dynamically pointed to
+by <parameter>types</parameter> using
+<function>gfs_glob_init(3)</function> before calling
 <function>gfs_glob(3)</function>.  The allocated memory space needs to
 be free'ed by gfs_glob_free(3).</para>
 

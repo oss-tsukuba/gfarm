@@ -113,12 +113,16 @@ CLASS="PARAMETER"
 >The returned path names are accessed by
 gfarm_stringlist_length(3) and gfarm_stringlist_elem(3).</P
 ><P
->It is necessary to dynamically allocate memory space pointed to
+>It is necessary to allocate memory space dynamically pointed to
 by <TT
 CLASS="PARAMETER"
 ><I
 >types</I
 ></TT
+> using
+<TT
+CLASS="FUNCTION"
+>gfs_glob_init(3)</TT
 > before calling
 <TT
 CLASS="FUNCTION"
