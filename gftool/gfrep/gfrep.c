@@ -533,8 +533,6 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc == 0)
-		usage();
 
 	e = gfarm_initialize(&argc_save, &argv_save);
 	if (e != NULL) {
