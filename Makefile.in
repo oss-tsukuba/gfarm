@@ -12,6 +12,7 @@ SUBDIRS = \
 	gfarmlib \
 	gfarmd \
 	gfarm \
+	gfmd \
 	gfsd \
 	nstool \
 	gftool
