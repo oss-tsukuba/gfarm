@@ -29,6 +29,7 @@ Table of Contents:
   4.1 Where are gfchmod, gfchown and gfmv?
   4.2 Can I open a file with read-write mode?
   4.3 Are file names case-sensitive in a Gfarm file system?
+  4.4 Can a file name include ',' or '+'?
 
 1. General
 **********
@@ -203,3 +204,10 @@ Table of Contents:
 	Currently, it is case-insensitive because virtual path names
 	are managed by distinguished name of the LDAP database.  This
 	limitation will be removed in the next major release.
+
+  4.4 Can a file name include ',' or '+'?
+
+	Currently, a file name in Gfarm file system cannot include
+	',', '+', '"', '\', '>', '<', and ';'.  Moreover, the file
+	name cannot start with either ' ' or '#'.  This limitation
+	will be removed in the next release.
