@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -52,6 +53,7 @@ gfm_client_connection0(char *hostname, struct gfm_connection *gfm_server)
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, hp->h_name,
