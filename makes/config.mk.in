@@ -9,7 +9,7 @@ default_libdir = @libdir@
 default_includedir = @includedir@
 default_exec_includedir = @exec_includedir@
 default_mandir = @mandir@
-default_docdir = @prefix@/share/doc/gfarm
+default_docdir = $(prefix)/share/doc/gfarm
 default_htmldir = $(default_docdir)/html
 
 sbindir = $(default_sbindir)
