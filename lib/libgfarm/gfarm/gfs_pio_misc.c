@@ -194,26 +194,22 @@ gfs_access(char *gfarm_url, int mode)
 		return (e);
 	}
 	/*
-	 * Check whether the gfarm_url can be accessible by other
-	 * processes or not.
-	 *
-	 * XXX - temporal solution until file locking will be implemented.
+	 * Check all fragments are ready or not.
+	 * XXX - is this check necessary?
 	 */
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
-	    &nsections, &sections);
+	e = gfarm_file_section_info_get_all_by_file(
+		gfarm_file, &nsections, &sections);
 	free(gfarm_file);
-	if (e != NULL) {
-		return (e);
-	}
+	if (e != NULL)
+		goto finish_free_path_info;
 	gfarm_file_section_info_free_all(nsections, sections);
-
 	if (!GFARM_S_IS_PROGRAM(pi.status.st_mode)
 	    && nsections != pi.status.st_nsections)
-		return (GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH);
-
-	e = gfarm_path_info_access(&pi, mode);
+		e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
+	if (e != NULL)
+		e = gfarm_path_info_access(&pi, mode);
+ finish_free_path_info:
 	gfarm_path_info_free(&pi);
-
 	return (e);
 }
 
@@ -233,7 +229,7 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 		return (e);
 	e = gfarm_path_info_access(&pi, GFS_W_OK);
 	if (e != NULL)
-		return (e);
+		goto finish_free_path_info;
 
 	gettimeofday(&now, NULL);
 	if (tsp == NULL) {
@@ -248,6 +244,7 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 	pi.status.st_ctimespec.tv_sec = now.tv_sec;
 	pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
 	e = gfarm_path_info_replace(pi.pathname, &pi);
+ finish_free_path_info:
 	gfarm_path_info_free(&pi);
 	return (e);
 }
