@@ -1,3 +1,45 @@
+2004-06-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec:
+	Deleted %if !%{globus} ... %endif for gfront.  A new rpm such as version 4.2.1 checks unpackaged file(s).  If there are files installed but unpackaged, RPM build process aborted.
+
+2004-06-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added one more typical error case in Subsection 2.2 "GSI authentication".
+
+2004-06-02  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control: removed invalid new lines on woody (debuild error)
+
+2004-06-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.ja: Rewrote the overview section for easier understanding.
+
+2004-05-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c:
+	(map_user) Fixed a bug reported by bugzilla-ja #22.  If user name entry multiply defined in man_user-files described in ~/.gfarmrc and /etc/gfarm.conf, user name is mapped according to ~/.gfarmrc's entry.
+
+2004-05-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c: remove warnings
+
+	* lib/libgfarm/gfarm/config.c:
+	make previous revision really work (pointed out by the author - tatebe-san)
+
+2004-05-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/config.c (gfarm_config_clear):
+	fixed a segfault bug in gfarm_terminate().  The memory space of gfarm_spool_root should not free'ed in the default case because it is statically allocated.
+
+2004-05-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Replaced DB_TXN_NOT_DURABLE with DB_TXN_NOSYNC to flush the log on transaction commit somehow.
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0.3.
+
 2004-05-24  Noriyuki Soda  <soda@sra.co.jp>
 
 	* lib/libgfarm/gfarm/url.c:
@@ -3712,7 +3754,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.27 2004/05/13 07:44:03 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.28 2004/05/25 08:27:44 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
