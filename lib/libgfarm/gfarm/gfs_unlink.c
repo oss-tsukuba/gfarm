@@ -60,16 +60,18 @@ gfs_unlink(const char *gfarm_url)
 
 	e = gfarm_url_make_path_for_creation(gfarm_url, &gfarm_file);
 	if (e != NULL) {
-		gfs_profile(gfarm_gettimerval(&t2));
-		gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
-		return (e);
+		e_save = e;
+		goto finish_unlink;
 	}
 	e = gfarm_path_info_get(gfarm_file, &pi);
-	if (e != NULL)
-		return (e);
+	if (e != NULL) {
+		e_save = e;
+		goto finish_free_gfarm_file;
+	}
 	if (GFARM_S_ISDIR(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
-		return GFARM_ERR_IS_A_DIRECTORY;
+		e_save = GFARM_ERR_IS_A_DIRECTORY;
+		goto finish_free_gfarm_file;
 	}
 	gfarm_path_info_free(&pi);
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
@@ -110,9 +112,12 @@ gfs_unlink(const char *gfarm_url)
 	e = gfarm_path_info_remove(gfarm_file);
 	if (e != NULL)
 		e_save = e;
-	free(gfarm_file);
 	gfs_uncachedir();
 
+finish_free_gfarm_file:
+	free(gfarm_file);
+
+finish_unlink:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 
