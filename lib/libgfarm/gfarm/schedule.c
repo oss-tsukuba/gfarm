@@ -844,7 +844,7 @@ gfarm_schedule_search_idle_acyclic_by_domainname(const char *domainname,
 	    init_host_info_array_iterator(&host_iterator, all_hosts),
 	    niohosts, ohosts);
 	if (e == NULL)
-		e = gfarm_fixedstrings_dup(nhosts, ohosts, ohosts);
+		e = gfarm_fixedstrings_dup(*niohosts, ohosts, ohosts);
 	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
 	return (e);
 }
