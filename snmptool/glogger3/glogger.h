@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/select.h>
@@ -51,7 +52,6 @@ int fsync_timing;
 #define DEFAULTUSEC    0
 #define DEFAULTOUTPUT  0       /* KB */
 #define DEFAULTMMAPOUTPUT  5  /* KB */
-//#define DEFAULTFILEINTSEC 0  /* 0:priority outputsizemax, 86400:1day */
 #define DEFAULTOVERWRITE "OFF" /* ON, OFF, enable, disable */
 #define DEFAULTPATH   "%G/%L_%y%m%d%h%M.glg"
 #define DEFAULTCOMM   "public"
@@ -72,7 +72,6 @@ int fsync_timing;
 #define KEYINTERVAL "interval"	   /* x.xxx (milisecond) */
 #define KEYDEFAULTDIR "defaultdir"
 #define KEYOUTMAX "maxfilesize"
-//#define KEYFILEINTERVAL "fileinterval"
 #define KEYOVERWRITE "overwrite"
 #define KEYLABEL "label"
 #define KEYPATH "path"
@@ -361,10 +360,6 @@ size_t glogger_write_mybuf(const  void  *ptr,  size_t  size,  size_t  nmemb,
 			   struct filelist *file);
 
 void glogger_write(struct timeval *time, struct target_files *targets);
-//void glogger_write_targets(struct timeval *time, struct target_files *targets);
-//void glogger_write_2(struct timeval *time, struct target_files *targets);
-//void glogger_write_3(struct timeval *time, struct target_files *targets);
-//void glogger_write_4(struct timeval *time, struct target_files *targets);
 
 void glogger_fflush_files(struct filelist *files);
 int glogger_check_and_change_file(struct filelist *files,
