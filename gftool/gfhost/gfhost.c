@@ -577,23 +577,30 @@ print_host_info(struct gfarm_host_info *info,
 }
 
 char *
-list_all(char *(*print_op)(struct gfarm_host_info *,
-			   struct gfs_client_udp_requests *),
+list_all(const char *architecture, const char *domainname,
+	char *(*print_op)(struct gfarm_host_info *,
+			  struct gfs_client_udp_requests *),
 	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i, nhosts;
 	struct gfarm_host_info *hosts;
 
-	e = gfarm_host_info_get_all(&nhosts, &hosts);
+	if (architecture != NULL)
+		e = gfarm_host_info_get_allhost_by_architecture(
+			architecture, &nhosts, &hosts);
+	else
+		e = gfarm_host_info_get_all(&nhosts, &hosts);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		return (e);
 	}
 	for (i = 0; i < nhosts; i++) {
-		e = (*print_op)(&hosts[i], udp_requests);
-		if (e_save == NULL)
-			e_save = e;
+		if (strstr(hosts[i].hostname, domainname)) {
+			e = (*print_op)(&hosts[i], udp_requests);
+			if (e_save == NULL)
+				e_save = e;
+		}
 	}
 	gfarm_host_info_free_all(nhosts, hosts);
 	return (e_save);
@@ -678,20 +685,21 @@ usage(void)
 {
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
-	    program_name, "[-lDH] [-j <concurrency>] [-iprv]",
+	    program_name,
+	    "[-lMH] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iprv]",
 	    program_name,
 	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
 	    program_name,
 	    "-m [-a <architecture>] [-n <ncpu>] [-A] <hostname> [<hostalias>...]",
 	    program_name, "-d <hostname>...",
-	    program_name, "-r");
+	    program_name, "-R");
 	exit(EXIT_FAILURE);
 }
 
 #define OP_DEFAULT	'\0'
 #define OP_LIST_LOADAVG	'H'
 #define OP_LIST_LONG	'l'
-#define OP_DUMP_DB	'D'
+#define OP_DUMP_METADB	'M'
 #define OP_REGISTER_DB	'R'	/* or, restore db */
 #define OP_CREATE_ENTRY	'c'
 #define OP_DELETE_ENTRY	'd'
@@ -750,6 +758,7 @@ main(int argc, char **argv)
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
 	char *opt_architecture = NULL;
+	char *opt_domainname = NULL;
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
 	int opt_sort_reverse = 0;
@@ -762,7 +771,7 @@ main(int argc, char **argv)
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "ADHLRa:cdij:lmn:prv")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMRa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
@@ -770,7 +779,7 @@ main(int argc, char **argv)
 		case 'L':
 			opt_sort_by_loadavg = 1;
 			break;
-		case 'D':
+		case 'M':
 		case 'H':
 		case 'R':
 		case 'c':
@@ -788,6 +797,16 @@ main(int argc, char **argv)
 				fprintf(stderr, "%s: "
 				    "invalid character '%c' in \"-a %s\"\n",
 				    program_name, *e, opt_architecture);
+				exit(1);
+			}
+			break;
+		case 'D':
+			opt_domainname = optarg;
+			e = validate_hostname(opt_domainname);
+			if (e != NULL) {
+				fprintf(stderr, "%s: "
+				    "invalid character '%c' in \"-a %s\"\n",
+				    program_name, *e, opt_domainname);
 				exit(1);
 			}
 			break;
@@ -822,7 +841,8 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (opt_operation == OP_CREATE_ENTRY) {
+	switch (opt_operation) {
+	case OP_CREATE_ENTRY:
 		if (opt_architecture == NULL) {
 			fprintf(stderr, "%s: missing -a <architecture>\n",
 			    program_name);
@@ -832,13 +852,28 @@ main(int argc, char **argv)
 			opt_ncpu = 1;
 		}
 		/* opt_alter_aliases is meaningless, but allowed */
-	} else if (opt_operation != OP_MODIFY_ENTRY) {
+		break;
+	case OP_REGISTER_DB:
+	case OP_DELETE_ENTRY:
 		if (opt_architecture != NULL)
 			invalid_option('a');
+		if (opt_domainname != NULL)
+			invalid_option('D');
+		/* fall through */
+	case OP_DEFAULT:
+	case OP_LIST_LOADAVG:
+	case OP_LIST_LONG:
+	case OP_DUMP_METADB:
 		if (opt_ncpu != 0)
 			invalid_option('n');
 		if (opt_alter_aliases)
 			invalid_option('A');
+		break;
+	case OP_MODIFY_ENTRY:
+		if (opt_domainname != NULL)
+			invalid_option('D');
+		break;
+	default:
 	}
 
 	for (i = 0; i < argc; i++) {
@@ -925,7 +960,8 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_loadavg, udp_requests);
+			e_save = list_all(opt_architecture, opt_domainname, 
+				print_loadavg, udp_requests);
 		} else {
 			e_save = list_loadavg(argc, argv, udp_requests);
 		}
@@ -953,7 +989,8 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_up, udp_requests);
+			e_save = list_all(opt_architecture, opt_domainname,
+				print_up, udp_requests);
 		} else {
 			e_save = list(argc, argv, print_up, udp_requests);
 		}
@@ -989,8 +1026,8 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (argc == 0) {
-			e_save = list_all(print_host_info_and_loadavg,
-			    udp_requests);
+			e_save = list_all(opt_architecture, opt_domainname,
+				print_host_info_and_loadavg, udp_requests);
 		} else {
 			e_save = list(argc, argv, print_host_info_and_loadavg,
 			    udp_requests);
@@ -1004,9 +1041,10 @@ main(int argc, char **argv)
 				e_save = e;
 		}
 		break;
-	case OP_DUMP_DB:
+	case OP_DUMP_METADB:
 		if (argc == 0) {
-			e_save = list_all(print_host_info, NULL);
+			e_save = list_all(opt_architecture, opt_domainname,
+				print_host_info, NULL);
 		} else {
 			e_save = list(argc, argv, print_host_info, NULL);
 		}
