@@ -12,7 +12,7 @@ gfs_pio_set_view_local
 .LP
 .B "char *"
 .br
-.BI "gfs_pio_set_view_index(GFS_File " gf ,
+.BI "gfs_pio_set_view_local(GFS_File " gf ,
 .BI "int " flags );
 
 .SH DESCRIPTION
@@ -20,13 +20,12 @@ gfs_pio_set_view_local
 \fBgfs_pio_set_view_local()\fP changes the process's view of the data
 in the file specified by \fIgf\fP to a file fragment in the local file
 view.  The local file view model assumes each process has its own file
-fragment which is implicitly specified by the argument \fInode\fP of
+fragment which is specified by the argument \fInode\fP of
 \fBgfs_pio_set_local(3)\fP.
 
-The total number of file fragments is implicitly specified by the
-argument \fInnode\fP of \fBgfs_pio_set_local(3)\fP.  If it is
-different from the total fragment number of the existent file, it is
-erroneous.
+The total number of file fragments is also specified by the argument
+\fInnode\fP of \fBgfs_pio_set_local(3)\fP.  If it is different from
+the total fragment number of the existent file, it is erroneous.
 
 Before changing to the local file view, it is necessary to call
 \fBgfs_pio_set_local(3)\fP in advance.
