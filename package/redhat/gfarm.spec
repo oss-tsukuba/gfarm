@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.0.4
-%define rel	3
+%define rel	4
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -355,6 +355,7 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_set_local.3.gz
 %{man_prefix}/ja/man3/gfs_pio_set_view_index.3.gz
 %{man_prefix}/ja/man3/gfs_pio_set_view_local.3.gz
+%{man_prefix}/ja/man3/gfs_pio_truncate.3.gz
 %{man_prefix}/ja/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
 %{man_prefix}/ja/man3/gfs_readdir.3.gz
@@ -518,6 +519,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_set_local.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_set_view_index.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_set_view_local.3.html
+%{html_prefix}/ja/ref/man3/gfs_pio_truncate.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/ja/ref/man3/gfs_readdir.3.html
