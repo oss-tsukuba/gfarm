@@ -528,7 +528,8 @@ fi
 %endif
 
 %{prefix}/bin/gfreg
-%{prefix}/bin/gfregister
+
+%{prefix}/sbin/gfregister
 
 %files fsnode
 %{prefix}/sbin/gfsd

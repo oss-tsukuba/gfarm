@@ -4,6 +4,9 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
+# gfregister is an administration command.
+bindir = $(sbindir)
+
 SCRIPTS= gfregister
 
 all:
