@@ -265,51 +265,120 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			list.add(re);
 			return list;
 		}
-		Date prevDate = (Date) l.get(0);
-		DataElement prevDataElement = (DataElement) l.get(1);
-		for(int i = 2; i <= l.size()-2; i += 2){
+		
+		Date prevDate = null;
+		DataElement prevDataElement = null;
+		int offset;
+		for(offset=0; offset <= l.size()-4; offset += 2){
+			prevDataElement = (DataElement) l.get(offset+1);
+			if(prevDataElement.getFlag(DataElement.VALID_FLAG) && prevDataElement.getFlag(DataElement.SUCCESS_FLAG)){
+				prevDate = (Date) l.get(offset);
+				break;
+			}
+		}
+		if(offset > l.size()-4){
+			return null;
+		}
+		
+		for(int i = 2+offset; i <= l.size()-2; i += 2){
 			Date date = (Date) l.get(i);
 			DataElement de = (DataElement) l.get(i + 1);
 			RawDataElement re = new RawDataElement();
 			re.setTime(date.getTime());
-			long during = date.getTime() - prevDate.getTime();
-			long value = de.getValue() - prevDataElement.getValue();
-			if(prevDataElement.getFlag(DataElement.VALID_FLAG) == false){
-				value = 0;
+			
+			if(de.getFlag(DataElement.VALID_FLAG) == false || de.getFlag(DataElement.SUCCESS_FLAG) == false){
+				re.setValue(0);
 				re.setValid(false);
 			} else {
+				long during = date.getTime() - prevDate.getTime();
+				long value = de.getValue() - prevDataElement.getValue();
 				if(value < 0){
-					//value = 0;
-					//re.setValid(false);
 					value = COUNTMAX + value;  // MAX - prev + now
 				}
 				value = (long) Math.rint((double)(value * 1000) / (double)during); // per second (v / (d / 1000));
-//				if(value >= 0 && (value * 8L) <= MAXbps){	
 				if(value >= 0){	
 					re.setValid(true);
+					re.setValue(value);
+					prevDate = date;
+					prevDataElement = de;
 				} else {
-					System.out.println("invalid value: " + (value * 8L));
-					value = 0;
+					//System.out.println("invalid value: " + value + "(during="+during+")");
+					re.setValue(0);
 					re.setValid(false);
 				}
 			}
-			re.setValue(value);
-			if(de.getFlag(DataElement.VALID_FLAG) == false || de.getFlag(DataElement.SUCCESS_FLAG) == false){
+			list.add(re);
+		}
+		return list;
+	}
+	
+	public ArrayList convertDateDataPairListToRawDataElementsByUptime(ArrayList l, ArrayList uptimeList)
+	{
+		if(l.size() != uptimeList.size()){
+//System.out.println("l != uptime: " + l.size() + ", " + uptimeList.size());
+			return null;
+		}
+		
+		ArrayList list = new ArrayList();
+		if(l.size() <= 2){
+			RawDataElement re = new RawDataElement();
+			re.setValid(false);	
+			re.setValue(0);
+			list.add(re);
+			return list;
+		}
+		
+		Date prevDate = null;
+		DataElement prevDataElement = null;
+		DataElement prevUptimeElement = null;
+		int offset;
+		for(offset=0; offset <= l.size()-4; offset += 2){
+			prevDataElement = (DataElement) l.get(offset+1);
+			prevUptimeElement = (DataElement) uptimeList.get(offset+1);
+			
+			if(prevDataElement.getFlag(DataElement.VALID_FLAG)
+				&& prevDataElement.getFlag(DataElement.SUCCESS_FLAG)
+				&& prevUptimeElement.getFlag(DataElement.VALID_FLAG)
+				&& prevUptimeElement.getFlag(DataElement.SUCCESS_FLAG)){
+				prevDate = (Date) l.get(offset);
+				break;
+			}
+		}
+		if(offset > l.size()-4){
+			return null;
+		}
+		
+		for(int i = 2+offset; i <= l.size()-2; i += 2){
+			Date date = (Date) l.get(i);
+			DataElement de = (DataElement) l.get(i + 1);
+			DataElement uptime = (DataElement) uptimeList.get(i + 1);
+
+			RawDataElement re = new RawDataElement();
+			re.setTime(date.getTime());
+			if(de.getFlag(DataElement.VALID_FLAG) == false || de.getFlag(DataElement.SUCCESS_FLAG) == false
+				|| uptime.getFlag(DataElement.VALID_FLAG) == false || uptime.getFlag(DataElement.SUCCESS_FLAG) == false){
+				re.setValue(0);
 				re.setValid(false);
 			} else {
-				//re.setValid(true);
+				long during = uptime.getValue() - prevUptimeElement.getValue();
+				long value = de.getValue() - prevDataElement.getValue();
+				if(value < 0){
+					value = COUNTMAX + value;  // MAX - prev + now
+				}
+				value = (long) Math.rint((double)(value * 100) / (double)during); // per second (v / (d / 1000));
+				if(value >= 0){
+					re.setValid(true);
+					re.setValue(value);
+					prevDate = date;
+					prevDataElement = de;
+					prevUptimeElement = uptime;
+				} else {
+//System.out.println("invalid value: " + value + " (during:"+during+"=" + uptime.getValue() + "-" + prevUptimeElement.getValue() +")");
+					re.setValue(0);
+					re.setValid(false);
+				}
 			}
-			/*			
-			if(de.getFlag(DataElement.VALID_FLAG) == true && de.getFlag(DataElement.SUCCESS_FLAG) == true && re.isValid()){
-				re.setValid(true);
-			}else{
-				// Nothing to do.
-			}
-			*/
-			
 			list.add(re);
-			prevDate = date;
-			prevDataElement = de;
 		}
 		return list;
 	}
