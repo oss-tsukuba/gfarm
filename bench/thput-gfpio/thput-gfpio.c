@@ -74,7 +74,7 @@ timerval_t tm_read_read_0, tm_read_read_1;
 timerval_t tm_read_close_0, tm_read_close_1;
 
 char *program_name = "thput-gfpio";
-int node_index = -1, total_nodes = -1;
+int node_index = -1;
 
 #define MAX_BUFFER_SIZE	(1024*1024)
 
@@ -352,14 +352,16 @@ main(int argc, char **argv)
 
 	if (argc > 0)
 		program_name = argv[0];
-	while ((c = getopt(argc, argv, "I:N:b:s:wrcmS:")) != -1) {
+
+	e = gfarm_initialize(&argc, &argv);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfarm_initalize(): %s\n",
+			program_name, e);
+		exit(1);
+	}
+
+	while ((c = getopt(argc, argv, "b:s:wrcmS:")) != -1) {
 		switch (c) {
-		case 'I':
-			node_index = strtol(optarg, NULL, 0);
-			break;
-		case 'N':
-			total_nodes = strtol(optarg, NULL, 0);
-			break;
 		case 'b':
 			buffer_size = strtol(optarg, NULL, 0);
 			if (buffer_size > MAX_BUFFER_SIZE) {
@@ -405,28 +407,15 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
-	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "[%03d] %s: gfarm_initalize(): %s\n",
-			node_index, program_name, e);
-		exit(1);
-	}
 	argc -= optind;
 	argv += optind;
 
-	if (node_index < 0) {
-		fprintf(stderr, "%s: missing node index, use -I option.\n",
-		program_name);
+	e = gfs_pio_get_node_rank(&node_index);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_get_node_rank(): %s\n",
+			program_name, e);
 		exit(1);
 	}
-	if (total_nodes <= 0) {
-		fprintf(stderr,
-			"%s: missing total node number, use -N option.\n",
-			program_name);
-		exit(1);
-	}
-	
-	gfs_pio_set_local(node_index, total_nodes);
 
 	if (argc > 0)
 		file1 = argv[0];
