@@ -119,6 +119,8 @@ main(int argc, char **argv)
 		a.mode = 0755;
 		e = gfs_client_apply_all_hosts(gfmkdir, &a, program_name,
 			&nhosts_succeed);
+#if 0 /* XXX - gfmkdir may fail.  However, it will be created by the
+       * following open operation. */
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
 				e);
@@ -127,6 +129,7 @@ main(int argc, char **argv)
 				continue;
 			}
 		}
+#endif
 		gettimeofday(&now, NULL);
 		pi.pathname = canonic_path;
 		pi.status.st_mode = (GFARM_S_IFDIR | a.mode);

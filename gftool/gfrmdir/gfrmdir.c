@@ -117,10 +117,14 @@ main(int argc, char **argv)
 		a.path = canonic_path;
 		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name,
 			&nhosts_succeed);
+#if 0 /* XXX - gfrmdir may fail.  In the current release, Only problem
+       * is that a new directory cannot be created in the other
+       * owner/permission.  */
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
+#endif
 		e = gfarm_path_info_remove(canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
