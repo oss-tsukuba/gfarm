@@ -1,7 +1,8 @@
 README for syscall-hooking library
 
-Gfarm syscall-hooking library enables every program to access Gfarm
-file system without any modification as if it is mounted at /gfarm.
+Gfarm syscall-hooking library enables every existing (binary) program
+to access Gfarm file system without any modification as if it is
+mounted at /gfarm.
 
 Basically the syscall-hooking library traps every system call for file
 access.  When a file is under the mount point /gfarm or a Gfarm URL
@@ -12,8 +13,8 @@ called.
 
 When you are using glibc typically in Linux, it is necessary to
 replace it to enable necessary system calls to hook properly.  The
-change is just for a version script for ld to add necessary symbols to
-the dynamic symbol table.
+change is just for a version script for ld to add necessary symbols
+(__lseek64, __getdents, and __getdents64) to the dynamic symbol table.
 
 Binary packages of glibc is available from Gfarm web site
 (http://datafarm.apgrid.org/software/) for typical distribution of
