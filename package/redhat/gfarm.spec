@@ -552,6 +552,7 @@ fi
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
+%{doc_prefix}/INSTALL.RPM.en
 %{doc_prefix}/INSTALL.RPM.ja
 %{doc_prefix}/LICENSE
 %{doc_prefix}/RELNOTES
