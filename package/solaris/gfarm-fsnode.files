@@ -2,4 +2,3 @@ usr/grid/sbin/gfsd
 etc/rc3.d/S99gfsd
 etc/rc3.d/K97gfsd
 etc/gfarm.conf.sample
-
