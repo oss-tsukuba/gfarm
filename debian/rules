@@ -97,6 +97,8 @@ install: build
 	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
 	cd build_gsi && $(MAKE) install DESTDIR=`pwd`/../debian/tmp_gsi
 
+	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
+
 # hoax gfarm's Makefile.
 	for tmp_dir in tmp tmp_gsi; do \
 	  install -d debian/$$tmp_dir/etc/init.d/; \
