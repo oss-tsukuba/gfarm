@@ -1,6 +1,31 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0b4
+============================
+
+[2003.9.5]
+
+Updated Features
+
+ * Client commands
+
+   * New feature
+
+   (gfmpirun_p4)
+
+   - The executed process can be suspended or executed in the
+     background.
+
+ * Bug fix
+
+   (libgfarm.a)
+
+   - Fixed a bug not to create a directory or a file at the top
+     level. (Bug 1 in Gfarm bugzilla-ja)
+   - Fixed a bug not to delegate the user credential in the gsi_auth
+     authentication mode. (Bug 2 in Gfarm bugzilla)
+
 Release note for Gfarm 1.0b3
 ============================
 

@@ -1,4 +1,154 @@
+2003-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: Changed 'ALL' to '*'.
+	Changed parameter name that consists of several words for each sentence to one word for readability.
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	Added missing entries; gfcd and gfpwd.
+	Added a missing termination tag </H1>.
+
+2003-09-04  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: new beta release in changelog
+
+2003-09-03  Jun Ebihara  <jun@soum.co.jp>
+
+	* util/gfront/build.xml: Configration file for Ant.
+
+2003-09-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man3/gfs_glob_add.3.html, doc/html/ja/ref/man3/gfs_glob_free.3.html, doc/html/ja/ref/man3/gfs_glob_init.3.html, man/ja/man3/gfs_glob_add.3, man/ja/man3/gfs_glob_free.3, man/ja/man3/gfs_glob_init.3:
+	Initial revision generated from docbook file
+
+	* doc/docbook/ja/ref/man3/gfs_glob_add.3.docbook, doc/docbook/ja/ref/man3/gfs_glob_free.3.docbook, doc/docbook/ja/ref/man3/gfs_glob_init.3.docbook:
+	New file.
+
+	* doc/docbook/ja/ref/man3/Makefile.inc:
+	add gfs_glob_init(3), gfs_glob_add(3), gfs_glob_free(3)
+
+	* man/ja/man3/gfs_glob.3: regen
+
+	* doc/docbook/ja/ref/man3/gfs_glob.3.docbook: fix date
+
+	* doc/html/ja/ref/man3/gfs_glob.3.html, man/ja/man3/gfs_glob.3: regen
+
+	* doc/docbook/ja/ref/man3/gfs_glob.3.docbook: wording
+
+2003-08-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	$HOME is no longer default of --prefix, it's /usr/local now.
+
+2003-08-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man3/gfs_glob.3.html, man/ja/man3/gfs_glob.3:
+	Initial revision generated from docbook
+
+	* doc/docbook/ja/ref/man3/gfs_glob.3.docbook: New file.
+
+	* doc/docbook/ja/ref/man3/Makefile.inc: add gfs_glob(3)
+
+	* doc/html/ja/ref/man3/gfs_utimes.3.html, man/ja/man3/gfs_utimes.3:
+	Initial revision generated from docbook file
+
+	* doc/docbook/ja/ref/man3/Makefile.inc: add gfs_utiems(3)
+
+	* doc/docbook/ja/ref/man3/gfs_utimes.3.docbook: New file.
+
+2003-08-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfmpirun/gfmpirun.c:
+	Fixed a problem such that gfmpirun_p4 cannot be suspended or executed in background.
+
+2003-08-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja: remove redundant sentence.
+	change "multiple file" -> "multiple host" for the description of gfimport_*.
+
+2003-08-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/url.c (gfarm_canonical_path_for_creation):
+	Fixed a bug reported by Bug 1 in Gfarm bugzilla-ja.  http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=1
+	When creating a directory or a file at the top level, it is not correctly registered in the Gfarm filesystem metadata, since its transformation to the Gfarm internal canonical name is not appropriate.
+
+2003-08-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* man/ja/man5/gfarm.conf.5, man/man1/gfhost.1, man/man1/gfront.1, man/man1/gfsched.1, man/man5/gfarm.conf.5, doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man1/gfront.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man1/gfhost.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man1/gfhost.1, man/ja/man1/gfsched.1:
+	regen.
+
+	* doc/html/en/ref/index.html: Fixed typo.
+
+	* doc/docbook/en/ref/man1/gfront.1.docbook: Fixed typo.
+	Improved the wording.  Added a notice about client commands and configuration file.
+
+	* configure, configure.in:
+	Fixed a bug introduced in the previous commit.
+	This fixes the problem such that GLOBUS_LOCATION is improperly set up, and globus-makefile-header fails at the configuration time when the directory is not specified by the --with-globus option.
+
+2003-08-22  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog, debian/gfarm-gfront.install:
+	miss building of gfarm-gfront package
+
+2003-08-21  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* man/man1/gfront.1: regen
+	- fix charactor code setting
+
+2003-08-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfutil/gfevent.c:
+	fix a bug related to a sequence point, found by SUWspro compiler.
+
+	* package/solaris/gfarm-doc.files, package/solaris/gfarm-gfront.files:
+	add gfarm-gfront binary package
+
+	* package/solaris/gfarm-client.files:
+	add gfmkdir, gfrmdir, gfpwd and gfsetdir
+
+	* package/redhat/gfarm.spec: fix a problem on %{have_ns} case.
+
+2003-08-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: add file entries
+	change macro definition for MPI
+
+2003-08-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.in: fix a bug which is introduced in the previous version:
+	it didn't work with --with-globus, if $GLOBUS_LOCATION isn't set.
+
+2003-08-20  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/README.Debian, debian/control, debian/gfarm-gfront.install, debian/rules:
+	including gfarm-gfront
+
+2003-08-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.in: link globus library statically by default.
+	add "--with-globus-shared" option to configure command to link it dynamically.
+
+	this makes the following difference about the binary size on redhat-8.0:
+
+					    globus
+					dynamic	static
+		bin (stripped)		  4064	 38824
+		sbin (stripped)		   328	  3496
+		bin (with -g)		 26363	118840
+		sbin (with -g)		  2297	 11849
+
 2003-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Added the description about fault tolerant feature.
+	Changed text style.
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* lib/libgfarm/gfarm/gfs_pio_section.c, lib/gfs_hook/hooks_common.c:
 	[Fault tolelance] When gfs_pio_set_view_section() fails because a file replica to be opened is missing for some reason, delete the section copy info and try to open another replica.
@@ -1848,7 +1998,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.17 2003/08/19 09:57:28 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.18 2003/08/20 12:07:00 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
