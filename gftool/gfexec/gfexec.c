@@ -83,8 +83,6 @@ finish:
 	return (result);
 }
 
-static char gfarm_prefix[] = "/gfarm";
-
 /*
  * Shared objects in gfarm file system cannot be dynamically linked 
  * because _dl_*() defined in /lib/ld-linux cannot be hooked.
@@ -92,151 +90,257 @@ static char gfarm_prefix[] = "/gfarm";
  * LD_LIBRARY_PATH to local spool directory path, for example,
  * /gfarm/lib -> /var/spool/gfarm/lib.
  */
-char *
-replicate_so_from_dir_to_local(char **dirp)
+/* XXX - the following two static functions are defined in hooks_subr.c. */
+static char gfs_mntdir[] = "/gfarm";
+
+static int
+is_null_or_slash(const char c)
 {
-	char *e, *so_pat, *local_path, *local_dir;
-	int i, rv;
-	gfarm_stringlist paths;
-	gfs_glob_t types;
-	static char so_pat_template[] = "gfarm:%s/*.so*";
+	return (c == '\0' || c == '/' || c == ':');
+}
 
-	e = gfarm_stringlist_init(&paths);
-	if (e != NULL)
-		goto finish;
-	e = gfs_glob_init(&types);
-	if (e != NULL)
-		goto free_paths;
-	so_pat = malloc(strlen(*dirp) + sizeof(so_pat_template)
-			- sizeof(gfarm_prefix) + 1);	
-	if (so_pat == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		goto free_types;
-	}
-	sprintf(so_pat, so_pat_template, *dirp + sizeof(gfarm_prefix) - 1);
-	e = gfs_glob(so_pat, &paths, &types);
-	if (e != NULL)
-		goto free_so_pat;
-	local_dir = NULL;
-	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-		char *p;
+static int
+is_mount_point(const char *path)
+{
+	return (*path == '/' &&
+		memcmp(path, gfs_mntdir, sizeof(gfs_mntdir) - 1) == 0 &&
+		is_null_or_slash(path[sizeof(gfs_mntdir) - 1]));
+}
 
-		p = gfarm_stringlist_elem(&paths, i);
-		if (strcmp(p, so_pat) == 0) /* no "*.so*" file in dir */
-			goto free_so_pat;
-		e = gfarm_url_execfile_replicate_to_local(p, &local_path);
-		if (e == GFARM_ERR_NO_MEMORY) {
-			if (local_dir != NULL)
-				free (local_dir);
-			goto free_so_pat;
-		} else if (e != NULL) {
-			/* XXX - error message should be displayed */
-			continue;
-		}
-		p = strdup(local_path);
-		if (p == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			if (local_dir != NULL)
-				free (local_dir);
-			goto free_so_pat;
-		}
-		p[strcspn(local_path, ":")] = '\0';
-		unlink(p);
-		rv = symlink(local_path, p);
-		if (rv == -1) {
-			perror(p);
-			free(local_path);
-			free(p);
-			continue;
-		}
-		free(local_path);
-		if (local_dir == NULL) {
-			local_dir = strdup(dirname(p));
-			if (local_dir == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				free(p);
-				goto free_so_pat;
-			}
-		}
-		free(p);
-	}
-	if (local_dir != NULL) {
-		free(*dirp);	
-		*dirp = local_dir;
-	}
+static char *
+gfarm_url_localize(char *url, char **local_path)
+{
+	char *e, *canonic_path;
 
-free_so_pat:
-	free(so_pat);
-free_types:
-	gfs_glob_free(&types);
-free_paths:
-	gfarm_stringlist_free_deeply(&paths);
-finish:
+	*local_path = NULL;
+
+	e = gfarm_url_make_path(url, &canonic_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_localize(canonic_path, local_path);
+	free(canonic_path);
+	return (e);
+}
+
+/* convert to the canonical path */
+static char *
+gfs_mntpath_canonicalize(char *dir, size_t size, char **canonic_path)
+{
+	char *e, *gfarm_file;
+	
+	*canonic_path = NULL;
+
+	dir += sizeof(gfs_mntdir) - 1;
+	size -= sizeof(gfs_mntdir) - 1;
+	/* in '/gfarm/~' case, skip the first '/' */
+	if (dir[0] == '/' && dir[1] == '~') {
+		++dir;
+		--size;
+	}
+	/*
+	 * in '/gfarm' case, just convert to '\0'.
+	 * ':' is a separator of the environment variable.
+	 */
+	else if (dir[0] == '\0' || dir[0] == ':') {
+		*canonic_path = strdup("");
+		if (*canonic_path == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		return (NULL);
+	}
+	gfarm_file = malloc(size + 1);
+	if (gfarm_file == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(gfarm_file, "%.*s", size, dir);
+	
+	e = gfarm_canonical_path(gfarm_file, canonic_path);
+	free(gfarm_file);
 	return (e);
 }
 
 static char *
-replicate_so()
+gfs_mntpath_localize(char *dir, size_t size, char **local_path)
 {
-	char *e, *ld_path, *new_ld_path, *dir;
-	int new_ld_path_len, last_len, new_dir_len, rv;
-	size_t dir_len;
+	char *e, *canonic_path;
 
-	ld_path = getenv("LD_LIBRARY_PATH");
-	if (ld_path == NULL)
-		return (NULL);
+	*local_path = NULL;
 
-	e = NULL;
-	new_ld_path_len = sizeof("LD_LIBRARY_PATH=") - 1;
-	new_ld_path = malloc(new_ld_path_len + 1);
-	if (new_ld_path == NULL)
+	e = gfs_mntpath_canonicalize(dir, size, &canonic_path);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_localize(canonic_path, local_path);
+	free(canonic_path);
+	return (e);
+}
+
+static char *
+replicate_so_and_symlink(char *dir, size_t size)
+{
+	char *canonic_path, *gfarm_url, *so_pat, *lpath;
+	char *e, *e_save;
+	int i, rv;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
+	static char so_pat_template[] = "/*.so*";
+
+	e = gfs_mntpath_canonicalize(dir, size, &canonic_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_canonical_to_url(canonic_path, &gfarm_url);
+	free(canonic_path);
+	if (e != NULL)
+		return (e);
+
+	so_pat = malloc(strlen(gfarm_url) + sizeof(so_pat_template));
+	if (so_pat == NULL) {
+		free(gfarm_url);
 		return (GFARM_ERR_NO_MEMORY);
-	strcpy(new_ld_path, "LD_LIBRARY_PATH=");
-	while (*ld_path != '\0') {
+	}
+	sprintf(so_pat, "%s%s", gfarm_url, so_pat_template);
+	free(gfarm_url);
+
+	e_save = gfarm_stringlist_init(&paths);
+	if (e_save != NULL)
+		goto free_so_pat;
+	e_save = gfs_glob_init(&types);
+	if (e_save != NULL)
+		goto free_paths;
+	e_save = gfs_glob(so_pat, &paths, &types);
+	if (e_save != NULL)
+		goto free_types;
+
+	/* XXX - should replicate so files in parallel */
+	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+		char *gfarm_so, *local_so;
+
+		gfarm_so = gfarm_stringlist_elem(&paths, i);
+		if (strcmp(gfarm_so, so_pat) == 0) /* no "*.so*" file in dir */
+			break;
+		e = gfarm_url_execfile_replicate_to_local(gfarm_so, &lpath);
+		if (e != NULL) {
+			if (e_save == NULL)
+				e_save = e;
+			if (e == GFARM_ERR_NO_MEMORY)
+				break;
+			continue;
+		}
+
+		/* create a symlink */
+		e = gfarm_url_localize(gfarm_so, &local_so);
+		if (e != NULL) {
+			if (e_save == NULL)
+				e_save = e;
+			if (e == GFARM_ERR_NO_MEMORY)
+				break;
+			free(lpath);
+			continue;
+		}
+		unlink(local_so);
+		rv = symlink(lpath, local_so);
+		if (rv == -1)
+			if (e_save == NULL)
+				e_save = gfarm_errno_to_error(errno);
+		free(local_so);
+		free(lpath);
+	}
+free_types:
+	gfs_glob_free(&types);
+free_paths:
+	gfarm_stringlist_free_deeply(&paths);
+free_so_pat:
+	free(so_pat);
+	return (e_save);
+}
+
+static char *
+alloc_ldpath(size_t size)
+{
+	static char *ldpath = NULL;
+	static int ldpath_len = 0;
+
+	if (ldpath_len < size) {
 		char *p;
 
-		dir_len = strcspn(ld_path, ":");
-		dir = malloc(dir_len + 1);
-		if (dir == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			goto finish;
-		}
-		memcpy(dir, ld_path, dir_len);
-		dir[dir_len] = '\0';
-		new_dir_len = dir_len;
-		if (memcmp(dir, gfarm_prefix, sizeof(gfarm_prefix) - 1) == 0) {
-			e = replicate_so_from_dir_to_local(&dir);
+		p = realloc(ldpath, size);
+		if (p == NULL)
+			return (NULL);
+		ldpath = p;
+		ldpath_len = size;
+	}
+	return (ldpath);
+}
+
+static char *
+modify_ld_library_path(void)
+{
+	char *e, *e_save = NULL, *ldpath, *nldpath;
+	static char env_ldlibpath[] = "LD_LIBRARY_PATH";
+	size_t len, dirlen;
+	int rv;
+
+	ldpath = getenv(env_ldlibpath);
+	if (ldpath == NULL)
+		return (NULL);
+
+	len = sizeof(env_ldlibpath) + 1;
+	nldpath = alloc_ldpath(1024); /* specify bigger size than len */
+	if (nldpath == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	sprintf(nldpath, "%s=", env_ldlibpath);
+	while (*ldpath != '\0') {
+		char *local_dir;
+		int is_valid_local_dir = 0;
+
+		dirlen = 0;
+		while (ldpath[dirlen] && ldpath[dirlen] != ':')
+			++dirlen;
+		if (is_mount_point(ldpath)) {
+			e = gfs_mntpath_localize(ldpath, dirlen, &local_dir);
 			if (e != NULL) {
-				free(dir);
-				goto finish;
+				if (e != GFARM_ERR_NO_SUCH_OBJECT) {
+					if (e_save == NULL)
+						e_save = e;
+				}
+				goto skip_copying;
 			}
-			new_dir_len = strlen(dir);
-		}			
-		last_len = new_ld_path_len;
-		new_ld_path_len += new_dir_len;
-		p = realloc(new_ld_path, new_ld_path_len + 1);		
-		if (p == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			free(dir);
-			goto finish;
+			e = replicate_so_and_symlink(ldpath, dirlen);
+			if (e != NULL)
+				if (e_save == NULL)
+					e_save = e;
+			len += strlen(local_dir);
+			is_valid_local_dir = 1;
 		}
-		new_ld_path = p;
-		strcpy(new_ld_path + last_len, dir);
-		free(dir);
-		ld_path += dir_len;
-		if (*ld_path == '\0') {
-			new_ld_path[new_ld_path_len] = '\0';
-		} else {
-			new_ld_path[new_ld_path_len] = ':';
-			new_ld_path_len += 1;
-			ld_path += 1;
+		else
+			len += dirlen;
+
+		nldpath = alloc_ldpath(len);
+		if (nldpath == NULL) {
+			if (is_valid_local_dir)
+				free(local_dir);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		if (is_valid_local_dir) {
+			strcat(nldpath, local_dir);
+			free(local_dir);
+		}
+		else
+			strncat(nldpath, ldpath, dirlen);
+	skip_copying:
+		ldpath += dirlen;
+		if (*ldpath) {
+			++len;
+			nldpath = alloc_ldpath(len);
+			if (nldpath == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+			strncat(nldpath, ldpath, 1);
+			++ldpath;
 		}
 	}
-	rv = putenv(new_ld_path);
+	rv = putenv(nldpath);
 	if (rv == -1)
-		e = strerror(errno);
-finish:
-	return (e);
+		return (gfarm_errno_to_error(errno));
+
+	return (e_save);
 }
 
 int
@@ -329,11 +433,11 @@ main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-	e = replicate_so();
-	if (e != NULL) {
-		fprintf(stderr, "%s: replicate_so: %s\n",
-		    progname, e);
-		exit(1);
+	e = modify_ld_library_path();
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+		fprintf(stderr, "%s: modify_ld_library_path: %s\n",
+			progname, e);
+		/* continue */
 	}
 
 	/*
