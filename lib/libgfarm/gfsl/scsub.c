@@ -14,14 +14,16 @@
 #include <netdb.h>
 #include <limits.h>
 
-#include "gfarm_secure_session.h"
-#include "gfarm_auth.h"
 #include "tcputil.h"
 
-int testBufSize = 4096;
+#include "gfarm_secure_session.h"
+#include "gfarm_auth.h"
+
+gfarm_int32_t testBufSize = 4096;
 
 void	doServer(int fd, char *host, int port);
-void	doClient(char *host, int port, gss_cred_id_t deleCred, int deleCheck);
+void	doClient(char *host, int port,
+		 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
 
 void
@@ -36,7 +38,7 @@ doServer(fd, hostname, port)
     int n = -1;
     int rSz = -1;
     int dCheck = 0;
-    long *tmpBuf;
+    gfarm_int32_t *tmpBuf;
     gfarmAuthEntry *aePtr = NULL;
 
     gfarmSecSession *initialSession =
@@ -69,7 +71,7 @@ doServer(fd, hostname, port)
      * Now, we can communicate securely.
      */
 
-    x = gfarmSecSessionReceiveLongs(initialSession, (long **)&tmpBuf, &n);
+    x = gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n);
     if (x != 1) {
 	fprintf(stderr, "can't receive test buffer size because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
@@ -79,7 +81,7 @@ doServer(fd, hostname, port)
     (void)free(tmpBuf);
     fprintf(stderr, "Receive buffer size: %d\n", tBufSz);
 
-    if (gfarmSecSessionReceiveBytes(initialSession, &rBuf, &rSz) <= 0) {
+    if (gfarmSecSessionReceiveInt8(initialSession, &rBuf, &rSz) <= 0) {
 	fprintf(stderr, "test buffer receive failed because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
@@ -94,19 +96,19 @@ doServer(fd, hostname, port)
 	goto Done;
     }
 
-    if (gfarmSecSessionSendBytes(initialSession, rBuf, rSz) != rSz) {
+    if (gfarmSecSessionSendInt8(initialSession, rBuf, rSz) != rSz) {
 	fprintf(stderr, "test buffer send failed because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
     (void)free(rBuf);
 
-    if (gfarmSecSessionReceiveLongs(initialSession, (long **)&tmpBuf, &n) != 1) {
+    if (gfarmSecSessionReceiveInt32(initialSession, &tmpBuf, &n) != 1) {
 	fprintf(stderr, "can't receive delegation check flag because of:\n");
 	gfarmSecSessionPrintStatus(initialSession);
 	goto Done;
     }
-    dCheck = (int)*tmpBuf;
+    dCheck = *tmpBuf;
     if (dCheck == 1) {
 	gss_cred_id_t deleCred = gfarmSecSessionGetDelegatedCredential(initialSession);
 	if (deleCred != GSS_C_NO_CREDENTIAL) {
@@ -145,7 +147,7 @@ doClient(hostname, port, deleCred, deleCheck)
      char *hostname;
      int port;
      gss_cred_id_t deleCred;
-     int deleCheck;
+     gfarm_int32_t deleCheck;
 {
     char *sBuf = NULL;
     char *rBuf = NULL;
@@ -173,20 +175,20 @@ doClient(hostname, port, deleCred, deleCheck)
     }
     randomizeIt(sBuf, testBufSize);
 
-    if (gfarmSecSessionSendLongs(ss, (long *)&testBufSize, 1) != 1) {
+    if (gfarmSecSessionSendInt32(ss, &testBufSize, 1) != 1) {
 	fprintf(stderr, "can't send test buffer size because of:\n");
 	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
-    fprintf(stderr, "Send buffer size: %d\n", testBufSize);
+    fprintf(stderr, "Send buffer size: %ld\n", (long)testBufSize);
 
-    if (gfarmSecSessionSendBytes(ss, sBuf, testBufSize) != testBufSize) {
+    if (gfarmSecSessionSendInt8(ss, sBuf, testBufSize) != testBufSize) {
 	fprintf(stderr, "test buffer send failed because of:\n");
 	gfarmSecSessionPrintStatus(ss);
 	goto Done;
     }
 
-    if (gfarmSecSessionReceiveBytes(ss, &rBuf, &rSz) <= 0) {
+    if (gfarmSecSessionReceiveInt8(ss, &rBuf, &rSz) <= 0) {
 	fprintf(stderr, "test buffer receive failed because of:\n");
 	gfarmSecSessionPrintStatus(ss);
 	goto Done;
@@ -195,9 +197,9 @@ doClient(hostname, port, deleCred, deleCheck)
     if (testBufSize != rSz) {
 	fprintf(stderr,
 		"test buffer size differ.\n"
-		"\tOriginal: %10d\n"
+		"\tOriginal: %10ld\n"
 		"\tReplyed:  %10d\n",
-		testBufSize, rSz);
+		(long)testBufSize, rSz);
 	goto Done;
     }
 
@@ -208,7 +210,7 @@ doClient(hostname, port, deleCred, deleCheck)
 	fprintf(stderr, "test buffer check OK.\n");
     }
 
-    if (gfarmSecSessionSendLongs(ss, (long *)&deleCheck, 1) != 1) {
+    if (gfarmSecSessionSendInt32(ss, &deleCheck, 1) != 1) {
 	fprintf(stderr, "can't send delegation check flag.\n");
 	goto Done;
     }

@@ -13,9 +13,10 @@
 #include "gfutil.h"
 #include "gfevent.h"
 
+#include "tcputil.h"
+
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
-#include "tcputil.h"
 
 
 static char *	gssName2Str(gss_name_t name);
@@ -629,7 +630,7 @@ gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
      gss_ctx_id_t sCtx;
      int doEncrypt;
      gss_qop_t qopReq;
-     char *buf;
+     gfarm_int8_t *buf;
      int n;
      int chunkSz;
      OM_uint32 *statPtr;
@@ -713,7 +714,7 @@ int
 gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
      int fd;
      gss_ctx_id_t sCtx;
-     char **bufPtr;
+     gfarm_int8_t **bufPtr;
      int *lenPtr;
      OM_uint32 *statPtr;
 {
@@ -730,7 +731,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
     int sum = 0;
     int rem;
     int len;
-    char *buf = NULL;
+    gfarm_int8_t *buf = NULL;
     int i;
 
     /*
@@ -751,7 +752,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
 	majStat = GSS_S_CALL_INACCESSIBLE_READ;
 	goto Done;
     }
-    buf = (char *)malloc(sizeof(char) * n);
+    buf = (char *)malloc(sizeof(*buf) * n);
     if (buf == NULL) {
 	majStat = GSS_S_FAILURE;
 	goto Done;

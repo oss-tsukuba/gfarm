@@ -50,10 +50,10 @@ extern int	gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx,
 extern int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 			     int doEncrypt,
 			     gss_qop_t qopReq,
-			     char *buf, int n, int chunkSz,
+			     gfarm_int8_t *buf, int n, int chunkSz,
 			     OM_uint32 *statPtr);
 extern int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
-				char **bufPtr, int *lenPtr,
+				gfarm_int8_t **bufPtr, int *lenPtr,
 				OM_uint32 *statPtr);
 
 /* multiplexed version */

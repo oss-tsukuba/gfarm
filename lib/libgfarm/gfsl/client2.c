@@ -6,10 +6,10 @@
 #include <gssapi.h>
 #include <limits.h>
 
+#include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
-#include "tcputil.h"
 #include "misc.h"
 
 static int port = 0;
@@ -114,9 +114,9 @@ main(argc, argv)
 	    len--;
 	}
 	if (z % 2 == 0) {
-	    (void)gfarmSecSessionSendBytes(ss0, buf, len);
+	    (void)gfarmSecSessionSendInt8(ss0, buf, len);
 	} else {
-	    (void)gfarmSecSessionSendBytes(ss1, buf, len);
+	    (void)gfarmSecSessionSendInt8(ss1, buf, len);
 	}
 	z++;
     }

@@ -7,10 +7,10 @@
 #include <gssapi.h>
 #include <limits.h>
 
+#include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
-#include "tcputil.h"
 #include "misc.h"
 
 extern void	doClient(char *host, int port, gss_cred_id_t deleCred, int deleCheck);

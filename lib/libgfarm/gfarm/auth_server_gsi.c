@@ -12,12 +12,14 @@
 #include <gssapi.h>
 
 #include <stdio.h>
-#include "gfarm_secure_session.h"
-#include "gfarm_auth.h"
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "gfarm_secure_session.h"
+#include "gfarm_auth.h"
+
 #include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"

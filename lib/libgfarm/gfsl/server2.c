@@ -14,11 +14,11 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_auth.h"
 #include "gfarm_secure_session.h"
-#include "tcputil.h"
 #include "misc.h"
 
 
@@ -151,7 +151,7 @@ main(argc, argv)
 	    continue;
 	} else if (sel > 0) {
 	    if (gfarmSecSessionCheckPollReadable(ss0)) {
-		i = gfarmSecSessionReceiveBytes(ss0, &buf, &n);
+		i = gfarmSecSessionReceiveInt8(ss0, &buf, &n);
 		if (i == 0) {
 		    break;
 		} else if (i < 0) {
@@ -166,7 +166,7 @@ main(argc, argv)
 		}
 	    }
 	    if (gfarmSecSessionCheckPollReadable(ss1)) {
-		i = gfarmSecSessionReceiveBytes(ss1, &buf, &n);
+		i = gfarmSecSessionReceiveInt8(ss1, &buf, &n);
 		if (i == 0) {
 		    break;
 		} else if (i < 0) {

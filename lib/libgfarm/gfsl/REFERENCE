@@ -89,7 +89,7 @@ int	gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx,
 int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 		     int doEncrypt,
 		     gss_qop_t qopReq,
-		     char *buf, int n, int chunkSz,
+		     gfarm_int8_t *buf, int n, int chunkSz,
 		     OM_uint32 *statPtr);
 	sCtx, doEncrypt, qopReq により、buf (長さ n バイト)を暗号化し 
 	fd に出力する。sCtx, doEncrypt, qopReq は 
@@ -100,7 +100,7 @@ int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 	GSSAPI 呼び出しの status が返る。
 
 int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
-			char **bufPtr, int *lenPtr,
+			gfarm_int8_t **bufPtr, int *lenPtr,
 			OM_uint32 *statPtr);
 	fd から受け取った暗号文を sCtx で平文化し、**bufPtr で返す。平
 	文の長さは *lenPtr で返る。bufPtr は free() されなければならな
@@ -286,28 +286,28 @@ int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
 	の処理が行われる。成功した場合 1 が返り、それ以外の場合 -1 以
 	下が返る。
 
-int			gfarmSecSessionSendBytes(gfarmSecSession *ssPtr,
-						 char *buf,
+int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
+						gfarm_int8_t *buf,
+						int n);
+int			gfarmSecSessionSendInt16(gfarmSecSession *ssPtr,
+						 gfarm_int16_t *buf,
 						 int n);
-int			gfarmSecSessionSendShorts(gfarmSecSession *ssPtr,
-						  short *buf,
-						  int n);
-int			gfarmSecSessionSendLongs(gfarmSecSession *ssPtr,
-						 long *buf,
+int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
+						 gfarm_int32_t *buf,
 						 int n);
 	session ssPtr を利用して、buf で示される n 個の byte, short,
 	long を送信する。成功すると n が返り、それ以外は 0 以下が返る。
 
-int			gfarmSecSessionReceiveBytes(gfarmSecSession *ssPtr,
-						    char **bufPtr,
+int			gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr,
+						   gfarm_int8_t **bufPtr,
+						   int *lenPtr);
+int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
+						    gfarm_int16_t **bufPtr,
 						    int *lenPtr);
-int			gfarmSecSessionReceiveShorts(gfarmSecSession *ssPtr,
-						     short **bufPtr,
-						     int *lenPtr);
-int			gfarmSecSessionReceiveLongs(gfarmSecSession *ssPtr,
-						    long **bufPtr,
+int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
+						    gfarm_int32_t **bufPtr,
 						    int *lenPtr);
-	session ssPtr を利用して、byte, short, long を受信する。受信し
+	session ssPtr を利用して、byte, net short, net long を受信する。受信し
 	た個数は *lenPtr で返す。bufPtr は free() しなければならない。
 	成功すると *lenPtr と同じ値が返り、それ以外の場合は 0 以下が返る。
 

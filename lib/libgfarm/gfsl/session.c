@@ -23,8 +23,8 @@
 
 #include "gfevent.h"
 
-#include "gfarm_secure_session.h"
 #include "tcputil.h"
+#include "gfarm_secure_session.h"
 #include "misc.h"
 
 /* #define SS_DEBUG */
@@ -1376,9 +1376,9 @@ gfarmSecSessionDedicate(ssPtr)
 
 
 int
-gfarmSecSessionSendBytes(ssPtr, buf, n)
+gfarmSecSessionSendInt8(ssPtr, buf, n)
      gfarmSecSession *ssPtr;
-     char *buf;
+     gfarm_int8_t *buf;
      int n;
 {
     int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
@@ -1396,9 +1396,9 @@ gfarmSecSessionSendBytes(ssPtr, buf, n)
 
 
 int
-gfarmSecSessionReceiveBytes(ssPtr, bufPtr, lenPtr)
+gfarmSecSessionReceiveInt8(ssPtr, bufPtr, lenPtr)
      gfarmSecSession *ssPtr;
-     char **bufPtr;
+     gfarm_int8_t **bufPtr;
      int *lenPtr;
 {
     return gfarmGssReceive(ssPtr->fd,
@@ -1410,12 +1410,12 @@ gfarmSecSessionReceiveBytes(ssPtr, bufPtr, lenPtr)
 
 
 int
-gfarmSecSessionSendLongs(ssPtr, buf, n)
+gfarmSecSessionSendInt32(ssPtr, buf, n)
      gfarmSecSession *ssPtr;
-     long *buf;
+     gfarm_int32_t *buf;
      int n;
 {
-    long *lBuf = (long *)malloc(sizeof(long) * n);
+    gfarm_int32_t *lBuf = malloc(GFARM_OCTETS_PER_32BIT * n);
     int i;
     int ret = -1;
 
@@ -1427,49 +1427,50 @@ gfarmSecSessionSendLongs(ssPtr, buf, n)
 	lBuf[i] = htonl(buf[i]);
     }
     
-    ret = gfarmSecSessionSendBytes(ssPtr, (char *)lBuf, n * sizeof(long));
+    ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
+				  n * GFARM_OCTETS_PER_32BIT);
     (void)free(lBuf);
     if (ret > 0) {
-	ret /= sizeof(long);
+	ret /= GFARM_OCTETS_PER_32BIT;
     }
     return ret;
 }
 
 
 int
-gfarmSecSessionReceiveLongs(ssPtr, bufPtr, lenPtr)
+gfarmSecSessionReceiveInt32(ssPtr, bufPtr, lenPtr)
      gfarmSecSession *ssPtr;
-     long **bufPtr;
+     gfarm_int32_t **bufPtr;
      int *lenPtr;
 {
-    char *lBuf = NULL;
-    char *lbPtr = NULL;
-    long *retBuf = NULL;
-    long tmp;
+    gfarm_int8_t *lBuf = NULL;
+    gfarm_int8_t *lbPtr = NULL;
+    gfarm_int32_t *retBuf = NULL;
+    gfarm_int32_t tmp;
     int len = 0;
     int i;
     int n;
-    int ret = gfarmSecSessionReceiveBytes(ssPtr, &lBuf, &len);
+    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len);
     
     if (ret <= 0) {
 	goto Done;
     }
-    n = len % sizeof(long);
+    n = len % GFARM_OCTETS_PER_32BIT;
     if (n != 0) {
 	goto Done;
     }
-    n = len / sizeof(long);
+    n = len / GFARM_OCTETS_PER_32BIT;
 
-    retBuf = (long *)malloc(sizeof(long) * n);
+    retBuf = malloc(GFARM_OCTETS_PER_32BIT * n);
     if (retBuf == NULL) {
 	goto Done;
     }
 
     lbPtr = lBuf;
     for (i = 0; i < n; i++) {
-	memcpy((void *)&tmp, (void *)lbPtr, sizeof(long));
+	memcpy((void *)&tmp, (void *)lbPtr, GFARM_OCTETS_PER_32BIT);
 	retBuf[i] = ntohl(tmp);
-	lbPtr += sizeof(long);
+	lbPtr += GFARM_OCTETS_PER_32BIT;
     }
     ret = n;
     if (lenPtr != NULL) {
@@ -1488,12 +1489,12 @@ gfarmSecSessionReceiveLongs(ssPtr, bufPtr, lenPtr)
 
 
 int
-gfarmSecSessionSendShorts(ssPtr, buf, n)
+gfarmSecSessionSendInt16(ssPtr, buf, n)
      gfarmSecSession *ssPtr;
-     short *buf;
+     gfarm_int16_t *buf;
      int n;
 {
-    short *lBuf = (short *)malloc(sizeof(short) * n);
+    gfarm_int16_t *lBuf = malloc(GFARM_OCTETS_PER_16BIT * n);
     int i;
     int ret = -1;
 
@@ -1505,49 +1506,50 @@ gfarmSecSessionSendShorts(ssPtr, buf, n)
 	lBuf[i] = htons(buf[i]);
     }
     
-    ret = gfarmSecSessionSendBytes(ssPtr, (char *)lBuf, n * sizeof(short));
+    ret = gfarmSecSessionSendInt8(ssPtr, (gfarm_int8_t *)lBuf,
+				   n * GFARM_OCTETS_PER_16BIT);
     (void)free(lBuf);
     if (ret > 0) {
-	ret /= sizeof(short);
+	ret /= GFARM_OCTETS_PER_16BIT;
     }
     return ret;
 }
 
 
 int
-gfarmSecSessionReceiveShorts(ssPtr, bufPtr, lenPtr)
+gfarmSecSessionReceiveInt16(ssPtr, bufPtr, lenPtr)
      gfarmSecSession *ssPtr;
-     short **bufPtr;
+     gfarm_int16_t **bufPtr;
      int *lenPtr;
 {
     char *lBuf = NULL;
     char *lbPtr = NULL;
-    short *retBuf = NULL;
-    short tmp;
+    gfarm_int16_t *retBuf = NULL;
+    gfarm_int16_t tmp;
     int len = 0;
     int i;
     int n;
-    int ret = gfarmSecSessionReceiveBytes(ssPtr, &lBuf, &len);
+    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len);
     
     if (ret <= 0) {
 	goto Done;
     }
-    n = len % sizeof(short);
+    n = len % GFARM_OCTETS_PER_16BIT;
     if (n != 0) {
 	goto Done;
     }
-    n = len / sizeof(short);
+    n = len / GFARM_OCTETS_PER_16BIT;
 
-    retBuf = (short *)malloc(sizeof(short) * n);
+    retBuf = malloc(GFARM_OCTETS_PER_16BIT * n);
     if (retBuf == NULL) {
 	goto Done;
     }
 
     lbPtr = lBuf;
     for (i = 0; i < n; i++) {
-	memcpy((void *)&tmp, (void *)lbPtr, sizeof(short));
+	memcpy((void *)&tmp, (void *)lbPtr, GFARM_OCTETS_PER_16BIT);
 	retBuf[i] = ntohs(tmp);
-	lbPtr += sizeof(short);
+	lbPtr += GFARM_OCTETS_PER_16BIT;
     }
     ret = n;
     if (lenPtr != NULL) {

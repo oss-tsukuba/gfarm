@@ -183,26 +183,26 @@ extern gfarmAuthEntry *		gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr)
 
 extern int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
 
-extern int			gfarmSecSessionSendLongs(gfarmSecSession *ssPtr,
-							 long *buf,
+extern int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
+							 gfarm_int32_t *buf,
 							 int n);
-extern int			gfarmSecSessionReceiveLongs(gfarmSecSession *ssPtr,
-							    long **bufPtr,
+extern int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
+							    gfarm_int32_t **bufPtr,
 							    int *lenPtr);
 
-extern int			gfarmSecSessionSendShorts(gfarmSecSession *ssPtr,
-							  short *buf,
+extern int			gfarmSecSessionSendInt16(gfarmSecSession *ssPtr,
+							 gfarm_int16_t *buf,
 							  int n);
-extern int			gfarmSecSessionReceiveShorts(gfarmSecSession *ssPtr,
-							     short **bufPtr,
-							     int *lenPtr);
-
-extern int			gfarmSecSessionSendBytes(gfarmSecSession *ssPtr,
-							 char *buf,
-							 int n);
-extern int			gfarmSecSessionReceiveBytes(gfarmSecSession *ssPtr,
-							    char **bufPtr,
+extern int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
+							    gfarm_int16_t **bufPtr,
 							    int *lenPtr);
+
+extern int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
+							gfarm_int8_t *buf,
+							int n);
+extern int			gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr,
+							   gfarm_int8_t **bufPtr,
+							   int *lenPtr);
 
 extern int			gfarmSecSessionPoll(gfarmSecSession *ssList[],
 						    int n,

@@ -11,11 +11,13 @@
 #include <errno.h>
 
 #include <gssapi.h>
-#include "gfarm_secure_session.h"
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "gfarm_secure_session.h"
+
 #include "iobuffer.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
@@ -52,7 +54,7 @@ gfarm_iobuffer_read_secsession_op(struct gfarm_iobuffer *b,
 		if (flag & O_NONBLOCK)
 			fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
-		rv = gfarmSecSessionReceiveBytes(io->session,
+		rv = gfarmSecSessionReceiveInt8(io->session,
 		    &io->buffer, &io->residual);
 
 		if (flag & O_NONBLOCK)
@@ -91,7 +93,7 @@ gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag & ~O_NONBLOCK);
 
-	rv = gfarmSecSessionSendBytes(io->session, data, length);
+	rv = gfarmSecSessionSendInt8(io->session, data, length);
 
 	if (flag & O_NONBLOCK)
 		fcntl(fd, F_SETFL, flag);
