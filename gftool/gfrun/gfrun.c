@@ -142,6 +142,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	command_alist_index = gfarm_stringlist_length(&arg_list);
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (cmd_type == GFARM_COMMAND) {
+		char *cwd;
+
 		gfarm_stringlist_add(&arg_list, "--gfarm_nfrags");
 		gfarm_stringlist_add(&arg_list, total_nodes);
 		gfarm_stringlist_add(&arg_list, "--gfarm_index");
@@ -158,6 +160,12 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			gfarm_stringlist_add(&arg_list, "--gfarm_profile");
 		if (replication_mode)
 			gfarm_stringlist_add(&arg_list, "--gfarm_replicate");
+		cwd = getenv("GFS_PWD");
+		if (cwd != NULL) {
+			gfarm_stringlist_add(&arg_list, "--gfarm_cwd");
+			gfarm_stringlist_add(&arg_list,
+				gfarm_url_prefix_skip(cwd));
+		}
 	}
 	gfarm_stringlist_cat(&arg_list, argv);
 	gfarm_stringlist_add(&arg_list, NULL);

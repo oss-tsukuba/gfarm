@@ -1136,6 +1136,15 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			gf_profile = 1;
 		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
 			gf_on_demand_replication = 1;
+		else if (strcmp(&argv[0][2], "gfarm_cwd") == 0) {
+			--argc;
+			++argv;
+			if (argc > 0) {
+				e = gfs_chdir(*argv);
+				if (e != NULL)
+					return (e);
+			}
+		}
 		else
 			break;
 		--argc;
