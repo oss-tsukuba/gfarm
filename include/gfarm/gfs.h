@@ -64,6 +64,7 @@ char *gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 #define GFARM_FILE_REPLICATE		0x02000000
 #define GFARM_FILE_NOT_REPLICATE	0x04000000
 #define GFARM_FILE_NOT_RETRY		0x08000000
+#define GFARM_FILE_UNBUFFERED		0x10000000
 
 char *gfs_pio_truncate(GFS_File, file_offset_t);
 

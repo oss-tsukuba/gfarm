@@ -418,7 +418,7 @@ gfs_pio_close(GFS_File gf)
 	return (e_save);
 }
 
-char *
+static char *
 gfs_pio_purge(GFS_File gf)
 {
 	gf->p = gf->length = 0;
@@ -744,7 +744,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		gf->length = gf->p;
 	*np = size;
 	e = NULL;
-	if (gf->p >= GFS_FILE_BUFSIZE)
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED || gf->p >= GFS_FILE_BUFSIZE)
 		e = gfs_pio_flush(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));

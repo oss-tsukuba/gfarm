@@ -94,6 +94,8 @@ gfs_hook_open_flags_gfarmize(int open_flags)
 		gfs_flags |= GFARM_FILE_APPEND;
 	if ((open_flags & O_EXCL) != 0)
 		gfs_flags |= GFARM_FILE_EXCLUSIVE;
+	/* open(2) and creat(2) should be unbuffered */
+	gfs_flags |= GFARM_FILE_UNBUFFERED;
 	return (gfs_flags);
 }
 
