@@ -569,6 +569,7 @@ utimes(const char *path, const struct timeval *tvp)
 	return (__utimes(path, tvp));
 }
 
+
 /*
  * chdir
  */
@@ -666,6 +667,54 @@ fchdir(int filedes)
 	_gfs_hook_debug_v(fputs("Hooking fchdir\n", stderr));
 	return (__fchdir(filedes));
 }
+
+
+/*
+ * getcwd
+ */
+
+#ifdef __linux__
+char *
+__getcwd(char *buf, size_t size)
+{
+	const char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr, 
+				  "Hooking __getcwd(%p, %d)\n", buf, size));
+
+	if (!gfs_hook_cwd_is_gfarm)
+		return (syscall(SYS_getcwd, buf, size) == 0 ? buf : NULL); 
+
+	_gfs_hook_debug(fprintf(stderr,
+			        "GFS: Hooking __getcwd(%p, %d)\n" ,buf, size));
+
+	e = gfs_hook_get_prefix(buf, size);
+	if (e != NULL)
+		goto error;
+	e = gfs_getcwd(buf + strlen(buf), size - strlen(buf));
+	if (e == NULL)
+		return (buf);
+error:
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __getcwd: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (NULL);
+}
+
+char *
+_getcwd(char *buf, size_t size)
+{
+	_gfs_hook_debug_v(fputs("Hooking _getcwd\n", stderr));
+	return (__getcwd(buf, size));
+}
+
+char *
+getcwd(char *buf, size_t size)
+{
+	_gfs_hook_debug_v(fputs("Hooking getcwd\n", stderr));
+	return (__getcwd(buf, size));
+}
+#endif
 
 /*
  * definitions for "hooks_common.c"

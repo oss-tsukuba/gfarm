@@ -56,21 +56,22 @@ gfs_getcwd(char *cwd, int cwdsize)
 	/* check the existence */
 	e = gfarm_canonical_path(path, &p);
 	if (e != NULL)
-		return (e);
+		goto finish;
 	free(p);
 
 	len = strlen(path);
 	if (len < cwdsize) {
 		strcpy(cwd, path);
+		e = NULL;
 	} else {
-		memcpy(cwd, path, cwdsize - 1);
-		cwd[cwdsize - 1] = '\0';
+		e = GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE;
 	}
+finish:
 
 	if (default_cwd != NULL)
 		free(default_cwd);
 
-	return (NULL);
+	return (e);
 }
 
 /*

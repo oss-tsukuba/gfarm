@@ -343,6 +343,17 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	return (0);
 }
 
+char *
+gfs_hook_get_prefix(char *buf, size_t size)
+{
+	static char prefix[] = "gfarm:";
+		
+	if (size < sizeof(prefix))
+		return GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE;
+	strcpy(buf, prefix);
+	return (NULL);
+}	
+
 /*
  * default file view manipulation
  */
