@@ -310,7 +310,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 {
 	char *e, *s, *path, *e_save = NULL;
 	gfarm_stringlist names;
-	gfarm_glob_t types;
+	gfs_glob_t types;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
@@ -325,7 +325,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		free(path);
 		return (e);
 	}
-	e = gfarm_glob_init(&types);
+	e = gfs_glob_init(&types);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		gfarm_stringlist_free(&names);
@@ -335,7 +335,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	e = gfs_opendir(path, &dir);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", path, e);
-		gfarm_glob_free(&types);
+		gfs_glob_free(&types);
 		gfarm_stringlist_free(&names);
 		free(path);
 		return (e);
@@ -347,7 +347,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			break;
 		}
 		gfarm_stringlist_add(&names, s);
-		gfarm_glob_add(&types, entry->d_type);
+		gfs_glob_add(&types, entry->d_type);
 	}
 	if (e != NULL) {
 		fprintf(stderr, "%s%s: %s\n", prefix, dirname, e);
@@ -370,14 +370,14 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			if (s[0] == '.' && (s[1] == '\0' ||
 			    (s[1] == '.' && s[2] == '\0')))
 				continue;
-			if (gfarm_glob_elem(&types, i) == GFS_DT_DIR) {
+			if (gfs_glob_elem(&types, i) == GFS_DT_DIR) {
 				e = list_dirs(path, 1, &s, need_newline);
 				if (e_save == NULL)
 					e_save = e;
 			}
 		}
 	}
-	gfarm_glob_free(&types);
+	gfs_glob_free(&types);
 	gfarm_stringlist_free_deeply(&names);
 	free(path);
 	return (e_save);
@@ -419,7 +419,7 @@ list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 }
 
 char *
-list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
+list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 {
 	char *e, *e_save = NULL;
 	gfarm_stringlist dirs, files;
@@ -444,7 +444,7 @@ list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
 	for (i = 0; i < gfarm_stringlist_length(paths); i++) {
 		char *path = gfarm_stringlist_elem(paths, i);
 
-		if (gfarm_glob_elem(types, i) == GFS_DT_DIR)
+		if (gfs_glob_elem(types, i) == GFS_DT_DIR)
 			gfarm_stringlist_add(&dirs, path);
 		else
 			gfarm_stringlist_add(&files, path);
@@ -489,7 +489,7 @@ main(int argc, char **argv)
 {
 	char *e;
 	gfarm_stringlist paths;
-	gfarm_glob_t types;
+	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
 	extern char *optarg;
 
@@ -543,14 +543,14 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
-	e = gfarm_glob_init(&types);
+	e = gfs_glob_init(&types);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
 		gfarm_stringlist_add(&paths, "gfarm:.");
-		gfarm_glob_add(&types, GFS_DT_DIR);
+		gfs_glob_add(&types, GFS_DT_DIR);
 	} else {
 		for (i = 0; i < argc; i++) {
 			int last;
@@ -558,8 +558,8 @@ main(int argc, char **argv)
 			/* do not treat glob error as an error */
 			gfs_glob(argv[i], &paths, &types);
 
-			last = gfarm_glob_length(&types) - 1;
-			if (last >= 0 && gfarm_glob_elem(&types, last) ==
+			last = gfs_glob_length(&types) - 1;
+			if (last >= 0 && gfs_glob_elem(&types, last) ==
 			    GFS_DT_UNKNOWN) {
 				/*
 				 * this only happens if argv[i] doesn't
@@ -581,7 +581,7 @@ main(int argc, char **argv)
 					paths.length--;
 					types.length--;
 				} else {
-					GFARM_GLOB_ELEM(types, last) =
+					GFS_GLOB_ELEM(types, last) =
 					    GFARM_S_ISDIR(s.st_mode) ?
 					    GFS_DT_DIR : GFS_DT_REG;
 					gfs_stat_free(&s);
