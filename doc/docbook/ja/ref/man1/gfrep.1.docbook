@@ -110,6 +110,8 @@
 <para>
 ファイル名として ``-'' を指定した場合，標準入力からホス
 ト名のリストを読み込みます．</para>
+<para>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</para>
 </listitem>
 </varlistentry>
 
@@ -122,6 +124,8 @@
 必要がありますが，それを省略できる場合もあります．
 詳しくは <option>-I</option> オプションの項を参照してください．
 </para>
+<para>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</para>
 </listitem>
 </varlistentry>
 
@@ -167,4 +171,3 @@
 </variablelist>
 </refsect1>
 </refentry>
-
