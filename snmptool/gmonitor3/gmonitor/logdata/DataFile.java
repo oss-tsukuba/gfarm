@@ -52,6 +52,11 @@ public class DataFile implements Comparable {
 				// アクセスされたので世代をリフレッシュ
 				instanceGeneration.remove(idx);
 				instanceGeneration.add(url);
+				
+				DataFile df = (DataFile) instanceMap.remove(url);
+				df.close();
+				f = new DataFile(url);
+				instanceMap.put(url, f);
 			}
 		}
 		return f;
