@@ -76,7 +76,6 @@ Description: Parallel tools installed under the Gfarm filesystem with GSI
  and a parallel grep command to the Gfarm filesystem by the
  'gfregister' command.
 
-
 Package: gfmd-gsi
 Section: net
 Architecture: i386
@@ -85,7 +84,6 @@ Conflicts: gfmd
 Description: The Gfarm metadata server with GSI
  The Gfarm filesystem metadata server for accessing 
  filesystem metadata of the Gfarm filesystem.
-
 
 Package: gfarm-gsi-client
 Section: utils
