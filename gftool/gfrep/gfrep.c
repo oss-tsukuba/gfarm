@@ -1009,7 +1009,7 @@ main(argc, argv)
 	gfs_glob_t types;
 	int error_happened = 0, min_replicas = 1;
 
-	char *hostfile = NULL, *domainname = NULL, *index = NULL;
+	char *hostfile = NULL, *domainname = "", *index = NULL;
 	char *src = NULL, *dest = NULL, *fragment_dest_list = NULL;
 	char *pair_list = NULL;
 
@@ -1080,6 +1080,22 @@ main(argc, argv)
 		    "%s: warning: -d dest option is ignored with -%c option\n",
 		    program_name, mode_ch);
 	}
+	if (min_replicas == 1 && mode_ch == 0 && dest == NULL) {
+		fprintf(stderr,
+		    "%s: warning: -N 1 (default) is meaningless "
+		    "without another option \n", program_name);
+		exit(EXIT_SUCCESS);
+	}
+	if (min_replicas > 1 &&
+	     (mode_ch == 'I' || mode_ch == 'l' || mode_ch == 'P'
+	    				       || dest != NULL)) {
+		fprintf(stderr,
+		    "%s: error: -N num-replica option is unavailable "
+		    "with -%c option\n", program_name, 
+				dest != NULL ? 'd' : mode_ch);
+			
+		exit(EXIT_FAILURE); 
+	}
 	if (argc == 0 && fragment_dest_list == NULL)
 		usage();
 
@@ -1100,7 +1116,7 @@ main(argc, argv)
 		char **hosttab;
 		int nhosts, error_line;
 
-		/* replicate a whole file */
+		/* replicate directories and whole files */
 		e = gfarm_hostlist_read(hostfile, &nhosts,
 			&hosttab, &error_line);
 		if (e != NULL) {
@@ -1115,18 +1131,6 @@ main(argc, argv)
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			file = gfarm_stringlist_elem(&paths, i);
 			e = replicate_files_to_hosts(file, nhosts, hosttab);
-			if (e != NULL) {
-				fprintf(stderr, "%s: %s: %s\n",
-				    program_name, file, e);
-				error_happened = 1;
-			}
-		}
-	} else if (domainname != NULL) {
-		/* replicate a whole file */
-		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-			file = gfarm_stringlist_elem(&paths, i);
-			e = replicate_files_to_domain(file, min_replicas,
-							domainname);
 			if (e != NULL) {
 				fprintf(stderr, "%s: %s: %s\n",
 				    program_name, file, e);
@@ -1163,17 +1167,10 @@ main(argc, argv)
 		}
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
-	} else { /* -I may be omitted */
+	} else if (dest != NULL) { /* -I may be omitted */
 		struct replication_job_list job_list;
 
 		/* replicate specified fragments */
-		if (dest == NULL) {
-			fprintf(stderr,
-			    "%s: -d dest-node option is required\n",
-			    program_name);
-			usage();
-			exit(EXIT_FAILURE);
-		}
 		replication_job_list_init(&job_list);
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 			char *section = index;
@@ -1192,7 +1189,19 @@ main(argc, argv)
 		}
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
-	}
+	} else {
+	  	/* replicate directories and whole files */
+		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+			file = gfarm_stringlist_elem(&paths, i);
+			e = replicate_files_to_domain(file, min_replicas,
+							domainname);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    program_name, file, e);
+				error_happened = 1;
+			}
+		}
+	}	
 	gfs_glob_free(&types);
 	e = gfarm_terminate();
 	if (e != NULL) {
