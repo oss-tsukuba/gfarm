@@ -436,6 +436,12 @@ fi
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %{prefix}/bin/gfwhere
+%{prefix}/bin/pcat
+%{prefix}/bin/pcp
+%{prefix}/bin/pdel
+%{prefix}/bin/pdiff
+%{prefix}/bin/pdist
+%{prefix}/bin/prun
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
