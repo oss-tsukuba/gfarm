@@ -1,0 +1,621 @@
+*** Gfarm system
+
+Gfarm is a reference implementation of the Grid Datafarm architecture
+designed for global petascale data-intensive computing.  It provides a
+global parallel filesystem with online petascale storage, scalable I/O
+bandwidth, and scalable parallel processing, and it can exploit local
+I/O in a grid of clusters with tens of thousands of nodes.  Gfarm
+parallel I/O APIs and commands provide a single filesystem image and
+manipulate filesystem metadata consistently.  Fault tolerance and load
+balancing are automatically managed by file duplication or
+re-computation using a command history log.
+
+For a detailed information about the Grid Datafarm architecture and
+its preliminary performance evaluation, refer to the following paper.
+
+[1] Osamu Tatebe, Youhei Morita, Satoshi Matsuoka, Noriyuki Soda,
+    Satoshi Sekiguchi,
+    "Grid Datafarm Architecture for Petascale Data Intensive Computing,"
+    Proceedings of the 2nd IEEE/ACM International Symposium on Cluster
+    Computing and the Grid (CCGrid 2002),
+    IEEE, pp.102-110, 2002
+    http://datafarm.apgrid.org/
+
+========================================================================
+
+*** Component of Gfarm system
+
+Gfarm system consists of the following nodes
+
+ - client node
+
+  Terminal node for users.
+
+ - filesystem node
+
+  Filesystem node provides disks and CPUs for the Gfarm system.  On
+  each filesystem node, the Gfarm filesystem daemon, called gfsd, is
+  running to facilitate remote file operations with access control in
+  the Gfarm filesystem as well as user authentication, file
+  replication, fast invocation, node resource status monitoring, and
+  control.
+
+ - metadata server node
+
+  Metadata server node manages Gfarm filesystem metadata and parallel
+  process information.  On the metadata server node, the Gfarm
+  filesystem metaserver, called gfmd, is running.
+
+A file in the Gfarm filesystem is a large-scale file that is divided
+into fragments and distributed across the disks of filesystem nodes,
+and which will be accessed in parallel.  The Gfarm filesystem is an
+extension of a striping parallel system in that each file fragment has
+an arbitrary length and can be stored on any node.
+
+A file in the Gfarm filesystem, specified by a Gfarm filename or a
+Gfarm URL such as gfarm:/path/name, is accessed using the Gfarm
+parallel I/O library or Gfarm commands which provide a
+single-filesystem image.
+
+========================================================================
+
+*** Structure of Gfarm software
+
+Gfarm software consists of
+
+ - libgfarm.a library
+
+  A library that implements Gfarm APIs including Gfarm filesystem
+  operations, parallel I/O extensions, parallel file transfer,
+  file-affinity process scheduling.  Parallel I/O extensions provide
+  new file views; index file view and local file view.
+
+ - gfmd - Gfarm metadata server
+
+  gfmd is a Gfarm filesystem metadata server for accessing filesystem
+  metadata of the Gfarm filesystem.  gfmd is needed to be running on a
+  metadata server node in advance.
+
+  In the current distribution, filesystem metadata is managed by a
+  LDAP server, which is directly accessed by each client and
+  filesystem node not via the gfmd.
+
+ - gfsd - Gfarm filesystem daemon
+
+  An I/O daemon for the Gfarm filesystem that is running on every
+  filesystem node, which provides remote file operations with access
+  control as well as user authentication, file replication, fast
+  invocation, node resource status monitoring.
+
+ - Gfarm command tools
+
+  Gfarm command tools consists of filesystem commands like gfrm,
+  gfwhere and gfrep, file management tools like digest, gfexport and
+  gfreg, session key management tools like gfkey, and parallel process
+  management tools like gfps, gfrun and gfmpirun.
+
+ - Gfarm sample programs
+
+  This distribution includes several sample programs.  gfimport_fixed
+  and gfimport_text are examples for dividing and registering
+  a file to the Gfarm filesystem.  gfgrep is a parallel grep utility,
+  and gfwc is a parallel word-counts utility.
+
+  These sample programs are located in the directory gftool/example.
+
+========================================================================
+
+*** Installation
+
+This distribution is fully tested on Linux.  Building test is done on
+NetBSD, Solaris, Tru64.  IRIX is fully tested except the gfsd command.
+
+To build the Gfarm system, OpenLDAP and OpenSSL libraries are
+indispensable.  To utilize the Grid Security Infrastructure (GSI) for
+authentication method, GSSAPI library is needed.  Currently, GSSAPI
+library provided by the Globus toolkit version 2 (GT2) is only
+supported by the configure.  When building sample MPI applications,
+MPICH is needed.
+
+Here are the installation steps of the Gfarm system.
+
+	% ./configure [options]
+	% make
+	% make install
+
+Configure has the following command options.  It is necessary to
+specify at least the --with-openldap option.
+
+  --with-openldap=directory
+
+  specifies an installation directory of the OpenLDAP library.
+
+  --with-openssl=directory
+
+  specifies an installation directory of the OpenSSL library.  Default
+  directory is /usr.
+
+  --with-mpi=directory
+
+  specifies an installation directory of the MPICH library to build
+  sample MPI applications.  This is optional.
+
+  --with-globus=directory
+
+  specifies an installation directory of GT2 to utilize GSI
+  authentication method.  Only the GSSAPI library in GT2 libraries is
+  needed.  When not specifying a directory, GLOBUS_LOCATION is used.
+  This is optional.
+
+  --prefix=directory
+
+  specifies a destination directory for installation.  Default is
+  $HOME directory.
+
+When you need to specify a compiler program explicitly, it can be
+specified by the environment variable CC.  This is an example using
+gcc in the C shell.
+
+	% env CC=gcc ./configure [options]
+
+========================================================================
+
+*** Initial configuration
+
+This section describes an initial configuration by an administrator.
+
+This section assumes the following setting.
+
+ - Gfarm installation directory
+
+	/usr/local/gfarm
+
+ - OpenLDAP installation directory
+
+	/usr/local/openldap
+
+ - hostname of a LDAP server
+
+	ldap.hpcc.jp
+
+ - TCP port number of the LDAP server
+
+	9000
+
+ - directory for configuration files of LDAP server
+
+	/etc/gfarm-ldap
+
+ - initial database file for LDAP database
+
+	/etc/gfarm-ldap/initial.ldif
+
+ - directory for LDAP database
+
+	/var/gfarm-ldap
+
+ - base distinguished name of LDAP
+
+	dc=hpcc,dc=jp
+
+ - Gfarm spool directory on filesystem nodes
+
+	/var/spool/gfarm
+
+------------------------------------------------------------------------
+
+** LDAP server
+
+In the current distribution, an LDAP server manages the Gfarm
+filesystem metadata.  This subsection describes the configuration for
+the Gfarm filesystem metadata.
+
+ - slapd.conf
+
+This is a configuration file for a LDAP server included in the
+OpenLDAP distribution.  Note that suffix and rootdn in this file
+refer to the base distinguished name.
+
+This is an example of /etc/gfarm-ldap/slapd.conf on ldap.hpcc.jp.
+
+----------------------------- BEGIN HERE -----------------------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include         /usr/local/openldap/etc/openldap/schema/core.schema
+include         /etc/gfarm-ldap/gfarm.schema
+
+pidfile         /var/gfarm-ldap/slapd.pid
+argsfile        /var/gfarm-ldap/slapd.args
+
+# enable global write access for now. XXX
+defaultaccess write
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        ldbm
+
+suffix          "dc=hpcc, dc=jp"
+rootdn          "cn=root, dc=hpcc, dc=jp"
+
+directory       /var/gfarm-ldap
+rootpw          secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+#
+dbnosync
+-------------------------------- END --------------------------------
+
+ - gfarm.schema
+
+This is a schema file for the Gfarm filesystem metadata used by
+slapd.conf, which is located at /etc/gfarm-ldap/gfarm.schema on
+ldap.hpcc.jp.  There is no need to modify.
+
+----------------------------- BEGIN HERE -----------------------------
+#
+# OID Base is:
+#	iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) 
+#		sra(13122) experimental(2) user(1) 
+#			soda(2924) gfarm(100)
+# i.e. gfarm schema OID base is 1.3.6.1.4.1.13122.2.1.2924.100
+#
+# gfarm schema:
+#	1.3.6.1.4.1.13122.2.1.2924.100.1.x attribute syntax
+#	1.3.6.1.4.1.13122.2.1.2924.100.2.x attribute type
+#	1.3.6.1.4.1.13122.2.1.2924.100.3.x object class
+
+# Attribute Type Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.2.x
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.1 NAME 'hostname'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.2 NAME 'hostalias'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.3 NAME 'architecture'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.4 NAME 'ncpu'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.6 NAME 'mode'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.7 NAME 'user'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.8 NAME 'group'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.9 NAME 'atimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.10 NAME 'atimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.11 NAME 'mtimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.12 NAME 'mtimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.13 NAME 'ctimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.14 NAME 'ctimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.15 NAME 'nsections'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.16 NAME 'section'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.17 NAME 'filesize'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.18 NAME 'checksumType'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.19 NAME 'checksum'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+# Object Class Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.3.x
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.1
+	NAME 'GFarmHost' SUP top STRUCTURAL
+	MUST ( hostname $ architecture )
+	MAY ( ncpu ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.2
+	NAME 'GFarmPath' SUP top STRUCTURAL
+	MUST ( pathname )
+	MAY (	mode $ user $ group $
+		atimesec $ atimensec $
+		mtimesec $ mtimensec $
+		ctimesec $ ctimensec $
+		nsections ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.3
+	NAME 'GFarmFileSection' SUP top STRUCTURAL
+	MUST ( pathname $ section )
+	MAY ( filesize $ checksumType $ checksum ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
+	NAME 'GFarmFileSectionCopy' SUP top STRUCTURAL
+	MUST ( pathname $ section $ hostname ) )
+-------------------------------- END --------------------------------
+
+ - Creating initial database of filesystem metadata
+
+Initial database contains the root distinguished name and information
+of filesystem nodes.
+
+  - root node information of LDAP
+
+  specify the base distinguished name for dn (distinguished name)
+  attribute. 
+
+  - information for filesystem nodes
+
+  For each node, specify the following attributes.
+
+  -- dn
+
+    fully qualified domain name (FQDN) and the base distinguished
+    name.  For example,
+
+	hostname=host.hpcc.jp, dc=hpcc,dc=jp
+
+  -- objectclass
+
+    GFarmHost
+
+  -- hostname
+
+    FQDN
+
+  -- architecture
+
+    architecture name like sparc-sun-solaris.    
+
+  -- ncpu
+
+    the number of cpus
+
+This is a sample database file of /etc/gfarm-ldap/initial.ldif on
+ldap.hpcc.jp.
+
+----------------------------- BEGIN HERE -----------------------------
+dn: dc=hpcc, dc=jp
+objectclass: top
+
+dn: hostname=hpc420-1.hpcc.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: hpc420-1.hpcc.jp
+architecture: sparc-sun-solaris
+ncpu: 1
+
+dn: hostname=hpc420-2.hpcc.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: hpc420-2.hpcc.jp
+architecture: sparc-sun-solaris
+ncpu: 1
+
+dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: wiz.etl.go.jp
+architecture: alpha-dec-osf
+ncpu: 1
+
+dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=jp
+objectclass: GFarmHost
+hostname: o2k.etl.go.jp
+architecture: mips-sgi-irix
+ncpu: 16
+-------------------------------- END --------------------------------
+
+ - Creating a LDAP database
+
+To create an initial LDAP database using the above initial entries,
+execute the following commands on ldap.hpcc.jp.
+
+	% rm -f /var/gfarm-ldap/*
+	% cd /etc/gfarm-ldap
+	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+
+ - Executing a LDAP server
+
+To execute a LDAP server on ldap.hpcc.jp, type the following commands,
+
+	% cd /usr/local/openldap/libexec/
+	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:9000/
+
+The -h option specifies a port number of the LDAP server.
+
+ - Testing a LDAP server
+
+Try to execute the following commands.  If the same content as the
+initial.ldif file is displayed, the test is passed.
+
+In the case of the Bourne Shell:
+	% host=ldap.hpcc.jp
+	% port=9000
+	% basedn='dc=hpcc, dc=jp'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+
+In the case of the csh:
+	% set host=ldap.hpcc.jp
+	% set port=9000
+	% set basedn='dc=hpcc, dc=jp'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
+
+------------------------------------------------------------------------
+
+** Creating a gfsd spool directory on filesystem nodes
+
+On each filesystem node, create a spool directory /var/spool/gfarm.
+Moreover, under the spool directory, create every user directory.  The
+following example creates user directories for three users; morita,
+tatebe, and soda.
+
+	% su
+	Password: 
+	# sh
+	# mkdir /var/spool/gfarm
+	# chmod 1777 /var/spool/gfarm
+	# for u in morita tatebe soda; do
+	>   mkdir /var/spool/gfarm/$u
+	>   chown ${u} /var/spool/gfarm/$u
+	> done
+	# exit
+	# exit
+	% 
+
+------------------------------------------------------------------------
+
+** /etc/gfarm.conf
+
+Create /etc/gfarm.conf on every host including filesystem nodes,
+metadata server nodes, and client nodes.
+
+----------------------------- BEGIN HERE -----------------------------
+spool /var/spool/gfarm
+metadb_serverhost ldap.hpcc.jp
+ldap_serverhost ldap.hpcc.jp
+ldap_serverport 9000
+ldap_base_dn "dc=hpcc, dc=jp"
+auth enable sharedsecret ALL
+-------------------------------- END --------------------------------
+
+On a client node, client programs read ~/.gfarmrc instead of
+/etc/gfarm.conf when it is available.
+
+------------------------------------------------------------------------
+
+** gfmd
+
+On a metadata server node, execute gfmd with a root privilege.  gfmd
+reads the configuration file /etc/gfarm.conf described above.
+
+** gfsd
+
+On every filesystem node, execute gfsd with a root privilege.  gfsd
+reads the configuration file /etc/gfarm.conf described above.
+
+========================================================================
+
+*** Examples
+
+This section describes execution examples.
+
+** Creating a session key for user authentication in a trusted
+   environment
+
+This subsection can be skipped when a home directory is shared among
+filesystem nodes, a metadata server node, and client nodes.
+
+1. create a session key "~/.gfarm_shared_key" for user authentication
+   using the gfkey command.
+
+	% gfkey -c
+
+2. copy the "~/.gfarm_shared_key" securely to the home directory on
+   all nodes including filesystem nodes, a metadata server node, and
+   client nodes.
+
+** Executing sample programs
+
+This subsection shows several execution examples of sample programs.
+
+ - Importing a text file
+
+  Gfimport_text is a sample program for dividing a text file to file
+  fragments by the line and registering it to the Gfarm filesystem.
+
+	% gfimport_text -H hostfile -o gfarm:test.txt textfile
+
+  hostfile specifies a list of filesystem nodes to be stored each
+  file fragment.  The hostfile consists of a hostname of a filesystem
+  node in each line.  The file is almost uniformly divided into file
+  fragments.
+
+  Instead of the "-H hostname" option, the "-f fragment-file" option
+  can be used to manage each fragment size.  fragment-file consists
+  of a fragment size in byte and a filesystem node separated by a
+  white space in each line.
+
+  gfexport outputs a Gfarm file to the standard output.  Using this,
+  you can check whether gfimport_text correctly copies the "textfile"
+  to the "gfarm:test.txt" in the Gfarm filesystem.
+
+	% gfexport gfarm:test.txt | diff -c - textfile
+
+  Using gfwhere command, you can see which filesystem node each file
+  fragment is stored on.
+
+	% gfwhere gfarm:test.txt
+
+ - Importing a fixed-size record file
+
+	% gfimport_fixed -H hostfile -o gfarm:test.bin \
+                         -l 100 fixed-size-record-file
+
+  You can check whether gfimport_fixed correctly copies the
+  "fixed-size-record-file" to the "gfarm:test.bin" in the Gfarm
+  filesystem.
+
+	% gfexport gfarm:test.bin | cmp - fixed-size-record-file
+
+ - gfgrep - parallel grep
+
+  At first, the gfgrep program is needed to be registered as
+  gfarm:gfgrep in the Gfarm filesystem using gfreg command.
+
+	% gfreg /usr/local/gfarm/bin/example/gfgrep gfarm:gfgrep
+
+  Gfrun executes a parallel command on filesystem nodes with
+  file-affinity scheduling.
+
+	% gfrun gfarm:gfgrep -o gfarm:gfgrep.out regexp gfarm:test.txt
+
+  You can check the result to compare the following outputs.
+
+	% gfexport gfarm:gfgrep.out
+	% grep regexp textfile
+
+ - gfwc - parallel word counts
+
+  Using gfreg, gfwc is needed to be registered as gfarm:gfwc in the
+  Gfarm filesystem.
+
+	% gfreg /usr/local/gfarm/bin/example/gfwc gfarm:gfwc
+
+  Since gfwc is an MPI application, it is executed using gfmpirun.
+
+	% gfmpirun gfarm:gfwc gfarm:test.txt
+
+  You can check the result.
+
+	% wc test.txt
+
+$Id$
