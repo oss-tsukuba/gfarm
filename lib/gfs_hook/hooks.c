@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfarm_stringlist.h>
+#include <gfarm/gfs_glob.h>
 #include <gfarm/gfs.h>
 #include "hooks_subr.h"
 
