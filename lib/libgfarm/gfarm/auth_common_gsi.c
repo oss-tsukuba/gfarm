@@ -52,18 +52,39 @@ gfarm_gsi_client_initialize(void)
 char *
 gfarm_gsi_client_cred_name(void)
 {
+	gss_cred_id_t cred;
 	gss_name_t name;
+	OM_uint32 e_major, e_minor;
 	static int initialized = 0;
 	static char *dn;
 
-	if (!initialized) {
-		if (gfarmSecSessionGetInitiatorInitialCredName(&name) < 0) {
-			dn = NULL;
-		} else {
-			dn = gfarmGssNewDisplayName(name, NULL, NULL, NULL);
+	if (initialized)
+		return (dn);
+	
+	if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
+		dn = NULL;
+		gflog_auth_error("gfarm_gsi_client_cred_name()",
+		    "not initialized as an initiator");
+	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
+	    < 0) {
+		dn = NULL;
+		if (gflog_auth_get_verbose()) {
+			gflog_error("cannot convert initiator credential "
+			    "to name", NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
 		}
-		initialized = 1;
+	} else {
+		dn = gfarmGssNewDisplayName(name, &e_major, &e_minor, NULL);
+		if (dn == NULL && gflog_auth_get_verbose()) {
+			gflog_error("cannot convert initiator credential "
+			    "to string", NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+		gfarmGssDeleteName(&name, NULL, NULL);
 	}
+	initialized = 1;
 	return (dn);
 }
 
@@ -148,6 +169,7 @@ gfarm_gsi_cred_config_convert_to_name(
 	int rv;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
+	gss_cred_id_t cred;
 
 	switch (type) {
 	case GFARM_AUTH_CRED_TYPE_DEFAULT:
@@ -208,16 +230,12 @@ gfarm_gsi_cred_config_convert_to_name(
 		if (service != NULL)
 			return ("cred_type is \"self\", "
 			    "but cred_service is set");
-		if (gfarmSecSessionGetInitiatorInitialCredName(namep) < 0)
+		if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0 ||
+		    cred == GSS_C_NO_CREDENTIAL)
 			return ("cred_type is \"self\", "
-			    "but there isn't valid credential");
-		if (gfarmGssDuplicateName(namep, *namep,
-		    &e_major, &e_minor) < 0) {
-			gfarmGssPrintMajorStatus(e_major);
-			gfarmGssPrintMinorStatus(e_minor);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		return (NULL);
+			    "but not initialized as an initiator");
+		rv = gfarmGssNewCredentialName(namep, cred, &e_major,&e_minor);
+		break;
 	default:
 		return ("internal error - invalid cred_type");
 	}
