@@ -113,6 +113,7 @@ const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"gfarm URL prefix is missing",
 	"too many jobs",
 	"file migrated",
+	"is a symbolic link",
 	"unknown error",
 };
 
@@ -188,6 +189,10 @@ const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"GSI credential initialization failed",
 	"GSI initialization failed",
 	"cannote initiate GSI connection",
+
+	/* refered only from gfarm/io_gfsl.c */
+	"GSI delegated credential doesn't exist",
+	"cannot export GSI delegated credential",
 };
 
 /*
