@@ -124,6 +124,14 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 	char *hostname, *e;
 	struct gfarm_file_section_copy_info sc_info;
 
+	/*
+	 * XXX - Gfarm v1 uses a special lock file to avoid race
+	 * condition during on-demand replication.  This file should
+	 * not be registered.
+	 */
+	if (strstr(sec, ":::lock"))
+		return ("lock file");
+
 	if (check_all == 0) {
 		/* check whether the fragment is already registered. */
 		e = gfarm_host_get_canonical_self_name(&hostname);
