@@ -641,7 +641,7 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 	if (e != NULL)
 		goto finish_srchosts;
 
-	pids = malloc(sizeof(int) * ndsthosts);
+	pids = malloc(sizeof(int) * nsrchosts);
 	if (pids == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_edsthosts;
