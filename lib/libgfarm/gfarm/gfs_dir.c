@@ -4,7 +4,7 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "hash.h"
-#include "gfs_pio.h"	/* gfs_profile */
+#include "gfs_pio.h"	/* gfarm_path_expand_home */
 
 static char *gfarm_current_working_directory;
 
