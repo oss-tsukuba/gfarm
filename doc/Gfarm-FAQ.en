@@ -13,9 +13,9 @@ Table of Contents:
 2. Trouble Shooting
   2.1 There is a file displayed as "not a directory" using gfls.  What
      is it?
-  2.2 There remain unregistered files in a spool directory on filesystem
-     nodes due to the interruption of file creation and so on.  How do
-     I delete these unregistered files?
+  2.2 Unregistered or unnecessary files seem to remain in a spool
+     directory on filesystem nodes.  How do I delete these
+     unregistered files?
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -49,9 +49,14 @@ Table of Contents:
 	will be fixed by the next release.  When there is a file
 	displayed as "not a directory", delete the entry using gfrm.
 
-  2.2 There remain unregistered files in a spool directory on filesystem
-     nodes due to the interruption of file creation and so on.  How do
-     I delete these unregistered files?
+  2.2 Unregistered or unnecessary files seem to remain in a spool
+     directory on filesystem nodes.  How do I delete these
+     unregistered files?
+
+	When a parallel process is interrupted during file creation,
+	or when a filesystem node is unavailable during removal of a
+	file, unnecessary files may remain in a spool directory on
+	filesystem nodes.
 
 	gfarm:/bin/gfsplck is prepared for checking and deleting these
 	unregistered files in a spool directory on filesystem nodes.
