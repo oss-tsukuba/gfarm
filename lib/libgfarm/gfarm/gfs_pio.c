@@ -405,9 +405,7 @@ gfs_pio_close(GFS_File gf)
 	 * other process or oneself such as 'nvi'.
 	 */
 	if (e_save == NULL)
-		e = gfs_pio_update_times(gf);
-	if (e_save == NULL)
-		e_save = e;
+		e_save = gfs_pio_update_times(gf);
 
 	gfarm_path_info_free(&gf->pi);
 	gfs_file_free(gf);
