@@ -39,7 +39,7 @@ timerval_calibrate(void)
 	timerval_calibration = 
 		(t2 - t1) / (
 		(s2.tv_sec - s1.tv_sec) +
-		(s2.tv_usec - s1.tv_usec) / 1000000.0);
+		(s2.tv_usec - s1.tv_usec) * .000001);
 	timerval_calibration = 1.0 / timerval_calibration;
 }
 
@@ -222,8 +222,8 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 double
 timeval_sub(struct timeval *t1, struct timeval *t2)
 {
-	return ((t1->tv_sec + t1->tv_usec / 1000000.0) -
-		(t2->tv_sec + t2->tv_usec / 1000000.0));
+	return ((t1->tv_sec + t1->tv_usec * .000001) -
+		(t2->tv_sec + t2->tv_usec * .000001));
 }
 
 #define TESTMODE_WRITE	1
