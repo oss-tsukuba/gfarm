@@ -1418,7 +1418,7 @@ fi
 if test "${with_default_ns_exec_root+set}" = set; then
   withval="$with_default_ns_exec_root"
   default_ns_exec_root="${withval}"
- default_ns_exec_bindir='$(default_ns_exec_root)/bin'
+ default_ns_exec_bindir="${default_ns_exec_root}/bin"
 
 else
   default_ns_exec_root='$(prefix)'
