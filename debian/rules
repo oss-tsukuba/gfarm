@@ -47,7 +47,7 @@ configure-stamp:
 # Add here commands to configure the package.
 	-rm -rf ns/
 	install -d build && cd build && $(CONFIGURE)
-	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --with-globus-flavor=gcc32dbg
 
 	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
 	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
