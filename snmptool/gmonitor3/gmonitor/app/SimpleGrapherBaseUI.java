@@ -78,6 +78,9 @@ public class SimpleGrapherBaseUI {
 	
 	String menuStrAutoUpdateInterval = "AutoUpdate Interval...";
 	JMenuItem menuItemAutoUpdateInterval = new JMenuItem(menuStrAutoUpdateInterval);
+
+	JCheckBoxMenuItem menuItemCorrectByUptime = new JCheckBoxMenuItem("Diff mode correction by uptime");
+
 	
 	JCheckBoxMenuItem menuItemVisInfo = new JCheckBoxMenuItem("Information");
 	JCheckBoxMenuItem menuItemVisGraphStyle = new JCheckBoxMenuItem("Graph Style");
@@ -295,6 +298,7 @@ public class SimpleGrapherBaseUI {
 			
 			menuConf.add(subMenuResample);
 			menuConf.add(menuItemAutoUpdateInterval);
+			menuConf.add(menuItemCorrectByUptime);
 			menuConf.addSeparator();
 			menuConf.add(menuItemVisInfo);
 			menuConf.add(menuItemVisGraphStyle);

@@ -179,6 +179,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		menuItem100div.addActionListener(new MenuItem100divAction());
 		menuItemTotal.addActionListener(new MenuItemTotalAction());
 		menuItemAutoUpdate.addActionListener(new MenuItemAutoUpdateAction());
+		menuItemCorrectByUptime.addActionListener(new CorrectByUptimeAction());
 		
 		RadioAction ra = new RadioAction();
 		radioMenuNone.addActionListener(ra);
@@ -226,6 +227,67 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		checkGraphStyleLine.setSelected(propLineStyle);
 		menuItemGraphStyleLine.setSelected(propLineStyle);
 	}
+	
+	private String selectedUptimeEventForCorrection;
+	private JComboBox comboUptimeSelection = null;
+	private void actionCorrect(boolean b){
+		if(b){
+			if(dtSpace == null){
+				menuItemCorrectByUptime.setSelected(false);
+				return;
+			}
+
+			JDialog dialog = new JDialog(appFrame, "select an event of uptime", true);
+			JPanel panel = new JPanel();
+			panel.setLayout(new BorderLayout());
+			comboUptimeSelection = new JComboBox();
+
+			defineNewComboBox(comboUptimeSelection, dtSpace.getEvents());
+			for(int i=0; i < comboUptimeSelection.getItemCount(); i++){
+	  			Object sel = comboUptimeSelection.getItemAt(i);
+				if("uptime".equals((String) sel)){
+					comboUptimeSelection.setSelectedItem(sel);
+					break;
+				}
+			}
+			
+			JButton ok = new JButton("OK");
+			ok.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					selectedUptimeEventForCorrection = (String) comboUptimeSelection.getSelectedItem();
+					((JButton) e.getSource()).getTopLevelAncestor().setVisible(false);
+					paintGraphAccordingToCurrentGUIStatus();
+//System.out.println("CorrectByUptime: " + selectedUptimeEventForCorrection);
+				}
+			});
+			JButton cancel = new JButton("Cancel");
+			cancel.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					((JButton) e.getSource()).getTopLevelAncestor().setVisible(false);
+					menuItemCorrectByUptime.setSelected(false);
+				}
+			});
+			panel.add(comboUptimeSelection, BorderLayout.NORTH);
+			panel.add(ok, BorderLayout.CENTER);
+			panel.add(cancel, BorderLayout.EAST);
+			panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			dialog.setContentPane(panel);
+			dialog.pack();
+			dialog.setLocationRelativeTo(appFrame);
+			dialog.setVisible(true);
+		} else {
+			selectedUptimeEventForCorrection = null;
+			paintGraphAccordingToCurrentGUIStatus();
+		}
+	}
+	
+	class CorrectByUptimeAction implements ActionListener
+	{
+		public void actionPerformed(ActionEvent ac) {
+			actionCorrect(menuItemCorrectByUptime.isSelected());
+		}
+	}	
+	
 	class GraphMouseAction implements MouseListener {
 		private boolean rightFlag;
 		int click;
@@ -241,7 +303,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		public void mousePressed(MouseEvent e) {
 			click = e.getClickCount();
 			if (click >= 2){
-System.out.println("click = " + click);
+//System.out.println("click = " + click);
 			}
 
 			rightFlag = false;
@@ -253,7 +315,7 @@ System.out.println("click = " + click);
 			// Windows
 			event(e);
 			if(rightFlag == false && click >= 2){
-System.out.println("x2");
+//System.out.println("x2");
 				magnificationY *= 2;
 				paintGraphAccordingToCurrentGUIStatus();
 			}
@@ -262,13 +324,13 @@ System.out.println("x2");
 		private void event(MouseEvent e){
 			if (e.isPopupTrigger() && rightFlag == false) {
 				if (click == 1){
-System.out.println("/2");
+//System.out.println("/2");
 					magnificationY /= 2;
 					if(magnificationY <= 0){
 						magnificationY = 1;
 					}
 				} else if (click == 2){
-System.out.println("Reset");
+//System.out.println("Reset");
 					magnificationY = 1;  // reset
 				}
 				paintGraphAccordingToCurrentGUIStatus();
@@ -276,7 +338,6 @@ System.out.println("Reset");
 			}
 		}
 	}
-
 	
 	class ResampleAction implements ActionListener
 	{
@@ -961,14 +1022,27 @@ System.out.println("AutoUpdate: no .glg file");
 			try {
 				// extract data from data-time space.
 				ArrayList dt = dtSpace.getMeasurementData(host, event, begin, term);
-				if(menuItemBefore.isSelected()){
-					dt = dtSpace.resampleBeforeDateDataPairListToRawDataElements(dt, resampleResolution);
-				} else if(menuItemInterpolate.isSelected()){
-					dt = dtSpace.resampleEstimateDateDataPairListToRawDataElements(dt, resampleResolution);
+				
+				ArrayList rde;
+				if(diffmode && menuItemCorrectByUptime.isSelected() && selectedUptimeEventForCorrection != null){
+					ArrayList uptimeList = dtSpace.getMeasurementData(host, selectedUptimeEventForCorrection, begin, term);
+					if(menuItemBefore.isSelected()){
+						dt = dtSpace.resampleBeforeDateDataPairListToRawDataElements(dt, resampleResolution);
+						uptimeList = dtSpace.resampleBeforeDateDataPairListToRawDataElements(uptimeList, resampleResolution);
+					} else if(menuItemInterpolate.isSelected()){
+						dt = dtSpace.resampleEstimateDateDataPairListToRawDataElements(dt, resampleResolution);
+						uptimeList = dtSpace.resampleEstimateDateDataPairListToRawDataElements(uptimeList, resampleResolution);
+					}
+					rde = dtSpace.convertDateDataPairListToRawDataElementsByUptime(dt, uptimeList);
+				} else {
+					if(menuItemBefore.isSelected()){
+						dt = dtSpace.resampleBeforeDateDataPairListToRawDataElements(dt, resampleResolution);
+					} else if(menuItemInterpolate.isSelected()){
+						dt = dtSpace.resampleEstimateDateDataPairListToRawDataElements(dt, resampleResolution);
+					}					
+					rde = dtSpace.convertDateDataPairListToRawDataElements(dt, diffmode);
 				}
-
-				ArrayList rde = dtSpace.convertDateDataPairListToRawDataElements(dt, diffmode);
-
+				
 				RawData rd = new RawData();
 				rd.setValid(true);
 				RawDataElement[] rda = new RawDataElement[rde.size()];
@@ -1228,6 +1302,9 @@ System.out.println("AutoUpdate: no .glg file");
 					String dt = dateFormat.format(new Date(begin));
 					textBeginTime.setText(dt);
 					long r =(latest-begin)/1000;
+					if(r <= 0){
+						r = 1;
+					}
 					textRange.setText(""+r);
 //System.out.println("dtSpace.getBeginDateTime(): " + begin + " -> " + latest);
 					
