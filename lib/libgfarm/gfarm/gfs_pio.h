@@ -112,6 +112,7 @@ struct gfs_file_section_context {
  *	usually, seek is needed.
  */
 
+extern GFS_File gf_stdout, gf_stderr;
 extern int gf_profile;
 extern int gf_on_demand_replication;
 #define gfs_profile(x) if (gf_profile == 1) { x; }

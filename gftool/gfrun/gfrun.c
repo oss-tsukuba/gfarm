@@ -118,6 +118,10 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	int replication_mode = options->replicate;
 	static char gfexec_command[] = "gfexec";
 
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	command_alist_index = 0;
+#endif
+
 	/*
 	 * deliver gfarm:program.
 	 */
@@ -145,13 +149,12 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (rsh_options != NULL)
 		gfarm_stringlist_add_list(&arg_list, rsh_options);
-	if (options->use_gfexec) {
+	if (options->use_gfexec)
 		gfarm_stringlist_add(&arg_list, gfexec_command);
-		if (cmd_type == USUAL_COMMAND)
-			gfarm_stringlist_add(&arg_list, "-u");
+	if (!options->use_gfexec) {
+		command_alist_index = gfarm_stringlist_length(&arg_list);
+		gfarm_stringlist_add(&arg_list, "(dummy)");
 	}
-	command_alist_index = gfarm_stringlist_length(&arg_list);
-	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (options->use_gfexec || cmd_type == GFARM_COMMAND) {
 		char *cwd;
 
@@ -176,6 +179,10 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			gfarm_stringlist_add(&arg_list, "--gfarm_cwd");
 			gfarm_stringlist_add(&arg_list, cwd);
 		}
+	}
+	if (options->use_gfexec) {
+		command_alist_index = gfarm_stringlist_length(&arg_list);
+		gfarm_stringlist_add(&arg_list, "(dummy)");
 	}
 	gfarm_stringlist_cat(&arg_list, argv);
 	gfarm_stringlist_add(&arg_list, NULL);

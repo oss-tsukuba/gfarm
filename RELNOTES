@@ -4,7 +4,7 @@ and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.0.2
 ============================
 
-[2004.4.9]
+[2004.4.15]
 
 Updated Features
 
@@ -27,10 +27,14 @@ Updated Features
      directory.  Applications do not assume '/gfarm:' indicates a
      current working directory in Gfarm file system.
 
-   - Added initialization and termination functionalities in 'gfexec'
-     with the -u option.  *** You do not need to modify application
-     source codes any more to utilize Gfarm file system.  Just link
-     with gfs_hook.o. ***
+   - Changed the way to pass node number and other information to
+     a gfarm process, when 'gfexec' command is used.
+     *** You do not need to modify application source codes any more ***
+     *** to utilize Gfarm file system.  Just link with gfs_hook.o.   ***
+
+     This has a side effect that all gfarm applications need to be
+     re-compiled. Or, you may be able to use "-S" option of "gfrun"
+     command, if you cannot recompile gfarm applications.
 
  * Bug fix
 

@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -23,7 +24,7 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
-#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers */
+#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers, ... */
 #include "timer.h"
 
 #ifndef GFARM_CONFIG
@@ -1108,23 +1109,66 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
 	return (e);
 }
 
-/*
- * eliminate arguments added by the gfrun command.
- */
-
-static GFS_File gf_stdout, gf_stderr;
+GFS_File gf_stdout, gf_stderr;
 int gf_profile;
 int gf_on_demand_replication;
 
-char *
+static int total_nodes = -1, node_index = -1;
+static char *stdout_file = NULL, *stderr_file = NULL;
+
+static char *
+gfarm_parse_env(void)
+{
+	char *env;
+	pid_t pid = getpid();
+
+	/* NOTE: the following string in sizeof() should be the longest one */
+	char namebuf[sizeof("gfarm_nfrags") + 1 + GFARM_INT64STRLEN];
+
+	sprintf(namebuf, "gfarm_index_%lu", (long)pid);
+	if ((env = getenv(namebuf)) != NULL)
+		node_index = strtol(env, NULL, 0);
+
+	sprintf(namebuf, "gfarm_nfrags_%lu", (long)pid);
+	if ((env = getenv(namebuf)) != NULL)
+		total_nodes = strtol(env, NULL, 0);
+
+	sprintf(namebuf, "gfarm_stdout_%lu", (long)pid);
+	if ((env = getenv(namebuf)) != NULL)
+		stdout_file = env;
+
+	sprintf(namebuf, "gfarm_stderr_%lu", (long)pid);
+	if ((env = getenv(namebuf)) != NULL)
+		stderr_file = env;
+
+	sprintf(namebuf, "gfarm_flags_%lu", (long)pid);
+	if ((env = getenv(namebuf)) != NULL) {
+		for (; *env; env++) {
+			switch (*env) {
+			case 'p': gf_profile = 1; break;
+			case 'r': gf_on_demand_replication = 1; break;
+			}
+		}
+	}
+
+	return (NULL);
+}
+
+/*
+ * eliminate arguments added by the gfrun command.
+ * this way is only used when the gfarm program is invoked directly,
+ * or invoked via "gfrun -S".
+ * if the gfarm program is invoked via gfexec, gfarm_parse_env() is
+ * used instead.
+ */
+
+static char *
 gfarm_parse_argv(int *argcp, char ***argvp)
 {
-	int total_nodes = -1, node_index = -1;
 	int argc = *argcp;
 	char **argv = *argvp;
 	char *argv0 = *argv;
-	int call_set_local = 0;
-	char *stdout_file = NULL, *stderr_file = NULL, *e;
+	char *e;
 
 	--argc;
 	++argv;
@@ -1134,14 +1178,12 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			++argv;
 			if (argc > 0)
 				node_index = strtol(*argv, NULL, 0);
-			call_set_local |= 1;
 		}
 		else if (strcmp(&argv[0][2], "gfarm_nfrags") == 0) {
 			--argc;
 			++argv;
 			if (argc > 0)
 				total_nodes = strtol(*argv, NULL, 0);
-			call_set_local |= 2;
 		}
 		else if (strcmp(&argv[0][2], "gfarm_stdout") == 0) {
 			--argc;
@@ -1173,31 +1215,41 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 		--argc;
 		++argv;
 	}
-	if (call_set_local == 3) {
+
+	++argc;
+	--argv;
+
+	*argcp = argc;
+	*argv = argv0;
+	*argvp = argv;
+
+	return (NULL);
+}
+
+static char *
+gfarm_eval_env_arg(void)
+{
+	char *e;
+
+	if (node_index != -1 && total_nodes != -1) {
 		e = gfs_pio_set_local(node_index, total_nodes);
 		if (e != NULL)
 			return (e);
+	}
 
-		/* redirect stdout and stderr */
-		if (stdout_file != NULL) {
-			e = gfarm_redirect_file(1, stdout_file, &gf_stdout);
-			if (e != NULL)
-				return (e);
-		}
-		if (stderr_file != NULL) {
-			e = gfarm_redirect_file(2, stderr_file, &gf_stderr);
-			if (e != NULL)
-				return (e);
-		}
-		gfs_profile(gfarm_timerval_calibrate());
+	/* redirect stdout and stderr */
+	if (stdout_file != NULL) {
+		e = gfarm_redirect_file(1, stdout_file, &gf_stdout);
+		if (e != NULL)
+			return (e);
+	}
+	if (stderr_file != NULL) {
+		e = gfarm_redirect_file(2, stderr_file, &gf_stderr);
+		if (e != NULL)
+			return (e);
+	}
 
-		++argc;
-		--argv;
-
-		*argcp = argc;
-		*argv = argv0;
-		*argvp = argv;
-	}	
+	gfs_profile(gfarm_timerval_calibrate());
 
 	return (NULL);
 }
@@ -1242,13 +1294,21 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	gfarm_config_set_default_spool_on_client();
 
-	if (argvp != NULL) {
-		if (getenv("DISPLAY") != NULL)
-			gfarm_debug_initialize((*argvp)[0]);
+	if (getenv("DISPLAY") != NULL)
+		gfarm_debug_initialize((*argvp)[0]);
+
+	e = gfarm_parse_env();
+	if (e != NULL)
+		return (e);
+	if (argvp != NULL) { /* not called from gfs_hook */
+		/* command line arguments take precedence over environments */
 		e = gfarm_parse_argv(argcp, argvp);
 		if (e != NULL)
 			return (e);
 	}
+	e = gfarm_eval_env_arg();
+	if (e != NULL)
+		return (e);
 			
 	gfarm_initialized = 1;
 
@@ -1281,7 +1341,7 @@ gfarm_server_initialize(void)
 char *
 gfarm_terminate(void)
 {
-	char *e;
+	char *e, *e_save = NULL;
 
 	gfs_profile(gfs_display_timers());
 
@@ -1289,21 +1349,21 @@ gfarm_terminate(void)
 		fflush(stdout);
 		e = gfs_pio_close(gf_stdout);
 		gf_stdout = NULL;
-		if (e != NULL)
-			return (e);
+		if (e_save == NULL)
+			e_save = e;
 	}
 	if (gf_stderr != NULL) {
 		fflush(stderr);
 		e = gfs_pio_close(gf_stderr);
 		gf_stderr = NULL;
-		if (e != NULL)
-			return (e);
+		if (e_save == NULL)
+			e_save = e;
 	}
 	e = gfarm_metadb_terminate();
-	if (e != NULL)
-		return (e);
+	if (e_save == NULL)
+		e_save = e;
 
-	return (NULL);
+	return (e_save);
 }
 
 /* the following function is for server. */
