@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <sys/types.h> /* fd_set */
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -848,16 +849,64 @@ list(int nhosts, char **hosts, char *(*print_op)(struct gfarm_host_info *))
 	return (e_save);
 }
 
+/* Well, this is really ad hoc manner to sort output... */
+int
+setup_sort(char *sort_arg)
+{
+	int pid, fds[2];
+
+	if (pipe(fds) == -1)
+		return (-1);
+	pid = fork();
+	switch (pid) {
+	case -1: /* error */
+		close(fds[0]);
+		close(fds[1]);
+		return (-1);
+	case 0: /* child */
+		close(fds[1]);
+		dup2(fds[0], 0);
+		close(fds[0]);
+		execlp("sort", "sort", sort_arg, NULL);
+		exit(1);
+	default: /* parent */
+		close(fds[0]);
+		dup2(fds[1], 1);
+		close(fds[1]);
+		return (pid);
+	}
+}
+
+char *
+wait_sort(int pid)
+{
+	char *e;
+	int status;
+
+	fclose(stdout);
+	if (waitpid(pid, &status, 0) == -1)
+		e = gfarm_errno_to_error(errno);
+	else if (WIFSIGNALED(status))
+		e = "killed by signal";
+	else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+		e = "failed to invoke";
+	else
+		e = NULL;
+	if (e != NULL)
+		fprintf(stderr, "%s: sort command: %s\n", program_name, e);
+	return (e);
+}
+
 void
 usage(void)
 {
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
-	    program_name, "[-lL] [-i -p <parallelism>]",
+	    program_name, "[-lL] [-j <concurrency>] [-ip]",
 	    program_name,
-	    "-c -a <architecture> [-n <ncpu>] <hostname> [<hostalias>...]",
+	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
 	    program_name,
-	    "-m [-a <architecture> -n <ncpu> -A] <hostname> [<hostalias>...]",
+	    "-m [-a <architecture>] [-n <ncpu>] [-A] <hostname> [<hostalias>...]",
 	    program_name, "-d <hostname>...",
 	    program_name, "-r");
 	exit(EXIT_FAILURE);
@@ -888,7 +937,7 @@ invalid_option(int c)
 }
 
 long
-parse_opt_long(char *option, char *option_name, char *argument_name)
+parse_opt_long(char *option, int option_char, char *argument_name)
 {
 	long value;
 	char *s;
@@ -896,16 +945,16 @@ parse_opt_long(char *option, char *option_name, char *argument_name)
 	errno = 0;
 	value = strtol(option, &s, 0);
 	if (s == option) {
-		fprintf(stderr, "%s: missing %s after %s\n",
-		    program_name, argument_name, option_name);
+		fprintf(stderr, "%s: missing %s after -%c\n",
+		    program_name, argument_name, option_char);
 		usage();
 	} else if (*s != '\0') {
-		fprintf(stderr, "%s: garbage in %s %s\n",
-		    program_name, option_name, option);
+		fprintf(stderr, "%s: garbage in -%c %s\n",
+		    program_name, option_char, option);
 		usage();
 	} else if (errno != 0 && (value == LONG_MIN || value == LONG_MAX)) {
-		fprintf(stderr, "%s: %s with %s %s\n",
-		    program_name, strerror(errno), option_name, option);
+		fprintf(stderr, "%s: %s with -%c %s\n",
+		    program_name, strerror(errno), option_char, option);
 		usage();
 	}
 	return (value);
@@ -923,8 +972,12 @@ main(int argc, char **argv)
 	int opt_add_aliases = 0;
 	char *opt_architecture = NULL;
 	long opt_ncpu = 0;
-	int i, c;
+	int opt_plain_order = 0; /* i.e. do not sort */
+	int i, c, sort_pid;
 
+#ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
+	sort_pid = 0;
+#endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
@@ -932,7 +985,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-	while ((c = getopt(argc, argv, "ALa:cdilmn:p:r")) != -1) {
+	while ((c = getopt(argc, argv, "ALa:cdij:lmn:pr")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_add_aliases = 1;
@@ -960,17 +1013,20 @@ main(int argc, char **argv)
 		case 'i':
 			opt_resolv_addr = resolv_addr_without_address_use;
 			break;
-		case 'n':
-			opt_ncpu = parse_opt_long(optarg, "-n", "<ncpu>");
-			break;
-		case 'p':
+		case 'j':
 			opt_concurrency = parse_opt_long(optarg,
-			    "-p", "<parallelism>");
+			    c, "<concurrency>");
 			if (opt_concurrency <= 0) {
-				fprintf(stderr, "%s: invalid value: -p %d\n",
-				    program_name, opt_concurrency);
+				fprintf(stderr, "%s: invalid value: -%c %d\n",
+				    program_name, c, opt_concurrency);
 				usage();
 			}
+			break;
+		case 'n':
+			opt_ncpu = parse_opt_long(optarg, c, "<ncpu>");
+			break;
+		case 'p':
+			opt_plain_order = 1;
 			break;
 		case '?':
 			usage();
@@ -1007,6 +1063,7 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
 		if (argc > 0) {
@@ -1043,6 +1100,8 @@ main(int argc, char **argv)
 		e_save = register_db();
 		break;
 	case OP_LIST_LOADAVG:
+		if (!opt_plain_order)
+			sort_pid = setup_sort("+1");
 		e = init_requests(opt_concurrency);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
@@ -1056,8 +1115,15 @@ main(int argc, char **argv)
 		e = wait_all_request_reply();
 		if (e_save == NULL)
 			e_save = e;
+		if (!opt_plain_order && sort_pid != -1) {
+			e = wait_sort(sort_pid);
+			if (e_save == NULL)
+				e_save = e;
+		}
 		break;
 	case OP_DEFAULT:
+		if (!opt_plain_order)
+			sort_pid = setup_sort("+3");
 		e = init_requests(opt_concurrency);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
@@ -1071,6 +1137,11 @@ main(int argc, char **argv)
 		e = wait_all_request_reply();
 		if (e_save == NULL)
 			e_save = e;
+		if (!opt_plain_order && sort_pid != -1) {
+			e = wait_sort(sort_pid);
+			if (e_save == NULL)
+				e_save = e;
+		}
 		break;
 	case OP_LIST_DB:
 		if (argc == 0) {
