@@ -45,39 +45,39 @@ gfs_stat_free(3).</para>
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NO_MEMORY</filename></term>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_AUTHENTICATION</filename></term>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
 <para>User authentication failed when connecting to gfmd(8).</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_PERMISSION_DENIED</filename></term>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter>
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NO_SUCH_OBJECT</filename></term>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter>
 does not exist.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NOT_A_DIRECTORY</filename></term>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
 <para>A component of the path prefix is not a directory.</para>
 </listitem>

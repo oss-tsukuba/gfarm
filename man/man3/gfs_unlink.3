@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_UNLINK" "3" "18 March 2003" "Gfarm" ""
+.TH "GFS_UNLINK" "3" "04 December 2003" "Gfarm" ""
 .SH NAME
 gfs_unlink \- delete a file
 .SH SYNOPSIS
@@ -18,23 +18,23 @@ char *gfs_unlink (char * \fIgfarm_url\fB);
 by \fIgfarm_url\fR.
 .SH "RETURN VALUES"
 .TP
-\fB\fINULL\fB\fR
+\fBNULL\fR
 The function terminated successfully.
 .TP
-\fB\fIGFARM_ERR_NO_MEMORY\fB\fR
+\fBGFARM_ERR_NO_MEMORY\fR
 Insufficient memory was available.
 .TP
-\fB\fIGFARM_ERR_AUTHENTICATION\fB\fR
+\fBGFARM_ERR_AUTHENTICATION\fR
 User authentication failed when connecting to gfmd(8).
 .TP
-\fB\fIGFARM_ERR_PERMISSION_DENIED\fB\fR
+\fBGFARM_ERR_PERMISSION_DENIED\fR
 \fIgfarm_url\fR
 points outside your accessible address space.
 .TP
-\fB\fIGFARM_ERR_NO_SUCH_OBJECT\fB\fR
+\fBGFARM_ERR_NO_SUCH_OBJECT\fR
 \fIgfarm_url\fR does not exist.
 .TP
-\fB\fIGFARM_ERR_NOT_A_DIRECTORY\fB\fR
+\fBGFARM_ERR_NOT_A_DIRECTORY\fR
 A component of the path prefix is not a directory.
 .TP
 \fBOthers\fR

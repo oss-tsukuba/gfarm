@@ -45,13 +45,13 @@ bytes written to the address pointed by <parameter>np</parameter>.</para>
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NO_MEMORY</filename></term>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
 </listitem>

@@ -49,7 +49,7 @@ pointer of the entry to the address pointed to by
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
 </listitem>

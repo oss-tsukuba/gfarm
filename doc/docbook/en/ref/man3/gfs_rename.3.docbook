@@ -41,39 +41,39 @@
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NO_MEMORY</filename></term>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_AUTHENTICATION</filename></term>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
 <listitem>
 <para>User authentication failed when connecting to gfmd(8).</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_PERMISSION_DENIED</filename></term>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para><parameter>gfarm_url_from</parameter> or <parameter>gfarm_url_from</parameter>
 points outside your accessible address space.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_ALREADY_EXISTS</filename></term>
+<term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
 <para><parameter>gfarm_url_to</parameter> already exists.  This includes the case where
 <parameter>gfarm_url</parameter> is a symbolic link, dangling or not.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_INVALID_ARGUMENT</filename></term>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
 <para><parameter>gfarm_url_to</parameter> contained a path prefix of <parameter>gfarm_url_from</parameter>,
 more generally, an attempt was made to make a directory a subdirectory
@@ -81,7 +81,7 @@ of itself.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>GFARM_ERR_NO_SUCH_OBJECT</filename></term>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para><parameter>gfarm_url_from</parameter> does not exist.</para>
 </listitem>

@@ -50,35 +50,35 @@ the dynamically allocated memory space pointed to by
 <variablelist>
 
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NO_MEMORY</filename></term>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NOT_A_DIRECTORY</filename></term>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
 <para>A component of the path prefix is not a directory.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_INVALID_ARGUMENT</filename></term>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter> is NULL.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_PERMISSION_DENIED</filename></term>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter> points outside your accessible
 address space.</para>
@@ -86,7 +86,7 @@ address space.</para>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NO_SUCH_OBJECT</filename></term>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter> does not exist.</para>
 </listitem>

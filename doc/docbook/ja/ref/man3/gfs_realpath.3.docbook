@@ -50,21 +50,21 @@
 <variablelist>
 
 <varlistentry>
-<term><filename>NULL</filename></term>
+<term><constant>NULL</constant></term>
 <listitem>
 <para>正常終了を示します．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NO_MEMORY</filename></term>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>メモリ不足のため処理を中止しました．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NOT_A_DIRECTORY</filename></term>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
 <listitem>
 <para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかった
 ことを示します．</para>
@@ -72,21 +72,21 @@
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_INVALID_ARGUMENT</filename></term>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter> が NULL ポインタです．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_PERMISSION_DENIED</filename></term>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
 <para>指定されたパスへアクセスする権限がありません．</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>GFARM_ERR_NO_SUCH_OBJECT</filename></term>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
 <listitem>
 <para>指定されたパス名が存在しません．</para>
 </listitem>
