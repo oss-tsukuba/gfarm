@@ -238,7 +238,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 	if (GFS_FILE_IS_PROGRAM(gf)) {
 		e = gfarm_host_get_self_architecture(&arch);
 		if (e != NULL)
-			return (gf->error = GFARM_ERR_OPERATION_NOT_PERMITTED);
+			return (gf->error = e);
 		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
 	}
 
