@@ -4,6 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = html/en/ref html/ja/ref
+SUBDIRS = html
 
 include $(top_srcdir)/makes/subdir.mk

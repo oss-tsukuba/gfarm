@@ -17,10 +17,13 @@ post-gfregister-hook:
 html-all:
 
 html-install:
-	@for i in / $(DOCBOOK); do \
-		n=`basename $$i .docbook`.html; \
+	@for i in / $(HTML); do \
 		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $$n $(htmldir)/$$n ); \
+		( set -x; $(INSTALL_DATA) $${i} $(htmldir)/$${i} ); \
+	done
+	@for i in / $(HTMLSRC); do \
+		case $$i in /) continue;; esac; \
+		( set -x; $(INSTALL_DATA) $${i}.html $(htmldir)/$${i}.html ); \
 	done
 
 html-clean:
@@ -39,7 +42,8 @@ $(dstsubst): $(srcsubst)
 	$(DOCBOOK2HTML) $(srcsubst)
 
 html-html:
-	for i in $(DOCBOOK); do \
+	for i in / $(HTMLSRC); do \
+		case $$i in /) continue;; esac; \
 		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$${i}.html $${i}.html; \
 	done
