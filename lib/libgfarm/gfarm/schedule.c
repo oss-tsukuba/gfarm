@@ -1,51 +1,53 @@
 #include <stdio.h> /* sprintf */
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <errno.h>
-#include <time.h>
-#include <unistd.h>
 #include <gfarm/gfarm.h>
-#ifdef HAVE_POLL
-#include <poll.h>
-#endif
-#include "host.h"
+#include "auth.h" /* XXX gfarm_random_initialize() */
 #include "gfs_client.h"
 
 char GFARM_ERR_NO_REPLICA[] = "no replica";
 char GFARM_ERR_NO_HOST[] = "no filesystem node";
 
-struct replied_host_of_search_idle {
+#define IDLE_LOAD_AVERAGE	0.1F
+#define SEMI_IDLE_LOAD_AVERAGE	0.5F
+
+struct search_idle_available_host {
 	char *hostname;
-	double loadavg;
+	float loadavg;
 };
 
-struct state_of_search_idle {
-	int nreplied_hosts;
-	struct replied_host_of_search_idle *replied_hosts;
+struct search_idle_state {
+	struct search_idle_available_host *available_hosts;
+	int available_hosts_number;
+	int idle_hosts_number;
+	int semi_idle_hosts_number;
 };
 
-struct closure_for_search_idle {
-	struct state_of_search_idle *state;
+struct search_idle_callback_closure {
+	struct search_idle_state *state;
 	char *hostname;
 };
 
 static void
 search_idle_callback(void *closure, struct sockaddr *addr,
-	struct gfs_client_load *result, char *error)
+	struct gfs_client_load *load, char *error)
 {
-	struct closure_for_search_idle *c = closure;
-	struct state_of_search_idle *s = c->state;
+	struct search_idle_callback_closure *c = closure;
+	struct search_idle_state *s = c->state;
 
 	if (error == NULL) {
-		struct replied_host_of_search_idle *h =
-		    &s->replied_hosts[s->nreplied_hosts++];
+		struct search_idle_available_host *h =
+		    &s->available_hosts[s->available_hosts_number++];
 
 		h->hostname = c->hostname;
-		h->loadavg = result->loadavg_1min;
+		h->loadavg = load->loadavg_1min;
+		if (h->loadavg <= SEMI_IDLE_LOAD_AVERAGE) {
+			s->semi_idle_hosts_number++;
+			if (h->loadavg <= IDLE_LOAD_AVERAGE)
+				s->idle_hosts_number++;
+		}
 	}
 	free(c);
 }
@@ -53,10 +55,10 @@ search_idle_callback(void *closure, struct sockaddr *addr,
 static int
 loadavg_compare(const void *a, const void *b)
 {
-	const struct replied_host_of_search_idle *p = a;
-	const struct replied_host_of_search_idle *q = b;
-	const double l1 = p->loadavg;
-	const double l2 = q->loadavg;
+	const struct search_idle_available_host *p = a;
+	const struct search_idle_available_host *q = b;
+	const float l1 = p->loadavg;
+	const float l2 = q->loadavg;
 
 	if (l1 < l2)
 		return (-1);
@@ -66,7 +68,118 @@ loadavg_compare(const void *a, const void *b)
 		return (0);
 }
 
-#define QUERY_LIMIT 10	/* ask 10 hosts */
+/*
+ * The search will be stopped, if `enough_number' of semi-idle hosts
+ * are found.
+ *
+ * `*nohostsp' is an IN/OUT parameter.
+ * It means desired number of hosts as an INPUT parameter.
+ * It returns available number of hosts as an OUTPUT parameter.
+ */
+static char *
+search_idle(int concurrency, int enough_number,
+	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
+{
+	char *e;
+	int i, desired_number = *nohostsp;
+	struct gfs_client_udp_requests *udp_requests;
+	struct sockaddr addr;
+	struct search_idle_state s;
+	struct search_idle_callback_closure *c;
+
+	s.available_hosts_number =
+	    s.idle_hosts_number = s.semi_idle_hosts_number = 0;
+	s.available_hosts = malloc(nihosts * sizeof(*s.available_hosts));
+	if (s.available_hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = gfarm_client_init_load_requests(concurrency, &udp_requests);
+	if (e != NULL) {
+		free(s.available_hosts);
+		return (e);
+	}
+	for (i = 0; i < nihosts; i++) {
+		e = gfarm_host_address_get(ihosts[i], gfarm_spool_server_port,
+		    &addr, NULL);
+		if (e != NULL)
+			continue;
+		c = malloc(sizeof(*c));
+		if (c == NULL)
+			break;
+		c->state = &s;
+		c->hostname = ihosts[i];
+		e = gfarm_client_add_load_request(udp_requests, &addr,
+		    c, search_idle_callback);
+		if (s.idle_hosts_number >= desired_number ||
+		    s.semi_idle_hosts_number >= enough_number)
+			break;
+	}
+	e = gfarm_client_wait_all_load_results(udp_requests);
+	if (s.available_hosts_number == 0) {
+		free(s.available_hosts);
+		*nohostsp = 0;
+		return (GFARM_ERR_NO_HOST);
+	}
+
+	/* sort hosts in the order of load average */
+	qsort(s.available_hosts, s.available_hosts_number,
+	    sizeof(*s.available_hosts), loadavg_compare);
+
+	for (i = 0; i < s.available_hosts_number && i < desired_number; i++)
+		ohosts[i] = s.available_hosts[i].hostname;
+	*nohostsp = i;
+	free(s.available_hosts);
+
+	return (NULL);
+}
+
+/* #define USE_SHUFFLED */
+
+#ifdef USE_SHUFFLED
+
+static void
+shuffle_strings(int n, char **strings)
+{
+	int i, j;
+	char *tmp;
+
+	gfarm_random_initialize();
+	for (i = n - 1; i > 0; --i) {
+#ifdef HAVE_RANDOM
+		j = random() % (i + 1);
+#else
+		j = rand()/(RAND_MAX + 1.0) * (i + 1);
+#endif
+		tmp = strings[i];
+		strings[i] = strings[j];
+		strings[j] = tmp;
+	}
+}
+
+static char *
+search_idle_shuffled(int concurrency, int enough_number,
+	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
+{
+	char *e, **shuffled_ihosts;
+	int i;
+
+	/* shuffle ihosts[] to avoid unbalanced host selection */
+	shuffled_ihosts = malloc(nihosts * sizeof(*shuffled_ihosts));
+	if (shuffled_ihosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	for (i = 0; i < nihosts; i++)
+		shuffled_ihosts[i] = ihosts[i];
+	shuffle_strings(nihosts, shuffled_ihosts);
+
+	e = search_idle(concurrency, enough_number,
+	    nihosts, shuffled_ihosts, nohostsp, ohosts);
+	free(shuffled_ihosts);
+	return (e);
+}
+
+#endif /* USE_SHUFFLED */
+
+#define CONCURRENCY	10
+#define ENOUGH_RATE	4
 
 /* 
  * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
@@ -78,59 +191,26 @@ char *
 gfarm_schedule_search_idle_hosts(
 	int nihosts, char **ihosts, int nohosts, char **ohosts)
 {
-	char *e, *e_save = NULL;
-	int i;
-	struct gfs_client_udp_requests *udp_requests;
-	struct sockaddr addr;
-	struct state_of_search_idle s;
-	struct closure_for_search_idle *c;
+	int i, j, nfound = nohosts;
+#ifdef USE_SHUFFLED
+	char *e = search_idle_shuffled(CONCURRENCY, nohosts * ENOUGH_RATE,
+	    nihosts, ihosts, &nfound, ohosts);
+#else
+	char *e = search_idle(CONCURRENCY, nohosts * ENOUGH_RATE,
+	    nihosts, ihosts, &nfound, ohosts);
+#endif
 
-	s.nreplied_hosts = 0;
-	s.replied_hosts = malloc(
-	    nihosts * sizeof(struct replied_host_of_search_idle));
-	if (s.replied_hosts == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	e = gfarm_client_init_load_requests(QUERY_LIMIT, &udp_requests);
-	if (e != NULL) {
-		free (s.replied_hosts);
+	if (e != NULL)
 		return (e);
-	}
-	for (i = 0; i < nihosts; i++) {
-		e = gfarm_host_address_get(ihosts[i],
-		    gfarm_spool_server_port,
-		    &addr, NULL);
-		if (e != NULL) {
-			if (e_save == NULL)
-				e_save = e;
-			continue;
-		}
-		c = malloc(sizeof(*c));
-		if (c == NULL) {
-			e_save = GFARM_ERR_NO_MEMORY;
-			break;
-		}
-		c->state = &s;
-		c->hostname = ihosts[i];
-		e = gfarm_client_add_load_request(udp_requests, &addr,
-		    c, search_idle_callback);
-		if (s.nreplied_hosts >= nohosts)
-			break;
-	}
-	e = gfarm_client_wait_all_load_results(udp_requests);		
-	if (s.nreplied_hosts == 0) {
+	if (nfound == 0) {
 		/* Oh, my god */
-		free(s.replied_hosts);
 		return (GFARM_ERR_NO_HOST);
 	}
-
-	/* sort hosts in the order of load average */
-	qsort(s.replied_hosts, s.nreplied_hosts,
-	      sizeof(*s.replied_hosts), loadavg_compare);
-
-	for (i = 0; i < nohosts; i++)
-		ohosts[i] = s.replied_hosts[i % s.nreplied_hosts].hostname;
-	free(s.replied_hosts);
-
+	for (i = nfound, j = 0; i < nohosts; i++, j++) {
+		if (j >= nfound)
+			j = 0;
+		ohosts[i] = ohosts[j];
+	}
 	return (NULL);
 }
 

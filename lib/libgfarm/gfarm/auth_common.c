@@ -75,13 +75,28 @@ write_hex(FILE *fp, void *buffer, size_t length)
 }
 
 void
+gfarm_random_initialize(void)
+{
+	static int rand_initialized = 0;
+	struct timeval t;
+
+	if (!rand_initialized) {
+		rand_initialized = 1;
+		gettimeofday(&t, NULL);
+#ifdef HAVE_RANDOM
+		srandom(t.tv_sec + t.tv_usec);
+#else
+		srand(t.tv_sec + t.tv_usec);
+#endif
+	}
+}
+
+void
 gfarm_auth_random(void *buffer, size_t length)
 {
 	unsigned char *p = buffer;
 	size_t i = 0;
 	int fd, rv;
-	struct timeval t;
-	static int rand_initialized = 0;
 
 	/*
 	 * do not use fopen(3) here,
@@ -100,15 +115,7 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 
 	/* XXX - this makes things too weak */
-	if (!rand_initialized) {
-		rand_initialized = 1;
-		gettimeofday(&t, NULL);
-#ifdef HAVE_RANDOM
-		srandom(t.tv_sec + t.tv_usec);
-#else
-		srand(t.tv_sec + t.tv_usec);
-#endif
-	}
+	gfarm_random_initialize();
 	for (; i < length; i++) {
 #ifdef HAVE_RANDOM
 		p[i] = random();

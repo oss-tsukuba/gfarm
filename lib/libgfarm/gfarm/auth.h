@@ -22,6 +22,7 @@ enum gfarm_auth_method {
  * 	note that this is too weak authentication for the Internet.
  */
 
+void gfarm_random_initialize(void);
 void gfarm_auth_random(void *, size_t);
 void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
