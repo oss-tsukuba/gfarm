@@ -62,7 +62,7 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 		 * gfs_stat() incorrectly assumes that this is a directory,
 		 * and reports GFARM_ERR_NOT_A_DIRECTORY.
 		 */
-		return ("no fragment information");
+		return (GFARM_ERR_NO_FRAGMENT_INFORMATION);
 	}
 
 	s->st_size = 0;

@@ -58,7 +58,7 @@ remove_cwd_entries()
 		}
 		e = gfarm_stringlist_add(&entry_list, p);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s/%s\n",
+			fprintf(stderr, "%s/%s: %s\n",
 					cwdbf, entry->d_name, e);
 		}
 	}
@@ -71,7 +71,7 @@ remove_cwd_entries()
 
 		e = gfs_stat(path, &gs);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			continue;
 		}
 		if (GFARM_S_ISREG(gs.st_mode)) {
@@ -84,12 +84,12 @@ remove_cwd_entries()
 			}
 			e = gfs_unlink(url);
 			if (e != NULL)
-				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			free(url);
 		} else if (GFARM_S_ISDIR(gs.st_mode)) {
 			e = gfs_chdir(path);
 			if (e != NULL) {
-				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 				continue;
 			}
 			remove_cwd_entries();
@@ -100,7 +100,7 @@ remove_cwd_entries()
 			}
 			e = gfs_rmdir(path);
 			if (e != NULL)
-				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 		}
 		gfs_stat_free(&gs);
 	}
@@ -110,11 +110,13 @@ remove_cwd_entries()
 static char *
 remove_whole_file_or_dir(char *path, int is_recursive)
 {
-	char *e;
+	char *e, *e2;
 	struct gfs_stat gs;
 	char cwdbuf[PATH_MAX * 2];
 
 	e = gfs_stat(path, &gs);
+	if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
+		e2 = gfs_unlink(path);	
 	if (e != NULL)
 		return (e);
 
