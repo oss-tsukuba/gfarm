@@ -3,7 +3,7 @@
 
 <refentry id='gfs-chmod.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>22 Feb 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_chmod</refentrytitle>
@@ -34,14 +34,19 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>The mode of the file given by 
-<parameter>gfarm_url</parameter>
-is changed.</para>
+<para><function>gfs_chmod()</function> changes the mode of the file
+given by <parameter>gfarm_url</parameter>.  Permission bit masks of
+<parameter>mode</parameter> are similar to ones of mode parameter to
+<function>chmod(2)</function>, though only the least 9 bit are
+effective.</para>
 
-<para>A file with any execution bit should not be changed to that with no
-execution bit.  It is necessary to keep at least one execution bit.
-Oppositely, a file with no execution bit should not be changed to that
-with any execution bit.</para>
+<para>An executable file cannot be changed to a non-executable file
+and vice versa, unless the number of fragment of the file is only one.
+In detail, a file has multiple fragments with any execution bit should not
+be changed to that with no execution bit.  It is necessary to have
+at least one execution bit.  Similarly, a file has multiple fragments
+with no execution bit should not be changed to that with any execution bit.
+</para>
 
 </refsect1>
 
@@ -72,8 +77,8 @@ with any execution bit.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>
-points outside your accessible address space.</para>
+<para>The parent directory of <parameter>gfarm_url</parameter>
+did not allow write permission.</para>
 </listitem>
 </varlistentry>
 
@@ -81,7 +86,8 @@ points outside your accessible address space.</para>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
 <para>The effective UID does not match the owner of the file, and is not
-zero.</para>
+zero.  Or an attempt was made to change an executable file with more than
+one fragment to a non-executable file, or vice versa.</para>
 </listitem>
 </varlistentry>
 
