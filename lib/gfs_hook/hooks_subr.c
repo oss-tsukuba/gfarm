@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h> /* PATH_MAX */
 #include <gfarm/gfarm.h>
 #include "hooks_subr.h"
 /* for creating_file hash -- XXX: Gfarm v2 may make this stuff obsolete */
@@ -38,6 +39,9 @@ static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 /*
  * static function definitions
  */
+static void gfs_hook_disable_hook();
+static void gfs_hook_enable_hook();
+static int gfs_hook_check_hook_disabled();
 static void gfs_hook_set_current_view_local();
 static void gfs_hook_set_current_view_index(int, int);
 static void gfs_hook_set_current_view_global();
@@ -460,6 +464,68 @@ gfs_hook_is_mount_point(const char *path)
 }
 
 static int
+gfs_hook_strmatchlen(const char *s1, const char *s2, size_t n)
+{
+	int c = 0;
+
+	while (s1[c] && s2[c] && s1[c] == s2[c] && c < n)
+		++c;
+	return (c);
+}
+
+/* strncmp(s1 + '/' + s2, t1, n) */
+static int
+gfs_hook_strncmp2(const char *s1, const char *s2, const char *t1, size_t n)
+{
+	int m;
+
+	m = gfs_hook_strmatchlen(s1, t1, n);
+	if (m == n)
+		return (0);
+	if (s1[m])
+		return (s1[m] - t1[m]);
+	t1 += m;
+	n -= m;
+	if (m > 0 && s1[m - 1] != '/') {
+		const char *slash = "/";
+		m = gfs_hook_strmatchlen(slash, t1, n);
+		if (m == n)
+			return (0);
+		if (slash[m])
+			return (slash[m] - t1[m]);
+		t1 += m;
+		n -= m;
+	}
+	m = gfs_hook_strmatchlen(s2, t1, n);
+	if (m == n)
+		return (0);
+	return (s2[m] - t1[m]);
+}	
+
+static const char *
+gfs_hook_is_mount_point_relative(const char *path)
+{
+	char cwd[PATH_MAX + 1], *r;
+	int mntdirlen, cwdlen;
+
+	gfs_hook_disable_hook();
+	r = getcwd(cwd, sizeof(cwd));
+	gfs_hook_enable_hook();
+	if (r == NULL)
+		return (NULL);
+
+	/* XXX - neither '..' nor '.' is properly handled. */
+	mntdirlen = sizeof(gfs_mntdir) - 1;
+	cwdlen = strlen(cwd);
+	if (*path != '/'
+	    && gfs_hook_strncmp2(cwd, path, gfs_mntdir, mntdirlen) == 0
+	    && gfs_hook_is_null_or_slash(path[mntdirlen - cwdlen]))
+		return (&path[mntdirlen - cwdlen]);
+	else
+		return (NULL);
+}
+
+static int
 set_received_prefix(const char *path)
 {
 	char *end, *p;
@@ -492,6 +558,29 @@ set_received_prefix(const char *path)
 }
 
 /*
+ * bypassing mechanism for hooking library
+ */
+static int _gfs_hook_disable_hook = 0;
+
+static void
+gfs_hook_disable_hook()
+{
+	_gfs_hook_disable_hook = 1;
+}
+
+static void
+gfs_hook_enable_hook()
+{
+	_gfs_hook_disable_hook = 0;
+}
+
+static int
+gfs_hook_check_hook_disabled()
+{
+	return (_gfs_hook_disable_hook);
+}
+
+/*
  * Gfarm path starts with '<mount_point>', 'gfarm:' or 'gfarm@'.
  *
  * When the Gfarm path starts with '<mount_point>', the path is
@@ -515,6 +604,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 	static char gfarm_url_prefix_for_root[] = "gfarm@";
 	char *sec = NULL;
 
+	if (gfs_hook_check_hook_disabled())
+		return (0);
+
 	path_save = path;
 	if (gfs_hook_is_mount_point(path)) {
 		is_mount_point = 1;
@@ -524,8 +616,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
-		if (!gfarm_initialized &&
-		    gfs_hook_initialize() != NULL) {
+		if (!gfarm_initialized && gfs_hook_initialize() != NULL) {
 			gfs_hook_not_initialized();
 			return (0); /* don't perform gfarm operation */
 		}
@@ -533,8 +624,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 		 * extension for accessing individual sections
 		 *   gfarm::section:pathname
 		 */
-		if (path[sizeof_prefix - 1] == ':') {
-			const char *p = path + sizeof_prefix;
+		path += sizeof_prefix - 1;
+		if (path[0] == ':') {
+			const char *p = path + 1;
 			int secsize = strcspn(p, "/:");
 			int urlsize;
 
@@ -544,12 +636,11 @@ gfs_hook_is_url(const char *path, char **urlp)
 			 * '/gfarm/~' and '/gfarm/.' will be translated
 			 * to 'gfarm:~' and 'gfarm:.', respectively.
 			 */
-			if (is_mount_point
-			    && p[secsize + 1] == '/'
+			if (is_mount_point && p[secsize + 1] == '/'
 			    && (p[secsize + 2] == '~' || p[secsize + 2] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
-			if (is_mount_point && path[secsize + 1] == '\0')
+			if (is_mount_point && p[secsize + 1] == '\0')
 				add_slash = 1;
 
 			urlsize = sizeof_gfarm_prefix - 1 + add_slash
@@ -578,19 +669,15 @@ gfs_hook_is_url(const char *path, char **urlp)
 			 * '/gfarm/~' and '/gfarm/.' will be translated
 			 * to 'gfarm:~' and 'gfarm:.', respectively.
 			 */
-			if (is_mount_point
-			    && path[sizeof_prefix - 1] == '/'
-			    && (path[sizeof_prefix] == '~'
-				|| path[sizeof_prefix] == '.'))
+			if (is_mount_point && path[0] == '/'
+			    && (path[1] == '~' || path[1] == '.'))
 				remove_slash = 1;
 			/* '/gfarm' will be translated to 'gfarm:/'. */
-			if (is_mount_point
-			    && path[sizeof_prefix - 1] == '\0')
+			if (is_mount_point && path[0] == '\0')
 				add_slash = 1;
 
 			*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
-				       + strlen(path + sizeof_prefix
-						+ remove_slash - 1) + 1);
+				       + strlen(path + remove_slash) + 1);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
 			/*
@@ -602,7 +689,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			if (add_slash)
 				strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
 			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
-			    path + sizeof_prefix + remove_slash - 1);
+			       path + remove_slash);
 
 			gfs_hook_set_current_view_default();
 		}
@@ -610,12 +697,42 @@ gfs_hook_is_url(const char *path, char **urlp)
 			return (0);
 		return (1);
 	}
+	/* The current directory is in the Gfarm file system */
 	if (*path_save != '/' && gfs_hook_get_cwd_is_gfarm()) {
 		*urlp = malloc(sizeof_gfarm_prefix + strlen(path_save));
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
 		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
 		strcpy(*urlp + sizeof_gfarm_prefix - 1, path_save);
+		/* It is not necessary to change the current view. */
+		return (1);
+	}
+	/* The current directory is *not* in the Gfarm file system */
+	if (*path_save != '/'
+	    && (path = gfs_hook_is_mount_point_relative(path_save))) {
+		if (!gfarm_initialized && gfs_hook_initialize() != NULL) {
+			gfs_hook_not_initialized();
+			return (0); /* don't perform gfarm operation */
+		}
+		/*
+		 * '/gfarm/~' and '/gfarm/.' will be translated
+		 * to 'gfarm:~' and 'gfarm:.', respectively.
+		 */
+		if (path[0] == '/' && (path[1] == '~' || path[1] == '.'))
+			remove_slash = 1;
+		/* '/gfarm' will be translated to 'gfarm:/'. */
+		if (path[0] == '\0')
+			add_slash = 1;
+
+		*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
+			       + strlen(path + remove_slash) + 1);
+		if (*urlp == NULL)
+			return (0) ; /* XXX - should return ENOMEM */
+		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
+		if (add_slash)
+			strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
+		strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
+		       path + remove_slash);
 		/* It is not necessary to change the current view. */
 		return (1);
 	}
