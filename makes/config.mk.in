@@ -54,7 +54,6 @@ ldap_libs = @ldap_libs@
 openssl_includes = @openssl_includes@
 openssl_libs = @openssl_libs@
 
-globus_shared = @globus_shared@
 globus_flavor = @globus_flavor@
 globus_location = @globus_location@
 globus_includes = @globus_includes@
