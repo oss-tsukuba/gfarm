@@ -407,6 +407,10 @@ skip_opt: ;
 			fprintf(stderr, "%s: -H option is ignored.\n",
 				program_name);
 		}
+		if (nprocs > 0) {
+			fprintf(stderr, "%s: -N option is ignored.\n",
+				program_name);
+		}
 		e = gfarm_url_hosts_schedule(schedfile, NULL, &nhosts, &hosts);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", schedfile, e);
@@ -417,6 +421,11 @@ skip_opt: ;
 	else if (hostfile != NULL) {
 		/* Hostfile scheduling */
 		int error_line;
+
+		if (nprocs > 0) {
+			fprintf(stderr, "%s: -N option is ignored.\n",
+				program_name);
+		}
 		/*
 		 * Is it necessary to access a Gfarm hostfile?
 		 */
