@@ -12,17 +12,19 @@ called.
 *** glibc
 
 When you are using glibc typically in Linux, it is necessary to
-replace it to enable necessary system calls to hook properly.  The
-change is just for a version script for ld to add necessary symbols
-(__lseek64, __getdents, and __getdents64) to the dynamic symbol table.
+install a glibc-not-hidden package to enable necessary system calls to
+hook properly.  The change is just for a version script for ld to add
+necessary symbols (__lseek64, __getdents, and __getdents64) to the
+dynamic symbol table.
 
-Binary packages of glibc is available from Gfarm web site
-(http://datafarm.apgrid.org/software/) for typical distribution of
-Linux.  If you need a glibc package other than provided, contact
-datafarm@apgrid.org.
+Binary and source packages of glibc-not-hidden are available from
+Gfarm web site (http://datafarm.apgrid.org/software/) for typical
+distribution of Linux.  If you need a glibc package other than
+provided, contact datafarm@apgrid.org.
 
-If you cannot replace glibc, follow the section of 'Running existing
-programs by statically linking with syscall-hooking library'.
+If you cannot install glibc-not-hidden package, follow the section of
+'Running existing programs by statically linking with syscall-hooking
+library'.
 
 *** Running existing programs without any modification
 
@@ -32,16 +34,16 @@ in Solaris.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD=/usr/lib/libgfs_hook.so.0
+	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD /usr/lib/libgfs_hook.so.0
+	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/libc-not-hidden.so'
 
 You can specify the above in the shell rc file such as .bashrc and
-.cshrc.  However, tcsh is not tested well at this time.  We recommend
-to use bash.
+.cshrc.  However, tcsh and zsh are not tested well at this time.  We
+recommend to use bash.
 
 After specifying the environment variable, every program can access to
 Gfarm file system.  If you would like to access Gfarm file system in
@@ -52,15 +54,6 @@ your login interactive shell, just execute bash again.
 Now, you can change the current working directory to /gfarm.
 
 	% cd /gfarm
-
-When you encounter a problem such that a newly created file cannot be
-accessed by other applications, you need to decrease the timeout of
-Gfarm metadata cache at the client side by the environment variable
-GFARM_DIRCACHE_TIMEOUT.  When you would like to set 10 seconds,
-
-	% export GFARM_DIRCACHE_TIMEOUT=10
-
-Default is 60 seconds.
 
 When you would like to use on-demand replication feature, it is
 possible to be specified by GFARM_FLAGS.
@@ -86,15 +79,7 @@ file system.
 
 * C program
 
-	% cc prog.c /usr/lib/gfs_hook.o -lgfarm -lldap
-
-or
-
-	% cc prog.c -I/usr/grid/include/gcc32 \
-		/usr/lib/gfs_hook.o -lgfarm \
-		-L/usr/grid/lib \
-		`globus-makefile-header -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
-		-lldap
+	% cc prog.c /usr/lib/gfs_hook.o -lgfarm
 
 * Fortran or C++ program
 
@@ -106,7 +91,7 @@ In the case of MPI programs, link with gfs_hook_no_init.o and
 hooks_init_mpi.c instead of gfs_hook.o.
 
 	% mpicc prog.c /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
-		-lgfarm -lldap
+		-lgfarm
 
 *** Running existing programs by statically linking with
     syscall-hooking library
