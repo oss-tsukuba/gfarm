@@ -1320,7 +1320,7 @@ fi
 if test "${with_globus+set}" = set; then
   withval="$with_globus"
   globus_location="${withval}"
- case "${globus_location}" in yes) globus_location='${GLOBUS_LOCATION}';; esac
+ case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
  globus_includedir='$(globus_location)/include/$(globus_flavor)'
  globus_libdir='$(globus_location)/lib'
