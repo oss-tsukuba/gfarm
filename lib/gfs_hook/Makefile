@@ -18,7 +18,7 @@ DEBUG_CFLAGS=
 SUFFIX=
 
 DEBUG_MAKEFLAGS= \
-	DEBUG_FLAGS=-DDEBUG \
+	DEBUG_CFLAGS=-DDEBUG \
 	SUFFIX=_debug
 
 SUBDIRS= sysdep/$(gfs_hook_sysdep_subdir)
@@ -78,27 +78,24 @@ gfs-hooks: $(LIBRARY_RESULT)
 
 
 libgfs_hook$(SUFFIX).la: $(OBJS) hooks_init$(SUFFIX).lo
-	$(LTLINK_SHARELIB) -o libgfs_hook$(SUFFIX).la \
-		$(OBJS) hooks_init$(SUFFIX).lo $(LDLIBS)
+	$(LTLINK_SHARELIB) $(OBJS) hooks_init$(SUFFIX).lo $(LDLIBS)
 
 gfs_hook$(SUFFIX).o: $(OBJS) hooks_init.lo
-	$(LTLINK) -o gfs_hook$(SUFFIX).o $(OBJS) hooks_init$(SUFFIX).lo
+	$(LTLINK) $(OBJS) hooks_init$(SUFFIX).lo
 
 
 libgfs_hook_no_init$(SUFFIX).la: $(OBJS)
-	$(LTLINK_SHARELIB) -o libgfs_hook_no_init$(SUFFIX).la \
-		$(OBJS) $(LDLIBS)
+	$(LTLINK_SHARELIB) $(OBJS) $(LDLIBS)
 
 gfs_hook_no_init$(SUFFIX).o: $(OBJS)
-	$(LTLINK) -o gfs_hook_no_init$(SUFFIX).o $(OBJS)
+	$(LTLINK) $(OBJS)
 
 
 gfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
-	$(LTLINK_SHARELIB) -o libgfs_hook_mpi$(SUFFIX).la \
-		$(OBJS) hooks_init_mpi$(SUFFIX).lo $(LDLIBS)
+	$(LTLINK_SHARELIB) $(OBJS) hooks_init_mpi$(SUFFIX).lo $(LDLIBS)
 
 gfs_hook_mpi$(SUFFIX).o: $(OBJS) hooks_init_mpi$(SUFFIX).lo
-	$(LTLINK) -o gfs_hook_mpi$(SUFFIX).o $(OBJS) hooks_init_mpi$(SUFFIX).lo
+	$(LTLINK) $(OBJS) hooks_init_mpi$(SUFFIX).lo
 
 ###
 ### objects needed by $(LIBRARY_TARGET)
