@@ -8,8 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <gfarm/gfarm.h>
-#include <gfarm/gfs_hook.h>
 
 char *program_name = "gfcp_hook";
 
@@ -30,31 +28,17 @@ main(int argc, char *argv[])
 {
 	extern char *optarg;
 	extern int optind;
-	int node_index = -1;
-	char *e, *input, *output;
+	char *input, *output;
 	int ifd, ofd;
-
-	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
 
 	if (argc >= 1)
 		program_name = argv[0];
 	--argc;
 	++argv;
 
-	e = gfs_pio_get_node_rank(&node_index);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
 	if (argc == 0) {
-		if (node_index == 0) {
-			fprintf(stderr, "%s: missing input file name\n",
-				program_name);
-		}
+		fprintf(stderr, "%s: missing input file name\n",
+			program_name);
 		exit(1);
 	}
 	input = argv[0];
@@ -62,10 +46,8 @@ main(int argc, char *argv[])
 	argv++;
 
 	if (argc == 0) {
-		if (node_index == 0) {
-			fprintf(stderr, "%s: missing output file name\n",
-				program_name);
-		}
+		fprintf(stderr, "%s: missing output file name\n",
+			program_name);
 		exit(1);
 	}
 	output = argv[0];
@@ -73,12 +55,10 @@ main(int argc, char *argv[])
 	argv++;
 
 	if (argc != 0) {
-		if (node_index == 0) {
-			fprintf(stderr,
-				"%s: currently, "
-				"only one input file is supported\n",
-				program_name);
-		}
+		fprintf(stderr,
+			"%s: currently, "
+			"only one input file is supported\n",
+			program_name);
 		exit(1);
 	}
 
@@ -109,12 +89,6 @@ main(int argc, char *argv[])
 		perror(input);
 	if (close(ofd))
 		perror(output);
-
-	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
 
 	return (0);
 }
