@@ -3,6 +3,7 @@
 # $Id$
 
 GFSD=@prefix@/sbin/gfsd
+PID_FILE=/var/run/gfsd.pid
 
 # workaround a problem that "ld -R" doesn't work with indirectly dependent SOs
 if [ -n "@globus_location@" ]; then
@@ -13,12 +14,14 @@ fi
 case "$1" in 
 'start')
 	if [ -x $GFSD -a -f /etc/gfarm.conf ]; then
-		$GFSD
+		$GFSD -P $PID_FILE
 	fi	
 	;;
 
 'stop')
-	/usr/bin/pkill -x -u 0 gfsd
+	if [ -f $PID_FILE ]; then
+		kill -TERM `cat $PID_FILE`
+	fi
 	;;
 
 *)

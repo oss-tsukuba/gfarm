@@ -29,7 +29,7 @@ PID_FILE=/var/run/${prog}.pid
 start()
 {
 	echo -n $"Starting $prog:"
-	initlog -c "$BINARY $OPTIONS" && success || failure
+	initlog -c "$BINARY -P $PID_FILE $OPTIONS" && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch /var/lock/subsys/$prog
 	echo
