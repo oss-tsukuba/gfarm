@@ -35,9 +35,9 @@ include-clean:
 
 include-veryclean: clean
 	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
-	-test -z "$(EXEC_INCS)" || $(RM) -f $(EXEC_INCS)
 
 include-distclean: veryclean
+	-test -z "$(EXEC_INCS)" || $(RM) -f $(EXEC_INCS)
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
 include-gfregister:
