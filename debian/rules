@@ -73,10 +73,12 @@ install: build
 	cd build && $(MAKE) install DESTDIR=`pwd`/../debian/tmp
 
 	# hoax gfarm's Makefile.
-	install -d debian/tmp/etc/
+	install -d debian/tmp/etc/init.d/
 	install -m 444 doc/conf/gfarm.conf debian/tmp/etc/
 	install -d debian/tmp/usr/share/doc/gfarm/
 
+	cp debian/gfsd.init debian/tmp/etc/init.d/gfsd
+	cp debian/gfmd.init debian/tmp/etc/init.d/gfmd
 
 	dh_install --sourcedir=debian/tmp
 	-dh_movefiles
@@ -126,7 +128,7 @@ binary-arch: build install
 #	dh_installmenu
 #	dh_installemacsen
 #	dh_installpam
-	dh_installinit
+#	dh_installinit
 #	dh_installcron
 
 	# manpages for gfarm package
