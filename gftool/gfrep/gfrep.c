@@ -20,7 +20,11 @@
 char *program_name = "gfrep";
 
 /* Do not use gfrepbe_client/gfrepbe_server, but use gfsd internal routine */
+#if 0 /* XXX for now */
 int bootstrap_method = 0;
+#else
+int bootstrap_method = 1;
+#endif
 int verbose = 0;
 
 struct replication_job {
@@ -559,10 +563,13 @@ main(argc, argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((ch = getopt(argc, argv, "bvH:D:I:s:d:l:P:?")) != -1) {
+	while ((ch = getopt(argc, argv, "bXvH:D:I:s:d:l:P:?")) != -1) {
 		switch (ch) {
 		case 'b':
 			bootstrap_method = 1;
+			break;
+		case 'X': /* use eXternal command (gfrepbe_*) */
+			bootstrap_method = 0;
 			break;
 		case 'v':
 			verbose = 1;

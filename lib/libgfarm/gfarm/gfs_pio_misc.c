@@ -373,7 +373,11 @@ gfarm_file_section_replicate_from_to_by_gfrepbe(
  * 0: use gfrepbe_client/gfrepbe_server
  * 1: use gfs_client_bootstrap_replicate_file()
  */
+#if 0 /* XXX for now */
 static int gfarm_replication_method = GFARM_REPLICATION_NORMAL_METHOD;
+#else
+static int gfarm_replication_method = GFARM_REPLICATION_BOOTSTRAP_METHOD;
+#endif
 
 int
 gfarm_replication_get_method(void)
