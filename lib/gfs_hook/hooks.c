@@ -519,7 +519,9 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 			_gfs_hook_debug(perror(filename));
 			_exit(255);
 		default:
-			if (waitpid(pid, &status, 0) == -1) {
+			while ((r = waitpid(pid, &status, 0)) == -1 &&
+			       errno == EINTR);
+			if (r == -1) {
 				_gfs_hook_debug(perror("waitpid"));
 				/* execve fails. call again to set errno. */
 				r = syscall(SYS_execve, filename, argv, envp);
@@ -530,6 +532,14 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 				 fprintf(stderr, "%s: signal %d received%s.\n",
 				  gfarm_host_get_self_name(), WTERMSIG(status),
 				  WCOREDUMP(status) ? " (core dumped)" : ""));
+			}
+			else if (WEXITSTATUS(status) == 255) {
+				_gfs_hook_debug(
+				 fprintf(stderr, "%s: status 255\n",
+				  gfarm_host_get_self_name()));
+				/* execve fails. call again to set errno. */
+				r = syscall(SYS_execve, filename, argv, envp);
+				return (r);
 			}
 			break;
 		}
