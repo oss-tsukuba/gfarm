@@ -1,0 +1,46 @@
+Copyright (c) 2003 National Institute of Advanced Industrial Science
+and Technology (AIST).  All Rights Reserved.
+
+Release note for Gfarm 1.0b1
+============================
+
+[2003.4.25]
+
+Features
+
+ * Supported client commands
+
+   file management - gfls, gfreg, gfrep, gfrm, gfwhere
+   file utilities  - gfexport, gfimport_text, gfimport_fixed
+   scheduling & host management - gfsched, gfhost
+   process management - gfrun, gfrcmd, gfmpirun_p4, gfps
+   security - gfkey, digest
+
+ * Unsupported client commands
+   gfmkdir, gfrmdir,
+   gfchmod, gfchown, gfchgrp,
+   gfcd, gfchdir, gfpwd,
+   gfcp, gfdf, gfsck.
+
+ * Gfarm filesystem daemon (gfsd)
+
+   Gfsd has a capability of remote file operations, user
+   authentication, file replication, remote program
+   invocation, and node status monitoring.
+
+ * Gfarm job-management daemon (gfmd)
+
+   Gfmd has a capability of job management for gfps.
+
+ * Gfarm filesystem metadata daemon (slapd)
+
+   This implementation utilizes the slapd provided by
+   the OpenLDAP software.
+
+ * Syscall hooking libraries
+
+   Legacy applications can utilize a Gfarm filesystem just
+   linking with syscall-hooking library, gfs_hook.o or
+   gfs_hook_mpi.o.
+
+$Id$
