@@ -364,12 +364,29 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 	return (NULL);
 }
 
+/* XXX this must be done only if the file was really read or written */
+static char *
+gfs_pio_update_times(GFS_File gf)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	if (gf->mode & GFS_FILE_MODE_READ) {
+		gf->pi.status.st_atimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_atimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
+}
+
 char *
 gfs_pio_close(GFS_File gf)
 {
 	char *e, *e_save;
 	gfarm_timerval_t t1, t2;
-	struct timeval now;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -382,17 +399,13 @@ gfs_pio_close(GFS_File gf)
 		if (e_save == NULL)
 			e_save = e;
 	}
-	/* XXX this must be done only if the file was really read or written */
-	gettimeofday(&now, NULL);
-	if (gf->mode & GFS_FILE_MODE_WRITE) {
-		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
-		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
-	}
-	if (gf->mode & GFS_FILE_MODE_READ) {
-		gf->pi.status.st_atimespec.tv_sec = now.tv_sec;
-		gf->pi.status.st_atimespec.tv_nsec = now.tv_usec * 1000;
-	}
-	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
+	/*
+	 * When there is inconsistency, do not update/overwrite the
+	 * metadata. This inconsistency may come from the update by
+	 * other process or oneself such as 'nvi'.
+	 */
+	if (e_save == NULL)
+		e = gfs_pio_update_times(gf);
 	if (e_save == NULL)
 		e_save = e;
 
