@@ -137,6 +137,9 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	}
 	_gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
 	if (_gfs_file_buf[fd] == NULL) {
+		__syscall_close(fd);
+		gfs_hook_delete_creating_file(gf);
+		gfs_pio_close(gf);
 		errno = ENOMEM;
 		return (-1);
 	}
@@ -150,7 +153,7 @@ int
 gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 {
 	int fd, save_errno;
-	char *e;
+	char *e, *canonical_path;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %p\n", dir));
 
@@ -177,8 +180,17 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
 	}
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(url),
+	    &canonical_path);
+	if (e != NULL) {
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
         _gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
         if (_gfs_file_buf[fd] == NULL) {
+		free(canonical_path);
 		__syscall_close(fd);
 		gfs_closedir(dir);
 		errno = ENOMEM;
@@ -186,22 +198,30 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
         }
         _gfs_file_buf[fd]->u.d = malloc(sizeof(*_gfs_file_buf[fd]->u.d));
 	if (_gfs_file_buf[fd]->u.d == NULL) {
+		free(_gfs_file_buf[fd]);
+		_gfs_file_buf[fd] = NULL;
+		free(canonical_path);
 		__syscall_close(fd);
 		gfs_closedir(dir);
 		errno = ENOMEM;
 		return (-1);
         }
+	e = gfs_stat(url, &_gfs_file_buf[fd]->u.d->gst);
+	if (e != NULL) {
+		free(_gfs_file_buf[fd]->u.d);
+		free(_gfs_file_buf[fd]);
+		_gfs_file_buf[fd] = NULL;
+		free(canonical_path);
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
 	_gfs_file_buf[fd]->refcount = 1;
 	_gfs_file_buf[fd]->d_type = GFS_DT_DIR;
 	_gfs_file_buf[fd]->u.d->dir = dir;
 	_gfs_file_buf[fd]->u.d->suspended = NULL;
-	e = gfs_stat(url, &_gfs_file_buf[fd]->u.d->gst);
-	if (e != NULL)
-		return (-1);
-	e = gfarm_canonical_path(gfarm_url_prefix_skip(url), 
-				 &_gfs_file_buf[fd]->u.d->canonical_path);
-	if (e != NULL)
-		return (-1);
+	_gfs_file_buf[fd]->u.d->canonical_path = canonical_path;
 	return (fd);
 }
 
@@ -346,8 +366,6 @@ gfs_hook_is_now_creating(const char *url)
 	char *pathname, *e;
 	struct gfarm_hash_entry *entry;
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: is_now_creating: %s\n", url));
-
 	if (creating_file_hashtab == NULL)
 		return (NULL);
 
@@ -355,11 +373,12 @@ gfs_hook_is_now_creating(const char *url)
 	if (e != NULL)
 		return (NULL);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: is_now_creating: %s\n",
-				pathname));
-
 	entry = gfarm_hash_lookup(creating_file_hashtab,
 	    pathname, strlen(pathname) + 1);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: is_now_creating(%s): %s\n",
+	    pathname, entry == NULL ? "no" : "yes"));
+
 	free(pathname);
 	if (entry == NULL)
 		return (NULL);
@@ -378,7 +397,6 @@ gfs_hook_delete_creating_file(GFS_File gf)
 
 	gfarm_hash_purge(creating_file_hashtab, 
 	    gf->pi.pathname, strlen(gf->pi.pathname) + 1);
-	return;
 }
 
 void
