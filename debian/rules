@@ -172,37 +172,37 @@ binary-arch: build install
 #	dh_installmenu
 #	dh_installemacsen
 #	dh_installpam
-#	dh_installinit
+	dh_installinit
 #	dh_installcron
 
 # manpages for gfarm package
 	for man in $(GFARM_GFPTOOL_MAN1); do \
-	  dh_installman -p$(GFARM_GFPTOOL_PKG) man/ja/man1/$$man man/man1/$$man; \
-	  dh_installman -p$(GFPTOOL_GSI_PKG) man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFARM_GFPTOOL_PKG) man/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFPTOOL_GSI_PKG) man/man1/$$man man/man1/$$man; \
 	done
 
 # manpages for gfmd package
 	for man in $(GFMD_MAN8); do \
-	  dh_installman -p$(GFMD_PKG) man/ja/man8/$$man man/man8/$$man; \
-	  dh_installman -p$(GFMD_GSI_PKG) man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFMD_PKG) man/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFMD_GSI_PKG) man/man8/$$man man/man8/$$man; \
 	done
 
 # manpages for gfarm-client package
 	for man in $(GFARM_CLIENT_MAN1); do \
-	  dh_installman -p$(GFARM_CLIENT_PKG) man/ja/man1/$$man man/man1/$$man; \
-	  dh_installman -p$(CLIENT_GSI_PKG) man/ja/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(GFARM_CLIENT_PKG) man/man1/$$man man/man1/$$man; \
+	  dh_installman -p$(CLIENT_GSI_PKG) man/man1/$$man man/man1/$$man; \
 	done
 
 # manpages for gfsd
 	for man in $(GFSD_MAN8); do \
-	  dh_installman -p$(GFSD_PKG) man/ja/man8/$$man man/man8/$$man; \
-	  dh_installman -p$(GFSD_GSI_PKG) man/ja/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFSD_PKG) man/man8/$$man man/man8/$$man; \
+	  dh_installman -p$(GFSD_GSI_PKG) man/man8/$$man man/man8/$$man; \
 	done
 
 #	manpages for libgfarm-dev
 	for man in $(LIBGFARM_DEV_MAN3); do \
-	  dh_installman -p$(LIBGFARM_DEV_PKG) man/ja/man3/$$man man/man3/$$man; \
-	  dh_installman -p$(DEV_GSI_PKG) man/ja/man3/$$man man/man3/$$man; \
+	  dh_installman -p$(LIBGFARM_DEV_PKG) man/man3/$$man man/man3/$$man; \
+	  dh_installman -p$(DEV_GSI_PKG) man/man3/$$man man/man3/$$man; \
 	done
 
 #	dh_installinfo
