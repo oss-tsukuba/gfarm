@@ -150,6 +150,7 @@ void gfs_uncachedir(void);
  */
 
 char *gfs_execve(const char *, char *const [], char *const []);
+char *gfs_execve_legacy(const char *, char *const [], char *const []);
 
 /*
  * meta operations
