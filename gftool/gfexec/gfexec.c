@@ -20,7 +20,7 @@ static char progname[] = PROGRAM_NAME;
 static void
 print_usage()
 {
-	fprintf(stderr, "usage: %s <program> <args> ...\n", progname);
+	fprintf(stderr, "usage: %s <program> [-N <nodes>] [-I <index>] [-s] <args> ...\n", progname);
 	exit(2);
 }
 
@@ -82,11 +82,15 @@ int
 main(int argc, char *argv[], char *envp[])
 {
 	char *e, *gfarm_url, *local_path, **new_env, *cwd_env;
-	int i, j, status, envc, rank, nodes;
+	int i, j, status, envc, rank = -1, nodes = -1;
 	pid_t pid;
-	char rankbuf[sizeof("gfarm_index_") + GFARM_INT64STRLEN * 2 + 2];
-	char nodesbuf[sizeof("gfarm_nfrags_") + GFARM_INT64STRLEN * 2 + 2];
-	char flagsbuf[sizeof("gfarm_flags_") + GFARM_INT64STRLEN + 1 + 2 + 1];
+	static const char env_node_rank[] = "GFARM_NODE_RANK=";
+	static const char env_node_size[] = "GFARM_NODE_SIZE=";
+	static const char env_flags[] = "GFARM_FLAGS=";
+	static const char env_gfs_pwd[] = "GFS_PWD=";
+	char rankbuf[sizeof(env_node_rank) + GFARM_INT64STRLEN];
+	char nodesbuf[sizeof(env_node_size) + GFARM_INT64STRLEN];
+	char flagsbuf[sizeof(env_flags) + 2];
 	char cwdbuf[PATH_MAX * 2];
 
 	e = gfarm_initialize(&argc, &argv);
@@ -104,6 +108,38 @@ main(int argc, char *argv[], char *envp[])
 			break;
 		for (j = 1; argv[i][j] != '\0'; j++) {
 			switch (argv[i][j]) {
+			case 'I':
+				if (argv[i][j + 1] != '\0') {
+					rank = strtol(&argv[i][j+1], NULL, 0);
+					j += strlen(&argv[i][j + 1]);
+				} else if (i + 1 < argc) {
+					rank = strtol(argv[++i], NULL, 0);
+					j = strlen(argv[i]) - 1;
+				} else {
+					fprintf(stderr,
+					    "%s: -I: missing argument\n",
+					    progname);
+					print_usage();
+				}
+				break;
+			case 'N':
+				if (argv[i][j + 1] != '\0') {
+					nodes = strtol(&argv[i][j+1], NULL, 0);
+					j += strlen(&argv[i][j + 1]);
+				} else if (i + 1 < argc) {
+					nodes = strtol(argv[++i], NULL, 0);
+					j = strlen(argv[i]) - 1;
+				} else {
+					fprintf(stderr,
+					    "%s: -N: missing argument\n",
+					    progname);
+					print_usage();
+				}
+				break;
+			case 's':
+				rank = 0;
+				nodes = 1;
+				break;
 			case 'h':
 			case '?':
 				print_usage();
@@ -140,12 +176,16 @@ main(int argc, char *argv[], char *envp[])
 	 * If gfs_pio_get_node_{rank,size}() fails, continue to
 	 * execute as a single process (not parallel processes).
 	 */
-	e = gfs_pio_get_node_rank(&rank);
-	if (e != NULL)
-		rank = 0;
-	e = gfs_pio_get_node_size(&nodes);
-	if (e != NULL)
-		nodes = 1;
+	if (rank == -1) {
+		e = gfs_pio_get_node_rank(&rank);
+		if (e != NULL)
+			rank = 0;
+	}
+	if (nodes == -1) {
+		e = gfs_pio_get_node_size(&nodes);
+		if (e != NULL)
+			nodes = 1;
+	}
 	for (envc = 0; envp[envc] != NULL; envc++)
 		;
 	new_env = malloc(sizeof(*new_env) * (envc + 4 + 1));
@@ -155,12 +195,30 @@ main(int argc, char *argv[], char *envp[])
 		    progname, e);
 		exit(1);
 	}
-	if ((cwd_env = malloc(strlen(cwdbuf) + sizeof("GFS_PWD="))) == NULL) {
-		fprintf(stderr, "%s: no memory for GFS_PWD=%s\n",
-		    progname, cwdbuf);
+	if ((cwd_env = malloc(strlen(cwdbuf) + sizeof(env_gfs_pwd))) == NULL) {
+		fprintf(stderr, "%s: no memory for %s%s\n",
+		    progname, env_gfs_pwd, cwdbuf);
 		exit(1);
 	}
-	sprintf(cwd_env, "GFS_PWD=%s", cwdbuf);
+	envc = 0;
+	for (i = 0; (e = envp[i]) != NULL; i++) {
+		if (memcmp(e, env_node_rank, sizeof(env_node_rank) -1 ) != 0 &&
+		    memcmp(e, env_node_size, sizeof(env_node_size) -1 ) != 0 &&
+		    memcmp(e, env_flags, sizeof(env_flags) - 1 ) != 0 &&
+		    memcmp(e, env_gfs_pwd, sizeof(env_gfs_pwd) - 1) != 0)
+			new_env[envc++] = e;
+	}
+	sprintf(rankbuf, "%s%d", env_node_rank, rank);
+	new_env[envc++] = rankbuf;
+	sprintf(nodesbuf, "%s%d", env_node_size, nodes);
+	new_env[envc++] = nodesbuf;
+	sprintf(flagsbuf, "%s%s%s", env_flags,
+	    gf_profile ? "p" : "",
+	    gf_on_demand_replication ? "r" : "");
+	new_env[envc++] = flagsbuf;
+	sprintf(cwd_env, "%s%s", env_gfs_pwd, cwdbuf);
+	new_env[envc++] = cwd_env;
+	new_env[envc++] = NULL;
 
 
 	if (gf_stdout == NULL && gf_stderr == NULL) {
@@ -181,20 +239,6 @@ main(int argc, char *argv[], char *envp[])
 		status = 255;
 		break;
 	case 0:
-		pid = getpid();
-		for (envc = 0; envp[envc] != NULL; envc++)
-			new_env[envc] = envp[envc];
-		sprintf(rankbuf, "gfarm_index_%lu=%d", (long)pid, rank);
-		new_env[envc++] = rankbuf;
-		sprintf(nodesbuf, "gfarm_nfrags_%lu=%d", (long)pid, nodes);
-		new_env[envc++] = nodesbuf;
-		sprintf(flagsbuf, "gfarm_flags_%lu=%s%s", (long)pid,
-		    gf_profile ? "p" : "",
-		    gf_on_demand_replication ? "r" : "");
-		new_env[envc++] = flagsbuf;
-		new_env[envc++] = cwd_env;
-		new_env[envc++] = NULL;
-
 		if (gf_stdout == NULL && gf_stderr == NULL) {
 			/* not to display profile statistics on gfarm_terminate() */
 			gfs_profile(gf_profile = 0);
