@@ -356,7 +356,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		e_save = e;
 	}
 	gfs_closedir(dir);
-	if (len > 0 && path[len - 1] != '/') {
+	if (*gfarm_url_basename(path) != '\0') {
 		path[len] = '/';
 		path[len + 1] = '\0';
 	}
