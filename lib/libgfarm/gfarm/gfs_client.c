@@ -375,7 +375,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		    NULL)) == 0) {
 			*statepp = state;
 			/* go to gfs_client_connect_start_auth() */
-			return (0);
+			return (NULL);
 		} else {
 			e = gfarm_errno_to_error(rv);
 			gfarm_event_free(state->writable);
@@ -393,7 +393,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 			 * call gfarm_auth_request,
 			 * then go to gfs_client_connect_end_auth()
 			 */
-			return (0);
+			return (NULL);
 		}
 	}
 	free(state);
