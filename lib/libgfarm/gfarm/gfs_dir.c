@@ -7,13 +7,41 @@
 #include "gfs_pio.h"	/* gfs_profile */
 #include "timer.h"
 
+static char *gfarm_current_working_directory;
+
+char *
+gfs_chdir(const char *dir)
+{
+	char *e, *canonic_path, *new_dir;
+
+	e = gfarm_canonical_path(dir, &canonic_path);
+	if (e != NULL)
+		return (e);
+	
+	if (gfarm_current_working_directory != NULL) {
+		free(gfarm_current_working_directory);
+		gfarm_current_working_directory = NULL;
+	}
+	new_dir = malloc(strlen(canonic_path) + 2);
+	if (new_dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	sprintf(new_dir, "/%s", canonic_path);
+	free(canonic_path);
+	gfarm_current_working_directory = new_dir;
+
+	return (NULL);
+}
+
 char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
 	char *path, *default_cwd = NULL;
 	int len;
 	
-	if ((path = getenv("GFS_PWD")) != NULL)
+	if (gfarm_current_working_directory != NULL)
+		path = gfarm_current_working_directory;
+	else if ((path = getenv("GFS_PWD")) != NULL)
 		path = gfarm_url_prefix_skip(path);
 	else { /* default case, use user's home directory */
 		char *e;
