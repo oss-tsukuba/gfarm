@@ -44,3 +44,7 @@ int gfs_hook_syscall_fxstat(int, int, struct stat *);
 int gfs_hook_syscall_xstat64(int, const char *, struct stat64 *);
 int gfs_hook_syscall_lxstat64(int, const char *, struct stat64 *);
 int gfs_hook_syscall_fxstat64(int, int, struct stat64 *);
+
+#ifdef _LARGEFILE64_SOURCE
+off64_t gfs_hook_syscall_lseek64(int, off64_t, int);
+#endif

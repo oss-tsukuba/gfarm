@@ -59,27 +59,7 @@ gfs_hook_syscall_creat64(const char *path, mode_t mode)
 #endif
 }
 
-/*
- * XXX - not really tested.
- */
-int
-gfs_hook_syscall_lseek64(int filedes, off64_t offset, int whence)
-{
-#if defined(SYS_lseek64)
-	return (syscall(SYS_lseek64, filedes, offset, whence));
-#elif defined(SYS_llseek)
-	return (syscall(SYS_llseek, filedes, (int)(offset >> 32), (int)offset,
-			whence));
-#elif defined(SYS__llseek) /* linux */
-	off64_t rv, result;
-
-	rv = syscall(SYS__llseek, filedes, (int)(offset >>32), (int)offset,
-	    &result, whence);
-	return (rv ? rv : result);
-#else
-#error do not know how to implement lseek64
-#endif
-}
+/* see lseek64.c for gfs_hook_syscall_lseek64() implementation */
 
 int
 gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
