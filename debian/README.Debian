@@ -1,0 +1,7 @@
+gfarm for Debian
+------------------
+
+  The gfarm support globus toolkit(GT), this package is not support GT.
+If you need GRAM on GT, you should re-build.
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Tue, 25 Mar 2003 21:17:41 +0900

@@ -1,3 +1,9 @@
+gfarm (0.0.cvs20030404-1) unstable; urgency=low
+
+  * correct debuild failure
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri,  4 Apr 2003 16:09:56 +0900
+
 gfarm (0.0.cvs20021101-1) unstable; urgency=low
 
   * New upstream release.
