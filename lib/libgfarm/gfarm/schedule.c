@@ -740,6 +740,7 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
  * load average, and return to 'ohosts'.
  * When enough number of hosts are not available, the available hosts
  * will be listed in the cyclic manner.
+ * NOTE: all of ihosts[] must be canonical hostnames.
  */
 char *
 gfarm_schedule_search_idle_hosts(
