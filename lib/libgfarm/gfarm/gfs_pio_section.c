@@ -91,7 +91,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			sprintf(&md_value_string[i + i], "%02x",
 				md_value[i]);
 
-		if (gf->mode & GFS_FILE_MODE_WRITE) {
+		if (gf->open_flags & GFARM_FILE_CREATE) {
 			fi.filesize = filesize;
 			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi.checksum = md_value_string;
@@ -466,7 +466,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	}
 
 	/* delete the file section when opening with a truncation flag. */
-	if ((gf->open_flags & GFARM_FILE_TRUNC) != 0)
+	if (gf->open_flags & GFARM_FILE_TRUNC)
 		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
 
 	gf->ops = &gfs_pio_view_section_ops;
@@ -479,6 +479,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
 	if (!is_local_host && 
+	    (gf->open_flags & GFARM_FILE_CREATE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&  
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
@@ -554,7 +555,7 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 	}
 
 	if (nfragments == GFARM_FILE_DONTCARE) {
-		if ((gf->mode & GFARM_FILE_CREATE) != 0 &&
+		if ((gf->open_flags & GFARM_FILE_CREATE) != 0 &&
 		    !GFARM_S_IS_PROGRAM(gf->pi.status.st_mode)) {
 			/* DONTCARE isn't permitted in this case */
 			gf->error = GFARM_ERR_INVALID_ARGUMENT;
