@@ -30,6 +30,10 @@ char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB
 には、
 \fBgfs_pio_open()\fR
 の第二引数と同じ意味を持ちます。
+\fIGFARM_FILE_RDONLY\fR、
+\fIGFARM_FILE_WRONLY\fR、
+\fIGFARM_FILE_RDWR\fR
+のいずれか一つのフラグを必ず指定しなければならない点も同じです。
 ただし、
 \fBgfs_pio_create()\fR
 に特有のフラグとして、

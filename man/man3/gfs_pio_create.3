@@ -24,12 +24,19 @@ and is modified by the process's umask\&.
 The
 \fIflags\fR
 argument has same meaning with the second argument of
-\fBgfs_pio_open()\fR\&.
+\fBgfs_pio_open()\fR, including the point
+that exactly one of
+\fIGFARM_FILE_RDONLY\fR,
+\fIGFARM_FILE_WRONLY\fR or
+\fIGFARM_FILE_RDWR\fR
+must be specified.
 There is one other flag which is specific to 
 \fBgfs_pio_create()\fR\&.
 That is
 \fIGFARM_FILE_EXCLUSIVE\fR,
-and this function will fail, if this flag is specified and
+and
+\fBgfs_pio_create()\fR
+will fail, if this flag is specified and
 the file already exists.
 .PP
 Note that
