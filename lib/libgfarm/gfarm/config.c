@@ -1091,6 +1091,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
 
 static GFS_File gf_stdout, gf_stderr;
 int gf_profile;
+int gf_on_demand_replication;
 
 char *
 gfarm_parse_argv(int *argcp, char ***argvp)
@@ -1133,6 +1134,8 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 		}
 		else if (strcmp(&argv[0][2], "gfarm_profile") == 0)
 			gf_profile = 1;
+		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
+			gf_on_demand_replication = 1;
 		else
 			break;
 		--argc;

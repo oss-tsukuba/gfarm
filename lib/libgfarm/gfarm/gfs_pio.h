@@ -102,6 +102,7 @@ struct gfs_file_section_context {
  */
 
 extern int gf_profile;
+extern int gf_on_demand_replication;
 #define gfs_profile(x) if (gf_profile == 1) { x; }
 
 extern double gfs_pio_set_view_section_time;

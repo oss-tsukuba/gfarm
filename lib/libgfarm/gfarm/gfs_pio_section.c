@@ -377,7 +377,8 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
 	if (!is_local_host && 
-	    (((gf->open_flags & GFARM_FILE_REPLICATE) != 0 &&  
+	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
+	       || gf_on_demand_replication ) &&  
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
 		e = replicate_section_to_local(gf, vc->section, if_hostname);
