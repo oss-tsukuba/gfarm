@@ -93,16 +93,16 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking " S(FUNC___OPEN)
 				": unsupported flags 0%o\n", oflag));
-			errno = ENOSYS;
 			free(url);
+			errno = ENOSYS;
 			return (-1);
 		}
 		else { /* no such file or directory */
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking " S(FUNC___OPEN)
 				": no such file or directory\n"));
-			errno = ENOENT;
 			free(url);
+			errno = ENOENT;
 			return (-1);
 		}
 	}
