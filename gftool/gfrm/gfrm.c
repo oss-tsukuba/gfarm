@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 
@@ -13,11 +15,126 @@ char *program_name = "gfrm";
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [ -h <host> ] <gfarm_url>...\n",
+	fprintf(stderr, "Usage: %s [ -rR ] <gfarm_url>...\n", program_name);
+	fprintf(stderr, "       %s [ -h <host> ] <gfarm_url>...\n",
 		program_name);
 	fprintf(stderr, "       %s -I <fragment> -h <host> <gfarm_url>...\n",
 		program_name);
 	exit(1);
+}
+
+static void
+remove_cwd_entries()
+{
+	char *e;
+	char cwdbf[PATH_MAX * 2];
+	int i;
+	GFS_Dir dir;
+	struct gfs_dirent *entry;
+	gfarm_stringlist entry_list;
+
+	e = gfs_getcwd(cwdbf, sizeof(cwdbf));
+	if (e != NULL) {
+		fprintf(stderr, "%s\n", e);
+		return;
+	}
+	e = gfs_opendir(".", &dir);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		return;
+	}
+	e = gfarm_stringlist_init(&entry_list);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+		return;
+	}
+	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		char *p;
+
+	 	p = strdup(entry->d_name);
+		if (p == NULL) {
+			fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+			exit (1);
+		}
+		e = gfarm_stringlist_add(&entry_list, p);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s/%s\n",
+					cwdbf, entry->d_name, e);
+		}
+	}
+	if (e != NULL)
+		fprintf(stderr, "%s: %s\n", cwdbf, e);
+	gfs_closedir(dir);
+	for (i = 0; i < gfarm_stringlist_length(&entry_list); i++) {
+		struct gfs_stat gs;
+		char *path = gfarm_stringlist_elem(&entry_list, i);
+
+		e = gfs_stat(path, &gs);
+		if (e != NULL)
+			fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+		if (GFARM_S_ISREG(gs.st_mode)) {
+			char *url;
+
+			url = gfarm_url_prefix_add(path);
+			if (url == NULL) {
+				fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
+				exit (1);
+			}
+			e = gfs_unlink(url);
+			if (e != NULL)
+				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+			free(url);
+		} else if (GFARM_S_ISDIR(gs.st_mode)) {
+			e = gfs_chdir(path);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+				continue;
+			}
+			remove_cwd_entries();
+			e = gfs_chdir("..");
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n", cwdbf, e);
+				exit (1);
+			}
+			e = gfs_rmdir(path);
+			if (e != NULL)
+				fprintf(stderr, "%s: %s/%s\n", cwdbf, path, e);
+		}
+		gfs_stat_free(&gs);
+	}
+	gfarm_stringlist_free_deeply(&entry_list);
+}
+
+static char *
+remove_whole_file_or_dir(char *path, int is_recursive)
+{
+	char *e;
+	struct gfs_stat gs;
+	char cwdbuf[PATH_MAX * 2];
+
+	e = gfs_stat(path, &gs);
+	if (e != NULL)
+		return (e);
+
+	if (GFARM_S_ISREG(gs.st_mode)) {
+		e = gfs_unlink(path);
+	} else if (GFARM_S_ISDIR(gs.st_mode)) {
+		if (!is_recursive)
+	        	return (GFARM_ERR_IS_A_DIRECTORY);
+		e = gfs_getcwd(cwdbuf, sizeof(cwdbuf));
+		if (e != NULL)
+			return (e);
+		e = gfs_chdir(path);
+		if (e != NULL)
+			return (e);
+		remove_cwd_entries();
+		e = gfs_chdir_canonical(cwdbuf);
+		if (e != NULL)
+			return (e);
+		e = gfs_rmdir(path);
+	}
+	gfs_stat_free(&gs);
+	return (e);
 }
 
 int
@@ -34,6 +151,7 @@ main(argc, argv)
 	char **hosttab;
 	gfarm_stringlist host_list;
 	int o_force = 0;
+	int o_recursive = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i;
@@ -47,7 +165,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	while ((ch = getopt(argc, argv, "h:I:fr?")) != -1) {
+	while ((ch = getopt(argc, argv, "h:I:fRr?")) != -1) {
 		switch (ch) {
 		case 'h':
 			e = gfarm_stringlist_add(&host_list, optarg);
@@ -63,6 +181,10 @@ main(argc, argv)
 			break;
 		case 'I':
 			section = optarg;
+			break;
+		case 'R':
+		case 'r':
+			o_recursive = 1;			
 			break;
 		case '?':
 		default:
@@ -95,18 +217,16 @@ main(argc, argv)
 	}
 	for (i = 0; i < argc; i++)
 		gfs_glob(argv[i], &paths, &types);
-
 	if (section == NULL) {
 		if (nhosts == 0) {
 			/* remove a whole file */
 			for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-				e = gfs_unlink(gfarm_stringlist_elem(
-					&paths, i));
+				e = remove_whole_file_or_dir(
+					gfarm_stringlist_elem(&paths, i),
+					o_recursive);
 				if (e != NULL)
 					fprintf(stderr, "%s: %s\n",
-						gfarm_stringlist_elem(
-							&paths, i),
-						e);
+				          gfarm_stringlist_elem(&paths, i), e);
 			}
 		}
 		else {
