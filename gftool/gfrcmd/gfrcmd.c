@@ -99,7 +99,7 @@ main(argc, argv)
 	char **argv;
 {
 	char *e, *user, *hostname, *command;
-	char *args[4];
+	char *args[2];
 	char *envs[2];
 	char **envp = NULL;
 	struct gfs_connection *gfs_server;
@@ -133,10 +133,8 @@ main(argc, argv)
 	}
 
 	command = concat(argc, argv);
-	args[0] = "/bin/sh";
-	args[1] = "-c";
-	args[2] = command;
-	args[3] = NULL;
+	args[0] = command;
+	args[1] = NULL;
 
 	/*
 	 * initialization
@@ -194,6 +192,7 @@ main(argc, argv)
 	e = gfs_client_chdir(gfs_server, user);
 
 	e = gfs_client_command(gfs_server, args[0], args, envp,
+			       GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND |
 			       (opt_no_stdin ?
 				GFS_CLIENT_COMMAND_FLAG_STDIN_EOF : 0) |
 			       (opt_xdpy_env ?
