@@ -30,6 +30,8 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		    "(%d)\n", filedes));
 
 		gsp = gfs_hook_get_gfs_stat(filedes);
+		buf->st_dev = GFS_DEV;
+		buf->st_ino = gsp->st_ino;
 		buf->st_mode = gsp->st_mode;
 		buf->st_nlink = 1;
 		buf->st_uid = getuid();
@@ -53,6 +55,8 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	if (e != NULL)
 		return (-1);
 
+	buf->st_dev = GFS_DEV;
+	buf->st_ino = status.st_ino;
 	buf->st_mode = status.st_mode;
 	buf->st_nlink = 1;
 	buf->st_uid = getuid();
@@ -142,6 +146,8 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
 
 		gsp = gfs_hook_get_gfs_stat(filedes);
+		buf->st_dev = GFS_DEV;
+		buf->st_ino = gsp->st_ino;
 		buf->st_mode = gsp->st_mode;
 		buf->st_nlink = 1;
 		buf->st_uid = getuid();
@@ -165,6 +171,8 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	if (e != NULL)
 		return (-1);
 
+	buf->st_dev = GFS_DEV;
+	buf->st_ino = status.st_ino;
 	buf->st_mode = status.st_mode;
 	buf->st_nlink = 1;
 	buf->st_uid = getuid();
