@@ -187,7 +187,8 @@ invalid_input(int lineno)
 char *
 add_line(char *line, int lineno)
 {
-	int len, ncpu, nhostaliases;
+	long ncpu;
+	int len, nhostaliases;
 	char *e, *hostname, *architecture;
 	char *hostaliases[MAX_HOSTALIASES + 1];
 	static char space[] = " \t";
