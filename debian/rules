@@ -98,6 +98,7 @@ clean:
 	rm -f debian/$(GFMD_GSI_PKG).install
 	rm -f debian/$(GFSD_GSI_PKG).install
 	rm -f debian/$(DEV_GSI_PKG).install
+	rm -f debian/$(LIBS_GSI_PKG).install
 
 	rm -f debian/$(GFMD_GSI_PKG).conffiles
 	rm -f debian/$(GFSD_GSI_PKG).conffiles
