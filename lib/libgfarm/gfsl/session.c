@@ -649,7 +649,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeAcceptor()",
-				 "no memory");
+				 "cannot access configuration directory");
 		majStat = GSS_S_FAILURE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		ret = -1;
@@ -752,7 +752,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeInitiator()",
-				 "no memory");
+				 "cannot access configuration directory");
 		majStat = GSS_S_FAILURE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		ret = -1;
@@ -871,7 +871,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeBoth()",
-				 "no memory");
+				 "cannot access configuration directory");
 		majStat = GSS_S_FAILURE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 		ret = -1;
