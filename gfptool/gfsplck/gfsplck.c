@@ -269,14 +269,14 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 	}
 
 	/* divide into file and section parts. */
-	sec = gfarm_url + strlen(gfarm_prefix);
+	sec = &gfarm_url[strlen(gfarm_url) - 1];
 	while (*sec) {
 		if (*sec == ':') {
 			*sec = '\0';
 			++sec;
 			break;
 		}
-		++sec;
+		--sec;
 	}
 	if (*sec == '\0') {
 		print_errmsg(pathname, "invalid filename");
