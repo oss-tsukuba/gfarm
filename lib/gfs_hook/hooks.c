@@ -1304,6 +1304,51 @@ symlink(const char *oldpath, const char *newpath)
 }
 
 /*
+ * link
+ */
+
+int
+__link(const char *oldpath, const char *newpath)
+{
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __link(%s, %s)\n",
+				  oldpath, newpath));
+
+	if (!gfs_hook_is_url(newpath, &url))
+		return (syscall(SYS_link, oldpath, newpath));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __link(%s, %s)\n",
+				oldpath, newpath));
+
+	/*
+	 * Gfarm file system does not support the creation of
+	 * hard link yet.
+	 */
+	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	free(url);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __link: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_link(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking _link\n", stderr));
+	return (__link(oldpath, newpath));
+}
+
+int
+link(const char *oldpath, const char *newpath)
+{
+	_gfs_hook_debug_v(fputs("Hooking link\n", stderr));
+	return (__link(oldpath, newpath));
+}
+
+/*
  * getxattr
  */
 int
