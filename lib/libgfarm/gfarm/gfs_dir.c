@@ -122,19 +122,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 {
 	static char *dir;
 	static int dir_len;
-
-	char *e;
 	int len;
-	struct gfarm_path_info pi;
-
-	e = gfarm_path_info_get(canonic_dir, &pi);
-	if (e != NULL)
-		return (e);
-	if (!GFARM_S_ISDIR(pi.status.st_mode)) {
-		gfarm_path_info_free(&pi);
-		return (GFARM_ERR_NOT_A_DIRECTORY);
-	}
-	gfarm_path_info_free(&pi);
 
 	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
 	if (dir_len < len) {
@@ -157,6 +145,15 @@ char *
 gfs_chdir(const char *dir)
 {
 	char *e, *canonic_path;
+	struct gfs_stat st;
+
+	if ((e = gfs_stat(dir, &st)) != NULL)
+		return (e);
+	if (!GFARM_S_ISDIR(st.st_mode)) {
+		gfs_stat_free(&st);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	gfs_stat_free(&st);
 
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(dir), &canonic_path);
 	if (e != NULL)
@@ -892,31 +889,22 @@ char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
 	char *e, *canonic_path;
-	struct gfarm_path_info pi;
 	struct node *n;
 	struct gfs_dir *dir;
+	struct gfs_stat st;
 
-	path = gfarm_url_prefix_skip(path);
-	/* gfs_refreshdir() will be called from here */
-	e = gfarm_canonical_path(path, &canonic_path);
+	/* gfs_stat() -> gfarm_path_info_get() makes the dircache consistent */
+	if ((e = gfs_stat(path, &st)) != NULL)
+		return (e);
+	if (!GFARM_S_ISDIR(st.st_mode)) {
+		gfs_stat_free(&st);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	gfs_stat_free(&st);
+
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
 	if (e != NULL)
 		return (e);
-
-	/* NOTE: We don't have path_info for the root directory */
-	if (*canonic_path != '\0') {
-		/* gfarm_path_info_get() makes the dircache consistent */
-		e = gfarm_path_info_get(canonic_path, &pi);
-		if (e != NULL) {
-			free(canonic_path);
-			return (e);
-		}
-		if (!GFARM_S_ISDIR(pi.status.st_mode)) {
-			gfarm_path_info_free(&pi);
-			free(canonic_path);
-			return (GFARM_ERR_NOT_A_DIRECTORY);
-		}
-		gfarm_path_info_free(&pi);
-	}
 
 	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
 	    GFARM_INODE_LOOKUP, &n);
