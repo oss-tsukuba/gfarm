@@ -188,15 +188,6 @@ fixfrag(char *pathname, char *gfarm_prefix)
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
-		fprintf(stderr, "%s on %s: %s\n", gfarm_url,
-			gfarm_host_get_self_name(), e);
-		free(gfarm_url);
-		return 1;
-	}
-
-	/* check whether the path info is already registered. */
-	e = check_path_info(gfarm_file);
-	if (e != NULL) {
 		fprintf(stderr, "%s (%s) on %s: %s\n", gfarm_url, sec,
 			gfarm_host_get_self_name(), e);
 		if (delete_invalid_file) {
@@ -206,8 +197,8 @@ fixfrag(char *pathname, char *gfarm_prefix)
 			else
 				perror(pathname);
 		}
-		r = 1;
-		goto finish;
+		free(gfarm_url);
+		return 1;
 	}
 
 	/* check whether the fragment is already registered. */
@@ -233,7 +224,6 @@ fixfrag(char *pathname, char *gfarm_prefix)
 		printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
 		       gfarm_host_get_self_name());
 
- finish:
 	free(gfarm_file);
 	free(gfarm_url);
 
