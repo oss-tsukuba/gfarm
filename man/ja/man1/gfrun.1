@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "25 April 2003" "Gfarm" ""
+.TH "GFRUN" "1" "24 May 2003" "Gfarm" ""
 .SH NAME
 gfrun, gfrsh, gfssh \- ファイルシステムノードで gfarm 並列コマンドを実行する
 .SH SYNOPSIS
@@ -70,6 +70,14 @@ gfarm-URL のファイル・アフィニティ・スケジューリングにより
 .TP
 \fB-e \fIgfarm-URL\fB\fR
 実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．
+.TP
+\fB-g\fR
+実行されるプログラムを gfarm 化されたプログラムだと明示的に指定します.
+この結果, プログラムには Gfarm 特有のオプションが渡されます.
+.TP
+\fB-u\fR
+実行されるプログラムを通常のプログラムであると明示的に指定します.
+この場合, プログラムに Gfarm 特有のオプションが渡されることはありません.
 .TP
 \fB-?\fR
 引数オプションを表示します．

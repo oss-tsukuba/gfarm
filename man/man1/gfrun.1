@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "25 April 2003" "Gfarm" ""
+.TH "GFRUN" "1" "24 May 2003" "Gfarm" ""
 .SH NAME
 gfrun, gfrsh, gfssh \- run Gfarm parallel programs
 .SH SYNOPSIS
@@ -67,6 +67,14 @@ program will be redirected to.
 \fB-e \fIgfarm-URL\fB\fR
 specifies a Gfarm file that the standard error of the executed
 program will be redirected to.
+.TP
+\fB-g\fR
+explicitly specifies that the command is a Gfarm program.
+Gfarm specific options will be passed to the command as the result.
+.TP
+\fB-u\fR
+explicitly specifies that the command is an usual program, and
+does not take Gfarm specific options.
 .TP
 \fB-?\fR
 displays a list of command options.
