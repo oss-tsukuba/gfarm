@@ -456,7 +456,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	/* delete section info when opening with a trancation flag. */
+	/* delete the file section when opening with a trancation flag. */
 	if ((gf->open_flags & GFARM_FILE_TRUNC) != 0)
 		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
 
