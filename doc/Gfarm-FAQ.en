@@ -26,11 +26,15 @@ Table of Contents:
   3.2 What is the difference in sharedsecret authentication,
     gsi_auth method and gsi authentication?
 
-4. Limitation
-  4.1 Where are gfchmod, gfchown and gfmv?
-  4.2 Can I open a file with read-write mode?
-  4.3 Are file names case-sensitive in a Gfarm file system?
-  4.4 Can a file name include ',' or '+'?
+4. Performance Tuning
+  4.1 How to speed up writes to metadata databse using OpenLDAP
+    version 2.1.X and Berlekey DB?
+
+5. Limitation
+  5.1 Where are gfchmod, gfchown and gfmv?
+  5.2 Can I open a file with read-write mode?
+  5.3 Are file names case-sensitive in a Gfarm file system?
+  5.4 Can a file name include ',' or '+'?
 
 1. General
 **********
@@ -193,15 +197,34 @@ Table of Contents:
 	Please look at the following URL about the GSI:
 		http://www.globus.org/
 
-4. Limitation
+4. Performance Tuning
+*********************
+  4.1 How to speed up writes to metadata databse using OpenLDAP
+    version 2.1.X and Berlekey DB?
+
+	When you are using Berkeley DB as database backend, it is
+	possible to improve write performance significantly to tune
+	cache size and to suppress creation of transaction log
+	records.  These are specified in the
+	/var/gfarm-ldap/DB_CONFIG.  In the following configuration
+	example, the size of the cache is specified as 512 MB.  It is
+	necessary to restart slapd after the modification of the
+	configuration file.
+
+----------------------------- BEGIN HERE -----------------------------
+set_cachesize 0 536870912 2
+set_flags DB_TXN_NOT_DURABLE
+-------------------------------- END --------------------------------
+
+5. Limitation
 *************
-  4.1 Where are gfchmod, gfchown and gfmv?
+  5.1 Where are gfchmod, gfchown and gfmv?
 
 	Unfortunately, not implemented yet.
 
 	We plan to add these commands in the next major release.
 
-  4.2 Can I open a file with read-write mode?
+  5.2 Can I open a file with read-write mode?
 
 	Currently, no error happens even if you open a file with
 	read-write mode. But if there are some replicas of the file,
@@ -209,13 +232,13 @@ Table of Contents:
 
 	We plan to fix this problem in the next major release.
 
-  4.3 Are file names case-sensitive in a Gfarm file system?
+  5.3 Are file names case-sensitive in a Gfarm file system?
 
 	Currently, it is case-insensitive because virtual path names
 	are managed by distinguished name of the LDAP database.  This
 	limitation will be removed in the next major release.
 
-  4.4 Can a file name include ',' or '+'?
+  5.4 Can a file name include ',' or '+'?
 
 	Currently, a file name in Gfarm file system cannot include
 	',', '+', '"', '\', '>', '<', and ';'.  Moreover, the file

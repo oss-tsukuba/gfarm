@@ -255,9 +255,9 @@ configure コマンドには，下記のオプションがあります．
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
 LDAP サーバーを用意する必要があります．
 
-Gfarm バージョン 1.0.X では，利用可能な LDAP サーバは，OpenLDAP
-version 2.0.X であり，version 2.1.X およびそれ以外の LDAP サーバでは動
-作確認が十分にできていません．
+Gfarm バージョン 1.0.X では，OpenLDAP version 2.0.X および version
+2.1.X で動作が確認されていますが，それ以外の LDAP サーバでは動作確認が
+十分におこなわれていません．
 
 ▽ slapd.conf
 
@@ -281,7 +281,7 @@ include         /etc/openldap/schema/core.schema
 include         /etc/gfarm-ldap/gfarm.schema
 
 pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/gfarm-ldap/slapd.args
+argsfile        /var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 defaultaccess write
@@ -320,14 +320,14 @@ include         /etc/openldap/schema/core.schema
 include         /etc/gfarm-ldap/gfarm.schema
 
 pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/gfarm-ldap/slapd.args
+argsfile        /var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 allow bind_anon_dn update_anon
 access to * by anonymous write
 
 # unlimit search result
-sizelimit 2000000000
+sizelimit unlimited
 
 #######################################################################
 # ldbm database definitions

@@ -236,8 +236,9 @@ This section assumes the following setting.
 In the current distribution, an LDAP server manages the Gfarm
 filesystem metadata.
 
-The Gfarm version 1.0.X only supports OpenLDAP version 2.0.X.  Other
-versions or other LDAP servers are not tested enough.
+The Gfarm version 1.0.X only supports OpenLDAP version 2.0.X and
+version 2.1.X.  Other versions or other LDAP servers are not tested
+enough.
 
  - slapd.conf
 
@@ -260,7 +261,7 @@ include         /etc/openldap/schema/core.schema
 include         /etc/gfarm-ldap/gfarm.schema
 
 pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/gfarm-ldap/slapd.args
+argsfile        /var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 defaultaccess write
@@ -299,14 +300,14 @@ include         /etc/openldap/schema/core.schema
 include         /etc/gfarm-ldap/gfarm.schema
 
 pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/gfarm-ldap/slapd.args
+argsfile        /var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 allow bind_anon_dn update_anon
 access to * by anonymous write
 
 # unlimit search result
-sizelimit 2000000000
+sizelimit unlimited
 
 #######################################################################
 # ldbm database definitions
