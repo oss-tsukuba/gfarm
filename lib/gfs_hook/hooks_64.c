@@ -269,24 +269,3 @@ llseek(int filedes, OFF_T offset, int whence)
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
 #endif /* defined(SYS_llseek) || defined(SYS__llseek) */
-
-#ifdef __linux__
-OFF_T
-__libc_lseek64(int filedes, OFF_T offset, int whence)
-{
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "llseek" ": %d\n",
-	    filedes));
-	return (FUNC___LSEEK(filedes, offset, whence));
-}
-
-/*
- * __llseek() called from libio/fileops.c:_IO_file_seek() cannot be hooked
- * without replacing the _IO_file_seek() implementation. XXX
- */
-#include <libio.h>
-_IO_off64_t
-_IO_file_seek(_IO_FILE *fp, _IO_off64_t offset, int dir)
-{
-	return (__llseek(fp->_fileno, offset, dir));
-}
-#endif /* __linux */
