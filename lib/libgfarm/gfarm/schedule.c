@@ -672,7 +672,7 @@ search_idle_shuffled(int concurrency, int enough_number,
 		do {
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
 		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
-		shuffled_ihosts[i++] = ihost;
+		shuffled_ihosts[i] = ihost;
 	}
 	shuffle_strings(nihosts, shuffled_ihosts);
 
