@@ -327,7 +327,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
 		e = GFARM_ERR_NOT_A_DIRECTORY;
-		goto finish;
+		goto error;
 	}	  
 
 	bp = buf;
@@ -396,13 +396,14 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		 reclen - (offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen));
 		bp = (STRUCT_DIRENT *) ((char *)bp + reclen);
 	}
- finish:
+finish:
 	if (e == NULL) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___GETDENTS) " --> %d\n", filedes));
 		gfs_hook_inc_readcount(filedes);
 		return ((char *)bp - (char *)buf);
 	}
+error:
 
 	_gfs_hook_debug(fprintf(stderr,
 				"GFS: " S(FUNC___GETDENTS) ": %s\n", e));
@@ -420,11 +421,15 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 }
 
 int
+#if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
+#else
 FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
+#endif
 {
 	_gfs_hook_debug_v(fprintf(stderr,
 				  "Hooking " S(FUNC_GETDENTS) ": %d\n",
 				  filedes));
-	return (FUNC___GETDENTS(filedes, buf, nbyte));
+	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte));
 }
 #endif
