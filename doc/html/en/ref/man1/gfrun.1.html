@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrun</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFRUN.1"
+></A
+>gfrun</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrun, gfrsh, gfssh&nbsp;--&nbsp;run Gfarm parallel programs</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> [-G <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrsh</B
+> [-G <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfssh</B
+> [-G <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> executes a parallel command on filesystem nodes.
+Filesystem nodes are allocated by file-affinity scheduling using the
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>, or by the <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> explicitly that lists
+filesystem nodes.  In the case of the file-affinity scheduling,
+<B
+CLASS="COMMAND"
+>gfrun</B
+> schedules the same number of filesystem nodes as the
+number of the Gfarm fragments, taking into consideration the physical
+locations of each fragment replicas of the Gfarm file, and filesystem
+node status.</P
+><P
+>If the -H option is missing, a Gfarm file used by file-affinity
+scheduling is specified by the first existent Gfarm file in the
+argument list <TT
+CLASS="PARAMETER"
+><I
+>args</I
+></TT
+>.</P
+><P
+>To inform the node index (node) and the total number of nodes
+(nnode), each process is executed by the following command:
+"gfrcmd hostname command -N nnode -I node args"</P
+><P
+><B
+CLASS="COMMAND"
+>gfrsh</B
+> and <B
+CLASS="COMMAND"
+>gfssh</B
+> utilizes rsh and ssh, respectively,
+instead of gfrcmd.</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>Command</I
+></TT
+> can be specified by a gfarm-URL that is registered using
+gfreg(1).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-G</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> for file-affinity scheduling.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>specifies a <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists filesystem nodes.  If the -G
+option is specified with the -H option, this option is ignored.</P
+><P
+>if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="ENVIROMNENT-VARIABLES"
+></A
+><H2
+>ENVIROMNENT VARIABLES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="ENVAR"
+>GFRUN_CMD</TT
+></DT
+><DD
+><P
+>specifies a remote shell command.  If globus-job-run is specified,
+gfrun executes each process using globus-job-run.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfmpirun</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

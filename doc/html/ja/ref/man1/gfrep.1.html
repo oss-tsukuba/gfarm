@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrep</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREP.1"
+></A
+>gfrep</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrep&nbsp;--&nbsp;Gfarm ファイルのレプリカを作成する。</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホスト指定ファイル</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -I <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント番号</I
+></TT
+>  [-s <TT
+CLASS="REPLACEABLE"
+><I
+>複製元ホスト</I
+></TT
+>]  -d <TT
+CLASS="REPLACEABLE"
+><I
+>複製先ホスト</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>引数 Gfarm-URL の複製を、ホスト指定ファイルに記述されたホス
+トあるいは指定されたドメイン名のホストに作成します。</P
+><P
+>-I オプションでフラグメント番号あるいはセクション名を指定し
+た場合は，指定したファイルフラグメントの複製を -d オプション
+で指定したホストに作成します．-s オプションが指定された場合
+は，指定されたホストからファイルの複製を作成します．</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>各フラグメントの複製を作成するホスト名のリストを指定します。
+ホスト名は、各行に一ホストずつ記述します。ホストファイル中
+のホスト名の数は、フラグメントの数と一致している必要があり
+ます。</P
+><P
+>ファイル名として ``-'' を指定した場合、標準入力からホス
+ト名のリストを読み込みます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-D</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ドメイン名</I
+></TT
+></DT
+><DD
+><P
+>各フラグメントの複製を作成するホストのドメイン名を指定します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>フラグメント番号</I
+></TT
+></DT
+><DD
+><P
+>複製を作成するファイルフラグメントを指定します。
+ファイルフラグメントはフラグメント番号あるいはアーキテク
+チャなどのセクション名です．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>複製元ホスト</I
+></TT
+></DT
+><DD
+><P
+>-I オプションと共に指定し，ファイルフラグメントの複製元
+のホストを指定します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-d</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>複製先ホスト</I
+></TT
+></DT
+><DD
+><P
+>-I オプションと共に指定し，ファイルフラグメントの複製先
+のホストを指定します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfmd</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFMD.8"
+></A
+>gfmd</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfmd(8)&nbsp;--&nbsp;Gfarm metadata server</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmd</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmd</B
+> is a Gfarm filesystem metadata server for accessing
+filesystem metadata of the Gfarm filesystem.  <B
+CLASS="COMMAND"
+>gfmd</B
+> is needed to
+be running on a metadata server node in advance.</P
+><P
+>It is possible for <B
+CLASS="COMMAND"
+>gfmd</B
+> to be executed as a non-privileged user
+process although other users cannot use it.  Moreover, a <B
+CLASS="COMMAND"
+>gfmd</B
+>
+with a user privilege cannot authenticate using the GSI.</P
+><P
+>In order to execute <B
+CLASS="COMMAND"
+>gfmd</B
+> as a non-privileged user process, a
+configuration file for a user needs to be specified by the -f option.
+At least, the port number used by <B
+CLASS="COMMAND"
+>gfmd</B
+> should be altered to a
+non-privileged port number by metadb_serverport statement in the
+configuration file or the -p option.</P
+><P
+>In this case, the altered port number of <B
+CLASS="COMMAND"
+>gfmd</B
+> should be
+specified by the metadb_serverport statement in <TT
+CLASS="FILENAME"
+>~/.gfarmrc</TT
+>
+or <TT
+CLASS="FILENAME"
+>/etc/gfarm.conf</TT
+> on a client node.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-d</TT
+></DT
+><DD
+><P
+>specifies the debug mode.  With the -d option, gfmd is running as a
+foreground process not a daemon.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-f</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>config-file</I
+></TT
+></DT
+><DD
+><P
+>specifies a configuration file that is read instead of the default
+configuration file.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-p</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>specifies a port number used by gfmd.  By default, 601 is used.</P
+><P
+>Default port requires the root privilege, although privileged ports
+are not necessary to execute gfmd.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>syslog-facility</I
+></TT
+></DT
+><DD
+><P
+>specifies a syslog facility to report errors by gfmd.  By default,
+local0 is used.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-u</TT
+> <TT
+CLASS="PARAMETER"
+><I
+></I
+></TT
+></DT
+><DD
+><P
+>specifies a syslog facility to report errors by gfmd.  By default,
+local0 is used.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>/etc/gfarm.conf</TT
+></DT
+><DD
+><P
+>configuration file</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

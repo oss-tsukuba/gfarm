@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfimport_fixed</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFIMPORT-FIXED.1"
+></A
+>gfimport_fixed</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfimport_fixed&nbsp;--&nbsp;divide and register a fixed-size data file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>file</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> is a sample program for dividing a file to file
+fragments and registering it to the Gfarm filesystem.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+>
+specifies a hostname list of filesystem nodes.  The <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+>
+consists of a hostname of a filesystem node in each line.  The file is
+uniformly divided into file fragments, each file fragment except the
+last one having the same size.
+if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-f</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>fragment file</I
+></TT
+></DT
+><DD
+><P
+>specifies a <TT
+CLASS="PARAMETER"
+><I
+>fragment file</I
+></TT
+> that consists of a fragment size and a
+filesystem node separated by a white space in each line.</P
+><P
+>if ``-'' is specified, standard input is used.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-l</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>record size</I
+></TT
+></DT
+><DD
+><P
+>specifies the size of fixed-size records in bytes.  With this option,
+file is divided by the multiple size of the <TT
+CLASS="PARAMETER"
+><I
+>record size</I
+></TT
+>.
+Default size is 1.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies an output file.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfreg</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREG.1"
+></A
+>gfreg</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfreg&nbsp;--&nbsp;Gfarm ファイルシステムへのプログラム、ファイルフラグメントの登録</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+> [-a <TT
+CLASS="REPLACEABLE"
+><I
+>architecture</I
+></TT
+>] [-N <TT
+CLASS="REPLACEABLE"
+><I
+>複製の数</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>program</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+>  -N <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント総数</I
+></TT
+>   -I <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント番号</I
+></TT
+>  [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>第1の形式の場合、引数 program に指定したローカルディスク上の
+プログラム・ファイルを、gfarm-URL に登録します。この時、Gfarm ファイル
+システムのファイルシステムノード上に、このプログラム・ファイルの複製が
+作られます。これ以降、
+gfrun および gfmpirun で指定するプログラム名として、この URL が
+使えるようになります。オプション -a でプログラムの動作するアーキテク
+チャを指定しなかった場合には、gfreg コマンドを実行したホストのアーキ
+テクチャと同じであると仮定します。ただし、そのホストが Gfarm メタサー
+バに登録されている必要があります。
+オプション -N により，複製の数を指定することができます。指定しない場
+合は 1 となります。</P
+><P
+>第2の形式の場合、localfileをGfarmファイルのフラグメントとして
+登録します。オプション -N と -I で、総フラグメント数と、この
+localfileのフラグメント番号を必ず指定する必要があります。
+デフォルトでは gfreg を実行したマシンに複製を作成しますが、
+オプション -h により任意のファイルシステムノードを指定することができ
+ます。</P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrep</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREP.1"
+></A
+>gfrep</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrep&nbsp;--&nbsp;replicate a Gfarm file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -D <TT
+CLASS="REPLACEABLE"
+><I
+>domainname</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+>  -I <TT
+CLASS="REPLACEABLE"
+><I
+>fragment-index</I
+></TT
+>  [-s <TT
+CLASS="REPLACEABLE"
+><I
+>src-node</I
+></TT
+>]  -d <TT
+CLASS="REPLACEABLE"
+><I
+>dest-node</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrep</B
+> creates a replica of a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>.
+Destination filesystem nodes can be specified by the <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> or
+the <TT
+CLASS="PARAMETER"
+><I
+>domainname</I
+></TT
+>.</P
+><P
+>With the <TT
+CLASS="OPTION"
+>-I</TT
+> option, <B
+CLASS="COMMAND"
+>gfrep</B
+> creates a replica of a specified
+file fragment <TT
+CLASS="PARAMETER"
+><I
+>fragment-index</I
+></TT
+> of a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> on
+the filesystem node <TT
+CLASS="PARAMETER"
+><I
+>dest-node</I
+></TT
+> specified by the -d option.  When
+the -s option is specified, the file fragment is copied from the
+<TT
+CLASS="PARAMETER"
+><I
+>src-node</I
+></TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>specifies a list of filesystem nodes that will be replicated to.
+<TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> consists of a filesystem node in each line.  The total
+number of file fragments should be equal to the number of nodes listed
+in the <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+>.</P
+><P
+>if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-D</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>domainname</I
+></TT
+></DT
+><DD
+><P
+>specifies a domainname of filesystem nodes that will be replicated
+to.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>fragment-index</I
+></TT
+></DT
+><DD
+><P
+>specifies a file fragment.  It is a fragment index or a section name
+describing its architecture.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>src-node</I
+></TT
+></DT
+><DD
+><P
+>specifies a source filesystem node from which the file fragment will
+be copied.  This option needs to be specified with the <TT
+CLASS="OPTION"
+>-I</TT
+>
+option.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-d</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>dest-node</I
+></TT
+></DT
+><DD
+><P
+>specifies a destination filesystem node to which the file fragment
+will be copied.  This option needs to be specified with the <TT
+CLASS="OPTION"
+>-I</TT
+>
+option.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

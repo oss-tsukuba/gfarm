@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfreg</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREG.1"
+></A
+>gfreg</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfreg&nbsp;--&nbsp;register a Gfarm program or a Gfarm file fragment</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+> [-a <TT
+CLASS="REPLACEABLE"
+><I
+>architecture</I
+></TT
+>] [-N <TT
+CLASS="REPLACEABLE"
+><I
+>num-of-replicas</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>program</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+>  -N <TT
+CLASS="REPLACEABLE"
+><I
+>total-num-of-fragments</I
+></TT
+>   -I <TT
+CLASS="REPLACEABLE"
+><I
+>fragment-index</I
+></TT
+>  [-h <TT
+CLASS="REPLACEABLE"
+><I
+>filesystem-node</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The first form copies and registers the program <TT
+CLASS="PARAMETER"
+><I
+>program</I
+></TT
+> as a
+Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> in the Gfarm filesystem.  After this
+registration, the <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> can be specified as a program name
+of gfrun(1) and gfmpirun(1).  Without the <TT
+CLASS="OPTION"
+>-a</TT
+> option,
+architecture of
+the specified program is assumed to be the same architecture as the
+client host on that gfreg(1) is executed, which is obtained by the
+Gfarm metaserver.  The <TT
+CLASS="OPTION"
+>-N</TT
+> option specifies the number of file
+replicas.  When it is omitted, one file replica is created.  The
+destination filesystem node is automatically selected among filesystem
+nodes of the same architecture.</P
+><P
+>The second form registers <TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+> as a file fragment of a
+Gfarm file.  The total number of fragments and the fragment index
+are specified by the <TT
+CLASS="OPTION"
+>-N</TT
+> option and the <TT
+CLASS="OPTION"
+>-I</TT
+>
+option, respectively.
+By default, the destination filesystem node is the client host on the
+gfreg(1) is executed, although which is changed by the <TT
+CLASS="OPTION"
+>-h</TT
+>
+option.</P
+></DIV
+></BODY
+></HTML
+>

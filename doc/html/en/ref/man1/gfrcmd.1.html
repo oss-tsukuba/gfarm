@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrcmd</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="AEN1"
+></A
+>gfrcmd</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="AEN8"
+></A
+><H2
+>Name</H2
+>gfrcmd&nbsp;--&nbsp;Gfarm remote shell</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="AEN11"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrcmd</B
+>  <TT
+CLASS="REPLACEABLE"
+><I
+>host</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrcmd</B
+> logs into a filesystem node <TT
+CLASS="PARAMETER"
+><I
+>host</I
+></TT
+> and executes
+<TT
+CLASS="PARAMETER"
+><I
+>command</I
+></TT
+> on the filesystem node.  It provides a similar
+functionality to rsh, while the following is a list of differences.</P
+><P
+>A remote server is not executed by inetd, but is incorporated with
+gfsd(8).</P
+><P
+>The user is authenticated and authorized by the Gfarm security
+mechanism.  Since it does not rely on privileged ports of TCP for
+authentication like rsh, the maximum number of remote executions is
+not limited by the number of privileged ports.</P
+><P
+>Unlike rsh, <B
+CLASS="COMMAND"
+>gfrcmd</B
+> utilizes a single TCP connection to a
+filesystem node.  It requires less kernel resources than rsh when
+several processes are executed.</P
+><P
+><B
+CLASS="COMMAND"
+>gfrcmd</B
+> inherits the environment variable DISPLAY and the
+authentication information of the X Window System.</P
+><P
+>On the filesystem node, the current working directory is not the home
+directory that is often shared using NFS, but a spool directory of the
+Gfarm filesystem, which makes it possible to leave core files on each
+filesystem node when debugging.</P
+><P
+>It has a functionality to invoke a debugger when a fatal signal
+occurs.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-l</TT
+><TT
+CLASS="PARAMETER"
+><I
+>username</I
+></TT
+></DT
+><DD
+><P
+>specifies a username on a remote host.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-n</TT
+></DT
+><DD
+><P
+>redirects the standard input from the special device /dev/null.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-y</TT
+></DT
+><DD
+><P
+>inherits the environment variable DISPLAY.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-x</TT
+></DT
+><DD
+><P
+>inherits the authentication information of the X Window System.  It
+is useful under the situation such that the home directory is not
+shared.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="ENVIRONMENT-VARIABLES"
+></A
+><H2
+>ENVIRONMENT VARIABLES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="ENVAR"
+>GFARM_DEBUG_MODE</TT
+></DT
+><DD
+><P
+>specifies the debugger command that is invoked when a remotely
+executed command aborts with a fatal signal.  When gdb is specified,
+xterm and the GNU debugger gdb are executed.
+To utilize this functionality, it is necessary to invoke <B
+CLASS="COMMAND"
+>gfrcmd</B
+>
+on the X Window System.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

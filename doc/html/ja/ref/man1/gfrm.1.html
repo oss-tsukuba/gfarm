@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfrm</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFRM.1"
+></A
+>gfrm</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrm&nbsp;--&nbsp;Gfarm ファイルを削除する。</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrm</B
+> [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrm</B
+>  -h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+>   -I <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント番号</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>Gfarm-URL に指定したファイルを削除します。<TT
+CLASS="OPTION"
+>-h</TT
+> オプションで
+ファイルシステムノードを指定することにより、特定のファイル
+システムノードに存在するファイル断片の複製を削除することが
+できます。</P
+><P
+>また、
+<TT
+CLASS="OPTION"
+>-h</TT
+>
+オプションと
+<TT
+CLASS="OPTION"
+>-I</TT
+>
+オプションの両方を指定すること
+により、特定のファイル断片の複製を削除することができます。
+ただし、複製が一つしかない場合は削除することができません。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-h</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ファイルシステムノード</I
+></TT
+></DT
+><DD
+><P
+>複製を削除するファイルシステムノード名を指定します。
+-I オプションと共に指定することにより、特定のファイル断片を
+削除することができます。複数のファイルシステムノードか
+ら同じファイル断片の複製を一度に削除するためには，このオ
+プションを複数回指定します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-I</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>フラグメント番号</I
+></TT
+></DT
+><DD
+><P
+>複製を削除するフラグメント番号を指定します。
+実行形式のファイルの場合には、このオプションで実行アーキ
+テクチャ(例 「sparc-sun-solaris」) を指定することによっ
+て、指定したアーキテクチャの複製を削除できます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
