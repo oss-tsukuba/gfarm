@@ -1,4 +1,5 @@
 # Part 1 data definition
+%define pkg	gfarm
 %define ver	1.0b1
 %define	rel	1
 
@@ -8,11 +9,28 @@
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
 
+
+# do the followings to build gfarm-gsi-*.rpm:
+#
+#   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 rpmbuild -bb gfarm.spec
+#
+
+%define	globus_prefix	%(echo "${GLOBUS_PREFIX}")
+%define	globus_flavor	%(echo "${GLOBUS_FLAVOR}")
+
+%define globus %(test -n "${GLOBUS_PREFIX}" -a -n "${GLOBUS_FLAVOR}" -a -r %{globus_prefix}/include/%{globus_flavor}/gssapi.h && echo 1 || echo 0)
+
+%if %{globus}
+%define package_name	%{pkg}-gsi
+%else
+%define package_name	%{pkg}
+%endif
+
 Summary: Grid Datafarm
-Name: gfarm
+Name: %{package_name}
 Version: %ver
 Release: %rel
-Source: %{name}-%{ver}.tar.gz
+Source: %{pkg}-%{ver}.tar.gz
 #Patch: 
 Copyright: National Institute of Advanced Industrial Science and Technology
 Group: Local
@@ -77,15 +95,17 @@ development library for gfarm
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
-%setup
+%setup -n %{pkg}-%{ver}
 #%patch -p1
 
 %build
 ./configure --prefix=%{prefix} \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
-	--with-readline=/usr
-#	--with-globus=/usr/grid --with-globus-flavor=gcc32
+	--with-readline=/usr \
+	`test "%{globus}" -ne 0 && \
+	 echo --with-globus=%{globus_prefix} \
+		--with-globus-flavor=%{globus_flavor}`
 #	--with-mpi=/usr
 
 make
