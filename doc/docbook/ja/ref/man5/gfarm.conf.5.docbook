@@ -318,7 +318,7 @@ IPアドレスを通信に用いるかを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>ユーザマップファイル指定</parameter></term>
+<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter></term>
 <listitem>
 <para>グローバルユーザ名とローカルユーザ名の対応関係を記述した
 ユーザマップファイルパス名を指定します。</para>
