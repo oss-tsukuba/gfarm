@@ -21,6 +21,7 @@
 #include "io_fd.h"
 #include "sockopt.h"
 #include "auth.h"
+#include "config.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
 
@@ -79,7 +80,7 @@ gfm_client_connection0(char *hostname, struct gfm_connection *gfm_server)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = gfarm_auth_request(gfm_server->conn,
-	    host_fqdn, (struct sockaddr *)&peer_addr,
+	    GFM_SERVICE_TAG, host_fqdn, (struct sockaddr *)&peer_addr,
 	    &gfm_server->auth_method);
 	free(host_fqdn);
 	if (e != NULL) {

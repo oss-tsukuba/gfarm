@@ -36,6 +36,7 @@
 #include "param.h"
 #include "sockopt.h"
 #include "auth.h"
+#include "config.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
@@ -133,7 +134,8 @@ gfs_client_connection0(const char *canonical_hostname,
 		xxx_connection_free(gfs_server->conn);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_auth_request(gfs_server->conn, host_fqdn, peer_addr,
+	e = gfarm_auth_request(gfs_server->conn,
+	    GFS_SERVICE_TAG, host_fqdn, peer_addr,
 	    &gfs_server->auth_method);
 	free(host_fqdn);
 	if (e != NULL) {
@@ -279,7 +281,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		state->error = gfarm_errno_to_error(error);
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
-		    state->gfs_server->conn,
+		    state->gfs_server->conn, GFS_SERVICE_TAG,
 		    state->gfs_server->hostname, &state->peer_addr,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
@@ -381,7 +383,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	} else {
 		state->writable = NULL;
 		e = gfarm_auth_request_multiplexed(q,
-		    gfs_server->conn,
+		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
