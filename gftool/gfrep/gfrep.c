@@ -616,6 +616,7 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 	gfs_closedir(dir);
 	for (i = 0; i < gfarm_stringlist_length(&entry_list); i++) {
 		struct gfs_stat gs;
+		gfarm_mode_t mode;
 		char *path = gfarm_stringlist_elem(&entry_list, i);
 
 		e = gfs_stat(path, &gs);
@@ -623,13 +624,15 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			continue;
 		}
-		if (GFARM_S_ISREG(gs.st_mode)) {
+		mode = gs.st_mode;
+		gfs_stat_free(&gs);
+		if (GFARM_S_ISREG(mode)) {
 			e = (*file_processor)(cwdbf, path, closure);
 			if (e != NULL) {
 				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 				continue;
 			}
-		} else if (GFARM_S_ISDIR(gs.st_mode)) {
+		} else if (GFARM_S_ISDIR(mode)) {
 			e = gfs_chdir(path);
 			if (e != NULL) {
 				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
@@ -642,7 +645,6 @@ traverse_file_tree(char *(*file_processor)(char *, char *, void *),
 				exit (1);
 			}
 		}
-		gfs_stat_free(&gs);
 	}
 	gfarm_stringlist_free_deeply(&entry_list);
 }
