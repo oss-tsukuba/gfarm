@@ -1040,7 +1040,7 @@ Optional Packages:
   --with-globus-shared		link globus shared library instead of static library
 				[default=disable]
   --with-globus-flavor=FLAVOR	globus flavor name
-				[default=gcc32]
+				[default=guessed]
   --with-globus=GLOBUS_ROOT	globus root directory
 				[default=disable]
   --with-mpi=MPI_ROOT		MPI root directory
@@ -18247,7 +18247,7 @@ if test "${with_globus_flavor+set}" = set; then
   globus_flavor="${withval}"
 
 else
-  globus_flavor=gcc32
+  globus_flavor=
 
 fi;
 
@@ -18261,10 +18261,54 @@ if test "${with_globus+set}" = set; then
   globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
- echo "$as_me:$LINENO: result: using \"${globus_location}\" as globus root directory" >&5
-echo "${ECHO_T}using \"${globus_location}\" as globus root directory" >&6
- echo "$as_me:$LINENO: result: using globus flavor: \"${globus_flavor}\"" >&5
-echo "${ECHO_T}using globus flavor: \"${globus_flavor}\"" >&6
+ echo "$as_me:$LINENO: checking globus" >&5
+echo $ECHO_N "checking globus... $ECHO_C" >&6
+ GLBlocation_candidates=${globus_location:-/usr/grid}
+ if test -n "$globus_flavor"; then
+	GLBflavor_candidates="$globus_flavor"
+ else
+	GLBflavor_candidates=
+	if test x"$GCC" = x"yes"; then
+		tmp='gcc vendorcc'
+	else
+		tmp='vendorcc gcc'
+	fi
+	for GLBbits in 32; do
+		for GLBcc in $tmp; do
+			for GLBdebug in "" dbg; do
+				for GLBpthread in "" pthr; do
+					GLBflavor_candidates="$GLBflavor_candidates $GLBcc$GLBbits$GLBdebug$GLBpthread"
+				done
+			done
+		done
+	done
+ fi
+ globus_found=
+ for d in ${GLBlocation_candidates}; do
+	for f in ${GLBflavor_candidates}; do
+		if test -f "$d/include/$f/gssapi.h"; then
+			globus_location=$d
+			globus_flavor=$f
+			globus_found=yes
+			break
+		fi
+	done
+	if test x"$globus_found" = x"yes"; then break; fi
+ done
+ if test x"$globus_found" != x"yes"; then
+	echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+	echo "$as_me:$LINENO: result: searched directories are: ${GLBlocation_candidates}" >&5
+echo "${ECHO_T}searched directories are: ${GLBlocation_candidates}" >&6
+	echo "$as_me:$LINENO: result: searched flavors are: ${GLBflavor_candidates}" >&5
+echo "${ECHO_T}searched flavors are: ${GLBflavor_candidates}" >&6
+	{ { echo "$as_me:$LINENO: error: aborted" >&5
+echo "$as_me: error: aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	exit 1
+ fi
+ echo "$as_me:$LINENO: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
+echo "${ECHO_T}found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&6
 
  globus_includes='-I$(globus_location)/include/$(globus_flavor)'
  globus_libdir='$(globus_location)/lib'
@@ -18654,8 +18698,8 @@ fi
 done
 
 if test x"${ac_cv_header_stdio_h}" != x"yes"; then
-	echo "$as_me:$LINENO: result: "echo preprocessor option error on: \"$ac_cpp\""" >&5
-echo "${ECHO_T}"echo preprocessor option error on: \"$ac_cpp\""" >&6
+	echo "$as_me:$LINENO: result: preprocessor option error on: \"$ac_cpp\"" >&5
+echo "${ECHO_T}preprocessor option error on: \"$ac_cpp\"" >&6
 	#exit 1
 fi
 
@@ -18746,7 +18790,8 @@ fi
 done
 
 if test x"${ac_cv_func_printf}" != x"yes"; then
-	eval "echo linker option error on: \"$ac_link\""
+	echo "$as_me:$LINENO: result: linker option error on: \"$ac_link\"" >&5
+echo "${ECHO_T}linker option error on: \"$ac_link\"" >&6
 	exit 1
 fi
 
