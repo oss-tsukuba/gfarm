@@ -234,14 +234,14 @@ and <token>gsi</token>, and all other hosts will be authenticated by
 communication parameters listed below.</para>
 
 <para><token>parallel_streams</token>.  This parameter specifies the
-number of tcp streams.  The default is a single stream.  This
-parameter may improve the file transfer performance especially when
-connecting to a far distant site such that tcp congestion window size
-will not increase enough.  In the current implementation, this
-parameter is only effective on a client node where gfrep(1) command is
-executed.  <parameter>Host specification</parameter> specifies the
-source host(s) of file replication instead of the destination
-host(s).</para>
+number of tcp streams.  The default is a single stream.  The
+<token>parallel_streams</token> parameter may improve the file
+transfer performance especially when connecting to a far distant site
+(i.e. high bandwidth-delay product network) such that tcp congestion
+window size will not increase enough.  This parameter is only
+effective on a client node where gfrep(1) command is executed.
+<parameter>Host specification</parameter> specifies the source host(s)
+of file replication instead of the destination host(s).</para>
 
 <para><token>stripe_unit_size</token>.  This parameter specifies how
 to divide the data when utilizing multiple tcp streams.  Without this
@@ -253,19 +253,19 @@ speaking, the performance of file transfer is improved using this
 parameter.</para>
 
 <para>This parameter is effective only when two or more is specified
-by the <token>parallel_streams</token> parameter.  In the current
-implementation, this parameter is only effective on a client node
-where gfrep(1) command is executed.  <parameter>Host
-specification</parameter> specifies the source host(s) of file
-replication instead of the destination host(s).</para>
+by the <token>parallel_streams</token> parameter.  This parameter is
+only effective on a client node where gfrep(1) command is executed.
+<parameter>Host specification</parameter> specifies the source host(s)
+of file replication instead of the destination host(s).</para>
 
 <para><token>rate_limit</token>.  This parameter specifies the maximum
 transfer rate (bps; bit per second) for a single connection, which is
-introduced experimentally.  In the current implementation, this
-parameter is only effective on a client node where gfrep(1) command is
-executed.  <parameter>Host specification</parameter> specifies the
-source host(s) of file replication instead of the destination
-host(s).</para>
+introduced experimentally.  The parameter on a source filesystem node
+is effective during parallel file replication.  <parameter>Host
+specification</parameter> specifies the destination host(s) of file
+replication.</para> Note that this parameter needs to be specified on
+a source filesystem node not on a client host unlike the other
+parameters.
 
 <para>For example,</para>
 <literallayout>
