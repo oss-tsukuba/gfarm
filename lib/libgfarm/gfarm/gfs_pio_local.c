@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -174,6 +176,7 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e, *local_path;
 	int fd, open_flags = gfs_open_flags_localize(gf->open_flags);
+	mode_t saved_umask;
 
 	if (open_flags == -1)
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -183,8 +186,10 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	if (e != NULL)
 		return (e);
 
+	saved_umask = umask(0);
 	fd = open(local_path, open_flags,
 		  gf->pi.status.st_mode & GFARM_S_ALLPERM);
+	umask(saved_umask);
 	/* FT - the parent directory may be missing */
 	if (fd == -1
 	    && gfarm_errno_to_error(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
@@ -247,6 +252,8 @@ gfs_pio_local_mkdir_p(char *canonic_dir)
 		return (e);
 	if (stat(local_path, &statb)) {
 		char *par_dir, *saved_par_dir;
+		mode_t saved_umask;
+		int r;
 
 		par_dir = saved_par_dir = strdup(canonic_dir);
 		if (par_dir == NULL) {
@@ -260,7 +267,10 @@ gfs_pio_local_mkdir_p(char *canonic_dir)
 			free(local_path);
 			return (e);
 		}
-		if (mkdir(local_path, mode) == -1) {
+		saved_umask = umask(0);
+		r = mkdir(local_path, mode);
+		umask(saved_umask);
+		if (r == -1) {
 			free(local_path);
 			return (gfarm_errno_to_error(errno));
 		}
