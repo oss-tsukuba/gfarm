@@ -9,7 +9,7 @@
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
 %define etc_prefix	/etc
-%define ldap_etc_prefix	/etc/gfarm-ldap
+%define ldap_etc_prefix	%{etc_prefix}/gfarm-ldap
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
@@ -485,10 +485,10 @@ fi
 %config(noreplace) %{etc_prefix}/gfarm.conf
 
 %files server
-%dir %{etc_prefix}/gfarm-ldap
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
 %{rc_prefix}/gfarm-slapd
+%dir %{ldap_etc_prefix}
 %{ldap_etc_prefix}/gfarm.schema
 
 %files devel
