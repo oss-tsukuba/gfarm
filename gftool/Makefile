@@ -18,6 +18,7 @@ SUBDIRS = \
 	gfrm \
 	gfrmdir \
 	gfsched \
+	gfsck \
 	gfsetdir \
 	gfstat \
 	gfmpirun \
