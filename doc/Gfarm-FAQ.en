@@ -228,9 +228,10 @@ set_flags DB_TXN_NOT_DURABLE
 
   5.3 Are file names case-sensitive in a Gfarm file system?
 
-	File names became case-sensitive in Gfarm version 1.0.2 or
-	later.  Files created by the version 1.0.1 or earlier can be
-	accessed by a path name with all lower-case letters.
+	If you are using latest version of openldap 2.1 series or
+	2.2 series, file names are case-sensitive.
+	But if you are using older version like openldap 2.0 series,
+	Gfarm cannot distinguish upper case and lower case in file names.
 
   5.4 Can a file name include ',' or '+'?
 
