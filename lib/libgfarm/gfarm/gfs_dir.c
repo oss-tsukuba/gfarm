@@ -129,9 +129,12 @@ gfs_chdir_canonical(const char *canonic_dir)
 	len = sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH + 1 +
 	    strlen(canonic_dir) + 1;
 	if (env_len < len) {
-		env = realloc(env, len);
-		if (env == NULL)
+		char *tmp_env;
+
+		tmp_env = realloc(env, len);
+		if (tmp_env == NULL)
 			return (GFARM_ERR_NO_MEMORY);
+		env = tmp_env;
 		env_len = len;
 	}
 
