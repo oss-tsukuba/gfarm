@@ -19,6 +19,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	_gfs_hook_debug(fprintf(stderr,
 	    "Hooking " S(FUNC___OPEN) "(%s, 0x%x)\n", path, oflag));
 
+retry:
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return (SYSCALL_OPEN(path, oflag, mode));
 
@@ -56,6 +57,14 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			_gfs_hook_debug(fprintf(stderr,
 			    "GFS: set_view_local: %s\n", e));
 			gfs_pio_close(gf);
+			if (e = GFARM_ERR_NO_SUCH_OBJECT) {
+				/*
+				 * corrupted GFarmPath entry,
+				 * possibly caused by coredump.
+				 */
+				gfs_unlink(path); /* XXX - FIXME */
+				goto retry; /* XXX - FIXME */
+			}
 			errno = gfarm_error_to_errno(e);
 			return (-1);
 		}
