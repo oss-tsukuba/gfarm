@@ -122,7 +122,19 @@ gfs_chdir_canonical(const char *canonic_dir)
 {
 	static char *dir;
 	static int dir_len;
+
+	char *e;
 	int len;
+	struct gfarm_path_info pi;
+
+	e = gfarm_path_info_get(canonic_dir, &pi);
+	if (e != NULL)
+		return (e);
+	if (!GFARM_S_ISDIR(pi.status.st_mode)) {
+		gfarm_path_info_free(&pi);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	gfarm_path_info_free(&pi);
 
 	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
 	if (dir_len < len) {
