@@ -21,6 +21,10 @@ usage()
 	fprintf(stderr, "Usage: %s [option] host command...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-n: disable standard input.\n");
+	fprintf(stderr, "\t-r: execute a remote command directly.\n");
+	fprintf(stderr, "\t-y: inherits the environment variable DISPLAY.\n");
+	fprintf(stderr, "\t-X: inherits the authentication info of the "
+			"X Window System.\n");
 	exit(1);
 }
 

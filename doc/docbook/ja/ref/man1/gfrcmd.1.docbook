@@ -68,6 +68,14 @@ System の認証情報も渡すことが出来る。</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>遠隔ホストのログインシェルを利用しないで，
+指定されたコマンドを直接実行します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-y</option></term>
 <listitem>
 <para>環境変数DISPLAYを遠隔ホストに伝えます。</para>
@@ -75,7 +83,7 @@ System の認証情報も渡すことが出来る。</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-x</option></term>
+<term><option>-X</option></term>
 <listitem>
 <para>環境変数 X Window System の認証情報を、遠隔ホストに伝えます。
 ホームディレクトリを共有していないような場合に有用です。</para>
@@ -107,6 +115,11 @@ gdb を、コマンドに関連づけた状態で、起動します。
 </listitem>
 </varlistentry>
 </variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>-l オプションはまだ実装されていません。
+</para>
 </refsect1>
 </refentry>
 

@@ -75,6 +75,13 @@ occurs.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>executes a remote command directly without using a login shell.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-y</option></term>
 <listitem>
 <para>inherits the environment variable DISPLAY.</para>
@@ -82,7 +89,7 @@ occurs.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-x</option></term>
+<term><option>-X</option></term>
 <listitem>
 <para>inherits the authentication information of the X Window System.  It
 is useful under the situation such that the home directory is not
@@ -115,6 +122,10 @@ on the X Window System.</para>
 </listitem>
 </varlistentry>
 </variablelist>
+</refsect1>
 
+<refsect1 id='bugs'><title>BUGS</title>
+<para>The -l option is not implemented yet.
+</para>
 </refsect1>
 </refentry>
