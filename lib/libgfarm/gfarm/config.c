@@ -15,7 +15,11 @@
 
 #include <time.h>
 #include <pwd.h>
+
 #include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+
 #include "hostspec.h"
 #include "host.h"
 #include "param.h"
