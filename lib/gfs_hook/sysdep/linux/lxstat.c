@@ -22,10 +22,13 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stddef.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include "kernel_stat.h"
 
 #include <sys/syscall.h>
+
+#include "hooks_subr.h"
 
 #define NEEDS_XSTAT_CONV
 #include "xstatconv.c"

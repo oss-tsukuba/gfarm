@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <sys/types.h>
 #include <unistd.h>
 #include <gfarm/gfarm.h>
 #include "hooks_subr.h"

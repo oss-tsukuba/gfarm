@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <sys/types.h>
 #include <unistd.h>
 #include <mpi.h>
 #include <gfarm/gfarm.h>

@@ -23,10 +23,13 @@
 #ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
 #endif
+#include <sys/types.h>
 #include <sys/stat.h>
 #include "kernel_stat.h"
 
 #include <sys/syscall.h>
+
+#include "hooks_subr.h"
 
 #define NEEDS_XSTAT64_CONV
 #include "xstatconv.c"

@@ -92,7 +92,6 @@ retry:
 		if (gfs_pio_get_nfragment(gf, &nf) ==
 			GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
 		    (gfs_pio_get_node_size(&np) == NULL && nf == np)) {
-			extern int gfarm_node, gfarm_nnode;
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: set_view_local(%s (%d, %d))\n",
 					path, gfarm_node, gfarm_nnode));

@@ -457,12 +457,13 @@ gfs_hook_syscall_fstat(int filedes, struct stat *buf)
 #endif
 }
 
+#if defined(_STAT_VER) && defined(SYS_xstat)
 /*
  * for SVR4.
  *
- * (see sysdep/linux/xstat.c about Linux)
+ * but not for Linux. (see sysdep/linux/xstat.c for Linux version)
  */
-#if defined(_STAT_VER) && defined(SYS_xstat)
+
 int
 gfs_hook_syscall_xstat(int ver, const char *path, struct stat *buf)
 {
@@ -483,7 +484,7 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	return (syscall(SYS_fxstat, ver, filedes, buf));
 
 }
-#endif
+#endif /* defined(_STAT_VER) && defined(SYS_xstat) */
 
 #define OFF_T off_t
 
