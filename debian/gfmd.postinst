@@ -1,0 +1,6 @@
+#!/bin/sh -e
+
+if [ -e /etc/init.d/ssh ]; then
+    update-rc.d gfmd defaults >/dev/null
+    /etc/init.d/gfmd restart
+fi
