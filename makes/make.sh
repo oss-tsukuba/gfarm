@@ -17,7 +17,7 @@ while	if pwd | grep ^/\$ >/dev/null; then
 		echo '"$0"': cannot find \\${top_builddir} >&2;
 		exit 1;
 	fi;
-	if [ -f Makefile -a -d lib -a -d gfptool -a -d gftool -a -d server ];
+	if [ -f Makefile -a -d makes -a -d gfptool ];
 	then false; else :; fi;
 do
 	top_builddir=${top_builddir}/..;
