@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#include <glob.h>
 
 #include <gfarm/gfarm.h>
 
@@ -18,14 +19,14 @@ static int check_all = 0;
 static int delete_invalid_file = 0;
 
 static void
-print_errmsg(char *path, char *msg)
+print_errmsg(const char *path, char *msg)
 {
 	fprintf(stderr, "%s on %s: %s\n",
 		path, gfarm_host_get_self_name(), msg);
 }
 
 static void
-print_errmsg_with_section(char *path, char *section, char *msg)
+print_errmsg_with_section(const char *path, char *section, char *msg)
 {
 	fprintf(stderr, "%s (%s) on %s: %s\n",
 		path, section, gfarm_host_get_self_name(), msg);
@@ -58,7 +59,7 @@ unlink_dir(const char *src)
 
 			f = malloc(strlen(src) + 1 + strlen(dp->d_name) + 1);
 			if (f == NULL) {
-				fputs("not enough memory", stderr);
+				print_errmsg(dp->d_name, "not enough memory");
 				return (1);
 			}
 			strcpy(f, src);
@@ -96,6 +97,28 @@ delete_invalid_file_or_directory(char *pathname)
 }
 
 static char *
+append_prefix_pathname(const char *prefix, const char *path)
+{
+	char *url;
+
+	url = malloc(strlen(prefix) + strlen(path) + 2);
+	if (url == NULL)
+		return (url);
+
+	strcpy(url, prefix);
+	switch (url[strlen(url) - 1]) {
+	case '/':
+	case ':':
+		break;
+	default:
+		strcat(url, "/");
+	}
+	strcat(url, path);
+
+	return (url);
+}
+
+static char *
 fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 {
 	char *hostname, *e;
@@ -124,86 +147,116 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 	return (gfs_pio_set_fragment_info_local(pathname, gfarm_file, sec));
 }
 
-static int fixdir(char *dir, char *gfarm_prefix);
+static int fixdir(char *dir, const char *gfarm_prefix);
 
-static int
-fixurl(char *gfarm_url)
+static void
+fixurl(const char *gfarm_url)
 {
 	char *gfarm_file, *local_path, *e;
-	char sec[GFARM_INT32STRLEN];
 	struct stat sb;
-	int rank;
-	int r = 1;
+	int len_path, is_invalid = 0, is_directory = 0;
+	glob_t pglob;
+	char **pathp, *pat;
+	struct gfs_stat gs;
 
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(gfarm_url), &gfarm_file);
 	if (e != NULL) {
-		print_errmsg(gfarm_url, e);
-		return (r);
+		/*
+		 * no path info, try to delete invalid physical files
+		 * or directories
+		 */
+		e = gfarm_canonical_path_for_creation(
+			gfarm_url_prefix_skip(gfarm_url), &gfarm_file);
+		if (e != NULL) {
+			/* in this case, give up searching invalid files */
+			print_errmsg(gfarm_url, e);
+			return;
+		}
+		is_invalid = 1;
 	}
-
-	/* check whether gfarm_url is directory or not. */
+	else {
+		/* check it is a directory or not */
+		e = gfs_stat(gfarm_url, &gs);
+		if (e != NULL) {
+			/* maybe permission denied */
+			print_errmsg(gfarm_url, e);
+			goto error_gfarm_file;
+		}
+		is_directory = GFARM_S_ISDIR(gs.st_mode);
+		gfs_stat_free(&gs);
+	}
+	/*
+	 * Check local_path; if it is invalid or not a directory,
+	 * delete it.  Otherwise, check it recursively.
+	 */
 	e = gfarm_path_localize(gfarm_file, &local_path);
-	if (e == NULL && stat(local_path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
-		if (chdir(local_path) == 0)
-			r = fixdir(".", gfarm_url);
-		goto error_local_path;
+	if (e == NULL && stat(local_path, &sb) == 0) {
+		if (is_invalid || !is_directory || !S_ISDIR(sb.st_mode)) {
+			print_errmsg(local_path, "invalid file or directory");
+			delete_invalid_file_or_directory(local_path);
+		}
+		else if (chdir(local_path) == 0)
+			(void)fixdir(".", gfarm_url);
+		/* continue */
 	}
 	if (e != NULL) {
 		print_errmsg(gfarm_url, e);
 		goto error_gfarm_file;
 	}
+
+	/* investigate file sections */
+	len_path = strlen(local_path);
+	pat = malloc(len_path + 3);
+	if (pat == NULL) {
+		print_errmsg(gfarm_url, "not enough memory");
+		free(local_path);
+		goto error_gfarm_file;
+	}
+	strcpy(pat, local_path);
+	strcat(pat, ":*");
 	free(local_path);
 
-	/* XXX - assume gfarm_url is a fragmented file. */
-	e = gfs_pio_get_node_rank(&rank);
-	if (e != NULL) {
-		print_errmsg(gfarm_url, e);
-		goto error_gfarm_file;
-	}
+	pglob.gl_offs = 0;
+	glob(pat, GLOB_DOOFFS, NULL, &pglob);
+	free(pat);
+	
+	pathp = pglob.gl_pathv;
+	while (*pathp) {
+		char *sec = &((*pathp)[len_path + 1]);
 
-	e = gfarm_path_localize_file_fragment(gfarm_file, rank, &local_path);
-	if (e != NULL) {
-		print_errmsg(gfarm_url, e);
-		goto error_gfarm_file;
+		if (is_invalid || is_directory) {
+			print_errmsg_with_section(
+				gfarm_url, sec, "invalid file");
+			delete_invalid_file_or_directory(*pathp);
+			++pathp;
+			continue;
+		}
+		e = fixfrag_i(*pathp, gfarm_file, sec);
+		if (e != NULL && e != GFARM_ERR_ALREADY_EXISTS) {
+			print_errmsg_with_section(gfarm_url, sec, e);
+			delete_invalid_file_or_directory(*pathp);
+		}
+		++pathp;
 	}
+	globfree(&pglob);
 
-	sprintf(sec, "%d", rank);
-	e = fixfrag_i(local_path, gfarm_file, sec);
-	if (e != NULL && e != GFARM_ERR_ALREADY_EXISTS) {
-		print_errmsg_with_section(gfarm_url, sec, e);
-		delete_invalid_file_or_directory(local_path);
-		goto error_local_path;
-	}
-	r = 0;
-
- error_local_path:
-	free(local_path);
  error_gfarm_file:
 	free(gfarm_file);
-	return (r);
+	return;
 }
 
 static int
-fixfrag(char *pathname, char *gfarm_prefix)
+fixfrag(char *pathname, const char *gfarm_prefix)
 {
 	char *gfarm_url, *sec, *gfarm_file, *e;
 	struct gfs_stat gst;
 	int r = 1;
 
-	gfarm_url = malloc(strlen(gfarm_prefix) + strlen(pathname) + 2);
+	gfarm_url = append_prefix_pathname(gfarm_prefix, pathname);
 	if (gfarm_url == NULL) {
-		fputs("not enough memory", stderr);
+		print_errmsg(pathname, "not enough memory");
 		return (r);
 	}
-	strcpy(gfarm_url, gfarm_prefix);
-	switch (gfarm_url[strlen(gfarm_url) - 1]) {
-	case '/':
-	case ':':
-		break;
-	default:
-		strcat(gfarm_url, "/");
-	}
-	strcat(gfarm_url, pathname);
 
 	/* divide into file and section parts. */
 	sec = gfarm_url + strlen(gfarm_prefix);
@@ -265,13 +318,15 @@ error_gfarm_url:
 }
 
 static int
-fixdir(char *dir, char *gfarm_prefix)
+fixdir(char *dir, const char *gfarm_prefix)
 {
 	DIR* dirp;
 	struct dirent *dp;
 	struct stat sb;
 	char *dir1;
-	char *gfarm_url, *gfarm_file, *e;
+	char *gfarm_url, *e;
+	int is_directory;
+	struct gfs_stat gs;
 
 	if (lstat(dir, &sb)) {
 		perror(dir);
@@ -287,29 +342,27 @@ fixdir(char *dir, char *gfarm_prefix)
 	}
 
 	/* 'dir' is a directory */
-	gfarm_url = malloc(strlen(gfarm_prefix) + strlen(dir) + 2);
+	gfarm_url = append_prefix_pathname(gfarm_prefix, dir);
 	if (gfarm_url == NULL) {
-		fputs("not enough memory", stderr);
+		print_errmsg(dir, "not enough memory");
 		return (1);
 	}
-	strcpy(gfarm_url, gfarm_prefix);
-	switch (gfarm_url[strlen(gfarm_url) - 1]) {
-	case '/':
-	case ':':
-		break;
-	default:
-		strcat(gfarm_url, "/");
-	}
-	strcat(gfarm_url, dir);
 
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	e = gfs_stat(gfarm_url, &gs);
 	if (e != NULL) {
 		print_errmsg(gfarm_url, e);
 		delete_invalid_file_or_directory(dir);
 		free(gfarm_url);
 		return (1);
 	}
-	free(gfarm_file);
+	is_directory = GFARM_S_ISDIR(gs.st_mode);
+	gfs_stat_free(&gs);
+	if (!is_directory) {
+		print_errmsg(gfarm_url, "invalid directory");
+		delete_invalid_file_or_directory(dir);
+		free(gfarm_url);
+		return (1);
+	}
 	free(gfarm_url);
 
 	dirp = opendir(dir);
@@ -328,7 +381,7 @@ fixdir(char *dir, char *gfarm_prefix)
 
 		dir1 = malloc(strlen(dir) + strlen(dp->d_name) + 2);
 		if (dir1 == NULL) {
-			fputs("not enough memory", stderr);
+			print_errmsg(dp->d_name, "not enough memory");
 			closedir(dirp);
 			return (1);
 		}
@@ -390,8 +443,9 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc > 0) {
-		while (argc-- > 0 && fixurl(*argv++) == 0);
+	if (*argv) {
+		while (*argv)
+			fixurl(*argv++);
 		goto finish;
 	}
 
