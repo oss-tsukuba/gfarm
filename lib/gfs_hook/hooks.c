@@ -734,19 +734,24 @@ __chdir(const char *path)
 {
 	const char *e;
 	char *url;
+	int r;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chdir(%s)\n", path));
 
-	if (!gfs_hook_set_cwd_is_gfarm(gfs_hook_is_url(path, &url)))
-		return syscall(SYS_chdir, path);
+	if (!gfs_hook_is_url(path, &url)) {
+		if ((r = syscall(SYS_chdir, path)) == 0)
+			gfs_hook_set_cwd_is_gfarm(0);
+		return (r);
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chdir(%s)\n", path));
 
 	e = gfs_chdir(url);
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		gfs_hook_set_cwd_is_gfarm(1);
 		return (0);
-
+	}
 	_gfs_hook_debug(fprintf(stderr, "GFS: __chdir: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
@@ -836,6 +841,7 @@ __getcwd(char *buf, size_t size)
 	const char *e;
 	char *p;
 	int alloced = 0;
+	int prefix_size;
 
 	_gfs_hook_debug_v(fprintf(stderr, 
 	    "Hooking __getcwd(%p, %lu)\n", buf, (unsigned long)size));
@@ -858,8 +864,13 @@ __getcwd(char *buf, size_t size)
 	e = gfs_hook_get_prefix(buf, size);
 	if (e != NULL)
 		goto error;
+	prefix_size = strlen(buf);
 	e = gfs_getcwd(buf + strlen(buf), size - strlen(buf));
 	if (e == NULL) {
+		/* root in Gfarm FS is a special case. '/gfarm/' -> '/gfarm' */
+		if (buf[0] == '/' &&
+		    buf[prefix_size] == '/' && buf[prefix_size + 1] == '\0')
+			buf[prefix_size] = '\0';
 		if (alloced) {
 			p = realloc(buf, strlen(buf) + 1);
 			if (p != NULL)
