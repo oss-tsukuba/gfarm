@@ -542,7 +542,7 @@ main(argc, argv)
 	char **argv;
 {
 	char *e, *file;
-	int i, j, ch, mode_ch = 0;
+	int i, ch, mode_ch = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int error_happened = 1;
@@ -614,6 +614,7 @@ main(argc, argv)
 	}
 	if (argc == 0 && fragment_dest_list == NULL)
 		usage();
+
 	e = gfarm_stringlist_init(&paths);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
@@ -624,7 +625,9 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
-
+	for (i = 0; i < argc; i++)
+		gfs_glob(argv[i], &paths, &types);
+		
 	if (hostfile != NULL) {
 		char **hosttab;
 		int nhosts, error_line;
@@ -641,32 +644,26 @@ main(argc, argv)
 					program_name, e);
 			exit(EXIT_FAILURE);
 		}
-		for (i = 0; i < argc; i++) {
-			gfs_glob(argv[i], &paths, &types);
-			for (j = 0; j < gfarm_stringlist_length(&paths); j++) {
-				file = gfarm_stringlist_elem(&paths, j);
-				e = gfarm_url_fragments_replicate(file,
-				    nhosts, hosttab);
-				if (e != NULL) {
-					fprintf(stderr, "%s: %s: %s\n",
-					    program_name, file, e);
-					error_happened = 1;
-				}
+		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+			file = gfarm_stringlist_elem(&paths, i);
+			e = gfarm_url_fragments_replicate(file,
+			    nhosts, hosttab);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    program_name, file, e);
+				error_happened = 1;
 			}
 		}
 	} else if (domainname != NULL) {
 		/* replicate a whole file */
-		for (i = 0; i < argc; i++) {
-			gfs_glob(argv[i], &paths, &types);
-			for (j = 0; j < gfarm_stringlist_length(&paths); j++) {
-				file = gfarm_stringlist_elem(&paths, j);
-				e= gfarm_url_fragments_replicate_to_domainname(
-				    file, domainname);
-				if (e != NULL) {
-					fprintf(stderr, "%s: %s: %s\n",
-					    program_name, file, e);
-					error_happened = 1;
-				}
+		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+			file = gfarm_stringlist_elem(&paths, i);
+			e= gfarm_url_fragments_replicate_to_domainname(
+			    file, domainname);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    program_name, file, e);
+				error_happened = 1;
 			}
 		}
 	} else if (fragment_dest_list != NULL) {
@@ -688,18 +685,14 @@ main(argc, argv)
 
 		pairlist_read(pair_list, &npairs, &src_nodes, &dst_nodes);
 		replication_job_list_init(&job_list);
-		for (i = 0; i < argc; i++) {
-			gfs_glob(argv[i], &paths, &types);
-			for (j = 0; j < gfarm_stringlist_length(&paths); j++) {
-				file = gfarm_stringlist_elem(&paths, j);
-				if (verbose)
-					fprintf(stderr,
-					    "%s: scan fragments for %s\n",
-					    program_name, file);
-				if (jobs_by_pairs(&job_list, file,
-				    npairs, &src_nodes, &dst_nodes))
-					error_happened = 1;
-			}
+		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+			file = gfarm_stringlist_elem(&paths, i);
+			if (verbose)
+				fprintf(stderr, "%s: scan fragments for %s\n",
+				    program_name, file);
+			if (jobs_by_pairs(&job_list, file,
+			    npairs, &src_nodes, &dst_nodes))
+				error_happened = 1;
 		}
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
@@ -715,40 +708,36 @@ main(argc, argv)
 			exit(EXIT_FAILURE);
 		}
 		replication_job_list_init(&job_list);
-		for (i = 0; i < argc; i++) {
-			gfs_glob(argv[i], &paths, &types);
-			for (j = 0; j < gfarm_stringlist_length(&paths); j++) {
-				char *section = index;
+		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+			char *section = index;
 
-				file = gfarm_stringlist_elem(&paths, j);
-				if (index == NULL) {
-					/*
-					 * Special case for replicating a Gfarm
-					 * file having only one fragment
-					 */
-					int nfrags;
+			file = gfarm_stringlist_elem(&paths, i);
+			if (index == NULL) {
+				/*
+				 * Special case for replicating a Gfarm
+				 * file having only one fragment
+				 */
+				int nfrags;
 
-					e = gfarm_url_fragment_number(file,
-					    &nfrags);
-					if (e != NULL) {
-						fprintf(stderr, "%s: %s: %s\n",
-						    program_name, file, e);
-						continue;
-					}
-					if (nfrags != 1) {
-						fprintf(stderr,
-						    "%s: %s has more than "
-						    "one fragments, skipped\n",
-						    program_name, file);
-						continue;
-					}
-					/* XXX program case */
-					section = "0";  /* assume -I 0 */
+				e = gfarm_url_fragment_number(file, &nfrags);
+				if (e != NULL) {
+					fprintf(stderr, "%s: %s: %s\n",
+					    program_name, file, e);
+					continue;
 				}
-				if (replication_job_list_add(&job_list,
-				    file, section, src, dest))
-					error_happened = 1;
+				if (nfrags != 1) {
+					fprintf(stderr,
+					    "%s: %s has more than "
+					    "one fragments, skipped\n",
+					    program_name, file);
+					continue;
+				}
+				/* XXX program case */
+				section = "0";  /* assume -I 0 */
 			}
+			if (replication_job_list_add(&job_list,
+			    file, section, src, dest))
+				error_happened = 1;
 		}
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
