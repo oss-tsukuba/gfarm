@@ -332,24 +332,23 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 			gf->pi.pathname, section, my_hostname);
 	localfile_exist = !stat(local_path, &sb);
 
-	if (metadata_exist && localfile_exist) {
+	if (metadata_exist && localfile_exist
+		&& gf->pi.status.st_size == sb.st_size) {
 		/* already exist */
-		/* XXX - need integrity check */
+		/* XXX - need integrity check by checksum */
 	}
-	else if (localfile_exist) {
-		/* FT - unknown local file.  delete it */
-		unlink(local_path);
+	else {
 		replication_needed = 1;
+		if (localfile_exist) {
+			/* FT - unknown local file.  delete it */
+			unlink(local_path);
+		}
+		if (metadata_exist) {
+			/* FT - local file is missing.  delete the metadata */
+			(void)gfarm_file_section_copy_info_remove(
+				gf->pi.pathname, section, my_hostname);
+		}
 	}
-	else if (metadata_exist) {
-		/* FT - local file is missing.  delete the metadata */
-		e = gfarm_file_section_copy_info_remove(
-			gf->pi.pathname, section, my_hostname);
-		if (e == NULL)
-			replication_needed = 1;
-	}
-	else
-		replication_needed = 1;
 
 	if (replication_needed)
 		e = replicate_section_to_local_internal(

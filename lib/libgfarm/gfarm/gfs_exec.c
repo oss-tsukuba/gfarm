@@ -19,6 +19,7 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 	char *hostname, *e;
 	char *arch, *gfarm_file, *localpath;
 	struct gfs_stat gstat;
+	file_offset_t gsize;
 	struct stat st;		
 	int metadata_exist, localfile_exist, replication_needed = 0;
 
@@ -56,6 +57,7 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 		free(arch);
 		return ("unknown format");
 	}
+	gsize = gstat.st_size;
 	gfs_stat_free(&gstat);
 
 	/* determine the local pathname */
@@ -81,24 +83,22 @@ gfarm_url_program_get_local_path(const char *url, char **local_path)
 	localfile_exist = !stat(localpath, &st);
 
 	/* FT - check existence of the local file and its metadata */
-	if (metadata_exist && localfile_exist) {
+	if (metadata_exist && localfile_exist && gsize == st.st_size) {
 		/* already exist */
-		/* XXX - need integrity check */
+		/* XXX - need integrity check by checksum */
 	}
-	else if (localfile_exist) {
-		/* FT - unknown local file.  delete it */
-		unlink(localpath);
+	else {
 		replication_needed = 1;
+		if (localfile_exist) {
+			/* FT - unknown local file.  delete it */
+			unlink(localpath);
+		}
+		if (metadata_exist) {
+			/* FT - local file is missing.  delete the metadata */
+			(void)gfarm_file_section_copy_info_remove(
+				gfarm_file, arch, hostname);
+		}
 	}
-	else if (metadata_exist) {
-		/* FT - local file is missing.  delete the metadata */
-		e = gfarm_file_section_copy_info_remove(
-			gfarm_file, arch, hostname);
-		if (e == NULL)
-			replication_needed = 1;
-	}
-	else
-		replication_needed = 1;
 
 	if (replication_needed)
 		e = gfarm_url_section_replicate_to(url, arch, hostname);
