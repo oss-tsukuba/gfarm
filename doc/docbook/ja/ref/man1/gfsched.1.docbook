@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfsched</command>
     <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
     <arg choice='opt'><replaceable>output-hostfile</replaceable></arg>
 </cmdsynopsis>
@@ -36,21 +37,37 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
 <varlistentry>
 <term><option>-I</option> <parameter>フラグメント番号</parameter></term>
 <listitem>
-<para>特定のファイル断片についてホストリストを作成します。
-実行形式のファイルの場合には、このオプションで実行アーキ
-テクチャ(例 「sparc-sun-solaris」) を指定することによっ
-て、指定したアーキテクチャのホストリストを作成できます。</para>
+<para>特定のファイル断片についてホストを1つ選択します。
+<!--
+実行形式のファイルの場合には、このオプションで実行アーキテクチャ
+(例 「sparc-sun-solaris」) を指定することによって、
+そのアーキテクチャの実行形式ファイルを保持するホストを1つ選択します。
+-->
+</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>プログラムURL</parameter></term>
+<listitem>
+<para>そのファイルを処理するプログラム名を指定して、ホストリストを作成します。
+すなわち、選択されるホストを、このオプションで指定したプログラムを実行可能な
+アーキテクチャだけに限定します。
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>

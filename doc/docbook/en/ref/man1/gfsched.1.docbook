@@ -40,10 +40,25 @@ displays to the standard output.</para>
 <varlistentry>
 <term><option>-I</option> <parameter>fragment-index</parameter></term>
 <listitem>
-<para>specifies the fragment index to be scheduled.  If the <parameter>gfarm-URL</parameter>
-is an executable file, an architecture name, for example,
-sparc-sun-solaris, can be used to specify the executable architecture
-to be scheduled.</para>
+<para>specifies the fragment index to be scheduled.
+<!--
+If the <parameter>gfarm-URL</parameter> is an executable file,
+an architecture name, for example, sparc-sun-solaris,
+can be used to select a host which holds the executable file
+for the architecture.
+-->
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>program-URL</parameter></term>
+<listitem>
+<para>creates a host file with a program name which will be used
+to process the <parameter>gfarm-URL</parameter>.
+In other words, only hosts which can run the <parameter>program-URL</parameter>
+will be selected, if this option is specified.
+</para>
 </listitem>
 </varlistentry>
 
