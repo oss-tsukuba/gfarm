@@ -5,11 +5,13 @@ bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
 exec_includedir = @exec_includedir@
+mandir = @mandir@
 # save default for reference from where installation directory is overridden.
 default_bindir = @bindir@
 default_libdir = @libdir@
 default_includedir = @includedir@
 default_exec_includedir = @exec_includedir@
+default_mandir = @mandir@
 
 SYSTEM = @SYSTEM@
 

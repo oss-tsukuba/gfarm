@@ -15,7 +15,8 @@ SUBDIRS = \
 	gfmd \
 	gfsd \
 	nstool \
-	gftool
+	gftool \
+	man
 
 include $(top_srcdir)/makes/subdir.mk
 
