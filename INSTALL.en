@@ -497,23 +497,27 @@ process with the -f option (see man gfsd).
 To see whether gfsd is correctly executed or not, you can use the
 gfhost command with the -l option as follows.  At the beginning of
 each line, system load averages of the host are shown for the past 1,
-5, and 15 minutes.
+5, and 15 minutes. Next one character field is an authentication
+method which is used for the communication with the host.
 
 	% gfhost -l
-	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-1.example.com
-	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-2.example.com
-	-.--/-.--/-.-- i386-redhat8.0-linux 1 linuxhost-3.example.com
-	0.00/0.00/0.00 i386-redhat8.0-linux 1 linuxhost-4.example.com
-	0.40/0.45/0.42 i386-debian3.0-linux 2 linuxhost-5.example.com
-	0.43/0.50/0.40 i386-debian3.0-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 sparc-sun-solaris8 1 solarishost-1.example.com
-	x.xx/x.xx/x.xx sparc-sun-solaris8 1 solarishost-2.example.com
-	0.00/0.00/0.00 alpha-hp-osf5.0 1 osfhost-1.example.com
-	0.35/0.58/0.21 mips-sgi-irix6.5 16 irixhost-1.example.com
+	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-1.example.com
+	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-2.example.com
+	-.--/-.--/-.-- - i386-redhat8.0-linux 1 linuxhost-3.example.com
+	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-4.example.com
+	0.40/0.45/0.42 s i386-debian3.0-linux 2 linuxhost-5.example.com
+	0.43/0.50/0.40 s i386-debian3.0-linux 2 linuxhost-6.example.com
+	0.10/0.00/0.00 s sparc-sun-solaris8 1 solarishost-1.example.com
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solarishost-2.example.com
+	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osfhost-1.example.com
+	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irixhost-1.example.com
 
 In the above example, -.-- of linuxhost3.example.com shows there is no
 gfsd listening to the specified port on the machine.  x.xx of
-solarishost-2.example.com shows there is no route to the machine.
+solarishost-2.example.com shows that it is impossible to communicate
+with the node. Usually this means the node or network is down.
+Please add "-v" option to investigate the reason of such failure,
+this option makes error messages appear.
 
 ** Register Gfarm parallel commands
 

@@ -169,16 +169,16 @@ Gfarm ファイルシステムを構成しているファイルシステムノードが正しく起動
 イルシステムノードの状況を調べます．
 
  % gfhost -l
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm01.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm02.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm03.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm04.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm05.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm06.example.com
- -.--/-.--/-.-- i386-redhat8.0-linux 1 gfm07.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm08.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm09.example.com
- 0.00/0.00/0.00 i386-redhat8.0-linux 1 gfm10.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm01.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm02.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm03.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm04.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm05.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm06.example.com
+ -.--/-.--/-.-- - i386-redhat8.0-linux 1 gfm07.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm08.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm09.example.com
+ 0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm10.example.com
 
 ファイルシステムを構成するファイルシステムノードが一覧表示されれば，
 Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
@@ -187,6 +187,8 @@ Gfarm が正しく動作しています．このとき，各行の意味は以下の通りです．
  - ロードアベレージが -.-- という形式になっている行は，該当ノードの
    ファイルシステムノードに接続できないことを示します．おそらく該当
    ノードの gfsd が落ちています．
+ - ロードアベレージの次にある一桁のカラムは，認証に用いられる方式を
+   示します。ここで表示されている s は 共有秘密鍵認証方式を示します。
  - i386-redhat8.0-linux というカラムでは，該当ノードのアーキテクチャや
    OS が表示されます．
  - その次のカラムでは，該当ノードの CPU 数が表示されます．
