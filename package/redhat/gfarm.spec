@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0b5
+%define ver	1.0b7
 %define rel	1
 
 %define prefix		/usr/grid
@@ -541,6 +541,8 @@ fi
 %{prefix}/bin/gfwc
 %endif
 
+%{prefix}/libexec/gfrepbe_client
+%{prefix}/libexec/gfrepbe_server
 %{prefix}/sbin/gfregister
 
 %files fsnode

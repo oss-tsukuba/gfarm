@@ -5,4 +5,7 @@ usr/grid/bin/gfcp_hook
 usr/grid/bin/gfgrep
 usr/grid/bin/gfsplck
 usr/grid/bin/gfwc
+
+usr/grid/libexec/gfrepbe_client
+usr/grid/libexec/gfrepbe_server
 usr/grid/sbin/gfregister

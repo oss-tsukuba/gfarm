@@ -4,5 +4,6 @@ usr/bin/gfcp
 usr/bin/gfcp_hook
 usr/bin/gfgrep
 usr/bin/gfsplck
+usr/libexec/gfrepbe_client
+usr/libexec/gfrepbe_server
 usr/sbin/gfregister
-
