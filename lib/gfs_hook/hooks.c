@@ -1041,11 +1041,10 @@ rename(const char *oldpath, const char *newpath)
 	return (_rename(oldpath, newpath));
 }
 
-#ifdef __linux__
+#ifdef HAVE_ATTR_XATTR_H
 /*
  * getxattr
  */
-#ifdef SYS_getxattr
 int
 getxattr(const char *path, const char *name, void *value, size_t size)
 {
@@ -1057,7 +1056,14 @@ getxattr(const char *path, const char *name, void *value, size_t size)
 				  path, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_url(path, &url))
+#ifdef SYS_getxattr
 		return syscall(SYS_getxattr, path, name, value, size);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
 
 	_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking getxattr(%s, %s, %p, %lu)\n",
@@ -1074,11 +1080,10 @@ getxattr(const char *path, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-#endif
+
 /*
  * lgetxattr
  */
-#ifdef SYS_lgetxattr
 int
 lgetxattr(const char *path, const char *name, void *value, size_t size)
 {
@@ -1090,7 +1095,14 @@ lgetxattr(const char *path, const char *name, void *value, size_t size)
 				  path, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_url(path, &url))
+#ifdef SYS_lgetxattr
 		return syscall(SYS_lgetxattr, path, name, value, size);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
 
 	_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking lgetxattr(%s, %s, %p, %lu)\n",
@@ -1107,11 +1119,10 @@ lgetxattr(const char *path, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-#endif
+
 /*
  * fgetxattr
  */
-#ifdef SYS_fgetxattr
 int
 fgetxattr(int filedes, const char *name, void *value, size_t size)
 {
@@ -1122,7 +1133,14 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 				  filedes, name, value, (unsigned long)size));
 
 	if (!gfs_hook_is_open(filedes))
+#ifdef SYS_fgetxattr
 		return syscall(SYS_fgetxattr, filedes, name, value, size);
+#else
+	{
+		errno = ENODATA;
+		return (-1);
+	}
+#endif
 
 	_gfs_hook_debug(fprintf(stderr,
 				"GFS: Hooking fgetxattr(%d, %s, %p, %lu)\n",
@@ -1133,8 +1151,7 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-#endif
-#endif /* __linux__ */
+#endif /* HAVE_ATTR_XATTR_H */
 
 /*
  * definitions for "hooks_common.c"
