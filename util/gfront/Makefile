@@ -23,6 +23,8 @@ install:
 clean:
 veryclean: clean
 distclean: veryclean
+	-rm -f gfront
+
 gfregister:
 man:
 html:
