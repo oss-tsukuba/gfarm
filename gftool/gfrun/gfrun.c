@@ -58,9 +58,9 @@ usage()
 {
 	fprintf(stderr,
 #ifdef HAVE_GSI
-		"Usage: %s [-gnuprvS] [-l <login>]\n"
+		"Usage: %s [-bghnuprvS] [-l <login>]\n"
 #else		
-		"Usage: %s [-gnuprS] [-l <login>]\n"
+		"Usage: %s [-bghnuprS] [-l <login>]\n"
 #endif
 		"\t[-G <Gfarm file> [ -I <section> ]|-H <hostfile>|"
 		"-N <number of hosts>]\n"
@@ -83,6 +83,7 @@ struct gfrun_options {
 	int profile;
 	int replicate;
 	int use_gfexec;
+	int hook_global;
 };
 
 static void
@@ -100,6 +101,7 @@ default_gfrun_options(struct gfrun_options *options)
 	options->profile = 0;
 	options->replicate = 0;
 	options->use_gfexec = 1;
+	options->hook_global = 0;
 }
 
 char *
@@ -114,8 +116,6 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	enum command_type cmd_type_guess = USUAL_COMMAND, cmd_type;
 	char *stdout_file = options->stdout_file;
 	char *stderr_file = options->stderr_file;
-	int profile_mode = options->profile;
-	int replication_mode = options->replicate;
 	static char gfexec_command[] = "gfexec";
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
@@ -170,10 +170,12 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			gfarm_stringlist_add(&arg_list, "--gfarm_stderr");
 			gfarm_stringlist_add(&arg_list, stderr_file);
 		}
-		if (profile_mode)
+		if (options->profile)
 			gfarm_stringlist_add(&arg_list, "--gfarm_profile");
-		if (replication_mode)
+		if (options->replicate)
 			gfarm_stringlist_add(&arg_list, "--gfarm_replicate");
+		if (options->hook_global)
+			gfarm_stringlist_add(&arg_list, "--gfarm_hook_global");
 		cwd = getenv("GFS_PWD");
 		if (cwd != NULL) {
 			gfarm_stringlist_add(&arg_list, "--gfarm_cwd");
@@ -616,6 +618,14 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 
 	for (i = 1; arg[i] != '\0'; i++) {
 		switch (arg[i]) {
+		case 'b':
+			options->hook_global = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
+		case 'h':
+		case '?':
+			usage();
 		case 'g':
 			options->cmd_type = GFARM_COMMAND;
 			if (remove_option(arg, &i))

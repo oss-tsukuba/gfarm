@@ -1133,6 +1133,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
 GFS_File gf_stdout, gf_stderr;
 int gf_profile;
 int gf_on_demand_replication;
+int gf_hook_default_global;
 
 static int total_nodes = -1, node_index = -1;
 static char *stdout_file = NULL, *stderr_file = NULL;
@@ -1153,6 +1154,7 @@ gfarm_parse_env(void)
 			switch (*env) {
 			case 'p': gf_profile = 1; break;
 			case 'r': gf_on_demand_replication = 1; break;
+			case 'g': gf_hook_default_global = 1; break;
 			}
 		}
 	}
@@ -1207,6 +1209,8 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			gf_profile = 1;
 		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
 			gf_on_demand_replication = 1;
+		else if (strcmp(&argv[0][2], "gfarm_hook_global") == 0)
+			gf_hook_default_global = 1;
 		else if (strcmp(&argv[0][2], "gfarm_cwd") == 0) {
 			--argc;
 			++argv;

@@ -212,9 +212,10 @@ main(int argc, char *argv[], char *envp[])
 	new_env[envc++] = rankbuf;
 	sprintf(nodesbuf, "%s%d", env_node_size, nodes);
 	new_env[envc++] = nodesbuf;
-	sprintf(flagsbuf, "%s%s%s", env_flags,
+	sprintf(flagsbuf, "%s%s%s%s", env_flags,
 	    gf_profile ? "p" : "",
-	    gf_on_demand_replication ? "r" : "");
+	    gf_on_demand_replication ? "r" : "",
+	    gf_hook_default_global ? "g" : "");
 	new_env[envc++] = flagsbuf;
 	sprintf(cwd_env, "%s%s", env_gfs_pwd, cwdbuf);
 	new_env[envc++] = cwd_env;
