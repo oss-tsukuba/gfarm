@@ -318,27 +318,30 @@ IPアドレスを通信に用いるかを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><token>local_usr_map</token> <parameter>ユーザマップファイル指定</parameter></term>
+<term><token>local_user_map</token> <parameter>ユーザマップファイル指定</parameter></term>
 <listitem>
 <para>グローバルユーザ名とローカルユーザ名の対応関係を記述した
 ユーザマップファイルパス名を指定します。</para>
-<para>この設定は必須ではありませんが、ユーザ名の異なる
-ファイルシステムノードがある場合に、ファイルシステムノードごとに
-ユーザマップファイル指定とファイルが必要です。他ノードの異なる
-ローカルユーザ名に対しても同じグローバルユーザ名を定義すれば、
-あたかも同一ユーザとしてgfarm を利用することができます。</para>
+<para>この設定は必須ではありませんが、同一ユーザーに対して、
+異なるアカウント名を与えているファイルシステムノードがある場合に、
+このファイルでユーザー名の変換を行うことができます。そのような場合、
+このファイルで、各ノードのローカルなユーザ名に対して、単一の
+グローバルユーザ名を定義してやることによって、UNIX 的なアカウント名が
+異なっても同一ユーザとしてgfarm を利用することができます。</para>
 <para>例:</para>
 <literallayout>
-	local_user_map /usr/grid/usermap
-</literallayout>
-<para>ユーザマップファイルの内容例:</para>	
-<literallayout>
-	foogl foo
-	barglobal bar
+	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
+<para>ユーザーマップファイルは、グローバルユーザー名と
+ローカルユーザー名を、空白で区切って各行に記述します。</para>
+<para>ユーザマップファイルの内容例:</para>	
+<literallayout>
+	foobar foo
+	quux baz
+</literallayout>
 <para>この例の1行目の指定により、このノードのローカルユーザ名 foo に
-対してグローバルユーザ名 foogl が定義されます。</para>
+対してグローバルユーザ名 foobar が定義されます。</para>
 </listitem>
 </varlistentry>
 </variablelist>
