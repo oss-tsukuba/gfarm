@@ -8,7 +8,8 @@ include $(top_srcdir)/makes/var.mk
 include $(srcdir)/../Makefile.inc
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
-	$(openssl_includes)
+	$(openssl_includes) \
+	-DGFARM_DEFAULT_BINDIR=\"$(default_bindir)\"
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 

@@ -44,8 +44,11 @@
 #define COMPAT_OLD_GFS_PROTOCOL
 
 #ifndef DEFAULT_PATH
-#define DEFAULT_PATH "PATH=/usr/bin:/bin:/usr/local/bin:/usr/X11R6/bin:/usr/openwin/bin"
+#define DEFAULT_PATH "PATH=/usr/local/bin:/usr/bin:/bin:/usr/ucb:/usr/X11R6/bin:/usr/openwin/bin:/usr/pkg/bin"
 #endif
+
+#define GFARM_DEFAULT_PATH	DEFAULT_PATH ":" GFARM_DEFAULT_BINDIR
+
 #ifndef PATH_BSHELL
 #define PATH_BSHELL "/bin/sh"
 #endif
@@ -1441,7 +1444,7 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 	static char user_format[] = "USER=%s";
 	static char home_format[] = "HOME=%s";
 	static char shell_format[] = "SHELL=%s";
-	static char path_env[] = DEFAULT_PATH;
+	static char path_env[] = GFARM_DEFAULT_PATH;
 #define N_EXTRA_ENV	4	/* user_env, home_env, shell_env, path_env */
 	int use_cred_env = cred_env != NULL ? 1 : 0;
 
