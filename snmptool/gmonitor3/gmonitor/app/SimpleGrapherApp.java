@@ -65,7 +65,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	ArrayList rawDataSeries = new ArrayList();
 	GraphMonitorModel model = new GraphMonitorModel();
 	
-	private int autoUpdateInterval = 5; // second
+	private int autoUpdateInterval = 10; // second
 	Timer timer = new Timer(autoUpdateInterval * 1000,
 		new TimerAutoUpdateAction());
 	private boolean timerInitFlag;
@@ -560,6 +560,7 @@ System.out.println(path);
 				if(ret == JFileChooser.APPROVE_OPTION){
 					selectedDir = dialogDirOpen.getSelectedFile();
 					System.out.println(selectedDir.getPath());
+					currentDirectoryPath = selectedDir.getPath();
 				}
 				else {
 					menuItemAutoUpdate.setSelected(false);
@@ -678,6 +679,10 @@ System.out.println("AutoUpdate: no .glg file");
 				//JOptionPane.showMessageDialog(appFrame, msg);
 				System.out.println(msg);				
 				//e.printStackTrace();
+				
+//				checkAutoUpdate.setSelected(false);
+//				menuItemTotal.setSelected(false);
+//				actionAutoUpdate(false, false);
 			}
 		}
 	}
@@ -977,10 +982,13 @@ System.out.println("AutoUpdate: no .glg file");
 			} catch (IOException e) {
 				// cannot create model because specified time is out of range.
 				// null clear.
-				e.printStackTrace();
+				//e.printStackTrace();
 				JOptionPane.showMessageDialog(appFrame,
 					host + " does not exist into the data file.");
 				gm.setModel(null);
+				actionAutoUpdate(false, false);
+				checkAutoUpdate.setSelected(false);
+				menuItemTotal.setSelected(false);
 				if(totalmode == true){
 					// total off
 					checkTotal.setSelected(false);
@@ -1126,10 +1134,9 @@ System.out.println("AutoUpdate: no .glg file");
 	class MenuItemFileOpenAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+			actionAutoUpdate(false, false);
 			menuItemAutoUpdate.setSelected(false);
 			checkAutoUpdate.setSelected(false);
-			textBeginTime.setEnabled(true);
-			textRange.setEnabled(true);
 			// stop Swing timer.
 			timer.stop();
 
@@ -1153,6 +1160,7 @@ System.out.println(path);
 				// rebuild data-time space because files are specified.
 				File[] files = dialogFileOpen.getSelectedFiles();
 				selectedDir = files[0].getParentFile();
+				currentDirectoryPath = selectedDir.getParent();
 				String[] filenames = new String[files.length];
 				for(int i = 0; i < files.length; i++){
 					filenames[i] = files[i].getPath();
