@@ -15,6 +15,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	va_list ap;
 	mode_t mode;
 	int filedes;
+	struct gfs_stat gs;
+	int file_exist, file_size = 0, is_directory = 0;
 
 	va_start(ap, oflag);
 	mode = va_arg(ap, mode_t);
@@ -26,36 +28,88 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return (SYSCALL_OPEN(path, oflag, mode));
 
-	/* XXX - ROOT I/O creates a new file with O_CREAT|O_RDWR mode. */
-	/* XXX - FIXME */
-	if ((oflag & O_CREAT) != 0 || (oflag & O_TRUNC) != 0) {
+	if (sec == NULL)
+		e = gfs_stat(url, &gs);
+	else
+		e = gfs_stat_section(url, sec, &gs);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		file_exist = 0;
+	else if (e == NULL) {
+		file_exist = 1;
+		file_size = gs.st_size;
+		is_directory = GFARM_S_ISDIR(gs.st_mode);
+		gfs_stat_free(&gs);
+	}
+	else {
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n", e));
+		errno = gfarm_error_to_errno(e);
+		free(url);
+		if (sec != NULL)
+			free(sec);
+		return (-1);
+	}
+
+	/*
+	 * XXX - stopgap implementation of O_WRONLY/O_RDWR, O_CREAT,
+	 * O_TRUNC flags
+	 */
+	if ((oflag & O_CREAT) != 0 && !file_exist) {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
 		    url, sec != NULL ? sec : "(null)", oflag, mode));
-		if (oflag & O_TRUNC) {
+
+		e = gfs_pio_create(url, oflag, mode, &gf);
+	}
+	else if ((oflag & O_ACCMODE) == O_WRONLY
+		 || (oflag & O_ACCMODE) == O_RDWR) {
+		_gfs_hook_debug(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
+		    url, sec != NULL ? sec : "(null)", oflag, mode));
+
+		if (file_exist && (file_size == 0 || (oflag & O_TRUNC) != 0)) {
 			/*
+			 * XXX - unlink and create a new file
+			 *
 			 * Hooking open syscall does not mean to open
-			 * an entire file but a file fragment in local and
-			 * index file views.  gfs_unlink() should not be
-			 * called in both views.
+			 * an entire file but a file fragment in local
+			 * and index file views.  gfs_unlink() should
+			 * not be called in both views.
 			 */
 			if (_gfs_hook_default_view == global_view)
 				gfs_unlink(url); /* XXX - FIXME */
+			else
+				/* XXX - unlink the corresponding section */;
 			e = gfs_pio_create(url, oflag, mode, &gf);
-		} else {
-			e = gfs_pio_open(url, oflag, &gf);
-			if (e == GFARM_ERR_NO_SUCH_OBJECT) /* XXX - FIXME */
-				e = gfs_pio_create(url, oflag, mode, &gf);
 		}
-	} else {
+		else if (file_exist) { /* read-write mode: not supported yet */
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking " S(FUNC___OPEN)
+				": unsupported flags 0%o\n", oflag));
+			errno = ENOSYS;
+			free(url);
+			if (sec != NULL)
+				free(sec);
+			return (-1);
+		}
+		else { /* no such file or directory */
+			_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking " S(FUNC___OPEN)
+				": no such file or directory\n"));
+			errno = ENOENT;
+			free(url);
+			if (sec != NULL)
+				free(sec);
+			return (-1);
+		}
+	}
+	/* XXX - end of stopgap implementation */
+	else {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x)\n",
 		    url, sec != NULL ? sec : "(null)", oflag));
 
-		e = gfs_pio_open(url, oflag, &gf);
-		if (e == GFARM_ERR_IS_A_DIRECTORY ||
-		    e == GFARM_ERR_NO_SUCH_OBJECT) { /* may be root */
-
+		if (file_exist && is_directory) {
 			GFS_Dir dir;
 
 			e = gfs_opendir(url, &dir);
@@ -75,6 +129,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
                                 return (filedes);
 			}
 		}
+		else
+			e = gfs_pio_open(url, oflag, &gf);
 	}
 	free(url);
 	if (e != NULL) {
