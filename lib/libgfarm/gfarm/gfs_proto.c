@@ -197,7 +197,11 @@ gfs_open_flags_localize(int open_flags)
 	if ((open_flags & GFARM_FILE_CREATE) != 0)
 		local_flags |= O_CREAT;
 	if ((open_flags & GFARM_FILE_TRUNC) != 0)
-		local_flags |= O_TRUNC;
+		/*
+		 * XXX - file may be already deleted in
+		 * gfs_pio_set_view_section(). add O_CREAT.
+		 */
+		local_flags |= O_TRUNC|O_CREAT;
 	if ((open_flags & GFARM_FILE_APPEND) != 0)
 		local_flags |= O_APPEND;
 	if ((open_flags & GFARM_FILE_EXCLUSIVE) != 0)

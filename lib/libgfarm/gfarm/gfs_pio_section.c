@@ -529,6 +529,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 
 	if (gf->open_flags & GFARM_FILE_TRUNC) {
 		/* with truncation flag, delete all file copies */
+		/*
+		 * XXX - in this case, it is necessary to add O_CREAT
+		 * when opening a physical file since it is already unlinked.
+		 * This is taken care in gfs_open_flags_localize().
+		 */
 		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
 	} else if (gf->mode & GFS_FILE_MODE_WRITE) {
 		/* otherwise, if write mode, delete every other file copies */
