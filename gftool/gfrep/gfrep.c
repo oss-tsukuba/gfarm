@@ -511,6 +511,63 @@ pairlist_read(char *pair_list,
 	*npairsp = npairs;
 }
 
+char *
+get_default_section(char *file, char *dest)
+{
+	char *e;
+	struct gfs_stat gst;
+
+	e = gfs_stat(file, &gst);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s: %s\n", program_name, file, e);
+		return (NULL);
+	}
+	if (GFARM_S_IS_PROGRAM(gst.st_mode)) {
+		/* architecture of dest host (cache) */
+		static char *architecture = NULL;
+
+		gfs_stat_free(&gst);
+		if (architecture == NULL) {
+			char *dest_canonical;
+
+			e = gfarm_host_get_canonical_name(dest,
+			    &dest_canonical);
+			if (e != NULL) {
+				fprintf(stderr, "%s: host %s: %s\n",
+				    program_name, dest, e);
+				exit(EXIT_FAILURE);
+			}
+			architecture =
+			    gfarm_host_info_get_architecture_by_host(
+			    dest_canonical);
+			free(dest_canonical);
+			if (architecture == NULL) {
+				fprintf(stderr, "%s: host %s: %s\n",
+				    program_name, dest,
+				    "cannot get architecture");
+				exit(EXIT_FAILURE);
+			}
+		}
+		return (architecture); /* assume -a <architecture of dest> */
+	} else {
+		int nfrags = gst.st_nsections;
+
+		gfs_stat_free(&gst);
+		/*
+		 * Special case for replicating a Gfarm
+		 * file having only one fragment
+		 */
+		if (nfrags != 1) {
+			fprintf(stderr,
+			    "%s: %s has more than one fragments, skipped\n",
+			    program_name, file);
+			return (NULL);
+		}
+		return ("0");  /* assume -I 0 */
+	}
+}
+
+
 void
 usage()
 {
@@ -719,28 +776,12 @@ main(argc, argv)
 			char *section = index;
 
 			file = gfarm_stringlist_elem(&paths, i);
-			if (index == NULL) {
-				/*
-				 * Special case for replicating a Gfarm
-				 * file having only one fragment
-				 */
-				int nfrags;
-
-				e = gfarm_url_fragment_number(file, &nfrags);
-				if (e != NULL) {
-					fprintf(stderr, "%s: %s: %s\n",
-					    program_name, file, e);
+			if (index == NULL) { /* special case */
+				section = get_default_section(file, dest);
+				if (section == NULL) {
+					error_happened = 1;
 					continue;
 				}
-				if (nfrags != 1) {
-					fprintf(stderr,
-					    "%s: %s has more than "
-					    "one fragments, skipped\n",
-					    program_name, file);
-					continue;
-				}
-				/* XXX program case */
-				section = "0";  /* assume -I 0 */
 			}
 			if (replication_job_list_add(&job_list,
 			    file, section, src, dest))
