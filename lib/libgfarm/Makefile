@@ -13,6 +13,7 @@ LT_REVISION=0
 LT_AGE=0
 
 LIBRARY = libgfarm.la
+CFLAGS = $(COMMON_CFLAGS)
 LDFLAGS = $(LTFLAGS_SHARELIB_IN) $(libdir) $(SHARELIB_LTFLAGS)
 LDLIBS = $(metadb_client_libs) $(globus_gssapi_libs) $(openssl_libs) $(LIBS)
 
