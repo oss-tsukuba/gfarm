@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <sys/time.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>

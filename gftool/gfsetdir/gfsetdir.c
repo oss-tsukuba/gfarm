@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <libgen.h>
 #include <sys/socket.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
