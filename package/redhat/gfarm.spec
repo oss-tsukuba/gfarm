@@ -528,6 +528,8 @@ fi
 %{prefix}/bin/gfwc
 %endif
 
+%{prefix}/bin/gfregister
+
 %files fsnode
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd

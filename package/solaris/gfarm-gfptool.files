@@ -4,4 +4,5 @@ usr/grid/bin/gfcombine_hook
 usr/grid/bin/gfcp
 usr/grid/bin/gfcp_hook
 usr/grid/bin/gfgrep
+usr/grid/bin/gfregister
 usr/grid/bin/gfwc

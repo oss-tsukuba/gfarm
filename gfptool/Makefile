@@ -13,6 +13,7 @@ SUBDIRS = \
 	gfcp_hook \
 	gfgrep \
 	gfsplck \
-	$(mpi_subdirs)
+	$(mpi_subdirs) \
+	util
 
 include $(top_srcdir)/makes/subdir.mk

@@ -1,0 +1,50 @@
+#!/bin/sh
+
+PTOOLS='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfreg gfsplck gfwc'
+
+hostname=`hostname`
+arch=`gfhost -M $hostname | sed 's/ .*//'`
+status=0
+
+if test x"$arch" = x""
+then
+	echo "$0: error: architecture name of $hostname isn't determined" >&2
+	exit 1
+fi
+
+cd @prefix@/bin
+
+echo Creating gfarm:/bin  ...
+if gfmkdir gfarm:/bin; then
+	:
+else
+	status=1
+fi
+
+for cmd in $PTOOLS
+do
+	if test -f $cmd
+	then
+		if gfwhere -I $arch gfarm:/bin/$cmd >/dev/null 2>&1; then
+			:
+		else
+			echo Registering gfarm:/bin/$cmd for $arch ...
+			if gfreg $cmd gfarm:/bin/$cmd; then
+				:
+			else
+				status=1
+			fi
+		fi
+		gfhost -a $arch | while read host; do
+			echo Replicating gfarm:/bin/${cmd}:${arch} to $host ...
+			if gfrep -I $arch -s $hostname -d $host gfarm:/bin/$cmd
+			then
+				:
+			else
+				status=1
+			fi
+		done
+	fi
+done
+
+exit $status
