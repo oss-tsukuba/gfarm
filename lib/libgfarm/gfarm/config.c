@@ -1375,6 +1375,8 @@ gfarm_terminate(void)
 		e_save = e;
 	gfarm_config_clear();
 
+	gfarm_initialized = 0;
+
 	return (e_save);
 }
 
