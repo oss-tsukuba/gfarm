@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gfarm/gfarm.h>
 
 char *program_name = "gfcp";
