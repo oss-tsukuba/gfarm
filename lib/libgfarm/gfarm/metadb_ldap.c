@@ -796,11 +796,11 @@ gfarm_metadb_ldap_need_escape(char c)
 static char *
 gfarm_metadb_ldap_escape_pathname(const char *pathname)
 {
-	const char *c = pathname;
+	const char *s = pathname;
 	char *escaped_pathname, *d;
 
 	/* if pathname is a null string, return immediately */
-	if (*c == '\0')
+	if (*s == '\0')
 		return (NULL);
 
 	escaped_pathname = malloc(strlen(pathname) * 3);
@@ -809,13 +809,14 @@ gfarm_metadb_ldap_escape_pathname(const char *pathname)
 
 	d = escaped_pathname;
 	/* Escape the first character; ' ', '#', and need_escape(). */
-	if (*c == ' ' || *c == '#' || gfarm_metadb_ldap_need_escape(*c))
+	if (*s == ' ' || *s == '#' || gfarm_metadb_ldap_need_escape(*s))
 		*d++ = '\\';
-	*d++ = *c++;
-	while (*c) {
-		if (gfarm_metadb_ldap_need_escape(*c))
+	*d++ = *s++;
+	while (*s) {
+		if (gfarm_metadb_ldap_need_escape(*s) ||
+		    (*s == ' ' && d > escaped_pathname && d[-1] == ' '))
 			*d++ = '\\';
-		*d++ = *c++;
+		*d++ = *s++;
 	}
 	/*
 	 * Escape the last 'space' character.  pathname should have a
