@@ -79,27 +79,33 @@ display_stat(char *fn, struct stat *st)
  * test functions
  */
 
-void test_stat(char *filename)
+int test_stat(char *filename)
 {
     struct stat s;
+    int r;
 
     printf("***** stat(%s)\n", filename);
-    if (stat(filename, &s))
+    if ((r = stat(filename, &s)))
 	perror(filename);
     else
 	display_stat(filename, &s);
+
+    return r;
 }
 
 
-void test_lstat(char *filename)
+int test_lstat(char *filename)
 {
     struct stat s;
+    int r;
 
     printf("***** lstat(%s)\n", filename);
-    if (lstat(filename, &s))
+    if ((r = lstat(filename, &s)))
 	perror(filename);
     else
 	display_stat(filename, &s);
+
+    return r;
 }
 
 void test_fstat(int filedes)
@@ -279,8 +285,8 @@ main(int argc, char *argv[])
 
     /* create a file */
 
-    test_stat(filename);
-    test_lstat(filename);
+    if (test_stat(filename) == 0)
+	test_unlink(filename);
 
     fd = test_open_create(filename);
     test_write_string(fd, teststring);
