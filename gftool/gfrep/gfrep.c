@@ -21,6 +21,7 @@ char *program_name = "gfrep";
 
 /* Do not use gfrepbe_client/gfrepbe_server, but use gfsd internal routine */
 int bootstrap_method = 0;
+int verbose = 0;
 
 struct replication_job {
 	struct replication_job *next;
@@ -196,6 +197,9 @@ replication_pair_entry(struct replication_pair_list *transfers,
 	}
 	pair->src = list[0]->src;
 	pair->dest = list[0]->dest;
+	if (verbose)
+		fprintf(stderr, "%s: scheduling %s -> %s\n",
+		    program_name, pair->src, pair->dest);
 	e = gfarm_file_section_replicate_multiple_request(
 	    &pair->files, &pair->sections,
 	    pair->src, pair->dest, &pair->state);
@@ -509,6 +513,7 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-b\t\t\tuse bootstrap mode\n");
+	fprintf(stderr, "\t-v\t\t\tverbose message\n");
 	fprintf(stderr, "\t-H <hostfile>\t\treplicate a whole file\n");
 	fprintf(stderr, "\t-D <domainname>\t\treplicate a whole file\n");
 	fprintf(stderr, "\t-I fragment-index\treplicate a fragment"
@@ -554,10 +559,13 @@ main(argc, argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((ch = getopt(argc, argv, "bH:D:I:s:d:l:P:")) != -1) {
+	while ((ch = getopt(argc, argv, "bvH:D:I:s:d:l:P:")) != -1) {
 		switch (ch) {
 		case 'b':
 			bootstrap_method = 1;
+			break;
+		case 'v':
+			verbose = 1;
 			break;
 		case 'H':
 			hostfile = optarg; conflict_check(&mode_ch, ch);
@@ -683,8 +691,12 @@ main(argc, argv)
 		for (i = 0; i < argc; i++) {
 			gfs_glob(argv[i], &paths, &types);
 			for (j = 0; j < gfarm_stringlist_length(&paths); j++) {
-				if (jobs_by_pairs(&job_list,
-				    gfarm_stringlist_elem(&paths, j),
+				file = gfarm_stringlist_elem(&paths, j);
+				if (verbose)
+					fprintf(stderr,
+					    "%s: scan fragments for %s\n",
+					    program_name, file);
+				if (jobs_by_pairs(&job_list, file,
 				    npairs, &src_nodes, &dst_nodes))
 					error_happened = 1;
 			}
