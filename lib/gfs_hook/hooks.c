@@ -952,16 +952,16 @@ __rename(const char *oldpath, const char *newpath)
         old_is_url = gfs_hook_is_url(oldpath, &oldurl);
         new_is_url = gfs_hook_is_url(newpath, &newurl);
         if (!old_is_url || !new_is_url) {
-                if (old_is_url)
+		if (old_is_url)
 			free(oldurl);
 		if (new_is_url)	
 			free(newurl);
-                if (old_is_url != new_is_url) {
-                        errno = EXDEV;
-                        return (-1);
-                }
-                return (syscall(SYS_rename, oldpath, newpath));
-        }
+		if (old_is_url != new_is_url) {
+			errno = EXDEV;
+			return (-1);
+		}
+		return (syscall(SYS_rename, oldpath, newpath));
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __rename(%s, %s)\n",
 				oldpath, newpath));
