@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <assert.h>
 #include <sys/time.h>
 #include <stdio.h>
@@ -30,9 +34,13 @@ timerval_calibrate(void)
 	timerval_t t1, t2;
 	struct timeval s1, s2;
 
+	/* warming up */
 	gettimerval(&t1);
 	gettimeofday(&s1, NULL);
-	sleep(10);
+
+	gettimerval(&t1);
+	gettimeofday(&s1, NULL);
+	sleep(3);
 	gettimerval(&t2);
 	gettimeofday(&s2, NULL);
 
@@ -65,6 +73,7 @@ timerval_calibrate(void)
 int tm_write_write_measured = 0;
 timerval_t tm_write_open_0, tm_write_open_1;
 timerval_t tm_write_write_0, tm_write_write_1;
+timerval_t tm_write_sync_0, tm_write_sync_1;
 timerval_t tm_write_close_0, tm_write_close_1;
 
 int tm_read_read_measured = 0;
@@ -141,6 +150,11 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 		fprintf(stderr, "write test failed, residual = %ld\n",
 			(long)residual);
 	}
+	gettimerval(&tm_write_sync_0);
+ 	rv = fsync(fd);
+	gettimerval(&tm_write_sync_1);
+	if (rv == -1)
+		perror("write test fsync failed");
 	gettimerval(&tm_write_close_0);
 	rv = close(fd);
 	gettimerval(&tm_write_close_1);
@@ -315,9 +329,10 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0) {
 		fprintf(stderr, "%7d ", buffer_size);
 		if (test_mode & TESTMODE_WRITE)
-			fprintf(stderr, " %g %g %g",
+			fprintf(stderr, " %g %g %g %g",
 			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
 			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
+			    timerval_sub(&tm_write_sync_1, &tm_write_sync_0),
 			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
 			);
 		if (test_mode & TESTMODE_READ)
