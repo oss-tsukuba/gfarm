@@ -169,9 +169,6 @@ main(argc, argv)
 		command = args[0];
 	}
 
-	if (opt_auth_verbose)
-		gfarm_authentication_verbose = 1;
-
 	/*
 	 * initialization
 	 *
@@ -195,6 +192,15 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
+
+	/*
+	 * gfarm_authentication_verbose is set here because the above
+	 * call of gfarm_gsi_client_initialize() may display verbose
+	 * error messages, which will be displayed later again in
+	 * gfarm_auth_request_gsi().
+	 */
+	if (opt_auth_verbose)
+		gfarm_authentication_verbose = 1;
 
 #if 0 /* XXX - We cannot do this, because we don't access meta database. */
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,

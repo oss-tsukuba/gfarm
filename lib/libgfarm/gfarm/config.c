@@ -1213,7 +1213,9 @@ char *
 gfarm_initialize(int *argcp, char ***argvp)
 {
 	char *e;
-
+#ifdef HAVE_GSI
+	int saved_auth_verb;
+#endif
 	gfarm_error_initialize();
 
 	e = gfarm_set_local_user_for_this_local_account();
@@ -1223,7 +1225,14 @@ gfarm_initialize(int *argcp, char ***argvp)
 	if (e != NULL)
 		return (e);
 #ifdef HAVE_GSI
+	/*
+	 * Suppress verbose error messages.  The message will be
+	 * displayed later in gfarm_auth_request_gsi().
+	 */
+	saved_auth_verb = gfarm_authentication_verbose;
+	gfarm_authentication_verbose = 0;
 	(void*)gfarm_gsi_client_initialize();
+	gfarm_authentication_verbose = saved_auth_verb;
 #endif
 	e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL)
