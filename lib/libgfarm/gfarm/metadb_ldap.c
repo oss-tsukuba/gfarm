@@ -13,6 +13,9 @@
 #include <ldap.h>
 #include <gfarm/gfarm.h>
 
+/* old openldap does not have ldap_memfree. */
+#define	ldap_memfree(a)
+
 #define INT32STRLEN	GFARM_INT32STRLEN
 #define INT64STRLEN	GFARM_INT64STRLEN
 #define ARRAY_LENGTH(array)	GFARM_ARRAY_LENGTH(array)
@@ -1081,7 +1084,7 @@ gfarm_file_history_get_allfile_by_file(
 	sprintf(query, query_template, input_gfarm_file);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_path_info_ops);
 	free(query);
 	if (error != NULL)
