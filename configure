@@ -1319,7 +1319,7 @@ EOF
 
 
 else
-  globus_location='${GLOBUS_LOCATION}'
+  globus_location=
  globus_includedir=
  globus_libdir=
  globus_includes=
