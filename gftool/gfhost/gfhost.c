@@ -403,7 +403,7 @@ print_loadavg(struct gfarm_host_info *info,
 
 char *
 list_loadavg(int nhosts, char **hosts,
-	struct gfs_client_udp_requests* udp_requests)
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -602,8 +602,8 @@ list_all(char *(*print_op)(struct gfarm_host_info *,
 char *
 list(int nhosts, char **hosts,
 	char *(*print_op)(struct gfarm_host_info *,
-		struct gfs_client_udp_requests* udp_requests),
-	struct gfs_client_udp_requests* udp_requests)
+	    struct gfs_client_udp_requests *),
+	struct gfs_client_udp_requests *udp_requests)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -678,7 +678,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
-	    program_name, "[-lLu] [-j <concurrency>] [-ipv]",
+	    program_name, "[-lDH] [-j <concurrency>] [-iprv]",
 	    program_name,
 	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
 	    program_name,
@@ -689,10 +689,10 @@ usage(void)
 }
 
 #define OP_DEFAULT	'\0'
-#define OP_LIST_LOADAVG	'L'
-#define OP_LIST_DB	'l'
-#define OP_LIST_UP	'u'
-#define OP_REGISTER_DB	'r'
+#define OP_LIST_LOADAVG	'H'
+#define OP_LIST_LONG	'l'
+#define OP_DUMP_DB	'D'
+#define OP_REGISTER_DB	'R'	/* or, restore db */
 #define OP_CREATE_ENTRY	'c'
 #define OP_DELETE_ENTRY	'd'
 #define OP_MODIFY_ENTRY	'm'
@@ -752,6 +752,8 @@ main(int argc, char **argv)
 	char *opt_architecture = NULL;
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
+	int opt_sort_reverse = 0;
+	int opt_sort_by_loadavg = 0;
 	int i, c, sort_pid, need_metadb = 1;
 	struct gfs_client_udp_requests *udp_requests;
 
@@ -760,18 +762,21 @@ main(int argc, char **argv)
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "ALa:cdij:lmn:pruv")) != -1) {
+	while ((c = getopt(argc, argv, "ADHLRa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
 			break;
 		case 'L':
+			opt_sort_by_loadavg = 1;
+			break;
+		case 'D':
+		case 'H':
+		case 'R':
 		case 'c':
 		case 'd':
 		case 'l':
 		case 'm':
-		case 'r':
-		case 'u':
 			if (opt_operation != OP_DEFAULT && opt_operation != c)
 				inconsistent_option(opt_operation, c);
 			opt_operation = c;
@@ -803,6 +808,9 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			opt_plain_order = 1;
+			break;
+		case 'r':
+			opt_sort_reverse = 1;
 			break;
 		case 'v':
 			opt_verbose = 1;
@@ -895,8 +903,21 @@ main(int argc, char **argv)
 		e_save = register_db();
 		break;
 	case OP_LIST_LOADAVG:
-		if (!opt_plain_order)
-			sort_pid = setup_sort("+1");
+		if (!opt_plain_order) {
+			if (opt_sort_by_loadavg) {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+0nr");
+				} else {
+					sort_pid = setup_sort("+0n");
+				}
+			} else {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+1r");
+				} else {
+					sort_pid = setup_sort("+1");
+				}
+			}
+		}
 		e = gfarm_client_init_load_requests(
 			opt_concurrency, &udp_requests);
 		if (e != NULL) {
@@ -917,9 +938,14 @@ main(int argc, char **argv)
 				e_save = e;
 		}
 		break;
-	case OP_LIST_UP:
-		if (!opt_plain_order)
-			sort_pid = setup_sort("+1");
+	case OP_DEFAULT:
+		if (!opt_plain_order) {
+			if (opt_sort_reverse) {
+				sort_pid = setup_sort("+0r");
+			} else {
+				sort_pid = setup_sort("+0");
+			}
+		}
 		e = gfarm_client_init_load_requests(
 			opt_concurrency, &udp_requests);
 		if (e != NULL) {
@@ -940,9 +966,22 @@ main(int argc, char **argv)
 				e_save = e;
 		}
 		break;
-	case OP_DEFAULT:
-		if (!opt_plain_order)
-			sort_pid = setup_sort("+3");
+	case OP_LIST_LONG:
+		if (!opt_plain_order) {
+			if (opt_sort_by_loadavg) {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+0nr");
+				} else {
+					sort_pid = setup_sort("+0n");
+				}
+			} else {
+				if (opt_sort_reverse) {
+					sort_pid = setup_sort("+3r");
+				} else {
+					sort_pid = setup_sort("+3");
+				}
+			}
+		}
 		e = gfarm_client_init_load_requests(
 			opt_concurrency, &udp_requests);
 		if (e != NULL) {
@@ -951,10 +990,10 @@ main(int argc, char **argv)
 		}
 		if (argc == 0) {
 			e_save = list_all(print_host_info_and_loadavg,
-				udp_requests);
+			    udp_requests);
 		} else {
 			e_save = list(argc, argv, print_host_info_and_loadavg,
-					udp_requests);
+			    udp_requests);
 		}
 		e = gfarm_client_wait_all_load_results(udp_requests);
 		if (e_save == NULL)
@@ -965,7 +1004,7 @@ main(int argc, char **argv)
 				e_save = e;
 		}
 		break;
-	case OP_LIST_DB:
+	case OP_DUMP_DB:
 		if (argc == 0) {
 			e_save = list_all(print_host_info, NULL);
 		} else {
