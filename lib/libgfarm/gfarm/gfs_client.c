@@ -83,6 +83,7 @@ gfs_client_connection0(const char *canonical_hostname,
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
@@ -287,6 +288,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
@@ -1837,6 +1839,7 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 		e = gfarm_errno_to_error(errno);
 		goto error_return;
 	}
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 	/* connect UDP socket, to get error code */
 	if (connect(sock, peer_addr, sizeof(*peer_addr)) == -1) {
 		e = gfarm_errno_to_error(errno);

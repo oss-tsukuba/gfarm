@@ -293,6 +293,7 @@ gfarm_client_add_load_request(struct gfs_client_udp_requests *udp_requests,
 			udp_requests->requests_save_error = e;
 		return e;
 	}
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 	/* connect UDP socket, to get error code */
 	if (connect(sock, peer_addr, sizeof(*peer_addr)) == -1) {
 		e = gfarm_errno_to_error(errno);
