@@ -57,7 +57,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	char *e, *hostfile = NULL;
-	int ch, n = 0;
+	int ch, error_line, n = 0;
 	gfarm_stringlist hostlist = NULL;
 
 	if (argc >= 1)
@@ -87,9 +87,14 @@ main(argc, argv)
 		exit(1);
 	}
 	if (hostfile != NULL) {
-		e = gfarm_hostlist_read(hostfile, &n, &hostlist);
+		e = gfarm_hostlist_read(hostfile, &n, &hostlist, &error_line);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", hostfile, e);
+			if (error_line != -1)
+				fprintf(stderr, "%s: %s: line %d: %s\n",
+					program_name, hostfile, error_line, e);
+			else
+				fprintf(stderr, "%s: %s: %s\n",
+					program_name, hostfile, e);
 			exit(1);
 		}
 	}

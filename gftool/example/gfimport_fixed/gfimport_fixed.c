@@ -159,7 +159,8 @@ main(argc, argv)
 			fprintf(stderr, "%s: size unknown\n", iname);
 			exit(1);
 		}
-		e = gfarm_paths_read(hostfile, &nhosts, &hosttab, &error_line);
+		e = gfarm_hostlist_read(hostfile,
+		    &nhosts, &hosttab, &error_line);
 		if (e == NULL) {
 			sizetab = gfarm_import_fragment_size_alloc(
 			    is.st_size, nhosts);
