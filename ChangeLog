@@ -1,4 +1,169 @@
+2003-05-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfj_client.h: typo in comment
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/schedule.c:
+	Better (or, at least more usable than current one) scheduling.
+	Currently, shuffling is disabled, although it's somewhat tested.
+	"-DUSE_SHUFFLED" enables the host shuffling.
+
+	* gftool/gfrun/gfrun.c:
+	make it possible to make gfrun suspend/background
+
+	* server/gfmd/gfmd.c: fix minor(?) race condition
+
+	* server/gfmd/gfmd.c: fix resource leak in previous commit
+
+	* server/gfmd/gfmd.c:
+	Fix longstanding bug which made gfmd core dump at authentication failure.
+	Connection was registered to file_table[] at too early stage, even if
+	authentication failed.
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	Change function signature of gfarm_authorize(), it now returns client
+	hostname, too.
+	This change also includes some resource leaks. One of them has been
+	existed since nearly one year ago. (And again, the bug was introduced
+	on 2002/06/24, too...)
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c:
+	fix apparent typo (this bug was introduced on 2002/06/24, too...)
+
+2003-05-19  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: new version
+
+2003-05-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client.c:
+	add missing error check (this bug was introduced on 2002/06/24)
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	Correct a problem that error message about half-written metadata was
+	reported as "not a directory".  Now, it is reported as "no fragment
+	information".
+
+	problem reported in the following mail:
+	From: Naotaka YAMAMOTO <naotaka@ni.aist.go.jp>
+	Subject: [gfarm-arch:00312] Re: [datafarm:00449] gfarm software release TODO
+	Date: Mon, 14 Apr 2003 11:14:02 +0900 (JST)
+
+	This change includes some fixes about memory leak, too.
+
+2003-05-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: change version number from 1.0b1 to 1.0b2
+
+2003-05-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* server/gfmd/gfmd.c:
+	do not malloc becuase not return in the middle of function
+
+	* server/gfmd/gfmd.c: enabled to log disconnection
+
+	* lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c:
+	moved declarations of variables from the middle of the function to the head
+	for old compilers
+
+	* lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c, server/gfsd/gfsd.c, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/io_gfsl.h:
+	- gfsd: enabled to log authentication and disconnection
+	- changed 'authetication method name 'simple' to 'sharedsecret'
+	  in function names, messages and so on
+
+2003-05-15  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/docs, debian/gfarm-doc.docs, debian/gfarm-doc.examples, debian/gfmd.examples:
+	include gfarm.schema in example directory
+
+2003-05-14  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfmd.conffiles, debian/gfsd.conffiles: re-entry conffiles
+
+	* debian/changelog: debian version -4
+
+	* debian/rules: with japanexe man pages
+
+	* debian/rules: using dh_installinit
+	installed english manpages instet of japanese pages.
+
+	* debian/gfmd.postinst: using auto generated gfmd.postinst.debhelper
+
+	* debian/gfmd.init, debian/gfsd.init: rewriten
+
+2003-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en:
+	Added an example of static compilation with the Globus library.
+
+	* INSTALL.ja, doc/GUIDE.ja, doc/Gfarm-FAQ.ja: Converted to EUC.
+
+2003-05-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c (FUNC___OPEN):
+	Limited the number of retries when gfs_pio_set_view_local() fails.  That is because unlimited number of retries result in the infinite loop at least when a spool directory is not correctly set up.
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	Corrected the description about the netparam rate_limit parameter.
+
+2003-05-12  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* doc/GUIDE.ja:
+	Add a sample command line of usage of 'gfreg' new style.
+
+2003-05-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	Added a new category, scheduling, in the section 3.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	The second revision of the item 2.2.
+
+2003-05-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/session.c:
+	revision 1.2 of gfs_config.h made encryption disabled accidentally,
+	by mistakenly using opposite condition.
+	this fixes the problem.
+
+2003-05-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfreg/gfreg.c:
+	(main) Added the missing initialization for the local variable 'auto_hosts'.
+
+2003-05-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/gsi.c, server/gfsd/gfsd.c, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/xxx_proto.c, lib/libgfarm/gfarm/xxx_proto.h:
+	export delegated credential to a command which is invoked by gfrcmd
+
+	* lib/libgfarm/gfsl/gfsl_config.h:
+	- define USE_GLOBUS again, to enable "globus" configuration parameter.
+	  (see session.c)
+	- define GFARM_GSS_ENCRYPTION_ENABLED=1, even if defined(USE_GLOBUS) case.
+	- rename _GFARM_CONFIG_H_ to _GFARM_GFSL_CONFIG_H_
+
+2003-05-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfs_pio_section.c:
+	implemented GFARM_FILE_REPLICATE, GFARM_FILE_NOT_REPLICATE
+
+2003-05-08  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfsd.init: fixed a bug: cannot restart
+
+	* debian/control: Fixed typo.
+
+	* debian/gfarm-doc.install, debian/rules:
+	using /usr/share/doc/gfarm-doc in gfarm-doc package
+
 2003-05-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added an item 2.2 in the trouble shooting section to check and delete unnecessary files in a spool directory.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfarm_url_fragments_replicate):
+	Fixed a serious bug of buffer overrun.
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* gfptool/gfcp/gfcp.c:
 	Display an error message when file transfer error happens.
@@ -1019,7 +1184,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.14 2003/04/28 09:01:15 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.15 2003/05/08 02:55:20 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
