@@ -77,18 +77,9 @@ int	gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
 
 int	gfarmGssDeleteName(gss_name_t *namePtr,
 			   OM_uint32 *majStatPtr,
-			    OM_uint32 *minStatPtr);
+			   OM_uint32 *minStatPtr);
 	namePtr に渡された gss_name_t を解放する。
 	成功した場合 1 が返り、その他の場合には -1 以下が返る。
-
-int	gfarmGssDuplicateName(gss_name_t *outputNamePtr,
-			      const gss_name_t inputName,
-			      OM_uint32 *majStatPtr,
-			      OM_uint32 *minStatPtr);
-	inputName で与えられた名前のコピーを *outputNamePtr に返す。
-	*outputNamePtr は、inputName とは別に、gfarmGssDeleteName() を用いて
-	解放しなければならない。
-	成功した場合 1 が返り、その他の場合には -1 が返る。
 
 int	gfarmGssNewCredentialName(gss_name_t *outputNamePtr,
 				  gss_cred_id_t cred,

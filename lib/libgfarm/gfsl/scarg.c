@@ -116,3 +116,40 @@ HandleCommonOptions(option, arg)
     }
     return 0;
 }
+
+
+char *
+newStringOfName(inputName)
+     const gss_name_t inputName;
+{
+    OM_uint32 majStat, minStat;
+    char *s = gfarmGssNewDisplayName(inputName, &majStat, &minStat, NULL);
+
+    if (s != NULL) {
+	return s;
+    }
+    fprintf(stderr, "cannot convert gss_name_t to display string:\n");
+    gfarmGssPrintMajorStatus(majStat);
+    gfarmGssPrintMinorStatus(minStat);
+    return strdup("(invalid gss_name_t)");
+}
+
+
+char *
+newStringOfCredential(cred)
+     gss_cred_id_t cred;
+{
+    OM_uint32 majStat, minStat;
+    gss_name_t name;
+    char *s;
+
+    if (gfarmGssNewCredentialName(&name, cred, &majStat, &minStat) > 0) {
+	s = newStringOfName(name);
+	gfarmGssDeleteName(&name, NULL, NULL);
+	return s;
+    }
+    fprintf(stderr, "cannot convert credential to gss_name_t:\n");
+    gfarmGssPrintMajorStatus(majStat);
+    gfarmGssPrintMinorStatus(minStat);
+    return strdup("(invalid credential)");
+}

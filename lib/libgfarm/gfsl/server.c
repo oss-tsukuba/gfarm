@@ -114,13 +114,7 @@ main(argc, argv)
 	    gfarmGssPrintMinorStatus(minStat);
 	    return 1;
 	}
-	credString = gfarmGssNewDisplayName(credName, &majStat,&minStat, NULL);
-	if (credString == NULL) {
-	    fprintf(stderr, "can't convert acquired credential to string:\n");
-	    gfarmGssPrintMajorStatus(majStat);
-	    gfarmGssPrintMinorStatus(minStat);
-	    return 1;
-	}
+	credString = newStringOfName(credName);
 	fprintf(stderr, "Acceptor Credential: '%s'\n", credString);
 	free(credString);
 	gfarmGssDeleteName(&credName, NULL, NULL);

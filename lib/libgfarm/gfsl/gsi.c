@@ -269,6 +269,7 @@ gfarmGssDeleteName(namePtr, majStatPtr, minStatPtr)
 }
 
 
+#if 0 /* gss_duplicate_name() is not implemented at least in globus-2 yet. */
 int
 gfarmGssDuplicateName(outputNamePtr, inputName, majStatPtr, minStatPtr)
      gss_name_t *outputNamePtr;
@@ -289,6 +290,7 @@ gfarmGssDuplicateName(outputNamePtr, inputName, majStatPtr, minStatPtr)
     }
     return majStat == GSS_S_COMPLETE ? 1 : -1;
 }
+#endif
 
 
 int
@@ -435,6 +437,8 @@ gfarmGssAcquireCredential(credPtr, desiredName, credUsage, majStatPtr, minStatPt
 	}
 	if (ret > 0 && credPtr != NULL) {
 	    *credPtr = cred;
+	} else {
+	    gfarmGssDeleteCredential(&cred, NULL, NULL);
 	}
     }
 

@@ -19,6 +19,8 @@
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
+#include "scarg.h"
+
 gfarm_int32_t testBufSize = 4096;
 
 void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
@@ -55,14 +57,7 @@ doServer(fd, hostname, port, myCred, acceptorName)
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
-    name = gfarmGssNewDisplayName(initialSession->credName,
-				  &majStat, &minStat, NULL);
-    if (name == NULL) {
-	fprintf(stderr, "cannot convert acceptor credential to name:\n");
-	gfarmGssPrintMajorStatus(majStat);
-	gfarmGssPrintMinorStatus(minStat);
-	goto Done;
-    }
+    name = newStringOfCredential(initialSession->cred);
     fprintf(stderr, "Accept => Acceptor: '%s'\n", name);
     free(name);
     aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
@@ -181,33 +176,12 @@ doClient(hostname, port, acceptorName, deleCred, deleCheck)
 	return;
     }
 
-    if (ss->credName == GSS_C_NO_NAME) {
-	fprintf(stderr, "Initiate => Initiator: NULL\n");
-    } else {
-	name = gfarmGssNewDisplayName(ss->credName, &majStat, &minStat, NULL);
-	if (name == NULL) {
-	    fprintf(stderr, "cannot convert initiator credential to name:\n");
-	    gfarmGssPrintMajorStatus(majStat);
-	    gfarmGssPrintMinorStatus(minStat);
-	    goto Done;
-	}
-	fprintf(stderr, "Initiate => Initiator: '%s'\n", name);
-	free(name);
-    }
-    if (ss->iOaInfo.initiator.acceptorName == GSS_C_NO_NAME) {
-	fprintf(stderr, "Initiate => Acceptor: NULL\n");
-    } else {
-	name = gfarmGssNewDisplayName(ss->iOaInfo.initiator.acceptorName,
-				      &majStat, &minStat, NULL);
-	if (name == NULL) {
-	    fprintf(stderr, "cannot convert acceptor to name:\n");
-	    gfarmGssPrintMajorStatus(majStat);
-	    gfarmGssPrintMinorStatus(minStat);
-	    goto Done;
-	}
-	fprintf(stderr, "Initiate => Acceptor: '%s'\n", name);
-	free(name);
-    }
+    name = newStringOfCredential(ss->cred);
+    fprintf(stderr, "Initiate => Initiator: '%s'\n", name);
+    free(name);
+    name = newStringOfName(ss->iOaInfo.initiator.acceptorName);
+    fprintf(stderr, "Initiate => Acceptor: '%s'\n", name);
+    free(name);
 
     /*
      * Now, we can communicate securely.

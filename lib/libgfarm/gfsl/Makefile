@@ -67,7 +67,7 @@ server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
     gfsl_config.h gfarm_gsi.h gfarm_secure_session.h misc.h scarg.h
 server.o server2.o: gfarm_auth.h
 scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfarm_gsi.h misc.h scarg.h
-scsub.o: gfarm_secure_session.h gfarm_auth.h \
+scsub.o: gfarm_secure_session.h gfarm_auth.h scarg.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 
 ### for programs

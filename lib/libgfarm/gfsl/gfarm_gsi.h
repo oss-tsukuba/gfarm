@@ -33,10 +33,6 @@ extern int	gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
 extern int	gfarmGssDeleteName(gss_name_t *namePtr,
 				   OM_uint32 *majStatPtr,
 				   OM_uint32 *minStatPtr);
-extern int	gfarmGssDuplicateName(gss_name_t *outputNamePtr,
-				      const gss_name_t inputName,
-				      OM_uint32 *majStatPtr,
-				      OM_uint32 *minStatPtr);
 extern int	gfarmGssNewCredentialName(gss_name_t *outputNamePtr,
 					  gss_cred_id_t cred,
 					  OM_uint32 *majStatPtr,
