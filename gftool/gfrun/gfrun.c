@@ -52,10 +52,10 @@ void
 usage()
 {
 	fprintf(stderr,
-		"Usage: %s [-n] [-l <login>]"
-		" [-G <Gfarm file>]"
-		" [-H <hostfile>] command ...\n"
-		" [-N <number of hosts>] command ...\n",
+		"Usage: %s [-n] [-l <login>]\n"
+		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>]\n"
+		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
+		" command ...\n",
 		program_name);
 	exit(1);
 }
@@ -438,6 +438,8 @@ skip_opt: ;
 		hosts = malloc(sizeof(char *) * nprocs);
 		if (hosts == NULL)
 			fputs("not enough memory", stderr), exit(1);	
+		/* XXX - it is necessary to choose nodes such that
+		   user authentication succeeds. */
 		e = gfarm_schedule_search_idle_by_all(nprocs, hosts);
 		if (e != NULL)
 			fprintf(stderr, "%s: %s\n", program_name, e);
@@ -454,21 +456,29 @@ skip_opt: ;
 		}
 	}
 	else {
+		/* Serial execution */
 		char *self_name;
-		/* XXX - need to choose an appropriate host. */
+
 		nhosts = 1;
-		e = gfarm_host_get_canonical_self_name(&self_name);
-		if (e != NULL) {
-			fprintf(stderr, "%s: not a filesystem node\n",
-				program_name);
-			exit(1);
-		}
 		hosts = malloc(sizeof(char *));
 		if (hosts == NULL)
 			fputs("not enough memory", stderr), exit(1);
-		*hosts = strdup(self_name);
-		if (*hosts == NULL)
-			fputs("not enough memory", stderr), exit(1);
+
+		e = gfarm_host_get_canonical_self_name(&self_name);
+		if (e == NULL) {
+			*hosts = strdup(self_name);
+			if (*hosts == NULL)
+				fputs("not enough memory", stderr), exit(1);
+		}
+		else {
+			/* XXX - it is necessary to choose nodes such
+			   that user authentication succeeds. */
+			e = gfarm_schedule_search_idle_by_all(1, hosts);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n", program_name, e);
+				exit(1);
+			}
+		}
 		scheduling_file = "none";
 	}
 
