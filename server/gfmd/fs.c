@@ -328,7 +328,7 @@ gfm_server_open(struct peer *peer, int from_client)
 	struct inode *inode;
 	int created = 0;
 	gfarm_int32_t fd = -1;
-	gfarm_ino_t inum = 0;
+	internal_ino_t inum = 0;
 
 	e = gfm_server_get_request(peer, "open", "sii", &flag, &mode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -355,23 +355,23 @@ gfm_server_open(struct peer *peer, int from_client)
 			}
 		}
 		if (error == GFARM_ERR_NO_ERROR) {
-			if ((flag & GFARM_FILE_ACCMODE) ==
-			    GFARM_FILE_RDONLY && !created) {
+			inum = inode_get_number(inode);
+			if ((flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY
+			    && !created) {
 				if (!inode_has_replica(inode, spool_host))
 					error = GFARM_ERR_FILE_MIGRATED;
 				else
 					error = process_open_file(process,
-					    inode, flag, spool_host, &fd);
+					    inum, flag, spool_host, &fd);
 			} else {
 				if (inode_schedule_host_for_write(inode,
 				    spool_host) != spool_host)
 					error = GFARM_ERR_FILE_MIGRATED;
 				else
 					error = process_open_file(process,
-					    inode, flag, spool_host, &fd);
+					    inum, flag, spool_host, &fd);
 			}
 			if (error == GFARM_ERR_NO_ERROR) {
-				inum = inode_get_number(inode);
 				if (created) {
 					error = inode_add_replica(inode,
 					    spool_host);
@@ -385,7 +385,8 @@ gfm_server_open(struct peer *peer, int from_client)
 
 	free(path);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "open", error, "il", fd, inum));
+	return (gfm_server_put_reply(peer, "open", error, "il",
+	    fd, (gfarm_ino_t)inum));
 }
 
 gfarm_error_t

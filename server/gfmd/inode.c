@@ -10,8 +10,8 @@
 
 #include "host.h"
 #include "user.h"
-#include "process.h" /* struct file_opening */
 #include "inode.h"
+#include "process.h" /* struct file_opening */
 
 #define ROOT_INUMBER			2
 #define INODE_TABLE_SIZE_INITIAL	1000
@@ -25,25 +25,24 @@ struct file_copy {
 };
 
 struct inode {
-	gfarm_ino_t i_number;
 	gfarm_uint64_t i_gen;
-	gfarm_mode_t i_mode;
 	gfarm_uint64_t i_nlink;
+	gfarm_off_t i_size;
 	struct user *i_user;
 	struct group *i_group;
-	gfarm_off_t i_size;
-	gfarm_uint64_t i_ncopy;
 	struct gfarm_timespec i_atimespec;
+	gfarm_mode_t i_mode;
 	struct gfarm_timespec i_mtimespec;
+	gfarm_uint32_t i_ncopy;
 	struct gfarm_timespec i_ctimespec;
 
 	union {
 		struct inode_free_link {
-			struct inode *prev, *next;
+			internal_ino_t prev, next;
 		} l;
 		struct inode_file {
 			struct file_copy *copies;
-			struct file_opening openings;
+			struct file_opening *openings;
 		} f;
 		struct inode_dir {
 			struct gfarm_hash_table *dir_entries;
@@ -53,7 +52,6 @@ struct inode {
 
 struct inode *inode_table = NULL;
 int inode_table_size = 0;
-struct inode inode_free_list;
 
 gfarm_error_t
 inode_init(void)
@@ -62,13 +60,11 @@ inode_init(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-void
-inode_free_list_init(void)
-{
-	inode_free_list.u.l.prev =
-	inode_free_list.u.l.next = &inode_free_list;
-}
-
+/*
+ * NOTE:
+ * pointer to "struct inode" may become invalid after
+ * inode_alloc_num() is called, because of realloc(3).
+ */
 struct inode *
 inode_alloc_num(gfarm_ino_t inum)
 {
@@ -92,37 +88,43 @@ inode_alloc_num(gfarm_ino_t inum)
 			return (NULL); /* no memory */
 		inode_table = p;
 
-		if (inode_table_size == 0) {
-			inode_free_list_init();
-			/* we don't use 0 and 1 as i_number */
-			inode_table_size = ROOT_INUMBER;
-		}
 		for (i = inode_table_size; i < new_table_size; i++) {
 			inode = &inode_table[i];
-			inode->i_number = i;
 			inode->i_gen = 0;
 			inode->i_mode = 0; /* the inode is free */
 			inode->i_nlink = 0;
-			inode->u.l.prev = &inode_table[i - 1];
-			inode->u.l.next = &inode_table[i + 1];
+			inode->u.l.prev = i - 1;
+			inode->u.l.next = i + 1;
 		}
-		inode_table[inode_table_size].u.l.prev =
-			&inode_free_list;
-		inode_table[new_table_size - 1].u.l.next =
-			inode_free_list.u.l.next;
-		inode_free_list.u.l.next->u.l.prev =
-			&inode_table[new_table_size - 1];
-		inode_free_list.u.l.next =
-			&inode_table[inode_table_size];
+
+		/* link to free list */
+		if (inode_table_size == 0) {
+			/*
+			 * we use inode_table[0].u.l as dummy header of
+			 * doubly linked circular free list.
+			 * and we don't use inode_table[1].
+			 */
+			inode_table[ROOT_INUMBER].u.l.prev = 0;
+			inode_table[new_table_size - 1].u.l.next = 0;
+			inode_table[0].u.l.prev = new_table_size - 1;
+			inode_table[0].u.l.next = ROOT_INUMBER;
+		} else {
+			inode_table[inode_table_size].u.l.prev = 0;
+			inode_table[new_table_size - 1].u.l.next =
+				inode_table[0].u.l.next;
+			inode_table[inode_table[0].u.l.next].u.l.prev =
+				new_table_size - 1;
+			inode_table[0].u.l.next = inode_table_size;
+		}
 
 		inode_table_size = new_table_size;
 	}
 	inode = &inode_table[inum];
 	if (inode->i_mode != 0) /* the inode is not free */
 		return (NULL);
-	/* remove from inode_free_list */
-	inode->u.l.next->u.l.prev = inode->u.l.prev;
-	inode->u.l.prev->u.l.next = inode->u.l.next;
+	/* remove from free list */
+	inode_table[inode->u.l.next].u.l.prev = inode->u.l.prev;
+	inode_table[inode->u.l.prev].u.l.next = inode->u.l.next;
 	return (inode);
 }
 
@@ -131,8 +133,8 @@ inode_alloc(void)
 {
 	if (inode_table_size == 0)
 		return (inode_alloc_num(ROOT_INUMBER));
-	if (inode_free_list.u.l.next != &inode_free_list)
-		return (inode_alloc_num(inode_free_list.u.l.next->i_number));
+	if (inode_table[0].u.l.next != 0)
+		return (inode_alloc_num(inode_table[0].u.l.next));
 	else
 		return (inode_alloc_num(inode_table_size));
 }
@@ -140,14 +142,16 @@ inode_alloc(void)
 void
 inode_free(struct inode *inode)
 {
+	internal_ino_t inum = inode_get_number(inode);
+
 	inode->i_gen++;
 	inode->i_mode = 0; /* the inode is free */
 	inode->i_nlink = 0;
-	/* add to inode_free_list */
-	inode->u.l.prev = &inode_free_list;
-	inode->u.l.next = inode_free_list.u.l.next;
-	inode->u.l.next->u.l.prev = inode;
-	inode_free_list.u.l.next = inode;
+	/* add to free list */
+	inode->u.l.prev = 0;
+	inode->u.l.next = inode_table[0].u.l.next;
+	inode_table[inode_table[0].u.l.next].u.l.prev = inum;
+	inode_table[0].u.l.next = inum;
 }
 
 void
@@ -157,11 +161,12 @@ inode_remove(struct inode *inode)
 		struct file_copy *copy;
 		gfarm_error_t e;
 
-		if (inode->u.f.openings.opening_next != &inode->u.f.openings)
+		if (inode->u.f.openings->opening_next != inode->u.f.openings)
 			gflog_fatal("inode_remove", "still opened");
 		for (copy = inode->u.f.copies; copy != NULL;
 		    copy = copy->host_next) {
-			e = host_remove_replica(copy->host, inode->i_number);
+			e = host_remove_replica(copy->host,
+			    inode_get_number(inode));
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_error("host_remove_replica",
 				    host_name(copy->host));
@@ -176,11 +181,12 @@ inode_remove(struct inode *inode)
 }
 
 int
-inode_init_dir(struct inode *inode, struct inode *parent)
+inode_init_dir(struct inode *inode, internal_ino_t parent_inum)
 {
 	static char dot[] = ".";
 	static char dotdot[] = "..";
 	struct gfarm_hash_entry *entry;
+	internal_ino_t inum = inode_get_number(inode);
 
 	inode->u.d.dir_entries = gfarm_hash_table_alloc(DIR_HASH_SIZE,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
@@ -188,20 +194,20 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 		return (0);
 
 	entry = gfarm_hash_enter(inode->u.d.dir_entries, dot, sizeof(dot)-1,
-	    sizeof(struct inode *), NULL);
+	    sizeof(internal_ino_t), NULL);
 	if (entry == NULL) {
 		gfarm_hash_table_free(inode->u.d.dir_entries);
 		return (0);
 	}
-	*(struct inode **)gfarm_hash_entry_data(entry) = inode;
+	*(internal_ino_t *)gfarm_hash_entry_data(entry) = inum;
 
 	entry = gfarm_hash_enter(inode->u.d.dir_entries, dot, sizeof(dotdot)-1,
-	    sizeof(struct inode *), NULL);
+	    sizeof(internal_ino_t), NULL);
 	if (entry == NULL) {
 		gfarm_hash_table_free(inode->u.d.dir_entries);
 		return (0);
 	}
-	*(struct inode **)gfarm_hash_entry_data(entry) = parent;
+	*(internal_ino_t *)gfarm_hash_entry_data(entry) = parent_inum;
 
 	inode->i_nlink = 2;
 	inode->i_mode = GFARM_S_IFDIR;
@@ -214,13 +220,16 @@ inode_init_file(struct inode *inode)
 	inode->i_nlink = 1;
 	inode->i_mode = GFARM_S_IFREG;
 	inode->u.f.copies = NULL;
-	inode->u.f.openings.opening_prev =
-	inode->u.f.openings.opening_next = &inode->u.f.openings;
+	inode->u.f.openings = malloc(sizeof(*inode->u.f.openings));
+	if (inode->u.f.openings == NULL)
+		return (NULL);
+	inode->u.f.openings->opening_prev =
+	inode->u.f.openings->opening_next = inode->u.f.openings;
 	return (1);
 }
 
 struct inode *
-inode_lookup(gfarm_ino_t inum)
+inode_lookup(internal_ino_t inum)
 {
 	struct inode *inode;
 
@@ -244,10 +253,10 @@ inode_is_file(struct inode *inode)
 	return (GFARM_S_ISREG(inode->i_mode));
 }
 
-gfarm_ino_t
+internal_ino_t
 inode_get_number(struct inode *inode)
 {
-	return (inode->i_number);
+	return (inode - inode_table);
 }
 
 struct user *
@@ -334,7 +343,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
 	int created;
-	struct inode **np, *n;
+	internal_ino_t inum, *inump, parent_inum;
+	struct inode *n;
 
 	if (len == 0) {
 		if (op == INODE_REMOVE)
@@ -360,23 +370,25 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			    GFARM_ERR_NO_ERROR) {
 				return (e);
 			}
-			*inp = *(struct inode **)gfarm_hash_entry_data(entry);
+			inum = *(internal_ino_t *)gfarm_hash_entry_data(entry);
+			*inp = inode_lookup(inum);
 			*createdp = 0;
 			gfarm_hash_purge(parent->u.d.dir_entries, name, len);
 			return (GFARM_ERR_NO_ERROR);
 		}
-		*inp = *(struct inode **)gfarm_hash_entry_data(entry);
+		inum = *(internal_ino_t *)gfarm_hash_entry_data(entry);
+		*inp = inode_lookup(inum);
 		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	entry = gfarm_hash_enter(parent->u.d.dir_entries, name, len,
-	    sizeof(struct inode *), &created);
+	    sizeof(internal_ino_t), &created);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	np = gfarm_hash_entry_data(entry);
+	inump = gfarm_hash_entry_data(entry);
 	if (!created) {
-		*inp = *np;
+		*inp = inode_lookup(*inump);
 		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -384,9 +396,12 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		gfarm_hash_purge(parent->u.d.dir_entries, name, len);
 		return (e);
 	}
+	parent_inum = inode_get_number(parent);
 	n = inode_alloc();
+	/* `parent' pointer may become invalid here due to inode_alloc() */
+	parent = inode_lookup(parent_inum); /* make it valid again */
 	if (n == NULL ||
-	    !(is_dir ? inode_init_dir(n, parent) : inode_init_file(n))) {
+	    !(is_dir ? inode_init_dir(n, parent_inum) : inode_init_file(n))) {
 		gfarm_hash_purge(parent->u.d.dir_entries, name, len);
 		if (n != NULL)
 			inode_free(n); /* XXX i_gen is incremented */
@@ -405,7 +420,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		n->i_atimespec.tv_nsec = n->i_mtimespec.tv_nsec =
 		    n->i_ctimespec.tv_nsec = now.tv_usec * 1000;
 	}
-	*inp = *np = n;
+	*inump = inode_get_number(n);
+	*inp = n;
 	*createdp = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -463,7 +479,7 @@ inode_lookup_by_name_internal(char *path, struct process *process,
 	if (path[0] == '/')
 		cwd = inode_lookup(ROOT_INUMBER);
 	else
-		cwd = process_get_cwd(process);
+		cwd = inode_lookup(process_get_cwd(process));
 	if (cwd == NULL)
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	return (inode_lookup_relative(cwd, path, is_dir, op, user,
@@ -501,7 +517,7 @@ inode_unlink(char *path, struct process *process)
 		    0, INODE_REMOVE, &inode, &tmp);
 		if (--inode->i_nlink > 0)
 			return (GFARM_ERR_UNKNOWN);
-		if (inode->u.f.openings.opening_next == &inode->u.f.openings) {
+		if (inode->u.f.openings->opening_next == inode->u.f.openings) {
 			/* no process is opening this file, just remove it */
 			inode_remove(inode);
 			return (GFARM_ERR_NO_ERROR);
@@ -562,24 +578,25 @@ inode_remove_replica(struct inode *inode, struct host *spool_host)
 void
 inode_open(struct file_opening *fo)
 {
-	struct inode *inode = fo->inode;
+	struct inode *inode = inode_lookup(fo->inum);
 
-	fo->opening_prev = &inode->u.f.openings;
-	fo->opening_next = inode->u.f.openings.opening_next;
-	inode->u.f.openings.opening_next = fo;
+	fo->opening_prev = inode->u.f.openings;
+	fo->opening_next = inode->u.f.openings->opening_next;
+	inode->u.f.openings->opening_next = fo;
 	fo->opening_next->opening_prev = fo;
 }
 
 void
 inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 {
-	struct inode *inode = fo->inode;
+	struct inode *inode = inode_lookup(fo->inum);
 
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
-	inode->i_atimespec = *atime;
+	if (atime != NULL)
+		inode->i_atimespec = *atime;
 	if (inode->i_nlink == 0 &&
-	    inode->u.f.openings.opening_next == &inode->u.f.openings)
+	    inode->u.f.openings->opening_next == inode->u.f.openings)
 		inode_remove(inode);
 }
 
@@ -587,9 +604,10 @@ void
 inode_close_write(struct file_opening *fo,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
 {
-	struct inode *inode = fo->inode;
+	struct inode *inode = inode_lookup(fo->inum);
 
-	inode->i_mtimespec = *mtime;
+	if (mtime != NULL)
+		inode->i_mtimespec = *mtime;
 	inode_close_read(fo, atime);
 }
 
@@ -641,10 +659,10 @@ inode_schedule_host_for_write(struct inode *inode, struct host *spool_host)
 
 	if (!inode_is_file(inode))
 		gflog_fatal("inode_schedule_host_for_write", "not a file");
-	fo = inode->u.f.openings.opening_next;
-	if (fo == &inode->u.f.openings)
+	fo = inode->u.f.openings->opening_next;
+	if (fo == inode->u.f.openings)
 		return (inode_schedule_spool_host(inode, spool_host));
-	for (; fo != &inode->u.f.openings; fo = fo->opening_next) {
+	for (; fo != inode->u.f.openings; fo = fo->opening_next) {
 		if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
 			return (fo->spool_host);
 		/* XXX better scheduling is needed */

@@ -5,6 +5,12 @@ gfarm_error_t dead_file_copy_init(void);
 
 struct inode;
 
+/*
+ * although external representation of gfarm_ino_t is 64bit,
+ * we use 32bit number for in-core version gfmd.
+ */
+typedef gfarm_int32_t internal_ino_t;
+
 struct host;
 struct user;
 struct group;
@@ -12,7 +18,7 @@ struct process;
 
 int inode_is_dir(struct inode *);
 int inode_is_file(struct inode *);
-gfarm_ino_t inode_get_number(struct inode *);
+internal_ino_t inode_get_number(struct inode *);
 struct user *inode_get_user(struct inode *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
@@ -22,6 +28,7 @@ struct gfarm_timespec *inode_get_atime(struct inode *);
 
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
+struct inode *inode_lookup(internal_ino_t);
 gfarm_error_t inode_lookup_by_name(char *, struct process *, struct inode **);
 gfarm_error_t inode_create_file(char *, struct process *, gfarm_mode_t,
 	struct inode **, int *);

@@ -19,6 +19,7 @@
 #include "user.h"
 #include "host.h"
 #include "peer.h"
+#include "inode.h"
 #include "process.h"
 #include "job.h"
 

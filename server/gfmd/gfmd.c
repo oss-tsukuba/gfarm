@@ -42,8 +42,8 @@
 #include "user.h"
 #include "group.h"
 #include "peer.h"
-#include "process.h"
 #include "inode.h"
+#include "process.h"
 #include "fs.h"
 #include "job.h"
 

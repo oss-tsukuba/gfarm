@@ -9,8 +9,8 @@
 #include "gfm_proto.h"
 
 #include "subr.h"
-#include "inode.h"
 #include "peer.h"
+#include "inode.h"
 #include "process.h"
 #include "id_table.h"
 
@@ -23,10 +23,10 @@ struct process {
 	gfarm_pid_t pid;
 	struct user *user;
 	int refcount;
-	struct inode *cwd;
+	internal_ino_t cwd;
 
 	int nfiles;
-	struct file_opening *filetab;
+	struct file_opening **filetab;
 };
 
 static struct gfarm_id_table *process_id_table = NULL;
@@ -41,7 +41,7 @@ process_alloc(struct user *user,
 {
 	gfarm_pid_t pid;
 	struct process *process;
-	struct file_opening *filetab;
+	struct file_opening **filetab;
 	int fd;
 
 	if (process_id_table == NULL) {
@@ -65,14 +65,11 @@ process_alloc(struct user *user,
 	process->pid = pid;
 	process->user = user;
 	process->refcount = 0;
-	process->cwd = NULL;
+	process->cwd = 0;
 	process->nfiles = FILETAB_INITIAL;
 	process->filetab = filetab;
-	for (fd = 0; fd < FILETAB_INITIAL; fd++) {
-		filetab[fd].inode = NULL;
-		filetab[fd].spool_host = NULL;
-		filetab[fd].flag = 0;
-	}
+	for (fd = 0; fd < FILETAB_INITIAL; fd++)
+		filetab[fd] = NULL;
 
 	*processp = process;
 	*pidp = pid;
@@ -93,14 +90,11 @@ process_del_ref(struct process *process)
 
 	if (--process->refcount <= 0) {
 		for (fd = 0; fd < process->nfiles; fd++) {
-			fo = &process->filetab[fd];
-			if (fo->inode != NULL) {
-				/* XXX */
-				inode_close_read(fo,
-				    inode_get_atime(fo->inode));
-				fo->inode = NULL;
-				fo->spool_host = NULL;
-				fo->flag = 0;
+			fo = process->filetab[fd];
+			if (fo != NULL) {
+				inode_close_read(fo, NULL);
+				free(fo);
+				process->filetab[fd] = NULL;
 			}
 		}
 		free(process->filetab);
@@ -114,18 +108,20 @@ process_get_user(struct process *process)
 	return (process->user);
 }
 
-struct inode *
+internal_ino_t
 process_get_cwd(struct process *process)
 {
 	return (process->cwd);
 }
 
 gfarm_error_t
-process_set_cwd(struct process *process, struct inode *inode)
+process_set_cwd(struct process *process, internal_ino_t cwd)
 {
+	struct inode *inode = inode_lookup(cwd);
+
 	if (!GFARM_S_ISDIR(inode_get_mode(inode)))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
-	process->cwd = inode;
+	process->cwd = cwd;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -156,15 +152,16 @@ process_does_match(gfarm_pid_t pid,
 }
 
 gfarm_error_t
-process_open_file(struct process *process, struct inode *inode,
+process_open_file(struct process *process, internal_ino_t inum,
 	gfarm_int32_t flag, struct host *spool_host, gfarm_int32_t *fdp)
 {
 	int fd, fd2;
-	struct file_opening *p;
+	struct file_opening **p;
 
-	for (fd = 0; fd < process->nfiles; fd++)
-		if (process->filetab[fd].inode == NULL)
+	for (fd = 0; fd < process->nfiles; fd++) {
+		if (process->filetab == NULL)
 			break;
+	}
 	if (fd >= process->nfiles) {
 		if (fd >= FILETAB_MAX)
 			return (GFARM_ERR_TOO_MANY_OPEN_FILES);
@@ -174,16 +171,16 @@ process_open_file(struct process *process, struct inode *inode,
 			return (GFARM_ERR_NO_MEMORY);
 		process->filetab = p;
 		process->nfiles += FILETAB_DELTA;
-		for (fd2 = fd + 1; fd2 < process->nfiles; fd2++) {
-			process->filetab[fd2].inode = NULL;
-			process->filetab[fd2].spool_host = NULL;
-			process->filetab[fd2].flag = 0;
-		}
+		for (fd2 = fd + 1; fd2 < process->nfiles; fd2++)
+			process->filetab[fd2] = NULL;
 	}
-	process->filetab[fd].inode = inode;
-	process->filetab[fd].spool_host = spool_host;
-	process->filetab[fd].flag = flag;
-	inode_open(&process->filetab[fd]);
+	process->filetab[fd] = malloc(sizeof(*process->filetab[fd]));
+	if (process->filetab[fd] == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	process->filetab[fd]->inum = 0;
+	process->filetab[fd]->spool_host = spool_host;
+	process->filetab[fd]->flag = flag;
+	inode_open(process->filetab[fd]);
 	*fdp = fd;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -196,13 +193,12 @@ process_close_file_read(struct process *process, struct host *spool_host,
 
 	if (fd < 0 || fd >= process->nfiles)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	fo = &process->filetab[fd];
-	if (fo->inode == NULL || spool_host != fo->spool_host)
+	fo = process->filetab[fd];
+	if (fo == NULL || spool_host != fo->spool_host)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	inode_close_read(fo, atime);
-	fo->inode = NULL;
-	fo->spool_host = NULL;
-	fo->flag = 0;
+	free(fo);
+	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -214,13 +210,12 @@ process_close_file_write(struct process *process, struct host *spool_host,
 
 	if (fd < 0 || fd >= process->nfiles)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-	fo = &process->filetab[fd];
-	if (fo->inode == NULL || spool_host != fo->spool_host)
+	fo = process->filetab[fd];
+	if (fo == NULL || spool_host != fo->spool_host)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	inode_close_write(fo, atime, mtime);
-	fo->inode = NULL;
-	fo->spool_host = NULL;
-	fo->flag = 0;
+	free(fo);
+	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
