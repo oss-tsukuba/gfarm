@@ -3,49 +3,52 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREG" "1" "27 November 2003" "Gfarm" ""
+.TH "GFREG" "1" "10 April 2004" "Gfarm" ""
+
 .SH NAME
 gfreg \- register a Gfarm program or Gfarm file fragments
 .SH SYNOPSIS
 
-\fBgfreg\fR [ \fB-a \fIarchitecture\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIprogram\fB\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR [ \fB-h \fIfilesystem-node\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] \fB\fIprogram\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
 
 
 \fBgfreg\fR [ \fB-D \fIdomainname\fB\fR ] \fB\fIlocalfile\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
 
 
-\fBgfreg\fR \fB-N \fItotal-num-of-fragments\fB\fR \fB-I \fIfragment-index\fB\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIlocalfile\fB\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR \fB-N \fItotal-num-of-fragments\fB\fR \fB-I \fIfragment-index\fB\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIlocalfile\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
 
 .SH "DESCRIPTION"
 .PP
 The first form copies and registers the program
 \fIprogram\fR as a Gfarm file
-\fIgfarm-URL\fR in the Gfarm filesystem.  After this
+\fIgfarm-URL\fR in the Gfarm filesystem.  When
+\fIgfarm-URL\fR is a directory, multiple programs
+can be specified.  After the
 registration, the \fIgfarm-URL\fR can be specified as
 a program name of gfrun(1) and gfmpirun_p4(1).  Without the
-\fB-a\fR option, architecture of the specified program is
+\fB-a\fR option or the \fB-h\fR option,
+architecture of the \fIprogram\fR is
 assumed to be the same architecture as the client host on that
-gfreg(1) is executed, which is obtained by the Gfarm metaserver.  The
-\fB-N\fR option specifies the number of file replicas.
-When it is omitted, one file replica is created.  The destination
-filesystem node is automatically selected among filesystem nodes of
-the same architecture.
+gfreg(1) is executed, which is obtained by the Gfarm metaserver.
 .PP
 The second form registers one or more
 \fIlocalfile\fRs as a single Gfarm file.  The
-destination filesystem node will be automatically selected by load
-average.  With the \fB-D\fR option, the filesystem node
-selection is limited in the specified domain name.
+destination filesystem node will be automatically selected by CPU load
+average.  With the \fB-D\fR option, the selection of
+filesystem nodes is limited in the specified domain name.
 .PP
 The third form registers \fIlocalfile\fR as a
 file fragment of a Gfarm file.  The total number of fragments and the
 fragment index are specified by the \fB-N\fR option and the
-\fB-I\fR option, respectively.  The destination filesystem
-node will be automatically decided by load average except that the
+\fB-I\fR option, respectively.  When
+\fIgfarm-URL\fR is a directory, multiple
+\fIlocalfile\fRs can be specified.
+The destination filesystem
+node will be automatically decided by CPU load average except that the
 \fB-h\fR option is explicitly specified.  When the gfreg
 command of this form is executed on a filesystem node, the local
-filesystem node is always selected rather than remote filesystem
-nodes.  In this case, the \fB-h\fR option helps to store
+filesystem node is always selected rather than a remote filesystem
+node.  In this case, the \fB-h\fR option helps to store
 files dispersively.
 .SH "OPTIONS"
 .TP

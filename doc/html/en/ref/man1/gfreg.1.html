@@ -38,22 +38,22 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfreg</B
-> [-a <TT
+> [-h <TT
+CLASS="REPLACEABLE"
+><I
+>filesystem-node</I
+></TT
+>] [-a <TT
 CLASS="REPLACEABLE"
 ><I
 >architecture</I
-></TT
->] [-N <TT
-CLASS="REPLACEABLE"
-><I
->num-of-replicas</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
 >program</I
 ></TT
->   <TT
+>   ...   <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
@@ -103,7 +103,7 @@ CLASS="REPLACEABLE"
 ><I
 >localfile</I
 ></TT
->   <TT
+>   ...   <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
@@ -130,7 +130,14 @@ CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
-> in the Gfarm filesystem.  After this
+> in the Gfarm filesystem.  When
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> is a directory, multiple programs
+can be specified.  After the
 registration, the <TT
 CLASS="PARAMETER"
 ><I
@@ -141,16 +148,18 @@ a program name of gfrun(1) and gfmpirun_p4(1).  Without the
 <TT
 CLASS="OPTION"
 >-a</TT
-> option, architecture of the specified program is
-assumed to be the same architecture as the client host on that
-gfreg(1) is executed, which is obtained by the Gfarm metaserver.  The
-<TT
+> option or the <TT
 CLASS="OPTION"
->-N</TT
-> option specifies the number of file replicas.
-When it is omitted, one file replica is created.  The destination
-filesystem node is automatically selected among filesystem nodes of
-the same architecture.</P
+>-h</TT
+> option,
+architecture of the <TT
+CLASS="PARAMETER"
+><I
+>program</I
+></TT
+> is
+assumed to be the same architecture as the client host on that
+gfreg(1) is executed, which is obtained by the Gfarm metaserver.</P
 ><P
 >The second form registers one or more
 <TT
@@ -159,12 +168,12 @@ CLASS="PARAMETER"
 >localfile</I
 ></TT
 >s as a single Gfarm file.  The
-destination filesystem node will be automatically selected by load
+destination filesystem node will be automatically selected by CPU load
 average.  With the <TT
 CLASS="OPTION"
 >-D</TT
-> option, the filesystem node
-selection is limited in the specified domain name.</P
+> option, the selection of
+filesystem nodes is limited in the specified domain name.</P
 ><P
 >The third form registers <TT
 CLASS="PARAMETER"
@@ -180,15 +189,28 @@ CLASS="OPTION"
 <TT
 CLASS="OPTION"
 >-I</TT
-> option, respectively.  The destination filesystem
-node will be automatically decided by load average except that the
+> option, respectively.  When
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> is a directory, multiple
+<TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+>s can be specified.
+The destination filesystem
+node will be automatically decided by CPU load average except that the
 <TT
 CLASS="OPTION"
 >-h</TT
 > option is explicitly specified.  When the gfreg
 command of this form is executed on a filesystem node, the local
-filesystem node is always selected rather than remote filesystem
-nodes.  In this case, the <TT
+filesystem node is always selected rather than a remote filesystem
+node.  In this case, the <TT
 CLASS="OPTION"
 >-h</TT
 > option helps to store
