@@ -1,10 +1,18 @@
 #!/bin/sh
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+default_sbindir = @sbindir@
+default_bindir = @bindir@
+default_libexecdir = @libexecdir@
+
+PATH=${bindir}:${PATH}; export PATH
+
 PTOOLS_BIN='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfrcmd gfreg gfsplck'
 PTOOLS_LIBEXEC='gfrepbe_client gfrepbe_server'
 
 # gfwc may not be included in a release binary
-if [ -f @prefix@/bin/gfwc ]; then
+if [ -f ${bindir}/gfwc ]; then
 	PTOOLS_BIN="$PTOOLS_BIN gfwc"
 fi
 
@@ -18,8 +26,6 @@ then
 	exit 1
 fi
 
-cd @prefix@
-
 echo Creating gfarm:/bin gfarm:/libexec ...
 if gfmkdir gfarm:/bin gfarm:/libexec; then
 	:
@@ -30,8 +36,8 @@ fi
 # force to register the commands, even if already registered,
 # because the binaries may be obsolete.
 echo Registering gfarm commands for $arch ...
-( cd bin     && gfreg -f $PTOOLS_BIN     gfarm:/bin )
-( cd libexec && gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec )
+cd ${bindir};     gfreg -f $PTOOLS_BIN     gfarm:/bin
+cd ${libexecdir}; gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec
 
 all_commands=''
 for cmd in $PTOOLS_BIN; do
