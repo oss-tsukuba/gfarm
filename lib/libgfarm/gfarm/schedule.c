@@ -15,9 +15,8 @@
 #include "host.h"
 #include "gfs_client.h"
 
-char GFARM_ERR_PANIC_NO_REPLICA_REMAINS[] = "PANIC: no replica remains";
-char GFARM_ERR_HOSTS_UNAVAILABLE[] =
-    "available hosts count is less than requested";
+char GFARM_ERR_NO_REPLICA[] = "no replica";
+char GFARM_ERR_NO_HOST[] = "no filesystem node";
 
 struct replied_host_of_search_idle {
 	char *hostname;
@@ -120,7 +119,8 @@ gfarm_schedule_search_idle_hosts(
 	e = gfarm_client_wait_all_load_results(udp_requests);		
 	if (s.nreplied_hosts == 0) {
 		/* Oh, my god */
-		return (GFARM_ERR_HOSTS_UNAVAILABLE);
+		free(s.replied_hosts);
+		return (GFARM_ERR_NO_HOST);
 	}
 
 	/* sort hosts in the order of load average */
@@ -204,7 +204,7 @@ gfarm_file_section_host_schedule(char *gfarm_file, char *section, char **hostp)
 		return (e);
 	if (ncopies == 0) {
 		gfarm_file_section_copy_info_free_all(ncopies, copies);
-		return (GFARM_ERR_PANIC_NO_REPLICA_REMAINS);
+		return (GFARM_ERR_NO_REPLICA);
 	}
 	e = gfarm_schedule_search_idle_by_section_copy_info(
 		ncopies, copies, &host);
@@ -229,7 +229,7 @@ gfarm_file_section_host_schedule_with_priority_to_local(
 		return (e);
 	if (ncopies == 0) {
 		gfarm_file_section_copy_info_free_all(ncopies, copies);
-		return (GFARM_ERR_PANIC_NO_REPLICA_REMAINS);
+		return (GFARM_ERR_NO_REPLICA);
 	}
 
 	/* choose/schedule local one, if possible */
@@ -246,8 +246,10 @@ gfarm_file_section_host_schedule_with_priority_to_local(
 	else {
 		e = gfarm_schedule_search_idle_by_section_copy_info(
 			ncopies, copies, &host);
-		if (e != NULL)
+		if (e != NULL) {
+			gfarm_file_section_copy_info_free_all(ncopies, copies);
 			return (e);
+		}
 	}
 
 	*hostp = strdup(host);
@@ -315,7 +317,7 @@ gfarm_schedule_search_idle_by_domainname(const char *domainname,
 			++domain_nhosts;
 	}
 	if (domain_nhosts == 0) {
-		e = GFARM_ERR_HOSTS_UNAVAILABLE;
+		e = GFARM_ERR_NO_HOST;
 		goto finish;
 	}
 	domain_hosts = malloc(sizeof(char *) * domain_nhosts);
