@@ -27,7 +27,7 @@
  * to promote the sale, use or other dealings in this Software without
  * prior written authorization from the Software Research Associates.
  *
- * Id: nconnect.c,v 1.19 2001/02/15 16:11:32 soda Exp 
+ * Id: nconnect.c,v 1.21 2002/09/19 06:43:57 soda Exp 
  *
  */
 
@@ -978,6 +978,7 @@ int main(argc, argv)
 		fd = socket(peer_addr.address.sa_family, socket_type, 0);
 		if (fd < 0)
 			fatal("socket");
+		apply_sockopts(fd);
 	} else {
 		Bool print_port;
 
