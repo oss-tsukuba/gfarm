@@ -18,9 +18,11 @@ usr/grid/bin/gfrsh
 usr/grid/bin/gfrshl
 usr/grid/bin/gfrun
 usr/grid/bin/gfsched
+usr/grid/bin/gfsck
 usr/grid/bin/gfsetdir
 usr/grid/bin/gfssh
 usr/grid/bin/gfsshl
+usr/grid/bin/gfstat
 usr/grid/bin/gfwhere
 usr/grid/bin/pcat
 usr/grid/bin/pcp
