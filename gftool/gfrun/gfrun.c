@@ -58,9 +58,9 @@ usage()
 {
 	fprintf(stderr,
 #ifdef HAVE_GSI
-		"Usage: %s [-gnuprv] [-l <login>]\n"
+		"Usage: %s [-gnuprvS] [-l <login>]\n"
 #else		
-		"Usage: %s [-gnupr] [-l <login>]\n"
+		"Usage: %s [-gnuprS] [-l <login>]\n"
 #endif
 		"\t[-G <Gfarm file> [ -I <section> ]|-H <hostfile>|"
 		"-N <number of hosts>]\n"
@@ -82,6 +82,7 @@ struct gfrun_options {
 	int authentication_verbose_mode;
 	int profile;
 	int replicate;
+	int deliver;
 };
 
 static void
@@ -98,39 +99,44 @@ default_gfrun_options(struct gfrun_options *options)
 	options->authentication_verbose_mode = 0;
 	options->profile = 0;
 	options->replicate = 0;
+	options->deliver = 0;
 }
 
 char *
 gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	struct gfrun_options *options,
-	int nhosts, char **hosts,
-	enum command_type cmd_type, char *cmd, char **argv)
+	int nhosts, char **hosts, char *cmd, char **argv)
 {
 	int i, save_errno, pid, status, command_alist_index;
 	gfarm_stringlist arg_list;
 	char total_nodes[GFARM_INT32STRLEN], node_index[GFARM_INT32STRLEN];
 	char **delivered_paths = NULL, *e;
-	enum command_type cmd_type_guess = USUAL_COMMAND;
+	enum command_type cmd_type_guess = USUAL_COMMAND, cmd_type;
 	char *stdout_file = options->stdout_file;
 	char *stderr_file = options->stderr_file;
 	int profile_mode = options->profile;
 	int replication_mode = options->replicate;
+	static char gfexec_command[] = "gfexec";
 
 	/*
 	 * deliver gfarm:program.
 	 */
 	if (gfarm_is_url(cmd)) {
-		e = gfarm_url_program_deliver(cmd, nhosts, hosts,
-		    &delivered_paths);
-		if (e != NULL) {
-			fprintf(stderr, "%s: deliver %s: %s\n",
-			    program_name, cmd, e);
-			return (e);
+		if (options->deliver) {
+			e = gfarm_url_program_deliver(cmd, nhosts, hosts,
+				&delivered_paths);
+			if (e != NULL) {
+				fprintf(stderr, "%s: deliver %s: %s\n",
+					program_name, cmd, e);
+				return (e);
+			}
 		}
 		cmd_type_guess = GFARM_COMMAND;
 	}
-	if (cmd_type == UNKNOWN_COMMAND)
+	if (options->cmd_type == UNKNOWN_COMMAND)
 		cmd_type = cmd_type_guess;
+	else
+		cmd_type = options->cmd_type;
 
 	sprintf(total_nodes, "%d", nhosts);
 
@@ -139,6 +145,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (rsh_options != NULL)
 		gfarm_stringlist_add_list(&arg_list, rsh_options);
+	if (options->deliver == 0)
+		gfarm_stringlist_add(&arg_list, gfexec_command);
 	command_alist_index = gfarm_stringlist_length(&arg_list);
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (cmd_type == GFARM_COMMAND) {
@@ -285,9 +293,10 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 		gfs_stat_free(&sb);
 
 		default_gfrun_options(&options);
+		options.cmd_type = GFARM_COMMAND;
 
 		e = gfrun(rsh_command, rsh_options, &options,
-		    nhosts, hosts, GFARM_COMMAND, gfsplck_cmd, gfarm_files);
+			  nhosts, hosts, gfsplck_cmd, gfarm_files);
 		if (e != NULL)
 			fprintf(stderr,
 				"%s: cannot register a stdout file: "
@@ -633,6 +642,11 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 			if (remove_option(arg, &i))
 				return (0);
 			break;
+		case 'S':
+			options->deliver = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
 		case 'o':
 			return (option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &options->stdout_file));
@@ -778,7 +792,7 @@ main(int argc, char **argv)
 	}
 
 	e_save = gfrun(rsh_command, &rsh_options, &options, nhosts, hosts,
-	    options.cmd_type, command_url, &argv[command_index + 1]);
+		       command_url, &argv[command_index + 1]);
 	if (e_save == NULL) {
 		register_stdout_stderr(
 		    options.stdout_file, options.stderr_file,
