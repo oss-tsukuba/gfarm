@@ -380,6 +380,51 @@ gfs_hook_get_gfs_canonical_path(int fd)
 }
 
 /*
+ *  Check the current working directory is included in Gfarm file system.
+ */
+static int _gfs_hook_cwd_is_gfarm = -1;
+
+int
+gfs_hook_set_cwd_is_gfarm(int c)
+{
+	return (_gfs_hook_cwd_is_gfarm = c);
+}
+
+static void
+gfs_hook_check_cwd_is_gfarm()
+{
+	char *cwd;
+	/*
+	 * Honor 'PWD', which is set by bash or tcsh with Gfarm
+	 * syscall hook library, if it points to a path in Gfarm file
+	 * system.
+	 */
+	cwd = getenv("PWD");
+	if (cwd != NULL) {
+		char *url, *sec;
+
+		if (gfs_hook_is_url(cwd, &url, &sec)) {
+			gfs_chdir(url); /* here, cwd is changed. */
+			gfs_hook_set_cwd_is_gfarm(1);
+			free(url);
+			if (sec != NULL)
+				free(sec);
+			return;
+		}
+	}
+	gfs_hook_set_cwd_is_gfarm(0);
+}
+
+int
+gfs_hook_get_cwd_is_gfarm()
+{
+	if (_gfs_hook_cwd_is_gfarm == -1)
+		gfs_hook_check_cwd_is_gfarm();
+
+	return (_gfs_hook_cwd_is_gfarm);
+}
+
+/*
  *  Check whether pathname is gfarm url or not.
  *
  *  Gfarm URL:  gfarm:[:section:]pathname
@@ -389,7 +434,6 @@ gfs_hook_get_gfs_canonical_path(int fd)
  *  if *secp is not NULL.
  */
 static char gfs_mntdir[] = "/gfarm";
-extern int gfs_hook_cwd_is_gfarm;
 static char *received_prefix = NULL;
 
 static int
@@ -454,7 +498,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	int sizeof_gfarm_prefix = sizeof(prefix);
 	int sizeof_prefix = sizeof_gfarm_prefix;
 	const char *path_save;
-	int is_mount_point = 0, remove_slash = 0;
+	int is_mount_point = 0, remove_slash = 0, add_slash = 0;
 	/*
 	 * ROOT patch:
 	 *   'gfarm@' is also considered as a Gfarm URL
@@ -493,8 +537,11 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			    && p[secsize + 1] == '/'
 			    && p[secsize + 2] == '~')
 				remove_slash = 1;
+			/* '/gfarm' will be translated to 'gfarm:/'. */
+			if (is_mount_point && path[secsize + 1] == '\0')
+				add_slash = 1;
 
-			urlsize = sizeof_gfarm_prefix - 1
+			urlsize = sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(p + secsize + remove_slash + 1);
 			*urlp = malloc(urlsize + 1);
 			*secp = malloc(secsize + 1);
@@ -506,7 +553,9 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				return (0); /* XXX - should return ENOMEM */
 			}
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
-			strcpy(*urlp + sizeof_gfarm_prefix - 1,
+			if (add_slash)
+				strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
+			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
 			       p + secsize + remove_slash + 1);
 			memcpy(*secp, p, secsize);
 			(*secp)[secsize] = '\0';
@@ -521,8 +570,12 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			    && path[sizeof_prefix - 1] == '/'
 			    && path[sizeof_prefix] == '~')
 				remove_slash = 1;
+			/* '/gfarm' will be translated to 'gfarm:/'. */
+			if (is_mount_point
+			    && path[sizeof_prefix - 1] == '\0')
+				add_slash = 1;
 
-			*urlp = malloc(sizeof_gfarm_prefix - 1
+			*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
 				       + strlen(path + sizeof_prefix
 						+ remove_slash - 1) + 1);
 			if (*urlp == NULL)
@@ -533,14 +586,16 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 * (ROOT patch)
 			 */
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
-			strcpy(*urlp + sizeof_gfarm_prefix - 1,
+			if (add_slash)
+				strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
+			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
 			    path + sizeof_prefix + remove_slash - 1);
 		}
 		if (!set_received_prefix(path_save))
 			return (0);
 		return (1);
 	}
-	if (gfs_hook_cwd_is_gfarm && *path_save != '/') {
+	if (*path_save != '/' && gfs_hook_get_cwd_is_gfarm()) {
 		*urlp = malloc(strlen(prefix) + strlen(path_save) + 1);
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */

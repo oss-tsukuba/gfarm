@@ -16,8 +16,6 @@
 
 #include <sys/syscall.h>
 
-extern int gfs_hook_cwd_is_gfarm;
-
 /*
  * The following hooks are not implemented:
  *

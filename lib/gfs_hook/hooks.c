@@ -36,8 +36,6 @@
 #include <utime.h>
 #endif
 
-int gfs_hook_cwd_is_gfarm = 0;
-
 /*
  *  XXX - quite naive implementation
  *
@@ -683,8 +681,7 @@ __chdir(const char *path)
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chdir(%s)\n", path));
 
-	gfs_hook_cwd_is_gfarm = gfs_hook_is_url(path, &url, &sec);
-	if (!gfs_hook_cwd_is_gfarm)
+	if (!gfs_hook_set_cwd_is_gfarm(gfs_hook_is_url(path, &url, &sec)))
 		return syscall(SYS_chdir, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chdir(%s)\n", path));
@@ -781,7 +778,7 @@ __getcwd(char *buf, size_t size)
 	_gfs_hook_debug_v(fprintf(stderr, 
 				  "Hooking __getcwd(%p, %d)\n", buf, size));
 
-	if (!gfs_hook_cwd_is_gfarm)
+	if (!gfs_hook_get_cwd_is_gfarm())
 		return (gfs_hook_syscall_getcwd(buf, size));
 
 	_gfs_hook_debug(fprintf(stderr,
