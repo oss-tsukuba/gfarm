@@ -9,11 +9,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-double timerval_calibration;
-
 #ifdef i386
 
 typedef unsigned long long timerval_t;
+double timerval_calibration;
 
 unsigned long long
 get_cycles(void)
@@ -45,10 +44,11 @@ timerval_calibrate(void)
 	gettimeofday(&s2, NULL);
 
 	timerval_calibration = 
-		(t2 - t1) / (
-		(s2.tv_sec - s1.tv_sec) +
-		(s2.tv_usec - s1.tv_usec) * .000001);
-	timerval_calibration = 1.0 / timerval_calibration;
+		((s2.tv_sec - s1.tv_sec) +
+		 (s2.tv_usec - s1.tv_usec) * .000001) /
+		(t2 - t1);
+
+	fprintf(stderr, "timer/sec=%g\n", 1.0 / timerval_calibration);
 }
 
 #else /* gettimeofday */
@@ -64,21 +64,21 @@ typedef struct timeval timerval_t;
 
 void
 timerval_calibrate(void)
-{
-    timerval_calibration = 1.0;
-}
+{}
 
 #endif
 
 int tm_write_write_measured = 0;
 timerval_t tm_write_open_0, tm_write_open_1;
 timerval_t tm_write_write_0, tm_write_write_1;
+timerval_t tm_write_write_all_0, tm_write_write_all_1;
 timerval_t tm_write_sync_0, tm_write_sync_1;
 timerval_t tm_write_close_0, tm_write_close_1;
 
 int tm_read_read_measured = 0;
 timerval_t tm_read_open_0, tm_read_open_1;
 timerval_t tm_read_read_0, tm_read_read_1;
+timerval_t tm_read_read_all_0, tm_read_read_all_1;
 timerval_t tm_read_close_0, tm_read_close_1;
 
 #define ARRAY_LENGTH(array)	(sizeof(array)/sizeof(array[0]))
@@ -128,6 +128,7 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 		perror(ofile);
 		exit(1);
 	}
+	gettimerval(&tm_write_write_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
 		if (!tm_write_write_measured) {
 			tm_write_write_measured = 1;
@@ -146,6 +147,7 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 		assert(rv ==
 		       (buffer_size <= residual ? buffer_size : residual));
 	}
+	gettimerval(&tm_write_write_all_1);
 	if (residual > 0) {
 		fprintf(stderr, "write test failed, residual = %ld\n",
 			(long)residual);
@@ -175,6 +177,7 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 		perror(ifile);
 		exit(1);
 	}
+	gettimerval(&tm_read_read_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
 		if (!tm_read_read_measured) {
 			tm_read_read_measured = 1;
@@ -194,6 +197,7 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 		}
 		assert(rv == buffer_size || rv == residual);
 	}
+	gettimerval(&tm_read_read_all_1);
 	if (residual > 0) {
 		fprintf(stderr, "read test failed, residual = %ld\n",
 			(long)residual);
@@ -278,11 +282,6 @@ test_title(int test_mode, off_t file_size, int flags)
 		printf(" %20s", "copy [bytes/sec]");
 	printf("\n");
 	fflush(stdout);
-
-	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0 &&
-	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0)
-		fprintf(stderr, "timer/sec=%g\n",
-			1.0 / timerval_calibration);
 }
 
 void
@@ -327,21 +326,32 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 	}
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0 &&
 	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0) {
-		fprintf(stderr, "%7d ", buffer_size);
-		if (test_mode & TESTMODE_WRITE)
-			fprintf(stderr, " %g %g %g %g",
+		if (test_mode & TESTMODE_WRITE) {
+			fprintf(stderr, "%7s %11s %11s %11s %11s %11s\n",
+			    "bufsize", "open", "write", "write all",
+			    "fsync", "close");
+			fprintf(stderr, "%7d %11g %11g %11g %11g %11g\n",
+			    buffer_size,
 			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
 			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
+			    timerval_sub(&tm_write_write_all_1,
+					 &tm_write_write_all_0),
 			    timerval_sub(&tm_write_sync_1, &tm_write_sync_0),
 			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
 			);
-		if (test_mode & TESTMODE_READ)
-			fprintf(stderr, " %g %g %g",
+		}
+		if (test_mode & TESTMODE_READ) {
+			fprintf(stderr, "%7s %11s %11s %11s %11s\n",
+			    "bufsize", "open", "read", "read all", "close");
+			fprintf(stderr, "%7d %11g %11g %11g %11g\n",
+			    buffer_size,
 			    timerval_sub(&tm_read_open_1, &tm_read_open_0),
 			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
+			    timerval_sub(&tm_read_read_all_1,
+					 &tm_read_read_all_0),
 			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
 			);
-		fprintf(stderr, "\n");
+		}
 		tm_write_write_measured = tm_read_read_measured = 0;
 	}
 }
