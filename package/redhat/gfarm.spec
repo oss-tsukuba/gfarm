@@ -231,6 +231,7 @@ fi
 /usr/share/man/ja/man3/gfs_stat.3.gz
 /usr/share/man/ja/man3/gfs_stat_free.3.gz
 /usr/share/man/ja/man3/gfs_unlink.3.gz
+/usr/share/man/ja/man5/gfarm.conf.5.gz
 /usr/share/man/ja/man8/gfmd.8.gz
 /usr/share/man/ja/man8/gfsd.8.gz
 
