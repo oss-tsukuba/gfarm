@@ -644,19 +644,14 @@ Then, create a user proxy certificate.
 
 	% grid-proxy-init
 
-** Create a working directory of each user
+** Create user's working directory in a Gfarm file system
 
-Each user has to do this procedure at first.
+Every user has to create a working directory (or a home directory) in
+a Gfarm file system, by oneself.  Moreover, it is needed whenever new
+filesystem nodes are added.  (This limitation will be removed in the
+next major release.)
 
-Or, every time when some filesystem nodes are added, each user has to
-do this again. (This limitation will be removed at the next major
-release.)
-
-	% gfmkdir gfarm:/$USER
-
-For example, if the user name is "tatebe", please do as follows:
-
-	% gfmkdir gfarm:/tatebe
+	% gfmkdir gfarm:~
 
 ** Confirmation
 
