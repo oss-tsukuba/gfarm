@@ -1,3 +1,9 @@
+gfarm (1.0b3-2) unstable; urgency=low
+
+  * gfront.jar was not in previous gfarm-gfront package 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri, 22 Aug 2003 00:14:20 +0900
+
 gfarm (1.0b3-1) unstable; urgency=low
 
   * new beta version was released 
