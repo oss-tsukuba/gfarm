@@ -532,11 +532,17 @@ fi
 %{prefix}/lib/libgfarm.so.0.0.0
 %{prefix}/lib/libgfs_hook.so.0
 %{prefix}/lib/libgfs_hook.so.0.0.0
+%{prefix}/lib/libgfs_hook_debug.so.0
+%{prefix}/lib/libgfs_hook_debug.so.0.0.0
 %{prefix}/lib/libgfs_hook_no_init.so.0
 %{prefix}/lib/libgfs_hook_no_init.so.0.0.0
+%{prefix}/lib/libgfs_hook_no_init_debug.so.0
+%{prefix}/lib/libgfs_hook_no_init_debug.so.0.0.0
 %if %{mpi}
 %{prefix}/lib/libgfs_hook_mpi.so.0
 %{prefix}/lib/libgfs_hook_mpi.so.0.0.0
+%{prefix}/lib/libgfs_hook_mpi_debug.so.0
+%{prefix}/lib/libgfs_hook_mpi_debug.so.0.0.0
 %endif
 %if %{have_ns}
 %{prefix}/lib/libns.so.0
@@ -658,16 +664,12 @@ fi
 %{prefix}/lib/libgfs_hook_debug.a
 %{prefix}/lib/libgfs_hook_debug.la
 %{prefix}/lib/libgfs_hook_debug.so
-%{prefix}/lib/libgfs_hook_debug.so.0
-%{prefix}/lib/libgfs_hook_debug.so.0.0.0
 %{prefix}/lib/libgfs_hook_no_init.a
 %{prefix}/lib/libgfs_hook_no_init.la
 %{prefix}/lib/libgfs_hook_no_init.so
 %{prefix}/lib/libgfs_hook_no_init_debug.a
 %{prefix}/lib/libgfs_hook_no_init_debug.la
 %{prefix}/lib/libgfs_hook_no_init_debug.so
-%{prefix}/lib/libgfs_hook_no_init_debug.so.0
-%{prefix}/lib/libgfs_hook_no_init_debug.so.0.0.0
 %if %{mpi}
 %{prefix}/lib/gfs_hook_mpi.o
 %{prefix}/lib/gfs_hook_mpi_debug.o
@@ -677,8 +679,6 @@ fi
 %{prefix}/lib/libgfs_hook_mpi_debug.a
 %{prefix}/lib/libgfs_hook_mpi_debug.la
 %{prefix}/lib/libgfs_hook_mpi_debug.so
-%{prefix}/lib/libgfs_hook_mpi_debug.so.0
-%{prefix}/lib/libgfs_hook_mpi_debug.so.0.0.0
 %endif
 
 
