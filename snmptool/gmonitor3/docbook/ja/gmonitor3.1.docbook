@@ -84,7 +84,7 @@ GLogger の設定で、OID に対してつけたニックネームです。
 </varlistentry>
 
 <varlistentry>
-<term><option>--line</option></term>
+<term><option>--no-line</option></term>
 <listitem>
 <para>
 グラフの線を消します。
@@ -93,7 +93,7 @@ GLogger の設定で、OID に対してつけたニックネームです。
 </varlistentry>
 
 <varlistentry>
-<term><option>--bar</option></term>
+<term><option>--no-bar</option></term>
 <listitem>
 <para>
 グラフの棒を消します。
@@ -102,7 +102,7 @@ GLogger の設定で、OID に対してつけたニックネームです。
 </varlistentry>
 
 <varlistentry>
-<term><option>--plot</option></term>
+<term><option>--no-plot</option></term>
 <listitem>
 <para>
 グラフの点を消します。
@@ -111,7 +111,7 @@ GLogger の設定で、OID に対してつけたニックネームです。
 </varlistentry>
 
 <varlistentry>
-<term><option>--information</option></term>
+<term><option>--no-information</option></term>
 <listitem>
 <para>
 Information 部分を隠します。
@@ -120,7 +120,7 @@ Information 部分を隠します。
 </varlistentry>
 
 <varlistentry>
-<term><option>--style</option></term>
+<term><option>--no-style</option></term>
 <listitem>
 <para>
 Graph Style 部分を隠します。
@@ -129,7 +129,7 @@ Graph Style 部分を隠します。
 </varlistentry>
 
 <varlistentry>
-<term><option>--unit</option></term>
+<term><option>--no-unit</option></term>
 <listitem>
 <para>
 Unit 部分を隠します。
@@ -138,7 +138,7 @@ Unit 部分を隠します。
 </varlistentry>
 
 <varlistentry>
-<term><option>--controller</option></term>
+<term><option>--no-controller</option></term>
 <listitem>
 <para>
 Controller 部分を隠します。
