@@ -3,7 +3,7 @@
 PATH=/usr/bin:/bin:/usr/ccs/bin:/opt/SUNWspro/bin:/usr/local/bin:/usr/ucb
 export PATH
 
-version=1.0.1
+version=1.0.2
 subpkgs='client devel doc fsnode gfptool server gfront'
 prefix=/usr/grid
 
