@@ -24,6 +24,8 @@
 #ifdef __NetBSD__
 #define SYS_creat SYS_compat_43_ocreat
 #define SYS_stat SYS___stat13
+#define SYS_fstat SYS___fstat13
+#define SYS_lstat SYS___lstat13
 #endif
 
 /*
