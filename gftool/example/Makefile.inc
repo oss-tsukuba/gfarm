@@ -1,1 +1,1 @@
-bindir = $(exec_prefix)/bin/example
+bindir = $(default_bindir)/example

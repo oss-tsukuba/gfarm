@@ -1,55 +1,23 @@
-all:
-	cd nslib; make $@
-	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
-		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
-		cd gfarmlib/@sysdep_dir@; make $@; \
-	fi)
-	cd gfarmlib; make $@
-	cd gfarmd; make $@
-	cd gfarm; make $@
-	cd gfsd; make $@
-	cd nstool; make $@
-	cd gftool; make $@
+top_objdir = @top_objdir@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-clean veryclean:
-	cd nslib; make $@
-	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
-		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
-		cd gfarmlib/@sysdep_dir@; make $@; \
-	fi)
-	cd gfarmlib; make $@
-	cd gfarmd; make $@
-	cd gfarm; make $@
-	cd gfsd; make $@
-	cd nstool; make $@
-	cd gftool; make $@
+SUBDIRS = \
+	include \
+	nslib \
+	`if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
+		-a -f "gfarmlib/@sysdep_dir@/Makefile"; \
+	 then echo gfarmlib/@sysdep_dir@; fi` \
+	gfarmlib \
+	gfarmd \
+	gfarm \
+	gfsd \
+	nstool \
+	gftool
 
-install:
-	cd include; make $@
-	cd nslib; make $@
-	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
-		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
-		cd gfarmlib/@sysdep_dir@; make $@; \
-	fi)
-	cd gfarmlib; make $@
-	cd gfarmd; make $@
-	cd gfarm; make $@
-	cd gfsd; make $@
-	cd nstool; make $@
-	cd gftool; make $@
+include $(top_srcdir)/makes/subdir.mk
 
-distclean:
-	cd include; make $@
-	cd nslib; make $@
-	(if test "gfarmlib/@sysdep_dir@" != "gfarmlib/" \
-		-a -f "gfarmlib/@sysdep_dir@/Makefile"; then \
-		cd gfarmlib/@sysdep_dir@; make $@; \
-	fi)
-	cd gfarmlib; make $@
-	cd gfarmd; make $@
-	cd gfarm; make $@
-	cd gfsd; make $@
-	cd nstool; make $@
-	cd gftool; make $@
+post-distclean-hook:
 	rm -f config.log config.status config.cache \
 		gfarm_config.h Makefile makes/config.mk

@@ -1,11 +1,13 @@
-all:
-	cd gfimport_fixed && make $@
-	cd gfimport_text && make $@
-	cd gfgrep && make $@
-	cd gfwc && make $@
+top_objdir = ../..
+top_srcdir = $(top_objdir)
+srcdir = .
 
-install clean veryclean distclean:
-	cd gfimport_fixed && make $@
-	cd gfimport_text && make $@
-	cd gfgrep && make $@
-	cd gfwc && make $@
+include $(top_srcdir)/makes/var.mk
+
+SUBDIRS = \
+	gfimport_fixed \
+	gfimport_text \
+	gfgrep \
+	gfwc
+
+include $(top_srcdir)/makes/subdir.mk

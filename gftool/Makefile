@@ -1,27 +1,21 @@
-all:
-	cd digest && make $@
-	cd gfexport && make $@
-	cd gfkey && make $@
-	cd gfrcmd && make $@
-	cd gfreg && make $@
-	cd gfrep && make $@
-	cd gfrm && make $@
-	cd gfsched && make $@
-	cd gfmpirun && make $@
-	cd gfrsh && make $@
-	cd gfwhere && make $@
-	cd example && make $@
+top_objdir = ..
+top_srcdir = $(top_objdir)
+srcdir = .
 
-install clean veryclean distclean:
-	cd digest && make $@
-	cd gfexport && make $@
-	cd gfkey && make $@
-	cd gfrcmd && make $@
-	cd gfreg && make $@
-	cd gfrep && make $@
-	cd gfrm && make $@
-	cd gfsched && make $@
-	cd gfmpirun && make $@
-	cd gfrsh && make $@
-	cd gfwhere && make $@
-	cd example && make $@
+include $(top_srcdir)/makes/var.mk
+
+SUBDIRS = \
+	digest \
+	gfexport \
+	gfkey \
+	gfrcmd \
+	gfreg \
+	gfrep \
+	gfrm \
+	gfsched \
+	gfmpirun \
+	gfrsh \
+	gfwhere \
+	example
+
+include $(top_srcdir)/makes/subdir.mk

@@ -1,16 +1,17 @@
 # $Id$
 
-top_srcdir = ../..
+top_objdir = ../..
+top_srcdir = $(top_objdir)
+srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
 SRCS = gfexport.c
 OBJS = gfexport.o
 PROGRAM = gfexport
-CFLAGS = -I$(top_srcdir) -I$(INCDIR) $(OPTFLAGS)
-LDLIBS = -L$(top_srcdir)/gfarmlib -lgfarm \
-	$(metadb_client_libs) $(openssl_libs) $(LIBS)
-DEPLIBS = $(top_srcdir)/gfarmlib/libgfarm.a
+CFLAGS = -I$(top_objdir) -I$(INCDIR) $(OPTFLAGS)
+LDLIBS = $(GFARMLIB) $(LIBS)
+DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)
 
@@ -18,4 +19,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(INCDIR)/gfarm.h $(INCDIR)/gfarm_error.h $(INCDIR)/gfarm_metadb.h $(INCDIR)/gfarm_misc.h $(INCDIR)/gfs.h
+$(OBJS): $(DEPGFARMINC)

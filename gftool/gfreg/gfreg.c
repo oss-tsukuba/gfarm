@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "gfarm.h"
-#include "gfarmlib/gfs_client.h" /* XXX - for gfs_canonical_my_hostname() */
+#include "gfs_client.h" /* XXX - for gfs_canonical_my_hostname() */
 
 /*
  *  Register a local file to the Gfarm Meta DB.

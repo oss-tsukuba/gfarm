@@ -1,22 +1,24 @@
+install: all prog-install post-install-hook
+clean: prog-clean post-clean-hook
+veryclean: prog-veryclean post-veryclean-hook
+distclean: prog-distclean post-distclean-hook
+
+post-install-hook:
+post-clean-hook:
+post-veryclean-hook:
+post-distclean-hook:
+
 $(PROGRAM): $(OBJS) $(DEPLIBS)
 	$(CC) -o $(PROGRAM) $(CFLAGS) $(OBJS) $(LDLIBS)
 
-install-program:
-	if [ ! -d $(bindir) ]; then \
-		mkdir -p $(bindir); \
-	fi
-	cp -p $(PROGRAM) $(bindir)
+prog-install:
+	$(INSTALL_PROGRAM) $(PROGRAM) $(bindir)/$(PROGRAM)
 
-install: all pre-install-hook install-program post-install-hook
-
-clean:
+prog-clean:
 	-rm -f $(OBJS) $(EXTRA_CLEAN_TARGETS)
 
-veryclean: clean
+prog-veryclean: clean
 	-rm -f $(PROGRAM) $(EXTRA_VERYCLEAN_TARGETS)
 
-distclean: veryclean
-	if [ -f Makefile.in ]; then rm -f Makefile; fi
-
-pre-install-hook:
-post-install-hook:
+prog-distclean: veryclean
+	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi

@@ -1,9 +1,16 @@
+top_objdir = @top_objdir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
 exec_includedir = @exec_includedir@
+# save default for reference from where installation directory is overridden.
+default_bindir = @bindir@
+default_libdir = @libdir@
+default_includedir = @includedir@
+default_exec_includedir = @exec_includedir@
+
 SYSTEM = @SYSTEM@
 
 CC = @CC@
@@ -12,6 +19,9 @@ LEX = @LEX@
 LEXLIB = @LEXLIB@
 YACC = @YACC@
 RANLIB = @RANLIB@
+INSTALL = ${top_srcdir}/install-sh -c # "@INSTALL@" doesn't work
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
 
 LIBS = @LIBS@
 
