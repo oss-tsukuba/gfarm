@@ -59,14 +59,21 @@ void
 gfs_client_terminate(void)
 {
 	struct gfarm_hash_iterator it;
+	struct gfs_connection *gfs_server;
 
 	if (gfs_server_hashtab == NULL)
 		return;
 	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
-		gfs_client_disconnect(gfarm_hash_entry_data(
-		    gfarm_hash_iterator_access(&it)));
+		gfs_server = gfarm_hash_entry_data(
+		    gfarm_hash_iterator_access(&it));
+		/*
+		 * We cannot use gfs_client_disconnect() here,
+		 * because gfs_server->hostname and gfs_server aren't
+		 * malloc'ed.
+		 */
+		xxx_connection_free(gfs_server->conn);
 	}
 	gfarm_hash_table_free(gfs_server_hashtab);
 	gfs_server_hashtab = NULL;
