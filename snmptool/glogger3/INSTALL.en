@@ -14,7 +14,8 @@ package.  It is tested on Linux and FreeBSD.
   $ make
   $ make install
 
-'glogger' and 'glogdump' will be installed in $(prefix)/bin.
+'glogger', 'glogdump', 'glogd' and 'glogd-func' will be installed
+ in $(prefix)/bin.
 
 *** Configuration file
 

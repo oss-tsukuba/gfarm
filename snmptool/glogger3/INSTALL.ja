@@ -4,6 +4,7 @@ GLogger 3.0
 * インストール方法
 * snmpd の設定、起動の例
 * デーモン起動方法
+* glogdump コマンドについて
 
 ----------------------------------------------------------------------------
 * インストール方法
@@ -19,10 +20,11 @@ Linux と FreeBSD 環境でのみ動作確認しています。
   $ make
   $ make install
 
-glogger と glogdump コマンドが $(prefix)/bin にインストールされます。
+glogger, glogdump コマンドと、起動スクリプトの glogd, glogd-func が $(prefix)/bin
+にインストールされます。
 $(prefix)/man にマニュアルがインストールされます。
 
-sample.conf を参考に設定ファイルを記述し、確認します。
+sample.conf と glogger.conf のマニュアルを参考に設定ファイルを記述し、確認します。
 
   $ glogger -checkconf -config [設定ファイル]
 
@@ -37,6 +39,12 @@ configure には以下のオプションを指定できます。
   
   インストール先のディレクトリを指定します。このオプションを省略した場
   合は /usr/local ディレクトリの下にインストールします。
+  このオプションは省略可能です。
+
+・--with-confdir=ディレクトリ
+
+  glogger の設定ファイルを置くディレクトリを指定します。このオプションを省略した場
+  合は /etc/glogger ディレクトリの下に設定ファイルを置きます。
   このオプションは省略可能です。
 
 ・--enable-printtime
@@ -89,7 +97,10 @@ SNMPv1 と SNMPv2c によるアクセスを許可し、/raid ディレクトリがあるパー
 * デーモン起動方法
 
 glogd ファイルを参考に起動スクリプトを作成します。
-例えば Red Hat Linux ならば /etc/init.d/glogd へ配置します。
+例えば Red Hat Linux ならば /etc/init.d 以下へ配置します。
+設定ファイルは、glogger の設定ファイルを置くディレクトリに、
+「起動スクリプトと同じ名前.conf」を作成します。
+glogd という名前で起動スクリプトを作成するならば、glogd.conf を作成します。
 
 マシン起動時に GLogger が起動するようにする例
 # /sbin/chkconfig --add glogd
@@ -103,5 +114,9 @@ glogd ファイルを参考に起動スクリプトを作成します。
 再起動する場合
 # /etc/init.d/glogd restart
 
-強制起動する場合(PIDファイルが残っている場合)
-# /etc/init.d/glogd forcestart
+----------------------------------------------------------------------------
+* glogdump コマンドについて
+
+glogdump は glogger が出力したログファイルを、テキスト形式で読めるように変換します。
+
+$ glogdump [glogger output file] | more

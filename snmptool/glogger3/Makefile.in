@@ -29,7 +29,7 @@ LIBGLOG	= libglogger
 LIBSRCS	= read_glogger_conf.c snmpasync.c expand_node_name.c prepare_files.c \
 	write_to_files.c set_options.c
 
-BINS	= $(GLOGGER) $(DUMPLOG)
+BINS	= $(GLOGGER) $(DUMPLOG) glogd glogd-func
 SRCS	= $(GLOGGER).c $(DUMPLOG).c $(LIBSRCS)
 HEADS	= $(GLOGGER).h expand_node_name.h
 OBJS	= $(SRCS:.c=.o)
@@ -37,7 +37,7 @@ LIBOBJS	= $(LIBSRCS:.c=.o)
 
 FILES	= INSTALL.en INSTALL.ja Makefile.in config.mk.in \
         install-sh $(HEADS) $(SRCS) sample.conf glogd.in avg1.pl avg2.pl \
-	configure configure.in setsnmp_configure
+	configure configure.in setsnmp_configure glogd-func
 DOCS	= docbook/Makefile \
 	docbook/en/{Makefile,docdir.mk} \
 	docbook/ja/{Makefile.in,docdir.mk,*.{5,8}{,.docbook,.html}}
@@ -61,7 +61,6 @@ CPPFLAGS= -I$(srcdir) @CPPFLAGS@
 # commands
 SHELL	= /bin/sh
 RM	= rm -f
-PROF	= gprof
 AR	= ar
 
 ### rules ###
@@ -89,6 +88,7 @@ install: $(BINS)
             case $$i in /) continue;; esac; \
             ( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
         done
+	$(INSTALL_DATA) sample.conf $(sysconfdir)/sample.conf
 	(cd docbook; $(MAKE) install)
 
 clean:
@@ -110,6 +110,3 @@ tar:
 	cp --parents $(FILES) $(DOCS) `cat .package`
 	tar cvf - `cat .package` | gzip -9 > `cat .package`.tar.gz
 	@$(RM) -r `cat .package` .package
-
-prof: run
-	$(PROF) $(PACKAGE) | less
