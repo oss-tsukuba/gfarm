@@ -65,7 +65,8 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 char *
 gfs_rmdir(const char *pathname)
 {
-	char *canonic_path, *e;
+	char *canonic_path, *e, *e_tmp;
+	int need_uncachedir = 0;
 	struct gfarm_path_info pi;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
@@ -78,37 +79,39 @@ gfs_rmdir(const char *pathname)
 		return (e);
 
 	e = gfarm_path_info_get(canonic_path, &pi);
-	if (e != NULL) {
-		free(canonic_path);
-		return (e);
-	}
+	if (e != NULL)
+		goto error_free_canonic_path;
+
 	if (!GFARM_S_ISDIR(pi.status.st_mode)) {
-		free(canonic_path);
 		gfarm_path_info_free(&pi);
-		return (GFARM_ERR_NOT_A_DIRECTORY);
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+		goto error_free_canonic_path;
 	}
 	gfarm_path_info_free(&pi);
 
 	e = gfs_opendir(pathname, &dir);
-	if (e != NULL) {
-		free(canonic_path);
-		return (e);
-	}
+	if (e != NULL)
+		goto error_free_canonic_path;
 	e = gfs_readdir(dir, &entry);
-	if (e != NULL) {
-		free(canonic_path);
-		return (e);
-	}
+	if (e != NULL)
+		goto error_closedir;
 	if (entry != NULL) {
-		free(canonic_path);
-		return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
+		e = GFARM_ERR_DIRECTORY_NOT_EMPTY;
+		goto error_closedir;
 	}
-
 	e = gfarm_path_info_remove(canonic_path);
+	if (e == NULL)
+		need_uncachedir = 1;
+
+ error_closedir:
+	e_tmp = gfs_closedir(dir);
+	if (e == NULL)
+		e = e_tmp;
+	/* gfs_uncachedir() needs to be called after gfs_closedir() */
+	if (need_uncachedir)
+		gfs_uncachedir();
+ error_free_canonic_path:
 	free(canonic_path);
-
-	gfs_uncachedir();
-
 	return (e);
 }
 
