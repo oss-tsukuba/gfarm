@@ -283,8 +283,9 @@ int
 gfs_hook_is_url(const char *path, char **urlp, char **secp)
 {
 	static char prefix[] = "gfarm:";
+	int sizeof_prefix = sizeof(prefix);
 	const char *path_save;
-	int abs_path = 0;
+	int add_slash = 0;
 
 	/*
 	 * ROOT patch:
@@ -304,7 +305,7 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	path_save = path;
 	if (*path == '/') {
 		++path;
-		abs_path = 1;
+		add_slash = 1;
 	}
 	if (gfarm_is_url(path) ||
 	    /* ROOT patch */
@@ -320,15 +321,20 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 		 * extension for accessing individual sections
 		 *   gfarm::section:pathname
 		 */
-		if (path[sizeof(prefix) - 1] == ':') {
-			const char *p = path + sizeof(prefix);
+		if (path[sizeof_prefix - 1] == ':') {
+			const char *p = path + sizeof_prefix;
 			int secsize = strcspn(p, "/:");
 			int urlsize;
 
 			if (p[secsize] != ':')
 				return (0); /* gfarm::foo/:bar or gfarm::foo */
-			urlsize = sizeof(prefix) - 1 + strlen(p + secsize + 1);
-			*urlp = malloc(urlsize + 1 + abs_path);
+
+			/* 'path' is an absolute path. */
+			if (p[secsize + 1] == '/' || p[secsize + 1] == '~')
+				add_slash = 0;
+
+			urlsize = sizeof_prefix - 1 + strlen(p + secsize + 1);
+			*urlp = malloc(urlsize + 1 + add_slash);
 			*secp = malloc(secsize + 1);
 			if (*urlp == NULL || *secp == NULL) {
 				if (*urlp != NULL)
@@ -337,10 +343,10 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 					free(*secp);
 				return (0); /* XXX - should return ENOMEM */
 			}
-			memcpy(*urlp, prefix, sizeof(prefix) - 1);
-			if (abs_path)
-				(*urlp)[sizeof(prefix) - 1] = '/';
-			strcpy(*urlp + sizeof(prefix) - 1 + abs_path,
+			memcpy(*urlp, prefix, sizeof_prefix - 1);
+			if (add_slash)
+				(*urlp)[sizeof_prefix - 1] = '/';
+			strcpy(*urlp + sizeof_prefix - 1 + add_slash,
 			       p + secsize + 1);
 			memcpy(*secp, p, secsize);
 			(*secp)[secsize] = '\0';
@@ -350,7 +356,12 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 */
 		}
 		else {
-			*urlp = malloc(strlen(path) + 1 + abs_path);
+			/* 'path' is an absolute path. */
+			if (path[sizeof_prefix - 1] == '/' || 
+			    path[sizeof_prefix - 1] == '~')
+				add_slash = 0;
+
+			*urlp = malloc(strlen(path) + 1 + add_slash);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
 			/*
@@ -358,11 +369,11 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			 * is because the path may be "gfarm@path/name".
 			 * (ROOT patch)
 			 */
-			memcpy(*urlp, prefix, sizeof(prefix) - 1);
-			if (abs_path)
-				(*urlp)[sizeof(prefix) - 1] = '/';
-			strcpy(*urlp + sizeof(prefix) - 1 + abs_path,
-			    path + sizeof(prefix) - 1);
+			memcpy(*urlp, prefix, sizeof_prefix - 1);
+			if (add_slash)
+				(*urlp)[sizeof_prefix - 1] = '/';
+			strcpy(*urlp + sizeof_prefix - 1 + add_slash,
+			    path + sizeof_prefix - 1);
 		}
 		if (!set_received_prefix(path_save))
 			return (0);
@@ -372,8 +383,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 		*urlp = malloc(strlen(prefix) + strlen(path_save) + 1);
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
-		memcpy(*urlp, prefix, sizeof(prefix) - 1);
-		strcpy(*urlp + sizeof(prefix) - 1, path_save);
+		memcpy(*urlp, prefix, sizeof_prefix - 1);
+		strcpy(*urlp + sizeof_prefix - 1, path_save);
 		return (1);
 	}
 	return (0);
