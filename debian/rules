@@ -145,10 +145,10 @@ gfarm-client: build
 #	cp gftool/gfreplicate/gfreplicate debian/gfarm-client/usr/bin	
 #	cp debian/tmp/bin/gfrsh       debian/gfarm-client/usr/bin	
 	cp gftool/gfsched/gfsched   debian/gfarm-client/usr/bin	
-	cp gftool/example/gfgrep/gfgrep   debian/gfarm-client/usr/bin	
+	cp gfptool/gfgrep/gfgrep   debian/gfarm-client/usr/bin	
 	cp gftool/example/gfimport_fixed/gfimport_fixed   debian/gfarm-client/usr/bin	
 	cp gftool/example/gfimport_text/gfimport_text     debian/gfarm-client/usr/bin	
-#	cp gftool/example/gfwc/gfwc                       debian/gfarm-client/usr/bin	
+#	cp gfptool/gfwc/gfwc                       debian/gfarm-client/usr/bin	
 # 	
 #	dh_installmanpages -pgfarm-client
 	dh_installchangelogs -pgfarm-client 

@@ -1,7 +1,9 @@
 include $(top_objdir)/makes/config.mk
 
 ja_mandir = $(default_mandir)/ja
-example_bindir = $(default_bindir)/example
+
+# example_bindir = $(default_bindir)/example
+example_bindir = $(default_bindir)
 
 RM = rm
 

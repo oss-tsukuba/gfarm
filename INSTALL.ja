@@ -105,7 +105,8 @@ Gfarm ソフトウェアは、大きく下記の項目に分類されます。
   Gfarm アプリケーションのサンプルプログラムとして、MPI 並列プログラム
   gfwc および、並列プログラム gfgrep を用意しました。
 
-  これらのサンプルプログラムは、gftool/example の下にあります。
+  これらのサンプルプログラムは、gftool/example/ および gfptool/ の下に
+  あります。
 
 ========================================================================
 
@@ -658,7 +659,7 @@ gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
 
   gfgrep プログラムを、gfarm:gfgrep という名称で gfarm に登録します。
 
-	% gfreg /usr/local/gfarm/bin/example/gfgrep gfarm:gfgrep
+	% gfreg /usr/local/gfarm/bin/gfgrep gfarm:gfgrep
 
   実行してみましょう。
 
@@ -673,7 +674,7 @@ gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
 
   gfwc プログラムを、gfarm:gfwc という名称で gfarm に登録します。
 
-	% gfreg /usr/local/gfarm/bin/example/gfwc gfarm:gfwc
+	% gfreg /usr/local/gfarm/bin/gfwc gfarm:gfwc
 
   実行してみましょう。
 
