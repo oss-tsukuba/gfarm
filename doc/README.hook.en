@@ -28,13 +28,8 @@ Or, with the Globus GSI library of the flavor gcc32,
 
 	% gcc -static prog.c -I/usr/grid/include/gcc32 -L/usr/grid/lib \
 		/usr/grid/lib/gfs_hook.o -lgfarm \
-		-lglobus_gssapi_gsi_gcc32 -lglobus_gsi_callback_gcc32 \
-		-lglobus_gsi_cert_utils_gcc32 -lglobus_gsi_proxy_core_gcc32 \
-		-lglobus_gsi_credential_gcc32 -lglobus_gsi_sysconfig_gcc32 \
-		-lldap_gcc32pthr -llber_gcc32pthr \
-		-lglobus_common_gcc32 -lglobus_oldgaa_gcc32 \
-		-lglobus_openssl_gcc32 -lglobus_openssl_error_gcc32 \
-		-lglobus_proxy_ssl_gcc32 -lssl_gcc32 -lcrypto_gcc32 -lsasl -ldl
+		`globus-make-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'`\
+		-lldap -llber -lsasl -ldl
 
 After linking with gfs_hook.o, it is possible to access Gfarm files
 via Gfarm URL like gfarm:foo.
@@ -48,13 +43,9 @@ int
 main(int argc, char *argv[])
 {
     ...
-
     gfarm_initialize(&argc, &argv);
-
     ...
-
     gfarm_terminate();
-
     exit(0);
 }
 
@@ -64,6 +55,27 @@ For newly created files, the default file view is a local file view.
 For existent files, if the number of processes and the number of file
 fragments are the same, the default file view is a local file view,
 otherwise, the default view is a global view.
+
+** C++ program
+
+There are three hints for C++ programs.
+
+1. include <gfarm/gfarm.h> enclosed with extern "C".
+
+extern "C" {
+#include <gfarm/gfarm.h>
+}
+
+2. add :: before the function name.
+
+    char *e;
+    e = ::gfarm_initialize(&argc, &argv);
+    if (e != NULL) {
+        cerr << "gfarm_initialize: " << e;
+        exit(1);
+    }
+
+3. don't call ::gfarm_terminate().
 
 ** MPI application
 
