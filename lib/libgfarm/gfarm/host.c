@@ -290,80 +290,105 @@ gfarm_host_address_use(struct gfarm_hostspec *hsp)
 	return (NULL);
 }
 
-char *
-gfarm_host_address_get_matched(char *name, struct gfarm_hostspec *hostspec,
-	struct sockaddr *peer_addr)
+static char *
+host_address_get(const char *name, int port,
+	struct sockaddr *peer_addr, char **if_hostnamep)
 {
 	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
 	struct sockaddr_in *peer_addr_in = (struct sockaddr_in *)peer_addr;
 	struct hostent *hp = gethostbyname(name);
+	char *n;
+
+	if (hp == NULL || hp->h_addrtype != AF_INET)
+		return (GFARM_ERR_UNKNOWN_HOST);
+	if (if_hostnamep != NULL) {
+		n = strdup(name); /* XXX - or strdup(hp->h_name)? */
+		if (n == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		*if_hostnamep = n;
+	}
+	memset(peer_addr_in, 0, sizeof(*peer_addr_in));
+	peer_addr_in->sin_port = htons(port);
+	peer_addr_in->sin_family = hp->h_addrtype;
+	memcpy(&peer_addr_in->sin_addr, hp->h_addr,
+	    sizeof(peer_addr_in->sin_addr));
+	return (NULL);
+}
+
+static char *
+host_address_get_matched(char *name, int port,
+	struct gfarm_hostspec *hostspec,
+	struct sockaddr *peer_addr, char **if_hostnamep)
+{
+	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
+	struct sockaddr_in *peer_addr_in = (struct sockaddr_in *)peer_addr;
+	struct hostent *hp = gethostbyname(name);
+	char *n;
 	int i;
 
 	if (hp == NULL || hp->h_addrtype != AF_INET)
 		return (GFARM_ERR_UNKNOWN_HOST);
+	memset(peer_addr_in, 0, sizeof(*peer_addr_in));
+	peer_addr_in->sin_port = htons(port);
 	peer_addr_in->sin_family = hp->h_addrtype;
 	for (i = 0; hp->h_addr_list[i] != NULL; i++) {
 		memcpy(&peer_addr_in->sin_addr, hp->h_addr_list[i],
 		    sizeof(peer_addr_in->sin_addr));
-		if (gfarm_hostspec_match(hostspec, name, peer_addr))
+		if (gfarm_hostspec_match(hostspec, name, peer_addr)) {
+			if (if_hostnamep != NULL) {
+				/* XXX - or strdup(hp->h_name)? */
+				n = strdup(name); 
+				if (n == NULL)
+					return (GFARM_ERR_NO_MEMORY);
+				*if_hostnamep = n;
+			}
 			return (NULL);
+		}
 	}
 	return (GFARM_ERR_NO_SUCH_OBJECT);
+}
+
+char *
+gfarm_host_info_address_get(const char *host, int port,
+	struct gfarm_host_info *info,
+	struct sockaddr *peer_addr, char **if_hostnamep)
+{
+	int i;
+	char *n;
+
+	if (gfarm_host_address_use_config_list != NULL && info != NULL) {
+		struct gfarm_host_address_use_config *config;
+
+		for (config = gfarm_host_address_use_config_list;
+		    config != NULL; config = config->next) {
+			for (i = 0, n = info->hostname; n != NULL;
+			    n = i < info->nhostaliases ?
+			    info->hostaliases[i++] : NULL) {
+				if (host_address_get_matched(n, port,
+				    config->hostspec,
+				    peer_addr, if_hostnamep) == NULL) {
+					return (NULL);
+				}
+			}
+		}
+	}
+	return (host_address_get(host, port, peer_addr, if_hostnamep));
 }
 
 char *
 gfarm_host_address_get(const char *host, int port,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {
-	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
-	struct sockaddr_in *peer_addr_in = (struct sockaddr_in *)peer_addr;
-	struct hostent *hp;
-
+	char *e;
 	struct gfarm_host_info info;
-	char *n;
-
-	memset(peer_addr_in, 0, sizeof(*peer_addr_in));
-	peer_addr_in->sin_port = htons(port);
 
 	if (gfarm_host_address_use_config_list != NULL &&
 	    gfarm_host_info_get_by_if_hostname(host, &info) == NULL) {
-		struct gfarm_host_address_use_config *config;
-		int i;
-
-		for (config = gfarm_host_address_use_config_list;
-		    config != NULL; config = config->next) {
-			for (i = 0, n = info.hostname; n != NULL;
-			    n = i < info.nhostaliases ?
-			    info.hostaliases[i++] : NULL) {
-				if (gfarm_host_address_get_matched(n, 
-				    config->hostspec, peer_addr) != NULL)
-					continue;
-				if (if_hostnamep != NULL) {
-					n = strdup(n);
-					if (n == NULL) {
-						gfarm_host_info_free(&info);
-						return (GFARM_ERR_NO_MEMORY);
-					}
-					*if_hostnamep = n;
-				}
-				gfarm_host_info_free(&info);
-				return (NULL);
-			}
-		}
+		e = gfarm_host_info_address_get(host, port, &info,
+		    peer_addr, if_hostnamep);
 		gfarm_host_info_free(&info);
+		return (e);
 	}
 
-	hp = gethostbyname(host);
-	if (hp == NULL || hp->h_addrtype != AF_INET)
-		return (GFARM_ERR_UNKNOWN_HOST);
-	peer_addr_in->sin_family = hp->h_addrtype;
-	memcpy(&peer_addr_in->sin_addr, hp->h_addr,
-	    sizeof(peer_addr_in->sin_addr));
-	if (if_hostnamep != NULL) {
-		n = strdup(host); /* XXX - or strdup(hp->h_name)? */
-		if (n == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		*if_hostnamep = n;
-	}
-	return (NULL);
+	return (host_address_get(host, port, peer_addr, if_hostnamep));
 }
