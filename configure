@@ -22,7 +22,7 @@ ac_help="$ac_help
 				[default=disable]"
 ac_help="$ac_help
   --with-globus-flavor=FLAVOR	globus flavor name
-				[default=gcc32dbg]"
+				[default=gcc32]"
 ac_help="$ac_help
   --with-globus=globus_root	globus root directory
 				[default=disable]"
@@ -1869,7 +1869,7 @@ if test "${with_globus_flavor+set}" = set; then
   globus_flavor="${withval}"
 
 else
-  globus_flavor=gcc32dbg
+  globus_flavor=gcc32
 
 fi
 
