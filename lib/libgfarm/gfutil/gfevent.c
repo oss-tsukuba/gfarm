@@ -252,7 +252,8 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 	/* enqueue - insert at the tail of the circular list */
 	ev->next = &q->header;
 	ev->prev = q->header.prev;
-	q->header.prev->next = q->header.prev = ev;
+	q->header.prev->next = ev;
+	q->header.prev = ev;
 	return (0);
 }
 
