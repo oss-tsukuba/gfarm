@@ -10,13 +10,20 @@
 char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
-	char *path;
+	char *path, *default_cwd = NULL;
 	int len;
 	
 	if ((path = getenv("GFS_PWD")) != NULL)
 		path = gfarm_url_prefix_skip(path);
-	else
-		path = gfarm_get_global_username();
+	else { /* default case, use user's home directory */
+		char *e;
+
+		e = gfarm_path_expand_home("~", &default_cwd);
+		if (e != NULL)
+			return (e);
+		path = default_cwd;
+	}
+
 	len = strlen(path);
 	if (len < cwdsize) {
 		strcpy(cwd, path);
@@ -24,6 +31,10 @@ gfs_getcwd(char *cwd, int cwdsize)
 		memcpy(cwd, path, cwdsize - 1);
 		cwd[cwdsize - 1] = '\0';
 	}
+
+	if (default_cwd != NULL)
+		free(default_cwd);
+
 	return (NULL);
 }
 

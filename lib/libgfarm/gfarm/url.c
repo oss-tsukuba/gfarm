@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
+#include <limits.h>
 #include <assert.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
@@ -50,7 +51,7 @@ char GFARM_URL_PREFIX[] = "gfarm:";
  * Expand '~'.  Currently, '~/...' or '~username/...' is transformed
  * to '/username/...'.
  */
-static char *
+char *
 gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 {
 	char *s, *user;
@@ -122,10 +123,15 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 
 		return (e);
 	}
+	/* '' or 'gfarm:' case */
+	if (gfarm_file[0] == '\0') {
+		char cwd[PATH_MAX + 1];
 
-	if (gfarm_file[0] == '\0')
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-
+		e = gfs_getcwd(cwd, sizeof(cwd));
+		if (e != NULL)
+			return (e);
+		return (gfarm_canonical_path_for_creation(cwd, canonic_pathp));
+	}
 	/* Eliminate unnecessary '/'s following the basename. */
 	lastc = ini_lastc = &gfarm_file[strlen(gfarm_file) - 1];
 	while (gfarm_file < lastc && *lastc == '/')
@@ -422,4 +428,3 @@ gfarm_url_make_localized_file_fragment_path(char *gfarm_url, int index,
 	return (e);
 }
 #endif
-

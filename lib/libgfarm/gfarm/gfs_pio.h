@@ -115,3 +115,7 @@ extern double gfs_unlink_time;
 extern double gfs_stat_time;
 
 void gfs_display_timers();
+
+/* url.c */
+char *gfarm_path_expand_home(const char *_file, char **);
+
