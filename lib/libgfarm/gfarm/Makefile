@@ -64,11 +64,11 @@ gfs_lock.lo:
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_pio.h
-gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
+gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_lock.h
 gfs_proto.lo: gfs_proto.h
-gfs_unlink.lo: config.h gfs_client.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
+gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 glob.lo:
 host.lo: hostspec.h host.h
 hostspec.lo: hostspec.h

@@ -19,6 +19,7 @@
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
 #include "gfs_client.h"
 #include "gfs_pio.h"
+#include "gfs_misc.h" /* gfs_unlink_replica_internal() */
 #include "schedule.h"
 #include "timer.h"
 #include "gfutil.h"
@@ -1087,47 +1088,36 @@ gfarm_replication_set_method(int method)
 	gfarm_replication_method = method;
 }
 
-/*
- * `srchost' must already reflect "address_use" directive.
- */
 static char *
-gfarm_file_section_replicate_from_to_internal(
+gfarm_file_section_transfer_from_to_internal(
 	char *gfarm_file, char *section,
 	gfarm_mode_t mode, file_offset_t file_size,
 	char *src_canonical_hostname, char *src_if_hostname,
-	char *dsthost)
+	char *dst_canonical_hostname)
 {
 	char *e, *path_section;
 	struct gfarm_file_section_copy_info ci;
 	struct gfs_connection *gfs_server;
 	struct sockaddr peer_addr;
 
-	e = gfarm_host_get_canonical_name(dsthost, &ci.hostname);
-	if (e != NULL)
-		goto finish;
-	if (gfarm_file_section_copy_info_does_exist(gfarm_file, section,
-	    ci.hostname)) /* already exists, don't have to replicate */
-		goto finish_hostname;
-
-	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD) {
-		e = gfarm_file_section_replicate_from_to_by_gfrepbe(
+	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD)
+		return (gfarm_file_section_replicate_from_to_by_gfrepbe(
 		    gfarm_file, section,
-		    src_canonical_hostname, ci.hostname);
-		goto finish_hostname;
-	}
+		    src_canonical_hostname, dst_canonical_hostname));
 
 	e = gfarm_path_section(gfarm_file, section, &path_section);
 	if (e != NULL)
-		goto finish_hostname;
+		return (e);
 
-	e = gfarm_host_address_get(dsthost, gfarm_spool_server_port,
-	    &peer_addr, NULL);
+	e = gfarm_host_address_get(dst_canonical_hostname,
+	    gfarm_spool_server_port, &peer_addr, NULL);
 	if (e != NULL)
-		goto finish_path_section;
+		goto finish;
 
-	e = gfs_client_connect(ci.hostname, &peer_addr, &gfs_server);
+	e = gfs_client_connect(dst_canonical_hostname, &peer_addr,
+	    &gfs_server);
 	if (e != NULL)
-		goto finish_path_section;
+		goto finish;
 	e = gfs_client_bootstrap_replicate_file(gfs_server,
 	    path_section, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
@@ -1152,22 +1142,73 @@ gfarm_file_section_replicate_from_to_internal(
 #endif
 	gfs_client_disconnect(gfs_server);
 	if (e != NULL)
-		goto finish_path_section;
+		goto finish;
 	e = gfarm_file_section_copy_info_set(gfarm_file, section,
-	    ci.hostname, &ci);
+	    dst_canonical_hostname, &ci);
 
-finish_path_section:
-	free(path_section);
-finish_hostname:
-	free(ci.hostname);
 finish:
+	free(path_section);
 	return (e);
 }
 
 static char *
-gfarm_file_section_replicate_to_internal(char *gfarm_file, char *section,
+gfarm_file_section_replicate_from_to_internal(
+	char *gfarm_file, char *section,
 	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
 	char *dsthost)
+{
+	char *e, *dst_canonical_hostname;
+
+	e = gfarm_host_get_canonical_name(dsthost, &dst_canonical_hostname);
+	if (e != NULL)
+		return (e);
+	/* already exists? don't have to replicate in that case */
+	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
+	    dst_canonical_hostname)) {
+		e = gfarm_file_section_transfer_from_to_internal(
+		    gfarm_file, section, mode, file_size,
+		    src_canonical_hostname, src_if_hostname,
+		    dst_canonical_hostname);
+	}
+	free(dst_canonical_hostname);
+	return (e);
+}
+
+static char *
+gfarm_file_section_migrate_from_to_internal(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char *dsthost)
+{
+	char *e, *dst_canonical_hostname;
+
+	e = gfarm_host_get_canonical_name(dsthost, &dst_canonical_hostname);
+	if (e != NULL)
+		return (e);
+	/* already exists? don't have to replicate in that case */
+	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
+	    dst_canonical_hostname)) {
+		e = gfarm_file_section_transfer_from_to_internal(
+		    gfarm_file, section, mode, file_size,
+		    src_canonical_hostname, src_if_hostname,
+		    dst_canonical_hostname);
+		if (e == NULL) {
+			e = gfs_unlink_replica_internal(
+			    gfarm_file, section, src_canonical_hostname);
+		}
+	}
+	free(dst_canonical_hostname);
+	return (e);
+}
+
+static char *
+gfarm_file_section_transfer_to_internal(char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *srchost, *if_hostname;
 	struct sockaddr peer_addr;
@@ -1182,9 +1223,8 @@ gfarm_file_section_replicate_to_internal(char *gfarm_file, char *section,
 	if (e != NULL)
 		goto finish_srchost;
 
-	e = gfarm_file_section_replicate_from_to_internal(
-	    gfarm_file, section, mode & GFARM_S_ALLPERM, file_size,
-	    srchost, if_hostname, dsthost);
+	e = (*transfer_from_to_internal)(gfarm_file, section,
+	    mode & GFARM_S_ALLPERM, file_size, srchost, if_hostname, dsthost);
 
 	free(if_hostname);
 finish_srchost:
@@ -1193,9 +1233,22 @@ finish:
 	return (e);
 }
 
-char *
-gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
-	char *srchost, char *dsthost)
+static char *
+gfarm_file_section_replicate_to_internal(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *dsthost)
+{
+	return (gfarm_file_section_transfer_to_internal(gfarm_file, section,
+	    mode, file_size, dsthost,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+static char *
+gfarm_url_section_transfer_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file, *canonical_hostname, *if_hostname;
 	struct sockaddr peer_addr;
@@ -1234,8 +1287,7 @@ gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 		mode_allowed = 022;
 		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
-	e = gfarm_file_section_replicate_from_to_internal(
-	    gfarm_file, section,
+	e = (*transfer_from_to_internal)(gfarm_file, section,
 	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
 finish_if_hostname:
@@ -1253,8 +1305,26 @@ finish:
 }
 
 char *
-gfarm_url_section_replicate_to(
-	const char *gfarm_url, char *section, char *dsthost)
+gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost)
+{
+	return (gfarm_url_section_transfer_from_to(gfarm_url, section,
+	    srchost, dsthost, gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_section_migrate_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost)
+{
+	return (gfarm_url_section_transfer_from_to(gfarm_url, section,
+	    srchost, dsthost, gfarm_file_section_migrate_from_to_internal));
+}
+
+static char *
+gfarm_url_section_transfer_to(
+	const char *gfarm_url, char *section, char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
@@ -1282,10 +1352,9 @@ gfarm_url_section_replicate_to(
 		mode_allowed = 022;
 		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
-	e = gfarm_file_section_replicate_to_internal(
-	    gfarm_file, section,
+	e = gfarm_file_section_transfer_to_internal(gfarm_file, section,
 	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
-	    dsthost);
+	    dsthost, transfer_from_to_internal);
 
 	gfarm_file_section_info_free(&si);
 finish_path_info:
@@ -1294,6 +1363,22 @@ finish_gfarm_file:
 	free(gfarm_file);
 finish:
 	return (e);
+}
+
+char *
+gfarm_url_section_replicate_to(
+	const char *gfarm_url, char *section, char *dsthost)
+{
+	return (gfarm_url_section_transfer_to(gfarm_url, section, dsthost,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_section_migrate_to(
+	const char *gfarm_url, char *section, char *dsthost)
+{
+	return (gfarm_url_section_transfer_to(gfarm_url, section, dsthost,
+	    gfarm_file_section_migrate_from_to_internal));
 }
 
 char *
@@ -1568,9 +1653,11 @@ error:
 	return (e);
 }
 
-char *
-gfarm_url_fragments_replicate(
-	const char *gfarm_url, int ndsthosts, char **dsthosts)
+static char *
+gfarm_url_fragments_transfer(
+	const char *gfarm_url, int ndsthosts, char **dsthosts,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file, **srchosts, **edsthosts;
 	int nsrchosts;
@@ -1670,7 +1757,7 @@ gfarm_url_fragments_replicate(
 		if (e != NULL)
 			_exit(3);
 
-		e = gfarm_file_section_replicate_from_to_internal(
+		e = (*transfer_from_to_internal)(
 		    gfarm_file, section_string,
 		    mode & mode_mask, si.filesize,
 		    srchosts[i], if_hostname, edsthosts[i]);
@@ -1712,8 +1799,26 @@ gfarm_url_fragments_replicate(
 }
 
 char *
-gfarm_url_fragments_replicate_to_domainname(
-	const char *gfarm_url, const char *domainname)
+gfarm_url_fragments_replicate(
+	const char *gfarm_url, int ndsthosts, char **dsthosts)
+{
+	return (gfarm_url_fragments_transfer(gfarm_url, ndsthosts, dsthosts,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_migrate(
+	const char *gfarm_url, int ndsthosts, char **dsthosts)
+{
+	return (gfarm_url_fragments_transfer(gfarm_url, ndsthosts, dsthosts,
+	    gfarm_file_section_migrate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_transfer_to_domainname(
+	const char *gfarm_url, const char *domainname,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, **dsthosts;
 	int nfrags;
@@ -1731,7 +1836,8 @@ gfarm_url_fragments_replicate_to_domainname(
 	if (e != NULL)
 		goto free_dsthosts;
 
-	e = gfarm_url_fragments_replicate(gfarm_url, nfrags, dsthosts);
+	e = gfarm_url_fragments_transfer(gfarm_url, nfrags, dsthosts,
+	    transfer_from_to_internal);
 
 	while (--nfrags >= 0)
 		free(dsthosts[nfrags]);
@@ -1739,4 +1845,22 @@ gfarm_url_fragments_replicate_to_domainname(
 	free(dsthosts);
 
 	return (e);
+}
+
+char *
+gfarm_url_fragments_replicate_to_domainname(
+	const char *gfarm_url, const char *domainname)
+{
+	return (gfarm_url_fragments_transfer_to_domainname(
+	    gfarm_url, domainname,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_migrate_to_domainname(
+	const char *gfarm_url, const char *domainname)
+{
+	return (gfarm_url_fragments_transfer_to_domainname(
+	    gfarm_url, domainname,
+	    gfarm_file_section_migrate_from_to_internal));
 }

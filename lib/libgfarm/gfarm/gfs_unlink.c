@@ -12,9 +12,10 @@
 #include "config.h"
 #include "gfs_client.h"
 #include "gfs_pio.h"	/* gfs_profile */
+#include "gfs_misc.h"	/* gfs_unlink_replica_internal() */
 #include "timer.h"
 
-static char *
+char *
 gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	const char *hostname)
 {
