@@ -311,7 +311,7 @@ main(int argc, char *argv[])
 
 	/*  Command options  */
 
-	while ((c = getopt(argc, argv, "a:fh:D:I:N:?")) != -1) {
+	while ((c = getopt(argc, argv, "a:fh:D:I:H:N:?")) != -1) {
 		switch (c) {
 		case 'I':
 		case 'a':
