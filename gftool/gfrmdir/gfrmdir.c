@@ -28,8 +28,17 @@ char *
 gfrmdir(struct gfs_connection *gfs_server, void *args)
 {
 	struct args *a = args;
+	char *e = gfs_client_rmdir(gfs_server, a->path);
 
-	return (gfs_client_rmdir(gfs_server, a->path));
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/*
+		 * We don't treat this as error to remove path_info in MetaDB
+		 */
+		fprintf(stderr, "%s on %s: %s\n", program_name,
+		    gfs_client_hostname(gfs_server), e);
+		return (NULL);
+	}
+	return (e);
 }
 
 int
