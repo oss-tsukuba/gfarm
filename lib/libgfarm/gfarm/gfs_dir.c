@@ -89,21 +89,28 @@ gfs_rmdir(const char *pathname)
 	gfarm_path_info_free(&pi);
 
 	e = gfs_opendir(pathname, &dir);
-	if (e != NULL)
-		goto error_free_canonic_path;
-	e = gfs_readdir(dir, &entry);
-	if (e != NULL)
-		goto error_closedir;
-	if (entry != NULL) {
-		e = GFARM_ERR_DIRECTORY_NOT_EMPTY;
-		goto error_closedir;
-	}
-	e = gfarm_path_info_remove(canonic_path);
+	if (e == NULL) {
+		while ((e = gfs_readdir(dir, &entry)) == NULL) {
+			if (entry == NULL) {
+				/* OK, remove the directory */
+				e = gfarm_path_info_remove(canonic_path);
+				break;
+			}
+			if ((entry->d_namlen == 1 &&
+			     entry->d_name[0] == '.') ||
+			    (entry->d_namlen == 2 &&
+			     entry->d_name[0] == '.' &&
+			     entry->d_name[1] == '.'))
+				continue;
+			/* Not OK */
+			e = GFARM_ERR_DIRECTORY_NOT_EMPTY;
+			break;
+		}
 
- error_closedir:
-	e_tmp = gfs_closedir(dir);
-	if (e == NULL)
-		e = e_tmp;
+		e_tmp = gfs_closedir(dir);
+		if (e == NULL)
+			e = e_tmp;
+	}
  error_free_canonic_path:
 	free(canonic_path);
 	return (e);
