@@ -4,8 +4,8 @@
 
 #include <unistd.h>
 #include <mpi.h>
-#include <gfarm.h>
-#Include "hooks_subr.h"
+#include <gfarm/gfarm.h>
+#include "hooks_subr.h"
 
 char *
 gfs_hook_initialize(void)

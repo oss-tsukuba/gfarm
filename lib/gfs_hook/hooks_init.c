@@ -3,7 +3,7 @@
  */
 
 #include <unistd.h>
-#include <gfarm.h>
+#include <gfarm/gfarm.h>
 #include "hooks_subr.h"
 
 char *
