@@ -142,9 +142,10 @@ gfs_chdir_canonical(const char *canonic_dir)
 	tmp = getenv("GFS_PWD");
 	if (tmp != NULL && tmp != env + sizeof(env_name) - 1) {
 		/* changed by an application instead of this func */
-		env = tmp; /* probably already free()ed */
-		env_len = strlen(tmp) + 1;
-		/* XXX It's unsure whether realloc() is ok or not */
+		/* probably already free()ed.  In this case realloc
+		 * does not work well at least using bash.  allocate again. */
+		env = NULL;
+		env_len = 0;
 	}
 	if (env_len < len) {
 		tmp = realloc(env, len);
