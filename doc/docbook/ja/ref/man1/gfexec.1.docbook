@@ -1,0 +1,34 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfexec.1'>
+
+<refentryinfo><date>12 Nov 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfexec</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfexec</refname>
+<refpurpose>Gfarm ファイルシステムのプログラムを実行する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfexec</command>
+	<arg choice='plan'><replaceable>プログラム名</replaceable></arg>
+	<arg choice='opt' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>Gfarm ファイルシステムのプログラムを実行します．本コマンドはファ
+イルシステムノード上で実行する必要があります．</para>
+
+</refsect1>
+</refentry>
