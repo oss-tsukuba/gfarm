@@ -38,6 +38,9 @@ clean:
 
 distclean: clean
 
+# don't install anything
+install:
+
 gfregister:
 man:
 html:
