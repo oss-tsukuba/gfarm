@@ -155,9 +155,9 @@ gfarmAuthInitialize(usermapFile)
 	    if (strcmp(mode, "@user@") == 0) {
 		pPtr = getpwnam(localName);
 		if (pPtr == NULL) {
-		    gflog_warning(localName,
-				  "WARNING: Account doesn't exist."
-				  " Ignored.\n");
+		    gflog_auth_warning(localName,
+				       "WARNING: Account doesn't exist."
+				       " Ignored.\n");
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
