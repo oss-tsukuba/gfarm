@@ -10,8 +10,52 @@
 
 char *program_name = "gfwhere";
 
-char *
-where_is_section_copy(char *gfarm_url)
+static char *
+display_replica_catalog(char *gfarm_url);
+
+static char *
+display_replica_catalog_section(char *gfarm_url, char *section)
+{
+	char *gfarm_file, *e;
+	int j, ncopies;
+	struct gfarm_file_section_copy_info *copies;
+	struct gfs_stat st;
+
+	if (section == NULL)
+		return (display_replica_catalog(gfarm_url));
+
+	e = gfs_stat(gfarm_url, &st);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", gfarm_url, e);
+		return (e);
+	}
+	gfs_stat_free(&st);
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", gfarm_url, e);
+		return (e);
+	}
+	e = gfarm_file_section_copy_info_get_all_by_section(
+		gfarm_file, section, &ncopies, &copies);
+	if (e != NULL) {
+		fprintf(stderr, "%s\n", e);
+		free(gfarm_file);
+		return (e);
+	}
+	j = 0;
+	printf("%s", copies[j].hostname);
+	for (++j; j < ncopies; ++j)
+		printf(" %s", copies[j].hostname);
+	printf("\n");
+	gfarm_file_section_copy_info_free_all(ncopies, copies);
+	free(gfarm_file);
+
+	return (NULL);
+}
+
+static char *
+display_replica_catalog(char *gfarm_url)
 {
 	char *gfarm_file, *e, *e_save = NULL;
 	int i, j, nsections;
@@ -76,7 +120,8 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\tcurrently no option is supported.\n");
+	fprintf(stderr, "\t-I <fragment>\t"
+		"display filesystem nodes specified by <fragment>\n");
 	exit(1);
 }
 
@@ -87,14 +132,17 @@ main(int argc, char **argv)
 	extern int optind;
 	int argc_save = argc;
 	char **argv_save = argv;
-	char *e;
+	char *e, *section = NULL;
 	int i, ch, error = 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "rf")) != -1) {
+	while ((ch = getopt(argc, argv, "I:")) != -1) {
 		switch (ch) {
+		case 'I':
+			section = optarg;
+			break;
 		case '?':
 		default:
 			usage();
@@ -115,7 +163,7 @@ main(int argc, char **argv)
 	for (i = 0; i < argc; i++) {
 		if (argc > 1)
 			printf("%s:\n", argv[i]);
-		if (where_is_section_copy(argv[i]) != NULL)
+		if (display_replica_catalog_section(argv[i], section) != NULL)
 			error = 1;
 		if (argc > 1 && i < argc - 1)
 			printf("\n");
