@@ -33,6 +33,7 @@ main(argc, argv)
 	int ch, nhosts = 0;
 	char **hosttab;
 	gfarm_stringlist host_list;
+	int o_force = 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -53,6 +54,9 @@ main(argc, argv)
 				exit(1);
 			}
 			++nhosts;
+			break;
+		case 'f':
+			o_force = 1;
 			break;
 		case 'I':
 			section = optarg;
@@ -99,7 +103,7 @@ main(argc, argv)
 			for (j = 0; j < nhosts; j++) {
 				for (i = 0; i < argc; i++) {
 					e = gfs_unlink_replicas_on_host(
-						argv[i], hosttab[j]);
+						argv[i], hosttab[j], o_force);
 					if (e != NULL)
 						fprintf(stderr, "%s: %s\n",
 							argv[i], e);
@@ -120,7 +124,7 @@ main(argc, argv)
 
 		for (i = 0; i < argc; i++) {
 			e = gfs_unlink_section_replica(argv[i], section,
-				nhosts, hosttab);
+				nhosts, hosttab, o_force);
 			if (e != NULL)
 				fprintf(stderr, "%s: %s\n", argv[i], e);
 		}
