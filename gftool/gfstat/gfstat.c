@@ -99,12 +99,16 @@ main(int argc, char *argv[])
 			continue;
 		}
 		e = gfarm_url_fragment_number(url, &nfrags);
-		if (e != NULL) {
+		if (e == GFARM_ERR_OPERATION_NOT_PERMITTED)
+			nfrags = 1;
+		else if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", url, e);
 			r = 1;
+			gfs_stat_free(&st);
+			free(url);
+			continue;
 		}
-		else
-			display_stat(url, &st, nfrags);
+		display_stat(url, &st, nfrags);
 
 		gfs_stat_free(&st);
 		free(url);
