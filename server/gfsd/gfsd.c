@@ -476,7 +476,7 @@ gfs_server_digest(struct xxx_connection *client)
 	file_offset_t filesize;
 	EVP_MD_CTX md_ctx;
 	const EVP_MD *md_type;
-	unsigned int digest_length;
+	size_t digest_length;
 	unsigned char digest_value[EVP_MAX_MD_SIZE];
 	char buffer[GFS_PROTO_MAX_IOSIZE];
 
@@ -498,7 +498,7 @@ gfs_server_digest(struct xxx_connection *client)
 
 	gfs_server_put_reply(client, "digest",
 	    gfs_errno_to_proto_error(save_errno),
-	    "bo", (size_t)digest_length, digest_value, filesize);
+	    "bo", digest_length, digest_value, filesize);
 }
 
 void

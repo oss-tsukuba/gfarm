@@ -206,11 +206,12 @@ gfs_open_flags_localize(int open_flags)
 int
 gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 	const EVP_MD *md_type, EVP_MD_CTX *md_ctx,
-	unsigned int *md_lenp, unsigned char *md_value,
+	size_t *md_lenp, unsigned char *md_value,
 	file_offset_t *filesizep)
 {
 	int size;
 	file_offset_t off = 0;
+	unsigned int len;
 
 	if (lseek(fd, (off_t)0, 0) == -1)
 		return (errno);
@@ -220,8 +221,9 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 		EVP_DigestUpdate(md_ctx, buffer, size);
 		off += size;
 	}
-	EVP_DigestFinal(md_ctx, md_value, md_lenp);
+	EVP_DigestFinal(md_ctx, md_value, &len);
 
+	*md_lenp = len;
 	*filesizep = off;
 	return (size == -1 ? errno : 0);
 }

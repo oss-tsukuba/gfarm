@@ -926,7 +926,7 @@ gfs_rename(const char *from_url, const char *to_url)
 
 static char *
 digest_calculate(char *filename,
-		 char **digest_type, char *digest_string, unsigned *md_len_p,
+		 char **digest_type, char *digest_string, size_t *md_len_p,
 		 file_offset_t *filesizep)
 {
 	int fd, i, rv;
@@ -964,7 +964,7 @@ gfs_pio_set_fragment_info_local(char *filename,
 {
 	char *digest_type;
 	char digest_value_string[EVP_MAX_MD_SIZE * 2 + 1];
-	unsigned int digest_len;
+	size_t digest_len;
 	file_offset_t filesize;
 	char *e = NULL;
 	struct gfarm_file_section_info fi;
