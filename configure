@@ -462,7 +462,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL ldap_includes ldap_libs openssl_includes openssl_libs globus_shared globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL ldap_includes ldap_libs openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1037,7 +1037,7 @@ Optional Packages:
 				[default=guessed]
   --with-openssl=OpenSSL_ROOT	openssl root directory
 				[default=/usr]
-  --with-globus-shared		link globus shared library instead of static library
+  --with-globus-static		link static version of globus libraries instead of shared version
 				[default=disable]
   --with-globus-flavor=FLAVOR	globus flavor name
 				[default=guessed]
@@ -18227,16 +18227,15 @@ fi
 ###
 
 
-# Check whether --with-globus_shared or --without-globus_shared was given.
-if test "${with_globus_shared+set}" = set; then
-  withval="$with_globus_shared"
-  globus_shared="${withval}"
+# Check whether --with-globus_static or --without-globus_static was given.
+if test "${with_globus_static+set}" = set; then
+  withval="$with_globus_static"
+  globus_static="${withval}"
 
 else
-  globus_shared=""
+  globus_static=""
 
 fi;
-
 
 
 
@@ -18316,9 +18315,9 @@ echo "${ECHO_T}found in \"${globus_location}\" with \"${globus_flavor}\" flavor"
  cfgmhtmp=/tmp/cfgmh$$
  echo "$as_me:$LINENO: checking globus library names" >&5
 echo $ECHO_N "checking globus library names... $ECHO_C" >&6
- if	case ${globus_shared} in
-	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
-	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
+ if	case ${globus_static} in
+	yes)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header -static -flavor=${globus_flavor} globus_gssapi_gsi;;
+	*)	env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-makefile-header         -flavor=${globus_flavor} globus_gssapi_gsi;;
 	esac > $cfgmhtmp
  then
 	echo "$as_me:$LINENO: result: done" >&5
@@ -18331,8 +18330,9 @@ echo "$as_me: error: failed to call globus-makefile-header, aborted" >&2;}
  fi
  globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
  rm -f $cfgmhtmp
- case ${globus_shared} in
- yes)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
+ case ${globus_static} in
+ yes)	:;;
+ *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
  esac
 
  # for conditional compilation which depends on whether globus is enabled or not
@@ -18342,13 +18342,13 @@ echo "$as_me: error: failed to call globus-makefile-header, aborted" >&2;}
  globus_targets='$(GLOBUS_TARGETS)'
 
  openssl_includes='$(globus_includes)'
- case ${globus_shared} in
- yes)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
-	echo "$as_me:$LINENO: result: using globus shared library: yes" >&5
-echo "${ECHO_T}using globus shared library: yes" >&6;;
- *)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
+ case ${globus_static} in
+ yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
 	echo "$as_me:$LINENO: result: using globus shared library: no" >&5
 echo "${ECHO_T}using globus shared library: no" >&6;;
+ *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
+	echo "$as_me:$LINENO: result: using globus shared library: yes" >&5
+echo "${ECHO_T}using globus shared library: yes" >&6;;
  esac
 
 
@@ -21421,7 +21421,6 @@ s,@ldap_includes@,$ldap_includes,;t t
 s,@ldap_libs@,$ldap_libs,;t t
 s,@openssl_includes@,$openssl_includes,;t t
 s,@openssl_libs@,$openssl_libs,;t t
-s,@globus_shared@,$globus_shared,;t t
 s,@globus_flavor@,$globus_flavor,;t t
 s,@globus_location@,$globus_location,;t t
 s,@globus_includes@,$globus_includes,;t t
