@@ -66,7 +66,7 @@ map_user(char *from, char **to_p,
 {
 	FILE *map = NULL;
 	char *mapfile = NULL;
-	int i, list_len;
+	int i, list_len, mapfile_mapped_index;
 	char buffer[1024], *g_user, *l_user, *mapped, *e;
 	int lineno = 0;
 	static char fmt_open_error[] = "%s: %s";
@@ -76,6 +76,7 @@ map_user(char *from, char **to_p,
 	e = NULL;
 	*to_p = NULL;
 	list_len = gfarm_stringlist_length(&local_user_map_file_list);
+	mapfile_mapped_index = list_len;
 	for (i = 0; i < list_len; i++) {
 		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
@@ -116,15 +117,19 @@ map_user(char *from, char **to_p,
 			mapped = (*mapping)(from, g_user, l_user);
 			if (mapped != NULL) {
 				if (*to_p != NULL &&
-				    strcmp(mapped, *to_p) != 0) {
+				    strcmp(mapped, *to_p) != 0 &&
+				    i == mapfile_mapped_index) {
 					e = error_redefined;
 					goto finish;
 				}
-				*to_p = strdup(mapped);
 				if (*to_p == NULL) {
-					e = GFARM_ERR_NO_MEMORY;
-					goto finish;
+					*to_p = strdup(mapped);
+					if (*to_p == NULL) {
+						e = GFARM_ERR_NO_MEMORY;
+						goto finish;
+					}
 				}
+				mapfile_mapped_index = i;
 			}
 			if (gfarm_strtoken(&bp, &e) != NULL) {
 				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
@@ -133,7 +138,7 @@ map_user(char *from, char **to_p,
 		}
 		fclose(map);
 		map = NULL;
-	}	
+	}
 	if (*to_p == NULL) { /* not found */
 	 	*to_p = strdup(from);
 		if (*to_p == NULL)
@@ -143,6 +148,8 @@ finish:
 	if (map != NULL)
 		fclose(map);
 	if (e != NULL) {
+		if (*to_p != NULL)	 
+			free(*to_p);
 #ifdef HAVE_SNPRINTF
 		snprintf(error, sizeof(error), fmt_config_error,
 		    mapfile, lineno, e);
