@@ -118,6 +118,28 @@ main(argc, argv)
 		} else if (domainname != NULL) {
 			e = gfarm_url_fragments_replicate_to_domainname(
 				gfarm_url, domainname);
+		} else if (dest != NULL) {
+			/*
+			 * Special case for replicating a Gfarm file
+			 * having only one fragment
+			 */
+			int nfrags;
+
+			e = gfarm_url_fragment_number(gfarm_url, &nfrags);
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n", gfarm_url, e);
+				exit(1);
+			}
+			if (nfrags != 1)
+				usage();
+
+			index = "0";  /* assume -I 0 */
+			if (src == NULL)
+				e = gfarm_url_section_replicate_to(
+					gfarm_url, index, dest);
+			else
+				e = gfarm_url_section_replicate_from_to(
+					gfarm_url, index, src, dest);
 		} else
 			usage();
 	}
