@@ -31,12 +31,12 @@ in Solaris.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD=/usr/lib/gfs_preload.so
+	$ LD_PRELOAD=/usr/lib/libgfs_hook.so.0
 	$ export LD_PRELOAD
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD /usr/lib/gfs_preload.so
+	% setenv LD_PRELOAD /usr/lib/libgfs_hook.so.0
 
 You can specify the above in the shell rc file such as .bashrc and
 .cshrc.  However, tcsh is not tested well at this time.  We recommend
@@ -52,7 +52,7 @@ Now, you can change the current working directory to /gfarm.
 
 	% cd /gfarm
 
-For MPI applications, it is necessary to generate gfs_preload.so for
+For MPI applications, it is necessary to generate libgfs_hook.so for
 MPI library in your environment, or follow a section of either
 'Running existing programs by linking with syscall-hooking library' or
 'Running existing programs by statically linking with syscall-hooking
