@@ -24,6 +24,7 @@ usr/grid/bin/gfssh
 usr/grid/bin/gfsshl
 usr/grid/bin/gfstat
 usr/grid/bin/gfwhere
+usr/grid/bin/gfwhoami
 usr/grid/bin/pcat
 usr/grid/bin/pcp
 usr/grid/bin/pdel
