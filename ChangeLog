@@ -1,4 +1,569 @@
-2003-02-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-04-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfsl/server.c: make unreachable statements "#if 0"
+
+	* lib/libgfsl/Makefile: define GLOBUS_BUG unconditionally for now
+
+	* lib/libgfsl/gsi.c: use "#if GLOBUS_BUG" to make the workaround clear.
+
+2003-04-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/gsi.c (gfarmGssAcceptSecurityContext):
+	Removed the GSS_C_DELEG_FLAG check since it is not set using the Globus GSSAPI library, although this violates the RFC 2744.
+
+2003-04-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfsl/auth.c, lib/libgfsl/session.c, gfarmlib/Makefile.in, gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.c, gfarmlib/io_gfsl.h:
+	fix gcc warnings
+
+	* gfarmlib/schedule.c: - change indentation
+	- plug some memory leaks on error case
+	- make gfarm_url_hosts_schedule() use gfarm_file_section_host_schedule()
+	  internally
+
+	* gfarmlib/auth_server_gsi.c:
+	fix a bug that `global_username' was erroneously freed.
+	this is same fix with auth_server.c revision 1.12 by tatebe-san.
+
+2003-04-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_pio_section.c:
+	gfs_pio_set_view-section(): changed calling sequence of gfarm_schedule_search_
+	idle_by_all()
+
+	* gfarmlib/schedule.c, gfarmlib/schedule.h, gftool/gfrun/gfrun.c:
+	added -N <proc_num> option to gfrun.
+	programs run on top <proc_num> lightest hosts in load average.
+
+2003-04-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_server.c:
+	try to simplify gfarm_authorize_simple() implementation.
+	the behavior of log_set_auxiliary_info() is changed in this commit,
+	it is now revoked always if error happens.
+	(before this change, it wasn't revoked at error, if switch_to was true.)
+
+	* gfarmlib/Makefile.in, lib/gfs_hook/Makefile.in, lib/libgfsl/Makefile:
+	always make ${prefix}/lib directory automatically
+
+	* configure: regen
+
+	* configure.in: forgot to specify -p for mkdir
+
+2003-04-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_server.c (gfarm_authorize_simple):
+	Take care the non switch_to and successful authorization case.
+
+2003-04-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/gfarm_config.h:
+	undef USE_GLOBUS.  This enables the confidentiality feature such that each message will be encrypted.  The perforance impact needs to be investigated
+
+	* gfarmlib/auth_server.c (gfarm_authorize_simple):
+	Do not switch the user ID before simple authorization method, since it is necessary to switch back to the original user ID when it fails.
+	This fixed a problem such that the gsi authentication always fails after the sharedsecret authentication.
+
+2003-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* Makefile.in: forgot to remove $(top_objdir)/gfarm/gfarm_config.h
+
+	* Makefile.in, configure, configure.in, gfarm/Makefile, gfarmd/Makefile.in, gfptool/gfcombine_hook/Makefile, gfptool/gfcp_hook/Makefile, include/Makefile.in, lib/gfs_hook/Makefile.in, lib/gfs_hook/sysdep/linux/Makefile.in, makes/html.mk, makes/man.mk, makes/subdir.mk, makes/var.mk, nslib/Makefile.in, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_lstat.c, nstool/file/ns_mkdir.c, nstool/file/ns_put.c, nstool/file/ns_readdir.c, nstool/file/ns_readlink.c, nstool/file/ns_rename.c, nstool/file/ns_stat.c, nstool/file/ns_symlink.c, nstool/file/ns_unlink.c, nstool/file/ns_unlink_dir.c, nstool/file/put.c, nstool/file/stat.c:
+	make "./configure --srcdir=XXX" work again.
+	the way to handle <gfarm/gfarm_config.h> and <gfarm/con.h> is messy, though.
+	(these are now put in $(top_objdir)/gfarm, rather than $(top_srcdir)/include.
+	 probably best way is to change include directory name from include to gfarm.)
+
+	* nslib/nsexec.c: change #include "*.h" to #include <gfarm/*.h>
+
+	* gfarmlib/glob.c: 1 byte memory was wasted in previous change
+
+	* gfarmlib/gfs_dir.c, gfarmlib/glob.c, gfarmlib/url.c, gftool/gfls/gfls.c, include/gfarm_misc.h:
+	revise previous change.
+	in this version:
+	- gfarm_url_prefix_skip() is now pure function.
+	  it returns the result as the function-return-value.
+	- gfarm_url_basename() is now renamed to gfarm_path_dir_skip(),
+	  and now it doesn't take gfarm_url as its argument.
+	  i.e. gfarm_path_dir_skip() is portable version of traditional basename(3),
+	  rather than XPG basename(3).
+
+	* gftool/gfls/gfls.c:
+	fix bug that "gfls -l gfarm:" doesn't work, problem pointed out by naotaka-san
+
+	* include/gfarm_misc.h:
+	- rename GFARM_PREFIX{,_LENGTH} to GFARM_URL_PREFIX{,_LENGTH},
+	  and make GFARM_URL_PREFIX_LENGTH == strlen(GFARM_URL_PREFIX).
+	  this is more natural, and eliminates a lot of artificial "+1".
+	- rename gfarm_prefix_skip() to gfarm_url_prefix_skip()
+	- export gfarm_url_basename()
+
+	* gfarmlib/gfs_dir.c, gfarmlib/glob.c, gfarmlib/url.c:
+	- rename GFARM_PREFIX{,_LENGTH} to GFARM_URL_PREFIX{,_LENGTH},
+	  and make GFARM_URL_PREFIX_LENGTH == strlen(GFARM_URL_PREFIX).
+	  this is more natural, and eliminates a lot of artificial "+1".
+	- rename gfarm_prefix_skip() to gfarm_url_prefix_skip()
+	- split gfarm_basename() into gfarm_url_basename() and
+	  gfarm_url_remove_suffix(),
+	  and make gfarm_url_basename() not use XPG basename(3)
+
+	* lib/gfs_hook/Makefile.in:
+	use current directory for object file rather than /tmp
+
+2003-04-09  takamiya  <takamiya@smg.is.titech.ac.jp>
+
+	* debian/changelog: new cvs upstream version (20030409).
+
+	* debian/copyright: updated uri of cvs server.
+
+	* debian/control: new cvs upstream version (20030409).
+
+	new packages: gfarmd, gfmd
+	renamed packages: gfarm-fsnode -> gfsd
+
+	* debian/gfarm-doc.docs: removed #DOCS# line.
+
+	* debian/gfarm-pool.conffiles, debian/gfarm-pool.init, debian/gfarm-pool.postinst, debian/gfarm-doc.files, debian/gfarm-fsnode.conffiles, debian/gfarm-fsnode.install, debian/gfarm-client.dirs, debian/gfarm-doc.dirs, debian/gfarm-fsnode.dirs, debian/gfarm-server.dirs, debian/libgfarm-dev.dirs:
+	removed.
+
+	* debian/files, debian/gfarm-client.files, debian/gfarm-client.install, debian/gfarm-fsnode.install, debian/gfarm.files, debian/gfarmd.files, debian/gfarmd.init, debian/gfarmd.postinst, debian/gfmd.files, debian/gfmd.init, debian/gfmd.postinst, debian/gfsd.files, debian/gfsd.init, debian/libgfarm-dev.files:
+	added.
+
+	* debian/rules:
+	moved to DH_COMPAT=2 and rearranged obsolete make targets
+	(gfarm-fsnode and so on.)
+
+2003-04-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: correct return type of gfs_hook_syscall_lseek()
+
+2003-04-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/lseek64.c:
+	fix a problem to hook llseek/lseek64 on Solaris
+
+	* man/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_open.3, doc/html/ja/ref/man3/gfs_pio_open.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html:
+	regen
+
+	* doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook:
+	correct typo ("lags" -> "flags") reported by YAMAMOTO Naotaka-san
+
+2003-04-08  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* doc/conf/gfarm.conf: sample gfarm.conf
+
+2003-04-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/hostspec.c, gftool/gfhost/gfhost.c:
+	fix "char *" vs "unsigned char *" mismatch that SUNWspro5.0 warns.
+
+	* lib/gfs_hook/Makefile.in:
+	fix a bug that debugging object (*.do) cannot be built with non-gcc compilers,
+	because non-gcc only supports "*.o" as the extension of an object file.
+
+	* configure: regen
+
+	* configure.in: do not add "-I/usr/include" to cc options.
+	to suppress the following gcc-3.2 warning on redhat-8.0:
+	cc1: warning: changing search order for system directory "/usr/include"
+	cc1: warning:   as it has already been specified as a non-system directory
+
+	* gftool/gfhost/gfhost.c, gfarmlib/config.c: suppress gcc-3.2 warning
+
+	* gfarmlib/gfs_client.h: suppress gcc warnings on NetBSD-1.6
+
+	* gfarm/cmd.l, gfarmd/gfd_cmd.l, gfarmlib/auth_server.c, gfarmlib/gfs_pio.c, gfarmlib/logutil.h, gfsd/main.c, gftool/gfls/gfls.c, gftool/gfreg/gfreg.c:
+	suppress gcc warnings on vine-2.5
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/sysdep/linux/Makefile.in, lib/gfs_hook/sysdep/linux/fxstat.c, lib/gfs_hook/sysdep/linux/fxstat64.c, lib/gfs_hook/sysdep/linux/lxstat.c, lib/gfs_hook/sysdep/linux/lxstat64.c, lib/gfs_hook/sysdep/linux/xstat.c, lib/gfs_hook/sysdep/linux/xstat64.c:
+	fix gcc warnings
+
+2003-04-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarm_config.h.in, gfarmlib/xxx_proto.c:
+	revise floating point part of the fix to negative file_offset_t problem.
+	with this fix,
+	- the significant figure has one more bit (53bit total) with ieee double.
+	- more portable, because this version doesn't depend on any constant of
+	  floating point representation.
+	- approximately correct result up to 63bit.
+
+2003-04-04  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/README.Debian, debian/changelog, debian/control, debian/gfarm-client.dirs, debian/gfarm-doc.dirs, debian/gfarm-fsnode.conffiles, debian/gfarm-fsnode.dirs, debian/gfarm-server.dirs, debian/libgfarm-dev.dirs, debian/rules:
+	We can build debian packages,
+	but these are not complete.
+
+2003-04-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfreg/gfreg.c: Plugged a memory leak.
+
+	* gftool/gfreg/gfreg.c:
+	Fixed a segfault problem when registering a new file.
+
+2003-04-04  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* doc/conf/gfarm.schema: for ldap schema file
+
+2003-04-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfreg/gfreg.c:
+	Added the -f option to register a file even if it is already registered and will be overwritten.
+	Without the -f option, check the existence at first.
+
+	* gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_section.c, gfarmlib/gfs_unlink.c (gfs_pio_set_view_section):
+	When creating a file or opening with a trancation flag, delete all file fragments in the section at first.
+
+	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	Added a const modifier for some functions.
+
+2003-04-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarm_config.h.in, gfarmlib/xxx_proto.c:
+	use (nearly full) 53bit range for floating-point file_offset_t,
+	rather than 43bit.
+
+	* gfarm_config.h.in, gfarmlib/xxx_proto.c:
+	slightly modified fix for the following problem:
+	> Fixed a critical bug such that a negative value cannot be sent as a
+	> offset datatype.
+	> When this fix is applied, every library and daemon should be
+	> re-built and re-started.
+
+	differences are:
+	- retain old on-wire data representation.
+	- make this work with floating-point file_offset_t.
+
+2003-04-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/xxx_proto.c:
+	Fixed a critical bug such that a negative value cannot be sent as a offset datatype.
+	When this fix is applied, every library and daemon should be re-built and re-started.
+
+2003-04-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/main.c: - create its own process group for invoked command,
+	  and send passed signal to the process group rather than the process,
+	  to make signal delivery actually work on GFS_PROTO_COMMAND implementation.
+	- plug a security problem.
+	  if the user's shell isn't a standard shell (i.e. not listed in /etc/shells),
+	  GFS_PROTO_COMMAND without GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND shouldn't
+	  be allowed.
+
+	* gftool/gfrcmd/gfrcmd.c:
+	- pass SIGINT, SIGQUIT and SIGTERM to the remote command.
+	- implement -r option to invoke specified command directly,
+	  (i.e. not via login-shell)
+
+	* gfarmlib/gfs_client.h: export gfs_client_command_io()
+
+	* gfarmlib/gfs_client.c: typo in the gfrcmd signal sending code
+
+2003-03-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfwhere/gfwhere.c:
+	enable to interpret metacharacters in arguments.
+
+2003-03-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client.c:
+	- switch shell command used by gfrcmd from /bin/sh to user's login shell
+	- GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND for gfs_client_command() to
+	  implement above.
+
+	* gfsd/main.c: fix bugs in previous commit
+	fix long standing memory leak
+
+	* gfsd/main.c: fatal typo
+
+	* gfarmlib/gfs_client.h, gfsd/main.c, gftool/gfrcmd/gfrcmd.c:
+	- switch shell command used by gfrcmd from /bin/sh to user's login shell
+	- GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND for gfs_client_command() to
+	  implement above.
+
+2003-03-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio.c (gfs_pio_open):
+	Set GFARM_FILE_CREATE to flags for RDWR mode.
+	(gfs_pio_create, gfs_pio_open): Fixed a bug when checking a file mode.
+
+2003-03-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c:
+	Display more debug message for set_view_local.
+
+	* gfsd/main.c:
+	Just added a comment for $Id$. (check-in test on cvs.apgrid.org)
+
+	* gfarmlib/gfs_pio_misc.c:
+	gfarm_url_fragments_replicate): just cleaned up a code.
+
+	* gfarmlib/gfs_unlink.c: Added a comment for parallel unlink.
+
+	* gfarmlib/gfs_dir.c, gfarmlib/gfs_pio_section.c:
+	Plugged a memory leak.
+
+2003-03-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_init_mpi.c, lib/gfs_hook/hooks_init.c:
+	Display a debug message when gfarm_initialize is automatically (implicitly) called.
+
+2003-03-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/html.mk, doc/html/en/ref/man8/Makefile, doc/html/ja/ref/Makefile, doc/html/ja/ref/index.html, doc/html/ja/ref/man1/Makefile, doc/html/ja/ref/man3/Makefile, doc/html/ja/ref/man5/Makefile, doc/html/ja/ref/man8/Makefile, doc/Makefile, doc/html/Makefile, doc/html/en/ref/Makefile, doc/html/en/ref/index.html, doc/html/en/ref/man1/Makefile, doc/html/en/ref/man3/Makefile, doc/html/index.html:
+	add very primitive HTML index page
+
+	* man/man3/gfs_unlink.3, man/man8/gfmd.8, man/man8/gfsd.8, man/man3/gfs_pio_putline.3, man/man3/gfs_pio_puts.3, man/man3/gfs_pio_read.3, man/man3/gfs_pio_seek.3, man/man3/gfs_pio_set_local.3, man/man3/gfs_pio_set_view_index.3, man/man3/gfs_pio_set_view_local.3, man/man3/gfs_pio_ungetc.3, man/man3/gfs_pio_write.3, man/man3/gfs_readdir.3, man/man3/gfs_rename.3, man/man3/gfs_rmdir.3, man/man3/gfs_stat.3, man/man3/gfs_stat_free.3, man/man3/gfs_chmod.3, man/man3/gfs_chown.3, man/man3/gfs_closedir.3, man/man3/gfs_mkdir.3, man/man3/gfs_opendir.3, man/man3/gfs_pio_close.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_eof.3, man/man3/gfs_pio_error.3, man/man3/gfs_pio_flush.3, man/man3/gfs_pio_getc.3, man/man3/gfs_pio_getline.3, man/man3/gfs_pio_open.3, man/man3/gfs_pio_putc.3, man/man1/gfrcmd.1, man/man1/gfreg.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfrun.1, man/man1/gfsched.1, man/man1/gfwc.1, man/man1/gfwhere.1, man/man3/gfarm_initialize.3, man/man3/gfarm_strings_free_deeply.3, man/man3/gfarm_terminate.3, man/man3/gfarm_url_hosts_schedule.3, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man1/digest.1, man/man1/gfexport.1, man/man1/gfgrep.1, man/man1/gfimport_fixed.1, man/man1/gfimport_text.1, man/man1/gfkey.1, man/man1/gfls.1, man/man1/gfmpirun.1, man/man1/gfps.1, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_close.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_eof.3, man/ja/man3/gfs_pio_error.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_stringlist_length.3, man/ja/man3/gfarm_strings_free_deeply.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_fragments_replicate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfarm_url_program_deliver.3, man/ja/man3/gfarm_url_program_register.3, man/ja/man3/gfarm_url_section_replicate_from_to.3, man/ja/man3/gfarm_url_section_replicate_to.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man1/gfsched.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_import_fragment_size_alloc.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_cat.3, man/ja/man3/gfarm_stringlist_elem.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrun.1, doc/html/ja/ref/man3/gfs_unlink.3.html, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, doc/html/ja/ref/man3/gfs_pio_write.3.html, doc/html/ja/ref/man3/gfs_readdir.3.html, doc/html/ja/ref/man3/gfs_rename.3.html, doc/html/ja/ref/man3/gfs_rmdir.3.html, doc/html/ja/ref/man3/gfs_stat.3.html, doc/html/ja/ref/man3/gfs_stat_free.3.html, doc/html/ja/ref/man3/gfs_pio_puts.3.html, doc/html/ja/ref/man3/gfs_pio_read.3.html, doc/html/ja/ref/man3/gfs_pio_seek.3.html, doc/html/ja/ref/man3/gfs_pio_set_local.3.html, doc/html/ja/ref/man3/gfs_pio_set_view_index.3.html, doc/html/ja/ref/man3/gfs_pio_set_view_local.3.html, doc/html/ja/ref/man3/gfs_pio_ungetc.3.html, doc/html/ja/ref/man3/gfs_pio_error.3.html, doc/html/ja/ref/man3/gfs_pio_flush.3.html, doc/html/ja/ref/man3/gfs_pio_getc.3.html, doc/html/ja/ref/man3/gfs_pio_getline.3.html, doc/html/ja/ref/man3/gfs_pio_open.3.html, doc/html/ja/ref/man3/gfs_pio_putc.3.html, doc/html/ja/ref/man3/gfs_pio_putline.3.html, doc/html/ja/ref/man3/gfs_chown.3.html, doc/html/ja/ref/man3/gfs_closedir.3.html, doc/html/ja/ref/man3/gfs_mkdir.3.html, doc/html/ja/ref/man3/gfs_opendir.3.html, doc/html/ja/ref/man3/gfs_pio_close.3.html, doc/html/ja/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_eof.3.html, doc/html/ja/ref/man3/gfarm_url_hosts_schedule.3.html, doc/html/ja/ref/man3/gfarm_url_program_deliver.3.html, doc/html/ja/ref/man3/gfarm_url_program_register.3.html, doc/html/ja/ref/man3/gfarm_url_section_replicate_from_to.3.html, doc/html/ja/ref/man3/gfarm_url_section_replicate_to.3.html, doc/html/ja/ref/man3/gfs_chmod.3.html, doc/html/ja/ref/man3/gfarm_stringlist_elem.3.html, doc/html/ja/ref/man3/gfarm_stringlist_free.3.html, doc/html/ja/ref/man3/gfarm_stringlist_init.3.html, doc/html/ja/ref/man3/gfarm_stringlist_length.3.html, doc/html/ja/ref/man3/gfarm_strings_free_deeply.3.html, doc/html/ja/ref/man3/gfarm_terminate.3.html, doc/html/ja/ref/man3/gfarm_url_fragments_replicate.3.html, doc/html/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html, doc/html/ja/ref/man3/gfarm_hostlist_read.3.html, doc/html/ja/ref/man3/gfarm_import_fragment_config_read.3.html, doc/html/ja/ref/man3/gfarm_import_fragment_size_alloc.3.html, doc/html/ja/ref/man3/gfarm_initialize.3.html, doc/html/ja/ref/man3/gfarm_stringlist_add.3.html, doc/html/ja/ref/man3/gfarm_stringlist_cat.3.html, doc/html/ja/ref/man1/gfrmdir.1.html, doc/html/ja/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfsched.1.html, doc/html/ja/ref/man1/gfwc.1.html, doc/html/ja/ref/man1/gfwhere.1.html, doc/html/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html, doc/html/ja/ref/man1/gfmkdir.1.html, doc/html/ja/ref/man1/gfmpirun.1.html, doc/html/ja/ref/man1/gfps.1.html, doc/html/ja/ref/man1/gfrcmd.1.html, doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/digest.1.html, doc/html/ja/ref/man1/gfexport.1.html, doc/html/ja/ref/man1/gfgrep.1.html, doc/html/ja/ref/man1/gfimport_fixed.1.html, doc/html/ja/ref/man1/gfimport_text.1.html, doc/html/ja/ref/man1/gfkey.1.html, doc/html/ja/ref/man1/gfls.1.html, doc/html/en/ref/man3/gfs_rmdir.3.html, doc/html/en/ref/man3/gfs_stat.3.html, doc/html/en/ref/man3/gfs_stat_free.3.html, doc/html/en/ref/man3/gfs_unlink.3.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, doc/html/en/ref/man3/gfs_pio_set_local.3.html, doc/html/en/ref/man3/gfs_pio_set_view_index.3.html, doc/html/en/ref/man3/gfs_pio_set_view_local.3.html, doc/html/en/ref/man3/gfs_pio_ungetc.3.html, doc/html/en/ref/man3/gfs_pio_write.3.html, doc/html/en/ref/man3/gfs_readdir.3.html, doc/html/en/ref/man3/gfs_rename.3.html, doc/html/en/ref/man3/gfs_pio_getline.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/en/ref/man3/gfs_pio_putc.3.html, doc/html/en/ref/man3/gfs_pio_putline.3.html, doc/html/en/ref/man3/gfs_pio_puts.3.html, doc/html/en/ref/man3/gfs_pio_read.3.html, doc/html/en/ref/man3/gfs_pio_seek.3.html, doc/html/en/ref/man3/gfs_opendir.3.html, doc/html/en/ref/man3/gfs_pio_close.3.html, doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/en/ref/man3/gfs_pio_eof.3.html, doc/html/en/ref/man3/gfs_pio_error.3.html, doc/html/en/ref/man3/gfs_pio_flush.3.html, doc/html/en/ref/man3/gfs_pio_getc.3.html, doc/html/en/ref/man3/gfarm_terminate.3.html, doc/html/en/ref/man3/gfarm_url_hosts_schedule.3.html, doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/en/ref/man3/gfs_chown.3.html, doc/html/en/ref/man3/gfs_closedir.3.html, doc/html/en/ref/man3/gfs_mkdir.3.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man1/gfsched.1.html, doc/html/en/ref/man1/gfwc.1.html, doc/html/en/ref/man1/gfwhere.1.html, doc/html/en/ref/man3/gfarm_initialize.3.html, doc/html/en/ref/man3/gfarm_strings_free_deeply.3.html, doc/html/en/ref/man1/gfls.1.html, doc/html/en/ref/man1/gfmpirun.1.html, doc/html/en/ref/man1/gfps.1.html, doc/html/en/ref/man1/gfrcmd.1.html, doc/html/en/ref/man1/gfreg.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfrm.1.html, doc/html/en/ref/man1/digest.1.html, doc/html/en/ref/man1/gfexport.1.html, doc/html/en/ref/man1/gfgrep.1.html, doc/html/en/ref/man1/gfimport_fixed.1.html, doc/html/en/ref/man1/gfimport_text.1.html, doc/html/en/ref/man1/gfkey.1.html:
+	generate from docbook
+
+	* nstool/file/Makefile.in, man/ja/man1/Makefile, man/ja/man3/Makefile, man/ja/man5/Makefile, man/ja/man8/Makefile, man/man1/Makefile, man/man3/Makefile, man/man8/Makefile, nslib/Makefile.in, gfarmlib/Makefile.in, include/Makefile.in, lib/gfs_hook/sysdep/linux/Makefile.in, makes/config.mk.in, makes/html.mk, makes/man.mk, makes/prog.mk, makes/subdir.mk, makes/var.mk, doc/html/ja/ref/man1/Makefile, doc/html/ja/ref/man3/Makefile, doc/html/ja/ref/man5/Makefile, doc/html/ja/ref/man8/Makefile, gfarm/Makefile, gfarmd/Makefile.in, doc/html/en/ref/man1/Makefile, doc/html/en/ref/man3/Makefile, doc/html/en/ref/man8/Makefile, doc/html/ja/ref/Makefile, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man5/Makefile.inc, doc/docbook/ja/ref/man8/Makefile.inc, doc/html/en/ref/Makefile, Makefile.in, doc/Makefile, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man8/Makefile.inc:
+	add "man" and "html" target to generate them from docbook
+
+	* doc/docbook/en/ref/man3/gfarm_strings_free_deeply.3.docbook, doc/docbook/en/ref/man3/gfarm_terminate.3.docbook, doc/docbook/en/ref/man3/gfarm_url_hosts_schedule.3.docbook, doc/docbook/en/ref/man3/gfs_chmod.3.docbook, doc/docbook/en/ref/man3/gfs_chown.3.docbook, doc/docbook/en/ref/man3/gfs_closedir.3.docbook, doc/docbook/en/ref/man3/gfs_mkdir.3.docbook, doc/docbook/en/ref/man3/gfs_opendir.3.docbook, doc/docbook/en/ref/man3/gfs_pio_close.3.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_eof.3.docbook, doc/docbook/en/ref/man3/gfs_pio_error.3.docbook, doc/docbook/en/ref/man3/gfs_pio_flush.3.docbook, doc/docbook/en/ref/man3/gfs_pio_getc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_getline.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/en/ref/man3/gfs_pio_putc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_putline.3.docbook, doc/docbook/en/ref/man3/gfs_pio_puts.3.docbook, doc/docbook/en/ref/man3/gfs_pio_read.3.docbook, doc/docbook/en/ref/man3/gfs_pio_seek.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_local.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_view_local.3.docbook, doc/docbook/en/ref/man3/gfs_pio_ungetc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_write.3.docbook, doc/docbook/en/ref/man3/gfs_readdir.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook, doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/en/ref/man3/gfs_stat.3.docbook, doc/docbook/en/ref/man3/gfs_stat_free.3.docbook, doc/docbook/en/ref/man3/gfs_unlink.3.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook:
+	New file.
+
+	* doc/docbook/en/ref/man3/gfarm_strings_free_deeply.3.docbook, doc/docbook/en/ref/man3/gfarm_terminate.3.docbook, doc/docbook/en/ref/man3/gfarm_url_hosts_schedule.3.docbook, doc/docbook/en/ref/man3/gfs_chmod.3.docbook, doc/docbook/en/ref/man3/gfs_chown.3.docbook, doc/docbook/en/ref/man3/gfs_closedir.3.docbook, doc/docbook/en/ref/man3/gfs_mkdir.3.docbook, doc/docbook/en/ref/man3/gfs_opendir.3.docbook, doc/docbook/en/ref/man3/gfs_pio_close.3.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_eof.3.docbook, doc/docbook/en/ref/man3/gfs_pio_error.3.docbook, doc/docbook/en/ref/man3/gfs_pio_flush.3.docbook, doc/docbook/en/ref/man3/gfs_pio_getc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_getline.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/en/ref/man3/gfs_pio_putc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_putline.3.docbook, doc/docbook/en/ref/man3/gfs_pio_puts.3.docbook, doc/docbook/en/ref/man3/gfs_pio_read.3.docbook, doc/docbook/en/ref/man3/gfs_pio_seek.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_local.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_view_local.3.docbook, doc/docbook/en/ref/man3/gfs_pio_ungetc.3.docbook, doc/docbook/en/ref/man3/gfs_pio_write.3.docbook, doc/docbook/en/ref/man3/gfs_readdir.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook, doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/en/ref/man3/gfs_stat.3.docbook, doc/docbook/en/ref/man3/gfs_stat_free.3.docbook, doc/docbook/en/ref/man3/gfs_unlink.3.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook:
+	man pages are now converted to SGML DocBook format.
+
+	* doc/docbook/en/ref/man1/digest.1.docbook, doc/docbook/en/ref/man1/gfexport.1.docbook, doc/docbook/en/ref/man1/gfgrep.1.docbook, doc/docbook/en/ref/man1/gfimport_fixed.1.docbook, doc/docbook/en/ref/man1/gfimport_text.1.docbook, doc/docbook/en/ref/man1/gfkey.1.docbook, doc/docbook/en/ref/man1/gfls.1.docbook, doc/docbook/en/ref/man1/gfmpirun.1.docbook, doc/docbook/en/ref/man1/gfps.1.docbook, doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfwc.1.docbook, doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/en/ref/man3/gfarm_initialize.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man1/digest.1.docbook, doc/docbook/ja/ref/man1/gfexport.1.docbook, doc/docbook/ja/ref/man1/gfgrep.1.docbook, doc/docbook/ja/ref/man1/gfimport_fixed.1.docbook, doc/docbook/ja/ref/man1/gfimport_text.1.docbook, doc/docbook/ja/ref/man1/gfkey.1.docbook, doc/docbook/ja/ref/man1/gfls.1.docbook, doc/docbook/ja/ref/man1/gfmkdir.1.docbook, doc/docbook/ja/ref/man1/gfmpirun.1.docbook, doc/docbook/ja/ref/man1/gfps.1.docbook, doc/docbook/ja/ref/man1/gfrcmd.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrmdir.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook, doc/docbook/ja/ref/man1/gfwc.1.docbook, doc/docbook/ja/ref/man1/gfwhere.1.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.docbook, doc/docbook/ja/ref/man3/gfarm_hostlist_read.3.docbook, doc/docbook/ja/ref/man3/gfarm_import_fragment_config_read.3.docbook, doc/docbook/ja/ref/man3/gfarm_import_fragment_size_alloc.3.docbook, doc/docbook/ja/ref/man3/gfarm_initialize.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_add.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_cat.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_elem.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_free.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_init.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_length.3.docbook, doc/docbook/ja/ref/man3/gfarm_strings_free_deeply.3.docbook, doc/docbook/ja/ref/man3/gfarm_terminate.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_fragments_replicate.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_hosts_schedule.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_program_deliver.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_program_register.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_from_to.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_to.3.docbook, doc/docbook/ja/ref/man3/gfs_chmod.3.docbook, doc/docbook/ja/ref/man3/gfs_chown.3.docbook, doc/docbook/ja/ref/man3/gfs_closedir.3.docbook, doc/docbook/ja/ref/man3/gfs_mkdir.3.docbook, doc/docbook/ja/ref/man3/gfs_opendir.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_close.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_eof.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_error.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_flush.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_getc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_getline.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_putc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_putline.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_puts.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_read.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_seek.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_local.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_view_local.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_ungetc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_write.3.docbook, doc/docbook/ja/ref/man3/gfs_readdir.3.docbook, doc/docbook/ja/ref/man3/gfs_rename.3.docbook, doc/docbook/ja/ref/man3/gfs_rmdir.3.docbook, doc/docbook/ja/ref/man3/gfs_stat.3.docbook, doc/docbook/ja/ref/man3/gfs_stat_free.3.docbook, doc/docbook/ja/ref/man3/gfs_unlink.3.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook:
+	New file.
+
+	* doc/docbook/en/ref/man1/digest.1.docbook, doc/docbook/en/ref/man1/gfexport.1.docbook, doc/docbook/en/ref/man1/gfgrep.1.docbook, doc/docbook/en/ref/man1/gfimport_fixed.1.docbook, doc/docbook/en/ref/man1/gfimport_text.1.docbook, doc/docbook/en/ref/man1/gfkey.1.docbook, doc/docbook/en/ref/man1/gfls.1.docbook, doc/docbook/en/ref/man1/gfmpirun.1.docbook, doc/docbook/en/ref/man1/gfps.1.docbook, doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfwc.1.docbook, doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/en/ref/man3/gfarm_initialize.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man1/digest.1.docbook, doc/docbook/ja/ref/man1/gfexport.1.docbook, doc/docbook/ja/ref/man1/gfgrep.1.docbook, doc/docbook/ja/ref/man1/gfimport_fixed.1.docbook, doc/docbook/ja/ref/man1/gfimport_text.1.docbook, doc/docbook/ja/ref/man1/gfkey.1.docbook, doc/docbook/ja/ref/man1/gfls.1.docbook, doc/docbook/ja/ref/man1/gfmkdir.1.docbook, doc/docbook/ja/ref/man1/gfmpirun.1.docbook, doc/docbook/ja/ref/man1/gfps.1.docbook, doc/docbook/ja/ref/man1/gfrcmd.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrmdir.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook, doc/docbook/ja/ref/man1/gfwc.1.docbook, doc/docbook/ja/ref/man1/gfwhere.1.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.docbook, doc/docbook/ja/ref/man3/gfarm_hostlist_read.3.docbook, doc/docbook/ja/ref/man3/gfarm_import_fragment_config_read.3.docbook, doc/docbook/ja/ref/man3/gfarm_import_fragment_size_alloc.3.docbook, doc/docbook/ja/ref/man3/gfarm_initialize.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_add.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_cat.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_elem.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_free.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_init.3.docbook, doc/docbook/ja/ref/man3/gfarm_stringlist_length.3.docbook, doc/docbook/ja/ref/man3/gfarm_strings_free_deeply.3.docbook, doc/docbook/ja/ref/man3/gfarm_terminate.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_fragments_replicate.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_hosts_schedule.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_program_deliver.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_program_register.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_from_to.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_to.3.docbook, doc/docbook/ja/ref/man3/gfs_chmod.3.docbook, doc/docbook/ja/ref/man3/gfs_chown.3.docbook, doc/docbook/ja/ref/man3/gfs_closedir.3.docbook, doc/docbook/ja/ref/man3/gfs_mkdir.3.docbook, doc/docbook/ja/ref/man3/gfs_opendir.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_close.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_eof.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_error.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_flush.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_getc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_getline.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_putc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_putline.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_puts.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_read.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_seek.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_local.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_view_local.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_ungetc.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_write.3.docbook, doc/docbook/ja/ref/man3/gfs_readdir.3.docbook, doc/docbook/ja/ref/man3/gfs_rename.3.docbook, doc/docbook/ja/ref/man3/gfs_rmdir.3.docbook, doc/docbook/ja/ref/man3/gfs_stat.3.docbook, doc/docbook/ja/ref/man3/gfs_stat_free.3.docbook, doc/docbook/ja/ref/man3/gfs_unlink.3.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook:
+	man pages are now converted to SGML DocBook format.
+
+2003-03-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	- run gfmd and gfsd with the root privilage in examples.
+	- note that slapd also requires root privilege in this example,
+	  because the port number is less than 1024.
+	- s/<ARCH>/<OS>/
+	- correct directory name of start up script in japanese version.
+
+	* INSTALL.ja: standardize punctuation
+
+	* INSTALL.en, INSTALL.ja:
+	remove "in the C shell" from an example which isn't really csh dependent now
+	(except its prompt, but "%" may mean zsh, even.).
+
+2003-03-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio_misc.c (gfs_access):
+	if the gfarm_url is an executable, does not check the number of fragment.
+
+	* gfarmlib/gfs_pio_misc.c (gfs_access):
+	Added a check whether a file can be accessable by other processes or not.
+
+	* gfsd/main.c (gfs_server_digest): Plugged a memory leak.
+
+2003-03-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio.c (gfs_pio_seek):
+	Fixed a bug such that gfs_pio_seek(SEEK_CUR) does not work when the file offset will be repositioned beyond the current io buffer.
+
+2003-03-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrm/gfrm.c: Implemented metacharacter expansion in arguments.
+
+2003-03-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c: add more clarification
+
+	* gftool/gfls/gfls.c:
+	fix a comment which tells a lie, pointed out by sotoyama-san.
+
+2003-03-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gfarmlib/schedule.c, gfarmlib/schedule.h:
+	Added gfarm_schedule_search_idle_by_all().
+
+	* gfarmlib/gfs_pio_section.c:
+	Implemented selecting another host if it is impossible to creating a file
+	fragment on self host.
+
+2003-02-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* bench/thput-fsys/thput-fsys.c, bench/thput-gfpio/thput-gfpio.c, bench/thput-pvfs/thput-pvfs.c:
+	Replaced assert() with if statement.
+	thput-gfpio.c: Removed an obsolete -S option.
+	thput-gfpio.c: read or copy each entire file fragment with no -s <size> option.
+
+2003-02-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	Added a description about a path name of core.schema in slapd.conf.
+
+2003-02-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* bench/thput-fsys/thput-fsys.c, bench/thput-gfpio/thput-gfpio.c:
+	With the -m option, measure total time of write or read operation.
+
+	* lib/gfs_hook/hooks.c:
+	Commented a hook entry out for mmap() because it causes segfault while loading a shared library on i386 platform.
+
+2003-02-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c: remove ugly "XXX<directory-name>" warning,
+	because an error message will be displayed anyway.
+
+	* lib/gfs_hook/hooks.c: port to NetBSD again
+
+	* gfarmlib/Makefile.in, makes/var.mk: update dependency information
+
+2003-02-21  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfs.h: Moved glob function's declaration to gfs_glob.h.
+
+	* include/gfarm_misc.h: Added gfarm url prefix declaration.
+
+	* gfarmlib/glob.c, include/gfs_glob.h:
+	Moved macro definitions from gfs_glob.h to glob.c.
+	They are refered from functions in glob.c.
+
+	* gftool/gfls/gfls.c, include/gfs_glob.h:
+	rename type & function name gfarm_glob_* -> gfs_glob_*
+
+	* gfarmlib/url.c:
+	Added gfarm url string definition and a function skips gfarm url.
+
+	* gfarmlib/gfs_dir.c, gfarmlib/glob.c:
+	Moved functoins handle gfs_glob_t from gfs_dir.c to glob.c.
+
+2003-02-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfm_client.c: - fix a memory leak
+	- correct a case when an invalid job id is specified by a caller.
+
+2003-02-21  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_64.c: Retrun to revision 1.6.
+
+	* lib/gfs_hook/hooks.c: Retrunt to revision 1.17.
+
+	* gfsd/main.c: Return to revision 1.45.
+
+	* include/gfarm.h, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, gfsd/main.c:
+	Moved inclusion gfarm_stringlist.h, gfs_glob.h from include/gfs.h.
+
+	* include/gfs_glob.h: Moved from include/gfarm_glob.h.
+
+	* include/gfarm_glob.h: Moved include/gfs_glob.h.
+
+2003-02-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c: remove unnecessary code
+
+2003-02-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_dir.c:
+	implement free_node() for directory tree cache of client side.
+
+	* gfarmlib/hash.c: implement gfarm_hash_table_free()
+
+	* package/redhat/gfmd, package/redhat/gfsd:
+	use installation directory which is described in the gfarm.spec file.
+	use more appropriate start/stop priority
+
+	* package/redhat/gfarm-slapd:
+	use the LDAP port number described in INSTALL.{en,ja}
+	use more appropriate start/stop priority
+
+2003-02-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_dir.c: Fixed gfs_getcwd() scope error.
+
+	* gfarmlib/gfs_dir.c, gfarmlib/gfs_pio.c, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_unlink.c, gfarmlib/glob.c, gfarmlib/stringlist.c, gftool/gfls/gfls.c:
+	Moved functions from gfls.c into some files for archiving into library.
+
+	* gfarmlib/Makefile.in:
+	Added names splitted files from gftool/gfls/gfls.c
+
+	* include/gfarm_glob.h:
+	Moved typedef gfarm_dtypelist and macro defifinitions from gftool/gfls/gfls.c
+	and changed it's name.
+	Added the declarations of functions handles gfarm_glob_t.
+
+	* include/gfarm_stringlist.h:
+	Moved typedef gfarm_stringlist and functions from include/gfarm_misc.h.
+
+	* include/gfarm_misc.h:
+	Moved the type definition of gfarm_stringlist and the declaration of
+	functions handle it.
+
+	* include/gfs.h:
+	Added gfs_glob() and gfs_uncachedir()'s declaration because some functions
+	in gftool/gfls.c were moved to gfarmlib/gfs_dir.c.
+
+	* gfarmlib/schedule.c: gfarm_file_section_host_schedule():
+	  Fixed a error in testing memory allocation result.
+
+2003-02-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Added -o and -e options for specifying stdout and stderr gfarm files, respectively.
+	If stdout or stderr file is not correctly registered, try to do using gfarm:/bin/gfsplck.
+	If both -G and -H are not specified and there is no gfarm input file, try to run on appropreate nodes although the local node is always chosen by this revision.
+	If a remote program is not a gfarm file, do not add any gfarm specific arguments like --gfarm_index and --gfarm_nfrags.
+
+	usage: gfrun -o gfarm:out -e gfarm:err gfarm:program . . .
+
+	* gfarmlib/gfj_client.h, gfarmlib/gfm_client.c, gfmd/gfmd.c:
+	gfm_client.c (gfj_client_info): Fixed a bug.
+	Fixed a spelling miss.
+
+2003-02-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio_misc.c, gfptool/gfsplck/gfsplck.c:
+	gfs_pio_misc.c (gfs_pio_set_fragment_info_local): Eliminated a symlink code.  Fixed a check sum checking code.
+	gfsplck.c: Added -a and -d options.  The -a option checks filesystem metadata even if its section copy info is registered.  Thd -d option deletes files having invalid filesystem metadata.
+	Plugged a memory leak.
+
+2003-02-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gfarmlib/schedule.c: gfarm_schedule_search_idle_hosts():
+	  - Changed name from "gfarm_schedule_search_idle_new"
+
+	gfarm_schdeule_search_idle():
+	  - Changed return value from strcut gfarm_file_section_copy_info array's
+	    index to error message string.
+	  - Added 3'rd output argument that points to host name strings.
+	  - Calls gfarm_schedule_search_idle_hosts()
+
+	* gfarmlib/gfs_pio_misc.c, gfarmlib/schedule.h: Changed function name:
+	gfarm_schedule_search_idle_new() -> gfarm_schedule_search_idle_hosts()
+
+2003-02-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c:
+	Just added an entry of mmap to check this is called or not by linking with gfs_hook_debug.o
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c (__stat):
+	Filled st_uid, st_gid, and st_nlink.
+	(__dup2): Added a check whether SYS_dup2 is defined or not.
+
+	* gfarmlib/gfs_pio_misc.c, gfptool/gfsplck/gfsplck.c (gfs_pio_set_fragment_info_local):
+	Changed the second argument from gfarm_url to gfarm_file.
+	(gfs_pio_set_fragment_info_local): Added a check about filesystem metadata consistency.
+	(gfsplck): Gfarm directories or files can be specified by command-line arguments.
+
+2003-02-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio_misc.c: plug a memory leak of gfs_access()
+
+2003-02-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gfarmlib/gfs_pio_misc.c: back to revision 1.20 temporarily.
+
+	* gfarmlib/schedule.h: back to revision 1.2 temporarily.
+
+	* gfarmlib/schedule.c: back to revision 1.11 temporarily.
+
+	* gfarmlib/gfs_pio_misc.c, gfarmlib/schedule.c, gfarmlib/schedule.h:
+	Changed name of the function gfarm_schedule_search_idle_new()
+
+2003-02-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* README.hook.en: README file for gfs_hook libraries.
 
@@ -16,12 +581,12 @@
 	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
 	Added a hook entry for dup2().
 
-2003-02-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_pio_section.c (gfs_pio_view_section_close):
 	Fixed a bug such that file size in filesystem metadata is not correct when file offset is not set to the last of the file.
 
-2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hooks_fstat.c: Use gfs_fstat().
 
@@ -29,21 +594,21 @@
 	Added gfs_fstat().
 	gfs_pio_misc.c (gfs_stat_section): Plugged a memory leak.
 
-2003-02-14  soto  <sotoyama@sra.co.jp>
+2003-02-14  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gfarmlib/gfs_pio_misc.c: - fixed memory leak.
 	- returns error when #replied hosts < #requested hosts
 
-2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hook_test.c: Just fixed a typo.
 
-2003-02-14  soto  <sotoyama@sra.co.jp>
+2003-02-14  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gfarmlib/schedule.c:
 	Fixed bug gfreg faults. In previous revision, freed area not allocated.
 
-2003-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_unlink.c:
 	Even when deletion of some file fragments fails, delete the section information when there is no section copy information.
@@ -72,7 +637,7 @@
 	Deleted an entry of _IO_file_seek to avoid duplicate definition when compiling statically.
 	According to the ChangeLog of glibc, even __open, __close, __write, and __read cannot be hooked whenever they are called within the glibc library after the change at August 2, 2002.  The only way to hook them seems to be a static compilation.
 
-2003-02-13  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfreg/gfreg.c: Initial support for a directory destination.
 	XXX - Since gfs_stat() cannot work correctly for a directory at this time, there is an ad hoc code to check it.
@@ -92,7 +657,7 @@
 	* gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c:
 	fix longstanding bugs. found by sotoyama-san's test case.
 
-2003-02-10  soto  <sotoyama@sra.co.jp>
+2003-02-10  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gfarmlib/gfs_pio_misc.c, gfarmlib/schedule.c, gfarmlib/schedule.h:
 	Added gfarm_schedule_search_idle_new() to schedule.c that searches near hosts using functions defined in gfs_client_udp.c.
@@ -120,7 +685,7 @@
 	   after "make install").
 	add "make gfregister" target for "gfreg".
 
-2003-02-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3:
 	GFS_FILE_RDONLY should be GFARM_FILE_RDONLY.
@@ -131,7 +696,7 @@
 	XXX - When gfarm_terminate() is not called, a redirected gfarm file will not be a complete file, although can be fixed by gfrun.
 	usage: prog --gfarm_index <index> --gfarm_nfrags <nfrags> --gfarm_stdout gfarm:out --gfarm_stderr gfarm:err
 
-2003-02-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hook_test.c: Added gfarm_terminate().
 
@@ -154,7 +719,7 @@
 	in gfs_server_command_io(). If this happens, gfsd waits forever at
 	the select(2). Problem reported by naotaka-san.
 
-2003-02-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hook_test.c, lib/gfs_hook/hooks_common.c:
 	Changed a behavior for hooking the open syscall.
@@ -183,7 +748,7 @@
 
 	* include/gfs_hook.h, lib/gfs_hook/hooks_subr.c: do not hook fseek()
 
-2003-02-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-02-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfhost/gfhost.c:
 	Fixed a segfault when the -D option is not specified.
@@ -209,14 +774,14 @@
 	More quiet debug messages when linking gfs_hook_debug.o or gfs_hook_mpi_debug.o.
 	Added hook functions for unlink and _unlink.
 
-2003-01-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* include/gfs_hook.h, lib/gfs_hook/hooks_subr.c:
 	Added gfs_fseek_hook().
 
 	* Makefile.in: Added gfptool.
 
-2003-01-30  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-30  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* makes/gfptool.mk, gftool/example/Makefile, gfptool/gfsplck/gfsplck.c, gfptool/gfwc/Makefile, gfptool/gfwc/gfwc.c, gfptool/gfcp_hook/Makefile, gfptool/gfcp_hook/gfcp_hook.c, gfptool/gfgrep/Makefile, gfptool/gfgrep/gfgrep.c, gfptool/gfsplck/Makefile, gfptool/gfcombine/gfcombine.c, gfptool/gfcombine_hook/Makefile, gfptool/gfcombine_hook/gfcombine_hook.c, gfptool/gfcp/Makefile, gfptool/gfcp/gfcp.c, bench/thput-gfpio/Makefile, gfptool/Makefile, gfptool/gfcombine/Makefile:
 	Moved gfarm parallel tools to a new location, gfptool.
@@ -232,7 +797,7 @@
 	* gfarmlib/error.c:
 	try to avoid a compilation error reported by yamamoto-san
 
-2003-01-29  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hooks_common.c:
 	Fixed a problem such that a program whose fopen("w") is hooked creates an incomplete Gfarm file.
@@ -265,7 +830,7 @@
 	-H:		<not used>		->	list load average
 	-R:		<not used>		->	register/restore metadb
 
-2003-01-28  soto  <sotoyama@sra.co.jp>
+2003-01-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gfarmlib/gfs_client_udp.c: fix warning at compile on linux.
 
@@ -280,7 +845,7 @@
 
 	* gftool/gfhost/gfhost.c: fix warning at compile on linux.
 
-2003-01-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/ja/man1/gfreg.1, man/man1/gfreg.1: Updated the description.
 
@@ -299,7 +864,7 @@
 	* gftool/gfreg/gfreg.c: vailable -h option to specify hostname.
 	change usage()
 
-2003-01-27  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfsched/gfsched.c, man/ja/man1/Makefile, man/ja/man1/gfsched.1, man/man1/Makefile, man/man1/gfsched.1:
 	Added a manual page for gfsched.
@@ -317,13 +882,13 @@
 	* gfsd/main.c:
 	Reverted to the version 1.41.  Without a connection to a meta server, it is not possible to replicate a binary executable before execution.
 
-2003-01-24  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/Makefile.in, gfarmlib/gfs_exec.c, include/gfs.h, gfsd/main.c:
 	Added a new function, gfs_execve, to execute a Gfarm file.
 	XXX - no test yet.
 
-2003-01-23  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/auth_client_gsi.c:
 	Changed the default gfarm-usermap file to /etc/grid-security/grid-mapfile.
@@ -331,7 +896,7 @@
 	* gfarmlib/gfs_pio_misc.c (gfarm_url_fragments_replicate):
 	When the number of destination filesystem nodes is not the same as the number of source filesystem nodes, the hostlist of destination nodes will be expanded in a cyclic manner.  Before this revison, it is errorous.
 
-2003-01-22  soto  <sotoyama@sra.co.jp>
+2003-01-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gftool/gfhost/gfhost.c:
 	moved load average handling functions to gfarmlib/gfs_client_udp.c
@@ -345,7 +910,7 @@
 	* gfarmlib/Makefile.in:
 	mov load average handling functions from gftool/gfhost/gfhost.c
 
-2003-01-22  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog: Catched up with the current ChangeLog.
 
@@ -356,12 +921,12 @@
 	Added the -I option for specifying an individual file fragment.
 	XXX - need to improve the readability of the code.
 
-2003-01-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/example/gfcp/gfcp.c:
 	Fixed a bug related to parsing command-line arguments introduced by the revision 1.3.
 
-2003-01-20  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-gfpio/thput-gfpio.c (thput-gfpio.c):
 	Catched up with the change of behavior of gfarm_initialize().
@@ -383,7 +948,7 @@
 	use "example.com" rather than "hpcc.jp" for examples.
 	use port 389 (official port number for LDAP) rather than 9000 for LDAP service.
 
-2003-01-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfreg/gfreg.c:
 	Fixed a functionality to register a file fragment.
@@ -394,7 +959,7 @@
 	* gfarmlib/gfs_pio_section.c (gfs_pio_set_view_index):
 	Added a range check for fragment_index.
 
-2003-01-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/Makefile.in:
 	Fixed an installation error when gfs_hook_mpi.o is missing.
@@ -406,7 +971,7 @@
 
 	* gfarmlib/config.c: fix compilation error
 
-2003-01-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2003-01-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c, lib/gfs_hook/hooks_subr.c:
 	Added gfs_hook_mpi.o for MPI programs.
@@ -420,7 +985,7 @@
 	* configure, configure.in:
 	Modified globus_gssapi_libs for Globus Toolkit 2.2.2.
 
-2002-12-26  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-12-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/example/gfcombine_hook/gfcombine_hook.c, gftool/example/gfcp/gfcp.c, gftool/example/gfgrep/gfgrep.c, gfarmlib/config.c, gftool/example/gfcombine/gfcombine.c:
 	config.c (gfarm_initialize): This function eliminates -I and -N options added by gfrun from the argument list and calls gfs_pio_set_local().
@@ -433,7 +998,7 @@
 	* gfarmlib/gfs_pio_local.c, include/gfs.h:
 	Added gfs_pio_get_node_rank() and gfs_pio_get_node_size().
 
-2002-12-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-12-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/example/gfcp/gfcp.c: Fixed a fatal typo, strcmp vs strcpy.
 
@@ -442,16 +1007,16 @@
 	* debian/changelog, debian/control, debian/gfarm-server.init, debian/rules:
 	cvs 20021101 upstream release.
 
-2002-12-06  soto  <sotoyama@sra.co.jp>
+2002-12-06  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* package/redhat/gfarm.spec: change package category
 
-2002-12-05  soto  <sotoyama@sra.co.jp>
+2002-12-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gfarmlib/gfs_pio_misc.c: change program registratin priority
 	use local host first
 
-2002-12-04  soto  <sotoyama@sra.co.jp>
+2002-12-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* package/redhat/gfarm.spec: gfarm rpm spec file for:
 		gfarm-doc
@@ -489,12 +1054,12 @@
 	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
 	workaround a problem caused by the way that the ROOT packages treats pathnames.
 
-2002-11-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/example/gfcp/Makefile, gftool/example/gfcp/gfcp.c:
 	Added gfcp.  usage: gfrun gfarm:gfcp input output
 
-2002-11-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-fsys/thput-fsys.c:
 	Added fsync(2 or 3c) after a write test.
@@ -504,7 +1069,7 @@
 	* gftool/gfhost/gfhost.c:
 	add "-u" (up) option, this option prints hostnames which are alive.
 
-2002-11-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrep/gfrep.c, man/ja/man1/gfrep.1, man/man1/gfrep.1:
 	Added the -D domainname option.  Gfarm file will be replicated to filesystem
@@ -520,7 +1085,7 @@
 
 	* gftool/addpath/addpath.c: Added -d option for metadata removal.
 
-2002-11-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfhost/gfhost.c:
 	Don't display incorrectly enormous or negative loadavg.
@@ -650,7 +1215,7 @@
 	describe missing, but very important slapd.conf setting
 	which unlimits number of search results in LDAP protocol.
 
-2002-11-07  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrm/gfrm.c, man/ja/man1/gfrm.1, man/man1/gfrm.1:
 	Added the -h option to specify a filesystem node instead of the the -H option.
@@ -661,7 +1226,7 @@
 	* gftool/example/gfcombine/gfcombine.c:
 	Added the -n option to specify the number of fragments to be combined.
 
-2002-11-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrep/gfrep.c, man/ja/man1/gfrep.1, man/man1/gfrep.1:
 	Added a description for -I, -s, and -d options.
@@ -671,13 +1236,13 @@
 
 	* gftool/gfrep/gfrep.c: use stderr instead of stdout for warning
 
-2002-11-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrep/gfrep.c:
 	Added -I, -s, and -d options to replicate a fragment of a file.
 	usage: gfrep -I index [-s src-node] -d dest-node gfarm_url
 
-2002-11-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/addsec/addsec.c: Fixed memory leak.
 
@@ -693,11 +1258,11 @@
 	Commented out the fragment number check code of output files.
 	This is a temporal action to allow files whose number of fragments is not the same as the number of processes.
 
-2002-11-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/addsec/addsec.c: Accept several filenames.
 
-2002-11-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/addsec/Makefile, gftool/addsec/addsec.c, gftool/gfreg/gfreg.c, gfarmlib/gfs_pio_misc.c, gftool/addpath/Makefile, gftool/addpath/addpath.c, include/gfs.h:
 	Added maintenance commands: addpath and addsec.
@@ -712,7 +1277,7 @@
 		% addpath tatebe/echo:i386-intel-linux 1
 		% addsec tatebe/echo:i386-intel-linux
 
-2002-11-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-11-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog, include/gfarm_metadb.h:
 	Catched up with the current ChangeLog.
@@ -722,7 +1287,7 @@
 	* gfarmlib/gfm_client.c: fix error added at revision 1.12.
 	gfarm client doesn't have to be a compute host.
 
-2002-10-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-10-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/man1/Makefile, man/man1/gfls.1:
 	Added an manual page of gfls in English.
@@ -776,7 +1341,7 @@
 
 	* lib/gfs_hook/Makefile.in: add dependency
 
-2002-10-13  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-10-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hooks.c (__write):
 	Removed debug printing code to avoid infinite loops.
@@ -833,7 +1398,7 @@
 	* bench/Makefile, bench/thput-fsstripe/Makefile, bench/thput-fsstripe/thput-fsstripe.c:
 	a program t measure fs throughput with striping
 
-2002-10-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-10-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_pio.c (gfs_pio_create):
 	(quick hack) A RW mode checking code is commented out.  This is required for hooking ROOT I/O.
@@ -881,7 +1446,7 @@
 	* acconfig.h, configure, configure.in, gfarm_config.h.in:
 	deal with old BSDs which doesn't have strtoll() but does have strtoq()
 
-2002-10-08  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-10-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrm/gfrm.c, man/ja/man1/gfrm.1, man/man1/gfexport.1, man/man1/gfrm.1, gftool/gfexport/gfexport.c:
 	Improved the wording and fixed typos.
@@ -901,7 +1466,7 @@
 	change fragment option (from '-s' in gfexport and '-i' in gfrm) to '-I',
 	to make these consistent with gfreg.
 
-2002-10-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-10-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog: Chatched up with the current ChangeLog.
 
@@ -971,7 +1536,7 @@
 	API:		gfs_unlink_section_replica()
 	command:	gfrm -i <fragment> -H <hostfile>
 
-2002-09-12  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-09-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/ja/man3/Makefile: Added new man pages.
 
@@ -980,24 +1545,24 @@
 	* man/ja/man3/gfarm_url_fragments_replicate.3, man/ja/man3/gfarm_url_program_deliver.3, man/ja/man3/gfarm_url_program_register.3, man/ja/man3/gfarm_url_section_replicate_from_to.3, man/ja/man3/gfarm_url_section_replicate_to.3:
 	add man pages for replication & program registration APIs
 
-2002-09-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog: Catched up with the current ChangeLog.
 
 	* man/man1/gfimport_text.1, man/man8/gfmd.8, INSTALL.en, INSTALL.ja:
 	Added an installation manual in English.
 
-2002-09-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-09-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_pio.c (gfs_pio_seek):
 	Fixed a bug not to update resultp when seeking within a fragment.
 
-2002-09-02  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-09-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* package/redhat/gfmd, package/redhat/gfsd, package/solaris/gfmd, package/solaris/gfsd:
 	Init files for solaris and redhat distribution.
 
-2002-09-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-09-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
 	Extended a Gfarm URL format for syscall hooking to specify a section
@@ -1007,7 +1572,7 @@
 	* gftool/gfreg/gfreg.c:
 	Fixed an error message when a local file is missing.
 
-2002-08-29  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-08-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/man1/Makefile, man/man3/Makefile, man/man8/Makefile:
 	Fixed a path of top_objdir.
@@ -1020,7 +1585,7 @@
 	* man/man3/gfs_rmdir.3, man/man3/gfs_stat.3, man/man3/gfs_stat_free.3, man/man3/gfs_unlink.3, man/man8/Makefile, man/man8/gfmd.8, man/man8/gfsd.8, man/man3/gfs_pio_puts.3, man/man3/gfs_pio_read.3, man/man3/gfs_pio_seek.3, man/man3/gfs_pio_set_local.3, man/man3/gfs_pio_set_view_index.3, man/man3/gfs_pio_set_view_local.3, man/man3/gfs_pio_ungetc.3, man/man3/gfs_pio_write.3, man/man3/gfs_readdir.3, man/man3/gfs_rename.3, man/man3/gfs_pio_close.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_eof.3, man/man3/gfs_pio_error.3, man/man3/gfs_pio_flush.3, man/man3/gfs_pio_getc.3, man/man3/gfs_pio_getline.3, man/man3/gfs_pio_open.3, man/man3/gfs_pio_putc.3, man/man3/gfs_pio_putline.3, man/man3/Makefile, man/man3/gfarm_initialize.3, man/man3/gfarm_strings_free_deeply.3, man/man3/gfarm_terminate.3, man/man3/gfarm_url_hosts_schedule.3, man/man3/gfs_chmod.3, man/man3/gfs_chown.3, man/man3/gfs_closedir.3, man/man3/gfs_mkdir.3, man/man3/gfs_opendir.3, man/man1/gfreg.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfrsh.1, man/man1/gfrun.1, man/man1/gfssh.1, man/man1/gfwc.1, man/man1/gfwhere.1, man/ja/man3/gfs_pio_set_view_local.3, man/man1/Makefile, man/man1/digest.1, man/man1/gfexport.1, man/man1/gfgrep.1, man/man1/gfimport_fixed.1, man/man1/gfimport_text.1, man/man1/gfkey.1, man/man1/gfmpirun.1, man/man1/gfps.1, man/man1/gfrcmd.1, man/Makefile, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_set_local.3:
 	Added english man pages.
 
-2002-08-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-08-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/ja/man1/gfrun.1, gftool/gfrun/gfrun.c:
 	Changed the command option from -H gfarm-URL to -G gfarm-URL.
@@ -1095,7 +1660,7 @@
 	- print the warning message only once,
 	  this also should prevent infinite recursion.
 
-2002-07-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-07-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hooks_subr.c (gfs_hook_not_initialized):
 	Fixed typo.  Commented out fprintf("...") to avoid infinite recursive calls.
@@ -1145,7 +1710,7 @@
 	config directive to select authentication method.
 	(default: NONE)
 
-2002-06-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-06-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/sysdep/linux/xstatconv.c, makes/man.mk, makes/subdir.mk, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/sysdep/linux/Makefile.in, lib/gfs_hook/sysdep/linux/kernel_stat.h, lib/gfs_hook/sysdep/linux/xstat.c, lib/gfs_hook/sysdep/linux/xstat64.c, include/gfs.h, lib/Makefile, lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/url.c, Makefile.in, configure, configure.in:
 	Added gfs_hook.o that is a modified version by soda-san.
@@ -1158,7 +1723,7 @@
 	delegated credential should be used only for `switch_to' case.
 	(i.e. only for gfsd case. and shouldn't be used for gfmd case.)
 
-2002-06-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-06-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, ChangeLog:
 	Sessions should be initiated with the delegated credential.  gfrep now works fine using GSI!
@@ -1236,7 +1801,7 @@
 	* gfarmlib/gfs_client.c, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
 	modify gfarm_iobuffer API to prepare GFSL integration.
 
-2002-05-20  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-05-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nstool/file/get.c, nstool/file/put.c, nstool/file/stat.c:
 	Added an error checking code for remote execution.
@@ -1258,7 +1823,7 @@
 	bandwidth and latency between disk controller and cpu can be measured
 	by specifying raw disk device with this program.
 
-2002-05-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-05-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* man/ja/man3/Makefile: Fixed a typo of a filename.
 
@@ -1284,12 +1849,12 @@
 	* man/Makefile, man/ja/Makefile, man/ja/Makefile.inc, man/ja/man1/Makefile, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrsh.1, man/ja/man1/gfrun.1, man/ja/man1/gfssh.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3:
 	man pages of libgfarm and gftools
 
-2002-04-24  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfsl/Makefile, lib/libgfsl/README:
 	Added a compile option for static linking.
 
-2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nstool/file/stat.c, nstool/file/Makefile.in:
 	Added a ns client program stat.
@@ -1302,7 +1867,7 @@
 	* INSTALL.ja:
 	reflect recent changes, mention program registration by gfreg.
 
-2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-pvfs/Makefile, bench/thput-pvfs/thput-pvfs.c:
 	Experimental code for benchmarking of PVFS.
@@ -1332,13 +1897,13 @@
 	which don't support "long long".
 	but do not use that way for thput-fsys, to make it independent of gfarm.
 
-2002-04-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-gfpio/thput-gfpio.c:
 	Double-precision floating division is replaced with multiplication.
 	Changed type format from ld to lld when printing file_size.
 
-2002-04-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* include/comm.h, include/gflib.h, include/ns.h, include/nsclnt.h, include/nsexec.h:
 	Catched up with the change of gfarm-related header files' path.
@@ -1384,14 +1949,14 @@
 	- rename gfs_pio_error() to gfs_pio_clearerr() just like <stdio.h>
 	- define gfs_pio_get_nfragment()
 
-2002-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog: Catched up with the current ChangeLog.
 
 	* bench/thput-gfpio/thput-gfpio.c:
 	Use gettimeofday() on every platform except i386.
 
-2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/auth_common.c, gfarmlib/auth_server.c, gfarmlib/error.c, gfarmlib/gfs_pio_global.c, gfarmlib/stringlist.c:
 	Added missing include files.
@@ -1420,7 +1985,7 @@
 	* gfarmlib/gfs_pio_local.c:
 	just renaming local variable to avoid misunderstanding
 
-2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-gfpio/thput-gfpio.c: Catched up with the new Gfarm API.
 
@@ -1429,7 +1994,7 @@
 	* gfarmlib/gfj_client.h, gfarmlib/gfm_client.c, gftool/gfmpirun/Makefile, gftool/gfmpirun/gfmpirun.c, gftool/gfrun/Makefile, gftool/gfrun/gfrun.c:
 	forgot to register job on gfmpirun
 
-2002-04-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-04-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/schedule.c (gfarm_url_hosts_schedule):
 	Fixed a bug when scheduling by a Gfarm file with multiple replicas.  strdup() is necessary.
@@ -1457,7 +2022,7 @@
 	* include/Makefile.in:
 	use <gfarm/XXXX.h> instead of <gfarm.h> for header file name of gfarm API.
 
-2002-03-26  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-03-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gftool/gfrun/gfrun.c:
 	Added the -H <Gfarm file> option.  This option specifies the Gfarm file used for scheduling.
@@ -1486,17 +2051,17 @@
 	* gfsd/main.c:
 	before this change, table_size might be garbage, if !defined(HAVE_SETRLIMIT).
 
-2002-03-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-03-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* bench/thput-fsys/thput-fsys.c:
 	Use gettimeofday() on every platform except i386.
 
-2002-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-02-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfsl/README:
 	Added a description how to compile and how to test.
 
-2002-02-12  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-02-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfsl/Makefile, lib/libgfsl/gfarm-usermap:
 	Quich hack for Globus Toolkit 2.0.
@@ -1537,7 +2102,7 @@
 	* lib/libgfsl/session.c:
 	do not dumps core, rather returns error, if gfarmSecSessionAccept() aborts.
 
-2002-02-07  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-02-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog, INSTALL.ja: Added ChangeLog and INSTALL.ja.
 
@@ -1665,7 +2230,7 @@
 	because fopen(2) wastes entropy and cpu resource by reading BUFSIZ random bytes
 	rather than just reading the `length' bytes.
 
-2002-01-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2002-01-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_hook.c (open64): Fixed a bug when calling syscall().
 
@@ -1716,7 +2281,7 @@
 	* gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_common.c, gfarmlib/auth_server.c:
 	split authentication module to share with gfmd
 
-2001-12-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-12-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmd/gfarmd.c (gfarmd_wait):
 	Unregister a process entry when the specified process is not a child process or has already gone.
@@ -1817,7 +2382,7 @@
 	* gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in:
 	remove unneeded autoconf substitutions
 
-2001-10-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-10-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmd/gfd_auth.c: Fixed careless miss.
 
@@ -1827,7 +2392,7 @@
 	I'm using (very) old linux distribution which doesn't define _STAT_VER_KERNEL
 	in /usr/include/bits/stat.h...
 
-2001-10-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-10-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfsd/logutil.c: Added #include <stdlib.h> for exit(2).
 
@@ -1898,7 +2463,7 @@
 	on autoconf-2.13. the sed substition isn't generated at second appearance
 	of AC_OUTPUT().
 
-2001-08-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_hook.c: Added a hook of stat() on Linux!
 
@@ -1911,29 +2476,29 @@
 		o Adding mechanism to select system dependent syscall (or others)
 		  hooking configuration. Right now, only for ix86 based Linux.
 
-2001-08-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_hook.c, gfarmlib/url.c:
 	url.c (is_url,url_make_path): Objectivity patch.  '/gfarm:' is also considered as a Gfarm URL.
 	gfs_hook.c: Added stat() hooking, however it works on only Solaris not Linux.  Linux inlines stat() which calls __xstat() with an additional version argument.  Since gfs_stat() is not implemented yet, this hook only works like stat_local().
 
-2001-08-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* include/gfarm_misc.h, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/url.c:
 	First version for hooking system calls like open(), close(), read() and write().
 	Tested on Linux and Solaris.
 	errno is not set appropriately yet when gfs_*() is invoked.
 
-2001-08-23  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nstool/file/ns_readdir.c: Sends a stat also.
 
-2001-08-22  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* include/comm.h, include/nscom.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/file.c, nslib/soc-lxdr.c, nslib/soc.c:
 	Addd a const type qualifier to a buf argument of ns_data_send().
 
-2001-08-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nstool/file/Makefile.in, nstool/file/ns_readlink.c, nstool/file/ns_symlink.c:
 	ns_readlink.c, ns_symlink.c: Added.
@@ -1947,7 +2512,7 @@
 	* nstool/file/Makefile.in, nstool/file/ns_mkdir.c, nstool/file/ns_readdir.c:
 	Added new ns executables for file manipulations.
 
-2001-08-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nslib/file.c, nslib/nsclnt.c, nslib/soc-lxdr.c, nslib/soc.c, nstool/file/ns_lstat.c, nstool/file/ns_stat.c, nstool/file/ns_unlink_dir.c, include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c:
 	Changed datatype of buf argument of ns_send and recv from char * to void *.
@@ -1960,12 +2525,12 @@
 
 	* nslib/soc-lxdr.c (ns_lxdr_recv): Return if there is no message.
 
-2001-08-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-08-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nslib/file.c, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c, nstool/file/put.c, include/nscom.h:
 	Modified APIs for file transfer between a Gfarm client and a Gfarm server.
 
-2001-07-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-07-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/gfs_pio.c (gfs_pio_write):
 	Fixed a bug not to update the number of byte written.
@@ -1989,7 +2554,7 @@
 	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfsd/main.c, include/gfs.h, configure, configure.in:
 	add a simple tool to create replica.
 
-2001-06-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-06-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarm/gfarm.c (gfarm_nexec):
 	Added gfarm_clnt_display_msgs() for flushing messages before closing a data connection.
@@ -1997,7 +2562,7 @@
 	* nslib/gflib.c:
 	Added an error checking code for all ns_comm_printf()s.
 
-2001-05-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-05-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, include/gflib.h, nslib/gflib.c:
 	Changed a syntax of the kill command, kill pid.
@@ -2009,7 +2574,7 @@
 
 	* gftool/gfmpirun/gfmpirun.c: SA_RESETHAND is not needed, and harmful.
 
-2001-05-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-05-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmlib/url.c (gfarm_username): Added.
 	(gfarm_canonical_path): gfarm:path/name is now expanded to ${USER}/path/name like scp filenames.
@@ -2030,7 +2595,7 @@
 	* gfarmlib/gfs_pio.c:
 	yet another error check, pointed out by tatebe-san
 
-2001-05-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-05-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmd/gfd_cmd.h: Added #include <sys/types.h> for pid_t.
 
@@ -2055,7 +2620,7 @@
 	* gftool/gfreg/gfreg.c:
 	add a feature to register program binary to gfarm spool.
 
-2001-05-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-05-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarm/gfarm.c, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, include/gflib.h, include/nsclnt.h, nslib/gflib.c, nslib/nsclnt.c, nstool/file/get.c, nstool/file/put.c:
 	Added a new protocol WAIT pid for gfarmd.  This waits for the process completion specified by pid.
@@ -2067,7 +2632,7 @@
 	* include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/soc.c (ns_comm_printf):
 	 Changed a return datatype from void to int.  This function returns EOF upon unsuccessful completion.
 
-2001-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-04-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nslib/nsclnt.c (ns_clnt_wait_input): Commented out.
 
@@ -2084,7 +2649,7 @@
 	* gfarm/gfarm.c:
 	Just enclose a variable definition of gfarm_out with #ifdef USE_READLINE and #endif.
 
-2001-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-04-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* nstool/file/get.c, nstool/file/put.c:
 	If sending arguments fails, go to ns_clnt_rexec_wait() instead of exit(1), because it is nesessary to receive a status message from gfarm server.
@@ -2101,7 +2666,7 @@
 
 	* include/gflib.h, nslib/gflib.c (gfarm_clnt_active): Added.
 
-2001-04-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-04-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_parse.c:
 	Makefile.in: Added daemon.c.
@@ -2130,7 +2695,7 @@
 	* gfsd/main.c, gfsd/logutil.c:
 	use GFARM_ARRAY_LENGTH() rather than home grown ARRAY_LENGTH().
 
-2001-04-02  Tatebe Osamu  <o.tatebe@aist.go.jp>
+2001-04-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* gfarmd/gfarmd.c (main):
 	Become a daemon after listening a socket.  That is because the error message for failure of the bind is not displayed.
@@ -2151,7 +2716,7 @@
 	* gfsd/logutil.c:
 	priority was not used on log_message(), pointed out by tatebe-san.
 
-2001-03-30  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-30  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/soc.c, gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, makes/var.mk:
 	gfarmd: use syslog().  However, not tested enough yet.  Just temporally check in.
@@ -2175,7 +2740,7 @@
 	- do not access `errno', because strdup() doesn't set it.
 	- only call malloc() once. (not twice)
 
-2001-03-11  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-11  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmlib/gfs_pio.c, gfarmlib/url.c, include/gfarm_misc.h:
 	url.c (gfarm_cannonical_path): Added.  This function is called within gfarm_url_make_path().
@@ -2184,11 +2749,11 @@
 	* gftool/gfreg/gfreg.c (main):
 	Deleted a file existence check because the gfarm spool root directory should be added prior to the path name of the file.
 
-2001-03-10  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-10  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfd_auth.c (gfarmd_login): Set the environment variable HOME.
 
-2001-03-09  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-09  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gftool/gfreg/gfreg.c: Index is now specified using the -I option.
 
@@ -2199,7 +2764,7 @@
 	gfreg.c (main): Added a code for command option parsing.
 	gfgrep.c (main): Added a missing '\n' of an error message.
 
-2001-03-02  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-02  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmlib/gfs_pio.c, gfarmlib/url.c:
 	gfs_pio.c (gfs_pio_set_fragment_info_local): Unlink a newly created symlink if registration farls.  Changed indentation.
@@ -2237,7 +2802,7 @@
 	* gfarmlib/config.c:
 	fix a bug to read ~/.gfarmrc. pointed out by tatebe-san.
 
-2001-03-01  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-03-01  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* configure, configure.in, gftool/Makefile, gftool/gfsched/Makefile.in, gftool/gfsched/gfsched.c:
 	gftool/gfsched: Added.  This program create a hostfile from a given gfarm_url.
@@ -2249,12 +2814,12 @@
 	gfs_pio.c (gfs_pio_set_fragment_info_local): Added.  This function is used with legacy applications.
 	url.c (gfarm_file_absolute): Added.  This function returns the absolute path from a given relative path.
 
-2001-02-28  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-28  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarm/gfarm.c, gfarmd/gfarmd.c:
 	Reverted the default mode of gfarm and gfarmd to active mode.  That is because there is no method to flush stdout message of every remote program in passive mode.  Passive mode is used in the case of GridRPC.
 
-2001-02-26  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-26  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/soc-lxdr.c:
 	Added an error checking after ns_soc_send() and ns_soc_recv().
@@ -2266,7 +2831,7 @@
 	Added a check code after every malloc() system call.
 	(ns_soc_recv): Return -1 when read error occurs.
 
-2001-02-23  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-23  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/nsclnt.c: Changed default mode to the passive mode.
 
@@ -2372,7 +2937,7 @@
 
 	* acconfig.h, gfarm_config.h.in: add definition of FILE_OFFSET_T_MAX
 
-2001-02-19  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-19  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfd_cmd.l, gfarm/cmd.l: Added special characters to string.
 
@@ -2388,14 +2953,14 @@
 	* gfarmd/gfarmd.c, gfarmd/gfd_parse.c:
 	gfarmd.c (gfarmd_perror_reply): Added.
 
-2001-02-18  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-18  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c:
 	gfarmd_auth.c: Fixed a bug of chroot() for anonymous login.
 	gfarmd_auth.c: Restricted a command path to gfarmd_root/user_directory and gfarmd_root/nsbin.
 	For anonymous users, it is necessary to create gfarmd_root/lib directory and copy necessary shared libraries in the directory.
 
-2001-02-16  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-16  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* include/nscom.h, nslib/file.c, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c:
 	ns_recv_file(): Added an optional argument to specify a local filename.
@@ -2419,7 +2984,7 @@
 	* nstool/file/Makefile, nstool/file/Makefile.in:
 	rename Makefile to Makefine.in
 
-2001-02-15  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-15  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nstool/file/Makefile, nstool/file/file.c, nstool/file/file.h, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c, nstool/file/put.c:
 	NS tools.  This directory contains NS client/server tools.
@@ -2440,7 +3005,7 @@
 
 	* gfarmlib/stringlist.c: clean up and fix bogons
 
-2001-02-14  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-14  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/comm.c, nslib/soc.c, include/comm.h, include/soc-lxdr.h, include/soc.h:
 	Added a host entry in struct Connect.
@@ -2454,7 +3019,7 @@
 	* include/gfarm_misc.h, include/gfs.h, gfsd/Makefile.in, gfsd/loadavg.c, gfsd/main.c, include/gfarm.h, include/gfarm_error.h, include/gfarm_metadb.h, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/stringlist.c, gfarmlib/url.c, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/hash.c, gfarmlib/import_help.c, acconfig.h, configure, configure.in, gfarm_config.h.in, gfarmlib/Makefile.in, gfarmlib/config.c, gfarmlib/error.c:
 	gfarm pio library and gfsd implementation
 
-2001-02-09  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-09  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarm/gfarm.c, gfarmd/gfd_auth.c (gfarmd_user):
 	Changed an effective userid to root during execution of getspnam_r().
@@ -2483,7 +3048,7 @@
 	- add -with-gfarm-rsh option to configure
 	- remove double quotation from configure's argument, add it on Makefile
 
-2001-02-05  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-05  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfarmd.c (gfarmd_setenv):
 	Added.  This function is called before execution of the gfarm pool program to set up the environment variable, now only NS_DEBUG.
@@ -2495,7 +3060,7 @@
 	* gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c:
 	gfd_auth.c (gfarmd_getuidnam): Added.  This function returns uid from username.
 
-2001-02-03  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-03  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, include/gflib.h, nslib/gflib.c, nslib/nslib.c, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/gfarmd.c:
 	Added a passive mode.  In active mode, a remote program executed by gfarm server connects a gfarm client.  In passive mode, both a gfarm client and a remote program connect a gfarm proxy forked by gfarm server.
@@ -2506,7 +3071,7 @@
 	* gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c (gfarmd_user, gfarmd_pass):
 	Moved to a new file gfd_auth.c.
 
-2001-02-02  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-02  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/gflib.c, nslib/soc.c, include/comm.h (ns_comm_connect_ext):
 	Added.  This function is used to connect using rsh/ssh.
@@ -2527,7 +3092,7 @@
 
 	* configure, configure.in: replace "_" by "-" on "-with-XXX_XXX" option
 
-2001-02-01  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-02-01  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/soc.c (ns_soc_connect_stdio):
 	Added an initialization of streams.
@@ -2564,7 +3129,7 @@
 	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
 	fix warnings reported by "gcc -Wall"
 
-2001-01-29  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-29  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfarmd.c (reapchild):
 	Just changed a code to display pids of reaped children.
@@ -2587,12 +3152,12 @@
 	* gfarmd/gfarmd.c:
 	fix problem that effective uid may be incorrectly left as root.
 
-2001-01-27  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-27  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/comm.c, nslib/gflib.c, nslib/nsexec.c, nslib/nslib.c, nslib/soc-lxdr.c, nslib/soc.c, gfarm/gfarm.c, gfarmd/gfarmd.c, include/bswap.h, include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/Makefile, nslib/bswap.c:
 	Added a socket library with light-weight network-byte-order translation.  Byte-order translation is only applied by ns_data_send() and ns_data_recv(), and other functions are defined by the original socket library, soc.c.  Now this library is default.
 
-2001-01-26  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-26  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/nsexec.c, include/nslib.h:
 	nslib.h: Added a missing function declaration of ns_clnt_rexec_wait().
@@ -2601,7 +3166,7 @@
 	* include/nslib.h, nslib/nslib.c:
 	nslib.c (ns_clnt_connect): Changed an interface.  Now, this function checks whether login succeeds or not.
 
-2001-01-25  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-25  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/nsexec.c, nslib/nslib.c, nslib/soc.c:
 	nslib.c, nsexec.c (main): Fix a bug and changed an initialization part slightly. This main function is for testing.
@@ -2629,7 +3194,7 @@
 	* include/bswap.h:
 	portability fix: use <machine/endian.h> on BSD derived systems.
 
-2001-01-24  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-24  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/stublib.c, makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.irix, makes/Make.inc.linux, makes/Make.inc.rssp, makes/Make.inc.solaris, makes/Make.inc.sr8k, nslib/Makefile, nslib/clntcom.c, nslib/clntlib.c, nslib/comm.c, nslib/gflib.c, nslib/nsexec.c, nslib/nslib.c, nslib/soc.c, gfarm/gfarm.c, gfarmd/gfarmd.c, include/comm.h, include/gflib.h, include/nsexec.h, include/nslib.h:
 	Added gflib.c that is a library for gfarm client protocol in nslib/ directory.
@@ -2650,19 +3215,19 @@
 	* nslib/nslib.c:
 	portablity fix: <sys/types.h> is needed before <netinet/in.h>
 
-2001-01-24  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-24  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.alpha, makes/Make.inc.irix, makes/Make.inc.rssp, makes/Make.inc.solaris, makes/Make.inc.sr8k, nslib/soc.c:
 	Added a configuration file for IBM RS6000/SP.
 	Added compilation flags; -DNS_SOCKLEN_T_IS_INT and -DNS_SOCKLEN_T_IS_SIZE_T.
 
-2001-01-23  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-23  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* makes/Make.inc.sr8k: Added a comment for getpasswd(3).
 
 	* makes/Make.inc.sr8k: Added a new make.inc file for sr8k.
 
-2001-01-22  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-22  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* include/nslib.h, include/soc.h, nslib/clntcom.c, nslib/clntlib.c, nslib/nslib.c, nslib/soc.c:
 	Added ns_comm_setenv() and ns_comm_getenv() to pass the descriptor of a socket.
@@ -2675,7 +3240,7 @@
 	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarm/Makefile:
 	gfarm.c: Added gfarm_lexec() and removed gfarm_datafarm().
 
-2001-01-19  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-19  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfarmd.c (gfarmd_pass):
 	After logged in, user ID (not user effective ID) of a child process is changed.
@@ -2693,7 +3258,7 @@
 	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
 	GFarm meta database i/f
 
-2001-01-17  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-17  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* nslib/soc.c (ns_soc_close): Execution continues when close(2) fails.
 
@@ -2703,7 +3268,7 @@
 
 	* gfarm/cmd.l, gfarm/cmd.y: Changed an usage message slightly.
 
-2001-01-16  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-16  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* gfarmd/gfd_parse.c, include/nslib.h, include/soc.h, nslib/nslib.c, nslib/soc.c, gfarmd/gfarmd.c, gfarmd/gfd_cmd.l:
 	Added ns_comm_dup_stderr() to redirect stderr of a remotely executed program.
@@ -2715,7 +3280,7 @@
 	Added a rule to create necessary symlinks.
 	Added make veryclean in nslib/Makefile.
 
-2001-01-15  Tatebe Osamu  <tatebe@etl.go.jp>
+2001-01-15  Osamu Tatebe  <tatebe@etl.go.jp>
 
 	* Makefile, gfarm/Makefile, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/Makefile, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, gfarmd/symtab.c, gfarmd/symtab.h, gfarmd/yyerror.c, include/bswap.h, include/debug.h, include/nslib.h, include/soc-xdr.h, include/soc.h, include/type.h, makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.alpha, makes/Make.inc.irix, makes/Make.inc.solaris, nslib/Makefile, nslib/bswap.c, nslib/clntcom.c, nslib/clntlib.c, nslib/nslib.c, nslib/soc-xdr.c, nslib/soc.c, nslib/stublib.c:
 	Grid Data Farm
