@@ -242,19 +242,18 @@ file_table_init(int table_size)
 }
 
 int
-file_table_add(struct xxx_connection *client)
+file_table_add(struct xxx_connection *client, char *username, char *hostname)
 {
 	int fd = xxx_connection_fd(client);
 
-	if (fd < 0) {
-		xxx_connection_free(client);
+	if (fd < 0)
 		return (EINVAL);
-	}
-	if (fd >= file_table_size) {
-		xxx_connection_free(client);
+	if (fd >= file_table_size)
 		return (EMFILE);
-	}
+
 	file_table[fd].conn = client;
+	file_table[fd].user = username;
+	file_table[fd].host = hostname;
 	if (fd > file_table_max)
 		file_table_max = fd;
 	return (0);
@@ -659,11 +658,12 @@ main_loop(int accepting_socket)
 			    &username, &hostname)) != NULL) {
 				gflog_warning("authorize", e);
 				xxx_connection_free(client_conn);
-			} else if ((errno = file_table_add(client_conn)) != 0){
+			} else if ((errno = file_table_add(client_conn,
+			    username, hostname)) != 0) {
 				gflog_warning_errno("file_table_add");
-			} else {
-				file_table[client_socket].user = username;
-				file_table[client_socket].host = hostname;
+				xxx_connection_free(client_conn);
+				free(username);
+				free(hostname);
 			}
 		}
 		for (fd = 0; fd <= file_table_max; fd++) {
