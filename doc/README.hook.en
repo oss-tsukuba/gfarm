@@ -37,10 +37,13 @@ or
 	% cc -static prog.c /usr/grid/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
 
-In RedHat9 and Fedora Core 1, openldap libraries in a rpm package
-cannot be linked statically.  It results in segmentation fault.  In
-this case, you need to install openldap and required libraries such as
-Berkeley DB by yourself.
+Note that openldap libraries in a rpm package cannot be linked
+statically in RedHat-9 and Fedora Core 1.  It results in segmentation
+fault.  In this case, you need to install openldap and required
+libraries such as Berkeley DB by yourself.
+
+Note that static linking results in segmentation fault when using LDAP
+authentication in RedHat-8.0 and RedHat-7.3.
 
 In the case with the Globus GSI library of the flavor gcc32,
 
@@ -63,12 +66,16 @@ Follows the section for C programs but with an appropriate compiler.
 
 * MPI program
 
-In the case of MPI programs, link with gfs_hook_mpi.o instead of
-gfs_hook.o.
+In the case of MPI programs, link with gfs_hook_no_init.o and
+hooks_init_mpi.c instead of gfs_hook.o.
 
-	% mpicc prog.c /usr/grid/lib/gfs_hook_mpi.o -lgfarm -lldap -llber
+	% mpicc prog.c /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
+		-lgfarm -lldap -llber
 
-	% mpicc -static prog.c /usr/grid/lib/gfs_hook_mpi.o -lgfarm -lldap -llber \
+or
+
+	% mpicc -static prog.c /usr/lib/gfs_hook_mpi.o \
+		/usr/lib/hooks_init_mpi.c -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 ** How to run programs
@@ -94,12 +101,13 @@ Moreover, we provide a mount point for a Gfarm file system; '/gfarm'.
 '/gfarm/' is considered to be the root directory in Gfarm file system
 instead of a current working directory.  That is because applications
 usually assume that '/gfarm/' is an absolute path.  A home directory
-can be specified by '/gfarm/~'.
+and the current directory can be specified by '/gfarm/~' and
+'/gfarm/.', respectively.
 
-We also provide a way to explicitly specify a fragment index of a
-Gfarm file by extending Gfarm URL.  'gfarm::0:foo.txt' (or
-'gfarm@:0:foo.txt') and '/gfarm:0:/~/foo.txt' specify the first
-fragment of 'gfarm:foo.txt' and 'gfarm:~/foo.txt', respectively.
+We also provide a way to explicitly specify a fragment index (or
+section) of a Gfarm file by extending Gfarm URL.  'gfarm::0:foo.txt',
+'gfarm@:0:foo.txt', or '/gfarm:0:/./foo.txt' specifies the first
+fragment of 'gfarm:foo.txt'.
 
 ** gfs_hook APIs
 
@@ -113,20 +121,24 @@ opening or creating operations.
 
 void gfs_hook_set_default_view_local(void);
 void gfs_hook_set_default_view_index(int index, int nfrags);
+void gfs_hook_set_default_view_section(char *section);
 void gfs_hook_set_default_view_global(void);
 
 * changing file view
 
 The following APIs change the file view of a file specified by a file
 descriptor 'fd'.  The semantics is same as gfs_pio_set_view_local (3),
-gfs_pio_set_view_index (3), and gfs_pio_set_view_global (3),
-respectively, except the first argument.
+gfs_pio_set_view_index (3), gfs_pio_set_view_section (3), and
+gfs_pio_set_view_global (3), respectively, except the first argument.
 
 char *
 gfs_hook_set_view_local(int fd, int flags);
 
 char *
 gfs_hook_set_view_index(int fd, int nfrags, int index, char *host, int flags);
+
+char *
+gfs_hook_set_view_section(int fd, char *section, char *host, int flags);
 
 char *
 gfs_hook_set_view_global(int fd, int flags);
