@@ -38,6 +38,7 @@
 #include "sockopt.h"
 #include "host.h"
 #include "auth.h"
+#include "config.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
@@ -1841,7 +1842,7 @@ server(int client_fd)
 	 * gfarm_get_local_homedir() which are necessary for
 	 * gfs_client_connect() called from gfs_server_replicate_file().
 	 */
-	e = gfarm_authorize(client, 1, NULL, NULL, NULL);
+	e = gfarm_authorize(client, 1, GFS_SERVICE_TAG, NULL, NULL, NULL);
 	if (e != NULL)
 		gflog_fatal("gfarm_authorize", e);
 
@@ -2056,7 +2057,7 @@ main(int argc, char **argv)
 			restricted_user = getuid();
 			break;
 		case 'v':
-			gfarm_authentication_verbose = 1;
+			gflog_auth_set_verbose(1);
 			break;
 		case '?':
 		default:

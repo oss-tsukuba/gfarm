@@ -26,6 +26,7 @@
 #include "io_fd.h"
 #include "sockopt.h"
 #include "auth.h"
+#include "config.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
 
@@ -673,6 +674,7 @@ main_loop(int accepting_socket)
 				gflog_warning("fd_connection_new", e);
 				close(client_socket);
 			} else if ((e = gfarm_authorize(client_conn, 0,
+			    GFM_SERVICE_TAG,
 			    &username, &hostname, NULL)) != NULL) {
 				gflog_warning("authorize", e);
 				xxx_connection_free(client_conn);
@@ -778,7 +780,7 @@ main(int argc, char **argv)
 				gflog_fatal(optarg, "unknown syslog facility");
 			break;
 		case 'v':
-			gfarm_authentication_verbose = 1;
+			gflog_auth_set_verbose(1);
 			break;
 		case '?':
 		default:
