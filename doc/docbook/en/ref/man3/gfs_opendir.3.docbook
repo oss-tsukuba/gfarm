@@ -34,7 +34,6 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>NOT SUPPORTED YET.</para>
 
 <para>The <function>gfs_opendir()</function> function opens a directory stream
 corresponding to the directory <parameter>gfarm_url</parameter>, and returns the

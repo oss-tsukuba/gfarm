@@ -23,7 +23,7 @@
 <funcprototype>
   <funcdef><function><returnvalue>char *</returnvalue>gfs_readdir</function></funcdef>
     <paramdef>GFS_Dir <parameter>dir</parameter></paramdef>
-    <paramdef>char ** <parameter>entryp</parameter></paramdef>
+    <paramdef>struct gfs_dirent ** <parameter>entryp</parameter></paramdef>
 </funcprototype>
 
 

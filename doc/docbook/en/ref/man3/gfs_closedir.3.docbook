@@ -33,7 +33,6 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>NOT SUPPORTED YET.</para>
 
 <para>The <function>gfs_closedir()</function> function closes the directory stream
 associated with <parameter>dir</parameter>.  The directory stream descriptor <parameter>dir</parameter>

@@ -69,7 +69,7 @@ CLASS="PARAMETER"
 ><I
 >dir</I
 ></TT
->, char ** <TT
+>, struct gfs_dirent ** <TT
 CLASS="PARAMETER"
 ><I
 >entryp</I
@@ -88,31 +88,38 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->NOT SUPPORTED YET.</P
-><P
 >The <TT
 CLASS="FUNCTION"
 >gfs_readdir()</TT
-> function reads a directory entry from
-<TT
+> function reads a
+directory entry from <TT
 CLASS="PARAMETER"
 ><I
 >dir</I
 ></TT
->, and returns the pointer of the entry to the address pointed
-to by <TT
+>, and returns the
+pointer of the entry to the address pointed to by
+<TT
 CLASS="PARAMETER"
 ><I
 >entryp</I
 ></TT
->.  The buffer pointed to by <TT
+>.  The buffer pointed to by
+<TT
 CLASS="PARAMETER"
 ><I
 >entryp</I
 ></TT
-> is
-destroyed when calling succeeding gfs_readdir() or gfs_closedir() with
-the same argument <TT
+> is destroyed when calling succeeding
+<TT
+CLASS="FUNCTION"
+>gfs_readdir()</TT
+> or
+<TT
+CLASS="FUNCTION"
+>gfs_closedir()</TT
+> with the same argument
+<TT
 CLASS="PARAMETER"
 ><I
 >dir</I
