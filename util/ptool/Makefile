@@ -11,7 +11,7 @@ all:
 install:
 	@for i in / $(SCRIPTS); do \
 		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(bindir)/$${i} ); \
+		( set -x; $(INSTALL_PROGRAM) $(srcdir)/$${i} $(bindir)/$${i} ); \
 	done
 
 clean:
