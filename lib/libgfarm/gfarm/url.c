@@ -376,8 +376,8 @@ gfarm_url_remove_suffix(char *gfarm_url, char *suffix, char **out_urlp)
  * convenience functions
  */
 
-char *
-gfarm_url_prefix_skip(char *gfarm_url)
+const char *
+gfarm_url_prefix_skip(const char *gfarm_url)
 {
 	if (memcmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH) == 0)
 		gfarm_url += GFARM_URL_PREFIX_LENGTH;

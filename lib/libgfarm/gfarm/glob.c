@@ -56,7 +56,7 @@ gfs_glob_add(gfs_glob_t *listp, int dtype)
  * gfs_glob
  */
 static void
-glob_pattern_to_name(char *name, char *pattern, int length)
+glob_pattern_to_name(char *name, const char *pattern, int length)
 {
 	int i, j;
 
@@ -72,7 +72,7 @@ glob_pattern_to_name(char *name, char *pattern, int length)
 }
 
 static int
-glob_charset_parse(char *pattern, int index, int *ip)
+glob_charset_parse(const char *pattern, int index, int *ip)
 {
 	int i = index;
 
@@ -102,7 +102,7 @@ glob_charset_parse(char *pattern, int index, int *ip)
 }
 
 static int
-glob_charset_match(int ch, char *pattern, int pattern_length)
+glob_charset_match(int ch, const char *pattern, int pattern_length)
 {
 	int i = 0, negate = 0;
 	unsigned char c = ch, *p = (unsigned char *)pattern;
@@ -126,7 +126,7 @@ glob_charset_match(int ch, char *pattern, int pattern_length)
 }
 
 static int
-glob_name_submatch(char *name, char *pattern, int namelen)
+glob_name_submatch(char *name, const char *pattern, int namelen)
 {
 	int w;
 
@@ -156,8 +156,8 @@ glob_name_submatch(char *name, char *pattern, int namelen)
 }
 
 static int
-glob_prefix_length_to_asterisk(char *pattern, int pattern_length,
-	char **asterisk)
+glob_prefix_length_to_asterisk(const char *pattern, int pattern_length,
+	const char **asterisk)
 {
 	int i, length = 0;
 
@@ -178,9 +178,9 @@ glob_prefix_length_to_asterisk(char *pattern, int pattern_length,
 }
 
 static int
-glob_name_match(char *name, char *pattern, int pattern_length)
+glob_name_match(char *name, const char *pattern, int pattern_length)
 {
-	char *asterisk;
+	const char *asterisk;
 	int residual = strlen(name);
 	int sublen = glob_prefix_length_to_asterisk(pattern, pattern_length,
 	    &asterisk);
@@ -209,7 +209,7 @@ glob_name_match(char *name, char *pattern, int pattern_length)
 }
 
 static char *
-gfarm_url_prefix_add(char *s)
+gfarm_url_prefix_add(const char *s)
 {
 	char *p = malloc(GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
 
@@ -225,7 +225,7 @@ static char GFARM_ERR_PATHNAME_TOO_LONG[] = "pathname too long";
 #define GLOB_PATH_BUFFER_SIZE	(PATH_MAX * 2)
 
 static char *
-gfs_glob_sub(char *path_buffer, char *path_tail, char *pattern,
+gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	gfarm_stringlist *paths, gfs_glob_t *types)
 {
 	char *s, *e, *e_save = NULL;
@@ -325,9 +325,10 @@ gfs_glob_sub(char *path_buffer, char *path_tail, char *pattern,
 }
 
 char *
-gfs_glob(char *pattern,	gfarm_stringlist *paths, gfs_glob_t *types)
+gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 {
-	char *s, *p = NULL, *e = NULL;
+	const char *s;
+	char *p = NULL, *e = NULL;
 	int len, n = gfarm_stringlist_length(paths);
 	char path_buffer[GLOB_PATH_BUFFER_SIZE + 1];
 

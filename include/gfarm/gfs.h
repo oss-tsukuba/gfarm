@@ -116,7 +116,7 @@ char *gfs_chmod(const char *, gfarm_mode_t);
 char *gfs_utimes(const char *, const struct gfarm_timespec *);
 char *gfs_rename(const char *, const char *);
 
-char *gfs_stat(char *, struct gfs_stat *);
+char *gfs_stat(const char *, struct gfs_stat *);
 char *gfs_stat_section(char *, char *, struct gfs_stat *);
 char *gfs_stat_index(char *, int, struct gfs_stat *);
 char *gfs_fstat(GFS_File, struct gfs_stat *);
@@ -136,10 +136,10 @@ struct gfs_dirent {
 #define	GFS_DT_REG		 8
 
 typedef struct gfs_dir *GFS_Dir;
-char *gfs_opendir(char *, GFS_Dir *);
+char *gfs_opendir(const char *, GFS_Dir *);
 char *gfs_readdir(GFS_Dir, struct gfs_dirent **);
 char *gfs_closedir(GFS_Dir);
-char *gfs_realpath(char *, char **);
+char *gfs_realpath(const char *, char **);
 
 void gfs_uncachedir(void);
 

@@ -14,7 +14,7 @@ gfs_chdir(const char *dir)
 {
 	char *e, *canonic_path, *new_dir;
 
-	e = gfarm_canonical_path(dir, &canonic_path);
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(dir), &canonic_path);
 	if (e != NULL)
 		return (e);
 	
@@ -36,7 +36,8 @@ gfs_chdir(const char *dir)
 char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
-	char *path, *default_cwd = NULL;
+	const char *path;
+	char *default_cwd = NULL;
 	int len;
 	
 	if (gfarm_current_working_directory != NULL)
@@ -85,7 +86,7 @@ struct node {
 static struct node *root;
 
 static struct node *
-init_node_name(struct node *n, char *name, int len)
+init_node_name(struct node *n, const char *name, int len)
 {
 	n->name = malloc(len + 1);
 	if (n->name == NULL)
@@ -99,7 +100,7 @@ init_node_name(struct node *n, char *name, int len)
 	(sizeof(struct node) - sizeof(union node_u) + sizeof(struct dir))
 
 static struct node *
-init_dir_node(struct node *n, char *name, int len)
+init_dir_node(struct node *n, const char *name, int len)
 {
 	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
@@ -112,7 +113,7 @@ init_dir_node(struct node *n, char *name, int len)
 #define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
 
 static struct node *
-init_file_node(struct node *n, char *name, int len)
+init_file_node(struct node *n, const char *name, int len)
 {
 	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
@@ -121,7 +122,8 @@ init_file_node(struct node *n, char *name, int len)
 }
 
 static struct node *
-lookup_node(struct node *parent, char *name, int len, int is_dir, int create)
+lookup_node(struct node *parent, const char *name,
+	    int len, int is_dir, int create)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
@@ -162,7 +164,7 @@ lookup_node(struct node *parent, char *name, int len, int is_dir, int create)
 
 /* if (!create), (is_dir) may be -1, and that means "don't care". */
 static char *
-lookup_relative(struct node *n, char *path, int is_dir, int create,
+lookup_relative(struct node *n, const char *path, int is_dir, int create,
 	struct node **np)
 {
 	int len;
@@ -199,7 +201,7 @@ lookup_relative(struct node *n, char *path, int is_dir, int create,
 
 /* if (!create), (is_dir) may be -1, and that means "don't care". */
 static char *
-lookup_path(char *path, int is_dir, int create,	struct node **np)
+lookup_path(const char *path, int is_dir, int create, struct node **np)
 {
 	struct node *n;
 
@@ -280,7 +282,7 @@ gfs_uncachedir(void)
 }
 
 char *
-gfs_realpath(char *path, char **abspathp)
+gfs_realpath(const char *path, char **abspathp)
 {
 	struct node *n, *p;
 	char *e, *abspath;
@@ -330,7 +332,7 @@ struct gfs_dir {
 };
 
 char *
-gfs_opendir(char *path, GFS_Dir *dirp)
+gfs_opendir(const char *path, GFS_Dir *dirp)
 {
 	char *e;
 	struct node *n;
@@ -439,7 +441,7 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 double gfs_stat_time;
 
 char *
-gfs_stat(char *path, struct gfs_stat *s)
+gfs_stat(const char *path, struct gfs_stat *s)
 {
 	char *e, *p;
 	struct node *n;
