@@ -22,13 +22,13 @@ ac_help="$ac_help
 				[default=5000]"
 ac_help="$ac_help
   --with-default-ns-exec-root=dir	default top directory of ns_exec
-				[default="/var/tmp"]"
+				[default=/var/tmp]"
 ac_help="$ac_help
-  --with-gfarm-shared-program-directory=dir	shared directory for program
-				[default="nf"]"
+  --with-gfarm-rsh=rsh		command name equivalent to rsh
+				[default=rsh]"
 ac_help="$ac_help
   --with-gfarmd-username=dir	default username of gfarmd
-				[default="nobody"]"
+				[default=nobody]"
 ac_default_prefix=$HOME
 
 # Initialize some variables set by options.
@@ -599,18 +599,18 @@ if test "${with_default_ns_exec_root+set}" = set; then
   withval="$with_default_ns_exec_root"
   default_ns_exec_root="${withval}"
 else
-  default_ns_exec_root='"/var/tmp"'
+  default_ns_exec_root='/var/tmp'
 fi
 
 
 
 
-# Check whether --with-gfarm_shared_program_directory or --without-gfarm_shared_program_directory was given.
-if test "${with_gfarm_shared_program_directory+set}" = set; then
-  withval="$with_gfarm_shared_program_directory"
-  gfarm_shared_program_directory="${withval}"
+# Check whether --with-gfarm_rsh or --without-gfarm_rsh was given.
+if test "${with_gfarm_rsh+set}" = set; then
+  withval="$with_gfarm_rsh"
+  gfarm_rsh="${withval}"
 else
-  gfarm_shared_program_directory='"nf"'
+  gfarm_rsh='rsh'
 fi
 
 
@@ -621,7 +621,7 @@ if test "${with_gfarmd_username+set}" = set; then
   withval="$with_gfarmd_username"
   gfarmd_username="${withval}"
 else
-  gfarmd_username='"nobody"'
+  gfarmd_username='nobody'
 fi
 
 
@@ -1533,7 +1533,7 @@ s%@metadb_client_objs@%$metadb_client_objs%g
 s%@default_ns_server@%$default_ns_server%g
 s%@default_ns_port@%$default_ns_port%g
 s%@default_ns_exec_root@%$default_ns_exec_root%g
-s%@gfarm_shared_program_directory@%$gfarm_shared_program_directory%g
+s%@gfarm_rsh@%$gfarm_rsh%g
 s%@gfarmd_username@%$gfarmd_username%g
 s%@exec_includedir@%$exec_includedir%g
 s%@SYSTEM@%$SYSTEM%g
