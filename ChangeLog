@@ -1,0 +1,1571 @@
+2002-06-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_server_gsi.c:
+	delegated credential should be used only for `switch_to' case.
+	(i.e. only for gfsd case. and shouldn't be used for gfmd case.)
+
+2002-06-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, ChangeLog:
+	Sessions should be initiated with the delegated credential.  gfrep now works fine using GSI!
+
+2002-06-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfmd/gfmd.c, gfsd/main.c, gfarmlib/auth.h:
+	remove symbol GFARM_AUTH_H_CLIENT and GFARM_AUTH_H_SERVER
+
+	* gfarmlib/io_fd.c: missing reference to INFTIM in last commitment
+
+	* configure, configure.in, gfarm_config.h.in, gfarmlib/io_fd.c:
+	use -1 instead of INFTIM, because linux doesn't define INFTIM.
+
+2002-06-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_server_gsi.c: bug fix
+	- xxx_proto_flush() should be called before calling GFSL routines
+	- condition about global_username was opposite
+
+	* gfarmlib/auth_client_gsi.c:
+	remove unnecessary line (these lines are traces of gfarm_auth_request_simple())
+
+	* lib/libgfsl/Makefile.gt1:
+	leave original Makefile for Globus-1.x with different name.
+
+2002-06-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/main.c:
+	forgot to deal with multiple connection type on server side
+
+	* gfarmlib/auth_client_gsi.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.h:
+	forgot to switch to secure session
+
+	* lib/libgfsl/gfarm_secure_session.h:
+	add struct tag name `gfarmSecSession' to type gfarmSecSession,
+	to make opaque reference easy.
+
+	* gfarmlib/io_gfsl.h, lib/libgfsl/Makefile, makes/config.mk.in, makes/var.mk, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_client_gsi.c, gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, gfarmlib/io_gfsl.c, Makefile.in, acconfig.h, configure, configure.in, gfarm_config.h.in:
+	link Globus GSI and libgfsl.a, when --with-globus is specified with configure.
+
+	* gfarmlib/io_fd.c, configure, configure.in, gfarm_config.h.in:
+	SVR4 (including Solaris, IRIX) requires <stropts.h> for INFTIM
+
+	* gfmd/gfmd.c, gfsd/main.c, configure, configure.in, gfarm_config.h.in, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c, gfarmlib/io_fd.c, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
+	- close underlying stream in xxx_connection_free()
+	- explicitly pass fd parameter to iobuffer read/write/close function,
+	  to reduce number of function calls
+	- use "char *" rather than "int" for iobuffer error status interface
+	- use poll in io_fd.c
+
+	* gfarmlib/gfs_pio_global.c: workaround type mismatch in Solaris 7
+
+	* lib/libgfsl/gfarm-usermap: add my entry
+
+	* gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_misc.c:
+	workaround type mismatch in Solaris 7
+
+	* configure, configure.in:
+	change default DEFAULT_NS_EXEC_ROOT from /var/tmp to ${prefix},
+	approved by tatebe-san.
+
+	* configure, configure.in: reorder some checks
+
+	* gfarmlib/io_fd.c, gfarmlib/io_fd.h, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfmd/gfmd.c, gfsd/main.c, gfarmlib/Makefile.in, gfarmlib/gfm_client.c, gfarmlib/gfs_client.c:
+	modify xxx_connection API again, to prepare GFSL integration.
+	suggested by tatebe-san.
+
+2002-06-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/iobuffer.c: remove obsolete comment
+
+2002-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client.c, gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
+	modify gfarm_iobuffer API to prepare GFSL integration.
+
+2002-05-20  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/get.c, nstool/file/put.c, nstool/file/stat.c:
+	Added an error checking code for remote execution.
+
+2002-05-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-fsys/thput-fsys.c:
+	- remove limitation of maximum buffer size
+	- make this program work with linux raw device
+	 (i.e. ensure 512byte aligned buffer)
+
+	* bench/Makefile: add bwlat-syscache
+
+	* bench/bwlat-syscache/Makefile, bench/bwlat-syscache/bwlat-syscache.c:
+	New file.
+
+	* bench/bwlat-syscache/Makefile, bench/bwlat-syscache/bwlat-syscache.c:
+	benchmark program which reads same disk block repeatedly.
+	bandwidth and latency between disk controller and cpu can be measured
+	by specifying raw disk device with this program.
+
+2002-05-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man3/Makefile: Fixed a typo of a filename.
+
+2002-05-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/error.c, include/gfarm_error.h:
+	add some errors (some of them will be used only internally in libgfarm)
+
+	* gftool/gfmpirun/gfmpirun.c, gftool/gfrun/gfrun.c, include/gfarm_misc.h, gfarmlib/gfs_client.c, gfarmlib/import_help.c, gfarmlib/stringlist.c, gftool/gfexport/gfexport.c:
+	adapt to new stringlist API described in man pages
+
+	* Makefile.in, makes/config.mk.in: changes for man pages
+
+	* makes/man.mk, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3, man/ja/man3/Makefile, man/ja/man3/gfarm_import_fragment_size_alloc.3, man/ja/man3/gfarm_stringlist_cat.3, man/ja/man3/gfarm_stringlist_elem.3, man/ja/man3/gfarm_stringlist_free_deeply.3, man/ja/man3/gfarm_stringlist_length.3, man/ja/man3/gfarm_strings_free_deeply.3, man/ja/man3/gfs_pio_close.3, man/ja/man3/gfs_pio_eof.3, man/ja/man3/gfs_pio_error.3, man/ja/man8/Makefile, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8:
+	New file.
+
+	* makes/man.mk, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3, man/ja/man3/Makefile, man/ja/man3/gfarm_import_fragment_size_alloc.3, man/ja/man3/gfarm_stringlist_cat.3, man/ja/man3/gfarm_stringlist_elem.3, man/ja/man3/gfarm_stringlist_free_deeply.3, man/ja/man3/gfarm_stringlist_length.3, man/ja/man3/gfarm_strings_free_deeply.3, man/ja/man3/gfs_pio_close.3, man/ja/man3/gfs_pio_eof.3, man/ja/man3/gfs_pio_error.3, man/ja/man8/Makefile, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8:
+	man pages of libgfarm and gftools
+
+	* man/Makefile, man/ja/Makefile, man/ja/Makefile.inc, man/ja/man1/Makefile, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrsh.1, man/ja/man1/gfrun.1, man/ja/man1/gfssh.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3:
+	New file.
+
+	* man/Makefile, man/ja/Makefile, man/ja/Makefile.inc, man/ja/man1/Makefile, man/ja/man1/digest.1, man/ja/man1/gfexport.1, man/ja/man1/gfgrep.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfkey.1, man/ja/man1/gfls.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfmpirun.1, man/ja/man1/gfps.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfrsh.1, man/ja/man1/gfrun.1, man/ja/man1/gfssh.1, man/ja/man1/gfwc.1, man/ja/man1/gfwhere.1, man/ja/man3/gfarm_hostlist_read.3, man/ja/man3/gfarm_import_fragment_config_read.3, man/ja/man3/gfarm_initialize.3, man/ja/man3/gfarm_stringlist_add.3, man/ja/man3/gfarm_stringlist_free.3, man/ja/man3/gfarm_stringlist_init.3, man/ja/man3/gfarm_terminate.3, man/ja/man3/gfarm_url_hosts_schedule.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_closedir.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_opendir.3, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_flush.3, man/ja/man3/gfs_pio_getc.3, man/ja/man3/gfs_pio_getline.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_putc.3, man/ja/man3/gfs_pio_putline.3, man/ja/man3/gfs_pio_puts.3, man/ja/man3/gfs_pio_read.3, man/ja/man3/gfs_pio_seek.3, man/ja/man3/gfs_pio_set_local.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_ungetc.3, man/ja/man3/gfs_pio_write.3, man/ja/man3/gfs_readdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man3/gfs_stat.3, man/ja/man3/gfs_stat_free.3, man/ja/man3/gfs_unlink.3:
+	man pages of libgfarm and gftools
+
+2002-04-24  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/Makefile, lib/libgfsl/README:
+	Added a compile option for static linking.
+
+2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/stat.c, nstool/file/Makefile.in:
+	Added a ns client program stat.
+
+	* ChangeLog, INSTALL.ja:
+	Fixed a careless miss of a gfgrep command-line example.
+
+2002-04-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja:
+	reflect recent changes, mention program registration by gfreg.
+
+2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-pvfs/Makefile, bench/thput-pvfs/thput-pvfs.c:
+	Experimental code for benchmarking of PVFS.
+
+	* ChangeLog, INSTALL.ja: Added an introductory description.
+	Catched up with the change of Gfarm terminology.
+
+2002-04-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio_remote.c: avoid inefficient GFS_PROTO_WRITE request.
+	partial read/write are already cared by upper gfs_pio layer.
+
+	* gfsd/main.c:
+	do not cause fatal error when buffer bigger than GFS_PROTO_MAX_IOSIZE
+	are passed by GFS_PROTO_READ and GFS_PROTO_WRITE, but perform partial
+	i/o operation for that case.
+	note that client should avoid such case for GFS_PROTO_WRITE, because
+	it is inefficient.
+
+	* gfarmlib/iobuffer.h:
+	add a comment about *_just() and *_x() functions.
+
+2002-04-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	use file_offset_t and related macro to make thput-gfpio work on platforms
+	which don't support "long long".
+	but do not use that way for thput-fsys, to make it independent of gfarm.
+
+2002-04-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	Double-precision floating division is replaced with multiplication.
+	Changed type format from ld to lld when printing file_size.
+
+2002-04-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* include/comm.h, include/gflib.h, include/ns.h, include/nsclnt.h, include/nsexec.h:
+	Catched up with the change of gfarm-related header files' path.
+
+	* bench/thput-fsys/thput-fsys.c (timeval_sub):
+	Changed division to multiplication.
+
+2002-04-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexport/gfexport.c: - use gfs_pio_get_nfragment()
+	- call gfs_pio_open() only once for fragmented file
+
+	* gftool/gfwhere/gfwhere.c: plug minor memory leak
+
+	* gfarmlib/metadb_misc.c:
+	use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+
+	* gfarmlib/gfs_pio.c:
+	- rename gfs_pio_error() to gfs_pio_clearerr() just like <stdio.h>
+	- define gfs_pio_get_nfragment()
+	- honor umask
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+
+	* gfarmlib/gfs_pio_misc.c:
+	use GFARM_S_IS_FRAGMENTED and GFARM_S_IS_PROGRAM
+
+	* gfarmlib/gfs_pio_section.c:
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+	- be more robust when gfarm_path_info_set returns GFARM_ERR_ALREADY_EXISTS
+
+	* gfarmlib/gfs_pio_global.c:
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+
+	* gfarmlib/gfs_pio_default.c: be more consistent about gf->error
+
+	* gfarmlib/gfs_pio.h:
+	- GFARM_IS_PROGRAM() is obsoleted by GFARM_S_IS_PROGRAM()
+
+	* include/gfs.h: - define GFARM_S_IS_FRAGMENTED and GFARM_S_IS_PROGRAM
+	- rename gfs_pio_error() to gfs_pio_clearerr() just like <stdio.h>
+	- define gfs_pio_get_nfragment()
+
+2002-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	Use gettimeofday() on every platform except i386.
+
+2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_common.c, gfarmlib/auth_server.c, gfarmlib/error.c, gfarmlib/gfs_pio_global.c, gfarmlib/stringlist.c:
+	Added missing include files.
+
+2002-04-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c, include/gfarm_misc.h:
+	export gfarm_attach_debugger()
+
+	* gfarmlib/gfs_pio_section.c:
+	fix fatal error which happens on writing more than 64KB with gfs_pio_write(),
+	problem reported by tatebe-san.
+
+	* bench/thput-gfpio/thput-gfpio.c: make debugger work
+
+	* bench/thput-gfpio/Makefile: define $(DEPLIBS)
+
+	* gfarmlib/gfs_pio_global.c:
+	- introduceg internal function fs_pio_set_view_default() for common processing
+	- fix resource leak on gfs_pio_view_global_close()
+	- better errror recovery on failure of gfs_pio_set_view_index()
+
+	* gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_section.c:
+	introduceg internal function fs_pio_set_view_default() for common processing
+
+	* gfarmlib/gfs_pio_local.c:
+	just renaming local variable to avoid misunderstanding
+
+2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c: Catched up with the new Gfarm API.
+
+2002-04-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfj_client.h, gfarmlib/gfm_client.c, gftool/gfmpirun/Makefile, gftool/gfmpirun/gfmpirun.c, gftool/gfrun/Makefile, gftool/gfrun/gfrun.c:
+	forgot to register job on gfmpirun
+
+2002-04-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/schedule.c (gfarm_url_hosts_schedule):
+	Fixed a bug when scheduling by a Gfarm file with multiple replicas.  strdup() is necessary.
+
+	* gfarmlib/Makefile.in:
+	Makefile.in: Exclude gfs_hook.o from libgfarm.a.  It is necessary to be linked explicitly.
+
+2002-03-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmd/Makefile.in: clean up symbolic link (deamon.c)
+
+	* include/gfs.h, gftool/gfkey/gfkey.c, gftool/gfps/gfps.c, gftool/gfrcmd/gfrcmd.c, gftool/gfrun/gfrun.c, gftool/gfsched/gfsched.c, gftool/gfwhere/gfwhere.c, include/gfarm_error.h, include/gfarm_metadb.h, include/gfarm_misc.h, gfmd/gfmd.c, gfsd/main.c, gftool/example/gfgrep/gfgrep.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/example/gfwc/gfwc.c, gftool/gfexport/gfexport.c, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_pio_remote.c, gfarmlib/gfs_pio_section.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/url.c, gfarmlib/error.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_hook.c, gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_local.c, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_common.c, gfarmlib/auth_server.c, gfarmlib/config.c:
+	changes for new gfarm API
+
+	* nslib/nsclnt.c, nslib/soc-lxdr.c, nslib/soc.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, include/gfarm.h, include/soc-lxdr.h, nslib/comm.c, nslib/file.c, nslib/gflib.c, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, gfarmd/gfd_parse.c, gfarmlib/gfm_client.c, gfarmlib/import_help.c, gfarmlib/stringlist.c, gfarmlib/xxx_proto.c, gfsd/daemon.c, gfsd/limit.c, gfsd/loadavg.c, gftool/gfmpirun/gfmpirun.c, bench/thput-gfpio/thput-gfpio.c, gfarm/gfarm.c:
+	use <gfarm/XXXX.h> instead of <gfarm.h> for header file name of gfarm API.
+
+	* makes/var.mk: move logutil.[ch] from gfsd/ to gfarmlib/
+
+	* gftool/example/gfgrep/Makefile: typo
+
+	* gfarmlib/logutil.c, gfarmlib/logutil.h, gfsd/logutil.h, gfarmd/Makefile.in, gfmd/Makefile, gfsd/Makefile, gfsd/logutil.c:
+	move logutil.[ch] from gfsd/ to gfarmlib/
+
+	* include/Makefile.in:
+	use <gfarm/XXXX.h> instead of <gfarm.h> for header file name of gfarm API.
+
+2002-03-26  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Added the -H <Gfarm file> option.  This option specifies the Gfarm file used for scheduling.
+
+2002-03-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfmd/gfmd.c:
+	fix yet another uninitialized variable related to unlimit_nofiles()
+
+2002-03-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/limit.c:
+	RLIM_INFINITY might be incorrectly returned as maximum open files
+	before this fix. (on AIX 4.2?)
+
+	* configure, configure.in: correct warning message
+
+	* gfarmlib/error.c:
+	add MAX_ERRNO (1024 by default) as stopgap for AIX 4.3
+	where sys_nerr isn't usable and strerror(i) never returns NULL.
+
+	* gfarmlib/gfs_pio.c:
+	- fix incorrect assertion that size_t is compatible with int.
+	- fix misbehavior of gfs_pio_flush() on error case.
+
+	* gfsd/main.c:
+	before this change, table_size might be garbage, if !defined(HAVE_SETRLIMIT).
+
+2002-03-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-fsys/thput-fsys.c:
+	Use gettimeofday() on every platform except i386.
+
+2002-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/README:
+	Added a description how to compile and how to test.
+
+2002-02-12  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/Makefile, lib/libgfsl/gfarm-usermap:
+	Quich hack for Globus Toolkit 2.0.
+
+2002-02-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/config.mk.in: correct variable name for shlib path setting
+
+	* configure, configure.in:
+	add sanity check about user specified compiler/liker option.
+	problem noted by tatebe-san.
+
+2002-02-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c:
+	use waitpid() instead of wait4(), because the former doesn't have portability.
+
+	* configure, configure.in: check -lgen for basename(3) on IRIX.
+
+	* makes/config.mk.in, configure, configure.in:
+	- add "-lresolv", if openldap needs it.
+	- specify -rpath (or -R) for extra libraries.
+	problem reported by tatebe-san
+
+	* lib/libgfsl/client2.c:
+	print error message, if gfarmSecSessionInitiateByAddr() fails.
+
+	* lib/libgfsl/gsi.c:
+	remove unused function of getToken() and getGfarmEtcDir() reported by gcc -Wall.
+	those functions are moved to misc.c.
+
+	* lib/libgfsl/session.c, lib/libgfsl/auth.c, lib/libgfsl/gsi.c, lib/libgfsl/misc.c, lib/libgfsl/server.c, lib/libgfsl/server2.c:
+	remove unused variables and labels reported by gcc -Wall
+
+	* lib/libgfsl/scsub.c, lib/libgfsl/server2.c:
+	typo in message: s/accpetor/acceptor/
+
+	* lib/libgfsl/session.c:
+	do not dumps core, rather returns error, if gfarmSecSessionAccept() aborts.
+
+2002-02-07  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, INSTALL.ja: Added ChangeLog and INSTALL.ja.
+
+	* nslib/gflib.c, nslib/soc.c:
+	Removed unnecessary cast operations for NULL.
+
+	* gftool/gfrun/gfrun.c, gftool/Makefile, gftool/gfrun/Makefile:
+	Renamed gfrsh to gfrun.
+	gfrun executes programs using the environment variable GFRUN_CMD.
+	You can submit jobs with globus-job-run!
+
+2002-02-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrep/Makefile, gftool/gfrm/Makefile, gftool/gfsched/Makefile, gftool/gfwhere/Makefile, makes/config.mk.in, makes/var.mk, nslib/Makefile.in, nstool/file/Makefile.in, gftool/example/gfimport_text/Makefile, gftool/example/gfwc/Makefile, gftool/gfexport/Makefile, gftool/gfkey/Makefile, gftool/gfmpirun/Makefile, gftool/gfps/Makefile, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in, gfmd/Makefile, gfsd/Makefile, gftool/digest/Makefile, gftool/example/gfgrep/Makefile, gftool/example/gfimport_fixed/Makefile, bench/Makefile, bench/nconnect/Makefile, bench/thput-fsys/Makefile, bench/thput-gfpio/Makefile, configure, configure.in:
+	enable largefile & 64bit off_t.
+
+	* gfarmlib/gfs_hook.c:
+	workaround symbol conflicts caused by 64bit off_t of largefile support
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	make clock counter routine i386 generic (but still gcc dependent)
+
+	* bench/thput-fsys/thput-fsys.c:
+	- make clock counter routine i386 generic (but still gcc dependent)
+	- fix problems reported by compiler
+
+	* bench/nconnect/nconnect.c:
+	remove strdup() to resolve conflict with libc.
+	fix to problems reported by compiler.
+
+2002-01-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrcmd/gfrcmd.c: remove unused variables
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	add "-m" option to measure gfs_pio call overhead (i.e. metadb access overhead)
+	(made at Nov 1, 2001. forgot to commit...)
+
+	* bench/thput-fsys/thput-fsys.c:
+	add "-m" option to measure system call overhead
+	(made at Nov 1, 2001. forgot to commit...)
+
+	* gfarmlib/config.c, gfarmlib/gfm_client.c, gfmd/gfmd.c, include/gfarm_misc.h:
+	add "metadb_serverport" config directive to support debugging without
+	root privilege
+
+	* gfarmlib/gfs_pio.c:
+	- fix a race bug which was caused by shared LDAP connection of fork(2)ed
+	  children.
+	  calling gfarm_metadb_terminate() (i.e. ldap_unbind()) on children
+	  after fork(2) doesn't fix this problem, so call it before fork(2),
+	  and re-initialize metadb on parent after the fork(2) finished.
+	- plug memory leak on gfarm_url_fragments_replicate()
+
+	* gfarmlib/gfs_client.c:
+	use "#ifdef XXX_MEASURE_CKSUM_COST" rather than "#if 0"
+
+2002-01-23  takamiya  <takamiya@matsulab.is.titech.ac.jp>
+
+	* debian/gfarm-server.init, debian/postinst, debian/rules, debian/dirs, debian/docs, debian/gfarm-doc.docs, debian/gfarm-doc.files, debian/gfarm-pool.conffiles, debian/gfarm-pool.init, debian/gfarm-pool.postinst, debian/changelog, debian/control, debian/copyright:
+	added debian related files.
+
+2002-01-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfsl/README, lib/libgfsl/Why: New file.
+
+	* lib/libgfsl/README, lib/libgfsl/Why:
+	secure session layer library by m-hirano
+
+	* lib/libgfsl/Makefile, lib/libgfsl/REFERENCE, lib/libgfsl/auth.c, lib/libgfsl/client.c, lib/libgfsl/client2.c, lib/libgfsl/gfarm-initiator.conf, lib/libgfsl/gfarm-usermap, lib/libgfsl/gfarm_auth.h, lib/libgfsl/gfarm_config.h, lib/libgfsl/gfarm_gsi.h, lib/libgfsl/gfarm_hash.c, lib/libgfsl/gfarm_hash.h, lib/libgfsl/gfarm_secure_session.h, lib/libgfsl/gsi.c, lib/libgfsl/misc.c, lib/libgfsl/scsub.c, lib/libgfsl/server.c, lib/libgfsl/server2.c, lib/libgfsl/session.c, lib/libgfsl/tcputil.c, lib/libgfsl/tcputil.h:
+	New file.
+
+	* lib/libgfsl/Makefile, lib/libgfsl/REFERENCE, lib/libgfsl/auth.c, lib/libgfsl/client.c, lib/libgfsl/client2.c, lib/libgfsl/gfarm-initiator.conf, lib/libgfsl/gfarm-usermap, lib/libgfsl/gfarm_auth.h, lib/libgfsl/gfarm_config.h, lib/libgfsl/gfarm_gsi.h, lib/libgfsl/gfarm_hash.c, lib/libgfsl/gfarm_hash.h, lib/libgfsl/gfarm_secure_session.h, lib/libgfsl/gsi.c, lib/libgfsl/misc.c, lib/libgfsl/scsub.c, lib/libgfsl/server.c, lib/libgfsl/server2.c, lib/libgfsl/session.c, lib/libgfsl/tcputil.c, lib/libgfsl/tcputil.h:
+	secure session layer library by m-hirano
+
+2002-01-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrcmd/gfrcmd.c:
+	do not connect to metadb server (because it is unnecessary)
+	to make this command run faster.
+
+	still (sometimes 10times) slower than rsh, with a server on localhost.
+	this seems to be a scheduling problem (CPU is mostly idle, and gfrcmd
+	sometimes runs mostly same speed with rsh).
+
+	* gfarmlib/iobuffer.h: correct false (obsolete) comment
+
+2002-01-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in: libssl is needed for openldap-2.x
+
+	* gfarmlib/metadb_ldap.c:
+	portability fix: make this works with openldap-2.0.21
+
+	* makes/subdir.mk:
+	display "[ making DIRECTORY ]" rather than "*** making DIRECTORY",
+	from tatebe-san
+
+	* gfsd/main.c: - encapsulate EOF handling into iobuffer module
+	- check return value of select(2), because contents of readable/writable
+	  may be invalid, if select(2) returns -1.
+	  for example, if SIGCHLD is delivered during select(2), select(2) may
+	  be interrupted with errno == EINTR.
+	  without this fix, xxx_proto_recv(client, 1, &eof, "i", &cmd) in
+	  gfs_server_command_io_fd_set() waits forever, because readable is mistakenly
+	  treated as true.
+	- fix race condition about server_command_context.pid and
+	  server_command_context.running handling
+	- make protocol state neutral in gfs_server_client_command_result(),
+	  if an invoked command exits during GFS_COMMAND_CLIENT_STATE_OUTPUT,
+	  protocol becomes out of sync without this.
+	- report EOF state of stdout/stderr to client
+
+	* gfarmlib/gfs_client.c:
+	- encapsulate EOF handling into iobuffer module
+	- check return value of select(2), because contents of readable/writable
+	  may be invalid, if select(2) returns -1 (e.g. due to EINTR).
+
+	* gfarmlib/iobuffer.c, gfarmlib/iobuffer.h:
+	- encapsulate eof handling into iobuffer module
+	- add an ability to call a callback function at write-close
+	 (currently not used).
+
+	* gfarmlib/auth_common.c: do not use fopen(3) but use open(2),
+	because fopen(2) wastes entropy and cpu resource by reading BUFSIZ random bytes
+	rather than just reading the `length' bytes.
+
+2002-01-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_hook.c (open64): Fixed a bug when calling syscall().
+
+	* gfarmlib/gfs_hook.c (_creat, __creat):
+	Fixed a trivial bug about arguments.
+
+2001-12-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/nconnect/nconnect.c:
+	a program which was used to measure network+disk bandwidth.
+
+2001-12-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfmd/gfmd.c: - permit that one client registers multiple jobs
+	- forgot to add the code which actually passes hostnames of nodes
+	- add (currently unused) flag parameter to gfj_client_register()
+
+	* gfarmlib/gfj_client.h, gfarmlib/gfm_client.c:
+	- forgot to add the code which actually passes hostnames of nodes.
+	- add (currently unused) flag parameter to gfj_client_register()
+
+	* gfarmlib/gfs_pio.c: missing space in error message
+
+	* gfarmlib/gfs_proto.c: portability fix
+
+2001-12-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm_misc.h: add meatdb server related variable
+
+	* gfsd/main.c:
+	move authentication module to gfarmlib, and other clean up
+
+	* gftool/Makefile: add gfps
+
+	* Makefile.in: add gfmd
+
+	* gftool/gfkey/gfkey.c: s/GFS_AUTH/GFRAM_AUTH/g
+
+	* gftool/gfps/Makefile, gftool/gfps/gfps.c:
+	get process status from job manager
+
+	* gfmd/Makefile, gfmd/gfmd.c:
+	meta db server skelton. only job manager is included for now.
+
+	* gfarmlib/Makefile.in, gfarmlib/config.c, gfarmlib/gfj_client.h, gfarmlib/gfm_client.c, gfarmlib/gfm_proto.h, gfarmlib/gfs_client.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h:
+	job manager client routines
+
+	* gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_common.c, gfarmlib/auth_server.c:
+	split authentication module to share with gfmd
+
+2001-12-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmd/gfarmd.c (gfarmd_wait):
+	Unregister a process entry when the specified process is not a child process or has already gone.
+
+2001-11-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/iobuffer.c, gfarmlib/iobuffer.h, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfarmlib/gfs_client.c:
+	kick disk i/o as soon as some data are received from network.
+	this makes replication performance 10% better on matsulab padXXX cluster.
+	(protocol isn't changed, only client side implementation is changed.)
+
+	* gfsd/main.c: better error handling
+
+2001-10-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	simple i/o throughput benchmark of gfs_pio_read/write
+
+	* bench/thput-fsys/thput-fsys.c:
+	simple i/o throughput benchmark of read/write via filesystem.
+
+	* gfsd/main.c, include/gfarm_misc.h, gfarmlib/config.c, gfarmlib/gfs_client.c:
+	some debugging feature like follows:
+	- make it possible to specify gfsd port number in /etc/gfarm.conf or ~/.gfarmrc
+	- make it possible to run gfsd without root privilege
+	  (gfsd only accepts connections from same user who invoked gfsd in this case)
+	- remove obsolete rsh_invocation code in gfsd
+
+2001-10-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio.c: redundant expression
+
+2001-10-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/xxx_proto.c:
+	better error handling
+
+	* gfsd/main.c: - better error handling
+	- correct behaviour in SIGPIPE case (ignore SIGPIPE and reply EPIPE)
+
+	* gfarmlib/gfs_client.c: - better error handling
+	- fix bugs in gfs_client_copyin(), gfs_client_command_result()
+
+	* gfarmlib/gfs_hook.c: - set errno
+	- plug potential resource leak
+
+	* gfarmlib/error.c:
+	- add some other error codes for better error handling
+	- fix a bug which was introduced at Solaris port
+
+	* include/gfarm_error.h:
+	add some other error codes for better error handling
+
+	* gftool/gfrcmd/gfrcmd.c: remove unused variables
+
+	* gfarmlib/iobuffer.h: missing function prototypes
+
+	* gfarmlib/iobuffer.c: missing return statement
+
+	* gfarmlib/config.c:
+	<sys/wait.h> is needed for function prototype of waitpid(2).
+
+2001-10-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_hook.c: fix problem of lseek emulation on NetBSD.
+
+2001-10-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/config.mk.in, makes/prog.mk, makes/subdir.mk, makes/var.mk, nslib/Makefile.in, nstool/Makefile, nstool/file/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, gftool/gfreg/gfreg.c, gftool/gfrep/Makefile, gftool/gfrm/Makefile, gftool/gfsched/Makefile, gftool/gfwhere/Makefile, include/Makefile.in, gftool/digest/Makefile, gftool/example/Makefile, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_text/Makefile, gftool/example/gfwc/Makefile, gftool/gfexport/Makefile, gftool/gfkey/Makefile, gftool/gfmpirun/Makefile, config.sub, configure, configure.in, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in, gfsd/Makefile, gftool/Makefile, install-sh, Makefile.in:
+	support --srcdir option for configure, to make it possible to build/test
+	multiple architectures from single source directories.
+	this change introduces $(srcdir), $(obj_srcdir) in addition to $(src_topdir).
+
+2001-10-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* nstool/file/Makefile.in:
+	link libns before $(LIBS), because libns refers cuserid(2) which may belong
+	to $(LIBS) (actually libcompat in $(LIBS))
+
+	* configure, configure.in, gfarm_config.h.in:
+	check existence of libcompat, because cuserid(3) belongs to libcompat on NetBSD
+
+	* acconfig.h:
+	forgot to commit this, when HAVE_SYS_NERR was added for Solaris 7.
+
+	* gftool/gfsched/Makefile, gftool/gfsched/Makefile.in, gftool/gfwhere/Makefile, gftool/gfwhere/Makefile.in, makes/prog.mk, gftool/gfmpirun/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfrcmd/Makefile, gftool/gfrcmd/Makefile.in, gftool/gfreg/Makefile, gftool/gfreg/Makefile.in, gftool/gfrep/Makefile, gftool/gfrep/Makefile.in, gftool/gfrm/Makefile, gftool/gfrm/Makefile.in, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_fixed/Makefile.in, gftool/example/gfimport_text/Makefile, gftool/example/gfimport_text/Makefile.in, gftool/example/gfwc/Makefile, gftool/example/gfwc/Makefile.in, gftool/gfexport/Makefile, gftool/gfexport/Makefile.in, gftool/gfkey/Makefile, gftool/gfkey/Makefile.in, configure, configure.in, gfarm/Makefile, gfarm/Makefile.in, gfsd/Makefile, gfsd/Makefile.in, gftool/digest/Makefile, gftool/digest/Makefile.in, gftool/example/Makefile.inc, gftool/example/gfgrep/Makefile, gftool/example/gfgrep/Makefile.in:
+	- repair missing "install" target.
+	 (example programs are installed under bin/example/, currently...)
+	- use makes/prog.mk for common rule for program Makefiles.
+	- use gftool/example/Makefile.inc for common rule of gftools/example/*
+	- stop needless Makefile.in -> Makefile generation for simple Makefiles,
+	  use plain Makefile instead.
+	 (Makefile.in files which use @xxx@ substitution other than @top_srcdir@
+	  remain untouched.)
+
+	* gftool/gfrcmd/gfrcmd.c: duplicate include directive
+
+	* gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in:
+	remove unneeded autoconf substitutions
+
+2001-10-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmd/gfd_auth.c: Fixed careless miss.
+
+2001-10-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/sysdep/ix86-pc-linux-gnu/gfarm_linux_kernel_stat.h:
+	I'm using (very) old linux distribution which doesn't define _STAT_VER_KERNEL
+	in /usr/include/bits/stat.h...
+
+2001-10-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfsd/logutil.c: Added #include <stdlib.h> for exit(2).
+
+	* gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c, gfarmd/gfd_file.c, gfarmd/gfd_parse.c, gfarmd/symtab.c:
+	Changed a home directory in gfarmd to the same home directory in a passwd file.
+
+	* nslib/gflib.c (gfarm_clnt_login):
+	getlogin() returns NULL on the terminal like rxvt in Linux 2.4.  In this case, try cuserid() and getenv("LOGNAME").
+
+2001-10-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfsched/gfsched.c, nslib/soc.c, configure, configure.in, gfarm_config.h.in, gfarmlib/error.c, gftool/gfmpirun/gfmpirun.c, gftool/gfreg/gfreg.c:
+	fix compile error on Solaris 7
+
+	* configure.in, gftool/Makefile, configure: add gftools/gfrcmd/
+
+	* gftool/gfmpirun/gfmpirun.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfsched/gfsched.c, gftool/gfwhere/gfwhere.c, gftool/example/gfgrep/gfgrep.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/example/gfwc/gfwc.c, gftool/gfexport/gfexport.c:
+	add argc/argv parameter to gfarm_initialize().
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfsd/main.c, gftool/gfrcmd/Makefile.in, gftool/gfrcmd/gfrcmd.c:
+	- add command invocation feature to gfsd
+	- add rsh-like command `gfrcmd' which uses the gfsd command invocation
+
+	* include/gfarm_misc.h:
+	- add argc, argv parameter to gfarm_initialize()
+	- make gfarm_server_initialize/terminate() function.
+	- add fixed bit length types
+	- move hash functions to private header (gfarmlib/hash.h)
+
+	* gfarmlib/import_help.c: error in error message
+
+	* gfarmlib/url.c, gfarmlib/gfs_pio.c:
+	use gfarm_errno_to_error() rather than strerror()
+
+	* gfarmlib/gfs_hook.c: slight change for NetBSD (not really tested)
+
+	* gfarmlib/Makefile.in: add iobuffer module
+
+	* include/gfs.h: - update some interface (but not latest spec, yet.)
+
+	* gfarmlib/error.c, include/gfarm_error.h:
+	- add conversion function from/to errno
+	- add the following errors
+		GFARM_ERR_OPERATION_NOT_PERMITTED
+		GFARM_ERR_AUTHENTICATION
+		GFARM_ERR_NO_SPACE
+
+	* gfarmlib/config.c: - add argc/argv parameter to gfarm_initialize()
+	- create gfarm_server_initialize/terminate()
+	- add runtime debug support ($GFARM_DEBUG_MODE=gdb)
+
+	* gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h:
+	- use struct iobuffer rather than FILE for buffering
+	- add `just' parameter to all receive functions
+
+	* gfarmlib/iobuffer.c, gfarmlib/iobuffer.h: i/o buffering module
+
+	* gfarmlib/hash.c, gfarmlib/hash.h: - (hopefully) better interface
+	- fix a bug about casefold string key
+
+2001-09-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure.in, configure:
+	fix problem that sed @...@ susbstitution isn't done, if there isn't
+	gfarmlib/${sysdep_dir}/Makefile.
+
+	it seems AC_OUTPUT() can appear only at once in configure.in, at least
+	on autoconf-2.13. the sed substition isn't generated at second appearance
+	of AC_OUTPUT().
+
+2001-08-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_hook.c: Added a hook of stat() on Linux!
+
+2001-08-31  Motonori Hirano  <m-hirano@aist.go.jp>
+
+	* gfarmlib/sysdep/ix86-pc-linux-gnu/linux_stat.c:
+		o Omit calling __ptrvalue().
+
+	* gfarmlib/sysdep/ix86-pc-linux-gnu/xstatconv.c, gfarmlib/Makefile.in, gfarmlib/sysdep/ix86-pc-linux-gnu/Makefile.in, gfarmlib/sysdep/ix86-pc-linux-gnu/gfarm_linux_bp-checks.h, gfarmlib/sysdep/ix86-pc-linux-gnu/gfarm_linux_kernel_stat.h, gfarmlib/sysdep/ix86-pc-linux-gnu/linux_stat.c, gfarmlib/sysdep/ix86-pc-linux-gnu/linux_stat.h, Makefile.in, config.guess, configure, configure.in:
+		o Adding mechanism to select system dependent syscall (or others)
+		  hooking configuration. Right now, only for ix86 based Linux.
+
+2001-08-31  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_hook.c, gfarmlib/url.c:
+	url.c (is_url,url_make_path): Objectivity patch.  '/gfarm:' is also considered as a Gfarm URL.
+	gfs_hook.c: Added stat() hooking, however it works on only Solaris not Linux.  Linux inlines stat() which calls __xstat() with an additional version argument.  Since gfs_stat() is not implemented yet, this hook only works like stat_local().
+
+2001-08-28  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* include/gfarm_misc.h, gfarmlib/Makefile.in, gfarmlib/gfs_hook.c, gfarmlib/url.c:
+	First version for hooking system calls like open(), close(), read() and write().
+	Tested on Linux and Solaris.
+	errno is not set appropriately yet when gfs_*() is invoked.
+
+2001-08-23  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/ns_readdir.c: Sends a stat also.
+
+2001-08-22  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* include/comm.h, include/nscom.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/file.c, nslib/soc-lxdr.c, nslib/soc.c:
+	Addd a const type qualifier to a buf argument of ns_data_send().
+
+2001-08-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/Makefile.in, nstool/file/ns_readlink.c, nstool/file/ns_symlink.c:
+	ns_readlink.c, ns_symlink.c: Added.
+
+	* nslib/gflib.c (gfarm_clnt_init):
+	When NS_DEBUG is defined, call gfarm_clnt_display_msg() to display reply messages from gfarmd.
+
+	* nslib/nsclnt.c, nslib/nsexec.c, gfarm/gfarm.c, gfarmd/gfarmd.c, include/gflib.h, include/nsexec.h, nslib/gflib.c:
+	gflib.c (gfarm_clnt_display_cmd): Added to control whether reply messages from gfarmd are displayed or not.
+
+	* nstool/file/Makefile.in, nstool/file/ns_mkdir.c, nstool/file/ns_readdir.c:
+	Added new ns executables for file manipulations.
+
+2001-08-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nslib/file.c, nslib/nsclnt.c, nslib/soc-lxdr.c, nslib/soc.c, nstool/file/ns_lstat.c, nstool/file/ns_stat.c, nstool/file/ns_unlink_dir.c, include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c:
+	Changed datatype of buf argument of ns_send and recv from char * to void *.
+
+	* nstool/file/ns_stat.c, nstool/file/ns_unlink.c, nstool/file/ns_unlink_dir.c, nstool/file/put.c, nstool/file/Makefile.in, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_lstat.c, nstool/file/ns_put.c, nstool/file/ns_rename.c:
+	Added several remote file functions.
+
+	* include/nscom.h, nslib/file.c:
+	Modified API name from ns_{send,recv}_lstat to ns_{send,recv}_stat.
+
+	* nslib/soc-lxdr.c (ns_lxdr_recv): Return if there is no message.
+
+2001-08-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nslib/file.c, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c, nstool/file/put.c, include/nscom.h:
+	Modified APIs for file transfer between a Gfarm client and a Gfarm server.
+
+2001-07-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/gfs_pio.c (gfs_pio_write):
+	Fixed a bug not to update the number of byte written.
+
+2001-06-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in, gftool/Makefile: add gfwhere and gfrm
+
+	* include/gfarm_metadb.h, gfarmlib/gfs_pio.c, gftool/gfrm/Makefile.in, gftool/gfrm/gfrm.c:
+	gfrm: tool to remove gfarm file.
+
+	* gftool/gfwhere/Makefile.in, gftool/gfwhere/gfwhere.c:
+	a tool to display locations of replica.
+		Usage: gfwhere <gfarm_url>
+
+	* gfarmlib/import_help.c: forgot to canonicalize hostname here.
+
+	* configure, configure.in, gftool/Makefile, gftool/gfrep/Makefile.in, gftool/gfrep/gfrep.c:
+	rename "gfreplicate" to "gfrep", suggested by tatebe-san
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfsd/main.c, include/gfs.h, configure, configure.in:
+	add a simple tool to create replica.
+
+2001-06-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarm/gfarm.c (gfarm_nexec):
+	Added gfarm_clnt_display_msgs() for flushing messages before closing a data connection.
+
+	* nslib/gflib.c:
+	Added an error checking code for all ns_comm_printf()s.
+
+2001-05-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, include/gflib.h, nslib/gflib.c:
+	Changed a syntax of the kill command, kill pid.
+
+	* gfarmd/gfarmd.c, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.y:
+	Changed a syntax of the KILL protocol, KILL pid.
+
+2001-05-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfmpirun/gfmpirun.c: SA_RESETHAND is not needed, and harmful.
+
+2001-05-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/url.c (gfarm_username): Added.
+	(gfarm_canonical_path): gfarm:path/name is now expanded to ${USER}/path/name like scp filenames.
+
+	* gftool/gfreg/gfreg.c:
+	Moved a file existence check to the if-condition clause for checking it is executable or not.  That is because gfreg for Gfarm files (not program) specifies a fragment by the Gfarm canonical path.
+
+	* gftool/gfmpirun/gfmpirun.c: Added #include <stdlib.h> for mkstemp().
+
+	* nslib/gflib.c (gfarm_clnt_wait):
+	Added a special treatment for pid -1.
+
+	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c:
+	Added new gfarm shell commands, nexec and wait.
+
+2001-05-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio.c:
+	yet another error check, pointed out by tatebe-san
+
+2001-05-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmd/gfd_cmd.h: Added #include <sys/types.h> for pid_t.
+
+2001-05-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio.c:
+	slightly better (but not yet complete) error handling.
+	-- error condition reported by tatebe-san.
+
+2001-05-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/metadb_ldap.c, gfarmlib/xxx_proto.c, gfsd/main.c, include/gfarm_metadb.h, include/gfarm_misc.h, include/gfs.h, gfarmlib/config.c:
+	- enable to register program binary to gfarm spool.
+	- automatic program delivery via gfarm url.
+	enable to specify gfarm url as program name
+
+	* gftool/gfmpirun/gfmpirun.c:
+	- do not do ad hoc parsing, but call gfarm_url_fragment_number().
+	  (similar change with gfrsh.c revision 1.2 and 1.4)
+	- enable to specify gfarm url as program name.
+
+	* gftool/gfreg/gfreg.c:
+	add a feature to register program binary to gfarm spool.
+
+2001-05-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarm/gfarm.c, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, include/gflib.h, include/nsclnt.h, nslib/gflib.c, nslib/nsclnt.c, nstool/file/get.c, nstool/file/put.c:
+	Added a new protocol WAIT pid for gfarmd.  This waits for the process completion specified by pid.
+	gfarmd/gfarmd.c (gfarmd_wait): Added.
+	gfarmd/gfd_auth.c, gfarmd/gfarmd.c: Replaced syslog() with log_message().
+	nslib/gflib.c, nslib/nsclnt.c: Changed APIs for nonblocking execution.
+	nstool/file/{put,get}.c: Followed the above changes.
+
+	* include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/soc.c (ns_comm_printf):
+	 Changed a return datatype from void to int.  This function returns EOF upon unsuccessful completion.
+
+2001-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nslib/nsclnt.c (ns_clnt_wait_input): Commented out.
+
+	* gfarmd/gfd_file.c, gfarmd/gfd_parse.c, gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c:
+	Makefile.in: Added gfd_file.c.
+	gfarmd.c (gfarmd_init): Added a check for necessary directories.
+	gfd_file.c: Added.  This file contains functions for file and directory manipulation.
+	gfd_auth.c (gfarmd_mk_home_directory): Renamed to gfarmd_mkdir and moved to gfd_file.c.
+	gfd_auth.c (gfarmd_login, gfarmd_user): Changed HOME directory to $root/GFARMD_HOME/$username.  PATH is now $root/GFARMD_HOME/$username:$root/GFARMD_BIN.  Added a return-code check of strdup().
+
+	* gfarmlib/url.c (gfarm_url_make_path):
+	Removed a definition of unused variables.
+
+	* gfarm/gfarm.c:
+	Just enclose a variable definition of gfarm_out with #ifdef USE_READLINE and #endif.
+
+2001-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* nstool/file/get.c, nstool/file/put.c:
+	If sending arguments fails, go to ns_clnt_rexec_wait() instead of exit(1), because it is nesessary to receive a status message from gfarm server.
+
+	* gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, gfarmd/gfarmd.c:
+	Changed the default syslog facility to GFARM_DEFAULT_FACILITY (= LOG_USER0).
+	Added ACTV command.
+
+	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c:
+	Added active command.
+
+	* nslib/nsclnt.c (ns_clnt_rexec_wait):
+	Change to the standard mode after waiting the remote execution if NS_PROXY is not defined.
+
+	* include/gflib.h, nslib/gflib.c (gfarm_clnt_active): Added.
+
+2001-04-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_parse.c:
+	Makefile.in: Added daemon.c.
+	gfd_parse.c (ns_register_proc, ns_unregister_proc): Added.  This registers a process entry.
+	gfd_parse.c (ns_free_argv): Added.
+	gfd_parse.c (gfd_rmdir): Added.  Equivalent to rm -rf, while this function is currently declared as a static function.
+	gfarmd.c (gfarmd_exec): Register executed processes.
+
+	* gfarm/gfarm.c (gfarm_wait_input): Deleted.  It is no longer used.
+	(prompt): Delete a commented-out code.
+
+2001-04-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in, gfarm_config.h.in, makes/config.mk.in:
+	- add "--with-readline=XXX" option (default: disable)
+	- actually check setrlimit() and daemon()
+
+	* gfarm/Makefile.in:
+	use variables generated by "configure --with-readline=XXX".
+
+	* gfsd/Makefile.in, gfsd/daemon.c, gfsd/limit.c, gfsd/main.c:
+	- split daemon() to daemon.c
+	- split unlimit_nofiles() to limit.c
+	to share these functions with gfarmd.
+
+	* gfsd/main.c, gfsd/logutil.c:
+	use GFARM_ARRAY_LENGTH() rather than home grown ARRAY_LENGTH().
+
+2001-04-02  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmd/gfarmd.c (main):
+	Become a daemon after listening a socket.  That is because the error message for failure of the bind is not displayed.
+
+	* gfarm/Makefile.in, gfarm/gfarm.c:
+	Added USE_READLINE to utilize libreadline.
+
+	* gfarmd/gfarmd.c, gfarmd/gfd_auth.c:
+	gfd_auth.c (gfarmd_user, gfarmd_login_ext): Added a call of log_set_auxiliary_info().
+	LOG_NOTICE is used instead of LOG_INFO.
+	Default syslog facility is now LOG_DAEMON.
+
+	* gfsd/logutil.c, gfsd/main.c:
+	Fixed ARRAY_LENGTH macro to calculate correctly the number of array elements.
+
+2001-03-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/logutil.c:
+	priority was not used on log_message(), pointed out by tatebe-san.
+
+2001-03-30  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/soc.c, gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, makes/var.mk:
+	gfarmd: use syslog().  However, not tested enough yet.  Just temporally check in.
+
+2001-03-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/logutil.c, gfsd/logutil.h, gfsd/main.c:
+	rename syslog related functions and variables.
+	e.g. use "log_" as prefix of log related functions.
+
+	* gfsd/Makefile.in, gfsd/logutil.c, gfsd/logutil.h, gfsd/main.c:
+	split log related functions to logutil.c/logutil.h
+
+2001-03-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio.c: gfs_pio_set_fragment_info_local():
+	- plug memory leaks about `local_path'
+	- some style fixes (remove casts which are not needed on ANSI-C)
+
+	* gfarmlib/url.c: gfarm_basename():
+	- do not access `errno', because strdup() doesn't set it.
+	- only call malloc() once. (not twice)
+
+2001-03-11  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmlib/gfs_pio.c, gfarmlib/url.c, include/gfarm_misc.h:
+	url.c (gfarm_cannonical_path): Added.  This function is called within gfarm_url_make_path().
+	gfs_pio.c (gfs_pio_set_fragment_info_local): Gfarm spool directory is added prior to the given local filename.
+
+	* gftool/gfreg/gfreg.c (main):
+	Deleted a file existence check because the gfarm spool root directory should be added prior to the path name of the file.
+
+2001-03-10  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfd_auth.c (gfarmd_login): Set the environment variable HOME.
+
+2001-03-09  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gftool/gfreg/gfreg.c: Index is now specified using the -I option.
+
+	* gftool/gfsched/gfsched.c:
+	Added an error checking of a missing command argument.
+
+	* gftool/example/gfgrep/gfgrep.c, gftool/gfreg/gfreg.c:
+	gfreg.c (main): Added a code for command option parsing.
+	gfgrep.c (main): Added a missing '\n' of an error message.
+
+2001-03-02  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmlib/gfs_pio.c, gfarmlib/url.c:
+	gfs_pio.c (gfs_pio_set_fragment_info_local): Unlink a newly created symlink if registration farls.  Changed indentation.
+	url.c (gfarm_basename): Added.
+
+2001-03-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/metadb_ldap.c:
+	use better error message, add one sanity check to detect configuration errror.
+
+	* gfarmlib/url.c:
+	treat "gfarm:~user/path" as same with "gfarm:/user/path".
+
+	* gfarmlib/url.c:
+	change error message of gfarm_url_make_path() from "invalid argument"to
+	"invalid gfarm URL" as suggested by tatebe-san
+
+	* gfarmlib/url.c:
+	fix problem about "~" expansion in "gfarm:~/path/name".
+	pointed out by tatebe-san.
+
+	* gfsd/main.c: fix stupid error. gfsd no longer creates zombie.
+
+	* configure, configure.in, gftool/Makefile, gftool/gfkey/Makefile.in, gftool/gfkey/gfkey.c:
+	add `gfkey', a utility to create ~/.gfarm_shared_key.
+
+	* gfsd/main.c:
+	fix privilege to read ~/.gfarm_shared_key, this was `root' and that didn't
+	work with NFS shared home directory, if root access to the home directory
+	is not permitted.
+
+	* gfsd/main.c: - fix false error message
+	- report authentication error in detail
+
+	* gfarmlib/config.c:
+	fix a bug to read ~/.gfarmrc. pointed out by tatebe-san.
+
+2001-03-01  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* configure, configure.in, gftool/Makefile, gftool/gfsched/Makefile.in, gftool/gfsched/gfsched.c:
+	gftool/gfsched: Added.  This program create a hostfile from a given gfarm_url.
+
+	* configure, configure.in, gftool/Makefile, gftool/gfreg/Makefile.in, gftool/gfreg/gfreg.c:
+	gftool/gfreg: Added.  This is a tool to register a local file to the Gfarm Meta DB.
+
+	* include/gfarm_misc.h, include/gfs.h, gfarmlib/gfs_pio.c, gfarmlib/url.c:
+	gfs_pio.c (gfs_pio_set_fragment_info_local): Added.  This function is used with legacy applications.
+	url.c (gfarm_file_absolute): Added.  This function returns the absolute path from a given relative path.
+
+2001-02-28  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarm/gfarm.c, gfarmd/gfarmd.c:
+	Reverted the default mode of gfarm and gfarmd to active mode.  That is because there is no method to flush stdout message of every remote program in passive mode.  Passive mode is used in the case of GridRPC.
+
+2001-02-26  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/soc-lxdr.c:
+	Added an error checking after ns_soc_send() and ns_soc_recv().
+
+	* nstool/file/put.c, nslib/file.c, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c:
+	Added a handshake code to indicate that a file can be opened or created.
+
+	* nslib/nsclnt.c, nslib/soc.c:
+	Added a check code after every malloc() system call.
+	(ns_soc_recv): Return -1 when read error occurs.
+
+2001-02-23  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/nsclnt.c: Changed default mode to the passive mode.
+
+	* gfarm/gfarm.c, gfarmd/gfarmd.c: Change default mode to passive mode.
+
+2001-02-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/hash.c:
+	bug fix: there was a case where (*createdp) wasn't set.
+
+	* configure, configure.in:
+	add gftool/{gfmpirun,gfrsh,example/{gfgrep,gfwc}}
+
+	* gftool/example/Makefile: make gfwc, too
+
+	* gftool/example/gfwc/Makefile.in, gftool/example/gfwc/gfwc.c:
+	sample program for gfmpirun
+
+	* gftool/example/gfgrep/Makefile.in, gftool/example/gfgrep/gfgrep.c:
+	sample program for gfrsh
+
+	* gftool/Makefile, gftool/example/Makefile, gftool/gfmpirun/Makefile.in, gftool/gfmpirun/gfmpirun.c:
+	very bare bone gfmpirun and gfrsh.
+	(history handling is not implemented, yet)
+
+	* gfsd/main.c: fix bug which was introduced in revision 1.6
+
+	* gfarmlib/Makefile.in, gfarmlib/host_config.c, gfarmlib/import_help.c, include/gfarm_misc.h, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/gfexport/gfexport.c:
+	merge gfarm_hostlist_read() and gfarm_paths_read()
+
+	* gfsd/main.c: only cosmetic change
+
+	* gfarmlib/gfs_pio.c: do not add suffix twice
+
+	* gfarmlib/gfs_pio.c: fix uninitialized variables
+
+	* gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gfarmlib/import_help.c, gfarmlib/metadb_misc.c, include/gfarm_misc.h:
+	better implementation of gfarm_url_fragment_cleanup()
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_client.h:
+	add index argument to unlink/chmod/chgrp
+
+	* gfarmlib/metadb_ldap.c: missing changes in revision 1.6
+
+	* gfsd/main.c: add index argument to unlink/chmod/chgrp, some cleanup
+
+	* gfarmlib/gfs_pio.c: more function prototype fixes, and typo fix
+
+	* gfarmlib/schedule.c, include/gfarm_misc.h:
+	add gfarm_url_hosts_schedule() as a wrapper of gfarm_hosts_schedule()
+	for convenience.
+
+	* gfarmlib/xxx_proto.c: more function prototype fix
+
+	* gftool/example/gfimport_fixed/gfimport_fixed.c:
+	remove unused variable
+
+	* gftool/digest/digest.c: more fix about function prototype
+
+	* gfsd/loadavg.c, gfsd/main.c, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/schedule.c, gfarmlib/url.c:
+	more fix about prototype
+
+2001-02-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/example/gfimport_text/gfimport_text.c: remove unused variables
+
+	* include/gfarm_misc.h, gfsd/main.c, gfarmlib/config.c, gfarmlib/gfs_client.c:
+	split gfarm_server_config_read() from gfarm_config_read(),
+	and let gfarm_config_read() read ~/.gfarmrc.
+
+	* gfarmlib/hash.c, gfarmlib/import_help.c, gfarmlib/url.c:
+	include headers to get function prototype
+
+	* gfsd/loadavg.c:
+	porting to Tru64 UNIX (formerly known as OSF/1 or Digital UNIX)
+
+2001-02-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/digest/digest.c: fix type mismatch
+
+	* gfarmlib/gfs_pio.c: typo
+
+	* gfarmlib/url.c, gfsd/main.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/import_help.c, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c:
+	fix some type mismatch and garbage collect unreferenced variables
+
+	* configure, configure.in:
+	fix following socklen_t problem on IRIX (pointed out by tatebe-san):
+	AC_TRY_LINK() always succeed even if socklen_t is not size_t,
+	due to weak type checking of C language.
+
+	* configure, configure.in: remove not yet committed directories for now
+
+	* gfarmlib/host_config.c, gfarmlib/import_help.c:
+	fix compile error on solaris
+
+	* gftool/gfexport/gfexport.c, gftool/Makefile, gftool/digest/Makefile.in, gftool/digest/digest.c, gftool/example/Makefile, gftool/example/gfimport_fixed/Makefile.in, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/Makefile.in, gftool/example/gfimport_text/gfimport_text.c, gftool/gfexport/Makefile.in:
+	add basic gfarm tools.
+
+	* gfsd/loadavg.c, gfsd/main.c, include/gfarm_metadb.h, include/gfarm_misc.h, include/gfs.h, gfarmlib/Makefile.in, gfarmlib/config.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/host_config.c, gfarmlib/import_help.c, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/url.c, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfsd/Makefile.in:
+	bug fixes
+
+	* configure.in, Makefile.in, configure: make "gfsd" and "gftool".
+
+	* acconfig.h, gfarm_config.h.in: add definition of FILE_OFFSET_T_MAX
+
+2001-02-19  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfd_cmd.l, gfarm/cmd.l: Added special characters to string.
+
+	* nstool/file/get.c, nstool/file/put.c:
+	Disconnect a connection between client and library after receiving a completion message from a server.
+
+	* nslib/gflib.c (gfarm_clnt_connect_ext):
+	Referred NS_SERVER as a default server if server is not specified.
+
+	* nstool/file/get.c, nstool/file/put.c:
+	ns_put and ns_get is assumed to be installed <gfarmd_root>/nsbin.
+
+	* gfarmd/gfarmd.c, gfarmd/gfd_parse.c:
+	gfarmd.c (gfarmd_perror_reply): Added.
+
+2001-02-18  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c:
+	gfarmd_auth.c: Fixed a bug of chroot() for anonymous login.
+	gfarmd_auth.c: Restricted a command path to gfarmd_root/user_directory and gfarmd_root/nsbin.
+	For anonymous users, it is necessary to create gfarmd_root/lib directory and copy necessary shared libraries in the directory.
+
+2001-02-16  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* include/nscom.h, nslib/file.c, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c:
+	ns_recv_file(): Added an optional argument to specify a local filename.
+
+	* nstool/file/ns_put.c, nstool/file/put.c, include/nsexec.h, include/nslib.h, nslib/Makefile.in, nslib/file.c, nslib/nsclnt.c, nslib/nslib.c, nstool/file/Makefile.in, nstool/file/file.c, nstool/file/file.h, nstool/file/get.c, nstool/file/ns_get.c, include/ns.h, include/nsclnt.h, include/nscom.h:
+	nstool/file/file.c: Moved to the nslib/ directory.
+	nstool/file/file.h: Renamed to nscom.h and moved to the include/ directory.
+	nslib.h: Renamed to nsclnt.h.  NS client should include ns.h instead of nslib.h.
+
+	* gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, gfarmd/gfd_parse.c:
+	Makefile.in: Updated a dependency.
+	Added a comment and corrected spelling miss of a message.
+
+2001-02-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* Makefile.in, configure, configure.in, nstool/Makefile:
+	add nstool/file/
+
+	* nstool/file/Makefile.in: changes for autoconf
+
+	* nstool/file/Makefile, nstool/file/Makefile.in:
+	rename Makefile to Makefine.in
+
+2001-02-15  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nstool/file/Makefile, nstool/file/file.c, nstool/file/file.h, nstool/file/get.c, nstool/file/ns_get.c, nstool/file/ns_put.c, nstool/file/put.c:
+	NS tools.  This directory contains NS client/server tools.
+
+	* nslib/nsexec.c, nslib/nslib.c, nslib/soc.c, gfarm/Makefile.in, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/gfarmd.c, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, include/gflib.h, include/nslib.h, nslib/gflib.c:
+	Added a passive mode.  The previous passive mode is now renamed a proxy mode.
+	In the passive mode, a gfarm client makes another connection to a gfarm server that will be used to communicate with a remote program.
+
+	* nslib/soc.c: Added a comment and a debug message.
+
+2001-02-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_client.c: remove unused array.
+
+	* gfarmlib/gfs_client.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/import_help.c:
+	fix compile error on linux, by removing EFTYPE, EAUTH, ENEEDAUTH,
+	because those errno is not really portable. pointed out by tatebe-san.
+
+	* gfarmlib/stringlist.c: clean up and fix bogons
+
+2001-02-14  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/comm.c, nslib/soc.c, include/comm.h, include/soc-lxdr.h, include/soc.h:
+	Added a host entry in struct Connect.
+	(ns_comm_getservname): Added.
+
+2001-02-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/Makefile.in, gfsd/Makefile.in, makes/config.mk.in, configure, configure.in:
+	add --with-openssl=... option to specify OpenSSL installation directory
+
+	* include/gfarm_misc.h, include/gfs.h, gfsd/Makefile.in, gfsd/loadavg.c, gfsd/main.c, include/gfarm.h, include/gfarm_error.h, include/gfarm_metadb.h, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/stringlist.c, gfarmlib/url.c, gfarmlib/xxx_proto.c, gfarmlib/xxx_proto.h, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_pio.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/hash.c, gfarmlib/import_help.c, acconfig.h, configure, configure.in, gfarm_config.h.in, gfarmlib/Makefile.in, gfarmlib/config.c, gfarmlib/error.c:
+	gfarm pio library and gfsd implementation
+
+2001-02-09  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarm/gfarm.c, gfarmd/gfd_auth.c (gfarmd_user):
+	Changed an effective userid to root during execution of getspnam_r().
+
+	* gfarmd/gfarmd.c:
+	Added an error checking code for ns_comm_listen() since now ns_comm_listen() does not exit(1) when an error occurs.
+
+	* include/comm.h, include/gflib.h, nslib/comm.c, nslib/gflib.c, nslib/nslib.c, gfarm/gfarm.c, gfarmd/gfarmd.c:
+	gflib.c (gfarm_clnt_passive): Added an additional argument, server.  The server name is returned to a client proran.
+	comm.h: Added a constant definition NS_MAXHOSTNAMELEN.  I think this should be equal to MAXHOSTNAMELEN if it is defined, though now it is a constant 256.
+	gfarmd.c (gfarmd_passive): Now the return message includes the proxy-server hostname.
+
+	* gfarm/cmd.l, gfarmd/gfd_cmd.l:
+	If YY_READ_BUF_SIZE is already defined, it should be undefined first before it is re-defined.
+
+	* nslib/gflib.c (gfarm_clnt_wait_reply_msg):
+	Eliminated an unused variable.
+
+	* gfarm/gfarm.c:
+	Deleted a function body of snprintf(3) and declared only the function prototype even if there is no snprintf(3) since snprintf() is defined in soc.c.
+
+2001-02-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* nslib/Makefile.in, configure, configure.in, gfarmd/Makefile.in:
+	- remove SHARED_DIRECTORY, it is obsolete.
+	- add -with-gfarm-rsh option to configure
+	- remove double quotation from configure's argument, add it on Makefile
+
+2001-02-05  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfarmd.c (gfarmd_setenv):
+	Added.  This function is called before execution of the gfarm pool program to set up the environment variable, now only NS_DEBUG.
+
+	* gfarmd/gfarmd.c, include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/soc.c:
+	comm.c (ns_data_irecv): Added.  This function is almost the same of read(2), and returns without waiting to receive all data.
+	gfarmd.c (gfarmd_proxy): Now this function uses ns_data_irecv() not ns_data_recv() because this function should not be blocked.
+
+	* gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c:
+	gfd_auth.c (gfarmd_getuidnam): Added.  This function returns uid from username.
+
+2001-02-03  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, include/gflib.h, nslib/gflib.c, nslib/nslib.c, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/gfarmd.c:
+	Added a passive mode.  In active mode, a remote program executed by gfarm server connects a gfarm client.  In passive mode, both a gfarm client and a remote program connect a gfarm proxy forked by gfarm server.
+	gfarm.c (gfarm_disconnect): Added a code for a re-initialization of static variables.
+	gfarm.c (gfarm_setenv): Added.  Set the environment variable NS_PASSIVE and NS_PASSIVE_PORT if passive mode.
+	nslib.c (ns_clnt_rexec): If the environment variable NS_PASSIVE is defined, this function calls ns_clnt_rexec_passive/proxy(), otherwise this function calls ns_clnt_rexec_active().
+
+	* gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_auth.c (gfarmd_user, gfarmd_pass):
+	Moved to a new file gfd_auth.c.
+
+2001-02-02  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* include/soc-lxdr.h, include/soc.h, nslib/comm.c, nslib/gflib.c, nslib/soc.c, include/comm.h (ns_comm_connect_ext):
+	Added.  This function is used to connect using rsh/ssh.
+	(gfarm_clnt_connect): if the environment variable GFARM_AUTH is defined, ns_comm_connect_ext() is used.  Otherwise, ns_comm_connect() is used.  Remote shell program like rsh and ssh can be specified by GFARM_RSH.  Default is rsh.
+
+	* gfarmd/gfarmd.c: I think it is necessary to divide a file.
+	SHARED_DIRECTORY, gfarmd_append_path(), gfarmd_search_prog(): Deleted.
+	(gfarmd_init): Added the command option -i to be able to execute gfarmd using rsh/ssh.
+	symtab_strsave() is replaced by strdup(3).
+	(gfarmd_login): Added.
+	(gfarmd_login_ext): Added.  This function is used with rsh/ssh authentication.
+	ns_user: The data type of this global variable is changed to struct passwd from struct passwd *.
+
+	* gfarm/gfarm.c (gfarm_connect):
+	Added a check code of return value of ns_comm_getpeername().
+
+2001-02-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in: replace "_" by "-" on "-with-XXX_XXX" option
+
+2001-02-01  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/soc.c (ns_soc_connect_stdio):
+	Added an initialization of streams.
+	(ns_soc_get{sock,peer}name): return NULL when getsockname() or getpeername() fails.
+
+	* gfarm/gfarm.c: symtab_strsave() is replaced by strdup(3).
+
+	* nslib/soc.c (ns_soc_strsave):
+	Removed.  This function is replaced by strdup(3).
+
+2001-02-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* acconfig.h, gfarm_config.h.in: just comment fix.
+	SUSv2 does define getpwname_r(), but doesn't define getspnam_r().
+
+	* configure.in, configure:
+	move AC_CHECK_LIB() before socklen_t check, to fix the following
+	problem reported by tatebe-san:
+		because "-lsocket -lnsl" option is missing,
+		socklen_t is incorrectly treated as not defined on Solaris.
+
+	* configure, configure.in: change default C compiler from gcc to cc.
+	to use gcc, please set environment variable CC=gcc before running configure.
+
+2001-01-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, configure.in: fatal typo
+
+2001-01-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* nslib/soc-lxdr.c, nslib/soc.c, makes/config.mk.in, makes/var.mk, nslib/Makefile, nslib/Makefile.in, nslib/gflib.c, makes/Make.inc.netbsd, makes/Make.inc.rssp, makes/Make.inc.solaris, makes/Make.inc.sr8k, makes/Make.inc.all, makes/Make.inc.digital, makes/Make.inc.irix, makes/Make.inc.linux, gfarmd/Makefile.in, gfarmd/gfarmd.c, gfarmlib/Makefile.in, include/Makefile.in, include/soc-lxdr.h, gfarm/Makefile, gfarm/Makefile.in, gfarm_config.h.in, gfarmd/Makefile, Makefile, Makefile.in, acconfig.h, configure, configure.in:
+	use GNU autoconf
+
+	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	fix warnings reported by "gcc -Wall"
+
+2001-01-29  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfarmd.c (reapchild):
+	Just changed a code to display pids of reaped children.
+
+	* gfarmd/gfarmd.c (main):
+	Fixed a bug such that a necessary memory region is free-ed.
+
+	* nslib/comm.c, nslib/soc-lxdr.c, nslib/soc-xdr.c, gfarmd/Makefile, include/bswap.h, include/comm.h, include/soc-lxdr.h, include/soc-xdr.h, include/soc.h, nslib/Makefile, nslib/bswap.h, gfarm/Makefile:
+	bswap.h: Now this file is only included by nslib/soc-lxdr.c.
+	include/soc-lxdr.h: Fixed a bug of incorrect use of NS_BYTE_ORDER.  Now NS_BYTE_ORDER is only used by this file.  If neither NS_BYTE_ORDER or HAVE_MACHINE_ENDIAN_H is defined, big endian is assumed.
+
+	* makes/Make.inc.digital, makes/Make.inc.alpha:
+	Make.inc.digital: Make.inc.alpha is renamed.
+
+2001-01-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmd/gfarmd.c:
+	porting to Net/2 derived BSDs. (i.e. BSD/OS, FreeBSD, NetBSD, OpenBSD)
+
+	* gfarmd/gfarmd.c:
+	fix problem that effective uid may be incorrectly left as root.
+
+2001-01-27  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/comm.c, nslib/gflib.c, nslib/nsexec.c, nslib/nslib.c, nslib/soc-lxdr.c, nslib/soc.c, gfarm/gfarm.c, gfarmd/gfarmd.c, include/bswap.h, include/comm.h, include/soc-lxdr.h, include/soc.h, nslib/Makefile, nslib/bswap.c:
+	Added a socket library with light-weight network-byte-order translation.  Byte-order translation is only applied by ns_data_send() and ns_data_recv(), and other functions are defined by the original socket library, soc.c.  Now this library is default.
+
+2001-01-26  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/nsexec.c, include/nslib.h:
+	nslib.h: Added a missing function declaration of ns_clnt_rexec_wait().
+	nsexec.c (ns_exec_finalize): Added free().
+
+	* include/nslib.h, nslib/nslib.c:
+	nslib.c (ns_clnt_connect): Changed an interface.  Now, this function checks whether login succeeds or not.
+
+2001-01-25  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/nsexec.c, nslib/nslib.c, nslib/soc.c:
+	nslib.c, nsexec.c (main): Fix a bug and changed an initialization part slightly. This main function is for testing.
+	soc.c (ns_soc_recv): Deleted a printf() statement for debug.
+
+	* gfarm/Makefile, nslib/Makefile, nslib/nsexec.c:
+	Makefile: Updated dependency though this should be automatically done every timebefore make.
+
+	* include/gflib.h, include/nsexec.h, makes/Make.inc.sr8k, gfarmd/gfarmd.c:
+	Make.inc.sr8k: -DNS_SOCKLEN_T_IS_INT is added to NSLIB_DEFFLAGS.
+	gflib.h, nsexec.h: Removed extern int _ns_gDebug;
+
+	* nslib/soc.c, include/comm.h, include/soc.h, makes/Make.inc.irix, makes/Make.inc.linux, makes/Make.inc.solaris, nslib/comm.c, nslib/gflib.c, nslib/nslib.c, gfarm/gfarm.c:
+	soc.c: Added ns_soc_poll().
+	gfarm.c, nslib.c, gflib.c: ns_comm_poll() is called instead of select(2) system call.
+	nslib.c, Make.inc: Added a HAVE_INTTYPES_H macro since Digital Unix does not have it.
+
+	* nslib/nsexec.c, nslib/nslib.c:
+	nslib.c: Added a static funciton ns_clnt_wait_input() to select an input from a server or a remote executable.
+
+2001-01-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/metadb_ldap.c: portability fix on solaris
+
+	* include/bswap.h:
+	portability fix: use <machine/endian.h> on BSD derived systems.
+
+2001-01-24  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/stublib.c, makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.irix, makes/Make.inc.linux, makes/Make.inc.rssp, makes/Make.inc.solaris, makes/Make.inc.sr8k, nslib/Makefile, nslib/clntcom.c, nslib/clntlib.c, nslib/comm.c, nslib/gflib.c, nslib/nsexec.c, nslib/nslib.c, nslib/soc.c, gfarm/gfarm.c, gfarmd/gfarmd.c, include/comm.h, include/gflib.h, include/nsexec.h, include/nslib.h:
+	Added gflib.c that is a library for gfarm client protocol in nslib/ directory.
+	clntlib.c, stublib.c and nslib.c are renamed to nslib.c, nsexec.c and comm.c, respectively.
+
+2001-01-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	define gfarm_file_fragment_copy_info,
+	and move hostname from gfarm_file_fragment_info to it,
+	to support fragment replica.
+
+	* makes/Make.inc.netbsd: configuration for NetBSD.
+
+	* nslib/soc.c:
+	portability fix: <sys/types.h> and <sys/socket.h> is needed before <netinet/*>
+
+	* nslib/nslib.c:
+	portablity fix: <sys/types.h> is needed before <netinet/in.h>
+
+2001-01-24  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.alpha, makes/Make.inc.irix, makes/Make.inc.rssp, makes/Make.inc.solaris, makes/Make.inc.sr8k, nslib/soc.c:
+	Added a configuration file for IBM RS6000/SP.
+	Added compilation flags; -DNS_SOCKLEN_T_IS_INT and -DNS_SOCKLEN_T_IS_SIZE_T.
+
+2001-01-23  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* makes/Make.inc.sr8k: Added a comment for getpasswd(3).
+
+	* makes/Make.inc.sr8k: Added a new make.inc file for sr8k.
+
+2001-01-22  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* include/nslib.h, include/soc.h, nslib/clntcom.c, nslib/clntlib.c, nslib/nslib.c, nslib/soc.c:
+	Added ns_comm_setenv() and ns_comm_getenv() to pass the descriptor of a socket.
+	clntcom.c (nc_clnt_init): This function now returns the connection if it is passed by environment variables.
+	clntlib.c (ns_clnt_rexec): Changed the behavior w.r.t. a connection to a server.  Now, it should be passed by argument and is not closed in this function.
+
+	* gfarmd/gfarmd.c, gfarmd/gfd_parse.c:
+	gfarmd.c (gfarmd_pass): Added chroot() for a guest user, however it is not implemented enough.
+
+	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarm/Makefile:
+	gfarm.c: Added gfarm_lexec() and removed gfarm_datafarm().
+
+2001-01-19  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfarmd.c (gfarmd_pass):
+	After logged in, user ID (not user effective ID) of a child process is changed.
+
+	* gfarm/Makefile, gfarm/gfarm.c, makes/Make.inc.all, makes/Make.inc.solaris:
+	gfarm.c: Added command-line arguments: gfarm [server [port]].
+	gfarm.c: Added -DHAVE_GETPASSPHRASE for Solaris to use getpassphrase() since getpass() returns only 8 characters in Solaris.
+
+	* nslib/clntlib.c (ns_clnt_connect): Added a comment.
+
+	* gfarmd/gfd_parse.c (gfarmd_create_machinefile): Warning elimination.
+
+2001-01-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/metadb_ldap.c, include/gfarm_metadb.h:
+	GFarm meta database i/f
+
+2001-01-17  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* nslib/soc.c (ns_soc_close): Execution continues when close(2) fails.
+
+	* gfarmd/gfarmd.c:
+	Changed a home directory from /var/tmp to /var/tmp/username.
+	If the home directory is missing, it is created.
+
+	* gfarm/cmd.l, gfarm/cmd.y: Changed an usage message slightly.
+
+2001-01-16  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* gfarmd/gfd_parse.c, include/nslib.h, include/soc.h, nslib/nslib.c, nslib/soc.c, gfarmd/gfarmd.c, gfarmd/gfd_cmd.l:
+	Added ns_comm_dup_stderr() to redirect stderr of a remotely executed program.
+
+	* gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c:
+	Added an exec command.
+
+	* Makefile, gfarm/Makefile, nslib/Makefile:
+	Added a rule to create necessary symlinks.
+	Added make veryclean in nslib/Makefile.
+
+2001-01-15  Tatebe Osamu  <tatebe@etl.go.jp>
+
+	* Makefile, gfarm/Makefile, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/Makefile, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, gfarmd/symtab.c, gfarmd/symtab.h, gfarmd/yyerror.c, include/bswap.h, include/debug.h, include/nslib.h, include/soc-xdr.h, include/soc.h, include/type.h, makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.alpha, makes/Make.inc.irix, makes/Make.inc.solaris, nslib/Makefile, nslib/bswap.c, nslib/clntcom.c, nslib/clntlib.c, nslib/nslib.c, nslib/soc-xdr.c, nslib/soc.c, nslib/stublib.c:
+	Grid Data Farm
+
+	* Makefile, gfarm/Makefile, gfarm/cmd.h, gfarm/cmd.l, gfarm/cmd.y, gfarm/gfarm.c, gfarmd/Makefile, gfarmd/gfarmd.c, gfarmd/gfarmd.h, gfarmd/gfd_cmd.h, gfarmd/gfd_cmd.l, gfarmd/gfd_cmd.y, gfarmd/gfd_parse.c, gfarmd/symtab.c, gfarmd/symtab.h, gfarmd/yyerror.c, include/bswap.h, include/debug.h, include/nslib.h, include/soc-xdr.h, include/soc.h, include/type.h, makes/Make.inc.Linux, makes/Make.inc.all, makes/Make.inc.alpha, makes/Make.inc.irix, makes/Make.inc.solaris, nslib/Makefile, nslib/bswap.c, nslib/clntcom.c, nslib/clntlib.c, nslib/nslib.c, nslib/soc-xdr.c, nslib/soc.c, nslib/stublib.c:
+	New file.
+

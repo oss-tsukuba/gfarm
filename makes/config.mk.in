@@ -1,0 +1,64 @@
+top_objdir = @top_objdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+exec_includedir = @exec_includedir@
+mandir = @mandir@
+# save default for reference from where installation directory is overridden.
+default_bindir = @bindir@
+default_libdir = @libdir@
+default_includedir = @includedir@
+default_exec_includedir = @exec_includedir@
+default_mandir = @mandir@
+
+SYSTEM = @SYSTEM@
+
+CC = @CC@
+OPTFLAGS = @CFLAGS@
+LEX = @LEX@
+LEXLIB = @LEXLIB@
+YACC = @YACC@
+RANLIB = @RANLIB@
+INSTALL = ${top_srcdir}/install-sh -c # "@INSTALL@" doesn't work
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+LIBS = @LIBS@
+
+ld_rpath_flag = @ld_rpath_flag@
+
+metadb_client_includes = @metadb_client_includes@
+metadb_client_libs = @metadb_client_libs@
+
+openssl_includes = @openssl_includes@
+openssl_libs = @openssl_libs@
+openssl_ssl = @openssl_ssl@
+openssl_crypto = @openssl_crypto@
+
+globus_location = @globus_location@
+globus_includedir = @globus_includedir@
+globus_libdir = @globus_libdir@
+globus_includes = @globus_includes@
+globus_gssapi_libs = @globus_gssapi_libs@
+globus_srcs = @globus_srcs@
+globus_objs = @globus_objs@
+globus_subdirs = @globus_subdirs@
+
+globus_flavor = @globus_flavor@
+
+MPICC = @mpicc@
+mpi_srcs = @mpi_srcs@
+mpi_objs = @mpi_objs@
+mpi_subdirs = @mpi_subdirs@
+
+gfsl_includes = @gfsl_includes@
+gfsl_libs = @gfsl_libs@
+depgfsllib = @depgfsllib@
+
+readline_includes = @readline_includes@
+readline_libs = @readline_libs@
+
+largefile_cflags = @largefile_cflags@
+largefile_ldflags = @largefile_ldflags@

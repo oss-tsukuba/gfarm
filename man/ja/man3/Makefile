@@ -8,7 +8,7 @@ include $(top_srcdir)/makes/var.mk
 include $(srcdir)/../Makefile.inc
 
 MAN = \
-	GFARM_STRINGLIST_ELEm.3 \
+	GFARM_STRINGLIST_ELEM.3 \
 	GFARM_STRINGLIST_STRARRAY.3 \
 	gfarm_hostlist_read.3 \
 	gfarm_import_fragment_config_read.3 \
