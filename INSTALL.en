@@ -647,9 +647,7 @@ Then, create a user proxy certificate.
 ** Create user's working directory in a Gfarm file system
 
 Every user has to create a working directory (or a home directory) in
-a Gfarm file system, by oneself.  Moreover, it is needed whenever new
-filesystem nodes are added.  (This limitation will be removed in the
-next major release.)
+a Gfarm file system, by oneself.
 
 	% gfmkdir gfarm:~
 
@@ -663,9 +661,6 @@ Please try to access filesystem nodes in your system:
 
 The system administrator has to do this procedure once for each
 architecture.
-
-Or, every time when some filesystem nodes are added, the system
-administrator has to do this again for each newly added architecture.
 
 Register Gfarm parallel commands such as a parallel file copy command
 and a parallel grep command to the Gfarm filesystem by the
