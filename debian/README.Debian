@@ -1,7 +1,0 @@
-gfarm for Debian
-------------------
-
-The pdiff command provided by gfarm source tar ball is not included in 
-Debian package due to conflict with a2ps/pdiff task.
-
- -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Wed, 20 Aug 2003 17:00:00 +0900
