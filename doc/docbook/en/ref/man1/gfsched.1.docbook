@@ -20,6 +20,7 @@
 
 <cmdsynopsis>
   <command>gfsched</command>
+    <arg choice='opt'>-U</arg>
     <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
     <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -28,6 +29,7 @@
 
 <cmdsynopsis>
   <command>gfsched</command>
+    <arg choice='opt'>-U</arg>
     <arg choice='plain'>-N <replaceable>number</replaceable></arg>
     <arg choice='opt'>-p <replaceable>gfarm-program-URL</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
@@ -72,6 +74,19 @@ an architecture name, for example, sparc-sun-solaris8,
 can be used to select a host which holds the executable file
 for the architecture.
 -->
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>suppresses authentication check.
+Without this option, the scheduler checks whether the user will be 
+successfully authenticated with the hosts or not.
+This option omits the check to make scheduling faster,
+but that makes a risk that hosts which make authentication failure with
+the user may be scheduled.
 </para>
 </listitem>
 </varlistentry>

@@ -21,6 +21,7 @@
 
 <cmdsynopsis>
   <command>gfsched</command>
+    <arg choice='opt'>-U</arg>
     <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
     <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -29,6 +30,7 @@
 
 <cmdsynopsis>
   <command>gfsched</command>
+    <arg choice='opt'>-U</arg>
     <arg choice='plain'>-N <replaceable>ノード数</replaceable></arg>
     <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>ホスト名</replaceable></arg>
@@ -71,6 +73,16 @@
 (例 「sparc-sun-solaris8」) を指定することによって、
 そのアーキテクチャの実行形式ファイルを保持するホストを1つ選択します。
 -->
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>そのホストに対して、認証が成功するか否かの確認を省略します。
+高速になりますが、認証不能なホストがスケジューリングされてしまう
+危険があります。
 </para>
 </listitem>
 </varlistentry>
