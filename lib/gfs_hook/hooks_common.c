@@ -86,6 +86,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		return (-1);
 	}
 
+	/* set file view */
 	if (sec != NULL || _gfs_hook_default_view == index_view) {
 		if (sec != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
@@ -98,13 +99,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 				_gfs_hook_num_fragments, _gfs_hook_index));
 			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
 				_gfs_hook_index, NULL, 0);
-		}
-		if (e != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_section: %s\n", e));
-			gfs_pio_close(gf);
-			errno = gfarm_error_to_errno(e);
-			return (-1);
 		}
 	} else if (_gfs_hook_default_view == local_view) {
 		int nf = -1, np;
@@ -119,15 +113,21 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: set_view_local(%s (%d, %d))\n",
 					path, gfarm_node, gfarm_nnode));
-			if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
-				_gfs_hook_debug(fprintf(stderr,
-					"GFS: set_view_local: %s\n", e));
-				gfs_pio_close(gf);
-				errno = gfarm_error_to_errno(e);
-				return (-1);
-			}
+			e = gfs_pio_set_view_local(gf, 0);
 		}
+		else
+			e = gfs_pio_set_view_global(gf, 0);
 	}
+	else
+		e = gfs_pio_set_view_global(gf, 0);
+
+	if (e != NULL) {
+		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
+		gfs_pio_close(gf);
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+
 	filedes = gfs_hook_insert_gfs_file(gf);
 	_gfs_hook_debug(
 		if (filedes != -1) {
@@ -197,6 +197,7 @@ FUNC___CREAT(const char *path, mode_t mode)
 		return (-1);
 	}
 
+	/* set file view */
 	if (sec != NULL || _gfs_hook_default_view == index_view) {
 		if (sec != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
@@ -210,24 +211,20 @@ FUNC___CREAT(const char *path, mode_t mode)
 			e = gfs_pio_set_view_index(gf, _gfs_hook_num_fragments,
 				_gfs_hook_index, NULL, 0);
 		}
-		if (e != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_section: %s\n", e));
-			gfs_pio_close(gf);
-			errno = gfarm_error_to_errno(e);
-			return (-1);
-		}
 	} else if (_gfs_hook_default_view == local_view) {
 		_gfs_hook_debug(fprintf(stderr,
 			"GFS: set_view_local(%s)\n", path));
-		if ((e = gfs_pio_set_view_local(gf, 0)) != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: set_view_local: %s\n", e));
-			gfs_pio_close(gf);
-			errno = gfarm_error_to_errno(e);
-			return (-1);
-		}
+		e = gfs_pio_set_view_local(gf, 0);
+	} else
+		e = gfs_pio_set_view_global(gf, 0);
+
+	if (e != NULL) {
+		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
+		gfs_pio_close(gf);
+		errno = gfarm_error_to_errno(e);
+		return (-1);
 	}
+
 	filedes = gfs_hook_insert_gfs_file(gf);
 	_gfs_hook_debug(
 		if (filedes != -1) {
