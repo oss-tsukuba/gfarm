@@ -33,6 +33,9 @@
 #
 # do the followings to build gfarm-gsi-*.rpm:
 #   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 rpmbuild -bb gfarm.spec
+# or
+#   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 \
+#	GFARM_CONFIGURE_OPTION=--with-globus-static rpmbuild -bb gfarm.spec
 
 %define	globus_prefix	%(echo "${GLOBUS_PREFIX}")
 %define	globus_flavor	%(echo "${GLOBUS_FLAVOR}")
@@ -146,7 +149,8 @@ mkdir -p $RPM_BUILD_ROOT
 	`test "%{globus}" -ne 0 && echo	\
 		--with-globus=%{globus_prefix} \
 		--with-globus-flavor=%{globus_flavor}` \
-	`test "%{mpi}" -ne 0 && echo --with-mpi=%{mpi_prefix}`
+	`test "%{mpi}" -ne 0 && echo --with-mpi=%{mpi_prefix}` \
+	${GFARM_CONFIGURE_OPTION}
 
 make
 
