@@ -418,10 +418,10 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，
 	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
 	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
-登録結果は，オプション -D を指定して gfhost を実行することで，
+登録結果は，オプション -M を指定して gfhost を実行することで，
 確認できます．
 
-	% gfhost -D
+	% gfhost -M
 	i386-redhat-linux 1 linuxhost-1.example.com
 	i386-redhat-linux 1 linuxhost-2.example.com
 	i386-redhat-linux 1 linuxhost-3.example.com

@@ -404,10 +404,10 @@ The followings are sample commands to register those information.
 	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
 	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
-You can confirm the filesystem node information by specifying the -D
+You can confirm the filesystem node information by specifying the -M
 option with the gfhost command:
 
-	% gfhost -D
+	% gfhost -M
 	i386-redhat-linux 1 linuxhost-1.example.com
 	i386-redhat-linux 1 linuxhost-2.example.com
 	i386-redhat-linux 1 linuxhost-3.example.com
