@@ -77,6 +77,12 @@ gfarm_path_info_remove_all(char *pathname)
 	char *e, *e_save = NULL;
 	struct gfarm_path_info pi;
 
+#if 0
+	/*
+	 * It is not necessary to chech whether pathname is a
+	 * directory or not.  This function would like to force to
+	 * remove the path information from file system metadata.
+	 */
 	if (gfarm_path_info_get(pathname, &pi) == NULL) {
 		if (GFARM_S_ISDIR(pi.status.st_mode)) {
 			gfarm_path_info_free(&pi);
@@ -84,6 +90,7 @@ gfarm_path_info_remove_all(char *pathname)
 		}
 		gfarm_path_info_free(&pi);
 	}
+#endif
 	e = gfarm_file_section_copy_info_remove_all_by_file(pathname);
 	if (e != NULL)
 		e_save = e;
