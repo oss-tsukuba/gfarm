@@ -11,7 +11,7 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfrep</refname>
-<refpurpose>Gfarm ファイルのレプリカを作成する．</refpurpose>
+<refpurpose>Gfarm ファイルの複製を作成する．</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -22,7 +22,8 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
@@ -62,6 +63,8 @@
 <para>
 ファイル名として ``-'' を指定した場合，標準入力からホス
 ト名のリストを読み込みます．</para>
+<para>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</para>
 </listitem>
 </varlistentry>
 
@@ -69,6 +72,28 @@
 <term><option>-D</option> <parameter>ドメイン名</parameter></term>
 <listitem>
 <para>各フラグメントの複製を作成するホストのドメイン名を指定します．</para>
+<para>このオプションを省略し，他の複製先ホストを指定するオプションも
+使用しない場合は，メタデータに登録にされているすべてのホストのいずれかに
+複製を作成します．ただし，この場合に<option>-N</option>オプションで
+2以上の複製数を指定しないと複製を行いません．
+詳しくは <option>-N</option> オプションの項を参照してください．
+</para>
+<para>指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
+再帰的に複製します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option> <parameter>複製数</parameter></term>
+<listitem>
+<para>フラグメントごとに作成する複製の数を指定します．
+この数には既存の複製も含まれます．既にこの数以上の複製が存在する
+場合は，そのフラグメントについて複製の作成も削除も行いません．</para>
+<para>このオプションは単独で，あるいは，<option>-D</option> オプションと
+ともに用います．</para>
+
+<para>このオプションを省略すると，<option>-N 1</option> と指定されたものと
+みなされます．</para>
 </listitem>
 </varlistentry>
 
