@@ -413,11 +413,7 @@ __utimes(const char *path, const struct timeval *tvp)
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %x)\n",
 	    path, tvp));
 	if (!gfs_hook_is_url(path, &url, &sec))
-#ifdef SYS_utimes
-		return syscall(SYS_utimes, path, tvp);
-#else
 		return syscall(SYS_utime, path, tvp);
-#endif
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __utimes(%s)\n", url));
 	if (tvp == NULL)
