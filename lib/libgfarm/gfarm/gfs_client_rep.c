@@ -171,7 +171,8 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 
 	/* "gfrcmd <dst> gfrepbe_client -i <I> -n <N> -s -r -S 1 <srchost>" */
 	/* "gfrcmd <src> gfrepbe_server -i <I> -n <N> -s -a <version>" */
-	char *args[13];
+	char *args[17], *if_hostname;
+	struct sockaddr peer_addr;
 	struct gfs_client_rep_backend_state *state;
 
 	if (algorithm_version >= 0 &&
@@ -181,9 +182,18 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
+	e = gfarm_host_address_get(canonical_hostname, gfarm_spool_server_port,
+	    &peer_addr, &if_hostname);
+	if (e != NULL) {
+		free(state);
+		return (e);
+	}
+
 	i = 0;
 	args[i++] = "gfrcmd";
+	args[i++] = "-N";
 	args[i++] = canonical_hostname;
+	args[i++] = if_hostname;
 	args[i++] = program;
 	if (interleave_factor != 0) {
 		sprintf(interleave, "%d", interleave_factor);
@@ -217,6 +227,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 		e = gfarm_errno_to_error(errno);
 		fprintf(stderr, "%s: creating a pipe for stdin to %s: %s\n",
 		    message_prefix, canonical_hostname, e);
+		free(if_hostname);
 		free(state);
 		return (e);
 	}
@@ -226,6 +237,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 		    message_prefix, canonical_hostname, e);
 		close(stdin_pipe[0]);
 		close(stdin_pipe[1]);
+		free(if_hostname);
 		free(state);
 		return (e);
 	}
@@ -237,6 +249,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 		close(stdin_pipe[1]);
 		close(stdout_pipe[0]);
 		close(stdout_pipe[1]);
+		free(if_hostname);
 		free(state);
 		return (e);
 	} else if (state->pid == 0) {
@@ -259,6 +272,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	/* parent */
 	close(stdin_pipe[0]);
 	close(stdout_pipe[1]);
+	free(if_hostname);
 
 	e = xxx_fd_connection_new(stdin_pipe[1], &state->out);
 	if (e != NULL) {
