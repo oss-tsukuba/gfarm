@@ -78,4 +78,16 @@ nodes.  In this case, the <option>-h</option> option helps to store
 files dispersively.</para>
 
 </refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
 </refentry>
