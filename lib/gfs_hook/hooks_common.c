@@ -34,7 +34,14 @@ retry:
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
 		    path, sec != NULL ? sec : "(null)", oflag, mode));
 		if (oflag & O_TRUNC) {
-			gfs_unlink(path); /* XXX - FIXME */
+			/*
+			 * Hooking open syscall does not mean to open
+			 * an entire file but a file fragment in local and
+			 * index file views.  gfs_unlink() should not be
+			 * called in both views.
+			 */
+			if (_gfs_hook_default_view == global_view)
+				gfs_unlink(path); /* XXX - FIXME */
 			e = gfs_pio_create(url, oflag, mode, &gf);
 		} else {
 			e = gfs_pio_open(url, oflag, &gf);
