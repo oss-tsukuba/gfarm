@@ -242,11 +242,33 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
 	}
 
-	if ((gf->open_flags & GFARM_FILE_CREATE) != 0)
+	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0)
 		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
 
-	/* XXX - GFARM_FILE_TRUNC and GFARM_FILE_APPEND are not supported */
-	if (gf->open_flags & (GFARM_FILE_TRUNC|GFARM_FILE_APPEND)) {
+	if (gf->open_flags & GFARM_FILE_TRUNC) {
+		int nsections;
+		struct gfarm_file_section_info *sections;
+
+		/* XXX this may not be OK, if a parallel process does this */
+		/* remove all sections except section "0" */
+		e = gfarm_file_section_info_get_all_by_file(gf->pi.pathname,
+		    &nsections, &sections);
+		if (e != NULL)
+			return (e);
+		for (i = 0; i < nsections; i++) {
+			if (strcmp(sections[i].section, "0") == 0)
+				continue;
+			(void)gfs_unlink_section(gf->pi.pathname,
+			    sections[i].section);
+		}
+		gfarm_file_section_info_free_all(nsections, sections);
+
+		gf->pi.status.st_nsections = 1;
+		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
+	}
+
+	/* XXX - GFARM_FILE_APPEND is not supported */
+	if (gf->open_flags & GFARM_FILE_APPEND) {
 		gf->error = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gf->error);
 	}

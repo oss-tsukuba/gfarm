@@ -106,6 +106,10 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e, *path_section;
 	struct gfs_connection *gfs_server;
+	/* GFARM_FILE_CREATE is for a case that its location is changed */
+	int oflags = gf->open_flags |
+	    ((gf->mode & GFS_FILE_MODE_SECTION_CREATED) != 0 ?
+	     GFARM_FILE_CREATE : 0);
 	int fd;
 	struct sockaddr peer_addr;
 
@@ -128,18 +132,16 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	}
 	vc->storage_context = gfs_server;
 
-	e = gfs_client_open(gfs_server, path_section, gf->open_flags,
+	e = gfs_client_open(gfs_server, path_section, oflags,
 			    gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	/* FT - the parent directory may be missing */
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		if (gfs_pio_remote_mkdir_parent_canonical_path(
 			    gfs_server, gf->pi.pathname) == NULL)
-			e = gfs_client_open(gfs_server, path_section,
-				gf->open_flags,
+			e = gfs_client_open(gfs_server, path_section, oflags,
 				gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	/* FT - physical file should be missing */
-	if ((gf->open_flags & GFARM_FILE_CREATE) == 0
-	    && e == GFARM_ERR_NO_SUCH_OBJECT)
+	if ((oflags & GFARM_FILE_CREATE) == 0 && e == GFARM_ERR_NO_SUCH_OBJECT)
 		/* Delete the section copy info */
 		if (gfarm_file_section_copy_info_remove(gf->pi.pathname,
 			vc->section, vc->canonical_hostname) == NULL)

@@ -25,8 +25,8 @@ struct gfs_file {
 #define GFS_FILE_MODE_WRITE		0x00000002
 #define GFS_FILE_MODE_NSEGMENTS_FIXED	0x01000000
 #define GFS_FILE_MODE_CALC_DIGEST	0x02000000
-#define GFS_FILE_MODE_FILE_DIRTY	0x10000000
-#define GFS_FILE_MODE_SECTION_DIRTY	0x20000000
+#define GFS_FILE_MODE_SECTION_CREATED	0x04000000 /* section (re)created */
+#define GFS_FILE_MODE_FILE_CREATED	0x08000000 /* path_info created */
 #define GFS_FILE_MODE_BUFFER_DIRTY	0x40000000
 
 	/* remember parameter of open/set_view */

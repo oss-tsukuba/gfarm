@@ -34,16 +34,11 @@ gfs_pio_view_section_close(GFS_File gf)
 
 	/* calculate checksum */
 	if ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0) {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
-		    (gf->error != GFS_FILE_ERROR_EOF)) {
-			/*
-			 * sequential and read-only case, but
-			 * either error occurred or gf doesn't reach EOF,
-			 * we don't confirm checksum in this case.
-			 */
-			md_calculated = 0;
-		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
-		    (gf->open_flags & GFARM_FILE_TRUNC) == 0) {
+		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
+		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
+		    ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
+		     (gf->error != GFS_FILE_ERROR_EOF) &&
+		     (gf->mode & GFS_FILE_MODE_SECTION_CREATED) != 0)) {
 			/* we have to read rest of the file in this case */
 #if 0
 			char message[] = "gfarm: writing without truncation"
@@ -60,6 +55,14 @@ gfs_pio_view_section_close(GFS_File gf)
 				if (e_save == NULL)
 					e_save = e;
 			}
+		} else if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
+		    (gf->error != GFS_FILE_ERROR_EOF)) {
+			/*
+			 * sequential and read-only case, but
+			 * either error occurred or gf doesn't reach EOF,
+			 * we don't confirm checksum in this case.
+			 */
+			md_calculated = 0;
 		} else {
 			unsigned int len;
 
@@ -68,7 +71,8 @@ gfs_pio_view_section_close(GFS_File gf)
 			filesize = gf->offset + gf->length;
 		}
 	} else {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) == 0) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
+		    (gf->mode & GFS_FILE_MODE_SECTION_CREATED) == 0) {
 			/*
 			 * random-access and read-only case,
 			 * we don't confirm checksum for this case,
@@ -102,14 +106,14 @@ gfs_pio_view_section_close(GFS_File gf)
 			sprintf(&md_value_string[i + i], "%02x",
 				md_value[i]);
 
-		if (gf->open_flags & GFARM_FILE_CREATE) {
+		if (gf->mode & GFS_FILE_MODE_SECTION_CREATED) {
 			fi.filesize = filesize;
 			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi.checksum = md_value_string;
 				
 			e = gfarm_file_section_info_set(
 				gf->pi.pathname, vc->section, &fi);
-			if (e == NULL) {
+			if (e == NULL || e == GFARM_ERR_ALREADY_EXISTS) {
 				fci.hostname = vc->canonical_hostname;
 				e = gfarm_file_section_copy_info_set(
 				    gf->pi.pathname, vc->section,
@@ -144,6 +148,7 @@ gfs_pio_view_section_close(GFS_File gf)
 	free(vc->section);
 	free(vc);
 	gf->view_context = NULL;
+	gf->mode &= ~GFS_FILE_MODE_SECTION_CREATED;
 	gfs_pio_set_view_default(gf);
 	return (e_save);
 }
@@ -421,19 +426,31 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 				goto retry;
 			}
 			goto finish;
-		}
-		else if (e != NULL)
+		} else if (e != NULL)
 			goto finish;
-	} else if ((gf->mode & GFS_FILE_MODE_WRITE)
-		   && (gf->open_flags & GFARM_FILE_TRUNC)) {
+		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
+		   (gf->open_flags & GFARM_FILE_TRUNC) ||
+		   !gfarm_file_section_info_does_exist(
+			gf->pi.pathname, vc->section)) {
+			gf->mode |= GFS_FILE_MODE_SECTION_CREATED;
+		} else if (!gfarm_file_section_copy_info_does_exist(
+		    gf->pi.pathname, vc->section, vc->canonical_hostname)) {
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+			goto free_host;
+		}
+	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
+		   (gf->open_flags & GFARM_FILE_TRUNC) ||
+		   !gfarm_file_section_info_does_exist(
+			gf->pi.pathname, vc->section)) {
 		e = gfarm_host_get_canonical_self_name(&if_hostname);
-		if (e == NULL)
+		if (e == NULL) {
 			e = gfarm_schedule_search_idle_hosts(
 				1, &if_hostname, 1, &vc->canonical_hostname);
-		if (e == NULL)
-			e = gfarm_fixedstrings_dup(
-				1, &vc->canonical_hostname,
-				   &vc->canonical_hostname);
+			if (e == NULL)
+				e = gfarm_fixedstrings_dup(
+					1, &vc->canonical_hostname,
+					   &vc->canonical_hostname);
+		}
 		if (e != NULL) {
 			/*
 			 * local host is not a file system node, or
@@ -444,6 +461,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 				goto finish;
 			vc->canonical_hostname = if_hostname;
 		}
+		gf->mode |= GFS_FILE_MODE_SECTION_CREATED;
 	} else {
 		e = gfarm_file_section_host_schedule_with_priority_to_local(
 		    gf->pi.pathname, vc->section, &if_hostname);
@@ -455,7 +473,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	is_local_host = gfarm_canonical_hostname_is_local(
 					vc->canonical_hostname);
 
-	if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
+	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
 		struct gfarm_path_info pi;
 
 		e = gfarm_path_info_set(gf->pi.pathname, &gf->pi);
@@ -492,18 +510,16 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	/* In write mode, delete appropreate file copies */
-	if (gf->mode & GFS_FILE_MODE_WRITE) {
-		if (gf->open_flags & GFARM_FILE_TRUNC)
-			/* with truncation flag, delete all file copies */
-			(void)gfs_unlink_section(gf->pi.pathname, vc->section);
-		else
-			/* otherwise, delete every other file copies */
-			(void)gfs_unlink_every_other_replicas(
-				gf->pi.pathname, vc->section,
-				vc->canonical_hostname);
-		/* XXX - need to figure out ignorable error or not */
+	if (gf->open_flags & GFARM_FILE_TRUNC) {
+		/* with truncation flag, delete all file copies */
+		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
+	} else if (gf->mode & GFS_FILE_MODE_WRITE) {
+		/* otherwise, if write mode, delete every other file copies */
+		(void)gfs_unlink_every_other_replicas(
+			gf->pi.pathname, vc->section,
+			vc->canonical_hostname);
 	}
+	/* XXX - need to figure out ignorable error or not */
 
 	gf->ops = &gfs_pio_view_section_ops;
 	gf->view_context = vc;
@@ -596,7 +612,7 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 	}
 
 	if (nfragments == GFARM_FILE_DONTCARE) {
-		if ((gf->open_flags & GFARM_FILE_CREATE) != 0 &&
+		if ((gf->mode & GFS_FILE_MODE_NSEGMENTS_FIXED) == 0 &&
 		    !GFARM_S_IS_PROGRAM(gf->pi.status.st_mode)) {
 			/* DONTCARE isn't permitted in this case */
 			gf->error = GFARM_ERR_INVALID_ARGUMENT;
@@ -604,6 +620,18 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 		}
 	} else {
 		if ((gf->mode & GFS_FILE_MODE_NSEGMENTS_FIXED) == 0) {
+			if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0 &&
+			    gf->pi.status.st_nsections > nfragments) {
+				/* GFARM_FILE_TRUNC case */
+				int i;
+
+				for (i = nfragments;
+				     i < gf->pi.status.st_nsections; i++) {
+					sprintf(section_string, "%d", i);
+					gfs_unlink_section(gf->pi.pathname,
+					    section_string);
+				}
+			}
 			gf->pi.status.st_nsections = nfragments;
 			gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
 		} else if (nfragments != gf->pi.status.st_nsections) {

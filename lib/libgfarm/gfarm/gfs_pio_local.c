@@ -182,11 +182,15 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e, *local_path;
-	int fd, open_flags = gfs_open_flags_localize(gf->open_flags);
+	/* GFARM_FILE_CREATE is for a case that its location is changed */
+	int oflags = gf->open_flags |
+	    ((gf->mode & GFS_FILE_MODE_SECTION_CREATED) != 0 ?
+	     GFARM_FILE_CREATE : 0);
+	int fd, local_oflags = gfs_open_flags_localize(oflags);
 	int saved_errno;
 	mode_t saved_umask;
 
-	if (open_flags == -1)
+	if (local_oflags == -1)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	e = gfarm_path_localize_file_section(gf->pi.pathname, vc->section,
@@ -195,24 +199,26 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 		return (e);
 
 	saved_umask = umask(0);
-	fd = open(local_path, open_flags,
+	fd = open(local_path, local_oflags,
 		  gf->pi.status.st_mode & GFARM_S_ALLPERM);
 	saved_errno = errno;
 	umask(saved_umask);
 	/* FT - the parent directory may be missing */
-	if (fd == -1 && (gf->open_flags & GFARM_FILE_CREATE) != 0
-	    && gfarm_errno_to_error(saved_errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+	if (fd == -1 && (oflags & GFARM_FILE_CREATE) != 0
+	    && saved_errno == ENOENT) {
 		if (gfs_pio_local_mkdir_parent_canonical_path(
 			    gf->pi.pathname) == NULL) {
-			fd = open(local_path, open_flags,
+			umask(0);
+			fd = open(local_path, local_oflags,
 				  gf->pi.status.st_mode & GFARM_S_ALLPERM);
 			saved_errno = errno;
+			umask(saved_umask);
 		}
 	}
 	free(local_path);
 	/* FT - physical file should be missing */
-	if (fd == -1 && (gf->open_flags & GFARM_FILE_CREATE) == 0
-	    && gfarm_errno_to_error(saved_errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+	if (fd == -1 && (oflags & GFARM_FILE_CREATE) == 0
+	    && saved_errno == ENOENT) {
 		/* Delete the section copy info */
 		char *localhost;
 		if (gfarm_host_get_canonical_self_name(&localhost) == NULL &&

@@ -136,6 +136,52 @@ gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
 		NULL : GFARM_ERR_PERMISSION_DENIED);
 }
 
+static void
+gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
+{
+	/*
+	 * It may be necessary to calculate checksum of the
+	 * whole file when closing on either random access case
+	 * or even sequential access without truncation,
+	 * which requires a read mode.
+	 */
+	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY &&
+	    (flags & (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) !=
+	    (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL))
+		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
+	gf->open_flags = flags;
+
+	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
+	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
+		gf->mode |= GFS_FILE_MODE_READ;
+	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
+	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY))
+		gf->mode |= GFS_FILE_MODE_WRITE;
+}
+
+static char *
+gfs_pio_open_check_perm(GFS_File gf)
+{
+	char *e;
+	int check= 0;
+
+	if ((gf->mode & GFS_FILE_MODE_READ) != 0)
+		check |= GFS_R_OK;
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+	    (gf->open_flags & GFARM_FILE_TRUNC) != 0)
+		check |= GFS_W_OK;
+	e = gfarm_path_info_access(&gf->pi, check);
+	if (e != NULL)
+		return (e);
+	if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
+		if (GFARM_S_ISDIR(gf->pi.status.st_mode))
+			return (GFARM_ERR_IS_A_DIRECTORY);
+		else
+			return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+	}
+	return (NULL);
+}
+
 static double gfs_pio_create_time;
 static double gfs_pio_open_time;
 static double gfs_pio_close_time;
@@ -149,8 +195,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
-	int pi_available = 0;
-	mode_t mask;
 	char *user;
 	gfarm_timerval_t t1, t2;
 
@@ -162,9 +206,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		    "gfarm library isn't properly initialized";
 		goto finish;
 	}
-	mask = umask(0);
-	umask(mask);
-	mode &= ~mask;
 
 	e = gfarm_url_make_path_for_creation(url, &pathname);
 	if (e != NULL)
@@ -175,66 +216,38 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		goto finish;
 	}
 
-	/* gfs_pio_create() always assumes CREATE, TRUNC */
-	flags |= GFARM_FILE_CREATE | GFARM_FILE_TRUNC;
+	flags |= GFARM_FILE_CREATE;
 
-	if ((flags & (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) !=
-	    (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) {
-		/* MODE_READ is needed to re-calculate checksum. */
-		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
-	} else if ((flags & ~GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY) {
-		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_WRONLY;
-	} 
-	gf->open_flags = flags;
+	gfs_pio_open_initialize_mode_flags(gf, flags);
 
-	gf->mode = GFS_FILE_MODE_WRITE;
-	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
-		gf->mode |= GFS_FILE_MODE_READ;
 	e = gfarm_path_info_get(pathname, &gf->pi);
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
 		free(pathname);
-		gfs_file_free(gf);
-		goto finish;
+		goto free_gf;
 	}
 	if (e == NULL) {
-		/* XXX unlink and re-create the file? */
 		free(pathname);
-		e = gfarm_path_info_access(&gf->pi, GFS_W_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			goto finish;
-		}
-		if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
-			if (GFARM_S_ISDIR(gf->pi.status.st_mode))
-				e = GFARM_ERR_IS_A_DIRECTORY;
-			else
-				e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			goto finish;
-		}
+		e = gfs_pio_open_check_perm(gf);
+		if (e != NULL)
+			goto free_gf_pi;
 		/*
 		 * XXX should check the follows:
 		 * - the mode is consistent among same job
 		 * - creator of the metainfo has same job id
 		 * - O_TRUNC / !O_TRUNC case
 		 */
-		mode |= GFARM_S_IFREG;
-		if (GFARM_S_IS_PROGRAM(mode) != GFS_FILE_IS_PROGRAM(gf)) {
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			goto finish;
-		}
-		pi_available = 1;
-	}
-	if (!pi_available) {
+		if ((flags & GFARM_FILE_TRUNC) == 0)
+			gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+	} else {
+		mode_t mask;
 		struct timeval now;
+
+		mask = umask(0);
+		umask(mask);
 
 		gettimeofday(&now, NULL);
 		gf->pi.pathname = pathname;
-		gf->pi.status.st_mode = (GFARM_S_IFREG | mode);
+		gf->pi.status.st_mode = (GFARM_S_IFREG | (mode & ~mask));
 		gf->pi.status.st_user = strdup(user); /* XXX NULL check */
 		gf->pi.status.st_group = strdup("*"); /* XXX for now */
 		gf->pi.status.st_atimespec.tv_sec =
@@ -245,10 +258,16 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		gf->pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
 		gf->pi.status.st_size = 0;
 		gf->pi.status.st_nsections = 0;
+		gf->mode |= GFS_FILE_MODE_FILE_CREATED;
 	}
 	*gfp = gf;
 
 	e = NULL;
+	goto finish;
+free_gf_pi:
+	gfarm_path_info_free(&gf->pi);
+free_gf:
+	gfs_file_free(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
@@ -269,14 +288,6 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		goto finish;
 	}
-	/*
-	 * In this case, it is necessary to calculate checksum of the
-	 * whole file when closing, which requires a read mode.
-	 */
-	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY
-	    && (flags & GFARM_FILE_TRUNC) == 0)
-		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
-
 	e = gfarm_url_make_path(url, &pathname);
 	if (e != NULL)
 		goto finish;
@@ -285,35 +296,18 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		free(pathname);
 		goto finish;
 	}
-	gf->open_flags = flags;
-	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
-	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
-		gf->mode |= GFS_FILE_MODE_READ;
-	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
-	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY))
-		gf->mode |= GFS_FILE_MODE_WRITE;
+
+	gfs_pio_open_initialize_mode_flags(gf, flags);
+
 	e = gfarm_path_info_get(pathname, &gf->pi);
 	free(pathname);
 	if (e != NULL)
 		goto free_gf;
-	if (gf->mode & GFS_FILE_MODE_READ) {
-		e = gfarm_path_info_access(&gf->pi, GFS_R_OK);
-		if (e != NULL)
-			goto free_gf_pi;
-	}
-	if (gf->mode & GFS_FILE_MODE_WRITE) {
-		e = gfarm_path_info_access(&gf->pi, GFS_W_OK);
-		if (e != NULL)
-			goto free_gf_pi;
-	}
-	if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
-		if (GFARM_S_ISDIR(gf->pi.status.st_mode))
-			e = GFARM_ERR_IS_A_DIRECTORY;
-		else
-			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	e = gfs_pio_open_check_perm(gf);
+	if (e != NULL)
 		goto free_gf_pi;
-	}
-	gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+	if ((flags & GFARM_FILE_TRUNC) == 0)
+		gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
 	*gfp = gf;
 
 	e = NULL;
@@ -366,6 +360,7 @@ gfs_pio_close(GFS_File gf)
 {
 	char *e, *e_save;
 	gfarm_timerval_t t1, t2;
+	struct timeval now;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -378,6 +373,20 @@ gfs_pio_close(GFS_File gf)
 		if (e_save == NULL)
 			e_save = e;
 	}
+	/* XXX this must be done only if the file was really read or written */
+	gettimeofday(&now, NULL);
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	if (gf->mode & GFS_FILE_MODE_READ) {
+		gf->pi.status.st_atimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_atimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
+	if (e_save == NULL)
+		e_save = e;
+
 	gfarm_path_info_free(&gf->pi);
 	gfs_file_free(gf);
 
