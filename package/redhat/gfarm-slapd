@@ -1,0 +1,65 @@
+#! /bin/sh
+#
+# gfarm-slapd
+#
+# chkconfig: 2345 55 25
+# description: LDAP slapd for Gfarm
+# processname: slapd
+# pidfile: /var/run/gfarm-slapd.pid
+# config: /etc/gfarm-ldap/slapd.conf
+
+config=/etc/gfarm-ldap/slapd.conf
+port=9000
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+[ -f /usr/sbin/slapd ] || exit 0
+[ -f $config ] || exit 0
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting Gfarm LDAP services: "
+	daemon /usr/sbin/slapd -f $config -h ldap://:$port/
+	RETVAL=$?
+
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/gfarm-slapd
+
+	;;
+  stop)
+	echo -n "Stopping Gfarm LDAP services: "
+	killproc gfarm-slapd
+	RETVAL=$?
+
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/gfarm-slapd
+	;;
+  status)
+	status slapd
+	RETVAL=$?
+	;;
+  restart|reload)
+  	$0 stop
+	$0 start
+	# is this available?: killall -HUP slapd
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: inet {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $REVAL
