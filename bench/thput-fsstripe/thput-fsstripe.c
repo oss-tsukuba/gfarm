@@ -14,6 +14,10 @@ char *program_name = "thput-fsstripe.c";
 #define strtoll(nptr, endptr, base) strtoq(nptr, endptr, base)
 #endif
 
+/* compatibility with the source code of gfsd */
+typedef off_t file_offset_t;
+#define file_offset_floor(n)	(n)
+
 #define MAX_IOSIZE 524288
 
 int iosize = 4096;
@@ -67,7 +71,7 @@ worker(char *filename,
 		if (size <= 0)
 			break;
 		offset += full_stripe_size;
-		if (lseek(fd, (off_t)offset, SEEK_SET) == -1) {
+		if (lseek(fd, offset, SEEK_SET) == -1) {
 			perror("lseek");
 			exit(1);
 		}
@@ -75,20 +79,21 @@ worker(char *filename,
 }
 
 void
-simple_division(char *filename, off_t file_size, int n)
+simple_division(char *filename, file_offset_t file_size, int n)
 {
-	off_t offset = 0, residual = file_size;
-	off_t size_per_division = file_size / n;
+	file_offset_t offset = 0, residual = file_size;
+	file_offset_t size_per_division = file_offset_floor(file_size / n);
 	int i;
 
-	if ((size_per_division / iosize_alignment) * iosize_alignment !=
-	    size_per_division) {
-		size_per_division = 
-		    ((size_per_division / iosize_alignment) + 1) *
+	if (file_offset_floor(size_per_division / iosize_alignment) *
+	    iosize_alignment != size_per_division) {
+		size_per_division = (file_offset_floor(
+		    size_per_division / iosize_alignment) + 1) *
 		    iosize_alignment;
 	}
+
 	for (i = 0; i < n && residual > 0; i++) {
-		off_t size = residual <= size_per_division ?
+		file_offset_t size = residual <= size_per_division ?
 		    residual : size_per_division;
 
 		switch (fork()) {
@@ -108,28 +113,31 @@ simple_division(char *filename, off_t file_size, int n)
 }
 
 void
-striping(char *filename, off_t file_size, int n, off_t interleave_factor)
+striping(char *filename,
+	file_offset_t file_size, int n, int interleave_factor)
 {
-	off_t full_stripe_size = (off_t)interleave_factor * n;
-	off_t stripe_number = file_size / full_stripe_size;
-	off_t size_per_division = interleave_factor * stripe_number;
-	off_t residual = file_size - full_stripe_size * stripe_number;
-	off_t chunk_number_on_last_stripe;
-	off_t last_chunk_size;
-	off_t offset = 0;
+	file_offset_t full_stripe_size = (file_offset_t)interleave_factor * n;
+	file_offset_t stripe_number = file_offset_floor(file_size /
+	    full_stripe_size);
+	file_offset_t size_per_division = interleave_factor * stripe_number;
+	file_offset_t residual = file_size - full_stripe_size * stripe_number;
+	file_offset_t chunk_number_on_last_stripe;
+	file_offset_t last_chunk_size;
+	file_offset_t offset = 0;
 	int i;
-	
+
 	if (residual == 0) {
 		chunk_number_on_last_stripe = 0;
 		last_chunk_size = 0;
 	} else {
-		chunk_number_on_last_stripe = residual / interleave_factor;
+		chunk_number_on_last_stripe = file_offset_floor(
+		    residual / interleave_factor);
 		last_chunk_size = residual - 
 		    interleave_factor * chunk_number_on_last_stripe;
 	}
 
 	for (i = 0; i < n; i++) {
-		off_t size = size_per_division;
+		file_offset_t size = size_per_division;
 
 		if (i < chunk_number_on_last_stripe)
 			size += interleave_factor;
@@ -155,7 +163,7 @@ striping(char *filename, off_t file_size, int n, off_t interleave_factor)
 }
 
 void
-limit_division(int *ndivisionsp, off_t file_size)
+limit_division(int *ndivisionsp, file_offset_t file_size)
 {
 	int ndivisions = *ndivisionsp;
 
@@ -200,9 +208,9 @@ main(int argc, char **argv)
 	int full_stripe_size = 0;
 	int interleave_factor = 0;
 	int slave_mode = 0;
-	off_t offset = 0;
+	file_offset_t offset = 0;
 	int parallelism = 1;
-	off_t file_size = -1;
+	file_offset_t file_size = -1;
 	int ch, sv;
 	char *filename;
 	struct stat s;
