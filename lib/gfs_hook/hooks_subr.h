@@ -5,8 +5,10 @@
 #ifdef DEBUG
 #include <stdio.h>
 #define _gfs_hook_debug(x) x
+#define _gfs_hook_debug_v(x)
 #else
 #define _gfs_hook_debug(x)
+#define _gfs_hook_debug_v(x)
 #endif
 
 int gfs_hook_insert_gfs_file(GFS_File);

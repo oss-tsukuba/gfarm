@@ -43,7 +43,7 @@ __read(int filedes, void *buf, size_t nbyte)
 	char *e;
 	int n;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __read(%d, , %d)\n",
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __read(%d, , %d)\n",
 	    filedes, nbyte));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
@@ -54,7 +54,7 @@ __read(int filedes, void *buf, size_t nbyte)
 
 	e = gfs_pio_read(gf, buf, nbyte, &n);
 	if (e == NULL) {
-		_gfs_hook_debug(fprintf(stderr,
+		_gfs_hook_debug_v(fprintf(stderr,
 		    "GFS: Hooking __read --> %d\n", n));
 		return (n);
 	}
@@ -67,14 +67,14 @@ __read(int filedes, void *buf, size_t nbyte)
 ssize_t
 _read(int filedes, void *buf, size_t nbyte)
 {
-	_gfs_hook_debug(fputs("Hooking _read\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking _read\n", stderr));
 	return (__read(filedes, buf, nbyte));
 }
 
 ssize_t
 read(int filedes, void *buf, size_t nbyte)
 {
-	_gfs_hook_debug(fputs("Hooking read\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking read\n", stderr));
 	return (__read(filedes, buf, nbyte));
 }
 
@@ -93,7 +93,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 	/* 
 	 * DO NOT put the following line here. This causes infinite loop!
 	 *
-	 * _gfs_hook_debug(fprintf(stderr, "Hooking __write(%d, , %d)\n",
+	 * _gfs_hook_debug_v(fprintf(stderr, "Hooking __write(%d, , %d)\n",
          *     filedes, nbyte));
 	 */
 
@@ -105,7 +105,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 
 	e = gfs_pio_write(gf, buf, nbyte, &n);
 	if (e == NULL) {
-		_gfs_hook_debug(fprintf(stderr,
+		_gfs_hook_debug_v(fprintf(stderr,
 		    "GFS: Hooking __write --> %d\n", n));
 		return (n);
 	}
@@ -143,7 +143,7 @@ __close(int filedes)
 	GFS_File gf;
 	char *e;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __close(%d)\n", filedes));
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __close(%d)\n", filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (__syscall_close(filedes));
@@ -155,6 +155,7 @@ __close(int filedes)
 	e = gfs_pio_close(gf);
 	if (e == NULL)
 		return (0);
+
 	_gfs_hook_debug(fprintf(stderr, "GFS: __close: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
@@ -163,14 +164,14 @@ __close(int filedes)
 int
 _close(int filedes)
 {
-	_gfs_hook_debug(fputs("Hooking _close\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking _close\n", stderr));
 	return (__close(filedes));
 }
 
 int
 close(int filedes)
 {
-	_gfs_hook_debug(fputs("Hooking __close\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking close\n", stderr));
 	return (__close(filedes));
 }
 
@@ -184,7 +185,7 @@ __unlink(const char *path)
 	const char *e;
 	char *url, *sec;
 
-	_gfs_hook_debug(fprintf(stderr, "Hooking __unlink(%s)\n", path));
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __unlink(%s)\n", path));
 
 	if (!gfs_hook_is_url(path, &url, &sec))
 		return syscall(SYS_unlink, path);
@@ -196,14 +197,30 @@ __unlink(const char *path)
 		free(sec);
 	if (e == NULL)
 		return (0);
+
 	_gfs_hook_debug(fprintf(stderr, "GFS: __unlink: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
 
+int
+_unlink(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking _unlink\n", stderr));
+	return (__unlink(path));
+}
+
+int
+unlink(const char *path)
+{
+	_gfs_hook_debug_v(fputs("Hooking unlink\n", stderr));
+	return (__unlink(path));
+}
+
 /*
- *
+ * access
  */
+
 int
 __access(const char *path, int type)
 {
@@ -236,14 +253,14 @@ __access(const char *path, int type)
 int
 _access(const char *path, int type)
 {
-	_gfs_hook_debug(fputs("Hooking _access\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking _access\n", stderr));
 	return (__access(path, type));
 }
 
 int
 access(const char *path, int type)
 {
-	_gfs_hook_debug(fputs("Hooking __access\n", stderr));
+	_gfs_hook_debug_v(fputs("Hooking access\n", stderr));
 	return (__access(path, type));
 }
 
