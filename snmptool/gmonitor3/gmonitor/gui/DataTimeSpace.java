@@ -37,7 +37,10 @@ public class DataTimeSpace {
 
 	long largestGroupInterval = 1;
 	long smallestGroupInterval = 1;
-
+	
+	private long COUNTMAX = 4294967295L; // 32bit
+	private long MAXbps = 1500L*1000L*1000L;  // 1.5Gbps
+	
 	public long getBeginDateTime() throws IOException
 	{
 		if(files != null && files.size() > 0 ){
@@ -248,11 +251,19 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		return list;
 	}
 	
+
 	public ArrayList convertDateDataPairListToRawDataElements(ArrayList l, boolean diffmode)
 	{
 		ArrayList list = new ArrayList();
 		if(diffmode == false){
 			return convertDateDataPairListToRawDataElements(l);
+		}
+		if(l.size() <= 2){
+			RawDataElement re = new RawDataElement();
+			re.setValid(false);	
+			re.setValue(0);
+			list.add(re);
+			return list;
 		}
 		Date prevDate = (Date) l.get(0);
 		DataElement prevDataElement = (DataElement) l.get(1);
@@ -264,15 +275,23 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			long during = date.getTime() - prevDate.getTime();
 			long value = de.getValue() - prevDataElement.getValue();
 			if(prevDataElement.getFlag(DataElement.VALID_FLAG) == false){
-				value = -1;
-				re.setValid(false);
-			} else if(value < 0){
-//System.out.println("value " + value);
 				value = 0;
 				re.setValid(false);
 			} else {
-				value = (long) Math.rint((double)(value * 1000) / (double)during); // per second / ·•ª‹æŠÔ‚Ì•½‹Ï (v / (d / 1000));
-				re.setValid(true);
+				if(value < 0){
+					//value = 0;
+					//re.setValid(false);
+					value = COUNTMAX + value;  // MAX - prev + now
+				}
+				value = (long) Math.rint((double)(value * 1000) / (double)during); // per second (v / (d / 1000));
+				if(value >= 0 && (value * 8L) <= MAXbps){	
+//				if(value >= 0){	
+					re.setValid(true);
+				} else {
+					System.out.println("invalid value: " + (value * 8L));
+					value = 0;
+					re.setValid(false);
+				}
 			}
 			re.setValue(value);
 			if(de.getFlag(DataElement.VALID_FLAG) == false || de.getFlag(DataElement.SUCCESS_FLAG) == false){
