@@ -43,11 +43,11 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	else {
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n", e));
-		errno = gfarm_error_to_errno(e);
-		free(url);
-		if (sec != NULL)
-			free(sec);
-		return (-1);
+		/* XXX - metadata may be incomplete. anyway, continue. */
+		file_exist = 1;
+		file_size = 0;
+		/* XXX - metadata of a directory should not be imcomplete */
+		is_directory = 0; 
 	}
 
 	/*
