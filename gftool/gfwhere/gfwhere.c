@@ -108,6 +108,9 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
+	if (argc == 0) {
+		usage();
+	}
 
 	for (i = 0; i < argc; i++) {
 		if (argc > 1)
