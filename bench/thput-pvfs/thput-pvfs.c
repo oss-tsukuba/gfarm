@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <assert.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -131,8 +130,8 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 			perror("write test");
 			break;
 		}
-		assert(rv ==
-		       (buffer_size <= residual ? buffer_size : residual));
+		if (rv != (buffer_size <= residual ? buffer_size : residual))
+			break;
 	}
 	if (residual > 0) {
 		fprintf(stderr, "write test failed, residual = %ld\n",
@@ -175,7 +174,8 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 			perror("read test");
 			break;
 		}
-		assert(rv == buffer_size || rv == residual);
+		if (rv != buffer_size && rv != residual)
+			break;
 	}
 	if (residual > 0) {
 		fprintf(stderr, "read test failed, residual = %ld\n",
@@ -215,7 +215,8 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 			perror("copytest read");
 			break;
 		}
-		assert(rv == buffer_size || rv == residual);
+		if (rv != buffer_size && rv != residual)
+			break;
 
 		osize = rv;
 		rv = pvfs_write(ofd, buffer, osize);
@@ -223,7 +224,8 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 			perror("copytest write");
 			break;
 		}
-		assert(rv == osize);
+		if (rv != osize)
+			break;
 	}
 	if (residual > 0) {
 		fprintf(stderr, "copy test failed, residual = %ld\n",

@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <assert.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,14 +109,14 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	gettimerval(&tm_write_open_0);
 	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &gf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] cannot open %s: %s\n",
-			node_index, ofile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
+			node_index, ofile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
-			node_index, ofile, e);
+		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
+			node_index, ofile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	gettimerval(&tm_write_open_1);
@@ -138,31 +137,32 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 				&rv);
 		}
 		if (e != NULL) {
-			fprintf(stderr, "[%03d] write test: %s\n",
-				node_index, e);
+			fprintf(stderr, "[%03d] write test: %s on %s\n",
+				node_index, e, gfarm_host_get_self_name());
 			break;
 		}
-		assert(rv ==
-		       (buffer_size <= residual ? buffer_size : residual));
+		if (rv != (buffer_size <= residual ? buffer_size : residual))
+			break;
 	}
 	gettimerval(&tm_write_write_all_1);
 	if (residual > 0) {
-		fprintf(stderr, "[%03d] write test failed, residual = %ld\n",
-			node_index, (long)residual);
+		fprintf(stderr, "[%03d] write test failed, residual = %ld on %s\n",
+			node_index, (long)residual, gfarm_host_get_self_name());
 	}
 	gettimerval(&tm_write_close_0);
 	e = gfs_pio_close(gf);
 	gettimerval(&tm_write_close_1);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] write test close failed: %s\n",
-			node_index, e);
+		fprintf(stderr, "[%03d] write test close failed: %s on %s\n",
+			node_index, e, gfarm_host_get_self_name());
 	}
 }
 
-void
+off_t
 readtest(char *ifile, int buffer_size, off_t file_size)
 {
 	GFS_File gf;
+	struct gfs_stat status;
 	char *e;
 	int rv;
 	off_t residual;
@@ -170,17 +170,30 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	gettimerval(&tm_read_open_0);
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &gf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] cannot open %s: %s\n",
-			node_index, ifile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
-			node_index, ifile, e);
+		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	gettimerval(&tm_read_open_1);
+
+	e = gfs_fstat(gf, &status);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] fstat(%s): %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
+		exit(1);
+	}
+	if (file_size == 0)
+		file_size = status.st_size;
+	if (file_size > status.st_size)
+		file_size = status.st_size;
+	gfs_stat_free(&status);
+
 	gettimerval(&tm_read_read_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
 		if (!tm_read_read_measured) {
@@ -198,94 +211,113 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 				&rv);
 		}
 		if (e != NULL) {
-			fprintf(stderr, "[%03d] read test: %s\n",
-				node_index, e);
+			fprintf(stderr, "[%03d] read test: %s on %s\n",
+				node_index, e, gfarm_host_get_self_name());
 			break;
 		}
 		if (rv == 0)
 			break;
-		assert(rv == buffer_size || rv == residual);
+		if (rv != buffer_size && rv != residual)
+			break;
 	}
 	gettimerval(&tm_read_read_all_1);
 	if (residual > 0) {
-		fprintf(stderr, "[%03d] read test failed, residual = %ld\n",
-			node_index, (long)residual);
+		fprintf(stderr, "[%03d] read test failed, residual = %ld on %s\n",
+			node_index, (long)residual, gfarm_host_get_self_name());
 	}
 	gettimerval(&tm_read_close_0);
 	e = gfs_pio_close(gf);
 	gettimerval(&tm_read_close_1);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] read test close failed: %s\n",
-			node_index, e);
+		fprintf(stderr, "[%03d] read test close failed: %s on %s\n",
+			node_index, e, gfarm_host_get_self_name());
 	}
+	return (file_size - residual);
 }
 
-void
+off_t
 copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 {
 	GFS_File igf, ogf;
+	struct gfs_stat status;
 	char *e;
 	int rv, osize;
 	off_t residual;
 
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &igf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] cannot open %s: %s\n",
-			node_index, ifile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
-			node_index, ifile, e);
+		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY, 0666, &ogf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] cannot open %s: %s\n",
-			node_index, ofile, e);
+		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
+			node_index, ofile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	e = gfs_pio_set_view_local(ogf, GFARM_FILE_SEQUENTIAL);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] set_view_local(%s): %s\n",
-			node_index, ofile, e);
+		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
+			node_index, ofile, e, gfarm_host_get_self_name());
 		exit(1);
 	}
+
+	e = gfs_fstat(igf, &status);
+	if (e != NULL) {
+		fprintf(stderr, "[%03d] fstat(%s): %s on %s\n",
+			node_index, ifile, e, gfarm_host_get_self_name());
+		exit(1);
+	}
+	if (file_size == 0)
+		file_size = status.st_size;
+	if (file_size > status.st_size)
+		file_size = status.st_size;
+	gfs_stat_free(&status);
+
 	for (residual = file_size; residual > 0; residual -= rv) {
 		e = gfs_pio_read(igf, buffer, buffer_size, &rv);
 		if (e != NULL) {
-			fprintf(stderr, "[%03d] copytest read: %s\n",
-				node_index, e);
+			fprintf(stderr, "[%03d] copytest read: %s on %s\n",
+				node_index, e, gfarm_host_get_self_name());
 			break;
 		}
 		if (rv == 0)
 			break;
-		assert(rv == buffer_size || rv == residual);
+		if (rv != buffer_size && rv != residual)
+			break;
 
 		osize = rv;
 		e = gfs_pio_write(ogf, buffer, osize, &rv);
 		if (e != NULL) {
-			fprintf(stderr, "[%03d] copytest write: %s\n",
-				node_index, e);
+			fprintf(stderr, "[%03d] copytest write: %s on %s\n",
+				node_index, e, gfarm_host_get_self_name());
 			break;
 		}
-		assert(rv == osize);
+		if (rv != osize)
+			break;
 	}
 	if (residual > 0) {
-		fprintf(stderr, "[%03d] copy test failed, residual = %ld\n",
-			node_index, (long)residual);
+		fprintf(stderr, "[%03d] copy test failed, residual = %ld on %s\n",
+			node_index, (long)residual, gfarm_host_get_self_name());
 	}
 	e = gfs_pio_close(ogf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] copy test write close failed: %s\n",
-			node_index, e);
+		fprintf(stderr, "[%03d] copy test write close failed: %s on %s\n",
+			node_index, e, gfarm_host_get_self_name());
 	}
 	e = gfs_pio_close(igf);
 	if (e != NULL) {
-		fprintf(stderr, "[%03d] copy test read close failed: %s\n",
-			node_index, e);
+		fprintf(stderr, "[%03d] copy test read close failed: %s on %s\n",
+			node_index, e, gfarm_host_get_self_name());
 	}
+	return (file_size - residual);
 }
 
 double
@@ -312,11 +344,11 @@ test(enum testmode test_mode, char *file1, char *file2,
 		label = "write";
 		break;
 	case TESTMODE_READ:
-		readtest(file1, buffer_size, file_size);
+		file_size = readtest(file1, buffer_size, file_size);
 		label = "read";
 		break;
 	case TESTMODE_COPY:
-		copytest(file1, file2, buffer_size, file_size);
+		file_size = copytest(file1, file2, buffer_size, file_size);
 		label = "copy";
 		break;
 	default:
@@ -356,13 +388,15 @@ test(enum testmode test_mode, char *file1, char *file2,
 	}
 }
 
+#define DEFAULT_FILE_SIZE 1024
+
 int
 main(int argc, char **argv)
 {
 	char *file1 = "gfarm:test.file1";
 	char *file2 = "gfarm:test.file2";
 	int c, buffer_size = 1024 * 1024;
-	off_t file_size = 1024;
+	off_t file_size = 0;
 	enum testmode test_mode = TESTMODE_WRITE;
 	int flags = 0;
 	char *e;
@@ -377,7 +411,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "b:s:wrcmS:")) != -1) {
+	while ((c = getopt(argc, argv, "b:s:wrcm")) != -1) {
 		switch (c) {
 		case 'b':
 			buffer_size = strtol(optarg, NULL, 0);
@@ -402,24 +436,17 @@ main(int argc, char **argv)
 		case 'm':
 			flags |= FLAG_MEASURE_PRIMITIVES;
 			break;
-		case 'S':
-			/*
-			 * This option is provided to give scheduling hint
-			 * to `gfrsh'. Benchmark itself just ignores `optarg'.
-			 */
-			break;
 		case '?':
 		default:
 			fprintf(stderr,
-				"Usage: gfrsh %s [options]"
+				"Usage: gfrun %s [options]"
 				" [gfarm_url1 [gfarm_url2]]\n"
 				"options:\n"
 				"\t-b block-size\n"
 				"\t-s file-size\n"
 				"\t-w			: write test\n"
 				"\t-r			: read test\n"
-				"\t-c			: copy test\n"
-				"\t-S gfarm_url		: scheduling hint\n",
+				"\t-c			: copy test\n",
 				program_name);
 			exit(1);
 		}
@@ -442,6 +469,9 @@ main(int argc, char **argv)
 	if (flags & FLAG_MEASURE_PRIMITIVES)
 		timerval_calibrate();
 
+	if (file_size == 0 && test_mode == TESTMODE_WRITE)
+		file_size = DEFAULT_FILE_SIZE;
+
 	file_size *= 1024 * 1024;
 	initbuffer();
 
@@ -449,8 +479,8 @@ main(int argc, char **argv)
 
 	e = gfarm_terminate();
 	if (e != NULL) {
-		fprintf(stderr, "%s: gfarm_terminiate(): %s\n",
-			program_name, e);
+		fprintf(stderr, "%s: gfarm_terminiate(): %s on %s\n",
+			program_name, e, gfarm_host_get_self_name());
 		exit(1);
 	}
 	return (0);
