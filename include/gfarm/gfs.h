@@ -134,7 +134,8 @@ char *gfs_access(const char *, int);
 
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
-	int d_fileno;
+	long d_fileno;
+	unsigned short d_reclen;
 	unsigned char d_type;
 	unsigned char d_namlen;
 	char d_name[GFS_MAXNAMLEN + 1];
