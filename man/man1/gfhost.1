@@ -3,12 +3,12 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "24 May 2003" "Gfarm" ""
+.TH "GFHOST" "1" "12 August 2003" "Gfarm" ""
 .SH NAME
 gfhost \- gfarm host maintenance command
 .SH SYNOPSIS
 
-\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprv\fR ] [ \fB-a \fIarchtecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
+\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIarchtecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
 
 
 \fBgfhost\fR \fB-c\fR \fB-a\fIarchitecture\fB\fR [ \fB-n\fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
@@ -44,7 +44,7 @@ If -H, -l or -M is specified, or none of functions are specified,
 Display functions other than -M also access \fBgfsd\fR
 which is running on filesystem nodes. When \fBgfhost\fR
 accesses \fBgfsd\fR, its access option can be specified
-by option -i, -j  and -v.
+by option -i, -j, -U and -v.
 .PP
 You don't have to specify hostnames for display functions.
 In that case, all hosts which are registered in metadata will be
@@ -107,11 +107,17 @@ will be displayed in parentheses just after the hostname.
 Hostnames are displayed by alphabetical order, by default.
 .TP
 \fB-l\fR
-Display with long format, that means this displays load average,
+Display with long format.
+This function displays both information retrieved from gfsd
+and metadata server.
+The types of information retrieved from gfsd are load average and
+authentication method.
+And the types of information retrieved from metadata server are
 architecture name, number of CPUs, host identifier
 and host aliases (if any).
 IP address will be displayed in parentheses just after the
 hostname used for the access to \fBgfsd\fR.
+
 If the host cannot be accessed due to machine down or
 network trouble etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
@@ -119,6 +125,14 @@ If the host is up, but \fBgfsd\fR on the host
 cannot be accessed by the port number configured in
 /etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
+
+The next field is the authenticaion method used with the
+host. `G' in this field means GSI authenticaion, `S' means
+gfarm sharedsecret authentication, `x' means that the
+authentication failed, and `-' means that the authentication
+wasn't actually tried. If -U option is specified, this
+authentication method field won't be provided.
+
 Hostnames are displayed by alphabetical order, by default.
 .TP
 \fB-M\fR
@@ -190,6 +204,14 @@ is displayed with the order that each \fBgfsd\fR answers.
 .TP
 \fB-r\fR
 Reverse the order of sort.
+.TP
+\fB-U\fR
+Suppress authentication attempts by TCP, and only query
+load average by UDP.
+This option only makes sense, if you specified -H or -l function,
+or if you don't specify any function.
+If -l function is specified, this option makes the authentication
+method field disappear.
 .TP
 \fB-v\fR
 -l function 
