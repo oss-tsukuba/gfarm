@@ -180,7 +180,7 @@ AC_ARG_WITH(globus,
 	else
 		tmp='vendorcc gcc'
 	fi
-	for GLBbits in 32; do
+	for GLBbits in 64 32; do
 		for GLBcc in $tmp; do
 			for GLBdebug in "" dbg; do
 				for GLBpthread in "" pthr; do
