@@ -565,7 +565,7 @@ gfmd は、前節で解説した /etc/gfarm.conf ファイルを設定ファイルとして
 
   実行してみましょう。
 
-	% gfrun gfarm:gfgrep gfarm:-o gfarm:gfgrep.out 正規表現 gfarm:テスト.txt
+	% gfrun gfarm:gfgrep -o gfarm:gfgrep.out 正規表現 gfarm:テスト.txt
 
   結果を確認してみましょう。
 

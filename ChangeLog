@@ -1,3 +1,16 @@
+2002-04-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja:
+	reflect recent changes, mention program registration by gfreg.
+
+2002-04-19  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-pvfs/Makefile, bench/thput-pvfs/thput-pvfs.c:
+	Experimental code for benchmarking of PVFS.
+
+	* ChangeLog, INSTALL.ja: Added an introductory description.
+	Catched up with the change of Gfarm terminology.
+
 2002-04-18  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfarmlib/gfs_pio_remote.c: avoid inefficient GFS_PROTO_WRITE request.
