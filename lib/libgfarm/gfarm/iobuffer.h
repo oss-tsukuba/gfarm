@@ -45,6 +45,9 @@
  *	gfarm_iobuffer_is_read_eof(b)
  * and
  *	gfarm_iobuffer_is_eof(b)
+ *
+ * Note that users of this module should check gfarm_iobuffer_get_error(b)
+ * as well as the above eof conditions.
  */
 
 struct gfarm_iobuffer;
