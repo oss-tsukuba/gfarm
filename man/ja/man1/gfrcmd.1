@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRCMD" "1" "18 March 2003" "Gfarm" ""
+.TH "GFRCMD" "1" "01 May 2003" "Gfarm" ""
 .SH NAME
 gfrcmd(1) \- Gfarm 計算プールのホストで、コマンドを実行する。
 .SH SYNOPSIS
@@ -42,10 +42,14 @@ gfarmライブラリと協調して、コマンドが致命的なシグナルを発生さ
 \fB-n\fR
 標準入力の内容を、遠隔ホストに送らなくします。
 .TP
+\fB-r\fR
+遠隔ホストのログインシェルを利用しないで，
+指定されたコマンドを直接実行します。
+.TP
 \fB-y\fR
 環境変数DISPLAYを遠隔ホストに伝えます。
 .TP
-\fB-x\fR
+\fB-X\fR
 環境変数 X Window System の認証情報を、遠隔ホストに伝えます。
 ホームディレクトリを共有していないような場合に有用です。
 .TP
@@ -60,3 +64,6 @@ gdb を、コマンドに関連づけた状態で、起動します。
 
 この機能を利用するには、X Window System 下で gfrcmd を利用する必要
 があります。
+.SH "BUGS"
+.PP
+-l オプションはまだ実装されていません。
