@@ -88,25 +88,12 @@ Gfarm 用の slapd のポート番号を変更したい場合は，-p オプションで指定し，
 	# /usr/lib/gfarm/config/config-gfarm -p 10389
 
 config-gfarm により，メタデータ保持用ディレクトリ(metadata directory)の
-初期設定，Gfarm 設定ファイル(/etc/gfarm.conf)の設定などが行われます．
+初期設定，Gfarm 設定ファイル(/etc/gfarm.conf)の設定などがなされ，slapd
+(LDAP サーバ) および gfmd が起動します．
 
 設定ファイル，ディレクトリが既に存在する場合，config-gfarm は失敗します．
 その場合，それらを待避するか，あるいは config-gfarm に -f オプションを
 指定して実行させ，強制的に消去させることもできます．
-
-▽ slapd (LDAP サーバ) の起動
-
-メタデータサーバで slapd を起動します．slapd の起動スクリプト，および設
-定ファイルは config-gfarm で作成されます．
-
-	# service gfarm-slapd start
-
-◇ gfmd の起動
-
-メタデータサーバで gfmd を起動します．gfmd は，config-gfarm で作成され
-る /etc/gfarm.conf を設定ファイルとして読み込みます．
-
-	# service gfmd start
 
 ● ファイルシステムノード（かつクライアントノード）の設定
 
@@ -162,15 +149,11 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 	# /usr/lib/gfarm/config/config-gfsd /var/spool/gfarm
 
+config-gfsd により，スプール・ディレクトリの初期設定，Gfarm 設定ファイ
+ルの更新などがなされ，gfsd が起動します．
+
 既にディレクトリが存在する場合は，待避して config-gfsd を実行するか，-f
 オプションを指定して強制的に消去し，新規作成させる必要があります．
-
-◇ gfsd の起動
-
-ファイルシステムノードで gfsd を起動します．gfsd は，/etc/gfarm.conf を
-設定ファイルとして読み込みます．
-
-	# service gfsd start
 
 ● クライアントノードの設定
 
