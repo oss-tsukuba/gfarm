@@ -597,7 +597,7 @@ list_all(const char *architecture, const char *domainname,
 	}
 	for (i = 0; i < nhosts; i++) {
 		if (domainname == NULL ||
-	 	    strstr(hosts[i].hostname, domainname)) {
+	 	    gfarm_host_is_in_domain(hosts[i].hostname, domainname)) {
 			e = (*print_op)(&hosts[i], udp_requests);
 			if (e_save == NULL)
 				e_save = e;
