@@ -147,7 +147,6 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 		}
 		e = gfs_stat(buffer, &stats[i]);
 		if (e != NULL) {
-fprintf(stderr, "XXX<%s>", prefix);
 			fprintf(stderr, "%s: %s\n", buffer, e);
 			if (e_save != NULL)
 				e_save = e;
