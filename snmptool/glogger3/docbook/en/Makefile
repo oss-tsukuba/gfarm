@@ -2,4 +2,4 @@
 all:
 install:
 clean:
-	@rm *~
+	-@rm -f *~
