@@ -158,18 +158,21 @@ void
 inode_remove(struct inode *inode)
 {
 	if (inode_is_file(inode)) {
-		struct file_copy *copy;
+		struct file_copy *copy, *cn;
 		gfarm_error_t e;
 
 		if (inode->u.f.openings->opening_next != inode->u.f.openings)
 			gflog_fatal("inode_remove", "still opened");
+		free(inode->u.f.openings->opening_next);
 		for (copy = inode->u.f.copies; copy != NULL;
-		    copy = copy->host_next) {
+		    copy = cn) {
 			e = host_remove_replica(copy->host,
 			    inode_get_number(inode));
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_error("host_remove_replica",
 				    host_name(copy->host));
+			cn = copy->host_next;
+			free(copy);
 		}
 	} else if (inode_is_dir(inode)) {
 		gfarm_hash_table_free(inode->u.d.dir_entries);
