@@ -683,7 +683,7 @@ __getcwd(char *buf, size_t size)
 				  "Hooking __getcwd(%p, %d)\n", buf, size));
 
 	if (!gfs_hook_cwd_is_gfarm)
-		return (syscall(SYS_getcwd, buf, size) == 0 ? buf : NULL); 
+		return ((char *)syscall(SYS_getcwd, buf, size));
 
 	_gfs_hook_debug(fprintf(stderr,
 			        "GFS: Hooking __getcwd(%p, %d)\n" ,buf, size));
