@@ -224,6 +224,15 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
 			break;
+		case 'S':
+			s = va_arg(ap, const char *);
+			n = va_arg(ap, size_t);
+			i = htonl(n);
+			gfarm_iobuffer_put_write(conn->sendbuffer,
+			    &i, sizeof(i));
+			gfarm_iobuffer_put_write(conn->sendbuffer,
+			    s, n);
+			break;
 		case 'b':
 			/*
 			 * note that because actual type of size_t may be
