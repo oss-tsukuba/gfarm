@@ -34,7 +34,7 @@ struct gfs_dirent *gfs_hook_get_suspended_gfs_dirent(int);
 struct gfs_stat *gfs_hook_get_gfs_stat(int);
 char *gfs_hook_get_gfs_canonical_path(int);
 int gfs_hook_set_cwd_is_gfarm(int);
-int gfs_hook_get_cwd_is_gfarm();
+int gfs_hook_get_cwd_is_gfarm(void);
 int gfs_hook_is_url(const char *, char **);
 char *gfs_hook_get_prefix(char *, size_t);
 int __syscall_close(int);
@@ -46,10 +46,10 @@ enum gfs_hook_file_view {
 	section_view
 };
 
-enum gfs_hook_file_view gfs_hook_get_current_view();
-int gfs_hook_get_current_index();
-int gfs_hook_get_current_nfrags();
-char *gfs_hook_get_current_section();
+enum gfs_hook_file_view gfs_hook_get_current_view(void);
+int gfs_hook_get_current_index(void);
+int gfs_hook_get_current_nfrags(void);
+char *gfs_hook_get_current_section(void);
 
 struct dirent;
 struct dirent64;
