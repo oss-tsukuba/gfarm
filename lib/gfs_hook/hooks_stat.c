@@ -42,10 +42,13 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		free(sec);
 	if (e == NULL) {
 		buf->st_mode = gs.st_mode;
+		buf->st_nlink = 1;
+		buf->st_uid = getuid();
+		buf->st_gid = getgid();
+		buf->st_size = gs.st_size;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
-		buf->st_size = gs.st_size;
 		gfs_stat_free(&gs);
 
 		return (0);
@@ -170,10 +173,13 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		free(sec);
 	if (e == NULL) {
 		buf->st_mode = gs.st_mode;
+		buf->st_nlink = 1;
+		buf->st_uid = getuid();
+		buf->st_gid = getgid();
+		buf->st_size = gs.st_size;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
-		buf->st_size = gs.st_size;
 		gfs_stat_free(&gs);
 
 		return (0);

@@ -271,6 +271,7 @@ access(const char *path, int type)
  * dup2
  */
 
+#ifdef SYS_dup2
 int
 __dup2(int oldfd, int newfd)
 {
@@ -311,6 +312,7 @@ dup2(int oldfd, int newfd)
 	_gfs_hook_debug_v(fputs("Hooking dup2\n", stderr));
 	return (__dup2(oldfd, newfd));
 }
+#endif /* SYS_dup2 */
 
 /*
  * execve

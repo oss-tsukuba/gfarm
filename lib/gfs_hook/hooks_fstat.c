@@ -29,10 +29,13 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		return (-1);
 
 	buf->st_mode = status.st_mode;
+	buf->st_nlink = 1;
+	buf->st_uid = getuid();
+	buf->st_gid = getgid();
+	buf->st_size = status.st_size;
 	buf->st_atime = status.st_atimespec.tv_sec;
 	buf->st_mtime = status.st_mtimespec.tv_sec;
 	buf->st_ctime = status.st_ctimespec.tv_sec;
-	buf->st_size = status.st_size;
 
 	gfs_stat_free(&status);
 
@@ -112,10 +115,13 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		return (-1);
 
 	buf->st_mode = status.st_mode;
+	buf->st_nlink = 1;
+	buf->st_uid = getuid();
+	buf->st_gid = getgid();
+	buf->st_size = status.st_size;
 	buf->st_atime = status.st_atimespec.tv_sec;
 	buf->st_mtime = status.st_mtimespec.tv_sec;
 	buf->st_ctime = status.st_ctimespec.tv_sec;
-	buf->st_size = status.st_size;
 
 	gfs_stat_free(&status);
 
