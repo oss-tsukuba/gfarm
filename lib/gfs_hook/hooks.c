@@ -673,7 +673,6 @@ fchdir(int filedes)
  * getcwd
  */
 
-#ifdef __linux__
 char *
 __getcwd(char *buf, size_t size)
 {
@@ -683,7 +682,7 @@ __getcwd(char *buf, size_t size)
 				  "Hooking __getcwd(%p, %d)\n", buf, size));
 
 	if (!gfs_hook_cwd_is_gfarm)
-		return ((char *)syscall(SYS_getcwd, buf, size));
+		return (gfs_hook_syscall_getcwd(buf, size));
 
 	_gfs_hook_debug(fprintf(stderr,
 			        "GFS: Hooking __getcwd(%p, %d)\n" ,buf, size));
@@ -714,7 +713,6 @@ getcwd(char *buf, size_t size)
 	_gfs_hook_debug_v(fputs("Hooking getcwd\n", stderr));
 	return (__getcwd(buf, size));
 }
-#endif
 
 /*
  * definitions for "hooks_common.c"
