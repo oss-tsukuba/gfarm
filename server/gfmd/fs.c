@@ -465,15 +465,20 @@ gfm_server_getdirents(struct peer *peer, int from_client)
 				break;
 		}
 		n = i;
+		if (n > 0)
+			inode_accessed(inode);
 
 		/* remember current position */
 		entry = dir_cursor_get_entry(dir, &cursor);
-		if (entry != NULL) {
+		if (entry == NULL) {
+			dir_offset = dir_get_entry_count(dir);
+		} else {
 			name = dir_entry_get_name(entry, &namelen);
 			process_set_dir_key(process, spool_host, fd,
 			    name, namelen);
+			dir_offset = dir_cursor_get_pos(dir, &cursor);
 		}
-		process_set_dir_offset(process, spool_host, fd, n);
+		process_set_dir_offset(process, spool_host, fd, dir_offset);
 	}
 	
 	giant_unlock();
