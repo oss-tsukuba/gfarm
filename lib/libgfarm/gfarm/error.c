@@ -55,6 +55,8 @@ char GFARM_ERR_CONNECTION_RESET_BY_PEER[] = "connection reset by peer";
 char GFARM_ERR_UNKNOWN_HOST[] = "unknown host";
 
 /* gfarm specific errors */
+char GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING[] =
+	"\"gfarm:\" URL prefix is missing";
 char GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE[] =
 	"fragment index not available";
 char GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH[] =
