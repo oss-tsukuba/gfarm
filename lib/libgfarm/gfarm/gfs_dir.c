@@ -112,28 +112,34 @@ gfs_rmdir(const char *pathname)
 }
 
 char *
-gfs_chdir(const char *dir)
+gfs_chdir_canonical(const char *canonic_dir)
 {
-	char *e, *canonic_path, *new_dir;
+	char *new_dir;
 
-	e = gfarm_canonical_path(gfarm_url_prefix_skip(dir), &canonic_path);
-	if (e != NULL)
-		return (e);
-	
 	if (gfarm_current_working_directory != NULL) {
 		free(gfarm_current_working_directory);
 		gfarm_current_working_directory = NULL;
 	}
-	new_dir = malloc(strlen(canonic_path) + 2);
-	if (new_dir == NULL) {
-		free(canonic_path);
+	new_dir = malloc(strlen(canonic_dir) + 2);
+	if (new_dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
-	sprintf(new_dir, "/%s", canonic_path);
-	free(canonic_path);
+	sprintf(new_dir, "/%s", canonic_dir);
 	gfarm_current_working_directory = new_dir;
 
 	return (NULL);
+}
+
+char *
+gfs_chdir(const char *dir)
+{
+	char *e, *canonic_path;
+
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(dir), &canonic_path);
+	if (e != NULL)
+		return (e);
+	e = gfs_chdir_canonical(canonic_path);
+	free (canonic_path);
+	return (e);
 }
 
 char *
