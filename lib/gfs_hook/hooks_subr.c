@@ -799,7 +799,7 @@ gfs_hook_get_prefix(char *buf, size_t size)
 {
 	if (received_prefix == NULL)
 		return GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING;
-	if (size < strlen(received_prefix))
+	if (size <= strlen(received_prefix))
 		return GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE;
 	strcpy(buf, received_prefix);
 	return (NULL);
