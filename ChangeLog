@@ -1,3 +1,373 @@
+2003-01-22  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* man/ja/man1/gfwhere.1, man/man1/gfwhere.1:
+	Added the description of the -I option.
+
+	* gftool/gfwhere/gfwhere.c:
+	Added the -I option for specifying an individual file fragment.
+	XXX - need to improve the readability of the code.
+
+2003-01-21  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/example/gfcp/gfcp.c:
+	Fixed a bug related to parsing command-line arguments introduced by the revision 1.3.
+
+2003-01-20  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c (thput-gfpio.c):
+	Catched up with the change of behavior of gfarm_initialize().
+
+	* gftool/gfwhere/gfwhere.c: Display usage when no file is specified.
+
+	* gfarmlib/config.c, gftool/gfrun/gfrun.c:
+	Changed command-line argument names added by gfrun from -I and -N to --gfarm_index and --gfarm_nfrags, respectively.
+	These arguments will be parsed and eliminated by gfarm_initialize().
+
+2003-01-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: japanese manual page for gfarm.conf
+
+	* man/ja/Makefile, man/ja/man5/Makefile, man/ja/man5/gfarm.conf.5:
+	manual page for gfarm.conf
+
+	* INSTALL.en, INSTALL.ja:
+	use "example.com" rather than "hpcc.jp" for examples.
+	use port 389 (official port number for LDAP) rather than 9000 for LDAP service.
+
+2003-01-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfreg/gfreg.c:
+	Fixed a functionality to register a file fragment.
+
+	* gfarmlib/config.c, gfarmlib/gfs_pio_local.c (gfs_pio_set_local):
+	Added a range check for fragment index.
+
+	* gfarmlib/gfs_pio_section.c (gfs_pio_set_view_index):
+	Added a range check for fragment_index.
+
+2003-01-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/Makefile.in:
+	Fixed an installation error when gfs_hook_mpi.o is missing.
+
+	* lib/gfs_hook/Makefile.in:
+	Fixed a target name because of a name conflict.
+
+2003-01-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c: fix compilation error
+
+2003-01-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c, lib/gfs_hook/hooks_subr.c:
+	Added gfs_hook_mpi.o for MPI programs.
+	Since gfarm_initialize() is automatically called, any change of source code is not necessary to utilize gfarm filesystem.
+
+	* gfarmlib/config.c: *** empty log message ***
+
+	* configure, configure.in:
+	When --with-mpi is specified without a withval, MPICC is defined as mpicc.
+
+	* configure, configure.in:
+	Modified globus_gssapi_libs for Globus Toolkit 2.2.2.
+
+2002-12-26  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/example/gfcombine_hook/gfcombine_hook.c, gftool/example/gfcp/gfcp.c, gftool/example/gfgrep/gfgrep.c, gfarmlib/config.c, gftool/example/gfcombine/gfcombine.c:
+	config.c (gfarm_initialize): This function eliminates -I and -N options added by gfrun from the argument list and calls gfs_pio_set_local().
+	Now, gfarm applications are not necessary to call gfs_pio_set_local() explicitly.
+
+	* gftool/addsec/addsec.c:
+	Changed the default prefix 'gfarm:/' to 'gfarm:'.
+	This assumes this command is executed in the home directory of the gfarm spool not in the top directory.
+
+	* gfarmlib/gfs_pio_local.c, include/gfs.h:
+	Added gfs_pio_get_node_rank() and gfs_pio_get_node_size().
+
+2002-12-16  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/example/gfcp/gfcp.c: Fixed a fatal typo, strcmp vs strcpy.
+
+2002-12-09  takamiya  <takamiya@b1k-1.a02.aist.go.jp>
+
+	* debian/changelog, debian/control, debian/gfarm-server.init, debian/rules:
+	cvs 20021101 upstream release.
+
+2002-12-06  soto  <soto@b1k-1.a02.aist.go.jp>
+
+	* package/redhat/gfarm.spec: change package category
+
+2002-12-05  soto  <soto@b1k-1.a02.aist.go.jp>
+
+	* gfarmlib/gfs_pio_misc.c: change program registratin priority
+	use local host first
+
+2002-12-04  soto  <soto@b1k-1.a02.aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm rpm spec file for:
+		gfarm-doc
+		gfarm-clinet
+		gfarm-server
+		gfarm-fsnode
+		gfarm-gfmd
+		gfarm-devel
+
+2002-12-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/hash.c: fatal typo
+
+	* makes/config.mk.in: make default_mandir be able to be overridden, too
+
+	* makes/var.mk, man/ja/Makefile.inc:
+	make japanese mandir be able to be overriden
+
+	* gftool/example/Makefile.inc, makes/var.mk:
+	make example bindir be able to be overridden
+
+2002-11-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/auth_server.c, gfarmlib/auth_server_gsi.c, configure, configure.in, gfarm_config.h.in:
+	call setsid(), and if it's available, also setlogin(),
+	to make getlogin() return correct login name on 4.4BSD derived systems.
+
+2002-11-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/param.h, gfsd/main.c, gfarmlib/param.c:
+	very experimental rate limiting code
+
+2002-11-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	workaround a problem caused by the way that the ROOT packages treats pathnames.
+
+2002-11-17  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/example/gfcp/Makefile, gftool/example/gfcp/gfcp.c:
+	Added gfcp.  usage: gfrun gfarm:gfcp input output
+
+2002-11-11  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-fsys/thput-fsys.c:
+	Added fsync(2 or 3c) after a write test.
+
+2002-11-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfhost/gfhost.c:
+	add "-u" (up) option, this option prints hostnames which are alive.
+
+2002-11-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrep/gfrep.c, man/ja/man1/gfrep.1, man/man1/gfrep.1:
+	Added the -D domainname option.  Gfarm file will be replicated to filesystem
+	nodes in the domainname.
+
+	* gfarmlib/gfs_pio_misc.c, gfarmlib/schedule.c, gfarmlib/schedule.h, gfarmlib/Makefile.in, include/gfs.h (gfs_pio_misc.c):
+	Added gfarm_url_fragments_replicate_to_domainname(
+					gfarm_url, domainname).
+	This function replicates a file to filesystem nodes within the domainname.
+
+	* gftool/addpath/addpath.c:
+	Fixed a bug in version 1.2 when adding a Gfarm file.
+
+	* gftool/addpath/addpath.c: Added -d option for metadata removal.
+
+2002-11-09  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfhost/gfhost.c:
+	Don't display incorrectly enormous or negative loadavg.
+
+	* configure, configure.in:
+	Corrected an installation directory for nsbins when --with-default-ns-exec-root option is explicitly specified.
+
+	* gftool/example/gfcombine_hook/gfcombine_hook.c, gftool/example/gfcombine_hook/Makefile:
+	Added a gfcombine_hook program that is a sample program using syscall hooking.
+
+	* lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, include/gfs_hook.h, lib/gfs_hook/hooks_common.c:
+	Added file view management functions for syscall hooking:
+		gfs_hook_set_default_view_local()
+		gfs_hook_set_default_view_index(index, nfrags)
+		gfs_hook_set_default_view_global()
+		gfs_hook_set_view_local(fd, flags)
+		gfs_hook_set_view_index(fd, nfrags, index, host, flags)
+		gfs_hook_set_view_global(fd, flags)
+
+	* man/man3/gfs_pio_set_view_local.3, man/ja/man3/gfs_pio_set_view_local.3:
+	Fixed a function name...
+
+2002-11-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c: correct sort order of "gfls -lt" and "gfls -ltr"
+
+	* gftool/gfhost/gfhost.c:
+	don't call gfarm_initialize(), if it's not necessary (e.g. gfhost -Li <host>).
+	because ldap_open(3), which is called from gfarm_initialize(), takes
+	17..22 seconds on the indiana hosts (to LDAP server on gfm04.apgrid.org).
+
+	* include/gfarm_metadb.h, gfarmlib/metadb_ldap.c, gftool/gfhost/gfhost.c:
+	we couldn't modify host information without adding hostaliases for entries
+	that don't have any hostaliases.
+	this fixes the problem.
+
+	* gftool/gfhost/gfhost.c:
+	revert meaning of -A. because this seems to be more natural.
+	e.g.
+	- "gfhost -m -n <ncpu> <hostname>" doesn't change aliases.
+	- "gfhost -m -n <ncpu> <hostname>" doesn't fail, if there is no hostalias.
+	 ("gfhost -m -A <hostname>" will fail, if there is no hostalias.
+	  but this is what we expect.)
+
+	* INSTALL.en, INSTALL.ja:
+	make slad.conf match with recently committed package/redhat/gfarm-slapd
+
+2002-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm-slapd:
+	/etc/rc.d/init.d startup script for LDAP server on redhat derived systems.
+	(only tested on Vine-2.5)
+
+	* gftool/gfhost/gfhost.c:
+	- disable warning message on default output mode.
+	- add "-v" option to make the warning appear on default output mode.
+	- use "x.xx" rather than "-.--" for hosts which don't return
+	  GFARM_ERR_CONNECTION_REFUSED.
+
+	* gftool/gfhost/gfhost.c: - fix incorrect timeout handling
+	- do not ingore error event on poll(2)
+
+	* gfarmlib/host.c: return the ``host'' argument as a *if_hostnamep,
+	rather than "struct hostent:h_name",
+	for non meta database case, too.
+	as mentioned in previous commit message of this file.
+	XXX - not sure this is the right thing. this makes gfhost output better, though.
+
+	* gftool/gfsched/gfsched.c:
+	add "-I" option to schedule a section (not a whole file),
+	for gfarmlib debugging purpose
+
+	* gfarmlib/gfs_client.c: fix a bug in previous commit.
+
+	* gftool/gfhost/gfhost.c:
+	sort output by default and also on -L option case.
+	XXX - implementation is somewhat ad hoc....
+
+	* INSTALL.en, INSTALL.ja, gftool/Makefile, gftool/gfhost/Makefile, gftool/gfhost/gfhost.c:
+	add gfhost command, which manipulates/lists host information in meta database.
+	this command also displays gfsd status by default.
+
+	* include/gfarm_metadb.h:
+	add gfarm_host_info_replace() interface and relevant infrastructure
+
+	* gfarmlib/schedule.c:
+	move timeout parameter for UDP service from here to gfs_client.[ch].
+	remove unused #define symbol.
+
+	* gfarmlib/stringlist.c: rename strvector_dup() and strvector_free() to
+	gfarm_strarray_dup() and gfarm_strarray_free(),
+	export these interface,
+	and move these functions from metadb_ldap.c to stringlist.c.
+
+	* gfarmlib/metadb_ldap.c:
+	- add gfarm_host_info_replace() interface and relevant infrastructure
+	- rename strvector_dup() and strvector_free() to
+	  gfarm_strarray_dup() and gfarm_strarray_free(),
+	  export these interface, and move these functions to stringlist.c.
+
+	* include/gfarm_misc.h:
+	- move gfarm_host_address_get() from "host.h" to <gfarm/gfarm_misc.h>.
+	  i.e. export this interface to application.
+	- export gfarm_host_info_get_by_if_hostname()
+	- rename strvector_dup() and strvector_free() to
+	  gfarm_strarray_dup() and gfarm_strarray_free(),
+	  export these interface, and move these functions to stringlist.c.
+
+	* gfarmlib/host.h:
+	move gfarm_host_address_get() from "host.h" to <gfarm/gfarm_misc.h>.
+	i.e. export this interface to application.
+
+	* gfarmlib/host.c:
+	return hostname or hostalias in meta database as a *if_hostnamep,
+	rather than "struct hostent:h_name".
+
+	XXX -	we should return the ``host'' argument as a *if_hostnamep,
+		rather than "struct hostent:h_name",
+		for non meta database case, too???
+
+	* gfarmlib/gfs_client.h: define and export timeouts for UDP service
+
+	* gfarmlib/gfs_client.c: - define and export timeouts for UDP service
+	- support connected socket for UDP service
+
+	* INSTALL.en, INSTALL.ja:
+	describe missing, but very important slapd.conf setting
+	which unlimits number of search results in LDAP protocol.
+
+2002-11-07  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrm/gfrm.c, man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	Added the -h option to specify a filesystem node instead of the the -H option.
+
+	* man/man1/gfrep.1:
+	Added a description for -s and -d options.  It needs to be specified with -I option.
+
+	* gftool/example/gfcombine/gfcombine.c:
+	Added the -n option to specify the number of fragments to be combined.
+
+2002-11-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrep/gfrep.c, man/ja/man1/gfrep.1, man/man1/gfrep.1:
+	Added a description for -I, -s, and -d options.
+	(gfrep.c): Just holding on 80 columns.
+
+2002-11-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c: use stderr instead of stdout for warning
+
+2002-11-06  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrep/gfrep.c:
+	Added -I, -s, and -d options to replicate a fragment of a file.
+	usage: gfrep -I index [-s src-node] -d dest-node gfarm_url
+
+2002-11-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/addsec/addsec.c: Fixed memory leak.
+
+	* gftool/example/gfcombine/gfcombine.c, gftool/example/gfcombine/Makefile:
+	Added a sample program to reduce the number of fragments by half; gfcombine.
+
+		usage: gfcombine [-o outputfile] inputfile
+		% gfrun -G gfarm:inputfile gfarm:gfcombine gfarm:inputfile
+
+	Default output filename is 'gfarm:combine.out'.
+
+	* gftool/gfrun/gfrun.c:
+	Commented out the fragment number check code of output files.
+	This is a temporal action to allow files whose number of fragments is not the same as the number of processes.
+
+2002-11-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/addsec/addsec.c: Accept several filenames.
+
+2002-11-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/addsec/Makefile, gftool/addsec/addsec.c, gftool/gfreg/gfreg.c, gfarmlib/gfs_pio_misc.c, gftool/addpath/Makefile, gftool/addpath/addpath.c, include/gfs.h:
+	Added maintenance commands: addpath and addsec.
+	usage:
+		addpath pathname nfrags
+		addsec pathname
+
+	for example,
+		% cd $gfarm_spool_root
+		% addpath tatebe/foo:0 1
+		% addsec tatbe/foo:0
+		% addpath tatebe/echo:i386-intel-linux 1
+		% addsec tatebe/echo:i386-intel-linux
+
+2002-11-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, include/gfarm_metadb.h:
+	Catched up with the current ChangeLog.
+
 2002-10-31  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gfarmlib/gfm_client.c: fix error added at revision 1.12.
