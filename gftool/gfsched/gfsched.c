@@ -59,13 +59,16 @@ main(int argc, char * argv[])
 	exit(1);
     }
 
-    while ((c = getopt(argc, argv, "I:N:p:?")) != EOF) {
+    while ((c = getopt(argc, argv, "I:N:Up:?")) != EOF) {
 	switch (c) {
 	case 'I':
 	    section = optarg;
 	    break;
 	case 'N':
 	    nhosts = atoi(optarg);
+	    break;
+	case 'U':
+	    gfarm_schedule_search_mode_set(GFARM_SCHEDULE_SEARCH_BY_LOADAVG);
 	    break;
 	case 'p':
 	    program = optarg;
