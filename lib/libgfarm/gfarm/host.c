@@ -361,13 +361,14 @@ host_address_get_matched(const char *name, int port,
 {
 	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
 	struct sockaddr_in *peer_addr_in = (struct sockaddr_in *)peer_addr;
-	struct hostent *hp = gethostbyname(name);
+	struct hostent *hp;
 	char *n;
 	int i;
 
 	if (hostspec == NULL)
 		return (host_address_get(name, port, peer_addr, if_hostnamep));
 
+	hp = gethostbyname(name);
 	if (hp == NULL || hp->h_addrtype != AF_INET)
 		return (GFARM_ERR_UNKNOWN_HOST);
 	memset(peer_addr_in, 0, sizeof(*peer_addr_in));
