@@ -15,6 +15,7 @@
 #include "hash.h"
 #include <openssl/evp.h>
 #include "gfs_pio.h"
+#include <gfarm/gfs_hook.h>
 
 #define MAX_GFS_FILE_BUF	2048
 
@@ -401,14 +402,12 @@ gfs_hook_check_cwd_is_gfarm()
 	 */
 	cwd = getenv("PWD");
 	if (cwd != NULL) {
-		char *url, *sec;
+		char *url;
 
-		if (gfs_hook_is_url(cwd, &url, &sec)) {
+		if (gfs_hook_is_url(cwd, &url)) {
 			gfs_chdir(url); /* here, cwd is changed. */
 			gfs_hook_set_cwd_is_gfarm(1);
 			free(url);
-			if (sec != NULL)
-				free(sec);
 			return;
 		}
 	}
@@ -430,8 +429,6 @@ gfs_hook_get_cwd_is_gfarm()
  *  Gfarm URL:  gfarm:[:section:]pathname
  *
  *  It is necessary to free the memory space for *url.
- *  Also, it's necessary to free the memory space for *secp,
- *  if *secp is not NULL.
  */
 static char gfs_mntdir[] = "/gfarm";
 static char *received_prefix = NULL;
@@ -492,7 +489,7 @@ set_received_prefix(const char *path)
  * specify a home directory in Gfarm file system.
  */
 int
-gfs_hook_is_url(const char *path, char **urlp, char **secp)
+gfs_hook_is_url(const char *path, char **urlp)
 {
 	static char prefix[] = "gfarm:";
 	int sizeof_gfarm_prefix = sizeof(prefix);
@@ -504,8 +501,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 	 *   'gfarm@' is also considered as a Gfarm URL
 	 */
 	static char gfarm_url_prefix_for_root[] = "gfarm@";
+	char *sec = NULL;
 
-	*secp = NULL;
 	path_save = path;
 	if (gfs_hook_is_mount_point(path)) {
 		is_mount_point = 1;
@@ -546,12 +543,12 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 			urlsize = sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(p + secsize + remove_slash + 1);
 			*urlp = malloc(urlsize + 1);
-			*secp = malloc(secsize + 1);
-			if (*urlp == NULL || *secp == NULL) {
+			sec = malloc(secsize + 1);
+			if (*urlp == NULL || sec == NULL) {
 				if (*urlp != NULL)
 					free(*urlp);
-				if (*secp != NULL)
-					free(*secp);
+				if (sec != NULL)
+					free(sec);
 				return (0); /* XXX - should return ENOMEM */
 			}
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
@@ -559,12 +556,10 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
 			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
 			       p + secsize + remove_slash + 1);
-			memcpy(*secp, p, secsize);
-			(*secp)[secsize] = '\0';
-			/*
-			 * This case needs to free memory space of
-			 * both *urlp and *secp.
-			 */
+			memcpy(sec, p, secsize);
+			sec[secsize] = '\0';
+			/* It is not necessary to free memory space of 'sec'. */
+			gfs_hook_set_default_view_section(sec);
 		}
 		else {
 			/*
@@ -596,6 +591,8 @@ gfs_hook_is_url(const char *path, char **urlp, char **secp)
 				strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
 			strcpy(*urlp + sizeof_gfarm_prefix - 1 + add_slash,
 			    path + sizeof_prefix + remove_slash - 1);
+
+			gfs_hook_set_default_view_local();
 		}
 		if (!set_received_prefix(path_save))
 			return (0);
@@ -630,6 +627,7 @@ gfs_hook_get_prefix(char *buf, size_t size)
 enum gfs_hook_file_view _gfs_hook_default_view = local_view;
 int _gfs_hook_index = 0;
 int _gfs_hook_num_fragments = GFARM_FILE_DONTCARE;
+char *_gfs_hook_section = NULL;
 
 void
 gfs_hook_set_default_view_local()
@@ -649,6 +647,15 @@ void
 gfs_hook_set_default_view_global()
 {
 	_gfs_hook_default_view = global_view;
+}
+
+void
+gfs_hook_set_default_view_section(char *section)
+{
+	_gfs_hook_default_view = section_view;
+	if (_gfs_hook_section != NULL)
+		free(_gfs_hook_section);
+	_gfs_hook_section = section;
 }
 
 char *
@@ -702,4 +709,21 @@ gfs_hook_set_view_global(int filedes, int flags)
 		return e;
 	}
 	return NULL;
+}
+
+char *
+gfs_hook_set_view_section(int filedes, char *section, char *host, int flags)
+{
+	GFS_File gf;
+	char *e;
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return "not a Gfarm file";
+
+	if ((e = gfs_pio_set_view_section(gf, section, host, flags)) != NULL) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: set_view_section: %s\n", e));
+		return (e);
+	}
+	return (NULL);
 }

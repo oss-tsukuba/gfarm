@@ -12,7 +12,7 @@ int
 FUNC___STAT(const char *path, STRUCT_STAT *buf)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 	struct gfs_stat gs;
 #if 0
 	char *canonic_path, *abs_path;
@@ -22,27 +22,26 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___STAT) "(%s)\n",
 	    path));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_STAT(path, buf));
 
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)\n", path));
 
 #if 1
-	if (sec != NULL || _gfs_hook_default_view == index_view) {
-		if (sec != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
-				url, sec));
-			e = GFS_STAT_SECTION(url, sec, &gs);
-			free(sec); /* 'sec' is free'ed here */
-		} else {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
-				url, _gfs_hook_index));
-			e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
-		}
-	} else if (_gfs_hook_default_view == local_view) {
+	if (_gfs_hook_default_view == section_view) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
+			url, _gfs_hook_section));
+		e = GFS_STAT_SECTION(url, _gfs_hook_section, &gs);
+	}
+	else if (_gfs_hook_default_view == index_view) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+			url, _gfs_hook_index));
+		e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
+	}
+	else if (_gfs_hook_default_view == local_view) {
 		int nf = -1, np;
 		/*
 		 * If the number of fragments is not the same as the
@@ -92,7 +91,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);
 	}
-	free(url); /* 'sec' is already free'ed */
+	free(url);
 	if (e == NULL) {
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
@@ -123,8 +122,6 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 
 	e = gfarm_url_make_path(url, &canonic_path);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e != NULL) {
 		errno = gfarm_error_to_errno(e);
 		return (-1);
@@ -199,7 +196,7 @@ int
 FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 	struct gfs_stat gs;
 #if 0
 	char *canonic_path, *abs_path;
@@ -209,27 +206,26 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___XSTAT) "(%s)\n",
 	    path));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_XSTAT(ver, path, buf));
 
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)\n", path));
 
 #if 1
-	if (sec != NULL || _gfs_hook_default_view == index_view) {
-		if (sec != NULL) {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
-				url, sec));
-			e = GFS_STAT_SECTION(url, sec, &gs);
-			free(sec); /* 'sec' is free'ed here */
-		} else {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
-				url, _gfs_hook_index));
-			e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
-		}
-	} else if (_gfs_hook_default_view == local_view) {
+	if (_gfs_hook_default_view == section_view) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)\n",
+			url, _gfs_hook_section));
+		e = GFS_STAT_SECTION(url, _gfs_hook_section, &gs);
+	}
+	else if (_gfs_hook_default_view == index_view) {
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)\n",
+			url, _gfs_hook_index));
+		e = GFS_STAT_INDEX(url, _gfs_hook_index, &gs);
+	}
+	else if (_gfs_hook_default_view == local_view) {
 		int nf = -1, np;
 		/*
 		 * If the number of fragments is not the same as the
@@ -278,7 +274,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 			"GFS: " S(GFS_STAT) "(%s)\n", url));
 		e = GFS_STAT(url, &gs);
 	}
-	free(url); /* 'sec' is already free'ed */
+	free(url);
 	if (e == NULL) {
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
@@ -302,8 +298,6 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 #else /* Temporary code until gfs_stat() will be implemented. */
 	e = gfarm_url_make_path(url, &canonic_path);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e != NULL) {
 		errno = gfarm_error_to_errno(e);
 		return (-1);

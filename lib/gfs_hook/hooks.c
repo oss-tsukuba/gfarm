@@ -260,18 +260,16 @@ int
 __unlink(const char *path)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __unlink(%s)\n", path));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_unlink, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink(%s)\n", path));
 	e = gfs_unlink(url);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -301,20 +299,18 @@ unlink(const char *path)
 int
 __access(const char *path, int type)
 {
-	char *e, *url, *sec;
+	char *e, *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __access(%s, %d)\n",
 	    path, type));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_access, path, type);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __access(%s, %d)\n",
 				path, type));
 	e = gfs_access(url, type);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -468,18 +464,16 @@ dup(int oldfd)
 int
 __execve(const char *filename, char *const argv [], char *const envp[])
 {
-	char *url, *sec, *e;
+	char *url, *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __execve(%s)\n", filename));
 
-	if (!gfs_hook_is_url(filename, &url, &sec))
+	if (!gfs_hook_is_url(filename, &url))
 		return syscall(SYS_execve, filename, argv, envp);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __execve(%s)\n", url));
 	e = gfs_execve(url, argv, envp);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	_gfs_hook_debug(fprintf(stderr, "GFS: __execve: %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
@@ -513,12 +507,12 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 int
 __utimes(const char *path, const struct timeval *tvp)
 {
-	char *e, *url, *sec;
+	char *e, *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %p)\n",
 	    path, tvp));
 
-	if (!gfs_hook_is_url(path, &url, &sec)) {
+	if (!gfs_hook_is_url(path, &url)) {
 #ifdef __linux__
 		if (tvp == NULL) {
 			return syscall(SYS_utime, path, NULL);
@@ -547,8 +541,6 @@ __utimes(const char *path, const struct timeval *tvp)
 		e = gfs_utimes(url, gt);
 	}
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -574,12 +566,12 @@ utimes(const char *path, const struct timeval *tvp)
 int
 __utime(const char *path, const struct utimbuf *buf)
 {
-	char *e, *url, *sec;
+	char *e, *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utime(%s, %p)\n",
 	    path, buf));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_utime, path, buf);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __utime(%s)\n", url));
@@ -595,8 +587,6 @@ __utime(const char *path, const struct utimbuf *buf)
 		e = gfs_utimes(url, gt);
 	}
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -627,20 +617,18 @@ int
 __mkdir(const char *path, mode_t mode)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __mkdir(%s, 0%o)\n",
 				path, mode));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_mkdir, path, mode);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __mkdir(%s, 0%o)\n",
 				path, mode));
 	e = gfs_mkdir(url, mode);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -671,18 +659,16 @@ int
 __rmdir(const char *path)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __rmdir(%s)\n", path));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_rmdir, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __rmdir(%s)\n", path));
 	e = gfs_rmdir(url);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -713,19 +699,17 @@ int
 __chdir(const char *path)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chdir(%s)\n", path));
 
-	if (!gfs_hook_set_cwd_is_gfarm(gfs_hook_is_url(path, &url, &sec)))
+	if (!gfs_hook_set_cwd_is_gfarm(gfs_hook_is_url(path, &url)))
 		return syscall(SYS_chdir, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chdir(%s)\n", path));
 
 	e = gfs_chdir(url);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 
@@ -855,20 +839,18 @@ int
 __chmod(const char *path, mode_t mode)
 {
 	const char *e;
-	char *url, *sec;
+	char *url;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chmod(%s, 0%o)\n",
 				path, mode));
 
-	if (!gfs_hook_is_url(path, &url, &sec))
+	if (!gfs_hook_is_url(path, &url))
 		return syscall(SYS_chmod, path, mode);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chmod(%s, 0%o)\n",
 				path, mode));
 	e = gfs_chmod(url, mode);
 	free(url);
-	if (sec != NULL)
-		free(sec);
 	if (e == NULL)
 		return (0);
 

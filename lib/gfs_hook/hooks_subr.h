@@ -35,18 +35,20 @@ struct gfs_stat *gfs_hook_get_gfs_stat(int);
 char *gfs_hook_get_gfs_canonical_path(int);
 int gfs_hook_set_cwd_is_gfarm(int);
 int gfs_hook_get_cwd_is_gfarm();
-int gfs_hook_is_url(const char *, char **, char **);
+int gfs_hook_is_url(const char *, char **);
 char *gfs_hook_get_prefix(char *, size_t);
 int __syscall_close(int);
 
 enum gfs_hook_file_view {
 	local_view,
 	index_view,
-	global_view
+	global_view,
+	section_view
 } _gfs_hook_default_view;
 
 extern int _gfs_hook_index;
 extern int _gfs_hook_num_fragments;
+extern char *_gfs_hook_section;
 
 struct dirent;
 struct dirent64;
