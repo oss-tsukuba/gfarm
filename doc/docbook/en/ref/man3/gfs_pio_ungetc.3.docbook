@@ -43,7 +43,7 @@
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><filename>EOF</filename></term>
+<term><constant>EOF</constant></term>
 <listitem>
 <para><function>gfs_pio_ungetc()</function> does not follow <function>gfs_pio_getc(3)</function>.</para>
 </listitem>
