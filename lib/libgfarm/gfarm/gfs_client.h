@@ -87,6 +87,10 @@ char *gfs_client_command(struct gfs_connection *,
  * replicateion service
  */
 
+enum { GFARM_REPLICATION_BOOTSTRAP_METHOD, GFARM_REPLICATION_NORMAL_METHOD };
+int  gfarm_replication_get_method(void);
+void gfarm_replication_set_method(int);
+
 #define GFS_CLIENT_REP_ALGORITHM_LATEST	1
 
 int gfs_client_rep_limit_division(int, int, file_offset_t);
