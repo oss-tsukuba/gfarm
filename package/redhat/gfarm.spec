@@ -15,10 +15,12 @@
 %define have_ns	0
 
 #
-# check MPI
+# check && enable/disable MPI
 #
+# do the followings to make gfwc
+#   # env MPI_PREFIX=/usr/local/mpich rpmbuild -bb gfarm.spec
 
-%define	mpi_prefix	/usr
+%define	mpi_prefix	%(echo "${MPI_PREFIX}")
 
 %define mpi	%(test -x %{mpi_prefix}/bin/mpicc && echo 1 || echo 0)
 
@@ -202,6 +204,11 @@ fi
 %{man_prefix}/man1/gfssh.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
+%{man_prefix}/man1/gfcd.1.gz
+%{man_prefix}/man1/gfmkdir.1.gz
+%{man_prefix}/man1/gfpwd.1.gz
+%{man_prefix}/man1/gfrmdir.1.gz
+%{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfront.1.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
@@ -254,6 +261,11 @@ fi
 %{man_prefix}/ja/man1/gfssh.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
+%{man_prefix}/ja/man1/gfcd.1.gz
+%{man_prefix}/ja/man1/gfmkdir.1.gz
+%{man_prefix}/ja/man1/gfpwd.1.gz
+%{man_prefix}/ja/man1/gfrmdir.1.gz
+%{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfront.1.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_ELEM.3.gz
 %{man_prefix}/ja/man3/GFARM_STRINGLIST_STRARRAY.3.gz
@@ -322,6 +334,11 @@ fi
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
+%{html_prefix}/en/ref/man1/gfcd.1.html
+%{html_prefix}/en/ref/man1/gfmkdir.1.html
+%{html_prefix}/en/ref/man1/gfpwd.1.html
+%{html_prefix}/en/ref/man1/gfrmdir.1.html
+%{html_prefix}/en/ref/man1/gfsetdir.1.html
 %{html_prefix}/en/ref/man1/gfront.1.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
@@ -373,6 +390,11 @@ fi
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
+%{html_prefix}/ja/ref/man1/gfcd.1.html
+%{html_prefix}/ja/ref/man1/gfmkdir.1.html
+%{html_prefix}/ja/ref/man1/gfpwd.1.html
+%{html_prefix}/ja/ref/man1/gfrmdir.1.html
+%{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %{html_prefix}/ja/ref/man1/gfront.1.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
 %{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html
@@ -457,6 +479,10 @@ fi
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %{prefix}/bin/gfwhere
+%{prefix}/bin/gfmkdir
+%{prefix}/bin/gfpwd
+%{prefix}/bin/gfrmdir
+%{prefix}/bin/gfsetdir
 %{prefix}/bin/pcat
 %{prefix}/bin/pcp
 %{prefix}/bin/pdel
