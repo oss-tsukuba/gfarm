@@ -159,6 +159,12 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 	state->session = gfarmSecSessionInitiateResult(state->gfsl_state,
 	    &e_major, &e_minor);
 	if (state->session == NULL) {
+		if (gflog_auth_get_verbose()) {
+			gflog_error("Can't initiate session because of:",
+				    NULL);
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
 #if 0
 		/* XXX e_major/e_minor should be used */
 		state->error = GFARM_ERR_AUTHENTICATION;
