@@ -24,8 +24,11 @@ struct search_idle_host_state {
 	struct gfarm_host_info *host_info;
 	float loadavg;
 	int flags;
-#define HOST_STATE_FLAG_GOT_LOADAVG	1
-#define HOST_STATE_FLAG_RUNNABLE	2
+#define HOST_STATE_FLAG_RUNNABLE		0x01
+#define HOST_STATE_FLAG_LOADAVG_TRIED		0x02
+#define HOST_STATE_FLAG_LOADAVG_AVAIL		0x04
+#define HOST_STATE_FLAG_AUTH_TRIED		0x08
+#define HOST_STATE_FLAG_AUTH_SUCCEED		0x10
 };
 
 static void
@@ -353,6 +356,8 @@ init_host_runnable_filter(struct host_runnable_filter *filter,
  * gfarm_client_*_load_*() callback routine which is provided by search_idle()
  */
 
+#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	1.0F
+
 #define IDLE_LOAD_AVERAGE	0.1F
 #define SEMI_IDLE_LOAD_AVERAGE	0.5F
 
@@ -411,8 +416,8 @@ search_idle_load_callback(void *closure)
 
 	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
 	if (e == NULL) {
+		c->ah.host_state->flags |= HOST_STATE_FLAG_LOADAVG_AVAIL;
 		c->ah.host_state->loadavg = load.loadavg_1min;
-		c->ah.host_state->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
 		search_idle_record_host(c->state,
 		    c->ah.host_state, c->ah.hostname);
 	}
@@ -430,6 +435,7 @@ search_idle_connect_callback(void *closure)
 	e = gfs_client_connect_result_multiplexed(c->protocol_state,
 	    &gfs_server);
 	if (e == NULL) {
+		c->ah.host_state->flags |= HOST_STATE_FLAG_AUTH_SUCCEED;
 		search_idle_record_host(c->state,
 		    c->ah.host_state, c->ah.hostname);
 		gfs_client_disconnect(gfs_server);
@@ -448,8 +454,10 @@ search_idle_load_and_connect_callback(void *closure)
 
 	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
 	if (e == NULL) {
+		c->ah.host_state->flags |=
+			HOST_STATE_FLAG_LOADAVG_AVAIL |
+			HOST_STATE_FLAG_AUTH_TRIED;
 		c->ah.host_state->loadavg = load.loadavg_1min;
-		c->ah.host_state->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
 		e = gfs_client_connect_request_multiplexed(c->state->q,
 		    c->ah.hostname, &c->peer_addr,
 		    search_idle_connect_callback, c,
@@ -481,6 +489,23 @@ loadavg_compare(const void *a, const void *b)
 		return (0);
 }
 
+/* check authentication success or not? */
+
+static enum gfarm_schedule_search_mode default_search_method =
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH;
+
+enum gfarm_schedule_search_mode
+gfarm_schedule_search_mode_get(void)
+{
+	return (default_search_method);
+}
+
+void
+gfarm_schedule_search_mode_set(enum gfarm_schedule_search_mode mode)
+{
+	default_search_method = mode;
+}
+
 /*
  * The search will be stopped, if `enough_number' of semi-idle hosts
  * are found.
@@ -489,11 +514,9 @@ loadavg_compare(const void *a, const void *b)
  * It means desired number of hosts as an INPUT parameter.
  * It returns available number of hosts as an OUTPUT parameter.
  */
-#define SEARCH_IDLE_GET_LOAD	0
-#define SEARCH_IDLE_CONNECT	1
 
 static char *
-search_idle(int concurrency, int search_method, int enough_number,
+search_idle(int concurrency, int enough_number,
 	struct gfarm_hash_table *hosts_state,
 	int nihosts, struct string_filter *ihost_filter,
 	struct get_next_iterator *ihost_iterator,
@@ -530,8 +553,13 @@ search_idle(int concurrency, int search_method, int enough_number,
 		if (entry == NULL)
 			continue; /* never happen, if metadata is consistent */
 		h = gfarm_hash_entry_data(entry);
-		if ((h->flags & HOST_STATE_FLAG_GOT_LOADAVG) != 0) {
-			search_idle_record_host(&s, h, ihost);
+		if ((h->flags & HOST_STATE_FLAG_LOADAVG_TRIED) != 0) {
+			if ((h->flags &
+			     (default_search_method ==
+			      GFARM_SCHEDULE_SEARCH_BY_LOADAVG ?
+			      HOST_STATE_FLAG_LOADAVG_AVAIL :
+			      HOST_STATE_FLAG_AUTH_SUCCEED)) != 0)
+				search_idle_record_host(&s, h, ihost);
 		} else {
 			e = gfarm_host_info_address_get(ihost,
 			    gfarm_spool_server_port, h->host_info,
@@ -557,9 +585,11 @@ search_idle(int concurrency, int search_method, int enough_number,
 			c->peer_addr = addr;
 			c->ah.host_state = h;
 			c->ah.hostname = ihost; /* record return value */
+			h->flags |= HOST_STATE_FLAG_LOADAVG_TRIED;
 			e = gfs_client_get_load_request_multiplexed(s.q,
 			    &c->peer_addr,
-			    search_method == SEARCH_IDLE_GET_LOAD ?
+			    default_search_method ==
+			    GFARM_SCHEDULE_SEARCH_BY_LOADAVG ?
 			    search_idle_load_callback :
 			    search_idle_load_and_connect_callback,
 			    c, &gls);
@@ -623,7 +653,7 @@ shuffle_strings(int n, char **strings)
 }
 
 static char *
-search_idle_shuffled(int concurrency, int search_method, int enough_number,
+search_idle_shuffled(int concurrency, int enough_number,
 	struct gfarm_hash_table *hosts_state,
 	int nihosts, struct string_filter *ihost_filter,
 	struct get_next_iterator *ihost_iterator,
@@ -646,7 +676,7 @@ search_idle_shuffled(int concurrency, int search_method, int enough_number,
 	}
 	shuffle_strings(nihosts, shuffled_ihosts);
 
-	e = search_idle(concurrency, search_method, enough_number, hosts_state,
+	e = search_idle(concurrency, enough_number, hosts_state,
 	    nihosts, &null_filter,
 	    init_string_array_iterator(&host_iterator, shuffled_ihosts),
 	    nohostsp, ohosts);
@@ -671,7 +701,6 @@ gfarm_strings_expand_cyclic(int nsrchosts, char **srchosts,
 
 #define CONCURRENCY	10
 #define ENOUGH_RATE	4
-#define SEARCH_METHOD	SEARCH_IDLE_GET_LOAD
 
 static char *
 search_idle_cyclic(struct gfarm_hash_table *hosts_state,
@@ -683,12 +712,12 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
 	int nfound = nohosts;
 
 #ifdef USE_SHUFFLED
-	e = search_idle_shuffled(CONCURRENCY, SEARCH_METHOD,
+	e = search_idle_shuffled(CONCURRENCY,
 	    nohosts * ENOUGH_RATE, hosts_state,
 	    nihosts, ihost_filter, ihost_iterator,
 	    &nfound, ohosts);
 #else
-	e = search_idle(CONCURRENCY, SEARCH_METHOD,
+	e = search_idle(CONCURRENCY,
 	    nohosts * ENOUGH_RATE, hosts_state,
 	    nihosts, ihost_filter, ihost_iterator,
 	    &nfound, ohosts);
@@ -853,7 +882,7 @@ search_idle_by_section_copy_info(struct gfarm_hash_table *hosts_state,
 				if (entry == NULL)
 					continue; /* shouldn't happen */
 				h = gfarm_hash_entry_data(entry);
-				h->loadavg += 1.0F;
+				h->loadavg += VIRTUAL_LOAD_FOR_SCHEDULED_HOST;
 			}
 		}
 	}
