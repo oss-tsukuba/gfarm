@@ -268,6 +268,48 @@ access(const char *path, int type)
 }
 
 /*
+ * mmap
+ *
+ * XXX - just print out the information.
+ */
+
+void *
+__mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+	GFS_File gf;
+	int gfs_fd;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+		"Hooking __mmap(%p, %d, %d, %d, %d, %d)\n",
+		addr, len, prot, flags, fildes, (int)off));
+
+	if ((gf = gfs_hook_is_open(fildes)) == NULL)
+		return (void *)syscall(
+			SYS_mmap, addr, len, prot, flags, fildes, off);
+
+	_gfs_hook_debug(fprintf(stderr,
+		"GFS: Hooking __mmap(%p, %d, %d, %d, %d, %d)\n",
+		addr, len, prot, flags, fildes, (int)off));
+
+	gfs_fd = gfs_pio_fileno(gf);
+	return (void *)syscall(SYS_mmap, addr, len, prot, flags, gfs_fd, off);
+}
+
+void *
+_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+	_gfs_hook_debug_v(fputs("Hooking _mmap\n", stderr));
+	return (__mmap(addr, len, prot, flags, fildes, off));
+}
+
+void *
+mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
+{
+	_gfs_hook_debug_v(fputs("Hooking mmap\n", stderr));
+	return (__mmap(addr, len, prot, flags, fildes, off));
+}
+
+/*
  * dup2
  */
 
