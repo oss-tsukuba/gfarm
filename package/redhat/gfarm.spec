@@ -250,6 +250,7 @@ fi
 %{man_prefix}/man3/gfs_stat.3.gz
 %{man_prefix}/man3/gfs_stat_free.3.gz
 %{man_prefix}/man3/gfs_unlink.3.gz
+%{man_prefix}/man3/gfs_utimes.3.gz
 %{man_prefix}/man5/gfarm.conf.5.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
@@ -397,6 +398,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_stat.3.html
 %{html_prefix}/en/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/en/ref/man3/gfs_unlink.3.html
+%{html_prefix}/en/ref/man3/gfs_utimes.3.html
 %{html_prefix}/en/ref/man5/gfarm.conf.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
