@@ -31,6 +31,8 @@ usage()
 	fprintf(stderr, "\t-X: inherits the authentication info of the "
 			"X Window System.\n");
 #ifdef HAVE_GSI
+	fprintf(stderr, "\t-N <hostname>: "
+		"use this name to authenticate peer.\n");
 	fprintf(stderr, "\t-v: display GSS minor status error.\n");
 #endif
 	exit(1);
@@ -41,6 +43,7 @@ int opt_no_stdin = 0;
 int opt_raw_command = 0;
 int opt_xdpy_env = 0;
 int opt_xauth_copy = 0;
+char *opt_hostname = NULL;
 int opt_auth_verbose = 0;
 
 void
@@ -78,6 +81,18 @@ parse_option(int *argcp, char ***argvp)
 				break;
 			case 'X':
 				opt_xauth_copy = 1;
+				break;
+			case 'N':
+				if (s[1]) {
+					opt_hostname = &s[1];
+					s += strlen(s) - 1;
+				} else if (argc > 1) {
+					opt_hostname = argv[1];
+					argc--, argv++;
+					s = argv[0] + strlen(argv[0]) - 1;
+				} else {
+					usage();
+				}
 				break;
 			case 'v':
 				opt_auth_verbose = 1;
@@ -129,7 +144,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char *e, *user, *hostname, *command;
+	char *e, *user, *if_hostname, *command;
 	char *args[2];
 	char *envs[2];
 	char **argp, **envp = NULL;
@@ -148,7 +163,7 @@ main(argc, argv)
 	if (argc <= 0)
 		usage();
 
-	hostname = argv[0];
+	if_hostname = argv[0];
 	argc--, argv++;
 
 	parse_option(&argc, &argv);
@@ -209,20 +224,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-#if 0 /* XXX - We cannot do this, because we don't access meta database. */
-	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e == NULL) {
-		char *canonical_name;
-
-		e = gfarm_host_get_canonical_name(hostname, &canonical_name);
-		if (e == NULL) {
-			e = gfs_client_connect(canonical_name,
-			    (struct sockaddr *)&peer_addr, &gfs_server);
-		}
-	}
-#else
-	hp = gethostbyname(hostname);
+	hp = gethostbyname(if_hostname);
 	if (hp == NULL || hp->h_addrtype != AF_INET) {
 		e = GFARM_ERR_UNKNOWN_HOST;
 	} else {
@@ -231,13 +233,13 @@ main(argc, argv)
 		       sizeof(peer_addr.sin_addr));
 		peer_addr.sin_family = hp->h_addrtype;
 		peer_addr.sin_port = htons(gfarm_spool_server_port);
-		/* XXX - `hostname' may not be a canonical_hostname. */
-		e = gfs_client_connect(hostname, (struct sockaddr *)&peer_addr,
+		e = gfs_client_connect(
+		    opt_hostname != NULL ? opt_hostname : if_hostname, 
+		    (struct sockaddr *)&peer_addr,
 		    &gfs_server);
 	}
-#endif
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", hostname, e);
+		fprintf(stderr, "%s: %s\n", if_hostname, e);
 		exit(1);
 	}
 
@@ -288,8 +290,8 @@ main(argc, argv)
 		exit(1);
 	}
 	if (sig) {
-		fprintf(stderr, "%s: signal %d received%s.\n", hostname, sig,
-			coredump ? " (core dumped)" : "");
+		fprintf(stderr, "%s: signal %d received%s.\n",
+		    if_hostname, sig, coredump ? " (core dumped)" : "");
 		exit(255);
 	}
 	exit(status);
