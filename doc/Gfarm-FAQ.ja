@@ -10,6 +10,8 @@ and Technology (AIST).  All Rights Reserved.
   1.2 Gfarm はどこからダウンロードできますか？
 
 2. トラブル・シューティング
+  2.1 gfls をすると not a directory と表示されるファイルがありますが，
+     これは何でしょうか？
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
@@ -25,7 +27,7 @@ and Technology (AIST).  All Rights Reserved.
 **********
   1.1 Gfarm とは何ですか？
 	下記の URL をご覧ください。
-		http://datafarm.apgrid.org/index.ja.html
+		http://datafarm.apgrid.org/
 
   1.2 Gfarm はどこからダウンロードできますか？
 	下記の URL から配布されています。
@@ -33,6 +35,13 @@ and Technology (AIST).  All Rights Reserved.
 
 2. トラブル・シューティング
 *******************
+  2.1 gfls をすると not a directory と表示されるファイルがありますが，
+     これは何でしょうか？
+
+	Gfarm 1.0b1 では，プログラムを実行途中で中断するとファイルシス
+	テムメタデータにごみが残ることがあります．次回のバージョン以降
+	では修正予定ですが，もし not a directory と表示された場合，
+	gfrm でそのファイルを消去してください．
 
 3. セキュリティ
 ***************
