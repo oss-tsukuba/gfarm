@@ -161,15 +161,20 @@ close(int filedes)
 int
 __unlink(const char *path)
 {
-	const char *e, *url;
+	const char *e;
+	char *url, *sec;
 
 	_gfs_hook_debug(fprintf(stderr, "Hooking __unlink: %s\n", path));
 
-	if (!gfs_hook_is_url(path, &url))
+	if (!gfs_hook_is_url(path, &url, &sec))
 		return syscall(SYS_unlink, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink: %s\n", path));
 	e = gfs_unlink(url);
+	if (sec != NULL) {
+	    free(url);
+	    free(sec);
+	}
 	if (e == NULL)
 	    return (0);
 	_gfs_hook_debug(fprintf(stderr, "GFS: __unlink: %s\n", e));

@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <gfarm/gfarm.h>
 #include "hooks_subr.h"
 
@@ -70,9 +71,18 @@ gfs_hook_is_open(int fd)
 	return (NULL);
 }
 
+/*
+ *  Check whether pathname is gfarm url or not.
+ *
+ *  Gfarm URL:  gfarm:[:section:]pathname
+ *
+ *  If *secp is not NULL, it is necessary to free the memory space for
+ *  both *urlp and *secp.
+ */
 int
-gfs_hook_is_url(const char *path, const char **urlp)
+gfs_hook_is_url(const char *path, char **urlp, char **secp)
 {
+	*secp = NULL;
 	/*
 	 * Objectivity patch:
 	 *   '/gfarm:' is also considered as a Gfarm URL
@@ -80,11 +90,35 @@ gfs_hook_is_url(const char *path, const char **urlp)
 	if (*path == '/')
 		++path;
 	if (gfarm_is_url(path)) {
+		static char prefix[] = "gfarm:";
 		if (!gfarm_initialized) {
 			gfs_hook_not_initialized();
 			return (0); /* don't perform gfarm operation */
 		}
-		*urlp = path;
+		/*
+		 * extension for accessing individual sections
+		 *   gfarm::section:pathname
+		 */
+		if (*(path + sizeof(prefix) - 1) == ':') {
+			char *loc = strchr(path + sizeof(prefix), ':');
+			int urlsize, secsize;
+			if (loc == NULL) /* no section or no pathname */
+				return (0);
+			urlsize = sizeof(prefix) - 1 + strlen(loc + 1);
+			secsize = strlen(path) - urlsize - 2;
+			*urlp = calloc(urlsize + 1, sizeof(char));
+			*secp = calloc(secsize + 1, sizeof(char));
+			strcat(*urlp, prefix);
+			strcat(*urlp, loc + 1);
+			strncpy(*secp, path + sizeof(prefix), secsize);
+			/*
+			 * This case needs to free memory space of
+			 * both *urlp and *secp.
+			 */
+		}
+		else {
+			*urlp = path;
+		}
 		return (1);
 	}
 	return (0);
