@@ -8,11 +8,6 @@ Release note for Gfarm 1.0b5
 
 Updated Features
 
- * Client commands
-
-   * New feature
-
-
  * Parallel I/O Library
 
    - [New feature] Added new functions, gfs_glob, gfs_chdir,
