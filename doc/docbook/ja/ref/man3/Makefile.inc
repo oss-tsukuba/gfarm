@@ -19,6 +19,7 @@ DOCBOOK = \
 	gfarm_url_program_register.3 \
 	gfarm_url_section_replicate_from_to.3 \
 	gfarm_url_section_replicate_to.3 \
+	gfs_chdir.3 \
 	gfs_closedir.3 \
 	gfs_opendir.3 \
 	gfs_pio_close.3 \

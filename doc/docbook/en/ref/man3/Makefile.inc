@@ -3,6 +3,7 @@ DOCBOOK = \
 	gfarm_strings_free_deeply.3 \
 	gfarm_terminate.3 \
 	gfarm_url_hosts_schedule.3 \
+	gfs_chdir.3 \
 	gfs_closedir.3 \
 	gfs_opendir.3 \
 	gfs_pio_close.3 \
