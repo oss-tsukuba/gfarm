@@ -113,7 +113,11 @@ replication_job_list_add(struct replication_job_list *list,
 		exit(1);
 	}
 	job->file = gfarm_file;
-	job->section = section;
+	job->section = strdup(section);
+	if (job->section == NULL) {
+		fprintf(stderr, "%s: no memory\n", program_name);
+		exit(1);
+	}
 	job->dest = dest_canonical;
 	if (src != NULL) {
 		e = gfarm_host_get_canonical_name(src, &job->src);
