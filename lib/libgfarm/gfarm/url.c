@@ -11,9 +11,10 @@
 #include <pwd.h>
 #include <limits.h>
 #include <assert.h>
-#include <gfarm/gfarm_error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h>
+
+#include <openssl/evp.h>
+#include <gfarm/gfarm.h>
+#include "gfs_pio.h" /* gfs_realpath_canonical */
 
 /*
  * GFarm-URL:
@@ -81,7 +82,7 @@ gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 char *
 gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 {
-	char *s, *e, *t;
+	char *s, *e;
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
@@ -89,15 +90,9 @@ gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_realpath(s, &t);
+	e = gfs_realpath_canonical(s, canonic_pathp);
 	free(s);
-	if (e != NULL)
-		return(e);
-	*canonic_pathp = strdup(t + GFARM_URL_PREFIX_LENGTH + 1);
-	free(t);
-	if (*canonic_pathp == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	return (NULL);
+	return(e);
 }
 
 char *
@@ -259,6 +254,24 @@ gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
 	*gfarm_url = url;
 
 	return (NULL);
+}
+
+/*
+ * gfs_realpath
+ */
+
+char *
+gfs_realpath(const char *path, char **abspathp)
+{
+	char *e, *canonic_path;
+
+	path = gfarm_url_prefix_skip(path);
+	e = gfarm_canonical_path(path, &canonic_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_canonical_to_url(canonic_path, abspathp);
+	free(canonic_path);
+	return (e);
 }
 
 /*

@@ -282,7 +282,7 @@ gfs_uncachedir(void)
 }
 
 char *
-gfs_realpath(const char *path, char **abspathp)
+gfs_realpath_canonical(const char *path, char **abspathp)
 {
 	struct node *n, *p;
 	char *e, *abspath;
@@ -294,29 +294,23 @@ gfs_realpath(const char *path, char **abspathp)
 	e = lookup_path(path, -1, 0, &n);
 	if (e != NULL)
 		return (e);
-	if (n == root) {
-		len = 1;
-	} else {
-		len = 0;
-		for (p = n; p != root; p = p->parent)
-			len += strlen(p->name) + 1;
+	len = 0;
+	for (p = n; p != root; p = p->parent) {
+		if (p != n)
+			++len; /* for '/' */
+		len += strlen(p->name);
 	}
-	len += GFARM_URL_PREFIX_LENGTH;
 	abspath = malloc(len + 1);
 	if (abspath == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	abspath[len] = '\0';
-	if (n == root) {
-		abspath[GFARM_URL_PREFIX_LENGTH] = '/';
-	} else {
-		for (p = n; p != root; p = p->parent) {
-			l = strlen(p->name);
-			len -= l;
-			memcpy(abspath + len, p->name, l);
+	for (p = n; p != root; p = p->parent) {
+		if (p != n)
 			abspath[--len] = '/';
-		}
+		l = strlen(p->name);
+		len -= l;
+		memcpy(abspath + len, p->name, l);
 	}
-	memcpy(abspath, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
 	*abspathp = abspath;
 	return (NULL);
 }

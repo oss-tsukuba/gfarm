@@ -127,3 +127,6 @@ char *gfarm_path_expand_home(const char *_file, char **);
 
 /* gfs_pio_misc.c */
 char *gfs_stat_canonical_path(char *, struct gfs_stat *);
+
+/* gfs_dir.c */
+char *gfs_realpath_canonical(const char *, char **);
