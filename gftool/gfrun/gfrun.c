@@ -840,12 +840,19 @@ main(int argc, char **argv)
 	e_save = gfrun(rsh_command, &rsh_options, canonical_name_option,
 	    &options, nhosts, hosts,
 	    command_url, &argv[command_index + 1]);
+#if 0
+	/*
+	 * gfarm_terminate() should be called after the change of
+	 * hooks_init.c on 2 March, 2005.  It is not necessary to call
+	 * costly register_stdout_stderr() any more.
+	 */
 	if (e_save == NULL) {
 		register_stdout_stderr(
 		    options.stdout_file, options.stderr_file,
 		    rsh_command, &rsh_options, canonical_name_option,
 		    nhosts, hosts);
 	}
+#endif
 #if 0 /* XXX - temporary solution; it is not necessary for the output
 	 file to be the same number of fragments. */
 	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
