@@ -517,29 +517,34 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 			if (gfs_hook_num_gfs_files() == 0)
 				return (r);
 			_gfs_hook_debug(perror(filename));
-			_exit(255);
+			exit(255);
 		default:
 			while ((r = waitpid(pid, &status, 0)) == -1 &&
 			       errno == EINTR);
 			if (r == -1) {
 				_gfs_hook_debug(perror("waitpid"));
-				/* execve fails. call again to set errno. */
-				r = syscall(SYS_execve, filename, argv, envp);
-				return (r);
+				status = 255;
 			}
 			else if (WIFSIGNALED(status)) {
 				_gfs_hook_debug(
 				 fprintf(stderr, "%s: signal %d received%s.\n",
 				  gfarm_host_get_self_name(), WTERMSIG(status),
 				  WCOREDUMP(status) ? " (core dumped)" : ""));
+				/* propagate the signal */
+				raise(WTERMSIG(status));
+				status = WEXITSTATUS(status);
 			}
 			else if (WEXITSTATUS(status) == 255) {
+				/* child process fails in execve */
 				_gfs_hook_debug(
 				 fprintf(stderr, "%s: status 255\n",
 				  gfarm_host_get_self_name()));
-				/* execve fails. call again to set errno. */
-				r = syscall(SYS_execve, filename, argv, envp);
-				return (r);
+				/* XXX - need to obtain from the child */
+				errno = EPERM;
+				return (-1);
+			}
+			else {
+				status = WEXITSTATUS(status);
 			}
 			break;
 		}
@@ -577,62 +582,6 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 	return (__execve(filename, argv, envp));
 }
 
-/*
- * fork - flush all of iobuffer before fork().  This is necessary to
- * correctly execute a shell script such as 'configure'.
- */
-pid_t
-__fork(void)
-{
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fork()\n"));
-	/* flush all of buffer */
-	gfs_hook_flush_all();
-	return syscall(SYS_fork);
-}
-
-pid_t
-_fork(void)
-{
-	_gfs_hook_debug_v(fputs("Hooking _fork\n", stderr));
-	return (__fork());
-}
-
-pid_t
-fork(void)
-{
-	_gfs_hook_debug_v(fputs("Hooking fork\n", stderr));
-	return (__fork());
-}
-
-#ifdef SYS_vfork
-pid_t
-__vfork(void)
-{
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __vfork()\n"));
-	/* flush all of buffer */
-	gfs_hook_flush_all();
-	/* 
-	 * SYS_fork is called instead of SYS_vfork.  This is needed
-	 * for linux to avoid segfault in wrong configuration,
-	 * e.g. libpthread-not-hidden is not pre-loaded.
-	 */
-	return syscall(SYS_fork);
-}
-
-pid_t
-_vfork(void)
-{
-	_gfs_hook_debug_v(fputs("Hooking _vfork\n", stderr));
-	return (__vfork());
-}
-
-pid_t
-vfork(void)
-{
-	_gfs_hook_debug_v(fputs("Hooking vfork\n", stderr));
-	return (__vfork());
-}
-#endif
 /*
  * utimes & utime
  */
@@ -1104,6 +1053,152 @@ fchmod(int filedes, mode_t mode)
 }
 
 /*
+ * chown - not well tested
+ */
+
+int
+__syscall_chown(const char *path, uid_t owner, gid_t group)
+{
+#ifdef SYS_chown32
+	return (syscall(SYS_chown32, path, owner, group));
+#else
+	return (syscall(SYS_chown, path, owner, group));
+#endif
+}
+
+int
+__chown(const char *path, uid_t owner, gid_t group)
+{
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chown(%s, %d, %d)\n",
+				  path, uid, group));
+
+	if (!gfs_hook_is_url(path, &url))
+		return (__syscall_chown(path, owner, group));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __chown(%s, %d, %d)\n",
+				path, owner, group));
+	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	free(url);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __chown: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_chown(const char *path, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking _chown\n", stderr));
+	return (__chown(path, owner, group));
+}
+
+int
+chown(const char *path, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking chown\n", stderr));
+	return (__chown(path, owner, group));
+}
+
+int
+__syscall_lchown(const char *path, uid_t owner, gid_t group)
+{
+#ifdef SYS_lchown32
+	return (syscall(SYS_lchown32, path, owner, group));
+#else
+	return (syscall(SYS_lchown, path, owner, group));
+#endif
+}
+
+int
+__lchown(const char *path, uid_t owner, gid_t group)
+{
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __lchown(%s, %d, %d)\n",
+				  path, uid, group));
+
+	if (!gfs_hook_is_url(path, &url))
+		return (__syscall_lchown(path, owner, group));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __lchown(%s, %d, %d)\n",
+				path, owner, group));
+	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	free(url);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __lchown: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_lchown(const char *path, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking _lchown\n", stderr));
+	return (__lchown(path, owner, group));
+}
+
+int
+lchown(const char *path, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking lchown\n", stderr));
+	return (__lchown(path, owner, group));
+}
+
+int
+__syscall_fchown(int fd, uid_t owner, gid_t group)
+{
+#ifdef SYS_fchown32
+	return (syscall(SYS_fchown32, fd, owner, group));
+#else
+	return (syscall(SYS_fchown, fd, owner, group));
+#endif
+}
+
+int
+__fchown(int fd, uid_t owner, gid_t group)
+{
+	const char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchown(%d, %d, %d)\n",
+				  fd, uid, group));
+
+	if (gfs_hook_is_open(fd) == NULL)
+		return (__syscall_fchown(fd, owner, group));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __fchown(%d, %d, %d)\n",
+				fd, owner, group));
+	e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* EPERM */
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fchown: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fchown(int fd, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking _fchown\n", stderr));
+	return (__fchown(fd, owner, group));
+}
+
+int
+fchown(int fd, uid_t owner, gid_t group)
+{
+	_gfs_hook_debug_v(fputs("Hooking fchown\n", stderr));
+	return (__fchown(fd, owner, group));
+}
+
+/*
  * rename
  */
 
@@ -1204,7 +1299,6 @@ symlink(const char *oldpath, const char *newpath)
 	return (__symlink(oldpath, newpath));
 }
 
-#ifdef HAVE_ATTR_XATTR_H
 /*
  * getxattr
  */
@@ -1314,7 +1408,6 @@ fgetxattr(int filedes, const char *name, void *value, size_t size)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
-#endif /* HAVE_ATTR_XATTR_H */
 
 /*
  * definitions for "hooks_common.c"
