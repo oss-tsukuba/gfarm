@@ -299,13 +299,13 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 				if(value >= 0){	
 					re.setValid(true);
 					re.setValue(value);
-					prevDate = date;
-					prevDataElement = de;
 				} else {
-					//System.out.println("invalid value: " + value + "(during="+during+")");
+//System.out.println("invalid value: " + value + "(during="+during+")");
 					re.setValue(0);
 					re.setValid(false);
 				}
+				prevDate = date;
+				prevDataElement = de;
 			}
 			list.add(re);
 		}
@@ -370,13 +370,13 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 					re.setValid(true);
 					re.setValue(value);
 					prevDate = date;
-					prevDataElement = de;
-					prevUptimeElement = uptime;
 				} else {
 //System.out.println("invalid value: " + value + " (during:"+during+"=" + uptime.getValue() + "-" + prevUptimeElement.getValue() +")");
 					re.setValue(0);
 					re.setValid(false);
 				}
+				prevDataElement = de;
+				prevUptimeElement = uptime;
 			}
 			list.add(re);
 		}

@@ -25,8 +25,27 @@ public class UTY {
 		return new String(b, off, len, ENCODING);
 	}
 	public static final long byte2long(byte b[]){
-		BigInteger bi = new BigInteger(b);
-		return bi.longValue();
+		return 
+			( ((b[0]&0xFFL)<<56) | ((b[1]&0xFFL)<<48)
+			| ((b[2]&0xFFL)<<40) | ((b[3]&0xFFL)<<32)
+			| ((b[4]&0xFFL)<<24) | ((b[5]&0xFFL)<<16)
+			| ((b[6]&0xFFL)<<8)  | (b[7]&0xFFL)
+			);
+
+//		long val = 0;
+//		for(int i = 0; i < 8; i++){
+//			val |= (b[i] & 0xFF) << (8*(7-i));
+//		}
+//		return val;
+
+		//BigInteger bi = new BigInteger(b);
+		//return bi.longValue();
+	}
+	public static final int byte2int4(byte b[]){
+		return 
+			( ((b[0]&0xFF)<<24) | ((b[1]&0xFF)<<16)
+			| ((b[2]&0xFF)<<8)  | (b[3]&0xFF)
+			);
 	}
 	public static final int byte2int(byte b[]){
 		BigInteger bi = new BigInteger(b);

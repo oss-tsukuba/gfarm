@@ -633,7 +633,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 				int ret = dialogDirOpen.showOpenDialog(appFrame);
 				if(ret == JFileChooser.APPROVE_OPTION){
 					selectedDir = dialogDirOpen.getSelectedFile();
-					System.out.println(selectedDir.getPath());
+					//System.out.println(selectedDir.getPath());
 					currentDirectoryPath = selectedDir.getPath();
 				}
 				else {
@@ -756,11 +756,15 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 				String msg = "File open error.";
 				//JOptionPane.showMessageDialog(appFrame, msg);
 				System.out.println(msg);				
-				e.printStackTrace();
+				//e.printStackTrace();
 				
 //				checkAutoUpdate.setSelected(false);
 //				menuItemTotal.setSelected(false);
 //				actionAutoUpdate(false, false);
+			} catch (NumberFormatException e) {
+				System.out.println("invalid Time Range.");
+			} catch (Exception e) {
+				System.out.println("");
 			}
 			lockTimer = false;
 		}
@@ -1246,7 +1250,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 //			//System.out.println(windowSize.getWidth() + " " + windowSize.getHeight());
 //		}
 
-		gm.repaint();
+		//gm.repaint();
 		appFrame.repaint();
 	}
 	

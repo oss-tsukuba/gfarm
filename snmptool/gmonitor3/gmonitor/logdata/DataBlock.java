@@ -41,13 +41,13 @@ public class DataBlock {
 		b4[1] = bytes[i + 1];
 		b4[2] = bytes[i + 2];
 		b4[3] = bytes[i + 3];
-		timeInUNIXSeconds = UTY.byte2int(b4); i += 4;
+		timeInUNIXSeconds = UTY.byte2int4(b4); i += 4;
 
 		b4[0] = bytes[i + 0];
 		b4[1] = bytes[i + 1];
 		b4[2] = bytes[i + 2];
 		b4[3] = bytes[i + 3];
-		timeInUNIXuSeconds = UTY.byte2int(b4);i += 4;
+		timeInUNIXuSeconds = UTY.byte2int4(b4);i += 4;
 
 		time = (long) (timeInUNIXSeconds * 1000L + timeInUNIXuSeconds / 1000L);
 		for(int j = 0; j < num; j++){

@@ -30,13 +30,10 @@ public class DataElement {
 	public DataElement(byte b, long val) {
 		value = val;
 		flagByte = b;
-		for(int i = 0; i < 8; i++){
-			if((((int)b & (int)Math.pow(2, i)) >> i) == 1){
-				flags[i] = true;
-			}else{
-				flags[i] = false;
-			}
-		}
+
+    	for(int i = 0; i < 8; i++){
+			flags[i] = (((int)b & (0x01 << i)) != 0) ? true : false;
+    	}
 	}
 
 	byte flagByte;
