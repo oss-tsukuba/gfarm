@@ -13,8 +13,13 @@ static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
 void
 gfs_hook_not_initialized(void)
 {
-	/*  printf and puts should not be put into the following function. */
-	/* fprintf(stderr, "fatal error: gfarm_initialize() isn't called\n"); */
+	static int printed = 0;
+
+	if (!printed) {
+		printed = 1;
+		fprintf(stderr,
+			"fatal error: gfarm_initialize() isn't called\n");
+	}
 }
 
 int
@@ -60,11 +65,6 @@ gfs_hook_clear_gfs_file(int fd)
 GFS_File
 gfs_hook_is_open(int fd)
 {
-	if (!gfarm_initialized) {
-		gfs_hook_not_initialized();
-		return (NULL); /* don't perform gfarm operation */
-	}
-
 	if (fd >= 0 && fd < MAX_GFS_FILE_BUF)
 		return (_gfs_file_buf[fd]);
 	return (NULL);
