@@ -4,6 +4,7 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gfs_hook.h>
 #include "hooks_subr.h"
@@ -14,8 +15,18 @@ char *
 gfs_hook_initialize(void)
 {
 	char *e;
+	int fd;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_initialize\n"));
+
+	/*
+	 * Reserve several file descriptors for applications.  At least,
+	 * 'configure' uses 5 and 6.  Maybe, tcsh and zsh also.
+	 */
+	fd = open("/dev/null", O_RDWR);
+	while (fd < 7)
+		fd = open("/dev/null", O_RDWR);
+	close(fd);
 
 	e = gfarm_initialize(NULL, NULL);
 	if (e != NULL)
