@@ -221,8 +221,8 @@ main(int argc, char *argv[])
 	    char *tmp_e;
 
 	    tmp_e = gfs_stat_section(target_url, node_index, &s);
-	    gfs_stat_free(&s);
 	    if (tmp_e == NULL) {
+		gfs_stat_free(&s);
 		e = "already exist";
 		goto finish;
 	    }
@@ -258,8 +258,8 @@ main(int argc, char *argv[])
 	    char *tmp_e;
 
 	    tmp_e = gfs_stat_index(target_url, index, &s);
-	    gfs_stat_free(&s);
 	    if (tmp_e == NULL) {
+		gfs_stat_free(&s);
 		e = "already exist";
 		goto finish;
 	    }
