@@ -21,6 +21,4 @@
 
 #define DIRENT_TYPE struct dirent64
 
-#define __LINUX_KERNEL_VERSION 132097
-
 #include "getdents_common.c"
