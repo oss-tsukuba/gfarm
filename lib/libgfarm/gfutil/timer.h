@@ -4,16 +4,6 @@
  * TIMER routine
  */
 
-#ifndef GFS_PROFILE
-
-typedef int gfarm_timerval_t;
-#define gfarm_gettimerval(tp)
-#define gfarm_timerval_second(tp)	(0)
-#define gfarm_timerval_sub(t1p, t2p)	(0)
-#define gfarm_timerval_calibrate()
-
-#else /* ! GFS_PROFILE */
-
 #ifdef i386
 
 typedef unsigned long long gfarm_timerval_t;
@@ -41,5 +31,3 @@ typedef struct timeval gfarm_timerval_t;
 
 void
 gfarm_timerval_calibrate(void);
-
-#endif /* GFS_PROFILE */

@@ -66,7 +66,7 @@ gfs_pio_set_view_local(GFS_File gf, int flags)
 	char *e;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_set_local_check();
 	if (e != NULL)
@@ -74,8 +74,9 @@ gfs_pio_set_view_local(GFS_File gf, int flags)
 
 	e = gfs_pio_set_view_index(gf, gfarm_nnode, gfarm_node, NULL, flags);
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_set_view_local_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_set_view_local_time
+		    += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }

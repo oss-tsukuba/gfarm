@@ -111,7 +111,6 @@ static double gfs_pio_seek_time;
 static double gfs_pio_read_time;
 static double gfs_pio_write_time;
 static double gfs_pio_getline_time;
-extern double gfs_pio_set_view_local_time;
 
 char *
 gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
@@ -123,7 +122,7 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	char *user;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	user = gfarm_get_global_username();
 	if (user == NULL)
@@ -220,8 +219,8 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	*gfp = gf;
 	gfs_uncachedir();
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (NULL);
 }
@@ -233,7 +232,7 @@ gfs_pio_open(char *url, int flags, GFS_File *gfp)
 	GFS_File gf;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
 #if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
@@ -276,8 +275,8 @@ gfs_pio_open(char *url, int flags, GFS_File *gfp)
 	gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
 	*gfp = gf;
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (NULL);
 }
@@ -320,7 +319,7 @@ gfs_pio_close(GFS_File gf)
 	char *e;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = (*gf->ops->view_close)(gf);
 
@@ -341,8 +340,8 @@ gfs_pio_close(GFS_File gf)
 	free(gf->buffer);
 	free(gf);
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -472,7 +471,7 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	file_offset_t where;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (whence == SEEK_SET || whence == SEEK_CUR) {
 		file_offset_t tmp_offset = offset;
@@ -500,8 +499,9 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 			if (resultp != NULL)
 				*resultp = tmp_offset;
 
-			gfarm_gettimerval(&t2);
-			gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1);
+			gfs_profile(gfarm_gettimerval(&t2));
+			gfs_profile(gfs_pio_seek_time
+				    += gfarm_timerval_sub(&t2, &t1));
 
 			return (NULL);
 		}
@@ -528,8 +528,8 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	if (resultp != NULL)
 		*resultp = where;
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (NULL);
 }
@@ -543,7 +543,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	int length;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	CHECK_READABLE(gf);
 
@@ -565,8 +565,8 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 		return (e);
 	*np = n;
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_read_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_read_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (NULL);
 }
@@ -578,7 +578,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	size_t written;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	CHECK_WRITABLE(gf);
 
@@ -604,8 +604,9 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		gf->offset += written;
 		*np = written; /* XXX - size_t vs int */
 
-		gfarm_gettimerval(&t2);
-		gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1);
+		gfs_profile(gfarm_gettimerval(&t2));
+		gfs_profile(gfs_pio_write_time
+			    += gfarm_timerval_sub(&t2, &t1));
 
 		return (NULL);
 	}
@@ -619,8 +620,8 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	if (gf->p >= GFS_FILE_BUFSIZE)
 		e = gfs_pio_flush(gf);
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -693,7 +694,7 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 	int c;
 	gfarm_timerval_t t1, t2;
 
-	gfarm_gettimerval(&t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
 	c = EOF;
@@ -717,8 +718,8 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 	}
 	*eofp = 0;
 
-	gfarm_gettimerval(&t2);
-	gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1);
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (NULL);
 }
@@ -739,7 +740,6 @@ gfs_pio_putline(GFS_File gf, char *s)
 void
 gfs_display_timers()
 {
-#ifdef GFS_PROFILE
 	printf("gfs_pio_create  : %g sec\n", gfs_pio_create_time);
 	printf("gfs_pio_open    : %g sec\n", gfs_pio_open_time);
 	printf("gfs_pio_close   : %g sec\n", gfs_pio_close_time);
@@ -749,5 +749,4 @@ gfs_display_timers()
 	printf("gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
 	printf("gfs_pio_set_view_local : %g sec\n",
 	       gfs_pio_set_view_local_time);
-#endif
 }

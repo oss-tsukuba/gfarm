@@ -101,4 +101,9 @@ struct gfs_file_section_context {
  *	usually, seek is needed.
  */
 
+extern int gf_profile;
+#define gfs_profile(x) if (gf_profile == 1) { x; }
+
+extern double gfs_pio_set_view_local_time;
+
 void gfs_display_timers();

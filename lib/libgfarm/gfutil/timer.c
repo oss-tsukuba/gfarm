@@ -15,9 +15,6 @@
  */
 
 #include <sys/time.h>
-#ifndef GFS_PROFILE
-#define GFS_PROFILE
-#endif
 #include "timer.h"
 
 #ifdef i386

@@ -1090,6 +1090,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
  */
 
 static GFS_File gf_stdout, gf_stderr;
+int gf_profile;
 
 char *
 gfarm_parse_argv(int *argcp, char ***argvp)
@@ -1130,6 +1131,8 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			if (argc > 0)
 				stderr_file = *argv;
 		}
+		else if (strcmp(&argv[0][2], "gfarm_profile") == 0)
+			gf_profile = 1;
 		else
 			break;
 		--argc;
@@ -1151,6 +1154,9 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			if (e != NULL)
 				return (e);
 		}
+		if (gf_profile == 1)
+			gfarm_timerval_calibrate();
+
 		++argc;
 		--argv;
 
@@ -1197,8 +1203,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 		if (e != NULL)
 			return (e);
 	}
-
-	gfarm_timerval_calibrate();
 
 	gfarm_initialized = 1;
 
@@ -1248,7 +1252,10 @@ gfarm_terminate(void)
 	e = gfarm_metadb_terminate();
 	if (e != NULL)
 		return (e);
-	gfs_display_timers();
+
+	if (gf_profile == 1)
+		gfs_display_timers();
+
 	return (NULL);
 }
 

@@ -58,9 +58,9 @@ usage()
 {
 	fprintf(stderr,
 #ifdef HAVE_GSI
-		"Usage: %s [-gnuv] [-l <login>]\n"
+		"Usage: %s [-gnupv] [-l <login>]\n"
 #else		
-		"Usage: %s [-gnu] [-l <login>]\n"
+		"Usage: %s [-gnup] [-l <login>]\n"
 #endif
 		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>]\n"
 		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
@@ -71,7 +71,7 @@ usage()
 
 char *
 gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
-	char *stdout_file, char *stderr_file,
+	char *stdout_file, char *stderr_file, int profile_mode,
 	int nhosts, char **hosts,
 	enum command_type cmd_type, char *cmd, char **argv)
 {
@@ -116,6 +116,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			gfarm_stringlist_add(&arg_list, "--gfarm_stderr");
 			gfarm_stringlist_add(&arg_list, stderr_file);
 		}
+		if (profile_mode)
+			gfarm_stringlist_add(&arg_list, "--gfarm_profile");
 	}
 	gfarm_stringlist_cat(&arg_list, argv);
 	gfarm_stringlist_add(&arg_list, NULL);
@@ -211,7 +213,7 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 		}
 		gfs_stat_free(&sb);
 
-		e = gfrun(rsh_command, rsh_options, NULL, NULL,
+		e = gfrun(rsh_command, rsh_options, NULL, NULL, 0,
 		    nhosts, hosts, GFARM_COMMAND, gfsplck_cmd, gfarm_files);
 		if (e != NULL)
 			fprintf(stderr,
@@ -229,6 +231,7 @@ struct gfrun_options {
 	int nprocs;		/* -N <nprocs> */
 	enum command_type cmd_type;
 	int authentication_verbose_mode;
+	int profile;
 };
 
 /* Process scheduling */
@@ -530,6 +533,11 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 			if (remove_option(arg, &i))
 				return (0);
 			break;
+		case 'p':
+			options->profile = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
 		case 'o':
 			return (option_param(is_last_arg, arg, next_arg, i,
 			    rsh_options, &options->stdout_file));
@@ -579,6 +587,7 @@ parse_options(int argc, char **argv,
 	options->nprocs = 0;
 	options->cmd_type = UNKNOWN_COMMAND;
 	options->authentication_verbose_mode = 0;
+	options->profile = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-')
@@ -649,7 +658,8 @@ main(int argc, char **argv)
 	}
 
 	e_save = gfrun(rsh_command, &rsh_options,
-	    options.stdout_file, options.stderr_file, nhosts, hosts,
+	    options.stdout_file, options.stderr_file, options.profile,
+	    nhosts, hosts,
 	    options.cmd_type, command_name, &argv[command_index + 1]);
 	if (e_save != NULL) {
 		fprintf(stderr, "%s: %s\n", command_name, e_save);
