@@ -1,5 +1,7 @@
 include $(top_objdir)/makes/config.mk
 
+RM = rm
+
 COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) -I$(top_objdir) -I$(INCDIR)
 COMMON_LDFLAGS = $(largefile_ldflags)
 
