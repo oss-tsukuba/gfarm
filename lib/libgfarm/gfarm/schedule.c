@@ -1,9 +1,11 @@
 #include <stdio.h> /* sprintf */
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <gfarm/gfarm.h>
+#include "gfevent.h"
 #include "hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "auth.h" /* XXX gfarm_random_initialize() */
@@ -360,44 +362,105 @@ struct search_idle_available_host {
 };
 
 struct search_idle_state {
+	struct gfarm_eventqueue *q;
 	struct search_idle_available_host *available_hosts;
 	int available_hosts_number;
 	int idle_hosts_number;
 	int semi_idle_hosts_number;
-};
 
-struct search_idle_callback_closure {
-	struct search_idle_state *state;
-	struct search_idle_available_host ah;
+	int concurrency;
 };
 
 static void
-search_idle_callback(void *closure, struct sockaddr *addr,
-	struct gfs_client_load *load, char *error)
+search_idle_record_host(struct search_idle_state *s,
+	struct search_idle_host_state *h, char *hostname)
+{
+	struct search_idle_available_host *ah =
+	    &s->available_hosts[s->available_hosts_number++];
+	float loadavg = h->loadavg;
+
+	ah->host_state = h;
+	ah->hostname = hostname;
+
+	/*
+	 * We don't use (loadavg / h->host_info->ncpu) to count
+	 * semi_idle_hosts here for now, because it is possible
+	 * that there is a process which is consuming 100% of
+	 * memory or 100% of I/O bandwidth on the host.
+	 */
+	if (loadavg <= SEMI_IDLE_LOAD_AVERAGE)
+		s->semi_idle_hosts_number++;
+
+	if (loadavg / h->host_info->ncpu <= IDLE_LOAD_AVERAGE)
+		s->idle_hosts_number++;
+}
+
+struct search_idle_callback_closure {
+	struct search_idle_state *state;
+	struct sockaddr peer_addr;
+	struct search_idle_available_host ah;
+	void *protocol_state;
+};
+
+static void
+search_idle_load_callback(void *closure)
 {
 	struct search_idle_callback_closure *c = closure;
-	struct search_idle_state *s = c->state;
-	struct search_idle_host_state *h = c->ah.host_state;
-	float loadavg;
+	char *e;
+	struct gfs_client_load load;
 
-	if (error == NULL) {
-		s->available_hosts[s->available_hosts_number++] = c->ah;
-		
-		h->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
-		h->loadavg = loadavg = load->loadavg_1min;
-		/*
-		 * We don't use (loadavg / h->host_info->ncpu) to count
-		 * semi_idle_hosts here for now, because it is possible
-		 * that there is a process which is consuming 100% of
-		 * memory or 100% of I/O bandwidth on the host.
-		 */
-		if (loadavg <= SEMI_IDLE_LOAD_AVERAGE)
-			s->semi_idle_hosts_number++;
-		loadavg /= h->host_info->ncpu;
-		if (loadavg <= IDLE_LOAD_AVERAGE)
-			s->idle_hosts_number++;
+	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
+	if (e == NULL) {
+		c->ah.host_state->loadavg = load.loadavg_1min;
+		c->ah.host_state->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
+		search_idle_record_host(c->state,
+		    c->ah.host_state, c->ah.hostname);
 	}
 	free(c);
+	c->state->concurrency--;
+}
+
+static void
+search_idle_connect_callback(void *closure)
+{
+	struct search_idle_callback_closure *c = closure;
+	char *e;
+	struct gfs_connection *gfs_server;
+
+	e = gfs_client_connect_result_multiplexed(c->protocol_state,
+	    &gfs_server);
+	if (e == NULL) {
+		search_idle_record_host(c->state,
+		    c->ah.host_state, c->ah.hostname);
+		gfs_client_disconnect(gfs_server);
+	}
+	free(c);
+	c->state->concurrency--;
+}
+
+static void
+search_idle_load_and_connect_callback(void *closure)
+{
+	struct search_idle_callback_closure *c = closure;
+	char *e;
+	struct gfs_client_load load;
+	struct gfs_client_connect_state *cs;
+
+	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
+	if (e == NULL) {
+		c->ah.host_state->loadavg = load.loadavg_1min;
+		c->ah.host_state->flags |= HOST_STATE_FLAG_GOT_LOADAVG;
+		e = gfs_client_connect_request_multiplexed(c->state->q,
+		    c->ah.hostname, &c->peer_addr,
+		    search_idle_connect_callback, c,
+		    &cs);
+		if (e == NULL) {
+			c->protocol_state = cs;
+			return; /* request continues */
+		}
+	}
+	free(c);
+	c->state->concurrency--;
 }
 
 static int
@@ -426,34 +489,38 @@ loadavg_compare(const void *a, const void *b)
  * It means desired number of hosts as an INPUT parameter.
  * It returns available number of hosts as an OUTPUT parameter.
  */
+#define SEARCH_IDLE_GET_LOAD	0
+#define SEARCH_IDLE_CONNECT	1
+
 static char *
-search_idle(int concurrency, int enough_number,
+search_idle(int concurrency, int search_method, int enough_number,
 	struct gfarm_hash_table *hosts_state,
 	int nihosts, struct string_filter *ihost_filter,
 	struct get_next_iterator *ihost_iterator,
 	int *nohostsp, char **ohosts)
 {
 	char *e, *ihost;
-	int i, desired_number = *nohostsp;
-	struct gfs_client_udp_requests *udp_requests;
-	struct sockaddr addr;
+	int i, rv, desired_number = *nohostsp;
 	struct search_idle_state s;
+	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
 	struct search_idle_callback_closure *c;
-	struct gfarm_hash_entry *entry;
+	struct sockaddr addr;
+	struct gfs_client_get_load_state *gls;
 
 	if (nihosts == 0)
 		return (GFARM_ERR_NO_HOST);
+	s.q = gfarm_eventqueue_alloc();
+	if (s.q == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	s.available_hosts_number =
 	    s.idle_hosts_number = s.semi_idle_hosts_number = 0;
 	s.available_hosts = malloc(nihosts * sizeof(*s.available_hosts));
-	if (s.available_hosts == NULL)
+	if (s.available_hosts == NULL) {
+		gfarm_eventqueue_free(s.q);
 		return (GFARM_ERR_NO_MEMORY);
-	e = gfarm_client_init_load_requests(concurrency, &udp_requests);
-	if (e != NULL) {
-		free(s.available_hosts);
-		return (e);
 	}
+	s.concurrency = 0;
 	for (i = 0; i < nihosts; i++) {
 		do {
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
@@ -463,35 +530,53 @@ search_idle(int concurrency, int enough_number,
 		if (entry == NULL)
 			continue; /* never happen, if metadata is consistent */
 		h = gfarm_hash_entry_data(entry);
-
-		c = malloc(sizeof(*c));
-		if (c == NULL)
-			break;
-		c->state = &s;
-		c->ah.host_state = h;
-		c->ah.hostname = ihost; /* record return value */
-
 		if ((h->flags & HOST_STATE_FLAG_GOT_LOADAVG) != 0) {
-			struct gfs_client_load loadtmp;
-
-			loadtmp.loadavg_1min = h->loadavg;
-			search_idle_callback(c, NULL, &loadtmp, NULL);
+			search_idle_record_host(&s, h, ihost);
 		} else {
 			e = gfarm_host_info_address_get(ihost,
 			    gfarm_spool_server_port, h->host_info,
 			    &addr, NULL);
+			if (e != NULL)
+				continue;
+
+			/* We limit concurrency here */
+			rv = 0;
+			while (s.concurrency >= concurrency) {
+				rv = gfarm_eventqueue_turn(s.q, NULL);
+				/* XXX - how to report this error? */
+				if (rv != 0 && rv != EAGAIN && rv != EINTR)
+					break;
+			}
+			if (rv != 0 && rv != EAGAIN && rv != EINTR)
+				break;
+
+			c = malloc(sizeof(*c));
+			if (c == NULL)
+				break;
+			c->state = &s;
+			c->peer_addr = addr;
+			c->ah.host_state = h;
+			c->ah.hostname = ihost; /* record return value */
+			e = gfs_client_get_load_request_multiplexed(s.q,
+			    &c->peer_addr,
+			    search_method == SEARCH_IDLE_GET_LOAD ?
+			    search_idle_load_callback :
+			    search_idle_load_and_connect_callback,
+			    c, &gls);
 			if (e != NULL) {
 				free(c);
-				continue;
+			} else {
+				c->protocol_state = gls;
+				s.concurrency++;
 			}
-			e = gfarm_client_add_load_request(udp_requests, &addr,
-			    c, search_idle_callback);
 		}
 		if (s.idle_hosts_number >= desired_number ||
 		    s.semi_idle_hosts_number >= enough_number)
 			break;
 	}
-	e = gfarm_client_wait_all_load_results(udp_requests);
+	/* XXX - how to report this error? */
+	rv = gfarm_eventqueue_loop(s.q, NULL);
+	gfarm_eventqueue_free(s.q);
 	if (s.available_hosts_number == 0) {
 		free(s.available_hosts);
 		*nohostsp = 0;
@@ -538,7 +623,7 @@ shuffle_strings(int n, char **strings)
 }
 
 static char *
-search_idle_shuffled(int concurrency, int enough_number,
+search_idle_shuffled(int concurrency, int search_method, int enough_number,
 	struct gfarm_hash_table *hosts_state,
 	int nihosts, struct string_filter *ihost_filter,
 	struct get_next_iterator *ihost_iterator,
@@ -561,7 +646,7 @@ search_idle_shuffled(int concurrency, int enough_number,
 	}
 	shuffle_strings(nihosts, shuffled_ihosts);
 
-	e = search_idle(concurrency, enough_number, hosts_state,
+	e = search_idle(concurrency, search_method, enough_number, hosts_state,
 	    nihosts, &null_filter,
 	    init_string_array_iterator(&host_iterator, shuffled_ihosts),
 	    nohostsp, ohosts);
@@ -586,6 +671,7 @@ gfarm_strings_expand_cyclic(int nsrchosts, char **srchosts,
 
 #define CONCURRENCY	10
 #define ENOUGH_RATE	4
+#define SEARCH_METHOD	SEARCH_IDLE_GET_LOAD
 
 static char *
 search_idle_cyclic(struct gfarm_hash_table *hosts_state,
@@ -597,12 +683,14 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
 	int nfound = nohosts;
 
 #ifdef USE_SHUFFLED
-	e = search_idle_shuffled(CONCURRENCY, nohosts * ENOUGH_RATE,
-	    hosts_state, nihosts, ihost_filter, ihost_iterator,
+	e = search_idle_shuffled(CONCURRENCY, SEARCH_METHOD,
+	    nohosts * ENOUGH_RATE, hosts_state,
+	    nihosts, ihost_filter, ihost_iterator,
 	    &nfound, ohosts);
 #else
-	e = search_idle(CONCURRENCY, nohosts * ENOUGH_RATE,
-	    hosts_state, nihosts, ihost_filter, ihost_iterator,
+	e = search_idle(CONCURRENCY, SEARCH_METHOD,
+	    nohosts * ENOUGH_RATE, hosts_state,
+	    nihosts, ihost_filter, ihost_iterator,
 	    &nfound, ohosts);
 #endif
 

@@ -17,8 +17,10 @@
 #include <limits.h>
 #include <errno.h>
 #include <gfarm/gfarm.h>
-#include "gfs_client.h"
+#include "gfevent.h"
 #include "host.h" /* gfarm_host_info_address_get() */
+#include "auth.h"
+#include "gfs_client.h"
 
 char *program_name = "gfhost";
 
@@ -375,28 +377,228 @@ char *(*opt_resolv_addr)(char *, struct sockaddr *, char **) =
 char *(*opt_resolv_addr_by_host_info)(char *, struct gfarm_host_info *,
     struct sockaddr *, char **) = resolv_addr_by_host_info_with_address_use;
 
+
+/*
+ * parallel access wrapper
+ */
+
+struct gfarm_paraccess {
+	struct gfarm_eventqueue *q;
+	int try_auth;
+
+	struct gfarm_access {
+		void (*callback)(void *, char *, struct sockaddr *,
+		    struct gfs_client_load *, struct gfs_connection *,
+		    char *);
+		void *closure;
+		char *hostname;
+		struct sockaddr peer_addr;
+		struct gfs_client_load load;
+
+		void *protocol_state;
+		struct gfarm_paraccess *pa;
+
+		struct gfarm_access *next;
+	} *access_state;
+	struct gfarm_access *free_list;
+	int concurrency, nfree;
+};
+
+char *
+gfarm_paraccess_alloc(
+	int concurrency, int try_auth,
+	struct gfarm_paraccess **pap)
+{
+	struct gfarm_paraccess *pa;
+	int i;
+
+	pa = malloc(sizeof(*pa));
+	if (pa == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	pa->q = gfarm_eventqueue_alloc();
+	if (pa->q == NULL) {
+		free(pa);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+        pa->access_state = malloc(sizeof(*pa->access_state) * concurrency);
+	if (pa->access_state == NULL) {
+		gfarm_eventqueue_free(pa->q);
+		free(pa);
+		return (GFARM_ERR_NO_MEMORY);
+        }
+
+	/* construct free slot list */
+	i = concurrency - 1;
+	pa->access_state[i].next = NULL;
+	while (--i >= 0)
+		pa->access_state[i].next = &pa->access_state[i + 1];
+	pa->free_list = &pa->access_state[0];
+	pa->concurrency = pa->nfree = concurrency;
+
+	pa->try_auth = try_auth;
+	*pap = pa;
+	return (NULL);
+}
+
+static void
+gfarm_paraccess_callback(struct gfarm_paraccess *pa, struct gfarm_access *a,
+	struct gfs_client_load *load, struct gfs_connection *gfs_server,
+	char *e)
+{
+	(*a->callback)(a->closure, a->hostname, &a->peer_addr,
+	    load, gfs_server, e);
+
+	/* bring this back to the free slot list */
+	a->next = pa->free_list;
+	pa->free_list = a;
+	pa->nfree++;
+}
+
+static void
+gfarm_paraccess_load_finish(void *closure)
+{
+	struct gfarm_access *a = closure;
+	char *e;
+
+	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
+	    &a->load);
+	gfarm_paraccess_callback(a->pa, a, e == NULL ? &a->load : NULL, NULL,
+	    e);
+}
+
+static void
+gfarm_paraccess_connect_finish(void *closure)
+{
+	struct gfarm_access *a = closure;
+	char *e;
+	struct gfs_connection *gfs_server;
+
+	e = gfs_client_connect_result_multiplexed(a->protocol_state,
+	    &gfs_server);
+	if (e != NULL) {
+		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
+		return;
+	}
+	gfarm_paraccess_callback(a->pa, a, &a->load, gfs_server, e);
+	gfs_client_disconnect(gfs_server);
+}
+
+static void
+gfarm_paraccess_connect_request(void *closure)
+{
+	struct gfarm_access *a = closure;
+	char *e;
+	struct gfs_client_connect_state *cs;
+
+	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
+	    &a->load);
+	if (e != NULL) {
+		gfarm_paraccess_callback(a->pa, a, NULL, NULL, e);
+		return;
+	}
+	e = gfs_client_connect_request_multiplexed(a->pa->q,
+	    a->hostname, &a->peer_addr,
+	    gfarm_paraccess_connect_finish, a,
+	    &cs);
+	if (e != NULL) {
+		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
+		return;
+	}
+	a->protocol_state = cs;
+}
+
+char *
+gfarm_paraccess_request(struct gfarm_paraccess *pa,
+	void (*callback)(void *, char *, struct sockaddr *,
+	    struct gfs_client_load *, struct gfs_connection *,
+	    char *),
+	void *closure,
+	char *hostname, struct sockaddr *peer_addr)
+{
+	int rv;
+	char *e;
+	struct gfarm_access *a;
+	struct gfs_client_get_load_state *gls;
+
+	/*
+	 * Wait until at least one slot becomes available.
+	 * We limit concurrency here.
+	 */
+	while (pa->free_list == NULL) {
+		rv = gfarm_eventqueue_turn(pa->q, NULL);
+		if (rv == EAGAIN || rv == EINTR) {
+			continue; /* not really an error */
+		} else if (rv != 0) {
+			return (gfarm_errno_to_error(rv));
+		}
+	}
+
+	/* acquire free slot */
+	a = pa->free_list;
+	pa->free_list = a->next;
+	--pa->nfree;
+
+	a->callback = callback;
+	a->closure = closure;
+	a->hostname = hostname;
+	a->peer_addr = *peer_addr;
+
+	e = gfs_client_get_load_request_multiplexed(pa->q, &a->peer_addr,
+	    pa->try_auth ?
+	    gfarm_paraccess_connect_request :
+	    gfarm_paraccess_load_finish,
+	    a,
+	    &gls);
+	if (e != NULL) {
+		gfarm_paraccess_callback(pa, a, NULL, NULL, e);
+		return (e);
+	}
+	a->protocol_state = gls;
+	a->pa = pa;
+	return (NULL);
+}
+
+char *
+gfarm_paraccess_free(struct gfarm_paraccess *pa)
+{
+	int rv = gfarm_eventqueue_loop(pa->q, NULL);
+	char *e;
+
+	free(pa->access_state);
+	gfarm_eventqueue_free(pa->q);
+	free(pa);
+	if (rv == 0)
+		return (NULL);
+	e = gfarm_errno_to_error(rv);
+	fprintf(stderr, "%s: %s\n", program_name, e);
+	return (e);
+}
+
 /*
  * listing options.
  */
 
 int opt_verbose = 0;
+int opt_udp_only = 0;
 
 #define round_loadavg(l) ((l) < 0.0 ? 0.0 : (l) > 9.99 ? 9.99 : (l))
 
 void
-callback_loadavg(void *closure, struct sockaddr *addr,
-	struct gfs_client_load *result, char *error)
+callback_loadavg(void *closure, char *if_hostname, struct sockaddr *peer_addr,
+	struct gfs_client_load *load, struct gfs_connection *gfs_server,
+	char *error)
 {
-	char *if_hostname = closure;
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+	struct sockaddr_in *addr_in = (struct sockaddr_in *)peer_addr;
 
 	if (error != NULL) {
 		fprintf(stderr, "%s: %s\n", if_hostname, error);
 	} else {
 		printf("%4.2f/%4.2f/%4.2f %s(%s)\n",
-		    round_loadavg(result->loadavg_1min),
-		    round_loadavg(result->loadavg_5min),
-		    round_loadavg(result->loadavg_15min),
+		    round_loadavg(load->loadavg_1min),
+		    round_loadavg(load->loadavg_5min),
+		    round_loadavg(load->loadavg_15min),
 		    if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	free(if_hostname);
@@ -404,32 +606,30 @@ callback_loadavg(void *closure, struct sockaddr *addr,
 
 char *
 print_loadavg(struct gfarm_host_info *info,
-	struct gfs_client_udp_requests *udp_requests)
+	struct gfarm_paraccess *pa)
 {
 	char *e;
 	struct sockaddr addr;
-	char *hostname = info->hostname;
 	char *if_hostname;
 
-	
 	if (info->architecture == NULL) { /* XXX faked host_info? */
-		e = (*opt_resolv_addr)(hostname, &addr, &if_hostname);
+		e = (*opt_resolv_addr)(info->hostname, &addr, &if_hostname);
 	} else {
-		e = (*opt_resolv_addr_by_host_info)(hostname, info,
+		e = (*opt_resolv_addr_by_host_info)(info->hostname, info,
 		    &addr, &if_hostname);
 	}
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", hostname, e);
+		fprintf(stderr, "%s: %s\n", info->hostname, e);
 		return (e);
 	}
-	gfarm_client_add_load_request(udp_requests, &addr, if_hostname,
-		callback_loadavg);
-	return (NULL);
+	return (gfarm_paraccess_request(pa, callback_loadavg, NULL,
+	    if_hostname, &addr));
 }
 
+/* This function is a special case to avoid Meta DB access. */
 char *
 list_loadavg(int nhosts, char **hosts,
-	struct gfs_client_udp_requests *udp_requests)
+	struct gfarm_paraccess *pa)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -438,124 +638,117 @@ list_loadavg(int nhosts, char **hosts,
 	for (i = 0; i < nhosts; i++) {
 		host.hostname = hosts[i];
 		host.architecture = NULL; /* XXX mark as a faked host_info */
-		e = print_loadavg(&host, udp_requests);
+		e = print_loadavg(&host, pa);
 		if (e_save == NULL)
 			e_save = e;
 	}
 	return (e_save);
 }
 
-struct closure_for_host_info_and_loadavg {
-	struct gfarm_host_info host_info;
-	char *if_hostname;
-};
-
 void
-callback_host_info_and_loadavg(void *closure, struct sockaddr *addr,
-	struct gfs_client_load *result, char *error)
+callback_host_info_and_loadavg(
+	void *closure, char *if_hostname, struct sockaddr *peer_addr,
+	struct gfs_client_load *load, struct gfs_connection *gfs_server,
+	char *error)
 {
-	struct closure_for_host_info_and_loadavg *c = closure;
+	struct gfarm_host_info *info = closure;
 	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
-	struct gfarm_host_info *info = &c->host_info;
-	int i, print_ifaddr = c->if_hostname != NULL;
+	struct sockaddr_in *addr_in = (struct sockaddr_in *)peer_addr;
+	int i, print_ifaddr = if_hostname != NULL;
 
-	if (error != NULL) {
-		if (opt_verbose)
-			fprintf(stderr, "%s: %s\n", info->hostname, error);
-		if (error == GFARM_ERR_CONNECTION_REFUSED) /* machine is up */
-			printf("-.--/-.--/-.-- ");
-		else
-			printf("x.xx/x.xx/x.xx ");
-	} else {
+	if (load != NULL)
 		printf("%4.2f/%4.2f/%4.2f ",
-		    round_loadavg(result->loadavg_1min),
-		    round_loadavg(result->loadavg_5min),
-		    round_loadavg(result->loadavg_15min));
+		    round_loadavg(load->loadavg_1min),
+		    round_loadavg(load->loadavg_5min),
+		    round_loadavg(load->loadavg_15min));
+	else if (error == GFARM_ERR_CONNECTION_REFUSED) /* machine is up */
+		printf("-.--/-.--/-.-- ");
+	else
+		printf("x.xx/x.xx/x.xx ");
+	if (!opt_udp_only) {
+		printf("%c ",
+		    gfs_server != NULL ?
+		    gfarm_auth_method_mnemonic(
+		    gfs_client_connection_auth_method(gfs_server)) :
+		    load != NULL ? 'x' : '-');
 	}
 	printf("%s %d %s", info->architecture, info->ncpu, info->hostname);
-	if (print_ifaddr && strcasecmp(info->hostname, c->if_hostname) == 0) {
+	if (print_ifaddr && strcasecmp(info->hostname, if_hostname) == 0) {
 		print_ifaddr = 0;
 		printf("(%s)", inet_ntoa(addr_in->sin_addr));
 	}
 	for (i = 0; i < info->nhostaliases; i++) {
 		printf(" %s", info->hostaliases[i]);
 		if (print_ifaddr &&
-		    strcasecmp(info->hostaliases[i], c->if_hostname) == 0) {
+		    strcasecmp(info->hostaliases[i], if_hostname) == 0) {
 			print_ifaddr = 0;
 			printf("(%s)", inet_ntoa(addr_in->sin_addr));
 		}
 	}
 	if (print_ifaddr) {
-		printf(" [%s(%s)]", c->if_hostname,
-		    inet_ntoa(addr_in->sin_addr));
+		printf(" [%s(%s)]", if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	putchar('\n');
-	gfarm_host_info_free(&c->host_info);
-	if (c->if_hostname != NULL)
-		free(c->if_hostname);
-	free(c);
+	if (opt_verbose && error != NULL)
+		fprintf(stderr, "%s: %s\n", info->hostname, error);
+	gfarm_host_info_free(info);
+	free(info);
+	if (if_hostname != NULL)
+		free(if_hostname);
 }
 
 char *
 print_host_info_and_loadavg(struct gfarm_host_info *host_info,
-	struct gfs_client_udp_requests *udp_requests)
+	struct gfarm_paraccess *pa)
 {
 	char *e;
 	struct sockaddr addr;
-	struct closure_for_host_info_and_loadavg *closure;
+	struct gfarm_host_info *info;
+	char *if_hostname;
 
-	closure = malloc(sizeof(*closure));
-	if (closure == NULL) {
+	info = malloc(sizeof(*info));
+	if (info == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		return (e);
 	}
-	/* dup `*host_info' -> `closure->host_info' */
-	closure->host_info.hostname = strdup(host_info->hostname);
-	closure->host_info.nhostaliases = host_info->nhostaliases;
+	/* dup `*host_info' -> `*info' */
+	info->hostname = strdup(host_info->hostname);
+	info->nhostaliases = host_info->nhostaliases;
 	if (host_info->nhostaliases == 0) {
-		closure->host_info.hostaliases = NULL;
+		info->hostaliases = NULL;
 	} else {
-		closure->host_info.hostaliases =
-		    gfarm_strarray_dup(host_info->hostaliases);
-		if (closure->host_info.hostaliases == NULL)
-			closure->host_info.nhostaliases = 0;
+		info->hostaliases = gfarm_strarray_dup(host_info->hostaliases);
+		if (info->hostaliases == NULL)
+			info->nhostaliases = 0;
 	}
-	closure->host_info.architecture = strdup(host_info->architecture);
-	closure->host_info.ncpu = host_info->ncpu;
-	if (closure->host_info.hostname == NULL ||
-	    closure->host_info.architecture == NULL) {
-		gfarm_host_info_free(&closure->host_info);
+	info->architecture = strdup(host_info->architecture);
+	info->ncpu = host_info->ncpu;
+	if (info->hostname == NULL || info->architecture == NULL) {
+		gfarm_host_info_free(info);
+		free(info);
 		e = GFARM_ERR_NO_MEMORY;
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		return (e);
 	}
 
 	e = (*opt_resolv_addr_by_host_info)(host_info->hostname, host_info,
-	    &addr, &closure->if_hostname);
+	    &addr, &if_hostname);
 	if (e != NULL) {
-		closure->if_hostname = NULL;
-		callback_host_info_and_loadavg(closure, NULL, NULL, e);
+		callback_host_info_and_loadavg(info, NULL, NULL, NULL, NULL,
+		    e);
 		return (e);
 	}
 
-	gfarm_client_add_load_request(udp_requests, &addr, closure, 
-		callback_host_info_and_loadavg);
-	return (NULL);
+	return (gfarm_paraccess_request(pa, callback_host_info_and_loadavg,
+	    info, if_hostname, &addr));
 }
 
-struct closure_for_up {
-	struct gfarm_host_info host_info;
-	char *if_hostname;
-};
-
 void
-callback_up(void *closure, struct sockaddr *addr,
-	struct gfs_client_load *result, char *error)
+callback_up(void *closure, char *hostname, struct sockaddr *peer_addr,
+	struct gfs_client_load *load, struct gfs_connection *gfs_server,
+	char *error)
 {
-	char *hostname = closure;
-
 	if (error != NULL) {
 		fprintf(stderr, "%s: %s\n", hostname, error);
 	} else {
@@ -566,12 +759,12 @@ callback_up(void *closure, struct sockaddr *addr,
 
 char *
 print_up(struct gfarm_host_info *host_info,
-	struct gfs_client_udp_requests *udp_requests)
+	struct gfarm_paraccess *pa)
 {
 	char *e, *hostname;
 	struct sockaddr addr;
 
-	/* dup `*host_info' -> `closure->host_info' */
+	/* dup `host_info->hostname' -> `hostname' */
 	hostname = strdup(host_info->hostname);
 	if (hostname == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -581,18 +774,17 @@ print_up(struct gfarm_host_info *host_info,
 
 	e = (*opt_resolv_addr_by_host_info)(hostname, host_info, &addr, NULL);
 	if (e != NULL) {
-		callback_up(hostname, NULL, NULL, e);
+		callback_up(NULL, hostname, NULL, NULL, NULL, e);
 		return (e);
 	}
 
-	gfarm_client_add_load_request(udp_requests, &addr, hostname,
-		callback_up);
-	return (NULL);
+	return (gfarm_paraccess_request(pa, callback_up, NULL, hostname,
+	    &addr));
 }
 
 char *
 print_host_info(struct gfarm_host_info *info,
-	struct gfs_client_udp_requests *udp_requests)
+	struct gfarm_paraccess *pa)
 {
 	int i;
 
@@ -606,8 +798,8 @@ print_host_info(struct gfarm_host_info *info,
 char *
 list_all(const char *architecture, const char *domainname,
 	char *(*print_op)(struct gfarm_host_info *,
-			  struct gfs_client_udp_requests *),
-	struct gfs_client_udp_requests *udp_requests)
+			  struct gfarm_paraccess *),
+	struct gfarm_paraccess *pa)
 {
 	char *e, *e_save = NULL;
 	int i, nhosts;
@@ -625,7 +817,7 @@ list_all(const char *architecture, const char *domainname,
 	for (i = 0; i < nhosts; i++) {
 		if (domainname == NULL ||
 	 	    gfarm_host_is_in_domain(hosts[i].hostname, domainname)) {
-			e = (*print_op)(&hosts[i], udp_requests);
+			e = (*print_op)(&hosts[i], pa);
 			if (e_save == NULL)
 				e_save = e;
 		}
@@ -637,8 +829,8 @@ list_all(const char *architecture, const char *domainname,
 char *
 list(int nhosts, char **hosts,
 	char *(*print_op)(struct gfarm_host_info *,
-	    struct gfs_client_udp_requests *),
-	struct gfs_client_udp_requests *udp_requests)
+	    struct gfarm_paraccess *),
+	struct gfarm_paraccess *pa)
 {
 	char *e, *e_save = NULL;
 	int i;
@@ -651,7 +843,7 @@ list(int nhosts, char **hosts,
 			if (e_save == NULL)
 				e_save = e;
 		} else {
-			e = (*print_op)(&hi, udp_requests);
+			e = (*print_op)(&hi, pa);
 			if (e_save == NULL)
 				e_save = e;
 			gfarm_host_info_free(&hi);
@@ -792,14 +984,14 @@ main(int argc, char **argv)
 	int opt_sort_reverse = 0;
 	int opt_sort_by_loadavg = 0;
 	int i, c, sort_pid, need_metadb = 1;
-	struct gfs_client_udp_requests *udp_requests;
+	struct gfarm_paraccess *pa;
 
 #ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
 	sort_pid = 0;
 #endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMRa:cdij:lmn:prv")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMRUa:cdij:lmn:prv")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
@@ -860,6 +1052,9 @@ main(int argc, char **argv)
 			break;
 		case 'r':
 			opt_sort_reverse = 1;
+			break;
+		case 'U':
+			opt_udp_only = 1;
 			break;
 		case 'v':
 			opt_verbose = 1;
@@ -984,19 +1179,18 @@ main(int argc, char **argv)
 				}
 			}
 		}
-		e = gfarm_client_init_load_requests(
-			opt_concurrency, &udp_requests);
+		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname, 
-				print_loadavg, udp_requests);
+				print_loadavg, pa);
 		} else {
-			e_save = list_loadavg(argc, argv, udp_requests);
+			e_save = list_loadavg(argc, argv, pa);
 		}
-		e = gfarm_client_wait_all_load_results(udp_requests);
+		e = gfarm_paraccess_free(pa);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {
@@ -1013,19 +1207,18 @@ main(int argc, char **argv)
 				sort_pid = setup_sort("+0");
 			}
 		}
-		e = gfarm_client_init_load_requests(
-			opt_concurrency, &udp_requests);
+		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname,
-				print_up, udp_requests);
+				print_up, pa);
 		} else {
-			e_save = list(argc, argv, print_up, udp_requests);
+			e_save = list(argc, argv, print_up, pa);
 		}
-		e = gfarm_client_wait_all_load_results(udp_requests);
+		e = gfarm_paraccess_free(pa);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {
@@ -1050,20 +1243,19 @@ main(int argc, char **argv)
 				}
 			}
 		}
-		e = gfarm_client_init_load_requests(
-			opt_concurrency, &udp_requests);
+		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(1);
 		}
 		if (argc == 0) {
 			e_save = list_all(opt_architecture, opt_domainname,
-				print_host_info_and_loadavg, udp_requests);
+				print_host_info_and_loadavg, pa);
 		} else {
 			e_save = list(argc, argv, print_host_info_and_loadavg,
-			    udp_requests);
+			    pa);
 		}
-		e = gfarm_client_wait_all_load_results(udp_requests);
+		e = gfarm_paraccess_free(pa);
 		if (e_save == NULL)
 			e_save = e;
 		if (!opt_plain_order && sort_pid != -1) {

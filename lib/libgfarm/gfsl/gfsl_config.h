@@ -65,5 +65,7 @@
 /* XXX - This depends on globus implementation - GLOBUS_SUCCESS (== 0) */
 #define GFSL_DEFAULT_MINOR_ERROR 0
 
+#define GFARM_GSS_AUTH_TIMEOUT	60	/* seconds */
+
 #endif /* _GFARM_GFSL_CONFIG_H_ */
 

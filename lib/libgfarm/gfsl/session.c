@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,6 +21,9 @@
 #include "gssapi.h"
 
 #include <gfarm/gfarm_config.h>
+
+#include "gfevent.h"
+
 #include "gfarm_secure_session.h"
 #include "tcputil.h"
 #include "misc.h"
@@ -307,6 +311,10 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
 {
+    int ret = -1;
+    OM_uint32 majStat = GSS_S_FAILURE;
+    OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
+
     gss_qop_t retQOP = GFARM_GSS_DEFAULT_QOP;
     unsigned int retMaxT = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
     unsigned int retConf = GFARM_SS_USE_ENCRYPTION;
@@ -319,15 +327,8 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 #define NEGO_PARAM_OTHER_CONFIG_FORCE	5
 #define NUM_NEGO_PARAM			6
   
-    if (majStatPtr != NULL) {
-	*majStatPtr = GSS_S_FAILURE;
-    }
-    if (minStatPtr != NULL) {
-	*minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
-    }
-
     if (sCtx == GSS_C_NO_CONTEXT) {
-	return -1;
+	goto Done;
     }
 
     switch (which) {
@@ -340,7 +341,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    int iConf, iConfF;
 	   
 	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
-	         return -1;
+	         goto Done;
 	    iQOP = param[NEGO_PARAM_QOP];
 	    iQOPF = param[NEGO_PARAM_QOP_FORCE];
 	    iMax = param[NEGO_PARAM_MAX_TRANS_SIZE];
@@ -409,7 +410,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
 
 	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
-		return -1;
+		goto Done;
 
 	    /* End of acceptor side negotiation. */
 	    break;
@@ -424,10 +425,10 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
 	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
-		return -1;
+		goto Done;
 
 	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
-		return -1;
+		goto Done;
 
 	    retQOP = param[NEGO_PARAM_QOP];
 	    retMaxT = param[NEGO_PARAM_MAX_TRANS_SIZE];
@@ -440,40 +441,34 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 
     {
 	unsigned int maxMsgSize;
-	OM_uint32 majStat, minStat;
-
 	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     			(isBitSet(retConf,
 				  GFARM_SS_USE_ENCRYPTION) ? 1 : 0);
+
 	if (gfarmGssConfigureMessageSize(sCtx, doEncrypt,
 					 retQOP, retMaxT, &maxMsgSize,
-					 &majStat, &minStat) < 0) {
-	    if (majStatPtr != NULL) {
-		*majStatPtr = majStat;
+					 &majStat, &minStat) >= 0) {
+	    if (qOpPtr != NULL) {
+		*qOpPtr = retQOP;
 	    }
-	    if (minStatPtr != NULL) {
-		*minStatPtr = minStat;
+	    if (maxTransPtr != NULL) {
+		*maxTransPtr = maxMsgSize;
 	    }
-	    return -1;
-	}
+	    if (configPtr != NULL) {
+		*configPtr = retConf;
+	    }
 
-	if (majStatPtr != NULL) {
-	    *majStatPtr = majStat;
-	}
-	if (minStatPtr != NULL) {
-	    *minStatPtr = minStat;
-	}
-	if (qOpPtr != NULL) {
-	    *qOpPtr = retQOP;
-	}
-	if (maxTransPtr != NULL) {
-	    *maxTransPtr = maxMsgSize;
-	}
-	if (configPtr != NULL) {
-	    *configPtr = retConf;
+	    ret = 1;
 	}
     }
-    return 1;
+    Done:
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }
+    return ret;
 }
 
 
@@ -1636,3 +1631,533 @@ gfarmSecSessionPoll(ssList, n, toPtr)
     return ret;
 }
 
+/*
+ * multiplexed version of negotiateConfigParam(,, GFARM_SS_INITIATOR, ...)
+ */
+
+struct negotiateConfigParamInitiatorState {
+    struct gfarm_eventqueue *q;
+    struct gfarm_event *writable, *readable;
+    int fd;
+    gss_ctx_id_t sCtx;
+    gfarmSecSessionOption *canPtr;
+    void (*continuation)(void *);
+    void *closure;
+
+    gss_qop_t retQOP;
+    unsigned int retMaxT;
+    unsigned int retConf;
+
+    /* results */
+    OM_uint32 majStat;
+    OM_uint32 minStat;
+};
+
+static void
+negotiateConfigParamInitiatorReceive(events, fd, closure, t)
+     int events;
+     int fd;
+     void *closure;
+     const struct timeval *t;
+{
+    struct negotiateConfigParamInitiatorState *state = closure;
+    long param[NUM_NEGO_PARAM];
+
+    if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+	assert(events == GFARM_EVENT_TIMEOUT);
+	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
+    } else {
+	assert(events == GFARM_EVENT_READ);
+	if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
+	    state->retQOP = param[NEGO_PARAM_QOP];
+	    state->retMaxT = param[NEGO_PARAM_MAX_TRANS_SIZE];
+	    state->retConf = param[NEGO_PARAM_OTHER_CONFIG];
+	    /* End of initiator side negotiation. */
+	} else {
+	    state->majStat = GSS_S_FAILURE;
+	}
+    }
+
+    /* finished */
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+static void
+negotiateConfigParamInitiatorSend(events, fd, closure, t)
+     int events;
+     int fd;
+     void *closure;
+     const struct timeval *t;
+{
+    struct negotiateConfigParamInitiatorState *state = closure;
+    gfarmSecSessionOption *canPtr = state->canPtr;
+    long param[NUM_NEGO_PARAM];
+    struct timeval timeout;
+    int rv;
+
+    param[NEGO_PARAM_QOP] = canPtr->qOpReq;
+    param[NEGO_PARAM_QOP_FORCE] = canPtr->qOpForce;
+    param[NEGO_PARAM_MAX_TRANS_SIZE] = canPtr->maxTransSizeReq;
+    param[NEGO_PARAM_MAX_TRANS_SIZE_FORCE] = canPtr->maxTransSizeForce;
+    param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
+    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
+
+    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) == NUM_NEGO_PARAM) {
+	timeout.tv_sec = GFARM_GSS_AUTH_TIMEOUT; timeout.tv_usec = 0;
+	rv = gfarm_eventqueue_add_event(state->q, state->readable, &timeout);
+	if (rv == 0) {
+	    /* go to negotiateConfigParamInitiatorReceive() */
+	    return;
+	}
+	/* XXX convert rv to state->{majStat,minStat} */
+	state->majStat = GSS_S_FAILURE;
+    }
+
+    /* failure */
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+struct negotiateConfigParamInitiatorState *
+negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure, majStatPtr, minStatPtr)
+     struct gfarm_eventqueue *q;
+     int fd;
+     gss_ctx_id_t sCtx;
+     gfarmSecSessionOption *canPtr;
+     void (*continuation)(void *);
+     void *closure;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    struct negotiateConfigParamInitiatorState *state = NULL;
+    OM_uint32 majStat = GSS_S_FAILURE;
+    OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
+    int rv;
+
+    if (sCtx != GSS_C_NO_CONTEXT && (state = malloc(sizeof(*state))) != NULL) {
+	state->writable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_WRITE, fd,
+	    negotiateConfigParamInitiatorSend, state);
+	if (state->writable != NULL) {
+	    /*
+	     * We cannot use two independent events (i.e. a fd_event with
+	     * GFARM_EVENT_READ flag and a timer_event) here, because
+	     * it's possible that both event handlers are called at once.
+	     */
+	    state->readable = gfarm_fd_event_alloc(
+		GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+		negotiateConfigParamInitiatorReceive, state);
+	    if (state->readable != NULL) {
+		/* go to negotiateConfigParamInitiatorSend() */
+		rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+		if (rv == 0) {
+		    state->q = q;
+		    state->fd = fd;
+		    state->sCtx = sCtx;
+		    state->canPtr = canPtr;
+		    state->continuation = continuation;
+		    state->closure = closure;
+
+		    state->retQOP = GFARM_GSS_DEFAULT_QOP;
+		    state->retMaxT = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
+		    state->retConf = GFARM_SS_USE_ENCRYPTION;
+
+		    state->majStat = GSS_S_COMPLETE;
+		    state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+
+		    majStat = GSS_S_COMPLETE;
+		    goto Done;
+		}
+		/* XXX convert rv to {majStat,minStat} */
+		gfarm_event_free(state->readable);
+	    }
+	    gfarm_event_free(state->writable);
+	}
+	free(state);
+	state = NULL;
+    }
+    Done:
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }
+    return (state);
+}
+
+int
+negotiateConfigParamInitiatorResult(state, qOpPtr, maxTransPtr, configPtr, majStatPtr, minStatPtr)
+     struct negotiateConfigParamInitiatorState *state;
+     gss_qop_t *qOpPtr;
+     unsigned int *maxTransPtr;
+     unsigned int *configPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    int ret = -1;
+    OM_uint32 majStat = state->majStat;
+    OM_uint32 minStat = state->minStat;
+
+    if (majStat == GSS_S_COMPLETE) {
+	unsigned int maxMsgSize;
+	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
+    			(isBitSet(state->retConf,
+				  GFARM_SS_USE_ENCRYPTION) ? 1 : 0);
+
+	if (gfarmGssConfigureMessageSize(state->sCtx, doEncrypt,
+					 state->retQOP, state->retMaxT,
+					 &maxMsgSize,
+					 &majStat, &minStat) < 0) {
+	    majStat = GSS_S_FAILURE;
+	} else {
+	    if (qOpPtr != NULL) {
+		*qOpPtr = state->retQOP;
+	    }
+	    if (maxTransPtr != NULL) {
+		*maxTransPtr = maxMsgSize;
+	    }
+	    if (configPtr != NULL) {
+		*configPtr = state->retConf;
+	    }
+	    ret = 1;
+	}
+    }
+    gfarm_event_free(state->readable);
+    gfarm_event_free(state->writable);
+    free(state);
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }
+    return ret;
+}
+
+/*
+ * multiplexed version of secSessionInitiate()
+ */
+
+struct gfarmSecSessionInitiateState {
+    /* request */
+    struct gfarm_eventqueue *q;
+    int fd;
+    gss_cred_id_t cred;
+    void (*continuation)(void *);
+    void *closure;
+    int needClose;
+
+    /* local variables */
+
+    gfarmSecSessionOption canOpt;
+
+    unsigned long int rAddr;
+    int rPort;
+    char *peerName;
+    struct gfarm_event *readable;
+    struct gfarmGssInitiateSecurityContextState *secCtxState;
+    struct negotiateConfigParamInitiatorState *negoCfgState;
+
+    gss_ctx_id_t sCtx;
+    char *acceptorDistName;
+    char *credName;
+
+    gss_qop_t qOp;
+    unsigned int maxTransSize;
+    unsigned int config;
+
+    /* results */
+    OM_uint32 majStat;
+    OM_uint32 minStat;
+    gfarmSecSession *session;
+};
+
+static void
+secSessionInitiateCleanup(closure)
+     void *closure;
+{
+    struct gfarmSecSessionInitiateState *state = closure;
+
+    if (negotiateConfigParamInitiatorResult(state->negoCfgState,
+					    &state->qOp,
+					    &state->maxTransSize,
+					    &state->config,
+					    &state->majStat,
+					    &state->minStat) >= 0) {
+	state->majStat = GSS_S_COMPLETE;
+	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+    }
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+static void
+secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
+     int events;
+     int fd;
+     void *closure;
+     const struct timeval *t;
+{
+    struct gfarmSecSessionInitiateState *state = closure;
+    int acknack;
+
+    if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+	assert(events == GFARM_EVENT_TIMEOUT);
+	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
+    } else {
+	assert(events == GFARM_EVENT_READ);
+	/*
+	 * Phase 2: Receive authorization acknowledgement.
+	 */
+	if (gfarmReadLongs(fd, (long *)&acknack, 1) != 1) {
+	    state->majStat = GSS_S_UNAUTHORIZED;
+	} else if (acknack == GFARM_SS_AUTH_NACK) {
+	    state->majStat = GSS_S_UNAUTHORIZED;
+	} else {
+	    /*
+	     * Phase 3: Negotiate configuration parameters
+	     * with the acceptor.
+	     */
+	    state->negoCfgState = negotiateConfigParamInitiatorRequest(
+		state->q, fd, state->sCtx, &state->canOpt,
+		secSessionInitiateCleanup, state,
+		&state->majStat, &state->minStat);
+	    if (state->negoCfgState != NULL) {
+		/*
+		 * call negotiateConfigParamInitiator*(),
+		 * then go to secSessionInitiateCleanup()
+		 */
+		return;
+	    }
+	}
+    }
+
+    /* failure */
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+static void
+secSessionInitiateWaitAuthorizationAck(closure)
+     void *closure;
+{
+    struct gfarmSecSessionInitiateState *state = closure;
+    struct timeval timeout;
+    int rv;
+
+    if (gfarmGssInitiateSecurityContextResult(
+	state->secCtxState, &state->sCtx, &state->majStat, &state->minStat,
+	&state->acceptorDistName) >= 0) {
+	if (state->acceptorDistName == NULL ||
+	    state->acceptorDistName[0] == '\0') {
+	    state->majStat = GSS_S_UNAUTHORIZED; /* failure */
+	} else {
+	    timeout.tv_sec = GFARM_GSS_AUTH_TIMEOUT; timeout.tv_usec = 0;
+	    rv = gfarm_eventqueue_add_event(state->q,
+					    state->readable, &timeout);
+	    if (rv == 0) {
+		/* go to secSessionInitiateReceiveAuthorizationAck() */
+		return;
+	    }
+	    /* XXX convert rv to state->{majStat,minStat} */
+	    state->majStat = GSS_S_FAILURE;
+	}
+    }
+    /* failure */
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+static struct gfarmSecSessionInitiateState *
+secSessionInitiateRequest(q, fd, cred, ssOptPtr, continuation, closure, needClose, majStatPtr, minStatPtr)
+     struct gfarm_eventqueue *q;
+     int fd;
+     gss_cred_id_t cred;
+     gfarmSecSessionOption *ssOptPtr;
+     void (*continuation)(void *);
+     void *closure;
+     int needClose;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    struct gfarmSecSessionInitiateState *state = NULL;
+    gfarmSecSession *ret = NULL;
+    gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
+    OM_uint32 majStat = GSS_S_FAILURE;
+    OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
+
+    if (initiatorInitialized == 0) {
+	/* failure */;
+    } else if ((state = malloc(sizeof(*state))) == NULL) {
+	/* failure */;
+    } else if ((ret = allocSecSession(GFARM_SS_INITIATOR)) == NULL) {
+	/* failure */;
+    } else if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt)< 0){
+	/* failure */;
+    } else {
+	state->q = q;
+	state->fd = fd;
+	state->cred = cred;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->needClose = needClose;
+
+	state->canOpt = canOpt;
+
+	state->rAddr = INADDR_ANY;
+	state->rPort = 0;
+	state->peerName = NULL;
+
+	state->sCtx = GSS_C_NO_CONTEXT;
+	state->acceptorDistName = NULL;
+	state->credName = NULL;
+
+	state->majStat = GSS_S_COMPLETE;
+	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+	state->session = ret;
+
+	/*
+	 * Get a peer information.
+	 */
+	state->rAddr = gfarmIPGetPeernameOfSocket(fd, &state->rPort);
+	if (state->rAddr != 0 && state->rPort != 0) {
+	    state->peerName = gfarmIPGetHostOfAddress(state->rAddr);
+	}
+
+	/*
+	 * Check the credential.
+	 */
+	if (cred == GSS_C_NO_CREDENTIAL) {
+	    state->cred = initiatorInitialCred;
+	    state->credName = strdup(initiatorInitialCredName);
+	} else {
+	    state->credName = gfarmGssGetCredentialName(cred);
+	}
+
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+	    secSessionInitiateReceiveAuthorizationAck, state);
+
+	if (state->readable != NULL) {
+	    /*
+	     * Phase 1: Initiate a security context.
+	     */
+	    state->secCtxState = gfarmGssInitiateSecurityContextRequest(q,
+		fd, cred, GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+		secSessionInitiateWaitAuthorizationAck, state,
+		majStatPtr, minStatPtr);
+	    if (state->secCtxState != NULL)
+		return (state); /* success */
+
+	    majStat = *majStatPtr;
+	    minStat = *minStatPtr;
+	}
+
+	/* failure */
+	if (state->readable != NULL) {
+	    gfarm_event_free(state->readable);
+	}
+	if (state->peerName != NULL) {
+	    free(state->peerName);
+	}
+	if (state->credName != NULL) {
+	    free(state->credName);
+	}
+    }
+
+    if (ret != NULL) {
+	destroySecSession(ret);
+    }
+    if (state != NULL) {
+	free(state);
+    }
+    if (majStatPtr != NULL) {
+	*majStatPtr = majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = minStat;
+    }
+    return (NULL); /* failure */
+}
+
+static gfarmSecSession *
+secSessionInitiateResult(state, majStatPtr, minStatPtr)
+     struct gfarmSecSessionInitiateState *state;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    gfarmSecSession *ret = state->session;
+
+    if (GSS_ERROR(state->majStat)) {
+	destroySecSession(ret);
+	ret = NULL;
+    } else {
+#if 0
+	fprintf(stderr, "Initiator config:\n");
+	dumpConfParam(state->qOp, state->maxTransSize, state->config);
+#endif
+	/*
+	 * Success: Fill all members of session struct out.
+	 */
+	ret->fd = state->fd;
+	ret->needClose = state->needClose;
+	ret->rAddr = state->rAddr;
+	ret->rPort = state->rPort;
+	ret->peerName = state->peerName;
+	ret->cred = state->cred;
+	ret->credName = state->credName;
+	ret->sCtx = state->sCtx;
+	ret->iOa = GFARM_SS_INITIATOR;
+	ret->iOaInfo.initiator.reqFlag = GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG;
+	ret->iOaInfo.initiator.acceptorDistName =
+	    strdup(state->acceptorDistName);
+	ret->qOp = state->qOp;
+	ret->maxTransSize = state->maxTransSize;
+	ret->config = state->config;
+	ret->gssLastStat = state->majStat;
+    }
+
+    if (state->acceptorDistName != NULL) {
+	(void)free(state->acceptorDistName);
+    }
+    gfarm_event_free(state->readable);
+
+    if (majStatPtr != NULL) {
+	*majStatPtr = state->majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = state->minStat;
+    }
+    free(state);
+    return (ret);
+}
+
+/*
+ * multiplexed version of gfarmSecSessionInitiate()
+ */
+
+struct gfarmSecSessionInitiateState *
+gfarmSecSessionInitiateRequest(q, fd, cred, ssOptPtr, continuation, closure, majStatPtr, minStatPtr)
+     struct gfarm_eventqueue *q;
+     int fd;
+     gss_cred_id_t cred;
+     gfarmSecSessionOption *ssOptPtr;
+     void (*continuation)(void *);
+     void *closure;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    return secSessionInitiateRequest(q, fd, cred, ssOptPtr,
+				     continuation, closure,
+				     majStatPtr, minStatPtr, 0);
+}
+
+gfarmSecSession *
+gfarmSecSessionInitiateResult(state, majStatPtr, minStatPtr)
+     struct gfarmSecSessionInitiateState *state;
+     OM_uint32 *majStatPtr, *minStatPtr;
+{
+    return secSessionInitiateResult(state, majStatPtr, minStatPtr);
+}

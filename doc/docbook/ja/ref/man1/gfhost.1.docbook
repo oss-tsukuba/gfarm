@@ -23,12 +23,10 @@
       <arg choice='plain'>-l</arg>
       <arg choice='plain'>-M</arg>
     </group>
-<!-- <arg choice='opt'>-iLprUv</arg> XXX NOTYET: -U -->
-     <arg choice='opt'>-iLprv</arg>
+    <arg choice='opt'>-iLprUv</arg>
     <arg choice='opt'>-a <replaceable>アーキテクチャ</replaceable></arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice='opt'>-j <replaceable>並列度</replaceable></arg>
-<!-- <arg choice='opt'>-N <replaceable>数</replaceable></arg> XXX NOTYET -->
     <arg choice='opt' rep='repeat'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
@@ -77,7 +75,6 @@
     -l		<function> display with long format
     -M		<function> display hosts in MetaDB
     -m		<function> modify a host in MetaDB
-    -N <number>	display N hosts which answered quickly, for (default)/-H/-l
     -n <number>	number of CPUs, for -c/-m
     -p		display by plain order (don't sort), for (default)/-H/-l/-M
     -R		<function> restore hosts to MetaDB
@@ -126,7 +123,7 @@
   それ以外の機能はファイルシステムノードで動作している
   <command>gfsd</command> にもアクセスします。
   <command>gfsd</command> にアクセスする場合、そのアクセスに関する
-  オプションを -i, -j, <!-- XXX NOTYET -N, -U, --> -v で指定できます。
+  オプションを -i, -j, -U, -v で指定できます。
   <!-- XXX FIXME -v should be applied to -H and the (default) case, too -->
 </para>
 <para>
@@ -235,17 +232,27 @@
     <term><option>-l</option></term>
     <listitem>
       <para>
-	<command>gfsd</command> に問い合わせてえた
-	<!-- XXX NOTYET 情報、すなわち --> ロードアベレージ
-	<!-- XXX NOTYET と認証手段 --> と、メタデータ情報、
-	すなわちアーキテクチャ名、CPU数、ホスト別名を
+	<command>gfsd</command> に問い合わせてえた情報、
+	すなわちロードアベレージおよび認証手段と、
+	メタデータ・サーバーに問い合わせてえた情報、
+	すなわちアーキテクチャ名、CPU数およびホスト別名を
 	全て表示します。またアクセスに用いられたホスト名の後に、
 	IP アドレスを括弧で囲って表示します。
+      </para>
+      <para>
 	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
 	ホストが動作しているが、/etc/gfarm.conf ないし $HOME/.gfarmrc で
 	指定されたポートで、そのホストの <command>gfsd</command> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
+      </para>
+      <para>
+	その次の一桁の欄は認証手段で、「G」は GSI 認証、
+	「S」は sharedsecret 認証、「x」は認証失敗、「-」は認証を
+	試みなかったことを示します。また、「-U」オプション指定時には、
+	この認証手段の表示欄はなくなります。
+      </para>
+      <para>
 	デフォールトでは、ホスト名のアルファベット順で表示します。
       </para>
     </listitem>
@@ -370,23 +377,6 @@
     </listitem>
   </varlistentry>
 
-<!-- XXX NOTYET
-
-  <varlistentry>
-    <term><option>-N</option> <parameter>ホスト数</parameter></term>
-    <listitem>
-      <para>
-	-H、-l 機能の場合および特に機能を指定しなかった場合、
-	このオプションで、表示するホスト数を限ることができます。
-	このとき、ネットワーク通信往復時間が短いホストで、かつロード
-	アベレージの低いホストが優先して選ばれます。
-	XXX - 指定した数のホストがなかった場合には？
-      </para>
-    </listitem>
-  </varlistentry>
-
--->
-
   <varlistentry>
     <term><option>-n</option> <parameter>CPU数</parameter></term>
     <listitem>
@@ -422,16 +412,19 @@
     </listitem>
   </varlistentry>
 
- <!-- XXX NOTYET
   <varlistentry>
     <term><option>-U</option></term>
     <listitem>
       <para>
-	XXX UDP only, do not try authentication, for (default)/-H/-l
+	TCP による認証をやめ、
+	UDP によるロードアベレージの問い合わせのみを行うようにします。
+	-H ないし -l 機能を指定した場合および機能を指定しなかった場合に
+	意味のあるオプションです。
+	-l を指定している場合、このオプションを指定すると、認証方式の
+	表示欄がなくなります。
       </para>
     </listitem>
   </varlistentry>
--->
 
   <varlistentry>
     <term><option>-v</option></term>

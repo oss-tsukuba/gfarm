@@ -56,6 +56,21 @@ extern int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
 				char **bufPtr, int *lenPtr,
 				OM_uint32 *statPtr);
 
+/* multiplexed version */
+
+struct gfarm_eventqueue;
+struct gfarmGssInitiateSecurityContextState;
+
+extern struct gfarmGssInitiateSecurityContextState *gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q,
+			int fd, gss_cred_id_t cred, OM_uint32 reqFlag,
+			void (*continuation)(void *), void *closure,
+			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr);
+extern int	gfarmGssInitiateSecurityContextResult(
+			struct gfarmGssInitiateSecurityContextState *state,
+			gss_ctx_id_t *scPtr, 
+			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr,
+			char **remoteNamePtr);
+
 /* only available on GFARM_GSS_EXPORT_CRED_ENABLED case */
 extern gfarmExportedCredential *
 		gfarmGssExportCredential(gss_cred_id_t cred,

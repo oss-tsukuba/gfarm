@@ -1,8 +1,12 @@
+/* daemon */
+
 #ifndef HAVE_DAEMON
 int gfarm_daemon(int, int);
 #else
 #define gfarm_daemon	daemon
 #endif
+
+/* limit */
 
 void gfarm_unlimit_nofiles(int *);
 
@@ -29,3 +33,14 @@ char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int); 
 
 int gflog_syslog_name_to_facility(char *);
+
+/* timeval */
+
+#define GFARM_MILLISEC_BY_MICROSEC	1000
+#define GFARM_SECOND_BY_MICROSEC	1000000
+
+struct timeval;
+int gfarm_timeval_cmp(const struct timeval *, const struct timeval *);
+void gfarm_timeval_add(struct timeval *, const struct timeval *);
+void gfarm_timeval_sub(struct timeval *, const struct timeval *);
+void gfarm_timeval_add_microsec(struct timeval *, long);

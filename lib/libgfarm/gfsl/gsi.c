@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -11,6 +12,7 @@
 #include "gssapi.h"
 
 #include "gfutil.h"
+#include "gfevent.h"
 
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
@@ -897,3 +899,331 @@ gfarmGssDeleteExportedCredential(exportedCred)
 }
 
 #endif /* GFARM_GSS_EXPORT_CRED_ENABLED */
+
+/*
+ * multiplexed version of gfarmGssInitiateSecurityContext()
+ */
+
+struct gfarmGssInitiateSecurityContextState {
+    struct gfarm_eventqueue *q;
+    struct gfarm_event *readable, *writable;
+    int fd;
+    gss_cred_id_t cred;
+    OM_uint32 reqFlag;
+    void (*continuation)(void *);
+    void *closure;
+
+    int completed;
+    OM_uint32 majStat;
+    OM_uint32 minStat;
+
+    gss_ctx_id_t sc;
+    gss_name_t acceptorName;
+    OM_uint32 retFlag;
+
+    gss_buffer_desc inputToken;
+    gss_buffer_t itPtr;
+
+    gss_buffer_desc outputToken;
+    gss_buffer_t otPtr;
+
+    gss_OID *actualMechType;
+    OM_uint32 timeRet;
+};
+
+static void
+gssInitiateSecurityContextSwitch(state)
+     struct gfarmGssInitiateSecurityContextState *state;
+{
+    OM_uint32 minStat2;
+    struct timeval timeout;
+
+    if (GSS_ERROR(state->majStat)) {
+	if (state->sc != GSS_C_NO_CONTEXT) {
+	    (void)gss_delete_sec_context(&minStat2, &state->sc,
+					 GSS_C_NO_BUFFER);
+	    return;
+	}
+    }
+
+    if (state->majStat & GSS_S_CONTINUE_NEEDED) {
+	timeout.tv_sec = GFARM_GSS_AUTH_TIMEOUT;
+	timeout.tv_usec = 0;
+	if (gfarm_eventqueue_add_event(state->q, state->readable, &timeout) == 0) {
+	    /* go to gfarmGssInitiateSecurityContextRecieveToken() */
+	    return;
+	}
+	state->majStat = GSS_S_FAILURE;
+	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+    } else {
+	state->completed = 1;
+    }
+}
+
+static void
+gssInitiateSecurityContextNext(state)
+     struct gfarmGssInitiateSecurityContextState *state;
+{
+    OM_uint32 minStat2;
+
+    state->majStat = gss_init_sec_context(&state->minStat,
+					  state->cred,
+					  &state->sc,
+					  state->acceptorName,
+					  GSS_C_NO_OID,
+					  state->reqFlag,
+					  0,
+					  GSS_C_NO_CHANNEL_BINDINGS,
+					  state->itPtr,
+					  state->actualMechType,
+					  state->otPtr,
+					  &state->retFlag,
+					  &state->timeRet);
+
+    if (state->itPtr->length > 0) {
+	(void)gss_release_buffer(&minStat2, state->itPtr);
+    }
+
+    if (state->otPtr->length > 0) {
+	if (gfarm_eventqueue_add_event(state->q, state->writable, NULL) == 0) {
+	    /* go to gfarmGssInitiateSecurityContextSendToken() */
+	    return;
+	}
+	state->majStat = GSS_S_FAILURE;
+	state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+    }
+
+    gssInitiateSecurityContextSwitch(state);
+}
+
+static void
+gfarmGssInitiateSecurityContextSendToken(events, fd, closure, t)
+     int events;
+     int fd;
+     void *closure;
+     const struct timeval *t;
+{
+    struct gfarmGssInitiateSecurityContextState *state = closure;
+    int tknStat;
+    OM_uint32 minStat2;
+
+    tknStat = gfarmGssSendToken(fd, state->otPtr);
+    (void)gss_release_buffer(&minStat2, state->otPtr);
+    if (tknStat <= 0) {
+	state->majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
+    }
+
+    gssInitiateSecurityContextSwitch(state);
+    if (GSS_ERROR(state->majStat) || state->completed) {
+	if (state->continuation != NULL)
+	    (*state->continuation)(state->closure);
+    }
+}
+
+static void
+gfarmGssInitiateSecurityContextReceiveToken(events, fd, closure, t)
+     int events;
+     int fd;
+     void *closure;
+     const struct timeval *t;
+{
+    struct gfarmGssInitiateSecurityContextState *state = closure;
+    int tknStat;
+
+    if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+	assert(events == GFARM_EVENT_TIMEOUT);
+	state->majStat = GSS_S_UNAVAILABLE; /* failure: timeout */
+    } else {
+	assert(events == GFARM_EVENT_READ);
+	tknStat = gfarmGssReceiveToken(fd, state->itPtr);
+	if (tknStat <= 0) {
+	    state->majStat =
+		GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
+	} else {
+	    gssInitiateSecurityContextNext(state);
+	    if (!GSS_ERROR(state->majStat) && !state->completed) {
+		/* possibly go to gfarmGssInitiateSecurityContextSendToken() */
+		return;
+	    }
+	}
+    }
+    assert(GSS_ERROR(state->majStat) || state->completed);
+    if (state->continuation != NULL)
+	(*state->continuation)(state->closure);
+}
+
+struct gfarmGssInitiateSecurityContextState *
+gfarmGssInitiateSecurityContextRequest(q, fd, cred, reqFlag, continuation, closure, majStatPtr, minStatPtr)
+     struct gfarm_eventqueue *q;
+     int fd;
+     gss_cred_id_t cred;
+     OM_uint32 reqFlag;
+     void (*continuation)(void *);
+     void *closure;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+{
+    struct gfarmGssInitiateSecurityContextState *state;
+
+    state = malloc(sizeof(*state));
+    if (state == NULL) {
+	if (majStatPtr != NULL) {
+	    *majStatPtr = GSS_S_FAILURE;
+	}
+	if (minStatPtr != NULL) {
+	    *minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
+	}
+	return (NULL);
+    }
+
+    state->completed = 0;
+    state->majStat = GSS_S_COMPLETE;
+    state->minStat = GFSL_DEFAULT_MINOR_ERROR;
+
+    state->writable =
+	gfarm_fd_event_alloc(GFARM_EVENT_WRITE, fd,
+			     gfarmGssInitiateSecurityContextSendToken,
+			     state);
+    if (state->writable == NULL) {
+	state->majStat = GSS_S_FAILURE;
+	goto freeState;
+    }
+    /*
+     * We cannot use two independent events (i.e. a fd_event with
+     * GFARM_EVENT_READ flag and a timer_event) here, because
+     * it's possible that both event handlers are called at once.
+     */
+    state->readable =
+	gfarm_fd_event_alloc(GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
+			     gfarmGssInitiateSecurityContextReceiveToken,
+			     state);
+    if (state->readable == NULL) {
+	state->majStat = GSS_S_FAILURE;
+	goto freeWritable;
+    }
+
+    state->q = q;
+    state->fd = fd;
+    state->cred = cred;
+    state->reqFlag = reqFlag;
+    state->continuation = continuation;
+    state->closure = closure;
+
+    state->retFlag = 0;
+    state->acceptorName = GSS_C_NO_NAME;
+
+    /* GSS_C_EMPTY_BUFFER */
+    state->inputToken.length = 0; state->inputToken.value = NULL;
+    state->itPtr = &state->inputToken;
+
+    /* GSS_C_EMPTY_BUFFER */
+    state->outputToken.length = 0; state->outputToken.value = NULL;
+    state->otPtr = &state->outputToken;
+
+    state->actualMechType = NULL;
+
+    state->sc = GSS_C_NO_CONTEXT;
+
+    /*
+     * Implementation specification:
+     * In gfarm, an initiator must reveal own identity to an acceptor.
+     */
+    state->reqFlag &= ~GSS_C_ANON_FLAG;
+
+    gssInitiateSecurityContextNext(state);
+    assert(!state->completed);
+    if (!GSS_ERROR(state->majStat)) {
+	if (majStatPtr != NULL) {
+	    *majStatPtr = GSS_S_COMPLETE;
+	}
+	if (minStatPtr != NULL) {
+	    *minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
+	}
+	return (state);
+    }
+
+    gfarm_event_free(state->readable);
+freeWritable:
+    gfarm_event_free(state->writable);
+freeState:
+    if (majStatPtr != NULL) {
+	*majStatPtr = state->majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = state->minStat;
+    }
+    free(state);
+    return (NULL);
+}
+
+int
+gfarmGssInitiateSecurityContextResult(state, scPtr, majStatPtr, minStatPtr, remoteNamePtr)
+     struct gfarmGssInitiateSecurityContextState *state;
+     gss_ctx_id_t *scPtr;
+     OM_uint32 *majStatPtr;
+     OM_uint32 *minStatPtr;
+     char **remoteNamePtr;
+{
+    int ret = -1;
+    OM_uint32 minStat2;
+
+    assert(GSS_ERROR(state->majStat) || state->completed);
+
+    if (state->itPtr->length > 0) {
+	(void)gss_release_buffer(&minStat2, state->itPtr);
+    }
+    if (state->otPtr->length > 0) {
+	(void)gss_release_buffer(&minStat2, state->otPtr);
+    }
+
+    if (state->majStat == GSS_S_COMPLETE) {
+	state->acceptorName = GSS_C_NO_NAME;
+	(void)gss_inquire_context(&minStat2,
+				  state->sc,
+				  NULL,
+				  &state->acceptorName,
+				  NULL,
+				  NULL,
+				  NULL,
+				  NULL,
+				  NULL);
+	if (state->acceptorName != GSS_C_NO_NAME) {
+	    char *name = gssName2Str(state->acceptorName);
+	    if (name != NULL) {
+		/* Only valid when the name is got. */
+		ret = 1;
+	    }
+	    if (remoteNamePtr != NULL) {
+		*remoteNamePtr = name;
+	    } else {
+		(void)free(name);
+	    }
+	    (void)gss_release_name(&minStat2, &state->acceptorName);
+	}
+	if (ret != 1) {
+	    state->majStat = GSS_S_UNAUTHORIZED;
+	}
+    }
+
+    gfarm_event_free(state->readable);
+    gfarm_event_free(state->writable);
+
+    if (majStatPtr != NULL) {
+	*majStatPtr = state->majStat;
+    }
+    if (minStatPtr != NULL) {
+	*minStatPtr = state->minStat;
+    }
+
+    if (ret == -1) {
+	if (state->sc != GSS_C_NO_CONTEXT) {
+	    (void)gss_delete_sec_context(&minStat2, &state->sc,
+					 GSS_C_NO_BUFFER);
+	}
+    }
+
+    *scPtr = state->sc;
+
+    free(state);
+    return ret;
+}

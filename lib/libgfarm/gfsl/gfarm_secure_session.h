@@ -218,4 +218,23 @@ extern int			gfarmSecSessionPoll(gfarmSecSession *ssList[],
 #define gfarmSecSessionAddPollEvent(s, m) { s->pollEvent |= (m); }
 #define gfarmSecSessionDeletePollEvent(s, d) { s->pollEvent &= ~(d); }
 
+/*
+ * multiplexed version
+ */
+struct gfarm_eventqueue;
+struct gfarmSecSessionInitiateState;
+
+extern struct gfarmSecSessionInitiateState *gfarmSecSessionInitiateRequest(
+							struct gfarm_eventqueue *q,
+							int fd,
+							gss_cred_id_t cred,
+							gfarmSecSessionOption *ssOptPtr,
+							void (*continuation)(void *),
+							void *closure,
+							OM_uint32 *majStatPtr,
+							OM_uint32 *minStatPtr);
+extern gfarmSecSession *gfarmSecSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
+						      OM_uint32 *majStatPtr,
+						      OM_uint32 *minStatPtr);
+
 #endif /* _GFARM_SECURE_SESSION_H_ */
