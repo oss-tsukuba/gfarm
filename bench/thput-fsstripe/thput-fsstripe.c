@@ -20,8 +20,11 @@ int iosize = 4096;
 int iosize_alignment = 512;
 int iosize_minimum_division = 65536;
 
+int verbose_mode = 0;
+
 void
-worker(off_t offset,
+worker(char *filename,
+	off_t offset,
 	off_t size,
 	off_t interleave_factor,
 	off_t full_stripe_size)
@@ -29,11 +32,18 @@ worker(off_t offset,
 	off_t chunk_size;
 	int rv;
 	char buffer[MAX_IOSIZE];
+	int fd = open(filename, O_RDONLY);
 
-	fprintf(stderr, "off=%lld size=%lld ileave=%lld stripe=%lld\n",
-	    offset, size, interleave_factor, full_stripe_size);
+	if (fd == -1) {
+		perror(filename);
+		exit(1);
+	}
+	if (verbose_mode) {
+		fprintf(stderr, "off=%lld size=%lld ileave=%lld stripe=%lld\n",
+		    offset, size, interleave_factor, full_stripe_size);
+	}
 
-	if (lseek(STDIN_FILENO, offset, SEEK_SET) == -1) {
+	if (lseek(fd, offset, SEEK_SET) == -1) {
 		perror("lseek");
 		exit(1);
 	}
@@ -41,7 +51,7 @@ worker(off_t offset,
 		chunk_size = interleave_factor == 0 || size < interleave_factor
 		    ? size : interleave_factor;
 		for (; chunk_size > 0; chunk_size -= rv, size -= rv) {
-			rv = read(STDIN_FILENO, buffer, chunk_size < iosize ?
+			rv = read(fd, buffer, chunk_size < iosize ?
 			    chunk_size : iosize);
 			if (rv <= 0) {
 				if (rv == -1) {
@@ -57,7 +67,7 @@ worker(off_t offset,
 		if (size <= 0)
 			break;
 		offset += full_stripe_size;
-		if (lseek(STDIN_FILENO, (off_t)offset, SEEK_SET) == -1) {
+		if (lseek(fd, (off_t)offset, SEEK_SET) == -1) {
 			perror("lseek");
 			exit(1);
 		}
@@ -65,7 +75,7 @@ worker(off_t offset,
 }
 
 void
-simple_division(int n, off_t file_size)
+simple_division(char *filename, int n, off_t file_size)
 {
 	off_t offset = 0, residual = file_size;
 	off_t size_per_division = file_size / n;
@@ -83,7 +93,7 @@ simple_division(int n, off_t file_size)
 
 		switch (fork()) {
 		case 0:
-			worker(offset, size, 0, 0);
+			worker(filename, offset, size, 0, 0);
 			exit(0);
 		case -1:
 			perror("fork");
@@ -98,7 +108,7 @@ simple_division(int n, off_t file_size)
 }
 
 void
-striping(int n, off_t file_size, off_t interleave_factor)
+striping(char *filename, int n, off_t file_size, off_t interleave_factor)
 {
 	off_t full_stripe_size = (off_t)interleave_factor * n;
 	off_t stripe_number = file_size / full_stripe_size;
@@ -130,7 +140,7 @@ striping(int n, off_t file_size, off_t interleave_factor)
 
 		switch (fork()) {
 		case 0:
-			worker(offset, size, interleave_factor,
+			worker(filename, offset, size, interleave_factor,
 			    full_stripe_size);
 			exit(0);
 		case -1:
@@ -168,7 +178,7 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [options]\n", program_name);
+	fprintf(stderr, "Usage: %s [options] <input_file>\n", program_name);
 	fprintf(stderr, "\t-a <iosize_alignment>\n");
 	fprintf(stderr, "\t-b <blocking_size>\n");
 	fprintf(stderr, "\t-g <full_stripe_size> (gap between stripe)\n");
@@ -177,6 +187,7 @@ usage(void)
 	fprintf(stderr, "\t-o <offset> (slave mode)\n");
 	fprintf(stderr, "\t-p <parallelism>\n");
 	fprintf(stderr, "\t-s <file_size>\n");
+	fprintf(stderr, "\t-v\t(verbose)\n");
 	exit(1);
 }
 
@@ -193,12 +204,13 @@ main(int argc, char **argv)
 	int parallelism = 1;
 	off_t file_size = -1;
 	int ch, sv;
+	char *filename;
 	struct stat s;
 	struct timeval t1, t2;
 
 	if (argc > 0)
 		program_name = argv[0];
-	while ((ch = getopt(argc, argv, "a:b:g:i:m:o:p:s:")) != -1) {
+	while ((ch = getopt(argc, argv, "a:b:g:i:m:o:p:s:v")) != -1) {
 		switch (ch) {
 		case 'a':
 			iosize_alignment = strtoll(optarg, NULL, 0);
@@ -225,6 +237,9 @@ main(int argc, char **argv)
 		case 's':
 			file_size = strtoll(optarg, NULL, 0);
 			break;
+		case 'v':
+			verbose_mode = 1;
+			break;
 		case '?':
 			/*FALLTHROUGH*/
 		default:
@@ -233,14 +248,19 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+	if (argc != 1) {
+		fprintf(stderr, "<input_file_name> is needed\n");
+		exit(1);
+	}
+	filename = argv[0];
 
 	if (file_size == -1) {
-		if (fstat(STDIN_FILENO, &s) == -1) {
-			perror("fstat");
+		if (stat(filename, &s) == -1) {
+			perror("stat");
 			exit(1);
 		}
 		if (!S_ISREG(s.st_mode)) {
-			fprintf(stderr, "the standard input is not a file\n");
+			fprintf(stderr, "%s: not a file\n", filename);
 			exit(1);
 		}
 		file_size = s.st_size;
@@ -255,15 +275,16 @@ main(int argc, char **argv)
 	limit_division(&parallelism, file_size);
 
 	if (slave_mode) {
-		worker(offset, file_size, interleave_factor, full_stripe_size);
+		worker(filename, offset, file_size,
+		    interleave_factor, full_stripe_size);
 		return (0);
 	}
 
 	gettimeofday(&t1, NULL);
 	if (full_stripe_size == 0 && interleave_factor == 0) {
-		simple_division(parallelism, file_size);
+		simple_division(filename, parallelism, file_size);
 	} else if (interleave_factor != 0) {
-		striping(parallelism, file_size, interleave_factor);
+		striping(filename, parallelism, file_size, interleave_factor);
 	} else {
 		interleave_factor = full_stripe_size / parallelism;
 		if ((interleave_factor / iosize_alignment) * iosize_alignment
@@ -271,7 +292,7 @@ main(int argc, char **argv)
 			interleave_factor =
 			    ((interleave_factor / iosize_alignment) + 1) *
 			    iosize_alignment;
-		striping(parallelism, file_size, interleave_factor);
+		striping(filename, parallelism, file_size, interleave_factor);
 	}
 	while (waitpid(-1, &sv, 0) != -1 || errno != ECHILD)
 		;
