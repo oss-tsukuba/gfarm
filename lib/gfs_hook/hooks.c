@@ -402,6 +402,57 @@ execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
+ * utimes
+ */
+
+int
+__utimes(const char *path, const struct timeval *tvp)
+{
+	char *e, *url, *sec;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %x)\n",
+	    path, tvp));
+	if (!gfs_hook_is_url(path, &url, &sec))
+		return syscall(SYS_utime, path, tvp);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __utimes(%s)\n", url));
+	if (tvp == NULL)
+		e = gfs_utimes(url, NULL);
+	else {
+		struct gfarm_timespec gt[2];
+		
+		gt[0].tv_sec = tvp[0].tv_sec;
+		gt[0].tv_nsec= tvp[0].tv_usec * 1000;
+		gt[1].tv_sec = tvp[1].tv_sec;
+		gt[1].tv_nsec= tvp[1].tv_usec * 1000;
+		e = gfs_utimes(url, gt);
+	}
+	free(url);
+	if (sec != NULL)
+		free(sec);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __utimes: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int 
+_utimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(fputs("Hooking _utimes\n", stderr));
+	return (__utimes(path, tvp));
+}
+
+int 
+utimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(fputs("Hooking utimes\n", stderr));
+	return (__utimes(path, tvp));
+}
+
+/*
  * definitions for "hooks_common.c"
  */
 

@@ -6,6 +6,7 @@
 #include <sys/socket.h> /* struct sockaddr */
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/time.h> /* for gfs_utime() */
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -111,6 +112,40 @@ gfs_access(char *gfarm_url, int mode)
 	e = gfarm_path_info_access(&pi, mode);
 	gfarm_path_info_free(&pi);
 
+	return (e);
+}
+
+char *
+gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
+{
+	char *e, *gfarm_file;
+	struct gfarm_path_info pi;
+	struct timeval now;
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	free(gfarm_file);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_info_access(&pi, GFS_W_OK);
+	if (e != NULL)
+		return (e);
+	if (tsp == NULL) {
+		gettimeofday(&now, NULL);
+		pi.status.st_atimespec.tv_sec = 
+		pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		pi.status.st_atimespec.tv_nsec = 
+		pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
+	} else {
+		pi.status.st_atimespec = tsp[0];
+		pi.status.st_mtimespec = tsp[1];
+	}
+	pi.status.st_ctimespec.tv_sec = now.tv_sec;
+	pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+	e = gfarm_path_info_replace(pi.pathname, &pi);
+	gfarm_path_info_free(&pi);
 	return (e);
 }
 

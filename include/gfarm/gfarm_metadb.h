@@ -59,6 +59,7 @@ struct gfarm_path_info {
 void gfarm_path_info_free(struct gfarm_path_info *);
 char *gfarm_path_info_get(char *, struct gfarm_path_info *);
 char *gfarm_path_info_set(char *, struct gfarm_path_info *);
+char *gfarm_path_info_replace(char *, struct gfarm_path_info *);
 char *gfarm_path_info_remove(char *);
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */

@@ -62,11 +62,6 @@ gfs_file_free(GFS_File gf)
 	free(gf);
 }
 
-#define GFS_F_OK	0
-#define GFS_X_OK	1
-#define GFS_W_OK	2
-#define GFS_R_OK	4
-
 /*
  * note that unlike access(2), gfarm_path_info_access() doesn't/can't check
  * access permission of ancestor directories.

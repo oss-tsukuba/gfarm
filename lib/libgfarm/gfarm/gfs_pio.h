@@ -49,6 +49,11 @@ struct gfs_file {
 
 char *gfs_unlink_section(const char *, const char *);
 
+#define GFS_F_OK	0
+#define GFS_X_OK	1
+#define GFS_W_OK	2
+#define GFS_R_OK	4
+
 char *gfarm_path_info_access(struct gfarm_path_info *, int);
 
 char *gfs_pio_set_view_default(GFS_File);

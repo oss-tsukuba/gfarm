@@ -848,34 +848,13 @@ gfarm_path_info_validate(void *vinfo)
 	);
 }
 
-void
-gfarm_path_info_free(
-	struct gfarm_path_info *info)
-{
-	if (info->pathname != NULL)
-		free(info->pathname);
-	if (info->status.st_user != NULL)
-		free(info->status.st_user);
-	if (info->status.st_group != NULL)
-		free(info->status.st_group);
-}
-
-char *gfarm_path_info_get(
+static char *
+gfarm_path_info_update(
 	char *pathname,
-	struct gfarm_path_info *info)
-{
-	struct gfarm_path_info_key key;
-
-	key.pathname = pathname;
-
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_path_info_ops));
-}
-
-char *
-gfarm_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	struct gfarm_path_info *info,
+	int mod_op,
+	char *(*update_op)(void *, LDAPMod **,
+	    const struct gfarm_generic_info_ops *))
 {
 	int i;
 	LDAPMod *modv[13];
@@ -906,47 +885,89 @@ gfarm_path_info_set(
 	sprintf(ctimespec_nsec_string, "%d", info->status.st_ctimespec.tv_nsec);
 	sprintf(nsections_string, "%d", info->status.st_nsections);
 	i = 0;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "objectclass", "GFarmPath", &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "pathname", pathname, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "mode", mode_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "user", info->status.st_user, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "group", info->status.st_group, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "atimesec", atimespec_sec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "atimensec", atimespec_nsec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "mtimesec", mtimespec_sec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "mtimensec", mtimespec_nsec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "ctimesec", ctimespec_sec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "ctimensec", ctimespec_nsec_string, &storage[i]);
 	i++;
-	set_string_mod(&modv[i], LDAP_MOD_ADD,
+	set_string_mod(&modv[i], mod_op,
 		       "nsections", nsections_string, &storage[i]);
 	i++;
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_generic_info_set(&key, modv,
+	return ((*update_op)(&key, modv, &gfarm_path_info_ops));
+}
+
+void
+gfarm_path_info_free(
+	struct gfarm_path_info *info)
+{
+	if (info->pathname != NULL)
+		free(info->pathname);
+	if (info->status.st_user != NULL)
+		free(info->status.st_user);
+	if (info->status.st_group != NULL)
+		free(info->status.st_group);
+}
+
+char *gfarm_path_info_get(
+	char *pathname,
+	struct gfarm_path_info *info)
+{
+	struct gfarm_path_info_key key;
+
+	key.pathname = pathname;
+
+	return (gfarm_generic_info_get(&key, info,
 	    &gfarm_path_info_ops));
+}
+
+
+char *
+gfarm_path_info_set(
+	char *pathname,
+	struct gfarm_path_info *info)
+{
+	return (gfarm_path_info_update(pathname, info,
+	    LDAP_MOD_ADD, gfarm_generic_info_set));
+}
+
+char *
+gfarm_path_info_replace(
+	char *pathname,
+	struct gfarm_path_info *info)
+{
+	return (gfarm_path_info_update(pathname, info,
+	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
 }
 
 char *
