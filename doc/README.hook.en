@@ -34,12 +34,12 @@ in Solaris.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/libc-not-hidden.so'
+	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/libc-not-hidden.so'
+	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libc-not-hidden.so'
 
 You can specify the above in the shell rc file such as .bashrc and
 .cshrc.  However, tcsh and zsh are not tested well at this time.  We
