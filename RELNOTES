@@ -1,5 +1,60 @@
-Copyright (c) 2003 National Institute of Advanced Industrial Science
-and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003, 2004 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
+
+Release note for Gfarm 1.0.4
+============================
+
+[2004.8.23]
+
+Updated Features
+
+ * New I/O functions; gfs_fchmod and gfs_rename.  Gfs_rename only
+   supports to rename a file not a directory in this version.
+
+ * Global and local file view enhancement for executable files.
+
+ * gfs_chmod(3) - allows to change execution bits if it has only one
+   file fragment.
+
+ * Shared library support
+
+ * gfsd - added new protocols for creating a hard link and renaming a file.
+
+ * libgfarm - added timeout for metadata cache.
+
+ * Syscall hooking library
+
+  - New syscall hook entries; fchmod, rename, dup, getxattr,
+    lgetxattr, and fgetxattr.
+
+  - '/gfarm' is now translated to 'gfarm:/' not 'gfarm:'.  '/gfarm/~'
+    and '/gfarm/.' specifies the home directory and the current
+    working directory in Gfarm file system, respectively.
+
+  - More support for bash.  It is possible to change the current
+    working directory by 'cd' such as 'cd /gfarm/~'.  For more
+    details, refer to README.hook.en document.
+
+ * Bug fix
+
+  - gfrm cannot remove a file that has invalid metadata. (Bugzilla #12)
+
+  - gfimport_text creates an incomplete Gfarm file. [gfarm-discuss:00092]
+
+  - gfsplck does not delete an invalid file when it is not a regular
+    file. (Bugzilla-ja #29)
+
+  - Include path for openssl is missing. (Bugzilla-ja #33)
+
+  - Inactive local file system node may be selected. (Bugzilla-ja #31)
+
+  - Fixed a segfault problem during parallel gsi_auth authentications.
+
+ * Documentation
+
+  (README.hook.en) describes how to access Gfarm file system by
+		   existing binary programs without any modification
+		   as if it is mounted at /gfarm.
 
 Release note for Gfarm 1.0.3.1
 ==============================

@@ -1,3 +1,320 @@
+2004-08-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c (gfarm_auth_result_gsi_auth_multiplexed):
+	fixed a segfault bug during parallel gsi_auth authentications.
+
+	* lib/gfs_hook/hooks.c (__dup2):
+	Fixed a bug introduced in the revision 1.48.
+	syscall(SYS_dup2) should be called after gfs_hook_set_descriptor().
+
+2004-08-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c: LP64 cleanup
+
+	* lib/gfs_hook/lseek64.c: port to linux/x86_64
+
+	* lib/gfs_hook/sysdep/linux/fxstat.c, lib/gfs_hook/sysdep/linux/fxstat64.c, lib/gfs_hook/sysdep/linux/lxstat.c, lib/gfs_hook/sysdep/linux/lxstat64.c, lib/gfs_hook/sysdep/linux/xstat.c, lib/gfs_hook/sysdep/linux/xstat64.c:
+	- port to x86_64
+	- fix bugs, if 64bit system-calls failed with ENOSYS on i386
+
+	* lib/gfs_hook/sysdep/linux/sysdep.h:
+	move machine independent definition to outside of #idef
+
+	* lib/gfs_hook/sysdep/linux/sysdep.h:
+	- protect i386 dependent definition by defined(__i386__)
+	- add x86_64 dependent definition in defined(__x86_64__) clause.
+	  this is copied from glibc-2.3.1/sysdeps/unix/sysv/linux/x86_64/sysdep.h
+	- call #error on anything else
+
+	* lib/gfs_hook/sysdep/linux/Makefile, lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/getdents64.c, lib/gfs_hook/sysdep/linux/getdents_common.c:
+	rename back getdents_common.c to getdents.c, because previous getdents.c was
+	empty, and getdents.c is the original name of this content in glibc-2.3.1.
+
+	* lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/getdents64.c:
+	don't define __LINUX_KERNEL_VERSION, because this makes the object more
+	portable (i.e. works with more versions of linux kernel.)
+
+	* lib/gfs_hook/sysdep/linux/getdents.h, lib/gfs_hook/sysdep/linux/sysdep.h:
+	rename getdents.h to sysdep.h, because sysdep.h is the original name
+	in glibc-2.3.1, and more appropriate for this definition
+
+	* lib/gfs_hook/sysdep/linux/Makefile, lib/gfs_hook/sysdep/linux/getdents.c, lib/gfs_hook/sysdep/linux/getdents64.c, lib/gfs_hook/sysdep/linux/getdents_common.c:
+	make these files looks more similar to original version in
+	glibc-2.3.1/sysdeps/unix/sysv/linux/
+
+	* lib/gfs_hook/Makefile: repair the build for test programs
+
+2004-08-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/Makefile: Fix a typo about DEBUG_CFLAGS.
+	Delete unnecessary -o target because $(LTLINK) already has it.
+
+2004-08-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c, gftool/gfhost/gfhost.c:
+	portability problem on LP64 platforms like x86_64
+
+	* lib/libgfarm/gfarm/xxx_proto.c:
+	use va_copy() to fix portability problem to x86_64, powerpoc, ...
+
+	* lib/libgfarm/gfarm/gfs_unlink.c:
+	add #include <sys/time.h> for gettimeofday(2)
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	- change 6th argument of gfs_digest_calculate_local() from "unsigned *"
+	  to "size_t *" for x86_64
+	- add #include <sys/time.h> for gettimeofday(2)
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_proto.c, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/gfsd.c:
+	change 6th argument of gfs_digest_calculate_local() from "unsigned *"
+	to "size_t *" for x86_64
+
+	* configure: regen
+
+	* configure.ac: search gcc64* as globus_flavor for x86_64
+
+2004-08-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_set_view_default):
+	flush the io buffer before closing a file section.
+	This fixes a problem reported in [gfarm-discuss:00092].
+
+2004-08-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/Makefile: correct a comment.
+	this is the result that libgfarm.so now depends on globus gssapi libraries
+	by the change of revision 1.9 of lib/libgfarm/Makefile.
+
+	* lib/libgfarm/Makefile:
+	remove a hack which makes this library not to depend on $(globus_gssapi_libs),
+	if --with-globus-shared is specified.
+	because embeding globus objects to libgfarm.so is rather desired in that
+	case.
+
+	* makes/config.mk.in:
+	back out previous change about $(INSTALL) setting, because /usr/bin/install
+	doesn't automatically create parent directories.
+
+2004-08-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: add shared objects.
+	add new sub-package "libs" for runtime part.
+
+	* ns/gfarmd/Makefile.in, ns/nslib/Makefile.in, ns/nstool/file/Makefile.in, Makefile.in:
+	remove unnecessary $(VPATH) setting (it's done in makes/var.mk now)
+
+	* makes/make.sh: make this work with $(top_srcdir) != $(top_builddir)
+
+	* lib/gfs_hook/Makefile, makes/script.mk, makes/var.mk:
+	repair build for $(top_srcdir) != $(top_builddir)
+
+	* configure: regen
+
+	* configure.ac: dynamically search globus flavor
+
+	* makes/include.mk:
+	$(EXEC_INCS) must be removed at "make distclean" instead of "make veryclean",
+	because it's made at configure time
+
+	* lib/gfs_hook/Makefile:
+	don't use -L$(top_builddir)/lib/libgfarm, this prevents libtool from
+	accidentally link a static library (libgfarm.a) at installation time.
+
+	* lib/libgfarm/gfsl/session.c: make some private functions static
+
+	* Makefile.in: remove libtool at "make distclean"
+
+	* makes/make.sh: A script to be used as an alternative of "make",
+	when $(top_builddir) is different from $(top_srcdir) and
+	there isn't Makefile.in the $(srcdir).
+	It isn't possible to simply invoke "make" on such directories,
+	because there is no Makefile in the directory, although there
+	is a Makefile in $(srcdir).
+
+	* ns/gfarm/Makefile, ns/gfarmd/Makefile.in, ns/nslib/Makefile.in, ns/nstool/file/Makefile.in:
+	use libtool to build shared libraries
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/Makefile.inc, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/Makefile.inc, lib/Makefile, lib/gfs_hook/Makefile, lib/gfs_hook/Makefile.in, lib/gfs_hook/sysdep/linux/Makefile, lib/gfs_hook/sysdep/linux/Makefile.in, lib/libgfarm/Makefile, makes/var.mk:
+	- use libtool to build shared libraries
+	- use lib.mk
+
+	* lib/gfs_hook/sysdep/default/Makefile, lib/gfs_hook/sysdep/default/dummy.c:
+	- change the way how lib/gfs_hook/sysdep directory is detected
+	- use libtool
+
+	* makes/lib.mk: - provide this for libraries
+	- use libtool to build shared libraries
+
+	* makes/prog.mk: - use libtool to build shared libraries
+	- change the void marker of pathname from "/" to "--"
+	- don't show (ignored) error message, if there is no file to remove
+
+	* gfptool/Makefile: rename $(mpi_subdirs) to $(mpi_targets)
+
+	* makes/config.mk.in: - use libtool to build shared libraries
+	- move definition of $(exec_includedir) from configure to here
+	- refer $(globus_shared)
+	- rename {globus,mpi}_subdirs to {globus,mpi}_targets
+	- rename $(gfs_hook_lfs64_objs) to largefile64_objs,
+	  and define largefile64__{srcs,cflags,targets} as well
+	- change the way how lib/gfs_hook/sysdep directory is detected
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure.ac: - use libtool to build shared libraries
+	- move definition of $(exec_includedir) from here to makes/config.mk
+	- detect gcc automatically
+	- be more verbose about --with-PACKAGE
+	- export $(globus_shared)
+	- rename {globus,mpi}_subdirs to {globus,mpi}_targets
+	- rename $(gfs_hook_lfs64_objs) to $(largefile64_objs),
+	  and define largefile64__{srcs,cflags,targets} as well
+	- change the way how lib/gfs_hook/sysdep directory is detected
+	- change Makefile.in under lib/gfs_hook to Makefile
+
+	* aclocal.m4:
+	copied from ${prefix}/share/aclocal/libtool.m4 in libtool-1.5.6
+
+	* makes/ltmain.sh:
+	copied from ${prefix}/share/libtool/ltmain.sh in libtool-1.5.6
+
+	* gfptool/util/Makefile, util/gfront/Makefile, util/ptool/Makefile:
+	use script.mk
+
+	* makes/script.mk: provide this for scripts installation
+
+	* doc/Makefile: change the void marker of pathname from "/" to "--"
+
+	* makes/html.mk, makes/include.mk, makes/man.mk, makes/subdir.mk:
+	- change the void marker of pathname from "/" to "--"
+	- don't show (ignored) error message, if there is no file to remove
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* Makefile.in, acconfig.h, config.guess, config.sub, configure.ac, configure.in, install-sh, makes/config.guess, makes/config.sub, makes/install-sh:
+	switch from autoconf-2.13 to autoconf-2.57
+
+	* util/gfront/Makefile, util/ptool/Makefile: use $(INSTALL_SCRIPT)
+
+	* makes/config.mk.in:
+	- use configure generated @INSTALL@ instead of handcrafted one
+	- define $(INSTALL_SCRIPT)
+
+	* ns/nslib/Makefile.in: - use "$(MAKE)" instead of "make"
+	- fix typo in "install" target
+
+	* server/gfmd/Makefile, server/gfsd/Makefile, util/gfront/Makefile, util/ptool/Makefile, ns/gfarmd/Makefile.in, ns/nstool/Makefile, ns/nstool/file/Makefile.in, server/Makefile, man/ja/man8/Makefile, man/man1/Makefile, man/man3/Makefile, man/man5/Makefile, man/man8/Makefile, ns/Makefile, ns/gfarm/Makefile, lib/libgfarm/gfsl/Makefile, makes/var.mk, man/Makefile, man/ja/Makefile, man/ja/man1/Makefile, man/ja/man3/Makefile, man/ja/man5/Makefile, gftool/gfstat/Makefile, gftool/gfwhere/Makefile, gftool/gfwhoami/Makefile, include/gfarm/Makefile, lib/Makefile, lib/gfs_hook/sysdep/linux/Makefile.in, gftool/gfrep/Makefile, gftool/gfrm/Makefile, gftool/gfrmdir/Makefile, gftool/gfrun/Makefile, gftool/gfsched/Makefile, gftool/gfsck/Makefile, gftool/gfsetdir/Makefile, gftool/gfls/Makefile, gftool/gfmkdir/Makefile, gftool/gfmpirun/Makefile, gftool/gfps/Makefile, gftool/gfpwd/Makefile, gftool/gfrcmd/Makefile, gftool/gfreg/Makefile, gftool/example/Makefile, gftool/example/gfimport_fixed/Makefile, gftool/example/gfimport_text/Makefile, gftool/gfexec/Makefile, gftool/gfexport/Makefile, gftool/gfhost/Makefile, gftool/gfkey/Makefile, gfptool/gfwc/Makefile, gfptool/util/Makefile, gftool/Makefile, gftool/addpath/Makefile, gftool/digest/Makefile, gfptool/gfcp/Makefile, gfptool/gfcp_hook/Makefile, gfptool/gfgrep/Makefile, gfptool/gfrepbe_client/Makefile, gfptool/gfrepbe_server/Makefile, gfptool/gfsplck/Makefile, doc/html/ja/ref/man1/Makefile, doc/html/ja/ref/man3/Makefile, doc/html/ja/ref/man5/Makefile, doc/html/ja/ref/man8/Makefile, gfptool/Makefile, gfptool/gfcombine/Makefile, gfptool/gfcombine_hook/Makefile, doc/html/Makefile, doc/html/en/ref/Makefile, doc/html/en/ref/man1/Makefile, doc/html/en/ref/man3/Makefile, doc/html/en/ref/man5/Makefile, doc/html/en/ref/man8/Makefile, doc/html/ja/ref/Makefile, bench/bwlat-syscache/Makefile, bench/nconnect/Makefile, bench/thput-fsstripe/Makefile, bench/thput-fsys/Makefile, bench/thput-gfpio/Makefile, bench/thput-pvfs/Makefile, doc/Makefile, Makefile.in, bench/Makefile:
+	rename "objdir" to "builddir" to conform to the libtool convention
+
+	* lib/gfs_hook/Makefile.in:
+	- rename "objdir" to "builddir" to conform to the libtool convention
+	- remove unneeded assignments to top_objdir and VPATH
+
+	* ns/include/gfarm/Makefile, ns/nslib/Makefile.in:
+	- make this work with relative srcdir
+	- rename "objdir" to "builddir" to conform to the libtool convention
+
+	* makes/subdir.mk: make this work with relative srcdir
+
+	* makes/include.mk: use $(INCS) instead of *.h
+
+	* lib/libgfarm/Makefile:
+	- don't use ${ldap_srcs}, ${ldap_objs} any more
+	- rename "objdir" to "builddir" to conform to the libtool convention
+
+	* lib/libgfarm/gfarm/Makefile.inc:
+	don't use ${ldap_srcs}, ${ldap_objs} any more
+
+	* makes/config.mk.in: remove unnecessary variables
+
+	* configure: regen
+
+	* configure.in:
+	- reorder to make this mostly conform to the autoconf standard convention
+	- remove unnecessary variables
+
+2004-08-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	corrected typographical errors that using leading spaces instead of tabs.
+
+	* lib/gfs_hook/hooks.c: Added rename hook.
+
+2004-08-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/gfmd.c: plug memory leak
+
+	* lib/gfs_hook/hooks.c: make utime(2) hook more portable
+
+	* lib/libgfarm/gfarm/host.c: avoid unnecessary gethostbyname() call
+
+	* lib/libgfarm/gfarm/config.c: off by one error
+
+2004-08-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_rename_file(): Pluged a memory leak.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	Added gfs_rename(), but it does not support directory handling in this
+	revision.
+
+	* server/gfsd/gfsd.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.h:
+	Added GFS_PROTO_LINK protocol and its handlers.
+
+2004-08-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfexec/gfexec.c:
+	Fixed a buffer overrun bug introduced by the previous commit.
+
+	* lib/libgfarm/gfarm/gfs_pio.h, gftool/gfexec/gfexec.c, gftool/gfrun/gfrun.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_init_mpi.c, lib/libgfarm/gfarm/config.c:
+	Added the -b option for gfrun to set global file view as a default view for programs that link with Gfarm syscall-hooking library.
+	Added the --gfarm_hook_global option for gfexec.
+
+	* doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man8/gfmd.8, man/man8/gfsd.8:
+	regen
+
+	* doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook:
+	Corrected the description related to gfsd and gfmd running in a user privilege.
+
+	* doc/README.hook.en: Rewrote many sections by introducing LD_PRELOAD.
+
+	* INSTALL.en, INSTALL.ja: Added description related to LD_PRELOAD.
+	Updated other sections including the introduction.
+
+2004-08-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/inode.c: plug memory leak
+
+	* server/gfmd/fs.c, server/gfmd/gfmd.c, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/peer.c, server/gfmd/process.c, server/gfmd/process.h:
+	bug fix - deal with realloc().
+	use internal_ino_t instead of "struct inode *" for long term use
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfs_proto.h, makes/var.mk:
+	gfarm v2 initial commit
+
+	* server/gfmd/fs.c, server/gfmd/fs.h, server/gfmd/group.c, server/gfmd/group.h, server/gfmd/host.c, server/gfmd/host.h, server/gfmd/id_table.c, server/gfmd/id_table.h, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/job.c, server/gfmd/job.h, server/gfmd/peer.c, server/gfmd/peer.h, server/gfmd/process.c, server/gfmd/process.h, server/gfmd/subr.c, server/gfmd/subr.h, server/gfmd/user.c, server/gfmd/user.h:
+	New file.
+
+	* server/gfmd/Makefile, server/gfmd/fs.c, server/gfmd/fs.h, server/gfmd/gfmd.c, server/gfmd/group.c, server/gfmd/group.h, server/gfmd/host.c, server/gfmd/host.h, server/gfmd/id_table.c, server/gfmd/id_table.h, server/gfmd/inode.c, server/gfmd/inode.h, server/gfmd/job.c, server/gfmd/job.h, server/gfmd/peer.c, server/gfmd/peer.h, server/gfmd/process.c, server/gfmd/process.h, server/gfmd/subr.c, server/gfmd/subr.h, server/gfmd/user.c, server/gfmd/user.h, acconfig.h, configure.in:
+	gfarm v2 initial commit
+
+	* include/gfarm/error.h, include/gfarm/group_info.h, include/gfarm/host_info.h, include/gfarm/user_info.h:
+	New file.
+
+	* include/gfarm/error.h, include/gfarm/gfarm.h, include/gfarm/gfarm_config.h.in, include/gfarm/gfarm_error.h, include/gfarm/gfarm_misc.h, include/gfarm/gfarm_stringlist.h, include/gfarm/gfs.h, include/gfarm/group_info.h, include/gfarm/host_info.h, include/gfarm/user_info.h, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c:
+	gfarm v2 initial commit
+
+	* lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/config_server.c, lib/libgfarm/gfarm/gfm_client.h, lib/libgfarm/gfarm/gfp_xdr.c, lib/libgfarm/gfarm/gfp_xdr.h, lib/libgfarm/gfarm/liberror.c, lib/libgfarm/gfarm/liberror.h:
+	New file.
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/config_server.c, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfm_client.h, lib/libgfarm/gfarm/gfm_proto.h, lib/libgfarm/gfarm/gfp_xdr.c, lib/libgfarm/gfarm/gfp_xdr.h, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/hostspec.h, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/io_fd.h, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/io_gfsl.h, lib/libgfarm/gfarm/iobuffer.c, lib/libgfarm/gfarm/iobuffer.h, lib/libgfarm/gfarm/liberror.c, lib/libgfarm/gfarm/liberror.h, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/param.h, lib/libgfarm/gfarm/sockopt.c, lib/libgfarm/gfarm/sockopt.h, lib/libgfarm/gfarm/stringlist.c:
+	gfarm v2 initial commit
+
+2004-08-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2004-08-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/Makefile.in:
@@ -4036,7 +4353,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.29 2004/06/21 13:55:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.30 2004/08/07 11:16:26 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
