@@ -1,4 +1,80 @@
+2002-04-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfs_pio_remote.c: avoid inefficient GFS_PROTO_WRITE request.
+	partial read/write are already cared by upper gfs_pio layer.
+
+	* gfsd/main.c:
+	do not cause fatal error when buffer bigger than GFS_PROTO_MAX_IOSIZE
+	are passed by GFS_PROTO_READ and GFS_PROTO_WRITE, but perform partial
+	i/o operation for that case.
+	note that client should avoid such case for GFS_PROTO_WRITE, because
+	it is inefficient.
+
+	* gfarmlib/iobuffer.h:
+	add a comment about *_just() and *_x() functions.
+
+2002-04-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	use file_offset_t and related macro to make thput-gfpio work on platforms
+	which don't support "long long".
+	but do not use that way for thput-fsys, to make it independent of gfarm.
+
+2002-04-15  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	Double-precision floating division is replaced with multiplication.
+	Changed type format from ld to lld when printing file_size.
+
+2002-04-10  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* include/comm.h, include/gflib.h, include/ns.h, include/nsclnt.h, include/nsexec.h:
+	Catched up with the change of gfarm-related header files' path.
+
+	* bench/thput-fsys/thput-fsys.c (timeval_sub):
+	Changed division to multiplication.
+
+2002-04-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexport/gfexport.c: - use gfs_pio_get_nfragment()
+	- call gfs_pio_open() only once for fragmented file
+
+	* gftool/gfwhere/gfwhere.c: plug minor memory leak
+
+	* gfarmlib/metadb_misc.c:
+	use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+
+	* gfarmlib/gfs_pio.c:
+	- rename gfs_pio_error() to gfs_pio_clearerr() just like <stdio.h>
+	- define gfs_pio_get_nfragment()
+	- honor umask
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+
+	* gfarmlib/gfs_pio_misc.c:
+	use GFARM_S_IS_FRAGMENTED and GFARM_S_IS_PROGRAM
+
+	* gfarmlib/gfs_pio_section.c:
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+	- be more robust when gfarm_path_info_set returns GFARM_ERR_ALREADY_EXISTS
+
+	* gfarmlib/gfs_pio_global.c:
+	- use GFARM_ERR_OPERATION_NOT_PERMITTED for program vs fragmented-file mismatch
+	- be more consistent about gf->error
+
+	* gfarmlib/gfs_pio_default.c: be more consistent about gf->error
+
+	* gfarmlib/gfs_pio.h:
+	- GFARM_IS_PROGRAM() is obsoleted by GFARM_S_IS_PROGRAM()
+
+	* include/gfs.h: - define GFARM_S_IS_FRAGMENTED and GFARM_S_IS_PROGRAM
+	- rename gfs_pio_error() to gfs_pio_clearerr() just like <stdio.h>
+	- define gfs_pio_get_nfragment()
+
 2002-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* bench/thput-gfpio/thput-gfpio.c:
 	Use gettimeofday() on every platform except i386.
