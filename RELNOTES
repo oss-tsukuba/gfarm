@@ -1,6 +1,103 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0b3
+============================
+
+[2003.8.20]
+
+Updated Features
+
+ * Client commands
+
+   (gfcd, gfpwd, gfmkdir, gfrmdir) Added.
+
+   (gfront) Added.  Gfarm file system browser.
+
+   (gfsched) Added the -p <program> option to restrict the selection
+             of hosts that can run the specified program.
+
+	     Added the -N <#nodes> option.
+
+	     Added the -U option to retain old behavior (i.e. do not
+	     check whether the user can log in or not.)
+
+   (gfrun) Enhanced the host selection to schedule hosts which can run
+	   a specified program.
+
+           Added -u and -g options to manually decide to pass gfarm
+	   specific command-line options or not.
+
+	   Added the -v option to display GSSAPI major and minor error
+	   status.
+
+	   Added the -p option to profile GFS PIO APIs.
+
+	   Added the -r option for on-demand replication.
+
+	   Added the -I option to specify an index name explicitly.
+	   This option is effective only with the file-affinity
+	   scheduling.
+
+   (gfrcmd) Added a functionality to execute .bashrc at login time.
+
+	    Added the -v option to display GSSAPI major and minor
+	    error status.
+
+   (gfrep) Supported a special case for replicating a Gfarm file with
+	   only one file fragment.  In this case, the file can be
+	   replicated by specifying only the -d option.
+
+   (gfreg) Added the -D <domain> option to limit filesystem nodes
+	   within the specified domainname.
+
+   (gfmpirun_p4) Added -G <Gfarm file> and -N <# nodes> options.
+
+   (gfhost) Added a feature such that gfhost selects hosts that the
+	    user successfully logs on.
+
+ * Parallel I/O Library
+
+   Only filesystem nodes successfully logged on are selected by every
+   command.
+
+   Employed better process scheduling.
+
+   Host alias name can be specified as a hostname.
+
+   Improved the overhead of GSI authentication and the performance of
+   data transfer with GSI.
+
+ * Syscall hooking libraries
+
+   Added an entry to hook utime().
+
+ * Configuration file
+
+   '*' can also be specified in a host specification part that means
+   all hosts.  'ALL' will be deprecated.
+
+ * Documentation
+
+   (README.hook) Added a section for C++ programs.
+
+   (INSTALL) Updated the description.
+
+ * Bug fix
+
+   (gfs_hook.o) Fixed a bug when hooking lseek64 on linux.
+
+   (libgfarm.a) Added a missing error condition.
+
+	        Fixed memory leak at LDAP access that is not described
+		in RFC1823.
+
+		Fix an off-by-one error that may cause core dump.
+
+   (gfsd) Fixed a bug such that gfsd that executes a user process
+	  cannot terminate and consume 100% of CPU when the invoked
+	  gfrcmd is already terminated before that.
+
 Release note for Gfarm 1.0b2
 ============================
 

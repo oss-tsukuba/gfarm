@@ -1,3 +1,575 @@
+2003-08-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfsched/gfsched.c:
+	add -U option to retain old behavior (i.e. do not check authentcation)
+
+	* lib/libgfarm/gfarm/schedule.c, include/gfarm/gfarm_misc.h:
+	check authentication success/failure on scheduling
+
+2003-08-19  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/ref/man1/gfront.1.html: Add description about gfront.
+
+	* doc/html/en/ref/index.html: Add gfront.
+
+	* doc/html/en/ref/man1/gfront.1.html: Add gfront manual.
+
+	* doc/docbook/ja/ref/man1/gfront.1.docbook: Add description.
+
+	* doc/docbook/en/ref/man1/Makefile.inc: Add gfront manual.
+
+	* doc/docbook/en/ref/man1/gfront.1.docbook, man/ja/man1/gfront.1:
+	Initial import of gfront manual.
+
+	* doc/docbook/ja/ref/man1/gfront.1.docbook: nit.
+
+	* doc/html/ja/ref/index.html: Add gfront manual link.
+
+	* doc/html/ja/ref/man1/gfront.1.html: Initial Import of gfront manual.
+
+	* doc/docbook/ja/ref/man1/Makefile.inc: Add gfront manual.
+
+	* doc/docbook/ja/ref/man1/gfront.1.docbook:
+	Initial Import of gfront manual.
+
+2003-08-19  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control: add flex and bison in Build-Depends section.
+
+2003-08-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* util/gfront/Makefile: remove "gfront" on "make distclean"
+
+	* lib/gfs_hook/hooks.c: backout previous (not intended) commit
+
+	* util/gfront/Makefile, lib/gfs_hook/hooks.c, Makefile.in:
+	install gfront and gfront.jar
+
+	* configure: regen
+
+	* configure.in: rewrite @prefix@ for util/gfront/gfront
+
+	* util/gfront/gfront.in:
+	- make this template configurable by the configure script
+	- avoid bash-ism (">&" isn't portable on bourne shells)
+
+2003-08-19  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* util/gfront/GFront/gfront/ChangeLookAndFeel.java, util/gfront/GFront/gfront/CommandOutput.java, util/gfront/GFront/gfront/DirectoryTreeNode.java, util/gfront/GFront/gfront/FileTableModel.java, util/gfront/GFront/gfront/FragmentEditor.java, util/gfront/GFront/gfront/GFAction.java, util/gfront/GFront/gfront/GFAppConst.java, util/gfront/GFront/gfront/GFLSParser.java, util/gfront/GFront/gfront/GFWHEREParser.java, util/gfront/GFront/gfront/GFWHEREParser2.java, util/gfront/GFront/gfront/GFront.java, util/gfront/GFront/gfront/GFrontApp.java, util/gfront/GFront/gfront/GFrontCommon.java, util/gfront/GFront/gfront/GFrontConst.java, util/gfront/GFront/gfront/GfhostList.java, util/gfront/GFront/gfront/ReadOnlyTableModel.java, util/gfront/GFront/gfront/RightClickDirTree.java, util/gfront/GFront/gfront/RightClickTable.java:
+	Initial import of gfront
+
+	* util/gfront/gfront.in, util/gfront/gfront.jar:
+	initial import of gfront
+
+2003-08-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client.c: remove unused variable
+
+2003-08-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfarm_metadb.h, lib/gfs_hook/hooks.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/metadb_ldap.c:
+	Added a hook entry fo utimes().
+
+2003-08-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth.h: add comment
+
+	* lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth.h:
+	allocate new authenticaion method identifier for new GSI authentiction protocol,
+	to avoid confusion which may be caused by communication between old gfarm GSI
+	and new gfarm GSI.
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c: better(?) error message
+
+	* lib/libgfarm/gfarm/auth_client.c:
+	a bug about state transition for parallel authenticaion.
+	expired GSI proxy credential makes this bug appear.
+
+2003-08-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfhost.1.html, man/man1/gfhost.1: regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook:
+	forgot to translate to english in previous commit
+
+	* gftool/gfhost/gfhost.c: fix a bug in previous commit
+
+	* doc/html/en/ref/man1/gfhost.1.html, doc/html/ja/ref/man1/gfhost.1.html, man/ja/man1/gfhost.1, man/man1/gfhost.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/gfhost.1.docbook, gftool/gfhost/gfhost.c:
+	- do not display error message with default function and -H function,
+	  as suggested by tatebe-san long ago.
+	- display authentication method with -H function as well as -l function
+
+	* lib/libgfarm/gfutil/gfevent.c:
+	return 0 instead of EDEADLK, if there is no pending event.
+
+2003-08-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c: forgot to set `just' flag
+
+	* man/man1/gfhost.1, doc/html/en/ref/man1/gfhost.1.html, doc/html/ja/ref/man1/gfhost.1.html, man/ja/man1/gfhost.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook: missing <para>
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfsl/Makefile.inc:
+	reflect reality
+
+	* lib/libgfarm/gfarm/schedule.c: stupid mistake
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfutil/Makefile.inc, lib/libgfarm/gfutil/gfevent.c, lib/libgfarm/gfutil/gfevent.h, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/timeval.c, doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/gfhost.1.docbook, gftool/gfhost/Makefile, gftool/gfhost/gfhost.c:
+	implement parallel authentication
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h:
+	- make gfarm_authorize() and gfarm_auth_request() return
+	  the authentication method
+	- implement parallel authentication
+
+	* lib/libgfarm/gfarm/io_gfsl.h: cosmetic change
+
+	* server/gfmd/gfmd.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/gfm_client.c, server/gfsd/gfsd.c:
+	make gfarm_authorize() and gfarm_auth_request() return
+	the authentication method
+
+	* lib/libgfarm/gfarm/auth_server_gsi.c: minor cosmetic change
+
+	* lib/libgfarm/gfarm/auth_common.c: fix off-by-one error
+
+2003-08-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Fixed a problem of buffer overrun when too long (invalid) section name is specified by the -I option.
+
+2003-08-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	use loadavg instead of (loadavg / h->host_info->ncpu) to count
+	number of semi_idle_hosts, to workaround a scheduling problem
+	with Hirano Tsuneo-san's program which 1GB memory.
+
+	* server/gfsd/gfsd.c:
+	changes corresponding to lib/libgfarm/gfarm/gfs_client.c revision 1.5.
+
+	it was possible that gfsd consumes 100% of cpu, if read(2) or write(2)
+	returns an error on gfs_server_client_command().
+	followings are done to solve this potential problem:
+	- check error status every time after calling gfarm_iobuffer_{read,write}()
+	  and make an appropriate action to deal with the error.
+	- don't call gfarm_iobuffer_{read,write}() without select(2),
+	  because it may cause EAGAIN.
+	  this behaviour is actually observed at the handler of
+	  GFS_COMMAND_CLIENT_STATE_OUTPUT.
+	  XXX there are still some such places.
+
+	This also includes the following change:
+	- if a socket with gfrcmd client is disconnected unexpectedly
+	  (e.g. by gfrcmd is killed by SIGKILL), send SIGTERM signal to
+	  a command which was invoked by the gfrcmd.
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	fix a bug that Hirano Tsuneo-san recently encounterd.
+
+	In this case, gfrcmd consumes 100% of cpu, although a remote command
+	which is invoked by the gfrcmd already finished.
+	The gfrcmd is trying to write an error message from the remote command
+	to stderr, but because the user has already logged out from the tty,
+	write(2) to stderr is returning -1 with errno == EIO.
+
+	followings are done to solve this bug:
+	- check error status every time after calling gfarm_iobuffer_{read,write}(),
+	  and make an appropriate action to deal with the error.
+	- don't call gfarm_iobuffer_{read,write}() without select(2),
+	  because it may cause EAGAIN.
+	  XXX there are still some such places.
+
+	This also includes the following change:
+	- fix missing error check for select(2)
+
+	* lib/libgfarm/gfarm/iobuffer.h:
+	add a comment about gfarm_iobuffer_get_error()
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c:
+	add GFARM_ERR_INTERRUPTED_SYSTEM_CALL
+	and GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE
+	which are corresponding to EINTR and EAGAIN
+
+2003-08-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Fixed a bug such that number of fragment is not specified correctly when the -I option is specified.
+
+2003-07-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfmpirun/gfmpirun.c:
+	Added -G <Gfarm file> and -N <# nodes> options.
+
+2003-07-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Added -I <section> option to specify an index name explicitly.  This option is effective only with the file-affinity scheduling.
+
+	* gftool/gfrun/gfrun.c: Added -r option for on-demand replication.
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_section.c:
+	config.c (gfarm_parse_argv): Added --gfarm_replicate option for on-demand replication.  In this case, every remote file will be replicated at access time.
+
+2003-07-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/schedule.h:
+	Moved the function declaration of gfarm_schedule_search_idle_by_domainname() to public place.
+
+	* gftool/gfreg/gfreg.c:
+	Added -D <domainname> option to limit filesystem nodes within the specified domainname.
+
+2003-07-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrep/gfrep.c:
+	Supported a special case for replicating a Gfarm file with only one file fragment as requested by [gfarm-discuss-ja:00002].  In this case, the file can be replicated by specifying the -d option.
+
+2003-07-11  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* doc/README.hook.en: fixed a typo at MPI section
+
+2003-07-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/session.c:
+	Moved GSS minor status initial value defintion.
+
+	* lib/libgfarm/gfsl/session.c:
+	negotiateConfigParam() Change GSS minor stats initial value.
+
+	* lib/libgfarm/gfsl/session.c:
+	negotiateConfigParam(): In previous revision, majStatPtr and minStatPtr are
+	unset in case of error before gfarmGssConfigureMessageSize() is called.
+	Corrected this problem.
+
+2003-07-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfmkdir/gfmkdir.c: - repair a mistake made at previous commit.
+	  gfs_client_mkdir() should be done, even if the directory already exists
+	  in metadb, because previous gfmkdir operation might fail on some nodes.
+	- don't report "already exists" error on every node, if metadata of the
+	  directory already exists.
+
+2003-07-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfsl/session.c:
+	negotiateConfigParam(): Send and receive 3 negotiation parameters with
+	force flags one time to reduce slow select(2) system call.
+
+2003-07-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrmdir/gfrmdir.c:
+	remove path_info, even if the directory is already removed in a spool.
+
+	* lib/libgfarm/gfarm/gfs_client.c: - provide gfs_client_hostname()
+	- slightly better error message
+
+	* lib/libgfarm/gfarm/gfs_client.h: provide gfs_client_hostname()
+
+	* gftool/gfrmdir/gfrmdir.c:
+	use gfarm_url_make_path() instead of gfarm_url_make_path_for_creation()
+
+	* gftool/gfreg/gfreg.c:
+	remove a variable which became unused in previous commit
+
+	* gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c, gftool/gfsetdir/gfsetdir.c:
+	make these commands accept "gfarm:" prefix
+
+	* lib/libgfarm/gfarm/url.c: - use GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING
+	- remove some unnecessary assignments
+	- use gfarm_is_url() in some place
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c:
+	define GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING
+
+	* gftool/addpath/addpath.c, gftool/gfmkdir/gfmkdir.c: add sanity check
+
+	* gftool/gfreg/gfreg.c:
+	make a codition work even if the last argument is NULL string.
+
+	* lib/libgfarm/gfarm/glob.c:
+	fix an off-by-one error which made gfls coredump
+
+2003-07-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfsl/REFERENCE:
+	change description of GSSAPI status in some functions because they can
+	get, log minor status.
+
+2003-07-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja, doc/GUIDE.ja: mention "gfsched -N"
+
+	* INSTALL.en: translate gfcd/gfpwd section to English
+
+	* INSTALL.ja: use same wording with an existent section
+
+	* INSTALL.ja: change punctuation, section order, indentation
+
+	* man/ja/man1/gfcd.1, man/ja/man1/gfmkdir.1, man/ja/man1/gfpwd.1, man/ja/man1/gfrmdir.1, man/ja/man1/gfsetdir.1, man/man1/gfcd.1, man/man1/gfmkdir.1, man/man1/gfpwd.1, man/man1/gfrmdir.1, man/man1/gfsetdir.1, doc/html/ja/ref/man1/gfcd.1.html, doc/html/ja/ref/man1/gfmkdir.1.html, doc/html/ja/ref/man1/gfrmdir.1.html, doc/html/ja/ref/man1/gfsetdir.1.html, doc/html/en/ref/man1/gfcd.1.html, doc/html/en/ref/man1/gfmkdir.1.html, doc/html/en/ref/man1/gfpwd.1.html, doc/html/en/ref/man1/gfrmdir.1.html, doc/html/en/ref/man1/gfsetdir.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfcd.1.docbook, doc/docbook/en/ref/man1/gfmkdir.1.docbook, doc/docbook/en/ref/man1/gfpwd.1.docbook, doc/docbook/en/ref/man1/gfrmdir.1.docbook, doc/docbook/en/ref/man1/gfsetdir.1.docbook:
+	english version of new documents
+
+	* doc/docbook/ja/ref/man1/gfmkdir.1.docbook, doc/docbook/ja/ref/man1/gfpwd.1.docbook, doc/docbook/ja/ref/man1/gfrmdir.1.docbook:
+	update modified date
+
+	* doc/docbook/ja/ref/man1/gfcd.1.docbook, doc/docbook/ja/ref/man1/gfsetdir.1.docbook:
+	- use <variablelist>
+	- update modified date
+
+2003-07-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* INSTALL.ja:
+	Added description of setting for chagning Gfarm working directory.
+
+	* doc/html/ja/ref/man1/gfcd.1.html, doc/html/ja/ref/man1/gfpwd.1.html, doc/html/ja/ref/man1/gfsetdir.1.html, man/ja/man1/gfcd.1, man/ja/man1/gfpwd.1, man/ja/man1/gfsetdir.1:
+	Initial revision genereted from docbook file.
+
+	* doc/html/ja/ref/man1/gfrmdir.1.html, man/ja/man1/gfrmdir.1:
+	Added again because gfrmdir(1) is implemented.
+
+	* doc/html/ja/ref/man1/gfmkdir.1.html, man/ja/man1/gfmkdir.1: regen
+
+	* doc/docbook/ja/ref/man1/gfmkdir.1.docbook: Corrected synopsis.
+
+	* doc/docbook/ja/ref/man1/Makefile.inc:
+	Added gfcd(1), gfmkdir(1), gfpwd(1), gfrmdir(1), gfsetdir(1) man pages.
+
+	* doc/docbook/ja/ref/man1/gfcd.1.docbook, doc/docbook/ja/ref/man1/gfpwd.1.docbook, doc/docbook/ja/ref/man1/gfsetdir.1.docbook:
+	New file.
+
+2003-06-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_unlink.c:
+	Added operation meta db in making and removing gfarm directory.
+	gfmkdir sets the directory information to meta db if making directory succeeds
+	on some host. gfrmdir removes from meta db unless a serious error occurs.
+	It checks specifiled path name is a directory, dosen't remove files.
+	And added checking the argument path isn't a directory in gfs_unlink(),
+
+2003-06-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man5/gfarm.conf.5, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5:
+	regen
+
+	* doc/conf/gfarm.conf, INSTALL.en, INSTALL.ja, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/hostspec.c:
+	"*" in hostspec now means all hosts (as well as "ALL").
+	"ALL" will be deprecated in the future.
+
+	* gftool/gfrun/gfrun.c: better error reporting
+
+2003-06-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/Makefile, gftool/gfmkdir/Makefile, gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/Makefile, gftool/gfrmdir/gfrmdir.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h:
+	Implemented gfmkdir and gfrmdir.
+
+	* lib/libgfarm/gfarm/url.c: Added error check.
+
+2003-06-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c:
+	Added profiling feature for gfs_stat() and gfs_unlink().
+
+	* gfptool/gfsplck/gfsplck.c:
+	Catched up with the change of behavior of gfarm_url_make_path().
+	Now, it returns "no such object" when the specified URL is not registered.
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio.c:
+	Output profiling information to stderr not to stdout.
+
+	* gftool/gfrun/gfrun.c, lib/libgfarm/gfutil/timer.c, lib/libgfarm/gfutil/timer.h, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c:
+	Added the -p option to gfrun command for GFS PIO API profiling.
+
+2003-06-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_local.c:
+	Added profling feature for gfs_pio_set_view_local().
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfutil/Makefile.inc, lib/libgfarm/gfutil/timer.c, lib/libgfarm/gfutil/timer.h:
+	Added experimental profiling support for GFS PIO funcitons.
+	To enable profiling, compile libgfarm.a with -DGFS_PROFILE.
+	Not tested yet.
+
+2003-06-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/url.c:
+	- Removed warning about const type modifier.
+	- Fixed bug in gfarm_canonical_path_for_creation()  in case of url is
+	  "gfarm:/dir/file".
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/url.c, include/gfarm/gfarm_misc.h:
+	Fixed bug that gfs_pio_create() fails.
+	It was reported by naotaka-san in [gfarm-cvs:01848], [gfarm-cvs:01849].
+
+2003-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/host.c:
+	make it possible to specify host alias as a hostname.
+	problem reported by naotaka-san in [gfarm-cvs:01824].
+
+2003-06-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c: Corrected an error.
+
+	* gftool/Makefile, gftool/gfpwd/Makefile, gftool/gfpwd/gfpwd.c, gftool/gfsetdir/Makefile, gftool/gfsetdir/gfsetdir.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/url.c:
+	-Implemented gfsetdir (for temporaly use instead of gfcd) and gfpwd.
+
+2003-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c: add extra newline
+
+	* lib/libgfarm/gfarm/metadb_ldap.c: fix memory leak at LDAP access.
+	RFC1823 (The LDAP Application Program Interface) is not enough,
+	function calls which aren't described in the RFC are needed.
+
+2003-06-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c: an error condition was missed.
+
+2003-06-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en: Fixed a typo.
+
+2003-06-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/lseek64.c:
+	return value of gfs_hook_syscall_lseek64() was incorrect on linux.
+	problem pointed out by tatebe-san.
+
+2003-06-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfimport_fixed.1.html, doc/html/en/ref/man1/gfimport_text.1.html, doc/html/en/ref/man1/gfsched.1.html, doc/html/ja/ref/man1/gfimport_fixed.1.html, doc/html/ja/ref/man1/gfimport_text.1.html, doc/html/ja/ref/man1/gfsched.1.html, man/ja/man1/gfhost.1, man/ja/man1/gfimport_fixed.1, man/ja/man1/gfimport_text.1, man/ja/man1/gfsched.1, man/man1/gfimport_fixed.1, man/man1/gfimport_text.1, man/man1/gfsched.1:
+	*** empty log message ***
+
+	* doc/docbook/en/ref/man1/gfimport_fixed.1.docbook, doc/docbook/en/ref/man1/gfimport_text.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/ja/ref/man1/gfimport_fixed.1.docbook, doc/docbook/ja/ref/man1/gfimport_text.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook, gftool/gfsched/gfsched.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/schedule.h:
+	add "-N" option to "gfsched" command
+
+	* lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfarm/auth_client_gsi.c:
+	include "gfutil.h" to suppress warning about missing prototype
+
+	* gftool/gfhost/gfhost.c:
+	use gfarm_host_info_address_get() instead of gfarm_host_address_get()
+	to reduce inquery to metadata server.
+
+2003-06-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	- honor struct gfarm_host_info::ncpu for scheduling
+	- if there are replicas, previous version of gfarm_url_hosts_schedule()
+	  and gfarm_url_hosts_schedule_by_program() schedule same host for
+	  multile fragments. this version avoids such stupid scheduling if possible.
+
+	* lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/host.h:
+	provide gfarm_host_info_address_get() to avoid overhead to query
+	gfarm_host_info multiple times.
+
+2003-06-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en: Added a section for C++ programs.
+
+2003-05-30  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c:
+	get and display GSSAPI authentication error minor status.
+
+	* gftool/gfrun/gfrun.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c, gftool/gfrcmd/gfrcmd.c:
+	added -v option displays GSSAPI major and minor error status.
+
+2003-05-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c: choose ad hoc way to make bash execute .bashrc
+
+2003-05-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_misc.h:
+	add functions to schedule hosts which can run specified program
+
+	* man/ja/man1/gfexport.1, man/ja/man1/gfhost.1, man/ja/man1/gfrm.1, man/ja/man1/gfrun.1, man/ja/man1/gfsched.1, man/ja/man1/gfwhere.1, man/man1/gfexport.1, man/man1/gfhost.1, man/man1/gfrm.1, man/man1/gfrun.1, man/man1/gfsched.1, man/man1/gfwhere.1, doc/html/en/ref/man1/gfexport.1.html, doc/html/en/ref/man1/gfrm.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man1/gfsched.1.html, doc/html/en/ref/man1/gfwhere.1.html, doc/html/ja/ref/man1/gfexport.1.html, doc/html/ja/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfsched.1.html, doc/html/ja/ref/man1/gfwhere.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfexport.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/ja/ref/man1/gfexport.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook, doc/docbook/ja/ref/man1/gfwhere.1.docbook:
+	replace "sparc-sun-solaris" by "sparc-sun-solaris8"
+
+	* doc/docbook/ja/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook:
+	- add description about -p option
+	- correct description about passing an executable file to -I option
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	add descriptions about -g and -u option
+
+	* gftool/gfrun/gfrun.c:
+	- deal with running a program on a cluster with mixed architectures.
+	  we have to restrict hosts by the architectures that the program
+	  is registered.
+	- add "-u" and "-g" option to manually decide to pass gfarm specific options.
+	- clean up by splitting main()
+
+	* gftool/gfsched/gfsched.c:
+	add "-p" option to restrict hosts by a program.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfarm/stringlist.c:
+	add functions to schedule hosts which can run specified program
+
+	* lib/libgfarm/gfarm/config.c: better behavior on debugger invocation
+
+	* gftool/gfhost/gfhost.c: use gfarm_host_is_in_domain()
+
+	* lib/libgfarm/gfarm/hostspec.c: define gfarm_host_is_in_domain()
+
+2003-05-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	add a link to http://www.globus.org/security/ about GSI
+
+	* man/ja/man1/gfhost.1, man/ja/man1/gfmpirun_p4.1, man/man1/gfhost.1, man/man1/gfmpirun_p4.1, doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man1/gfmpirun_p4.1.html, doc/html/ja/ref/man1/gfhost.1.html, doc/html/ja/ref/man1/gfmpirun_p4.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/gfhost.1.docbook:
+	gfhost man page
+
+2003-05-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	delete ineffective memory allocation code found by soda-san
+
+2003-05-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.ja: alpha-dec -> alpha-hp
+
+	* INSTALL.en, INSTALL.ja, doc/GUIDE.ja:
+	be more specific about OS version for architecture name
+
+	* gftool/gfhost/gfhost.c: add a comment to DEFAULT_CONCURRENCY
+
+2003-05-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja:
+	The -D option of gfhost should be the -M option.
+
+2003-05-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Updated the description about flags for a replication hint.
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	Fixed a grammatical error introduced by the previous commit.
+
+	* RELNOTES: Release note for the version 1.0b2.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Deleted the item 2.1 because this problem is fixed.
+
+	* INSTALL.en, INSTALL.ja:
+	Updated the description related to the gfreg command.
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2003-05-19  Noriyuki Soda  <soda@sra.co.jp>
 
 	* lib/libgfarm/gfarm/gfj_client.h: typo in comment
@@ -29,7 +601,7 @@
 	* lib/libgfarm/gfarm/auth_client_gsi.c:
 	fix apparent typo (this bug was introduced on 2002/06/24, too...)
 
-2003-05-19  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-05-19  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/changelog: new version
 
@@ -1184,7 +1756,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.15 2003/05/08 02:55:20 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.16 2003/05/19 09:44:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
