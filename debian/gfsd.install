@@ -1,5 +1,0 @@
-debian/tmp/usr/bin/gfexec
-debian/tmp/usr/bin/gfsplck
-debian/tmp/usr/bin/thput-gfpio
-debian/tmp/usr/sbin/gfsd
-debian/tmp/etc/init.d/gfsd
