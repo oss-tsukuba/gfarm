@@ -611,11 +611,12 @@ gfs_hook_is_url(const char *path, char **urlp)
 		return (1);
 	}
 	if (*path_save != '/' && gfs_hook_get_cwd_is_gfarm()) {
-		*urlp = malloc(strlen(prefix) + strlen(path_save) + 1);
+		*urlp = malloc(sizeof_gfarm_prefix + strlen(path_save));
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
-		memcpy(*urlp, prefix, sizeof_prefix - 1);
-		strcpy(*urlp + sizeof_prefix - 1, path_save);
+		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
+		strcpy(*urlp + sizeof_gfarm_prefix - 1, path_save);
+		/* It is not necessary to change the current view. */
 		return (1);
 	}
 	return (0);
