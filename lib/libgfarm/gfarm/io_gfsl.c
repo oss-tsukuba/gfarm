@@ -18,7 +18,12 @@
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
 #include "xxx_proto.h"
+#include "io_fd.h"
 #include "io_gfsl.h"
+
+/*
+ * for "gsi" method
+ */
 
 struct io_gfsl {
 	gfarmSecSession *session;
@@ -214,4 +219,33 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
 
 	if (e != NULL && gfarm_iobuffer_get_error(b) == 0)
 		gfarm_iobuffer_set_error(b, e);
+}
+
+/*
+ * for "gsi_auth" method
+ */
+
+struct xxx_iobuffer_ops xxx_insecure_gsi_session_iobuffer_ops = {
+	xxx_iobuffer_close_secsession_op,
+	xxx_iobuffer_export_credential_secsession_op,
+	xxx_iobuffer_delete_credential_secsession_op,
+	xxx_iobuffer_env_for_credential_secsession_op,
+	/* NOTE: the following assumes that these functions don't use cookie */
+	gfarm_iobuffer_nonblocking_read_fd_op,
+	gfarm_iobuffer_nonblocking_write_fd_op,
+	gfarm_iobuffer_blocking_read_fd_op,
+	gfarm_iobuffer_blocking_write_fd_op
+};
+
+/*
+ * downgrade
+ * from a "gsi" connection which is created by xxx_connection_set_secsession()
+ * to a "gsi_auth" connection.
+ */
+
+void
+xxx_connection_downgrade_to_insecure_session(struct xxx_connection *conn)
+{
+	xxx_connection_set(conn, &xxx_insecure_gsi_session_iobuffer_ops,
+	    xxx_connection_cookie(conn), xxx_connection_fd(conn));
 }

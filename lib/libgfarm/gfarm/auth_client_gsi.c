@@ -253,12 +253,9 @@ char *
 gfarm_auth_request_gsi_auth(struct xxx_connection *conn)
 {
 	char *e = gfarm_auth_request_gsi(conn);
-	int fd = xxx_connection_fd(conn);
 
-	if (e == NULL) {
-		xxx_connection_reset_secsession(conn);
-		xxx_connection_set_fd(conn, fd);
-	}
+	if (e == NULL)
+		xxx_connection_downgrade_to_insecure_session(conn);
 	return (e);
 }
 
@@ -276,13 +273,9 @@ char *
 gfarm_auth_result_gsi_auth_multiplexed(void *sp)
 {
 	struct gfarm_auth_request_gsi_state *state = sp;
-	struct xxx_connection *conn = state->conn;
-	int fd = xxx_connection_fd(conn);
 	char *e = gfarm_auth_result_gsi_multiplexed(sp);
 
-	if (e == NULL) {
-		xxx_connection_reset_secsession(conn);
-		xxx_connection_set_fd(conn, fd);
-	}
+	if (e == NULL)
+		xxx_connection_downgrade_to_insecure_session(state->conn);
 	return (e);
 }
