@@ -252,6 +252,7 @@ the default function of <command>gfhost</command>.
 	IP address will be displayed in parentheses just after the
 	hostname used for the access to <command>gfsd</command>.
       </para>
+      <para>
 	If the host cannot be accessed due to machine down or
 	network trouble etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
