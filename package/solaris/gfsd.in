@@ -1,0 +1,23 @@
+#!/sbin/sh
+#
+# $Id$
+
+GFSD=@prefix@/sbin/gfsd
+
+case "$1" in 
+'start')
+	if [ -x $GFSD -a -f /etc/gfarm.conf ]; then
+		$GFSD
+	fi	
+	;;
+
+'stop')
+	/usr/bin/pkill -x -u 0 gfsd
+	;;
+
+*)
+	echo "Usage: $0 { start | stop }"
+	exit 1
+	;;
+esac
+exit 0

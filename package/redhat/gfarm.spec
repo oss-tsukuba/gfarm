@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.0b1
-%define	rel	1
+%define	rel	2
 
 %define prefix		/usr/grid
 %define man_prefix	/usr/share/man
@@ -138,6 +138,7 @@ make prefix=${RPM_BUILD_ROOT}%{prefix} \
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd package/redhat/gfarm-slapd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
+chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
 mkdir -p ${RPM_BUILD_ROOT}%{etc_prefix}
 cp -p doc/conf/gfarm.conf ${RPM_BUILD_ROOT}%{etc_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{ldap_etc_prefix}
