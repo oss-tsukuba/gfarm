@@ -576,6 +576,8 @@ This authentication method requires a user certificate, and host
 certificates for every filesystem node and a metadata server.
 Moreover, your entry should be listed in a grid map file
 /etc/grid-security/grid-mapfile on every node.
+Please look at the following WWW page for the detail of GSI.
+	http://www.globus.org/security/
 
 Then, create a user proxy certificate.
 
