@@ -873,6 +873,66 @@ chmod(const char *path, mode_t mode)
 	return (__chmod(path, mode));
 }
 
+/*
+ * fchmod
+ */
+
+int
+__fchmod(int filedes, mode_t mode)
+{
+	GFS_File gf;
+	char *e, *url;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchmod(%d, 0%o)\n",
+				filedes, mode));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return syscall(SYS_fchmod, filedes, mode);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __fchmod(%d, 0%o)\n",
+				filedes, mode));
+
+	switch (gfs_hook_gfs_file_type(filedes)) {
+	case GFS_DT_REG:
+		e = gfs_fchmod(gf, mode);
+		break;
+	case GFS_DT_DIR:
+		url = gfarm_url_prefix_add(gfs_dirname((GFS_Dir)gf));
+		if (url == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			break;
+		}
+		e = gfs_chmod(url, mode);
+		free(url);
+		break;
+	default:
+		_gfs_hook_debug(fprintf(stderr,
+			"GFS: Hooking __fchmod: couldn't get gf or dir\n"));
+		errno = EBADF; /* XXX - something broken */
+		return (-1);			
+	}
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fchmod: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fchmod(int filedes, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking _fchmod\n", stderr));
+	return (__fchmod(filedes, mode));
+}
+
+int
+fchmod(int filedes, mode_t mode)
+{
+	_gfs_hook_debug_v(fputs("Hooking fchmod\n", stderr));
+	return (__fchmod(filedes, mode));
+}
+
 #ifdef __linux__
 /*
  * getxattr
