@@ -42,9 +42,11 @@ main(int argc, char *argv[], char *envp[])
 		exit(1);
 	}
 
-	e = gfs_realpath(*argv, &gfarm_url);
+	e = gfs_realpath(*saved_argv, &gfarm_url);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", *argv, e);
+		/* not found in Gfarm file system */
+		execvp(*saved_argv, saved_argv);
+		perror(*saved_argv);
 		exit(1);
 	}
 	e = gfs_execve(gfarm_url, saved_argv, envp);
@@ -53,12 +55,10 @@ main(int argc, char *argv[], char *envp[])
 	for (i = 0; i < saved_argc; ++i)
 		free(saved_argv[i]);
 	free(saved_argv);
-
-	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", progname, e);
-		exit(1);
-	}
+	/*
+	 * Should not call gfarm_terminate() here, because it has been
+	 * already called in gfs_execve().
+	 */
 
 	exit(1);
 }
