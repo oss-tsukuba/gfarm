@@ -256,6 +256,25 @@ enum exec_change {
 	TO_UNEXECUTABLE
 };
 
+static char *
+change_path_info_mode_nsections(
+	struct gfarm_path_info *p,
+	gfarm_mode_t mode,
+	enum exec_change change)
+{
+	switch (change) {
+	case TO_EXECUTABLE:
+		p->status.st_nsections = 0;
+		break;
+	case TO_UNEXECUTABLE:
+		p->status.st_nsections = 1;
+		break;
+	default:
+		break;
+	}
+	return (change_path_info_mode(p, mode));
+}
+
 static enum exec_change
 diff_exec(gfarm_mode_t old, gfarm_mode_t new)
 {
@@ -336,7 +355,7 @@ gfs_chmod_execfile_metadata(
 	if (e != NULL)
 		goto finish_free_to_section_section;
 
-	e = change_path_info_mode(pi, mode);
+	e = change_path_info_mode_nsections(pi, mode, change);
 	if (e != NULL) {
 		char *e2;
 		e2 = gfarm_file_section_info_remove(
