@@ -377,8 +377,6 @@ resolv_addr_without_address_use(
 char *(*opt_resolv_addr)(const char *, int, struct gfarm_host_info *,
     struct sockaddr *, char **) = gfarm_host_info_address_get;
 
-int opt_use_metadb = 1;
-
 /*
  * parallel access wrapper
  */
@@ -1016,7 +1014,7 @@ main(int argc, char **argv)
 	int opt_plain_order = 0; /* i.e. do not sort */
 	int opt_sort_reverse = 0;
 	int opt_sort_by_loadavg = 0;
-	int i, c, sort_pid;
+	int i, c, sort_pid, opt_use_metadb = 1;
 	struct gfarm_paraccess *pa;
 
 #ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
