@@ -713,7 +713,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	gfs_hook_syscall_xstat(ver, path, buf)
 #define FUNC___XSTAT	__xstat
 #define FUNC__XSTAT	_xstat
-#define FUNC_XSTAT	xstat
 #endif
 
 #include "hooks_stat.c"
@@ -727,7 +726,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #undef SYSCALL_XSTAT
 #undef FUNC___XSTAT
 #undef FUNC__XSTAT
-#undef FUNC_XSTAT
 #endif
 
 /* lstat */
@@ -744,7 +742,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	gfs_hook_syscall_lxstat(ver, path, buf)
 #define FUNC___XSTAT	__lxstat
 #define FUNC__XSTAT	_lxstat
-#define FUNC_XSTAT	lxstat
 #endif
 
 #include "hooks_stat.c"
@@ -763,7 +760,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	gfs_hook_syscall_fxstat(ver, fd, buf)
 #define FUNC___FXSTAT	__fxstat
 #define FUNC__FXSTAT	_fxstat
-#define FUNC_FXSTAT	fxstat
 #endif
 
 #include "hooks_fstat.c"

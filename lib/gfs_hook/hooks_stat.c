@@ -224,11 +224,4 @@ FUNC__XSTAT(int ver, const char *path, STRUCT_STAT *buf)
     return (FUNC___XSTAT(ver, path, buf));
 }
 
-int
-FUNC_XSTAT(int ver, const char *path, STRUCT_STAT *buf)
-{
-    _gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_XSTAT) ": %s\n", path));
-    return (FUNC___XSTAT(ver, path, buf));
-}
-
 #endif /* SVR4 or Linux */

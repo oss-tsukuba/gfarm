@@ -188,12 +188,4 @@ FUNC__FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
     return (FUNC___FXSTAT(ver, filedes, buf));
 }
 
-int
-FUNC_FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
-{
-    _gfs_hook_debug_v(
-	fprintf(stderr, "Hooking " S(FUNC_FXSTAT) ": %d\n", filedes));
-    return (FUNC___FXSTAT(ver, filedes, buf));
-}
-
 #endif /* SVR4 or Linux */
