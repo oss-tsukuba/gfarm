@@ -1,0 +1,60 @@
+.TH gfarm_url_section_replicate_to 3 "10 Sep 2002"
+
+.SH NAME
+
+gfarm_url_section_replicate_to \- 各フラグメントのレプリカを作成する
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_url_section_replicate_to(char *" gfarm_url ,
+.in +.5i
+.BI "char *" section ,
+.BI "gfarm_mode_t " mode ,
+.br
+.BI "char *" dsthost );
+.in
+
+.SH DESCRIPTION
+
+ファイル
+.I gfarm_url
+のフラグメント
+.I section
+のレプリカを、
+.I dsthost
+に作成します。
+
+この関数では、フラグメント番号を整数ではなく、文字列
+.I section
+で指定する必要があることに注意してください。また、またこの文字列は、
+余分な空白や、先行 0 を含んではいけません。
+
+ファイル
+.I gfarm_url
+のモードを、引数
+.I mode
+で指定する必要があります。
+なお、この引数は、将来のバージョンで削除される予定です。
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+正常終了を示します。
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+メモリ不足のため処理を中止しました。
+.TP
+その他
+.br
+上記以外のエラーが生じたことを示します。
+
+.SH "SEE ALSO"
+.BR gfarm_url_section_replicate_from_to (3),
+.BR gfarm_url_fragments_replicate (3)
