@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -562,7 +563,8 @@ print_up(struct gfarm_host_info *host_info,
 }
 
 char *
-print_host_info(struct gfarm_host_info *info)
+print_host_info(struct gfarm_host_info *info,
+	struct gfs_client_udp_requests *udp_requests)
 {
 	int i;
 
