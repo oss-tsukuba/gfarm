@@ -501,7 +501,7 @@ gfarm_url_section_replicate_from_to(char *gfarm_url, char *section,
 	struct sockaddr peer_addr;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0;
+	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -532,10 +532,11 @@ gfarm_url_section_replicate_from_to(char *gfarm_url, char *section,
 		if (e != NULL)
 			goto finish_path_info;
 		mode_allowed = 022;
+		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
 	e = gfarm_file_section_replicate_from_to_internal(
 	    gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & GFARM_S_ALLPERM, si.filesize,
+	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
 
 	free(if_hostname);
@@ -557,7 +558,7 @@ gfarm_url_section_replicate_to(char *gfarm_url, char *section, char *dsthost)
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0;
+	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -578,10 +579,11 @@ gfarm_url_section_replicate_to(char *gfarm_url, char *section, char *dsthost)
 		if (e != NULL)
 			goto finish_path_info;
 		mode_allowed = 022;
+		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
 	e = gfarm_file_section_replicate_to_internal(
 	    gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & GFARM_S_ALLPERM, si.filesize,
+	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
 	    dsthost);
 
 	gfarm_file_section_info_free(&si);
@@ -738,7 +740,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			  char ***delivered_paths)
 {
 	char *e, **dp, *gfarm_file, *root, *arch, **canonical_hostnames;
-	gfarm_mode_t mode;
+	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
 	int i;
 	struct gfarm_path_info pi;
 
@@ -775,6 +777,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			return (e);
 		}
 		mode |= 022;
+		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
 	gfarm_path_info_free(&pi);
 	dp = malloc(sizeof(char *) * (nhosts + 1));
@@ -843,7 +846,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		 * replicate the program
 		 */
 		e = gfarm_file_section_replicate_to_internal(gfarm_file, arch,
-		    mode & GFARM_S_ALLPERM, si.filesize, hosts[i]);
+		    mode & mode_mask, si.filesize, hosts[i]);
 		gfarm_file_section_info_free(&si);
 		free(arch);
 		if (e != NULL)
@@ -868,7 +871,7 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 {
 	char *e, *gfarm_file, **srchosts, **edsthosts;
 	int nsrchosts;
-	gfarm_mode_t mode;
+	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
 	int i, pid, *pids;
 	struct gfarm_path_info pi;
 
@@ -899,6 +902,7 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 			return (e);
 		}
 		mode |= 022;
+		mode_mask = 0777; /* don't allow setuid/setgid */
 	}
 	e = gfarm_url_hosts_schedule(gfarm_url, "", &nsrchosts, &srchosts);
 	if (e != NULL)
@@ -964,7 +968,7 @@ gfarm_url_fragments_replicate(char *gfarm_url, int ndsthosts, char **dsthosts)
 
 		e = gfarm_file_section_replicate_from_to_internal(
 		    gfarm_file, section_string,
-		    mode & GFARM_S_ALLPERM, si.filesize,
+		    mode & mode_mask, si.filesize,
 		    srchosts[i], if_hostname, edsthosts[i]);
 		if (e != NULL)
 			_exit(1);

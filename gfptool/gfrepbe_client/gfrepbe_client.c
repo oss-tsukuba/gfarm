@@ -591,8 +591,10 @@ session(char *server_name, struct sockaddr *server_addr,
 			 * should be fixed in the next major release.
 			 */
 			if (strcmp(path_infos[i].status.st_user,
-			    gfarm_get_global_username()) != 0)
-				mode |= 022;
+			    gfarm_get_global_username()) != 0) {
+				/* don't allow setuid/setgid */
+				mode = (mode | 022) & 0777;
+			}
 
 			ofd = open(pathname, O_CREAT|O_WRONLY, mode);
 			/* FT */
