@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -120,23 +121,25 @@ gfs_rmdir(const char *pathname)
 char *
 gfs_chdir_canonical(const char *canonic_dir)
 {
-	static char *dir;
-	static int dir_len;
+	static char env_name[] = "GFS_PWD=";
+	static char *env = NULL;
+	static int env_len = 0;
 	int len;
 
-	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
-	if (dir_len < len) {
-		dir = realloc(dir, len);
-		if (dir == NULL) {
-			dir_len = 0;
+	len = sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH + 1 +
+	    strlen(canonic_dir) + 1;
+	if (env_len < len) {
+		env = realloc(env, len);
+		if (env == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		}
-		dir_len = len;
+		env_len = len;
 	}
 
-	sprintf(dir, "%s/%s", GFARM_URL_PREFIX, canonic_dir);
-	gfarm_current_working_directory = dir + GFARM_URL_PREFIX_LENGTH;
-	setenv("GFS_PWD", dir, 1);
+	sprintf(env, "%s%s/%s", env_name, GFARM_URL_PREFIX, canonic_dir);
+	gfarm_current_working_directory = env +
+	    sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
+	if (putenv(env) != 0)
+		return (gfarm_errno_to_error(errno));
 
 	return (NULL);
 }
