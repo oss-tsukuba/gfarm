@@ -124,8 +124,10 @@ bad:
 static int
 gfarm_is_string_upper_case(char *s)
 {
-	for (; *s != '\0'; s++) {
-		if (!isupper(*s))
+	unsigned char *t = (unsigned char *)s;
+
+	for (; *t != '\0'; t++) {
+		if (!isupper(*t))
 			return (0);
 	}
 	return (1);
