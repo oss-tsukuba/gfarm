@@ -13,7 +13,7 @@ Users or Grid applications access the Gfarm file system via POSIX file
 I/O APIs and Gfarm native file I/O APIs with extension of new file
 view semantics.  It is not necessary to recompile and re-link programs
 to access Gfarm file system.  Any binary program can access the Gfarm
-file system without any modification as if it is mounted at /gfarm.
+file system without any modification as if it were mounted at /gfarm.
 
 Automatic replica selection depending on CPU load average makes it
 fault tolerant and avoids access concentration, which is complete
@@ -55,17 +55,14 @@ Gfarm system consists of the following nodes
   process information.  On the metadata server node, a Gfarm
   filesystem metaserver, called gfmd, and an LDAP server are running.
 
-A file in the Gfarm filesystem is a large-scale file that is divided
-into fragments or a ranked group of files, and distributed across the
-disks of filesystem nodes, and which will be accessed in parallel.
-The Gfarm filesystem is an extension of a striping parallel system in
-that each file fragment has an arbitrary length and can be stored on
-any node.
+A file in the Gfarm filesystem is a standard file or a large-scale
+file that is divided into fragments or a ranked group of files.
+Physically, each file is replicated and dispersed across disks of
+filesystem nodes, and which will be accessed in parallel.
 
-A file in the Gfarm filesystem, specified by a Gfarm filename or a
-Gfarm URL such as gfarm:/path/name, is accessed using the Gfarm
-parallel I/O library or Gfarm commands which provide a
-single-filesystem image.
+A file in the Gfarm filesystem can be accessed using the Gfarm
+parallel I/O library or Gfarm commands by a Gfarm URL such as
+gfarm:/path/name, or as if it were mounted at /gfarm.
 
 ========================================================================
 
@@ -75,19 +72,21 @@ Gfarm software consists of
 
  - libgfarm.a library
 
-  A library that implements Gfarm APIs including Gfarm filesystem
-  operations, parallel I/O extensions, parallel file transfer,
-  file-affinity process scheduling.  Parallel I/O extensions provide
-  new file views; index file view and local file view.
+  A library that implements Gfarm APIs including Gfarm file access,
+  file replication, parallel I/O extensions, parallel file transfer,
+  and file-affinity process scheduling.  Parallel I/O extensions
+  provide new file views; index file view and local file view, for
+  parallel processes.
 
   A syscall-hook library, gfs_hook.o, is provided for porting legacy
   applications.  Just linking with gfs_hook.o and libgfarm.a, the
   legacy applications can exploit the Gfarm filesystem.
 
-  For Linux system, a dynamic library, libgfs_hook.so, is also
-  provided for binary programs to access Gfarm file system without any
-  modification as well as re-linking.  Just set LD_PRELOAD environment
-  variable.
+  For Linux system, a dynamic library, libgfs_hook.so, for pre-loading
+  is also provided for binary programs to access Gfarm file system
+  without any modification as well as re-linking.  You can access
+  Gfarm file system as if it is mounted at /gfarm, just setting
+  LD_PRELOAD environment variable.
 
   For details about a Gfarm syscall-hook library, refer to
   doc/README.hook.en.
@@ -155,12 +154,13 @@ Here are installation steps of the Gfarm system.
 	% make
 	% make install
 
-In the following command options, it is necessary to specify at least
-the --with-openldap option.
+Options for configure:
 
   --with-openldap=directory
 
-  specifies an installation directory of the OpenLDAP.
+  specifies an installation directory of the OpenLDAP.  When this
+  option is not specified, the installation directory automatically
+  tries to be searched.
 
   --with-openssl=directory
 
@@ -179,10 +179,10 @@ the --with-openldap option.
 
   specifies an installation directory of Globus Toolkit to utilize GSI
   authentication method.  When not specifying a directory, environment
-  variable GLOBUS_LOCATION is used.  This is optional.  By default,
-  "gcc32" flavor is used to link the Globus toolkit library.  If you
-  want to use another flavor of the library, you can specify a flavor
-  by --with-globus-flavor="gcc32dbg", for example.
+  variable GLOBUS_LOCATION is used.  This is optional.  The flavor of
+  Globus library automatically tries to be searched.  If you need to
+  specify a flavor, specify it by the --with-globus-flavor=flavor
+  option.
 
   --prefix=directory
 
@@ -382,7 +382,8 @@ The 'slapadd' command creates an initial LDAP database.  The following
 example shows how to create the initial LDAP database using the above
 initial entries on ldap.example.com.
 
-	% rm -f /var/gfarm-ldap/*
+	% rm -rf /var/gfarm-ldap
+	% mkdir /var/gfarm-ldap
 	% cd /etc/gfarm-ldap
 	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
@@ -746,7 +747,6 @@ All parallel commands will be registered in the gfarm:/bin directory.
 	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
 	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
 	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
 
 You can check which architecture of a binary program is registered
 using the gfwhere command.
