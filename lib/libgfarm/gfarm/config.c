@@ -1212,7 +1212,6 @@ char *
 gfarm_initialize(int *argcp, char ***argvp)
 {
 	char *e;
-	struct gfs_stat gstat;
 #ifdef HAVE_GSI
 	int saved_auth_verb;
 #endif
@@ -1250,15 +1249,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 		if (e != NULL)
 			return (e);
 	}
-
-	/* check the existence of home directory */
-	e = gfs_stat("gfarm:~", &gstat);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		return ("no home directory.  "
-			"create it first by \'gfmkdir gfarm:~\', thanks.");
-	else if (e != NULL)
-		return (e);
-	gfs_stat_free(&gstat);
 			
 	gfarm_initialized = 1;
 
