@@ -1273,7 +1273,7 @@ if test "${with_globus+set}" = set; then
  globus_includedir='$(globus_location)/include/$(globus_flavor)'
  globus_libdir='$(globus_location)/lib'
  globus_includes='-I$(globus_includedir)'
- globus_gssapi_libs='-L$(globus_libdir) -lglobus_gssapi_gsi_$(globus_flavor) -lglobus_ssl_utils_$(globus_flavor)'
+ globus_gssapi_libs='-L$(globus_libdir) -lglobus_gssapi_gsi_$(globus_flavor)'
  if test x"${ld_rpath_flag}" != x; then
   globus_gssapi_libs="${ld_rpath_flag}"'$(globus_libdir)'" ${globus_gssapi_libs}"
  fi
