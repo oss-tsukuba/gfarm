@@ -190,7 +190,7 @@
 
 2004-11-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
-	* package/redhat/gfarm.patch: Removed patches for $Id: ChangeLog,v 1.35 2005/01/11 13:33:15 tatebe Exp $ lines.
+	* package/redhat/gfarm.patch: Removed patches for $Id$ lines.
 
 2004-11-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
@@ -5808,7 +5808,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.35 2005/01/11 13:33:15 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id$. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
