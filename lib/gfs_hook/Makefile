@@ -1,0 +1,165 @@
+# $Id$
+
+top_builddir = ../..
+top_srcdir = $(top_builddir)
+srcdir = .
+
+include $(top_srcdir)/makes/var.mk
+
+# shared object version
+SHARELIB_LTFLAGS=
+LT_CURRENT=0
+LT_REVISION=0
+LT_AGE=0
+
+LTLINK_SHARELIB= $(LTLINK_SHARELIB_IN) $(libdir) $(SHARELIB_LTFLAGS)
+
+DEBUG_CFLAGS=
+SUFFIX=
+
+DEBUG_MAKEFLAGS= \
+	DEBUG_FLAGS=-DDEBUG \
+	SUFFIX=_debug
+
+SUBDIRS= sysdep/$(gfs_hook_sysdep_subdir)
+SYSDEP_OBJS= sysdep/$(gfs_hook_sysdep_subdir)/libsysdep.la
+
+# do not use $(COMMON_CFLAGS) here, to avoid symbol renaming by largefile API.
+CFLAGS = $(OPTFLAGS) $(DEBUG_CFLAGS) -I$(srcdir) \
+	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes) \
+	-I$(top_builddir)/include -I$(top_srcdir)/include
+
+# The reason, why we don't use $(GFARMLIB) and add an inter-library
+# dependency only on libgfarm here, is because the other dependencies
+# will be automatically added by libtool. And because using $(GFARMLIB)
+# automatically adds $(globus_gssapi_libs), and that may add statically
+# linked globus libraries to the gfs_hook.so.
+LDLIBS = -L$(top_builddir)/lib/libgfarm -lgfarm
+
+# to not use default $(LIBRARY) target in lib.mk
+LIBRARY =
+
+LIBRARY_RESULT = libgfs_hook$(SUFFIX).la gfs_hook$(SUFFIX).o \
+	libgfs_hook_no_init$(SUFFIX).la gfs_hook_no_init$(SUFFIX).o \
+	$(mpi_targets)
+MPI_TARGETS = libgfs_hook_mpi$(SUFFIX).la gfs_hook_mpi$(SUFFIX).o
+
+# need to hook _LFS64_LARGEFILE API?
+LARGEFILE64_SRCS= hooks_64.c lseek64.c
+LARGEFILE64_OBJS= hooks_64$(SUFFIX).lo lseek64.lo
+
+# build MPI related objects?
+MPI_SRCS = hooks_init_mpi.c
+MPI_OBJS = hooks_init_mpi$(SUFFIX).lo
+
+SRCS = getcwd.c hooks_subr.c \
+	hooks.c \
+	$(largefile64_srcs) \
+	hooks_common.c hooks_stat.c hooks_fstat.c \
+	hooks_init.c $(mpi_srcs)
+OBJS = getcwd.lo hooks_subr$(SUFFIX).lo \
+	hooks$(SUFFIX).lo \
+	$(largefile64_objs) \
+	$(SYSDEP_OBJS)
+EXTRA_CLEAN_TARGETS= hooks_init$(SUFFIX).lo $(mpi_objs)
+
+.SUFFIXES: .a .la .ln .o _debug.lo .lo .s .S .c .cc .f .y .l
+
+.c_debug.lo:
+	$(LTCOMPILE) -c $*.c -o $*_debug.lo
+
+all: subdir-all gfs-hooks debug-gfs-hooks
+
+###
+### rules to make $(LIBRARY_RESULT)
+###
+
+gfs-hooks: $(LIBRARY_RESULT)
+
+
+libgfs_hook$(SUFFIX).la: $(OBJS) hooks_init$(SUFFIX).lo
+	$(LTLINK_SHARELIB) -o libgfs_hook$(SUFFIX).la \
+		$(OBJS) hooks_init$(SUFFIX).lo $(LDLIBS)
+
+gfs_hook$(SUFFIX).o: $(OBJS) hooks_init.lo
+	$(LTLINK) -o gfs_hook$(SUFFIX).o $(OBJS) hooks_init$(SUFFIX).lo
+
+
+libgfs_hook_no_init$(SUFFIX).la: $(OBJS)
+	$(LTLINK_SHARELIB) -o libgfs_hook_no_init$(SUFFIX).la \
+		$(OBJS) $(LDLIBS)
+
+gfs_hook_no_init$(SUFFIX).o: $(OBJS)
+	$(LTLINK) -o gfs_hook_no_init$(SUFFIX).o $(OBJS)
+
+
+gfs_hook_mpi$(SUFFIX).la: $(OBJS) hooks_init_mpi$(SUFFIX).lo
+	$(LTLINK_SHARELIB) -o libgfs_hook_mpi$(SUFFIX).la \
+		$(OBJS) hooks_init_mpi$(SUFFIX).lo $(LDLIBS)
+
+gfs_hook_mpi$(SUFFIX).o: $(OBJS) hooks_init_mpi$(SUFFIX).lo
+	$(LTLINK) -o gfs_hook_mpi$(SUFFIX).o $(OBJS) hooks_init_mpi$(SUFFIX).lo
+
+###
+### objects needed by $(LIBRARY_TARGET)
+###
+
+lseek64.lo: lseek64.c
+	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -o $@ -c $(srcdir)/lseek64.c
+
+hooks_64$(SUFFIX).lo: hooks_64.c hooks_common.c hooks_stat.c hooks_fstat.c
+	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -o $@ -c $(srcdir)/hooks_64.c
+
+hooks$(SUFFIX).lo: hooks.c hooks_common.c hooks_stat.c hooks_fstat.c
+
+hooks_init_mpi$(SUFFIX).lo: hooks_init_mpi.c
+	$(LIBTOOL) --mode=compile $(MPICC) $(CFLAGS) -o $@ -c $(srcdir)/hooks_init_mpi.c
+
+install: all
+	# XXX this installation directory is WRONG.
+	$(INSTALL_DATA) $(srcdir)/hooks_init_mpi.c $(libdir)/hooks_init_mpi.c
+
+###
+### *_debug.{o,a,so*}: libraries compiled with -DDEBUG
+###
+
+install: debug-lib-install
+clean: debug-lib-clean
+veryclean: debug-lib-veryclean
+
+debug-gfs-hooks debug-lib-install debug-lib-clean debug-lib-veryclean:
+	@target=`expr $@ : 'debug-\(.*\)'`; \
+	echo '[' making $@ ']'; set -x; $(MAKE) $(DEBUG_MAKEFLAGS) $${target}
+
+###
+### test programs, these won't be installed.
+###
+
+veryclean: test-veryclean
+
+test: hook_test
+mpitest: hook_test_mpi
+
+hook_test: subdir-all debug-gfs-hooks hook_test.o
+	$(LTLINK) hook_test.o gfs_hook_debug.o $(TEST_LDLIBS)
+
+hook_test_mpi: subdir-all debug-gfs-hooks hook_test_mpi.o
+	$(LIBTOOL) --mode=link $(MPICC) $(CFLAGS) -o $@ hook_test_mpi.o gfs_hook_mpi_debug.o $(TEST_LDLIBS)
+
+hook_test_mpi.o: hook_test_mpi.c
+	$(MPICC) -c $(CFLAGS) -o $@ $(srcdir)/hook_test_mpi.c
+
+test-veryclean:
+	$(LTCLEAN) hook_test hook_test.o hook_test_mpi hook_test_mpi.o
+
+###
+### dependencies, etc.
+###
+
+include $(top_srcdir)/makes/subdir.mk
+include $(top_srcdir)/makes/lib.mk
+
+$(OBJS): $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfs.h hooks_subr.h
+
+hooks$(SUFFIX).lo hooks_64$(SUFFIX).lo: hooks_subr.h hooks_common.c hooks_stat.c hooks_fstat.c
+hooks_subr$(SUFFIX).lo: hooks_subr.h

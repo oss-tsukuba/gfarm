@@ -10,7 +10,13 @@ example_bindir = $(default_bindir)
 metadb_client_includes = $(ldap_includes)
 metadb_client_libs = $(ldap_libs)
 
+SHELL = /bin/sh
 RM = rm
+
+# library to be installed, see lib.mk
+LIBRARY_RESULT = $(LIBRARY)
+
+# libgfarm
 
 COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
 	-I$(top_builddir)/include -I$(top_srcdir)/include
@@ -20,7 +26,7 @@ GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
 
 INC_SRCDIR = $(top_srcdir)/include/gfarm
 INC_BUILDDIR = $(top_builddir)/include/gfarm
-DEPGFARMLIB = $(top_builddir)/lib/libgfarm/libgfarm.a
+DEPGFARMLIB = $(top_builddir)/lib/libgfarm/libgfarm.la
 DEPGFARMINC = $(INC_BUILDDIR)/gfarm_config.h $(INC_SRCDIR)/gfarm.h $(INC_SRCDIR)/gfarm_error.h $(INC_SRCDIR)/gfarm_metadb.h $(INC_SRCDIR)/gfarm_misc.h $(INC_SRCDIR)/gfarm_stringlist.h $(INC_SRCDIR)/gfs.h $(INC_SRCDIR)/gfs_glob.h
 
 # ns
@@ -34,8 +40,8 @@ NSEXECLIB = -L$(top_builddir)/ns/nslib -lnsexec
 NSINC_SRCDIR = $(top_srcdir)/ns/include/gfarm
 NSINC_BUILDDIR = $(top_builddir)/ns/include/gfarm
 GFD_SRCDIR = $(top_srcdir)/ns/gfarmd
-DEPNSLIB = $(top_builddir)/ns/nslib/libns.a
-DEPNSEXECLIB = $(top_builddir)/ns/nslib/libnsexec.a
+DEPNSLIB = $(top_builddir)/ns/nslib/libns.la
+DEPNSEXECLIB = $(top_builddir)/ns/nslib/libnsexec.la
 
 # gfsl
 
@@ -53,3 +59,21 @@ DOCBOOK2MAN = jw -b man
 DOCBOOK2HTML = jw -b html -u
 srcsubst = dummy
 dstsubst = dummy
+
+# libtool
+
+LTFLAGS_SHARELIB_IN = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -rpath
+CCLD = $(CC)
+
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(CFLAGS)
+LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+LTLINK_SHARELIB_IN = $(LTLINK) $(LTFLAGS_SHARELIB_IN)
+LTINSTALL_PROGRAM = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)
+LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
+LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
+
+
+.SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l
+
+.c.lo:
+	$(LTCOMPILE) -c $*.c

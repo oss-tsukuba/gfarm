@@ -4,11 +4,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-GLOBUS_SUBDIRS = libgfarm/gfsl
-
 SUBDIRS = \
 	libgfarm \
-	gfs_hook \
-	$(globus_subdirs)
+	gfs_hook
 
 include $(top_srcdir)/makes/subdir.mk
