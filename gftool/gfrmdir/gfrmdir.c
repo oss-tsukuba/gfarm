@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <unistd.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/gfarm_metadb.h>
@@ -46,11 +47,20 @@ int
 main(int argc, char **argv)
 {
 	char *e, *canonic_path;
-	int i; 
+	int i, c;
 
 	if (argc <= 1)
 		usage();
 	program_name = basename(argv[0]);
+
+	while ((c = getopt(argc, argv, "h")) != EOF) {
+		switch (c) {
+		case 'h':
+		default:
+			usage();
+		}
+	}
+
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
