@@ -43,7 +43,7 @@ displays to the standard output.</para>
 <para>specifies the fragment index to be scheduled.
 <!--
 If the <parameter>gfarm-URL</parameter> is an executable file,
-an architecture name, for example, sparc-sun-solaris,
+an architecture name, for example, sparc-sun-solaris8,
 can be used to select a host which holds the executable file
 for the architecture.
 -->
