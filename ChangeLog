@@ -1,3 +1,95 @@
+2003-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c, lib/gfs_hook/hooks_common.c:
+	[Fault tolelance] When gfs_pio_set_view_section() fails because a file replica to be opened is missing for some reason, delete the section copy info and try to open another replica.
+	nCVS: Enter Log.  Lines beginning with `CVS:' are removed automatically
+
+2003-08-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: for release 1.0b3
+	add spec for gfarm-gfront
+
+2003-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c (register_stdout_stderr):
+	Fixed a bug such that gfsplck is eventually executed even if stdout and stderr files are successfully created.
+
+2003-08-20  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* man/man1/gfront.1: Initial import of gfront manual.
+
+2003-08-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/io_gfsl.c, doc/GUIDE.ja, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook:
+	implement "gsi_auth" method, which performs GSI authentication,
+	but does not use any data signing or data encryption for later communication,
+	for faster (but not really secure) communication with GSI credential.
+
+	* gftool/gfsetdir/gfsetdir.c, gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c:
+	portability fix: basename(3) needs <libgen.h>
+
+	* doc/GUIDE.ja, INSTALL.en, INSTALL.ja:
+	the output format of "gfhost -l" was changed.
+
+2003-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfmpirun_p4.1.html, doc/html/en/ref/man1/gfrcmd.1.html, doc/html/en/ref/man1/gfreg.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfmpirun_p4.1.html, doc/html/ja/ref/man1/gfrcmd.1.html, doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfmpirun_p4.1, man/ja/man1/gfrcmd.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrun.1, man/man1/gfmpirun_p4.1, man/man1/gfrcmd.1, man/man1/gfreg.1, man/man1/gfrep.1, man/man1/gfrun.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfreg.1.docbook:
+	Fixed a syntactical error of DocBook.
+
+	* doc/docbook/en/ref/man1/gfmpirun_p4.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfmpirun_p4.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	Updated the description.
+
+2003-08-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	__utime(): use system call symbolic constant 'SYS_utime' for linux, 'SYS_utimes' for others.
+
+2003-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrcmd.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	Updated the description of manual pages.
+
+2003-08-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* util/gfront/Makefile:
+	fix a problem that gfront cannot be installed, if --srcdir is specified
+	as an argument of configure. reported by naotaka-san.
+
+	* configure: regen (for the change by naotaka-san)
+
+2003-08-20  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* configure.in: creating util directory
+
+	* debian/changelog: release beta 3
+
+2003-08-20  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* man/ja/man1/gfront.1: Add description about gfront.
+
+2003-08-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfrun.1, man/man1/gfrun.1:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook:
+	Added the description for newly added command-line options; -r, -I, -v, -p options.
+
+2003-08-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfsched.1.html, man/ja/man1/gfsched.1, man/man1/gfsched.1, doc/html/en/ref/man1/gfsched.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/ja/ref/man1/gfsched.1.docbook:
+	describe -U option which is added today
+
+2003-08-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.0b3.
+
 2003-08-19  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gftool/gfsched/gfsched.c:
@@ -1756,7 +1848,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.16 2003/05/19 09:44:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.17 2003/08/19 09:57:28 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
