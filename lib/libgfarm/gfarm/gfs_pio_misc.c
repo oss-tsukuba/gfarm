@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/evp.h>
@@ -1132,7 +1133,7 @@ get_path_infos(char *from_canonic_path,
 	       gfarm_stringlist *list, struct gfarm_path_info *path_infos)
 {
 	int i;
-	char *e;
+	char *e = NULL;
 
 	for (i = 0; i < gfarm_stringlist_length(list); i++) {
 		char *p, *elem;
