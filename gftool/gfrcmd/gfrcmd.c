@@ -8,7 +8,6 @@
 #include <libgen.h>
 #include "gfarm.h"
 #include "gfs_client.h"
-#include "gfs_client.h"
 
 char *program_name = "gfrcmd";
 
