@@ -271,6 +271,20 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_LSEEK(filedes, offset, whence));
+	
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+		_gfs_hook_debug(fprintf(stderr,
+		"GFS: Hooking " S(FUNC___LSEEK)
+		   "(%d, %" PR_FILE_OFFSET ", %d)\n",
+		filedes, (file_offset_t)offset, whence));
+
+		_gfs_hook_debug(fprintf(stderr,
+		    "lseek(2) trapping of Gfarm directory "
+		      "not supported yet\n"));
+
+		e = GFARM_ERR_IS_A_DIRECTORY;
+		goto error;
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
 	    S(FUNC___LSEEK) "(%d(%d), %" PR_FILE_OFFSET ", %d)\n",
@@ -279,6 +293,7 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 	e = gfs_pio_seek(gf, offset, whence, &o);
 	if (e == NULL)
 		return ((OFF_T)o);
+error:
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___LSEEK) ": %s\n", e));
 	errno = gfarm_error_to_errno(e);
