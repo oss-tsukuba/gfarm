@@ -26,6 +26,7 @@ SUBDIRS = \
 	gfps \
 	gfrun \
 	gfwhere \
+	gfwhoami \
 	example
 
 include $(top_srcdir)/makes/subdir.mk
