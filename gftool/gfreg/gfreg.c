@@ -29,6 +29,7 @@ usage()
     fprintf(stderr, "\t-N number\t\ttotal number of fragments\n");
     fprintf(stderr, "\t-a architecture\t\tspecify an architecture\n");
     fprintf(stderr, "\t-h hostname\t\tspecify a hostname\n");
+    fprintf(stderr, "\t-D domainname\t\tspecify a domainname\n");
     fprintf(stderr, "\t-f \t\t\tforce to register\n");
     exit(1);
 }
@@ -252,7 +253,7 @@ int
 main(int argc, char *argv[])
 {
 	char *gfarm_url, *node_index = NULL;
-	char *hostname = NULL, **auto_hosts = NULL, *e;
+	char *hostname = NULL, **auto_hosts = NULL, *domainname = NULL, *e;
 	int total_nodes = -1, c, auto_index = 0;
 	extern char *optarg;
 	extern int optind;
@@ -265,7 +266,7 @@ main(int argc, char *argv[])
 
 	/*  Command options  */
 
-	while ((c = getopt(argc, argv, "I:N:a:h:f")) != -1) {
+	while ((c = getopt(argc, argv, "a:fh:D:I:N:")) != -1) {
 		switch (c) {
 		case 'I':
 		case 'a':
@@ -276,6 +277,9 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			hostname = optarg;
+			break;
+		case 'D':
+			domainname = optarg;
 			break;
 		case 'f':
 			opt_force = 1;
@@ -301,15 +305,22 @@ main(int argc, char *argv[])
 	if (argc > 1 && total_nodes < 0 && node_index == NULL) {
 		total_nodes = argc - 1;
 		auto_index = 1;
-		if (hostname == NULL) {
-			auto_hosts = malloc(total_nodes * sizeof(char *));
-			if (auto_hosts != NULL) {
+
+		if (hostname != NULL)
+			fprintf(stderr, "%s: warning: -h option is ignored\n",
+				program_name);
+
+		auto_hosts = malloc(total_nodes * sizeof(char *));
+		if (auto_hosts != NULL) {
+			if (domainname != NULL)
+				e = gfarm_schedule_search_idle_by_domainname(
+					domainname, total_nodes, auto_hosts);
+			else
 				e = gfarm_schedule_search_idle_by_all(
 					total_nodes, auto_hosts);
-				if (e != NULL) {
-					free(auto_hosts);
-					auto_hosts = NULL;
-				}
+			if (e != NULL) {
+				free(auto_hosts);
+				auto_hosts = NULL;
 			}
 		}
 	}
