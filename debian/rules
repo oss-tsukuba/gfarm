@@ -47,6 +47,12 @@ configure-stamp:
 	install -d build && cd build && $(CONFIGURE) --prefix=`pwd`/../debian/tmp/usr 
 	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=`pwd`/../debian/tmp_gsi/usr 
 
+	ln -s $(GFARM_CLIENT_PKG).install	debian/$(CLIENT_GSI_PKG).install
+	ln -s $(GFARM_GFPTOOL_PKG).install	debian/$(GFPTOOL_GSI_PKG).install
+	ln -s $(GFMD_PKG).install		debian/$(GFMD_GSI_PKG).install
+	ln -s $(GFSD_PKG).install		debian/$(GFSD_GSI_PKG).install
+	ln -s $(LIBGFARM_DEV_PKG).install	debian/$(DEV_GSI_PKG).install
+
 	touch configure-stamp
 
 build: configure-stamp build-stamp
@@ -71,6 +77,13 @@ clean:
 	-rm -rf build build_gsi
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
 	-rm -rf debian/tmp_gsi debian/tmp_nogsi
+
+	rm -f debian/$(CLIENT_GSI_PKG).install
+	rm -f debian/$(GFPTOOL_GSI_PKG).install
+	rm -f debian/$(GFMD_GSI_PKG).install
+	rm -f debian/$(GFSD_GSI_PKG).install
+	rm -f debian/$(DEV_GSI_PKG).install
+
 	dh_clean
 
 install: DH_OPTIONS=
