@@ -1,5 +1,6 @@
 #include <gfarm/gfarm_config.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "gfutil.h"
 
