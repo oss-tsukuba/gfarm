@@ -93,14 +93,17 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </para>
 <para>
 ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
-読み込みます．</para>
+読み込みます．-G オプションと同時に指定された場合，-H オプションは無視
+されます．</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-N</option> <parameter>ノード数</parameter></term>
 <listitem>
 <para>並列プログラムを実行するファイルシステムノードのノード数を指定します．
-ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</para>
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
+-G オプションあるいは -H オプションと同時に指定された場合，-N オプショ
+ンは無視されます．</para>
 </listitem>
 </varlistentry>
 <varlistentry>
