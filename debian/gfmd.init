@@ -1,58 +1,38 @@
-#! /bin/sh
+#! /bin/bash
+#
+# gfmd     Start the gfmd server.
+#
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=gfmd
+DAEMON=/usr/sbin/$NAME
+PIDFILE=/var/run/$NAME.pid
+CONF=/etc/gfarm.conf
 
-DAEMON_GFMD=/usr/sbin/gfmd
-NAME_GFMD=gfmd
-DESC_GFMD="gfmd"
+trap "" 1
+export LANG=C
+export PATH
 
-test -f $DAEMON_GFMD || exit 0
-set -e
+test -f $DAEMON || exit 0
+test -f $CONF || exit 0
 
 case "$1" in
   start)
-	echo -n "Starting $DESC_GFMD: "
-	start-stop-daemon --start --quiet --exec $DAEMON_GFMD
-	echo "$NAME_GFMD."
+	echo -n "Starting gfarm server: $NAME"
+	start-stop-daemon --start --exec $DAEMON
+	echo "."
 	;;
   stop)
-	echo -n "Stopping $DESC_GFMD: "
-#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFMD
-        # to avoid post-installation script abort on non-zero return value.
-	echo `killall $NAME_GFMD`&>/dev/null 
-	echo "$NAME_GFMD."
+	echo -n "Stopping gfarm server: $NAME"
+	start-stop-daemon --stop --oknodo --exec $DAEMON
+	echo "."
 	;;
-  #reload)
-	#
-	#	If the daemon can reload its config files on the fly
-	#	for example by sending it SIGHUP, do it here.
-	#
-	#	If the daemon responds to changes in its config file
-	#	directly anyway, make this a do-nothing entry.
-	#
-	# echo "Reloading $DESC_GFARMD configuration files."
-	# start-stop-daemon --stop --signal 1 --quiet --pidfile \
-	#	/var/run/$NAME_GFARMD.pid --exec $DAEMON_GFARMD
-  #;;
   restart|force-reload)
-	#
-	#	If the "reload" option is implemented, move the "force-reload"
-	#	option to the "reload" entry above. If not, "force-reload" is
-	#	just the same as "restart".
-	#
-
-	echo -n "Restarting $DESC_GFMD: "
-#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFMD
-        # to avoid post-installation script abort on non-zero return value.
-	echo `killall $NAME_GFMD`&>/dev/null 
-	sleep 1
-	start-stop-daemon --start --quiet --exec $DAEMON_GFMD
-	echo "$NAME_GFMD."
+	$0 stop
+	$0 start
 	;;
   *)
-	N="/etc/init.d/gfmd"
-	# echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	echo "Usage: /etc/init.d/$NAME {start|stop|restart}"
 	exit 1
 	;;
 esac
