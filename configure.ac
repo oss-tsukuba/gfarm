@@ -37,80 +37,7 @@ AC_PROG_LIBTOOL
 ###### parsing command line options
 ######
 
-###
-### --with-openldap=OpenLDAP_ROOT
-###
-
-AC_ARG_WITH(openldap,
-[  --with-openldap=OpenLDAP_ROOT	openldap root directory
-				[[default=guessed]]],
-[with_openldap="${withval}"
-],
-[with_openldap=
-])
-
-openldap_found=
-if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
-  for d in /usr/local/openldap /usr/local /usr/pkg /usr
-  do
-    if test -f $d/include/ldap.h; then
-	with_openldap=$d
-	openldap_found=yes
-	break
-    fi
-  done
-  if test x"${openldap_found}" != x"yes"; then
-	AC_MSG_ERROR([openldap is not found, aborted])
-  fi
-fi
-AC_MSG_RESULT([using \"${with_openldap}\" as openldap root directory])
-
-ldap_libs="-lldap -llber"
-if test x"${with_openldap}" = x"/usr"; then
-  ldap_includes=""
-else
-  ldap_includes="-I${with_openldap}/include"
-  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
-fi
-
-# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
-# configured, and DNS resolver library doesn't belongs to libc on some
-# systems.
-# But we cannot blindly link libresolv, because it may change behaviour
-# of gethostbyname() and friends.
-
-CPPFLAGS_SAVE="$CPPFLAGS"
-LIBS_SAVE="$LIBS"
-
-openldap_found=
-for extra_lib in "" "-lresolv" "-lbind"; do
-
-CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="$LIBS_SAVE ${ldap_libs} ${extra_lib}"
-
-AC_TRY_LINK([
-#include <lber.h>
-#include <ldap.h>],[
-	LDAP *ldap_server = ldap_open("example.com", 389);
-], [
-	if test x"${extra_lib}" != x; then
-		AC_MSG_RESULT([using ${extra_lib} for LDAP])
-		ldap_libs="${ldap_libs} ${extra_lib}"
-	fi
-	openldap_found=yes
-	break
- ], [])
-
-done
-if test x"${openldap_found}" != x"yes"; then
-	AC_MSG_ERROR([openldap cannot be linked, aborted])
-fi
-
-CPPFLAGS="$CPPFLAGS_SAVE"
-LIBS="$LIBS_SAVE"
-
-AC_SUBST(ldap_includes)
-AC_SUBST(ldap_libs)
+### --with-openldap is handled later, because it needs AC_CHECK_LIB(nsl, ...)
 
 ###
 ### --with-openssl=OpenSSL_ROOT
@@ -489,6 +416,81 @@ AC_SUBST(largefile64_srcs)
 AC_SUBST(largefile64_objs)
 AC_SUBST(largefile64_cflags)
 AC_SUBST(largefile64_targets)
+
+###
+### --with-openldap=OpenLDAP_ROOT
+###
+
+AC_ARG_WITH(openldap,
+[  --with-openldap=OpenLDAP_ROOT	openldap root directory
+				[[default=guessed]]],
+[with_openldap="${withval}"
+],
+[with_openldap=
+])
+
+openldap_found=
+if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
+  for d in /usr/local/openldap /usr/local /usr/pkg /usr
+  do
+    if test -f $d/include/ldap.h; then
+	with_openldap=$d
+	openldap_found=yes
+	break
+    fi
+  done
+  if test x"${openldap_found}" != x"yes"; then
+	AC_MSG_ERROR([openldap is not found, aborted])
+  fi
+fi
+AC_MSG_RESULT([using \"${with_openldap}\" as openldap root directory])
+
+ldap_libs="-lldap -llber"
+if test x"${with_openldap}" = x"/usr"; then
+  ldap_includes=""
+else
+  ldap_includes="-I${with_openldap}/include"
+  ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib ${ldap_libs}"
+fi
+
+# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
+# configured, and DNS resolver library doesn't belongs to libc on some
+# systems.
+# But we cannot blindly link libresolv, because it may change behaviour
+# of gethostbyname() and friends.
+
+CPPFLAGS_SAVE="$CPPFLAGS"
+LIBS_SAVE="$LIBS"
+
+openldap_found=
+for extra_lib in "" "-lresolv" "-lbind"; do
+
+CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
+LIBS="$LIBS_SAVE ${ldap_libs} ${extra_lib}"
+
+AC_TRY_LINK([
+#include <lber.h>
+#include <ldap.h>],[
+	LDAP *ldap_server = ldap_open("example.com", 389);
+], [
+	if test x"${extra_lib}" != x; then
+		AC_MSG_RESULT([using ${extra_lib} for LDAP])
+		ldap_libs="${ldap_libs} ${extra_lib}"
+	fi
+	openldap_found=yes
+	break
+ ], [])
+
+done
+if test x"${openldap_found}" != x"yes"; then
+	AC_MSG_ERROR([openldap cannot be linked, aborted])
+fi
+
+CPPFLAGS="$CPPFLAGS_SAVE"
+LIBS="$LIBS_SAVE"
+
+AC_SUBST(ldap_includes)
+AC_SUBST(ldap_libs)
 
 ###### 
 ###### Checks for header files.
