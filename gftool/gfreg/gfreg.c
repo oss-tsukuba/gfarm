@@ -97,7 +97,6 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 	struct stat s;
 	struct gfs_stat gs;
 	char *e, *target_url = NULL;
-	static const char gfarm_prefix[] = "gfarm:";
 	int executable_file = 0;
 
 	if (stat(filename, &s) == -1) {
