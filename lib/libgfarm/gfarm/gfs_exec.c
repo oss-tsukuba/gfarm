@@ -17,6 +17,8 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 		return gfarm_errno_to_error(errno);
 	}
 
+	/* XXX - If this host is an active filesystem node */
+
 	e = gfarm_host_get_canonical_self_name(&hostname);
 	if (e != NULL)
 		return (e);
