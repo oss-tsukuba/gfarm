@@ -74,17 +74,35 @@ timerval_t tm_read_close_0, tm_read_close_1;
 
 #define ARRAY_LENGTH(array)	(sizeof(array)/sizeof(array[0]))
 
-#define MAX_BUFFER_SIZE_NUMBER	32
-#define MAX_BUFFER_SIZE		(8*1024*1024)
+/* Linux stupidly requires 512byte aligned buffer for raw device access. */
+#define ALIGNMENT	512
 
-char buffer[MAX_BUFFER_SIZE];
+#define MAX_BUFFER_SIZE_NUMBER	32
+
+char *buffer;
+int max_buffer_size = 0;
+
+void *
+alloc_aligned_memory(size_t size, int alignment)
+{
+	char *p = malloc(size + alignment - 1);
+
+	if (p == NULL) {
+		fprintf(stderr, "no memory for %ld bytes\n",
+			(long)size + alignment - 1);
+		exit(1);
+	}
+	if (((long)p & (alignment - 1)) != 0)
+		p += alignment - ((long)p & (alignment - 1));
+	return (p);
+}
 
 void
 initbuffer(void)
 {
 	int i;
 
-	for (i = 0; i < MAX_BUFFER_SIZE; i++)
+	for (i = 0; i < max_buffer_size; i++)
 		buffer[i] = i;
 }
 
@@ -319,7 +337,7 @@ main(int argc, char **argv)
 	char *file1 = "test.file1";
 	char *file2 = "test.file2";
 	int test_mode = 0;
-	int c, i, buffer_sizec = 0, buffer_sizes[MAX_BUFFER_SIZE_NUMBER];
+	int c, i, buffer_sizec = 0, buffer_sizes_space[MAX_BUFFER_SIZE_NUMBER];
 	static int buffer_sizes_default[] = {
 		512,
 		1024,
@@ -328,6 +346,7 @@ main(int argc, char **argv)
 		256 * 1024,
 		1024 * 1024,
 	};
+	int *buffer_sizes;
 	off_t file_size = 1024;
 	int flags = 0;
 
@@ -340,12 +359,8 @@ main(int argc, char **argv)
 					MAX_BUFFER_SIZE_NUMBER);
 				exit(1);
 			}
-			buffer_sizes[buffer_sizec] = strtol(optarg, NULL, 0);
-			if (buffer_sizes[buffer_sizec] > MAX_BUFFER_SIZE) {
-				fprintf(stderr, "-b: %d is too big\n",
-					buffer_sizes[buffer_sizec]);
-				exit(1);
-			}
+			buffer_sizes_space[buffer_sizec] =
+			    strtol(optarg, NULL, 0);
 			buffer_sizec++;
 			break;
 		case 's':
@@ -393,19 +408,26 @@ main(int argc, char **argv)
 	if (test_mode == 0)
 		test_mode = TESTMODE_WRITE|TESTMODE_READ|TESTMODE_COPY;
 
+	if (buffer_sizec == 0) {
+		buffer_sizec = ARRAY_LENGTH(buffer_sizes_default);
+		buffer_sizes = buffer_sizes_default;
+	} else {
+		buffer_sizes = buffer_sizes_space;
+	}
+	for (i = 0; i < buffer_sizec; i++) {
+		if (max_buffer_size < buffer_sizes[i])
+			max_buffer_size = buffer_sizes[i];
+	}
+	buffer = alloc_aligned_memory(max_buffer_size, ALIGNMENT);
+
 	test_title(test_mode, file_size, flags);
 
 	file_size *= 1024 * 1024;
 	initbuffer();
 
-	if (buffer_sizec == 0) {
-		for (i = 0; i < ARRAY_LENGTH(buffer_sizes_default); i++)
-			test(test_mode, file1, file2,
-			     buffer_sizes_default[i], file_size, flags);
-	} else {
-		for (i = 0; i < buffer_sizec; i++)
-			test(test_mode, file1, file2,
-			     buffer_sizes[i], file_size, flags);
+	for (i = 0; i < buffer_sizec; i++) {
+		test(test_mode, file1, file2,
+		     buffer_sizes[i], file_size, flags);
 	}
 	return (0);
 }
