@@ -120,7 +120,7 @@ main(argc, argv)
 	extern int optind;
 	int argc_save = argc;
 	char **argv_save = argv;
-	char *e, *hostfile = NULL, *section = NULL;
+	char *e, *hostfile = NULL, *section = NULL, *url;
 	int ch, error_line, n = 0, default_view = 0, global_view = 0;
 	char **hostlist = NULL;
 
@@ -165,12 +165,18 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
+
+	e = gfs_realpath(argv[0], &url);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[0], e);
+		exit(1);
+	}
 	if (section != NULL) {
-		e = gfexport_section(argv[0], section, stdout);
+		e = gfexport_section(url, section, stdout);
 	} else if (global_view) {
-		e = gfexport_test(argv[0], stdout, 1);
+		e = gfexport_test(url, stdout, 1);
 	} else if (default_view) {
-		e = gfexport_test(argv[0], stdout, 0);
+		e = gfexport_test(url, stdout, 0);
 	} else {
 		if (hostfile != NULL) {
 			e = gfarm_hostlist_read(hostfile,
@@ -184,15 +190,18 @@ main(argc, argv)
 				else
 					fprintf(stderr, "%s: %s: %s\n",
 						program_name, hostfile, e);
+				free(url);
 				exit(1);
 			}
 		}
-		e = gfexport(argv[0], stdout, n, hostlist);
+		e = gfexport(url, stdout, n, hostlist);
 	}
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, argv[0], e);
+		fprintf(stderr, "%s: %s: %s\n", program_name, url, e);
+		free(url);
 		exit(1);
 	}
+	free(url);
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);

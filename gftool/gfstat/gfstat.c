@@ -81,16 +81,28 @@ main(int argc, char *argv[])
 
 	while (*argv) {
 		struct gfs_stat st;
+		char *url;
 
-		e = gfs_stat(*argv, &st);
+		e = gfs_realpath(*argv, &url);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", *argv, e);
 			r = 1;
+			++argv;
+			continue;
 		}
-		else {
-			display_stat(*argv, &st);
-			gfs_stat_free(&st);
+
+		e = gfs_stat(url, &st);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", url, e);
+			r = 1;
+			free(url);
+			++argv;
+			continue;
 		}
+		display_stat(url, &st);
+
+		gfs_stat_free(&st);
+		free(url);
 		++argv;
 	}
 
