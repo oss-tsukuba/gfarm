@@ -470,26 +470,33 @@ compare_size_r(const void *a, const void *b)
 }
 
 int
+timespec_cmp(struct gfarm_timespec *t1, struct gfarm_timespec *t2)
+{
+	if (t1->tv_sec > t2->tv_sec)
+		return (1);
+	if (t1->tv_sec < t2->tv_sec)
+		return (-1);
+	if (t1->tv_nsec > t2->tv_nsec)
+		return (1);
+	if (t1->tv_nsec < t2->tv_nsec)
+		return (-1);
+	return (0);
+}
+
+int
 compare_mtime(const void *a, const void *b)
 {
 	const struct ls_entry *p = a, *q = b;
 
-	if (p->st->st_mtimespec.tv_sec > q->st->st_mtimespec.tv_sec)
-		return (1);
-	else if (p->st->st_mtimespec.tv_sec < q->st->st_mtimespec.tv_sec)
-		return (-1);
-	else if (p->st->st_mtimespec.tv_nsec > q->st->st_mtimespec.tv_nsec)
-		return (1);
-	else if (p->st->st_mtimespec.tv_nsec < q->st->st_mtimespec.tv_nsec)
-		return (-1);
-	else
-		return (0);
+	return (timespec_cmp(&q->st->st_mtimespec, &p->st->st_mtimespec));
 }
 
 int
 compare_mtime_r(const void *a, const void *b)
 {
-	return (-compare_mtime(a, b));
+	const struct ls_entry *p = a, *q = b;
+
+	return (timespec_cmp(&p->st->st_mtimespec, &q->st->st_mtimespec));
 }
 
 void
