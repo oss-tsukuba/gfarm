@@ -549,12 +549,6 @@ fi
 %{prefix}/lib/gfs_hook_mpi_debug.o
 %endif
 
-%if !%{globus}
-%files gfront
-%{prefix}/bin/gfront
-%{prefix}/share/java/gfront.jar
-%endif
-
 %if %{have_ns}
 %{prefix}/include/gfarm/comm.h
 %{prefix}/include/gfarm/debug.h
@@ -568,4 +562,10 @@ fi
 %{prefix}/include/gfarm/type.h
 %{prefix}/lib/libns.a
 %{prefix}/lib/libnsexec.a
+%endif
+
+%if !%{globus}
+%files gfront
+%{prefix}/bin/gfront
+%{prefix}/share/java/gfront.jar
 %endif
