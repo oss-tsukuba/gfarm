@@ -10,7 +10,7 @@ SRCS = gfcombine_hook.c
 OBJS = gfcombine_hook.o
 PROGRAM = gfcombine_hook
 CFLAGS = $(COMMON_CFLAGS)
-LDLIBS = $(COMMON_LDFLAGS) $(top_srcdir)/lib/gfs_hook/gfs_hook.o $(GFARMLIB) $(LIBS)
+LDLIBS = $(COMMON_LDFLAGS) $(top_objdir)/lib/gfs_hook/gfs_hook.o $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)

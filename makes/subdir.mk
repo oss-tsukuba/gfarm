@@ -21,30 +21,28 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 		echo '[' making $${dir} ']'; \
 		if test -f $(srcdir)/$${dir}/Makefile.in; then \
 			( cd $${dir} && \
-			  if [ "$(srcdir)" = "." ]; then \
-				$(MAKE) $${target}; \
-			  else \
-				$(MAKE) \
+			  case "$(srcdir)" in \
+			  .)	$(MAKE) $${target};; \
+			  *)	$(MAKE) \
 					top_srcdir=$(top_srcdir) \
 					top_objdir=$(top_objdir) \
 					srcdir=$(srcdir)/$${dir} \
 					VPATH='$$(srcdir)' \
-					$${target}; \
-			  fi; \
+					$${target};; \
+			  esac; \
 			) || exit 1; \
 		else \
-			test -d $${dir} || mkdir $${dir} || exit 1; \
+			test -d $${dir} || mkdir -p $${dir} || exit 1; \
 			( cd $${dir} && \
-			  if [ "$(srcdir)" = "." ]; then \
-				$(MAKE) $${target}; \
-			  else \
-				$(MAKE) -f $(srcdir)/$${dir}/Makefile \
+			  case "$(srcdir)" in \
+			  .)	$(MAKE) $${target};; \
+			  *)	$(MAKE) -f $(srcdir)/$${dir}/Makefile \
 					top_srcdir=$(top_srcdir) \
 					top_objdir=$(top_objdir) \
 					srcdir=$(srcdir)/$${dir} \
 					VPATH='$$(srcdir)' \
-					$${target}; \
-			  fi; \
+					$${target};; \
+			  esac; \
 			) || exit 1; \
 		fi; \
 	done

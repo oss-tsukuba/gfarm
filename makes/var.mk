@@ -7,10 +7,12 @@ example_bindir = $(default_bindir)
 
 RM = rm
 
-COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) -I$(top_objdir) -I$(INCDIR)
+COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
+	-I$(top_objdir) -I$(top_objdir)/include
 COMMON_LDFLAGS = $(largefile_ldflags)
 
 INCDIR = $(top_srcdir)/include
+OBJINCDIR = $(top_objdir)/gfarm
 GFSL_DIR = $(top_srcdir)/lib/libgfsl
 GFD_DIR = $(top_srcdir)/gfarmd
 GFSD_DIR = $(top_srcdir)/gfsd

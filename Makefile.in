@@ -3,6 +3,8 @@ top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
+include $(top_srcdir)/makes/var.mk
+
 GLOBUS_SUBDIRS = lib/libgfsl
 
 SUBDIRS = \
@@ -21,7 +23,13 @@ SUBDIRS = \
 	gftool \
 	gfptool
 
+all: make-link
+
 include $(top_srcdir)/makes/subdir.mk
+
+make-link:
+	-rm -f $(OBJINCDIR)/gfarm_config.h; \
+		ln -s ../gfarm_config.h $(OBJINCDIR)
 
 post-distclean-hook:
 	rm -f config.log config.status config.cache \

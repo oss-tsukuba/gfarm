@@ -19,11 +19,11 @@ html-all:
 html-install:
 	@for i in / $(HTML); do \
 		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $${i} $(htmldir)/$${i} ); \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(htmldir)/$${i} ); \
 	done
 	@for i in / $(HTMLSRC); do \
 		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $${i}.html $(htmldir)/$${i}.html ); \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$${i}.html $(htmldir)/$${i}.html ); \
 	done
 
 html-clean:
