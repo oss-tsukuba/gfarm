@@ -265,6 +265,9 @@ gfs_realpath(const char *path, char **abspathp)
 {
 	char *e, *canonic_path;
 
+	if (path == NULL)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+
 	path = gfarm_url_prefix_skip(path);
 	e = gfarm_canonical_path(path, &canonic_path);
 	if (e != NULL)
