@@ -145,7 +145,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (rsh_options != NULL)
 		gfarm_stringlist_add_list(&arg_list, rsh_options);
-	if (options->deliver == 0)
+	if (cmd_type == GFARM_COMMAND && options->deliver == 0)
 		gfarm_stringlist_add(&arg_list, gfexec_command);
 	command_alist_index = gfarm_stringlist_length(&arg_list);
 	gfarm_stringlist_add(&arg_list, "(dummy)");
