@@ -14,7 +14,8 @@ SUBDIRS = \
 	gftool \
 	gfptool \
 	util/gfront \
-	util/ptool
+	util/ptool \
+	bench/thput-gfpio
 
 all:
 

@@ -631,6 +631,7 @@ fi
 %files fsnode
 %{prefix}/bin/gfexec
 %{prefix}/bin/gfsplck
+%{prefix}/bin/thput-gfpio
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 
