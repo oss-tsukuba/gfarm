@@ -502,6 +502,7 @@ chmod +x してください．
 	RedHat Linux:
 		% su
 		Password: 
+		# /sbin/chkconfig --add gfmd
 		# /etc/rc.d/init.d/gfmd start
 	Debian GNU/Linux:
 		% su
@@ -550,6 +551,7 @@ chmod +x してください．
 	RedHat Linux:
 		% su
 		Password: 
+		# /sbin/chkconfig --add gfsd
 		# /etc/rc.d/init.d/gfsd start
 	Debian GNU/Linux:
 		% su

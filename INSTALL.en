@@ -481,6 +481,7 @@ The procedure to invoke gfmd by this script is as follows:
 	RedHat Linux:
 		% su
 		Password: 
+		# /sbin/chkconfig --add gfmd
 		# /etc/rc.d/init.d/gfmd start
 	Debian GNU/Linux:
 		% su
@@ -528,6 +529,7 @@ The procedure to invoke gfsd by this script is as follows:
 	RedHat Linux:
 		% su
 		Password: 
+		# /sbin/chkconfig --add gfsd
 		# /etc/rc.d/init.d/gfsd start
 	Debian GNU/Linux:
 		% su
