@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 #include <sys/syscall.h>
+#include "hooks_subr.h"
 
 #ifdef SYS_getcwd
 
@@ -52,8 +53,6 @@ gfs_hook_syscall_getcwd(char *buf, size_t size)
 }
 
 #else /* do not have SYS_getcwd */
-
-#include "hooks_subr.h"
 
 #define	ISDOT(dp) \
 	(dp->d_name[0] == '.' && (dp->d_name[1] == '\0' || \
