@@ -134,6 +134,9 @@ main(int argc, char **argv)
 	char **argv_save = argv;
 	char *e, *section = NULL;
 	int i, ch, error = 0;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
+	int argc_expanded;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -160,14 +163,32 @@ main(int argc, char **argv)
 		usage();
 	}
 
-	for (i = 0; i < argc; i++) {
-		if (argc > 1)
-			printf("%s:\n", argv[i]);
-		if (display_replica_catalog_section(argv[i], section) != NULL)
+	e = gfarm_stringlist_init(&paths);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
+	e = gfs_glob_init(&types);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < argc; i++)
+		gfs_glob(argv[i], &paths, &types);
+
+	argc_expanded = gfarm_stringlist_length(&paths);
+	for (i = 0; i < argc_expanded; i++) {
+		char *p = gfarm_stringlist_elem(&paths, i);
+
+		if (argc_expanded > 1)
+			printf("%s:\n", p);
+		if (display_replica_catalog_section(p, section) != NULL)
 			error = 1;
-		if (argc > 1 && i < argc - 1)
+		if (argc_expanded > 1 && i < argc_expanded - 1)
 			printf("\n");
 	}
+	gfs_glob_free(&types);
+	gfarm_stringlist_free_deeply(&paths);
 	e = gfarm_terminate();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
