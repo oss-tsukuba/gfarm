@@ -25,6 +25,8 @@ INSTALL_DATA = @INSTALL_DATA@
 
 LIBS = @LIBS@
 
+ld_runpath_flag = @ld_rpath_flag@
+
 metadb_client_includes = @metadb_client_includes@
 metadb_client_libs = @metadb_client_libs@
 
