@@ -1479,6 +1479,19 @@ gfarm_file_section_info_remove_all_by_file(const char *pathname)
 	return (error_save);
 }
 
+int
+gfarm_file_section_info_does_exist(
+	const char *pathname,
+	const char *section)
+{
+	struct gfarm_file_section_info info;
+
+	if (gfarm_file_section_info_get(pathname, section, &info) != NULL)
+		return (0);
+	gfarm_file_section_info_free(&info);
+	return (1);
+}
+
 /**********************************************************************/
 
 static char *gfarm_file_section_copy_info_make_dn(void *vkey);
