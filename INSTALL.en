@@ -76,7 +76,7 @@ Gfarm software consists of
   metadata of the Gfarm filesystem.  gfmd is needed to be running on a
   metadata server node in advance.
 
-  In the current distribution, filesystem metadata is managed by a
+  In the current distribution, filesystem metadata is managed by an
   LDAP server, which is directly accessed by each client and
   filesystem node not via the gfmd.
 
@@ -174,7 +174,7 @@ This section assumes the following setting.
 
 	/usr/local/openldap
 
- - hostname of a LDAP server
+ - hostname of an LDAP server
 
 	ldap.example.com
 
@@ -198,7 +198,7 @@ This section assumes the following setting.
 
 	dc=example,dc=com
 
-	It is recommended to choose the base distingush name by using
+	It is recommended to choose the base distinguish name by using
 	each component of the fully qualified domain name (FQDN) as
 	a right hand value of "dc=".
 
@@ -216,7 +216,7 @@ the Gfarm filesystem metadata.
 
  - slapd.conf
 
-This is a configuration file for a LDAP server included in the
+This is a configuration file for an LDAP server included in the
 OpenLDAP distribution.  Note that suffix and rootdn in this file
 refer to the base distinguished name.
 
@@ -370,12 +370,12 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
 	MUST ( pathname $ section $ hostname ) )
 -------------------------------- END --------------------------------
 
- - Creating initial database of filesystem metadata
+ - Create the initial database file of filesystem metadata
 
-Initial database contains the root node information of LDAP.
-
-Please specify the base distinguished name as a "dn" (distinguished name)
-attribute, and "top" as a "objectclass" attribute.
+Initial database should contain the root node information of LDAP,
+which includes the base distinguished name specifed by the "dn"
+(distinguished name) attribute, and "top" specified by the
+"objectclass" attribute.
 
 This is a sample database file of /etc/gfarm-ldap/initial.ldif on
 ldap.example.com.
@@ -386,30 +386,32 @@ objectclass: top
 
 -------------------------------- END --------------------------------
 
- - Creating a LDAP database
+ - Create an LDAP database
 
-To create an initial LDAP database using the above initial entries,
-execute the following commands on ldap.example.com.
+The 'slapadd' command creates an initial LDAP database.  The following
+example shows how to create the initial LDAP database using the above
+initial entries on ldap.example.com.
 
 	% rm -f /var/gfarm-ldap/*
 	% cd /etc/gfarm-ldap
 	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
- - Executing a LDAP server
+ - Execute an LDAP server
 
-To execute a LDAP server on ldap.example.com, type the following commands,
+An LDAP server is invoked by the 'slapd' command.
 
 	% cd /usr/local/openldap/libexec/
 	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
-The -h option specifies a port number of the LDAP server.
+The -h option specifies a listening port number of the LDAP server.
 
- - Testing a LDAP server
+ - Test the LDAP server
 
 Try to execute the following commands.  If the same content as the
-initial.ldif file is displayed, the test is passed.
+initial.ldif file is displayed, the LDAP server works fine.
 
 In the case of the Bourne Shell:
+
 	% host=ldap.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
@@ -417,43 +419,42 @@ In the case of the Bourne Shell:
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 In the case of the csh:
+
 	% set host=ldap.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
+ - Register filesystem nodes
 
- - Registering information for filesystem nodes
+Every filesystem node need to be registered to the Gfarm metadata.
+The 'gfhost -c' command is used to register the node information,
+which includes hostname, hostalias, architecture, and ncpu;
 
-For each node, register the following information by the gfhost command.
+% gfhost -c -a <architecture> [ -n <ncpu> ] <hostname> [ <hostalias> ... ]
 
   -- hostname
 
     fully qualified domain name (FQDN) of the host.
-    Specify this as a parameter of the gfhost command. 
 
   -- hostalias
 
-    If the host has multiple network interfaces, and those interfaces
-    have different hostnames, you can specify the hostnames as subsequent
-    parameters of the above hostname parameter of the gfhost command.
-    If the host has only one physical network interface, you don't have
-    to specify this information.
+    If the host has multiple network interfaces that have different
+    hostnames, these hostnames can be spacified as hostname aliases by
+    subsequent parameters of the hostname.  This is optional.
 
   -- architecture
 
-    architecture name like sparc-sun-solaris.
-    Specify this as an argument of -a option of the gfhost command.
+    architecture name like sparc-sun-solaris, which is specified by
+    the -a option.
 
   -- ncpu
 
-    the number of cpus.
-    Specify this as an argument of -n option of the gfhost command.
-    this information is optional.
+    the number of cpus, which is speficied by the -n option.  This is
+    optional.
 
 The followings are sample commands to register those information.
-The option -c means "create" a host information.
 
 	% gfhost -c -a i386-redhat-linux linuxhost-1.example.com
 	% gfhost -c -a i386-redhat-linux linuxhost-2.example.com
@@ -466,10 +467,10 @@ The option -c means "create" a host information.
 	% gfhost -c -a alpha-dec-osf osfhost-1.example.com
 	% gfhost -c -a mips-sgi-irix -n 16 irixhost-1.example.com
 
-You can confirm the information by specifing -l option with
-the gfhost command:
+You can confirm the filesystem node information by specifying the -D
+option with the gfhost command:
 
-	% gfhost -l
+	% gfhost -D
 	i386-redhat-linux 1 linuxhost-1.example.com
 	i386-redhat-linux 1 linuxhost-2.example.com
 	i386-redhat-linux 1 linuxhost-3.example.com
@@ -483,18 +484,22 @@ the gfhost command:
 
 ------------------------------------------------------------------------
 
-** Creating a gfsd spool directory on filesystem nodes
+** Create a gfsd spool directory on filesystem nodes
 
-On each filesystem node, create a spool directory /var/spool/gfarm.
-Moreover, under the spool directory, create every user directory.  The
-following example creates user directories for three users; morita,
-tatebe, and soda.
+On each filesystem node, create a spool root directory
+/var/spool/gfarm.  Moreover, under the spool root directory, create a
+bin/ directory and every user directory, although user directories
+will be automatically created by the 'gfrun' command described later.
+The following example creates user directories for three users;
+morita, tatebe, and soda.
 
 	% su
 	Password: 
 	# sh
 	# mkdir /var/spool/gfarm
 	# chmod 1777 /var/spool/gfarm
+	# mkdir /var/spool/gfarm/bin
+	# chmod 1777 /var/spool/gfarm/bin
 	# for u in morita tatebe soda; do
 	>   mkdir /var/spool/gfarm/$u
 	>   chown ${u} /var/spool/gfarm/$u
@@ -507,8 +512,8 @@ tatebe, and soda.
 
 ** /etc/gfarm.conf
 
-Create /etc/gfarm.conf on every host including filesystem nodes,
-metadata server nodes, and client nodes.
+Create /etc/gfarm.conf on every filesystem node and metadata server
+nodes.
 
 ----------------------------- BEGIN HERE -----------------------------
 spool /var/spool/gfarm
@@ -519,18 +524,20 @@ ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret ALL
 -------------------------------- END --------------------------------
 
-On a client node, client programs read ~/.gfarmrc instead of
-/etc/gfarm.conf when it is available.
+On client nodes, the configuration file can be placed on
+/etc/gfarm.conf and/or ~/.gfarmrc.  When both files exist, ~/.gfarmrc
+is used.
 
 ------------------------------------------------------------------------
 
 ** gfmd
 
 On a metadata server node, execute gfmd with a root privilege.  gfmd
-reads the configuration file /etc/gfarm.conf described above.
+reads the configuration file /etc/gfarm.conf described above.  You can
+find sample start up scripts in init.d/<arch>/ directory.
 
 To see whether gfmd is correctly invoked or not, you can use the
-gfps command as follows. If gfmd is correctly invoked, gfps immediately
+gfps command as follows.  If gfmd is correctly invoked, gfps immediately
 exits without any warning message.
 
 	% gfps
@@ -538,23 +545,28 @@ exits without any warning message.
 ** gfsd
 
 On every filesystem node, execute gfsd with a root privilege.  gfsd
-reads the configuration file /etc/gfarm.conf described above.
+reads the configuration file /etc/gfarm.conf described above.  You can
+find sample start up scripts in init.d/<arch>/ directory.
 
 To see whether gfsd is correctly invoked or not, you can use the
-gfhost command without any argument as follows. The 3 numbers at
+gfhost command with the -l option as follows. The 3 numbers at
 the beginning of each line are load averages of the host.
 
-	% gfhost
+	% gfhost -l
 	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-1.example.com
 	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-2.example.com
-	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-3.example.com
+	-.--/-.--/-.-- i386-redhat-linux 1 linuxhost-3.example.com
 	0.00/0.00/0.00 i386-redhat-linux 1 linuxhost-4.example.com
 	0.40/0.45/0.42 i386-debian-linux 2 linuxhost-5.example.com
 	0.43/0.50/0.40 i386-debian-linux 2 linuxhost-6.example.com
 	0.10/0.00/0.00 sparc-sun-solaris 1 solarishost-1.example.com
-	0.00/0.01/0.10 sparc-sun-solaris 1 solarishost-2.example.com
+	x.xx/x.xx/x.xx sparc-sun-solaris 1 solarishost-2.example.com
 	0.00/0.00/0.00 alpha-dec-osf 1 osfhost-1.example.com
 	0.35/0.58/0.21 mips-sgi-irix 16 irixhost-1.example.com
+
+-.-- of linuxhost3.example.com shows there is no gfsd listening to the
+specified port on the machine.  x.xx of solarishost-2.example.com
+shows there is no route to the machine.
 
 ========================================================================
 
@@ -562,7 +574,7 @@ the beginning of each line are load averages of the host.
 
 This section describes execution examples.
 
-** Creating a session key for user authentication in a trusted
+** Create a session key for user authentication in a trusted
    environment
 
 This subsection can be skipped when a home directory is shared among
@@ -577,7 +589,7 @@ filesystem nodes, a metadata server node, and client nodes.
    all nodes including filesystem nodes, a metadata server node, and
    client nodes.
 
-** Executing sample programs
+** Execute sample programs
 
 This subsection shows several execution examples of sample programs.
 
