@@ -136,7 +136,11 @@ main(argc, argv)
 	args[2] = command;
 	args[3] = NULL;
 
-	e = gfarm_initialize(&argc_save, &argv_save);
+	/*
+	 * initialization
+	 */
+	gfarm_error_initialize();
+	e = gfarm_config_read();
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
@@ -164,10 +168,6 @@ main(argc, argv)
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", argv[0], e);
 		exit(1);
-	}
-	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
 	}
 	if (sig) {
 		fprintf(stderr, "%s: signal %d received%s.\n", hostname, sig,
