@@ -167,6 +167,17 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 </listitem>
 </varlistentry>
 <varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>
+Gfarm システムコール・フック・ライブラリを利用して実行されるプログラムにおいて，
+デフォルトのファイル・ビューをグローバル・ファイル・ビューに設定します．
+このオプションをつけないと，
+デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>

@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "05 January 2004" "Gfarm" ""
+.TH "GFRUN" "1" "10 August 2004" "Gfarm" ""
+
 .SH NAME
 gfrun, gfrsh, gfssh \- run Gfarm parallel programs
 .SH SYNOPSIS
@@ -95,6 +96,11 @@ Gfarm specific options will be passed to the command as the result.
 \fB-u\fR
 explicitly specifies that the command is an usual program, and
 does not take Gfarm specific options.
+.TP
+\fB-b\fR
+specifies global file view as a defult file view for programs
+linked with Gfarm syscall-hooking library.  If this option is not
+specified, the default is local file view.
 .TP
 \fB-?\fR
 displays a list of command options.

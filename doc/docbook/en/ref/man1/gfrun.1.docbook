@@ -175,6 +175,16 @@ does not take Gfarm specific options.
 </varlistentry>
 
 <varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>specifies global file view as a defult file view for programs
+linked with Gfarm syscall-hooking library.  If this option is not
+specified, the default is local file view.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>displays a list of command options.</para>
