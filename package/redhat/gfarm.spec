@@ -227,6 +227,7 @@ fi
 %{man_prefix}/man3/gfs_glob_add.3.gz
 %{man_prefix}/man3/gfs_glob_free.3.gz
 %{man_prefix}/man3/gfs_glob_init.3.gz
+%{man_prefix}/man3/gfs_mkdir.3.gz
 %{man_prefix}/man3/gfs_opendir.3.gz
 %{man_prefix}/man3/gfs_pio_close.3.gz
 %{man_prefix}/man3/gfs_pio_create.3.gz
@@ -248,6 +249,7 @@ fi
 %{man_prefix}/man3/gfs_pio_write.3.gz
 %{man_prefix}/man3/gfs_readdir.3.gz
 %{man_prefix}/man3/gfs_realpath.3.gz
+%{man_prefix}/man3/gfs_rmdir.3.gz
 %{man_prefix}/man3/gfs_stat.3.gz
 %{man_prefix}/man3/gfs_stat_free.3.gz
 %{man_prefix}/man3/gfs_unlink.3.gz
@@ -310,6 +312,7 @@ fi
 %{man_prefix}/ja/man3/gfs_glob_add.3.gz
 %{man_prefix}/ja/man3/gfs_glob_free.3.gz
 %{man_prefix}/ja/man3/gfs_glob_init.3.gz
+%{man_prefix}/ja/man3/gfs_mkdir.3.gz
 %{man_prefix}/ja/man3/gfs_opendir.3.gz
 %{man_prefix}/ja/man3/gfs_pio_close.3.gz
 %{man_prefix}/ja/man3/gfs_pio_create.3.gz
@@ -331,6 +334,7 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
 %{man_prefix}/ja/man3/gfs_readdir.3.gz
 %{man_prefix}/ja/man3/gfs_realpath.3.gz
+%{man_prefix}/ja/man3/gfs_rmdir.3.gz
 %{man_prefix}/ja/man3/gfs_stat.3.gz
 %{man_prefix}/ja/man3/gfs_stat_free.3.gz
 %{man_prefix}/ja/man3/gfs_unlink.3.gz
@@ -377,6 +381,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_glob_add.3.html
 %{html_prefix}/en/ref/man3/gfs_glob_free.3.html
 %{html_prefix}/en/ref/man3/gfs_glob_init.3.html
+%{html_prefix}/en/ref/man3/gfs_mkdir.3.html
 %{html_prefix}/en/ref/man3/gfs_opendir.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_create.3.html
@@ -398,6 +403,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/en/ref/man3/gfs_readdir.3.html
 %{html_prefix}/en/ref/man3/gfs_realpath.3.html
+%{html_prefix}/en/ref/man3/gfs_rmdir.3.html
 %{html_prefix}/en/ref/man3/gfs_stat.3.html
 %{html_prefix}/en/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/en/ref/man3/gfs_unlink.3.html
@@ -459,6 +465,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_glob_add.3.html
 %{html_prefix}/ja/ref/man3/gfs_glob_free.3.html
 %{html_prefix}/ja/ref/man3/gfs_glob_init.3.html
+%{html_prefix}/ja/ref/man3/gfs_mkdir.3.html
 %{html_prefix}/ja/ref/man3/gfs_opendir.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_create.3.html
@@ -480,6 +487,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
 %{html_prefix}/ja/ref/man3/gfs_readdir.3.html
 %{html_prefix}/ja/ref/man3/gfs_realpath.3.html
+%{html_prefix}/ja/ref/man3/gfs_rmdir.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat.3.html
 %{html_prefix}/ja/ref/man3/gfs_stat_free.3.html
 %{html_prefix}/ja/ref/man3/gfs_unlink.3.html

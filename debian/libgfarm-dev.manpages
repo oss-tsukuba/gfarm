@@ -4,11 +4,12 @@ man/man3/gfarm_terminate.3
 man/man3/gfarm_url_hosts_schedule.3
 man/man3/gfs_chdir.3
 man/man3/gfs_closedir.3
-man/man3/gfs_opendir.3
 man/man3/gfs_glob.3
 man/man3/gfs_glob_add.3
 man/man3/gfs_glob_free.3
 man/man3/gfs_glob_init.3
+man/man3/gfs_mkdir.3
+man/man3/gfs_opendir.3
 man/man3/gfs_pio_close.3
 man/man3/gfs_pio_create.3
 man/man3/gfs_pio_eof.3
@@ -29,6 +30,7 @@ man/man3/gfs_pio_ungetc.3
 man/man3/gfs_pio_write.3
 man/man3/gfs_readdir.3
 man/man3/gfs_realpath.3
+man/man3/gfs_rmdir.3
 man/man3/gfs_stat.3
 man/man3/gfs_stat_free.3
 man/man3/gfs_unlink.3
