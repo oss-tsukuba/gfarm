@@ -11,9 +11,10 @@ extern int gfarm_node;
 int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
-	const char *e;
 	GFS_File gf;
-#if 1
+#if 0
+	const char *e;
+#else
 	int r;
 #endif
 
@@ -105,9 +106,10 @@ FUNC_FSTAT(int filedes, STRUCT_STAT *buf)
 int
 FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
-	const char *e;
 	GFS_File gf;
-#if 1
+#if 0
+	const char *e;
+#else
 	int r;
 #endif
 
@@ -121,7 +123,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
 
 #if 0 /* Not yet implemented. */
-	e = gfs_fstat(filedes, buf);
+	e = GFS_FSTAT(filedes, buf);
 	if (e == NULL)
 		return (0);
 
