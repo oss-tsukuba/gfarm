@@ -420,28 +420,27 @@ mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off)
 int
 __dup2(int oldfd, int newfd)
 {
-	GFS_File gf;
-	int gfs_fd;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup2(%d, %d)\n",
 				  oldfd, newfd));
 
-	if ((gf = gfs_hook_is_open(oldfd)) == NULL)
+	if (gfs_hook_is_open(oldfd) == NULL)
 		return syscall(SYS_dup2, oldfd, newfd);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
 				oldfd, newfd));
 
-	gfs_fd = gfs_pio_fileno(gf);
-	if (syscall(SYS_dup2, gfs_fd, newfd) == -1)
+	if (syscall(SYS_dup2, oldfd, newfd) == -1)
 		return (-1);
-	
-	if (gfs_hook_insert_filedes(newfd, gf) == -1)
+
+	if (gfs_hook_insert_filedes(oldfd, newfd) == -1) {
+		close(newfd);
 		return (-1); /* XXX - no errno */
+	}
 
 	gfs_hook_inc_refcount(oldfd);
 
-	return (0);
+	return (newfd);
 }
 
 int

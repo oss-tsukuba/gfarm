@@ -23,7 +23,7 @@ int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
 unsigned char gfs_hook_gfs_file_type(int);
 int gfs_hook_clear_gfs_file(int);
 
-int gfs_hook_insert_filedes(int, struct gfs_file *);
+int gfs_hook_insert_filedes(int, int);
 void gfs_hook_inc_refcount(int);
 
 void *gfs_hook_is_open(int);

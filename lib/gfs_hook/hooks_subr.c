@@ -179,18 +179,17 @@ gfs_hook_clear_gfs_file(int fd)
 }
 
 int
-gfs_hook_insert_filedes(int fd, GFS_File gf)
+gfs_hook_insert_filedes(int oldfd, int newfd)
 {
 	_gfs_hook_debug(
-		fprintf(stderr, "GFS: insert_filedes: %d, %p\n", fd, gf));
-
-	if (_gfs_file_buf[fd].u.f != NULL)
+	   fprintf(stderr, "GFS: insert_filedes: %d, %d\n", oldfd, newfd));
+			
+	if (_gfs_file_buf[newfd].u.f != NULL)
 		return (-1);
 
-	_gfs_file_buf[fd].d_type = GFS_DT_REG;
-	_gfs_file_buf[fd].u.f = gf;
-
-	return (fd);
+	_gfs_file_buf[newfd] = _gfs_file_buf[oldfd];
+	
+	return (newfd);
 }
 
 void
