@@ -7,7 +7,7 @@ default_bindir = @bindir@
 default_libdir = @libdir@
 default_libexecdir = @libexecdir@
 default_includedir = @includedir@
-default_exec_includedir = @exec_includedir@
+default_exec_includedir = @includedir@
 default_mandir = @mandir@
 default_docdir = $(prefix)/share/doc/gfarm
 default_htmldir = $(default_docdir)/html
@@ -28,6 +28,7 @@ LEX = @LEX@
 LEXLIB = @LEXLIB@
 YACC = @YACC@
 RANLIB = @RANLIB@
+LIBTOOL = @LIBTOOL@
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -37,6 +38,13 @@ LIBS = @LIBS@
 
 largefile_cflags = @largefile_cflags@
 largefile_ldflags = @largefile_ldflags@
+# `getconf LFS_LIBS` is already added to $(LIBS)
+
+# for conditional compilation which depends on _LARGEFILE64_SOURCE API
+largefile64_srcs = @largefile64_srcs@
+largefile64_objs = @largefile64_objs@
+largefile64_cflags = @largefile64_cflags@
+largefile64_targets = @largefile64_targets@
 
 ldap_includes = @ldap_includes@
 ldap_libs = @ldap_libs@
@@ -44,6 +52,7 @@ ldap_libs = @ldap_libs@
 openssl_includes = @openssl_includes@
 openssl_libs = @openssl_libs@
 
+globus_shared = @globus_shared@
 globus_flavor = @globus_flavor@
 globus_location = @globus_location@
 globus_includes = @globus_includes@
@@ -51,15 +60,18 @@ globus_gssapi_libs = @globus_gssapi_libs@
 # for conditional compilation which depends on whether globus is enabled or not
 globus_srcs = @globus_srcs@
 globus_objs = @globus_objs@
-globus_subdirs = @globus_subdirs@
 globus_cflags = @globus_cflags@
+globus_targets = @globus_targets@
 
 MPICC = @mpicc@
 # for conditional compilation which depends on whether MPI is enabled or not
 mpi_srcs = @mpi_srcs@
 mpi_objs = @mpi_objs@
-mpi_subdirs = @mpi_subdirs@
 mpi_cflags = @mpi_cflags@
+mpi_targets = @mpi_targets@
 
 readline_includes = @readline_includes@
 readline_libs = @readline_libs@
+
+# build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
+gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@
