@@ -231,6 +231,8 @@ OpenLDAP distribution.  Note that suffix and rootdn in this file
 refer to the base distinguished name.
 
 This is an example of /etc/gfarm-ldap/slapd.conf on ldap.example.com.
+The path name of core.schema on line 5 depends on the installation of
+the OpenLDAP.
 
 ----------------------------- BEGIN HERE -----------------------------
 #
