@@ -245,3 +245,37 @@ gfs_hook_set_view_global(int filedes, int flags)
 	}
 	return NULL;
 }
+
+/*
+ * fseek hook
+ */
+
+int
+gfs_hook_fseek(FILE *stream, long offset, int whence)
+{
+	int filedes = fileno(stream);
+	GFS_File gf;
+	const char *e;
+	file_offset_t o;
+
+	_gfs_hook_debug(fprintf(stderr,
+	    "HOOK: gfs_hook_fseek(%d, %" PR_FILE_OFFSET ", %d)\n",
+	    filedes, (file_offset_t)offset, whence));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (fseek(stream, offset, whence));
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_fseek "
+	    "(%d(%d), %" PR_FILE_OFFSET ", %d)\n",
+	    filedes, gfs_pio_fileno(gf), (file_offset_t)offset, whence));
+
+	/* At first, need to flush the io stream */
+	fflush(stream);
+
+	e = gfs_pio_seek(gf, offset, whence, &o);
+	if (e == NULL)
+		return (0);
+	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_fseek: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
