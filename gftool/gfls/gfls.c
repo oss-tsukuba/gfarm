@@ -14,6 +14,9 @@
 
 char *program_name = "gfls";
 
+#define INUM_LEN	11
+#define INUM_PRINT(ino)	printf("%10lu ", (long)(ino))
+
 enum output_format {
 	OF_ONE_PER_LINE,
 	OF_MULTI_COLUMN,
@@ -27,7 +30,9 @@ enum sort_order {
 int option_type_suffix = 0;		/* -F */
 int option_recursive = 0;		/* -R */
 int option_complete_time = 0;		/* -T */
+int option_all = 0;			/* -a */
 int option_directory_itself = 0;	/* -d */
+int option_inumber = 0;			/* -i */
 int option_reverse_sort = 0;		/* -r */
 
 int screen_width = 80; /* default */
@@ -257,7 +262,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		return (GFARM_ERR_NO_MEMORY);
 	if (option_output_format == OF_LONG ||
 	    option_sort_order != SO_NAME ||
-	    option_type_suffix) {
+	    option_type_suffix || option_inumber) {
 		stats = malloc(sizeof(struct gfs_stat) * n);
 		if (stats == NULL) {
 			free(ls);
@@ -275,10 +280,14 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 	if (option_output_format == OF_MULTI_COLUMN) {
 		int j, k, columns, lines, column_width, max_width = 0;
 
-		for (i = 0; i < n; i++)
-			if (max_width < strlen(ls[i].path))
-				max_width = strlen(ls[i].path);
-		column_width = option_type_suffix ? max_width + 1 : max_width;
+		for (i = 0; i < n; i++) {
+			j = strlen(ls[i].path);
+			if (max_width < j)
+				max_width = j;
+		}
+		column_width = max_width +
+		    (option_type_suffix ? 1 : 0) +
+		    (option_inumber ? INUM_LEN : 0);
 		columns = screen_width / (column_width + 1);
 		lines = n / columns;
 		if (lines * columns < n)
@@ -289,17 +298,23 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 				k = i + j * lines;
 				if (k >= n)
 					break;
+				if (option_inumber)
+					INUM_PRINT(ls[k].st->st_ino);
 				fputs(ls[k].path, stdout);
 				if (option_type_suffix)
 					len_suffix = put_suffix(&ls[k]);
 				printf("%*s",
-				       (int)(column_width - strlen(ls[k].path))
+				       (int)(column_width
+				       - (option_inumber ? INUM_LEN : 0)
+				       - strlen(ls[k].path))
 				       - len_suffix + 1, "");
 			}
 			putchar('\n');
 		}				
 	} else {
 		for (i = 0; i < n; i++) {
+			if (option_inumber)
+				INUM_PRINT(ls[i].st->st_ino);
 			if (option_output_format == OF_LONG)
 				put_stat(ls[i].st);
 			fputs(ls[i].path, stdout);
@@ -354,6 +369,8 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		return (e);
 	}
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		if (!option_all && entry->d_name[0] == '.')
+			continue;
 		s = strdup(entry->d_name);
 		if (s == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
@@ -382,6 +399,8 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 			s = GFARM_STRINGLIST_STRARRAY(names)[i];
 			if (s[0] == '.' && (s[1] == '\0' ||
 			    (s[1] == '.' && s[2] == '\0')))
+				continue; /* "." or ".." */
+			if (!option_all && entry->d_name[0] == '.')
 				continue;
 			if (gfs_glob_elem(&types, i) == GFS_DT_DIR) {
 				e = list_dirs(path, 1, &s, need_newline);
@@ -493,7 +512,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1CFRSTdlrt] <path>...\n", program_name);
+	fprintf(stderr, "Usage: %s [-1CFRSTadilrt] <path>...\n", program_name);
 	exit(EXIT_FAILURE);
 }
 
@@ -531,7 +550,7 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1CFRSTdlrt?")) != -1) {
+	while ((c = getopt(argc, argv, "1CFRSTadilrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
 		case 'C': option_output_format = OF_MULTI_COLUMN; break;
@@ -539,7 +558,9 @@ main(int argc, char **argv)
 		case 'R': option_recursive = 1; break;
 		case 'S': option_sort_order = SO_SIZE; break;
 		case 'T': option_complete_time = 1; break;
-		case 'd': option_directory_itself =  1; break;
+		case 'a': option_all = 1; break;
+		case 'd': option_directory_itself = 1; break;
+		case 'i': option_inumber = 1; break;
 		case 'l': option_output_format = OF_LONG; break;
 		case 'r': option_reverse_sort = 1; break;
 		case 't': option_sort_order = SO_MTIME; break;
