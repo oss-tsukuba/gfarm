@@ -39,7 +39,7 @@ NAME="DESCRIPTION"
 Gfarm server processes such as gfmd and gfsd refer to /etc/gfarm.conf
 by default.  Since this configuration file is only read at the startup
 time, it is necessary to restart servers when updating the content of
-the configuraiton file.</P
+the configuration file.</P
 ><P
 >Application programs such as gfls and gfhost refer to both
 /etc/gfarm.conf and ~/.gfarmrc in a user's home directory as a
@@ -110,7 +110,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifes a host name.</P
+>specifies a host name.</P
 ></DD
 ><DT
 ><I
@@ -374,13 +374,13 @@ specification</I
 >The <SPAN
 CLASS="TOKEN"
 >auth</SPAN
-> stetement may be specified any number of
+> statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the taget host has
+the first entry whose host specification matches the target host has
 the <SPAN
 CLASS="TOKEN"
 >enable</SPAN
-> keyword.  When there is no correnponding
+> keyword.  When there is no corresponding
 entry, or when the first corresponding entry has the
 <SPAN
 CLASS="TOKEN"
@@ -405,11 +405,14 @@ CLASS="TOKEN"
 ><P
 >The GSI authentication method is available if and only if the
 --with-globus option is specified at the configure time.  When it is
-not available, the auth statement with <SPAN
+not available, the <SPAN
+CLASS="TOKEN"
+>auth</SPAN
+> statement with
+<SPAN
 CLASS="TOKEN"
 >gsi</SPAN
-> will be
-ignored.</P
+> will be ignored.</P
 ><P
 >This statement cannot be omitted.</P
 ><P
@@ -468,8 +471,11 @@ CLASS="EMPHASIS"
 ></DT
 ><DD
 ><P
->The netparm statement specifies several communication parameters
-listed below.</P
+>The <SPAN
+CLASS="TOKEN"
+>netparam</SPAN
+> statement specifies several
+communication parameters listed below.</P
 ><P
 ><SPAN
 CLASS="TOKEN"

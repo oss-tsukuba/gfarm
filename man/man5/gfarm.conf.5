@@ -12,7 +12,7 @@ gfarm.conf is a text file that contains a Gfarm configuration.
 Gfarm server processes such as gfmd and gfsd refer to /etc/gfarm.conf
 by default.  Since this configuration file is only read at the startup
 time, it is necessary to restart servers when updating the content of
-the configuraiton file.
+the configuration file.
 .PP
 Application programs such as gfls and gfhost refer to both
 /etc/gfarm.conf and ~/.gfarmrc in a user's home directory as a
@@ -38,7 +38,7 @@ specifies a network address with an IP address and a netmask
 from 0 to 31 separated by "/".
 .TP
 \fB\fIdomain.name\fB\fR
-specifes a host name.
+specifies a host name.
 .TP
 \fB.\fIdomain.name\fB\fR
 specifies all hosts belonging to the domain.name.
@@ -139,10 +139,10 @@ gsi or sharedsecret keyword.
 The third argument specifies the host(s) by \fIHost
 specification\fR.
 
-The auth stetement may be specified any number of
+The auth statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the taget host has
-the enable keyword.  When there is no correnponding
+the first entry whose host specification matches the target host has
+the enable keyword.  When there is no corresponding
 entry, or when the first corresponding entry has the
 disable keyword, the authentication method does not
 become a candidate.
@@ -158,8 +158,8 @@ gsi is tried.
 
 The GSI authentication method is available if and only if the
 --with-globus option is specified at the configure time.  When it is
-not available, the auth statement with gsi will be
-ignored.
+not available, the auth statement with
+gsi will be ignored.
 
 This statement cannot be omitted.
 
@@ -180,8 +180,8 @@ gsi.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.
 .TP
 \fBnetparam\fIparameter\fB=\fIvalue\fB[\fIHost specification\fB]\fR
-The netparm statement specifies several communication parameters
-listed below.
+The netparam statement specifies several
+communication parameters listed below.
 
 parallel_streams.  This parameter specifies the
 number of tcp streams.  The default is a single stream.  This
