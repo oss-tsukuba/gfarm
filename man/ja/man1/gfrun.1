@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "10 August 2004" "Gfarm" ""
+.TH "GFRUN" "1" "11 February 2005" "Gfarm" ""
 
 .SH NAME
 gfrun, gfrsh, gfssh \- ファイルシステムノードで gfarm 並列コマンドを実行する
@@ -78,7 +78,8 @@ gfarm-URL のファイル・アフィニティ・スケジューリングにより
 指定されたフラグメント番号のプロセスだけが実行されます．
 このオプションは，\fB-G\fR オプションあるいは引数に与えた Gfarm
 ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
-場合のみ利用可能です．
+場合，および \fB-N\fR オプションが指定されている場合のみ利
+用可能です．
 .TP
 \fB-v\fR
 詳細にエラーメッセージを表示します．

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "10 August 2004" "Gfarm" ""
+.TH "GFRUN" "1" "11 February 2005" "Gfarm" ""
 
 .SH NAME
 gfrun, gfrsh, gfssh \- run Gfarm parallel programs
@@ -78,9 +78,9 @@ program will be redirected to.
 .TP
 \fB-I \fIfragment-index\fB\fR
 specifies a Gfarm fragment index executed by the gfrun command.
-This option is only available, when file-affinity scheduling is
+This option is available only when either file-affinity scheduling is
 selected by the \fB-G\fR option or a gfarm file in the
-argument list.
+argument list, or the \fB-N\fR option is specified.
 .TP
 \fB-v\fR
 displays error message verbosely.
