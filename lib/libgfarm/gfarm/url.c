@@ -118,8 +118,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		assert(expanded_gfarm_file[0] != '~');
 		e = gfarm_canonical_path_for_creation(
 			expanded_gfarm_file, canonic_pathp);
-		if (e != NULL)
-			free(expanded_gfarm_file);
+		free(expanded_gfarm_file);
 
 		return (e);
 	}
@@ -155,8 +154,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		eliminated_gfarm_file[lastc - gfarm_file] = '\0';
 		e = gfarm_canonical_path_for_creation(
 			eliminated_gfarm_file, canonic_pathp);
-		if (e != NULL)
-			free(eliminated_gfarm_file);
+		free(eliminated_gfarm_file);
 
 		return (e);
 	}
