@@ -598,6 +598,7 @@ traverse_file_tree_with_cwd(char *cwd,
 							program_name, path, e);
 			return (1);
 		}
+		gfs_closedir(dir);
 		e = gfs_chdir("..");
 		if (e != NULL) {
 			fprintf(stderr, "%s: gfs_chdir: %s/..: %s\n",
