@@ -17,6 +17,11 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrm</command>
+    <arg choice='opt'>-r</arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrm</command>
     <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -48,6 +53,13 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>引数がディレクトリだった場合、そのディレクトリ以下を
+全て、再帰的に削除します。</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
 <listitem>

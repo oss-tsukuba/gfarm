@@ -19,6 +19,11 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrm</command>
+    <arg choice='opt'>-r</arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrm</command>
     <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -47,6 +52,13 @@ the last file repilca.</para>
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>If an argument is a directory, remove all entries under the directory
+recursively.</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-h</option> <parameter>filesystem-node</parameter></term>
 <listitem>
