@@ -263,9 +263,9 @@ transfer rate (bps; bit per second) for a single connection, which is
 introduced experimentally.  The parameter on a source filesystem node
 is effective during parallel file replication.  <parameter>Host
 specification</parameter> specifies the destination host(s) of file
-replication.</para> Note that this parameter needs to be specified on
-a source filesystem node not on a client host unlike the other
-parameters.
+replication.  Note that this parameter needs to be specified on a
+source filesystem node not on a client host unlike the other
+parameters.</para>
 
 <para>For example,</para>
 <literallayout>
