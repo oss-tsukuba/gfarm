@@ -80,7 +80,7 @@ alloc_hosts_state(int *n_all_hostsp, struct gfarm_host_info **all_hostsp,
 	*n_all_hostsp = n_all_hosts;
 	*all_hostsp = all_hosts;
 	*hosts_statep = hosts_state;
-	return (NULL);			
+	return (NULL);
 }
 
 /*
@@ -484,7 +484,7 @@ loadavg_compare(const void *a, const void *b)
 
 	if (l1 < l2)
 		return (-1);
-        else if (l1 > l2)
+	else if (l1 > l2)
 		return (1);
 	else
 		return (0);
@@ -735,7 +735,7 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
 	return (NULL);
 }
 
-/* 
+/*
  * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
  * load average, and return to 'ohosts'.
  * When enough number of hosts are not available, the available hosts
@@ -813,6 +813,38 @@ gfarm_schedule_search_idle_by_domainname(const char *domainname,
 	    nohosts, ohosts);
 	if (e == NULL)
 		e = gfarm_fixedstrings_dup(nohosts, ohosts, ohosts);
+	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
+	return (e);
+}
+
+char *
+gfarm_schedule_search_idle_acyclic_by_domainname(const char *domainname,
+	int *niohosts, char **ohosts)
+{
+	char *e;
+	int i, nhosts, n_all_hosts;
+	struct gfarm_host_info *all_hosts;
+	struct gfarm_hash_table *hosts_state;
+	struct host_info_array_iterator host_iterator;
+	struct domainname_filter domain_filter;
+
+	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
+	if (e != NULL)
+		return (e);
+
+	nhosts = 0;
+	for (i = 0; i < n_all_hosts; i++) {
+		if (gfarm_host_is_in_domain(all_hosts[i].hostname, domainname))
+			++nhosts;
+	}
+
+	e = search_idle(CONCURRENCY, *niohosts * ENOUGH_RATE,
+	    hosts_state,
+	    nhosts, init_domainname_filter(&domain_filter, domainname),
+	    init_host_info_array_iterator(&host_iterator, all_hosts),
+	    niohosts, ohosts);
+	if (e == NULL)
+		e = gfarm_fixedstrings_dup(nhosts, ohosts, ohosts);
 	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
 	return (e);
 }

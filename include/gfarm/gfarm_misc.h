@@ -89,6 +89,8 @@ void gfarm_schedule_search_mode_use_loadavg(void);
 char *gfarm_schedule_search_idle_hosts(int, char **, int, char **);
 char *gfarm_schedule_search_idle_by_all(int, char **);
 char *gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
+char *gfarm_schedule_search_idle_acyclic_by_domainname(const char *, int *,
+	char **);
 char *gfarm_schedule_search_idle_by_program(char *, int, char **);
 char *gfarm_url_hosts_schedule(const char *, char *, int *, char ***);
 char *gfarm_url_hosts_schedule_by_program(char *, char *, char *,
