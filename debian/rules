@@ -28,6 +28,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
+	-rm -rf ns/
 	install -d build && cd build && ../configure --srcdir=$(PWD) --with-openldap=/usr --prefix=`pwd`/debian/tmp/usr
 
 	touch configure-stamp
@@ -47,7 +48,7 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) distclean
+	-cd build && $(MAKE) distclean
 	-rm -f configure-stamp
 	-rm -rf build
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
@@ -62,7 +63,7 @@ install: build
 
 	# Add here commands to install the package into debian/tmp.
 	# -$(MAKE) -C build install DESTDIR=`pwd`/debian/tmp
-	$(MAKE) install DESTDIR=`pwd`/debian/tmp
+	cd build && $(MAKE) install DESTDIR=`pwd`/debian/tmp
 
 	# hoax gfarm's Makefile.
 	install -d debian/tmp/etc/
