@@ -8,9 +8,15 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "gfs_pio.h"
 #include "host.h"
 #include "schedule.h"
+#include "gfs_client.h"
+#include "gfs_proto.h"
 
 static char *
 gfs_pio_view_section_close(GFS_File gf)
@@ -205,6 +211,60 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_stat
 };
 
+static char *
+replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
+
+{
+	char *e;
+	struct sockaddr peer_addr;
+	struct gfs_connection *peer_conn;
+	char *path_section;
+	char *local_path;
+	int fd, peer_fd;
+
+	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		return (e);
+
+	e = gfs_client_connection(peer_hostname, &peer_addr, &peer_conn);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_section(gf->pi.pathname, section, &path_section);
+	if (e != NULL) 
+		return (e);
+
+	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
+	    &peer_fd);
+	if (e != NULL)
+		goto finish_free_path_section;
+
+	e = gfarm_path_localize(path_section, &local_path);
+	if (e != NULL)
+		goto finish_peer_close;
+
+	fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC, gf->pi.status.st_mode);
+	if (fd < 0) {
+		e = gfs_proto_error_string(errno);
+		goto finish_free_local_path;
+	}
+
+	e = gfs_client_copyin(peer_conn, peer_fd, fd);
+	/* XXX - copyin() should return the digest value */
+	if (e == NULL)
+		e = gfs_pio_set_fragment_info_local(local_path,
+		    gf->pi.pathname, section);    
+	close(fd);
+finish_free_local_path:
+	free(local_path);
+finish_peer_close:
+	gfs_client_close(peer_conn, peer_fd);
+finish_free_path_section:
+	free(path_section);
+	return (e);
+}
+
 char *
 gfs_pio_set_view_section(GFS_File gf, char *section,
 			 char *if_hostname, int flags)
@@ -317,6 +377,26 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 
 	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
+
+	if (!is_local_host && 
+	    (((gf->open_flags & GFARM_FILE_REPLICATE) != 0 &&  
+	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
+	     (flags & GFARM_FILE_REPLICATE) != 0)) {
+		e = replicate_section_to_local(gf, vc->section, if_hostname);
+		if (e != NULL)
+			goto free_host;
+		free(vc->canonical_hostname);
+		e = gfarm_host_get_canonical_self_name(
+		    &vc->canonical_hostname); 
+		if (e != NULL)
+			goto finish;
+		vc->canonical_hostname = strdup(vc->canonical_hostname);
+		if (vc->canonical_hostname == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto finish;
+		}
+		is_local_host = 1;
+	}
 
 	if (is_local_host)
 		e = gfs_pio_open_local_section(gf, flags);
