@@ -14,6 +14,7 @@
 #define MAX_GFS_FILE_BUF	2048
 
 static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
+static int _gfs_file_refcount[MAX_GFS_FILE_BUF];
 
 void
 gfs_hook_not_initialized(void)
@@ -65,13 +66,43 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	return (fd);
 }
 
-void
+int
 gfs_hook_clear_gfs_file(int fd)
 {
+	int ref;
+
 	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
 
 	_gfs_file_buf[fd] = NULL;
 	__syscall_close(fd);
+
+	ref = _gfs_file_refcount[fd];
+	if (ref > 0)
+		--_gfs_file_refcount[fd];
+
+	return ref;
+}
+
+int
+gfs_hook_insert_filedes(int fd, GFS_File gf)
+{
+	_gfs_hook_debug(
+		fprintf(stderr, "GFS: insert_filedes: %d, %p\n", fd, gf));
+
+	if (_gfs_file_buf[fd] != NULL)
+		return (-1);
+
+	_gfs_file_buf[fd] = gf;
+	return (fd);
+}
+
+void
+gfs_hook_inc_refcount(int fd)
+{
+	_gfs_hook_debug(
+		fprintf(stderr, "GFS: inc_refcount: %d\n", fd));
+
+	++_gfs_file_refcount[fd];
 }
 
 /*  printf and puts should not be put into the following function. */

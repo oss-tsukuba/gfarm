@@ -151,7 +151,14 @@ __close(int filedes)
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __close(%d(%d))\n",
 	    filedes, gfs_pio_fileno(gf)));
 
-	gfs_hook_clear_gfs_file(filedes);
+	if (gfs_hook_clear_gfs_file(filedes) > 0) {
+		/* if filedes is duplicated, skip closing the file. */
+		_gfs_hook_debug(
+			fprintf(stderr, "GFS: Hooking __close: skipped\n"));
+
+		return (0);
+	}
+
 	e = gfs_pio_close(gf);
 	if (e == NULL)
 		return (0);
@@ -262,6 +269,51 @@ access(const char *path, int type)
 {
 	_gfs_hook_debug_v(fputs("Hooking access\n", stderr));
 	return (__access(path, type));
+}
+
+/*
+ * dup2
+ */
+
+int
+__dup2(int oldfd, int newfd)
+{
+	GFS_File gf;
+	int gfs_fd;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __dup2(%d, %d)\n",
+				  oldfd, newfd));
+
+	if ((gf = gfs_hook_is_open(oldfd)) == NULL)
+		return syscall(SYS_dup2, oldfd, newfd);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
+				oldfd, newfd));
+
+	gfs_fd = gfs_pio_fileno(gf);
+	if (syscall(SYS_dup2, gfs_fd, newfd) == -1)
+		return (-1);
+	
+	if (gfs_hook_insert_filedes(newfd, gf) == -1)
+		return (-1); /* XXX - no errno */
+
+	gfs_hook_inc_refcount(oldfd);
+
+	return (0);
+}
+
+int
+_dup2(int oldfd, int newfd)
+{
+	_gfs_hook_debug_v(fputs("Hooking _dup2\n", stderr));
+	return (__dup2(oldfd, newfd));
+}
+
+int
+dup2(int oldfd, int newfd)
+{
+	_gfs_hook_debug_v(fputs("Hooking dup2\n", stderr));
+	return (__dup2(oldfd, newfd));
 }
 
 /*
