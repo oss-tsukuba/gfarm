@@ -345,10 +345,9 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 	s->st_user = strdup(s->st_user);
 	s->st_group = strdup(s->st_group);
 	gfarm_path_info_free(&pi);
-	if (s->st_user == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	if (s->st_group == NULL) {
-		free(s->st_user);
+	if (s->st_user == NULL || s->st_group == NULL) {
+		gfs_stat_free(s);
+		free(gfarm_file);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -360,8 +359,15 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
 	free(gfarm_file);
-	if (e != NULL)
-		return (e);
+	if (e != NULL) {
+		gfs_stat_free(s);
+		/*
+		 * If GFARM_ERR_NO_SUCH_OBJECT is returned here,
+		 * gfs_stat() incorrectly assumes that this is a directory,
+		 * and reports GFARM_ERR_NOT_A_DIRECTORY.
+		 */
+		return ("no fragment information");
+	}
 
 	s->st_size = 0;
 	for (i = 0; i < nsections; i++)
@@ -387,9 +393,11 @@ gfs_stat(char *path, struct gfs_stat *s)
 		return (e);
 	e = gfs_stat_sub(p, s);
 	free(p);
-	if (e == NULL || e != GFARM_ERR_NO_SUCH_OBJECT)
+	if (e == NULL)
+		return (NULL);
+	if (e != GFARM_ERR_NO_SUCH_OBJECT)
 		return (e);
-	/* XXX */
+	/* XXX - assume that it's a directory. */
 	e = lookup_path(path, 1, 0, &n);
 	if (e != NULL)
 		return (e);
