@@ -570,9 +570,9 @@ Then, copy the key securely to the home directory on all nodes
 including filesystem nodes, a metadata server node, and client nodes
 usually by scp.  Note that this key will be expired after 24 hours.
 
-*** Grid security infrastructure
+*** Grid Security Infrastructure (GSI)
 
-This authentication method requires a user certificate and host
+This authentication method requires a user certificate, and host
 certificates for every filesystem node and a metadata server.
 Moreover, your entry should be listed in a grid map file
 /etc/grid-security/grid-mapfile on every node.
@@ -584,6 +584,65 @@ Then, create a user proxy certificate.
 ** Execute sample programs
 
 This subsection shows several execution examples of sample programs.
+
+ - Importing a group of files
+
+  When there are several files that are better to be managed as a
+  ranked group of files, they can be registered to the Gfarm
+  filesystem as a Gfarm file.  For example, there are ten files from
+  'file01' to 'file10', which will be imported to a gfarm:file by the
+  gfreg command.
+
+	% gfreg file?? gfarm:file
+
+  At this time, ten files from 'file01' to 'file10' are grouped, and
+  can be accessed by a single Gfarm file 'gfarm:file'.
+
+	% gfls -l gfarm:file
+
+  Next, you can check filesystem nodes on which each file is stored by
+  the gfexport command.
+
+	% gfwhere gfarm:file
+	0: gfm01.apgrid.org
+	1: gfm02.apgrid.org
+	2: gfm03.apgrid.org
+	3: gfm04.apgrid.org
+	4: gfm05.apgrid.org
+	5: gfm06.apgrid.org
+	6: gfm07.apgrid.org
+	7: gfm08.apgrid.org
+	8: gfm09.apgrid.org
+	9: gfm10.apgrid.org
+
+  The left part of ':' in the output of gfwhere is called 'the index
+  number' or 'the section name'.  The right part of ':' shows
+  filesystem node(s) where the file fragment is stored.
+
+  A Gfarm file can be accessed by a single file to which a ranked
+  group of files are concatenated, or an individual file of a group of
+  files.  Using the gfexport command, the content of a file will be
+  displayed.
+
+	% gfexport gfarm:file
+	% gfexport -I 0 gfarm:file
+
+  A group of files can also be registered by specifying an individual
+  file with the index number and total number of files.
+
+	% gfreg -I 0 -N 10 [ -h filesystem node ] file01 gfarm:file
+	% gfreg -I 1 -N 10 [ -h filesystem node ] file02 gfarm:file
+	% ...
+	% gfreg -I 9 -N 10 [ -h filesystem node ] file10 gfarm:file
+
+  A filesystem node on which each file is stored will be automatically
+  selected by load average.  It is possible to specify a filesystem
+  node explicitly with the -h option.
+
+  When the gfreg command of this form is executed on a filesystem
+  node, the local filesystem node is always selected rather than
+  remote filesystem nodes.  In this case, the -h option helps to store
+  files dispersively.
 
  - Importing a text file
 
@@ -619,21 +678,6 @@ This subsection shows several execution examples of sample programs.
   filesystem.
 
 	% gfexport gfarm:test.bin | cmp - fixed-size-record-file
-
- - Importing a group of files
-
-  When there are several files that are better to be managed as a
-  ranked group of files, they can be registered to the Gfarm
-  filesystem as a Gfarm file.  The following example shows ten files
-  from file01 to file10 will be imported to a gfarm:file.
-
-	% gfreg -I 0 -N 10 [ -h filesystem node ] file01 gfarm:file
-	% gfreg -I 1 -N 10 [ -h filesystem node ] file02 gfarm:file
-	% ...
-	% gfreg -I 9 -N 10 [ -h filesystem node ] file10 gfarm:file
-
-  The -h option should be specified when gfreg is executed not on a
-  filesystem node.
 
  - gfgrep - parallel grep
 
