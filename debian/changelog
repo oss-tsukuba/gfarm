@@ -1,3 +1,9 @@
+gfarm (1.0b4-2) unstable; urgency=low
+
+  * fixed a miss packaging for gfarm-client 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 10 Sep 2003 13:54:32 +0900
+
 gfarm (1.0b4-1) unstable; urgency=low
 
   * new beta release 
