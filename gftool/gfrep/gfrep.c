@@ -697,7 +697,7 @@ main(argc, argv)
 		/* replicate specified fragments */
 		if (dest == NULL) {
 			fprintf(stderr,
-			    "%s: -d dest-node option is required with -l\n",
+			    "%s: -d dest-node option is required\n",
 			    program_name);
 			usage();
 			exit(EXIT_FAILURE);
