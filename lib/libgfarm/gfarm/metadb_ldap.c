@@ -98,7 +98,7 @@ gfarm_metadb_terminate(void)
 	int rv;
 
 	if (gfarm_ldap_server == NULL)
-		return ("metadb connection alrady disconnected");
+		return ("metadb connection already disconnected");
 
 	/* close and free connection resources */
 	rv = ldap_unbind(gfarm_ldap_server);
@@ -115,6 +115,9 @@ gfarm_metadb_check(void)
 {
 	int rv;
 	LDAPMessage *res;
+
+	if (gfarm_ldap_server == NULL)
+		return ("metadb connection already disconnected");
 
 	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
 	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
