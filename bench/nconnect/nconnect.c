@@ -191,14 +191,6 @@ Pointer emalloc(size)
 	return p;
 }
 
-char *strdup(s)
-	const char *s;
-{
-	char *d = (char *)emalloc(strlen(s) + 1);
-
-	return strcpy(d, s);
-}
-
 /*** sockaddr ************************************************/
 
 union generic_sockaddr {
@@ -586,7 +578,6 @@ void record_sockopt(option)
 	 */
 	struct sockopt_table *tab;
 	char *equal;
-	int value;
 	struct protoent *proto;
 
 	equal = strchr(option, '=');
@@ -928,7 +919,7 @@ int main(argc, argv)
 					record_sockopt(&s[1]);
 				} else {
 					if (--argc <= 0)
-						usage;
+						usage();
 					record_sockopt(*++argv);
 				}
 				s = end_loop;
