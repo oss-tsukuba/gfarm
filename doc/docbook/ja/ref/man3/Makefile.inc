@@ -36,6 +36,7 @@ DOCBOOK = \
 	gfs_pio_puts.3 \
 	gfs_pio_putline.3 \
 	gfs_pio_puts.3 \
+	gfs_pio_read.3 \
 	gfs_pio_readdelim.3 \
 	gfs_pio_readline.3 \
 	gfs_pio_seek.3 \
