@@ -7,13 +7,18 @@
 char *
 gfs_getcwd(char *cwd, int cwdsize)
 {
-	char *user = gfarm_get_global_username();
-	int len = strlen(user);
-
+	char *path;
+	int *len;
+	
+	if ((path = getenv("GFS_PWD")) != NULL)
+		path = gfarm_url_prefix_skip(path);
+	else
+		path = gfarm_get_global_username();
+	len = strlen(path);
 	if (len < cwdsize) {
-		strcpy(cwd, user);
+		strcpy(cwd, path);
 	} else {
-		memcpy(cwd, user, cwdsize - 1);
+		memcpy(cwd, path, cwdsize - 1);
 		cwd[cwdsize - 1] = '\0';
 	}
 	return (NULL);
@@ -232,13 +237,16 @@ gfs_uncachedir(void)
 	}
 }
 
-static char *
-get_abspath(char *path, char **abspathp)
+char *
+gfs_realpath(char *path, char **abspathp)
 {
 	struct node *n, *p;
 	char *e, *abspath;
 	int l, len;
 
+	e = gfs_cachedir();
+	if (e != NULL) 
+		return (e);
 	e = lookup_path(path, -1, 0, &n);
 	if (e != NULL)
 		return (e);
@@ -388,7 +396,7 @@ gfs_stat(char *path, struct gfs_stat *s)
 	if (e != NULL) 
 		return (e);
 	path = gfarm_url_prefix_skip(path);
-	e = get_abspath(path, &p);
+	e = gfs_realpath(path, &p);
 	if (e != NULL)
 		return (e);
 	e = gfs_stat_sub(p, s);

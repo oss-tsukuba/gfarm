@@ -11,6 +11,7 @@
 #include <pwd.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
 
 /*
  * GFarm-URL:
@@ -47,37 +48,32 @@ char GFARM_URL_PREFIX[] = "gfarm:";
 char *
 gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 {
-	char *s, *user;
+	char *s, *user, *e, *t;
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
 	if (gfarm_file[0] == '~' &&
 	    (gfarm_file[1] == '\0' || gfarm_file[1] == '/')) {
 		user = gfarm_get_global_username();
-		s = malloc(strlen(user) + strlen(&gfarm_file[1]) + 1);
+		s = malloc(strlen(user) + strlen(&gfarm_file[1]) + 2);
 		if (s == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		strcpy(s, user);
-		strcat(s, &gfarm_file[1]);
-		*canonic_pathp = s;
-		return (NULL);
-	}
-	if (gfarm_file[0] == '/' || gfarm_file[0] == '~') {
-		gfarm_file++;
+		sprintf(s, "/%s%s", user, &gfarm_file[1]);
+	} else {
 		s = strdup(gfarm_file);
 		if (s == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		*canonic_pathp = s;
-		return (NULL);
+		if (gfarm_file[0] == '~') /* ~username/... */
+			*s = '/';
 	}
-	user = gfarm_get_global_username();
-	s = malloc(strlen(user) + 1 + strlen(gfarm_file) + 1);
-	if (s == NULL)
+	e = gfs_realpath(s, &t);
+	free(s);
+	if (e != NULL)
+		return(e);
+	*canonic_pathp = strdup(t + GFARM_URL_PREFIX_LENGTH + 1);
+	free(t);
+	if (*canonic_pathp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	strcpy(s, user);
-	strcat(s, "/");
-	strcat(s, gfarm_file);
-	*canonic_pathp = s;
 	return (NULL);
 }
 
