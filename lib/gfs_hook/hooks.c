@@ -130,10 +130,14 @@ __write(int filedes, const void *buf, size_t nbyte)
 		return (syscall(SYS_write, filedes, buf, nbyte));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
-		_gfs_hook_debug(fprintf(stderr,
-					"GFS: Hooking __write(%d, , %d)\n",
-	    				filedes, nbyte));
-
+		/*
+		 * DO NOT put the following line here, which results
+		 * in infinite loop.
+		 * 
+		 * _gfs_hook_debug(fprintf(stderr,
+		 *			"GFS: Hooking __write(%d, , %d)\n",
+		 *			filedes, nbyte));
+		 */
 		e = GFARM_ERR_IS_A_DIRECTORY;
 		goto error;
 	}
@@ -148,8 +152,11 @@ __write(int filedes, const void *buf, size_t nbyte)
 		return (n);
 	}
 error:
-
-	_gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
+	/*
+	 * DO NOT put the following line here.
+	 *
+	 * _gfs_hook_debug(fprintf(stderr, "GFS: __write: %s\n", e));
+	 */
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
