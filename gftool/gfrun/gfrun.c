@@ -167,8 +167,18 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		struct sockaddr peer_addr;
 
 		if (options->section != NULL && nhosts == 1) {
+			/* Serial execution case with section name */
+			int nfrags;
+
 			/* XXX - need to check the string size */
 			sprintf(node_index, "%s", options->section);
+			if (options->sched_file != NULL) {
+				e = gfarm_url_fragment_number(
+					options->sched_file, &nfrags);
+				if (e != NULL)
+					return (e);
+				sprintf(total_nodes, "%d", nfrags);
+			}
 		}
 		else
 			sprintf(node_index, "%d", i);
@@ -354,10 +364,10 @@ schedule(char *command_name, struct gfrun_options *options,
 		 * If scheduling file is not explicitly specified, the
 		 * first input file used for file-affinity scheduling.
 		 */
-		if (options->sched_file != NULL)
-			scheduling_file = options->sched_file;
-		else
-			scheduling_file = gfarm_stringlist_elem(input_list, 0);
+		if (options->sched_file == NULL)
+			options->sched_file =
+				gfarm_stringlist_elem(input_list, 0);
+		scheduling_file = options->sched_file;
 
 		if (options->section != NULL) {
 			/* schedule a process for specified section */
