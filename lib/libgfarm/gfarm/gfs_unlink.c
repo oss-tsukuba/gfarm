@@ -6,8 +6,11 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "gfs_client.h"
+#include "gfs_pio.h"	/* gfs_profile */
+#include "timer.h"
 
 static char *
 gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
@@ -42,17 +45,24 @@ finish:
 	return (e);
 }
 
+double gfs_unlink_time;
+
 char *
 gfs_unlink(const char *gfarm_url)
 {
 	char *gfarm_file, *e, *e_save = NULL;
 	int i, j, nsections;
 	struct gfarm_file_section_info *sections;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL)
+	if (e != NULL) {
+		gfs_profile(gfarm_gettimerval(&t2));
+		gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 		return (e);
-
+	}
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
 	if (e != NULL) {
@@ -93,6 +103,10 @@ gfs_unlink(const char *gfarm_url)
 		e_save = e;
 	free(gfarm_file);
 	gfs_uncachedir();
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
+
 	return (e_save);	
 }
 

@@ -17,6 +17,7 @@
 #include "schedule.h"
 #include "gfs_client.h"
 #include "gfs_proto.h"
+#include "timer.h"
 
 static char *
 gfs_pio_view_section_close(GFS_File gf)
@@ -265,6 +266,8 @@ finish_free_path_section:
 	return (e);
 }
 
+double gfs_pio_set_view_section_time;
+
 char *
 gfs_pio_set_view_section(GFS_File gf, char *section,
 			 char *if_hostname, int flags)
@@ -272,22 +275,25 @@ gfs_pio_set_view_section(GFS_File gf, char *section,
 	struct gfs_file_section_context *vc;
 	char *e;
 	int is_local_host;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_set_view_default(gf);
 	if (e != NULL)
-		return (e);
+		goto profile_finish;
 
 	vc = malloc(sizeof(struct gfs_file_section_context));
 	if (vc == NULL) {
-		gf->error = GFARM_ERR_NO_MEMORY;
-		return (gf->error);
+		e = gf->error = GFARM_ERR_NO_MEMORY;
+		goto profile_finish;
 	}
 
 	vc->section = strdup(section);
 	if (vc->section == NULL) {
 		free(vc);
-		gf->error = GFARM_ERR_NO_MEMORY;
-		return (gf->error);
+		e = gf->error = GFARM_ERR_NO_MEMORY;
+		goto profile_finish;
 	}
 
 	if (if_hostname != NULL) {
@@ -408,6 +414,11 @@ finish:
 		gfs_pio_set_view_default(gf);
 	}
 	gf->error = e;
+
+profile_finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_set_view_section_time
+		    += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }

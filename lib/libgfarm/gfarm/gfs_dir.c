@@ -1,8 +1,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "hash.h"
+#include "gfs_pio.h"	/* gfs_profile */
+#include "timer.h"
 
 char *
 gfs_getcwd(char *cwd, int cwdsize)
@@ -386,29 +389,34 @@ gfs_stat_sub(char *gfarm_url, struct gfs_stat *s)
 	return (NULL);
 }
 
+double gfs_stat_time;
+
 char *
 gfs_stat(char *path, struct gfs_stat *s)
 {
 	char *e, *p;
 	struct node *n;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_cachedir();
 	if (e != NULL) 
-		return (e);
+		goto finish;
 	path = gfarm_url_prefix_skip(path);
 	e = gfs_realpath(path, &p);
 	if (e != NULL)
-		return (e);
+		goto finish;
 	e = gfs_stat_sub(p, s);
 	free(p);
 	if (e == NULL)
-		return (NULL);
+		goto finish;
 	if (e != GFARM_ERR_NO_SUCH_OBJECT)
-		return (e);
+		goto finish;
 	/* XXX - assume that it's a directory. */
 	e = lookup_path(path, 1, 0, &n);
 	if (e != NULL)
-		return (e);
+		goto finish;
 	s->st_mode = GFARM_S_IFDIR | 0777;
 	s->st_user = strdup("root");
 	s->st_group = strdup("gfarm");
@@ -420,7 +428,13 @@ gfs_stat(char *path, struct gfs_stat *s)
 	s->st_ctimespec.tv_nsec = 0;
 	s->st_size = 0;
 	s->st_nsections = 0;
-	return (NULL);
+
+	e = NULL;
+ finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
 }
 
 void
