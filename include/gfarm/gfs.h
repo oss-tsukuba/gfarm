@@ -131,10 +131,11 @@ struct gfs_dirent {
 	unsigned char d_namlen;
 	char d_name[GFS_MAXNAMLEN + 1];
 };
+
 /* File types */
-#define	GFS_DT_UNKNOWN		 0
-#define	GFS_DT_DIR		 4
-#define	GFS_DT_REG		 8
+#define	GFS_DT_UNKNOWN	 0 /* gfs_hook.c depends on it that this is 0 */
+#define	GFS_DT_DIR	 4
+#define	GFS_DT_REG	 8
 
 typedef struct gfs_dir *GFS_Dir;
 char *gfs_opendir(const char *, GFS_Dir *);
