@@ -10,6 +10,7 @@ enum gfarm_auth_error {
 enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_NONE, /* never used */
 	GFARM_AUTH_METHOD_SHAREDSECRET,
+	GFARM_AUTH_METHOD_GSI_OLD, /* not supported anymore */
 	GFARM_AUTH_METHOD_GSI,
 
 	GFARM_AUTH_METHOD_NUMBER
