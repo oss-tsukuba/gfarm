@@ -171,11 +171,12 @@ static char *
 gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 	char *hostname, char **global_usernamep)
 {
-	char *e, *global_username, *local_username;
+	char *e, *global_username, *local_username, *aux, *msg;
 	int eof;
 	struct passwd *pwd;
 	uid_t o_uid;
 	gid_t o_gid;
+	static char method[] = "auth=sharedsecret local_user=";
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
 	o_uid = o_gid = 0;
@@ -190,7 +191,7 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 		return (GFARM_ERR_PROTOCOL);
 	}
 
-	char *aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
+	aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
 	if (aux == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(aux, "%s@%s", global_username, hostname);
@@ -244,8 +245,7 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 		return (e);
 	}
 
-	static char method[] = "auth=sharedsecret local_user=";
-	char *msg = malloc(sizeof(method) + strlen(local_username));
+	msg = malloc(sizeof(method) + strlen(local_username));
 	if (msg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(msg, "%s%s", method, local_username);

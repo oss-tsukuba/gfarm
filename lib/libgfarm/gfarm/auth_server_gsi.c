@@ -51,10 +51,13 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 		    char **global_usernamep)
 {
 	int fd = xxx_connection_fd(conn);
-	char *e, *e2, *global_username;
+	char *e, *e2, *global_username, *aux, *msg;
 	OM_uint32 e_major;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
+	static char method[] = "auth=gsi local_user=";
+	static char dnb[] = " DN=\"";
+	static char dne[] = "\"";
 
 	e = xxx_proto_flush(conn);
 	if (e != NULL) {
@@ -121,16 +124,13 @@ gfarm_authorize_gsi(struct xxx_connection *conn, int switch_to, char *hostname,
 		return (e);
 	}
 
-	char *aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
+	aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
 	if (aux == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(aux, "%s@%s", global_username, hostname);
 	gflog_set_auxiliary_info(aux);
 
-	static char method[] = "auth=gsi local_user=";
-	static char dnb[] = " DN=\"";
-	static char dne[] = "\"";
-	char *msg = malloc(sizeof(method) +
+	msg = malloc(sizeof(method) +
 		strlen(userinfo->authData.userAuth.localName) +
 		sizeof(dnb) + strlen(userinfo->distName) + sizeof(dne));
 	if (msg == NULL)
