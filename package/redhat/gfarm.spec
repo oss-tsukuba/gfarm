@@ -476,7 +476,6 @@ fi
 %{prefix}/bin/gfkey
 %{prefix}/bin/gfls
 %{prefix}/bin/gfrcmd
-%{prefix}/bin/gfreg
 %{prefix}/bin/gfrep
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfsched
@@ -528,6 +527,7 @@ fi
 %{prefix}/bin/gfwc
 %endif
 
+%{prefix}/bin/gfreg
 %{prefix}/bin/gfregister
 
 %files fsnode

@@ -8,7 +8,6 @@ usr/bin/gfls
 usr/bin/gfmpirun_p4
 usr/bin/gfps
 usr/bin/gfrcmd
-usr/bin/gfreg
 usr/bin/gfrep
 usr/bin/gfrm
 usr/bin/gfrsh
