@@ -18,18 +18,26 @@ extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf);
 extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf);
 
 extern int	gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
+					  char *desiredNameString,
+					  gss_OID desiredNameType,
 					  gss_cred_usage_t credUsage,
 					  OM_uint32 *majStatPtr,
   					  OM_uint32 *minStatPtr,
 					  char **credNamePtr);
+extern int	gfarmGssReleaseCredential(gss_cred_id_t cred,
+					  OM_uint32 *majStatPtr,
+					  OM_uint32 *minStatPtr);
 extern int	gfarmGssAcceptSecurityContext(int fd,
 					      gss_cred_id_t cred,
 					      gss_ctx_id_t *scPtr,
 					      OM_uint32 *majStatPtr,
      					      OM_uint32 *minStatPtr,
 					      char **remoteNamePtr,
+					      char **exportedNamePtr,
 					      gss_cred_id_t *remoteCredPtr);
 extern int	gfarmGssInitiateSecurityContext(int fd,
+						char *acceptorNameString,
+						gss_OID acceptorNameType,
 						gss_cred_id_t cred,
 						OM_uint32 reqFlag,
 						gss_ctx_id_t *scPtr,
@@ -62,7 +70,10 @@ struct gfarm_eventqueue;
 struct gfarmGssInitiateSecurityContextState;
 
 extern struct gfarmGssInitiateSecurityContextState *gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q,
-			int fd, gss_cred_id_t cred, OM_uint32 reqFlag,
+			int fd,
+			char *acceptorNameString,
+			gss_OID acceptorNameType,
+			gss_cred_id_t cred, OM_uint32 reqFlag,
 			void (*continuation)(void *), void *closure,
 			OM_uint32 *majStatPtr, OM_uint32 *minStatPtr);
 extern int	gfarmGssInitiateSecurityContextResult(

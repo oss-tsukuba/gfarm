@@ -52,6 +52,7 @@ typedef struct gfarmSecSession {
 	struct acceptorSessionInfo {
 	    gfarmAuthEntry *mappedUser;	/* Authenticated
 					   user information. */
+	    char *exportedName;		/* initiator GSS_C_NT_EXPORT_NAME */
 	    gss_cred_id_t deleCred;	/* A credential
 					   delegated from
 					   the initiator. */
@@ -139,6 +140,7 @@ extern int	gfarmSecSessionInitializeAcceptor(char *configFile,
 						  OM_uint32 *majStatPtr,
   						  OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeInitiator(char *configFile,
+						   char *usermapFile,
 						   OM_uint32 *majStatPtr,
 						   OM_uint32 *minStatPtr);
 extern int	gfarmSecSessionInitializeBoth(char *iConfigFile,
@@ -159,18 +161,24 @@ extern gfarmSecSession *	gfarmSecSessionAccept(int fd,
 						      OM_uint32 *majStatPtr,
 						      OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiate(int fd,
+							char *acceptorNameString,
+							gss_OID acceptorNameType,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByAddr(unsigned long rAddr,
 							int port,
+							char *acceptorNameString,
+							gss_OID acceptorNameType,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
 							OM_uint32 *minStatPtr);
 extern gfarmSecSession *	gfarmSecSessionInitiateByName(char *hostname,
 							int port,
+							char *acceptorNameString,
+							gss_OID acceptorNameType,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
 							OM_uint32 *majStatPtr,
@@ -178,6 +186,8 @@ extern gfarmSecSession *	gfarmSecSessionInitiateByName(char *hostname,
 extern void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
 
 extern gss_cred_id_t		gfarmSecSessionGetDelegatedCredential(gfarmSecSession *ssPtr);
+
+extern char *			gfarmSecSessionGetInitiatorExportedName(gfarmSecSession *ssPtr);
 
 extern gfarmAuthEntry *		gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
 
@@ -229,6 +239,8 @@ struct gfarmSecSessionInitiateState;
 extern struct gfarmSecSessionInitiateState *gfarmSecSessionInitiateRequest(
 							struct gfarm_eventqueue *q,
 							int fd,
+							char *acceptorNameString,
+							gss_OID acceptorNameType,
 							gss_cred_id_t cred,
 							gfarmSecSessionOption *ssOptPtr,
 							void (*continuation)(void *),
