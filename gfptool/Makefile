@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-MPI_SUBDIRS = gfwc
+MPI_TARGETS = gfwc
 
 SUBDIRS = \
 	gfcombine \
@@ -15,7 +15,7 @@ SUBDIRS = \
 	gfrepbe_client \
 	gfrepbe_server \
 	gfsplck \
-	$(mpi_subdirs) \
+	$(mpi_targets) \
 	util
 
 include $(top_srcdir)/makes/subdir.mk
