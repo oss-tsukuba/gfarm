@@ -126,10 +126,9 @@ the default function of <command>gfhost</command>.
   <command>gfhost</command> displays information of filesystem node.
   -M function only accesses information in metadata server.
   Display functions other than -M also access <command>gfsd</command>
-  which is running on filesystem nodes. When <command>gfhost</command>
-  accesses <command>gfsd</command>, its access option can be specified
+  which is running on filesystem nodes. For functions which access
+  <command>gfhost</command>, the access option can be specified
   by option -i, -j, -U and -v.
-  <!-- XXX FIXME -v should be applied to -H and the (default) case, too -->
 </para>
 <para>
   You don't have to specify hostnames for display functions.
@@ -218,20 +217,30 @@ the default function of <command>gfhost</command>.
     <term><option>-H</option></term>
     <listitem>
       <para>
-	Display load average <!-- XXX NOTYET and authentication method -->.
-	Exact hostname passed by command argument will be display
-	rather than canonical host identifier with this function.
-	IP address which is used to access <command>gfsd</command>
-	will be displayed in parentheses just after the hostname.
-	<!-- XXX FIXME
+	Display load average and authentication method.
+	With this function, the exact hostname passed by gfhost command
+	arguments will be displayed instead of canonical host identifier.
+	Also, this function displays the IP address which is used to
+	access <command>gfsd</command> in parentheses just after the hostname.
+      </para>
+      <para>
 	If the host cannot be accessed due to machine down or
 	network trouble etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
 	cannot be accessed by the port number configured in
-	/etc/gfarm.conf or $HOME/.gfarmrc, -.- -/-.- -/-.- - will be
+	/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 	displayed.
-	-->
+      </para>
+      <para>
+	The next field is the authenticaion method used with the
+	host. `G' in this field means GSI authenticaion, `S' means
+	gfarm sharedsecret authentication, `x' means that the
+	authentication failed, and `-' means that the authentication
+	wasn't actually tried. If -U option is specified, this
+	authentication method field won't be provided.
+      </para>
+      <para>
 	Hostnames are displayed by alphabetical order, by default.
       </para>
     </listitem>
@@ -447,10 +456,9 @@ the default function of <command>gfhost</command>.
     <term><option>-v</option></term>
     <listitem>
       <para>
-	<!-- FIXME -H, --> -l function <!-- FIXME and default function -->
-	doesn't <!-- FIXME don't --> display any message about
-	network error at <command>gfsd</command> accesss.
-	Such message will be displayed with this option.
+	-H, -l function and default function don't produce any error
+	report about the <command>gfsd</command> accesss.
+	Such error report will be produced by this option.
       </para>
     </listitem>
   </varlistentry>
