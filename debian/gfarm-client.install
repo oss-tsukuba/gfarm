@@ -20,6 +20,7 @@ debian/tmp/usr/bin/gfssh
 debian/tmp/usr/bin/gfsshl
 debian/tmp/usr/bin/gfstat
 debian/tmp/usr/bin/gfwhere
+debian/tmp/usr/bin/gfwhoami
 debian/tmp/usr/bin/gfmkdir
 debian/tmp/usr/bin/gfpwd
 debian/tmp/usr/bin/gfrmdir

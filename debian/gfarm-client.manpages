@@ -13,6 +13,7 @@ man/man1/gfrun.1
 man/man1/gfsched.1
 man/man1/gfstat.1
 man/man1/gfwhere.1
+man/man1/gfwhoami.1
 man/man1/gfhost.1
 man/man1/gfls.1
 man/man1/gfcd.1
