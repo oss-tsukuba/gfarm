@@ -397,11 +397,15 @@ __dup2(int oldfd, int newfd)
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __dup2(%d, %d)\n",
 				oldfd, newfd));
 
-	if (syscall(SYS_dup2, oldfd, newfd) == -1)
-		return (-1);
-
 	d = gfs_hook_dup_descriptor(oldfd);
 	gfs_hook_set_descriptor(newfd, d);
+	/*
+	 * dup2() should be called after gfs_hook_set_descriptor()
+	 * because newfd may be a descriptor reserved for a hooking point
+	 * of a Gfarm file.
+	 */ 
+	if (syscall(SYS_dup2, oldfd, newfd) == -1)
+		return (-1);
 
 	return (newfd);
 }
