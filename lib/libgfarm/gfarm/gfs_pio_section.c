@@ -265,7 +265,8 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 		goto finish_free_local_path;
 	}
 
-	e = gfs_client_copyin(peer_conn, peer_fd, fd);
+	/* XXX FIXME: this should honor sync_rate */
+	e = gfs_client_copyin(peer_conn, peer_fd, fd, 0);
 	/* XXX - copyin() should return the digest value */
 	if (e == NULL)
 		e = gfs_pio_set_fragment_info_local(local_path,
