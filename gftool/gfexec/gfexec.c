@@ -182,13 +182,16 @@ replicate_so()
 	int new_ld_path_len, last_len, new_dir_len, rv;
 	size_t dir_len;
 
+	ld_path = getenv("LD_LIBRARY_PATH");
+	if (ld_path == NULL)
+		return (NULL);
+
 	e = NULL;
 	new_ld_path_len = sizeof("LD_LIBRARY_PATH=") - 1;
 	new_ld_path = malloc(new_ld_path_len + 1);
 	if (new_ld_path == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(new_ld_path, "LD_LIBRARY_PATH=");
-	ld_path = getenv("LD_LIBRARY_PATH");
 	while (*ld_path != '\0') {
 		char *p;
 
