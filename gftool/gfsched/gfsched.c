@@ -24,6 +24,8 @@ usage()
 int
 main(int argc, char * argv[])
 {
+    int argc_save = argc;
+    char * argv_save = argv;
     char * gfarm_url = (char *)NULL, * gfarm_file = (char *)NULL;
     char * e = (char *)NULL;
     int filep = 0;
@@ -74,7 +76,7 @@ main(int argc, char * argv[])
 	}
     }
 
-    e = gfarm_initialize();
+    e = gfarm_initialize(&argc_save, &argv_save);
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
 	exit(1);

@@ -72,7 +72,7 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	e = gfarm_initialize();
+	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);

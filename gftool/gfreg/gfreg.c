@@ -27,6 +27,8 @@ usage()
 int
 main(int argc, char * argv[])
 {
+    int argc_save = argc;
+    char * argv_save = argv;
     char * filename, * gfarm_url;
     int node_index = -1, total_nodes = -1;
     char * e = (char *)NULL, * architecture = NULL;
@@ -83,7 +85,7 @@ main(int argc, char * argv[])
 
     /* */
 
-    e = gfarm_initialize();
+    e = gfarm_initialize(&argc_save, &argv_save);
     if (e != NULL) {
 	fprintf(stderr, "%s: %s\n", program_name, e);
 	exit(1);

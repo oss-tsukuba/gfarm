@@ -66,6 +66,8 @@ main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
+	int argc_save = argc;
+	char **argv_save = argv;
 	char *e;
 	int i, ch, error = 0;
 
@@ -82,7 +84,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	e = gfarm_initialize();
+	e = gfarm_initialize(&argc_save, &argv_save);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);

@@ -56,6 +56,8 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
+	int argc_save = argc;
+	char **argv_save = argv;
 	char *e, *hostfile = NULL;
 	int ch, error_line, n = 0;
 	gfarm_stringlist hostlist = NULL;
@@ -81,7 +83,7 @@ main(argc, argv)
 			program_name);
 		exit(1);
 	}
-	e = gfarm_initialize();
+	e = gfarm_initialize(&argc_save, &argv_save);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);

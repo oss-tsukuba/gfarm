@@ -26,6 +26,8 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
+	int argc_save = argc;
+	char **argv_save = argv;
 	char *e, *hostfile = NULL;
 	int ch, nhosts, error_line;
 	char **hosttab;
@@ -48,7 +50,7 @@ main(argc, argv)
 	if (argc != 1)
 		usage();
 
-	e = gfarm_initialize();
+	e = gfarm_initialize(&argc_save, &argv_save);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
