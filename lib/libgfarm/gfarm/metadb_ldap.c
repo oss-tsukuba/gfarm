@@ -282,7 +282,7 @@ gfarm_generic_info_get_all(
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
 	char *query,
 	int *np,
-	char **infosp,
+	void *infosp,
 	const struct gfarm_generic_info_ops *ops)
 {
 	LDAPMessage *res, *e;
@@ -357,7 +357,7 @@ gfarm_generic_info_get_all(
 
 	/* XXX - if (i < n), element from (i+1) to (n-1) may be wasted */
 	*np = i;
-	*infosp = infos;
+	*(char **)infosp = infos;
 	return (NULL);
 }
 
@@ -664,7 +664,7 @@ gfarm_host_info_get_all(
 
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_host_info_ops.query_type,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_host_info_ops);
 	if (error != NULL)
 		return (error);
@@ -691,7 +691,7 @@ gfarm_host_info_get_by_name_alias(
 	sprintf(query, query_template, name_alias, name_alias);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_host_info_ops);
 	free(query);
 	if (error != NULL) {
@@ -725,7 +725,7 @@ gfarm_host_info_get_allhost_by_architecture(const char *architecture,
 	sprintf(query, query_template, architecture);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_host_info_ops);
 	free(query);
 	if (error != NULL)
@@ -1001,7 +1001,7 @@ gfarm_path_info_get_all(
 
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_path_info_ops.query_type,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_path_info_ops);
 	if (error != NULL)
 		return (error);
@@ -1050,7 +1050,7 @@ gfarm_file_history_get_allfile_by_program(
 	sprintf(query, query_template, program);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_path_info_ops);
 	free(query);
 	if (error != NULL)
@@ -1286,7 +1286,7 @@ gfarm_file_section_info_get_all_by_file(
 	sprintf(dn, dn_template, pathname, gfarm_ldap_base_dn);
 	error = gfarm_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
 	    gfarm_file_section_info_ops.query_type,
-	    &n, (char **)&infos,
+	    &n, &infos,
 	    &gfarm_file_section_info_ops);
 	free(dn);
 	if (error != NULL)
@@ -1547,7 +1547,7 @@ gfarm_file_section_copy_info_get_all_by_file(
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, pathname);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_SUBTREE, query, &n, (char **)&infos,
+	    LDAP_SCOPE_SUBTREE, query, &n, &infos,
 	    &gfarm_file_section_copy_info_ops);
 	free(query);
 	if (error != NULL)
@@ -1606,7 +1606,7 @@ gfarm_file_section_copy_info_get_all_by_section(
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	error = gfarm_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
-	    gfarm_file_section_copy_info_ops.query_type, &n, (char **)&infos,
+	    gfarm_file_section_copy_info_ops.query_type, &n, &infos,
 	    &gfarm_file_section_copy_info_ops);
 	free(dn);
 	if (error != NULL)
@@ -1666,7 +1666,7 @@ gfarm_file_section_copy_info_get_all_by_host(
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, hostname);
 	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_SUBTREE, query, &n, (char **)&infos,
+	    LDAP_SCOPE_SUBTREE, query, &n, &infos,
 	    &gfarm_file_section_copy_info_ops);
 	free(query);
 	if (error != NULL)
