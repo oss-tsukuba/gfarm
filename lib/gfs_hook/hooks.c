@@ -509,7 +509,7 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 
 		switch (pid) {
 		case -1:
-			_gfs_hook_debug(perror("fork"));
+			_gfs_hook_debug(perror("GFS: fork"));
 			status = 255;
 			break;
 		case 0:
@@ -522,29 +522,33 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 			while ((r = waitpid(pid, &status, 0)) == -1 &&
 			       errno == EINTR);
 			if (r == -1) {
-				_gfs_hook_debug(perror("waitpid"));
+				_gfs_hook_debug(perror("GFS: waitpid"));
 				status = 255;
+			}
+			else if (WIFEXITED(status)) {
+				switch (WEXITSTATUS(status)) {
+				case 255:
+					/* child process fails in execve */
+					_gfs_hook_debug(
+					 fprintf(stderr, "%s(%d): %s\n",
+					 "GFS: waitpid", pid, "status 255"));
+					/* XXX - need to obtain from child */
+					errno = EPERM;
+					return (-1);
+				default:
+					status = WEXITSTATUS(status);
+					break;
+				}
 			}
 			else if (WIFSIGNALED(status)) {
 				_gfs_hook_debug(
-				 fprintf(stderr, "%s: signal %d received%s.\n",
-				  gfarm_host_get_self_name(), WTERMSIG(status),
+				 fprintf(stderr,
+				  "%s(%d): signal %d received%s.\n",
+				  "GFS: waitpid", pid, WTERMSIG(status),
 				  WCOREDUMP(status) ? " (core dumped)" : ""));
 				/* propagate the signal */
 				raise(WTERMSIG(status));
-				status = WEXITSTATUS(status);
-			}
-			else if (WEXITSTATUS(status) == 255) {
-				/* child process fails in execve */
-				_gfs_hook_debug(
-				 fprintf(stderr, "%s: status 255\n",
-				  gfarm_host_get_self_name()));
-				/* XXX - need to obtain from the child */
-				errno = EPERM;
-				return (-1);
-			}
-			else {
-				status = WEXITSTATUS(status);
+				status = 255;
 			}
 			break;
 		}
