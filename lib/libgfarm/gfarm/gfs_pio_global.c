@@ -78,7 +78,7 @@ gfs_pio_view_global_adjust(GFS_File gf, const char *buffer, size_t *sizep)
 	size_t size = *sizep;
 	char *e = NULL;
 
-	if (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
+	while (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset >= gc->offsets[gc->fragment_index + 1]) {
 		e = gfs_pio_view_global_move_to(gf, gc->fragment_index + 1);
 		if (e != NULL)
