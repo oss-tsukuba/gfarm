@@ -423,7 +423,6 @@ list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
 {
 	char *e, *e_save = NULL;
 	gfarm_stringlist dirs, files;
-	gfarm_glob_t filetypes;
 	int i, nfiles, ndirs;
 
 	if (option_directory_itself) {
@@ -439,13 +438,6 @@ list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
 	e = gfarm_stringlist_init(&files);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
-		gfarm_stringlist_free(&dirs);
-		return (e);
-	}
-	e = gfarm_glob_init(&filetypes);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		gfarm_stringlist_free(&files);
 		gfarm_stringlist_free(&dirs);
 		return (e);
 	}
@@ -467,7 +459,6 @@ list(gfarm_stringlist *paths, gfarm_glob_t *types, int *need_newline)
 		if (e_save == NULL)
 			e_save = e;
 	}
-	gfarm_glob_free(&filetypes);
 	gfarm_stringlist_free(&files);
 
 	if (nfiles == 0 && ndirs == 1) {
