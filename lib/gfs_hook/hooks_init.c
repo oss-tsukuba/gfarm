@@ -15,15 +15,12 @@ gfs_hook_initialize(void)
 #else
 	char *e;
 
-	_gfs_hook_debug(fprintf(stderr,
-			"GFS: gfs_hook_initialize: set_local(0, 1)\n"));
+	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_initialize\n"));
 
 	e = gfarm_initialize(NULL, NULL);
 	if (e != NULL)
-		return e;
+		return (e);
 
-	gfs_pio_set_local(0, 1);
-
-	return NULL;
+	return (NULL);
 #endif
 }
