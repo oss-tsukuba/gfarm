@@ -307,221 +307,131 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
 {
-#define SS_CONF_ACK	1
-#define SS_CONF_NACK	0
-#define SS_CONF_NEGO	2
-    int ret = -1;
     gss_qop_t retQOP = GFARM_GSS_DEFAULT_QOP;
     unsigned int retMaxT = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
     unsigned int retConf = GFARM_SS_USE_ENCRYPTION;
-    char NACK = SS_CONF_NACK;
-    char ACK = SS_CONF_ACK;
-    char NEGO = SS_CONF_NEGO;
-    char stat;
 
-    int negoPhase = 0;
-    int dQOP = (int)(GFARM_GSS_DEFAULT_QOP);
-    unsigned int dMax = GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE;
-    unsigned int dConf = GFARM_SS_USE_ENCRYPTION;
-
-#define SendCmd(p) { if (gfarmWriteBytes(fd, (char *)&(p), 1) != 1) { break; }}
-#define SendACK(dum) SendCmd(ACK)
-#define SendNACK(dum) SendCmd(NACK)
-#define SendNEGO(dum) SendCmd(NEGO)
-
-#define ReadCmd(p) { if (gfarmReadBytes(fd, (char *)&(p), 1) != 1) { break; }}
-
-#define SendParam(x) {if (gfarmWriteLongs(fd, (long *)&(x), 1) != 1) {break;}}
-#define ReadParam(x) {if (gfarmReadLongs(fd, (long *)&(x), 1) != 1) {break;}}
+#define NEGO_PARAM_QOP			0
+#define NEGO_PARAM_QOP_FORCE		1
+#define NEGO_PARAM_MAX_TRANS_SIZE	2
+#define NEGO_PARAM_MAX_TRANS_SIZE_FORCE	3
+#define NEGO_PARAM_OTHER_CONFIG		4
+#define NEGO_PARAM_OTHER_CONFIG_FORCE	5
+#define NUM_NEGO_PARAM			6
 
     if (sCtx == GSS_C_NO_CONTEXT) {
-	return ret;
+	return -1;
     }
 
     switch (which) {
+	long param[NUM_NEGO_PARAM];
+
 	case GFARM_SS_ACCEPTOR: {
 	    int iQOP, iQOPF;
 	    unsigned int iMax;
 	    int iMaxF;
 	    int iConf, iConfF;
+	   
+	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
+	         return -1;
+	    iQOP = param[NEGO_PARAM_QOP];
+	    iQOPF = param[NEGO_PARAM_QOP_FORCE];
+	    iMax = param[NEGO_PARAM_MAX_TRANS_SIZE];
+	    iMaxF = param[NEGO_PARAM_MAX_TRANS_SIZE_FORCE];
+	    iConf = param[NEGO_PARAM_OTHER_CONFIG];
+	    iConfF = param[NEGO_PARAM_OTHER_CONFIG_FORCE];
 
-	    /* QOP negotiation. */
-	    ReadParam(iQOP);
-	    ReadParam(iQOPF);
-	    if (canPtr->qOpReq != iQOP) {
-		if (canPtr->qOpForce == 1 && iQOPF == 1) {
-		    /*
-		     * Both sides want to rule the world.
-		     * No 2nd thought sigh.
-		     */
-		    SendNACK(0);
-		    break;
-		} else if (iQOPF == 1) {
-		    /*
-		     * Use the initiator's QOP
-		     */
-		    dQOP = iQOP;
-		    goto setQOP;
-		} else {
-		    /*
-		     * (canPtr->qOpForce == 1 ||
-		     *  Both force flags == 0)
-		     * Propose the acceptor's QOP
-		     */
-		    SendNEGO(2);
-		    SendParam(canPtr->qOpReq);
-		    ReadCmd(stat);
-		    if (stat != ACK) {
-			break;
-		    } else {
-			dQOP = canPtr->qOpReq;
-			goto setQOP;
-		    }
-		}
+	    /* 
+	     * Give precedence to the acceptor on QOP.
+	     */
+	    if (canPtr->qOpForce == 0 && iQOPF == 1) {
+		/*
+		 * Use the initiator's.
+		 */
+		retQOP = (gss_qop_t)iQOP;
 	    } else {
-		dQOP = iQOP;
-		setQOP:
-		SendACK(1);
-		retQOP = (gss_qop_t)dQOP;
-		negoPhase++;
+		/*
+		 * Use the acceptor's.
+		 */
+		retQOP = canPtr->qOpReq;
 	    }
+	    param[NEGO_PARAM_QOP] = retQOP;
 
-	    /* Max transmission size negotiation. */
-	    ReadParam(iMax);
-	    ReadParam(iMaxF);
-	    if (canPtr->maxTransSizeReq != iMax) {
-		if (canPtr->maxTransSizeForce == 1 && iMaxF == 1) {
-		    SendNACK(0);
-		    break;
-		} else if (iMaxF == 1) {
-		    dMax = iMax;
-		    goto setMax;
-		} else {
-		    int tmpMax;
-		    if (canPtr->maxTransSizeForce == 1) {
-			tmpMax = canPtr->maxTransSizeReq;
-		    } else {
-			tmpMax = (canPtr->maxTransSizeReq < iMax) ?
+	    /* 
+	     * maximum transmission size
+	     */
+	    if (canPtr->maxTransSizeForce == 1) {
+		/*
+		 * Use the acceptor's.
+		 */
+		retMaxT = iMax;
+	    } else if (iMaxF == 1) {
+		/*
+		 * Use the initiator's.
+		 */
+		retMaxT = canPtr->maxTransSizeReq;
+	    } else { 
+		/*
+		 * Both force flags are off.
+		 * Use larger one.
+		 */
+		retMaxT = (canPtr->maxTransSizeReq >= iMax) ?
 				canPtr->maxTransSizeReq : iMax;
-		    }
-		    SendNEGO(2);
-		    SendParam(tmpMax);
-		    ReadCmd(stat);
-		    if (stat != ACK) {
-			break;
-		    } else {
-			dMax = tmpMax;
-			goto setMax;
-		    }
-		}
-	    } else {
-		dMax = iMax;
-		setMax:
-		SendACK(1);
-		retMaxT = dMax;
-		negoPhase++;
 	    }
+	    param[NEGO_PARAM_MAX_TRANS_SIZE] = retMaxT;
 
-	    /* Configuration flag negotiation. */
-	    ReadParam(iConf);
-	    ReadParam(iConfF);
-	    if (canPtr->configReq != iConf) {
-		if (canPtr->configForce == 1 && iConfF == 1) {
-		    SendNACK(0);
-		    break;
-		} else if (iConfF == 1) {
-		    dConf = iConf;
-		    goto setConf;
-		} else {
-		    SendNEGO(2);
-		    SendParam(canPtr->configReq);
-		    ReadCmd(stat);
-		    if (stat != ACK) {
-			break;
-		    } else {
-			dConf = canPtr->configReq;
-			goto setConf;
-		    }
-		}
+	    /* 
+	     * other configuration flags
+	     */
+	    /* compression, systemconf -  Give precedence to the acceptor. */
+	    if (canPtr->configForce == 0 && iConfF == 1) {
+		/*
+		 * Use the initiator's.
+		 */
+		retConf = canPtr->configReq;
 	    } else {
-		dConf = iConf;
-		setConf:
-		SendACK(1);
-		retConf = dConf;
-		negoPhase++;
+		/*
+		 * Use the acceptor's.
+		 */
+		retConf = iConf;
 	    }
+	    /* encryption - Take logical or value ignoring both force flags. */
+	    retConf &= ~GFARM_SS_USE_ENCRYPTION;
+	    retConf |= (canPtr->configReq | iConf) & GFARM_SS_USE_ENCRYPTION;
 
-	    /* End of initiator side negotiation. */
+	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
+
+	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
+		return -1;
+
+	    /* End of acceptor side negotiation. */
 	    break;
 	}
 
 	case GFARM_SS_INITIATOR: {
-	    /* QOP */
-	    SendParam(canPtr->qOpReq);
-	    SendParam(canPtr->qOpForce);
-	    ReadCmd(stat);
-	    switch (stat) {
-		case SS_CONF_ACK: {
-		    retQOP = canPtr->qOpReq;
-		    break;
-		}
-		case SS_CONF_NACK: {
-		    goto Done;
-		}
-		case SS_CONF_NEGO: {
-		    ReadParam(retQOP);
-		    SendACK(1);
-		    break;
-		}
-	    }
-	    negoPhase++;
+	    param[NEGO_PARAM_QOP] = canPtr->qOpReq;
+	    param[NEGO_PARAM_QOP_FORCE] = canPtr->qOpForce;
+	    param[NEGO_PARAM_MAX_TRANS_SIZE] = canPtr->maxTransSizeReq;
+	    param[NEGO_PARAM_MAX_TRANS_SIZE_FORCE] = canPtr->maxTransSizeForce;
+	    param[NEGO_PARAM_OTHER_CONFIG] = canPtr->configReq;
+	    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
-	    /* Max transmission size */
-	    SendParam(canPtr->maxTransSizeReq);
-	    SendParam(canPtr->maxTransSizeForce);
-	    ReadCmd(stat);
-	    switch (stat) {
-		case SS_CONF_ACK: {
-		    retMaxT = canPtr->maxTransSizeReq;
-		    break;
-		}
-		case SS_CONF_NACK: {
-		    goto Done;
-		}
-		case SS_CONF_NEGO: {
-		    ReadParam(retMaxT);
-		    SendACK(1);
-		    break;
-		}
-	    }
-	    negoPhase++;
+	    if (gfarmWriteLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM)
+		return -1;
 
-	    /* Configuration flag */
-	    SendParam(canPtr->configReq);
-	    SendParam(canPtr->configForce);
-	    ReadCmd(stat);
-	    switch (stat) {
-		case SS_CONF_ACK: {
-		    retConf = canPtr->configReq;
-		    break;
-		}
-		case SS_CONF_NACK: {
-		    goto Done;
-		}
-		case SS_CONF_NEGO: {
-		    ReadParam(retConf);
-		    SendACK(1);
-		    break;
-		}
-	    }
-	    negoPhase++;
-	    
+	    if (gfarmReadLongs(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) 
+		return -1;
+
+	    retQOP = param[NEGO_PARAM_QOP];
+	    retMaxT = param[NEGO_PARAM_MAX_TRANS_SIZE];
+	    retConf = param[NEGO_PARAM_OTHER_CONFIG];
+
+	    /* End of initiator side negotiation. */
 	    break;
 	}
     }
 
-    Done:
-    if (negoPhase >= 3) {
+    {
 	OM_uint32 majStat, minStat;
 	unsigned int maxMsgSize;
 	int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
@@ -536,7 +446,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    if (minStatPtr != NULL) {
 		*minStatPtr = minStat;
 	    }
-	    return ret;
+	    return -1;
 	}
 
 	if (majStatPtr != NULL) {
@@ -554,21 +464,8 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	if (configPtr != NULL) {
 	    *configPtr = retConf;
 	}
-
-	ret = 1;
     }
-    return ret;
-
-#undef SS_CONF_ACK
-#undef SS_CONF_NACK
-#undef SS_CONF_NEGO
-#undef SendCmd
-#undef SendACK
-#undef SendNACK
-#undef SendNEGO
-#undef ReadCmd
-#undef SendParam
-#undef ReadParam
+    return 1;
 }
 
 
