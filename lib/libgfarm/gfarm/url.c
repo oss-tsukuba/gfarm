@@ -80,7 +80,8 @@ gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 char *
 gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 {
-	char *basename, *dir, *e, *dir_canonic;
+	const char *basename;
+	char *dir, *e, *dir_canonic;
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
@@ -95,11 +96,11 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		if (dir == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	} else { /* /.../.../filename */
-		dir = malloc(basename - 2 - gfarm_file + 1);
+		dir = malloc(basename - 2 - gfarm_file + 2);
 		if (dir == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		strncpy(dir, gfarm_file, basename - 2 - gfarm_file);
-		dir[basename - 2 -gfarm_file] = '\0';
+		strncpy(dir, gfarm_file, basename - 2 - gfarm_file + 1);
+		dir[basename - 2 - gfarm_file + 1] = '\0';
 	}
 	e = gfarm_canonical_path(dir, &dir_canonic);
 	free(dir);
@@ -298,10 +299,10 @@ gfarm_url_prefix_skip(char *gfarm_url)
  * Skip directory in the pathname.
  * We want traditional basename(3) here, rather than weird XPG one.
  */
-char *
-gfarm_path_dir_skip(char *path)
+const char *
+gfarm_path_dir_skip(const char *path)
 {
-	char *base;
+	const char *base;
 
 	for (base = path; *path != '\0'; path++) {
 		if (*path == '/')

@@ -87,7 +87,7 @@ char *gfarm_path_localize(char *, char **);
 char *gfarm_path_localize_file_section(char *, char *, char **);
 char *gfarm_path_localize_file_fragment(char *, int, char **);
 char *gfarm_url_prefix_skip(char *);
-char *gfarm_path_dir_skip(char *);
+const char *gfarm_path_dir_skip(const char *);
 
 extern char GFARM_URL_PREFIX[];
 #define GFARM_URL_PREFIX_LENGTH 6
