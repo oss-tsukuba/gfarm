@@ -1,246 +1,24 @@
-2003-11-12  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfexec.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfexec.1.docbook, doc/html/en/ref/index.html, doc/html/en/ref/man1/gfexec.1.html, doc/html/ja/ref/index.html, doc/html/ja/ref/man1/gfexec.1.html, man/ja/man1/gfexec.1, man/man1/gfexec.1:
-	Added a manual page for gfexec(1).
-
-	* gftool/gfexec/gfexec.c:
-	save the initial argv because it may be modified in gfarm_initialize().
-
-	* gftool/Makefile, gftool/gfexec/Makefile, gftool/gfexec/gfexec.c:
-	A new command-line interface to invoke a gfarm command.
-
-		usage: gfexec gfarm:command args ...
-
-	* gftool/Makefile, gftool/gfsck/Makefile, gftool/gfsck/gfsck.c:
-	An initial commit for gfsck system command.
-
-		usage: gfsck [ -v ] path ...
-
-	Currently, it checks the existence of every file fragment.  If not, the meta data is deleted.
-
-2003-11-11  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gftool/Makefile: Added an entry for gfstat.
-
-	* gftool/gfstat/Makefile, gftool/gfstat/gfstat.c:
-	a command-line interface to inspect file informations.
-
-	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio_section.c:
-	Added a new experimental flag for gfs_pio_open() and create(), GFARM_FILE_NOT_RETRY.
-
-	* gfptool/gfsplck/gfsplck.c:
-	With the -d option, invalid files or directories in the spool directory are also deleted.
-	Fixed a bug such that a (invalid) file section is unexpectedly attached to a Gfarm directory.
-
-2003-11-10  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
-
-	* bench/nconnect/nconnect.c:
-	add experimental option "-S" which specifies `sync_rate'
-
-	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/param.h, server/gfsd/gfsd.c:
-	add experimental netparam `sync_rate'
-
-	* lib/libgfarm/gfarm/gfs_pio_section.c:
-	add experimental netparam `sync_rate'
-
-	XXX FIXME: replicate_section_to_local() doesn't honr `sync_rate'
-
-2003-11-08  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gftool/gfls/gfls.c:
-	Fixed a bug related to spacing with the -F option reported by Bugzilla-ja #5.
-	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=5
-
-2003-11-07  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gftool/gfmkdir/gfmkdir.c:
-	gfmkdir does not need to create a physical directory on every file
-	system node any more, because it will be created on demand.  Now, just
-	insert the directory entry to the meta db.  That's it.
-
-	* gftool/gfps/gfps.c:
-	Skip to display invalid job information that causes segfault.
-
-2003-11-06  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/docbook/en/gmonitor3.1, snmptool/gmonitor3/docbook/en/gmonitor3.1.docbook, snmptool/gmonitor3/docbook/en/gmonitor3.1.html, snmptool/gmonitor3/docbook/ja/gmonitor3.1, snmptool/gmonitor3/docbook/ja/gmonitor3.1.docbook, snmptool/gmonitor3/docbook/ja/gmonitor3.1.html:
-	Renamed some option names.
-
-2003-11-05  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/gmonitor/logdata/DataFile.java:
-	Modified the processing way of opening and closing files.
-
-	* snmptool/gmonitor3/gmonitor/gui/DataTimeSpace.java:
-	Modified the calculation of diff mode.
-
-	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherApp.java:
-	Renamed some option names.
-	Fixed a bug of endless loop when there is no data in the opened file.
-
-2003-11-04  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gftool/gfrcmd/gfrcmd.c, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/io_gfsl.h:
-	Added an experimental support for the distingushed name to a global Gfarm name.
-	Currently, the same local user map is used to describe the mapping.
-	[CAUTION] When using this feature, the same local user account can be shared by several users that has the different distingushed name.  On the other hand, there is no security among users that share the same local user account.
-
-	* lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/session.c (gfarmSecSessionGetInitiatorCredName):
-	Added to obtain the distinguished name of the client.
-
-	* gftool/gfmkdir/gfmkdir.c, gftool/gfrmdir/gfrmdir.c:
-	Fixed a critical bug such that the first directory entry is ignored, introduced by the previous commit.
-
-2003-10-29  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* util/gfront/GFront/gfront/GFront.java, util/gfront/GFront/gfront/GFrontApp.java:
-	Renamed "Update" to "Refresh". Modified etc..
-
-	* snmptool/gmonitor3/gmonitor/gui/DataTimeSpace.java:
-	Modified the calculation of diff mode.
-
-	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherBaseUI.java:
-	Renamed "Redraw" to "Refresh".
-
-	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherApp.java:
-	Modified the action of host selection when there is no selected data.
-
-2003-10-29  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* util/ptool/preplace:
-	A new ptool for replacing a word in a document in parallel.
-	e.g. preplace "usr\/users" home /etc/passwd
-	replaces every occurrence of "usr/users" with "home".
-
-	* doc/docbook/en/ref/man3/gfs_closedir.3.docbook, doc/docbook/en/ref/man3/gfs_opendir.3.docbook, doc/docbook/en/ref/man3/gfs_readdir.3.docbook, doc/docbook/ja/ref/man3/gfs_readdir.3.docbook, doc/html/en/ref/man3/gfs_closedir.3.html, doc/html/en/ref/man3/gfs_opendir.3.html, doc/html/en/ref/man3/gfs_readdir.3.html, doc/html/ja/ref/man3/gfs_readdir.3.html, man/ja/man3/gfs_readdir.3, man/man3/gfs_closedir.3, man/man3/gfs_opendir.3, man/man3/gfs_readdir.3:
-	Removed "NOT SUPPORTED YET".
-
-2003-10-28  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gfptool/gfcp/gfcp.c:
-	Added the -p option for preserving the file status.
-	Added the error check such that the destination is a directory or not, because the gfcp currently support a copy from a file to a file.
-
-	* gfptool/gfsplck/gfsplck.c (fixurl):
-	Removed check_path_info() because gfarm_url_make_path() already makes sure the existence of the metadata.
-
-	* INSTALL.en, INSTALL.ja:
-	Deleted an obsolete description such that a creation of a home directory and an execution of the gfregister command are needed every time a new file system node is added.
-
-	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_utimes):
-	Fixed a bug such that an uninitialized value will be set to ctimespec when 'tsp' (access and modification times) is specified by the argument.
-
-	* gftool/gfrmdir/gfrmdir.c, gftool/gfmkdir/gfmkdir.c:
-	Skipped command-line arguments.  The current code does not require it, while it will be needed.
-
-2003-10-27  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* util/gfront/GFront/gfront/FragmentEditor.java, util/gfront/GFront/gfront/GFront.java, util/gfront/GFront/gfront/GFrontCommon.java:
-	Modified actions of tree selection and Update.
-
-2003-10-22  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* util/gfront/gfront.jar, util/gfront/GFront/gfront/GFrontCommon.java, util/gfront/GFront/gfront/RightClickDirTree.java, util/gfront/GFront/gfront/RightClickTable.java:
-	Enabled menus of gfrun, gfmkdir and gfrmdir.
-
-	* util/gfront/gfront.jar: Added a menu of Update.
-
-2003-10-21  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* util/gfront/GFront/gfront/FragmentEditor.java, util/gfront/GFront/gfront/GFront.java, util/gfront/GFront/gfront/RightClickDirTree.java, util/gfront/GFront/gfront/RightClickTable.java:
-	Modified a action of Update.
-
-	* util/gfront/build.xml, util/gfront/gfront.mani:
-	Added a manifest-file for gfront.jar.
-
-	* util/gfront/GFront/gfront/GFront.java, util/gfront/GFront/gfront/GFrontConst.java:
-	Added a menu for Update.
-
-	* util/gfront/GFront/gfront/FragmentEditor.java:
-	Fixed a bug to display filesystem nodes of an executable file. 
-	(maximum of 10 nodes are displayed)
-
-	* util/gfront/GFront/.classpath, util/gfront/GFront/.project:
-	Added project files for Eclipse.
-
-2003-10-20  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* gftool/addpath/addpath.c (gfarm_path_info_set_from_file):
-	Fixed a bug to free unallocated memory area that causes a segfault.
-
-2003-10-15  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
-
-	* lib/libgfarm/gfutil/gfevent.c:
-	fix missing variable initialization which makes gfhost and scheduling
-	functions hang.
-
-2003-10-14  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/gmonitor/gui/DataTimeSpace.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroup.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroupElement.java:
-	Fixed so that the action that has become heavy in the previous commit may become light.
-
-2003-10-10  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherApp.java:
-	Fixed the action of AutoUpdate mode.
-
-	* snmptool/gmonitor3/gmonitor/gui/DataTimeSpace.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroup.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroupElement.java, snmptool/gmonitor3/gmonitor/logdata/OIDDefBlock.java:
-	Fixed the action when OIDs are different and OID nick names are same.
-
-2003-10-09  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/docbook/ja/Makefile, snmptool/gmonitor3/docbook/ja/gmonitor3.1, snmptool/gmonitor3/docbook/ja/gmonitor3.1.docbook, snmptool/gmonitor3/docbook/ja/gmonitor3.1.html, snmptool/gmonitor3/INSTALL, snmptool/gmonitor3/Makefile.in, snmptool/gmonitor3/config.mk.in, snmptool/gmonitor3/configure, snmptool/gmonitor3/configure.in, snmptool/gmonitor3/docbook/Makefile, snmptool/gmonitor3/docbook/doc.mk.in, snmptool/gmonitor3/docbook/en/Makefile, snmptool/gmonitor3/docbook/en/gmonitor3.1, snmptool/gmonitor3/docbook/en/gmonitor3.1.docbook, snmptool/gmonitor3/docbook/en/gmonitor3.1.html, snmptool/gmonitor3/gmonitor3, snmptool/gmonitor3/gmonitor3.in, snmptool/gmonitor3/install-sh:
-	Added manuals and installer for gmonitor3.
-
-2003-10-03  Naotaka Yamamoto  <naotaka@gfmgw01.apgrid.org>
-
-	* debian/rules: added man files for libgfarm-dev package
-
-	* debian/changelog: new beta release
-
-2003-10-02  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/gmonitor3.jar: Fixed average calcualation.
-
-	* snmptool/gmonitor3/gmonitor/gui/GraphMonitorModel.java:
-	Fixed calcAverage(). (pointed by tatebe-san)
-
-2003-10-01  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
-
-	* snmptool/gmonitor3/gmonitor/app/SimpleGrapherApp.java, snmptool/gmonitor3/gmonitor/gui/GraphMonitor.java, snmptool/gmonitor3/gmonitor/logdata/DataBlockGroupElement.java, snmptool/gmonitor3/gmonitor/logdata/DataFile.java:
-	Deleted some TODO messages.
-
-	* snmptool/gmonitor3/gmonitor3: starting script for gmonitor3.jar
-
-	* snmptool/gmonitor3/gmonitor3.jar: jar file of gmonitor3
-
-2003-09-30  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
-
-	* RELNOTES: Deleted unnecessary section.
-
-	* ChangeLog, RELNOTES: Release note for the version 1.0b5.
-
-2003-09-30  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
+2003-09-30  Noriyuki Soda  <soda@sra.co.jp>
 
 	* package/solaris/build:
 	update openssl from 0.9.7b to 0.9.7c, to avoid security holes reported today.
 	XXX - openldap is still compiled by gcc-2.95.2. but it seems to be ok.
 
-2003-09-30  Takuya Ishibashi  <takuya@gfmgw01.apgrid.org>
+2003-09-30  Takuya Ishibashi  <takuya@soum.co.jp>
 
 	* snmptool/glogger3/docbook/en/Makefile, snmptool/glogger3/docbook/en/docdir.mk, snmptool/glogger3/docbook/ja/Makefile.in, snmptool/glogger3/docbook/ja/docdir.mk, snmptool/glogger3/docbook/ja/glogdump.8, snmptool/glogger3/docbook/ja/glogdump.8.docbook, snmptool/glogger3/docbook/ja/glogdump.8.html, snmptool/glogger3/docbook/ja/glogger.8, snmptool/glogger3/docbook/ja/glogger.8.docbook, snmptool/glogger3/docbook/ja/glogger.8.html, snmptool/glogger3/docbook/ja/glogger.conf.5, snmptool/glogger3/docbook/ja/glogger.conf.5.docbook, snmptool/glogger3/docbook/ja/glogger.conf.5.html, snmptool/glogger3/docbook/ja/glogger_logdata.5, snmptool/glogger3/docbook/ja/glogger_logdata.5.docbook, snmptool/glogger3/docbook/ja/glogger_logdata.5.html, snmptool/glogger3/INSTALL.en, snmptool/glogger3/INSTALL.ja, snmptool/glogger3/Makefile.in, snmptool/glogger3/avg1.pl, snmptool/glogger3/avg2.pl, snmptool/glogger3/config.mk.in, snmptool/glogger3/configure, snmptool/glogger3/configure.in, snmptool/glogger3/docbook/Makefile, snmptool/glogger3/expand_node_name.c, snmptool/glogger3/expand_node_name.h, snmptool/glogger3/glogd.in, snmptool/glogger3/glogdump.c, snmptool/glogger3/glogger.c, snmptool/glogger3/glogger.h, snmptool/glogger3/install-sh, snmptool/glogger3/prepare_files.c, snmptool/glogger3/read_glogger_conf.c, snmptool/glogger3/sample.conf, snmptool/glogger3/set_options.c, snmptool/glogger3/setsnmp_configure, snmptool/glogger3/snmpasync.c, snmptool/glogger3/write_to_files.c:
 	inital import of glogger3
 
-2003-09-30  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
+2003-09-30  Noriyuki Soda  <soda@sra.co.jp>
 
 	* package/solaris/build: some cleanup
 
-2003-09-29  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
+2003-09-29  Noriyuki Soda  <soda@sra.co.jp>
 
 	* package/solaris/build:
 	script to build binary release images on Solaris
 
-2003-09-29  Osamu Tatebe  <tatebe@gfmgw01.apgrid.org>
+2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: Deleted obsolete items.
 
@@ -250,7 +28,7 @@
 	Added a manual page for gfs_realpath(3).
 	Modified an incomplete sentence in the manual page for gfs_glob(3).
 
-2003-09-29  Noriyuki Soda  <soda@gfmgw01.apgrid.org>
+2003-09-29  Noriyuki Soda  <soda@sra.co.jp>
 
 	* debian/rules: undo revision 1.28:
 	move "gfreg" back from a gfptool to a client tool
@@ -268,6 +46,8 @@
 	* package/redhat/gfarm.spec: sort
 
 	* package/redhat/gfarm.spec: add missing documents
+
+	* package/redhat/gfarm.spec: change version number from 1.0b4 to 1.0b5
 
 2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
