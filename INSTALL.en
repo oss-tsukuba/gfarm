@@ -2,13 +2,13 @@
 
 Gfarm is a reference implementation of the Grid Datafarm architecture
 designed for global petascale data-intensive computing.  It provides a
-global parallel filesystem with online petascale storage, scalable I/O
-bandwidth, and scalable parallel processing, and it can exploit local
-I/O in a grid of clusters with tens of thousands of nodes.  Gfarm
-parallel I/O APIs and commands provide a single filesystem image and
-manipulate filesystem metadata consistently.  Fault tolerance and load
-balancing are automatically managed by file duplication or
-re-computation using a command history log.
+global virtual file system (Gfarm file system) with online petascale
+storage, scalable I/O bandwidth, and scalable parallel processing, and
+it can exploit local I/O in a grid of clusters with tens of thousands
+of nodes.  Users or Grid applications access the Gfarm file system via
+POSIX file I/O APIs and Gfarm native file I/O APIs with extension of
+new file view semantics in a single filesystem image.  Fault tolerance
+and load balancing are automatically managed by file replicas.
 
 For a detailed information about the Grid Datafarm architecture and
 its preliminary performance evaluation, refer to the following paper.
@@ -363,7 +363,7 @@ metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
-auth enable sharedsecret 163.220.31.0/24
+auth disable sharedsecret *
 auth enable gsi *
 -------------------------------- END --------------------------------
 
@@ -428,9 +428,7 @@ option with the gfhost command:
 ** Create a gfsd spool directory on filesystem nodes
 
 On each filesystem node, create a spool root directory
-/var/spool/gfarm.  Moreover, under the spool root directory, create a
-bin/ directory and every user directory, although user directories
-will be automatically created by the 'gfrun' command described later.
+/var/spool/gfarm.
 
 	% su
 	Password: 
@@ -450,7 +448,7 @@ metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
-auth enable sharedsecret 163.220.31.0/24
+auth disable sharedsecret *
 auth enable gsi *
 -------------------------------- END --------------------------------
 
