@@ -505,6 +505,32 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
+ * vfork - this entry is needed for linux to avoid segfault.
+ */
+#ifdef SYS_vfork
+pid_t
+__vfork(void)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __vfork()\n"));
+	/* SYS_fork is called instead of SYS_vfork. */
+	return syscall(SYS_fork);
+}
+
+pid_t
+_vfork(void)
+{
+	_gfs_hook_debug_v(fputs("Hooking _vfork\n", stderr));
+	return (__vfork());
+}
+
+pid_t
+vfork(void)
+{
+	_gfs_hook_debug_v(fputs("Hooking vfork\n", stderr));
+	return (__vfork());
+}
+#endif
+/*
  * utimes & utime
  */
 
