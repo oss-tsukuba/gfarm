@@ -19,11 +19,10 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 {
 	char *hostname, *e;
 	char *arch, *gfarm_file, *localpath;
-	struct gfs_stat gstat;
+	struct gfs_stat gstat, gs;
 	file_offset_t gsize;
-	struct stat st;		
+	struct stat st;
 	int metadata_exist, localfile_exist, replication_needed = 0;
-	struct gfs_stat gs;
 
 	*local_path = NULL;
 
@@ -33,11 +32,11 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 		return ("not a file system node");
 	else if (e != NULL)
 		return (e);
-	
+
 	e = gfs_stat(url, &gs);
 	if (e != NULL)
-		return (e);	  
-	
+		return (e);
+
 	if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
 		arch = gfarm_host_info_get_architecture_by_host(hostname);
 		if (arch == NULL)
