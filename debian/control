@@ -2,7 +2,7 @@ Source: gfarm
 Section: net
 Priority: optional
 Maintainer: Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>
-Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, flex, bison, mpich
+Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, flex|flex-old, bison, mpich
 Standards-Version: 3.5.2
 
 Package: gfarm-gfptool
@@ -10,91 +10,91 @@ Section: utils
 Architecture: i386
 Depends: ${shlibs:Depends}, gfarm-client
 Conflicts: gfarm-gsi-gfptool
-Description: The gfarm server.
- The gfarm tools.
+Description: The Gfarm parallel commands.
+ The Gfarm parallel commands.
 
 Package: gfmd
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfmd-gsi
-Description: The gfarm server.
- The gfmd server.
+Description: The Gfarm metadata server.
+ The Gfarm metadata server.
 
 Package: gfarm-client
 Section: utils
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfarm-gsi-client
-Description: The gfarm client.
- The gfarm client.
+Description: The Gfarm client commands.
+ The Gfarm client commands.
 
 Package: gfarm-gfront
 Section: utils
 Architecture: i386
 Depends: ${shlibs:Depends}
-Description: The gfarm front-end
- The gfarm front-end.
+Description: The Gfarm file system browser.
+ The Gfarm file system browser.
 
 Package: gfsd
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfsd-gsi
-Description: The gfarm fsnode daemon. 
- The gfarm fsnode daemon.
+Description: The Gfarm filesystem daemon.
+ The Gfarm filesystem daemon.
 
 Package: libgfarm-dev
 Section: devel
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: libgfarm-gsi-dev
-Description: Development files for the gfarm.
- Development files for the gfarm. 
+Description: Development files for the Gfarm.
+ Development files for the Gfarm.
 
 Package: gfarm-doc
 Section: doc
 Architecture: all
 Depends: ${shlibs:Depends}
-Description: Documents for the gfarm.
- Documents for the gfarm. 
+Description: Documents for the Gfarm.
+ Documents for the Gfarm. 
 
 Package: gfarm-gsi-gfptool
 Section: utils
 Architecture: i386
 Depends: ${shlibs:Depends}, gfarm-gsi-client
 Conflicts: gfarm-gfptool
-Description: The gfarm server.
- The gfarm tools.
+Description: The Gfarm parallel commands.
+ The Gfarm parallel commands.
 
 Package: gfmd-gsi
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfmd
-Description: The gfarm server.
- The gfmd server.
+Description: The Gfarm metadata server.
+ The Gfarm metadata server.
 
 Package: gfarm-gsi-client
 Section: utils
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfarm-client
-Description: The gfarm client.
- The gfarm client.
+Description: The Gfarm client commands.
+ The Gfarm client commands.
 
 Package: gfsd-gsi
 Section: net
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: gfsd
-Description: The gfarm fsnode daemon. 
- The gfarm fsnode daemon.
+Description: The Gfarm filesystem daemon.
+ The Gfarm filesystem daemon.
 
 Package: libgfarm-gsi-dev
 Section: devel
 Architecture: i386
 Depends: ${shlibs:Depends}
 Conflicts: libgfarm-dev
-Description: Development files for the gfarm.
- Development files for the gfarm. 
+Description: Development files for the Gfarm.
+ Development files for the Gfarm. 
