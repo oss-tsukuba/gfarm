@@ -1,4 +1,157 @@
+2002-04-05  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c:
+	Use gettimeofday() on every platform except i386.
+
+2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/auth_common.c, gfarmlib/auth_server.c, gfarmlib/error.c, gfarmlib/gfs_pio_global.c, gfarmlib/stringlist.c:
+	Added missing include files.
+
+2002-04-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c, include/gfarm_misc.h:
+	export gfarm_attach_debugger()
+
+	* gfarmlib/gfs_pio_section.c:
+	fix fatal error which happens on writing more than 64KB with gfs_pio_write(),
+	problem reported by tatebe-san.
+
+	* bench/thput-gfpio/thput-gfpio.c: make debugger work
+
+	* bench/thput-gfpio/Makefile: define $(DEPLIBS)
+
+	* gfarmlib/gfs_pio_global.c:
+	- introduceg internal function fs_pio_set_view_default() for common processing
+	- fix resource leak on gfs_pio_view_global_close()
+	- better errror recovery on failure of gfs_pio_set_view_index()
+
+	* gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_section.c:
+	introduceg internal function fs_pio_set_view_default() for common processing
+
+	* gfarmlib/gfs_pio_local.c:
+	just renaming local variable to avoid misunderstanding
+
+2002-04-04  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-gfpio/thput-gfpio.c: Catched up with the new Gfarm API.
+
+2002-04-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/gfj_client.h, gfarmlib/gfm_client.c, gftool/gfmpirun/Makefile, gftool/gfmpirun/gfmpirun.c, gftool/gfrun/Makefile, gftool/gfrun/gfrun.c:
+	forgot to register job on gfmpirun
+
+2002-04-03  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gfarmlib/schedule.c (gfarm_url_hosts_schedule):
+	Fixed a bug when scheduling by a Gfarm file with multiple replicas.  strdup() is necessary.
+
+	* gfarmlib/Makefile.in:
+	Makefile.in: Exclude gfs_hook.o from libgfarm.a.  It is necessary to be linked explicitly.
+
+2002-03-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmd/Makefile.in: clean up symbolic link (deamon.c)
+
+	* include/gfs.h, gftool/gfkey/gfkey.c, gftool/gfps/gfps.c, gftool/gfrcmd/gfrcmd.c, gftool/gfrun/gfrun.c, gftool/gfsched/gfsched.c, gftool/gfwhere/gfwhere.c, include/gfarm_error.h, include/gfarm_metadb.h, include/gfarm_misc.h, gfmd/gfmd.c, gfsd/main.c, gftool/example/gfgrep/gfgrep.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/example/gfwc/gfwc.c, gftool/gfexport/gfexport.c, gfarmlib/gfs_pio_misc.c, gfarmlib/gfs_pio_remote.c, gfarmlib/gfs_pio_section.c, gfarmlib/gfs_proto.c, gfarmlib/gfs_proto.h, gfarmlib/metadb_ldap.c, gfarmlib/metadb_misc.c, gfarmlib/schedule.c, gfarmlib/url.c, gfarmlib/error.c, gfarmlib/gfs_client.c, gfarmlib/gfs_client.h, gfarmlib/gfs_hook.c, gfarmlib/gfs_pio.c, gfarmlib/gfs_pio.h, gfarmlib/gfs_pio_default.c, gfarmlib/gfs_pio_global.c, gfarmlib/gfs_pio_local.c, gfarmlib/Makefile.in, gfarmlib/auth.h, gfarmlib/auth_client.c, gfarmlib/auth_common.c, gfarmlib/auth_server.c, gfarmlib/config.c:
+	changes for new gfarm API
+
+	* nslib/nsclnt.c, nslib/soc-lxdr.c, nslib/soc.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, include/gfarm.h, include/soc-lxdr.h, nslib/comm.c, nslib/file.c, nslib/gflib.c, gfarmd/gfarmd.c, gfarmd/gfd_auth.c, gfarmd/gfd_parse.c, gfarmlib/gfm_client.c, gfarmlib/import_help.c, gfarmlib/stringlist.c, gfarmlib/xxx_proto.c, gfsd/daemon.c, gfsd/limit.c, gfsd/loadavg.c, gftool/gfmpirun/gfmpirun.c, bench/thput-gfpio/thput-gfpio.c, gfarm/gfarm.c:
+	use <gfarm/XXXX.h> instead of <gfarm.h> for header file name of gfarm API.
+
+	* makes/var.mk: move logutil.[ch] from gfsd/ to gfarmlib/
+
+	* gftool/example/gfgrep/Makefile: typo
+
+	* gfarmlib/logutil.c, gfarmlib/logutil.h, gfsd/logutil.h, gfarmd/Makefile.in, gfmd/Makefile, gfsd/Makefile, gfsd/logutil.c:
+	move logutil.[ch] from gfsd/ to gfarmlib/
+
+	* include/Makefile.in:
+	use <gfarm/XXXX.h> instead of <gfarm.h> for header file name of gfarm API.
+
+2002-03-26  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Added the -H <Gfarm file> option.  This option specifies the Gfarm file used for scheduling.
+
+2002-03-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfmd/gfmd.c:
+	fix yet another uninitialized variable related to unlimit_nofiles()
+
+2002-03-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfsd/limit.c:
+	RLIM_INFINITY might be incorrectly returned as maximum open files
+	before this fix. (on AIX 4.2?)
+
+	* configure, configure.in: correct warning message
+
+	* gfarmlib/error.c:
+	add MAX_ERRNO (1024 by default) as stopgap for AIX 4.3
+	where sys_nerr isn't usable and strerror(i) never returns NULL.
+
+	* gfarmlib/gfs_pio.c:
+	- fix incorrect assertion that size_t is compatible with int.
+	- fix misbehavior of gfs_pio_flush() on error case.
+
+	* gfsd/main.c:
+	before this change, table_size might be garbage, if !defined(HAVE_SETRLIMIT).
+
+2002-03-01  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* bench/thput-fsys/thput-fsys.c:
+	Use gettimeofday() on every platform except i386.
+
+2002-02-14  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/README:
+	Added a description how to compile and how to test.
+
+2002-02-12  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* lib/libgfsl/Makefile, lib/libgfsl/gfarm-usermap:
+	Quich hack for Globus Toolkit 2.0.
+
+2002-02-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/config.mk.in: correct variable name for shlib path setting
+
+	* configure, configure.in:
+	add sanity check about user specified compiler/liker option.
+	problem noted by tatebe-san.
+
+2002-02-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfarmlib/config.c:
+	use waitpid() instead of wait4(), because the former doesn't have portability.
+
+	* configure, configure.in: check -lgen for basename(3) on IRIX.
+
+	* makes/config.mk.in, configure, configure.in:
+	- add "-lresolv", if openldap needs it.
+	- specify -rpath (or -R) for extra libraries.
+	problem reported by tatebe-san
+
+	* lib/libgfsl/client2.c:
+	print error message, if gfarmSecSessionInitiateByAddr() fails.
+
+	* lib/libgfsl/gsi.c:
+	remove unused function of getToken() and getGfarmEtcDir() reported by gcc -Wall.
+	those functions are moved to misc.c.
+
+	* lib/libgfsl/session.c, lib/libgfsl/auth.c, lib/libgfsl/gsi.c, lib/libgfsl/misc.c, lib/libgfsl/server.c, lib/libgfsl/server2.c:
+	remove unused variables and labels reported by gcc -Wall
+
+	* lib/libgfsl/scsub.c, lib/libgfsl/server2.c:
+	typo in message: s/accpetor/acceptor/
+
+	* lib/libgfsl/session.c:
+	do not dumps core, rather returns error, if gfarmSecSessionAccept() aborts.
+
 2002-02-07  Tatebe Osamu  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, INSTALL.ja: Added ChangeLog and INSTALL.ja.
 
 	* nslib/gflib.c, nslib/soc.c:
 	Removed unnecessary cast operations for NULL.
