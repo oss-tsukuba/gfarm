@@ -126,11 +126,12 @@ void set_value_to_dbgmap(unsigned long *val, char *setstr,
   char *p, *str;
   double f;
 
+  //printf("setstr: %s\n", setstr);
   //printf("mibtype: %d\n", mibtype);
 
   switch (mibtype) {
-  case 1:      /* load average */
-    /* ! there is room for improvement */
+  case TYPEMODE_load:      /* for load average -> *100 */
+    /* ex. STRING: 1.58 */
     str = setstr;
     do {
       f = strtod(str, &p);
@@ -140,21 +141,31 @@ void set_value_to_dbgmap(unsigned long *val, char *setstr,
     //printf("  float: %f\n", f);
 
     *val = (unsigned long) rint(f*100);
-    //*val = (unsigned long) (f*100);
 
     break;
-  case 2:
-    /* ! there is room for improvement */
+  case TYPEMODE_interface:      /* get tail value */
+    /* ex. Counter32: 1609014642 */
     str = setstr;
     do {
       *val = strtoul(str, &p, 10);
-      //printf("   --> %s\n", p);
+      //printf("   %lu --> %s\n", *val, p);
       str++;
     } while(*p != '\0');
+    break;
+  case TYPEMODE_uptime:     /* uptime */
+    /* ex. Timeticks: (346391518) 40 days, 2:11:55.18  */
+    /*                 ^^^^^^^^^ */
+    str = setstr;
+    do {
+      *val = strtoul(str, &p, 10);
+      //printf("   %lu --> %s\n", *val, p);
+      str++;
+    } while(*p != ')' && *p != '\0');
     break;
   default:
     *val = 0;
   }
+
   //printf(" --> value: %lu\n", *val);
 }
 

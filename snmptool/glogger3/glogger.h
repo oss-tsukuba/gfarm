@@ -79,6 +79,20 @@ int fsync_timing;
 #define KEYCOMMUNITY "community"
 #define KEYFSYNC "fsync_interval"
 
+/* mib types */
+#define TYPE_laLoad      "laLoad"
+#define TYPE_ifOutOctets "ifOutOctets"
+#define TYPE_ifInOctets  "ifInOctets"
+#define TYPE_dskUsed     "dskUsed"
+#define TYPE_dskAvail    "dskAvail"
+#define TYPE_sysUpTime   "sysUpTime"
+
+#define TYPEMODE_load      1
+#define TYPEMODE_interface 2
+#define TYPEMODE_disk      2
+#define TYPEMODE_uptime    3
+#define TYPEMODE_default   2
+
 /* at present time */
 extern struct tm now_tm;
 extern struct timeval nowtime;

@@ -396,7 +396,7 @@ int set_requests_value(char *key, char *val){
     else if(strcmp(key, KEYINTERVAL) == 0){
       f = atof(val);
       requests_interval.tv_sec = floor(f);
-      requests_interval.tv_usec = rint((f - global_interval.tv_sec)*1000000L);
+      requests_interval.tv_usec = rint((f - requests_interval.tv_sec)*1000000L);
     }
     else if(strcmp(key, KEYCOMMUNITY) == 0){
       strncpy(requests_community, val, MAXCOMMLEN);
@@ -427,7 +427,7 @@ int set_mib_value(char *key, char *val){
     else if(strcmp(key, KEYINTERVAL) == 0){
       f = atof(val);
       mib_interval.tv_sec = floor(f);
-      mib_interval.tv_usec = rint((f - global_interval.tv_sec)*1000000L);
+      mib_interval.tv_usec = rint((f - mib_interval.tv_sec)*1000000L);
     }
   }
   return 1;
@@ -505,32 +505,28 @@ void free_nodelist(struct nodelist *nodes){
 }
 #endif
 
-
-#define TYPE_laLoad "enterprises.ucdavis.laTable.laEntry.laLoad"
-#define TYPE_ifOutOctets "interfaces.ifTable.ifEntry.ifOutOctets"
-#define TYPE_ifInOctets "interfaces.ifTable.ifEntry.ifInOctets"
-#define TYPE_dskUsed "enterprises.ucdavis.dskTable.dskEntry.dskUsed"
-#define TYPE_dskAvail "enterprises.ucdavis.dskTable.dskEntry.dskAvail"
-
 unsigned short glogger_mibtype(char *oidname){
-  if(strncmp(oidname, TYPE_laLoad, strlen(TYPE_laLoad)) == 0){
-    return 1;
+  if(strstr(oidname, TYPE_laLoad) != NULL){
+    return TYPEMODE_load;
   }
-  else if(strncmp(oidname, TYPE_ifOutOctets, strlen(TYPE_ifOutOctets)) == 0){
-    return 2;
+  else if(strstr(oidname, TYPE_ifOutOctets) != NULL){
+    return TYPEMODE_interface;
   }
-  else if(strncmp(oidname, TYPE_ifInOctets, strlen(TYPE_ifInOctets)) == 0){
-    return 2;
+  else if(strstr(oidname, TYPE_ifInOctets) != NULL){
+    return TYPEMODE_interface;
   }
-  else if(strncmp(oidname, TYPE_dskUsed, strlen(TYPE_dskUsed)) == 0){
-    return 2;
+  else if(strstr(oidname, TYPE_dskUsed) != NULL){
+    return TYPEMODE_disk;
   }
-  else if(strncmp(oidname, TYPE_dskAvail, strlen(TYPE_dskAvail)) == 0){
-    return 2;
+  else if(strstr(oidname, TYPE_dskAvail) != NULL){
+    return TYPEMODE_disk;
+  }
+  else if(strstr(oidname, TYPE_sysUpTime) != NULL){
+    return TYPEMODE_uptime;
   }
   else {
-    printf("warning: unknown mib type (oid: %s)\n", oidname);
-    return 2;
+    printf("warning: unsupported mib type (oid: %s)\n", oidname);
+    return TYPEMODE_default;
   }
 }
 
