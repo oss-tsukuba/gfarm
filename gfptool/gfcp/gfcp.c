@@ -124,6 +124,8 @@ main(int argc, char *argv[])
 		if (e != NULL)
 			break;
 	}
+	if (e != NULL)
+		fprintf(stderr, "%s\n", e);
 
 	e = gfs_pio_close(igf);
 	if (e != NULL)
