@@ -24,13 +24,15 @@ with_mpi= # --with-mpi=/usr/local/mpich
 
 vendorcc_pkg=/usr/users/soda/install/SunOS-5.8-SUWspro-6.2
 with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.1.17
-with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.7b
+with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.7c
 # XXX only gcc32 flavor is installed on the build-host.
 with_vendorcc_globus_flavor=--with-globus-flavor=gcc32
 
-gcc_pkg=/usr/users/soda/install/SunOS-5.8-gcc-2.95.2
-with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.1.17
-with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.7b
+gcc_pkg=/usr/users/soda/install/SunOS-5.8-gcc-3.3
+#with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.1.17
+# XXX need to update
+with_gcc_openldap=--with-openldap=/usr/users/soda/install/SunOS-5.8-gcc-2.95.2/openldap-2.1.17
+with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.7c
 with_gcc_globus_flavor=--with-globus-flavor=gcc32
 
 case `whoami` in
