@@ -7,6 +7,7 @@ include $(top_srcdir)/makes/var.mk
 SUBDIRS = \
 	bwlat-syscache \
 	nconnect \
+	thput-fsstripe \
 	thput-fsys \
 	thput-gfpio
 
