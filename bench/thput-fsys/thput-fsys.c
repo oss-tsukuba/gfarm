@@ -21,8 +21,8 @@ get_cycles(void)
 }
 
 #define gettimerval(tp)		(*(tp) = get_cycles())
-#define timerval_second(tp)	(*(tp) / timerval_calibration)
-#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) / timerval_calibration)
+#define timerval_second(tp)	(*(tp) * timerval_calibration)
+#define timerval_sub(t1p, t2p)	((*(t1p) - *(t2p)) * timerval_calibration)
 
 void
 timerval_calibrate(void)
@@ -40,7 +40,26 @@ timerval_calibrate(void)
 		(t2 - t1) / (
 		(s2.tv_sec - s1.tv_sec) +
 		(s2.tv_usec - s1.tv_usec) / 1000000.0);
+	timerval_calibration = 1.0 / timerval_calibration;
 }
+
+#else /* gettimeofday */
+
+typedef struct timeval timerval_t;
+
+#define gettimerval(t1)		gettimeofday(t1, NULL)
+#define timerval_second(t1)	((double)(t1)->tv_sec \
+				 + (double)(t1)->tv_usec * .000001)
+#define timerval_sub(t1, t2)	\
+	(((double)(t1)->tv_sec - (double)(t2)->tv_sec)	\
+	+ ((double)(t1)->tv_usec - (double)(t2)->tv_usec) * .000001)
+
+void
+timerval_calibrate(void)
+{
+    timerval_calibration = 1.0;
+}
+
 #endif
 
 int tm_write_write_measured = 0;
@@ -230,7 +249,8 @@ test_title(int test_mode, off_t file_size, int flags)
 
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0 &&
 	    (test_mode & (TESTMODE_WRITE|TESTMODE_READ)) != 0)
-		fprintf(stderr, "timer/sec=%g\n", timerval_calibration);
+		fprintf(stderr, "timer/sec=%g\n",
+			1.0 / timerval_calibration);
 }
 
 void
