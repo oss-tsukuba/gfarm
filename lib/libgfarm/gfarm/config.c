@@ -341,7 +341,12 @@ static void
 gfarm_config_clear(void)
 {
 	if (gfarm_spool_root != NULL) {
-		free(gfarm_spool_root);
+		/*
+		 * In case of the default spool root, do not free the
+		 * memory space becase it is statically allocated.
+		 */
+		if (gfarm_spool_root != GFARM_SPOOL_ROOT)
+			free(gfarm_spool_root);
 		gfarm_spool_root = NULL;
 	}
 	if (gfarm_spool_server_portname != NULL) {
