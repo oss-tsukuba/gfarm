@@ -795,6 +795,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 	static char gfarm_url_prefix_for_root[] = "gfarm@";
 	char *sec = NULL;
 
+	if (path == NULL || *path == '\0')
+		return (0);
+
 	if (gfs_hook_check_hook_disabled())
 		return (0);
 
