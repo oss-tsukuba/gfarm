@@ -1,3 +1,266 @@
+2004-10-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* server/gfsd/gfsd.c (gfs_server_open): plug memory leak in error case.
+
+	* lib/libgfarm/gfarm/gfs_client.c (gfs_client_copyin):
+	add missing gfs_client_rpc_result().  this fixes
+	a problem of on-demand replication failure that creates a file with
+	size 0.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir_canonical):
+	Do not replace 'env' when realloc(3) fails.
+
+2004-10-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.ac:
+	make it possible to omit "-llber" for Solaris stock LDAP library.
+	this configuration can be compiled fine, but it is not really tested yet.
+
+	* configure: regen
+
+	* configure.ac: correct order to link libsocket and libnsl (on Solaris)
+
+	* gftool/gfexec/Makefile:
+	$(openssl_includes) and $(openssl_libs) are needed
+
+	* doc/README.hook.en:
+	change the installation directory of libc-not-hidden.so
+	from /usr/lib to /usr/lib/gfarm to prevent glibc from
+	treating the library as default libc.so.6.
+
+	* configure: regen
+
+	* configure.ac:
+	move OpenLDAP handling after the checks of libnsl and libsocket for Solaris
+
+	* lib/libgfarm/Makefile:
+	enable $(OPTFLAGS) (e.g. -g) when linking libgfarm library
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	do not create a file section, if the file isn't opened for write,
+	problem pointed out by tatebe-san
+
+	* lib/gfs_hook/hooks_common.c: rewrite confusing debug message
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	use putenv(3) instead of setenv(3) for portability to Solaris,
+	problem pointed out by tatebe-san.
+	also, do not need to clear env_len on realloc(3) failure,
+	because the allocated memory is unchanged even in that case.
+
+2004-10-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/ja/ref/man3/gfs_pio_open.3.html, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, man/ja/man3/gfs_pio_open.3, man/man3/gfs_pio_open.3:
+	added description about flags.
+	XXX - error code is not updated yet.
+
+	* doc/README.hook.en: describes glibc-not-hidden packages.
+	deletes description about GFARM_DIRCACHE_TIMEOUT.
+	deletes -lldap in compilation examples.
+
+2004-09-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfls.1.html, doc/html/ja/ref/man1/gfls.1.html, man/ja/man1/gfls.1, man/man1/gfls.1:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfls.1.docbook, doc/docbook/en/ref/man1/gfls.1.docbook:
+	describe -a and -i option
+
+	* man/ja/man1/gfrm.1, man/man1/gfrm.1, doc/html/en/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrm.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook:
+	describe -r option
+
+	* INSTALL.en, INSTALL.ja: gfs_preload.so -> libgfs_hook.so
+
+2004-09-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_lock.c (gfs_i_lock):
+	errno of open() should be saved.
+
+2004-09-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man3/gfs_pio_create.3.html, man/ja/man3/gfs_pio_create.3:
+	regen
+
+	* doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook: missing change
+
+2004-09-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	make local file creation slightly faster by using
+	gfarm_is_active_file_system_node instead of
+	connecting to local gfsd each time to see its availability.
+
+2004-09-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c:
+	fix pasting error which makes "gfls -lR" core dump
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	slightly changed the way how GFARM_FILE_EXCLUSIVE is handled,
+	so that the flag can be actually used for locking.
+
+	But with this cange, the GFARM_ERR_ALREADY_EXISTS condition can happen
+	at not only gfs_pio_create() time, but also gfs_pio_set_view_*() time.
+	This may not be a problem with system call hooks, but may be a problem
+	with gfarm native applications.
+	XXX - We should revisit this GFARM_FILE_EXCLUSIVE handling.
+
+	* man/ja/man3/gfs_pio_create.3, man/man3/gfs_pio_create.3, doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_create.3.html:
+	mention the change of GFARM_FILE_TRUNC flag handling of gfs_pio_create()
+
+	* gfptool/gfgrep/gfgrep.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/example/gfimport_text/gfimport_text.c, gftool/gfreg/gfreg.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio_misc.c, bench/thput-gfpio/thput-gfpio.c, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, gfptool/gfcombine/gfcombine.c, gfptool/gfcp/gfcp.c:
+	adapt to the change of gfs_pio_create(): add GFARM_FILE_TRUNC flag
+
+	* include/gfarm/gfs.h, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_proto.c:
+	introduce GFARM_FILE_EXCLUSIVE, and support O_EXCL on system call hooks
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	- make gfs_pio_create() not implicitly assume GFARM_FILE_TRUNC,
+	  but require it explicitly.
+	- support GFARM_FILE_TRUNC with global view
+	- calculate checksum when the file is truncated or crated,
+	  even if the access mode is read-only.
+	- allow changes of number of fragments, when GFARM_FILE_TRUNC is specified.
+	- check the file is whether writable or not, when GFARM_FILE_TRUNC is
+	  specified, even if the access mode is read-only.
+	- introduce GFS_FILE_MODE_FILE_CREATED flag, this shows that the
+	  metadata is newly created.
+	- introduce GFS_FILE_MODE_SECTION_CREATED flag, this shows that the
+	  section will be newly created.
+
+	* server/gfsd/gfsd.c:
+	log error codes which cannot be converted to gfsd standard code
+	on LOG_INFO level of syslog, to make system administrators be able
+	to see what caused GFARM_ERR_UNKNOWN.
+
+	* lib/gfs_hook/hooks_common.c:
+	let libgfarm handle most cases on creat() and open(),
+	and simplify the implementations of system hooks.
+
+	NOTE: "cp SIMPLE-FILE PARALLEL-FILE" now changes the PARRALE-FILE into
+	  a simple file since this change.
+	  it caused GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH until now.
+
+	* lib/gfs_hook/hooks_subr.c:
+	- plug some resource leaks on some error cases.
+	- make gfs_hook_is_now_creating() a bit silent.
+
+	* lib/gfs_hook/getcwd.c: make sure to return correct errno
+
+	* lib/libgfarm/gfarm/gfs_unlink.c:
+	- make gfs_unlink_every_other_replicas() simpler,
+	  so that this can be used when if the host doesn't actually have the replica,
+	- do not call gfarm_host_get_canonical_name(), and caller should canonicalize
+	  the hostname instead.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	add gfarm_file_section_info_does_exist() which was planned long ago
+
+2004-09-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (replicate_section_to_local_internal):
+	do not call gfs_pio_set_fragment_info_local() after replication.  Instead, just set the section copy info.
+
+2004-09-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	add file size check between metadata and physical file before on-demand replication.
+
+2004-09-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfexec/gfexec.c:
+	make it possible to execute a shell script without "#!/bin/sh"
+
+	* lib/libgfarm/gfarm/gfs_dir.c: make directory handling more robust:
+	there may be directories which don't have path_info,
+	e.g. /, or directories which were made by old gfarm.
+
+2004-09-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	make gfs_chdir() fail, if specified path isn't a directory.
+	problem noticed by tatebe-san.
+
+	* lib/libgfarm/gfarm/gfs_dir.c, gftool/gfrm/gfrm.c, gftool/gfsck/gfsck.c:
+	make gfs_readdir() return "." and "..", and fill d_fileno field.
+
+	* lib/libgfarm/gfarm/glob.c:
+	add special handling for initial "." in pathname,
+	because now gfs_readdir() returns "." and "..".
+
+	* gftool/gfls/gfls.c:
+	make gfs_readdir() return "." and "..", and fill d_fileno field.
+	implement "-a" and "-i" option in gfls.
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	make gfs_readdir() return "." and "..", and fill d_fileno field.
+	let getdents(2) hook use the fact.
+
+	* include/gfarm/gfs.h:
+	change struct gfs_dirent:d_fileno from int to long.
+	XXX this should bump the major number of libgfarm on LP64 platforms like amd64.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	remember directory-update-time to st_mtime,
+	and use it to make directory cache consistent.
+
+	* lib/libgfarm/gfarm/dircache.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/metadb_ldap.c:
+	cosmetic change:
+	do not hook metadb path_info functions to implement dircache,
+	instead, provide metadb level interface (gfarm_metadb_path_info_*()),
+	and move existing interface (gfarm_path_info_*()) to dircache layer.
+
+2004-09-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	make "rm -r" work again, by adding NODE_FLAG_PURGED to remember removed
+	node, even if opendir_count > 0.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	correct the condition to allow gfs_utimes():
+	write privilege isn't necessary, but the owner must be same with the user.
+
+	* gftool/gfrmdir/gfrmdir.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	add `tolerant' flag, which allows ENOENT and failures on making connection,
+	to gfs_client_apply_all_hosts().
+	make gfs_rmdir() use this flag, not to return an error on such condition.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	It's OK to rmdir, if "." and ".." exist.
+
+2004-09-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/config.c:
+	added gfarm_is_active_file_system_node to know whether the host is an active file system node or not.
+	gfsplck.c: when the host is not a file system node, it exits immediately.
+
+2004-09-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	make '/gfarm' a special point to force to uncache directory cache.
+	To uncache directory cache, do 'type -d /gfarm'.
+
+2004-09-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/dircache.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_ldap.c:
+	when a path is created or removed,
+	- do not change inode values
+	- do not forget directory cache
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	don't display error messages to chmod directories
+
+2004-09-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	support of read-write mode and append mode.
+	add how to improve the performance of an openldap server using LDBM.
+
 2004-09-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfarm/gfarm/gfs_dir.c (gfs_rmdir): gfs_closedir() is missing.
@@ -4526,7 +4789,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.31 2004/08/22 16:14:28 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.32 2004/09/09 09:14:03 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
