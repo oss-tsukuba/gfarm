@@ -408,7 +408,7 @@ gfs_uncachedir(void)
 struct timeval gfarm_dircache_timeout = { 60, 0 }; /* default 60sec. */
 static struct timeval last_dircache = {0, 0};
 
-char *
+static char *
 gfs_refreshdir(void)
 {
 	static int initialized = 0;
