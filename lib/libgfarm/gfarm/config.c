@@ -23,7 +23,8 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
-#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST */
+#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers */
+#include "timer.h"
 
 #ifndef GFARM_CONFIG
 #define GFARM_CONFIG	"/etc/gfarm.conf"
@@ -1196,6 +1197,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 		if (e != NULL)
 			return (e);
 	}
+
+	gfarm_timerval_calibrate();
+
 	gfarm_initialized = 1;
 
 	return (NULL);
@@ -1244,6 +1248,7 @@ gfarm_terminate(void)
 	e = gfarm_metadb_terminate();
 	if (e != NULL)
 		return (e);
+	gfs_display_timers();
 	return (NULL);
 }
 

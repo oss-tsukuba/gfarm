@@ -13,6 +13,7 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "gfs_pio.h"
+#include "timer.h"
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
 
@@ -103,6 +104,14 @@ gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
 		NULL : GFARM_ERR_PERMISSION_DENIED);
 }
 
+double time_gfs_pio_create;
+double time_gfs_pio_open;
+double time_gfs_pio_close;
+double time_gfs_pio_seek;
+double time_gfs_pio_read;
+double time_gfs_pio_write;
+double time_gfs_pio_getline;
+
 char *
 gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {
@@ -110,8 +119,12 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	GFS_File gf;
 	int pi_available = 0;
 	mode_t mask;
-	char *user = gfarm_get_global_username();
+	char *user;
+	gfarm_timerval_t t1, t2;
 
+	gfarm_gettimerval(&t1);
+
+	user = gfarm_get_global_username();
 	if (user == NULL)
 		return ("gfarm_pio_create(): programming error, "
 			"gfarm library isn't properly initialized");
@@ -205,6 +218,10 @@ gfs_pio_create(char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	}
 	*gfp = gf;
 	gfs_uncachedir();
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_create += gfarm_timerval_sub(&t2, &t1);
+
 	return (NULL);
 }
 
@@ -213,6 +230,9 @@ gfs_pio_open(char *url, int flags, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
 
 	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
 #if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
@@ -254,6 +274,10 @@ gfs_pio_open(char *url, int flags, GFS_File *gfp)
 	}
 	gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
 	*gfp = gf;
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_open += gfarm_timerval_sub(&t2, &t1);
+
 	return (NULL);
 }
 
@@ -292,7 +316,12 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 char *
 gfs_pio_close(GFS_File gf)
 {
-	char *e = (*gf->ops->view_close)(gf);
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
+
+	e = (*gf->ops->view_close)(gf);
 
 	if ((gf->open_flags & GFARM_FILE_CREATE) != 0) {
 		struct gfarm_path_info pi;
@@ -310,6 +339,10 @@ gfs_pio_close(GFS_File gf)
 	gfarm_path_info_free(&gf->pi);
 	free(gf->buffer);
 	free(gf);
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_close += gfarm_timerval_sub(&t2, &t1);
+
 	return (e);
 }
 
@@ -436,6 +469,9 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 {
 	char *e;
 	file_offset_t where;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
 
 	if (whence == SEEK_SET || whence == SEEK_CUR) {
 		file_offset_t tmp_offset = offset;
@@ -462,6 +498,10 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 			gf->p = tmp_offset - gf->offset;
 			if (resultp != NULL)
 				*resultp = tmp_offset;
+
+			gfarm_gettimerval(&t2);
+			time_gfs_pio_seek += gfarm_timerval_sub(&t2, &t1);
+
 			return (NULL);
 		}
 	} else if (whence != SEEK_END) {
@@ -486,6 +526,10 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	gf->offset = gf->io_offset = where;
 	if (resultp != NULL)
 		*resultp = where;
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_seek += gfarm_timerval_sub(&t2, &t1);
+
 	return (NULL);
 }
 
@@ -496,6 +540,9 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	char *p = buffer;
 	int n = 0;
 	int length;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
 
 	CHECK_READABLE(gf);
 
@@ -516,6 +563,10 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	if (e != NULL && n == 0)
 		return (e);
 	*np = n;
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_read += gfarm_timerval_sub(&t2, &t1);
+
 	return (NULL);
 }
 
@@ -524,6 +575,9 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 {
 	char *e;
 	size_t written;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
 
 	CHECK_WRITABLE(gf);
 
@@ -548,6 +602,10 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 			return (e);
 		gf->offset += written;
 		*np = written; /* XXX - size_t vs int */
+
+		gfarm_gettimerval(&t2);
+		time_gfs_pio_write += gfarm_timerval_sub(&t2, &t1);
+
 		return (NULL);
 	}
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
@@ -556,9 +614,14 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	if (gf->p > gf->length)
 		gf->length = gf->p;
 	*np = size;
+	e = NULL;
 	if (gf->p >= GFS_FILE_BUFSIZE)
-		return (gfs_pio_flush(gf));
-	return (NULL);
+		e = gfs_pio_flush(gf);
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_write += gfarm_timerval_sub(&t2, &t1);
+
+	return (e);
 }
 
 int
@@ -627,6 +690,9 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 {
 	char *p = s;
 	int c;
+	gfarm_timerval_t t1, t2;
+
+	gfarm_gettimerval(&t1);
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
 	c = EOF;
@@ -649,6 +715,10 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 		return (GFS_PIO_ERROR(gf));
 	}
 	*eofp = 0;
+
+	gfarm_gettimerval(&t2);
+	time_gfs_pio_getline += gfarm_timerval_sub(&t2, &t1);
+
 	return (NULL);
 }
 
@@ -663,4 +733,26 @@ gfs_pio_putline(GFS_File gf, char *s)
 	if (e != NULL)
 		return (e);
 	return (gfs_pio_putc(gf, '\n'));
+}
+
+double gfs_timer_gfs_pio_create()  { return time_gfs_pio_create; }
+double gfs_timer_gfs_pio_open()    { return time_gfs_pio_open; }
+double gfs_timer_gfs_pio_close()   { return time_gfs_pio_close; }
+double gfs_timer_gfs_pio_seek()    { return time_gfs_pio_read; }
+double gfs_timer_gfs_pio_read()    { return time_gfs_pio_read; }
+double gfs_timer_gfs_pio_write()   { return time_gfs_pio_write; }
+double gfs_timer_gfs_pio_getline() { return time_gfs_pio_getline; }
+
+void
+gfs_display_timers()
+{
+#ifdef GFS_PROFILE
+	printf("gfs_pio_create  : %g sec\n", gfs_timer_gfs_pio_create());
+	printf("gfs_pio_open    : %g sec\n", gfs_timer_gfs_pio_open());
+	printf("gfs_pio_close   : %g sec\n", gfs_timer_gfs_pio_close());
+	printf("gfs_pio_seek    : %g sec\n", gfs_timer_gfs_pio_seek());
+	printf("gfs_pio_read    : %g sec\n", gfs_timer_gfs_pio_read());
+	printf("gfs_pio_write   : %g sec\n", gfs_timer_gfs_pio_write());
+	printf("gfs_pio_getline : %g sec\n", gfs_timer_gfs_pio_getline());
+#endif
 }

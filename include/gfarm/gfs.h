@@ -158,3 +158,15 @@ char *gfarm_url_program_register(char *, char *, char *, int);
 char *gfarm_url_program_deliver(const char *, int, char **, char ***);
 char *gfarm_url_fragments_replicate(char *, int, char **);
 char *gfarm_url_fragments_replicate_to_domainname(char *, const char *);
+
+/*
+ * profile
+ */
+
+double gfs_timer_gfs_pio_create();
+double gfs_timer_gfs_pio_open();
+double gfs_timer_gfs_pio_close();
+double gfs_timer_gfs_pio_seek();
+double gfs_timer_gfs_pio_read();
+double gfs_timer_gfs_pio_write();
+double gfs_timer_gfs_pio_getline();

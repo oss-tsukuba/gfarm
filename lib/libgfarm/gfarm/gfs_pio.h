@@ -100,3 +100,5 @@ struct gfs_file_section_context {
  * switching from reading to writing:
  *	usually, seek is needed.
  */
+
+void gfs_display_timers();
