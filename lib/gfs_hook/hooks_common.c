@@ -54,7 +54,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	 * XXX - stopgap implementation of O_WRONLY/O_RDWR, O_CREAT,
 	 * O_TRUNC flags
 	 */
-	if ((oflag & O_CREAT) != 0 && !file_exist) {
+	if (!file_exist && (oflag & O_CREAT) != 0) {
+
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
 		    url, sec != NULL ? sec : "(null)", oflag, mode));
@@ -65,23 +66,25 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	}
 	else if ((oflag & O_ACCMODE) == O_WRONLY
 		 || (oflag & O_ACCMODE) == O_RDWR) {
+
 		_gfs_hook_debug(fprintf(stderr,
 		    "GFS: Hooking " S(FUNC___OPEN) "(%s:%s, 0x%x, 0%o)\n",
 		    url, sec != NULL ? sec : "(null)", oflag, mode));
 
 		if (file_exist && (file_size == 0 || (oflag & O_TRUNC) != 0)) {
 			/*
-			 * XXX - unlink and create a new file
-			 *
-			 * Hooking open syscall does not mean to open
-			 * an entire file but a file fragment in local
-			 * and index file views.  gfs_unlink() should
-			 * not be called in both views.
+			 * XXX - O_TRUNC is basically supported in
+			 * Gfarm v1 except in global file view.
+			 * This case needs to be implemented in
+			 * gfs_pio_set_view_global() in gfs_pio_global.c.
 			 */
-			if (_gfs_hook_default_view == global_view)
+			if (sec == NULL
+			    && _gfs_hook_default_view == global_view)
 				gfs_unlink(url); /* XXX - FIXME */
-			else
-				/* XXX - unlink the corresponding section */;
+			/*
+			 * gfs_pio_create assumes GFARM_FILE_TRUNC.
+			 * It is not necessary to set O_TRUNC explicitly.
+			 */
 			e = gfs_pio_create(url, oflag, mode, &gf);
 			if (e == NULL)
 				gfs_hook_add_creating_file(gf);
