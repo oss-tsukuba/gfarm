@@ -142,7 +142,7 @@ gfarm_error_t gfs_access(const char *, int);
 
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
-	int d_fileno;
+	gfarm_ino_t d_fileno;
 	unsigned char d_type;
 	unsigned char d_namlen;
 	char d_name[GFS_MAXNAMLEN + 1];
