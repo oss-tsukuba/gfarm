@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "25 April 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "25 4月 2003" "Gfarm" ""
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
 .SH "DESCRIPTION"
@@ -259,6 +259,32 @@ IPアドレスを通信に用いるかを指定します。
 .nf
 	address_use 192.168.0.0/24
 .fi
+.TP
+\fBlocal_usr_map \fIユーザマップファイル指定\fB\fR
+グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。
+
+この設定は必須ではありませんが、ユーザ名の異なる
+ファイルシステムノードがある場合に、ファイルシステムノードごとに
+ユーザマップファイル指定とファイルが必要です。他ノードの異なる
+ローカルユーザ名に対しても同じグローバルユーザ名を定義すれば、
+あたかも同一ユーザとしてgfarm を利用することができます。
+
+例:
+
+.nf
+	local_user_map /usr/grid/usermap
+.fi
+
+ユーザマップファイルの内容例:
+
+.nf
+	foogl foo
+	barglobal bar
+.fi
+
+この例の1行目の指定により、このノードのローカルユーザ名 foo に
+対してグローバルユーザ名 foogl が定義されます。
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -275,7 +301,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		<auth_statement> |
 		<netparam_statement> |
 		<sockopt_statement> |
-		<address_use_statement>
+		<address_use_statement> |
+		<local_user_map_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
@@ -296,6 +323,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
+	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		<hostname>
 	<pathname> ::= <pathname_character> <pathname_character>*

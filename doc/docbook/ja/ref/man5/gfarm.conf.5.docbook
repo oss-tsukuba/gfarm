@@ -316,6 +316,31 @@ IPアドレスを通信に用いるかを指定します。
 </literallayout>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><token>local_usr_map</token> <parameter>ユーザマップファイル指定</parameter></term>
+<listitem>
+<para>グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。</para>
+<para>この設定は必須ではありませんが、ユーザ名の異なる
+ファイルシステムノードがある場合に、ファイルシステムノードごとに
+ユーザマップファイル指定とファイルが必要です。他ノードの異なる
+ローカルユーザ名に対しても同じグローバルユーザ名を定義すれば、
+あたかも同一ユーザとしてgfarm を利用することができます。</para>
+<para>例:</para>
+<literallayout>
+	local_user_map /usr/grid/usermap
+</literallayout>
+<para>ユーザマップファイルの内容例:</para>	
+<literallayout>
+	foogl foo
+	barglobal bar
+</literallayout>
+
+<para>この例の1行目の指定により、このノードのローカルユーザ名 foo に
+対してグローバルユーザ名 foogl が定義されます。</para>
+</listitem>
+</varlistentry>
 </variablelist>
 </refsect1>
 
@@ -333,7 +358,8 @@ IPアドレスを通信に用いるかを指定します。
 		&lt;auth_statement&gt; |
 		&lt;netparam_statement&gt; |
 		&lt;sockopt_statement&gt; |
-		&lt;address_use_statement&gt;
+		&lt;address_use_statement&gt; |
+		&lt;local_user_map_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
 	&lt;metadb_serverhost_statement&gt; ::= "metadb_serverhost" &lt;hostname&gt;
@@ -354,6 +380,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		"tcp_nodelay"
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
+	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&lt;hostname&gt;
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*

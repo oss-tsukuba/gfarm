@@ -611,6 +611,41 @@ IPアドレスを通信に用いるかを指定します。
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>local_usr_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ユーザマップファイル指定</I
+></TT
+></DT
+><DD
+><P
+>グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。</P
+><P
+>この設定は必須ではありませんが、ユーザ名の異なる
+ファイルシステムノードがある場合に、ファイルシステムノードごとに
+ユーザマップファイル指定とファイルが必要です。他ノードの異なる
+ローカルユーザ名に対しても同じグローバルユーザ名を定義すれば、
+あたかも同一ユーザとしてgfarm を利用することができます。</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_user_map&nbsp;/usr/grid/usermap</P
+><P
+>ユーザマップファイルの内容例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	foogl&nbsp;foo<br>
+	barglobal&nbsp;bar</P
+><P
+>この例の1行目の指定により、このノードのローカルユーザ名 foo に
+対してグローバルユーザ名 foogl が定義されます。</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -636,7 +671,8 @@ CLASS="LITERALLAYOUT"
 		&#60;auth_statement&#62;&nbsp;|<br>
 		&#60;netparam_statement&#62;&nbsp;|<br>
 		&#60;sockopt_statement&#62;&nbsp;|<br>
-		&#60;address_use_statement&#62;<br>
+		&#60;address_use_statement&#62;&nbsp;|<br>
+		&#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;metadb_serverhost_statement&#62;&nbsp;::=&nbsp;"metadb_serverhost"&nbsp;&#60;hostname&#62;<br>
@@ -657,6 +693,7 @@ CLASS="LITERALLAYOUT"
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
 		"tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		&#60;hostname&#62;<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
