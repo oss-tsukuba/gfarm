@@ -24,14 +24,19 @@ usage()
 struct args {
 	char *path;
 	gfarm_int32_t mode;
+	int may_exist;
 };
 
 char *
 gfmkdir(struct gfs_connection *gfs_server, void *args)
 {
 	struct args *a = args;
+	char *e;
 
-	return (gfs_client_mkdir(gfs_server, a->path, a->mode));
+	e = gfs_client_mkdir(gfs_server, a->path, a->mode);
+	if (a->may_exist && e == GFARM_ERR_ALREADY_EXISTS)
+		return (NULL);
+	return (e);
 }
 
 int
@@ -73,10 +78,30 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (gfarm_path_info_get(canonic_path, &pi) == 0) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, argv[i],
-			    GFARM_ERR_ALREADY_EXISTS);
+			/*
+			 * XXX We should make this error,
+			 * even if it's GFARM_S_ISDIR() case.
+			 * But We cannot actually do it,
+			 * becauase currently we don't record directory
+			 * operation failure in anywhere.
+			 * Thus, we must permit user to retry the gfmkdir
+			 * operation.
+			 */
+			if (!GFARM_S_ISDIR(pi.status.st_mode)) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    program_name, argv[i],
+				    GFARM_ERR_ALREADY_EXISTS);
+				gfarm_path_info_free(&pi);
+				continue;
+			}
 			gfarm_path_info_free(&pi);
-			continue;
+			/*
+			 * don't report error,
+			 * if the directory already exists
+			 */
+			a.may_exist = 1;
+		} else {
+			a.may_exist = 0;
 		}
 
 		a.path = canonic_path;
