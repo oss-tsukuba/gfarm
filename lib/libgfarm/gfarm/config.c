@@ -255,39 +255,18 @@ gfarm_get_local_homedir(void)
 char *
 gfarm_set_local_user_for_this_local_account(void)
 {
-	char *error = NULL;
+	char *error;
 	char *user;
 	char *home;
 	struct passwd *pwd;
 
-	user = getenv("USER");
-	if (user == NULL)
-		user = getenv("LOGIN");
-	if (user == NULL)
-		user = getlogin();
-
-	home = getenv("HOME");
-
-	if (user == NULL || home == NULL) {
-		pwd = NULL;
-		if (user != NULL)
-			pwd = getpwnam(user);
-		if (pwd == NULL) {
-			/*user = NULL;*/ /* maybe getpwnam(user) failed */
-			pwd = getpwuid(getuid());
-		}
-		if (pwd != NULL) {
-			if (user == NULL)
-				user = pwd->pw_name;
-			if (home == NULL)
-				home = pwd->pw_dir;
-		} else {
-			/* XXX */
-			if (user == NULL)
-				user = "nobody";
-			if (home == NULL)
-				home = "/";
-		}
+	pwd = getpwuid(geteuid());
+	if (pwd != NULL) {
+		user = pwd->pw_name;
+		home = pwd->pw_dir;
+	} else { /* XXX */
+		user = "nobody";
+		home = "/";
 	}
 	error = gfarm_set_local_username(user);
 	if (error != NULL)
@@ -357,6 +336,39 @@ char *gfarm_ldap_base_dn = NULL;
 
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
+
+static void
+gfarm_config_clear(void)
+{
+	if (gfarm_spool_root != NULL) {
+		free(gfarm_spool_root);
+		gfarm_spool_root = NULL;
+	}
+	if (gfarm_spool_server_portname != NULL) {
+		free(gfarm_spool_server_portname);
+		gfarm_spool_server_portname = NULL;
+	}
+	if (gfarm_metadb_server_name != NULL) {
+		free(gfarm_metadb_server_name);
+		gfarm_metadb_server_name = NULL;
+	}
+	if (gfarm_metadb_server_portname != NULL) {
+		free(gfarm_metadb_server_portname);
+		gfarm_metadb_server_portname = NULL;
+	}
+	if (gfarm_ldap_server_name != NULL) {
+		free(gfarm_ldap_server_name);
+		gfarm_ldap_server_name = NULL;
+	}
+	if (gfarm_ldap_server_port != NULL) {
+		free(gfarm_ldap_server_port);
+		gfarm_ldap_server_port = NULL;
+	}
+	if (gfarm_ldap_base_dn != NULL) {
+		free(gfarm_ldap_base_dn);
+		gfarm_ldap_base_dn = NULL;
+	}
+}
 
 /*
  * get (almost) shell style token.
@@ -1344,9 +1356,11 @@ gfarm_terminate(void)
 		if (e_save == NULL)
 			e_save = e;
 	}
+	gfs_client_terminate();
 	e = gfarm_metadb_terminate();
 	if (e_save == NULL)
 		e_save = e;
+	gfarm_config_clear();
 
 	return (e_save);
 }
@@ -1355,7 +1369,8 @@ gfarm_terminate(void)
 char *
 gfarm_server_terminate(void)
 {
-	/* nothing to do (and also may never be called) */
+	gfs_client_terminate();
+	gfarm_config_clear();
 	return (NULL);
 }
 

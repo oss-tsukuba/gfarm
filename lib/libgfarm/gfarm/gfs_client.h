@@ -10,6 +10,8 @@ struct gfs_stat;
 enum gfarm_auth_method;
 struct gfs_client_connect_state;
 
+void gfs_client_terminate(void);
+
 int gfs_client_connection_fd(struct gfs_connection *);
 enum gfarm_auth_method gfs_client_connection_auth_method(
 	struct gfs_connection *);

@@ -55,6 +55,23 @@ struct gfs_connection {
 
 static struct gfarm_hash_table *gfs_server_hashtab = NULL;
 
+void
+gfs_client_terminate(void)
+{
+	struct gfarm_hash_iterator it;
+
+	if (gfs_server_hashtab != NULL)
+		return (NULL);
+	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		gfs_client_disconnect(gfarm_hash_entry_data(
+		    gfarm_hash_iterator_access(&it)));
+	}
+	gfarm_hash_table_free(gfs_server_hashtab);
+	gfs_server_hashtab = NULL;
+}
+
 int
 gfs_client_connection_fd(struct gfs_connection *gfs_server)
 {
