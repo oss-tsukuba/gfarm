@@ -13,47 +13,24 @@
 
 #include <gfarm/gfarm.h>
 
-int
-main(int argc, char *argv[])
+/*
+ *
+ */
+
+static char *
+gfarm_path_info_set_from_file(char *pathname, int nfrags)
 {
 	struct stat sb;
-	char *pathname, *c;
 	struct passwd *pw;
 	struct gfarm_path_info pi;
-	int nfrags;
 	char *e;
-	
-	if (argc != 3) {
-		fprintf(stderr, "usage: %s pathname nfrags\n",
-			argv[0]);
-		exit(1);
-	}
 
-	pathname = argv[1];
-	nfrags = atoi(argv[2]);
-
-	if (stat(pathname, &sb)) {
-		perror(pathname);
-		exit(1);
-	}
-
-	/* remove a section part. */
-
-	c = pathname;
-	while (*c) {
-		if (*c == ':') {
-			*c = '\0';
-			break;
-		}
-		++c;
-	}
+	if (stat(pathname, &sb))
+		return "no such file";
 
 	pw = getpwuid(sb.st_uid);
-	if (pw == NULL) {
-		fprintf(stderr, "no such user: uid = %d\n",
-			sb.st_uid);
-		exit(1);
-	}
+	if (pw == NULL)
+		return "no such user";
 
 	pi.pathname = pathname;
 	pi.status.st_mode = GFARM_S_IFREG | (sb.st_mode & GFARM_S_ALLPERM);
@@ -68,15 +45,109 @@ main(int argc, char *argv[])
 	pi.status.st_size = 0;
 	pi.status.st_nsections = nfrags;
 
+	e = gfarm_path_info_set(pi.pathname, &pi);
+	return (e);
+}
+
+static char *
+gfarm_path_info_remove_all(char *pathname)
+{
+	char *e, *e_save = NULL;
+
+	e = gfarm_file_section_copy_info_remove_all_by_file(pathname);
+	if (e != NULL)
+		e_save = e;
+	e = gfarm_file_section_info_remove_all_by_file(pathname);
+	if (e != NULL)
+		e_save = e;
+	e = gfarm_path_info_remove(pathname);
+	if (e != NULL)
+		e_save = e;
+	return (e_save);	
+}
+
+/*
+ *
+ */
+
+static char *progname = "addpath";
+
+void
+usage()
+{
+	fprintf(stderr, "usage: %s pathname nfrags\n",
+		progname);
+	fprintf(stderr, "       %s -d pathname\n",
+		progname);
+	exit(1);
+}
+
+int
+main(int argc, char *argv[])
+{
+	char *pathname, *p;
+	int nfrags;
+	char *e;
+	extern int optind;
+	int c;
+	enum { add, delete } mode = add;
+	
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", pathname, e);
+		fprintf(stderr, "%s: %s\n", progname, e);
 	}
 
-	e = gfarm_path_info_set(pi.pathname, &pi);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", pathname, e);
-		exit(1);
+	while ((c = getopt(argc, argv, "d")) != EOF) {
+		switch (c) {
+		case 'd':
+			mode = delete;
+			break;
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc > 0)
+		pathname = argv[0];
+	else {
+		fprintf(stderr, "%s: too few arguments\n", progname);
+		usage();
+	}
+	--argc;
+	++argv;
+
+	/* remove a section part. */
+
+	p = pathname;
+	while (*p) {
+		if (*p == ':') {
+			*p = '\0';
+			break;
+		}
+		++p;
+	}
+
+	switch (mode) {
+	case add:
+		if (argc == 1)
+			nfrags = atoi(argv[0]);
+		else
+			usage();
+		e = gfarm_path_info_set_from_file(pathname, nfrags);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", pathname, e);
+			exit(1);
+		}
+		break;
+	case delete:
+		e = gfarm_path_info_remove_all(pathname);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", pathname, e);
+			exit(1);
+		}
+		break;
 	}
 
 	e = gfarm_terminate();
