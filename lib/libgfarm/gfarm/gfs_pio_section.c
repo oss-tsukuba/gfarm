@@ -18,6 +18,7 @@
 #include "gfs_client.h"
 #include "gfs_proto.h"
 #include "timer.h"
+#include "gfs_lock.h"
 
 static char *
 gfs_pio_view_section_close(GFS_File gf)
@@ -222,19 +223,30 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	char *path_section;
 	char *local_path;
 	int fd, peer_fd;
-
-	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_client_connection(peer_hostname, &peer_addr, &peer_conn);
-	if (e != NULL)
-		return (e);
+	struct stat sb;
 
 	e = gfarm_path_section(gf->pi.pathname, section, &path_section);
 	if (e != NULL) 
 		return (e);
+
+	e = gfarm_path_localize(path_section, &local_path);
+	if (e != NULL)
+		goto finish_free_path_section;
+
+	/* critical section starts */
+	gfs_lock_local_path_section(local_path);
+
+	if (!stat(local_path, &sb)) /* already exist */
+		goto finish_critical_section;
+
+	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		goto finish_critical_section;
+
+	e = gfs_client_connection(peer_hostname, &peer_addr, &peer_conn);
+	if (e != NULL)
+		goto finish_critical_section;
 
 	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
 	    &peer_fd);
@@ -245,11 +257,7 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 			section, peer_hostname) == NULL)
 			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 	if (e != NULL)
-		goto finish_free_path_section;
-
-	e = gfarm_path_localize(path_section, &local_path);
-	if (e != NULL)
-		goto finish_peer_close;
+		goto finish_critical_section;
 
 	fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC, gf->pi.status.st_mode);
 	/* FT - the parent directory may be missing */
@@ -262,7 +270,7 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	}
 	if (fd < 0) {
 		e = gfs_proto_error_string(errno);
-		goto finish_free_local_path;
+		goto finish_peer_close;
 	}
 
 	/* XXX FIXME: this should honor sync_rate */
@@ -272,10 +280,13 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 		e = gfs_pio_set_fragment_info_local(local_path,
 		    gf->pi.pathname, section);    
 	close(fd);
-finish_free_local_path:
-	free(local_path);
 finish_peer_close:
 	gfs_client_close(peer_conn, peer_fd);
+finish_critical_section:
+	gfs_unlock_local_path_section(local_path);
+	/* critical section ends */
+
+	free(local_path);
 finish_free_path_section:
 	free(path_section);
 	return (e);
