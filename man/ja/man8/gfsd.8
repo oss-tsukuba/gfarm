@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "18 March 2003" "Gfarm" ""
+.TH "GFSD" "8" "01 December 2003" "Gfarm" ""
 .SH NAME
 gfsd(8) \- Gfarm 並列ファイルシステム・デーモン
 .SH SYNOPSIS
@@ -32,6 +32,9 @@ gfsd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
 spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 す．
 .SH "OPTIONS"
+.TP
+\fB-P \fIPIDファイル\fB\fR
+gfsd の process ID を、指定したファイルに記録します。
 .TP
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・

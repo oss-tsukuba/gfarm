@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "18 March 2003" "Gfarm" ""
+.TH "GFSD" "8" "01 December 2003" "Gfarm" ""
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
 .SH SYNOPSIS
@@ -33,6 +33,9 @@ In this case, the altered port number of \fBgfsd\fR should be
 specified by the spool_serverport statement in ~/.gfarmrc or
 /etc/gfarm.conf on a client node.
 .SH "OPTIONS"
+.TP
+\fB-P \fIpid-file\fB\fR
+specifies a file name which records the process ID of gfsd.
 .TP
 \fB-d\fR
 specifies the debug mode.  With the -d option, gfsd is running as a
