@@ -306,7 +306,7 @@ gfs_server_ftruncate(struct xxx_connection *client)
 
 	gfs_server_get_request(client, "ftruncate", "io", &fd, &length);
 
-	if (ftruncate(fd, length) == -1)
+	if (ftruncate(file_table_get(fd), (off_t)length) == -1)
 		save_errno = errno;
 
 	gfs_server_put_reply_with_errno(client, "ftruncate", save_errno, "");
