@@ -782,6 +782,54 @@ struct gfarm_path_info_key {
 	char *pathname;
 };
 
+static int
+gfarm_metadb_ldap_need_escape(char c)
+{
+	switch (c) {
+	case ',': case '+': case '"': case '\\':
+	case '<': case '>': case ';':
+		return (1);
+	}
+	return (0);
+}
+
+static char *
+gfarm_metadb_ldap_escape_pathname(const char *pathname)
+{
+	const char *c = pathname;
+	char *escaped_pathname, *d;
+
+	/* if pathname is a null string, return immediately */
+	if (*c == '\0')
+		return (NULL);
+
+	escaped_pathname = malloc(strlen(pathname) * 3);
+	if (escaped_pathname == NULL)
+		return (escaped_pathname);
+
+	d = escaped_pathname;
+	/* Escape the first character; ' ', '#', and need_escape(). */
+	if (*c == ' ' || *c == '#' || gfarm_metadb_ldap_need_escape(*c))
+		*d++ = '\\';
+	*d++ = *c++;
+	while (*c) {
+		if (gfarm_metadb_ldap_need_escape(*c))
+			*d++ = '\\';
+		*d++ = *c++;
+	}
+	/*
+	 * Escape the last 'space' character.  pathname should have a
+	 * length of more than 1.  If d[-1] == ' ', it should have a
+	 * length more than 2.
+	 */
+	if (d[-1] == ' ' && d[-2] != '\\') {
+		d[-1] = '\\';
+		*d++ = ' ';
+	}
+	*d = '\0';
+	return (escaped_pathname);
+}
+
 static const struct gfarm_generic_info_ops gfarm_path_info_ops = {
 	sizeof(struct gfarm_path_info),
 	"(objectclass=GFarmPath)",
@@ -797,14 +845,21 @@ static char *
 gfarm_path_info_make_dn(void *vkey)
 {
 	struct gfarm_path_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_path_info_ops.dn_template) +
-			  strlen(key->pathname) +
-			  strlen(gfarm_ldap_base_dn) + 1);
+	char *escaped_pathname, *dn;
 
-	if (dn == NULL)
+	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	if (escaped_pathname == NULL)
 		return (NULL);
+
+	dn = malloc(strlen(gfarm_path_info_ops.dn_template) +
+		    strlen(escaped_pathname) + strlen(gfarm_ldap_base_dn) + 1);
+	if (dn == NULL) {
+		free(escaped_pathname);
+		return (NULL);
+	}
 	sprintf(dn, gfarm_path_info_ops.dn_template,
-		key->pathname, gfarm_ldap_base_dn);
+		escaped_pathname, gfarm_ldap_base_dn);
+	free(escaped_pathname);
 	return (dn);
 }
 
@@ -1142,14 +1197,22 @@ static char *
 gfarm_file_section_info_make_dn(void *vkey)
 {
 	struct gfarm_file_section_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_file_section_info_ops.dn_template) +
-			  strlen(key->section) + strlen(key->pathname) +
-			  strlen(gfarm_ldap_base_dn) + 1);
+	char *escaped_pathname, *dn;
 
-	if (dn == NULL)
+	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	if (escaped_pathname == NULL)
 		return (NULL);
+
+	dn = malloc(strlen(gfarm_file_section_info_ops.dn_template) +
+		    strlen(key->section) + strlen(escaped_pathname) +
+		    strlen(gfarm_ldap_base_dn) + 1);
+	if (dn == NULL) {
+		free(escaped_pathname);
+		return (NULL);
+	}
 	sprintf(dn, gfarm_file_section_info_ops.dn_template,
-		key->section, key->pathname, gfarm_ldap_base_dn);
+		key->section, escaped_pathname, gfarm_ldap_base_dn);
+	free(escaped_pathname);
 	return (dn);
 }
 
@@ -1301,12 +1364,20 @@ gfarm_file_section_info_get_all_by_file(
 	int n;
 	struct gfarm_file_section_info *infos;
 	static char dn_template[] = "pathname=%s, %s";
-	char *dn = malloc(sizeof(dn_template) + strlen(pathname) +
-			  strlen(gfarm_ldap_base_dn));
+	char *escaped_pathname, *dn;
 
-	if (dn == NULL)
+	escaped_pathname = gfarm_metadb_ldap_escape_pathname(pathname);
+	if (escaped_pathname == NULL)
 		return (NULL);
-	sprintf(dn, dn_template, pathname, gfarm_ldap_base_dn);
+
+	dn = malloc(sizeof(dn_template) + strlen(escaped_pathname) +
+		    strlen(gfarm_ldap_base_dn));
+	if (dn == NULL) {
+		free(escaped_pathname);
+		return (NULL);
+	}
+	sprintf(dn, dn_template, escaped_pathname, gfarm_ldap_base_dn);
+	free(escaped_pathname);
 	error = gfarm_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
 	    gfarm_file_section_info_ops.query_type,
 	    &n, &infos,
@@ -1408,16 +1479,24 @@ static char *
 gfarm_file_section_copy_info_make_dn(void *vkey)
 {
 	struct gfarm_file_section_copy_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_file_section_copy_info_ops.dn_template) +
-			  strlen(key->hostname) +
-			  strlen(key->section) + strlen(key->pathname) +
-			  strlen(gfarm_ldap_base_dn) + 1);
+	char *escaped_pathname, *dn;
 
-	if (dn == NULL)
+	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	if (escaped_pathname == NULL)
 		return (NULL);
+
+	dn = malloc(strlen(gfarm_file_section_copy_info_ops.dn_template) +
+		    strlen(key->hostname) +
+		    strlen(key->section) + strlen(escaped_pathname) +
+		    strlen(gfarm_ldap_base_dn) + 1);
+	if (dn == NULL) {
+		free(escaped_pathname);
+		return (NULL);
+	}
 	sprintf(dn, gfarm_file_section_copy_info_ops.dn_template,
-		key->hostname, key->section, key->pathname,
+		key->hostname, key->section, escaped_pathname,
 		gfarm_ldap_base_dn);
+	free(escaped_pathname);
 	return (dn);
 }
 
