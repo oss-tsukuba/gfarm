@@ -437,7 +437,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if (e != NULL)
 			goto finish;
 		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		    (gf->open_flags & GFARM_FILE_TRUNC) ||
 		    ((gf->open_flags & GFARM_FILE_CREATE) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
@@ -449,7 +448,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		   (gf->open_flags & GFARM_FILE_TRUNC) ||
 		   ((gf->open_flags & GFARM_FILE_CREATE) &&
 		    !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
@@ -527,16 +525,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	if (gf->open_flags & GFARM_FILE_TRUNC) {
-		/* with truncation flag, delete all file copies */
-		/*
-		 * XXX - in this case, it is necessary to add O_CREAT
-		 * when opening a physical file since it is already unlinked.
-		 * This is taken care in gfs_open_flags_localize().
-		 */
-		(void)gfs_unlink_section(gf->pi.pathname, vc->section);
-	} else if (gf->mode & GFS_FILE_MODE_WRITE) {
-		/* otherwise, if write mode, delete every other file copies */
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		/* if write mode, delete every other file copies */
 		(void)gfs_unlink_every_other_replicas(
 			gf->pi.pathname, vc->section,
 			vc->canonical_hostname);
