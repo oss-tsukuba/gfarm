@@ -416,9 +416,6 @@ gfm_server_getdirents(struct peer *peer, int from_client)
 		return (e);
 	giant_lock();
 
-	if (n > GFM_PROTO_MAX_DIRENT)
-		n = GFM_PROTO_MAX_DIRENT;
-
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
@@ -435,6 +432,8 @@ gfm_server_getdirents(struct peer *peer, int from_client)
 		 (error = process_get_dir_offset(process, spool_host, fd,
 		    &dir_offset)) != GFARM_ERR_NO_ERROR)
 		;
+	else if (n <= 0)
+		error = GFARM_ERR_INVALID_ARGUMENT;
 	else if ((p = malloc(sizeof(*p) * n)) == NULL)
 		error = GFARM_ERR_NO_MEMORY;
 	else {
