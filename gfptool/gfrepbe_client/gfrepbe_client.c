@@ -26,7 +26,7 @@ char *program_name = "gfrepbe_client";
 char *my_name; /* == gfarm_host_get_self_name() */
 
 char *gfrcmd_url = "gfarm:/bin/gfrcmd";
-char *gfrep_backend_server = "gfarm:/libexec/gfrepbe_server";
+char *gfrep_backend_server_url = "gfarm:/libexec/gfrepbe_server";
 
 long file_sync_rate;
 
@@ -775,11 +775,12 @@ main(int argc, char **argv)
 		fatal();
 	}
 
-	e = gfarm_url_program_deliver(gfrep_backend_server,
+	e = gfarm_url_program_deliver(gfrep_backend_server_url,
 	    1, &src_host, &gfrep_backend_server_paths);
 	if (e != NULL) {
 		fprintf(stderr, "%s: cannot deliver %s to host %s on %s: %s\n",
-		    program_name, gfrep_backend_server, src_host, my_name, e);
+		    program_name, gfrep_backend_server_url, src_host, my_name,
+		    e);
 		fatal();
 	}
 
