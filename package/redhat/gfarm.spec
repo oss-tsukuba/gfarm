@@ -84,11 +84,9 @@ Group: System Environment/Daemons
 Summary: development library for gfarm
 Group: Development/Libraries
 
-%if !%{globus}
 %package gfront
 Summary: file system browser for gfarm
 Group: Applications/Internet
-%endif
 
 %description
 gfarm - Grid datafarm 
@@ -114,10 +112,8 @@ metadb server for gfarm
 %description devel
 development library for gfarm
 
-%if !%{globus}
 %description gfront
 file system browser for gfarm
-%endif
 
 %changelog
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
@@ -636,8 +632,6 @@ fi
 %{prefix}/lib/libnsexec.a
 %endif
 
-%if !%{globus}
 %files gfront
 %{prefix}/bin/gfront
 %{prefix}/share/java/gfront.jar
-%endif
