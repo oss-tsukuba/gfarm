@@ -1,6 +1,52 @@
 Copyright (c) 2003 National Institute of Advanced Industrial Science
 and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.0b5
+============================
+
+[2003.10.1]
+
+Updated Features
+
+ * Client commands
+
+   * New feature
+
+
+ * Parallel I/O Library
+
+   - [New feature] Added new functions, gfs_glob, gfs_chdir,
+     gfs_realpath.
+   - [Fault tolerance] When the parent directory in a spool directory
+     is missing, it is tried to be created.
+
+ * Bug fix
+
+   (gfmkdir, gfrmdir)
+
+   - Added the -h option for usage. (Bug 3 in Gfarm bugzilla-jp)
+
+   (gfrun)
+
+   - The current working directory is inherited to each parallel
+     process.
+
+   (gfls)
+
+   - Fixed a multi-column display format bug with the -F option.
+     (Bug 5 in Gfarm bugzilla-ja)
+
+   (libgfarm.a)
+
+   - Fixed a bug such that process's umask unexpectedly modifies the
+     access permission in a spool directory.
+   - Fixed a memory leak.
+   - Fixed a bug for resolving a Gfarm path name.
+
+   (debian package)
+
+   - Added missing commands for manipulating directories.
+
 Release note for Gfarm 1.0b4
 ============================
 

@@ -1,4 +1,57 @@
+2003-09-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build:
+	update openssl from 0.9.7b to 0.9.7c, to avoid security holes reported today.
+	XXX - openldap is still compiled by gcc-2.95.2. but it seems to be ok.
+
+2003-09-30  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* snmptool/glogger3/docbook/en/Makefile, snmptool/glogger3/docbook/en/docdir.mk, snmptool/glogger3/docbook/ja/Makefile.in, snmptool/glogger3/docbook/ja/docdir.mk, snmptool/glogger3/docbook/ja/glogdump.8, snmptool/glogger3/docbook/ja/glogdump.8.docbook, snmptool/glogger3/docbook/ja/glogdump.8.html, snmptool/glogger3/docbook/ja/glogger.8, snmptool/glogger3/docbook/ja/glogger.8.docbook, snmptool/glogger3/docbook/ja/glogger.8.html, snmptool/glogger3/docbook/ja/glogger.conf.5, snmptool/glogger3/docbook/ja/glogger.conf.5.docbook, snmptool/glogger3/docbook/ja/glogger.conf.5.html, snmptool/glogger3/docbook/ja/glogger_logdata.5, snmptool/glogger3/docbook/ja/glogger_logdata.5.docbook, snmptool/glogger3/docbook/ja/glogger_logdata.5.html, snmptool/glogger3/INSTALL.en, snmptool/glogger3/INSTALL.ja, snmptool/glogger3/Makefile.in, snmptool/glogger3/avg1.pl, snmptool/glogger3/avg2.pl, snmptool/glogger3/config.mk.in, snmptool/glogger3/configure, snmptool/glogger3/configure.in, snmptool/glogger3/docbook/Makefile, snmptool/glogger3/expand_node_name.c, snmptool/glogger3/expand_node_name.h, snmptool/glogger3/glogd.in, snmptool/glogger3/glogdump.c, snmptool/glogger3/glogger.c, snmptool/glogger3/glogger.h, snmptool/glogger3/install-sh, snmptool/glogger3/prepare_files.c, snmptool/glogger3/read_glogger_conf.c, snmptool/glogger3/sample.conf, snmptool/glogger3/set_options.c, snmptool/glogger3/setsnmp_configure, snmptool/glogger3/snmpasync.c, snmptool/glogger3/write_to_files.c:
+	inital import of glogger3
+
+2003-09-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build: some cleanup
+
+2003-09-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build:
+	script to build binary release images on Solaris
+
 2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: Deleted obsolete items.
+
+	* lib/libgfarm/gfarm/url.c (gfs_realpath): Added a null string check.
+
+	* doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfs_realpath.3.docbook, doc/html/en/ref/man3/gfs_glob.3.html, doc/html/en/ref/man3/gfs_realpath.3.html, doc/html/ja/ref/man3/gfs_realpath.3.html, man/ja/man3/gfs_realpath.3, man/man3/gfs_glob.3, man/man3/gfs_realpath.3, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfs_glob.3.docbook, doc/docbook/en/ref/man3/gfs_realpath.3.docbook:
+	Added a manual page for gfs_realpath(3).
+	Modified an incomplete sentence in the manual page for gfs_glob(3).
+
+2003-09-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/rules: undo revision 1.28:
+	move "gfreg" back from a gfptool to a client tool
+
+	* package/solaris/gfarm-client.files, package/solaris/gfarm-gfptool.files:
+	sort
+
+	* package/solaris/gfarm-client.files, package/solaris/gfarm-gfptool.files:
+	undo previou change:
+	move "gfreg" back from a gfptool to a client tool
+
+	* package/redhat/gfarm.spec: undo revision 1.28
+	move "gfreg" back from a gfptool to a client tool
+
+	* package/redhat/gfarm.spec: sort
+
+	* package/redhat/gfarm.spec: add missing documents
+
+	* package/redhat/gfarm.spec: change version number from 1.0b4 to 1.0b5
+
+2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
 
 	* gftool/gfsetdir/gfsetdir.c:
 	use gfs_realpath().  Client commands should not use canonical path name explicitly.
@@ -2253,7 +2306,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.19 2003/09/05 10:22:38 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.20 2003/09/29 14:52:45 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
