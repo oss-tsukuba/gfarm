@@ -159,6 +159,21 @@ main(int argc, char *argv[])
 	usage();
     }
 
+    /* check only "gfarm:" */
+    if( strcmp(gfarm_url, "gfarm:") == 0 ) {
+      static char tmp_url[1024];
+      char *s = NULL;
+
+      tmp_url[0] = tmp_url[1020] = '\0';
+      strncpy( tmp_url, gfarm_url, 1020 );
+      s = strrchr( filename, '/' );  /* in case of "gfreg hoge_dir/foo_dir/bar.bin gfarm:" */
+      if( s != NULL )
+	strcat( tmp_url, s+1 );
+      else
+	strcat( tmp_url, filename );
+      gfarm_url = tmp_url;
+    }
+
     if (S_ISREG(s.st_mode) && (s.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) {
 	/* register a binary executable. */
 	if (node_index == NULL) {
