@@ -64,12 +64,12 @@ CLASS="RETURNVALUE"
 >char *</SPAN
 >gfs_utimes</TT
 ></CODE
->(char * <TT
+>(const char * <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
->, struct gfarm_timespec * <TT
+>, const struct gfarm_timespec * <TT
 CLASS="PARAMETER"
 ><I
 >tsp</I
@@ -116,12 +116,7 @@ CLASS="PARAMETER"
 ></TT
 >[1] の値を修正時刻に使用します。
 構造体
-<TT
-CLASS="PARAMETER"
-><I
->gfarm_timespec</I
-></TT
->
+gfarm_timespec
 は以下のようになっています。
 <TABLE
 BORDER="0"

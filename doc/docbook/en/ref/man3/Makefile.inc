@@ -29,6 +29,7 @@ DOCBOOK = \
 	gfs_stat.3 \
 	gfs_stat_free.3 \
 	gfs_unlink.3 \
+	gfs_utimes.3 \
 	gfs_glob_init.3 \
 	gfs_glob.3 \
 	gfs_glob_add.3 \

@@ -3,14 +3,14 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_UTIMES" "3" "28 August 2003" "Gfarm" ""
+.TH "GFS_UTIMES" "3" "04 December 2003" "Gfarm" ""
 .SH NAME
 gfs_utimes \- ファイルアクセス時刻/修正時刻変更
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfs_utimes (char * \fIgfarm_url\fB, struct gfarm_timespec * \fItsp\fB);
+char *gfs_utimes (const char * \fIgfarm_url\fB, const struct gfarm_timespec * \fItsp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
@@ -22,7 +22,7 @@ char *gfs_utimes (char * \fIgfarm_url\fB, struct gfarm_timespec * \fItsp\fB);
 \fItsp\fR[0] の値をアクセス時刻に、
 \fItsp\fR[1] の値を修正時刻に使用します。
 構造体
-\fIgfarm_timespec\fR
+gfarm_timespec
 は以下のようになっています。
 
 .nf
