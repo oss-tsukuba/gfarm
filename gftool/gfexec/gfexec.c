@@ -90,7 +90,7 @@ main(int argc, char *argv[], char *envp[])
 	static const char env_gfs_pwd[] = "GFS_PWD=";
 	char rankbuf[sizeof(env_node_rank) + GFARM_INT64STRLEN];
 	char nodesbuf[sizeof(env_node_size) + GFARM_INT64STRLEN];
-	char flagsbuf[sizeof(env_flags) + 2];
+	char flagsbuf[sizeof(env_flags) + 3];
 	char cwdbuf[PATH_MAX * 2];
 
 	e = gfarm_initialize(&argc, &argv);
