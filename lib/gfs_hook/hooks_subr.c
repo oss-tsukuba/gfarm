@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <sys/stat.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -48,6 +49,7 @@ int
 gfs_hook_insert_gfs_file(GFS_File gf)
 {
 	int fd, save_errno;
+	struct stat st;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_file: %p\n", gf));
 
@@ -55,7 +57,17 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	 * A new file descriptor is needed to identify a hooked file
 	 * descriptor.
 	 */
-	fd = dup(gfs_pio_fileno(gf));
+	fd = gfs_pio_fileno(gf);
+	if (fstat(fd, &st) == -1) {
+		save_errno = errno;
+		gfs_pio_close(gf);
+		errno = save_errno;
+		return (-1);
+	}
+	if (S_ISREG(st.st_mode))
+		fd = dup(fd);
+	else /* don't return a socket, to make select(2) work with this fd */
+		fd = open("/dev/null", O_RDWR);
 	if (fd == -1) {
 		save_errno = errno;
 		gfs_pio_close(gf);
