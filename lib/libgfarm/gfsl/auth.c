@@ -191,7 +191,7 @@ gfarmAuthInitialize(usermapFile)
 		    gflog_warning(localName,
 				  "WARNING: no memory for DN. Ignored.");
 		} else if (!isNew) {
-		    gflog_warning(localName,
+		    gflog_auth_warning(localName,
 				  "WARNING: multiple X.509 Distinguish name "
 				  "for a UNIX user account. Ignored.");
 		} else {
