@@ -132,7 +132,7 @@ syscall-hook library for executing legacy MPI applications on the
 Gfarm filesystem, and when building sample MPI applications in this
 distribution, an MPI library is needed.
 
-Here are the installation steps of the Gfarm system.
+Here are installation steps of the Gfarm system.
 
 	% ./configure [options]
 	% make
@@ -143,11 +143,11 @@ the --with-openldap option.
 
   --with-openldap=directory
 
-  specifies an installation directory of the OpenLDAP library.
+  specifies an installation directory of the OpenLDAP.
 
   --with-openssl=directory
 
-  specifies an installation directory of the OpenSSL library.  Default
+  specifies an installation directory of the OpenSSL.  Default
   directory is /usr.
 
   --with-mpi=directory
