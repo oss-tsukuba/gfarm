@@ -135,6 +135,11 @@ configure コマンドには、下記のオプションがあります。
   OpenSSL のインストールされているディレクトリを指定します。
   このオプションは必ず指定してください。
 
+・--with-mpi=ディレクトリ
+
+  MPICH  のインストールされているディレクトリを指定します。
+  このオプションは省略可能です。
+
 ・--prefix=ディレクトリ
 
   インストール先のディレクトリを指定します。このオプションを省略した場
@@ -161,7 +166,7 @@ configure コマンドには、下記のオプションがあります。
 
 ・LDAP サーバーを実行するホスト
 
-	ldap.hpcc.gr.jp
+	ldap.hpcc.jp
 
 ・LDAP サーバーの利用する TCP ポート番号
 
@@ -181,12 +186,12 @@ configure コマンドには、下記のオプションがあります。
 
 ・LDAP の base distinguished name
 
-	dc=hpcc,dc=gr,gc=jp
+	dc=hpcc,gc=jp
 
   この値は、LDAP で保持する情報の根となるノードの名称です。
 
-  Gfarm システムを利用している組織のドメイン名が hpcc.gr.jp であれば、
-  そのドメイン名の各構成要素を dc= に指定して「dc=hpcc,dc=gr,gc=jp」の
+  Gfarm システムを利用している組織のドメイン名が hpcc.jp であれば、
+  そのドメイン名の各構成要素を dc= に指定して「dc=hpcc,gc=jp」の
   ような名前を決め、これを base distinguished name に使うと良いでしょ
   う。
 
@@ -209,7 +214,7 @@ OpenLDAP 付属の LDAP サーバーの設定ファイルです。
 base distinguished name を、このファイルの suffix および 
 rootdn で参照しているのに注意してください。
 
-例えばホスト ldap.hpcc.gr.jp の
+例えばホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/slapd-master.conf に、
 下記のような内容を記述します。
 
@@ -228,9 +233,9 @@ argsfile        /var/gfarm-ldap/slapd.args
 #######################################################################
 
 database        ldbm
-suffix          "dc=hpcc, dc=gr, dc=jp"
+suffix          "dc=hpcc, dc=jp"
 directory       /var/gfarm-ldap
-rootdn          "cn=root, dc=hpcc, dc=gr, dc=jp"
+rootdn          "cn=root, dc=hpcc, dc=jp"
 rootpw          secret-ldap-password
 defaultaccess   write
 #
@@ -246,7 +251,7 @@ slapd-master.conf から include されているファイルです。
 
 OpenLDAP にサンプルとして付属する slapd.at.conf に、
 下記の内容を追加したものを、
-ホスト ldap.hpcc.gr.jp の
+ホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/slapd.ac.conf に
 置いてください。
 特にカスタマイズする項目はありません。
@@ -284,7 +289,7 @@ slapd-master.conf から include されているファイルです。
 
 OpenLDAP にサンプルとして付属する slapd.oc.conf に、
 下記の内容を追加したものを、
-ホスト ldap.hpcc.gr.jp の
+ホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/slapd.oc.conf に
 置いてください。
 特にカスタマイズする項目はありません。
@@ -358,7 +363,7 @@ objectclass GFarmHost
 
     下記のような値を設定します。
 
-	hostname=そのホストのホスト名(FQDN), dc=hpcc,dc=gr,gc=jp
+	hostname=そのホストのホスト名(FQDN), dc=hpcc,gc=jp
 
   -- objectclass
 
@@ -376,34 +381,34 @@ objectclass GFarmHost
     形式で記述します。
 
 
-例えばホスト ldap.hpcc.gr.jp の
+例えばホスト ldap.hpcc.jp の
 ファイル /etc/gfarm-ldap/initial.ldif に、
 下記のような内容を設定することになります。
 
 ------------------------------ ここから ------------------------------
-dn: dc=hpcc, dc=gr, dc=jp
+dn: dc=hpcc, dc=jp
 objectclass: top
 objectclass: organization
 objectclass: domainRelatedObject
 objectclass: quipuObject
 objectclass: quipuNonLeafObject
 
-dn: hostname=hpc420-1.hpcc.gr.jp, dc=hpcc,dc=gr,dc=jp
+dn: hostname=hpc420-1.hpcc.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
-hostname: hpc420-1.hpcc.gr.jp
+hostname: hpc420-1.hpcc.jp
 architecture: sparc-sun-solaris
 
-dn: hostname=hpc420-2.hpcc.gr.jp, dc=hpcc,dc=gr,dc=jp
+dn: hostname=hpc420-2.hpcc.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
-hostname: hpc420-2.hpcc.gr.jp
+hostname: hpc420-2.hpcc.jp
 architecture: sparc-sun-solaris
 
-dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=gr,dc=jp
+dn: hostname=wiz.etl.go.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: wiz.etl.go.jp
 architecture: alpha-dec-osf
 
-dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=gr,dc=jp
+dn: hostname=o2k.etl.go.jp, dc=hpcc,dc=jp
 objectclass: GFarmHost
 hostname: o2k.etl.go.jp
 architecture: mips-sgi-irix
@@ -412,7 +417,7 @@ architecture: mips-sgi-irix
 ▽ LDAP データベースの作成
 
 前節で作成したファイルシステムメタデータの初期情報を元に、LDAP データ
-ベースを作成します。これには、ホスト ldap.hpcc.gr.jp で、下記のコマン
+ベースを作成します。これには、ホスト ldap.hpcc.jp で、下記のコマン
 ドを実行します。
 
      % rm -f /var/gfarm-ldap/*
@@ -421,7 +426,7 @@ architecture: mips-sgi-irix
 
 ▽ LDAP サーバーの起動
 
-ホスト ldap.hpcc.gr.jp で、LDAP サーバーを起動します。
+ホスト ldap.hpcc.jp で、LDAP サーバーを起動します。
 下記のコマンドを実行します。
 
 	% cd /usr/local/openldap/libexec
@@ -435,16 +440,16 @@ architecture: mips-sgi-irix
 と同じ内容が表示されれば、正しく動作しています。
 
 Bourne Shell の場合:
-	% host=ldap.hpcc.gr.jp
+	% host=ldap.hpcc.jp
 	% port=9000
-	% basedn='dc=hpcc, dc=gr, dc=jp'
+	% basedn='dc=hpcc, dc=jp'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
 csh の場合:
-	% set host=ldap.hpcc.gr.jp
+	% set host=ldap.hpcc.jp
 	% set port=9000
-	% set basedn='dc=hpcc, dc=gr, dc=jp'
+	% set basedn='dc=hpcc, dc=jp'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -b "$basedn" -L -h $host -p $port '(objectclass=*)'
 
@@ -480,10 +485,10 @@ csh の場合:
 
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.hpcc.gr.jp
-ldap_serverhost ldap.hpcc.gr.jp
+metadb_serverhost ldap.hpcc.jp
+ldap_serverhost ldap.hpcc.jp
 ldap_serverport 9000
-ldap_base_dn "dc=hpcc, dc=gr, dc=jp"
+ldap_base_dn "dc=hpcc, dc=jp"
 auth enable sharedsecret ALL
 ------------------------------ ここまで ------------------------------
 
