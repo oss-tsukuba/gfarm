@@ -86,7 +86,7 @@ public class HostDefBlock extends BinaryBlock {
 		synchronized(definition){
 			for(int i = 0; i < definition.size(); i++){
 				HostDefElement e = (HostDefElement) definition.get(i);
-				String h = e.getHostname();
+				String h = e.getNameAndNick();
 				if(h.equals(host) == true){
 					idx = i;
 					break;

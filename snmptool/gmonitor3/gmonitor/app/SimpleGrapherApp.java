@@ -231,6 +231,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	private String selectedUptimeEventForCorrection;
 	private JComboBox comboUptimeSelection = null;
 	private void actionCorrect(boolean b){
+		selectedUptimeEventForCorrection = null;
 		if(b){
 			if(dtSpace == null){
 				menuItemCorrectByUptime.setSelected(false);
@@ -241,11 +242,13 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			JPanel panel = new JPanel();
 			panel.setLayout(new BorderLayout());
 			comboUptimeSelection = new JComboBox();
+			comboUptimeSelection.setRenderer(new HostOidCellRenderer());
 
 			defineNewComboBox(comboUptimeSelection, dtSpace.getEvents());
 			for(int i=0; i < comboUptimeSelection.getItemCount(); i++){
 	  			Object sel = comboUptimeSelection.getItemAt(i);
-				if("uptime".equals((String) sel)){
+				//if("uptime".equals((String) sel)){
+				if(((String)sel).startsWith("uptime")){
 					comboUptimeSelection.setSelectedItem(sel);
 					break;
 				}
@@ -264,7 +267,6 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			cancel.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					((JButton) e.getSource()).getTopLevelAncestor().setVisible(false);
-					menuItemCorrectByUptime.setSelected(false);
 				}
 			});
 			panel.add(comboUptimeSelection, BorderLayout.NORTH);
@@ -275,8 +277,11 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			dialog.pack();
 			dialog.setLocationRelativeTo(appFrame);
 			dialog.setVisible(true);
+			
+			if(selectedUptimeEventForCorrection == null){
+				menuItemCorrectByUptime.setSelected(false);
+			}
 		} else {
-			selectedUptimeEventForCorrection = null;
 			paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
@@ -551,6 +556,8 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			String[] listData = (String[]) hostList.toArray(tmp);
 			list = new JList(listData);
 			JButton ok = new JButton("OK");
+			list.setCellRenderer(new HostOidCellRenderer());
+			
 			ok.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					Object[] h = list.getSelectedValues();
@@ -1203,12 +1210,15 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		gm.setStyleFill(checkGraphStyleBar.isSelected());
 		gm.setStyleJoin(checkGraphStyleLine.isSelected());
 		gm.setStylePlot(checkGraphStylePlot.isSelected());
-		String host = "";
+		String host;
 		if(totalmode == true){
 			host = "Total of ";
 		}else{
 			host = (String) comboHostname.getSelectedItem();
+			host = getName1(host);
 		}
+		event = getName1(event);
+		
 		gm.setTitle(createTitle(host, event));
 		gm.setModel(model);
 		gm.setAxisLabelX(labelAxisX); // set label of x-axis
@@ -1225,7 +1235,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 			info += lineSep + "Total: " + event + " (";
 			int i = 0;
 			while(true){
-				info += selectedHostsForTotal[i];
+				info += getName1(selectedHostsForTotal[i]);
 				if( i < selectedHostsForTotal.length - 1){
 					info += ", ";
 				} else {
@@ -1475,8 +1485,10 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		if(setTargetHostName != null){
 			for(int i=0; i<comboHostname.getItemCount(); i++){
 //System.out.println((String)comboHostname.getItemAt(i));					
-				if(setTargetHostName.equals((String)comboHostname.getItemAt(i))){
-					comboHostname.setSelectedItem(comboHostname.getItemAt(i));
+				//if(setTargetHostName.equals((String)comboHostname.getItemAt(i))){
+				Object chn = comboHostname.getItemAt(i);
+				if(chn != null && ((String)chn).indexOf(setTargetHostName) > 0){
+					comboHostname.setSelectedItem(chn);
 					break;
 				}
 			}
@@ -1484,9 +1496,11 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 		}
 		if(setTargetEventName != null){
 			for(int i=0; i<comboEvent.getItemCount(); i++){
-//System.out.println((String)comboEvent.getItemAt(i));					
-				if(setTargetEventName.equals((String)comboEvent.getItemAt(i))){
-					comboEvent.setSelectedItem(comboEvent.getItemAt(i));
+//System.out.println((String)comboEvent.getItemAt(i));
+				//if(setTargetEventName.equals((String)comboEvent.getItemAt(i))){
+				Object ce = comboEvent.getItemAt(i);
+				if(ce != null && ((String)ce).indexOf(setTargetEventName) > 0){
+					comboEvent.setSelectedItem(ce);
 					break;
 				}
 			}

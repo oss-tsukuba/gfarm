@@ -70,7 +70,7 @@ public class DataTimeSpace {
 		smallestGroupInterval = Long.MAX_VALUE;
 		for(int i = 0; i < list.length; i++){
 			DataFile f = DataFile.getInstance(list[i]);
-			f.reload();
+//			f.reload();
 			SecondMetaBlock smb = f.getSecondMetaBlock();
 FirstMetaBlock fmb = f.getFirstMetaBlock();
 long intv = fmb.getGroupInterval();
@@ -81,7 +81,7 @@ if(smallestGroupInterval > intv) smallestGroupInterval = intv;
 			int hdb_count = hdb.getCount();
 			for(int j = 0; j < hdb_count; j++){
 				HostDefElement e = hdb.getHostDefElement(j);
-				String h = e.getHostname();
+				String h = e.getNameAndNick();
 				hostnames.add(h);
 			}
 
@@ -90,7 +90,7 @@ if(smallestGroupInterval > intv) smallestGroupInterval = intv;
 			int odb_count = odb.getCount();
 			for(int j = 0; j < odb_count; j++){
 				OIDDefElement e = odb.getOIDDefElement(j);
-				String n = e.getNickname();
+				String n = e.getNameAndNick();
 				eventnames.add(n);
 			}
 
@@ -507,26 +507,21 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 	public ArrayList getMeasurementData(String host, String event, long begin, long term)
 	throws IOException
 	{
-//begin = begin - this.getLargestGroupInterval();
-//term = term + this.getLargestGroupInterval();
-		// ファイルから計測データを読み込む
 		ArrayList a_list = extract_aList(host);
 		ArrayList b_list = extract_bList(a_list, event);
-		ArrayList c_list = extract_cList(b_list, begin, term);
+		ArrayList c_list = extract_cList(b_list, begin, term);   // target file list
 		ArrayList data = new ArrayList();
 		if(c_list == null || c_list.size() == 0){
-			// 該当するファイルがなかったので、計測データがない
 			throw new IOException("File not matched, no measurement data.");
 		}
 
-		// 1.まず開始時点を探す。
+		// 1. seek starting point
 		int startingFileIndex = -1;
 		long db_idx = 0;
 
-		int saveOIDindex = -1;
 		for(int i = 0; i < c_list.size(); i++){
 			if(startingFileIndex >= 0){
-				// 開始時点を含むファイルを検出したので、探索終了。
+				// found
 				break;
 			}
 			DataFile file = (DataFile) c_list.get(i);
@@ -548,30 +543,21 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 				DataBlockGroupElement row[] = (DataBlockGroupElement[]) dbgeList.get((int)dbg_idx);
 				int columns = -1;
 				for(int j = 0; j < row.length; j++){
-					if(saveOIDindex == -1) {
-						int matched = row[j].seekPairOfHIDandOID(hidx, event, odb);
-						if(matched >= 0){
-							columns = j;
-							saveOIDindex = matched;
-							break;
-						}
-					} else {
-						boolean matched = row[j].isPairOfHIDandOID(hidx, saveOIDindex);
-						if(matched == true){
-							columns = j;
-							break;
-						}
+					boolean matched = row[j].isPairOfHIDandOID(hidx, oidx);
+					if(matched == true){
+						columns = j;
+						break;
 					}
 				}
+				
 				if(columns >= 0){
-					// テーブルによるとこのデータブロックに存在するので、読む。
 					DataBlock db = file.readDataBlock(db_idx);
 					if(db == null){
-						// ファイルの終端を検出したので、次のファイルに切り替える。
+						// nexe file
 						break;
 					}
 					if(db.getTime() >= begin){
-						// 開始時点を検出したので、探索終了。
+						// found
 						startingFileIndex = i;
 						break;
 					}
@@ -580,67 +566,67 @@ SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			}
 		}
 		if(startingFileIndex < 0){
-			// 対応するファイルが見つからなかったので、null を返す。
 			throw new IOException("File not mathed, no starting point.");
 		}
-//System.out.println("startingFileIndex: " + startingFileIndex + " cList.size: " + c_list.size());
-		// 2.開始時点から順にデータブロックをスキャンし、日時と計測データを詰めていく。
+
+		// 2. set a data from a data block
 		long dbidx = db_idx;
 		long endingTime = begin + term;
 		for(int i = startingFileIndex; i < c_list.size(); i++){
 			DataFile file = (DataFile) c_list.get(i);
-//System.out.println("Reading file: " + file.getUrl());
 			SecondMetaBlock smb = file.getSecondMetaBlock();
 			HostDefBlock hdb = smb.getHostDefBlock();
 			int hidx = hdb.getHostIndex(host);
-			//OIDDefBlock odb = smb.getOIDDefBlock();
-			//int oidx = odb.getOIDIndex(event);
+			OIDDefBlock odb = smb.getOIDDefBlock();
+			int oidx = odb.getOIDIndex(event);
 			DataBlockGroupTable tbl = smb.getDataBlockGroupTable();
 			ArrayList rows = (ArrayList) tbl.getDataBlockGroupElements();
 			int dbgCount = rows.size();
 			
 			while(true){
+				if(file.readDataBlock(dbidx) == null){  // end
+					break;
+				}
 				int dbg_idx = (int) (dbidx % dbgCount);
 				DataBlockGroupElement[] row = (DataBlockGroupElement[]) rows.get(dbg_idx);
-
+				
 				int columns = -1;
 				for(int j = 0; j < row.length; j++){
-					boolean matched = row[j].isPairOfHIDandOID(hidx, saveOIDindex);
+					boolean matched = row[j].isPairOfHIDandOID(hidx, oidx);
 					if(matched == true){
 						columns = j;
 						break;
 					}
 				}
-				if(columns >= 0){
-					// テーブルによるとこのデータブロックに存在するので、読む。
+//System.out.println("dbidx:" + dbidx + ", columns:" + columns + ", dbg_idx:" + dbg_idx + ", i:" + i);
+
+				// found
+				if(columns >= 0){  
 					DataBlock db = file.readDataBlock(dbidx);
 					if(db == null){
-						// ファイルの終端を検出したので、次のファイルに切り替える。
+						// next file
 //System.out.println("file termination.");
 						break;
 					}
 					
 					long dt = db.getTime();
 					ArrayList dbdata = db.getData();
-					// oidx と hidx のマッチするカラムを探して取得
 					DataElement de = (DataElement) dbdata.get(columns);
 					data.add(new Date(dt));
 //System.out.println(gmonitor.app.SimpleGrapherApp.dateString(dt));
 					data.add(de);
 
 					if(dt > endingTime){
-						// 終了時点を検出したので、探索終了。
 //System.out.println("time exceeded, finish.");
 						break;
 					}
 				}else{
 //System.out.println("data not exists in this datablock.");
-					// このデータブロックには存在しないようなので読まない。
 				}
 				dbidx++;
 			}
 
-			// ファイルが切り替わるので、インデクスをリセット。
+			// next file: reset
 			dbidx = 0;
 		}
 		return data;

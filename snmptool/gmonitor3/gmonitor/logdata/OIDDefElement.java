@@ -30,10 +30,15 @@ public class OIDDefElement {
 	/**
 	 * @return
 	 */
+	public String getNameAndNick() {
+		//return nickname;
+		return nickname + "#" + OID;
+	}
+
 	public String getNickname() {
 		return nickname;
 	}
-
+	
 	/**
 	 * @return
 	 */

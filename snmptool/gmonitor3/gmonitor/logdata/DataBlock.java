@@ -34,10 +34,8 @@ public class DataBlock {
 	/**
 	 * バイナリ配列からデータブロックを生成する
 	 */
-	public DataBlock(byte[] bytes, int idx, int num)
+	public DataBlock(byte[] bytes, int i, int num)
 	{
-		int i = idx;
-
 		timeInUNIXSeconds = 
 			( ((bytes[i++]&0xFF)<<24) | ((bytes[i++]&0xFF)<<16)
 			| ((bytes[i++]&0xFF)<<8)  | (bytes[i++]&0xFF)
@@ -63,8 +61,9 @@ public class DataBlock {
 
 		time = (long) (timeInUNIXSeconds * 1000L + timeInUNIXuSeconds / 1000L);
 		long val;
+		byte b;
 		for(int j = 0; j < num; j++){
-			byte b = bytes[i++];
+			b = bytes[i++];
 			val =
 				( ((bytes[i++]&0xFFL)<<24) | ((bytes[i++]&0xFFL)<<16)
 				| ((bytes[i++]&0xFFL)<<8)  | (bytes[i++]&0xFFL)

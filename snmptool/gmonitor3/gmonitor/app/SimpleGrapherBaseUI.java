@@ -169,8 +169,8 @@ public class SimpleGrapherBaseUI {
 		
 	}
 	
-	class MyCellRenderer extends JLabel implements ListCellRenderer {
-		public MyCellRenderer() {
+	class UnitCellRenderer extends JLabel implements ListCellRenderer {
+		public UnitCellRenderer() {
 			setOpaque(true);
 		}
 		public Component getListCellRendererComponent(
@@ -185,7 +185,49 @@ public class SimpleGrapherBaseUI {
 			setForeground(isSelected ? Color.white : Color.black);
 			return this;
 		}
-	 }
+	}
+	
+	class HostOidCellRenderer extends JLabel implements ListCellRenderer {
+		public HostOidCellRenderer() {
+			setOpaque(true);
+		}
+		public Component getListCellRendererComponent(
+		JList list,
+		Object value,
+		int index,
+		boolean isSelected,
+		boolean cellHasFocus)
+		{
+			String v = (String) value;
+			String name1, name2;
+			try {
+				name1 = getName1(v);
+			} catch(Exception e){
+				name1 = v;
+			}
+			try {
+				name2 = getName2(v);
+			} catch(Exception e){
+				name2 = name1;
+			}
+			//setText(isSelected ? name2 : name1);
+			setText(name1);
+			list.setToolTipText(name2);
+
+			setBackground(isSelected ? Color.blue : Color.white);
+			setForeground(isSelected ? Color.white : Color.black);
+			return this;
+		}
+		
+	}
+	
+	protected String getName1(String v){
+		return v.substring(0, v.indexOf('#'));
+	}
+	
+	protected String getName2(String v){
+		return v.substring(v.indexOf('#') + 1);
+	}
 	
 	public void setToolTips(){
 		String ls = System.getProperty("line.separator");
@@ -276,7 +318,7 @@ public class SimpleGrapherBaseUI {
 				
 			}
 			model.setSelectedItem(s[0]);
-			MyCellRenderer renderer = new MyCellRenderer();
+			UnitCellRenderer renderer = new UnitCellRenderer();
 			comboUnit.setRenderer(renderer);
 			comboUnit.setModel(model);
 			
@@ -350,6 +392,10 @@ public class SimpleGrapherBaseUI {
 
 		// preparing panel of controller.
 		{
+			HostOidCellRenderer renderer = new HostOidCellRenderer();
+			comboHostname.setRenderer(renderer);
+			comboEvent.setRenderer(renderer);
+
 			GridBagLayout layoutManager = new GridBagLayout();
 			panelController.setLayout(layoutManager);
 			GridBagConstraints c = new GridBagConstraints();

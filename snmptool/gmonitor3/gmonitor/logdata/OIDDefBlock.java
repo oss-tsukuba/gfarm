@@ -72,7 +72,7 @@ public class OIDDefBlock extends BinaryBlock {
 		synchronized(definition){
 			for(int i = 0; i < definition.size(); i++){
 				OIDDefElement e = (OIDDefElement) definition.get(i);
-				String n = e.getNickname();
+				String n = e.getNameAndNick();
 				if(n.equals(nick) == true){
 					idx = i;
 					break;
@@ -91,7 +91,7 @@ public class OIDDefBlock extends BinaryBlock {
 		synchronized(definition){
 			for(int i = 0; i < definition.size(); i++){
 				OIDDefElement e = (OIDDefElement) definition.get(i);
-				String n = e.getNickname();
+				String n = e.getNameAndNick();
 				if(n.equals(nick) == true){
 					if(next <= 1){
 						idx = i;

@@ -169,29 +169,35 @@ public class GraphMonitor extends JPanel implements ComponentListener {
 			return;
 		}
 		int sz = l.size();
-//System.out.println("xxx");
 		Graphics org_g = g;
+
+		FontMetrics fm = getFontMetrics(getFont());
+		ViewData vd;
+		int fh = fm.getHeight(); 
+		int grid_y_origin = 0 + fh + grid_height;
+		int grid_x_origin = 0 + fh + y_label_width_max;
+//		int grid_x_origin = 0 + fh + y_label_width_max + 1;
+//      int grid_x_origin = 0 + fh + x_label_width_max / 2;
+
 		for(int i = 0; i < sz; i++){
 			g = org_g.create();
-			ViewData vd = (ViewData)l.get(i);
+			vd = (ViewData)l.get(i);
 			if(vd == null || vd.isValid() != true){
 				// 系列iは無効な描画データなので、描画しないでスキップ
 				//break;
 				continue;
 			}
 			ViewDataElement[] vde = vd.getData();
-			FontMetrics fm = getFontMetrics(getFont());
-			int fh = fm.getHeight(); 
-			int grid_y_origin = 0 + fh + grid_height;
-			int grid_x_origin = 0 + fh + y_label_width_max;
-//			int grid_x_origin = 0 + fh + y_label_width_max + 1;
-			//int grid_x_origin = 0 + fh + x_label_width_max / 2;
+
 			g.setClip(grid_x_origin, grid_y_origin - grid_height, grid_width, grid_height);
 			int previous_point_x = grid_x_origin;
 			int previous_point_y = 0;
 			boolean previous_point_valid = false;
 			int y = grid_y_origin;
 			if(vde != null){
+				Color fillColor = vd.getFillColor();
+				Color joinColor = vd.getJoinColor();
+//System.out.println("vde len:" + vde.length);
 				for(int j = 0; j < vde.length; j++){
 					if(vde[j].isValid() != true){
 						// 無効なポイントなので描画しない
@@ -203,10 +209,10 @@ public class GraphMonitor extends JPanel implements ComponentListener {
 					int x = vde[j].getPos() + grid_x_origin;
 					int h = vde[j].getHeight();
 					if(vd.isFill() == true){
-						// 棒の塗りつぶしを行う
+						// 棒の塗りつぶし
 						int lefthalf = 0;
 						if(previous_point_valid == true){
-							lefthalf = (x - previous_point_x) / 2; // 直前の計測ポイントの X とこの計測ポイントの X との中値
+							lefthalf = (x - previous_point_x) / 2; // 中値
 						}else{
 							lefthalf = 0;
 						}
@@ -214,21 +220,20 @@ public class GraphMonitor extends JPanel implements ComponentListener {
 						if(nextIdx >= vde.length){
 							nextIdx = j;
 						}
-						int righthalf= (int) Math.ceil((vde[nextIdx].getPos() + grid_x_origin - x) / 2.0); // 直後の計測ポイントの X とこの計測ポイントの X との中値
+						int righthalf= (int) Math.ceil((vde[nextIdx].getPos() + grid_x_origin - x) / 2.0); // 中値
 						int w = lefthalf + righthalf;
-						g.setColor(vd.getFillColor());
+						g.setColor(fillColor);
 						g.fillRect(x - lefthalf, y - h, w, h);
 					}
 					if(vd.isJoin() == true){
-						// 頂点の連結を行う
+						// line
 						if(previous_point_valid == true){
-							// 直前のポイントが有効なので連結する
-							g.setColor(vd.getJoinColor());
-//System.out.println(vd.getJoinColor());
+							// 連結する
+							g.setColor(joinColor);
 							g.drawLine(previous_point_x, previous_point_y, x, y - h);
 							g.drawLine(previous_point_x, previous_point_y-1, x, y - h-1); // bold
 						}else{
-							// 直前のポイントが有効なデータではないので連結しない
+							// 連結しない
 						}
 					}
 					previous_point_x = x;
@@ -238,23 +243,25 @@ public class GraphMonitor extends JPanel implements ComponentListener {
 
 				if(vd.isPlot() == true){
 					// 頂点の描画を行う
+					int r = vd.getPlotRadius();
+					int r2 = r*2;
+					Color vdColor = vd.getPlotColor();
+					Color vdColorD = vdColor.darker();
+					Color error = Color.ORANGE; // error color
+					Color errorD = error.darker();
 					for(int j = 0; j < vde.length; j++){
 						int x = vde[j].getPos() + grid_x_origin;
 						int h = vde[j].getHeight();
-						int r = vd.getPlotRadius();
 						if(vde[j].isValid() != true){
-							Color error = Color.ORANGE; // error color
 							g.setColor(error);  
-							g.fillOval(x - r, grid_y_origin - r, r * 2, r * 2); 
-							g.setColor(error.darker());						
-							g.drawOval(x - r, grid_y_origin - r, r * 2, r * 2); 
-							//g.drawLine(x, grid_y_origin, x, 0 - grid_height);
-							//continue;
+							g.fillOval(x - r, grid_y_origin - r, r2, r2); 
+							g.setColor(errorD);	
+							g.drawOval(x - r, grid_y_origin - r, r2, r2); 
 						} else {
-							g.setColor(vd.getPlotColor());
-							g.fillOval(x - r, y - h - r, r * 2, r * 2); 
-							g.setColor(vd.getPlotColor().darker());						
-							g.drawOval(x - r, y - h - r, r * 2, r * 2); 
+							g.setColor(vdColor);
+							g.fillOval(x - r, y - h - r, r2, r2); 
+							g.setColor(vdColorD);	
+							g.drawOval(x - r, y - h - r, r2, r2);
 						}
 					}
 				}

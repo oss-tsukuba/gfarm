@@ -43,10 +43,15 @@ public class HostDefElement {
 	/**
 	 * @return
 	 */
+	public String getNameAndNick() {
+		//return hostname;
+		return nickname + "#" + hostname;
+	}
+
 	public String getHostname() {
 		return hostname;
 	}
-
+	
 	public String getIpAddr() {
 		return ipAddr;
 	}
