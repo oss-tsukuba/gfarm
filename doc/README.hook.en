@@ -87,18 +87,19 @@ gfrun command.
 Some applications including Objectivity object database and SAO ds9
 require an absolute path name that should start with '/'.  Some
 applications like ROOT I/O cut off the filename before ':' without any
-investigation.  We provide varieties of Gfarm URL; '/gfarm:' and
-'gfarm@'.  For example, 'gfarm:~/foo.txt' is also referred to by
-'/gfarm:~/foo.txt' or 'gfarm@~/foo.txt'.
+investigation.  We provide a variety of Gfarm URL; 'gfarm@'.  For
+example, 'gfarm:~/foo.txt' is also referred to by 'gfarm@~/foo.txt'.
 
-'/gfarm:' has different semantics such that it is considered to be the
-root directory in Gfarm file system instead of a current working
-directory.  That is because applications usually assume that '/gfarm:'
-is an absolute path.
+Moreover, we provide a mount point for a Gfarm file system; '/gfarm'.
+'/gfarm/' is considered to be the root directory in Gfarm file system
+instead of a current working directory.  That is because applications
+usually assume that '/gfarm/' is an absolute path.  A home directory
+can be specified by '/gfarm/~'.
 
 We also provide a way to explicitly specify a fragment index of a
-Gfarm file by extending Gfarm URL.  gfarm::0:foo.txt specifies the
-first fragment of gfarm:foo.txt.
+Gfarm file by extending Gfarm URL.  'gfarm::0:foo.txt' (or
+'gfarm@:0:foo.txt') and '/gfarm:0:/~/foo.txt' specify the first
+fragment of 'gfarm:foo.txt' and 'gfarm:~/foo.txt', respectively.
 
 ** gfs_hook APIs
 
