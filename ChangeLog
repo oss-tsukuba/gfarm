@@ -1,3 +1,283 @@
+2004-08-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/Makefile.in:
+	Added $(openssl_include) in CFLAGS. [Bugzilla-ja #33]
+
+2004-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrm/gfrm.c, include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	remove_whole_file_or_dir(): unlink files don't have fragment infromation.
+	http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=12
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_fchmod(): Implemented gfs_chmod()'s functions in previous revision.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c: gfs_chmod():
+	- change file section name from index to architecture and vice versa
+	  according to file's mode.
+	- change mode of file in spool.
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.h, server/gfsd/gfsd.c:
+	Added GFS_PROTO_RENAME protocol and its handlers.
+
+2004-08-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/gfmd.c:
+	always use KEEPALIVE option to deal with reboot or network trouble.
+	discussed with tatebe-san.
+
+2004-07-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: Added fchmod() hook.
+
+	* lib/libgfarm/gfarm/gfs_dir.c, include/gfarm/gfs.h:
+	Added gfs_dirname() returns directory name.
+
+2004-07-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir_canonical):
+	change also the environment variable GFS_PWD for shells.
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c (set_view_{local,global}):
+	Changed error message to NO_SUCH_OBJECT from OPERATION_NOT_PERMITTED.
+
+2004-07-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.csh, package/redhat/gfarm.sh:
+	Added the option of gfsetdir to specify a shell type explicitly.
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c:
+	gfs_pio_set_view_{local,global} set a section of localhost's architecture when it is called for an executable file.
+
+	* gftool/gfrun/gfrun.c:
+	Do not select the local host without any inspection.
+
+	* package/redhat/gfarm.csh, package/redhat/gfarm.sh, package/redhat/gfarm.spec:
+	Added profile.d/gfarm.{sh,csh} for 'gfcd' in gfarm-client package.
+
+2004-07-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	item 2.5 isn't needed, because we always provide the hooks for
+	getxattr()/lgetxattr()/fgetxattr()regardless of <attr/xattr.h> existence.
+
+	* lib/gfs_hook/hooks.c: Added getxattr()/lgetxattr()/fgetxattr().
+
+2004-07-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	preparation for getxattr(2) and related hooks:
+	mention that libattr package is needed.
+
+	* configure, configure.in, include/gfarm/gfarm_config.h.in:
+	preparation for getxattr(2) and related hooks:
+	use "#ifdef HAVE_ATTR_XATTR_H" to determine whether <attr/xattr.h>
+	can be #included or not.
+
+2004-07-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hook_test.c:
+	Removed Gfarm related include files and functions.
+
+	* lib/libgfarm/gfarm/config.c (gfarm_config_set_default_spool_on_client):
+	Do not rely on the configuration file for the spool root.  It is necessary to be obtained by gfsd always when the client node is also a file system node.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (gfs_pio_set_view_section):
+	Fixed a bug such that canonical_self_name will be free'ed.
+
+2004-07-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c: make gfs_refreshdir() static
+
+2004-07-21  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	Added gfs_refreshdir(). This function refreshes directory cache when timeout
+	occurs and none of the directories is opened.
+
+2004-07-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/schedule.c (gfarm_file_section_host_schedule_with_priority_to_local):
+	Fixed a double free bug.
+
+2004-07-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c:
+	Replaced SSLeay_add_all_algorithms with OpenSSL_add_all_digests because openssl library in Globus-3.2 does not have it.
+
+2004-07-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c:
+	delete an invalid file when when it is not a regular file. [Bugzilla-ja #29]
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/schedule.c:
+	schedule.c (gfarm_file_section_host_schedule_with_priority_to_local): Even when a local host is included in a host list, make sure gfsd is running or not. [Bugzilla-ja #31]
+	gfs_pio_section.c (gfs_pio_set_view_section): likewise.
+
+2004-07-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en:
+	Mention about segmentation fault when using LDAP authentication in RedHat-8.0 and 7.3.
+	use gfs_hook_no_init.o and hooks_init_mpi.c instead of gfs_hook_mpi.o.
+	Added gfs_hook_set_default_view_section() and gfs_hook_set_view_section.
+
+	* gfptool/gfcp/gfcp.c: Fixed a segfault problem.
+
+2004-07-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfs_hook.h, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	When the section is specified by an extended Gfarm URL, the default view is changed to the section view.
+	'sec' argument is now unnecessary in gfs_hook_is_url().  It is specified by _gfs_hook_section.
+	Added gfs_hook_set_default_view_section() and gfs_hook_set_view_section().
+
+	* gftool/gfrm/gfrm.c:
+	Fixed a segfault bug.  Need to add more error handling.
+
+	* lib/gfs_hook/hooks.c: Added dup(2) syscall hook.
+
+	* lib/gfs_hook/hooks_subr.c:
+	'/gfarm/.' specifies the current working directory in Gfarm file system like 'gfarm:'.
+
+2004-07-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	Added gfs_fchmod().
+
+2004-07-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	'/gfarm' is now translated to 'gfarm:/' not 'gfarm:'.
+	Initial cwd is assumed to be 'PWD' if it points to a path in Gfarm file system.
+	This assumes 'PWD' is set by bash or tcsh with syscall hooking library.
+
+2004-07-05  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: new release 1.0.3.1
+
+	* debian/rules: added gfs_chmod man page
+
+	* lib/gfs_hook/Makefile.in: install hooks_init_mpi.c from $(srcdir)
+
+2004-07-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: Added a manual page for gfs_chmod(3).
+
+	* RELNOTES, package/redhat/gfarm.spec, package/solaris/build:
+	Release note for the version 1.0.3.1.
+
+	* doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/ja/ref/man3/gfs_chmod.3.html, man/ja/man3/gfs_chmod.3, man/man3/gfs_chmod.3:
+	regen
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc, doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	Added manual entry for gfs_chmod(3).
+
+2004-07-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c (FUNC___OPEN): modified a comment.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c: fixed spellng.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (set_view_section):
+	just modified a comment in O_TRUNC case.
+
+2004-07-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/getcwd.c:
+	syscall(SYS_getcwd) results in segfault in RH-8.0 and RH-7.3.  This code is temporary commented out.
+
+	* lib/gfs_hook/hooks.c (__write):
+	commented out the debug print that also results in infinite loop.
+
+2004-07-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c: Added chmod(2) syscall hook entry.
+
+	* doc/README.hook.en:
+	Updated the description in extended Gfarm URL section.  mention about '/gfarm'.
+
+	* doc/html/en/ref/man3/gfs_rmdir.3.html, doc/html/ja/ref/man3/gfs_rmdir.3.html, man/ja/man3/gfs_rmdir.3, man/man3/gfs_rmdir.3:
+	regen
+
+	* doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/ja/ref/man3/gfs_rmdir.3.docbook, lib/libgfarm/gfarm/gfs_dir.c (gfs_rmdir):
+	Added the permission check of the parent directory.
+
+	* debian/libgfarm-dev.install:
+	Added gfs_hook_no_init.o and hooks_init_mpi.c.
+
+	* package/redhat/gfarm.spec: Changed prefix from /usr/grid to /usr.
+	Added gfs_hook_no_init.o and hooks_init_mpi.c.
+
+	* lib/gfs_hook/Makefile.in:
+	Even though the case without --with-mpi, install gfs_hook_no_init.o and hooks_init_mpi.c to the destination directory to make it possible to link with syscall hook library for MPI application using any MPI compiler.  Note that object code using MPI library does not have object-level compatibility.
+
+	* lib/gfs_hook/hooks_init_mpi.c: Removed gfs_hook dependent code.
+
+	* lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink):
+	plugged memory leak.  measure time even when the error occurs.
+
+2004-07-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c: Added gfs_chmod().
+
+	* lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink):
+	Added check of the parent directory's permisson.
+
+2004-07-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_stat.c:
+	Fixed a bug such that 'sec' is free'ed twice, introduced by the previous commit.
+
+	* lib/gfs_hook/hooks.c (__utime):
+	fixed a bug to set invalid modification time.
+
+	* lib/gfs_hook/Makefile.in, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	hook_stat.c: make the condition to select file view consistent with open(2) syscall hook. [Bugzilla-ja #26]
+	hooks_subr.c: added a hash table to maintain files under creation.  This makes stat possible to files that are created by the same process but not close yet.  XXX - this is stopgap implementation for Gfarm v1.
+
+2004-07-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c (FNNC___OPEN):
+	taken care of parallel write case.
+
+	* lib/gfs_hook/hooks_common.c (FUNC___OPEN):
+	stopgap implementation of O_WRONLY/O_RDWR, O_CREAT, and O_TRUNC flags.  When file size is 0, the file can be opened even in write mode.
+
+2004-06-30  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c:
+	Added new syscall hook entries; mkdir, rmdir, and utime.  Tested using RH-7.3 and glibc-2.2.5-44.
+
+2004-06-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	A home directory in Gfarm file system can be specified by '/gfarm/~username' instead of '/gfarm~username'.
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	Fixed a segfault bug introduced by the previous commit.
+
+2004-06-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	Introduced the mount point concept.  Now it is '/gfarm', although the mount point can be specified by a configufation file.
+	'/gfarm:' and '/gfarm@' are now obsolete.
+	 VS: ----------------------------------------------------------------------
+
+	* gfptool/gfcp_hook/Makefile, gfptool/gfcombine_hook/Makefile:
+	Added missing dependency.
+
+2004-06-24  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_dir.c:
+	Added gfs_chdir_canonial(). It changes cwd to the argument without
+	canonicalization.
+
+	* gftool/gfrm/gfrm.c:
+	Added -r, -R options, remove the contents of directories recursively.
+
+2004-06-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2004-06-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* package/redhat/gfarm.spec:
@@ -1497,6 +1777,8 @@
 
 	* package/redhat/gfarm.spec: add missing documents
 
+	* package/redhat/gfarm.spec: change version number from 1.0b4 to 1.0b5
+
 2003-09-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* ChangeLog: Catched up with the current ChangeLog.
@@ -2640,12 +2922,12 @@
 	- changed 'authetication method name 'simple' to 'sharedsecret'
 	  in function names, messages and so on
 
-2003-05-15  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-05-15  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/docs, debian/gfarm-doc.docs, debian/gfarm-doc.examples, debian/gfmd.examples:
 	include gfarm.schema in example directory
 
-2003-05-14  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-05-14  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfmd.conffiles, debian/gfsd.conffiles: re-entry conffiles
 
@@ -2716,7 +2998,7 @@
 	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfs_pio_section.c:
 	implemented GFARM_FILE_REPLICATE, GFARM_FILE_NOT_REPLICATE
 
-2003-05-08  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-05-08  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfsd.init: fixed a bug: cannot restart
 
@@ -2836,7 +3118,7 @@
 	gfarm-global-to-local-username call it. Soda-san made the patch-file
 	for this modification.
 
-2003-04-28  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-28  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/rules: auto generating/removing debian/*gsi.install files
 
@@ -2922,7 +3204,7 @@
 
 	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: Improved the wording.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/changelog: set version for release
 
@@ -2930,7 +3212,7 @@
 
 	* lib/libgfarm/gfsl/auth.c: missing semicolon
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfarm-client.files: remove pdiff in this package
 
@@ -2952,7 +3234,7 @@
 	* package/redhat/gfarm.spec:
 	install gfarm.conf to /etc/, and gfarm.schema to /etc/gfarm-ldap/
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/control: remove gfarmd package
 
@@ -2964,7 +3246,7 @@
 	Added an entry for "not a directory".
 	Improved the wording.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfmd.postinst: never start init script
 
@@ -2977,7 +3259,7 @@
 
 	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook: wording
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfmd.files, debian/gfsd.conffiles, debian/gfsd.files, debian/rules:
 	not start daemon after installation
@@ -3002,7 +3284,7 @@
 
 	* doc/Gfarm-FAQ.ja: very preliminary FAQ
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/gfsd.conffiles: init script and conf file
 
@@ -3014,7 +3296,7 @@
 
 	* util/00README: Improved the wording.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/libgfarm-dev.files, debian/rules: add *mpi.o
 
@@ -3033,7 +3315,7 @@
 
 	* RELNOTES: Added the section of Gfarm filesystem.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/rules: define package names *_PKG
 
@@ -3058,7 +3340,7 @@
 
 	* debian/gfarm-doc.files: added.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/rules: use gcc
 
@@ -3146,7 +3428,7 @@
 	* package/redhat/gfarm.spec:
 	add gfarm.conf.5 man and html pages in English.
 
-2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/files: this file is created by debuild.
 
@@ -3571,7 +3853,7 @@
 	* lib/gfs_hook/Makefile.in:
 	use current directory for object file rather than /tmp
 
-2003-04-09  Yasuhito Takamiya  <takamiya@smg.is.titech.ac.jp>
+2003-04-09  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
 
 	* debian/changelog: new cvs upstream version (20030409).
 
@@ -3609,7 +3891,7 @@
 	* doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook:
 	correct typo ("lags" -> "flags") reported by YAMAMOTO Naotaka-san
 
-2003-04-08  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-08  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* doc/conf/gfarm.conf: sample gfarm.conf
 
@@ -3649,7 +3931,7 @@
 	  floating point representation.
 	- approximately correct result up to 63bit.
 
-2003-04-04  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-04  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* debian/README.Debian, debian/changelog, debian/control, debian/gfarm-client.dirs, debian/gfarm-doc.dirs, debian/gfarm-fsnode.conffiles, debian/gfarm-fsnode.dirs, debian/gfarm-server.dirs, debian/libgfarm-dev.dirs, debian/rules:
 	We can build debian packages,
@@ -3662,7 +3944,7 @@
 	* gftool/gfreg/gfreg.c:
 	Fixed a segfault problem when registering a new file.
 
-2003-04-04  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-04-04  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* doc/conf/gfarm.schema: for ldap schema file
 
@@ -3754,7 +4036,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id: ChangeLog,v 1.28 2004/05/25 08:27:44 tatebe Exp $. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.29 2004/06/21 13:55:08 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
@@ -4128,7 +4410,7 @@
 	* makes/gfptool.mk, makes/man.mk, makes/prog.mk, makes/subdir.mk, nslib/Makefile.in, nstool/file/Makefile.in, gfarm/Makefile, gfarmd/Makefile.in, gfarmlib/Makefile.in, include/Makefile.in, lib/gfs_hook/Makefile.in, lib/gfs_hook/sysdep/linux/Makefile.in:
 	make "make gfregister" work recursively from the top directory
 
-2003-02-07  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-02-07  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* gftool/gfreg/gfreg.c:
 	When going "gfreg foo gfarm:", the previous version create blank file name gfarm file.
@@ -4320,7 +4602,7 @@
 	* gftool/gfreg/gfreg.c: Fixed typo.
 	Try to determine index and nfrags using gfs_pio_get_node_{rank,size}.
 
-2003-01-27  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+2003-01-27  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
 	* gftool/gfreg/gfreg.c: vailable -h option to specify hostname.
 	change usage()
