@@ -120,6 +120,7 @@ char *gfs_chdir(const char *);
 char *gfs_getcwd(char *, int);
 char *gfs_chown(const char *, char *, char *);
 char *gfs_chmod(const char *, gfarm_mode_t);
+char *gfs_fchmod(GFS_File, gfarm_mode_t);
 char *gfs_utimes(const char *, const struct gfarm_timespec *);
 char *gfs_rename(const char *, const char *);
 

@@ -266,6 +266,17 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 }
 
 char *
+gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
+{
+	if (strcmp(gf->pi.status.st_user, gfarm_get_global_username()) != 0)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	gf->pi.status.st_mode &= ~GFARM_S_ALLPERM;
+	gf->pi.status.st_mode |= (mode & GFARM_S_ALLPERM);
+	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
+}
+
+char *
 gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 {
 	char *e, *gfarm_file;
