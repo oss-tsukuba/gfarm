@@ -242,21 +242,19 @@ file_table_init(int table_size)
 }
 
 int
-file_table_add(int fd)
+file_table_add(struct xxx_connection *client)
 {
-	char *e;
+	int fd = xxx_connection_fd(client);
 
-	if (fd < 0)
+	if (fd < 0) {
+		xxx_connection_free(client);
 		return (EINVAL);
+	}
 	if (fd >= file_table_size) {
-		close(fd);
+		xxx_connection_free(client);
 		return (EMFILE);
 	}
-	e = xxx_fd_connection_new(fd, &file_table[fd].conn);
-	if (e != NULL) {
-		close(fd);
-		return (ENOMEM);
-	}
+	file_table[fd].conn = client;
 	if (fd > file_table_max)
 		file_table_max = fd;
 	return (0);
@@ -632,6 +630,7 @@ main_loop(int accepting_socket)
 {
 	char *e, *username, *hostname;
 	int max_fd, nfound, client_socket, fd;
+	struct xxx_connection *client_conn;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
 	fd_set readable;
@@ -648,28 +647,23 @@ main_loop(int accepting_socket)
 		if (FD_ISSET(accepting_socket, &readable)) {
 			client_addr_size = sizeof(client_addr);
 			client_socket = accept(accepting_socket,
-					(struct sockaddr *)&client_addr,
-					&client_addr_size);
+			   (struct sockaddr *)&client_addr, &client_addr_size);
 			if (client_socket < 0) {
 				if (errno != EINTR)
 					gflog_warning_errno("accept");
+			} else if ((e = xxx_fd_connection_new(
+			    client_socket, &client_conn)) != NULL) {
+				gflog_warning("fd_connection_new", e);
+				close(client_socket);
+			} else if ((e = gfarm_authorize(client_conn, 0,
+			    &username, &hostname)) != NULL) {
+				gflog_warning("authorize", e);
+				xxx_connection_free(client_conn);
+			} else if ((errno = file_table_add(client_conn)) != 0){
+				gflog_warning_errno("file_table_add");
 			} else {
-				errno = file_table_add(client_socket);
-				if (errno != 0)
-					gflog_warning_errno("file_table_add");
-				else {
-					e = gfarm_authorize(
-					    file_table[client_socket].conn,
-					    0, &username, &hostname);
-					if (e != NULL) {
-						gflog_warning("authorize", e);
-					} else {
-						file_table[client_socket].user
-							= username;
-						file_table[client_socket].host
-							= hostname;
-					}
-				}
+				file_table[client_socket].user = username;
+				file_table[client_socket].host = hostname;
 			}
 		}
 		for (fd = 0; fd <= file_table_max; fd++) {
