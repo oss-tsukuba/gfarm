@@ -798,13 +798,5 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
      gfrun コマンドで Gfarm ファイルシステムに登録したコマンドを実行し
      ます．
 
-     % gfrun -u gfarm:~/echo Hello from \`hostname\`
+     % gfrun gfarm:~/echo Hello from \`hostname\`
      Hello from gfm02.example.com
-
-     gfrun で実行されるアプリケーションには，Gfarm 固有のコマンド・オプ
-     ションが渡されますが，echo コマンドは Gfarm アプリケーションではな
-     いためこれらのオプションを解釈することができません．
-
-     gfrun の -u オプションは，実行するプログラムが Gfarm アプリケーショ
-     ンではない場合に利用されます．このとき，これら Gfarm 固有のコマン
-     ド・オプションはアプリケーションには渡りません．

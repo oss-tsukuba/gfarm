@@ -74,11 +74,11 @@ gfs_hook.o.
 ** How to run programs
 
 Applications with a syscall-hook library are needed to be executed by
-gfrun with the '-u' option.
+gfrun command.
 
-      % gfrun -u gfarm:foo
+      % gfrun gfarm:foo
 
-      % gfrun -u -G gfarm:input gfarm:foo gfarm:input
+      % gfrun -G gfarm:input gfarm:foo gfarm:input
 
 ----------------------------------------------------------------------
 
