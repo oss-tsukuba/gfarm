@@ -189,7 +189,8 @@ gfs_pio_view_global_seek(GFS_File gf, file_offset_t offset, int whence,
 	e = gfs_pio_seek(gc->fragment_gf, offset, SEEK_SET, &offset);
 	if (e != NULL)
 		return (e);
-	*resultp = gc->offsets[gc->fragment_index] + offset;
+	if (resultp != NULL)
+		*resultp = gc->offsets[gc->fragment_index] + offset;
 	return (NULL);
 }
 
