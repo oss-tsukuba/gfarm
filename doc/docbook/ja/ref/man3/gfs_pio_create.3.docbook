@@ -2,7 +2,7 @@
 
 <refentry id='gfs-pio-create.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>30 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -51,6 +51,10 @@
 には、
 <function>gfs_pio_open()</function>
 の第二引数と同じ意味を持ちます。
+<parameter>GFARM_FILE_RDONLY</parameter>、
+<parameter>GFARM_FILE_WRONLY</parameter>、
+<parameter>GFARM_FILE_RDWR</parameter>
+のいずれか一つのフラグを必ず指定しなければならない点も同じです。
 ただし、
 <function>gfs_pio_create()</function>
 に特有のフラグとして、

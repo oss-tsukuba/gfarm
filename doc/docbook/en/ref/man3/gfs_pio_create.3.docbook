@@ -3,7 +3,7 @@
 
 <refentry id='gfs-pio-create.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>30 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -46,12 +46,19 @@ and is modified by the process's <varname>umask</varname>.</para>
 The
 <parameter>flags</parameter>
 argument has same meaning with the second argument of
-<function>gfs_pio_open()</function>.
+<function>gfs_pio_open()</function>, including the point
+that exactly one of
+<parameter>GFARM_FILE_RDONLY</parameter>,
+<parameter>GFARM_FILE_WRONLY</parameter> or
+<parameter>GFARM_FILE_RDWR</parameter>
+must be specified.
 There is one other flag which is specific to 
 <function>gfs_pio_create()</function>.
 That is
 <parameter>GFARM_FILE_EXCLUSIVE</parameter>,
-and this function will fail, if this flag is specified and
+and
+<function>gfs_pio_create()</function>
+will fail, if this flag is specified and
 the file already exists.
 </para>
 <para>
