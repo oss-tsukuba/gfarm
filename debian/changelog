@@ -1,3 +1,17 @@
+gfarm (0.0.cvs20030409-1) unstable; urgency=low
+
+  * new cvs version and re-packaging. 
+    * added libssl-dev, libldap2-dev to Build-Depends.
+    * removal of gfarm-doc.files.
+    * removal of {libgfarm-dev,gfarm-server,gfarm-client,gfarm-doc}.dirs.
+    * removed gfarm-pool.*
+    * removed gfarm-fsnode.{conffiles,install,dirs}.
+    * divided gfarm package into gfarm, gfarmd and gfmd package.
+    * gfarm-fnode -> gfsd.
+    * reasonable sections for all packages.
+  
+ -- Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>  Wed,  9 Apr 2003 00:30:29 +0900
+
 gfarm (0.0.cvs20030404-1) unstable; urgency=low
 
   * correct debuild failure
