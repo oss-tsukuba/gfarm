@@ -234,8 +234,9 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 	e = gfarm_path_info_access(&pi, GFS_W_OK);
 	if (e != NULL)
 		return (e);
+
+	gettimeofday(&now, NULL);
 	if (tsp == NULL) {
-		gettimeofday(&now, NULL);
 		pi.status.st_atimespec.tv_sec = 
 		pi.status.st_mtimespec.tv_sec = now.tv_sec;
 		pi.status.st_atimespec.tv_nsec = 
