@@ -68,7 +68,7 @@ main(int argc, char * argv[])
 	    nhosts = atoi(optarg);
 	    break;
 	case 'U':
-	    gfarm_schedule_search_mode_set(GFARM_SCHEDULE_SEARCH_BY_LOADAVG);
+	    gfarm_schedule_search_mode_use_loadavg();
 	    break;
 	case 'p':
 	    program = optarg;

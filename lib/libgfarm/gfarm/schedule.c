@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "auth.h" /* XXX gfarm_random_initialize() */
+#include "config.h"
 #include "gfs_client.h"
 
 char GFARM_ERR_NO_REPLICA[] = "no replica";
@@ -491,19 +492,18 @@ loadavg_compare(const void *a, const void *b)
 
 /* check authentication success or not? */
 
+enum gfarm_schedule_search_mode {
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH
+};
+
 static enum gfarm_schedule_search_mode default_search_method =
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH;
 
-enum gfarm_schedule_search_mode
-gfarm_schedule_search_mode_get(void)
-{
-	return (default_search_method);
-}
-
 void
-gfarm_schedule_search_mode_set(enum gfarm_schedule_search_mode mode)
+gfarm_schedule_search_mode_use_loadavg(void)
 {
-	default_search_method = mode;
+	default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
 }
 
 /*

@@ -165,10 +165,6 @@ char *gfs_execve(const char *, char *const [], char *const []);
 /*
  * meta operations
  */
-enum { GFARM_REPLICATION_BOOTSTRAP_METHOD, GFARM_REPLICATION_NORMAL_METHOD };
-int  gfarm_replication_get_method(void);
-void gfarm_replication_set_method(int);
-
 char *gfarm_url_section_replicate_from_to(const char *, char *, char *, char *);
 char *gfarm_url_section_replicate_to(const char *, char *, char *);
 char *gfarm_url_program_register(const char *, char *, char *, int);
