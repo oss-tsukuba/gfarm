@@ -1,0 +1,50 @@
+.Id $Id$
+.TH gfexport 1 "1 May 2002"
+.SH NAME
+
+gfexport \- print on the standard output
+
+.SH SYNOPSIS
+
+.B gfexport
+.\" [
+.\" .B \-H
+.\" .I hostfile
+.\" ]
+[
+.B -s
+.I fragment name
+]
+.\" .in +.5i
+.I gfarm-URL
+.\" .in
+
+.SH DESCRIPTION
+
+\fBgfexport\fP outputs a Gfarm file specified by \fIgfarm-URL\fP to
+the standard output.
+
+.SH OPTIONS
+
+.\" .TP
+.\" .B \-H
+.\" .I hostfile
+.\" .br
+.\" specifies a list of filesystem nodes explicitly to be accessed.
+.\" \fIhostfile\fP contains of a hostname that stores the corresponding
+.\" file fragment in each line.
+.TP
+.B \-s
+.I fragment name
+.br
+outputs the only specified fragment name
+specifies the fragment name to be accessed.  In this case, only the
+specified fragment 
+
+An executable file for a
+specific architecture, for example, sparc-sun-solaris, can be obtained
+by specifying the architecture as a \fIfragment name\fP.
+.TP
+.B \-?
+.br
+displays a list of command options.

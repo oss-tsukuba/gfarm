@@ -1,0 +1,44 @@
+.Id $Id$
+.TH gfs_pio_write 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_write \- write to a file
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_write(GFS_File " gf ,
+.BI "void *" buffer ,
+.BI "int " size ,
+.BI "int *" np );
+
+.SH DESCRIPTION
+
+\fBgfs_pio_write()\fP writes up to \fIsize\fP bytes to the file \fIgf\fP
+from the buffer starting at \fIbuffer\fP.  It returns the number of
+bytes written to the address pointed by \fInp\fP.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+Insufficient memory was available.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_flush (3),
+.BR gfs_pio_open (3)

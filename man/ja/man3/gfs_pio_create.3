@@ -35,9 +35,14 @@ gfs_pio_create \- Gfarmファイルの作成
 .I GFS_FILE_WRONLY
 を渡すようにしてください。
 
-gfrun(3) や gfmpirun(3) で起動された並列プロセスは、引数
+gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+.I gfs_pio_create()
+を呼ぶ場合、それぞれのプロセスは引数
 .I mode
 に、一貫した値を指定しなければなりません。
+また、この場合それぞれのプロセスの
+.I GFS_File
+構造体は個別ファイルポインタを持ちます。
 
 .SH "RETURN VALUES"
 

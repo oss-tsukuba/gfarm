@@ -1,0 +1,40 @@
+.Id $Id$
+.TH gfs_pio_putline 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_putline \- output of a line
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_putline(GFS_File " gf ,
+.BI "char *" s );
+
+.SH DESCRIPTION
+
+\fBgfs_pio_putline()\fP writes the string \fIs\fP and a trailing newline
+to \fIgf\fP.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+Insufficient memory was available.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3)

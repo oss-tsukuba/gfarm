@@ -1,0 +1,20 @@
+.Id $Id$
+.TH gfwc 1 "1 May 2002"
+.SH NAME
+
+gfwc \- print the number of bytes, words, and lines in Gfarm files
+
+.SH SYNOPSIS
+
+.B gfwc
+.I input-gfarm-URL
+
+.SH DESCRIPTION
+
+This is a sample application invoked with gfmpirun(1).
+
+\fBgfwc\fP reads from \fIinput-gfarm-URL\fP and prints the numbers of
+bytes, words, and lines to the standard output.
+
+Every application invoked with gfmpirun(1) should call
+gfs_pio_set_local() using the rank and the size of a parallel process.

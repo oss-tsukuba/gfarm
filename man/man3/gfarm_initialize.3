@@ -1,0 +1,40 @@
+.Id $Id$
+.TH gfarm_initialize 3 "1 May 2002"
+
+.SH NAME
+
+gfarm_initialize \- initialization of Gfarm execution environment
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfarm_initialize(int *" argcp ,
+.BI "char ***" argvp );
+
+.SH DESCRIPTION
+
+\fBgfarm_initialize()\fP initializes the execution environment for the
+Gfarm application.  \fIargcp\fP is a pointer to the number of
+arguments and \fIargvp\fP is a pointer to the argument vector.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+Insufficient memory was available.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfarm_terminate (3)

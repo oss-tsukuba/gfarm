@@ -1,0 +1,41 @@
+.Id $Id$
+.TH gfs_pio_flush 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_flush \- flush a stream
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_flush(GFS_File " gf );
+
+.SH DESCRIPTION
+
+The function \fBgfs_pio_flush()\fP forces a write of all user-space
+buffered data for the given output \fIgf\fP.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+Insufficient memory was available.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3),
+.BR gfs_pio_write (3)
+

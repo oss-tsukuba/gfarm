@@ -1,0 +1,33 @@
+.Id $Id$
+.TH gfrep 1 "1 May 2002"
+.SH NAME
+
+gfrep \- replicate a Gfarm file
+
+.SH SYNOPSIS
+
+.B gfrep
+.B \-H
+.I hostfile
+.I gfarm-URL
+
+.SH DESCRIPTION
+
+\fBgfrep\fP create a replica of a Gfarm file \fIgfarm-URL\fP on
+filesystem nodes listed in the \fIhostfile\fP.  The total number of
+file fragments should be equal to the number of nodes listed in the
+\fIhostfile\fP.
+
+.SH OPTIONS
+
+.TP
+.B \-H
+.I hostfile
+.br
+specifies a list of filesystem nodes that will be replicated to.
+\fIhostfile\fP consists of a filesystem node in each line.
+.TP
+.B \-?
+.br
+displays a list of command options.
+

@@ -1,0 +1,38 @@
+.Id $Id$
+.TH gfs_closedir 3 "1 May 2002"
+
+.SH NAME
+
+gfs_closedir \- close a directory
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_closedir(GFS_Dir " dir );
+
+.SH DESCRIPTION
+
+NOT SUPPORTED YET.
+
+The \fBgfs_closedir()\fP function closes the directory stream
+associated with \fIdir\fP.  The directory stream descriptor \fIdir\fP
+is not available after this call.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfs_opendir (3),
+.BR gfs_readdir (3)

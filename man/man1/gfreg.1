@@ -1,0 +1,42 @@
+.Id $Id$
+.TH gfreg 1 "1 May 2002"
+.SH NAME
+
+gfreg \- register a Gfarm program or a Gfarm file fragment
+
+.SH SYNOPSIS
+
+.B gfreg
+[
+.B \-a
+.I architecture
+]
+.I program
+.I gfarm-URL
+.br
+
+.B gfreg
+.B \-N
+.I total-num-of-fragments
+.B \-I
+.I fragment-index
+.in +0.5i
+.I localfile
+.I gfarm-URL
+.in
+
+.SH DESCRIPTION
+
+The first form copies and registers the program \fIprogram\fP as a
+Gfarm file \fIgfarm-URL\fP in the Gfarm filesystem.  After this
+registration, the \fIgfarm-URL\fP can be specified as a program name
+of gfrun(1) and gfmpirun(1).  Without the \-a option, architecture of
+the specified program is assumed to be the same architecture as the
+client host on that gfreg(1) is executed, which is obtained by the
+Gfarm metaserver.
+
+The second form registers a Gfarm fragment \fIlocalfile\fP in each
+filesystem node.  The total number of fragments and the fragment index
+are specified by the \-N option and the \-I option, respectively.  In
+the current implementation, \fIlocalfile\fP is specified by the
+relative pathname to the Gfarm spool directory.

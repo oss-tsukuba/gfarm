@@ -4,6 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = ja
+SUBDIRS = man1 man3 man8 ja
 
 include $(top_srcdir)/makes/subdir.mk

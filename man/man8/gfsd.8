@@ -1,0 +1,51 @@
+.Id $Id$
+.TH gfsd 8 "1 May 2002"
+.SH NAME
+
+gfsd(8) \- Gfarm filesystem daemon
+
+.SH SYNOPSIS
+
+.B gfsd
+[
+.I options
+]
+
+.SH DESCRIPTION
+
+\fBgfsd\fP is a filesystem daemon for the Gfarm filesystem, which has
+been running on every filesystem node as a root privilege in advance.
+
+\fBgfsd\fP provides remote file operations with access control in the
+Gfarm filesystem as well as user authentication, file replication,
+fast invocation, node resource status monitoring.
+
+.SH OPTIONS
+
+.TP
+.B \-d
+.br
+specifies the debug mode.  With the -d option, gfsd is running as a
+foreground process not a daemon.
+.TP
+.B \-p port
+.br
+specifies a port number of TCP and UDP used by gfsd.  By default, 600
+is used.
+.TP
+.B \-s syslog facility
+.br
+specifies a syslog facility to report errors by gfsd.  By default,
+local0 is used.
+.TP
+.B \-?
+.br
+displays a list of command options.
+
+.SH FILES
+.SB "/etc/gfarm.conf"
+
+configuration file for gfsd
+
+.\" .SH SEE ALSO
+.\" .BR gfarm.conf (5)

@@ -1,0 +1,38 @@
+.Id $Id$
+.TH gfs_pio_ungetc 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_ungetc \- push a character back
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "int"
+.br
+.BI "gfs_pio_ungetc(GFS_File " gf ,
+.BI "int " c );
+
+.SH DESCRIPTION
+
+\fBgfs_pio_ungetc()\fP pushes a character \fIc\fP back to the file
+\fIgf\fP.  \fBgfs_pio_ungetc()\fP is needed to follow
+\fBgfs_pio_getc(3)\fP.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB EOF
+.br
+\fBgfs_pio_ungetc()\fP does not follow \fBgfs_pio_getc(3)\fP.
+.TP
+Others
+.br
+The function terminated successfully.
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_error (3),
+.BR gfs_pio_getc (3),
+.BR gfs_pio_open (3)

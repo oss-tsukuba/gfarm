@@ -1,0 +1,50 @@
+.Id $Id$
+.TH gfmd 8 "1 May 2002"
+.SH NAME
+
+gfmd(8) \- Gfarm metaserver
+
+.SH SYNOPSIS
+
+.B gfmd
+[
+.I options
+]
+
+.SH DESCRIPTION
+
+\fBgfmd\fP is a Gfarm metaserver for accessing filesystem metadata of
+the Gfarm filesystem.  \fBgfmd\fP is needed to be running on a
+filesystem server node in advance.
+
+.SH OPTIONS
+
+.TP
+.B \-d
+.br
+specifies the debug mode.  With the -d option, gfmd is running as a
+foreground process not a daemon.
+.TP
+.B \-p port
+.br
+specifies a port number used by gfmd.  By default, 601 is used.
+.br
+Default port requires the root privilege, although privileged ports
+are not necessary to execute gfmd.
+.TP
+.B \-s syslog facility
+.br
+specifies a syslog facility to report errors by gfmd.  By default,
+local0 is used.
+.\" .TP
+.\" .B \-u username
+.\" .br
+.\" specifies the effective user id of gfmd by username, when gfmd is
+.\" executed as a root process.
+.TP
+.B \-?
+.br
+displays a list of command options.
+
+.\" .SH SEE ALSO
+.\" .BR gfmd.conf (5)

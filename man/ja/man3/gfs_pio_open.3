@@ -27,6 +27,12 @@ gfs_pio_open \- Gfarmファイルのオープン
 .SM GFS_FILE_RDONLY
 を渡すようにしてください。
 
+gfrun(3) や gfmpirun(3) で起動された並列プロセスで
+.I gfs_pio_open()
+を呼ぶ場合、それぞれのプロセスの
+.I GFS_File
+構造体は個別ファイルポインタを持ちます。
+
 .SH "RETURN VALUES"
 
 .TP

@@ -1,0 +1,47 @@
+.Id $Id$
+.TH gfs_pio_getline 3 "1 May 2002"
+
+.SH NAME
+
+gfs_pio_getline \- read a line
+
+.SH SYNOPSIS
+
+.B "#include <gfarm/gfarm.h>"
+.LP
+.B "char *"
+.br
+.BI "gfs_pio_getline(GFS_File "gf ,
+.BI "char *" s ,
+.BI "size_t " size ,
+.in +.5i
+.BI "int *" eofp );
+.in
+
+.SH DESCRIPTION
+
+\fBgfs_pio_getline()\fP reads a line from the file \fIgf\fP, and
+stores to the buffer starting at \fIs\fP at most \fIsize\fP \- 1
+bytes.  It is indistinguishable whether the length of a line is more
+than \fIsize\fP or equal to \fIsize\fP \- 1.  It sets 1 into the
+address pointed by \fIeofp\fP on end of file, otherwise it sets 0.
+
+.SH "RETURN VALUES"
+
+.TP
+.SB NULL
+.br
+The function terminated successfully.
+.TP
+.SB GFARM_ERR_NO_MEMORY
+.br
+Insufficient memory was available.
+.TP
+Others
+.br
+An error except the above occurred.  The reason is shown by its
+pointed strings.
+
+.SH "SEE ALSO"
+.BR gfs_pio_create (3),
+.BR gfs_pio_open (3)
