@@ -249,9 +249,11 @@ notfound:
 		errno = save_errno ? save_errno : ENOENT;
 	/* FALLTHROUGH */
 err:
+	save_errno = errno;
 	if (ptsize)
 		free(pt);
 	free(up);
+	errno = save_errno;
 	return (NULL);
 }
 
