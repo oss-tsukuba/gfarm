@@ -1,3 +1,401 @@
+2005-03-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/README.hook.en: Added libpthread-not-hidden.so
+	Deleted the description about segfault in RH9 and FC1.  Now it does not occur.
+
+	* doc/Makefile, package/redhat/gfarm.spec: Added INSTALL.RPM.en
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja: update the description.
+
+2005-03-08  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	Added syscall hook entries, setxattr(2), lsetxattr(2) and fsetxattr(2).
+
+2005-03-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	change the default dircache timeout to 10 minutes.
+
+	* lib/gfs_hook/hooks.c (__execve):
+	do not use WEXITSTATUS in case of WIFSIGNALED.
+
+	* include/gfarm/gfs.h, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/gfs_pio.c:
+	added GFARM_FILE_UNBUFFERED for unbuffered write.
+
+	* lib/gfs_hook/hooks.c (__execve):
+	do not re-run execve. status needs to be properly set. deliver the signal.
+	(__fork, __vfork): deleted. it is not necessary and rather harmful in FC3.
+	(__chown, __lchown, __fchown): just added not to display warning by 'cp -p'
+	(__getxattr, ...): ifdef HAVE_ATTR_XATTR_H is removed. there is the case such that getxattr is provided even though /usr/include/attr/xattr.h is missing.
+
+	* lib/gfs_hook/hooks_subr.h: eleminate warning
+
+2005-03-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_*_all):
+	do not execute an unnecessary loop when max_fd = 0.
+
+2005-03-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_close_all):
+	flush stdio buffers.  this is needed by flex.
+
+	* lib/libgfarm/gfarm/gfs_pio.c (do_write):
+	fixed a big big oops when reading and writing the same file.
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_close):
+	update/overwrite metadata when i/o succeeds or there is no inconsistency.  The inconsistency may come from the update by other processes or oneself like 'nvi'.
+
+2005-03-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd.in, package/redhat/config/gfarm-slapd.in, package/redhat/config/slapd.conf-2.0.in, package/redhat/config/slapd.conf-2.1.in:
+	make it possible to specify prefix of openldap, and backend database via environment variable.
+
+	* lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_realpath_canonical, gfs_get_ino):
+	in case of no such object, refresh the directory cache. this fix makes it possible to refresh the directory cache via gfs_stat().
+
+	* lib/gfs_hook/hooks.c (__execve):
+	support suspend/background execution (not tested). set errno when exit status is 255.
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_*_all):
+	slightly improve efficiency
+	(gfs_hook_insert_gfs_*): simplify
+
+2005-03-02  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control:
+	removed excessive dependencies for libc, libldap2, libssl0.9.7
+
+2005-03-02  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir_canonical):
+	alloc env when GFS_PWD is not defined. 'tcsh'
+	always free the space of 'env'.
+
+	* lib/gfs_hook/hooks_init.c:
+	back to the revision 1.12.  metadb_ldap.c revision 1.24 does not unbind the ldap connection unless the connection is established by this process.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c (gfarm_metadb_terminate):
+	call ldap_unbind only when the ldap connection is established by this process not the parent.
+
+2005-03-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h (__dup2, __dup):
+	flush the iobuffer and set digest calc mode. dup'ed file descriptor can be accessed by the child process.
+	(__execve): flush the iobuffer.
+	(__fork): added
+	(__fork, __vfork): flush the iobuffer. buffers in this level should be flushed.
+	(gfs_hook_num_gfs_files): the number of opened file descriptors should not be reest even when the process is forked.  revert to the previous commit.
+	(hook_initalize): remove the registration of gfarm_terminate().
+
+	* lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h (hook_initialize):
+	do not keep file descripters open.
+	(hook_initialize): register gfs_hook_close_all() and gfarm_terminate by atexit.
+	(hook_insert_*): allocate file descriptor greater than MIN_FD (= 10).
+
+2005-02-28  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd.in, package/redhat/config/gfarm-slapd.in, package/redhat/config/gfmd.in, package/redhat/config/gfsd.in:
+	use killproc instead of killall
+
+	* package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd, package/redhat/config/config-gfsd.in, package/redhat/config/gfarm-slapd.in, package/redhat/config/gfmd.in, package/redhat/config/gfsd.in, package/redhat/config/slapd.conf-2.0.in, package/redhat/config/slapd.conf-2.1.in, package/redhat/gfarm.spec, Makefile.in, configure, configure.ac:
+	change installation directory.  config-{gfarm,gfsd} will be installed in /usr/bin, and template files will be installed in /usr/share/gfarm/config.
+	add --prefix option to config-{gfarm,gfsd}.
+	create startup script for gfsd and gfmd when config-{gfarm,gfsd} are executed in user mode.
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	Fixed an oops when seeking beyond the buffer in SEEK_CUR.
+
+	* lib/gfs_hook/hooks_init.c:
+	use dup(2) instead of open(2) for efficiency.
+
+2005-02-27  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_init.c:
+	Reserve file descriptors up to 6 for applications.  At least, this is required by 'configure'.  tcsh and zsh also seem to require this.
+
+	* lib/gfs_hook/hooks.c (__execve):
+	add debug message in the case of fork and exec.
+
+2005-02-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.RPM.ja, package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd:
+	start daemons in a configure script.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_rename):
+	plugged memory leak. use gfarm_url_make_path() for oldpath. allow GFARM_ERR_NO_SUCH_OBJECT for gfs_unlink the destination file to make fault tolerant.
+
+	* lib/gfs_hook/hooks.c:
+	Added a sycall hook for symlink although it returns EPERM in Gfarm file system.
+
+	* lib/gfs_hook/hooks_common.c: display flags for open(2) in octal.
+
+	* package/redhat/gfarm.spec: Added INSTALL.RPM.ja.
+	Fixed installation problem of config/ directory.
+
+	* package/redhat/config/slapd.conf-2.1.in, INSTALL.RPM.ja, Makefile.in, configure, configure.ac, doc/Makefile, package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd, package/redhat/config/gfarm-slapd.in, package/redhat/config/gfarm.conf.in, package/redhat/config/slapd.conf-2.0.in, package/redhat/gfarm.spec:
+	Added configuration package for Red Hat distribution.
+	config-gfarm - set up metadata server and Gfarm configuration file.
+	config-gfsd - set up file system node.
+	Configuration files such as /etc/gfarm.conf, /etc/gfarm-ldap/slapd.conf, and /etc/init.d/gfarm-slapd, will be created by 'config-gfarm' script.
+	For details, see INSTALL.RPM.ja.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.c:
+	removed old special code, unlink + create, to support GFARM_FILE_TRUNC.  Now, we do not need such a special code.
+
+2005-02-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.c:
+	It is necessary to add O_CREAT when GFARM_FILE_TRUNC is specified in gfs_pio_open() since the opening file is deleted in gfs_pio_set_view_section().
+	This fix adds O_CREAT in gfs_open_flags_localize().  Need to figure out the side effect if it exists.
+
+	* gftool/gfexec/gfexec.c:
+	Set PWD even in Gfarm file system.  This only works with syscall hook
+	library, but harmless without it.
+
+	Now, 'gfrun ls' works as 'gfrun ls gfarm:' not listing contents of a
+	physical spool directory.
+
+2005-02-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man3/gfs_chmod.3.html, man/man3/gfs_chmod.3: regen
+
+	* doc/docbook/en/ref/man3/gfs_chmod.3.docbook:
+	add description about execute mode
+
+2005-02-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c (__execve):
+	return -1 and set errno when execve of the child process fails.
+	do not modify status.
+
+2005-02-21  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man3/gfs_chmod.3.html, man/ja/man3/gfs_chmod.3: regen
+
+	* doc/docbook/ja/ref/man3/gfs_chmod.3.docbook:
+	add description about execute modes
+
+	* doc/html/en/ref/man3/gfs_rename.3.html, doc/html/ja/ref/man3/gfs_rename.3.html:
+	generate again from docbook
+
+	* man/ja/man3/gfs_rename.3: genarate again from docbook
+
+	* man/man3/gfs_rename.3: generate again from docbook
+
+	* doc/html/ja/ref/index.html: add gfs_pio_truncate.3 and gfs_rename.3
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc, doc/html/en/ref/index.html:
+	add gfs_rename.3
+
+	* doc/docbook/ja/ref/man3/gfs_rename.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook:
+	add detail description and cheage explanation of some return values
+
+2005-02-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	shell redirection support.
+	(__execve): close all opened files.
+
+	* lib/gfs_hook/hooks.c (__getcwd): do not call unnecessary strlen().
+
+2005-02-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c (__chdir):
+	call gfs_hook_set_cwd_is_gfarm() only when chdir operation succeeds like __fchdir.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir_canonical):
+	realloc does not work well at least using bash.
+
+	* lib/gfs_hook/getcwd.c (gfs_hook_syscall_getcwd):
+	realloc the malloc'ed buffer when specified size is zero.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_chdir_canonical):
+	Fixed the condition to determine whether buffer space for GFS_PWD environment variable is free'ed by some other application or not.  getenv() returns only value part.  Fixed the calculation of env_len in this case.
+
+	* lib/gfs_hook/getcwd.c: Take care of the case that buf is NULL.
+	Follows the linux (libc4, libc5, glibc) behavior as an extension to the POSIX.1 standard.
+
+2005-02-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/getcwd.c:
+	SYS_getcwd returns the length of the cwd, not pointer.
+
+	* lib/libgfarm/gfarm/gfs_dir.c: more simplify
+
+	* lib/libgfarm/gfarm/gfs_dir.c: fix a bug in revision 1.40
+
+	* lib/libgfarm/gfarm/gfs_dir.c: simplify
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	fix another corner case in previous commit.
+
+	* lib/gfs_hook/hooks_common.c: portability fix for *BSD
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	deal with applications which reallocate environment variables by itself,
+	it seems tcsh realloc's $GFS_PWD.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	<limits.h> - portability fix: PATH_MAX needs this.
+	get_path_infos() - shut up "uninitialized variable" warning by gcc
+
+2005-02-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_rename(): implement renaming directory
+
+2005-02-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	traverse_file_tree_with_cwd(): call gfs_closedir() missed in previous revision
+
+2005-02-16  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: Debian changelog file for gfarm-1.1.0
+
+2005-02-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: spec file for gfarm-1.1.0-0.
+	install libraries in %{_libdir} to support 64bit architecture.
+
+2005-02-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc:
+	Added gfs_pio_truncate.3
+
+	* INSTALL.en, INSTALL.ja, doc/GUIDE.ja:
+	Removed gfregister related description.
+
+	* LICENSE: Added 2005.
+
+2005-02-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfrun.1, man/man1/gfrun.1, doc/html/en/ref/man1/gfrun.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	Updated the description about the -I option.
+
+	* gftool/gfrun/gfrun.c:
+	Support the -I <index> option with not only the -G <file> option but
+	also the -N <nprocs> option.
+
+2005-02-09  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	Make __fchdir() call gfs_hook_set_cwd_is_gfarm() when successfully changed
+	directory.
+
+2005-02-01  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c (gfs_pio_view_global_adjust):
+	take care of the case that file fragment need to be moved more than one.
+
+2005-01-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/auth_common_gsi.c:
+	Introduce 'GFARM_GSI_MAPFILE' to specify a user mapfile.
+
+2005-01-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfsl/session.c:
+	GNEO ad-hoc code to use a service certificate in the client side.
+	XXX - this is a stopgap code.
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c (gfarm_auth_request_gsi_multiplexed):
+	typo in error message.
+
+	* lib/libgfarm/gfsl/session.c (secSessionInitiateRequest):
+	cred should be state->cred in gfarmGssInitiateSecurityContextRequest().
+
+	* lib/libgfarm/gfarm/auth_client_gsi.c (gfarm_auth_request_gsi_multiplexed):
+	typo in error message.
+
+	* lib/libgfarm/gfsl/session.c (secSessionInitiateRequest):
+	cred should be state->cred in gfarmGssInitiateSecurityContextRequest().
+
+2005-01-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* Makefile.in: delete gneogfcmd in SUBDIRS.
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.h:
+	declare gfs_scramble_make_replica in gfs_pio_scramble.h.
+	make several functions static in gfs_pio_scramble.c.
+
+2005-01-14  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfrep.1.html, man/man1/gfrep.1: regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook:
+	- -D option: add description about the case none of the options speceify
+	  destination hosts or domain is used
+	- add usage -N option
+	- -H, -D, -P, -d option: add description in case of Gfarm-URL is a directory
+
+	* doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1: regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	add recursive replication description to -P and -d option
+
+2005-01-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.h:
+	add function declarations of gfs_pio_{open,close}_v2().
+	remove typedefs of uint32_t and uint64_t.  Instead, include stdint.h.
+
+	* lib/libgfarm/gfarm/auth_server_gsi.c:
+	Reverted to the revision 1.17.  The revision 1.17.2.1 is committed in
+	error, I believe.
+
+2005-01-13  Katsuhiko Ohkubo  <ohkubo-k@suri.co.jp>
+
+	* doc/scramble-dd.pdf, doc/scramble-dd.ppt: New file.
+
+	* doc/scramble-dd.pdf, doc/scramble-dd.ppt:
+	detail design of scramble mode
+
+	* doc/scramble-fd.doc, doc/scramble-fd.pdf: New file.
+
+	* doc/scramble-fd.doc, doc/scramble-fd.pdf:
+	fundamental design of scramble mode
+
+2005-01-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	add English manual and html file entries of gfs_pio_truncate(3)
+
+	* doc/html/en/ref/index.html: add an entry of gfs_pio_truncate(3)
+
+	* doc/html/en/ref/man3/gfs_pio_truncate.3.html, man/man3/gfs_pio_truncate.3:
+	generate from doocbook
+
+	* doc/docbook/en/ref/man3/gfs_pio_truncate.3.docbook: New file.
+
+2005-01-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch:
+	Added a patch in makes/var.mk to enable to compile Gfarm with GSI on AIST M Cluster.
+
+	* ChangeLog: Reverted replaced keywords.
+
+	* makes/var.mk:
+	Changed the order of $metadb_client_libs and $globus_gssapi_libs in GFARMLIB to properly link Globus gssapi library.
+	This avoids the segfault problem when ldap library is linked with another gssapi library.
+
+2005-01-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch, package/redhat/gfarm.spec:
+	spec file for gfarm-1.0.4-4.
+
+	* ChangeLog: Fixed an email address of Ohkubo-san.
+
+	* ChangeLog: ChangeLog for gfarm-1.0.4-4
+
+	* doc/html/ja/ref/index.html: Added an entry of gfs_pio_truncate.3.
+	English manual is still missing.
+
 2005-01-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/gfs_hook/hooks.c:

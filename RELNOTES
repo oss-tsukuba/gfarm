@@ -1,5 +1,65 @@
-Copyright (c) 2003, 2004 National Institute of Advanced Industrial
-Science and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003, 2004, 2005 National Institute of Advanced
+Industrial Science and Technology (AIST).  All Rights Reserved.
+
+Release note for Gfarm 1.1.0
+============================
+
+[2005.3.9]
+
+Updated Features
+
+ * Configuration utilities for RPM binary packages;
+	config-gfarm - set up metadata server and Gfarm configuration file.
+	config-gfsd - set up file system node.
+	For details, see INSTALL.RPM.
+
+ * gfrep(1) - supports recursive replication when directories are
+   specified, and supports the -N option that specifies the number of
+   file replicas.
+
+ * gfs_rename(3) - supports to rename not only a file but also a
+   directory.
+
+ * Syscall hooking library
+
+  - New syscall hook entries; truncate, ftruncate, symlink, chown,
+    lchown, fchown, setxattr, lsetxattr, and fsetxattr.
+
+  - redirect support, i.e. cat a > /gfarm/~/a
+    'sh ./configure' works well in Gfarm file system!
+
+  - tcsh and zsh support. (old tcsh still has a problem when a command
+    error happens.)
+
+ * Documentation
+
+   (INSTALL.RPM) Installation document using RPM binary packages
+
+ * Bug fix
+
+  - Service certificate cannot be used when host cert or user proxy
+    cert is not available.
+
+  - vim cannot open a file when it is specified by a relative path.
+
+  - 'gfrun ls' lists the contents in the physical spool directory.
+
+  - open(file, O_WRONLY|O_TRUNC) fails when the file exists.
+
+  - gfs_rename and syscall hook entry for rename. (Bugzilla #6)
+
+  - Fix an oops when seeking beyond the buffer in SEEK_CUR.
+
+  - Fix 'segmentation fault' when executing tcsh.
+
+  - Fix 'no such object' error when accessing a new file or a new
+    directory created by another application.
+
+  - Fix 'invalid argument' error when reading and writing the same
+    file.
+
+  - gfsplck recognizes an incorrect section name when the filename
+    includes ':'.
 
 Release note for Gfarm 1.0.4
 ============================
