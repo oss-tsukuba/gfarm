@@ -957,11 +957,11 @@ char *
 gfs_client_bootstrap_replicate_file_sequential_request(
 	struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode,
-	char *srchost)
+	char *src_canonical_hostname, char *src_if_hostname)
 {
 	return (gfs_client_rpc_request(gfs_server,
-	    GFS_PROTO_REPLICATE_FILE_SEQUENTIAL, "sis",
-	    gfarm_file, mode, srchost));
+	    GFS_PROTO_REPLICATE_FILE_SEQUENTIAL, "siss",
+	    gfarm_file, mode, src_canonical_hostname, src_if_hostname));
 }
 
 /* Perhaps this isn't needed any more, or we can use this for bootstrapping */
@@ -970,12 +970,12 @@ gfs_client_bootstrap_replicate_file_parallel_request(
 	struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t mode, file_offset_t file_size,
 	gfarm_int32_t ndivisions, gfarm_int32_t interleave_factor,
-	char *srchost)
+	char *src_canonical_hostname, char *src_if_hostname)
 {
 	return (gfs_client_rpc_request(gfs_server,
-	    GFS_PROTO_REPLICATE_FILE_PARALLEL, "sioiis",
+	    GFS_PROTO_REPLICATE_FILE_PARALLEL, "sioiiss",
 	    gfarm_file, mode, file_size, ndivisions, interleave_factor,
-	    srchost));
+	    src_canonical_hostname, src_if_hostname));
 }
 
 char *
@@ -1016,7 +1016,8 @@ gfs_client_bootstrap_replicate_file_request(struct gfs_connection *gfs_server,
 
 	if (parallel_streams <= 1)
 		return (gfs_client_bootstrap_replicate_file_sequential_request(
-		    gfs_server, gfarm_file, mode, src_if_hostname));
+		    gfs_server, gfarm_file, mode,
+		    src_canonical_hostname, src_if_hostname));
 
 	e = gfarm_netparam_config_get_long(
 	    &gfarm_netparam_stripe_unit_size,
@@ -1028,7 +1029,7 @@ gfs_client_bootstrap_replicate_file_request(struct gfs_connection *gfs_server,
 	return (
 	    gfs_client_bootstrap_replicate_file_parallel_request(gfs_server,
 	    gfarm_file, mode, file_size, parallel_streams, stripe_unit_size,
-	    src_if_hostname));
+	    src_canonical_hostname, src_if_hostname));
 }
 
 char *

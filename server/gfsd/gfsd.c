@@ -666,10 +666,11 @@ gfs_server_striping_read(struct xxx_connection *client)
 }
 
 void
-gfs_server_replicate_file_sequential(struct xxx_connection *client)
+gfs_server_replicate_file_sequential_common(struct xxx_connection *client,
+	char *file, gfarm_int32_t mode,
+	char *src_canonical_hostname, char *src_if_hostname)
 {
-	char *e, *file, *path, *src_host;
-	gfarm_int32_t mode;
+	char *e, *path;
 	struct gfs_connection *src_conn;
 	int fd, src_fd;
 	long file_sync_rate;
@@ -677,10 +678,8 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 	struct hostent *hp;
 	struct sockaddr_in peer_addr;
 
-	gfs_server_get_request(client, "replicate_file_seq",
-	    "sis", &file, &mode, &src_host);
-
-	hp = gethostbyname(src_host);
+	hp = gethostbyname(src_if_hostname);
+	free(src_if_hostname);
 	if (hp == NULL || hp->h_addrtype != AF_INET) {
 		e = GFARM_ERR_UNKNOWN_HOST;
 	} else {
@@ -692,7 +691,8 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 
 		e = gfarm_netparam_config_get_long(
 		    &gfarm_netparam_file_sync_rate,
-		    src_host, (struct sockaddr *)&peer_addr, &file_sync_rate);
+		    src_canonical_hostname, (struct sockaddr *)&peer_addr,
+		    &file_sync_rate);
 		if (e != NULL) /* shouldn't happen */
 			gflog_warning("file_sync_rate", e);
 
@@ -701,11 +701,11 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 		 * information which was set in gfarm_authorize()
 		 * with switch_to==1.
 		 */
-		/* XXX - `src_host' should be canonical_hostname. */
-		e = gfs_client_connect(src_host, (struct sockaddr *)&peer_addr,
+		e = gfs_client_connect(
+		    src_canonical_hostname, (struct sockaddr *)&peer_addr,
 		    &src_conn);
 	}
-	free(src_host);
+	free(src_canonical_hostname);
 	if (e != NULL) {
 		error = gfs_string_to_proto_error(e);
 		gflog_warning("replicate_file_seq:remote_connect", e);
@@ -742,6 +742,39 @@ gfs_server_replicate_file_sequential(struct xxx_connection *client)
 	free(file);
 
 	gfs_server_put_reply(client, "replicate_file_seq", error, "");
+}
+
+/* obsolete interafce, keeped for backward compatibility */
+void
+gfs_server_replicate_file_sequential_old(struct xxx_connection *client)
+{
+	char *file, *src_canonical_hostname, *src_if_hostname;
+	gfarm_int32_t mode;
+
+	gfs_server_get_request(client, "replicate_file_seq_old",
+	    "sis", &file, &mode, &src_if_hostname);
+
+	src_canonical_hostname = strdup(src_if_hostname);
+	if (src_canonical_hostname == NULL) {
+		gfs_server_put_reply(client, "replicate_file_seq_old",
+		    GFS_ERROR_NOMEM, "");
+		return;
+	}
+	gfs_server_replicate_file_sequential_common(client, file, mode,
+	    src_canonical_hostname, src_if_hostname);
+}
+
+void
+gfs_server_replicate_file_sequential(struct xxx_connection *client)
+{
+	char *file, *src_canonical_hostname, *src_if_hostname;
+	gfarm_int32_t mode;
+
+	gfs_server_get_request(client, "replicate_file_seq",
+	    "siss", &file, &mode, &src_canonical_hostname, &src_if_hostname);
+
+	gfs_server_replicate_file_sequential_common(client, file, mode,
+	    src_canonical_hostname, src_if_hostname);
 }
 
 int iosize_alignment = 4096;
@@ -862,23 +895,18 @@ limit_division(int *ndivisionsp, file_offset_t file_size)
 }
 
 void
-gfs_server_replicate_file_parallel(struct xxx_connection *client)
+gfs_server_replicate_file_parallel_common(struct xxx_connection *client,
+	char *file, gfarm_int32_t mode, file_offset_t file_size,
+	gfarm_int32_t ndivisions, gfarm_int32_t interleave_factor,
+	char *src_canonical_hostname, char *src_if_hostname)
 {
 	struct parallel_stream *divisions;
-	char *e_save = NULL, *e, *file, *path, *src_host;
-	gfarm_int32_t mode;
-	gfarm_int32_t ndivisions; /* parallel_streams */
-	gfarm_int32_t interleave_factor; /* stripe_unit_size, chuck size */
-	file_offset_t file_size;
+	char *e_save = NULL, *e, *path;
 	long file_sync_rate, written;
 	int i, j, n, ofd;
 	enum gfs_proto_error error = GFS_ERROR_NOERROR;
 	struct hostent *hp;
 	struct sockaddr_in peer_addr;
-
-	gfs_server_get_request(client, "replicate_file_par", "sioiis",
-	    &file, &mode, &file_size, &ndivisions, &interleave_factor,
-	    &src_host);
 
 	e = gfarm_path_localize(file, &path);
 	if (e != NULL)
@@ -899,7 +927,7 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 		goto finish_ofd;
 	}
 
-	hp = gethostbyname(src_host);
+	hp = gethostbyname(src_if_hostname);
 	if (hp == NULL || hp->h_addrtype != AF_INET) {
 		error = GFS_ERROR_CONNREFUSED;
 		goto finish_free_divisions;
@@ -910,14 +938,16 @@ gfs_server_replicate_file_parallel(struct xxx_connection *client)
 	peer_addr.sin_port = htons(gfarm_spool_server_port);
 
 	e = gfarm_netparam_config_get_long(&gfarm_netparam_file_sync_rate,
-	    src_host, (struct sockaddr *)&peer_addr, &file_sync_rate);
+	    src_canonical_hostname, (struct sockaddr *)&peer_addr,
+	    &file_sync_rate);
 	if (e != NULL) /* shouldn't happen */
 		gflog_warning("file_sync_rate", e);
 
 	/* XXX - this should be done in parallel rather than sequential */
 	for (i = 0; i < ndivisions; i++) {
 
-		e = gfs_client_connect(src_host, (struct sockaddr *)&peer_addr,
+		e = gfs_client_connect(
+		    src_canonical_hostname, (struct sockaddr *)&peer_addr,
 		    &divisions[i].src_conn);
 		if (e != NULL) {
 			if (e_save == NULL)
@@ -1052,8 +1082,52 @@ finish_ofd:
 	close(ofd);
 finish:
 	free(file);
-	free(src_host);
+	free(src_canonical_hostname);
+	free(src_if_hostname);
 	gfs_server_put_reply(client, "replicate_file_par", error, "");
+}
+
+/* obsolete interafce, keeped for backward compatibility */
+void
+gfs_server_replicate_file_parallel_old(struct xxx_connection *client)
+{
+	char *file, *src_canonical_hostname, *src_if_hostname;
+	gfarm_int32_t mode;
+	gfarm_int32_t ndivisions; /* parallel_streams */
+	gfarm_int32_t interleave_factor; /* stripe_unit_size, chuck size */
+	file_offset_t file_size;
+
+	gfs_server_get_request(client, "replicate_file_par_old", "sioiis",
+	    &file, &mode, &file_size, &ndivisions, &interleave_factor,
+	    &src_if_hostname);
+
+	src_canonical_hostname = strdup(src_if_hostname);
+	if (src_canonical_hostname == NULL) {
+		gfs_server_put_reply(client, "replicate_file_par_old",
+		    GFS_ERROR_NOMEM, "");
+		return;
+	}
+	gfs_server_replicate_file_parallel_common(client,
+	    file, mode, file_size, ndivisions, interleave_factor,
+	    src_canonical_hostname, src_if_hostname);
+}
+
+void
+gfs_server_replicate_file_parallel(struct xxx_connection *client)
+{
+	char *file, *src_canonical_hostname, *src_if_hostname;
+	gfarm_int32_t mode;
+	gfarm_int32_t ndivisions; /* parallel_streams */
+	gfarm_int32_t interleave_factor; /* stripe_unit_size, chuck size */
+	file_offset_t file_size;
+
+	gfs_server_get_request(client, "replicate_file_par", "sioiiss",
+	    &file, &mode, &file_size, &ndivisions, &interleave_factor,
+	    &src_canonical_hostname, &src_if_hostname);
+
+	gfs_server_replicate_file_parallel_common(client,
+	    file, mode, file_size, ndivisions, interleave_factor,
+	    src_canonical_hostname, src_if_hostname);
 }
 
 void
@@ -1893,6 +1967,10 @@ server(int client_fd)
 			gfs_server_bulkread(client); break;
 		case GFS_PROTO_STRIPING_READ:
 			gfs_server_striping_read(client); break;
+		case GFS_PROTO_REPLICATE_FILE_SEQUENTIAL_OLD:
+			gfs_server_replicate_file_sequential_old(client);break;
+		case GFS_PROTO_REPLICATE_FILE_PARALLEL_OLD:
+			gfs_server_replicate_file_parallel_old(client); break;
 		case GFS_PROTO_REPLICATE_FILE_SEQUENTIAL:
 			gfs_server_replicate_file_sequential(client); break;
 		case GFS_PROTO_REPLICATE_FILE_PARALLEL:
