@@ -3,6 +3,10 @@
 %define ver	1.0
 %define rel	1
 
+#%define pkgver	%{ver}
+# to make RPM version number greater than 1.0b5
+%define pkgver	%{ver}r
+
 %define prefix		/usr/grid
 %define man_prefix	/usr/share/man
 %define doc_prefix	/usr/doc/%{name}-%{ver}
@@ -43,7 +47,7 @@
 
 Summary: Grid Datafarm
 Name: %{package_name}
-Version: %ver
+Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: 
