@@ -12,11 +12,8 @@ int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
-#if 0
-	const char *e;
-#else
-	int r;
-#endif
+	struct gfs_stat status;
+	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FSTAT) "(%d)\n",
 	    filedes));
@@ -27,28 +24,19 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking " S(FUNC___FSTAT)
 	    "(%d(%d))\n", filedes, gfs_pio_fileno(gf)));
 
-#if 0 /* Not yet implemented. */
-	e = GFS_FSTAT(filedes, buf);
-	if (e == NULL)
-		return (0);
+	e = gfs_fstat(gf, &status);
+	if (e != NULL)
+		return (-1);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FSTAT) ": %s\n", e));
-	errno = gfarm_error_to_errno(e);
-	return (-1);
-#else /* Temporary code until gfs_stat() will be implemented. */
-	/*
-	 * gfs_stat() may not appropriate here, because:
-	 * 1. it doesn't/can't fill all necessary field of struct stat.
-	 * 2. it returns information of whole gfarm file, rather than
-	 *    information of the fragment.
-	 */
+	buf->st_mode = status.st_mode;
+	buf->st_atime = status.st_atimespec.tv_sec;
+	buf->st_mtime = status.st_mtimespec.tv_sec;
+	buf->st_ctime = status.st_ctimespec.tv_sec;
+	buf->st_size = status.st_size;
 
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___FSTAT) " locally: %d\n",
-	    gfs_pio_fileno(gf)));
-	r = SYSCALL_FSTAT(gfs_pio_fileno(gf), buf);
-	return (r);
-#endif
+	gfs_stat_free(&status);
+
+	return (0);
 }
 
 int
@@ -107,11 +95,8 @@ int
 FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
-#if 0
-	const char *e;
-#else
-	int r;
-#endif
+	struct gfs_stat status;
+	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%s)\n",
 	    path));
@@ -122,21 +107,19 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
 
-#if 0 /* Not yet implemented. */
-	e = GFS_FSTAT(filedes, buf);
-	if (e == NULL)
-		return (0);
+	e = gfs_fstat(gf, &status);
+	if (e != NULL)
+		return (-1);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FXSTAT) ": %s\n", e));
-	errno = gfarm_error_to_errno(e);
-	return (-1);
-#else /* Temporary code until gfs_stat() will be implemented. */
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___FXSTAT) " locally: %d\n",
-	    gfs_pio_fileno(gf)));
-	r = SYSCALL_FXSTAT(ver, gfs_pio_fileno(gf), buf);
-	return (r);
-#endif
+	buf->st_mode = status.st_mode;
+	buf->st_atime = status.st_atimespec.tv_sec;
+	buf->st_mtime = status.st_mtimespec.tv_sec;
+	buf->st_ctime = status.st_ctimespec.tv_sec;
+	buf->st_size = status.st_size;
+
+	gfs_stat_free(&status);
+
+	return (0);
 }
 
 int
