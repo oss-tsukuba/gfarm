@@ -130,8 +130,9 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 <term><option>-I</option> <parameter>フラグメント番号</parameter></term>
 <listitem>
 <para>指定されたフラグメント番号のプロセスだけが実行されます．
-この時，ファイル・アフィニティ・スケジューリングにより並列プログラムが
-スケジューリングされている必要があります．
+このオプションは，<option>-G</option> オプションあるいは引数に与えた Gfarm
+ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
+場合のみ利用可能です．
 </para>
 </listitem>
 </varlistentry>
