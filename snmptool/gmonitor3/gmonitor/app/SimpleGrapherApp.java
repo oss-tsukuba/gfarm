@@ -104,7 +104,8 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 
 	private long magnificationY = 1;  // Y scale
 
-	private boolean disableComboEvent = false;
+	private boolean disableComboEvent = false;    // do not refresh
+	private boolean setComboTargetsFlag = false;  // do not refresh in setComboTargets()
 
 /*
 	private static final String[] UNIT_PREFIX_TABLE = new String[]{
@@ -351,7 +352,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			panelInformation.setVisible(menuItemVisInfo.isSelected());
-			paintGraphAccordingToCurrentGUIStatus();
+			//paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 
@@ -359,7 +360,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			panelGraphStyle.setVisible(menuItemVisGraphStyle.isSelected());
-			paintGraphAccordingToCurrentGUIStatus();
+			//paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 
@@ -367,7 +368,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			panelUnit.setVisible(menuItemVisUnit.isSelected());
-			paintGraphAccordingToCurrentGUIStatus();
+			//paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 
@@ -375,13 +376,14 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 	{
 		public void actionPerformed(ActionEvent arg0) {
 			panelController.setVisible(menuItemVisController.isSelected());
-			paintGraphAccordingToCurrentGUIStatus();
+			//paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 
 	class RadioAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+//System.out.println("RadioAction");
 			if(((JRadioButtonMenuItem) arg0.getSource()).equals(radioMenubps)){
 				menuItem8times.setSelected(true);
 				check8times.setSelected(true);
@@ -394,14 +396,16 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 				checkDifferentialMode.setSelected(false);
 			}
 			comboUnit.setSelectedItem((JRadioButtonMenuItem) arg0.getSource());
-			paintGraphAccordingToCurrentGUIStatus();
+			//paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 	
 	class AutoUpdateIntervalAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
-			timer.stop();
+			if(checkAutoUpdate.isSelected()){
+				timer.stop();
+			}
 			String interval =
 				JOptionPane.showInputDialog(
 					appFrame,
@@ -409,7 +413,7 @@ public class SimpleGrapherApp extends SimpleGrapherBaseUI {
 					String.valueOf(autoUpdateInterval));
 			try {
 				if(interval != null){
-System.out.println("AutoUpdateInterval " + interval);
+//System.out.println("AutoUpdateInterval " + interval);
 					int tmp = Integer.parseInt(interval);
 					if(tmp <= 0){
 						return;
@@ -420,7 +424,9 @@ System.out.println("AutoUpdateInterval " + interval);
 				}
 			} catch(Exception e){
 			}
-			timer.start();
+			if(checkAutoUpdate.isSelected()){
+				timer.start();
+			}
 		}
 	}
 
@@ -434,17 +440,17 @@ System.out.println("AutoUpdateInterval " + interval);
 					String.valueOf(resampleResolution));
 			try {
 				if(interval != null){
-System.out.println("ResampleResolution " + interval);
+//System.out.println("ResampleResolution " + interval);
 					int tmp = Integer.parseInt(interval);
 					if(tmp <= 0){
 						return;
 					}
 					resampleResolution = tmp;
 					menuItemResolution.setText(menuStrResolution + " ("+interval+")");
+					paintGraphAccordingToCurrentGUIStatus();
 				}
 			} catch(Exception e){
 			}
-			paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
 	
@@ -453,6 +459,9 @@ System.out.println("ResampleResolution " + interval);
 		public void actionPerformed(ActionEvent arg0) {
 			((JRadioButtonMenuItem)comboUnit.getSelectedItem()).setSelected(true);
 			((JRadioButtonMenuItem)comboUnit.getSelectedItem()).doClick();
+			if(setComboTargetsFlag == true){
+				return;
+			}
 			paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
@@ -587,7 +596,7 @@ System.out.println("ResampleResolution " + interval);
 		}
 		if(timerFlag == true){
 			timer.start();
-		} else {
+		} else if(totalOkFlag == true){
 			paintGraphAccordingToCurrentGUIStatus();
 		}
 	}
@@ -600,8 +609,6 @@ System.out.println("ResampleResolution " + interval);
 			actionTotal(c.isSelected());
 		}
 	}
-	
-	
 	
 	private void actionAutoUpdate(boolean check, boolean choice){
 		if(check == true){
@@ -632,6 +639,7 @@ System.out.println("ResampleResolution " + interval);
 				else {
 					menuItemAutoUpdate.setSelected(false);
 					checkAutoUpdate.setSelected(false);
+					timer.stop();
 					return;
 				}
 			} else {
@@ -639,6 +647,7 @@ System.out.println("ResampleResolution " + interval);
 				if(selectedDir.exists() == false){
 					menuItemAutoUpdate.setSelected(false);
 					checkAutoUpdate.setSelected(false);
+					timer.stop();
 					return;
 				}
 				//System.out.println(selectedDir.getPath());
@@ -653,6 +662,7 @@ System.out.println("ResampleResolution " + interval);
 				//c.setEnabled(true);
 				menuItemAutoUpdate.setSelected(false);
 				checkAutoUpdate.setSelected(false);
+				timer.stop();
 				return;
 			}
 			textBeginTime.setEnabled(false);
@@ -660,17 +670,9 @@ System.out.println("ResampleResolution " + interval);
 			if(timer.isRunning()){
 				timer.stop();
 			}
-			// schedule the first event in 1 milli-sec future.
-			//if(initialDelay > 0) {
-			//	timer.setInitialDelay(initialDelay * 1000);
-			//	initialDelay = -1;
-			//} else {
-				//timer.setInitialDelay(0);
-			//}
 			// start Swing timer to update.
 			timerInitFlag = false;
 			timer.start();
-			//paintGraphAccordingToCurrentGUIStatus();
 			return;
 		}else{
 			textBeginTime.setEnabled(true);
@@ -697,11 +699,19 @@ System.out.println("ResampleResolution " + interval);
 			actionAutoUpdate(c.isSelected(), true);
 		}
 	}
+	
+	private boolean lockTimer = false;
 	class TimerAutoUpdateAction implements ActionListener
 	{
 		// This listener is invoked when the Swing timer was exceeded
 		// the update interval.
 		synchronized public void actionPerformed(ActionEvent arg0) {
+		//public void actionPerformed(ActionEvent arg0) {
+			if(lockTimer == true){
+//System.out.println("Cancel: Timer");
+				return;
+			}
+			lockTimer = true;
 //System.out.println("AutoUpdate");
 			// scan directory contents in selectedDir and rebuild
 			// data-time space.
@@ -715,7 +725,8 @@ System.out.println("ResampleResolution " + interval);
 				}
 			});
 			if(files == null){
-System.out.println("AutoUpdate: no .glg file");
+				lockTimer = false;
+				System.out.println("AutoUpdate: no .glg file");
 				return;
 			}
 			String[] filenames = new String[files.length];
@@ -751,6 +762,7 @@ System.out.println("AutoUpdate: no .glg file");
 //				menuItemTotal.setSelected(false);
 //				actionAutoUpdate(false, false);
 			}
+			lockTimer = false;
 		}
 	}
 	class MenuItemGraphStyleBarAction implements ActionListener
@@ -824,6 +836,9 @@ System.out.println("AutoUpdate: no .glg file");
 	class ComboEventSelectionAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+			if(setComboTargetsFlag == true){
+				return;
+			}
 			setTargetEventName = (String) comboEvent.getSelectedItem();
 			if(disableComboEvent == false){
 				paintGraphAccordingToCurrentGUIStatus();
@@ -837,6 +852,9 @@ System.out.println("AutoUpdate: no .glg file");
 	class ComboHostnameSelectionAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+			if(setComboTargetsFlag == true){
+				return;
+			}
 			setTargetHostName = (String) comboHostname.getSelectedItem();
 			if(disableComboEvent == false){
 				paintGraphAccordingToCurrentGUIStatus();
@@ -850,6 +868,7 @@ System.out.println("AutoUpdate: no .glg file");
 	class RepaintRepack implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+			System.gc();
 			repaintFlag = true;
 			paintGraphAccordingToCurrentGUIStatus();
 			repaintFlag = false;
@@ -962,8 +981,22 @@ System.out.println("AutoUpdate: no .glg file");
 	private boolean initFlag = true;
 	private boolean checkHostFlag;
 	private boolean checkEventFlag;
+	private boolean lockRefresh = false;
 	
 	private void paintGraphAccordingToCurrentGUIStatus()
+	{
+		if(lockRefresh == true){
+//System.out.println("Cancel: Refresh");
+			return;
+		}
+//System.out.println("Refresh");
+		lockRefresh = true;
+		paintGraphAccordingToCurrentGUIStatus2();
+		lockRefresh = false;
+//System.out.println("Refresh done");
+	}
+
+	private void paintGraphAccordingToCurrentGUIStatus2()
 	{
 		if(dtSpace == null){
 			// No data-time space, Nothing to do.
@@ -1066,7 +1099,7 @@ System.out.println("AutoUpdate: no .glg file");
 
 				rd.setData(rda);
 				rawDataSeries.add(rd);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				// cannot create model because specified time is out of range.
 				// null clear.
 				//e.printStackTrace();
@@ -1082,7 +1115,7 @@ System.out.println("AutoUpdate: no .glg file");
 					disableComboEvent = true;
 					comboEvent.setSelectedIndex(id);
 					disableComboEvent = false;
-					paintGraphAccordingToCurrentGUIStatus();
+					paintGraphAccordingToCurrentGUIStatus2();
 					return;
 				}
 				
@@ -1103,7 +1136,7 @@ System.out.println("AutoUpdate: no .glg file");
 					disableComboEvent = true;
 					comboHostname.setSelectedIndex(id);
 					disableComboEvent = false;
-					paintGraphAccordingToCurrentGUIStatus();
+					paintGraphAccordingToCurrentGUIStatus2();
 					return;
 				}
 				
@@ -1311,9 +1344,9 @@ System.out.println("AutoUpdate: no .glg file");
 					defineNewComboBox(comboHostname, dtSpace.getHostnames());
 					defineNewComboBox(comboEvent, dtSpace.getEvents());
 					paintGraphAccordingToCurrentGUIStatus();
-				} catch (IOException e) {
+				} catch (Exception e) {
 					// Cannot create datat-time space.
-e.printStackTrace();
+//e.printStackTrace();
 					String msg = "File open error.";
 					JOptionPane.showMessageDialog(appFrame, msg);
 				}
@@ -1439,6 +1472,7 @@ e.printStackTrace();
 	}
 
 	public void setComboTargets(){
+		setComboTargetsFlag = true;
 		if(setTargetHostName != null){
 			for(int i=0; i<comboHostname.getItemCount(); i++){
 //System.out.println((String)comboHostname.getItemAt(i));					
@@ -1467,8 +1501,9 @@ e.printStackTrace();
 			} else if(setTargetUnitName.equals("Load")){
 				comboUnit.setSelectedItem(radioMenuLoad);
 			}
-			setTargetUnitName = null;
+			//setTargetUnitName = null;
 		}
+		setComboTargetsFlag = false;
 	}
 
 	public SimpleGrapherApp(String args[])
