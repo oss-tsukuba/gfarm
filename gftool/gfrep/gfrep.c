@@ -378,66 +378,6 @@ replicate_by_fragment_dest_list(char *fragment_dest_list, char *src_default)
 	return (error_happend | replication_job_list_execute(&job_list));
 }
 
-static int
-jobs_by_pairs(struct replication_job_list *job_list,
-	char *gfarm_url, int npairs,
-	gfarm_stringlist *src_nodes, gfarm_stringlist *dst_nodes)
-{
-	int i, j, k, error_happend = 0;
-	char *e, *gfarm_file, *src_host, *dst_host;
-	int nfragments, ncopies;
-	struct gfarm_file_section_copy_info *copies;
-	char section[GFARM_INT32STRLEN];
-
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL) {
-		fprintf(stderr, "%s: cannot determine pathname for %s: %s\n",
-		    program_name, gfarm_url, e);
-		return (error_happend);
-	}
-	e = gfarm_url_fragment_number(gfarm_url, &nfragments);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s: cannot get fragment number: %s\n",
-		    program_name, gfarm_url, e);
-		return (error_happend);
-	}
-	for (i = 0; i < nfragments; i++) {
-		sprintf(section, "%d", i);
-		e = gfarm_file_section_copy_info_get_all_by_section(
-			gfarm_file, section, &ncopies, &copies);
-		if (e != NULL) {
-			fprintf(stderr,
-			    "%s: %s:%s: cannot get replica location: %s\n",
-			    program_name, gfarm_url, section, e);
-			continue;
-		}
-		for (j = 0; j < npairs; j++) {
-			src_host = gfarm_stringlist_elem(src_nodes, j);
-			dst_host = gfarm_stringlist_elem(dst_nodes, j);
-			for (k = 0; k < ncopies; k++) {
-				if(strcasecmp(copies[k].hostname,src_host)==0){
-#if 0
-					printf("%s %s %s %s\n",
-					    gfarm_url, section,
-					    dst_host, src_host);
-#else
-					if (replication_job_list_add(job_list,
-					    gfarm_url, section,
-					    src_host, dst_host))
-						error_happend = 1;
-#endif
-					goto found;
-				}
-			}
-		}
-		fprintf(stderr, "%s: error: %s:%s - no replica is found\n",
-		    program_name, gfarm_url, section);
-	found:
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
-	}
-	return (error_happend);
-}
-
 static void
 pairlist_read(char *pair_list,
 	int *npairsp, gfarm_stringlist *src_nodes, gfarm_stringlist *dst_nodes)
@@ -945,6 +885,90 @@ replicate_files_to_domain(char *path, int min_replicas, char *domainname)
 	free(nfragments);
 	gfarm_stringlist_free_deeply(&path_list);
 	return (error_happend);
+}
+
+struct jobs_by_pairs_closure {
+	struct replication_job_list *job_list;
+	int npairs;
+	gfarm_stringlist *src_nodes;
+	gfarm_stringlist *dst_nodes;
+};
+
+static int
+jobs_by_pairs_callback(char *cwd, char *gfarm_url, void *closure)
+{
+	struct jobs_by_pairs_closure *c = closure;
+	int i, j, k, error_happend = 0;
+	char *e, *gfarm_file, *src_host, *dst_host, *p;
+	int nfragments, ncopies;
+	struct gfarm_file_section_copy_info *copies;
+	char section[GFARM_INT32STRLEN];
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL) {
+		fprintf(stderr, "%s: cannot determine pathname for %s: %s\n",
+		    program_name, gfarm_url, e);
+		error_happend = 1;
+		goto free_gfarm_file;
+	}
+	e = gfarm_url_fragment_number(gfarm_url, &nfragments);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s: cannot get fragment number: %s\n",
+		    program_name, gfarm_url, e);
+		error_happend = 1;
+		goto free_gfarm_file;
+	}
+	p = add_cwd_to_relative_path(cwd, gfarm_url);
+	gfarm_url = gfarm_url_prefix_add(p);
+	free(p);
+	for (i = 0; i < nfragments; i++) {
+		sprintf(section, "%d", i);
+		e = gfarm_file_section_copy_info_get_all_by_section(
+			gfarm_file, section, &ncopies, &copies);
+		if (e != NULL) {
+			fprintf(stderr,
+			    "%s: %s:%s: cannot get replica location: %s\n",
+			    program_name, gfarm_url, section, e);
+			continue;
+		}
+		for (j = 0; j < c->npairs; j++) {
+			src_host = gfarm_stringlist_elem(c->src_nodes, j);
+			dst_host = gfarm_stringlist_elem(c->dst_nodes, j);
+			for (k = 0; k < ncopies; k++) {
+				if(strcasecmp(copies[k].hostname,src_host)==0){
+					if (replication_job_list_add(
+					    c->job_list,
+					    gfarm_url, section,
+					    src_host, dst_host))
+						error_happend = 1;
+					goto found;
+				}
+			}
+		}
+		fprintf(stderr, "%s: error: %s:%s - no replica is found\n",
+		    program_name, gfarm_url, section);
+	found:
+		gfarm_file_section_copy_info_free_all(ncopies, copies);
+	}
+free_gfarm_file:
+	free(gfarm_file);
+	return (error_happend);
+
+}
+
+static int
+jobs_by_pairs(struct replication_job_list *job_list,
+	char *gfarm_url, int npairs,
+	gfarm_stringlist *src_nodes, gfarm_stringlist *dst_nodes)
+{
+	struct jobs_by_pairs_closure c;
+
+	c.job_list = job_list;
+	c.npairs = npairs;
+	c.src_nodes = src_nodes;
+	c.dst_nodes = dst_nodes;
+
+	return traverse_file_tree(gfarm_url, jobs_by_pairs_callback, &c);
 }
 
 struct replicate_to_dest_closure {
