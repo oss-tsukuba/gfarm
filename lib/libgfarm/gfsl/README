@@ -32,7 +32,7 @@
 
    % ln -s . etc
 
-3. gfarm-mapfile の確認．自分のエントリが存在するか？
+3. $GFARM_HOME/etc/gfarm-usermap の確認．自分のエントリが存在するか？
 
 4. host certificate および CA signing policy の確認．
 
