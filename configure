@@ -650,12 +650,12 @@ if test "${with_openssl+set}" = set; then
   withval="$with_openssl"
   with_openssl="${withval}"
  openssl_includes="-I${with_openssl}/include"
- openssl_libs="-L${with_openssl}/lib -lcrypto"
+ openssl_libs="-L${with_openssl}/lib -lcrypto -lssl"
 
 else
   with_openssl=/usr
  openssl_includes=
- openssl_libs=-lcrypto
+ openssl_libs="-lcrypto -lssl"
 
 fi
 
