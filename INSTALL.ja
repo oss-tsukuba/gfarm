@@ -171,10 +171,14 @@ configure コマンドには，下記のオプションがあります．
 ・--with-globus=ディレクトリ
 
   認証方式として GSI を可能とします．ディレクトリは Globus toolkit
-  version 2 (GT2) のインストールされているディレクトリを指定します．
+  version 2 (GT2) のインストールされているディレクトリを指定します%．
   GT2 のうち GSSAPI ライブラリが必要となります．ディレクトリを指定しな
   いと，環境変数 GLOBUS_LOCATION の示すディレクトリが利用されます．
   このオプションは省略可能です．
+  デフォールトでは，"gcc32" flavor でコンパイルされた Globus toolkit
+  ライブラリをリンクします．これ以外の flavor を利用したい場合には，
+  例えば --with-globus-flavor="gcc32dbg" のようにして flavor 名を指定して
+  ください．
 
 ・--prefix=ディレクトリ
 

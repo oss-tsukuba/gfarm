@@ -163,6 +163,9 @@ the --with-openldap option.
   specifies an installation directory of GT2 to utilize GSI
   authentication method.  When not specifying a directory,
   environment variable GLOBUS_LOCATION is used.  This is optional.
+  By default, "gcc32" flavor is used to link the Globus toolkit
+  library. If you want to use other flavor of the library, you can
+  specify the flavor by --with-globus-flavor="gcc32dbg", for example.
 
   --prefix=directory
 
