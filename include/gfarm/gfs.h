@@ -60,6 +60,7 @@ char *gfs_pio_create(char *, int, gfarm_mode_t mode, GFS_File *);
 #define GFARM_FILE_SEQUENTIAL		0x01000000
 #define GFARM_FILE_REPLICATE		0x02000000
 #define GFARM_FILE_NOT_REPLICATE	0x04000000
+#define GFARM_FILE_NOT_RETRY		0x08000000
 
 char *gfs_pio_set_local(int, int);
 char *gfs_pio_set_local_check(void);
