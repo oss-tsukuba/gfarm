@@ -98,6 +98,14 @@ shared.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>displays error message verbosely.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>displays a list of command options.</para>

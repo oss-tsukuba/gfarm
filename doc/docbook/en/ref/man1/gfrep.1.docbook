@@ -39,15 +39,22 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfrep</command> creates a replica of a Gfarm file <parameter>gfarm-URL</parameter>.
-Destination filesystem nodes can be specified by the <parameter>hostfile</parameter> or
-the <parameter>domainname</parameter>.</para>
 
-<para>With the <option>-I</option> option, <command>gfrep</command> creates a replica of a specified
-file fragment <parameter>fragment-index</parameter> of a Gfarm file <parameter>gfarm-URL</parameter> on
-the filesystem node <parameter>dest-node</parameter> specified by the -d option.  When
-the -s option is specified, the file fragment is copied from the
-<parameter>src-node</parameter>.</para>
+<para><command>gfrep</command> creates a replica of a Gfarm file
+<parameter>gfarm-URL</parameter>.  Destination filesystem nodes can be
+specified by the <parameter>hostfile</parameter> or the
+<parameter>domainname</parameter>.</para>
+
+<para>With the <option>-I</option> option, <command>gfrep</command>
+creates a replica of a specified file fragment
+<parameter>fragment-index</parameter> of a Gfarm file
+<parameter>gfarm-URL</parameter> on the filesystem node
+<parameter>dest-node</parameter> specified by the <option>-d</option>
+option.  With the <option>-s</option> option, it is possible to
+explicitly specify the source node <parameter>src-node</parameter>
+where the file fragment is copied from.  When the specified Gfarm file
+has only one fragment, it is not necessary to specify the
+<option>-I</option> option.</para>
 
 </refsect1>
 

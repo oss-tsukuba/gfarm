@@ -91,6 +91,14 @@ System の認証情報も渡すことが出来る。</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>詳細にエラーメッセージを表示します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
