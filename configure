@@ -2275,6 +2275,7 @@ fi
 
 test -d include || mkdir -p include
 test -d lib || mkdir -p lib
+test -d gfptool || mkdir -p gfptool
 test -d package || mkdir -p package
 test -d util || mkdir -p util
 
