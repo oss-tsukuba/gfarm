@@ -5,7 +5,8 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -232,7 +233,7 @@ CLASS="TOKEN"
 >例:</P
 ><P
 CLASS="LITERALLAYOUT"
->	spool_server_cred_type&nbsp;user</P
+>	spool_server_cred_type&nbsp;self</P
 ><P
 >指定可能な <TT
 CLASS="PARAMETER"
@@ -240,6 +241,10 @@ CLASS="PARAMETER"
 >cred_type</I
 ></TT
 > としては、
+「<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>」、
 「<SPAN
 CLASS="TOKEN"
 >host</SPAN
@@ -265,6 +270,25 @@ CLASS="TOKEN"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>self</SPAN
+></DT
+><DD
+><P
+>そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> および
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> の
+指定を行ってはいけません。</P
+></DD
 ><DT
 ><SPAN
 CLASS="TOKEN"
@@ -305,6 +329,9 @@ CLASS="COMMAND"
 > コマンドで指定した
 正式名と正確に一致している必要があります。ホスト別名は許されません。</P
 ><P
+>これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_HOSTBASED_SERVICE に
+対応する機能です。</P
+><P
 >例:</P
 ><P
 CLASS="LITERALLAYOUT"
@@ -324,21 +351,27 @@ CLASS="TOKEN"
 >spool_server_cred_name</SPAN
 > で指定します。
 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
-現在、ユーザ名はローカルホストのアカウント名として解釈されますが、
-これはバグであり、gfarm のグローバルユーザ名に変更される予定です。</P
-><P
->なお、ユーザ名と証明書の Distinguished Name の対応をとるため、
-``<TT
-CLASS="FILENAME"
->/etc/grid-security/grid-mapfile</TT
->'' を用います。
-このファイルに、同一のユーザアカウントに対して2つ以上の Distinguished Name が
-設定されていた場合、2つ名以降の設定は無視されます。
 この指定を利用する際には、<SPAN
 CLASS="TOKEN"
 >spool_server_cred_service</SPAN
 > の
 指定を行ってはいけません。</P
+><P
+>現時点では、この機能の実装に、いくつかの実装上の制限事項があります。
+まず、ユーザ名はローカルホストのアカウント名として解釈されますが、
+これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
+ユーザ名と証明書の Distinguished Name の対応をとるため、
+``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
+さらに、このファイル中で、同一のユーザアカウントに対して2つ以上の
+Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
+しまいます。</P
+><P
+>これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_USER_NAME に対応する機能です。</P
 ><P
 >例:</P
 ><P
@@ -363,6 +396,9 @@ CLASS="TOKEN"
 >spool_server_cred_service</SPAN
 > の
 指定を行ってはいけません。</P
+><P
+>これは、GSSAPI (RFC2743/RFC2744) で Name Type として GSS_C_NO_OID を
+指定した場合に対応する機能です。</P
 ><P
 >例:</P
 ><P
@@ -891,44 +927,44 @@ CLASS="TOKEN"
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->。setsockopt(2) システムコールで、<CODE
+>。setsockopt(2) システムコールで、<TT
 CLASS="CONSTANT"
->SO_DEBUG</CODE
+>SO_DEBUG</TT
 > ソケット・オプションを指定します。値を記述する必要はありません。</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->。setsockopt(2) システムコールで、<CODE
+>。setsockopt(2) システムコールで、<TT
 CLASS="CONSTANT"
->SO_KEEPALIVE</CODE
+>SO_KEEPALIVE</TT
 >
 ソケット・オプションを指定します。値を記述する必要はありません。</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->。setsockopt(2) システムコールで、<CODE
+>。setsockopt(2) システムコールで、<TT
 CLASS="CONSTANT"
->SO_SNDBUF</CODE
+>SO_SNDBUF</TT
 >
 ソケット・オプションを指定します。値の指定が必要です。</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->。setsockopt(2) システムコールで、<CODE
+>。setsockopt(2) システムコールで、<TT
 CLASS="CONSTANT"
->SO_RCVBUF</CODE
+>SO_RCVBUF</TT
 >
 ソケット・オプションを指定します。値の指定が必要です。</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->。setsockopt(2) システムコールで、<CODE
+>。setsockopt(2) システムコールで、<TT
 CLASS="CONSTANT"
->TCP_NODELAY</CODE
+>TCP_NODELAY</TT
 >
 ソケット・オプションを指定します。値を記述する必要はありません。</P
 ><P

@@ -3,8 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "16 October 2004" "Gfarm" ""
-
+.TH "GFARM.CONF" "5" "21 October 2004" "Gfarm" ""
 .SH NAME
 gfarm.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
@@ -41,7 +40,7 @@ from 0 to 31 separated by "/".
 \fB\fIdomain.name\fB\fR
 specifies a host name.
 .TP
-\fB \fI\&.domain.name\fB\fR
+\fB \fI.domain.name\fB\fR
 specifies all hosts which belong to the domain.name.
 .TP
 \fB*\fR
@@ -94,35 +93,47 @@ side needs to specify the following one line.
 Example:
 
 .nf
-	spool_server_cred_type user
+	spool_server_cred_type self
 .fi
 
 The possible types of the \fIcred_type\fR are
-``host\&'', ``user\&'' and 
-``mechanism-specific\&''.
+``self'', 
+``host'', ``user'' and 
+``mechanism-specific''.
 And those are used with spool_server_cred_service
 and spool_server_cred_name statement as follows:
 .RS
+.TP
+\fBtype\fR
+This keyword specifies that a certificate that currently the user
+has is used.
+You must not use either
+spool_server_cred_service or
+spool_server_cred_name statement,
+if you are using this type.
 .TP
 \fBhost\fR
 This keyword specifies that a host certificate or a service certificate
 is used.
 To choose a service certificate, the name of the service may be specified
 by spool_server_cred_service statement.
-If ``host\&'' is specified as the service name, a host certificate
-in the file ``\fI/etc/grid-security/hostcert.pem\fR\&'' will
+If ``host'' is specified as the service name, a host certificate
+in the file ``\fI/etc/grid-security/hostcert.pem\fR'' will
 be used.
-If any server name other than ``host\&'' is specified,
+If any server name other than ``host'' is specified,
 a service certificate in the file
-``\fI/etc/grid-security/SERVICE/SERVICEcert.pem\fR\&''
+``\fI/etc/grid-security/SERVICE/SERVICEcert.pem\fR''
 will be used.
-If the service name is omitted, ``host\&'' will be used as
+If the service name is omitted, ``host'' will be used as
 the service name by default.
 Only the Common Name field of a certificate will be used to check
 the server's identity for a host certificate and a service certificate.
 And the Common Name field must be ``CN=SERVERNAME/HOSTNAME'' format.
 Also the hostname must exactly match with the canonical name configured by
 the \fBgfhost\fR command. Any alias hostnames are not allowed.
+
+This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
+(RFC2743/RFC2744).
 
 Example:
 
@@ -137,18 +148,24 @@ The accout name of the user may be specified by
 spool_server_cred_name statement.
 If the accout name is omitted, the user who invoked the command
 will be used by default.
-Currently, the account name is interpreted as an account on the local host,
-but this is a bug, and will be changed to a gfarm global user name
-in the future.
-
-To map from the account name to a Distinguished Name of a certificate,
-file ``\fI/etc/grid-security/grid-mapfile\fR\&'' is used.
-If there are multiple Distinguished Names per one account in this file,
-only first Distinguished Name is used, and rest Distinguished Names for
-the account are ignored.
 You must not specify a service name by
 spool_server_cred_service statement, if you are using
 any user certificate.
+
+Currently, there are several implementation limits in this feature.
+First, the account name is interpreted as an account on the local host,
+but this is a bug, and will be changed to a gfarm global user name
+in the future.
+Second, to map from the account name to a Distinguished Name of a certificate,
+file ``\fI/etc/grid-security/grid-mapfile\fR'' is used.
+Thus, if there isn't such file, or if the user isn't specified in this file,
+this feature cannot be used.
+Third, if there are multiple Distinguished Names per one account in this file,
+only first Distinguished Name is used, and rest Distinguished Names for
+the account are ignored.
+
+This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
+(RFC2743/RFC2744).
 
 Example:
 
@@ -164,6 +181,9 @@ You must not specify a service name by
 spool_server_cred_service statement, if you are using
 this type.
 
+This feature corresponds to a case that GSS_C_NT_USER_NAME is specified
+as a Name Type in GSSAPI (RFC2743/RFC2744).
+
 Example:
 
 .nf
@@ -174,7 +194,7 @@ Example:
 .TP
 \fBspool_server_cred_service \fIcred_service\fB\fR
 This statement specifies the service name of a service certificate
-used by gfsd for GSI authentication, when ``host\&'' is specified
+used by gfsd for GSI authentication, when ``host'' is specified
 in spool_server_cred_type statement.
 This is just ignored when you are using sharedsecret 
 authentication.
@@ -223,7 +243,7 @@ statement about the configuration of this statement.
 .TP
 \fBmetadb_server_cred_service \fIcred_service\fB\fR
 This statement specifies the service name of a service certificate
-used by gfmd for GSI authentication, when ``host\&'' is specified
+used by gfmd for GSI authentication, when ``host'' is specified
 in metadb_server_cred_type statement.
 This is just ignored when you are using sharedsecret 
 authentication.
@@ -286,7 +306,7 @@ The second argument \fIauth method\fR should be
 gsi, gsi_auth or sharedsecret
 keyword.
 The third argument specifies the host(s) by \fIHost
-specification\fR\&.
+specification\fR.
 
 The auth statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
@@ -304,7 +324,7 @@ The order of statements with different authentication methods is
 not concerned.  When there are several candidates for authentication
 method for the host, the order the authentication trial is
 sharedsecret, gsi_auth
-and then gsi\&.
+and then gsi.
 
 The GSI methods are available if and only if the
 --with-globus option is specified at the configure time.  When the methods are
@@ -331,14 +351,14 @@ all hosts which belong to the network address of 10.0.0.0/8 will be
 tried to be authenticated by both
 gsi_auth and gsi,
 and all other hosts will be authenticated by
-gsi\&.  Note that two hosts of 192.168.0.100 and
+gsi.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.
 .TP
 \fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost specification\fB]\fR
 The netparam statement specifies several
 communication parameters listed below.
 
-parallel_streams\&.  This parameter specifies the
+parallel_streams.  This parameter specifies the
 number of tcp streams.  The default is a single stream.  The
 parallel_streams parameter may improve the file
 transfer performance especially when connecting to a far distant site
@@ -348,7 +368,7 @@ effective on a client node where gfrep(1) command is executed.
 \fIHost specification\fR specifies the source host(s)
 of file replication instead of the destination host(s).
 
-stripe_unit_size\&.  This parameter specifies how
+stripe_unit_size.  This parameter specifies how
 to divide the data when utilizing multiple tcp streams.  Without this
 parameter, the data will be divided into
 parallel_streams of contiguous blocks with almost even
@@ -363,7 +383,7 @@ only effective on a client node where gfrep(1) command is executed.
 \fIHost specification\fR specifies the source host(s)
 of file replication instead of the destination host(s).
 
-rate_limit\&.  This parameter specifies the maximum
+rate_limit.  This parameter specifies the maximum
 transfer rate (bps; bit per second) for a single connection, which is
 introduced experimentally.  The parameter on a source filesystem node
 is effective during parallel file replication.  \fIHost
@@ -398,21 +418,21 @@ to every socket.
 
 The following socket option can be specified.
 
-debug\&.  SO_DEBUG socket
+debug.  SO_DEBUG socket
 option is specified.  The \fIvalue\fR is not
 necessary.
 
-keepalive\&.  SO_KEEPALIVE
+keepalive.  SO_KEEPALIVE
 socket option is specified.  The \fIvalue\fR is not
 necessary.
 
-sndbuf\&.  SO_SNDBUF socket
+sndbuf.  SO_SNDBUF socket
 option is specified with the \fIvalue\fR
 
-rcvbuf\&.  SO_RCVBUF socket
+rcvbuf.  SO_RCVBUF socket
 option is specified with the \fIvalue\fR
 
-tcp_nodelay\&.  TCP_NODELAY
+tcp_nodelay.  TCP_NODELAY
 socket option is specified.  The \fIvalue\fR is not
 necessary.
 
@@ -476,89 +496,4 @@ notation.
 
 .nf
 	<statement> ::=
-		\~\~<spool_statement> |
-		\~\~<spool_serverport_statement> |
-		\~\~<spool_server_cred_type_statement> |
-		\~\~<spool_server_cred_service_statement> |
-		\~\~<spool_server_cred_name_statement> |
-		\~\~<metadb_serverhost_statement> |
-		\~\~<metadb_serverport_statement> |
-		\~\~<metadb_server_cred_type_statement> |
-		\~\~<metadb_server_cred_service_statement> |
-		\~\~<metadb_server_cred_name_statement> |
-		\~\~<ldap_serverhost_statement> |
-		\~\~<ldap_serverport_statement> |
-		\~\~<ldap_base_dn_statement> |
-		\~\~<auth_statement> |
-		\~\~<netparam_statement> |
-		\~\~<sockopt_statement> |
-		\~\~<address_use_statement> |
-		\~\~<local_user_map_statement>
-	<spool_statement> ::= "spool" <pathname>
-	<spool_serverport_statement> ::= "spool_serverport" <hostname>
-	<spool_server_cred_type_statement> ::=
-		\~\~"spool_server_cred_type" <cred_type>
-	<spool_server_cred_service_statement> ::=
-		\~\~"spool_server_cred_service" <cred_service>
-	<spool_server_cred_name_statement> ::=
-		\~\~"spool_server_cred_name" <cred_name>
-	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
-	<metadb_serverport_statement> ::= "metadb_serverport" <portnumber>
-	<metadb_server_cred_type_statement> ::=
-		\~\~"metadb_server_cred_type" <cred_type>
-	<metadb_server_cred_service_statement> ::=
-		\~\~"metadb_server_cred_service" <cred_service>
-	<metadb_server_cred_name_statement> ::=
-		\~\~"metadb_server_cred_name" <cred_name>
-	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
-	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
-	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
-	<auth_statement> ::=
-		\~\~"auth" <auth_command> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
-	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
-	<netparam_statement> ::=
-		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
-	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
-		\~\~"rate_limit"
-	<sockopt_statement> ::=
-		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
-		\~\~"tcp_nodelay"
-	<address_use_statement> ::=  "address_use" <hostspec>
-	<local_user_map_statement> ::=  "local_user_map" <pathname>
-	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
-		\~\~<hostname> | "." <domain_name> | "*"
-	<pathname> ::= <pathname_character> <pathname_character>*
-	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
-	<hostname> ::= <hostname_character> <hostname_character>*
-	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
-	<portnumber> ::= <number>
-	<number> ::= <digit> [<digit>*]
-	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	<string> ::= """ <double_quoted_character>* """
-	<double_quoted_character> ::=
-		\~\~<any_character_except_backslash_and_double_quotation> |
-		\~\~"\\\\" | "\\""
-.fi
-.SH "EXAMPLES"
-
-.nf
-spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
-ldap_serverport 389
-ldap_base_dn "dc=example, dc=com"
-auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
-auth enable gsi *
-.fi
-.SH "FILES"
-.TP
-\fB\fI/etc/gfarm.conf\fB\fR
-.TP
-\fB\fI$HOME/.gfarmrc\fB\fR
-.SH "SEE ALSO"
-.PP
-\fBgfmd\fR(8),
-\fBgfsd\fR(8), \fBsetsockopt\fR(2)
+		

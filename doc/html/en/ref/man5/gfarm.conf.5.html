@@ -5,7 +5,8 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -232,7 +233,7 @@ side needs to specify the following one line.</P
 >Example:</P
 ><P
 CLASS="LITERALLAYOUT"
->	spool_server_cred_type&nbsp;user</P
+>	spool_server_cred_type&nbsp;self</P
 ><P
 >The possible types of the <TT
 CLASS="PARAMETER"
@@ -240,6 +241,10 @@ CLASS="PARAMETER"
 >cred_type</I
 ></TT
 > are
+``<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>'', 
 ``<SPAN
 CLASS="TOKEN"
 >host</SPAN
@@ -264,6 +269,26 @@ CLASS="TOKEN"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>type</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a certificate that currently the user
+has is used.
+You must not use either
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> or
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement,
+if you are using this type.</P
+></DD
 ><DT
 ><SPAN
 CLASS="TOKEN"
@@ -311,6 +336,9 @@ CLASS="COMMAND"
 >gfhost</B
 > command. Any alias hostnames are not allowed.</P
 ><P
+>This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
+(RFC2743/RFC2744).</P
+><P
 >Example:</P
 ><P
 CLASS="LITERALLAYOUT"
@@ -332,24 +360,30 @@ CLASS="TOKEN"
 > statement.
 If the accout name is omitted, the user who invoked the command
 will be used by default.
-Currently, the account name is interpreted as an account on the local host,
-but this is a bug, and will be changed to a gfarm global user name
-in the future.</P
-><P
->To map from the account name to a Distinguished Name of a certificate,
-file ``<TT
-CLASS="FILENAME"
->/etc/grid-security/grid-mapfile</TT
->'' is used.
-If there are multiple Distinguished Names per one account in this file,
-only first Distinguished Name is used, and rest Distinguished Names for
-the account are ignored.
 You must not specify a service name by
 <SPAN
 CLASS="TOKEN"
 >spool_server_cred_service</SPAN
 > statement, if you are using
 any user certificate.</P
+><P
+>Currently, there are several implementation limits in this feature.
+First, the account name is interpreted as an account on the local host,
+but this is a bug, and will be changed to a gfarm global user name
+in the future.
+Second, to map from the account name to a Distinguished Name of a certificate,
+file ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' is used.
+Thus, if there isn't such file, or if the user isn't specified in this file,
+this feature cannot be used.
+Third, if there are multiple Distinguished Names per one account in this file,
+only first Distinguished Name is used, and rest Distinguished Names for
+the account are ignored.</P
+><P
+>This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
+(RFC2743/RFC2744).</P
 ><P
 >Example:</P
 ><P
@@ -375,6 +409,9 @@ CLASS="TOKEN"
 >spool_server_cred_service</SPAN
 > statement, if you are using
 this type.</P
+><P
+>This feature corresponds to a case that GSS_C_NT_USER_NAME is specified
+as a Name Type in GSSAPI (RFC2743/RFC2744).</P
 ><P
 >Example:</P
 ><P
@@ -976,9 +1013,9 @@ to every socket.</P
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->.  <CODE
+>.  <TT
 CLASS="CONSTANT"
->SO_DEBUG</CODE
+>SO_DEBUG</TT
 > socket
 option is specified.  The <TT
 CLASS="PARAMETER"
@@ -991,9 +1028,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->.  <CODE
+>.  <TT
 CLASS="CONSTANT"
->SO_KEEPALIVE</CODE
+>SO_KEEPALIVE</TT
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"
@@ -1006,9 +1043,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->.  <CODE
+>.  <TT
 CLASS="CONSTANT"
->SO_SNDBUF</CODE
+>SO_SNDBUF</TT
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -1020,9 +1057,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->.  <CODE
+>.  <TT
 CLASS="CONSTANT"
->SO_RCVBUF</CODE
+>SO_RCVBUF</TT
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -1034,9 +1071,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->.  <CODE
+>.  <TT
 CLASS="CONSTANT"
->TCP_NODELAY</CODE
+>TCP_NODELAY</TT
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "16 October 2004" "Gfarm" ""
+.TH "GFARM.CONF" "5" "21 October 2004" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -91,16 +91,24 @@ sharedsecret 利用時には、この指定は単に無視されます。
 例:
 
 .nf
-	spool_server_cred_type user
+	spool_server_cred_type self
 .fi
 
 指定可能な \fIcred_type\fR としては、
+「self」、
 「host」、「user」、
 「mechanism-specific」があり、
 spool_server_cred_service および
 spool_server_cred_name と組み合わせて
 下記のように用います。
 .RS
+.TP
+\fBself\fR
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+spool_server_cred_service および
+spool_server_cred_name の
+指定を行ってはいけません。
 .TP
 \fBhost\fR
 ホスト証明書あるいはサービス証明書を用いることを示します。
@@ -118,6 +126,9 @@ spool_server_cred_service で指定します。
 あります。また、ホスト名は、\fBgfhost\fR コマンドで指定した
 正式名と正確に一致している必要があります。ホスト別名は許されません。
 
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_HOSTBASED_SERVICE に
+対応する機能です。
+
 例:
 
 .nf
@@ -129,15 +140,21 @@ spool_server_cred_service で指定します。
 ユーザ証明書を用いることを示します。
 ユーザのアカウント名を spool_server_cred_name で指定します。
 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
-現在、ユーザ名はローカルホストのアカウント名として解釈されますが、
-これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
-
-なお、ユーザ名と証明書の Distinguished Name の対応をとるため、
-``\fI/etc/grid-security/grid-mapfile\fR\&'' を用います。
-このファイルに、同一のユーザアカウントに対して2つ以上の Distinguished Name が
-設定されていた場合、2つ名以降の設定は無視されます。
 この指定を利用する際には、spool_server_cred_service の
 指定を行ってはいけません。
+
+現時点では、この機能の実装に、いくつかの実装上の制限事項があります。
+まず、ユーザ名はローカルホストのアカウント名として解釈されますが、
+これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
+ユーザ名と証明書の Distinguished Name の対応をとるため、
+``\fI/etc/grid-security/grid-mapfile\fR\&'' を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
+さらに、このファイル中で、同一のユーザアカウントに対して2つ以上の
+Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
+しまいます。
+
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_USER_NAME に対応する機能です。
 
 例:
 
@@ -151,6 +168,9 @@ spool_server_cred_service で指定します。
 直接指定します。
 この指定を利用する際には、spool_server_cred_service の
 指定を行ってはいけません。
+
+これは、GSSAPI (RFC2743/RFC2744) で Name Type として GSS_C_NO_OID を
+指定した場合に対応する機能です。
 
 例:
 
