@@ -312,14 +312,16 @@ test(enum testmode test_mode, char *file1, char *file2,
 	}
 	gettimeofday(&t2, NULL);
 
-	printf("[%03d] %lld %7d %-5s %10.0f %s\n",
-	       node_index, (long long)file_size, buffer_size, label,
+	printf("[%03d] %" PR_FILE_OFFSET " %7d %-5s %10.0f %s\n",
+	       node_index, CAST_PR_FILE_OFFSET (file_offset_t)file_size,
+	       buffer_size, label,
 	       file_size / timeval_sub(&t2, &t1), gfarm_self_hostname);
 	fflush(stdout);
 
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
-		fprintf(stderr, "[%03d] %lld %7d %-5s",
-		       node_index, (long long)file_size, buffer_size, label);
+		fprintf(stderr, "[%03d] %" PR_FILE_OFFSET " %7d %-5s",
+		    node_index, CAST_PR_FILE_OFFSET (file_offset_t)file_size,
+		    buffer_size, label);
 		if (test_mode == TESTMODE_WRITE)
 			fprintf(stderr, " %g %g %g",
 			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
