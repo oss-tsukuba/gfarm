@@ -13,12 +13,10 @@ char *program_name = "gfrm";
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
-	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-h <host>\t"
-	    "remove a replicated fragment specified on <host>\n");
-	fprintf(stderr, "\t-I <fragment>\t"
-	    "remove a replicated fragment specified by <fragment>\n");
+	fprintf(stderr, "Usage: %s [ -h <host> ] <gfarm_url>...\n",
+		program_name);
+	fprintf(stderr, "       %s -I <fragment> -h <host> <gfarm_url>...\n",
+		program_name);
 	exit(1);
 }
 
@@ -79,15 +77,34 @@ main(argc, argv)
 	}
 
 	if (section == NULL) {
-		int i;
-		/* remove a whole file */
-		if (nhosts != 0)
-			fprintf(stderr, "%s: warning: -h option is ignored\n", 
-				program_name);
-		for (i = 0; i < argc; i++) {
-			e = gfs_unlink(argv[i]);
-			if (e != NULL)
-				fprintf(stderr, "%s: %s\n", argv[i], e);
+		if (nhosts == 0) {
+			int i;
+			/* remove a whole file */
+			for (i = 0; i < argc; i++) {
+				e = gfs_unlink(argv[i]);
+				if (e != NULL)
+					fprintf(stderr, "%s: %s\n",
+						argv[i], e);
+			}
+		}
+		else {
+			/*
+			 * remove file replicas of a whole file
+			 * on a specified node.
+			 */
+			int i, j;
+			hosttab = gfarm_strings_alloc_from_stringlist(
+				&host_list);
+			gfarm_stringlist_free(&host_list);
+			for (j = 0; j < nhosts; j++) {
+				for (i = 0; i < argc; i++) {
+					e = gfs_unlink_replicas_on_host(
+						argv[i], hosttab[j]);
+					if (e != NULL)
+						fprintf(stderr, "%s: %s\n",
+							argv[i], e);
+				}
+			}
 		}
 	} else {
 		int i;
