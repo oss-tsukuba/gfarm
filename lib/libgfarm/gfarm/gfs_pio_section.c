@@ -222,7 +222,7 @@ replicate_section_to_local_internal(
 {
 	struct sockaddr peer_addr;
 	struct gfs_connection *peer_conn;
-	int fd, peer_fd;
+	int fd, peer_fd, saved_errno;
 	char *e;
 
 	e = gfarm_host_address_get(peer_hostname, gfarm_spool_server_port,
@@ -246,16 +246,20 @@ replicate_section_to_local_internal(
 		return (e);
 
 	fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC, st_mode);
+	saved_errno = errno;
 	/* FT - the parent directory may be missing */
 	if (fd == -1
-	    && gfs_proto_error_string(errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+	    && gfs_proto_error_string(saved_errno)
+		== GFARM_ERR_NO_SUCH_OBJECT) {
 		if (gfs_pio_local_mkdir_parent_canonical_path(
-			    pathname) == NULL)
+			    pathname) == NULL) {
 			fd = open(local_path, O_WRONLY|O_CREAT|O_TRUNC,
 				  st_mode);
+			saved_errno = errno;
+		}
 	}
 	if (fd < 0) {
-		e = gfs_proto_error_string(errno);
+		e = gfs_proto_error_string(saved_errno);
 		goto finish_peer_close;
 	}
 
