@@ -1,5 +1,10 @@
 README for syscall-hooking library
 
+*** Limitation
+
+This syscall-hooking library does not work with newer version than
+glibc version 2.3.2 such as glibc included in Fedora Core 1.
+
 *** Trapping system calls for porting legacy or commercial
     applications
 
