@@ -18,7 +18,8 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <input_file> <output_file>\n",
 		program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-p\tpreserve file status\n");
+	fprintf(stderr, "\t-p\t\t\tpreserve file status\n");
+	fprintf(stderr, "\t-I fragment-index\tspecify a fragment index\n");
 	exit(1);
 }
 
@@ -27,9 +28,8 @@ usage()
 int
 main(int argc, char *argv[])
 {
-	int total_nodes, node_index;
 	int flag_preserve = 0;
-	char *e, c, *input, *output;
+	char *e, c, *input, *output, *gfarm_index = NULL;
 	GFS_File igf, ogf;
 	struct gfs_stat gstat;
 	gfarm_mode_t mode;
@@ -46,10 +46,13 @@ main(int argc, char *argv[])
 	if (argc >= 1)
 		program_name = argv[0];
 
-	while ((c = getopt(argc, argv, "ph")) != -1) {
+	while ((c = getopt(argc, argv, "hI:p?")) != -1) {
 		switch (c) {
 		case 'p':
 			flag_preserve = 1;
+			break;
+		case 'I':
+			gfarm_index = optarg;
 			break;
 		case 'h':
 		case '?':
@@ -60,57 +63,35 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	e = gfs_pio_get_node_rank(&node_index);
+	if (argc < 2 || argc > 3 /* XXX */)
+		usage();
+	output = argv[argc - 1];
+	--argc;
+
+	e = gfs_stat(output, &gstat);
+	if (e == NULL && GFARM_S_ISDIR(gstat.st_mode)) {
+		fprintf(stderr, "%s: is a directory, not supported yet\n",
+			output);
+		exit(1);
+	}
+#if 0   /*  XXX - gfs_stat() may return a non-null pointer because
+	    a process in the same parallel process might create it
+	    already. */
+	else if (e == NULL) {
+		fprintf(stderr, "%s: already exist\n", output);
+		exit(1);
+	}
+#endif
+	gfs_stat_free(&gstat);
+
+	e = gfs_realpath(*argv, &input);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: %s\n", *argv, e);
 		exit(1);
 	}
-	e = gfs_pio_get_node_size(&total_nodes);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
-	if (argc == 0) {
-		if (node_index == 0) {
-			fprintf(stderr, "%s: missing input file name\n",
-				program_name);
-		}
-		exit(1);
-	}
-	input = argv[0];
-	argc--;
-	argv++;
-
-	if (argc == 0) {
-		if (node_index == 0) {
-			fprintf(stderr, "%s: missing output file name\n",
-				program_name);
-		}
-		exit(1);
-	}
-	output = argv[0];
-	argc--;
-	argv++;
-
-	if (argc != 0) {
-		if (node_index == 0) {
-			fprintf(stderr,
-				"%s: currently, "
-				"only one input file is supported\n",
-				program_name);
-		}
-		exit(1);
-	}
-	if (strcmp(input, output) == 0) {
-		fprintf(stderr, "%s: %s and %s are the same file\n",
-			program_name, input, output);
-		exit(1);
-	}
-
 	e = gfs_stat(input, &gstat);
 	if (e != NULL) {
-		fprintf(stderr, "%s: node %d, cannot open %s: %s\n",
-			program_name, node_index, input, e);
+		fprintf(stderr, "%s: %s\n", input, e);
 		exit(1);
 	}
 	if (flag_preserve) {
@@ -122,40 +103,57 @@ main(int argc, char *argv[])
 		mode = 0666;
 	gfs_stat_free(&gstat);
 
+	/** **/
+
 	e = gfs_pio_open(input, GFARM_FILE_RDONLY, &igf);
 	if (e != NULL) {
-		fprintf(stderr, "%s: node %d, cannot open %s: %s\n",
-			program_name, node_index, input, e);
+		fprintf(stderr, "%s: %s\n", input, e);
 		exit(1);
 	}
-	e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
-		fprintf(stderr,
-			"%s: node %d, set_view_local(%s): %s\n",
-			program_name, node_index, input, e);
-		exit(1);
+	if (gfarm_index == NULL) {
+		e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
+		if (e != NULL) {
+			fprintf(stderr,
+				"%s: set_view_local(%s): %s\n",
+				program_name, input, e);
+			exit(1);
+		}
+	}
+	else {
+		e = gfs_pio_set_view_section(
+			igf, gfarm_index, NULL, GFARM_FILE_SEQUENTIAL);
+		if (e != NULL) {
+			fprintf(stderr,
+				"%s: set_view_section(%s, %s): %s\n",
+				program_name, input, gfarm_index, e);
+			exit(1);
+		}
 	}
 
-	/* check whether the destination is a directory or not */
-	e = gfs_stat(output, &gstat);
-	if (e == NULL && GFARM_S_ISDIR(gstat.st_mode)) {
-		if (node_index == 0) {
-			fprintf(stderr, "%s: is a directory\n", output);
-		}
-		exit(1);
-	}
+	/** **/
 
 	e = gfs_pio_create(output, GFARM_FILE_WRONLY, mode, &ogf);
 	if (e != NULL) {
-		fprintf(stderr, "%s: node %d, cannot open %s: %s\n",
-			program_name, node_index, output, e);
+		fprintf(stderr, "%s: cannot open %s: %s\n",
+			program_name, output, e);
 		exit(1);
 	}
-	e = gfs_pio_set_view_local(ogf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
-		fprintf(stderr, "%s: node %d, set_view_local(%s): %s\n",
-			program_name, node_index, output, e);
-		exit(1);
+	if (gfarm_index == NULL) {
+		e = gfs_pio_set_view_local(ogf, GFARM_FILE_SEQUENTIAL);
+		if (e != NULL) {
+			fprintf(stderr, "%s: set_view_local(%s): %s\n",
+				program_name, output, e);
+			exit(1);
+		}
+	}
+	else {
+		e = gfs_pio_set_view_section(
+			ogf, gfarm_index, NULL, GFARM_FILE_SEQUENTIAL);
+		if (e != NULL) {
+			fprintf(stderr, "%s: set_view_section(%s, %s): %s\n",
+				program_name, output, gfarm_index, e);
+			exit(1);
+		}
 	}
 
 	/* copy this fragment */
