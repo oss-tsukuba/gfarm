@@ -218,6 +218,7 @@ fi
 %{man_prefix}/man3/gfarm_terminate.3.gz
 %{man_prefix}/man3/gfarm_url_hosts_schedule.3.gz
 %{man_prefix}/man3/gfs_chdir.3.gz
+%{man_prefix}/man3/gfs_chmod.3.gz
 %{man_prefix}/man3/gfs_closedir.3.gz
 %{man_prefix}/man3/gfs_glob.3.gz
 %{man_prefix}/man3/gfs_glob_add.3.gz
@@ -306,6 +307,7 @@ fi
 %{man_prefix}/ja/man3/gfarm_url_section_replicate_from_to.3.gz
 %{man_prefix}/ja/man3/gfarm_url_section_replicate_to.3.gz
 %{man_prefix}/ja/man3/gfs_chdir.3.gz
+%{man_prefix}/ja/man3/gfs_chmod.3.gz
 %{man_prefix}/ja/man3/gfs_closedir.3.gz
 %{man_prefix}/ja/man3/gfs_glob.3.gz
 %{man_prefix}/ja/man3/gfs_glob_add.3.gz
@@ -378,6 +380,7 @@ fi
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
 %{html_prefix}/en/ref/man3/gfarm_url_hosts_schedule.3.html
 %{html_prefix}/en/ref/man3/gfs_chdir.3.html
+%{html_prefix}/en/ref/man3/gfs_chmod.3.html
 %{html_prefix}/en/ref/man3/gfs_closedir.3.html
 %{html_prefix}/en/ref/man3/gfs_glob.3.html
 %{html_prefix}/en/ref/man3/gfs_glob_add.3.html
@@ -465,6 +468,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfarm_url_section_replicate_from_to.3.html
 %{html_prefix}/ja/ref/man3/gfarm_url_section_replicate_to.3.html
 %{html_prefix}/ja/ref/man3/gfs_chdir.3.html
+%{html_prefix}/ja/ref/man3/gfs_chmod.3.html
 %{html_prefix}/ja/ref/man3/gfs_closedir.3.html
 %{html_prefix}/ja/ref/man3/gfs_glob.3.html
 %{html_prefix}/ja/ref/man3/gfs_glob_add.3.html
