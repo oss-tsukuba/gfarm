@@ -875,6 +875,7 @@ main(int argc, char **argv)
 			invalid_option('D');
 		break;
 	default:
+		;
 	}
 
 	for (i = 0; i < argc; i++) {
