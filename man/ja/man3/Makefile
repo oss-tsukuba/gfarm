@@ -23,7 +23,12 @@ MAN = \
 	gfarm_stringlist_length.3 \
 	gfarm_strings_free_deeply.3 \
 	gfarm_terminate.3 \
+	gfarm_url_fragments_replicate.3 \
 	gfarm_url_hosts_schedule.3 \
+	gfarm_url_program_deliver.3 \
+	gfarm_url_program_register.3 \
+	gfarm_url_section_replicate_from_to.3 \
+	gfarm_url_section_replicate_to.3 \
 	gfs_chmod.3 \
 	gfs_chown.3 \
 	gfs_closedir.3 \
