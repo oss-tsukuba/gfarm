@@ -1592,7 +1592,18 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		pclose(fp);
 		free(xauth_command);
 	}
-	if (pipe(stdin_pipe) == -1) {
+#if 1	/*
+	 * To make bash execucute ~/.bashrc, because bash only executes it, if
+	 *   1. $SSH_CLIENT/$SSH2_CLIENT is set, or stdin is a socket.
+	 * and
+	 *   2. $SHLVL < 2
+	 * Honestly, people should use zsh instead of bash.
+	 */
+	if (socketpair(PF_UNIX, SOCK_STREAM, 0, stdin_pipe) == -1)
+#else
+	if (pipe(stdin_pipe) == -1)
+#endif
+	{
 		e = gfarm_errno_to_error(errno);
 		goto free_xauth_env;
 	}
