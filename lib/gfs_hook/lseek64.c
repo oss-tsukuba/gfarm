@@ -30,9 +30,10 @@ gfs_hook_syscall_lseek64(int filedes, off64_t offset, int whence)
 	return (syscall(SYS_llseek, filedes, (int)(offset >> 32), (int)offset,
 	    whence));
 #elif defined(SYS__llseek) /* linux */
-	off64_t rv, result;
+	int rv;
+	off64_t result;
 
-	rv = syscall(SYS__llseek, filedes, (int)(offset >>32), (int)offset,
+	rv = syscall(SYS__llseek, filedes, (int)(offset >> 32), (int)offset,
 	    &result, whence);
 	return (rv ? rv : result);
 #else
