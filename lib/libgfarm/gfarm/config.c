@@ -1189,8 +1189,7 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			if (e != NULL)
 				return (e);
 		}
-		if (gf_profile == 1)
-			gfarm_timerval_calibrate();
+		gfs_profile(gfarm_timerval_calibrate());
 
 		++argc;
 		--argv;
@@ -1284,8 +1283,7 @@ gfarm_terminate(void)
 {
 	char *e;
 
-	if (gf_profile == 1)
-		gfs_display_timers();
+	gfs_profile(gfs_display_timers());
 
 	if (gf_stdout != NULL) {
 		fflush(stdout);
