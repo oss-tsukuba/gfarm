@@ -102,7 +102,7 @@ gfs_rmdir(const char *pathname)
 			    (entry->d_namlen == 2 &&
 			     entry->d_name[0] == '.' &&
 			     entry->d_name[1] == '.'))
-				continue;
+				continue; /* "." or ".." */
 			/* Not OK */
 			e = GFARM_ERR_DIRECTORY_NOT_EMPTY;
 			break;
@@ -873,6 +873,7 @@ struct gfs_dir {
 	struct node *dir;
 	struct gfarm_hash_iterator iterator;
 	struct gfs_dirent buffer;
+	int index;
 };
 
 char *
@@ -916,6 +917,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 		return (GFARM_ERR_NO_MEMORY);
 	dir->dir = n;
 	gfarm_hash_iterator_begin(n->u.d.children, &dir->iterator);
+	dir->index = 0;
 	*dirp = dir;
 
 	++opendir_count;
@@ -929,24 +931,38 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 	struct gfarm_hash_entry *he;
 	struct node *n;
 
-	for (;;) {
-		he = gfarm_hash_iterator_access(&dir->iterator);
-		if (he == NULL) {
-			*entry = NULL;
-			return (NULL);
+	if (dir->index == 0) {
+		n = dir->dir;
+		dir->buffer.d_namlen = 1;
+		dir->buffer.d_name[0] = '.';
+		dir->index++;
+	} else if (dir->index == 1) {
+		n = dir->dir->parent;
+		dir->buffer.d_namlen = 2;
+		dir->buffer.d_name[0] = dir->buffer.d_name[1] = '.';
+		dir->index++;
+	} else {
+		for (;;) {
+			he = gfarm_hash_iterator_access(&dir->iterator);
+			if (he == NULL) {
+				*entry = NULL;
+				return (NULL);
+			}
+			n = gfarm_hash_entry_data(he);
+			gfarm_hash_iterator_next(&dir->iterator);
+			dir->index++;
+			if ((n->flags & NODE_FLAG_PURGED) == 0)
+				break;
 		}
-		n = gfarm_hash_entry_data(he);
-		gfarm_hash_iterator_next(&dir->iterator);
-		if ((n->flags & NODE_FLAG_PURGED) == 0)
-			break;
+		dir->buffer.d_namlen = gfarm_hash_entry_key_length(he);
+		memcpy(dir->buffer.d_name, gfarm_hash_entry_key(he),
+		    dir->buffer.d_namlen);
 	}
-	dir->buffer.d_fileno = INUMBER(n);
+	dir->buffer.d_name[dir->buffer.d_namlen] = '\0';
 	dir->buffer.d_type = (n->flags & NODE_FLAG_IS_DIR) ?
 	    GFS_DT_DIR : GFS_DT_REG;
-	dir->buffer.d_namlen = gfarm_hash_entry_key_length(he);
-	memcpy(dir->buffer.d_name, gfarm_hash_entry_key(he),
-	    dir->buffer.d_namlen);
-	dir->buffer.d_name[dir->buffer.d_namlen] = '\0';
+	dir->buffer.d_reclen = 0x100; /* XXX */
+	dir->buffer.d_fileno = INUMBER(n);
 	*entry = &dir->buffer;
 	return (NULL);
 }

@@ -187,6 +187,9 @@ gfsck_dir(char *gfarm_dir, char *file)
 		return (e);
 	}
 	while ((e = gfs_readdir(gdir, &gdent)) == NULL && gdent != NULL) {
+		if (gdent->d_name[0] == '.' && (gdent->d_name[1] == '\0' ||
+		    (gdent->d_name[1] == '.' && gdent->d_name[2] == '\0')))
+			continue; /* "." or ".." */
 		e = gfsck_dir(gfarm_url, gdent->d_name);
 		if (e != NULL) {
 			fprintf(stderr, "%s/%s: %s\n",

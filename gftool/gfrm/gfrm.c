@@ -51,6 +51,9 @@ remove_cwd_entries()
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
 		char *p;
 
+		if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' ||
+		    (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
+			continue; /* "." or ".." */
 	 	p = strdup(entry->d_name);
 		if (p == NULL) {
 			fprintf(stderr, "%s\n", GFARM_ERR_NO_MEMORY);
