@@ -1,2 +1,2 @@
-usr/bin/gfront
-usr/share/java/gfront.jar
+debian/tmp/usr/bin/gfront
+debian/tmp/usr/share/java/gfront.jar

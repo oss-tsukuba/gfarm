@@ -49,11 +49,23 @@ configure-stamp:
 	install -d build && cd build && $(CONFIGURE) --prefix=`pwd`/../debian/tmp/usr 
 	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=/usr/grid --prefix=`pwd`/../debian/tmp_gsi/usr 
 
-	ln -s $(CLIENT_PKG).install	debian/$(CLIENT_GSI_PKG).install
-	ln -s $(GFPTOOL_PKG).install	debian/$(GFPTOOL_GSI_PKG).install
-	ln -s $(GFMD_PKG).install		debian/$(GFMD_GSI_PKG).install
-	ln -s $(GFSD_PKG).install		debian/$(GFSD_GSI_PKG).install
-	ln -s $(LIBGFARM_DEV_PKG).install	debian/$(DEV_GSI_PKG).install
+#	sed -e 's/tmp/tmp_gsi/' debian/$(CLIENT_PKG).install > debian/$(CLIENT_GSI_PKG).install
+#	sed -e 's/tmp/tmp_gsi/' debian/$(GFPTOOL_PKG).install > debian/$(GFPTOOL_GSI_PKG).install
+#	sed -e 's/tmp/tmp_gsi/' debian/$(GFMD_PKG).install > debian/$(GFMD_GSI_PKG).install
+#	sed -e 's/tmp/tmp_gsi/' debian/$(GFSD_PKG).install > debian/$(GFSD_GSI_PKG).install
+#	sed -e 's/tmp/tmp_gsi/' debian/$(LIBGFARM_DEV_PKG).install > debian/$(DEV_GSI_PKG).install
+
+	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
+	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
+	ln -s $(GFMD_PKG).install  debian/$(GFMD_GSI_PKG).install
+	ln -s $(GFSD_PKG).install  debian/$(GFSD_GSI_PKG).install
+	ln -s $(LIBGFARM_DEV_PKG).install  debian/$(DEV_GSI_PKG).install
+
+	ln -s $(CLIENT_PKG).manpages debian/$(CLIENT_GSI_PKG).manpages
+	ln -s $(GFPTOOL_PKG).manpages debian/$(GFPTOOL_GSI_PKG).manpages
+	ln -s $(GFMD_PKG).manpages debian/$(GFMD_GSI_PKG).manpages
+	ln -s $(GFSD_PKG).manpages debian/$(GFSD_GSI_PKG).manpages
+	ln -s $(LIBGFARM_DEV_PKG).manpages debian/$(DEV_GSI_PKG).manpages
 
 	touch configure-stamp
 
@@ -86,6 +98,12 @@ clean:
 	rm -f debian/$(GFSD_GSI_PKG).install
 	rm -f debian/$(DEV_GSI_PKG).install
 
+	rm -f debian/$(CLIENT_GSI_PKG).manpages
+	rm -f debian/$(GFPTOOL_GSI_PKG).manpages
+	rm -f debian/$(GFMD_GSI_PKG).manpages
+	rm -f debian/$(GFSD_GSI_PKG).manpages
+	rm -f debian/$(DEV_GSI_PKG).manpages
+
 	dh_clean
 
 install: DH_OPTIONS=
@@ -112,22 +130,22 @@ install: build
 	  mv debian/$$tmp_dir/etc/init.d/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
 	done
 
-	dh_install -p$(CLIENT_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFRONT_PKG) --sourcedir=debian/tmp
-	dh_install -p$(DOC_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFPTOOL_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFMD_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFSD_PKG) --sourcedir=debian/tmp
-	dh_install -p$(LIBGFARM_DEV_PKG) --sourcedir=debian/tmp
+	dh_install -p$(CLIENT_PKG)
+	dh_install -p$(GFRONT_PKG)
+	dh_install -p$(DOC_PKG)
+	dh_install -p$(GFPTOOL_PKG)
+	dh_install -p$(GFMD_PKG)
+	dh_install -p$(GFSD_PKG)
+	dh_install -p$(LIBGFARM_DEV_PKG)
 
 	mv debian/tmp debian/tmp_nogsi
 	mv debian/tmp_gsi debian/tmp
 
-	dh_install -p$(CLIENT_GSI_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFPTOOL_GSI_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFMD_GSI_PKG) --sourcedir=debian/tmp
-	dh_install -p$(GFSD_GSI_PKG) --sourcedir=debian/tmp
-	dh_install -p$(DEV_GSI_PKG) --sourcedir=debian/tmp
+	dh_install -p$(CLIENT_GSI_PKG)
+	dh_install -p$(GFPTOOL_GSI_PKG)
+	dh_install -p$(GFMD_GSI_PKG)
+	dh_install -p$(GFSD_GSI_PKG)
+	dh_install -p$(DEV_GSI_PKG)
 #	-dh_movefiles
 
 # Build architecture-independent files here.
@@ -180,9 +198,9 @@ binary-arch: build install
 
 # manpages for gfarm package
 	for pkg in $(GFPTOOL_PKG) $(GFPTOOL_GSI_PKG); do \
+	dh_installman -p$$pkg; \
 	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	for man in $(GFARM_GFPTOOL_MAN1); do \
-	  dh_installman -p$$pkg man/man1/$$man man/man1/$$man; \
 	  install -o root -g root -m 644 man/ja/man1/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man1/$$man; \
 	done; \
@@ -190,9 +208,9 @@ binary-arch: build install
 
 # manpages for gfmd package
 	for pkg in $(GFMD_PKG) $(GFMD_GSI_PKG); do \
+	dh_installman -p$$pkg; \
 	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	for man in $(GFMD_MAN8); do \
-	  dh_installman -p$$pkg man/man8/$$man man/man8/$$man; \
 	  install -o root -g root -m 644 man/ja/man8/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man8/$$man; \
 	done; \
@@ -200,27 +218,27 @@ binary-arch: build install
 
 # manpages for gfarm-client package
 	for pkg in $(CLIENT_PKG) $(CLIENT_GSI_PKG); do \
+	dh_installman -p$$pkg; \
 	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	for man in $(GFARM_CLIENT_MAN1); do \
-	  dh_installman -p$$pkg man/man1/$$man man/man1/$$man; \
 	  install -o root -g root -m 644 man/ja/man1/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man1; \
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man1/$$man; \
 	done; \
 	done
 
 # manpages for gfarm-gfront package
-	install -d `pwd`/debian/$(GFRONT_PKG)/usr/share/man/ja/man1; \
+	dh_installman -p$(GFRONT_PKG)
+	install -d `pwd`/debian/$(GFRONT_PKG)/usr/share/man/ja/man1
 	for man in $(GFRONT_MAN1); do \
-	  dh_installman -p$(GFRONT_PKG) man/man1/$$man man/man1/$$man; \
 	  install -o root -g root -m 644 man/ja/man1/$$man `pwd`/debian/$(GFRONT_PKG)/usr/share/man/ja/man1; \
 	  gzip -f -9 `pwd`/debian/$(GFRONT_PKG)/usr/share/man/ja/man1/$$man; \
 	done
 
 # manpages for gfsd
 	for pkg in $(GFSD_PKG) $(GFSD_GSI_PKG); do \
+	dh_installman -p$$pkg; \
 	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	for man in $(GFSD_MAN8); do \
-	  dh_installman -p$$pkg man/man8/$$man man/man8/$$man; \
 	  install -o root -g root -m 644 man/ja/man8/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man8; \
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man8/$$man; \
 	done; \
@@ -228,9 +246,9 @@ binary-arch: build install
 
 #	manpages for libgfarm-dev
 	for pkg in $(LIBGFARM_DEV_PKG) $(DEV_GSI_PKG); do \
+	dh_installman -p$$pkg; \
 	install -d `pwd`/debian/$$pkg/usr/share/man/ja/man3; \
 	for man in $(LIBGFARM_DEV_MAN3); do \
-	  dh_installman -p$$pkg man/man3/$$man man/man3/$$man; \
 	  install -o root -g root -m 644 man/ja/man3/$$man `pwd`/debian/$$pkg/usr/share/man/ja/man3; \
 	  gzip -f -9 `pwd`/debian/$$pkg/usr/share/man/ja/man3/$$man; \
 	done; \

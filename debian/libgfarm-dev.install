@@ -1,6 +1,6 @@
-usr/lib/gfs_hook.o
-usr/lib/gfs_hook_debug.o
-usr/lib/gfs_hook_mpi.o
-usr/lib/gfs_hook_mpi_debug.o
-usr/lib/libgfarm.a
-usr/include/
+debian/tmp/usr/lib/gfs_hook.o
+debian/tmp/usr/lib/gfs_hook_debug.o
+debian/tmp/usr/lib/gfs_hook_mpi.o
+debian/tmp/usr/lib/gfs_hook_mpi_debug.o
+debian/tmp/usr/lib/libgfarm.a
+debian/tmp/usr/include/
