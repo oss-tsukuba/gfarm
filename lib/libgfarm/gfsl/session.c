@@ -811,13 +811,9 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 
 	/*
 	 * Authorization init.
+	 * It isn't fatal for an initiator, if this fails.
 	 */
-	if (gfarmAuthInitialize(usermapFile) < 0) {
-	    majStat = GSS_S_FAILURE;
-	    minStat = GFSL_DEFAULT_MINOR_ERROR;
-	    ret = -1;
-	    goto Done;
-	}
+	(void)gfarmAuthInitialize(usermapFile);
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 
 	Done:
