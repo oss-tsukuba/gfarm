@@ -224,11 +224,11 @@ __access(const char *path, int type)
 	/* XXX - FIXME : only uid is checked here. */
 	mask = 0;
 	if (type & 1)
-		mask |= 1;
+		mask |= 0100;
 	if (type & 2)
-		mask |= 2;
+		mask |= 0200;
 	if (type & 4)
-		mask |= 4;
+		mask |= 0400;
 	if ((s.st_mode & mask) != mask)
 		return (-1);
 	return (0);
