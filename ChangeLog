@@ -1,3 +1,633 @@
+2003-04-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c:
+	add function map-user and let gfarm-local-to-global-usernam and
+	gfarm-global-to-local-username call it. Soda-san made the patch-file
+	for this modification.
+
+2003-04-28  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: auto generating/removing debian/*gsi.install files
+
+	* debian/control: change dependencies
+
+	* debian/changelog: version 1.0b1-3
+
+	* debian/postinst: don't call /etc/init.d/gfarm-server
+
+	* util/ptool/Makefile: have not execute flag x
+
+	* debian/rules: change clean:
+
+	* debian/changelog, debian/control, debian/gfarm-client.files, debian/gfarm-client.install, debian/gfarm-doc.files, debian/gfarm-doc.install, debian/gfarm-gfptool.files, debian/gfarm-gfptool.install, debian/gfarmd.files, debian/gfmd.files, debian/gfmd.install, debian/gfsd.conffiles, debian/gfsd.files, debian/gfsd.install, debian/libgfarm-dev.files, debian/libgfarm-dev.install, debian/rules:
+	building -gsi packages.
+	using dh_install instet of dh_movefiles (using package.install files)
+	gfsd.conffiles is not needed
+
+	* debian/gfarm-gfptool.files: rename from gfarm.files
+
+	* debian/gfarm.files: rename to gfarm-gfptool.files
+
+	* debian/control, debian/rules: change package name
+
+2003-04-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.in:
+	do not set $globus_location=${GLOBUS_LOCATION}, if globus is disabled
+
+	* package/solaris/gfmd.in, package/solaris/gfsd.in:
+	workaround a problem that -R doesn't work with indirectly dependent SOs
+	like the follows:
+		libglobus_gsi_proxy_core_gcc32.so.0
+		libglobus_gsi_credential_gcc32.so.0
+		libglobus_gsi_callback_gcc32.so.0
+		libglobus_oldgaa_gcc32.so.0
+		libglobus_gsi_sysconfig_gcc32.so.0
+		libglobus_gsi_cert_utils_gcc32.so.0
+		libglobus_openssl_error_gcc32.so.0
+		libglobus_openssl_gcc32.so.0
+		libglobus_proxy_ssl_gcc32.so.0
+		libglobus_common_gcc32.so.0
+
+	* package/solaris/gfarm-fsnode.files: remove blank line
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/gfarm-fsnode.files:
+	etc/gfarm.conf -> etc/gfarm.conf.sample, to prevent to overwrite gfarm.conf
+
+	* package/solaris/gfarm-doc.files:
+	usr/grid/share/doc/gfarm -> usr/grid/share
+
+	* package/solaris/gfarm-client.files, package/solaris/gfarm-devel.files, package/solaris/gfarm-doc.files, package/solaris/gfarm-fsnode.files, package/solaris/gfarm-gfptool.files, package/solaris/gfarm-server.files:
+	files for solaris package
+
+	* makes/config.mk.in:
+	make "make prefix=XXXX install" effective for $(docdir)
+
+	* configure: regen
+
+	* Makefile.in, configure.in, package/redhat/gfarm.spec, package/redhat/gfmd, package/redhat/gfmd.in, package/redhat/gfsd, package/redhat/gfsd.in, package/solaris/gfmd, package/solaris/gfmd.in, package/solaris/gfsd, package/solaris/gfsd.in:
+	automatically rewrite ${prefix} in the rc.d scripts.
+	bump RPM rel number from 1 to 2 (i.e. gfarm-*-1.0b1-2.i386.rpm).
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfhost.1.html, doc/html/ja/ref/man1/gfhost.1.html, man/ja/man1/gfhost.1, man/man1/gfhost.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/gfhost.1.docbook:
+	The -L option should be the -M option.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec, util/ptool/Makefile: do not install pdiff
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: Improved the wording.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: set version for release
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/auth.c: missing semicolon
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.files: remove pdiff in this package
+
+	* debian/libgfarm-dev.files: typo
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/misc.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfsl/tcputil.c:
+	- make it possible to use syslog
+	- use snprintf, if available
+
+	* lib/libgfarm/gfsl/Makefile.inc: add dependency
+
+	* configure, configure.in: cosmetic fix
+
+	* INSTALL.en, INSTALL.ja:
+	don't describe the contents of the gfarm.schema, but just refer the filename
+
+	* package/redhat/gfarm.spec:
+	install gfarm.conf to /etc/, and gfarm.schema to /etc/gfarm-ldap/
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control: remove gfarmd package
+
+	* debian/gfarm-client.files: same gfarm.spec
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added an entry for "not a directory".
+	Improved the wording.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfmd.postinst: never start init script
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man5/gfarm.conf.5, man/ja/man5/gfarm.conf.5, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man5/gfarm.conf.5.html:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: forgot to update BNF
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook: wording
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfmd.files, debian/gfsd.conffiles, debian/gfsd.files, debian/rules:
+	not start daemon after installation
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man5/gfarm.conf.5.html:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	correct syntax error in the previous commit
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	broken english translation of "local_user_map" feature.
+	(it's better than nothing.)
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	fix typo (local_usr_map -> local_user_map), etc...
+
+	* doc/Gfarm-FAQ.en:
+	very preliminary FAQ with broken English translation.
+
+	* doc/Gfarm-FAQ.ja: very preliminary FAQ
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfsd.conffiles: init script and conf file
+
+	* debian/gfsd.files: add gfarm.conf
+
+	* debian/rules: change mode ./etc/gfarm.conf
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* util/00README: Improved the wording.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/libgfarm-dev.files, debian/rules: add *mpi.o
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html: better index
+
+	* package/redhat/gfarm.spec:
+	add pcat, pcp, pdel, pdiff, pdist and prun to gfarm-client RPM
+
+	* configure: regen
+
+	* configure.in: change default ${prefix} from $HOME to /usr/local
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Added the section of Gfarm filesystem.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: define package names *_PKG
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man3/gfs_chmod.3, man/man3/gfs_chown.3, man/man3/gfs_mkdir.3, man/man3/gfs_rename.3, man/man3/gfs_rmdir.3, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_chown.3, man/ja/man3/gfs_mkdir.3, man/ja/man3/gfs_rename.3, man/ja/man3/gfs_rmdir.3, man/ja/man1/gfmkdir.1, man/ja/man1/gfrmdir.1, doc/html/ja/ref/man3/gfs_chmod.3.html, doc/html/ja/ref/man3/gfs_chown.3.html, doc/html/ja/ref/man3/gfs_mkdir.3.html, doc/html/ja/ref/man3/gfs_rename.3.html, doc/html/ja/ref/man3/gfs_rmdir.3.html, doc/html/ja/ref/man1/gfmkdir.1.html, doc/html/ja/ref/man1/gfrmdir.1.html, doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/en/ref/man3/gfs_chown.3.html, doc/html/en/ref/man3/gfs_mkdir.3.html, doc/html/en/ref/man3/gfs_rename.3.html, doc/html/en/ref/man3/gfs_rmdir.3.html:
+	remove following manuals for now, because those are not implemented yet:
+		gfmkdir(1), gfrmdir(1), gfs_chmod(3), gfs_chown(3),
+		gfs_mkdir(3), gfs_rmdir(3), gfs_rename(3)
+
+	* Makefile.in, util/ptool/Makefile:
+	install pcat, pcp, pdel, pdiff, pdist and prun into ${prefix}/bin
+
+	* man/man1/digest.1, man/ja/man1/digest.1, doc/html/ja/ref/man1/digest.1.html, doc/html/en/ref/man1/digest.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/digest.1.docbook, doc/docbook/ja/ref/man1/digest.1.docbook, gftool/digest/digest.c:
+	make digest command compatible with somewhat popular free program which has
+	same name.
+
+2003-04-25  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
+
+	* debian/gfarm-doc.files: added.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: use gcc
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	install RELNOTES into /usr/doc/gfarm-1.0b1/
+
+	* doc/Makefile: install RELNOTES into ${prefix}/share/doc/gfarm/
+
+2003-04-25  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5:
+	add description of user map.
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Added the section of sample parallel commands.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	- add --with-mpi automatically, if /usr/bin/mpicc exists.
+	- define %{have_ns} macro, and use it for the decision to include "ns" tools.
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Release Notes
+
+	* util/ptool/pcat, util/ptool/pcp, util/ptool/pdel, util/ptool/pdiff, util/ptool/pdist, util/ptool/prun:
+	Parallel tools for cluster management.
+
+2003-04-25  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* INSTALL.en, INSTALL.ja:  * fix a path prefix in sample command line.
+	   /usr/local/gfarm -> /usr/grid
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/rules, doc/Makefile, makes/config.mk.in, package/redhat/gfarm.spec:
+	- change the installation directory of html files
+	  from ${prefix}/html to ${prefix}/share/doc/gfarm/html
+	  (as debian package did).
+	- install the following files into ${prefix}/share/doc/.
+	  LICENSE, INSTALL.en, INSTALL.ja,
+	  GUIDE.ja, Gfarm-FAQ.en, Gfarm-FAQ.ja, README.hook.en
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfrun.1.html, man/ja/man1/gfrun.1, man/man1/gfrun.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	Updated the description.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	build gfarm-*.rpm and gfarm-gsi-*.rpm (w/ globus) by only one spec file.
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	Display warning message when the -N option is ignored.
+
+	* doc/docbook/ja/ref/man1/gfrun.1.docbook: Updated the description.
+
+2003-04-25  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
+
+	* debian/rules: fixed prefix and DESTDIR. now debuild is okay.
+
+	* debian/rules: make {install,distclean} in build/ dir.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	remove --with-globus, use macros to make it easy to change install prefix.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added Gfarm FAQs for packaging. (These are empty for now.)
+	XXX - should be written as an article of DocBook SGML/XML format.
+
+2003-04-25  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	add gfarm.conf.5 man and html pages in English.
+
+2003-04-25  Natotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/files: this file is created by debuild.
+
+2003-04-25  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
+
+	* debian/rules: mkdir ${top_srcdir}/build/ dir and do make in it.
+
+2003-04-25  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* doc/GUIDE.ja: Fix a sample path, /usr/local -> /usr/grid
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/rules, package/redhat/gfarm.spec: add gfhost(1) manual page
+
+2003-04-25  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* doc/GUIDE.ja, util/gfsuites/bin/gfront, util/gfsuites/bin/gmonitor, util/gfsuites/bin/grapher, util/gfsuites/etc/gmonitor-sample.conf, util/gfsuites/src/gfsuites/common/FilesetDataSource.java, util/gfsuites/src/gfsuites/common/GFAppConst.java, util/gfsuites/src/gfsuites/gmonitor/GMonitor.java, util/glogger/README.ja, util/glogger/sample.conf:
+	Some fixing and unification of sample domainname.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man5/gfarm.conf.5, man/man1/gfhost.1, man/ja/man1/gfhost.1, doc/html/ja/ref/man1/gfhost.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man1/gfhost.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfhost.1.docbook:
+	Added gfhost(1) man pages for packaging. (These are empty for now.)
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: Checked spelling.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/rules, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man3/Makefile.inc, package/redhat/gfarm.spec:
+	do not install following manuals, because those are not implemented yet:
+		gfmkdir(1), gfrmdir(1),	gfs_chmod(3), gfs_chown(3),
+		gfs_mkdir(3), gfs_rmdir(3), gfs_rename(3)
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/Makefile, doc/html/en/ref/index.html, doc/html/en/ref/man5/Makefile, doc/html/en/ref/man5/gfarm.conf.5.html, man/Makefile, man/man5/Makefile, man/man5/gfarm.conf.5:
+	Added section 5 in English.
+	Generated man and html pages from docbook files.
+
+2003-04-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3, man/man3/gfs_pio_set_view_index.3, man/man1/gfreg.1, man/man1/gfrun.1, man/man1/gfwc.1, man/ja/man5/gfarm.conf.5, man/ja/man3/gfs_pio_create.3, man/ja/man3/gfs_pio_open.3, man/ja/man3/gfs_pio_set_view_index.3, man/ja/man1/gfreg.1, man/ja/man1/gfwc.1, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man3/gfs_pio_create.3.html, doc/html/ja/ref/man3/gfs_pio_open.3.html, doc/html/ja/ref/man3/gfs_pio_set_view_index.3.html, doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfwc.1.html, doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/en/ref/man3/gfs_pio_set_view_index.3.html, doc/html/en/ref/man1/gfreg.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man1/gfwc.1.html:
+	regen ("gfmpirun" command is renamed to "gfmpirun_p4")
+
+	* doc/docbook/ja/ref/man3/gfs_pio_create.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_open.3.docbook, doc/html/en/ref/man1/gfmpirun.1.html, doc/html/en/ref/man1/gfmpirun_p4.1.html, doc/html/ja/ref/man1/gfmpirun.1.html, doc/html/ja/ref/man1/gfmpirun_p4.1.html, gftool/gfmpirun/Makefile, gftool/gfmpirun/gfmpirun.c, man/ja/man1/gfmpirun.1, man/ja/man1/gfmpirun_p4.1, man/man1/gfmpirun.1, man/man1/gfmpirun_p4.1, package/redhat/gfarm.spec, INSTALL.en, INSTALL.ja, debian/gfarm-client.files, debian/rules, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfmpirun.1.docbook, doc/docbook/en/ref/man1/gfmpirun_p4.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man1/gfwc.1.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfmpirun.1.docbook, doc/docbook/ja/ref/man1/gfmpirun_p4.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfwc.1.docbook:
+	"gfmpirun" command is renamed to "gfmpirun_p4"
+
+2003-04-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/docbook/en/ref/man5/Makefile.inc, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	Added the english version of gfarm.conf(5).
+
+2003-04-25  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c: fixed bugs in reading user map file.
+
+2003-04-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c: Updated description of usage.
+	When there is no scheduling information and the gfrun command is executed on a non-filesystem node, choose a (remote) filesystem node with the lowest load average.
+
+2003-04-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.en, INSTALL.ja: drop Tru64 and IRIX
+
+	* server/Makefile.inc: (forgot to commit this one)
+	install gfmd, gfsd and gfarmd into ${prefix}/sbin (rather than ${prefix}/bin)
+
+	* debian/rules, makes/config.mk.in, ns/gfarmd/Makefile.in, package/redhat/gfarm.spec, server/gfmd/Makefile, server/gfsd/Makefile:
+	install gfmd, gfsd and gfarmd into ${prefix}/sbin (rather than ${prefix}/bin)
+
+2003-04-24  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: change version number: 1.0 -> 1.0b1 and
+	       configure --prefix: /usr/lcoal/gfarm -> /usr/grid
+	for 1st public release.
+
+	* package/redhat/gfarm.spec: change for public release 1.0
+
+2003-04-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfutil/Makefile.inc, lib/libgfarm/gfutil/daemon.c, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/limit.c, lib/libgfarm/gfutil/logutil.c, ns/gfarmd/gfarmd.c, ns/gfarmd/gfd_auth.c, ns/gfarmd/gfd_file.c, ns/gfarmd/gfd_parse.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	to prevent name space pollution, rename some functions as follows:
+	daemon()		->	gfarm_daemon()
+	unlimit_nofiles()	->	gfarm_unlimit_nofiles()
+	fatal*()		->	gflog_fatal*()
+	syslog_name_to_facility() ->	gflog_syslog_name_to_facility()
+	log_open_syslog()	->	gflog_syslog_open()
+	log_*()			->	gflog_*()
+
+	* lib/Makefile, lib/libgfarm/gfsl/Makefile:
+	make test programs in lib/libgfarm/gfsl/
+
+	* lib/libgfarm/gfsl/Makefile.inc, lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/gfarm_hash.c, lib/libgfarm/gfsl/gfarm_hash.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/misc.c, lib/libgfarm/gfsl/misc.h, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfsl/tcputil.c, lib/libgfarm/gfsl/tcputil.h:
+	- remove a hash module which was derived from Tcl.
+	  use home-grown hash module instead.
+	- add "gfarm" prefix to functions in tcputil.c and misc.c
+	  to prevent name space pollution.
+
+	* lib/libgfarm/Makefile: forgot to add -DGLOBUS_BUG
+
+	* lib/libgfarm/gfarm/auth_server_gsi.c:
+	adapt changes about gfarm_local_to_global_username() function prototype
+
+2003-04-23  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* util/glogger/libglogger.c, util/glogger/sample.conf: New file.
+
+	* util/glogger/libglogger.c, util/glogger/sample.conf:
+	importing GMonitor, GFront, GLogger.
+
+	* util/glogger/glogd, util/glogger/glogger.c, util/glogger/glogger.h:
+	New file.
+
+	* util/glogger/glogd, util/glogger/glogger.c, util/glogger/glogger.h:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/NodeMonitor.java, util/gfsuites/src/gfsuites/gmonitor/RangePanel.java, util/glogger/INSTALL, util/glogger/Makefile, util/glogger/README.ja, util/glogger/avg.pl:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/NodeMonitor.java, util/gfsuites/src/gfsuites/gmonitor/RangePanel.java, util/glogger/INSTALL, util/glogger/Makefile, util/glogger/README.ja, util/glogger/avg.pl:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GraphFrame.java, util/gfsuites/src/gfsuites/gmonitor/GraphFrameApp.java, util/gfsuites/src/gfsuites/gmonitor/GrapherApplet.java, util/gfsuites/src/gfsuites/gmonitor/HttpGraphPanel.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GraphFrame.java, util/gfsuites/src/gfsuites/gmonitor/GraphFrameApp.java, util/gfsuites/src/gfsuites/gmonitor/GrapherApplet.java, util/gfsuites/src/gfsuites/gmonitor/HttpGraphPanel.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GPlot.java: New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GPlot.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GMonitor.java, util/gfsuites/src/gfsuites/gmonitor/GMonitorApp.java, util/gfsuites/src/gfsuites/gmonitor/GMonitorConst.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GMonitor.java, util/gfsuites/src/gfsuites/gmonitor/GMonitorApp.java, util/gfsuites/src/gfsuites/gmonitor/GMonitorConst.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GFNode.java, util/gfsuites/src/gfsuites/gmonitor/GFNodeEditor.java, util/gfsuites/src/gfsuites/gmonitor/GMActions.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/GFNode.java, util/gfsuites/src/gfsuites/gmonitor/GFNodeEditor.java, util/gfsuites/src/gfsuites/gmonitor/GMActions.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/FileDataVisualizer.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/FileDataVisualizer.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/gmonitor/ClusterGraphFrame.java, util/gfsuites/src/gfsuites/gmonitor/ConfReader.java, util/gfsuites/src/gfsuites/gmonitor/DataVisualizeFrame.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/gmonitor/ClusterGraphFrame.java, util/gfsuites/src/gfsuites/gmonitor/ConfReader.java, util/gfsuites/src/gfsuites/gmonitor/DataVisualizeFrame.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/common/TreeChooser.java, util/gfsuites/src/gfsuites/common/ValueCellRenderer.java, util/gfsuites/src/gfsuites/gfront/DirectoryTreeNode.java, util/gfsuites/src/gfsuites/gfront/FileTableModel.java, util/gfsuites/src/gfsuites/gfront/GFAction.java, util/gfsuites/src/gfsuites/gfront/GFront.java, util/gfsuites/src/gfsuites/gfront/GFrontApp.java, util/gfsuites/src/gfsuites/gfront/GFrontConst.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/common/TreeChooser.java, util/gfsuites/src/gfsuites/common/ValueCellRenderer.java, util/gfsuites/src/gfsuites/gfront/DirectoryTreeNode.java, util/gfsuites/src/gfsuites/gfront/FileTableModel.java, util/gfsuites/src/gfsuites/gfront/GFAction.java, util/gfsuites/src/gfsuites/gfront/GFront.java, util/gfsuites/src/gfsuites/gfront/GFrontApp.java, util/gfsuites/src/gfsuites/gfront/GFrontConst.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/common/HttpDataSourceContext.java, util/gfsuites/src/gfsuites/common/MetaServerAccess.java, util/gfsuites/src/gfsuites/common/MetaServerSpecifyer.java, util/gfsuites/src/gfsuites/common/NodeDisplayTableModel.java, util/gfsuites/src/gfsuites/common/NodeListChooser.java, util/gfsuites/src/gfsuites/common/ReadOnlyTableModel.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/common/HttpDataSourceContext.java, util/gfsuites/src/gfsuites/common/MetaServerAccess.java, util/gfsuites/src/gfsuites/common/MetaServerSpecifyer.java, util/gfsuites/src/gfsuites/common/NodeDisplayTableModel.java, util/gfsuites/src/gfsuites/common/NodeListChooser.java, util/gfsuites/src/gfsuites/common/ReadOnlyTableModel.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/common/GFLSParser.java, util/gfsuites/src/gfsuites/common/GFWHEREParser.java, util/gfsuites/src/gfsuites/common/GLoggerUtils.java, util/gfsuites/src/gfsuites/common/HostSymFileFilter.java, util/gfsuites/src/gfsuites/common/HttpDataSource.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/common/GFLSParser.java, util/gfsuites/src/gfsuites/common/GFWHEREParser.java, util/gfsuites/src/gfsuites/common/GLoggerUtils.java, util/gfsuites/src/gfsuites/common/HostSymFileFilter.java, util/gfsuites/src/gfsuites/common/HttpDataSource.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/src/gfsuites/common/FragmentEditor.java, util/gfsuites/src/gfsuites/common/GFAppConst.java, util/gfsuites/src/gfsuites/common/GFAppUtilities.java:
+	New file.
+
+	* util/gfsuites/src/gfsuites/common/FragmentEditor.java, util/gfsuites/src/gfsuites/common/GFAppConst.java, util/gfsuites/src/gfsuites/common/GFAppUtilities.java:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/lib/plotapplet.jar, util/gfsuites/src/gfsuites/common/AbstractDataSource.java, util/gfsuites/src/gfsuites/common/AbstractDataSourceContext.java, util/gfsuites/src/gfsuites/common/CommandOutput.java, util/gfsuites/src/gfsuites/common/ConfigurationGFARM.java, util/gfsuites/src/gfsuites/common/DoubleCellRenderer.java, util/gfsuites/src/gfsuites/common/FilesetDataSource.java, util/gfsuites/src/gfsuites/common/FilesetDataSourceContext.java, util/gfsuites/src/index.html, util/gfsuites/src/sample.html:
+	New file.
+
+	* util/gfsuites/lib/plotapplet.jar, util/gfsuites/src/gfsuites/common/AbstractDataSource.java, util/gfsuites/src/gfsuites/common/AbstractDataSourceContext.java, util/gfsuites/src/gfsuites/common/CommandOutput.java, util/gfsuites/src/gfsuites/common/ConfigurationGFARM.java, util/gfsuites/src/gfsuites/common/DoubleCellRenderer.java, util/gfsuites/src/gfsuites/common/FilesetDataSource.java, util/gfsuites/src/gfsuites/common/FilesetDataSourceContext.java, util/gfsuites/src/index.html, util/gfsuites/src/sample.html:
+	importing GMonitor, GFront, GLogger.
+
+	* util/gfsuites/bin/gmonitor, util/gfsuites/bin/graphapp, util/gfsuites/bin/grapher, util/gfsuites/etc/gmonitor-sample.conf:
+	New file.
+
+	* util/gfsuites/bin/gmonitor, util/gfsuites/bin/graphapp, util/gfsuites/bin/grapher, util/gfsuites/etc/gmonitor-sample.conf:
+	importing GMonitor, GFront, GLogger.
+
+	* util/00README, util/gfsuites/bin/gfront, util/gfsuites/build.xml:
+	New file.
+
+	* util/00README, util/gfsuites/bin/gfront, util/gfsuites/build.xml:
+	importing GMonitor, GFront, GLogger.
+
+2003-04-23  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/GUIDE.ja:
+	- Added notes about mixing sharedsecret and gsi authentication.
+	- Added notes about setting PATH before executing Gfarm commands.
+	- Converted EUC to Shift JIS.
+
+2003-04-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* README.hook.en, doc/README.hook.en:
+	Moved from the top directory to the doc/ directory.
+
+	* doc/docbook/en/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_set_view_index.3.docbook:
+	Fixed typo.
+
+2003-04-23  Hideki Kondou  <hkondo@soum.co.jp>
+
+	* doc/GUIDE.ja: Charset conversion, JIS to EUC.
+
+	* doc/GUIDE.ja: Gfarm User's Guide.
+
+2003-04-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfkey/gfkey.c: change function name in config.c
+
+	* gftool/gfrcmd/gfrcmd.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/config.c:
+	implement local <--> global user name mapping
+
+2003-04-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* LICENSE: Copyright notice
+
+2003-04-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/Makefile, makes/include.mk, makes/subdir.mk, makes/var.mk, ns/gfarm/Makefile:
+	make "configure --srcdir=..." work again
+
+	* configure: regen
+
+	* configure.in: mistake in previous commit.
+	this caused "make" fail unless openldap belongs to /usr.
+
+	* ns/nslib/Makefile.in:
+	use same expression with subdir.mk to see whether --srcdir was used
+	at "configure" time.
+
+	* Makefile.in, ns/Makefile, ns/nslib/Makefile.in, ns/nstool/Makefile:
+	fix build problems under ns/ hierarchy
+
+	* ns/nslib/Makefile: remove a file which was committed accidentally
+
+	* include/gfarm/config.h.in:
+	remove a garbage file which was committed accidentally.
+
+2003-04-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/Makefile, ns/Makefile, makes/config.mk.in, makes/include.mk, makes/subdir.mk, makes/var.mk, lib/libgfarm/Makefile, lib/gfs_hook/Makefile.in, lib/Makefile, gftool/gfrun/Makefile, gftool/gfreg/Makefile, gftool/gfrcmd/Makefile, gftool/gfps/Makefile, gftool/gfmpirun/Makefile, gftool/gfls/Makefile, gftool/gfkey/Makefile, gftool/gfhost/Makefile, gftool/addpath/Makefile, gfptool/gfsplck/Makefile, Makefile.in, configure, configure.in, gfarm_config.h.in:
+	directories are restructured
+
+	* server/gfsd/Makefile, server/gfsd/gfsd.c, server/gfsd/loadavg.c:
+	moved from gfsd
+
+	* server/gfmd/Makefile, server/gfmd/gfmd.c: moved from gfmd
+
+	* ns/nstool/Makefile: moved from nstool
+
+	* ns/nstool/file/Makefile.in, ns/nstool/file/get.c, ns/nstool/file/ns_get.c, ns/nstool/file/ns_lstat.c, ns/nstool/file/ns_mkdir.c, ns/nstool/file/ns_put.c, ns/nstool/file/ns_readdir.c, ns/nstool/file/ns_readlink.c, ns/nstool/file/ns_rename.c, ns/nstool/file/ns_stat.c, ns/nstool/file/ns_symlink.c, ns/nstool/file/ns_unlink.c, ns/nstool/file/ns_unlink_dir.c, ns/nstool/file/put.c, ns/nstool/file/stat.c:
+	moved from nstool/file
+
+	* ns/nslib/Makefile, ns/nslib/Makefile.in, ns/nslib/bswap.c, ns/nslib/bswap.h, ns/nslib/comm.c, ns/nslib/file.c, ns/nslib/gflib.c, ns/nslib/nsclnt.c, ns/nslib/nsexec.c, ns/nslib/soc-lxdr.c, ns/nslib/soc.c:
+	moved from nslib
+
+	* lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/Makefile.gt1, lib/libgfarm/gfsl/Makefile.inc, lib/libgfarm/gfsl/README, lib/libgfarm/gfsl/REFERENCE, lib/libgfarm/gfsl/Why, lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/client.c, lib/libgfarm/gfsl/client2.c, lib/libgfarm/gfsl/gfarm-initiator.conf, lib/libgfarm/gfsl/gfarm-usermap, lib/libgfarm/gfsl/gfarm_auth.h, lib/libgfarm/gfsl/gfarm_gsi.h, lib/libgfarm/gfsl/gfarm_hash.c, lib/libgfarm/gfsl/gfarm_hash.h, lib/libgfarm/gfsl/gfarm_secure_session.h, lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/misc.c, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfsl/tcputil.c, lib/libgfarm/gfsl/tcputil.h:
+	moved from lib/libgfsl
+
+	* lib/libgfarm/gfutil/Makefile.inc, lib/libgfarm/gfutil/daemon.c, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/hash.c, lib/libgfarm/gfutil/hash.h, lib/libgfarm/gfutil/limit.c, lib/libgfarm/gfutil/logutil.c, lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfj_client.h, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfm_proto.h, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_udp.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_default.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.c, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/host.h, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/hostspec.h, lib/libgfarm/gfarm/import_help.c, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/io_fd.h, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/io_gfsl.h, lib/libgfarm/gfarm/iobuffer.c, lib/libgfarm/gfarm/iobuffer.h, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/param.h, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfarm/sockopt.c, lib/libgfarm/gfarm/sockopt.h, lib/libgfarm/gfarm/stringlist.c, lib/libgfarm/gfarm/url.c, lib/libgfarm/gfarm/xxx_proto.c, lib/libgfarm/gfarm/xxx_proto.h:
+	moved from gfarmlib
+
+	* ns/include/gfarm/Makefile, ns/include/gfarm/comm.h, ns/include/gfarm/debug.h, ns/include/gfarm/gflib.h, ns/include/gfarm/ns.h, ns/include/gfarm/nsclnt.h, ns/include/gfarm/nscom.h, ns/include/gfarm/nsexec.h, ns/include/gfarm/soc-lxdr.h, ns/include/gfarm/soc.h, ns/include/gfarm/type.h:
+	moved from include
+
+	* include/Makefile.in, include/comm.h, include/debug.h, include/gfarm.h, include/gfarm_error.h, include/gfarm_metadb.h, include/gfarm_misc.h, include/gfarm_stringlist.h, include/gflib.h, include/gfs.h, include/gfs_glob.h, include/gfs_hook.h, include/ns.h, include/nsclnt.h, include/nscom.h, include/nsexec.h, include/soc-lxdr.h, include/soc.h, include/type.h:
+	moved to include/gfarm and ns/include/gfarm
+
+	* include/gfarm/Makefile, include/gfarm/config.h.in, include/gfarm/gfarm.h, include/gfarm/gfarm_config.h.in, include/gfarm/gfarm_error.h, include/gfarm/gfarm_metadb.h, include/gfarm/gfarm_misc.h, include/gfarm/gfarm_stringlist.h, include/gfarm/gfs.h, include/gfarm/gfs_glob.h, include/gfarm/gfs_hook.h:
+	moved from include
+
+	* ns/gfarmd/Makefile.in, ns/gfarmd/gfarmd.c, ns/gfarmd/gfarmd.h, ns/gfarmd/gfd_auth.c, ns/gfarmd/gfd_cmd.h, ns/gfarmd/gfd_cmd.l, ns/gfarmd/gfd_cmd.y, ns/gfarmd/gfd_file.c, ns/gfarmd/gfd_parse.c, ns/gfarmd/symtab.c, ns/gfarmd/symtab.h, ns/gfarmd/yyerror.c:
+	moved from gfarmd
+
+	* ns/gfarm/Makefile, ns/gfarm/cmd.h, ns/gfarm/cmd.l, ns/gfarm/cmd.y, ns/gfarm/gfarm.c:
+	moved from gfarm
+
+	* lib/gfs_hook/sysdep/linux/kernel_stat.h, lib/gfs_hook/sysdep/linux/xstatconv.c:
+	fix problem with headers in recent linux kernel.
+
+	* acconfig.h:
+	forgot to update this file, when gfarm_config.h.in was updated.
+
+2003-04-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja: Updated the overview section.
+	Added the description about gfs_hook_mpi.o, a syscall-hook library for MPI applications.
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2003-04-11  Noriyuki Soda  <soda@sra.co.jp>
 
 	* lib/libgfsl/server.c: make unreachable statements "#if 0"
@@ -110,7 +740,7 @@
 	* lib/gfs_hook/Makefile.in:
 	use current directory for object file rather than /tmp
 
-2003-04-09  takamiya  <takamiya@smg.is.titech.ac.jp>
+2003-04-09  Yasuhito Takamiya  <takamiya@smg.is.titech.ac.jp>
 
 	* debian/changelog: new cvs upstream version (20030409).
 
@@ -293,7 +923,7 @@
 	Display more debug message for set_view_local.
 
 	* gfsd/main.c:
-	Just added a comment for $Id$. (check-in test on cvs.apgrid.org)
+	Just added a comment for $Id: ChangeLog,v 1.13 2003/04/16 04:55:44 tatebe Exp $. (check-in test on cvs.apgrid.org)
 
 	* gfarmlib/gfs_pio_misc.c:
 	gfarm_url_fragments_replicate): just cleaned up a code.
@@ -1002,7 +1632,7 @@
 
 	* gftool/example/gfcp/gfcp.c: Fixed a fatal typo, strcmp vs strcpy.
 
-2002-12-09  takamiya  <takamiya@matsulab.is.titech.ac.jp>
+2002-12-09  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
 
 	* debian/changelog, debian/control, debian/gfarm-server.init, debian/rules:
 	cvs 20021101 upstream release.
@@ -2160,7 +2790,7 @@
 	* gfarmlib/gfs_client.c:
 	use "#ifdef XXX_MEASURE_CKSUM_COST" rather than "#if 0"
 
-2002-01-23  takamiya  <takamiya@matsulab.is.titech.ac.jp>
+2002-01-23  Yasuhito Takamiya  <takamiya@matsulab.is.titech.ac.jp>
 
 	* debian/gfarm-server.init, debian/postinst, debian/rules, debian/dirs, debian/docs, debian/gfarm-doc.docs, debian/gfarm-doc.files, debian/gfarm-pool.conffiles, debian/gfarm-pool.init, debian/gfarm-pool.postinst, debian/changelog, debian/control, debian/copyright:
 	added debian related files.
