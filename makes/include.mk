@@ -20,22 +20,25 @@ post-html-hook:
 include-all:
 include-install: all
 	@set -x; \
-	for i in / $(INCS); do \
-		case $$i in /) continue;; esac; \
+	for i in -- $(INCS); do \
+		case $$i in --) continue;; esac; \
 		$(INSTALL_DATA) $(srcdir)/$$i $(includedir)/$$i; \
 	done
 	@set -x; \
-	for i in / $(EXEC_INCS); do \
-		case $$i in /) continue;; esac; \
+	for i in -- $(EXEC_INCS); do \
+		case $$i in --) continue;; esac; \
 		$(INSTALL_DATA) $$i $(exec_includedir)/$$i; \
 	done
 
 include-clean:
+	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
 include-veryclean: clean
-	-rm -f $(EXECHEADERS)
+	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
+	-test -z "$(EXEC_INCS)" || $(RM) -f $(EXEC_INCS)
 
 include-distclean: veryclean
+	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
 include-gfregister:
 include-man:

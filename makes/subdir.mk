@@ -2,7 +2,7 @@ all: subdir-all post-all-hook
 install: subdir-install post-install-hook
 clean: subdir-clean post-clean-hook
 veryclean: subdir-veryclean post-very-clean-hook
-distclean: subdir-distclean post-distclean-hook
+distclean: subdir-distclean subdir-distclean-here post-distclean-hook
 gfregister: subdir-gfregister post-gfregister-hook
 man: subdir-man
 html: subdir-html
@@ -20,8 +20,8 @@ post-gfregister-hook:
 
 subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
-	for dir in / $(SUBDIRS); do \
-		case $${dir} in /) continue;; esac; \
+	for dir in -- $(SUBDIRS); do \
+		case $${dir} in --) continue;; esac; \
 		echo '[' making $${dir} ']'; \
 		case $(top_srcdir) in \
 		/*)	top_srcdir=$(top_srcdir); \
@@ -33,7 +33,7 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 		if test -f $(srcdir)/$${dir}/Makefile.in; then \
 			( cd $${dir} && \
 			  case "$(srcdir)" in \
-			  .)	$(MAKE) $${target};; \
+			  .)	$(MAKE) $${target};;\
 			  *)	$(MAKE) top_srcdir=$${top_srcdir} \
 					srcdir=$${srcdir} \
 					$${target};; \
@@ -43,7 +43,7 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 			test -d $${dir} || mkdir -p $${dir} || exit 1; \
 			( cd $${dir} && \
 			  case "$(srcdir)" in \
-			  .)	$(MAKE) $${target};; \
+			  .)	$(MAKE) $${target};;\
 			  *)	$(MAKE) -f $${srcdir}/Makefile \
 					top_srcdir=$${top_srcdir} \
 					srcdir=$${srcdir} \
@@ -52,3 +52,6 @@ subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-
 			) || exit 1; \
 		fi; \
 	done
+
+subdir-distclean-here:
+	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile

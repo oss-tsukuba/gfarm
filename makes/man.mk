@@ -17,20 +17,20 @@ post-gfregister-hook:
 man-all:
 
 man-install:
-	@for i in / $(MAN); do \
-		case $$i in /) continue;; esac; \
+	@for i in -- $(MAN); do \
+		case $$i in --) continue;; esac; \
 		suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
 		( set -x; $(INSTALL_DATA) $(srcdir)/$$i $(mandir)/man$$suffix/$$i ); \
 	done
 
 man-clean:
-	-rm -f $(EXTRA_CLEAN_TARGETS)
+	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
 man-veryclean: clean
-	-rm -f $(EXTRA_VERYCLEAN_TARGETS)
+	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
 
 man-distclean: veryclean
-	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
+	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
 man-gfregister:
 
