@@ -1,0 +1,359 @@
+.TH gfarm.conf 1 "20 Jan 2003"
+.SH NAME
+
+gfarm.conf \- Gfarm 設定ファイル
+
+.SH DESCRIPTION
+.PP
+gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
+サーバー・プロセスである gfmd と gfsd は、デフォールトでは、
+この /etc/gfarm.conf を設定ファイルとして参照します。
+なお、設定内容が読み込まれるのは起動時だけなので、
+設定内容を変更した場合、サーバーを再起動する必要があります。
+.PP
+アプリケーションプログラムは、/etc/gfarm.conf と、ユーザーの
+ホームディレクトリにある .gfarmrc ファイルを、設定ファイル
+として参照します。.gfarmrc ファイルは、/etc/gfarm.conf と
+同一の形式で記述します。.gfarmrc と /etc/gfarm.conf では、
+.gfarmrc の方が優先されます。
+.PP
+gfarm.conf は、一行に一文の形式で設定します。
+ただし、行末に文字 ``\'' を記述することによって、行を継続させることが
+できます。また、文字 ``#'' から行末までは、コメントとして扱われ、無視
+されます。
+
+.SH ホスト指定
+.PP
+引数として、\fIホスト指定\fP を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。
+.TP
+\fIIII.JJJ.KKK.LLL\fP
+.br
+"." で区切られた 0〜256 までの数字 4 つで、IP アドレスを指定します。
+.TP
+\fIIII.JJJ.KKK.LLL\fP/\fIMM\fP
+.br
+IP アドレスと、"/" で区切られた 0〜31 までの数字で、ネットワークを
+指定します。"/" 以降の数字は netmask のビット長です。
+.TP
+\fIdomain.name\fP
+.br
+ホスト名をドメイン名で指定します。
+.TP
+\&\fB.\fIdomain.name\fP
+.br
+ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
+ホストを意味します。
+
+.SH 文
+.PP
+文には、下記の種類があります。
+.TP
+\fBspool\fP \fIgfsdスプール・ディレクトリ\fP
+.br
+gfsdが、gfarmファイルの実体を保持するディレクトリ名を
+指定します。
+この設定は必須です。
+.br
+
+例:
+.nf
+	spool /var/spool/gfarm
+.fi
+.TP
+\fBspool_serverport\fP \fIgfsdポート番号\fP
+.br
+gfsdが利用するTCPおよびUDPポートの番号を指定します。
+省略時のデフォールト・ポート番号は600番です。
+.br
+
+例:
+.nf
+	spool_serverport 600
+.fi
+.TP
+\fBmetadb_serverhost\fP \fIgfmdホスト名\fP
+.br
+gfmdが動作しているホスト名を指定します。
+.br
+この設定は必須です。
+.br
+
+例:
+.nf
+	metadb_serverhost ldap.example.com
+.fi
+.TP
+\fBmetadb_serverport\fP \fIgfmdポート番号\fP
+.br
+gfmdが利用するTCPポートの番号を指定します。
+省略時のデフォールト・ポート番号は601番です。
+.br
+
+例:
+.nf
+	metadb_serverport 601
+.fi
+.TP
+\fBldap_serverhost\fP \fILDAPサーバー・ホスト名\fP
+.br
+LDAP サーバーが動作しているホスト名を指定します。
+.br
+この設定は必須です。
+.br
+
+例:
+.nf
+	ldap_serverhost ldap.example.com
+.fi
+.TP
+\fBldap_serverport\fP \fILDAPサーバー・ポート番号\fP
+.br
+LDAP サーバーが動作しているホスト名を指定します。
+.br
+現在のところ、この設定は必須です。
+.br
+
+例:
+.nf
+	ldap_serverport 389
+.fi
+.TP
+\fBldap_base_dn\fP \fILDAP_base_distinguished_name\fP
+.br
+LDAP データベースで保持するデータのキーの根となるノードの
+名称、base distinguished name を指定します。
+.br
+この設定は必須です。
+.br
+
+例:
+.nf
+	ldap_base_dn "dc=example, dc=com"
+.fi
+.TP
+\fBauth\fP \fI有効無効\fP \fI認証方法\fP \fIホスト指定\fP
+.br
+この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
+
+第1引数の\fI有効無効\fP部には、\fBenable\fP ないし \fBdisable\fP
+キーワードを指定します。
+第2引数の\fI認証方法\fP部には、\fBgsi\fP ないし \fBsharedsecret\fP
+キーワードを指定します。
+第3引数には、\fIホスト指定\fPを記述します。
+
+この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
+適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が
+利用候補になります。有効であるとの指定に適合しない場合や、あるいは
+有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
+場合、その認証方法は、候補になりません。
+
+認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、\fBsharesecret\fP による認証が 
+\fBgsi\fP より優先して試されます。
+
+この指定は、サーバー側とクライアント側の両方で解釈され、
+双方ともで有効になっている認証方法のみが用いられます。
+
+Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
+gsi 認証は利用できません。この場合、gsi 認証の指定は単に無視されます。
+
+この設定は必須です。
+.br
+
+例:
+.nf
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi ALL
+.fi
+
+この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
+除いた 192.168.0.0/24 ネットワークに属すホストには 
+\fBsharedsecret\fP と \fBgsi\fP の両方を、それ以外の全てのホスト
+には \fBgsi\fP 認証を試みます。
+すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+\fBgsi\fI 認証のみを試みることになります。
+
+.TP
+.B netparam \fIパラメータ\fP=\fI値\fP [\fIホスト指定\fP]
+.br
+ネットワーク通信に用いる各種パラメータを指定します。
+パラメータには下記のものがあります。
+
+\fBparallel_streams\fP。このパラメータは、通信に利用する
+TCPのストリーム数を指定します。省略時は1です。
+このパラメータは、TCP の通信ウィンドウが十分なサイズ
+まで開かないような遠方との通信の際に、有効なことがあります。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。
+
+\fBstripe_unit_size\fP。このパラメータは、通信に複数の TCP ストリーム
+を利用する場合に、どのように転送内容を分割するかを指定します。
+もしこの指定がない場合、転送内容を単に \fBparallel_streams\fP 個に
+分割して送信します。
+これに対し、\fBstripe_unit_size\fP を指定した場合は、このパラメータ
+で指定したバイト数を単位としてストライピングして送信します。
+通常、単なる分割よりもストライピングの方が性能的に有利です。
+.br
+このパラメータは、上記の \fBparallel_streams\fP として 1 より大きな値
+を指定した通信のみで有効です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep コマンドを起動したホストのユーザー設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。
+
+.br
+\fBrate_limit\fP。コネクション1本あたりの通信バンド幅を制限する
+実験的な機能です。指定する値の単位は bps (bit per second) です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、複製元のホスト上の gfsd の設定ファイルが用いられます。
+ホスト指定と比較されるのは、複製先のホストです。
+.br
+
+例:
+.nf
+	netparam parallel_streams=2	10.0.0.0/8
+	netparam stripe_unit_size=8192	10.0.0.0/8
+	netparam rate_limit=750000	192.168.0.0/24
+.fi
+.TP
+.B sockopt \fIオプション\fP[=\fI値\fP] ["\fBLISTENER\fP"|\fIホスト指定\fP]
+.br
+通信 socket(2) に対して、setsockopt(2) システムコールを使って
+ソケット・オプションを指定します。
+
+第2引数に \fBLISTENER\fP を指定した場合、サーバー側 (着呼側) の
+ソケットに指定するオプションになります。この場合、通信する相手に
+関係なく、一律にソケット・オプションが設定されます。
+.br
+第2引数にホスト指定を記述した場合、クライアント側 (発呼側) の
+ソケットに指定するオプションになります。この場合、通信する相手毎に
+ソケット・オプションを変えることができます。
+.br
+第2引数を省略した場合、サーバー側とクライアント側の両方で、
+全ての通信相手に対して同じソケット・オプションを設定します。
+
+指定可能なソケット・オプションには次のものがあります。
+
+\fBdebug\fP。setsockopt(2) システムコールで、\fBSO_DEBUG\fP ソケット・
+オプションを指定します。値を記述する必要はありません。
+
+\fBkeepalive\fP。setsockopt(2) システムコールで、\fBSO_KEEPALIVE\fP
+ソケット・オプションを指定します。値を記述する必要はありません。
+
+\fBsndbuf\fP。setsockopt(2) システムコールで、\fBSO_SNDBUF\fP
+ソケット・オプションを指定します。値の指定が必要です。
+
+\fBrcvbuf\fP。setsockopt(2) システムコールで、\fBSO_RCVBUF\fP
+ソケット・オプションを指定します。値の指定が必要です。
+
+\fBtcp_nodelay\fP。setsockopt(2) システムコールで、\fBTCP_NODELAY\fP
+ソケット・オプションを指定します。値を記述する必要はありません。
+
+例:
+.nf
+	sockopt tcp_nodelay 192.168.0.0/24
+	sockopt sndbuf=1048576 10.0.0.0/8
+	sockopt sndbuf=1048576 LISTENER
+	sockopt rcvbuf=1048576 10.0.0.0/8
+	sockopt rcvbuf=1048576 LISTENER
+.fi
+.TP
+.B address_use \fIホスト指定\fP
+.br
+ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
+IPアドレスを通信に用いるかを指定します。
+この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
+適合するアドレスがない場合でも、通信を行ないます。
+.br
+
+例:
+.nf
+	address_use 192.168.0.0/24
+.fi
+
+.SH GRAMMER
+.PP
+gfarm.conf の文法をBNFで記述すると、下記のようになります。
+\fC
+.nf
+	<statement> ::=
+		<spool_statement> |
+		<spool_serverport_statement> |
+		<metadb_serverhost_statement> |
+		<metadb_serverport_statement> |
+		<ldap_serverhost_statement> |
+		<ldap_serverport_statement> |
+		<ldap_base_dn_statement> |
+		<auth_statement> |
+		<netparam_statement> |
+		<sockopt_statement> |
+		<address_use_statement>
+	<spool_statement> ::= "spool" <pathname>
+	<spool_serverport_statement> ::= "spool_serverport" <hostname>
+	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
+	<metadb_serverport_statement> ::= "metadb_serverport" <portnumber>
+	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
+	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
+	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<auth_statement> ::=
+		"auth" <auth_command> <auth_method> <hostspec>
+	<auth_command> ::= "enable" | "disable"
+	<auth_method> ::= "gsi" | "sharedsecret"
+	<netparam_statement> ::=
+		"netparam" <netparam_option>=<number> [<hostspec>]
+	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
+		"rate_limit"
+	<sockopt_statement> ::=
+		"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
+	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+		"tcp_nodelay"
+	<address_use_statement> ::=  "address_use" <hostspec>
+	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
+		<hostname>
+	<pathname> ::= <pathname_character> <pathname_character>*
+	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
+	<hostname> ::= <hostname_character> <hostname_character>*
+	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
+	<portnumber> ::= <number>
+	<number> ::= <digit> [<digit>*]
+	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	<string> ::= """ <double_quoted_character>* """
+.\"	<string> ::= <string_component> <string_component>*
+.\"	<string_component> ::= <pathname> |
+.\"		"'" <single_quoted_character>* "'" |
+.\"		""" <double_quoted_character>* """
+.\"	<single_quoted_character> ::=
+.\"		<any_character_except_single_quotation>
+	<double_quoted_character> ::=
+		<any_character_except_backslash_and_double_quotation> |
+		"\\\\" | "\\""
+.fi
+.PP
+.fi
+.PP
+
+.SH EXAMPLES
+\fC
+.nf
+spool /var/spool/gfarm
+metadb_serverhost ldap.example.com
+ldap_serverhost ldap.example.com
+ldap_serverport 389
+ldap_base_dn "dc=example, dc=com"
+auth enable sharedsecret 192.168.0.0/24
+auth enable gsi ALL
+.fi
+.PP
+
+.SH FILES
+/etc/gfarm.conf
+.br
+$HOME/.gfarmrc
+.SH SEE ALSO
+gfmd(8), gfsd(8), setsockopt(2)
+
