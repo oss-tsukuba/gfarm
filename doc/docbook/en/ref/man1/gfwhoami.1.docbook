@@ -33,7 +33,7 @@
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>also prints Subject DN of local user when using GSI authentication.</para>
+<para>prints Subject DN of the user for GSI authentication.</para>
 </listitem>
 </varlistentry>
 

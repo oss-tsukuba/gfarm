@@ -35,8 +35,7 @@
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>GSI 認証を用いている場合ローカルユーザ名である
-Subject DN も同時に表示します。</para>
+<para>GSI 認証を用いている場合、利用者の Subject DN も表示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
