@@ -357,7 +357,7 @@ int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 char *
 gfarm_strtoken(char **cursorp, char **errorp)
 {
-	char *top, *p, *s = *cursorp;
+	unsigned char *top, *p, *s = *(unsigned char *)cursorp;
 
 	*errorp = NULL;
 	while (*s != '\n' && isspace(*s))
@@ -975,7 +975,7 @@ main()
 #endif
 
 char *gfarm_debug_command;
-char gfarm_debug_pid[GFARM_INT32STRLEN];
+char gfarm_debug_pid[GFARM_INT64STRLEN];
 
 static int
 gfarm_call_debugger(void)
@@ -1022,7 +1022,7 @@ void
 gfarm_debug_initialize(char *command)
 {
 	gfarm_debug_command = command;
-	sprintf(gfarm_debug_pid, "%d", getpid());
+	sprintf(gfarm_debug_pid, "%ld", (long)getpid());
 
 	signal(SIGQUIT, gfarm_sig_debug);
 	signal(SIGILL,  gfarm_sig_debug);
