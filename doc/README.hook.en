@@ -1,7 +1,8 @@
-README for syscall-hooking library
+		File access from existing applications
+		 (README for syscall-hooking library)
 
 Gfarm syscall-hooking library enables every existing (binary) program
-to access Gfarm file system without any modification as if it is
+to access Gfarm file system without any modification as if it were
 mounted at /gfarm.
 
 Basically the syscall-hooking library traps every system call for file
@@ -9,13 +10,16 @@ access.  When a file is under the mount point /gfarm or a Gfarm URL
 starting with 'gfarm:' or 'gfarm@', appropriate Gfarm I/O APIs are
 called.
 
-*** glibc
+*** glibc-not-hidden
 
-When you are using glibc typically in Linux, it is necessary to
-install a glibc-not-hidden package to enable necessary system calls to
-hook properly.  The change is just for a version script for ld to add
-necessary symbols (__lseek64, __getdents, __getdents64, and so on) to
-the dynamic symbol table.
+When you are using GNU C library (glibc) typically in Linux, it is
+necessary to install a glibc-not-hidden package to enable necessary
+system calls to hook properly.  The change is just for a version
+script for ld to add necessary symbols (__lseek64, __getdents,
+__getdents64, and so on) to the dynamic symbol table.
+
+When you install the glibc-not-hidden package, every application can
+access Gfarm file system without any modification.
 
 Binary and source packages of glibc-not-hidden are available from
 Gfarm web site (http://datafarm.apgrid.org/software/) for typical
@@ -46,23 +50,26 @@ You can specify the above in the shell rc file such as .bashrc and
 
 After specifying the environment variable, every program can access to
 Gfarm file system.  If you would like to access Gfarm file system in
-your login interactive shell, just execute bash again.
+your interactive shell, just execute bash again.
 
 	% exec bash -l
 
-Now, you can change the current working directory to /gfarm.
+Now, you can change the current working directory to /gfarm, or enable
+filename completion.
 
 	% cd /gfarm
 
-When you would like to use on-demand replication feature, it is
-possible to be specified by GFARM_FLAGS.
+Currently, program execution and file creation by a child process via
+a redirection can be supported on a file system node.
+
+To support file input via a redirection, you need to specify
+GFARM_FLAGS to enable on-demand replication feature.
 
 	% export GFARM_FLAGS=r
 
 In this case, every file will be replicated to the local file system
-on demand instead of accessing remotely.  This flag is also required
-for a program whose child process reads or writes a file opened by the
-parent process such as 'tar zxfp'.
+on demand instead of accessing remotely.  For example, 'tar zxfp
+foo.tar.gz' requires this setting.
 
 For MPI applications, it is necessary to generate libgfs_hook.so for
 MPI library in your environment, or follow a section of either
@@ -73,12 +80,16 @@ library'.
 *** Running existing programs by linking with syscall-hooking library
 
 When your operating system does not support LD_PRELOAD, it is
-necessary to link with Gfarm syscall-hooking library to access Gfarm
-file system.
+necessary to re-link with Gfarm syscall-hooking library to access
+Gfarm file system.
+
+This section is only applied only when necessary system calls can be
+hooked.  If not, follow the next section "Running existing programs by
+statically linking with syscall-hooking library".
 
 * C program
 
-	% cc prog.c /usr/lib/gfs_hook.o -lgfarm
+	% cc prog.o /usr/lib/gfs_hook.o -lgfarm
 
 * Fortran or C++ program
 
@@ -89,26 +100,26 @@ Follows the section for 'C program' but with an appropriate compiler.
 In the case of MPI programs, link with gfs_hook_no_init.o and
 hooks_init_mpi.c instead of gfs_hook.o.
 
-	% mpicc prog.c /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
+	% mpicc prog.o /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
 		-lgfarm
 
 *** Running existing programs by statically linking with
     syscall-hooking library
 
-If you cannot replace glibc, or if a program is a statically linked
-executable, it is necessary to link statically with the Gfarm
-syscall-hook library and Gfarm I/O library.
+The last resort is to link statically with the Gfarm syscall-hook
+library and Gfarm I/O library.
 
 * C program
 
-Libraries that need to be linked with depend on the operating system.
+Re-link using -static option with gfs_hook.o and -lgfarm.  Other
+libraries that need to be linked with depend on the operating system.
 
-	% cc -static prog.c /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.o /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 or
 
-	% cc -static prog.c /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.o /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
 
 Note that static linking results in segmentation fault when using LDAP
@@ -116,7 +127,7 @@ authentication in RedHat-8.0 and RedHat-7.3.
 
 In the case with the Globus GSI library of the flavor gcc32,
 
-	% gcc -static prog.c -I/usr/grid/include/gcc32 -L/usr/grid/lib \
+	% gcc -static prog.o -I/usr/grid/include/gcc32 -L/usr/grid/lib \
 		/usr/lib/gfs_hook.o -lgfarm \
 		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
 		-lldap -llber -lsasl -ldl
@@ -130,7 +141,7 @@ Follows the section for 'C program' but with an appropriate compiler.
 In the case of MPI programs, link with gfs_hook_no_init.o and
 hooks_init_mpi.c instead of gfs_hook.o.
 
-	% mpicc -static prog.c /usr/lib/gfs_hook_mpi.o \
+	% mpicc -static prog.o /usr/lib/gfs_hook_mpi.o \
 		/usr/lib/hooks_init_mpi.c -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
@@ -142,6 +153,9 @@ For newly created files, the default file view is a local file view.
 For existent files, if the number of processes and the number of file
 fragments are the same, the default file view is a local file view,
 otherwise, the default view is a global view.
+
+When you execute 'gfrun' with the -b option, you can change the
+default view to the global file view.
 
 ** Extended Gfarm URL
 
@@ -178,9 +192,9 @@ void gfs_hook_set_default_view_global(void);
 * changing file view
 
 The following APIs change the file view of a file specified by a file
-descriptor 'fd'.  The semantics is same as gfs_pio_set_view_local (3),
-gfs_pio_set_view_index (3), gfs_pio_set_view_section (3), and
-gfs_pio_set_view_global (3), respectively, except the first argument.
+descriptor 'fd'.  The semantics is same as gfs_pio_set_view_local(3),
+gfs_pio_set_view_index(3), gfs_pio_set_view_section(3), and
+gfs_pio_set_view_global(3), respectively, except the first argument.
 
 char *
 gfs_hook_set_view_local(int fd, int flags);
