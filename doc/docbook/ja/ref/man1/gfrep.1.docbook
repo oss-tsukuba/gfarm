@@ -2,7 +2,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>11 Dec 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -11,93 +11,134 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfrep</refname>
-<refpurpose>Gfarm ファイルのレプリカを作成する。</refpurpose>
+<refpurpose>Gfarm ファイルのレプリカを作成する．</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
-    <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
+    <arg choice='plain'>-P <replaceable>ホスト対指定ファイル</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrep</command>
     <arg choice='plain'>-d <replaceable>複製先ホスト</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 Gfarm-URL の複製を、ホスト指定ファイルに記述されたホス
-トあるいは指定されたドメイン名のホストに作成します。</para>
-
-<para>-I オプションでフラグメント番号あるいはセクション名を指定し
-た場合は、指定したファイルフラグメントの複製を -d オプション
-で指定したホストに作成します。-s オプションが指定された場合
-は、指定されたホストからファイルの複製を作成します。引数 Gfarm-URL が
-ファイルフラグメントを一つしか持たない場合は、-I オプションによるフラ
-グメント番号の指定を省略することができます。</para>
-
+<para>引数 Gfarm-URL で指定したファイルの複製を，
+指定されたホストに作成します．</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
 <varlistentry>
 <term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
 <listitem>
-<para>各フラグメントの複製を作成するホスト名のリストを指定します。
-ホスト名は、各行に一ホストずつ記述します。ホストファイル中
-のホスト名の数は、フラグメントの数と一致している必要があり
-ます。
+<para>各フラグメントの複製を作成するホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
+指定したホスト名の数がフラグメントの数よりも少ない場合，
+フラグメントの数と一致するまでホスト名のリストを繰り返し指定した
+ものと見なします．
 </para>
 <para>
-ファイル名として ``-'' を指定した場合、標準入力からホス
-ト名のリストを読み込みます。</para>
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-D</option> <parameter>ドメイン名</parameter></term>
 <listitem>
-<para>各フラグメントの複製を作成するホストのドメイン名を指定します。</para>
+<para>各フラグメントの複製を作成するホストのドメイン名を指定します．</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
-<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<term><option>-P</option> <parameter>ホスト対ファイル</parameter></term>
 <listitem>
-<para>複製を作成するファイルフラグメントを指定します。
-ファイルフラグメントはフラグメント番号あるいはアーキテク
-チャなどのセクション名です．</para>
+<para>複製元のホストと複製先のホストの対のリストを記述した
+ファイル名を指定します．
+ファイルの各行には，複製元ホストと複製先ホストを，この順で空白で
+区切って指定します．
+指定した Gfarm-URL を構成するファイルが，複製元ホストに存在する場合のみ，
+そのファイルを複製先ホストにコピーします．
+</para>
+<para>
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．</para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><option>-s</option> <parameter>複製元ホスト</parameter></term>
-<listitem>
-<para>-I オプションと共に指定し，ファイルフラグメントの複製元
-のホストを指定します．</para>
-</listitem>
-</varlistentry>
+
 <varlistentry>
 <term><option>-d</option> <parameter>複製先ホスト</parameter></term>
 <listitem>
-<para>-I オプションと共に指定し，ファイルフラグメントの複製先
-のホストを指定します．</para>
+<para>複製先のホストを1つだけ指定します．
+</para>
+<para>このオプションは，通常 <option>-I</option> オプションとともに用いる
+必要がありますが，それを省略できる場合もあります．
+詳しくは <option>-I</option> オプションの項を参照してください．
+</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter>複製元ホスト</parameter></term>
+<listitem>
+<para>ファイルフラグメントの複製元のホストを指定します．
+このオプションは <option>-d</option> オプションと共に用います．
+</para>
+<para>
+このオプションを省略した場合，複製元のホストは自動で選ばれます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<listitem>
+<para>指定した Gfarm-URL が通常のファイルなら，このオプションで
+そのフラグメント番号を，あるいはプログラムならアーキテクチャ名を
+指定します．
+このオプションは <option>-d</option> オプションと共に用います．
+</para>
+<para>
+このオプションは省略できる場合があります．
+指定した Gfarm-URL が通常ファイルの場合，そのファイルがフラグメント一つから
+構成されているのなら，<option>-I</option> オプションを省略できます．
+その場合，<option>-I 0</option> と指定されたものとみなされます．
+あるいは，指定した Gfarm-URL がプログラムの場合，<option>-I</option> 
+オプションを省略すると複製先ホストのアーキテクチャ名を指定したものと
+みなされます．
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>引数オプションを表示します。</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>

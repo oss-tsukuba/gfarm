@@ -3,7 +3,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>11 Dec 2003</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -13,26 +13,31 @@
 
 <refnamediv id='name'>
 <refname>gfrep</refname>
-<refpurpose>replicate a Gfarm file</refpurpose>
+<refpurpose>replicate Gfarm files</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-I <replaceable>fragment-index</replaceable></arg>
-    <arg choice='opt'>-s <replaceable>src-node</replaceable></arg>
-    <arg choice='plain'>-d <replaceable>dest-node</replaceable></arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain'>-P <replaceable>host-pair-file</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='plain'>-d <replaceable>destination-node</replaceable></arg>
+    <arg choice='opt'>-s <replaceable>source-node</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -40,21 +45,9 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><command>gfrep</command> creates a replica of a Gfarm file
-<parameter>gfarm-URL</parameter>.  Destination filesystem nodes can be
-specified by the <parameter>hostfile</parameter> or the
-<parameter>domainname</parameter>.</para>
-
-<para>With the <option>-I</option> option, <command>gfrep</command>
-creates a replica of a specified file fragment
-<parameter>fragment-index</parameter> of a Gfarm file
-<parameter>gfarm-URL</parameter> on the filesystem node
-<parameter>dest-node</parameter> specified by the <option>-d</option>
-option.  With the <option>-s</option> option, it is possible to
-explicitly specify the source node <parameter>src-node</parameter>
-where the file fragment is copied from.  When the specified Gfarm file
-has only one fragment, it is not necessary to specify the
-<option>-I</option> option.</para>
+<para><command>gfrep</command> creates a replica of Gfarm files
+specified by the <parameter>gfarm-URL</parameter>. 
+</para>
 
 </refsect1>
 
@@ -64,10 +57,14 @@ has only one fragment, it is not necessary to specify the
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>
 <listitem>
-<para>specifies a list of filesystem nodes that will be replicated to.
-<parameter>hostfile</parameter> consists of a filesystem node in each line.  The total
-number of file fragments should be equal to the number of nodes listed
-in the <parameter>hostfile</parameter>.</para>
+<para>specifies a file which describes hostnames of
+destination filesystem nodes where the replica will be made on.
+The <parameter>hostfile</parameter> consists of a filesystem node name
+in each line.
+If the number of nodes listed in the <parameter>hostfile</parameter>
+is less than the total number of file fragments,
+it is treated as if the node names are specified repeatedly.
+</para>
 <para>
 if ``-'' is specified, standard input is used to read the host list.</para>
 </listitem>
@@ -76,34 +73,67 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 <varlistentry>
 <term><option>-D</option> <parameter>domainname</parameter></term>
 <listitem>
-<para>specifies a domainname of filesystem nodes that will be replicated
-to.</para>
+<para>specifies a domainname of destination filesystem nodes
+where the replica will be made on.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>host-pair-file</parameter></term>
+<listitem>
+<para>specifies a file which describes hostname pairs of
+source nodes and destination nodes.
+The <parameter>host-pair-file</parameter> consists of a pair
+of a source node name and a destination node name in this order in each line.
+The replica will be copied to the destination node, only if it exists
+on the source node of the pair.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option> <parameter>destination-node</parameter></term>
+<listitem>
+<para>specifies one destination filesystem node where the file will be
+copied to.
+This option also needs <option>-I</option> usually,
+but there are conditions that <option>-I</option> option can be omitted.
+Please refer the description of the <option>-I</option> for detail.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter>source-node</parameter></term>
+<listitem>
+<para>specifies a source filesystem node where the file will be copied from.
+This option is used with the <option>-d</option> option.
+</para>
+<para>If this option is omitted, the source filesystem node is choosed
+automatically.
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-I</option> <parameter>fragment-index</parameter></term>
 <listitem>
-<para>specifies a file fragment.  It is a fragment index or a section name
-describing its architecture.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-s</option> <parameter>src-node</parameter></term>
-<listitem>
-<para>specifies a source filesystem node from which the file fragment will
-be copied.  This option needs to be specified with the <option>-I</option>
-option.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-d</option> <parameter>dest-node</parameter></term>
-<listitem>
-<para>specifies a destination filesystem node to which the file fragment
-will be copied.  This option needs to be specified with the <option>-I</option>
-option.</para>
+<para>specifies a file fragment number,
+if the <parameter>Gfarm-URL</parameter> is an usual file.
+If the <parameter>Gfarm-URL</parameter> is a program,
+this option specifies an architecture name of the program.
+This option is used with the <option>-d</option> option.
+</para>
+<para>
+It is possible to omit this option in the following cases.
+If specified <parameter>Gfarm-URL</parameter> is an usual file
+and it's consists of just one file fragment, this option can
+be omitted, and works as if option <option>-I 0</option> is specified.
+If specified <parameter>Gfarm-URL</parameter> is a program,
+This works as if the architecture of the destination filesystem node
+is specified.
+</para>
 </listitem>
 </varlistentry>
 
