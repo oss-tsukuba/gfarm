@@ -13,31 +13,25 @@
 <refname>gfrun</refname>
 <refname>gfrsh</refname>
 <refname>gfssh</refname>
-<refpurpose>ファイルシステムノードで、gfarm 並列コマンドを実行する</refpurpose>
+<refpurpose>ファイルシステムノードで gfarm 並列コマンドを実行する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrun</command>
-    <group choice='opt'>
-	<arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg>
-	<arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    </group>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrsh</command>
-    <group choice='opt'>
-	<arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg>
-	<arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    </group>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfssh</command>
-    <group choice='opt'><arg choice='plain'>-G <replaceable>gfarm-URL</replaceable></arg><arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg></group>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
 </cmdsynopsis>
@@ -46,32 +40,38 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>並列プログラムを実行します．実行されるファイルシステムノードは，
--G オプションで指定される Gfarm ファイル <parameter>gfarm-URL</parameter> の
-ファイル・アフィニティ・スケジューリングにより決定されます．
+<para>
+並列プログラムを実行します．実行されるファイルシステムノードは，
+-G オプション，-H オプションあるいは -N オプションにより決定されます．
+</para>
+
+<para>
+-G オプションはファイル・アフィニティ・スケジューリングのための
+Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
 ファイルのそれぞれのファイル断片に対し，複製が格納されている
 ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
 同数のプロセスが，ファイル断片を格納しているノードで実行され
-るということになります．</para>
+るということになります．
+-H オプションは <parameter>ホスト指定ファイル</parameter> を指定します．
+この場合，そのファイルに記述されたノードで並列プログラムを実行します．
+-N オプションは実行されるファイルシステムノードの
+<parameter>ノード数</parameter> を指定します．
+</para>
 
-<para>-H オプションで <parameter>ホスト指定ファイル</parameter> が指定された場合は，
-そのファイルに記述されたノードで並列プログラムを実行します．</para>
+<para>
+-G オプション，-H オプション，-N オプションがいずれも指定されない場合は，
+引数に指定された既に存在する Gfarmファイルのうち一番はじめのファイルを
+利用したファイル・アフィニティ・スケジューリングにより決定されます．
+引数中に既に存在する Gfarm ファイルが存在しない場合は，適当なノードが1
+ノード選択され，逐次実行となります．
+</para>
 
-<para>-Gオプションも-Hオプションも指定されない場合は，引数に指定され
-た既に存在するGfarmファイルのうち一番はじめのファイルを利用して，
-ファイル・アフィニティ・スケジューリングされます．</para>
+<para>gfrsh や gfssh コマンドは，gfrcmd の代わりに rsh，ssh を
+利用することを除いて，gfrun と同様です．</para>
 
-<para>指定されたファイルシステムノード群に対して、並列プログラムの
-それぞれのプロセスは
-「gfrcmd ホスト プログラム名 -N 全ノード数 -I ノード番号 引数…」
-で実行されます。</para>
-
-<para>gfrsh や gfssh コマンドは、gfrcmd の代わりに rsh、ssh を
-利用することを除いて、gfrun と同様です。</para>
-
-<para>プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
-も指定できます。</para>
+<para>プログラム名としては，gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます．</para>
 
 </refsect1>
 
@@ -88,18 +88,38 @@
 <term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
 <listitem>
 <para>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
-指定します。
-ホスト名は、各行に一ホストずつ記述します。
+指定します．
+ホスト名は，各行に一ホストずつ記述します．
 </para>
 <para>
-ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。</para>
+ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-N</option> <parameter>ノード数</parameter></term>
+<listitem>
+<para>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>実行される並列プログラムの標準出力を gfarm-URL に書き出します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-e</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>引数オプションを表示します。</para>
+<para>引数オプションを表示します．</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -110,9 +130,8 @@
 <varlistentry>
 <term><envar>GFRUN_CMD</envar></term>
 <listitem>
-<para>遠隔起動コマンドを指定します．globus-job-runを指定すれ
-ば，gfrunはglobus-job-run を使ってそれぞれのプロセスを
-起動します．</para>
+<para>遠隔起動コマンドを指定します．例えば globus-job-run が指定された場合，
+gfrun は globus-job-run を使ってそれぞれのプロセスを起動します．</para>
 </listitem>
 </varlistentry>
 </variablelist>
