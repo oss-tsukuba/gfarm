@@ -13,7 +13,18 @@
 
 #define MAX_GFS_FILE_BUF	2048
 
-static GFS_File _gfs_file_buf[MAX_GFS_FILE_BUF];
+static struct {
+	unsigned char d_type;   /* file types in <gfarm/gfs.h> */
+        union {
+		GFS_File f;
+		struct {
+			GFS_Dir dir;
+			int readcount;
+			struct gfs_dirent *suspended;
+			struct gfs_stat gst;
+		} *d;
+	} u;
+} _gfs_file_buf[MAX_GFS_FILE_BUF];
 static int _gfs_file_refcount[MAX_GFS_FILE_BUF];
 
 void
@@ -56,14 +67,67 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		errno = EMFILE;
 		return (-1);
 	}
-	if (_gfs_file_buf[fd] != NULL) {
+	if (_gfs_file_buf[fd].u.f != NULL) {
 		__syscall_close(fd);
 		gfs_pio_close(gf);
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
 	}
-	_gfs_file_buf[fd] = gf;
+	_gfs_file_buf[fd].d_type = GFS_DT_REG;
+	_gfs_file_buf[fd].u.f = gf;
 	return (fd);
+}
+
+int
+gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
+{
+	int fd, save_errno;
+	char *e;
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %p\n", dir));
+
+	/*
+	 * A new file descriptor is needed to identify a hooked file
+	 * descriptor.
+	 */
+	fd = open("/dev/null", O_RDONLY);
+	if (fd == -1) {
+		save_errno = errno;
+		gfs_closedir(dir);
+		errno = save_errno;
+		return (-1);
+	}
+	if (fd >= MAX_GFS_FILE_BUF) {
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = EMFILE;
+		return (-1);
+	}
+	if (_gfs_file_buf[fd].u.d != NULL) {
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = EBADF; /* XXX - something broken */
+		return (-1);
+	}
+        _gfs_file_buf[fd].u.d = malloc(sizeof(*_gfs_file_buf[fd].u.d));
+        if (_gfs_file_buf[fd].u.d == NULL) {
+		__syscall_close(fd);
+		gfs_closedir(dir);
+		errno = ENOMEM;
+		return (-1);
+        }
+	_gfs_file_buf[fd].d_type = GFS_DT_DIR;
+        _gfs_file_buf[fd].u.d->dir = dir;
+        _gfs_file_buf[fd].u.d->readcount = 0;
+        _gfs_file_buf[fd].u.d->suspended = NULL;
+        e = gfs_stat(url, &_gfs_file_buf[fd].u.d->gst);
+	return (fd);
+}
+
+unsigned char
+gfs_hook_gfs_file_type(int fd)
+{
+	return (_gfs_file_buf[fd].d_type);
 }
 
 int
@@ -73,7 +137,18 @@ gfs_hook_clear_gfs_file(int fd)
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
 
-	_gfs_file_buf[fd] = NULL;
+	if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG)
+		_gfs_file_buf[fd].u.f = NULL;
+	else {
+		_gfs_file_buf[fd].u.d->dir = NULL;
+		_gfs_file_buf[fd].u.d->readcount = 0;
+		_gfs_file_buf[fd].u.d->suspended = NULL;
+		gfs_stat_free(&_gfs_file_buf[fd].u.d->gst);
+		free(_gfs_file_buf[fd].u.d); 
+		_gfs_file_buf[fd].u.d = NULL;
+	}
+
+	_gfs_file_buf[fd].d_type = GFS_DT_UNKNOWN;
 	__syscall_close(fd);
 
 	ref = _gfs_file_refcount[fd];
@@ -89,10 +164,12 @@ gfs_hook_insert_filedes(int fd, GFS_File gf)
 	_gfs_hook_debug(
 		fprintf(stderr, "GFS: insert_filedes: %d, %p\n", fd, gf));
 
-	if (_gfs_file_buf[fd] != NULL)
+	if (_gfs_file_buf[fd].u.f != NULL)
 		return (-1);
 
-	_gfs_file_buf[fd] = gf;
+	_gfs_file_buf[fd].d_type = GFS_DT_REG;
+	_gfs_file_buf[fd].u.f = gf;
+
 	return (fd);
 }
 
@@ -106,12 +183,53 @@ gfs_hook_inc_refcount(int fd)
 }
 
 /*  printf and puts should not be put into the following function. */
-GFS_File
+void *
 gfs_hook_is_open(int fd)
 {
-	if (fd >= 0 && fd < MAX_GFS_FILE_BUF)
-		return (_gfs_file_buf[fd]);
-	return (NULL);
+	if (fd < 0 || fd >= MAX_GFS_FILE_BUF)
+		return (NULL);
+
+	switch (gfs_hook_gfs_file_type(fd)) {
+	case GFS_DT_REG:
+		return (_gfs_file_buf[fd].u.f);
+	case GFS_DT_DIR:
+		return (_gfs_file_buf[fd].u.d->dir);
+	default:
+		return (NULL);
+	}
+}
+
+void
+gfs_hook_inc_readcount(int fd)
+{
+	_gfs_hook_debug(
+		fprintf(stderr, "GFS: inc_readount: %d\n", fd));
+
+	++_gfs_file_buf[fd].u.d->readcount;
+}
+
+int
+gfs_hook_is_read(int fd)
+{
+	return (_gfs_file_buf[fd].u.d->readcount > 0);
+}
+
+void
+gfs_hook_set_suspended_gfs_dirent(int fd, struct gfs_dirent *entry)
+{
+	_gfs_file_buf[fd].u.d->suspended = entry;
+}
+
+struct gfs_dirent *
+gfs_hook_get_suspended_gfs_dirent(int fd)
+{
+	return (_gfs_file_buf[fd].u.d->suspended);
+}
+
+struct gfs_stat *
+gfs_hook_get_gfs_stat(int fd)
+{
+	return (&_gfs_file_buf[fd].u.d->gst);
 }
 
 /*

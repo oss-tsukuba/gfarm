@@ -13,16 +13,25 @@ extern int gfarm_node, gfarm_nnode;
 #endif
 
 struct gfs_file;
+struct gfs_dir;
+struct gfs_dirent;
 
 char *gfs_hook_initialize(void);
 
 int gfs_hook_insert_gfs_file(struct gfs_file *);
+int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
+unsigned char gfs_hook_gfs_file_type(int);
 int gfs_hook_clear_gfs_file(int);
 
 int gfs_hook_insert_filedes(int, struct gfs_file *);
 void gfs_hook_inc_refcount(int);
 
-struct gfs_file *gfs_hook_is_open(int);
+void *gfs_hook_is_open(int);
+void gfs_hook_inc_readcount(int);
+int gfs_hook_is_read(int);
+void gfs_hook_set_suspended_gfs_dirent(int, struct gfs_dirent *);
+struct gfs_dirent *gfs_hook_get_suspended_gfs_dirent(int);
+struct gfs_stat *gfs_hook_get_gfs_stat(int);
 int gfs_hook_is_url(const char *, char **, char **);
 int __syscall_close(int);
 
