@@ -101,7 +101,6 @@ main(argc, argv)
 	char *args[4];
 	char *envs[2];
 	char **envp = NULL;
-	int i, ch;
 	struct gfs_connection *gfs_server;
 	int sig, status, coredump;
 
