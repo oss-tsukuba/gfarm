@@ -300,6 +300,26 @@ gfs_hook_syscall_stat(const char *path, struct stat *buf)
 #endif
 }
 
+int
+gfs_hook_syscall_lstat(const char *path, struct stat *buf)
+{
+#ifndef _STAT_VER
+	return (syscall(SYS_lstat, path, buf));
+#else /* SVR4 or Linux */
+	return (gfs_hook_syscall_lxstat(_STAT_VER, path, buf));
+#endif
+}
+
+int
+gfs_hook_syscall_fstat(int filedes, struct stat *buf)
+{
+#ifndef _STAT_VER
+	return (syscall(SYS_fstat, filedes, buf));
+#else /* SVR4 or Linux */
+	return (gfs_hook_syscall_fxstat(_STAT_VER, filedes, buf));
+#endif
+}
+
 /*
  * for SVR4.
  *
@@ -312,6 +332,20 @@ gfs_hook_syscall_xstat(int ver, const char *path, struct stat *buf)
 	return (syscall(SYS_xstat, ver, path, buf));
 
 }
+
+int
+gfs_hook_syscall_lxstat(int ver, const char *path, struct stat *buf)
+{
+	return (syscall(SYS_lxstat, ver, path, buf));
+
+}
+
+int
+gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
+{
+	return (syscall(SYS_fxstat, ver, filedes, buf));
+
+}
 #endif
 
 #define OFF_T off_t
@@ -322,8 +356,6 @@ gfs_hook_syscall_xstat(int ver, const char *path, struct stat *buf)
 	gfs_hook_syscall_creat(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek(filedes, offset, whence)
-#define SYSCALL_STAT(path, buf)	\
-	gfs_hook_syscall_stat(path, buf)
 
 #define FUNC___OPEN	__open
 #define FUNC__OPEN	_open
@@ -334,10 +366,19 @@ gfs_hook_syscall_xstat(int ver, const char *path, struct stat *buf)
 #define FUNC___LSEEK	__lseek
 #define FUNC__LSEEK	_lseek
 #define FUNC_LSEEK	lseek
+
+#include "hooks_common.c"
+
+/* stat */
+
+#define STRUCT_STAT	struct stat
+
+#define SYSCALL_STAT(path, buf)	\
+	gfs_hook_syscall_stat(path, buf)
 #define FUNC___STAT	__stat
 #define FUNC__STAT	_stat
 #define FUNC_STAT	stat
-#define STRUCT_STAT	struct stat
+#define GFS_STAT	gfs_stat
 
 #ifdef _STAT_VER /* SVR4 or Linux */
 #define SYSCALL_XSTAT(ver, path, buf)	\
@@ -347,4 +388,54 @@ gfs_hook_syscall_xstat(int ver, const char *path, struct stat *buf)
 #define FUNC_XSTAT	xstat
 #endif
 
-#include "hooks_common.c"
+#include "hooks_stat.c"
+
+#undef SYSCALL_STAT
+#undef FUNC___STAT
+#undef FUNC__STAT
+#undef FUNC_STAT
+#undef GFS_STAT
+#ifdef _STAT_VER /* SVR4 or Linux */
+#undef SYSCALL_XSTAT
+#undef FUNC___XSTAT
+#undef FUNC__XSTAT
+#undef FUNC_XSTAT
+#endif
+
+/* lstat */
+
+#define SYSCALL_STAT(path, buf)	\
+	gfs_hook_syscall_lstat(path, buf)
+#define FUNC___STAT	__lstat
+#define FUNC__STAT	_lstat
+#define FUNC_STAT	lstat
+#define GFS_STAT	gfs_lstat
+
+#ifdef _STAT_VER /* SVR4 or Linux */
+#define SYSCALL_XSTAT(ver, path, buf)	\
+	gfs_hook_syscall_lxstat(ver, path, buf)
+#define FUNC___XSTAT	__lxstat
+#define FUNC__XSTAT	_lxstat
+#define FUNC_XSTAT	lxstat
+#endif
+
+#include "hooks_stat.c"
+
+/* fstat */
+
+#define SYSCALL_FSTAT(path, buf)	\
+	gfs_hook_syscall_fstat(path, buf)
+#define FUNC___FSTAT	__fstat
+#define FUNC__FSTAT	_fstat
+#define FUNC_FSTAT	fstat
+#define GFS_FSTAT	gfs_fstat
+
+#ifdef _STAT_VER /* SVR4 or Linux */
+#define SYSCALL_FXSTAT(ver, fd, buf)	\
+	gfs_hook_syscall_fxstat(ver, fd, buf)
+#define FUNC___FXSTAT	__fxstat
+#define FUNC__FXSTAT	_fxstat
+#define FUNC_FXSTAT	fxstat
+#endif
+
+#include "hooks_fstat.c"

@@ -34,7 +34,7 @@
 /* Get information about the file NAME in BUF.  */
 
 int
-gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
+gfs_hook_syscall_lxstat64 (int vers, const char *name, struct stat64 *buf)
 {
   int result;
 
@@ -44,11 +44,11 @@ gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
   if (! no_stat64)
     {
       int saved_errno = errno;
-      result = syscall (SYS_stat64, name, buf);
+      result = syscall (SYS_lstat64, name, buf);
 
       if (result != -1 || errno != ENOSYS)
 	{
-#  if defined _HAVE_STAT64___ST_INO && __ASSUME_ST_INO_64_BIT == 0
+#  if defined _HAVE_LSTAT64___ST_INO && __ASSUME_ST_INO_64_BIT == 0
 	  if (result != -1 && buf->__st_ino != (__ino_t) buf->st_ino)
 	    buf->st_ino = buf->__st_ino;
 #  endif
@@ -63,7 +63,7 @@ gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
   {
     struct kernel_stat kbuf;
 
-    result = syscall (stat, name, &kbuf);
+    result = syscall (lstat, name, &kbuf);
     if (result == 0)
       result = xstat64_conv (vers, &kbuf, buf);
   }

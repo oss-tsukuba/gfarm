@@ -1,5 +1,5 @@
-/* xstat64 using old-style Unix stat system call.
-   Copyright (C) 1991,95,96,97,98,99,2000,2001 Free Software Foundation, Inc.
+/* xstat using old-style Unix stat system call.
+   Copyright (C) 1991,95,96,97,98,2000 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,56 +17,32 @@
    write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
    Boston, MA 02111-1307, USA.  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <stddef.h>
-
-#ifndef __USE_LARGEFILE64
-#define __USE_LARGEFILE64
-#endif
 #include <sys/stat.h>
 #include "kernel_stat.h"
 
 #include <sys/syscall.h>
 
-#define NEEDS_XSTAT64_CONV
+#define NEEDS_XSTAT_CONV
 #include "xstatconv.c"
 
-/* Get information about the file NAME in BUF.  */
-
+/* Get information about the file FD in BUF.  */
 int
-gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
+gfs_hook_syscall_fxstat (int vers, int fd, struct stat *buf)
 {
+  struct kernel_stat kbuf;
   int result;
 
-# if defined SYS_stat64
-  static int no_stat64 = 0;
+  if (vers == _STAT_VER_KERNEL)
+    return syscall (SYS_fstat, fd, (struct kernel_stat *) buf);
 
-  if (! no_stat64)
-    {
-      int saved_errno = errno;
-      result = syscall (SYS_stat64, name, buf);
-
-      if (result != -1 || errno != ENOSYS)
-	{
-#  if defined _HAVE_STAT64___ST_INO && __ASSUME_ST_INO_64_BIT == 0
-	  if (result != -1 && buf->__st_ino != (__ino_t) buf->st_ino)
-	    buf->st_ino = buf->__st_ino;
-#  endif
-	  return result;
-	}
-
-      errno = saved_errno;
-      no_stat64 = 1;
-    }
-# endif
-
-  {
-    struct kernel_stat kbuf;
-
-    result = syscall (stat, name, &kbuf);
-    if (result == 0)
-      result = xstat64_conv (vers, &kbuf, buf);
-  }
+  result = syscall (SYS_fstat, fd, &kbuf);
+  if (result == 0)
+    result = xstat_conv (vers, &kbuf, buf);
 
   return result;
 }

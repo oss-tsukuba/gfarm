@@ -31,10 +31,10 @@
 #define NEEDS_XSTAT64_CONV
 #include "xstatconv.c"
 
-/* Get information about the file NAME in BUF.  */
+/* Get information about the file FD in BUF.  */
 
 int
-gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
+gfs_hook_syscall_fxstat64 (int vers, int fd, struct stat64 *buf)
 {
   int result;
 
@@ -44,7 +44,7 @@ gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
   if (! no_stat64)
     {
       int saved_errno = errno;
-      result = syscall (SYS_stat64, name, buf);
+      result = syscall (SYS_fstat64, fd, buf);
 
       if (result != -1 || errno != ENOSYS)
 	{
@@ -63,7 +63,7 @@ gfs_hook_syscall_xstat64 (int vers, const char *name, struct stat64 *buf)
   {
     struct kernel_stat kbuf;
 
-    result = syscall (stat, name, &kbuf);
+    result = syscall (fstat, fd, &kbuf);
     if (result == 0)
       result = xstat64_conv (vers, &kbuf, buf);
   }

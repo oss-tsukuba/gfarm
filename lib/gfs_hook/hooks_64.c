@@ -27,10 +27,8 @@
  *	lio_listio64()
  *
  * _LFS64_LARGEFILE APIs
- *	fstat64()
  *	ftruncate64()
  *	lockf64()
- *	lstat64()
  *	mmap64()
  *	readdir64()
  *	truncate64()
@@ -93,6 +91,26 @@ gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
 #endif
 }
 
+int
+gfs_hook_syscall_lstat64(const char *path, struct stat64 *buf)
+{
+#ifndef _STAT_VER
+	return (syscall(SYS_lstat64, path, buf));
+#else /* SVR4 or Linux */
+	return (gfs_hook_syscall_lxstat64(_STAT_VER, path, buf));
+#endif
+}
+
+int
+gfs_hook_syscall_fstat64(int filedes, struct stat64 *buf)
+{
+#ifndef _STAT_VER
+	return (syscall(SYS_fstat64, filedes, buf));
+#else /* SVR4 or Linux */
+	return (gfs_hook_syscall_fxstat64(_STAT_VER, filedes, buf));
+#endif
+}
+
 /*
  * for SVR4.
  *
@@ -108,6 +126,26 @@ gfs_hook_syscall_xstat64(int ver, const char *path, struct stat64 *buf)
 	return (gfs_hook_syscall_xstat(SYS_xstat, _STAT64_VER, path, buf));
 #endif
 }
+
+int
+gfs_hook_syscall_lxstat64(int ver, const char *path, struct stat64 *buf)
+{
+#if defined(__sgi) && _MIPS_SIM == _ABIN32 /* ABI N32 */
+	return (gfs_hook_syscall_lxstat(SYS_lxstat, _STAT_VER, path, buf));
+#else
+	return (gfs_hook_syscall_lxstat(SYS_lxstat, _STAT64_VER, path, buf));
+#endif
+}
+
+int
+gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
+{
+#if defined(__sgi) && _MIPS_SIM == _ABIN32 /* ABI N32 */
+	return (gfs_hook_syscall_fxstat(SYS_fxstat, _STAT_VER, filedes, buf));
+#else
+	return (gfs_hook_syscall_fxstat(SYS_fxstat, _STAT64_VER, filedes, buf));
+#endif
+}
 #endif
 
 #define OFF_T off64_t
@@ -118,8 +156,6 @@ gfs_hook_syscall_xstat64(int ver, const char *path, struct stat64 *buf)
 	gfs_hook_syscall_creat64(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek64(filedes, offset, whence)
-#define SYSCALL_STAT(path, buf)	\
-	gfs_hook_syscall_stat64(path, buf)
 
 #define FUNC___OPEN	__open64
 #define FUNC__OPEN	_open64
@@ -130,10 +166,19 @@ gfs_hook_syscall_xstat64(int ver, const char *path, struct stat64 *buf)
 #define FUNC___LSEEK	__lseek64
 #define FUNC__LSEEK	_lseek64
 #define FUNC_LSEEK	lseek64
+
+#include "hooks_common.c"
+
+/* stat */
+
+#define STRUCT_STAT	struct stat64
+
+#define SYSCALL_STAT(path, buf)	\
+	gfs_hook_syscall_stat64(path, buf)
 #define FUNC___STAT	__stat64
 #define FUNC__STAT	_stat64
 #define FUNC_STAT	stat64
-#define STRUCT_STAT	struct stat64
+#define GFS_STAT	gfs_stat
 
 #ifdef _STAT_VER /* SVR4 or Linux */
 #define SYSCALL_XSTAT(ver, path, buf)	\
@@ -143,7 +188,57 @@ gfs_hook_syscall_xstat64(int ver, const char *path, struct stat64 *buf)
 #define FUNC_XSTAT	xstat64
 #endif
 
-#include "hooks_common.c"
+#include "hooks_stat.c"
+
+#undef SYSCALL_STAT
+#undef FUNC___STAT
+#undef FUNC__STAT
+#undef FUNC_STAT
+#undef GFS_STAT
+#ifdef _STAT_VER /* SVR4 or Linux */
+#undef SYSCALL_XSTAT
+#undef FUNC___XSTAT
+#undef FUNC__XSTAT
+#undef FUNC_XSTAT
+#endif
+
+/* lstat */
+
+#define SYSCALL_STAT(path, buf)	\
+	gfs_hook_syscall_lstat64(path, buf)
+#define FUNC___STAT	__lstat64
+#define FUNC__STAT	_lstat64
+#define FUNC_STAT	lstat64
+#define GFS_STAT	gfs_lstat
+
+#ifdef _STAT_VER /* SVR4 or Linux */
+#define SYSCALL_XSTAT(ver, path, buf)	\
+	gfs_hook_syscall_lxstat64(ver, path, buf)
+#define FUNC___XSTAT	__lxstat64
+#define FUNC__XSTAT	_lxstat64
+#define FUNC_XSTAT	lxstat64
+#endif
+
+#include "hooks_stat.c"
+
+/* fstat */
+
+#define SYSCALL_FSTAT(path, buf)	\
+	gfs_hook_syscall_fstat64(path, buf)
+#define FUNC___FSTAT	__fstat64
+#define FUNC__FSTAT	_fstat64
+#define FUNC_FSTAT	fstat64
+#define GFS_FSTAT	gfs_fstat
+
+#ifdef _STAT_VER /* SVR4 or Linux */
+#define SYSCALL_FXSTAT(ver, fd, buf)	\
+	gfs_hook_syscall_fxstat64(ver, fd, buf)
+#define FUNC___FXSTAT	__fxstat64
+#define FUNC__FXSTAT	_fxstat64
+#define FUNC_FXSTAT	fxstat64
+#endif
+
+#include "hooks_fstat.c"
 
 #if defined(SYS_llseek) || defined(SYS__llseek)
 /*
