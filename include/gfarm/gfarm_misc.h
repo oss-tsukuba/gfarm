@@ -42,8 +42,6 @@ char *gfarm_set_global_user_for_this_local_account(void);
 
 /* the following functions are for client, */
 /* server/daemon process shouldn't call follows: */
-extern int gfarm_initialized;
-extern int gfarm_is_active_file_system_node;
 char *gfarm_initialize(int *, char ***);
 char *gfarm_terminate(void);
 char *gfarm_config_read(void);
@@ -54,21 +52,7 @@ char *gfarm_server_terminate(void);
 char *gfarm_server_config_read(void);
 void gfarm_config_set_filename(char *);
 
-extern int gfarm_authentication_verbose;
-
 char *gfarm_strtoken(char **, char **);
-
-extern char *gfarm_spool_root;
-extern int gfarm_spool_server_port;
-
-/* GFM dependent */
-extern char *gfarm_metadb_server_name;
-extern int gfarm_metadb_server_port;
-
-/* LDAP dependent */
-extern char *gfarm_ldap_server_name;
-extern char *gfarm_ldap_server_port;
-extern char *gfarm_ldap_base_dn;
 
 /*
  * GFarm URL and pathname handling
@@ -101,13 +85,7 @@ extern char GFARM_URL_PREFIX[];
  * Pool Host Scheduling
  * XXX - will be separated to <gfarm_schedule.h>?
  */
-enum gfarm_schedule_search_mode {
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH
-};
-enum gfarm_schedule_search_mode gfarm_schedule_search_mode_get(void);
-void gfarm_schedule_search_mode_set(enum gfarm_schedule_search_mode);
-
+void gfarm_schedule_search_mode_use_loadavg(void);
 char *gfarm_schedule_search_idle_hosts(int, char **, int, char **);
 char *gfarm_schedule_search_idle_by_all(int, char **);
 char *gfarm_schedule_search_idle_by_domainname(const char *, int, char **);

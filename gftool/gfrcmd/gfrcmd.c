@@ -11,8 +11,12 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+
 #include "gfs_client.h"
 #include "auth.h"
+#include "config.h"
 
 char *program_name = "gfrcmd";
 
@@ -194,13 +198,13 @@ main(argc, argv)
 	}
 
 	/*
-	 * gfarm_authentication_verbose is set here because the above
+	 * gflog_auth_set_verbose() is called here because the above
 	 * call of gfarm_gsi_client_initialize() may display verbose
 	 * error messages, which will be displayed later again in
 	 * gfarm_auth_request_gsi().
 	 */
 	if (opt_auth_verbose)
-		gfarm_authentication_verbose = 1;
+		gflog_auth_set_verbose(1);
 
 #if 0 /* XXX - We cannot do this, because we don't access meta database. */
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,

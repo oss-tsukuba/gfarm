@@ -13,7 +13,11 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+
 #include "host.h"
+#include "config.h"
 #include "gfj_client.h"
 #include "schedule.h"
 
@@ -733,7 +737,7 @@ main(int argc, char **argv)
 		usage();
 	command_name = argv[command_index];
 	if (options.authentication_verbose_mode)
-		gfarm_authentication_verbose = 1;
+		gflog_auth_set_verbose(1);
 	if ((e = gfarm_initialize(&argc, &argv)) != NULL) {
 		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
 		exit(1);
