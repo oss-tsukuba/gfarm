@@ -110,7 +110,14 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 				strlen(basename) + 1); 
 	if (*canonic_pathp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	sprintf(*canonic_pathp, "%s/%s", dir_canonic, basename);
+	/*
+	 * When the 'dir_canonic' is a null string, *canonic_pathp
+	 * will start with '/' incorrectly.
+	 */
+	if (strcmp(dir_canonic, "") == 0)
+		strcpy(*canonic_pathp, basename);
+	else
+		sprintf(*canonic_pathp, "%s/%s", dir_canonic, basename);
 	free(dir_canonic);
 	return (NULL);
 }
