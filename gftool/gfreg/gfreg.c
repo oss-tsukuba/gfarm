@@ -129,8 +129,8 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 
 	e = gfs_stat(gfarm_url, &gs);
 	if (e == NULL && GFARM_S_ISDIR(gs.st_mode)) {
+		/* target gfarm_url is a directory */
 		char *bname;
-		/* gfarm_url is a directory */
 
 		gfs_stat_free(&gs);
 
@@ -176,12 +176,12 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 	if (executable_file) {
 		/* register a binary executable. */
 
-		/*
-		 * In auto index case, node_index does not stand for
-		 * architecture.
-		 */
-		if (auto_index)
-			node_index = NULL;
+		/* auto index case is not permitted */
+		if (auto_index) {
+			fprintf(stderr, "%s: binary file in auto index mode\n",
+				filename);
+			return (-1);
+		}
 
 		if (node_index == NULL) {
 			if (hostname == NULL) {
@@ -220,6 +220,26 @@ gfarm_register_file(char *gfarm_url, char *node_index, char *hostname,
 				"of %s.\n",
 				program_name, gfarm_host_get_self_name());
 			return (-1);
+		}
+		if (hostname == NULL) {
+			int nhosts;
+			struct gfarm_host_info *hosts;
+
+			/* if hostname is not specified, check architecture */
+			e = gfarm_host_info_get_allhost_by_architecture(
+				node_index, &nhosts, &hosts);
+			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+				fprintf(stderr, "%s: no such architecture\n",
+					node_index);
+				return (-1);
+			}
+			if (e != NULL) {
+				fprintf(stderr, "%s: %s\n", node_index, e);
+				return (-1);
+			}
+			/* XXX - select nodes, not implemented yet. */
+
+			gfarm_host_info_free_all(nhosts, hosts);
 		}
 		if (total_nodes <= 0) {
 			if (gfs_pio_get_node_size(&total_nodes) != NULL)
@@ -306,6 +326,7 @@ main(int argc, char *argv[])
 	int total_nodes = -1, c, auto_index = 0;
 	extern char *optarg;
 	extern int optind;
+	struct gfs_stat gs;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
@@ -351,16 +372,30 @@ main(int argc, char *argv[])
 			program_name);
 		usage();
 	}
-	if ((argc > 2 || hostname == NULL)
-	    && (argc > 1 && total_nodes < 0 && node_index == NULL)) {
-		total_nodes = argc - 1;
+	gfarm_url = argv[argc - 1];
+
+	/*
+	 * auto index mode: when target gfarm_url does not exist (a
+	 * new Gfarm file), and when node_index is not specified,
+	 * node_index will be automatically determined.
+	 */
+	e = gfs_stat(gfarm_url, &gs);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT && node_index == NULL) {
+		/* auto index mode */
 		auto_index = 1;
 
+		if (total_nodes >= 0 && total_nodes != argc - 1) {
+			fprintf(stderr, "%s: -N option is not correctly "
+				"specified\n", program_name);
+			usage();
+		}
+		total_nodes = argc - 1;
+		/*
+		 * if hostname is not specified, select appropreate
+		 * nodes
+		 */
 		if (hostname != NULL)
-			fprintf(stderr, "%s: warning: -h option is ignored\n",
-				program_name);
-
-		auto_hosts = malloc(total_nodes * sizeof(char *));
+			auto_hosts = malloc(total_nodes * sizeof(char *));
 		if (auto_hosts != NULL) {
 			if (domainname != NULL)
 				e = gfarm_schedule_search_idle_by_domainname(
@@ -374,7 +409,8 @@ main(int argc, char *argv[])
 			}
 		}
 	}
-	gfarm_url = argv[argc - 1];
+	if (e == NULL)
+		gfs_stat_free(&gs);
 
 	while (--argc) {
 		char index_str[GFARM_INT32STRLEN + 1];
