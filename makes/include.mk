@@ -19,8 +19,11 @@ post-html-hook:
 
 include-all:
 include-install: all
-	( cd $(srcdir) && \
-	  for i in *.h; do $(INSTALL_DATA) $$i $(includedir)/$$i; done )
+	@set -x; \
+	for i in / $(INCS); do \
+		case $$i in /) continue;; esac; \
+		$(INSTALL_DATA) $(srcdir)/$$i $(includedir)/$$i; \
+	done
 	@set -x; \
 	for i in / $(EXEC_INCS); do \
 		case $$i in /) continue;; esac; \
