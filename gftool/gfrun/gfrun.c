@@ -41,6 +41,7 @@ ignore_handler(int signum)
 void
 sig_ignore(int signum)
 {
+	/* we don't use SIG_IGN to make it possible that child catch singals */
 	setsig(signum, ignore_handler);
 }
 
@@ -68,7 +69,6 @@ main(argc, argv)
 	int pid, status;
 	int i, j, nhosts, job_id, nfrags, save_errno;
 	char *e, **hosts;
-	struct gfarm_job_info job_info;
 	static char gfarm_prefix[] = "gfarm:";
 #	define GFARM_PREFIX_LEN (sizeof(gfarm_prefix) - 1)
 	char total_nodes[GFARM_INT32STRLEN], node_index[GFARM_INT32STRLEN];
@@ -112,18 +112,19 @@ main(argc, argv)
 	 * XXX - Currently, You can specify at most one flag.
 	 */
 	rsh_flags = getenv(ENV_GFRUN_FLAGS);
-	if (rsh_flags == NULL)
+	if (rsh_flags == NULL) {
 		if (have_redirect_stdio_option == 1)
 			rsh_flags = "-n";
+	}
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
 		exit(1);
 	}
 	e = gfj_initialize();
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: job manager: %s\n", program_name, e);
 		exit(1);
 	}
 	gfarm_stringlist_init(&optlist_size, &option_list);
@@ -214,7 +215,7 @@ skip_opt: ;
 		e = gfarm_url_hosts_schedule(input_list[0], NULL,
 					     &nhosts, &hosts);
 		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
+			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
 			exit(1);
 		}
 	} else if (gfarm_is_url(hostfile)) {
@@ -247,23 +248,14 @@ skip_opt: ;
 	/*
 	 * register job manager
 	 */
-	gfarm_job_info_clear(&job_info, 1);
-	job_info.total_nodes = nhosts;
-	job_info.user = gfarm_get_global_username();
-	job_info.job_type = program_name;
-	job_info.originate_host = gfarm_self_hostname;
-	job_info.gfarm_url_for_scheduring =
-		hostfile == NULL ? input_list[0] : hostfile;
-	job_info.argc = argc - command_index;
-	job_info.argv = &argv[command_index];
-	job_info.nodes = malloc(sizeof(struct gfarm_job_node_info) * nhosts);
-	if (job_info.nodes == NULL) {
-		fprintf(stderr, "%s: no memory\n", program_name);
+	e = gfarm_user_job_register(nhosts, hosts, program_name,
+	    hostfile == NULL ? input_list[0] : hostfile,
+	    argc - command_index, &argv[command_index],
+	    &job_id);
+	if (e != NULL) {
+		fprintf(stderr, "%s: job register: %s\n", program_name, e);
 		exit(1);
 	}
-	for (i = 0; i < nhosts; i++)
-		job_info.nodes[i].hostname = hosts[i];
-	gfj_client_register(gfarm_jobmanager_server, &job_info, 0, &job_id);
 
 	/*
 	 * deliver gfarm:program.

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+#include "gfj_client.h"
 
 char *program_name = "gfmpirun";
 
@@ -36,6 +37,7 @@ ignore_handler(int signum)
 void
 sig_ignore(int signum)
 {
+	/* we don't use SIG_IGN to make it possible that child catch singals */
 	setsig(signum, ignore_handler);
 }
 
@@ -57,7 +59,7 @@ main(argc, argv)
 	int ilist_size, olist_size, alist_size, optlist_size;
 	int command_index;
 	int pid, status;
-	int i, nhosts, nfrags, save_errno;
+	int i, nhosts, job_id, nfrags, save_errno;
 	char *e, **hosts;
 	static char gfarm_prefix[] = "gfarm:";
 #	define GFARM_PREFIX_LEN (sizeof(gfarm_prefix) - 1)
@@ -74,7 +76,12 @@ main(argc, argv)
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
+		exit(1);
+	}
+	e = gfj_initialize();
+	if (e != NULL) {
+		fprintf(stderr, "%s: job manager: %s\n", program_name, e);
 		exit(1);
 	}
 	gfarm_stringlist_init(&optlist_size, &option_list);
@@ -153,6 +160,10 @@ skip_opt: ;
 		/* XXX - this is only using first input file for scheduling */
 		e = gfarm_url_hosts_schedule(input_list[0], NULL,
 					     &nhosts, &hosts);
+		if (e != NULL) {
+			fprintf(stderr, "%s: schedule: %s\n", program_name, e);
+			exit(1);
+		}
 
 		fp = fdopen(mkstemp(strcpy(filename, template)), "w");
 		for (i = 0; i < nhosts; i++)
@@ -175,6 +186,21 @@ skip_opt: ;
 		}
 	}
 
+	/*
+	 * register job manager
+	 */
+	e = gfarm_user_job_register(nhosts, hosts, program_name,
+	    hostfile == NULL ? input_list[0] : hostfile,
+	    argc - command_index, &argv[command_index],
+	    &job_id);
+	if (e != NULL) {
+		fprintf(stderr, "%s: job register: %s\n", program_name, e);
+		exit(1);
+	}
+
+	/*
+	 * deliver gfarm:program.
+	 */
 	if (strncmp(command_name, gfarm_prefix, GFARM_PREFIX_LEN) == 0) {
 		e = gfarm_url_program_deliver(command_name, nhosts, hosts,
 					      &delivered_paths);
@@ -208,7 +234,8 @@ skip_opt: ;
 		gfarm_stringlist_add(&alist_size, &arg_list, command_name);
 	} else {
 		/*
-		 * XXX assumes that all nodes have same gfarm_root!
+		 * XXX This assumes that all nodes are same architecture
+		 * XXX and all nodes have same gfarm_root!
 		 * XXX really broken.
 		 */
 		gfarm_stringlist_add(&alist_size,&arg_list,delivered_paths[0]);

@@ -9,7 +9,7 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfmpirun.c
 OBJS = gfmpirun.o
 PROGRAM = gfmpirun
-CFLAGS = $(COMMON_CFLAGS)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_DIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
