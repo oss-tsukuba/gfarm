@@ -281,16 +281,18 @@ For example,
 	address_use 192.168.0.0/24
 .fi
 .TP
-\fBlocal_user_map \fIconfiguration of a file to map user name \fB\fR
-This directive specifies a file name to map global user names
+\fBlocal_user_map \fIuser-map-file\fB\fR
+This directive specifies a file name
+\fIuser-map-file\fR for mapping global user names
 to local user names
 
-This directive is optional. You can use this directive
-to map user names on filesystem node hosts which use different
-user account names for an identical user.
-One can use gfarm as an identical user by defining a mapping from
-an identical global user name to a local user name on each host
-which has different UNIX account name.
+This directive is optional.  The
+\fIuser-map-file\fR is needed when you need to use
+the sharedsecret authentication method in the case that you have
+different unix account names on different filesystem nodes.  In this
+case, the \fIuser-map-file\fR on each filesystem node
+should have an entry from a unique global user name to each local user
+name.
 
 Example:
 
@@ -298,9 +300,9 @@ Example:
 	local_user_map /etc/gfarm/gfarm-usermap
 .fi
 
-Each line of the user mapping file is consisted of two fields,
-first field is a global user name, and second field is a local user name,
-and those fields are separated by spaces.
+Each line of the \fIuser-map-file\fR consists
+of two fields separated by spaces; the first field is a global user
+name, and the second field is a local user name.
 
 Example of the user mapping file:
 
@@ -309,9 +311,8 @@ Example of the user mapping file:
 	quux baz
 .fi
 
-In the first line of this mapping file, a user name "foobar"
-is defined as a global user name which corresponds to a local user
-name "foo" on this node.
+According to the first line of this mapping file, a global user
+name "foobar" is mapped to a local user name "foo" on this node.
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm.conf described by the BNF
