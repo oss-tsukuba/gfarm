@@ -3,19 +3,31 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSCHED" "1" "24 May 2003" "Gfarm" ""
+.TH "GFSCHED" "1" "06 June 2003" "Gfarm" ""
 .SH NAME
-gfsched \- ファイル・アフィニティ・スケジューリングにより ホストリストを作成
+gfsched \- ファイル・アフィニティ・スケジューリングによりホストリストを作成
 .SH SYNOPSIS
 
 \fBgfsched\fR [ \fB-I \fIフラグメント番号\fB\fR ] [ \fB-p \fIプログラムURL\fB\fR ] \fB\fIgfarm-URL\fB\fR [ \fB\fIoutput-hostfile\fB\fR ]
 
+
+\fBgfsched\fR \fB-N \fIノード数\fB\fR [ \fB-p \fIプログラムURL\fB\fR ] [ \fB\fIホスト名\fB\fR\fI ...\fR ]
+
 .SH "DESCRIPTION"
 .PP
-指定した \fIgfarm-URL\fR を利用してファイル・アフィニティ・スケジュー
-リングによりホストリストを作成します。
-\fIoutput-hostfile\fR が省略された場合、標準出力にホストリストを表示し
-ます。
+\fIgfarm-URL\fR を指定した場合、
+そのgfarmファイルに対する
+ファイル・アフィニティ・スケジューリングによりホストリストを作成します。
+すなわち、そのgfarmファイル・フラグメントを保持するホストをできる限り
+優先して、フラグメント数と等しい数のホストを選んで表示します。
+\fIoutput-hostfile\fR が省略された場合、
+標準出力にホストリストを表示します。
+.PP
+\fIgfarm-URL\fR を指定するのではなく、
+\fB-N\fR でホスト数を指定した場合、
+引数で指定したホストの中から、指定した数のホストを選んで表示します。
+ホストの指定を省略した場合、登録されている全てのホストから指定した
+数のホストを選びます。
 .SH "OPTIONS"
 .TP
 \fB-I \fIフラグメント番号\fB\fR

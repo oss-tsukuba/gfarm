@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFIMPORT_FIXED" "1" "18 March 2003" "Gfarm" ""
+.TH "GFIMPORT_FIXED" "1" "06 6月 2003" "Gfarm" ""
 .SH NAME
 gfimport_fixed \- 固定長データをフラグメントに分けて取り込む
 .SH SYNOPSIS
@@ -44,3 +44,36 @@ Gfarm ファイルシステムに取り込むサンプル・プログラムです。
 .TP
 \fB-?\fR
 引数オプションを表示します。
+.SH "EXAMPLES"
+.SS "指定した個数に分割して取り込む"
+.PP
+以下は、ファイルを8個のフラグメントに分割し、
+ファイル \fIgfarm:file\fR として取り込む例です。
+
+.nf
+gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file
+.fi
+.SS "処理するプログラムを指定し、特定の個数に分割して取り込む"
+.PP
+以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム \fIgfarm:prog\fR を実行可能なホストに、
+ファイル \fIgfarm:file\fR として取り込む例です。
+
+.nf
+gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file
+.fi
+.SS "既存の GFARM ファイルと同じ配置で取り込む"
+.PP
+以下は、既存の gfarm ファイル \fIgfarm:template\fR と
+同じ個数のフラグメントに分割し、
+\fIgfarm:template\fR が存在するのと同じホストに、
+ファイル \fIgfarm:file\fR として取り込む例です。
+
+.nf
+gfsched gfarm:template | gfimport_fixed -H - -o gfarm:file source_file
+.fi
+.SH "SEE ALSO"
+.PP
+\fBgfimport_text\fR(1),
+\fBgfsched\fR(1),
+\fBgfarm.conf\fR(5)

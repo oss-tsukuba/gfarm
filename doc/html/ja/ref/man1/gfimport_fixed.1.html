@@ -155,6 +155,155 @@ CLASS="OPTION"
 ></DL
 ></DIV
 ></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN58"
+></A
+><P
+><B
+>Example 1. 指定した個数に分割して取り込む</B
+></P
+><P
+>以下は、ファイルを8個のフラグメントに分割し、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN63"
+></A
+><P
+><B
+>Example 2. 処理するプログラムを指定し、特定の個数に分割して取り込む</B
+></P
+><P
+>以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:prog</I
+></TT
+> を実行可能なホストに、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN69"
+></A
+><P
+><B
+>Example 3. 既存の gfarm ファイルと同じ配置で取り込む</B
+></P
+><P
+>以下は、既存の gfarm ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:template</I
+></TT
+> と
+同じ個数のフラグメントに分割し、
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:template</I
+></TT
+> が存在するのと同じホストに、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched gfarm:template | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_text</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsched</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
 ></BODY
 ></HTML
 >

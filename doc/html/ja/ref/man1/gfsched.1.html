@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsched&nbsp;--&nbsp;ファイル・アフィニティ・スケジューリングにより ホストリストを作成</DIV
+>gfsched&nbsp;--&nbsp;ファイル・アフィニティ・スケジューリングによりホストリストを作成</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -59,6 +59,26 @@ CLASS="REPLACEABLE"
 >output-hostfile</I
 ></TT
 >]</P
+><P
+><B
+CLASS="COMMAND"
+>gfsched</B
+>  -N <TT
+CLASS="REPLACEABLE"
+><I
+>ノード数</I
+></TT
+>  [-p <TT
+CLASS="REPLACEABLE"
+><I
+>プログラムURL</I
+></TT
+>] [<TT
+CLASS="REPLACEABLE"
+><I
+>ホスト名</I
+></TT
+>...]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -68,20 +88,37 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->指定した <TT
+>  <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
-> を利用してファイル・アフィニティ・スケジュー
-リングによりホストリストを作成します。
-<TT
+> を指定した場合、
+  そのgfarmファイルに対する
+  ファイル・アフィニティ・スケジューリングによりホストリストを作成します。
+  すなわち、そのgfarmファイル・フラグメントを保持するホストをできる限り
+  優先して、フラグメント数と等しい数のホストを選んで表示します。
+  <TT
 CLASS="PARAMETER"
 ><I
 >output-hostfile</I
 ></TT
-> が省略された場合、標準出力にホストリストを表示し
-ます。</P
+> が省略された場合、
+  標準出力にホストリストを表示します。</P
+><P
+>  <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> を指定するのではなく、
+  <TT
+CLASS="OPTION"
+>-N</TT
+> でホスト数を指定した場合、
+  引数で指定したホストの中から、指定した数のホストを選んで表示します。
+  ホストの指定を省略した場合、登録されている全てのホストから指定した
+  数のホストを選びます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

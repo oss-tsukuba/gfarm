@@ -43,6 +43,11 @@ CLASS="REPLACEABLE"
 ><I
 >fragment-index</I
 ></TT
+>] [-p <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-program-URL</I
+></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
@@ -54,6 +59,26 @@ CLASS="REPLACEABLE"
 >output-hostfile</I
 ></TT
 >]</P
+><P
+><B
+CLASS="COMMAND"
+>gfsched</B
+>  -N <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+>  [-p <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-program-URL</I
+></TT
+>] [<TT
+CLASS="REPLACEABLE"
+><I
+>host</I
+></TT
+>...]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -63,25 +88,58 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
-><B
+>  <B
 CLASS="COMMAND"
 >gfsched</B
-> creates a host file using the file-affinity scheduing of
-<TT
+> creates a host file
+  using the file-affinity scheduing of <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
->.  When <TT
+>.
+  In other words, <B
+CLASS="COMMAND"
+>gfsched</B
+> chooses and displays
+  hostnames of the same number with the fragments of
+  the <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>, with giving priority to
+  the hosts which has the fragment as far as possible.
+  When <TT
 CLASS="PARAMETER"
 ><I
 >output-hostfile</I
 ></TT
-> is omitted, <B
+> is omitted,
+  <B
+CLASS="COMMAND"
+>gfsched</B
+> displays to the standard output.</P
+><P
+>  If <TT
+CLASS="OPTION"
+>-N</TT
+> is specified instead of 
+  <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>, <B
+CLASS="COMMAND"
+>gfsched</B
+> chooses and
+  displays specified number of hosts from the hosts in the arguments.
+  If no host is specified in the argument, <B
 CLASS="COMMAND"
 >gfsched</B
 >
-displays to the standard output.</P
+  chooses hosts from all registered hosts.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

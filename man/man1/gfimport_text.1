@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFIMPORT_TEXT" "1" "18 March 2003" "Gfarm" ""
+.TH "GFIMPORT_TEXT" "1" "06 June 2003" "Gfarm" ""
 .SH NAME
 gfimport_text \- divide and register a text file
 .SH SYNOPSIS
@@ -34,3 +34,41 @@ specifies an output file.
 .TP
 \fB-?\fR
 displays a list of command options.
+.SH "EXAMPLES"
+.SS "IMPORTING BY SPLITTING TO SPECIFIED NUMBER OF FRAGMENTS"
+.PP
+The following is an example using \fBgfimport_text\fR 
+to import a \fIsource_file\fR 
+as \fIgfarm:file\fR 
+by splitting to 8 fragments.
+
+.nf
+gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file
+.fi
+.SS "IMPORTING BY SPLITTING TO SPECIFIED NUMBER OF FRAGMENTS   FOR PARTICULAR PROGRAM"
+.PP
+The following is an example using \fBgfimport_text\fR 
+to import a \fIsource_file\fR 
+as \fIgfarm:file\fR 
+by splitting to 8 fragments
+to be processed by \fIgfarm:prog\fR program.
+
+.nf
+gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file
+.fi
+.SS "IMPORTING INTO SAME DISPOSITION WITH AN EXISTING GFARM FILE"
+.PP
+The following is an example using \fBgfimport_text\fR
+to import a \fIsource_file\fR 
+as \fIgfarm:file\fR 
+into same disposition with existing file
+\fIgfarm:template\fR.
+
+.nf
+gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file
+.fi
+.SH "SEE ALSO"
+.PP
+\fBgfimport_fixed\fR(1),
+\fBgfsched\fR(1),
+\fBgfarm.conf\fR(5)
