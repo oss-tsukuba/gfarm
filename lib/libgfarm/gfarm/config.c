@@ -1120,29 +1120,14 @@ static char *
 gfarm_parse_env(void)
 {
 	char *env;
-	pid_t pid = getpid();
 
-	/* NOTE: the following string in sizeof() should be the longest one */
-	char namebuf[sizeof("gfarm_nfrags") + 1 + GFARM_INT64STRLEN];
-
-	sprintf(namebuf, "gfarm_index_%lu", (long)pid);
-	if ((env = getenv(namebuf)) != NULL)
+	if ((env = getenv("GFARM_NODE_RANK")) != NULL)
 		node_index = strtol(env, NULL, 0);
 
-	sprintf(namebuf, "gfarm_nfrags_%lu", (long)pid);
-	if ((env = getenv(namebuf)) != NULL)
+	if ((env = getenv("GFARM_NODE_SIZE")) != NULL)
 		total_nodes = strtol(env, NULL, 0);
 
-	sprintf(namebuf, "gfarm_stdout_%lu", (long)pid);
-	if ((env = getenv(namebuf)) != NULL)
-		stdout_file = env;
-
-	sprintf(namebuf, "gfarm_stderr_%lu", (long)pid);
-	if ((env = getenv(namebuf)) != NULL)
-		stderr_file = env;
-
-	sprintf(namebuf, "gfarm_flags_%lu", (long)pid);
-	if ((env = getenv(namebuf)) != NULL) {
+	if ((env = getenv("GFARM_FLAGS")) != NULL) {
 		for (; *env; env++) {
 			switch (*env) {
 			case 'p': gf_profile = 1; break;
