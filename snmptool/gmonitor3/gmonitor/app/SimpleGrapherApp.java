@@ -15,6 +15,8 @@ import gmonitor.gui.RawDataElement;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.DisplayMode;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -336,6 +338,7 @@ System.out.println("Reset");
 	class AutoUpdateIntervalAction implements ActionListener
 	{
 		public void actionPerformed(ActionEvent arg0) {
+			timer.stop();
 			String interval =
 				JOptionPane.showInputDialog(
 					appFrame,
@@ -354,6 +357,7 @@ System.out.println("AutoUpdateInterval " + interval);
 				}
 			} catch(Exception e){
 			}
+			timer.start();
 		}
 	}
 
@@ -889,6 +893,9 @@ System.out.println("AutoUpdate: no .glg file");
 	
 	
 	private boolean initFlag = true;
+	private boolean checkHostFlag;
+	private boolean checkEventFlag;
+	
 	private void paintGraphAccordingToCurrentGUIStatus()
 	{
 		if(dtSpace == null){
@@ -983,12 +990,43 @@ System.out.println("AutoUpdate: no .glg file");
 				// cannot create model because specified time is out of range.
 				// null clear.
 				//e.printStackTrace();
-				JOptionPane.showMessageDialog(appFrame,
-					host + " does not exist into the data file.");
-				gm.setModel(null);
+System.out.println("no data: " + host + " / " + event + "");
+				int id = comboEvent.getSelectedIndex();
+				if(checkEventFlag){
+					id = 0;
+					checkEventFlag = false;
+				} else {
+					id++;
+				}
+				if(id < comboEvent.getItemCount()){
+					comboEvent.setSelectedIndex(id);
+					paintGraphAccordingToCurrentGUIStatus();
+					return;
+				}
+				
+				checkEventFlag = true;
+				comboEvent.setSelectedIndex(0);
+				
+				id = comboHostname.getSelectedIndex();
+				if(checkHostFlag){
+					id = 0;
+					checkHostFlag = false;
+				} else {
+					id++;
+				}
+				if(id < comboHostname.getItemCount()){
+					comboHostname.setSelectedIndex(id);
+					paintGraphAccordingToCurrentGUIStatus();
+					return;
+				}
+				checkHostFlag = true;
+				
 				actionAutoUpdate(false, false);
 				checkAutoUpdate.setSelected(false);
 				menuItemTotal.setSelected(false);
+				JOptionPane.showMessageDialog(appFrame,
+					"The corresponding data is not found.");
+				gm.setModel(null);
 				if(totalmode == true){
 					// total off
 					checkTotal.setSelected(false);
@@ -998,6 +1036,9 @@ System.out.println("AutoUpdate: no .glg file");
 				return;
 			}
 		}
+		checkHostFlag = true;
+		checkEventFlag = true;
+		
 		if(totalmode == true){
 			rawDataSeries = totalofRawDataSeries(rawDataSeries);
 		}
@@ -1076,13 +1117,13 @@ System.out.println("AutoUpdate: no .glg file");
 		if(initFlag){
 			initFlag = false;
 		}
-		if(repaintFlag) {
-			//txtInfoScroll.setMinimumSize(txtInfo.getSize());
-			Dimension windowSize = appFrame.getSize(); // save
-			appFrame.pack();
-			appFrame.setSize(windowSize);
-//System.out.println(windowSize.getWidth() + " " + windowSize.getHeight());
-		}
+//		if(repaintFlag) {
+//			//txtInfoScroll.setMinimumSize(txtInfo.getSize());
+//			Dimension windowSize = appFrame.getSize(); // save
+//			appFrame.pack();
+//			appFrame.setSize(windowSize);
+//			//System.out.println(windowSize.getWidth() + " " + windowSize.getHeight());
+//		}
 
 		gm.repaint();
 		appFrame.repaint();
@@ -1393,10 +1434,6 @@ e.printStackTrace();
 			allPanel.add(getPanelController(), gbc);
 		}
 		c.add(allPanel);
-		//f.setLocationRelativeTo(null);
-		//Point p = f.getLocation();
-		//Dimension d = f.getSize();
-		//f.setLocation(p.x - d.width/2, p.y - d.height/2);
 
 // Swing paint debugging with diabling double-bufferring.
 //RepaintManager rm = RepaintManager.currentManager(getGraphPane());
@@ -1405,11 +1442,18 @@ e.printStackTrace();
 	
 	public static void main(String[] args) {
 		SimpleGrapherApp app = new SimpleGrapherApp(args);
-		//app.setSize(400, 500);
+
 		app.setTitle("GMonitor");
-		app.show();
 		app.pack();
-		app.setOptions(args);
+
+		try {
+			Dimension d = app.appFrame.getSize();
+			DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+			app.appFrame.setLocation(dm.getWidth()/2 - d.width/2, dm.getHeight()/2 - d.height/2);
+		} catch(Exception e){
+		}
+		app.show();
+		app.setOptions(args);		
 	}
 	/**
 	 * set frame size.
