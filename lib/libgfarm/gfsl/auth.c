@@ -157,13 +157,13 @@ gfarmAuthInitialize(usermapFile)
 		if (pPtr == NULL) {
 		    gflog_auth_warning(localName,
 				       "WARNING: Account doesn't exist."
-				       " Ignored.\n");
+				       " Ignored.");
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
 		    gflog_warning(localName,
 				  "WARNING: This user is a super user."
-				  " Ignored.\n");
+				  " Ignored.");
 		    continue;
 		}
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
