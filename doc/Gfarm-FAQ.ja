@@ -1,7 +1,7 @@
 Gfarm FAQ - Gfarm に関するよくある質問
 
-Copyright (c) 2003 National Institute of Advanced Industrial Science
-and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003, 2004 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
 
 目次:
 *****
@@ -10,7 +10,7 @@ and Technology (AIST).  All Rights Reserved.
   1.2 Gfarm はどこからダウンロードできますか？
 
 2. トラブル・シューティング
-  2.1 gfls を実行すると gfarm:.:no such object というエラーメッセージ
+  2.1 gfls を実行すると gfarm:.: no such object というエラーメッセージ
     がでます．
   2.2 [GSI認証] プログラム起動時，ファイル複製作成時などに認証エラーが
      起きてしまいます．あるいは，no filesystem node というエラーが発生
@@ -49,7 +49,7 @@ and Technology (AIST).  All Rights Reserved.
 
 2. トラブル・シューティング
 *******************
-  2.1 gfls を実行すると gfarm:.:no such object というエラーメッセージ
+  2.1 gfls を実行すると gfarm:.: no such object というエラーメッセージ
     がでます．
 
 	エラーメッセージは，Gfarm ファイルシステム上の現在の作業ディレ
@@ -226,4 +226,4 @@ set_flags DB_TXN_NOSYNC
      できますか？
 
 	Version 1.0.2 よりファイル名として '#', ' ', ',', '+', '"',
-	'\', '>', '<', ';' の文字を利用可能となりました．
+	'\', '>', '<', ';' の文字が利用可能となりました．
