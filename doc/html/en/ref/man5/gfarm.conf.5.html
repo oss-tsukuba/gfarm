@@ -779,7 +779,8 @@ CLASS="LITERALLAYOUT"
 		&#60;auth_statement&#62;&nbsp;|<br>
 		&#60;netparam_statement&#62;&nbsp;|<br>
 		&#60;sockopt_statement&#62;&nbsp;|<br>
-		&#60;address_use_statement&#62;<br>
+		&#60;address_use_statement&#62;&nbsp;|<br>
+		&#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;metadb_serverhost_statement&#62;&nbsp;::=&nbsp;"metadb_serverhost"&nbsp;&#60;hostname&#62;<br>
@@ -800,6 +801,7 @@ CLASS="LITERALLAYOUT"
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
 		"tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		&#60;hostname&#62;<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

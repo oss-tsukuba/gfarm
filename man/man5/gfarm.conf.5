@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "25 April 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "26 April 2003" "Gfarm" ""
 .SH NAME
 gfarm.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
@@ -280,6 +280,38 @@ For example,
 .nf
 	address_use 192.168.0.0/24
 .fi
+.TP
+\fBlocal_user_map \fIconfiguration of a file to map user name \fB\fR
+This directive specifies a file name to map global user names
+to local user names
+
+This directive is optional. You can use this directive
+to map user names on filesystem node hosts which use different
+user account names for an identical user.
+One can use gfarm as an identical user by defining a mapping from
+an identical global user name to a local user name on each host
+which has different UNIX account name.
+
+Example:
+
+.nf
+	local_user_map /etc/gfarm/gfarm-usermap
+.fi
+
+Each line of the user mapping file is consisted of two fields,
+first field is a global user name, and second field is a local user name,
+and those fields are separated by spaces.
+
+Example of the user mapping file:
+
+.nf
+	foobar foo
+	quux baz
+.fi
+
+In the first line of this mapping file, a user name "foobar"
+is defined as a global user name which corresponds to a local user
+name "foo" on this node.
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm.conf described by the BNF
@@ -297,7 +329,8 @@ notation.
 		<auth_statement> |
 		<netparam_statement> |
 		<sockopt_statement> |
-		<address_use_statement>
+		<address_use_statement> |
+		<local_user_map_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
@@ -318,6 +351,7 @@ notation.
 	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
+	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		<hostname>
 	<pathname> ::= <pathname_character> <pathname_character>*
