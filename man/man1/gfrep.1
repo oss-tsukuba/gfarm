@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "18 March 2003" "Gfarm" ""
+.TH "GFREP" "1" "20 August 2003" "Gfarm" ""
+
 .SH NAME
 gfrep \- replicate a Gfarm file
 .SH SYNOPSIS
@@ -18,15 +19,21 @@ gfrep \- replicate a Gfarm file
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrep\fR creates a replica of a Gfarm file \fIgfarm-URL\fR.
-Destination filesystem nodes can be specified by the \fIhostfile\fR or
-the \fIdomainname\fR.
+\fBgfrep\fR creates a replica of a Gfarm file
+\fIgfarm-URL\fR.  Destination filesystem nodes can be
+specified by the \fIhostfile\fR or the
+\fIdomainname\fR.
 .PP
-With the \fB-I\fR option, \fBgfrep\fR creates a replica of a specified
-file fragment \fIfragment-index\fR of a Gfarm file \fIgfarm-URL\fR on
-the filesystem node \fIdest-node\fR specified by the -d option.  When
-the -s option is specified, the file fragment is copied from the
-\fIsrc-node\fR.
+With the \fB-I\fR option, \fBgfrep\fR
+creates a replica of a specified file fragment
+\fIfragment-index\fR of a Gfarm file
+\fIgfarm-URL\fR on the filesystem node
+\fIdest-node\fR specified by the \fB-d\fR
+option.  With the \fB-s\fR option, it is possible to
+explicitly specify the source node \fIsrc-node\fR
+where the file fragment is copied from.  When the specified Gfarm file
+has only one fragment, it is not necessary to specify the
+\fB-I\fR option.
 .SH "OPTIONS"
 .TP
 \fB-H \fIhostfile\fB\fR

@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "18 March 2003" "Gfarm" ""
+.TH "GFREP" "1" "20 August 2003" "Gfarm" ""
+
 .SH NAME
 gfrep \- Gfarm ファイルのレプリカを作成する。
 .SH SYNOPSIS
@@ -22,9 +23,11 @@ gfrep \- Gfarm ファイルのレプリカを作成する。
 トあるいは指定されたドメイン名のホストに作成します。
 .PP
 -I オプションでフラグメント番号あるいはセクション名を指定し
-た場合は，指定したファイルフラグメントの複製を -d オプション
-で指定したホストに作成します．-s オプションが指定された場合
-は，指定されたホストからファイルの複製を作成します．
+た場合は、指定したファイルフラグメントの複製を -d オプション
+で指定したホストに作成します。-s オプションが指定された場合
+は、指定されたホストからファイルの複製を作成します。引数 Gfarm-URL が
+ファイルフラグメントを一つしか持たない場合は、-I オプションによるフラ
+グメント番号の指定を省略することができます。
 .SH "OPTIONS"
 .TP
 \fB-H \fIホスト指定ファイル\fB\fR

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "19 August 2003" "Gfarm" ""
+.TH "GFRUN" "1" "20 August 2003" "Gfarm" ""
 
 .SH NAME
 gfrun, gfrsh, gfssh \- run Gfarm parallel programs
@@ -20,24 +20,29 @@ gfrun, gfrsh, gfssh \- run Gfarm parallel programs
 .SH "DESCRIPTION"
 .PP
 \fBgfrun\fR executes a parallel command on
-filesystem nodes, which is determined by the -G option, the -H option,
-or the -N option.
+filesystem nodes, which is determined by the \fB-G\fR
+option, the \fB-H\fR option, or the \fB-N\fR
+option.
 .PP
-The -G option specifies the \fIgfarm-URL\fR,
-which will be used by the file-affinity scheduling.  In this case,
-\fBgfrun\fR schedules the same number of filesystem nodes
-as the number of the Gfarm fragments, taking into consideration the
-physical locations of each fragment replicas of the Gfarm file, and
-filesystem node status.  The -H option specifies the
-\fIhostfile\fR that lists filesystem nodes.  The -N
-option specifies the number of filesystem nodes.
+The \fB-G\fR option specifies the
+\fIgfarm-URL\fR, which will be used by the
+file-affinity scheduling.  In this case, \fBgfrun\fR
+schedules the same number of filesystem nodes as the number of the
+Gfarm fragments, taking into consideration the physical locations of
+each fragment replicas of the Gfarm file, and filesystem node status.
+The \fB-H\fR option specifies the
+\fIhostfile\fR that lists filesystem nodes.  The
+\fB-N\fR option specifies the number of filesystem
+nodes.
 .PP
-When none of -G, -H, and -N options are not specified,
-\fBgfrun\fR schedules filesystem nodes by the
-file-affinity scheduling using the first existent Gfarm file in the
-argument list \fIargs\fR.  If there is no existent
-Gfarm file in the argument list, an appropriate filesystem node is
-selected to be executed.
+\fB-G\fR, \fB-H\fR, and
+\fB-N\fR options are exclusive.  When none of
+\fB-G\fR, \fB-H\fR, and \fB-N\fR
+options are not specified, \fBgfrun\fR schedules
+filesystem nodes by the file-affinity scheduling using the first
+existent Gfarm file in the argument list \fIargs\fR.
+If there is no existent Gfarm file in the argument list, an
+appropriate filesystem node is selected to be executed.
 .PP
 \fBgfrsh\fR and \fBgfssh\fR utilizes
 rsh and ssh, respectively, instead of gfrcmd.
@@ -47,19 +52,17 @@ that is registered using gfreg(1).
 .SH "OPTIONS"
 .TP
 \fB-G \fIgfarm-URL\fB\fR
-specifies a Gfarm file \fIgfarm-URL\fR for file-affinity scheduling.
+specifies a Gfarm file \fIgfarm-URL\fR for
+file-affinity scheduling.
 .TP
 \fB-H \fIhostfile\fB\fR
-specifies a \fIhostfile\fR that lists filesystem nodes.  If the -G
-option is specified with the -H option, this option is ignored.
+specifies a \fIhostfile\fR that lists filesystem nodes.
 
 if ``-'' is specified, standard input is used to read the host list.
 .TP
 \fB-N \fInp\fB\fR
 specifies the number of nodes \fInp\fR, which
-are selected by the increasing order of load average.  If the -G
-option or the -H option is specified with the -N option, this option
-is ignored.
+are selected by the increasing order of load average.
 .TP
 \fB-r\fR
 specifies an on-demand replication mode.  In this mode, every

@@ -101,19 +101,20 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> creates a replica of a Gfarm file <TT
+> creates a replica of a Gfarm file
+<TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
->.
-Destination filesystem nodes can be specified by the <TT
+>.  Destination filesystem nodes can be
+specified by the <TT
 CLASS="PARAMETER"
 ><I
 >hostfile</I
 ></TT
-> or
-the <TT
+> or the
+<TT
 CLASS="PARAMETER"
 ><I
 >domainname</I
@@ -126,31 +127,45 @@ CLASS="OPTION"
 > option, <B
 CLASS="COMMAND"
 >gfrep</B
-> creates a replica of a specified
-file fragment <TT
+>
+creates a replica of a specified file fragment
+<TT
 CLASS="PARAMETER"
 ><I
 >fragment-index</I
 ></TT
-> of a Gfarm file <TT
+> of a Gfarm file
+<TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
-> on
-the filesystem node <TT
+> on the filesystem node
+<TT
 CLASS="PARAMETER"
 ><I
 >dest-node</I
 ></TT
-> specified by the -d option.  When
-the -s option is specified, the file fragment is copied from the
-<TT
+> specified by the <TT
+CLASS="OPTION"
+>-d</TT
+>
+option.  With the <TT
+CLASS="OPTION"
+>-s</TT
+> option, it is possible to
+explicitly specify the source node <TT
 CLASS="PARAMETER"
 ><I
 >src-node</I
 ></TT
->.</P
+>
+where the file fragment is copied from.  When the specified Gfarm file
+has only one fragment, it is not necessary to specify the
+<TT
+CLASS="OPTION"
+>-I</TT
+> option.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

@@ -38,7 +38,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfmpirun_p4</B
->  <TT
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
 CLASS="REPLACEABLE"
 ><I
 >command</I
@@ -61,16 +66,139 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfmpirun_p4</B
-> executes a parallel command on filesystem nodes with
-mpirun.</P
+> executes a parallel command on
+filesystem nodes with mpirun provided by MPICH/p4, which is determined
+by the <TT
+CLASS="OPTION"
+>-G</TT
+> option, the <TT
+CLASS="OPTION"
+>-H</TT
+> option, or
+the <TT
+CLASS="OPTION"
+>-N</TT
+> option.</P
+><P
+><TT
+CLASS="OPTION"
+>-G</TT
+>, <TT
+CLASS="OPTION"
+>-H</TT
+>, and
+<TT
+CLASS="OPTION"
+>-N</TT
+> options are exclusive.  When none of
+<TT
+CLASS="OPTION"
+>-G</TT
+>, <TT
+CLASS="OPTION"
+>-H</TT
+>, and <TT
+CLASS="OPTION"
+>-N</TT
+>
+options are not specified, <B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> schedules
+filesystem nodes by the file-affinity scheduling using the first
+existent Gfarm file in the argument list
+<TT
+CLASS="PARAMETER"
+><I
+>args</I
+></TT
+>.</P
 ><P
 ><TT
 CLASS="PARAMETER"
 ><I
 >Command</I
 ></TT
-> can be specified by a gfarm-URL that is registered using
-gfreg(1).</P
+> can be specified by a gfarm-URL
+that is registered using gfreg(1).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-G</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> for
+file-affinity scheduling.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>specifies a <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists
+filesystem nodes.</P
+><P
+>if ``-'' is specified, standard input is used to read the host
+list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+></DT
+><DD
+><P
+>specifies the number of nodes <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+>, which
+are selected by the increasing order of load average.</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -80,7 +208,11 @@ NAME="BUGS"
 ><H2
 >BUGS</H2
 ><P
->gfmpirun_p4 can only work with the MPICH-p4.</P
+><B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> can only work with the
+MPICH/p4.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

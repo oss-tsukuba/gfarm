@@ -38,7 +38,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfmpirun_p4</B
->  <TT
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
 CLASS="REPLACEABLE"
 ><I
 >プログラム名</I
@@ -58,11 +63,82 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->引数に指定した Gfarm入力ファイル の存在する計算プールのホスト群に対して、
-mpirun を実行します。</P
+>MPI並列プログラムを MPICH/p4 で提供される mpirun を利用して実行
+します．実行されるファイルシステムノードは，-G オプション，-H オプショ
+ンあるいは -N オプションにより決定されます．</P
+><P
+>-G オプション，-H オプション，-N オプションは同時に二つ以上指定するこ
+とはできません．また，-G オプション，-H オプション，-N オプションがい
+ずれも指定されない場合は，引数に指定された既に存在する Gfarmファイルの
+うち一番はじめのファイルを利用したファイル・アフィニティ・スケジューリ
+ングにより決定されます．</P
 ><P
 >プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
 も指定できます。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-G</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>gfarm-URL のファイル・アフィニティ・スケジューリングにより
+並列プログラムを実行します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
+指定します．
+ホスト名は，各行に一ホストずつ記述します．</P
+><P
+>ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</P
+></DD
+></DL
+></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -72,11 +148,7 @@ NAME="BUGS"
 ><H2
 >BUGS</H2
 ><P
->入力ファイルか否かは、単に、指定された Gfarm-URL が既に存在するかど
-うかだけで判断するので、Gfarm-URL の綴りを間違えると、意図したホスト
-で実行されません。</P
-><P
->現バージョンは、MPI-CH/p4 との組合せでないと動作しません。</P
+>現バージョンは、MPICH/p4 との組合せでないと動作しません。</P
 ></DIV
 ></BODY
 ></HTML
