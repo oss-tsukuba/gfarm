@@ -9,11 +9,12 @@
 #include "auth.h"
 
 struct gfarm_auth_method_name_value {
+	char mnemonic;
 	char *name;
 	enum gfarm_auth_method method;
 } gfarm_auth_method_name_value_table[] = {
-	{ "sharedsecret", GFARM_AUTH_METHOD_SHAREDSECRET },
-	{ "gsi", GFARM_AUTH_METHOD_GSI },
+	{ 'S', "sharedsecret", GFARM_AUTH_METHOD_SHAREDSECRET },
+	{ 'G', "gsi", GFARM_AUTH_METHOD_GSI },
 };
 
 enum gfarm_auth_config_command { GFARM_AUTH_ENABLE, GFARM_AUTH_DISABLE };
@@ -28,6 +29,38 @@ struct gfarm_auth_config {
 
 struct gfarm_auth_config *gfarm_auth_config_list = NULL;
 struct gfarm_auth_config **gfarm_auth_config_last = &gfarm_auth_config_list;
+
+char
+gfarm_auth_method_mnemonic(enum gfarm_auth_method method)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_auth_method_name_value_table);
+	     i++) {
+		struct gfarm_auth_method_name_value *entry =
+		    &gfarm_auth_method_name_value_table[i];
+
+		if (entry->method == method)
+			return (entry->mnemonic);
+	}
+	return ('-');
+}
+
+char *
+gfarm_auth_method_name(enum gfarm_auth_method method)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_auth_method_name_value_table);
+	     i++) {
+		struct gfarm_auth_method_name_value *entry =
+		    &gfarm_auth_method_name_value_table[i];
+
+		if (entry->method == method)
+			return (entry->name);
+	}
+	return ("unknown auth method");
+}
 
 char *
 gfarm_auth_method_parse(char *name, enum gfarm_auth_method *methodp)

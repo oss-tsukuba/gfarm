@@ -667,7 +667,7 @@ main_loop(int accepting_socket)
 				gflog_warning("fd_connection_new", e);
 				close(client_socket);
 			} else if ((e = gfarm_authorize(client_conn, 0,
-			    &username, &hostname)) != NULL) {
+			    &username, &hostname, NULL)) != NULL) {
 				gflog_warning("authorize", e);
 				xxx_connection_free(client_conn);
 			} else if ((errno = file_table_add(client_conn,

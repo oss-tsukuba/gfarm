@@ -1844,7 +1844,7 @@ server(int client_fd)
 	 * gfarm_get_local_homedir() which are necessary for
 	 * gfs_client_connect() called from gfs_server_replicate_file().
 	 */
-	e = gfarm_authorize(client, 1, NULL, NULL);
+	e = gfarm_authorize(client, 1, NULL, NULL, NULL);
 	if (e != NULL)
 		gflog_fatal("gfarm_authorize", e);
 

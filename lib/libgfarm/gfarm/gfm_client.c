@@ -25,6 +25,7 @@
 
 struct gfm_connection {
 	struct xxx_connection *conn;
+	enum gfarm_auth_method auth_method;
 };
 
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
@@ -76,7 +77,8 @@ gfm_client_connection0(char *hostname, struct gfm_connection *gfm_server)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = gfarm_auth_request(gfm_server->conn,
-	    host_fqdn, (struct sockaddr *)&peer_addr);
+	    host_fqdn, (struct sockaddr *)&peer_addr,
+	    &gfm_server->auth_method);
 	free(host_fqdn);
 	if (e != NULL) {
 		xxx_connection_free(gfm_server->conn);

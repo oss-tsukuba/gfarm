@@ -15,19 +15,13 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
-#include "xxx_proto.h"
 #include "gfutil.h"
+#include "xxx_proto.h"
 #include "hostspec.h"
 #include "auth.h"
 
-#ifdef HAVE_GSI
-#include "io_gfsl.h" /* XXX - gfarm_authorize_gsi() */
-#endif
-
 static char *gfarm_authorize_panic(struct xxx_connection *, int, char *,
 	char **);
-static char *gfarm_authorize_sharedsecret(struct xxx_connection *, int, char *,
-        char **);
 
 char *(*gfarm_authorization_table[])(struct xxx_connection *, int, char *,
 	char **) = {
@@ -184,7 +178,7 @@ gfarm_auth_sharedsecret_response(struct xxx_connection *conn, char *homedir)
 	}
 }
 
-static char *
+char *
 gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 	char *hostname, char **global_usernamep)
 {
@@ -327,7 +321,8 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
  */
 char *
 gfarm_authorize(struct xxx_connection *conn, int switch_to,
-	char **global_usernamep, char **hostnamep)
+	char **global_usernamep, char **hostnamep, 
+	enum gfarm_auth_method *auth_methodp)
 {
 	char *e, *hostname;
 	gfarm_int32_t methods; /* bitset of enum gfarm_auth_method */
@@ -449,6 +444,10 @@ gfarm_authorize(struct xxx_connection *conn, int switch_to,
 				free(hostname);
 			else
 				*hostnamep = hostname;
+			if (e == NULL) {
+				if (auth_methodp != NULL)
+					*auth_methodp = method;
+			}
 			return (e);
 		}
 	}
