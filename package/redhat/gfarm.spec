@@ -1,13 +1,14 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.0.4
-%define rel	4
+%define ver	1.1.0
+%define rel	0
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
 
-%define prefix		/usr
-%define man_prefix	/usr/share/man
+%define prefix		%{_prefix}
+%define lib_prefix	%{_libdir}
+%define man_prefix	%{_mandir}
 %define doc_prefix	/usr/share/doc/%{name}-%{ver}
 %define html_prefix	%{doc_prefix}/html
 %define rc_prefix	/etc/rc.d/init.d
@@ -139,10 +140,11 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-%patch -p1
+#%patch -p1
 
 %build
 ./configure --prefix=%{prefix} \
+	--libdir=%{lib_prefix} \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
 	--with-readline=/usr \
@@ -156,6 +158,7 @@ make
 
 %install
 make prefix=${RPM_BUILD_ROOT}%{prefix} \
+	default_libdir=${RPM_BUILD_ROOT}%{lib_prefix} \
 	default_docdir=${RPM_BUILD_ROOT}%{doc_prefix} \
 	default_mandir=${RPM_BUILD_ROOT}%{man_prefix} \
 	example_bindir=${RPM_BUILD_ROOT}%{prefix}/bin install 
@@ -544,27 +547,27 @@ fi
 %{doc_prefix}/README.hook.en
 
 %files libs
-%{prefix}/lib/libgfarm.so.0
-%{prefix}/lib/libgfarm.so.0.0.0
-%{prefix}/lib/libgfs_hook.so.0
-%{prefix}/lib/libgfs_hook.so.0.0.0
-%{prefix}/lib/libgfs_hook_debug.so.0
-%{prefix}/lib/libgfs_hook_debug.so.0.0.0
-%{prefix}/lib/libgfs_hook_no_init.so.0
-%{prefix}/lib/libgfs_hook_no_init.so.0.0.0
-%{prefix}/lib/libgfs_hook_no_init_debug.so.0
-%{prefix}/lib/libgfs_hook_no_init_debug.so.0.0.0
+%{lib_prefix}/libgfarm.so.0
+%{lib_prefix}/libgfarm.so.0.0.0
+%{lib_prefix}/libgfs_hook.so.0
+%{lib_prefix}/libgfs_hook.so.0.0.0
+%{lib_prefix}/libgfs_hook_debug.so.0
+%{lib_prefix}/libgfs_hook_debug.so.0.0.0
+%{lib_prefix}/libgfs_hook_no_init.so.0
+%{lib_prefix}/libgfs_hook_no_init.so.0.0.0
+%{lib_prefix}/libgfs_hook_no_init_debug.so.0
+%{lib_prefix}/libgfs_hook_no_init_debug.so.0.0.0
 %if %{mpi}
-%{prefix}/lib/libgfs_hook_mpi.so.0
-%{prefix}/lib/libgfs_hook_mpi.so.0.0.0
-%{prefix}/lib/libgfs_hook_mpi_debug.so.0
-%{prefix}/lib/libgfs_hook_mpi_debug.so.0.0.0
+%{lib_prefix}/libgfs_hook_mpi.so.0
+%{lib_prefix}/libgfs_hook_mpi.so.0.0.0
+%{lib_prefix}/libgfs_hook_mpi_debug.so.0
+%{lib_prefix}/libgfs_hook_mpi_debug.so.0.0.0
 %endif
 %if %{have_ns}
-%{prefix}/lib/libns.so.0
-%{prefix}/lib/libns.so.0.0.0
-%{prefix}/lib/libnsexec.so.0
-%{prefix}/lib/libnsexec.so.0.0.0
+%{lib_prefix}/libns.so.0
+%{lib_prefix}/libns.so.0.0.0
+%{lib_prefix}/libnsexec.so.0
+%{lib_prefix}/libnsexec.so.0.0.0
 %endif
 
 %files frontend
@@ -667,35 +670,35 @@ fi
 %{prefix}/include/gfarm/gfs.h
 %{prefix}/include/gfarm/gfs_glob.h
 %{prefix}/include/gfarm/gfs_hook.h
-%{prefix}/lib/gfs_hook.o
-%{prefix}/lib/gfs_hook_debug.o
-%{prefix}/lib/gfs_hook_no_init.o
-%{prefix}/lib/gfs_hook_no_init_debug.o
-%{prefix}/lib/hooks_init_mpi.c
-%{prefix}/lib/libgfarm.a
-%{prefix}/lib/libgfarm.la
-%{prefix}/lib/libgfarm.so
-%{prefix}/lib/libgfs_hook.a
-%{prefix}/lib/libgfs_hook.la
-%{prefix}/lib/libgfs_hook.so
-%{prefix}/lib/libgfs_hook_debug.a
-%{prefix}/lib/libgfs_hook_debug.la
-%{prefix}/lib/libgfs_hook_debug.so
-%{prefix}/lib/libgfs_hook_no_init.a
-%{prefix}/lib/libgfs_hook_no_init.la
-%{prefix}/lib/libgfs_hook_no_init.so
-%{prefix}/lib/libgfs_hook_no_init_debug.a
-%{prefix}/lib/libgfs_hook_no_init_debug.la
-%{prefix}/lib/libgfs_hook_no_init_debug.so
+%{lib_prefix}/gfs_hook.o
+%{lib_prefix}/gfs_hook_debug.o
+%{lib_prefix}/gfs_hook_no_init.o
+%{lib_prefix}/gfs_hook_no_init_debug.o
+%{lib_prefix}/hooks_init_mpi.c
+%{lib_prefix}/libgfarm.a
+%{lib_prefix}/libgfarm.la
+%{lib_prefix}/libgfarm.so
+%{lib_prefix}/libgfs_hook.a
+%{lib_prefix}/libgfs_hook.la
+%{lib_prefix}/libgfs_hook.so
+%{lib_prefix}/libgfs_hook_debug.a
+%{lib_prefix}/libgfs_hook_debug.la
+%{lib_prefix}/libgfs_hook_debug.so
+%{lib_prefix}/libgfs_hook_no_init.a
+%{lib_prefix}/libgfs_hook_no_init.la
+%{lib_prefix}/libgfs_hook_no_init.so
+%{lib_prefix}/libgfs_hook_no_init_debug.a
+%{lib_prefix}/libgfs_hook_no_init_debug.la
+%{lib_prefix}/libgfs_hook_no_init_debug.so
 %if %{mpi}
-%{prefix}/lib/gfs_hook_mpi.o
-%{prefix}/lib/gfs_hook_mpi_debug.o
-%{prefix}/lib/libgfs_hook_mpi.a
-%{prefix}/lib/libgfs_hook_mpi.la
-%{prefix}/lib/libgfs_hook_mpi.so
-%{prefix}/lib/libgfs_hook_mpi_debug.a
-%{prefix}/lib/libgfs_hook_mpi_debug.la
-%{prefix}/lib/libgfs_hook_mpi_debug.so
+%{lib_prefix}/gfs_hook_mpi.o
+%{lib_prefix}/gfs_hook_mpi_debug.o
+%{lib_prefix}/libgfs_hook_mpi.a
+%{lib_prefix}/libgfs_hook_mpi.la
+%{lib_prefix}/libgfs_hook_mpi.so
+%{lib_prefix}/libgfs_hook_mpi_debug.a
+%{lib_prefix}/libgfs_hook_mpi_debug.la
+%{lib_prefix}/libgfs_hook_mpi_debug.so
 %endif
 
 
@@ -710,12 +713,12 @@ fi
 %{prefix}/include/gfarm/soc-lxdr.h
 %{prefix}/include/gfarm/soc.h
 %{prefix}/include/gfarm/type.h
-%{prefix}/lib/libns.a
-%{prefix}/lib/libns.la
-%{prefix}/lib/libns.so
-%{prefix}/lib/libnsexec.a
-%{prefix}/lib/libnsexec.la
-%{prefix}/lib/libnsexec.so
+%{lib_prefix}/libns.a
+%{lib_prefix}/libns.la
+%{lib_prefix}/libns.so
+%{lib_prefix}/libnsexec.a
+%{lib_prefix}/libnsexec.la
+%{lib_prefix}/libnsexec.so
 %endif
 
 %files gfront
