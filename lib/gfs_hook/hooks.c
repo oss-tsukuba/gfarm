@@ -28,6 +28,11 @@
 #define SYS_lstat SYS___lstat13
 #endif
 
+#ifdef __linux__
+#include <sys/types.h>
+#include <utime.h>
+#endif
+
 /*
  *  XXX - quite naive implementation
  *
@@ -412,8 +417,22 @@ __utimes(const char *path, const struct timeval *tvp)
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __utimes(%s, %x)\n",
 	    path, tvp));
-	if (!gfs_hook_is_url(path, &url, &sec))
-		return syscall(SYS_utime, path, tvp);
+
+	if (!gfs_hook_is_url(path, &url, &sec)) {
+#ifdef __linux__
+		if (tvp == NULL) {
+			return syscall(SYS_utime, path, NULL);
+		} else {
+			struct utimbuf ut;
+
+			ut.actime = tvp[0].tv_sec;
+			ut.modtime = tvp[1].tv_sec;
+			return syscall(SYS_utime, path, &ut);
+		}
+#else
+		return syscall(SYS_utimes, path, tvp);
+#endif
+	}
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __utimes(%s)\n", url));
 	if (tvp == NULL)
