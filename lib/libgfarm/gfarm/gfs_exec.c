@@ -25,6 +25,9 @@ gfs_execve(const char *filename, char *const argv [], char *const envp[])
 	e = gfs_realpath(filename, &url);
 	if (e != NULL) {
 		/* not found in Gfarm file system */
+		if (gfarm_is_url(filename))
+			/* to avoid an infinite loop for syscall hooks. */
+			return (e);
 		path = filename;
 		goto clean_up_and_exec;
 	}
