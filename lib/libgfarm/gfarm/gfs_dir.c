@@ -128,7 +128,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 	int len, need_realloc = 0;
 	char *tmp;
 
-	len = GFARM_URL_PREFIX_LENGTH + 1 + strlen(canonic_dir) + 1;
+	len = 1 + strlen(canonic_dir) + 1;
 	if (cwd_len < len) {
 		tmp = realloc(gfarm_current_working_directory, len);
 		if (tmp == NULL)
@@ -136,10 +136,9 @@ gfs_chdir_canonical(const char *canonic_dir)
 		gfarm_current_working_directory = tmp;
 		cwd_len = len;
 	}
-	sprintf(gfarm_current_working_directory, "%s/%s",
-	    GFARM_URL_PREFIX, canonic_dir);
+	sprintf(gfarm_current_working_directory, "/%s", canonic_dir);
 
-	len += sizeof(env_name) - 1;
+	len += sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
 	tmp = getenv("GFS_PWD");
 	if (tmp != env) { /* changed by an application instead of this func */
 		env = tmp; /* probably already free()ed */
@@ -154,7 +153,8 @@ gfs_chdir_canonical(const char *canonic_dir)
 		env = tmp;
 		env_len = len;
 	}
-	sprintf(env, "%s%s", env_name, gfarm_current_working_directory);
+	sprintf(env, "%s%s%s",
+	    env_name, GFARM_URL_PREFIX, gfarm_current_working_directory);
 
 	if (putenv(env) != 0)
 		return (gfarm_errno_to_error(errno));
