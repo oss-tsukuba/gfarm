@@ -23,4 +23,8 @@
 #define SYSCALL_GETDENTS(filedes, buf, nbyte) \
 	gfs_hook_syscall_getdents(filedes, buf, nbyte)
 
+#define DIRENT_TYPE struct dirent
+
+#define __LINUX_KERNEL_VERSION 132097
+
 #include "getdents_common.c"
