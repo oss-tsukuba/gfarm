@@ -19,6 +19,8 @@ Table of Contents:
      unregistered files?
   2.4 Due to disk crash, files in a file system node are lost.  What
      we need to do?
+  2.5. When I run "ls" command with gfs_hook linked on Linux, the
+    command reports "No such file or directory".
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -112,6 +114,18 @@ Table of Contents:
 	nothing you need to do.  When opening these missing files, the
 	Gfarm system detects that, and opens the other file replica
 	automatically, or replicates it dynamically.
+
+  2.5. When I run "ls" command with gfs_hook linked on Linux, the
+    command reports "No such file or directory".
+
+	On Linux distributions which use glibc-2.2.93, glibc-2.3 or
+	later, libattr and its development package are needed, when
+	you compile gfarm. If you don't install these packages,
+	you can compile gfarm itself, but you will see above problem.
+	This is because the systemcall-hook function for getxattr(2)
+	isn't compiled without the packages.
+	For example, libattr and libattr-devel RPM packages are needed
+	on RedHat 8 or later.	
 
 3. Security
 ***********

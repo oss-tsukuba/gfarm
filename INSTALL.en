@@ -133,6 +133,11 @@ syscall-hook library for executing legacy MPI applications on the
 Gfarm filesystem, and when building sample MPI applications in this
 distribution, an MPI library is needed.
 
+On Linux distributions which use glibc-2.2.93, 2.3 or later,
+libattr and its development package are also needed.
+To take RedHat Linux distribution as an example, libattr and
+libattr-devel RPM packages are needed on RedHat 8 or later.
+
 Here are installation steps of the Gfarm system.
 
 	% ./configure [options]
