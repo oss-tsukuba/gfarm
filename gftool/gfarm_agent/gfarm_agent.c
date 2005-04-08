@@ -691,7 +691,7 @@ main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
-	struct sockaddr_un client_addr;
+	struct sockaddr_un *client_addr;
 	socklen_t client_addr_size;
 	char *e, *config_file = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
@@ -779,9 +779,11 @@ main(int argc, char **argv)
 	signal(SIGTERM, sigterm_handler);
 
 	for (;;) {
-		client_addr_size = sizeof(client_addr);
+		client_addr_size = sizeof(struct sockaddr_un);
+		/* XXX - need to be free'ed later */
+		client_addr = malloc(client_addr_size);
 		client = accept(accepting_sock,
-			(struct sockaddr *)&client_addr, &client_addr_size);
+			(struct sockaddr *)client_addr, &client_addr_size);
 		if (client < 0) {
 			if (errno == EINTR)
 				continue;
