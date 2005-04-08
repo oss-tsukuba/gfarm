@@ -399,7 +399,7 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
 	    st.st_user, st.st_group, st.st_size, st.st_ncopy,
 	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec, 
-	    st.st_mtimespec.tv_sec, st.st_atimespec.tv_nsec, 
+	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec, 
 	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec));
 }
 
