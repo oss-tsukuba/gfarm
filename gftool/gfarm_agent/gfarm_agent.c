@@ -611,6 +611,7 @@ sigterm_handler(int sig)
 		unlink(sock_path);
 	if (sock_dir)
 		rmdir(sock_dir);
+	exit(1);
 }
 
 #define AGENT_SOCK_TEMPLATE	"/tmp/.gfarm-XXXXXX"
