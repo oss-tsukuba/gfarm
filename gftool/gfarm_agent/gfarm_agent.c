@@ -787,7 +787,7 @@ main(int argc, char **argv)
 				continue;
 			gflog_fatal_errno("accept");
 		}
-		agent_schedule(client, server);
+		agent_schedule(&client, server);
 	}
 	/*NOTREACHED*/
 	return (0); /* to shut up warning */
