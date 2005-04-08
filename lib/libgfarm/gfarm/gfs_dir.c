@@ -717,7 +717,7 @@ gfs_cachedir(struct timeval *now)
 }
 
 void
-gfs_uncachedir(void)
+gfs_i_uncachedir(void)
 {
 	need_to_clear_cache = 1;
 }
@@ -764,7 +764,7 @@ gfs_refreshdir(void)
  */
 
 char *
-gfarm_path_info_get(const char *pathname, struct gfarm_path_info *info)
+gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
 	char *e = gfs_refreshdir(), *e2;
 	struct node *n;
@@ -793,14 +793,14 @@ gfarm_path_info_get(const char *pathname, struct gfarm_path_info *info)
 	      n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
 		/ GFARM_MILLISEC_BY_MICROSEC))) {
 		/* there is inconsistency, refresh the dircache. */
-		gfs_uncachedir();
+		gfs_i_uncachedir();
 		e2 = gfs_refreshdir();
 	}
 	return (e != NULL ? e : e2);
 }
 
 char *
-gfarm_path_info_set(char *pathname, struct gfarm_path_info *info)
+gfarm_i_path_info_set(char *pathname, struct gfarm_path_info *info)
 {
 	char *e = gfs_refreshdir();
 
@@ -815,7 +815,7 @@ gfarm_path_info_set(char *pathname, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_path_info_replace(char *pathname,	struct gfarm_path_info *info)
+gfarm_i_path_info_replace(char *pathname, struct gfarm_path_info *info)
 {
 	char *e = gfs_refreshdir();
 
@@ -826,7 +826,7 @@ gfarm_path_info_replace(char *pathname,	struct gfarm_path_info *info)
 		e = gfs_dircache_enter_path(GFARM_INODE_LOOKUP,
 		    pathname, info);
 		if (e != NULL) {
-			gfs_uncachedir();
+			gfs_i_uncachedir();
 			e = gfs_refreshdir();
 		}
 	}
@@ -834,7 +834,7 @@ gfarm_path_info_replace(char *pathname,	struct gfarm_path_info *info)
 }
 
 char *
-gfarm_path_info_remove(const char *pathname)
+gfarm_i_path_info_remove(const char *pathname)
 {
 	char *e = gfs_refreshdir();
 
@@ -854,7 +854,7 @@ gfarm_path_info_remove(const char *pathname)
  * same as a canonical path.
  */
 char *
-gfs_realpath_canonical(const char *path, char **abspathp)
+gfs_i_realpath_canonical(const char *path, char **abspathp)
 {
 	struct node *n, *p;
 	char *e, *abspath;
@@ -866,7 +866,7 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	if (e != NULL) {
 		/* there may be inconsistency, refresh and lookup again. */
-		gfs_uncachedir();
+		gfs_i_uncachedir();
 		if (gfs_refreshdir() == NULL)
 			e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	}
@@ -896,7 +896,7 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 #define INUMBER(node)	((long)(node))
 
 char *
-gfs_get_ino(const char *canonical_path, long *inop)
+gfs_i_get_ino(const char *canonical_path, long *inop)
 {
 	struct node *n;
 	char *e;
@@ -907,7 +907,7 @@ gfs_get_ino(const char *canonical_path, long *inop)
 	e = lookup_relative(root, canonical_path, -1, GFARM_INODE_LOOKUP, &n);
         if (e != NULL) {
 		/* there may be inconsistency, refresh and lookup again. */
-		gfs_uncachedir();
+		gfs_i_uncachedir();
 		if (gfs_refreshdir() == NULL)
 			e = lookup_relative(root, canonical_path, -1,
 				GFARM_INODE_LOOKUP, &n);
@@ -930,7 +930,7 @@ struct gfs_dir {
 };
 
 char *
-gfs_opendir(const char *path, GFS_Dir *dirp)
+gfs_i_opendir(const char *path, GFS_Dir *dirp)
 {
 	char *e, *canonic_path;
 	struct node *n;
@@ -970,7 +970,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 }
 
 char *
-gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
+gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 {
 	struct gfarm_hash_entry *he;
 	struct node *n;
@@ -1012,7 +1012,7 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 }
 
 char *
-gfs_closedir(GFS_Dir dir)
+gfs_i_closedir(GFS_Dir dir)
 {
 	free(dir);
 	--opendir_count;
@@ -1024,7 +1024,7 @@ gfs_closedir(GFS_Dir dir)
  */
 
 char *
-gfs_dirname(GFS_Dir dir)
+gfs_i_dirname(GFS_Dir dir)
 {
   	return (dir->dir->name);
 }

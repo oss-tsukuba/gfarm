@@ -16,6 +16,7 @@ GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
+	agent_wrap.c agent_client.c \
 	config.c error.c gfm_client.c gfs_client.c gfs_client_rep.c \
 	gfs_dir.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
@@ -26,6 +27,7 @@ SRCS = \
 	$(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
+	agent_wrap.lo agent_client.lo \
 	config.lo error.lo gfm_client.lo gfs_client.lo gfs_client_rep.lo \
 	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
@@ -46,6 +48,8 @@ include $(top_srcdir)/makes/lib.mk
 
 $(GFARM_OBJS): $(DEPGFARMINC)
 $(GFARM_GLOBUS_OBJS): $(DEPGFSLINC)
+agent_wrap.lo: agent_client.h agent_wrap.h
+agent_client.lo: xxx_proto.h io_fd.h config.h agent_proto.h agent_client.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h
 auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h xxx_proto.h io_fd.h io_gfsl.h auth.h auth_gsi.h
 auth_common.lo: auth.h

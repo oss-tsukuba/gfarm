@@ -1331,7 +1331,7 @@ gfarm_eval_env_arg(void)
  * $USER or $HOME.
  */
 char *
-gfarm_initialize(int *argcp, char ***argvp)
+gfarm_client_initialize(int *argcp, char ***argvp)
 {
 	char *e;
 #ifdef HAVE_GSI
@@ -1408,7 +1408,7 @@ gfarm_server_initialize(void)
  * $USER or $HOME.
  */
 char *
-gfarm_terminate(void)
+gfarm_client_terminate(void)
 {
 	char *e, *e_save = NULL;
 
