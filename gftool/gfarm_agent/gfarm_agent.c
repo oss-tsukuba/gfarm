@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <signal.h>
 
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
@@ -25,10 +26,6 @@
 #define LISTEN_BACKLOG	SOMAXCONN
 #else
 #define LISTEN_BACKLOG	5
-#endif
-
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX	108
 #endif
 
 char *program_name = "gfarm_agent";
@@ -553,9 +550,31 @@ server(int client_fd)
 		error_proto("xxx_connection_free", e);
 }
 
+static char *sock_dir;
 static char *sock_path;
+static enum {
+	UNDECIDED,
+	B_SHELL_LIKE,
+	C_SHELL_LIKE
+} shell_type;
 
-void
+static void
+guess_shell_type(void)
+{
+	char *shell;
+
+	if (shell_type == UNDECIDED && (shell = getenv("SHELL")) != NULL) {
+		int shell_len = strlen(shell);
+		
+		if (shell_len < 3 || 
+		    memcmp(shell + shell_len - 3, "csh", 3) != 0)
+			shell_type = B_SHELL_LIKE;
+		else
+			shell_type = C_SHELL_LIKE;
+	}
+}
+
+static void
 display_env(int fd)
 {
 	FILE *f = fdopen(fd, "w");
@@ -563,11 +582,35 @@ display_env(int fd)
 
 	if (f == NULL)
 		return;
-	fprintf(f, "GFARM_AGENT_SOCK=%s; export GFARM_AGENT_SOCK;\n",
-		sock_path);
-	fprintf(f, "GFARM_AGENT_PID=%d; export GFARM_AGENT_PID;\n", pid);
-	fprintf(f, "echo Agent pid %d;\n", pid);
+
+	guess_shell_type();
+
+	switch (shell_type) {
+	case B_SHELL_LIKE:
+		fprintf(f, "GFARM_AGENT_SOCK=%s; export GFARM_AGENT_SOCK;\n",
+			sock_path);
+		fprintf(f, "GFARM_AGENT_PID=%d; export GFARM_AGENT_PID;\n",
+			pid);
+		fprintf(f, "echo Agent pid %d;\n", pid);
+		break;
+	case C_SHELL_LIKE:
+		fprintf(f, "setenv GFARM_AGENT_SOCK %s;\n", sock_path);
+		fprintf(f, "setenv GFARM_AGENT_PID %d;\n", pid);
+		fprintf(f, "echo Agent pid %d;\n", pid);
+		break;
+	default:
+		break;
+	}
 	fclose(f);
+}
+
+void
+sigterm_handler(int sig)
+{
+	if (sock_path)
+		unlink(sock_path);
+	if (sock_dir)
+		rmdir(sock_dir);
 }
 
 #define AGENT_SOCK_TEMPLATE	"/tmp/.gfarm-XXXXXX"
@@ -584,6 +627,7 @@ open_accepting_socket(void)
 	sdir = mkdtemp(sockdir);
 	if (sdir == NULL)
 		gflog_fatal_errno("mkdtemp");
+	sock_dir = strdup(sdir);
 	sprintf(tmpsoc, "/agent.%ld", (long)getpid());
 
 	memset(&self_addr, 0, sizeof(self_addr));
@@ -619,9 +663,12 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-c\t\tGenerate C-shell commands\n");
+	fprintf(stderr, "\t-s\t\tGenerate Bourne shell commands\n");
+	fprintf(stderr, "\t-d\t\tdebug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
-	fprintf(stderr, "\t-s <syslog-facility>\n");
+	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-S <syslog-facility>\n");
 	fprintf(stderr, "\t-v\n");
 	exit(1);
 }
@@ -642,10 +689,10 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:df:s:v")) != -1) {
+	while ((ch = getopt(argc, argv, "cdf:P:sS:v")) != -1) {
 		switch (ch) {
-		case 'P':
-			pid_file = optarg;
+		case 'c':
+			shell_type = C_SHELL_LIKE;
 			break;
 		case 'd':
 			debug_mode = 1;
@@ -653,7 +700,13 @@ main(int argc, char **argv)
 		case 'f':
 			config_file = optarg;
 			break;
+		case 'P':
+			pid_file = optarg;
+			break;
 		case 's':
+			shell_type = B_SHELL_LIKE;
+			break;
+		case 'S':
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
@@ -709,6 +762,8 @@ main(int argc, char **argv)
 		fclose(pid_fp);
 	}
 	display_env(stdout_fd);
+
+	signal(SIGTERM, sigterm_handler);
 
 	for (;;) {
 		client_addr_size = sizeof(client_addr);
