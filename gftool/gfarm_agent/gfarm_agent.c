@@ -21,6 +21,7 @@
 #include "io_fd.h"
 #include "agent_proto.h"
 #include "agent_wrap.h"
+#include "agent_thr.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -436,15 +437,17 @@ agent_server_uncachedir(struct xxx_connection *client)
 
 static int gfarm_initialized = 0;
 
-void
-server(int client_fd)
+void *
+server(void *arg)
 {
+	int client_fd = *(int *)arg;
 	char *e;
 	struct xxx_connection *client;
 	int eof;
 	gfarm_int32_t request;
 	char buffer[GFARM_INT32STRLEN];
 
+	agent_lock();
 	if (!gfarm_initialized) {
 		e = gfarm_initialize(NULL, NULL);
 		if (e == NULL)
@@ -452,27 +455,32 @@ server(int client_fd)
 		else {
 			(void)gfarm_terminate();
 			close(client_fd);
+			agent_unlock();
 			error_proto("gfarm_initialize", e);
-			return;
+			return (NULL);
 		}
 	}
+	agent_unlock();
 
+	agent_lock();
 	e = gfarm_metadb_check();
 	if (e != NULL) {
 		log_proto("gfarm_metadb_check", e);
 		e = gfarm_metadb_initialize();
 		if (e != NULL) {
 			close(client_fd);
+			agent_unlock();
 			error_proto("gfarm_metadb_initialize", e);
-			return;
+			return (NULL);
 		}
 	}
+	agent_unlock();
 
 	e = xxx_fd_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
 		error_proto("xxx_connection_new", e);
-		return;
+		return (NULL);
 	}
 
 	for (;;) {
@@ -486,6 +494,7 @@ server(int client_fd)
 			cleanup();
 			goto exit_free_conn;
 		}
+		agent_lock();
 		switch (request) {
 		case AGENT_PROTO_PATH_INFO_GET:
 			cmd = "path_info_get";
@@ -534,9 +543,11 @@ server(int client_fd)
 		default:
 			sprintf(buffer, "%d", (int)request);
 			gflog_warning("unknown request", buffer);
+			agent_unlock();
 			cleanup();
 			goto exit_free_conn;
 		}
+		agent_unlock();
 		if (e != NULL) {
 			/* protocol error */
 			error_proto(cmd, e);
@@ -548,6 +559,7 @@ server(int client_fd)
 	e = xxx_connection_free(client);
 	if (e != NULL)
 		error_proto("xxx_connection_free", e);
+	return (NULL);
 }
 
 static char *sock_dir;
@@ -775,7 +787,7 @@ main(int argc, char **argv)
 				continue;
 			gflog_fatal_errno("accept");
 		}
-		server(client);
+		agent_schedule(client, server);
 	}
 	/*NOTREACHED*/
 	return (0); /* to shut up warning */
