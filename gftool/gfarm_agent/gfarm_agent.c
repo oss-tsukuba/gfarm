@@ -22,6 +22,7 @@
 #include "agent_proto.h"
 #include "agent_wrap.h"
 #include "agent_thr.h"
+#include "agent_ptable.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -268,53 +269,6 @@ agent_server_get_ino(struct xxx_connection *client)
 	return (e_rpc);
 }
 
-/* pointer table */
-
-#define PTABLE_LEN	1024
-static void *ptable[PTABLE_LEN];
-static int ptable_free_ptr;
-
-#define PTABLE_OUT_OF_RANGE(p)	((p) < 0 || (p) >= PTABLE_LEN)
-
-static void *
-get_pointer(int p)
-{
-	if (PTABLE_OUT_OF_RANGE(p))
-		return (0);
-
-	return (ptable[p]);
-}
-
-static int
-set_pointer(void *ptr)
-{
-	int saved_ptr = ptable_free_ptr;
-
-	if (PTABLE_OUT_OF_RANGE(ptable_free_ptr))
-		return (-1);
-	if (ptable[ptable_free_ptr])
-		return (-1);
-
-	ptable[ptable_free_ptr] = ptr;
-	while (get_pointer(++ptable_free_ptr));
-
-	return (saved_ptr);
-}
-
-static char *
-release_pointer(int p)
-{
-	if (get_pointer(p))
-		ptable[p] = 0;
-	else
-		return ("already released or out of range");
-
-	if (p < ptable_free_ptr)
-		ptable_free_ptr = p;
-
-	return (NULL);
-}
-
 static char *
 agent_server_opendir(struct xxx_connection *client)
 {
@@ -329,7 +283,7 @@ agent_server_opendir(struct xxx_connection *client)
 	e = gfs_i_opendir(path, &dir);
 	free(path);
 	if (e == NULL) {
-		dir_index = set_pointer(dir);
+		dir_index = agent_ptable_entry_add(dir);
 		if (dir_index < 0) {
 			e = GFARM_ERR_NO_SPACE;
 			(void)gfs_i_closedir(dir);
@@ -353,7 +307,7 @@ agent_server_readdir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	dir = get_pointer(dir_index);
+	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		e = gfs_i_readdir(dir, &entry);
 	else
@@ -384,13 +338,13 @@ agent_server_closedir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	dir = get_pointer(dir_index);
+	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		e = gfs_i_closedir(dir);
 	else
 		e = GFARM_ERR_NO_SUCH_OBJECT; /* XXX - EBADF */
 	if (e == NULL)
-		release_pointer(dir_index);
+		agent_ptable_entry_delete(dir_index);
 
 	e_rpc = agent_server_put_reply(client, "closedir", e, "");
 	if (e != NULL)
@@ -409,7 +363,7 @@ agent_server_dirname(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	dir = get_pointer(dir_index);
+	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		name = gfs_i_dirname(dir);
 
@@ -446,6 +400,8 @@ server(void *arg)
 	int eof;
 	gfarm_int32_t request;
 	char buffer[GFARM_INT32STRLEN];
+
+	agent_ptable_alloc();
 
 	agent_lock();
 	if (!gfarm_initialized) {
