@@ -6,6 +6,7 @@ include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
 	digest \
+	gfarm_agent \
 	gfdf \
 	gfexec \
 	gfexport \
