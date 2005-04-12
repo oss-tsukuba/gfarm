@@ -99,41 +99,32 @@ gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 char *
 gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 {
-	const char *basename;
-	char *dir, *e, *dir_canonic;
-	const char *lastc, *ini_lastc;
+	const char *basename, *p0;
+	char *e, *p1, *dir, *dir_canonic, *lastc, cwd[PATH_MAX + 1];
 
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	/* Expand '~'. */
-	if (gfarm_file[0] == '~') {
-		char *expanded_gfarm_file;
-
-		e = gfarm_path_expand_home(gfarm_file, &expanded_gfarm_file);
-		if (e != NULL)
-			return (e);
-		assert(expanded_gfarm_file[0] != '~');
-		e = gfarm_canonical_path_for_creation(
-			expanded_gfarm_file, canonic_pathp);
-		free(expanded_gfarm_file);
-
-		return (e);
-	}
 	/* '' or 'gfarm:' case */
 	if (gfarm_file[0] == '\0') {
-		char cwd[PATH_MAX + 1];
-
 		e = gfs_getcwd(cwd, sizeof(cwd));
 		if (e != NULL)
 			return (e);
-		return (gfarm_canonical_path_for_creation(cwd, canonic_pathp));
+		p0 = cwd;
 	}
+	else
+		p0 = gfarm_file;
+
+	/* Expand '~'. */
+	e = gfarm_path_expand_home(p0, &p1);
+	if (e != NULL)
+		return (e);
+
 	/* Eliminate unnecessary '/'s following the basename. */
-	lastc = ini_lastc = &gfarm_file[strlen(gfarm_file) - 1];
+	lastc = &p1[strlen(p1) - 1];
 	if (*lastc == '/') {
-		while (gfarm_file < lastc && *lastc == '/')
+		while (p1 < lastc && *lastc == '/')
 			--lastc;
-		if (gfarm_file == lastc) {
+		if (p1 == lastc) {
 			/*
 			 * In this case, given gfarm_file is '/' or contains
 			 * only several '/'s.  This means to attempt to create
@@ -144,48 +135,28 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			 * That is why the error of 'already exist' is
 			 * returned here.
 			 */
+			free(p1);
 			return (GFARM_ERR_ALREADY_EXISTS);
 		}
-		else if (lastc != ini_lastc) {
-			char *elm_gfarm_file;
-
-			++lastc;
-			elm_gfarm_file = malloc(lastc - gfarm_file + 1);
-			if (elm_gfarm_file == NULL)
-				return (GFARM_ERR_NO_MEMORY);
-			strncpy(elm_gfarm_file, gfarm_file, lastc - gfarm_file);
-			elm_gfarm_file[lastc - gfarm_file] = '\0';
-			e = gfarm_canonical_path_for_creation(
-				elm_gfarm_file, canonic_pathp);
-			free(elm_gfarm_file);
-
-			return (e);
+		else {
+			*(lastc + 1) = '\0';
 		}
 	}
 
-	basename = gfarm_path_dir_skip(gfarm_file);
-	dir = NULL;
-	if (basename == gfarm_file) { /* "filename" */ 
-		dir = strdup(".");
-		if (dir == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-	} else if (basename == gfarm_file + 1) { /* "/filename" */
-		dir = strdup("/");
-		if (dir == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-	} else { /* /.../.../filename */
-		dir = malloc(basename - 2 - gfarm_file + 2);
-		if (dir == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		strncpy(dir, gfarm_file, basename - 2 - gfarm_file + 1);
-		dir[basename - 2 - gfarm_file + 1] = '\0';
+	basename = gfarm_path_dir_skip(p1);
+	if (basename == p1)	     /* "filename" */
+		dir = ".";
+	else if (basename == p1 + 1) /* "/filename" */
+		dir = "/";
+	else {			     /* /.../.../filename */
+		p1[basename - 1 - p1] = '\0';
+		dir = p1;
 	}
-
 	/* Check the existence of the parent directory. */
 	e = gfarm_canonical_path(dir, &dir_canonic);
-	free(dir);
 	if (e != NULL)
-		return (e);
+		goto free_p1;
+
 	/*
 	 * check whether parent directory is writable or not.
 	 * XXX this isn't enough yet, due to missing X-bits check.
@@ -194,23 +165,20 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		struct gfarm_path_info pi;
 
 		e = gfarm_path_info_get(dir_canonic, &pi);
-		if (e != NULL) {
-			free(dir_canonic);
-			return (e);
-		}
+		if (e != NULL)
+			goto free_dir_canonic;
+
 		e = gfarm_path_info_access(&pi, GFS_W_OK);
 		gfarm_path_info_free(&pi);
-		if (e != NULL) {
-			free(dir_canonic);
-			return (e);
-		}
+		if (e != NULL)
+			goto free_dir_canonic;
 	}
 
 	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
 				strlen(basename) + 1); 
 	if (*canonic_pathp == NULL) {
-		free(dir_canonic);
-		return (GFARM_ERR_NO_MEMORY);
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_dir_canonic;
 	}
 
 	/*
@@ -221,9 +189,12 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		strcpy(*canonic_pathp, basename);
 	else
 		sprintf(*canonic_pathp, "%s/%s", dir_canonic, basename);
+	e = NULL;
+free_dir_canonic:
 	free(dir_canonic);
-
-	return (NULL);
+free_p1:
+	free(p1);
+	return (e);
 }
 
 char *
