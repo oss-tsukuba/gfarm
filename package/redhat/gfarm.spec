@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.1.0
+%define ver	1.1.1
 %define rel	0
 
 # a hook to make RPM version number different from %{ver}
@@ -593,6 +593,7 @@ fi
 
 %files client
 %{prefix}/bin/digest
+%{prefix}/bin/gfarm_agent
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
