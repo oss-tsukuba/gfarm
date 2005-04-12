@@ -835,7 +835,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			/* '/gfarm' will be translated to 'gfarm:/'. */
 			if (is_mount_point && p[secsize + 1] == '\0') {
 				add_slash = 1;
-				gfs_uncachedir();
+				/*gfs_uncachedir();*/
 			}
 			urlsize = sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(p + secsize + remove_slash + 1);
@@ -869,7 +869,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 			/* '/gfarm' will be translated to 'gfarm:/'. */
 			if (is_mount_point && path[0] == '\0') {
 				add_slash = 1;
-				gfs_uncachedir();
+				/*gfs_uncachedir();*/
 			}
 			*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
 				       + strlen(path + remove_slash) + 1);
@@ -921,7 +921,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 		/* '/gfarm' will be translated to 'gfarm:/'. */
 		if (path[0] == '\0') {
 			add_slash = 1;
-			gfs_uncachedir();
+			/*gfs_uncachedir();*/
 		}
 		*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
 			       + strlen(path + remove_slash) + 1);
