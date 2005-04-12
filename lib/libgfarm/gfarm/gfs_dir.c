@@ -763,6 +763,34 @@ gfs_refreshdir(void)
  * metadatabase interface wrappers provided by dircache layer.
  */
 
+static char *
+root_path_info(struct gfarm_path_info *info)
+{
+	long ino;
+	char *e;
+
+	e = gfs_get_ino("", &ino);
+	if (e != NULL)
+		return (e);
+	info->pathname = strdup("");
+	if (info->pathname == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	info->status.st_ino = ino;
+	info->status.st_mode = GFARM_S_IFDIR | 0777;
+	info->status.st_user = strdup("root");
+	info->status.st_group = strdup("gfarm");
+	info->status.st_atimespec.tv_sec = 0;
+	info->status.st_atimespec.tv_nsec = 0;
+	info->status.st_mtimespec.tv_sec = 0;
+	info->status.st_mtimespec.tv_nsec = 0;
+	info->status.st_ctimespec.tv_sec = 0;
+	info->status.st_ctimespec.tv_nsec = 0;
+	info->status.st_size = 0;
+	info->status.st_nsections = 0;
+
+	return (NULL);
+}
+
 char *
 gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
@@ -771,6 +799,10 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 
 	if (e != NULL)
 		return (e);
+
+	/* 'root' is a special case not having the metadata */
+	if (*pathname == '\0')
+		return (root_path_info(info));
 
 	/* real metadata */
 	e = gfarm_metadb_path_info_get(pathname, info);
@@ -853,6 +885,40 @@ gfarm_i_path_info_remove(const char *pathname)
  * 'path' is '/' + canonical path, or a relative path.  It is not the
  * same as a canonical path.
  */
+char *gfs_i_realpath_canonical(const char *, char **);
+
+static char *
+gfs_realpath_canonical_parent(const char *path, char **abspathp)
+{
+	char *e, *par_dir;
+	const char *base;
+	int need_free = 0;
+
+	base = gfarm_path_dir_skip(path);
+	if (base == path)
+		par_dir = ".";
+	else if (base == path + 1)
+		par_dir = "/";
+	else {
+		par_dir = malloc(base - path);
+		if (par_dir == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		/* do not copy the last '/' */
+		memcpy(par_dir, path, base - path - 1);
+		par_dir[base - path - 1] = '\0';
+		need_free = 1;
+	}
+	if (strcmp(path, par_dir) == 0) {
+		/* this should not happen but ensures termination */
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	}
+	else
+		e = gfs_i_realpath_canonical(par_dir, abspathp);
+	if (need_free)
+		free(par_dir);
+	return (e);
+}
+
 char *
 gfs_i_realpath_canonical(const char *path, char **abspathp)
 {
@@ -865,6 +931,29 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 		return (e);
 	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	if (e != NULL) {
+		char *p_dir, *c_path;
+		const char *base;
+		struct gfarm_path_info info;
+		/*
+		 * Before uncaching the metadata, check a typical case
+		 * such that the parent directory exists.
+		 */
+		if (gfs_realpath_canonical_parent(path, &p_dir) == NULL) {
+			base = gfarm_path_dir_skip(path);
+			c_path = malloc(strlen(p_dir) + 1 + strlen(base) + 1);
+			if (c_path == NULL) {
+				free(p_dir);
+				return (GFARM_ERR_NO_MEMORY);
+			}
+			sprintf(c_path, "%s/%s", p_dir, base);
+			free(p_dir);
+			e = gfarm_i_path_info_get(c_path, &info);
+			free(c_path);
+			if (e != NULL)
+				return (e);
+			else
+				gfarm_path_info_free(&info);
+		}
 		/* there may be inconsistency, refresh and lookup again. */
 		gfs_i_uncachedir();
 		if (gfs_refreshdir() == NULL)
