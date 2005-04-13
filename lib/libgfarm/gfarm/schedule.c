@@ -545,9 +545,12 @@ search_idle(int concurrency, int enough_number,
 	}
 	s.concurrency = 0;
 	for (i = 0; i < nihosts; i++) {
-		do {
+		ihost = (*ihost_iterator->get_next)(ihost_iterator);
+		for (; !(*ihost_filter->suitable)(ihost_filter, ihost) &&
+			     i < nihosts; i++)
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
+		if (i == nihosts)
+			break;
 		entry = gfarm_hash_lookup(hosts_state,
 		    ihost, strlen(ihost) + 1);
 		if (entry == NULL)
@@ -660,7 +663,7 @@ search_idle_shuffled(int concurrency, int enough_number,
 	int *nohostsp, char **ohosts)
 {
 	char *e, *ihost, **shuffled_ihosts;
-	int i;
+	int i, j;
 	struct string_array_iterator host_iterator;
 
 	if (nihosts == 0)
@@ -668,12 +671,19 @@ search_idle_shuffled(int concurrency, int enough_number,
 	shuffled_ihosts = malloc(nihosts * sizeof(*shuffled_ihosts));
 	if (shuffled_ihosts == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	j = 0;
 	for (i = 0; i < nihosts; i++) {
-		do {
+		ihost = (*ihost_iterator->get_next)(ihost_iterator);
+		for (; !(*ihost_filter->suitable)(ihost_filter, ihost) &&
+			     i < nihosts; i++)
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
-		shuffled_ihosts[i] = ihost;
+		if (i == nihosts)
+			break;
+		shuffled_ihosts[j++] = ihost;
 	}
+	nihosts = j;
+	if (nihosts == 0)
+		return (GFARM_ERR_NO_HOST);
 	shuffle_strings(nihosts, shuffled_ihosts);
 
 	e = search_idle(concurrency, enough_number, hosts_state,
