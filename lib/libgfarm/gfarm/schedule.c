@@ -545,12 +545,9 @@ search_idle(int concurrency, int enough_number,
 	}
 	s.concurrency = 0;
 	for (i = 0; i < nihosts; i++) {
-		ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		for (; !(*ihost_filter->suitable)(ihost_filter, ihost) &&
-			     i < nihosts; i++)
+		do {
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		if (i == nihosts)
-			break;
+		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
 		entry = gfarm_hash_lookup(hosts_state,
 		    ihost, strlen(ihost) + 1);
 		if (entry == NULL)
@@ -632,7 +629,7 @@ search_idle(int concurrency, int enough_number,
  * shuffle input-hosts before searching to avoid unbalanced search
  */
 
-#define USE_SHUFFLED
+/* #define USE_SHUFFLED */
 
 #ifdef USE_SHUFFLED
 
@@ -663,7 +660,7 @@ search_idle_shuffled(int concurrency, int enough_number,
 	int *nohostsp, char **ohosts)
 {
 	char *e, *ihost, **shuffled_ihosts;
-	int i, j;
+	int i;
 	struct string_array_iterator host_iterator;
 
 	if (nihosts == 0)
@@ -671,19 +668,12 @@ search_idle_shuffled(int concurrency, int enough_number,
 	shuffled_ihosts = malloc(nihosts * sizeof(*shuffled_ihosts));
 	if (shuffled_ihosts == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	j = 0;
 	for (i = 0; i < nihosts; i++) {
-		ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		for (; !(*ihost_filter->suitable)(ihost_filter, ihost) &&
-			     i < nihosts; i++)
+		do {
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
-		if (i == nihosts)
-			break;
-		shuffled_ihosts[j++] = ihost;
+		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
+		shuffled_ihosts[i] = ihost;
 	}
-	nihosts = j;
-	if (nihosts == 0)
-		return (GFARM_ERR_NO_HOST);
 	shuffle_strings(nihosts, shuffled_ihosts);
 
 	e = search_idle(concurrency, enough_number, hosts_state,
@@ -751,6 +741,10 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
  * When enough number of hosts are not available, the available hosts
  * will be listed in the cyclic manner.
  * NOTE: all of ihosts[] must be canonical hostnames.
+ *
+ * NOTE2: each entry of ohosts is not strdup'ed unlike other
+ * gfarm_schedule_* functions.  Do not call
+ * gfarm_strings_free_deeply() or free(*ohosts).
  */
 char *
 gfarm_schedule_search_idle_hosts(
