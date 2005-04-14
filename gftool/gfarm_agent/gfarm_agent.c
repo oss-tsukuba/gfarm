@@ -429,6 +429,7 @@ server(void *arg)
 			error_proto("gfarm_metadb_initialize", e);
 			return (NULL);
 		}
+		gfs_i_uncachedir();
 	}
 	agent_unlock();
 
@@ -733,6 +734,7 @@ main(int argc, char **argv)
 	display_env(stdout_fd);
 
 	signal(SIGTERM, sigterm_handler);
+	signal(SIGPIPE, SIG_IGN);
 
 	for (;;) {
 		client_addr_size = sizeof(client_addr);
