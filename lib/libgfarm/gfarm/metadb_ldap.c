@@ -30,6 +30,13 @@
 
 static LDAP *gfarm_ldap_server = NULL;
 static pid_t gfarm_ldap_client_pid;
+static int gfarm_ldap_shared;
+
+void
+gfarm_metadb_share_connection(void)
+{
+	gfarm_ldap_shared = 1;
+}
 
 char *
 gfarm_metadb_initialize(void)
@@ -104,7 +111,7 @@ gfarm_metadb_terminate(void)
 		return ("metadb connection already disconnected");
 
 	/* close and free connection resources */
-	if (getpid() == gfarm_ldap_client_pid) {
+	if (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid) {
 		rv = ldap_unbind(gfarm_ldap_server);
 		if (rv != LDAP_SUCCESS)
 			e = ldap_err2string(rv);
@@ -138,13 +145,14 @@ gfarm_metadb_check(void)
 }
 
 /*
- * LDAP connection cannot be used from forked children.
+ * LDAP connection cannot be used from forked children unless the
+ * connection is ensured to be used exclusively.
  * This routine guarantees that never happens.
  */
 static char *
 gfarm_ldap_check(void)
 {
-	if (getpid() == gfarm_ldap_client_pid)
+	if (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid)
 		return (NULL);
 	/* XXX close the file descriptor for gfarm_ldap_server */
 	gfarm_ldap_server = NULL;

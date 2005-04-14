@@ -701,6 +701,7 @@ main(int argc, char **argv)
 	 * running at start-up time.  In this case, retry at connection time.
 	 */
 	gfarm_agent_disable();
+	gfarm_metadb_share_connection();
 	e = gfarm_initialize(NULL, NULL);
 	if (e == NULL)
 		gfarm_initialized = 1;
