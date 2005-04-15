@@ -128,6 +128,7 @@ install: build
 	cd build_gsi && $(MAKE) install prefix=`pwd`/../debian/tmp_gsi/usr \
 	  default_libexecdir=`pwd`/../debian/tmp_gsi/usr/lib/gfarm
 
+# LICENSE file is stored in debian/copyright (Debian policy)
 	rm -f  debian/tmp/usr/share/doc/gfarm/LICENSE
 	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
 
