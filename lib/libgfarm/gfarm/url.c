@@ -163,13 +163,17 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 	 */
 	if (dir_canonic[0] != '\0') { /* XXX "/" is always OK for now */
 		struct gfarm_path_info pi;
+		int is_dir;
 
 		e = gfarm_path_info_get(dir_canonic, &pi);
 		if (e != NULL)
 			goto free_dir_canonic;
 
+		is_dir = GFARM_S_ISDIR(pi.status.st_mode);
 		e = gfarm_path_info_access(&pi, GFS_W_OK);
 		gfarm_path_info_free(&pi);
+		if (!is_dir)
+			e = GFARM_ERR_NOT_A_DIRECTORY;
 		if (e != NULL)
 			goto free_dir_canonic;
 	}
