@@ -1600,6 +1600,177 @@ fsetxattr(int filedes, const char *name, void *value, size_t size, int flags)
 }
 
 /*
+ * mknod
+ */
+
+#ifndef _MKNOD_VER
+
+int
+__mknod(const char *path, mode_t mode, dev_t dev)
+{
+	const char *e;
+	char *url;
+	struct gfs_stat gs;
+	GFS_File gf;
+
+	_gfs_hook_debug_v(fputs("Hooking __mknod\n", stderr));
+
+	if (!gfs_hook_is_url(path, &url))
+		return (syscall(SYS_mknod, path, mode, dev));
+	
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking __mknod(%s, %o)\n", path, mode));
+	
+	if (gfs_hook_get_current_view() == section_view)
+		e = gfs_stat_section(url, gfs_hook_get_current_section(), &gs);
+	else
+		e = gfs_stat(url, &gs);
+	if (e == NULL) {
+		gfs_stat_free(&gs);
+		errno = EEXIST;
+		return (-1);
+	} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* fall through */
+	} else {
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+	switch(mode & S_IFMT) {
+	case S_IFCHR:
+	case S_IFBLK:
+	case S_IFIFO:
+	case S_IFSOCK:
+		errno = EPERM;
+		return (-1);
+		break;
+	case S_IFREG:
+		if ((e = gfs_pio_create(url, 
+			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
+			!= NULL) {
+			errno = gfarm_error_to_errno(e);
+			return (-1);
+		}
+		if ((e = gfs_pio_close(gf)) != NULL) {
+			errno = gfarm_error_to_errno(e);
+			return (-1);
+		}
+		return 0;
+		break;
+	default:
+		errno = EINVAL;
+		return (-1);
+		break;
+	}
+	return 0;
+}
+
+int
+_mknod(const char *path, mode_t mode, dev_t dev)
+{
+	_gfs_hook_debug_v(fputs("Hooking _mknod\n", stderr));
+	return (__mknod(path, mode, dev));
+}
+
+int
+mknod(const char *path, mode_t mode, dev_t dev)
+{
+	_gfs_hook_debug_v(fputs("Hooking mknod\n", stderr));
+	return (__mknod(path, mode, dev));
+}
+
+#else /* defined _MKNOD_VER */
+
+#ifdef __linux__
+
+int
+__mknod(const char *path, mode_t mode, dev_t dev)
+{
+	_gfs_hook_debug_v(fputs("Hooking __mknod\n", stderr));
+	return (__xmknod(_MKNOD_VER, path, mode, &dev));
+}
+
+int
+_mknod(const char *path, mode_t mode, dev_t dev)
+{
+	_gfs_hook_debug_v(fputs("Hooking _mknod\n", stderr));
+	return (__xmknod(_MKNOD_VER, path, mode, &dev));
+}
+
+#endif /* __linux__ */
+
+int
+__xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+{
+	const char *e;
+	char *url;
+	struct gfs_stat gs;
+	GFS_File gf;
+
+	_gfs_hook_debug_v(fputs("Hooking __xmknod\n", stderr));
+
+	if (!gfs_hook_is_url(path, &url))
+#ifdef SYS_xmknod
+		return (syscall(SYS_xmknod, ver, path, mode, dev));
+#else /* !defined(SYS_xmknod) */
+		return (syscall(SYS_mknod, path, mode, *dev));
+#endif /* SYS_xmknod */
+
+	_gfs_hook_debug(fprintf(stderr,
+				"GFS: Hooking __xmknod(%s, %o)\n", path, mode));
+	
+	if (gfs_hook_get_current_view() == section_view)
+		e = gfs_stat_section(url, gfs_hook_get_current_section(), &gs);
+	else
+		e = gfs_stat(url, &gs);
+	if (e == NULL) {
+		gfs_stat_free(&gs);
+		errno = EEXIST;
+		return (-1);
+	} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* fall through */
+	} else {
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+	switch(mode & S_IFMT) {
+	case S_IFCHR:
+	case S_IFBLK:
+	case S_IFIFO:
+	case S_IFSOCK:
+		errno = EPERM;
+		return (-1);
+		break;
+	case S_IFREG:
+		if ((e = gfs_pio_create(url, 
+			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
+			!= NULL) {
+			errno = gfarm_error_to_errno(e);
+			return (-1);
+		}
+		if ((e = gfs_pio_close(gf)) != NULL) {
+			errno = gfarm_error_to_errno(e);
+			return (-1);
+		}
+		return 0;
+		break;
+	default:
+		errno = EINVAL;
+		return (-1);
+		break;
+	}
+	return 0;
+}
+
+int
+_xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+{
+	_gfs_hook_debug_v(fputs("Hooking _xmknod\n", stderr));
+	return (__xmknod(ver, path, mode, dev));
+}
+
+#endif /* _MKNOD_VER */
+
+/*
  * definitions for "hooks_common.c"
  */
 
