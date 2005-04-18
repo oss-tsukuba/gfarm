@@ -8,6 +8,7 @@
 #include <libgen.h>
 #include <string.h>
 #include <assert.h>
+#include <dirent.h>
 #include <gfarm/gfarm.h>
 #include "schedule.h" /* gfarm_strings_expand_cyclic() */
 
@@ -47,10 +48,12 @@ usage()
     fprintf(stderr, "\t-H hostfile\t\tspecify hostnames by a file\n");
     fprintf(stderr, "\t-D domainname\t\tspecify a domainname\n");
     fprintf(stderr, "\t-f \t\t\tforce to register\n");
+    fprintf(stderr, "\t-r files\t\tspecify some directories and files\n");
     exit(EXIT_FAILURE);
 }
 
 static int opt_force = 0;
+static int opt_recursive = 0;
 static int error_happened = 0;
 
 static int
@@ -188,9 +191,20 @@ get_nsections(char *gfarm_url, int *nsectionsp)
 	return (1);
 }
 
+static char *
+path_one_dir_skip(char *path)
+{
+	for (; *path != '\0'; path++) {
+		if (*path == '/')
+			return (path + 1);
+	}
+	return (path);
+}
+
 static void
-register_program(int is_dir, char *gfarm_url, char *section, char *hostname,
-	char *filename, int use_file_mode, gfarm_mode_t file_mode)
+register_file(int is_dir, char *gfarm_url, char *section, char *hostname,
+	char *filename, int use_file_mode, gfarm_mode_t file_mode,
+	int is_recursive)
 {
 	char *e;
 	int fd, fd_needs_close;
@@ -202,11 +216,22 @@ register_program(int is_dir, char *gfarm_url, char *section, char *hostname,
 	if (!use_file_mode && !get_file_mode(fd, filename, &file_mode))
 		goto finish;
 
-	if (!is_dir)
+	if ((file_mode & 0111) == 0)
+		section = "0";	  
+
+	if (is_dir) {
+		if (!concat_dir_name(gfarm_url,
+	    	    is_recursive ? filename : gfarm_path_dir_skip(filename),
+	    	    &target_url))
+			goto finish;
+	} else if (is_recursive) {
+		if (!concat_dir_name(gfarm_url,
+		    path_one_dir_skip(filename),
+		    &target_url))
+			goto finish;
+	} else {
 		target_url = gfarm_url;
-	else if (!concat_dir_name(gfarm_url, gfarm_path_dir_skip(filename),
-	    &target_url))
-		goto finish;
+	}
 
 	if (opt_force || section_does_not_exists(target_url, section)) {
 		e = gfs_pio_create(target_url,
@@ -232,6 +257,214 @@ register_program(int is_dir, char *gfarm_url, char *section, char *hostname,
  finish:
 	if (fd_needs_close)
 		close(fd);
+}
+
+static char *
+add_cwd_to_relative_path(char *cwd, const char *path)
+{
+	char *p;
+
+	p = malloc(strlen(cwd) + strlen(path) + 2);
+	if (p == NULL) {
+		fprintf(stderr, "%s: %s\n",
+			    program_name, GFARM_ERR_NO_MEMORY);
+		exit(EXIT_FAILURE);
+	}
+	sprintf(p, "%s/%s", cwd, path);
+	return (p);
+}
+
+static int
+traverse_file_tree(char *cwd, char *path,
+	gfarm_stringlist *dir_list, gfarm_stringlist *file_list)
+{
+	char *e;
+	struct stat s;
+	DIR *dir;
+	struct dirent *entry;
+	char *dpath;
+
+	dpath = add_cwd_to_relative_path(cwd, path);
+	if (stat(path, &s) == -1) {
+		fprintf(stderr, "%s: cannot stat %s: %s\n",
+		    program_name, dpath, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+
+	if (S_ISREG(s.st_mode)) {
+		e = gfarm_stringlist_add(file_list, dpath);
+		if (e != NULL) {
+			fprintf(stderr, "%s: traverse_file_tree: %s:\n",
+			    program_name, e);
+			exit(EXIT_FAILURE);			
+		}
+	} else if (S_ISDIR(s.st_mode)) {
+		e = gfarm_stringlist_add(dir_list, dpath);
+		if (e != NULL) {
+			fprintf(stderr, "%s: traverse_file_tree: %s:\n",
+			    program_name, e);
+			exit(EXIT_FAILURE);			
+		}
+		if (chdir(path) == -1) {
+			fprintf(stderr, "%s: cannot change directory %s: %s\n",
+		    	    program_name, dpath, strerror(errno));
+			error_happened = 1;
+			return (0);
+		}
+		if ((dir = opendir(".")) == NULL) {
+			fprintf(stderr,	"%s: cannot open directory %s: %s\n",
+			    program_name, dpath, strerror(errno));
+			error_happened = 1;
+			return (0);
+		}
+		while ((entry = readdir(dir)) != NULL) {
+			if (strcmp(entry->d_name, ".") == 0 ||
+			    strcmp(entry->d_name, "..") == 0) { 
+				continue;
+			}
+			if (!traverse_file_tree(dpath, entry->d_name,
+			    dir_list, file_list)) {
+				return (0);
+			}
+
+		}
+		if (closedir(dir) == -1) {
+			fprintf(stderr,
+		    	    "%s: cannot close directory %s: %s\n",
+			    program_name, dpath, strerror(errno));
+			error_happened = 1;
+			return (0);
+		}
+		if (chdir("..") == -1) {
+			fprintf(stderr,
+			    "%s: cannot change directory %s: %s\n",
+			    program_name, cwd, strerror(errno));
+			error_happened = 1;
+			return (0);
+		}
+	}
+	return (1);
+}
+
+static int
+get_lists(char *dir_path,
+	gfarm_stringlist *dir_list,gfarm_stringlist *file_list)
+{
+	char cwdbf[PATH_MAX * 2];
+	struct dirent *entry;
+	DIR *dir;
+
+	if (getcwd(cwdbf, sizeof(cwdbf)) == NULL) {
+		fprintf(stderr,
+		    "%s: cannot get current working directory: %s\n",
+		    program_name, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+	if (chdir(dir_path) == -1) {
+		fprintf(stderr,
+		    "%s: cannot change directory %s: %s\n",
+		    program_name, dir_path, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+	if ((dir = opendir(".")) == NULL) {
+		fprintf(stderr,
+		    "%s: cannot open directory %s: %s\n",
+		    program_name, dir_path, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+	while ((entry = readdir(dir)) != NULL) {
+		if (strcmp(entry->d_name, "..") == 0) { 
+			continue;
+		}
+		if (strcmp(entry->d_name, ".") == 0) {
+			gfarm_stringlist_add(dir_list, dir_path);
+			continue;
+		} 
+		if (!traverse_file_tree(dir_path, entry->d_name,
+					dir_list, file_list)) {
+			closedir(dir);
+			return (0);
+		}
+	}
+	if (closedir(dir) == -1) {
+		fprintf(stderr,
+		    "%s: cannot close directory %s: %s\n",
+		    program_name, dir_path, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+	if (chdir(cwdbf) == -1) {
+		fprintf(stderr,
+		    "%s: cannot change directory %s: %s\n",
+		    program_name, cwdbf, strerror(errno));
+		error_happened = 1;
+		return (0);
+	}
+	return (1);
+}
+
+static void
+register_directory(int is_dir, char *gfarm_url, char *section, char *hostname,
+	char *filename)
+{
+	char *e;
+	gfarm_stringlist dir_list, file_list;
+	int i, is_recursive, use_file_mode;
+	gfarm_mode_t file_mode_dummy;
+
+	e = gfarm_stringlist_init(&dir_list);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
+	e = gfarm_stringlist_init(&file_list);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
+
+	if (!get_lists(filename, &dir_list, &file_list))
+		return;
+
+	for (i = 0; i < gfarm_stringlist_length(&dir_list); i++) {
+		char *target_url;
+
+		if (!is_dir) {
+			if (!concat_dir_name(
+		    		gfarm_url,
+				path_one_dir_skip(
+				    gfarm_stringlist_elem(&dir_list, i)),
+				&target_url))
+			return;
+		} else if (!concat_dir_name(
+		    		gfarm_url,
+				gfarm_stringlist_elem(&dir_list, i),
+				&target_url)) {
+			return;
+		}
+		e = gfs_mkdir(target_url, 0755);
+		if (e != NULL) {
+			fprintf(stderr, "%s: gfs_mkdir: %s, %s",
+				 program_name, target_url, e);
+			exit(EXIT_FAILURE);
+		}
+	}
+	is_recursive = 1;
+	use_file_mode = 0;
+	file_mode_dummy = 0000;
+	for (i = 0; i < gfarm_stringlist_length(&file_list); i++) {
+		register_file(is_dir, gfarm_url, section,
+		    hostname,
+		    gfarm_stringlist_elem(&file_list, i),
+		    use_file_mode, file_mode_dummy,
+		    is_recursive);
+	}
+	gfarm_stringlist_free(&dir_list);
+	gfarm_stringlist_free(&file_list);
 }
 
 static void
@@ -288,6 +521,41 @@ register_fragment(int is_dir, char *gfarm_url, int index, int nfragments,
 		close(fd);
 }
 
+static char *
+get_section(char *hostname, int *section_alloced) {
+	char *section, *e;
+
+	*section_alloced = 0;
+	if (hostname == NULL) {	
+		if (gfarm_host_get_self_architecture(&section) != NULL) {
+			fprintf(stderr, "%s: missing -a option\n",
+			    program_name);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		char *canonical;
+
+		e = gfarm_host_get_canonical_name(hostname, &canonical);
+		if (e != NULL) {
+			if (e == GFARM_ERR_NO_SUCH_OBJECT)
+				e = "not a filesystem node";
+			fprintf(stderr, "%s: host %s: %s\n",
+			    program_name, hostname, e);
+			exit(EXIT_FAILURE);
+		}
+		section = gfarm_host_info_get_architecture_by_host(canonical);
+		free(canonical);
+		if (section == NULL) {
+			fprintf(stderr, "%s: %s\n",
+			    program_name, GFARM_ERR_NO_MEMORY);
+			exit(EXIT_FAILURE);
+		}
+		*section_alloced = 1;
+	}
+
+	return (section);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -300,7 +568,7 @@ main(int argc, char *argv[])
 
 	char *e, *gfarm_url, *file_mode_arg;
 	gfarm_mode_t file_mode = DEFAULT_FILE_MODE;
-	int c, i, is_dir, index;
+	int c, i, is_dest_dir, index, is_recursive;
 	struct gfs_stat gs;
 
 	e = gfarm_initialize(&argc, &argv);
@@ -311,7 +579,7 @@ main(int argc, char *argv[])
 
 	/*  Command options  */
 
-	while ((c = getopt(argc, argv, "a:fh:D:I:H:N:?")) != -1) {
+	while ((c = getopt(argc, argv, "a:fh:rD:I:H:N:?")) != -1) {
 		switch (c) {
 		case 'I':
 		case 'a':
@@ -331,6 +599,9 @@ main(int argc, char *argv[])
 			break;
 		case 'f':
 			opt_force = 1;
+			break;
+		case 'r':
+			opt_recursive = 1;
 			break;
 		case '?':
 		default:
@@ -386,22 +657,26 @@ main(int argc, char *argv[])
 	 * 3. fragment mode:
 	 *	gfreg [-h <hostname>] [-N <nfragments>] -I <index> \
 	 *		<local-file>... <gfarm-URL>
+	 * 4. recursive mode:
+	 *	gfreg [-h <hostname>] [-a <architecture>] \
+	 *		<local-directory|local-program|local-file>...
+	 *		<gfarm-URL>
 	 */
 
 	e = gfs_stat(gfarm_url, &gs);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		is_dir = 0;
+		is_dest_dir = 0;
 		file_mode_arg = NULL;
 	} else if (e != NULL) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, gfarm_url, e);
 		exit(EXIT_FAILURE);
 	} else {
 		if (GFARM_S_ISREG(gs.st_mode)) {
-			is_dir = 0;
+			is_dest_dir = 0;
 			file_mode_arg = gfarm_url;
 			file_mode = gs.st_mode;
 		} else if (GFARM_S_ISDIR(gs.st_mode)) {
-			is_dir = 1;
+			is_dest_dir = 1;
 			file_mode_arg = NULL;
 		} else { /* defensive programming. this shouldn't happen. */
 			fprintf(stderr, "%s: %s: unknown file type\n",
@@ -414,6 +689,97 @@ main(int argc, char *argv[])
 	c = 0; /* count of "-" in the arguments */
 	if (hostfile != NULL && strcmp(hostfile, STDIN_FILENAME) == 0)
 		++c;
+	if (opt_recursive) {
+		/*
+		 * recursive mode
+		 */
+		int section_alloced = 0;
+
+		if (!is_dest_dir && argc != 1) {
+			char *file_type;
+
+			file_type = (file_mode_arg == NULL ? 
+					"file or directory" : "file");
+			fprintf(stderr, "%s: only one %s can be specified to"
+			    " register the gfarm program `%s'\n",
+			    program_name, file_type, gfarm_url);
+			exit(EXIT_FAILURE);
+		}
+		if (hostfile != NULL || domainname != NULL) {
+			fprintf(stderr,
+			    "%s: cannot use -%c with -r\n", 
+			    program_name, hostfile != NULL ? 'H' : 'D');
+			exit(EXIT_FAILURE);
+		}
+		if (nfragments != GFARM_FILE_DONTCARE) {
+			/*
+			 * XXX - call gfarm_url_replicate() to replicate
+			 * `nfragments' copies of gfarm_url:section?
+			 */
+			fprintf(stderr,
+			    "%s: warning: option -N is currently ignored\n", 
+			    program_name);
+		}
+		if (section == NULL) {
+			section = get_section(hostname, &section_alloced);
+		}
+		for (i = 0; i < argc; i++) {
+			int fd, fd_needs_close;
+			gfarm_mode_t m;
+
+			if (!open_file(argv[i], &fd, &fd_needs_close))
+				exit(EXIT_FAILURE);
+			if (!get_mode(fd, argv[i], &m))
+				exit(EXIT_FAILURE);
+			if (S_ISDIR(m)) {
+				if (!is_dest_dir && file_mode_arg != NULL) {
+					/* gfarm_url is a regular file */
+					fprintf(stderr,
+					    "%s: cannot register "
+					    "%s(directory) "
+					    "as %s(regular file)\n",
+					    program_name, argv[i],
+					    file_mode_arg);
+					exit(EXIT_FAILURE);
+				}
+				register_directory(is_dest_dir, gfarm_url,
+						   section, hostname, argv[i]);
+			} else if (S_ISREG(m)) {
+				if (file_mode_arg == NULL) {
+					/*
+					 * NOTE: this mode may be used for the
+					 * mode to create the gfarm file.
+					 */
+					file_mode_arg = argv[i];
+					file_mode = m & FILE_MODE_MASK;
+				}
+				is_recursive = 0;
+				register_file(is_dest_dir, gfarm_url, section,
+				    hostname,
+				    argv[i],
+				    file_mode_arg == gfarm_url ||
+				    file_mode_arg == argv[i],
+				    file_mode,
+				    is_recursive);
+			} else if (fd_needs_close) {
+				/* if it's "-", allow non-file (e.g. pipe) */
+				fprintf(stderr, "%s: %s: not a regular file\n",
+					program_name, argv[i]);
+				exit(EXIT_FAILURE);
+			}
+			if (fd_needs_close) {
+				close(fd);
+			} else if (++c > 1) {
+				fprintf(stderr, "%s: `-' (stdin) is specified "
+			    		"multiple times\n", program_name);
+				exit(EXIT_FAILURE);
+			}
+		}
+		if (section_alloced)
+			free(section);
+		exit(error_happened); 
+	}
+
 	for (i = 0; i < argc; i++) {
 		int fd, fd_needs_close;
 		gfarm_mode_t m;
@@ -459,7 +825,7 @@ main(int argc, char *argv[])
 		 */
 		int section_alloced = 0;
 
-		if (!is_dir && argc != 1) {
+		if (!is_dest_dir && argc != 1) {
 			fprintf(stderr, "%s: only one file can be specified to"
 			    " register the gfarm program `%s'\n",
 			    program_name, gfarm_url);
@@ -480,40 +846,17 @@ main(int argc, char *argv[])
 			    "%s: warning: option -N is currently ignored\n", 
 			    program_name);
 		}
-		if (section != NULL) {
-			;
-		} else if (hostname != NULL) {
-			char *canonical;
-
-			e = gfarm_host_get_canonical_name(hostname,
-			    &canonical);
-			if (e != NULL) {
-				if (e == GFARM_ERR_NO_SUCH_OBJECT)
-					e = "not a filesystem node";
-				fprintf(stderr, "%s: host %s: %s\n",
-				    program_name, hostname, e);
-				exit(EXIT_FAILURE);
-			}
-			section_alloced = 1;
-			section = gfarm_host_info_get_architecture_by_host(
-			    canonical);
-			free(canonical);
-			if (section == NULL) {
-				fprintf(stderr, "%s: %s\n",
-				    program_name, GFARM_ERR_NO_MEMORY);
-				exit(EXIT_FAILURE);
-			}
-		} else if (gfarm_host_get_self_architecture(&section) != NULL){
-			fprintf(stderr, "%s: missing -a option\n",
-			    program_name);
-			exit(EXIT_FAILURE);
+		if (section == NULL) {
+			section = get_section(hostname, &section_alloced);
 		}
+		is_recursive = 0;
 		for (i = 0; i < argc; i++) {
-			register_program(is_dir, gfarm_url, section,
+			register_file(is_dest_dir, gfarm_url, section,
 			    hostname, argv[i],
 			    file_mode_arg == gfarm_url ||
 			    file_mode_arg == argv[i],
-			    file_mode);
+			    file_mode,
+			    is_recursive);
 		}
 		if (section_alloced)
 			free(section);
@@ -525,7 +868,7 @@ main(int argc, char *argv[])
 			index = strtol(section, NULL, 0);
 		else if (nfragments == GFARM_FILE_DONTCARE)
 			gfs_pio_get_node_size(&nfragments);
-		if (!is_dir && argc != 1) {
+		if (!is_dest_dir && argc != 1) {
 			fprintf(stderr, "%s: only one file can be specified to"
 			    " register a fragment %s of the gfarm file `%s'\n",
 			    program_name, section, gfarm_url);
@@ -538,7 +881,8 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		for (i = 0; i < argc; i++) {
-			register_fragment(is_dir, gfarm_url, index, nfragments,
+			register_fragment(is_dest_dir, gfarm_url, index,
+			    nfragments,
 			    hostname, argv[i],
 			    file_mode_arg == gfarm_url ||
 			    file_mode_arg == argv[i],
@@ -558,7 +902,7 @@ main(int argc, char *argv[])
 			    program_name, argc, nfragments);
 			exit(EXIT_FAILURE);
 		}
-		if (is_dir && nfragments > 1) {
+		if (is_dest_dir && nfragments > 1) {
 			fprintf(stderr, "%s: cannot determine the file name "
 			    "under the directory %s, "
 			    "because multiple local file names are specifed\n",
@@ -616,7 +960,8 @@ main(int argc, char *argv[])
 		}
 		/* XXX - need to register in parallel? */
 		for (i = 0; i < argc; i++) {
-			register_fragment(is_dir, gfarm_url, i, nfragments,
+			register_fragment(is_dest_dir, gfarm_url,
+			    i, nfragments,
 			    hostname != NULL ? hostname : hosts[i], argv[i],
 			    1, file_mode);
 		}
