@@ -888,79 +888,14 @@ gfarm_i_path_info_remove(const char *pathname)
 char *gfs_i_realpath_canonical(const char *, char **);
 
 static char *
-gfs_realpath_canonical_parent(const char *path, char **abspathp)
+canonical_pathname(const struct node *n, char **abspathp)
 {
-	char *e, *par_dir;
-	const char *base;
-	int need_free = 0;
-
-	base = gfarm_path_dir_skip(path);
-	if (base == path)
-		par_dir = ".";
-	else if (base == path + 1)
-		par_dir = "/";
-	else {
-		par_dir = malloc(base - path);
-		if (par_dir == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		/* do not copy the last '/' */
-		memcpy(par_dir, path, base - path - 1);
-		par_dir[base - path - 1] = '\0';
-		need_free = 1;
-	}
-	if (strcmp(path, par_dir) == 0) {
-		/* this should not happen but ensures termination */
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-	}
-	else
-		e = gfs_i_realpath_canonical(par_dir, abspathp);
-	if (need_free)
-		free(par_dir);
-	return (e);
-}
-
-char *
-gfs_i_realpath_canonical(const char *path, char **abspathp)
-{
-	struct node *n, *p;
-	char *e, *abspath;
+	const struct node *p;
+	char *abspath;
 	int l, len;
 
-	e = gfs_refreshdir();
-	if (e != NULL) 
-		return (e);
-	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
-	if (e != NULL) {
-		char *p_dir, *c_path;
-		const char *base;
-		struct gfarm_path_info info;
-		/*
-		 * Before uncaching the metadata, check a typical case
-		 * such that the parent directory exists.
-		 */
-		if (gfs_realpath_canonical_parent(path, &p_dir) == NULL) {
-			base = gfarm_path_dir_skip(path);
-			c_path = malloc(strlen(p_dir) + 1 + strlen(base) + 1);
-			if (c_path == NULL) {
-				free(p_dir);
-				return (GFARM_ERR_NO_MEMORY);
-			}
-			sprintf(c_path, "%s/%s", p_dir, base);
-			free(p_dir);
-			e = gfarm_i_path_info_get(c_path, &info);
-			free(c_path);
-			if (e != NULL)
-				return (e);
-			else
-				gfarm_path_info_free(&info);
-		}
-		/* there may be inconsistency, refresh and lookup again. */
-		gfs_i_uncachedir();
-		if (gfs_refreshdir() == NULL)
-			e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
-	}
-	if (e != NULL)
-		return (e);
+	*abspathp = NULL;
+
 	len = 0;
 	for (p = n; p != root; p = p->parent) {
 		if (p != n)
@@ -980,6 +915,112 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 	}
 	*abspathp = abspath;
 	return (NULL);
+}
+
+/*
+ * Canonicalize a path using canonicalized pathname of the parent
+ * directory and the basename.  Note that the content of 'path1' will
+ * be modified.
+ */
+static char *
+gfs_realpath_canonical_candidate(
+	char *path1, const char *path2, char **abspathp)
+{
+	char *e, *p_dir, *abspath;
+	const char *base;
+	int final = 0;
+	struct node *n;
+
+	if (path1 == NULL || *path1 == '\0')
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	base = gfarm_path_dir_skip(path1);
+	if (*base == '\0' && path1 < base) {
+		/* remove unnecessary '/'s following the basename. */
+		--base;
+		while (path1 < base && *base == '/')
+			--base;
+		if (path1 == base) /* '//////' */
+			return (GFARM_ERR_NO_SUCH_OBJECT);
+		path1[base - path1 + 1] = '\0';
+		base = gfarm_path_dir_skip(path1);
+	}
+	if (base == path1) {
+		path1 = ".";
+		final = 1;
+	}
+	else if (base == path1 + 1) {
+		path1 = "/";
+		final = 1;
+	}
+	else
+		path1[base - path1 - 1] = '\0';
+
+	if (path2 != NULL)
+		path1[path2 - path1 - 1] = '/';
+
+	e = lookup_path(path1, NODE_FLAG_IS_DIR, GFARM_INODE_LOOKUP, &n);
+	if (e != NULL) {
+		if (!final)
+			return (gfs_realpath_canonical_candidate(
+					path1, base, abspathp));
+		else
+			return (e);
+	}
+	e = canonical_pathname(n, &p_dir);
+	if (e != NULL)
+		return (e);
+
+	abspath = malloc(strlen(p_dir) + 1 + strlen(base) + 1);
+	if (abspath == NULL) {
+		free(p_dir);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sprintf(abspath, "%s/%s", p_dir, base);
+	free(p_dir);
+
+	*abspathp = abspath;
+	return (NULL);
+}
+
+char *
+gfs_i_realpath_canonical(const char *path, char **abspathp)
+{
+	struct node *n;
+	char *e;
+
+	e = gfs_refreshdir();
+	if (e != NULL) 
+		return (e);
+	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
+	if (e != NULL) {
+		char *path1, *c_path;
+		struct gfarm_path_info info;
+		/*
+		 * Before uncaching the metadata, try to canonicalize
+		 * using canonicalized pathname of the parent directory.
+		 */
+		path1 = strdup(path);
+		if (path1 == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		e = gfs_realpath_canonical_candidate(path1, NULL, &c_path);
+		free(path1);
+		if (e != NULL)
+			return (e);
+		e = gfarm_i_path_info_get(c_path, &info);
+		free(c_path);
+		if (e != NULL)
+			return (e);
+		gfarm_path_info_free(&info);
+
+		/* there may be inconsistency, refresh and lookup again. */
+		gfs_i_uncachedir();
+		if (gfs_refreshdir() == NULL)
+			e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
+	}
+	if (e != NULL)
+		return (e);
+	return (canonical_pathname(n, abspathp));
 }
 
 #define INUMBER(node)	((long)(node))
