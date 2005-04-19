@@ -702,7 +702,7 @@ sweep_nodes(struct node *n)
 /* refresh directories as soon as possible */
 static int need_to_clear_cache = 0;
 
-struct timeval gfarm_dircache_timeout = { 600, 0 }; /* default 10 min. */
+struct timeval gfarm_dircache_timeout = { 3600, 0 }; /* default 1 hour. */
 static struct timeval last_dircache = {0, 0};
 
 static char *
