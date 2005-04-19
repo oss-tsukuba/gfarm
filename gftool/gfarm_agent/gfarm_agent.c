@@ -391,6 +391,25 @@ agent_server_uncachedir(struct xxx_connection *client)
 
 static int gfarm_initialized = 0;
 
+static int
+client_arg_alloc(int fd, void **argp)
+{
+	int *arg;
+
+	arg = malloc(sizeof(int));
+	if (arg == NULL)
+		return (-1);
+	arg[0] = fd;
+	*argp = arg;
+	return (0);
+}
+
+static void
+client_arg_free(void *arg)
+{
+	free(arg);
+}
+
 void *
 server(void *arg)
 {
@@ -401,6 +420,7 @@ server(void *arg)
 	gfarm_int32_t request;
 	char buffer[GFARM_INT32STRLEN];
 
+	client_arg_free(arg);
 	agent_ptable_alloc();
 
 	agent_lock();
@@ -738,15 +758,29 @@ main(int argc, char **argv)
 	signal(SIGPIPE, SIG_IGN);
 
 	for (;;) {
+		int err;
+		void *arg;
+
 		client_addr_size = sizeof(client_addr);
 		client = accept(accepting_sock,
 			(struct sockaddr *)&client_addr, &client_addr_size);
 		if (client < 0) {
-			if (errno == EINTR)
-				continue;
-			gflog_fatal_errno("accept");
+			if (errno != EINTR)
+				gflog_warning_errno("accept");
+			continue;
 		}
-		agent_schedule(&client, server);
+		err = client_arg_alloc(client, &arg);
+		if (err) {
+			gflog_warning("client_arg_alloc", "no memory");
+			close(client);
+			continue;
+		}
+		err = agent_schedule(arg, server);
+		if (err) {
+			gflog_warning_errno("agent_schedule");
+			close(client);
+			client_arg_free(arg);
+		}
 	}
 	/*NOTREACHED*/
 	return (0); /* to shut up warning */

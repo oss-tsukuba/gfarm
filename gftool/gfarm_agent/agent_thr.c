@@ -22,7 +22,7 @@ agent_unlock()
 }
 
 int
-agent_schedule(int *fd, void *(*handler)(void *))
+agent_schedule(void *arg, void *(*handler)(void *))
 {
 	int err;
 	pthread_t thread_id;
@@ -40,5 +40,5 @@ agent_schedule(int *fd, void *(*handler)(void *))
 		initialized = 1;
 	}
 
-	return (pthread_create(&thread_id, &attr, handler, fd));
+	return (pthread_create(&thread_id, &attr, handler, arg));
 }
