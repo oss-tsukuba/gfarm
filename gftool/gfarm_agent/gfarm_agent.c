@@ -131,6 +131,8 @@ agent_server_path_info_get(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc); /* protocol error */
 
+	if (debug_mode)
+		log_proto("path_info_get", path);
 	e = gfarm_i_path_info_get(path, &pi);
 	free(path);
 
@@ -169,6 +171,8 @@ agent_server_path_info_set(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("path_info_set", pathname);
 	pi.pathname = pathname;
 	e = gfarm_i_path_info_set(pathname, &pi);
 	/* pathname will be free'ed in gfarm_path_info_free(&pi) */
@@ -199,6 +203,8 @@ agent_server_path_info_replace(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("path_info_replace", pathname);
 	pi.pathname = pathname;
 	e = gfarm_i_path_info_replace(pathname, &pi);
 	gfarm_path_info_free(&pi);
@@ -219,6 +225,8 @@ agent_server_path_info_remove(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("path_info_remove", pathname);
 	e = gfarm_i_path_info_remove(pathname);
 	free(pathname);
 
@@ -238,6 +246,8 @@ agent_server_realpath_canonical(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("realpath_canonical", path);
 	e = gfs_i_realpath_canonical(path, &abspath);
 	free(path);
 
@@ -260,6 +270,8 @@ agent_server_get_ino(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("get_ino", path);
 	e = gfs_i_get_ino(path, &ino);
 	free(path);
 
@@ -280,6 +292,8 @@ agent_server_opendir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("opendir", path);
 	e = gfs_i_opendir(path, &dir);
 	free(path);
 	if (e == NULL) {
@@ -307,6 +321,8 @@ agent_server_readdir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("readdir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		e = gfs_i_readdir(dir, &entry);
@@ -338,6 +354,8 @@ agent_server_closedir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("closedir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		e = gfs_i_closedir(dir);
@@ -363,6 +381,8 @@ agent_server_dirname(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("dirname", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		name = gfs_i_dirname(dir);
@@ -383,6 +403,8 @@ agent_server_uncachedir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
+	if (debug_mode)
+		log_proto("uncachedir", "begin");
 	gfs_i_uncachedir();
 
 	e_rpc = agent_server_put_reply(client, "uncachedir", NULL, "");
