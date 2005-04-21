@@ -297,6 +297,9 @@ defaultaccess write
 # unlimit search result
 sizelimit 2000000000
 
+# disable syslog
+loglevel 0
+
 #######################################################################
 # ldbm database definitions
 #######################################################################
@@ -336,6 +339,9 @@ access to * by anonymous write
 
 # unlimit search result
 sizelimit unlimited
+
+# disable syslog
+loglevel 0
 
 #######################################################################
 # ldbm database definitions
