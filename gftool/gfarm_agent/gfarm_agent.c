@@ -39,7 +39,8 @@ static void
 cleanup(void)
 {
 	/* disconnect, do logging */
-	gflog_notice("disconnected", NULL);
+	if (debug_mode)
+		gflog_notice("disconnected", NULL);
 }
 
 static void
