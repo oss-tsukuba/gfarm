@@ -1013,10 +1013,8 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 			return (e);
 		gfarm_path_info_free(&info);
 
-		/* there may be inconsistency, refresh and lookup again. */
-		gfs_i_uncachedir();
-		if (gfs_refreshdir() == NULL)
-			e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
+		/* directory cache is already refreshed in path_info_get(). */
+		e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	}
 	if (e != NULL)
 		return (e);
