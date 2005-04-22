@@ -1,11 +1,13 @@
 		Gfarm File System Installation Manual
 
-* About this document
+About this document
+===================
 
 This document describes the installation and configuration of Gfarm
 file system by RPM binary packages.
 
-* About Gfarm file system
+About Gfarm file system
+=======================
 
 Gfarm file system is a virtual file system (cluster/Grid file system)
 consisting of a metadata server and many file system nodes.  It is a
@@ -16,7 +18,8 @@ Unique feature of Gfarm is that each file system node is also a client
 to the Gfarm file system.  Distributed access by file system nodes
 realizes super-scalable I/O performance.
 
-* Configuration of Gfarm metadata server
+Configuration of Gfarm metadata server
+======================================
 
 o (For wide area use) Installation of host certificate
 
@@ -56,7 +59,9 @@ Note: It is possible to set up client configuration on the metadata
 o Configuration of Gfarm file system
 
 Run 'config-gfarm' to configure a Gfarm file system.  At first, make
-sure the default setting with the -t option.
+sure the default setting with the -t option.  With the -t option,
+nothing is really executed except displaying the setting for
+configuration.
 
 	# config-gfarm -t
 	prefix [--prefix]: 
@@ -101,7 +106,8 @@ Created /etc/gfarm.conf assumes security in the cluster or LAN
 environment.  For further information, refer to the man page of
 gfarm.conf.
 
-* Configuration of Gfarm file system node (and client node)
+Configuration of Gfarm file system node (and client node)
+=========================================================
 
 o (For wide area use) Installation of host certificate
 
@@ -142,8 +148,10 @@ Note: The location of the Gfarm configuration file can be specified by
 
 Run 'config-gfsd' to set up a spool directory in a local file system
 on the file system node, and to register to the metadata server.  At
-first, make sure the default setting with the -t option.  The
-following example specifies /var/spool/gfarm as a spool directory.
+first, make sure the default setting with the -t option.  With the -t
+option, nothing is really executed except displaying the setting for
+configuration.  The following example specifies /var/spool/gfarm as a
+spool directory.
 
 	# config-gfsd -t /var/spool/gfarm
 	prefix [--prefix]: 
@@ -175,7 +183,8 @@ move the directory before running config-gfsd, or execute config-gfsd
 with the -f option.  With the -f option, config-gfsd deletes and
 creates a new spool directory.
 
-* Configuration of Gfarm client node
+Configuration of Gfarm client node
+==================================
 
 This chapter describes configuration for only client node.
 
@@ -205,7 +214,8 @@ it from the server using scp.
 Note: This setting can be substituted for copying to ~/.gfarmrc as
       described in the next chapter.
 
-* Setting for each user
+Setting for each user
+=====================
 
 o (GSI only) Installation of user certificate
 
@@ -257,7 +267,8 @@ When the login shell is csh or tcsh, add the following to .cshrc,
 
 	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
-* Test of Gfarm file system
+Test of Gfarm file system
+=========================
 
 You can check whether the Gfarm file system works or not by any client
 since it can be accessed (or shared) by every client node.
@@ -320,7 +331,8 @@ executed.
 
 For details of the above Gfarm commands, refer to each man page.
 
-* Access from existing applications
+Access from existing applications
+=================================
 
 To enable the setting of LD_PRELOAD in the section "Setting for each
 user", log in again, or, set the LD_PRELOAD environment variable.
@@ -356,7 +368,8 @@ filename completion.
 	% ls -la
 	% pwd
 
-* Further example in advanced functionality
+Further example in advanced functionality
+=========================================
 
 o File replica creation
 
