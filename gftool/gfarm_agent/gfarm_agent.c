@@ -134,7 +134,9 @@ agent_server_path_info_get(struct xxx_connection *client)
 
 	if (debug_mode)
 		log_proto("path_info_get", path);
+	agent_lock();
 	e = gfarm_i_path_info_get(path, &pi);
+	agent_unlock();
 	free(path);
 
 	e_rpc = agent_server_put_reply(
@@ -175,7 +177,9 @@ agent_server_path_info_set(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto("path_info_set", pathname);
 	pi.pathname = pathname;
+	agent_lock();
 	e = gfarm_i_path_info_set(pathname, &pi);
+	agent_unlock();
 	/* pathname will be free'ed in gfarm_path_info_free(&pi) */
 	gfarm_path_info_free(&pi);
 
@@ -207,7 +211,9 @@ agent_server_path_info_replace(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto("path_info_replace", pathname);
 	pi.pathname = pathname;
+	agent_lock();
 	e = gfarm_i_path_info_replace(pathname, &pi);
+	agent_unlock();
 	gfarm_path_info_free(&pi);
 
 	e_rpc = agent_server_put_reply(client, "path_info_replace", e, "");
@@ -228,7 +234,9 @@ agent_server_path_info_remove(struct xxx_connection *client)
 
 	if (debug_mode)
 		log_proto("path_info_remove", pathname);
+	agent_lock();
 	e = gfarm_i_path_info_remove(pathname);
+	agent_unlock();
 	free(pathname);
 
 	e_rpc = agent_server_put_reply(client, "path_info_remove", e, "");
@@ -249,7 +257,9 @@ agent_server_realpath_canonical(struct xxx_connection *client)
 
 	if (debug_mode)
 		log_proto("realpath_canonical", path);
+	agent_lock();
 	e = gfs_i_realpath_canonical(path, &abspath);
+	agent_unlock();
 	free(path);
 
 	e_rpc = agent_server_put_reply(
@@ -273,7 +283,9 @@ agent_server_get_ino(struct xxx_connection *client)
 
 	if (debug_mode)
 		log_proto("get_ino", path);
+	agent_lock();
 	e = gfs_i_get_ino(path, &ino);
+	agent_unlock();
 	free(path);
 
 	e_rpc = agent_server_put_reply(client, "get_ino", e, "i", ino);
@@ -295,13 +307,17 @@ agent_server_opendir(struct xxx_connection *client)
 
 	if (debug_mode)
 		log_proto("opendir", path);
+	agent_lock();
 	e = gfs_i_opendir(path, &dir);
+	agent_unlock();
 	free(path);
 	if (e == NULL) {
 		dir_index = agent_ptable_entry_add(dir);
 		if (dir_index < 0) {
 			e = GFARM_ERR_NO_SPACE;
+			agent_lock();
 			(void)gfs_i_closedir(dir);
+			agent_unlock();
 		}
 	}
 	e_rpc = agent_server_put_reply(client, "opendir", e, "i", dir_index);
@@ -325,8 +341,11 @@ agent_server_readdir(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto("readdir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
-	if (dir)
+	if (dir) {
+		agent_lock();
 		e = gfs_i_readdir(dir, &entry);
+		agent_unlock();
+	}
 	else
 		e = GFARM_ERR_NO_SUCH_OBJECT; /* XXX - EBADF */
 
@@ -358,8 +377,11 @@ agent_server_closedir(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto("closedir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
-	if (dir)
+	if (dir) {
+		agent_lock();
 		e = gfs_i_closedir(dir);
+		agent_unlock();
+	}
 	else
 		e = GFARM_ERR_NO_SUCH_OBJECT; /* XXX - EBADF */
 	if (e == NULL)
@@ -453,8 +475,8 @@ server(void *arg)
 			gfarm_initialized = 1;
 		else {
 			(void)gfarm_terminate();
-			close(client_fd);
 			agent_unlock();
+			close(client_fd);
 			error_proto("gfarm_initialize", e);
 			return (NULL);
 		}
@@ -467,8 +489,8 @@ server(void *arg)
 		log_proto("gfarm_metadb_check", e);
 		e = gfarm_metadb_initialize();
 		if (e != NULL) {
-			close(client_fd);
 			agent_unlock();
+			close(client_fd);
 			error_proto("gfarm_metadb_initialize", e);
 			return (NULL);
 		}
@@ -494,7 +516,6 @@ server(void *arg)
 			cleanup();
 			goto exit_free_conn;
 		}
-		agent_lock();
 		switch (request) {
 		case AGENT_PROTO_PATH_INFO_GET:
 			cmd = "path_info_get";
@@ -543,11 +564,9 @@ server(void *arg)
 		default:
 			sprintf(buffer, "%d", (int)request);
 			gflog_warning("unknown request", buffer);
-			agent_unlock();
 			cleanup();
 			goto exit_free_conn;
 		}
-		agent_unlock();
 		if (e != NULL) {
 			/* protocol error */
 			error_proto(cmd, e);
