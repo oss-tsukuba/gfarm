@@ -1,5 +1,6 @@
 DOCBOOK = \
 	digest.1 \
+	gfarm_agent.1 \
 	gfcd.1 \
 	gfdf.1 \
 	gfexec.1 \

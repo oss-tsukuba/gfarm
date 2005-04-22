@@ -1,0 +1,160 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm_agent.1'>
+
+<refentryinfo><date>22 Apr 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_agent</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_agent</refname>
+<refpurpose>Gfarm メタデータキャッシュサーバ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfarm_agent</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+<command>gfarm_agent</command> は、
+同一ノードで実行される複数のアプリケーションで共有可能な
+Gfarm ファイルシステム・メタデータのキャッシュサーバです。
+キャッシュサーバにより、
+遠隔のメタデータサーバに対するネットワーク遅延の隠蔽、
+およびファイル数の増大に伴う性能低下を抑制し、
+Gfarm ファイルシステムに対するレスポンスを大幅に改善します。
+</para>
+
+<para>
+利用するためには、
+クライアントノードあるいは計算ノードで
+<command>gfarm_agent</command>
+を実行し、出力される環境変数を定義します。
+</para>
+
+<programlisting>
+% eval `<command>gfarm_agent</command>`
+</programlisting>
+
+<para>
+出力される環境変数は、<command>gfarm_agent</command>
+が listen している UNIX ドメインのソケットを示す
+<envar>GFARM_AGENT_SOCK</envar> と、
+<command>gfarm_agent</command> が起動している process ID を示す
+<envar>GFARM_AGENT_PID</envar> です。
+</para>
+
+<para>
+<command>gfarm_agent</command> は起動されると、
+バックグラウンドで動き続けます。
+上記の環境変数を定義することにより、起動している
+<command>gfarm_agent</command> を共有することが可能です。
+</para>
+
+<para>
+<command>gfarm_agent</command> は、
+同時に複数のノードで実行することが可能です。
+その場合、複数の <command>gfarm_agent</command>
+および Gfarm メタデータサーバ間の一貫性は保証されます。
+</para>
+
+<para>
+停止するためには TERM シグナルを送ります。
+</para>
+
+<programlisting>
+% kill $GFARM_AGENT_PID
+</programlisting>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>Bourne shell 系シェル用のコマンドを出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>csh 系シェル用のコマンドを出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>デバッグオプションです。バックグラウンドではなく、
+フォアグラウンドで実行します。
+フォアグラウンドで実行されるため、上記のように
+eval `<command>gfarm_agent</command>`
+では実行できません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>設定ファイル</parameter></term>
+<listitem>
+<para>起動時に読み込む設定ファイルを指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
+<listitem>
+<para><command>gfarm_agent</command> の process ID を、
+指定したファイルに記録します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter>syslogファシリティ</parameter></term>
+<listitem>
+<para><command>gfarm_agent</command> がエラー報告に用いる
+syslog のファシリティを指定します。
+省略した場合には、local0 を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>認証時のエラーメッセージの詳細を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>/tmp/.gfarm-XXXXXX/agent.&lt;ppid&gt;</filename></term>
+<listitem>
+<para>UNIX ドメインのソケットです。このソケットには、
+<command>gfarm_agent</command> を起動したユーザだけが接続可能です。
+また、<command>gfarm_agent</command> に TERM シグナルが送られると、
+自動的に消去されます。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+</refentry>
