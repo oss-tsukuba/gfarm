@@ -236,6 +236,7 @@ struct node {
 #define		NODE_FLAG_IS_DIR	1
 #define		NODE_FLAG_MARKED	2
 #define		NODE_FLAG_PURGED	4	/* removed, and to be freed */
+#define		NODE_FLAG_INVALID	8
 	union node_u {
 		struct dir {
 			struct gfarm_hash_table *children;
@@ -813,22 +814,43 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
 	    GFARM_INODE_LOOKUP, &n);
 
-	/* real and cache do agree, and the metadata does not exist  */
-	if ((e == NULL) == (e2 == NULL) && e != NULL)
+	/* both real and cache do not exist */
+	if (e != NULL && e2 != NULL)
 		return (e);
 
-	if ((e == NULL) != (e2 == NULL) ||
-	    GFARM_S_ISDIR(info->status.st_mode) !=
-		((n->flags & NODE_FLAG_IS_DIR) != 0) ||
-	    ((n->flags & NODE_FLAG_IS_DIR) != 0 &&
-	     (n->u.d.mtime.tv_sec != info->status.st_mtimespec.tv_sec ||
-	      n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
-		/ GFARM_MILLISEC_BY_MICROSEC))) {
-		/* there is inconsistency, refresh the dircache. */
-		gfs_i_uncachedir();
-		e2 = gfs_refreshdir();
+	if (e == NULL && e2 == NULL) {
+		if (GFARM_S_ISDIR(info->status.st_mode) !=
+		    ((n->flags & NODE_FLAG_IS_DIR) != 0)) {
+			gfs_i_uncachedir();
+			e = gfs_refreshdir();
+		}
+		else if ((n->flags & NODE_FLAG_IS_DIR) != 0 &&
+		    (n->u.d.mtime.tv_sec != info->status.st_mtimespec.tv_sec ||
+		     n->u.d.mtime.tv_usec != info->status.st_mtimespec.tv_nsec
+		     / GFARM_MILLISEC_BY_MICROSEC)) {
+			/* directory entry is modified. need to refresh later */
+			n->flags |= NODE_FLAG_INVALID;
+		}
+		if (e != NULL)
+			gfarm_path_info_free(info);
 	}
-	return (e != NULL ? e : e2);
+	else if (e == NULL) {
+		if (GFARM_S_ISDIR(info->status.st_mode) ||
+		    gfs_dircache_enter_path(
+			    GFARM_INODE_CREATE, pathname, info) != NULL) {
+			gfs_i_uncachedir();
+			e = gfs_refreshdir();
+		}
+		if (e != NULL)
+			gfarm_path_info_free(info);
+	}
+	else /* if (e2 == NULL) */ {
+		if (gfs_dircache_purge_path(pathname) != NULL) {
+			gfs_i_uncachedir();
+			gfs_refreshdir();
+		}
+	}
+	return (e);
 }
 
 char *
@@ -1033,13 +1055,6 @@ gfs_i_get_ino(const char *canonical_path, long *inop)
 	if (e != NULL) 
 		return (e);
 	e = lookup_relative(root, canonical_path, -1, GFARM_INODE_LOOKUP, &n);
-        if (e != NULL) {
-		/* there may be inconsistency, refresh and lookup again. */
-		gfs_i_uncachedir();
-		if (gfs_refreshdir() == NULL)
-			e = lookup_relative(root, canonical_path, -1,
-				GFARM_INODE_LOOKUP, &n);
-	}
         if (e != NULL)
 		return (e);
 	*inop = INUMBER(n);;
@@ -1063,16 +1078,6 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 	char *e, *canonic_path;
 	struct node *n;
 	struct gfs_dir *dir;
-	struct gfs_stat st;
-
-	/* gfs_stat() -> gfarm_path_info_get() makes the dircache consistent */
-	if ((e = gfs_stat(path, &st)) != NULL)
-		return (e);
-	if (!GFARM_S_ISDIR(st.st_mode)) {
-		gfs_stat_free(&st);
-		return (GFARM_ERR_NOT_A_DIRECTORY);
-	}
-	gfs_stat_free(&st);
 
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
 	if (e != NULL)
@@ -1083,6 +1088,15 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 	free(canonic_path);
 	if (e != NULL)
 		return (e);
+
+	/* here, refresh directory cache */
+	if (n->flags & NODE_FLAG_INVALID) {
+		gfs_i_uncachedir();
+		e = gfs_refreshdir();
+		if (e != NULL)
+			return (e);
+		n->flags &= ~NODE_FLAG_INVALID;
+	}
 
 	dir = malloc(sizeof(struct gfs_dir));
 	if (dir == NULL)
