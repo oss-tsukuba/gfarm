@@ -1,6 +1,41 @@
 Copyright (c) 2003, 2004, 2005 National Institute of Advanced
 Industrial Science and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.1.1
+============================
+
+[2005.4.22]
+
+ * gfarm_agent(1) - Gfarm filesystem metadata cache server.  This
+   dramatically improves performance and response time to access Gfarm
+   file system.  For details, see a manual page of gfarm_agent.
+
+ * gfreg(1) - the -r option is added to support recursive registration
+   when directories or files are specified.
+
+ * Performance Improvement
+
+  - Improve metadata cache management significantly.
+
+  - Improve gfrun(1) performance.
+
+ * Syscall hooking library
+
+  - New syscall hook entries; mknod and link.
+
+  - Bug fixes; chown, lchown, fchown, setxattr, lsetxattr, and
+    fsetxattr, and execve.
+
+ * Bug fix
+
+  - A file can be created even under a file not a directory.
+
+  - Fix 'segmentation fault' when reading, writing, and seeking a file
+    in global file view.
+
+  - A file '' means the current working directory in Gfarm file
+    system.
+
 Release note for Gfarm 1.1.0
 ============================
 

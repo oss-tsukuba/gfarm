@@ -1,3 +1,305 @@
+2005-04-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-4
+	add manual page of gfarm_agent
+
+	* doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man1/gfarm_agent.1.html, man/ja/man1/gfarm_agent.1, man/man1/gfarm_agent.1:
+	regen
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	add gfarm_agent
+
+	* doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook:
+	manual page of gfarm_agent
+
+	* INSTALL.RPM.en: Change style of section
+
+	* gftool/gfarm_agent/gfarm_agent.c: do not lock unnecessary long
+
+	* gftool/gfarm_agent/gfarm_agent.c (cleanup):
+	'disconnected' is now displayed only in debug mode.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	do no recache when a file is specified.  If there is inconsistency, just add to or remove from directory cache.
+	when a directory is inconsistent, delay recache until opendir time.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	do not re-cache double when a new file created by some other process
+	is accessed.
+
+2005-04-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.en, INSTALL.ja: add loglevel 0 in sample slapd.conf
+
+	* gftool/gfarm_agent/gfarm_agent.c: add debug message
+
+2005-04-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfreg.1.html, man/ja/man1/gfreg.1: regen
+
+	* doc/docbook/ja/ref/man1/gfreg.1.docbook: fix typo
+
+	* doc/html/ja/ref/man1/gfreg.1.html, man/ja/man1/gfreg.1: regen
+
+	* doc/docbook/ja/ref/man1/gfreg.1.docbook:
+	add description of recursive mode
+
+2005-04-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/slapd.conf-2.0.in, package/redhat/config/slapd.conf-2.1.in:
+	disable syslog
+
+2005-04-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-3
+
+	* gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/agent_thr.h, gftool/gfarm_agent/gfarm_agent.c:
+	fixed a race condition regarding a file descriptor that will be passed to a new thread.  this is pointed out by Soda-san.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	change the default dircache timeout to 1 hour.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_i_realpath_canonical):
+	improve the logic to create a candidate of canonical path that will be compared with the metadata entry.  The previous one tends to cause many recaching when long and wrong pathname that includes many slashes is specified.
+
+2005-04-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfreg/gfreg.c: add recursive mode
+
+2005-04-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-2
+
+2005-04-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfarm.in:
+	copy DB_CONFIG when SLAPD_DB is bdb and $GFARM_LDAP/DB_CONFIG exists.
+
+2005-04-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/url.c:
+	make sure that the parent is really directory,
+	when creating a file or a directory.
+
+2005-04-15  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/README.Debian: updated readme for Debian
+
+2005-04-15  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	mknod: added new hook entry *mknod. Note: Only S_IFREG is supported. Fail with
+	errno EPERM when specified S_IFCHR, S_IFBLK, S_IFIFO and S_IFSOCK.
+
+2005-04-15  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/copyright, debian/rules:
+	A new LICENSE file was stored in copyright file due to Debian policy.
+
+2005-04-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfsd.in:
+	do not abort even when gfhost fails.
+
+	* package/redhat/config/config-gfsd.in:
+	delete host entry before adding it when -f option is specified.
+
+	* include/gfarm/gfarm_metadb.h, gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/metadb_ldap.c (gfarm_metadb_share_connection):
+	added
+	(gfarm_agent.c): share metadb connection.  note that each thread has a different pid in Linux.
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	ignore SIGPIPE not to terminate by Broken Pipe.
+	uncache directory cache when gfarm_agent re-connects to the metadata server.
+
+2005-04-14  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-gfront.manpages:
+	added gfront manpage in gfarm-gfront package
+
+2005-04-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-1
+
+	* lib/libgfarm/gfarm/schedule.c: reverted to the version 1.19.
+	do not define USE_SHUFFLED
+
+	* lib/libgfarm/gfarm/schedule.c (search_idle, search_idle_shuffled):
+	fixed out of range access.
+
+2005-04-13  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: for 1.1.1
+
+2005-04-12  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec:
+	Spec file for the version 1.1.1 at this moment.
+
+	* lib/libgfarm/gfarm/url.c (gfarm_canonical_path_for_creation):
+	simplify.  need to incorporate to gfs_realpath_canonical_parent().
+
+	* gftool/Makefile: Added gfarm_agent.
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	use a different connection to the agent when pid is changed.
+	cwd is expanded in a client side because it is maintained by each client.
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	do not call gfs_uncachedir() when accessing the root directory.  Maybe we need a different path to do.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfarm_i_path_info_get):
+	return the metadata even in case of root.
+	(gfs_i_realpath_canonical): try to canonicalize the parent directory and check the existence in metadata server before uncaching the data when the specified entry is missing in directory cache.
+
+	* gftool/gfarm_agent/Makefile, gftool/gfarm_agent/agent_ptable.c, gftool/gfarm_agent/agent_ptable.h, gftool/gfarm_agent/gfarm_agent.c:
+	Pointer table should be a thread-specific data.
+	Index of the table begins with 1 not 0 (= NULL).
+
+2005-04-08  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/agent_thr.h, gftool/gfarm_agent/gfarm_agent.c (agent_schedule):
+	pass a pointer of int instead of int value in the first argument.
+
+2005-04-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c: revert to the revision 1.4.
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	do not share client_addr among threads.
+
+	* gftool/gfarm_agent/Makefile, gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/agent_thr.h, gftool/gfarm_agent/gfarm_agent.c:
+	Multithreaded
+
+	* server/gfmd/fs.c: gfm_server_fstat(): fix typo.
+
+	* gftool/gfarm_agent/gfarm_agent.c: call exit in sigterm_handler().
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	added -s and -c options to specify shell type.  When neither is not specified, it will be guessed by SHELL environment variable.
+	unlink the socket when gfarm_agent terminates.
+
+	* gftool/gfarm_agent/Makefile, gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_proto.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_dir.c:
+	gfarm_agent - pathinfo cache agent
+		% eval `gfarm_agent`
+	agent_wrap.c - interface to wrap the following Gfarm APIs for agent access;
+		gfarm_initialize, gfarm_terminate
+		gfarm_path_info_{get,set,replace,remove}
+		gfs_realpath_canonical, gfs_get_ino
+		gfs_opendir, gfs_readdir, gfs_closedir, gfs_dirname, gfs_uncachedir
+	config.c - gfarm_{initialize,terminate} are renamed to gfarm_client_{initialize,terminate}, which are not assumed to be called directly.
+	gfs_dir.c - the above function names are renamed to gfarm_i_* or gfs_i_* that are not assumed to be called directly again.
+
+2005-04-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks.c (chown, lchown, fchown):
+	in the case of the file owner, return 0 with no action...
+
+2005-04-01  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	fixed segmentation fault by search_idle_shuffled.
+
+2005-03-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c:
+	do not call register_stdin_stderr().  It is costly and not necessary.
+
+	* lib/libgfarm/gfarm/schedule.c: enabled shuffled search of hosts.
+
+2005-03-30  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/gfs_hook/hooks.c (__link, _link, link):
+	added hook entries which fail(errno=EPERM) under GfarmFS.
+
+2005-03-30  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/README.Debian, debian/changelog, debian/gfarm-doc.examples, debian/gfmd.examples, debian/gfmd.manpages, debian/libgfarm-dev.manpages, debian/rules:
+	fixed some problems
+
+2005-03-30  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c (gfs_pio_view_global_seek):
+	fill *resultp only when resultp != NULL.
+	This fixes a bug, segmentation fault occur when resultp == NULL.
+
+2005-03-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_close):
+	fixed a warning; 'e' might be used uninitialized in this function.
+
+	* lib/gfs_hook/hooks.c (*setxattr):
+	set ENOTSUP to errno instead of ENODATA.  At least, libattr in SuSE-8 set this, and this seems to be assumed by 'cp -a'.
+
+2005-03-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/fs.c, server/gfmd/fs.h, server/gfmd/gfmd.c, server/gfmd/group.c, server/gfmd/group.h, server/gfmd/host.c, server/gfmd/host.h, server/gfmd/job.c, server/gfmd/job.h, server/gfmd/peer.c, server/gfmd/peer.h, server/gfmd/process.c, server/gfmd/process.h, server/gfmd/subr.c, server/gfmd/subr.h, server/gfmd/user.c, server/gfmd/user.h:
+	adapt changes of metadata protocol, implement GFM_PROTO_COMPOUND_*.
+	XXX - still far from complete.
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfm_client.h, lib/libgfarm/gfarm/gfm_proto.h:
+	metadata client side protocol
+
+	* lib/libgfarm/gfarm/liberror.c: recently added error messages
+
+	* include/gfarm/gfarm_misc.h:
+	define gfarm_pid_t here, instead of server/gfmd/process.h
+
+	* include/gfarm/error.h: add GFARM_ERR_IS_A_SYMBOLIC_LINK,
+	to deal with symbolic link by using GFM_PROTO_COMPOUND_*
+
+	* include/gfarm/gfs.h: use gfarm_ino_t
+
+	* lib/libgfarm/gfarm/config_server.c: now "config.h" requires "auth.h"
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h:
+	add gfarm_{set,get}_auth_id_type()
+
+	* lib/libgfarm/gfarm/gfp_xdr.c:
+	add 'S' format for sending, similar to 's',
+	but not NUL-terminated and length is specified.
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure: switch to autoconf-2.59
+
+2005-03-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: Added 2005.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Deleted the description about a problem such that files cannot be created by redirection.  It is now supported.
+
+2005-03-23  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	return 0 when path is NULL or '\0'.
+
+2005-03-14  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog, debian/control: fixed invalid dependencies.
+	  o version 1.1.0-2 is based on 1.1.0 source tar ball with this patch
+
+2005-03-11  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/index.html: fix an oops for a link of gfs_chmod.3.
+
+	* doc/README.hook.en, doc/README.hook.ja: Added Japanese README.hook.
+
+	* lib/gfs_hook/hooks.c (__execve):
+	use ENOENT instead of EPERM when the child process fails.  This is needed to execute 'tar zxfp'. XXX - need to obtain errno from the child.
+
+	* package/redhat/config/config-gfsd.in:
+	create required directories for gfsd.
+
+2005-03-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build: gfarm-1.1.0
+
+2005-03-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.1.0.
+
 2005-03-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* doc/README.hook.en: Added libpthread-not-hidden.so
