@@ -55,7 +55,7 @@ Name: %{package_name}
 Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
-Patch: %{pkg}.patch
+#Patch: %{pkg}.patch
 Copyright: National Institute of Advanced Industrial Science and Technology
 Group: Local
 Packager: Tohru Sotoyama <sotoyama@sra.co.jp>
