@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -698,6 +702,8 @@ sweep_nodes(struct node *n)
 			c->flags &= ~NODE_FLAG_MARKED;
 		}
 	}
+	/* cached entries in this directory are now valid */
+	n->flags &= ~NODE_FLAG_INVALID;
 }
 
 /* refresh directories as soon as possible */
@@ -835,11 +841,16 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 			gfarm_path_info_free(info);
 	}
 	else if (e == NULL) {
-		if (GFARM_S_ISDIR(info->status.st_mode) ||
-		    gfs_dircache_enter_path(
+		if (gfs_dircache_enter_path(
 			    GFARM_INODE_CREATE, pathname, info) != NULL) {
 			gfs_i_uncachedir();
 			e = gfs_refreshdir();
+		}
+		else if (GFARM_S_ISDIR(info->status.st_mode)) {
+			e = lookup_relative(root, pathname,
+				NODE_FLAG_IS_DIR, GFARM_INODE_LOOKUP, &n);
+			if (e == NULL)
+				n->flags |= NODE_FLAG_INVALID;
 		}
 		if (e != NULL)
 			gfarm_path_info_free(info);
@@ -1095,7 +1106,7 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 		e = gfs_refreshdir();
 		if (e != NULL)
 			return (e);
-		n->flags &= ~NODE_FLAG_INVALID;
+		/* NODE_FLAG_INVALID is reset in gfs_cachedir() */
 	}
 
 	dir = malloc(sizeof(struct gfs_dir));
