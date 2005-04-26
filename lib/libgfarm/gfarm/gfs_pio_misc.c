@@ -1549,6 +1549,15 @@ gfs_rename(const char *from_url, const char *to_url)
 			e = gfs_rmdir(to_url);
 			if (e != NULL)
 				goto free_to_canonical_path;
+		} else { /* to_canonical_path does not exist */
+			if (strstr(to_canonical_path, from_canonical_path) ==
+				to_canonical_path &&
+			    to_canonical_path[strlen(from_canonical_path)] ==
+									'/') {
+				e = GFARM_ERR_INVALID_ARGUMENT;
+				goto free_to_canonical_path;
+			}
+		  
 		}
 		e = rename_dir(from_url, to_url,
 			       from_canonical_path, to_canonical_path);
