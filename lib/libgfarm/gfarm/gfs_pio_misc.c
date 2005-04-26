@@ -1209,6 +1209,29 @@ free_from_canonic_path:
 }
 
 static char *
+set_a_path_info(char *from_dir_canonical_path,
+		char *to_dir_canonical_path,
+		struct gfarm_path_info *from_path_info,
+		char **to_path)
+{
+	char *p;
+	struct gfarm_path_info to_pi;
+
+	p = malloc(strlen(from_path_info->pathname) -
+			 strlen(from_dir_canonical_path) +
+			 strlen(to_dir_canonical_path) + 1);
+	if (p == NULL) {
+		return (GFARM_ERR_NO_MEMORY);
+	}				
+	sprintf(p, "%s%s", to_dir_canonical_path,
+	    from_path_info->pathname + strlen(from_dir_canonical_path));
+	to_pi = *from_path_info;
+	to_pi.pathname = p;
+	*to_path = p;
+	return (gfarm_path_info_set(to_pi.pathname, &to_pi));
+}
+
+static char *
 set_meta_data(int ndir, int nfile,
 	      char *from_canonical_path, char *to_canonical_path,
 	      struct gfarm_path_info *dir_path_infos,
@@ -1218,48 +1241,21 @@ set_meta_data(int ndir, int nfile,
 	      unsigned char ***exist)
 {
 	int i, j, k;
-	char *e;
+	char *e, *to_path;
 
 	e = NULL;
 	for (i = 0; i < ndir; i++) {
-		char *to_path;
-		struct gfarm_path_info  to_pi;
-		to_path = malloc(strlen(dir_path_infos[i].pathname) -
-				 strlen(from_canonical_path +
-				 strlen(to_canonical_path) + 1));
-		if (to_path == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
+		e = set_a_path_info(from_canonical_path,
+			to_canonical_path, &dir_path_infos[i], &to_path);
+		if (e != NULL)
 			return (e);
-		}				
-		sprintf(to_path, "%s%s", to_canonical_path,
-					 dir_path_infos[i].pathname +
-					 strlen(from_canonical_path));
-		to_pi = dir_path_infos[i];
-		to_pi.pathname = to_path;
-		e = gfarm_path_info_set(to_pi.pathname, &to_pi);
-		if (e != NULL) {
-			return (e);
-		}
 	}
 	for (i = 0; i < nfile; i++) {
-		char *to_path;
-		struct gfarm_path_info  to_pi;
-		to_path = malloc(strlen(file_path_infos[i].pathname) -
-					strlen(from_canonical_path +
-					strlen(to_canonical_path) + 1));
-		if (to_path == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
+		e = set_a_path_info(from_canonical_path,
+			to_canonical_path, &file_path_infos[i], &to_path);
+		if (e != NULL)
 			return (e);
-		}
-		sprintf(to_path, "%s%s", to_canonical_path,
-					 file_path_infos[i].pathname +
-			  		  strlen(from_canonical_path));
-		to_pi = file_path_infos[i];
-		to_pi.pathname = to_path;
-		e = gfarm_path_info_set(to_pi.pathname, &to_pi);
-		if (e != NULL) {
-			return (e);
-		}
+
 		for (j = 0; j < nsection[i]; j++) {
 			struct gfarm_file_section_info to_si;
 			to_si = sections[i][j];
