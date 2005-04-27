@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>9 Apr 2004</date></refentryinfo>
+<refentryinfo><date>27 Apr 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfreg</refname>
-<refpurpose>register a Gfarm program or Gfarm file fragments</refpurpose>
+<refpurpose>register a Gfarm file, Gfarm file fragments, or a Gfarm directory</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -44,13 +44,27 @@
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfreg</command>
+    <arg choice='plain'>-r</arg>
+    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'><replaceable>directory</replaceable></arg>
+      <arg choice='plain'><replaceable>program</replaceable></arg>
+      <arg choice='plain'><replaceable>localfile</replaceable></arg>
+    </group>
+    <arg choice='plain'>...</arg>
+    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+</cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>The first form copies and registers the program
+<para>The first form copies and registers the
 <parameter>program</parameter> as a Gfarm file
 <parameter>gfarm-URL</parameter> in the Gfarm filesystem.  When
 <parameter>gfarm-URL</parameter> is a directory, multiple programs
@@ -89,6 +103,34 @@ command of this form is executed on a filesystem node, the local
 filesystem node is always selected rather than a remote filesystem
 node.  In this case, the <option>-h</option> option helps to store
 files dispersively.</para>
+
+<para>The fourth form registers the <parameter>directory</parameter>
+as a Gfarm directory <parameter>gfarm-URL</parameter>, the
+<parameter>program</parameter> or the <parameter>localfile</parameter>
+as a Gfarm file <parameter>gfarm-URL</parameter>.
+If <parameter>directory</parameter> have some sub directories and/or
+files, they will be registered recursively.  The non-executable file 
+<parameter>localfile</parameter> will be registered as a file has
+one fragment.  A non-executable file in the
+<parameter>directory</parameter> will be registered in the same way.
+When <parameter>gfarm-URL</parameter> already exists as a directory,
+multiple <parameter>directorie</parameter>s,
+<parameter>program</parameter>s, and <parameter>localfile</parameter>s
+can be specified and they will be registered in
+<parameter>gfarm-URL</parameter>.  They can be mixed in parameteres,
+while other forms inhibit this manner.
+When <parameter>gfarm-URL</parameter> already exists as a file,
+one program or localfile can be specified and the content of
+<parameter>gfarm-URL</parameter> will be replaced. 
+If <parameter>gfarm-URL</parameter> does not exist, one
+<parameter>directory</parameter> or one
+<parameter>program</parameter>, or one
+<parameter>localfile</parameter> can be specified and it will be
+registered as <parameter>gfarm-URL</parameter>.
+Refer to the first form's part above to specify filesystem node
+thatprogfarms and files will reside with the <option>-a</option>
+option or the <option>-h</option> option.
+</para>
 
 </refsect1>
 
