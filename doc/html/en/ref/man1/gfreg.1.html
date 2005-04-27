@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfreg&nbsp;--&nbsp;register a Gfarm program or Gfarm file fragments</DIV
+>gfreg&nbsp;--&nbsp;register a Gfarm file, Gfarm file fragments, or a Gfarm directory</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -109,6 +109,41 @@ CLASS="REPLACEABLE"
 >gfarm-URL</I
 ></TT
 > </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+>  -r  [-h <TT
+CLASS="REPLACEABLE"
+><I
+>filesystem-node</I
+></TT
+>] [-a <TT
+CLASS="REPLACEABLE"
+><I
+>architecture</I
+></TT
+>] [<TT
+CLASS="REPLACEABLE"
+><I
+>directory</I
+></TT
+> | <TT
+CLASS="REPLACEABLE"
+><I
+>program</I
+></TT
+> | <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>]  ...   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -118,7 +153,7 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->The first form copies and registers the program
+>The first form copies and registers the
 <TT
 CLASS="PARAMETER"
 ><I
@@ -215,6 +250,139 @@ CLASS="OPTION"
 >-h</TT
 > option helps to store
 files dispersively.</P
+><P
+>The fourth form registers the <TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+>
+as a Gfarm directory <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>, the
+<TT
+CLASS="PARAMETER"
+><I
+>program</I
+></TT
+> or the <TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+>
+as a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>.
+If <TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+> have some sub directories and/or
+files, they will be registered recursively.  The non-executable file 
+<TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+> will be registered as a file has
+one fragment.  A non-executable file in the
+<TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+> will be registered in the same way.
+When <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> already exists as a directory,
+multiple <TT
+CLASS="PARAMETER"
+><I
+>directorie</I
+></TT
+>s,
+<TT
+CLASS="PARAMETER"
+><I
+>program</I
+></TT
+>s, and <TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+>s
+can be specified and they will be registered in
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>.  They can be mixed in parameteres,
+while other forms inhibit this manner.
+When <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> already exists as a file,
+one program or localfile can be specified and the content of
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> will be replaced. 
+If <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> does not exist, one
+<TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+> or one
+<TT
+CLASS="PARAMETER"
+><I
+>program</I
+></TT
+>, or one
+<TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+> can be specified and it will be
+registered as <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>.
+Refer to the first form's part above to specify filesystem node
+thatprogfarms and files will reside with the <TT
+CLASS="OPTION"
+>-a</TT
+>
+option or the <TT
+CLASS="OPTION"
+>-h</TT
+> option.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

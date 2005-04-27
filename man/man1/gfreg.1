@@ -3,10 +3,9 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREG" "1" "10 April 2004" "Gfarm" ""
-
+.TH "GFREG" "1" "27 April 2005" "Gfarm" ""
 .SH NAME
-gfreg \- register a Gfarm program or Gfarm file fragments
+gfreg \- register a Gfarm file, Gfarm file fragments, or a Gfarm directory
 .SH SYNOPSIS
 
 \fBgfreg\fR [ \fB-h \fIfilesystem-node\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] \fB\fIprogram\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
@@ -17,9 +16,12 @@ gfreg \- register a Gfarm program or Gfarm file fragments
 
 \fBgfreg\fR \fB-N \fItotal-num-of-fragments\fB\fR \fB-I \fIfragment-index\fB\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIlocalfile\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
 
+
+\fBgfreg\fR \fB-r\fR [ \fB-h \fIfilesystem-node\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB\fIdirectory\fB\fR | \fB\fIprogram\fB\fR | \fB\fIlocalfile\fB\fR ] \fB...\fR \fB\fIgfarm-URL\fB\fR
+
 .SH "DESCRIPTION"
 .PP
-The first form copies and registers the program
+The first form copies and registers the
 \fIprogram\fR as a Gfarm file
 \fIgfarm-URL\fR in the Gfarm filesystem.  When
 \fIgfarm-URL\fR is a directory, multiple programs
@@ -50,6 +52,33 @@ command of this form is executed on a filesystem node, the local
 filesystem node is always selected rather than a remote filesystem
 node.  In this case, the \fB-h\fR option helps to store
 files dispersively.
+.PP
+The fourth form registers the \fIdirectory\fR
+as a Gfarm directory \fIgfarm-URL\fR, the
+\fIprogram\fR or the \fIlocalfile\fR
+as a Gfarm file \fIgfarm-URL\fR.
+If \fIdirectory\fR have some sub directories and/or
+files, they will be registered recursively.  The non-executable file 
+\fIlocalfile\fR will be registered as a file has
+one fragment.  A non-executable file in the
+\fIdirectory\fR will be registered in the same way.
+When \fIgfarm-URL\fR already exists as a directory,
+multiple \fIdirectorie\fRs,
+\fIprogram\fRs, and \fIlocalfile\fRs
+can be specified and they will be registered in
+\fIgfarm-URL\fR.  They can be mixed in parameteres,
+while other forms inhibit this manner.
+When \fIgfarm-URL\fR already exists as a file,
+one program or localfile can be specified and the content of
+\fIgfarm-URL\fR will be replaced. 
+If \fIgfarm-URL\fR does not exist, one
+\fIdirectory\fR or one
+\fIprogram\fR, or one
+\fIlocalfile\fR can be specified and it will be
+registered as \fIgfarm-URL\fR.
+Refer to the first form's part above to specify filesystem node
+thatprogfarms and files will reside with the \fB-a\fR
+option or the \fB-h\fR option.
 .SH "OPTIONS"
 .TP
 \fB-?\fR
