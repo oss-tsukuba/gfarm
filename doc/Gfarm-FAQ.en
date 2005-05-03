@@ -31,6 +31,7 @@ Table of Contents:
 4. Performance Tuning
   4.1 How to speed up reads and writes to metadata database using an
     OpenLDAP server?
+  4.2 How to execute gfarm_agent automatically only when it is not there?
 
 5. Limitation
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -266,6 +267,42 @@ set_flags DB_TXN_NOSYNC
 ----------------------------- BEGIN HERE -----------------------------
 cachesize 10000
 dbcachesize 1000000
+-------------------------------- END --------------------------------
+
+  4.2 How to execute gfarm_agent automatically only when it is not there?
+
+	Add the following script to ~/.bashrc.
+
+----------------------------- BEGIN HERE -----------------------------
+GFARMENV=/tmp/gfarm-env-$USER
+
+source_gfarm_env()
+{
+	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
+}
+
+restart_gfarm_agent()
+{
+	touch $GFARMENV
+	chmod go-rw $GFARMENV
+	gfarm_agent > $GFARMENV 2> /dev/null || rm -f $GFARMENV
+}
+
+check_gfarm_agent()
+{
+	source_gfarm_env
+	if test "X$GFARM_AGENT_PID" = X
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	elif ! ps -p $GFARM_AGENT_PID > /dev/null
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	fi
+}
+
+check_gfarm_agent
 -------------------------------- END --------------------------------
 
 5. Limitation

@@ -30,6 +30,8 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 4. 性能チューニング
   4.1 OpenLDAP サーバで，メタデータの読込み，書込み性能を向上させるには
     どうすればいいでしょうか？
+  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
+    しょうか？
 
 5. 制限事項
   5.1 gfchmod, gfchown, gfmv 等はないのですか？
@@ -247,6 +249,43 @@ set_flags DB_TXN_NOSYNC
 ------------------------------ ここから ------------------------------
 cachesize 10000
 dbcachesize 1000000
+------------------------------ ここまで ------------------------------
+
+  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
+    しょうか？
+
+	例えば，以下のようなスクリプトを .bashrc などに記述します．
+
+------------------------------ ここから ------------------------------
+GFARMENV=/tmp/gfarm-env-$USER
+
+source_gfarm_env()
+{
+	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
+}
+
+restart_gfarm_agent()
+{
+	touch $GFARMENV
+	chmod go-rw $GFARMENV
+	gfarm_agent > $GFARMENV 2> /dev/null || rm -f $GFARMENV
+}
+
+check_gfarm_agent()
+{
+	source_gfarm_env
+	if test "X$GFARM_AGENT_PID" = X
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	elif ! ps -p $GFARM_AGENT_PID > /dev/null
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	fi
+}
+
+check_gfarm_agent
 ------------------------------ ここまで ------------------------------
 
 5. 制限事項
