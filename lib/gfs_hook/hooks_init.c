@@ -36,8 +36,8 @@ gfs_hook_initialize(void)
 		gfs_pio_set_local(0, 1);
 
 	/* exexute close_all() and gfarm_terminate() at program termination */
-	atexit(gfarm_terminate);
-	atexit(gfs_hook_close_all);
+	atexit((void (*)(void))gfarm_terminate);
+	atexit((void (*)(void))gfs_hook_close_all);
 
 	return (NULL);
 }
