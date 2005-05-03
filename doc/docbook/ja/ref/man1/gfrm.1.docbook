@@ -2,7 +2,7 @@
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>2 May 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
@@ -11,22 +11,19 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfrm</refname>
-<refpurpose>Gfarm ファイルを削除する。</refpurpose>
+<refpurpose>Gfarm ファイル、ディレクトリ、ファイル複製を削除する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrm</command>
-    <arg choice='opt'>-r</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrm</command>
+    <arg choice='opt'>-frR</arg>
     <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrm</command>
+    <arg choice='opt'>-f</arg>
     <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
@@ -36,25 +33,43 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm-URL に指定したファイルを削除します。<option>-h</option> オプションで
-ファイルシステムノードを指定することにより、特定のファイル
-システムノードに存在するファイル断片の複製を削除することが
-できます。</para>
+<para>Gfarm-URL に指定されたファイルを削除します。
+デフォルトではディレクトリの削除は行いませんが、
+<option>-r</option> あるいは <option>-R</option>
+オプションが指定された場合、
+指定されたディレクトリ以下のファイルおよびディレクトリが再帰的に消去されます。
+なお、. あるいは .. が指定された場合はエラーになります。
+<option>-h</option> オプションでファイルシステムノードを指定することにより、
+指定されたノードに格納されているファイル複製を削除することができます。
+ただし、全てのファイル複製を削除することはできません。
+</para>
 
 <para>また、
 <option>-h</option>
 オプションと
 <option>-I</option>
-オプションの両方を指定すること
-により、特定のファイル断片の複製を削除することができます。
-ただし、複製が一つしかない場合は削除することができません。</para>
+オプションの両方を指定することにより、
+特定のファイル断片の複製を削除することができます。
+ただし、全てのファイル複製を削除することはできません。
+</para>
 
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-r</option></term>
+<term><option>-f</option></term>
+<listitem>
+<para>ファイル複製削除の場合に、
+全てのファイル複製を削除することになってもファイル複製を削除します。
+この時、ファイル自体が削除されることになります。
+このオプションは <option>-h</option>
+オプションとともに指定された場合に有効です。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-r</option>, <option>-R</option></term>
 <listitem>
 <para>引数がディレクトリだった場合、そのディレクトリ以下を
 全て、再帰的に削除します。</para>
@@ -64,8 +79,7 @@
 <term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
 <listitem>
 <para>複製を削除するファイルシステムノード名を指定します。
--I オプションと共に指定することにより、特定のファイル断片を
-削除することができます。複数のファイルシステムノードか
+複数のファイルシステムノードか
 ら同じファイル断片の複製を一度に削除するためには，このオ
 プションを複数回指定します．</para>
 </listitem>

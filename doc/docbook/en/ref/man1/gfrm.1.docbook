@@ -3,7 +3,7 @@
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>2 May 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
@@ -13,22 +13,19 @@
 
 <refnamediv id='name'>
 <refname>gfrm</refname>
-<refpurpose>remove Gfarm files</refpurpose>
+<refpurpose>remove Gfarm files, directories, or file replicas</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrm</command>
-    <arg choice='opt'>-r</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrm</command>
+    <arg choice='opt'>-frR</arg>
     <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrm</command>
+    <arg choice='opt'>-f</arg>
     <arg choice='plain'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='plain'>-I <replaceable>fragment-index</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
@@ -38,14 +35,17 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfrm</command> removes each specified file.  With the <option>-h</option> option,
-<command>gfrm</command> removes file replicas of each specified file on the
-specified filesystem node(s).</para>
+<para><command>gfrm</command> removes each specified file.  By
+default, it does not remove directories.  '.' or '..' cannot be
+removed.  With the <option>-h</option> option,
+<command>gfrm</command> removes file replicas of each specified file
+on the specified filesystem node(s).  All file replicas of a file
+cannot be removed.</para>
 
 <para>When both <option>-h</option> and <option>-I</option> options are specified, <command>gfrm</command>
 removes a file replica specified by <parameter>fragment-index</parameter> on the
-filesystem nodes <parameter>filesystem-node</parameter>.  It is not allowed to remove
-the last file repilca.</para>
+filesystem nodes <parameter>filesystem-node</parameter>.  All file
+replicas of a file cannot be removed.</para>
 
 </refsect1>
 
@@ -53,12 +53,22 @@ the last file repilca.</para>
 <variablelist>
 
 <varlistentry>
-<term><option>-r</option></term>
+<term><option>-f</option></term>
 <listitem>
-<para>If an argument is a directory, remove all entries under the directory
-recursively.</para>
+<para>Even when all file repicas are specified by the
+<option>-h</option> option, force to delete all the file replica.  In
+this case, the specified file will be deleted.</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-r</option>, <option>-R</option></term>
+<listitem>
+<para>remove all entries under the directories specified by the
+command-line argument recursively.</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-h</option> <parameter>filesystem-node</parameter></term>
 <listitem>
