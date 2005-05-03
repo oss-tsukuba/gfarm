@@ -3,34 +3,40 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRM" "1" "30 September 2004" "Gfarm" ""
+.TH "GFRM" "1" "03 May 2005" "Gfarm" ""
+
 .SH NAME
-gfrm \- remove Gfarm files
+gfrm \- remove Gfarm files, directories, or file replicas
 .SH SYNOPSIS
 
-\fBgfrm\fR [ \fB-r\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrm\fR [ \fB-frR\fR ] [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrm\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
-
-
-\fBgfrm\fR \fB-h \fIfilesystem-node\fB\fR \fB-I \fIfragment-index\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrm\fR [ \fB-f\fR ] \fB-h \fIfilesystem-node\fB\fR \fB-I \fIfragment-index\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrm\fR removes each specified file.  With the \fB-h\fR option,
-\fBgfrm\fR removes file replicas of each specified file on the
-specified filesystem node(s).
+\fBgfrm\fR removes each specified file.  By
+default, it does not remove directories.  '.' or '..' cannot be
+removed.  With the \fB-h\fR option,
+\fBgfrm\fR removes file replicas of each specified file
+on the specified filesystem node(s).  All file replicas of a file
+cannot be removed.
 .PP
 When both \fB-h\fR and \fB-I\fR options are specified, \fBgfrm\fR
 removes a file replica specified by \fIfragment-index\fR on the
-filesystem nodes \fIfilesystem-node\fR.  It is not allowed to remove
-the last file repilca.
+filesystem nodes \fIfilesystem-node\fR.  All file
+replicas of a file cannot be removed.
 .SH "OPTIONS"
 .TP
-\fB-r\fR
-If an argument is a directory, remove all entries under the directory
-recursively.
+\fB-f\fR
+Even when all file repicas are specified by the
+\fB-h\fR option, force to delete all the file replica.  In
+this case, the specified file will be deleted.
+.TP
+\fB-r, -R\fR
+remove all entries under the directories specified by the
+command-line argument recursively.
 .TP
 \fB-h \fIfilesystem-node\fB\fR
 specifies a filesystem node on which file replicas will be removed.
