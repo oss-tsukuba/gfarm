@@ -71,6 +71,8 @@ char GFARM_ERR_INCONSISTENT_RECOVERABLE[] =
 	"inconsistent metadata fixed, try again";
 char GFARM_ERR_NO_FRAGMENT_INFORMATION[] =
 	"no fragment information";
+char GFARM_ERR_NO_REPLICA_ON_HOST[] =
+	"no file replica on the host";
 char GFARM_ERR_UNKNOWN[] = "unknown error";
 
 /*
