@@ -117,7 +117,7 @@ char *gfs_pio_set_fragment_info_local(char *, char *, char *);
 char *gfs_unlink(const char *);
 char *gfs_unlink_section_replica(const char *, const char *,
 	int, char **, int);
-char *gfs_unlink_replicas_on_host(const char *,	const char *, int);
+char *gfs_unlink_replica(const char *, int, char **, int);
 char *gfs_mkdir(const char *, gfarm_mode_t);
 char *gfs_rmdir(const char *);
 char *gfs_chdir_canonical(const char *);

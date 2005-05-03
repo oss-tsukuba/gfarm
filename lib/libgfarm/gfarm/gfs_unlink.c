@@ -61,7 +61,7 @@ gfs_unlink(const char *gfarm_url)
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e = gfarm_url_make_path_for_creation(gfarm_url, &gfarm_file);
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
 		e_save = e;
 		goto finish_unlink;
@@ -231,15 +231,13 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 			}
 		}
 		if (j >= ncopies && e_save == NULL) {
-			e_save = "gfs_unlink_section_replica: "
-			    "no file replica on the host";
+			e_save = GFARM_ERR_NO_REPLICA_ON_HOST;
 			/* do not finish, but continue */
 		}
 	}
 	if (ndeletes == ncopies) {
 		if (force == 0) {
-			e_save =
-		    "gfs_unlink_section_replica: cannot remove all replicas";
+			e_save = "cannot remove all replicas";
 			goto finish_replica_canonical_hostnames;
 		}
 		else
@@ -288,96 +286,34 @@ finish:
 }
 
 /*
- * Eliminate file replicas of a gfarm_url on a specified node.
+ * Eliminate file replicas of a gfarm_url on a specified node list.
  */
-
 char *
-gfs_unlink_replicas_on_host(const char *gfarm_url,
-	const char *hostname, int force)
+gfs_unlink_replica(const char *gfarm_url,
+	int nreplicas, char **replica_hosts, int force)
 {
-	char *gfarm_file, *e, *e_save = NULL;
-	int i, j, nsections;
+	char *gfarm_file, *e, *e_save;
+	int i, nsections;
 	struct gfarm_file_section_info *sections;
-	char *c_hname;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_host_get_canonical_name(hostname, &c_hname);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
-
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
+	e_save = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
-	if (e != NULL) {
-		e_save = e;
+	if (e_save != NULL) {
 		nsections = 0;
 		sections = NULL;
 	}
 	for (i = 0; i < nsections; i++) {
-		int ncopies;
-		struct gfarm_file_section_copy_info *copies;
-
-		e = gfarm_file_section_copy_info_get_all_by_section(
-		    gfarm_file, sections[i].section, &ncopies, &copies);
-		if (e != NULL) {
-			if (e == GFARM_ERR_NO_SUCH_OBJECT && force)
-				/* filesystem metadata should be collapsed. */
-				e = gfarm_file_section_info_remove(
-					gfarm_file, sections[i].section);
-			if (e_save == NULL)
-				e_save = e;
-			continue;
-		}
-		for (j = 0; j < ncopies; j++) {
-			/* skip when a different node. */
-			if (strcmp(c_hname, copies[j].hostname) != 0)
-				continue;
-
-			if (ncopies == 1 && force == 0) {
-				if (e_save == NULL)
-					e_save = "gfs_unlink_replica_on_host:"
-						" cannot delete the last file"
-						" replica";
-				continue;
-			}
-
-			e = gfs_unlink_replica_internal(gfarm_file,
-				sections[i].section, copies[j].hostname);
-			if (e != NULL) {
-				if (e_save == NULL)
-					e_save = e;
-				continue;
-			}
-			if (ncopies == 1) {
-				int ncps;
-				struct gfarm_file_section_copy_info *cps;
-				e = gfarm_file_section_copy_info_get_all_by_section(
-					gfarm_file, sections[i].section,
-					&ncps, &cps);
-				if (e == GFARM_ERR_NO_SUCH_OBJECT)
-					/* There is no section copy info. */
-					e = gfarm_file_section_info_remove(
-					    gfarm_file, sections[i].section);
-				else if (e == NULL)
-					gfarm_file_section_copy_info_free_all(
-						ncps, cps);
-			     
-				if (e != NULL) {
-					if (e_save == NULL)
-						e_save = e;
-					continue;
-				}
-			}
-		}
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
+		e = gfs_unlink_section_replica(gfarm_url, sections[i].section,
+			nreplicas, replica_hosts, force);
+		if (e != NULL && e_save == NULL)
+			e_save = e;
 	}
 	if (sections != NULL)
 		gfarm_file_section_info_free_all(nsections, sections);
-	free(c_hname);
 	free(gfarm_file);
 	return (e_save);	
 }
