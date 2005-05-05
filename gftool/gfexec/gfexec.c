@@ -345,6 +345,13 @@ modify_ld_library_path(void)
 	return (e_save);
 }
 
+static void
+errmsg(char *func, char *msg)
+{
+	fprintf(stderr, "%s (%s): %s: %s\n",
+		gfarm_host_get_self_name(), progname, func, msg);
+}
+
 int
 main(int argc, char *argv[], char *envp[])
 {
@@ -363,7 +370,7 @@ main(int argc, char *argv[], char *envp[])
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: gfarm_initialize: %s\n", progname, e);
+		errmsg("gfarm_initialize", e);
 		exit(1);
 	}
 
@@ -384,9 +391,7 @@ main(int argc, char *argv[], char *envp[])
 					rank = strtol(argv[++i], NULL, 0);
 					j = strlen(argv[i]) - 1;
 				} else {
-					fprintf(stderr,
-					    "%s: -I: missing argument\n",
-					    progname);
+					errmsg("-I", "missing argument");
 					print_usage();
 				}
 				break;
@@ -398,9 +403,7 @@ main(int argc, char *argv[], char *envp[])
 					nodes = strtol(argv[++i], NULL, 0);
 					j = strlen(argv[i]) - 1;
 				} else {
-					fprintf(stderr,
-					    "%s: -N: missing argument\n",
-					    progname);
+					errmsg("-N", "missing argument");
 					print_usage();
 				}
 				break;
@@ -430,16 +433,14 @@ main(int argc, char *argv[], char *envp[])
 	} else {
 		e = gfarm_url_program_get_local_path(gfarm_url, &local_path);
 		if (e != NULL) {
-			fprintf(stderr, "%s: replicating %s: %s\n",
-			    progname, gfarm_url, e);
+			errmsg(gfarm_url, e);
 			exit(1);
 		}
 	}
 
 	e = modify_ld_library_path();
 	if (e != NULL) {
-		fprintf(stderr, "%s: modify_ld_library_path: %s\n",
-			progname, e);
+		errmsg("modify_ld_library_path", e);
 		/* continue */
 	}
 
@@ -467,8 +468,7 @@ main(int argc, char *argv[], char *envp[])
 	e = gfs_getcwd(cwdbuf + GFARM_URL_PREFIX_LENGTH,
 		sizeof(cwdbuf) - GFARM_URL_PREFIX_LENGTH);
 	if (e != NULL) {
-		fprintf(stderr, "%s: cannot get current directory: %s\n",
-		    progname, e);
+		errmsg("cannot get current directory", e);
 		exit(1);
 	}
 	if ((cwd_env = malloc(strlen(cwdbuf) + sizeof(env_gfs_pwd))) == NULL) {
@@ -535,9 +535,7 @@ main(int argc, char *argv[], char *envp[])
 
 			e = gfarm_terminate();
 			if (e != NULL)
-				fprintf(stderr,
-				    "%s (child): gfarm_terminate: %s\n",
-				    progname, e);
+				errmsg("(child) gfarm_terminate", e);
 		} else {
 			/*
 			 * otherwise don't call gfarm_terminate(), because:
@@ -580,7 +578,7 @@ main(int argc, char *argv[], char *envp[])
 
 	e = gfarm_terminate();
 	if (e != NULL) {
-		fprintf(stderr, "%s: gfarm_terminate: %s\n", progname, e);
+		errmsg("gfarm_terminate", e);
 		exit(1);
 	}
 	exit(status);
