@@ -1743,7 +1743,7 @@ gfs_client_command(struct gfs_connection *gfs_server,
  */
 
 int gfs_client_datagram_timeouts[] = {
-	10, 100, 1000, 2000 /* milli seconds */
+	10, 100, 1000, 2000, 4000 /* milli seconds */
 };
 int gfs_client_datagram_ntimeouts =
 	GFARM_ARRAY_LENGTH(gfs_client_datagram_timeouts);
