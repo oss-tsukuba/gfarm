@@ -459,7 +459,7 @@ gfarm_generic_info_get_foreach(
 	const struct gfarm_generic_info_ops *ops)
 {
 	LDAPMessage *res, *e;
-	int i, rv;
+	int i, msgid, rv;
 	char *a;
 	BerElement *ber;
 	char **vals;
@@ -467,44 +467,53 @@ gfarm_generic_info_get_foreach(
 
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
-	/* search for entries, return all attrs  */
-	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
-	if (rv != LDAP_SUCCESS) {
-		if (rv == LDAP_NO_SUCH_OBJECT)
-			return (GFARM_ERR_NO_SUCH_OBJECT);
-		return (ldap_err2string(rv));
-	}
+	/* search for entries asynchronously */
+	msgid = ldap_search(gfarm_ldap_server, dn, scope, query, NULL, 0);
+	if (msgid == -1)
+		return ("ldap_search: error");
 
 	/* step through each entry returned */
-	for (i = 0, e = ldap_first_entry(gfarm_ldap_server, res); e != NULL;
-	    e = ldap_next_entry(gfarm_ldap_server, e)) {
-
-		ops->clear(tmp_info);
-
-		ber = NULL;
-		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber);
-		    a != NULL;
-		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
-			vals = ldap_get_values(gfarm_ldap_server, e, a);
-			if (vals[0] != NULL)
-				ops->set_field(tmp_info, a, vals);
-			ldap_value_free(vals);
-			ldap_memfree(a);
+	i = 0;
+	while ((rv = ldap_result(gfarm_ldap_server,
+			msgid, LDAP_MSG_ONE, NULL, &res)) > 0) {
+		e = ldap_first_entry(gfarm_ldap_server, res);
+		if (e == NULL) {
+			ldap_msgfree(res);
+			break;
 		}
-		if (ber != NULL)
-			ber_free(ber, 0);
+		for (; e != NULL; e = ldap_next_entry(gfarm_ldap_server, e)) {
 
-		if (!ops->validate(tmp_info)) {
-			/* invalid record */
-			ops->free(tmp_info);
-			continue;
+			ops->clear(tmp_info);
+
+			ber = NULL;
+			for (a = ldap_first_attribute(
+				     gfarm_ldap_server, e, &ber);
+			     a != NULL;
+			     a = ldap_next_attribute(
+				     gfarm_ldap_server, e, ber)) {
+				vals = ldap_get_values(gfarm_ldap_server, e, a);
+				if (vals[0] != NULL)
+					ops->set_field(tmp_info, a, vals);
+				ldap_value_free(vals);
+				ldap_memfree(a);
+			}
+			if (ber != NULL)
+				ber_free(ber, 0);
+
+			if (!ops->validate(tmp_info)) {
+				/* invalid record */
+				ops->free(tmp_info);
+				continue;
+			}
+			(*callback)(closure, tmp_info);
+			ops->free(tmp_info);			
+			i++;
 		}
-		(*callback)(closure, tmp_info);
-		ops->free(tmp_info);
-		i++;
+		/* free the search results */
+		ldap_msgfree(res);
 	}
-	/* free the search results */
-	ldap_msgfree(res);
+	if (rv == -1)
+		return ("ldap_result: error");
 
 	if (i == 0)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
