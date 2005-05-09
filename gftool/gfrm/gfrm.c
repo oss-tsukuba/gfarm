@@ -81,6 +81,8 @@ remove_cwd_entries(Unlink_Ops ops, void *closure)
 		gfarm_mode_t mode;
 
 		e = gfs_stat(path, &gs);
+		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
+			return (ops->unlink(path, closure));
 		if (e != NULL) {
 			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			continue;
