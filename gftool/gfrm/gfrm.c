@@ -78,18 +78,19 @@ remove_cwd_entries(Unlink_Ops ops, void *closure)
 	for (i = 0; i < gfarm_stringlist_length(&entry_list); i++) {
 		struct gfs_stat gs;
 		char *path = gfarm_stringlist_elem(&entry_list, i);
-		gfarm_mode_t mode;
+		gfarm_mode_t mode = 0;
 
 		e = gfs_stat(path, &gs);
-		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
-			return (ops->unlink(path, closure));
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_FRAGMENT_INFORMATION && e != NULL) {
 			fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			continue;
 		}
-		mode = gs.st_mode;
-		gfs_stat_free(&gs);
-		if (GFARM_S_ISREG(mode)) {
+		if (e == NULL) {
+			mode = gs.st_mode;
+			gfs_stat_free(&gs);
+		}
+		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION
+		    || GFARM_S_ISREG(mode)) {
 			char *url;
 
 			url = gfarm_url_prefix_add(path);
@@ -170,7 +171,7 @@ unlink_file(char *path, void *closure)
 }
 
 static char *
-rmdir_file(char *path, void *closure)
+rmdir_file(const char *path, void *closure)
 {
 	return (gfs_rmdir(path));
 }
