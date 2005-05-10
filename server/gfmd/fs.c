@@ -536,6 +536,34 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
+gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+
+	/* XXX - NOT IMPLEMENTED */
+	gflog_error("cksum_get", "not implemented");
+
+	e = gfm_server_put_reply(peer, "cksum_get",
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e != GFARM_ERR_NO_ERROR ? e :
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+gfarm_error_t
+gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+
+	/* XXX - NOT IMPLEMENTED */
+	gflog_error("cksum_set", "not implemented");
+
+	e = gfm_server_put_reply(peer, "cksum_set",
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e != GFARM_ERR_NO_ERROR ? e :
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+gfarm_error_t
 gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -850,6 +878,20 @@ gfm_server_seek(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
+gfm_server_reopen(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+
+	/* XXX - NOT IMPLEMENTED */
+	gflog_error("reopen", "not implemented");
+
+	e = gfm_server_put_reply(peer, "reopen",
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e != GFARM_ERR_NO_ERROR ? e :
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+gfarm_error_t
 gfm_server_lock(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -1032,14 +1074,28 @@ gfm_server_replica_remove_by_host(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
-gfm_server_replica_add(struct peer *peer, int from_client, int skip)
+gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_add", "not implemented");
+	gflog_error("replica_adding", "not implemented");
 
-	e = gfm_server_put_reply(peer, "replica_add",
+	e = gfm_server_put_reply(peer, "replica_adding",
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e != GFARM_ERR_NO_ERROR ? e :
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+gfarm_error_t
+gfm_server_replica_added(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+
+	/* XXX - NOT IMPLEMENTED */
+	gflog_error("replica_added", "not implemented");
+
+	e = gfm_server_put_reply(peer, "replica_added",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);

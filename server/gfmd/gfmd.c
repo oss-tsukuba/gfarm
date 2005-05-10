@@ -200,6 +200,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_FCHOWN:
 		e = gfm_server_fchown(peer, from_client, skip);
 		break;
+	case GFM_PROTO_CKSUM_GET:
+		e = gfm_server_cksum_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_CKSUM_SET:
+		e = gfm_server_cksum_set(peer, from_client, skip);
+		break;
 	case GFM_PROTO_SCHEDULE_FILE:
 		e = gfm_server_schedule_file(peer, from_client, skip);
 		break;
@@ -236,6 +242,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_SEEK:
 		e = gfm_server_seek(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REOPEN:
+		e = gfm_server_reopen(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
 		e = gfm_server_lock(peer, from_client, skip);
@@ -276,8 +285,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
 		e = gfm_server_replica_remove_by_host(peer, from_client, skip);
 		break;
-	case GFM_PROTO_REPLICA_ADD:
-		e = gfm_server_replica_add(peer, from_client, skip);
+	case GFM_PROTO_REPLICA_ADDING:
+		e = gfm_server_replica_adding(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_ADDED:
+		e = gfm_server_replica_added(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_REMOVE:
 		e = gfm_server_replica_remove(peer, from_client, skip);

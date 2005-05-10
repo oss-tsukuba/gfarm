@@ -20,6 +20,8 @@ gfarm_error_t gfm_server_fstat(struct peer *, int, int);
 gfarm_error_t gfm_server_futimes(struct peer *, int, int);
 gfarm_error_t gfm_server_fchmod(struct peer *, int, int);
 gfarm_error_t gfm_server_fchown(struct peer *, int, int);
+gfarm_error_t gfm_server_cksum_get(struct peer *, int, int);
+gfarm_error_t gfm_server_cksum_set(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_file(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_file_with_program(struct peer *, int, int);
 gfarm_error_t gfm_server_remove(struct peer *, int, int);
@@ -34,6 +36,7 @@ gfarm_error_t gfm_server_getdirents(struct peer *, int, int);
 gfarm_error_t gfm_server_seek(struct peer *, int, int);
 
 /* gfs from gfsd */
+gfarm_error_t gfm_server_reopen(struct peer *, int, int);
 gfarm_error_t gfm_server_lock(struct peer *, int, int);
 gfarm_error_t gfm_server_trylock(struct peer *, int, int);
 gfarm_error_t gfm_server_unlock(struct peer *, int, int);
@@ -53,5 +56,6 @@ gfarm_error_t gfm_server_replica_list_by_host(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_remove_by_host(struct peer *, int, int);
 
 /* replica management from gfsd */
-gfarm_error_t gfm_server_replica_add(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_adding(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_added(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_remove(struct peer *, int, int);
