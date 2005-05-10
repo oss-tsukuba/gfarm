@@ -193,6 +193,13 @@ const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/io_gfsl.c */
 	"GSI delegated credential doesn't exist",
 	"cannot export GSI delegated credential",
+
+	/* refered only from gfarm/gfs_client.c */
+	"gfsd aborted",
+	"illegal gfsd descriptor",
+	"unknown gfsd reply",
+	"GFS_PROTO_PREAD: protocol error",
+	"GFS_PROTO_WRITE: protocol error",
 };
 
 /*

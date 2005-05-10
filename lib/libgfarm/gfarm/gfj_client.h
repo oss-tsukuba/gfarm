@@ -26,20 +26,17 @@ void gfarm_job_info_free_contents(struct gfarm_job_info *, int);
 
 struct gfm_connection;
 
-extern struct gfm_connection *gfarm_metadb_server;
-#define gfarm_jobmanager_server	gfarm_metadb_server
+gfarm_error_t gfj_initialize(void);
 
-char *gfj_initialize(void);
-
-char *gfj_client_lock_register(struct gfm_connection *);
-char *gfj_client_unlock_register(struct gfm_connection *);
-char *gfj_client_register(struct gfm_connection *,
+gfarm_error_t gfj_client_lock_register(struct gfm_connection *);
+gfarm_error_t gfj_client_unlock_register(struct gfm_connection *);
+gfarm_error_t gfj_client_register(struct gfm_connection *,
 			  struct gfarm_job_info *, int, int *job_idp);
-char *gfj_client_unregister(struct gfm_connection *, int);
-char *gfj_client_list(struct gfm_connection *, char *, int *, int **);
-char *gfj_client_info(struct gfm_connection *, int, int *,
+gfarm_error_t gfj_client_unregister(struct gfm_connection *, int);
+gfarm_error_t gfj_client_list(struct gfm_connection *, char *, int *, int **);
+gfarm_error_t gfj_client_info(struct gfm_connection *, int, int *,
 		      struct gfarm_job_info *);
 
 /* convenience function */
-char *gfarm_user_job_register(int, char **, char *, char *, int, char **,
-			      int *);
+gfarm_error_t gfarm_user_job_register(struct gfm_connection *,
+	int, char **, char *, char *, int, char **, int *);

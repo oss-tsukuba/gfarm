@@ -460,7 +460,7 @@ gfp_xdr_vrpc_result(struct gfp_xdr *conn,
 		return (e);
 	if (eof) /* rpc status missing */
 		return (GFARM_ERR_PROTOCOL);
-	if (*errorp != 0) /* should examine error in this case */
+	if (*errorp != 0) /* should examine the *errorp in this case */
 		return (GFARM_ERR_NO_ERROR);
 	e = gfp_xdr_vrecv(conn, just, &eof, formatp, app);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -494,7 +494,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (*errorp != 0) /* should examine error in this case */
+	if (*errorp != 0) /* should examine the *errorp in this case */
 		return (GFARM_ERR_NO_ERROR);
 
 	if (**formatp != '\0')
