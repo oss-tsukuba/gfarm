@@ -58,7 +58,7 @@ struct gfs_connection {
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
 };
 
-/* doubly linked circular list head */
+/* doubly linked circular list head to see LRU connection */
 static struct gfs_connection connection_list_head = {
 	&connection_list_head, &connection_list_head
 };
@@ -110,6 +110,42 @@ gfs_client_hostname(struct gfs_connection *gfs_server)
 	return (gfp_conn_hash_hostname(gfs_server->hash_entry));
 }
 
+static void
+gfs_client_connection_gc_internal(int free_target)
+{
+	struct gfs_connection *gfs_server;
+
+	/* search least recently used connection */
+	for (gfs_server = connection_list_head.prev;
+	    free_connections > free_target;
+	    gfs_server = gfs_server->prev) {
+		/* sanity check */
+		if (gfs_server == &connection_list_head) {
+			fprintf(stderr, "free connections/target = %d/%d\n",
+			    free_connections, free_target);
+			fprintf(stderr, "But no free connection is found.\n");
+			fprintf(stderr, "This shouldn't happen\n");
+			abort();
+		}
+
+		if (gfs_server->acquired <= 0) {
+			/* free this connection */
+			gfs_server->next->prev = gfs_server->prev;
+			gfs_server->prev->next = gfs_server->next;
+			gfp_xdr_free(gfs_server->conn);
+			gfp_conn_hash_purge(gfs_server_hashtab,
+			    gfs_server->hash_entry);
+			--free_connections;
+		}
+	}
+}
+
+void
+gfs_client_connection_gc(void)
+{
+	gfs_client_connection_gc_internal(0);
+}
+
 static gfarm_error_t
 gfs_client_connection0(const char *canonical_hostname,
 	struct sockaddr *peer_addr, int port,
@@ -124,6 +160,10 @@ gfs_client_connection0(const char *canonical_hostname,
 		socklen_t socklen;
 
 		sock = socket(PF_UNIX, SOCK_STREAM, 0);
+		if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
+			gfs_client_connection_gc();
+			sock = socket(PF_UNIX, SOCK_STREAM, 0);
+		}
 		if (sock == -1)
 			return (gfarm_errno_to_error(errno));
 		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
@@ -144,6 +184,10 @@ gfs_client_connection0(const char *canonical_hostname,
 		}
 	} else {
 		sock = socket(PF_INET, SOCK_STREAM, 0);
+		if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
+			gfs_client_connection_gc();
+			sock = socket(PF_INET, SOCK_STREAM, 0);
+		}
 		if (sock == -1)
 			return (gfarm_errno_to_error(errno));
 		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
@@ -201,32 +245,11 @@ gfs_client_connection_free(struct gfs_connection *gfs_server)
 	}
 
 	++free_connections;
-	while (free_connections >= MAXIMUM_FREE_CONNECTIONS) {
-		/* search least recently used connection */
-		for (gfs_server = connection_list_head.prev;
-		    gfs_server->acquired != 0;
-		     gfs_server = gfs_server->prev) {
-			/* sanity check */
-			if (gfs_server == &connection_list_head) {
-				fprintf(stderr, "free_connections = %d\n",
-				    free_connections);
-				fprintf(stderr, "but that isn't found.\n");
-				fprintf(stderr, "This shouldn't happen\n");
-				abort();
-			}
-		}
 
-		/* free this connection */
-		gfs_server->next->prev = gfs_server->prev;
-		gfs_server->prev->next = gfs_server->next;
-		gfp_xdr_free(gfs_server->conn);
-		gfp_conn_hash_purge(gfs_server_hashtab,
-		    gfs_server->hash_entry);
-		--free_connections;
-	}
+	gfs_client_connection_gc_internal(MAXIMUM_FREE_CONNECTIONS);
 }
 
-/* move this gfs_server to the top of the LRU list */
+/* update the LRU list to mark this gfs_server recently used */
 static void
 gfs_client_connection_used(struct gfs_connection *gfs_server)
 {
@@ -478,7 +501,7 @@ gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
  */
 
 int
-fd_receive_message(int fd, void *buffer, size_t size,
+gfarm_fd_receive_message(int fd, void *buffer, size_t size,
 	int fdc, int *fdv)
 {
 	int i, rv;
@@ -493,7 +516,7 @@ fd_receive_message(int fd, void *buffer, size_t size,
 
 	if (fdc > GFSD_MAX_PASSING_FD) {
 #if 0
-		fprintf(stderr, "fd_receive_message(%s): "
+		fprintf(stderr, "gfarm_fd_receive_message(%s): "
 			"fd count %d > %d\n", fdc, GFSD_MAX_PASSING_FD);
 #endif
 		return (EINVAL);
@@ -547,7 +570,7 @@ fd_receive_message(int fd, void *buffer, size_t size,
 			    cmsg.hdr.cmsg_type != SCM_RIGHTS) {
 #if 0
 				fprintf(stderr,
-					"fd_receive_message():"
+					"gfarm_fd_receive_message():"
 					" descriptor not passed"
 					" msg_controllen: %d (%d),"
 					" cmsg_len: %d (%d),"
@@ -669,8 +692,8 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	/* layering violation, but... */
-	rv = fd_receive_message(gfp_xdr_fd(gfs_server->conn), &e, sizeof(e),
-	    1, &local_fd);
+	rv = gfarm_fd_receive_message(gfp_xdr_fd(gfs_server->conn),
+	    &e, sizeof(e), 1, &local_fd);
 	if (rv != sizeof(e))
 		return (GFARM_ERR_PROTOCOL);
 	/* both `e' and `local_fd` are passed by using host byte order. */

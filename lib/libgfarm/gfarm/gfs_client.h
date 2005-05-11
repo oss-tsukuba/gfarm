@@ -20,6 +20,7 @@ const char *gfs_client_hostname(struct gfs_connection *);
 gfarm_error_t gfs_client_connection_acquire(const char *, int,
 	struct sockaddr *, struct gfs_connection **);
 void gfs_client_connection_free(struct gfs_connection *);
+void gfs_client_connection_gc(void);
 
 #if 0 /* XXX FIXME - disable multiplexed version for now */
 gfarm_error_t gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
