@@ -96,8 +96,9 @@ get_file_mode(int fd, char *filename, gfarm_mode_t *file_mode_p)
 {
 	if (!get_mode(fd, filename, file_mode_p))
 		return (0);
-	*file_mode_p &= FILE_MODE_MASK;
-	if (!S_ISREG(*file_mode_p))
+	if (S_ISREG(*file_mode_p))
+		*file_mode_p &= FILE_MODE_MASK;
+	else
 		*file_mode_p = 0644; /* XXX, but better than *file_mode_p */
 	return (1);
 }
