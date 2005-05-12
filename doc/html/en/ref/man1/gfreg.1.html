@@ -38,7 +38,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfreg</B
-> [-h <TT
+> [-p ] [-h <TT
 CLASS="REPLACEABLE"
 ><I
 >filesystem-node</I
@@ -63,7 +63,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfreg</B
-> [-D <TT
+> [-i ] [-H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>] [-D <TT
 CLASS="REPLACEABLE"
 ><I
 >domainname</I
@@ -172,29 +177,37 @@ CLASS="PARAMETER"
 >gfarm-URL</I
 ></TT
 > is a directory, multiple programs
-can be specified.  After the
-registration, the <TT
+can be specified.  After the registration, the
+<TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
-> can be specified as
-a program name of gfrun(1) and gfmpirun_p4(1).  Without the
+> can be specified as a program name of
+gfrun(1) and gfmpirun_p4(1).  Without the <TT
+CLASS="OPTION"
+>-p</TT
+> option,
+only executable file can be specified.  With the <TT
+CLASS="OPTION"
+>-p</TT
+>
+option, non-executable file can be specified as well.  Without the
 <TT
 CLASS="OPTION"
 >-a</TT
 > option or the <TT
 CLASS="OPTION"
 >-h</TT
-> option,
-architecture of the <TT
+>
+option,architecture of the <TT
 CLASS="PARAMETER"
 ><I
 >program</I
 ></TT
-> is
-assumed to be the same architecture as the client host on that
-gfreg(1) is executed, which is obtained by the Gfarm metaserver.</P
+> is assumed
+to be the same architecture as the client host on that gfreg(1) is
+executed, which is obtained by the Gfarm metaserver.</P
 ><P
 >The second form registers one or more
 <TT
@@ -202,9 +215,29 @@ CLASS="PARAMETER"
 ><I
 >localfile</I
 ></TT
->s as a single Gfarm file.  The
-destination filesystem node will be automatically selected by CPU load
-average.  With the <TT
+>s as a single Gfarm file.  Without the
+<TT
+CLASS="OPTION"
+>-i</TT
+> option, only non-executable file can be specified
+as <TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+>.  With the <TT
+CLASS="OPTION"
+>-i</TT
+>
+option, both excutable and non-executable file can be specified as
+<TT
+CLASS="PARAMETER"
+><I
+>localfile</I
+></TT
+>. 
+The destination filesystem node will be automatically selected by CPU
+load average.  With the <TT
 CLASS="OPTION"
 >-D</TT
 > option, the selection of
