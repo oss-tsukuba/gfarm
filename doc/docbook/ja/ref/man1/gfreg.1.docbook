@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>20 Apr 2005</date></refentryinfo>
+<refentryinfo><date>12 May 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -19,6 +19,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfreg</command>
+    <arg choice='opt'>-p </arg>
     <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <!-- arg choice='opt'>-N <replaceable>複製の数</replaceable></arg -->
@@ -28,6 +29,8 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfreg</command>
+    <arg choice='opt'>-i </arg>
+    <arg choice='opt'>-H <replaceable>ホストファイル名</replaceable></arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
@@ -64,11 +67,14 @@
 プログラム・ファイルを，gfarm-URL に登録します．gfarm-URL がディレクト
 リの場合は，複数の program を指定することができます．これ以降，
 gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
-使えるようになります．オプション -a でプログラムの動作するアーキテク
-チャを指定しなかった場合，あるいはオプション -h で登録するファイルシス
-テムノードを指定しなかった場合には，gfreg コマンドを実行したホストのアー
-キテクチャと同じであると仮定します．ただし，そのホストが Gfarm メタサー
-バに登録されている必要があります．
+使えるようになります．オプション -p がない場合には，実行が許可されてい
+る program のみ指定できます．ある場合には，実行が許可されていないファイ
+ルも指定できますが，このファイル名を gfrun および gfmpirun_p4 で指定し
+ても，実行できません．オプション -a でプログラムの動作するアーキテ
+クチャを指定しなかった場合，あるいはオプション -h で登録するファイルシ
+ステムノードを指定しなかった場合には，gfreg コマンドを実行したホストの
+アーキテクチャと同じであると仮定します．ただし，そのホストが Gfarm メ
+タサーバに登録されている必要があります．
 <!--
 オプション -N により，複製の数を指定することができます．指定しない場
 合は 1 となります．
@@ -76,9 +82,12 @@ gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
 </para>
 
 <para>第2の形式の場合，一つ以上の複数のlocalfileをGfarmファイルとして
-登録します．ファイルの複製が作成されるファイルシステムノードは自動的に
-CPU負荷により選ばれますが，オプション -D により選択されるファイルシス
-テムノードのドメイン名を制限することができます．</para>
+登録します．オプション -i がない場合には，実行が許可されていない
+localfile のみを指定できます．ある場合には，実行許可とは無関係に
+localfile を指定できます．ファイルの複製が作成されるファイルシス
+テムノードは自動的にCPU負荷により選ばれますが，オプション -D により選
+択されるファイルシステムノードのドメイン名を制限することができます．
+</para>
 
 <para>第3の形式の場合，localfileをGfarmファイルのフラグメントとして登
 録します．オプション -N と -I で，総フラグメント数と，このlocalfileの
@@ -99,7 +108,7 @@ Gfarm-URL がディレクトリとして存在する場合は，複数の directory,
 program, localfile を Gfarm-URL ディレクトリに登録します．
 他の形式と異なり，これらをいっしょに引数として指定することもできます．
 gfarm_URL がファイルの場合は program あるいは localfile を一つだけ登録
-できます．gfarm-URL の内容はローカルファイルの内容に置き換えられます。
+できます．gfarm-URL の内容はローカルファイルの内容に置き換えられます．
 gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
 一つを登録できます．
 ファイルが登録されるファイルシステムノードとオプション -a -h について
