@@ -61,6 +61,8 @@ configure-stamp:
 	ln -s $(LIBS_PKG).install  debian/$(LIBS_GSI_PKG).install
 
 	ln -s $(GFMD_PKG).docs  debian/$(GFMD_GSI_PKG).docs
+	ln -s $(GFMD_PKG).docs  debian/$(GFSD_PKG).docs
+	ln -s $(GFSD_PKG).docs  debian/$(GFSD_GSI_PKG).docs
 
 	ln -s $(GFMD_PKG).conffiles  debian/$(GFMD_GSI_PKG).conffiles
 	ln -s $(GFSD_PKG).conffiles  debian/$(GFSD_GSI_PKG).conffiles
@@ -104,6 +106,8 @@ clean:
 	rm -f debian/$(LIBS_GSI_PKG).install
 
 	-rm -f debian/$(GFMD_GSI_PKG).docs
+	-rm -f debian/$(GFSD_PKG).docs
+	-rm -f debian/$(GFSD_GSI_PKG).docs
 
 	rm -f debian/$(GFMD_GSI_PKG).conffiles
 	rm -f debian/$(GFSD_GSI_PKG).conffiles
@@ -162,6 +166,8 @@ install: build
 	  install debian/gfarm-slapd.init debian/$$tmp_dir/usr/share/gfarm/config/gfarm-slapd.in; \
 	  install -d debian/$$tmp_dir/etc/default/; \
 	  install debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \
+	  install build/package/redhat/config/config-gfsd debian/$$tmp_dir/usr/lib/gfarm/; \
+	  install debian/config-gfsd debian/$$tmp_dir/usr/sbin/; \
 	done
 
 	dh_install -p$(CLIENT_PKG)

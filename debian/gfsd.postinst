@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+. /usr/share/debconf/confmodule
+
+echo 'Run /usr/sbin/config-gfsd, if you want to setup gfsd
+for Gfarm filesystem filesysm node. Please see 
+/usr/share/gfsd/doc/INSTALL.RPM.* for more details.' >&2
+
+

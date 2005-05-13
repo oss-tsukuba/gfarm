@@ -44,7 +44,7 @@ Description: Front-end java application for the Gfarm
 Package: gfsd
 Section: net
 Architecture: i386
-Depends: libgfarm (= ${Source-Version})
+Depends: libgfarm (= ${Source-Version}), gfarm-client (= ${Source-Version})
 Conflicts: gfsd-gsi
 Description: The Gfarm filesystem daemon
  A filesystem daemon for the Gfarm filesystem,
@@ -106,7 +106,7 @@ Description: The Gfarm clients with GSI
 Package: gfsd-gsi
 Section: net
 Architecture: i386
-Depends: libgfarm-gsi (= ${Source-Version})
+Depends: libgfarm-gsi (= ${Source-Version}), gfarm-client (= ${Source-Version})
 Conflicts: gfsd
 Description: The Gfarm filesystem daemon with GSI
  A filesystem daemon for the Gfarm filesystem,
