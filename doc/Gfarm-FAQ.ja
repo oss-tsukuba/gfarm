@@ -44,11 +44,15 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 1. 一般
 **********
   1.1 Gfarm とは何ですか？
+
 	下記の URL をご覧ください．
+
 		http://datafarm.apgrid.org/
 
   1.2 Gfarm はどこからダウンロードできますか？
+
 	下記の URL から配布されています．
+
 		http://datafarm.apgrid.org/software/
 
 2. トラブル・シューティング
@@ -61,6 +65,7 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	には，ユーザのホームディレクトリが作成されていないため，このエ
 	ラーメッセージが出ます．以下のコマンドにより Gfarm ファイルシ
 	ステムにホームディレクトリを作成してください．
+
 		% gfmkdir gfarm:~
 
   2.2 ファイルシステムノード，メタサーバに接続できません．
@@ -122,6 +127,7 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	information と表示されます．正しく登録し直すためには，gfsplck
 	コマンドを利用します．例えば，gfarm:file を登録し直すためには，
 	以下のように実行します．
+
 		% gfhost | gfrun -H - gfsplck gfarm:file
 
   2.5 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
@@ -135,21 +141,33 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	gfsplck というプログラムで，登録されていないファイルの確認，消
 	去ができます．まず，以下のコマンドで登録されていないファイルが
 	確認してください．
+
 		% gfhost | gfrun -H - gfsplck gfarm:~
+
 	確認したら，以下のコマンドで消去します．
+
 		% gfhost | gfrun -H - gfsplck -d gfarm:~
+
 	なお，上記コマンドでは，md5チェックサムによるファイルの一貫性
 	チェックを行いません．完全なチェックを行って，ファイルを消去す
 	るためには，以下のように -a オプションをつけて実行します．
+
 		% gfhost | gfrun -H - gfsplck -ad gfarm:~
 
-  2.6 ファイルシステムノードのディスクがクラッシュして，ファイルがなく
-     なってしまいました．どうすればいいでしょうか？
+  2.6 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
+    うすればいいでしょうか？
 
 	実行プログラムを含むファイルは，ファイル参照時に自動的にファイ
-	ルがなくなったことが検出され，別のファイル複製が参照，あるいは
-	動的にファイル複製が作成されされますので，複製が他のノードに存
-	在していれば問題ありません．
+	ルがなくなったことが検出され，別のファイル複製が参照されますの
+	で，複製が他のノードに存在していれば問題なくアクセスすることが
+	できます．
+
+	ただし，失われたファイル複製の無効な情報がメタデータサーバに登
+	録されたままですので，その情報を消去する必要があります．例えば，
+	クラッシュしたホストが gfm01.aist.go.jp の場合は，以下のコマン
+	ドを実行します．
+
+		% gfrm -h gfm01.aist.go.jp -r gfarm:/
 
 3. セキュリティ
 ***************
@@ -292,7 +310,11 @@ check_gfarm_agent
 ***********
   5.1 gfchmod, gfchown, gfmv 等はないのですか？
 
-	ありません．
+	ありません．ただし，gfchmod, gfmv に関しては，LD_PRELOAD 環境変
+	数を設定し，既存アプリケーションからのアクセスが可能になってい
+	る場合は，chmod，mv コマンドが利用可能です．詳細は，
+	README.hook.ja をご覧ください．
+
 	この問題は，次期メジャーリリースで解決する予定です．
 
   5.2 ファイルを読み書き可能な状態でオープンできますか？

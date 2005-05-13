@@ -42,11 +42,15 @@ Table of Contents:
 1. General
 **********
   1.1 What is Gfarm?
+
 	Please refer to the following URL:
+
 		http://datafarm.apgrid.org/
 
   1.2 Where can I download Gfarm?
+
 	It is delivered from the following URL:
+
 		http://datafarm.apgrid.org/software/
 
 2. Trouble Shooting
@@ -58,6 +62,7 @@ Table of Contents:
 	creating your home directory, you always encounter this error
 	message.  In this case, it is necessary to create a home
 	directory.
+
 		% gfmkdir gfarm:~
 
   2.2 We cannot connect to file system nodes and/or a metadata server.
@@ -123,6 +128,7 @@ Table of Contents:
 	Such files are displayed as "no fragment information" by 'gfls
 	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
 	be used.  When gfarm:file needs to be registered, execute
+
 		% gfhost | gfrun -H - gfsplck gfarm:file
 
   2.5 Unregistered or unnecessary files seem to remain in a spool
@@ -137,12 +143,17 @@ Table of Contents:
 	'gfsplck' is prepared for checking and deleting these
 	unregistered files in a spool directory on filesystem nodes.
 	You can check which files are unregistered or not by
+
 		% gfhost | gfrun -H - gfsplck gfarm:~
+
 	After checking files, you can delete them by
+
 		% gfhost | gfrun -H - gfsplck -d gfarm:~
+
 	The above command examples do not check the file integrity.
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
+
 		% gfhost | gfrun -H - gfsplck -ad gfarm:~
 
   2.6 Due to disk crash, all files in a file system node are lost.
@@ -153,6 +164,12 @@ Table of Contents:
 	When opening these missing files, the Gfarm system detects
 	that, and opens another file replica automatically, or
 	replicates it dynamically.
+
+	Since invalid metadata of lost file replicas remain in a
+	metadata database, it is necessary to delete these metadata.
+	When a crashed file system node is gfm01.aist.go.jp, run
+
+		% gfrm -h gfm01.aist.go.jp -r gfarm:/
 
 3. Security
 ***********
@@ -309,7 +326,9 @@ check_gfarm_agent
 *************
   5.1 Where are gfchmod, gfchown and gfmv?
 
-	Unfortunately, not implemented yet.
+	Unfortunately, not implemented yet.  Instead, you can use
+	chmod and mv commands when LD_PRELOAD environment variable is
+	set.  For details, see README.hook.en.
 
 	We plan to add these commands in the next major release.
 
