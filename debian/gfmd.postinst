@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+. /usr/share/debconf/confmodule
+
+echo 'Run /usr/sbin/config-gfarm, if you want to setup gfmd and slapd 
+for Gfarm filesystem metadata server. Please see 
+/usr/share/gfmd/doc/INSTALL.RPM.* for more details.' >&2
+
+

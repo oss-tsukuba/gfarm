@@ -1,2 +1,7 @@
 debian/tmp/usr/sbin/gfmd
+debian/tmp/usr/sbin/config-gfarm
 debian/tmp/etc/init.d/gfmd
+debian/tmp/etc/gfarm-ldap/gfarm.schema
+debian/tmp/usr/share/gfarm/config/
+debian/tmp/usr/lib/gfarm/config-gfarm
+debian/tmp/etc/default/gfarm-slapd
