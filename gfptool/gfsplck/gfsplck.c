@@ -10,6 +10,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <glob.h>
+#include <errno.h>
 
 #include <gfarm/gfarm.h>
 
@@ -121,6 +122,28 @@ append_prefix_pathname(const char *prefix, const char *path)
 }
 
 static char *
+check_file_size(char *pathname, char *gfarm_file, char *section)
+{
+	struct stat st;
+	struct gfarm_file_section_info fi;
+	char *e;
+
+	if (lstat(pathname, &st) == -1)
+		return (gfarm_errno_to_error(errno));
+
+	e = gfarm_file_section_info_get(gfarm_file, section, &fi);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		return (GFARM_ERR_NO_FRAGMENT_INFORMATION);
+	else if (e != NULL)
+		return (e);
+	if (fi.filesize != st.st_size)
+		e = "file size mismatch";
+	gfarm_file_section_info_free(&fi);
+
+	return (e);
+}
+
+static char *
 fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 {
 	char *hostname, *e;
@@ -135,6 +158,11 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 		return ("lock file");
 
 	if (check_all == 0) {
+		/* check file size */
+		e = check_file_size(pathname, gfarm_file, sec);
+		if (e != GFARM_ERR_NO_FRAGMENT_INFORMATION && e != NULL)
+			return (e);
+
 		/* check whether the fragment is already registered. */
 		e = gfarm_host_get_canonical_self_name(&hostname);
 		if (e == NULL) {
