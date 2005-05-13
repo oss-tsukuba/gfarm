@@ -27,7 +27,7 @@ int
 main(int argc, char **argv)
 {
 	char *e;
-	int i, c;
+	int i, c, err = 0;
 	extern int optind;
 
 	if (argc <= 1)
@@ -55,8 +55,13 @@ main(int argc, char **argv)
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s: %s\n",
 				program_name, argv[i], e);
+			err++;
 		}
 	}
 	e = gfarm_terminate();
-	return (0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		err++;
+	}
+	return (err > 0);
 }
