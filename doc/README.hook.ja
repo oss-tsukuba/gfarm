@@ -22,18 +22,41 @@ Linux では，LD_PRELOAD 環境変数を設定することにより，任意のアプリケーショ
 
 シェルが sh あるいは bash の場合は，以下のように設定します．
 
-$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
-$ export LD_PRELOAD
+	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合は，以下のように設定します．
 
-% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 ＃ tcsh には，いくつかの不具合が報告されており，bash で実行することをお
 ＃ 勧めします．
 
 この設定以降に起動するアプリケーションは，/gfarm に Gfarm ファイルシス
 テムをマウントしているように利用することが可能になります．
+
+上記の設定を行ったら，まず，ふだん利用しているシェルを起動して，動作
+するかどうか確認してください．
+
+	% bash
+
+Fedora Core 2 をはじめとする，一部の Linux ディストリビューションでは，
+上記の設定を行うと，下記のようなメッセージが表示され，シェルの起動に
+失敗することがあります．
+
+	bash: /usr/lib/gfarm/libpthread-not-hidden.so: version `GLIBC_2.3.3' not found (required by /lib/tls/librt.so.1)
+
+このような場合，下記のように，/usr/lib/gfarm/librt-not-hidden.so も
+LD_PRELOAD に追加してください．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 上記設定は，.bashrc や .cshrc など起動スクリプトに記述すると，以降の設
 定が必要なくなり，便利です．
