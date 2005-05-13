@@ -112,13 +112,13 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
   gfs_hook.o と libgfarm.a をリンクするだけで，Gfarm ファイルシステムが
   利用できるようになります．
 
-  さらに，Linux の場合は，共有ライブラリ libgfs_hook.so が提供されます．
-  この共有ライブラリを LD_PRELOAD 環境変数で指定することにより，既存の
-  （バイナリ）アプリケーションがそのまま無修整，再リンクなしに Gfarm ファ
-  イルシステムを利用可能となります．
+  さらに，Linux の場合は，提供される共有ライブラリ libgfs_hook.so を
+  LD_PRELOAD 環境変数で指定することにより，既存の（バイナリ）アプリケー
+  ションがそのまま無修整，再リンクなしに Gfarm ファイルシステムを利用可
+  能となります．
 
   gfs_hook.o および libgfs_hook.so の利用に関しては，
-  doc/README.hook.en をご参照ください．
+  doc/README.hook.ja をご参照ください．
 
 ・gfmd - Gfarm メタデータサーバ
 
