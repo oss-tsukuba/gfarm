@@ -4,14 +4,22 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.1.1
 ============================
 
-[2005.4.22]
+[2005.5.17]
 
  * gfarm_agent(1) - Gfarm filesystem metadata cache server.  This
    dramatically improves performance and response time to access Gfarm
    file system.  For details, see a manual page of gfarm_agent.
 
  * gfreg(1) - the -r option is added to support recursive registration
-   when directories or files are specified.
+   when directories or files are specified.  The -p and -i options
+   are added to specify a registration mode explicitly.
+
+ * gfrm(1) - supports recursive deletion of file replica.  gfrm -h
+   host -r dir.
+
+ * Configuration utilities for Debian packages;
+	config-gfarm - set up metadata server and Gfarm configuration file.
+	config-gfsd - set up file system node.
 
  * Performance Improvement
 
@@ -26,6 +34,18 @@ Release note for Gfarm 1.1.1
   - Bug fixes; chown, lchown, fchown, setxattr, lsetxattr, and
     fsetxattr, and execve.
 
+ * Documentation
+
+   (Gfarm-FAQ)
+
+    - Add how to execute gfarm_agent automatically only when it is not
+      there?
+
+    - Add how to delete invalid metadata when a file system node is
+      crashed.
+
+    - Add a comment for gfchmod and gfmv.
+
  * Bug fix
 
   - A file can be created even under a file not a directory.
@@ -33,8 +53,20 @@ Release note for Gfarm 1.1.1
   - Fix 'segmentation fault' when reading, writing, and seeking a file
     in global file view.
 
-  - A file '' means the current working directory in Gfarm file
-    system.
+  - A file '' is wrongly considered as the current working directory
+    in Gfarm file system.
+
+  - Fix 'segmentation fault' when renaming a directory.
+
+  - gfrm deletes '.' or '..' when it is specified.
+
+  - gfs_pio_truncate does not maintain file pointer.
+
+  - Syscall hook library does not allow to access a large file.
+
+  - gfreg cannot register a file via a socket.
+
+  - gfsplck cannot remove a file that has invalid metadata.
 
 Release note for Gfarm 1.1.0
 ============================

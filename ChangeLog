@@ -1,4 +1,212 @@
+2005-05-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/Makefile: compile hooks_subr.c with largefile_cflags.
+
+	* lib/libgfarm/gfarm/gfs_pio.c (gfs_pio_truncate):
+	do not change file pointer.
+
+2005-05-16  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: o rewrote a list of japanese manpages
+	o removed unnecessary comments
+
+2005-05-15  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* man/man3/gfs_chmod.3, man/man3/gfs_pio_truncate.3, man/man3/gfs_rename.3, package/redhat/config/config-gfarm.in, package/redhat/config/config-gfsd.in, package/redhat/config/gfarm-slapd.in, package/redhat/config/gfarm.conf.in, package/redhat/config/gfmd.in, package/redhat/config/gfsd.in, package/redhat/config/slapd.conf-2.0.in, package/redhat/config/slapd.conf-2.1.in, package/redhat/gfarm.patch, package/redhat/gfarm.spec, package/solaris/build, makes/var.mk, man/ja/man1/gfarm_agent.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man1/gfrm.1, man/ja/man1/gfrun.1, man/ja/man3/gfs_chmod.3, man/ja/man3/gfs_rename.3, man/man1/gfarm_agent.1, man/man1/gfreg.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfrun.1, gftool/gfsck/gfsck.c, include/gfarm/gfarm_config.h.in, include/gfarm/gfarm_error.h, include/gfarm/gfarm_metadb.h, include/gfarm/gfs.h, lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_proto.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/url.c, gftool/gfexec/gfexec.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfrun/gfrun.c, doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrun.1.html, doc/html/ja/ref/man3/gfs_chmod.3.html, doc/html/ja/ref/man3/gfs_rename.3.html, gfptool/gfsplck/gfsplck.c, gftool/Makefile, gftool/gfarm_agent/Makefile, gftool/gfarm_agent/agent_ptable.c, gftool/gfarm_agent/agent_ptable.h, gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/agent_thr.h, gftool/gfarm_agent/gfarm_agent.c, doc/html/en/ref/index.html, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfreg.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfrm.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/en/ref/man3/gfs_pio_truncate.3.html, doc/html/en/ref/man3/gfs_rename.3.html, doc/html/ja/ref/index.html, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfs_chmod.3.docbook, doc/docbook/en/ref/man3/gfs_pio_truncate.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfs_chmod.3.docbook, doc/docbook/ja/ref/man3/gfs_rename.3.docbook, configure.ac, debian/README.Debian, debian/changelog, debian/config-gfarm, debian/config-gfsd, debian/control, debian/copyright, debian/gfarm-client.manpages, debian/gfarm-doc.examples, debian/gfarm-gfront.manpages, debian/gfarm-slapd.default, debian/gfarm-slapd.init, debian/gfmd.docs, debian/gfmd.examples, debian/gfmd.install, debian/gfmd.manpages, debian/gfmd.postinst, debian/gfsd.install, debian/gfsd.postinst, debian/libgfarm-dev.manpages, debian/rules, debian/slapd.conf-2.1.in, doc/GUIDE.ja, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/Makefile, doc/README.hook.en, doc/README.hook.ja, ChangeLog, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, LICENSE, Makefile.in, RELNOTES, configure:
+	merged change of the gfarm_v1 main trunk.
+
+2005-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* INSTALL.ja: refer to README.hook.ja instead of README.hook.en
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	add how to delete invalid metadata when a file system node is crashed.
+	add a comment for gfchmod and gfmv.
+
+	* gfptool/gfsplck/gfsplck.c:
+	add file size check even when the -a option is not specified.
+
+2005-05-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention that /usr/lib/gfarm/librt-not-hidden.so may be needed on some
+	distributions like Fedora Core 2.
+
+2005-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfmkdir/gfmkdir.c: merged change of the gfarm_v1_gneo branch.
+	* add error handling
+
+2005-05-13  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control: missed dependency in previous commit
+
+	* debian/config-gfarm, debian/config-gfsd, debian/control, debian/gfsd.install, debian/gfsd.postinst, debian/rules:
+	support config-gfsd
+
+2005-05-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfsd.in, package/redhat/config/config-gfarm.in:
+	do not add and restart services when DO_NOT_START_SERVICE is set.
+
+2005-05-13  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/config-gfarm, debian/gfarm-slapd.default, debian/gfarm-slapd.init, debian/gfmd.docs, debian/gfmd.install, debian/gfmd.postinst, debian/rules, debian/slapd.conf-2.1.in:
+	support config-gfarm script on gfmd package
+
+	* debian/libgfarm-dev.manpages: removed entries
+
+2005-05-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfreg.1.html, man/man1/gfreg.1: regen
+
+	* doc/docbook/en/ref/man1/gfreg.1.docbook:
+	add description of -p and -i options
+
+	* doc/html/ja/ref/man1/gfreg.1.html, man/ja/man1/gfreg.1: regen
+
+	* doc/docbook/ja/ref/man1/gfreg.1.docbook:
+	add description of -p and -i options
+
+	* gftool/gfreg/gfreg.c:
+	get_file_mode(): fix bug makes all file's mode 644
+
+2005-05-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h:
+	- export connection garbage collector as gfs_client_connection_gc()
+	- make that function efficient: from O(N**2) to O(N)
+	- symbol fd_receive_message() was incorrectly exported. fix it.
+
+2005-05-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfreg/gfreg.c:
+	- add '-p' option to specify program reistration mode explicitly
+	- add '-i' option to specify auto index reistration mode explicitly
+	- register a non-file(e.g. socket) as gfarm file
+
+2005-05-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile.inc, lib/libgfarm/gfarm/conn_hash.c, lib/libgfarm/gfarm/conn_hash.h, lib/libgfarm/gfarm/gfj_client.h, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfm_client.h, lib/libgfarm/gfarm/gfp_xdr.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.c, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/host.h, lib/libgfarm/gfarm/liberror.c, lib/libgfarm/gfarm/liberror.h:
+	- correct some gfmd protocols and add GFM_PROTO_CKSUM_{GET,SET},
+	  GFM_PROTO_REOPEN, GFM_PROTO_REPLICA_ADD{ING,ED},
+	- gfsd client side implementation with simple LRU connection cache.
+	- use port number and user name as well as hostname for gfm/gfs connection
+	  identification.
+	etc.
+
+	* lib/libgfarm/gfarm/conn_hash.c, lib/libgfarm/gfarm/conn_hash.h:
+	New file.
+
+	* server/gfmd/fs.c, server/gfmd/fs.h, server/gfmd/gfmd.c:
+	add stub of GFM_PROTO_CKSUM_{GET,SET}, GFM_PROTO_REOPEN,
+	GFM_PROTO_REPLICA_ADD{ING,ED}
+
+	* lib/libgfarm/gfarm/gfm_proto.h:
+	add GFM_PROTO_CKSUM_{GET,SET}, GFM_PROTO_REOPEN, GFM_PROTO_REPLICA_ADD{ING,ED}
+
+2005-05-10  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-5
+
+2005-05-09  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrm/gfrm.c: previous commit does not work...
+
+	* gftool/gfrm/gfrm.c (remove_cwd_entries):
+	delete entries that do not have fragment information.
+
+2005-05-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c (gfarm_generic_info_get_foreach):
+	use asynchronous version of
+	ldap_search.  This improves performance dramatically.  For example,
+	2 minutes 5 seconds become just 4 seconds in iGAP/Gfarm testbed.
+
+2005-05-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	make UDP timeout from ~3sec. to ~7sec.,
+	because ~3sec. is too short from Singapore.
+	requested by tatebe-san.
+
+2005-05-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	change the default dircache timeout to 1 day.
+
+	* gftool/gfsck/gfsck.c:
+	do not return error of subentries, since error message is already displayed.
+	fix a bug not to delete invalid metadata that does not have fragment information.
+
+	* gftool/gfexec/gfexec.c: Display hostname in error message
+
+2005-05-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/ja/ref/man1/gfrm.1.html, doc/html/en/ref/man1/gfrm.1.html, man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook:
+	update description
+
+	* gftool/gfrm/gfrm.c:
+	support recursive deletion of file replicas.  for example, gfrm -h gfm01 -r dir
+	plugged memory leak
+	do not delete '.' or '..'.
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink):
+	use gfarm_url_make_path not gfarm_url_make_path_for_creation.
+	(gfs_unlink_repilcas_on_host): removed
+	(gfs_unlink_replica): added. this replaces gfs_unlink_replicas_on_host.
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfs_rmdir):
+	use gfarm_url_make_path not gfarm_url_make_path_for_creation.
+
+	* lib/gfs_hook/hooks_init.c: eliminate warning
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	Added 4.2 How to execute gfarm_agent automatically only when it is not there?
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c:
+	Added GFARM_ERR_NO_REPLICA_ON_HOST.
+
+2005-04-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfreg.1.html, man/man1/gfreg.1: regen
+
+	* doc/docbook/en/ref/man1/gfreg.1.docbook:
+	add description of recursive mode
+
+2005-04-26  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.manpages, debian/libgfarm-dev.manpages:
+	applied alphabetical sort
+
+2005-04-26  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	gfs_rename: add missing check for directory paths in case of destination
+	does not exist
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	fix a bug cases segmentation fault when 'mv tt tt-a' is issued
+
+2005-04-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.spec: Commented out 'Patch:' line.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	delay re-cache until opendir time when a new directory is added to
+	the directory cache.
+
+2005-04-23  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.manpages, debian/rules:
+	added gfarm_agent manualpage
+
 2005-04-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: Release note for the version 1.1.1.
 
 	* package/redhat/gfarm.spec: gfarm-1.1.1-4
 	add manual page of gfarm_agent
