@@ -7,6 +7,7 @@
 #include <sys/un.h>
 #include <stdio.h>
 #include <errno.h>
+#include <libgen.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <string.h>
@@ -23,6 +24,22 @@
 #include "agent_wrap.h"
 #include "agent_thr.h"
 #include "agent_ptable.h"
+
+#ifndef HAVE_MKDTEMP
+#include <sys/stat.h>
+
+char *
+mkdtemp(char *template)
+{
+	char *s = mktemp(template);
+
+	if (s == NULL)
+		return (NULL);
+	if (mkdir(s, 0700) != 0)
+		return (NULL);
+	return (s);
+}
+#endif
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -825,5 +842,7 @@ main(int argc, char **argv)
 		}
 	}
 	/*NOTREACHED*/
-	return (0); /* to shut up warning */
+#ifdef __GNUC__ /* to shut up warning */
+	return (0);
+#endif
 }
