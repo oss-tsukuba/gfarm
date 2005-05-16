@@ -419,6 +419,7 @@ gfs_pio_close(GFS_File gf)
 static char *
 gfs_pio_purge(GFS_File gf)
 {
+	gf->offset += gf->p;
 	gf->p = gf->length = 0;
 	return (NULL);
 }
@@ -458,10 +459,9 @@ gfs_pio_fillbuf(GFS_File gf)
 		e = gfs_pio_flush(gf);
 		if (e != NULL)
 			return (e);
-	} else {
-		gf->offset += gf->p;
-		gf->p = gf->length = 0;
-	}
+	} else
+		gfs_pio_purge(gf);
+
 	assert(gf->io_offset == gf->offset);
 
 	e = (*gf->ops->view_read)(gf, gf->buffer, GFS_FILE_BUFSIZE, &len);
@@ -529,10 +529,9 @@ gfs_pio_flush(GFS_File gf)
 			return (e);
 		gf->mode &= ~GFS_FILE_MODE_BUFFER_DIRTY;
 	}
-	if (gf->p >= gf->length) {
-		gf->offset += gf->p;
-		gf->p = gf->length = 0;
-	}
+	if (gf->p >= gf->length)
+		gfs_pio_purge(gf);
+
 	return (NULL);
 }
 
