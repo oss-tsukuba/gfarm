@@ -7,6 +7,7 @@
 #include <sys/un.h>
 #include <stdio.h>
 #include <errno.h>
+#include <libgen.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <string.h>
@@ -25,6 +26,8 @@
 #include "agent_ptable.h"
 
 #ifndef HAVE_MKDTEMP
+#include <sys/stat.h>
+
 char *
 mkdtemp(char *template)
 {
@@ -839,5 +842,7 @@ main(int argc, char **argv)
 		}
 	}
 	/*NOTREACHED*/
-	return (0); /* to shut up warning */
+#ifdef __GNUC__ /* to shut up warning */
+	return (0);
+#endif
 }

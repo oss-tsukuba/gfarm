@@ -2314,5 +2314,7 @@ main(int argc, char **argv)
 		}
 	}
 	/*NOTREACHED*/
-	return (0); /* to shut up warning */
+#ifdef __GNUC__ /* to shut up warning */
+	return (0);
+#endif
 }
