@@ -37,13 +37,16 @@ LIBS_GSI_PKG = libgfarm-gsi
 GFARM_GFPTOOL_MAN1=gfgrep.1
 GFMD_MAN5=gfarm.conf.5
 GFMD_MAN8=gfmd.8
-GFARM_CLIENT_MAN1=digest.1 gfarm_agent.1 gfexport.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfmpirun_p4.1 gfps.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrsh.1 gfrun.1 gfsched.1 gfssh.1 gfstat.1 gfwhere.1 gfwhoami.1 gfhost.1 gfls.1 gfcd.1 gfmkdir.1 gfpwd.1 gfrmdir.1 gfsetdir.1 gfwc.1 gfdf.1
+GFARM_CLIENT_MAN1=digest.1 gfarm_agent.1 gfcd.1 gfdf.1 gfexport.1 gfhost.1 gfimport_fixed.1 gfimport_text.1 gfkey.1 gfls.1 gfmkdir.1 gfmpirun_p4.1 gfps.1 gfpwd.1 gfrcmd.1 gfreg.1 gfrep.1 gfrm.1 gfrmdir.1 gfrun.1 gfsched.1 gfsetdir.1 gfstat.1 gfwc.1 gfwhere.1 gfwhoami.1
 GFRONT_MAN1=gfront.1
 GFSD_MAN1=gfexec.1
 GFSD_MAN8=gfsd.8
-LIBGFARM_DEV_MAN3=gfarm_initialize.3 gfarm_strings_free_deeply.3 gfarm_terminate.3 gfarm_url_hosts_schedule.3 gfs_chdir.3 gfs_chmod.3 gfs_closedir.3 gfs_opendir.3 gfs_mkdir.3 gfs_chmod.3 gfs_glob.3 gfs_glob_add.3 gfs_glob_free.3 gfs_glob_init.3 gfs_pio_close.3 gfs_pio_create.3 gfs_pio_eof.3 gfs_pio_error.3 gfs_pio_flush.3 gfs_pio_getc.3 gfs_pio_getline.3 gfs_pio_gets.3 gfs_pio_open.3 gfs_pio_putc.3 gfs_pio_putline.3 gfs_pio_puts.3 gfs_pio_read.3 gfs_pio_readdelim.3 gfs_pio_readline.3 gfs_pio_seek.3 gfs_pio_set_local.3 gfs_pio_set_view_index.3 gfs_pio_set_view_local.3 gfs_pio_truncate.3 gfs_pio_ungetc.3 gfs_pio_write.3 gfs_readdir.3 gfs_realpath.3 gfs_rename.3 gfs_rmdir.3 gfs_stat.3 gfs_stat_free.3 gfs_unlink.3 gfs_utimes.3 gfarm_hostlist_read.3 gfarm_import_fragment_config_read.3 gfarm_import_fragment_size_alloc.3 gfarm_stringlist_add.3 gfarm_stringlist_cat.3 gfarm_stringlist_elem.3 gfarm_stringlist_free.3 gfarm_stringlist_init.3 gfarm_stringlist_length.3 gfarm_url_fragments_replicate.3 gfarm_url_program_deliver.3 gfarm_url_program_register.3 gfarm_url_section_replicate_from_to.3 gfarm_url_section_replicate_to.3 GFARM_STRINGLIST_ELEM.3 GFARM_STRINGLIST_STRARRAY.3
+LIBGFARM_DEV_MAN3=GFARM_STRINGLIST_ELEM.3 GFARM_STRINGLIST_STRARRAY.3 gfarm_hostlist_read.3 gfarm_import_fragment_config_read.3 gfarm_import_fragment_size_alloc.3 gfarm_initialize.3 gfarm_stringlist_add.3 gfarm_stringlist_cat.3 gfarm_stringlist_elem.3 gfarm_stringlist_free.3 gfarm_stringlist_free_deeply.3 gfarm_stringlist_init.3 gfarm_stringlist_length.3 gfarm_strings_free_deeply.3 gfarm_terminate.3 gfarm_url_fragments_replicate.3 gfarm_url_hosts_schedule.3 gfarm_url_program_deliver.3 gfarm_url_program_register.3 gfarm_url_section_replicate_from_to.3 gfarm_url_section_replicate_to.3 gfs_chdir.3 gfs_chmod.3 gfs_closedir.3 gfs_glob.3 gfs_glob_add.3 gfs_glob_free.3 gfs_glob_init.3 gfs_mkdir.3 gfs_opendir.3 gfs_pio_close.3 gfs_pio_create.3 gfs_pio_eof.3 gfs_pio_error.3 gfs_pio_flush.3 gfs_pio_getc.3 gfs_pio_getline.3 gfs_pio_gets.3 gfs_pio_open.3 gfs_pio_putc.3 gfs_pio_putline.3 gfs_pio_puts.3 gfs_pio_read.3 gfs_pio_readdelim.3 gfs_pio_readline.3 gfs_pio_seek.3 gfs_pio_set_local.3 gfs_pio_set_view_index.3 gfs_pio_set_view_local.3 gfs_pio_truncate.3 gfs_pio_ungetc.3 gfs_pio_write.3 gfs_readdir.3 gfs_realpath.3 gfs_rename.3 gfs_rmdir.3 gfs_stat.3 gfs_stat_free.3 gfs_unlink.3 gfs_utimes.3
 
 CONFIGURE = ../configure --prefix=/usr --libexecdir=/usr/lib/gfarm
+
+##
+GLOBUS_FLAVOR=gcc32dbg
 
 configure: configure-stamp
 configure-stamp:
@@ -51,7 +54,7 @@ configure-stamp:
 # Add here commands to configure the package.
 	-rm -rf ns/
 	install -d build && cd build && $(CONFIGURE)
-	install -d build_gsi && cd build_gsi && $(CONFIGURE) $(GFARM_CONFIGURE_OPTION) --with-globus=/usr/grid --with-globus-flavor=gcc32dbg
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) $(GFARM_CONFIGURE_OPTION) --with-globus=/usr/grid --with-globus-flavor=$(GLOBUS_FLAVOR)
 
 	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
 	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
@@ -91,8 +94,6 @@ clean:
 	rm -f build-stamp 
 
 # Add here commands to clean up after the build process.
-#	-cd build && $(MAKE) distclean
-#	-cd build_gsi && $(MAKE) distclean
 	-rm -f configure-stamp
 	-rm -rf build build_gsi
 	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
@@ -139,11 +140,6 @@ install: build
 # LICENSE file is stored in debian/copyright (Debian policy)
 	rm -f  debian/tmp/usr/share/doc/gfarm/LICENSE
 	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
-
-#	for tmp_dir in tmp tmp_gsi; do \
-#	  install -d debian/$$tmp_dir/usr/lib/gfarm/; \
-#	  mv debian/$$tmp_dir/usr/libexec/* debian/$$tmp_dir/usr/lib/gfarm/; \
-#	done
 
 # hoax gfarm's Makefile.
 	for tmp_dir in tmp tmp_gsi; do \
@@ -316,28 +312,6 @@ binary-arch: build install
 	(cd ./debian/gfarm-gsi-client/usr/share/man/man1/; rm -f gfssh.1.gz gfsshl.1.gz gfrsh.1.gz gfrshl.1.gz; \
 	ln -s gfrun.1.gz gfssh.1.gz; ln -s gfrun.1.gz gfsshl.1.gz; \
 	ln -s gfrun.1.gz gfrsh.1.gz; ln -s gfrun.1.gz gfrshl.1.gz)
-
-# others
-#	install -o root -g root -m 644 debian/man/gfregister.1 debian/gfarm-gfptool/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-gfptool/usr/share/man/man1/gfregister.1
-#	install -o root -g root -m 644 debian/man/gfregister.1 debian/gfarm-gsi-gfptool/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-gsi-gfptool/usr/share/man/man1/gfregister.1
-
-#	install -o root -g root -m 644 debian/man/gfsck.1 debian/gfarm-client/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-client/usr/share/man/man1/gfsck.1
-#	install -o root -g root -m 644 debian/man/gfsck.1 debian/gfarm-gsi-client/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-gsi-client/usr/share/man/man1/gfsck.1
-
-#	install -o root -g root -m 644 debian/man/ptool.1 debian/gfarm-client/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-client/usr/share/man/man1/ptool.1
-#	install -o root -g root -m 644 debian/man/ptool.1 debian/gfarm-gsi-client/usr/share/man/man1/
-#	gzip -f -9 debian/gfarm-gsi-client/usr/share/man/man1/ptool.1
-#	(cd ./debian/gfarm-client/usr/share/man/man1/; \
-#	ln -s ptool.1.gz prun.1.gz; ln -s ptool.1.gz pcp.1.gz; \
-#	ln -s ptool.1.gz pcat.1.gz; ln -s ptool.1.gz pdel.1.gz; ln -s ptool.1.gz pdist.1.gz)
-#	(cd ./debian/gfarm-gsi-client/usr/share/man/man1/; \
-#	ln -s ptool.1.gz prun.1.gz; ln -s ptool.1.gz pcp.1.gz; \
-#	ln -s ptool.1.gz pcat.1.gz; ln -s ptool.1.gz pdel.1.gz; ln -s ptool.1.gz pdist.1.gz)
 
 #	dh_installinfo
 #	dh_undocumented
