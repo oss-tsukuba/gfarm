@@ -124,6 +124,9 @@ libgfs_hook_mpi$(SUFFIX).la: lib_tmp_gfs_hook_mpi$(SUFFIX).la
 ### objects needed by $(LIBRARY_TARGET)
 ###
 
+hooks_subr$(SUFFIX).lo: hooks_subr.c
+	$(LTCOMPILE) $(largefile_cflags) -o $@ -c $(srcdir)/hooks_subr.c
+
 lseek64.lo: lseek64.c
 	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -o $@ -c $(srcdir)/lseek64.c
 
