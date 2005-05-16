@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <limits.h>
 #include <string.h>
 #include <assert.h>
 #include <dirent.h>
