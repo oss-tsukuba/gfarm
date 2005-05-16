@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.1.1
-%define rel	5
+%define rel	6
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -85,6 +85,7 @@ Requires: %{package_name}-client
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
+Requires: %{package_name}-client
 
 %package server
 Summary: metadata server for gfarm
