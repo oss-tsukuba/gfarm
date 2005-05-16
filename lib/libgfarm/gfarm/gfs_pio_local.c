@@ -203,7 +203,8 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	 *
 	 * NOTE: Same thing must be done in gfs_pio_remote.c.
 	 */
-	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE);
+	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE) |
+	    (flags & GFARM_FILE_CREATE);
 	int fd, local_oflags = gfs_open_flags_localize(oflags);
 	int saved_errno;
 	mode_t saved_umask;

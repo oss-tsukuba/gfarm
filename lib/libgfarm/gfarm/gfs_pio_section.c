@@ -437,10 +437,13 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if (e != NULL)
 			goto finish;
 		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		    ((gf->open_flags & GFARM_FILE_CREATE) &&
+		    (((gf->open_flags & GFARM_FILE_CREATE) ||
+		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
+			
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
+			flags |= GFARM_FILE_CREATE;
 		} else if (!gfarm_file_section_copy_info_does_exist(
 		    gf->pi.pathname, vc->section, vc->canonical_hostname)) {
 			e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -448,8 +451,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		   ((gf->open_flags & GFARM_FILE_CREATE) &&
-		    !gfarm_file_section_info_does_exist(
+		    (((gf->open_flags & GFARM_FILE_CREATE) || 
+		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
+		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
 		if (gfarm_is_active_file_system_node &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
@@ -469,6 +473,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			vc->canonical_hostname = if_hostname;
 		}
 		gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
+		flags |= GFARM_FILE_CREATE;
 	} else {
 		e = gfarm_file_section_host_schedule_with_priority_to_local(
 		    gf->pi.pathname, vc->section, &if_hostname);

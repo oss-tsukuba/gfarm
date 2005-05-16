@@ -125,7 +125,8 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	 *
 	 * NOTE: Same thing must be done in gfs_pio_local.c.
 	 */
-	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE);
+	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE) |
+	    (flags & GFARM_FILE_CREATE);
 	int fd;
 	struct sockaddr peer_addr;
 

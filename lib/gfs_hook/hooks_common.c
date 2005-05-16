@@ -127,7 +127,18 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		 * fragmented, do not change to the local file view.
 		 */
 		if ((e = gfs_pio_get_nfragment(gf, &nf)) ==
-			GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
+			GFARM_ERR_OPERATION_NOT_PERMITTED) { 
+			/* program file */
+			char *arch;
+					
+			e = gfarm_host_get_self_architecture(&arch);
+			if (e != NULL) {
+				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			} else {
+				e = gfs_pio_set_view_section(gf,
+					 arch, NULL, 0);
+			}				
+		} else if (e == GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
 		    (e == NULL && gfs_pio_get_node_size(&np) == NULL &&
 		     nf == np)) {
 			_gfs_hook_debug(fprintf(stderr,
