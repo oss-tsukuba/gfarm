@@ -1,4 +1,5 @@
 @PREFIX@/bin/digest
+@PREFIX@/bin/gfarm_agent
 @PREFIX@/bin/gfdf
 @PREFIX@/bin/gfexport
 @PREFIX@/bin/gfhost
