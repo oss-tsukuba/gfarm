@@ -1642,7 +1642,6 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 	case S_IFSOCK:
 		errno = EPERM;
 		return (-1);
-		break;
 	case S_IFREG:
 		if ((e = gfs_pio_create(url, 
 			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
@@ -1655,13 +1654,9 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 			return (-1);
 		}
 		return 0;
-		break;
-	default:
-		errno = EINVAL;
-		return (-1);
-		break;
 	}
-	return 0;
+	errno = EINVAL;
+	return (-1);
 }
 
 int
