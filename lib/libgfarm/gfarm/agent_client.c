@@ -39,7 +39,7 @@ agent_client_connection0(
 		return (gfarm_errno_to_error(errno));
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
-	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+	if (connect(sock, (struct sockaddr *)peer_addr, sizeof(*peer_addr)) < 0) {
 		e = gfarm_errno_to_error(errno);
 		close(sock);
 		return (e);
