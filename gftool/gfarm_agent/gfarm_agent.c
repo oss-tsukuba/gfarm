@@ -24,6 +24,20 @@
 #include "agent_thr.h"
 #include "agent_ptable.h"
 
+#ifndef HAVE_MKDTEMP
+char *
+mkdtemp(char *template)
+{
+	char *s = mktemp(template);
+
+	if (s == NULL)
+		return (NULL);
+	if (mkdir(s, 0700) != 0)
+		return (NULL);
+	return (s);
+}
+#endif
+
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
 #else
