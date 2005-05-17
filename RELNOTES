@@ -66,7 +66,8 @@ Release note for Gfarm 1.1.1
 
   - gfreg cannot register a file via a socket.
 
-  - gfsplck cannot remove a file that has invalid metadata.
+  - gfsck cannot remove invalid metadata that does not have fragment
+    information.
 
 Release note for Gfarm 1.1.0
 ============================
