@@ -115,6 +115,7 @@ char *gfs_pio_set_fragment_info_local(char *, char *, char *);
  */
 
 char *gfs_unlink(const char *);
+char *gfs_unlink_section(const char *, const char *);
 char *gfs_unlink_section_replica(const char *, const char *,
 	int, char **, int);
 char *gfs_unlink_replica(const char *, int, char **, int);

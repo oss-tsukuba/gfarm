@@ -48,7 +48,7 @@ struct gfs_file {
 	struct gfarm_path_info pi;
 };
 
-char *gfs_unlink_section(const char *, const char *);
+char *gfs_unlink_section_internal(const char *, const char *);
 char *gfs_unlink_every_other_replicas(
 	const char *, const char *, const char *);
 

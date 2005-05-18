@@ -644,8 +644,8 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 				for (i = nfragments;
 				     i < gf->pi.status.st_nsections; i++) {
 					sprintf(section_string, "%d", i);
-					gfs_unlink_section(gf->pi.pathname,
-					    section_string);
+					gfs_unlink_section_internal(
+					    gf->pi.pathname, section_string);
 				}
 			}
 			gf->pi.status.st_nsections = nfragments;

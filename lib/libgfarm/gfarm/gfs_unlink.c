@@ -128,7 +128,7 @@ finish_unlink:
 
 /* internal use in the gfarm library */
 char *
-gfs_unlink_section(const char *gfarm_file, const char *section)
+gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 {
 	char *e, *e_save = NULL;
 	int j, ncopies;
@@ -164,6 +164,32 @@ gfs_unlink_section(const char *gfarm_file, const char *section)
 	}
 
 	return (e_save != NULL ? e_save : e);	
+}
+
+char *
+gfs_unlink_section(const char *gfarm_url, const char *section)
+{
+	char *e, *gfarm_file; 
+	int nsections;
+	struct gfarm_file_section_info *sections;	
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL)
+		return (e);
+	e = gfarm_file_section_info_get_all_by_file(gfarm_file, &nsections,
+						    &sections);
+	if (e != NULL)
+		goto free_gfarm_file;
+	e = gfs_unlink_section_internal(gfarm_file, section);
+	if (e != NULL)
+		goto free_sections;
+	if (nsections <= 1)
+		e = gfarm_path_info_remove(gfarm_file);
+ free_sections:       
+	gfarm_file_section_info_free_all(nsections, sections);
+ free_gfarm_file:
+	free(gfarm_file);
+	return (e);
 }
 
 char *

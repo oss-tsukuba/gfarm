@@ -236,7 +236,8 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 	e = gfarm_file_section_info_replace(gf->pi.pathname, section_string,
 					    &sections[fragment]);
 	for (i = fragment + 1; i < nsections; i++)
-		(void)gfs_unlink_section(gf->pi.pathname, sections[i].section);
+		(void)gfs_unlink_section_internal(gf->pi.pathname,
+						  sections[i].section);
 	gfarm_file_section_info_free_all(nsections, sections);
 	
 	return (e);
@@ -309,7 +310,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		for (i = 0; i < nsections; i++) {
 			if (strcmp(sections[i].section, "0") == 0)
 				continue;
-			(void)gfs_unlink_section(gf->pi.pathname,
+			(void)gfs_unlink_section_internal(gf->pi.pathname,
 			    sections[i].section);
 		}
 		gfarm_file_section_info_free_all(nsections, sections);
