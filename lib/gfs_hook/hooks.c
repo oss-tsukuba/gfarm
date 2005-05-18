@@ -271,8 +271,36 @@ __unlink(const char *path)
 		return syscall(SYS_unlink, path);
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking __unlink(%s)\n", path));
-	e = gfs_unlink(url);
+	if (gfs_hook_get_current_view() == section_view) {
+		e = gfs_unlink_section(url, gfs_hook_get_current_section());
+	} else {	
+		struct gfs_stat gs;
+
+		e = gfs_stat(url, &gs);
+		if (e != NULL) {
+			_gfs_hook_debug(fprintf(stderr,
+			    "GFS: Hooking __unlink: gfs_stat: %s\n", e));
+			goto free_url;
+		}
+
+		if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
+			char *arch;
+
+			e = gfarm_host_get_self_architecture(&arch);
+			if (e != NULL) {
+				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			} else {
+				e = gfs_unlink_section(url, arch);
+			}
+		} else {
+			e = gfs_unlink(url);
+		}
+		gfs_stat_free(&gs);
+	}	
+
+ free_url:
 	free(url);
+
 	if (e == NULL)
 		return (0);
 
