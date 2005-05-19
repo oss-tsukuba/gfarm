@@ -40,4 +40,5 @@ man/man3/gfs_rmdir.3
 man/man3/gfs_stat.3
 man/man3/gfs_stat_free.3
 man/man3/gfs_unlink.3
+man/man3/gfs_unlink_section.3
 man/man3/gfs_utimes.3
