@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREG" "1" "12 May 2005" "Gfarm" ""
+.TH "GFREG" "1" "20 May 2005" "Gfarm" ""
 .SH NAME
 gfreg \- Gfarm ファイルシステムへのファイル，ファイルフラグメント，ディレクトリの登録
 .SH SYNOPSIS
@@ -58,13 +58,14 @@ localfile を指定できます．ファイルの複製が作成されるファイルシス
 Gfarm-URL がディレクトリとして存在する場合は，複数の directory,
 program, localfile を Gfarm-URL ディレクトリに登録します．
 他の形式と異なり，これらをいっしょに引数として指定することもできます．
-gfarm_URL がファイルの場合は program あるいは localfile を一つだけ登録
-できます．gfarm-URL の内容はローカルファイルの内容に置き換えられます．
 gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
 一つを登録できます．
 ファイルが登録されるファイルシステムノードとオプション -a -h について
 は，上記の第1の形式での説明を参照しください．
 .SH "OPTIONS"
+.TP
+\fB-f\fR
+gfarm-URL がファイルとして存在していても，強制的に上書きします．
 .TP
 \fB-?\fR
 引数オプションを表示します．
