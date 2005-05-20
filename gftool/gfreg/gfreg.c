@@ -766,6 +766,10 @@ main(int argc, char *argv[])
 
 		if (fd_needs_close) {
 			close(fd);
+		} else if (is_dest_dir) {
+			fprintf(stderr, "%s: cannot create file `-'\n",
+				program_name);
+			exit(EXIT_FAILURE);
 		} else if (++c > 1) {
 			fprintf(stderr, "%s: `-' (stdin) is specified "
 				"multiple times\n", program_name);
