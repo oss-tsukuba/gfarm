@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>12 May 2005</date></refentryinfo>
+<refentryinfo><date>20 May 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -128,9 +128,6 @@ multiple <parameter>directorie</parameter>s,
 can be specified and they will be registered in
 <parameter>gfarm-URL</parameter>.  They can be mixed in parameteres,
 while other forms inhibit this manner.
-When <parameter>gfarm-URL</parameter> already exists as a file,
-one program or localfile can be specified and the content of
-<parameter>gfarm-URL</parameter> will be replaced. 
 If <parameter>gfarm-URL</parameter> does not exist, one
 <parameter>directory</parameter> or one
 <parameter>program</parameter>, or one
@@ -145,6 +142,12 @@ option or the <option>-h</option> option.
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>overwrites gfarm-URL even if it exits as a Gfarm file.</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>

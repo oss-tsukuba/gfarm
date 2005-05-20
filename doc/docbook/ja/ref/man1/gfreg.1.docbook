@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>12 May 2005</date></refentryinfo>
+<refentryinfo><date>20 May 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -107,8 +107,6 @@ localfile を指定できます．ファイルの複製が作成されるファイルシス
 Gfarm-URL がディレクトリとして存在する場合は，複数の directory,
 program, localfile を Gfarm-URL ディレクトリに登録します．
 他の形式と異なり，これらをいっしょに引数として指定することもできます．
-gfarm_URL がファイルの場合は program あるいは localfile を一つだけ登録
-できます．gfarm-URL の内容はローカルファイルの内容に置き換えられます．
 gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
 一つを登録できます．
 ファイルが登録されるファイルシステムノードとオプション -a -h について
@@ -119,6 +117,12 @@ gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>gfarm-URL がファイルとして存在していても，強制的に上書きします．</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
