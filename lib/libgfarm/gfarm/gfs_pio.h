@@ -91,6 +91,7 @@ struct gfs_file_section_context {
 	char *section;
 	char *canonical_hostname;
 	int fd; /* socket (for remote) or file (for local) descriptor */
+	pid_t pid;
 
 	/* for checksum, maintained only if GFS_FILE_MODE_CALC_DIGEST */
 	EVP_MD_CTX md_ctx;

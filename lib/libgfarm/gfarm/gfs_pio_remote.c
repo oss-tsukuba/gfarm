@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <libgen.h>
 #include <sys/socket.h> /* struct sockaddr */
@@ -22,6 +23,14 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
+	/*
+	 * Do not close remote file from a child process because its
+	 * open file count is not incremented.
+	 * XXX - This behavior is not the same as expected, but better
+	 * than closing the remote file.
+	 */
+	if (vc->pid != getpid())
+		return (NULL);
 	return (gfs_client_close(gfs_server, vc->fd));
 }
 
@@ -170,6 +179,7 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 
 	vc->ops = &gfs_pio_remote_storage_ops;
 	vc->fd = fd;
+	vc->pid = getpid();
 	return (NULL);
 }
 
