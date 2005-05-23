@@ -13,7 +13,7 @@ Configuratoin
 =============
 Gfarm packages are built by
 
-  debuild --set-envvar GFARM_CONFIGURE_OPTION=--with-globus-static
+  debuild -eGLOBUS_PREFIX=$GLOBUS_LOCATION -eGFARM_CONFIGURE_OPTION=--with-globus-static -eBUILD_BOTH
 
 to link statistically with globus toolkit binaries. If you have globus
 tool kit libraries and want to build debian package for yourself, you
@@ -22,7 +22,7 @@ add configure option to debian/rules file.
 
 NOTE
 ====
-A pdiff command is not included in binary package due to conflict with
-a2ps/pdiff task.
+The pdiff and pcat commands are not included in binary package due to conflict with
+a2ps and tct packages, respectively.
 
- -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Fri, 15 Apr 2005 11:30:00 +0900
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Mon, 23 May 2005 16:24:00 +0900
