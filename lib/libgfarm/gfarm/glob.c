@@ -252,6 +252,7 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			gfs_glob_add(types, GFS_DT_DIR);
 		else
 			gfs_glob_add(types, GFS_DT_REG);
+		gfs_stat_free(&st);
 		return (NULL);
 	}
 	nomagic = i;

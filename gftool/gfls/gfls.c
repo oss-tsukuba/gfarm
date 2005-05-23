@@ -325,8 +325,11 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 	}
 	if (n > 0 || e != NULL)
 		*need_newline = 1;
-	if (stats != NULL)
+	if (stats != NULL) {
+		for (i = 0; i < n; i++)
+			gfs_stat_free(&stats[i]);
 		free(stats);
+	}
 	free(ls);
 	return (e);
 }
@@ -638,5 +641,7 @@ main(int argc, char **argv)
 			printf("<%s>\n", gfarm_stringlist_elem(&paths, i));
 #endif
 	}
+	gfarm_stringlist_free_deeply(&paths);
+	gfs_glob_free(&types);
 	return (exit_code);
 }

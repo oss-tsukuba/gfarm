@@ -230,6 +230,7 @@ gfarm_generic_info_get(
 	    LDAP_SCOPE_BASE, ops->query_type, NULL, 0, &res);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
+		ldap_msgfree(res);
 		if (rv == LDAP_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		return (ldap_err2string(rv));
@@ -803,6 +804,7 @@ gfarm_host_info_get_by_name_alias(
 		return (GFARM_ERR_AMBIGUOUS_RESULT);
 	}
 	*info = infos[0];
+	free(infos);
 	return (NULL);
 }
 

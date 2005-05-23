@@ -135,6 +135,8 @@ main(int argc, char **argv)
 		    opt_print_inode) != NULL)
 			failed = 1;
 	}
+	gfarm_strings_free_deeply(nhosts, hosts);
+	gfarm_stringlist_free_deeply(&hostlist);
 
 	if ((e = gfarm_terminate()) != NULL) {
 		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);

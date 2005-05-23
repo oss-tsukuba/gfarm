@@ -113,6 +113,9 @@ main(argc, argv)
 			printf("\n");
 		}
 	}
+	gfarm_job_info_free_contents(infos, n);
+	free(infos);
+	free(joblist);
 
 	e = gfarm_terminate();
 	if (e != NULL) {

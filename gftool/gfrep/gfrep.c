@@ -1231,6 +1231,7 @@ main(argc, argv)
 				error_happened = 1;
 		}
 	}	
+	gfarm_stringlist_free_deeply(&paths);
 	gfs_glob_free(&types);
 	e = gfarm_terminate();
 	if (e != NULL) {

@@ -33,5 +33,6 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	printf("%s\n", path);
+	free(path);
 	return (0);
 }

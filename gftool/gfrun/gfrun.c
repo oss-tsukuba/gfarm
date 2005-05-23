@@ -863,6 +863,7 @@ main(int argc, char **argv)
 	gfarm_stringlist_free(&output_list);
 	gfarm_stringlist_free(&input_list);
 	gfarm_stringlist_free(&rsh_options);
+	free(command_url);
 	if ((e = gfarm_terminate()) != NULL) {
 		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);
 		exit(1);

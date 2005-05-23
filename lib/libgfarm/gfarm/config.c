@@ -325,6 +325,7 @@ gfarm_set_global_user_for_this_local_account(void)
  set_global_username:
 #endif
 	e = gfarm_set_global_username(global_user);
+	free(global_user);
 	gfarm_stringlist_free_deeply(&local_user_map_file_list);
 	return (e);
 }
@@ -932,6 +933,7 @@ gfarm_config_set_default_spool_on_client(void)
 	if (e == NULL && gfarm_host_is_local(host)) {
 		struct sockaddr peer_addr;
 		struct gfs_connection *gfs_server;
+		char *old_ptr = gfarm_spool_root;
 
 		e = gfarm_host_address_get(host,
 			gfarm_spool_server_port, &peer_addr, NULL);
@@ -945,6 +947,9 @@ gfarm_config_set_default_spool_on_client(void)
 		e = gfs_client_get_spool_root(gfs_server, &gfarm_spool_root);
 		if (e == NULL)
 			gfarm_is_active_file_system_node = 1;
+		if (old_ptr != NULL && old_ptr != gfarm_spool_root &&
+		    old_ptr != gfarm_spool_root_default)
+			free(old_ptr);
 	ignore_error:
 		;
 	}
