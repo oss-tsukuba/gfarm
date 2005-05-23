@@ -245,8 +245,10 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		if (e != NULL)
 			return (e);
 		s = gfarm_url_prefix_add(path_buffer);
-		if (s == NULL)
+		if (s == NULL) {
+			gfs_stat_free(&st);
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		gfarm_stringlist_add(paths, s);
 		if (GFARM_S_ISDIR(st.st_mode))
 			gfs_glob_add(types, GFS_DT_DIR);
