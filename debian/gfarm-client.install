@@ -26,7 +26,6 @@ debian/tmp/usr/bin/gfmkdir
 debian/tmp/usr/bin/gfpwd
 debian/tmp/usr/bin/gfrmdir
 debian/tmp/usr/bin/gfsetdir
-debian/tmp/usr/bin/pcat
 debian/tmp/usr/bin/pcp
 debian/tmp/usr/bin/pdel
 debian/tmp/usr/bin/pdist
