@@ -1,1 +1,3 @@
 /etc/init.d/gfmd
+/etc/gfarm-ldap/gfarm.schema
+/etc/default/gfarm-slapd
