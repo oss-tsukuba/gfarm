@@ -286,7 +286,7 @@ restart_gfarm_agent()
 {
 	touch $GFARMENV
 	chmod go-rw $GFARMENV
-	gfarm_agent > $GFARMENV 2> /dev/null || rm -f $GFARMENV
+	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
 }
 
 check_gfarm_agent()
