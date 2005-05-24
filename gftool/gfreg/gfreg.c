@@ -194,24 +194,12 @@ get_nsections(char *gfarm_url, int *nsectionsp)
 	return (1);
 }
 
-static char *
-path_one_dir_skip(char *path)
-{
-	for (; *path != '\0'; path++) {
-		if (*path == '/')
-			return (path + 1);
-	}
-	return (path);
-}
-
 static void
-register_file(int is_dest_dir, char *gfarm_url, char *section, char *hostname,
-	char *filename, int use_file_mode, gfarm_mode_t file_mode,
-	int is_recursive)
+register_file(char *gfarm_url, char *section, char *hostname,
+	      char *filename, int use_file_mode, gfarm_mode_t file_mode)
 {
 	char *e;
 	int fd, fd_needs_close;
-	char *target_url;
 	GFS_File gf;
 
 	if (!open_file(filename, &fd, &fd_needs_close))
@@ -222,41 +210,25 @@ register_file(int is_dest_dir, char *gfarm_url, char *section, char *hostname,
 	if ((file_mode & 0111) == 0)
 		section = "0";	  
 
-	if (is_dest_dir) {
-		if (!concat_dir_name(gfarm_url,
-		    is_recursive ? filename : gfarm_path_dir_skip(filename),
-		    &target_url))
-			goto finish;
-	} else if (is_recursive) {
-		if (!concat_dir_name(gfarm_url,
-		    path_one_dir_skip(filename),
-		    &target_url))
-			goto finish;
-	} else {
-		target_url = gfarm_url;
-	}
-
-	if (opt_force || section_does_not_exists(target_url, section)) {
-		e = gfs_pio_create(target_url,
+	if (opt_force || section_does_not_exists(gfarm_url, section)) {
+		e = gfs_pio_create(gfarm_url,
 		    GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, file_mode, &gf);
 		if (e != NULL) {
 			fprintf(stderr, "%s: cannot open %s: %s\n",
-			    program_name, target_url, e);
+			    program_name, gfarm_url, e);
 			error_happened = 1;
 		} else {
 			if ((e = gfs_pio_set_view_section(gf, section,
 			    hostname, 0)) != NULL) {
 				fprintf(stderr, "%s: cannot open %s:%s: %s\n",
-				    program_name, target_url, section, e);
+				    program_name, gfarm_url, section, e);
 				error_happened = 1;
 			} else {
-				copy_file(fd, gf, target_url, section);
+				copy_file(fd, gf, gfarm_url, section);
 			}
 			gfs_pio_close(gf);
 		}
 	}
-	if (target_url != gfarm_url)
-		free(target_url);
  finish:
 	if (fd_needs_close)
 		close(fd);
@@ -273,7 +245,7 @@ add_cwd_to_relative_path(char *cwd, const char *path)
 			    program_name, GFARM_ERR_NO_MEMORY);
 		exit(EXIT_FAILURE);
 	}
-	sprintf(p, "%s/%s", cwd, path);
+	sprintf(p, strcmp(cwd, "") ? "%s/%s" : "%s%s", cwd, path);
 	return (p);
 }
 
@@ -294,7 +266,6 @@ traverse_file_tree(char *cwd, char *path,
 		error_happened = 1;
 		return (0);
 	}
-
 	if (S_ISDIR(s.st_mode)) {
 		e = gfarm_stringlist_add(dir_list, dpath);
 		if (e != NULL) {
@@ -384,10 +355,10 @@ get_lists(char *dir_path,
 			continue;
 		}
 		if (strcmp(entry->d_name, ".") == 0) {
-			gfarm_stringlist_add(dir_list, dir_path);
+			gfarm_stringlist_add(dir_list, "");
 			continue;
-		} 
-		if (!traverse_file_tree(dir_path, entry->d_name,
+		}
+		if (!traverse_file_tree("", entry->d_name,
 					dir_list, file_list)) {
 			closedir(dir);
 			return (0);
@@ -411,10 +382,10 @@ get_lists(char *dir_path,
 }
 
 static void
-register_directory(int is_dest_dir, char *gfarm_url, char *section, char *hostname,
-	char *filename)
+register_directory(int is_dest_dir, char *gfarm_url, char *section,
+		   char *hostname, char *filename)
 {
-	char *e;
+	char *e, *target_base_url, *target_url;
 	gfarm_stringlist dir_list, file_list;
 	int i;
 
@@ -432,23 +403,21 @@ register_directory(int is_dest_dir, char *gfarm_url, char *section, char *hostna
 	if (!get_lists(filename, &dir_list, &file_list))
 		return;
 
-	for (i = 0; i < gfarm_stringlist_length(&dir_list); i++) {
-		char *target_url;
-
-		if (!is_dest_dir) {
-			if (!concat_dir_name(
-				gfarm_url,
-				path_one_dir_skip(
-				    gfarm_stringlist_elem(&dir_list, i)),
-				&target_url))
+	if (is_dest_dir) {
+		if (!concat_dir_name(gfarm_url, gfarm_path_dir_skip(filename),
+				     &target_base_url))
 			return;
-		} else if (!concat_dir_name(
-				gfarm_url,
-				gfarm_stringlist_elem(&dir_list, i),
-				&target_url)) {
+	} else {
+			target_base_url = gfarm_url;
+	}
+
+	for (i = 0; i < gfarm_stringlist_length(&dir_list); i++) {
+		if (!concat_dir_name(target_base_url,
+		    gfarm_stringlist_elem(&dir_list, i), &target_url)) {
 			return;
 		}
 		e = gfs_mkdir(target_url, 0755);
+		free(target_url);
 		if (e != NULL) {
 			fprintf(stderr, "%s: gfs_mkdir: %s, %s",
 				 program_name, target_url, e);
@@ -456,15 +425,26 @@ register_directory(int is_dest_dir, char *gfarm_url, char *section, char *hostna
 		}
 	}
 	for (i = 0; i < gfarm_stringlist_length(&file_list); i++) {
-		int is_recursive, use_file_mode;
+		int use_file_mode;
 		gfarm_mode_t file_mode_dummy;
-
-		register_file(is_dest_dir, gfarm_url, section,
-		    hostname,
-		    gfarm_stringlist_elem(&file_list, i),
-		    use_file_mode = 0, file_mode_dummy = 0000,
-		    is_recursive = 1);
+		char *src_file_name;
+		
+		if (!concat_dir_name(filename,
+			gfarm_stringlist_elem(&file_list, i),
+			&src_file_name))
+			return;
+		if (!concat_dir_name(is_dest_dir ? target_base_url : gfarm_url,
+			gfarm_stringlist_elem(&file_list, i),
+			&target_url))
+			return;
+		register_file(target_url, section,
+			 hostname, src_file_name,
+			 use_file_mode = 0, file_mode_dummy = 0000);
+		free(src_file_name);
+		free(target_url);
 	}
+	if (is_dest_dir)
+		free (target_base_url);
 	gfarm_stringlist_free(&dir_list);
 	gfarm_stringlist_free(&file_list);
 }
@@ -835,13 +815,23 @@ main(int argc, char *argv[])
 						   section, hostname, argv[i]);
 
 			} else {
-				int is_recursive;
-
-				register_file(is_dest_dir, gfarm_url, section,
+				char *target_url;
+				
+				if (is_dest_dir) {
+					if (!concat_dir_name(gfarm_url,
+						gfarm_path_dir_skip(argv[i]),
+						&target_url))
+					exit(EXIT_FAILURE);
+				} else {
+					target_url = gfarm_url;
+				}
+				register_file(target_url, section,
 				    hostname, argv[i],
 				    file_mode_arg == gfarm_url,
-				    file_mode,
-				    is_recursive = 0);
+				    file_mode);
+				if (is_dest_dir) {
+					free(target_url);
+				}
 			}
 		}
 		if (section_alloced)
@@ -889,13 +879,23 @@ main(int argc, char *argv[])
 				fprintf(stderr,"%s: omitting directory `%s'\n",
 					program_name, argv[i]);
 			} else {
-				int is_recursive;
-
-				register_file(is_dest_dir, gfarm_url, section,
+				char *target_url;
+				
+				if (is_dest_dir) {
+					if (!concat_dir_name(gfarm_url,
+						gfarm_path_dir_skip(argv[i]),
+						&target_url))
+					exit(EXIT_FAILURE);
+				} else {
+					target_url = gfarm_url;
+				}
+				register_file(target_url, section,
 				    hostname, argv[i],
 				    file_mode_arg == gfarm_url,
-				    file_mode,
-				    is_recursive = 0);
+				    file_mode);
+				if (is_dest_dir) {
+					free(target_url);
+				}
 			}
 		}
 		if (section_alloced)
