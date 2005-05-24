@@ -209,13 +209,15 @@ agent_client_readdir(struct agent_connection *agent_server,
 		"i/ihccs", p,
 		&de.d_fileno, &de.d_reclen,
 		&de.d_type, &de.d_namlen, &name);
-	if (strcmp(name, "") == 0)
-		*entry = NULL;
-	else {
-		strcpy(de.d_name, name);
-		*entry = &de;
+	if (e == NULL) {
+		if (*name == '\0')
+			*entry = NULL;
+		else {
+			strcpy(de.d_name, name);
+			*entry = &de;
+		}
+		free(name);
 	}
-	free(name);
 	return (e);
 }
 
