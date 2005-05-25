@@ -93,6 +93,9 @@ ifeq ($(globus), yes)
 	ln -s $(GFMD_PKG).docs  debian/$(GFMD_GSI_PKG).docs
 	ln -s $(GFSD_PKG).docs  debian/$(GFSD_GSI_PKG).docs
 
+	ln -s $(GFMD_PKG).init  debian/$(GFMD_GSI_PKG).$(GFMD_PKG).init
+	ln -s $(GFSD_PKG).init  debian/$(GFSD_GSI_PKG).$(GFSD_PKG).init
+
 	ln -s $(GFMD_PKG).conffiles  debian/$(GFMD_GSI_PKG).conffiles
 	ln -s $(GFSD_PKG).conffiles  debian/$(GFSD_GSI_PKG).conffiles
 
@@ -144,6 +147,8 @@ clean:
 	-rm -f debian/$(GFMD_GSI_PKG).docs
 	-rm -f debian/$(GFSD_GSI_PKG).docs
 
+	-rm -f debian/{$(GFMD_GSI_PKG).$(GFMD_PKG),$(GFSD_GSI_PKG).$(GFSD_PKG)}.init
+
 	rm -f debian/$(GFMD_GSI_PKG).conffiles
 	rm -f debian/$(GFSD_GSI_PKG).conffiles
 
@@ -187,22 +192,19 @@ endif
 	  install -d debian/$$tmp_dir/etc/init.d/; \
 	  install -m 444 doc/conf/gfarm.conf debian/$$tmp_dir/etc/; \
 	  install -d debian/$$tmp_dir/usr/share/doc/gfarm/; \
-	  install debian/gfsd.init debian/$$tmp_dir/etc/init.d/; \
-	  mv debian/$$tmp_dir/etc/init.d/gfsd.init debian/$$tmp_dir/etc/init.d/gfsd; \
-	  install debian/gfmd.init debian/$$tmp_dir/etc/init.d/; \
-	  mv debian/$$tmp_dir/etc/init.d/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
+	  install debian/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
 	  install -d debian/$$tmp_dir/etc/ldap/schema/; \
 	  install -d debian/$$tmp_dir/etc/gfarm-ldap/; \
-	  install doc/conf/gfarm.schema debian/$$tmp_dir/etc/gfarm-ldap/; \
+	  install -m 644 doc/conf/gfarm.schema debian/$$tmp_dir/etc/gfarm-ldap/; \
 	  install -d debian/$$tmp_dir/usr/share/gfarm/config; \
-	  install package/redhat/config/gfarm.conf.in debian/$$tmp_dir/usr/share/gfarm/config/; \
-	  install debian/slapd.conf-2.1.in debian/$$tmp_dir/usr/share/gfarm/config/; \
+	  install -m 644 package/redhat/config/gfarm.conf.in debian/$$tmp_dir/usr/share/gfarm/config/; \
+	  install -m 644 debian/slapd.conf-2.1.in debian/$$tmp_dir/usr/share/gfarm/config/; \
 	  install build/package/redhat/config/config-gfarm debian/$$tmp_dir/usr/lib/gfarm/; \
 	  install debian/config-gfarm debian/$$tmp_dir/usr/sbin/; \
 	  install debian/gfmd.init debian/$$tmp_dir/usr/share/gfarm/config/gfmd.in; \
 	  install debian/gfarm-slapd.init debian/$$tmp_dir/usr/share/gfarm/config/gfarm-slapd.in; \
 	  install -d debian/$$tmp_dir/etc/default/; \
-	  install debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \
+	  install -m 644 debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \
 	  install build/package/redhat/config/config-gfsd debian/$$tmp_dir/usr/lib/gfarm/; \
 	  install debian/config-gfsd debian/$$tmp_dir/usr/sbin/; \
 	done
@@ -285,16 +287,20 @@ binary-arch: build install
 #	dh_installmenu
 #	dh_installemacsen
 #	dh_installpam
+ifeq ($(non-globus),yes)
 	dh_installinit
+endif
+ifeq ($(globus),yes)
+	dh_installinit -pgfsd-gsi --name=gfsd
+	dh_installinit -pgfmd-gsi --name=gfmd
+endif
 #	dh_installcron
-
 	dh_installman
-
 #	dh_installinfo
 #	dh_undocumented
 	dh_installchangelogs
 #### XXX skip dh_strip because an error is occurred (2004/08/25)
-#	dh_strip
+	dh_strip
 	dh_link
 	dh_compress
 	dh_fixperms
