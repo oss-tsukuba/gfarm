@@ -126,7 +126,7 @@ char *
 gfarm_metadb_check(void)
 {
 	int rv;
-	LDAPMessage *res;
+	LDAPMessage *res = NULL;
 
 	if (gfarm_ldap_server == NULL)
 		return ("metadb connection already disconnected");
@@ -134,6 +134,7 @@ gfarm_metadb_check(void)
 	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
 	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
+		ldap_msgfree(res);
 		if (rv == LDAP_SERVER_DOWN)
 			return ("can't contact gfarm meta-db server");
 		if (rv == LDAP_NO_SUCH_OBJECT)
@@ -214,7 +215,7 @@ gfarm_generic_info_get(
 	void *info,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res, *e;
+	LDAPMessage *res = NULL, *e;
 	int n, rv;
 	char *a;
 	BerElement *ber;
@@ -369,7 +370,7 @@ gfarm_generic_info_get_all(
 	void *infosp,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res, *e;
+	LDAPMessage *res = NULL, *e;
 	int i, n, rv;
 	char *a;
 	BerElement *ber;
@@ -382,6 +383,7 @@ gfarm_generic_info_get_all(
 	/* search for entries, return all attrs  */
 	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
+		ldap_msgfree(res);
 		if (rv == LDAP_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		return (ldap_err2string(rv));
@@ -459,7 +461,7 @@ gfarm_generic_info_get_foreach(
 	void *closure,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res, *e;
+	LDAPMessage *res = NULL, *e;
 	int i, msgid, rv;
 	char *a;
 	BerElement *ber;
@@ -480,6 +482,7 @@ gfarm_generic_info_get_foreach(
 		e = ldap_first_entry(gfarm_ldap_server, res);
 		if (e == NULL) {
 			ldap_msgfree(res);
+			res = NULL;
 			break;
 		}
 		for (; e != NULL; e = ldap_next_entry(gfarm_ldap_server, e)) {
@@ -512,7 +515,9 @@ gfarm_generic_info_get_foreach(
 		}
 		/* free the search results */
 		ldap_msgfree(res);
+		res = NULL;
 	}
+	ldap_msgfree(res);
 	if (rv == -1)
 		return ("ldap_result: error");
 
