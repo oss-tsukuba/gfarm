@@ -41,8 +41,7 @@ gfarm_metadb_share_connection(void)
 char *
 gfarm_metadb_initialize(void)
 {
-	int rv;
-	int port;
+	int rv, port, version;
 	char *e;
 
 	if (gfarm_ldap_server_name == NULL)
@@ -77,15 +76,13 @@ gfarm_metadb_initialize(void)
 		}
 	}
 
+	/* options */
+	version = LDAP_VERSION3;
+	ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION, &version);
+	ldap_set_option(gfarm_ldap_server, LDAP_OPT_REFERRALS, LDAP_OPT_ON);
+
 	/* authenticate as nobody */
 	rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL); 
-	if (rv == LDAP_PROTOCOL_ERROR) {
-		/* Try the version 3 */
-		int version = LDAP_VERSION3;
-		ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION,
-				&version);
-		rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL); 
-	}
 	if (rv != LDAP_SUCCESS) {
 		(void)gfarm_metadb_terminate();
 		return (ldap_err2string(rv));
@@ -127,6 +124,7 @@ gfarm_metadb_check(void)
 {
 	int rv;
 	LDAPMessage *res = NULL;
+	char *e = NULL;
 
 	if (gfarm_ldap_server == NULL)
 		return ("metadb connection already disconnected");
@@ -134,15 +132,20 @@ gfarm_metadb_check(void)
 	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
 	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
-		ldap_msgfree(res);
-		if (rv == LDAP_SERVER_DOWN)
-			return ("can't contact gfarm meta-db server");
-		if (rv == LDAP_NO_SUCH_OBJECT)
-			return ("gfarm meta-db ldap_base_dn not found");
-		return ("gfarm meta-db ldap_base_dn access failed");
+		switch (rv) {
+		case LDAP_SERVER_DOWN:
+			e = "can't contact gfarm meta-db server";
+			break;
+		case LDAP_NO_SUCH_OBJECT:
+			e = "gfarm meta-db ldap_base_dn not found";
+			break;
+		default:
+			e = "gfarm meta-db ldap_base_dn access failed";
+		}
 	}
-	ldap_msgfree(res);
-	return (NULL);
+	if (res != NULL)
+		ldap_msgfree(res);
+	return (e);
 }
 
 /*
@@ -215,32 +218,33 @@ gfarm_generic_info_get(
 	void *info,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res = NULL, *e;
+	LDAPMessage *res, *e;
 	int n, rv;
-	char *a;
+	char *a, *dn, *error;
 	BerElement *ber;
 	char **vals;
-	char *dn = ops->make_dn(key);
-	char *error;
 
-	if (dn == NULL)
-		return (GFARM_ERR_NO_MEMORY);
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
+
+	dn = ops->make_dn(key);
+	if (dn == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	res = NULL;
 	rv = ldap_search_s(gfarm_ldap_server, dn, 
 	    LDAP_SCOPE_BASE, ops->query_type, NULL, 0, &res);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
-		ldap_msgfree(res);
 		if (rv == LDAP_NO_SUCH_OBJECT)
-			return (GFARM_ERR_NO_SUCH_OBJECT);
-		return (ldap_err2string(rv));
+			error = GFARM_ERR_NO_SUCH_OBJECT;
+		else
+			error = ldap_err2string(rv);
+		goto msgfree;
 	}
 	n = ldap_count_entries(gfarm_ldap_server, res);
 	if (n == 0) {
-		/* free the search results */
-		ldap_msgfree(res);
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		goto msgfree;
 	}
 	ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
@@ -257,17 +261,18 @@ gfarm_generic_info_get(
 	if (ber != NULL)
 		ber_free(ber, 0);
 
-	/* free the search results */
-	ldap_msgfree(res);
-
 	/* should check all fields are filled */
 	if (!ops->validate(info)) {
 		ops->free(info);
 		/* XXX - different error code is better ? */
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
 	}
+msgfree:
+	/* free the search results */
+	if (res != NULL)
+		ldap_msgfree(res);
 
-	return (NULL); /* success */
+	return (error); /* success */
 }
 
 char *
@@ -277,13 +282,14 @@ gfarm_generic_info_set(
 	const struct gfarm_generic_info_ops *ops)
 {
 	int rv;
-	char *dn = ops->make_dn(key);
-	char *error;
+	char *dn, *error;
 
-	if (dn == NULL)
-		return (GFARM_ERR_NO_MEMORY);
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
+
+	dn = ops->make_dn(key);
+	if (dn == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_add_s(gfarm_ldap_server, dn, modv);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
@@ -301,13 +307,14 @@ gfarm_generic_info_modify(
 	const struct gfarm_generic_info_ops *ops)
 {
 	int rv;
-	char *dn = ops->make_dn(key);
-	char *error;
+	char *dn, *error;
 
-	if (dn == NULL)
-		return (GFARM_ERR_NO_MEMORY);
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
+
+	dn = ops->make_dn(key);
+	if (dn == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_modify_s(gfarm_ldap_server, dn, modv);
 	free(dn);
 	switch (rv) {
@@ -328,13 +335,14 @@ gfarm_generic_info_remove(
 	const struct gfarm_generic_info_ops *ops)
 {
 	int rv;
-	char *dn = ops->make_dn(key);
-	char *error;
+	char *dn, *error;
 
-	if (dn == NULL)
-		return (GFARM_ERR_NO_MEMORY);
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
+
+	dn = ops->make_dn(key);
+	if (dn == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_delete_s(gfarm_ldap_server, dn);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
@@ -370,7 +378,7 @@ gfarm_generic_info_get_all(
 	void *infosp,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res = NULL, *e;
+	LDAPMessage *res, *e;
 	int i, n, rv;
 	char *a;
 	BerElement *ber;
@@ -381,24 +389,24 @@ gfarm_generic_info_get_all(
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
 	/* search for entries, return all attrs  */
+	res = NULL;
 	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
-		ldap_msgfree(res);
 		if (rv == LDAP_NO_SUCH_OBJECT)
-			return (GFARM_ERR_NO_SUCH_OBJECT);
-		return (ldap_err2string(rv));
+			error = GFARM_ERR_NO_SUCH_OBJECT;
+		else
+			error = ldap_err2string(rv);
+		goto msgfree;
 	}
 	n = ldap_count_entries(gfarm_ldap_server, res);
 	if (n == 0) {
-		/* free the search results */
-		ldap_msgfree(res);
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		goto msgfree;
 	}
 	infos = malloc(ops->info_size * n);
 	if (infos == NULL) {
-		/* free the search results */
-		ldap_msgfree(res);
-		return (GFARM_ERR_NO_MEMORY);
+		error = GFARM_ERR_NO_MEMORY;
+		goto msgfree;
 	}
 
 	/* use last element as temporary buffer */
@@ -434,20 +442,21 @@ gfarm_generic_info_get_all(
 		}
 		i++;
 	}
-
-	/* free the search results */
-	ldap_msgfree(res);
-
 	if (i == 0) {
 		free(infos);
 		/* XXX - data were all invalid */
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		goto msgfree;
 	}
-
 	/* XXX - if (i < n), element from (i+1) to (n-1) may be wasted */
 	*np = i;
 	*(char **)infosp = infos;
-	return (NULL);
+msgfree:
+	/* free the search results */
+	if (res != NULL)
+		ldap_msgfree(res);
+
+	return (error);
 }
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
@@ -461,7 +470,7 @@ gfarm_generic_info_get_foreach(
 	void *closure,
 	const struct gfarm_generic_info_ops *ops)
 {
-	LDAPMessage *res = NULL, *e;
+	LDAPMessage *res, *e;
 	int i, msgid, rv;
 	char *a;
 	BerElement *ber;
@@ -477,14 +486,13 @@ gfarm_generic_info_get_foreach(
 
 	/* step through each entry returned */
 	i = 0;
+	res = NULL;
 	while ((rv = ldap_result(gfarm_ldap_server,
 			msgid, LDAP_MSG_ONE, NULL, &res)) > 0) {
 		e = ldap_first_entry(gfarm_ldap_server, res);
-		if (e == NULL) {
-			ldap_msgfree(res);
-			res = NULL;
+		if (e == NULL)
 			break;
-		}
+
 		for (; e != NULL; e = ldap_next_entry(gfarm_ldap_server, e)) {
 
 			ops->clear(tmp_info);
@@ -517,7 +525,8 @@ gfarm_generic_info_get_foreach(
 		ldap_msgfree(res);
 		res = NULL;
 	}
-	ldap_msgfree(res);
+	if (res != NULL)
+		ldap_msgfree(res);
 	if (rv == -1)
 		return ("ldap_result: error");
 
