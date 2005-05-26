@@ -78,10 +78,10 @@ gfarm_agent_disconnect()
 		return ("already disconnected");
 
 	e = agent_client_disconnect(agent_server);
-	if (e == NULL) {
-		agent_server = NULL;
-		agent_pid = 0;
-	}
+	/* reset agent_server even in error case */
+	agent_server = NULL;
+	agent_pid = 0;
+
 	return (e);
 }
 
