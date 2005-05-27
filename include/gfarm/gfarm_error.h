@@ -25,6 +25,9 @@ extern char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[];
 extern char GFARM_ERR_DISK_QUOTA_EXCEEDED[];
 extern char GFARM_ERR_DIRECTORY_NOT_EMPTY[];
 
+/* non classic, system call */
+extern char GFARM_ERR_FUNCTION_NOT_IMPLEMENTED[];
+
 /* math software */
 extern char GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE[];
 

@@ -42,6 +42,9 @@ char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[] =
 char GFARM_ERR_DISK_QUOTA_EXCEEDED[] = "disk quota exceeded";
 char GFARM_ERR_DIRECTORY_NOT_EMPTY[] = "directory not empty";
 
+/* non classic, system call */
+char GFARM_ERR_FUNCTION_NOT_IMPLEMENTED[] = "function not implemented";
+
 /* math software */
 char GFARM_ERR_NUMERICAL_RESULT_OUT_OF_RANGE[] =
 	"numerical result out of range";
@@ -119,6 +122,11 @@ struct {
 	 */
 	{ EDQUOT,	GFARM_ERR_DISK_QUOTA_EXCEEDED },
 	{ ENOTEMPTY,	GFARM_ERR_DIRECTORY_NOT_EMPTY },
+
+	/*
+	 * non classic, system call
+	 */
+	{ ENOSYS,	GFARM_ERR_FUNCTION_NOT_IMPLEMENTED },
 
 	/*
 	 * math software
