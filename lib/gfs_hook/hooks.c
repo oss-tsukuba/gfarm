@@ -1788,6 +1788,104 @@ _xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 
 #endif /* _MKNOD_VER */
 
+int
+__fcntl(int filedes, int cmd, ...)
+{
+	va_list ap;
+	GFS_File gf;
+	char *e;
+	unsigned int val;
+
+	va_start(ap, cmd);
+	val = va_arg(ap, unsigned int);
+	va_end(ap);
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fcntl(%d, %d, %x)\n",
+					filedes, cmd, val));
+
+#ifdef F_FREESP
+	if (cmd == F_FREESP)
+		_gfs_hook_debug_v(fprintf(stderr, "flock.l_start:%d",
+			(int)(((struc flock *)val)->l_start)));
+#endif
+#ifdef F_FREESP64
+	if (cmd == F_FREESP64)
+		_gfs_hook_debug_v(fprintf(stderr, "flock64.l_start:%d",
+			(int)(((struct flock64 *)val)->l_start)));
+#endif
+
+	if (cmd == F_GETFD || cmd == F_SETFD ||
+	    (gf = gfs_hook_is_open(filedes)) == NULL)
+		return (syscall(SYS_fcntl, filedes, cmd, val));
+
+
+	_gfs_hook_debug(fprintf(stderr,
+		"GFS: Hooking __fcntl(%d(%d), %d, %x)\n",
+		filedes, gfs_pio_fileno(gf), cmd, val));
+
+	switch (cmd) {
+#ifdef F_FREESP
+	case F_FREESP:
+		if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+			_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __fcntl(%d, %d, %x)\n",
+						filedes, cmd, val));
+			e = GFARM_ERR_IS_A_DIRECTORY;
+		}
+		e = gfs_pio_truncate(gf, ((struct flock *)val)->l_start);
+		break;
+#endif
+#ifdef F_FREESP64
+	case F_FREESP64:
+		if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+			_gfs_hook_debug(fprintf(stderr,
+					"GFS: Hooking __fcntl(%d, %d, %x)\n",
+						filedes, cmd, val));
+			e = GFARM_ERR_IS_A_DIRECTORY;
+		}
+		e = gfs_pio_truncate(gf, ((struct flock64 *)val)->l_start);
+		break;
+#endif
+	default:
+		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+		break;
+	}	
+	if (e == NULL)
+		return (0); 
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fcntl: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fcntl(int filedes, int cmd, ...)
+{
+	va_list ap;
+	unsigned int val;
+
+	va_start(ap, cmd);
+	val = va_arg(ap, unsigned int);
+	va_end(ap);
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking fcntl(%d, %d, %x)\n",
+				  filedes, cmd, val));
+	return (__fcntl(filedes, cmd, val));
+}
+
+int
+fcntl(int filedes, int cmd, ...)
+{
+	va_list ap;
+	unsigned int val;
+
+	va_start(ap, cmd);
+	val = va_arg(ap, unsigned int);
+	va_end(ap);
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking fcntl(%d, %d, %x)\n",
+				  filedes, cmd, val));
+	return (__fcntl(filedes, cmd, val));
+}
+
 /*
  * definitions for "hooks_common.c"
  */
