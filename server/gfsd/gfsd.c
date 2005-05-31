@@ -375,7 +375,7 @@ gfs_server_fsync(struct xxx_connection *client)
 			save_errno = errno;
 		break;
 	default:
-		save_errno = EPROTO;
+		save_errno = EINVAL;
 		break;
 	}
 
