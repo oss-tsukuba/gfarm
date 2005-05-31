@@ -1886,6 +1886,84 @@ fcntl(int filedes, int cmd, ...)
 	return (__fcntl(filedes, cmd, val));
 }
 
+int
+__fsync(int filedes)
+{
+	GFS_File gf;
+	char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fsync(%d)\n", fiiledes));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (syscall(SYS_fsync, filedes));
+
+	_gfs_hook_debug(fprintf(stderr,
+		"GFS: Hooking __fsync(%d(%d))\n",
+				filedes, gfs_pio_fileno(gf)));
+
+	e = gfs_pio_sync(gf);
+	if (e == NULL)
+		return (0); 
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fsync: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fsync(int filedes)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking _fsync(%d)\n", filedes));
+	return (__fsync(filedes));
+}
+
+int
+fsync(int filedes)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking fsync(%d)\n", filedes));
+	return (__fsync(filedes));
+}
+
+int
+__fdatasync(int filedes)
+{
+	GFS_File gf;
+	char *e;
+
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fdatasync(%d)\n",
+				  fiiledes));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (syscall(SYS_fdatasync, filedes));
+
+	_gfs_hook_debug(fprintf(stderr,
+		"GFS: Hooking __fdatasync(%d(%d))\n",
+				filedes, gfs_pio_fileno(gf)));
+
+	e = gfs_pio_datasync(gf);
+	if (e == NULL)
+		return (0); 
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: __fdatasync: %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_fdatasync(int filedes)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking _fdatasync(%d)\n",
+				  filedes));
+	return (__fdatasync(filedes));
+}
+
+int
+fdatasync(int filedes)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking fdatasync(%d)\n", filedes));
+	return (__fdatasync(filedes));
+}
+
 /*
  * definitions for "hooks_common.c"
  */
