@@ -243,6 +243,35 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 	return (e);
 }
 
+static char *
+gfs_pio_view_global_fsync(GFS_File gf, int operation)
+{
+	struct gfs_file_global_context *gc = gf->view_context;
+	char *e = NULL;
+	int i;
+
+	for (i = 0; i < gf->pi.status.st_nsections; i++) {
+		e = gfs_pio_view_global_move_to(gf, i);
+		if (e != NULL)
+			return (e);
+
+		switch (operation) {
+		case GFS_PROTO_FSYNC_WITHOUT_METADATA:
+			e = gfs_pio_datasync(gc->fragment_gf);
+			break;
+		case GFS_PROTO_FSYNC_WITH_METADATA:
+			e = gfs_pio_sync(gc->fragment_gf);
+			break;
+		default:	
+			e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+			break;
+		}	
+		if (e != NULL)
+			return (e);
+	}
+	return (e);
+}
+
 static int
 gfs_pio_view_global_fd(GFS_File gf)
 {
@@ -270,6 +299,7 @@ struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_read,
 	gfs_pio_view_global_seek,
 	gfs_pio_view_global_ftruncate,
+	gfs_pio_view_global_fsync,
 	gfs_pio_view_global_fd,
 	gfs_pio_view_global_stat
 };

@@ -550,6 +550,19 @@ gfs_client_write(struct gfs_connection *gfs_server,
 }
 
 char *
+gfs_client_fsync(struct gfs_connection *gfs_server,
+		 gfarm_int32_t fd, gfarm_int32_t operation)
+{
+	char *e;
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
+			   fd, operation);
+	if (e != NULL)
+		return (e);
+	return (NULL);
+}
+
+char *
 gfs_client_link(struct gfs_connection *gfs_server, char *from, char *to)
 {
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_LINK, "ss/",

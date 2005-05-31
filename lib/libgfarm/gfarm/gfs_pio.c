@@ -190,6 +190,8 @@ static double gfs_pio_seek_time;
 static double gfs_pio_truncate_time;
 static double gfs_pio_read_time;
 static double gfs_pio_write_time;
+static double gfs_pio_sync_time;
+static double gfs_pio_datasync_time;
 static double gfs_pio_getline_time;
 
 char *
@@ -750,6 +752,42 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	return (e);
 }
 
+static char *
+sync_internal(GFS_File gf, int operation, double *time)
+{
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_flush(gf);
+	if (e != NULL)
+		goto finish;
+
+	e = (*gf->ops->view_fsync)(gf, operation);
+	if (e != NULL)
+		gf->error = e;
+finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(*time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+char *
+gfs_pio_sync(GFS_File gf)
+{
+	return (sync_internal(gf, GFS_PROTO_FSYNC_WITH_METADATA,
+			      &gfs_pio_sync_time));
+}
+
+char *
+gfs_pio_datasync(GFS_File gf)
+{
+	return (sync_internal(gf, GFS_PROTO_FSYNC_WITHOUT_METADATA,
+			      &gfs_pio_datasync_time));
+}
+
 int
 gfs_pio_getc(GFS_File gf)
 {
@@ -1132,6 +1170,7 @@ gfs_display_timers()
 	fprintf(stderr, "gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
 	fprintf(stderr, "gfs_pio_read    : %g sec\n", gfs_pio_read_time);
 	fprintf(stderr, "gfs_pio_write   : %g sec\n", gfs_pio_write_time);
+	fprintf(stderr, "gfs_pio_sync    : %g sec\n", gfs_pio_sync_time);
 	fprintf(stderr, "gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
 	fprintf(stderr, "gfs_pio_set_view_section : %g sec\n",
 		gfs_pio_set_view_section_time);

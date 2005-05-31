@@ -32,7 +32,8 @@ enum gfs_proto_command {
 	GFS_PROTO_FTRUNCATE,
 	GFS_PROTO_REPLICATE_FILE_SEQUENTIAL,
 	GFS_PROTO_REPLICATE_FILE_PARALLEL,
-	GFS_PROTO_STATFS
+	GFS_PROTO_STATFS,
+	GFS_PROTO_FSYNC
 };
 
 enum gfs_proto_error {
@@ -114,6 +115,15 @@ enum gfs_proto_command_server {
 	GFS_PROTO_COMMAND_EXITED,
 	GFS_PROTO_COMMAND_STOPPED, /* currently not used */
 	GFS_PROTO_COMMAND_FD_OUTPUT,
+};
+
+/*
+ * sub protocol of GFS_PROTO_FSYNC
+ */
+
+enum gfs_proto_fsync_operation {
+	GFS_PROTO_FSYNC_WITHOUT_METADATA,
+	GFS_PROTO_FSYNC_WITH_METADATA
 };
 
 #define GFARM_DEFAULT_COMMAND_IOBUF_SIZE 0x4000

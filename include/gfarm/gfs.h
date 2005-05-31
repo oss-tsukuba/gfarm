@@ -93,6 +93,8 @@ char *gfs_pio_flush(GFS_File);
 char *gfs_pio_seek(GFS_File, file_offset_t, int, file_offset_t *);
 char *gfs_pio_read(GFS_File, void *, int, int *);
 char *gfs_pio_write(GFS_File, const void *, int, int *);
+char *gfs_pio_sync(GFS_File);
+char *gfs_pio_datasync(GFS_File);
 
 int gfs_pio_getc(GFS_File);
 int gfs_pio_ungetc(GFS_File, int);

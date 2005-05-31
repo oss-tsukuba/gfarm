@@ -195,6 +195,14 @@ gfs_pio_view_section_ftruncate(GFS_File gf, file_offset_t length)
 	return ((*vc->ops->storage_ftruncate)(gf, length));
 }
 
+static char *
+gfs_pio_view_section_fsync(GFS_File gf, int operation)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return ((*vc->ops->storage_fsync)(gf, operation));
+}
+
 static int
 gfs_pio_view_section_fd(GFS_File gf)
 {
@@ -250,6 +258,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_read,
 	gfs_pio_view_section_seek,
 	gfs_pio_view_section_ftruncate,
+	gfs_pio_view_section_fsync,
 	gfs_pio_view_section_fd,
 	gfs_pio_view_section_stat
 };

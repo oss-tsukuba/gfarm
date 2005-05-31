@@ -144,6 +144,28 @@ gfs_pio_local_storage_ftruncate(GFS_File gf, file_offset_t length)
 }
 
 static char *
+gfs_pio_local_storage_fsync(GFS_File gf, int operation)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	int rv;
+
+	switch (operation) {
+	case GFS_PROTO_FSYNC_WITHOUT_METADATA:
+		rv = fdatasync(vc->fd);
+		break;
+	case GFS_PROTO_FSYNC_WITH_METADATA:
+		rv = fsync(vc->fd);
+		break;
+	default:
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	}
+
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (NULL);
+}
+
+static char *
 gfs_pio_local_storage_calculate_digest(GFS_File gf, char *digest_type,
 				       size_t digest_size,
 				       size_t *digest_lengthp,
@@ -186,6 +208,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_read,
 	gfs_pio_local_storage_seek,
 	gfs_pio_local_storage_ftruncate,
+	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_calculate_digest,
 	gfs_pio_local_storage_fd,
 };

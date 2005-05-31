@@ -13,6 +13,7 @@ struct gfs_pio_ops {
 	char *(*view_read)(GFS_File, char *, size_t, size_t *);
 	char *(*view_seek)(GFS_File, file_offset_t, int, file_offset_t *);
 	char *(*view_ftruncate)(GFS_File, file_offset_t);
+	char *(*view_fsync)(GFS_File, int);
 	int (*view_fd)(GFS_File);
 	char *(*view_stat)(GFS_File, struct gfs_stat *);
 };
@@ -76,6 +77,7 @@ struct gfs_storage_ops {
 	char *(*storage_read)(GFS_File, char *, size_t, size_t *);
 	char *(*storage_seek)(GFS_File, file_offset_t, int, file_offset_t *);
 	char *(*storage_ftruncate)(GFS_File, file_offset_t);
+	char *(*storage_fsync)(GFS_File, int);
 	char *(*storage_calculate_digest)(GFS_File, char *, size_t,
 	    size_t *, unsigned char *, file_offset_t *);
 	int (*storage_fd)(GFS_File);
