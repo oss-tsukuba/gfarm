@@ -357,6 +357,32 @@ gfs_server_write(struct xxx_connection *client)
 }
 
 void
+gfs_server_fsync(struct xxx_connection *client)
+{
+	int fd;
+	int operation;
+	int save_errno = 0;
+
+	gfs_server_get_request(client, "fsync", "ii", &fd, &operation);
+
+	switch (operation) {
+	case GFS_PROTO_FSYNC_WITHOUT_METADATA:      
+		if (fdatasync(file_table_get(fd)) == -1)
+			save_errno = errno;
+		break;
+	case GFS_PROTO_FSYNC_WITH_METADATA:
+		if (fsync(file_table_get(fd)) == -1)
+			save_errno = errno;
+		break;
+	default:
+		save_errno = EPROTO;
+		break;
+	}
+
+	gfs_server_put_reply_with_errno(client, "fsync", save_errno, "");
+}
+
+void
 gfs_server_link(struct xxx_connection *client)
 {
 	char *from, *to, *fpath, *tpath;
@@ -2012,8 +2038,9 @@ server(int client_fd)
 			    xxx_connection_env_for_credential(client));
 			break;
 		case GFS_PROTO_RENAME:	gfs_server_rename(client); break;
-		case GFS_PROTO_LINK:	gfs_server_link(client); break;  
-		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;  
+		case GFS_PROTO_LINK:	gfs_server_link(client); break;
+		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;
+		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		default:
 			sprintf(buffer, "%d", (int)request);
 			gflog_warning("unknown request", buffer);
