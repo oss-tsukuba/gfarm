@@ -263,7 +263,7 @@ gfs_pio_view_global_fsync(GFS_File gf, int operation)
 			e = gfs_pio_sync(gc->fragment_gf);
 			break;
 		default:	
-			e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+			e = GFARM_ERR_INVALID_ARGUMENT;
 			break;
 		}	
 		if (e != NULL)

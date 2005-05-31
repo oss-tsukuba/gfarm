@@ -157,7 +157,7 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 		rv = fsync(vc->fd);
 		break;
 	default:
-		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
 	if (rv == -1)
