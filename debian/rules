@@ -37,11 +37,16 @@ CONFIGURE = ../configure --prefix=/usr --libexecdir=/usr/lib/gfarm
 
 GLOBUS_PREFIX ?= undefined
 BUILD_BOTH    ?= undefined
+GLOBUS_STATIC ?= undefined
 non-globus=yes
 globus=no
+globus_static=no
 ifneq ($(GLOBUS_PREFIX),undefined)
   globus=yes
   GLOBUS_FLAVOR ?= gcc32dbg
+  ifneq ($(GLOBUS_STATIC),undefined)
+    globus_static=yes
+  endif
   ifeq ($(BUILD_BOTH), undefined)
     non-globus=no
   else
@@ -71,7 +76,7 @@ ifeq ($(non-globus),yes)
 	install -d build && cd build && $(CONFIGURE)
 endif
 ifeq ($(globus),yes)
-	install -d build_gsi && cd build_gsi && $(CONFIGURE) $(GFARM_CONFIGURE_OPTION) --with-globus=$(GLOBUS_PREFIX) --with-globus-flavor=$(GLOBUS_FLAVOR)
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=$(GLOBUS_PREFIX) --with-globus-flavor=$(GLOBUS_FLAVOR) $(GLOBUS_STATIC)
    ifneq ($(build_both),yes)
 	ln -s build_gsi build
 	ln -s tmp_gsi debian/tmp
@@ -299,8 +304,15 @@ endif
 #	dh_installinfo
 #	dh_undocumented
 	dh_installchangelogs
-#### XXX skip dh_strip because an error is occurred (2004/08/25)
+ifeq ($(globus_static),yes)
+   ifeq ($(non-globus),yes)
+	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG); do \
+          dh_strip -p$$pkg; \
+	done
+   endif
+else
 	dh_strip
+endif
 	dh_link
 	dh_compress
 	dh_fixperms
