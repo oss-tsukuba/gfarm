@@ -10,6 +10,7 @@ DOCBOOK = \
 	gfs_opendir.3 \
 	gfs_pio_close.3 \
 	gfs_pio_create.3 \
+	gfs_pio_datasync.3 \
 	gfs_pio_eof.3 \
 	gfs_pio_error.3 \
 	gfs_pio_flush.3 \
@@ -24,6 +25,7 @@ DOCBOOK = \
 	gfs_pio_readdelim.3 \
 	gfs_pio_readline.3 \
 	gfs_pio_seek.3 \
+	gfs_pio_sync.3 \
 	gfs_pio_set_local.3 \
 	gfs_pio_set_view_index.3 \
 	gfs_pio_set_view_local.3 \
