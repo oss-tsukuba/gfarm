@@ -262,6 +262,7 @@ fi
 %{man_prefix}/man3/gfs_opendir.3.gz
 %{man_prefix}/man3/gfs_pio_close.3.gz
 %{man_prefix}/man3/gfs_pio_create.3.gz
+%{man_prefix}/man3/gfs_pio_datasync.3.gz
 %{man_prefix}/man3/gfs_pio_eof.3.gz
 %{man_prefix}/man3/gfs_pio_error.3.gz
 %{man_prefix}/man3/gfs_pio_flush.3.gz
@@ -279,6 +280,7 @@ fi
 %{man_prefix}/man3/gfs_pio_set_local.3.gz
 %{man_prefix}/man3/gfs_pio_set_view_index.3.gz
 %{man_prefix}/man3/gfs_pio_set_view_local.3.gz
+%{man_prefix}/man3/gfs_pio_sync.3.gz
 %{man_prefix}/man3/gfs_pio_truncate.3.gz
 %{man_prefix}/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/man3/gfs_pio_write.3.gz
@@ -356,6 +358,7 @@ fi
 %{man_prefix}/ja/man3/gfs_opendir.3.gz
 %{man_prefix}/ja/man3/gfs_pio_close.3.gz
 %{man_prefix}/ja/man3/gfs_pio_create.3.gz
+%{man_prefix}/ja/man3/gfs_pio_datasync.3.gz
 %{man_prefix}/ja/man3/gfs_pio_eof.3.gz
 %{man_prefix}/ja/man3/gfs_pio_error.3.gz
 %{man_prefix}/ja/man3/gfs_pio_flush.3.gz
@@ -373,6 +376,7 @@ fi
 %{man_prefix}/ja/man3/gfs_pio_set_local.3.gz
 %{man_prefix}/ja/man3/gfs_pio_set_view_index.3.gz
 %{man_prefix}/ja/man3/gfs_pio_set_view_local.3.gz
+%{man_prefix}/ja/man3/gfs_pio_sync.3.gz
 %{man_prefix}/ja/man3/gfs_pio_truncate.3.gz
 %{man_prefix}/ja/man3/gfs_pio_ungetc.3.gz
 %{man_prefix}/ja/man3/gfs_pio_write.3.gz
@@ -434,6 +438,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_opendir.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_create.3.html
+%{html_prefix}/en/ref/man3/gfs_pio_datasync.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_eof.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_error.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_flush.3.html
@@ -451,6 +456,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_pio_set_local.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_set_view_index.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_set_view_local.3.html
+%{html_prefix}/en/ref/man3/gfs_pio_sync.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_truncate.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_write.3.html
@@ -527,6 +533,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_opendir.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_create.3.html
+%{html_prefix}/ja/ref/man3/gfs_pio_datasync.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_eof.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_error.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_flush.3.html
@@ -544,6 +551,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_pio_set_local.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_set_view_index.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_set_view_local.3.html
+%{html_prefix}/ja/ref/man3/gfs_pio_sync.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_truncate.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_ungetc.3.html
 %{html_prefix}/ja/ref/man3/gfs_pio_write.3.html
