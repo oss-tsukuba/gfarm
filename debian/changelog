@@ -1,3 +1,10 @@
+gfarm (1:1.1.1-2) unstable; urgency=low
+
+  * changed build environments (Bug#14)
+  * fixed some problems to build package 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Thu,  2 Jun 2005 10:40:48 +0900
+
 gfarm (1:1.1.1-1) unstable; urgency=low
 
   * New upstream release
