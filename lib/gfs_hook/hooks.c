@@ -1788,16 +1788,18 @@ _xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 
 #endif /* _MKNOD_VER */
 
+/* XXX - Eventualy we always need fcntl() hook, but not for now... */
+#if defined(F_FREESP) || defined(F_FREESP64)
 int
 __fcntl(int filedes, int cmd, ...)
 {
 	va_list ap;
 	GFS_File gf;
 	char *e;
-	unsigned int val;
+	unsigned long val;
 
 	va_start(ap, cmd);
-	val = va_arg(ap, unsigned int);
+	val = va_arg(ap, unsigned long);
 	va_end(ap);
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fcntl(%d, %d, %x)\n",
@@ -1805,13 +1807,13 @@ __fcntl(int filedes, int cmd, ...)
 
 #ifdef F_FREESP
 	if (cmd == F_FREESP)
-		_gfs_hook_debug_v(fprintf(stderr, "flock.l_start:%d",
-			(int)(((struc flock *)val)->l_start)));
+		_gfs_hook_debug_v(fprintf(stderr, "flock.l_start:%ld",
+			(long)(((struc flock *)val)->l_start)));
 #endif
 #ifdef F_FREESP64
 	if (cmd == F_FREESP64)
-		_gfs_hook_debug_v(fprintf(stderr, "flock64.l_start:%d",
-			(int)(((struct flock64 *)val)->l_start)));
+		_gfs_hook_debug_v(fprintf(stderr, "flock64.l_start:%ld",
+			(long)(((struct flock64 *)val)->l_start)));
 #endif
 
 	if (cmd == F_GETFD || cmd == F_SETFD ||
@@ -1862,10 +1864,10 @@ int
 _fcntl(int filedes, int cmd, ...)
 {
 	va_list ap;
-	unsigned int val;
+	unsigned long val;
 
 	va_start(ap, cmd);
-	val = va_arg(ap, unsigned int);
+	val = va_arg(ap, unsigned long);
 	va_end(ap);
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking fcntl(%d, %d, %x)\n",
 				  filedes, cmd, val));
@@ -1876,15 +1878,16 @@ int
 fcntl(int filedes, int cmd, ...)
 {
 	va_list ap;
-	unsigned int val;
+	unsigned long val;
 
 	va_start(ap, cmd);
-	val = va_arg(ap, unsigned int);
+	val = va_arg(ap, unsigned long);
 	va_end(ap);
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking fcntl(%d, %d, %x)\n",
 				  filedes, cmd, val));
 	return (__fcntl(filedes, cmd, val));
 }
+#endif /* defined(F_FREESP) || defined(F_FREESP64) */
 
 int
 __fsync(int filedes)
