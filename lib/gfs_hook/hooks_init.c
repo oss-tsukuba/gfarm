@@ -26,9 +26,11 @@ gfs_hook_initialize(void)
 	gfs_hook_reserve_fd();
 	e = gfarm_initialize(NULL, NULL);
 	gfs_hook_release_fd();
-	if (e != NULL)
+	if (e != NULL) {
+		_gfs_hook_debug(
+			fprintf(stderr, "GFS: gfs_hook_initialize: %s\n", e));
 		return (e);
-
+	}
 	if (gf_hook_default_global)
 		gfs_hook_set_default_view_global();
 

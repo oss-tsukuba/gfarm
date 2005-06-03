@@ -238,6 +238,10 @@ error_close_fd:
 error_close_gf:
 	gfs_hook_delete_creating_file(gf);
 	gfs_pio_close(gf);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_file: %s\n",
+		gfarm_errno_to_error(save_errno)));
+
 	errno = save_errno;
 	return (-1);
 }
@@ -306,6 +310,10 @@ error_close_fd:
 	__syscall_close(fd);
 error_closedir:
 	gfs_closedir(dir);
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %s\n",
+		gfarm_errno_to_error(save_errno)));
+
 	errno = save_errno;
 	return (-1);
 }
@@ -352,6 +360,11 @@ gfs_hook_clear_gfs_file(int fd)
 	}
 	__syscall_close(fd);
 	_gfs_file_buf[fd] = NULL;
+
+	if (e != NULL)
+		_gfs_hook_debug(
+			fprintf(stderr, "GFS: clear_gfs_file: %s\n", e));
+
 	return (e);
 }
 
@@ -393,6 +406,10 @@ gfs_hook_flush_all(void)
 				e_save = e;
 		}
 	}
+	if (e_save != NULL)
+		_gfs_hook_debug(
+			fprintf(stderr, "GFS: hook_flush_all: %s\n", e_save));
+
 	return (e_save);
 }
 
@@ -416,6 +433,10 @@ gfs_hook_close_all(void)
 				e_save = e;
 		}
 	}
+	if (e_save != NULL)
+		_gfs_hook_debug(
+			fprintf(stderr, "GFS: hook_close_all: %s\n", e_save));
+
 	return (e_save);
 }
 
