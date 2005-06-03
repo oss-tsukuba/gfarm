@@ -586,7 +586,7 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
-		gfarm_stringlist_add(&paths, "gfarm:.");
+		gfarm_stringlist_add(&paths, strdup("gfarm:."));
 		gfs_glob_add(&types, GFS_DT_DIR);
 	} else {
 		for (i = 0; i < argc; i++) {
