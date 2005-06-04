@@ -553,13 +553,8 @@ char *
 gfs_client_fsync(struct gfs_connection *gfs_server,
 		 gfarm_int32_t fd, gfarm_int32_t operation)
 {
-	char *e;
-
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
-			   fd, operation);
-	if (e != NULL)
-		return (e);
-	return (NULL);
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
+			       fd, operation));
 }
 
 char *
@@ -771,7 +766,7 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 			if (i < partial) {
 				/*
 				 * write(2) never returns 0,
-				 * so the following rv == 0 case is 
+				 * so the following rv == 0 case is
 				 * just warm fuzzy.
 				 */
 				return (gfarm_errno_to_error(
@@ -928,7 +923,7 @@ gfs_client_striping_copyin_partial(struct gfs_connection *gfs_server, int *rvp)
 	if (i < partial) {
 		/*
 		 * write(2) never returns 0,
-		 * so the following rv == 0 case is 
+		 * so the following rv == 0 case is
 		 * just warm fuzzy.
 		 */
 		return (gfarm_errno_to_error(rv == 0 ? ENOSPC : errno));
@@ -1852,7 +1847,7 @@ gfs_client_get_load_send(int events, int fd, void *closure,
 	state->error = gfs_client_get_load_request(state->sock, NULL, 0);
 	if (state->error == NULL) {
 		timeout.tv_sec = timeout.tv_usec = 0;
-		gfarm_timeval_add_microsec(&timeout, 
+		gfarm_timeval_add_microsec(&timeout,
 		    gfs_client_datagram_timeouts[state->try] *
 		    GFARM_MILLISEC_BY_MICROSEC);
 		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
@@ -2043,7 +2038,7 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 			    hostname, e);
 		_exit(tolerant ? 0 : 3);
 	}
-			
+
 	e = (*op)(conn, args);
 	if (e != NULL) {
 		/* if tolerant, we allow "no such file or directory" */
@@ -2052,7 +2047,7 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 			fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
 		_exit(tolerant && e == GFARM_ERR_NO_SUCH_OBJECT ? 0 : 4);
 	}
-		
+
 	e = gfs_client_disconnect(conn);
 	if (e != NULL) {
 		if (message != NULL)
@@ -2100,7 +2095,7 @@ gfs_client_apply_all_hosts(
 	char *e;
 	int i, j, nhosts, pids[CONCURRENCY];
 	struct gfarm_host_info *hosts;
-		
+
 	e = gfarm_host_info_get_all(&nhosts, &hosts);
 	if (e != NULL)
 		return (e);
