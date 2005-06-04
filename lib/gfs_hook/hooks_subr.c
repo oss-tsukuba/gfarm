@@ -816,11 +816,16 @@ gfs_hook_is_url(const char *path, char **urlp)
 	static char gfarm_url_prefix_for_root[] = "gfarm@";
 	char *sec = NULL;
 
-	if (path == NULL || *path == '\0')
-		return (0);
-
 	if (gfs_hook_check_hook_disabled())
 		return (0);
+
+	/* 'Bad address' check to prevent segmentation fault */
+	gfs_hook_disable_hook();
+	if ((access(path, F_OK) == -1 && errno == EFAULT) || *path == '\0') {
+		gfs_hook_enable_hook();
+		return (0);
+	}
+	gfs_hook_enable_hook();
 
 	path_save = path;
 	if (gfs_hook_is_mount_point(path)) {
