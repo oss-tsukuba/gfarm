@@ -16,7 +16,7 @@ GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
-	agent_wrap.c agent_client.c \
+	agent_wrap.c agent_client.c agent_proto.c \
 	config.c error.c gfm_client.c gfs_client.c gfs_client_rep.c \
 	gfs_dir.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
@@ -27,7 +27,7 @@ SRCS = \
 	$(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
-	agent_wrap.lo agent_client.lo \
+	agent_wrap.lo agent_client.lo agent_proto.lo \
 	config.lo error.lo gfm_client.lo gfs_client.lo gfs_client_rep.lo \
 	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
@@ -50,6 +50,7 @@ $(GFARM_OBJS): $(DEPGFARMINC)
 $(GFARM_GLOBUS_OBJS): $(DEPGFSLINC)
 agent_wrap.lo: agent_client.h agent_wrap.h
 agent_client.lo: xxx_proto.h io_fd.h config.h agent_proto.h agent_client.h
+agent_proto.lo: xxx_proto.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h
 auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h xxx_proto.h io_fd.h io_gfsl.h auth.h auth_gsi.h
 auth_common.lo: auth.h
@@ -62,7 +63,7 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h dircache.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_ldap.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
 gfs_lock.lo: 
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
@@ -80,7 +81,7 @@ import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
-metadb_ldap.lo: config.h dircache.h
+metadb_ldap.lo: config.h metadb_ldap.h
 metadb_misc.lo: host.h config.h gfs_client.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h

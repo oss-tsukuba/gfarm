@@ -28,3 +28,53 @@ char *agent_client_readdir(
 char *agent_client_closedir(struct agent_connection *, GFS_Dir);
 char *agent_client_dirname(struct agent_connection *, GFS_Dir);
 char *agent_client_uncachedir(struct agent_connection *);
+
+char *agent_client_host_info_get(
+	struct agent_connection *, const char *, struct gfarm_host_info *);
+char *agent_client_host_info_remove_hostaliases(
+	struct agent_connection *, const char *);
+char *agent_client_host_info_set(
+	struct agent_connection *, char *, struct gfarm_host_info *);
+char *agent_client_host_info_replace(
+	struct agent_connection *, char *, struct gfarm_host_info *);
+char *agent_client_host_info_remove(struct agent_connection *, const char *);
+char *agent_client_host_info_get_all(
+	struct agent_connection *, int *, struct gfarm_host_info **);
+char *agent_client_host_info_get_by_name_alias(
+	struct agent_connection *, const char *, struct gfarm_host_info *);
+char *agent_client_host_info_get_allhost_by_architecture(
+	struct agent_connection *,
+	const char *, int *, struct gfarm_host_info **);
+
+char *agent_client_file_section_info_get(
+	struct agent_connection *, const char *, const char *,
+	struct gfarm_file_section_info *);
+char *agent_client_file_section_info_set(
+	struct agent_connection *, char *, char *,
+	struct gfarm_file_section_info *);
+char *agent_client_file_section_info_replace(
+	struct agent_connection *, char *, char *,
+	struct gfarm_file_section_info *);
+char *agent_client_file_section_info_remove(
+	struct agent_connection *, const char *, const char *);
+char *agent_client_file_section_info_get_all_by_file(
+	struct agent_connection *, const char *, int *,
+	struct gfarm_file_section_info **);
+
+char *agent_client_file_section_copy_info_get(
+	struct agent_connection *, const char *, const char *, const char *,
+	struct gfarm_file_section_copy_info *);
+char *agent_client_file_section_copy_info_set(
+	struct agent_connection *, char *, char *, char *,
+	struct gfarm_file_section_copy_info *);
+char *agent_client_file_section_copy_info_remove(
+	struct agent_connection *, const char *, const char *, const char *);
+char *agent_client_file_section_copy_info_get_all_by_file(
+	struct agent_connection *, const char *, int *,
+	struct gfarm_file_section_copy_info **);
+char *agent_client_file_section_copy_info_get_all_by_section(
+	struct agent_connection *, const char *, const char *, int *,
+	struct gfarm_file_section_copy_info **);
+char *agent_client_file_section_copy_info_get_all_by_host(
+	struct agent_connection *, const char *, int *,
+	struct gfarm_file_section_copy_info **);

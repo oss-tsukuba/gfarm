@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include <gfarm/gfarm.h>
+#include "metadb_ldap.h"
 #include "agent_client.h"
 #include "agent_wrap.h"
 
@@ -96,8 +97,14 @@ gfarm_initialize(int *argc, char ***argv)
 char *
 gfarm_terminate(void)
 {
-	gfarm_agent_disconnect();
-	return (gfarm_client_terminate());
+	char *e;
+
+	if (gfarm_agent_check() == NULL)
+		(void)gfarm_agent_disconnect();
+	e = gfarm_client_terminate();
+	(void)gfarm_metadb_terminate();
+
+	return (e);
 }
 
 char *
@@ -234,4 +241,246 @@ gfs_uncachedir(void)
 		agent_client_uncachedir(agent_server);
 	else
 		gfs_i_uncachedir();
+}
+
+/* host info */
+
+char *gfarm_host_info_get(const char *hostname, struct gfarm_host_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_get(
+				agent_server, hostname, info));
+	else
+		return (gfarm_metadb_host_info_get(hostname, info));
+}
+
+char *
+gfarm_host_info_remove_hostaliases(const char *hostname)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_remove_hostaliases(
+				agent_server, hostname));
+	else
+		return (gfarm_metadb_host_info_remove_hostaliases(hostname));
+}
+
+char *
+gfarm_host_info_set(char *hostname, struct gfarm_host_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_set(
+				agent_server, hostname, info));
+	else
+		return (gfarm_metadb_host_info_set(hostname, info));
+}
+
+char *
+gfarm_host_info_replace(char *hostname, struct gfarm_host_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_replace(
+				agent_server, hostname, info));
+	else
+		return (gfarm_metadb_host_info_replace(hostname, info));
+}
+
+char *
+gfarm_host_info_remove(const char *hostname)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_remove(agent_server, hostname));
+	else
+		return (gfarm_metadb_host_info_remove(hostname));
+}
+
+char *
+gfarm_host_info_get_all(int *np, struct gfarm_host_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_get_all(
+				agent_server, np, infosp));
+	else
+		return (gfarm_metadb_host_info_get_all(np, infosp));
+}
+
+char *
+gfarm_host_info_get_by_name_alias(
+	const char *alias, struct gfarm_host_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_get_by_name_alias(
+				agent_server, alias, info));
+	else
+		return (gfarm_metadb_host_info_get_by_name_alias(alias, info));
+}
+
+char *
+gfarm_host_info_get_allhost_by_architecture(const char *architecture,
+	int *np, struct gfarm_host_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_host_info_get_allhost_by_architecture(
+				agent_server, architecture, np, infosp));
+	else
+		return (gfarm_metadb_host_info_get_allhost_by_architecture(
+				architecture, np, infosp));
+}
+
+/* file section info */
+
+char *
+gfarm_file_section_info_get(
+	const char *pathname,
+	const char *section,
+	struct gfarm_file_section_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_info_get(
+				agent_server, pathname, section, info));
+	else
+		return (gfarm_metadb_file_section_info_get(
+				pathname, section, info));
+}
+
+char *
+gfarm_file_section_info_set(
+	char *pathname,
+	char *section,
+	struct gfarm_file_section_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_info_set(
+				agent_server, pathname, section, info));
+	else
+		return (gfarm_metadb_file_section_info_set(
+				pathname, section, info));
+}
+
+char *
+gfarm_file_section_info_replace(
+	char *pathname,
+	char *section,
+	struct gfarm_file_section_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_info_replace(
+				agent_server, pathname, section, info));
+	else
+		return (gfarm_metadb_file_section_info_replace(
+				pathname, section, info));
+}
+
+char *
+gfarm_file_section_info_remove(const char *pathname, const char *section)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_info_remove(
+				agent_server, pathname, section));
+	else
+		return (gfarm_metadb_file_section_info_remove(
+				pathname, section));
+}
+
+char *
+gfarm_file_section_info_get_all_by_file(
+	const char *pathname,
+	int *np,
+	struct gfarm_file_section_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_info_get_all_by_file(
+				agent_server, pathname, np, infosp));
+	else
+		return (gfarm_metadb_file_section_info_get_all_by_file(
+				pathname, np, infosp));
+}
+
+/* file section copy info */
+
+char *
+gfarm_file_section_copy_info_get(
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	struct gfarm_file_section_copy_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_get(agent_server,
+				pathname, section, hostname, info));
+	else
+		return (gfarm_metadb_file_section_copy_info_get(
+				pathname, section, hostname, info));
+}
+
+char *
+gfarm_file_section_copy_info_set(
+	char *pathname,
+	char *section,
+	char *hostname,
+	struct gfarm_file_section_copy_info *info)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_set(agent_server,
+				pathname, section, hostname, info));
+	else
+		return (gfarm_metadb_file_section_copy_info_set(
+				pathname, section, hostname, info));
+
+}
+
+char *
+gfarm_file_section_copy_info_remove(
+	const char *pathname,
+	const char *section,
+	const char *hostname)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_remove(agent_server,
+				pathname, section, hostname));
+	else
+		return (gfarm_metadb_file_section_copy_info_remove(
+				pathname, section, hostname));
+}
+
+char *
+gfarm_file_section_copy_info_get_all_by_file(
+	const char *pathname,
+	int *np,
+	struct gfarm_file_section_copy_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_get_all_by_file(
+				agent_server, pathname, np, infosp));
+	else
+		return (gfarm_metadb_file_section_copy_info_get_all_by_file(
+				pathname, np, infosp));
+}
+
+char *
+gfarm_file_section_copy_info_get_all_by_section(
+	const char *pathname,
+	const char *section,
+	int *np,
+	struct gfarm_file_section_copy_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_get_all_by_section(
+				agent_server, pathname, section, np, infosp));
+	else
+		return (gfarm_metadb_file_section_copy_info_get_all_by_section(
+				pathname, section, np, infosp));
+}
+
+char *
+gfarm_file_section_copy_info_get_all_by_host(
+	const char *hostname,
+	int *np,
+	struct gfarm_file_section_copy_info **infosp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_file_section_copy_info_get_all_by_host(
+				agent_server, hostname, np, infosp));
+	else
+		return (gfarm_metadb_file_section_copy_info_get_all_by_host(
+				hostname, np, infosp));
 }

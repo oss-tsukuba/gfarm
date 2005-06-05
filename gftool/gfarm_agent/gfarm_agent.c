@@ -17,6 +17,7 @@
 #include <signal.h>
 
 #include <gfarm/gfarm.h>
+#include "metadb_ldap.h"
 #include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
@@ -437,19 +438,626 @@ agent_server_dirname(struct xxx_connection *client)
 static char *
 agent_server_uncachedir(struct xxx_connection *client)
 {
-	char *e_rpc;
-
-	e_rpc = agent_server_get_request(client, "uncachedir", "");
-	if (e_rpc != NULL)
-		return (e_rpc);
-
 	if (debug_mode)
 		log_proto("uncachedir", "begin");
 	gfs_i_uncachedir();
 
-	e_rpc = agent_server_put_reply(client, "uncachedir", NULL, "");
+	return (agent_server_put_reply(client, "uncachedir", NULL, ""));
+}
+
+/* host info */
+
+static char *
+agent_server_host_info_get(struct xxx_connection *client)
+{
+	char *hostname, *e, *e_rpc;
+	struct gfarm_host_info info;
+	char *diag = "host_info_get";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, hostname);
+	agent_lock();
+	e = gfarm_metadb_host_info_get(hostname, &info);
+	agent_unlock();
+	free(hostname);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e == NULL && e_rpc == NULL) {
+		e_rpc = xxx_proto_send_host_info(client, &info);
+		if (e_rpc != NULL)
+			error_proto(diag, e_rpc);
+	}
+	if (e == NULL)
+		gfarm_host_info_free(&info);
+	else
+		log_proto(diag, e);
 	return (e_rpc);
 }
+
+static char *
+agent_server_host_info_remove_hostaliases(struct xxx_connection *client)
+{
+	char *hostname, *e, *e_rpc;
+	char *diag = "host_info_remove_hostaliases";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, hostname);
+	agent_lock();
+	e = gfarm_metadb_host_info_remove_hostaliases(hostname);
+	agent_unlock();
+	free(hostname);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_set(struct xxx_connection *client)
+{
+	char *hostname, *e, *e_rpc;
+	struct gfarm_host_info info;
+	char *diag = "host_info_set";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
+	if (e_rpc != NULL)
+		return (e_rpc);
+	e_rpc = xxx_proto_recv_host_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_hostname;
+	}
+	if (debug_mode)
+		log_proto(diag, hostname);
+	agent_lock();
+	e = gfarm_metadb_host_info_set(hostname, &info);
+	agent_unlock();
+	gfarm_host_info_free(&info);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+free_hostname:
+	free(hostname);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_replace(struct xxx_connection *client)
+{
+	char *hostname, *e, *e_rpc;
+	struct gfarm_host_info info;
+	char *diag = "host_info_replace";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
+	if (e_rpc != NULL)
+		return (e_rpc);
+	e_rpc = xxx_proto_recv_host_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_hostname;
+	}
+	if (debug_mode)
+		log_proto(diag, hostname);
+	agent_lock();
+	e = gfarm_metadb_host_info_replace(hostname, &info);
+	agent_unlock();
+	gfarm_host_info_free(&info);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+free_hostname:
+	free(hostname);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_remove(struct xxx_connection *client)
+{
+	char *hostname, *e, *e_rpc;
+	char *diag = "host_info_remove";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, hostname);
+	agent_lock();
+	e = gfarm_metadb_host_info_remove(hostname);
+	agent_unlock();
+	free(hostname);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_get_all(struct xxx_connection *client)
+{
+	int np, i;
+	struct gfarm_host_info *hosts;
+	char *e, *e_rpc;
+	char *diag = "host_info_get_all";
+
+	if (debug_mode)
+		log_proto(diag, "begin");
+	agent_lock();
+	e = gfarm_metadb_host_info_get_all(&np, &hosts);
+	agent_unlock();
+
+	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_host_info(client, &hosts[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_host_info_free_all(np, hosts);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_get_by_name_alias(struct xxx_connection *client)
+{
+	char *alias, *e, *e_rpc;
+	struct gfarm_host_info info;
+	char *diag = "host_info_get_by_name_alias";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &alias);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, alias);
+	agent_lock();
+	e = gfarm_metadb_host_info_get_by_name_alias(alias, &info);
+	agent_unlock();
+	free(alias);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e == NULL && e_rpc == NULL) {
+		e_rpc = xxx_proto_send_host_info(client, &info);
+		if (e_rpc != NULL)
+			error_proto(diag, e_rpc);
+	}
+	if (e == NULL)
+		gfarm_host_info_free(&info);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_host_info_get_allhost_by_architecture(
+	struct xxx_connection *client)
+{
+	char *arch, *e, *e_rpc;
+	int np, i;
+	struct gfarm_host_info *hosts;
+	char *diag = "host_info_get_allhost_by_architecture";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &arch);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, arch);
+	agent_lock();
+	e = gfarm_metadb_host_info_get_allhost_by_architecture(
+		arch, &np, &hosts);
+	agent_unlock();
+	free(arch);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_host_info(client, &hosts[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_host_info_free_all(np, hosts);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+/* file section info */
+
+static char *
+agent_server_file_section_info_get(struct xxx_connection *client)
+{
+	char *path, *section, *e, *e_rpc;
+	struct gfarm_file_section_info info;
+	char *diag = "file_section_info_get";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &section);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_info_get(path, section, &info);
+	agent_unlock();
+	free(path);
+	free(section);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e == NULL && e_rpc == NULL) {
+		e_rpc = xxx_proto_send_file_section_info(client, &info);
+		if (e_rpc != NULL)
+			error_proto(diag, e_rpc);
+	}
+	if (e == NULL)
+		gfarm_file_section_info_free(&info);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_info_set(struct xxx_connection *client)
+{
+	char *path, *section, *e, *e_rpc;
+	struct gfarm_file_section_info info;
+	char *diag = "file_section_info_set";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &section);
+	if (e_rpc != NULL)
+		return (e_rpc);
+	e_rpc = xxx_proto_recv_file_section_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_path;
+	}
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_info_set(path, section, &info);
+	agent_unlock();
+	gfarm_file_section_info_free(&info);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+free_path:
+	free(path);
+	free(section);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_info_replace(struct xxx_connection *client)
+{
+	char *path, *section, *e, *e_rpc;
+	struct gfarm_file_section_info info;
+	char *diag = "file_section_info_replace";
+
+	e_rpc = agent_server_get_request(
+		client, diag, "ss", &path, &section);
+	if (e_rpc != NULL)
+		return (e_rpc);
+	e_rpc = xxx_proto_recv_file_section_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_path;
+	}
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_info_replace(path, section, &info);
+	agent_unlock();
+	gfarm_file_section_info_free(&info);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+free_path:
+	free(path);
+	free(section);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_info_remove(struct xxx_connection *client)
+{
+	char *path, *section, *e, *e_rpc;
+	char *diag = "file_section_info_remove";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &section);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_info_remove(path, section);
+	agent_unlock();
+	free(path);
+	free(section);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_info_get_all_by_file(struct xxx_connection *client)
+{
+	char *path, *e, *e_rpc;
+	int np, i;
+	struct gfarm_file_section_info *infos;
+	char *diag = "file_section_info_get_all_by_file";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_info_get_all_by_file(path, &np, &infos);
+	agent_unlock();
+	free(path);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_file_section_info(
+				client, &infos[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_file_section_info_free_all(np, infos);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+/* file section copy info */
+
+static char *
+agent_server_file_section_copy_info_get(struct xxx_connection *client)
+{
+	char *path, *section, *host, *e, *e_rpc;
+	struct gfarm_file_section_copy_info info;
+	char *diag = "file_section_copy_info_get";
+
+	e_rpc = agent_server_get_request(
+		client, diag, "sss", &path, &section, &host);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_get(path, section, host, &info);
+	agent_unlock();
+	free(path);
+	free(section);
+	free(host);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e == NULL && e_rpc == NULL) {
+		e_rpc = xxx_proto_send_file_section_copy_info(client, &info);
+		if (e_rpc != NULL)
+			error_proto(diag, e_rpc);
+	}
+	if (e == NULL)
+		gfarm_file_section_copy_info_free(&info);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_copy_info_set(struct xxx_connection *client)
+{
+	char *path, *section, *host, *e, *e_rpc;
+	struct gfarm_file_section_copy_info info;
+	char *diag = "file_section_copy_info_set";
+
+	e_rpc = agent_server_get_request(
+		client, diag, "sss", &path, &section, &host);
+	if (e_rpc != NULL)
+		return (e_rpc);
+	e_rpc = xxx_proto_recv_file_section_copy_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_path;
+	}
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_set(path, section, host, &info);
+	agent_unlock();
+	gfarm_file_section_copy_info_free(&info);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+free_path:
+	free(path);
+	free(section);
+	free(host);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_copy_info_remove(struct xxx_connection *client)
+{
+	char *path, *section, *host, *e, *e_rpc;
+	char *diag = "file_section_copy_info_remove";
+
+	e_rpc = agent_server_get_request(
+		client, diag, "sss", &path, &section, &host);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_remove(path, section, host);
+	agent_unlock();
+	free(path);
+	free(section);
+	free(host);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_copy_info_get_all_by_file(
+	struct xxx_connection *client)
+{
+	char *path, *e, *e_rpc;
+	char *diag = "file_section_copy_info_get_all_by_file";
+	int np, i;
+	struct gfarm_file_section_copy_info *infos;
+
+	e_rpc = agent_server_get_request(
+		client, diag, "s", &path);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_get_all_by_file(
+		path, &np, &infos);
+	agent_unlock();
+	free(path);
+
+	e_rpc = agent_server_put_reply(
+		client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_file_section_copy_info(
+				client, &infos[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_file_section_copy_info_free_all(np, infos);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_copy_info_get_all_by_section(
+	struct xxx_connection *client)
+{
+	char *path, *section, *e, *e_rpc;
+	int np, i;
+	struct gfarm_file_section_copy_info *infos;
+	char *diag = "file_section_copy_info_get_all_by_section";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &section);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_get_all_by_section(
+		path, section, &np, &infos);
+	agent_unlock();
+	free(path);
+	free(section);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_file_section_copy_info(
+				client, &infos[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_file_section_copy_info_free_all(np, infos);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_file_section_copy_info_get_all_by_host(
+	struct xxx_connection *client)
+{
+	char *host, *e, *e_rpc;
+	int np, i;
+	struct gfarm_file_section_copy_info *infos;
+	char *diag = "file_section_copy_info_get_all_by_host";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &host);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto(diag, host);
+	agent_lock();
+	e = gfarm_metadb_file_section_copy_info_get_all_by_host(
+		host, &np, &infos);
+	agent_unlock();
+	free(host);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
+	if (e == NULL && e_rpc == NULL) {
+		for (i = 0; i < np; ++i) {
+			e_rpc = xxx_proto_send_file_section_copy_info(
+				client, &infos[i]);
+			if (e_rpc != NULL) {
+				error_proto(diag, e_rpc);
+				break;
+			}
+		}
+	}
+	if (e == NULL)
+		gfarm_file_section_copy_info_free_all(np, infos);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+/* */
 
 static int gfarm_initialized = 0;
 
@@ -577,6 +1185,87 @@ server(void *arg)
 		case AGENT_PROTO_UNCACHEDIR:
 			cmd = "uncachedir";
 			e = agent_server_uncachedir(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_GET:
+			cmd = "host_info_get";
+			e = agent_server_host_info_get(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_REMOVE_HOSTALIASES:
+			cmd = "host_info_remove_hostaliases";
+			e = agent_server_host_info_remove_hostaliases(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_SET:
+			cmd = "host_info_set";
+			e = agent_server_host_info_set(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_REPLACE:
+			cmd = "host_info_replace";
+			e = agent_server_host_info_replace(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_REMOVE:
+			cmd = "host_info_remove";
+			e = agent_server_host_info_remove(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_GET_ALL:
+			cmd = "host_info_get_all";
+			e = agent_server_host_info_get_all(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_GET_BY_NAME_ALIAS:
+			cmd = "host_info_get_by_name_alias";
+			e = agent_server_host_info_get_by_name_alias(client);
+			break;
+		case AGENT_PROTO_HOST_INFO_GET_ALLHOST_BY_ARCHITECTURE:
+			cmd = "host_info_get_allhost_by_architecture";
+			e = agent_server_host_info_get_allhost_by_architecture(
+				client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_INFO_GET:
+			cmd = "file_section_info_get";
+			e = agent_server_file_section_info_get(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_INFO_SET:
+			cmd = "file_section_info_set";
+			e = agent_server_file_section_info_set(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_INFO_REPLACE:
+			cmd = "file_section_info_replace";
+			e = agent_server_file_section_info_replace(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_INFO_REMOVE:
+			cmd = "file_section_info_remove";
+			e = agent_server_file_section_info_remove(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_INFO_GET_ALL_BY_FILE:
+			cmd = "file_section_info_get_all_by_file";
+			e = agent_server_file_section_info_get_all_by_file(
+				client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_GET:
+			cmd = "file_section_copy_info_get";
+			e = agent_server_file_section_copy_info_get(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_SET:
+			cmd = "file_section_copy_info_set";
+			e = agent_server_file_section_copy_info_set(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_REMOVE:
+			cmd = "file_section_copy_info_remove";
+			e = agent_server_file_section_copy_info_remove(client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_FILE:
+			cmd = "file_section_copy_info_get_all_by_file";
+			e = agent_server_file_section_copy_info_get_all_by_file(
+				client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_SECTION:
+			cmd = "file_section_copy_info_get_all_by_section";
+		     e = agent_server_file_section_copy_info_get_all_by_section(
+				client);
+			break;
+		case AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_HOST:
+			cmd = "file_section_copy_info_get_all_by_host";
+			e = agent_server_file_section_copy_info_get_all_by_host(
+				client);
 			break;
 		default:
 			sprintf(buffer, "%d", (int)request);
