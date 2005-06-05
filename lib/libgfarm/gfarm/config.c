@@ -1362,9 +1362,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 	e = gfarm_set_global_user_for_this_local_account();
 	if (e != NULL)
 		return (e);
- 	e = gfarm_metadb_initialize();
-	if (e != NULL)
-		return (e);
+	/* gfarm_metadb_initialize() is called on demand in gfarm_ldap_check */
 
 	gfarm_config_set_default_spool_on_client();
 
@@ -1434,9 +1432,7 @@ gfarm_client_terminate(void)
 			e_save = e;
 	}
 	gfs_client_terminate();
-	e = gfarm_metadb_terminate();
-	if (e_save == NULL)
-		e_save = e;
+	/* gfarm_metadb_terminate() will be called in gfarm_terminate() */
 	gfarm_config_clear();
 
 	gfarm_initialized = 0;

@@ -2007,19 +2007,6 @@ apply_one_host(char *(*op)(struct gfs_connection *, void *),
 	}
 	/* child */
 
-	/*
-	 * use different connection for each metadb access.
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	e = gfarm_metadb_initialize();
-	if (e != NULL) {
-		if (message != NULL)
-			fprintf(stderr, "%s: metadb initialization error: %s\n",
-			    message, e);
-		_exit(1);
-	}
-
 	/* reflect "address_use" directive in the `hostname' */
 	e = gfarm_host_address_get(hostname, gfarm_spool_server_port, &addr,
 		NULL);
@@ -2099,14 +2086,7 @@ gfs_client_apply_all_hosts(
 	e = gfarm_host_info_get_all(&nhosts, &hosts);
 	if (e != NULL)
 		return (e);
-	/*
-	 * To use different connection for each metadb access.
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	e = gfarm_metadb_terminate();
-	if (e != NULL)
-		goto finish_hosts;
+
         j = 0;
 	*nhosts_succeed = 0;
         for (i = 0; i < nhosts; i++) {
@@ -2121,18 +2101,7 @@ gfs_client_apply_all_hosts(
         }
         if (j > 0)
                 e = wait_pid(pids, j, nhosts_succeed);
-	/*
-	 * recover temporary closed metadb connection
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	if (e != NULL) {
-		gfarm_metadb_initialize();
-	} else {
-		e = gfarm_metadb_initialize();
-	}
 
- finish_hosts:
 	gfarm_host_info_free_all(nhosts, hosts);
 	return (e);
 }

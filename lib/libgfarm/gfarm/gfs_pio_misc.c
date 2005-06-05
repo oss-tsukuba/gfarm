@@ -2338,14 +2338,6 @@ gfarm_url_fragments_transfer(
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_edsthosts;
 	}
-	/*
-	 * To use different connection for each metadb access.
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	e = gfarm_metadb_terminate();
-	if (e != NULL)
-		goto finish_pids;
 
 	for (i = 0; i < nsrchosts; i++) {
 		struct sockaddr peer_addr;
@@ -2362,15 +2354,6 @@ gfarm_url_fragments_transfer(
 			continue;
 		}
 		/* child */
-
-		/*
-		 * use different connection for each metadb access.
-		 *
-		 * XXX: FIXME layering violation
-		 */
-		e = gfarm_metadb_initialize();
-		if (e != NULL)
-			_exit(1);
 
 		/* reflect "address_use" directive in the `srchosts[i]' */
 		e = gfarm_host_address_get(srchosts[i],
@@ -2404,17 +2387,6 @@ gfarm_url_fragments_transfer(
 			e = "error happens on replication";
 		}
 	}
-	/*
-	 * recover temporary closed metadb connection
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	if (e != NULL) {
-		gfarm_metadb_initialize();
-	} else {
-		e = gfarm_metadb_initialize();
-	}
- finish_pids:
 	free(pids);
  finish_edsthosts:
 	free(edsthosts);
