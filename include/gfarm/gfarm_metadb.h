@@ -4,11 +4,6 @@
 
 #include <gfarm/gfarm_config.h>
 
-char *gfarm_metadb_initialize(void);
-char *gfarm_metadb_terminate(void);
-char *gfarm_metadb_check(void);
-void gfarm_metadb_share_connection(void);
-
 /* ---------------------------------------- */
 
 /*
