@@ -15,7 +15,7 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
-#include "dircache.h"
+#include "metadb_ldap.h"
 
 /* old openldap does not have ldap_memfree. */
 #ifndef HAVE_LDAP_MEMFREE
@@ -156,7 +156,12 @@ gfarm_metadb_check(void)
 static char *
 gfarm_ldap_check(void)
 {
-	if (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid)
+	/*
+	 * if there is a valid LDAP connection, return.  If not,
+	 * create a new connection.
+	 */
+	if (gfarm_ldap_server != NULL &&
+	    (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid))
 		return (NULL);
 	/* XXX close the file descriptor for gfarm_ldap_server */
 	gfarm_ldap_server = NULL;
@@ -212,7 +217,7 @@ struct gfarm_generic_info_ops {
 	void (*free)(void *info);
 };
 
-char *
+static char *
 gfarm_generic_info_get(
 	void *key,
 	void *info,
@@ -275,7 +280,7 @@ msgfree:
 	return (error); /* success */
 }
 
-char *
+static char *
 gfarm_generic_info_set(
 	void *key,
 	LDAPMod **modv,
@@ -300,7 +305,7 @@ gfarm_generic_info_set(
 	return (NULL);
 }
 
-char *
+static char *
 gfarm_generic_info_modify(
 	void *key,
 	LDAPMod **modv,
@@ -329,7 +334,7 @@ gfarm_generic_info_modify(
 	}
 }
 
-char *
+static char *
 gfarm_generic_info_remove(
 	void *key,
 	const struct gfarm_generic_info_ops *ops)
@@ -353,7 +358,7 @@ gfarm_generic_info_remove(
 	return (NULL);
 }
 
-void
+static void
 gfarm_generic_info_free_all(
 	int n,
 	void *vinfos,
@@ -369,7 +374,7 @@ gfarm_generic_info_free_all(
 	free(vinfos);
 }
 
-char *
+static char *
 gfarm_generic_info_get_all(
 	char *dn,
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
@@ -460,7 +465,7 @@ msgfree:
 }
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
-char *
+static char *
 gfarm_generic_info_get_foreach(
 	char *dn,
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
@@ -492,7 +497,6 @@ gfarm_generic_info_get_foreach(
 		e = ldap_first_entry(gfarm_ldap_server, res);
 		if (e == NULL)
 			break;
-
 		for (; e != NULL; e = ldap_next_entry(gfarm_ldap_server, e)) {
 
 			ops->clear(tmp_info);
@@ -638,7 +642,7 @@ gfarm_host_info_free(
 	 */
 }
 
-char *gfarm_host_info_get(
+char *gfarm_metadb_host_info_get(
 	const char *hostname,
 	struct gfarm_host_info *info)
 {
@@ -704,7 +708,7 @@ gfarm_host_info_update(
 }
 
 char *
-gfarm_host_info_remove_hostaliases(const char *hostname)
+gfarm_metadb_host_info_remove_hostaliases(const char *hostname)
 {
 	int i;
 	LDAPMod *modv[2];
@@ -729,7 +733,7 @@ gfarm_host_info_remove_hostaliases(const char *hostname)
 }
 
 char *
-gfarm_host_info_set(
+gfarm_metadb_host_info_set(
 	char *hostname,
 	struct gfarm_host_info *info)
 {
@@ -738,7 +742,7 @@ gfarm_host_info_set(
 }
 
 char *
-gfarm_host_info_replace(
+gfarm_metadb_host_info_replace(
 	char *hostname,
 	struct gfarm_host_info *info)
 {
@@ -747,7 +751,7 @@ gfarm_host_info_replace(
 }
 
 char *
-gfarm_host_info_remove(const char *hostname)
+gfarm_metadb_host_info_remove(const char *hostname)
 {
 	struct gfarm_host_info_key key;
 
@@ -767,7 +771,7 @@ gfarm_host_info_free_all(
 }
 
 char *
-gfarm_host_info_get_all(
+gfarm_metadb_host_info_get_all(
 	int *np,
 	struct gfarm_host_info **infosp)
 {
@@ -788,7 +792,7 @@ gfarm_host_info_get_all(
 }
 
 char *
-gfarm_host_info_get_by_name_alias(
+gfarm_metadb_host_info_get_by_name_alias(
 	const char *name_alias,
 	struct gfarm_host_info *info)
 {
@@ -823,7 +827,7 @@ gfarm_host_info_get_by_name_alias(
 }
 
 char *
-gfarm_host_info_get_allhost_by_architecture(const char *architecture,
+gfarm_metadb_host_info_get_allhost_by_architecture(const char *architecture,
 	int *np, struct gfarm_host_info **infosp)
 {
 	char *error;
@@ -856,7 +860,7 @@ gfarm_host_info_get_architecture_by_host(const char *hostname)
 	char *error;
 	struct gfarm_host_info info;
 
-	error = gfarm_host_info_get(hostname, &info);
+	error = gfarm_metadb_host_info_get(hostname, &info);
 	if (error != NULL)
 		return (NULL);
 
@@ -1173,7 +1177,7 @@ gfarm_path_info_free_all(
 }
 
 char *
-gfarm_path_info_get_all(
+gfarm_metadb_path_info_get_all(
 	int *np,
 	struct gfarm_path_info **infosp)
 {
@@ -1195,7 +1199,7 @@ gfarm_path_info_get_all(
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
 char *
-gfarm_path_info_get_all_foreach(
+gfarm_metadb_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
 {
@@ -1215,7 +1219,7 @@ gfarm_file_history_free_allfile(int n, char **v)
 
 /* get GFarmFiles which were created by the program */
 char *
-gfarm_file_history_get_allfile_by_program(
+gfarm_metadb_file_history_get_allfile_by_program(
 	char *program,
 	int *np,
 	char ***gfarm_files_p)
@@ -1245,7 +1249,7 @@ gfarm_file_history_get_allfile_by_program(
 
 /* get GFarmFiles which were created from the file as a input */
 char *
-gfarm_file_history_get_allfile_by_file(
+gfarm_metadb_file_history_get_allfile_by_file(
 	char *input_gfarm_file,
 	int *np,
 	char ***gfarm_files_p)
@@ -1373,7 +1377,7 @@ gfarm_file_section_info_free(struct gfarm_file_section_info *info)
 		free(info->checksum);
 }
 
-char *gfarm_file_section_info_get(
+char *gfarm_metadb_file_section_info_get(
 	const char *pathname,
 	const char *section,
 	struct gfarm_file_section_info *info)
@@ -1438,7 +1442,7 @@ gfarm_file_section_info_update(
 }
 
 char *
-gfarm_file_section_info_set(
+gfarm_metadb_file_section_info_set(
 	char *pathname,
 	char *section,
 	struct gfarm_file_section_info *info)
@@ -1448,7 +1452,7 @@ gfarm_file_section_info_set(
 }
 
 char *
-gfarm_file_section_info_replace(
+gfarm_metadb_file_section_info_replace(
 	char *pathname,
 	char *section,
 	struct gfarm_file_section_info *info)
@@ -1458,7 +1462,7 @@ gfarm_file_section_info_replace(
 }
 
 char *
-gfarm_file_section_info_remove(
+gfarm_metadb_file_section_info_remove(
 	const char *pathname,
 	const char *section)
 {
@@ -1481,7 +1485,7 @@ gfarm_file_section_info_free_all(
 }
 
 char *
-gfarm_file_section_info_get_all_by_file(
+gfarm_metadb_file_section_info_get_all_by_file(
 	const char *pathname,
 	int *np,
 	struct gfarm_file_section_info **infosp)
@@ -1532,7 +1536,7 @@ gfarm_file_section_info_get_sorted_all_serial_by_file(
 {
 	int n;
 	struct gfarm_file_section_info *infos;
-	char *error = gfarm_file_section_info_get_all_by_file(
+	char *error = gfarm_metadb_file_section_info_get_all_by_file(
 		pathname, &n, &infos);
 
 	if (error != NULL)
@@ -1552,7 +1556,7 @@ gfarm_file_section_info_remove_all_by_file(const char *pathname)
 	int i, n;
 	struct gfarm_file_section_info *infos;
 
-	error = gfarm_file_section_info_get_all_by_file(pathname,
+	error = gfarm_metadb_file_section_info_get_all_by_file(pathname,
 	    &n, &infos);
 	if (error != NULL) {
 		if (error == GFARM_ERR_NO_SUCH_OBJECT)
@@ -1565,7 +1569,7 @@ gfarm_file_section_info_remove_all_by_file(const char *pathname)
 	 */
 	error_save = NULL;
 	for (i = 0; i < n; i++) {
-		error = gfarm_file_section_info_remove(pathname,
+		error = gfarm_metadb_file_section_info_remove(pathname,
 		    infos[i].section);
 		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
 			error_save = error;
@@ -1584,7 +1588,8 @@ gfarm_file_section_info_does_exist(
 {
 	struct gfarm_file_section_info info;
 
-	if (gfarm_file_section_info_get(pathname, section, &info) != NULL)
+	if (gfarm_metadb_file_section_info_get(pathname, section, &info)
+	    != NULL)
 		return (0);
 	gfarm_file_section_info_free(&info);
 	return (1);
@@ -1688,7 +1693,7 @@ gfarm_file_section_copy_info_free(struct gfarm_file_section_copy_info *info)
 }
 
 char *
-gfarm_file_section_copy_info_get(
+gfarm_metadb_file_section_copy_info_get(
 	const char *pathname,
 	const char *section,
 	const char *hostname,
@@ -1705,7 +1710,7 @@ gfarm_file_section_copy_info_get(
 }
 
 char *
-gfarm_file_section_copy_info_set(
+gfarm_metadb_file_section_copy_info_set(
 	char *pathname,
 	char *section,
 	char *hostname,
@@ -1747,7 +1752,7 @@ gfarm_file_section_copy_info_set(
 }
 
 char *
-gfarm_file_section_copy_info_remove(
+gfarm_metadb_file_section_copy_info_remove(
 	const char *pathname,
 	const char *section,
 	const char *hostname)
@@ -1772,7 +1777,7 @@ gfarm_file_section_copy_info_free_all(
 }
 
 char *
-gfarm_file_section_copy_info_get_all_by_file(
+gfarm_metadb_file_section_copy_info_get_all_by_file(
 	const char *pathname,
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
@@ -1806,7 +1811,7 @@ gfarm_file_section_copy_info_remove_all_by_file(
 	int i, n;
 	struct gfarm_file_section_copy_info *infos;
 
-	error = gfarm_file_section_copy_info_get_all_by_file(pathname,
+	error = gfarm_metadb_file_section_copy_info_get_all_by_file(pathname,
 	    &n, &infos);
 	if (error != NULL) {
 		if (error == GFARM_ERR_NO_SUCH_OBJECT)
@@ -1819,7 +1824,7 @@ gfarm_file_section_copy_info_remove_all_by_file(
 	 */
 	error_save = NULL;
 	for (i = 0; i < n; i++) {
-		error = gfarm_file_section_copy_info_remove(pathname,
+		error = gfarm_metadb_file_section_copy_info_remove(pathname,
 		    infos[i].section, infos[i].hostname);
 		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
 			error_save = error;
@@ -1830,7 +1835,7 @@ gfarm_file_section_copy_info_remove_all_by_file(
 }
 
 char *
-gfarm_file_section_copy_info_get_all_by_section(
+gfarm_metadb_file_section_copy_info_get_all_by_section(
 	const char *pathname,
 	const char *section,
 	int *np,
@@ -1866,7 +1871,7 @@ gfarm_file_section_copy_info_remove_all_by_section(
 	int i, n;
 	struct gfarm_file_section_copy_info *infos;
 
-	error = gfarm_file_section_copy_info_get_all_by_section(
+	error = gfarm_metadb_file_section_copy_info_get_all_by_section(
 	    pathname, section,
 	    &n, &infos);
 	if (error != NULL) {
@@ -1880,7 +1885,7 @@ gfarm_file_section_copy_info_remove_all_by_section(
 	 */
 	error_save = NULL;
 	for (i = 0; i < n; i++) {
-		error = gfarm_file_section_copy_info_remove(pathname,
+		error = gfarm_metadb_file_section_copy_info_remove(pathname,
 		    section, infos[i].hostname);
 		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
 			error_save = error;
@@ -1891,7 +1896,7 @@ gfarm_file_section_copy_info_remove_all_by_section(
 }
 
 char *
-gfarm_file_section_copy_info_get_all_by_host(
+gfarm_metadb_file_section_copy_info_get_all_by_host(
 	const char *hostname,
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
@@ -1925,7 +1930,7 @@ gfarm_file_section_copy_info_remove_all_by_host(
 	int i, n;
 	struct gfarm_file_section_copy_info *infos;
 
-	error = gfarm_file_section_copy_info_get_all_by_host(hostname,
+	error = gfarm_metadb_file_section_copy_info_get_all_by_host(hostname,
 	    &n, &infos);
 	if (error != NULL) {
 		if (error == GFARM_ERR_NO_SUCH_OBJECT)
@@ -1938,7 +1943,7 @@ gfarm_file_section_copy_info_remove_all_by_host(
 	 */
 	error_save = NULL;
 	for (i = 0; i < n; i++) {
-		error = gfarm_file_section_copy_info_remove(
+		error = gfarm_metadb_file_section_copy_info_remove(
 		    infos[i].pathname, infos[i].section,
 		    hostname);
 		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
@@ -1957,7 +1962,7 @@ gfarm_file_section_copy_info_does_exist(
 {
 	struct gfarm_file_section_copy_info info;
 
-	if (gfarm_file_section_copy_info_get(pathname, section,
+	if (gfarm_metadb_file_section_copy_info_get(pathname, section,
 	    hostname, &info) != NULL)
 		return (0);
 	gfarm_file_section_copy_info_free(&info);

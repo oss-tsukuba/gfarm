@@ -14,7 +14,7 @@
 #include "gfs_pio.h"	/* gfarm_path_expand_home */
 #include "gfutil.h"
 
-#include "dircache.h"
+#include "metadb_ldap.h"
 
 static char *gfarm_current_working_directory;
 
@@ -716,7 +716,7 @@ static char *
 gfs_cachedir(struct timeval *now)
 {
 	/* assert(root != NULL); */
-	gfarm_path_info_get_all_foreach(mark_path, NULL);
+	gfarm_metadb_path_info_get_all_foreach(mark_path, NULL);
 	sweep_nodes(root);
 	need_to_clear_cache = 0;
 	last_dircache = *now;
