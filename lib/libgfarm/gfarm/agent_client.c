@@ -141,53 +141,45 @@ char *
 agent_client_path_info_get(struct agent_connection *agent_server,
 	const char *path, struct gfarm_path_info *info)
 {
-	return (agent_client_rpc(
-			agent_server, 0, AGENT_PROTO_PATH_INFO_GET,
-			"s/siissoiiiiiii", path,
-			&info->pathname, 
-			&info->status.st_ino, &info->status.st_mode,
-			&info->status.st_user, &info->status.st_group,
-			&info->status.st_size, &info->status.st_nsections,
-			&info->status.st_atimespec.tv_sec,
-			&info->status.st_atimespec.tv_nsec, 
-			&info->status.st_mtimespec.tv_sec,
-			&info->status.st_mtimespec.tv_nsec, 
-			&info->status.st_ctimespec.tv_sec,
-			&info->status.st_ctimespec.tv_nsec));
+	char *e;
+
+	e = agent_client_rpc(agent_server, 0,
+		AGENT_PROTO_PATH_INFO_GET, "s/", path);
+	if (e != NULL)
+		return (e);
+	return (xxx_proto_recv_path_info(agent_server->conn, info));
 }
 
 char *
 agent_client_path_info_set(struct agent_connection *agent_server,
 	char *path, struct gfarm_path_info *info)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_PATH_INFO_SET,
-			"siissoiiiiiii/", path,
-			info->status.st_ino, info->status.st_mode,
-			info->status.st_user, info->status.st_group,
-			info->status.st_size, info->status.st_nsections,
-			info->status.st_atimespec.tv_sec,
-			info->status.st_atimespec.tv_nsec, 
-			info->status.st_mtimespec.tv_sec,
-			info->status.st_mtimespec.tv_nsec, 
-			info->status.st_ctimespec.tv_sec,
-			info->status.st_ctimespec.tv_nsec));
+	char *e;
+
+	e = agent_client_rpc_request(agent_server,
+		AGENT_PROTO_PATH_INFO_SET, "s", path);
+	if (e != NULL)
+		return (e);
+	e = xxx_proto_send_path_info(agent_server->conn, info);
+	if (e != NULL)
+		return (e);
+	return (agent_client_rpc_result(agent_server, 0, ""));
 }
 
 char *
 agent_client_path_info_replace(struct agent_connection *agent_server,
 	char *path, struct gfarm_path_info *info)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_PATH_INFO_REPLACE,
-			"siissoiiiiiii/", path,
-			info->status.st_ino, info->status.st_mode,
-			info->status.st_user, info->status.st_group,
-			info->status.st_size, info->status.st_nsections,
-			info->status.st_atimespec.tv_sec,
-			info->status.st_atimespec.tv_nsec, 
-			info->status.st_mtimespec.tv_sec,
-			info->status.st_mtimespec.tv_nsec, 
-			info->status.st_ctimespec.tv_sec,
-			info->status.st_ctimespec.tv_nsec));
+	char *e;
+
+	e = agent_client_rpc_request(agent_server,
+		AGENT_PROTO_PATH_INFO_REPLACE, "s", path);
+	if (e != NULL)
+		return (e);
+	e = xxx_proto_send_path_info(agent_server->conn, info);
+	if (e != NULL)
+		return (e);
+	return (agent_client_rpc_result(agent_server, 0, ""));
 }
 
 char *

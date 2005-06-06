@@ -69,6 +69,46 @@ free_hostname:
 }
 
 char *
+xxx_proto_send_path_info(struct xxx_connection *client,
+	struct gfarm_path_info *info)
+{
+	return (xxx_proto_send(client, "siissoiiiiiii",
+			info->pathname,
+			info->status.st_ino, info->status.st_mode,
+			info->status.st_user, info->status.st_group,
+			info->status.st_size, info->status.st_nsections,
+			info->status.st_atimespec.tv_sec,
+			info->status.st_atimespec.tv_nsec,
+			info->status.st_mtimespec.tv_sec,
+			info->status.st_mtimespec.tv_nsec,
+			info->status.st_ctimespec.tv_sec,
+			info->status.st_ctimespec.tv_nsec));
+}
+
+char *
+xxx_proto_recv_path_info(struct xxx_connection *client,
+	struct gfarm_path_info *info)
+{
+	char *e;
+	int eof;
+
+	e = xxx_proto_recv(client, 0, &eof, "siissoiiiiiii",
+		&info->pathname,
+		&info->status.st_ino, &info->status.st_mode,
+		&info->status.st_user, &info->status.st_group,
+		&info->status.st_size, &info->status.st_nsections,
+		&info->status.st_atimespec.tv_sec,
+		&info->status.st_atimespec.tv_nsec,
+		&info->status.st_mtimespec.tv_sec,
+		&info->status.st_mtimespec.tv_nsec,
+		&info->status.st_ctimespec.tv_sec,
+		&info->status.st_ctimespec.tv_nsec);
+	if (eof)
+		return (GFARM_ERR_PROTOCOL);
+	return (e);
+}
+
+char *
 xxx_proto_send_file_section_info(struct xxx_connection *client,
 	struct gfarm_file_section_info *info)
 {

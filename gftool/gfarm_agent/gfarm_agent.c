@@ -144,32 +144,30 @@ static char *
 agent_server_path_info_get(struct xxx_connection *client)
 {
 	char *path, *e, *e_rpc;
-	struct gfarm_path_info pi;
+	struct gfarm_path_info info;
+	char *diag = "path_info_get";
 
-	e_rpc = agent_server_get_request(client, "path_info_get", "s", &path);
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
 	if (e_rpc != NULL)
 		return (e_rpc); /* protocol error */
 
 	if (debug_mode)
-		log_proto("path_info_get", path);
+		log_proto(diag, path);
 	agent_lock();
-	e = gfarm_i_path_info_get(path, &pi);
+	e = gfarm_i_path_info_get(path, &info);
 	agent_unlock();
 	free(path);
 
-	e_rpc = agent_server_put_reply(
-		client, "path_info_get", e, "siissoiiiiiii",
-		pi.pathname,
-		pi.status.st_ino, pi.status.st_mode,
-		pi.status.st_user, pi.status.st_group,
-		pi.status.st_size, pi.status.st_nsections,
-		pi.status.st_atimespec.tv_sec, pi.status.st_atimespec.tv_nsec, 
-		pi.status.st_mtimespec.tv_sec, pi.status.st_mtimespec.tv_nsec, 
-		pi.status.st_ctimespec.tv_sec, pi.status.st_ctimespec.tv_nsec);
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e == NULL && e_rpc == NULL) {
+		e_rpc = xxx_proto_send_path_info(client, &info);
+		if (e_rpc != NULL)
+			error_proto(diag, e_rpc);
+	}
 	if (e == NULL)
-		gfarm_path_info_free(&pi);
-	if (e != NULL)
-		log_proto("path_info_get", e);
+		gfarm_path_info_free(&info);
+	else
+		log_proto(diag, e);
 	return (e_rpc);
 }
 
@@ -177,33 +175,29 @@ static char *
 agent_server_path_info_set(struct xxx_connection *client)
 {
 	char *pathname, *e, *e_rpc;
-	struct gfarm_path_info pi;
-	struct gfs_stat *st = &pi.status;
+	struct gfarm_path_info info;
+	char *diag = "path_info_set";
 
-	e_rpc = agent_server_get_request(
-		client, "path_info_set", "siissoiiiiiii",
-		&pathname,
-		&st->st_ino, &st->st_mode,
-		&st->st_user, &st->st_group,
-		&st->st_size, &st->st_nsections,
-		&st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec, 
-		&st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec, 
-		&st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec);
+	e_rpc = agent_server_get_request(client, diag, "s", &pathname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-
+	e_rpc = xxx_proto_recv_path_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_pathname;
+	}
 	if (debug_mode)
-		log_proto("path_info_set", pathname);
-	pi.pathname = pathname;
+		log_proto(diag, pathname);
 	agent_lock();
-	e = gfarm_i_path_info_set(pathname, &pi);
+	e = gfarm_i_path_info_set(pathname, &info);
 	agent_unlock();
-	/* pathname will be free'ed in gfarm_path_info_free(&pi) */
-	gfarm_path_info_free(&pi);
+	gfarm_path_info_free(&info);
 
-	e_rpc = agent_server_put_reply(client, "path_info_set", e, "");
+	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
-		log_proto("path_info_set", e);
+		log_proto(diag, e);
+free_pathname:
+	free(pathname);
 	return (e_rpc);
 }
 
@@ -211,32 +205,29 @@ static char *
 agent_server_path_info_replace(struct xxx_connection *client)
 {
 	char *pathname, *e, *e_rpc;
-	struct gfarm_path_info pi;
-	struct gfs_stat *st = &pi.status;
+	struct gfarm_path_info info;
+	char *diag = "path_info_replace";
 
-	e_rpc = agent_server_get_request(
-		client, "path_info_replace", "siissoiiiiiii",
-		&pathname,
-		&st->st_ino, &st->st_mode,
-		&st->st_user, &st->st_group,
-		&st->st_size, &st->st_nsections,
-		&st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec, 
-		&st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec, 
-		&st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec);
+	e_rpc = agent_server_get_request(client, diag, "s", &pathname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-
+	e_rpc = xxx_proto_recv_path_info(client, &info);
+	if (e_rpc != NULL) {
+		error_proto(diag, e_rpc);
+		goto free_pathname;
+	}
 	if (debug_mode)
-		log_proto("path_info_replace", pathname);
-	pi.pathname = pathname;
+		log_proto(diag, pathname);
 	agent_lock();
-	e = gfarm_i_path_info_replace(pathname, &pi);
+	e = gfarm_i_path_info_replace(pathname, &info);
 	agent_unlock();
-	gfarm_path_info_free(&pi);
+	gfarm_path_info_free(&info);
 
-	e_rpc = agent_server_put_reply(client, "path_info_replace", e, "");
+	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
-		log_proto("path_info_replace", e);
+		log_proto(diag, e);
+free_pathname:
+	free(pathname);
 	return (e_rpc);
 }
 
@@ -244,22 +235,22 @@ static char *
 agent_server_path_info_remove(struct xxx_connection *client)
 {
 	char *pathname, *e, *e_rpc;
+	char *diag = "path_info_remove";
 
-	e_rpc = agent_server_get_request(
-		client, "path_info_remove", "s", &pathname);
+	e_rpc = agent_server_get_request(client, diag, "s", &pathname);
 	if (e_rpc != NULL)
 		return (e_rpc);
 
 	if (debug_mode)
-		log_proto("path_info_remove", pathname);
+		log_proto(diag, pathname);
 	agent_lock();
 	e = gfarm_i_path_info_remove(pathname);
 	agent_unlock();
 	free(pathname);
 
-	e_rpc = agent_server_put_reply(client, "path_info_remove", e, "");
+	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
-		log_proto("path_info_remove", e);
+		log_proto(diag, e);
 	return (e_rpc);
 }
 
@@ -267,25 +258,24 @@ static char *
 agent_server_realpath_canonical(struct xxx_connection *client)
 {
 	char *path, *abspath, *e, *e_rpc;
+	char *diag = "realpath_canonical";
 
-	e_rpc = agent_server_get_request(
-		client, "realpath_canonical", "s", &path);
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
 	if (e_rpc != NULL)
 		return (e_rpc);
 
 	if (debug_mode)
-		log_proto("realpath_canonical", path);
+		log_proto(diag, path);
 	agent_lock();
 	e = gfs_i_realpath_canonical(path, &abspath);
 	agent_unlock();
 	free(path);
 
-	e_rpc = agent_server_put_reply(
-		client, "realpath_canonical", e, "s", abspath);
+	e_rpc = agent_server_put_reply(client, diag, e, "s", abspath);
 	if (e == NULL)
 		free(abspath);
-	if (e != NULL)
-		log_proto("realpath_canonical", e);
+	else
+		log_proto(diag, e);
 	return (e_rpc);
 }
 
@@ -294,21 +284,22 @@ agent_server_get_ino(struct xxx_connection *client)
 {
 	char *path, *e, *e_rpc;
 	long ino;
+	char *diag = "get_ino";
 
-	e_rpc = agent_server_get_request(client, "get_ino", "s", &path);
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
 	if (e_rpc != NULL)
 		return (e_rpc);
 
 	if (debug_mode)
-		log_proto("get_ino", path);
+		log_proto(diag, path);
 	agent_lock();
 	e = gfs_i_get_ino(path, &ino);
 	agent_unlock();
 	free(path);
 
-	e_rpc = agent_server_put_reply(client, "get_ino", e, "i", ino);
+	e_rpc = agent_server_put_reply(client, diag, e, "i", ino);
 	if (e != NULL)
-		log_proto("get_ino", e);
+		log_proto(diag, e);
 	return (e_rpc);
 }
 
@@ -1302,8 +1293,8 @@ guess_shell_type(void)
 
 	if (shell_type == UNDECIDED && (shell = getenv("SHELL")) != NULL) {
 		int shell_len = strlen(shell);
-		
-		if (shell_len < 3 || 
+
+		if (shell_len < 3 ||
 		    memcmp(shell + shell_len - 3, "csh", 3) != 0)
 			shell_type = B_SHELL_LIKE;
 		else
