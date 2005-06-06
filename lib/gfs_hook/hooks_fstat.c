@@ -12,6 +12,7 @@ int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
+	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FSTAT) "(%d)\n",
 	    filedes));
@@ -23,12 +24,11 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___FSTAT) "(%d)\n", filedes));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
-		char *e;
 		struct gfs_stat status;
 
 		e = gfs_fstat(gf, &status);
 		if (e != NULL)
-			return (-1);
+			goto error;
 
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = status.st_ino;
@@ -46,9 +46,6 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	} else {
 		struct gfs_stat *gsp;
 
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___FSTAT) "(%d)\n", filedes));
-
 		gsp = gfs_hook_get_gfs_stat(filedes);
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gsp->st_ino;
@@ -63,6 +60,11 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
 	}
 	return (0);
+
+error:
+	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FSTAT) ": %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
 }
 
 int
@@ -121,6 +123,7 @@ int
 FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
+	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%d)\n",
 	    filedes));
@@ -132,12 +135,11 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
-		char *e;
 		struct gfs_stat status;
 
 		e = gfs_fstat(gf, &status);
 		if (e != NULL)
-			return (-1);
+			goto error;
 
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = status.st_ino;
@@ -155,9 +157,6 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	} else {
 		struct gfs_stat *gsp;
 
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
-
 		gsp = gfs_hook_get_gfs_stat(filedes);
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gsp->st_ino;
@@ -172,6 +171,11 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
 	}
 	return (0);
+
+error:
+	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FXSTAT) ": %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
 }
 
 int
