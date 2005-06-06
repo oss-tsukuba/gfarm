@@ -181,23 +181,24 @@ agent_server_path_info_set(struct xxx_connection *client)
 	e_rpc = agent_server_get_request(client, diag, "s", &pathname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_path_info(client, &info);
+	e_rpc = xxx_proto_recv_path_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
-		goto free_pathname;
+		free(pathname);
+		return (e_rpc);
 	}
 	if (debug_mode)
 		log_proto(diag, pathname);
+ 	info.pathname = pathname;
 	agent_lock();
 	e = gfarm_i_path_info_set(pathname, &info);
 	agent_unlock();
+	/* pathname will be free'ed in gfarm_path_info_free(&info) */
 	gfarm_path_info_free(&info);
 
 	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
 		log_proto(diag, e);
-free_pathname:
-	free(pathname);
 	return (e_rpc);
 }
 
@@ -211,13 +212,15 @@ agent_server_path_info_replace(struct xxx_connection *client)
 	e_rpc = agent_server_get_request(client, diag, "s", &pathname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_path_info(client, &info);
+	e_rpc = xxx_proto_recv_path_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
-		goto free_pathname;
+		free(pathname);
+		return (e_rpc);
 	}
 	if (debug_mode)
 		log_proto(diag, pathname);
+	info.pathname = pathname;
 	agent_lock();
 	e = gfarm_i_path_info_replace(pathname, &info);
 	agent_unlock();
@@ -226,8 +229,6 @@ agent_server_path_info_replace(struct xxx_connection *client)
 	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
 		log_proto(diag, e);
-free_pathname:
-	free(pathname);
 	return (e_rpc);
 }
 
@@ -502,7 +503,7 @@ agent_server_host_info_set(struct xxx_connection *client)
 	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_host_info(client, &info);
+	e_rpc = xxx_proto_recv_host_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
 		goto free_hostname;
@@ -532,7 +533,7 @@ agent_server_host_info_replace(struct xxx_connection *client)
 	e_rpc = agent_server_get_request(client, diag, "s", &hostname);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_host_info(client, &info);
+	e_rpc = xxx_proto_recv_host_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
 		goto free_hostname;
@@ -719,7 +720,7 @@ agent_server_file_section_info_set(struct xxx_connection *client)
 	e_rpc = agent_server_get_request(client, diag, "ss", &path, &section);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_file_section_info(client, &info);
+	e_rpc = xxx_proto_recv_file_section_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
 		goto free_path;
@@ -751,7 +752,7 @@ agent_server_file_section_info_replace(struct xxx_connection *client)
 		client, diag, "ss", &path, &section);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_file_section_info(client, &info);
+	e_rpc = xxx_proto_recv_file_section_info_for_set(client, &info);
 	if (e_rpc != NULL) {
 		error_proto(diag, e_rpc);
 		goto free_path;
@@ -880,25 +881,20 @@ agent_server_file_section_copy_info_set(struct xxx_connection *client)
 		client, diag, "sss", &path, &section, &host);
 	if (e_rpc != NULL)
 		return (e_rpc);
-	e_rpc = xxx_proto_recv_file_section_copy_info(client, &info);
-	if (e_rpc != NULL) {
-		error_proto(diag, e_rpc);
-		goto free_path;
-	}
+
 	if (debug_mode)
 		log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_set(path, section, host, &info);
 	agent_unlock();
-	gfarm_file_section_copy_info_free(&info);
+	/* no need to free info... */
+	free(path);
+	free(section);
+	free(host);
 
 	e_rpc = agent_server_put_reply(client, diag, e, "");
 	if (e != NULL)
 		log_proto(diag, e);
-free_path:
-	free(path);
-	free(section);
-	free(host);
 	return (e_rpc);
 }
 

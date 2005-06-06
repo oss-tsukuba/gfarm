@@ -160,7 +160,7 @@ agent_client_path_info_set(struct agent_connection *agent_server,
 		AGENT_PROTO_PATH_INFO_SET, "s", path);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_path_info(agent_server->conn, info);
+	e = xxx_proto_send_path_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -176,7 +176,7 @@ agent_client_path_info_replace(struct agent_connection *agent_server,
 		AGENT_PROTO_PATH_INFO_REPLACE, "s", path);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_path_info(agent_server->conn, info);
+	e = xxx_proto_send_path_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -315,7 +315,7 @@ agent_client_host_info_set(struct agent_connection *agent_server,
 		AGENT_PROTO_HOST_INFO_SET, "s", hostname);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_host_info(agent_server->conn, info);
+	e = xxx_proto_send_host_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -331,7 +331,7 @@ agent_client_host_info_replace(struct agent_connection *agent_server,
 		AGENT_PROTO_HOST_INFO_REPLACE, "s", hostname);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_host_info(agent_server->conn, info);
+	e = xxx_proto_send_host_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -447,7 +447,7 @@ agent_client_file_section_info_set(
 		AGENT_PROTO_FILE_SECTION_INFO_SET, "ss", pathname, section);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_file_section_info(agent_server->conn, info);
+	e = xxx_proto_send_file_section_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -466,7 +466,7 @@ agent_client_file_section_info_replace(
 		AGENT_PROTO_FILE_SECTION_INFO_REPLACE, "ss", pathname, section);
 	if (e != NULL)
 		return (e);
-	e = xxx_proto_send_file_section_info(agent_server->conn, info);
+	e = xxx_proto_send_file_section_info_for_set(agent_server->conn, info);
 	if (e != NULL)
 		return (e);
 	return (agent_client_rpc_result(agent_server, 0, ""));
@@ -538,22 +538,12 @@ agent_client_file_section_copy_info_get(
 char *
 agent_client_file_section_copy_info_set(
 	struct agent_connection *agent_server,
-	char *pathname,
-	char *section,
-	char *hostname,
+	char *pathname, char *section, char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
-	char *e;
-
-	e = agent_client_rpc_request(agent_server,
-		AGENT_PROTO_FILE_SECTION_COPY_INFO_SET, "sss",
-		pathname, section, hostname);
-	if (e != NULL)
-		return (e);
-	e = xxx_proto_send_file_section_copy_info(agent_server->conn, info);
-	if (e != NULL)
-		return (e);
-	return (agent_client_rpc_result(agent_server, 0, ""));
+	return (agent_client_rpc(agent_server, 0,
+			AGENT_PROTO_FILE_SECTION_COPY_INFO_SET,
+			"sss/", pathname, section, hostname));
 }
 
 char *

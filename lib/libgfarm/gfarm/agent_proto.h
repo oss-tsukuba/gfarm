@@ -39,13 +39,25 @@ char *xxx_proto_send_host_info(
 	struct xxx_connection *, struct gfarm_host_info *);
 char *xxx_proto_recv_host_info(
 	struct xxx_connection *, struct gfarm_host_info *);
+char *xxx_proto_send_host_info_for_set(
+	struct xxx_connection *, struct gfarm_host_info *);
+char *xxx_proto_recv_host_info_for_set(
+	struct xxx_connection *, struct gfarm_host_info *);
 char *xxx_proto_send_path_info(
 	struct xxx_connection *, struct gfarm_path_info *);
 char *xxx_proto_recv_path_info(
 	struct xxx_connection *, struct gfarm_path_info *);
+char *xxx_proto_send_path_info_for_set(
+	struct xxx_connection *, struct gfarm_path_info *);
+char *xxx_proto_recv_path_info_for_set(
+	struct xxx_connection *, struct gfarm_path_info *);
 char *xxx_proto_send_file_section_info(
 	struct xxx_connection *, struct gfarm_file_section_info *);
 char *xxx_proto_recv_file_section_info(
+	struct xxx_connection *, struct gfarm_file_section_info *);
+char *xxx_proto_send_file_section_info_for_set(
+	struct xxx_connection *, struct gfarm_file_section_info *);
+char *xxx_proto_recv_file_section_info_for_set(
 	struct xxx_connection *, struct gfarm_file_section_info *);
 char *xxx_proto_send_file_section_copy_info(
 	struct xxx_connection *, struct gfarm_file_section_copy_info *);
