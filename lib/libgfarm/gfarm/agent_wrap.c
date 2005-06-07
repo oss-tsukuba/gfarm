@@ -326,6 +326,26 @@ gfarm_host_info_get_allhost_by_architecture(const char *architecture,
 				architecture, np, infosp));
 }
 
+char *
+gfarm_host_info_get_architecture_by_host(const char *hostname)
+{
+	char *error;
+	struct gfarm_host_info info;
+
+	error = gfarm_host_info_get(hostname, &info);
+	if (error != NULL)
+		return (NULL);
+
+	/* free info except info.architecture */
+	free(info.hostname);
+	if (info.hostaliases != NULL) {
+		gfarm_strarray_free(info.hostaliases);
+		info.nhostaliases = 0;
+	}
+
+	return (info.architecture);
+}
+
 /* file section info */
 
 char *
@@ -395,6 +415,81 @@ gfarm_file_section_info_get_all_by_file(
 				pathname, np, infosp));
 }
 
+static int
+gfarm_file_section_info_compare_serial(const void *d, const void *s)
+{
+	const struct gfarm_file_section_info *df = d, *sf = s;
+
+	return (atoi(df->section) - atoi(sf->section));
+}
+
+char *
+gfarm_file_section_info_get_sorted_all_serial_by_file(
+	const char *pathname,
+	int *np,
+	struct gfarm_file_section_info **infosp)
+{
+	int n;
+	struct gfarm_file_section_info *infos;
+	char *error = gfarm_file_section_info_get_all_by_file(
+		pathname, &n, &infos);
+
+	if (error != NULL)
+		return (error);
+
+	qsort(infos, n, sizeof(infos[0]),
+	      gfarm_file_section_info_compare_serial);
+	*np = n;
+	*infosp = infos;
+	return (NULL);
+}
+
+char *
+gfarm_file_section_info_remove_all_by_file(const char *pathname)
+{
+	char *error, *error_save;
+	int i, n;
+	struct gfarm_file_section_info *infos;
+
+	error = gfarm_file_section_info_get_all_by_file(pathname,
+	    &n, &infos);
+	if (error != NULL) {
+		if (error == GFARM_ERR_NO_SUCH_OBJECT)
+			return (NULL);
+		return (error);
+	}
+
+	/*
+	 * remove GfarmFileSection's
+	 */
+	error_save = NULL;
+	for (i = 0; i < n; i++) {
+		error = gfarm_file_section_info_remove(pathname,
+		    infos[i].section);
+		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
+			error_save = error;
+	}
+	gfarm_file_section_info_free_all(n, infos);
+
+	/* XXX - do not remove parent GFarmPath here */
+
+	return (error_save);
+}
+
+int
+gfarm_file_section_info_does_exist(
+	const char *pathname,
+	const char *section)
+{
+	struct gfarm_file_section_info info;
+
+	if (gfarm_file_section_info_get(pathname, section, &info)
+	    != NULL)
+		return (0);
+	gfarm_file_section_info_free(&info);
+	return (1);
+}
+
 /* file section copy info */
 
 char *
@@ -457,6 +552,37 @@ gfarm_file_section_copy_info_get_all_by_file(
 }
 
 char *
+gfarm_file_section_copy_info_remove_all_by_file(
+	const char *pathname)
+{
+	char *error, *error_save;
+	int i, n;
+	struct gfarm_file_section_copy_info *infos;
+
+	error = gfarm_file_section_copy_info_get_all_by_file(pathname,
+	    &n, &infos);
+	if (error != NULL) {
+		if (error == GFARM_ERR_NO_SUCH_OBJECT)
+			return (NULL);
+		return (error);
+	}
+
+	/*
+	 * remove GFarmFileSectionCopies
+	 */
+	error_save = NULL;
+	for (i = 0; i < n; i++) {
+		error = gfarm_file_section_copy_info_remove(pathname,
+		    infos[i].section, infos[i].hostname);
+		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
+			error_save = error;
+	}
+	gfarm_file_section_copy_info_free_all(n, infos);
+
+	return (error_save);
+}
+
+char *
 gfarm_file_section_copy_info_get_all_by_section(
 	const char *pathname,
 	const char *section,
@@ -472,6 +598,39 @@ gfarm_file_section_copy_info_get_all_by_section(
 }
 
 char *
+gfarm_file_section_copy_info_remove_all_by_section(
+	const char *pathname,
+	const char *section)
+{
+	char *error, *error_save;
+	int i, n;
+	struct gfarm_file_section_copy_info *infos;
+
+	error = gfarm_file_section_copy_info_get_all_by_section(
+	    pathname, section,
+	    &n, &infos);
+	if (error != NULL) {
+		if (error == GFARM_ERR_NO_SUCH_OBJECT)
+			return (NULL);
+		return (error);
+	}
+
+	/*
+	 * remove GfarmFileSectionCopies
+	 */
+	error_save = NULL;
+	for (i = 0; i < n; i++) {
+		error = gfarm_file_section_copy_info_remove(pathname,
+		    section, infos[i].hostname);
+		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
+			error_save = error;
+	}
+	gfarm_file_section_copy_info_free_all(n, infos);
+
+	return (error_save);
+}
+
+char *
 gfarm_file_section_copy_info_get_all_by_host(
 	const char *hostname,
 	int *np,
@@ -483,4 +642,51 @@ gfarm_file_section_copy_info_get_all_by_host(
 	else
 		return (gfarm_metadb_file_section_copy_info_get_all_by_host(
 				hostname, np, infosp));
+}
+
+char *
+gfarm_file_section_copy_info_remove_all_by_host(
+	const char *hostname)
+{
+	char *error, *error_save;
+	int i, n;
+	struct gfarm_file_section_copy_info *infos;
+
+	error = gfarm_file_section_copy_info_get_all_by_host(hostname,
+	    &n, &infos);
+	if (error != NULL) {
+		if (error == GFARM_ERR_NO_SUCH_OBJECT)
+			return (NULL);
+		return (error);
+	}
+
+	/*
+	 * remove GfarmFileSectionCopy's
+	 */
+	error_save = NULL;
+	for (i = 0; i < n; i++) {
+		error = gfarm_file_section_copy_info_remove(
+		    infos[i].pathname, infos[i].section,
+		    hostname);
+		if (error != NULL && error != GFARM_ERR_NO_SUCH_OBJECT)
+			error_save = error;
+	}
+	gfarm_file_section_copy_info_free_all(n, infos);
+
+	return (error_save);
+}
+
+int
+gfarm_file_section_copy_info_does_exist(
+	const char *pathname,
+	const char *section,
+	const char *hostname)
+{
+	struct gfarm_file_section_copy_info info;
+
+	if (gfarm_file_section_copy_info_get(pathname, section,
+	    hostname, &info) != NULL)
+		return (0);
+	gfarm_file_section_copy_info_free(&info);
+	return (1);
 }
