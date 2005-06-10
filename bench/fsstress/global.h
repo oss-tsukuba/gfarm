@@ -35,71 +35,32 @@
 
 /* xfs-specific includes */
 
-#ifndef NO_XFS
-#include <libxfs.h>
-#include <attributes.h>
+#if defined(NO_XFS)
+# include "xfscompat.h"
 #else
-#include <xfscompat.h>
+# include <libxfs.h>
+# include <attributes.h>
 #endif
 
 /* libc includes */
 
-#ifdef __FreeBSD__
-#include <sys/types.h>
-#include <sys/param.h>
-#endif
 #include <sys/stat.h>
-#ifndef __FreeBSD__
 #include <sys/statvfs.h>
-#endif
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#ifndef __FreeBSD__
+#include <sys/types.h>
+#include <fcntl.h>
 #include <malloc.h>
-#endif
 #include <dirent.h>
 #include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #ifndef O_DIRECT
-#define O_DIRECT        040000
-#endif
-
-#ifdef __FreeBSD__
-typedef off_t	off64_t;
-#define stat64	stat
-#define lseek64	lseek
-#define lstat64	lstat
-#define fstat64	fstat
-#define ftruncate64	ftruncate
-#define truncate64	truncate
-#define readdir64	readdir
-#define fdatasync	fsync
-typedef long	ptrdiff_t;
-
-static __inline
-void *
-memalign(int blksize, int bytes)
-{
-    void *ptr;
-    int blkmask;
-    static int pagesize;
-
-    if (pagesize == 0)
-	pagesize = getpagesize();
-    if (blksize < pagesize)
-	blksize = pagesize;
-    blkmask = blksize - 1;
-    ptr = malloc((bytes + blkmask) & ~blkmask);
-    bzero(ptr, bytes);
-    return(ptr);
-}
-
+#define O_DIRECT 040000
 #endif
 
 #endif
-
