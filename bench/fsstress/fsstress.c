@@ -1689,7 +1689,7 @@ creat_f(int opno, long r)
 }
 
 
-
+#ifdef O_DIRECT
 int 
 setdirect(int fd)
 { 
@@ -1714,6 +1714,7 @@ setdirect(int fd)
 			       
 	return 1;
 } 
+#endif
 
 void
 dread_f(int opno, long r)
@@ -1739,9 +1740,11 @@ dread_f(int opno, long r)
 	}
 	fd = open_path(&f, O_RDONLY);
 
+#ifdef O_DIRECT
 	if (!setdirect(fd)) { 
 		return;
 	} 
+#endif
 
 	e = fd < 0 ? errno : 0;
 	check_cwd();
@@ -1839,8 +1842,10 @@ dwrite_f(int opno, long r)
 		return;
 	}
 
+#ifdef O_DIRECT
 	if (!setdirect(fd)) 
 		return; 
+#endif
 	if (fstat64(fd, &stb) < 0) {
 		if (v)
 			printf("%d/%d: dwrite - fstat64 %s failed %d\n",

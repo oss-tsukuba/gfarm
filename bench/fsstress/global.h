@@ -49,27 +49,19 @@
 #include <sys/param.h>
 #endif
 #include <sys/stat.h>
-#ifndef __FreeBSD__
-#include <sys/statvfs.h>
-#endif
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#ifndef __FreeBSD__
-#include <malloc.h>
-#endif
 #include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <string.h>
-#ifndef O_DIRECT
-#define O_DIRECT        040000
-#endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__NetBSD__)
 typedef off_t	off64_t;
 #define stat64	stat
 #define lseek64	lseek
@@ -78,8 +70,6 @@ typedef off_t	off64_t;
 #define ftruncate64	ftruncate
 #define truncate64	truncate
 #define readdir64	readdir
-#define fdatasync	fsync
-typedef long	ptrdiff_t;
 
 static __inline
 void *
@@ -99,6 +89,11 @@ memalign(int blksize, int bytes)
     return(ptr);
 }
 
+#endif /* defined(__FreeBSD__) || defined(__NetBSD__) */
+
+#ifdef __FreeBSD__
+#define fdatasync	fsync
+typedef long	ptrdiff_t;
 #endif
 
 #endif
