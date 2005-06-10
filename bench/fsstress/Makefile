@@ -1,13 +1,15 @@
+CFLAGS += -Wall -g -DNO_XFS -I. -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+LDFLAGS += 
 
-CFLAGS= -g -DNO_XFS -I. -D_LARGEFILE64_SOURCE -Wall -Wstrict-prototypes
-FILES=  Makefile README fsstress.c global.h xfscompat.h dotest.sample
+SRCS=$(wildcard *.c)
+TARGETS=$(patsubst %.c,%,$(SRCS))
 
-all: fsstress
+all: $(TARGETS)
 
-fsstress.c: global.h xfscompat.h
+install:
+	ln -f fsstress ../../../bin
 
 clean:
-	rm -f fsstress.o fsstress fsstress.core fsstress-1.00.tgz
+	rm -f $(TARGETS)
 
-tar:
-	tar czf fsstress-1.00.tgz $(FILES)
+
