@@ -35,11 +35,11 @@
 
 /* xfs-specific includes */
 
-#ifndef NO_XFS
-#include <libxfs.h>
-#include <attributes.h>
+#if defined(NO_XFS)
+# include "xfscompat.h"
 #else
-#include <xfscompat.h>
+# include <libxfs.h>
+# include <attributes.h>
 #endif
 
 /* libc includes */
@@ -49,16 +49,17 @@
 #include <sys/param.h>
 #endif
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <dirent.h>
 #include <errno.h>
-#include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include <string.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__CYGWIN__)
@@ -96,5 +97,4 @@ memalign(int blksize, int bytes)
 typedef long	ptrdiff_t;
 #endif
 
-#endif
-
+#endif /* GLOBAL_H */
