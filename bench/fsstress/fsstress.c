@@ -1620,7 +1620,8 @@ chown_f(int opno, long r)
 	e = lchown_path(&f, u, -1) < 0 ? errno : 0;
 	check_cwd();
 	if (v)
-		printf("%d/%d: chown %s %d %d\n", procid, opno, f.path, u, e);
+		printf("%d/%d: chown %s %d %d\n",
+		    procid, opno, f.path, (int)u, e);
 	free_pathname(&f);
 }
 

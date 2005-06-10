@@ -61,7 +61,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__CYGWIN__)
 typedef off_t	off64_t;
 #define stat64	stat
 #define lseek64	lseek
@@ -89,7 +89,7 @@ memalign(int blksize, int bytes)
     return(ptr);
 }
 
-#endif /* defined(__FreeBSD__) || defined(__NetBSD__) */
+#endif /* defined(__FreeBSD__) || defined(__NetBSD__) || defined(__CYGWIN__) */
 
 #ifdef __FreeBSD__
 #define fdatasync	fsync
