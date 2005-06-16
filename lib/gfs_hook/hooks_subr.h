@@ -83,3 +83,4 @@ off64_t gfs_hook_syscall_lseek64(int, off64_t, int);
 
 #define GFS_DEV		((dev_t)-1)
 #define GFS_BLKSIZE	8192
+#define GFS_NLINK_DIR	32000	/* dummy value of st_nlink for directories */

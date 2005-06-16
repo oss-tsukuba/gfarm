@@ -54,7 +54,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gsp->st_ino;
 		buf->st_mode = gsp->st_mode;
-		buf->st_nlink = 2;
+		buf->st_nlink = GFS_NLINK_DIR;
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gsp->st_size;
@@ -167,7 +167,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gsp->st_ino;
 		buf->st_mode = gsp->st_mode;
-		buf->st_nlink = 2;
+		buf->st_nlink = GFS_NLINK_DIR;
 		buf->st_uid = getuid();
 		buf->st_gid = getgid();
 		buf->st_size = gsp->st_size;

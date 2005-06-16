@@ -95,7 +95,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
-		buf->st_nlink = 1;
+		buf->st_nlink = S_ISDIR(buf->st_mode) ? GFS_NLINK_DIR : 1;
 
 		/* XXX FIXME: need to convert gfarm global user to UNIX uid */
 		p = getpwnam(gfarm_get_local_username());
@@ -257,7 +257,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
-		buf->st_nlink = 1;
+		buf->st_nlink = S_ISDIR(buf->st_mode) ? GFS_NLINK_DIR : 1;
 
 		/* XXX FIXME: need to convert gfarm global user to UNIX uid */
 		p = getpwnam(gfarm_get_local_username());
