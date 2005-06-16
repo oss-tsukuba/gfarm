@@ -81,4 +81,5 @@ void gfs_hook_set_descriptor(int, struct _gfs_file_descriptor *);
 off64_t gfs_hook_syscall_lseek64(int, off64_t, int);
 #endif
 
-#define GFS_DEV	(dev_t)-1
+#define GFS_DEV		((dev_t)-1)
+#define GFS_BLKSIZE	8192

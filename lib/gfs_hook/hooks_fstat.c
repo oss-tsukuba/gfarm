@@ -30,6 +30,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		if (e != NULL)
 			goto error;
 
+		memchr(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = status.st_ino;
 		buf->st_mode = status.st_mode;
@@ -47,6 +48,8 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		struct gfs_stat *gsp;
 
 		gsp = gfs_hook_get_gfs_stat(filedes);
+
+		memchr(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gsp->st_ino;
 		buf->st_mode = gsp->st_mode;

@@ -91,6 +91,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	if (e == NULL) {
 		struct passwd *p;
 
+		memchr(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
@@ -251,6 +252,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	if (e == NULL) {
 		struct passwd *p;
 
+		memchr(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;

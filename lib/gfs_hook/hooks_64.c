@@ -207,7 +207,6 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 /* stat */
 
 #define STRUCT_STAT	struct stat64
-#define GFS_BLKSIZE	8192
 
 #define SYSCALL_STAT(path, buf)	\
 	gfs_hook_syscall_stat64(path, buf)
