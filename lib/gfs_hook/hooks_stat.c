@@ -108,7 +108,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		}
 		buf->st_size = gs.st_size;
 		buf->st_blksize = GFS_BLKSIZE;
-		buf->st_blocks = (gs.st_size + GFS_BLKSIZE - 1) / GFS_BLKSIZE;
+		buf->st_blocks = (gs.st_size + STAT_BLKSIZ - 1) / STAT_BLKSIZ;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
@@ -270,7 +270,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		}
 		buf->st_size = gs.st_size;
 		buf->st_blksize = GFS_BLKSIZE;
-		buf->st_blocks = (gs.st_size + GFS_BLKSIZE - 1) / GFS_BLKSIZE;
+		buf->st_blocks = (gs.st_size + STAT_BLKSIZ - 1) / STAT_BLKSIZ;
 		buf->st_atime = gs.st_atimespec.tv_sec;
 		buf->st_mtime = gs.st_mtimespec.tv_sec;
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
