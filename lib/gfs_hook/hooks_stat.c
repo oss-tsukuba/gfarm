@@ -15,10 +15,6 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	char *url;
 	struct gfs_stat gs;
 	int nf = -1, np;
-#if 0
-	char *canonic_path, *abs_path;
-	int r, save_errno;
-#endif
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___STAT) "(%s)\n",
 	    path));
@@ -29,7 +25,6 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)\n", path));
 
-#if 1
 	switch (gfs_hook_get_current_view()) {
 	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
@@ -123,35 +118,6 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___STAT) ": %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
-#else /* Temporary code until gfs_stat() will be implemented. */
-	/*
-	 * gfs_stat() may not appropriate here, because:
-	 * 1. it doesn't/can't fill all necessary field of struct stat.
-	 * 2. it returns information of whole gfarm file, rather than
-	 *    information of the fragment.
-	 */
-
-	e = gfarm_url_make_path(url, &canonic_path);
-	free(url);
-	if (e != NULL) {
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-	e = gfarm_path_localize_file_fragment(canonic_path, gfarm_node,
-	    &abs_path);
-	free(canonic_path);
-	if (e != NULL) {
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___STAT) " locally: %s\n", abs_path));
-	r = SYSCALL_STAT(abs_path, buf);
-	save_errno = errno;
-	free(abs_path);
-	errno = save_errno;
-	return (r);
-#endif
 }
 
 int
@@ -210,10 +176,6 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	char *url;
 	struct gfs_stat gs;
 	int nf = -1, np;
-#if 0
-	char *canonic_path, *abs_path;
-	int r, save_errno;
-#endif
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___XSTAT) "(%s)\n",
 	    path));
@@ -224,7 +186,6 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr,
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)\n", path));
 
-#if 1
 	switch (gfs_hook_get_current_view()) {
 	case section_view:
 		_gfs_hook_debug(fprintf(stderr,
@@ -317,28 +278,6 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___XSTAT) ": %s\n", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
-#else /* Temporary code until gfs_stat() will be implemented. */
-	e = gfarm_url_make_path(url, &canonic_path);
-	free(url);
-	if (e != NULL) {
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-	e = gfarm_path_localize_file_fragment(canonic_path, gfarm_node,
-	    &abs_path);
-	free(canonic_path);
-	if (e != NULL) {
-		errno = gfarm_error_to_errno(e);
-		return (-1);
-	}
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___XSTAT) " locally: %s\n", abs_path));
-	r = SYSCALL_XSTAT(ver, abs_path, buf);
-	save_errno = errno;
-	free(abs_path);
-	errno = save_errno;
-	return (r);
-#endif
 }
 
 int
