@@ -891,9 +891,9 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 		gfarm_file_section_copy_info_free_all((*ncopy)[i],
 								(*copies)[i]);
 finish_free_copies:
-	free(copies);
+	free(*copies);
 finish_free_ncopy:
-	free(ncopy);
+	free(*ncopy);
 finish_free_section_info:
 	gfarm_file_section_info_free_all(*nsection, *sections);
 	return (e);
