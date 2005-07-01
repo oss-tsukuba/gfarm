@@ -1108,9 +1108,9 @@ static char *get_infos_by_file(char *pathname,
 	return (NULL);
 
 finish_free_copies:
-	free(copies);
+	free(*copies);
 finish_free_ncopy:
-	free(ncopy);
+	free(*ncopy);
 finish_free_section_info:
 	gfarm_file_section_info_free_all(*nsection, *sections);
 	return (e);
