@@ -558,7 +558,7 @@ fi
 ###### Checks for library functions.
 ###### 
 
-AC_CHECK_FUNCS(poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
+AC_CHECK_FUNCS(fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 

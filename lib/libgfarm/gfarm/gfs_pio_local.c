@@ -151,8 +151,12 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 
 	switch (operation) {
 	case GFS_PROTO_FSYNC_WITHOUT_METADATA:
+#ifdef HAVE_FDATASYNC
 		rv = fdatasync(vc->fd);
 		break;
+#else
+		/*FALLTHROUGH*/
+#endif
 	case GFS_PROTO_FSYNC_WITH_METADATA:
 		rv = fsync(vc->fd);
 		break;

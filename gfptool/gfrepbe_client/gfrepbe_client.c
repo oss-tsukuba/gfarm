@@ -78,7 +78,11 @@ write_buffer(int fd, char *buffer, int len, int *disksync_cyclep)
 			*disksync_cyclep += rv;
 			if (*disksync_cyclep >= file_sync_rate) {
 				*disksync_cyclep -= file_sync_rate;
+#ifdef HAVE_FDATASYNC
 				fdatasync(fd);
+#else
+				fsync(fd);
+#endif
 			}
 		}
 	}

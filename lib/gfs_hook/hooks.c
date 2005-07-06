@@ -1921,6 +1921,7 @@ fsync(int filedes)
 	return (__fsync(filedes));
 }
 
+#ifdef SYS_fdatasync
 int
 __fdatasync(int filedes)
 {
@@ -1960,6 +1961,7 @@ fdatasync(int filedes)
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking fdatasync(%d)\n", filedes));
 	return (__fdatasync(filedes));
 }
+#endif /* SYS_fdatasync */
 
 /*
  * definitions for "hooks_common.c"

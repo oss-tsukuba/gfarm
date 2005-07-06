@@ -367,9 +367,13 @@ gfs_server_fsync(struct xxx_connection *client)
 
 	switch (operation) {
 	case GFS_PROTO_FSYNC_WITHOUT_METADATA:      
+#ifdef HAVE_FDATASYNC
 		if (fdatasync(file_table_get(fd)) == -1)
 			save_errno = errno;
 		break;
+#else
+		/*FALLTHROUGH*/
+#endif
 	case GFS_PROTO_FSYNC_WITH_METADATA:
 		if (fsync(file_table_get(fd)) == -1)
 			save_errno = errno;
@@ -1107,7 +1111,11 @@ gfs_server_replicate_file_parallel_common(struct xxx_connection *client,
 				written += rv;
 				if (written >= file_sync_rate) {
 					written -= file_sync_rate;
+#ifdef HAVE_FDATASYNC
 					fdatasync(ofd);
+#else
+					fsync(ofd);
+#endif
 				}
 			}
 			if (--nfound <= 0)
