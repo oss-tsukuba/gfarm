@@ -110,7 +110,11 @@ pwrite_buffer(int fd, char *buffer, int len, off_t offset,
 			*disksync_cyclep += rv;
 			if (*disksync_cyclep >= file_sync_rate) {
 				*disksync_cyclep -= file_sync_rate;
+#ifdef HAVE_FDATASYNC
 				fdatasync(fd);
+#else
+				fsync(fd);
+#endif
 			}
 		}
 	}
@@ -277,7 +281,11 @@ parallel_sync_transfer(int ofd, file_offset_t size,
 				    transfers[i]);
 			if (file_sync_stripe > 0) {
 				if (++k >= file_sync_stripe) {
+#ifdef HAVE_FDATASYNC
 					fdatasync(ofd);
+#else
+					fsync(ofd);
+#endif
 					k = 0;
 				}
 			}
