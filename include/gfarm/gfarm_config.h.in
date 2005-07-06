@@ -44,6 +44,9 @@
 /* Define to 1 if you have the `ldap_memfree' function. */
 #undef HAVE_LDAP_MEMFREE
 
+/* Define to 1 if you have the `ldap_set_option' function. */
+#undef HAVE_LDAP_SET_OPTION
+
 /* Define to 1 if you have the `compat' library (-lcompat). */
 #undef HAVE_LIBCOMPAT
 

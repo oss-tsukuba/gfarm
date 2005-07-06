@@ -20472,7 +20472,8 @@ echo "${ECHO_T}using ${extra_lib} for LDAP" >&6
 	fi
 	openldap_found=yes
 
-for ac_func in ldap_memfree
+
+for ac_func in ldap_memfree ldap_set_option
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
