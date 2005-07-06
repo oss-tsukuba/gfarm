@@ -20,6 +20,7 @@
 #include <time.h>
 #include <openssl/evp.h>
 
+#include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
@@ -708,7 +709,11 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 				written += rv;
 				if (written >= sync_rate) {
 					written -= sync_rate;
+#ifdef HAVE_FDATASYNC
 					fdatasync(fd);
+#else
+					fsync(fd);
+#endif
 				}
 			}
 		}
@@ -759,7 +764,11 @@ gfs_client_copyin(struct gfs_connection *gfs_server, int src_fd, int fd,
 					written += rv;
 					if (written >= sync_rate) {
 						written -= sync_rate;
-						fdatasync(fd);
+#ifdef HAVE_FDATASYNC
+					fdatasync(fd);
+#else
+					fsync(fd);
+#endif
 					}
 				}
 			}
