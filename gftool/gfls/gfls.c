@@ -526,7 +526,6 @@ main(int argc, char **argv)
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
-	extern char *optarg;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);

@@ -29,7 +29,6 @@ main(int argc, char **argv)
 {
 	char *e;
 	int c;
-	extern char *optarg;
 #ifdef HAVE_GSI
 	int verbose_flag = 0;
 #endif

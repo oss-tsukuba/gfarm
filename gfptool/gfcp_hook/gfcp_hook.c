@@ -26,8 +26,6 @@ usage()
 int
 main(int argc, char *argv[])
 {
-	extern char *optarg;
-	extern int optind;
 	char *input, *output;
 	int ifd, ofd;
 
