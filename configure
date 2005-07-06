@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1034,6 +1034,9 @@ Optional Packages:
                           both]
   --with-tags[=TAGS]
                           include additional configurations [automatic]
+  --with-pthread=PTHREAD_ROOT	pthread root directory
+				[default=/usr]
+  --without-pthread             disable pthread support
   --with-openssl=OpenSSL_ROOT	openssl root directory
 				[default=/usr]
   --with-globus-static		link static version of globus libraries instead of shared version
@@ -1599,6 +1602,10 @@ host_vendor=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
 host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 
 
+
+# "linux-gnu" -> "linux", "netbsdelf" -> "netbsd"
+host_os_nickname=`echo $host_os |
+	sed -e 's/-gnu$//' -e 's/0-9.*$//' -e 's/^netbsdelf$/netbsd/'`
 
 ######
 ###### Checks for programs.
@@ -3344,7 +3351,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3347 "configure"' > conftest.$ac_ext
+  echo '#line 3354 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -4814,7 +4821,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4817:" \
+echo "$as_me:4824:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5916,11 +5923,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:5919: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:5926: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:5923: \$? = $ac_status" >&5
+   echo "$as_me:5930: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6178,11 +6185,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6181: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6188: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6185: \$? = $ac_status" >&5
+   echo "$as_me:6192: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6240,11 +6247,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6243: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6250: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6247: \$? = $ac_status" >&5
+   echo "$as_me:6254: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8480,7 +8487,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8483 "configure"
+#line 8490 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8578,7 +8585,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8581 "configure"
+#line 8588 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10830,11 +10837,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10833: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10840: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10837: \$? = $ac_status" >&5
+   echo "$as_me:10844: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10892,11 +10899,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10895: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10902: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10899: \$? = $ac_status" >&5
+   echo "$as_me:10906: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12261,7 +12268,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12264 "configure"
+#line 12271 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12359,7 +12366,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12362 "configure"
+#line 12369 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13244,11 +13251,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13247: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13254: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13251: \$? = $ac_status" >&5
+   echo "$as_me:13258: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13306,11 +13313,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13309: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13316: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13313: \$? = $ac_status" >&5
+   echo "$as_me:13320: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15432,11 +15439,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15435: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15442: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15439: \$? = $ac_status" >&5
+   echo "$as_me:15446: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15694,11 +15701,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15697: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15704: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15701: \$? = $ac_status" >&5
+   echo "$as_me:15708: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15756,11 +15763,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15759: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15766: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15763: \$? = $ac_status" >&5
+   echo "$as_me:15770: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17996,7 +18003,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 17999 "configure"
+#line 18006 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18094,7 +18101,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18097 "configure"
+#line 18104 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -19148,6 +19155,78 @@ LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 ######
 ###### parsing command line options
 ######
+
+###
+### --with-pthread=PTHREAD_ROOT, or --without-pthread
+###
+
+
+# Check whether --with-pthread or --without-pthread was given.
+if test "${with_pthread+set}" = set; then
+  withval="$with_pthread"
+  with_pthread="${withval}"
+
+fi;
+
+if test x"${with_pthread}" = x""; then
+  with_pthread=/usr
+fi
+if test ! -f "${with_pthread}"/include/pthread.h; then
+  { echo "$as_me:$LINENO: WARNING: could not find \"${with_pthread}\"/include/pthread.h" >&5
+echo "$as_me: WARNING: could not find \"${with_pthread}\"/include/pthread.h" >&2;}
+  with_pthread=no
+fi
+if test x"${with_pthread}" = x"no"; then
+  echo "$as_me:$LINENO: result: disabling pthread" >&5
+echo "${ECHO_T}disabling pthread" >&6
+  pthread_srcs=
+  pthread_objs=
+  pthread_cflags=
+  pthread_targets=
+  pthread_includes=
+  pthread_libs=
+else
+  echo "$as_me:$LINENO: result: using \"${with_pthread}\" as pthread root directory" >&5
+echo "${ECHO_T}using \"${with_pthread}\" as pthread root directory" >&6
+  pthread_srcs='$(PTHREAD_SRCS)'
+  pthread_objs='$(PTHREAD_OBJS)'
+  pthread_cflags='$(PTHREAD_CFLAGS)'
+  pthread_targets='$(PTHREAD_TARGETS)'
+
+  if test x"${with_pthread}" != x"/usr"; then # 3rd party library? e.g. pth
+    pthread_includes=-I"${with_pthread}"/include/pthread.h
+    pthread_libs="-L${with_pthread}/lib -lpthread"
+  else # system supplied pthread library
+    case ${host_os_nickname} in
+    freebsd*)
+        # FreeBSD-4.X needs -D_THREAD_SAFE, FreeBSD-5.X doesn't
+	pthread_includes="-pthread -D_THREAD_SAFE"
+	pthread_libs=-pthread;;
+    osf1*)
+	pthread_includes="-pthread"
+	pthread_libs=;;
+    *)
+	pthread_includes=-pthread
+	pthread_libs=-pthread;;
+    esac
+    # always define _REENTRANT
+    pthread_includes="${pthread_includes} -D_REENTRANT"
+  fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PTHREAD 1
+_ACEOF
+
+fi
+
+
+
+# for conditional compilation which depends on _LARGEFILE64_SOURCE API
+
+
+
+
 
 ### --with-openldap is handled later, because it needs AC_CHECK_LIB(nsl, ...)
 
@@ -22200,14 +22279,11 @@ fi
 
 # need to make system dependent source?
 
-# "linux-gnu" -> "linux"
-gfs_hook_sysdep_subdir=`echo $host_os |
-	sed -e 's/-gnu$//' -e 's/0-9.*$//' -e 's/^netbsdelf$/netbsd/'`
-
-gfs_hook_sysdep=lib/gfs_hook/sysdep/${gfs_hook_sysdep_subdir}
+gfs_hook_sysdep=lib/gfs_hook/sysdep/${host_os_nickname}
 if test -f ${srcdir}/${gfs_hook_sysdep}/Makefile; then
 	echo "$as_me:$LINENO: result: using ${gfs_hook_sysdep} directory for system dependent objects." >&5
 echo "${ECHO_T}using ${gfs_hook_sysdep} directory for system dependent objects." >&6
+	gfs_hook_sysdep_subdir=${host_os_nickname}
 else
 	gfs_hook_sysdep_subdir=default
 fi
@@ -22901,6 +22977,12 @@ s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@LIBTOOL@,$LIBTOOL,;t t
+s,@pthread_includes@,$pthread_includes,;t t
+s,@pthread_libs@,$pthread_libs,;t t
+s,@pthread_srcs@,$pthread_srcs,;t t
+s,@pthread_objs@,$pthread_objs,;t t
+s,@pthread_cflags@,$pthread_cflags,;t t
+s,@pthread_targets@,$pthread_targets,;t t
 s,@openssl_includes@,$openssl_includes,;t t
 s,@openssl_libs@,$openssl_libs,;t t
 s,@globus_flavor@,$globus_flavor,;t t

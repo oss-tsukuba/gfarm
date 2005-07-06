@@ -80,6 +80,9 @@
 /* Define to 1 if you have the `printf' function. */
 #undef HAVE_PRINTF
 
+/* pthread library exists */
+#undef HAVE_PTHREAD
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
