@@ -10,6 +10,10 @@
 #include "iobuffer.h"
 #include "xxx_proto.h"
 
+#ifdef	va_copy
+#define	va_copy(dst, src)	((dst) = (src))
+#endif
+
 #if FILE_OFFSET_T_IS_FLOAT
 #include <math.h>
 
