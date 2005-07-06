@@ -1983,7 +1983,7 @@ gfs_hook_syscall_creat(const char *path, mode_t mode)
 off_t
 gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 {
-#if defined(__NetBSD__)
+#if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 	return (__syscall((quad_t)SYS_lseek, filedes, 0, offset, whence));
 #else
 	return (syscall(SYS_lseek, filedes, offset, whence));

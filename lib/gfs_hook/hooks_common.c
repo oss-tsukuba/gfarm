@@ -314,7 +314,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	unsigned short reclen;
 	struct gfs_dirent *entry;
 	STRUCT_DIRENT *bp;
-#if !defined(__NetBSD__) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 	int reccnt = 0;
 #endif
 
@@ -346,7 +346,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
 		bp->d_ino = entry->d_fileno;
 
-#if !defined(__NetBSD__) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 		/* XXX - as readdir()'s retrun value to user level nfsd */
 		bp->d_off = 0x100 * ++reccnt;
 #endif
@@ -367,7 +367,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
 		bp->d_ino = entry->d_fileno;
 
-#if !defined(__NetBSD__) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 		/* XXX - as readdir()'s retrun value to user level nfsd */
 		bp->d_off = 0x100 * ++reccnt;
 #endif
@@ -404,7 +404,7 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 int internal_function
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 FUNC_GETDENTS(int filedes, char *buf, int nbyte)
 #else
 FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
