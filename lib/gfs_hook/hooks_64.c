@@ -181,8 +181,6 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 	gfs_hook_syscall_creat64(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek64(filedes, offset, whence)
-#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
-	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 
 #define FUNC___OPEN	__open64
 #define FUNC__OPEN	_open64
@@ -194,6 +192,10 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define FUNC___LSEEK	__lseek64
 #define FUNC__LSEEK	_lseek64
 #define FUNC_LSEEK	lseek64
+
+
+#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
+	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 #define FUNC___GETDENTS	__getdents64
 #define FUNC__GETDENTS	_getdents64
 #define FUNC_GETDENTS	getdents64
@@ -201,6 +203,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define STRUCT_DIRENT	struct dirent64
 #define ALIGNMENT 8
 #define ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
+
 
 #include "hooks_common.c"
 

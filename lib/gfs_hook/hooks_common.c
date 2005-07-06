@@ -307,15 +307,20 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
 #endif
 
 int internal_function
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)
+#else
 FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
+#endif
 {
 	GFS_Dir dir;
 	const char *e;
 	unsigned short reclen;
 	struct gfs_dirent *entry;
 	STRUCT_DIRENT *bp;
-#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 	int reccnt = 0;
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+	int at_first = 1;
 #endif
 
 	_gfs_hook_debug_v(fprintf(stderr,
@@ -323,7 +328,11 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	    filedes, buf, (unsigned long)nbyte));
 
 	if ((dir = gfs_hook_is_open(filedes)) == NULL)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+		return (SYSCALL_GETDENTS(filedes, (char *)buf, nbyte, offp));
+#else
 		return (SYSCALL_GETDENTS(filedes, buf, nbyte));
+#endif
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
 	    S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
@@ -335,20 +344,25 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	}
 
 	bp = buf;
-	if ((entry = gfs_hook_get_suspended_gfs_dirent(filedes)) != NULL) {
+	if ((entry = gfs_hook_get_suspended_gfs_dirent(filedes, &reccnt))
+	    != NULL) {
 		reclen = ALIGN(
 			offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen + 1);
 		if ((char *)bp + reclen > (char *)buf + nbyte) {
 			e = GFARM_ERR_INVALID_ARGUMENT;
 			goto finish;
 		}
-		gfs_hook_set_suspended_gfs_dirent(filedes, NULL);
+		gfs_hook_set_suspended_gfs_dirent(filedes, NULL, 0);
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
 		bp->d_ino = entry->d_fileno;
 
-#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 		/* XXX - as readdir()'s retrun value to user level nfsd */
-		bp->d_off = 0x100 * ++reccnt;
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+		at_first = 0;
+		if (offp != NULL)
+			*offp = GFS_DIRENTSIZE * ++reccnt;
+#elif !defined(__NetBSD__) && !defined(__OpenBSD__)
+		bp->d_off = GFS_DIRENTSIZE * ++reccnt;
 #endif
 
 		bp->d_reclen = reclen;
@@ -361,15 +375,22 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		reclen = ALIGN(
 			offsetof(STRUCT_DIRENT, d_name) + entry->d_namlen + 1);
 		if ((char *)bp + reclen > (char *)buf + nbyte) {
-			gfs_hook_set_suspended_gfs_dirent(filedes, entry);
+			gfs_hook_set_suspended_gfs_dirent(filedes,
+			    entry, reccnt);
 			goto finish;
 		}
 		memset(bp, 0, offsetof(STRUCT_DIRENT, d_name)); /* XXX */
 		bp->d_ino = entry->d_fileno;
 
-#if !defined(__NetBSD__) && !defined(__FreeBSD__)  && !defined(__DragonFly__) && !defined(__OpenBSD__)
 		/* XXX - as readdir()'s retrun value to user level nfsd */
-		bp->d_off = 0x100 * ++reccnt;
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+		if (at_first) {
+			at_first = 0;
+			if (offp != NULL)
+				*offp = GFS_DIRENTSIZE * ++reccnt;
+		}
+#elif !defined(__NetBSD__) && !defined(__OpenBSD__)
+		bp->d_off = GFS_DIRENTSIZE * ++reccnt;
 #endif
 
 		bp->d_reclen = reclen;
@@ -392,6 +413,28 @@ error:
 	return (-1);
 }
 
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+
+int
+FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)
+{
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking " S(FUNC__GETDENTS) ": %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, buf, nbyte, offp));
+}
+
+int
+FUNC_GETDENTS(int filedes, char *buf, int nbyte, long *offp)
+{
+	_gfs_hook_debug_v(fprintf(stderr,
+				  "Hooking " S(FUNC_GETDENTS) ": %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, offp));
+}
+
+#else /* !defined(__FreeBSD__) && !defined(__DragonFly__) */
+
 int internal_function
 FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 {
@@ -404,8 +447,6 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 int internal_function
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-FUNC_GETDENTS(int filedes, char *buf, int nbyte)
 #else
 FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 #endif
@@ -415,6 +456,8 @@ FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 				  filedes));
 	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte));
 }
+
+#endif /* !defined(__FreeBSD__) && !defined(__DragonFly__) */
 
 /*
  * truncate

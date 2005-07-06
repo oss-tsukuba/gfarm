@@ -35,6 +35,7 @@ struct _gfs_file_descriptor {
 		struct {
 			GFS_Dir dir;
 			struct gfs_dirent *suspended;
+			int suspended_offset;
 			struct gfs_stat gst;
 			char *canonical_path; /* for __fchdir() hook */
 		} *d;
@@ -296,6 +297,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	_gfs_file_buf[fd]->d_type = GFS_DT_DIR;
 	_gfs_file_buf[fd]->u.d->dir = dir;
 	_gfs_file_buf[fd]->u.d->suspended = NULL;
+	_gfs_file_buf[fd]->u.d->suspended_offset = 0;
 	_gfs_file_buf[fd]->u.d->canonical_path = canonical_path;
 	return (fd);
 
@@ -351,6 +353,7 @@ gfs_hook_clear_gfs_file(int fd)
 		} else if (gfs_hook_gfs_file_type(fd) == GFS_DT_DIR) {
 			_gfs_file_buf[fd]->u.d->dir = NULL;
 			_gfs_file_buf[fd]->u.d->suspended = NULL;
+			_gfs_file_buf[fd]->u.d->suspended_offset = 0;
 			gfs_stat_free(&_gfs_file_buf[fd]->u.d->gst);
 			free(_gfs_file_buf[fd]->u.d->canonical_path); 
 			free(_gfs_file_buf[fd]->u.d);
@@ -571,15 +574,21 @@ gfs_hook_delete_creating_file(GFS_File gf)
 }
 
 void
-gfs_hook_set_suspended_gfs_dirent(int fd, struct gfs_dirent *entry)
+gfs_hook_set_suspended_gfs_dirent(int fd, struct gfs_dirent *entry, int offset)
 {
 	_gfs_file_buf[fd]->u.d->suspended = entry;
+	_gfs_file_buf[fd]->u.d->suspended_offset = offset;
 }
 
 struct gfs_dirent *
-gfs_hook_get_suspended_gfs_dirent(int fd)
+gfs_hook_get_suspended_gfs_dirent(int fd, int *offsetp)
 {
-	return (_gfs_file_buf[fd]->u.d->suspended);
+	struct gfs_dirent *ent = _gfs_file_buf[fd]->u.d->suspended;
+
+	if (ent == NULL)
+		return (NULL);
+	*offsetp = _gfs_file_buf[fd]->u.d->suspended_offset;
+	return (ent);
 }
 
 struct gfs_stat *

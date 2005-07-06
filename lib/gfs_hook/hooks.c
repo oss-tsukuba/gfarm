@@ -1990,13 +1990,19 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 #endif
 }
 
-#ifndef __linux__
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+int
+gfs_hook_syscall_getdirentries(int filedes, char *buf, int nbyte, long *offp)
+{
+	return (syscall(SYS_getdirentries, filedes, buf, nbyte, offp));
+}
+#else !defined(__linux__) /* linux version is defined in sysdep/linux/ */
 int
 gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
 {
 	return (syscall(SYS_getdents, filedes, buf, nbyte));
 }
-#endif
+#endif /* !defined(__linux__) */
 
 #ifdef SYS_truncate
 int
@@ -2093,8 +2099,6 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 	gfs_hook_syscall_creat(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek(filedes, offset, whence)
-#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
-	gfs_hook_syscall_getdents(filedes, buf, nbyte)
 
 #define FUNC___OPEN	__open
 #define FUNC__OPEN	_open
@@ -2107,9 +2111,20 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC__LSEEK	_lseek
 #define FUNC_LSEEK	lseek
 
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#define SYSCALL_GETDENTS(filedes, buf, nbyte, offp) \
+	gfs_hook_syscall_getdirentries(filedes, buf, nbyte, offp)
+#define FUNC___GETDENTS	__getdirentries
+#define FUNC__GETDENTS	_getdirentries
+#define FUNC_GETDENTS	getdirentries
+#else
+#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
+	gfs_hook_syscall_getdents(filedes, buf, nbyte)
 #define FUNC___GETDENTS	__getdents
 #define FUNC__GETDENTS	_getdents
 #define FUNC_GETDENTS	getdents
+#endif
 
 #define STRUCT_DIRENT	struct dirent
 #define ALIGNMENT 8
@@ -2118,6 +2133,33 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #include "hooks_common.c"
 
 #undef ALIGNMENT
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+int
+__getdent(int filedes, char *buf, unsigned int nbyte)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __getdent: %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, NULL));
+}
+
+int
+_getdent(int filedes, char *buf, unsigned int nbyte)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking _getdent: %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, NULL));
+}
+
+int
+getdent(int filedes, char *buf, unsigned int nbyte)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking getdent: %d\n",
+				  filedes));
+	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, NULL));
+}
+#endif /* defined(__FreeBSD__) || defined(__DragonFly__) */
+
 
 /* stat */
 
