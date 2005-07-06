@@ -402,8 +402,10 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 }
 
 int internal_function
-#if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
+#elif defined(__FreeBSD__)
+FUNC_GETDENTS(int filedes, char *buf, int nbyte)
 #else
 FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 #endif
