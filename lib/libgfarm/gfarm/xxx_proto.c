@@ -1,9 +1,10 @@
+#include <sys/types.h>
+#include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
