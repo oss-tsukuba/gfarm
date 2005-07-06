@@ -1996,7 +1996,7 @@ gfs_hook_syscall_getdirentries(int filedes, char *buf, int nbyte, long *offp)
 {
 	return (syscall(SYS_getdirentries, filedes, buf, nbyte, offp));
 }
-#else !defined(__linux__) /* linux version is defined in sysdep/linux/ */
+#elif !defined(__linux__) /* linux version is defined in sysdep/linux/ */
 int
 gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
 {
