@@ -25,11 +25,7 @@
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
-#if defined(__osf__) && defined(__alpha) /* Tru64 */
-#define SYS_creat SYS_old_creat
-#endif
 #ifdef __NetBSD__
-#define SYS_creat SYS_compat_43_ocreat
 #define SYS_stat SYS___stat13
 #define SYS_fstat SYS___fstat13
 #define SYS_lstat SYS___lstat13
@@ -1399,6 +1395,9 @@ link(const char *oldpath, const char *newpath)
 	return (__link(oldpath, newpath));
 }
 
+
+#ifdef __linux__ /* xattr related system calls */
+
 /*
  * getxattr
  */
@@ -1626,6 +1625,8 @@ fsetxattr(int filedes, const char *name, void *value, size_t size, int flags)
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
+
+#endif /* __linux__ - xattr related system calls */
 
 /*
  * mknod
@@ -1976,7 +1977,7 @@ gfs_hook_syscall_open(const char *path, int oflag, mode_t mode)
 int
 gfs_hook_syscall_creat(const char *path, mode_t mode)
 {
-	return (syscall(SYS_creat, path, mode));
+	return (gfs_hook_syscall_open(path, O_CREAT|O_TRUNC|O_WRONLY, mode));
 }
 
 off_t
