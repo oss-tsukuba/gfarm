@@ -48,6 +48,14 @@ largefile64_objs = @largefile64_objs@
 largefile64_cflags = @largefile64_cflags@
 largefile64_targets = @largefile64_targets@
 
+pthread_includes = @pthread_includes@
+pthread_libs = @pthread_libs@
+# for conditional compilation which depends on whether pthread is enabled or not
+pthread_srcs = @pthread_srcs@
+pthread_objs = @pthread_objs@
+pthread_cflags = @pthread_cflags@
+pthread_targets = @pthread_targets@
+
 ldap_includes = @ldap_includes@
 ldap_libs = @ldap_libs@
 

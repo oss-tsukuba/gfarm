@@ -9,9 +9,10 @@ include $(top_srcdir)/makes/var.mk
 PROGRAM = gfarm_agent
 SRCS = gfarm_agent.c agent_thr.c agent_ptable.c
 OBJS = gfarm_agent.o agent_thr.o agent_ptable.o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+CFLAGS = $(pthread_includes) \
+	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(openssl_includes)
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
+LDLIBS = $(pthread_libs) $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 all: $(PROGRAM)

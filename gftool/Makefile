@@ -4,9 +4,10 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
+PTHREAD_TARGETS = gfarm_agent
 SUBDIRS = \
+	$(PTHREAD_TARGETS) \
 	digest \
-	gfarm_agent \
 	gfdf \
 	gfexec \
 	gfexport \
