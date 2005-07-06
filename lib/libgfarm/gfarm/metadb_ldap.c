@@ -41,7 +41,10 @@ gfarm_metadb_share_connection(void)
 char *
 gfarm_metadb_initialize(void)
 {
-	int rv, port, version;
+	int rv, port;
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_VERSION3)
+	int version;
+#endif
 	char *e;
 
 	if (gfarm_ldap_server_name == NULL)
@@ -76,10 +79,14 @@ gfarm_metadb_initialize(void)
 		}
 	}
 
+#ifdef HAVE_LDAP_SET_OPTION
 	/* options */
+#ifdef LDAP_VERSION3
 	version = LDAP_VERSION3;
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION, &version);
+#endif
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_REFERRALS, LDAP_OPT_ON);
+#endif
 
 	/* authenticate as nobody */
 	rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL);

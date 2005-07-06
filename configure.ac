@@ -549,7 +549,7 @@ AC_TRY_LINK([
 		ldap_libs="${ldflags} ${libs}"
 	fi
 	openldap_found=yes
-	AC_CHECK_FUNCS(ldap_memfree)
+	AC_CHECK_FUNCS(ldap_memfree ldap_set_option)
 	break 2
  ], [])
 
