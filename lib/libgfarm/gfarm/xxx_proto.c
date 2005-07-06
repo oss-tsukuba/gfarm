@@ -10,7 +10,7 @@
 #include "iobuffer.h"
 #include "xxx_proto.h"
 
-#ifdef	va_copy
+#ifndef	va_copy
 #define	va_copy(dst, src)	((dst) = (src))
 #endif
 
