@@ -216,7 +216,6 @@ fi
 
 # Part 3  file list
 %files doc
-%{man_prefix}/man1/digest.1.gz
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
 %{man_prefix}/man1/gfdf.1.gz
@@ -296,7 +295,6 @@ fi
 %{man_prefix}/man5/gfarm.conf.5.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
-%{man_prefix}/ja/man1/digest.1.gz
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
@@ -394,7 +392,6 @@ fi
 %{man_prefix}/ja/man8/gfsd.8.gz
 %{html_prefix}/index.html
 %{html_prefix}/en/ref/index.html
-%{html_prefix}/en/ref/man1/digest.1.html
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
@@ -473,7 +470,6 @@ fi
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/ja/ref/index.html
-%{html_prefix}/ja/ref/man1/digest.1.html
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
@@ -609,7 +605,6 @@ fi
 %endif
 
 %files client
-%{prefix}/bin/digest
 %{prefix}/bin/gfarm_agent
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfexport

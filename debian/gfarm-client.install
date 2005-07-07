@@ -1,4 +1,3 @@
-debian/tmp/usr/bin/digest
 debian/tmp/usr/bin/gfarm_agent
 debian/tmp/usr/bin/gfdf
 debian/tmp/usr/bin/gfexport
