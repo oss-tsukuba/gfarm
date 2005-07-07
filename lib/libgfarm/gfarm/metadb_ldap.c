@@ -876,9 +876,14 @@ struct gfarm_path_info_key {
 static int
 gfarm_metadb_ldap_need_escape(char c)
 {
+	/* According to RFC 2253 (Section 2.4 and 3), following characters 
+	 * must be escaped.
+	 * Note: '#' should also be escaped. But it seems to be unnecessary
+	 *       when using OpenLDAP 2.2.x.
+	 */
 	switch (c) {
 	case ',': case '+': case '"': case '\\':
-	case '<': case '>': case ';':
+	case '<': case '>': case ';': case '=':
 		return (1);
 	}
 	return (0);
