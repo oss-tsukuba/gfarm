@@ -79,13 +79,22 @@ else
     pthread_libs="-L${with_pthread}/lib -lpthread"
   else # system supplied pthread library
     case ${host_os_nickname} in
+    aix*)
+	pthread_includes=-mthreads
+	pthread_libs=-mthreads;;
     freebsd*)
         # FreeBSD-4.X needs -D_THREAD_SAFE, FreeBSD-5.X doesn't
+	# XXX Is it better to use "-kthread" instead?
 	pthread_includes="-pthread -D_THREAD_SAFE"
 	pthread_libs=-pthread;;
-    osf1*)
-	pthread_includes="-pthread"
-	pthread_libs=;;
+    solaris*)
+	if test x"$GCC" = x"yes"; then
+		pthread_includes=-pthread
+		pthread_libs=-pthread
+	else
+		pthread_includes=-mt
+		pthread_libs="-mt -lpthread"
+	fi;;
     *)
 	pthread_includes=-pthread
 	pthread_libs=-pthread;;
@@ -535,7 +544,8 @@ for libs in "-lldap -llber" "-lldap"; do
 for extra_lib in "" "-lresolv" "-lbind"; do
 
 CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-LIBS="${ldflags} ${libs} ${extra_lib} $LIBS_SAVE"
+# -R is not portable without libtool, and not necessary for AC_TRY_LINK
+LIBS="`echo $ldflags | sed 's/-R[[^ ]]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
 
 AC_TRY_LINK([
 #include <lber.h>
