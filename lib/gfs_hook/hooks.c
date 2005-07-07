@@ -25,6 +25,9 @@
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
+#ifdef SYS_fdsync /* Solaris */
+#include <sys/file.h>		/* FSYNC, FDSYNC */
+#endif
 #ifdef __NetBSD__
 #define SYS_stat SYS___stat13
 #define SYS_fstat SYS___fstat13
@@ -1893,7 +1896,11 @@ __fsync(int filedes)
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fsync(%d)\n", fiiledes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+#ifdef SYS_fdsync /* Solaris */
+		return (syscall(SYS_fdsync, filedes, FSYNC));
+#else
 		return (syscall(SYS_fsync, filedes));
+#endif
 
 	_gfs_hook_debug(fprintf(stderr,
 		"GFS: Hooking __fsync(%d(%d))\n",
@@ -1922,7 +1929,7 @@ fsync(int filedes)
 	return (__fsync(filedes));
 }
 
-#ifdef SYS_fdatasync
+#if defined(SYS_fdatasync) || defined(SYS_fdsync)
 int
 __fdatasync(int filedes)
 {
@@ -1933,7 +1940,11 @@ __fdatasync(int filedes)
 				  fiiledes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+#ifdef SYS_fdsync /* Solaris */
+		return (syscall(SYS_fdsync, filedes, FDSYNC));
+#else
 		return (syscall(SYS_fdatasync, filedes));
+#endif
 
 	_gfs_hook_debug(fprintf(stderr,
 		"GFS: Hooking __fdatasync(%d(%d))\n",
