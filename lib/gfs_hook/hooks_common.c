@@ -307,7 +307,7 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
 #endif
 
 int internal_function
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)
 #else
 FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
@@ -319,7 +319,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	struct gfs_dirent *entry;
 	STRUCT_DIRENT *bp;
 	int reccnt = 0;
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 	int at_first = 1;
 #endif
 
@@ -328,7 +328,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	    filedes, buf, (unsigned long)nbyte));
 
 	if ((dir = gfs_hook_is_open(filedes)) == NULL)
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 		return (SYSCALL_GETDENTS(filedes, (char *)buf, nbyte, offp));
 #else
 		return (SYSCALL_GETDENTS(filedes, buf, nbyte));
@@ -357,7 +357,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		bp->d_ino = entry->d_fileno;
 
 		/* XXX - as readdir()'s retrun value to user level nfsd */
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 		at_first = 0;
 		if (offp != NULL)
 			*offp = GFS_DIRENTSIZE * ++reccnt;
@@ -383,7 +383,7 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		bp->d_ino = entry->d_fileno;
 
 		/* XXX - as readdir()'s retrun value to user level nfsd */
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 		if (at_first) {
 			at_first = 0;
 			if (offp != NULL)
@@ -413,7 +413,7 @@ error:
 	return (-1);
 }
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 
 int
 FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)

@@ -3,6 +3,10 @@
  *
  * $Id$
  */
+#ifdef __osf__
+/* argument types of mknod() and utimes() are different without this */
+#define _XOPEN_SOURCE_EXTENDED
+#endif
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -2001,7 +2005,7 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 #endif
 }
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 int
 gfs_hook_syscall_getdirentries(int filedes, char *buf, int nbyte, long *offp)
 {
@@ -2123,7 +2127,7 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC_LSEEK	lseek
 
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
 #define SYSCALL_GETDENTS(filedes, buf, nbyte, offp) \
 	gfs_hook_syscall_getdirentries(filedes, buf, nbyte, offp)
 #define FUNC___GETDENTS	__getdirentries
