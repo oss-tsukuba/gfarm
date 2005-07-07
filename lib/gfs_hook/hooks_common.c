@@ -20,7 +20,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	int nf = -1, np;
 
 	va_start(ap, oflag);
-	mode = va_arg(ap, mode_t);
+	mode = va_arg(ap, int); /* XXX this doesn't work if mode_t is 64bit */
 	va_end(ap);
 
 	_gfs_hook_debug_v(fprintf(stderr,
