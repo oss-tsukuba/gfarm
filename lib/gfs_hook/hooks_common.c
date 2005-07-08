@@ -190,7 +190,7 @@ FUNC__OPEN(const char *path, int oflag, ...)
 	mode_t mode;
 
 	va_start(ap, oflag);
-	mode = va_arg(ap, mode_t);
+	mode = va_arg(ap, int); /* See comment of va_arg() in FUNC___OPEN(); */
 	va_end(ap);
 	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__OPEN) "\n", stderr));
 	return (FUNC___OPEN(path, oflag, mode));
@@ -203,7 +203,7 @@ FUNC_OPEN(const char *path, int oflag, ...)
 	mode_t mode;
 
 	va_start(ap, oflag);
-	mode = va_arg(ap, mode_t);
+	mode = va_arg(ap, int); /* See comment of va_arg() in FUNC___OPEN(); */
 	va_end(ap);
 	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_OPEN) "\n", stderr));
 	return (FUNC___OPEN(path, oflag, mode));
