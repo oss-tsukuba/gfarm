@@ -17,8 +17,20 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* struct dirent has d_namlen member */
+#undef HAVE_D_NAMLEN
+
+/* struct dirent has d_off member */
+#undef HAVE_D_OFF
+
+/* struct dirent has d_type member */
+#undef HAVE_D_TYPE
+
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
+
+/* Define to 1 if you have the `getdents' function. */
+#undef HAVE_GETDENTS
 
 /* Define to 1 if you have the `gethostbyname2' function. */
 #undef HAVE_GETHOSTBYNAME2

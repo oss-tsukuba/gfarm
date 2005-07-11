@@ -19160,6 +19160,8 @@ LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 ### --with-pthread=PTHREAD_ROOT, or --without-pthread
 ###
 
+echo "$as_me:$LINENO: checking pthread" >&5
+echo $ECHO_N "checking pthread... $ECHO_C" >&6
 
 # Check whether --with-pthread or --without-pthread was given.
 if test "${with_pthread+set}" = set; then
@@ -19171,14 +19173,15 @@ fi;
 if test x"${with_pthread}" = x""; then
   with_pthread=/usr
 fi
-if test ! -f "${with_pthread}"/include/pthread.h; then
-  { echo "$as_me:$LINENO: WARNING: could not find \"${with_pthread}\"/include/pthread.h" >&5
-echo "$as_me: WARNING: could not find \"${with_pthread}\"/include/pthread.h" >&2;}
+if test x"${with_pthread}" = x"no"; then
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+elif test ! -f "${with_pthread}"/include/pthread.h; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
   with_pthread=no
 fi
 if test x"${with_pthread}" = x"no"; then
-  echo "$as_me:$LINENO: result: disabling pthread" >&5
-echo "${ECHO_T}disabling pthread" >&6
   pthread_srcs=
   pthread_objs=
   pthread_cflags=
@@ -19186,8 +19189,8 @@ echo "${ECHO_T}disabling pthread" >&6
   pthread_includes=
   pthread_libs=
 else
-  echo "$as_me:$LINENO: result: using \"${with_pthread}\" as pthread root directory" >&5
-echo "${ECHO_T}using \"${with_pthread}\" as pthread root directory" >&6
+  echo "$as_me:$LINENO: result: found in \"${with_pthread}\"" >&5
+echo "${ECHO_T}found in \"${with_pthread}\"" >&6
   pthread_srcs='$(PTHREAD_SRCS)'
   pthread_objs='$(PTHREAD_OBJS)'
   pthread_cflags='$(PTHREAD_CFLAGS)'
@@ -19213,6 +19216,14 @@ echo "${ECHO_T}using \"${with_pthread}\" as pthread root directory" >&6
 	else
 		pthread_includes=-mt
 		pthread_libs="-mt -lpthread"
+	fi;;
+    sysv5uw7*) # UnixWare 7
+	if test x"$GCC" = x"yes"; then
+		pthread_includes=-pthread
+		pthread_libs=-pthread
+	else
+		pthread_includes=-Kthread
+		pthread_libs=-Kthread
 	fi;;
     *)
 	pthread_includes=-pthread
@@ -19243,6 +19254,8 @@ fi
 ### --with-openssl=OpenSSL_ROOT
 ###
 
+echo "$as_me:$LINENO: checking openssl" >&5
+echo $ECHO_N "checking openssl... $ECHO_C" >&6
 
 # Check whether --with-openssl or --without-openssl was given.
 if test "${with_openssl+set}" = set; then
@@ -19253,8 +19266,8 @@ else
   with_openssl=/usr
 
 fi;
-echo "$as_me:$LINENO: result: using \"${with_openssl}\" as openssl root directory" >&5
-echo "${ECHO_T}using \"${with_openssl}\" as openssl root directory" >&6
+echo "$as_me:$LINENO: result: using \"${with_openssl}\"" >&5
+echo "${ECHO_T}using \"${with_openssl}\"" >&6
 
 openssl_libs='-lssl -lcrypto'
 if test x"${with_openssl}" = x"/usr"; then
@@ -19299,6 +19312,8 @@ fi;
 
 
 
+echo "$as_me:$LINENO: checking globus" >&5
+echo $ECHO_N "checking globus... $ECHO_C" >&6
 
 # Check whether --with-globus or --without-globus was given.
 if test "${with_globus+set}" = set; then
@@ -19306,8 +19321,6 @@ if test "${with_globus+set}" = set; then
   globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
- echo "$as_me:$LINENO: checking globus" >&5
-echo $ECHO_N "checking globus... $ECHO_C" >&6
  GLBlocation_candidates=${globus_location:-/usr/grid}
  if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
@@ -19404,7 +19417,9 @@ _ACEOF
 
 
 else
-  globus_location=
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+ globus_location=
  globus_includes=
  globus_gssapi_libs=
 
@@ -19430,6 +19445,8 @@ fi;
 ### --with-mpi=MPI_ROOT
 ###
 
+echo "$as_me:$LINENO: checking mpi" >&5
+echo $ECHO_N "checking mpi... $ECHO_C" >&6
 
 # Check whether --with-mpi or --without-mpi was given.
 if test "${with_mpi+set}" = set; then
@@ -19440,8 +19457,8 @@ if test "${with_mpi+set}" = set; then
  else
   mpicc="${with_mpi}/bin/mpicc"
  fi
- echo "$as_me:$LINENO: result: using \"${mpicc}\" to compile MPI programs" >&5
-echo "${ECHO_T}using \"${mpicc}\" to compile MPI programs" >&6
+ echo "$as_me:$LINENO: result: using \"${mpicc}\"" >&5
+echo "${ECHO_T}using \"${mpicc}\"" >&6
 
  # for conditional compilation which depends on whether MPI is enabled or not
  mpi_srcs='$(MPI_SRCS)'
@@ -19450,7 +19467,9 @@ echo "${ECHO_T}using \"${mpicc}\" to compile MPI programs" >&6
  mpi_targets='$(MPI_TARGETS)'
 
 else
-  with_mpi=
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+ with_mpi=
 
  mpicc=
  # for conditional compilation which depends on whether MPI is enabled or not
@@ -20376,6 +20395,8 @@ fi
 ### --with-openldap=OpenLDAP_ROOT
 ###
 
+echo "$as_me:$LINENO: checking openldap" >&5
+echo $ECHO_N "checking openldap... $ECHO_C" >&6
 
 # Check whether --with-openldap or --without-openldap was given.
 if test "${with_openldap+set}" = set; then
@@ -20403,8 +20424,8 @@ echo "$as_me: error: openldap is not found, aborted" >&2;}
    { (exit 1); exit 1; }; }
   fi
 fi
-echo "$as_me:$LINENO: result: using \"${with_openldap}\" as openldap root directory" >&5
-echo "${ECHO_T}using \"${with_openldap}\" as openldap root directory" >&6
+echo "$as_me:$LINENO: result: found in \"${with_openldap}\"" >&5
+echo "${ECHO_T}found in \"${with_openldap}\"" >&6
 
 if test x"${with_openldap}" = x"/usr"; then
   ldap_includes=""
@@ -21835,6 +21856,8 @@ _ACEOF
 
 ### socklen_t is available?
 
+echo "$as_me:$LINENO: checking socklen_t" >&5
+echo $ECHO_N "checking socklen_t... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21889,7 +21912,10 @@ ax_cv_have_socklen_t=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-if test "$ax_cv_have_socklen_t" = no; then
+if test "$ax_cv_have_socklen_t" = yes; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
 
   # determine size of socklen_t
 
@@ -21945,6 +21971,8 @@ fi
 rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 
+  echo "$as_me:$LINENO: result: $ax_cv_socklen_t" >&5
+echo "${ECHO_T}$ax_cv_socklen_t" >&6
 
 cat >>confdefs.h <<_ACEOF
 #define socklen_t $ax_cv_socklen_t
@@ -21952,8 +21980,201 @@ _ACEOF
 
 fi
 
+######
 ###### Checks for structures.
-# empty for now
+######
+
+echo "$as_me:$LINENO: checking struct dirent::d_off" >&5
+echo $ECHO_N "checking struct dirent::d_off... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <dirent.h>
+int
+main ()
+{
+
+struct dirent d;
+long off;
+
+off = d.d_off;
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ax_cv_have_d_off=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ax_cv_have_d_off=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_d_off" >&5
+echo "${ECHO_T}$ax_cv_have_d_off" >&6
+if test "$ax_cv_have_d_off" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_D_OFF 1
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking struct dirent::d_namlen" >&5
+echo $ECHO_N "checking struct dirent::d_namlen... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <dirent.h>
+int
+main ()
+{
+
+struct dirent d;
+int len;
+
+len = d.d_namlen;
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ax_cv_have_d_namlen=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ax_cv_have_d_namlen=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_d_namlen" >&5
+echo "${ECHO_T}$ax_cv_have_d_namlen" >&6
+if test "$ax_cv_have_d_namlen" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_D_NAMLEN 1
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking struct dirent::d_type" >&5
+echo $ECHO_N "checking struct dirent::d_type... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <dirent.h>
+int
+main ()
+{
+
+struct dirent d;
+int len;
+
+len = d.d_type;
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ax_cv_have_d_type=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ax_cv_have_d_type=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_d_type" >&5
+echo "${ECHO_T}$ax_cv_have_d_type" >&6
+if test "$ax_cv_have_d_type" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_D_TYPE 1
+_ACEOF
+
+fi
 
 ###### Checks for compiler characteristics.
 # empty for now
@@ -21978,7 +22199,8 @@ fi
 
 
 
-for ac_func in fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
+
+for ac_func in getdents fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -22082,6 +22304,8 @@ done
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
+echo "$as_me:$LINENO: checking SUSv2 compliant getpwnam_r" >&5
+echo $ECHO_N "checking SUSv2 compliant getpwnam_r... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -22136,6 +22360,8 @@ ax_cv_have_getpwnam_r=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_getpwnam_r" >&5
+echo "${ECHO_T}$ax_cv_have_getpwnam_r" >&6
 if test "$ax_cv_have_getpwnam_r" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -22146,6 +22372,8 @@ fi
 
 ### SUSv2 getspnam_r() has 5 args, but Solaris's only has 4.
 
+echo "$as_me:$LINENO: checking SUSv2 compliant getspnam_r" >&5
+echo $ECHO_N "checking SUSv2 compliant getspnam_r... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -22199,6 +22427,8 @@ ax_cv_have_getspnam_r=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_getspnam_r" >&5
+echo "${ECHO_T}$ax_cv_have_getspnam_r" >&6
 if test "$ax_cv_have_getspnam_r" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -22209,6 +22439,8 @@ fi
 
 ### Solaris no longer defines sys_nerr/sys_errlist
 
+echo "$as_me:$LINENO: checking sys_nerr" >&5
+echo $ECHO_N "checking sys_nerr... $ECHO_C" >&6
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -22259,6 +22491,8 @@ ax_cv_have_sys_nerr=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ax_cv_have_sys_nerr" >&5
+echo "${ECHO_T}$ax_cv_have_sys_nerr" >&6
 if test "$ax_cv_have_sys_nerr" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
