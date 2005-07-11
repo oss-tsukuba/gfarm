@@ -158,6 +158,8 @@ char *gfs_opendir(const char *, GFS_Dir *);
 char *gfs_readdir(GFS_Dir, struct gfs_dirent **);
 char *gfs_closedir(GFS_Dir);
 char *gfs_dirname(GFS_Dir);
+char *gfs_seekdir(GFS_Dir, file_offset_t);
+char *gfs_telldir(GFS_Dir, file_offset_t *);
 char *gfs_realpath(const char *, char **);
 
 void gfs_uncachedir(void);

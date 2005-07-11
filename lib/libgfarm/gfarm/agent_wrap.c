@@ -234,6 +234,24 @@ gfs_dirname(GFS_Dir dir)
 		return (gfs_i_dirname(dir));
 }
 
+char *
+gfs_seekdir(GFS_Dir dir, file_offset_t off)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_seekdir(agent_server, dir, off));
+	else
+		return (gfs_i_seekdir(dir, off));
+}
+
+char *
+gfs_telldir(GFS_Dir dir, file_offset_t *offp)
+{
+	if (gfarm_agent_check() == NULL)
+		return (agent_client_telldir(agent_server, dir, offp));
+	else
+		return (gfs_i_telldir(dir, offp));
+}
+
 void
 gfs_uncachedir(void)
 {

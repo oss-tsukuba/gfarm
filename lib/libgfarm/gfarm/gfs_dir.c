@@ -1122,6 +1122,8 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 	return (NULL);
 }
 
+#define GFS_DIRENTSIZE	0x100	/* XXX */
+
 char *
 gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 {
@@ -1158,7 +1160,7 @@ gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 	dir->buffer.d_name[dir->buffer.d_namlen] = '\0';
 	dir->buffer.d_type = (n->flags & NODE_FLAG_IS_DIR) ?
 	    GFS_DT_DIR : GFS_DT_REG;
-	dir->buffer.d_reclen = 0x100; /* XXX */
+	dir->buffer.d_reclen = GFS_DIRENTSIZE; /* XXX */
 	dir->buffer.d_fileno = INUMBER(n);
 	*entry = &dir->buffer;
 	return (NULL);
@@ -1169,6 +1171,39 @@ gfs_i_closedir(GFS_Dir dir)
 {
 	free(dir);
 	--opendir_count;
+	return (NULL);
+}
+
+char *
+gfs_i_seekdir(GFS_Dir dir, file_offset_t off)
+{
+	char *e;
+	int new_index;
+	struct gfs_dirent *ent;
+
+	if (off < 0)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	new_index = off / GFS_DIRENTSIZE;
+	if (new_index < dir->index) {
+		/* rewind */
+		gfarm_hash_iterator_begin(dir->dir->u.d.children,
+		    &dir->iterator);
+		dir->index = 0;
+	}
+	while (dir->index < new_index) {
+		e = gfs_i_readdir(dir, &ent);
+		if (e != NULL)
+			return (e);
+		if (ent == NULL)
+			break; /* always OK beyond EOF for now */
+	}
+	return (NULL); 
+}
+
+char *
+gfs_i_telldir(GFS_Dir dir, file_offset_t *offp)
+{
+	*offp = dir->index * GFS_DIRENTSIZE;
 	return (NULL);
 }
 

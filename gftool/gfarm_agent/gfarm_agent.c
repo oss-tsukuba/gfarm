@@ -428,6 +428,63 @@ agent_server_dirname(struct xxx_connection *client)
 }
 
 static char *
+agent_server_seekdir(struct xxx_connection *client)
+{
+	char *e, *e_rpc;
+	int dir_index;
+	file_offset_t off;
+	GFS_Dir dir;
+
+	e_rpc = agent_server_get_request(client, "seekdir", "io",
+	    &dir_index, &off);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto("seekdir", "begin");
+	dir = agent_ptable_entry_get(dir_index);
+	if (dir) {
+		agent_lock();
+		e = gfs_i_seekdir(dir, off);
+		agent_unlock();
+	} else
+		e = GFARM_ERR_NO_SUCH_OBJECT; /* XXX - EBADF */
+
+	e_rpc = agent_server_put_reply(client, "seekdir", e, "");
+	if (e != NULL)
+		log_proto("seekdir", e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_telldir(struct xxx_connection *client)
+{
+	char *e, *e_rpc;
+	int dir_index;
+	file_offset_t off;
+	GFS_Dir dir;
+
+	e_rpc = agent_server_get_request(client, "telldir", "i", &dir_index);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	if (debug_mode)
+		log_proto("telldir", "begin");
+	dir = agent_ptable_entry_get(dir_index);
+	if (dir) {
+		agent_lock();
+		e = gfs_i_telldir(dir, &off);
+		agent_unlock();
+	} else
+		e = GFARM_ERR_NO_SUCH_OBJECT; /* XXX - EBADF */
+
+	e_rpc = agent_server_put_reply(client, "telldir", e, "o", off);
+	if (e != NULL)
+		log_proto("telldir", e);
+	return (e_rpc);
+}
+
+static char *
 agent_server_uncachedir(struct xxx_connection *client)
 {
 	if (debug_mode)
@@ -1253,6 +1310,14 @@ server(void *arg)
 			cmd = "file_section_copy_info_get_all_by_host";
 			e = agent_server_file_section_copy_info_get_all_by_host(
 				client);
+			break;
+		case AGENT_PROTO_SEEKDIR:
+			cmd = "seekdir";
+			e = agent_server_seekdir(client);
+			break;
+		case AGENT_PROTO_TELLDIR:
+			cmd = "telldir";
+			e = agent_server_telldir(client);
 			break;
 		default:
 			sprintf(buffer, "%d", (int)request);

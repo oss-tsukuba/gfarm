@@ -276,6 +276,26 @@ agent_client_dirname(struct agent_connection *agent_server, GFS_Dir dir)
 }
 
 char *
+agent_client_seekdir(struct agent_connection *agent_server,
+	GFS_Dir dir, file_offset_t off)
+{
+	gfarm_int32_t p = (gfarm_int32_t)dir;
+
+	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_SEEKDIR, "io/",
+	    p, off));
+}
+
+char *
+agent_client_telldir(struct agent_connection *agent_server,
+	GFS_Dir dir, file_offset_t *offp)
+{
+	gfarm_int32_t p = (gfarm_int32_t)dir;
+
+	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_TELLDIR, "i/o",
+	    p, offp));
+}
+
+char *
 agent_client_uncachedir(struct agent_connection *agent_server)
 {
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_UNCACHEDIR, "/"));
