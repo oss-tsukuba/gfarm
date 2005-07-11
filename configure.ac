@@ -45,6 +45,7 @@ AC_PROG_LIBTOOL
 ### --with-pthread=PTHREAD_ROOT, or --without-pthread
 ###
 
+AC_MSG_CHECKING([pthread])
 AC_ARG_WITH(pthread,
 [  --with-pthread=PTHREAD_ROOT	pthread root directory
 				[[default=/usr]]]
@@ -55,12 +56,13 @@ AC_ARG_WITH(pthread,
 if test x"${with_pthread}" = x""; then
   with_pthread=/usr
 fi
-if test ! -f "${with_pthread}"/include/pthread.h; then
-  AC_MSG_WARN([could not find "${with_pthread}"/include/pthread.h])
+if test x"${with_pthread}" = x"no"; then
+  AC_MSG_RESULT([disabled])
+elif test ! -f "${with_pthread}"/include/pthread.h; then
+  AC_MSG_RESULT([no])
   with_pthread=no
 fi
 if test x"${with_pthread}" = x"no"; then
-  AC_MSG_RESULT([disabling pthread])
   pthread_srcs=
   pthread_objs=
   pthread_cflags=
@@ -68,7 +70,7 @@ if test x"${with_pthread}" = x"no"; then
   pthread_includes=
   pthread_libs=
 else
-  AC_MSG_RESULT([using \"${with_pthread}\" as pthread root directory])
+  AC_MSG_RESULT([found in \"${with_pthread}\"])
   pthread_srcs='$(PTHREAD_SRCS)'
   pthread_objs='$(PTHREAD_OBJS)'
   pthread_cflags='$(PTHREAD_CFLAGS)'
@@ -95,6 +97,14 @@ else
 		pthread_includes=-mt
 		pthread_libs="-mt -lpthread"
 	fi;;
+    sysv5uw7*) # UnixWare 7 
+	if test x"$GCC" = x"yes"; then
+		pthread_includes=-pthread
+		pthread_libs=-pthread
+	else
+		pthread_includes=-Kthread
+		pthread_libs=-Kthread
+	fi;;
     *)
 	pthread_includes=-pthread
 	pthread_libs=-pthread;;
@@ -120,6 +130,7 @@ AC_SUBST(pthread_targets)
 ### --with-openssl=OpenSSL_ROOT
 ###
 
+AC_MSG_CHECKING([openssl])
 AC_ARG_WITH(openssl,
 [  --with-openssl=OpenSSL_ROOT	openssl root directory
 				[[default=/usr]]],
@@ -127,7 +138,7 @@ AC_ARG_WITH(openssl,
 ],
 [with_openssl=/usr
 ])
-AC_MSG_RESULT([using \"${with_openssl}\" as openssl root directory])
+AC_MSG_RESULT([using \"${with_openssl}\"])
 
 openssl_libs='-lssl -lcrypto'
 if test x"${with_openssl}" = x"/usr"; then
@@ -166,13 +177,13 @@ AC_ARG_WITH(globus_flavor,
 AC_SUBST(globus_flavor)
 
 
+AC_MSG_CHECKING([globus])
 AC_ARG_WITH(globus,
 [  --with-globus=GLOBUS_ROOT	globus root directory
 				[[default=disable]]],
 [globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
- AC_MSG_CHECKING([globus])
  GLBlocation_candidates=${globus_location:-/usr/grid}
  if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
@@ -252,7 +263,8 @@ AC_ARG_WITH(globus,
 
  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
 ],
-[globus_location=
+[AC_MSG_RESULT([disabled])
+ globus_location=
  globus_includes=
  globus_gssapi_libs=
 
@@ -277,6 +289,7 @@ AC_SUBST(globus_targets)
 ### --with-mpi=MPI_ROOT
 ###
 
+AC_MSG_CHECKING([mpi])
 AC_ARG_WITH(mpi,
 [  --with-mpi=MPI_ROOT		MPI root directory
 				[[default=disable]]],
@@ -286,7 +299,7 @@ AC_ARG_WITH(mpi,
  else
   mpicc="${with_mpi}/bin/mpicc"
  fi
- AC_MSG_RESULT([using \"${mpicc}\" to compile MPI programs])
+ AC_MSG_RESULT([using \"${mpicc}\"])
 
  # for conditional compilation which depends on whether MPI is enabled or not
  mpi_srcs='$(MPI_SRCS)'
@@ -294,7 +307,8 @@ AC_ARG_WITH(mpi,
  mpi_srcs='$(MPI_CFLAGS)'
  mpi_targets='$(MPI_TARGETS)'
 ],
-[with_mpi=
+[AC_MSG_RESULT([disabled])
+ with_mpi=
 
  mpicc=
  # for conditional compilation which depends on whether MPI is enabled or not
@@ -498,6 +512,7 @@ AC_SUBST(largefile64_targets)
 ### --with-openldap=OpenLDAP_ROOT
 ###
 
+AC_MSG_CHECKING([openldap])
 AC_ARG_WITH(openldap,
 [  --with-openldap=OpenLDAP_ROOT	openldap root directory
 				[[default=guessed]]],
@@ -520,7 +535,7 @@ if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
 	AC_MSG_ERROR([openldap is not found, aborted])
   fi
 fi
-AC_MSG_RESULT([using \"${with_openldap}\" as openldap root directory])
+AC_MSG_RESULT([found in \"${with_openldap}\"])
 
 if test x"${with_openldap}" = x"/usr"; then
   ldap_includes=""
@@ -593,6 +608,7 @@ AC_CHECK_SIZEOF(long long)
 
 ### socklen_t is available?
 
+AC_MSG_CHECKING([socklen_t])
 AC_TRY_LINK([
 #include <sys/types.h>
 #include <sys/socket.h>],[
@@ -602,7 +618,9 @@ socklen_t len;
 
 rv = bind(s, &addr, len);
 ], [ax_cv_have_socklen_t=yes], [ax_cv_have_socklen_t=no])
-if test "$ax_cv_have_socklen_t" = no; then
+if test "$ax_cv_have_socklen_t" = yes; then
+  AC_MSG_RESULT([yes])
+else
 
   # determine size of socklen_t
 
@@ -622,12 +640,56 @@ if test "$ax_cv_have_socklen_t" = no; then
   }
   ], [ax_cv_socklen_t=int], [ax_cv_socklen_t=size_t])
 
+  AC_MSG_RESULT([$ax_cv_socklen_t])
   AC_DEFINE_UNQUOTED(socklen_t, $ax_cv_socklen_t,
    [3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define])
 fi
 
+###### 
 ###### Checks for structures.
-# empty for now
+###### 
+
+AC_MSG_CHECKING([struct dirent::d_off])
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <dirent.h>],[
+struct dirent d;
+long off;
+
+off = d.d_off;
+], [ax_cv_have_d_off=yes], [ax_cv_have_d_off=no])
+AC_MSG_RESULT([$ax_cv_have_d_off])
+if test "$ax_cv_have_d_off" = yes; then
+  AC_DEFINE(HAVE_D_OFF, 1, [struct dirent has d_off member])
+fi
+
+AC_MSG_CHECKING([struct dirent::d_namlen])
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <dirent.h>],[
+struct dirent d;
+int len;
+
+len = d.d_namlen;
+], [ax_cv_have_d_namlen=yes], [ax_cv_have_d_namlen=no])
+AC_MSG_RESULT([$ax_cv_have_d_namlen])
+if test "$ax_cv_have_d_namlen" = yes; then
+  AC_DEFINE(HAVE_D_NAMLEN, 1, [struct dirent has d_namlen member])
+fi
+
+AC_MSG_CHECKING([struct dirent::d_type])
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <dirent.h>],[
+struct dirent d;
+int len;
+
+len = d.d_type;
+], [ax_cv_have_d_type=yes], [ax_cv_have_d_type=no])
+AC_MSG_RESULT([$ax_cv_have_d_type])
+if test "$ax_cv_have_d_type" = yes; then
+  AC_DEFINE(HAVE_D_TYPE, 1, [struct dirent has d_type member])
+fi
 
 ###### Checks for compiler characteristics.
 # empty for now
@@ -636,10 +698,11 @@ fi
 ###### Checks for library functions.
 ###### 
 
-AC_CHECK_FUNCS(fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
+AC_CHECK_FUNCS(getdents fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
+AC_MSG_CHECKING([SUSv2 compliant getpwnam_r])
 AC_TRY_LINK([
 #include <sys/types.h>
 #include <pwd.h>],[
@@ -649,6 +712,7 @@ char buffer[1024];
 
 rv = getpwnam_r("root", pwd, buffer, sizeof buffer, &pwd);
 ], [ax_cv_have_getpwnam_r=yes], [ax_cv_have_getpwnam_r=no])
+AC_MSG_RESULT([$ax_cv_have_getpwnam_r])
 if test "$ax_cv_have_getpwnam_r" = yes; then
   AC_DEFINE(HAVE_GETPWNAM_R, 1,
 	[5 arguments getpwnam_r() which is compatible with SUSv2 exists])
@@ -656,6 +720,7 @@ fi
 
 ### SUSv2 getspnam_r() has 5 args, but Solaris's only has 4.
 
+AC_MSG_CHECKING([SUSv2 compliant getspnam_r])
 AC_TRY_LINK([
 #include <shadow.h>],[
 int rv;
@@ -664,17 +729,20 @@ char buffer[1024];
 
 rv = getspnam_r("root", sp, buffer, sizeof buffer, &sp);
 ], [ax_cv_have_getspnam_r=yes], [ax_cv_have_getspnam_r=no])
+AC_MSG_RESULT([$ax_cv_have_getspnam_r])
 if test "$ax_cv_have_getspnam_r" = yes; then
   AC_DEFINE(HAVE_GETSPNAM_R, 1, [5 arguments getspnam_r() exists])
 fi
 
 ### Solaris no longer defines sys_nerr/sys_errlist
 
+AC_MSG_CHECKING([sys_nerr])
 AC_TRY_LINK([
 #include <stdio.h>
 #include <errno.h>],[
 int i = sys_nerr;
 ], [ax_cv_have_sys_nerr=yes], [ax_cv_have_sys_nerr=no])
+AC_MSG_RESULT([$ax_cv_have_sys_nerr])
 if test "$ax_cv_have_sys_nerr" = yes; then
   AC_DEFINE(HAVE_SYS_NERR, 1, [sys_nerr is defined])
 fi
