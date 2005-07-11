@@ -3,6 +3,7 @@
  *
  * $Id$
  */
+
 #ifdef __osf__
 /* argument types of mknod() and utimes() are different without this */
 #define _XOPEN_SOURCE_EXTENDED
@@ -32,11 +33,35 @@
 #ifdef SYS_fdsync /* Solaris */
 #include <sys/file.h>		/* FSYNC, FDSYNC */
 #endif
+
+#ifdef __osf__
+#define HOOK_GETDIRENTRIES
+#endif
+
+#ifdef __FreeBSD__
+#define USE_BSD_LSEEK_ARGUMENT
+#define HOOK_GETDIRENTRIES
+#endif /* __FreeBSD__ */
+
+#ifdef __DragonFly__
+#define USE_BSD_LSEEK_ARGUMENT
+#define HOOK_GETDIRENTRIES
+#endif /* __DragonFly__ */
+
 #ifdef __NetBSD__
+#define USE_BSD_LSEEK_ARGUMENT
+#define GETDENTS_CHAR_P
+/* has getdirentries(), but doesn't have to hook it, since it's deprecated */
+
 #define SYS_stat SYS___stat13
 #define SYS_fstat SYS___fstat13
 #define SYS_lstat SYS___lstat13
-#endif
+#endif /* __NetBSD__ */
+
+#ifdef __OpenBSD__
+#define USE_BSD_LSEEK_ARGUMENT
+#define GETDENTS_CHAR_P
+#endif /* __OpenBSD__ */
 
 #ifdef SYS_utime
 #include <utime.h>
@@ -865,7 +890,6 @@ __fchdir(int filedes)
 {
 	GFS_File gf;
 	const char *e;
-	char *url;
 	int r;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchdir(%d)\n", filedes));
@@ -884,13 +908,7 @@ __fchdir(int filedes)
 	_gfs_hook_debug(
 		fprintf(stderr, "GFS: Hooking __fchdir(%d)\n", filedes));
 
-	e = gfarm_path_canonical_to_url(
-		gfs_hook_get_gfs_canonical_path(filedes), &url);
-	if (e != NULL)
-		goto error;
-
-	e = gfs_chdir(url);
-	free(url);
+	e = gfs_chdir(gfs_hook_get_gfs_url(filedes));
 	if (e == NULL) {
 		gfs_hook_set_cwd_is_gfarm(1);
 		return (0);
@@ -1998,14 +2016,14 @@ gfs_hook_syscall_creat(const char *path, mode_t mode)
 off_t
 gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 {
-#if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#ifdef USE_BSD_LSEEK_ARGUMENT
 	return (__syscall((quad_t)SYS_lseek, filedes, 0, offset, whence));
 #else
 	return (syscall(SYS_lseek, filedes, offset, whence));
 #endif
 }
 
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
+#ifdef HOOK_GETDIRENTRIES
 int
 gfs_hook_syscall_getdirentries(int filedes, char *buf, int nbyte, long *offp)
 {
@@ -2127,7 +2145,7 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 #define FUNC_LSEEK	lseek
 
 
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__osf__)
+#ifdef HOOK_GETDIRENTRIES
 #define SYSCALL_GETDENTS(filedes, buf, nbyte, offp) \
 	gfs_hook_syscall_getdirentries(filedes, buf, nbyte, offp)
 #define FUNC___GETDENTS	__getdirentries
@@ -2149,7 +2167,7 @@ gfs_hook_syscall_fxstat(int ver, int filedes, struct stat *buf)
 
 #undef ALIGNMENT
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(HOOK_GETDIRENTRIES) && defined(HAVE_GETDENTS)
 int
 __getdent(int filedes, char *buf, unsigned int nbyte)
 {
@@ -2173,7 +2191,7 @@ getdent(int filedes, char *buf, unsigned int nbyte)
 				  filedes));
 	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, NULL));
 }
-#endif /* defined(__FreeBSD__) || defined(__DragonFly__) */
+#endif /* defined(HOOK_GETDIRENTRIES) && defined(HAVE_GETDENTS) */
 
 
 /* stat */

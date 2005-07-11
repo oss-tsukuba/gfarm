@@ -35,9 +35,9 @@ struct _gfs_file_descriptor {
 		struct {
 			GFS_Dir dir;
 			struct gfs_dirent *suspended;
-			int suspended_offset;
+			file_offset_t suspended_offset;
 			struct gfs_stat gst;
-			char *canonical_path; /* for __fchdir() hook */
+			char *abs_url; /* for __fchdir() hook */
 		} *d;
 	} u;
 };
@@ -251,7 +251,7 @@ int
 gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 {
 	int fd, save_errno;
-	char *e, *canonical_path;
+	char *e, *abs_url;
 
 	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %p\n", dir));
 
@@ -272,8 +272,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 		save_errno = EBADF; /* XXX - something broken */
 		goto error_close_fd;
 	}
-	e = gfarm_canonical_path(gfarm_url_prefix_skip(url),
-	    &canonical_path);
+	e = gfs_realpath(url, &abs_url);
 	if (e != NULL) {
 		save_errno = gfarm_error_to_errno(e);
 		goto error_close_fd;
@@ -298,7 +297,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	_gfs_file_buf[fd]->u.d->dir = dir;
 	_gfs_file_buf[fd]->u.d->suspended = NULL;
 	_gfs_file_buf[fd]->u.d->suspended_offset = 0;
-	_gfs_file_buf[fd]->u.d->canonical_path = canonical_path;
+	_gfs_file_buf[fd]->u.d->abs_url = abs_url;
 	return (fd);
 
 error_free_file_buf_u_d:
@@ -307,7 +306,7 @@ error_free_file_buf:
 	free(_gfs_file_buf[fd]);
 	_gfs_file_buf[fd] = NULL;
 error_free_path:
-	free(canonical_path);
+	free(abs_url);
 error_close_fd:
 	__syscall_close(fd);
 error_closedir:
@@ -355,7 +354,7 @@ gfs_hook_clear_gfs_file(int fd)
 			_gfs_file_buf[fd]->u.d->suspended = NULL;
 			_gfs_file_buf[fd]->u.d->suspended_offset = 0;
 			gfs_stat_free(&_gfs_file_buf[fd]->u.d->gst);
-			free(_gfs_file_buf[fd]->u.d->canonical_path); 
+			free(_gfs_file_buf[fd]->u.d->abs_url); 
 			free(_gfs_file_buf[fd]->u.d);
 			e = gfs_closedir((GFS_Dir)gf);
 		}
@@ -574,14 +573,15 @@ gfs_hook_delete_creating_file(GFS_File gf)
 }
 
 void
-gfs_hook_set_suspended_gfs_dirent(int fd, struct gfs_dirent *entry, int offset)
+gfs_hook_set_suspended_gfs_dirent(int fd,
+	struct gfs_dirent *entry, file_offset_t offset)
 {
 	_gfs_file_buf[fd]->u.d->suspended = entry;
 	_gfs_file_buf[fd]->u.d->suspended_offset = offset;
 }
 
 struct gfs_dirent *
-gfs_hook_get_suspended_gfs_dirent(int fd, int *offsetp)
+gfs_hook_get_suspended_gfs_dirent(int fd, file_offset_t *offsetp)
 {
 	struct gfs_dirent *ent = _gfs_file_buf[fd]->u.d->suspended;
 
@@ -598,9 +598,9 @@ gfs_hook_get_gfs_stat(int fd)
 }
 
 char *
-gfs_hook_get_gfs_canonical_path(int fd)
+gfs_hook_get_gfs_url(int fd)
 {
-	return (_gfs_file_buf[fd]->u.d->canonical_path);
+	return (_gfs_file_buf[fd]->u.d->abs_url);
 }
 
 /*
