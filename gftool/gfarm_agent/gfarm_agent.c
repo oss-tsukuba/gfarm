@@ -1528,7 +1528,24 @@ main(int argc, char **argv)
 	else
 		(void)gfarm_terminate();
 
+#ifndef __FreeBSD__
+	/*
+	 * __exit() function in the userland thread library (libc_r)
+	 * on FreeBSD-4.X makes all descriptors blocking mode, thus,
+	 * as soon as the parent process calls __exit() via gfarm_daemon(),
+	 * pthread functions in the child process become broken,
+	 * because the implementation needs non-blocking mode, and the
+	 * descriptor mode is shared between the parent and the child.
+	 * So, we move open_accepting_socket() after gfarm_daemon()
+	 * to workaround this problem.
+	 * Fortunately, it's rate that open_accepting_socket() fails,
+	 * thus I hope this workaround is acceptable.
+	 *
+	 * libc_r isn't not longer default pthread library on FreeBSD-5.X,
+	 * but it's provided as an option, so we do this on FreeBSD-5.X too.
+	 */
 	accepting_sock = open_accepting_socket();
+#endif
 	stdout_fd = dup(1);
 
 	if (pid_file != NULL) {
@@ -1544,6 +1561,9 @@ main(int argc, char **argv)
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		gfarm_daemon(0, 0);
 	}
+#ifdef __FreeBSD__ /* see above comment about FreeBSD */
+	accepting_sock = open_accepting_socket();
+#endif
 	if (pid_file != NULL) {
 		/*
 		 * We do this after calling gfarm_daemon(),
