@@ -1538,7 +1538,7 @@ main(int argc, char **argv)
 	 * descriptor mode is shared between the parent and the child.
 	 * So, we move open_accepting_socket() after gfarm_daemon()
 	 * to workaround this problem.
-	 * Fortunately, it's rate that open_accepting_socket() fails,
+	 * Fortunately, it's rare that open_accepting_socket() fails,
 	 * thus I hope this workaround is acceptable.
 	 *
 	 * libc_r isn't not longer default pthread library on FreeBSD-5.X,
