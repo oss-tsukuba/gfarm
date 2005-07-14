@@ -159,11 +159,7 @@ mkdir -p $RPM_BUILD_ROOT
 make
 
 %install
-make prefix=${RPM_BUILD_ROOT}%{prefix} \
-	default_libdir=${RPM_BUILD_ROOT}%{lib_prefix} \
-	default_docdir=${RPM_BUILD_ROOT}%{doc_prefix} \
-	default_mandir=${RPM_BUILD_ROOT}%{man_prefix} \
-	example_bindir=${RPM_BUILD_ROOT}%{prefix}/bin install 
+make DESTDIR=${RPM_BUILD_ROOT} install
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
