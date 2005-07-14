@@ -27,7 +27,8 @@ $(PROGRAM_LINKS): $(PROGRAM)
 
 post-install-hook:
 	for f in $(PROGRAM_LINKS); do \
-		rm -f $(bindir)/$$f; ln $(bindir)/$(PROGRAM) $(bindir)/$$f; \
+		rm -f $(DESTDIR)$(bindir)/$$f; \
+		ln $(DESTDIR)$(bindir)/$(PROGRAM) $(DESTDIR)$(bindir)/$$f; \
 	done
 
 ###

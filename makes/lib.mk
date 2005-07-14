@@ -19,10 +19,11 @@ $(LIBRARY): $(OBJS) $(DEPLIBS)
 	$(LTLINK) $(OBJS) $(LDLIBS)
 
 lib-install:
+	@$(MKDIR_P) $(DESTDIR)$(libdir)
 	@set -x; \
 	for i in -- $(LIBRARY_RESULT); do \
 		case $$i in --) continue;; esac; \
-		$(LTINSTALL_LIBRARY) $$i $(libdir)/$$i; \
+		$(LTINSTALL_LIBRARY) $$i $(DESTDIR)$(libdir)/$$i; \
 	done
 
 lib-clean:

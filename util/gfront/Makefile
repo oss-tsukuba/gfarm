@@ -13,9 +13,11 @@ JAR= gfront.jar
 include $(top_srcdir)/makes/script.mk
 
 install:
+	@$(MKDIR_P) $(DESTDIR)$(javadir)
 	@for i in -- $(JAR); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(javadir)/$${i} ); \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} \
+			$(DESTDIR)$(javadir)/$${i} ); \
 	done
 
 distclean:

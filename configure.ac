@@ -33,6 +33,14 @@ if test x"$LEX" = x"flex"; then
   AC_CHECK_LIB(fl, yywrap, [LEXLIB=-lfl], [LEXLIB=-ll])
 fi
 
+if mkdir -p . 2>/dev/null; then
+  MKDIR_P='mkdir -p'
+else
+  test -d ./-p && rmdir ./-p
+  MKDIR_P='$(top_srcdir)/makes/mkdirhier'
+fi
+AC_SUBST(MKDIR_P)
+
 AC_PROG_YACC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
@@ -836,17 +844,17 @@ if test -d ${srcdir}/ns; then
 
 	# The following is for --srcdir option.
 	# AC_OUTPUT() assumes that parent directory of the Makefile exists
-	test -d ns || mkdir -p ns
-	test -d ns/nstool || mkdir -p ns/nstool
+	test -d ns || mkdir ns
+	test -d ns/nstool || mkdir ns/nstool
 fi
 
 
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
-test -d include || mkdir -p include
-test -d gfptool || mkdir -p gfptool
-test -d package || mkdir -p package
-test -d util || mkdir -p util
+test -d include || mkdir include
+test -d gfptool || mkdir gfptool
+test -d package || mkdir package
+test -d util || mkdir util
 
 AC_CONFIG_FILES(Makefile makes/config.mk
 	${ns_makefiles}

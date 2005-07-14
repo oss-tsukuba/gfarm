@@ -140,7 +140,9 @@ hooks_init_mpi$(SUFFIX).lo: hooks_init_mpi.c
 
 install: all
 	# XXX this installation directory is WRONG.
-	$(INSTALL_DATA) $(srcdir)/hooks_init_mpi.c $(libdir)/hooks_init_mpi.c
+	@$(MKDIR_P) $(DESTDIR)$(libdir)
+	$(INSTALL_DATA) $(srcdir)/hooks_init_mpi.c \
+		$(DESTDIR)$(libdir)/hooks_init_mpi.c
 
 ###
 ### *_debug.{o,a,so*}: libraries compiled with -DDEBUG

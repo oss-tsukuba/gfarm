@@ -20,7 +20,9 @@ man-install:
 	@for i in -- $(MAN); do \
 		case $$i in --) continue;; esac; \
 		suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$$i $(mandir)/man$$suffix/$$i ); \
+		$(MKDIR_P) $(DESTDIR)$(mandir)/man$$suffix; \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$$i \
+			$(DESTDIR)$(mandir)/man$$suffix/$$i ); \
 	done
 
 man-clean:

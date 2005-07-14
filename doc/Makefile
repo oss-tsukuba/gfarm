@@ -13,9 +13,11 @@ DOC =	../INSTALL.en ../INSTALL.ja ../LICENSE ../RELNOTES \
 include $(top_srcdir)/makes/subdir.mk
 
 install:
+	@$(MKDIR_P) $(DESTDIR)$(docdir)
 	@for i in -- $(DOC); do \
 		case $$i in --) continue;; esac; \
 		( set -x; \
-		  $(INSTALL_DATA) $(srcdir)/$${i} $(docdir)/`basename $${i}` \
+		  $(INSTALL_DATA) $(srcdir)/$${i} \
+			$(DESTDIR)$(docdir)/`basename $${i}` \
 		); \
 	done

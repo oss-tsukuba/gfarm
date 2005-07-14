@@ -68,9 +68,10 @@ CCLD = $(CC)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(CFLAGS)
 LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 LTLINK_SHARELIB_IN = $(LTLINK) $(LTFLAGS_SHARELIB_IN)
+LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
+# the use of the following operations should honor $(DESTDIR)
 LTINSTALL_PROGRAM = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)
 LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
-LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 
 
 .SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l

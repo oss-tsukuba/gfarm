@@ -19,7 +19,8 @@ $(PROGRAM): $(OBJS) $(DEPLIBS)
 	$(LTLINK) $(OBJS) $(LDLIBS)
 
 prog-install:
-	$(LTINSTALL_PROGRAM) $(PROGRAM) $(bindir)/$(PROGRAM)
+	@$(MKDIR_P) $(DESTDIR)$(bindir)
+	$(LTINSTALL_PROGRAM) $(PROGRAM) $(DESTDIR)$(bindir)/$(PROGRAM)
 
 prog-clean:
 	-$(LTCLEAN) $(OBJS) $(EXTRA_CLEAN_TARGETS)

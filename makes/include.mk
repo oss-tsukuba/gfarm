@@ -19,15 +19,16 @@ post-html-hook:
 
 include-all:
 include-install: all
+	@$(MKDIR_P) $(DESTDIR)$(includedir) $(DESTDIR)$(exec_includedir)
 	@set -x; \
 	for i in -- $(INCS); do \
 		case $$i in --) continue;; esac; \
-		$(INSTALL_DATA) $(srcdir)/$$i $(includedir)/$$i; \
+		$(INSTALL_DATA) $(srcdir)/$$i $(DESTDIR)$(includedir)/$$i; \
 	done
 	@set -x; \
 	for i in -- $(EXEC_INCS); do \
 		case $$i in --) continue;; esac; \
-		$(INSTALL_DATA) $$i $(exec_includedir)/$$i; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(exec_includedir)/$$i; \
 	done
 
 include-clean:

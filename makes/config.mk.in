@@ -29,9 +29,9 @@ LEXLIB = @LEXLIB@
 YACC = @YACC@
 RANLIB = @RANLIB@
 LIBTOOL = @LIBTOOL@
-# We don't use "@INSTALL@" here, because /usr/bin/install doesn't
-# automatically create parent directories.
-INSTALL = $(top_srcdir)/makes/install-sh -c
+# the use of the following operations should honor $(DESTDIR)
+MKDIR_P = @MKDIR_P@
+INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@

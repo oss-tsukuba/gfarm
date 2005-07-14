@@ -19,10 +19,11 @@ post-html-hook:
 script-all:
 
 script-install:
+	@$(MKDIR_P) $(DESTDIR)$(bindir)
 	@set -x; \
 	for i in -- $(SCRIPTS); do \
 		case $$i in --) continue;; esac; \
-		$(INSTALL_SCRIPT) $$i $(bindir)/`basename $$i`; \
+		$(INSTALL_SCRIPT) $$i $(DESTDIR)$(bindir)/`basename $$i`; \
 	done
 
 script-clean:
