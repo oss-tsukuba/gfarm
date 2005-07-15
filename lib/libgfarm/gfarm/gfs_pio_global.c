@@ -284,13 +284,8 @@ static char *
 gfs_pio_view_global_stat(GFS_File gf, struct gfs_stat *status)
 {
 	struct gfs_file_global_context *gc = gf->view_context;
-	char *e;
 
-	e = gfs_stat(gc->url, status);
-	if (e != NULL)
-		return (e);
-
-	return (NULL);
+	return (gfs_stat(gc->url, status));
 }
 
 struct gfs_pio_ops gfs_pio_view_global_ops = {
