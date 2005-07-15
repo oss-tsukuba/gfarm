@@ -31,7 +31,11 @@ RANLIB = @RANLIB@
 LIBTOOL = @LIBTOOL@
 # the use of the following operations should honor $(DESTDIR)
 MKDIR_P = @MKDIR_P@
-INSTALL = @INSTALL@
+# We don't use "@INSTALL@" here, since we want absolute pathname 
+# instead of relative pathname for install-sh.
+# On platforms which have working /usr/bin/install, this setting
+# isn't a problem, because "@INSTALL_PROGRAM@" will have /usr/bin/install.
+INSTALL = $(top_srcdir)/makes/install-sh -c
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@
