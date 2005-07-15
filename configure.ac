@@ -61,72 +61,102 @@ AC_ARG_WITH(pthread,
 [with_pthread="${withval}"
 ])
 
-if test x"${with_pthread}" = x""; then
-  with_pthread=/usr
-fi
-if test x"${with_pthread}" = x"no"; then
-  AC_MSG_RESULT([disabled])
-elif test ! -f "${with_pthread}"/include/pthread.h; then
-  AC_MSG_RESULT([no])
-  with_pthread=no
-fi
-if test x"${with_pthread}" = x"no"; then
-  pthread_srcs=
-  pthread_objs=
-  pthread_cflags=
-  pthread_targets=
-  pthread_includes=
+ax_cv_have_pthread=no
+
+if test x"${with_pthread}" != x"no"; then
+
+  AC_DEFUN([AC_TRY_PTHREAD], [
+    CPPFLAGS_SAVE="$CPPFLAGS"
+    LIBS_SAVE="$LIBS"
+    CPPFLAGS="$CPPFLAGS ${pthread_includes} $1"
+    LIBS="$LIBS ${pthread_libs} $2"
+    AC_TRY_LINK([
+#include <pthread.h>
+
+void *foo(void *p){ return 0; }],[
+	pthread_t thread_id;
+	pthread_create(&thread_id, NULL, foo, NULL);
+], [ax_cv_have_pthread=yes
+    pthread_includes="${pthread_includes} $1"
+    pthread_libs="${pthread_libs} $2"
+    ], [])
+    CPPFLAGS="$CPPFLAGS_SAVE"
+    LIBS="$LIBS_SAVE"
+  ])
+
+  # always define _REENTRANT
+  pthread_includes="-D_REENTRANT"
   pthread_libs=
-else
-  AC_MSG_RESULT([found in \"${with_pthread}\"])
+
+  if expr x"${with_pthread}" : x"/.*" >/dev/null; then # pathname specified?
+    AC_TRY_PTHREAD(-I${with_pthread}/include,-R${with_pthread}/lib -L${with_pthread}/lib -lpthread)
+  elif test x"${with_pthread}" != x""; then
+    AC_TRY_PTHREAD(${with_pthread},${with_pthread})
+  elif test x"${PTHREAD_CFLAGS+1}${PTHREAD_LDFLAGS+2}${PTHREAD_LIBS+3}" != x""
+  then # NetBSD pkgsrc configuration is specified?
+    AC_TRY_PTHREAD(${PTHREAD_CFLAGS},${PTHREAD_LDFLAGS} ${PTHREAD_LIBS})
+  else # otherwise try system supplied pthread library
+    case $host in
+    *-*-aix*)
+	AC_TRY_PTHREAD(-mthreads,-mthreads);;
+    *-*-freebsd[2-4].*)	# FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
+	AC_TRY_PTHREAD(-D_THREAD_SAFE -pthread,-pthread);;
+    *-*-hpux*)
+	AC_TRY_PTHREAD(-D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE,-lpthread);;
+    *-*-solaris*)
+	if test x"$GCC" = x"yes"; then
+		AC_TRY_PTHREAD(-pthread,-pthread)
+	else
+		AC_TRY_PTHREAD(-mt,-mt -lpthread)
+	fi;;
+    *-*-sysv5uw7*) # UnixWare 7 
+	if test x"$GCC" = x"yes"; then
+		AC_TRY_PTHREAD(-pthread,-pthread)
+	else
+		AC_TRY_PTHREAD(-Kthread,-Kthread)
+	fi;;
+    *)
+	# Tru64 (OSF1): -pthread
+	# FreeBSD 5.X: -pthread, 3 libraries are available as follows:
+	#	-lpthread (M:N, default), -lc_r (1:N), and -lthr (1:1)
+	# NetBSD 2.X or later: -pthread
+	# Linux: -pthread
+	AC_TRY_PTHREAD(-pthread,-pthread);;
+    esac
+
+    # and if it fails too, just try default ${CFLAGS}, ${LDFLAGS} and ${LIBS}
+    if test x"${ax_cv_have_pthread}" != x"yes"; then
+      AC_TRY_PTHREAD(,)
+    fi
+  fi
+fi
+
+if test x"${ax_cv_have_pthread}" = x"yes"; then
   pthread_srcs='$(PTHREAD_SRCS)'
   pthread_objs='$(PTHREAD_OBJS)'
   pthread_cflags='$(PTHREAD_CFLAGS)'
   pthread_targets='$(PTHREAD_TARGETS)'
 
-  if test x"${with_pthread}" != x"/usr"; then # 3rd party library? e.g. pth
-    pthread_includes=-I"${with_pthread}"/include/pthread.h
-    pthread_libs="-L${with_pthread}/lib -lpthread"
-  else # system supplied pthread library
-    case ${host_os_nickname} in
-    aix*)
-	pthread_includes=-mthreads
-	pthread_libs=-mthreads;;
-    freebsd*)
-        # FreeBSD-4.X needs -D_THREAD_SAFE, FreeBSD-5.X doesn't
-	# XXX Is it better to use "-kthread" instead?
-	pthread_includes="-pthread -D_THREAD_SAFE"
-	pthread_libs=-pthread;;
-    solaris*)
-	if test x"$GCC" = x"yes"; then
-		pthread_includes=-pthread
-		pthread_libs=-pthread
-	else
-		pthread_includes=-mt
-		pthread_libs="-mt -lpthread"
-	fi;;
-    sysv5uw7*) # UnixWare 7 
-	if test x"$GCC" = x"yes"; then
-		pthread_includes=-pthread
-		pthread_libs=-pthread
-	else
-		pthread_includes=-Kthread
-		pthread_libs=-Kthread
-	fi;;
-    *)
-	pthread_includes=-pthread
-	pthread_libs=-pthread;;
-    esac
-    # always define _REENTRANT
-    pthread_includes="${pthread_includes} -D_REENTRANT"
-  fi
+  AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
+  AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
+else
+  pthread_includes=
+  pthread_libs=
+  pthread_srcs=
+  pthread_objs=
+  pthread_cflags=
+  pthread_targets=
 
- AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
+  if test x"${with_pthread}" = x"no"; then
+    AC_MSG_RESULT([disabled])
+  else
+    AC_MSG_RESULT([no])
+  fi
 fi
 
 AC_SUBST(pthread_includes)
 AC_SUBST(pthread_libs)
-# for conditional compilation which depends on _LARGEFILE64_SOURCE API
+# for conditional compilation which depends on pthread
 AC_SUBST(pthread_srcs)
 AC_SUBST(pthread_objs)
 AC_SUBST(pthread_cflags)
