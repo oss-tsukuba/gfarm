@@ -8,9 +8,9 @@ include $(top_srcdir)/makes/var.mk
 
 # shared object version
 SHARELIB_LTFLAGS=
-LT_CURRENT=1
+LT_CURRENT=0
 LT_REVISION=0
-LT_AGE=1
+LT_AGE=0
 
 LIBRARY = libgfarm.la
 CFLAGS = $(COMMON_CFLAGS)
