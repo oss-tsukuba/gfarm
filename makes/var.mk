@@ -66,8 +66,7 @@ LTFLAGS_SHARELIB_IN = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -rpat
 CCLD = $(CC)
 
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(CFLAGS)
-LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-LTLINK_SHARELIB_IN = $(LTLINK) $(LTFLAGS_SHARELIB_IN)
+LTLINK = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LTLDFLAGS) $(LDFLAGS) -o $@
 LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 # the use of the following operations should honor $(DESTDIR)
 LTINSTALL_PROGRAM = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)

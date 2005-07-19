@@ -7,12 +7,11 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 # shared object version
-SHARELIB_LTFLAGS=
 LT_CURRENT=0
 LT_REVISION=0
 LT_AGE=0
 
-LTLINK_SHARELIB= $(LTLINK_SHARELIB_IN) $(libdir) $(SHARELIB_LTFLAGS)
+LTLINK_SHARELIB= $(LTLINK) $(LTFLAGS_SHARELIB_IN) $(libdir)
 
 DEBUG_CFLAGS=
 SUFFIX=
