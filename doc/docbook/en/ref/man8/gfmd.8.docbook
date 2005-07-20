@@ -42,7 +42,7 @@ configuration file or the -p option.</para>
 
 <para>In this case, the altered port number of <command>gfmd</command> should be
 specified by the metadb_serverport statement in <filename>~/.gfarmrc</filename>
-or <filename>/etc/gfarm.conf</filename> on a client node.</para>
+or <filename>%%SYSCONFDIR%%/gfarm.conf</filename> on a client node.</para>
 
 </refsect1>
 
@@ -109,7 +109,7 @@ local0 is used.</para>
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>/etc/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>

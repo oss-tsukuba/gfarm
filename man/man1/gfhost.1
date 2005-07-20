@@ -111,7 +111,7 @@ network trouble etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
 cannot be accessed by the port number configured in
-/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
 The next field is the authenticaion method used with the host.
@@ -143,7 +143,7 @@ network trouble etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
 cannot be accessed by the port number configured in
-/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
 The next field is the authenticaion method used with the host.
@@ -197,7 +197,7 @@ This option is used with -H, -l, -M function or default function
 to limit hosts to the specified domain.
 .TP
 \fB-i\fR
-There is "address_use" directive in /etc/gfarm.conf and
+There is "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
 $HOME/.gfarmrc to give priorities of network addresses
 for gfarm access.
 This directive works with \fBgfhost\fR command,

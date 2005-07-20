@@ -100,14 +100,14 @@ prefix は，特にユーザ権限で Gfarm ファイルシステムを設定したい場合や，
 	# config-gfarm -p 10389
 
 config-gfarm により，メタデータ保持用ディレクトリ(metadata directory)の
-初期設定，Gfarm 設定ファイル(/etc/gfarm.conf)の設定などがなされ，slapd
+初期設定，Gfarm 設定ファイル(%%SYSCONFDIR%%/gfarm.conf)の設定などがなされ，slapd
 (LDAP サーバ) および gfmd が起動します．
 
 設定ファイル，ディレクトリが既に存在する場合，config-gfarm は失敗します．
 その場合，それらを待避するか，あるいは config-gfarm に -f オプションを
 指定して実行させ，強制的に消去させることもできます．
 
-なお，/etc/gfarm.conf のセキュリティに関する設定（auth文）は，クラスタ
+なお，%%SYSCONFDIR%%/gfarm.conf のセキュリティに関する設定（auth文）は，クラスタ
 内での利用を想定しています．より高度な設定は，gfarm.conf の man ページ
 をご参照ください．
 
@@ -140,10 +140,10 @@ client パッケージもインストールします．doc パッケージは任意です．
 ▽ ファイルシステムノードの設定
 
 前章の config-gfarm によりメタデータサーバで作成した設定ファイル
-/etc/gfarm.conf をファイルシステムノードにコピーします．例えば，メタデー
+%%SYSCONFDIR%%/gfarm.conf をファイルシステムノードにコピーします．例えば，メタデー
 タサーバが gfms.apgrid.org の場合は，以下のようになります．
 
-	# scp -p gfms.apgrid.org:/etc/gfarm.conf /etc
+	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
 
 （注）以下の，config-gfsd で prefix を指定する場合は，<prefix>/etc にコ
       ピーします．
@@ -204,10 +204,10 @@ glibc-not-hidden パッケージをインストールします．
 
 ▽ クライアントノードの設定
 
-メタデータサーバで作成した設定ファイル /etc/gfarm.conf をクライアントノー
-ドの /etc/gfarm.conf にコピーします．
+メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
+ドの %%SYSCONFDIR%%/gfarm.conf にコピーします．
 
-	# scp -p gfms.apgrid.org:/etc/gfarm.conf /etc
+	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
 
 あるいは，次章の「Gfarm 設定ファイルの作成」によりユーザのホームディレ
 クトリに作成することにより，この設定を代用可能です．
@@ -224,12 +224,12 @@ glibc-not-hidden パッケージをインストールします．
 
 ◇ Gfarm 設定ファイルの作成
 
-（この設定は既に /etc/gfarm.conf が存在するノードでは必要ありません．）
+（この設定は既に %%SYSCONFDIR%%/gfarm.conf が存在するノードでは必要ありません．）
 
-メタデータサーバで作成した設定ファイル /etc/gfarm.conf をクライアントノー
+メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
 ドのホームディレクトリの ~/.gfarmrc にコピーします．
 
-	% scp -p gfms.apgrid.org:/etc/gfarm.conf ~/.gfarmrc
+	% scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
 
 ◇ ホームディレクトリの作成
 
@@ -240,7 +240,7 @@ glibc-not-hidden パッケージをインストールします．
 	% gfmkdir gfarm:~
 
 このコマンドが失敗する場合は，メタデータサーバの slapd が正しく起動して
-いないか，クライアントの .gfarmrc （あるいは /etc/gfarm.conf）が正しく
+いないか，クライアントの .gfarmrc （あるいは %%SYSCONFDIR%%/gfarm.conf）が正しく
 ない可能性があります．
 
 ◇ LD_PRELOAD 環境変数の設定

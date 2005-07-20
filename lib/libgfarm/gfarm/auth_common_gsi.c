@@ -16,7 +16,9 @@
 #include "auth.h"
 #include "auth_gsi.h"
 
+#ifndef GFSL_CONF_USERMAP
 #define GFSL_CONF_USERMAP "/etc/grid-security/grid-mapfile"
+#endif
 
 static int gsi_initialized;
 static int gsi_server_initialized;

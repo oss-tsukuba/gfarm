@@ -20,12 +20,12 @@ html-install:
 	@$(MKDIR_P) $(DESTDIR)$(htmldir)
 	@for i in -- $(HTML); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} \
+		( set -x; $(INSTALL_DOC) $(srcdir)/$${i} \
 			$(DESTDIR)$(htmldir)/$${i} ); \
 	done
 	@for i in -- $(HTMLSRC); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i}.html \
+		( set -x; $(INSTALL_DOC) $(srcdir)/$${i}.html \
 			$(DESTDIR)$(htmldir)/$${i}.html ); \
 	done
 

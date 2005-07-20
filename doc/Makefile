@@ -17,7 +17,7 @@ install:
 	@for i in -- $(DOC); do \
 		case $$i in --) continue;; esac; \
 		( set -x; \
-		  $(INSTALL_DATA) $(srcdir)/$${i} \
+		  $(INSTALL_DOC) $(srcdir)/$${i} \
 			$(DESTDIR)$(docdir)/`basename $${i}` \
 		); \
 	done

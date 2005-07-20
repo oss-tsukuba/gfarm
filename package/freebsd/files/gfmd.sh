@@ -21,9 +21,9 @@ rcvar=`set_rcvar`
 
 command="%%PREFIX%%/sbin/${name}"
 pidfile="/var/run/${name}.pid"
-required_files=%%PREFIX%%/etc/gfarm.conf
+required_files=%%SYSCONFDIR%%/gfarm.conf
 # add more flags through ${${name}_flags}
-command_args="-f ${required_files} -P /var/run/${name}.pid"
+command_args="-P /var/run/${name}.pid"
 
 [ -z "$gfmd_enable" ]       && gfmd_enable="NO"
 [ -z "$gfmd_flags" ]        && gfmd_flags=""

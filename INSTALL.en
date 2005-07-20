@@ -189,6 +189,13 @@ Options for configure:
   specifies a destination directory for installation.  Default is
   /usr/local directory.  This is optional.
 
+  --sysconfdir=directory
+
+  specifies a directory where ``gfarm.conf'' configuration file is
+  located.  Default is ``etc'' directory under the directory which
+  is specified in above --prefix option.  This document assumes
+  that --sysconfdir=/etc is specified.  This is optional.
+
 When you need to specify a compiler program explicitly, use the
 environment variable CC.  This is an example using gcc.
 

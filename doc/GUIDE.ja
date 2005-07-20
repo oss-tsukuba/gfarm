@@ -38,10 +38,10 @@ Gfarm の日本語マニュアルを読むには，環境変数 LANG を ja_JP.ujis に設定
 1.3 Gfarm のユーザ設定の確認
 
 クライアントホストにおいて，ユーザが正しく Gfarm を利用できるよう設定
-されていることを確認します．Gfarm の設定ファイルは /etc/gfarm.conf も
+されていることを確認します．Gfarm の設定ファイルは %%SYSCONFDIR%%/gfarm.conf も
 しくは ~/.gfarmrc です．これらのファイルが存在するかを確認します．
 
- % ls /etc/gfarm.conf
+ % ls %%SYSCONFDIR%%/gfarm.conf
  % ls ~/.gfarmrc
 
 これらのファイルが両方存在する場合は，~/.gfarmrc が優先されます．
@@ -62,7 +62,7 @@ Gfarm を利用するためには，まず最初に認証を行なう必要があります．以下
      を行わない方式
 
 利用している Gfarm 環境がどの認証方式を採用しているか分からない場合は，
-Gfarm 設定ファイル /etc/gfarm.conf を参照してください．
+Gfarm 設定ファイル %%SYSCONFDIR%%/gfarm.conf を参照してください．
 gfarm.conf の書式については，man gfarm.conf を参考にしてください．
 
 2.1 共有秘密鍵方式の場合

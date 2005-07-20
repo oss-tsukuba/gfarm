@@ -886,7 +886,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-AC_CONFIG_FILES(Makefile makes/config.mk
+AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	${ns_makefiles}
 	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd

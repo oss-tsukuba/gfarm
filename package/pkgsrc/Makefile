@@ -11,9 +11,10 @@ COMMENT=	User-level grid filesystem and parallel process management
 GFARM_VERSION=	1.1.2
 
 USE_PKGINSTALL=	yes
-GNU_CONFIGURE=	yes
 USE_TOOLS+=	gmake # NetBSD-make works too, but pkgsrc supports non-NetBSD.
 USE_LIBTOOL=	yes
+GNU_CONFIGURE=	yes
+CONFIGURE_ARGS+=--sysconfdir=${PKG_SYSCONFDIR}
 
 default_htmldir=${PREFIX}/share/doc/html/gfarm
 ja_mandir=	${PREFIX}/man/ja_JP.eucJP

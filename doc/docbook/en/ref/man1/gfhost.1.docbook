@@ -229,7 +229,7 @@ the default function of <command>gfhost</command>.
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
 	cannot be accessed by the port number configured in
-	/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 	displayed.
       </para>
       <para>
@@ -270,7 +270,7 @@ the default function of <command>gfhost</command>.
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
 	cannot be accessed by the port number configured in
-	/etc/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
+	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 	displayed.
       </para>
       <para>
@@ -378,7 +378,7 @@ the default function of <command>gfhost</command>.
     <term><option>-i</option></term>
     <listitem>
       <para>
-	There is "address_use" directive in /etc/gfarm.conf and
+	There is "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
 	$HOME/.gfarmrc to give priorities of network addresses
 	for gfarm access.
 	This directive works with <command>gfhost</command> command,

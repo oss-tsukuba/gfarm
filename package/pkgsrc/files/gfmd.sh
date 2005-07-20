@@ -16,7 +16,7 @@ rcvar=${name}
 command="@PREFIX@/sbin/${name}"
 required_files="@PKG_SYSCONFDIR@/gfarm.conf"
 # add more flags through ${${name}_flags}
-command_args="-f ${required_files} -P @GFARM_PID_DIR@/${name}.pid"
+command_args="-P @GFARM_PID_DIR@/${name}.pid"
 
 if [ -f /etc/rc.subr ]; then
 	load_rc_config $name

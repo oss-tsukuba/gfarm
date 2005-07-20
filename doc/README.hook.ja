@@ -24,12 +24,12 @@ Linux や *BSD では，LD_PRELOAD 環境変数を設定することにより，任意のアプ
 
 シェルが sh あるいは bash の場合は，以下のように設定します．
 
-	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合は，以下のように設定します．
 
-	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 ＃ tcsh には，いくつかの不具合が報告されており，bash で実行することをお
 ＃ 勧めします．
@@ -53,26 +53,23 @@ LD_PRELOAD に追加してください．
 
 シェルが sh あるいは bash の場合:
 
-	$ LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合:
 
-	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 * FreeBSD の場合
 
 シェルが sh あるいは bash の場合:
 
-	$ LD_PRELOAD=/usr/local/lib/libgfs_hook.so.0
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
 	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合:
 
-	% setenv LD_PRELOAD /usr/local/lib/libgfs_hook.so.0
-
-以降の説明で、libgfs_hook のパス名として /usr/lib と記述してある部分は，
-FreeBSD では /usr/local/lib に読み換えてください．
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
 なお，FreeBSD の 4.X までのリリースでは，/bin にあるコマンドはスタティック
 リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
@@ -96,15 +93,12 @@ FreeBSD では /usr/local/lib に読み換えてください．
 
 シェルが sh あるいは bash の場合:
 
-	$ LD_PRELOAD=/usr/pkg/lib/libgfs_hook.so.0
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
 	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合:
 
-	% setenv LD_PRELOAD /usr/pkg/lib/libgfs_hook.so.0
-
-以降の説明で，libgfs_hook のパス名として /usr/lib と記述してある部分は，
-NetBSD では /usr/pkg/lib に読み換えてください．
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
 なお，NetBSD の 1.X までのリリースでは，/bin にあるコマンドはスタティック
 リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
@@ -163,7 +157,7 @@ LD_PRELOAD をサポートしていない OS の場合，既存のアプリケーションを再リ
 
 * C プログラム
 
-	% cc prog.o /usr/lib/gfs_hook.o -lgfarm
+	% cc prog.o %%LIBDIR%%/gfs_hook.o -lgfarm
 
 * Fortran あるいは C++ プログラム
 
@@ -174,7 +168,7 @@ C プログラムの場合と同様に gfs_hook.o と -lgfarm をリンクします．
 MPI プログラムの場合は，gfs_hook.o の代りに，gfs_hook_no_init.o と
 hooks_init_mpi.c をリンクします．
 
-	% mpicc prog.o /usr/lib/gfs_hook_no_init.o /usr/lib/hooks_init_mpi.c \
+	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c \
 		-lgfarm
 
 *** 静的リンクによって既存のアプリケーションを実行
@@ -189,12 +183,12 @@ hooks_init_mpi.c をリンクします．
 以下は，例ですが，その他に必要となるライブラリは OS やディストリビュー
 ションによります．
 
-	% cc -static prog.o /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 あるいは
 
-	% cc -static prog.o /usr/lib/gfs_hook.o -lgfarm -lldap -llber \
+	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
 
 ＃ RedHat 8.0 あるいは RedHat 7.3 では，アカウントの認証に LDAP を利用
@@ -205,7 +199,7 @@ hooks_init_mpi.c をリンクします．
 ります．
 
 	% gcc -static prog.o -I/usr/grid/include/gcc32 -L/usr/grid/lib \
-		/usr/lib/gfs_hook.o -lgfarm \
+		%%LIBDIR%%/gfs_hook.o -lgfarm \
 		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
 		-lldap -llber -lsasl -ldl
 
@@ -218,8 +212,8 @@ C プログラムの場合と同様に gfs_hook.o と -lgfarm をリンクします．
 MPI プログラムの場合は，gfs_hook.o の代りに，gfs_hook_no_init.o と
 hooks_init_mpi.c をリンクします．
 
-	% mpicc -static prog.o /usr/lib/gfs_hook_mpi.o \
-		/usr/lib/hooks_init_mpi.c -lgfarm -lldap -llber \
+	% mpicc -static prog.o %%LIBDIR%%/gfs_hook_mpi.o \
+		%%LIBDIR%%/hooks_init_mpi.c -lgfarm -lldap -llber \
 		-lssl -lcrypto -lsasl -ldl
 
 ----------------------------------------------------------------------

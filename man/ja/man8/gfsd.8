@@ -29,7 +29,7 @@ gfsd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
 ます．
 .PP
 デフォルト以外のポート番号で立ち上がっている gfsd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは /etc/gfarm.conf の 
+クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
 spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 す．
 .SH "OPTIONS"
@@ -56,7 +56,7 @@ gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
 引数オプションを表示します。
 .SH "FILES"
 .TP
-\fB\fI/etc/gfarm.conf\fB\fR
+\fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
 gfmd が参照する設定ファイルです。
 .SH "SEE ALSO"
 .PP

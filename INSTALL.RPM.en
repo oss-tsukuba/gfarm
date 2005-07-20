@@ -93,7 +93,7 @@ option.
 	# config-gfarm -p 10389
 
 config-gfarm set up the metadata directory that keeps file system
-metadata, creates a Gfarm configuration file /etc/gfarm.conf, and
+metadata, creates a Gfarm configuration file %%SYSCONFDIR%%/gfarm.conf, and
 executes slapd (LDAP server) and gfmd.
 
 If the metadata directory or the configuration file already exists,
@@ -102,7 +102,7 @@ running config-gfarm, or execute config-gfarm with the -f option.
 With the -f option, config-gfarm deletes and creates a new metadata
 directory and/or a configuration file.
 
-Created /etc/gfarm.conf assumes security in the cluster or LAN
+Created %%SYSCONFDIR%%/gfarm.conf assumes security in the cluster or LAN
 environment.  For further information, refer to the man page of
 gfarm.conf.
 
@@ -136,12 +136,12 @@ file system as a client node, install glibc-not-hidden package.
 
 o Configuration of file system node
 
-Copy /etc/gfarm.conf from the metadata server that is created by
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server that is created by
 'config-gfarm' as described in the previous section.  For example,
 when the metadata server is 'gfms.apgrid.org', you can copy it from
 the server using scp.
 
-	# scp -p gfms.apgrid.org:/etc/gfarm.conf /etc
+	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
 
 Note: The location of the Gfarm configuration file can be specified by
       'prefix' of config-gfsd as described below.
@@ -205,11 +205,11 @@ install glibc-not-hidden package.
 
 o Configuration of client node
 
-Copy /etc/gfarm.conf from the metadata server to the client node.  For
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to the client node.  For
 example, when the metadata server is 'gfms.apgrid.org', you can copy
 it from the server using scp.
 
-	# scp -p gfms.apgrid.org:/etc/gfarm.conf /etc
+	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
 
 Note: This setting can be substituted for copying to ~/.gfarmrc as
       described in the next chapter.
@@ -229,13 +229,13 @@ stored in /etc/grid-security/certificates.
 
 o Configuration of client node
 
-(This section is not necessary when /etc/gfarm.conf exists.)
+(This section is not necessary when %%SYSCONFDIR%%/gfarm.conf exists.)
 
-Copy /etc/gfarm.conf from the metadata server to ~/.gfarmrc on the
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to ~/.gfarmrc on the
 client node.  For example, when the metadata server is
 'gfms.apgrid.org', you can copy it from the server using scp.
 
-	# scp -p gfms.apgrid.org:/etc/gfarm.conf ~/.gfarmrc
+	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
 
 o Creation of a home directory in Gfarm file system
 
@@ -250,7 +250,7 @@ directory more than once.
 
 If this command fails, slapd on the metadata server is not executed
 correctly, or the Gfarm configuration file (~/.gfarmrc or
-/etc/gfarm.conf) on the client is not correct.
+%%SYSCONFDIR%%/gfarm.conf) on the client is not correct.
 
 o LD_PRELOAD environment variable
 

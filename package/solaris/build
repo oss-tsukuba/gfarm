@@ -19,6 +19,7 @@ buildrootbase=$work/buildroot-$$
 make=/usr/local/bin/make
 tar=/usr/local/bin/tar
 with_prefix=--prefix=/$prefix
+with_sysconfdir=--sysconfdir=/etc
 with_globus=--with-globus=/opt/gt-2.4.3
 with_globus="$with_globus --with-globus-static"
 # XXX --with-mpi needs OPTFLAGS=-O with gcc (an error happens at gfs_hook_mpi).
@@ -49,20 +50,20 @@ do
 	do
 		case ${pkg}-${cc} in
 		gfarm-vendorcc)
-			./configure $with_prefix \
+			./configure $with_prefix $with_sysconfdir \
 				$with_vendorcc_openldap \
 				$with_vendorcc_openssl;;
 		gfarm-gsi-vendorcc)
-			./configure $with_prefix \
+			./configure $with_prefix $with_sysconfdir \
 				$with_vendorcc_openldap \
 				$with_vendorcc_openssl \
 				$with_globus $with_vendorcc_globus_flavor;;
 		gfarm-gcc)
-			CC=gcc ./configure $with_prefix \
+			CC=gcc ./configure $with_prefix $with_sysconfdir \
 				$with_gcc_openldap \
 				$with_gcc_openssl;;
 		gfarm-gsi-gcc)
-			CC=gcc ./configure $with_prefix \
+			CC=gcc ./configure $with_prefix $with_sysconfdir \
 				$with_gcc_openldap \
 				$with_gcc_openssl \
 				$with_globus $with_gcc_globus_flavor;;

@@ -11,6 +11,7 @@ default_exec_includedir = @includedir@
 default_mandir = @mandir@
 default_docdir = $(prefix)/share/doc/gfarm
 default_htmldir = $(default_docdir)/html
+default_sysconfdir= @sysconfdir@
 
 sbindir = $(default_sbindir)
 bindir = $(default_bindir)
@@ -21,6 +22,7 @@ exec_includedir = $(default_exec_includedir)
 mandir = $(default_mandir)
 docdir = $(default_docdir)
 htmldir = $(default_htmldir)
+sysconfdir = $(default_sysconfdir)
 
 CC = @CC@
 OPTFLAGS = @CFLAGS@
@@ -38,6 +40,7 @@ INSTALL = $(top_srcdir)/makes/install-sh -c
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@
+INSTALL_DOC = sh $(top_srcdir)/makes/install-doc
 
 LIBS = @LIBS@
 

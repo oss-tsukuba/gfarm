@@ -16,6 +16,7 @@
 %define rc_prefix	%{etc_prefix}/rc.d/init.d
 %define ldap_prefix	%{etc_prefix}/%{pkg}-ldap
 %define profile_prefix	%{etc_prefix}/profile.d
+%define sysconfdir	%{etc_prefix}
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
@@ -147,6 +148,7 @@ mkdir -p $RPM_BUILD_ROOT
 %build
 ./configure --prefix=%{prefix} \
 	--libdir=%{lib_prefix} \
+	--sysconfdir=%{sysconfdir} \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
 	--with-readline=/usr \

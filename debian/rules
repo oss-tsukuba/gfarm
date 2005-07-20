@@ -33,7 +33,7 @@ GFSD_GSI_PKG=gfsd-gsi
 DEV_GSI_PKG = libgfarm-gsi-dev
 LIBS_GSI_PKG = libgfarm-gsi
 
-CONFIGURE = ../configure --prefix=/usr --libexecdir=/usr/lib/gfarm
+CONFIGURE = ../configure --prefix=/usr --libexecdir=/usr/lib/gfarm --sysconfdir=/etc
 
 GLOBUS_PREFIX ?= undefined
 BUILD_BOTH    ?= undefined

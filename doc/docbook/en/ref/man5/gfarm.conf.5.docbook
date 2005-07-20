@@ -19,15 +19,15 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes such as gfmd and gfsd refer to /etc/gfarm.conf
+Gfarm server processes such as gfmd and gfsd refer to %%SYSCONFDIR%%/gfarm.conf
 by default.  Since this configuration file is only read at the startup
 time, it is necessary to restart servers when updating the content of
 the configuration file.</para>
 
 <para>Application programs such as gfls and gfhost refer to both
-/etc/gfarm.conf and ~/.gfarmrc in a user's home directory as a
-configuration file.  .gfarmrc has the same grammar as /etc/gfarm.conf.
-If both .gfarmrc and /etc/gfarm.conf exist, .gfarmrc is read at
+%%SYSCONFDIR%%/gfarm.conf and ~/.gfarmrc in a user's home directory as a
+configuration file.  .gfarmrc has the same grammar as %%SYSCONFDIR%%/gfarm.conf.
+If both .gfarmrc and %%SYSCONFDIR%%/gfarm.conf exist, .gfarmrc is read at
 first.</para>
 
 <para>Each line of gfarm.conf consists of one statement.  When the
@@ -709,7 +709,7 @@ auth enable gsi *
 <variablelist>
 
 <varlistentry>
-<term><filename>/etc/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
