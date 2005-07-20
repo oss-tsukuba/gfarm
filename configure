@@ -1605,7 +1605,7 @@ host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 
 # "linux-gnu" -> "linux", "netbsdelf" -> "netbsd"
 host_os_nickname=`echo $host_os |
-	sed -e 's/-gnu$//' -e 's/0-9.*$//' -e 's/^netbsdelf$/netbsd/'`
+	sed -e 's/-.*//' -e 's/[0-9.]*$//' -e 's/^netbsdelf$/netbsd/'`
 
 ######
 ###### Checks for programs.
@@ -19443,7 +19443,7 @@ rm -f conftest.err conftest.$ac_objext \
     CPPFLAGS="$CPPFLAGS_SAVE"
     LIBS="$LIBS_SAVE"
   ;;
-    *-*-freebsd2-4.*)	# FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
+    *-*-freebsd[2-4].*) # FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
