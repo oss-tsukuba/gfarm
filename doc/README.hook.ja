@@ -15,10 +15,12 @@ datafarm@apgrid.org までご相談ください．
 
 *** 無変更で既存のアプリケーションを実行
 
-Linux では，LD_PRELOAD 環境変数を設定することにより，任意のアプリケーショ
-ンで，Gfarm ファイルシステムを /gfarm にマウントしているようにアクセス
-することが可能です．Solaris でも，可能のはずですが，あまりテストがなさ
-れていません．
+Linux や *BSD では，LD_PRELOAD 環境変数を設定することにより，任意のアプ
+リケーションで，Gfarm ファイルシステムを /gfarm にマウントしているよう
+にアクセスすることが可能です．Solaris でも，可能のはずですが，あまりテ
+ストがなされていません．
+
+* Linux の場合
 
 シェルが sh あるいは bash の場合は，以下のように設定します．
 
@@ -57,6 +59,71 @@ LD_PRELOAD に追加してください．
 シェルが csh (tcsh) の場合:
 
 	% setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+
+* FreeBSD の場合
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=/usr/local/lib/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD /usr/local/lib/libgfs_hook.so.0
+
+以降の説明で、libgfs_hook のパス名として /usr/lib と記述してある部分は，
+FreeBSD では /usr/local/lib に読み換えてください．
+
+なお，FreeBSD の 4.X までのリリースでは，/bin にあるコマンドはスタティック
+リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
+ダイナミックリンクしたコマンドを /usr/local/dynbin のような場所に作成し，
+パスの先頭に加えておくと良いでしょう．
+(1) ソース配布中の sbin.??, subin.?? を展開する．
+	# cd /usr/src
+	# cat 配布ディレクトリ/src/sbin.?? | tar zpxf -
+	# cat 配布ディレクトリ/src/subin.?? | tar zpxf -
+(2) 動的リンクに変更する．
+	# cd bin
+	# vi Makefile.inc
+		下記の行をコメントに変更する．
+		NOSHARED?=	YES
+(3) make して，適当なディレクトリにインストールする．
+  ここでは /usr/local/dynbin/ にインストールしています．
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
+
+* NetBSD で pkgsrc ないし binary package からインストールした場合
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=/usr/pkg/lib/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD /usr/pkg/lib/libgfs_hook.so.0
+
+以降の説明で，libgfs_hook のパス名として /usr/lib と記述してある部分は，
+NetBSD では /usr/pkg/lib に読み換えてください．
+
+なお，NetBSD の 1.X までのリリースでは，/bin にあるコマンドはスタティック
+リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
+ダイナミックリンクしたコマンドを /usr/local/dynbin のような場所に作成し，
+パスの先頭に加えておくと良いでしょう．
+(1) ソース配布中の src.tgz を展開する．
+	# cd /
+	# tar zpxf 配布ディレクトリ/source/sets/src.tgz
+(2) 動的リンクに変更する．
+	# cd usr/src/bin
+	# vi Makefile.inc
+		下記の行をコメントに変更する．
+		LDSTATIC?=	-static
+(3) make して，適当なディレクトリにインストールする．
+  ここでは /usr/local/dynbin/ にインストールしています．
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
+
+* OS に依存しない設定事項
 
 上記設定は，.bashrc や .cshrc など起動スクリプトに記述すると，以降の設
 定が必要なくなり，便利です．

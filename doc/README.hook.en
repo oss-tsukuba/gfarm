@@ -33,8 +33,10 @@ library'.
 *** Running existing programs without any modification
 
 Every dynamically linked executable can access Gfarm file system by
-just specifying LD_PRELOAD environment variable in Linux and possibly
-in Solaris.
+just specifying LD_PRELOAD environment variable in Linux, *BSD and
+possibly in Solaris.
+
+* on Linux
 
 In the case of sh or bash,
 
@@ -70,6 +72,73 @@ In the case of csh or tcsh,
 
 You can specify the above in the shell rc file such as .bashrc and
 .cshrc.  We recommend to use bash because it is well tested.
+
+* on FreeBSD
+
+In the case of sh or bash,
+
+	$ LD_PRELOAD=/usr/local/lib/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+In the case of csh or tcsh,
+
+	% setenv LD_PRELOAD /usr/local/lib/libgfs_hook.so.0
+
+Please read /usr/lib (for Linux case) as /usr/local/lib on FreeBSD
+in the description below.
+
+Also, this LD_PRELOAD setting won't work with commands in /bin
+on FreeBSD 4.X or before, because the commands are statically linked.
+If you are using such release, it's better to create dynamically linked
+executables for such commands in a directory like /usr/local/dynbin,
+and add the directory to your $PATH, by procedures like follows:
+(1) extract sbin.?? and subin.?? in the source distribution
+	# cd /usr/src
+	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/sbin.?? | tar zpxf -
+	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/subin.?? | tar zpxf -
+(2) change the configuration from static to dynamic linkage
+	# cd bin
+	# vi Makefile.inc
+	  ... comment out the following line
+		NOSHARED?=	YES
+(3) build, and install to an appropriate directory (/usr/local/dynbin
+  in this example)
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
+
+* on NetBSD with pkgsrc
+
+In the case of sh or bash,
+
+	$ LD_PRELOAD=/usr/pkg/lib/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+In the case of csh or tcsh,
+
+	% setenv LD_PRELOAD /usr/pkg/lib/libgfs_hook.so.0
+
+Please read /usr/lib (for Linux case) as /usr/pkg/lib on NetBSD
+in the description below.
+
+Also, this LD_PRELOAD setting won't work with commands in /bin
+on NetBSD 1.X or before, because the commands are statically linked.
+If you are using such release, it's better to create dynamically linked
+executables for such commands in a directory like /usr/local/dynbin,
+and add the directory to your $PATH, by procedures like follows:
+(1) extract src.tgz in the source distribution
+	# cd /
+	# tar zpxf ${NETBSD_RELEASE_DIRECTORY}/source/sets/src.tgz
+(2) change the configuration from static to dynamic linkage
+	# cd usr/src/bin
+	# vi Makefile.inc
+	  ... comment out the following line
+		LDSTATIC?=	-static
+(3) build, and install to an appropriate directory (/usr/local/dynbin
+  in this example)
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
+
+* OS-independent settings
 
 After specifying the environment variable, every program can access to
 Gfarm file system.  If you would like to access Gfarm file system in
