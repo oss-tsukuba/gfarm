@@ -50,7 +50,7 @@ IGNORE=		is not built, because globus-makefile-header does not work due to missi
 
 .if defined(LDCONFIG_R_DOES_WORK_FOR_GLOBUS)
 # XXX This doesn't work, because "ldconfig -r" doesn't show the libraries.
-#LIB_DEPENDS+=	globus_gssapi_gsi_${GLOBUS_FLAVOR}:${PORTSDIR}/misc/globus2
+LIB_DEPENDS+=	globus_gssapi_gsi_${GLOBUS_FLAVOR}:${PORTSDIR}/misc/globus2
 .else # workaround the problem
 BUILD_DEPENDS=	${GLOBUS_LOCATION}/bin/globus-makefile-header:${PORTSDIR}/misc/globus2
 RUN_DEPENDS=	${BUILD_DEPENDS}
