@@ -40,13 +40,6 @@ post-install:
 GPT_LOCATION=	${LOCALBASE}
 GLOBUS_LOCATION=${LOCALBASE}/globus
 GLOBUS_FLAVOR?=	gcc32dbg
-CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
-		--with-globus-flavor=${GLOBUS_FLAVOR}
-
-.if !exists(${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh)
-# globus-makefile-header will be called from configure
-IGNORE=		is not built, because globus-makefile-header does not work due to missing ${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh. Probably you need to run this: env GPT_LOCATION=${GPT_LOCATION} GLOBUS_LOCATION=${GLOBUS_LOCATION} /usr/local/sbin/gpt-postinstall
-.endif
 
 .if defined(LDCONFIG_R_DOES_WORK_FOR_GLOBUS)
 # XXX This doesn't work, because "ldconfig -r" doesn't show the libraries.
@@ -56,10 +49,18 @@ BUILD_DEPENDS=	${GLOBUS_LOCATION}/bin/globus-makefile-header:${PORTSDIR}/misc/gl
 RUN_DEPENDS=	${BUILD_DEPENDS}
 .endif
 
+CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
+		--with-globus-flavor=${GLOBUS_FLAVOR}
+
 # XXX Workaround a mistake in ports/misc/globus2.
 # Without the following environment, globus-makefile-header complains
-# that it can't locate Grid/GPT/Dependencies.pm in @INC. 
+# that it can't locate Grid/GPT/Dependencies.pm in @INC.
 CONFIGURE_ENV+=	PERL5LIB=${PREFIX}/lib/perl
+
+.if !exists(${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh)
+# globus-makefile-header will be called from configure
+IGNORE=		is not built, because globus-makefile-header does not work due to missing ${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh. Probably you need to run this: env GPT_LOCATION=${GPT_LOCATION} GLOBUS_LOCATION=${GLOBUS_LOCATION} ${GPT_LOCATION}/sbin/gpt-postinstall
+.endif
 
 .endif # WITH_GLOBUS
 

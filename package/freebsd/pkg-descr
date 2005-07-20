@@ -16,4 +16,3 @@ your environment by the following procedure:
 	on csh:
 		setenv GLOBUS_LOCATION /usr/local/globus
 		. $GLOBUS_LOCATION/etc/globus-user-env.csh 
-
