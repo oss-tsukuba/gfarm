@@ -13,7 +13,7 @@ AC_CANONICAL_HOST
 
 # "linux-gnu" -> "linux", "netbsdelf" -> "netbsd"
 host_os_nickname=`echo $host_os |
-	sed -e 's/-gnu$//' -e 's/[0-9.]*$//' -e 's/^netbsdelf$/netbsd/'`
+	sed -e 's/-.*//' -e 's/[[0-9.]]*$//' -e 's/^netbsdelf$/netbsd/'`
 
 ######
 ###### Checks for programs.
@@ -99,7 +99,7 @@ void *foo(void *p){ return 0; }],[
     case $host in
     *-*-aix*)
 	AC_TRY_PTHREAD(-mthreads,-mthreads);;
-    *-*-freebsd[2-4].*)	# FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
+    *-*-freebsd[[2-4]].*) # FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
 	AC_TRY_PTHREAD(-D_THREAD_SAFE -pthread,-pthread);;
     *-*-hpux*)
 	AC_TRY_PTHREAD(-D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE,-lpthread);;
