@@ -23312,7 +23312,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                                              ac_config_files="$ac_config_files Makefile makes/config.mk ${ns_makefiles} gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd package/redhat/config/config-gfarm package/redhat/config/config-gfsd util/gfront/gfront"
+                                                                                                                        ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd package/redhat/config/config-gfarm package/redhat/config/config-gfsd util/gfront/gfront"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -23841,6 +23841,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "makes/config.mk" ) CONFIG_FILES="$CONFIG_FILES makes/config.mk" ;;
+  "makes/install-doc" ) CONFIG_FILES="$CONFIG_FILES makes/install-doc" ;;
   "${ns_makefiles}" ) CONFIG_FILES="$CONFIG_FILES ${ns_makefiles}" ;;
   "gfptool/util/gfregister" ) CONFIG_FILES="$CONFIG_FILES gfptool/util/gfregister" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
