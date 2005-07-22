@@ -8,7 +8,7 @@ SUBDIRS = html
 
 DOC =	../INSTALL.en ../INSTALL.ja ../LICENSE ../RELNOTES \
 	../INSTALL.RPM.en ../INSTALL.RPM.ja \
-	GUIDE.ja Gfarm-FAQ.en Gfarm-FAQ.ja README.hook.en
+	GUIDE.ja Gfarm-FAQ.en Gfarm-FAQ.ja README.hook.en README.hook.ja
 
 include $(top_srcdir)/makes/subdir.mk
 

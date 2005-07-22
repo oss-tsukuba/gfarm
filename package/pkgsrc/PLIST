@@ -248,6 +248,7 @@ share/doc/gfarm/INSTALL.en
 share/doc/gfarm/INSTALL.ja
 share/doc/gfarm/LICENSE
 share/doc/gfarm/README.hook.en
+share/doc/gfarm/README.hook.ja
 share/doc/gfarm/RELNOTES
 share/doc/html/gfarm/en/ref/index.html
 share/doc/html/gfarm/en/ref/man1/gfarm_agent.1.html

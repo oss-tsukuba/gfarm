@@ -571,6 +571,7 @@ fi
 %{doc_prefix}/Gfarm-FAQ.en
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/README.hook.en
+%{doc_prefix}/README.hook.ja
 
 %files libs
 %{lib_prefix}/libgfarm.so.0
