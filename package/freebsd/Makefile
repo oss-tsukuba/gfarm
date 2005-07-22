@@ -33,8 +33,6 @@ post-install:
 	@${INSTALL_SCRIPT} ${WRKDIR}/gfmd.sh ${PREFIX}/etc/rc.d/
 	@${INSTALL_SCRIPT} ${WRKDIR}/gfsd.sh ${PREFIX}/etc/rc.d/
 
-.include <bsd.port.pre.mk>
-
 .if defined(WITH_GLOBUS)
 
 GPT_LOCATION=	${LOCALBASE}
@@ -44,10 +42,21 @@ GLOBUS_FLAVOR?=	gcc32dbg
 .if defined(LDCONFIG_R_DOES_WORK_FOR_GLOBUS)
 # XXX This doesn't work, because "ldconfig -r" doesn't show the libraries.
 LIB_DEPENDS+=	globus_gssapi_gsi_${GLOBUS_FLAVOR}:${PORTSDIR}/misc/globus2
-.else # workaround the problem
+.else # So, workaround the problem
 BUILD_DEPENDS=	${GLOBUS_LOCATION}/bin/globus-makefile-header:${PORTSDIR}/misc/globus2
 RUN_DEPENDS=	${BUILD_DEPENDS}
 .endif
+
+# globus-makefile-header will be called from configure
+pre-configure:
+	@if ! ${SETENV} GLOBUS_LOCATION=${GLOBUS_LOCATION} \
+	    ${GLOBUS_LOCATION}/bin/globus-makefile-header \
+	    -flavor=${GLOBUS_FLAVOR} globus_gssapi_gsi >/dev/null; then \
+		${ECHO_CMD} "${PKGNAME}: globus-makefile-header failed."; \
+		${ECHO_CMD} "Probably you need to run the following command:"; \
+		${ECHO_CMD} "	${SETENV} GPT_LOCATION=${GPT_LOCATION} GLOBUS_LOCATION=${GLOBUS_LOCATION} ${GPT_LOCATION}/sbin/gpt-postinstall"; \
+		${FALSE}; \
+	fi
 
 CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
 		--with-globus-flavor=${GLOBUS_FLAVOR}
@@ -57,11 +66,6 @@ CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
 # that it can't locate Grid/GPT/Dependencies.pm in @INC.
 CONFIGURE_ENV+=	PERL5LIB=${PREFIX}/lib/perl
 
-.if !exists(${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh)
-# globus-makefile-header will be called from configure
-IGNORE=		is not built, because globus-makefile-header does not work due to missing ${GLOBUS_LOCATION}/libexec/globus-sh-tools-vars.sh. Probably you need to run this: env GPT_LOCATION=${GPT_LOCATION} GLOBUS_LOCATION=${GLOBUS_LOCATION} ${GPT_LOCATION}/sbin/gpt-postinstall
-.endif
-
 .endif # WITH_GLOBUS
 
 # TODO:
@@ -69,4 +73,4 @@ IGNORE=		is not built, because globus-makefile-header does not work due to missi
 # - split into fine-grained packages.
 #   e.g. gfarm-{libs,client,fsnode,server,devel}
 
-.include <bsd.port.post.mk>
+.include <bsd.port.mk>
