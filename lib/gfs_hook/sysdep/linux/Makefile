@@ -7,7 +7,8 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 # do not use $(COMMON_CFLAGS) here, to avoid symbol renaming by largefile API.
-CFLAGS = -I$(srcdir) -I$(top_srcdir)/lib/gfs_hook -Doff64_t=__off64_t
+CFLAGS = -I$(srcdir) -I$(top_srcdir)/lib/gfs_hook -Doff64_t=__off64_t \
+	-I$(top_builddir)/include -I$(top_srcdir)/include $(OPTFLAGS)
 
 LIBRARY = libsysdep.la
 LIBRARY_RESULT = # do not install
