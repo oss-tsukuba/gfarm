@@ -161,7 +161,9 @@ mkdir -p $RPM_BUILD_ROOT
 make
 
 %install
-make DESTDIR=${RPM_BUILD_ROOT} install
+make DESTDIR=${RPM_BUILD_ROOT} \
+	default_docdir=%{doc_prefix} \
+	default_mandir=%{man_prefix} install
 mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
