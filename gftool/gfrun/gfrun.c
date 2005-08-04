@@ -758,7 +758,7 @@ main(int argc, char **argv)
 	struct gfrun_options options;
 	gfarm_stringlist input_list, output_list, rsh_options;
 	char *canonical_name_option;
-	int remove_gfarm_url_prefix = 0;
+	int remove_gfarm_url_prefix = 0, command_url_need_free;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -814,6 +814,7 @@ main(int argc, char **argv)
 			free(command_url);
 			exit(1);
 		}
+		command_url_need_free = 1;
 	}
 	else {
 		if (gfarm_is_url(command_name)) {
@@ -822,6 +823,7 @@ main(int argc, char **argv)
 		}
 		/* not a command in Gfarm file system */
 		command_url = command_name;
+		command_url_need_free = 0;
 	}
 	schedule(command_url, &options, &input_list,
 	    &nhosts, &hosts, &scheduling_file);
@@ -863,7 +865,8 @@ main(int argc, char **argv)
 	gfarm_stringlist_free(&output_list);
 	gfarm_stringlist_free(&input_list);
 	gfarm_stringlist_free(&rsh_options);
-	free(command_url);
+	if (command_url_need_free)
+		free(command_url);
 	if ((e = gfarm_terminate()) != NULL) {
 		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);
 		exit(1);
