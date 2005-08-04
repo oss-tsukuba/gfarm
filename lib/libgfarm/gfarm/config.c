@@ -851,13 +851,36 @@ parse_one_line(char *s, char *p, char **op)
 }
 
 static char *
-gfarm_config_read_file(FILE *config, char *config_file)
+gfarm_config_read_file(char *config_file, int *open_failedp)
 {
 	int lineno = 0;
 	char *s, *p, *e, *o, buffer[1024];
-	static char format[] = "%s: line %d: %s: %s\n";
+	static char open_error_fmt[] = "%s: %s";
+	static char syntax_error_fmt[] = "%s: line %d: %s: %s";
 	static char error[256];
+	FILE *config = fopen(config_file, "r");
 
+	if (config == NULL) {
+		if (open_failedp != NULL)
+			*open_failedp = 1;
+#ifdef HAVE_SNPRINTF
+		snprintf(error, sizeof(error),
+		    open_error_fmt, config_file, strerror(errno));
+		return (error);
+#else
+		if (strlen(open_error_fmt) + strlen(config_file) +
+		    strlen(strerror(errno)) < sizeof(error)) {
+			sprintf(error,
+			    open_error_fmt, config_file, strerror(errno));
+			return (error);
+		} else {
+			return (gfarm_errno_to_error(errno));
+		}
+#endif
+	}
+	if (open_failedp != NULL)
+		*open_failedp = 0;
+	 
 	while (fgets(buffer, sizeof buffer, config) != NULL) {
 		lineno++;
 		p = buffer;
@@ -871,14 +894,14 @@ gfarm_config_read_file(FILE *config, char *config_file)
 		if (e != NULL) {
 #ifdef HAVE_SNPRINTF
 			snprintf(error, sizeof(error),
-				 format, config_file, lineno, o, e);
+				 syntax_error_fmt, config_file, lineno, o, e);
 			e = error;
 #else
-			if (strlen(format) + strlen(config_file) +
+			if (strlen(syntax_error_fmt) + strlen(config_file) +
 			    GFARM_INT32STRLEN + strlen(o) + strlen(e) <
 			    sizeof(error)) {
 				sprintf(error,
-					format, config_file, lineno, o, e);
+					syntax_error_fmt, config_file, lineno, o, e);
 				e = error;
 			} else {
 				/* XXX: no file name, no line number */
@@ -977,8 +1000,7 @@ char *
 gfarm_config_read(void)
 {
 	char *e, *home;
-	FILE *config;
-	int user_config_errno;
+	int rc_open_failed, etc_open_failed;
 	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
 	char *rc;
 
@@ -1005,32 +1027,15 @@ gfarm_config_read(void)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(rc, "%s/%s", home, gfarm_client_rc);
 	gfarm_stringlist_init(&local_user_map_file_list);
-	if ((config = fopen(rc, "r")) == NULL) {
-		user_config_errno = errno;
-	} else {
-		user_config_errno = 0;
-		/*
-		 * The reason why we don't just pass `rc' as the
-		 * second argument of gfarm_config_read_file() is
-		 * because `rc' may be too long name to generate error
-		 * message.
-		 */
-		e = gfarm_config_read_file(config, "~/" GFARM_CLIENT_RC);
-		if (e != NULL) {
-			free(rc);
-			return (e);
-		}
-	}
+	e = gfarm_config_read_file(rc, &rc_open_failed);
 	free(rc);
-
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
-		if (user_config_errno != 0)
-			return ("gfarm.conf: cannot read");
-	} else {
-		e = gfarm_config_read_file(config, gfarm_config_file);
-		if (e != NULL)
-			return (e);
-	}
+	if (e != NULL && !rc_open_failed)
+		return (e);
+	
+	e = gfarm_config_read_file(gfarm_config_file, &etc_open_failed);
+	/* if ~/.gfarmrc was successfully read, an error at open here is ok */
+	if (e != NULL && (!etc_open_failed || rc_open_failed))
+		return (e);
 
 	gfarm_config_set_default_ports();
 
@@ -1042,7 +1047,6 @@ char *
 gfarm_server_config_read(void)
 {
 	char *e;
-	FILE *config;
 
 	switch (config_read) {
 	case gfarm_config_not_read:
@@ -1057,10 +1061,7 @@ gfarm_server_config_read(void)
 	}
 
 	gfarm_stringlist_init(&local_user_map_file_list);
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
-		return ("gfarm.conf: cannot read");
-	}
-	e = gfarm_config_read_file(config, gfarm_config_file);
+	e = gfarm_config_read_file(gfarm_config_file, NULL);
 	if (e != NULL)
 		return (e);
 
