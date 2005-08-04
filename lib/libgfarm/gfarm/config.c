@@ -1420,6 +1420,9 @@ gfarm_client_terminate(void)
 {
 	char *e, *e_save = NULL;
 
+	if (!gfarm_initialized)
+		return (NULL);
+
 	gfs_profile(gfs_display_timers());
 
 	if (gf_stdout != NULL) {
