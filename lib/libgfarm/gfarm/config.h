@@ -1,4 +1,3 @@
-extern int gfarm_initialized;
 extern int gfarm_is_active_file_system_node;
 
 extern char *gfarm_spool_root;

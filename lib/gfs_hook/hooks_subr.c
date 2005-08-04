@@ -799,6 +799,8 @@ gfs_hook_check_hook_disabled(void)
 	return (gfs_hook_is_disabled);
 }
 
+static int gfs_hook_initialized = 0;
+
 static int
 gfs_hook_init(void)
 {
@@ -808,6 +810,7 @@ gfs_hook_init(void)
 		return (0); /* don't perform gfarm operation */
 	}
 	gfs_hook_enable_hook();
+	gfs_hook_initialized = 1;
 	return (1);
 }
 
@@ -857,7 +860,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
-		if (!gfarm_initialized && !gfs_hook_init()) {
+		if (!gfs_hook_initialized && !gfs_hook_init()) {
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
@@ -956,7 +959,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	/* The current directory is *not* in the Gfarm file system */
 	if (*path_save != '/'
 	    && (path = gfs_hook_is_mount_point_relative(path_save))) {
-		if (!gfarm_initialized && !gfs_hook_init()) {
+		if (!gfs_hook_initialized && !gfs_hook_init()) {
 			return (0); /* don't perform gfarm operation */
 		}
 		/*

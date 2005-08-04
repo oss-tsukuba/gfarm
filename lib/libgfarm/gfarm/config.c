@@ -46,7 +46,7 @@
 #define GFARM_SPOOL_ROOT	"/var/spool/gfarm"
 #endif
 
-int gfarm_initialized = 0;
+static int gfarm_initialized = 0;
 int gfarm_is_active_file_system_node = 0;
 
 char *gfarm_config_file = GFARM_CONFIG;
@@ -1343,6 +1343,10 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 #ifdef HAVE_GSI
 	int saved_auth_verb;
 #endif
+
+	if (gfarm_initialized)
+		return (NULL);
+
 	gfarm_error_initialize();
 
 	e = gfarm_set_local_user_for_this_local_account();
