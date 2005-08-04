@@ -19,6 +19,7 @@ struct gfs_dir;
 struct gfs_dirent;
 
 char *gfs_hook_initialize(void);
+void gfs_hook_terminate(void);
 
 int gfs_hook_open_flags_gfarmize(int);
 

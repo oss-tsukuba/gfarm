@@ -442,6 +442,18 @@ gfs_hook_close_all(void)
 	return (e_save);
 }
 
+void
+gfs_hook_terminate(void)
+{
+	char *e;
+
+	gfs_hook_close_all();
+	e = gfarm_terminate();
+	if (e != NULL)
+		_gfs_hook_debug(
+		    fprintf(stderr, "GFS: gfarm_terminate: %s\n", e));
+}
+
 struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
 {
 	if (gfs_hook_is_open(fd) == NULL)
