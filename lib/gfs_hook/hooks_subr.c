@@ -779,24 +779,24 @@ set_received_prefix(const char *path)
 /*
  * bypassing mechanism for hooking library
  */
-static int _gfs_hook_disable_hook = 0;
+static int gfs_hook_is_disabled = 0;
 
 static void
 gfs_hook_disable_hook(void)
 {
-	_gfs_hook_disable_hook = 1;
+	gfs_hook_is_disabled = 1;
 }
 
 static void
 gfs_hook_enable_hook(void)
 {
-	_gfs_hook_disable_hook = 0;
+	gfs_hook_is_disabled = 0;
 }
 
 static int
 gfs_hook_check_hook_disabled(void)
 {
-	return (_gfs_hook_disable_hook);
+	return (gfs_hook_is_disabled);
 }
 
 static int
