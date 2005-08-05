@@ -56,7 +56,7 @@ auth.lo: gfsl_config.h gfarm_auth.h misc.h
 gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
 gsi.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 gsi.lo: gfsl_config.h gfarm_gsi.h gfarm_auth.h
-misc.lo: gfsl_config.h gfarm_auth.h
+misc.lo: gfsl_config.h gfarm_auth.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
 session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
 session.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
 session.lo: gfarm_secure_session.h misc.h
