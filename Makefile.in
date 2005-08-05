@@ -24,7 +24,7 @@ include $(top_srcdir)/makes/subdir.mk
 post-distclean-hook:
 	rm -f config.log config.status config.cache \
 		$(INC_BUILDDIR)/gfarm_config.h \
-		Makefile makes/config.mk \
+		Makefile makes/config.mk makes/install-doc \
 		package/solaris/gfmd package/solaris/gfsd \
 		package/redhat/gfmd package/redhat/gfsd \
 		package/redhat/config/config-gfarm \
