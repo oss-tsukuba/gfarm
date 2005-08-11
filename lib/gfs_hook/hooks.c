@@ -2023,6 +2023,34 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 #endif
 }
 
+#ifdef SYS_pread
+int
+gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
+{
+	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
+}
+
+#define SYSCALL_PREAD(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pread(filedes, buf, nbyte, offset)
+#define FUNC___PREAD	__pread
+#define FUNC__PREAD	_pread
+#define FUNC_PREAD	pread
+#endif
+
+#ifdef SYS_pwrite
+int
+gfs_hook_syscall_pwrite(int filedes, const void *buf, size_t nbyte, off_t offset)
+{
+	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
+}
+
+#define SYSCALL_PWRITE(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pwrite(filedes, buf, nbyte, offset)
+#define FUNC___PWRITE	__pwrite
+#define FUNC__PWRITE	_pwrite
+#define FUNC_PWRITE	pwrite
+#endif
+
 #ifdef HOOK_GETDIRENTRIES
 int
 gfs_hook_syscall_getdirentries(int filedes, char *buf, int nbyte, long *offp)

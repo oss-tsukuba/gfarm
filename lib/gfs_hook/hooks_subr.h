@@ -68,6 +68,8 @@ struct stat64;
 int gfs_hook_syscall_open(const char *, int, mode_t);
 int gfs_hook_syscall_getdents(int, struct dirent *, size_t);
 int gfs_hook_syscall_getdents64(int, struct dirent64 *, size_t);
+int gfs_hook_syscall_pread(int, void *, size_t, off_t);
+int gfs_hook_syscall_pwrite(int, const void *, size_t, off_t);
 int gfs_hook_syscall_xstat(int, const char *, struct stat *);
 int gfs_hook_syscall_lxstat(int, const char *, struct stat *);
 int gfs_hook_syscall_fxstat(int, int, struct stat *);

@@ -325,6 +325,152 @@ FUNC_LSEEK(int filedes, OFF_T offset, int whence)
 }
 
 /*
+ * pread
+ */
+
+#ifdef FUNC___PREAD
+ssize_t
+FUNC___PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
+{
+	GFS_File gf;
+	const char *e;
+	file_offset_t o;
+	int n;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+	    "Hooking " S(FUNC___PREAD) "(%d, ,%lu, %" PR_FILE_OFFSET ")\n",
+	    filedes, (unsigned long)nbyte, (file_offset_t)offset));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL) 
+		return (SYSCALL_PREAD(filedes, buf, nbyte, offset));
+
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+		e = GFARM_ERR_IS_A_DIRECTORY;
+		goto error;
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
+	    S(FUNC___PREAD) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")\n",
+	    filedes, gfs_pio_fileno(gf),
+				(unsigned long)nbyte, (file_offset_t)offset));
+
+	e = gfs_pio_seek(gf, 0, SEEK_CUR, &o);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_seek(gf, offset, SEEK_SET, NULL);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_read(gf, buf, nbyte, &n);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_seek(gf, o, SEEK_SET, NULL);
+	if (e != NULL)
+		goto error;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___PREAD) " --> %d\n", n));
+	return (n);
+error:
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___PREAD) ": %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+ssize_t
+FUNC__PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__PREAD) ": %d\n",
+	    filedes));
+	return (FUNC___PREAD(filedes, buf, nbyte, offset));
+}
+
+ssize_t
+FUNC_PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_PREAD) ": %d\n",
+	    filedes));
+	return (FUNC___PREAD(filedes, buf, nbyte, offset));
+}
+#endif
+
+/*
+ * pwrite
+ */
+
+#ifdef FUNC___PWRITE
+ssize_t
+FUNC___PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
+{
+	GFS_File gf;
+	const char *e;
+	file_offset_t o;
+	int n;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+	    "Hooking " S(FUNC___PWRITE) "(%d, ,%lu, %" PR_FILE_OFFSET ")\n",
+	    filedes, (unsigned long)nbyte, (file_offset_t)offset));
+
+	if ((gf = gfs_hook_is_open(filedes)) == NULL)
+		return (SYSCALL_PWRITE(filedes, buf, nbyte, offset));
+
+	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
+		e = GFARM_ERR_IS_A_DIRECTORY;
+		goto error;
+	}
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
+	    S(FUNC___PWRITE) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")\n",
+	    filedes, gfs_pio_fileno(gf),
+				(unsigned long)nbyte, (file_offset_t)offset));
+
+	e = gfs_pio_seek(gf, 0, SEEK_CUR, &o);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_seek(gf, offset, SEEK_SET, NULL);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_write(gf, buf, nbyte, &n);
+	if (e != NULL)
+		goto error;
+
+	e = gfs_pio_seek(gf, o, SEEK_SET, NULL);
+	if (e != NULL)
+		goto error;
+
+	_gfs_hook_debug_v(fprintf(stderr,
+		    "GFS: Hooking " S(FUNC___PWRITE) " --> %d\n", n));
+	return (n);
+error:
+
+	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___PWRITE) ": %s\n", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+ssize_t
+FUNC__PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__PWRITE) ": %d\n",
+	    filedes));
+	return (FUNC___PWRITE(filedes, buf, nbyte, offset));
+}
+
+ssize_t
+FUNC_PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
+{
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_PWRITE) ": %d\n",
+	    filedes));
+	return (FUNC___PWRITE(filedes, buf, nbyte, offset));
+}
+#endif
+
+/*
  * getdents
  */
 

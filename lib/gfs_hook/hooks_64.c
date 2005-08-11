@@ -106,6 +106,42 @@ gfs_hook_syscall_ftruncate64(int filedes, off64_t length)
 
 /* see lseek64.c for gfs_hook_syscall_lseek64() implementation */
 
+#if defined(SYS_pread) || defined(SYS_pread64)
+int
+gfs_hook_syscall_pread64(int filedes, void *buf, size_t nbyte, off64_t offset)
+{
+# ifdef SYS_pread64
+	return (syscall(SYS_pread64, filedes, buf, nbyte, offset));
+# else
+	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
+# endif
+}
+
+#define SYSCALL_PREAD(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pread64(filedes, buf, nbyte, offset)
+#define FUNC___PREAD	__pread64
+#define FUNC__PREAD	_pread64
+#define FUNC_PREAD	pread64
+#endif
+
+#if defined(SYS_pwrite) || defined(SYS_pwrite64)
+int
+gfs_hook_syscall_pwrite64(int filedes, const void *buf, size_t nbyte, off64_t offset)
+{
+# ifdef SYS_pwrite64
+	return (syscall(SYS_pwrite64, filedes, buf, nbyte, offset));
+# else
+	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
+# endif
+
+#define SYSCALL_PWRITE(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pwrite64(filedes, buf, nbyte, offset)
+#define FUNC___PWRITE	__pwrite64
+#define FUNC__PWRITE	_pwrite64
+#define FUNC_PWRITE	pwrite64
+}
+#endif
+
 int
 gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
 {
