@@ -1963,7 +1963,7 @@ __fdatasync(int filedes)
 	char *e;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fdatasync(%d)\n",
-				  fiiledes));
+				  filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 #ifdef SYS_fdsync /* Solaris */
