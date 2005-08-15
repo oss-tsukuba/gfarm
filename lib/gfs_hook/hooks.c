@@ -43,6 +43,10 @@
 #define HOOK_GETDIRENTRIES
 #endif /* __FreeBSD__ */
 
+#if defined(__APPLE__) && defined(__MACH__) /* MacOS X */
+#define HOOK_GETDIRENTRIES
+#endif
+
 #ifdef __DragonFly__
 #define USE_BSD_LSEEK_ARGUMENT
 #define HOOK_GETDIRENTRIES
