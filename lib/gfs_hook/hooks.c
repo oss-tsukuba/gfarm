@@ -1131,7 +1131,7 @@ __chown(const char *path, uid_t owner, gid_t group)
 	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __chown(%s, %d, %d)\n",
-				  path, uid, group));
+				  path, owner, group));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (__syscall_chown(path, owner, group));
@@ -1186,7 +1186,7 @@ __lchown(const char *path, uid_t owner, gid_t group)
 	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __lchown(%s, %d, %d)\n",
-				  path, uid, group));
+				  path, owner, group));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (__syscall_lchown(path, owner, group));
@@ -1242,7 +1242,7 @@ __fchown(int fd, uid_t owner, gid_t group)
 	struct gfs_stat s;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchown(%d, %d, %d)\n",
-				  fd, uid, group));
+				  fd, owner, group));
 
 	if ((gf = gfs_hook_is_open(fd)) == NULL)
 		return (__syscall_fchown(fd, owner, group));
@@ -1919,7 +1919,7 @@ __fsync(int filedes)
 	GFS_File gf;
 	char *e;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fsync(%d)\n", fiiledes));
+	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fsync(%d)\n", filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 #ifdef SYS_fdsync /* Solaris */
