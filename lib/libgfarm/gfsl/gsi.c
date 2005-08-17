@@ -546,7 +546,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
-    OM_uint32 retFlag = 0;
+    OM_uint32 retFlag = GFARM_GSS_DEFAULT_SECURITY_ACCEPT_FLAG;
     gss_name_t initiatorName = GSS_C_NO_NAME;
     gss_cred_id_t remCred = GSS_C_NO_CREDENTIAL;
 
