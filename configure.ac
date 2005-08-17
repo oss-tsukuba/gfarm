@@ -258,7 +258,11 @@ AC_ARG_WITH(globus,
 	AC_MSG_RESULT([not found])
 	AC_MSG_RESULT([searched directories are: ${GLBlocation_candidates}])
 	AC_MSG_RESULT([searched flavors are: ${GLBflavor_candidates}])
-	AC_MSG_ERROR([aborted])
+	if test -n "$globus_flavor"; then
+		AC_MSG_ERROR([cannot find the globus flavor \"$globus_flavor\", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}.])
+	else
+		AC_MSG_ERROR([cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR])
+	fi
 	exit 1
  fi
  AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
@@ -276,7 +280,9 @@ AC_ARG_WITH(globus,
 	AC_MSG_RESULT([done])
  else
 	rm -f $cfgmhtmp
-	AC_MSG_ERROR([failed to call globus-makefile-header, aborted])
+	AC_MSG_RESULT([failed to call ${globus_location}/bin/globus-makefile-header command.])
+	AC_MSG_RESULT([Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet.])
+	AC_MSG_ERROR([Globus installation is incomplete, aborted.])
  fi
  globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
  rm -f $cfgmhtmp
