@@ -287,11 +287,12 @@ replicate_section_to_local_internal(
 	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
 	    &peer_fd);
 	/* FT - source file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		/* Delete the section copy info */
-		if (gfarm_file_section_copy_info_remove(pathname,
-			section, peer_hostname) == NULL)
-			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+		(void)gfarm_file_section_copy_info_remove(
+			pathname, section, peer_hostname);
+		e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+	}
 	if (e != NULL)
 		return (e);
 
@@ -439,13 +440,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		    &vc->canonical_hostname);
 		if (e == GFARM_ERR_UNKNOWN_HOST) {
 			/* FT - invalid hostname, delete section copy info */
-			if (gfarm_file_section_copy_info_remove(
-				    gf->pi.pathname, vc->section, if_hostname)
-			    == NULL)
-				e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+			(void)gfarm_file_section_copy_info_remove(
+				gf->pi.pathname, vc->section, if_hostname);
+			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 
-			if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
-			    && (flags & GFARM_FILE_NOT_RETRY) == 0
+			if ((flags & GFARM_FILE_NOT_RETRY) == 0
 			    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
 				if_hostname = NULL;
 				goto retry;
