@@ -252,14 +252,14 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	/* FT - the parent directory may be missing */
 	if (fd == -1 && (oflags & GFARM_FILE_CREATE) != 0
 	    && saved_errno == ENOENT) {
-		if (gfs_pio_local_mkdir_parent_canonical_path(
-			    gf->pi.pathname) == NULL) {
-			umask(0);
-			fd = open(local_path, local_oflags,
-				  gf->pi.status.st_mode & GFARM_S_ALLPERM);
-			saved_errno = errno;
-			umask(saved_umask);
-		}
+		/* the parent directory can be created by some other process */
+		(void)gfs_pio_local_mkdir_parent_canonical_path(
+			gf->pi.pathname);
+		umask(0);
+		fd = open(local_path, local_oflags,
+			  gf->pi.status.st_mode & GFARM_S_ALLPERM);
+		saved_errno = errno;
+		umask(saved_umask);
 	}
 	free(local_path);
 	/* FT - physical file should be missing */
@@ -267,9 +267,10 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	    && saved_errno == ENOENT) {
 		/* Delete the section copy info */
 		char *localhost;
-		if (gfarm_host_get_canonical_self_name(&localhost) == NULL &&
-		    gfarm_file_section_copy_info_remove(
-			    gf->pi.pathname, vc->section, localhost) == NULL) {
+		if (gfarm_host_get_canonical_self_name(&localhost) == NULL) {
+			/* section copy may be removed by some other process */
+			(void)gfarm_file_section_copy_info_remove(
+				gf->pi.pathname, vc->section, localhost);
 			return (GFARM_ERR_INCONSISTENT_RECOVERABLE);
 		}
 	}
