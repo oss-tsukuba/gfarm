@@ -31,6 +31,7 @@ char GFARM_ERR_ALREADY_EXISTS[] = "already exists";
 char GFARM_ERR_NOT_A_DIRECTORY[] = "not a directory";
 char GFARM_ERR_IS_A_DIRECTORY[] = "is a directory";
 char GFARM_ERR_INVALID_ARGUMENT[] = "invalid argument";
+char GFARM_ERR_TEXT_FILE_BUSY[] = "text file busy";
 char GFARM_ERR_NO_SPACE[] = "no space";
 char GFARM_ERR_READ_ONLY_FILE_SYSTEM[] = "read-only file system";
 
@@ -109,6 +110,7 @@ struct {
 	{ ENOTDIR,	GFARM_ERR_NOT_A_DIRECTORY },
 	{ EISDIR,	GFARM_ERR_IS_A_DIRECTORY },
 	{ EINVAL,	GFARM_ERR_INVALID_ARGUMENT },
+	{ ETXTBSY,	GFARM_ERR_TEXT_FILE_BUSY },
 	{ ENOSPC,	GFARM_ERR_NO_SPACE },
 	{ EROFS,	GFARM_ERR_READ_ONLY_FILE_SYSTEM },
 

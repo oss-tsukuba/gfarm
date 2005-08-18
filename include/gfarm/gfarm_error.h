@@ -15,6 +15,7 @@ extern char GFARM_ERR_ALREADY_EXISTS[];
 extern char GFARM_ERR_NOT_A_DIRECTORY[];
 extern char GFARM_ERR_IS_A_DIRECTORY[];
 extern char GFARM_ERR_INVALID_ARGUMENT[];
+extern char GFARM_ERR_TEXT_FILE_BUSY[];
 extern char GFARM_ERR_NO_SPACE[];
 extern char GFARM_ERR_READ_ONLY_FILE_SYSTEM[];
 

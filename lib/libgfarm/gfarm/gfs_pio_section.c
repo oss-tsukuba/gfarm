@@ -23,6 +23,51 @@
 #include "timer.h"
 #include "gfs_lock.h"
 
+/*  */
+
+#define SECTION_BUSY "SECTION BUSY"
+
+static char *
+gfs_set_section_busy(char *pathname, char *section)
+{
+	struct gfarm_file_section_info fi;
+	char *e;
+
+	fi.filesize = 0;
+	fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
+	fi.checksum = SECTION_BUSY;
+				
+	e = gfarm_file_section_info_set(pathname, section, &fi);
+	if (e == GFARM_ERR_ALREADY_EXISTS)
+		e = gfarm_file_section_info_replace(pathname, section, &fi);
+	return (e);
+}
+
+static char *
+gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *fi)
+{
+	if (strncmp(fi->checksum, SECTION_BUSY, sizeof(SECTION_BUSY) - 1) == 0)
+		return (GFARM_ERR_TEXT_FILE_BUSY);
+	return (NULL);
+}
+
+
+char *
+gfs_check_section_busy(char *pathname, char *section)
+{
+	struct gfarm_file_section_info fi;
+	char *e;
+
+	e = gfarm_file_section_info_get(pathname, section, &fi);
+	if (e != NULL)
+		return (e);
+	e = gfs_check_section_busy_by_finfo(&fi);
+	gfarm_file_section_info_free(&fi);
+	return (e);
+}
+
+/*  */
+
 static char *
 gfs_pio_view_section_close(GFS_File gf)
 {
@@ -127,12 +172,19 @@ gfs_pio_view_section_close(GFS_File gf)
 		} else {
 			e = gfarm_file_section_info_get(
 			    gf->pi.pathname, vc->section, &fi);
-			if (filesize != fi.filesize)
-				e = "filesize mismatch";
-			else if (strcasecmp(fi.checksum_type,
-			    GFS_DEFAULT_DIGEST_NAME) != 0 ||
-			    strcasecmp(fi.checksum, md_value_string) != 0)
-				e = "checksum mismatch";
+			if (e == NULL) {
+				if (gfs_check_section_busy_by_finfo(&fi)
+				    == NULL) {
+					if (filesize != fi.filesize)
+						e = "filesize mismatch";
+					else if (strcasecmp(fi.checksum_type,
+					  GFS_DEFAULT_DIGEST_NAME) != 0 ||
+					  strcasecmp(
+					    fi.checksum, md_value_string) != 0)
+						e = "checksum mismatch";
+				}
+				gfarm_file_section_info_free(&fi);
+			}
 		}
 	}
 	if (e_save == NULL)
@@ -344,6 +396,10 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	file_offset_t size;
 	struct stat sb;
 
+	e = gfs_check_section_busy(gf->pi.pathname, section);
+	if (e != NULL)
+		return (e);
+
 	e = gfarm_host_get_canonical_self_name(&my_hostname);
 	if (e != NULL)
 		return (e);
@@ -361,7 +417,11 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	if (e != NULL)
 		goto finish_free_local_path;
 	size = sinfo.filesize;
+
+	e = gfs_check_section_busy_by_finfo(&sinfo);
 	gfarm_file_section_info_free(&sinfo);
+	if (e != NULL)
+		goto finish_free_local_path;
 
 	/* critical section starts */
 	gfs_lock_local_path_section(local_path);
@@ -548,9 +608,18 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 
 	if (gf->mode & GFS_FILE_MODE_WRITE) {
 		/* if write mode, delete every other file copies */
+		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
 		(void)gfs_unlink_every_other_replicas(
 			gf->pi.pathname, vc->section,
 			vc->canonical_hostname);
+	}
+	/* create section copy info */
+	if (flags & GFARM_FILE_CREATE) {
+		struct gfarm_file_section_copy_info fci;
+
+		fci.hostname = vc->canonical_hostname;
+		(void)gfarm_file_section_copy_info_set(
+			gf->pi.pathname, vc->section, fci.hostname, &fci);
 	}
 	/* XXX - need to figure out ignorable error or not */
 

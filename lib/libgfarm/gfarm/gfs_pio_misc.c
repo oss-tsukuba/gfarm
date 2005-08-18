@@ -1727,6 +1727,10 @@ gfarm_file_section_transfer_from_to_internal(
 	struct gfs_connection *gfs_server;
 	struct sockaddr peer_addr;
 
+	e = gfs_check_section_busy(gfarm_file, section);
+	if (e != NULL)
+		return (e);
+
 	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD)
 		return (gfarm_file_section_replicate_from_to_by_gfrepbe(
 		    gfarm_file, section,

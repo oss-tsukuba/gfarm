@@ -75,6 +75,12 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 		free(arch);
 		return (e);
 	}
+	e = gfs_check_section_busy(gfarm_file, arch);
+	if (e != NULL) {
+		free(gfarm_file);
+		free(arch);
+		return (e);
+	}
 	e = gfarm_path_localize_file_section(gfarm_file, arch, &localpath);
 	if (e != NULL) {
 		free(gfarm_file);
