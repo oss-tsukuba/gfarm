@@ -339,6 +339,8 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	char *e;
 	char *path_section, *local_path, *my_hostname;
 	int metadata_exist, localfile_exist, replication_needed = 0;
+	struct gfarm_file_section_info sinfo;
+	file_offset_t size;
 	struct stat sb;
 
 	e = gfarm_host_get_canonical_self_name(&my_hostname);
@@ -353,6 +355,13 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	if (e != NULL)
 		goto finish_free_path_section;
 
+	/* gf->pi.status.st_size does not have the file size... */
+	e = gfarm_file_section_info_get(gf->pi.pathname, section, &sinfo);
+	if (e != NULL)
+		goto finish_free_local_path;
+	size = sinfo.filesize;
+	gfarm_file_section_info_free(&sinfo);
+
 	/* critical section starts */
 	gfs_lock_local_path_section(local_path);
 
@@ -362,8 +371,7 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 			gf->pi.pathname, section, my_hostname);
 	localfile_exist = !stat(local_path, &sb);
 
-	if (metadata_exist && localfile_exist
-		&& gf->pi.status.st_size == sb.st_size) {
+	if (metadata_exist && localfile_exist && size == sb.st_size) {
 		/* already exist */
 		/* XXX - need integrity check by checksum */
 	}
@@ -387,7 +395,7 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 
 	gfs_unlock_local_path_section(local_path);
 	/* critical section ends */
-
+finish_free_local_path:
 	free(local_path);
 finish_free_path_section:
 	free(path_section);
