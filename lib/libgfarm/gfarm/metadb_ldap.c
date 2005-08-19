@@ -238,7 +238,7 @@ gfarm_generic_info_get(
 
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
-
+retry:
 	dn = ops->make_dn(key);
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -247,10 +247,18 @@ gfarm_generic_info_get(
 	    LDAP_SCOPE_BASE, ops->query_type, NULL, 0, &res);
 	free(dn);
 	if (rv != LDAP_SUCCESS) {
-		if (rv == LDAP_NO_SUCH_OBJECT)
+		switch (rv) {
+		case LDAP_SERVER_DOWN:
+			error = gfarm_metadb_initialize();
+			if (error == NULL)
+				goto retry;
+			break;
+		case LDAP_NO_SUCH_OBJECT:
 			error = GFARM_ERR_NO_SUCH_OBJECT;
-		else
+			break;
+		default:
 			error = ldap_err2string(rv);
+		}
 		goto msgfree;
 	}
 	n = ldap_count_entries(gfarm_ldap_server, res);
@@ -401,13 +409,22 @@ gfarm_generic_info_get_all(
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
 	/* search for entries, return all attrs  */
+retry:
 	res = NULL;
 	rv = ldap_search_s(gfarm_ldap_server, dn, scope, query, NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
-		if (rv == LDAP_NO_SUCH_OBJECT)
+		switch (rv) {
+		case LDAP_SERVER_DOWN:
+			error = gfarm_metadb_initialize();
+			if (error == NULL)
+				goto retry;
+			break;
+		case LDAP_NO_SUCH_OBJECT:
 			error = GFARM_ERR_NO_SUCH_OBJECT;
-		else
+			break;
+		default:
 			error = ldap_err2string(rv);
+		}
 		goto msgfree;
 	}
 	n = ldap_count_entries(gfarm_ldap_server, res);
