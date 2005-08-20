@@ -715,8 +715,12 @@ static struct timeval last_dircache = {0, 0};
 static char *
 gfs_cachedir(struct timeval *now)
 {
+	char *e;
+
 	/* assert(root != NULL); */
-	gfarm_metadb_path_info_get_all_foreach(mark_path, NULL);
+	e = gfarm_metadb_path_info_get_all_foreach(mark_path, NULL);
+	if (e != NULL)
+		return (e);
 	sweep_nodes(root);
 	need_to_clear_cache = 0;
 	last_dircache = *now;
@@ -813,6 +817,8 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 
 	/* real metadata */
 	e = gfarm_metadb_path_info_get(pathname, info);
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
+		return (e); /* Can't connect LDAP server */
 
 	/* cached metadata */
 	e2 = lookup_relative(root, pathname,
@@ -1022,9 +1028,12 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 	struct node *n;
 	char *e;
 
-	e = gfs_refreshdir();
-	if (e != NULL) 
-		return (e);
+	(void)gfs_refreshdir();
+	/*
+	 * Even when a metadb server is down, allow read-only access
+	 * to cached metadata
+	 */
+
 	e = lookup_path(path, -1, GFARM_INODE_LOOKUP, &n);
 	if (e != NULL) {
 		char *path1, *c_path;
@@ -1062,9 +1071,12 @@ gfs_i_get_ino(const char *canonical_path, long *inop)
 	struct node *n;
 	char *e;
 	
-	e = gfs_refreshdir();
-	if (e != NULL) 
-		return (e);
+	(void)gfs_refreshdir();
+	/*
+	 * Even when a metadb server is down, allow read-only access
+	 * to cached metadata
+	 */
+
 	e = lookup_relative(root, canonical_path, -1, GFARM_INODE_LOOKUP, &n);
         if (e != NULL)
 		return (e);
