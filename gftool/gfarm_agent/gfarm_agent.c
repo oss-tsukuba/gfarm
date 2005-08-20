@@ -1152,21 +1152,6 @@ server(void *arg)
 	}
 	agent_unlock();
 
-	agent_lock();
-	e = gfarm_metadb_check();
-	if (e != NULL) {
-		log_proto("gfarm_metadb_check", e);
-		e = gfarm_metadb_initialize();
-		if (e != NULL) {
-			agent_unlock();
-			close(client_fd);
-			error_proto("gfarm_metadb_initialize", e);
-			return (NULL);
-		}
-		gfs_i_uncachedir();
-	}
-	agent_unlock();
-
 	e = xxx_fd_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
