@@ -1000,7 +1000,7 @@ char *
 gfarm_config_read(void)
 {
 	char *e, *home;
-	int rc_open_failed, etc_open_failed;
+	int rc_open_failed, etc_open_failed, rc_need_free;
 	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
 	char *rc;
 
@@ -1016,19 +1016,25 @@ gfarm_config_read(void)
 			"something wrong");
 	}
 
-	/*
-	 * result of gfarm_get_local_homedir() should not be trusted.
-	 * (maybe forged)
-	 */
-	home = gfarm_get_local_homedir();
+	rc_need_free = 0;
+	rc = getenv("GFARM_CONFIG_FILE");
+	if (rc != NULL) {
+		/*
+		 * result of gfarm_get_local_homedir() should not be trusted.
+		 * (maybe forged)
+		 */
+		home = gfarm_get_local_homedir();
 
-	rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
-	if (rc == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	sprintf(rc, "%s/%s", home, gfarm_client_rc);
+		rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
+		if (rc == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		sprintf(rc, "%s/%s", home, gfarm_client_rc);
+		rc_need_free = 1;
+	}
 	gfarm_stringlist_init(&local_user_map_file_list);
 	e = gfarm_config_read_file(rc, &rc_open_failed);
-	free(rc);
+	if (rc_need_free)
+		free(rc);
 	if (e != NULL && !rc_open_failed)
 		return (e);
 	
