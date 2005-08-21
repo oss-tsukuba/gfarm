@@ -329,6 +329,10 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 	if (*pattern == '~') {
 		if (pattern[1] == '\0' || pattern[1] == '/') {
 			s = gfarm_get_global_username();
+			if (s == NULL)
+				return (
+				    "gfs_glob(): programming error, "
+				    "gfarm library isn't properly initialized");
 			len = strlen(s);
 			pattern++;
 		} else {

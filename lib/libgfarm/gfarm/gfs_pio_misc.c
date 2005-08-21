@@ -609,7 +609,7 @@ gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
 char *
 gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 {
-	char *e, *gfarm_file;
+	char *e, *gfarm_file, *user;
 	struct gfarm_path_info pi;
 	struct timeval now;
 
@@ -620,7 +620,11 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 	free(gfarm_file);
 	if (e != NULL)
 		return (e);
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0)
+	user = gfarm_get_global_username();
+	if (user == NULL)
+		return ("gfs_utimes(): programming error, "
+			"gfarm library isn't properly initialized");
+	if (strcmp(pi.status.st_user, user) != 0)
 		goto finish_free_path_info;
 
 	gettimeofday(&now, NULL);
@@ -1754,11 +1758,11 @@ gfarm_file_section_transfer_from_to_internal(
 	    src_canonical_hostname, src_if_hostname);
 	/* FT - the parent directory of the destination may be missing */
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		if (gfs_pio_remote_mkdir_parent_canonical_path(
-			    gfs_server, gfarm_file) == NULL)
-			e = gfs_client_bootstrap_replicate_file(
-				gfs_server, path_section, mode, file_size,
-				src_canonical_hostname, src_if_hostname);
+		(void)gfs_pio_remote_mkdir_parent_canonical_path(
+			gfs_server, gfarm_file);
+		e = gfs_client_bootstrap_replicate_file(
+			gfs_server, path_section, mode, file_size,
+			src_canonical_hostname, src_if_hostname);
 	}
 #if 0 /* XXX - not implemented yet */
 	/* FT - source file should be missing */

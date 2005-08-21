@@ -211,6 +211,11 @@ gfs_pio_remote_mkdir_p(
 	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
 		return (NULL); /* should exist */
 
+	user = gfarm_get_global_username();
+	if (user == NULL)
+		return ("gfs_pio_remote_mkdir_p(): programming error, "
+			"gfarm library isn't properly initialized");
+
 	e = gfs_stat_canonical_path(canonic_dir, &stata);
 	if (e != NULL)
 		return (e);
@@ -220,7 +225,6 @@ gfs_pio_remote_mkdir_p(
 	 * directory with permission 0777 - This should be fixed in
 	 * the next major release.
 	 */
-	user = gfarm_get_global_username();
 	if (strcmp(stata.st_user, user) != 0)
 		mode |= 0777;
 	gfs_stat_free(&stata);

@@ -63,6 +63,9 @@ gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 	if (gfarm_file[0] == '~' &&
 	    (gfarm_file[1] == '\0' || gfarm_file[1] == '/')) {
 		user = gfarm_get_global_username();
+		if (user == NULL)
+			return ("gfarm_path_expand_home(): programming error, "
+				"gfarm library isn't properly initialized");
 		s = malloc(strlen(user) + strlen(&gfarm_file[1]) + 2);
 		if (s == NULL)
 			return (GFARM_ERR_NO_MEMORY);
