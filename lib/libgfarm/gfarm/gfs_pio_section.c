@@ -194,6 +194,23 @@ gfs_pio_view_section_close(GFS_File gf)
 	if (e_save == NULL)
 		e_save = e;
 
+	/* create file repilcas */
+	{
+		char hosts[ncopy], my_hostname;
+		int i;
+
+		e = gfarm_schedule_search_idle_by_all(ncopy, &hosts);
+
+		e = gfarm_host_get_canonical_self_name(&my_hostname);
+			
+		for (i = 0; i < ncopy; ++i)
+			if (strcasecmp(my_hostname, hosts[i])) {
+				(void)gfarm_url_section_replicate_to(
+					gf->pi.pathname, vc->section, hosts[i]);
+				free(hosts[i]);
+			}
+	}
+
 	free(vc->canonical_hostname);
 	free(vc->section);
 	free(vc);
@@ -395,10 +412,6 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 	struct gfarm_file_section_info sinfo;
 	file_offset_t size;
 	struct stat sb;
-
-	e = gfs_check_section_busy(gf->pi.pathname, section);
-	if (e != NULL)
-		return (e);
 
 	e = gfarm_host_get_canonical_self_name(&my_hostname);
 	if (e != NULL)
