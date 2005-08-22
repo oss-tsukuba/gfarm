@@ -6,7 +6,7 @@
 #
 
 PORTNAME=	gfarm
-PORTVERSION=	1.1.2
+PORTVERSION=	1.2
 CATEGORIES=	net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 
