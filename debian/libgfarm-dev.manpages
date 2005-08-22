@@ -1,3 +1,4 @@
+man/man3/gfarm.3
 man/man3/gfarm_initialize.3
 man/man3/gfarm_strings_free_deeply.3
 man/man3/gfarm_terminate.3

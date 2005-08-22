@@ -104,8 +104,7 @@ man/ja/man1/gfstat.1
 man/ja/man1/gfwc.1
 man/ja/man1/gfwhere.1
 man/ja/man1/gfwhoami.1
-man/ja/man3/GFARM_STRINGLIST_ELEM.3
-man/ja/man3/GFARM_STRINGLIST_STRARRAY.3
+man/ja/man3/gfarm.3
 man/ja/man3/gfarm_hostlist_read.3
 man/ja/man3/gfarm_import_fragment_config_read.3
 man/ja/man3/gfarm_import_fragment_size_alloc.3
@@ -199,6 +198,7 @@ man/man1/gfstat.1
 man/man1/gfwc.1
 man/man1/gfwhere.1
 man/man1/gfwhoami.1
+man/man3/gfarm.3
 man/man3/gfarm_initialize.3
 man/man3/gfarm_strings_free_deeply.3
 man/man3/gfarm_terminate.3
@@ -291,6 +291,7 @@ share/doc/gfarm/html/en/ref/man1/gfstat.1.html
 share/doc/gfarm/html/en/ref/man1/gfwc.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhoami.1.html
+share/doc/gfarm/html/en/ref/man3/gfarm.3.html
 share/doc/gfarm/html/en/ref/man3/gfarm_initialize.3.html
 share/doc/gfarm/html/en/ref/man3/gfarm_strings_free_deeply.3.html
 share/doc/gfarm/html/en/ref/man3/gfarm_terminate.3.html
@@ -370,8 +371,7 @@ share/doc/gfarm/html/ja/ref/man1/gfstat.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwc.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhoami.1.html
-share/doc/gfarm/html/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
-share/doc/gfarm/html/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html
+share/doc/gfarm/html/ja/ref/man3/gfarm.3.html
 share/doc/gfarm/html/ja/ref/man3/gfarm_hostlist_read.3.html
 share/doc/gfarm/html/ja/ref/man3/gfarm_import_fragment_config_read.3.html
 share/doc/gfarm/html/ja/ref/man3/gfarm_import_fragment_size_alloc.3.html

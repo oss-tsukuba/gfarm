@@ -246,6 +246,7 @@ fi
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
+%{man_prefix}/man3/gfarm.3.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
 %{man_prefix}/man3/gfarm_terminate.3.gz
@@ -325,8 +326,7 @@ fi
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
-%{man_prefix}/ja/man3/GFARM_STRINGLIST_ELEM.3.gz
-%{man_prefix}/ja/man3/GFARM_STRINGLIST_STRARRAY.3.gz
+%{man_prefix}/ja/man3/gfarm.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
 %{man_prefix}/ja/man3/gfarm_import_fragment_config_read.3.gz
 %{man_prefix}/ja/man3/gfarm_import_fragment_size_alloc.3.gz
@@ -420,6 +420,7 @@ fi
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
+%{html_prefix}/en/ref/man3/gfarm.3.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
@@ -498,8 +499,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
-%{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html
-%{html_prefix}/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html
+%{html_prefix}/ja/ref/man3/gfarm.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
 %{html_prefix}/ja/ref/man3/gfarm_import_fragment_config_read.3.html
 %{html_prefix}/ja/ref/man3/gfarm_import_fragment_size_alloc.3.html
