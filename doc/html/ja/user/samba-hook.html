@@ -1,85 +1,205 @@
-Gfarm hook + Samba
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Grid Datafarm: Gfarm hook + Samba [Japanese]</title>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-jp">
+<meta content="document" name="resource-type"></head>
+<body><a href="http://datafarm.apgrid.org/">
+<img alt="[GFARM LOGO]" src="samba-gfarmfs.ja_files/gfarm-logo.gif" align="right" border="0"></a> 
+<h1>Samba を使って gfarm ファイルシステムにアクセスする
+-- システムコールフックを用いる方法</h1>
 
-別の方法： GfarmFS-FUSE + Samba の方法はこちら
+<h2>1. 概要</h2>
 
-1. 概要
+  この文書では，Gfarm システムコールフックライブラリをプリロードした
+  うえで Samba を起動して  Windows から Gfarm ファイルにアクセスする
+  ための設定方法を説明しています．</br></br>
 
-  この文書では、Gfarm システムコールフックライブラリをプリロードしたうえで 
-  Samba を起動して  Windows から Gfarm ファイルにアクセスするための設定方法を
-  説明しています。
+  別に FUSE を使って Samba を利用する方法もありますが，フックライブラリを
+  用いる方が，より設定／利用手順が簡単ですので，この方法をお勧めします．
+  
+別の方法： GfarmFS-FUSE + Samba の方法についてはこちら
 
-2. 利用環境の前提条件
+<h2>2. 利用環境の前提条件</h2>
    
-  2.1 Samba サーバホスト
-    ・Gfarm クライアントが利用できるものとします。
-    ・libgfs_hook が利用可能であるとします。具体的な手順については
-      INSTALL.RPM.ja の「● クライアントノードの設定」を参照してください。
+<ul>
+  <li>Samba サーバホスト
+  <ul>
+    <li>Gfarm クライアントが利用できること．(必須)</li><br>
+    <li>libgfs_hook が利用できること．(必須)<br>
+      具体的な手順については INSTALL.RPM.ja の
+      「● クライアントノードの設定」を参照してください．</li><br>
+    <li>smbd を実行するホストが Gfarm ファイルシステムノードではないこと(推奨)
+      <br>
 
-    関連ソフトウェアURL
-    Gfarm: http://datafarm.apgrid.org/software/index.ja.html
-    Samba: http://www.samba.gr.jp
+      smbd 実行するホストがファイルシステムノードにもなっていると，
+      新規作成するファイルは，すべてそのホストに作成されてします．</li><br>
 
-3. LDAP サーバ設定の設定
+    <li>認証方法としては shared_secret を使い，全ての filesystem node と
+      smbd を実行するホストの間で，各ユーザがホームディレクトリを NFS
+      などの手段で共有していること(推奨)<br>
 
-  3.1 日本語ファイル名のための設定
+      shared_secret を使っても，ホームディレクトリを共有していない場合は，
+      各ユーザが smbd を実行するホストで「gfkey -c」を実行し，
+      ~/.gfarm_shared_key を，全ての ファイルシステムノードの
+      ホームディレクトリにコピーする必要があります．<br>
 
-   /etc/gfarm-ldap/gfarm.schema の 'pathname' に関する部分が，
-   以下のようになっていることを確認します．以下のようになっていない場合は，
-   修正して，LDAP サーバを再起動してください．
-   Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，
-   下記の設定になっていません．
+      また，shared_secret の代りにGSI認証を使う方法もありますが，
+      各ユーザが smbd を実行するホストで，あらかじめ grid-proxy-init
+      を実行しておく必要があります．</li>
+  </ul>
+</ul>
 
-   attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+  関連ソフトウェア
+  <ul>
+    <li>Gfarm: http://datafarm.apgrid.org/software/index.ja.html</li>
+    <li>Samba: http://www.samba.gr.jp</li>
+  </ul>
+
+<h2>3. LDAP サーバの設定</h2>
+
+  <h3>3.1 日本語ファイル名のための設定</h3>
+    <p>/etc/gfarm-ldap/gfarm.schema の 'pathname' に関する部分が，
+       以下のようになっていることを確認します．以下のようになっていない場合は，
+       修正してLDAP サーバを再起動してください．
+       Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，
+       下記の設定になっていません．</p>
+
+   <p><table bgcolor="lightcyan"><tbody><tr><td>
+       <pre> attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
         EQUALITY caseExactMatch
-        SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)</pre>
+       </td></tr></tbody></table>
+     # 修正する場合は，この 3行のうち，下2行を変更します．</p>
 
-   # 修正する場合は，この 3 行のうち，下 2行を変更します。
+<h2>4. Samba サーバの設定</h2>
 
-
-4. Samba の設定 
-
-  4.1 smb.conf の変更
+  <h3>4.1 smb.conf の変更</h3>
    
-    4.1.1 [global] セクションへの追加項目
+    <h4>4.1.1 [global] セクションへの追加項目</h4>
 	
-      4.1.1.2 日本語ファイル名のための設定  
+      <h5>4.1.1.1 日本語ファイル名のための設定</h5>
 
-        Linux 側では UTF-8 でファイル名を読み書きするようにし，
-        それを Windows から見えるように設定します．
+        <p>Linux 側では UTF-8 でファイル名を読み書きするようにし，
+        それを Windows から見えるように設定します．</p>
 
-	  Samba 2系の場合
+	<p>Samba 2系の場合
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+client code page = 932
+coding system = utf8</pre></td></tr></tbody></table></p>
 
-	    client code page =  932
-	    coding system = utf8
+	<p>Samba 3系の場合
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+dos charset = CP932
+unix charset = UTF-8
+display charset = UTF-8</pre></td></tr></tbody></table></p>
 
-	  Samba 3系の場合
+    <h4>4.1.2 Gfarm ファイルの共有を定義するセクションを追加</h4>
 
-	    dos charset = CP932
-	    unix charset = UTF-8
-	    display charset = UTF-8
+      <p>Gfarm ファイルシステムにアクセスするためのセクションを追加します．</p>
 
-    4.1.2 Gfarm ファイルの共有を定義するセクションを追加
+      <h5>4.1.2.1 Gfarm ファイルシステム用パラメータ</h5>
 
-5. Samba の起動方法
+	<p>セクション内で以下のパラメータを指定してください．
 
-   5.1 起動スクリプトの変更
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+create mask = 0664
+oplocks = no 
+level2 oplocks = no</pre></td></tr></tbody></table></p>
 
-     スクリプトファイル /etc/rc.d/init.d/smb の関数 start() に
-     以下の項目を追加・変更します。 
+      <h5>4.1.2.2 例</h5>
 
-     5.1.1 ファイル記述子数の追加
+        <p>複数ユーザで，Gfarmファイルシステム全体を共有する場合に追加する
+      セクションの例を以下に示します．</p>
 
-       ulimit -n $(( $(gfhost -M | wc -l) + 50))
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+[gfarm-public]
+   comment = Gfarm Public Stuff
+   path = /gfarm
+   public = yes
+   writable = yes
+   printable = no
+   create mask = 0664	
+   oplocks = no
+   level2 oplocks = no</pre></td></tr></tbody></table></p>
+	
+<h2>5. Samba の起動方法</h2>
 
-     5.1.2 smbd コマンド起動行に LD_PRELOAD 環境変数の設定を追加
+  <h3>5.1 起動スクリプトの変更</h3>
 
-       LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so' DAEMON ./SBIN/SMBD $SMBDOPTIONS
+     <p>Linux での例を用いて説明します．</p>
 
-   5.2 追加後の起動スクリプトの例
+     <p>スクリプトファイル /etc/rc.d/init.d/smb の関数 start() に
+     以下の項目を追加・変更します．</p> 
 
-   5.3 Samba を起動 または 再起動
+     <h4>5.1.1 ファイル記述子数の追加</h4>
 
-     # /usr/local/samba/sbin/smb [start|restart]
+       <p>以下の行を start() の関数定義の先頭に追加します．</p>
 
-6. Windows から Samba へのアクセス
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+       n=$(( $(gfhost -M | wc -l) + 50))
+       if [ `ulimit -n` -lt $n ]; then
+               ulimit -n $n
+       fi</pre></td></tr></tbody></table></p>
 
+
+     <h4>5.1.2 smbd 起動行に LD_PRELOAD 環境変数の設定を追加</h4>
+
+       <p>smbd デーモンを起動している行，Linux の例では，</p>
+
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table></p>
+
+       <p>の先頭に LD_PRELOAD 環境変数の設定を追加して，</p>
+
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hid
+den.so /usr/lib/gfarm/libc-not-hidden.so' daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table></p>
+
+       <p>とします．Linux 以外のOS では "*-not-hiddden.so" の指定は不要です。 </p>
+
+   <h3>5.2 追加後の起動スクリプト例</h3>
+
+	<p><table bgcolor="lightcyan"><tbody><tr><td><pre>
+#!/bin/sh
+
+(中略)
+
+start() {
+        n=$(( $(gfhost -M | wc -l) + 50))
+        if [ `ulimit -n` -lt $n ]; then
+                ulimit -n $n
+        fi
+        KIND="SMB"
+	echo -n $"Starting $KIND services: "
+	LD_PRELOAD='/usr/prj/etl/work/sotoyama/gfarm/lib/gfs_hook/.libs/libgfs_
+hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidde
+n.so' daemon smbd $SMBOPTIONS
+	RETVAL=$?
+	echo
+        KIND="NMB"
+	echo -n $"Starting $KIND services: "
+	daemon ./sbin/nmbd $NMBDOPTIONS
+	RETVAL2=$?
+	echo
+	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && touch /var/lock/subsys/smb || \
+	   RETVAL=1
+	return $RETVAL
+}	
+
+(以下略)</pre></td></tr></tbody></table></p>
+
+   <h3>5.3 Samba を起動または再起動</h3>
+
+     <p>例えば Linux では以下を実行します．</p>
+
+     <p><table bgcolor="lightcyan"><tbody><tr><td><pre>
+# /etc/rc.d/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
+
+<h2>6. Windows から Sambaへのアクセス</h2>
+
+     <p>Samba での共有に Windows クライアントのネットワークドライブを
+     割りあてます．例えば以下の手順で共有フォルダが表示されます．</p>
+     <ol>    
+     <li>マイネットワークアイコンを右クリック</li>
+     <li>ネットワークドライブの割り当てを左クリック</li>
+     <li> 表示されたダイアログでドライブ名と共有フォルダ名を指定</li>
+     </ol>
