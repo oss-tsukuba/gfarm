@@ -62,25 +62,6 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 				"GFS: " S(GFS_STAT) "(%s)\n", url));
 			e = GFS_STAT(url, &gs);
 		}
-		if (e != NULL) {
-			/* someone is possibly creating the file right now */
-			/*
-			 * XXX - there is no way to determine other
-			 * processes are now creating the
-			 * corresponding section or not in Gfarm v1.
-			 * However, at least, it is possible to
-			 * determine this process is now creating the
-			 * section or not.
-			 */
-			GFS_File gf;
-			if ((gf = gfs_hook_is_now_creating(url)) != NULL) {
-				_gfs_hook_debug(fprintf(stderr,
-					"GFS: gfs_fstat(%p (%s))\n", gf, url));
-				e = gfs_fstat(gf, &gs);
-			}
-			else
-				e = GFARM_ERR_NO_SUCH_OBJECT;
-		}
 		break;
 	default:
 		_gfs_hook_debug(fprintf(stderr,
@@ -224,24 +205,6 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 			_gfs_hook_debug(fprintf(stderr,
 				"GFS: " S(GFS_STAT) "(%s)\n", url));
 			e = GFS_STAT(url, &gs);
-		}
-		if (e != NULL) {
-			/* someone is possibly creating the file right now */
-			/*
-			 * XXX - there is no way to determine other
-			 * processes are now creating the corresponding
-			 * section or not.  However, at least, it is
-			 * possible to determine this process is now
-			 * creating the section or not.
-			 */
-			GFS_File gf;
-			if ((gf = gfs_hook_is_now_creating(url)) != NULL) {
-				_gfs_hook_debug(fprintf(stderr,
-					"GFS: gfs_fstat(%p (%s))\n", gf, url));
-				e = gfs_fstat(gf, &gs);
-			}
-			else
-				e = GFARM_ERR_NO_SUCH_OBJECT;
 		}
 		break;
 	default:

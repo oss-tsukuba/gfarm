@@ -93,8 +93,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_create(url, oflag, mode, &gf);
-		if (e == NULL && !path_exist)
-			gfs_hook_add_creating_file(gf);
 	} else {
 		_gfs_hook_debug(fprintf(stderr,
 		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o)\n", url, oflag));
@@ -166,7 +164,6 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	}
 	if (e != NULL) {
 		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
-		gfs_hook_delete_creating_file(gf);
 		gfs_pio_close(gf);
 		errno = gfarm_error_to_errno(e);
 		return (-1);

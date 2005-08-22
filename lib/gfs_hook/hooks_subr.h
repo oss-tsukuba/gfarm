@@ -36,9 +36,6 @@ char *gfs_hook_flush_all(void);
 char *gfs_hook_close_all(void);
 
 void *gfs_hook_is_open(int);
-char *gfs_hook_add_creating_file(struct gfs_file *);
-struct gfs_file *gfs_hook_is_now_creating(const char *);
-void gfs_hook_delete_creating_file(struct gfs_file *);
 void gfs_hook_set_suspended_gfs_dirent(int, struct gfs_dirent *,file_offset_t);
 struct gfs_dirent *gfs_hook_get_suspended_gfs_dirent(int, file_offset_t *);
 struct gfs_stat *gfs_hook_get_gfs_stat(int);
