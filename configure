@@ -20113,9 +20113,15 @@ echo "${ECHO_T}not found" >&6
 echo "${ECHO_T}searched directories are: ${GLBlocation_candidates}" >&6
 	echo "$as_me:$LINENO: result: searched flavors are: ${GLBflavor_candidates}" >&5
 echo "${ECHO_T}searched flavors are: ${GLBflavor_candidates}" >&6
-	{ { echo "$as_me:$LINENO: error: aborted" >&5
-echo "$as_me: error: aborted" >&2;}
+	if test -n "$globus_flavor"; then
+		{ { echo "$as_me:$LINENO: error: cannot find the globus flavor \"$globus_flavor\", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}." >&5
+echo "$as_me: error: cannot find the globus flavor \"$globus_flavor\", missing include/$globus_flavor/gssapi.h under ${GLBlocation_candidates}." >&2;}
    { (exit 1); exit 1; }; }
+	else
+		{ { echo "$as_me:$LINENO: error: cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR" >&5
+echo "$as_me: error: cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.h under ${GLBlocation_candidates}, please specify the flavor by --with-globus-flavor=GLOBUS_FLAVOR" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 	exit 1
  fi
  echo "$as_me:$LINENO: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
@@ -20136,8 +20142,12 @@ echo $ECHO_N "checking globus library names... $ECHO_C" >&6
 echo "${ECHO_T}done" >&6
  else
 	rm -f $cfgmhtmp
-	{ { echo "$as_me:$LINENO: error: failed to call globus-makefile-header, aborted" >&5
-echo "$as_me: error: failed to call globus-makefile-header, aborted" >&2;}
+	echo "$as_me:$LINENO: result: failed to call ${globus_location}/bin/globus-makefile-header command." >&5
+echo "${ECHO_T}failed to call ${globus_location}/bin/globus-makefile-header command." >&6
+	echo "$as_me:$LINENO: result: Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet." >&5
+echo "${ECHO_T}Please run \${GPT_LOCATION}/sbin/gpt-postinstall, if it is not invoked yet." >&6
+	{ { echo "$as_me:$LINENO: error: Globus installation is incomplete, aborted." >&5
+echo "$as_me: error: Globus installation is incomplete, aborted." >&2;}
    { (exit 1); exit 1; }; }
  fi
  globus_gssapi_libs=`sed -n '/^GLOBUS_PKG_LIBS *=/s///p' $cfgmhtmp`
