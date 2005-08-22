@@ -1,4 +1,5 @@
 DOCBOOK = \
+	gfarm.3 \
 	gfarm_initialize.3 \
 	gfarm_strings_free_deeply.3 \
 	gfarm_terminate.3 \

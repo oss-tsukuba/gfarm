@@ -1,0 +1,352 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm.3'>
+
+<refentryinfo><date>22 Aug 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm</refname>
+<refpurpose>Gfarm ネイティブ API ライブラリ</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<synopsis>
+#include &lt;gfarm/gfarm.h&gt;
+
+</synopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
+機能に対するインターフェースを提供します．このマニュアルはライブラリ
+の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
+ください．</para>
+
+<refsect2>
+<title>初期化／終了処理</title>
+<para>
+<citerefentry>
+<refentrytitle>gfarm_initialize</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は gfarm ライブラリの初期化に，
+<citerefentry>
+<refentrytitle>gfarm_terminate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は gfarm ライブラリの終了処理に用います．
+</para>
+</refsect2>
+
+<refsect2>
+<title>ファイル入出力処理</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_set_local</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，並列プロセスの初期化として，自ノードのノード番号と
+総ノード数の設定に用います．
+
+既存のファイルをストリームとしてオープンするには
+<citerefentry>
+<refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数を，
+新規ファイルを作成してストリームとしてオープンするには
+<citerefentry>
+<refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数を用います．
+ファイルのクローズは
+<citerefentry>
+<refentrytitle>gfs_pio_close</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数を使います．
+<citerefentry>
+<refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数と
+<citerefentry>
+<refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，
+並列ファイルのアクセス方法を指定します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_error</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はオープンしているストリームに関してエラーが生じているか
+を判別し，
+<citerefentry>
+<refentrytitle>gfs_pio_eof</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は読み込みオープンしているストリームがファイル
+末尾に達しているかを判別します．
+<citerefentry>
+<refentrytitle>gfs_pio_seek</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ストリーム中の現在位置を変更します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_getc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はストリームから一文字読み込み，
+<citerefentry>
+<refentrytitle>gfs_pio_ungetc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は逆に読み込んだ一文字をストリームに戻します．
+<citerefentry>
+<refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数や
+<citerefentry>
+<refentrytitle>gfs_pio_gets</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfs_pio_readline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ストリームから一行を読み込み，
+<citerefentry>
+<refentrytitle>gfs_pio_readdelim</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ストリームから指定したデリミタまでを読み込みます．
+<citerefentry>
+<refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ストリームから指定したバイト数だけ読み込みます．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_putc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はストリームへ一文字書きだし，
+<citerefentry>
+<refentrytitle>gfs_pio_putline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数や
+<citerefentry>
+<refentrytitle>gfs_pio_puts</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はストリームへ一行書きだします．
+<citerefentry>
+<refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ストリームへ指定したバイト数だけ書き込みます．
+<citerefentry>
+<refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数や，
+<citerefentry>
+<refentrytitle>gfs_pio_sync</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfs_pio_datasync</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，バッファリングしているデータを記憶装置に書き出します．
+
+<citerefentry>
+<refentrytitle>gfs_pio_truncate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ファイルのサイズを変更します．
+</para>
+</refsect2>
+
+<refsect2>
+<title>ディレクトリアクセス</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_chdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，カレント作業ディレクトリを変更します．
+<citerefentry>
+<refentrytitle>gfs_realpath</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，引数のフルパス名を返します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数でディレクトリをオープンすると，
+<citerefentry>
+<refentrytitle>gfs_readdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で，そのディレクトリを構成するエントリを得ることが
+できます．オープンしたディレクトリへのアクセスは，
+<citerefentry>
+<refentrytitle>gfs_closedir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で終了します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_glob_init</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で初期化した gfs_glob_t を
+<citerefentry>
+<refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数に渡すことで，ワイルドカードの展開を行うことが
+できます．
+利用が終わったら，この領域は
+<citerefentry>
+<refentrytitle>gfs_glob_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で開放します．
+<citerefentry>
+<refentrytitle>gfs_glob_add</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，gfs_glob_t にエントリを追加するのに用います．
+</para>
+</refsect2>
+
+<refsect2>
+<title>ファイル／ディレクトリ操作</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_chmod</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数でファイルのモードを変更し，
+<!--
+<citerefentry>
+<refentrytitle>gfs_chown</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数でファイルの所有者を変更し，
+-->
+<citerefentry>
+<refentrytitle>gfs_utimes</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数でファイルの更新時刻とアクセス時刻を変更します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_mkdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はディレクトリを作成し，
+<citerefentry>
+<refentrytitle>gfs_rmdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はディレクトリを削除します．
+<citerefentry>
+<refentrytitle>gfs_unlink</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はファイルを削除し，
+<citerefentry>
+<refentrytitle>gfs_unlink_section</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は並列ファイルを構成するフラグメントを削除します．
+<citerefentry>
+<refentrytitle>gfs_rename</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数はディレクトリやファイルを改名します．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_stat</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は指定したファイルあるいはディレクトリのサイズや
+更新時刻などの情報を返します．
+この関数が返した gfs_stat 構造体は
+<citerefentry>
+<refentrytitle>gfs_stat_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数を用いて解放する必要があります．
+</para>
+</refsect2>
+
+<refsect2>
+<title>ユーティリティ関数</title>
+<para>
+<citerefentry>
+<refentrytitle>gfarm_hostlist_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，および
+<citerefentry>
+<refentrytitle>gfarm_import_fragment_size_alloc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，並列ファイルをフラグメント化して登録する際に
+使うユーティリティ関数です．利用方法の例は
+<citerefentry>
+<refentrytitle>gfimport_text</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> コマンドや
+<citerefentry>
+<refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> コマンドの
+ソースを参照してください．
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>文字列配列操作ユーティリティ</title>
+<para>
+文字列配列を表す gfarm_stringlist 型の変数は，
+<citerefentry>
+<refentrytitle>gfarm_stringlist_init</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で初期化し，
+<citerefentry>
+<refentrytitle>gfarm_stringlist_add</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で文字列を一つ追加し，
+<citerefentry>
+<refentrytitle>gfarm_stringlist_cat</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で文字列を複数追加し，
+<citerefentry>
+<refentrytitle>gfarm_stringlist_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で解放することができます．
+文字列配列の各要素文字列には
+<citerefentry>
+<refentrytitle>gfarm_stringlist_elem</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数あるいは
+GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
+また，文字列配列を構成する文字列の数は
+<citerefentry>
+<refentrytitle>gfarm_stringlist_length</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で得ることができます．
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，文字列配列およびそれを構成する各文字列に対して
+標準ライブラリ関数の free() を呼び出して解放します．
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>文字列配列操作ユーティリティマクロ</title>
+<variablelist>
+
+<varlistentry>
+<term>GFARM_STRINGLIST_ELEM(list, i)</term>
+<listitem>
+<para>
+gfarm_stringlist 型の <parameter>list</parameter> 引数が表す文字列配列の
+<parameter>i</parameter> 番目の要素を
+表すマクロです．このマクロは左辺値として使えます．
+値として評価した場合には
+<citerefentry>
+<refentrytitle>gfarm_stringlist_elem</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数と同一の結果を返します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>GFARM_STRINGLIST_STRARRAY(list)</term>
+<listitem>
+<para>
+gfarm_stringlist 型の <parameter>list</parameter> 引数が
+表す文字列配列の先頭要素へのポインタを返します．
+返り値は，文字へのポインタへのポインタとなります．
+</para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+</refsect2>
+
+<refsect2>
+<title>内部関数</title>
+
+<para>
+<citerefentry>
+<refentrytitle>gfarm_url_program_register</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfarm_url_hosts_schedule</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfarm_url_fragments_replicate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，
+<citerefentry>
+<refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数，および
+<citerefentry>
+<refentrytitle>gfarm_url_section_replicate_to</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，gfarm が内部的に利用している関数です．
+歴史的理由でマニュアルも提供されていますが，将来仕様が変更される
+可能性があります．
+</para>
+
+</refsect2>
+
+</refsect1>
+
+</refentry>

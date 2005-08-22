@@ -1,6 +1,5 @@
 DOCBOOK = \
-	GFARM_STRINGLIST_ELEM.3 \
-	GFARM_STRINGLIST_STRARRAY.3 \
+	gfarm.3 \
 	gfarm_hostlist_read.3 \
 	gfarm_import_fragment_config_read.3 \
 	gfarm_import_fragment_size_alloc.3 \
