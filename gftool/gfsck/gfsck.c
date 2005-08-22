@@ -11,6 +11,7 @@
 #include <gfarm/gfarm.h>
 
 static int option_verbose;
+static char GFARM_MSG_DELETED[] = "deleted";
 
 static char *
 path_info_remove(char *url, char *canonical_path, char *errmsg)
@@ -27,7 +28,7 @@ path_info_remove(char *url, char *canonical_path, char *errmsg)
 
 	e = gfarm_path_info_remove(canonical_path);
 	if (e == NULL)
-		e = "deleted";
+		e = GFARM_MSG_DELETED;
 	else
 		out = stderr;
 
@@ -35,7 +36,7 @@ path_info_remove(char *url, char *canonical_path, char *errmsg)
 
 	if (c_path != NULL)
 		free(c_path);
-	return (e);
+	return (e == GFARM_MSG_DELETED ? NULL : e);
 }
 
 static char *
@@ -45,13 +46,13 @@ section_info_remove(char *url, char *gfarm_file, char *section, char *errmsg)
 	FILE *out = stdout;
 
 	if (e == NULL)
-		e = "deleted";
+		e = GFARM_MSG_DELETED;
 	else
 		out = stderr;
 
 	fprintf(out, "%s (%s): %s: %s\n", url, section, errmsg, e);
 
-	return (e);
+	return (e == GFARM_MSG_DELETED ? NULL : e);
 }
 
 static char *
@@ -62,13 +63,13 @@ section_copy_info_remove(
 	FILE *out = stdout;
 
 	if (e == NULL)
-		e = "deleted";
+		e = GFARM_MSG_DELETED;
 	else
 		out = stderr;
 
 	fprintf(out, "%s (%s) on %s: %s: %s\n", url, section, host, errmsg, e);
 
-	return (e);
+	return (e == GFARM_MSG_DELETED ? NULL : e);
 }
 
 static char *
