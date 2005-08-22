@@ -45,6 +45,9 @@ gfarm_metadb_initialize(void)
 #if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_VERSION3)
 	int version;
 #endif
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_NETWORK_TIMEOUT)
+	struct timeval timeout = { 5, 0 };
+#endif
 	char *e;
 
 	if (gfarm_ldap_server_name == NULL)
@@ -86,8 +89,11 @@ gfarm_metadb_initialize(void)
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION, &version);
 #endif
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_REFERRALS, LDAP_OPT_ON);
+#ifdef LDAP_OPT_NETWORK_TIMEOUT
+	ldap_set_option(
+		gfarm_ldap_server, LDAP_OPT_NETWORK_TIMEOUT, (void *)&timeout);
 #endif
-
+#endif
 	/* authenticate as nobody */
 	rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL);
 	if (rv != LDAP_SUCCESS) {
