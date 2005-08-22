@@ -435,6 +435,8 @@ share/doc/gfarm/html/ja/ref/man3/gfs_utimes.3.html
 share/doc/gfarm/html/ja/ref/man5/gfarm.conf.5.html
 share/doc/gfarm/html/ja/ref/man8/gfmd.8.html
 share/doc/gfarm/html/ja/ref/man8/gfsd.8.html
+share/doc/gfarm/html/ja/user/index.html
+share/doc/gfarm/html/ja/user/samba-hook.html
 share/java/gfront.jar
 @unexec rmdir %%LOCALBASE%%/share/java 2>/dev/null || true
 @dirrm share/doc/gfarm/html/ja/ref/man8

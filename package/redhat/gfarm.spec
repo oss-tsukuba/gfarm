@@ -563,6 +563,8 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
+%{html_prefix}/ja/user/index.html
+%{html_prefix}/ja/user/samba-hook.html
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
