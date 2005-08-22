@@ -47,9 +47,14 @@ BUILD_DEPENDS=	${GLOBUS_LOCATION}/bin/globus-makefile-header:${PORTSDIR}/misc/gl
 RUN_DEPENDS=	${BUILD_DEPENDS}
 .endif
 
+# XXX Workaround a mistake in ports/misc/globus2.
+# Without the following environment, globus-makefile-header complains
+# that it can't locate Grid/GPT/Dependencies.pm in @INC.
+PERL5LIB_FIX=	PERL5LIB=${LOCALBASE}/lib/perl
+
 # globus-makefile-header will be called from configure
 pre-configure:
-	@if ! ${SETENV} GLOBUS_LOCATION=${GLOBUS_LOCATION} \
+	@if ! ${SETENV} ${PERL5LIB_FIX} GLOBUS_LOCATION=${GLOBUS_LOCATION} \
 	    ${GLOBUS_LOCATION}/bin/globus-makefile-header \
 	    -flavor=${GLOBUS_FLAVOR} globus_gssapi_gsi >/dev/null; then \
 		${ECHO_CMD} "${PKGNAME}: globus-makefile-header failed."; \
@@ -61,10 +66,7 @@ pre-configure:
 CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
 		--with-globus-flavor=${GLOBUS_FLAVOR}
 
-# XXX Workaround a mistake in ports/misc/globus2.
-# Without the following environment, globus-makefile-header complains
-# that it can't locate Grid/GPT/Dependencies.pm in @INC.
-CONFIGURE_ENV+=	PERL5LIB=${PREFIX}/lib/perl
+CONFIGURE_ENV+=	${PERL5LIB_FIX}
 
 .endif # WITH_GLOBUS
 
