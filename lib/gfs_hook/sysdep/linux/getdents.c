@@ -167,7 +167,7 @@ SYSCALL_GETDENTS (int fd, char *buf, size_t nbytes)
 		     otherwise signal overflow.  */
 		  if (last_offset != -1)
 		    {
-		      __lseek64 (fd, last_offset, SEEK_SET);
+		      lseek64 (fd, last_offset, SEEK_SET);
 		      return (char *) dp - buf;
 		    }
 		  __set_errno (EOVERFLOW);
@@ -224,7 +224,7 @@ SYSCALL_GETDENTS (int fd, char *buf, size_t nbytes)
 	    /* Our heuristic failed.  We read too many entries.  Reset
 	       the stream.  */
 	    assert (last_offset != -1);
-	    __lseek64 (fd, last_offset, SEEK_SET);
+	    lseek64 (fd, last_offset, SEEK_SET);
 
 	    if ((char *) dp == buf)
 	      {

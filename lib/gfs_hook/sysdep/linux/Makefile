@@ -26,6 +26,7 @@ all:	$(LIBRARY)
 include $(top_srcdir)/makes/lib.mk
 
 getdents.lo: getdents.c
+	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -c $(srcdir)/getdents.c
 
 getdents64.lo: getdents64.c getdents.c
 	$(LTCOMPILE) -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS` -c $(srcdir)/getdents64.c
