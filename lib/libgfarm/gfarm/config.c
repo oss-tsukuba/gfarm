@@ -1018,7 +1018,7 @@ gfarm_config_read(void)
 
 	rc_need_free = 0;
 	rc = getenv("GFARM_CONFIG_FILE");
-	if (rc != NULL) {
+	if (rc == NULL) {
 		/*
 		 * result of gfarm_get_local_homedir() should not be trusted.
 		 * (maybe forged)
