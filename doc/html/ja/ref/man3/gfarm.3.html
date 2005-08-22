@@ -1,0 +1,647 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfarm</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM.3"
+></A
+>gfarm</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm&nbsp;--&nbsp;Gfarm ネイティブ API ライブラリ</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>#include &#60;gfarm/gfarm.h&#62;&#13;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
+機能に対するインターフェースを提供します．このマニュアルはライブラリ
+の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
+ください．</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN16"
+></A
+><H3
+>初期化／終了処理</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_initialize</SPAN
+>(3)</SPAN
+> 関数は gfarm ライブラリの初期化に，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_terminate</SPAN
+>(3)</SPAN
+> 関数は gfarm ライブラリの終了処理に用います．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN25"
+></A
+><H3
+>ファイル入出力処理</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_local</SPAN
+>(3)</SPAN
+> 関数は，並列プロセスの初期化として，自ノードのノード番号と
+総ノード数の設定に用います．
+
+既存のファイルをストリームとしてオープンするには
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+> 関数を，
+新規ファイルを作成してストリームとしてオープンするには
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_create</SPAN
+>(3)</SPAN
+> 関数を用います．
+ファイルのクローズは
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_close</SPAN
+>(3)</SPAN
+> 関数を使います．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_view_index</SPAN
+>(3)</SPAN
+> 関数と
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_view_local</SPAN
+>(3)</SPAN
+> 関数は，
+並列ファイルのアクセス方法を指定します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_error</SPAN
+>(3)</SPAN
+> 関数はオープンしているストリームに関してエラーが生じているか
+を判別し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_eof</SPAN
+>(3)</SPAN
+> 関数は読み込みオープンしているストリームがファイル
+末尾に達しているかを判別します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_seek</SPAN
+>(3)</SPAN
+> 関数は，ストリーム中の現在位置を変更します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getc</SPAN
+>(3)</SPAN
+> 関数はストリームから一文字読み込み，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_ungetc</SPAN
+>(3)</SPAN
+> 関数は逆に読み込んだ一文字をストリームに戻します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getline</SPAN
+>(3)</SPAN
+> 関数や
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_gets</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readline</SPAN
+>(3)</SPAN
+> 関数は，ストリームから一行を読み込み，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readdelim</SPAN
+>(3)</SPAN
+> 関数は，ストリームから指定したデリミタまでを読み込みます．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_read</SPAN
+>(3)</SPAN
+> 関数は，ストリームから指定したバイト数だけ読み込みます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_putc</SPAN
+>(3)</SPAN
+> 関数はストリームへ一文字書きだし，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_putline</SPAN
+>(3)</SPAN
+> 関数や
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_puts</SPAN
+>(3)</SPAN
+> 関数はストリームへ一行書きだします．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_write</SPAN
+>(3)</SPAN
+> 関数は，ストリームへ指定したバイト数だけ書き込みます．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_flush</SPAN
+>(3)</SPAN
+> 関数や，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_sync</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_datasync</SPAN
+>(3)</SPAN
+> 関数は，バッファリングしているデータを記憶装置に書き出します．
+
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_truncate</SPAN
+>(3)</SPAN
+> 関数は，ファイルのサイズを変更します．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN103"
+></A
+><H3
+>ディレクトリアクセス</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_chdir</SPAN
+>(3)</SPAN
+> 関数は，カレント作業ディレクトリを変更します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_realpath</SPAN
+>(3)</SPAN
+> 関数は，引数のフルパス名を返します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_opendir</SPAN
+>(3)</SPAN
+> 関数でディレクトリをオープンすると，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_readdir</SPAN
+>(3)</SPAN
+> 関数で，そのディレクトリを構成するエントリを得ることが
+できます．オープンしたディレクトリへのアクセスは，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_closedir</SPAN
+>(3)</SPAN
+> 関数で終了します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_init</SPAN
+>(3)</SPAN
+> 関数で初期化した gfs_glob_t を
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob</SPAN
+>(3)</SPAN
+> 関数に渡すことで，ワイルドカードの展開を行うことが
+できます．
+利用が終わったら，この領域は
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_free</SPAN
+>(3)</SPAN
+> 関数で開放します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_add</SPAN
+>(3)</SPAN
+> 関数は，gfs_glob_t にエントリを追加するのに用います．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN135"
+></A
+><H3
+>ファイル／ディレクトリ操作</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_chmod</SPAN
+>(3)</SPAN
+> 関数でファイルのモードを変更し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_utimes</SPAN
+>(3)</SPAN
+> 関数でファイルの更新時刻とアクセス時刻を変更します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_mkdir</SPAN
+>(3)</SPAN
+> 関数はディレクトリを作成し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_rmdir</SPAN
+>(3)</SPAN
+> 関数はディレクトリを削除します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_unlink</SPAN
+>(3)</SPAN
+> 関数はファイルを削除し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_unlink_section</SPAN
+>(3)</SPAN
+> 関数は並列ファイルを構成するフラグメントを削除します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_rename</SPAN
+>(3)</SPAN
+> 関数はディレクトリやファイルを改名します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_stat</SPAN
+>(3)</SPAN
+> 関数は指定したファイルあるいはディレクトリのサイズや
+更新時刻などの情報を返します．
+この関数が返した gfs_stat 構造体は
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_stat_free</SPAN
+>(3)</SPAN
+> 関数を用いて解放する必要があります．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN167"
+></A
+><H3
+>ユーティリティ関数</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_hostlist_read</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_import_fragment_config_read</SPAN
+>(3)</SPAN
+> 関数，および
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_import_fragment_size_alloc</SPAN
+>(3)</SPAN
+> 関数は，並列ファイルをフラグメント化して登録する際に
+使うユーティリティ関数です．利用方法の例は
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_text</SPAN
+>(1)</SPAN
+> コマンドや
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_fixed</SPAN
+>(1)</SPAN
+> コマンドの
+ソースを参照してください．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN185"
+></A
+><H3
+>文字列配列操作ユーティリティ</H3
+><P
+>文字列配列を表す gfarm_stringlist 型の変数は，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_init</SPAN
+>(3)</SPAN
+> 関数で初期化し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_add</SPAN
+>(3)</SPAN
+> 関数で文字列を一つ追加し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_cat</SPAN
+>(3)</SPAN
+> 関数で文字列を複数追加し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_free</SPAN
+>(3)</SPAN
+> 関数で解放することができます．
+文字列配列の各要素文字列には
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_elem</SPAN
+>(3)</SPAN
+> 関数あるいは
+GFARM_STRINGLIST_ELEM() マクロでアクセスすることができます．
+また，文字列配列を構成する文字列の数は
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_length</SPAN
+>(3)</SPAN
+> 関数で得ることができます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_strings_free_deeply</SPAN
+>(3)</SPAN
+> 関数は，文字列配列およびそれを構成する各文字列に対して
+標準ライブラリ関数の free() を呼び出して解放します．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN210"
+></A
+><H3
+>文字列配列操作ユーティリティマクロ</H3
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>GFARM_STRINGLIST_ELEM(list, i)</DT
+><DD
+><P
+>gfarm_stringlist 型の <TT
+CLASS="PARAMETER"
+><I
+>list</I
+></TT
+> 引数が表す文字列配列の
+<TT
+CLASS="PARAMETER"
+><I
+>i</I
+></TT
+> 番目の要素を
+表すマクロです．このマクロは左辺値として使えます．
+値として評価した場合には
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_elem</SPAN
+>(3)</SPAN
+> 関数と同一の結果を返します．</P
+></DD
+><DT
+>GFARM_STRINGLIST_STRARRAY(list)</DT
+><DD
+><P
+>gfarm_stringlist 型の <TT
+CLASS="PARAMETER"
+><I
+>list</I
+></TT
+> 引数が
+表す文字列配列の先頭要素へのポインタを返します．
+返り値は，文字へのポインタへのポインタとなります．</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN227"
+></A
+><H3
+>内部関数</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_program_register</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_hosts_schedule</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_fragments_replicate</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_program_deliver</SPAN
+>(3)</SPAN
+> 関数，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_from_to</SPAN
+>(3)</SPAN
+> 関数，および
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_to</SPAN
+>(3)</SPAN
+> 関数は，gfarm が内部的に利用している関数です．
+歴史的理由でマニュアルも提供されていますが，将来仕様が変更される
+可能性があります．</P
+></DIV
+></DIV
+></BODY
+></HTML
+>
