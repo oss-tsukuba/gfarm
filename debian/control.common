@@ -18,3 +18,4 @@ Depends: gfarm-gsi-client (= ${Source-Version}) | gfarm-client (= ${Source-Versi
 Description: Front-end java application for the Gfarm
  This package contains client and administrative front-end application
  fot the Gfarm using JAVA.
+
