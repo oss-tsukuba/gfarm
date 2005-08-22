@@ -1,0 +1,85 @@
+Gfarm hook + Samba
+
+別の方法： GfarmFS-FUSE + Samba の方法はこちら
+
+1. 概要
+
+  この文書では、Gfarm システムコールフックライブラリをプリロードしたうえで 
+  Samba を起動して  Windows から Gfarm ファイルにアクセスするための設定方法を
+  説明しています。
+
+2. 利用環境の前提条件
+   
+  2.1 Samba サーバホスト
+    ・Gfarm クライアントが利用できるものとします。
+    ・libgfs_hook が利用可能であるとします。具体的な手順については
+      INSTALL.RPM.ja の「● クライアントノードの設定」を参照してください。
+
+    関連ソフトウェアURL
+    Gfarm: http://datafarm.apgrid.org/software/index.ja.html
+    Samba: http://www.samba.gr.jp
+
+3. LDAP サーバ設定の設定
+
+  3.1 日本語ファイル名のための設定
+
+   /etc/gfarm-ldap/gfarm.schema の 'pathname' に関する部分が，
+   以下のようになっていることを確認します．以下のようになっていない場合は，
+   修正して，LDAP サーバを再起動してください．
+   Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，
+   下記の設定になっていません．
+
+   attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+        EQUALITY caseExactMatch
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)
+
+   # 修正する場合は，この 3 行のうち，下 2行を変更します。
+
+
+4. Samba の設定 
+
+  4.1 smb.conf の変更
+   
+    4.1.1 [global] セクションへの追加項目
+	
+      4.1.1.2 日本語ファイル名のための設定  
+
+        Linux 側では UTF-8 でファイル名を読み書きするようにし，
+        それを Windows から見えるように設定します．
+
+	  Samba 2系の場合
+
+	    client code page =  932
+	    coding system = utf8
+
+	  Samba 3系の場合
+
+	    dos charset = CP932
+	    unix charset = UTF-8
+	    display charset = UTF-8
+
+    4.1.2 Gfarm ファイルの共有を定義するセクションを追加
+
+5. Samba の起動方法
+
+   5.1 起動スクリプトの変更
+
+     スクリプトファイル /etc/rc.d/init.d/smb の関数 start() に
+     以下の項目を追加・変更します。 
+
+     5.1.1 ファイル記述子数の追加
+
+       ulimit -n $(( $(gfhost -M | wc -l) + 50))
+
+     5.1.2 smbd コマンド起動行に LD_PRELOAD 環境変数の設定を追加
+
+       LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so' DAEMON ./SBIN/SMBD $SMBDOPTIONS
+
+   5.2 追加後の起動スクリプトの例
+
+   5.3 Samba を起動 または 再起動
+
+     # /usr/local/samba/sbin/smb [start|restart]
+
+6. Windows から Samba へのアクセス
+
