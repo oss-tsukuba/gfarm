@@ -429,6 +429,7 @@ share/examples/rc.d/gfmd
 share/examples/rc.d/gfsd
 share/java/gfront.jar
 @unexec ${RMDIR} -p %D/share/java 2>/dev/null || ${TRUE}
+@dirrm share/doc/html/gfarm/ja/user
 @dirrm share/doc/html/gfarm/ja/ref/man8
 @dirrm share/doc/html/gfarm/ja/ref/man5
 @dirrm share/doc/html/gfarm/ja/ref/man3
