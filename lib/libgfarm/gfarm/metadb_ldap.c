@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
