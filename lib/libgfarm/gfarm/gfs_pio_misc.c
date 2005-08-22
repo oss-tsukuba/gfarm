@@ -754,7 +754,7 @@ rename_file_spool(
 			gfs_client_disconnect(gfs_server);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool:"
-					      "gfarm_client_link()", e);
+					      "gfs_client_link()", e);
 					continue;
 			}
 
@@ -1317,7 +1317,7 @@ check_existence_spool_file(int nfile, int *nsection, int **ncopy,
 				if (exist[i][j][k] == 1)
 					break;
 			}
-			if (exist[i][j][k] == 0)
+			if (k >= ncopy[i][j])
 				return (0);
 		}
 	}
