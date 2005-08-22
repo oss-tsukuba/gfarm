@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = en/ref ja/ref
+SUBDIRS = en/ref ja/ref ja/user
 
 htmldir=$(default_htmldir)
 HTML = index.html
