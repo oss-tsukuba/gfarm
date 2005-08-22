@@ -19,6 +19,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <unistd.h>
 
 #ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
