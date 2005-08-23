@@ -98,10 +98,22 @@ display charset = UTF-8</pre></td></tr></tbody></table></p>
 
       <h5>4.1.2.1 Gfarm ファイルシステム用パラメータ</h5>
 
-	<p>セクション内で以下のパラメータを指定してください．
+	<p>セクション内で以下のパラメータを指定してください．</p>
 
+	<p>デフォルトの設定で Windows クライアントから Gfarm ファイルシステム
+	   にファイルを新規作成あるいはコピーすると、ファイルシステム
+	   ノードと同じアーキテクチャをもつホストで実行されるプログラムと
+	   して登録されます。これはファイルの属性とは異なりますので、
+	   実行不可能なファイルとして登録するために以下のパラメータを
+	   指定します。
 	<table bgcolor="lightcyan"><tbody><tr><td><pre>
-create mask = 0664
+create mask = 0644</pre></td></tr></tbody></table></p>
+
+	<p>デフォルトの設定で、Windows クライアントから Gfarm ファイルシステム
+	   上のファイルを読み書きすると、Gfarm がフックをサポートしていない
+	   システムコールを Samba が呼び出します。これを防ぐために
+	   以下のパラメータを指定します。
+	<table bgcolor="lightcyan"><tbody><tr><td><pre>
 oplocks = no 
 level2 oplocks = no</pre></td></tr></tbody></table></p>
 
@@ -117,7 +129,7 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
    public = yes
    writable = yes
    printable = no
-   create mask = 0664	
+   create mask = 0644
    oplocks = no
    level2 oplocks = no</pre></td></tr></tbody></table></p>
 	
