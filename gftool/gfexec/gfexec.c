@@ -174,20 +174,33 @@ gfs_mntpath_localize(char *dir, size_t size, char **local_path)
 }
 
 static char *
+gfs_mntpath_to_url(char *path, size_t size, char **url)
+{
+	char *e, *canonic_path;
+
+	*url = NULL;
+
+	e = gfs_mntpath_canonicalize(path, size, &canonic_path);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_canonical_to_url(canonic_path, url);
+	free(canonic_path);
+	return (e);
+}
+
+
+static char *
 replicate_so_and_symlink(char *dir, size_t size)
 {
-	char *canonic_path, *gfarm_url, *so_pat, *lpath;
+	char *gfarm_url, *so_pat, *lpath;
 	char *e, *e_save;
 	int i, rv;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	static char so_pat_template[] = "/*.so*";
 
-	e = gfs_mntpath_canonicalize(dir, size, &canonic_path);
-	if (e != NULL)
-		return (e);
-	e = gfarm_path_canonical_to_url(canonic_path, &gfarm_url);
-	free(canonic_path);
+	e = gfs_mntpath_to_url(dir, size, &gfarm_url);
 	if (e != NULL)
 		return (e);
 
@@ -356,6 +369,7 @@ int
 main(int argc, char *argv[], char *envp[])
 {
 	char *e, *gfarm_url, *local_path, **new_env, *cwd_env, *pwd_env;
+	char *path;
 	int i, j, status, envc, rank = -1, nodes = -1;
 	pid_t pid;
 	static const char env_node_rank[] = "GFARM_NODE_RANK=";
@@ -426,16 +440,22 @@ main(int argc, char *argv[], char *envp[])
 	if (argc == 0)
 		print_usage();
 
-	e = gfs_realpath(argv[0], &gfarm_url);
-	if (e != NULL) {
-		/* XXX check `e' */
-		local_path = search_path(argv[0]);
-	} else {
+	path = argv[0];
+	if (is_mount_point(path))
+		e = gfs_mntpath_to_url(path, strlen(path), &gfarm_url);
+	else
+		e = gfs_realpath(path, &gfarm_url);
+	if (e == NULL) {
 		e = gfarm_url_program_get_local_path(gfarm_url, &local_path);
 		if (e != NULL) {
 			errmsg(gfarm_url, e);
 			exit(1);
 		}
+		free(gfarm_url);
+	}
+	else {
+		/* XXX check `e' */
+		local_path = search_path(path);
 	}
 
 	e = modify_ld_library_path();
