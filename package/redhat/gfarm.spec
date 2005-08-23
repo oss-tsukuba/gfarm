@@ -57,8 +57,10 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-Copyright: National Institute of Advanced Industrial Science and Technology
-Group: Local
+Group: Applications/Internet
+License: BSD
+Vendor: National Institute of Advanced Industrial Science and Technology
+URL: http://datafarm.apgrid.org/
 Packager: Tohru Sotoyama <sotoyama@sra.co.jp>
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
