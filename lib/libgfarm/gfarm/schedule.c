@@ -167,6 +167,9 @@ hosts_for_program(char *program,
 
 	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
 	if (e == NULL) {
+#ifdef __GNUC__ /* workaround gcc warning: 'arch_set' may be used uninitialized */
+	  arch_set = NULL;
+#endif
 		e = program_arch_set(program, &arch_set);
 		if (e == NULL) {
 			n_runnable_hosts = 0;

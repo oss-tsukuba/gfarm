@@ -6,14 +6,16 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <openssl/evp.h>
-#include <gfarm/gfarm.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#include <openssl/evp.h>
+#include <gfarm/gfarm.h>
+
 #include "gfs_pio.h"
 #include "host.h"
 #include "config.h"
@@ -470,6 +472,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	int is_local_host;
 	gfarm_timerval_t t1, t2;
 
+#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
+	t1 = 0;
+#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_set_view_default(gf);

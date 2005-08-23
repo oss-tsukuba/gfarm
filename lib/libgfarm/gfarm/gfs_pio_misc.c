@@ -87,6 +87,9 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfarm_timerval_t t1, t2;
 	long ino;
 
+#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
+	t1 = 0;
+#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	path = gfarm_url_prefix_skip(path);
@@ -911,6 +914,12 @@ rename_single_file(struct gfarm_path_info *from_pi, char *newpath)
 	struct gfarm_file_section_info *sections;
 	struct gfarm_file_section_copy_info **copies;
 
+#ifdef __GNUC__
+	/* workaround gcc warning: 'copies' may be used uninitialized */
+	copies = NULL;
+	/* workaround gcc warning: 'ncopy' may be used uninitialized */
+	ncopy = NULL;
+#endif
 	e = link_a_file(from_pi, newpath,
 			&nsection, &sections, &ncopy, &copies);
 	if (e == NULL) {
@@ -1630,6 +1639,9 @@ gfs_pio_set_fragment_info_local(char *filename,
 	struct gfarm_file_section_info fi;
 	struct gfarm_file_section_copy_info fci;
 
+#ifdef __GNUC__ /* workaround gcc warning: 'digest_type' may be used uninitialized */
+	digest_type = NULL;
+#endif
 	/* Calculate checksum. */
 	e = digest_calculate(filename, &digest_type, digest_value_string,
 			     &digest_len, &filesize);
