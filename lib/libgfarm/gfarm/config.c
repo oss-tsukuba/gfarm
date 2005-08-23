@@ -855,8 +855,9 @@ gfarm_config_read_file(char *config_file, int *open_failedp)
 {
 	int lineno = 0;
 	char *s, *p, *e, *o, buffer[1024];
-	static char open_error_fmt[] = "%s: %s";
-	static char syntax_error_fmt[] = "%s: line %d: %s: %s";
+	static const char open_error_fmt[] = "%s: %s";
+	static const char token_error_fmt[] = "%s: line %d: %s";
+	static const char syntax_error_fmt[] = "%s: line %d: %s: %s";
 	static char error[256];
 	FILE *config = fopen(config_file, "r");
 
@@ -864,14 +865,14 @@ gfarm_config_read_file(char *config_file, int *open_failedp)
 		if (open_failedp != NULL)
 			*open_failedp = 1;
 #ifdef HAVE_SNPRINTF
-		snprintf(error, sizeof(error),
-		    open_error_fmt, config_file, strerror(errno));
+		snprintf(error, sizeof(error), open_error_fmt,
+		    config_file, strerror(errno));
 		return (error);
 #else
 		if (strlen(open_error_fmt) + strlen(config_file) +
 		    strlen(strerror(errno)) < sizeof(error)) {
-			sprintf(error,
-			    open_error_fmt, config_file, strerror(errno));
+			sprintf(error, open_error_fmt,
+			    config_file, strerror(errno));
 			return (error);
 		} else {
 			return (gfarm_errno_to_error(errno));
@@ -885,23 +886,39 @@ gfarm_config_read_file(char *config_file, int *open_failedp)
 		lineno++;
 		p = buffer;
 		s = gfarm_strtoken(&p, &e);
-
-		if (e == NULL) {
-			if (s == NULL) /* blank or comment line */
-				continue;
-			e = parse_one_line(s, p, &o);
-		}
 		if (e != NULL) {
 #ifdef HAVE_SNPRINTF
-			snprintf(error, sizeof(error),
-				 syntax_error_fmt, config_file, lineno, o, e);
+			snprintf(error, sizeof(error), token_error_fmt,
+			    config_file, lineno, e);
+			e = error;
+#else
+			if (strlen(token_error_fmt) + strlen(config_file) +
+			    GFARM_INT32STRLEN + strlen(e) < sizeof(error)) {
+				sprintf(error, token_error_fmt,
+				    config_file, lineno, e);
+				e = error;
+			} else {
+				/* XXX: no file name, no line number */
+			}
+#endif
+			fclose(config);
+			return (e);
+		}
+
+		if (s == NULL) /* blank or comment line */
+			continue;
+		e = parse_one_line(s, p, &o);
+		if (e != NULL) {
+#ifdef HAVE_SNPRINTF
+			snprintf(error, sizeof(error), syntax_error_fmt,
+			    config_file, lineno, o, e);
 			e = error;
 #else
 			if (strlen(syntax_error_fmt) + strlen(config_file) +
 			    GFARM_INT32STRLEN + strlen(o) + strlen(e) <
 			    sizeof(error)) {
-				sprintf(error,
-					syntax_error_fmt, config_file, lineno, o, e);
+				sprintf(error, syntax_error_fmt,
+				    config_file, lineno, o, e);
 				e = error;
 			} else {
 				/* XXX: no file name, no line number */
