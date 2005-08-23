@@ -197,7 +197,7 @@ gfarmIPGetPeernameOfSocket(sock, portPtr)
      int *portPtr;
 {
     struct sockaddr_in sin;
-    int slen = sizeof(sin);
+    socklen_t slen = sizeof(sin);
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	gflog_error("getpeername", strerror(errno));
@@ -219,7 +219,7 @@ gfarmIPGetNameOfSocket(sock, portPtr)
      int *portPtr;
 {
     struct sockaddr_in sin;
-    int slen = sizeof(sin);
+    socklen_t slen = sizeof(sin);
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	gflog_error("getsockname", strerror(errno));

@@ -1796,7 +1796,7 @@ gfs_client_get_load_request(int sock,
  */
 char *
 gfs_client_get_load_result(int sock,
-	struct sockaddr *server_addr, int *server_addr_sizep,
+	struct sockaddr *server_addr, socklen_t *server_addr_sizep,
 	struct gfs_client_load *result)
 {
 	int rv;

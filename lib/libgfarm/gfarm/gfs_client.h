@@ -166,7 +166,7 @@ struct gfs_client_load {
 };
 
 char *gfs_client_get_load_request(int, struct sockaddr *, int);
-char *gfs_client_get_load_result(int, struct sockaddr *, int *,
+char *gfs_client_get_load_result(int, struct sockaddr *, socklen_t *,
 	struct gfs_client_load *);
 
 struct gfs_client_get_load_state;

@@ -26,10 +26,14 @@
 #include <pwd.h>
 #include <grp.h>
 #include <libgen.h>
+
 #include <openssl/evp.h>
+
+#include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+
 #include "gfutil.h"
 #include "iobuffer.h"
 #include "xxx_proto.h"

@@ -14,6 +14,8 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include <gfarm/gfarm_config.h>
+
 #include "gfutil.h"
 
 #include "tcputil.h"
@@ -53,7 +55,7 @@ main(argc, argv)
     int ret = 1;
     int bindFd = -1;
     struct sockaddr_in remote;
-    int remLen = sizeof(struct sockaddr_in);
+    socklen_t remLen = sizeof(struct sockaddr_in);
     int fd0 = -1;
     int fd1 = -1;
     OM_uint32 majStat, minStat;

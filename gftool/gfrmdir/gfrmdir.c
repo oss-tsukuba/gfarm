@@ -7,10 +7,8 @@
 #include <string.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h>
-#include <gfarm/gfarm_metadb.h>
-#include <gfarm/gfarm_error.h>
+#include <sys/socket.h>
+#include <gfarm/gfarm.h>
 #include "gfs_client.h"
 
 char *program_name = "gfrmdir";
