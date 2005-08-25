@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + NFS [Japanese]</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=euc-jp">
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+
+<H1>GfarmFS-FUSE + NFS</H1>
+<A href="../../en/user/nfs-gfarmfs.html">English</A> | 日本語 
+
+<H2>1. 概要</H2>
+
+GfarmFS-FUSE を使って Gfarm ファイルシステムをマウントし，そのマウントポイントを NFS サーバで公開する方法をご紹介します．<BR>
+しかし，使い勝手の点で，お勧めできる方法ではありません．
+
+<P>
+必要な環境や設定
+<UL>
+<LI>NFS サーバマシン側
+  <UL>
+  <LI>Gfarm のクライアントが利用できる．利用しようと思っている Gfarm の環境にアクセスできる．
+  <LI>認証方法は，sahedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shaed_key を各ノードに配布したり，grid-proxy-init を実行しておかなければならない．
+  <LI>FUSE がインストールされている．
+  <LI>Linux カーネル 2.6 環境である．FUSE のマウントポイントを NFS でエクスポートするために必要となっている．
+  <LI>一般ユーザが FUSE でマウントしたマウントポイントに他ユーザがアクセスすることを許可されている．(user_allow_other 設定)
+  <LI>GfarmFS-FUSE がインストールされていて，実行できる．
+  <LI>NFS サーバを動かすことができる．または動いている．
+  <LI>この NFS サーバのマシン上で Gfarm のファイルシステムノード(gfsd)を動かしていないことを推奨する．gfsd を動かしている場合に，この NFS を経由して Gfarm 上にファイルを作成した場合は，このファイルシステムノードにしかファイルが作成されない．
+  <LI>一般ユーザが FUSE でマウントした(する予定の)マウントポイントに NFS 経由でアクセスできるような NFS の設定にする．
+  <LI>FUSE でマウントしてから(しなおした場合も)，nfs restart をする必要がある．
+  </UL>
+<LI>NFS クライアントマシン側
+  <UL>
+  <LI>上記 NFS のサービスにアクセスができる．
+  </UL>
+</UL>
+
+関連ソフトウエア一覧
+<UL>
+<LI>Gfarm: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
+<LI>GfarmFS-FUSE: <A HREF="https://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html">https://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html</A>
+<LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
+</UL>
+
+
+<H2>2. GfarmFS-FUSE で Gfarm をマウント</H2>
+NFS でエクスポートする前に，gfarmfs コマンドを実行して，Gfarm ファイルシステムをマウントしておく必要があります．
+下記の NFS サーバを動す予定の Linux マシン上で，
+かつ Gfarm の環境を使う準備ができている一般ユーザ権限で実行します．
+<P>
+gfhost -l などで，ファイルシステムノードにアクセスできる状態であることを確認してから，
+以下のコマンドを実行してマウントします．<BR>
+詳しくは Gfarm と GfarmFS-FUSE のドキュメントをご覧ください．
+<P>
+<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+  $ gfarmfs [gfarmfs のオプション] <B>マウントポイント</B> -o allow_root [FUSE のオプション]
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+-o allow_root が使えずマウントできない場合は，/etc/fuse.conf に 
+<P>
+<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+user_allow_other
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+と記述します．このことに関しては，FUSE パッケージの README もご覧ください．
+<P>
+マウントポイントは Samba で公開しているディレクトリ自体，またはそれ以下のディレクトリにします．<BR>
+以下では，説明のため，このマウントポイントを /tmp/yourname/gfarmfs としています．
+
+<H3>注意</H3>
+-o allow_other オプションを指定しないでください．
+-o allow_other オプションをつけると，他の一般ユーザがアクセスできてしまいます．
+しかも，マウントしたユーザの権限で Gfarm の環境にアクセスすることになります．
+
+<H2>3. NFS サーバの設定</H2>
+
+Linux Kernel 2.6 の環境でおこないます．(FUSE の README.NFS に記述されています)
+<BR>
+/etc/exports には，マウントポイントを公開する設定に fsid と anonuid の設定も加えます．
+その他，/etc/hosts.allow /etc/hosts.deny などの設定をして，nfs restart します．
+<BR>
+<P>
+/etc/exports の例です．
+<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+/tmp/yourname/gfarmfs  AAA.BBB.CCC.0/255.255.255.0(rw,fsid=10,anonuid=1205)
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+fsid には，他のファイルシステムで使われていない任意の値を指定するようです．(詳しい方いらっしゃいませんか？)<BR>
+anonuid には，gfarmfs でマウントしたユーザの uid を指定します．
+
+<H2>4. NFS クライアントからマウント</H2>
+
+NFS クライアントから，上記の NFS サーバをマウントします．
+クライアント側は，一般的な方法で NFS マウントするだけで，特別な設定は要りません．
+mount コマンドでマウントします．
+/etc/fstab に記述もできます．
+<P>
+/etc/fstab の例です．
+<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+AAA.BBB.CCC.1:/tmp/yourname/gfarmfs  /mnt/gfarm/yourname  nfs  rw,sync,noauto  0  0
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>5. 使い勝手について</H2>
+
+NFS サーバ側では，GfarmFS-FUSE でマウントしておいてから，nfs restart をかけます．
+しかし，通常，GfarmFS-FUSE でマウントするのは一般ユーザで，nfs restart するのは root になります．
+さらに，GfarmFS-FUSE を再びマウントしなおした場合は，nfs restart しなければなりません．(reload や exportfs -r ではだめでした)<BR>
+NFS クライアントはからは, root 権限でマウントすることになり，そのマウントポイントには，GfarmFS-FUSE でマウントしたユーザ(と uid, gid が一致している)しか利用できません．/etc/fstab に user オプションを指定しても，一般ユーザがマウントできるようになるだけで，GfarmFS-FUSE をマウントしたユーザしかアクセスできません．
+
+
+<H2>6. コメント</H2>質問やコメントがありましたら，
+<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A> まで自由にメールを送付してください． 
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>
