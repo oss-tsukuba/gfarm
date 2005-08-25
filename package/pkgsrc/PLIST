@@ -329,6 +329,8 @@ share/doc/html/gfarm/en/ref/man3/gfs_utimes.3.html
 share/doc/html/gfarm/en/ref/man5/gfarm.conf.5.html
 share/doc/html/gfarm/en/ref/man8/gfmd.8.html
 share/doc/html/gfarm/en/ref/man8/gfsd.8.html
+share/doc/html/gfarm/en/user/index.html
+share/doc/html/gfarm/en/user/samba-gfarmfs.html
 share/doc/html/gfarm/index.html
 share/doc/html/gfarm/ja/ref/index.html
 share/doc/html/gfarm/ja/ref/man1/gfarm_agent.1.html
@@ -424,11 +426,14 @@ share/doc/html/gfarm/ja/ref/man5/gfarm.conf.5.html
 share/doc/html/gfarm/ja/ref/man8/gfmd.8.html
 share/doc/html/gfarm/ja/ref/man8/gfsd.8.html
 share/doc/html/gfarm/ja/user/index.html
+share/doc/html/gfarm/ja/user/samba-gfarmfs.html
 share/doc/html/gfarm/ja/user/samba-hook.html
+share/doc/html/gfarm/pic/gfarm-logo.gif
 share/examples/rc.d/gfmd
 share/examples/rc.d/gfsd
 share/java/gfront.jar
 @unexec ${RMDIR} -p %D/share/java 2>/dev/null || ${TRUE}
+@dirrm share/doc/html/gfarm/pic
 @dirrm share/doc/html/gfarm/ja/user
 @dirrm share/doc/html/gfarm/ja/ref/man8
 @dirrm share/doc/html/gfarm/ja/ref/man5
@@ -436,6 +441,7 @@ share/java/gfront.jar
 @dirrm share/doc/html/gfarm/ja/ref/man1
 @dirrm share/doc/html/gfarm/ja/ref
 @dirrm share/doc/html/gfarm/ja
+@dirrm share/doc/html/gfarm/en/user
 @dirrm share/doc/html/gfarm/en/ref/man8
 @dirrm share/doc/html/gfarm/en/ref/man5
 @dirrm share/doc/html/gfarm/en/ref/man3

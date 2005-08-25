@@ -472,6 +472,9 @@ fi
 %{html_prefix}/en/ref/man5/gfarm.conf.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
+%{html_prefix}/en/user/index.html
+%{html_prefix}/en/user/samba-gfarmfs.html
+# XXX NOTYET %{html_prefix}/en/user/samba-hook.html
 %{html_prefix}/ja/ref/index.html
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
@@ -566,7 +569,9 @@ fi
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/index.html
+%{html_prefix}/ja/user/samba-gfarmfs.html
 %{html_prefix}/ja/user/samba-hook.html
+%{html_prefix}/pic/gfarm-logo.gif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en

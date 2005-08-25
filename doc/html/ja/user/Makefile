@@ -8,6 +8,6 @@ include $(top_srcdir)/makes/var.mk
 
 htmldir=$(default_htmldir)/ja/user
 
-HTML = index.html samba-hook.html
+HTML = index.html samba-gfarmfs.html samba-hook.html
 
 include $(top_srcdir)/makes/html.mk
