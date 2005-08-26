@@ -6,8 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-htmldir=$(default_htmldir)/pic
+datadir=$(default_htmldir)/pic
 
-HTML =	gfarm-logo.gif
+DATA = gfarm-logo.gif
 
-include $(top_srcdir)/makes/html.mk
+include $(top_srcdir)/makes/data.mk
