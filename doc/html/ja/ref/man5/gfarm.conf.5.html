@@ -5,8 +5,7 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -41,11 +40,13 @@ NAME="DESCRIPTION"
 ¤Ê¤ª¡¢ÀßÄêÆâÍÆ¤¬ÆÉ¤ß¹þ¤Þ¤ì¤ë¤Î¤Ïµ¯Æ°»þ¤À¤±¤Ê¤Î¤Ç¡¢
 ÀßÄêÆâÍÆ¤òÊÑ¹¹¤·¤¿¾ì¹ç¡¢¥µ¡¼¥Ð¡¼¤òºÆµ¯Æ°¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£</P
 ><P
->¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤Ï¡¢%%SYSCONFDIR%%/gfarm.conf ¤È¡¢¥æ¡¼¥¶¡¼¤Î
-¥Û¡¼¥à¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë .gfarmrc ¥Õ¥¡¥¤¥ë¤ò¡¢ÀßÄê¥Õ¥¡¥¤¥ë
-¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£.gfarmrc ¥Õ¥¡¥¤¥ë¤Ï¡¢%%SYSCONFDIR%%/gfarm.conf ¤È
-Æ±°ì¤Î·Á¼°¤Çµ­½Ò¤·¤Þ¤¹¡£.gfarmrc ¤È %%SYSCONFDIR%%/gfarm.conf ¤Ç¤Ï¡¢
- .gfarmrc ¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£</P
+>¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤Ç
+»ØÄê¤·¤¿¥Õ¥¡¥¤¥ë¤È¡¢%%SYSCONFDIR%%/gfarm.conf ¤ò¡¢ÀßÄê¥Õ¥¡¥¤¥ë
+¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£¤³¤ÎÆó¤Ä¤Î¥Õ¥¡¥¤¥ë¤Ç¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤Ç
+»ØÄê¤·¤¿¥Õ¥¡¥¤¥ë¤ÎÀßÄê¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
+¤É¤Á¤é¤ÎÀßÄê¥Õ¥¡¥¤¥ë¤â¡¢Æ±°ì¤ÎÊ¸Ë¡¤Çµ­½Ò¤·¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤¬ÀßÄê¤µ¤ì¤Æ¤Ê¤¤¾ì¹ç¡¢Âå¤ï¤ê¤Ë
+¥æ¡¼¥¶¡¼¤Î¥Û¡¼¥à¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë .gfarmrc ¥Õ¥¡¥¤¥ë¤ò»ÈÍÑ¤·¤Þ¤¹¡£&#13;</P
 ><P
 >gfarm.conf ¤Ï¡¢°ì¹Ô¤Ë°ìÊ¸¤Î·Á¼°¤ÇÀßÄê¤·¤Þ¤¹¡£
 ¤¿¤À¤·¡¢¹ÔËö¤ËÊ¸»ú ``\'' ¤òµ­½Ò¤¹¤ë¤³¤È¤Ë¤è¤Ã¤Æ¡¢¹Ô¤ò·ÑÂ³¤µ¤»¤ë¤³¤È¤¬
@@ -660,12 +661,12 @@ CLASS="PARAMETER"
 ><I
 >Í­¸úÌµ¸ú</I
 ></TT
-> <TT
+>  <TT
 CLASS="PARAMETER"
 ><I
 >Ç§¾ÚÊýË¡</I
 ></TT
-> <TT
+>  <TT
 CLASS="PARAMETER"
 ><I
 >¥Û¥¹¥È»ØÄê</I
@@ -927,44 +928,44 @@ CLASS="TOKEN"
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_DEBUG</TT
+>SO_DEBUG</CODE
 > ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_KEEPALIVE</TT
+>SO_KEEPALIVE</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_SNDBUF</TT
+>SO_SNDBUF</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤Î»ØÄê¤¬É¬Í×¤Ç¤¹¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_RCVBUF</TT
+>SO_RCVBUF</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤Î»ØÄê¤¬É¬Í×¤Ç¤¹¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->TCP_NODELAY</TT
+>TCP_NODELAY</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
@@ -998,6 +999,40 @@ IP¥¢¥É¥ì¥¹¤òÄÌ¿®¤ËÍÑ¤¤¤ë¤«¤ò»ØÄê¤·¤Þ¤¹¡£
 ><P
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_architecture</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾</I
+></TT
+>  <TT
+CLASS="PARAMETER"
+><I
+>¥Û¥¹¥È»ØÄê</I
+></TT
+></DT
+><DD
+><P
+>¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤¬¼Â¹Ô¥Õ¥¡¥¤¥ë¤Ë¥¢¥¯¥»¥¹¤¹¤ë¾ì¹ç¤ËÁªÂò¤¹¤ë
+¥Ç¥Õ¥©¥ë¥È¤Î¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£
+¤³¤Î»ØÄê¤Ï¡¢¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤Î¤ßºîÍÑ¤·¤Þ¤¹¡£
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤Ï¡¢¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ð¤ËÅÐÏ¿¤µ¤ì¤Æ¤¤¤ë
+¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤¬»È¤ï¤ì¤Þ¤¹¡£</P
+><P
+>¤³¤ì¤ËÂÐ¤·¡¢´Ä¶­ÊÑ¿ô GFARM_ARCHITECTURE ¤ò»È¤¦¤È¡¢¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤ËÂÐ¤·¤Æ¤â
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤â¡¢¼Â¹Ô¥Õ¥¡¥¤¥ë¤Î¥Ç¥Õ¥©¥ë¥È¤Î¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤ò
+»ØÄê¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-1.example.com<br>
+	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-2.example.com<br>
+	client_architecture&nbsp;sparc-sun-solaris8&nbsp;solaris-1.example.com</P
 ></DD
 ><DT
 ><SPAN
@@ -1070,6 +1105,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;netparam_statement&#62;&nbsp;|<br>
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
 		  &#60;address_use_statement&#62;&nbsp;|<br>
+		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
@@ -1103,6 +1139,8 @@ CLASS="LITERALLAYOUT"
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;client_architecture_statement&#62;&nbsp;::=<br>
+		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>

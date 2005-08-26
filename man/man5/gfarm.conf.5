@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "21 December 2004" "Gfarm" ""
+.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -16,18 +16,20 @@ time, it is necessary to restart servers when updating the content of
 the configuration file.
 .PP
 Application programs such as gfls and gfhost refer to both
-%%SYSCONFDIR%%/gfarm.conf and ~/.gfarmrc in a user's home directory as a
-configuration file.  .gfarmrc has the same grammar as %%SYSCONFDIR%%/gfarm.conf.
-If both .gfarmrc and %%SYSCONFDIR%%/gfarm.conf exist, .gfarmrc is read at
-first.
+%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+GFARM_CONFIG_FILE. If both configuration files exist, the file
+specified by the environment variable GFARM_CONFIG_FILE is read at
+first. Both files have same grammar.
+If the environment variable GFARM_CONFIG_FILE doesn't exist,
+~/.gfarmrc in a user's home directory is used instead.
 .PP
 Each line of gfarm.conf consists of one statement.  When the
 line ends with the character ``\\'', the line continues for the next
 line.  A word beginning with ``#'' causes that word and all remaining
 characters on that line to be ignored.
-.SH "HOST SPECIFICATION"
+.SH "HOST_SPECIFICATION"
 .PP
-\fIHost specification\fR has the following
+\fIHost_specification\fR has the following
 forms.
 .TP
 \fB\fIIII.JJJ.KKK.LLL\fB\fR
@@ -297,7 +299,7 @@ For example,
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fIenable/disable\fB \fImethod\fB \fIHost specification\fB\fR
+\fBauth \fIenable/disable\fB \fImethod\fB \fIHost_specification\fB\fR
 This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.
 
@@ -311,7 +313,7 @@ specification\fR\&.
 
 The auth statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the target host has
+the first entry whose host_specification matches the target host has
 the enable keyword.  When there is no corresponding
 entry, or when the first corresponding entry has the
 disable keyword, the authentication method does not
@@ -355,7 +357,7 @@ and all other hosts will be authenticated by
 gsi\&.  Note that two hosts of 192.168.0.100 and
 192.168.0.101 will be tried to be authenticated by gsi only.
 .TP
-\fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost specification\fB]\fR
+\fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost_specification\fB]\fR
 The netparam statement specifies several
 communication parameters listed below.
 
@@ -366,7 +368,7 @@ transfer performance especially when connecting to a far distant site
 (i.e. high bandwidth-delay product network) such that tcp congestion
 window size will not increase enough.  This parameter is only
 effective on a client node where gfrep(1) command is executed.
-\fIHost specification\fR specifies the source host(s)
+\fIHost_specification\fR specifies the source host(s)
 of file replication instead of the destination host(s).
 
 stripe_unit_size\&.  This parameter specifies how
@@ -381,7 +383,7 @@ parameter.
 This parameter is effective only when two or more is specified
 by the parallel_streams parameter.  This parameter is
 only effective on a client node where gfrep(1) command is executed.
-\fIHost specification\fR specifies the source host(s)
+\fIHost_specification\fR specifies the source host(s)
 of file replication instead of the destination host(s).
 
 rate_limit\&.  This parameter specifies the maximum
@@ -401,7 +403,7 @@ For example,
 	netparam rate_limit=750000	192.168.0.0/24
 .fi
 .TP
-\fBsockopt \fIoption\fB[=\fIvalue\fB] [LISTENER | \fIHost specification\fB]\fR
+\fBsockopt \fIoption\fB[=\fIvalue\fB] [LISTENER | \fIHost_specification\fB]\fR
 The sockopt parameter specifies the socket option
 \fIoption\fR via the setsockopt(2) system call.
 
@@ -409,7 +411,7 @@ When LISTENER (all capital letter) is specified
 by the second argument, the socket option is applied to any socket
 in server side (accepting side).
 
-When the host specification is specified by the second argument,
+When the host_specification is specified by the second argument,
 the socket option is applied to sockets that connect to specified host(s).
 If the second argument is "*", the socket option is applied to any
 hosts in client side (connecting side).
@@ -447,7 +449,7 @@ For example,
 	sockopt rcvbuf=1048576 LISTENER
 .fi
 .TP
-\fBaddress_use \fIHost specification\fB\fR
+\fBaddress_use \fIHost_specification\fB\fR
 The address_use statement specifies an IP address
 or a network address that is preferably used for connection when the
 target host has several IP addresses.
@@ -456,6 +458,25 @@ For example,
 
 .nf
 	address_use 192.168.0.0/24
+.fi
+.TP
+\fBclient_architecture \fIarchitecture\fB \fIHost_specification\fB\fR
+This directive specifies default architecture name which may be used
+when a client node accesses an executable file.
+This directive only affects client nodes.
+For filesystem nodes, architecture names which are registered in
+the metadata server are used.
+
+On the other hand, environment variable GFARM_ARCHITECTURE,
+which specifies default architecture name just like this directive,
+affects both client nodes and filesystem nodes.
+
+Example:
+
+.nf
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
 .fi
 .TP
 \fBlocal_user_map \fIuser-map-file\fB\fR
@@ -514,6 +535,7 @@ notation.
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<address_use_statement> |
+		\~\~<client_architecture_statement> |
 		\~\~<local_user_map_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
@@ -547,6 +569,8 @@ notation.
 	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
+	<client_architecture_statement> ::=
+		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"

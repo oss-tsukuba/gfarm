@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "21 October 2004" "Gfarm" ""
+.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -15,11 +15,13 @@ gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
 なお、設定内容が読み込まれるのは起動時だけなので、
 設定内容を変更した場合、サーバーを再起動する必要があります。
 .PP
-アプリケーションプログラムは、%%SYSCONFDIR%%/gfarm.conf と、ユーザーの
-ホームディレクトリにある .gfarmrc ファイルを、設定ファイル
-として参照します。.gfarmrc ファイルは、%%SYSCONFDIR%%/gfarm.conf と
-同一の形式で記述します。.gfarmrc と %%SYSCONFDIR%%/gfarm.conf では、
-.gfarmrc の方が優先されます。
+アプリケーションプログラムは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルと、%%SYSCONFDIR%%/gfarm.conf を、設定ファイル
+として参照します。この二つのファイルでは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルの設定の方が優先されます。
+どちらの設定ファイルも、同一の文法で記述します。
+環境変数 GFARM_CONFIG_FILE が設定されてない場合、代わりに
+ユーザーのホームディレクトリにある .gfarmrc ファイルを使用します。
 .PP
 gfarm.conf は、一行に一文の形式で設定します。
 ただし、行末に文字 ``\\'' を記述することによって、行を継続させることが
@@ -269,7 +271,7 @@ LDAP データベースで保持するデータのキーの根となるノードの
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fI有効無効\fB\~\fI認証方法\fB\~\fIホスト指定\fB\fR
+\fBauth \fI有効無効\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
 この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
 
 第1引数の\fI有効無効\fR部には、enable ないし disable
@@ -415,6 +417,25 @@ IPアドレスを通信に用いるかを指定します。
 	address_use 192.168.0.0/24
 .fi
 .TP
+\fBclient_architecture \fIアーキテクチャ名\fB\~ \fIホスト指定\fB\fR
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
+
+これに対し、環境変数 GFARM_ARCHITECTURE を使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
+
+例:
+
+.nf
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
+.fi
+.TP
 \fBlocal_user_map \fIユーザマップファイルパス名\fB\fR
 グローバルユーザ名とローカルユーザ名の対応関係を記述した
 ユーザマップファイルパス名を指定します。
@@ -467,6 +488,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<address_use_statement> |
+		\~\~<client_architecture_statement> |
 		\~\~<local_user_map_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
@@ -500,6 +522,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
+	<client_architecture_statement> ::=
+		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"

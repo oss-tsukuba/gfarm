@@ -41,10 +41,12 @@ time, it is necessary to restart servers when updating the content of
 the configuration file.</P
 ><P
 >Application programs such as gfls and gfhost refer to both
-%%SYSCONFDIR%%/gfarm.conf and ~/.gfarmrc in a user's home directory as a
-configuration file.  .gfarmrc has the same grammar as %%SYSCONFDIR%%/gfarm.conf.
-If both .gfarmrc and %%SYSCONFDIR%%/gfarm.conf exist, .gfarmrc is read at
-first.</P
+%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+GFARM_CONFIG_FILE. If both configuration files exist, the file
+specified by the environment variable GFARM_CONFIG_FILE is read at
+first. Both files have same grammar.
+If the environment variable GFARM_CONFIG_FILE doesn't exist,
+ ~/.gfarmrc in a user's home directory is used instead.</P
 ><P
 >Each line of gfarm.conf consists of one statement.  When the
 line ends with the character ``\'', the line continues for the next
@@ -57,12 +59,12 @@ CLASS="REFSECT1"
 NAME="HOSTSPECIFICATION"
 ></A
 ><H2
->Host specification</H2
+>Host_specification</H2
 ><P
 ><TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > has the following
 forms.</P
@@ -711,7 +713,7 @@ CLASS="PARAMETER"
 > <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ></DT
 ><DD
@@ -757,7 +759,7 @@ CLASS="TOKEN"
 >auth</SPAN
 > statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the target host has
+the first entry whose host_specification matches the target host has
 the <SPAN
 CLASS="TOKEN"
 >enable</SPAN
@@ -862,7 +864,7 @@ CLASS="EMPHASIS"
 ><TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ><I
 CLASS="EMPHASIS"
@@ -892,7 +894,7 @@ effective on a client node where gfrep(1) command is executed.
 <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > specifies the source host(s)
 of file replication instead of the destination host(s).</P
@@ -921,7 +923,7 @@ only effective on a client node where gfrep(1) command is executed.
 <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > specifies the source host(s)
 of file replication instead of the destination host(s).</P
@@ -975,7 +977,7 @@ CLASS="TOKEN"
 > | <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 >]</I
 ></DT
@@ -999,7 +1001,7 @@ CLASS="TOKEN"
 by the second argument, the socket option is applied to any socket
 in server side (accepting side).</P
 ><P
->When the host specification is specified by the second argument,
+>When the host_specification is specified by the second argument,
 the socket option is applied to sockets that connect to specified host(s).
 If the second argument is "*", the socket option is applied to any
 hosts in client side (connecting side).</P
@@ -1098,7 +1100,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ></DT
 ><DD
@@ -1114,6 +1116,40 @@ target host has several IP addresses.</P
 ><P
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_architecture</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>architecture</I
+></TT
+> <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies default architecture name which may be used
+when a client node accesses an executable file.
+This directive only affects client nodes.
+For filesystem nodes, architecture names which are registered in
+the metadata server are used.</P
+><P
+>On the other hand, environment variable GFARM_ARCHITECTURE,
+which specifies default architecture name just like this directive,
+affects both client nodes and filesystem nodes.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-1.example.com<br>
+	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-2.example.com<br>
+	client_architecture&nbsp;sparc-sun-solaris8&nbsp;solaris-1.example.com</P
 ></DD
 ><DT
 ><SPAN
@@ -1210,6 +1246,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;netparam_statement&#62;&nbsp;|<br>
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
 		  &#60;address_use_statement&#62;&nbsp;|<br>
+		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
@@ -1243,6 +1280,8 @@ CLASS="LITERALLAYOUT"
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;client_architecture_statement&#62;&nbsp;::=<br>
+		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
