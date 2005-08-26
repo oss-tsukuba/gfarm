@@ -744,6 +744,39 @@ parse_local_user_map(char *p, char **op)
 }
 
 static char *
+parse_client_architecture(char *p, char **op)
+{
+	char *e, *architecture, *host;
+	struct gfarm_hostspec *hostspecp;
+
+	architecture = gfarm_strtoken(&p, &e);
+	if (e != NULL)
+		return (e);
+	if (architecture == NULL)
+		return ("missing 1st(architecture) argument");
+	host = gfarm_strtoken(&p, &e);
+	if (e != NULL)
+		return (e);
+	if (host == NULL)
+		return ("missing 2nd(host-spec) argument");
+	if (gfarm_strtoken(&p, &e) != NULL)
+		return (GFARM_ERR_TOO_MANY_ARGUMENTS);
+	e = gfarm_hostspec_parse(host, &hostspecp);
+	if (e != NULL) {
+		/*
+		 * we don't return `host' to *op here,
+		 * because it may be too long.
+		 */
+		*op = "2nd(host-spec) argument";
+		return (e);
+	}
+	e = gfarm_set_client_architecture(architecture, hostspecp);
+	if (e != NULL)
+		gfarm_hostspec_free(hostspecp);
+	return (e);
+}
+
+static char *
 get_one_argument(char *p, char **sp)
 {
 	char *e, *s;
@@ -842,6 +875,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_address_use_arguments(p, &o);
 	} else if (strcmp(s, o = "local_user_map") == 0) {
 		e = parse_local_user_map(p, &o);
+	} else if (strcmp(s, o = "client_architecture") == 0) {
+		e = parse_client_architecture(p, &o);
 	} else {
 		o = s;
 		e = "unknown keyword";

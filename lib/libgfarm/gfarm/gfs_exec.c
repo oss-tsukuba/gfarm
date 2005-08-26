@@ -37,14 +37,17 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	if (e != NULL)
 		return (e);
 
-	if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
-		arch = gfarm_host_info_get_architecture_by_host(hostname);
-		if (arch == NULL)
+	if (GFARM_S_ISDIR(gstat.st_mode)) {
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	} else if (!GFARM_S_ISREG(gstat.st_mode)) {
+		e = "unknown format";
+	} else if (GFARM_S_IS_FRAGMENTED_FILE(gs.st_mode)) {
+		arch = "0";
+	} else if (GFARM_S_IS_PROGRAM(gs.st_mode)) {
+		if (gfarm_host_get_self_architecture(&arch) != NULL)
 			e = "not a file system node";
 	} else {
-		arch = strdup("0");
-		if (arch == NULL)
-			e = GFARM_ERR_NO_MEMORY;
+		e = "unknown format";
 	}
 	gfs_stat_free(&gs);
 	if (e != NULL)
@@ -52,33 +55,18 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 
 	/* check the metadata */
 	e = gfs_stat_section(url, arch, &gstat);
-	if (e != NULL) {
-		free(arch);
+	if (e != NULL)
 		return (e);
-	}
-	if (GFARM_S_ISDIR(gstat.st_mode)) {
-		gfs_stat_free(&gstat);
-		free(arch);
-		return (GFARM_ERR_IS_A_DIRECTORY);
-	}
-	else if (!GFARM_S_ISREG(gstat.st_mode)) {
-		gfs_stat_free(&gstat);
-		free(arch);
-		return ("unknown format");
-	}
 	gsize = gstat.st_size;
 	gfs_stat_free(&gstat);
 
 	/* determine the local pathname */
 	e = gfarm_url_make_path(url, &gfarm_file);
-	if (e != NULL) {
-		free(arch);
+	if (e != NULL)
 		return (e);
-	}
 	e = gfarm_path_localize_file_section(gfarm_file, arch, &localpath);
 	if (e != NULL) {
 		free(gfarm_file);
-		free(arch);
 		return (e);
 	}
 
@@ -116,7 +104,6 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	/* critical section ends */
 
 	free(gfarm_file);
-	free(arch);
 	if (e != NULL) {
 		free(localpath);
 		return (e);

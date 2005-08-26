@@ -223,7 +223,7 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 			return (strcasecmp(name, hostspecp->u.name) == 0);
 		}
 	case GFHS_AF_INET4:
-		if (addr->sa_family != AF_INET)
+		if (addr == NULL || addr->sa_family != AF_INET)
 			return (0);
 		return ((((struct sockaddr_in *)addr)->sin_addr.s_addr &
 			 hostspecp->u.in4_addr.mask.s_addr) ==
