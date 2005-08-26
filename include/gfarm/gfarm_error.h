@@ -18,6 +18,7 @@ extern char GFARM_ERR_INVALID_ARGUMENT[];
 extern char GFARM_ERR_TEXT_FILE_BUSY[];
 extern char GFARM_ERR_NO_SPACE[];
 extern char GFARM_ERR_READ_ONLY_FILE_SYSTEM[];
+extern char GFARM_ERR_BROKEN_PIPE[];
 
 /* non classic, non-blocking and interrupt i/o */
 extern char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[];
@@ -43,6 +44,7 @@ extern char GFARM_ERR_NO_ROUTE_TO_HOST[];
 extern char GFARM_ERR_CONNECTION_TIMED_OUT[];
 extern char GFARM_ERR_CONNECTION_REFUSED[];
 extern char GFARM_ERR_CONNECTION_RESET_BY_PEER[];
+extern char GFARM_ERR_SOCKET_IS_NOT_CONNECTED[];
 extern char GFARM_ERR_UNKNOWN_HOST[];
 
 /* gfarm specific errors */
@@ -53,6 +55,7 @@ extern char GFARM_ERR_AMBIGUOUS_RESULT[];
 extern char GFARM_ERR_INCONSISTENT_RECOVERABLE[];
 extern char GFARM_ERR_NO_FRAGMENT_INFORMATION[];
 extern char GFARM_ERR_NO_REPLICA_ON_HOST[];
+extern char GFARM_ERR_UNEXPECTED_EOF[];
 extern char GFARM_ERR_UNKNOWN[];
 
 int gfarm_error_to_errno(const char *);

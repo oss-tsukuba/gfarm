@@ -151,7 +151,7 @@ char *
 xxx_proto_purge(struct xxx_connection *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
-		return (GFARM_ERR_PROTOCOL); /* unexpected eof */
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	return (NULL);
 }
 
@@ -454,14 +454,14 @@ xxx_proto_vrpc_result(struct xxx_connection *conn,
 	if (e != NULL)
 		return (e);
 	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc status missing */
+		return (GFARM_ERR_UNEXPECTED_EOF); /* rpc status missing */
 	if (*errorp != 0)
 		return (NULL); /* should examine error in this case */
 	e = xxx_proto_vrecv(conn, just, &eof, formatp, app);
 	if (e != NULL)
 		return (e);
 	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc return value missing */
+		return (GFARM_ERR_UNEXPECTED_EOF); /* rpc return value missing */
 	return (NULL);
 }
 

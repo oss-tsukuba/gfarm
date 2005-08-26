@@ -34,6 +34,7 @@ char GFARM_ERR_INVALID_ARGUMENT[] = "invalid argument";
 char GFARM_ERR_TEXT_FILE_BUSY[] = "text file busy";
 char GFARM_ERR_NO_SPACE[] = "no space";
 char GFARM_ERR_READ_ONLY_FILE_SYSTEM[] = "read-only file system";
+char GFARM_ERR_BROKEN_PIPE[] = "broken pipe";
 
 /* non classic, non-blocking and interrupt i/o */
 char GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE[] =
@@ -61,6 +62,7 @@ char GFARM_ERR_NO_ROUTE_TO_HOST[] = "no route to host";
 char GFARM_ERR_CONNECTION_TIMED_OUT[] = "connection timed out";
 char GFARM_ERR_CONNECTION_REFUSED[] = "connection refused";
 char GFARM_ERR_CONNECTION_RESET_BY_PEER[] = "connection reset by peer";
+char GFARM_ERR_SOCKET_IS_NOT_CONNECTED[] = "socket is not connected";
 char GFARM_ERR_UNKNOWN_HOST[] = "unknown host";
 
 /* gfarm specific errors */
@@ -77,6 +79,8 @@ char GFARM_ERR_NO_FRAGMENT_INFORMATION[] =
 	"no fragment information";
 char GFARM_ERR_NO_REPLICA_ON_HOST[] =
 	"no file replica on the host";
+extern char GFARM_ERR_UNEXPECTED_EOF[] =
+	"unexpected EOF";
 char GFARM_ERR_UNKNOWN[] = "unknown error";
 
 /*
@@ -113,6 +117,7 @@ struct {
 	{ ETXTBSY,	GFARM_ERR_TEXT_FILE_BUSY },
 	{ ENOSPC,	GFARM_ERR_NO_SPACE },
 	{ EROFS,	GFARM_ERR_READ_ONLY_FILE_SYSTEM },
+	{ EPIPE,	GFARM_ERR_BROKEN_PIPE },
 
 	/*
 	 * non classic, non-blocking and interrupt i/o
@@ -162,6 +167,7 @@ struct {
 	{ ETIMEDOUT,	GFARM_ERR_CONNECTION_TIMED_OUT },
 	{ ECONNREFUSED,	GFARM_ERR_CONNECTION_REFUSED },
 	{ ECONNRESET,	GFARM_ERR_CONNECTION_RESET_BY_PEER },
+	{ ENOTCONN,	GFARM_ERR_SOCKET_IS_NOT_CONNECTED },
 };
 
 /* prevent infinite loop caused by where IN_ERRNO(i) is always true. */
