@@ -2,21 +2,31 @@
 <html><head><title>Grid Datafarm: Gfarm hook + Samba [Japanese]</title>
 <meta http-equiv="Content-Type" content="text/html; charset=euc-jp">
 <meta content="document" name="resource-type"></head>
-<body><a href="http://datafarm.apgrid.org/">
+<body>
+<a href="http://datafarm.apgrid.org/">
 <img alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></a> 
+<A href="../../index.html">文書集</a> >
+<a href="index.html">ユーザーズマニュアル</a> >
+samba/hook
+
+
 <h1>Samba を使って gfarm ファイルシステムにアクセスする
 -- システムコールフックを用いる方法</h1>
 
 <h2>1. 概要</h2>
 
+  <p>
   この文書では，Gfarm システムコールフックライブラリをプリロードした
   うえで Samba を起動して  Windows から Gfarm ファイルにアクセスする
   ための設定方法を説明しています．</br></br>
 
+  <p>
   別に FUSE を使って Samba を利用する方法もありますが，フックライブラリを
   用いる方が，より設定／利用手順が簡単ですので，この方法をお勧めします．
   
-別の方法： GfarmFS-FUSE + Samba の方法についてはこちら
+<p>
+別の方法： 
+<a href="samba-gfarmfs.html">GfarmFS-FUSE + Samba の方法についてはこちら</a>
 
 <h2>2. 利用環境の前提条件</h2>
    
