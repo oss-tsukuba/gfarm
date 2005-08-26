@@ -437,7 +437,9 @@ share/doc/gfarm/html/ja/ref/man3/gfs_utimes.3.html
 share/doc/gfarm/html/ja/ref/man5/gfarm.conf.5.html
 share/doc/gfarm/html/ja/ref/man8/gfmd.8.html
 share/doc/gfarm/html/ja/ref/man8/gfsd.8.html
+share/doc/gfarm/html/ja/user/export-gfarm.html
 share/doc/gfarm/html/ja/user/index.html
+share/doc/gfarm/html/ja/user/nfs-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-hook.html
 share/doc/gfarm/html/pic/gfarm-logo.gif

@@ -568,7 +568,9 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
+%{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/index.html
+%{html_prefix}/ja/user/nfs-gfarmfs.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
 %{html_prefix}/ja/user/samba-hook.html
 %{html_prefix}/pic/gfarm-logo.gif
