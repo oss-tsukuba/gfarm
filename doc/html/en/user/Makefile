@@ -10,5 +10,9 @@ htmldir=$(default_htmldir)/en/user
 
 HTML =	index.html \
 	samba-gfarmfs.html
+# XXX not translated yet
+#	export-gfarm.html \
+	nfs-gfarmfs.html \
+#	samba-hook.html
 
 include $(top_srcdir)/makes/html.mk
