@@ -297,20 +297,14 @@ diff_exec(gfarm_mode_t old, gfarm_mode_t new)
 static char *
 get_architecture_name(int ncopy, struct gfarm_file_section_copy_info *copies)
 {
-	/* XXX - this selection of architecture is stopgap. */
+	char *architecture;
 
-	char *e, *hostname;
-	int i;
+	/* if architecture of this node is known, use it */
+	if (gfarm_host_get_self_architecture(&architecture) == NULL)
+		return (strdup(architecture));
 
-	e = gfarm_host_get_canonical_self_name(&hostname);
-	if (e != NULL)
-		hostname = copies[0].hostname;
-	for (i = 0; i < ncopy; i++)
-		if (strcmp(copies[i].hostname, hostname) == 0) 
-			break;
-	if (i >= ncopy)
-		hostname = copies[0].hostname;
-	return gfarm_host_info_get_architecture_by_host(hostname);
+	/* XXX stopgap. use architecture of a node which has a replica. */
+	return (gfarm_host_info_get_architecture_by_host(copies[0].hostname));
 }
 
 struct gfs_chmod_args {
