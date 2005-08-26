@@ -349,6 +349,10 @@ gfarm_path_localize(char *canonic_path, char **abs_pathp)
 
 	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
 
+	if (gfarm_spool_root == NULL)
+		return ("gfarm_path_localize(): programming error, "
+			"gfarm library isn't properly initialized");
+
 	s = malloc(strlen(gfarm_spool_root) + 1 + strlen(canonic_path) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -373,6 +377,11 @@ char *
 gfarm_path_localize_file_section(char *canonic_path, char *section,
 				 char **abs_pathp)
 {
+	if (gfarm_spool_root == NULL)
+		return ("gfarm_path_localize_file_section(): "
+			"programming error, "
+			"gfarm library isn't properly initialized");
+
 	return (gfarm_full_path_file_section(gfarm_spool_root,
 	    canonic_path, section, abs_pathp));
 }
