@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>21 Oct 2003</date></refentryinfo>
+<refentryinfo><date>26 Aug 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -24,11 +24,15 @@
 なお、設定内容が読み込まれるのは起動時だけなので、
 設定内容を変更した場合、サーバーを再起動する必要があります。</para>
 
-<para>アプリケーションプログラムは、%%SYSCONFDIR%%/gfarm.conf と、ユーザーの
-ホームディレクトリにある .gfarmrc ファイルを、設定ファイル
-として参照します。.gfarmrc ファイルは、%%SYSCONFDIR%%/gfarm.conf と
-同一の形式で記述します。.gfarmrc と %%SYSCONFDIR%%/gfarm.conf では、
- .gfarmrc の方が優先されます。</para>
+<para>アプリケーションプログラムは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルと、%%SYSCONFDIR%%/gfarm.conf を、設定ファイル
+として参照します。この二つのファイルでは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルの設定の方が優先されます。
+どちらの設定ファイルも、同一の文法で記述します。
+環境変数 GFARM_CONFIG_FILE が設定されてない場合、代わりに
+ユーザーのホームディレクトリにある .gfarmrc ファイルを使用します。
+
+</para>
 
 <para>gfarm.conf は、一行に一文の形式で設定します。
 ただし、行末に文字 ``\'' を記述することによって、行を継続させることが
@@ -376,7 +380,7 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>有効無効</parameter>&nbsp;<parameter>認証方法</parameter>&nbsp;<parameter>ホスト指定</parameter></term>
+<term><token>auth</token> <parameter>有効無効</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
 <para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
@@ -535,6 +539,30 @@ IPアドレスを通信に用いるかを指定します。
 </varlistentry>
 
 <varlistentry>
+<term><token>client_architecture</token> <parameter>アーキテクチャ名</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
+</para>
+<para>
+これに対し、環境変数 GFARM_ARCHITECTURE を使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
+</para>
+<para>例:</para>
+<literallayout>
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter></term>
 <listitem>
 <para>グローバルユーザ名とローカルユーザ名の対応関係を記述した
@@ -561,6 +589,7 @@ IPアドレスを通信に用いるかを指定します。
 対してグローバルユーザ名 foobar が定義されています。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -585,6 +614,7 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
+		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
@@ -618,6 +648,8 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
+	&lt;client_architecture_statement&gt; ::=
+		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"

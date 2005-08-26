@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>21 Oct 2004</date></refentryinfo>
+<refentryinfo><date>26 Aug 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -25,10 +25,13 @@ time, it is necessary to restart servers when updating the content of
 the configuration file.</para>
 
 <para>Application programs such as gfls and gfhost refer to both
-%%SYSCONFDIR%%/gfarm.conf and ~/.gfarmrc in a user's home directory as a
-configuration file.  .gfarmrc has the same grammar as %%SYSCONFDIR%%/gfarm.conf.
-If both .gfarmrc and %%SYSCONFDIR%%/gfarm.conf exist, .gfarmrc is read at
-first.</para>
+%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+GFARM_CONFIG_FILE. If both configuration files exist, the file
+specified by the environment variable GFARM_CONFIG_FILE is read at
+first. Both files have same grammar.
+If the environment variable GFARM_CONFIG_FILE doesn't exist,
+ ~/.gfarmrc in a user's home directory is used instead.
+</para>
 
 <para>Each line of gfarm.conf consists of one statement.  When the
 line ends with the character ``\'', the line continues for the next
@@ -37,8 +40,8 @@ characters on that line to be ignored.</para>
 
 </refsect1>
 
-<refsect1 id='hostspecification'><title>Host specification</title>
-<para><parameter>Host specification</parameter> has the following
+<refsect1 id='hostspecification'><title>Host_specification</title>
+<para><parameter>Host_specification</parameter> has the following
 forms.</para>
 <variablelist>
 
@@ -401,7 +404,7 @@ distinguished name of LDAP database.</para>
 
 <varlistentry>
 <term><token>auth</token> <parameter>enable/disable</parameter>
-<parameter>method</parameter> <parameter>Host specification</parameter></term>
+<parameter>method</parameter> <parameter>Host_specification</parameter></term>
 <listitem>
 <para>This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.</para>
@@ -416,7 +419,7 @@ specification</parameter>.</para>
 
 <para>The <token>auth</token> statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the target host has
+the first entry whose host_specification matches the target host has
 the <token>enable</token> keyword.  When there is no corresponding
 entry, or when the first corresponding entry has the
 <token>disable</token> keyword, the authentication method does not
@@ -463,7 +466,7 @@ and all other hosts will be authenticated by
 </varlistentry>
 
 <varlistentry>
-<term><token>netparam</token> <parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter> <emphasis>[</emphasis><parameter>Host specification</parameter><emphasis>]</emphasis></term>
+<term><token>netparam</token> <parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter> <emphasis>[</emphasis><parameter>Host_specification</parameter><emphasis>]</emphasis></term>
 <listitem>
 <para>The <token>netparam</token> statement specifies several
 communication parameters listed below.</para>
@@ -475,7 +478,7 @@ transfer performance especially when connecting to a far distant site
 (i.e. high bandwidth-delay product network) such that tcp congestion
 window size will not increase enough.  This parameter is only
 effective on a client node where gfrep(1) command is executed.
-<parameter>Host specification</parameter> specifies the source host(s)
+<parameter>Host_specification</parameter> specifies the source host(s)
 of file replication instead of the destination host(s).</para>
 
 <para><token>stripe_unit_size</token>.  This parameter specifies how
@@ -490,7 +493,7 @@ parameter.</para>
 <para>This parameter is effective only when two or more is specified
 by the <token>parallel_streams</token> parameter.  This parameter is
 only effective on a client node where gfrep(1) command is executed.
-<parameter>Host specification</parameter> specifies the source host(s)
+<parameter>Host_specification</parameter> specifies the source host(s)
 of file replication instead of the destination host(s).</para>
 
 <para><token>rate_limit</token>.  This parameter specifies the maximum
@@ -512,7 +515,7 @@ parameters.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>sockopt </token><parameter>option</parameter><emphasis>[=</emphasis><parameter>value</parameter><emphasis>] [<token>LISTENER</token> | <parameter>Host specification</parameter>]</emphasis></term>
+<term><token>sockopt </token><parameter>option</parameter><emphasis>[=</emphasis><parameter>value</parameter><emphasis>] [<token>LISTENER</token> | <parameter>Host_specification</parameter>]</emphasis></term>
 <listitem>
 <para>The <token>sockopt</token> parameter specifies the socket option
 <parameter>option</parameter> via the setsockopt(2) system call.</para>
@@ -521,7 +524,7 @@ parameters.</para>
 by the second argument, the socket option is applied to any socket
 in server side (accepting side).</para>
 
-<para>When the host specification is specified by the second argument,
+<para>When the host_specification is specified by the second argument,
 the socket option is applied to sockets that connect to specified host(s).
 If the second argument is "*", the socket option is applied to any
 hosts in client side (connecting side).
@@ -562,7 +565,7 @@ necessary.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>address_use</token> <parameter>Host specification</parameter></term>
+<term><token>address_use</token> <parameter>Host_specification</parameter></term>
 <listitem>
 <para>The <token>address_use</token> statement specifies an IP address
 or a network address that is preferably used for connection when the
@@ -570,6 +573,29 @@ target host has several IP addresses.</para>
 <para>For example,</para>
 <literallayout>
 	address_use 192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_architecture</token> <parameter>architecture</parameter> <parameter>Host_specification</parameter></term>
+<listitem>
+<para>This directive specifies default architecture name which may be used
+when a client node accesses an executable file.
+This directive only affects client nodes.
+For filesystem nodes, architecture names which are registered in
+the metadata server are used.
+</para>
+<para>
+On the other hand, environment variable GFARM_ARCHITECTURE,
+which specifies default architecture name just like this directive,
+affects both client nodes and filesystem nodes.
+</para>
+<para>Example:</para>
+<literallayout>
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
 </literallayout>
 </listitem>
 </varlistentry>
@@ -608,6 +634,7 @@ name "foobar" is mapped to a local user name "foo" on this node.
 </para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -633,6 +660,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
+		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
@@ -666,6 +694,8 @@ notation.</para>
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
+	&lt;client_architecture_statement&gt; ::=
+		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
