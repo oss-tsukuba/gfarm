@@ -5,8 +5,11 @@
 </HEAD>
 <BODY><A href="http://datafarm.apgrid.org/">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> >
+<A href="index.html">ユーザーズマニュアル</A> >
+他のプロトコルを用いてGfarmにアクセス
 
-<H1>Gfarm を各種サーバを経由して公開する</H1>
+<H1>他のプロトコルを用いて Gfarm ファイルシステムにアクセスする</H1>
 <A href="../../en/user/export-gfarm.html">English</A> | 日本語 
 
 <H2>1. 概要</H2>
@@ -32,7 +35,7 @@
 <TR>
 <TD>NFS</TD>
 <TD>×</TD>
-<TD><A HREF="nfs-gfarmfs.html">○</A></TD>
+<TD><A HREF="nfs-gfarmfs.html">○<BR>allow_root必要</A></TD>
 </TR>
 <TD><A HREF="http://vsftpd.beasts.org/">vsftpd</A></TD>
 <TD>○</TD>
@@ -47,11 +50,6 @@
 <TD><A HREF="http://www.globus.org/toolkit/docs/4.0/data/gridftp/">globus-gridftp-server</A><BR>(GT4) (root権限起動）</TD>
 <TD>○<BR>サーバ側でもgrid-proxy-init必要</TD>
 <TD>○<BR>サーバ側でもgrid-proxy-init必要</TD>
-</TR>
-<TR>
-<TD></TD>
-<TD></TD>
-<TD></TD>
 </TR>
 </TBODY>
 </TABLE>
