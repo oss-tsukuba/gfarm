@@ -79,7 +79,7 @@ char GFARM_ERR_NO_FRAGMENT_INFORMATION[] =
 	"no fragment information";
 char GFARM_ERR_NO_REPLICA_ON_HOST[] =
 	"no file replica on the host";
-extern char GFARM_ERR_UNEXPECTED_EOF[] =
+char GFARM_ERR_UNEXPECTED_EOF[] =
 	"unexpected EOF";
 char GFARM_ERR_UNKNOWN[] = "unknown error";
 
