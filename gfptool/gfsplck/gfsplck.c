@@ -48,6 +48,9 @@ unlink_dir(const char *src)
 		DIR *dirp;
 		struct dirent *dp;
 
+		/* allow read and write access always */
+		chmod(src, (sb.st_mode | S_IRUSR | S_IWUSR) & 07777);
+
 		dirp = opendir(src);
 		if (dirp == NULL) {
 			perror(src);
