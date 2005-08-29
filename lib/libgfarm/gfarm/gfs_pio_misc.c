@@ -213,35 +213,33 @@ gfs_access(const char *gfarm_url, int mode)
 	if (e != NULL)
 		return (e);
 	e = gfarm_path_info_get(gfarm_file, &pi);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
+	if (e != NULL)
+		goto free_gfarm_file;
+
 	stat_mode = pi.status.st_mode;
 	stat_nsections = pi.status.st_nsections;
 	e = gfarm_path_info_access(&pi, mode);
 	gfarm_path_info_free(&pi);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
-	if (GFARM_S_ISDIR(stat_mode)) {
-		free(gfarm_file);
-		return (NULL);
-	}
+	if (e != NULL)
+		goto free_gfarm_file;
+#if 0
+	if (GFARM_S_ISDIR(stat_mode))
+		goto free_gfarm_file;
 	/*
 	 * Check all fragments are ready or not.
 	 * XXX - is this check necessary?
 	 */
 	e = gfarm_file_section_info_get_all_by_file(
 		gfarm_file, &nsections, &sections);
-	free(gfarm_file);
 	if (e != NULL)
 		return (e);
 	gfarm_file_section_info_free_all(nsections, sections);
 	if (!GFARM_S_IS_PROGRAM(stat_mode)
 	    && nsections != stat_nsections)
 		e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
+#endif
+free_gfarm_file:
+	free(gfarm_file);
 	return (e);
 }
 
