@@ -140,7 +140,7 @@ gfarm_auth_sharedsecret_response(struct xxx_connection *conn, char *homedir)
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			/* already logged at gfarm_authorize_sharedsecret() */
 		} else if ((e = gfarm_auth_shared_key_get(&expire_expected,
-		    shared_key_expected, homedir, GFARM_AUTH_SHARED_KEY_GET))
+		    shared_key_expected, homedir, GFARM_AUTH_SHARED_KEY_GET, 0))
 		    != NULL && e != GFARM_ERR_EXPIRED) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			gflog_error("auth_sharedsecret: .gfarm_shared_key", e);

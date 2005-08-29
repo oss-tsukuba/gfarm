@@ -79,7 +79,7 @@ gfarm_auth_request_sharedsecret(struct xxx_connection *conn,
 
 	do {
 		e = gfarm_auth_shared_key_get(&expire, shared_key, home,
-		    key_create);
+		    key_create, 0);
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
 		if (e != NULL) {
 			e_save = e;
@@ -461,7 +461,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    &state->expire, state->shared_key, state->home,
 	    state->try == 0 ?
 	    GFARM_AUTH_SHARED_KEY_CREATE :
-	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE);
+	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE, 0);
 	if (state->error_save != NULL) {
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,
 		    closure, t);

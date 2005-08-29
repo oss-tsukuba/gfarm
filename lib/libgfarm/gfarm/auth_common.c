@@ -127,7 +127,7 @@ gfarm_auth_random(void *buffer, size_t length)
 
 char *
 gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
-			  char *home, int create)
+			  char *home, int create, int period)
 {
 	FILE *fp;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
@@ -186,7 +186,9 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 			return (gfarm_errno_to_error(errno));
 		}
 		gfarm_auth_random(shared_key, GFARM_AUTH_SHARED_KEY_LEN);
-		expire = time(NULL) + GFARM_AUTH_EXPIRE_DEFAULT;
+		if (period <= 0)
+			period = GFARM_AUTH_EXPIRE_DEFAULT;
+		expire = time(NULL) + period;
 		expire = htonl(expire);
 		write_hex(fp, &expire, sizeof(expire));
 		expire = ntohl(expire);

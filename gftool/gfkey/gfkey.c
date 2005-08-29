@@ -27,12 +27,15 @@ write_hex(FILE *fp, void *buffer, size_t length)
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [option]\n", program_name);
+	fprintf(stderr, "Usage: %s [-c|-f] [-p <period>]\n", program_name);
+	fprintf(stderr, "       %s [-l|-e]\n", program_name);
+
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-c\tcreate new key, if doesn't exist or expired\n");
-	fprintf(stderr, "\t-f\tforce to create new key\n");
-	fprintf(stderr, "\t-l\tlist existing key\n");
-	fprintf(stderr, "\t-e\treport expire time\n");
+	fprintf(stderr, "\t-c\t\tcreate new key, if doesn't exist or expired\n");
+	fprintf(stderr, "\t-f\t\tforce to create new key\n");
+	fprintf(stderr, "\t-p <period>\tspecify term of validity in second\n");
+	fprintf(stderr, "\t-l\t\tlist existing key\n");
+	fprintf(stderr, "\t-e\t\treport expire time\n");
 	exit(1);
 }
 
@@ -47,11 +50,12 @@ main(argc, argv)
 	unsigned int expire;
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	int mode = GFARM_AUTH_SHARED_KEY_GET;
+	int period = -1;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "cefl?")) != -1) {
+	while ((ch = getopt(argc, argv, "ceflp:?")) != -1) {
 		switch (ch) {
 		case 'c':
 			mode = GFARM_AUTH_SHARED_KEY_CREATE;
@@ -64,6 +68,9 @@ main(argc, argv)
 			break;
 		case 'l':
 			do_list = 1;
+			break;
+		case 'p':
+			period = strtol(optarg, NULL, 0);
 			break;
 		case '?':
 		default:
@@ -85,7 +92,7 @@ main(argc, argv)
 	}
 	home = gfarm_get_local_homedir();
 
-	e = gfarm_auth_shared_key_get(&expire, shared_key, home, mode);
+	e = gfarm_auth_shared_key_get(&expire, shared_key, home, mode, period);
 	if (e != NULL) {
 		fprintf(stderr, "%s\n", e);
 		exit(1);

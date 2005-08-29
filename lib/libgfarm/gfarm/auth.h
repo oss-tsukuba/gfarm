@@ -39,7 +39,7 @@ void gfarm_random_initialize(void);
 void gfarm_auth_random(void *, size_t);
 void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
-char *gfarm_auth_shared_key_get(unsigned int *, char *, char *, int);
+char *gfarm_auth_shared_key_get(unsigned int *, char *, char *, int, int);
 #define GFARM_AUTH_SHARED_KEY_GET		0
 #define GFARM_AUTH_SHARED_KEY_CREATE		1
 #define GFARM_AUTH_SHARED_KEY_CREATE_FORCE	2
