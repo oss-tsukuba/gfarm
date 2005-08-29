@@ -1,6 +1,109 @@
 Copyright (c) 2003, 2004, 2005 National Institute of Advanced
 Industrial Science and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.2
+==========================
+
+[2005.8.30]
+
+Updated Features
+
+ * UTF-8 support.
+
+ * FreeBSD and NetBSD supports.
+
+ * File locking support aginst replication during updating the file,
+   which prevents from creating inconsistent file replicas.
+
+ * A newly created file can be accessed by other processes before it
+   is closed.
+
+ * When copying, moving and removing executable files, only the target
+   architecture section of the executable files is modified.  This
+   means you can install and remove executable binaries in different
+   architecture independently or separately.
+
+ * gfarm.conf(5) - add client_architecture directive to specify a
+   client architecture.
+
+ * Environment variable
+
+  - GFARM_CONFIG_FILE environment variable can specify a Gfarm
+    configuration file instead of ~/.gfarmrc.
+
+  - GFARM_ARCHITECTURE environment variable can specify a client
+    architecture.
+
+ * gfs_unlink_section(3) - new function to unlink a particular section
+   of a file.
+
+ * gfs_pio_sync(3), gfs_pio_datasync(3) - new functions
+
+ * gfs_seekdir(3), gfs_telldir(3) - new functions
+
+ * configure(1) - honors the --sysconfdir option to specify a
+   directory of gfarm.conf.
+
+ * gfsd, gfmd - accepts level N limited proxy to enable access to
+   Gfarm file system from a process invoked by Globus jobmanager.
+
+ * Syscall hooking library
+
+  - New syscall hook entries; fsync, fdatasync, pread, pread64,
+    pwrite, and pwrite64.
+
+  - lseek(2) hook supports a seek operation for a directory.
+    (Bugzilla-ja #36, #37)
+
+  - stat(2) hook fills 'st_blocks' in struct stat, which makes "du"
+    command work.
+
+ * Robustness Improvement
+
+  - gfarm_agent(1) - the functionality is enhanced to accept all
+    metadata requests.  When using gfarm_agent, client programs do not
+    connect to an LDAP server, which reduces the number of connections
+    to the LDAP server and CPU load of the LDAP server.
+
+  - libgfarm(3) - tries to re-connect when the connectin to an LDAP
+    server, gfsd, or gfmd is broken.
+
+ * Documentation
+
+   - samba-hook, samba-gfarmfs - describes how to export a Gfarm file
+     system to Windows clients via samba.
+
+   - nfs-gfarmfs - describes how to export a Gfarm file system in NFS.
+
+   - export-gfarm - summarizes the status to export a Gfarm file
+     system in various protocols.
+
+ * Bug fix
+
+  - fix a segfault problem or inappropreate error message problem when
+    Gfarm I/O libraries are called before calling gfarm_inititlize.
+    (Bugzilla-ja #32)
+
+  - fix a race condition when multiple processes fix an invalid
+    metadata.
+
+  - gfarm_initialize(3) disables the syscall hook library.
+    https://datafarm.apgrid.org/ml/gfarm-discuss-ja/msg00046.html
+
+  - '=' can be included in a filename.
+
+  - gfreg creates a file whose name is '-' when 'cat file | gfreg -
+    gfarm:dir' (bugzilla-ja #35)
+
+  - a remote file openen by a process can be closed by the child
+    process.
+
+  - fix memory leak.
+
+  - gfreg(1) - fix a bug related to the -r option.
+
+  - fix a segfault problem when using an old tcsh and gfarm_agent.
+
 Release note for Gfarm 1.1.1
 ============================
 

@@ -1,4 +1,1062 @@
+2005-08-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/gfsplck.c:
+	add read and write access to enable to delete invalid directories.
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c:
+	discard the previous 'false warning fix in gcc'.  gcc in Fedora Core 4 should be immature...
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/agent_client.c:
+	portability fix for lp64
+
+2005-08-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/pic/Makefile: use data.mk to avoid to use install-doc
+
+	* doc/html/en/user/Makefile: add XXX
+
+2005-08-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/user/Makefile, doc/html/pic/Makefile:
+	add missing Makefiles
+
+	* lib/libgfarm/gfarm/error.c: remove unnecessary extern
+
+2005-08-26  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/user/export-gfarm.html, doc/html/ja/user/nfs-gfarmfs.html, doc/html/ja/user/samba-gfarmfs.html:
+	add links to parent html files.
+
+2005-08-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/xxx_proto.c:
+	implement gfs_client reconnection to deal with reboot of filesystem node.
+	this implementation is not perfect (there are some cases that reconnection
+	isn't tried, or even NULL pointer access against gfs_client->conn), but
+	probably covers most practical cases.
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5, man/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	describe $GFARM_CONFIG_FILE, $GFARM_ARCHITECTURE environment variables
+	and "client_architecture" configuration directive.
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/host.h, lib/libgfarm/gfarm/hostspec.c:
+	implement "client_architecture" configuration directive and
+	$GFARM_ARCHITECTURE environment variable to specify architecture
+	of cilent hosts and current host.
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	change default executable architecture of "chmod +x",
+	the architecture was determined by location of replicas before this change,
+	but now it's determined by the architecture of the host that the chmod
+	operation was invoked.
+	old behavior stil remains for the case that the architecture of the host is
+	not known.
+
+	* doc/html/en/user/index.html, doc/html/ja/ref/index.html, doc/html/en/ref/index.html:
+	add a link to translation page
+
+	* doc/html/ja/user/samba-hook.html: - add logo
+	- add links to paraent html files
+	- really add a link to samba-gfarmfs.html
+
+	* doc/html/ja/user/Makefile, doc/html/ja/user/index.html, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec:
+	add export-gfarm.html and nfs-gfarmfs.html
+
+	* doc/html/index.html:
+	typo fix, add links to http://datafarm.apgrid.org/
+
+2005-08-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/url.c:
+	add a null check of gfarm_spool_root not to cause segfault.
+
+2005-08-25  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/user/export-gfarm.html:
+	Introduction of servers which export Gfarm.
+
+	* doc/html/ja/user/nfs-gfarmfs.html:
+	Usage of GfarmFS-FUSE+NFS in Japanese.
+
+2005-08-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec, doc/html/Makefile, doc/html/ja/user/Makefile, makes/config.mk.in, makes/data.mk, package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	install recently added HTML and GIF files.
+	NOTE: need to rerun "configure" script to refect this change.
+
+	* doc/html/en/user/index.html, doc/html/index.html, doc/html/ja/user/index.html:
+	add links to {ja,en}/user/samba-gfarmfs.html
+
+2005-08-25  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/en/user/samba-gfarmfs.html:
+	Usage of GfarmFS-FUSE+Samba in English.
+
+	* doc/html/ja/user/samba-gfarmfs.html:
+	Usage of GfarmFS+Samba in Japanese.
+
+2005-08-25  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/ja/user/samba-hook.html, doc/html/pic/gfarm-logo.gif:
+	add gfarm-logo.gif
+
+	* doc/html/ja/user/samba-hook.html: update a link to gfarm logo
+
+2005-08-23  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfexec/gfexec.c:
+	Fix a segfault problem when program is specified by /gfarm/....
+	Now, gfexec recognize /gfarm mount point for execution program as well
+	as so files.
+
+2005-08-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	use "License:" instead of "Copyright:", since the latter is obsolete.
+	add "Vendor:" and "URL:", because now "License:" doesn't mention AIST.
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfsl/server.c, lib/libgfarm/gfsl/server2.c, lib/libgfarm/gfsl/tcputil.c, server/gfsd/gfsd.c, gftool/gfmkdir/gfmkdir.c, gftool/gfrep/gfrep.c, gftool/gfrmdir/gfrmdir.c:
+	use socklen_t appropriately.
+	this fixes warnings from gcc on Fedora Core 4, reported by ishibashi-san.
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/schedule.c:
+	shut up false warnings (uninitialized variable) from gcc on Fedora Core 4
+
+	* lib/libgfarm/gfarm/config.c:
+	fix a bug which refers uninitialized variable,
+	found by gcc on Fedora Core 4, reported by ishibashi-san
+
+	* ns/gfarmd/gfd_auth.c:
+	fix gcc warning: sgetnam_strcpy is defined but not used
+
+2005-08-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/user/samba-hook.html:
+	add explanation of smb.conf parameters to share Gfarm files
+
+2005-08-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfsck/gfsck.c:
+	do not display misleading "pathname: deleted" message when pathname is not actually deleted
+
+2005-08-22  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control, debian/control.common: added blank line
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile:
+	set ${PERL5LIB} always before calling globus-makefile-header,
+	otherwise pre-configure fails.
+
+2005-08-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/user/samba-hook.html: - convert text to HTML format
+	- add some items
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	missing @dirrm share/doc/gfarm/html/ja/user
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	fix compilation error on FreeBSD-4.11
+
+	* lib/gfs_hook/sysdep/linux/Makefile, lib/gfs_hook/sysdep/linux/getdents.c:
+	use -D_LARGEFILE64_SOURCE `getconf LFS64_CFLAGS`
+	and lseek64() instead of __lseek64()
+	to remove the following warning:
+	warning: implicit declaration of function `__lseek64'
+
+2005-08-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	rename_file_spool(): correct typo in a log message
+	check_existence_spool_file(): fix a bug
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* debian/libgfarm-dev.manpages, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	remove manual of GFARM_STRINGLIST_ELEM() and GFARM_STRINGLIST_STRARRAY() marco,
+	and provide gfarm(3) library man page,
+	to support case-insensitive filesystems like HFS+ on MacOS X.
+
+	* man/man3/gfarm.3, man/ja/man3/gfarm.3, doc/html/en/ref/man3/gfarm.3.html, doc/html/ja/ref/man3/gfarm.3.html:
+	regen
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfarm.3.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.docbook, doc/docbook/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.docbook, doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/ja/ref/man3/gfarm.3.docbook, doc/html/ja/ref/man3/GFARM_STRINGLIST_ELEM.3.html, doc/html/ja/ref/man3/GFARM_STRINGLIST_STRARRAY.3.html, man/ja/man3/GFARM_STRINGLIST_ELEM.3, man/ja/man3/GFARM_STRINGLIST_STRARRAY.3:
+	remove manual of GFARM_STRINGLIST_ELEM() and GFARM_STRINGLIST_STRARRAY() marco,
+	and provide gfarm(3) library man page,
+	to support case-insensitive filesystems like HFS+ on MacOS X.
+
+2005-08-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	remove creating file stuff.  It is not necessary any more.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	specify timeout (5 sec) for ldap_bind_s.  Without it, a client possibly waits forever when the metadata server in packet filtered network is down.
+
+2005-08-22  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: new version of 1.2.0
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile, package/redhat/gfarm.spec, package/solaris/build:
+	gfarm-1.1.2 -> gfarm-1.2
+
+	* package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec:
+	html/ja/user/samba-hook.html and html/ja/user/index.html are added.
+
+	* doc/html/ja/user/Makefile, doc/html/ja/user/index.html, doc/html/Makefile, doc/html/index.html:
+	install and add hyperlink to doc/html/ja/user/samba-hook.html
+
+2005-08-22  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/config.c:
+	revise it so that GFARM_CONFIG_FILE specify a Gfarm configuration file justly
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+	(forgot to commit this file, when configure.ac revision 1.23 was committed.)
+
+2005-08-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/user/samba-hook.html:
+	Initial revision, written not in html format but in text yet
+
+	* doc/html/ja/user/samba-hook.ja.html:
+	rename from samba-hook.ja.html to samba-hook.html because 'ja' is duplicated
+	with directory name
+
+	* doc/html/ja/user/samba-hook.ja.html:
+	Initial revision, written not in html format but in text yet.
+
+2005-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec, package/solaris/build:
+	gfarm-1.1.1 -> gfarm-1.1.2 (for RC1)
+
+2005-08-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	delete unnecessary code committed by mistake
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/url.c:
+	return "gfarm library isn't properly initialized" error when gfarm_get_global_username returns NULL.
+
+	* lib/libgfarm/gfarm/config.c:
+	introduce GFARM_CONFIG_FILE to specify a Gfarm configuration file
+	instead of ~/.gfarmrc
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (replicate_section_to_local):
+	delete redundant section busy check
+
+	* lib/libgfarm/gfarm/gfs_exec.c:
+	revert to rev 1.16.  gfs_check_section_busy() is called in
+	gfarm_url_section_replicate_to() (gfarm_file_section_transfer_from_to_internal()).
+
+2005-08-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	do not re-connect to metadb server.  This is down in metadb_ldap.c
+
+	* lib/libgfarm/gfarm/gfs_dir.c (gfarm_i_path_info_get):
+	do not purge path when metadb server is down.
+
+2005-08-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	try to re-connect when the connection to slapd is disconnected
+
+2005-08-18  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	introduce GFARM_ERR_TEXT_FILE_BUSY and gfs_check_section_busy() to prevent file replication during file modification.
+	register file section copy when creating a file, which makes it possible to do 'tail -f' of the log file, for example.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	do not check the return status in FT case
+
+	* lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c (gfs_pio_open_*_section):
+	it is not necessary to check the return status in FT case.  Some process might do already.
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c (replicate_section_to_local):
+	fix size check bug, although the size check in this function is not so much useful.
+
+2005-08-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfsl/gfsl_config.h, lib/libgfarm/gfsl/gsi.c:
+	enable to accept level N limited proxy certificate
+	possible problem is that limited cert now can execute a remote process via gfsd.
+
+2005-08-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure.ac: be more verbose, if configure failed due to globus.
+
+2005-08-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	__fdatasync(): fix a varibale name in _gfs_hook_debug_v() as previous commit
+
+2005-08-15  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* lib/gfs_hook/hooks.c:
+	fixed some variable names using _gfs_hook_debug_v
+
+	* lib/gfs_hook/hooks.c: added MAC OS X ifdef
+
+2005-08-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/config.guess, makes/config.sub:
+	latest config.guess and config.sub from:
+		http://savannah.gnu.org/projects/config/
+
+2005-08-11  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* util/gfront/build.xml, util/gfront/src/gfront/ChangeLookAndFeel.java, util/gfront/src/gfront/CommandOutput.java, util/gfront/src/gfront/DirectoryTreeNode.java, util/gfront/src/gfront/FileTableModel.java, util/gfront/src/gfront/FragmentEditor.java, util/gfront/src/gfront/GFAction.java, util/gfront/src/gfront/GFAppConst.java, util/gfront/src/gfront/GFLSParser.java, util/gfront/src/gfront/GFWHEREParser.java, util/gfront/src/gfront/GFWHEREParser2.java, util/gfront/src/gfront/GFront.java, util/gfront/src/gfront/GFrontApp.java, util/gfront/src/gfront/GFrontCommon.java, util/gfront/src/gfront/GFrontConst.java, util/gfront/src/gfront/GfhostList.java, util/gfront/src/gfront/ReadOnlyTableModel.java, util/gfront/src/gfront/RightClickDirTree.java, util/gfront/src/gfront/RightClickTable.java:
+	rename "GFront/" to "src/".
+
+2005-08-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.h:
+	Add pread, pread64, pwrite, pwrite64 hooks for samba-3.0.14a.
+	These hooks aren't multithreaded yet.
+
+2005-08-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfsl/Makefile:
+	add dependency on makes/config.mk for changes about -sysconfdir
+
+2005-08-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* Makefile.in (distclean): remove makes/install-doc
+
+2005-08-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfrun/gfrun.c: do not free command_url if not necessary.
+
+2005-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/config.c:
+	make gfarm_client_terminate() safe against duplicated call,
+	to make this consistent with gfarm_client_initialize().
+
+	* lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h:
+	use `gfs_hook_initialized' instead of abusing `gfarm_initialized' to
+	see whether gfs_hook is initialized or not, because the latter
+	prevented hooked programs, which also call gfarm_initialize(),
+	from working.
+
+	* lib/gfs_hook/hooks_subr.c:
+	don't pollute system namespace, names which begin with "_" belong to it.
+
+	* lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	introduce gfs_hook_terminate(), and use it for atexit(),
+	because number of atexit() entry may be limited.
+	this also eliminates two cast operations.
+
+	* lib/libgfarm/gfarm/config.c:
+	- report full pathname, if .gfarmrc or gfarm.conf cannot be opened.
+	- remove unnecessary newline
+
+2005-07-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* package/redhat/gfarm.spec: restore install options for doc and man
+
+2005-07-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/sysdep/linux/Makefile:
+	add -I$(top_builddir)/include -I$(top_srcdir)/include to $(CFLAGS),
+	since hooks_subr.h now requires <gfarm/gfarm_config.h>.
+	while we are here, add $(OPTFLAGS) to $(CFLAGS) as well.
+
+2005-07-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec, doc/Makefile, package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	forgot to install README.hook.ja
+
+	* package/freebsd/Makefile:
+	correct the timing to suggest gpt-postinstall,
+	before this fix, it was displayed before
+	building globus, if globus was not installed.
+
+2005-07-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/config-gfsd.in:
+	do not display error message when deleting host entry just in case with -f option.
+
+2005-07-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile, package/freebsd/pkg-descr:
+	fix most of warnings reported by portlint
+
+	* package/freebsd/Makefile: remove unnecessary comment mark
+
+	* package/freebsd/Makefile, package/freebsd/files/gfmd.sh, package/freebsd/files/gfsd.sh, package/freebsd/pkg-descr:
+	enable GSI by linking Globus2, if ${WITH_GLOBUS} is defined.
+
+	* makes/config.mk.in:
+	makes/install-doc doesn't belong to srcdir, but builddir
+
+	* package/pkgsrc/files/gfsd.sh, makes/install-doc.in:
+	honor --sysconfdir option of configure, to make pkgsrc happy and
+	resolve inconsistency about gfarm.conf between package/*/files/*.sh
+	and package binaries.
+	as a side effect, gfarm.conf is now moved to ${prefix}/etc/gfarm.conf,
+	if --sysconfdir option is not specified.
+
+	* configure: regen
+
+	* package/pkgsrc/Makefile, package/pkgsrc/files/gfmd.sh, package/redhat/gfarm.spec, package/solaris/build, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man1/gfhost.1, man/man5/gfarm.conf.5, man/man8/gfmd.8, man/man8/gfsd.8, package/freebsd/Makefile, package/freebsd/files/gfmd.sh, package/freebsd/files/gfsd.sh, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/auth_common_gsi.c, lib/libgfarm/gfsl/Makefile, makes/config.mk.in, makes/html.mk, makes/man.mk, man/ja/man1/gfhost.1, doc/docbook/ja/ref/man1/gfhost.1.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook, doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, doc/html/ja/ref/man1/gfhost.1.html, debian/rules, doc/GUIDE.ja, doc/Makefile, doc/README.hook.en, doc/README.hook.ja, doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, configure.ac:
+	honor --sysconfdir option of configure, to make pkgsrc happy and
+	resolve inconsistency about gfarm.conf between package/*/files/*.sh
+	and package binaries.
+	as a side effect, gfarm.conf is now moved to ${prefix}/etc/gfarm.conf,
+	if --sysconfdir option is not specified.
+
+	* configure: regen
+
+	* configure.ac: fix two m4 quoting error
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	add description about FreeBSD and NetBSD.
+	XXX section structure is now too complicated?
+
+2005-07-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/pkgsrc/DESCR, package/pkgsrc/Makefile, package/pkgsrc/PLIST, package/pkgsrc/files/gfmd.sh, package/pkgsrc/files/gfsd.sh:
+	definition for pkgsrc - NetBSD's standard packaging system
+
+	* package/freebsd/Makefile, package/freebsd/files/gfmd.sh, package/freebsd/files/gfsd.sh, package/freebsd/pkg-descr, package/freebsd/pkg-plist:
+	definition for ports - FreeBSD's standard packaging system
+
+	* makes/var.mk, lib/gfs_hook/Makefile, lib/libgfarm/Makefile:
+	split libtool-dependent options from $(LDFLAGS) into $(LTLDFLAGS),
+	to workaround a problem that ports and pkgsrc sometimes mangle ${LDFLAGS}
+	by propagating parent directory's $(LDFLAGS) to child directories.
+
+	while we are here, remove the following variables for simplicity:
+	$(SHARELIB_LTFLAGS) - not actually used
+	$(LTLINK_SHARELIB_IN) - just same with "$(LTLINK) $(LTFLAGS_SHARELIB_IN)"
+
+	* lib/libgfarm/Makefile:
+	back out previous change about LT_CURRENT and LT_AGE,
+	to workaround broken version handling which is found
+	in some versions of libtool on non-linux platforms.
+
+2005-07-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.ac:
+	better way to detect pthread options, now this works with NetBSD's pkgsrc.
+
+	* makes/config.mk.in: correct comment.
+	XXX - this isn't efficient, but not worse than what gfarm-1.1.1 did,
+	and works with *BSD's ports/pkgsrc.
+
+	* makes/config.mk.in: fix a problem on Solaris:
+	@INSTALL@ is expanded to "../makes/install-sh -c",
+	but the relative pathname doesn't work.
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c: remove unnecessary if statement
+
+2005-07-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* makes/mkdirhier: New file.
+
+	* makes/mkdirhier:
+	alternative script for platforms which don't support "mkdir -p",
+	from X11R6, to explicitly create installation directories.
+
+	* package/redhat/gfarm.spec: use $(DESTDIR)
+
+	* ns/nslib/Makefile.in, ns/nstool/file/Makefile.in, util/gfront/Makefile, doc/Makefile, gftool/gfrun/Makefile, lib/gfs_hook/Makefile, makes/config.mk.in, makes/html.mk, makes/include.mk, makes/lib.mk, makes/man.mk, makes/prog.mk, makes/script.mk, makes/var.mk, ns/gfarm/Makefile, ns/gfarmd/Makefile.in, configure.ac:
+	explicitly create installation directories instead of implicitly
+	relying on makes/install-sh to do so, to make *BSD's ports/pkgsrc
+	happy, because ports/pkgsrc framework automatically replaces
+	$(INSTALL_PROGRAM), $(INSTALL_SCRIPT) and $(INSTALL_DATA).
+
+	support $(DESTDIR), since above change requires looking at all
+	uses of $(INSTALL*).
+
+2005-07-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	fix a typo in comment which was added in previous commit
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	fix a bug that clients of gfarm_agent just hang on FreeBSD-4.X.
+
+	The reason is __exit() function in the userland thread library (libc_r)
+	on FreeBSD-4.X makes all descriptors blocking mode, thus, as soon as
+	the parent process calls __exit() via gfarm_daemon(), pthread functions
+	in the child process become broken, because the implementation needs
+	non-blocking mode, and the descriptor mode is shared between the
+	parent and the child.
+	So, we move open_accepting_socket() after gfarm_daemon() to workaround
+	this problem.
+	Fortunately, it's rate that open_accepting_socket() fails, thus I hope
+	this workaround is acceptable.
+
+2005-07-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	- implement lseek() for directories
+	- fill d_type and d_namlen members of struct dirent for *BSDs
+	- use symbols instead of defined(OS_NAME)
+	- store absolute gfarm_url instead of canonical_path to _gfs_file_buf[fd].u.d
+	  to reduce number of memory allocations in fchdir()
+
+	this change makes dynamically-linked ls work on FreeBSD and NetBSD.
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure.ac:
+	- check whether struct dirent has d_off, d_namlen and d_type members or not
+	- check whether there is getdents() or not
+	- be more cosisitent about "checking..." messages.
+
+	* lib/libgfarm/Makefile:
+	increment LT_CURRENT and LT_AGE, due to gfs_seekdir()/gfs_telldir() addtion
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_proto.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/gfs_dir.c:
+	implement gfs_seekdir() and gfs_telldir()
+
+2005-07-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_common.c: more fixes for va_arg() vs mode_t
+
+	* lib/gfs_hook/hooks_common.c:
+	add more comment why va_arg(ap, mode_t) isn't appropriate.
+
+2005-07-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/ja/man1/digest.1, man/man1/digest.1, package/redhat/gfarm.spec, package/solaris/gfarm-client.files, doc/html/en/ref/index.html, doc/html/en/ref/man1/digest.1.html, doc/html/ja/ref/index.html, doc/html/ja/ref/man1/digest.1.html, gftool/Makefile, debian/gfarm-client.install, debian/gfarm-client.manpages, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/digest.1.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/digest.1.docbook:
+	remove "digest" command, because:
+	- This command is not so useful, because "openssl <digest_type> file..."
+	  does just same job with "digest <digest_type> file..."
+	- More importantly, this command name conflicts with same command in pkgsrc.
+	The reason why we had this was only historical nowadays.
+
+	* gftool/Makefile: typo in pthread automatic configuration support
+
+	* lib/gfs_hook/hooks_common.c:
+	use int instead of mode_t to stop the following warning on FreeBSD
+	when using gcc-3.4.x/gcc-4.x (reported on [gfarm-cvs:05456]):
+	./hooks_common.c: In function `__open':
+	./hooks_common.c:23: warning: `mode_t' is promoted to `int' when passed through`...'
+	./hooks_common.c:23: warning: (so you should pass `int' not `mode_t' to `va_arg')
+	./hooks_common.c:23: note: if this code is reached, the program will abort
+	./hooks_common.c: In function `_open':
+
+	XXX - this change doesn't work on systems which use 64bit mode_t.
+	but I don't know such system for now.
+
+2005-07-07  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* doc/conf/gfarm.schema:
+	changed SYNTAX of 'pathname' IA5 to Directory String. This change make it
+	enable to use UTF-8 within pathname.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	make '=' to be escaped, according to RFC 2253. This change make it enable to
+	use '=' within pathname.
+
+2005-07-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* configure.ac: portability fixes:
+	- Solaris cc (Sun ONE Studio) doesn't have -pthread option, but have -mt.
+	- cc -R doesn't work on some platforms without libtool.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c:
+	more portability fix (Tru64)
+
+	* lib/gfs_hook/hooks.c:
+	make fsync(2) and fdatasync(2) hook available on Solaris
+
+2005-07-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure.ac, lib/libgfarm/gfarm/metadb_ldap.c:
+	check existence of ldap_set_option()
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure.ac, gftool/Makefile, gftool/gfarm_agent/Makefile, makes/config.mk.in:
+	minimum support of automatic configuration for pthread-related options
+
+	* lib/gfs_hook/hooks.c: fix typo of cpp directive in previous commit
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h:
+	add getdirentries() hook for FreeBSD
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c:
+	supply missing #ifdef for FreeBSD
+
+	* gfptool/gfcp_hook/gfcp_hook.c, gftool/gfwhoami/gfwhoami.c, gftool/gfls/gfls.c:
+	fix unused variable warning
+
+	* gftool/gfdf/gfdf.c:
+	FreeBSD-4.X needs <sys/types.h> to include <sys/socket.h>
+
+	* gfptool/gfrepbe_client/gfrepbe_client.c:
+	FreeBSD-4.X doesn't have fdatasync(), more changes were needed
+
+	* configure: regen
+
+	* makes/ltmain.sh:
+	copied from ${prefix}/share/libtool/ltmain.sh in libtool-1.5.18 + pkgsrc rev.2
+
+	* aclocal.m4:
+	copied from ${prefix}/share/aclocal/libtool.m4 in libtool-1.5.18 + pkgsrc rev.2
+
+	* makes/ltmain.sh:
+	copied from ${prefix}/share/libtool/ltmain.sh in libtool-1.5.6
+
+	* aclocal.m4:
+	copied from ${prefix}/share/aclocal/libtool.m4 in libtool-1.5.6
+
+	* server/gfmd/gfmd.c:
+	<sys/time.h> is needed for struct rusage on FreeBSD-4.X,
+	otherwise sizeof(struct timeval) is unknown.
+
+	* lib/libgfarm/gfarm/xxx_proto.c:
+	<sys/types.h> is needed to include <netinet/in.h> on FreeBSD-4.X
+
+	* lib/gfs_hook/hooks_common.c:
+	getdents() prototype is different on FreeBSD-4.X
+
+	* lib/gfs_hook/hooks.c: don't use SYS_creat, and always use SYS_open,
+	because SYS_creat may be disabled in kernel configuration,
+	and also FreeBSD-4.X doesn't define the symbol at all.
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	<sys/time.h> is needed for struct timeval on FreeBSD-4.X
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	- FreeBSD-4.X doesn't have fdatasync()
+	- missing #include <gfarm/gfarm_config.h>
+
+	* configure.ac, gfptool/gfrepbe_client/gfrepbe_client.c, lib/gfs_hook/hooks.c, lib/libgfarm/gfarm/gfs_pio_local.c, server/gfsd/gfsd.c:
+	FreeBSD-4.X doesn't have fdatasync()
+
+2005-07-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/xxx_proto.c:
+	'#ifdef va_copy' should be '#ifndef va_copy'...
+
+2005-07-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/xxx_proto.c: FreeBSD-4.X doesn't have va_copy()
+
+2005-07-04  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.install: added gfarm_agent
+
+2005-07-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	get_infos_by_file(): fixed a invalid free()ing similar to one which
+	Anami-san fixed in previous revision
+
+2005-06-29  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	fixed a bug, free()ing invalid pointer, in error case.
+
+2005-06-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.h:
+	st_blocks calculation which was made today was wrong,
+	its unit is not st_blksize, but always 512.
+
+	* lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.h:
+	set st_nlink to 32000 instead of 1 or 2 for directories.
+	this makes an optimization for some directory traversal routine work correctly,
+	although this makes the output of ls somewhat uglier.
+
+	* lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	fill "st_blocks" field of struct stat to make "du" command work
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.h:
+	move the definition of GFS_BLKSIZE from hooks{,_64}.c to hooks_subr.h
+
+	* lib/gfs_hook/hooks_stat.c:
+	remove obsolete and unused code in #if 0 for stat()/xstat().
+
+2005-06-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/fsstress/README, bench/fsstress/dotest.sample:
+	re-add these files
+
+	* bench/fsstress/README, bench/fsstress/dotest.sample, bench/fsstress/fsstress.c, bench/fsstress/global.h:
+	merge conflicts
+
+	* bench/fsstress/Makefile, bench/fsstress/fsstress.c, bench/fsstress/global.h, bench/fsstress/xfscompat.h:
+	latest fsstress in ltp-full-20050505.tgz from ltp.sourceforge.org
+
+	important changes according to:
+	http://cvs.sourceforge.net/viewcvs.py/ltp/ltp/testcases/kernel/fs/fsstress/fsstress.c?rev=1.9&view=log
+
+	Revision 1.8:
+	Added two options for setting the number of loops to execute and
+	whether or not the test should cleanup after itself.
+
+	Revision 1.3:
+	This patch was submitted by Andi Kleen, but originated from Andrew Morton.
+	Here's the note:
+
+	When I ported fsstress from the XFS testsuite to run standalone I introduced
+	a bug which broke some test cases. This patch fixes it. Found by
+	Andrew Morton.
+
+	Please apply.
+
+	-Andi
+
+	* LICENSE: mention licence exception about lib/gfs_hook/sysdep/linux/
+
+	* lib/gfs_hook/sysdep/linux/COPYING.LIB: LGPL 2.1 from FSF
+
+	* lib/gfs_hook/sysdep/linux/COPYING.LIB: New file.
+
+2005-06-10  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* bench/fsstress/fsstress.c, bench/fsstress/global.h: port to cygwin
+
+2005-06-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* bench/fsstress/fsstress.c, bench/fsstress/global.h:
+	make this more portable
+
+	* bench/fsstress/Makefile, bench/fsstress/README, bench/fsstress/dotest.sample, bench/fsstress/fsstress.c, bench/fsstress/global.h, bench/fsstress/xfscompat.h:
+	New file.
+
+	* bench/fsstress/Makefile, bench/fsstress/README, bench/fsstress/dotest.sample, bench/fsstress/fsstress.c, bench/fsstress/global.h, bench/fsstress/xfscompat.h:
+	fsstress-1.00 - a filesystem test program from SGI.
+	license: GPL
+
+2005-06-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/metadb_ldap.c:
+	move gfarm_host_info_*(), gfarm_file_section_info_*(), and gfarm_file_section_copy_info_*() except *free() from metadb_ldap.c to agent_wrap.c to prevent unintended metadb access.
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c (gfs_scramble_param_set):
+	plug memory leak.
+	(gfs_pio_scramble_stat): supported.
+
+2005-06-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/agent_proto.h:
+	revert backward compatibility of gfarm_agent.
+	do not transfer (or do not touch) unused entries.
+
+	* lib/gfs_hook/hooks_fstat.c: set errno in error case.
+	display error message in debug mode.
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/agent_proto.h:
+	Introduce common functions to send and receive path information.
+	Unfortunately, this breaks the backward compatibility of gfarm_agent.
+
+2005-06-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* include/gfarm/gfarm_metadb.h:
+	do not define function prototypes of gfarm_metadb_*().
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/config.c:
+	do not call gfarm_metadb_{initialize,terminate}().
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/agent_proto.h, lib/libgfarm/gfarm/agent_wrap.c:
+	gfarm_agent takes care all metadata requests.  When using gfarm_agent, client programs do not connect to an LDAP server any more.
+
+	* lib/libgfarm/gfarm/dircache.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_ldap.h:
+	rename LDAP related functions to gfarm_metadb_*.
+	gfarm_metadb_initialize is assumed to be called in gfarm_ldap_check() on demand.  It is not necessary to be called explicitly.
+	metadb_ldap.h defines every gfarm_metadb_* function, which replaces dircache.h.
+
+2005-06-04  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c (gfs_client_fsync): simplify
+
+	* lib/gfs_hook/hooks.c (__fcntl):
+	do not call gfs_pio_truncate() in error case.
+	remove unnecessary spaces and tabs at the end of line.
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	add 'Bad address' check to prevent segmentation fault when 'path' points to invalid address.
+
+2005-06-03  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_subr.c:
+	add debug message in case of error
+
+2005-06-03  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* gftool/gfdf/gfdf.c:
+	fixed a bug made by previous commit, caught signal 11 when specified -h option.
+
+	* gftool/gfls/gfls.c:
+	fixed a bug made by previous commit, caught signal 11 when no arg specified.
+
+2005-06-03  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: __fcntl():
+	- chage argument type from `int' to `long', becase int is imcomatible with
+	pointer in some architectures
+	- comment out fcntl hook if neither F_FREESP nor F_FREESP64 is defined.
+	fcntl hook has to support SYS_fcntl64 on Linux (cf. glibc), but for now,
+	fcntl hook is needed only for F_FREESP on Soraiis.
+
+2005-06-02  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: for gfarm-1.1.1-2
+
+2005-06-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* debian/libgfarm-dev.manpages:
+	add manual pages for gfs_pio_datasync(3) and gfs_pio_sync(3)
+
+	* package/redhat/gfarm.spec:
+	add manual pages for gfs_pio_datasync(3), gfs_pio_sync(3)
+
+	* doc/html/en/ref/index.html: add gfs_pio_datasync.3, gfs_pio_sync.3
+
+	* doc/html/en/ref/man3/gfs_pio_datasync.3.html, doc/html/en/ref/man3/gfs_pio_sync.3.html, man/man3/gfs_pio_datasync.3, man/man3/gfs_pio_sync.3:
+	genereate from docbook
+
+	* doc/docbook/en/ref/man3/Makefile.inc:
+	add gfs_pio_datasync.3, gfs_pio_sync.3
+
+	* doc/docbook/en/ref/man3/gfs_pio_datasync.3.docbook, doc/docbook/en/ref/man3/gfs_pio_sync.3.docbook:
+	New file.
+
+2005-06-01  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: could not do dh_strip with --with-globus-static option
+
+2005-06-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/index.html: add gfs_pio_datasync.3, gfs_pio_sync.3
+
+	* doc/html/ja/ref/man3/gfs_pio_datasync.3.html, doc/html/ja/ref/man3/gfs_pio_sync.3.html, man/ja/man3/gfs_pio_datasync.3, man/ja/man3/gfs_pio_sync.3:
+	generate from docbook
+
+	* doc/docbook/ja/ref/man3/Makefile.inc:
+	add gfs_pio_datasync.3, gfs_pio_sync.3
+
+	* doc/docbook/ja/ref/man3/gfs_pio_datasync.3.docbook, doc/docbook/ja/ref/man3/gfs_pio_sync.3.docbook:
+	New file.
+
+2005-05-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c:
+	gfs_pio_veiw_global_fsync(), gfs_pio_view_local_fsync(): change error number
+	according to the convention
+
+	* server/gfsd/gfsd.c:
+	gfs_server_fsync(): change EPROTO to EINVAL because EPROTO isn't portable
+
+	* lib/gfs_hook/hooks.c: add fsync() and fdatasync() hooks
+
+	* include/gfarm/gfs.h, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.h:
+	add gfs_pio_sync(), gfs_pio_datasync() and their sub functions
+
+	* server/gfsd/gfsd.c: add gfs_server_fsync()
+
+2005-05-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/index.html: typo
+
+2005-05-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: add fcntl() hook
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c:
+	add new error GFARM_ERR_FUNCTION_NOT_IMPLEMENTED
+
+2005-05-26  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/agent_wrap.c (gfarm_agent_disconnect):
+	reset agent_server even in error case to fix segmentation fault when using old tcsh.  Old tcsh may close a socket to gfarm_agent, which results in faulure when closing socket in agent_client_disconnect().
+
+	* lib/gfs_hook/hooks.c (__xmknod): remove redundant code
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	do not try LDAP_VERSION2, but just use LDAP_VERSION3
+	chase referrals
+	do not assume ldap_msgfree() does not free NULL pointer.
+	plug memory leak related to make_dn.
+
+2005-05-25  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_ldap.c: re-fixed memory leak.
+
+2005-05-25  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/rules: brushed up makefile
+
+2005-05-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/config/gfarm-slapd.in:
+	increase the maximum number of open file descriptors
+
+2005-05-24  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfreg/gfreg.c:
+	fix a bug 'gfreg -r path/fromdir gfarm:todir' makes gfarm:todir/path/fromdir,
+	in this revision this command makes the right directory gfarm:todir/fromdir
+
+2005-05-24  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/agent_client.c (agent_client_readdir):
+	fix error handling.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	add -s option in gfarm_agent example.
+
+	* gftool/gfsck/gfsck.c: delete metadata in case of no route to host.
+	display error message instead of 'invalid metadata'.
+
+2005-05-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/glob.c: another memory leak in an error case
+
+2005-05-23  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfarm-client.install: removed pcat entry
+
+	* debian/README.Debian: upgraded information for debuild
+	added notice for pcat
+
+	* debian/gfmd.conffiles: added files under /etc
+
+	* debian/gfsd.install: removed init.d script from this list
+
+	* debian/gfmd.postinst, debian/gfsd.postinst: added debhelper scripts
+
+2005-05-23  Kazuaki Anami  <kazuaki@soum.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_misc.c, gftool/gfrep/gfrep.c, gftool/gfrun/gfrun.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/metadb_ldap.c, gftool/gfps/gfps.c, gftool/gfpwd/gfpwd.c, gftool/gfls/gfls.c, gftool/gfdf/gfdf.c:
+	fixed memory leak.
+
+2005-05-20  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_remote.c (gfs_pio_remote_storage_close):
+	do not close remote file from a child process because its open file count is not incremented.  XXX - This behavior is not the same as expected, but better than closing the remote file.
+
+2005-05-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/ja/ref/man1/gfreg.1.html, man/ja/man1/gfreg.1, man/man1/gfreg.1, doc/html/en/ref/man1/gfreg.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook:
+	-add description of -f option
+	-delete description of overwriting gfarm-URL from recursive mode
+
+	* gftool/gfreg/gfreg.c: fix a bug creates the file named `-'.
+	this problem was reported by Naotaka Yamamoto-san and is described in
+	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=35.
+
+2005-05-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* debian/libgfarm-dev.manpages:
+	add manual page for gfs_unlink_section(3)
+
+	* package/redhat/gfarm.spec: add manual pages for gfs_unlink_section(3)
+
+	* doc/docbook/ja/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/Makefile.inc, doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	add manual entry for gfs_unlink_section(3)
+
+	* doc/html/en/ref/man3/gfs_unlink_section.3.html, doc/html/ja/ref/man3/gfs_unlink_section.3.html, man/ja/man3/gfs_unlink_section.3, man/man3/gfs_unlink_section.3:
+	generate from docbook
+
+	* doc/docbook/ja/ref/man3/gfs_unlink_section.3.docbook, doc/docbook/en/ref/man3/gfs_unlink_section.3.docbook:
+	New file.
+
+2005-05-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: __unlink(): add unlinking a section
+
+	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, include/gfarm/gfs.h:
+	gfs_unlink_section(): become public function and change first parameter to
+	gfarm url
+
+2005-05-17  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/control, debian/control.common, debian/control.gsi, debian/control.non-gsi, debian/gfarm-client.links, debian/gfarm-doc.install, debian/rules:
+	going:
+	  debuild ... for normal package
+	  debuild -eGLOBUS_PREFIX=$GLOBUS_LOCATION ... for with gsi
+	  debuild -eGLOBUS_PREFIX.. -eBUILD_BOTH ... for gsi and non-gsi packages
+
+2005-05-17  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: gfsplck in bug fix section should be gfsck.
+	Never mind.
+
+	* ChangeLog, RELNOTES: merged change of the gfarm_v1 trunk.
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/gfs_hook/Makefile:
+	merged change of the gfarm_v1 main trunk.
+
+2005-05-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c, server/gfsd/gfsd.c:
+	fix warning on Solaris
+
+	* gftool/gfreg/gfreg.c: fix compilation error on Solaris
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	add our own mkdtemp(3) implemenation for Solaris
+
+2005-05-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks_common.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	In previous revision, when an executable file exits in gfarm file system
+	and you try to copy the same executable file '/bin/cp file /gfarm/file'
+	on the host has differnt architecture, cp returns "/gfarm/file: no such
+	object" because cp recognizes the file exists, and opens with O_TRUNC
+	flag and  gfs_pio_set_view_section() searches the file section of
+	the host's architecure.
+	gfs_pio_set_view_section(): create new architecure's section of executable
+	file in writing mode
+
+2005-05-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_config.h.in, configure: regen
+
+	* configure.ac: check whether mkdtemp(3) exists or not
+
+	* lib/gfs_hook/hooks.c: fix warning (statement not reached) on Solaris
+
+	* lib/libgfarm/gfarm/agent_client.c: fix warning on Solaris
+
+	* lib/libgfarm/gfarm/agent_wrap.c: fix compilation error on Solaris
+
+	* package/solaris/build: gfarm-1.1.1
+
+	* package/solaris/gfarm-client.files: add gfarm_agent
+
 2005-05-16  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: (Updated) release note for the version 1.1.1.
+
+	* package/redhat/gfarm.spec: gfarm-1.1.1-6
+	fsnode depends on the client package since config-gfsd requires gfhost.
 
 	* lib/gfs_hook/Makefile: compile hooks_subr.c with largefile_cflags.
 
