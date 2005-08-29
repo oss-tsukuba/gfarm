@@ -62,7 +62,7 @@ CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
 >
 that is used for user authentication in a trusted environment when
-connecting to gfsd.</P
+connecting to gfsd and/or gfmd.</P
 ><P
 >When the home directory is shared among filesystem nodes, it is not
 necessary to use this command.  If not, it is necessary to distribute
@@ -100,6 +100,20 @@ CLASS="OPTION"
 ><P
 >forces to create a new session key even if a valid session key already
 exists.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-p</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>period</I
+></TT
+></DT
+><DD
+><P
+>specifies the term of validity in second.  This option needs to be used with -c or -f option.</P
 ></DD
 ><DT
 ><TT
