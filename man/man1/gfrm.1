@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRM" "1" "03 May 2005" "Gfarm" ""
+.TH "GFRM" "1" "30 August 2005" "Gfarm" ""
 
 .SH NAME
 gfrm \- remove Gfarm files, directories, or file replicas
@@ -12,21 +12,26 @@ gfrm \- remove Gfarm files, directories, or file replicas
 \fBgfrm\fR [ \fB-frR\fR ] [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrm\fR [ \fB-f\fR ] \fB-h \fIfilesystem-node\fB\fR \fB-I \fIfragment-index\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrm\fR [ \fB-frR\fR ] \fB-I \fIfile-section\fB\fR [ \fB-h \fIfilesystem-node\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrm\fR removes each specified file.  By
-default, it does not remove directories.  '.' or '..' cannot be
-removed.  With the \fB-h\fR option,
-\fBgfrm\fR removes file replicas of each specified file
-on the specified filesystem node(s).  All file replicas of a file
-cannot be removed.
+\fBgfrm\fR removes each specified file.  It does
+not remove directories unless the \fB-r\fR or
+\fB-R\fR is specified.  '.' or '..' cannot be removed.
+With the \fB-h\fR option, \fBgfrm\fR removes
+file replicas of each specified file on the specified filesystem
+node(s).  All file replicas of a file cannot be removed.
 .PP
-When both \fB-h\fR and \fB-I\fR options are specified, \fBgfrm\fR
-removes a file replica specified by \fIfragment-index\fR on the
-filesystem nodes \fIfilesystem-node\fR.  All file
-replicas of a file cannot be removed.
+When \fB-I\fR option is specified,
+\fBgfrm\fR removes the specified file section.  File
+section is an architecture name for executable files, or is a fragment
+index for a regular file.  It does not remove directories unless the
+\fB-r\fR or \fB-R\fR is specified.  With the
+\fB-h\fR option, \fBgfrm\fR removes file
+replicas of each specified file section on the specified filesystem
+node(s).  All file replicas of a file section cannot be
+removed.
 .SH "OPTIONS"
 .TP
 \fB-f\fR
@@ -41,16 +46,14 @@ command-line argument recursively.
 \fB-h \fIfilesystem-node\fB\fR
 specifies a filesystem node on which file replicas will be removed.
 With the \fB-I\fR option, a file raplica of the specified
-file fragment will be removed.
+file section will be removed.
 This option can be used more than once to remove file
 replicas on several filesystem nodes at once.
 .TP
-\fB-I \fIfragment-index\fB\fR
-specifies the fragment index to be removed.
-
-If the \fIgfarm-URL\fR is an executable file, an architecture name,
-for example, sparc-sun-solaris8, can be used to specify the executable
-architecture to be removed.
+\fB-I \fIfile-section\fB\fR
+specifies the file section to be removed.  File section is an
+architecture name such as sparc-sun-solaris8 for executable files, and
+an fragment index for regular files.
 .TP
 \fB-?\fR
 displays a list of command options.
