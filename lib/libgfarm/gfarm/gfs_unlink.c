@@ -62,25 +62,25 @@ gfs_unlink(const char *gfarm_url)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL) {
-		e_save = e;
+	if (e != NULL)
 		goto finish_unlink;
-	}
+
 	e = gfarm_path_info_get(gfarm_file, &pi);
-	if (e != NULL) {
-		e_save = e;
+	if (e != NULL)
 		goto finish_free_gfarm_file;
-	}
+
 	if (GFARM_S_ISDIR(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
-		e_save = GFARM_ERR_IS_A_DIRECTORY;
+		e = GFARM_ERR_IS_A_DIRECTORY;
 		goto finish_free_gfarm_file;
 	}
 	gfarm_path_info_free(&pi);
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
 	if (e != NULL) {
-		e_save = e;
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
+			goto finish_free_gfarm_file;
+		/* no fragment information */
 		nsections = 0;
 		sections = NULL;
 	}
@@ -99,21 +99,19 @@ gfs_unlink(const char *gfarm_url)
 		for (j = 0; j < ncopies; j++) {
 			e = gfs_unlink_replica_internal(gfarm_file,
 				sections[i].section, copies[j].hostname);
-			if (e != NULL) {
-				if (e_save == NULL)
-					e_save = e;
-				continue;
-			}
+			if (e != NULL && e_save == NULL)
+				e_save = e;
 		}
 		gfarm_file_section_copy_info_free_all(ncopies, copies);
 	}
-	if (sections != NULL)
+	if (sections != NULL) {
 		gfarm_file_section_info_free_all(nsections, sections);
-	e = gfarm_file_section_info_remove_all_by_file(gfarm_file);
-	if (e != NULL)
-		e_save = e;
+		e = gfarm_file_section_info_remove_all_by_file(gfarm_file);
+		if (e != NULL && e_save == NULL)
+			e_save = e;
+	}
 	e = gfarm_path_info_remove(gfarm_file);
-	if (e != NULL)
+	if (e != NULL && e_save == NULL)
 		e_save = e;
 
 finish_free_gfarm_file:
@@ -123,7 +121,7 @@ finish_unlink:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 
-	return (e_save);
+	return (e_save != NULL ? e_save : e);
 }
 
 /* internal use in the gfarm library */
