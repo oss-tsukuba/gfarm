@@ -123,7 +123,7 @@ finish_unlink:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 
-	return (e_save);	
+	return (e_save);
 }
 
 /* internal use in the gfarm library */
@@ -137,8 +137,9 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 	e = gfarm_file_section_copy_info_get_all_by_section(
 		gfarm_file, section, &ncopies, &copies);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		e = gfarm_file_section_info_remove(gfarm_file, section);
-		return (e == NULL || e == GFARM_ERR_NO_SUCH_OBJECT ? NULL : e);
+		/* if there is the section info, remove it */
+		(void)gfarm_file_section_info_remove(gfarm_file, section);
+		return (e);
 	}
 	if (e != NULL)
 		return (e);
@@ -157,21 +158,21 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 	(void)gfarm_file_section_copy_info_remove_all_by_section(
 		gfarm_file, section);
 	e = gfarm_file_section_info_remove(gfarm_file, section);
-			     
+
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
 		if (e_save == NULL)
 			e_save = e;
 	}
 
-	return (e_save != NULL ? e_save : e);	
+	return (e_save != NULL ? e_save : e);
 }
 
 char *
 gfs_unlink_section(const char *gfarm_url, const char *section)
 {
-	char *e, *gfarm_file; 
+	char *e, *gfarm_file;
 	int nsections;
-	struct gfarm_file_section_info *sections;	
+	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -181,11 +182,9 @@ gfs_unlink_section(const char *gfarm_url, const char *section)
 	if (e != NULL)
 		goto free_gfarm_file;
 	e = gfs_unlink_section_internal(gfarm_file, section);
-	if (e != NULL)
-		goto free_sections;
-	if (nsections <= 1)
+	if (e == NULL && nsections <= 1)
 		e = gfarm_path_info_remove(gfarm_file);
- free_sections:       
+
 	gfarm_file_section_info_free_all(nsections, sections);
  free_gfarm_file:
 	free(gfarm_file);
@@ -292,7 +291,7 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 				gfarm_file, section);
 		else if (e == NULL)
 			gfarm_file_section_copy_info_free_all(ncps, cps);
-			     
+
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
@@ -308,7 +307,7 @@ finish_copies:
 finish_gfarm_file:
 	free(gfarm_file);
 finish:
-	return (e_save != NULL ? e_save : e);	
+	return (e_save != NULL ? e_save : e);
 }
 
 /*
@@ -341,7 +340,7 @@ gfs_unlink_replica(const char *gfarm_url,
 	if (sections != NULL)
 		gfarm_file_section_info_free_all(nsections, sections);
 	free(gfarm_file);
-	return (e_save);	
+	return (e_save);
 }
 
 /*
@@ -372,5 +371,5 @@ gfs_unlink_every_other_replicas(const char *gfarm_file, const char *section,
 			e_save = e;
 	}
 	gfarm_file_section_copy_info_free_all(ncopies, copies);
-	return (e_save);	
+	return (e_save);
 }
