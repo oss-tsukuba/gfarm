@@ -1,14 +1,16 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>2 May 2005</date></refentryinfo>
+<refentryinfo><date>30 Aug 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
+
 <refnamediv id='name'>
 <refname>gfrm</refname>
 <refpurpose>Gfarm ファイル、ディレクトリ、ファイル複製を削除する。</refpurpose>
@@ -23,9 +25,9 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrm</command>
-    <arg choice='opt'>-f</arg>
-    <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-frR</arg>
+    <arg choice='plain'>-I <replaceable>ファイルセクション</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -44,12 +46,16 @@
 ただし、全てのファイル複製を削除することはできません。
 </para>
 
-<para>また、
-<option>-h</option>
-オプションと
-<option>-I</option>
-オプションの両方を指定することにより、
-特定のファイル断片の複製を削除することができます。
+<para>また、<option>-I</option>オプションを指定することにより、
+ファイルの特定のファイルセクションを削除することができます。
+ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
+通常ファイルの場合はファイルインデックス番号となります。
+デフォルトではディレクトリは指定できませんが、
+<option>-r</option> あるいは <option>-R</option>
+オプションが指定された場合、
+指定されたディレクトリ以下のファイルの特定のファイルセクションが再帰的に消去されます。
+<option>-h</option> オプションでファイルシステムノードを指定することにより、
+指定されたノードに格納されているファイル複製を削除することができます。
 ただし、全てのファイル複製を削除することはできません。
 </para>
 
@@ -57,6 +63,7 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
 <varlistentry>
 <term><option>-f</option></term>
 <listitem>
@@ -68,6 +75,7 @@
 </para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-r</option>, <option>-R</option></term>
 <listitem>
@@ -75,6 +83,7 @@
 全て、再帰的に削除します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
 <listitem>
@@ -84,21 +93,24 @@
 プションを複数回指定します．</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
-<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<term><option>-I</option> <parameter>ファイルセクション</parameter></term>
 <listitem>
-<para>複製を削除するフラグメント番号を指定します。
-実行形式のファイルの場合には、このオプションで実行アーキ
-テクチャ(例 「sparc-sun-solaris8」) を指定することによっ
-て、指定したアーキテクチャの複製を削除できます。</para>
+<para>削除するファイルセクションを指定します。
+ファイルセクションとは、
+実行形式のファイルの場合は、アーキテクチャ名(例 「sparc-sun-solaris8」)、
+通常ファイルの場合は、ファイルインデックス番号のことです。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>

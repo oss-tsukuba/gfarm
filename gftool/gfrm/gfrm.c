@@ -99,7 +99,8 @@ remove_cwd_entries(Unlink_Ops ops, void *closure)
 				exit (1);
 			}
 			e = ops->unlink(url, closure);
-			if (e != GFARM_ERR_NO_REPLICA_ON_HOST && e != NULL)
+			if (e != GFARM_ERR_NO_REPLICA_ON_HOST &&
+			    e != GFARM_ERR_NO_SUCH_OBJECT && e != NULL)
 				fprintf(stderr, "%s/%s: %s\n", cwdbf, path, e);
 			free(url);
 		} else if (GFARM_S_ISDIR(mode)) {
@@ -176,21 +177,32 @@ rmdir_file(const char *path, void *closure)
 	return (gfs_rmdir(path));
 }
 
-struct unlink_replica_closure { int nhosts; char **hosts; int force; };
+struct unlink_replica_closure {
+	char *section; int nhosts; char **hosts; int force;
+};
 
 static char *
-unlink_replica_alloc_closure(int nhosts, char **hosts, int force, void **cp)
+unlink_replica_alloc_closure(
+	char *section, int nhosts, char **hosts, int force, void **cp)
 {
 	struct unlink_replica_closure *c;
 
 	c = malloc(sizeof(struct unlink_replica_closure));
 	if (c == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	c->section = section;
 	c->nhosts = nhosts;
 	c->hosts = hosts;
 	c->force = force;
 	*cp = c;
 	return (NULL);
+}
+
+static char *
+unlink_section(char *path, void *closure)
+{
+	struct unlink_replica_closure *a = closure;
+	return (gfs_unlink_section(path, a->section));
 }
 
 static char *
@@ -201,18 +213,36 @@ unlink_replica(char *path, void *closure)
 }
 
 static char *
+unlink_section_replica(char *path, void *closure)
+{
+	struct unlink_replica_closure *a = closure;
+	return (gfs_unlink_section_replica(
+			path, a->section, a->nhosts, a->hosts, a->force));
+}
+
+static char *
+rmdir_section(const char *path, void *closure)
+{
+	(void)gfs_rmdir(path);
+	return (NULL);
+}
+
+static char *
 rmdir_replica(const char *path, void *closure)
 {
 	struct unlink_replica_closure *a = closure;
 
 	if (a->force)
-		return (gfs_rmdir(path));
+		(void)gfs_rmdir(path);
 	/* do nothing */
 	return (NULL);
 }
 
 static struct unlink_ops file_ops = { unlink_file, rmdir_file };
+static struct unlink_ops section_ops = { unlink_section, rmdir_section };
 static struct unlink_ops replica_ops = { unlink_replica, rmdir_replica };
+static struct unlink_ops section_replica_ops =
+{ unlink_section_replica, rmdir_replica };
 
 int
 main(argc, argv)
@@ -222,16 +252,14 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int argc_save = argc;
-	char **argv_save = argv;
-	char *e, *section = NULL;
-	int ch, nhosts = 0;
-	char **hosttab;
+	char **argv_save = argv, *e, *section = NULL, **hosttab;
+	int i, ch, nhosts = 0;
 	gfarm_stringlist host_list;
-	int o_force = 0;
-	int o_recursive = 0;
+	int o_force = 0, o_recursive = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	int i;
+	void *closure;
+	Unlink_Ops ops;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -294,64 +322,40 @@ main(argc, argv)
 	}
 	for (i = 0; i < argc; i++)
 		gfs_glob(argv[i], &paths, &types);
-	if (section == NULL) {
-		if (nhosts == 0) {
-			/* remove a whole file */
-			for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-				char *f = gfarm_stringlist_elem(&paths, i);
-				e = remove_whole_file_or_dir(
-					f, &file_ops, NULL, o_recursive);
-				if (e != NULL)
-					fprintf(stderr, "%s: %s\n", f, e);
-			}
-		}
-		else {
-			/*
-			 * remove file replicas of a whole file
-			 * on a specified node.
-			 */
-			void *closure;
-			hosttab = gfarm_strings_alloc_from_stringlist(
-				&host_list);
-			gfarm_stringlist_free(&host_list);
-			e = unlink_replica_alloc_closure(
-				nhosts, hosttab, o_force, &closure);
-			if (e != NULL) {
-				fprintf(stderr, "%s: %s\n", program_name, e);
-				exit(EXIT_FAILURE);
-			}
-			for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-				char *f = gfarm_stringlist_elem(&paths, i);
-				e = remove_whole_file_or_dir(
-					f, &replica_ops, closure, o_recursive);
-				if (e != NULL)
-					fprintf(stderr, "%s: %s\n", f, e);
-			}
-			free(closure);
-			free(hosttab);
-		}
-	} else {
-		int i;
-		/* remove a file fragment */
-		if (nhosts == 0) {
-			fprintf(stderr, "%s: -h option should be specified\n",
-				program_name);
-			exit(1);
-		}
-		/* assert(nhosts == gfarm_stringlist_length(&host_list)); */
-		hosttab = gfarm_strings_alloc_from_stringlist(&host_list);
-		gfarm_stringlist_free(&host_list);
 
-		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-			e = gfs_unlink_section_replica(
-				gfarm_stringlist_elem(&paths, i), section,
-				nhosts, hosttab, o_force);
-			if (e != NULL)
-				fprintf(stderr, "%s: %s\n",
-					gfarm_stringlist_elem(&paths, i), e);
-		}
-		free(hosttab);
+	/* assert(nhosts == gfarm_stringlist_length(&host_list)); */
+	hosttab = gfarm_strings_alloc_from_stringlist(&host_list);
+	gfarm_stringlist_free(&host_list);
+	e = unlink_replica_alloc_closure(
+		section, nhosts, hosttab, o_force, &closure);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
 	}
+
+	if (section == NULL) {
+		/* remove a file */
+		if (nhosts == 0)
+			ops = &file_ops;
+		/* remove file replicas on a specified node */
+		else
+			ops = &replica_ops;
+	} else if (nhosts == 0) {
+		/* remove a file section */
+		ops = &section_ops;
+	} else {
+		/* remove file replicas of the specified file section */
+		ops = &section_replica_ops;
+	}
+
+	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
+		char *f = gfarm_stringlist_elem(&paths, i);
+		e = remove_whole_file_or_dir(f, ops, closure, o_recursive);
+		if (e != NULL)
+			fprintf(stderr, "%s: %s\n", f, e);
+	}
+	free(closure);
+	free(hosttab);
 	gfs_glob_free(&types);
 	gfarm_stringlist_free_deeply(&paths);
 	e = gfarm_terminate();
