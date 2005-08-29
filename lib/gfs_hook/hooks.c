@@ -309,7 +309,11 @@ __unlink(const char *path)
 		struct gfs_stat gs;
 
 		e = gfs_stat(url, &gs);
-		if (e != NULL) {
+		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION) {
+			e = gfs_unlink(url);
+			goto free_url;
+		}
+		else if (e != NULL) {
 			_gfs_hook_debug(fprintf(stderr,
 			    "GFS: Hooking __unlink: gfs_stat: %s\n", e));
 			goto free_url;
