@@ -217,7 +217,8 @@ agent_client_opendir(struct agent_connection *agent_server,
 	e = agent_client_rpc(agent_server, 0, AGENT_PROTO_OPENDIR, "s/i",
 			     path, &p);
 	if (e == NULL)
-		*dirp = (GFS_Dir)p;
+		/* portability fix for lp64 */
+		*dirp = (GFS_Dir)(long)p;
 	return (e);
 }
 
@@ -225,7 +226,7 @@ char *
 agent_client_readdir(struct agent_connection *agent_server,
 	GFS_Dir dir, struct gfs_dirent **entry)
 {
-	gfarm_int32_t p = (gfarm_int32_t)dir;
+	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 	char *e, *name;
 	static struct gfs_dirent de;
 
@@ -249,7 +250,7 @@ agent_client_readdir(struct agent_connection *agent_server,
 char *
 agent_client_closedir(struct agent_connection *agent_server, GFS_Dir dir)
 {
-	gfarm_int32_t p = (gfarm_int32_t)dir;
+	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 
 	return (agent_client_rpc(
 			agent_server, 0, AGENT_PROTO_CLOSEDIR,
@@ -259,7 +260,7 @@ agent_client_closedir(struct agent_connection *agent_server, GFS_Dir dir)
 char *
 agent_client_dirname(struct agent_connection *agent_server, GFS_Dir dir)
 {
-	gfarm_int32_t p = (gfarm_int32_t)dir;
+	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 	char *e, *n;
 	static char name[GFS_MAXNAMLEN];
 
@@ -279,7 +280,7 @@ char *
 agent_client_seekdir(struct agent_connection *agent_server,
 	GFS_Dir dir, file_offset_t off)
 {
-	gfarm_int32_t p = (gfarm_int32_t)dir;
+	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_SEEKDIR, "io/",
 	    p, off));
@@ -289,7 +290,7 @@ char *
 agent_client_telldir(struct agent_connection *agent_server,
 	GFS_Dir dir, file_offset_t *offp)
 {
-	gfarm_int32_t p = (gfarm_int32_t)dir;
+	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_TELLDIR, "i/o",
 	    p, offp));
