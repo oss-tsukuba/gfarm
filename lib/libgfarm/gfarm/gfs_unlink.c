@@ -59,9 +59,6 @@ gfs_unlink(const char *gfarm_url)
 	struct gfarm_file_section_info *sections;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);

@@ -202,9 +202,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	char *user;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	user = gfarm_get_global_username();
@@ -293,9 +290,6 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	GFS_File gf;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (flags & GFARM_FILE_CREATE) {
@@ -396,9 +390,6 @@ gfs_pio_close(GFS_File gf)
 	char *e, *e_save;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e_save = gfs_pio_check_view_default(gf);
@@ -554,9 +545,6 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	file_offset_t where;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -636,9 +624,6 @@ gfs_pio_truncate(GFS_File gf, file_offset_t length)
 	char *e;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -677,9 +662,6 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	int length;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -721,9 +703,6 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	size_t written;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -779,9 +758,6 @@ sync_internal(GFS_File gf, int operation, double *time)
 	char *e;
 	gfarm_timerval_t t1, t2;
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_flush(gf);
@@ -914,9 +890,6 @@ gfs_pio_gets(GFS_File gf, char *s, size_t size)
 	if (e != NULL)
 		return (e);
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -954,9 +927,6 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 	if (e != NULL)
 		return (e);
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -1023,9 +993,6 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 	if (e != NULL)
 		return (e);
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -1102,9 +1069,6 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	if (e != NULL)
 		return (e);
 
-#ifdef __GNUC__ /* workaround gcc warning: 't1' may be used uninitialized */
-	t1 = 0;
-#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
