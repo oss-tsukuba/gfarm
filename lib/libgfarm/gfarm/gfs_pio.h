@@ -133,9 +133,10 @@ extern double gfs_stat_time;
 void gfs_display_timers();
 
 /* url.c */
-char *gfarm_path_expand_home(const char *_file, char **);
+char *gfarm_path_expand_home(const char *, char **);
 
 /* gfs_pio_misc.c */
+char *gfs_stat_size_canonical_path(char *, file_offset_t *, int *);
 char *gfs_stat_canonical_path(char *, struct gfs_stat *);
 
 /* gfs_dir.c */

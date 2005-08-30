@@ -288,6 +288,8 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
+	file_offset_t s;
+	int nsec;
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -319,6 +321,15 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		goto free_gf_pi;
 	if ((flags & GFARM_FILE_TRUNC) == 0)
 		gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+	/*
+	 * XXX - Add GFARM_FILE_TRUNC when writing a file with size 0
+	 * to avoid re-calculation of checksum on close.
+	 */
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
+	    gfs_stat_size_canonical_path(gf->pi.pathname, &s, &nsec) == NULL &&
+	    s == 0)
+		gf->open_flags |= GFARM_FILE_TRUNC;
+
 	*gfp = gf;
 
 	e = NULL;
@@ -586,7 +597,7 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	}
 
 	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-	    
+
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
 		if (e != NULL) {
@@ -1044,7 +1055,6 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 	*bufp = buf;
 	*sizep = size;
 	*lenp = len;
-	
 
 	return (NULL);
 }
