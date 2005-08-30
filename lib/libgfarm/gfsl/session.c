@@ -692,10 +692,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeAcceptor()",
 				 "cannot access configuration directory");
-		majStat = GSS_S_FAILURE;
-		minStat = GFSL_DEFAULT_MINOR_ERROR;
-		ret = -1;
-		goto Done;
+		goto SkipReadConfFile;
 	    }
 #ifdef HAVE_SNPRINTF
 	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_ACCEPTOR_CONFIG_FILE);
@@ -712,6 +709,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    goto Done;
 	}
 
+    SkipReadConfFile:
 	/*
 	 * Authorization init.
 	 */
@@ -788,10 +786,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeInitiator()",
 				 "cannot access configuration directory");
-		majStat = GSS_S_FAILURE;
-		minStat = GFSL_DEFAULT_MINOR_ERROR;
-		ret = -1;
-		goto Done;
+		goto SkipReadConfFile;
 	    }
 #ifdef HAVE_SNPRINTF
 	    snprintf(confFile, sizeof confFile, "%s/%s", confDir, GFARM_DEFAULT_INITIATOR_CONFIG_FILE);
@@ -808,6 +803,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    goto Done;
 	}
 
+    SkipReadConfFile:
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 	/*
 	 * If GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS is true,
@@ -896,10 +892,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    if (confDir == NULL) {
 		gflog_auth_error("gfarmSecSessionInitializeBoth()",
 				 "cannot access configuration directory");
-		majStat = GSS_S_FAILURE;
-		minStat = GFSL_DEFAULT_MINOR_ERROR;
-		ret = -1;
-		goto Done;
+		goto SkipReadConfFile;
 	    }
 	}
 
@@ -939,6 +932,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    goto Done;
 	}
 
+    SkipReadConfFile:
 	/*
 	 * Authorization init.
 	 */
