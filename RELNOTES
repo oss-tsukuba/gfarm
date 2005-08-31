@@ -34,17 +34,10 @@ Updated Features
   - GFARM_ARCHITECTURE environment variable can specify a client
     architecture.
 
- * gfs_unlink_section(3) - new function to unlink a particular section
-   of a file.
+ * configure - honors the --sysconfdir option to specify a directory
+   of gfarm.conf.
 
- * gfs_pio_sync(3), gfs_pio_datasync(3) - new functions
-
- * gfs_seekdir(3), gfs_telldir(3) - new functions
-
- * configure(1) - honors the --sysconfdir option to specify a
-   directory of gfarm.conf.
-
- * gfsd, gfmd - accepts level N limited proxy to enable access to
+ * gfsd(8), gfmd(8) - accepts level N limited proxy to enable access to
    Gfarm file system from a process invoked by Globus jobmanager.
 
  * gfrm(1) - supports recursive deletion of (file replicas of) a
@@ -52,6 +45,13 @@ Updated Features
 
  * gfkey(1) - the -p option is added to specify the term of validity
    in second.
+
+ * gfs_unlink_section(3) - new function to unlink a particular section
+   of a file.
+
+ * gfs_pio_sync(3), gfs_pio_datasync(3) - new functions
+
+ * gfs_seekdir(3), gfs_telldir(3) - new functions
 
  * Syscall hooking library
 
