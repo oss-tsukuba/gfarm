@@ -15,6 +15,8 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
+#include <openssl/evp.h>
+#include "gfs_pio.h"
 
 char *progname = "gfsplck";
 
@@ -147,7 +149,7 @@ check_file_size(char *pathname, char *gfarm_file, char *section)
 }
 
 static char *
-fixfrag_i(char *pathname, char *gfarm_file, char *sec)
+fixfrag_ii(char *pathname, char *gfarm_file, char *sec)
 {
 	char *hostname, *e;
 	struct gfarm_file_section_copy_info sc_info;
@@ -159,6 +161,11 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 	 */
 	if (strstr(sec, ":::lock"))
 		return ("lock file");
+
+	/* check section busy */
+	e = gfs_check_section_busy(gfarm_file, sec);
+	if (e != NULL)
+		return (e);
 
 	if (check_all == 0) {
 		/* check file size */
@@ -186,6 +193,26 @@ fixfrag_i(char *pathname, char *gfarm_file, char *sec)
 	 * Otherwise, check file size and checksum.
 	 */
 	return (gfs_pio_set_fragment_info_local(pathname, gfarm_file, sec));
+}
+
+static char *
+fixfrag_i(const char *gfarm_url, char *pathname, char *gfarm_file, char *sec)
+{
+	char *e;
+
+	e = fixfrag_ii(pathname, gfarm_file, sec);
+	if (e != NULL) {
+		if (e != GFARM_ERR_ALREADY_EXISTS) {
+			print_errmsg_with_section(gfarm_url, sec, e);
+			if (e != GFARM_ERR_TEXT_FILE_BUSY)
+				delete_invalid_file_or_directory(pathname);
+		}
+	}
+	else
+		printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
+		       gfarm_host_get_self_name());
+
+	return (e);
 }
 
 static int fixdir(char *dir, const char *gfarm_prefix);
@@ -277,16 +304,8 @@ fixurl(const char *gfarm_url)
 			++pathp;
 			continue;
 		}
-		e = fixfrag_i(*pathp, gfarm_file, sec);
-		if (e != NULL) {
-			if (e != GFARM_ERR_ALREADY_EXISTS) {
-				print_errmsg_with_section(gfarm_url, sec, e);
-				delete_invalid_file_or_directory(*pathp);
-			}
-		}
-		else
-			printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
-			       gfarm_host_get_self_name());
+		(void)fixfrag_i(gfarm_url, *pathp, gfarm_file, sec);
+
 		++pathp;
 	}
 	globfree(&pglob);
@@ -347,19 +366,10 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 	}
 
 	/* check whether the fragment is already registered. */
-	e = fixfrag_i(pathname, gfarm_file, sec);
-	if (e != NULL) {
-		if (e != GFARM_ERR_ALREADY_EXISTS) {
-			print_errmsg_with_section(pathname, sec, e);
-			delete_invalid_file_or_directory(pathname);
-			goto error_gfarm_file;
-		}
-		else
-			/* no message */;
-	}
-	else
-		printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
-		       gfarm_host_get_self_name());
+	e = fixfrag_i(gfarm_url, pathname, gfarm_file, sec);
+	if (e != NULL && e != GFARM_ERR_ALREADY_EXISTS)
+		goto error_gfarm_file;
+
 	r = 0;
 
 error_gfarm_file:
