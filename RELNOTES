@@ -29,7 +29,7 @@ Updated Features
  * Environment variable
 
   - GFARM_CONFIG_FILE environment variable can specify a Gfarm
-    configuration file instead of ~/.gfarmrc.
+    configuration file instead of ~/.gfarmrc. (Bugzilla-ja #38)
 
   - GFARM_ARCHITECTURE environment variable can specify a client
     architecture.
