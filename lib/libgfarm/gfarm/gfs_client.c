@@ -50,7 +50,6 @@ struct gfs_connection {
 	struct xxx_connection *conn;
 	enum gfarm_auth_method auth_method;
 	char *hostname; /* malloc()ed, if created by gfs_client_connect() */
-	struct sockaddr peer_addr; /* for reconnect */
 
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
 };
@@ -77,8 +76,7 @@ gfs_client_terminate(void)
 		 * because gfs_server->hostname and gfs_server aren't
 		 * malloc'ed.
 		 */
-		if (gfs_server->conn != NULL) /* not reconnection failed */
-			xxx_connection_free(gfs_server->conn);
+		xxx_connection_free(gfs_server->conn);
 	}
 	gfarm_hash_table_free(gfs_server_hashtab);
 	gfs_server_hashtab = NULL;
@@ -146,9 +144,6 @@ gfs_client_connection0(const char *canonical_hostname,
 		xxx_connection_free(gfs_server->conn);
 		return (e);
 	}
-	if (peer_addr != &gfs_server->peer_addr) /* not reconnect case */
-		memcpy(&gfs_server->peer_addr, peer_addr, sizeof(*peer_addr));
-
 	return (NULL);
 }
 
@@ -234,31 +229,11 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 char *
 gfs_client_disconnect(struct gfs_connection *gfs_server)
 {
-	char *e;
-
-	if (gfs_server->conn != NULL) /* not reconnection failed */
-		e = xxx_connection_free(gfs_server->conn);
-	else
-		e = NULL;
+	char *e = xxx_connection_free(gfs_server->conn);
 
 	/* XXX - gfs_server->context should be NULL here */
 	free(gfs_server->hostname);
 	free(gfs_server);
-	return (e);
-}
-
-char *
-gfs_client_reconnect(struct gfs_connection *gfs_server)
-{
-	char *e;
-
-	/* ignore error. it's expected */
-	xxx_connection_free(gfs_server->conn);
-
-	e = gfs_client_connection0(gfs_server->hostname,
-	    &gfs_server->peer_addr, gfs_server);
-	if (e != NULL)
-		gfs_server->conn = NULL; /* remember reconnection failed */
 	return (e);
 }
 
@@ -439,8 +414,6 @@ gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
 
 	if (state->writable != NULL)
 		gfarm_event_free(state->writable);
-	memcpy(&gfs_server->peer_addr, &state->peer_addr,
-	    sizeof(state->peer_addr));
 	free(state);
 	if (e != NULL) {
 		gfs_client_disconnect(gfs_server);
@@ -459,21 +432,11 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 		       char *format, ...)
 {
 	va_list ap;
-	char *e, *e2, *fmt = format;
+	char *e;
 
-	if (gfs_server->conn == NULL) /* reconnection failed */
-		return (GFARM_ERR_SOCKET_IS_NOT_CONNECTED);
 	va_start(ap, format);
-	e = xxx_proto_vrpc_request(gfs_server->conn, command, &fmt, &ap);
+	e = xxx_proto_vrpc_request(gfs_server->conn, command, &format, &ap);
 	va_end(ap);
-	if (e == GFARM_ERR_BROKEN_PIPE &&
-	    (e2 = gfs_client_reconnect(gfs_server)) == NULL) {
-		va_start(ap, format);
-		fmt = format;
-		e = xxx_proto_vrpc_request(gfs_server->conn, command,
-		    &fmt, &ap);
-		va_end(ap);
-	}
 	return (e);
 }
 
@@ -485,13 +448,10 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	char *e;
 	int error;
 
-	if (gfs_server->conn == NULL) /* reconnection failed */
-		return (GFARM_ERR_SOCKET_IS_NOT_CONNECTED);
 	va_start(ap, format);
 	e = xxx_proto_vrpc_result(gfs_server->conn, just,
 				  &error, &format, &ap);
 	va_end(ap);
-	/* XXX - have to deal with GFARM_ERR_UNEXPECTED_EOF, but can't... */
 
 	if (e != NULL)
 		return (e);
@@ -505,23 +465,13 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 	       char *format, ...)
 {
 	va_list ap;
-	char *e, *e2, *fmt = format;
+	char *e;
 	int error;
 
-	if (gfs_server->conn == NULL) /* reconnection failed */
-		return (GFARM_ERR_SOCKET_IS_NOT_CONNECTED);
 	va_start(ap, format);
 	e = xxx_proto_vrpc(gfs_server->conn, just,
-			   command, &error, &fmt, &ap);
+			   command, &error, &format, &ap);
 	va_end(ap);
-	if ((e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) &&
-	    (e2 = gfs_client_reconnect(gfs_server)) == NULL) {
-		va_start(ap, format);
-		fmt = format;
-		e = xxx_proto_vrpc(gfs_server->conn, just,
-				   command, &error, &fmt, &ap);
-		va_end(ap);
-	}
 
 	if (e != NULL)
 		return (e);
