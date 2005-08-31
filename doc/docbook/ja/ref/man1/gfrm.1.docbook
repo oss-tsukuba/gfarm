@@ -3,7 +3,7 @@
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>30 Aug 2005</date></refentryinfo>
+<refentryinfo><date>31 Aug 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
@@ -20,13 +20,7 @@
 <cmdsynopsis>
   <command>gfrm</command>
     <arg choice='opt'>-frR</arg>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrm</command>
-    <arg choice='opt'>-frR</arg>
-    <arg choice='plain'>-I <replaceable>ファイルセクション</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>ファイルセクション</replaceable></arg>
     <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -41,19 +35,16 @@
 オプションが指定された場合、
 指定されたディレクトリ以下のファイルおよびディレクトリが再帰的に消去されます。
 なお、. あるいは .. が指定された場合はエラーになります。
-<option>-h</option> オプションでファイルシステムノードを指定することにより、
-指定されたノードに格納されているファイル複製を削除することができます。
-ただし、全てのファイル複製を削除することはできません。
 </para>
 
-<para>また、<option>-I</option>オプションを指定することにより、
+<para>
+<option>-I</option>オプションを指定することにより、
 ファイルの特定のファイルセクションを削除することができます。
 ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
 通常ファイルの場合はファイルインデックス番号となります。
-デフォルトではディレクトリは指定できませんが、
-<option>-r</option> あるいは <option>-R</option>
-オプションが指定された場合、
-指定されたディレクトリ以下のファイルの特定のファイルセクションが再帰的に消去されます。
+</para>
+
+<para>
 <option>-h</option> オプションでファイルシステムノードを指定することにより、
 指定されたノードに格納されているファイル複製を削除することができます。
 ただし、全てのファイル複製を削除することはできません。

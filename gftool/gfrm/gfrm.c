@@ -15,10 +15,9 @@ char *program_name = "gfrm";
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [-frR] [-h <host>] <gfarm_url>...\n",
+	fprintf(stderr,
+		"Usage: %s [-frR] [-I <section>] [-h <host>] <gfarm_url>...\n",
 		program_name);
-	fprintf(stderr, "       %s [-f] -I <fragment> -h <host> "
-		"<gfarm_url>...\n", program_name);
 	exit(1);
 }
 

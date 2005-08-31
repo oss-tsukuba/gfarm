@@ -3,7 +3,7 @@
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>30 Aug 2005</date></refentryinfo>
+<refentryinfo><date>31 Aug 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
@@ -20,13 +20,7 @@
 <cmdsynopsis>
   <command>gfrm</command>
     <arg choice='opt'>-frR</arg>
-    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrm</command>
-    <arg choice='opt'>-frR</arg>
-    <arg choice='plain'>-I <replaceable>file-section</replaceable></arg>
+    <arg choice='opt'>-I <replaceable>file-section</replaceable></arg>
     <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -38,19 +32,19 @@
 <para><command>gfrm</command> removes each specified file.  It does
 not remove directories unless the <option>-r</option> or
 <option>-R</option> is specified.  '.' or '..' cannot be removed.
-With the <option>-h</option> option, <command>gfrm</command> removes
-file replicas of each specified file on the specified filesystem
-node(s).  All file replicas of a file cannot be removed.</para>
+</para>
 
-<para>When <option>-I</option> option is specified,
-<command>gfrm</command> removes the specified file section.  File
-section is an architecture name for executable files, or is a fragment
-index for a regular file.  It does not remove directories unless the
-<option>-r</option> or <option>-R</option> is specified.  With the
-<option>-h</option> option, <command>gfrm</command> removes file
-replicas of each specified file section on the specified filesystem
-node(s).  All file replicas of a file section cannot be
-removed.</para>
+<para>
+When <option>-I</option> option is specified, <command>gfrm</command>
+removes the specified file section.  File section is an architecture
+name for executable files, or is a fragment index for a regular file.
+</para>
+
+<para>
+With the <option>-h</option> option, <command>gfrm</command> removes
+file replicas of each specified file or file section on the specified
+filesystem node(s).  All file replicas of a file cannot be removed.
+</para>
 
 </refsect1>
 
