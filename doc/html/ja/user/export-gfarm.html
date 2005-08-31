@@ -54,7 +54,10 @@
 <TR>
 <TD><A HREF="http://httpd.apache.org/">Apache HTTP Server</A><BR>
 (Gfarm にアクセスできる<BR>ユーザの権限で起動)</TD>
-<TD>○<BR>httpd.conf に EnableSendfile Off 必要</TD>
+<TD>○<BR>httpd.conf に<BR>
+EnableMMAP Off<BR>
+EnableSendfile Off<BR>
+が必要な場合がある</TD>
 <TD>○<BR></TD>
 </TR>
 </TBODY>
