@@ -1,10 +1,10 @@
 Copyright (c) 2003, 2004, 2005 National Institute of Advanced
 Industrial Science and Technology (AIST).  All Rights Reserved.
 
-Release note for Gfarm 1.2
-==========================
+Release note for Gfarm 1.2 (RC2)
+================================
 
-[2005.8.30]
+[2005.8.31]
 
 Updated Features
 
@@ -12,7 +12,7 @@ Updated Features
 
  * FreeBSD and NetBSD supports.
 
- * File locking support aginst replication during updating the file,
+ * File locking support against replication during updating the file,
    which prevents from creating inconsistent file replicas.
 
  * A newly created file can be accessed by other processes before it
@@ -47,6 +47,12 @@ Updated Features
  * gfsd, gfmd - accepts level N limited proxy to enable access to
    Gfarm file system from a process invoked by Globus jobmanager.
 
+ * gfrm(1) - supports recursive deletion of (file replicas of) a
+   particular file section.
+
+ * gfkey(1) - the -p option is added to specify the term of validity
+   in second.
+
  * Syscall hooking library
 
   - New syscall hook entries; fsync, fdatasync, pread, pread64,
@@ -65,7 +71,7 @@ Updated Features
     connect to an LDAP server, which reduces the number of connections
     to the LDAP server and CPU load of the LDAP server.
 
-  - libgfarm(3) - tries to re-connect when the connectin to an LDAP
+  - libgfarm(3) - tries to re-connect when the connection to an LDAP
     server, gfsd, or gfmd is broken.
 
  * Documentation
@@ -80,8 +86,8 @@ Updated Features
 
  * Bug fix
 
-  - fix a segfault problem or inappropreate error message problem when
-    Gfarm I/O libraries are called before calling gfarm_inititlize.
+  - fix a segfault problem or inappropriate error message problem when
+    Gfarm I/O libraries are called before calling gfarm_initialize.
     (Bugzilla-ja #32)
 
   - fix a race condition when multiple processes fix an invalid
@@ -95,7 +101,7 @@ Updated Features
   - gfreg creates a file whose name is '-' when 'cat file | gfreg -
     gfarm:dir' (bugzilla-ja #35)
 
-  - a remote file openen by a process can be closed by the child
+  - a remote file opened by a process can be closed by the child
     process.
 
   - fix memory leak.
@@ -103,6 +109,8 @@ Updated Features
   - gfreg(1) - fix a bug related to the -r option.
 
   - fix a segfault problem when using an old tcsh and gfarm_agent.
+
+  - unlink(2) hook cannot remove a file with no fragment information.
 
 Release note for Gfarm 1.1.1
 ============================

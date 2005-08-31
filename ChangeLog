@@ -1,4 +1,47 @@
+2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* man/man1/gfrm.1, doc/html/en/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrm.1.html, man/ja/man1/gfrm.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, gftool/gfrm/gfrm.c:
+	simplify
+
+2005-08-30  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_pio_open):
+	add GFARM_FILE_TRUNC when writing a file with size 0 to avoid re-calculation of checksum on close.
+	(gfs_stat_size_canonical_path): added for internal use.
+
+	* lib/libgfarm/gfsl/session.c (gfarmSecSessionInitialize{Acceptor,Initiator,Both}):
+	do not return error when conf dir does not exist.  Without this, <prefix>/etc directory is indispensable for GSI authentication (or GFSL) even when it is not necessary.
+
 2005-08-29  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* doc/html/en/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrm.1.html, man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, gftool/gfrm/gfrm.c (gfrm):
+	support recursive deletion of (file replicas of) a particular file section.
+
+	* lib/gfs_hook/hooks.c (__unlink):
+	unlink a file in case of no fragment information
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c (gfs_access):
+	do not do unnecessary section info check
+
+	* lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink):
+	return NULL in case of no fragment information
+
+	* lib/libgfarm/gfarm/gfs_unlink.c (gfs_unlink_section):
+	do not call unnecessary gfarm_path_info_remove when the specified section does not exist, which returns inappropriate error.
+
+	* doc/html/ja/ref/man1/gfkey.1.html, man/ja/man1/gfkey.1, man/man1/gfkey.1, doc/html/en/ref/man1/gfkey.1.html:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfkey.1.docbook, gftool/gfkey/gfkey.c, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_server.c, doc/docbook/en/ref/man1/gfkey.1.docbook (gfkey.c):
+	add -p option to specify the term of validity in second.
+
+	* ChangeLog, RELNOTES: release note for the version 1.2
 
 	* gfptool/gfsplck/gfsplck.c:
 	add read and write access to enable to delete invalid directories.
