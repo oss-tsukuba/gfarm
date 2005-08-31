@@ -30,12 +30,12 @@
 <TR>
 <TD><A HREF="http://www.samba.org/">Samba</A></TD>
 <TD><A HREF="samba-hook.html">◎</A></TD>
-<TD><A HREF="samba-gfarmfs.html">◎<BR>allow_root必要</A></TD>
+<TD><A HREF="samba-gfarmfs.html">◎<BR>allow_root 必要</A></TD>
 </TR>
 <TR>
 <TD>NFS</TD>
 <TD>×</TD>
-<TD><A HREF="nfs-gfarmfs.html">○<BR>allow_root必要</A></TD>
+<TD><A HREF="nfs-gfarmfs.html">○<BR>allow_root 必要</A></TD>
 </TR>
 <TD><A HREF="http://vsftpd.beasts.org/">vsftpd</A></TD>
 <TD>○</TD>
@@ -44,22 +44,30 @@
 <TR>
 <TD><A HREF="http://www.proftpd.org/">ProFTPD</A></TD>
 <TD>○</TD>
-<TD>○<BR>allow_root必要</TD>
+<TD>○<BR>allow_root 必要</TD>
 </TR>
 <TR>
-<TD><A HREF="http://www.globus.org/toolkit/docs/4.0/data/gridftp/">globus-gridftp-server</A><BR>(GT4) (root権限起動）</TD>
-<TD>○<BR>サーバ側でもgrid-proxy-init必要</TD>
-<TD>○<BR>サーバ側でもgrid-proxy-init必要</TD>
+<TD><A HREF="http://www.globus.org/toolkit/docs/4.0/data/gridftp/">globus-gridftp-server</A><BR>(GT4) (root 権限起動）</TD>
+<TD>○<BR>サーバ側でも grid-proxy-init 必要</TD>
+<TD>○<BR>サーバ側でも grid-proxy-init 必要</TD>
+</TR>
+<TR>
+<TD><A HREF="http://httpd.apache.org/">Apache HTTP Server</A><BR>
+(Gfarm にアクセスできる<BR>ユーザの権限で起動)</TD>
+<TD>○<BR>httpd.conf に EnableSendfile Off 必要</TD>
+<TD>○<BR></TD>
 </TR>
 </TBODY>
 </TABLE>
+<P>
+リンク先があれば詳細な解説があります．他のサーバにも応用してみてください．
 
 <UL>
 <LI>◎: テスト済み
 <LI>○: 簡単な動作確認のみ
 <LI>×: 不可能
+<LI>allow_root 必要とは、FUSE のオプションである -o allow_root を付けてマウントする必要があります．詳しくは FUSE パッケージの README をご覧ください．
 </UL>
-リンク先があれば詳細な解説があります．他のサーバにも応用してみてください．
 
 
 <H2>3. コメント</H2>質問やコメントがありましたら，
