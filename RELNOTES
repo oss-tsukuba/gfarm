@@ -72,8 +72,7 @@ Updated Features
     to the LDAP server and CPU load of the LDAP server.
 
   - libgfarm(3) - tries to re-connect when the connection to an LDAP
-    server, gfsd, or gfmd is broken due to rebooting or some other
-    reason.
+    server is broken due to rebooting or some other reason.
 
  * Documentation
 
