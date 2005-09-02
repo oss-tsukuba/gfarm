@@ -37,9 +37,9 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	if (e != NULL)
 		return (e);
 
-	if (GFARM_S_ISDIR(gstat.st_mode)) {
+	if (GFARM_S_ISDIR(gs.st_mode)) {
 		e = GFARM_ERR_IS_A_DIRECTORY;
-	} else if (!GFARM_S_ISREG(gstat.st_mode)) {
+	} else if (!GFARM_S_ISREG(gs.st_mode)) {
 		e = "unknown format";
 	} else if (GFARM_S_IS_FRAGMENTED_FILE(gs.st_mode)) {
 		arch = "0";
