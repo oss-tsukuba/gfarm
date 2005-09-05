@@ -1,38 +1,63 @@
 	      既存アプリケーションからのアクセスについて
+	     --- システムコールフックライブラリの利用 ---
 
-Gfarm ファイルシステムは，以下の設定により /gfarm にマウントしているよ
-うにアクセスすることが可能です．
+システムコールフックライブラリ(libgfs_hook.so あるいは gfs_hook.o)を利
+用することにより，Gfarm ファイルシステムを /gfarm にマウントしているよ
+うにアクセスすることが可能になります．/gfarm が，Gfarm ファイルシステム
+の root ディレクトリとなります．
 
-*** glibc-not-hidden
+1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X の場合
+---------------------------------------------------
 
-Linux など GNU C ライブラリ(glibc)を利用している場合，glibc-not-hidden
-パッケージをインストールすると，次節の「無変更で既存のアプリケーション
-を実行」が可能となります．glibc-not-hidden パッケージは Gfarm のウェブ
-サイト(http://datafarm.apgrid.org/software/)から入手可能です．
+無修整で，既存のアプリケーションから Gfarm ファイルシステムをアクセス
+できます．
 
-もし，お使いのディストリビューション用のパッケージがない場合は，
+2) AIX の場合
+-------------
+
+システムコールフックライブラリと再リンクして作成し直すことにより，既存
+のアプリケーションからのアクセスが可能です．
+
+3) その他の OS の場合
+----------------------
+
 datafarm@apgrid.org までご相談ください．
 
-*** 無変更で既存のアプリケーションを実行
+======================================================================
 
-Linux や *BSD では，LD_PRELOAD 環境変数を設定することにより，任意のアプ
-リケーションで，Gfarm ファイルシステムを /gfarm にマウントしているよう
-にアクセスすることが可能です．Solaris でも，可能のはずですが，あまりテ
-ストがなされていません．
+1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X の場合
+---------------------------------------------------
 
-* Linux の場合
+アプリケーションの起動に先立ち，libgfs_hook.so を preload することによ
+り，無修整で，既存のアプリケーションからの Gfarm ファイルシステムのアク
+セスが可能になります．
+
+preload にあたり，OS 個別の設定，注意事項があります．
+
++-------------------+
+| 1-1) Linux の場合 |
++-------------------+
+
+まず，必要なシステムコールを正しくフックするため，glibc-not-hidden パッ
+ケージをインストールします．
+http://datafarm.apgrid.org/software/sycall-hook.ja.html#glibc-not-hidden
+
+もしも glibc-not-hidden をインストールできない場合は，2) に従い，システ
+ムコールフックライブラリと静的に再リンクしてアプリケーションを作成し直
+すことでも実現できます．あるいは，GfarmFS-FUSE を利用することもできます．
+       http://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html
+
+次に，LD_PRELOAD 環境変数に，libgfs_hook.so.0 および
+glib{rt,pthread,c}-not-hidden.so を指定します．
 
 シェルが sh あるいは bash の場合は，以下のように設定します．
 
-	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	$ export LD_PRELOAD
 
 シェルが csh (tcsh) の場合は，以下のように設定します．
 
-	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
-
-＃ tcsh には，いくつかの不具合が報告されており，bash で実行することをお
-＃ 勧めします．
+	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 この設定以降に起動するアプリケーションは，/gfarm に Gfarm ファイルシス
 テムをマウントしているように利用することが可能になります．
@@ -42,25 +67,24 @@ Linux や *BSD では，LD_PRELOAD 環境変数を設定することにより，任意のアプ
 
 	% bash
 
-Fedora Core 2 をはじめとする，一部の Linux ディストリビューションでは，
-上記の設定を行うと，下記のようなメッセージが表示され，シェルの起動に
-失敗することがあります．
+なお，GSI 認証を含んだ Gfarm を利用している場合で，既に install されて
+いる scp や wget が Kerberos ベースの libgssapi をリンクしている場合は，
+それらのプログラムが Segmentation fault で落ちてしまったり，それらのプ
+ログラムからの Gfarm ファイルシステムのアクセスができない場合があります．
+その場合は，GSI ベースの libgssapi と libssl も LD_PRELOAD で指定します．
 
-	bash: /usr/lib/gfarm/libpthread-not-hidden.so: version `GLIBC_2.3.3' not found (required by /lib/tls/librt.so.1)
+例えば，それらが $GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 およ
+び $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 の場合は，以下のようになりま
+す．
 
-このような場合，下記のように，/usr/lib/gfarm/librt-not-hidden.so も
-LD_PRELOAD に追加してください．
-
-シェルが sh あるいは bash の場合:
-
-	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
 	$ export LD_PRELOAD
 
-シェルが csh (tcsh) の場合:
++---------------------+
+| 1-2) FreeBSD の場合 |
++---------------------+
 
-	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
-
-* FreeBSD の場合
+LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
 
 シェルが sh あるいは bash の場合:
 
@@ -71,25 +95,36 @@ LD_PRELOAD に追加してください．
 
 	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
-なお，FreeBSD の 4.X までのリリースでは，/bin にあるコマンドはスタティック
-リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
-ダイナミックリンクしたコマンドを /usr/local/dynbin のような場所に作成し，
-パスの先頭に加えておくと良いでしょう．
+ところで，FreeBSD の 4.X までのリリースでは，/bin にあるコマンドはスタ
+ティックリンクされているため LD_PRELOAD が効きません．この場合，下記の
+ような手順でダイナミックリンクしたコマンドを /usr/local/dynbin のような
+場所に作成し，パスの先頭に加えておくと良いでしょう．
+
 (1) ソース配布中の sbin.??, subin.?? を展開する．
 	# cd /usr/src
 	# cat 配布ディレクトリ/src/sbin.?? | tar zpxf -
 	# cat 配布ディレクトリ/src/subin.?? | tar zpxf -
+
 (2) 動的リンクに変更する．
 	# cd bin
 	# vi Makefile.inc
 		下記の行をコメントに変更する．
 		NOSHARED?=	YES
+
 (3) make して，適当なディレクトリにインストールする．
   ここでは /usr/local/dynbin/ にインストールしています．
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
 
-* NetBSD で pkgsrc ないし binary package からインストールした場合
+なお，FreeBSD-4.11/i386 で，precompile されたバイナリは以下にあります．
+
+https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
+
++--------------------+
+| 1-3) NetBSD の場合 |
++--------------------+
+
+LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
 
 シェルが sh あるいは bash の場合:
 
@@ -100,24 +135,33 @@ LD_PRELOAD に追加してください．
 
 	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
-なお，NetBSD の 1.X までのリリースでは，/bin にあるコマンドはスタティック
-リンクされているため LD_PRELOAD が効きません．この場合，下記のような手順で
-ダイナミックリンクしたコマンドを /usr/local/dynbin のような場所に作成し，
-パスの先頭に加えておくと良いでしょう．
+ところで，NetBSD の 1.X までのリリースでは，/bin にあるコマンドはスタ
+ティックリンクされているため LD_PRELOAD が効きません．この場合，下記の
+ような手順でダイナミックリンクしたコマンドを /usr/local/dynbin のような
+場所に作成し，パスの先頭に加えておくと良いでしょう．
+
 (1) ソース配布中の src.tgz を展開する．
 	# cd /
 	# tar zpxf 配布ディレクトリ/source/sets/src.tgz
+
 (2) 動的リンクに変更する．
 	# cd usr/src/bin
 	# vi Makefile.inc
 		下記の行をコメントに変更する．
 		LDSTATIC?=	-static
+
 (3) make して，適当なディレクトリにインストールする．
   ここでは /usr/local/dynbin/ にインストールしています．
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
 
-* OS に依存しない設定事項
+なお，NetBSD-1.6.2/i386 で，precompile されたバイナリは以下にあります．
+
+https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
+
++------------------------------+
+| 1-4) OS に依存しない設定事項 |
++------------------------------+
 
 上記設定は，.bashrc や .cshrc など起動スクリプトに記述すると，以降の設
 定が必要なくなり，便利です．
@@ -134,7 +178,7 @@ LD_PRELOAD に追加してください．
 なお，現在，Gfarm ファイルシステムに保持されているプログラムの起動，お
 よび，リダイレクトによる子プロセスのファイル作成などは，（gfrun による
 遠隔起動や直接の実行を含む）ファイルシステムノードでの実行のみのサポー
-トとなります．
+トとなります．（この制限は GfarmFS-FUSE にはありません．）
 
 さらに，リダイレクトによるファイルの入力をサポートするためには，
 
@@ -145,19 +189,33 @@ LD_PRELOAD に追加してください．
 を作成してから参照されるようになります．例えば，この設定は，'tar zxfp
 foo.tar.gz' などで，ファイルを展開する場合にも必要となります．
 
-*** 再リンクによって既存のアプリケーションを実行
+-----------------------------------------------------------------------
 
-LD_PRELOAD をサポートしていない OS の場合，既存のアプリケーションを再リ
-ンクすることにより，Gfarm ファイルシステムを /gfarm にマウントしている
-ようにアクセスすることが可能となります．
+2) AIX の場合
+-------------
 
-ただし，必要なシステムコールのフックが可能な場合に限ります．そうではな
-い場合は，次節の「静的リンクによって既存のアプリケーションを実行」をご
-参照ください．
+AIX など preload の機能をもたない OS の場合は，gfs_hook.o と再リンクし
+てアプリケーションを作成し直すことにより，既存のアプリケーションからの
+アクセスが可能です．
+
+ただし，（Linux など）ダイナミックリンクでは必要なシステムコールのフッ
+クできない場合があります．その場合は，静的にリンクすると解決する場合が
+あります．
 
 * C プログラム
 
+gfs_hook.o と -lgfarm をリンクしてアプリケーションを再作成します．
+
 	% cc prog.o %%LIBDIR%%/gfs_hook.o -lgfarm
+
+静的にリンクする場合は，libtool を利用して，-all-static オプションをつ
+けます．
+
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_gcc32 -lsasl 
+
+＃ RedHat 8.0 あるいは RedHat 7.3 で，アカウントの認証に LDAP を利用し
+＃ ている場合，静的リンクされたプログラムは正しく実行されず，
+＃ Segmentation fault になるというバグがあります．
 
 * Fortran あるいは C++ プログラム
 
@@ -171,52 +229,14 @@ hooks_init_mpi.c をリンクします．
 	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c \
 		-lgfarm
 
-*** 静的リンクによって既存のアプリケーションを実行
+-----------------------------------------------------------------------
 
-上記のどれもできない場合は，既存アプリケーションを静的に再リンクするこ
-とにより，Gfarm ファイルシステムを /gfarm にマウントしているようにアク
-セスすることが可能となります．
+3) その他の OS の場合
+----------------------
 
-* C プログラム
+datafarm@apgrid.org までご相談ください．
 
--static オプションを付けて gfs_hook.o および -lgfarm と再リンクします．
-以下は，例ですが，その他に必要となるライブラリは OS やディストリビュー
-ションによります．
-
-	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl -ldl
-
-あるいは
-
-	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
-
-＃ RedHat 8.0 あるいは RedHat 7.3 では，アカウントの認証に LDAP を利用
-＃ している場合，静的リンクされたプログラムは正しく実行されず，
-＃ Segmentation Fault になるというバグがあります．
-
-さらに，Globus の GSSAPI ライブラリを利用している場合は，以下のようにな
-ります．
-
-	% gcc -static prog.o -I/usr/grid/include/gcc32 -L/usr/grid/lib \
-		%%LIBDIR%%/gfs_hook.o -lgfarm \
-		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
-		-lldap -llber -lsasl -ldl
-
-* Fortran あるいは C++ プログラム
-
-C プログラムの場合と同様に gfs_hook.o と -lgfarm をリンクします．
-
-* MPI プログラム
-
-MPI プログラムの場合は，gfs_hook.o の代りに，gfs_hook_no_init.o と
-hooks_init_mpi.c をリンクします．
-
-	% mpicc -static prog.o %%LIBDIR%%/gfs_hook_mpi.o \
-		%%LIBDIR%%/hooks_init_mpi.c -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl -ldl
-
-----------------------------------------------------------------------
+======================================================================
 
 ** ファイル・ビューのセマンティクス
 

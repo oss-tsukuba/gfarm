@@ -1,79 +1,90 @@
 		File access from existing applications
 		 (README for syscall-hooking library)
 
-Gfarm syscall-hooking library enables every existing (binary) program
-to access Gfarm file system without any modification as if it were
-mounted at /gfarm.
+Gfarm syscall-hooking library (libgfs_hook.so or gfs_hook.o) enables
+every existing (binary) program to access Gfarm file system as if it
+were mounted on /gfarm.
 
 Basically the syscall-hooking library traps every system call for file
 access.  When a file is under the mount point /gfarm or a Gfarm URL
 starting with 'gfarm:' or 'gfarm@', appropriate Gfarm I/O APIs are
 called.
 
-*** glibc-not-hidden
+1) Linux, FreeBSD, NetBSD, Solaris, and Mac OS X
+------------------------------------------------
 
-When you are using GNU C library (glibc) typically in Linux, it is
-necessary to install a glibc-not-hidden package to enable necessary
-system calls to hook properly.  The change is just for a version
-script for ld to add necessary symbols (__lseek64, __getdents,
-__getdents64, and so on) to the dynamic symbol table.
+Every existing program can access Gfarm file system without any
+modification.
 
-When you install the glibc-not-hidden package, every application can
-access Gfarm file system without any modification.
+2) AIX
+------
 
-Binary and source packages of glibc-not-hidden are available from
-Gfarm web site (http://datafarm.apgrid.org/software/) for typical
-distribution of Linux.  If you need a glibc package other than
-provided, contact datafarm@apgrid.org.
+Just re-linking with the syscall-hooking library, every existing
+program can access Gfarm file system.
 
-If you cannot install glibc-not-hidden package, follow the section of
-'Running existing programs by statically linking with syscall-hooking
-library'.
+3) Other systems
+----------------
 
-*** Running existing programs without any modification
+Contact datafarm@apgrid.org.
 
-Every dynamically linked executable can access Gfarm file system by
-just specifying LD_PRELOAD environment variable in Linux, *BSD and
-possibly in Solaris.
+======================================================================
 
-* on Linux
+1) Linux, FreeBSD, NetBSD, Solaris, and Mac OS X
+------------------------------------------------
 
-In the case of sh or bash,
+Exploiting a preload mechanism that loads specified shared libraries
+before executing application, every existing program can access Gfarm
+file system without any modification.
 
-	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
-	$ export LD_PRELOAD
++------------+
+| 1-1) Linux |
++------------+
 
-In the case of csh or tcsh,
+It is necessary to install a glibc-not-hidden package to enable
+necessary system calls to hook properly.
+http://datafarm.apgrid.org/software/sycall-hook.en.html#glibc-not-hidden
 
-	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+If you cannot install glibc-not-hidden package, it is necessary to
+re-link syscall-hooking library statically described in Section 2.
+Or, you can use GfarmFS-FUSE.
+       http://datafarm.apgrid.org/software/gfarmfs-fuse.en.html
 
-Please make sure that the above setting does work by invoking your
-login shell. e.g.
-
-	% bash
-
-On some Linux distributions like Fedora Core 2, it is possible that
-a message like the following may be displayed, and the shell
-invocation may fail:
-
-	bash: /usr/lib/gfarm/libpthread-not-hidden.so: version `GLIBC_2.3.3' not found (required by /lib/tls/librt.so.1)
-
-In that case, please add /usr/lib/gfarm/librt-not-hidden.so to LD_PRELOAD
-as well like follows.
+Specify libgfs_hook.so.0 and glib{rt,pthread,c}-not-hidden.so in
+LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
 	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
-$ export LD_PRELOAD
+	$ export LD_PRELOAD
 
 In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
-You can specify the above in the shell rc file such as .bashrc and
-.cshrc.  We recommend to use bash because it is well tested.
+After specifying LD_PRELOAD environment variable, every application
+can access Gfarm file system as if it were mounted on /gfarm.
 
-* on FreeBSD
+Make sure that the above setting does work by invoking your
+login shell. e.g.
+
+	% bash
+
+When using GSI-enabled Gfarm, scp and wget may cause segmentation
+fault or cannot access Gfarm file system if they are linked with
+libgssapi based on Kerberos.  In this case, you need to add libgssapi
+based on GSI and libssl in LD_PRELOAD environment variable.
+
+When they are $GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 and
+$GLOBUS_LOCATION/lib/libssl_gcc32.so.0,
+
+	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
+	$ export LD_PRELOAD
+
++--------------+
+| 1-2) FreeBSD |
++--------------+
+
+Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -84,26 +95,39 @@ In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
-Also, this LD_PRELOAD setting won't work with commands in /bin
-on FreeBSD 4.X or before, because the commands are statically linked.
-If you are using such release, it's better to create dynamically linked
-executables for such commands in a directory like /usr/local/dynbin,
-and add the directory to your $PATH, by procedures like follows:
+Note that this LD_PRELOAD setting won't work with commands in /bin
+when using FreeBSD 4.X or earlier, because the commands are statically
+linked.  If you are using such a release, it's better to create
+dynamically linked executables for these commands in a directory like
+/usr/local/dynbin, and add the directory to your $PATH, by the
+following procedures;
+
 (1) extract sbin.?? and subin.?? in the source distribution
 	# cd /usr/src
 	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/sbin.?? | tar zpxf -
 	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/subin.?? | tar zpxf -
+
 (2) change the configuration from static to dynamic linkage
 	# cd bin
 	# vi Makefile.inc
 	  ... comment out the following line
 		NOSHARED?=	YES
+
 (3) build, and install to an appropriate directory (/usr/local/dynbin
   in this example)
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
 
-* on NetBSD with pkgsrc
+Or, you can use precompiled binaries for FreeBSD-4.11/i386 available
+at
+
+https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
+
++-------------+
+| 1-3) NetBSD |
++-------------+
+
+Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -114,39 +138,53 @@ In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
 
-Also, this LD_PRELOAD setting won't work with commands in /bin
-on NetBSD 1.X or before, because the commands are statically linked.
-If you are using such release, it's better to create dynamically linked
-executables for such commands in a directory like /usr/local/dynbin,
-and add the directory to your $PATH, by procedures like follows:
+Note that this LD_PRELOAD setting won't work with commands in /bin
+when using NetBSD 1.X or earlier, because the commands are statically
+linked.  If you are using such a release, it's better to create
+dynamically linked executables for these commands in a directory like
+/usr/local/dynbin, and add the directory to your $PATH, by the
+following procedures;
+
 (1) extract src.tgz in the source distribution
 	# cd /
 	# tar zpxf ${NETBSD_RELEASE_DIRECTORY}/source/sets/src.tgz
+
 (2) change the configuration from static to dynamic linkage
 	# cd usr/src/bin
 	# vi Makefile.inc
 	  ... comment out the following line
 		LDSTATIC?=	-static
+
 (3) build, and install to an appropriate directory (/usr/local/dynbin
   in this example)
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
 
-* OS-independent settings
+Or, you can use precompiled binaries for FreeBSD-1.6.2/i386 available
+at
 
-After specifying the environment variable, every program can access to
-Gfarm file system.  If you would like to access Gfarm file system in
-your interactive shell, just execute bash again.
+https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
+
++------------------------------+
+| 1-4) OS-independent settings |
++------------------------------+
+
+It is useful to specify the above in the shell rc file such as .bashrc
+and .cshrc.  We recommend to use bash because it is well tested.
+
+If you would like to access Gfarm file system in your interactive
+shell, just execute the shell again.
 
 	% exec bash -l
 
-Now, you can change the current working directory to /gfarm, or enable
-filename completion.
+Now, you can change the current working directory to /gfarm, and you
+can use filename completion in the shell.
 
 	% cd /gfarm
 
 Currently, program execution and file creation by a child process via
-a redirection can be supported on a file system node.
+a redirection can be supported on a file system node.  (This
+limitation is not applied to GfarmFS-FUSE.)
 
 To support file input via a redirection, you need to specify
 GFARM_FLAGS to enable on-demand replication feature.
@@ -158,28 +196,38 @@ on demand instead of accessing remotely.  For example, 'tar zxfp
 foo.tar.gz' requires this setting.
 
 For MPI applications, it is necessary to generate libgfs_hook.so for
-MPI library in your environment, or follow a section of either
-'Running existing programs by linking with syscall-hooking library' or
-'Running existing programs by statically linking with syscall-hooking
-library'.
+MPI library in your environment, or follow the Section 2.
 
-*** Running existing programs by linking with syscall-hooking library
+-----------------------------------------------------------------------
 
-When your operating system does not support LD_PRELOAD, it is
-necessary to re-link with Gfarm syscall-hooking library to access
-Gfarm file system.
+2) AIX
+------
 
-This section is only applied only when necessary system calls can be
-hooked.  If not, follow the next section "Running existing programs by
-statically linking with syscall-hooking library".
+When an operating system does not support a preload mechanism, it is
+necessary to re-link with Gfarm syscal-hooking library, gfs_hook.o, to
+access Gfarm file system.
+
+Note that it is necessary to link with gfs_hook.o statically when you
+are using GNU C library (glibc) typically in Linux to hook necessary
+system calls properly.
 
 * C program
 
+Re-create applications by linking with gfs_hook.o and -lgfarm.
+
 	% cc prog.o %%LIBDIR%%/gfs_hook.o -lgfarm
+
+For static linking, you can use libtool with the -all-static option.
+
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_gcc32 -lsasl 
+
+Note that static linking results in segmentation fault when using LDAP
+authentication in RedHat-8.0 and RedHat-7.3.
 
 * Fortran or C++ program
 
-Follows the section for 'C program' but with an appropriate compiler.
+Follows the section for 'C program' and links with gfs_hook.o and
+-lgfarm but with an appropriate compiler.
 
 * MPI program
 
@@ -189,49 +237,13 @@ hooks_init_mpi.c instead of gfs_hook.o.
 	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c \
 		-lgfarm
 
-*** Running existing programs by statically linking with
-    syscall-hooking library
+-----------------------------------------------------------------------
 
-The last resort is to link statically with the Gfarm syscall-hook
-library and Gfarm I/O library.
+3) Other systems
 
-* C program
+Contact datafarm@apgrid.org.
 
-Re-link using -static option with gfs_hook.o and -lgfarm.  Other
-libraries that need to be linked with depend on the operating system.
-
-	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl -ldl
-
-or
-
-	% cc -static prog.o %%LIBDIR%%/gfs_hook.o -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl2 -lkrb5 -lk5crypto -lcom_err -ldl
-
-Note that static linking results in segmentation fault when using LDAP
-authentication in RedHat-8.0 and RedHat-7.3.
-
-In the case with the Globus GSI library of the flavor gcc32,
-
-	% gcc -static prog.o -I/usr/grid/include/gcc32 -L/usr/grid/lib \
-		%%LIBDIR%%/gfs_hook.o -lgfarm \
-		`globus-makefile-header -static -flavor=gcc32 globus_gssapi_gsi | perl -n -e 'if (/GLOBUS_PKG_LIBS = (.*)/){print $1;}'` \
-		-lldap -llber -lsasl -ldl
-
-* Fortran or C++ program
-
-Follows the section for 'C program' but with an appropriate compiler.
-
-* MPI program
-
-In the case of MPI programs, link with gfs_hook_no_init.o and
-hooks_init_mpi.c instead of gfs_hook.o.
-
-	% mpicc -static prog.o %%LIBDIR%%/gfs_hook_mpi.o \
-		%%LIBDIR%%/hooks_init_mpi.c -lgfarm -lldap -llber \
-		-lssl -lcrypto -lsasl -ldl
-
-----------------------------------------------------------------------
+======================================================================
 
 ** File view semantics
 
