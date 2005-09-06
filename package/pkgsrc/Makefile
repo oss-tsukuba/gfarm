@@ -4,6 +4,10 @@ DISTNAME=	gfarm-${GFARM_VERSION}
 CATEGORIES=	parallel net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${GFARM_VERSION}/
 
+PATCH_SITES=	${MASTER_SITES}
+PATCHFILES=	gfarm-1.2-patch1.diff.gz
+PATCH_DIST_STRIP= -p1
+
 MAINTAINER=	soda@NetBSD.org
 HOMEPAGE=	http://datafarm.apgrid.org/
 COMMENT=	User-level grid filesystem and parallel process management
