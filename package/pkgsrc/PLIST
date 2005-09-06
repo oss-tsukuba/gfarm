@@ -286,10 +286,10 @@ share/doc/html/gfarm/en/ref/man3/gfarm.3.html
 share/doc/html/gfarm/en/ref/man3/gfarm_initialize.3.html
 share/doc/html/gfarm/en/ref/man3/gfarm_strings_free_deeply.3.html
 share/doc/html/gfarm/en/ref/man3/gfarm_terminate.3.html
-share/doc/gfarm/html/en/ref/man3/gfarm_url_fragments_replicate.3.html
+share/doc/html/gfarm/en/ref/man3/gfarm_url_fragments_replicate.3.html
 share/doc/html/gfarm/en/ref/man3/gfarm_url_hosts_schedule.3.html
-share/doc/gfarm/html/en/ref/man3/gfarm_url_section_replicate_from_to.3.html
-share/doc/gfarm/html/en/ref/man3/gfarm_url_section_replicate_to.3.html
+share/doc/html/gfarm/en/ref/man3/gfarm_url_section_replicate_from_to.3.html
+share/doc/html/gfarm/en/ref/man3/gfarm_url_section_replicate_to.3.html
 share/doc/html/gfarm/en/ref/man3/gfs_chdir.3.html
 share/doc/html/gfarm/en/ref/man3/gfs_chmod.3.html
 share/doc/html/gfarm/en/ref/man3/gfs_closedir.3.html
