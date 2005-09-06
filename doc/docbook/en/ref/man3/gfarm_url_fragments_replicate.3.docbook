@@ -3,7 +3,7 @@
 
 <refentry id='gfarm-url-fragments-replicate.3'>
 
-<refentryinfo><date>4 Sep 2005</date></refentryinfo>
+<refentryinfo><date>6 Sep 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_url_fragments_replicate</refentrytitle>
@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_fragments_replicate</refname>
-<refpurpose>ファイルのレプリカを作成する</refpurpose>
+<refpurpose>Create a file replica of a file</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -34,21 +34,16 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>ファイル
-<parameter>gfarm_url</parameter>
-の複製を、長さ
-<parameter>ndsthosts</parameter>
-の文字列配列
-<parameter>dsthosts</parameter>
-で指定したホストに作成します。
-この関数では、実行形式のファイルの複製には利用できません。
-</para>
 
-<para>
-ファイルのファイルインデックスの総数より、指定されたホストの総数
-<parameter>ndsthosts</parameter>
-が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。
-</para>
+<para> <function>gfarm_url_fragments_replicate()</function> creates a
+file replica of a file <parameter>gfarm_url</parameter> to destination
+hosts specified by a string array <parameter>dsthosts</parameter> with
+a length <parameter>ndsthosts</parameter>.  It cannot replicate an
+executable file.</para>
+
+<para> When the total number of file fragments is greater than the
+specified total number of hosts <parameter>ndsthosts</parameter>,
+destination hosts are allocated in round robin.  </para>
 
 </refsect1>
 
@@ -57,29 +52,29 @@
 <varlistentry>
 <term><constant>NULL</constant></term>
 <listitem>
-<para>正常終了を示します。</para>
+<para>The function terminated successfully.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
-<para>メモリ不足のため処理を中止しました。</para>
+<para>Insufficient memory was available.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>引数として、実行形式のファイル、
-ディレクトリなど通常ファイル以外のファイルを指定しました。</para>
+<para>The file is not a regular fragmented file.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term>その他</term>
+<term>Others</term>
 <listitem>
-<para>上記以外のエラーが生じたことを示します。</para>
+<para>An error except the above occurred.  The reason is shown by its
+pointed strings.</para>
 </listitem>
 </varlistentry>
 </variablelist>
