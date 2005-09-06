@@ -64,7 +64,7 @@ CLASS="RETURNVALUE"
 >char *</SPAN
 >gfarm_url_fragments_replicate</TT
 ></CODE
->(char *<TT
+>(const char *<TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
@@ -93,20 +93,21 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->ファイル<TT
+>ファイル
+<TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
 >
-を構成する、
+の複製を、長さ
 <TT
 CLASS="PARAMETER"
 ><I
 >ndsthosts</I
 ></TT
 >
-個のフラグメントのレプリカを、文字列配列
+の文字列配列
 <TT
 CLASS="PARAMETER"
 ><I
@@ -114,23 +115,16 @@ CLASS="PARAMETER"
 ></TT
 >
 で指定したホストに作成します。
-N 番目のフラグメントは、配列
-<TT
-CLASS="PARAMETER"
-><I
->dsthosts</I
-></TT
->
-の N 番目の要素で指定したホストに複製されます。</P
+この関数では、実行形式のファイルの複製には利用できません。</P
 ><P
->フラグメントの数と異なる値を
+>ファイルのファイルインデックスの総数より、指定されたホストの総数
 <TT
 CLASS="PARAMETER"
 ><I
 >ndsthosts</I
 ></TT
 >
-に指定した場合には、エラーとなります。</P
+が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -169,7 +163,8 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->引数として、フラグメント化ファイル以外のファイルを指定しました。</P
+>引数として、実行形式のファイル、
+ディレクトリなど通常ファイル以外のファイルを指定しました。</P
 ></DD
 ><DT
 >その他</DT

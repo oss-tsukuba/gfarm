@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfarm_url_section_replicate_from_to</TITLE
+>gfarm_url_section_replicate_to</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
@@ -16,9 +16,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFARM-URL-SECTION-REPLICATE-FROM-TO.3"
+NAME="GFARM-URL-SECTION-REPLICATE-TO.3"
 ></A
->gfarm_url_section_replicate_from_to</H1
+>gfarm_url_section_replicate_to</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_url_section_replicate_from_to&nbsp;--&nbsp;ファイルセクションのレプリカを作成する</DIV
+>gfarm_url_section_replicate_to&nbsp;--&nbsp;Create a file replica of a file section</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -62,7 +62,7 @@ CLASS="FUNCTION"
 ><SPAN
 CLASS="RETURNVALUE"
 >char *</SPAN
->gfarm_url_section_replicate_from_to</TT
+>gfarm_url_section_replicate_to</TT
 ></CODE
 >(const char *<TT
 CLASS="PARAMETER"
@@ -73,11 +73,6 @@ CLASS="PARAMETER"
 CLASS="PARAMETER"
 ><I
 >section</I
-></TT
->, char *<TT
-CLASS="PARAMETER"
-><I
->srchost</I
 ></TT
 >, char *<TT
 CLASS="PARAMETER"
@@ -98,55 +93,33 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->ファイル
-<TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
->
-のファイルセクション
-<TT
+> <TT
+CLASS="FUNCTION"
+>gfarm_url_section_replicate_to()</TT
+> creates a
+file replica of a file section <TT
 CLASS="PARAMETER"
 ><I
 >section</I
 ></TT
->
-の複製を、
-<TT
+> of a
+file <TT
 CLASS="PARAMETER"
 ><I
->srchost</I
+>gfarm_url</I
 ></TT
->から
+> to a destination host
 <TT
 CLASS="PARAMETER"
 ><I
 >dsthost</I
 ></TT
->
-に作成します。</P
+>.  </P
 ><P
->ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
-通常ファイルの場合はファイルインデックス番号となります。
-ファイルインデックス番号を整数ではなく、文字列
-<TT
-CLASS="PARAMETER"
-><I
->section</I
-></TT
->
-で指定する必要があることに注意してください。また、またこの文字列は、
-余分な空白や、先行 0 を含んではいけません。</P
-><P
->指定した
-<TT
-CLASS="PARAMETER"
-><I
->srchost</I
-></TT
->
-にファイルが存在しなかった場合にはエラーになります。</P
+> File section is an architecture name for executable files, or
+is a fragment index for a regular file.  Note that a fragment index
+needs to be specified in string without any unnecessary space
+character and zero padding.  </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -167,7 +140,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->正常終了を示します。</P
+>The function terminated successfully.</P
 ></DD
 ><DT
 ><TT
@@ -176,7 +149,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->メモリ不足のため処理を中止しました。</P
+>Insufficient memory was available.</P
 ></DD
 ><DT
 ><TT
@@ -185,8 +158,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->指定されたファイル、
-あるいは複製作成元のホストにファイルの複製が存在しません。</P
+>A component used as a directory in
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> does not exist.</P
 ></DD
 ><DT
 ><TT
@@ -195,14 +173,20 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->指定されたファイルが現在（他のプロセスにより）更新中のため、
-ファイルの複製が作成できません。</P
+>The file <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> cannot be replicated
+because it is being updated by another process.</P
 ></DD
 ><DT
->その他</DT
+>Others</DT
 ><DD
 ><P
->上記以外のエラーが生じたことを示します。</P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
 ></DD
 ></DL
 ></DIV
@@ -219,7 +203,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_to</SPAN
+>gfarm_url_section_replicate_from_to</SPAN
 >(3)</SPAN
 >,
 <SPAN

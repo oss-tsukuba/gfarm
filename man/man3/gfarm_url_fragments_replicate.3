@@ -6,7 +6,7 @@
 .TH "GFARM_URL_FRAGMENTS_REPLICATE" "3" "06 September 2005" "Gfarm" ""
 
 .SH NAME
-gfarm_url_fragments_replicate \- ファイルのレプリカを作成する
+gfarm_url_fragments_replicate \- Create a file replica of a file
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
@@ -15,32 +15,29 @@ char *gfarm_url_fragments_replicate (const char *\fIgfarm_url\fB, int \fIndsthos
 \fR
 .SH "DESCRIPTION"
 .PP
-ファイル
-\fIgfarm_url\fR
-の複製を、長さ
-\fIndsthosts\fR
-の文字列配列
-\fIdsthosts\fR
-で指定したホストに作成します。
-この関数では、実行形式のファイルの複製には利用できません。
+\fBgfarm_url_fragments_replicate()\fR creates a
+file replica of a file \fIgfarm_url\fR to destination
+hosts specified by a string array \fIdsthosts\fR with
+a length \fIndsthosts\fR.  It cannot replicate an
+executable file.
 .PP
-ファイルのファイルインデックスの総数より、指定されたホストの総数
-\fIndsthosts\fR
-が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。
+When the total number of file fragments is greater than the
+specified total number of hosts \fIndsthosts\fR,
+destination hosts are allocated in round robin.  
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
-正常終了を示します。
+The function terminated successfully.
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
-メモリ不足のため処理を中止しました。
+Insufficient memory was available.
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-引数として、実行形式のファイル、
-ディレクトリなど通常ファイル以外のファイルを指定しました。
+The file is not a regular fragmented file.
 .TP
-\fBその他\fR
-上記以外のエラーが生じたことを示します。
+\fBOthers\fR
+An error except the above occurred.  The reason is shown by its
+pointed strings.
 .SH "SEE ALSO"
 .PP
 \fBgfarm_url_section_replicate_from_to\fR(3),

@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_url_section_replicate_to&nbsp;--&nbsp;各フラグメントのレプリカを作成する</DIV
+>gfarm_url_section_replicate_to&nbsp;--&nbsp;ファイルセクションのレプリカを作成する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -64,7 +64,7 @@ CLASS="RETURNVALUE"
 >char *</SPAN
 >gfarm_url_section_replicate_to</TT
 ></CODE
->(char *<TT
+>(const char *<TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
@@ -100,14 +100,14 @@ CLASS="PARAMETER"
 >gfarm_url</I
 ></TT
 >
-のフラグメント
+のファイルセクション
 <TT
 CLASS="PARAMETER"
 ><I
 >section</I
 ></TT
 >
-のレプリカを、
+の複製を、
 <TT
 CLASS="PARAMETER"
 ><I
@@ -116,7 +116,9 @@ CLASS="PARAMETER"
 >
 に作成します。</P
 ><P
->この関数では、フラグメント番号を整数ではなく、文字列
+>ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
+通常ファイルの場合はファイルインデックス番号となります。
+ファイルインデックス番号を整数ではなく、文字列
 <TT
 CLASS="PARAMETER"
 ><I
@@ -155,6 +157,25 @@ CLASS="CONSTANT"
 ><DD
 ><P
 >メモリ不足のため処理を中止しました。</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</TT
+></DT
+><DD
+><P
+>指定されたファイルが存在しません。</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_TEXT_FILE_BUSY</TT
+></DT
+><DD
+><P
+>指定されたファイルが現在（他のプロセスにより）更新中のため、
+ファイルの複製が作成できません。</P
 ></DD
 ><DT
 >その他</DT

@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfarm_url_section_replicate_from_to</TITLE
+>gfarm_url_fragments_replicate</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
@@ -16,9 +16,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFARM-URL-SECTION-REPLICATE-FROM-TO.3"
+NAME="GFARM-URL-FRAGMENTS-REPLICATE.3"
 ></A
->gfarm_url_section_replicate_from_to</H1
+>gfarm_url_fragments_replicate</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm_url_section_replicate_from_to&nbsp;--&nbsp;ファイルセクションのレプリカを作成する</DIV
+>gfarm_url_fragments_replicate&nbsp;--&nbsp;Create a file replica of a file</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -62,27 +62,22 @@ CLASS="FUNCTION"
 ><SPAN
 CLASS="RETURNVALUE"
 >char *</SPAN
->gfarm_url_section_replicate_from_to</TT
+>gfarm_url_fragments_replicate</TT
 ></CODE
 >(const char *<TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
->, char *<TT
+>, int <TT
 CLASS="PARAMETER"
 ><I
->section</I
+>ndsthosts</I
 ></TT
->, char *<TT
+>, char **<TT
 CLASS="PARAMETER"
 ><I
->srchost</I
-></TT
->, char *<TT
-CLASS="PARAMETER"
-><I
->dsthost</I
+>dsthosts</I
 ></TT
 >);</CODE
 ></P
@@ -98,55 +93,38 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->ファイル
-<TT
+> <TT
+CLASS="FUNCTION"
+>gfarm_url_fragments_replicate()</TT
+> creates a
+file replica of a file <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
->
-のファイルセクション
-<TT
+> to destination
+hosts specified by a string array <TT
 CLASS="PARAMETER"
 ><I
->section</I
+>dsthosts</I
 ></TT
->
-の複製を、
-<TT
+> with
+a length <TT
 CLASS="PARAMETER"
 ><I
->srchost</I
+>ndsthosts</I
 ></TT
->から
-<TT
-CLASS="PARAMETER"
-><I
->dsthost</I
-></TT
->
-に作成します。</P
+>.  It cannot replicate an
+executable file.</P
 ><P
->ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
-通常ファイルの場合はファイルインデックス番号となります。
-ファイルインデックス番号を整数ではなく、文字列
-<TT
+> When the total number of file fragments is greater than the
+specified total number of hosts <TT
 CLASS="PARAMETER"
 ><I
->section</I
+>ndsthosts</I
 ></TT
->
-で指定する必要があることに注意してください。また、またこの文字列は、
-余分な空白や、先行 0 を含んではいけません。</P
-><P
->指定した
-<TT
-CLASS="PARAMETER"
-><I
->srchost</I
-></TT
->
-にファイルが存在しなかった場合にはエラーになります。</P
+>,
+destination hosts are allocated in round robin.  </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -167,7 +145,7 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->正常終了を示します。</P
+>The function terminated successfully.</P
 ></DD
 ><DT
 ><TT
@@ -176,33 +154,23 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
->メモリ不足のため処理を中止しました。</P
+>Insufficient memory was available.</P
 ></DD
 ><DT
 ><TT
 CLASS="CONSTANT"
->GFARM_ERR_NO_SUCH_OBJECT</TT
+>GFARM_ERR_OPERATION_NOT_PERMITTED</TT
 ></DT
 ><DD
 ><P
->指定されたファイル、
-あるいは複製作成元のホストにファイルの複製が存在しません。</P
+>The file is not a regular fragmented file.</P
 ></DD
 ><DT
-><TT
-CLASS="CONSTANT"
->GFARM_ERR_TEXT_FILE_BUSY</TT
-></DT
+>Others</DT
 ><DD
 ><P
->指定されたファイルが現在（他のプロセスにより）更新中のため、
-ファイルの複製が作成できません。</P
-></DD
-><DT
->その他</DT
-><DD
-><P
->上記以外のエラーが生じたことを示します。</P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
 ></DD
 ></DL
 ></DIV
@@ -219,14 +187,14 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_to</SPAN
+>gfarm_url_section_replicate_from_to</SPAN
 >(3)</SPAN
 >,
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_url_fragments_replicate</SPAN
+>gfarm_url_section_replicate_from_to</SPAN
 >(3)</SPAN
 ></P
 ></DIV
