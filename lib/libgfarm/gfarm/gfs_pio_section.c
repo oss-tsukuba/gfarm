@@ -38,7 +38,7 @@ gfs_set_section_busy(char *pathname, char *section)
 	fi.filesize = 0;
 	fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 	fi.checksum = SECTION_BUSY;
-				
+
 	e = gfarm_file_section_info_set(pathname, section, &fi);
 	if (e == GFARM_ERR_ALREADY_EXISTS)
 		e = gfarm_file_section_info_replace(pathname, section, &fi);
@@ -157,7 +157,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			fi.filesize = filesize;
 			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi.checksum = md_value_string;
-				
+
 			e = gfarm_file_section_info_set(
 				gf->pi.pathname, vc->section, &fi);
 			if (e == GFARM_ERR_ALREADY_EXISTS)
@@ -375,7 +375,7 @@ replicate_section_to_local_internal(
 #if 0   /* section info is already set. no need to call this here. */
 	if (e == NULL)
 		e = gfs_pio_set_fragment_info_local(local_path,
-		    pathname, section);    
+		    pathname, section);
 #endif
 	/* instead, just set a section copy info */
 	if (e == NULL)
@@ -403,7 +403,7 @@ replicate_section_to_local(GFS_File gf, char *section, char *peer_hostname)
 		return (e);
 
 	e = gfarm_path_section(gf->pi.pathname, section, &path_section);
-	if (e != NULL) 
+	if (e != NULL)
 		return (e);
 
 	e = gfarm_path_localize(path_section, &local_path);
@@ -496,7 +496,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (if_hostname != NULL) {
 		e = gfarm_host_get_canonical_name(if_hostname,
 		    &vc->canonical_hostname);
-		if (e == GFARM_ERR_UNKNOWN_HOST) {
+		if (e == GFARM_ERR_UNKNOWN_HOST ||
+		    e == GFARM_ERR_INVALID_ARGUMENT /* XXX - gfarm_agent */) {
 			/* FT - invalid hostname, delete section copy info */
 			(void)gfarm_file_section_copy_info_remove(
 				gf->pi.pathname, vc->section, if_hostname);
@@ -515,7 +516,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
-			
+
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 			flags |= GFARM_FILE_CREATE;
 		} else if (!gfarm_file_section_copy_info_does_exist(
@@ -525,7 +526,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		    (((gf->open_flags & GFARM_FILE_CREATE) || 
+		    (((gf->open_flags & GFARM_FILE_CREATE) ||
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
@@ -633,7 +634,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (!is_local_host && gfarm_is_active_file_system_node &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
-	       || gf_on_demand_replication ) &&  
+	       || gf_on_demand_replication ) &&
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
 		e = replicate_section_to_local(gf, vc->section,
@@ -650,7 +651,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 		free(vc->canonical_hostname);
 		e = gfarm_host_get_canonical_self_name(
-		    &vc->canonical_hostname); 
+		    &vc->canonical_hostname);
 		if (e != NULL)
 			goto finish;
 		vc->canonical_hostname = strdup(vc->canonical_hostname);

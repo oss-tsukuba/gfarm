@@ -249,7 +249,7 @@ gfj_client_register(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &job_id);
 	if (e == NULL)
 		*job_idp = job_id;
-	return (e);	
+	return (e);
 }
 
 char *
@@ -284,7 +284,6 @@ gfj_client_list(struct gfm_connection *gfm_server, char *user,
 			return (GFARM_ERR_PROTOCOL);
 		}
 		jobs[i] = job_id;
-		
 	}
 	*np = n;
 	*jobsp = jobs;
@@ -298,7 +297,7 @@ gfj_client_info_entry(struct xxx_connection *conn,
 	char *e;
 	int eof, i;
 	gfarm_int32_t total_nodes, argc, node_pid, node_state;
-	
+
 	e = xxx_proto_recv(conn, 0, &eof, "issssi",
 			   &total_nodes,
 			   &info->user,
@@ -446,7 +445,7 @@ gfarm_user_job_register(int nhosts, char **hosts,
 	job_info.job_type = job_type;
 	e = gfarm_host_get_canonical_self_name(&job_info.originate_host);
 	if (e == GFARM_ERR_UNKNOWN_HOST || e == GFARM_ERR_AMBIGUOUS_RESULT ||
-	    e == GFARM_ERR_INVALID_ARGUMENT /* via gfarm_agent */) {
+	    e == GFARM_ERR_INVALID_ARGUMENT /* XXX - via gfarm_agent */) {
 		/*
 		 * gfarm client doesn't have to be a compute host,
 		 * so, we should allow non canonical name here.
