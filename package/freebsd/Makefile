@@ -10,10 +10,6 @@ PORTVERSION=	1.2
 CATEGORIES=	net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 
-PATCH_SITES=	${MASTER_SITES}
-PATCHFILES=	gfarm-1.2-patch1.diff.gz
-PATCH_DIST_STRIP= -p1
-
 MAINTAINER=	soda@sra.co.jp
 COMMENT=	User-level grid filesystem and parallel process management
 
@@ -42,8 +38,6 @@ post-install:
 GPT_LOCATION=	${LOCALBASE}
 GLOBUS_LOCATION=${LOCALBASE}/globus
 GLOBUS_FLAVOR?=	gcc32dbg
-
-RC_SCRIPTS_SUB+=	GLOBUS_LOCATION=${GLOBUS_LOCATION}
 
 .if defined(LDCONFIG_R_DOES_WORK_FOR_GLOBUS)
 # XXX This doesn't work, because "ldconfig -r" doesn't show the libraries.

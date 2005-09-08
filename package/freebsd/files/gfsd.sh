@@ -30,12 +30,10 @@ command_args="-P /var/run/${name}.pid"
 
 load_rc_config $name
 
-if [ -n "%%GLOBUS_LOCATION%%" ]; then
-	GLOBUS_LOCATION=%%GLOBUS_LOCATION%%
-	export GLOBUS_LOCATION
-	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
-		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-	fi
+GLOBUS_LOCATION=/usr/local/globus
+export GLOBUS_LOCATION
+if [ -f $GLOBUS_LOCATION/etc/globus-user-env.sh ]; then
+. $GLOBUS_LOCATION/etc/globus-user-env.sh
 fi
 
 run_rc_command "$1"

@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.2
-%define rel	3
+%define rel	0
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -57,7 +57,6 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-Patch: gfarm-1.2-patch1.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology
@@ -146,7 +145,7 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-%patch -p1
+#%patch -p1
 
 %build
 ./configure --prefix=%{prefix} \
@@ -253,10 +252,7 @@ fi
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
 %{man_prefix}/man3/gfarm_terminate.3.gz
-%{man_prefix}/man3/gfarm_url_fragments_replicate.3.gz
 %{man_prefix}/man3/gfarm_url_hosts_schedule.3.gz
-%{man_prefix}/man3/gfarm_url_section_replicate_from_to.3.gz
-%{man_prefix}/man3/gfarm_url_section_replicate_to.3.gz
 %{man_prefix}/man3/gfs_chdir.3.gz
 %{man_prefix}/man3/gfs_chmod.3.gz
 %{man_prefix}/man3/gfs_closedir.3.gz
@@ -430,10 +426,7 @@ fi
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
-%{html_prefix}/en/ref/man3/gfarm_url_fragments_replicate.3.html
 %{html_prefix}/en/ref/man3/gfarm_url_hosts_schedule.3.html
-%{html_prefix}/en/ref/man3/gfarm_url_section_replicate_from_to.3.html
-%{html_prefix}/en/ref/man3/gfarm_url_section_replicate_to.3.html
 %{html_prefix}/en/ref/man3/gfs_chdir.3.html
 %{html_prefix}/en/ref/man3/gfs_chmod.3.html
 %{html_prefix}/en/ref/man3/gfs_closedir.3.html
@@ -604,9 +597,6 @@ fi
 %{lib_prefix}/libgfs_hook_no_init.so.0.0.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0.0.0
-%dir %{share_prefix}
-%dir %{share_prefix}/config
-%{share_prefix}/config/config-gfarm.sysdep
 %if %{mpi}
 %{lib_prefix}/libgfs_hook_mpi.so.0
 %{lib_prefix}/libgfs_hook_mpi.so.0.0.0
@@ -703,8 +693,7 @@ fi
 %{prefix}/bin/config-gfsd
 %dir %{share_prefix}
 %dir %{share_prefix}/config
-%{share_prefix}/config/linux/debian/gfsd.in
-%{share_prefix}/config/linux/redhat/gfsd.in
+%{share_prefix}/config/gfsd.in
 
 %files server
 %{prefix}/sbin/gfmd
@@ -714,16 +703,11 @@ fi
 %{prefix}/bin/config-gfarm
 %dir %{share_prefix}
 %dir %{share_prefix}/config
-%{share_prefix}/config/bdb.DB_CONFIG.in
-%{share_prefix}/config/gfarm.conf.in
-%{share_prefix}/config/gfarm.schema
-%{share_prefix}/config/initial.ldif.in
-%{share_prefix}/config/linux/debian/gfarm-slapd.in
-%{share_prefix}/config/linux/debian/gfmd.in
-%{share_prefix}/config/linux/redhat/gfarm-slapd.in
-%{share_prefix}/config/linux/redhat/gfmd.in
+%{share_prefix}/config/gfarm-slapd.in
+%{share_prefix}/config/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
+%{share_prefix}/config/gfarm.conf.in
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
