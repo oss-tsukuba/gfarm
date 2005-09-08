@@ -1,4 +1,4 @@
-#!@RCD_SCRIPTS_SHELL@
+#!/bin/sh
 #
 # $NetBSD$
 #
@@ -11,17 +11,21 @@ if [ -f /etc/rc.subr ]; then
 	. /etc/rc.subr
 fi
 
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_gfsd_option@"
+
 name="gfsd"
 rcvar=${name}
-command="@PREFIX@/sbin/${name}"
-required_files="@PKG_SYSCONFDIR@/gfarm.conf"
+command="@config_gfarm_prefix@/sbin/${name}"
+pidfile="@config_gfarm_run_dir@/${name}.pid"
+required_files="$CONF"
 # add more flags through ${${name}_flags}
-command_args="-P @GFARM_PID_DIR@/${name}.pid"
+command_args="-P $pidfile $OPTIONS"
 
 if [ -f /etc/rc.subr ]; then
 	load_rc_config $name
 	run_rc_command "$1"
 else
-	@ECHO@ -n " ${name}"
+	echo -n " ${name}"
 	${command} ${gfsd_flags} ${command_args}
 fi

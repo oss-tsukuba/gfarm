@@ -3,12 +3,17 @@
 # Kill me on all errors
 set -e
 
+DAEMON="@config_gfarm_openldap_libexec@/slapd"
+SLAPD_CONF="@config_gfarm_slapd_config@"
+SLAPD_SERVICES="ldap://:@config_gfarm_slapd_port@/"
+SLAPD_OPTIONS=""
+
 # Stop processing if slapd is not there
-[ -x /usr/sbin/slapd ] || exit 0
+[ -x "$DAEMON" ] || exit 0
 
 # Source the init script configuration
 if [ -f "/etc/default/gfarm-slapd" ]; then
-	. /etc/default/gfarm-slapd
+#	. /etc/default/gfarm-slapd
 else
 	exit 1
 fi
@@ -116,11 +121,11 @@ start_slapd() {
 	if [ -z "$SLAPD_SERVICES" ]; then
 		reason="`start-stop-daemon --start --quiet --oknodo \
 			--pidfile "$SLAPD_PIDFILE" \
-			--exec /usr/sbin/slapd -- $SLAPD_OPTIONS 2>&1`"
+			--exec "$DAEMON" -- $SLAPD_OPTIONS 2>&1`"
 	else
 		reason="`start-stop-daemon --start --quiet --oknodo \
 			--pidfile "$SLAPD_PIDFILE" \
-			--exec /usr/sbin/slapd -- -h "$SLAPD_SERVICES" $SLAPD_OPTIONS 2>&1`"
+			--exec "$DAEMON" -- -h "$SLAPD_SERVICES" $SLAPD_OPTIONS 2>&1`"
 	fi
 }
 
@@ -141,7 +146,7 @@ stop_slapd() {
 	echo -n " slapd"
 	reason="`start-stop-daemon --stop --quiet --oknodo --retry 10 \
 		--pidfile "$SLAPD_PIDFILE" \
-		--exec /usr/sbin/slapd 2>&1`"
+		--exec "$DAEMON" 2>&1`"
 }
 
 # Stop the slurpd daemon and capture the error message (if any) to

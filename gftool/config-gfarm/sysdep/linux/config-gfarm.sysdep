@@ -1,0 +1,135 @@
+fq_hostname()
+{
+	hostname -f
+}
+
+dns_domainname()
+{
+	dnsdomainname
+}
+
+memory_size()
+{
+	# kilo bytes -> mega bytes
+	awk '$1 == "MemTotal:" {print int($2/1024)}' /proc/meminfo
+}
+
+number_of_cpus()
+{
+	grep "^processor" /proc/cpuinfo | wc | awk '{ print $1 }'
+}
+
+set_linux_rc_type()
+{
+	if [ -n "${LINUX_RC_TYPE-}" ]; then
+		return
+	fi
+
+	# if [ -x /sbin/rc-update ] || [ -x /usr/sbin/rc-update ]; then
+	#	LINUX_RC_TYPE=gentoo; return
+	if [ -x /sbin/update-rc.d ] || [ -x /usr/sbin/update-rc.d ]; then
+		LINUX_RC_TYPE=debian; return
+	fi
+	## elif [ -x /sbin/chkconfig ] || [ -x /usr/sbin/chkconfig ]
+	# don't check above. rather, assume RedHat as default.
+	LINUX_RC_TYPE=redhat
+}
+
+sysdep_defaults()
+{
+	set_linux_rc_type
+
+	# Actual pathname may be /etc/rc.d/init.d on RedHat and derived,
+	# but there is always symbolic link from /etc/init.d to there.
+	: ${RC_DIR:="$CONFIG_PREFIX/etc/init.d"}
+
+	: ${SLAPD_BDB_NCACHE:="1"} # 0/1: contiguous memory
+
+	case $LINUX_RC_TYPE in
+	debian)	: ${OPENLDAP_ETC=$CONFIG_PREFIX/etc/ldap}
+		: ${LDAP_DATADIRECTORY=$CONFIG_PREFIX/var/lib/gfarm-ldap}
+		;;
+	redhat)	: ${RC_LOCK_DIR:="$CONFIG_PREFIX/var/lock/subsys"}
+		;;
+	esac
+
+	: ${RC_GFARM_SLAPD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfarm-slapd.in"}
+	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
+	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.in"}
+}
+
+config_sysdep()
+{
+	case $LINUX_RC_TYPE in
+	redhat)	sed -e "s|@config_gfarm_lock_dir@|$RC_LOCK_DIR|" ${1+"$@"}
+		;;
+	*)	# no conversion
+		cat ${1+"$@"}
+		;;
+	esac
+}
+
+mkcnf_gfarm_sysdep()
+{
+	case $LINUX_RC_TYPE in
+	redhat)	create_directory "${RC_LOCK_DIR}"
+		;;
+	esac
+}
+
+mkcnf_gfmd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+mkcnf_gfsd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+start_service_debian()
+{
+	local service
+
+	service=$1
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+		update-rc.d $service defaults >/dev/null &&
+		echo added "$service" service
+	else
+		echo add "$service" service: skipped
+	fi || ABORT "cannot add "$service" service"
+
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X \
+			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d $service restart
+	else
+		"$RC_DIR/$service" restart
+	fi || ABORT "cannot start "$service""
+}
+
+start_service_redhat()
+{
+	local service
+
+	service=$1
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+		chkconfig "$service" --add &&
+		echo added "$service" service
+	else
+		echo add "$service" service: skipped
+	fi || ABORT "cannot add $service service"
+
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+		service "$service" restart
+	else
+		"$RC_DIR/$service" restart
+	fi || ABORT "cannot start $service"
+}
+
+start_service()
+{
+	case $LINUX_RC_TYPE in
+	debian)	start_service_debian $1;;
+	redhat)	start_service_redhat $1;;
+	esac
+}

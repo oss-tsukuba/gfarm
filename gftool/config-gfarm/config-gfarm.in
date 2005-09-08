@@ -2,23 +2,67 @@
 #
 # $Id$
 
-[ ${DEBUG:="off"} = off ] || set -xu
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+export PATH
+
+${DEBUG:="false"} && set -xu
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+config_dir="@datadir@/gfarm/config"
+globus_location="@globus_location@"
+
+# OpenLDAP installation directory
+ldap_prefix="@ldap_prefix@"
 
 PROGNAME=`basename $0`
 
+#
+# check whether shell function does work or not.
+#
+BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
+if [ x"$1" = x--re-invoked ]; then
+	# shell function works with this shell, remove --re-invoked option
+	shift
+elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
+	# shell function works
+	:
+else
+	# Search other shell that supports shell functions
+	for sh in ksh bash zsh sh ash bsh sh5; do
+		set `IFS=:;
+		 P="/bin:/usr/5bin:/usr/bin:/usr/local/bin:/usr/pkg/bin:$PATH";
+		 echo $P`
+		for dir
+		do
+			shell="$dir/$sh"
+			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
+				"$shell" -c 'shellfunc() { exit 0; };
+					shellfunc' 2>/dev/null
+			then
+				BOURNE_SHELL="$shell" exec "$shell" "$0" \
+					--re-invoked ${1+"$@"}
+			fi
+		done
+	done
+	echo "$PROGNAME: cannot find a shell which supports functions" >&2
+	exit 1
+fi
+
 usage()
 {
-	echo 1>&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
-	echo 1>&2 "        [-d domain_name] [-h hostname]"
-	echo 1>&2 "        [-V openldap_version] [-l metadata_directory]"
-	echo 1>&2 "        [-p slapd_port] [-s gfsd_port] [-m gfmd_port]"
+	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo >&2 "	[-d domain_name] [-h hostname]"
+	echo >&2 "	[-V openldap_version] [-l metadata_directory]"
+	echo >&2 "	[-p slapd_port] [-s gfsd_port] [-m gfmd_port]"
 	exit 1
 }
 
 ABORT()
 {
-	[ $# -gt 0 ] && echo 1>&2 $*
-	echo "$PROGNAME failure"
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
 	exit 1
 }
 
@@ -27,51 +71,30 @@ display_params()
 	echo "prefix [--prefix]: $CONFIG_PREFIX"
 	echo "domain name  [-d]: $DOMAIN_NAME"
 	echo "openldap version    [-V]: $OPENLDAP_VERSION"
-	echo "metadata directory  [-l]: $LDAP_DATADIRECTORY"
+	echo "metadata directory  [-l]: $LDAP_DATA_DIR"
 	echo "metaserver hostname [-h]: $SLAPD_HOSTNAME"
 	echo "slapd port [-p]: $SLAPD_PORT"
 	echo "gfmd port  [-m]: $GFMD_PORT"
 	echo "gfsd port  [-s]: $GFSD_PORT"
-	echo 'slapd DB type ($SLAPD_DB): ' "$SLAPD_DB"
+	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
 	exit 0
 }
 
-# default value
-
-: ${CONFIG_PREFIX:=}
-: ${DOMAIN_NAME:=`dnsdomainname`}
-[ X$DOMAIN_NAME = X ] && ABORT
-
-: ${OPENLDAP_VERSION:="2.1"}
-: ${OPENLDAP_LIBEXEC:="/usr/sbin"}
-: ${OPENLDAP_ETC:="/etc/openldap"}
-
-: ${SLAPD_HOSTNAME:="`hostname -f`"}
-: ${SLAPD_PORT:="389"}
-[ X$SLAPD_HOSTNAME = X ] && ABORT
-
-: ${GFMD_PORT:="601"}
-: ${GFSD_PORT:="600"}
-
-: ${FORCE:="0"}
-: ${DISPLAY_PARAMS:="0"}
-
 while [ $# -gt 0 ] ; do
 	case $1 in
+
+	# set parameters
 	  --prefix) shift; [ $# -ge 1 ] || usage
 		CONFIG_PREFIX=$1
 		;;
 	  -d) shift; [ $# -ge 1 ] || usage
 		DOMAIN_NAME=$1
 		;;
-	  -f)
-		FORCE=1
+	  -V) shift; [ $# -ge 1 ] || usage
+		OPENLDAP_VERSION=$1
 		;;
 	  -l) shift; [ $# -ge 1 ] || usage
-		LDAP_DATADIRECTORY=$1
-		;;
-	  -m) shift; [ $# -ge 1 ] || usage
-		GFMD_PORT=$1
+		LDAP_DATA_DIR=$1
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		SLAPD_HOSTNAME=$1
@@ -79,14 +102,22 @@ while [ $# -gt 0 ] ; do
 	  -p) shift; [ $# -ge 1 ] || usage
 		SLAPD_PORT=$1
 		;;
+	  -m) shift; [ $# -ge 1 ] || usage
+		GFMD_PORT=$1
+		;;
 	  -s) shift; [ $# -ge 1 ] || usage
 		GFSD_PORT=$1
 		;;
-	  -t)
-		DISPLAY_PARAMS=1
+
+	# control options
+	  -N)
+		START_SERVICE=false
 		;;
-	  -V) shift; [ $# -ge 1 ] || usage
-		OPENLDAP_VERSION=$1
+	  -f)
+		FORCE=true
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
 		;;
 	  *)
 		usage
@@ -95,216 +126,218 @@ while [ $# -gt 0 ] ; do
 	shift
 done
 
-if [ $OPENLDAP_VERSION \> 2.1 -o $OPENLDAP_VERSION = 2.1 ]; then
-	: ${SLAPD_DB:="bdb"}
+. $config_dir/config-gfarm.sysdep
+
+#
+# default values
+#
+
+: ${CONFIG_PREFIX:=}
+
+# NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+: ${START_SERVICE:=true}
+: ${FORCE:=false}
+: ${DISPLAY_PARAMS:=false}
+
+: ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
+: ${GFARM_CONF_DIR:="$CONFIG_PREFIX$sysconfdir"}
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
+
+: ${FQ_HOSTNAME:=`fq_hostname`}
+
+# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+: ${DOMAIN_NAME:=`dns_domainname`}
+[ X"$DOMAIN_NAME" = X ] && ABORT 'cannot determine DNS domain name'
+
+: ${SLAPD_HOSTNAME:="$FQ_HOSTNAME"}
+[ X$SLAPD_HOSTNAME = X ] && ABORT 'cannot determine slapd hostname'
+
+: ${SLAPD_PORT:="389"}
+
+: ${GFMD_PORT:="601"}
+: ${GFSD_PORT:="600"}
+
+: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/pg'`"}
+: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
+
+if [ -x "$ldap_prefix/sbin/slapd" ]; then
+	: ${OPENLDAP_LIBEXEC:="$ldap_prefix/sbin"}
 else
-	: ${SLAPD_DB:="ldbm"}
+	: ${OPENLDAP_LIBEXEC:="$ldap_prefix/libexec"}
 fi
 
-: ${GFARM_LDAP:="$CONFIG_PREFIX/etc/gfarm-ldap"}
-: ${SLAPD_CONF:="$GFARM_LDAP/slapd.conf"}
-: ${LDAP_DATADIRECTORY:="$CONFIG_PREFIX/var/gfarm-ldap"}
+if [ -d "$ldap_prefix/etc/openldap" ]; then
+	: ${OPENLDAP_ETC="$ldap_prefix/etc/openldap"}
+else
+	: ${OPENLDAP_ETC="/etc/openldap"}
+fi
 
-: ${INITIAL_LDIF:="$GFARM_LDAP/initial.ldif"}
+if [ -z "${OPENLDAP_VERSION-}" ]; then
+	OPENLDAP_VERSION=`"$ldap_prefix/bin/ldapsearch" -V 2>&1 |
+		sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+	if [ -z "$OPENLDAP_VERSION" ]
+	then
+		OPENLDAP_VERSION="2.0"
+	elif expr "$OPENLDAP_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' >/dev/null
+	then
+		:
+	else
+		OPENLDAP_VERSION="2.1"
+	fi
+fi
 
-: ${GFARM_CONF_SCRIPT:="$GFARM_LDAP/config.script"}
-: ${GFARM_CONF:="$CONFIG_PREFIX/etc/gfarm.conf"}
+case $OPENLDAP_VERSION in
+[01].*|2.0)	# 2.0.X or before
+	: ${SLAPD_DB:="ldbm"}
+	: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.0.in"}
+	;;
+*)		# 2.1.X or later
+	: ${SLAPD_DB:="bdb"}
+	: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.1.in"}
+	;;
+esac
 
-: ${ETC_INITD:="$CONFIG_PREFIX/etc/init.d"}
-: ${VAR_RUND:="$CONFIG_PREFIX/var/run"}
-: ${VAR_LOCKD:="$CONFIG_PREFIX/var/lock/subsys"}
+: ${LDAP_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-ldap"}
+: ${LDAP_CONF_DIR:="$CONFIG_PREFIX/etc/gfarm-ldap"}
+: ${SLAPD_CONF:="$LDAP_CONF_DIR/slapd.conf"}
+: ${GFARM_SCHEMA:="$LDAP_CONF_DIR/gfarm.schema"}
+: ${INITIAL_LDIF:="$LDAP_CONF_DIR/initial.ldif"}
 
-: ${DO_NOT_START_SERVICE:="0"}
+: ${SLAPD_BDB_CACHESIZE:="`memory_size | awk '{print $NF/2*1024*1024}'`"}
+: ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
 
-# Gfarm installation directory
-prefix=@prefix@
-
-SUFFIX="dc=`echo ${DOMAIN_NAME} | sed -ne 's/\./, dc=/pg'`"
-ROOTDN="cn=root, ${SUFFIX}"
-DC=`echo ${DOMAIN_NAME} | awk -F '.' '{print $1}'`
-[ X"$SUFFIX" = X -o X"$ROOTDN" = X -o X"$DC" = X ] && ABORT
+: ${RC_GFARM_SLAPD_IN="$config_dir/gfarm-slapd.in"}
+: ${RC_GFMD_IN="$config_dir/gfmd.in"}
 
 # -t option; display parameters
-[ X$DISPLAY_PARAMS = X1 ] && display_params
+$DISPLAY_PARAMS && display_params
 
 #########################################################################
 
-mkcnf_config_script()
+config()
 {
-	cat <<EOF
-s/@config_gfarm_suffix@/$SUFFIX/
-s/@config_gfarm_rootdn@/$ROOTDN/
-s/@config_gfarm_dc@/$DC/
-s,@config_gfarm_prefix@,@prefix@,
-s,@config_gfarm_gfarm_config@,$GFARM_CONF,
-s,@config_gfarm_slapd_hostname@,$SLAPD_HOSTNAME,
-s,@config_gfarm_slapd_port@,$SLAPD_PORT,
-s,@config_gfarm_slapd_config@,$SLAPD_CONF,
-s,@config_gfarm_slapd_database@,$SLAPD_DB,
-s,@config_gfarm_openldap_libexec@,$OPENLDAP_LIBEXEC,
-s,@config_gfarm_openldap_etc@,$OPENLDAP_ETC,
-s,@config_gfarm_ldap_directory@,$LDAP_DATADIRECTORY,
-s,@config_gfarm_gfmd_port@,$GFMD_PORT,
-s,@config_gfarm_gfmd_option@,"-f $GFARM_CONF",
-s,@config_gfarm_gfsd_port@,$GFSD_PORT,
-s,@config_gfarm_gfsd_option@,"-f $GFARM_CONF",
-s,@config_gfarm_run_dir@,$VAR_RUND,
-s,@config_gfarm_lock_dir@,$VAR_LOCKD,
-EOF
-}
-
-mkcnf_initial_ldif()
-{
-	cat << initial_ldif_EOF
-dn: $SUFFIX
-objectclass: dcObject
-objectclass: organization
-objectclass: top
-dc: $DC
-o: Gfarm file system
-initial_ldif_EOF
-}
-
-mkcnf_slapd_conf()
-{
-	if [ $OPENLDAP_VERSION \> 2.1 -o $OPENLDAP_VERSION = 2.1 ]; then
-		SLAPD_CONF_IN=slapd.conf-2.1.in
-	else
-		SLAPD_CONF_IN=slapd.conf-2.0.in
-	fi
-	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/$SLAPD_CONF_IN
-}
-
-mkcnf_dbconfig()
-{
-	cachesize=`
-	    awk '$1 == "MemTotal:" {print int($2/2/8)*8*1024}' /proc/meminfo`
-	[ -n "$cachesize" ] &&
-	echo "set_cachesize 0 $cachesize 1"
-
-	echo "set_flags DB_TXN_NOSYNC"
-}
-
-mkcnf_gfarm_conf()
-{
-	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/gfarm.conf.in
-}
-
-mkscript_gfarm_slapd()
-{
-	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/gfarm-slapd.in
-}
-
-mkscript_gfmd()
-{
-	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/gfmd.in
+	sed \
+	-e "s|@config_gfarm_prefix@|$prefix|" \
+	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
+	-e "s|@config_gfarm_globus_location@|$globus_location|" \
+	-e "s|@config_gfarm_ldap_base_dn@|$LDAP_BASE_DN|" \
+	-e "s|@config_gfarm_ldap_leaf_dc@|$LDAP_LEAF_DC|" \
+	-e "s|@config_gfarm_slapd_hostname@|$SLAPD_HOSTNAME|" \
+	-e "s|@config_gfarm_slapd_port@|$SLAPD_PORT|" \
+	-e "s|@config_gfarm_slapd_config@|$SLAPD_CONF|" \
+	-e "s|@config_gfarm_slapd_database@|$SLAPD_DB|" \
+	-e "s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|" \
+	-e "s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|" \
+	-e "s|@config_gfarm_openldap_libexec@|$OPENLDAP_LIBEXEC|" \
+	-e "s|@config_gfarm_openldap_etc@|$OPENLDAP_ETC|" \
+	-e "s|@config_gfarm_ldap_conf_dir@|$LDAP_CONF_DIR|" \
+	-e "s|@config_gfarm_ldap_data_dir@|$LDAP_DATA_DIR|" \
+	-e "s|@config_gfarm_ldap_schema@|$GFARM_SCHEMA|" \
+	-e "s|@config_gfarm_gfmd_port@|$GFMD_PORT|" \
+	-e "s|@config_gfarm_gfmd_option@|-f $GFARM_CONF|" \
+	-e "s|@config_gfarm_gfsd_port@|$GFSD_PORT|" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|" \
+	-e "s|@config_gfarm_run_dir@|$RUN_DIR|" \
+	${1+"$@"} | config_sysdep
 }
 
 mkcnf()
 {
-	[ $# -eq 2 ] && $1 > $2 && echo create $2
+	local out
+
+	out=$1
+	shift
+	if ${1+"$@"} >$out; then
+		echo created $out
+	else
+		ABORT "cannot create $out"
+	fi
 }
 
 mkscript()
 {
-	[ $# -eq 2 ] && $1 > $2 && chmod +x $2 && echo create $2
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
+}
+
+delete_file_or_directory()
+{
+	local p
+
+	for p
+	do
+		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
+		if [ -e "$p" ]; then
+			if $FORCE; then
+				rm -rf "$p"
+				echo removed "$p"
+			else
+				ABORT "$p already exist"
+			fi
+		fi
+	done
+}
+
+create_directory()
+{
+	local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		[ -e "$d" ] &&
+			ABORT "$d must be a directory, but actually it isn't"
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
 }
 
 #########################################################################
 
-delete_file_or_directory()
-{
-	while [ $# -gt 0 ] ; do
-		if [ -e $1 ]; then
-			if [ X$FORCE = X0 ]; then
-				ABORT "$PROGNAME: $1 already exist"
-			else
-				rm -rf $1
-			fi
-		fi
-		shift
-	done
-}
+delete_file_or_directory \
+	"$GFARM_CONF" \
+	"$LDAP_DATA_DIR" \
+	"$RC_DIR/gfarm-slapd"
 
-delete_file_or_directory $LDAP_DATADIRECTORY $GFARM_CONF $ETC_INITD/gfarm-slapd
+create_directory \
+	"$GFARM_CONF_DIR" \
+	"$LDAP_CONF_DIR" \
+	"$LDAP_DATA_DIR" \
+	"$RC_DIR" \
+	"$RUN_DIR"
 
-# make directory
-create_directory()
-{
-	[ $# -gt 0 ] && mkdir -p $* && echo create $*
-}
-
-create_directory $LDAP_DATADIRECTORY ||
-ABORT "$PROGNAME: mkdir $LDAP_DATADIRECTORY, failed"
-
-mkdir_list=""
-for x in $GFARM_LDAP $ETC_INITD $VAR_RUND $VAR_LOCKD; do
-	if [ ! -d $x ] ; then
-		rm -rf $x > /dev/null 2>&1
-		mkdir_list="$mkdir_list $x"
-	fi
-done
-[ -z "$mkdir_list" ] || create_directory $mkdir_list ||
-ABORT "$PROGNAME: mkdir $mkdir_list, failed"
-
-# create configuration file
-mkcnf mkcnf_config_script $GFARM_CONF_SCRIPT ||
-ABORT "$PROGNAME: cannot create configuration script"
-
-mkcnf mkcnf_initial_ldif $INITIAL_LDIF &&
-mkcnf mkcnf_slapd_conf $SLAPD_CONF &&
-mkcnf mkcnf_gfarm_conf $GFARM_CONF ||
-ABORT "$PROGNAME: cannot create configuration file"
+# create configuration files
+mkcnf_gfmd_sysdep
+mkcnf "$GFARM_CONF"	config "$config_dir/gfarm.conf.in"
+mkcnf "$GFARM_SCHEMA"	cat "$config_dir/gfarm.schema"
+mkcnf "$INITIAL_LDIF"	config "$config_dir/initial.ldif.in"
+mkcnf "$SLAPD_CONF"	config "$SLAPD_CONF_IN"
+case $SLAPD_DB in
+bdb)	mkcnf "$LDAP_DATA_DIR/DB_CONFIG" config "$config_dir/bdb.DB_CONFIG.in"
+	;;
+esac
 
 # add initial data
-if [ X"$SLAPD_DB" = Xbdb ]; then
-	if [ ! -f $GFARM_LDAP/DB_CONFIG ]; then
-		mkcnf mkcnf_dbconfig $GFARM_LDAP/DB_CONFIG ||
-		ABORT "$PROGNAME: cannot create $GFARM_LDAP/DB_CONFIG"
-	fi
-	cp -a $GFARM_LDAP/DB_CONFIG $LDAP_DATADIRECTORY
-fi
 slapadd -f $SLAPD_CONF -l $INITIAL_LDIF && echo add initial metadata ||
-ABORT "$PROGNAME: cannot add initial metadata"
+ABORT "cannot add initial metadata"
 
-# create run script for gfarm-slapd
-mkscript mkscript_gfarm_slapd $ETC_INITD/gfarm-slapd ||
-ABORT "$PROGNAME: cannot create $ETC_INITD/gfarm-slapd"
+# create run scripts
+mkscript "$RC_DIR/gfarm-slapd"	config "$RC_GFARM_SLAPD_IN"
+mkscript "$RC_DIR/gfmd"		config "$RC_GFMD_IN"
 
-#
-if [ X"$DO_NOT_START_SERVICE" = X1 ]; then
-	echo "$PROGNAME success"
-	exit 0
+if $START_SERVICE; then
+	if start_service gfarm-slapd && start_service gfmd; then
+		:
+	else
+		ABORT "failed to start service"
+	fi
 fi
 
-if [ X`id -u` = X0 -a X$CONFIG_PREFIX = X ]; then
-	chkconfig gfarm-slapd --add &&
-	echo add gfarm-slapd service ||
-	ABORT "$PROGNAME: cannot add gfarm-slapd service"
-else
-	echo add gfarm-slapd service: skipped
-fi
-
-if [ X`id -u` = X0 -a X$CONFIG_PREFIX = X ]; then
-	service gfarm-slapd restart ||
-	ABORT "$PROGNAME: cannot start gfarm-slapd"
-else
-	$ETC_INITD/gfarm-slapd restart ||
-	ABORT "$PROGNAME: cannot start gfarm-slapd"
-fi
-
-if [ X`id -u` = X0 -a X$CONFIG_PREFIX = X ]; then
-	service gfmd restart ||
-	ABORT "$PROGNAME: cannot start gfmd"
-else
-	# create run script for gfmd
-	mkscript mkscript_gfmd $ETC_INITD/gfmd ||
-	ABORT "$PROGNAME: cannot create $ETC_INITD/gfmd"
-
-	$ETC_INITD/gfmd restart ||
-	ABORT "$PROGNAME: cannot start gfmd"
-fi
-error=$?
-
-[ $error = 0 ] && echo "$PROGNAME success" || echo "$PROGNAME failure"
-exit $error
+echo "$PROGNAME success"
+exit 0

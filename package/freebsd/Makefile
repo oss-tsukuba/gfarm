@@ -43,6 +43,8 @@ GPT_LOCATION=	${LOCALBASE}
 GLOBUS_LOCATION=${LOCALBASE}/globus
 GLOBUS_FLAVOR?=	gcc32dbg
 
+RC_SCRIPTS_SUB+=	GLOBUS_LOCATION=${GLOBUS_LOCATION}
+
 .if defined(LDCONFIG_R_DOES_WORK_FOR_GLOBUS)
 # XXX This doesn't work, because "ldconfig -r" doesn't show the libraries.
 LIB_DEPENDS+=	globus_gssapi_gsi_${GLOBUS_FLAVOR}:${PORTSDIR}/misc/globus2

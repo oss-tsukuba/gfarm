@@ -29,6 +29,7 @@ SUBDIRS = \
 	gfrun \
 	gfwhere \
 	gfwhoami \
-	example
+	example \
+	config-gfarm
 
 include $(top_srcdir)/makes/subdir.mk

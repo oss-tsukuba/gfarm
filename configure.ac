@@ -632,6 +632,9 @@ AC_MSG_RESULT([using \"${ldap_includes} ${ldap_libs}\" for ldap])
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 
+ldap_prefix="$with_openldap"
+
+AC_SUBST(ldap_prefix)
 AC_SUBST(ldap_includes)
 AC_SUBST(ldap_libs)
 
@@ -869,6 +872,20 @@ fi
 AC_SUBST(gfs_hook_sysdep_subdir)
 
 ###
+### gftool/config-gfarm
+###
+
+config_gfarm_sysdep=gftool/config-gfarm/sysdep/${host_os_nickname}
+if test -f ${srcdir}/${config_gfarm_sysdep}/Makefile; then
+	AC_MSG_RESULT([using ${config_gfarm_sysdep} directory for system dependent part of config-gfarm.])
+	config_gfarm_sysdep_subdir=${host_os_nickname}
+else
+	config_gfarm_sysdep_subdir=default
+fi
+
+AC_SUBST(config_gfarm_sysdep_subdir)
+
+###
 ### ns
 ###
 
@@ -894,10 +911,10 @@ test -d util || mkdir util
 
 AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	${ns_makefiles}
+	gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd
 	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
-	package/redhat/config/config-gfarm package/redhat/config/config-gfsd
 	util/gfront/gfront
 )
 AC_OUTPUT

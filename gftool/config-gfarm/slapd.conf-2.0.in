@@ -3,7 +3,7 @@
 # This file should NOT be world readable.
 #
 include		@config_gfarm_openldap_etc@/schema/core.schema
-include		/etc/gfarm-ldap/gfarm.schema
+include		@config_gfarm_ldap_schema@
 
 pidfile		@config_gfarm_run_dir@/gfarm-slapd.pid
 argsfile	@config_gfarm_run_dir@/gfarm-slapd.args
@@ -23,10 +23,10 @@ loglevel 0
 
 database	@config_gfarm_slapd_database@
 
-suffix		"@config_gfarm_suffix@"
-rootdn		"@config_gfarm_rootdn@"
+suffix		"@config_gfarm_ldap_base_dn@"
+rootdn		"cn=root, @config_gfarm_ldap_base_dn@"
 
-directory	@config_gfarm_ldap_directory@
+directory	@config_gfarm_ldap_data_dir@
 rootpw		secret-ldap-password
 
 # Indices to maintain

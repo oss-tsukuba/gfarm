@@ -202,16 +202,8 @@ endif
 	  install -d debian/$$tmp_dir/etc/gfarm-ldap/; \
 	  install -m 644 doc/conf/gfarm.schema debian/$$tmp_dir/etc/gfarm-ldap/; \
 	  install -d debian/$$tmp_dir/usr/share/gfarm/config; \
-	  install -m 644 package/redhat/config/gfarm.conf.in debian/$$tmp_dir/usr/share/gfarm/config/; \
-	  install -m 644 debian/slapd.conf-2.1.in debian/$$tmp_dir/usr/share/gfarm/config/; \
-	  install build/package/redhat/config/config-gfarm debian/$$tmp_dir/usr/lib/gfarm/; \
-	  install debian/config-gfarm debian/$$tmp_dir/usr/sbin/; \
-	  install debian/gfmd.init debian/$$tmp_dir/usr/share/gfarm/config/gfmd.in; \
-	  install debian/gfarm-slapd.init debian/$$tmp_dir/usr/share/gfarm/config/gfarm-slapd.in; \
 	  install -d debian/$$tmp_dir/etc/default/; \
 	  install -m 644 debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \
-	  install build/package/redhat/config/config-gfsd debian/$$tmp_dir/usr/lib/gfarm/; \
-	  install debian/config-gfsd debian/$$tmp_dir/usr/sbin/; \
 	done
 
 	install -d debian/tmp/usr/share/man

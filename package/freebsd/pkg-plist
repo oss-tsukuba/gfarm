@@ -1,4 +1,6 @@
 @comment $FreeBSD$
+bin/config-gfarm
+bin/config-gfsd
 bin/gfarm_agent
 bin/gfcombine
 bin/gfcombine_hook
@@ -449,8 +451,20 @@ share/doc/gfarm/html/ja/user/nfs-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-hook.html
 share/doc/gfarm/html/pic/gfarm-logo.gif
+share/gfarm/config/bdb.DB_CONFIG.in
+share/gfarm/config/config-gfarm.sysdep
+share/gfarm/config/gfarm.conf.in
+share/gfarm/config/gfarm.schema
+share/gfarm/config/initial.ldif.in
+share/gfarm/config/gfarm-slapd.in
+share/gfarm/config/gfmd.in
+share/gfarm/config/gfsd.in
+share/gfarm/config/slapd.conf-2.0.in
+share/gfarm/config/slapd.conf-2.1.in
 share/java/gfront.jar
 @unexec rmdir %%LOCALBASE%%/share/java 2>/dev/null || true
+@dirrm share/gfarm/config
+@dirrm share/gfarm
 @dirrm share/doc/gfarm/html/pic
 @dirrm share/doc/gfarm/html/ja/user
 @dirrm share/doc/gfarm/html/ja/ref/man8

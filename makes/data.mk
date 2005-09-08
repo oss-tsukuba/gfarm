@@ -23,8 +23,7 @@ data-install:
 	@set -x; \
 	for i in -- $(DATA); do \
 		case $$i in --) continue;; esac; \
-		$(INSTALL_DATA) $(srcdir)/$$i \
-			$(DESTDIR)$(datadir)/`basename $$i`; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(datadir)/`basename $$i`; \
 	done
 
 data-clean:

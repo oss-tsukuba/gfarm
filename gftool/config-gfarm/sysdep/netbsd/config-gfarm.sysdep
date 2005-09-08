@@ -1,0 +1,70 @@
+fq_hostname()
+{
+	case `hostname` in
+	*.*)	hostname;;
+	*)	host "`hostname`" | awk 'NR==1 {print $1; exit}';;
+	esac
+}
+
+# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+dns_domainname()
+{
+	[ X"$FQ_HOSTNAME" = X ] && ABORT '$FQ_HOSTNAME is not set'
+	echo "$FQ_HOSTNAME" | sed 's/^[^.]*\.//'
+}
+
+memory_size()
+{
+	sysctl -n hw.physmem | awk '{print int($NF/1024/1024)}'
+}
+
+number_of_cpus()
+{
+	sysctl -n hw.ncpu
+}
+
+sysdep_defaults()
+{
+	: ${RC_DIR:="$CONFIG_PREFIX/etc/rc.d"}
+	: ${RC_CONF_DIR:="$CONFIG_PREFIX/etc/rc.conf.d"}
+}
+
+config_sysdep()
+{
+	# no conversion
+	cat ${1+"$@"}
+}
+
+mkcnf_gfarm_sysdep()
+{
+	create_directory "${RC_CONF_DIR}"
+}
+
+mkcnf_gfmd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+mkcnf_gfsd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+start_service()
+{
+	local service mode
+
+	service=$1
+
+	echo "${service}=YES" |
+		sed s/-/_/g >"$RC_CONF_DIR/$service" &&
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+		echo added "$service" service
+		mode=
+	else
+		echo add "$service" service: skipped
+		mode=force
+	fi || ABORT "cannot add $service service"
+
+	"$RC_DIR/$service" ${mode}restart || ABORT "cannot start $service"
+}

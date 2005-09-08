@@ -2,21 +2,62 @@
 #
 # $Id$
 
-[ ${DEBUG:="off"} = off ] || set -xu
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+export PATH
+
+${DEBUG:="false"} && set -xu
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+config_dir="@datadir@/gfarm/config"
+globus_location="@globus_location@"
 
 PROGNAME=`basename $0`
 
+#
+# check whether shell function does work or not.
+#
+BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
+if [ x"$1" = x--re-invoked ]; then
+	# shell function works with this shell, remove --re-invoked option
+	shift
+elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
+	# shell function works
+	:
+else
+	# Search other shell that supports shell functions
+	for sh in ksh bash zsh sh ash bsh sh5; do
+		set `IFS=:;
+		 P="/bin:/usr/5bin:/usr/bin:/usr/local/bin:/usr/pkg/bin:$PATH";
+		 echo $P`
+		for dir
+		do
+			shell="$dir/$sh"
+			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
+				"$shell" -c 'shellfunc() { exit 0; };
+					shellfunc' 2>/dev/null
+			then
+				BOURNE_SHELL="$shell" exec "$shell" "$0" \
+					--re-invoked ${1+"$@"}
+			fi
+		done
+	done
+	echo "$PROGNAME: cannot find a shell which supports functions" >&2
+	exit 1
+fi
+
 usage()
 {
-	echo 1>&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
-	echo 1>&2 "        [-a arch] [-h hostname] [-n ncpu] spool_directory"
+	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo >&2 "	[-a arch] [-h hostname] [-n ncpu] spool_directory"
 	exit 1
 }
 
 ABORT()
 {
-	[ $# -gt 0 ] && echo 1>&2 $*
-	echo "$PROGNAME failure"
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
 	exit 1
 }
 
@@ -26,26 +67,19 @@ display_params()
 	echo "hostname     [-h]: $GFSD_HOSTNAME"
 	echo "architecture [-a]: $ARCH"
 	echo "ncpu         [-n]: $NCPU"
+	echo "spool directory  : $SPOOL_DIRECTORY"
 	exit 0
 }
 
-# default value
-
-: ${CONFIG_PREFIX:=}
-
-: ${FORCE:="0"}
-: ${DISPLAY_PARAMS:="0"}
-
 while [ $# -gt 0 ] ; do
 	case $1 in
+
+	# set parameters
 	  --prefix) shift; [ $# -ge 1 ] || usage
 		CONFIG_PREFIX=$1
 		;;
 	  -a) shift; [ $# -ge 1 ] || usage
 		ARCH=$1
-		;;
-	  -f)
-		FORCE=1
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		GFSD_HOSTNAME=$1
@@ -53,8 +87,16 @@ while [ $# -gt 0 ] ; do
 	  -n) shift; [ $# -ge 1 ] || usage
 		NCPU=$1
 		;;
+
+	# control options
+	  -N)
+		START_SERVICE=false
+		;;
+	  -f)
+		FORCE=true
+		;;
 	  -t)
-		DISPLAY_PARAMS=1
+		DISPLAY_PARAMS=true
 		;;
 	  -*)
 		usage
@@ -74,134 +116,152 @@ case $SPOOL_DIRECTORY in
 	*) ABORT "$SPOOL_DIRECTORY: should be absolute path" ;;
 esac
 
-: ${GFARM_CONF_SCRIPT:="/tmp/config-gfsd-$$"}
-: ${GFARM_CONF:="$CONFIG_PREFIX/etc/gfarm.conf"}
+. $prefix/share/gfarm/config/config-gfarm.sysdep
 
-: ${ETC_INITD:="$CONFIG_PREFIX/etc/init.d"}
-: ${VAR_RUND:="$CONFIG_PREFIX/var/run"}
-: ${VAR_LOCKD:="$CONFIG_PREFIX/var/lock/subsys"}
+#
+# default values
+#
 
-: ${DO_NOT_START_SERVICE:="0"}
+: ${CONFIG_PREFIX:=}
 
-# Gfarm installation directory
-prefix=@prefix@
+# NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
 
-if [ X$ARCH = X ]; then
-	KERNEL=`uname -s`
-	RELEASE=`uname -r`
-	MACHINE=`uname -m`
-	[ X$KERNEL = X -o X$RELEASE = X -o X$MACHINE = X ] && ABORT
-	ARCH=$KERNEL-$RELEASE-$MACHINE
-fi
-[ X$GFSD_HOSTNAME = X ] && GFSD_HOSTNAME=`hostname -f`
-[ X$NCPU = X ] && NCPU=`grep ^processor /proc/cpuinfo | wc | awk '{ print $1 }'`
-[ X$GFSD_HOSTNAME = X -o X$NCPU = X ] && ABORT
+: ${START_SERVICE:=true}
+: ${FORCE:=false}
+: ${DISPLAY_PARAMS:=false}
+
+: ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
+: ${GFARM_CONF_DIR:="$CONFIG_PREFIX$sysconfdir"}
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
+
+: ${FQ_HOSTNAME:=`fq_hostname`}
+
+: ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
+[ X$GFSD_HOSTNAME = X ] && ABORT 'cannot determine gfsd hostname'
+
+: ${NCPU:=`number_of_cpus`}
+[ X$NCPU = X ] && ABORT 'cannot determine number of CPUs'
+
+: ${ARCH:=`$prefix/bin/gfarm.arch.guess`}
+[ X$ARCH = X ] && ABORT 'cannot determine the architecture of this machine'
+
+: ${RC_GFSD_IN="$config_dir/gfsd.in"}
 
 # -t option; display parameters
-[ X$DISPLAY_PARAMS = X1 ] && display_params
+$DISPLAY_PARAMS && display_params
 
 #########################################################################
 
-mkcnf_config_script()
+config()
 {
-	cat <<EOF
-s,@config_gfarm_prefix@,@prefix@,
-s,@config_gfarm_gfarm_config@,$GFARM_CONF,
-s,@config_gfarm_gfsd_option@,"-f $GFARM_CONF",
-s,@config_gfarm_run_dir@,$VAR_RUND,
-s,@config_gfarm_lock_dir@,$VAR_LOCKD,
-EOF
-}
-
-mkscript_gfsd()
-{
-	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/gfsd.in
+	sed \
+	-e "s|@config_gfarm_prefix@|$prefix|" \
+	-e "s|@config_gfarm_globus_location@|$globus_location|" \
+	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|" \
+	-e "s|@config_gfarm_run_dir@|$RUN_DIR|" \
+	${1+"$@"} | config_sysdep
 }
 
 mkcnf()
 {
-	[ $# -eq 2 ] && $1 > $2 && echo create $2
+	local out
+
+	out=$1
+	shift
+	if ${1+"$@"} >$out; then
+		echo created $out
+	else
+		ABORT "cannot create $out"
+	fi
 }
 
 mkscript()
 {
-	[ $# -eq 2 ] && $1 > $2 && chmod +x $2 && echo create $2
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
 }
-
-#########################################################################
 
 delete_file_or_directory()
 {
-	while [ $# -gt 0 ] ; do
-		[ -e $1 ] && rmdir $1 > /dev/null 2>&1
-		if [ -e $1 ]; then
-			if [ X$FORCE = X0 ]; then
-				ABORT "$PROGNAME: $1 already exist"
+	local p
+
+	for p
+	do
+		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
+		if [ -e "$p" ]; then
+			if $FORCE; then
+				rm -rf "$p"
 			else
-				rm -rf $1
+				ABORT "$p already exist"
 			fi
 		fi
-		shift
 	done
 }
 
 create_directory()
 {
-	[ $# -gt 0 ] && mkdir -p $* && echo create $*
+	local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		[ -e "$d" ] ||
+			ABORT "$d must be a directory, but actually it isn't"
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
 }
+
+#########################################################################
 
 [ -f $GFARM_CONF ] || ABORT "$GFARM_CONF: no such file"
 
-# spool directory
-delete_file_or_directory $SPOOL_DIRECTORY
-create_directory $SPOOL_DIRECTORY &&
-chmod 1777 $SPOOL_DIRECTORY ||
-ABORT "$PROGNAME: mkdir $SPOOL_DIRECTORY, failed"
+create_directory $RC_DIR $RUN_DIR
 
+# spool directory
+# delete_file_or_directory $SPOOL_DIRECTORY # XXX keep this
+create_directory $SPOOL_DIRECTORY
+[ X"`ls -ld $SPOOL_DIRECTORY | awk '{print $1}'`" = X"drwxrwxrwt" ] ||
+	chmod 1777 $SPOOL_DIRECTORY ||
+	ABORT "chmod 1777 $SPOOL_DIRECTORY, failed"
+
+mkcnf_gfsd_sysdep
+
+# create configuration files
 grep -v "^spool " $GFARM_CONF > $GFARM_CONF.tmp &&
 echo spool $SPOOL_DIRECTORY >> $GFARM_CONF.tmp &&
 mv $GFARM_CONF.tmp $GFARM_CONF &&
 echo $GFARM_CONF: updated ||
 ABORT "$GFARM_CONF: cannot append spool statement"
 
+# create run scripts
+mkscript $RC_DIR/gfsd	config "$RC_GFSD_IN"
+
 # gfhost
 if [ X$CONFIG_PREFIX = X ]; then
-	if [ X$FORCE = X1 ]; then
+	if $FORCE; then
 		gfhost -d $GFSD_HOSTNAME > /dev/null 2>&1
 	fi
 	gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
 	echo gfhost $GFSD_HOSTNAME: succeeded ||
-	echo 1>&2 "gfhost $GFSD_HOSTNAME: failed"
+	echo >&2 "gfhost $GFSD_HOSTNAME: failed"
 else
 	echo '** 'run \'gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME\'
 	echo '** 'after copying $GFARM_CONF to ~/.gfarmrc
 fi
 
-#
-if [ X"$DO_NOT_START_SERVICE" = X1 ]; then
-	echo "$PROGNAME success"
-	exit 0
+if $START_SERVICE; then
+	if start_service gfsd; then
+		:
+	else
+		ABORT "failed to start service"
+	fi
 fi
-
-if [ X$CONFIG_PREFIX = X -a X`id -u` = X0 ]; then
-	service gfsd restart ||
-	ABORT "$PROGNAME: cannot start gfsd"
-else
-	# create run script for gfsd
-	mkcnf mkcnf_config_script $GFARM_CONF_SCRIPT > /dev/null ||
-	ABORT "$PROGNAME: cannot create configuration script"
-
-	create_directory $ETC_INITD $VAR_RUND $VAR_LOCKD
-
-	mkscript mkscript_gfsd $ETC_INITD/gfsd ||
-	ABORT "$PROGNAME: cannot create $ETC_INITD/gfsd"
-
-	$ETC_INITD/gfsd restart ||
-	ABORT "$PROGNAME: cannot start gfsd"
-
-	rm -f $GFARM_CONF_SCRIPT
-fi
-error=$?
-
-[ $error = 0 ] && echo "$PROGNAME success" || echo "$PROGNAME failure"
-exit $error
+echo "$PROGNAME success"
+exit 0

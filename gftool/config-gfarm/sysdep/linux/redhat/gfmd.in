@@ -11,26 +11,26 @@
 #
 # $Id$
 
-gfarm_prefix=@config_gfarm_prefix@
+gfarm_prefix="@config_gfarm_prefix@"
 prog="gfmd"
 
 # source function library
 . /etc/rc.d/init.d/functions
 
-OPTIONS=@config_gfarm_gfmd_option@
+OPTIONS="@config_gfarm_gfmd_option@"
 
 RETVAL=0
 
 # Some functions to make the below more readable
 BINARY=$gfarm_prefix/sbin/$prog
-PID_FILE=@config_gfarm_run_dir@/${prog}.pid
+PID_FILE="@config_gfarm_run_dir@/${prog}.pid"
 
 start()
 {
 	echo -n $"Starting $prog:"
 	initlog -c "$BINARY -P $PID_FILE $OPTIONS" && success || failure
 	RETVAL=$?
-	[ "$RETVAL" = 0 ] && touch @config_gfarm_lock_dir@/$prog
+	[ "$RETVAL" = 0 ] && touch "@config_gfarm_lock_dir@/$prog"
 	echo
 }
 
@@ -44,7 +44,7 @@ stop()
 		killproc $prog -TERM
 	fi
 	RETVAL=$?
-	[ "$RETVAL" = 0 ] && rm -f @config_gfarm_lock_dir@/$prog
+	[ "$RETVAL" = 0 ] && rm -f "@config_gfarm_lock_dir@/$prog"
 	echo
 }
 

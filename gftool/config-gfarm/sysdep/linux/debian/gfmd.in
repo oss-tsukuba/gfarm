@@ -5,9 +5,10 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=gfmd
-DAEMON=/usr/sbin/$NAME
-PIDFILE=/var/run/$NAME.pid
-CONF=/etc/gfarm.conf
+DAEMON="@config_gfarm_prefix@/sbin/$NAME"
+PIDFILE="@config_gfarm_run_dir@/$NAME.pid"
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_gfmd_option@"
 
 trap "" 1
 export LANG=C
@@ -20,12 +21,12 @@ case "$1" in
   start)
 	echo -n "Starting gfarm server: $NAME"
 	start-stop-daemon --start \
-             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE
+             --pidfile "$PIDFILE" --exec $DAEMON -- -P "$PIDFILE" $OPTIONS
 	echo "."
 	;;
   stop)
 	echo -n "Stopping gfarm server: $NAME"
-	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
+	start-stop-daemon --stop --quiet --pidfile "$PIDFILE" --exec $DAEMON
 	echo "."
 	;;
   restart|force-reload)

@@ -92,3 +92,6 @@ readline_libs = @readline_libs@
 
 # build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
 gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@
+
+# build gftool/config-gfarm/sysdep/$(config_gfarm_sysdep_subdir)
+config_gfarm_sysdep_subdir = @config_gfarm_sysdep_subdir@

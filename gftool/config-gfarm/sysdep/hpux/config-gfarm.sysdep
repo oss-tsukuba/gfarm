@@ -1,0 +1,72 @@
+fq_hostname()
+{
+	case `hostname` in
+	*.*)	hostname;;
+	*)	nslookup "`hostname`" | awk '/^Name:/ {print $2}';;
+	esac
+}
+
+# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+dns_domainname()
+{
+	[ X"$FQ_HOSTNAME" = X ] && ABORT '$FQ_HOSTNAME is not set'
+	echo "$FQ_HOSTNAME" | sed 's/^[^.]*\.//'
+}
+
+memory_size()
+{
+	# XXX assume 64MB
+	echo 64
+}
+
+number_of_cpus()
+{
+	# XXX assume UniProcessor
+	echo 1
+}
+
+sysdep_defaults()
+{
+	: ${RC_DIR:="$CONFIG_PREFIX/sbin/init.d"}
+	: ${RC_BASE_DIR:="/sbin"}
+}
+
+config_sysdep()
+{
+	# no conversion
+	cat ${1+"$@"}
+}
+
+mkcnf_gfmd_sysdep()
+{
+}
+
+mkcnf_gfsd_sysdep()
+{
+}
+
+start_service()
+{
+	local service levels start kill level d
+
+	service=$1
+
+	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+		levels=`awk '/^# +chkconfig: +/{print $3}' $RC_DIR/$service |
+			sed 's/./& /g'`
+		start=`awk '/^# +chkconfig: +/{print $4}' $RC_DIR/$service`
+		kill=`awk '/^# +chkconfig: +/{print $5}' $RC_DIR/$service`
+		for level in $levels; do
+			d="$RC_BASE_DIR/rc$level.d"
+			[ -d $d ] &&
+			ln -s "$RC_DIR/$service" "$d/S${start}$service" &&
+			ln -s "$RC_DIR/$service" "$d/K${kill}$service" ||
+			ABORT "cannot add $service to $d"
+		done
+		echo added "$service" service
+	else
+		echo add "$service" service: skipped
+	fi || ABORT "cannot add $service service"
+
+	"$RC_DIR/$service" restart || ABORT "cannot start $service"
+}

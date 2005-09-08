@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.2
-%define rel	2
+%define rel	3
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -604,6 +604,9 @@ fi
 %{lib_prefix}/libgfs_hook_no_init.so.0.0.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0.0.0
+%dir %{share_prefix}
+%dir %{share_prefix}/config
+%{share_prefix}/config/config-gfarm.sysdep
 %if %{mpi}
 %{lib_prefix}/libgfs_hook_mpi.so.0
 %{lib_prefix}/libgfs_hook_mpi.so.0.0.0
@@ -700,7 +703,8 @@ fi
 %{prefix}/bin/config-gfsd
 %dir %{share_prefix}
 %dir %{share_prefix}/config
-%{share_prefix}/config/gfsd.in
+%{share_prefix}/config/linux/debian/gfsd.in
+%{share_prefix}/config/linux/redhat/gfsd.in
 
 %files server
 %{prefix}/sbin/gfmd
@@ -710,11 +714,16 @@ fi
 %{prefix}/bin/config-gfarm
 %dir %{share_prefix}
 %dir %{share_prefix}/config
-%{share_prefix}/config/gfarm-slapd.in
-%{share_prefix}/config/gfmd.in
+%{share_prefix}/config/bdb.DB_CONFIG.in
+%{share_prefix}/config/gfarm.conf.in
+%{share_prefix}/config/gfarm.schema
+%{share_prefix}/config/initial.ldif.in
+%{share_prefix}/config/linux/debian/gfarm-slapd.in
+%{share_prefix}/config/linux/debian/gfmd.in
+%{share_prefix}/config/linux/redhat/gfarm-slapd.in
+%{share_prefix}/config/linux/redhat/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
-%{share_prefix}/config/gfarm.conf.in
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h

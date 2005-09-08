@@ -1,0 +1,31 @@
+#!/sbin/sh
+#
+# $Id$
+#
+# chkconfig: 2345 85 15
+
+CONF="@config_gfarm_slapd_config@"
+PORT=@config_gfarm_slapd_port@
+SLAPD="@config_gfarm_openldap_libexec@/slapd"
+OPTIONS="-f $CONF -h ldap://:$PORT/"
+PID_FILE=@config_gfarm_run_dir@/slapd.pid
+
+case "$1" in 
+'start')
+	if [ -x $SLAPD -a -f "$CONF" ]; then
+		$SLAPD $OPTIONS
+	fi	
+	;;
+
+'stop')
+	if [ -f $PID_FILE ]; then
+		kill -TERM `cat $PID_FILE`
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start | stop }"
+	exit 1
+	;;
+esac
+exit 0

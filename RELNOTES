@@ -93,6 +93,8 @@ Updated Features
 
  * gfs_seekdir(3), gfs_telldir(3) - new functions
 
+ * config-gfarm(1) and config-gfsd(1) are now supported in all platforms.
+
  * Syscall hooking library
 
   - New syscall hook entries; fsync, fdatasync, pread, pread64,

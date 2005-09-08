@@ -1,20 +1,26 @@
 #!/sbin/sh
 #
 # $Id$
+#
+# chkconfig: 2345 95 05
 
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_gfmd_option@"
 GFSD=@prefix@/sbin/gfsd
 PID_FILE=/var/run/gfsd.pid
 
-# workaround a problem that "ld -R" doesn't work with indirectly dependent SOs
-if [ -n "@globus_location@" ]; then
-	LD_LIBRARY_PATH=@globus_location@/lib
-	export LD_LIBRARY_PATH
+if [ -n "@config_gfarm_globus_location@" ]; then
+	GLOBUS_LOCATION=@config_gfarm_globus_location@
+	export GLOBUS_LOCATION
+	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
+		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+	fi
 fi
 
 case "$1" in 
 'start')
-	if [ -x $GFSD -a -f /etc/gfarm.conf ]; then
-		$GFSD -P $PID_FILE
+	if [ -x $GFSD -a -f "$CONF" ]; then
+		$GFSD -P $PID_FILE $OPTIONS
 	fi	
 	;;
 
