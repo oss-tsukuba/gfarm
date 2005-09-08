@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "14 January 2005" "Gfarm" ""
+.TH "GFREP" "1" "08 September 2005" "Gfarm" ""
 .SH NAME
 gfrep \- replicate Gfarm files
 .SH SYNOPSIS
@@ -11,13 +11,13 @@ gfrep \- replicate Gfarm files
 \fBgfrep\fR \fB-H \fIhostfile\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-D \fIdomainname\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
 \fBgfrep\fR \fB-P \fIhost-pair-file\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-d \fIdestination-node\fB\fR [ \fB-s \fIsource-node\fB\fR ] [ \fB-I \fIfragment-index\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-s \fIsource-node\fB\fR ] [ \fB-d \fIdestination-node\fB [ -I \fIfragment-index\fB ]\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -39,12 +39,26 @@ if ``-'' is specified, standard input is used to read the host list.
 If the specified \fIGfarm-URL\fR is a directory,
 it will be copied recursively.
 .TP
-\fB-D \fIdomainname\fB\fR
+\fB-S \fIsource-domainname\fB\fR
+specifies a domainname of source filesystem nodes
+where replicas will be made from.
+
+If none of this and other options for the source host is specified, 
+will be copied from one host registered in meta data.
+
+If a host of in the source domain is also in the destination
+domain specified by \fB-D\fR, gfrep will not replicate
+on the host.
+
+If the specified \fIGfarm-URL\fR is a directory,
+it will be copied recursively.
+.TP
+\fB-D \fIdestination-domainname\fB\fR
 specifies a domainname of destination filesystem nodes
-where the replica will be made on.
+where replicas will be made on.
 
 If none of this and other options for the destination host is specified, 
-the replica will be copied to any of hosts in meta data.
+the replica will be copied to any of hosts registered in meta data.
 But, in this case, you need to specify the number of replicas greater than
 or equal to 2 using -N option. 
 Please refer the description of the \fB-N\fR for detail.
@@ -54,12 +68,19 @@ it will be copied recursively.
 .TP
 \fB-N \fInum-of-replicas\fB\fR
 specifies the number of file replicas, counting already existing ones.
-If replicas of a \fIGfarm-URL\fR file fragment is more than
-this parameter, the file fragment won't be copied and its replicas won't be
-removed.
 
-This option must be sepcified singuraly or with \fB-D\fR
-option.
+Gfrep generate replicas  until this number in hosts that are in destination
+domain specified by \fB-D\fR(if not specified, all hosts
+registered inmeta data) and are not in source domain specified by
+\fB-S\fR. If \fB-S\fR is not specified, gfrep
+genetate until this number of hosts in destination domain.
+
+If replicas of a \fIGfarm-URL\fR file fragment is more than
+this parameter before replication, the file fragment won't be copied and
+its replicas won't be removed.
+
+This option must be sepcified singuraly or with \fB-S\fR
+and/or \fB-D\fR options.
 
 If \fB-N\fR option is omitted,  this works as if
 \fB-N 1\fR is specified.
@@ -87,7 +108,8 @@ it will be copied recursively.
 .TP
 \fB-s \fIsource-node\fB\fR
 specifies a source filesystem node where the file will be copied from.
-This option is used with the \fB-d\fR option.
+This option is used singuraly or with the \fB-d\fR option.
+If used singuraly, gfrep replicates on the host other than this one.
 
 If this option is omitted, the source filesystem node is choosed
 automatically.

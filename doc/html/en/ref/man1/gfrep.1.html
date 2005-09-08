@@ -53,10 +53,15 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-D <TT
+> [-S <TT
 CLASS="REPLACEABLE"
 ><I
->domainname</I
+>source-domainname</I
+></TT
+>] [-D <TT
+CLASS="REPLACEABLE"
+><I
+>destination-domainname</I
 ></TT
 >] [-N <TT
 CLASS="REPLACEABLE"
@@ -88,22 +93,22 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -d <TT
-CLASS="REPLACEABLE"
-><I
->destination-node</I
-></TT
->  [-s <TT
+> [-s <TT
 CLASS="REPLACEABLE"
 ><I
 >source-node</I
 ></TT
->] [-I <TT
+>] [-d <TT
+CLASS="REPLACEABLE"
+><I
+>destination-node</I
+></TT
+> [-I <TT
 CLASS="REPLACEABLE"
 ><I
 >fragment-index</I
 ></TT
->]  <TT
+>]]  <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
@@ -184,20 +189,53 @@ it will be copied recursively.</P
 ><DT
 ><TT
 CLASS="OPTION"
+>-S</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>source-domainname</I
+></TT
+></DT
+><DD
+><P
+>specifies a domainname of source filesystem nodes
+where replicas will be made from.</P
+><P
+>If none of this and other options for the source host is specified, 
+ will be copied from one host registered in meta data.</P
+><P
+>If a host of in the source domain is also in the destination
+domain specified by <TT
+CLASS="OPTION"
+>-D</TT
+>, gfrep will not replicate
+on the host.</P
+><P
+>If the specified <TT
+CLASS="PARAMETER"
+><I
+>Gfarm-URL</I
+></TT
+> is a directory,
+it will be copied recursively.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
 >-D</TT
 > <TT
 CLASS="PARAMETER"
 ><I
->domainname</I
+>destination-domainname</I
 ></TT
 ></DT
 ><DD
 ><P
 >specifies a domainname of destination filesystem nodes
-where the replica will be made on.</P
+where replicas will be made on.</P
 ><P
 >If none of this and other options for the destination host is specified, 
-the replica will be copied to any of hosts in meta data.
+the replica will be copied to any of hosts registered in meta data.
 But, in this case, you need to specify the number of replicas greater than
 or equal to 2 using -N option. 
 Please refer the description of the <TT
@@ -225,21 +263,40 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies the number of file replicas, counting already existing ones.
-If replicas of a <TT
+>specifies the number of file replicas, counting already existing ones.</P
+><P
+>Gfrep generate replicas  until this number in hosts that are in destination
+domain specified by <TT
+CLASS="OPTION"
+>-D</TT
+>(if not specified, all hosts
+registered inmeta data) and are not in source domain specified by
+<TT
+CLASS="OPTION"
+>-S</TT
+>. If <TT
+CLASS="OPTION"
+>-S</TT
+> is not specified, gfrep
+genetate until this number of hosts in destination domain.</P
+><P
+>If replicas of a <TT
 CLASS="PARAMETER"
 ><I
 >Gfarm-URL</I
 ></TT
 > file fragment is more than
-this parameter, the file fragment won't be copied and its replicas won't be
-removed.</P
+this parameter before replication, the file fragment won't be copied and
+its replicas won't be removed.</P
 ><P
 >This option must be sepcified singuraly or with <TT
 CLASS="OPTION"
->-D</TT
+>-S</TT
 >
-option.</P
+and/or <TT
+CLASS="OPTION"
+>-D</TT
+> options.</P
 ><P
 >If <TT
 CLASS="OPTION"
@@ -330,10 +387,11 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >specifies a source filesystem node where the file will be copied from.
-This option is used with the <TT
+This option is used singuraly or with the <TT
 CLASS="OPTION"
 >-d</TT
-> option.</P
+> option.
+If used singuraly, gfrep replicates on the host other than this one.</P
 ><P
 >If this option is omitted, the source filesystem node is choosed
 automatically.</P
