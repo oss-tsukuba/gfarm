@@ -1,0 +1,71 @@
+#! /bin/sh
+#
+# gfarm-slapd
+#
+# chkconfig: 2345 85 15
+# description: LDAP slapd for Gfarm
+# processname: slapd
+# pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
+# config: @config_gfarm_slapd_config@
+
+bindir=@config_gfarm_openldap_libexec@
+config=@config_gfarm_slapd_config@
+port=@config_gfarm_slapd_port@
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+[ -f $bindir/slapd ] || exit 0
+[ -f $config ] || exit 0
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting Gfarm LDAP services: "
+	# increase the maximum number of open file descriptors
+	ulimit -n 16384 2> /dev/null
+	daemon $bindir/slapd -f $config -h ldap://:$port/
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch @config_gfarm_lock_dir@/gfarm-slapd
+	echo
+	;;
+  stop)
+	echo -n "Stopping Gfarm LDAP services: "
+	if [ -f @config_gfarm_run_dir@/gfarm-slapd.pid ]; then
+		PID=`cat @config_gfarm_run_dir@/gfarm-slapd.pid`
+		kill -TERM $PID && success || failure
+		rm -f @config_gfarm_run_dir@/gfarm-slapd.pid
+	else
+		killproc slapd -TERM
+	fi
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f @config_gfarm_lock_dir@/gfarm-slapd
+	echo
+	;;
+  status)
+	status slapd
+	RETVAL=$?
+	;;
+  restart|reload)
+  	$0 stop
+	$0 start
+	# is this available?: killall -HUP slapd
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: inet {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $REVAL

@@ -1,0 +1,38 @@
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include		@config_gfarm_openldap_etc@/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
+
+pidfile		@config_gfarm_run_dir@/gfarm-slapd.pid
+argsfile	@config_gfarm_run_dir@/gfarm-slapd.args
+
+# enable global write access for now. XXX
+allow bind_anon_dn update_anon
+access to * by anonymous write
+
+# unlimit search result
+sizelimit unlimited
+
+# disable syslog
+loglevel 0
+
+#######################################################################
+# database definitions
+#######################################################################
+
+database	@config_gfarm_slapd_database@
+
+suffix		"@config_gfarm_suffix@"
+rootdn		"@config_gfarm_rootdn@"
+
+directory	@config_gfarm_ldap_directory@
+rootpw		secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
