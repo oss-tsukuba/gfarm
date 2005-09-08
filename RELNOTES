@@ -4,9 +4,11 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 Release note for Gfarm 1.2 (RC2)
 ================================
 
-[2005.8.31]
+[2005.9.8]
 
 Updated Features
+
+ * gfrep(1) - the -S option is added to specify the source domainname.
 
  * UTF-8 support.
 
