@@ -179,14 +179,6 @@ cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{share_prefix}/config
-cp -p package/redhat/config/{gfarm-slapd,gfmd,gfsd}.in \
-	${RPM_BUILD_ROOT}%{share_prefix}/config
-cp -p package/redhat/config/{gfarm.conf,slapd.conf-2.[01]}.in \
-	${RPM_BUILD_ROOT}%{share_prefix}/config
-cp -p package/redhat/config/config-{gfarm,gfsd} \
-	${RPM_BUILD_ROOT}%{prefix}/bin
-chmod +x ${RPM_BUILD_ROOT}%{prefix}/bin/config-{gfarm,gfsd}
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
