@@ -769,6 +769,33 @@ gfarm_schedule_search_idle_hosts(
 	return (e);
 }
 
+/*
+ * Similar to 'gfarm_schedule_search_idle_hosts' except for the fact that
+ * the available hosts will be listed only once even if enough number of
+ * hosts are not available, 
+ */
+char *
+gfarm_schedule_search_idle_acyclic_hosts(
+	int nihosts, char **ihosts, int *nohosts, char **ohosts)
+{
+	char *e;
+	int n_all_hosts;
+	struct gfarm_host_info *all_hosts;
+	struct gfarm_hash_table *hosts_state;
+	struct string_array_iterator host_iterator;
+
+	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
+	if (e != NULL)
+		return (e);
+	e = search_idle(CONCURRENCY, nihosts * ENOUGH_RATE, 
+	    hosts_state, 
+	    nihosts, &null_filter,
+	    init_string_array_iterator(&host_iterator, ihosts),
+	    nohosts, ohosts);
+	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
+	return (e);
+}
+
 char *
 gfarm_schedule_search_idle_by_all(int nohosts, char **ohosts)
 {
