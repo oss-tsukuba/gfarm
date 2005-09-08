@@ -3,7 +3,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>11 Dec 2003</date></refentryinfo>
+<refentryinfo><date>8 Sep 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -24,7 +24,8 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
+    <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
     <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
@@ -35,9 +36,8 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-d <replaceable>destination-node</replaceable></arg>
     <arg choice='opt'>-s <replaceable>source-node</replaceable></arg>
-    <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
+    <arg choice='opt'>-d <replaceable>destination-node</replaceable><arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -74,14 +74,33 @@ it will be copied recursively.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-D</option> <parameter>domainname</parameter></term>
+<term><option>-S</option> <parameter>source-domainname</parameter></term>
+<listitem>
+<para>specifies a domainname of source filesystem nodes
+where replicas will be made from.
+</para>
+<para>
+If none of this and other options for the source host is specified, 
+ will be copied from one host registered in meta data.
+</para>
+<para>If a host of in the source domain is also in the destination
+domain specified by <option>-D</option>, gfrep will not replicate
+on the host.
+</para>
+<para>If the specified <parameter>Gfarm-URL</parameter> is a directory,
+it will be copied recursively.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter>destination-domainname</parameter></term>
 <listitem>
 <para>specifies a domainname of destination filesystem nodes
-where the replica will be made on.
+where replicas will be made on.
 </para>
 <para>
 If none of this and other options for the destination host is specified, 
-the replica will be copied to any of hosts in meta data.
+the replica will be copied to any of hosts registered in meta data.
 But, in this case, you need to specify the number of replicas greater than
 or equal to 2 using -N option. 
 Please refer the description of the <option>-N</option> for detail.
@@ -95,11 +114,20 @@ it will be copied recursively.</para>
 <term><option>-N</option> <parameter>num-of-replicas</parameter></term>
 <listitem>
 <para>specifies the number of file replicas, counting already existing ones.
+</para>
+<para>
+Gfrep generate replicas  until this number in hosts that are in destination
+domain specified by <option>-D</option>(if not specified, all hosts
+registered inmeta data) and are not in source domain specified by
+<option>-S</option>. If <option>-S</option> is not specified, gfrep
+genetate until this number of hosts in destination domain.
+</para>
+<para>
 If replicas of a <parameter>Gfarm-URL</parameter> file fragment is more than
-this parameter, the file fragment won't be copied and its replicas won't be
-removed.</para>
-<para>This option must be sepcified singuraly or with <option>-D</option>
-option.</para>
+this parameter before replication, the file fragment won't be copied and
+its replicas won't be removed.</para>
+<para>This option must be sepcified singuraly or with <option>-S</option>
+and/or <option>-D</option> options.</para>
 <para>If <option>-N</option> option is omitted,  this works as if
 <option>-N 1</option> is specified.</para>
 </listitem>
@@ -138,7 +166,8 @@ it will be copied recursively.</para>
 <term><option>-s</option> <parameter>source-node</parameter></term>
 <listitem>
 <para>specifies a source filesystem node where the file will be copied from.
-This option is used with the <option>-d</option> option.
+This option is used singuraly or with the <option>-d</option> option.
+If used singuraly, gfrep replicates on the host other than this one.
 </para>
 <para>If this option is omitted, the source filesystem node is choosed
 automatically.
