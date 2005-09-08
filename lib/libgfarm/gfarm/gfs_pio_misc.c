@@ -29,7 +29,7 @@ char *
 gfs_stat_size_canonical_path(
 	char *gfarm_file, file_offset_t *size, int *nsection)
 {
-	char *e;
+	char *e, *e_save = NULL;
 	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	file_offset_t s;
@@ -40,14 +40,18 @@ gfs_stat_size_canonical_path(
 		return (e);
 
 	s = 0;
-	for (i = 0; i < nsections; i++)
+	for (i = 0; i < nsections; i++) {
+		e = gfs_check_section_busy_by_finfo(&sections[i]);
+		if (e_save == NULL)
+			e_save = e;
 		s += sections[i].filesize;
+	}
 	*size = s;
 	*nsection = nsections;
 
 	gfarm_file_section_info_free_all(nsections, sections);
 
-	return (NULL);
+	return (e_save);
 }
 
 char *
@@ -81,6 +85,9 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 	/* regular file */
 	e = gfs_stat_size_canonical_path(
 		gfarm_file, &s->st_size, &s->st_nsections);
+	/* allow stat() during text file busy */
+	if (e == GFARM_ERR_TEXT_FILE_BUSY)
+		e = NULL;
 	if (e != NULL) {
 		gfs_stat_free(s);
 		/*

@@ -45,7 +45,7 @@ gfs_set_section_busy(char *pathname, char *section)
 	return (e);
 }
 
-static char *
+char *
 gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *fi)
 {
 	if (strncmp(fi->checksum, SECTION_BUSY, sizeof(SECTION_BUSY) - 1) == 0)

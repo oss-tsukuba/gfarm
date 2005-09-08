@@ -49,6 +49,7 @@ struct gfs_file {
 	struct gfarm_path_info pi;
 };
 
+char *gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *);
 char *gfs_check_section_busy(char *, char *);
 char *gfs_unlink_section_internal(const char *, const char *);
 char *gfs_unlink_every_other_replicas(
