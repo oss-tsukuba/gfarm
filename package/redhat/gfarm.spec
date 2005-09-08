@@ -147,7 +147,9 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-%patch -p1
+#%patch -p1
+%patch0 -p1
+%patch1 -p1
 
 %build
 ./configure --prefix=%{prefix} \
