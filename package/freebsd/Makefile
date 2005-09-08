@@ -11,7 +11,8 @@ CATEGORIES=	net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 
 PATCH_SITES=	${MASTER_SITES}
-PATCHFILES=	gfarm-1.2-patch1.diff.gz
+PATCHFILES=	gfarm-1.2-patch1.diff.gz \
+		gfarm-1.2-patch1.diff.gz
 PATCH_DIST_STRIP= -p1
 
 MAINTAINER=	soda@sra.co.jp

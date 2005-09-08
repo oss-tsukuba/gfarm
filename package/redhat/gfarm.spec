@@ -57,7 +57,8 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-Patch: gfarm-1.2-patch1.diff
+Patch0: gfarm-1.2-patch1.diff
+Patch1: gfarm-1.2-patch2.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology

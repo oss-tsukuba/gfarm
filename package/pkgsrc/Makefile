@@ -5,7 +5,8 @@ CATEGORIES=	parallel net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${GFARM_VERSION}/
 
 PATCH_SITES=	${MASTER_SITES}
-PATCHFILES=	gfarm-1.2-patch1.diff.gz
+PATCHFILES=	gfarm-1.2-patch1.diff.gz \
+		gfarm-1.2-patch2.diff.gz
 PATCH_DIST_STRIP= -p1
 
 MAINTAINER=	soda@NetBSD.org
