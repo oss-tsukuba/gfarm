@@ -6,6 +6,8 @@ Release note for Gfarm 1.2
 
 [2005.9.8]
 
+ * config-gfarm(1) and config-gfsd(1) are now supported in all platforms.
+
  * gfrep(1) - the -S option is added to specify the source domainname.
 
  * Bug fix
@@ -92,8 +94,6 @@ Updated Features
  * gfs_pio_sync(3), gfs_pio_datasync(3) - new functions
 
  * gfs_seekdir(3), gfs_telldir(3) - new functions
-
- * config-gfarm(1) and config-gfsd(1) are now supported in all platforms.
 
  * Syscall hooking library
 
