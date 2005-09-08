@@ -1,0 +1,41 @@
+#! /bin/bash
+#
+# gfmd     Start the gfmd server.
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=gfmd
+DAEMON=/usr/sbin/$NAME
+PIDFILE=/var/run/$NAME.pid
+CONF=/etc/gfarm.conf
+
+trap "" 1
+export LANG=C
+export PATH
+
+test -f $DAEMON || exit 0
+test -f $CONF || exit 0
+
+case "$1" in
+  start)
+	echo -n "Starting gfarm server: $NAME"
+	start-stop-daemon --start \
+             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping gfarm server: $NAME"
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
+	echo "."
+	;;
+  restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo "Usage: /etc/init.d/$NAME {start|stop|restart}"
+	exit 1
+	;;
+esac
+
+exit 0
