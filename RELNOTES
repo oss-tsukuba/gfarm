@@ -1,14 +1,52 @@
 Copyright (c) 2003, 2004, 2005 National Institute of Advanced
 Industrial Science and Technology (AIST).  All Rights Reserved.
 
-Release note for Gfarm 1.2 (RC2)
-================================
+Release note for Gfarm 1.2
+==========================
 
 [2005.9.8]
 
+ * gfrep(1) - the -S option is added to specify the source domainname.
+
+ * Bug fix
+
+ - When opening a file in write mode during text file busy, it will be
+   truncated.  This bug was introduced in the version 1.2 RC2.
+
+ - Syscall hooking library - fix a filename translation for
+   '/gfarm/.filename' and '~filename' in Gfarm file system.
+
+Release note for Gfarm 1.2 (RC3)
+================================
+
+[2005.9.6]
+
 Updated Features
 
- * gfrep(1) - the -S option is added to specify the source domainname.
+ * config-gfarm - specify cachesize automatically when using Berkeley
+   DB.
+
+ * Documentation
+
+   - README.hook - simplify and reorganize the structure.  add issues
+     of possible segmentation fault by libgssapi collision.
+
+   - gfarm_url_section_replicate_{,from_}to(3) and
+     gfarm_url_fragments_replicate(3) - added
+
+ * Bug fix
+
+  - gfrun(1) may fail when a job is submitted by an unregistered
+    client via gfarm_agent.
+
+  - gfexec(1) - fix uninitialized variable reference.
+
+Release note for Gfarm 1.2 (RC2)
+================================
+
+[2005.8.31]
+
+Updated Features
 
  * UTF-8 support.
 

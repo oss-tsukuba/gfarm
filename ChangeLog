@@ -1,4 +1,175 @@
+2005-09-08  Osamu Tatebe  <tatebe@amethyst.hpcc.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c (gfs_stat_size_canonical_path):
+	return GFARM_ERR_TEXT_FILE_BUSY when one of sections is busy.
+
+2005-09-08  Tohru Sotoyama  <soto@amethyst.hpcc.jp>
+
+	* RELNOTES: add gfrep -S option
+
+	* doc/html/en/ref/man1/gfrep.1.html, man/man1/gfrep.1: regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook: - new entry of -S option
+	- add description to the entries of -D, -N, -d and -s options
+
+	* doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1: regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook: - new entry of -S option
+	- add description to the entries of -D, -N, -d and -s options
+
+2005-09-08  Noriyuki Soda  <soda@amethyst.hpcc.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	Change the behavior of search_idle() at enough_number == 0 or *nohostsp == 0.
+	Before this change, the return value of search_idle() depends on whether
+	first candidate host is availble or not (NULL for the former, GFARM_ERR_NO_HOST
+	for the latter).
+	After this change, the return value is always GFARM_ERR_NO_HOSTS,
+	regardless of the availability of the first candidate host.
+
+	RATIONALE: if enough_number == 0 or *nohostsp == 0, the caller of this function
+	probably did "ohosts = malloc(sizeof(*ohosts) * 0);", but the behaivor of
+	malloc(0) is implementation dependent. i.e. It's not portable.
+
+2005-09-08  Tohru Sotoyama  <soto@amethyst.hpcc.jp>
+
+	* gftool/gfrep/gfrep.c: - add -S option
+	-'gfrep -s srchost' replicate to an appropriate host if -d optoins isn't
+	  specified
+	- suppress warning lack of replica in source host or source domain
+	  in case of replicating a directory
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/schedule.c:
+	add farm_schedule_search_idle_acyclic_hosts() for 'gfrep -S'
+
+	* gftool/gfrep/Makefile: include "hash.h'
+
+2005-09-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	rename the patch filename from gfarm.patch to gfarm-1.2-patch1.diff,
+	to make it clear that the patch file is similar to:
+	http://datafarm.apgrid.org/software/1.2/gfarm-1.2-patch1.diff.gz
+
+	* package/redhat/gfarm.patch:
+	We won't use in-tree patch files any more (just use diff-files between cvs tags)
+
+2005-09-07  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_is_url):
+	fix a filename translation for '/gfarm/.filename'
+	and '~filename' in Gfarm file system.
+
+2005-09-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile:
+	apply the following patch:
+	http://datafarm.apgrid.org/software/1.2/gfarm-1.2-patch1.diff.gz
+
+	* package/pkgsrc/PLIST: correct a mistake in previous change
+
+	* package/pkgsrc/PLIST: add references for replication in English
+
+2005-09-06  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* package/redhat/gfarm.patch, package/redhat/gfarm.spec: gfarm-1.2-2
+
+	* debian/libgfarm-dev.manpages, package/freebsd/pkg-plist, package/redhat/gfarm.spec, doc/html/en/ref/index.html:
+	add references for replication in English
+
+	* man/man3/gfarm_url_fragments_replicate.3, man/man3/gfarm_url_section_replicate_from_to.3, man/man3/gfarm_url_section_replicate_to.3, man/man3/gfs_pio_set_view_index.3, man/ja/man3/gfarm_url_fragments_replicate.3, man/ja/man3/gfarm_url_section_replicate_from_to.3, man/ja/man3/gfarm_url_section_replicate_to.3, doc/html/ja/ref/man3/gfarm_url_fragments_replicate.3.html, doc/html/ja/ref/man3/gfarm_url_section_replicate_from_to.3.html, doc/html/ja/ref/man3/gfarm_url_section_replicate_to.3.html, doc/html/en/ref/man3/gfarm_url_fragments_replicate.3.html, doc/html/en/ref/man3/gfarm_url_section_replicate_from_to.3.html, doc/html/en/ref/man3/gfarm_url_section_replicate_to.3.html, doc/html/en/ref/man3/gfs_pio_set_view_index.3.html:
+	regen
+
+	* doc/docbook/en/ref/man3/Makefile.inc, doc/docbook/en/ref/man3/gfarm_url_fragments_replicate.3.docbook, doc/docbook/en/ref/man3/gfarm_url_section_replicate_from_to.3.docbook, doc/docbook/en/ref/man3/gfarm_url_section_replicate_to.3.docbook, doc/docbook/en/ref/man3/gfs_pio_set_view_index.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_fragments_replicate.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_from_to.3.docbook, doc/docbook/ja/ref/man3/gfarm_url_section_replicate_to.3.docbook:
+	add GFARM_ERR_NO_SUCH_OBJECT and GFARM_ERR_TEXT_FILE_BUSY.
+	add missing manual pages in English.
+
+	* lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_pio_section.c (gfs_pio_set_view_section):
+	gfarm_host_get_canonical_name() may return GFARM_ERR_INVALID_ARGUMENT when using gfarm_agent.
+	add XXX in comment
+
+2005-09-05  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfm_client.c (gfarm_user_job_register):
+	gfarm_host_get_canonical_host_name may return GFARM_ERR_INVALID_ARGUMENT since both GFARM_ERR_UNKNOWN_HOST and GFARM_ERR_AMBIGUOUS_RESULT map to GFARM_ERR_INVALID_ARGUMENT in gfarm_agent...
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	simplify and reorganize the structure
+	add issue of possible collision regarding libgssapi
+
+2005-09-02  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_exec.c:
+	gfarm_url_execfile_replicate_to_local(): fix references to an uninitialized
+	variable
+
+2005-09-01  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: changed version number
+
 2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/Makefile: add openssl_includes in CFLAGS
+
+	* package/redhat/gfarm.spec: gfarm-1.2-1
+
+2005-08-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/config/config-gfarm.in: thinko
+
+	* package/redhat/config/config-gfarm.in:
+	- automatically select berkeley DB, if OpenLDAP version >= 2.1
+	- automatically generate DB_CONFIG for berkeley DB,
+	  and set cachesize to half of physical memory
+
+	* package/redhat/config/slapd.conf-2.0.in, package/redhat/config/slapd.conf-2.1.in:
+	- use tab instead of spaces
+	- correct/add comments
+	no actual change
+
+2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: reordering
+
+2005-08-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* RELNOTES: remove reconnection to gfsd (and gfmd) for now
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	back out previous change about reconnection to gfsd.
+	the change is too dangerous to use, because it doesn't honor state of
+	the connection (e.g. file descriptors, seek position, etc...)
+
+	* package/redhat/gfarm.patch: this file is no longer used
+
+	* makes/data.mk: deal with --srcdir option of configure
+
+2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: more verbose
+
+	* RELNOTES: add a reference to Bugzilla-ja #38
+
+2005-08-31  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/user/export-gfarm.html:
+	modify the explanation so that EnableMMAP and EnableSendfile are required.
+
+	* doc/html/ja/user/export-gfarm.html:
+	add an explanation about EnableMMAP Off for httpd with syscall-hooking library.
+
+2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gfptool/gfsplck/Makefile, gfptool/gfsplck/gfsplck.c:
+	text file busy support
+
+2005-08-31  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/user/export-gfarm.html: add items about httpd.
+
+2005-08-31  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: release note for the version 1.2 RC2
 
 	* man/man1/gfrm.1, doc/html/en/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrm.1.html, man/ja/man1/gfrm.1:
 	regen
