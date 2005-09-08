@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs gfs_hook_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_prefix ldap_includes ldap_libs gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -21391,6 +21391,9 @@ echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs}\" for ldap" >&6
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 
+ldap_prefix="$with_openldap"
+
+
 
 
 
@@ -23299,6 +23302,21 @@ fi
 
 
 ###
+### gftool/config-gfarm
+###
+
+config_gfarm_sysdep=gftool/config-gfarm/sysdep/${host_os_nickname}
+if test -f ${srcdir}/${config_gfarm_sysdep}/Makefile; then
+	echo "$as_me:$LINENO: result: using ${config_gfarm_sysdep} directory for system dependent part of config-gfarm." >&5
+echo "${ECHO_T}using ${config_gfarm_sysdep} directory for system dependent part of config-gfarm." >&6
+	config_gfarm_sysdep_subdir=${host_os_nickname}
+else
+	config_gfarm_sysdep_subdir=default
+fi
+
+
+
+###
 ### ns
 ###
 
@@ -23322,7 +23340,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                                                        ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd package/redhat/config/config-gfarm package/redhat/config/config-gfsd util/gfront/gfront"
+                                                                                                                        ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd util/gfront/gfront"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -23853,13 +23871,13 @@ do
   "makes/config.mk" ) CONFIG_FILES="$CONFIG_FILES makes/config.mk" ;;
   "makes/install-doc" ) CONFIG_FILES="$CONFIG_FILES makes/install-doc" ;;
   "${ns_makefiles}" ) CONFIG_FILES="$CONFIG_FILES ${ns_makefiles}" ;;
+  "gftool/config-gfarm/config-gfarm" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfarm" ;;
+  "gftool/config-gfarm/config-gfsd" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfsd" ;;
   "gfptool/util/gfregister" ) CONFIG_FILES="$CONFIG_FILES gfptool/util/gfregister" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
   "package/solaris/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
   "package/redhat/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfmd" ;;
   "package/redhat/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfsd" ;;
-  "package/redhat/config/config-gfarm" ) CONFIG_FILES="$CONFIG_FILES package/redhat/config/config-gfarm" ;;
-  "package/redhat/config/config-gfsd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/config/config-gfsd" ;;
   "util/gfront/gfront" ) CONFIG_FILES="$CONFIG_FILES util/gfront/gfront" ;;
   "include/gfarm/gfarm_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/gfarm/gfarm_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -24022,9 +24040,11 @@ s,@largefile64_srcs@,$largefile64_srcs,;t t
 s,@largefile64_objs@,$largefile64_objs,;t t
 s,@largefile64_cflags@,$largefile64_cflags,;t t
 s,@largefile64_targets@,$largefile64_targets,;t t
+s,@ldap_prefix@,$ldap_prefix,;t t
 s,@ldap_includes@,$ldap_includes,;t t
 s,@ldap_libs@,$ldap_libs,;t t
 s,@gfs_hook_sysdep_subdir@,$gfs_hook_sysdep_subdir,;t t
+s,@config_gfarm_sysdep_subdir@,$config_gfarm_sysdep_subdir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
