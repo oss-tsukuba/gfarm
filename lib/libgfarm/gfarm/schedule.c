@@ -534,7 +534,13 @@ search_idle(int concurrency, int enough_number,
 	struct sockaddr addr;
 	struct gfs_client_get_load_state *gls;
 
-	if (nihosts == 0)
+	/*
+	 * If we don't check enough_number or desired_number here,
+	 * the behavior of search_idle() becomes undeterministic.
+	 * i.e. If first ihost, which meets ihost_filter, is available,
+	 * search_idle() returns NULL, otherwise GFARM_ERR_NO_HOST.
+	 */
+	if (enough_number == 0 || desired_number == 0 || nihosts == 0)
 		return (GFARM_ERR_NO_HOST);
 	s.q = gfarm_eventqueue_alloc();
 	if (s.q == NULL)
