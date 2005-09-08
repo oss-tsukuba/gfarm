@@ -1,0 +1,8 @@
+spool_serverport @config_gfarm_gfsd_port@
+metadb_serverhost @config_gfarm_slapd_hostname@
+metadb_serverport @config_gfarm_gfmd_port@
+ldap_serverhost @config_gfarm_slapd_hostname@
+ldap_serverport @config_gfarm_slapd_port@
+ldap_base_dn "@config_gfarm_suffix@"
+auth enable sharedsecret *
+auth enable gsi_auth *

@@ -1,0 +1,207 @@
+#!/bin/sh
+#
+# $Id$
+
+[ ${DEBUG:="off"} = off ] || set -xu
+
+PROGNAME=`basename $0`
+
+usage()
+{
+	echo 1>&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo 1>&2 "        [-a arch] [-h hostname] [-n ncpu] spool_directory"
+	exit 1
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo 1>&2 $*
+	echo "$PROGNAME failure"
+	exit 1
+}
+
+display_params()
+{
+	echo "prefix [--prefix]: $CONFIG_PREFIX"
+	echo "hostname     [-h]: $GFSD_HOSTNAME"
+	echo "architecture [-a]: $ARCH"
+	echo "ncpu         [-n]: $NCPU"
+	exit 0
+}
+
+# default value
+
+: ${CONFIG_PREFIX:=}
+
+: ${FORCE:="0"}
+: ${DISPLAY_PARAMS:="0"}
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -a) shift; [ $# -ge 1 ] || usage
+		ARCH=$1
+		;;
+	  -f)
+		FORCE=1
+		;;
+	  -h) shift; [ $# -ge 1 ] || usage
+		GFSD_HOSTNAME=$1
+		;;
+	  -n) shift; [ $# -ge 1 ] || usage
+		NCPU=$1
+		;;
+	  -t)
+		DISPLAY_PARAMS=1
+		;;
+	  -*)
+		usage
+		;;
+	  *)
+		break
+		;;
+	esac
+	shift
+done
+
+[ $# -eq 1 ] || usage
+
+SPOOL_DIRECTORY=$1
+case $SPOOL_DIRECTORY in
+	/*) break ;;
+	*) ABORT "$SPOOL_DIRECTORY: should be absolute path" ;;
+esac
+
+: ${GFARM_CONF_SCRIPT:="/tmp/config-gfsd-$$"}
+: ${GFARM_CONF:="$CONFIG_PREFIX/etc/gfarm.conf"}
+
+: ${ETC_INITD:="$CONFIG_PREFIX/etc/init.d"}
+: ${VAR_RUND:="$CONFIG_PREFIX/var/run"}
+: ${VAR_LOCKD:="$CONFIG_PREFIX/var/lock/subsys"}
+
+: ${DO_NOT_START_SERVICE:="0"}
+
+# Gfarm installation directory
+prefix=@prefix@
+
+if [ X$ARCH = X ]; then
+	KERNEL=`uname -s`
+	RELEASE=`uname -r`
+	MACHINE=`uname -m`
+	[ X$KERNEL = X -o X$RELEASE = X -o X$MACHINE = X ] && ABORT
+	ARCH=$KERNEL-$RELEASE-$MACHINE
+fi
+[ X$GFSD_HOSTNAME = X ] && GFSD_HOSTNAME=`hostname -f`
+[ X$NCPU = X ] && NCPU=`grep ^processor /proc/cpuinfo | wc | awk '{ print $1 }'`
+[ X$GFSD_HOSTNAME = X -o X$NCPU = X ] && ABORT
+
+# -t option; display parameters
+[ X$DISPLAY_PARAMS = X1 ] && display_params
+
+#########################################################################
+
+mkcnf_config_script()
+{
+	cat <<EOF
+s,@config_gfarm_prefix@,@prefix@,
+s,@config_gfarm_gfarm_config@,$GFARM_CONF,
+s,@config_gfarm_gfsd_option@,"-f $GFARM_CONF",
+s,@config_gfarm_run_dir@,$VAR_RUND,
+s,@config_gfarm_lock_dir@,$VAR_LOCKD,
+EOF
+}
+
+mkscript_gfsd()
+{
+	sed -f $GFARM_CONF_SCRIPT @datadir@/gfarm/config/gfsd.in
+}
+
+mkcnf()
+{
+	[ $# -eq 2 ] && $1 > $2 && echo create $2
+}
+
+mkscript()
+{
+	[ $# -eq 2 ] && $1 > $2 && chmod +x $2 && echo create $2
+}
+
+#########################################################################
+
+delete_file_or_directory()
+{
+	while [ $# -gt 0 ] ; do
+		[ -e $1 ] && rmdir $1 > /dev/null 2>&1
+		if [ -e $1 ]; then
+			if [ X$FORCE = X0 ]; then
+				ABORT "$PROGNAME: $1 already exist"
+			else
+				rm -rf $1
+			fi
+		fi
+		shift
+	done
+}
+
+create_directory()
+{
+	[ $# -gt 0 ] && mkdir -p $* && echo create $*
+}
+
+[ -f $GFARM_CONF ] || ABORT "$GFARM_CONF: no such file"
+
+# spool directory
+delete_file_or_directory $SPOOL_DIRECTORY
+create_directory $SPOOL_DIRECTORY &&
+chmod 1777 $SPOOL_DIRECTORY ||
+ABORT "$PROGNAME: mkdir $SPOOL_DIRECTORY, failed"
+
+grep -v "^spool " $GFARM_CONF > $GFARM_CONF.tmp &&
+echo spool $SPOOL_DIRECTORY >> $GFARM_CONF.tmp &&
+mv $GFARM_CONF.tmp $GFARM_CONF &&
+echo $GFARM_CONF: updated ||
+ABORT "$GFARM_CONF: cannot append spool statement"
+
+# gfhost
+if [ X$CONFIG_PREFIX = X ]; then
+	if [ X$FORCE = X1 ]; then
+		gfhost -d $GFSD_HOSTNAME > /dev/null 2>&1
+	fi
+	gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
+	echo gfhost $GFSD_HOSTNAME: succeeded ||
+	echo 1>&2 "gfhost $GFSD_HOSTNAME: failed"
+else
+	echo '** 'run \'gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME\'
+	echo '** 'after copying $GFARM_CONF to ~/.gfarmrc
+fi
+
+#
+if [ X"$DO_NOT_START_SERVICE" = X1 ]; then
+	echo "$PROGNAME success"
+	exit 0
+fi
+
+if [ X$CONFIG_PREFIX = X -a X`id -u` = X0 ]; then
+	service gfsd restart ||
+	ABORT "$PROGNAME: cannot start gfsd"
+else
+	# create run script for gfsd
+	mkcnf mkcnf_config_script $GFARM_CONF_SCRIPT > /dev/null ||
+	ABORT "$PROGNAME: cannot create configuration script"
+
+	create_directory $ETC_INITD $VAR_RUND $VAR_LOCKD
+
+	mkscript mkscript_gfsd $ETC_INITD/gfsd ||
+	ABORT "$PROGNAME: cannot create $ETC_INITD/gfsd"
+
+	$ETC_INITD/gfsd restart ||
+	ABORT "$PROGNAME: cannot start gfsd"
+
+	rm -f $GFARM_CONF_SCRIPT
+fi
+error=$?
+
+[ $error = 0 ] && echo "$PROGNAME success" || echo "$PROGNAME failure"
+exit $error
