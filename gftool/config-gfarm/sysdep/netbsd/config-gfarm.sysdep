@@ -59,7 +59,7 @@ start_service()
 
 	echo "${service}=YES" |
 		sed s/-/_/g >"$RC_CONF_DIR/$service" &&
-	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
 		echo added "$service" service
 		mode=
 	else

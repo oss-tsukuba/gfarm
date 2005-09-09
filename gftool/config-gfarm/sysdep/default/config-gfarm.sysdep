@@ -54,7 +54,7 @@ start_service()
 
 	service=$1
 
-	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
 		levels=`awk '/^# +chkconfig: +/{print $3}' $RC_DIR/$service |
 			sed 's/./& /g'`
 		start=`awk '/^# +chkconfig: +/{print $4}' $RC_DIR/$service`
