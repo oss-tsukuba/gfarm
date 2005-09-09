@@ -15,6 +15,7 @@ dns_domainname()
 
 memory_size()
 {
+	# bytes -> mega bytes
 	sysctl -n hw.physmem | awk '{print int($NF/1024/1024)}'
 }
 
