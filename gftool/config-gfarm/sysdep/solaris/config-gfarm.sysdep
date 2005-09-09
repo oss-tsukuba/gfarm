@@ -15,8 +15,8 @@ dns_domainname()
 
 memory_size()
 {
-	/usr/sbin/prtconf |
-		awk '/^Memory size:/ { printf "%.0f\n", $3 * 1024 * 1024 }'
+	# mega bytes
+	/usr/sbin/prtconf | awk '/^Memory size:/ { printf "%.0f\n", $3 }'
 }
 
 number_of_cpus()

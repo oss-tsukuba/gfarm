@@ -15,8 +15,8 @@ dns_domainname()
 
 memory_size()
 {
-	vmstat -P |
-	  awk '/^Total Physical Memory = / {print "%.0f\n", $5 * 1024 * 1024}'
+	# mega bytes
+	vmstat -P | awk '/^Total Physical Memory = / {print "%.0f\n", $5 }'
 }
 
 number_of_cpus()
