@@ -76,6 +76,13 @@ display_params()
 	echo "slapd port [-p]: $SLAPD_PORT"
 	echo "gfmd port  [-m]: $GFMD_PORT"
 	echo "gfsd port  [-s]: $GFSD_PORT"
+
+	echo -n \
+	     'slapd DB cache size [-c]:' ''
+	case $SLAPD_DB in
+	bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
+	*)	echo '(this option is only available for SLAPD_DB="bdb")';;
+	esac
 	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
 	exit 0
 }
@@ -107,6 +114,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -s) shift; [ $# -ge 1 ] || usage
 		GFSD_PORT=$1
+		;;
+	  -c) shift; [ $# -ge 1 ] || usage
+		SLAPD_BDB_CACHESIZE=$1
 		;;
 
 	# control options
@@ -206,6 +216,9 @@ esac
 : ${GFARM_SCHEMA:="$LDAP_CONF_DIR/gfarm.schema"}
 : ${INITIAL_LDIF:="$LDAP_CONF_DIR/initial.ldif"}
 
+: ${SLAPD_CONF_2_0_HOOK:=""}
+: ${SLAPD_CONF_2_1_HOOK:=""}
+
 : ${SLAPD_BDB_CACHESIZE:="`memory_size | awk '{print $NF/2*1024*1024}'`"}
 : ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
 
@@ -228,6 +241,8 @@ config()
 	-e "s|@config_gfarm_slapd_hostname@|$SLAPD_HOSTNAME|" \
 	-e "s|@config_gfarm_slapd_port@|$SLAPD_PORT|" \
 	-e "s|@config_gfarm_slapd_config@|$SLAPD_CONF|" \
+	-e "s|@config_gfarm_slapd_config_2_0_hook@|$SLAPD_CONF_2_0_HOOK|" \
+	-e "s|@config_gfarm_slapd_config_2_1_hook@|$SLAPD_CONF_2_1_HOOK|" \
 	-e "s|@config_gfarm_slapd_database@|$SLAPD_DB|" \
 	-e "s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|" \
 	-e "s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|" \
@@ -312,8 +327,13 @@ create_directory \
 	"$RC_DIR" \
 	"$RUN_DIR"
 
-# create configuration files
+# this needs to be called before other "mkcnf" operations,
+# to make some directories, or to set some variables
+# (e.g. $SLAPD_CONF_2_1_HOOK, this cannot be set at sysdep_defaults,
+# because this needs to refer actual $SLAPD_DB value)
 mkcnf_gfmd_sysdep
+
+# create configuration files
 mkcnf "$GFARM_CONF"	config "$config_dir/gfarm.conf.in"
 mkcnf "$GFARM_SCHEMA"	cat "$config_dir/gfarm.schema"
 mkcnf "$INITIAL_LDIF"	config "$config_dir/initial.ldif.in"
