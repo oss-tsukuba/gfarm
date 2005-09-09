@@ -53,7 +53,7 @@ mkcnf_gfsd_sysdep()
 
 start_service()
 {
-	local service levels start kill level d
+	# local service levels start kill level d
 
 	service=$1
 

@@ -105,7 +105,7 @@ mkcnf_gfsd_sysdep()
 
 start_service_debian()
 {
-	local service
+	# local service
 
 	service=$1
 	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then
@@ -125,7 +125,7 @@ start_service_debian()
 
 start_service_redhat()
 {
-	local service
+	# local service
 
 	service=$1
 	if [ X`id -u` = X0 -a X"$CONFIG_PREFIX" = X ]; then

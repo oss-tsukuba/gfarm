@@ -167,7 +167,7 @@ config()
 
 mkcnf()
 {
-	local out
+	# local out
 
 	out=$1
 	shift
@@ -186,7 +186,7 @@ mkscript()
 
 delete_file_or_directory()
 {
-	local p
+	# local p
 
 	for p
 	do
@@ -203,7 +203,7 @@ delete_file_or_directory()
 
 create_directory()
 {
-	local d
+	# local d
 
 	for d
 	do
