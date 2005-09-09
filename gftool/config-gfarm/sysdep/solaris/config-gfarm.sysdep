@@ -39,10 +39,12 @@ config_sysdep()
 
 mkcnf_gfmd_sysdep()
 {
+	: # do nothing
 }
 
 mkcnf_gfsd_sysdep()
 {
+	: # do nothing
 }
 
 start_service()
