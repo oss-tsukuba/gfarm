@@ -170,7 +170,7 @@ sysdep_defaults
 : ${GFMD_PORT:="601"}
 : ${GFSD_PORT:="600"}
 
-: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/pg'`"}
+: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/gp'`"}
 : ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
 
 if [ -x "$ldap_prefix/sbin/slapd" ]; then
