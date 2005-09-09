@@ -719,7 +719,7 @@ gfs_cachedir(struct timeval *now)
 
 	/* assert(root != NULL); */
 	e = gfarm_metadb_path_info_get_all_foreach(mark_path, NULL);
-	if (e != NULL)
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
 		return (e);
 	sweep_nodes(root);
 	need_to_clear_cache = 0;
