@@ -80,6 +80,22 @@ mkcnf_gfarm_sysdep()
 mkcnf_gfmd_sysdep()
 {
 	mkcnf_gfarm_sysdep
+
+	case $LINUX_RC_TYPE in
+	debian)
+		# $SLAPD_CONF_2_1_HOOK cannot be set at sysdep_defaults,
+		# because this needs to refer actual $SLAPD_DB value.
+
+		# Debian uses dynamic loading for backend db module.
+		# We need "\" at the end-of-line, because this is used for
+		# s/// statement for sed.
+		# XXX: Is it really right thing to add "moduleload" always?
+
+		: ${SLAPD_CONF_2_1_HOOK:='\
+modulepath	'"$ldap_prefix/lib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+		;;
+	esac
 }
 
 mkcnf_gfsd_sysdep()

@@ -18,6 +18,8 @@ sizelimit unlimited
 # disable syslog
 loglevel 0
 
+@config_gfarm_slapd_config_2_1_hook@
+
 #######################################################################
 # database definitions
 #######################################################################
