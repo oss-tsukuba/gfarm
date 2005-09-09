@@ -64,8 +64,8 @@ start_service()
 		kill=`awk '/^# +chkconfig: +/{print $5}' $RC_DIR/$service`
 		for level in $levels; do
 			d="$RC_BASE_DIR/rc$level.d"
-			[ -d $d ] &&
-			rm -f "$d/S${start}$service" "$d/K${kill}$service" &&
+			[ -d $d ] || continue
+			rm -f "$d/S${start}$service" "$d/K${kill}$service"
 			ln -s "$RC_DIR/$service" "$d/S${start}$service" &&
 			ln -s "$RC_DIR/$service" "$d/K${kill}$service" ||
 			ABORT "cannot add $service to $d"
