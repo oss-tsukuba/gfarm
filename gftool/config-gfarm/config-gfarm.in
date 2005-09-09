@@ -285,7 +285,8 @@ delete_file_or_directory()
 	for p
 	do
 		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
-		if [ -e "$p" ]; then
+		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
+		if ls -1d "$p" >/dev/null 2>&1; then
 			if $FORCE; then
 				rm -rf "$p"
 				echo removed "$p"
@@ -303,8 +304,6 @@ create_directory()
 	for d
 	do
 		[ -d "$d" ] && continue
-		[ -e "$d" ] &&
-			ABORT "$d must be a directory, but actually it isn't"
 		if mkdir -p "$d"; then
 			echo created "$d"
 		else
