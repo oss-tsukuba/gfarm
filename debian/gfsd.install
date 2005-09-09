@@ -1,4 +1,5 @@
 debian/tmp/usr/bin/config-gfsd
+debian/tmp/usr/bin/gfarm.arch.guess
 debian/tmp/usr/bin/gfexec
 debian/tmp/usr/bin/gfsplck
 debian/tmp/usr/bin/thput-gfpio

@@ -1,4 +1,5 @@
 @PREFIX@/bin/config-gfsd
+@PREFIX@/bin/gfarm.arch.guess
 @PREFIX@/bin/gfexec
 @PREFIX@/bin/gfsplck
 @PREFIX@/bin/thput-gfpio

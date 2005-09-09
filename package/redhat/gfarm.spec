@@ -690,12 +690,13 @@ fi
 %{prefix}/sbin/gfregister
 
 %files fsnode
+%{prefix}/bin/config-gfsd
+%{prefix}/bin/gfarm.arch.guess
 %{prefix}/bin/gfexec
 %{prefix}/bin/gfsplck
 %{prefix}/bin/thput-gfpio
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
-%{prefix}/bin/config-gfsd
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/linux/debian/gfsd.in

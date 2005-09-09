@@ -1,6 +1,7 @@
 @comment $FreeBSD$
 bin/config-gfarm
 bin/config-gfsd
+bin/gfarm.arch.guess
 bin/gfarm_agent
 bin/gfcombine
 bin/gfcombine_hook
