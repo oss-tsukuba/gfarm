@@ -139,13 +139,13 @@ sysdep_defaults
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
-[ X$GFSD_HOSTNAME = X ] && ABORT 'cannot determine gfsd hostname'
+[ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname'
 
 : ${NCPU:=`number_of_cpus`}
-[ X$NCPU = X ] && ABORT 'cannot determine number of CPUs'
+[ X"$NCPU" = X ] && ABORT 'cannot determine number of CPUs'
 
 : ${ARCH:=`$prefix/bin/gfarm.arch.guess`}
-[ X$ARCH = X ] && ABORT 'cannot determine the architecture of this machine'
+[ X"$ARCH" = X ] && ABORT 'cannot determine the architecture of this machine'
 
 : ${RC_GFSD_IN="$config_dir/gfsd.in"}
 
@@ -244,7 +244,7 @@ ABORT "$GFARM_CONF: cannot append spool statement"
 mkscript $RC_DIR/gfsd	config "$RC_GFSD_IN"
 
 # gfhost
-if [ X$CONFIG_PREFIX = X ]; then
+if [ X"$CONFIG_PREFIX" = X ]; then
 	if $FORCE; then
 		gfhost -d $GFSD_HOSTNAME > /dev/null 2>&1
 	fi
