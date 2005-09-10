@@ -22,7 +22,7 @@ memory_size()
 number_of_cpus()
 {
 	LC_ALL=C /usr/sbin/psrinfo -v |
-		egrep "Status of (virtual )?processor" | wc -l
+		awk '/Status of (virtual )?processor/ {n++} END {print n}'
 }
 
 sysdep_defaults()
