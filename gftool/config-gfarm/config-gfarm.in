@@ -77,12 +77,11 @@ display_params()
 	echo "gfmd port  [-m]: $GFMD_PORT"
 	echo "gfsd port  [-s]: $GFSD_PORT"
 
-	echo -n \
-	     'slapd DB cache size [-c]:' ''
-	case $SLAPD_DB in
-	bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
-	*)	echo '(this option is only available for SLAPD_DB="bdb")';;
-	esac
+	echo 'slapd DB cache size [-c]:' `
+	  case $SLAPD_DB in
+	  bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
+	  *)	echo '(this option is only available for SLAPD_DB="bdb")';;
+	  esac`
 	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
 	exit 0
 }
