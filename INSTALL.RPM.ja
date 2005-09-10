@@ -78,6 +78,8 @@ Gfarm ファイルシステムに必要な設定を行うため，config-gfarm を実行します．
 	slapd port [-p]: 389
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
+	slapd DB cache size [-c]: 536870912 bytes
+	slapd DB type ($SLAPD_DB): bdb
 
 変更が必要な場合は [ ] のオプションで変更することができます．
 
@@ -159,8 +161,9 @@ client パッケージもインストールします．doc パッケージは任意です．
 	# config-gfsd -t /var/spool/gfarm
 	prefix [--prefix]: 
 	hostname     [-h]: amethyst.hpcc.jp
-	architecture [-a]: Linux-2.4.20-30.9-i686
+	architecture [-a]: i386-fedora3-linux
 	ncpu         [-n]: 1
+	spool directory  : /var/spool/gfarm
 
 変更が必要な場合は [ ] のオプションで変更することができます．なお，スプー
 ル・ディレクトリは，他のノードと共有されない領域を指定してください．

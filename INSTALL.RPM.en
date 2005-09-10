@@ -72,6 +72,8 @@ configuration.
 	slapd port [-p]: 389
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
+	slapd DB cache size [-c]: 536870912 bytes
+	slapd DB type ($SLAPD_DB): bdb
 
 You can modify any default parameter by the option shown in [ ].  For
 example, to change the port for slapd because there is another LDAP
@@ -156,8 +158,9 @@ spool directory.
 	# config-gfsd -t /var/spool/gfarm
 	prefix [--prefix]: 
 	hostname     [-h]: amethyst.hpcc.jp
-	architecture [-a]: Linux-2.4.20-30.9-i686
+	architecture [-a]: i386-fedora3-linux
 	ncpu         [-n]: 1
+	spool directory  : /var/spool/gfarm
 
 You can modify any default parameter by the option shown in [ ].  Note
 that the spool directory should be a non-shared area among file system
