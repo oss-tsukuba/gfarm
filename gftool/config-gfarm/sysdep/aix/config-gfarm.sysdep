@@ -24,8 +24,7 @@ memory_size()
 
 number_of_cpus()
 {
-	# XXX assume UniProcessor
-	echo 1
+	lsdev -C | grep Process | wc -l
 }
 
 sysdep_defaults()
