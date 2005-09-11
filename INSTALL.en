@@ -149,6 +149,7 @@ Gfarm filesystem, and when building sample MPI applications in this
 distribution, an MPI library is needed.
 
 Here are installation steps of the Gfarm system.
+Please use GNU make on Operating Systems other than Linux and NetBSD.
 
 	% ./configure [options]
 	% make
