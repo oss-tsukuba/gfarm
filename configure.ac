@@ -653,15 +653,36 @@ AC_CHECK_SIZEOF(long long)
 ### socklen_t is available?
 
 AC_MSG_CHECKING([socklen_t])
-AC_TRY_LINK([
-#include <sys/types.h>
-#include <sys/socket.h>],[
-int rv, s;
-struct sockaddr addr;
-socklen_t len;
 
-rv = bind(s, &addr, len);
-], [ax_cv_have_socklen_t=yes], [ax_cv_have_socklen_t=no])
+case $host_os_nickname in
+hpux)
+  # There are two ways to deal with socklen_t on HP-UX 11i.
+  # 1. Use system supplied socklen_t. 
+  #   This requires CPPFLAGS=-D_XOPEN_SOURCE_EXTENDED and LIBS=-lxnet.
+  # 2. Use int.
+  #   This is incompatible with both -D_XOPEN_SOURCE_EXTENDED and -lxnet.
+  # socklen_t had been also usable for the case 2 on HP-UX before LP64 support.
+  # But this is no longer true on LP64 HP-UX, because socklen_t is now always
+  # size_t on HP-UX, and size_t is uint64_t on LP64 systems. The problem is
+  # that 1 and 2 are incompatible, and cannot be linked each other.
+  # We choose 2 here, because that seems to be the way most third party
+  # libraries are using now.
+  ax_cv_have_socklen_t=no # don't try linking, it's linkable, but doesn't work.
+  ;;
+
+*)
+  AC_TRY_LINK([
+# include <sys/types.h>
+# include <sys/socket.h>],[
+  int rv, s = socket(PF_INET, SOCK_STREAM, 0);
+  struct sockaddr addr;
+  socklen_t len;
+
+  rv = getpeername(s, &addr, &len);
+  ], [ax_cv_have_socklen_t=yes], [ax_cv_have_socklen_t=no])
+  ;;
+esac
+
 if test "$ax_cv_have_socklen_t" = yes; then
   AC_MSG_RESULT([yes])
 else
