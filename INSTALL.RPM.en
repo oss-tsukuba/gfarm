@@ -259,7 +259,7 @@ o LD_PRELOAD environment variable
 
 Existing dynamically linked executables on every client node can
 access the Gfarm file system by specifying LD_PRELOAD environment
-variable.
+variable. Please look at README.hook.en for detail.
 
 When the login shell is bash, add the following to .bashrc,
 

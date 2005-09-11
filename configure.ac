@@ -632,9 +632,6 @@ AC_MSG_RESULT([using \"${ldap_includes} ${ldap_libs}\" for ldap])
 CPPFLAGS="$CPPFLAGS_SAVE"
 LIBS="$LIBS_SAVE"
 
-ldap_prefix="$with_openldap"
-
-AC_SUBST(ldap_prefix)
 AC_SUBST(ldap_includes)
 AC_SUBST(ldap_libs)
 

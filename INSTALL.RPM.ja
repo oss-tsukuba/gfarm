@@ -72,6 +72,7 @@ Gfarm ファイルシステムに必要な設定を行うため，config-gfarm を実行します．
 	# config-gfarm -t
 	prefix [--prefix]: 
 	domain name  [-d]: apgrid.org
+	openldap prefix     [-P]: /usr
 	openldap version    [-V]: 2.1
 	metadata directory  [-l]: /var/gfarm-ldap
 	metaserver hostname [-h]: gfms.apgrid.org
@@ -250,7 +251,7 @@ glibc-not-hidden パッケージをインストールします．
 
 既存のアプリケーションから Gfarm ファイルシステムを利用するために，（ク
 ライアントとなるファイルシステムノードを含む）全クライアントノードで
-LD_PRELOAD 環境変数を設定します．
+LD_PRELOAD 環境変数を設定します．詳しくは README.hook.ja をご覧ください．
 
 起動シェルが bash の場合は，.bashrc に以下を記述します．
 

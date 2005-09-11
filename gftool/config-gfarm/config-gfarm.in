@@ -2,9 +2,6 @@
 #
 # $Id$
 
-PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH
-export PATH
-
 ${DEBUG:="false"} && set -xu
 
 # Gfarm installation directory
@@ -13,8 +10,10 @@ sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
 globus_location="@globus_location@"
 
-# OpenLDAP installation directory
-ldap_prefix="@ldap_prefix@"
+#
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+slapadd_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb
 
 PROGNAME=`basename $0`
 
@@ -66,10 +65,30 @@ ABORT()
 	exit 1
 }
 
+sanity()
+{
+	rv=0
+	if [ ! -x "$OPENLDAP_SLAPADD" ]; then
+		echo "WARNING: command not found: slapadd" >&2
+		rv=1
+	fi
+	if [ ! -x "$OPENLDAP_LIBEXEC/slapd" ]; then
+		echo "WARNING: command not found: slapd" >&2
+		rv=1
+	fi
+	if [ ! -f "$OPENLDAP_ETC/schema/core.schema" ]; then
+		echo "WARNING: file not found:" \
+			"$OPENLDAP_ETC/schema/core.schema" >&2
+		rv=1
+	fi
+	return $rv
+}
+
 display_params()
 {
 	echo "prefix [--prefix]: $CONFIG_PREFIX"
 	echo "domain name  [-d]: $DOMAIN_NAME"
+	echo "openldap prefix     [-P]: $OPENLDAP_PREFIX"
 	echo "openldap version    [-V]: $OPENLDAP_VERSION"
 	echo "metadata directory  [-l]: $LDAP_DATA_DIR"
 	echo "metaserver hostname [-h]: $SLAPD_HOSTNAME"
@@ -83,8 +102,14 @@ display_params()
 	  *)	echo '(this option is only available for SLAPD_DB="bdb")';;
 	  esac`
 	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
+
+	sanity
 	exit 0
 }
+
+#
+# parse arguments
+#
 
 while [ $# -gt 0 ] ; do
 	case $1 in
@@ -95,6 +120,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -d) shift; [ $# -ge 1 ] || usage
 		DOMAIN_NAME=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		OPENLDAP_PREFIX=$1
 		;;
 	  -V) shift; [ $# -ge 1 ] || usage
 		OPENLDAP_VERSION=$1
@@ -135,6 +163,41 @@ while [ $# -gt 0 ] ; do
 	shift
 done
 
+#
+# search default $OPENLDAP_PREFIX
+#
+
+if [ -z "${OPENLDAP_PREFIX-}" ]; then
+	OIFS=$IFS
+	IFS=":"
+	set $slapadd_path
+	IFS=$OIFS
+	for d
+	do
+		if [ -x "$d/slapadd" ]; then
+			OPENLDAP_PREFIX=`dirname "$d"`
+			: ${OPENLDAP_SLAPADD:="$d/slapadd"}
+			break
+		fi
+	done
+fi
+if [ -z "${OPENLDAP_PREFIX-}" ]; then
+	OIFS=$IFS
+	IFS=":"
+	set $slapadd_path
+	IFS=$OIFS
+	for d
+	do
+		b=`dirname "$d"`
+		if [ -x "$b/sbin/slapadd" ]; then
+			OPENLDAP_PREFIX=$b
+			: ${OPENLDAP_SLAPADD:="$b/sbin/slapadd"}
+			break
+		fi
+	done
+fi
+
+
 . $config_dir/config-gfarm.sysdep
 
 #
@@ -172,29 +235,35 @@ sysdep_defaults
 : ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/gp'`"}
 : ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
 
-if [ -x "$ldap_prefix/sbin/slapd" ]; then
-	: ${OPENLDAP_LIBEXEC:="$ldap_prefix/sbin"}
+if [ -x "$OPENLDAP_PREFIX/sbin/slapd" ]; then
+	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/sbin"}
 else
-	: ${OPENLDAP_LIBEXEC:="$ldap_prefix/libexec"}
+	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/libexec"}
 fi
 
-if [ -d "$ldap_prefix/etc/openldap" ]; then
-	: ${OPENLDAP_ETC="$ldap_prefix/etc/openldap"}
+if [ -d "$OPENLDAP_PREFIX/etc/openldap" ]; then
+	: ${OPENLDAP_ETC:="$OPENLDAP_PREFIX/etc/openldap"}
 else
-	: ${OPENLDAP_ETC="/etc/openldap"}
+	: ${OPENLDAP_ETC:="/etc/openldap"}
 fi
+
+: ${OPENLDAP_SLAPADD:="$OPENLDAP_PREFIX/sbin/slapadd"}
 
 if [ -z "${OPENLDAP_VERSION-}" ]; then
-	OPENLDAP_VERSION=`"$ldap_prefix/bin/ldapsearch" -V 2>&1 |
-		sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
-	if [ -z "$OPENLDAP_VERSION" ]
-	then
-		OPENLDAP_VERSION="2.0"
-	elif expr "$OPENLDAP_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' >/dev/null
-	then
-		:
+	if [ -x "$OPENLDAP_PREFIX/bin/ldapsearch" ]; then
+		OPENLDAP_VERSION=`"$OPENLDAP_PREFIX/bin/ldapsearch" -V 2>&1 |
+		  sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+		if [ -z "$OPENLDAP_VERSION" ]
+		then
+			OPENLDAP_VERSION="2.0" # assumes older version
+		elif expr "$OPENLDAP_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
+				>/dev/null; then
+			:
+		else
+			OPENLDAP_VERSION="unknown"
+		fi
 	else
-		OPENLDAP_VERSION="2.1"
+		OPENLDAP_VERSION="unknown"
 	fi
 fi
 
@@ -226,6 +295,8 @@ esac
 
 # -t option; display parameters
 $DISPLAY_PARAMS && display_params
+
+sanity || ABORT "aborted"
 
 #########################################################################
 
@@ -342,8 +413,9 @@ bdb)	mkcnf "$LDAP_DATA_DIR/DB_CONFIG" config "$config_dir/bdb.DB_CONFIG.in"
 esac
 
 # add initial data
-slapadd -f $SLAPD_CONF -l $INITIAL_LDIF && echo add initial metadata ||
-ABORT "cannot add initial metadata"
+"${OPENLDAP_SLAPADD}" -f $SLAPD_CONF -l $INITIAL_LDIF &&
+	echo add initial metadata ||
+	ABORT "cannot add initial metadata"
 
 # create run scripts
 mkscript "$RC_DIR/gfarm-slapd"	config "$RC_GFARM_SLAPD_IN"
