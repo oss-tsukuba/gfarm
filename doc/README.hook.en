@@ -15,6 +15,8 @@ called.
 
 Every existing program can access Gfarm file system without any
 modification.
+Although Solaris version has a restriction, that is directory
+access via readdir(3) doesn't actually work.
 
 2) AIX
 ------
