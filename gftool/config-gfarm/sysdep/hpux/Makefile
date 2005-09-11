@@ -13,4 +13,13 @@ DATA =	$(srcdir)/config-gfarm.sysdep \
 	$(srcdir)/../default/gfmd.in \
 	$(srcdir)/../default/gfsd.in
 
+PROGRAM = getmemsize
+SRCS = $(PROGRAM).c
+OBJS = $(PROGRAM).o
+CFLAGS = $(COMMON_CFLAGS)
+LDLIBS = $(COMMON_LDLIBS) $(LIBS)
+
+all: $(PROGRAM)
+
+include $(top_srcdir)/makes/prog.mk
 include $(top_srcdir)/makes/data.mk
