@@ -206,6 +206,13 @@ fi
 
 : ${CONFIG_PREFIX:=}
 
+if [ -f "$OPENLDAP_PREFIX/etc/openldap/schema/core.schema" ]; then
+	: ${OPENLDAP_ETC:="$OPENLDAP_PREFIX/etc/openldap"}
+fi
+if [ -x "$OPENLDAP_PREFIX/sbin/slapadd" ]; then
+	: ${OPENLDAP_SLAPADD:="$OPENLDAP_PREFIX/sbin/slapadd"}
+fi
+
 # NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
@@ -235,19 +242,13 @@ sysdep_defaults
 : ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/gp'`"}
 : ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
 
+: ${OPENLDAP_ETC:="/etc/openldap"}
+
 if [ -x "$OPENLDAP_PREFIX/sbin/slapd" ]; then
 	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/sbin"}
 else
 	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/libexec"}
 fi
-
-if [ -d "$OPENLDAP_PREFIX/etc/openldap" ]; then
-	: ${OPENLDAP_ETC:="$OPENLDAP_PREFIX/etc/openldap"}
-else
-	: ${OPENLDAP_ETC:="/etc/openldap"}
-fi
-
-: ${OPENLDAP_SLAPADD:="$OPENLDAP_PREFIX/sbin/slapadd"}
 
 if [ -z "${OPENLDAP_VERSION-}" ]; then
 	if [ -x "$OPENLDAP_PREFIX/bin/ldapsearch" ]; then

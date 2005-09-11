@@ -46,7 +46,9 @@ sysdep_defaults()
 	: ${SLAPD_BDB_NCACHE:="1"} # 0/1: contiguous memory
 
 	case $LINUX_RC_TYPE in
-	debian)	: ${OPENLDAP_ETC=$CONFIG_PREFIX/etc/ldap}
+	debian)	if [ -f /etc/ldap/schema/core.schema ]; then
+			: ${OPENLDAP_ETC:=/etc/ldap}
+		fi
 		: ${LDAP_DATADIRECTORY=$CONFIG_PREFIX/var/lib/gfarm-ldap}
 		;;
 	redhat)	: ${RC_LOCK_DIR:="$CONFIG_PREFIX/var/lock/subsys"}
