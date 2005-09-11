@@ -182,16 +182,25 @@ shell, just execute the shell again.
 Now, you can change the current working directory to /gfarm, and you
 can use filename completion in the shell.
 
-	% cd /gfarm
+	bash$ cd /gfarm
 
 Currently, program execution and file creation by a child process via
-a redirection can be supported on a file system node.  (This
-limitation is not applied to GfarmFS-FUSE.)
+a redirection is not supported on a client node, but only supported on
+a file system node.  (This limitation is not applied to GfarmFS-FUSE.)
+
+However, accesses except program invocation, i.e. creating a file with
+execution bits, and/or read a file which has execution bits, are
+possible even on a client node, by setting an environment variable
+as follows, or configuring ~/.gfarmrc. Please look at gfarm.conf(5)
+man page about the ~/.gfarmrc configuration.
+
+	bash$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
+
 
 To support file input via a redirection, you need to specify
 GFARM_FLAGS to enable on-demand replication feature.
 
-	% export GFARM_FLAGS=r
+	bash$ export GFARM_FLAGS=r
 
 In this case, every file will be replicated to the local file system
 on demand instead of accessing remotely.  For example, 'tar zxfp
