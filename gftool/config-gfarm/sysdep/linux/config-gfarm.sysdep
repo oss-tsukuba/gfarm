@@ -91,12 +91,14 @@ mkcnf_gfmd_sysdep()
 		# Debian uses dynamic loading for backend db module.
 		# We need "\" at the end-of-line, because this is used for
 		# s/// statement for sed.
-		# XXX: Is it really right thing to add "moduleload" always?
 
-		: ${SLAPD_CONF_2_1_HOOK:='\
+		case $OPENLDAP_PREFIX in
+		/usr)
+			: ${SLAPD_CONF_2_1_HOOK:='\
 modulepath	'"$OPENLDAP_PREFIX/lib/ldap"'\
 moduleload	back_'"$SLAPD_DB"}
-		;;
+			;;
+		esac;;
 	esac
 }
 
