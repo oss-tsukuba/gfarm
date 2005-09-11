@@ -287,7 +287,7 @@ esac
 : ${SLAPD_CONF_2_0_HOOK:=""}
 : ${SLAPD_CONF_2_1_HOOK:=""}
 
-: ${SLAPD_BDB_CACHESIZE:="`memory_size | awk '{print $NF/2*1024*1024}'`"}
+: ${SLAPD_BDB_CACHESIZE:="`memory_size|awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
 : ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
 
 : ${RC_GFARM_SLAPD_IN="$config_dir/gfarm-slapd.in"}
