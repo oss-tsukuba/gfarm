@@ -222,7 +222,12 @@ sysdep_defaults
 : ${DISPLAY_PARAMS:=false}
 
 : ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
-: ${GFARM_CONF_DIR:="$CONFIG_PREFIX$sysconfdir"}
+
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
 
 : ${FQ_HOSTNAME:=`fq_hostname`}
