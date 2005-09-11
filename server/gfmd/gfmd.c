@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <gfarm/gfarm_config.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -20,9 +19,13 @@
 #include <libgen.h>
 #include <pwd.h>
 #include <grp.h>
+
+#include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include "gfutil.h"
+
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "sockopt.h"

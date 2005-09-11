@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <gfarm/gfarm_config.h>
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
