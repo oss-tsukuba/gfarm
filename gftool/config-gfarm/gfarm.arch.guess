@@ -29,7 +29,7 @@ hp-ux)	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
 irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE;;
 linux)	ARCH=
 	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release \
-		-a `ls /etc/*-release | wc -l` = 1 ]
+		-a `ls /etc/*-release 2>/dev/null | wc -l` = 1 ]
 	then
 		# /etc/redhat-release:
 		#	Red Hat Linux release 8.0 (Psyche)
