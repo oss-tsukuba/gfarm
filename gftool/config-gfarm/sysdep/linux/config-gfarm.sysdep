@@ -82,24 +82,6 @@ mkcnf_gfarm_sysdep()
 mkcnf_gfmd_sysdep()
 {
 	mkcnf_gfarm_sysdep
-
-	case $LINUX_RC_TYPE in
-	debian)
-		# $SLAPD_CONF_2_1_HOOK cannot be set at sysdep_defaults,
-		# because this needs to refer actual $SLAPD_DB value.
-
-		# Debian uses dynamic loading for backend db module.
-		# We need "\" at the end-of-line, because this is used for
-		# s/// statement for sed.
-
-		case $OPENLDAP_PREFIX in
-		/usr)
-			: ${SLAPD_CONF_2_1_HOOK:='\
-modulepath	'"$OPENLDAP_PREFIX/lib/ldap"'\
-moduleload	back_'"$SLAPD_DB"}
-			;;
-		esac;;
-	esac
 }
 
 mkcnf_gfsd_sysdep()

@@ -285,8 +285,21 @@ esac
 : ${GFARM_SCHEMA:="$LDAP_CONF_DIR/gfarm.schema"}
 : ${INITIAL_LDIF:="$LDAP_CONF_DIR/initial.ldif"}
 
-: ${SLAPD_CONF_2_0_HOOK:=""}
-: ${SLAPD_CONF_2_1_HOOK:=""}
+# Debian uses dynamic loading for backend db module.
+# (e.g. /usr/lib/ldap/back_bdb.so)
+# We need "\" at the end-of-line, because this is used for
+# s/// statement for sed.
+if [ -f "$OPENLDAP_PREFIX/lib/openldap/back_$SLAPD_DB.so" ]; then
+	: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$OPENLDAP_PREFIX/openlib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+elif [ -f "$OPENLDAP_PREFIX/lib/ldap/back_$SLAPD_DB.so" ]; then
+	: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$OPENLDAP_PREFIX/lib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+fi
+
+: ${SLAPD_CONF_HOOK:=""}
 
 : ${SLAPD_BDB_CACHESIZE:="`memory_size|awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
 : ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
@@ -312,8 +325,7 @@ config()
 	-e "s|@config_gfarm_slapd_hostname@|$SLAPD_HOSTNAME|" \
 	-e "s|@config_gfarm_slapd_port@|$SLAPD_PORT|" \
 	-e "s|@config_gfarm_slapd_config@|$SLAPD_CONF|" \
-	-e "s|@config_gfarm_slapd_config_2_0_hook@|$SLAPD_CONF_2_0_HOOK|" \
-	-e "s|@config_gfarm_slapd_config_2_1_hook@|$SLAPD_CONF_2_1_HOOK|" \
+	-e "s|@config_gfarm_slapd_config_hook@|$SLAPD_CONF_HOOK|" \
 	-e "s|@config_gfarm_slapd_database@|$SLAPD_DB|" \
 	-e "s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|" \
 	-e "s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|" \
@@ -397,10 +409,8 @@ create_directory \
 	"$RC_DIR" \
 	"$RUN_DIR"
 
-# this needs to be called before other "mkcnf" operations,
-# to make some directories, or to set some variables
-# (e.g. $SLAPD_CONF_2_1_HOOK, this cannot be set at sysdep_defaults,
-# because this needs to refer actual $SLAPD_DB value)
+# this needs to be called before other "mkcnf" operations
+# to make some directories.
 mkcnf_gfmd_sysdep
 
 # create configuration files
