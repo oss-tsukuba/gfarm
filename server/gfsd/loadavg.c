@@ -65,6 +65,29 @@ getloadavg(double *loadavg, int n)
 }
 #endif /* __osf__ */
 
+#if defined(__hpux)
+
+#include <sys/param.h>
+#include <sys/pstat.h>
+
+int
+getloadavg(double *loadavg, int n)
+{
+	struct pst_dynamic psd;
+
+	if (pstat_getdynamic (&psd, sizeof(psd), (size_t)1, 0) == -1)
+		return (-1);
+	if (n > 0)
+		loadavg[0] = psd.psd_avg_1_min;
+	if (n > 1)
+		loadavg[1] = psd.psd_avg_5_min;
+	if (n > 2)
+		loadavg[2] = psd.psd_avg_15_min;
+	return (n > 3 ? 3 : n);
+}
+
+#endif /* __hpux */
+
 #endif /* !HAVE_GETLOADAVG */
 
 #ifdef LOADAVG_TEST
