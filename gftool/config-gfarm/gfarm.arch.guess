@@ -28,8 +28,9 @@ hp-ux)	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
 	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`;;
 irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE;;
 linux)	ARCH=
-	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release \
-		-a `ls /etc/*-release 2>/dev/null | wc -l` = 1 ]
+	i=`ls /etc/*-release 2>/dev/null | wc -l`
+	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release ] &&
+		( [ $i -eq 1 ] || [ -f /etc/lsb-release -a $i -eq 2 ] )
 	then
 		# /etc/redhat-release:
 		#	Red Hat Linux release 8.0 (Psyche)
@@ -72,6 +73,8 @@ linux)	ARCH=
 		#	Gentoo Base System version 1.4.16
 		# /etc/lfs-release:
 		#	SVN-20040910
+		# /etc/lsb-release (version number of Linux Standard Base):
+		#	LSB_VERSION="1.2.0"
 		# /etc/mandrake-release:
 		#	Mandrake Linux release 8.1 (Vitamin) for i586
 		# /etc/release
@@ -94,7 +97,9 @@ linux)	ARCH=
 		#	Vine Linux 3.0 (VineSeed) (Valandraud)
 		# /etc/yellowdog-release: ???
 		for i in /etc/*-release; do
-			if [ ! -h $i -a -f $i -a $i != /etc/redhat-release ]
+			if [ ! -h $i -a -f $i \
+				-a $i != /etc/redhat-release \
+				-a $i != /etc/lsb-release ]
 			then
 				ARCH=$MACHINE-`echo $i |
 					sed -e 's|^/etc/||' \
