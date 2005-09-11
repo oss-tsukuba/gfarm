@@ -16,8 +16,14 @@
 #
 # See slapd(8) for more flags
 #
-
-. "/usr/local/etc/rc.subr"
+if [ -f /usr/local/etc/rc.subr ]; then
+	. /usr/local/etc/rc.subr
+elif [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+else
+	echo "$0: abort: rc.subr not found"
+	exit 2
+fi
 
 FILE=gfarm-slapd
 CONF="@config_gfarm_slapd_config@"

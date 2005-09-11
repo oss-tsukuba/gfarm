@@ -14,7 +14,14 @@
 # gfmd_flags (str):        Set to "" by default.
 #                             Extra flags passed to start command
 #
-. "/usr/local/etc/rc.subr"
+if [ -f /usr/local/etc/rc.subr ]; then
+	. /usr/local/etc/rc.subr
+elif [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+else
+	echo "$0: abort: rc.subr not found"
+	exit 2
+fi
 
 CONF="@config_gfarm_gfarm_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
