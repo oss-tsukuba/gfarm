@@ -82,7 +82,10 @@ server running, you can change the port by the -p option.
 	# config-gfarm -t -p 10389
 
 'prefix' is used to configure several Gfarm file systems or to
-configure it in user privilege.
+configure it in user privilege. It makes all configuration files
+generated under the specified directory.
+Note that if you want to use Gfarm in user privilege, you have to
+specify 1024 or higher values as the port numbers.
 
 Note: If you are using an openldap server version 2.0 series or
       earlier, we strongly recommend to use the version 2.1 series or
