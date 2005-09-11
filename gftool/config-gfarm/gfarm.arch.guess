@@ -24,8 +24,7 @@ aix)	if [ -x /usr/bin/oslevel ]; then
 	else
 		ARCH="$MACHINE-ibm-$KERNEL`uname -v`.$RELEASE"
 	fi;;
-hp-ux)	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
-	case `getconf SC_CPU_VERSION 2>/dev/null` in
+hp-ux)	case `getconf SC_CPU_VERSION 2>/dev/null` in
 	523)	MACHINE=hppa1.0;;
 	528)	MACHINE=hppa1.1;;
 	532)	MACHINE=hppa2.0;;
@@ -34,6 +33,7 @@ hp-ux)	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
 		*) MACHINE=m68k;;
 		esac
 	esac
+	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
 	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`";;
 irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE";;
 linux)	ARCH=
