@@ -22,12 +22,11 @@ all:
 include $(top_srcdir)/makes/subdir.mk
 
 post-distclean-hook:
-	rm -f config.log config.status config.cache \
+	-rm -rf autom4te.cache
+	rm -f config.log config.status config.cache libtool \
 		$(INC_BUILDDIR)/gfarm_config.h \
 		Makefile makes/config.mk makes/install-doc \
+		gftool/config-gfarm/config-gfarm \
+		gftool/config-gfarm/config-gfsd \
 		package/solaris/gfmd package/solaris/gfsd \
-		package/redhat/gfmd package/redhat/gfsd \
-		package/redhat/config/config-gfarm \
-		package/redhat/config/config-gfsd \
-		libtool
-	-rm -rf autom4te.cache
+		package/redhat/gfmd package/redhat/gfsd
