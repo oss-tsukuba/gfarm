@@ -43,7 +43,7 @@ gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 }
 
 char *
-gfarm_hostspec_af_inet4_new(gfarm_int32_t addr, gfarm_int32_t mask,
+gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
