@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.2
-%define rel	4
+%define rel	5
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -59,6 +59,7 @@ Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
 Patch0: gfarm-1.2-patch1.diff
 Patch1: gfarm-1.2-patch2.diff
+Patch2: gfarm-1.2-patch3.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology
@@ -150,6 +151,7 @@ mkdir -p $RPM_BUILD_ROOT
 #%patch -p1
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 ./configure --prefix=%{prefix} \
