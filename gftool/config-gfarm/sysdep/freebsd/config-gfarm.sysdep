@@ -26,8 +26,10 @@ number_of_cpus()
 
 sysdep_defaults()
 {
-	: ${RC_DIR:="$CONFIG_PREFIX/usr/local/etc/rc.d"}
-	: ${RC_CONF_DIR:="$CONFIG_PREFIX/etc/rc.conf.d"}
+	if [ X"$CONFIG_PREFIX" = X ]; then
+		: ${RC_DIR:="/usr/local/etc/rc.d"}
+	fi
+	: ${RC_DIR:="$CONFIG_PREFIX/etc/rc.d"}
 }
 
 config_sysdep()
@@ -48,14 +50,14 @@ mkcnf_gfsd_sysdep()
 
 start_service()
 {
-	# local service
+	# local service mode
 
 	service=$1
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		create_directory "${RC_CONF_DIR}"
+		create_directory "/etc/rc.conf.d"
 		echo "${service}_enable=\"YES\"" |
-			sed s/-/_/g >"$RC_CONF_DIR/$service" ||
+			sed s/-/_/g >"/etc/rc.conf.d/$service" ||
 			ABORT "cannot add $service service"
 		echo added "$service" service
 		mode=
