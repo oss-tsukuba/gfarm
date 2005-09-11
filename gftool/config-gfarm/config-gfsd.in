@@ -61,6 +61,16 @@ ABORT()
 	exit 1
 }
 
+sanity()
+{
+	rv=0
+	if [ ! -x "$prefix/bin/gfhost" ]; then
+		echo "WARNING: command not found: $prefix/bin/gfhost" >&2
+		rv=1
+	fi
+	return $rv
+}
+
 display_params()
 {
 	echo "prefix [--prefix]: $CONFIG_PREFIX"
@@ -68,6 +78,8 @@ display_params()
 	echo "architecture [-a]: $ARCH"
 	echo "ncpu         [-n]: $NCPU"
 	echo "spool directory  : $SPOOL_DIRECTORY"
+
+	sanity
 	exit 0
 }
 
@@ -156,6 +168,8 @@ fi
 
 # -t option; display parameters
 $DISPLAY_PARAMS && display_params
+
+sanity || ABORT "aborted"
 
 #########################################################################
 
@@ -249,17 +263,16 @@ ABORT "$GFARM_CONF: cannot append spool statement"
 mkscript $RC_DIR/gfsd	config "$RC_GFSD_IN"
 
 # gfhost
-if [ X"$CONFIG_PREFIX" = X ]; then
-	if $FORCE; then
-		gfhost -d $GFSD_HOSTNAME > /dev/null 2>&1
-	fi
-	gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
-	echo gfhost $GFSD_HOSTNAME: succeeded ||
-	echo >&2 "gfhost $GFSD_HOSTNAME: failed"
-else
-	echo '** 'run \'gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME\'
-	echo '** 'after copying $GFARM_CONF to ~/.gfarmrc
+if [ X"$CONFIG_PREFIX" != X ]; then
+	GFARM_CONFIG_FILE="$GFARM_CONF"
+	export GFARM_CONFIG_FILE
 fi
+if $FORCE; then
+	"$prefix/bin/gfhost" -d $GFSD_HOSTNAME > /dev/null 2>&1
+fi
+"$prefix/bin/gfhost" -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
+echo gfhost $GFSD_HOSTNAME: succeeded ||
+echo >&2 "gfhost $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
 	if start_service gfsd; then
