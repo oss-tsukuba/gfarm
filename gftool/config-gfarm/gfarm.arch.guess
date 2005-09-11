@@ -25,8 +25,17 @@ aix)	if [ -x /usr/bin/oslevel ]; then
 		ARCH="$MACHINE-ibm-$KERNEL`uname -v`.$RELEASE"
 	fi;;
 hp-ux)	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
-	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`;;
-irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE;;
+	case `getconf SC_CPU_VERSION 2>/dev/null` in
+	523)	MACHINE=hppa1.0;;
+	528)	MACHINE=hppa1.1;;
+	532)	MACHINE=hppa2.0;;
+	'')	case $MACHINE in
+		9000/[678][0-9][0-9]) MACHINE=hppa;;
+		*) MACHINE=m68k;;
+		esac
+	esac
+	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`";;
+irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE";;
 linux)	ARCH=
 	i=`ls /etc/*-release 2>/dev/null | wc -l`
 	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release ] &&
@@ -37,12 +46,15 @@ linux)	ARCH=
 		#	Red Hat Linux release 9 (Shrike)
 		#	Red Hat Linux Advanced Server release 2.1AS (Pensacola)
 		#	Red Hat Enterprise Linux WS release 4 (Nahant)
-		ARCH=$MACHINE-redhat`awk 'NR == 1 {
+		#	Red Hat Enterprise Linux ES release 4 (Nahant Update 1)
+		ARCH=$MACHINE-redhat`
+		sed 's/([^()]*) *$//' /etc/redhat-release |
+		awk 'NR == 1 {
 			if ($3 != "Linux") {
 			  printf "%c%c", substr($3,1,1), substr($4,1,1)
 			}
-			print $(NF-1)
-		}' /etc/redhat-release`-$KERNEL
+			print $NF
+		}'`-$KERNEL
 	fi
 	if [ X"$ARCH"  = X ]; then
 		# /etc/debian_version: 3.0
@@ -61,6 +73,7 @@ linux)	ARCH=
 		# /etc/SuSE-release:
 		#	SuSE Linux 8.1 (i386)
 		#	SuSE SLES-8 (AMD64)
+		#	SUSE LINUX Enterprise Server 9 (i586)
 		# /etc/arch-release:
 		#	Arch Linux 0.7 (Wombat)
 		# /etc/bluepoint-release: ???
