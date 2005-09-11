@@ -16,7 +16,7 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	mode_t mode;
 	int filedes;
 	struct gfs_stat gs;
-	int is_directory, path_exist, save_errno;
+	int is_directory, save_errno;
 	int nf = -1, np;
 
 	va_start(ap, oflag);
@@ -41,12 +41,10 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	else
 		e = gfs_stat(url, &gs);
 	if (e == NULL) {
-		path_exist = 1;
 		is_directory = GFARM_S_ISDIR(gs.st_mode);
 		gfs_stat_free(&gs);
 	} else {
 		/* XXX - metadata may be incomplete. anyway, continue. */
-		path_exist = 0;
 		/* XXX - metadata of a directory should not be imcomplete */
 		is_directory = 0;
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)

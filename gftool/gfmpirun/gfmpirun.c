@@ -65,7 +65,7 @@ main(argc, argv)
 {
 	gfarm_stringlist input_list, output_list, arg_list, option_list;
 	int command_index;
-	int pid, status;
+	int status;
 	int i, nhosts, job_id, nfrags, save_errno;
 	char *e, **hosts;
 	static char template[] = "/tmp/mpXXXXXX";
@@ -328,7 +328,7 @@ skip_opt: ;
 	gfarm_stringlist_cat(&arg_list, &argv[command_index + 1]);
 	gfarm_stringlist_add(&arg_list, NULL);
 
-	switch (pid = fork()) {
+	switch (fork()) {
 	case 0:
 		execvp("mpirun", GFARM_STRINGLIST_STRARRAY(arg_list));
 		perror("mpirun");

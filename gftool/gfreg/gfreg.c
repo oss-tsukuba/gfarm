@@ -425,8 +425,6 @@ register_directory(int is_dest_dir, char *gfarm_url, char *section,
 		}
 	}
 	for (i = 0; i < gfarm_stringlist_length(&file_list); i++) {
-		int use_file_mode;
-		gfarm_mode_t file_mode_dummy;
 		char *src_file_name;
 		
 		if (!concat_dir_name(filename,
@@ -439,7 +437,7 @@ register_directory(int is_dest_dir, char *gfarm_url, char *section,
 			return;
 		register_file(target_url, section,
 			 hostname, src_file_name,
-			 use_file_mode = 0, file_mode_dummy = 0000);
+			 /* use_file_mode */ 0, /* dummy file_mode */ 0000);
 		free(src_file_name);
 		free(target_url);
 	}
@@ -1003,12 +1001,10 @@ main(int argc, char *argv[])
 		}		
 		/* XXX - need to register in parallel? */
 		for (i = 0; i < argc; i++) {
-			int use_file_mode;
-
 			register_fragment(is_dest_dir, gfarm_url,
 			    i, nfragments,
 			    hostname != NULL ? hostname : hosts[i], argv[i],
-			    use_file_mode = 1, file_mode);
+			    /* use_file_mode */ 1, file_mode);
 		}
 		if (hostname == NULL)
 			gfarm_strings_free_deeply(nfragments, hosts);

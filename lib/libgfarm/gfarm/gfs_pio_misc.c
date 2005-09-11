@@ -227,8 +227,6 @@ gfs_access(const char *gfarm_url, int mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
-	gfarm_mode_t stat_mode;
-	int stat_nsections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -237,8 +235,6 @@ gfs_access(const char *gfarm_url, int mode)
 	if (e != NULL)
 		goto free_gfarm_file;
 
-	stat_mode = pi.status.st_mode;
-	stat_nsections = pi.status.st_nsections;
 	e = gfarm_path_info_access(&pi, mode);
 	gfarm_path_info_free(&pi);
 
@@ -692,7 +688,7 @@ rename_file_spool(
 	struct gfarm_file_section_copy_info **copies)
 {
 	int i, j;
-	char *e, *e2;
+	char *e;
 	char *from_path_section, *to_path_section;
 	struct gfarm_file_section_copy_info new_copy;
 	struct gfs_connection *gfs_server;
@@ -778,9 +774,9 @@ rename_file_spool(
 	if (ok) {
 		e = NULL;
 	} else {  /* unlink new spool file */
-		e2 = rename_clean_spool(to_pathname,
-					nsection, sections,
-					ncopy, copies);
+		/* ignore error code here */
+		rename_clean_spool(to_pathname, nsection, sections,
+		    ncopy, copies);
 	}
 	return (e);
 }

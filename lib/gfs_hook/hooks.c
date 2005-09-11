@@ -896,13 +896,12 @@ chdir(const char *path)
 int
 __fchdir(int filedes)
 {
-	GFS_File gf;
 	const char *e;
 	int r;
 
 	_gfs_hook_debug_v(fprintf(stderr, "Hooking __fchdir(%d)\n", filedes));
 
-	if ((gf = gfs_hook_is_open(filedes)) == NULL) {
+	if (gfs_hook_is_open(filedes) == NULL) {
 		if ((r = syscall(SYS_fchdir, filedes)) == 0)
 			gfs_hook_set_cwd_is_gfarm(0);
 		return (r);

@@ -113,7 +113,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	char *canonical_name_option, struct gfrun_options *options,
 	int nhosts, char **hosts, char *cmd, char **argv)
 {
-	int i, save_errno, pid, status;
+	int i, save_errno, status;
 	int base_alist_index, host_alist_index, command_alist_index;
 	gfarm_stringlist arg_list;
 	char total_nodes[GFARM_INT32STRLEN], node_index[GFARM_INT32STRLEN];
@@ -252,7 +252,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			GFARM_STRINGLIST_ELEM(arg_list, command_alist_index) =
 			    delivered_paths[i];
 		}
-		switch (pid = fork()) {
+		switch (fork()) {
 		case 0:
 			execvp(rsh_command,
 			    GFARM_STRINGLIST_STRARRAY(arg_list) +

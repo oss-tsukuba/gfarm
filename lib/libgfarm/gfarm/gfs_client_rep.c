@@ -303,9 +303,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 char *
 gfs_client_rep_backend_wait(struct gfs_client_rep_backend_state *state)
 {
-	int rv;
-
-	while ((rv = waitpid(state->pid, NULL, 0)) == -1 && errno == EINTR)
+	while (waitpid(state->pid, NULL, 0) == -1 && errno == EINTR)
 		;
 	xxx_connection_free(state->in);
 	xxx_connection_free(state->out);
