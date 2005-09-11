@@ -92,7 +92,7 @@ mkcnf_gfmd_sysdep()
 		# XXX: Is it really right thing to add "moduleload" always?
 
 		: ${SLAPD_CONF_2_1_HOOK:='\
-modulepath	'"$ldap_prefix/lib/ldap"'\
+modulepath	'"$OPENLDAP_PREFIX/lib/ldap"'\
 moduleload	back_'"$SLAPD_DB"}
 		;;
 	esac
