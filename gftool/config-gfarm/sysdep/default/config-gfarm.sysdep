@@ -70,7 +70,7 @@ start_service()
 		echo added "$service" service
 	else
 		echo add "$service" service: skipped
-	fi || ABORT "cannot add $service service"
+	fi
 
 	"$RC_DIR/$service" restart || ABORT "cannot start $service"
 }

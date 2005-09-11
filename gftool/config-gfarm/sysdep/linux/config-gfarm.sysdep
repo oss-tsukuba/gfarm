@@ -95,11 +95,12 @@ start_service_debian()
 
 	service=$1
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		update-rc.d $service defaults >/dev/null &&
+		update-rc.d $service defaults >/dev/null ||
+			ABORT "cannot add "$service" service"
 		echo added "$service" service
 	else
 		echo add "$service" service: skipped
-	fi || ABORT "cannot add "$service" service"
+	fi
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X \
 			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
@@ -114,12 +115,14 @@ start_service_redhat()
 	# local service
 
 	service=$1
+
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		chkconfig "$service" --add &&
+		chkconfig "$service" --add ||
+			ABORT "cannot add $service service"
 		echo added "$service" service
 	else
 		echo add "$service" service: skipped
-	fi || ABORT "cannot add $service service"
+	fi
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
 		service "$service" restart

@@ -36,19 +36,14 @@ config_sysdep()
 	cat ${1+"$@"}
 }
 
-mkcnf_gfarm_sysdep()
-{
-	create_directory "${RC_CONF_DIR}"
-}
-
 mkcnf_gfmd_sysdep()
 {
-	mkcnf_gfarm_sysdep
+	: # do nothing
 }
 
 mkcnf_gfsd_sysdep()
 {
-	mkcnf_gfarm_sysdep
+	: # do nothing
 }
 
 start_service()
@@ -57,15 +52,17 @@ start_service()
 
 	service=$1
 
-	echo "${service}=YES" |
-		sed s/-/_/g >"$RC_CONF_DIR/$service" &&
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		create_directory "${RC_CONF_DIR}"
+		echo "${service}=YES" |
+			sed s/-/_/g >"$RC_CONF_DIR/$service" ||
+			ABORT "cannot add $service service"
 		echo added "$service" service
 		mode=
 	else
 		echo add "$service" service: skipped
 		mode=force
-	fi || ABORT "cannot add $service service"
+	fi
 
 	"$RC_DIR/$service" ${mode}restart || ABORT "cannot start $service"
 }
