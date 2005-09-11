@@ -27,7 +27,6 @@ number_of_cpus()
 sysdep_defaults()
 {
 	: ${RC_DIR:="$CONFIG_PREFIX/etc/rc.d"}
-	: ${RC_CONF_DIR:="$CONFIG_PREFIX/etc/rc.conf.d"}
 }
 
 config_sysdep()
@@ -53,9 +52,9 @@ start_service()
 	service=$1
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		create_directory "${RC_CONF_DIR}"
+		create_directory "/etc/rc.conf.d"
 		echo "${service}=YES" |
-			sed s/-/_/g >"$RC_CONF_DIR/$service" ||
+			sed s/-/_/g >"/etc/rc.conf.d/$service" ||
 			ABORT "cannot add $service service"
 		echo added "$service" service
 		mode=
