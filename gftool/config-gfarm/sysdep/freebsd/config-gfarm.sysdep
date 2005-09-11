@@ -56,9 +56,13 @@ start_service()
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
 		create_directory "/etc/rc.conf.d"
-		echo "${service}_enable=\"YES\"" |
-			sed s/-/_/g >"/etc/rc.conf.d/$service" ||
+		if echo "${service}_enable=\"YES\"" |
+			sed s/-/_/g >"/etc/rc.conf.d/$service"
+		then
+			echo created "/etc/rc.conf.d/$service"
+		else
 			ABORT "cannot add $service service"
+		fi
 		echo added "$service" service
 		mode=
 	else
