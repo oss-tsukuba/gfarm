@@ -15,14 +15,13 @@ dns_domainname()
 
 memory_size()
 {
-	# XXX assume 64MB
-	echo 64
+	# mega bytes
+	getmemsize -mq	# This is a command in gfarm.
 }
 
 number_of_cpus()
 {
-	# XXX assume UniProcessor
-	echo 1
+	/etc/ioscan -k -C processor | grep processor | wc -l
 }
 
 sysdep_defaults()
