@@ -5,8 +5,8 @@
 # chkconfig: 2345 95 05
 
 CONF="@config_gfarm_gfarm_config@"
-OPTIONS="@config_gfarm_gfmd_option@"
-GFSD=@prefix@/sbin/gfsd
+OPTIONS="@config_gfarm_gfsd_option@"
+GFMD=@config_gfarm_prefix@/sbin/gfsd
 PID_FILE=/var/run/gfsd.pid
 
 if [ -n "@config_gfarm_globus_location@" ]; then
