@@ -1,9 +1,298 @@
-2005-09-08  Osamu Tatebe  <tatebe@amethyst.hpcc.jp>
+2005-09-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/sysdep/default/gfsd.in: careless error
+
+2005-09-11  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: updated to 1.2-2
+
+2005-09-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/pkgsrc/Makefile, package/redhat/gfarm.spec, package/freebsd/Makefile:
+	add gfarm-1.2-patch3.diff
+
+	* gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep:
+	report file creation under /etc/rc.conf.d as well
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja:
+	mention what --prefix does and port number restriction in user privilege
+
+	* gftool/config-gfarm/config-gfsd.in:
+	load globus-user-env.sh, if available, before calling gfhost
+
+	* gftool/config-gfarm/config-gfsd.in:
+	- add sanity check to see that gfhost really exists
+	- invoke gfhost by using full pathname
+	- invoke gfhost even if --prefix is specified, because we can specify
+	  the location of the config file by using $GFARM_CONFIG_FILE now.
+
+	* gftool/config-gfarm/sysdep/freebsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in:
+	rc.subr is moved from /usr/local/etc to /etc on FreeBSD-5.X
+
+	* gftool/config-gfarm/config-gfsd.in:
+	If --prefix is specified, don't use $CONFIG_PREFIX/$sysconfdir/gfarm.conf,
+	rather, just use $CONFIG_PREFIX/etc/gfarm.conf.
+
+	* gftool/config-gfarm/gfarm.arch.guess: move comment
+
+	* gftool/config-gfarm/gfarm.arch.guess: - correct quoting error
+	- display something like hppa2.0-hp-hpux11.11 instead of 9000/800-hp-hpux11.11
+	- deal with the following variant of /etc/redhat-release:
+		Red Hat Enterprise Linux ES release 4 (Nahant Update 1)
+
+	* gftool/config-gfarm/gfarm.arch.guess:
+	ignore /etc/lsb-release, which shows LSB (Linux Standard Base) version.
+
+	* gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep:
+	It is unnecessary to make /etc/rc.conf.d configurable.
+
+	* gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep:
+	- If --prefix is specified, create rc scripts in $CONFIG_PREFIX/etc/rc.d
+	  instead of $CONFIG_PREFIX/usr/local/etc.d.
+	- It is unnecessary to make /etc/rc.conf.d configurable.
+
+	* gftool/config-gfarm/config-gfarm.in:
+	If --prefix is specified, don't create gfarm.conf in $CONFIG_PREFIX/$sysconfdir,
+	rather, create it just in $CONFIG_PREFIX/etc.
+
+	i.e. If sysconfdir=/home/soda/etc, and if --prefix is not specified,
+	gfarm.conf will be created in /home/soda/etc.  But if --prefix /var/tmp
+	is specified, now it will be created in /var/tmp/etc. It would be created
+	in /var/tmp/home/soda/etc before this change.
+
+	* gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	remove redundant or not-straightforward statements
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in:
+	move modulepath & moduleload handling of slapd.conf
+	from debian dependent part to system independent part,
+	and use the existence of /usr/lib/ldap/back_${SLAPD_DB}.so
+	for whether we'll use the modulepath & moduleload feature or not.
+	because:
+	- other distribution could use same way (actually PLD does).
+	- even debian may not use that way (e.g. nimbus.titech.hpcc.jp - woody).
+
+	* Makefile.in:
+	remove gftool/config-gfarm/config-{gfarm,gfsd} at make distclean
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	Add modulepath/moduleload to slapd.conf only if the openldap is
+	system supplied one (i.e. $OPENLDAP_PREFIX==/usr).
+	If openldap is made by a user, it's unlikely using the module feature.
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/config-gfarm.in:
+	Give higher priority to $OPENLDAP_PREFIX always over system ldap directory,
+	even on Debian (/etc/ldap).
+	Otherwise metadata server cannot be installed by non-privileged user,
+	if /etc/ldap/schema/core.schema is not installed by super-user of the machine.
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	forgot to rewrite $ldap_prefix to $OPENLDAP_PREFIX here.
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention how to access executable files (except invocation) on a client node.
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention that currently readdir(3) on Solaris doesn't work.
+
+	* gftool/gfreg/gfreg.c, gftool/gfrun/gfrun.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/gfs_pio_misc.c, gftool/gfmpirun/gfmpirun.c:
+	fix the following warning which was reported by HP-UX C compiler on IA64:
+	warning #2550-D: variable was set but never used
+
+	* lib/libgfarm/gfarm/hostspec.c:
+	fix the following warning which was reported by HP-UX C compiler on IA64:
+	warning #2068-D: integer conversion resulted in a change of sign
+
+	* gftool/config-gfarm/config-gfarm.in:
+	print 2146435072 instead of 2.14644e+09 as memory size on
+	a HP-UX machine which has 4094MB physical memory.
+
+	* gftool/config-gfarm/gfarm.arch.guess:
+	Do not output garbage on non-RedHat-derived Linux distros.
+
+	* INSTALL.en, INSTALL.ja: mention that GNU make is needed for now.
+
+	* server/gfsd/gfsd.c, server/gfmd/gfmd.c:
+	Don't #include <gfarm/gfarm_config.h> before <sys/socket.h>.
+	Now socklen_t is defined as "#define socklen_t int" in <gfarm/gfarm_config.h>
+	on HP-UX, and this definition breaks <sys/socket.h>, because <sys/socket.h> has
+	"typedef size_t socklen_t;" and that will be expanded to "typedef size_t int;"
+
+	* configure: regen
+
+	* configure.ac: Don't use system supplied socklen_t on HP-UX,
+	because that makes libgfarm incompatible with third party programs
+	which weren't linked against libxnet.
+	It seems most programs don't use libxnet.
+	(This observation could be wrong, though)
+
+	* server/gfsd/loadavg.c: getloadavg() for HP-UX
+
+	* gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep:
+	automatically detect physical memory size and number of CPUs on HP-UX
+
+	* gftool/config-gfarm/sysdep/hpux/Makefile, gftool/config-gfarm/sysdep/hpux/getmemsize.c:
+	progam to detect physical memory size on HP-UX, from hpux-faq
+
+	* configure: regen
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja, configure.ac, gftool/config-gfarm/config-gfarm.in:
+	do not embedded openldap prefix at build time, instead, search it at
+	config-gfarm runtime, because the former doesn't make sense on some cases.
+
+	e.g.
+	Solaris binary distribution currently uses the following path at build time:
+	/home/soda/install/SunOS-5.9-SunONEStudio-8/openldap-2.1.30
+
+	* doc/html/en/user/Makefile: fix typo in previous my commit
+
+2005-09-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep:
+	add a way to detect number of CPUs on AIX, not really tested
+
+	* gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep:
+	remove unnecessary spaces from the output of number_of_cpus
+
+	* gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep: typo
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja:
+	update output of "config-gfarm -t" and "config-gfsd -t"
+
+	* gftool/config-gfarm/config-gfarm.in: "echo -n" is not portable
+
+	* debian/slapd.conf-2.1.in:
+	now gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:mkcnf_gfmd_sysdep()
+	adds "modulepath" and "moduleload" to slapd.conf on Debian,
+	so this file should be unnecessary.
+
+2005-09-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfsd.in:
+	change [ X$VAR = X ] to [ X"$VAR" = X ], because the former doesn't work
+	if $VAR includes some spaces.
+
+	* package/solaris/gfmd.in, package/solaris/gfsd.in, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in:
+	support restart command
+
+	* gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep:
+	don't abort, when rcN.d directory doesn't exist.
+	(e.g. Solaris 9 doesn't have rc4.d)
+
+	* gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep:
+	remove rc script, before creating it
+
+	* gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep:
+	"id -u" isn't portable (Solaris doesn't support it),
+	so use "[ -w / ]" the check root privilege.
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in:
+	[ -e "$p" ] isn't supported by Solaris /bin/sh, so don't use it.
+
+	* gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in:
+	"local" statement isn't really portable, so don't use it.
+	(e.g. Solaris /bin/sh doesn't support it)
+
+	* gftool/config-gfarm/config-gfarm.in:
+	Solaris's sed doesn't allow "sed s/.../___/pg" in this case,
+	but it allows "sed s/.../___/gp".
+
+	* gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep:
+	bash and Solaris /bin/sh doesn't allow null statement function,
+	so add ":" statement as NOP.
+
+	* gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	add "moduleload" setting to slapd.conf on Debian. (missed in previous change)
+
+	* gftool/config-gfarm/config-gfarm.in:
+	- add "-c" option to explictly specify berkeley DB cachesize for slapd.
+	- add "moduleload" setting to slapd.conf on Debian. (missed in previous change)
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	gfs_cachedir() should ignore (at least) GFARM_ERR_NO_SUCH_OBJECT
+	from gfarm_metadb_path_info_get_all_foreach(). otherwise we cannot
+	create any file or directory, if it is fresh empty metadata.
+
+	* gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep:
+	forgot to change memory size unit from bytes to mega bytes
+
+	* gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep:
+	just add a comment
+
+	* package/redhat/gfarm.spec: increase RPM release
+
+	* debian/gfsd.install, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/gfarm-fsnode.files:
+	forgot to add bin/gfarm.arch.guess
+
+2005-09-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: move config-gfarm issue to 1.2 from 1.2 RC2
+
+2005-09-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	remove reference to obsolete package/redhat/config/
+
+	* package/redhat/gfarm.spec: forgot to enable gfarm-1.2-patch2.diff
+
+	* package/freebsd/Makefile: typo
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile, package/redhat/gfarm.spec:
+	add gfarm-1.2-patch2.diff
+
+	* configure: regen
+
+	* package/freebsd/Makefile, package/freebsd/files/gfmd.sh, package/freebsd/files/gfsd.sh, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/build, package/solaris/gfarm-fsnode.files, package/solaris/gfarm-libs.files, package/solaris/gfarm-server.files, gftool/config-gfarm/sysdep/linux/Makefile, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/debian/Makefile, gftool/config-gfarm/sysdep/linux/debian/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/debian/gfmd.in, gftool/config-gfarm/sysdep/linux/debian/gfsd.in, gftool/config-gfarm/sysdep/linux/redhat/Makefile, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, gftool/config-gfarm/sysdep/netbsd/Makefile, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/netbsd/gfmd.in, gftool/config-gfarm/sysdep/netbsd/gfsd.in, gftool/config-gfarm/sysdep/osf1/Makefile, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/Makefile, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, makes/config.mk.in, makes/data.mk, doc/html/pic/Makefile, gftool/Makefile, gftool/config-gfarm/Makefile, gftool/config-gfarm/bdb.DB_CONFIG.in, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/gfarm.arch.guess, gftool/config-gfarm/gfarm.conf.in, gftool/config-gfarm/initial.ldif.in, gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in, gftool/config-gfarm/sysdep/aix/Makefile, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/Makefile, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in, gftool/config-gfarm/sysdep/freebsd/Makefile, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in, gftool/config-gfarm/sysdep/hpux/Makefile, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, RELNOTES, configure.ac, debian/config-gfarm, debian/config-gfsd, debian/gfmd.install, debian/gfsd.install, debian/libgfarm-dev.install, debian/rules:
+	support config-gfarm and config-gfsd on all platforms
+
+	* gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in:
+	New file.
+
+	* gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in:
+	from gfarm/package/solaris
+
+	* gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in:
+	New file.
+
+	* gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in:
+	from gfarm/package/freebsd/files
+
+	* gftool/config-gfarm/sysdep/netbsd/gfmd.in, gftool/config-gfarm/sysdep/netbsd/gfsd.in:
+	New file.
+
+	* gftool/config-gfarm/sysdep/netbsd/gfmd.in, gftool/config-gfarm/sysdep/netbsd/gfsd.in:
+	from gfarm/package/pkgsrc/files
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	New file.
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	from gfarm/package/redhat/config
+
+	* gftool/config-gfarm/gfarm.schema: New file.
+
+	* gftool/config-gfarm/gfarm.schema: from gfarm/doc/conf
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/gfarm.conf.in, gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in:
+	New file.
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/gfarm.conf.in, gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in:
+	from gfarm/package/redhat/config
+
+	* gftool/config-gfarm/sysdep/linux/debian/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/debian/gfmd.in, gftool/config-gfarm/sysdep/linux/debian/gfsd.in:
+	New file.
+
+	* gftool/config-gfarm/sysdep/linux/debian/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/debian/gfmd.in, gftool/config-gfarm/sysdep/linux/debian/gfsd.in:
+	from gfarm/debian
+
+2005-09-08  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog, RELNOTES: release note for the version 1.2
 
 	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c (gfs_stat_size_canonical_path):
 	return GFARM_ERR_TEXT_FILE_BUSY when one of sections is busy.
 
-2005-09-08  Tohru Sotoyama  <soto@amethyst.hpcc.jp>
+2005-09-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* RELNOTES: add gfrep -S option
 
@@ -17,7 +306,7 @@
 	* doc/docbook/ja/ref/man1/gfrep.1.docbook: - new entry of -S option
 	- add description to the entries of -D, -N, -d and -s options
 
-2005-09-08  Noriyuki Soda  <soda@amethyst.hpcc.jp>
+2005-09-08  Noriyuki Soda  <soda@sra.co.jp>
 
 	* lib/libgfarm/gfarm/schedule.c:
 	Change the behavior of search_idle() at enough_number == 0 or *nohostsp == 0.
@@ -31,7 +320,7 @@
 	probably did "ohosts = malloc(sizeof(*ohosts) * 0);", but the behaivor of
 	malloc(0) is implementation dependent. i.e. It's not portable.
 
-2005-09-08  Tohru Sotoyama  <soto@amethyst.hpcc.jp>
+2005-09-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gftool/gfrep/gfrep.c: - add -S option
 	-'gfrep -s srchost' replicate to an appropriate host if -d optoins isn't
