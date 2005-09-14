@@ -10,4 +10,3 @@
 @PREFIX@/share/gfarm/config/slapd.conf-2.1.in
 etc/rc3.d/S90gfmd
 etc/rc3.d/K10gfmd
-etc/gfarm-ldap/gfarm.schema

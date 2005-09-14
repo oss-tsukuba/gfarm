@@ -436,11 +436,11 @@ index	hostname	pres,eq
 
 slapd.conf から include されているファイルです．
 
-ソース配布中のファイル doc/conf/gfarm.schema を，ホスト 
+ソース配布中のファイル gftool/config-gfarm/gfarm.schema を，ホスト 
 ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 
 バイナリ配布の場合，gfarm-server パッケージ中の
-/etc/gfarm-ldap/gfarm.schema に，このファイルが含まれています．
+/usr/grid/share/gfarm/config/gfarm.schema に，このファイルが含まれています．
 
 特にカスタマイズする項目はありません．
 

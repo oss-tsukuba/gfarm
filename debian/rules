@@ -199,8 +199,6 @@ endif
 	  install -d debian/$$tmp_dir/usr/share/doc/gfarm/; \
 	  install debian/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
 	  install -d debian/$$tmp_dir/etc/ldap/schema/; \
-	  install -d debian/$$tmp_dir/etc/gfarm-ldap/; \
-	  install -m 644 doc/conf/gfarm.schema debian/$$tmp_dir/etc/gfarm-ldap/; \
 	  install -d debian/$$tmp_dir/usr/share/gfarm/config; \
 	  install -d debian/$$tmp_dir/etc/default/; \
 	  install -m 644 debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \

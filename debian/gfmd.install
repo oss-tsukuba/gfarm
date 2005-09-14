@@ -1,7 +1,6 @@
 debian/tmp/usr/bin/config-gfarm
 debian/tmp/usr/sbin/gfmd
 debian/tmp/etc/init.d/gfmd
-debian/tmp/etc/gfarm-ldap/gfarm.schema
 debian/tmp/usr/share/gfarm/config/bdb.DB_CONFIG.in
 debian/tmp/usr/share/gfarm/config/gfarm.conf.in
 debian/tmp/usr/share/gfarm/config/gfarm.schema

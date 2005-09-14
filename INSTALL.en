@@ -309,11 +309,11 @@ The Gfarm version 1.0.X supports OpenLDAP version 2.0.X, 2.1.X, and
  - gfarm.schema
 
 This is a schema file of Gfarm filesystem metadata for the LDAP
-server.  Copy the file doc/conf/gfarm.schema in the source
+server.  Copy the file gftool/config-gfarm/gfarm.schema in the source
 distribution to /etc/gfarm-ldap/gfarm.schema on ldap.example.com.
 
 In the binary distribution, this file is installed to
-/etc/gfarm-ldap/gfarm.schema by the gfarm-server package.
+/usr/grid/share/gfarm/config/gfarm.schema by the gfarm-server package.
 
 There is no need to modify.
 

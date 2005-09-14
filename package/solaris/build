@@ -81,8 +81,6 @@ do
 		ln $buildroot/etc/rc3.d/S95gfsd $buildroot/etc/rc3.d/K05gfsd
 		chmod +x $buildroot/etc/rc3.d/*
 		cp doc/conf/gfarm.conf $buildroot/etc/gfarm.conf.sample
-		mkdir -p $buildroot/etc/gfarm-ldap
-		cp doc/conf/gfarm.schema $buildroot/etc/gfarm-ldap/
 		$make distclean
 
 		( cd $buildroot &&

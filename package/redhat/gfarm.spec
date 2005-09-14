@@ -14,7 +14,6 @@
 %define html_prefix	%{doc_prefix}/html
 %define etc_prefix	/etc
 %define rc_prefix	%{etc_prefix}/rc.d/init.d
-%define ldap_prefix	%{etc_prefix}/%{pkg}-ldap
 %define profile_prefix	%{etc_prefix}/profile.d
 %define sysconfdir	%{etc_prefix}
 
@@ -176,8 +175,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
 cp -p package/redhat/gfmd package/redhat/gfsd \
 	${RPM_BUILD_ROOT}%{rc_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
-mkdir -p ${RPM_BUILD_ROOT}%{ldap_prefix}
-cp -p doc/conf/gfarm.schema ${RPM_BUILD_ROOT}%{ldap_prefix}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
@@ -707,8 +704,6 @@ fi
 %files server
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
-%dir %{ldap_prefix}
-%{ldap_prefix}/gfarm.schema
 %{prefix}/bin/config-gfarm
 %dir %{share_prefix}
 %dir %{share_prefix}/config
