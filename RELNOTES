@@ -1,12 +1,21 @@
 Copyright (c) 2003, 2004, 2005 National Institute of Advanced
 Industrial Science and Technology (AIST).  All Rights Reserved.
 
-Release note for Gfarm 1.2
-==========================
+Release note for Gfarm 1.2 (PL3)
+================================
 
-[2005.9.8]
+[2005.9.12]
 
  * config-gfarm(1) and config-gfsd(1) are now supported in all platforms.
+
+ * Bug fix
+
+ - cannot create any file or directory in an empty Gfarm file system.
+
+Release note for Gfarm 1.2 (PL2)
+================================
+
+[2005.9.8]
 
  * gfrep(1) - the -S option is added to specify the source domainname.
 
@@ -18,7 +27,7 @@ Release note for Gfarm 1.2
  - Syscall hooking library - fix a filename translation for
    '/gfarm/.filename' and '~filename' in Gfarm file system.
 
-Release note for Gfarm 1.2 (RC3)
+Release note for Gfarm 1.2 (PL1)
 ================================
 
 [2005.9.6]
