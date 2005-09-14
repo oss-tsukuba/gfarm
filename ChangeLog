@@ -311,7 +311,7 @@
 	* lib/libgfarm/gfarm/schedule.c:
 	Change the behavior of search_idle() at enough_number == 0 or *nohostsp == 0.
 	Before this change, the return value of search_idle() depends on whether
-	first candidate host is availble or not (NULL for the former, GFARM_ERR_NO_HOST
+	first candidate host is available or not (NULL for the former, GFARM_ERR_NO_HOST
 	for the latter).
 	After this change, the return value is always GFARM_ERR_NO_HOSTS,
 	regardless of the availability of the first candidate host.
@@ -322,14 +322,15 @@
 
 2005-09-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
-	* gftool/gfrep/gfrep.c: - add -S option
-	-'gfrep -s srchost' replicate to an appropriate host if -d optoins isn't
-	  specified
-	- suppress warning lack of replica in source host or source domain
-	  in case of replicating a directory
+	* gftool/gfrep/gfrep.c:
+	- add -S option
+	- make 'gfrep -s srchost' automatically select an appropriate
+	  destination host, when if -d option isn't specified
+	- suppress warning about lack of replica in source host or
+	  source domain in case of replicating a directory
 
 	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/schedule.c:
-	add farm_schedule_search_idle_acyclic_hosts() for 'gfrep -S'
+	add gfarm_schedule_search_idle_acyclic_hosts() for 'gfrep -S'
 
 	* gftool/gfrep/Makefile: include "hash.h'
 
@@ -1007,7 +1008,7 @@
 	parent and the child.
 	So, we move open_accepting_socket() after gfarm_daemon() to workaround
 	this problem.
-	Fortunately, it's rate that open_accepting_socket() fails, thus I hope
+	Fortunately, it's rare that open_accepting_socket() fails, thus I hope
 	this workaround is acceptable.
 
 2005-07-11  Noriyuki Soda  <soda@sra.co.jp>
@@ -1322,7 +1323,7 @@
 	pointer in some architectures
 	- comment out fcntl hook if neither F_FREESP nor F_FREESP64 is defined.
 	fcntl hook has to support SYS_fcntl64 on Linux (cf. glibc), but for now,
-	fcntl hook is needed only for F_FREESP on Soraiis.
+	fcntl hook is needed only for F_FREESP on Solaris.
 
 2005-06-02  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
@@ -1492,11 +1493,12 @@
 
 2005-05-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
-	* lib/gfs_hook/hooks.c: __unlink(): add unlinking a section
+	* lib/gfs_hook/hooks.c: __unlink(): make unlink(2) hook unlink
+	a section, if it's a executable file or current mode is section view.
 
 	* lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, include/gfarm/gfs.h:
-	gfs_unlink_section(): become public function and change first parameter to
-	gfarm url
+	gfs_unlink_section(): make this a public function and change first
+	parameter to a gfarm URL.
 
 2005-05-17  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
 
@@ -1529,12 +1531,12 @@
 2005-05-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* lib/gfs_hook/hooks_common.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c:
-	In previous revision, when an executable file exits in gfarm file system
-	and you try to copy the same executable file '/bin/cp file /gfarm/file'
-	on the host has differnt architecture, cp returns "/gfarm/file: no such
-	object" because cp recognizes the file exists, and opens with O_TRUNC
-	flag and  gfs_pio_set_view_section() searches the file section of
-	the host's architecure.
+	In previous revision, when an executable file exists in gfarm file system
+	and you try to do '/bin/cp a-program /gfarm/the-executable-file'
+	on a host which is different architecture, cp returns
+	"/gfarm/file: no such object" because cp recognizes that the file
+	exists, and opens it with O_TRUNC flag, and gfs_pio_set_view_section()
+	searches the file section of the architecure of the host.
 	gfs_pio_set_view_section(): create new architecure's section of executable
 	file in writing mode
 
@@ -1642,9 +1644,11 @@
 2005-05-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* gftool/gfreg/gfreg.c:
-	- add '-p' option to specify program reistration mode explicitly
-	- add '-i' option to specify auto index reistration mode explicitly
-	- register a non-file(e.g. socket) as gfarm file
+	- add '-p' option to specify program registration mode explicitly
+	- add '-i' option to specify auto index registration mode explicitly
+	- if source file is not a regular file, don't use the mode of the
+	  source file, but use more appropriate mode to register it as a
+	  gfarm file.
 
 2005-05-10  Noriyuki Soda  <soda@sra.co.jp>
 
