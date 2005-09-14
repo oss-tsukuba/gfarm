@@ -285,6 +285,47 @@ configure コマンドには，下記のオプションがあります．
 
 ------------------------------------------------------------------------
 
+◇ 簡易な設定方法
+
+1. メタデータサーバ上で以下のコマンドを実行して，これから行う設定に
+  関して，適切なデフォルト値が設定されているか確認します．
+	# config-gfarm -t
+
+  もしデフォルト値が適切でない場合には，表示されるオプションを指定して
+  設定を変更できます．
+
+2. 適切な設定になったら，config-gfarm コマンドのオプションから -t を
+  取り除いて実行します．
+  特にオプションを指定する必要がなかったのであれば，以下を実行すること
+  になります．
+	# config-gfarm
+
+3. config-gfarm コマンドによって，/etc/gfarm.conf が作成された筈です．
+  この gfarm.conf をファイルシステムノードの /etc にコピーします．
+
+4. ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
+  関して，適切なデフォルト値が設定されているか確認します．
+	# config-gfsd -t /var/spool/gfarm
+
+  もしデフォルト値が適切でない場合には，表示されるオプションを指定して
+  設定を変更できます．
+
+5. 適切な設定になったら，config-gfsd コマンドのオプションから -t を
+  取り除いて実行します．
+  特にオプションを指定する必要がなかったのであれば，以下を実行すること
+  になります．
+	# config-gfsd /var/spool/gfarm
+
+以上で設定は完了です．
+ここからは，config-gfarm コマンドや config-gfsd コマンドが内部的に
+どういう設定を行っているかを解説します．
+解説が不要な方は，「各ユーザの設定」の節まで読み飛ばしてください．
+
+なお，config-gfarm, config-gfsd のより詳しい利用法に関しては，
+INSTALL.RPM.ja を参照してください．
+
+------------------------------------------------------------------------
+
 ◇ LDAP サーバー
 
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
@@ -312,11 +353,11 @@ name を，このファイルの suffix および rootdn で参照しているのに注意し
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 defaultaccess write
@@ -328,16 +369,16 @@ sizelimit 2000000000
 loglevel 0
 
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        ldbm
+database	ldbm
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq
@@ -345,20 +386,21 @@ index	objectClass	eq
 index	pathname	pres,eq
 index	section		pres,eq
 index	hostname	pres,eq
-#
+
+# dangerous, but faster
 dbnosync
 ------------------------------ ここまで ------------------------------
 
------------------- ここから （OpenLDAP-2.1.X の場合）-----------------
+------------------ ここから （OpenLDAP-2.1.X 以降の場合）-------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 allow bind_anon_dn update_anon
@@ -371,16 +413,16 @@ sizelimit unlimited
 loglevel 0
 
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        bdb
+database	bdb
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq

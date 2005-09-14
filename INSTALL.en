@@ -256,6 +256,48 @@ This section assumes the following setting.
 
 ------------------------------------------------------------------------
 
+** Easy Installation Method
+
+1. Run the folloing command on your metadata server to see whether
+  appropriate default values will be automatically configured or not:
+	# config-gfarm -t
+
+  If there are some default values which are not appropriate, you can
+  change the values by specifying displayed options.
+
+2. Run the 'config-gfarm' command without '-t' option, this actually
+  makes gfarm configured.
+  For example, if you don't have to specify any option in the step 1.
+  you can use the following command:
+	# config-gfarm
+
+3. The 'config-gfarm' command should generate /etc/gfarm.conf.
+  Please copy this file to /etc of all filesystem nodes.
+
+4. Run the folloing command on every your filesystem node to see whether
+  appropriate default values will be automatically configured or not:
+	# config-gfsd -t /var/spool/gfarm
+
+  If there are some default values which are not appropriate, you can
+  change the values by specifying displayed options.
+
+5. Run the 'config-gfsd' command without '-t' option, this actually
+  makes gfsd configured.
+  For example, if you don't have to specify any option in the step 4.
+  you can use the following command:
+	# config-gfsd /var/spool/gfarm
+
+That's all.
+The following describes what this config-gfarm command and config-gfsd
+command actually do.
+If you don't have to know detailed description, please skip to "setting
+of each user" section.
+
+If you'd like to see further usage of config-gfarm and config-gfsd
+command, please read INSTALL.RPM.en.
+
+------------------------------------------------------------------------
+
 ** LDAP server
 
 In the current distribution, an LDAP server manages the Gfarm
@@ -293,11 +335,11 @@ core.schema in your installation of OpenLDAP.
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 defaultaccess write
@@ -309,16 +351,16 @@ sizelimit 2000000000
 loglevel 0
 
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        ldbm
+database	ldbm
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq
@@ -330,16 +372,16 @@ index	hostname	pres,eq
 dbnosync
 -------------------------------- END --------------------------------
 
----------------- BEGIN HERE (OpenLDAP-2.1.X and 2.2.X)---------------
+---------------- BEGIN HERE (OpenLDAP-2.1.X or later) ---------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 allow bind_anon_dn update_anon
@@ -352,16 +394,16 @@ sizelimit unlimited
 loglevel 0
 
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        bdb
+database	bdb
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq
