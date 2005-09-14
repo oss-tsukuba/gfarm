@@ -177,7 +177,6 @@ https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
 Solaris is not tested well.  At lease, we know there is a restriction
 such that directory access via readdir(3) doesn't work.
 
-
  (5) OS-independent settings
 =============================
 
@@ -196,6 +195,9 @@ can use filename completion in the shell.
 
 For MPI applications, it is necessary to generate libgfs_hook.so for
 MPI library in your environment, or follow the Section 2.
+
+There are some limitations of system-call hooking library.  Refer to
+the following "Limitation" section.
 
 -----------------------------------------------------------------------
 
