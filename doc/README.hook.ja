@@ -11,7 +11,7 @@
 
 1) 設定方法
 
-  1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X の場合
+  1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX の場合
 
   無修整で，既存のアプリケーションから Gfarm ファイルシステムをアクセス
   できます．
@@ -34,8 +34,8 @@
 1) 設定方法
 -----------
 
-1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X の場合
------------------------------------------------------
+1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX, Tru64 の場合
+-------------------------------------------------------------------
 
 アプリケーションの起動に先立ち，libgfs_hook.so を preload することによ
 り，無修整で，既存のアプリケーションからの Gfarm ファイルシステムのアク
@@ -123,7 +123,8 @@ LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
 
-なお，FreeBSD-4.11/i386 で，precompile されたバイナリは以下にあります．
+なお，以下に FreeBSD-4.11/i386 用のダイナミックリンクされた /bin バイナリ
+があります．
 
 https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
 
@@ -161,17 +162,88 @@ LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
 
-なお，NetBSD-1.6.2/i386 で，precompile されたバイナリは以下にあります．
+なお，以下に NetBSD-1.6.2/i386 用のダイナミックリンクされた /bin バイナリ
+があります．
 
 https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
 
  (4) Solaris
 =============
 
-Solaris では十分なテストができていません．今のところ，readdir(3) ライブ
-ラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
+LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
 
- (5) OS に依存しない設定事項
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+
+なお，Solaris では十分なテストができていません．今のところ，readdir(3)
+ライブラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
+
+ (5) MacOS X
+=============
+
+DYLD_INSERT_LIBRARIES 環境変数に，libgfs_hook.dylib を指定し，
+さらに DYLD_FORCE_FLAT_NAMESPACE 環境変数を設定します．
+DYLD_INSERT_LIBRARIES 環境変数に複数のライブラリを指定する場合には，
+「:」で区切ります。
+DYLD_FORCE_FLAT_NAMESPACE 環境変数に指定する値は，どんな値でも結構です．
+
+シェルが sh あるいは bash の場合:
+
+	$ DYLD_INSERT_LIBRARIES=%%LIBDIR%%/libgfs_hook.dylib
+	$ DYLD_FORCE_FLAT_NAMESPACE=
+	$ export DYLD_INSERT_LIBRARIES DYLD_FORCE_FLAT_NAMESPACE
+
+シェルが csh (tcsh) の場合:
+
+	% setenv DYLD_INSERT_LIBRARIES %%LIBDIR%%/libgfs_hook.dylib
+	% setenv DYLD_FORCE_FLAT_NAMESPACE ""
+
+なお，MacOS X はほとんどテストがされていません．
+
+ (6) HP-UX
+=============
+
+LD_PRELOAD 環境変数に，libgfs_hook.sl を指定します．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.sl
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.sl
+
+なお，HP-UX はほとんどテストがされていません．今のところ，readdir(3)
+ライブラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
+
+ (7) Tru64
+=============
+
+_RLD_LIST 環境変数に，libgfs_hook.so.0 を指定します．
+_RLD_LIST 環境変数に複数のライブラリを指定する場合には，「:」で区切ります．
+また、最後に「:DEFAULT」の指定も必要です．
+
+シェルが sh あるいは bash の場合:
+
+	$ _RLD_LIST=%%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+	$ export _RLD_LIST
+
+シェルが csh (tcsh) の場合:
+
+	% setenv _RLD_LIST %%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+
+Tru64 は，現在のところ gfhost コマンドやスケジューリング機能に問題が
+あることが判明しています．また readdir(3) ライブラリ関数を用いたディレ
+クトリアクセスも動作しません．
+
+ (8) OS に依存しない設定事項
 =============================
 
 上記設定は，.bashrc や .cshrc など起動スクリプトに記述すると，以降の設

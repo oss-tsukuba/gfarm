@@ -15,7 +15,7 @@ Contents
 
 1) Configuration
 
-  1-1) Linux, FreeBSD, NetBSD, Solaris, and Mac OS X
+  1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X and HP-UX
 
   Every existing program can access Gfarm file system without any
   modification.
@@ -37,8 +37,8 @@ Contents
 
 1) Configuration
 
-1-1) Linux, FreeBSD, NetBSD, Solaris, and Mac OS X
---------------------------------------------------
+1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX and Tru64
+---------------------------------------------------------------
 
 Exploiting a preload mechanism that loads specified shared libraries
 before executing application, every existing program can access Gfarm
@@ -125,8 +125,8 @@ following procedures;
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
 
-Or, you can use precompiled binaries for FreeBSD-4.11/i386 available
-at
+Or, you can download dynamically linked /bin binaries for FreeBSD-4.11/i386
+from
 
 https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
 
@@ -166,18 +166,90 @@ following procedures;
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
 	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
 
-Or, you can use precompiled binaries for FreeBSD-1.6.2/i386 available
-at
+Or, you can download dynamically linked /bin binaries for NetBSD-1.6.2/i386
+from
 
 https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
 
  (4) Solaris
 =============
 
-Solaris is not tested well.  At lease, we know there is a restriction
+Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
+
+In the case of sh or bash,
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+In the case of csh or tcsh,
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+
+Solaris is not tested well.  At least, we know there is a restriction
 such that directory access via readdir(3) doesn't work.
 
- (5) OS-independent settings
+ (5) MacOS X
+=============
+
+Specify libgfs_hook.dynlib in DYLD_INSERT_LIBRARIES environment variable,
+and also set DYLD_FORCE_FLAT_NAMESPACE environment variable as well.
+To specify multiple libraries in DYLD_INSERT_LIBRARIES, each library
+should be separated by ":" (colon).
+You can specify any value to the DYLD_FORCE_FLAT_NAMESPACE,
+the existence of the variable itself makes an effect.
+
+In the case of sh or bash,
+
+	$ DYLD_INSERT_LIBRARIES=%%LIBDIR%%/libgfs_hook.dylib
+	$ DYLD_FORCE_FLAT_NAMESPACE=
+	$ export DYLD_INSERT_LIBRARIES DYLD_FORCE_FLAT_NAMESPACE
+
+In the case of csh or tcsh,
+
+	% setenv DYLD_INSERT_LIBRARIES %%LIBDIR%%/libgfs_hook.dylib
+	% setenv DYLD_FORCE_FLAT_NAMESPACE ""
+
+MacOS X is barely tested.
+
+ (6) HP-UX
+=============
+
+Specify libgfs_hook.sl in LD_PRELOAD environment variable.
+
+In the case of sh or bash,
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.sl
+	$ export LD_PRELOAD
+
+In the case of csh or tcsh,
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.sl
+
+HP-UX is barely tested.  At least, we know there is a restriction
+such that directory access via readdir(3) doesn't work.
+
+ (7) Tru64
+=============
+
+Specify libgfs_hook.so.0 in _RLD_LIST environment variable.
+To specify multiple libraries in _RLD_LIST, each library should be
+separated by ":" (colon).
+Also, ":DEFAULT" is needed at the end of the variable.
+
+In the case of sh or bash,
+
+	$ _RLD_LIST=%%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+	$ export _RLD_LIST
+
+In the case of csh or tcsh,
+
+	% setenv _RLD_LIST %%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+
+It is known that gfhost command and scheduling functions do not
+correctly work on Tru64. Also, we know there is a restriction
+such that directory access via readdir(3) doesn't work.
+
+ (8) OS-independent settings
 =============================
 
 It is useful to specify the above in the shell rc file such as .bashrc
