@@ -61,7 +61,7 @@ restart)
 
 status)
 	if [ -f "$PID_FILE" ] && kill -0 `cat "$PID_FILE"`; then
-		:
+		echo "$PROG (pid" `cat "$PID_FILE"`") is running"
 	elif [ -f "$PID_FILE" ]; then
 		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
 		exit 1
