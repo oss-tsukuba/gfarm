@@ -12,11 +12,12 @@
 # pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
 
 PROG="slapd"
+FILE="gfarm-slapd"
 
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_slapd_port@
 BINARY="@config_gfarm_openldap_libexec@/$PROG"
-PID_FILE="@config_gfarm_run_dir@/${PROG}.pid"
+PID_FILE="@config_gfarm_run_dir@/${FILE}.pid"
 
 case $1 in 
 start)
