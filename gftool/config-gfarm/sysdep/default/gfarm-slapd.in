@@ -2,34 +2,67 @@
 #
 # $Id$
 #
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
 # chkconfig: 2345 85 15
+#
+## For RedHat Linux style rc.d
+# description: LDAP slapd for Gfarm
+# processname: slapd
+# config: @config_gfarm_slapd_config@
+# pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
+
+PROG="slapd"
 
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_slapd_port@
-SLAPD="@config_gfarm_openldap_libexec@/slapd"
-OPTIONS="-f $CONF -h ldap://:$PORT/"
-PID_FILE=@config_gfarm_run_dir@/slapd.pid
+BINARY="@config_gfarm_openldap_libexec@/$PROG"
+PID_FILE="@config_gfarm_run_dir@/${PROG}.pid"
 
-case "$1" in 
-'start')
-	if [ -x $SLAPD -a -f "$CONF" ]; then
-		$SLAPD $OPTIONS
-	fi	
+case $1 in 
+start)
+	if [ ! -x "$BINARY" ]; then
+		echo -n "$BINARY is not installed"
+		exit 1
+	fi
+	if [ ! -f "$CONF" ]; then
+		echo -n "$CONF is not configured"
+		exit 1
+	fi
+	$BINARY -f "$CONF" -h "ldap://:$PORT/"
 	;;
 
-'stop')
-	if [ -f $PID_FILE ]; then
-		kill -TERM `cat $PID_FILE`
+stop)
+	if [ -f "$PID_FILE" ] && kill -TERM `cat "$PID_FILE"`; then
+		:
+	elif [ -f "$PID_FILE" ]; then
+		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+		rm -f "$PID_FILE"
+		exit 1
+	else
+		echo "$PID_FILE does not exist"
+		exit 1
 	fi
 	;;
 
-'restart')
+restart)
 	$0 stop
 	$0 start
 	;;
 
+status)
+	if [ -f "$PID_FILE" ] && kill -0 `cat "$PID_FILE"`; then
+		:
+	elif [ -f "$PID_FILE" ]; then
+		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+		exit 1
+	else
+		echo "$PID_FILE does not exist. $PROG is not running?"
+		exit 1
+	fi
+	;;
+
 *)
-	echo "Usage: $0 { start | stop }"
+	echo "Usage: $0 { start | stop | restart | status }"
 	exit 1
 	;;
 esac
