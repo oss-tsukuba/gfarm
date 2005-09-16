@@ -6,9 +6,12 @@ GFMD=@prefix@/sbin/gfmd
 PID_FILE=/var/run/gfmd.pid
 
 # workaround a problem that "ld -R" doesn't work with indirectly dependent SOs
-if [ -n "@globus_location@" ]; then
-	LD_LIBRARY_PATH=@globus_location@/lib
-	export LD_LIBRARY_PATH
+if [ -n "@globus_location@" ] && [ -d "@globus_location@" ]; then
+	GLOBUS_LOCATION="@globus_location@"
+	export GLOBUS_LOCATION
+	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
+		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+	fi
 fi
 
 case "$1" in 
