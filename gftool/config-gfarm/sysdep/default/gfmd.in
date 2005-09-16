@@ -9,6 +9,16 @@ OPTIONS="@config_gfarm_gfmd_option@"
 GFMD=@config_gfarm_prefix@/sbin/gfmd
 PID_FILE=@config_gfarm_run_dir@/gfmd.pid
 
+if [ -n "@config_gfarm_globus_location@" ] &&
+   [ -d "@config_gfarm_globus_location@" ]
+then
+	GLOBUS_LOCATION="@config_gfarm_globus_location@"
+	export GLOBUS_LOCATION
+	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
+		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+	fi
+fi
+
 if [ -n "@config_gfarm_globus_location@" ]; then
 	GLOBUS_LOCATION=@config_gfarm_globus_location@
 	export GLOBUS_LOCATION

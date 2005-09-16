@@ -40,8 +40,10 @@ command_args="-P $pidfile $OPTIONS"
 
 load_rc_config $name
 
-if [ -n "@config_gfarm_globus_location@" ]; then
-	GLOBUS_LOCATION=@config_gfarm_globus_location@
+if [ -n "@config_gfarm_globus_location@" -a \
+     -d "@config_gfarm_globus_location@"]
+then
+	GLOBUS_LOCATION="@config_gfarm_globus_location@"
 	export GLOBUS_LOCATION
 	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
 		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
