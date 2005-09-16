@@ -2,12 +2,21 @@
 #
 # $Id$
 #
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
 # chkconfig: 2345 95 05
+#
+## For RedHat Linux style rc.d
+# description: Gfarm filesystem metaserver
+# processname: gfmd
+# config: @config_gfarm_gfarm_config@
+# pidfile: @config_gfarm_run_dir@/gfsd.pid
+
+PROG="gfsd"
 
 CONF="@config_gfarm_gfarm_config@"
+BINARY="@config_gfarm_prefix@/sbin/$PROG"
+PID_FILE="@config_gfarm_run_dir@/${PROG}.pid"
 OPTIONS="@config_gfarm_gfsd_option@"
-GFMD=@config_gfarm_prefix@/sbin/gfsd
-PID_FILE=/var/run/gfsd.pid
 
 if [ -n "@config_gfarm_globus_location@" ] &&
    [ -d "@config_gfarm_globus_location@" ]
@@ -19,26 +28,51 @@ then
 	fi
 fi
 
-case "$1" in 
-'start')
-	if [ -x $GFSD -a -f "$CONF" ]; then
-		$GFSD -P $PID_FILE $OPTIONS
-	fi	
+case $1 in 
+start)
+	if [ ! -x "$BINARY" ]; then
+		echo -n "$BINARY is not installed"
+		exit 1
+	fi
+	if [ ! -f "$CONF" ]; then
+		echo -n "$CONF is not configured"
+		exit 1
+	fi
+	$BINARY -P "$PID_FILE" $OPTIONS
 	;;
 
-'stop')
-	if [ -f $PID_FILE ]; then
-		kill -TERM `cat $PID_FILE`
+stop)
+	if [ -f "$PID_FILE" ] && kill -TERM `cat "$PID_FILE"`; then
+		:
+	elif [ -f "$PID_FILE" ]; then
+		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+		rm -f "$PID_FILE"
+		exit 1
+	else
+		echo "$PID_FILE does not exist"
+		exit 1
 	fi
 	;;
 
-'restart')
+restart)
 	$0 stop
 	$0 start
 	;;
 
+status)
+	if [ -f "$PID_FILE" ] && kill -0 `cat "$PID_FILE"`; then
+		:
+	elif [ -f "$PID_FILE" ]; then
+		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+		exit 1
+	else
+		echo "$PID_FILE does not exist. $PROG is not running?"
+		exit 1
+	fi
+	;;
+
 *)
-	echo "Usage: $0 { start | stop }"
+	echo "Usage: $0 { start | stop | restart | status }"
 	exit 1
 	;;
 esac
