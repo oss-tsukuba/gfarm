@@ -8,8 +8,8 @@ include $(top_srcdir)/makes/var.mk
 
 datadir=$(default_datadir)/gfarm/config/linux/default
 
-DATA =	$(srcdir)/../default/gfarm-slapd.in \
-	$(srcdir)/../default/gfmd.in \
-	$(srcdir)/../default/gfsd.in
+DATA =	$(srcdir)/../../default/gfarm-slapd.in \
+	$(srcdir)/../../default/gfmd.in \
+	$(srcdir)/../../default/gfsd.in
 
 include $(top_srcdir)/makes/data.mk
