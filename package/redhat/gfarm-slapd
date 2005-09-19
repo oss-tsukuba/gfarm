@@ -36,7 +36,6 @@ fi
 
 RETVAL=0
 
-# See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FILE: "
@@ -47,7 +46,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping $FILE: "
-	killproc gfarm-slapd
+	killproc "$FILE"
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
 	echo
