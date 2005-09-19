@@ -41,7 +41,6 @@ RETVAL=0
 # because these functions don't allow multiple server processes for
 # same binary.
 
-# See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FILE: "
