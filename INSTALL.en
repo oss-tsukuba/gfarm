@@ -592,7 +592,7 @@ If you install from a binary distribution, the following start-up
 script is provided to start and stop gfmd.
 	RedHat Linux:		/etc/rc.d/init.d/gfmd
 	Debian GNU/Linux:	/etc/init.d/gfmd
-	Solaris:		/etc/rc3.d/S98gfmd
+	Solaris:		/etc/rc3.d/S90gfmd
 
 If you install from a source distribution, the start-up script will be
 generated to package/<OS>/gfmd at the configuration time.  On Debian
@@ -613,7 +613,7 @@ The procedure to invoke gfmd by this script is as follows:
 	Solaris:
 		% su
 		Password: 
-		# /etc/rc3.d/S98gfmd start
+		# /etc/rc3.d/S90gfmd start
 
 If you would like to execute gfmd directly, you can do as follows:
 	% su
@@ -639,7 +639,7 @@ If you install from a binary distribution, the following start-up
 script is provided to start and stop gfsd.
 	RedHat Linux:		/etc/rc.d/init.d/gfsd
 	Debian GNU/Linux:	/etc/init.d/gfsd
-	Solaris:		/etc/rc3.d/S99gfsd
+	Solaris:		/etc/rc3.d/S95gfsd
 
 If you install from a source distribution, the start-up script will be
 generated to package/<OS>/gfsd at the configuration time.  On Debian
@@ -660,7 +660,7 @@ The procedure to invoke gfsd by this script is as follows:
 	Solaris:
 		% su
 		Password: 
-		# /etc/rc3.d/S99gfsd start
+		# /etc/rc3.d/S95gfsd start
 
 If you would like to execute gfsd directly, you can do as follows:
 	% su
