@@ -33,7 +33,7 @@ RETVAL=0
 
 start()
 {
-	echo -n $"Starting $FILE:"
+	echo -n "Starting $FILE:"
 	initlog -c "$DAEMON -P $PIDFILE $OPTIONS" && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
@@ -42,7 +42,7 @@ start()
 
 stop()
 {
-	echo -n $"Stopping $FILE:"
+	echo -n "Stopping $FILE:"
 	if [ -f "$PIDFILE" ]; then
 		kill -TERM `cat "$PIDFILE"` && success || failure
 		RETVAL=$?
