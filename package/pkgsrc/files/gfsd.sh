@@ -12,14 +12,16 @@ if [ -f /etc/rc.subr ]; then
 fi
 
 name="gfsd"
+FILE=${name}
 rcvar=${name}
 command="@PREFIX@/sbin/${name}"
+pidfile="@GFARM_PID_DIR@/${FILE}.pid"
 required_files="@PKG_SYSCONFDIR@/gfarm.conf"
 # add more flags through ${${name}_flags}
-command_args="-P @GFARM_PID_DIR@/${name}.pid"
+command_args="-P $pidfile"
 
 if [ -f /etc/rc.subr ]; then
-	load_rc_config $name
+	load_rc_config ${FILE}
 	run_rc_command "$1"
 else
 	@ECHO@ -n " ${name}"

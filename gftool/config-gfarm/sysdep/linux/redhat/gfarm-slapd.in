@@ -5,15 +5,20 @@
 # chkconfig: 2345 85 15
 # description: LDAP slapd for Gfarm
 # processname: slapd
-# pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
 # config: @config_gfarm_slapd_config@
-
-bindir=@config_gfarm_openldap_libexec@
-config=@config_gfarm_slapd_config@
-port=@config_gfarm_slapd_port@
+# pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
 
 # Source function library.
 . /etc/rc.d/init.d/functions
+
+prog="slapd"
+FILE="gfarm-slapd"
+
+CONF="@config_gfarm_slapd_config@"
+PORT=@config_gfarm_slapd_port@
+DAEMON="@config_gfarm_openldap_libexec@/$prog"
+PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 
 # Get config.
 . /etc/sysconfig/network
@@ -24,47 +29,68 @@ then
 	exit 0
 fi
 
-[ -f $bindir/slapd ] || exit 0
-[ -f $config ] || exit 0
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+[ -f "$DAEMON" ] || exit 0
+[ -f "$CONF" ] || exit 0
 
 RETVAL=0
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
 
 # See how we were called.
 case "$1" in
   start)
-	echo -n "Starting Gfarm LDAP services: "
+	echo -n "Starting $FILE: "
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
-	daemon $bindir/slapd -f $config -h ldap://:$port/
+	daemon "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && touch @config_gfarm_lock_dir@/gfarm-slapd
+	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
 	echo
 	;;
   stop)
-	echo -n "Stopping Gfarm LDAP services: "
-	if [ -f @config_gfarm_run_dir@/gfarm-slapd.pid ]; then
-		PID=`cat @config_gfarm_run_dir@/gfarm-slapd.pid`
+	echo -n "Stopping $FILE: "
+	if [ -f "$PIDFILE" ]; then
+		PID=`cat "$PIDFILE"`
 		kill -TERM $PID && success || failure
-		rm -f @config_gfarm_run_dir@/gfarm-slapd.pid
+		RETVAL=$?
+		rm -f "$PIDFILE"
 	else
-		killproc slapd -TERM
+		echo "$FILE is already stopped (no $PIDFILE)"
+		failure
+		RETVAL=1
 	fi
-	RETVAL=$?
-	[ $RETVAL -eq 0 ] && rm -f @config_gfarm_lock_dir@/gfarm-slapd
+	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
 	echo
 	;;
   status)
-	status slapd
-	RETVAL=$?
+	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
+	then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+		RETVAL=0
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+		RETVAL=1
+	elif [ -f "$LOCKFILE" ]; then
+		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
+		RETVAL=2
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		RETVAL=3
+	fi
 	;;
   restart|reload)
   	$0 stop
 	$0 start
-	# is this available?: killall -HUP slapd
+	# is this available?: killall -HUP "$PROG"
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: inet {start|stop|status|restart|reload}"
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
 	exit 1
 esac
 

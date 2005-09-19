@@ -11,14 +11,15 @@ if [ -f /etc/rc.subr ]; then
 	. /etc/rc.subr
 fi
 
-FILE=gfarm-slapd
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_slapd_port@
+FILE="gfarm-slapd"
 
 name="gfarm_slapd"
 rcvar=${name}
 command="@config_gfarm_openldap_libexec@/slapd"
 pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+required_dirs="@config_gfarm_ldap_data_dir@"
 required_files="$CONF"
 # add more flags through ${${name}_flags}
 command_args="-f $CONF -h ldap://:$PORT/"

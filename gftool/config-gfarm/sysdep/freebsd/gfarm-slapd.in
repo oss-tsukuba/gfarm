@@ -25,9 +25,9 @@ else
 	exit 2
 fi
 
-FILE=gfarm-slapd
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_slapd_port@
+FILE="gfarm-slapd"
 
 name="gfarm_slapd"
 rcvar=`set_rcvar`

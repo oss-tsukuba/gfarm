@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Init file for Gfarm filesystem daemon
+# Init file for Gfarm filesystem node daemon
 #
 # chkconfig: 2345 95 05
-# description: Gfarm filesystem daemon
+# description: Gfarm filesystem node daemon
 #
 # processname: gfsd
 # config: @config_gfarm_gfarm_config@
@@ -11,41 +11,67 @@
 #
 # $Id$
 
-gfarm_prefix="@config_gfarm_prefix@"
-prog="gfsd"
-
 # source function library
 . /etc/rc.d/init.d/functions
 
+prog="gfsd"
+FILE=$prog
+
+DAEMON="@config_gfarm_prefix@/sbin/$prog"
+PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfsd_option@"
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
 RETVAL=0
 
-# Some functions to make the below more readable
-BINARY=$gfarm_prefix/sbin/$prog
-PID_FILE="@config_gfarm_run_dir@/${prog}.pid"
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
 
 start()
 {
-	echo -n $"Starting $prog:"
-	initlog -c "$BINARY -P $PID_FILE $OPTIONS" && success || failure
+	echo -n $"Starting $FILE:"
+	initlog -c "$DAEMON -P $PIDFILE $OPTIONS" && success || failure
 	RETVAL=$?
-	[ "$RETVAL" = 0 ] && touch "@config_gfarm_lock_dir@/$prog"
+	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
 	echo
 }
 
 stop()
 {
-	echo -n $"Stopping $prog:"
-	if [ -f $PID_FILE ]; then
-		kill -TERM `cat $PID_FILE` && success || failure
-		rm -f $PID_FILE
+	echo -n $"Stopping $FILE:"
+	if [ -f "$PIDFILE" ]; then
+		kill -TERM `cat "$PIDFILE"` && success || failure
+		RETVAL=$?
+		rm -f "$PIDFILE"
 	else
-		killproc $prog -TERM
+		echo "$FILE is already stopped (no $PIDFILE)"
+		failure
+		RETVAL=1
 	fi
-	RETVAL=$?
-	[ "$RETVAL" = 0 ] && rm -f "@config_gfarm_lock_dir@/$prog"
+	[ "$RETVAL" = 0 ] && rm -f "$LOCKFILE"
 	echo
+}
+
+checkstatus()
+{
+	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
+	then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+		return 0
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+		return 1
+	elif [ -f "$LOCKFILE" ]; then
+		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
+		return 2
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		return 3
+	fi
 }
 
 case "$1" in
@@ -60,7 +86,7 @@ case "$1" in
 		start
 		;;
 	status)
-		status $BINARY
+		checkstatus
 		RETVAL=$?
 		;;
 	*)

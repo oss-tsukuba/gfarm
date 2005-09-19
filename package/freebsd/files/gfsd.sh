@@ -17,25 +17,27 @@
 . %%RC_SUBR%%
 
 name="gfsd"
+FILE=${name}
 rcvar=`set_rcvar`
 
 command="%%PREFIX%%/sbin/${name}"
-pidfile="/var/run/${name}.pid"
+pidfile="/var/run/${FILE}.pid"
 required_files=%%SYSCONFDIR%%/gfarm.conf
 # add more flags through ${${name}_flags}
-command_args="-P /var/run/${name}.pid"
+command_args="-P $pidfile"
+globus_location="%%GLOBUS_LOCATION%%"
 
 [ -z "$gfsd_enable" ]       && gfsd_enable="NO"
 [ -z "$gfsd_flags" ]        && gfsd_flags=""
 
-load_rc_config $name
+load_rc_config ${FILE}
 
-if [ -n "%%GLOBUS_LOCATION%%" ]; then
-	GLOBUS_LOCATION=%%GLOBUS_LOCATION%%
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
+then
+	GLOBUS_LOCATION="$globus_location"
 	export GLOBUS_LOCATION
-	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
-		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-	fi
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
 
 run_rc_command "$1"

@@ -16,31 +16,30 @@ FILE="gfarm-slapd"
 
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_slapd_port@
-BINARY="@config_gfarm_openldap_libexec@/$PROG"
-PID_FILE="@config_gfarm_run_dir@/${FILE}.pid"
+DAEMON="@config_gfarm_openldap_libexec@/$PROG"
+PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 
 case $1 in 
 start)
-	if [ ! -x "$BINARY" ]; then
-		echo -n "$BINARY is not installed"
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
 		exit 1
 	fi
 	if [ ! -f "$CONF" ]; then
 		echo -n "$CONF is not configured"
 		exit 1
 	fi
-	$BINARY -f "$CONF" -h "ldap://:$PORT/"
+	$DAEMON -f "$CONF" -h "ldap://:$PORT/"
 	;;
 
 stop)
-	if [ -f "$PID_FILE" ] && kill -TERM `cat "$PID_FILE"`; then
-		:
-	elif [ -f "$PID_FILE" ]; then
-		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
-		rm -f "$PID_FILE"
+	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
+		rm -f "$PIDFILE"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
 		exit 1
 	else
-		echo "$PID_FILE does not exist"
+		echo "$FILE is already stopped (no $PIDFILE)"
 		exit 1
 	fi
 	;;
@@ -51,13 +50,13 @@ restart)
 	;;
 
 status)
-	if [ -f "$PID_FILE" ] && kill -0 `cat "$PID_FILE"`; then
-		echo "$PROG (pid" `cat "$PID_FILE"`") is running"
-	elif [ -f "$PID_FILE" ]; then
-		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+	if [ -f "$PIDFILE" ] && kill -0 `cat "$PIDFILE"`; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
 		exit 1
 	else
-		echo "$PID_FILE does not exist. $PROG is not running?"
+		echo "$FILE is stopped (no $PIDFILE)"
 		exit 1
 	fi
 	;;

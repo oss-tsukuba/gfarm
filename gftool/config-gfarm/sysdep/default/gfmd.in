@@ -12,44 +12,43 @@
 # pidfile: @config_gfarm_run_dir@/gfmd.pid
 
 PROG="gfmd"
+FILE=$PROG
 
 CONF="@config_gfarm_gfarm_config@"
-BINARY="@config_gfarm_prefix@/sbin/$PROG"
-PID_FILE="@config_gfarm_run_dir@/${PROG}.pid"
+DAEMON="@config_gfarm_prefix@/sbin/$PROG"
+PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 OPTIONS="@config_gfarm_gfmd_option@"
+globus_location="@config_gfarm_globus_location@"
 
-if [ -n "@config_gfarm_globus_location@" ] &&
-   [ -d "@config_gfarm_globus_location@" ]
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
 then
-	GLOBUS_LOCATION="@config_gfarm_globus_location@"
+	GLOBUS_LOCATION="$globus_location"
 	export GLOBUS_LOCATION
-	if [ -f "$GLOBUS_LOCATION/etc/globus-user-env.sh" ]; then
-		. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
-	fi
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
 
 case $1 in 
 start)
-	if [ ! -x "$BINARY" ]; then
-		echo -n "$BINARY is not installed"
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
 		exit 1
 	fi
 	if [ ! -f "$CONF" ]; then
 		echo -n "$CONF is not configured"
 		exit 1
 	fi
-	$BINARY -P "$PID_FILE" $OPTIONS
+	$DAEMON -P "$PIDFILE" $OPTIONS
 	;;
 
 stop)
-	if [ -f "$PID_FILE" ] && kill -TERM `cat "$PID_FILE"`; then
-		:
-	elif [ -f "$PID_FILE" ]; then
-		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
-		rm -f "$PID_FILE"
+	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
+		rm -f "$PIDFILE"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
 		exit 1
 	else
-		echo "$PID_FILE does not exist"
+		echo "$FILE is already stopped (no $PIDFILE)"
 		exit 1
 	fi
 	;;
@@ -60,13 +59,13 @@ restart)
 	;;
 
 status)
-	if [ -f "$PID_FILE" ] && kill -0 `cat "$PID_FILE"`; then
-		echo "$PROG (pid" `cat "$PID_FILE"`") is running"
-	elif [ -f "$PID_FILE" ]; then
-		echo pid `cat "$PID_FILE"` is dead, but "$PID_FILE" remains
+	if [ -f "$PIDFILE" ] && kill -0 `cat "$PIDFILE"`; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
 		exit 1
 	else
-		echo "$PID_FILE does not exist. $PROG is not running?"
+		echo "$FILE is stopped (no $PIDFILE)"
 		exit 1
 	fi
 	;;

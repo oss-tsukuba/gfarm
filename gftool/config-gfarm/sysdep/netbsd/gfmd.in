@@ -2,7 +2,7 @@
 #
 # $NetBSD$
 #
-# Gfarm filesystem node daemon
+# Gfarm filesystem metaserver
 #
 # PROVIDE: gfmd
 # REQUIRE: DAEMON
@@ -15,15 +15,16 @@ CONF="@config_gfarm_gfarm_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
 
 name="gfmd"
+FILE=${name}
 rcvar=${name}
 command="@config_gfarm_prefix@/sbin/${name}"
-pidfile="@config_gfarm_run_dir@/${name}.pid"
+pidfile="@config_gfarm_run_dir@/${FILE}.pid"
 required_files="$CONF"
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"
 
 if [ -f /etc/rc.subr ]; then
-	load_rc_config $name
+	load_rc_config ${FILE}
 	run_rc_command "$1"
 else
 	echo -n " ${name}"

@@ -177,7 +177,7 @@ config()
 {
 	sed \
 	-e "s|@config_gfarm_prefix@|$prefix|" \
-	-e "s|@config_gfarm_globus_location@|$globus_location|" \
+	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
 	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|" \
 	-e "s|@config_gfarm_run_dir@|$RUN_DIR|" \
@@ -263,11 +263,12 @@ ABORT "$GFARM_CONF: cannot append spool statement"
 mkscript $RC_DIR/gfsd	config "$RC_GFSD_IN"
 
 # gfhost
-if [ X"$globus_location" != X -a -f "$globus_location/etc/globus-user-env.sh" ]
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
 then
 	GLOBUS_LOCATION="$globus_location"
 	export GLOBUS_LOCATION
-	. "$globus_location/etc/globus-user-env.sh"
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
 if [ X"$CONFIG_PREFIX" != X ]; then
 	GFARM_CONFIG_FILE="$GFARM_CONF"

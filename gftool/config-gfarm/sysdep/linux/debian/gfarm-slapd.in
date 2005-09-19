@@ -3,6 +3,7 @@
 # Kill me on all errors
 set -e
 
+FILE=gfarm-slapd
 DAEMON="@config_gfarm_openldap_libexec@/slapd"
 SLAPD_CONF="@config_gfarm_slapd_config@"
 SLAPD_SERVICES="ldap://:@config_gfarm_slapd_port@/"
@@ -12,8 +13,8 @@ SLAPD_OPTIONS=""
 [ -x "$DAEMON" ] || exit 0
 
 # Source the init script configuration
-if [ -f "/etc/default/gfarm-slapd" ]; then
-#	. /etc/default/gfarm-slapd
+if [ -f "/etc/default/$FILE" ]; then
+	. /etc/default/$FILE
 else
 	exit 1
 fi
@@ -60,7 +61,7 @@ fi
 if [ -z "$SLAPD_PIDFILE" ]; then
 	cat <<EOF >&2
 The pidfile for slapd is neither specified in "$SLAPD_CONF" nor
-in /etc/default/slapd. Consequently, slapd will not be started.
+in /etc/default/$FILE. Consequently, slapd will not be started.
 EOF
 	exit 1
 fi

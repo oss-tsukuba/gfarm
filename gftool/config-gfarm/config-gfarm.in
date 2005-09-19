@@ -324,7 +324,7 @@ config()
 	sed \
 	-e "s|@config_gfarm_prefix@|$prefix|" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
-	-e "s|@config_gfarm_globus_location@|$globus_location|" \
+	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|" \
 	-e "s|@config_gfarm_ldap_base_dn@|$LDAP_BASE_DN|" \
 	-e "s|@config_gfarm_ldap_leaf_dc@|$LDAP_LEAF_DC|" \
 	-e "s|@config_gfarm_slapd_hostname@|$SLAPD_HOSTNAME|" \
