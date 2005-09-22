@@ -257,7 +257,7 @@ fi
 
 if [ -z "${OPENLDAP_VERSION-}" ]; then
 	if [ -x "$OPENLDAP_PREFIX/bin/ldapsearch" ]; then
-		OPENLDAP_VERSION=`"$OPENLDAP_PREFIX/bin/ldapsearch" -V 2>&1 |
+		OPENLDAP_VERSION=`"$OPENLDAP_PREFIX/bin/ldapsearch" -Vxn 2>&1 |
 		  sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
 		if [ -z "$OPENLDAP_VERSION" ]
 		then
