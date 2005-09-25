@@ -58,7 +58,7 @@ cleanup(void)
 {
 	/* disconnect, do logging */
 	if (debug_mode)
-		gflog_notice("disconnected", NULL);
+		gflog_notice("disconnected");
 }
 
 static void
@@ -1308,7 +1308,7 @@ server(void *arg)
 			break;
 		default:
 			sprintf(buffer, "%d", (int)request);
-			gflog_warning("unknown request", buffer);
+			gflog_warning("unknown request: %s", buffer);
 			cleanup();
 			goto exit_free_conn;
 		}
@@ -1487,7 +1487,8 @@ main(int argc, char **argv)
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				gflog_fatal(optarg, "unknown syslog facility");
+				gflog_fatal("%s: unknown syslog facility",
+				    optarg);
 			break;
 		case 'v':
 			gflog_auth_set_verbose(1);
@@ -1578,7 +1579,7 @@ main(int argc, char **argv)
 		}
 		err = client_arg_alloc(client, &arg);
 		if (err) {
-			gflog_warning("client_arg_alloc", "no memory");
+			gflog_warning("client_arg_alloc: no memory");
 			close(client);
 			continue;
 		}

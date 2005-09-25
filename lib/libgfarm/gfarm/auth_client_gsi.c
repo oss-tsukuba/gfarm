@@ -57,9 +57,9 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 	    hostname,
 	    &acceptor_name);
 	if (e != NULL) {
-		gflog_auth_error("Server credential configuration for",
-		    service_tag);
-		gflog_auth_error(e, hostname);
+		gflog_auth_error(
+		    "Server credential configuration for %s:%s: %s",
+		    service_tag, hostname, e);
 		return (e);
 	}
 	session = gfarmSecSessionInitiate(fd, acceptor_name,
@@ -69,8 +69,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("Can't initiate session because of:",
-				    NULL);
+			gflog_error("Can't initiate session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -160,8 +159,7 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 	    &e_major, &e_minor);
 	if (state->session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("Can't initiate session because of:",
-				    NULL);
+			gflog_error("Can't initiate session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -237,9 +235,9 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    hostname,
 	    &state->acceptor_name);
 	if (e != NULL) {
-		gflog_auth_error("Server credential configuration for",
-		    service_tag);
-		gflog_auth_error(e, hostname);
+		gflog_auth_error(
+		    "Server credential configuration for %s:%s: %s",
+		    service_tag, hostname, e);
 		goto error_free_readable;
 	}
 

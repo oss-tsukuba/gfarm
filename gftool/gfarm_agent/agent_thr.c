@@ -32,11 +32,13 @@ agent_schedule(void *arg, void *(*handler)(void *))
 	if (!initialized) {
 		err = pthread_attr_init(&attr);
 		if (err != 0)
-			gflog_fatal("pthread_attr_init()", strerror(err));
+			gflog_fatal_errno("pthread_attr_init(): %s",
+			    strerror(err));
 		err = pthread_attr_setdetachstate(&attr,
 		    PTHREAD_CREATE_DETACHED);
 		if (err != 0)
-			gflog_fatal("PTHREAD_CREATE_DETACHED", strerror(err));
+			gflog_fatal_errno("PTHREAD_CREATE_DETACHED: %s",
+			    strerror(err));
 		initialized = 1;
 	}
 

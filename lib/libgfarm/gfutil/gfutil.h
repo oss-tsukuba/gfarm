@@ -16,16 +16,22 @@ void gfarm_unlimit_nofiles(int *);
 #define GFARM_DEFAULT_FACILITY	LOG_LOCAL0
 #endif
 
-void gflog_message(int, char *, char *);
-void gflog_error(char *, char *);
-void gflog_warning(char *, char *);
-void gflog_notice(char *, char *);
-void gflog_info(char *, char *);
-void gflog_debug(char *, char *);
-void gflog_warning_errno(char *);
+#ifdef __GNUC__
+#define GFLOG_PRINTF_ARG(M, N)	__attribute__((__format__(__printf__, M, N)))
+#else
+#define GFLOG_PRINTF_ARG(M, N)
+#endif
 
-void gflog_fatal(char *, char *);
-void gflog_fatal_errno(char *);
+void gflog_message(int, const char *, ...) GFLOG_PRINTF_ARG(2, 3);
+void gflog_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_notice(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_info(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_debug(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_warning_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+
+void gflog_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_fatal_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 
 void gflog_set_identifier(char *);
 void gflog_set_auxiliary_info(char *);
@@ -38,8 +44,8 @@ int gflog_syslog_name_to_facility(char *);
 
 int gflog_auth_set_verbose(int);
 int gflog_auth_get_verbose(void);
-void gflog_auth_error(char *, char *);
-void gflog_auth_warning(char *, char *);
+void gflog_auth_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+void gflog_auth_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 
 /* timeval */
 

@@ -51,13 +51,13 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 
 	e = xxx_proto_flush(conn);
 	if (e != NULL) {
-		gflog_error("authorize_gsi: protocol drain ", e);
+		gflog_error("authorize_gsi: protocol drain: %s", e);
 		return (e);
 	}
 
 	e = gfarm_gsi_server_initialize();
 	if (e != NULL) {
-		gflog_error("authorize_gsi: GSI initialize", e);
+		gflog_error("authorize_gsi: GSI initialize: %s", e);
 		return (e);
 	}
 
@@ -82,9 +82,9 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		    gfarm_host_get_self_name(),
 		    &desired_name);
 		if (e != NULL) {
-			gflog_auth_error("Server credential configuration for",
-			    service_tag);
-			gflog_auth_error(e, hostname);
+			gflog_auth_error(
+			    "Server credential configuration for %s:%s: %s",
+			    service_tag, hostname, e);
 			return (e);
 		}
 		rv = gfarmGssAcquireCredential(&cred,
@@ -94,11 +94,12 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 			gfarmGssDeleteName(&desired_name, NULL, NULL);
 		if (rv < 0) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error("Can't get server credential for ",
-				   service_tag);
+				gflog_error(
+				    "Can't get server credential for %s",
+				    service_tag);
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
-				gflog_error("GSI authentication error",
+				gflog_error("GSI authentication error: %s",
 				    hostname);
 			}
 			return (GFARM_ERR_AUTHENTICATION);
@@ -111,18 +112,17 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		
 		if (gfarmGssDeleteCredential(&cred, &e_major2, &e_minor2) < 0
 		    && gflog_auth_get_verbose()) {
-			gflog_warning("Can't release credential "
-			    " because of:", NULL);
+			gflog_warning("Can't release credential because of:");
 			gfarmGssPrintMajorStatus(e_major2);
 			gfarmGssPrintMinorStatus(e_minor2);
 		}
 	}
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("Can't accept session because of:", NULL);
+			gflog_error("Can't accept session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
-			gflog_error("GSI authentication error", hostname);
+			gflog_error("GSI authentication error: %s", hostname);
 		}
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -134,7 +134,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		global_username = NULL;
 		error = GFARM_AUTH_ERROR_DENIED;
 		gflog_error("authorize_gsi: "
-		    "cannot map global username into local username",
+		    "cannot map global username into local username: %s",
 		    userinfo->authData.userAuth.localName);
 	}
 #else
@@ -157,7 +157,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		global_username = NULL;
 		error = GFARM_AUTH_ERROR_DENIED;
 		gflog_error("authorize_gsi: "
-		    "cannot map DN into global username",
+		    "cannot map DN into global username: %s",
 		    userinfo->distName);
 	}
 #endif
@@ -183,7 +183,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 				free(aux);
 			if (msg != NULL)
 				free(msg);
-			gflog_error("authorize_gsi", e);
+			gflog_error("authorize_gsi: %s", e);
 		} else {
 			sprintf(aux, "%s@%s", global_username, hostname);
 			gflog_set_auxiliary_info(aux);
@@ -192,7 +192,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 			    method_prefix, auth_method_name,
 			    user_prefix, userinfo->authData.userAuth.localName,
 			    dnb, userinfo->distName, dne);
-			gflog_notice("authenticated", msg);
+			gflog_notice("authenticated: %s", msg);
 			free(msg);
 
 			if (!switch_to) {
@@ -205,9 +205,9 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 	xxx_connection_set_secsession(conn, session);
 	e2 = xxx_proto_send(conn, "i", error);
 	if (e2 != NULL) {
-		gflog_error("authorize_gsi: send reply", e2);
+		gflog_error("authorize_gsi: send reply: %s", e2);
 	} else if ((e2 = xxx_proto_flush(conn)) != NULL) {
-		gflog_error("authorize_gsi: completion", e2);
+		gflog_error("authorize_gsi: completion: %s", e2);
 	}
 
 	if (e != NULL || e2 != NULL) {

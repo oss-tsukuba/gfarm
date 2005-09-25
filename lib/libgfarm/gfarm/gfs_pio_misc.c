@@ -364,8 +364,8 @@ gfs_chmod_execfile_metadata(
 		char *e2;
 		e2 = gfarm_file_section_info_remove(
 				to_section.pathname, to_section.section);
-		gflog_warning("gfs_chmod: gfarm_file_section_info_remove()",
-			      e2);
+		gflog_warning(
+		    "gfs_chmod: gfarm_file_section_info_remove(): %s", e2);
 		goto finish_free_to_section_section;
 	}
 
@@ -374,16 +374,15 @@ gfs_chmod_execfile_metadata(
 							copies[i].section,
 							copies[i].hostname);
 		if (e != NULL)
-			gflog_warning(
-			  "gfs_chmod:gfarm_file_section_copy_info_remove()",
-			  e);
+			gflog_warning("gfs_chmod: "
+			  "gfarm_file_section_copy_info_remove(): %s", e);
 	}
 
 	e = gfarm_file_section_info_remove(from_section->pathname,
 					   from_section->section);
 	if (e != NULL)
-		gflog_warning("gfs_chmod:gfarm_file_section_info_remove()",
-		e);
+		gflog_warning("gfs_chmod:gfarm_file_section_info_remove(): %s",
+		    e);
 
 finish_free_to_section_section:
 	free(to_section.section);
@@ -436,7 +435,7 @@ gfs_chmod_file_spool(
 				gfarm_spool_server_port, &peer_addr, NULL);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_host_address_get()", e);
+				  "gfs_chmod:gfarm_host_address_get(): %s", e);
 				continue;
 			}
 
@@ -444,15 +443,15 @@ gfs_chmod_file_spool(
 						 &peer_addr, &gfs_server);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_client_connection()", e);
+				  "gfs_chmod:gfarm_client_connection(): %s",e);
 				continue;
 			}
 
 			e = gfs_client_chmod(gfs_server, from_path_section,
 					     mode);
 			if (e != NULL) {
-				gflog_warning("gfs_chmod:gfs_client_chmod()",
-					      e);
+				gflog_warning(
+				    "gfs_chmod:gfs_client_chmod(): %s", e);
 				gfs_client_disconnect(gfs_server);
 				continue;
 			}
@@ -462,7 +461,8 @@ gfs_chmod_file_spool(
 						      to_path_section);
 				if (e != NULL) {
 					gflog_warning(
-					  "gfs_chmod:gfs_client_rename()", e);
+					   "gfs_chmod:gfs_client_rename(): %s",
+					   e);
 					gfs_client_disconnect(gfs_server);
 					continue;
 				}
@@ -477,7 +477,8 @@ gfs_chmod_file_spool(
 				if (e != NULL) {
 					gflog_warning(
 					  "gfs_chmod:"
-					  "gfarm_file_section_copy_info_set()",
+					  "gfarm_file_section_copy_info_set()"
+					  "%s: ",
 					  e);
 				}
 			}
@@ -722,7 +723,7 @@ rename_file_spool(
 				gfarm_spool_server_port, &peer_addr, NULL);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool:"
-					      "gfarm_host_address_get()", e);
+				    "gfarm_host_address_get(): %s", e);
 				continue;
 			}
 
@@ -730,7 +731,7 @@ rename_file_spool(
 						 &peer_addr, &gfs_server);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool:"
-					      "gfarm_client_connect()", e);
+				    "gfarm_client_connect(): %s", e);
 				continue;
 			}
 
@@ -746,8 +747,8 @@ rename_file_spool(
 			gfs_client_disconnect(gfs_server);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool:"
-					      "gfs_client_link()", e);
-					continue;
+				    "gfs_client_link(): %s", e);
+				continue;
 			}
 
 			new_copy = copies[i][j];
@@ -758,8 +759,8 @@ rename_file_spool(
 							     &new_copy);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool:"
-					  "gfarm_file_section_copy_info_set()",
-					  e);
+				    "gfarm_file_section_copy_info_set(): %s",
+				    e);
 				continue;
 			}
 			ok = 1;
@@ -790,13 +791,13 @@ remove_infos_all(char *pathname)
 	e2 = gfarm_file_section_info_remove_all_by_file(pathname);
 	if (e2 != NULL)
 		gflog_warning("remove_infos_all:"
-			"gfarm_file_section_info_remove_all_by_file()", e2);
+		    "gfarm_file_section_info_remove_all_by_file(): %s", e2);
 	if (e == NULL)
 		e = e2;
 	e2 = gfarm_path_info_remove(pathname);
 	if (e2 != NULL)
 		gflog_warning("remove_infos_all:"
-			"gfarm_file_path_info_remove()", e2);
+		    "gfarm_file_path_info_remove(): %s", e2);
 	if (e == NULL)
 		e = e2;
 	return (e);
@@ -823,7 +824,7 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 		e2 = gfarm_path_info_remove(to_pi.pathname);
 		if (e2 != NULL)
 			gflog_warning("link_a_file:"
-				      "gfarm_path_info_remove()", e);
+			    "gfarm_path_info_remove(): %s", e);
 		return (e);
 	}
 
@@ -841,13 +842,15 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 						to_section.pathname,
 						(*sections)[i].section);
 				if (e2 != NULL)
-					gflog_warning("link_a_file"
-					"gfarm_file_section_info_remove()", e);
+					gflog_warning("link_a_file:"
+					   "gfarm_file_section_info_remove(): "
+					   "%s", 
+					   e);
 			}
 			e2 = gfarm_path_info_remove(to_pi.pathname);
 			if (e2 != NULL)
 				gflog_warning("link_a_file:"
-					      "gfarm_path_info_remove()", e);
+				    "gfarm_path_info_remove(): %s", e);
 			goto finish_free_section_info;
 		}
 	}
@@ -917,12 +920,12 @@ rename_single_file(struct gfarm_path_info *from_pi, char *newpath)
 					ncopy, copies);
 		if (e2 != NULL)
 			gflog_warning("rename_single_file:"
-				      "rename_clean_spool()", e2);
+				      "rename_clean_spool(): %s", e2);
 
 		e2 = remove_infos_all(from_pi->pathname);
 		if (e2 != NULL)
 			gflog_warning("rename_single_file:"
-				      "rename_infos_all()", e2);
+				      "rename_infos_all(): %s", e2);
 
 		for (i = 0; i < nsection; i++)
 			gfarm_file_section_copy_info_free_all(ncopy[i],
@@ -1011,20 +1014,20 @@ rename_spool_node_dir(char *hostname,
 	e = gfarm_host_address_get(hostname,
 		gfarm_spool_server_port, &peer_addr, NULL);
 	if (e != NULL) {
-		gflog_warning("rename_spool_node_dir:gfarm_host_address_get()",
-			      e);
+		gflog_warning(
+		    "rename_spool_node_dir:gfarm_host_address_get(): %s", e);
 		return;
 	}
 	e = gfs_client_connect(hostname, &peer_addr, &gfs_server);
 	if (e != NULL) {
-		gflog_warning("rename_spool_node_dir:gfarm_client_connect()",
-			      e);
+		gflog_warning(
+		    "rename_spool_node_dir:gfarm_client_connect(): %s", e);
 		return;
 	}
 	e = gfs_client_rename(gfs_server, from, to);
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_warning("rename_spool_node_dir:gfarm_client_rename()",
-			      e);
+		gflog_warning(
+		    "rename_spool_node_dir:gfarm_client_rename(): %s", e);
 		return;
 	}
 	for (i = 0; i < nfile; i++) {

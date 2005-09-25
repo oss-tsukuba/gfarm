@@ -30,8 +30,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	mode = va_arg(ap, int);
 	va_end(ap);
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___OPEN) "(%s, 0%o)\n", path, oflag));
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___OPEN) "(%s, 0%o)", path, oflag));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_OPEN(path, oflag, mode));
@@ -48,16 +48,16 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		/* XXX - metadata of a directory should not be imcomplete */
 		is_directory = 0;
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
-			_gfs_hook_debug(fprintf(stderr,
-			    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s\n",
+			_gfs_hook_debug(gflog_info(
+			    "GFS: Hooking " S(FUNC___OPEN) ": gfs_stat: %s",
 			    e));
 	}
 
 	if (is_directory) {
 		GFS_Dir dir;
 
-		_gfs_hook_debug(fprintf(stderr,
-		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o): dir\n",
+		_gfs_hook_debug(gflog_info(
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o): dir",
 		    url, oflag));
 
 		if ((oflag & (O_CREAT|O_TRUNC)) != 0 ||
@@ -71,8 +71,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			filedes = gfs_hook_insert_gfs_dir(dir, url);
 			save_errno = errno;
 			_gfs_hook_debug(
-				fprintf(stderr, "GFS: Hooking "
-				    S(FUNC___OPEN) " --> %d\n", filedes);
+				gflog_info("GFS: Hooking "
+				    S(FUNC___OPEN) " --> %d", filedes);
 			);
 			free(url);
 			if (filedes == -1)
@@ -85,23 +85,23 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	}
 
 	if ((oflag & O_CREAT) != 0) {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o, 0%o)\n",
+		_gfs_hook_debug(gflog_info(
+		    "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o, 0%o)",
 		    url, oflag, mode));
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_create(url, oflag, mode, &gf);
 	} else {
-		_gfs_hook_debug(fprintf(stderr,
-		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o)\n", url, oflag));
+		_gfs_hook_debug(gflog_info(
+		   "GFS: Hooking " S(FUNC___OPEN) "(%s, 0%o)", url, oflag));
 
 		oflag = gfs_hook_open_flags_gfarmize(oflag);
 		e = gfs_pio_open(url, oflag, &gf);
 	}
 	free(url);
 	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___OPEN) ": %s\n", e));
+		_gfs_hook_debug(gflog_info(
+		    "GFS: Hooking " S(FUNC___OPEN) ": %s", e));
 		errno = gfarm_error_to_errno(e);
 		return (-1);
 	}
@@ -109,15 +109,15 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	/* set file view */
 	switch (gfs_hook_get_current_view()) {
 	case section_view:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_section(%s, %s)\n",
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_section(%s, %s)",
 			path, gfs_hook_get_current_section()));
 		e = gfs_pio_set_view_section(
 			gf, gfs_hook_get_current_section(), NULL, 0);
 		break;
 	case index_view:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_index(%s, %d, %d)\n", path,
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_index(%s, %d, %d)", path,
 			gfs_hook_get_current_nfrags(),
 			gfs_hook_get_current_index()));
 		e = gfs_pio_set_view_index(gf, gfs_hook_get_current_nfrags(),
@@ -144,24 +144,24 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		} else if (e == GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
 		    (e == NULL && gfs_pio_get_node_size(&np) == NULL &&
 		     nf == np)) {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_local(%s) @ %d/%d\n",
+			_gfs_hook_debug(gflog_info(
+				"GFS: set_view_local(%s) @ %d/%d",
 					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_local(gf, 0);
 		} else {
-			_gfs_hook_debug(fprintf(stderr,
-				"GFS: set_view_global(%s) @ %d/%d\n",
+			_gfs_hook_debug(gflog_info(
+				"GFS: set_view_global(%s) @ %d/%d",
 					path, gfarm_node, gfarm_nnode));
 			e = gfs_pio_set_view_global(gf, 0);
 		}
 		break;
 	default:
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_global(%s)\n", path));
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_global(%s)", path));
 		e = gfs_pio_set_view_global(gf, 0);
 	}
 	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr, "GFS: set_view: %s\n", e));
+		_gfs_hook_debug(gflog_info("GFS: set_view: %s", e));
 		gfs_pio_close(gf);
 		errno = gfarm_error_to_errno(e);
 		return (-1);
@@ -170,8 +170,8 @@ FUNC___OPEN(const char *path, int oflag, ...)
 	filedes = gfs_hook_insert_gfs_file(gf);
 	_gfs_hook_debug(
 		if (filedes != -1) {
-			fprintf(stderr,
-			    "GFS: Hooking " S(FUNC___OPEN) " --> %d(%d)\n",
+			gflog_info(
+			    "GFS: Hooking " S(FUNC___OPEN) " --> %d(%d)",
 			    filedes, gfs_pio_fileno(gf));
 		}
 	);
@@ -187,7 +187,7 @@ FUNC__OPEN(const char *path, int oflag, ...)
 	va_start(ap, oflag);
 	mode = va_arg(ap, int); /* See comment of va_arg() in FUNC___OPEN(); */
 	va_end(ap);
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__OPEN) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__OPEN)));
 	return (FUNC___OPEN(path, oflag, mode));
 }
 
@@ -200,7 +200,7 @@ FUNC_OPEN(const char *path, int oflag, ...)
 	va_start(ap, oflag);
 	mode = va_arg(ap, int); /* See comment of va_arg() in FUNC___OPEN(); */
 	va_end(ap);
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_OPEN) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_OPEN)));
 	return (FUNC___OPEN(path, oflag, mode));
 }
 
@@ -211,28 +211,28 @@ FUNC_OPEN(const char *path, int oflag, ...)
 int
 FUNC___CREAT(const char *path, mode_t mode)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC___CREAT) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___CREAT)));
 	return (FUNC___OPEN(path, O_CREAT|O_TRUNC|O_WRONLY, mode));
 }
 
 int
 FUNC__CREAT(const char *path, mode_t mode)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__CREAT) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__CREAT)));
 	return (FUNC___CREAT(path, mode));
 }
 
 int
 FUNC_CREAT(const char *path, mode_t mode)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_CREAT) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_CREAT)));
 	return (FUNC___CREAT(path, mode));
 }
 
 int
 FUNC__LIBC_CREAT(const char *path, mode_t mode)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__LIBC_CREAT) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__LIBC_CREAT)));
 	return (FUNC___CREAT(path, mode));
 }
 
@@ -249,17 +249,17 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 	const char *e;
 	file_offset_t o;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___LSEEK) "(%d, %" PR_FILE_OFFSET ", %d)\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___LSEEK) "(%d, %" PR_FILE_OFFSET ", %d)",
 	    filedes, (file_offset_t)offset, whence));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_LSEEK(filedes, offset, whence));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
-		_gfs_hook_debug(fprintf(stderr,
+		_gfs_hook_debug(gflog_info(
 		"GFS: Hooking " S(FUNC___LSEEK)
-		   "(%d, %" PR_FILE_OFFSET ", %d)\n",
+		   "(%d, %" PR_FILE_OFFSET ", %d)",
 		filedes, (file_offset_t)offset, whence));
 
 		dir = (GFS_Dir)gf;
@@ -289,8 +289,8 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___LSEEK) "(%d(%d), %" PR_FILE_OFFSET ", %d)\n",
+	_gfs_hook_debug(gflog_info("GFS: Hooking "
+	    S(FUNC___LSEEK) "(%d(%d), %" PR_FILE_OFFSET ", %d)",
 	    filedes, gfs_pio_fileno(gf), (file_offset_t)offset, whence));
 
 	e = gfs_pio_seek(gf, offset, whence, &o);
@@ -298,7 +298,7 @@ FUNC___LSEEK(int filedes, OFF_T offset, int whence)
 		return ((OFF_T)o);
 error:
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___LSEEK) ": %s\n", e));
+	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___LSEEK) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -306,7 +306,7 @@ error:
 OFF_T
 FUNC__LSEEK(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__LSEEK) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__LSEEK) ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -314,7 +314,7 @@ FUNC__LSEEK(int filedes, OFF_T offset, int whence)
 OFF_T
 FUNC_LSEEK(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_LSEEK) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_LSEEK) ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -332,8 +332,8 @@ FUNC___PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 	file_offset_t o;
 	int n;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___PREAD) "(%d, ,%lu, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___PREAD) "(%d, ,%lu, %" PR_FILE_OFFSET ")",
 	    filedes, (unsigned long)nbyte, (file_offset_t)offset));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL) 
@@ -344,8 +344,8 @@ FUNC___PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___PREAD) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug(gflog_info("GFS: Hooking "
+	    S(FUNC___PREAD) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")",
 	    filedes, gfs_pio_fileno(gf),
 				(unsigned long)nbyte, (file_offset_t)offset));
 
@@ -365,12 +365,12 @@ FUNC___PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 	if (e != NULL)
 		goto error;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___PREAD) " --> %d\n", n));
+	_gfs_hook_debug_v(gflog_info(
+		    "GFS: Hooking " S(FUNC___PREAD) " --> %d", n));
 	return (n);
 error:
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___PREAD) ": %s\n", e));
+	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___PREAD) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -378,7 +378,7 @@ error:
 ssize_t
 FUNC__PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__PREAD) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__PREAD) ": %d",
 	    filedes));
 	return (FUNC___PREAD(filedes, buf, nbyte, offset));
 }
@@ -386,7 +386,7 @@ FUNC__PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 ssize_t
 FUNC_PREAD(int filedes, void *buf, size_t nbyte, OFF_T offset)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_PREAD) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_PREAD) ": %d",
 	    filedes));
 	return (FUNC___PREAD(filedes, buf, nbyte, offset));
 }
@@ -405,8 +405,8 @@ FUNC___PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 	file_offset_t o;
 	int n;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___PWRITE) "(%d, ,%lu, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___PWRITE) "(%d, ,%lu, %" PR_FILE_OFFSET ")",
 	    filedes, (unsigned long)nbyte, (file_offset_t)offset));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
@@ -417,8 +417,8 @@ FUNC___PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___PWRITE) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug(gflog_info("GFS: Hooking "
+	    S(FUNC___PWRITE) "(%d(%d), ,%lu, %" PR_FILE_OFFSET ")",
 	    filedes, gfs_pio_fileno(gf),
 				(unsigned long)nbyte, (file_offset_t)offset));
 
@@ -438,12 +438,12 @@ FUNC___PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 	if (e != NULL)
 		goto error;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___PWRITE) " --> %d\n", n));
+	_gfs_hook_debug_v(gflog_info(
+		    "GFS: Hooking " S(FUNC___PWRITE) " --> %d", n));
 	return (n);
 error:
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___PWRITE) ": %s\n", e));
+	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___PWRITE) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -451,7 +451,7 @@ error:
 ssize_t
 FUNC__PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__PWRITE) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__PWRITE) ": %d",
 	    filedes));
 	return (FUNC___PWRITE(filedes, buf, nbyte, offset));
 }
@@ -459,7 +459,7 @@ FUNC__PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 ssize_t
 FUNC_PWRITE(int filedes, const void *buf, size_t nbyte, OFF_T offset)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_PWRITE) ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_PWRITE) ": %d",
 	    filedes));
 	return (FUNC___PWRITE(filedes, buf, nbyte, offset));
 }
@@ -492,8 +492,8 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	int at_first = 1;
 #endif
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___GETDENTS) "(%d, %p, %lu)",
 	    filedes, buf, (unsigned long)nbyte));
 
 	if ((dir = gfs_hook_is_open(filedes)) == NULL)
@@ -503,8 +503,8 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 		return (SYSCALL_GETDENTS(filedes, buf, nbyte));
 #endif
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___GETDENTS) "(%d, %p, %lu)\n",
+	_gfs_hook_debug(gflog_info("GFS: Hooking "
+	    S(FUNC___GETDENTS) "(%d, %p, %lu)",
 	    filedes, buf, (unsigned long)nbyte));
 
 	if (gfs_hook_gfs_file_type(filedes) != GFS_DT_DIR) {
@@ -589,14 +589,14 @@ FUNC___GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 	}
 finish:
 	if (e == NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___GETDENTS) " --> %d\n", filedes));
+		_gfs_hook_debug(gflog_info(
+		    "GFS: Hooking " S(FUNC___GETDENTS) " --> %d", filedes));
 		return ((char *)bp - (char *)buf);
 	}
 error:
 
-	_gfs_hook_debug(fprintf(stderr,
-				"GFS: " S(FUNC___GETDENTS) ": %s\n", e));
+	_gfs_hook_debug(gflog_info(
+				"GFS: " S(FUNC___GETDENTS) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -606,8 +606,8 @@ error:
 int
 FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)
 {
-	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking " S(FUNC__GETDENTS) ": %d\n",
+	_gfs_hook_debug_v(gflog_info(
+				  "Hooking " S(FUNC__GETDENTS) ": %d",
 				  filedes));
 	return (FUNC___GETDENTS(filedes, buf, nbyte, offp));
 }
@@ -615,8 +615,8 @@ FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, int nbyte, long *offp)
 int
 FUNC_GETDENTS(int filedes, char *buf, int nbyte, long *offp)
 {
-	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking " S(FUNC_GETDENTS) ": %d\n",
+	_gfs_hook_debug_v(gflog_info(
+				  "Hooking " S(FUNC_GETDENTS) ": %d",
 				  filedes));
 	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte, offp));
 }
@@ -626,8 +626,8 @@ FUNC_GETDENTS(int filedes, char *buf, int nbyte, long *offp)
 int internal_function
 FUNC__GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 {
-	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking " S(FUNC__GETDENTS) ": %d\n",
+	_gfs_hook_debug_v(gflog_info(
+				  "Hooking " S(FUNC__GETDENTS) ": %d",
 				  filedes));
 	return (FUNC___GETDENTS(filedes, buf, nbyte));
 }
@@ -639,8 +639,8 @@ FUNC_GETDENTS(int filedes, char *buf, size_t nbyte)
 FUNC_GETDENTS(int filedes, STRUCT_DIRENT *buf, size_t nbyte)
 #endif
 {
-	_gfs_hook_debug_v(fprintf(stderr,
-				  "Hooking " S(FUNC_GETDENTS) ": %d\n",
+	_gfs_hook_debug_v(gflog_info(
+				  "Hooking " S(FUNC_GETDENTS) ": %d",
 				  filedes));
 	return (FUNC___GETDENTS(filedes, (STRUCT_DIRENT *)buf, nbyte));
 }
@@ -660,8 +660,8 @@ FUNC___TRUNCATE(const char *path, OFF_T length)
 	char *url;
 	struct gfs_stat gs;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___TRUNCATE) "(%s, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___TRUNCATE) "(%s, %" PR_FILE_OFFSET ")",
 	    path, (file_offset_t)length));
 
 	if (!gfs_hook_is_url(path, &url))
@@ -669,16 +669,16 @@ FUNC___TRUNCATE(const char *path, OFF_T length)
 
 	e = gfs_stat(url, &gs);
 	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-		    "GFS: Hooking " S(FUNC___TRUNCATE) ": gfs_stat: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+		    "GFS: Hooking " S(FUNC___TRUNCATE) ": gfs_stat: %s", e));
 		free(url);
 		errno = gfarm_error_to_errno(e);
 		return (-1);
 	}
 	if (GFARM_S_ISDIR(gs.st_mode)) {
 		e = GFARM_ERR_IS_A_DIRECTORY;
-		_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-			S(FUNC___FTRUNCATE) "(%s, %" PR_FILE_OFFSET"): %s\n",
+		_gfs_hook_debug(gflog_info("GFS: Hooking "
+			S(FUNC___FTRUNCATE) "(%s, %" PR_FILE_OFFSET"): %s",
 			path, (file_offset_t)length ,e));
 		free(url);
 		gfs_stat_free(&gs);
@@ -686,14 +686,14 @@ FUNC___TRUNCATE(const char *path, OFF_T length)
 		return (-1);
 	}
 	gfs_stat_free(&gs);
-	_gfs_hook_debug(fprintf(stderr,
-	   "GFS: Hooking " S(FUNC___TRUNCATE) "(%s, %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug(gflog_info(
+	   "GFS: Hooking " S(FUNC___TRUNCATE) "(%s, %" PR_FILE_OFFSET ")",
 	    path, (file_offset_t)length));
 
 	e = gfs_pio_open(url, GFARM_FILE_RDWR, &gf);
 	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-		"GFS: Hooking " S(FUNC___TRUNCATE) ": gfs_pio_open: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+		"GFS: Hooking " S(FUNC___TRUNCATE) ": gfs_pio_open: %s", e));
 		free(url);
 		errno = gfarm_error_to_errno(e);
 		return (-1);
@@ -701,8 +701,8 @@ FUNC___TRUNCATE(const char *path, OFF_T length)
 	free(url);
 	e = gfs_pio_truncate(gf, length);
 	if (e != NULL) {
-		_gfs_hook_debug(fprintf(stderr,	"GFS: Hooking "
-		 S(FUNC___TRUNCATE) ": gfs_pio_truncate: %s\n", e));
+		_gfs_hook_debug(gflog_info(	"GFS: Hooking "
+		 S(FUNC___TRUNCATE) ": gfs_pio_truncate: %s", e));
 		errno = gfarm_error_to_errno(e);
 		return (-1);
 	}
@@ -713,14 +713,14 @@ FUNC___TRUNCATE(const char *path, OFF_T length)
 int
 FUNC__TRUNCATE(const char *path, OFF_T length)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__TRUNCATE) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__TRUNCATE)));
 	return (FUNC___TRUNCATE(path, length));
 }
 
 int
 FUNC_TRUNCATE(const char *path, OFF_T length)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_TRUNCATE) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_TRUNCATE)));
 	return (FUNC___TRUNCATE(path, length));
 }
 #endif
@@ -736,32 +736,32 @@ FUNC___FTRUNCATE(int filedes, OFF_T length)
 	GFS_File gf;
 	const char *e;
 
-	_gfs_hook_debug_v(fprintf(stderr,
-	    "Hooking " S(FUNC___FTRUNCATE) "(%d, %" PR_FILE_OFFSET")\n",
+	_gfs_hook_debug_v(gflog_info(
+	    "Hooking " S(FUNC___FTRUNCATE) "(%d, %" PR_FILE_OFFSET")",
 	    filedes, (file_offset_t)length));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_FTRUNCATE(filedes, length));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_DIR) {
-		_gfs_hook_debug(fprintf(stderr,	"GFS: Hooking "
-			S(FUNC___FTRUNCATE) "(%d, %" PR_FILE_OFFSET")\n",
+		_gfs_hook_debug(gflog_info(	"GFS: Hooking "
+			S(FUNC___FTRUNCATE) "(%d, %" PR_FILE_OFFSET")",
 		 filedes, (file_offset_t)length));
 
 		e = GFARM_ERR_IS_A_DIRECTORY;
 		goto error;
 	}
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: Hooking "
-	    S(FUNC___FTRUNCATE) "(%d(%d), %" PR_FILE_OFFSET ")\n",
+	_gfs_hook_debug(gflog_info("GFS: Hooking "
+	    S(FUNC___FTRUNCATE) "(%d(%d), %" PR_FILE_OFFSET ")",
 	    filedes, gfs_pio_fileno(gf), (file_offset_t)length));
 
 	e = gfs_pio_truncate(gf, length);
 	if (e == NULL)
 		return (0);
 error:
-	_gfs_hook_debug(fprintf(stderr,
-				"GFS:" S(FUNC___FTRUNCATE) ": %s\n", e));
+	_gfs_hook_debug(gflog_info(
+				"GFS:" S(FUNC___FTRUNCATE) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -769,14 +769,14 @@ error:
 int
 FUNC__FTRUNCATE(int filedes, OFF_T length)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC__FTRUNCATE) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__FTRUNCATE)));
 	return (FUNC___FTRUNCATE(filedes, length));
 }
 
 int
 FUNC_FTRUNCATE(int filedes, OFF_T length)
 {
-	_gfs_hook_debug_v(fputs("Hooking " S(FUNC_FTRUNCATE) "\n", stderr));
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_FTRUNCATE)));
 	return (FUNC___FTRUNCATE(filedes, length));
 }
 #endif

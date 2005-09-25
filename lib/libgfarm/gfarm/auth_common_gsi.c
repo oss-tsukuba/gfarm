@@ -38,8 +38,7 @@ gfarm_gsi_client_initialize(void)
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error(
-				"can't initialize as initiator because of:",
-				NULL);
+			    "can't initialize as initiator because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -65,14 +64,14 @@ gfarm_gsi_client_cred_name(void)
 	
 	if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
 		dn = NULL;
-		gflog_auth_error("gfarm_gsi_client_cred_name()",
+		gflog_auth_error("gfarm_gsi_client_cred_name(): "
 		    "not initialized as an initiator");
 	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
 	    < 0) {
 		dn = NULL;
 		if (gflog_auth_get_verbose()) {
 			gflog_error("cannot convert initiator credential "
-			    "to name", NULL);
+			    "to name");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -80,7 +79,7 @@ gfarm_gsi_client_cred_name(void)
 		dn = gfarmGssNewDisplayName(name, &e_major, &e_minor, NULL);
 		if (dn == NULL && gflog_auth_get_verbose()) {
 			gflog_error("cannot convert initiator credential "
-			    "to string", NULL);
+			    "to string");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -109,8 +108,7 @@ gfarm_gsi_server_initialize(void)
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error(
-				"can't initialize GSI as both because of:",
-				NULL);
+			    "can't initialize GSI as both because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -243,7 +241,7 @@ gfarm_gsi_cred_config_convert_to_name(
 	}
 	if (rv < 0) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("gfarmGssImportName()",
+			gflog_error("gfarmGssImportName(): "
 			    "invalid credential configuration:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);

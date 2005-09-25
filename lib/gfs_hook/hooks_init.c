@@ -17,7 +17,7 @@ gfs_hook_initialize(void)
 {
 	char *e;
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: gfs_hook_initialize\n"));
+	_gfs_hook_debug(gflog_info("GFS: gfs_hook_initialize"));
 
 	/*
 	 * allocate file descriptor greater than MIN_FD defined in
@@ -28,7 +28,7 @@ gfs_hook_initialize(void)
 	gfs_hook_release_fd();
 	if (e != NULL) {
 		_gfs_hook_debug(
-			fprintf(stderr, "GFS: gfs_hook_initialize: %s\n", e));
+			gflog_info("GFS: gfs_hook_initialize: %s", e));
 		return (e);
 	}
 	if (gf_hook_default_global)

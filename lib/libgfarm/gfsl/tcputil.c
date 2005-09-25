@@ -35,7 +35,7 @@ isNonBlock(fd)
 {
     int stat = fcntl(fd, F_GETFL, 0);
     if (stat < 0) {
-	gflog_error("fcntl", strerror(errno));
+	gflog_error("fcntl: %s", strerror(errno));
 	return 0;
     } else {
 	if (stat & O_NONBLOCK) {
@@ -58,7 +58,7 @@ gfarmTCPConnectPort(addr, port)
     memset((void *)&sin, 0, sizeof(struct sockaddr_in));
 
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	gflog_error("socket", strerror(errno));
+	gflog_error("socket: %s", strerror(errno));
 	return -1;
     }
 
@@ -80,7 +80,7 @@ gfarmTCPConnectPort(addr, port)
 	    }
 	} else {
 	    Error:
-	    gflog_error("connect", strerror(errno));
+	    gflog_error("connect: %s", strerror(errno));
 	    return -1;
 	}
     }
@@ -99,7 +99,7 @@ gfarmTCPBindPort(port)
     memset((void *)&sin, 0, sizeof(struct sockaddr_in));
 
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	gflog_error("socket", strerror(errno));
+	gflog_error("socket: %s", strerror(errno));
 	return -1;
     }
 
@@ -108,19 +108,19 @@ gfarmTCPBindPort(port)
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) != 0) {
-	gflog_error("setsockopt", strerror(errno));
+	gflog_error("setsockopt: %s", strerror(errno));
 	close(sock);
 	return -1;
     }
     
     if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-	gflog_error("bind", strerror(errno));
+	gflog_error("bind: %s", strerror(errno));
 	close(sock);
 	return -1;
     }
 
     if (listen(sock, MAX_BACKLOG) != 0) {
-	gflog_error("listen", strerror(errno));
+	gflog_error("listen: %s", strerror(errno));
 	close(sock);
 	return -1;
     }
@@ -200,7 +200,7 @@ gfarmIPGetPeernameOfSocket(sock, portPtr)
     socklen_t slen = sizeof(sin);
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	gflog_error("getpeername", strerror(errno));
+	gflog_error("getpeername: %s", strerror(errno));
 	if (portPtr != NULL) {
 	    *portPtr = 0;
 	}
@@ -222,7 +222,7 @@ gfarmIPGetNameOfSocket(sock, portPtr)
     socklen_t slen = sizeof(sin);
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	gflog_error("getsockname", strerror(errno));
+	gflog_error("getsockname: %s", strerror(errno));
 	if (portPtr != NULL) {
 	    *portPtr = 0;
 	}
@@ -252,7 +252,7 @@ gfarmWaitReadable(fd)
 	if (errno == EINTR) {
 	    goto SelectAgain;
 	} else {
-	    gflog_error("select", strerror(errno));
+	    gflog_error("select: %s", strerror(errno));
 	    return sel;
 	}
     }
@@ -277,7 +277,7 @@ gfarmReadInt8(fd, buf, len)
 	}
 	cur = read(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error("read", strerror(errno));
+	    gflog_error("read: %s", strerror(errno));
 	    return sum;
 	} else if (cur == 0) {
 	    break;
@@ -344,7 +344,7 @@ gfarmWriteInt8(fd, buf, len)
     do {
 	cur = write(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error("write", strerror(errno));
+	    gflog_error("write: %s", strerror(errno));
 	    return sum;
 	}
 	sum += cur;

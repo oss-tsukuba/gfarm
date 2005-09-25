@@ -14,14 +14,14 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	GFS_File gf;
 	char *e;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FSTAT) "(%d)\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___FSTAT) "(%d)",
 	    filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_FSTAT(filedes, buf));
 
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___FSTAT) "(%d)\n", filedes));
+	_gfs_hook_debug(gflog_info(
+	    "GFS: Hooking " S(FUNC___FSTAT) "(%d)", filedes));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
 		struct gfs_stat status;
@@ -67,7 +67,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 	return (0);
 
 error:
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FSTAT) ": %s\n", e));
+	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___FSTAT) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -75,7 +75,7 @@ error:
 int
 FUNC__FSTAT(int filedes, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC__FSTAT) ": %d\n",
+    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__FSTAT) ": %d",
 	filedes));
     return (FUNC___FSTAT(filedes, buf));
 }
@@ -83,7 +83,7 @@ FUNC__FSTAT(int filedes, STRUCT_STAT *buf)
 int
 FUNC_FSTAT(int filedes, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_FSTAT) ": %d\n",
+    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_FSTAT) ": %d",
 	filedes));
     return (FUNC___FSTAT(filedes, buf));
 }
@@ -104,14 +104,14 @@ int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
     _gfs_hook_debug_v(
-	fprintf(stderr, "Hooking " S(FUNC___FSTAT) ": %d\n", filedes));
+	gflog_info("Hooking " S(FUNC___FSTAT) ": %d", filedes));
     return (FUNC___FXSTAT(_STAT_VER, filedes, buf));
 }
 
 int
 FUNC_FSTAT(int filedes, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC_FSTAT) ": %d\n",
+    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_FSTAT) ": %d",
 	filedes));
     return (FUNC___FXSTAT(_STAT_VER, filedes, buf));
 }
@@ -130,14 +130,14 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	GFS_File gf;
 	char *e;
 
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " S(FUNC___FXSTAT) "(%d)\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___FXSTAT) "(%d)",
 	    filedes));
 
 	if ((gf = gfs_hook_is_open(filedes)) == NULL)
 		return (SYSCALL_FXSTAT(ver, filedes, buf));
 
-	_gfs_hook_debug(fprintf(stderr,
-	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)\n", filedes));
+	_gfs_hook_debug(gflog_info(
+	    "GFS: Hooking " S(FUNC___FXSTAT) "(%d)", filedes));
 
 	if (gfs_hook_gfs_file_type(filedes) == GFS_DT_REG) {
 		struct gfs_stat status;
@@ -180,7 +180,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 	return (0);
 
 error:
-	_gfs_hook_debug(fprintf(stderr, "GFS: " S(FUNC___FXSTAT) ": %s\n", e));
+	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___FXSTAT) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -189,7 +189,7 @@ int
 FUNC__FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
     _gfs_hook_debug_v(
-	fprintf(stderr, "Hooking " S(FUNC__FXSTAT) ": %d\n", filedes));
+	gflog_info("Hooking " S(FUNC__FXSTAT) ": %d", filedes));
     return (FUNC___FXSTAT(ver, filedes, buf));
 }
 

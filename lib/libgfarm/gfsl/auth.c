@@ -69,7 +69,7 @@ gfarmAuthInitialize(usermapFile)
 	if (usermapFile == NULL || usermapFile[0] == '\0') {
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
-		gflog_auth_error("gfarmAuthInitialize()", "no memory");
+		gflog_auth_error("gfarmAuthInitialize(): no memory");
 		ret = -1;
 		goto done;
 	    }
@@ -83,7 +83,8 @@ gfarmAuthInitialize(usermapFile)
 	    (void)free(confDir);
 	}
 	if ((mFd = fopen(usermapFile, "r")) == NULL) {
-	    gflog_auth_error(usermapFile, "cannot open");
+	    gflog_auth_error("%s: cannot open: %s",
+		usermapFile, strerror(errno));
 	    ret = -1;
 	    goto done;
 	}
@@ -92,7 +93,7 @@ gfarmAuthInitialize(usermapFile)
 					   gfarm_hash_default,
 					   gfarm_hash_key_equal_default);
 	if (authTable == NULL) { /* no memory */
-	    gflog_auth_error("gfarmAuthInitialize()", "no memory");
+	    gflog_auth_error("gfarmAuthInitialize(): no memory");
 	    ret = -1;
 	    goto done;
 	}
@@ -101,7 +102,7 @@ gfarmAuthInitialize(usermapFile)
 					      gfarm_hash_default,
 					      gfarm_hash_key_equal_default);
 	if (userToDNTable == NULL) { /* no memory */
-	    gflog_auth_error("gfarmAuthInitialize()", "no memory");
+	    gflog_auth_error("gfarmAuthInitialize(): no memory");
 	    gfarm_hash_table_free(authTable);
 	    ret = -1;
 	    goto done;
@@ -133,9 +134,8 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (nToken == 0) {
 		continue;
 	    } else {
-		gflog_warning(distName,
-			      "WARNING: missing local username for DN."
-			      " Ignored.");
+		gflog_warning("%s: WARNING: missing local username for DN."
+			      " Ignored.", distName);
 		continue;
 	    }
 
@@ -155,20 +155,18 @@ gfarmAuthInitialize(usermapFile)
 	    if (strcmp(mode, "@user@") == 0) {
 		pPtr = getpwnam(localName);
 		if (pPtr == NULL) {
-		    gflog_auth_warning(localName,
-				       "WARNING: Account doesn't exist."
-				       " Ignored.");
+		    gflog_auth_warning("%s: WARNING: Account doesn't exist."
+				       " Ignored.", localName);
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
-		    gflog_warning(localName,
-				  "WARNING: This user is a super user."
-				  " Ignored.");
+		    gflog_warning("%s: WARNING: This user is a super user."
+				  " Ignored.", localName);
 		    continue;
 		}
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
 		if (aePtr == NULL) {
-		    gflog_auth_error("gfarmAuthInitialize()", "no memory");
+		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;
 		    goto initDone;
 		}
@@ -188,12 +186,12 @@ gfarmAuthInitialize(usermapFile)
 					strlen(localName) + 1,
 					sizeof(aePtr), &isNew);
 		if (ePtr == NULL) { /* no memory */
-		    gflog_warning(localName,
-				  "WARNING: no memory for DN. Ignored.");
+		    gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+				  localName);
 		} else if (!isNew) {
-		    gflog_auth_warning(localName,
-				  "WARNING: multiple X.509 Distinguish name "
-				  "for a UNIX user account. Ignored.");
+		    gflog_auth_warning(
+			"%s: WARNING: multiple X.509 Distinguish name "
+			"for a UNIX user account. Ignored.", localName);
 		} else {
 		    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;
 		}
@@ -201,7 +199,7 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (strcmp(mode, "@host@") == 0) {
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
 		if (aePtr == NULL) {
-		    gflog_auth_error("gfarmAuthInitialize()", "no memory");
+		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;
 		    goto initDone;
 		}
@@ -213,9 +211,8 @@ gfarmAuthInitialize(usermapFile)
 		aePtr->distName = strdup(distName);
 		aePtr->authData.hostAuth.FQDN = strdup(localName);
 	    } else {
-		gflog_warning(localName,
-			      "WARNING: Unknown keyword at second field."
-			      " Ignored.");
+		gflog_warning("%s: WARNING: Unknown keyword at second field."
+			      " Ignored.", localName);
 		continue;
 	    }
 
@@ -223,8 +220,8 @@ gfarmAuthInitialize(usermapFile)
 				    strlen(aePtr->distName) + 1,
 				    sizeof(aePtr), &isNew);
 	    if (ePtr == NULL) { /* no memory */
-		gflog_warning(distName,
-			      "WARNING: no memory for DN. Ignored.");
+		gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+			      distName);
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 		if (aePtr->authType == GFARM_AUTH_USER)
 		    gfarm_hash_purge(userToDNTable,
@@ -235,7 +232,7 @@ gfarmAuthInitialize(usermapFile)
 		goto initDone;
 	    }
 	    if (!isNew) {
-		gflog_warning(distName, "WARNING: duplicate DN. Ignored.");
+		gflog_warning("%s: WARNING: duplicate DN. Ignored.", distName);
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 		if (aePtr->authType == GFARM_AUTH_USER)
 		    gfarm_hash_purge(userToDNTable,

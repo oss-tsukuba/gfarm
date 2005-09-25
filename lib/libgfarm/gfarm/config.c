@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h> /* ntohs */
@@ -1401,6 +1402,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 {
 	struct sigaction sigpipe_action;
 	char *e;
+	int syslog_facility;
 #ifdef HAVE_GSI
 	int saved_auth_verb;
 #endif
@@ -1409,6 +1411,16 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 		return (NULL);
 
 	gfarm_error_initialize();
+
+	if ((e = getenv("GFARM_SYSLOG_OUTPUT")) != NULL) {
+		syslog_facility = gflog_syslog_name_to_facility(e);
+		if (syslog_facility == -1) {
+			gflog_warning(
+			    "GFARM_SYSLOG_OUTPUT=%s: unknown facility", e);
+			syslog_facility = LOG_USER;
+		}
+		gflog_syslog_open(LOG_PID, syslog_facility);
+	}
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != NULL)

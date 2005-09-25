@@ -66,11 +66,12 @@ gfm_server_get_request(struct xxx_connection *client, char *diag,
 		return (e);
 	}
 	if (eof) {
-		gflog_warning(diag, "missing RPC argument");
+		gflog_warning("%s: missing RPC argument", diag);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
-		gflog_fatal(diag, "invalid format character to get request");
+		gflog_fatal("%s: invalid format character to get request",
+		    diag);
 	return (NULL);
 }
 
@@ -84,20 +85,20 @@ gfm_server_put_reply(struct xxx_connection *client, char *diag,
 	va_start(ap, format);
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL) {
-		gflog_warning(diag, e);
+		gflog_warning("%s: %s", diag, e);
 		return (e);
 	}
 	if (ecode == GFJ_ERROR_NOERROR) {
 		e = xxx_proto_vsend(client, &format, &ap);
 		if (e != NULL) {
-			gflog_warning(diag, e);
+			gflog_warning("%s: %s", diag, e);
 			return (e);
 		}
 	}
 	va_end(ap);
 
 	if (ecode == 0 && *format != '\0')
-		gflog_fatal(diag, "invalid format character to put reply");
+		gflog_fatal("%s: invalid format character to put reply", diag);
 	return (NULL);
 }
 
@@ -267,26 +268,12 @@ file_table_add(struct xxx_connection *client, char *username, char *hostname)
 int
 file_table_close(int fd)
 {
-	static char m1[] = "(";
-	static char m2[] = "@";
-	static char m3[] = ") disconnected";
-	char *msg;
-
 	if (fd < 0 || fd >= file_table_size || file_table[fd].conn == NULL)
 		return (EBADF);
 
 	/* disconnect, do logging */
-	msg = malloc(sizeof(m1) - 1 + strlen(file_table[fd].user) +
-	    sizeof(m2) - 1 + strlen(file_table[fd].host) + sizeof(m3));
-	if (msg == NULL) {
-		gflog_notice("(:@not enough memory) disconnected",
-		    file_table[fd].user);
-	} else {
-		sprintf(msg, "%s%s%s%s%s", m1, file_table[fd].user,
-		    m2, file_table[fd].host, m3);
-		gflog_notice(msg, NULL);
-		free(msg);
-	}
+	gflog_notice("(%s@%s) disconnected",
+	    file_table[fd].user, file_table[fd].host);
 
 	while (file_table[fd].jobs != NULL)
 		job_table_remove(file_table[fd].jobs->id, file_table[fd].user,
@@ -450,7 +437,7 @@ char *
 gfj_server_register_node(struct xxx_connection *client)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("register_node", "not implemented");
+	gflog_fatal("register_node: not implemented");
 
 	return (gfj_server_put_reply(client, "register_node",
 	    GFJ_ERROR_NOERROR, ""));
@@ -581,7 +568,7 @@ char *
 gfj_server_hostinfo(struct xxx_connection *client)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("host_info", "not implemented");
+	gflog_fatal("host_info: not implemented");
 
 	return (gfj_server_put_reply(client, "host_info",
 	    GFJ_ERROR_NOERROR, ""));
@@ -594,7 +581,6 @@ service(int client_socket)
 	char *e;
 	int eof;
 	gfarm_int32_t request;
-	char buffer[GFARM_INT32STRLEN];
 
 	client = file_table[client_socket].conn;
 	e = xxx_proto_recv(client, 0, &eof, "i", &request);
@@ -603,7 +589,7 @@ service(int client_socket)
 		return;
 	}
 	if (e != NULL) {
-		gflog_warning("request number", e);
+		gflog_warning("request number: %s", e);
 		return;
 	}
 	switch (request) {
@@ -626,8 +612,7 @@ service(int client_socket)
 	case GFJ_PROTO_HOSTINFO:
 		e = gfj_server_hostinfo(client); break;
 	default:
-		sprintf(buffer, "%d", request);
-		gflog_warning("unknown request", buffer);
+		gflog_warning("unknown request: %d", request);
 	}
 	if (e == NULL)
 		e = xxx_proto_flush(client);
@@ -675,12 +660,12 @@ main_loop(int accepting_socket)
 					gflog_warning_errno("accept");
 			} else if ((e = xxx_fd_connection_new(client_socket,
 			    &client_conn)) != NULL) {
-				gflog_warning("fd_connection_new", e);
+				gflog_warning("fd_connection_new: %s", e);
 				close(client_socket);
 			} else if ((e = gfarm_authorize(client_conn, 0,
 			    GFM_SERVICE_TAG,
 			    &username, &hostname, NULL)) != NULL) {
-				gflog_warning("authorize", e);
+				gflog_warning("authorize: %s", e);
 				xxx_connection_free(client_conn);
 			} else if ((errno = file_table_add(client_conn,
 			    username, hostname)) != 0) {
@@ -730,7 +715,7 @@ open_accepting_socket(int port)
 		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != NULL)
-		gflog_warning("setsockopt", e);
+		gflog_warning("setsockopt: %s", e);
 	if (listen(sock, LISTEN_BACKLOG) < 0)
 		gflog_fatal_errno("listen");
 	return (sock);
@@ -781,7 +766,8 @@ main(int argc, char **argv)
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				gflog_fatal(optarg, "unknown syslog facility");
+				gflog_fatal("%s: unknown syslog facility",
+				    optarg);
 			break;
 		case 'v':
 			gflog_auth_set_verbose(1);

@@ -14,6 +14,7 @@
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include "gfutil.h"
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
@@ -320,7 +321,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 OFF_T
 __llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "__llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "__llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -328,7 +329,7 @@ __llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 _llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "_llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "_llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -336,7 +337,7 @@ _llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }

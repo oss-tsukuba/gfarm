@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
@@ -10,95 +11,125 @@ static char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 
+void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
 void
-gflog_message(int priority, char *message, char *status)
+gflog_vmessage(int priority, const char *format, va_list ap)
 {
+	char buffer[2048];
+
+	vsnprintf(buffer, sizeof buffer, format, ap);
+
 	if (log_auxiliary_info != NULL) {
-		if (status != NULL) {
-			if (log_use_syslog)
-				syslog(priority, "(%s) %s: %s",
-				       log_auxiliary_info, message, status);
-			else
-				fprintf(stderr, "%s: (%s) %s: %s\n",
-					log_identifier,
-					log_auxiliary_info, message, status);
-		} else {
-			if (log_use_syslog)
-				syslog(priority, "(%s) %s",
-				       log_auxiliary_info, message);
-			else
-				fprintf(stderr, "%s: (%s) %s\n",
-					log_identifier,
-					log_auxiliary_info, message);
-		}
+		if (log_use_syslog)
+			syslog(priority, "(%s) %s",
+			    log_auxiliary_info, buffer);
+		else
+			fprintf(stderr, "%s: (%s) %s\n",
+			    log_identifier,
+			    log_auxiliary_info, buffer);
 	} else {
-		if (status != NULL) {
-			if (log_use_syslog)
-				syslog(priority, "%s: %s",
-				       message, status);
-			else
-				fprintf(stderr, "%s: %s: %s\n",
-					log_identifier,
-					message, status);
-		} else {
-			if (log_use_syslog)
-				syslog(priority, "%s",
-				       message);
-			else
-				fprintf(stderr, "%s: %s\n",
-					log_identifier,
-					message);
-		}
+		if (log_use_syslog)
+			syslog(priority, "%s", buffer);
+		else
+			fprintf(stderr, "%s: %s\n", log_identifier, buffer);
 	}
 }
 
 void
-gflog_error(char *message, char *status)
+gflog_message(int priority, const char *format, ...)
 {
-	gflog_message(LOG_ERR, message, status);
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(priority, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_warning(char *message, char *status)
+gflog_error(const char *format, ...)
 {
-	gflog_message(LOG_WARNING, message, status);
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_ERR, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_notice(char *message, char *status)
+gflog_warning(const char *format, ...)
 {
-	gflog_message(LOG_NOTICE, message, status);
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_WARNING, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_info(char *message, char *status)
+gflog_notice(const char *format, ...)
 {
-	gflog_message(LOG_INFO, message, status);
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_NOTICE, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_debug(char *message, char *status)
+gflog_info(const char *format, ...)
 {
-	gflog_message(LOG_DEBUG, message, status);
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_INFO, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_warning_errno(char *message)
+gflog_debug(const char *format, ...)
 {
-	gflog_warning(message, strerror(errno));
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_DEBUG, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_fatal(char *message, char *status)
+gflog_warning_errno(const char *format, ...)
 {
-	gflog_error(message, status);
+	char buffer[2048];
+
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buffer, sizeof buffer, format, ap);
+	va_end(ap);
+	gflog_warning("%s: %s", buffer, strerror(errno));
+}
+
+void
+gflog_fatal(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(LOG_ERR, format, ap);
+	va_end(ap);
 	exit(2);
 }
 
 void
-gflog_fatal_errno(char *message)
+gflog_fatal_errno(const char *format, ...)
 {
-	gflog_fatal(message, strerror(errno));
+	char buffer[2048];
+
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buffer, sizeof buffer, format, ap);
+	va_end(ap);
+	gflog_fatal("%s: %s", buffer, strerror(errno));
 }
 
 void
@@ -189,16 +220,24 @@ gflog_auth_get_verbose(void)
 }
 
 void
-gflog_auth_error(char *message, char *status)
+gflog_auth_error(const char *format, ...)
 {
+	va_list ap;
+
+	va_start(ap, format);
 	if (authentication_verbose)
-		gflog_error(message, status);
+		gflog_vmessage(LOG_ERR, format, ap);
+	va_end(ap);
 }
 
 void
-gflog_auth_warning(char *message, char *status)
+gflog_auth_warning(const char *format, ...)
 {
+	va_list ap;
+
+	va_start(ap, format);
 	if (authentication_verbose)
-		gflog_warning(message, status);
+		gflog_vmessage(LOG_WARNING, format, ap);
+	va_end(ap);
 }
 

@@ -13,6 +13,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "config.h"
 
 #include <openssl/evp.h>
@@ -62,8 +63,8 @@ gfs_hook_not_initialized(void)
 
 	if (!printed) {
 		printed = 1;
-		fprintf(stderr,
-			"fatal error: gfarm_initialize() isn't called\n");
+		gflog_info(
+			"fatal error: gfarm_initialize() isn't called");
 	}
 }
 
@@ -193,7 +194,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	int fd, save_errno;
 	struct stat st;
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_file: %p\n", gf));
+	_gfs_hook_debug(gflog_info("GFS: insert_gfs_file: %p", gf));
 
 	/*
 	 * A new file descriptor is needed to identify a hooked file
@@ -236,7 +237,7 @@ error_close_fd:
 error_close_gf:
 	gfs_pio_close(gf);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_file: %s\n",
+	_gfs_hook_debug(gflog_info("GFS: insert_gfs_file: %s",
 		gfarm_errno_to_error(save_errno)));
 
 	errno = save_errno;
@@ -249,7 +250,7 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	int fd, save_errno;
 	char *e, *abs_url;
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %p\n", dir));
+	_gfs_hook_debug(gflog_info("GFS: insert_gfs_dir: %p", dir));
 
 	/*
 	 * A new file descriptor is needed to identify a hooked file
@@ -308,7 +309,7 @@ error_close_fd:
 error_closedir:
 	gfs_closedir(dir);
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: insert_gfs_dir: %s\n",
+	_gfs_hook_debug(gflog_info("GFS: insert_gfs_dir: %s",
 		gfarm_errno_to_error(save_errno)));
 
 	errno = save_errno;
@@ -327,19 +328,19 @@ gfs_hook_clear_gfs_file(int fd)
 	GFS_File gf;
 	char *e = NULL;
 
-	_gfs_hook_debug(fprintf(stderr, "GFS: clear_gfs_file: %d\n", fd));
+	_gfs_hook_debug(gflog_info("GFS: clear_gfs_file: %d", fd));
 
 	gf = gfs_hook_is_open(fd);
 	if (gf == NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: ERROR: not a Gfarm file: %d\n", fd));
+		_gfs_hook_debug(gflog_info(
+			"GFS: ERROR: not a Gfarm file: %d", fd));
 		return ("not a Gfarm file");
 	}
 
 	if (--_gfs_file_buf[fd]->refcount > 0) {
 	  	/* fd is duplicated, skip closing the file. */
-		_gfs_hook_debug(fprintf(stderr,
-					"GFS: clear_gfs_file: skipped\n"));
+		_gfs_hook_debug(gflog_info(
+					"GFS: clear_gfs_file: skipped"));
 	} else {
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
 			e = gfs_pio_close(gf);
@@ -360,7 +361,7 @@ gfs_hook_clear_gfs_file(int fd)
 
 	if (e != NULL)
 		_gfs_hook_debug(
-			fprintf(stderr, "GFS: clear_gfs_file: %s\n", e));
+			gflog_info("GFS: clear_gfs_file: %s", e));
 
 	return (e);
 }
@@ -405,7 +406,7 @@ gfs_hook_flush_all(void)
 	}
 	if (e_save != NULL)
 		_gfs_hook_debug(
-			fprintf(stderr, "GFS: hook_flush_all: %s\n", e_save));
+			gflog_info("GFS: hook_flush_all: %s", e_save));
 
 	return (e_save);
 }
@@ -432,7 +433,7 @@ gfs_hook_close_all(void)
 	}
 	if (e_save != NULL)
 		_gfs_hook_debug(
-			fprintf(stderr, "GFS: hook_close_all: %s\n", e_save));
+			gflog_info("GFS: hook_close_all: %s", e_save));
 
 	return (e_save);
 }
@@ -446,7 +447,7 @@ gfs_hook_terminate(void)
 	e = gfarm_terminate();
 	if (e != NULL)
 		_gfs_hook_debug(
-		    fprintf(stderr, "GFS: gfarm_terminate: %s\n", e));
+		    gflog_info("GFS: gfarm_terminate: %s", e));
 }
 
 struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
@@ -469,7 +470,7 @@ int
 gfs_hook_dup_filedes(int oldfd, int newfd)
 {
 	_gfs_hook_debug(
-	   fprintf(stderr, "GFS: dpu_filedes: %d, %d\n", oldfd, newfd));
+	   gflog_info("GFS: dpu_filedes: %d, %d", oldfd, newfd));
 
 #if 0
 	if (_gfs_file_buf[oldfd] == _gfs_file_buf[newfd])
@@ -1066,8 +1067,8 @@ gfs_hook_set_view_local(int filedes, int flag)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_local(gf, flag)) != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_local: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_local: %s", e));
 		return e;
 	}
 	return NULL;
@@ -1085,8 +1086,8 @@ gfs_hook_set_view_index(int filedes, int nfrags, int index,
 
 	if ((e = gfs_pio_set_view_index(gf, nfrags, index, host, flags))
 	    != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_index: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_index: %s", e));
 		return e;
 	}
 	return NULL;
@@ -1102,8 +1103,8 @@ gfs_hook_set_view_global(int filedes, int flags)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_global(gf, flags)) != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_global: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_global: %s", e));
 		return e;
 	}
 	return NULL;
@@ -1119,8 +1120,8 @@ gfs_hook_set_view_section(int filedes, char *section, char *host, int flags)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_section(gf, section, host, flags)) != NULL) {
-		_gfs_hook_debug(fprintf(stderr,
-			"GFS: set_view_section: %s\n", e));
+		_gfs_hook_debug(gflog_info(
+			"GFS: set_view_section: %s", e));
 		return (e);
 	}
 	return (NULL);
