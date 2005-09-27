@@ -1,12 +1,12 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><title>Grid Datafarm: Gfarm hook + Samba [Japanese]</title>
 <meta http-equiv="Content-Type" content="text/html; charset=euc-jp">
 <meta content="document" name="resource-type"></head>
 <body>
 <a href="http://datafarm.apgrid.org/">
 <img alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></a> 
-<A href="../../index.html">文書集</a> >
-<a href="index.html">ユーザーズマニュアル</a> >
+<A href="../../index.html">文書集</a> &gt;
+<a href="index.html">ユーザーズマニュアル</a> &gt;
 samba/hook
 
 
@@ -18,7 +18,7 @@ samba/hook
   <p>
   この文書では，Gfarm システムコールフックライブラリをプリロードした
   うえで Samba を起動して  Windows から Gfarm ファイルにアクセスする
-  ための設定方法を説明しています．</br></br>
+  ための設定方法を説明しています．<br><br>
 
   <p>
   別に FUSE を使って Samba を利用する方法もありますが，フックライブラリを
@@ -73,7 +73,7 @@ samba/hook
        Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，
        下記の設定になっていません．</p>
 
-   <p><table bgcolor="lightcyan"><tbody><tr><td>
+   <p><table bgcolor="#E0FFFF"><tbody><tr><td>
        <pre> attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
         EQUALITY caseExactMatch
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)</pre>
@@ -92,12 +92,12 @@ samba/hook
         それを Windows から見えるように設定します．</p>
 
 	<p>Samba 2系の場合
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 client code page = 932
 coding system = utf8</pre></td></tr></tbody></table></p>
 
 	<p>Samba 3系の場合
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 dos charset = CP932
 unix charset = UTF-8
 display charset = UTF-8</pre></td></tr></tbody></table></p>
@@ -116,14 +116,14 @@ display charset = UTF-8</pre></td></tr></tbody></table></p>
 	   して登録されます。これはファイルの属性とは異なりますので、
 	   実行不可能なファイルとして登録するために以下のパラメータを
 	   指定します。
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 create mask = 0644</pre></td></tr></tbody></table></p>
 
 	<p>デフォルトの設定で、Windows クライアントから Gfarm ファイルシステム
 	   上のファイルを読み書きすると、Gfarm がフックをサポートしていない
 	   システムコールを Samba が呼び出します。これを防ぐために
 	   以下のパラメータを指定します。
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 oplocks = no 
 level2 oplocks = no</pre></td></tr></tbody></table></p>
 
@@ -132,7 +132,7 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
         <p>複数ユーザで，Gfarmファイルシステム全体を共有する場合に追加する
       セクションの例を以下に示します．</p>
 
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 [gfarm-public]
    comment = Gfarm Public Stuff
    path = /gfarm
@@ -141,7 +141,7 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
    printable = no
    create mask = 0644
    oplocks = no
-   level2 oplocks = no</pre></td></tr></tbody></table></p>
+   level2 oplocks = no</pre></td></tr></tbody></table>
 	
 <h2>5. Samba の起動方法</h2>
 
@@ -156,31 +156,31 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
 
        <p>以下の行を start() の関数定義の先頭に追加します．</p>
 
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
        n=$(( $(gfhost -M | wc -l) + 50))
        if [ `ulimit -n` -lt $n ]; then
                ulimit -n $n
-       fi</pre></td></tr></tbody></table></p>
+       fi</pre></td></tr></tbody></table>
 
 
      <h4>5.1.2 smbd 起動行に LD_PRELOAD 環境変数の設定を追加</h4>
 
        <p>smbd デーモンを起動している行，Linux の例では，</p>
 
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
-	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table></p>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
 
        <p>の先頭に LD_PRELOAD 環境変数の設定を追加して，</p>
 
-	<table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hid
-den.so /usr/lib/gfarm/libc-not-hidden.so' daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table></p>
+den.so /usr/lib/gfarm/libc-not-hidden.so' daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
 
        <p>とします．Linux 以外のOS では "*-not-hiddden.so" の指定は不要です。 </p>
 
    <h3>5.2 追加後の起動スクリプト例</h3>
 
-	<p><table bgcolor="lightcyan"><tbody><tr><td><pre>
+	<p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 #!/bin/sh
 
 (中略)
@@ -213,7 +213,7 @@ n.so' daemon smbd $SMBOPTIONS
 
      <p>例えば Linux では以下を実行します．</p>
 
-     <p><table bgcolor="lightcyan"><tbody><tr><td><pre>
+     <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 # /etc/rc.d/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
 
 <h2>6. Windows から Sambaへのアクセス</h2>
@@ -225,3 +225,6 @@ n.so' daemon smbd $SMBOPTIONS
      <li>ネットワークドライブの割り当てを左クリック</li>
      <li> 表示されたダイアログでドライブ名と共有フォルダ名を指定</li>
      </ol>
+</body>
+</html>
+

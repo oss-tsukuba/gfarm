@@ -1,12 +1,12 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + NFS [Japanese]</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=euc-jp">
 <META content=document name=resource-type>
 </HEAD>
 <BODY><A href="http://datafarm.apgrid.org/">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
-<A href="../../index.html">文書集</A> >
-<A href="index.html">ユーザーズマニュアル</A> >
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
 nfs/gfarmfs-fuse
 
 <H1>GfarmFS-FUSE + NFS</H1>
@@ -56,13 +56,13 @@ gfhost -l などで，ファイルシステムノードにアクセスできる状態であることを確認して
 以下のコマンドを実行してマウントします．<BR>
 詳しくは Gfarm と GfarmFS-FUSE のドキュメントをご覧ください．
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
   $ gfarmfs [gfarmfs のオプション] <B>マウントポイント</B> -o allow_root [FUSE のオプション]
 </PRE></TD></TR></TBODY></TABLE>
 <P>
 -o allow_root が使えずマウントできない場合は，/etc/fuse.conf に 
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 user_allow_other
 </PRE></TD></TR></TBODY></TABLE>
 <P>
@@ -85,7 +85,7 @@ Linux Kernel 2.6 の環境でおこないます．(FUSE の README.NFS に記述されています)
 <BR>
 <P>
 /etc/exports の例です．
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 /tmp/yourname/gfarmfs  AAA.BBB.CCC.0/255.255.255.0(rw,fsid=10,anonuid=1205)
 </PRE></TD></TR></TBODY></TABLE>
 <P>
@@ -100,7 +100,7 @@ mount コマンドでマウントします．
 /etc/fstab に記述もできます．
 <P>
 /etc/fstab の例です．
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 AAA.BBB.CCC.1:/tmp/yourname/gfarmfs  /mnt/gfarm/yourname  nfs  rw,sync,noauto  0  0
 </PRE></TD></TR></TBODY></TABLE>
 

@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + Samba [English]</TITLE>
 <META content=document name=resource-type>
 </HEAD>
@@ -59,7 +59,7 @@ See Samba documentations about the details of Samba configurations.
 If you will access to GfarmFS-FUSE via Samba when FUSE version 2.3.0 (or later) is installed, you should set the following.
 <P>
 /etc/fuse.conf 
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 user_allow_other
 </PRE></TD></TR></TBODY></TABLE>
 <P>
@@ -71,7 +71,7 @@ Please check whether you can access to Gfarm with 'gfhost -l'.
 Run the 'gfarmfs' to mount on the Samba server.<BR>
 (See documentations of Gfarm and GfarmFS-FUSE about these details.)
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
   $ gfarmfs [GfarmFS options] mountpoint [FUSE options]
 </PRE></TD></TR></TBODY></TABLE>
 <P>
@@ -107,7 +107,7 @@ This is an example that the mountpoint for gfarmfs is automatically mounted
 <LI>The mountpoint is automatically unmount in disconnected.
 </UL>
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 [Gfarm]
   path = %H/samba-fuse
   exec = /usr/local/bin/gfarmfsmount.sh %P
@@ -117,7 +117,7 @@ This is an example that the mountpoint for gfarmfs is automatically mounted
 </PRE></TD></TR></TBODY></TABLE>
 <P>
 gfarmfsmount.sh
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
 GFARMFS=/usr/local/bin/gfarmfs
@@ -149,19 +149,18 @@ fi
 DATE=`$DATE '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
-($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs > /dev/null && \
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null && \
     (echo $DATE MOUNT:ALREADY $MOUNTP) || \
     ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT && \
     echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
-) >> $LOGFILE 2>&1
+) &gt;&gt; $LOGFILE 2&gt;&1
 
 exit $?
 </PRE></TD></TR></TBODY></TABLE>
-<P>
 
 <P>
 gfarmfsumount.sh
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
 FUSERMOUNT=/usr/local/bin/fusermount
@@ -190,7 +189,7 @@ MOUNTP=$1
     $FUSERMOUNT -u $MOUNTP && \
         echo $DATE UMOUNT:SUCCESS $MOUNTP || \
         echo $DATE UMOUNT:FAIL $MOUNTP
-) >> $LOGFILE 2>&1 &
+) &gt;&gt; $LOGFILE 2&gt;&1 &
 </PRE></TD></TR></TBODY></TABLE>
 
 

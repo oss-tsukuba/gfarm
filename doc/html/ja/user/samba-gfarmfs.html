@@ -1,12 +1,12 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + Samba [Japanese]</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=euc-jp">
 <META content=document name=resource-type>
 </HEAD>
 <BODY><A href="http://datafarm.apgrid.org/">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
-<A href="../../index.html">文書集</A> >
-<A href="index.html">ユーザーズマニュアル</A> >
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
 samba/gfarmfs-fuse
 
 <H1>GfarmFS-FUSE + Samba</H1>
@@ -53,7 +53,7 @@ GfarmFS-FUSE を使って Gfarm ファイルシステムをマウントし，そのマウントポイントを
 以下のようになっていない場合は，修正して，LDAP サーバを再起動してください．<BR>
 Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，下記の設定になっていません．
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
         EQUALITY caseExactMatch
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)
@@ -69,13 +69,13 @@ Samba の設定は SWAT を使うと簡単にできます．<BR>
 
 <P>
 Samba 2系の場合
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 client code page =  932
 coding system = utf8
 </PRE></TD></TR></TBODY></TABLE>
 <P>
 Samba 3系の場合
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 dos charset = CP932
 unix charset = UTF-8
 display charset = UTF-8
@@ -104,10 +104,9 @@ FUSE 2.2.1 以前では，以下の /etc/fuse.conf の設定は必要ありません．(補足もご覧く
 FUSE のインストール直後は，このファイルがありません．
 <P>
 /etc/fuse.conf
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 user_allow_other
 </PRE></TD></TR></TBODY></TABLE>
-<P>
 <P>
 この設定に関しては，FUSE パッケージの README をご覧ください．<BR>
 これで，マウント時に -o allow_root オプションが使えるようになります．
@@ -138,7 +137,7 @@ smbd も完全に一般ユーザの権限(uid, gid) になって動く方法があれば user_allow_othe
 <H3>参考</H3>
 上記の設定をせずに FUSE を使ったファイルシステムを -o allow_root をつけてマウントすると，以下のエラーメッセージが出ます。
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 fusermount: option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf
 </PRE></TD></TR></TBODY></TABLE>
 
@@ -152,7 +151,7 @@ gfhost -l などで，ファイルシステムノードにアクセスできる状態であることを確認して
 以下のコマンドを実行してマウントします．<BR>
 詳しくは Gfarm と GfarmFS-FUSE のドキュメントをご覧ください．
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
   $ gfarmfs [gfarmfs のオプション] <B>マウントポイント</B> -o allow_root [FUSE のオプション]
 </PRE></TD></TR></TBODY></TABLE>
 <P>
@@ -193,7 +192,7 @@ Gfarm という共有名にアクセスするだけで，自動で GfarmFS-FUSE でマウントしてアクセ
 <LI>切断時には自動でアンマウントする．
 </UL>
 <P>
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 [Gfarm]
   path = %H/samba-fuse
   exec = /usr/local/bin/gfarmfsmount.sh %P
@@ -214,7 +213,7 @@ postexec は切断時に実行するコマンドです．<BR>
 状況により修正してお使いください．
 <P>
 gfarmfsmount.sh
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
 GFARMFS=/usr/local/bin/gfarmfs
@@ -246,19 +245,18 @@ fi
 DATE=`$DATE '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
-($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs > /dev/null && \
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null && \
     (echo $DATE MOUNT:ALREADY $MOUNTP) || \
     ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT && \
     echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
-) >> $LOGFILE 2>&1
+) &gt;&gt; $LOGFILE 2&gt;&1
 
 exit $?
 </PRE></TD></TR></TBODY></TABLE>
-<P>
 
 <P>
 gfarmfsumount.sh
-<TABLE bgColor=lightcyan><TBODY><TR><TD><PRE>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
 FUSERMOUNT=/usr/local/bin/fusermount
@@ -287,7 +285,7 @@ MOUNTP=$1
     $FUSERMOUNT -u $MOUNTP && \
         echo $DATE UMOUNT:SUCCESS $MOUNTP || \
         echo $DATE UMOUNT:FAIL $MOUNTP
-) >> $LOGFILE 2>&1 &
+) &gt;&gt; $LOGFILE 2&gt;&1 &
 </PRE></TD></TR></TBODY></TABLE>
 
 
