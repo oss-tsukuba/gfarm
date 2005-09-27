@@ -40,28 +40,37 @@ samba/hook
     <li>smbd を実行するホストが Gfarm ファイルシステムノードではないこと(推奨)
       <br>
 
-      smbd 実行するホストがファイルシステムノードにもなっていると，
-      新規作成するファイルは，すべてそのホストに作成されてします．</li><br>
+      smbd を実行するホストがファイルシステムノードだと，
+      新規作成するファイルは，すべてそのホストに作成されてしまいます．</li><br>
 
     <li>認証方法としては shared_secret を使い，全ての filesystem node と
       smbd を実行するホストの間で，各ユーザがホームディレクトリを NFS
       などの手段で共有していること(推奨)<br>
 
-      shared_secret を使っても，ホームディレクトリを共有していない場合は，
-      各ユーザが smbd を実行するホストで「gfkey -c」を実行し，
-      ~/.gfarm_shared_key を，全ての ファイルシステムノードの
-      ホームディレクトリにコピーする必要があります．<br>
+      認証方法として shared_secret ではなく GSI 認証を使う場合，
+      smbd を実行するホストで，各ユーザが あらかじめ grid-proxy-init
+      を実行しておく必要があります．また，GSI 鍵の有効期限が切れるたび
+      に grid-proxy-init を再実行する必要があります．
+      <br>
 
-      また，shared_secret の代りにGSI認証を使う方法もありますが，
-      各ユーザが smbd を実行するホストで，あらかじめ grid-proxy-init
-      を実行しておく必要があります．</li>
+      ホームディレクトリを共有していない場合は，shared_secret よりも
+      GSI 認証を使う方がむしろ簡単です．
+      ホームディレクトリを共有していない環境で shared_secret を使う場合は，
+      各ユーザが smbd を実行するホストで「gfkey -c」を実行し，
+      ~/.gfarm_shared_key を，全てのファイルシステムノードの
+      ホームディレクトリにコピーする必要があります．
+      また、shared_secret 鍵の有効期限が切れるたびに，この作業を
+      繰り返す必要があります．
+      </li>
   </ul>
 </ul>
 
   関連ソフトウェア
   <ul>
-    <li>Gfarm: http://datafarm.apgrid.org/software/index.ja.html</li>
-    <li>Samba: http://www.samba.gr.jp</li>
+    <li>Gfarm: <a href="http://datafarm.apgrid.org/software/">
+	http://datafarm.apgrid.org/software/</a></li>
+    <li>Samba: <a href="http://www.samba.gr.jp/">
+	http://www.samba.gr.jp/</a></li>
   </ul>
 
 <h2>3. LDAP サーバの設定</h2>
@@ -111,18 +120,19 @@ display charset = UTF-8</pre></td></tr></tbody></table></p>
 	<p>セクション内で以下のパラメータを指定してください．</p>
 
 	<p>デフォルトの設定で Windows クライアントから Gfarm ファイルシステム
-	   にファイルを新規作成あるいはコピーすると、ファイルシステム
-	   ノードと同じアーキテクチャをもつホストで実行されるプログラムと
-	   して登録されます。これはファイルの属性とは異なりますので、
+	   にファイルを新規作成あるいはコピーすると，そのファイルの
+	   実体が置かれるファイルシステムノードと同じアーキテクチャを
+	   もつ，実行ファイル(プログラム)として登録されてしまいます．
+	   ほとんどの場合，これは期待される動作と異なりますので，
 	   実行不可能なファイルとして登録するために以下のパラメータを
-	   指定します。
+	   指定します．
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 create mask = 0644</pre></td></tr></tbody></table></p>
 
-	<p>デフォルトの設定で、Windows クライアントから Gfarm ファイルシステム
-	   上のファイルを読み書きすると、Gfarm がフックをサポートしていない
-	   システムコールを Samba が呼び出します。これを防ぐために
-	   以下のパラメータを指定します。
+	<p>デフォルトの設定で，Windows クライアントから Gfarm ファイルシステム
+	   上のファイルを読み書きすると，Gfarm がシステムコールフック
+	   機能をサポートしていないシステムコールを Samba が呼び出します．
+	   これを防ぐために以下のパラメータを指定します．
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 oplocks = no 
 level2 oplocks = no</pre></td></tr></tbody></table></p>
@@ -147,36 +157,59 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
 
   <h3>5.1 起動スクリプトの変更</h3>
 
-     <p>Linux での例を用いて説明します．</p>
+     <p>RedHat Linux での例を用いて説明します．</p>
 
-     <p>スクリプトファイル /etc/rc.d/init.d/smb の関数 start() に
-     以下の項目を追加・変更します．</p> 
+     <p>smbd の起動処理において，以下の項目を追加・変更します．<br>
+	RedHat Linux の場合，これはスクリプトファイル /etc/init.d/smb
+	の関数 start() で行われています．
+     </p> 
 
-     <h4>5.1.1 ファイル記述子数の追加</h4>
+     <h4>5.1.1 ファイル記述子数制限の拡大処理の追加</h4>
 
-       <p>以下の行を start() の関数定義の先頭に追加します．</p>
+       <p>smbd 機能の直前に，以下の行を追加します．</p>
 
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-       n=$(( $(gfhost -M | wc -l) + 50))
-       if [ `ulimit -n` -lt $n ]; then
-               ulimit -n $n
-       fi</pre></td></tr></tbody></table>
+	m=`ulimit -n`
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi</pre></td></tr></tbody></table>
 
 
      <h4>5.1.2 smbd 起動行に LD_PRELOAD 環境変数の設定を追加</h4>
 
-       <p>smbd デーモンを起動している行，Linux の例では，</p>
+       <p>smbd デーモンを起動している行の行の先頭に LD_PRELOAD 環境変数や
+	LD_LIBRARY_PATH 環境変数の設定を追加します．
+	詳しい説明は，付属ドキュメントの README.hook.ja を参照してください．
+
+
+       <p>RedHat Linux を例にとると，</p>
 
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
 
-       <p>の先頭に LD_PRELOAD 環境変数の設定を追加して，</p>
+       <p>のところを</p>
 
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hid
-den.so /usr/lib/gfarm/libc-not-hidden.so' daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
 
-       <p>とします．Linux 以外のOS では "*-not-hiddden.so" の指定は不要です。 </p>
+	<p>とします．変数 gfarm_prefix，globus_location や globus_flavor
+	の値は，実際に Gfarm や	Globus をインストールしたパスや，
+	Gfarm にリンクしている Globus の flavor 名に合わせて変更してください．
+	<p>Linux 以外のOS では "*-not-hiddden.so" の指定は不要です．
+	<p>Globus 関係のパスを追加するためには，まず Globus の共有ライブラリを
+	インストールしておく必要があるので，注意してください．
+	ただし，バイナリ作成時に Globus をリンクしていなければ，Globus
+	関係のパスの追加は不要です．(RedHat Linux 向けバイナリ配布の場合は
+	リンクしていますので，必要です．)
+	<p>
+	また，バイナリ作成時に Globus を動的リンクしていなければ，
+	LD_LIBRARY_PATH の追加は不要です．(RedHat Linux 向けバイナリ配布の
+	場合は静的リンクしていますので，実際には省略できます．)
+	</p>
 
    <h3>5.2 追加後の起動スクリプト例</h3>
 
@@ -186,20 +219,22 @@ den.so /usr/lib/gfarm/libc-not-hidden.so' daemon smbd $SMBDOPTIONS</pre></td></t
 (中略)
 
 start() {
-        n=$(( $(gfhost -M | wc -l) + 50))
-        if [ `ulimit -n` -lt $n ]; then
-                ulimit -n $n
-        fi
-        KIND="SMB"
+	KIND="SMB"
 	echo -n $"Starting $KIND services: "
-	LD_PRELOAD='/usr/prj/etl/work/sotoyama/gfarm/lib/gfs_hook/.libs/libgfs_
-hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidde
-n.so' daemon smbd $SMBOPTIONS
+	m=`ulimit -n`
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBOPTIONS
 	RETVAL=$?
 	echo
-        KIND="NMB"
+	KIND="NMB"
 	echo -n $"Starting $KIND services: "
-	daemon ./sbin/nmbd $NMBDOPTIONS
+	daemon nmbd $NMBDOPTIONS
 	RETVAL2=$?
 	echo
 	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && touch /var/lock/subsys/smb || \
@@ -211,10 +246,10 @@ n.so' daemon smbd $SMBOPTIONS
 
    <h3>5.3 Samba を起動または再起動</h3>
 
-     <p>例えば Linux では以下を実行します．</p>
+     <p>例えば RedHat Linux では以下を実行します．</p>
 
      <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-# /etc/rc.d/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
+# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
 
 <h2>6. Windows から Sambaへのアクセス</h2>
 
