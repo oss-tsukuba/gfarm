@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gfs_hook.h>
+
+#include "gfutil.h"
+
 #include "hooks_subr.h"
 
 extern int gf_hook_default_global;
