@@ -1,3 +1,165 @@
+2005-09-28  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/ja/user/samba-gfarmfs.html: add 'create mask'.
+
+	* doc/html/ja/user/samba-hook.html:
+	add explanation about 'kernel change notify'.
+
+2005-09-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_init.c:
+	fix warning introduced in previous change about fprintf/fputs -> gflog_info
+
+	* doc/html/ja/user/samba-hook.html:
+	clarify some descriptions, fix some pathnames and punctuations, etc.
+
+	* doc/html/en/ref/index.html, doc/html/en/user/index.html, doc/html/en/user/samba-gfarmfs.html, doc/html/ja/ref/index.html, doc/html/ja/user/export-gfarm.html, doc/html/ja/user/index.html, doc/html/ja/user/nfs-gfarmfs.html, doc/html/ja/user/samba-gfarmfs.html, doc/html/ja/user/samba-hook.html:
+	fix HTML syntax errors, found by jweblint.
+	NOTE: "lightcyan" isn't a valid color name in the HTML 4.01 specification.
+
+	* doc/html/ja/user/samba-hook.html:
+	back out previous change, smb over GSI authentication is actually usable
+	with gfs_hook.
+
+2005-09-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c, ns/gfarmd/gfarmd.c, ns/gfarmd/gfd_auth.c, ns/gfarmd/gfd_parse.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c, gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/gfarm_agent.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_init.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common_gsi.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfsl/tcputil.c:
+	- use printf(3)-style format for gflog functions.
+	  its implementation uses vsnprintf(), since vsnprintf() has been
+	  part of C99 and SUS standard, and now exists everywhere.
+	- introduce GFARM_SYSLOG_OUTPUT environment variable,
+	  to redirect gflog output of gfarm client to syslog.
+	- make gfs_hook use gflog_info() instead of fprintf(3)/fputs(3),
+	  so, now deamon programs can be traced by using libgfs_hook_debug.so,
+	  if one specifies $GFARM_SYSLOG_OUTPUT.
+
+2005-09-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* gftool/config-gfarm/config-gfarm.in:
+	add -xn option for ldapsearch -V because password might be asked.
+	XXX - ldapsearch in OpenLDAP-2.0 does not understand -V option...
+
+2005-09-20  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/gfmd.postinst, debian/gfsd.postinst: missed directory name
+
+2005-09-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm-slapd:
+	remove comment to reduce difference from other rc scripts
+
+	* gftool/config-gfarm/sysdep/linux/suse/Makefile, gftool/config-gfarm/sysdep/linux/suse/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/suse/gfmd.in, gftool/config-gfarm/sysdep/linux/suse/gfsd.in, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in, gftool/config-gfarm/sysdep/linux/Makefile, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	add rc scripts for SuSE
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in:
+	remove comment to reduce difference from other rc scripts
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, package/redhat/gfmd.in, package/redhat/gfsd.in:
+	avoid to refer message catalog in echo command
+
+	* gftool/config-gfarm/sysdep/netbsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/netbsd/gfmd.in, gftool/config-gfarm/sysdep/netbsd/gfsd.in, package/freebsd/files/gfmd.sh, package/freebsd/files/gfsd.sh, package/pkgsrc/files/gfmd.sh, package/pkgsrc/files/gfsd.sh, package/redhat/gfarm-slapd, package/redhat/gfmd.in, package/redhat/gfsd.in, package/solaris/gfmd.in, package/solaris/gfsd.in, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in, gftool/config-gfarm/sysdep/freebsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in, gftool/config-gfarm/sysdep/linux/debian/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/debian/gfmd.in, gftool/config-gfarm/sysdep/linux/debian/gfsd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, debian/gfmd.init, debian/gfsd.init, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in:
+	- make it easier to run multiple slapd/gfmd/gfsd on same host,
+	  by using "$FILE" variable to specify pid and other files.
+	- reduce differences between all rc scripts,
+	  by e.g. using same variable names (e.g. $PIDFILE, $DAEMON) throughout scripts,
+	  if there isn't corresponding system convention.
+	- use always same condition and same behavior about $GLOBUS_LOCATION
+	- config-gfarm/sysdep/linux/redhat:
+	  correct return value of stop function
+	  make status function actually work for multiple daemons on same host
+
+	* INSTALL.en, INSTALL.ja: reflect changes of rc order on Solaris
+
+2005-09-19  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* lib/libgfarm/gfarm/gfs_unlink.c: add FT code
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c (gfs_pio_scramble_close):
+	set section info when file size is zero.
+
+2005-09-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/sysdep/default/gfarm-slapd.in:
+	correct filename of pid
+
+	* gftool/config-gfarm/sysdep/default/Makefile, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in:
+	print PID at status
+
+	* gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in:
+	Linux doesn't have sh in /sbin
+
+	* gftool/config-gfarm/sysdep/linux/default/Makefile: correct path
+
+	* gftool/config-gfarm/sysdep/linux/Makefile, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/default/Makefile:
+	don't use RedHat's as default rc scripts, instead,
+	use sysdep/default/*.in as defaults.
+
+	* gftool/config-gfarm/sysdep/default/gfsd.in:
+	- fix command name, the change in revision 1.4 was not enough
+	- add comments for chkconfig on Linux, since this script will be used in
+	  minor Linux distributions.
+	- implement 'status' subcommand
+	- print 'restart' subcommand in usage.
+	- be more verbose when $PID_FILE or $CONF is missing
+
+	* gftool/config-gfarm/sysdep/default/gfmd.in:
+	- remove duplicate loading of $GLOBUS_LOCATION/etc/globus-user-env.sh,
+	  added in previous commit
+	- add comments for chkconfig on Linux, since this script will be used in
+	  minor Linux distributions.
+	- implement 'status' subcommand
+	- print 'restart' subcommand in usage.
+	- be more verbose when $PID_FILE or $CONF is missing
+
+	* gftool/config-gfarm/sysdep/default/gfarm-slapd.in:
+	- add comments for chkconfig on Linux, since this script will be used in
+	  minor Linux distributions.
+	- implement 'status' subcommand
+	- print 'restart' subcommand in usage.
+	- be more verbose when $PID_FILE or $CONF is missing
+
+	* gftool/config-gfarm/sysdep/default/gfmd.in, gftool/config-gfarm/sysdep/default/gfsd.in, gftool/config-gfarm/sysdep/freebsd/gfmd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in:
+	be more conservative about setting $GLOBUS_LOCATION
+
+	* package/solaris/gfmd.in, package/solaris/gfsd.in:
+	Use $GLOBUS_LOCATION/etc/globus-user-env.sh,
+	instead of directly setting LD_LIBRARY_PATH, just like FreeBSD version does.
+	Although this change is not strictly necessary, since Solaris version
+	is currently built with --with-globus-static.
+
+2005-09-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* ChangeLog: some English corrections
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	add some description about MacOS X, HP-UX and Tru64
+
+	* package/solaris/build, package/solaris/gfarm-server.files, INSTALL.en, INSTALL.ja, debian/gfmd.conffiles, debian/gfmd.install, debian/rules, doc/conf/gfarm.schema, package/redhat/gfarm.spec:
+	doc/conf/gfarm.schema is no longer needed,
+	because config-gfarm now supplies the file.
+
+	* INSTALL.en, INSTALL.ja:
+	mention config-gfarm and config-gfsd, because now these commands are
+	available for installation from source as well.
+	sync slapd.conf with gftools/config-gfarm/slapd.conf*.
+
+2005-09-14  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* RELNOTES: Release note for the version 1.2 pl3
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	add Solaris section in Japanese README
+	add a note for limitation
+
+	* doc/README.hook.en, doc/README.hook.ja: add limitation section
+
+	* doc/html/ja/user/samba-hook.html:
+	delete description about gsi authentication.  it does not work for now.
+
+2005-09-13  Osamu Tatebe  <o.tatebe@aist.go.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2005-09-12  Noriyuki Soda  <soda@sra.co.jp>
 
 	* gftool/config-gfarm/sysdep/default/gfsd.in: careless error
