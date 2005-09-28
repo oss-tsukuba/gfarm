@@ -202,7 +202,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		}
 	}
 
-	xxx_connection_set_secsession(conn, session);
+	xxx_connection_set_secsession(conn, session, GSS_C_NO_CREDENTIAL);
 	e2 = xxx_proto_send(conn, "i", error);
 	if (e2 != NULL) {
 		gflog_error("authorize_gsi: send reply: %s", e2);

@@ -29,6 +29,9 @@
  * client side authentication
  */
 
+static char GFARM_ERR_CANNOT_ACQUIRE_CLIENT_CRED[] =
+	"cannot acquire client-side GSI credential";
+
 char *
 gfarm_auth_request_gsi(struct xxx_connection *conn,
 	char *service_tag, char *hostname)
@@ -40,11 +43,12 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
 	char *e;
 	gss_name_t acceptor_name = GSS_C_NO_NAME;
+	gss_cred_id_t cred;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
 	gfarmSecSession *session;
 	gfarm_int32_t error; /* enum gfarm_auth_error */
-	int eof;
+	int eof, cred_acquired = 0;
 
 	e = gfarm_gsi_client_initialize();
 	if (e != NULL)
@@ -62,14 +66,54 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 		    service_tag, hostname, e);
 		return (e);
 	}
-	session = gfarmSecSessionInitiate(fd, acceptor_name,
-	    gfarm_gsi_get_delegated_cred(),
+	cred = gfarm_gsi_get_delegated_cred();
+	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
+		/*
+		 * always re-acquire my credential, otherwise we cannot deal
+		 * with credential expiration.
+		 */
+		if (gfarmGssAcquireCredential(&cred,
+		    GSS_C_NO_NAME, GSS_C_INITIATE,
+		    &e_major, &e_minor, NULL) < 0) {
+			if (gflog_auth_get_verbose()) {
+				gflog_error("Can't acquire my credentail "
+				    "because of:");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
+			if (acceptor_name != GSS_C_NO_NAME)
+				gfarmGssDeleteName(&acceptor_name, NULL, NULL);
+#if 0
+			return (GFARM_ERR_AUTHENTICATION);
+#else
+			/*
+			 * We don't return GFARM_ERR_AUTHENTICATION or
+			 * GFARM_ERR_EXPIRED here for now,
+			 * to prevent the caller -- gfarm_auth_request()
+			 * -- from trying next auth_method, because current
+			 * server side implmenetation doesn't allow us to
+			 * continue gracefully in this case.
+			 * So, just kill this connection.
+			 */
+			return (GFARM_ERR_CANNOT_ACQUIRE_CLIENT_CRED);
+#endif
+		}
+		cred_acquired = 1;
+	}
+	session = gfarmSecSessionInitiate(fd, acceptor_name, cred,
 	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL, &e_major, &e_minor);
 	if (acceptor_name != GSS_C_NO_NAME)
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error("Can't initiate session because of:");
+			gfarmGssPrintMajorStatus(e_major);
+			gfarmGssPrintMinorStatus(e_minor);
+		}
+		if (cred_acquired &&
+		    gfarmGssDeleteCredential(&cred, &e_major, &e_minor) < 0 &&
+		    gflog_auth_get_verbose()) {
+			gflog_error("Can't free my credential because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
@@ -87,7 +131,8 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 #endif
 	}
-	xxx_connection_set_secsession(conn, session);
+	xxx_connection_set_secsession(conn, session,
+	    cred_acquired ? cred : GSS_C_NO_CREDENTIAL);
 
 	e = xxx_proto_recv(conn, 1, &eof, "i", &error);
 	if (e != NULL || eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
@@ -111,6 +156,8 @@ struct gfarm_auth_request_gsi_state {
 	void *closure;
 
 	gss_name_t acceptor_name;
+	gss_cred_id_t cred;
+	int cred_acquired;
 	struct gfarmSecSessionInitiateState *gfsl_state;
 	gfarmSecSession *session;
 
@@ -182,7 +229,9 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 		    state->readable, &timeout);
 		if (rv == 0) {
 			xxx_connection_set_secsession(state->conn,
-			    state->session);
+			    state->session,
+			    state->cred_acquired ?
+			    state->cred : GSS_C_NO_CREDENTIAL);
 			/* go to gfarm_auth_request_gsi_receive_result() */
 			return;
 		}
@@ -241,16 +290,50 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		goto error_free_readable;
 	}
 
+	state->cred_acquired = 0;
+	state->cred = gfarm_gsi_get_delegated_cred();
+	if (state->cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
+		/*
+		 * always re-acquire my credential, otherwise we cannot deal
+		 * with credential expiration.
+		 */
+		if (gfarmGssAcquireCredential(&state->cred,
+		    GSS_C_NO_NAME, GSS_C_INITIATE,
+		    &e_major, &e_minor, NULL) < 0) {
+			if (gflog_auth_get_verbose()) {
+				gflog_error("Can't acquire my credentail "
+				    "because of:");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
+#if 0
+			e = GFARM_ERR_AUTHENTICATION;
+#else
+			/*
+			 * We don't return GFARM_ERR_AUTHENTICATION or
+			 * GFARM_ERR_EXPIRED here for now, to prevent
+			 * the caller -- gfarm_auth_request_next_method()
+			 * -- from trying next auth_method, because current
+			 * server side implmenetation doesn't allow us to
+			 * continue gracefully in this case.
+			 * So, just kill this connection.
+			 */
+			e = GFARM_ERR_CANNOT_ACQUIRE_CLIENT_CRED;
+#endif
+			goto error_free_acceptor_name;
+		}
+		state->cred_acquired = 1;
+	}
+
 	state->gfsl_state = gfarmSecSessionInitiateRequest(q,
-	    xxx_connection_fd(conn), state->acceptor_name,
-	    gfarm_gsi_get_delegated_cred(),
+	    xxx_connection_fd(conn), state->acceptor_name, state->cred,
 	    GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG, NULL,
 	    gfarm_auth_request_gsi_wait_result, state,
 	    &e_major, &e_minor);
 	if (state->gfsl_state == NULL) {
 		/* XXX e_major/e_minor should be used */
 		e = "cannot initiate GSI connection";
-		goto error_free_readable;
+		goto error_free_cred;
 	}
 
 	state->q = q;
@@ -261,6 +344,17 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	*statepp = state;
 	return (NULL);
 
+error_free_cred:
+	if (state->cred_acquired &&
+	    gfarmGssDeleteCredential(&state->cred, &e_major, &e_minor) < 0 &&
+	    gflog_auth_get_verbose()) {
+		gflog_error("Can't free my credential because of:");
+		gfarmGssPrintMajorStatus(e_major);
+		gfarmGssPrintMinorStatus(e_minor);
+	}
+error_free_acceptor_name:
+	if (state->acceptor_name != GSS_C_NO_NAME)
+		gfarmGssDeleteName(&state->acceptor_name, NULL, NULL);
 error_free_readable:
 	gfarm_event_free(state->readable);
 error_free_state:
