@@ -519,8 +519,10 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 			flags |= GFARM_FILE_CREATE;
-		} else if (!gfarm_file_section_copy_info_does_exist(
-		    gf->pi.pathname, vc->section, vc->canonical_hostname)) {
+		} else if ((gf->open_flags & GFARM_FILE_CREATE) == 0 &&
+			   !gfarm_file_section_copy_info_does_exist(
+				   gf->pi.pathname, vc->section,
+				   vc->canonical_hostname)) {
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 			goto free_host;
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
