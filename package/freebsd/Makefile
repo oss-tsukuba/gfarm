@@ -13,7 +13,8 @@ MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 PATCH_SITES=	${MASTER_SITES}
 PATCHFILES=	gfarm-1.2-patch1.diff.gz \
 		gfarm-1.2-patch2.diff.gz \
-		gfarm-1.2-patch3.diff.gz
+		gfarm-1.2-patch3.diff.gz \
+		gfarm-1.2-patch4.diff.gz
 PATCH_DIST_STRIP= -p1
 
 MAINTAINER=	soda@sra.co.jp
