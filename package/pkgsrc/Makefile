@@ -38,6 +38,5 @@ FILES_SUBST+=	GFARM_PID_DIR=${GFARM_PID_DIR}
 
 # TODO:
 # - enable GSI, but this requires Globus in pkgsrc.
-# - provide scripts to create configuration files.
 # - split into fine-grained packages.
 #   e.g. gfarm-{libs,client,fsnode,server,devel}

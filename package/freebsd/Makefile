@@ -80,7 +80,6 @@ CONFIGURE_ENV+=	${PERL5LIB_FIX}
 .endif # WITH_GLOBUS
 
 # TODO:
-# - provide scripts to create configuration files.
 # - split into fine-grained packages.
 #   e.g. gfarm-{libs,client,fsnode,server,devel}
 
