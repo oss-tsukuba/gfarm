@@ -519,7 +519,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 			flags |= GFARM_FILE_CREATE;
-		} else if ((gf->open_flags & GFARM_FILE_CREATE) == 0 &&
+		} else if ((gf->open_flags & GFARM_FILE_TRUNC) == 0 &&
 			   !gfarm_file_section_copy_info_does_exist(
 				   gf->pi.pathname, vc->section,
 				   vc->canonical_hostname)) {
@@ -607,8 +607,12 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	if (gf->mode & GFS_FILE_MODE_WRITE) {
-		/* if write mode, delete every other file copies */
+	if ((gf->mode & GFS_FILE_MODE_WRITE) ||
+	    (gf->open_flags & GFARM_FILE_TRUNC)) {
+		/*
+		 * if write mode or read-but-truncate mode,
+		 * delete every other file copies
+		 */
 		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
 		(void)gfs_unlink_every_other_replicas(
 			gf->pi.pathname, vc->section,
