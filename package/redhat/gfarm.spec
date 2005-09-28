@@ -701,7 +701,9 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/linux/debian/gfsd.in
+%{share_prefix}/config/linux/default/gfsd.in
 %{share_prefix}/config/linux/redhat/gfsd.in
+%{share_prefix}/config/linux/suse/gfsd.in
 
 %files server
 %{prefix}/sbin/gfmd
@@ -715,8 +717,12 @@ fi
 %{share_prefix}/config/initial.ldif.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in
 %{share_prefix}/config/linux/debian/gfmd.in
+%{share_prefix}/config/linux/default/gfarm-slapd.in
+%{share_prefix}/config/linux/default/gfmd.in
 %{share_prefix}/config/linux/redhat/gfarm-slapd.in
 %{share_prefix}/config/linux/redhat/gfmd.in
+%{share_prefix}/config/linux/suse/gfarm-slapd.in
+%{share_prefix}/config/linux/suse/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
 
