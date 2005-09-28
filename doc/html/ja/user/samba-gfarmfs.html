@@ -88,8 +88,19 @@ display charset = UTF-8
 そのために，[homes] や [セクション名] を smb.conf に設定します． 
 GfarmFS-FUSE を使ってマウントする予定のパス，またはそれより上のディレクトリのパスを指定します．
 これらは SWAT を使うと簡単に設定できます．
+<BR>
+そして GfarmFS-FUSE にアクセスするセクションには，ファイルを書き込めるようにし，ファイル新規作成時に，実行ビットが付かないようにします．
 <P>
-そして，GfarmFS-FUSE を実行する UNIX ユーザ名と対応する Samba でのユーザを，無ければ作成します．<BR>
+例
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+[GfarmFS-FUSE]
+path = /tmp/gfarmfs/%u
+create mask = 0644
+read only = no
+</PRE></TD></TR></TBODY></TABLE>
+これで， /tmp/gfarmfs の下に各ユーザがユーザ名のディレクトリを作って gfarmfs でマウントしておけば，GfarmFS-FUSE という共有名でアクセスできます．
+<P>
+次に，GfarmFS-FUSE を実行する UNIX ユーザ名と対応する Samba でのユーザを，無ければ作成します．<BR>
 たとえば，SWAT で行う場合は，「PASSWORD→ローカルマシンのパスワード管理→新規ユーザ追加」でユーザを追加できます．
 <P>
 その他 Samba の設定に関する詳細は，Samba のドキュメントをご覧ください．
@@ -181,7 +192,7 @@ Gfarm という共有名にアクセスするだけで，自動で GfarmFS-FUSE でマウントしてアクセ
 <LI>誰がアクセスしても，gfarmfs によるマウントポイントが共有フォルダの直下になるようにする．
   <UL>
   <LI>各ユーザのホームディレクトリ直下の samba-fuse というディレクトリを公開する．
-  <LI>ディレクトリを作成しておく必要がある．
+  <LI>ディレクトリを作成しておく必要がある．(mkdir ~/samba-fuse)
   </UL>
 <LI>共有フォルダへ接続時に各ユーザの権限で自動で gfarmfs を使ってマウントする．
   <UL>
@@ -195,6 +206,7 @@ Gfarm という共有名にアクセスするだけで，自動で GfarmFS-FUSE でマウントしてアクセ
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 [Gfarm]
   path = %H/samba-fuse
+  create mask = 0644
   exec = /usr/local/bin/gfarmfsmount.sh %P
   preexec close = Yes
   postexec = /usr/local/bin/gfarmfsumount.sh %P
