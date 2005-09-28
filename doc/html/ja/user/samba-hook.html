@@ -111,6 +111,14 @@ dos charset = CP932
 unix charset = UTF-8
 display charset = UTF-8</pre></td></tr></tbody></table></p>
 
+    <h5>4.1.1.2 kernel change notify を無効にする (Samba 3系の場合)</h5>
+    Gfarm のシステムコールフックライブラリは，fcntl をサポートしていないため，fcntl を利用している機能を無効にします．
+    <p>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+kernel change notify = no</pre></td></tr></tbody></table></p>
+この設定をしないと，Windows クライアントと Samba との接続が切れることがあります(Samba 3.0.10 と 3.0.20 で確認)．
+この設定にすると，更新されたファイルの状態の表示がすぐに更新されなくなります．
+
     <h4>4.1.2 Gfarm ファイルの共有を定義するセクションを追加</h4>
 
       <p>Gfarm ファイルシステムにアクセスするためのセクションを追加します．</p>
