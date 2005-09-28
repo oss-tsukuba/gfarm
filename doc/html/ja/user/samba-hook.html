@@ -112,7 +112,7 @@ unix charset = UTF-8
 display charset = UTF-8</pre></td></tr></tbody></table></p>
 
     <h5>4.1.1.2 kernel change notify を無効にする (Samba 3系の場合)</h5>
-    Gfarm のシステムコールフックライブラリは，fcntl をサポートしていないため，fcntl を利用している機能を無効にします．
+    Gfarm のシステムコールフックライブラリが現在サポートしていない，fcntl(2) システムコールの F_NOTIFY 機能を，samba が利用しないようにします．
     <p>
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 kernel change notify = no</pre></td></tr></tbody></table></p>
