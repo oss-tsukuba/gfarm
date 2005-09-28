@@ -10,6 +10,12 @@ dst=$2
 
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
+libdir="@libdir@"
+sysconfdir="@sysconfdir@"
+
+globus_flavor="@globus_flavor@"
+globus_location="@globus_location@"
+
 INSTALL="@abs_top_srcdir@/makes/install-sh -c"
 tmpfile=insttmp.$$
 status=1
@@ -17,9 +23,10 @@ status=1
 trap 'rm -f $tmpfile; exit $status' 0 1 2 15
 
 if grep '%%' "$src" >/dev/null; then
-	sed	-e "s|%%PREFIX%%|@prefix@|g" \
-		-e "s|%%LIBDIR%%|@libdir@|g" \
-		-e "s|%%SYSCONFDIR%%|@sysconfdir@|g" \
+	sed	-e "s|%%PREFIX%%|$prefix|g" \
+		-e "s|%%LIBDIR%%|$libdir|g" \
+		-e "s|%%GLOBUS_FLAVOR%%|$globus_flavor|g" \
+		-e "s|%%GLOBUS_LOCATION%%|$globus_location|g" \
 		$src >$tmpfile
 	@INSTALL_DATA@ "$tmpfile" "$dst"
 	status=$?
