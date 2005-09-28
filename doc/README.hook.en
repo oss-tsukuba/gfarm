@@ -76,15 +76,17 @@ login shell. e.g.
 
 	% bash
 
-When using GSI-enabled Gfarm, scp and wget may cause segmentation
-fault or cannot access Gfarm file system if they are linked with
-libgssapi based on Kerberos.  In this case, you need to add libgssapi
-based on GSI and libssl in LD_PRELOAD environment variable.
+When using GSI-enabled Gfarm, some programs, which are linked with
+libgssapi based on Kerberos, may cause segmentation fault or cannot
+access Gfarm file system.  In this case, you need to add libgssapi
+based on GSI and libssl in LD_PRELOAD environment variable as well.
+For example, scp and wget sometimes fit this sort of programs.
 
-When they are $GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 and
-$GLOBUS_LOCATION/lib/libssl_gcc32.so.0,
+If the globus flavor name which is linked with Gfarm is %%GLOBUS_FLAVOR%%,
+You need to specify $GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0
+and $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 as follows.
 
-	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
+	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
 	$ export LD_PRELOAD
 
 
@@ -292,7 +294,7 @@ Re-create applications by linking with gfs_hook.o and -lgfarm.
 
 For static linking, you can use libtool with the -all-static option.
 
-	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_gcc32 -lsasl 
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_%%GLOBUS_FLAVOR%% -lsasl 
 
 Note that static linking results in segmentation fault when using LDAP
 authentication in RedHat-8.0 and RedHat-7.3.

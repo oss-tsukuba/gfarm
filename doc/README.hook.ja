@@ -75,17 +75,18 @@ glib{rt,pthread,c}-not-hidden.so を指定します．
 
 	% bash
 
-なお，GSI 認証を含んだ Gfarm を利用している場合で，既に install されて
-いる scp や wget が Kerberos ベースの libgssapi をリンクしている場合は，
-それらのプログラムが Segmentation fault で落ちてしまったり，それらのプ
-ログラムからの Gfarm ファイルシステムのアクセスができない場合があります．
-その場合は，GSI ベースの libgssapi と libssl も LD_PRELOAD で指定します．
+なお，GSI 認証を含んだ Gfarm を利用している場合，Kerberos ベースの
+libgssapi をリンクしているプログラムが Segmentation fault で落ちて
+しまったり，それらのプログラムからの Gfarm ファイルシステムのアクセス
+ができない場合があります．その場合は，GSI ベースの libgssapi と
+libssl も LD_PRELOAD で指定します．たとえば scp や wget のようなプロ
+グラムが，これに該当することがあります。
 
-例えば，それらが $GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 およ
-び $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 の場合は，以下のようになりま
-す．
+例えば，Gfarm にリンクされている Globus の flavor が %%GLOBUS_FLAVOR%% だった場合，
+以下のように $GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 
+および $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 を指定することになります．
 
-	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gcc32.so.0 $GLOBUS_LOCATION/lib/libssl_gcc32.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
+	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
 	$ export LD_PRELOAD
 
  (2) FreeBSD の場合
@@ -282,7 +283,7 @@ gfs_hook.o と -lgfarm をリンクしてアプリケーションを再作成します．
 静的にリンクする場合は，libtool を利用して，-all-static オプションをつ
 けます．
 
-	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_gcc32 -lsasl 
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_%%GLOBUS_FLAVOR%% -lsasl 
 
 ＃ RedHat 8.0 あるいは RedHat 7.3 で，アカウントの認証に LDAP を利用し
 ＃ ている場合，静的リンクされたプログラムは正しく実行されず，
