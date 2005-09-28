@@ -14,7 +14,9 @@ libdir="@libdir@"
 sysconfdir="@sysconfdir@"
 
 globus_flavor="@globus_flavor@"
-globus_location="@globus_location@"
+
+# If Globus is not configured, use "gcc32" for documentation purpose.
+: ${globus_flavor:="gcc32"}
 
 INSTALL="@abs_top_srcdir@/makes/install-sh -c"
 tmpfile=insttmp.$$
@@ -26,7 +28,6 @@ if grep '%%' "$src" >/dev/null; then
 	sed	-e "s|%%PREFIX%%|$prefix|g" \
 		-e "s|%%LIBDIR%%|$libdir|g" \
 		-e "s|%%GLOBUS_FLAVOR%%|$globus_flavor|g" \
-		-e "s|%%GLOBUS_LOCATION%%|$globus_location|g" \
 		$src >$tmpfile
 	@INSTALL_DATA@ "$tmpfile" "$dst"
 	status=$?
