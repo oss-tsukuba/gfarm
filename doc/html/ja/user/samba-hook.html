@@ -18,15 +18,14 @@ samba/hook
   <p>
   この文書では，Gfarm システムコールフックライブラリをプリロードした
   うえで Samba を起動して  Windows から Gfarm ファイルにアクセスする
-  ための設定方法を説明しています．<br><br>
+  ための設定方法を説明しています．
 
   <p>
-  別に FUSE を使って Samba を利用する方法もありますが，フックライブラリを
-  用いる方が，より設定／利用手順が簡単ですので，この方法をお勧めします．
-  
-<p>
-別の方法： 
-<a href="samba-gfarmfs.html">GfarmFS-FUSE + Samba の方法についてはこちら</a>
+  別の方法:
+  <a href="samba-gfarmfs.html">GfarmFS-FUSE + Samba</a><br>
+  別の方法として，FUSE を使って Samba を利用する方法もあります．
+  しかし，フックライブラリを用いる方が，より設定／利用手順が簡単ですので，
+  こちらの方法をお勧めします．
 
 <h2>2. 利用環境の前提条件</h2>
    
@@ -43,23 +42,23 @@ samba/hook
       smbd を実行するホストがファイルシステムノードだと，
       新規作成するファイルは，すべてそのホストに作成されてしまいます．</li><br>
 
-    <li>認証方法としては shared_secret を使い，全ての filesystem node と
+    <li>認証方法としては sharedsecret を使い，全ての filesystem node と
       smbd を実行するホストの間で，各ユーザがホームディレクトリを NFS
       などの手段で共有していること(推奨)<br>
 
-      認証方法として shared_secret ではなく GSI 認証を使う場合，
+      認証方法として sharedsecret ではなく GSI 認証を使う場合，
       smbd を実行するホストで，各ユーザが あらかじめ grid-proxy-init
       を実行しておく必要があります．また，GSI 鍵の有効期限が切れるたび
       に grid-proxy-init を再実行する必要があります．
       <br>
 
-      ホームディレクトリを共有していない場合は，shared_secret よりも
+      ホームディレクトリを共有していない場合は，sharedsecret よりも
       GSI 認証を使う方がむしろ簡単です．
-      ホームディレクトリを共有していない環境で shared_secret を使う場合は，
+      ホームディレクトリを共有していない環境で sharedsecret を使う場合は，
       各ユーザが smbd を実行するホストで「gfkey -c」を実行し，
       ~/.gfarm_shared_key を，全てのファイルシステムノードの
       ホームディレクトリにコピーする必要があります．
-      また、shared_secret 鍵の有効期限が切れるたびに，この作業を
+      また、sharedsecret 鍵の有効期限が切れるたびに，この作業を
       繰り返す必要があります．
       </li>
   </ul>
@@ -97,7 +96,7 @@ samba/hook
 	
       <h5>4.1.1.1 日本語ファイル名のための設定</h5>
 
-        <p>Linux 側では UTF-8 でファイル名を読み書きするようにし，
+        <p>Linux 側ではファイル名の文字コードとして UTF-8 を使うようにし，
         それを Windows から見えるように設定します．</p>
 
 	<p>Samba 2系の場合
