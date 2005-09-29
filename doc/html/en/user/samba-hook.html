@@ -5,8 +5,8 @@
 <body>
 <a href="http://datafarm.apgrid.org/">
 <img alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></a> 
-<a href="../../index.html">documents</a> >
-<a href="index.html">User's Manual</a> >
+<a href="../../index.html">documents</a> &gt;
+<a href="index.html">User's Manual</a> &gt;
 samba/hook
 
 <h1>Access Gfarm file system via Samba
@@ -130,7 +130,7 @@ level2 oplocks = no</pre></td></tr></tbody></table>
    printable = no
    create mask = 0644
    oplocks = no
-   level2 oplocks = no</pre></td></tr></tbody></table></p>
+   level2 oplocks = no</pre></td></tr></tbody></table>
 
 <h2>5. Start Samba</h2>
 
@@ -171,12 +171,12 @@ level2 oplocks = no</pre></td></tr></tbody></table>
 	globus_flavor=gcc32
 	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
 
-       <p>Specifying "*-not-hiddden.so" is unnecessary on OS other than Linux.
-	Configure the variable gfarm_prefix and globus_location to match
+       <p>Configure the variable gfarm_prefix and globus_location to match
 	your installation pathnames of Gfarm and Globus, and configure
 	globus_flavor variable to match your Globus flavor name which is
 	linked with Gfarm.
-	Before adding these Globus related paths, you need to install 
+
+       <p>Before adding these Globus related paths, you need to install 
 	Globus shared libraries if you have linked Globus libraries to 
 	Gfarm binaries, otherwise you need not this addition.
 	If you install Gfarm binary distribution for RedHat Linux,
@@ -185,6 +185,8 @@ level2 oplocks = no</pre></td></tr></tbody></table>
        <p>Adding assignment to LD_LIBRALY_PATH is necessary only if Globus is
        dynamically linked to Gfarm binaries.  Binary distribution for RedHat
        Linux is statically linked with Globus so it can be omitted.
+
+       <p>Specifying "*-not-hiddden.so" is unnecessary on OS other than Linux.
 
    <h3>5.2 Sample of configured script to start Samba</h3>
 
