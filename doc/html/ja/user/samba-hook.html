@@ -207,17 +207,19 @@ level2 oplocks = no</pre></td></tr></tbody></table></p>
 	<p>とします．変数 gfarm_prefix，globus_location や globus_flavor
 	の値は，実際に Gfarm や	Globus をインストールしたパスや，
 	Gfarm にリンクしている Globus の flavor 名に合わせて変更してください．
-	<p>Linux 以外のOS では "*-not-hiddden.so" の指定は不要です．
+
 	<p>Globus 関係のパスを追加するためには，まず Globus の共有ライブラリを
 	インストールしておく必要があるので，注意してください．
 	ただし，バイナリ作成時に Globus をリンクしていなければ，Globus
 	関係のパスの追加は不要です．(RedHat Linux 向けバイナリ配布の場合は
 	リンクしていますので，必要です．)
+
 	<p>
 	また，バイナリ作成時に Globus を動的リンクしていなければ，
 	LD_LIBRARY_PATH の追加は不要です．(RedHat Linux 向けバイナリ配布の
 	場合は静的リンクしていますので，実際には省略できます．)
-	</p>
+
+	<p>Linux 以外のOS では "*-not-hiddden.so" の指定は不要です．
 
    <h3>5.2 追加後の起動スクリプト例</h3>
 
