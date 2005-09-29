@@ -152,11 +152,11 @@ fi
 DATE=`$DATE '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
-($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null && \
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null &amp;&amp; \
     (echo $DATE MOUNT:ALREADY $MOUNTP) || \
-    ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT && \
+    ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT &amp;&amp; \
     echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
-) &gt;&gt; $LOGFILE 2&gt;&1
+) &gt;&gt; $LOGFILE 2&gt;&amp;1
 
 exit $?
 </PRE></TD></TR></TBODY></TABLE>
@@ -189,10 +189,10 @@ DATE=`date '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
 (cd /; $SLEEP 1;
-    $FUSERMOUNT -u $MOUNTP && \
+    $FUSERMOUNT -u $MOUNTP &amp;&amp; \
         echo $DATE UMOUNT:SUCCESS $MOUNTP || \
         echo $DATE UMOUNT:FAIL $MOUNTP
-) &gt;&gt; $LOGFILE 2&gt;&1 &
+) &gt;&gt; $LOGFILE 2&gt;&amp;1 &amp;
 </PRE></TD></TR></TBODY></TABLE>
 
 
