@@ -33,15 +33,15 @@ samba/hook
 <ul>
   <li>Samba サーバホスト
   <ul>
-    <li>Gfarm クライアントが利用できること．(必須)</li><br>
+    <li>Gfarm クライアントが利用できること．(必須)</li>
     <li>libgfs_hook が利用できること．(必須)<br>
       具体的な手順については INSTALL.RPM.ja の
-      「● クライアントノードの設定」を参照してください．</li><br>
+      「● クライアントノードの設定」を参照してください．</li>
     <li>smbd を実行するホストが Gfarm ファイルシステムノードではないこと(推奨)
       <br>
 
       smbd を実行するホストがファイルシステムノードだと，
-      新規作成するファイルは，すべてそのホストに作成されてしまいます．</li><br>
+      新規作成するファイルは，すべてそのホストに作成されてしまいます．</li>
 
     <li>認証方法としては sharedsecret を使い，全ての filesystem node と
       smbd を実行するホストの間で，各ユーザがホームディレクトリを NFS
@@ -87,7 +87,7 @@ samba/hook
         EQUALITY caseExactMatch
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)</pre>
        </td></tr></tbody></table>
-     # 修正する場合は，この 3行のうち，下2行を変更します．</p>
+     # 修正する場合は，この 3行のうち，下2行を変更します．
 
 <h2>4. Samba サーバの設定</h2>
 
@@ -109,13 +109,13 @@ coding system = utf8</pre></td></tr></tbody></table></p>
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 dos charset = CP932
 unix charset = UTF-8
-display charset = UTF-8</pre></td></tr></tbody></table></p>
+display charset = UTF-8</pre></td></tr></tbody></table>
 
     <h5>4.1.1.2 kernel change notify を無効にする (Samba 3系の場合)</h5>
     Gfarm のシステムコールフックライブラリが現在サポートしていない，fcntl(2) システムコールの F_NOTIFY 機能を，samba が利用しないようにします．
     <p>
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-kernel change notify = no</pre></td></tr></tbody></table></p>
+kernel change notify = no</pre></td></tr></tbody></table>
 この設定をしないと，Windows クライアントと Samba との接続が切れることがあります(Samba 3.0.10 と 3.0.20 で確認)．
 この設定にすると，更新されたファイルの状態の表示がすぐに更新されなくなります．
 
@@ -135,7 +135,7 @@ kernel change notify = no</pre></td></tr></tbody></table></p>
 	   実行不可能なファイルとして登録するために以下のパラメータを
 	   指定します．
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-create mask = 0644</pre></td></tr></tbody></table></p>
+create mask = 0644</pre></td></tr></tbody></table>
 
 	<p>デフォルトの設定で，Windows クライアントから Gfarm ファイルシステム
 	   上のファイルを読み書きすると，Gfarm がシステムコールフック
@@ -143,7 +143,7 @@ create mask = 0644</pre></td></tr></tbody></table></p>
 	   これを防ぐために以下のパラメータを指定します．
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 oplocks = no 
-level2 oplocks = no</pre></td></tr></tbody></table></p>
+level2 oplocks = no</pre></td></tr></tbody></table>
 
       <h5>4.1.2.2 例</h5>
 
@@ -247,19 +247,19 @@ start() {
 	daemon nmbd $NMBDOPTIONS
 	RETVAL2=$?
 	echo
-	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && touch /var/lock/subsys/smb || \
+	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] &amp;&amp; touch /var/lock/subsys/smb || \
 	   RETVAL=1
 	return $RETVAL
 }	
 
-(以下略)</pre></td></tr></tbody></table></p>
+(以下略)</pre></td></tr></tbody></table>
 
    <h3>5.3 Samba を起動または再起動</h3>
 
      <p>例えば RedHat Linux では以下を実行します．</p>
 
      <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
+# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table>
 
 <h2>6. Windows から Sambaへのアクセス</h2>
 

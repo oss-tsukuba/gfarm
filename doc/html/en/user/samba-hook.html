@@ -18,7 +18,7 @@ English | <A href="../../ja/user/samba-hook.html">Japanese</A>
   <p>
   This document describes how to configure samba to access Gfarm
   file system from Windows clients, by invoking samba with preloaded
-  Gfarm system-call-hooking library.<br><br>
+  Gfarm system-call-hooking library.<br>
 
   <p>
   Another solution:
@@ -32,14 +32,14 @@ English | <A href="../../ja/user/samba-hook.html">Japanese</A>
 <ul>
   <li>Samba server host
   <ul>
-    <li><strong>must</strong> be able to use Gfarm client on the host.</li><br>
+    <li><strong>must</strong> be able to use Gfarm client on the host.</li>
     <li><strong>must</strong> be able to link ilbgfs_hook.<br>
       Please refer to "Configuration of Gfarm client node" in "INSTALL.RPM.en"
-      for steps in detail.</li><br>
+      for steps in detail.</li>
     <li><strong>recommended</strong> that the host isn't a Gfarm file system
        node.<br>
       Because all new files will be created on th host if the smbd server host
-      is a Gfarm file system node.</li><br>
+      is a Gfarm file system node.</li>
     <li><strong>recommended</strong> that all users use sharedsecret as the
       gfarm authentication method, and all users share their home directories,
       by e.g. using NFS, on all file system nodes and the host that smbd is
@@ -82,7 +82,7 @@ English | <A href="../../ja/user/samba-hook.html">Japanese</A>
 	  because Gfarm system-call-hook library does not support it.
     <p>
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-kernel change notify = no</pre></td></tr></tbody></table></p>
+kernel change notify = no</pre></td></tr></tbody></table>
 A Windows client may be disconnected from the Samba server host without 
 this setting. We have found this problem at least on Samba 3.0.10 and 3.0.20. 
 But this setting has a side effect that file status changes doesn't
@@ -104,7 +104,7 @@ create mask = 0644</pre></td></tr></tbody></table>
 	   to Gfarm file system, the file will be registered as an 
 	   executable program that has the same architectue as 
 	   the file system node on which the file's body will be located.
-	   This is different from what you would expect.</p>
+	   This is different from what you would expect.
 
 	<p>Specify following parameters to make Samba not invoke such
 	   system calls.
@@ -114,7 +114,7 @@ level2 oplocks = no</pre></td></tr></tbody></table>
 
 	   In default configuration, if you access a file on
 	   Gfarm file system from a Windows client, Samba invokes system
-	   calls that Gfarm doesn't support hooking them.</p>
+	   calls that Gfarm doesn't support hooking them.
 
       <h5>4.1.2.2 Example</h5>
 
@@ -214,19 +214,19 @@ start() {
 	daemon nmbd $NMBDOPTIONS
 	RETVAL2=$?
 	echo
-	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] && touch /var/lock/subsys/smb || \
+	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] &amp;&amp; touch /var/lock/subsys/smb || \
 	   RETVAL=1
 	return $RETVAL
 }	
 
-(*snip*)</pre></td></tr></tbody></table></p>
+(*snip*)</pre></td></tr></tbody></table>
 
    <h3>5.3 Starting or Restarting Samba</h3>
 
      <p>For example, invoke the following command on RedHat Linux.</p>
 
      <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table></p>
+# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table>
 
 <h2>6. Access Samba server from Windows Client</h2>
 
