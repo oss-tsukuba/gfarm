@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1061,6 +1061,10 @@ Optional Packages:
 				[default=nobody]
   --with-openldap=OpenLDAP_ROOT	openldap root directory
 				[default=guessed]
+  --without-openldap			disable openldap
+  --with-postgresql=PostgreSQL_ROOT	PostgreSQL root directory
+				[default=guessed]
+  --without-postgresql			disable PostgreSQL
 
 Some influential environment variables:
   CC          C compiler command
@@ -3359,7 +3363,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3362 "configure"' > conftest.$ac_ext
+  echo '#line 3366 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -4829,7 +4833,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4832:" \
+echo "$as_me:4836:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5931,11 +5935,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:5934: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:5938: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:5938: \$? = $ac_status" >&5
+   echo "$as_me:5942: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6193,11 +6197,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6196: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6200: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6200: \$? = $ac_status" >&5
+   echo "$as_me:6204: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6255,11 +6259,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6258: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6262: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6262: \$? = $ac_status" >&5
+   echo "$as_me:6266: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8495,7 +8499,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8498 "configure"
+#line 8502 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8593,7 +8597,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8596 "configure"
+#line 8600 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10845,11 +10849,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10848: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10852: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10852: \$? = $ac_status" >&5
+   echo "$as_me:10856: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10907,11 +10911,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10910: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10914: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10914: \$? = $ac_status" >&5
+   echo "$as_me:10918: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12276,7 +12280,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12279 "configure"
+#line 12283 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12374,7 +12378,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12377 "configure"
+#line 12381 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13259,11 +13263,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13262: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13266: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13266: \$? = $ac_status" >&5
+   echo "$as_me:13270: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13321,11 +13325,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13324: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13328: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13328: \$? = $ac_status" >&5
+   echo "$as_me:13332: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15447,11 +15451,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15450: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15454: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15454: \$? = $ac_status" >&5
+   echo "$as_me:15458: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15709,11 +15713,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15712: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15716: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15716: \$? = $ac_status" >&5
+   echo "$as_me:15720: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15771,11 +15775,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15774: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15778: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15778: \$? = $ac_status" >&5
+   echo "$as_me:15782: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18011,7 +18015,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18014 "configure"
+#line 18018 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18109,7 +18113,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18112 "configure"
+#line 18116 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -19189,11 +19193,15 @@ if test x"${with_pthread}" != x"no"; then
   pthread_libs=
 
   if expr x"${with_pthread}" : x"/.*" >/dev/null; then # pathname specified?
+    pthread_specified=explicit
+    case ${with_pthread} in
+    /usr)
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -I${with_pthread}/include"
-    LIBS="$LIBS ${pthread_libs} -R${with_pthread}/lib -L${with_pthread}/lib -lpthread"
+    CPPFLAGS="${pthread_includes}  $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -lpthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19237,13 +19245,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -I${with_pthread}/include"
-    pthread_libs="${pthread_libs} -R${with_pthread}/lib -L${with_pthread}/lib -lpthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} "
+	pthread_libs="${pthread_libs} -lpthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19251,12 +19266,14 @@ rm -f conftest.err conftest.$ac_objext \
     CPPFLAGS="$CPPFLAGS_SAVE"
     LIBS="$LIBS_SAVE"
 
-  elif test x"${with_pthread}" != x""; then
+      ;;
+    *)
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} ${with_pthread}"
-    LIBS="$LIBS ${pthread_libs} ${with_pthread}"
+    CPPFLAGS="${pthread_includes} -I${with_pthread}/include $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -R${with_pthread}/lib -L${with_pthread}/lib -lpthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19300,13 +19317,94 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} ${with_pthread}"
-    pthread_libs="${pthread_libs} ${with_pthread}"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -I${with_pthread}/include"
+	pthread_libs="${pthread_libs} -R${with_pthread}/lib -L${with_pthread}/lib -lpthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+    CPPFLAGS="$CPPFLAGS_SAVE"
+    LIBS="$LIBS_SAVE"
+
+      ;;
+    esac
+  elif test x"${with_pthread}" != x && test x"${with_pthread}" != x"yes"; then
+    pthread_specified=explicit
+
+    CPPFLAGS_SAVE="$CPPFLAGS"
+    LIBS_SAVE="$LIBS"
+    CPPFLAGS="${pthread_includes} ${with_pthread} $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo ${with_pthread} | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <pthread.h>
+
+void *foo(void *p){ return 0; }
+int
+main ()
+{
+
+	pthread_t thread_id;
+	pthread_create(&thread_id, NULL, foo, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} ${with_pthread}"
+	pthread_libs="${pthread_libs} ${with_pthread}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${with_pthread}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19316,11 +19414,13 @@ rm -f conftest.err conftest.$ac_objext \
 
   elif test x"${PTHREAD_CFLAGS+1}${PTHREAD_LDFLAGS+2}${PTHREAD_LIBS+3}" != x""
   then # NetBSD pkgsrc configuration is specified?
+    pthread_specified=explicit
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} ${PTHREAD_CFLAGS}"
-    LIBS="$LIBS ${pthread_libs} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS}"
+    CPPFLAGS="${pthread_includes} ${PTHREAD_CFLAGS} $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS} | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19364,13 +19464,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} ${PTHREAD_CFLAGS}"
-    pthread_libs="${pthread_libs} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS}"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} ${PTHREAD_CFLAGS}"
+	pthread_libs="${pthread_libs} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS}"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"${PTHREAD_CFLAGS} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${PTHREAD_CFLAGS} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19379,13 +19486,15 @@ rm -f conftest.err conftest.$ac_objext \
     LIBS="$LIBS_SAVE"
 
   else # otherwise try system supplied pthread library
+    pthread_specified=yes
     case $host in
     *-*-aix*)
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -mthreads"
-    LIBS="$LIBS ${pthread_libs} -mthreads"
+    CPPFLAGS="${pthread_includes} -mthreads $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -mthreads | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19429,13 +19538,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -mthreads"
-    pthread_libs="${pthread_libs} -mthreads"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -mthreads"
+	pthread_libs="${pthread_libs} -mthreads"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19447,8 +19563,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -D_THREAD_SAFE -pthread"
-    LIBS="$LIBS ${pthread_libs} -pthread"
+    CPPFLAGS="${pthread_includes} -D_THREAD_SAFE -pthread $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -pthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19492,13 +19609,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -D_THREAD_SAFE -pthread"
-    pthread_libs="${pthread_libs} -pthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -D_THREAD_SAFE -pthread"
+	pthread_libs="${pthread_libs} -pthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19510,8 +19634,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE"
-    LIBS="$LIBS ${pthread_libs} -lpthread"
+    CPPFLAGS="${pthread_includes} -D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -lpthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19555,13 +19680,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE"
-    pthread_libs="${pthread_libs} -lpthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE"
+	pthread_libs="${pthread_libs} -lpthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19574,8 +19706,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -pthread"
-    LIBS="$LIBS ${pthread_libs} -pthread"
+    CPPFLAGS="${pthread_includes} -pthread $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -pthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19619,13 +19752,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -pthread"
-    pthread_libs="${pthread_libs} -pthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -pthread"
+	pthread_libs="${pthread_libs} -pthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19637,8 +19777,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -mt"
-    LIBS="$LIBS ${pthread_libs} -mt -lpthread"
+    CPPFLAGS="${pthread_includes} -mt $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -mt -lpthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19682,13 +19823,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -mt"
-    pthread_libs="${pthread_libs} -mt -lpthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -mt"
+	pthread_libs="${pthread_libs} -mt -lpthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19702,8 +19850,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -pthread"
-    LIBS="$LIBS ${pthread_libs} -pthread"
+    CPPFLAGS="${pthread_includes} -pthread $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -pthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19747,13 +19896,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -pthread"
-    pthread_libs="${pthread_libs} -pthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -pthread"
+	pthread_libs="${pthread_libs} -pthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19765,8 +19921,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -Kthread"
-    LIBS="$LIBS ${pthread_libs} -Kthread"
+    CPPFLAGS="${pthread_includes} -Kthread $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -Kthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19810,13 +19967,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -Kthread"
-    pthread_libs="${pthread_libs} -Kthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -Kthread"
+	pthread_libs="${pthread_libs} -Kthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19834,8 +19998,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} -pthread"
-    LIBS="$LIBS ${pthread_libs} -pthread"
+    CPPFLAGS="${pthread_includes} -pthread $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo -pthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19879,13 +20044,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} -pthread"
-    pthread_libs="${pthread_libs} -pthread"
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} -pthread"
+	pthread_libs="${pthread_libs} -pthread"
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19900,8 +20072,9 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} "
-    LIBS="$LIBS ${pthread_libs} "
+    CPPFLAGS="${pthread_includes}  $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo  | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19945,13 +20118,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} "
-    pthread_libs="${pthread_libs} "
+  	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} "
+	pthread_libs="${pthread_libs} "
 
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	if test x"${pthread_specified}" = x"explicit"; then
+	  { { echo "$as_me:$LINENO: error: \"\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
 
 fi
 rm -f conftest.err conftest.$ac_objext \
@@ -19963,35 +20143,39 @@ rm -f conftest.err conftest.$ac_objext \
   fi
 fi
 
-if test x"${ax_cv_have_pthread}" = x"yes"; then
-  pthread_srcs='$(PTHREAD_SRCS)'
-  pthread_objs='$(PTHREAD_OBJS)'
-  pthread_cflags='$(PTHREAD_CFLAGS)'
-  pthread_targets='$(PTHREAD_TARGETS)'
-
+case ${ax_cv_have_pthread} in
+yes)
+  echo "$as_me:$LINENO: result: using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"" >&5
+echo "${ECHO_T}using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"" >&6
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_PTHREAD 1
 _ACEOF
 
-  echo "$as_me:$LINENO: result: using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"" >&5
-echo "${ECHO_T}using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"" >&6
-else
+
+  pthread_srcs='$(PTHREAD_SRCS)'
+  pthread_objs='$(PTHREAD_OBJS)'
+  pthread_cflags='$(PTHREAD_CFLAGS)'
+  pthread_targets='$(PTHREAD_TARGETS)'
+  ;;
+*)
+  if test x"${with_pthread}" = x"no"; then
+    echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+  else
+    # in this case, must be: test x"${pthread_specified}" != x"explicit"
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  fi
+
   pthread_includes=
   pthread_libs=
   pthread_srcs=
   pthread_objs=
   pthread_cflags=
   pthread_targets=
-
-  if test x"${with_pthread}" = x"no"; then
-    echo "$as_me:$LINENO: result: disabled" >&5
-echo "${ECHO_T}disabled" >&6
-  else
-    echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-  fi
-fi
+  ;;
+esac
 
 
 
@@ -20000,8 +20184,6 @@ fi
 
 
 
-
-### --with-openldap is handled later, because it needs AC_CHECK_LIB(nsl, ...)
 
 ###
 ### --with-openssl=OpenSSL_ROOT
@@ -20256,6 +20438,8 @@ fi;
 ### --with-readline=READLINE_ROOT
 ###
 
+echo "$as_me:$LINENO: checking readline" >&5
+echo $ECHO_N "checking readline... $ECHO_C" >&6
 
 # Check whether --with-readline or --without-readline was given.
 if test "${with_readline+set}" = set; then
@@ -20267,35 +20451,55 @@ else
 
 fi;
 
-readline_found=
-if test x"${with_readline}" = x"yes"; then
+readline_specified=
+case ${with_readline} in
+/*)
+  if test -f "${with_readline}"/include/readline/readline.h; then
+	readline_specified=explicit
+  else
+	{ { echo "$as_me:$LINENO: error: not found in \"${with_readline}\", aborted" >&5
+echo "$as_me: error: not found in \"${with_readline}\", aborted" >&2;}
+   { (exit 1); exit 1; }; }
+  fi;;
+yes)
   for d in /usr/local /usr/pkg /usr
   do
     if test -f $d/include/readline/readline.h; then
 	with_readline=$d
-	echo "$as_me:$LINENO: result: using \"${d}\" as readline root directory" >&5
-echo "${ECHO_T}using \"${d}\" as readline root directory" >&6
-	readline_found=yes
+	readline_specified=yes
 	break
     fi
-  done
-  if test x"${readline_found}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: readline is not found, aborted" >&5
-echo "$as_me: error: readline is not found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-fi
+  done;;
+no|'')
+  ;;
+*)
+  readline_specified=explicit;;
+esac
 
-if test -n "${with_readline}"; then
-  readline_includes="-DUSE_READLINE"
-  readline_libs="-lreadline -ltermcap"
-  if test x"${with_readline}" != x"/usr"; then
-    readline_includes="-I${with_readline}/include ${readline_includes}"
-    readline_libs="-R${with_readline}/lib -L${with_readline}/lib ${readline_libs}"
-  fi
+readline_includes=
+readline_libs=
+
+if test x"${readline_specified}" = x""; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
 else
-  readline_includes=
-  readline_libs=
+  echo "$as_me:$LINENO: result: using \"${with_readline}\"" >&5
+echo "${ECHO_T}using \"${with_readline}\"" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_READLINE 1
+_ACEOF
+
+  readline_libs="-lreadline -ltermcap"
+  case ${with_readline} in
+  /usr)	;;
+  /*)	readline_includes="-I${with_readline}/include ${readline_includes}"
+	readline_libs="-R${with_readline}/lib -L${with_readline}/lib ${readline_libs}"
+	;;
+  *)	readline_includes=${with_readline}
+	readline_libs=${with_readline}
+	;;
+  esac
 fi
 
 
@@ -21158,6 +21362,9 @@ fi
 ### --with-openldap=OpenLDAP_ROOT
 ###
 
+# This command line option must be handled here,
+# because this needs AC_CHECK_LIB(nsl, ...)
+
 echo "$as_me:$LINENO: checking openldap" >&5
 echo $ECHO_N "checking openldap... $ECHO_C" >&6
 
@@ -21171,51 +21378,60 @@ else
 
 fi;
 
-openldap_found=
-if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
+ldap_specified=
+case ${with_openldap} in
+/*)
+  if test -f "${with_openldap}"/include/ldap.h; then
+	ldap_specified=explicit
+  else
+	{ { echo "$as_me:$LINENO: error: not found in \"${with_openldap}\", aborted" >&5
+echo "$as_me: error: not found in \"${with_openldap}\", aborted" >&2;}
+   { (exit 1); exit 1; }; }
+  fi;;
+yes|'')
   for d in /usr/local/openldap /usr/local /usr/pkg /usr
   do
     if test -f $d/include/ldap.h; then
 	with_openldap=$d
-	openldap_found=yes
+	ldap_specified=yes
 	break
     fi
-  done
-  if test x"${openldap_found}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: openldap is not found, aborted" >&5
-echo "$as_me: error: openldap is not found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-fi
-echo "$as_me:$LINENO: result: found in \"${with_openldap}\"" >&5
-echo "${ECHO_T}found in \"${with_openldap}\"" >&6
+  done;;
+no)
+  ;;
+*)
+  ldap_specified=explicit;;
+esac
 
-if test x"${with_openldap}" = x"/usr"; then
-  ldap_includes=""
-  ldflags=""
+ldap_usable=
+
+if test x"${ldap_specified}" = x""; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
 else
-  ldap_includes="-I${with_openldap}/include"
-  ldflags="-R${with_openldap}/lib -L${with_openldap}/lib"
-fi
 
-# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
-# configured, and DNS resolver library doesn't belongs to libc on some
-# systems.
-# But we cannot blindly link libresolv, because it may change behaviour
-# of gethostbyname() and friends.
 
-CPPFLAGS_SAVE="$CPPFLAGS"
-LIBS_SAVE="$LIBS"
+  case ${with_openldap} in
+  /*)	case ${with_openldap} in
+	/usr)	ldap_includes=
+		ldap_libs=;;
+	*)	ldap_includes="-I${with_openldap}/include"
+		ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib";;
+	esac
+	# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
+	# configured, and DNS resolver library doesn't belongs to libc on some
+	# systems.
+	# But we cannot blindly link libresolv, because it may change behaviour
+	# of gethostbyname() and friends.
+	for libs in "-lldap -llber" "-lldap"; do
+	  for extra_lib in "" "-lresolv" "-lbind"; do
 
-openldap_found=
-for libs in "-lldap -llber" "-lldap"; do
-for extra_lib in "" "-lresolv" "-lbind"; do
-
-CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-# -R is not portable without libtool, and not necessary for AC_TRY_LINK
-LIBS="`echo $ldflags | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
-
-cat >conftest.$ac_ext <<_ACEOF
+    CPPFLAGS_SAVE="$CPPFLAGS"
+    LIBS_SAVE="$LIBS"
+    CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
+    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -21257,14 +21473,17 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
 
-	if test x"${extra_lib}" != x; then
-		echo "$as_me:$LINENO: result: using ${extra_lib} for LDAP" >&5
-echo "${ECHO_T}using ${extra_lib} for LDAP" >&6
-		ldap_libs="${ldflags} ${libs} ${extra_lib}"
+	if test x"${extra_lib}" != x""; then
+		echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs} ${libs}\" with \"${extra_lib}\" for LDAP" >&5
+echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs} ${libs}\" with \"${extra_lib}\" for LDAP" >&6
+		ldap_libs="${ldap_libs} ${libs} ${extra_lib}"
 	else
-		ldap_libs="${ldflags} ${libs}"
+		echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs} ${libs}\" for LDAP" >&5
+echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs} ${libs}\" for LDAP" >&6
+		ldap_libs="${ldap_libs} ${libs}"
 	fi
-	openldap_found=yes
+	ldap_usable=yes
+	# this needs to be checked here due to settings of $CPPFLAGS and $LIBS
 
 
 for ac_func in ldap_memfree ldap_set_option
@@ -21368,7 +21587,6 @@ _ACEOF
 fi
 done
 
-	break 2
 
 else
   echo "$as_me: failed program was:" >&5
@@ -21377,22 +21595,418 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+    CPPFLAGS="$CPPFLAGS_SAVE"
+    LIBS="$LIBS_SAVE"
 
-done # extra_lib
-done # libs
-if test x"${openldap_found}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: openldap cannot be linked, aborted" >&5
-echo "$as_me: error: openldap cannot be linked, aborted" >&2;}
+	    if test x"${ldap_usable}" = x"yes"; then
+	      break 2
+	    fi
+	  done
+	done
+	;;
+  *)	ldap_includes=${with_openldap}
+	ldap_libs=${with_openldap}
+
+    CPPFLAGS_SAVE="$CPPFLAGS"
+    LIBS_SAVE="$LIBS"
+    CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'`   $LIBS_SAVE"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <lber.h>
+#include <ldap.h>
+int
+main ()
+{
+
+	LDAP *ldap_server = ldap_open("example.com", 389);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+	if test x"" != x""; then
+		echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs} \" with \"\" for LDAP" >&5
+echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs} \" with \"\" for LDAP" >&6
+		ldap_libs="${ldap_libs}  "
+	else
+		echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs} \" for LDAP" >&5
+echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs} \" for LDAP" >&6
+		ldap_libs="${ldap_libs} "
+	fi
+	ldap_usable=yes
+	# this needs to be checked here due to settings of $CPPFLAGS and $LIBS
+
+
+for ac_func in ldap_memfree ldap_set_option
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
+if eval "test \"\${$as_ac_var+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+char (*f) () = $ac_func;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != $ac_func;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  eval "$as_ac_var=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+eval "$as_ac_var=no"
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+    CPPFLAGS="$CPPFLAGS_SAVE"
+    LIBS="$LIBS_SAVE"
+
+	;;
+  esac
+
+  if test x"${ldap_usable}" != x"yes"; then
+    case $ldap_specified in
+    explicit)
+	  { { echo "$as_me:$LINENO: error: \"${with_openldap}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${with_openldap}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; };;
+    yes)
+	  echo "$as_me:$LINENO: result: found in \"${with_openldap}\", but cannot be linked, ignored" >&5
+echo "${ECHO_T}found in \"${with_openldap}\", but cannot be linked, ignored" >&6;;
+    esac
+  fi
+fi
+
+case $ldap_usable in
+yes)
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LDAP 1
+_ACEOF
+
+	ldap_srcs='$(LDAP_SRCS)'
+	ldap_objs='$(LDAP_OBJS)'
+	ldap_cflags='$(LDAP_CFLAGS)'
+	ldap_targets='$(LDAP_TARGETS)'
+	;;
+*)	ldap_includes=
+	ldap_libs=
+	ldap_srcs=
+	ldap_objs=
+	ldap_cflags=
+	ldap_targets=
+	;;
+esac
+
+
+
+
+# for conditional compilation which depends on LDAP
+
+
+
+
+
+###
+### --with-postgresql=PostgreSQL_ROOT
+###
+
+echo "$as_me:$LINENO: checking PostgreSQL" >&5
+echo $ECHO_N "checking PostgreSQL... $ECHO_C" >&6
+
+# Check whether --with-postgresql or --without-postgresql was given.
+if test "${with_postgresql+set}" = set; then
+  withval="$with_postgresql"
+  with_postgresql="${withval}"
+
+else
+  with_postgresql=
+
+fi;
+
+postgresql_specified=
+case ${with_postgresql} in
+/*)
+  if test -f "${with_postgresql}"/include/libpq-fe.h; then
+	postgresql_specified=explicit
+  else
+	{ { echo "$as_me:$LINENO: error: not found in \"${with_postgresql}\", aborted" >&5
+echo "$as_me: error: not found in \"${with_postgresql}\", aborted" >&2;}
+   { (exit 1); exit 1; }; }
+  fi;;
+yas|'')
+  for d in /usr/local/pgsql /usr/local /usr/pkg /usr
+  do
+    if test -f $d/include/libpq-fe.h; then
+	with_postgresql=$d
+	postgresql_specified=yes
+	break
+    fi
+  done;;
+no)
+  ;;
+*)
+  postgresql_specified=explicit;;
+esac
+
+postgresql_usable=
+
+if test x"${postgresql_specified}" = x""; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+else
+  case ${with_postgresql} in
+  /usr)
+	postgresql_includes=
+	postgresql_libs="-lpq"
+	;;
+  /*)
+	postgresql_includes="-I${with_postgresql}/include"
+	postgresql_libs="-R${with_postgresql}/lib -L${with_postgresql}/lib -lpq"
+	;;
+  *)
+	postgresql_includes="${with_postgresql}"
+	postgresql_libs="${with_postgresql}"
+	;;
+  esac
+
+  CPPFLAGS_SAVE="$CPPFLAGS"
+  LIBS_SAVE="$LIBS"
+
+  CPPFLAGS="${postgresql_includes} $CPPFLAGS_SAVE"
+  # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+  LIBS="`echo $postgresql_libs | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
+
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <libpq-fe.h>
+int
+main ()
+{
+
+	PGconn *conn = PQconnectdb("");
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+	postgresql_usable=yes
+	echo "$as_me:$LINENO: result: using \"${with_postgresql}\"" >&5
+echo "${ECHO_T}using \"${with_postgresql}\"" >&6
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	case $postgresql_specified in
+	explicit)
+		{ { echo "$as_me:$LINENO: error: \"${with_postgresql}\" is specified, but cannot be linked, aborted" >&5
+echo "$as_me: error: \"${with_postgresql}\" is specified, but cannot be linked, aborted" >&2;}
+   { (exit 1); exit 1; }; };;
+	yes)
+		echo "$as_me:$LINENO: result: found in \"${with_postgresql}\", but cannot be linked, ignored" >&5
+echo "${ECHO_T}found in \"${with_postgresql}\", but cannot be linked, ignored" >&6;;
+	esac
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+  CPPFLAGS="$CPPFLAGS_SAVE"
+  LIBS="$LIBS_SAVE"
+fi
+
+case $postgresql_usable in
+yes)
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_POSTGRESQL 1
+_ACEOF
+
+	postgresql_srcs='$(POSTGRESQL_SRCS)'
+	postgresql_objs='$(POSTGRESQL_OBJS)'
+	postgresql_cflags='$(POSTGRESQL_CFLAGS)'
+	postgresql_targets='$(POSTGRESQL_TARGETS)'
+	;;
+*)	postgresql_includes=
+	postgresql_libs=
+	postgresql_srcs=
+	postgresql_objs=
+	postgresql_cflags=
+	postgresql_targets=
+	;;
+esac
+
+
+
+
+# for conditional compilation which depends on PostgreSQL
+
+
+
+
+
+###
+### sanity check. We need either PostgreSQL or LDAP.
+###
+
+if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
+then
+	{ { echo "$as_me:$LINENO: error: neither LDAP or PostgreSQL is found, aborted" >&5
+echo "$as_me: error: neither LDAP or PostgreSQL is found, aborted" >&2;}
    { (exit 1); exit 1; }; }
 fi
-echo "$as_me:$LINENO: result: using \"${ldap_includes} ${ldap_libs}\" for ldap" >&5
-echo "${ECHO_T}using \"${ldap_includes} ${ldap_libs}\" for ldap" >&6
-
-CPPFLAGS="$CPPFLAGS_SAVE"
-LIBS="$LIBS_SAVE"
-
-
-
+# XXX this should be removed, when PostgreSQL support is completed.
+if test x"${ldap_usable}" != x"yes"; then
+	{ { echo "$as_me:$LINENO: error: LDAP is not found, aborted" >&5
+echo "$as_me: error: LDAP is not found, aborted" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 ######
 ###### Checks for header files.
@@ -24060,6 +24674,16 @@ s,@largefile64_cflags@,$largefile64_cflags,;t t
 s,@largefile64_targets@,$largefile64_targets,;t t
 s,@ldap_includes@,$ldap_includes,;t t
 s,@ldap_libs@,$ldap_libs,;t t
+s,@ldap_srcs@,$ldap_srcs,;t t
+s,@ldap_objs@,$ldap_objs,;t t
+s,@ldap_cflags@,$ldap_cflags,;t t
+s,@ldap_targets@,$ldap_targets,;t t
+s,@postgresql_includes@,$postgresql_includes,;t t
+s,@postgresql_libs@,$postgresql_libs,;t t
+s,@postgresql_srcs@,$postgresql_srcs,;t t
+s,@postgresql_objs@,$postgresql_objs,;t t
+s,@postgresql_cflags@,$postgresql_cflags,;t t
+s,@postgresql_targets@,$postgresql_targets,;t t
 s,@gfs_hook_sysdep_subdir@,$gfs_hook_sysdep_subdir,;t t
 s,@config_gfarm_sysdep_subdir@,$config_gfarm_sysdep_subdir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

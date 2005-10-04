@@ -53,6 +53,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* LDAP library exists */
+#undef HAVE_LDAP
+
 /* Define to 1 if you have the `ldap_memfree' function. */
 #undef HAVE_LDAP_MEMFREE
 
@@ -89,6 +92,9 @@
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
 
+/* PostgreSQL library exists */
+#undef HAVE_POSTGRESQL
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
@@ -100,6 +106,9 @@
 
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
+
+/* readline-compatible library exists */
+#undef HAVE_READLINE
 
 /* Define to 1 if you have the `setlogin' function. */
 #undef HAVE_SETLOGIN
