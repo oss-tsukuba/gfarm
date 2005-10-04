@@ -56,8 +56,8 @@ AC_PROG_LIBTOOL
 AC_MSG_CHECKING([pthread])
 AC_ARG_WITH(pthread,
 [  --with-pthread=PTHREAD_ROOT	pthread root directory
-				[[default=/usr]]]
-  --without-pthread             disable pthread support,
+				[[default=/usr]]
+  --without-pthread             disable pthread support],
 [with_pthread="${withval}"
 ])
 
@@ -68,18 +68,23 @@ if test x"${with_pthread}" != x"no"; then
   AC_DEFUN([AC_TRY_PTHREAD], [
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="$CPPFLAGS ${pthread_includes} $1"
-    LIBS="$LIBS ${pthread_libs} $2"
+    CPPFLAGS="${pthread_includes} $1 $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
     AC_TRY_LINK([
 #include <pthread.h>
 
 void *foo(void *p){ return 0; }],[
 	pthread_t thread_id;
 	pthread_create(&thread_id, NULL, foo, NULL);
-], [ax_cv_have_pthread=yes
-    pthread_includes="${pthread_includes} $1"
-    pthread_libs="${pthread_libs} $2"
-    ], [])
+], [	ax_cv_have_pthread=yes
+	pthread_includes="${pthread_includes} $1"
+	pthread_libs="${pthread_libs} $2"
+    ], [
+	if test x"${pthread_specified}" = x"explicit"; then
+	  AC_MSG_ERROR([\"$3\" is specified, but cannot be linked, aborted])
+	fi
+    ])
     CPPFLAGS="$CPPFLAGS_SAVE"
     LIBS="$LIBS_SAVE"
   ])
@@ -89,31 +94,42 @@ void *foo(void *p){ return 0; }],[
   pthread_libs=
 
   if expr x"${with_pthread}" : x"/.*" >/dev/null; then # pathname specified?
-    AC_TRY_PTHREAD(-I${with_pthread}/include,-R${with_pthread}/lib -L${with_pthread}/lib -lpthread)
-  elif test x"${with_pthread}" != x""; then
-    AC_TRY_PTHREAD(${with_pthread},${with_pthread})
+    pthread_specified=explicit
+    case ${with_pthread} in
+    /usr)
+      AC_TRY_PTHREAD(,-lpthread,${with_pthread})
+      ;;
+    *)
+      AC_TRY_PTHREAD(-I${with_pthread}/include,-R${with_pthread}/lib -L${with_pthread}/lib -lpthread,${with_pthread})
+      ;;
+    esac
+  elif test x"${with_pthread}" != x && test x"${with_pthread}" != x"yes"; then
+    pthread_specified=explicit
+    AC_TRY_PTHREAD(${with_pthread},${with_pthread},${with_pthread})
   elif test x"${PTHREAD_CFLAGS+1}${PTHREAD_LDFLAGS+2}${PTHREAD_LIBS+3}" != x""
   then # NetBSD pkgsrc configuration is specified?
-    AC_TRY_PTHREAD(${PTHREAD_CFLAGS},${PTHREAD_LDFLAGS} ${PTHREAD_LIBS})
+    pthread_specified=explicit
+    AC_TRY_PTHREAD(${PTHREAD_CFLAGS},${PTHREAD_LDFLAGS} ${PTHREAD_LIBS},${PTHREAD_CFLAGS} ${PTHREAD_LDFLAGS} ${PTHREAD_LIBS})
   else # otherwise try system supplied pthread library
+    pthread_specified=yes
     case $host in
     *-*-aix*)
-	AC_TRY_PTHREAD(-mthreads,-mthreads);;
+	AC_TRY_PTHREAD(-mthreads,-mthreads,);;
     *-*-freebsd[[2-4]].*) # FreeBSD 2.X ... 4.X (-lc_r) needs -D_THREAD_SAFE
-	AC_TRY_PTHREAD(-D_THREAD_SAFE -pthread,-pthread);;
+	AC_TRY_PTHREAD(-D_THREAD_SAFE -pthread,-pthread,);;
     *-*-hpux*)
-	AC_TRY_PTHREAD(-D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE,-lpthread);;
+	AC_TRY_PTHREAD(-D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE,-lpthread,);;
     *-*-solaris*)
 	if test x"$GCC" = x"yes"; then
-		AC_TRY_PTHREAD(-pthread,-pthread)
+		AC_TRY_PTHREAD(-pthread,-pthread,)
 	else
-		AC_TRY_PTHREAD(-mt,-mt -lpthread)
+		AC_TRY_PTHREAD(-mt,-mt -lpthread,)
 	fi;;
     *-*-sysv5uw7*) # UnixWare 7 
 	if test x"$GCC" = x"yes"; then
-		AC_TRY_PTHREAD(-pthread,-pthread)
+		AC_TRY_PTHREAD(-pthread,-pthread,)
 	else
-		AC_TRY_PTHREAD(-Kthread,-Kthread)
+		AC_TRY_PTHREAD(-Kthread,-Kthread,)
 	fi;;
     *)
 	# Tru64 (OSF1): -pthread
@@ -121,38 +137,42 @@ void *foo(void *p){ return 0; }],[
 	#	-lpthread (M:N, default), -lc_r (1:N), and -lthr (1:1)
 	# NetBSD 2.X or later: -pthread
 	# Linux: -pthread
-	AC_TRY_PTHREAD(-pthread,-pthread);;
+	AC_TRY_PTHREAD(-pthread,-pthread,);;
     esac
 
     # and if it fails too, just try default ${CFLAGS}, ${LDFLAGS} and ${LIBS}
     if test x"${ax_cv_have_pthread}" != x"yes"; then
-      AC_TRY_PTHREAD(,)
+      AC_TRY_PTHREAD(,,)
     fi
   fi
 fi
 
-if test x"${ax_cv_have_pthread}" = x"yes"; then
+case ${ax_cv_have_pthread} in
+yes)
+  AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
+  AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
+
   pthread_srcs='$(PTHREAD_SRCS)'
   pthread_objs='$(PTHREAD_OBJS)'
   pthread_cflags='$(PTHREAD_CFLAGS)'
   pthread_targets='$(PTHREAD_TARGETS)'
+  ;;
+*)
+  if test x"${with_pthread}" = x"no"; then
+    AC_MSG_RESULT([disabled])
+  else
+    # in this case, must be: test x"${pthread_specified}" != x"explicit"
+    AC_MSG_RESULT([no])
+  fi
 
-  AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
-  AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
-else
   pthread_includes=
   pthread_libs=
   pthread_srcs=
   pthread_objs=
   pthread_cflags=
   pthread_targets=
-
-  if test x"${with_pthread}" = x"no"; then
-    AC_MSG_RESULT([disabled])
-  else
-    AC_MSG_RESULT([no])
-  fi
-fi
+  ;;
+esac
 
 AC_SUBST(pthread_includes)
 AC_SUBST(pthread_libs)
@@ -161,8 +181,6 @@ AC_SUBST(pthread_srcs)
 AC_SUBST(pthread_objs)
 AC_SUBST(pthread_cflags)
 AC_SUBST(pthread_targets)
-
-### --with-openldap is handled later, because it needs AC_CHECK_LIB(nsl, ...)
 
 ###
 ### --with-openssl=OpenSSL_ROOT
@@ -375,6 +393,7 @@ AC_SUBST(mpi_targets)
 ### --with-readline=READLINE_ROOT
 ###
 
+AC_MSG_CHECKING([readline])
 AC_ARG_WITH(readline,
 [  --with-readline=READLINE_ROOT	readline root directory
 				[[default=disable]]],
@@ -383,32 +402,47 @@ AC_ARG_WITH(readline,
 [with_readline=
 ])
 
-readline_found=
-if test x"${with_readline}" = x"yes"; then
+readline_specified=
+case ${with_readline} in
+/*)
+  if test -f "${with_readline}"/include/readline/readline.h; then
+	readline_specified=explicit
+  else
+	AC_MSG_ERROR([not found in \"${with_readline}\", aborted])
+  fi;;
+yes)
   for d in /usr/local /usr/pkg /usr
   do
     if test -f $d/include/readline/readline.h; then
 	with_readline=$d
-	AC_MSG_RESULT([using \"${d}\" as readline root directory])
-	readline_found=yes
+	readline_specified=yes
 	break
     fi
-  done
-  if test x"${readline_found}" != x"yes"; then
-	AC_MSG_ERROR([readline is not found, aborted])
-  fi
-fi
+  done;;
+no|'')
+  ;;
+*)
+  readline_specified=explicit;;
+esac
 
-if test -n "${with_readline}"; then
-  readline_includes="-DUSE_READLINE"
-  readline_libs="-lreadline -ltermcap"
-  if test x"${with_readline}" != x"/usr"; then
-    readline_includes="-I${with_readline}/include ${readline_includes}"
-    readline_libs="-R${with_readline}/lib -L${with_readline}/lib ${readline_libs}"
-  fi
+readline_includes=
+readline_libs=
+
+if test x"${readline_specified}" = x""; then
+  AC_MSG_RESULT([no])
 else
-  readline_includes=
-  readline_libs=
+  AC_MSG_RESULT([using \"${with_readline}\"])
+  AC_DEFINE(HAVE_READLINE, 1, [readline-compatible library exists])
+  readline_libs="-lreadline -ltermcap"
+  case ${with_readline} in
+  /usr)	;;
+  /*)	readline_includes="-I${with_readline}/include ${readline_includes}"
+	readline_libs="-R${with_readline}/lib -L${with_readline}/lib ${readline_libs}"
+	;;
+  *)	readline_includes=${with_readline}
+	readline_libs=${with_readline}
+	;;
+  esac
 fi
 
 AC_SUBST(readline_includes)
@@ -556,84 +590,255 @@ AC_SUBST(largefile64_targets)
 ### --with-openldap=OpenLDAP_ROOT
 ###
 
+# This command line option must be handled here,
+# because this needs AC_CHECK_LIB(nsl, ...)
+
 AC_MSG_CHECKING([openldap])
 AC_ARG_WITH(openldap,
 [  --with-openldap=OpenLDAP_ROOT	openldap root directory
-				[[default=guessed]]],
+				[[default=guessed]]
+  --without-openldap			disable openldap],
 [with_openldap="${withval}"
 ],
 [with_openldap=
 ])
 
-openldap_found=
-if test x"${with_openldap}" = x -o x"${with_openldap}" = x"yes"; then
+ldap_specified=
+case ${with_openldap} in
+/*)
+  if test -f "${with_openldap}"/include/ldap.h; then
+	ldap_specified=explicit
+  else
+	AC_MSG_ERROR([not found in \"${with_openldap}\", aborted])
+  fi;;
+yes|'')
   for d in /usr/local/openldap /usr/local /usr/pkg /usr
   do
     if test -f $d/include/ldap.h; then
 	with_openldap=$d
-	openldap_found=yes
+	ldap_specified=yes
 	break
     fi
-  done
-  if test x"${openldap_found}" != x"yes"; then
-	AC_MSG_ERROR([openldap is not found, aborted])
-  fi
-fi
-AC_MSG_RESULT([found in \"${with_openldap}\"])
+  done;;
+no)
+  ;;
+*)
+  ldap_specified=explicit;;
+esac
 
-if test x"${with_openldap}" = x"/usr"; then
-  ldap_includes=""
-  ldflags=""
+ldap_usable=
+
+if test x"${ldap_specified}" = x""; then
+  AC_MSG_RESULT([no])
 else
-  ldap_includes="-I${with_openldap}/include"
-  ldflags="-R${with_openldap}/lib -L${with_openldap}/lib"
-fi
-
-# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
-# configured, and DNS resolver library doesn't belongs to libc on some
-# systems.
-# But we cannot blindly link libresolv, because it may change behaviour
-# of gethostbyname() and friends.
-
-CPPFLAGS_SAVE="$CPPFLAGS"
-LIBS_SAVE="$LIBS"
-
-openldap_found=
-for libs in "-lldap -llber" "-lldap"; do
-for extra_lib in "" "-lresolv" "-lbind"; do
-
-CPPFLAGS="$CPPFLAGS_SAVE ${ldap_includes}"
-# -R is not portable without libtool, and not necessary for AC_TRY_LINK
-LIBS="`echo $ldflags | sed 's/-R[[^ ]]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
-
-AC_TRY_LINK([
+  AC_DEFUN([AC_TRY_LDAP], [
+    CPPFLAGS_SAVE="$CPPFLAGS"
+    LIBS_SAVE="$LIBS"
+    CPPFLAGS="$1 $CPPFLAGS_SAVE"
+    # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+    LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $3 $4 $LIBS_SAVE"
+    AC_TRY_LINK([
 #include <lber.h>
 #include <ldap.h>],[
 	LDAP *ldap_server = ldap_open("example.com", 389);
 ], [
-	if test x"${extra_lib}" != x; then
-		AC_MSG_RESULT([using ${extra_lib} for LDAP])
-		ldap_libs="${ldflags} ${libs} ${extra_lib}"
+	if test x"$4" != x""; then
+		AC_MSG_RESULT([using \"$1 $2 $3\" with \"$4\" for LDAP])
+		ldap_libs="$2 $3 $4"
 	else
-		ldap_libs="${ldflags} ${libs}"
+		AC_MSG_RESULT([using \"$1 $2 $3\" for LDAP])
+		ldap_libs="$2 $3"
 	fi
-	openldap_found=yes
+	ldap_usable=yes
+	# this needs to be checked here due to settings of $CPPFLAGS and $LIBS
 	AC_CHECK_FUNCS(ldap_memfree ldap_set_option)
-	break 2
- ], [])
+    ], [])
+    CPPFLAGS="$CPPFLAGS_SAVE"
+    LIBS="$LIBS_SAVE"
+  ])
 
-done # extra_lib
-done # libs
-if test x"${openldap_found}" != x"yes"; then
-	AC_MSG_ERROR([openldap cannot be linked, aborted])
+  case ${with_openldap} in
+  /*)	case ${with_openldap} in
+	/usr)	ldap_includes=
+		ldap_libs=;;
+	*)	ldap_includes="-I${with_openldap}/include"
+		ldap_libs="-R${with_openldap}/lib -L${with_openldap}/lib";;
+	esac
+	# OpenLDAP since 2.x calls res_query() and dn_expand(), if dnssrv is
+	# configured, and DNS resolver library doesn't belongs to libc on some
+	# systems.
+	# But we cannot blindly link libresolv, because it may change behaviour
+	# of gethostbyname() and friends.
+	for libs in "-lldap -llber" "-lldap"; do
+	  for extra_lib in "" "-lresolv" "-lbind"; do
+	    AC_TRY_LDAP(${ldap_includes},${ldap_libs},${libs},${extra_lib})
+	    if test x"${ldap_usable}" = x"yes"; then
+	      break 2
+	    fi
+	  done
+	done
+	;;
+  *)	ldap_includes=${with_openldap}
+	ldap_libs=${with_openldap}
+	AC_TRY_LDAP(${ldap_includes},${ldap_libs},,)
+	;;
+  esac
+
+  if test x"${ldap_usable}" != x"yes"; then
+    case $ldap_specified in
+    explicit)
+	  AC_MSG_ERROR([\"${with_openldap}\" is specified, but cannot be linked, aborted]);;
+    yes)
+	  AC_MSG_RESULT([found in \"${with_openldap}\", but cannot be linked, ignored]);;
+    esac
+  fi
 fi
-AC_MSG_RESULT([using \"${ldap_includes} ${ldap_libs}\" for ldap])
 
-CPPFLAGS="$CPPFLAGS_SAVE"
-LIBS="$LIBS_SAVE"
+case $ldap_usable in
+yes)	AC_DEFINE(HAVE_LDAP, 1, [LDAP library exists])
+	ldap_srcs='$(LDAP_SRCS)'
+	ldap_objs='$(LDAP_OBJS)'
+	ldap_cflags='$(LDAP_CFLAGS)'
+	ldap_targets='$(LDAP_TARGETS)'
+	;;
+*)	ldap_includes=
+	ldap_libs=
+	ldap_srcs=
+	ldap_objs=
+	ldap_cflags=
+	ldap_targets=
+	;;
+esac
 
 AC_SUBST(ldap_includes)
 AC_SUBST(ldap_libs)
+
+# for conditional compilation which depends on LDAP
+AC_SUBST(ldap_srcs)
+AC_SUBST(ldap_objs)
+AC_SUBST(ldap_cflags)
+AC_SUBST(ldap_targets)
+
+###
+### --with-postgresql=PostgreSQL_ROOT
+###
+
+AC_MSG_CHECKING([PostgreSQL])
+AC_ARG_WITH(postgresql,
+[  --with-postgresql=PostgreSQL_ROOT	PostgreSQL root directory
+				[[default=guessed]]
+  --without-postgresql			disable PostgreSQL],
+[with_postgresql="${withval}"
+],
+[with_postgresql=
+])
+
+postgresql_specified=
+case ${with_postgresql} in
+/*)
+  if test -f "${with_postgresql}"/include/libpq-fe.h; then
+	postgresql_specified=explicit
+  else
+	AC_MSG_ERROR([not found in \"${with_postgresql}\", aborted])
+  fi;;
+yas|'')
+  for d in /usr/local/pgsql /usr/local /usr/pkg /usr
+  do
+    if test -f $d/include/libpq-fe.h; then
+	with_postgresql=$d
+	postgresql_specified=yes
+	break
+    fi
+  done;;
+no)
+  ;;
+*)
+  postgresql_specified=explicit;;
+esac
+
+postgresql_usable=
+
+if test x"${postgresql_specified}" = x""; then
+  AC_MSG_RESULT([no])
+else
+  case ${with_postgresql} in
+  /usr)
+	postgresql_includes=
+	postgresql_libs="-lpq"
+	;;
+  /*)
+	postgresql_includes="-I${with_postgresql}/include"
+	postgresql_libs="-R${with_postgresql}/lib -L${with_postgresql}/lib -lpq"
+	;;
+  *)
+	postgresql_includes="${with_postgresql}"
+	postgresql_libs="${with_postgresql}"
+	;;
+  esac
+
+  CPPFLAGS_SAVE="$CPPFLAGS"
+  LIBS_SAVE="$LIBS"
+
+  CPPFLAGS="${postgresql_includes} $CPPFLAGS_SAVE"
+  # -R is not portable without libtool, and not necessary for AC_TRY_LINK
+  LIBS="`echo $postgresql_libs | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
+
+  AC_TRY_LINK([
+#include <libpq-fe.h>],[
+	PGconn *conn = PQconnectdb("");
+  ], [
+	postgresql_usable=yes
+	AC_MSG_RESULT([using \"${with_postgresql}\"])
+  ], [
+	case $postgresql_specified in
+	explicit)
+		AC_MSG_ERROR([\"${with_postgresql}\" is specified, but cannot be linked, aborted]);;
+	yes)
+		AC_MSG_RESULT([found in \"${with_postgresql}\", but cannot be linked, ignored]);;
+	esac
+  ])
+
+  CPPFLAGS="$CPPFLAGS_SAVE"
+  LIBS="$LIBS_SAVE"
+fi
+
+case $postgresql_usable in
+yes)	AC_DEFINE(HAVE_POSTGRESQL, 1, [PostgreSQL library exists])
+	postgresql_srcs='$(POSTGRESQL_SRCS)'
+	postgresql_objs='$(POSTGRESQL_OBJS)'
+	postgresql_cflags='$(POSTGRESQL_CFLAGS)'
+	postgresql_targets='$(POSTGRESQL_TARGETS)'
+	;;
+*)	postgresql_includes=
+	postgresql_libs=
+	postgresql_srcs=
+	postgresql_objs=
+	postgresql_cflags=
+	postgresql_targets=
+	;;
+esac
+
+AC_SUBST(postgresql_includes)
+AC_SUBST(postgresql_libs)
+
+# for conditional compilation which depends on PostgreSQL
+AC_SUBST(postgresql_srcs)
+AC_SUBST(postgresql_objs)
+AC_SUBST(postgresql_cflags)
+AC_SUBST(postgresql_targets)
+
+###
+### sanity check. We need either PostgreSQL or LDAP.
+###
+
+if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
+then
+	AC_MSG_ERROR([neither LDAP or PostgreSQL is found, aborted])
+fi
+# XXX this should be removed, when PostgreSQL support is completed.
+if test x"${ldap_usable}" != x"yes"; then
+	AC_MSG_ERROR([LDAP is not found, aborted])
+fi
 
 ###### 
 ###### Checks for header files.
