@@ -14,6 +14,9 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo auth_server_gsi.lo \
 	io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
+LDAP_SRCS = metadb_ldap.c
+LDAP_OBJS = metadb_ldap.lo
+
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
 	agent_wrap.c agent_client.c agent_proto.c \
@@ -22,9 +25,9 @@ SRCS = \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
 	gfs_exec.c gfs_unlink.c gfs_lock.c \
 	gfs_proto.c glob.c host.c hostspec.c iobuffer.c \
-	import_help.c metadb_ldap.c metadb_misc.c param.c schedule.c \
+	import_help.c metadb_misc.c param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
-	$(globus_srcs)
+	$(ldap_srcs) $(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
@@ -33,9 +36,9 @@ OBJS = \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
 	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
 	gfs_proto.lo glob.lo host.lo hostspec.lo iobuffer.lo \
-	import_help.lo metadb_ldap.lo metadb_misc.lo param.lo schedule.lo \
+	import_help.lo metadb_misc.lo param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
-	$(globus_objs)
+	$(ldap_objs) $(globus_objs)
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
