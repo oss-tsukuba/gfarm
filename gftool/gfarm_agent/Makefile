@@ -25,6 +25,7 @@ gfarm_agent.o: $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/xxx_proto.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
+	$(GFARMLIB_SRCDIR)/metadb_access.h \
 	$(GFARMLIB_SRCDIR)/agent_proto.h \
 	$(GFARMLIB_SRCDIR)/agent_wrap.h \
 	agent_thr.h \

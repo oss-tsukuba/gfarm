@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #include <gfarm/gfarm.h>
-#include "metadb_ldap.h"
+#include "metadb_access.h"
 #include "agent_client.h"
 #include "agent_wrap.h"
 

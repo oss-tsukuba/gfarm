@@ -52,7 +52,7 @@ include $(top_srcdir)/makes/lib.mk
 
 $(GFARM_OBJS): $(DEPGFARMINC)
 $(GFARM_GLOBUS_OBJS): $(DEPGFSLINC)
-agent_wrap.lo: agent_client.h agent_wrap.h
+agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h
 agent_client.lo: xxx_proto.h io_fd.h config.h agent_proto.h agent_client.h
 agent_proto.lo: xxx_proto.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h
@@ -67,7 +67,7 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_ldap.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
 gfs_lock.lo: 
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
@@ -85,7 +85,7 @@ import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
-metadb_ldap.lo: config.h metadb_ldap.h
+metadb_ldap.lo: config.h metadb_access.h
 metadb_misc.lo: host.h config.h gfs_client.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h

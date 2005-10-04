@@ -17,7 +17,7 @@
 #include <signal.h>
 
 #include <gfarm/gfarm.h>
-#include "metadb_ldap.h"
+#include "metadb_access.h"
 #include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"

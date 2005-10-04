@@ -14,7 +14,7 @@
 #include "gfs_pio.h"	/* gfarm_path_expand_home */
 #include "gfutil.h"
 
-#include "metadb_ldap.h"
+#include "metadb_access.h"
 
 static char *gfarm_current_working_directory;
 

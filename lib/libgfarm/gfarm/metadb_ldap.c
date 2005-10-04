@@ -16,7 +16,7 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
-#include "metadb_ldap.h"
+#include "metadb_access.h"
 
 /* old openldap does not have ldap_memfree. */
 #ifndef HAVE_LDAP_MEMFREE
