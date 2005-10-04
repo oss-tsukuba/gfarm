@@ -64,9 +64,6 @@ pthread_objs = @pthread_objs@
 pthread_cflags = @pthread_cflags@
 pthread_targets = @pthread_targets@
 
-ldap_includes = @ldap_includes@
-ldap_libs = @ldap_libs@
-
 openssl_includes = @openssl_includes@
 openssl_libs = @openssl_libs@
 
@@ -89,6 +86,22 @@ mpi_targets = @mpi_targets@
 
 readline_includes = @readline_includes@
 readline_libs = @readline_libs@
+
+ldap_includes = @ldap_includes@
+ldap_libs = @ldap_libs@
+# for conditional compilation which depends on whether LDAP is enabled or not
+ldap_srcs = @ldap_srcs@
+ldap_objs = @ldap_objs@
+ldap_cflags = @ldap_cflags@
+ldap_targets = @ldap_targets@
+
+postgresql_includes = @postgresql_includes@
+postgresql_libs = @postgresql_libs@
+# for conditional compilation which depends on whether PostgreSQL is enabled or not
+postgresql_srcs = @postgresql_srcs@
+postgresql_objs = @postgresql_objs@
+postgresql_cflags = @postgresql_cflags@
+postgresql_targets = @postgresql_targets@
 
 # build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
 gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@

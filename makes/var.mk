@@ -7,8 +7,8 @@ ja_mandir = $(default_mandir)/ja
 # example_bindir = $(default_bindir)/example
 example_bindir = $(default_bindir)
 
-metadb_client_includes = $(ldap_includes)
-metadb_client_libs = $(ldap_libs)
+metadb_client_includes = $(ldap_includes) $(postgresql_includes)
+metadb_client_libs = $(ldap_libs) $(postgresql_libs)
 
 SHELL = /bin/sh
 RM = rm
