@@ -1227,6 +1227,8 @@ gfarm_metadb_path_info_get_all_foreach(
 	    &gfarm_path_info_ops));
 }
 
+#if 0 /* GFarmFile history isn't actually used yet */
+
 void
 gfarm_file_history_free_allfile(int n, char **v)
 {
@@ -1293,6 +1295,8 @@ gfarm_metadb_file_history_get_allfile_by_file(
 	*gfarm_files_p = (char **)infos;
 	return (NULL);
 }
+
+#endif /* GFarmFile history isn't actually used yet */
 
 /**********************************************************************/
 
@@ -1802,6 +1806,8 @@ gfarm_metadb_file_section_copy_info_get_all_by_host(
 
 /**********************************************************************/
 
+#if 0 /* GFarmFile history isn't actually used yet */
+
 static char *gfarm_file_history_make_dn(void *vkey);
 static void gfarm_file_history_clear(void *info);
 static void gfarm_file_history_set_field(void *info, char *attribute, char **vals);
@@ -1951,3 +1957,5 @@ gfarm_file_history_remove(char *gfarm_file)
 	return (gfarm_generic_info_remove(&key,
 	    &gfarm_file_history_ops));
 }
+
+#endif /* GFarmFile history isn't actually used yet */

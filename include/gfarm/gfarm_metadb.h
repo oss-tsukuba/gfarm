@@ -144,6 +144,8 @@ int gfarm_file_section_copy_info_does_exist(
 
 /* ---------------------------------------- */
 
+#if 0 /* GFarmFile history isn't actually used yet */
+
 /*
  * GFarmFile history database:
  * (pathname) -> (history)
@@ -164,3 +166,5 @@ void gfarm_file_history_free_allfile(int, char **);
 char *gfarm_file_history_get_allfile_by_program(char *, int *, char ***);
 /* get GFarmFiles which were created from the file as a input */
 char *gfarm_file_history_get_allfile_by_file(char *, int *, char ***);
+
+#endif /* GFarmFile history isn't actually used yet */
