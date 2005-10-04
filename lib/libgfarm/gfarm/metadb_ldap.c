@@ -39,6 +39,35 @@ gfarm_metadb_share_connection(void)
 	gfarm_ldap_shared = 1;
 }
 
+static char *
+gfarm_metadb_check(void)
+{
+	int rv;
+	LDAPMessage *res = NULL;
+	char *e = NULL;
+
+	if (gfarm_ldap_server == NULL)
+		return ("metadb connection already disconnected");
+
+	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
+	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
+	if (rv != LDAP_SUCCESS) {
+		switch (rv) {
+		case LDAP_SERVER_DOWN:
+			e = "can't contact gfarm meta-db server";
+			break;
+		case LDAP_NO_SUCH_OBJECT:
+			e = "gfarm meta-db ldap_base_dn not found";
+			break;
+		default:
+			e = "gfarm meta-db ldap_base_dn access failed";
+		}
+	}
+	if (res != NULL)
+		ldap_msgfree(res);
+	return (e);
+}
+
 char *
 gfarm_metadb_initialize(void)
 {
@@ -130,35 +159,6 @@ gfarm_metadb_terminate(void)
 	gfarm_ldap_server = NULL;
 	gfarm_ldap_client_pid = 0;
 
-	return (e);
-}
-
-char *
-gfarm_metadb_check(void)
-{
-	int rv;
-	LDAPMessage *res = NULL;
-	char *e = NULL;
-
-	if (gfarm_ldap_server == NULL)
-		return ("metadb connection already disconnected");
-
-	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
-	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
-	if (rv != LDAP_SUCCESS) {
-		switch (rv) {
-		case LDAP_SERVER_DOWN:
-			e = "can't contact gfarm meta-db server";
-			break;
-		case LDAP_NO_SUCH_OBJECT:
-			e = "gfarm meta-db ldap_base_dn not found";
-			break;
-		default:
-			e = "gfarm meta-db ldap_base_dn access failed";
-		}
-	}
-	if (res != NULL)
-		ldap_msgfree(res);
 	return (e);
 }
 
