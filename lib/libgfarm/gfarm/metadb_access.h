@@ -1,5 +1,5 @@
 /*
- * Metadata server operations for LDAP
+ * Metadata server operations
  *
  * $Id$
  */
