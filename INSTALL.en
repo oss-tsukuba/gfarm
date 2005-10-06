@@ -303,8 +303,11 @@ command, please read INSTALL.RPM.en.
 In the current distribution, an LDAP server manages the Gfarm
 filesystem metadata.
 
-The Gfarm version 1.0.X supports OpenLDAP version 2.0.X, 2.1.X, and
-2.2.X.  Other versions or other LDAP servers are not tested enough.
+The Gfarm supports OpenLDAP 2.1.X, and 2.2.X.  Other versions or other
+LDAP servers are not tested enough.  OpenLDAP 2.0.X is known to work,
+but OpenLDAP 2.1.X or later is strongly recommended, because 2.0.X
+cannot distinguish upper case letters and lower case latters.
+
 
  - gfarm.schema
 
@@ -325,7 +328,7 @@ gfarm.schema for Gfarm file system.  Note that suffix and rootdn in
 this file refer to the base distinguished name.
 
 Here are example files of /etc/gfarm-ldap/slapd.conf on
-ldap.example.com for OpenLDAP versions 2.0.X, 2.1.X and 2.2.X.  Note
+ldap.example.com for OpenLDAP versions 2.0.X, 2.1.X and later.  Note
 that the path name of core.schema on line 5 depends on the
 installation of the OpenLDAP.  You need to specify a location of
 core.schema in your installation of OpenLDAP.
