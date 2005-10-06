@@ -105,8 +105,8 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
   スや，ユーティリティ関数からなります．
 
   並列ファイルシステムは，内部的には LDAP サーバーないし PostgreSQL サー
-  バーLDAP サーバーを利用した，Gfarm メタデータベース・ライブラリを用い
-  て実装されています．
+  バーを利用した，Gfarm メタデータベース・ライブラリを用いて実装されてい
+  ます．
 
   既存アプリケーションで Gfarm ファイルシステムを利用するためのライブラ
   リ gfs_hook.o も準備されています．この場合，プログラムリンク時に
@@ -248,8 +248,7 @@ configure コマンドには，下記のオプションがあります．
 
 	/usr/grid
 
-・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクト
-  リ
+・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクトリ
 
 	/var/spool/gfarm
 
@@ -262,7 +261,7 @@ LDAP を使用する場合:
 
 ・LDAP サーバーを実行するホスト
 
-	memtadb.example.com
+	metadb.example.com
 
 ・LDAP サーバーの利用する TCP ポート番号
 
@@ -378,9 +377,11 @@ INSTALL.RPM.ja を参照してください．
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
 LDAP サーバーを用意する必要があります．
 
-Gfarm バージョン 1.0.X では，OpenLDAP version 2.0.X および version
-2.1.X で動作が確認されていますが，それ以外の LDAP サーバでは動作確認が
-十分におこなわれていません．
+Gfarm では，OpenLDAP version 2.1.X および version 2.2.X で動作が確認さ
+れていますが，それ以外の LDAP サーバでは動作確認が十分におこなわれてい
+ません．OpenLDAP 2.0.X でも動作は可能ですが，2.1 系列以降の最新版を利
+用することを強くお勧めします．2.0 系列の場合，Gfarm ファイルシステム上
+のファイル名は大文字，小文字を区別できません．
 
 ▽ slapd.conf
 
@@ -389,8 +390,8 @@ OpenLDAP 付属の LDAP サーバーの設定ファイルです．Gfarm ファイルシステ
 name を，このファイルの suffix および rootdn で参照しているのに注意し
 てください．
 
-以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X のそれぞれの場
-合における，ホスト memtadb.example.com のファイル 
+以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X 以降のそれぞれ
+の場合における，ホスト metadb.example.com のファイル 
 /etc/gfarm-ldap/slapd.conf 設定例を示します．設定ファイル中で include 
 している core.schema のパス名は OpenLDAP のインストレーションにより変
 わりますので気を付けてください．
@@ -484,7 +485,7 @@ index	hostname	pres,eq
 slapd.conf から include されているファイルです．
 
 ソース配布中のファイル gftool/config-gfarm/gfarm.schema を，ホスト 
-memtadb.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
+metadb.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 
 バイナリ配布の場合，gfarm-server パッケージ中の
 /usr/grid/share/gfarm/config/gfarm.schema に，このファイルが含まれています．
@@ -500,7 +501,7 @@ memtadb.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 name) 属性に base distinguished name を，また objectclass 属性に top 
 を設定します．
 
-例えばホスト memtadb.example.com のファイル /etc/gfarm-ldap/initial.ldif 
+例えばホスト metadb.example.com のファイル /etc/gfarm-ldap/initial.ldif 
 に，下記のような内容を設定することになります．
 
 ------------------------------ ここから ------------------------------
@@ -515,7 +516,7 @@ o: Example Com
 ▽ LDAP データベースの作成
 
 前節で作成したファイルシステムメタデータの初期情報を元に，LDAP データ
-ベースを作成します．これには，ホスト memtadb.example.com で，下記のコマン
+ベースを作成します．これには，ホスト metadb.example.com で，下記のコマン
 ドを実行します．
 
 	% rm -rf /var/gfarm-ldap
@@ -525,7 +526,7 @@ o: Example Com
 
 ▽ LDAP サーバーの起動
 
-ホスト memtadb.example.com で，LDAP サーバーを起動します．下記のコマンド
+ホスト metadb.example.com で，LDAP サーバーを起動します．下記のコマンド
 を実行します．
 
 	% cd /usr/local/openldap/libexec/
@@ -541,14 +542,14 @@ root 権限で行なう必要があります．
 と同じ内容が表示されれば，正しく動作しています．
 
 Bourne Shell の場合:
-	% host=memtadb.example.com
+	% host=metadb.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 csh の場合:
-	% set host=memtadb.example.com
+	% set host=metadb.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
@@ -587,8 +588,8 @@ csh の場合:
 
 LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
-metadb_serverhost memtadb.example.com
-ldap_serverhost memtadb.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
@@ -687,8 +688,8 @@ gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost memtadb.example.com
-ldap_serverhost memtadb.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
