@@ -1192,27 +1192,6 @@ gfarm_path_info_free_all(
 	    &gfarm_path_info_ops);
 }
 
-char *
-gfarm_metadb_path_info_get_all(
-	int *np,
-	struct gfarm_path_info **infosp)
-{
-	char *error;
-	int n;
-	struct gfarm_path_info *infos;
-
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_path_info_ops.query_type,
-	    &n, &infos,
-	    &gfarm_path_info_ops);
-	if (error != NULL)
-		return (error);
-
-	*np = n;
-	*infosp = infos;
-	return (NULL);
-}
-
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
 char *
 gfarm_metadb_path_info_get_all_foreach(
