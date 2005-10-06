@@ -68,7 +68,7 @@ Gfarm システムは，下記の種類のホストから構成されます．
   Gfarm ファイルシステムのメタデータと，ユーザがリクエストした並列プロ
   セスを管理するホストです．並列プロセスはファイルシステムノードのホス
   ト群で実行されることになります．ホスト上では LDAP サーバ(slapd) と
-  Postgresql サーバ(postmaster) のいずれか一方と, gfmd が走ります．
+  PostgreSQL サーバ(postmaster) のいずれか一方と, gfmd が走ります．
 
 Gfarm ファイルシステムでは，ファイルは任意のファイルシステムノードに配
 置されます．また，ファイルは複製され，異るノードに配置されます．さらに，
@@ -104,8 +104,9 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
   ライブラリです．Gfarm の並列ファイルシステムのライブラリ・インタフェー
   スや，ユーティリティ関数からなります．
 
-  並列ファイルシステムは，内部的には LDAP サーバーを利用した，Gfarm メ
-  タデータベース・ライブラリを用いて実装されています．
+  並列ファイルシステムは，内部的には LDAP サーバーないし PostgreSQL サー
+  バーLDAP サーバーを利用した，Gfarm メタデータベース・ライブラリを用い
+  て実装されています．
 
   既存アプリケーションで Gfarm ファイルシステムを利用するためのライブラ
   リ gfs_hook.o も準備されています．この場合，プログラムリンク時に
@@ -125,7 +126,8 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
   メタデータサーバ・マシン上で動作するデーモンプログラムです．
   現状の実装では，実行中のプロセス情報のみを管理しており，
   ファイルシステムメタデータサーバの機能は果たしていません．ファイルシ
-  ステムメタデータサーバは LDAP サーバを直接利用しています．
+  ステムメタデータサーバは LDAP サーバないし PostgreSQL サーバーを直接
+  利用しています．
 
 ・gfsd - Gfarm ファイルシステム・デーモン
 
@@ -158,8 +160,9 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
 今回のシステムは，Linux 上で実行テストされています．
 構築に関しては NetBSD, Solaris 上でテストされています．
 
-システムの構築のためには，OpenLDAP と OpenSSL ライブラリが必要です．認
-証方式として GSI を利用するためには，GSSAPI ライブラリが必要となります．
+システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちらか
+片方と OpenSSL ライブラリが必要です．認証方式として GSI を利用するために
+は，GSSAPI ライブラリが必要となります．
 現在の configure では GSSAPI ライブラリとして Globus toolkit version 2
 (GT2) あるいは version 3 (GT3) に含まれるライブラリをサポートしています．
 また，既存の MPI アプリケーションで Gfarm ファイルシステムを利用するた
@@ -259,7 +262,7 @@ LDAP を使用する場合:
 
 ・LDAP サーバーを実行するホスト
 
-	ldap.example.com
+	memtadb.example.com
 
 ・LDAP サーバーの利用する TCP ポート番号
 
@@ -301,21 +304,29 @@ PostgreSQL を使用する場合:
 
 ・PostgreSQL サーバーを実行するホスト
 
-	postgresql.example.com
+	metadb.example.com
 
 ・PostgreSQL サーバーの利用する TCP ポート番号
 
 	5432
 
+・PostgreSQL データベースを動作させる UNIX ユーザ権限
+
+	postgres
+
+・PostgreSQL データベース・ファイルを置くディレクトリ
+
+	/var/gfarm-pgsql
+
 ・PostgreSQL データベース名
 
 	gfarm		
 
-・PostgreSQL データベースに接続する PostgreSQL ユーザ名
+・PostgreSQL データベースに接続する データベース管理下のユーザ名
 
 	gfarm
 
-・PostgreSQL データベースに接続する PostgreSQL ユーザのパスワード
+・PostgreSQL データベースに接続する データベース管理下のユーザのパスワード
 
 	secret-postgresql-password
 
@@ -379,7 +390,7 @@ name を，このファイルの suffix および rootdn で参照しているのに注意し
 てください．
 
 以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X のそれぞれの場
-合における，ホスト ldap.example.com のファイル 
+合における，ホスト memtadb.example.com のファイル 
 /etc/gfarm-ldap/slapd.conf 設定例を示します．設定ファイル中で include 
 している core.schema のパス名は OpenLDAP のインストレーションにより変
 わりますので気を付けてください．
@@ -473,7 +484,7 @@ index	hostname	pres,eq
 slapd.conf から include されているファイルです．
 
 ソース配布中のファイル gftool/config-gfarm/gfarm.schema を，ホスト 
-ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
+memtadb.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 
 バイナリ配布の場合，gfarm-server パッケージ中の
 /usr/grid/share/gfarm/config/gfarm.schema に，このファイルが含まれています．
@@ -489,7 +500,7 @@ ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 name) 属性に base distinguished name を，また objectclass 属性に top 
 を設定します．
 
-例えばホスト ldap.example.com のファイル /etc/gfarm-ldap/initial.ldif 
+例えばホスト memtadb.example.com のファイル /etc/gfarm-ldap/initial.ldif 
 に，下記のような内容を設定することになります．
 
 ------------------------------ ここから ------------------------------
@@ -504,7 +515,7 @@ o: Example Com
 ▽ LDAP データベースの作成
 
 前節で作成したファイルシステムメタデータの初期情報を元に，LDAP データ
-ベースを作成します．これには，ホスト ldap.example.com で，下記のコマン
+ベースを作成します．これには，ホスト memtadb.example.com で，下記のコマン
 ドを実行します．
 
 	% rm -rf /var/gfarm-ldap
@@ -514,7 +525,7 @@ o: Example Com
 
 ▽ LDAP サーバーの起動
 
-ホスト ldap.example.com で，LDAP サーバーを起動します．下記のコマンド
+ホスト memtadb.example.com で，LDAP サーバーを起動します．下記のコマンド
 を実行します．
 
 	% cd /usr/local/openldap/libexec/
@@ -530,18 +541,20 @@ root 権限で行なう必要があります．
 と同じ内容が表示されれば，正しく動作しています．
 
 Bourne Shell の場合:
-	% host=ldap.example.com
+	% host=memtadb.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 csh の場合:
-	% set host=ldap.example.com
+	% set host=memtadb.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
+
+------------------------------------------------------------------------
 
 ◇ PostgreSQL サーバー
 
@@ -553,8 +566,10 @@ csh の場合:
 
 ▽ データベースクラスタの作成
 
-# su - postgres
-$ initdb -D /usr/local/pgsql/data
+	# mkdir /var/gfarm-pgsql
+	# chown postgres:postgres /var/gfarm-pgsql
+	# su - postgres
+	$ initdb -D /var/gfarm-pgsql
 
 ▽ データベースサーバの起動
 
@@ -564,23 +579,25 @@ $ initdb -D /usr/local/pgsql/data
 
 ...
 
+------------------------------------------------------------------------
+
 ◇ ~/.gfarmrc
 
 クライアントホストで ~/.gfarmrc を下記のように設定します．
 
 LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost memtadb.example.com
+ldap_serverhost memtadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
 
-PostreSQL を使用する場合:
+PostgreSQL を使用する場合:
 ------------------------------ ここから ------------------------------
-metadb_serverhost postgresql.example.com
-postgresql_serverhost postgresql.example.com
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
 postgresql_username gfarm
@@ -590,8 +607,8 @@ auth enable sharedsecret *
 
 ▽ ファイルシステムノードの登録
 
-LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
-ノードの情報を登録します．
+LDAP サーバーの起動ないし PostgreSQL サーバーの設定を完了したら，
+gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 
 ファイルシステムノードを構成するホストの情報には，下記のような項目があ
 ります．
@@ -670,18 +687,18 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
 LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost memtadb.example.com
+ldap_serverhost memtadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
 
-PostreSQL を使用する場合:
+PostgreSQL を使用する場合:
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost postgresql.example.com
-postgresql_serverhost postgresql.example.com
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
 postgresql_username gfarm
