@@ -46,6 +46,7 @@ Gfarm ファイルシステムは，Gfarm 並列入出力 APIのほか，殆んどの POSIX 入
      Grid Datafarm アーキテクチャ」，
     情報処理学会論文誌：ハイパフォーマンスコンピューティングシステム，
     情報処理学会，Vol.43，No.SIG 6 (HPS 5)，pp.184-195，2002 年
+    http://datafarm.apgrid.org/
 
 ========================================================================
 
@@ -642,31 +643,31 @@ gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 例えば下記のようなコマンドで設定することになります．
 オプション -c は，登録を指示するコマンドです．
 
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-1.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-2.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-3.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-4.example.com
-	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-5.example.com
-	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-6.example.com
-	% gfhost -c -a sparc-sun-solaris8 solarishost-1.example.com
-	% gfhost -c -a sparc-sun-solaris8 solarishost-2.example.com
-	% gfhost -c -a alpha-hp-osf5.0 osfhost-1.example.com
-	% gfhost -c -a mips-sgi-irix6.5 -n 16 irixhost-1.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-1.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-2.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-3.example.com
+	% gfhost -c -a i386-redhat8.0-linux linux-4.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-5.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-6.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-1.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-2.example.com
+	% gfhost -c -a alpha-hp-osf5.0 osf-1.example.com
+	% gfhost -c -a mips-sgi-irix6.5 -n 16 irix-1.example.com
 
 登録結果は，オプション -M を指定して gfhost を実行することで，確認でき
 ます．
 
 	% gfhost -M
-	i386-redhat8.0-linux 1 linuxhost-1.example.com
-	i386-redhat8.0-linux 1 linuxhost-2.example.com
-	i386-redhat8.0-linux 1 linuxhost-3.example.com
-	i386-redhat8.0-linux 1 linuxhost-4.example.com
-	i386-debian3.0-linux 2 linuxhost-5.example.com
-	i386-debian3.0-linux 2 linuxhost-6.example.com
-	sparc-sun-solaris8 1 solarishost-1.example.com
-	sparc-sun-solaris8 1 solarishost-2.example.com
-	alpha-hp-osf5.0 1 osfhost-1.example.com
-	mips-sgi-irix6.5 16 irixhost-1.example.com
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	i386-redhat8.0-linux 1 linux-4.example.com
+	i386-debian3.0-linux 2 linux-5.example.com
+	i386-debian3.0-linux 2 linux-6.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
+	alpha-hp-osf5.0 1 osf-1.example.com
+	mips-sgi-irix6.5 16 irix-1.example.com
 
 ◇ gfsd スプール・ディレクトリの作成
 
@@ -808,20 +809,20 @@ gfsd が正しく起動されているかどうかは，オプション -l を指定して gfhost
 アベレージ，その次の一文字は用いられる認証方法です．
 
 	% gfhost -l
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-1.example.com
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-2.example.com
-	-.--/-.--/-.-- - i386-redhat8.0-linux 1 linuxhost-3.example.com
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-4.example.com
-	0.40/0.45/0.42 s i386-debian3.0-linux 2 linuxhost-5.example.com
-	0.43/0.50/0.40 s i386-debian3.0-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 s sparc-sun-solaris8 1 solarishost-1.example.com
-	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solarishost-2.example.com
-	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osfhost-1.example.com
-	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irixhost-1.example.com
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.00/0.02/0.00 s i386-redhat8.0-linux 1 linux-4.example.com(10.0.0.4)
+	0.40/0.45/0.42 s i386-debian3.0-linux 2 linux-5.example.com(10.0.0.5)
+	0.43/0.50/0.40 s i386-debian3.0-linux 2 linux-6.example.com(10.0.0.6)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
+	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osf-1.example.com(10.0.1.17)
+	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irix-1.example.com(10.0.1.18)
 
-linuxhost-3.example.com の -.-- は，このノード上に（指定したポートで） 
-gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
-のノードに接続できない（ノードかネットワークが落ちている）ことを示して
+linux-3.example.com の -.-- は，このノード上に（指定したポートで） 
+gfsd が動いていないことを示し，solaris-2.example.com の x.xx はこの
+ノードに接続できない（ノードかネットワークが落ちている）ことを示して
 います．このような問題を追及するには，"-v" オプションを追加してエラー
 メッセージを表示させるようにしてください．
 
@@ -940,16 +941,16 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   しょう．
 
 	% gfwhere gfarm:file
-	0: gfm01.apgrid.org
-	1: gfm02.apgrid.org
-	2: gfm03.apgrid.org
-	3: gfm04.apgrid.org
-	4: gfm05.apgrid.org
-	5: gfm06.apgrid.org
-	6: gfm07.apgrid.org
-	7: gfm08.apgrid.org
-	8: gfm09.apgrid.org
-	9: gfm10.apgrid.org
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
+	5: linux-6.example.com
+	6: solaris-1.example.com
+	7: solaris-2.example.com
+	8: osf-1.example.com
+	9: irix-1.example.com
 
   gfwhere コマンドも gfls と同様に Gfarm URL の gfarm: は省略可能です．
   gfwhere コマンドの出力で : の左はファイルインデックス番号と呼ばれ，
@@ -1038,7 +1039,7 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   ステムノード名を -h オプションで，あるいはアーキテクチャ名を -a オプ
   ションで指定する必要があります．
 
-	% gfreg -h linuxhost-1.example.com /usr/bin/gfgrep gfarm:gfgrep
+	% gfreg -h linux-1.example.com /usr/bin/gfgrep gfarm:gfgrep
 
   登録されたら，実行してみましょう．
 

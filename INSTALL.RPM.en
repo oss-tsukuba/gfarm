@@ -65,10 +65,10 @@ configuration.
 
 	# config-gfarm -t
 	prefix [--prefix]: 
-	domain name  [-d]: apgrid.org
+	domain name  [-d]: example.com
 	openldap version    [-V]: 2.1
 	metadata directory  [-l]: /var/gfarm-ldap
-	metaserver hostname [-h]: gfms.apgrid.org
+	metaserver hostname [-h]: metadb.example.com
 	slapd port [-p]: 389
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
@@ -143,10 +143,10 @@ o Configuration of file system node
 
 Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server that is created by
 'config-gfarm' as described in the previous section.  For example,
-when the metadata server is 'gfms.apgrid.org', you can copy it from
+when the metadata server is 'metadb.example.com', you can copy it from
 the server using scp.
 
-	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
 
 Note: The location of the Gfarm configuration file can be specified by
       'prefix' of config-gfsd as described below.
@@ -160,9 +160,9 @@ spool directory.
 
 	# config-gfsd -t /var/spool/gfarm
 	prefix [--prefix]: 
-	hostname     [-h]: amethyst.hpcc.jp
+	hostname     [-h]: linux-1.example.com
 	architecture [-a]: i386-fedora3-linux
-	ncpu         [-n]: 1
+	ncpu         [-n]: 2
 	spool directory  : /var/spool/gfarm
 
 You can modify any default parameter by the option shown in [ ].  Note
@@ -212,10 +212,10 @@ install glibc-not-hidden package.
 o Configuration of client node
 
 Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to the client node.  For
-example, when the metadata server is 'gfms.apgrid.org', you can copy
+example, when the metadata server is 'metadb.example.com', you can copy
 it from the server using scp.
 
-	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
 
 Note: This setting can be substituted for copying to ~/.gfarmrc as
       described in the next chapter.
@@ -239,9 +239,9 @@ o Configuration of client node
 
 Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to ~/.gfarmrc on the
 client node.  For example, when the metadata server is
-'gfms.apgrid.org', you can copy it from the server using scp.
+'metadb.example.com', you can copy it from the server using scp.
 
-	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
 
 o Creation of a home directory in Gfarm file system
 
@@ -304,17 +304,21 @@ o gfhost - file system node information
 in the metadata server.
 
 	% gfhost -M
-	aist-xcluster 2 xcmp001.asc.hpcc.jp
-	aist-xcluster 2 xcmp002.asc.hpcc.jp
-	aist-xcluster 2 xcmp003.asc.hpcc.jp
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
 	...
 
 'gfhost -l' displays the status of file system nodes.
 
 	% gfhost -l
-	0.01/0.03/0.03 s aist-xcluster 2 xcmp001.asc.hpcc.jp(163.220.61.1)
-	0.00/0.00/0.00 s aist-xcluster 2 xcmp002.asc.hpcc.jp(163.220.61.2)
-	0.00/0.02/0.00 s aist-xcluster 2 xcmp003.asc.hpcc.jp(163.220.61.3)
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
 	...
 
 The second field shows the status of authentication to the file system
@@ -391,17 +395,17 @@ copies.
 catalog, of the specified files.
 
 	% gfwhere .bashrc
-	0: xcmp001.asc.hpcc.jp
+	0: linux-1.example.com
 
 'gfrep' command creates file copies.  For example, 'gfrep -N 2'
 creates two file copies.
 
 	% gfrep -N 2 .bashrc
 	% gfwhere .bashrc
-	0: xcmp001.asc.hpcc.jp xcmp002.asc.hpcc.jp
+	0: linux-1.example.com linux-2.example.com
 
 In this case, '.bashrc' has two copies; one is stored on
-xcmp001.asc.hpcc.jp and the other is stored on xcmp002.asc.hpcc.jp.
+linux-1.example.com and the other is stored on linux-2.example.com.
 
 When the directory is specified, file copies will be created in all
 files under the directory.  For example, when you would like to create
@@ -452,15 +456,15 @@ multiple fragments by the line and store to a file specified by the -o
 option.  Each file fragment has almost the same size.
 
 In this case, for example, 'gfarm:input' is divided into 5 fragments,
-and stored on different nodes from xcmp001.asc.hpcc.jp to
-xcmp005.asc.hpcc.jp.
+and stored on different nodes from linux-1.example.com to
+linux-5.example.com.
 
 	% gfwhere gfarm:input
-	0: xcmp001.asc.hpcc.jp
-	1: xcmp002.asc.hpcc.jp
-	2: xcmp003.asc.hpcc.jp
-	3: xcmp004.asc.hpcc.jp
-	4: xcmp005.asc.hpcc.jp
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
 
 Note that the file can be accessed normally even though it is
 physically divided.

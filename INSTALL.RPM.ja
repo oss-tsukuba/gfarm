@@ -71,11 +71,11 @@ Gfarm ファイルシステムに必要な設定を行うため，config-gfarm を実行します．
 
 	# config-gfarm -t
 	prefix [--prefix]: 
-	domain name  [-d]: apgrid.org
+	domain name  [-d]: example.com
 	openldap prefix     [-P]: /usr
 	openldap version    [-V]: 2.1
 	metadata directory  [-l]: /var/gfarm-ldap
-	metaserver hostname [-h]: gfms.apgrid.org
+	metaserver hostname [-h]: metadb.example.com
 	slapd port [-p]: 389
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
@@ -147,9 +147,9 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 前章の config-gfarm によりメタデータサーバで作成した設定ファイル
 %%SYSCONFDIR%%/gfarm.conf をファイルシステムノードにコピーします．例えば，メタデー
-タサーバが gfms.apgrid.org の場合は，以下のようになります．
+タサーバが metadb.example.com の場合は，以下のようになります．
 
-	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
 
 （注）以下の，config-gfsd で prefix を指定する場合は，<prefix>/etc にコ
       ピーします．
@@ -164,9 +164,9 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 	# config-gfsd -t /var/spool/gfarm
 	prefix [--prefix]: 
-	hostname     [-h]: amethyst.hpcc.jp
+	hostname     [-h]: linux-1.example.com
 	architecture [-a]: i386-fedora3-linux
-	ncpu         [-n]: 1
+	ncpu         [-n]: 2
 	spool directory  : /var/spool/gfarm
 
 変更が必要な場合は [ ] のオプションで変更することができます．なお，スプー
@@ -214,7 +214,7 @@ glibc-not-hidden パッケージをインストールします．
 メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
 ドの %%SYSCONFDIR%%/gfarm.conf にコピーします．
 
-	# scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf /etc
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
 
 あるいは，次章の「Gfarm 設定ファイルの作成」によりユーザのホームディレ
 クトリに作成することにより，この設定を代用可能です．
@@ -236,7 +236,7 @@ glibc-not-hidden パッケージをインストールします．
 メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
 ドのホームディレクトリの ~/.gfarmrc にコピーします．
 
-	% scp -p gfms.apgrid.org:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
+	% scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
 
 ◇ ホームディレクトリの作成
 
@@ -297,17 +297,21 @@ Globus ツールキットに関しては，http://www.globus.org/ を参照してくださ
 確認します．
 
 	% gfhost -M
-	aist-xcluster 2 xcmp001.asc.hpcc.jp
-	aist-xcluster 2 xcmp002.asc.hpcc.jp
-	aist-xcluster 2 xcmp003.asc.hpcc.jp
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
 	...
 
 次に，利用可能かどうか確認します．
 
 	% gfhost -lv
-	0.01/0.03/0.03 s aist-xcluster 2 xcmp001.asc.hpcc.jp(163.220.61.1)
-	0.00/0.00/0.00 s aist-xcluster 2 xcmp002.asc.hpcc.jp(163.220.61.2)
-	0.00/0.02/0.00 s aist-xcluster 2 xcmp003.asc.hpcc.jp(163.220.61.3)
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
 	...
 
 左から二番目の文字が 's', 'g', 'G' であれば，そのファイルシステムノード
@@ -378,16 +382,16 @@ Gfarm ファイルシステムでは，ファイルはどこかのファイルシステムノードに
 ます．
 
 	% gfwhere .bashrc
-	0: xcmp001.asc.hpcc.jp
+	0: linux-1.example.com
 
 ファイル複製を作成するためには gfrep コマンドが準備されています．例えば，
 もう一つファイル複製を作成したい場合は，以下のようにします．
 
 	% gfrep -N 2 .bashrc
 	% gfwhere .bashrc
-	0: xcmp001.asc.hpcc.jp xcmp002.asc.hpcc.jp
+	0: linux-1.example.com linux-2.example.com
 
-この場合，xcmp001 と xcmp002 に，ファイルが複製されて格納されています．
+この場合，linux-1 と linux-2 に，ファイルが複製されて格納されています．
 
 gfrep では，ファイルの他にディレクトリも指定することができ，この場合，
 指定されたディレクトリ以下の全ファイルについて，指定されたように複製を
@@ -439,11 +443,11 @@ gfimport_text は，テキスト文章を行単位にほぼ同じくらいのサイズになるよ
 ドに格納されます．
 
 	% gfwhere gfarm:input
-	0: xcmp001.asc.hpcc.jp
-	1: xcmp002.asc.hpcc.jp
-	2: xcmp003.asc.hpcc.jp
-	3: xcmp004.asc.hpcc.jp
-	4: xcmp005.asc.hpcc.jp
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
 
 ファイルは物理的には分割されていますが，以下のように，通常ファイルのよ
 うに扱うことができ，変更がないことを確認できます．
