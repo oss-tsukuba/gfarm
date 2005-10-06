@@ -309,7 +309,7 @@ PostgreSQL を使用する場合:
 
 	5432
 
-・PostgreSQL データベースを動作させる UNIX ユーザ権限
+・PostgreSQL データベース・サーバを動作させる UNIX ユーザ権限
 
 	postgres
 
