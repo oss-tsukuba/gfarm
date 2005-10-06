@@ -67,8 +67,8 @@ Gfarm システムは，下記の種類のホストから構成されます．
 
   Gfarm ファイルシステムのメタデータと，ユーザがリクエストした並列プロ
   セスを管理するホストです．並列プロセスはファイルシステムノードのホス
-  ト群で実行されることになります．ホスト上では gfmd および LDAP サーバ
-  (slapd) が走ります．
+  ト群で実行されることになります．ホスト上では LDAP サーバ(slapd) と
+  Postgresql サーバ(postmaster) のいずれか一方と, gfmd が走ります．
 
 Gfarm ファイルシステムでは，ファイルは任意のファイルシステムノードに配
 置されます．また，ファイルは複製され，異るノードに配置されます．さらに，
@@ -181,6 +181,12 @@ configure コマンドには，下記のオプションがあります．
   オプション省略時は自動的にインストールディレクトリの検索が試みられま
   す．
 
+・--with-postgresql=ディレクトリ
+
+  PostgreSQL のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
+
 ・--with-openssl=ディレクトリ
 
   OpenSSL のインストールされているディレクトリを指定します．
@@ -239,6 +245,14 @@ configure コマンドには，下記のオプションがあります．
 
 	/usr/grid
 
+・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクト
+  リ
+
+	/var/spool/gfarm
+
+
+LDAP を使用する場合:
+
 ・OpenLDAP インストール・ディレクトリ
 
 	/usr/local/openldap
@@ -278,10 +292,32 @@ configure コマンドには，下記のオプションがあります．
 
 	Example Com
 
-・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクト
-  リ
 
-	/var/spool/gfarm
+PostgreSQL を使用する場合:
+
+・PostgreSQL インストール・ディレクトリ
+
+	/usr/local/pgsql
+
+・PostgreSQL サーバーを実行するホスト
+
+	postgresql.example.com
+
+・PostgreSQL サーバーの利用する TCP ポート番号
+
+	5432
+
+・PostgreSQL データベース名
+
+	gfarm		
+
+・PostgreSQL データベースに接続する PostgreSQL ユーザ名
+
+	gfarm
+
+・PostgreSQL データベースに接続する PostgreSQL ユーザのパスワード
+
+	secret-postgresql-password
 
 ------------------------------------------------------------------------
 
@@ -507,15 +543,48 @@ csh の場合:
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
+◇ PostgreSQL サーバー
+
+...
+
+▽ 設定ファイルの変更
+
+...
+
+▽ データベースクラスタの作成
+
+# su - postgres
+$ initdb -D /usr/local/pgsql/data
+
+▽ データベースサーバの起動
+
+...
+
+▽ データベースとスキーマの作成
+
+...
+
 ◇ ~/.gfarmrc
 
 クライアントホストで ~/.gfarmrc を下記のように設定します．
 
+LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
+auth enable sharedsecret *
+------------------------------ ここまで ------------------------------
+
+PostreSQL を使用する場合:
+------------------------------ ここから ------------------------------
+metadb_serverhost postgresql.example.com
+postgresql_serverhost postgresql.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_username gfarm
+postgresql_passwd secret-postgresql-password
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
 
@@ -581,8 +650,6 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
 	alpha-hp-osf5.0 1 osfhost-1.example.com
 	mips-sgi-irix6.5 16 irixhost-1.example.com
 
-------------------------------------------------------------------------
-
 ◇ gfsd スプール・ディレクトリの作成
 
 ファイルシステムノード上の全ホストで，スプール・ルート・ディレクトリ
@@ -600,12 +667,25 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
 メタデータサーバのホストと，ファイルシステムノード上の全ホストで，
 /etc/gfarm.conf を下記のように設定します．
 
+LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
 metadb_serverhost ldap.example.com
 ldap_serverhost ldap.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
+auth enable sharedsecret *
+------------------------------ ここまで ------------------------------
+
+PostreSQL を使用する場合:
+------------------------------ ここから ------------------------------
+spool /var/spool/gfarm
+metadb_serverhost postgresql.example.com
+postgresql_serverhost postgresql.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_username gfarm
+postgresql_passwd secret-postgresql-password
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
 
