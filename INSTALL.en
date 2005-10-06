@@ -53,7 +53,8 @@ Gfarm system consists of the following nodes
 
   Metadata server node manages Gfarm filesystem metadata and parallel
   process information.  On the metadata server node, a Gfarm
-  filesystem metaserver, called gfmd, and an LDAP server are running.
+  filesystem metaserver (gfmd), and either an LDAP server (slapd) or
+  PostgreSQL server (postmaster) are running.
 
 A file in the Gfarm filesystem is a standard file or a large-scale
 file that is divided into fragments or a ranked group of files.
@@ -97,9 +98,9 @@ Gfarm software consists of
   metadata of the Gfarm filesystem.  gfmd is needed to be running on a
   metadata server node in advance.
 
-  In the current implementation, filesystem metadata is managed by an
-  LDAP server.  It is also needed to be running on, typically, a
-  metadata server node.
+  In the current implementation, filesystem metadata is managed by
+  either an LDAP server or PostgreSQL server.  It is also needed to be
+  running on, typically, a metadata server node.
 
  - gfsd - Gfarm filesystem daemon
 
@@ -139,14 +140,14 @@ This section describes how to build Gfarm binaries from the source
 distribution.  You can skip this section, if you use a binary
 distribution.
 
-To build the Gfarm system, OpenLDAP and OpenSSL libraries are
-required.  To utilize the Grid Security Infrastructure (GSI) for
-authentication method, GSSAPI library is needed.  Currently, GSSAPI
-library provided by the Globus toolkit version 2 and 3 (GT2 and GT3)
-are supported by the configure.  When building a gfs_hook_mpi.o
-syscall-hook library for executing legacy MPI applications on the
-Gfarm filesystem, and when building sample MPI applications in this
-distribution, an MPI library is needed.
+To build the Gfarm system, OpenSSL library and either OpenLDAP library
+or PostgreSQL library are required.  To utilize the Grid Security
+Infrastructure (GSI) for authentication method, GSSAPI library is
+needed.  Currently, GSSAPI library provided by the Globus toolkit
+version 2 and 3 (GT2 and GT3) are supported by the configure.  When
+building a gfs_hook_mpi.o syscall-hook library for executing legacy
+MPI applications on the Gfarm filesystem, and when building sample MPI
+applications in this distribution, an MPI library is needed.
 
 Here are installation steps of the Gfarm system.
 Please use GNU make on Operating Systems other than Linux and NetBSD.
@@ -158,6 +159,12 @@ Please use GNU make on Operating Systems other than Linux and NetBSD.
 Options for configure:
 
   --with-openldap=directory
+
+  specifies an installation directory of the OpenLDAP.  When this
+  option is not specified, the installation directory automatically
+  tries to be searched.
+
+  --with-postgresql=directory
 
   specifies an installation directory of the OpenLDAP.  When this
   option is not specified, the installation directory automatically
@@ -214,13 +221,20 @@ This section assumes the following setting.
 
 	/usr/grid
 
+ - Gfarm spool directory on filesystem nodes
+
+	/var/spool/gfarm
+
+
+In the case to use LDAP:
+
  - OpenLDAP installation directory
 
 	/usr/local/openldap
 
  - hostname of an LDAP server
 
-	ldap.example.com
+	metadb.example.com
 
  - TCP port number of the LDAP server
 
@@ -250,9 +264,40 @@ This section assumes the following setting.
 
 	Example Com
 
- - Gfarm spool directory on filesystem nodes
 
-	/var/spool/gfarm
+In the case to use PostgreSQL:
+
+・PostgreSQL installation directory
+
+	/usr/local/pgsql
+
+・hostname of a PostgreSQL server
+
+	metadb.example.com
+
+・TCP oprt number of the PostgreSQL server
+
+	5432
+
+・UNIX user name to run the PostgreSQL database server
+
+	postgres
+
+・directory for the PostgreSQL database file
+
+	/var/gfarm-pgsql
+
+・database name for PostgreSQL
+
+	gfarm		
+
+・database user name for PostgreSQL
+
+	gfarm
+
+・database user password for PostgreSQL
+
+	secret-postgresql-password
 
 ------------------------------------------------------------------------
 
@@ -313,7 +358,7 @@ cannot distinguish upper case letters and lower case latters.
 
 This is a schema file of Gfarm filesystem metadata for the LDAP
 server.  Copy the file gftool/config-gfarm/gfarm.schema in the source
-distribution to /etc/gfarm-ldap/gfarm.schema on ldap.example.com.
+distribution to /etc/gfarm-ldap/gfarm.schema on metadb.example.com.
 
 In the binary distribution, this file is installed to
 /usr/grid/share/gfarm/config/gfarm.schema by the gfarm-server package.
@@ -328,7 +373,7 @@ gfarm.schema for Gfarm file system.  Note that suffix and rootdn in
 this file refer to the base distinguished name.
 
 Here are example files of /etc/gfarm-ldap/slapd.conf on
-ldap.example.com for OpenLDAP versions 2.0.X, 2.1.X and later.  Note
+metadb.example.com for OpenLDAP versions 2.0.X, 2.1.X and later.  Note
 that the path name of core.schema on line 5 depends on the
 installation of the OpenLDAP.  You need to specify a location of
 core.schema in your installation of OpenLDAP.
@@ -424,7 +469,7 @@ which includes the base distinguished name specified by the "dn"
 "objectclass" attribute.
 
 This is a sample database file of /etc/gfarm-ldap/initial.ldif on
-ldap.example.com.
+metadb.example.com.
 
 ----------------------------- BEGIN HERE -----------------------------
 dn: dc=example, dc=com
@@ -439,7 +484,7 @@ o: Example Com
 
 The 'slapadd' command creates an initial LDAP database.  The following
 example shows how to create the initial LDAP database using the above
-initial entries on ldap.example.com.
+initial entries on metadb.example.com.
 
 	% rm -rf /var/gfarm-ldap
 	% mkdir /var/gfarm-ldap
@@ -465,7 +510,7 @@ initial.ldif file is displayed, the LDAP server works fine.
 
 In the case of the Bourne Shell:
 
-	% host=ldap.example.com
+	% host=metadb.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
@@ -473,11 +518,34 @@ In the case of the Bourne Shell:
 
 In the case of the csh:
 
-	% set host=ldap.example.com
+	% set host=metadb.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
+
+------------------------------------------------------------------------
+
+** PostgreSQL server
+
+ - configure PostgreSQL
+
+...
+
+ - creating a database cluster
+
+	# mkdir /var/gfarm-pgsql
+	# chown postgres:postgres /var/gfarm-pgsql
+	# su - postgres
+	$ initdb -D /var/gfarm-pgsql
+
+ - starting database server
+
+...
+
+ - creating a database
+
+...
 
 ------------------------------------------------------------------------
 
@@ -488,13 +556,25 @@ when you do not have /etc/gfarm.conf or when you need to overwrite the
 configuration of /etc/gfarm.conf.  Here is an example of the
 configuration file.
 
+In the case to use LDAP:
 ----------------------------- BEGIN HERE -----------------------------
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth disable sharedsecret *
 auth enable gsi *
+-------------------------------- END --------------------------------
+
+In the case to use PostgreSQL:
+----------------------------- BEGIN HERE -----------------------------
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_username gfarm
+postgresql_passwd secret-postgresql-password
+auth enable sharedsecret *
 -------------------------------- END --------------------------------
 
 ** Register filesystem nodes
@@ -572,14 +652,27 @@ On each filesystem node, create a spool root directory
 Create /etc/gfarm.conf on every filesystem node and metadata server
 nodes.  Here is an example of the configuration file.
 
+In the case to use LDAP:
 ----------------------------- BEGIN HERE -----------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth disable sharedsecret *
 auth enable gsi *
+-------------------------------- END --------------------------------
+
+In the case to use PostgreSQL:
+----------------------------- BEGIN HERE -----------------------------
+spool /var/spool/gfarm
+metadb_serverhost metadb.example.com
+ostgresql_serverhost metadb.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+ostgresql_username gfarm
+postgresql_passwd secret-postgresql-password
+auth enable sharedsecret *
 -------------------------------- END --------------------------------
 
 When filesystem nodes or metadata server nodes are used as a client
