@@ -46,7 +46,7 @@ all: $(LIBRARY) $(PROGRAMS)
 
 ### for library
 
-$(GFSL_OBJS): $(DEPGFSLINC)
+$(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h
 
 include $(top_srcdir)/makes/lib.mk
 

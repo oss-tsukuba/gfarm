@@ -20,7 +20,7 @@ include $(top_srcdir)/makes/lib.mk
 
 ###
 
-$(GFUTIL_OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC)
 daemon.lo: gfutil.h
 gfevent.lo: gfutil.h gfevent.h
 hash.lo: hash.h

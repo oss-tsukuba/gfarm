@@ -50,8 +50,8 @@ include $(top_srcdir)/makes/lib.mk
 
 ###
 
-$(GFARM_OBJS): $(DEPGFARMINC)
-$(GFARM_GLOBUS_OBJS): $(DEPGFSLINC)
+$(OBJS): $(DEPGFARMINC)
+$(GLOBUS_OBJS): $(DEPGFSLINC)
 agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h
 agent_client.lo: xxx_proto.h io_fd.h config.h agent_proto.h agent_client.h
 agent_proto.lo: xxx_proto.h
