@@ -17,6 +17,7 @@
 
 #include "config.h"
 #include "metadb_access.h"
+#include "metadb_sw.h"
 
 /* old openldap does not have ldap_memfree. */
 #ifndef HAVE_LDAP_MEMFREE
@@ -30,17 +31,9 @@
 /**********************************************************************/
 
 static LDAP *gfarm_ldap_server = NULL;
-static pid_t gfarm_ldap_client_pid;
-static int gfarm_ldap_shared;
-
-void
-gfarm_metadb_share_connection(void)
-{
-	gfarm_ldap_shared = 1;
-}
 
 static char *
-gfarm_metadb_check(void)
+gfarm_ldap_sanity(void)
 {
 	int rv;
 	LDAPMessage *res = NULL;
@@ -68,8 +61,8 @@ gfarm_metadb_check(void)
 	return (e);
 }
 
-char *
-gfarm_metadb_initialize(void)
+static char *
+gfarm_ldap_initialize(void)
 {
 	int rv, port;
 #if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_VERSION3)
@@ -131,18 +124,17 @@ gfarm_metadb_initialize(void)
 		return (ldap_err2string(rv));
 	}
 	/* sanity check. base_dn can be accessed? */
-	e = gfarm_metadb_check();
+	e = gfarm_ldap_sanity();
 	if (e != NULL) {
 		(void)gfarm_metadb_terminate();
 		return (e);
 	}
 
-	gfarm_ldap_client_pid = getpid();
 	return (NULL);
 }
 
-char *
-gfarm_metadb_terminate(void)
+static char *
+gfarm_ldap_terminate(void)
 {
 	int rv;
 	char *e = NULL;
@@ -151,13 +143,12 @@ gfarm_metadb_terminate(void)
 		return ("metadb connection already disconnected");
 
 	/* close and free connection resources */
-	if (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid) {
+	if (gfarm_does_own_metadb_connection()) {
 		rv = ldap_unbind(gfarm_ldap_server);
 		if (rv != LDAP_SUCCESS)
 			e = ldap_err2string(rv);
 	}
 	gfarm_ldap_server = NULL;
-	gfarm_ldap_client_pid = 0;
 
 	return (e);
 }
@@ -174,12 +165,10 @@ gfarm_ldap_check(void)
 	 * if there is a valid LDAP connection, return.  If not,
 	 * create a new connection.
 	 */
-	if (gfarm_ldap_server != NULL &&
-	    (gfarm_ldap_shared || getpid() == gfarm_ldap_client_pid))
+	if (gfarm_ldap_server != NULL && gfarm_does_own_metadb_connection())
 		return (NULL);
 	/* XXX close the file descriptor for gfarm_ldap_server */
 	gfarm_ldap_server = NULL;
-	gfarm_ldap_client_pid = 0;
 	return (gfarm_metadb_initialize());
 }
 
@@ -220,22 +209,19 @@ set_delete_mod(
 }
 #endif
 
-struct gfarm_generic_info_ops {
-	size_t info_size;
+struct gfarm_ldap_generic_info_ops {
+	const struct gfarm_base_generic_info_ops *gen_ops;
 	char *query_type;
 	char *dn_template;
 	char *(*make_dn)(void *key);
-	void (*clear)(void *info);
 	void (*set_field)(void *info, char *attribute, char **vals);
-	int (*validate)(void *info);
-	void (*free)(void *info);
 };
 
 static char *
-gfarm_generic_info_get(
+gfarm_ldap_generic_info_get(
 	void *key,
 	void *info,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	LDAPMessage *res, *e;
 	int n, rv;
@@ -273,7 +259,7 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto msgfree;
 	}
-	ops->clear(info);
+	ops->gen_ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
 
 	ber = NULL;
@@ -289,8 +275,8 @@ retry:
 		ber_free(ber, 0);
 
 	/* should check all fields are filled */
-	if (!ops->validate(info)) {
-		ops->free(info);
+	if (!ops->gen_ops->validate(info)) {
+		ops->gen_ops->free(info);
 		/* XXX - different error code is better ? */
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 	}
@@ -303,10 +289,10 @@ msgfree:
 }
 
 static char *
-gfarm_generic_info_set(
+gfarm_ldap_generic_info_set(
 	void *key,
 	LDAPMod **modv,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	int rv;
 	char *dn, *error;
@@ -328,10 +314,10 @@ gfarm_generic_info_set(
 }
 
 static char *
-gfarm_generic_info_modify(
+gfarm_ldap_generic_info_modify(
 	void *key,
 	LDAPMod **modv,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	int rv;
 	char *dn, *error;
@@ -357,9 +343,9 @@ gfarm_generic_info_modify(
 }
 
 static char *
-gfarm_generic_info_remove(
+gfarm_ldap_generic_info_remove(
 	void *key,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	int rv;
 	char *dn, *error;
@@ -380,30 +366,14 @@ gfarm_generic_info_remove(
 	return (NULL);
 }
 
-static void
-gfarm_generic_info_free_all(
-	int n,
-	void *vinfos,
-	const struct gfarm_generic_info_ops *ops)
-{
-	int i;
-	char *infos = vinfos;
-
-	for (i = 0; i < n; i++) {
-		ops->free(infos);
-		infos += ops->info_size;
-	}
-	free(vinfos);
-}
-
 static char *
-gfarm_generic_info_get_all(
+gfarm_ldap_generic_info_get_all(
 	char *dn,
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
 	char *query,
 	int *np,
 	void *infosp,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	LDAPMessage *res, *e;
 	int i, n, rv;
@@ -439,20 +409,20 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto msgfree;
 	}
-	infos = malloc(ops->info_size * n);
+	infos = malloc(ops->gen_ops->info_size * n);
 	if (infos == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		goto msgfree;
 	}
 
 	/* use last element as temporary buffer */
-	tmp_info = infos + ops->info_size * (n - 1);
+	tmp_info = infos + ops->gen_ops->info_size * (n - 1);
 
 	/* step through each entry returned */
 	for (i = 0, e = ldap_first_entry(gfarm_ldap_server, res); e != NULL;
 	    e = ldap_next_entry(gfarm_ldap_server, e)) {
 
-		ops->clear(tmp_info);
+		ops->gen_ops->clear(tmp_info);
 
 		ber = NULL;
 		for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber);
@@ -467,14 +437,14 @@ retry:
 		if (ber != NULL)
 			ber_free(ber, 0);
 
-		if (!ops->validate(tmp_info)) {
+		if (!ops->gen_ops->validate(tmp_info)) {
 			/* invalid record */
-			ops->free(tmp_info);
+			ops->gen_ops->free(tmp_info);
 			continue;
 		}
 		if (i < n - 1) { /* if (i == n - 1), do not have to copy */
-			memcpy(infos + ops->info_size * i, tmp_info,
-			       ops->info_size);
+			memcpy(infos + ops->gen_ops->info_size * i, tmp_info,
+			       ops->gen_ops->info_size);
 		}
 		i++;
 	}
@@ -497,14 +467,14 @@ msgfree:
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
 static char *
-gfarm_generic_info_get_foreach(
+gfarm_ldap_generic_info_get_foreach(
 	char *dn,
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
 	char *query,
 	void *tmp_info, /* just used as a work area */
 	void (*callback)(void *, void *),
 	void *closure,
-	const struct gfarm_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops)
 {
 	LDAPMessage *res, *e;
 	int i, msgid, rv;
@@ -530,7 +500,7 @@ gfarm_generic_info_get_foreach(
 			break;
 		for (; e != NULL; e = ldap_next_entry(gfarm_ldap_server, e)) {
 
-			ops->clear(tmp_info);
+			ops->gen_ops->clear(tmp_info);
 
 			ber = NULL;
 			for (a = ldap_first_attribute(
@@ -547,13 +517,13 @@ gfarm_generic_info_get_foreach(
 			if (ber != NULL)
 				ber_free(ber, 0);
 
-			if (!ops->validate(tmp_info)) {
+			if (!ops->gen_ops->validate(tmp_info)) {
 				/* invalid record */
-				ops->free(tmp_info);
+				ops->gen_ops->free(tmp_info);
 				continue;
 			}
 			(*callback)(closure, tmp_info);
-			ops->free(tmp_info);
+			ops->gen_ops->free(tmp_info);
 			i++;
 		}
 		/* free the search results */
@@ -572,56 +542,39 @@ gfarm_generic_info_get_foreach(
 
 /**********************************************************************/
 
-static char *gfarm_host_info_make_dn(void *vkey);
-static void gfarm_host_info_clear(void *info);
-static void gfarm_host_info_set_field(void *info, char *attribute, char **vals);
-static int gfarm_host_info_validate(void *info);
+static char *gfarm_ldap_host_info_make_dn(void *vkey);
+static void gfarm_ldap_host_info_set_field(void *info, char *attribute,
+	char **vals);
 
-struct gfarm_host_info_key {
+struct gfarm_ldap_host_info_key {
 	const char *hostname;
 };
 
-static const struct gfarm_generic_info_ops gfarm_host_info_ops = {
-	sizeof(struct gfarm_host_info),
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_host_info_ops = {
+	&gfarm_base_host_info_ops,
 	"(objectclass=GFarmHost)",
 	"hostname=%s, %s",
-	gfarm_host_info_make_dn,
-	gfarm_host_info_clear,
-	gfarm_host_info_set_field,
-	gfarm_host_info_validate,
-	(void (*)(void *))gfarm_host_info_free,
+	gfarm_ldap_host_info_make_dn,
+	gfarm_ldap_host_info_set_field,
 };
 
 static char *
-gfarm_host_info_make_dn(void *vkey)
+gfarm_ldap_host_info_make_dn(void *vkey)
 {
-	struct gfarm_host_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_host_info_ops.dn_template) +
+	struct gfarm_ldap_host_info_key *key = vkey;
+	char *dn = malloc(strlen(gfarm_ldap_host_info_ops.dn_template) +
 			  strlen(key->hostname) +
 			  strlen(gfarm_ldap_base_dn) + 1);
 
 	if (dn == NULL)
 		return (NULL);
-	sprintf(dn, gfarm_host_info_ops.dn_template,
+	sprintf(dn, gfarm_ldap_host_info_ops.dn_template,
 		key->hostname, gfarm_ldap_base_dn);
 	return (dn);
 }
 
 static void
-gfarm_host_info_clear(void *vinfo)
-{
-	struct gfarm_host_info *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-#if 0
-	info->ncpu = GFARM_HOST_INFO_NCPU_NOT_SET;
-#else
-	info->ncpu = 1; /* assume 1 CPU by default */
-#endif
-}
-
-static void
-gfarm_host_info_set_field(
+gfarm_ldap_host_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -641,57 +594,26 @@ gfarm_host_info_set_field(
 	}
 }
 
-static int
-gfarm_host_info_validate(void *vinfo)
-{
-	struct gfarm_host_info *info = vinfo;
-
-	/* info->hostaliases may be NULL */
-	return (
-	    info->hostname != NULL &&
-	    info->architecture != NULL &&
-	    info->ncpu != GFARM_HOST_INFO_NCPU_NOT_SET
-	);
-}
-
-void
-gfarm_host_info_free(
-	struct gfarm_host_info *info)
-{
-	if (info->hostname != NULL)
-		free(info->hostname);
-	if (info->hostaliases != NULL) {
-		gfarm_strarray_free(info->hostaliases);
-		info->nhostaliases = 0;
-	}
-	if (info->architecture != NULL)
-		free(info->architecture);
-	/*
-	 * if implementation of this function is changed,
-	 * implementation of gfarm_host_info_get_architecture_by_host()
-	 * should be changed, too.
-	 */
-}
-
-char *gfarm_metadb_host_info_get(
+static char *
+gfarm_ldap_host_info_get(
 	const char *hostname,
 	struct gfarm_host_info *info)
 {
-	struct gfarm_host_info_key key;
+	struct gfarm_ldap_host_info_key key;
 
 	key.hostname = hostname;
 
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_host_info_ops));
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_host_info_ops));
 }
 
 static char *
-gfarm_host_info_update(
+gfarm_ldap_host_info_update(
 	char *hostname,
 	struct gfarm_host_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
-	    const struct gfarm_generic_info_ops *))
+	    const struct gfarm_ldap_generic_info_ops *))
 {
 	int i;
 	LDAPMod *modv[6];
@@ -700,7 +622,7 @@ gfarm_host_info_update(
 
 	LDAPMod hostaliases_mod;
 
-	struct gfarm_host_info_key key;
+	struct gfarm_ldap_host_info_key key;
 
 	key.hostname = hostname;
 
@@ -735,17 +657,17 @@ gfarm_host_info_update(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv) || i == ARRAY_LENGTH(modv) - 1);
 
-	return ((*update_op)(&key, modv, &gfarm_host_info_ops));
+	return ((*update_op)(&key, modv, &gfarm_ldap_host_info_ops));
 }
 
-char *
-gfarm_metadb_host_info_remove_hostaliases(const char *hostname)
+static char *
+gfarm_ldap_host_info_remove_hostaliases(const char *hostname)
 {
 	int i;
 	LDAPMod *modv[2];
 	LDAPMod hostaliases_mod;
 
-	struct gfarm_host_info_key key;
+	struct gfarm_ldap_host_info_key key;
 
 	key.hostname = hostname;
 
@@ -760,49 +682,41 @@ gfarm_metadb_host_info_remove_hostaliases(const char *hostname)
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_generic_info_modify(&key, modv, &gfarm_host_info_ops));
+	return (gfarm_ldap_generic_info_modify(&key, modv,
+	    &gfarm_ldap_host_info_ops));
 }
 
-char *
-gfarm_metadb_host_info_set(
+static char *
+gfarm_ldap_host_info_set(
 	char *hostname,
 	struct gfarm_host_info *info)
 {
-	return (gfarm_host_info_update(hostname, info,
-	    LDAP_MOD_ADD, gfarm_generic_info_set));
+	return (gfarm_ldap_host_info_update(hostname, info,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
 }
 
-char *
-gfarm_metadb_host_info_replace(
+static char *
+gfarm_ldap_host_info_replace(
 	char *hostname,
 	struct gfarm_host_info *info)
 {
-	return (gfarm_host_info_update(hostname, info,
-	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
+	return (gfarm_ldap_host_info_update(hostname, info,
+	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
 }
 
-char *
-gfarm_metadb_host_info_remove(const char *hostname)
+static char *
+gfarm_ldap_host_info_remove(const char *hostname)
 {
-	struct gfarm_host_info_key key;
+	struct gfarm_ldap_host_info_key key;
 
 	key.hostname = hostname;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_host_info_ops));
+	return (gfarm_ldap_generic_info_remove(&key,
+	    &gfarm_ldap_host_info_ops));
 }
 
-void
-gfarm_host_info_free_all(
-	int n,
-	struct gfarm_host_info *infos)
-{
-	gfarm_generic_info_free_all(n, infos,
-	    &gfarm_host_info_ops);
-}
-
-char *
-gfarm_metadb_host_info_get_all(
+static char *
+gfarm_ldap_host_info_get_all(
 	int *np,
 	struct gfarm_host_info **infosp)
 {
@@ -810,10 +724,10 @@ gfarm_metadb_host_info_get_all(
 	int n;
 	struct gfarm_host_info *infos;
 
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_host_info_ops.query_type,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
+	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_host_info_ops.query_type,
 	    &n, &infos,
-	    &gfarm_host_info_ops);
+	    &gfarm_ldap_host_info_ops);
 	if (error != NULL)
 		return (error);
 
@@ -822,8 +736,8 @@ gfarm_metadb_host_info_get_all(
 	return (NULL);
 }
 
-char *
-gfarm_metadb_host_info_get_by_name_alias(
+static char *
+gfarm_ldap_host_info_get_by_name_alias(
 	const char *name_alias,
 	struct gfarm_host_info *info)
 {
@@ -837,10 +751,10 @@ gfarm_metadb_host_info_get_by_name_alias(
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, name_alias, name_alias);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
 	    &n, &infos,
-	    &gfarm_host_info_ops);
+	    &gfarm_ldap_host_info_ops);
 	free(query);
 	if (error != NULL) {
 		if (error == GFARM_ERR_NO_SUCH_OBJECT)
@@ -857,8 +771,8 @@ gfarm_metadb_host_info_get_by_name_alias(
 	return (NULL);
 }
 
-char *
-gfarm_metadb_host_info_get_allhost_by_architecture(const char *architecture,
+static char *
+gfarm_ldap_host_info_get_allhost_by_architecture(const char *architecture,
 	int *np, struct gfarm_host_info **infosp)
 {
 	char *error;
@@ -872,10 +786,10 @@ gfarm_metadb_host_info_get_allhost_by_architecture(const char *architecture,
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, architecture);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
 	    &n, &infos,
-	    &gfarm_host_info_ops);
+	    &gfarm_ldap_host_info_ops);
 	free(query);
 	if (error != NULL)
 		return (error);
@@ -887,18 +801,16 @@ gfarm_metadb_host_info_get_allhost_by_architecture(const char *architecture,
 
 /**********************************************************************/
 
-static char *gfarm_path_info_make_dn(void *vkey);
-static void gfarm_path_info_clear(void *info);
-static void gfarm_path_info_set_field(void *info, char *attribute, char **vals);
-static int gfarm_path_info_validate(void *info);
-struct gfarm_path_info;
+static char *gfarm_ldap_path_info_make_dn(void *vkey);
+static void gfarm_ldap_path_info_set_field(void *info, char *attribute,
+	char **vals);
 
-struct gfarm_path_info_key {
+struct gfarm_ldap_path_info_key {
 	const char *pathname;
 };
 
 static int
-gfarm_metadb_ldap_need_escape(char c)
+gfarm_ldap_need_escape(char c)
 {
 	/* According to RFC 2253 (Section 2.4 and 3), following characters 
 	 * must be escaped.
@@ -914,7 +826,7 @@ gfarm_metadb_ldap_need_escape(char c)
 }
 
 static char *
-gfarm_metadb_ldap_escape_pathname(const char *pathname)
+gfarm_ldap_escape_pathname(const char *pathname)
 {
 	const char *s = pathname;
 	char *escaped_pathname, *d;
@@ -929,11 +841,11 @@ gfarm_metadb_ldap_escape_pathname(const char *pathname)
 
 	d = escaped_pathname;
 	/* Escape the first character; ' ', '#', and need_escape(). */
-	if (*s == ' ' || *s == '#' || gfarm_metadb_ldap_need_escape(*s))
+	if (*s == ' ' || *s == '#' || gfarm_ldap_need_escape(*s))
 		*d++ = '\\';
 	*d++ = *s++;
 	while (*s) {
-		if (gfarm_metadb_ldap_need_escape(*s) ||
+		if (gfarm_ldap_need_escape(*s) ||
 		    (*s == ' ' && d[-1] == ' '))
 			*d++ = '\\';
 		*d++ = *s++;
@@ -951,49 +863,38 @@ gfarm_metadb_ldap_escape_pathname(const char *pathname)
 	return (escaped_pathname);
 }
 
-static const struct gfarm_generic_info_ops gfarm_path_info_ops = {
-	sizeof(struct gfarm_path_info),
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_path_info_ops = {
+	&gfarm_base_path_info_ops,
 	"(objectclass=GFarmPath)",
 	"pathname=%s, %s",
-	gfarm_path_info_make_dn,
-	gfarm_path_info_clear,
-	gfarm_path_info_set_field,
-	gfarm_path_info_validate,
-	(void (*)(void *))gfarm_path_info_free,
+	gfarm_ldap_path_info_make_dn,
+	gfarm_ldap_path_info_set_field,
 };
 
 static char *
-gfarm_path_info_make_dn(void *vkey)
+gfarm_ldap_path_info_make_dn(void *vkey)
 {
-	struct gfarm_path_info_key *key = vkey;
+	struct gfarm_ldap_path_info_key *key = vkey;
 	char *escaped_pathname, *dn;
 
-	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	escaped_pathname = gfarm_ldap_escape_pathname(key->pathname);
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_path_info_ops.dn_template) +
+	dn = malloc(strlen(gfarm_ldap_path_info_ops.dn_template) +
 		    strlen(escaped_pathname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
 		free(escaped_pathname);
 		return (NULL);
 	}
-	sprintf(dn, gfarm_path_info_ops.dn_template,
+	sprintf(dn, gfarm_ldap_path_info_ops.dn_template,
 		escaped_pathname, gfarm_ldap_base_dn);
 	free(escaped_pathname);
 	return (dn);
 }
 
 static void
-gfarm_path_info_clear(void *vinfo)
-{
-	struct gfarm_path_info *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-}
-
-static void
-gfarm_path_info_set_field(
+gfarm_ldap_path_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1027,26 +928,13 @@ gfarm_path_info_set_field(
 	}
 }
 
-static int
-gfarm_path_info_validate(void *vinfo)
-{
-	struct gfarm_path_info *info = vinfo;
-
-	/* XXX - should check all fields are filled */
-	return (
-	    info->pathname != NULL &&
-	    info->status.st_user != NULL &&
-	    info->status.st_group != NULL
-	);
-}
-
 static char *
-gfarm_path_info_update(
+gfarm_ldap_path_info_update(
 	char *pathname,
 	struct gfarm_path_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
-	    const struct gfarm_generic_info_ops *))
+	    const struct gfarm_ldap_generic_info_ops *))
 {
 	int i;
 	LDAPMod *modv[13];
@@ -1060,7 +948,7 @@ gfarm_path_info_update(
 	char ctimespec_nsec_string[INT32STRLEN + 1];
 	char nsections_string[INT32STRLEN + 1];
 
-	struct gfarm_path_info_key key;
+	struct gfarm_ldap_path_info_key key;
 
 	key.pathname = pathname;
 
@@ -1116,27 +1004,15 @@ gfarm_path_info_update(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return ((*update_op)(&key, modv, &gfarm_path_info_ops));
+	return ((*update_op)(&key, modv, &gfarm_ldap_path_info_ops));
 }
 
-void
-gfarm_path_info_free(
-	struct gfarm_path_info *info)
-{
-	if (info->pathname != NULL)
-		free(info->pathname);
-	if (info->status.st_user != NULL)
-		free(info->status.st_user);
-	if (info->status.st_group != NULL)
-		free(info->status.st_group);
-}
-
-char *
-gfarm_metadb_path_info_get(
+static char *
+gfarm_ldap_path_info_get(
 	const char *pathname,
 	struct gfarm_path_info *info)
 {
-	struct gfarm_path_info_key key;
+	struct gfarm_ldap_path_info_key key;
 
 	/*
 	 * This case intends to investigate the root directory.  Because
@@ -1149,74 +1025,58 @@ gfarm_metadb_path_info_get(
 	else
 		key.pathname = pathname;
 
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_path_info_ops));
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_path_info_ops));
 }
 
-
-char *
-gfarm_metadb_path_info_set(
+static char *
+gfarm_ldap_path_info_set(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
-	return (gfarm_path_info_update(pathname, info,
-	    LDAP_MOD_ADD, gfarm_generic_info_set));
+	return (gfarm_ldap_path_info_update(pathname, info,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
 }
 
-char *
-gfarm_metadb_path_info_replace(
+static char *
+gfarm_ldap_path_info_replace(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
-	return (gfarm_path_info_update(pathname, info,
-	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
+	return (gfarm_ldap_path_info_update(pathname, info,
+	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
 }
 
-char *
-gfarm_metadb_path_info_remove(const char *pathname)
+static char *
+gfarm_ldap_path_info_remove(const char *pathname)
 {
-	struct gfarm_path_info_key key;
+	struct gfarm_ldap_path_info_key key;
 
 	key.pathname = pathname;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_path_info_ops));
-}
-
-void
-gfarm_path_info_free_all(
-	int n,
-	struct gfarm_path_info *infos)
-{
-	gfarm_generic_info_free_all(n, infos,
-	    &gfarm_path_info_ops);
+	return (gfarm_ldap_generic_info_remove(&key,
+	    &gfarm_ldap_path_info_ops));
 }
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
-char *
-gfarm_metadb_path_info_get_all_foreach(
+static char *
+gfarm_ldap_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
 {
 	struct gfarm_path_info tmp_info;
 
-	return (gfarm_generic_info_get_foreach(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_path_info_ops.query_type,
+	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
+	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_path_info_ops.query_type,
 	    &tmp_info, /*XXX*/(void (*)(void *, void *))callback, closure,
-	    &gfarm_path_info_ops));
+	    &gfarm_ldap_path_info_ops));
 }
 
 #if 0 /* GFarmFile history isn't actually used yet */
 
-void
-gfarm_file_history_free_allfile(int n, char **v)
-{
-	gfarm_path_info_free_all(n, (struct gfarm_path_info *)v);
-}
-
 /* get GFarmFiles which were created by the program */
-char *
-gfarm_metadb_file_history_get_allfile_by_program(
+static char *
+gfarm_ldap_file_history_get_allfile_by_program(
 	char *program,
 	int *np,
 	char ***gfarm_files_p)
@@ -1231,10 +1091,10 @@ gfarm_metadb_file_history_get_allfile_by_program(
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, program);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
 	    &n, &infos,
-	    &gfarm_path_info_ops);
+	    &gfarm_ldap_path_info_ops);
 	free(query);
 	if (error != NULL)
 		return (error);
@@ -1245,8 +1105,8 @@ gfarm_metadb_file_history_get_allfile_by_program(
 }
 
 /* get GFarmFiles which were created from the file as a input */
-char *
-gfarm_metadb_file_history_get_allfile_by_file(
+static char *
+gfarm_ldap_file_history_get_allfile_by_file(
 	char *input_gfarm_file,
 	int *np,
 	char ***gfarm_files_p)
@@ -1262,10 +1122,10 @@ gfarm_metadb_file_history_get_allfile_by_file(
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, input_gfarm_file);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, query,
 	    &n, &infos,
-	    &gfarm_path_info_ops);
+	    &gfarm_ldap_path_info_ops);
 	free(query);
 	if (error != NULL)
 		return (error);
@@ -1279,60 +1139,50 @@ gfarm_metadb_file_history_get_allfile_by_file(
 
 /**********************************************************************/
 
-static char *gfarm_file_section_info_make_dn(void *vkey);
-static void gfarm_file_section_info_clear(void *info);
-static void gfarm_file_section_info_set_field(void *info, char *attribute, char **vals);
-static int gfarm_file_section_info_validate(void *info);
+static char *gfarm_ldap_file_section_info_make_dn(void *vkey);
+static void gfarm_ldap_file_section_info_set_field(void *info, char *attribute,
+	char **vals);
 
-struct gfarm_file_section_info_key {
+struct gfarm_ldap_file_section_info_key {
 	const char *pathname;
 	const char *section;
 };
 
-static const struct gfarm_generic_info_ops gfarm_file_section_info_ops = {
-	sizeof(struct gfarm_file_section_info),
+static const struct gfarm_ldap_generic_info_ops
+	gfarm_ldap_file_section_info_ops =
+{
+	&gfarm_base_file_section_info_ops,
 	"(objectclass=GFarmFileSection)",
 	"section=%s, pathname=%s, %s",
-	gfarm_file_section_info_make_dn,
-	gfarm_file_section_info_clear,
-	gfarm_file_section_info_set_field,
-	gfarm_file_section_info_validate,
-	(void (*)(void *))gfarm_file_section_info_free,
+	gfarm_ldap_file_section_info_make_dn,
+	gfarm_ldap_file_section_info_set_field,
 };
 
 static char *
-gfarm_file_section_info_make_dn(void *vkey)
+gfarm_ldap_file_section_info_make_dn(void *vkey)
 {
-	struct gfarm_file_section_info_key *key = vkey;
+	struct gfarm_ldap_file_section_info_key *key = vkey;
 	char *escaped_pathname, *dn;
 
-	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	escaped_pathname = gfarm_ldap_escape_pathname(key->pathname);
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_file_section_info_ops.dn_template) +
+	dn = malloc(strlen(gfarm_ldap_file_section_info_ops.dn_template) +
 		    strlen(key->section) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
 		free(escaped_pathname);
 		return (NULL);
 	}
-	sprintf(dn, gfarm_file_section_info_ops.dn_template,
+	sprintf(dn, gfarm_ldap_file_section_info_ops.dn_template,
 		key->section, escaped_pathname, gfarm_ldap_base_dn);
 	free(escaped_pathname);
 	return (dn);
 }
 
 static void
-gfarm_file_section_info_clear(void *vinfo)
-{
-	struct gfarm_file_section_info *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-}
-
-static void
-gfarm_file_section_info_set_field(
+gfarm_ldap_file_section_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1352,60 +1202,36 @@ gfarm_file_section_info_set_field(
 	}
 }
 
-static int
-gfarm_file_section_info_validate(void *vinfo)
-{
-	struct gfarm_file_section_info *info = vinfo;
-
-	/* XXX - should check all fields are filled */
-	return (
-	    info->section != NULL
-	);
-}
-
-void
-gfarm_file_section_info_free(struct gfarm_file_section_info *info)
-{
-	if (info->pathname != NULL)
-		free(info->pathname);
-	if (info->section != NULL)
-		free(info->section);
-	if (info->checksum_type != NULL)
-		free(info->checksum_type);
-	if (info->checksum != NULL)
-		free(info->checksum);
-}
-
-char *
-gfarm_metadb_file_section_info_get(
+static char *
+gfarm_ldap_file_section_info_get(
 	const char *pathname,
 	const char *section,
 	struct gfarm_file_section_info *info)
 {
-	struct gfarm_file_section_info_key key;
+	struct gfarm_ldap_file_section_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
 
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_file_section_info_ops));
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_file_section_info_ops));
 }
 
 static char *
-gfarm_file_section_info_update(
+gfarm_ldap_file_section_info_update(
 	char *pathname,
 	char *section,
 	struct gfarm_file_section_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
-	    const struct gfarm_generic_info_ops *))
+	    const struct gfarm_ldap_generic_info_ops *))
 {
 	int i;
 	LDAPMod *modv[7];
 	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
 	char filesize_string[INT64STRLEN + 1];
 
-	struct gfarm_file_section_info_key key;
+	struct gfarm_ldap_file_section_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
@@ -1438,54 +1264,45 @@ gfarm_file_section_info_update(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return ((*update_op)(&key, modv, &gfarm_file_section_info_ops));
+	return ((*update_op)(&key, modv, &gfarm_ldap_file_section_info_ops));
 }
 
-char *
-gfarm_metadb_file_section_info_set(
+static char *
+gfarm_ldap_file_section_info_set(
 	char *pathname,
 	char *section,
 	struct gfarm_file_section_info *info)
 {
-	return (gfarm_file_section_info_update(pathname, section, info,
-	    LDAP_MOD_ADD, gfarm_generic_info_set));
+	return (gfarm_ldap_file_section_info_update(pathname, section, info,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
 }
 
-char *
-gfarm_metadb_file_section_info_replace(
+static char *
+gfarm_ldap_file_section_info_replace(
 	char *pathname,
 	char *section,
 	struct gfarm_file_section_info *info)
 {
-	return (gfarm_file_section_info_update(pathname, section, info,
-	    LDAP_MOD_REPLACE, gfarm_generic_info_modify));
+	return (gfarm_ldap_file_section_info_update(pathname, section, info,
+	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
 }
 
-char *
-gfarm_metadb_file_section_info_remove(
+static char *
+gfarm_ldap_file_section_info_remove(
 	const char *pathname,
 	const char *section)
 {
-	struct gfarm_file_section_info_key key;
+	struct gfarm_ldap_file_section_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_file_section_info_ops));
+	return (gfarm_ldap_generic_info_remove(&key,
+	    &gfarm_ldap_file_section_info_ops));
 }
 
-void
-gfarm_file_section_info_free_all(
-	int n,
-	struct gfarm_file_section_info *infos)
-{
-	gfarm_generic_info_free_all(n, infos,
-	    &gfarm_file_section_info_ops);
-}
-
-char *
-gfarm_metadb_file_section_info_get_all_by_file(
+static char *
+gfarm_ldap_file_section_info_get_all_by_file(
 	const char *pathname,
 	int *np,
 	struct gfarm_file_section_info **infosp)
@@ -1496,7 +1313,7 @@ gfarm_metadb_file_section_info_get_all_by_file(
 	static char dn_template[] = "pathname=%s, %s";
 	char *escaped_pathname, *dn;
 
-	escaped_pathname = gfarm_metadb_ldap_escape_pathname(pathname);
+	escaped_pathname = gfarm_ldap_escape_pathname(pathname);
 	if (escaped_pathname == NULL)
 		return (NULL);
 
@@ -1508,10 +1325,10 @@ gfarm_metadb_file_section_info_get_all_by_file(
 	}
 	sprintf(dn, dn_template, escaped_pathname, gfarm_ldap_base_dn);
 	free(escaped_pathname);
-	error = gfarm_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
-	    gfarm_file_section_info_ops.query_type,
+	error = gfarm_ldap_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
+	    gfarm_ldap_file_section_info_ops.query_type,
 	    &n, &infos,
-	    &gfarm_file_section_info_ops);
+	    &gfarm_ldap_file_section_info_ops);
 	free(dn);
 	if (error != NULL)
 		return (error);
@@ -1522,39 +1339,37 @@ gfarm_metadb_file_section_info_get_all_by_file(
 
 /**********************************************************************/
 
-static char *gfarm_file_section_copy_info_make_dn(void *vkey);
-static void gfarm_file_section_copy_info_clear(void *info);
-static void gfarm_file_section_copy_info_set_field(void *info, char *attribute, char **vals);
-static int gfarm_file_section_copy_info_validate(void *info);
+static char *gfarm_ldap_file_section_copy_info_make_dn(void *vkey);
+static void gfarm_ldap_file_section_copy_info_set_field(
+	void *info, char *attribute, char **vals);
 
-struct gfarm_file_section_copy_info_key {
+struct gfarm_ldap_file_section_copy_info_key {
 	const char *pathname;
 	const char *section;
 	const char *hostname;
 };
 
-static const struct gfarm_generic_info_ops gfarm_file_section_copy_info_ops = {
-	sizeof(struct gfarm_file_section_copy_info),
+static const struct gfarm_ldap_generic_info_ops
+	gfarm_ldap_file_section_copy_info_ops =
+{
+	&gfarm_base_file_section_copy_info_ops,
 	"(objectclass=GFarmFileSectionCopy)",
 	"hostname=%s, section=%s, pathname=%s, %s",
-	gfarm_file_section_copy_info_make_dn,
-	gfarm_file_section_copy_info_clear,
-	gfarm_file_section_copy_info_set_field,
-	gfarm_file_section_copy_info_validate,
-	(void (*)(void *))gfarm_file_section_copy_info_free,
+	gfarm_ldap_file_section_copy_info_make_dn,
+	gfarm_ldap_file_section_copy_info_set_field,
 };
 
 static char *
-gfarm_file_section_copy_info_make_dn(void *vkey)
+gfarm_ldap_file_section_copy_info_make_dn(void *vkey)
 {
-	struct gfarm_file_section_copy_info_key *key = vkey;
+	struct gfarm_ldap_file_section_copy_info_key *key = vkey;
 	char *escaped_pathname, *dn;
 
-	escaped_pathname = gfarm_metadb_ldap_escape_pathname(key->pathname);
+	escaped_pathname = gfarm_ldap_escape_pathname(key->pathname);
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_file_section_copy_info_ops.dn_template) +
+	dn = malloc(strlen(gfarm_ldap_file_section_copy_info_ops.dn_template) +
 		    strlen(key->hostname) +
 		    strlen(key->section) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn) + 1);
@@ -1562,7 +1377,7 @@ gfarm_file_section_copy_info_make_dn(void *vkey)
 		free(escaped_pathname);
 		return (NULL);
 	}
-	sprintf(dn, gfarm_file_section_copy_info_ops.dn_template,
+	sprintf(dn, gfarm_ldap_file_section_copy_info_ops.dn_template,
 		key->hostname, key->section, escaped_pathname,
 		gfarm_ldap_base_dn);
 	free(escaped_pathname);
@@ -1570,15 +1385,7 @@ gfarm_file_section_copy_info_make_dn(void *vkey)
 }
 
 static void
-gfarm_file_section_copy_info_clear(void *vinfo)
-{
-	struct gfarm_file_section_copy_info *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-}
-
-static void
-gfarm_file_section_copy_info_set_field(
+gfarm_ldap_file_section_copy_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1594,48 +1401,25 @@ gfarm_file_section_copy_info_set_field(
 	}
 }
 
-static int
-gfarm_file_section_copy_info_validate(void *vinfo)
-{
-	struct gfarm_file_section_copy_info *info = vinfo;
-
-	return (
-	    info->pathname != NULL &&
-	    info->section != NULL &&
-	    info->hostname != NULL
-	);
-}
-
-void
-gfarm_file_section_copy_info_free(struct gfarm_file_section_copy_info *info)
-{
-	if (info->pathname != NULL)
-		free(info->pathname);
-	if (info->section != NULL)
-		free(info->section);
-	if (info->hostname != NULL)
-		free(info->hostname);
-}
-
-char *
-gfarm_metadb_file_section_copy_info_get(
+static char *
+gfarm_ldap_file_section_copy_info_get(
 	const char *pathname,
 	const char *section,
 	const char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
-	struct gfarm_file_section_copy_info_key key;
+	struct gfarm_ldap_file_section_copy_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
 	key.hostname = hostname;
 
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_file_section_copy_info_ops));
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_file_section_copy_info_ops));
 }
 
-char *
-gfarm_metadb_file_section_copy_info_set(
+static char *
+gfarm_ldap_file_section_copy_info_set(
 	char *pathname,
 	char *section,
 	char *hostname,
@@ -1645,7 +1429,7 @@ gfarm_metadb_file_section_copy_info_set(
 	LDAPMod *modv[5];
 	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
 
-	struct gfarm_file_section_copy_info_key key;
+	struct gfarm_ldap_file_section_copy_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
@@ -1672,37 +1456,28 @@ gfarm_metadb_file_section_copy_info_set(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_generic_info_set(&key, modv,
-	    &gfarm_file_section_copy_info_ops));
+	return (gfarm_ldap_generic_info_set(&key, modv,
+	    &gfarm_ldap_file_section_copy_info_ops));
 }
 
-char *
-gfarm_metadb_file_section_copy_info_remove(
+static char *
+gfarm_ldap_file_section_copy_info_remove(
 	const char *pathname,
 	const char *section,
 	const char *hostname)
 {
-	struct gfarm_file_section_copy_info_key key;
+	struct gfarm_ldap_file_section_copy_info_key key;
 
 	key.pathname = pathname;
 	key.section = section;
 	key.hostname = hostname;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_file_section_copy_info_ops));
+	return (gfarm_ldap_generic_info_remove(&key,
+	    &gfarm_ldap_file_section_copy_info_ops));
 }
 
-void
-gfarm_file_section_copy_info_free_all(
-	int n,
-	struct gfarm_file_section_copy_info *infos)
-{
-	gfarm_generic_info_free_all(n, infos,
-	    &gfarm_file_section_copy_info_ops);
-}
-
-char *
-gfarm_metadb_file_section_copy_info_get_all_by_file(
+static char *
+gfarm_ldap_file_section_copy_info_get_all_by_file(
 	const char *pathname,
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
@@ -1717,9 +1492,9 @@ gfarm_metadb_file_section_copy_info_get_all_by_file(
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, pathname);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_SUBTREE, query, &n, &infos,
-	    &gfarm_file_section_copy_info_ops);
+	    &gfarm_ldap_file_section_copy_info_ops);
 	free(query);
 	if (error != NULL)
 		return (error);
@@ -1728,8 +1503,8 @@ gfarm_metadb_file_section_copy_info_get_all_by_file(
 	return (NULL);
 }
 
-char *
-gfarm_metadb_file_section_copy_info_get_all_by_section(
+static char *
+gfarm_ldap_file_section_copy_info_get_all_by_section(
 	const char *pathname,
 	const char *section,
 	int *np,
@@ -1737,17 +1512,17 @@ gfarm_metadb_file_section_copy_info_get_all_by_section(
 {
 	char *error, *dn;
 	int n;
-	struct gfarm_file_section_info_key frag_info_key;
+	struct gfarm_ldap_file_section_info_key frag_info_key;
 	struct gfarm_file_section_copy_info *infos;
 
 	frag_info_key.pathname = pathname;
 	frag_info_key.section = section;
-	dn = (*gfarm_file_section_info_ops.make_dn)(&frag_info_key);
+	dn = (*gfarm_ldap_file_section_info_ops.make_dn)(&frag_info_key);
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	error = gfarm_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
-	    gfarm_file_section_copy_info_ops.query_type, &n, &infos,
-	    &gfarm_file_section_copy_info_ops);
+	error = gfarm_ldap_generic_info_get_all(dn, LDAP_SCOPE_ONELEVEL,
+	    gfarm_ldap_file_section_copy_info_ops.query_type, &n, &infos,
+	    &gfarm_ldap_file_section_copy_info_ops);
 	free(dn);
 	if (error != NULL)
 		return (error);
@@ -1756,8 +1531,8 @@ gfarm_metadb_file_section_copy_info_get_all_by_section(
 	return (NULL);
 }
 
-char *
-gfarm_metadb_file_section_copy_info_get_all_by_host(
+static char *
+gfarm_ldap_file_section_copy_info_get_all_by_host(
 	const char *hostname,
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
@@ -1772,9 +1547,9 @@ gfarm_metadb_file_section_copy_info_get_all_by_host(
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, hostname);
-	error = gfarm_generic_info_get_all(gfarm_ldap_base_dn,
+	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_SUBTREE, query, &n, &infos,
-	    &gfarm_file_section_copy_info_ops);
+	    &gfarm_ldap_file_section_copy_info_ops);
 	free(query);
 	if (error != NULL)
 		return (error);
@@ -1787,51 +1562,39 @@ gfarm_metadb_file_section_copy_info_get_all_by_host(
 
 #if 0 /* GFarmFile history isn't actually used yet */
 
-static char *gfarm_file_history_make_dn(void *vkey);
-static void gfarm_file_history_clear(void *info);
-static void gfarm_file_history_set_field(void *info, char *attribute, char **vals);
-static int gfarm_file_history_validate(void *info);
+static char *gfarm_ldap_file_history_make_dn(void *vkey);
+static void gfarm_ldap_file_history_set_field(void *info, char *attribute,
+	char **vals);
 
-struct gfarm_file_history_key {
+struct gfarm_ldap_file_history_key {
 	char *gfarm_file;
 };
 
-static const struct gfarm_generic_info_ops gfarm_file_history_ops = {
-	sizeof(struct gfarm_file_history),
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_file_history_ops = {
+	&gfarm_base_file_history_ops,
 	"(objectclass=GFarmFile)",
 	"gfarmFile=%s, %s",
-	gfarm_file_history_make_dn,
-	gfarm_file_history_clear,
-	gfarm_file_history_set_field,
-	gfarm_file_history_validate,
-	(void (*)(void *))gfarm_file_history_free,
+	gfarm_ldap_file_history_make_dn,
+	gfarm_ldap_file_history_set_field,
 };
 
 static char *
-gfarm_file_history_make_dn(void *vkey)
+gfarm_ldap_file_history_make_dn(void *vkey)
 {
-	struct gfarm_file_history_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_file_history_ops.dn_template) +
+	struct gfarm_ldap_file_history_key *key = vkey;
+	char *dn = malloc(strlen(gfarm_ldap_file_history_ops.dn_template) +
 			  strlen(key->gfarm_file) +
 			  strlen(gfarm_ldap_base_dn) + 1);
 
 	if (dn == NULL)
 		return (NULL);
-	sprintf(dn, gfarm_file_history_ops.dn_template,
+	sprintf(dn, gfarm_ldap_file_history_ops.dn_template,
 		key->gfarm_file, gfarm_ldap_base_dn);
 	return (dn);
 }
 
 static void
-gfarm_file_history_clear(void *vinfo)
-{
-	struct gfarm_file_history *info = vinfo;
-
-	memset(info, 0, sizeof(*info));
-}
-
-static void
-gfarm_file_history_set_field(
+gfarm_ldap_file_history_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
@@ -1847,45 +1610,21 @@ gfarm_file_history_set_field(
 	}
 }
 
-static int
-gfarm_file_history_validate(void *vinfo)
-{
-	struct gfarm_file_history *info = vinfo;
-
-	return (
-	    info->program != NULL &&
-	    info->input_files != NULL &&
-	    info->parameter != NULL
-	);
-}
-
-void
-gfarm_file_history_free(
-	struct gfarm_file_history *info)
-{
-	if (info->program != NULL)
-		free(info->program);
-	if (info->input_files != NULL)
-		gfarm_strarray_free(info->input_files);
-	if (info->parameter != NULL)
-		free(info->parameter);
-}
-
-char *
-gfarm_file_history_get(
+static char *
+gfarm_ldap_file_history_get(
 	char *gfarm_file,
 	struct gfarm_file_history *info)
 {
-	struct gfarm_file_history_key key;
+	struct gfarm_ldap_file_history_key key;
 
 	key.gfarm_file = gfarm_file;
 
-	return (gfarm_generic_info_get(&key, info,
-	    &gfarm_file_history_ops));
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_file_history_ops));
 }
 
-char *
-gfarm_file_history_set(
+static char *
+gfarm_ldap_file_history_set(
 	char *gfarm_file,
 	struct gfarm_file_history *info)
 {
@@ -1895,7 +1634,7 @@ gfarm_file_history_set(
 
 	LDAPMod input_files_mod;
 
-	struct gfarm_file_history_key key;
+	struct gfarm_ldap_file_history_key key;
 
 	key.gfarm_file = gfarm_file;
 
@@ -1922,19 +1661,54 @@ gfarm_file_history_set(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return (gfarm_generic_info_set(&key, modv,
-	    &gfarm_file_history_ops));
+	return (gfarm_ldap_generic_info_set(&key, modv,
+	    &gfarm_ldap_file_history_ops));
 }
 
-char *
-gfarm_file_history_remove(char *gfarm_file)
+static char *
+gfarm_ldap_file_history_remove(char *gfarm_file)
 {
-	struct gfarm_file_history_key key;
+	struct gfarm_ldap_file_history_key key;
 
 	key.gfarm_file = gfarm_file;
 
-	return (gfarm_generic_info_remove(&key,
-	    &gfarm_file_history_ops));
+	return (gfarm_ldap_generic_info_remove(&key,
+	    &gfarm_ldap_file_history_ops));
 }
 
 #endif /* GFarmFile history isn't actually used yet */
+
+/**********************************************************************/
+
+const struct gfarm_metadb_internal_ops gfarm_ldap_metadb_ops = {
+	gfarm_ldap_initialize,
+	gfarm_ldap_terminate,
+
+	gfarm_ldap_host_info_get,
+	gfarm_ldap_host_info_remove_hostaliases,
+	gfarm_ldap_host_info_set,
+	gfarm_ldap_host_info_replace,
+	gfarm_ldap_host_info_remove,
+	gfarm_ldap_host_info_get_all,
+	gfarm_ldap_host_info_get_by_name_alias,
+	gfarm_ldap_host_info_get_allhost_by_architecture,
+
+	gfarm_ldap_path_info_get,
+	gfarm_ldap_path_info_set,
+	gfarm_ldap_path_info_replace,
+	gfarm_ldap_path_info_remove,
+	gfarm_ldap_path_info_get_all_foreach,
+
+	gfarm_ldap_file_section_info_get,
+	gfarm_ldap_file_section_info_set,
+	gfarm_ldap_file_section_info_replace,
+	gfarm_ldap_file_section_info_remove,
+	gfarm_ldap_file_section_info_get_all_by_file,
+
+	gfarm_ldap_file_section_copy_info_get,
+	gfarm_ldap_file_section_copy_info_set,
+	gfarm_ldap_file_section_copy_info_remove,
+	gfarm_ldap_file_section_copy_info_get_all_by_file,
+	gfarm_ldap_file_section_copy_info_get_all_by_section,
+	gfarm_ldap_file_section_copy_info_get_all_by_host,
+};

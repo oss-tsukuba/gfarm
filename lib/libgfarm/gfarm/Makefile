@@ -16,6 +16,8 @@ GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 LDAP_SRCS = metadb_ldap.c
 LDAP_OBJS = metadb_ldap.lo
+POSTGRESQL_SRCS = metadb_pgsql.c
+POSTGRESQL_OBJS = metadb_pgsql.lo
 
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
@@ -25,9 +27,9 @@ SRCS = \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
 	gfs_exec.c gfs_unlink.c gfs_lock.c \
 	gfs_proto.c glob.c host.c hostspec.c iobuffer.c \
-	import_help.c metadb_misc.c param.c schedule.c \
+	import_help.c metadb_misc.c metadb_sw.c param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
-	$(ldap_srcs) $(globus_srcs)
+	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
@@ -36,9 +38,9 @@ OBJS = \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
 	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
 	gfs_proto.lo glob.lo host.lo hostspec.lo iobuffer.lo \
-	import_help.lo metadb_misc.lo param.lo schedule.lo \
+	import_help.lo metadb_misc.lo metadb_sw.lo param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
-	$(ldap_objs) $(globus_objs)
+	$(ldap_objs) $(postgresql_objs) $(globus_objs)
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
@@ -85,8 +87,10 @@ import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
-metadb_ldap.lo: config.h metadb_access.h
+metadb_ldap.lo: config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
+metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h
+metadb_sw.lo: config.h metadb_access.h metadb_sw.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h
 sockopt.lo: hostspec.h param.h sockopt.h
