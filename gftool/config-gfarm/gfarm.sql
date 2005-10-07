@@ -7,7 +7,7 @@ CREATE TABLE Host (
 
 CREATE TABLE HostAliases (
 	hostalias	VARCHAR(256)	PRIMARY KEY,
-	hostname	VARCHAR(256)	UNIQUE
+	hostname	VARCHAR(256)
 );
 
 
