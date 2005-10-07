@@ -10,6 +10,8 @@ CREATE TABLE HostAliases (
 	hostname	VARCHAR(256)
 );
 
+CREATE INDEX HostAliasesByHostname ON HostAliases (hostname);
+
 
 CREATE TABLE Path (
 	pathname	VARCHAR(1024)	PRIMARY KEY,
