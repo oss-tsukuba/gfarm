@@ -9,7 +9,8 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfps.c
 OBJS = gfps.o
 PROGRAM = gfps
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(openssl_includes)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -19,4 +20,7 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) \
+	$(GFUTIL_SRCDIR)/gfutil.h \
+	$(GFARMLIB_SRCDIR)/gfj_client.h \
+	$(GFARMLIB_SRCDIR)/auth.h
