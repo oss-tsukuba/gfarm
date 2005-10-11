@@ -266,12 +266,12 @@ variable. Please look at README.hook.en for detail.
 
 When the login shell is bash, add the following to .bashrc,
 
-	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	export LD_PRELOAD
 
 When the login shell is csh or tcsh, add the following to .cshrc,
 
-	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 Test of Gfarm file system
 =========================
@@ -350,7 +350,7 @@ To enable the setting of LD_PRELOAD in the section "Setting for each
 user", log in again, or, set the LD_PRELOAD environment variable.
 
 	% echo $LD_PRELOAD
-	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
+	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
 
 After that, every program can access the Gfarm file system as if it
 is mounted on /gfarm.

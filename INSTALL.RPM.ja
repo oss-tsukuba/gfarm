@@ -258,12 +258,12 @@ LD_PRELOAD 環境変数を設定します．詳しくは README.hook.ja をご覧ください．
 
 起動シェルが bash の場合は，.bashrc に以下を記述します．
 
-	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 	export LD_PRELOAD
 
 起動シェルが csh (tcsh) の場合は，.cshrc に以下を記述します．
 
-	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
 ● Gfarm ファイルシステムの利用確認
 
@@ -340,7 +340,7 @@ Globus ツールキットに関しては，http://www.globus.org/ を参照してくださ
 login し直します．（あるいは，LD_PRELOAD を設定します．）
 
 	% echo $LD_PRELOAD
-	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
+	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
 
 以降は，Gfarm ファイルシステムを /gfarm にマウントしているのと同様にア
 クセスすることが可能になります．
