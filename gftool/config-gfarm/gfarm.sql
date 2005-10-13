@@ -7,7 +7,7 @@ CREATE TABLE Host (
 
 CREATE TABLE HostAliases (
 	hostalias	VARCHAR(256)	PRIMARY KEY,
-	hostname	VARCHAR(256)
+	hostname	VARCHAR(256)	REFERENCES Host(hostname) ON DELETE CASCADE
 );
 
 CREATE INDEX HostAliasesByHostname ON HostAliases (hostname);
