@@ -126,12 +126,14 @@ host_info_get_one(
 }
 
 static char *
-gfarm_pgsql_host_info_get(
-	const char *hostname,
+host_info_get(
+	char *csql,
+	char *isql,
+	int nparams,
+	const char **paramValues,
 	struct gfarm_host_info *info)
 {
 	PGresult *res, *resi, *resc;
-	const char *paramValues[1];
 	char *e = NULL;
 	static char *e_save = NULL;
 
@@ -139,7 +141,6 @@ gfarm_pgsql_host_info_get(
 		free(e_save);
 		e_save = NULL;
 	}	
-	paramValues[0] = hostname;
 
 	res = PQexec(conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -149,9 +150,8 @@ gfarm_pgsql_host_info_get(
 	PQclear(res);
 
 	resc = PQexecParams(conn,
-		"SELECT count(hostaliases) FROM HostAliases "
-		    "WHERE hostname = $1",
-		1, /* number of params */
+	        csql,	    
+	        nparams,
 		NULL, /* param types */
 		paramValues,
 		NULL, /* param lengths */
@@ -165,12 +165,8 @@ gfarm_pgsql_host_info_get(
 	}	
 
 	resi = PQexecParams(conn,
-		"SELECT Host.hostname, architecture, ncpu, hostalias "
-		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
-		    "WHERE Host.hostname = $1 "
-		    "ORDER BY Host.hostname, hostalias",
-		1, /* number of params */
+		isql,    
+		nparams, /* number of params */
 		NULL, /* param types */
 		paramValues,
 		NULL, /* param lengths */
@@ -204,6 +200,29 @@ gfarm_pgsql_host_info_get(
 	PQclear(res);
 
 	return (e_save != NULL ? e_save : e);
+}
+
+static char *
+gfarm_pgsql_host_info_get(
+	const char *hostname,
+	struct gfarm_host_info *info)
+{
+	const char *paramValues[1];
+
+	paramValues[0] = hostname;
+	return (host_info_get(
+		"SELECT count(hostaliases) "
+		    "FROM HostAliases WHERE hostname = $1",
+
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		"WHERE Host.hostname = $1 "
+		"ORDER BY Host.hostname, hostalias",
+
+		1,
+		paramValues,
+		info));
 }
 
 static char *
@@ -267,7 +286,11 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 }
 
 static char *
-gfarm_pgsql_host_info_get_all(
+host_info_get_all(
+	char *csql,
+	char *isql,
+	int nparams,
+	const char **paramValues,
 	int *np,
 	struct gfarm_host_info **infosp)
 {
@@ -291,14 +314,10 @@ gfarm_pgsql_host_info_get_all(
 	PQclear(res);
 
 	resc = PQexecParams(conn,
-		"SELECT Host.hostname, count(hostalias) "
-		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
-		    "GROUP BY Host.hostname "
-			    "ORDER BY Host.hostname ",
-		0, /* number of params */
+		csql,
+		nparams,
 		NULL, /* param types */
-		NULL, /* param values */
+		paramValues,
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		1); /* ask for binary results */
@@ -317,19 +336,14 @@ gfarm_pgsql_host_info_get_all(
 	}
 
 	resi = PQexecParams(conn,
-		"SELECT Host.hostname, architecture, ncpu, hostalias "
-		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
-		    "ORDER BY Host.hostname, hostalias",
-		0, /* number of params */
+		isql,	    
+		nparams,
 		NULL, /* param types */
-		NULL, /* param values */
+		paramValues,
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(resi) != PGRES_TUPLES_OK) {
-	}	
-	if (PQntuples(resi) == 0) {
 		e_save = strdup(PQerrorMessage(conn));
 		if (e_save == NULL) 
 			e = GFARM_ERR_NO_MEMORY;
@@ -360,18 +374,92 @@ gfarm_pgsql_host_info_get_all(
 }
 
 static char *
+gfarm_pgsql_host_info_get_all(
+	int *np,
+	struct gfarm_host_info **infosp)
+{
+	return (host_info_get_all( 
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname",
+
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "ORDER BY Host.hostname, hostalias",
+
+		0,
+		NULL,
+		np,
+		infosp));
+}
+
+static char *
 gfarm_pgsql_host_info_get_by_name_alias(
 	const char *name_alias,
 	struct gfarm_host_info *info)
 {
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	const char *paramValues[1];
+	char *e;
+	int n;
+	struct gfarm_host_info *infos;
+
+	paramValues[0] = name_alias;
+	e = host_info_get_all(
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "WHERE Host.hostname = $1 OR hostalias = $1 "
+		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname",
+
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "WHERE Host.hostname = $1 OR hostalias = $1 "
+		    "ORDER BY Host.hostname, hostalias",
+
+		1,
+		paramValues,
+		&n,
+		&infos);
+	if (e != NULL)	
+		return (e);
+	if (n == 0)
+		return (GFARM_ERR_UNKNOWN_HOST);
+	if (n != 1 || infos[0].nhostaliases > 1)
+		return (GFARM_ERR_AMBIGUOUS_RESULT);
+	*info = infos[0];
+	free(infos);
+	return (NULL);
 }
 
 static char *
 gfarm_pgsql_host_info_get_allhost_by_architecture(const char *architecture,
 	int *np, struct gfarm_host_info **infosp)
 {
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	const char *paramValues[1];
+	paramValues[0] = architecture;
+	return (host_info_get_all( 
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "WHERE architecture = $1 "
+		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname",
+
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+		        "ON Host.hostname = HostAliases.hostname "
+		    "WHERE architecture = $1 "
+		    "ORDER BY Host.hostname, hostalias",
+
+		1,
+		paramValues,
+		np,
+		infosp));
 }
 
 /**********************************************************************/
