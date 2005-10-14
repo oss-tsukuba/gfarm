@@ -226,7 +226,7 @@ gfarm_pgsql_host_info_get(
 }
 
 static char *
-gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
+hostaliases_remove(const char *hostname)
 {
 	PGresult *res;
 	const char *paramValues[1];
@@ -248,6 +248,54 @@ gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
 }
 
 static char *
+gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
+{
+	static char *e_save = NULL;
+
+	if (e_save != NULL) {
+		free(e_save);
+		e_save = NULL;
+	}	
+
+	/*
+	 * XXX - needs to check if hostname exists in Hosts.
+	 *       this check and deletion should be done in a trunsuction
+	 */
+
+	return (e_save = hostaliases_remove(hostname));
+}
+
+static char *
+hostaliases_set(struct gfarm_host_info *info)
+{
+	PGresult *res;
+	const char *paramValues[2];
+	int i;
+
+	if (info->hostaliases != NULL) {
+		for (i = 0; i < info->nhostaliases; i++) {
+			paramValues[0] = info->hostname;
+			paramValues[1] = info->hostaliases[i];
+			res = PQexecParams(conn,
+				"INSERT INTO Hostaliases (hostname, hostalias)"
+				    " VALUES ($1, $2)",
+				2, /* number of params */
+				NULL, /* param types */
+				paramValues,
+				NULL, /* param lengths */
+				NULL, /* param formats */
+				0); /* dummy parameter for result format */
+			if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+				PQclear(res);
+				return(PQerrorMessage(conn));
+			}	
+			PQclear(res);
+		}
+	}	
+	return (NULL);
+}
+
+static char *
 gfarm_pgsql_host_info_set(
 	char *hostname,
 	struct gfarm_host_info *info)
@@ -257,7 +305,6 @@ gfarm_pgsql_host_info_set(
 	char *e = NULL;
 	static char *e_save = NULL;
 	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
-	int i;
 
 	if (e_save != NULL) {
 		free(e_save);
@@ -273,7 +320,7 @@ gfarm_pgsql_host_info_set(
 
 	paramValues[0] = hostname;
 	paramValues[1] = info->architecture;
-	sprintf(ncpu, "%u", info->ncpu);
+	sprintf(ncpu, "%d", info->ncpu);
 	paramValues[2] = ncpu;
 	res = PQexecParams(conn,
 		"INSERT INTO Host (hostname, architecture, ncpu) "
@@ -293,29 +340,12 @@ gfarm_pgsql_host_info_set(
 	}	
 	PQclear(res);
 
-	if (info->hostaliases != NULL) {
-		for (i = 0; i < info->nhostaliases; i++) {
-			paramValues[1] = info->hostaliases[i];
-			res = PQexecParams(conn,
-				"INSERT INTO Hostaliases (hostname, hostalias)"
-				    " VALUES ($1, $2)",
-				2, /* number of params */
-				NULL, /* param types */
-				paramValues,
-				NULL, /* param lengths */
-				NULL, /* param formats */
-				0); /* dummy parameter for result format */
-			if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-				PQclear(res);
-				e_save = strdup(PQerrorMessage(conn));
-				if (e_save == NULL) 
-					e = GFARM_ERR_NO_MEMORY;
-				goto end;
-			}	
-			PQclear(res);
-		}
+	e_save = hostaliases_set(info);
+	if (e_save != NULL) {
+		e_save = strdup(e_save);
+		if (e_save == NULL)
+			e = GFARM_ERR_NO_MEMORY;
 	}	
-
  end:
 	res = PQexec(conn, "END");
 	PQclear(res);
@@ -328,7 +358,65 @@ gfarm_pgsql_host_info_replace(
 	char *hostname,
 	struct gfarm_host_info *info)
 {
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	PGresult *res;
+	const char *paramValues[3];
+	char *e = NULL;
+	static char *e_save = NULL;
+	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
+
+	if (e_save != NULL) {
+		free(e_save);
+		e_save = NULL;
+	}	
+
+	res = PQexec(conn, "BEGIN");
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		PQclear(res);
+		return(PQerrorMessage(conn));
+	}	
+	PQclear(res);
+
+	paramValues[0] = hostname;
+	paramValues[1] = info->architecture;
+	sprintf(ncpu, "%d", info->ncpu);
+	paramValues[2] = ncpu;
+	res = PQexecParams(conn,
+		"UPDATE Host SET architecture = $2, ncpu =$3 "
+		    "WHERE hostname = $1",
+		3, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		PQclear(res);
+		e_save = strdup(PQerrorMessage(conn));
+		if (e_save == NULL) 
+			e = GFARM_ERR_NO_MEMORY;
+		goto end;
+	}	
+	PQclear(res);
+
+	e_save = hostaliases_remove(hostname);
+	if (e_save != NULL) {
+		e_save = strdup(e_save);
+		if (e_save == NULL)
+			e = GFARM_ERR_NO_MEMORY;
+	}	
+	e_save = hostaliases_set(info);
+	if (e_save != NULL) {
+		e_save = strdup(e_save);
+		if (e_save == NULL)
+			e = GFARM_ERR_NO_MEMORY;
+	}	
+
+ end:
+
+	res = PQexec(conn, "END");
+	PQclear(res);
+
+	return (e_save != NULL ? e_save : e);
 }
 
 static char *
