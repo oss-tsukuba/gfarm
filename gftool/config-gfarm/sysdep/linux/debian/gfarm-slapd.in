@@ -15,8 +15,6 @@ SLAPD_OPTIONS=""
 # Source the init script configuration
 if [ -f "/etc/default/$FILE" ]; then
 	. /etc/default/$FILE
-else
-	exit 1
 fi
 
 # Load the default location of the slapd config file
