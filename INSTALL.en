@@ -1,3 +1,4 @@
+
 *** Gfarm system
 
 Gfarm is a reference implementation of the Grid Datafarm architecture
@@ -572,10 +573,25 @@ metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
-postgresql_username gfarm
-postgresql_passwd secret-postgresql-password
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
 auth enable sharedsecret *
 -------------------------------- END --------------------------------
+
+The postgresql_user parameter and the postgresql_password parameter above
+might be omitted, if your PostgreSQL authentication configuration doesn't
+actually need these parameters.
+Also, if you need some more parameters with regard to PostgreSQL, you
+may be able to use postgresql_conninfo parameter. For example, if you
+want to specify "require" as SSL mode, and 30 seconds for connection
+timeout, you can use the following setting:
+------------------------------ ここから ------------------------------
+postgresql_conninfo "sslmode=require connect_timeout=30"
+------------------------------ ここまで ------------------------------
+Please read the following PQconnectdb() function manual page in libpq
+library of PostgreSQL for detail parameters that you can specify in
+the postgresql_conninfo directive:
+http://www.postgresql.jp/document/pg804doc/html/libpq.html#LIBPQ-CONNECT
 
 ** Register filesystem nodes
 
@@ -670,10 +686,15 @@ metadb_serverhost metadb.example.com
 ostgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
-ostgresql_username gfarm
-postgresql_passwd secret-postgresql-password
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
 auth enable sharedsecret *
 -------------------------------- END --------------------------------
+
+In other words, /etc/gfarm.conf on filesystem nodes needs "spool"
+parameter in addition to the contents of ~/.gfarmrc on client hosts.
+Please read ~/.gfarmrc description above for parameters other than
+"spool" in /etc/gfarm.conf.
 
 When filesystem nodes or metadata server nodes are used as a client
 node, client programs read ~/.gfarmrc first if it exists, and then
