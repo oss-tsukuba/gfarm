@@ -175,7 +175,9 @@ Linux と NetBSD 以外の OS では，GNU make を使ってください．
 
 	% ./configure [オプション]
 	% make
-	% make install
+	% su
+	Password:
+	# make install
 
 configure コマンドには，下記のオプションがあります．
 
@@ -389,7 +391,10 @@ Gfarm では，OpenLDAP version 2.1.X および version 2.2.X で動作が確認さ
 OpenLDAP 付属の LDAP サーバーの設定ファイルです．Gfarm ファイルシステ
 ムのためのスキーマファイルを include します．また，base distinguished
 name を，このファイルの suffix および rootdn で参照しているのに注意し
-てください．
+てください．このファイルにはパスワードが含まれていますから，slapd を
+起動するユーザ権限以外では読みとりできないようにしておくのが良いでしょう．
+
+	# chmod 600 /etc/gfarm-ldap/slapd.conf
 
 以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X 以降のそれぞれ
 の場合における，ホスト metadb.example.com のファイル 
@@ -520,18 +525,19 @@ o: Example Com
 ベースを作成します．これには，ホスト metadb.example.com で，下記のコマン
 ドを実行します．
 
-	% rm -rf /var/gfarm-ldap
-	% mkdir /var/gfarm-ldap
-	% cd /etc/gfarm-ldap
-	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+	# rm -rf /var/gfarm-ldap
+	# mkdir /var/gfarm-ldap
+	# chmod 700 /var/gfarm-ldap
+	# cd /etc/gfarm-ldap
+	# /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
 ▽ LDAP サーバーの起動
 
 ホスト metadb.example.com で，LDAP サーバーを起動します．下記のコマンド
 を実行します．
 
-	% cd /usr/local/openldap/libexec/
-	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
+	# cd /usr/local/openldap/libexec/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
 このオプション -h で指定した 389 が，LDAP サーバーのポート番号です．ポー
 ト番号として，この例のように1024番未満を利用する場合，slapd の起動を 
@@ -570,6 +576,7 @@ csh の場合:
 
 	# mkdir /var/gfarm-pgsql
 	# chown postgres:postgres /var/gfarm-pgsql
+	# chmod 700 /var/gfarm-pgsql
 	# su - postgres
 	$ initdb -D /var/gfarm-pgsql
 

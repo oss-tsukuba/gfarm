@@ -155,7 +155,9 @@ Please use GNU make on Operating Systems other than Linux and NetBSD.
 
 	% ./configure [options]
 	% make
-	% make install
+	% su
+	Password:
+	# make install
 
 Options for configure:
 
@@ -371,7 +373,11 @@ There is no need to modify.
 This is a configuration file of an LDAP server included in the
 OpenLDAP distribution.  It is necessary to include a schema file
 gfarm.schema for Gfarm file system.  Note that suffix and rootdn in
-this file refer to the base distinguished name.
+this file refer to the base distinguished name. Because this file
+includes a password, it's better to make this file only readable from
+the user privilege that slapd has.
+
+	# chmod 600 /etc/gfarm-ldap/slapd.conf
 
 Here are example files of /etc/gfarm-ldap/slapd.conf on
 metadb.example.com for OpenLDAP versions 2.0.X, 2.1.X and later.  Note
@@ -487,17 +493,18 @@ The 'slapadd' command creates an initial LDAP database.  The following
 example shows how to create the initial LDAP database using the above
 initial entries on metadb.example.com.
 
-	% rm -rf /var/gfarm-ldap
-	% mkdir /var/gfarm-ldap
-	% cd /etc/gfarm-ldap
-	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+	# rm -rf /var/gfarm-ldap
+	# mkdir /var/gfarm-ldap
+	# chmod 700 /var/gfarm-ldap
+	# cd /etc/gfarm-ldap
+	# /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
  - Execute an LDAP server
 
 An LDAP server is invoked by the 'slapd' command.
 
-	% cd /usr/local/openldap/libexec/
-	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
+	# cd /usr/local/openldap/libexec/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
 The -h option specifies a listening port number of the LDAP server.  A
 sample start-up script can be found at package/<arch>/gfarm-slapd.
@@ -537,6 +544,7 @@ In the case of the csh:
 
 	# mkdir /var/gfarm-pgsql
 	# chown postgres:postgres /var/gfarm-pgsql
+	# chmod 700 /var/gfarm-pgsql
 	# su - postgres
 	$ initdb -D /var/gfarm-pgsql
 
