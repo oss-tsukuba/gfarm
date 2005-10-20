@@ -53,6 +53,7 @@ char *
 gfarm_agent_connect(char *path)
 {
 	struct sockaddr_un peer_addr;
+	size_t len;
 
 	if (agent_server != NULL)
 		return ("already connected");
@@ -61,6 +62,10 @@ gfarm_agent_connect(char *path)
 		path = getenv("GFARM_AGENT_SOCK");
 	if (path == NULL)
 		return (GFARM_AGENT_ERR_NO_AGENT);
+
+	len = strlen(path);
+	if (len >= sizeof(peer_addr.sun_path))
+		return ("$GFARM_AGENT_SOCK: too long pathname");
 
 	memset(&peer_addr, 0, sizeof(peer_addr));
 	peer_addr.sun_family = AF_UNIX;
