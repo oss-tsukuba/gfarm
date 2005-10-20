@@ -278,7 +278,7 @@ In the case to use PostgreSQL:
 
 	metadb.example.com
 
-・TCP oprt number of the PostgreSQL server
+・TCP port number of the PostgreSQL server
 
 	5432
 
