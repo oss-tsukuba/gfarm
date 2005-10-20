@@ -79,6 +79,28 @@ gfarm_pgsql_terminate(void)
 	return (NULL);
 }
 
+/*
+ * PostgreSQL connection cannot be used from forked children unless
+ * the connection is ensured to be used exclusively.
+ * This routine guarantees that never happens.
+ * NOTE:
+ * This is where gfarm_metadb_initialize() is called from.
+ * Nearly every interface functions must call this function.
+ */
+static char *
+gfarm_pgsql_check(void)
+{
+	/*
+	 * if there is a valid PostgreSQL connection, return.  If not,
+	 * create a new connection.
+	 */
+	if (conn != NULL && gfarm_does_own_metadb_connection())
+		return (NULL);
+	/* XXX close the file descriptor for conn, but how? */
+	conn = NULL;
+	return (gfarm_metadb_initialize());
+}
+
 /**********************************************************************/
 
 uint64_t
@@ -207,7 +229,11 @@ gfarm_pgsql_host_info_get(
 	const char *hostname,
 	struct gfarm_host_info *info)
 {
+	char *e;
 	const char *paramValues[1];
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	paramValues[0] = hostname;
 	return (host_info_get(
@@ -250,7 +276,11 @@ hostaliases_remove(const char *hostname)
 static char *
 gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
 {
+	char *e;
 	static char *e_save = NULL;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	if (e_save != NULL) {
 		free(e_save);
@@ -302,9 +332,12 @@ gfarm_pgsql_host_info_set(
 {
 	PGresult *res;
 	const char *paramValues[3];
-	char *e = NULL;
+	char *e;
 	static char *e_save = NULL;
 	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	if (e_save != NULL) {
 		free(e_save);
@@ -360,9 +393,12 @@ gfarm_pgsql_host_info_replace(
 {
 	PGresult *res;
 	const char *paramValues[3];
-	char *e = NULL;
+	char *e;
 	static char *e_save = NULL;
 	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	if (e_save != NULL) {
 		free(e_save);
@@ -424,7 +460,10 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 {
 	PGresult *res;
 	const char *paramValues[1];
-	char *e = NULL;
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	paramValues[0] = hostname;
 	res = PQexecParams(conn,
@@ -534,6 +573,11 @@ gfarm_pgsql_host_info_get_all(
 	int *np,
 	struct gfarm_host_info **infosp)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
 	return (host_info_get_all( 
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
@@ -561,6 +605,9 @@ gfarm_pgsql_host_info_get_by_name_alias(
 	char *e;
 	int n;
 	struct gfarm_host_info *infos;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 
 	paramValues[0] = name_alias;
 	e = host_info_get_all(
@@ -596,7 +643,12 @@ static char *
 gfarm_pgsql_host_info_get_allhost_by_architecture(const char *architecture,
 	int *np, struct gfarm_host_info **infosp)
 {
+	char *e;
 	const char *paramValues[1];
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
 	paramValues[0] = architecture;
 	return (host_info_get_all( 
 		"SELECT Host.hostname, count(hostalias) "
@@ -625,6 +677,10 @@ gfarm_pgsql_path_info_get(
 	const char *pathname,
 	struct gfarm_path_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -633,6 +689,10 @@ gfarm_pgsql_path_info_set(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -641,12 +701,20 @@ gfarm_pgsql_path_info_replace(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
 static char *
 gfarm_pgsql_path_info_remove(const char *pathname)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -656,6 +724,10 @@ gfarm_pgsql_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -668,6 +740,10 @@ gfarm_pgsql_file_history_get_allfile_by_program(
 	int *np,
 	char ***gfarm_files_p)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -678,6 +754,10 @@ gfarm_pgsql_file_history_get_allfile_by_file(
 	int *np,
 	char ***gfarm_files_p)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -692,6 +772,10 @@ gfarm_pgsql_file_section_info_get(
 	const char *section,
 	struct gfarm_file_section_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -701,6 +785,10 @@ gfarm_pgsql_file_section_info_set(
 	char *section,
 	struct gfarm_file_section_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -710,6 +798,10 @@ gfarm_pgsql_file_section_info_replace(
 	char *section,
 	struct gfarm_file_section_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -718,6 +810,10 @@ gfarm_pgsql_file_section_info_remove(
 	const char *pathname,
 	const char *section)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -727,6 +823,10 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 	int *np,
 	struct gfarm_file_section_info **infosp)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -739,6 +839,10 @@ gfarm_pgsql_file_section_copy_info_get(
 	const char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -749,6 +853,10 @@ gfarm_pgsql_file_section_copy_info_set(
 	char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -758,6 +866,10 @@ gfarm_pgsql_file_section_copy_info_remove(
 	const char *section,
 	const char *hostname)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -767,6 +879,10 @@ gfarm_pgsql_file_section_copy_info_get_all_by_file(
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -777,6 +893,10 @@ gfarm_pgsql_file_section_copy_info_get_all_by_section(
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -786,6 +906,10 @@ gfarm_pgsql_file_section_copy_info_get_all_by_host(
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -798,6 +922,10 @@ gfarm_pgsql_file_history_get(
 	char *gfarm_file,
 	struct gfarm_file_history *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
@@ -806,12 +934,20 @@ gfarm_pgsql_file_history_set(
 	char *gfarm_file,
 	struct gfarm_file_history *info)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
 static char *
 gfarm_pgsql_file_history_remove(char *gfarm_file)
 {
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
