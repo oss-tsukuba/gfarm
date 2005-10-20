@@ -602,23 +602,17 @@ metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
-さらにデータベース接続時にデータベースユーザ名の指定が必要な場合は
-以下の行を追加します．
+上記のパラメータのうち、postgresql_user および postgresql_password は，
+PostgreSQL の認証の設定によっては省略できる場合があります．
+PostgreSQL に関して、さらに他の接続オプションを指定したい場合，
+たとえば sslmode オプションに require を指定し，接続タイムアウト時間を
+30秒に設定したい場合は以下の行を追加します．
 ------------------------------ ここから ------------------------------
-postgresql_user gfarm
------------------------------- ここまで ------------------------------
-さらに上記ユーザでのデータベース接続時にパスワード入力が必要な場合は
-以下の行を追加します．
------------------------------- ここから ------------------------------
-postgresql_password secret-postgresql-password
------------------------------- ここまで ------------------------------
-さらに他の接続オプションを指定したい場合，たとえば sslmode オプションに
-require を指定し，接続タイムアウト時間を30秒に設定したい場合は以下の行を
-追加します．
------------------------------- ここから ------------------------------
-postgresql_conninfo "connect_timeout=30 sslmode=require"
+postgresql_conninfo "sslmode=require connect_timeout=30"
 ------------------------------ ここまで ------------------------------
 postgresql_conninfo に指定できるパラメータの詳細ついては，PostgreSQL の
 iibpq ライブラリの関数 PQconnectdb についての文書， 例えば
@@ -716,32 +710,21 @@ auth enable sharedsecret *
 
 PostgreSQL を使用する場合:
 ------------------------------ ここから ------------------------------
+spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
-さらにデータベース接続時にデータベースユーザ名の指定が必要な場合は
-以下の行を追加します．
------------------------------- ここから ------------------------------
-postgresql_user gfarm
------------------------------- ここまで ------------------------------
-さらに上記ユーザでのデータベース接続時にパスワード入力が必要な場合は
-以下の行を追加します．
------------------------------- ここから ------------------------------
-postgresql_password secret-postgresql-password
------------------------------- ここまで ------------------------------
-さらに他の接続オプションを指定したい場合，たとえば sslmode オプションに
-require を指定し，接続タイムアウト時間を30秒に設定したい場合は以下の行を
-追加します．
------------------------------- ここから ------------------------------
-postgresql_conninfo "connect_timeout=30 sslmode=require"
------------------------------- ここまで ------------------------------
-postgresql_conninfo に指定できるパラメータの詳細ついては，PostgreSQL の
-iibpq ライブラリの関数 PQconnectdb についての文書， 例えば
-http://www.postgresql.jp/document/pg804doc/html/libpq.html#LIBPQ-CONNECT
-を参照してください．
+
+すなわち，ファイルシステムノードの /etc/gfarm.conf には，クライアント
+ホストでの ~/.gfarmrc の設定に加え，「spool」パラメータで，gfsd が
+使用するスプールディレクトリを指定します．
+「spool」以外のパラメータに関しては，上述の ~/.gfarmrc の項を参照
+してください．
 
 メタデータサーバのホストあるいはファイルシステムノードがクライアントと
 なる場合は，クライアントプログラムはまず ~/.gfarmrc を読み込み，次に
