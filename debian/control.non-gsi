@@ -1,6 +1,6 @@
 Package: gfarm-gfptool
 Section: utils
-Architecture: i386
+Architecture: i386 amd64
 Depends: gfarm-client (= ${Source-Version})
 Conflicts: gfarm-gsi-gfptool
 Description: Parallel tools installed under the Gfarm filesystem
@@ -10,7 +10,7 @@ Description: Parallel tools installed under the Gfarm filesystem
 
 Package: gfmd
 Section: net
-Architecture: i386
+Architecture: i386 amd64
 Depends: libgfarm (= ${Source-Version})
 Suggests: slapd
 Conflicts: gfmd-gsi
@@ -20,7 +20,7 @@ Description: The Gfarm metadata server
 
 Package: gfarm-client
 Section: utils
-Architecture: i386
+Architecture: i386 amd64
 Depends: libgfarm (= ${Source-Version})
 Conflicts: gfarm-gsi-client
 Description: The Gfarm clients
@@ -28,7 +28,7 @@ Description: The Gfarm clients
 
 Package: gfsd
 Section: net
-Architecture: i386
+Architecture: i386 amd64
 Depends: libgfarm (= ${Source-Version}), gfarm-client (= ${Source-Version})
 Conflicts: gfsd-gsi
 Description: The Gfarm filesystem daemon
@@ -38,7 +38,7 @@ Description: The Gfarm filesystem daemon
 
 Package: libgfarm
 Section: libs
-Architecture: i386
+Architecture: i386 amd64
 Depends: libssl0.9.7 | libssl0.9.6, libldap2
 Conflicts: libgfarm-gsi
 Description: Runtime libraries for the Gfarm
@@ -47,7 +47,7 @@ Description: Runtime libraries for the Gfarm
 
 Package: libgfarm-dev
 Section: devel
-Architecture: i386
+Architecture: i386 amd64
 Depends: libgfarm (= ${Source-Version})
 Conflicts: libgfarm-gsi-dev
 Description: Development files for the Gfarm
