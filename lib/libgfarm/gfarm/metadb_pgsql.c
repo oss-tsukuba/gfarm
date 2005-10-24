@@ -12,6 +12,8 @@
 #include "metadb_access.h"
 #include "metadb_sw.h"
 
+#define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION "23505"
+
 /* for test */
 char *gfarm_postgresql_server_name = "srapc1367.sra.co.jp";
 char *gfarm_postgresql_server_port = "5432";
@@ -23,12 +25,28 @@ char *gfarm_postgresql_passwd = "secret-postgresql-password";
 
 static PGconn *conn = NULL;
 
+#define	PGSQL_MSG_LEN 1024
+
+static char *
+save_pgsql_msg(char *s)
+{
+	static char msg[PGSQL_MSG_LEN + 1];
+	int len = strlen(s);
+
+	if (len >= sizeof(msg))
+		len = sizeof(msg) - 1;
+	memcpy(msg, s, len);
+	msg[len] = '\0';
+	if (len > 0 && msg[len - 1] == '\n')
+		msg[len - 1] = '\0';
+	return(msg);
+}
+
 static char *
 gfarm_pgsql_initialize(void)
 {
 	int port;
 	char *e;
-	static char *e_save = NULL;
 
 	if (gfarm_postgresql_server_name == NULL)
 		return ("gfarm.conf: postgresql_serverhost is missing");
@@ -57,15 +75,13 @@ gfarm_pgsql_initialize(void)
 			    gfarm_postgresql_dbname,
 			    gfarm_postgresql_username,
 			    gfarm_postgresql_passwd);
+	e = NULL;
 	if (PQstatus(conn) != CONNECTION_OK) {
 		/* PQerrorMessage's return value will be freed in PQfinish() */
-		if (e_save != NULL)
-			free(e_save);
-		e_save = strdup(PQerrorMessage(conn));
+		e = save_pgsql_msg(PQerrorMessage(conn));
 		(void)gfarm_metadb_terminate();
-		return (e_save != NULL ? e_save : GFARM_ERR_NO_MEMORY);
 	}
-	return (NULL);
+	return (e);
 }
 
 static char *
@@ -120,6 +136,8 @@ gfarm_ntoh64(uint64_t n64)
         return (gfarm_hton64(n64));
 }
 
+/**********************************************************************/
+
 static char *
 host_info_get_one(
 	PGresult *res,
@@ -157,17 +175,20 @@ host_info_get(
 {
 	PGresult *res, *resi, *resc;
 	char *e = NULL;
-	static char *e_save = NULL;
 
-	if (e_save != NULL) {
-		free(e_save);
-		e_save = NULL;
-	}	
-
+ retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
 		PQclear(res);
-		return(PQerrorMessage(conn));
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		goto end;
+	}	
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		goto end;
 	}	
 	PQclear(res);
 
@@ -180,9 +201,7 @@ host_info_get(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(resc) != PGRES_TUPLES_OK) {
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
+		e = save_pgsql_msg(PQresultErrorMessage(res));
 		goto clear_resc;
 	}	
 
@@ -195,9 +214,7 @@ host_info_get(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(resi) != PGRES_TUPLES_OK) {
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
+		e = save_pgsql_msg((PQresultErrorMessage(res)));
 		goto clear_resi;
 	}	
 	if (PQntuples(resi) == 0) {
@@ -217,11 +234,11 @@ host_info_get(
 	PQclear(resi);
  clear_resc:	
 	PQclear(resc);
-
+ end:
 	res = PQexec(conn, "END");
 	PQclear(res);
 
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 static char *
@@ -258,6 +275,7 @@ hostaliases_remove(const char *hostname)
 	const char *paramValues[1];
 	char *e = NULL;
 
+ retry:
 	paramValues[0] = hostname;
 	res = PQexecParams(conn,
 		"DELETE FROM HostAliases WHERE hostname = $1",
@@ -267,8 +285,14 @@ hostaliases_remove(const char *hostname)
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
-	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-		e = PQerrorMessage(conn);
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
+		PQclear(res);
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		return (e);
+	} else if (PQresultStatus(res) != PGRES_COMMAND_OK)
+		e = save_pgsql_msg(PQresultErrorMessage(res));
 	PQclear(res);
 	return (e);
 }
@@ -277,34 +301,30 @@ static char *
 gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
 {
 	char *e;
-	static char *e_save = NULL;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-
-	if (e_save != NULL) {
-		free(e_save);
-		e_save = NULL;
-	}	
-
 	/*
 	 * XXX - needs to check if hostname exists in Hosts.
 	 *       this check and deletion should be done in a trunsuction
 	 */
 
-	return (e_save = hostaliases_remove(hostname));
+	return (hostaliases_remove(hostname));
 }
 
 static char *
-hostaliases_set(struct gfarm_host_info *info)
+hostaliases_set(
+	char *hostname,
+	struct gfarm_host_info *info)
 {
 	PGresult *res;
 	const char *paramValues[2];
 	int i;
+	char *e = NULL;
 
 	if (info->hostaliases != NULL) {
 		for (i = 0; i < info->nhostaliases; i++) {
-			paramValues[0] = info->hostname;
+			paramValues[0] = hostname;
 			paramValues[1] = info->hostaliases[i];
 			res = PQexecParams(conn,
 				"INSERT INTO Hostaliases (hostname, hostalias)"
@@ -316,13 +336,22 @@ hostaliases_set(struct gfarm_host_info *info)
 				NULL, /* param formats */
 				0); /* dummy parameter for result format */
 			if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+				e = save_pgsql_msg(
+						PQresultErrorMessage(res));
 				PQclear(res);
-				return(PQerrorMessage(conn));
+				/* XXX */
+				if (strstr(
+				    e,
+				    "duplicate key violates unique constraint")
+				    != NULL) {
+					e = GFARM_ERR_ALREADY_EXISTS;
+				}					
+				return (e);
 			}	
 			PQclear(res);
 		}
 	}	
-	return (NULL);
+	return (e);
 }
 
 static char *
@@ -333,21 +362,24 @@ gfarm_pgsql_host_info_set(
 	PGresult *res;
 	const char *paramValues[3];
 	char *e;
-	static char *e_save = NULL;
-	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
+	char ncpu[GFARM_INT32STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
 
-	if (e_save != NULL) {
-		free(e_save);
-		e_save = NULL;
-	}	
-
+ retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
 		PQclear(res);
-		return(PQerrorMessage(conn));
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		goto end;
+	}	
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		goto end;
 	}	
 	PQclear(res);
 
@@ -365,25 +397,26 @@ gfarm_pgsql_host_info_set(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
+		/* XXX */
+		if (strstr(
+		    e, "duplicate key violates unique constraint") != NULL) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+		}
 		goto end;
 	}	
 	PQclear(res);
 
-	e_save = hostaliases_set(info);
-	if (e_save != NULL) {
-		e_save = strdup(e_save);
-		if (e_save == NULL)
-			e = GFARM_ERR_NO_MEMORY;
-	}	
+	e = hostaliases_set(hostname, info);
  end:
-	res = PQexec(conn, "END");
+	if (e == NULL)
+		res = PQexec(conn, "COMMIT");
+	else 	
+		res = PQexec(conn, "ROLLBACK");
 	PQclear(res);
 
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 static char *
@@ -394,21 +427,24 @@ gfarm_pgsql_host_info_replace(
 	PGresult *res;
 	const char *paramValues[3];
 	char *e;
-	static char *e_save = NULL;
-	char ncpu[sizeof(info->ncpu) + 1]; /* for \0 according to convention */
+	char ncpu[GFARM_INT32STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
 
-	if (e_save != NULL) {
-		free(e_save);
-		e_save = NULL;
-	}	
-
+ retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
 		PQclear(res);
-		return(PQerrorMessage(conn));
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		goto end;
+	}	
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		goto end;
 	}	
 	PQclear(res);
 
@@ -417,7 +453,7 @@ gfarm_pgsql_host_info_replace(
 	sprintf(ncpu, "%d", info->ncpu);
 	paramValues[2] = ncpu;
 	res = PQexecParams(conn,
-		"UPDATE Host SET architecture = $2, ncpu =$3 "
+		"UPDATE Host SET architecture = $2, ncpu = $3 "
 		    "WHERE hostname = $1",
 		3, /* number of params */
 		NULL, /* param types */
@@ -426,33 +462,29 @@ gfarm_pgsql_host_info_replace(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
 		goto end;
 	}	
+	if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		PQclear(res);
+		goto end;
+	}
 	PQclear(res);
 
-	e_save = hostaliases_remove(hostname);
-	if (e_save != NULL) {
-		e_save = strdup(e_save);
-		if (e_save == NULL)
-			e = GFARM_ERR_NO_MEMORY;
-	}	
-	e_save = hostaliases_set(info);
-	if (e_save != NULL) {
-		e_save = strdup(e_save);
-		if (e_save == NULL)
-			e = GFARM_ERR_NO_MEMORY;
-	}	
-
+	e = hostaliases_remove(hostname);
+	if (e != NULL)
+		goto end;
+	e = hostaliases_set(hostname, info);
  end:
-
-	res = PQexec(conn, "END");
+	if (e == NULL)
+		res = PQexec(conn, "COMMIT");
+	else 	
+		res = PQexec(conn, "ROLLBACK");
 	PQclear(res);
 
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 static char *
@@ -465,6 +497,7 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
 
+ retry:
 	paramValues[0] = hostname;
 	res = PQexecParams(conn,
 		"DELETE FROM Host WHERE hostname = $1",
@@ -474,9 +507,19 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		0);  /* dummy parameter for result format */
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
+		PQclear(res);
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		return (e);
+	}	
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
-		e = PQerrorMessage(conn);
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
+
 	return (e);
 }
 
@@ -489,26 +532,28 @@ host_info_get_all(
 	int *np,
 	struct gfarm_host_info **infosp)
 {
-	PGresult *res, *resi, *resc;
+	PGresult *res, *ires, *cres;
 	char *e = NULL;
-	static char *e_save = NULL;
 	int i, startrow;
 	struct gfarm_host_info *ip;
 
-	if (e_save != NULL) {
-		free(e_save);
-		e_save = NULL;
-	}	
-
+ retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
 		PQclear(res);
-		e_save = strdup(PQerrorMessage(conn));
-		return (e_save != NULL ? e_save : GFARM_ERR_NO_MEMORY);
+		e = gfarm_metadb_initialize();
+		if (e == NULL)
+			goto retry;
+		goto end;
+	}	
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		goto end;
 	}	
 	PQclear(res);
 
-	resc = PQexecParams(conn,
+	cres = PQexecParams(conn,
 		csql,
 		nparams,
 		NULL, /* param types */
@@ -516,21 +561,24 @@ host_info_get_all(
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		1); /* ask for binary results */
-	if (PQresultStatus(resc) != PGRES_TUPLES_OK) {
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
-		goto clear_resc;
+	if (PQresultStatus(cres) != PGRES_TUPLES_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(cres);
+		goto clear_cres;
 	}	
-
-	*np = PQntuples(resc);
+        *np = PQntuples(cres); /* number of hosts */
+	if (*np == 0)
+	{	
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		goto clear_cres;
+	}	
 	ip = malloc(sizeof(*ip) * *np);
 	if (ip == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		goto clear_resc;
+		goto clear_cres;
 	}
 
-	resi = PQexecParams(conn,
+	ires = PQexecParams(conn,
 		isql,	    
 		nparams,
 		NULL, /* param types */
@@ -538,34 +586,33 @@ host_info_get_all(
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		1); /* ask for binary results */
-	if (PQresultStatus(resi) != PGRES_TUPLES_OK) {
-		e_save = strdup(PQerrorMessage(conn));
-		if (e_save == NULL) 
-			e = GFARM_ERR_NO_MEMORY;
-		goto clear_resi;
+	if (PQresultStatus(ires) != PGRES_TUPLES_OK) {
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		free(ip);
+		goto clear_ires;
 	}
 
 	startrow = 0;
-	for (i = 0; i < PQntuples(resc); i++) {
+	for (i = 0; i < PQntuples(cres); i++) {
 		int nhostaliases;
 
-	        nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(resc,
+	        nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
 						i,
-					        PQfnumber(resc, "count"))));
-		e = host_info_get_one(resi, startrow, nhostaliases, &ip[i]);
+					        PQfnumber(cres, "count"))));
+		e = host_info_get_one(ires, startrow, nhostaliases, &ip[i]);
 		startrow += (nhostaliases == 0 ? 1 : nhostaliases);
 	}
 	*infosp = ip;
 
- clear_resi:      
-	PQclear(resi);
- clear_resc:	
-	PQclear(resc);
-
+ clear_ires:	
+	PQclear(ires);
+ clear_cres:	
+	PQclear(cres);
+ end:
 	res = PQexec(conn, "END");
 	PQclear(res);
 
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 static char *
@@ -672,16 +719,79 @@ gfarm_pgsql_host_info_get_allhost_by_architecture(const char *architecture,
 
 /**********************************************************************/
 
+static void
+path_info_set_field(
+	PGresult *res,
+	int row,
+	struct gfarm_path_info *info)
+{
+	/* XXX - info->status.st_ino is set not here but at upper level */
+
+	info->pathname = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "pathname")));
+	info->status.st_mode = ntohl(
+		*((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "mode"))));
+	info->status.st_user = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "username")));
+	info->status.st_group = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "groupname")));
+	info->status.st_atimespec.tv_sec = gfarm_ntoh64(
+	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "atimesec"))));
+	info->status.st_atimespec.tv_nsec = ntohl(
+	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "atimensec"))));
+	info->status.st_mtimespec.tv_sec = gfarm_ntoh64(
+	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "mtimesec"))));
+	info->status.st_mtimespec.tv_nsec = ntohl(
+	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "mtimensec"))));
+	info->status.st_ctimespec.tv_sec = gfarm_ntoh64(
+	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "ctimesec"))));
+	info->status.st_ctimespec.tv_nsec = ntohl(
+	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "ctimensec"))));
+	info->status.st_nsections = ntohl(
+	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "nsections"))));
+}	
+
 static char *
 gfarm_pgsql_path_info_get(
 	const char *pathname,
 	struct gfarm_path_info *info)
 {
+	const char *paramValues[1];
+	PGresult *res;
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+ retry:
+	paramValues[0] = pathname;
+	res = PQexecParams(conn,
+		"SELECT * FROM Path where pathname = $1",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+	if (PQntuples(res) == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	path_info_set_field(res, 0, info);
+	PQclear(res);
+	return (NULL);
 }
 
 static char *
@@ -689,33 +799,175 @@ gfarm_pgsql_path_info_set(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
+	PGresult *res;
+	const char *paramValues[11];
 	char *e;
+	char mode[GFARM_INT32STRLEN + 1];
+	char atimesec[GFARM_INT64STRLEN + 1];
+	char atimensec[GFARM_INT32STRLEN + 1];
+	char mtimesec[GFARM_INT64STRLEN + 1];
+	char mtimensec[GFARM_INT32STRLEN + 1];
+	char ctimesec[GFARM_INT64STRLEN + 1];
+	char ctimensec[GFARM_INT32STRLEN + 1];
+	char nsections[GFARM_INT32STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+ retry:
+	paramValues[0] = pathname;
+	sprintf(mode, "%d", info->status.st_mode);
+	paramValues[1] = mode;
+	paramValues[2] = info->status.st_user;
+	paramValues[3] = info->status.st_group;
+	sprintf(atimesec, "%lld", (long long)info->status.st_atimespec.tv_sec);
+	paramValues[4] = atimesec;
+	sprintf(atimensec, "%d", info->status.st_atimespec.tv_nsec);
+	paramValues[5] = atimensec;
+	sprintf(mtimesec, "%lld", (long long)info->status.st_mtimespec.tv_sec);
+	paramValues[6] = mtimesec;
+	sprintf(mtimensec, "%d", info->status.st_mtimespec.tv_nsec);
+	paramValues[7] = mtimensec;
+	sprintf(ctimesec, "%lld", (long long)info->status.st_ctimespec.tv_sec);
+	paramValues[8] = ctimesec;
+	sprintf(ctimensec, "%d", info->status.st_ctimespec.tv_nsec);
+	paramValues[9] = ctimensec;
+	sprintf(nsections, "%d", info->status.st_nsections);
+	paramValues[10] = nsections;
+
+	res = PQexecParams(conn,
+		"INSERT INTO Path (pathname, mode, username, groupname, "
+				   "atimesec, atimensec, "
+				   "mtimesec, mtimensec, "
+				   "ctimesec, ctimensec, nsections)"
+		    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10, $11)",
+		11, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		if (strcmp(
+			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
+			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+		}
+	}	
+	PQclear(res);
+	return (e);
 }
+
 
 static char *
 gfarm_pgsql_path_info_replace(
 	char *pathname,
 	struct gfarm_path_info *info)
 {
+	PGresult *res;
+	const char *paramValues[11];
 	char *e;
+	char mode[GFARM_INT32STRLEN + 1];
+	char atimesec[GFARM_INT64STRLEN + 1];
+	char atimensec[GFARM_INT32STRLEN + 1];
+	char mtimesec[GFARM_INT64STRLEN + 1];
+	char mtimensec[GFARM_INT32STRLEN + 1];
+	char ctimesec[GFARM_INT64STRLEN + 1];
+	char ctimensec[GFARM_INT32STRLEN + 1];
+	char nsections[GFARM_INT32STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:	
+	paramValues[0] = pathname;
+	sprintf(mode, "%d", info->status.st_mode);
+	paramValues[1] = mode;
+	paramValues[2] = info->status.st_user;
+	paramValues[3] = info->status.st_group;
+	sprintf(atimesec, "%lld", (long long)info->status.st_atimespec.tv_sec);
+	paramValues[4] = atimesec;
+	sprintf(atimensec, "%d", info->status.st_atimespec.tv_nsec);
+	paramValues[5] = atimensec;
+	sprintf(mtimesec, "%lld", (long long)info->status.st_mtimespec.tv_sec);
+	paramValues[6] = mtimesec;
+	sprintf(mtimensec, "%d", info->status.st_mtimespec.tv_nsec);
+	paramValues[7] = mtimensec;
+	sprintf(ctimesec, "%lld", (long long)info->status.st_ctimespec.tv_sec);
+	paramValues[8] = ctimesec;
+	sprintf(ctimensec, "%d", info->status.st_ctimespec.tv_nsec);
+	paramValues[9] = ctimensec;
+	sprintf(nsections, "%d", info->status.st_nsections);
+	paramValues[10] = nsections;
+
+	res = PQexecParams(conn,
+		"UPDATE Path SET mode = $2, username = $3, groupname = $4, "
+				"atimesec = $5, atimensec = $6, "
+				"mtimesec = $7, mtimensec = $8, "
+				"ctimesec = $9, ctimensec = $10, "
+				"nsections = $11 "
+		    "WHERE pathname = $1",
+		11, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
 }
 
 static char *
 gfarm_pgsql_path_info_remove(const char *pathname)
 {
+	PGresult *res;
+	const char *paramValues[1];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+ retry:
+	paramValues[0] = pathname;
+	res = PQexecParams(conn,
+		"DELETE FROM Path WHERE pathname = $1",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0);  /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
 }
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
@@ -724,11 +976,51 @@ gfarm_pgsql_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
 {
+	PGresult *res;
 	char *e;
+	int i;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+ retry:
+	res = PQexecParams(conn,
+		"SELECT * FROM Path",
+		0, /* number of params */
+		NULL, /* param types */
+		NULL, /* param values */
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+	if (PQntuples(res) == 0) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		PQclear(res);		
+		return (e);
+	}
+	for (i = 0; i < PQntuples(res); i++) {
+		struct gfarm_path_info info;
+		
+		gfarm_base_path_info_ops.clear(&info);
+		path_info_set_field(res, i, &info);
+		if (!gfarm_base_path_info_ops.validate(&info)) {
+			gfarm_base_path_info_ops.free(&info);
+			continue;
+		}
+		(*callback)(closure, &info);
+	}
+	return (NULL);
 }
 
 #if 0 /* GFarmFile history isn't actually used yet */
@@ -765,6 +1057,23 @@ gfarm_pgsql_file_history_get_allfile_by_file(
 
 /**********************************************************************/
 
+static void
+file_section_info_set_field(
+	PGresult *res,
+	int row,
+	struct gfarm_file_section_info *info)
+{
+	info->pathname = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "pathname")));
+	info->section = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "section")));
+	info->filesize=gfarm_ntoh64(
+	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "filesize"))));
+	info->checksum_type = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "checksumType")));
+	info->checksum = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "checksum")));
+}	
 
 static char *
 gfarm_pgsql_file_section_info_get(
@@ -772,11 +1081,43 @@ gfarm_pgsql_file_section_info_get(
 	const char *section,
 	struct gfarm_file_section_info *info)
 {
+	const char *paramValues[2];
+	PGresult *res;
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	res = PQexecParams(conn,
+		"SELECT * FROM FileSection where pathname = $1 "
+		    "AND section = $2",
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+	if (PQntuples(res) == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	file_section_info_set_field(res, 0, info);
+	PQclear(res);
+	return (NULL);
 }
 
 static char *
@@ -785,11 +1126,48 @@ gfarm_pgsql_file_section_info_set(
 	char *section,
 	struct gfarm_file_section_info *info)
 {
+	PGresult *res;
+	const char *paramValues[5];
 	char *e;
+	char filesize[GFARM_INT64STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	sprintf(filesize, "%lld", (long long)info->filesize);
+	paramValues[2] = filesize;
+        paramValues[3] = info->checksum_type;
+	paramValues[4] = info->checksum;
+	res = PQexecParams(conn,
+		"INSERT INTO FileSection (pathname, section, filesize,"
+				   "checksumType, checksum) "
+		     "VALUES ($1, $2, $3, $4, $5)",
+		5, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		if (strcmp(
+			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
+			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+		}
+	}	
+	PQclear(res);
+	return (e);
 }
 
 static char *
@@ -798,11 +1176,43 @@ gfarm_pgsql_file_section_info_replace(
 	char *section,
 	struct gfarm_file_section_info *info)
 {
+	PGresult *res;
+	const char *paramValues[5];
 	char *e;
+	char filesize[GFARM_INT64STRLEN + 1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	sprintf(filesize, "%lld", (long long)info->filesize);
+	paramValues[2] = filesize;
+        paramValues[3] = info->checksum_type;
+	paramValues[4] = info->checksum;
+	res = PQexecParams(conn,
+		"UPDATE FileSection SET filesize = $3, "
+				"checksumType = $4, checksum = $5 "
+		    "WHERE pathname = $1 AND section = $2",
+		5, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
 }
 
 static char *
@@ -810,11 +1220,36 @@ gfarm_pgsql_file_section_info_remove(
 	const char *pathname,
 	const char *section)
 {
+	PGresult *res;
+	const char *paramValues[2];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	res = PQexecParams(conn,
+		"DELETE FROM FileSection WHERE pathname = $1 AND section = $2",
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0);  /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
 }
 
 static char *
@@ -823,11 +1258,55 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 	int *np,
 	struct gfarm_file_section_info **infosp)
 {
+	const char *paramValues[1];
+	PGresult *res;
 	char *e;
+	struct gfarm_file_section_info *ip;
+	int i;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+ retry:
+	paramValues[0] = pathname;
+	res = PQexecParams(conn,
+		"SELECT * FROM FileSection where pathname = $1",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+        *np = PQntuples(res);
+	if (*np == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	ip = malloc(sizeof(*ip) * *np);
+	if (ip == NULL) {
+		PQclear(res);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < *np; i++)
+		file_section_info_set_field(res, i, &ip[i]);
+	*infosp = ip;
+	PQclear(res);
+	return (NULL);
 }
 
 /**********************************************************************/
