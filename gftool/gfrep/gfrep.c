@@ -1110,6 +1110,13 @@ replicate_files_to_domain(char *path, int min_replicas,
 				if (k2 == -1) /* not found */
 					break;
 				k = k2;
+				if (verbose)
+				  fprintf(stderr, "%s: replicating %s:%s from %s to %s\n",
+					  program_name,
+					  file_path, 
+					  sinfos[i][j].section,
+					  srhosts[0],
+					  dhosts[k]);
 				e = gfarm_url_section_replicate_from_to(
 					file_path,
 					sinfos[i][j].section,
