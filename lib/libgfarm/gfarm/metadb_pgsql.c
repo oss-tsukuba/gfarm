@@ -178,14 +178,15 @@ host_info_get(
 
  retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		goto end;
-	}	
+
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
@@ -222,6 +223,7 @@ host_info_get(
 		goto clear_resi;
 	}
 
+	gfarm_base_host_info_ops.clear(info);
 	e = host_info_get_one(resi,
 		0,
 		gfarm_ntoh64(
@@ -285,14 +287,17 @@ hostaliases_remove(const char *hostname)
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		return (e);
-	} else if (PQresultStatus(res) != PGRES_COMMAND_OK)
+
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
 		e = save_pgsql_msg(PQresultErrorMessage(res));
+	}	
 	PQclear(res);
 	return (e);
 }
@@ -369,14 +374,14 @@ gfarm_pgsql_host_info_set(
 
  retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		goto end;
-	}	
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
@@ -434,14 +439,14 @@ gfarm_pgsql_host_info_replace(
 
  retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		goto end;
-	}	
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
@@ -507,16 +512,17 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 		NULL, /* param lengths */
 		NULL, /* param formats */
 		0);  /* dummy parameter for result format */
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		return (e);
-	}	
-	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
-	else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
 
@@ -539,14 +545,14 @@ host_info_get_all(
 
  retry:
 	res = PQexec(conn, "BEGIN");
-	if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-		PQclear(res);
-		e = gfarm_metadb_initialize();
-		if (e == NULL)
-			goto retry;
-		goto end;
-	}	
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
@@ -599,6 +605,7 @@ host_info_get_all(
 	        nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
 						i,
 					        PQfnumber(cres, "count"))));
+		gfarm_base_host_info_ops.clear(&ip[i]);
 		e = host_info_get_one(ires, startrow, nhostaliases, &ip[i]);
 		startrow += (nhostaliases == 0 ? 1 : nhostaliases);
 	}
@@ -679,7 +686,7 @@ gfarm_pgsql_host_info_get_by_name_alias(
 		return (e);
 	if (n == 0)
 		return (GFARM_ERR_UNKNOWN_HOST);
-	if (n != 1 || infos[0].nhostaliases > 1)
+	if (n > 1)
 		return (GFARM_ERR_AMBIGUOUS_RESULT);
 	*info = infos[0];
 	free(infos);
@@ -789,6 +796,7 @@ gfarm_pgsql_path_info_get(
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
+	gfarm_base_path_info_ops.clear(info);
 	path_info_set_field(res, 0, info);
 	PQclear(res);
 	return (NULL);
@@ -1115,6 +1123,7 @@ gfarm_pgsql_file_section_info_get(
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
+	gfarm_base_file_section_info_ops.clear(info);
 	file_section_info_set_field(res, 0, info);
 	PQclear(res);
 	return (NULL);
@@ -1266,10 +1275,6 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-
-
-	if ((e = gfarm_pgsql_check()) != NULL)
-		return (e);
  retry:
 	paramValues[0] = pathname;
 	res = PQexecParams(conn,
@@ -1302,14 +1307,30 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 		PQclear(res);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	for (i = 0; i < *np; i++)
+	for (i = 0; i < *np; i++) {
+		gfarm_base_file_section_info_ops.clear(&ip[i]); 
 		file_section_info_set_field(res, i, &ip[i]);
+	}	
 	*infosp = ip;
 	PQclear(res);
 	return (NULL);
 }
 
 /**********************************************************************/
+
+static void
+file_section_copy_info_set_field(
+	PGresult *res,
+	int row,
+	struct gfarm_file_section_copy_info *info)
+{
+	info->pathname = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "pathname")));
+	info->section = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "section")));
+	info->hostname = strdup(
+		PQgetvalue(res, row, PQfnumber(res, "hostname")));
+}	
 
 static char *
 gfarm_pgsql_file_section_copy_info_get(
@@ -1318,11 +1339,45 @@ gfarm_pgsql_file_section_copy_info_get(
 	const char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
+	const char *paramValues[3];
+	PGresult *res;
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	paramValues[2] = hostname;
+	res = PQexecParams(conn,
+		"SELECT * FROM FileSectionCopy where pathname = $1 "
+		    "AND section = $2 AND hostname = $3",
+		3, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+	if (PQntuples(res) == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	gfarm_base_file_section_copy_info_ops.clear(info);
+	file_section_copy_info_set_field(res, 0, info);
+	PQclear(res);
+	return (NULL);
 }
 
 static char *
@@ -1332,11 +1387,42 @@ gfarm_pgsql_file_section_copy_info_set(
 	char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
+	PGresult *res;
+	const char *paramValues[3];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	paramValues[2] = hostname;
+	res = PQexecParams(conn,
+		"INSERT INTO FileSectionCopy (pathname, section, hostname) "
+		     "VALUES ($1, $2, $3)",
+		3, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		if (strcmp(
+			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
+			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+		}
+	}	
+	PQclear(res);
+	return (e);
 }
 
 static char *
@@ -1345,11 +1431,91 @@ gfarm_pgsql_file_section_copy_info_remove(
 	const char *section,
 	const char *hostname)
 {
+	PGresult *res;
+	const char *paramValues[3];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+ retry:
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	paramValues[2] = hostname;
+	res = PQexecParams(conn,
+		"DELETE FROM FileSectionCopy "
+		    "WHERE pathname = $1 AND section = $2 AND hostname = $3",
+		3, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0);  /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}	
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
+}
+
+static char *
+file_section_copy_info_get_all(
+	const char *sql,
+	int nparams,
+	const char **paramValues,
+	int *np,
+	struct gfarm_file_section_copy_info **infosp)
+{
+	PGresult *res;
+	char *e;
+	struct gfarm_file_section_copy_info *ip;
+	int i;
+
+ retry:
+	res = PQexecParams(conn,
+		sql,
+		nparams,
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		if (PQstatus(conn) == CONNECTION_BAD) {
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK) {
+				PQclear(res);
+				goto retry;
+			}	
+		}
+		e = save_pgsql_msg(PQresultErrorMessage(res));
+		PQclear(res);
+		return (e);
+	}	
+        *np = PQntuples(res);
+	if (*np == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	ip = malloc(sizeof(*ip) * *np);
+	if (ip == NULL) {
+		PQclear(res);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < *np; i++) {
+		gfarm_base_file_section_copy_info_ops.clear(&ip[i]);
+		file_section_copy_info_set_field(res, i, &ip[i]);
+	}	
+	*infosp = ip;
+	PQclear(res);
+	return (NULL);
 }
 
 static char *
@@ -1359,10 +1525,18 @@ gfarm_pgsql_file_section_copy_info_get_all_by_file(
 	struct gfarm_file_section_copy_info **infosp)
 {
 	char *e;
+	const char *paramValues[1];
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+	paramValues[0] = pathname;
+	return (file_section_copy_info_get_all(
+		"SELECT * FROM FileSectionCopy where pathname = $1",
+		1,
+		paramValues,		
+		np,
+		infosp));
 }
 
 static char *
@@ -1372,11 +1546,21 @@ gfarm_pgsql_file_section_copy_info_get_all_by_section(
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
+	const char *paramValues[2];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+	paramValues[0] = pathname;
+	paramValues[1] = section;
+	return (file_section_copy_info_get_all(
+		"SELECT * FROM FileSectionCopy "
+		    "WHERE pathname = $1 AND section = $2",
+		2,
+		paramValues,		
+		np,
+		infosp));
 }
 
 static char *
@@ -1385,11 +1569,19 @@ gfarm_pgsql_file_section_copy_info_get_all_by_host(
 	int *np,
 	struct gfarm_file_section_copy_info **infosp)
 {
+	const char *paramValues[1];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+	paramValues[0] = hostname;
+	return (file_section_copy_info_get_all(
+		"SELECT * FROM FileSectionCopy where hostname = $1",
+		1,
+		paramValues,		
+		np,
+		infosp));
 }
 
 /**********************************************************************/
