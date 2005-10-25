@@ -1028,6 +1028,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 		}
 		(*callback)(closure, &info);
 	}
+	PQclear(res);
 	return (NULL);
 }
 
