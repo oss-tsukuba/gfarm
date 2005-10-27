@@ -3,7 +3,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>8 Sep 2005</date></refentryinfo>
+<refentryinfo><date>27 Oct 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -19,11 +19,13 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-v</arg>
     <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
     <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
     <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
@@ -31,11 +33,13 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='plain'>-P <replaceable>host-pair-file</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='opt'>-s <replaceable>source-node</replaceable></arg>
     <arg choice='opt'>-d <replaceable>destination-node</replaceable><arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
@@ -54,6 +58,23 @@ specified by the <parameter>gfarm-URL</parameter>.
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>displays verbose output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>lets gfrep command do migrate/move, instead of replicate.
+Currently, this works only with -H, -P and -d options.
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>

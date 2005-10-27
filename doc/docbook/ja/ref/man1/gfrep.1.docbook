@@ -2,7 +2,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>8 Sep 2005</date></refentryinfo>
+<refentryinfo><date>27 Oct 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -17,11 +17,13 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-v</arg>
     <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
     <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
     <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
@@ -29,11 +31,13 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='plain'>-P <replaceable>ホスト対指定ファイル</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfrep</command>
+    <arg choice='opt'>-vm</arg>
     <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
     <arg choice='opt'>-d <replaceable>複製先ホスト</replaceable><arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
@@ -49,6 +53,24 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>複製処理に関して，冗長な表示を行ないます，
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>複製ではなく移動を行ないます．
+現在のところ，このオプションは，-H，-P, -d オプションを指定した場合にしか
+動作しません．
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
