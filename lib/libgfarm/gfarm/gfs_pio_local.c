@@ -16,6 +16,7 @@
 #include <gfarm/gfarm.h>
 #include "gfs_proto.h" /* GFARM_FILE_CREATE, gfs_digest_calculate_local() */
 #include "gfs_pio.h"
+#include "gfs_misc.h"
 
 int gfarm_node = -1;
 int gfarm_nnode = -1;

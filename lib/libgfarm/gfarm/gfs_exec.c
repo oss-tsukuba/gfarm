@@ -12,31 +12,30 @@
 #include <gfarm/gfarm.h>
 #include <openssl/evp.h>/* EVP_MD_CTX */
 #include "gfs_pio.h"	/* gfs_profile */
-#include "gfs_lock.h"
+#include "gfs_misc.h"
 
 char *
-gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
+gfarm_url_execfile_replicate_to_local(const char *url, char **local_pathp)
 {
-	char *hostname, *e;
-	char *arch, *gfarm_file, *localpath;
-	struct gfs_stat gstat, gs;
-	file_offset_t gsize;
-	struct stat st;
-	int metadata_exist, localfile_exist, replication_needed = 0;
+	char *e, *arch = NULL, *gfarm_file, *localpath;
+	struct gfs_stat gs;
+	gfarm_mode_t gmode;
+	struct gfarm_file_section_info sinfo;
 
-	*local_path = NULL;
-
-	/* determine the architecture */
-	e = gfarm_host_get_canonical_self_name(&hostname);
-	if (e == GFARM_ERR_UNKNOWN_HOST)
-		return ("not a file system node");
-	else if (e != NULL)
-		return (e);
+	*local_pathp = NULL;
 
 	e = gfs_stat(url, &gs);
 	if (e != NULL)
 		return (e);
 
+#if 0 /* this should be 1? but maybe too dangerous */
+	e = gfarm_fabricate_mode_for_replication(&gs, &gmode);
+	if (e != NULL) {
+		/**/
+	} else
+#else
+	gmode = gs.st_mode;
+#endif
 	if (GFARM_S_ISDIR(gs.st_mode)) {
 		e = GFARM_ERR_IS_A_DIRECTORY;
 	} else if (!GFARM_S_ISREG(gs.st_mode)) {
@@ -53,63 +52,24 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_path)
 	if (e != NULL)
 		return (e);
 
-	/* check the metadata */
-	e = gfs_stat_section(url, arch, &gstat);
-	if (e != NULL)
-		return (e);
-	gsize = gstat.st_size;
-	gfs_stat_free(&gstat);
-
 	/* determine the local pathname */
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
 		return (e);
-	e = gfarm_path_localize_file_section(gfarm_file, arch, &localpath);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
 
-	/* critical section starts */
-	gfs_lock_local_path_section(localpath);
-
-	/* replicate the program if needed */
-	metadata_exist =
-		gfarm_file_section_copy_info_does_exist(
-			gfarm_file, arch, hostname);
-	localfile_exist = !stat(localpath, &st);
-
-	/* FT - check existence of the local file and its metadata */
-	if (metadata_exist && localfile_exist && gsize == st.st_size) {
-		/* already exist */
-		/* XXX - need integrity check by checksum */
-	}
-	else {
-		replication_needed = 1;
-		if (localfile_exist) {
-			/* FT - unknown local file.  delete it */
-			unlink(localpath);
-		}
-		if (metadata_exist) {
-			/* FT - local file is missing.  delete the metadata */
-			(void)gfarm_file_section_copy_info_remove(
-				gfarm_file, arch, hostname);
-		}
-	}
-
-	if (replication_needed)
-		e = gfarm_url_section_replicate_to(url, arch, hostname);
-
-	gfs_unlock_local_path_section(localpath);
-	/* critical section ends */
-
+	/* check the metadata */
+	e = gfarm_file_section_info_get(gfarm_file, arch, &sinfo);
 	free(gfarm_file);
-	if (e != NULL) {
-		free(localpath);
+	if (e != NULL)
 		return (e);
-	}
-	*local_path = localpath;
-	return (NULL);
+
+	e = gfarm_file_section_replicate_to_local_with_locking(&sinfo, gmode,
+	    &localpath);
+	gfarm_file_section_info_free(&sinfo);
+
+	if (e == NULL)
+		*local_pathp = localpath;
+	return (e);
 }
 
 char *

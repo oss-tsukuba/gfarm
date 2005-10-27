@@ -9,12 +9,13 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 #include "hash.h"
-#include "gfs_pio.h"	/* gfarm_path_expand_home */
 #include "gfutil.h"
 
 #include "metadb_access.h"
+#include "gfs_misc.h"	/* gfarm_path_expand_home() */
 
 static char *gfarm_current_working_directory;
 

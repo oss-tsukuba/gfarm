@@ -16,6 +16,7 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "gfs_pio.h"
+#include "gfs_misc.h"
 
 static char *
 gfs_pio_remote_storage_close(GFS_File gf)

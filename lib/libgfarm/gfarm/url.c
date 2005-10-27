@@ -15,7 +15,56 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "config.h"
-#include "gfs_pio.h" /* gfs_realpath_canonical */
+#include "gfs_misc.h"
+
+/*
+ * XXX FIXME
+ * note that unlike access(2), gfarm_stat_access() doesn't/can't check
+ * access permission of ancestor directories.
+ */
+char *
+gfs_stat_access(struct gfs_stat *gst, int mode)
+{
+	gfarm_mode_t mask = 0;
+
+	if (strcmp(gst->st_user, gfarm_get_global_username()) == 0) {
+		if (mode & X_OK)
+			mask |= 0100;
+		if (mode & W_OK)
+			mask |= 0200;
+		if (mode & R_OK)
+			mask |= 0400;
+#if 0 /* XXX - check against st_group */
+	} else if (gfarm_is_group_member(gst->st_group)) {
+		if (mode & X_OK)
+			mask |= 0010;
+		if (mode & W_OK)
+			mask |= 0020;
+		if (mode & R_OK)
+			mask |= 0040;
+#endif
+	} else {
+		if (mode & X_OK)
+			mask |= 0001;
+		if (mode & W_OK)
+			mask |= 0002;
+		if (mode & R_OK)
+			mask |= 0004;
+	}
+	return (((gst->st_mode & mask) == mask) ?
+		NULL : GFARM_ERR_PERMISSION_DENIED);
+}
+
+/*
+ * XXX FIXME
+ * note that unlike access(2), gfarm_path_info_access() doesn't/can't check
+ * access permission of ancestor directories.
+ */
+char *
+gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
+{
+	return (gfs_stat_access(&pi->status, mode));
+}
 
 /*
  * GFarm-URL:
@@ -173,7 +222,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			goto free_dir_canonic;
 
 		is_dir = GFARM_S_ISDIR(pi.status.st_mode);
-		e = gfarm_path_info_access(&pi, GFS_W_OK);
+		e = gfarm_path_info_access(&pi, W_OK);
 		gfarm_path_info_free(&pi);
 		if (!is_dir)
 			e = GFARM_ERR_NOT_A_DIRECTORY;

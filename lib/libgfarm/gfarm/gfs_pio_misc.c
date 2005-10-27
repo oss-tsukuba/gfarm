@@ -14,16 +14,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
+#include "timer.h"
+#include "gfutil.h"
+
 #include "host.h"
 #include "config.h"
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
 #include "gfs_client.h"
 #include "gfs_pio.h"
-#include "gfs_misc.h" /* gfs_unlink_replica_internal() */
+#include "gfs_lock.h"
+#include "gfs_misc.h"
 #include "schedule.h"
-#include "timer.h"
-#include "gfutil.h"
 
 char *
 gfs_stat_size_canonical_path(
@@ -1671,6 +1675,38 @@ gfs_pio_set_fragment_info_local(char *filename,
 	return (e);
 }
 
+static int
+gfarm_file_missing_replica(char *gfarm_file, char *section,
+	char *canonical_hostname)
+{
+	char *e, *path_section;
+	struct sockaddr peer_addr;
+	struct gfs_connection *peer_conn;
+	int peer_fd, missing;
+
+	e = gfarm_host_address_get(canonical_hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		return (0);
+
+	e = gfs_client_connection(canonical_hostname, &peer_addr, &peer_conn);
+	if (e != NULL)
+		return (0);
+
+	e = gfarm_path_section(gfarm_file, section, &path_section);
+	if (e != NULL)
+		return (0);
+
+	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
+	    &peer_fd);
+	missing = e == GFARM_ERR_NO_SUCH_OBJECT;
+	if (e == NULL)
+		gfs_client_close(peer_conn, peer_fd);
+
+	free(path_section);
+	return (missing);
+}
+
 static char *
 gfarm_file_section_replicate_from_to_by_gfrepbe(
 	char *gfarm_file, char *section, char *srchost, char *dsthost)
@@ -1721,8 +1757,13 @@ gfarm_replication_set_method(int method)
 	gfarm_replication_method = method;
 }
 
+/*
+ * NOTE: gfarm_file_section_replicate_without_busy_check() assumes
+ *	that the caller of this function already checked the section
+ *	by gfs_check_section_busy(gfarm_file, section)
+ */
 static char *
-gfarm_file_section_transfer_from_to_internal(
+gfarm_file_section_replicate_without_busy_check(
 	char *gfarm_file, char *section,
 	gfarm_mode_t mode, file_offset_t file_size,
 	char *src_canonical_hostname, char *src_if_hostname,
@@ -1732,10 +1773,6 @@ gfarm_file_section_transfer_from_to_internal(
 	struct gfarm_file_section_copy_info ci;
 	struct gfs_connection *gfs_server;
 	struct sockaddr peer_addr;
-
-	e = gfs_check_section_busy(gfarm_file, section);
-	if (e != NULL)
-		return (e);
 
 	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD)
 		return (gfarm_file_section_replicate_from_to_by_gfrepbe(
@@ -1758,34 +1795,50 @@ gfarm_file_section_transfer_from_to_internal(
 	e = gfs_client_bootstrap_replicate_file(gfs_server,
 	    path_section, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
-	/* FT - the parent directory of the destination may be missing */
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* FT - the parent directory may be missing */
+		if (gfarm_file_missing_replica(gfarm_file, section,
+		    src_canonical_hostname)) {
+			/* Delete the section copy info */
+			(void)gfarm_file_section_copy_info_remove(gfarm_file,
+			    section, src_canonical_hostname);
+			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+			goto disconnect;
+		}
+		/* FT - the parent directory of the destination may be missing */
 		(void)gfs_pio_remote_mkdir_parent_canonical_path(
 			gfs_server, gfarm_file);
 		e = gfs_client_bootstrap_replicate_file(
 			gfs_server, path_section, mode, file_size,
 			src_canonical_hostname, src_if_hostname);
 	}
-#if 0 /* XXX - not implemented yet */
-	/* FT - source file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		/* XXX - need to check explicitly */
-		if (gfs_client_exist() == GFARM_ERR_NO_SUCH_OBJECT)
-			/* Delete the section copy info */
-			if (gfarm_file_section_copy_info_remove(gfarm_file,
-				section, src_canonical_hostname) == NULL)
-				e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
-	}
-#endif
+	if (e == NULL)
+		e = gfarm_file_section_copy_info_set(gfarm_file, section,
+		    dst_canonical_hostname, &ci);
+
+disconnect:
 	gfs_client_disconnect(gfs_server);
-	if (e != NULL)
-		goto finish;
-	e = gfarm_file_section_copy_info_set(gfarm_file, section,
-	    dst_canonical_hostname, &ci);
 
 finish:
 	free(path_section);
 	return (e);
+}
+
+static char *
+gfarm_file_section_replicate(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char *dst_canonical_hostname)
+{
+	char *e = gfs_check_section_busy(gfarm_file, section);
+
+	if (e != NULL)
+		return (e);
+	return (gfarm_file_section_replicate_without_busy_check(
+	    gfarm_file, section, mode, file_size,
+	    src_canonical_hostname, src_if_hostname,
+	    dst_canonical_hostname));
 }
 
 static char *
@@ -1803,7 +1856,7 @@ gfarm_file_section_replicate_from_to_internal(
 	/* already exists? don't have to replicate in that case */
 	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
 	    dst_canonical_hostname)) {
-		e = gfarm_file_section_transfer_from_to_internal(
+		e = gfarm_file_section_replicate(
 		    gfarm_file, section, mode, file_size,
 		    src_canonical_hostname, src_if_hostname,
 		    dst_canonical_hostname);
@@ -1827,7 +1880,7 @@ gfarm_file_section_migrate_from_to_internal(
 	/* already exists? don't have to replicate in that case */
 	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
 	    dst_canonical_hostname)) {
-		e = gfarm_file_section_transfer_from_to_internal(
+		e = gfarm_file_section_replicate(
 		    gfarm_file, section, mode, file_size,
 		    src_canonical_hostname, src_if_hostname,
 		    dst_canonical_hostname);
@@ -1850,23 +1903,28 @@ gfarm_file_section_transfer_to_internal(char *gfarm_file, char *section,
 	char *e, *srchost, *if_hostname;
 	struct sockaddr peer_addr;
 
-	e = gfarm_file_section_host_schedule(gfarm_file, section, &srchost);
-	if (e != NULL)
-		goto finish;
+	do {
+		e = gfarm_file_section_host_schedule(gfarm_file, section,
+		    &srchost);
+		if (e != NULL)
+			break;
 
-	/* reflect "address_use" directive in the `srchost' */
-	e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
-	    &peer_addr, &if_hostname);
-	if (e != NULL)
-		goto finish_srchost;
+		/* reflect "address_use" directive in the `srchost' */
+		e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
+		    &peer_addr, &if_hostname);
+		if (e != NULL) {
+			free(srchost);
+			break; /* XXX should try next candidate */
+		}
 
-	e = (*transfer_from_to_internal)(gfarm_file, section,
-	    mode & GFARM_S_ALLPERM, file_size, srchost, if_hostname, dsthost);
+		e = (*transfer_from_to_internal)(gfarm_file, section,
+		    mode & GFARM_S_ALLPERM, file_size,
+		    srchost, if_hostname, dsthost);
 
-	free(if_hostname);
-finish_srchost:
-	free(srchost);
-finish:
+		free(if_hostname);
+		free(srchost);
+
+	} while (e == GFARM_ERR_INCONSISTENT_RECOVERABLE);
 	return (e);
 }
 
@@ -1881,6 +1939,28 @@ gfarm_file_section_replicate_to_internal(
 	    gfarm_file_section_replicate_from_to_internal));
 }
 
+/*
+ * XXX FIXME
+ * if the owner of a file is not the same, permit a group/other write access.
+ *	- This should be fixed in the release of gfarm version 2.
+ */
+char *
+gfarm_fabricate_mode_for_replication(struct gfs_stat *gst, gfarm_mode_t *modep)
+{
+	char *e;
+
+	if (strcmp(gst->st_user, gfarm_get_global_username()) == 0) {
+		*modep = gst->st_mode & GFARM_S_ALLPERM;
+	} else {
+		e = gfs_stat_access(gst, R_OK);
+		if (e != NULL)
+			return (e);
+		/* don't allow setuid/setgid */
+		*modep = (gst->st_mode | 022) & 0777;
+	}
+	return (NULL);
+}
+
 static char *
 gfarm_url_section_transfer_from_to(const char *gfarm_url, char *section,
 	char *srchost, char *dsthost,
@@ -1891,7 +1971,7 @@ gfarm_url_section_transfer_from_to(const char *gfarm_url, char *section,
 	struct sockaddr peer_addr;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -1912,20 +1992,11 @@ gfarm_url_section_transfer_from_to(const char *gfarm_url, char *section,
 	    &peer_addr, &if_hostname);
 	if (e != NULL)
 		goto finish_canonical_hostname;
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL)
-			goto finish_if_hostname;
-		mode_allowed = 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
+	if (e != NULL)
+		goto finish_if_hostname;
 	e = (*transfer_from_to_internal)(gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
+	    mode, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
 finish_if_hostname:
 	free(if_hostname);
@@ -1966,7 +2037,7 @@ gfarm_url_section_transfer_to(
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -1977,22 +2048,13 @@ gfarm_url_section_transfer_to(
 	e = gfarm_file_section_info_get(gfarm_file, section, &si);
 	if (e != NULL)
 		goto finish_path_info;
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL)
-			goto finish_path_info;
-		mode_allowed = 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
+	if (e != NULL)
+		goto finish_section_info;
 	e = gfarm_file_section_transfer_to_internal(gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
+	    mode, si.filesize,
 	    dsthost, transfer_from_to_internal);
-
+finish_section_info:
 	gfarm_file_section_info_free(&si);
 finish_path_info:
 	gfarm_path_info_free(&pi);
@@ -2164,7 +2226,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			  char ***delivered_paths)
 {
 	char *e, **dp, *gfarm_file, *root, *arch, **canonical_hostnames;
-	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 	int i;
 	struct gfarm_path_info pi;
 
@@ -2177,33 +2239,22 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		free(gfarm_file);
 		return (e);
 	}
-	mode = pi.status.st_mode;
-	if (!GFARM_S_IS_PROGRAM(mode)) {
+	if (!GFARM_S_IS_PROGRAM(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
 		free(gfarm_file);
 		return ("gfarm_url_program_deliver(): not a program");
 	}
 	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	/*
 	 * XXX FIXME
 	 * This may be called with GFARM_REPLICATION_BOOTSTRAP_METHOD
 	 * to deliver gfrepbe_client/gfrepbe_server.
 	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_X_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&pi);
-			free(gfarm_file);
-			return (e);
-		}
-		mode |= 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
 	gfarm_path_info_free(&pi);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (e);
+	}
 	dp = malloc(sizeof(char *) * (nhosts + 1));
 	if (dp == NULL) {
 		free(gfarm_file);
@@ -2270,7 +2321,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		 * replicate the program
 		 */
 		e = gfarm_file_section_replicate_to_internal(gfarm_file, arch,
-		    mode & mode_mask, si.filesize, hosts[i]);
+		    mode, si.filesize, hosts[i]);
 		gfarm_file_section_info_free(&si);
 		free(arch);
 		if (e != NULL)
@@ -2298,7 +2349,7 @@ gfarm_url_fragments_transfer(
 {
 	char *e, *gfarm_file, **srchosts, **edsthosts;
 	int nsrchosts;
-	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 	int i, pid, *pids;
 	struct gfarm_path_info pi;
 
@@ -2310,28 +2361,15 @@ gfarm_url_fragments_transfer(
 	if (e != NULL)
 		goto finish_gfarm_file;
 
-	mode = pi.status.st_mode;
-	if (!GFARM_S_IS_FRAGMENTED_FILE(mode)) {
+	if (!GFARM_S_IS_FRAGMENTED_FILE(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		goto finish_gfarm_file;
 	}
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&pi);
-			free(gfarm_file);
-			return (e);
-		}
-		mode |= 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
 	gfarm_path_info_free(&pi);
+	if (e != NULL)
+		goto finish_gfarm_file;
 	e = gfarm_url_hosts_schedule(gfarm_url, "", &nsrchosts, &srchosts);
 	if (e != NULL)
 		goto finish_gfarm_file;
@@ -2377,9 +2415,8 @@ gfarm_url_fragments_transfer(
 		if (e != NULL)
 			_exit(3);
 
-		e = (*transfer_from_to_internal)(
-		    gfarm_file, section_string,
-		    mode & mode_mask, si.filesize,
+		e = (*transfer_from_to_internal)(gfarm_file, section_string,
+		    mode, si.filesize,
 		    srchosts[i], if_hostname, edsthosts[i]);
 		if (e != NULL)
 			_exit(1);
@@ -2472,4 +2509,121 @@ gfarm_url_fragments_migrate_to_domainname(
 	return (gfarm_url_fragments_transfer_to_domainname(
 	    gfarm_url, domainname,
 	    gfarm_file_section_migrate_from_to_internal));
+}
+
+/*
+ * internal functions which are used from gfs_pio_section.c and gfs_exec.c
+ */
+
+static char *
+lock_local_file_section(struct gfarm_file_section_info *sinfo,
+	char *canonical_self_hostname,
+	char **localpathp, int *replication_neededp)
+{
+	char *e, *localpath;
+	struct stat st;
+	int metadata_exist, localfile_exist;
+
+	e = gfs_check_section_busy_by_finfo(sinfo);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_localize_file_section(sinfo->pathname, sinfo->section,
+	    &localpath);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	gfs_lock_local_path_section(localpath);
+
+	/* FT - check existence of the local file and its metadata */
+	metadata_exist = gfarm_file_section_copy_info_does_exist(
+	    sinfo->pathname, sinfo->section, canonical_self_hostname);
+	localfile_exist = stat(localpath, &st) == 0 && S_ISREG(st.st_mode);
+
+	if (metadata_exist &&
+	    localfile_exist && st.st_size == sinfo->filesize) {
+		/* already exist */
+		/* XXX - need integrity check by checksum */
+		*replication_neededp = 0;
+	} else {
+		if (localfile_exist) /* FT - unknown local file.  delete it */
+			unlink(localpath);
+		if (metadata_exist)  /* FT - delete dangling metadata */
+			gfarm_file_section_copy_info_remove(
+			    sinfo->pathname, sinfo->section,
+			    canonical_self_hostname);
+		*replication_neededp = 1;
+	}
+	*localpathp = localpath;
+	return (NULL);
+}
+
+char *
+gfarm_file_section_replicate_from_to_local_with_locking(
+	struct gfarm_file_section_info *sinfo, gfarm_mode_t mode,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char **localpathp)
+{
+	char *e, *canonical_self_hostname, *localpath;
+	int replication_needed;
+
+	e = gfarm_host_get_canonical_self_name(&canonical_self_hostname);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	e = lock_local_file_section(sinfo, canonical_self_hostname,
+	    &localpath, &replication_needed);
+	if (e != NULL)
+		return (e);
+
+	if (replication_needed)
+		e = gfarm_file_section_replicate_without_busy_check(
+		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
+		    src_canonical_hostname, src_if_hostname,
+		    canonical_self_hostname);
+
+	gfs_unlock_local_path_section(localpath);
+	/* critical section ends */
+
+	if (e == NULL && localpathp != NULL)
+		*localpathp = localpath;
+	else
+		free(localpath);
+	return (e);
+}
+
+char *
+gfarm_file_section_replicate_to_local_with_locking(
+	struct gfarm_file_section_info *sinfo, gfarm_mode_t mode,
+	char **localpathp)
+{
+	char *e, *canonical_self_hostname, *localpath;
+	int replication_needed;
+
+	e = gfarm_host_get_canonical_self_name(&canonical_self_hostname);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	e = lock_local_file_section(sinfo, canonical_self_hostname,
+	    &localpath, &replication_needed);
+	if (e != NULL)
+		return (e);
+
+	if (replication_needed)
+		e = gfarm_file_section_transfer_to_internal(
+		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
+		    canonical_self_hostname,
+		    gfarm_file_section_replicate_without_busy_check);
+
+	gfs_unlock_local_path_section(localpath);
+	/* critical section ends */
+
+	if (e == NULL && localpathp != NULL)
+		*localpathp = localpath;
+	else
+		free(localpath);
+	return (e);
 }

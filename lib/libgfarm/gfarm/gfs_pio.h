@@ -55,13 +55,6 @@ char *gfs_unlink_section_internal(const char *, const char *);
 char *gfs_unlink_every_other_replicas(
 	const char *, const char *, const char *);
 
-#define GFS_F_OK	0
-#define GFS_X_OK	1
-#define GFS_W_OK	2
-#define GFS_R_OK	4
-
-char *gfarm_path_info_access(struct gfarm_path_info *, int);
-
 char *gfs_pio_set_view_default(GFS_File);
 char *gfs_pio_set_view_global(GFS_File, int);
 char *gfs_pio_open_local_section(GFS_File, int);
@@ -132,14 +125,3 @@ extern double gfs_unlink_time;
 extern double gfs_stat_time;
 
 void gfs_display_timers();
-
-/* url.c */
-char *gfarm_path_expand_home(const char *, char **);
-
-/* gfs_pio_misc.c */
-char *gfs_stat_size_canonical_path(char *, file_offset_t *, int *);
-char *gfs_stat_canonical_path(char *, struct gfs_stat *);
-
-/* gfs_dir.c */
-char *gfs_realpath_canonical(const char *, char **);
-char *gfs_get_ino(const char *, long *);

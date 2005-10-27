@@ -9,11 +9,15 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>	/* [FRWX]_OK */
 #include <errno.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfs_proto.h"
 #include "gfs_pio.h"
+#include "gfs_misc.h"
 #include "timer.h"
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
@@ -100,43 +104,6 @@ gfs_file_free(GFS_File gf)
 	free(gf);
 }
 
-/*
- * note that unlike access(2), gfarm_path_info_access() doesn't/can't check
- * access permission of ancestor directories.
- */
-char *
-gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
-{
-	gfarm_mode_t mask = 0;
-
-	if (strcmp(pi->status.st_user, gfarm_get_global_username()) == 0) {
-		if (mode & GFS_X_OK)
-			mask |= 0100;
-		if (mode & GFS_W_OK)
-			mask |= 0200;
-		if (mode & GFS_R_OK)
-			mask |= 0400;
-#if 0 /* XXX - check against st_group */
-	} else if (gfarm_is_group_member(pi->status.st_group)) {
-		if (mode & GFS_X_OK)
-			mask |= 0010;
-		if (mode & GFS_W_OK)
-			mask |= 0020;
-		if (mode & GFS_R_OK)
-			mask |= 0040;
-#endif
-	} else {
-		if (mode & GFS_X_OK)
-			mask |= 0001;
-		if (mode & GFS_W_OK)
-			mask |= 0002;
-		if (mode & GFS_R_OK)
-			mask |= 0004;
-	}
-	return (((pi->status.st_mode & mask) == mask) ?
-		NULL : GFARM_ERR_PERMISSION_DENIED);
-}
-
 static void
 gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
 {
@@ -167,10 +134,10 @@ gfs_pio_open_check_perm(GFS_File gf)
 	int check= 0;
 
 	if ((gf->mode & GFS_FILE_MODE_READ) != 0)
-		check |= GFS_R_OK;
+		check |= R_OK;
 	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
 	    (gf->open_flags & GFARM_FILE_TRUNC) != 0)
-		check |= GFS_W_OK;
+		check |= W_OK;
 	e = gfarm_path_info_access(&gf->pi, check);
 	if (e != NULL)
 		return (e);
