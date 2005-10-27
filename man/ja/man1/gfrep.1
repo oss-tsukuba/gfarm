@@ -3,27 +3,35 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "08 September 2005" "Gfarm" ""
+.TH "GFREP" "1" "27 October 2005" "Gfarm" ""
 .SH NAME
 gfrep \- Gfarm ファイルの複製を作成する．
 .SH SYNOPSIS
 
-\fBgfrep\fR \fB-H \fIホスト指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-vm\fR ] \fB-H \fIホスト指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-S \fI複製元ドメイン名\fB\fR ] [ \fB-D \fI複製先ドメイン名\fB\fR ] [ \fB-N \fI複製数\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-v\fR ] [ \fB-S \fI複製元ドメイン名\fB\fR ] [ \fB-D \fI複製先ドメイン名\fB\fR ] [ \fB-N \fI複製数\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR \fB-P \fIホスト対指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-vm\fR ] \fB-P \fIホスト対指定ファイル\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-s \fI複製元ホスト\fB\fR ] [ \fB-d \fI複製先ホスト\fB [ -I \fIフラグメント番号\fB ]\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-vm\fR ] [ \fB-s \fI複製元ホスト\fB\fR ] [ \fB-d \fI複製先ホスト\fB [ -I \fIフラグメント番号\fB ]\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
 引数 Gfarm-URL で指定したファイルの複製を，
 指定されたホストに作成します．
 .SH "OPTIONS"
+.TP
+\fB-v\fR
+複製処理に関して，冗長な表示を行ないます，
+.TP
+\fB-m\fR
+複製ではなく移動を行ないます．
+現在のところ，このオプションは，-H，-P, -d オプションを指定した場合にしか
+動作しません．
 .TP
 \fB-H \fIホスト指定ファイル\fB\fR
 各フラグメントの複製を作成するホスト名のリストを記述した

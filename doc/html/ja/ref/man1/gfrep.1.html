@@ -38,7 +38,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -H <TT
+> [-vm]  -H <TT
 CLASS="REPLACEABLE"
 ><I
 >ホスト指定ファイル</I
@@ -53,7 +53,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-S <TT
+> [-v] [-S <TT
 CLASS="REPLACEABLE"
 ><I
 >複製元ドメイン名</I
@@ -78,7 +78,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -P <TT
+> [-vm]  -P <TT
 CLASS="REPLACEABLE"
 ><I
 >ホスト対指定ファイル</I
@@ -93,7 +93,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-s <TT
+> [-vm] [-s <TT
 CLASS="REPLACEABLE"
 ><I
 >複製元ホスト</I
@@ -138,6 +138,26 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><TT
+CLASS="OPTION"
+>-v</TT
+></DT
+><DD
+><P
+>複製処理に関して，冗長な表示を行ないます，</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-m</TT
+></DT
+><DD
+><P
+>複製ではなく移動を行ないます．
+現在のところ，このオプションは，-H，-P, -d オプションを指定した場合にしか
+動作しません．</P
+></DD
 ><DT
 ><TT
 CLASS="OPTION"
