@@ -30,6 +30,49 @@ int bootstrap_method = 1;
 #endif
 int verbose = 0;
 
+static char *nop_section_replica(const char *, const char *, char *);
+static char *unlink_section_replica(const char *, const char *, char *);
+
+struct action {
+	char *action;
+	char *(*transfer_from_to)(const char *, char *, char *, char *);
+	char *(*transfer_to)(const char *, char *, char *);
+	char *(*fragments_transfer)(const char *, int, char **);
+	char *(*cleanup_section_replica)(const char *, const char *, char *);
+};
+
+struct action replicate = {
+	"replicate",
+	gfarm_url_section_replicate_from_to,
+	gfarm_url_section_replicate_to,
+	gfarm_url_fragments_replicate,
+	nop_section_replica, /* no need to remove original at replication */
+};
+
+struct action migrate = {
+	"migrate",
+	gfarm_url_section_migrate_from_to,
+	gfarm_url_section_migrate_to,
+	gfarm_url_fragments_migrate,
+	unlink_section_replica,
+};
+
+struct action *act = &replicate;
+
+static char *
+nop_section_replica(
+	const char *gfarm_url, const char *section, char *hostname)
+{
+	return (NULL);
+}
+
+static char *
+unlink_section_replica(
+	const char *gfarm_url, const char *section, char *host)
+{
+	return (gfs_unlink_section_replica(gfarm_url, section, 1, &host, 0));
+}
+
 struct replication_job {
 	struct replication_job *next;
 
@@ -90,19 +133,19 @@ replication_job_list_add(struct replication_job_list *list,
 
 	if (bootstrap_method) {
 		if (src != NULL) {
-			e = gfarm_url_section_replicate_from_to(
-				file, section, src, dest);
+			e = (*act->transfer_from_to)(file, section, src, dest);
 			if ((*is_err)(e))
 				fprintf(stderr,
-				    "%s: replicate %s:%s from %s to %s: %s\n",
-				    program_name, file, section, src, dest, e);
+				    "%s: %s %s:%s from %s to %s: %s\n",
+				    program_name, act->action,
+				    file, section, src, dest, e);
 		} else {
-			e = gfarm_url_section_replicate_to(
-				file, section, dest);
+			e = (*act->transfer_to)(file, section, dest);
 			if (e != NULL)
 				fprintf(stderr,
-				    "%s: replicate %s:%s to %s: %s\n",
-				    program_name, file, section, dest, e);
+				    "%s: %s %s:%s to %s: %s\n",
+				    program_name, act->action,
+				    file, section, dest, e);
 		}
 		return (e != NULL ? 1 : 0);
 	}
@@ -264,16 +307,31 @@ replication_pair_results(struct replication_pair_list *transfers)
 		}
 		n = gfarm_stringlist_length(&pair->files);
 		for (i = 0; i < n; i++) {
-			if (results[i] == NULL)
+			if (results[i] != NULL) {
+				fprintf(stderr,
+				    "%s: %s %s:%s from %s to %s: %s\n",
+				    program_name, act->action,
+				    gfarm_stringlist_elem(&pair->files, i),
+				    gfarm_stringlist_elem(&pair->sections, i),
+				    pair->src, pair->dest, e);
+				error_happend = 1;
 				continue;
-			fprintf(stderr,
-			    "%s: replicate %s:%s from %s to %s: %s\n",
-			    program_name,
+			}
+			results[i] = (*act->cleanup_section_replica)(
 			    gfarm_stringlist_elem(&pair->files, i),
 			    gfarm_stringlist_elem(&pair->sections, i),
-			    pair->src, pair->dest,
-			    e);
-			error_happend = 1;
+			    pair->src);
+			if (results[i] != NULL) {
+				fprintf(stderr,
+				    "%s: removing %s:%s on %s "
+				    "to %s from %s to %s: %s\n",
+				    program_name,
+				    gfarm_stringlist_elem(&pair->files, i),
+				    gfarm_stringlist_elem(&pair->sections, i),
+				    pair->src,
+				    act->action, pair->src, pair->dest, e);
+				error_happend = 1;
+			}
 		}
 	}
 	return (error_happend);
@@ -654,7 +712,7 @@ replicate_to_hosts_callback(char *cwd, char *url, void *closure)
 	char *e;
 	int error_happened = 0;
 
-	e = gfarm_url_fragments_replicate(url, c->nhosts, c->hosttab);
+	e = (*act->fragments_transfer)(url, c->nhosts, c->hosttab);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s: %s\n",	program_name, url, e);
 		error_happened = 1;
@@ -707,12 +765,12 @@ get_hosts_have_replica_in_domain(
 
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
-		return(e);
+		return (e);
 	e = gfarm_file_section_copy_info_get_all_by_section(
 				 gfarm_file, section, &ncinfos, &cinfos);
 	free(gfarm_file);
 	if (e != NULL)
-		return(e);
+		return (e);
 	hosts = malloc(sizeof(*hosts) * ncinfos);
 	if (hosts == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
@@ -733,7 +791,7 @@ get_hosts_have_replica_in_domain(
 	gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
 	*nrhosts = nhosts;
 	*rhosts = hosts;
-	return(NULL);
+	return (NULL);
 }
 
 static char *
@@ -748,12 +806,12 @@ get_hosts_have_replica(
 
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
-		return(e);
+		return (e);
 	e = gfarm_file_section_copy_info_get_all_by_section(
 				 gfarm_file, section, &ncinfos, &cinfos);
 	free(gfarm_file);
 	if (e != NULL)
-		return(e);
+		return (e);
 	hosts = malloc(sizeof(*hosts) * ncinfos);
 	if (hosts == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
@@ -777,7 +835,7 @@ get_hosts_have_replica(
 	gfarm_file_section_copy_info_free_all(ncinfos, cinfos);
 	*nrhosts = nhosts;
 	*rhosts = hosts;
-	return(NULL);
+	return (NULL);
 }
 
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -1117,19 +1175,17 @@ replicate_files_to_domain(char *path, int min_replicas,
 					  sinfos[i][j].section,
 					  srhosts[0],
 					  dhosts[k]);
-				e = gfarm_url_section_replicate_from_to(
+				e = (*act->transfer_from_to)(
 					file_path,
 					sinfos[i][j].section,
 					srhosts[0],
 					dhosts[k]);
 				if (e != NULL) {
 					fprintf(stderr,
-						"%s: gfarm_url_section_"
-						"replicate_from_to "
-						"%s: %s: from %s to %s: %s\n",
-						program_name, file_path,
-						sinfos[i][j].section,
-						srhosts[0], dhosts[k], e);
+					    "%s: %s %s:%s from %s to %s: %s\n",
+					    program_name, act->action,
+					    file_path, sinfos[i][j].section,
+					    srhosts[0], dhosts[k], e);
 					continue;
 				}
 				k = (k + 1) % ndhost;
@@ -1298,6 +1354,7 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <gfarm_url>...\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-b\t\t\tuse bootstrap mode\n");
+	fprintf(stderr, "\t-m\t\t\tmigrate, instead of replicate\n");
 	fprintf(stderr, "\t-v\t\t\tverbose message\n");
 	fprintf(stderr, "\t-H <hostfile>\t\treplicate a whole file\n");
 	fprintf(stderr, "\t-S <domainname>\t\treplicate a whole file\n");
@@ -1346,13 +1403,16 @@ main(argc, argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((ch = getopt(argc, argv, "bXvH:S:D:I:s:d:l:P:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "bXmvH:S:D:I:s:d:l:P:N:?")) != -1) {
 		switch (ch) {
 		case 'b':
 			bootstrap_method = 1;
 			break;
 		case 'X': /* use eXternal command (gfrepbe_*) */
 			bootstrap_method = 0;
+			break;
+		case 'm': /* do migration, instead of replication */
+			act = &migrate;
 			break;
 		case 'v':
 			verbose = 1;
@@ -1396,6 +1456,14 @@ main(argc, argv)
 	if (bootstrap_method)
 		gfarm_replication_set_method(
 		    GFARM_REPLICATION_BOOTSTRAP_METHOD);
+	if (!bootstrap_method && act == &migrate) {
+		/* XXX NOT IMPLEMENTED YET */
+		fprintf(stderr, "%s: currently, replica migration is "
+		    "not supported with -X option, sorry.\n",
+		    program_name);
+		usage();
+		exit(EXIT_FAILURE);
+	}
 	if (index != NULL && dest == NULL) {
 		fprintf(stderr,
 		    "%s: -I <index> option only works with -d option\n",
@@ -1439,10 +1507,9 @@ main(argc, argv)
 		if (e != NULL) {
 			if (error_line != -1)
 				fprintf(stderr, "%s: line %d: %s\n",
-					hostfile, error_line, e);
+				    hostfile, error_line, e);
 			else
-				fprintf(stderr, "%s: %s\n",
-					program_name, e);
+				fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(EXIT_FAILURE);
 		}
 		for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
@@ -1452,7 +1519,7 @@ main(argc, argv)
 		}
 	} else if (fragment_dest_list != NULL) {
 		/* replicate specified fragments */
-		if (bootstrap_method) {
+		if (bootstrap_method) { /* XXX NOT IMPLEMENTED YET */
 			fprintf(stderr, "%s: -l option isn't supported "
 			    "on bootstrap mode\n",
 			    program_name);
@@ -1495,6 +1562,14 @@ main(argc, argv)
 		if (replication_job_list_execute(&job_list))
 			error_happened = 1;
 	} else {
+		if (act == &migrate) { /* XXX NOT IMPLEMENTED YET */
+			fprintf(stderr, "%s: currently, replica migration is "
+			    "not supported with this operation mode, sorry.\n",
+			    program_name);
+			usage();
+			exit(EXIT_FAILURE);
+		}
+
 		/* replicate directories and whole files */
 		if (src_domain == NULL) {
 			if (src != NULL)
