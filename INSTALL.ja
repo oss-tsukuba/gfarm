@@ -375,10 +375,14 @@ INSTALL.RPM.ja を参照してください．
 
 ------------------------------------------------------------------------
 
-◇ LDAP サーバー
+◆ メタデータサーバー
 
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
-LDAP サーバーを用意する必要があります．
+LDAP サーバー，PostgreSQLサーバーのいずれか一方を用意する必要があります．
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+◇ LDAP サーバー
 
 Gfarm では，OpenLDAP version 2.1.X および version 2.2.X で動作が確認さ
 れていますが，それ以外の LDAP サーバでは動作確認が十分におこなわれてい
@@ -562,32 +566,108 @@ csh の場合:
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
-------------------------------------------------------------------------
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ◇ PostgreSQL サーバー
 
-...
-
-▽ 設定ファイルの変更
-
-...
+Gfarm では，PostgreSQL version 8.0.3 で動作が確認されていますが，それ
+以外の PostgreSQL サーバでは動作確認がおこなわれていません．8.0.3 以降
+の最新版を利用することをお勧めします．
 
 ▽ データベースクラスタの作成
 
+ホスト metadb.example.com で下記のコマンドを実行します．
+
+	# /bin/rm -rf /var/gfarm-pgsql
 	# mkdir /var/gfarm-pgsql
 	# chown postgres:postgres /var/gfarm-pgsql
 	# chmod 700 /var/gfarm-pgsql
 	# su - postgres
 	$ initdb -D /var/gfarm-pgsql
 
-▽ データベースサーバの起動
+▽ postgresql.conf
 
-...
+initdb コマンドにより metadb.example.com 上に ファイル
+/var/gfarm-pgsql/postgresql.conf が作成されます．metadb.example.com 以
+外のホストからの接続を許可するために，このファイルの
+------------------------------ ここから ------------------------------
+#listen_addres = 'localhost'
+------------------------------ ここまで ------------------------------
+と記述されている行をコメントアウトして
+------------------------------ ここから ------------------------------
+listen_addres = '*'
+------------------------------ ここまで ------------------------------
+とします．
 
-▽ データベースとスキーマの作成
+▽ pg_hba.conf
 
-...
+initdb コマンドにより metadb.example.com 上にファイル
+/var/gfarm-pgsql/pg_hba.conf が作成されます．
+データベースユーザー gfarm が データベース gfarm へ接続することを許可
+するために，このファイルに行を追加します．
+例えば，ホスト 192.168.12.10 と 192.168.12.11 からの接続を許可する場合，
+下記の行を追加します．
+------------------------------ ここから ------------------------------
+# TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+host    gfarm       gfarm       192.168.12.10/32      password
+------------------------------ ここまで ------------------------------
+また，IPアドレス 192.168.12.x をもつ全ホストからの接続を許可する場合，
+下記の行を追加します．
+------------------------------ ここから ------------------------------
+# TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+host    gfarm       gfarm       192.168.12.0/24       password
+------------------------------ ここまで ------------------------------
 
+▽ PostgreSQL データベースサーバーの起動
+
+ホスト metadb.example.com で，データベースサーバー postmaster を起動し
+ます．下記のコマンドを実行します．
+
+	$ cd /usr/local/pgsql/bin
+	$ ./postmaster -D /var/gfarm-pgsql >logfile 2>&1 &
+
+▽ PostgreSQL データベースユーザ gfarm の作成
+
+ホスト metadb.example.com で，データベースユーザ gfarm を作成します．
+下記のコマンドを実行します．
+
+        $ psql template1
+	template1=# create user gfarm createdb password 'secret-postgresql-password';
+	template1=# \q
+	$
+
+▽ PostgreSQL データベース gfarm の作成
+
+ホスト metadb.example.com で，データベース gfarm を作成します．
+上記で作成したユーザ gfarm で作成します．下記のコマンドを実行します．
+
+	$ psql template1 gfarm
+	$ template1=> create database gfarm; 
+	template1=> \q
+
+▽ gfarm.sql
+
+ソース配布中のファイル gftool/config-gfarm/gfarm.sql を ホスト
+metadb.example.com の /etc/gfarm-pgsql/gfarm.sql に置いてください．
+
+バイナリ配布の場合， gfarm-server パッケージ中の
+/usr/grid/share/gfarm/config/gfarm.sql に，このファイルが含まれていま
+す．特にカスタマイズする項目はありません．
+
+▽ PostgreSQL データベーステーブルの作成
+
+上記で作成したデータベースに gfarm.sql を用いてデータベーステーブルを
+作成します．下記のコマンドを実行します．
+	$ psql gfarm gfarm -f gfarm.sql
+
+▽ PostreSQO データベースサーバ の動作確認
+
+下記のコマンドを実行し，Host テーブルの件数が 0件で表示されれば
+正しく動作しています．
+
+	$ psql gfarm gfarm
+	gfarm=> select * from Host;	
+	
 ------------------------------------------------------------------------
 
 ◇ ~/.gfarmrc
