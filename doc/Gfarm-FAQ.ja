@@ -22,6 +22,8 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
      ですが，どうしたらいいでしょうか？
   2.6 ファイルシステムノードのディスクがクラッシュして，ファイルがなく
      なってしまいました．どうすればいいでしょうか？
+  2.7 実行ビットの立っているファイルを作成，参照しようとすると
+     Operation not permitted というエラーが発生してしまいます．
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
@@ -66,7 +68,7 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	ラーメッセージが出ます．以下のコマンドにより Gfarm ファイルシ
 	ステムにホームディレクトリを作成してください．
 
-		% gfmkdir gfarm:~
+		$ gfmkdir gfarm:~
 
   2.2 ファイルシステムノード，メタサーバに接続できません．
 
@@ -128,7 +130,7 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	コマンドを利用します．例えば，gfarm:file を登録し直すためには，
 	以下のように実行します．
 
-		% gfhost | gfrun -H - gfsplck gfarm:file
+		$ gfhost | gfrun -H - gfsplck gfarm:file
 
   2.5 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
      ステムに登録されていないファイルが残っているようです．消したいの
@@ -142,17 +144,17 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	去ができます．まず，以下のコマンドで登録されていないファイルが
 	確認してください．
 
-		% gfhost | gfrun -H - gfsplck gfarm:~
+		$ gfhost | gfrun -H - gfsplck gfarm:~
 
 	確認したら，以下のコマンドで消去します．
 
-		% gfhost | gfrun -H - gfsplck -d gfarm:~
+		$ gfhost | gfrun -H - gfsplck -d gfarm:~
 
 	なお，上記コマンドでは，md5チェックサムによるファイルの一貫性
 	チェックを行いません．完全なチェックを行って，ファイルを消去す
 	るためには，以下のように -a オプションをつけて実行します．
 
-		% gfhost | gfrun -H - gfsplck -ad gfarm:~
+		$ gfhost | gfrun -H - gfsplck -ad gfarm:~
 
   2.6 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
     うすればいいでしょうか？
@@ -167,7 +169,33 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 	クラッシュしたホストが gfm01.aist.go.jp の場合は，以下のコマン
 	ドを実行します．
 
-		% gfrm -h gfm01.aist.go.jp -r gfarm:/
+		$ gfrm -h gfm01.aist.go.jp -r gfarm:/
+
+  2.7 実行ビットの立っているファイルを作成，参照しようとすると
+     Operation not permitted というエラーが発生してしまいます．
+
+	Gfarm ファイルシステムでは，実行ビットの立ったファイルはアーキ
+	テクチャにより複数格納することができます．これにより，同じパス
+	名で異るバイナリを実行させることが可能になります．
+
+	一方で，この機構を実現するために，実行ビットの立ったファイルを
+	作成，参照する場合には，アーキテクチャを決定する必要があります．
+
+	ファイルシステムノードであれば，アーキテクチャはメタデータとし
+	て登録されているため，それを利用します．ただし，登録されている
+	ホスト名と hostname コマンドの出力が異る場合は，hostname コマン
+	ドの出力をホスト名の別名としてメタデータに登録する必要がありま
+	す．例えば，登録されているホスト名が host.example.com で，
+	hostname コマンドの出力が host の場合は，以下のように登録します．
+
+		$ gfhost -m host.example.com host
+
+	また，ファイルシステムノードではないクライアントから実行ビット
+	のたったファイルをアクセスする場合は，.gfarmrc の
+	client_architecture，あるいは環境変数 GFARM_ARCHITECTURE を利用
+	して，アーキテクチャ名を指定する必要があります．
+
+		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
 3. セキュリティ
 ***************

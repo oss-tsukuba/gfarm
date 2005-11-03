@@ -21,6 +21,8 @@ Table of Contents:
      unregistered files?
   2.6 Due to disk crash, files in a file system node are lost.  What
      we need to do?
+  2.7 "Operation not permitted" error happens when accessing or
+     creating a file having execution bits.
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -63,7 +65,7 @@ Table of Contents:
 	message.  In this case, it is necessary to create a home
 	directory.
 
-		% gfmkdir gfarm:~
+		$ gfmkdir gfarm:~
 
   2.2 We cannot connect to file system nodes and/or a metadata server.
 
@@ -129,7 +131,7 @@ Table of Contents:
 	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
 	be used.  When gfarm:file needs to be registered, execute
 
-		% gfhost | gfrun -H - gfsplck gfarm:file
+		$ gfhost | gfrun -H - gfsplck gfarm:file
 
   2.5 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
@@ -144,17 +146,17 @@ Table of Contents:
 	unregistered files in a spool directory on filesystem nodes.
 	You can check which files are unregistered or not by
 
-		% gfhost | gfrun -H - gfsplck gfarm:~
+		$ gfhost | gfrun -H - gfsplck gfarm:~
 
 	After checking files, you can delete them by
 
-		% gfhost | gfrun -H - gfsplck -d gfarm:~
+		$ gfhost | gfrun -H - gfsplck -d gfarm:~
 
 	The above command examples do not check the file integrity.
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
 
-		% gfhost | gfrun -H - gfsplck -ad gfarm:~
+		$ gfhost | gfrun -H - gfsplck -ad gfarm:~
 
   2.6 Due to disk crash, all files in a file system node are lost.
      What we need to do?
@@ -169,7 +171,33 @@ Table of Contents:
 	metadata database, it is necessary to delete these metadata.
 	When a crashed file system node is gfm01.aist.go.jp, run
 
-		% gfrm -h gfm01.aist.go.jp -r gfarm:/
+		$ gfrm -h gfm01.aist.go.jp -r gfarm:/
+
+  2.7 "Operation not permitted" error happens when accessing or
+     creating a file having execution bits.
+	
+	Gfarm file system can store multiple binaries in the same
+	pathname to make it possible to execute the corresponding
+	binary for each different architecture.  For this
+	functionality, it is necessary to determine the architecture
+	name to access files that has execution bits.
+
+	When the client host is a file system node, the architecture
+	is automatically determined by the Gfarm metadata database.
+	On the other hand, when the registered hostname and the output
+	of hostname command are different, the output of hostname
+	command needs to be registered as a hostname alias.  The
+	following example shows to register a hostname alias 'host'
+	to the host 'host.example.com';
+
+		$ gfhost -m host.example.com host
+
+	Otherwise, you need to specify the client architecture
+	explicitly to access files that has execution bits by either
+	the 'client_architecture' directive in the configuration file
+	or the environment variable GFARM_ARCHITECTURE.
+
+		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
 3. Security
 ***********
