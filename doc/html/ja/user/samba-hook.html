@@ -33,6 +33,7 @@ samba/hook
 <ul>
   <li>Samba サーバホスト
   <ul>
+    <li>Samba のバージョン 3 以降を利用すること．(必須)</li>
     <li>Gfarm クライアントが利用できること．(必須)</li>
     <li>libgfs_hook が利用できること．(必須)<br>
       具体的な手順については INSTALL.RPM.ja の
@@ -100,24 +101,20 @@ samba/hook
         <p>Linux 側ではファイル名の文字コードとして UTF-8 を使うようにし，
         それを Windows から見えるように設定します．</p>
 
-	<p>Samba 2系の場合
-	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
-client code page = 932
-coding system = utf8</pre></td></tr></tbody></table></p>
-
-	<p>Samba 3系の場合
+	<p>Samba 3 系のための設定
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 dos charset = CP932
 unix charset = UTF-8
 display charset = UTF-8</pre></td></tr></tbody></table>
 
-    <h5>4.1.1.2 kernel change notify を無効にする (Samba 3系の場合)</h5>
+    <h5>4.1.1.2 kernel change notify を無効にする (Samba 3 系の場合)</h5>
     Gfarm のシステムコールフックライブラリが現在サポートしていない，fcntl(2) システムコールの F_NOTIFY 機能を，samba が利用しないようにします．
     <p>
 	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
 kernel change notify = no</pre></td></tr></tbody></table>
 この設定をしないと，Windows クライアントと Samba との接続が切れることがあります(Samba 3.0.10 と 3.0.20 で確認)．
-この設定にすると，更新されたファイルの状態の表示がすぐに更新されなくなります．
+この設定にすると，更新されたファイルの状態の表示がすぐに更新されなくなります．<br>
+Samba 2 系では，この設定を使うことができないので，この問題を回避できません．
 
     <h4>4.1.2 Gfarm ファイルの共有を定義するセクションを追加</h4>
 

@@ -32,6 +32,7 @@ English | <A href="../../ja/user/samba-hook.html">Japanese</A>
 <ul>
   <li>Samba server host
   <ul>
+    <li><strong>must</strong> be able to use Samba version 3.X.</li>
     <li><strong>must</strong> be able to use Gfarm client on the host.</li>
     <li><strong>must</strong> be able to link ilbgfs_hook.<br>
       Please refer to "Configuration of Gfarm client node" in "INSTALL.RPM.en"
@@ -86,7 +87,9 @@ kernel change notify = no</pre></td></tr></tbody></table>
 A Windows client may be disconnected from the Samba server host without 
 this setting. We have found this problem at least on Samba 3.0.10 and 3.0.20. 
 But this setting has a side effect that file status changes doesn't
-displayed immediately.
+displayed immediately. <br>
+This problem is not avoided on Samba version 2.X,
+because Samba version 2.X cannot disable 'kernel change notify'.
 
     <h4>4.1.2 Adding a section to define a file space share</h4>
     <p>Add a section to access Gfarm file system¡¥</p>
