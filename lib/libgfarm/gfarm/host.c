@@ -283,13 +283,13 @@ gfarm_canonical_hostname_is_local(char *canonical_hostname)
 int
 gfarm_host_is_local(char *hostname)
 {
-	char *e;
+	char *e, *canonical_hostname;
 	int is_local;
 
-	e = gfarm_host_get_canonical_name(hostname, &hostname);
-	is_local = gfarm_canonical_hostname_is_local(hostname);
+	e = gfarm_host_get_canonical_name(hostname, &canonical_hostname);
+	is_local = gfarm_canonical_hostname_is_local(canonical_hostname);
 	if (e == NULL)
-		free(hostname);
+		free(canonical_hostname);
 	return (is_local);
 }
 
