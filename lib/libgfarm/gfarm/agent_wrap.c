@@ -268,13 +268,20 @@ gfs_uncachedir(void)
 
 /* host info */
 
-char *gfarm_host_info_get(const char *hostname, struct gfarm_host_info *info)
+void
+gfarm_host_info_free(struct gfarm_host_info *info)
+{
+	return (gfarm_cache_host_info_free(info));
+}
+
+char *
+gfarm_host_info_get(const char *hostname, struct gfarm_host_info *info)
 {
 	if (gfarm_agent_check() == NULL)
 		return (agent_client_host_info_get(
 				agent_server, hostname, info));
 	else
-		return (gfarm_metadb_host_info_get(hostname, info));
+		return (gfarm_cache_host_info_get(hostname, info));
 }
 
 char *
@@ -284,7 +291,7 @@ gfarm_host_info_remove_hostaliases(const char *hostname)
 		return (agent_client_host_info_remove_hostaliases(
 				agent_server, hostname));
 	else
-		return (gfarm_metadb_host_info_remove_hostaliases(hostname));
+		return (gfarm_cache_host_info_remove_hostaliases(hostname));
 }
 
 char *
@@ -294,7 +301,7 @@ gfarm_host_info_set(char *hostname, struct gfarm_host_info *info)
 		return (agent_client_host_info_set(
 				agent_server, hostname, info));
 	else
-		return (gfarm_metadb_host_info_set(hostname, info));
+		return (gfarm_cache_host_info_set(hostname, info));
 }
 
 char *
@@ -304,7 +311,7 @@ gfarm_host_info_replace(char *hostname, struct gfarm_host_info *info)
 		return (agent_client_host_info_replace(
 				agent_server, hostname, info));
 	else
-		return (gfarm_metadb_host_info_replace(hostname, info));
+		return (gfarm_cache_host_info_replace(hostname, info));
 }
 
 char *
@@ -313,7 +320,13 @@ gfarm_host_info_remove(const char *hostname)
 	if (gfarm_agent_check() == NULL)
 		return (agent_client_host_info_remove(agent_server, hostname));
 	else
-		return (gfarm_metadb_host_info_remove(hostname));
+		return (gfarm_cache_host_info_remove(hostname));
+}
+
+void
+gfarm_host_info_free_all(int n, struct gfarm_host_info *infos)
+{
+	gfarm_cache_host_info_free_all(n, infos);
 }
 
 char *
@@ -323,7 +336,7 @@ gfarm_host_info_get_all(int *np, struct gfarm_host_info **infosp)
 		return (agent_client_host_info_get_all(
 				agent_server, np, infosp));
 	else
-		return (gfarm_metadb_host_info_get_all(np, infosp));
+		return (gfarm_cache_host_info_get_all(np, infosp));
 }
 
 char *
@@ -334,7 +347,7 @@ gfarm_host_info_get_by_name_alias(
 		return (agent_client_host_info_get_by_name_alias(
 				agent_server, alias, info));
 	else
-		return (gfarm_metadb_host_info_get_by_name_alias(alias, info));
+		return (gfarm_cache_host_info_get_by_name_alias(alias, info));
 }
 
 char *
@@ -345,28 +358,26 @@ gfarm_host_info_get_allhost_by_architecture(const char *architecture,
 		return (agent_client_host_info_get_allhost_by_architecture(
 				agent_server, architecture, np, infosp));
 	else
-		return (gfarm_metadb_host_info_get_allhost_by_architecture(
+		return (gfarm_cache_host_info_get_allhost_by_architecture(
 				architecture, np, infosp));
 }
 
 char *
 gfarm_host_info_get_architecture_by_host(const char *hostname)
 {
-	char *error;
+	char *error, *arch;
 	struct gfarm_host_info info;
 
 	error = gfarm_host_info_get(hostname, &info);
 	if (error != NULL)
 		return (NULL);
 
-	/* free info except info.architecture */
-	free(info.hostname);
-	if (info.hostaliases != NULL) {
-		gfarm_strarray_free(info.hostaliases);
-		info.nhostaliases = 0;
-	}
+	arch = strdup(info.architecture);
+	gfarm_host_info_free(&info);
+	if (arch == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
-	return (info.architecture);
+	return (arch);
 }
 
 /* file section info */

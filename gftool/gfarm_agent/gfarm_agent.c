@@ -512,7 +512,7 @@ agent_server_host_info_get(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, hostname);
 	agent_lock();
-	e = gfarm_metadb_host_info_get(hostname, &info);
+	e = gfarm_cache_host_info_get(hostname, &info);
 	agent_unlock();
 	free(hostname);
 
@@ -542,7 +542,7 @@ agent_server_host_info_remove_hostaliases(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, hostname);
 	agent_lock();
-	e = gfarm_metadb_host_info_remove_hostaliases(hostname);
+	e = gfarm_cache_host_info_remove_hostaliases(hostname);
 	agent_unlock();
 	free(hostname);
 
@@ -570,7 +570,7 @@ agent_server_host_info_set(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, hostname);
 	agent_lock();
-	e = gfarm_metadb_host_info_set(hostname, &info);
+	e = gfarm_cache_host_info_set(hostname, &info);
 	agent_unlock();
 	gfarm_host_info_free(&info);
 
@@ -600,7 +600,7 @@ agent_server_host_info_replace(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, hostname);
 	agent_lock();
-	e = gfarm_metadb_host_info_replace(hostname, &info);
+	e = gfarm_cache_host_info_replace(hostname, &info);
 	agent_unlock();
 	gfarm_host_info_free(&info);
 
@@ -625,7 +625,7 @@ agent_server_host_info_remove(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, hostname);
 	agent_lock();
-	e = gfarm_metadb_host_info_remove(hostname);
+	e = gfarm_cache_host_info_remove(hostname);
 	agent_unlock();
 	free(hostname);
 
@@ -646,7 +646,7 @@ agent_server_host_info_get_all(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, "begin");
 	agent_lock();
-	e = gfarm_metadb_host_info_get_all(&np, &hosts);
+	e = gfarm_cache_host_info_get_all(&np, &hosts);
 	agent_unlock();
 
 	e_rpc = agent_server_put_reply(client, diag, e, "i", np);
@@ -680,7 +680,7 @@ agent_server_host_info_get_by_name_alias(struct xxx_connection *client)
 	if (debug_mode)
 		log_proto(diag, alias);
 	agent_lock();
-	e = gfarm_metadb_host_info_get_by_name_alias(alias, &info);
+	e = gfarm_cache_host_info_get_by_name_alias(alias, &info);
 	agent_unlock();
 	free(alias);
 
@@ -713,7 +713,7 @@ agent_server_host_info_get_allhost_by_architecture(
 	if (debug_mode)
 		log_proto(diag, arch);
 	agent_lock();
-	e = gfarm_metadb_host_info_get_allhost_by_architecture(
+	e = gfarm_cache_host_info_get_allhost_by_architecture(
 		arch, &np, &hosts);
 	agent_unlock();
 	free(arch);

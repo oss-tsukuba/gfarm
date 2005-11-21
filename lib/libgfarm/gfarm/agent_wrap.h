@@ -19,3 +19,18 @@ char *gfs_i_dirname(GFS_Dir);
 char *gfs_i_seekdir(GFS_Dir, file_offset_t);
 char *gfs_i_telldir(GFS_Dir, file_offset_t *);
 void gfs_i_uncachedir(void);
+
+/* hostcache */
+
+void gfarm_cache_host_info_free(struct gfarm_host_info *);
+char *gfarm_cache_host_info_get(const char *, struct gfarm_host_info *);
+char *gfarm_cache_host_info_get_by_name_alias(
+	const char *, struct gfarm_host_info *);
+char *gfarm_cache_host_info_remove_hostaliases(const char *);
+char *gfarm_cache_host_info_set(char *, struct gfarm_host_info *);
+char *gfarm_cache_host_info_replace(char *, struct gfarm_host_info *);
+char *gfarm_cache_host_info_remove(const char *);
+void gfarm_cache_host_info_free_all(int, struct gfarm_host_info *);
+char *gfarm_cache_host_info_get_all(int *, struct gfarm_host_info **);
+char *gfarm_cache_host_info_get_allhost_by_architecture(const char *,
+	int *, struct gfarm_host_info **);

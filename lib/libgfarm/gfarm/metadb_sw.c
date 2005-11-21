@@ -79,7 +79,7 @@ static int gfarm_base_host_info_validate(void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_host_info_ops = {
 	sizeof(struct gfarm_host_info),
-	(void (*)(void *))gfarm_host_info_free,
+	(void (*)(void *))gfarm_metadb_host_info_free,
 	gfarm_base_host_info_clear,
 	gfarm_base_host_info_validate,
 };
@@ -111,7 +111,7 @@ gfarm_base_host_info_validate(void *vinfo)
 }
 
 void
-gfarm_host_info_free(
+gfarm_metadb_host_info_free(
 	struct gfarm_host_info *info)
 {
 	if (info->hostname != NULL)
@@ -166,7 +166,7 @@ gfarm_metadb_host_info_remove(const char *hostname)
 }
 
 void
-gfarm_host_info_free_all(
+gfarm_metadb_host_info_free_all(
 	int n,
 	struct gfarm_host_info *infos)
 {

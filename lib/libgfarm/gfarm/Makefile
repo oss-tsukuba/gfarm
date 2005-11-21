@@ -26,7 +26,7 @@ SRCS = \
 	gfs_dir.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
 	gfs_exec.c gfs_unlink.c gfs_lock.c \
-	gfs_proto.c glob.c host.c hostspec.c iobuffer.c \
+	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
 	import_help.c metadb_misc.c metadb_sw.c param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
 	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
@@ -37,7 +37,7 @@ OBJS = \
 	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
 	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
-	gfs_proto.lo glob.lo host.lo hostspec.lo iobuffer.lo \
+	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
 	import_help.lo metadb_misc.lo metadb_sw.lo param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
 	$(ldap_objs) $(postgresql_objs) $(globus_objs)
@@ -82,6 +82,7 @@ gfs_proto.lo: gfs_proto.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 glob.lo:
 host.lo: hostspec.h host.h
+hostcache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
 hostspec.lo: hostspec.h
 import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h

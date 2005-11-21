@@ -8,11 +8,13 @@ char *gfarm_metadb_initialize(void);
 char *gfarm_metadb_terminate(void);
 void gfarm_metadb_share_connection(void);
 
+void gfarm_metadb_host_info_free(struct gfarm_host_info *);
 char *gfarm_metadb_host_info_get(const char *, struct gfarm_host_info *);
 char *gfarm_metadb_host_info_remove_hostaliases(const char *);
 char *gfarm_metadb_host_info_set(char *, struct gfarm_host_info *);
 char *gfarm_metadb_host_info_replace(char *, struct gfarm_host_info *);
-char *gfarm_metadb_host_info_remove(const char *hostname);
+char *gfarm_metadb_host_info_remove(const char *);
+void gfarm_metadb_host_info_free_all(int, struct gfarm_host_info *);
 char *gfarm_metadb_host_info_get_all(int *, struct gfarm_host_info **);
 char *gfarm_metadb_host_info_get_by_name_alias(const char *,
 	struct gfarm_host_info *);
