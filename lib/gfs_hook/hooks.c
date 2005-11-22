@@ -1842,7 +1842,7 @@ __fcntl(int filedes, int cmd, ...)
 #ifdef F_FREESP
 	if (cmd == F_FREESP)
 		_gfs_hook_debug_v(gflog_info("flock.l_start:%ld",
-			(long)(((struc flock *)val)->l_start)));
+			(long)(((struct flock *)val)->l_start)));
 #endif
 #ifdef F_FREESP64
 	if (cmd == F_FREESP64)
