@@ -36,13 +36,13 @@ gfarm_cache_host_info_hash_add(struct gfarm_hash_table *hash,
 	int created;
 
 	entry = gfarm_hash_enter(hash, hostname, strlen(hostname) + 1,
-			sizeof(struct gfarm_host_info), &created);
+			sizeof(struct gfarm_host_info *), &created);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (!created)
 		return (GFARM_ERR_ALREADY_EXISTS);
 
-	*(struct gfarm_host_info *)gfarm_hash_entry_data(entry) = *host;
+	*(struct gfarm_host_info **)gfarm_hash_entry_data(entry) = host;
 	return (NULL);
 }
 
@@ -168,7 +168,8 @@ gfarm_cache_host_info_get_by_name_alias(
 	entry = gfarm_hash_lookup(
 		host_cache->hash, alias, strlen(alias) + 1);
 	if (entry != NULL) {
-		*info = *(struct gfarm_host_info *)gfarm_hash_entry_data(entry);
+		*info = **(struct gfarm_host_info **)
+				gfarm_hash_entry_data(entry);
 		/* do not free */
 		return (NULL);
 	}
