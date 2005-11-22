@@ -7,7 +7,6 @@ struct timeval;
 struct gfarm_eventqueue;
 struct gfs_connection;
 struct gfs_stat;
-enum gfarm_auth_method;
 struct gfs_client_connect_state;
 
 void gfs_client_terminate(void);
