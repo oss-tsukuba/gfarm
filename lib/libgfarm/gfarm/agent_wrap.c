@@ -271,7 +271,7 @@ gfs_uncachedir(void)
 void
 gfarm_host_info_free(struct gfarm_host_info *info)
 {
-	return (gfarm_cache_host_info_free(info));
+	gfarm_cache_host_info_free(info);
 }
 
 char *
