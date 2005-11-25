@@ -316,7 +316,7 @@ gfs_unlink_replica(const char *gfarm_url,
 	int nreplicas, char **replica_hosts, int force)
 {
 	char *gfarm_file, *e, *e_save;
-	int i, nsections;
+	int i, nsections, nerr;
 	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
@@ -325,18 +325,25 @@ gfs_unlink_replica(const char *gfarm_url,
 
 	e_save = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
-	if (e_save != NULL) {
-		nsections = 0;
-		sections = NULL;
-	}
+	if (e_save != NULL)
+		goto free_gfarm_file;
+
+	nerr = 0;
 	for (i = 0; i < nsections; i++) {
 		e = gfs_unlink_section_replica(gfarm_url, sections[i].section,
 			nreplicas, replica_hosts, force);
-		if (e != NULL && e_save == NULL)
-			e_save = e;
+		if (e != NULL) {
+			++nerr;
+			if (e_save == NULL)
+				e_save = e;
+		}
 	}
-	if (sections != NULL)
-		gfarm_file_section_info_free_all(nsections, sections);
+	/* reset error when at least one file replica is unlinked */
+	if (nerr < nsections)
+		e_save = NULL;
+	gfarm_file_section_info_free_all(nsections, sections);
+
+free_gfarm_file:
 	free(gfarm_file);
 	return (e_save);
 }
