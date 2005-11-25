@@ -499,27 +499,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 	}
 
-	if ((gf->mode & GFS_FILE_MODE_WRITE) ||
-	    (gf->open_flags & GFARM_FILE_TRUNC)) {
-		/*
-		 * if write mode or read-but-truncate mode,
-		 * delete every other file copies
-		 */
-		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
-		(void)gfs_unlink_every_other_replicas(
-			gf->pi.pathname, vc->section,
-			vc->canonical_hostname);
-	}
-	/* create section copy info */
-	if (flags & GFARM_FILE_CREATE) {
-		struct gfarm_file_section_copy_info fci;
-
-		fci.hostname = vc->canonical_hostname;
-		(void)gfarm_file_section_copy_info_set(
-			gf->pi.pathname, vc->section, fci.hostname, &fci);
-	}
-	/* XXX - need to figure out ignorable error or not */
-
 	gf->ops = &gfs_pio_view_section_ops;
 	gf->view_context = vc;
 	gf->view_flags = flags;
@@ -573,8 +552,32 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		free(vc->canonical_hostname);
 		goto retry;
 	}
+	if (e != NULL)
+		goto free_host;
 
-	if (e == NULL && (gf->open_flags & GFARM_FILE_APPEND))
+	/* update metadata */
+	if ((gf->mode & GFS_FILE_MODE_WRITE) ||
+	    (gf->open_flags & GFARM_FILE_TRUNC)) {
+		/*
+		 * if write mode or read-but-truncate mode,
+		 * delete every other file copies
+		 */
+		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
+		(void)gfs_unlink_every_other_replicas(
+			gf->pi.pathname, vc->section,
+			vc->canonical_hostname);
+	}
+	/* create section copy info */
+	if (flags & GFARM_FILE_CREATE) {
+		struct gfarm_file_section_copy_info fci;
+
+		fci.hostname = vc->canonical_hostname;
+		(void)gfarm_file_section_copy_info_set(
+			gf->pi.pathname, vc->section, fci.hostname, &fci);
+	}
+	/* XXX - need to figure out ignorable error or not */
+
+	if (gf->open_flags & GFARM_FILE_APPEND)
 		e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
 
 free_host:
