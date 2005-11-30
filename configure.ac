@@ -208,6 +208,9 @@ fi
 AC_SUBST(openssl_includes)
 AC_SUBST(openssl_libs)
 
+# sanity check for OpenSSL is deferred, because ${openssl_includes}
+# and ${openssl_lib} may be overrided by Globus autoconfiguration.
+
 ###
 ### --with-globus=GLOBUS_ROOT --with-globus-flavor=FLAVOR -with-globus-static
 ###
@@ -1016,6 +1019,27 @@ AC_MSG_RESULT([$ax_cv_have_sys_nerr])
 if test "$ax_cv_have_sys_nerr" = yes; then
   AC_DEFINE(HAVE_SYS_NERR, 1, [sys_nerr is defined])
 fi
+
+### sanity check whether OpenSSL is really usable or not
+
+CPPFLAGS_SAVE="$CPPFLAGS"
+LIBS_SAVE="$LIBS"
+CPPFLAGS="${openssl_includes} $CPPFLAGS_SAVE"
+# -R is not portable without libtool, and not necessary for AC_TRY_LINK
+LIBS="`echo ${openssl_libs} | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
+
+AC_TRY_LINK([
+#include <openssl/evp.h>],[
+EVP_MD_CTX md_ctx;
+EVP_MD *md_type = EVP_get_digestbyname("sha1");
+
+EVP_DigestInit(&md_ctx, md_type);
+], [], [
+  AC_MSG_ERROR([OpenSSL cannot be linked with \"${openssl_includes} ${openssl_libs}\" options, aborted])
+])
+
+CPPFLAGS="$CPPFLAGS_SAVE"
+LIBS="$LIBS_SAVE"
 
 ###### Checks for system services.
 # empty for now
