@@ -4,6 +4,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS= $(srcdir)/pcat $(srcdir)/pcp $(srcdir)/pdel $(srcdir)/pdist $(srcdir)/prun
+SCRIPTS= $(srcdir)/gfarm-ptool $(srcdir)/gfarm-prun $(srcdir)/gfarm-pcp
 
 include $(top_srcdir)/makes/script.mk
