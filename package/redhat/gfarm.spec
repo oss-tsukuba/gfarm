@@ -576,6 +576,7 @@ fi
 %{html_prefix}/ja/user/nfs-gfarmfs.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
 %{html_prefix}/ja/user/samba-hook.html
+%{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/pic/gfarm-logo.gif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
@@ -624,6 +625,9 @@ fi
 
 %files client
 %{prefix}/bin/gfarm_agent
+%{prefix}/bin/gfarm-pcp
+%{prefix}/bin/gfarm-prun
+%{prefix}/bin/gfarm-ptool
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
@@ -651,12 +655,6 @@ fi
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
-%{prefix}/bin/pcat
-%{prefix}/bin/pcp
-%{prefix}/bin/pdel
-# %{prefix}/bin/pdiff
-%{prefix}/bin/pdist
-%{prefix}/bin/prun
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
 

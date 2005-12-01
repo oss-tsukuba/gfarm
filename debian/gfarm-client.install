@@ -1,4 +1,7 @@
 debian/tmp/usr/bin/gfarm_agent
+debian/tmp/usr/bin/gfarm-pcp
+debian/tmp/usr/bin/gfarm-prun
+debian/tmp/usr/bin/gfarm-ptool
 debian/tmp/usr/bin/gfdf
 debian/tmp/usr/bin/gfexport
 debian/tmp/usr/bin/gfhost
@@ -26,7 +29,3 @@ debian/tmp/usr/bin/gfsshl
 debian/tmp/usr/bin/gfstat
 debian/tmp/usr/bin/gfwhere
 debian/tmp/usr/bin/gfwhoami
-debian/tmp/usr/bin/pcp
-debian/tmp/usr/bin/pdel
-debian/tmp/usr/bin/pdist
-debian/tmp/usr/bin/prun

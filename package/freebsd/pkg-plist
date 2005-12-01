@@ -3,6 +3,9 @@ bin/config-gfarm
 bin/config-gfsd
 bin/gfarm.arch.guess
 bin/gfarm_agent
+bin/gfarm-pcp
+bin/gfarm-prun
+bin/gfarm-ptool
 bin/gfcombine
 bin/gfcombine_hook
 bin/gfcp
@@ -38,11 +41,6 @@ bin/gfsshl
 bin/gfstat
 bin/gfwhere
 bin/gfwhoami
-bin/pcat
-bin/pcp
-bin/pdel
-bin/pdist
-bin/prun
 bin/thput-gfpio
 etc/rc.d/gfmd.sh
 etc/rc.d/gfsd.sh
@@ -451,6 +449,7 @@ share/doc/gfarm/html/ja/user/index.html
 share/doc/gfarm/html/ja/user/nfs-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-gfarmfs.html
 share/doc/gfarm/html/ja/user/samba-hook.html
+share/doc/gfarm/html/ja/user/smboverssh.html
 share/doc/gfarm/html/pic/gfarm-logo.gif
 share/gfarm/config/bdb.DB_CONFIG.in
 share/gfarm/config/config-gfarm.sysdep
