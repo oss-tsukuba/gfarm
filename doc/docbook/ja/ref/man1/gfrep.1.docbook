@@ -2,7 +2,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>27 Oct 2005</date></refentryinfo>
+<refentryinfo><date>05 Dec 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -124,20 +124,25 @@
 <varlistentry>
 <term><option>-N</option> <parameter>複製数</parameter></term>
 <listitem>
-<para>フラグメントごとに作成する複製の数を指定します．
-<option>-D</option> オプションで指定された
-複製先ドメイン（指定なしの場合には，全登録ホスト）から
-<option>-S</option> で指定された複製元ドメインを除いたところに
-あるホスト上のレプリカ数がこの数になるように複製を作成します．
-複製元ドメインが指定されない場合には，複製先ドメインの全てのホストを
-カウントの対象とします．これらのホストに既にこの数以上の複製が
-存在する場合は，そのフラグメントについて複製の作成も削除も行いません．
+<para>フラグメントごとに作成する複製の数を指定します．このオプションを
+省略すると <option>-N 1</option> と指定されたものとみなされます．
+このオプションは単独であるいは <option>-D</option> オプション，
+<option>-S</option> オプションとともに用います．</para>
+<para><option>-D</option> オプションで複製先ドメインが指定された場合，
+このドメインのホストにあるレプリカ数が指定された数になるように複製しま
+す．</para>
+<para><option>-S</option> オプションで複製元ドメインが指定された場合，
+このドメイン以外のホストにあるレプリカ数が指定された数になるように複製
+します．</para>
+<para><option>-D</option>, <option>-S</option> オプションがともに指定
+された場合は，複製先ドメインのホストから複製元ドメインのホストを除いた
+ホストにあるレプリカ数が，指定された数になるように複製します．
+ただし，複製先ドメインが複製元ドメインに含まれている場合は，複製先ドメ
+インのホストにあるレプリカ数が指定された数になるように複製します．
 </para>
-<para>このオプションは単独で，あるいは，<option>-S</option> オプション，
-<option>-D</option> オプションとともに用います．
-</para>
-<para>このオプションを省略すると，<option>-N 1</option> と指定されたものと
-みなされます．</para>
+<para>各フラグメントについて，これらの複製対象ホスト上に指定された数以
+上の複製が既に存在する場合は，そのフラグメントについて複製の作成も削除
+も行いません．</para>
 </listitem>
 </varlistentry>
 
