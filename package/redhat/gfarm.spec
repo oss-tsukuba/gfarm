@@ -476,6 +476,7 @@ fi
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
+%{html_prefix}/en/user/nfs-gfarmfs.html
 %{html_prefix}/en/user/samba-gfarmfs.html
 # XXX NOTYET %{html_prefix}/en/user/samba-hook.html
 %{html_prefix}/ja/ref/index.html
