@@ -10,28 +10,12 @@
 #include <sys/stat.h>
 #include <openssl/evp.h>
 
-#if defined(__GNUC__) || defined(__STDC_VERSION__) && __STDC_VERSION__>=199901L
-# define gfarm_inline	inline
-#else
-# define gfarm_inline
-#endif
-
-
-#define USE_HASH	1
-
 #include <gfarm/gfarm.h>
-
-#if USE_HASH
 #include "hash.h"
-#else
-#include "tree.h"
-#endif
-
 #include "gfutil.h"
 
 #include "metadb_access.h"
 #include "gfs_misc.h"	/* gfarm_path_expand_home() */
-
 
 static char *gfarm_current_working_directory;
 
@@ -250,27 +234,7 @@ finish:
 /*
  * directory tree, opendir/readdir/closedir
  */
-
-#if USE_HASH
-
-typedef struct gfarm_hash_table *Dir;
-typedef struct struct gfarm_hash_iterator DirIterator;
-
-#else /* !USE_HASH */
-
-RB_HEAD(rb_dir, node);
-
-typedef struct rb_dir Dir;
-typedef struct node *DirIterator;
-
-#endif /* !USE_HASH */
-
 struct node {
-#if !USE_HASH
-	RB_ENTRY(node) rb_dir_entry;
-	int namelen;
-#endif
-
 	struct node *parent;
 	char *name;
 	int flags;
@@ -280,15 +244,19 @@ struct node {
 #define		NODE_FLAG_INVALID	8
 	union node_u {
 		struct dir {
-			Dir children;
+			struct gfarm_hash_table *children;
 
 			struct timeval mtime;
 		} d;
 	} u;
 };
 
-static gfarm_inline struct node *
-init_node_name_primitive(struct node *n, const char *name, int len)
+#define NODE_HASH_SIZE 53 /* prime */
+
+static struct node *root;
+
+static struct node *
+init_node_name(struct node *n, const char *name, int len)
 {
 	n->name = malloc(len + 1);
 	if (n->name == NULL)
@@ -298,61 +266,59 @@ init_node_name_primitive(struct node *n, const char *name, int len)
 	return (n);
 }
 
-static void recursive_free_nodes(struct node *);
-
-#if USE_HASH
-
-#define NODE_HASH_SIZE 53 /* prime */
+#define DIR_NODE_SIZE \
+	(sizeof(struct node) - sizeof(union node_u) + sizeof(struct dir))
 
 static struct node *
-init_node_name(struct node *n, const char *name, int len)
+init_dir_node(struct node *n, const char *name, int len)
 {
-	return (init_node_name_primitive(n, name, len));
-}
-
-static gfarm_inline int
-dir_init(Dir *dirp)
-{
-	Dir d = gfarm_hash_table_alloc(NODE_HASH_SIZE,
-	    gfarm_hash_default, gfarm_hash_key_equal_default);
-
-	if (d == NULL)
-		return (0);
-	*dirp = d;
-	return (1);
-}
-
-static gfarm_inline void
-dir_init_empty(Dir *dirp)
-{
-	*dirp = NULL;
-}
-
-static gfarm_inline int
-dir_make_valid(Dir *dirp)
-{
-	if (*dirp == NULL) {
-		*dirp = gfarm_hash_table_alloc(NODE_HASH_SIZE,
-		    gfarm_hash_default, gfarm_hash_key_equal_default);
-		/* XXX check GFARM_ERR_NO_MEMORY */
-		return (1);
-	}
-	return (0);
-}
-
-static struct node *
-dir_lookup(struct node *dir, const char *name, int len)
-{
-	struct gfarm_hash_entry *entry;
-
-	entry = gfarm_hash_lookup(dir->u.d.children, name, len);
-	if (entry == NULL)
+	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
-	return (gfarm_hash_entry_data(entry));
+	n->flags = NODE_FLAG_IS_DIR;
+	n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
+	    gfarm_hash_default, gfarm_hash_key_equal_default);
+	n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
+	return (n);
+}
+
+#define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
+
+static struct node *
+init_file_node(struct node *n, const char *name, int len)
+{
+	if (init_node_name(n, name, len) == NULL)
+		return (NULL);
+	n->flags = 0;
+#if 1
+	/*
+	 * We hold this even on a file_node,
+	 * this field can be non-NULL, if this node is changed from
+	 * a dir_node to a file_node.
+	 */
+	n->u.d.children = NULL;
+#endif
+	return (n);
 }
 
 static void
-dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
+change_file_node_to_dir(struct node *n)
+{
+	n->flags |= NODE_FLAG_IS_DIR;
+	if (n->u.d.children == NULL) {
+		n->u.d.children = gfarm_hash_table_alloc(NODE_HASH_SIZE,
+		    gfarm_hash_default, gfarm_hash_key_equal_default);
+		n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
+	}
+}
+
+static void
+change_dir_node_to_file(struct node *n)
+{
+	n->flags &= ~NODE_FLAG_IS_DIR;
+}
+
+static void
+for_each_node(struct node *n, void (*f)(void *, struct node *), void *cookie)
 {
 #if 0
 	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
@@ -366,10 +332,9 @@ dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
 		for (gfarm_hash_iterator_begin(n->u.d.children, &i);
 		    (child = gfarm_hash_iterator_access(&i)) != NULL;
 		    gfarm_hash_iterator_next(&i)) {
-			dir_for_each(gfarm_hash_entry_data(child), f, cookie);
+			for_each_node(gfarm_hash_entry_data(child), f, cookie);
 		}
 	}
-
 	(*f)(cookie, n);
 }
 
@@ -385,11 +350,22 @@ free_node(void *cookie, struct node *n)
 	free(n->name);
 }
 
-static gfarm_inline void
-purge_node(struct node *parent, struct node *n, const char *name, int len)
+static void
+recursive_free_nodes(struct node *n)
 {
-	recursive_free_nodes(n);
-	gfarm_hash_purge(parent->u.d.children, name, len);
+	for_each_node(n, free_node, NULL);
+}
+
+static void
+delayed_purge_node(void *cookie, struct node *n)
+{
+	n->flags |= NODE_FLAG_PURGED;
+}
+
+static void
+recursive_delayed_purge_nodes(struct node *n)
+{
+	for_each_node(n, delayed_purge_node, NULL);
 }
 
 static void
@@ -407,394 +383,15 @@ recursive_free_children(struct node *n)
 	n->u.d.children = NULL;
 }
 
-static void
-dir_iterator_init(DirIterator *iterator, Dir *dir)
-{
-	gfarm_hash_iterator_begin(*dir, iterator);
-}
-
-static struct node *
-dir_iterator_next(DirIterator *iterator, Dir *dir)
-{
-	struct gfarm_hash_entry *he = gfarm_hash_iterator_access(iterator);
-	struct node *n;
-
-	if (he == NULL)
-		return (NULL);
-	n = gfarm_hash_entry_data(he);
-	gfarm_hash_iterator_next(iterator);
-	return (n);	
-}
-
-#else /* !USE_HASH */
-
-static struct node *
-init_node_name(struct node *n, const char *name, int len)
-{
-	if (init_node_name_primitive(n, name, len) == NULL)
-		return (NULL);
-	n->namelen = len;
-	return (n);
-}
-
-static gfarm_inline int
-node_compare(struct node *a, struct node *b)
-{
-	int len = a->namelen < b->namelen ? a->namelen : b->namelen;
-	int cmp;
-
-#if 0
-	cmp = memcmp(a->name, b->name, len);
-#else	/* to reduce number of function calls */
-	if (len == 0) { /* shouldn't happen? */
-		cmp = 0;
-	} else {
-		if (a->name[0] < b->name[0])
-			return (-1);
-		else if (a->name[0] > b->name[0])
-			return (1);
-		if (len == 1)
-			cmp = 0;
-		else
-			cmp = memcmp(a->name + 1, b->name + 1, len - 1);
-#endif
-	}
-	if (cmp != 0 || a->namelen == b->namelen)
-		return (cmp);
-	if (a->namelen < b->namelen)
-		return (-1);
-	else
-		return (1);
-}
-
-RB_PROTOTYPE(rb_dir, node, rb_dir_entry, node_compare)
-RB_GENERATE(rb_dir, node, rb_dir_entry, node_compare)
-
-static gfarm_inline int
-dir_init(Dir *dirp)
-{
-	RB_INIT(dirp);
-	return (1);
-}
-
-static gfarm_inline void
-dir_init_empty(Dir *dirp)
-{
-	RB_INIT(dirp);
-}
-
-static gfarm_inline int
-dir_make_valid(Dir *dirp)
-{
-	if (RB_EMPTY(dirp)) {
-		RB_INIT(dirp);
-		return (1);
-	}
-	return (0);
-}
-
-static struct node *
-dir_lookup(struct node *dir, const char *name, int len)
-{
-	struct node entry;
-
-	entry.name = (char *)name; /* XXX UNCONST */
-	entry.namelen = len;
-	return (RB_FIND(rb_dir, &dir->u.d.children, &entry));
-}
-
-static void
-dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
-{
-#if 0
-	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
-#else
-	if (!RB_EMPTY(&n->u.d.children))
-#endif
-	{
-		struct node *child;
-
-		RB_FOREACH(child, rb_dir, &n->u.d.children) {
-			dir_for_each(child, f, cookie);
-		}
-	}
-
-	(*f)(cookie, n);
-}
-
-static void
-free_node(void *cookie, struct node *n)
-{
-	/*
-	 * free_all_nodes() doesn't work with this,
-	 * because this implementation cannot free the root node.
-	 * but it's OK, because free_all_nodes() is currently commented out.
-	 */
-	RB_REMOVE(rb_dir, &n->parent->u.d.children, n);
-	free(n->name);
-	free(n);
-}
-
-static gfarm_inline void
-purge_node(struct node *parent, struct node *n, const char *name, int len)
-{
-	recursive_free_nodes(n);
-}
-
-static void
-recursive_free_children(struct node *n)
-{
-	struct node *child;
-
-	RB_FOREACH(child, rb_dir, &n->u.d.children) {
-		recursive_free_nodes(child);
-	}
-}
-
-static void
-dir_iterator_init(DirIterator *iterator, Dir *dir)
-{
-	*iterator = RB_MIN(rb_dir, dir);
-}
-
-
-static struct node *
-dir_iterator_next(DirIterator *iterator, Dir *dir)
-{
-	struct node *n = *iterator;
-
-	if (n == NULL)
-		return (NULL);
-	*iterator = RB_NEXT(rb_dir, dir, n);
-	return (n);
-}
-
-#endif /* !USE_HASH */
-
-static struct node *root;
-
-#define DIR_NODE_SIZE \
-	(sizeof(struct node) - sizeof(union node_u) + sizeof(struct dir))
-
-static struct node *
-init_dir_node(struct node *n, const char *name, int len)
-{
-	if (init_node_name(n, name, len) == NULL)
-		return (NULL);
-	n->flags = NODE_FLAG_IS_DIR;
-	if (!dir_init(&n->u.d.children)) {
-		free(n);
-		return (NULL);
-	}
-	n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
-	return (n);
-}
-
-/* FILE_NODE_SIZE is not really used now */
-#define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
-
-static struct node *
-init_file_node(struct node *n, const char *name, int len)
-{
-	if (init_node_name(n, name, len) == NULL)
-		return (NULL);
-	n->flags = 0;
-#if 1
-	/*
-	 * We hold this even on a file_node,
-	 * this field can be non-NULL, if this node is changed from
-	 * a dir_node to a file_node.
-	 */
-	dir_init_empty(&n->u.d.children);
-#endif
-	return (n);
-}
-
-static void
-change_file_node_to_dir(struct node *n)
-{
-	n->flags |= NODE_FLAG_IS_DIR;
-	if (dir_make_valid(&n->u.d.children)) {
-		n->u.d.mtime.tv_sec = n->u.d.mtime.tv_usec = 0;
-	}
-}
-
-static void
-change_dir_node_to_file(struct node *n)
-{
-	n->flags &= ~NODE_FLAG_IS_DIR;
-}
-
-static void
-delayed_purge_node(void *cookie, struct node *n)
-{
-	n->flags |= NODE_FLAG_PURGED;
-}
-
-static void
-recursive_delayed_purge_nodes(struct node *n)
-{
-	dir_for_each(n, delayed_purge_node, NULL);
-}
-
-static void
-recursive_free_nodes(struct node *n)
-{
-	dir_for_each(n, free_node, NULL);
-}
-
-/* to inhibit dirctory uncaching while some directories are opened */
-static int opendir_count = 0;
-
-#if USE_HASH
-
-static char *
-enter_node(struct node *parent, const char *name, int len, int is_dir,
-	struct node **np, int *createdp)
-{
-	struct gfarm_hash_entry *entry;
-	int created;
-
-	entry = gfarm_hash_enter(parent->u.d.children, name, len,
-#if 0
-	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE,
-#else
-	/*
-	 * always allocate DIR_NODE_SIZE
-	 * to make it possible to change a file to a dir
-	 */
-	    DIR_NODE_SIZE,
-#endif
-	    createdp);
-	if (entry == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	if (*createdp) {
-		if (is_dir)
-			init_dir_node(n, name, len);
-		else
-			init_file_node(n, name, len);
-		n->parent = parent;
-	}
-
-	*np = gfarm_hash_entry_data(entry);
-	return (NULL);
-}
-
-static void
-sweep_nodes(struct node *n)
-{
-	struct gfarm_hash_iterator i;
-	struct gfarm_hash_entry *child;
-
-	/* assert((n->flags & NODE_FLAG_IS_DIR) != 0); */
-
-	/*
-	 * We don't have to honor the PURGED flag here,
-	 * because the mark phase overrides the flag.
-	 */
-
-	for (gfarm_hash_iterator_begin(n->u.d.children, &i);
-	    (child = gfarm_hash_iterator_access(&i)) != NULL;
-	    gfarm_hash_iterator_next(&i)) {
-		struct node *c = gfarm_hash_entry_data(child);
-
-		if ((c->flags & NODE_FLAG_MARKED) == 0) {
-			if (opendir_count > 0) {
-				recursive_delayed_purge_nodes(c);
-			} else {
-				recursive_free_nodes(c);
-				gfarm_hash_iterator_purge(&i);
-			}
-		} else {
-			if ((c->flags & NODE_FLAG_IS_DIR) != 0)
-				sweep_nodes(c);
-			else if (opendir_count == 0 && c->u.d.children != NULL)
-				recursive_free_children(c);
-			c->flags &= ~NODE_FLAG_MARKED;
-		}
-	}
-
-	/* cached entries in this directory are now valid */
-	n->flags &= ~NODE_FLAG_INVALID;
-}
-
-#else /* !USE_HASH */
-
-static char *
-enter_node(struct node *parent, const char *name, int len, int is_dir,
-	struct node **np, int *createdp)
-{
-	struct node entry, *n;
-
-	entry.name = (char *)name; /* XXX UNCONST */
-	entry.namelen = len;
-	n = RB_FIND(rb_dir, &parent->u.d.children, &entry);
-	if (n != NULL) {
-		*createdp = 0;
-		*np = n;
-		return (NULL);
-	}
-	n = malloc(
-#if 0
-	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE
-#else
-	/*
-	 * always allocate DIR_NODE_SIZE
-	 * to make it possible to change a file to a dir
-	 */
-	    DIR_NODE_SIZE
-#endif
-	);
-	if (n == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	if (is_dir)
-		init_dir_node(n, name, len);
-	else
-		init_file_node(n, name, len);
-	n->parent = parent;
-	RB_INSERT(rb_dir, &parent->u.d.children, n);
-
-	*createdp = 1;
-	*np = n;
-	return (NULL);
-}
-
-static void
-sweep_nodes(struct node *n)
-{
-	struct node *c;
-
-	RB_FOREACH(c, rb_dir, &n->u.d.children) {
-		if ((c->flags & NODE_FLAG_MARKED) == 0) {
-			if (opendir_count > 0) {
-				recursive_delayed_purge_nodes(c);
-			} else {
-				recursive_free_nodes(c);
-			}
-		} else {
-			if ((c->flags & NODE_FLAG_IS_DIR) != 0)
-				sweep_nodes(c);
-			else if (opendir_count == 0 &&
-			    !RB_EMPTY(&c->u.d.children))
-				recursive_free_children(c);
-			c->flags &= ~NODE_FLAG_MARKED;
-		}
-	}
-
-	/* cached entries in this directory are now valid */
-	n->flags &= ~NODE_FLAG_INVALID;
-}
-
-#endif /* !USE_HASH */
-
 enum gfarm_node_lookup_op {
 	GFARM_INODE_LOOKUP,
 	GFARM_INODE_CREATE,
 	GFARM_INODE_REMOVE,
 	GFARM_INODE_MARK
 };
+
+/* to inhibit dirctory uncaching while some directories are opened */
+static int opendir_count = 0;
 
 /*
  * if (op != GFARM_INODE_CREATE), (is_dir) may be -1,
@@ -805,7 +402,7 @@ lookup_node(struct node *parent, const char *name,
 	int len, int is_dir, enum gfarm_node_lookup_op op,
 	struct node **np)
 {
-	char *e;
+	struct gfarm_hash_entry *entry;
 	int created, already_purged;
 	struct node *n;
 
@@ -833,9 +430,10 @@ lookup_node(struct node *parent, const char *name,
 	if (len > GFS_MAXNAMLEN)
 		len = GFS_MAXNAMLEN;
 	if (op == GFARM_INODE_MARK) {
-		n = dir_lookup(parent, name, len);
-		if (n != NULL) {
+		entry = gfarm_hash_lookup(parent->u.d.children, name, len);
 		/* We should not honor the PURGED flag here */
+		if (entry != NULL) {
+			n = gfarm_hash_entry_data(entry);
 			if ((n->flags & NODE_FLAG_IS_DIR) == is_dir) {
 				/* abandon the PURGED flag at the mark phase */
 				n->flags &= ~NODE_FLAG_PURGED;
@@ -856,19 +454,23 @@ lookup_node(struct node *parent, const char *name,
 				*np = n;
 				return (NULL);
 			}
-			purge_node(parent, n, name, len);
+			recursive_free_nodes(n);
+			gfarm_hash_purge(parent->u.d.children, name, len);
 		}
 		/* do create */
 	} else if (op != GFARM_INODE_CREATE) {
-		n = dir_lookup(parent, name, len);
-		if (n == NULL)
+		entry = gfarm_hash_lookup(parent->u.d.children, name, len);
+		if (entry == NULL)
 			return (GFARM_ERR_NO_SUCH_OBJECT);
+		n = gfarm_hash_entry_data(entry);
 		already_purged = (n->flags & NODE_FLAG_PURGED) != 0;
 		if (already_purged || op == GFARM_INODE_REMOVE) {
 			if (opendir_count > 0) {
 				recursive_delayed_purge_nodes(n);
 			} else {
-				purge_node(parent, n, name, len);
+				recursive_free_nodes(n);
+				gfarm_hash_purge(parent->u.d.children,
+				    name, len);
 			}
 			if (already_purged)
 				return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -879,15 +481,31 @@ lookup_node(struct node *parent, const char *name,
 		return (NULL);
 	}
 
-	e = enter_node(parent, name, len, is_dir, &n, &created);
-	if (e != NULL)
-		return (e);
+	entry = gfarm_hash_enter(parent->u.d.children, name, len,
+#if 0
+	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE,
+#else
+	/*
+	 * always allocate DIR_NODE_SIZE
+	 * to make it possible to change a file to a dir
+	 */
+	    DIR_NODE_SIZE,
+#endif
+	    &created);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	n = gfarm_hash_entry_data(entry);
 	if (!created) {
 		n->flags &= ~NODE_FLAG_PURGED;
 		/* assert(op == GFARM_INODE_CREATE); */
 		*np = n;
 		return (NULL);
 	}
+	if (is_dir)
+		init_dir_node(n, name, len);
+	else
+		init_file_node(n, name, len);
+	n->parent = parent;
 	if (op == GFARM_INODE_MARK)
 		n->flags |= NODE_FLAG_MARKED;
 	*np = n;
@@ -1050,6 +668,43 @@ static void
 mark_path(void *closure, struct gfarm_path_info *info)
 {
 	gfs_dircache_enter_path(GFARM_INODE_MARK, info->pathname, info);
+}
+
+static void
+sweep_nodes(struct node *n)
+{
+	struct gfarm_hash_iterator i;
+	struct gfarm_hash_entry *child;
+
+	/* assert((n->flags & NODE_FLAG_IS_DIR) != 0); */
+
+	/*
+	 * We don't have to honor the PURGED flag here,
+	 * because the mark phase overrides the flag.
+	 */
+
+	for (gfarm_hash_iterator_begin(n->u.d.children, &i);
+	    (child = gfarm_hash_iterator_access(&i)) != NULL;
+	    gfarm_hash_iterator_next(&i)) {
+		struct node *c = gfarm_hash_entry_data(child);
+
+		if ((c->flags & NODE_FLAG_MARKED) == 0) {
+			if (opendir_count > 0) {
+				recursive_delayed_purge_nodes(c);
+			} else {
+				recursive_free_nodes(c);
+				gfarm_hash_iterator_purge(&i);
+			}
+		} else {
+			if ((c->flags & NODE_FLAG_IS_DIR) != 0)
+				sweep_nodes(c);
+			else if (opendir_count == 0 && c->u.d.children != NULL)
+				recursive_free_children(c);
+			c->flags &= ~NODE_FLAG_MARKED;
+		}
+	}
+	/* cached entries in this directory are now valid */
+	n->flags &= ~NODE_FLAG_INVALID;
 }
 
 /* refresh directories as soon as possible */
@@ -1436,7 +1091,7 @@ gfs_i_get_ino(const char *canonical_path, long *inop)
 
 struct gfs_dir {
 	struct node *dir;
-	DirIterator iterator;
+	struct gfarm_hash_iterator iterator;
 	struct gfs_dirent buffer;
 	int index;
 };
@@ -1471,7 +1126,7 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	dir->dir = n;
-	dir_iterator_init(&dir->iterator, &n->u.d.children);
+	gfarm_hash_iterator_begin(n->u.d.children, &dir->iterator);
 	dir->index = 0;
 	*dirp = dir;
 
@@ -1485,6 +1140,7 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 char *
 gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 {
+	struct gfarm_hash_entry *he;
 	struct node *n;
 
 	if (dir->index == 0) {
@@ -1499,18 +1155,20 @@ gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 		dir->index++;
 	} else {
 		for (;;) {
-			n = dir_iterator_next(&dir->iterator,
-			    &n->parent->u.d.children);
-			if (n == NULL) {
+			he = gfarm_hash_iterator_access(&dir->iterator);
+			if (he == NULL) {
 				*entry = NULL;
 				return (NULL);
 			}
+			n = gfarm_hash_entry_data(he);
+			gfarm_hash_iterator_next(&dir->iterator);
 			dir->index++;
 			if ((n->flags & NODE_FLAG_PURGED) == 0)
 				break;
 		}
-		dir->buffer.d_namlen = strlen(n->name);
-		memcpy(dir->buffer.d_name, n->name, dir->buffer.d_namlen);
+		dir->buffer.d_namlen = gfarm_hash_entry_key_length(he);
+		memcpy(dir->buffer.d_name, gfarm_hash_entry_key(he),
+		    dir->buffer.d_namlen);
 	}
 	dir->buffer.d_name[dir->buffer.d_namlen] = '\0';
 	dir->buffer.d_type = (n->flags & NODE_FLAG_IS_DIR) ?
@@ -1541,7 +1199,8 @@ gfs_i_seekdir(GFS_Dir dir, file_offset_t off)
 	new_index = off / GFS_DIRENTSIZE;
 	if (new_index < dir->index) {
 		/* rewind */
-		dir_iterator_init(&dir->iterator, &dir->dir->u.d.children);
+		gfarm_hash_iterator_begin(dir->dir->u.d.children,
+		    &dir->iterator);
 		dir->index = 0;
 	}
 	while (dir->index < new_index) {
