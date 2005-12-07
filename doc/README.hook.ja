@@ -171,18 +171,18 @@ https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
  (4) Solaris
 =============
 
-LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
+LD_PRELOAD_32 環境変数に，libgfs_hook.so.0 を指定します．
 
 シェルが sh あるいは bash の場合:
 
-	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
-	$ export LD_PRELOAD
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD_32
 
 シェルが csh (tcsh) の場合:
 
-	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
 
-なお，Solaris では十分なテストができていません．今のところ，readdir(3)
+なお，Solaris では十分なテストができていません．今のところ，opendir(3)
 ライブラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
 
  (5) MacOS X

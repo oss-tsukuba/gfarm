@@ -176,19 +176,19 @@ https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
  (4) Solaris
 =============
 
-Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
+Specify libgfs_hook.so.0 in LD_PRELOAD_32 environment variable.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
-	$ export LD_PRELOAD
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD_32
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
 
 Solaris is not tested well.  At least, we know there is a restriction
-such that directory access via readdir(3) doesn't work.
+such that directory access via opendir(3) doesn't work.
 
  (5) MacOS X
 =============
