@@ -353,12 +353,7 @@ dir_lookup(struct node *dir, const char *name, int len)
 static void
 dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
 {
-#if 0
-	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
-#else
-	if (n->u.d.children != NULL)
-#endif
-	{
+	if (n->u.d.children != NULL) {
 		struct gfarm_hash_iterator i;
 		struct gfarm_hash_entry *child;
 
@@ -375,11 +370,7 @@ dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
 static void
 free_node(void *cookie, struct node *n)
 {
-#if 0
-	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
-#else
 	if (n->u.d.children != NULL)
-#endif
 		gfarm_hash_table_free(n->u.d.children);
 	free(n->name);
 }
@@ -505,12 +496,7 @@ dir_lookup(struct node *dir, const char *name, int len)
 static void
 dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
 {
-#if 0
-	if ((n->flags & NODE_FLAG_IS_DIR) != 0)
-#else
-	if (!RB_EMPTY(&n->u.d.children))
-#endif
-	{
+	if (!RB_EMPTY(&n->u.d.children)) {
 		struct node *child;
 
 		RB_FOREACH(child, rb_dir, &n->u.d.children) {
@@ -575,6 +561,14 @@ static struct node *root;
 #define DIR_NODE_SIZE \
 	(sizeof(struct node) - sizeof(union node_u) + sizeof(struct dir))
 
+#if 0
+/*
+ * We always use DIR_NODE_SIZE always, so FILE_NODE_SIZE is not really used.
+ * to make it possible to change a file to a dir.
+ */
+#define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
+#endif
+
 static struct node *
 init_dir_node(struct node *n, const char *name, int len)
 {
@@ -589,23 +583,20 @@ init_dir_node(struct node *n, const char *name, int len)
 	return (n);
 }
 
-/* FILE_NODE_SIZE is not really used now */
-#define FILE_NODE_SIZE (sizeof(struct node) - sizeof(union node_u))
-
 static struct node *
 init_file_node(struct node *n, const char *name, int len)
 {
 	if (init_node_name(n, name, len) == NULL)
 		return (NULL);
 	n->flags = 0;
-#if 1
+
 	/*
-	 * We hold this even on a file_node,
+	 * We hold u.d.children even on a file_node,
 	 * this field can be non-NULL, if this node is changed from
 	 * a dir_node to a file_node.
 	 */
 	dir_init_empty(&n->u.d.children);
-#endif
+
 	return (n);
 }
 
@@ -654,17 +645,8 @@ enter_node(struct node *parent, const char *name, int len, int is_dir,
 	struct gfarm_hash_entry *entry;
 	struct node *n;
 
-	entry = gfarm_hash_enter(parent->u.d.children, name, len,
-#if 0
-	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE,
-#else
-	/*
-	 * always allocate DIR_NODE_SIZE
-	 * to make it possible to change a file to a dir
-	 */
-	    DIR_NODE_SIZE,
-#endif
-	    createdp);
+	entry = gfarm_hash_enter(parent->u.d.children, name, len, 
+	    DIR_NODE_SIZE, createdp);
 	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -735,17 +717,7 @@ enter_node(struct node *parent, const char *name, int len, int is_dir,
 		*np = n;
 		return (NULL);
 	}
-	n = malloc(
-#if 0
-	    is_dir ? DIR_NODE_SIZE : FILE_NODE_SIZE
-#else
-	/*
-	 * always allocate DIR_NODE_SIZE
-	 * to make it possible to change a file to a dir
-	 */
-	    DIR_NODE_SIZE
-#endif
-	);
+	n = malloc(DIR_NODE_SIZE);
 	if (n == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
