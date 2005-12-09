@@ -10,10 +10,9 @@
 #include <sys/stat.h>
 #include <openssl/evp.h>
 
-#if defined(__GNUC__) || defined(__STDC_VERSION__) && __STDC_VERSION__>=199901L
-# define gfarm_inline	inline
-#else
-# define gfarm_inline
+#if !defined(__GNUC__) && \
+	(!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L)
+# define inline
 #endif
 
 
@@ -287,7 +286,7 @@ struct node {
 	} u;
 };
 
-static gfarm_inline struct node *
+static inline struct node *
 init_node_name_primitive(struct node *n, const char *name, int len)
 {
 	n->name = malloc(len + 1);
@@ -310,7 +309,7 @@ init_node_name(struct node *n, const char *name, int len)
 	return (init_node_name_primitive(n, name, len));
 }
 
-static gfarm_inline int
+static inline int
 dir_init(Dir *dirp)
 {
 	Dir d = gfarm_hash_table_alloc(NODE_HASH_SIZE,
@@ -322,13 +321,13 @@ dir_init(Dir *dirp)
 	return (1);
 }
 
-static gfarm_inline void
+static inline void
 dir_init_empty(Dir *dirp)
 {
 	*dirp = NULL;
 }
 
-static gfarm_inline int
+static inline int
 dir_make_valid(Dir *dirp)
 {
 	if (*dirp == NULL) {
@@ -385,7 +384,7 @@ free_node(void *cookie, struct node *n)
 	free(n->name);
 }
 
-static gfarm_inline void
+static inline void
 purge_node(struct node *parent, struct node *n, const char *name, int len)
 {
 	recursive_free_nodes(n);
@@ -437,7 +436,7 @@ init_node_name(struct node *n, const char *name, int len)
 	return (n);
 }
 
-static gfarm_inline int
+static inline int
 node_compare(struct node *a, struct node *b)
 {
 	int len = a->namelen < b->namelen ? a->namelen : b->namelen;
@@ -470,20 +469,20 @@ node_compare(struct node *a, struct node *b)
 RB_PROTOTYPE(rb_dir, node, rb_dir_entry, node_compare)
 RB_GENERATE(rb_dir, node, rb_dir_entry, node_compare)
 
-static gfarm_inline int
+static inline int
 dir_init(Dir *dirp)
 {
 	RB_INIT(dirp);
 	return (1);
 }
 
-static gfarm_inline void
+static inline void
 dir_init_empty(Dir *dirp)
 {
 	RB_INIT(dirp);
 }
 
-static gfarm_inline int
+static inline int
 dir_make_valid(Dir *dirp)
 {
 	if (RB_EMPTY(dirp)) {
@@ -526,7 +525,7 @@ static void
 free_node(void *cookie, struct node *n)
 {
 	/*
-	 * free_all_nodes() doesn't work with this,
+	 * XXX free_all_nodes() doesn't work with this,
 	 * because this implementation cannot free the root node.
 	 * but it's OK, because free_all_nodes() is currently commented out.
 	 */
@@ -535,7 +534,7 @@ free_node(void *cookie, struct node *n)
 	free(n);
 }
 
-static gfarm_inline void
+static inline void
 purge_node(struct node *parent, struct node *n, const char *name, int len)
 {
 	recursive_free_nodes(n);
