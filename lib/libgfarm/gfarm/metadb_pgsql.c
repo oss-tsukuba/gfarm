@@ -14,13 +14,6 @@
 
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION "23505"
 
-/* for test */
-char *gfarm_postgresql_server_name = "srapc1367.sra.co.jp";
-char *gfarm_postgresql_server_port = "5432";
-char *gfarm_postgresql_dbname = "gfarm";
-char *gfarm_postgresql_username = "gfarm";
-char *gfarm_postgresql_passwd = "secret-postgresql-password";
-
 /**********************************************************************/
 
 static PGconn *conn = NULL;
@@ -43,38 +36,102 @@ save_pgsql_msg(char *s)
 }
 
 static char *
+gfarm_pgsql_make_conninfo(const char **varnames, char **varvalues, int n,
+	char *others)
+{
+	int i;
+	size_t length = 0;
+	char *v, *conninfo, *p;
+
+	/* count necessary string length */
+	for (i = 0; i < n; i++) {
+		if ((v = varvalues[i]) != NULL) {
+			if (i > 1)
+				length++; /* space */
+			length += strlen(varnames[i]) + 3; /* var='' */
+			for (; *v != '\0'; v++) {
+				if (*v == '\'' || *v == '\\')
+					++length;
+				++length;
+			}
+		}
+	}
+	if (others != NULL) {
+		if (length > 0)
+			++length; /* space */
+		length += strlen(others);
+	}
+	++length; /* '\0' */
+
+	conninfo = malloc(length);
+	if (conninfo == NULL)
+		return (NULL);
+
+	p = conninfo;
+	for (i = 0; i < n; i++) {
+		if ((v = varvalues[i]) != NULL) {
+			if (i > 1)
+				*p++ = ' ';
+			p += sprintf(p, "%s='", varnames[i]);
+			for (; *v != '\0'; v++) {
+				if (*v == '\'' || *v == '\\')
+					*p++ = '\\';
+				*p++ = *v;
+			}
+			*p++ = '\'';
+		}
+	}
+	if (others != NULL) {
+		if (p > conninfo)
+			*p++ = ' ';
+		p += sprintf(p, "%s", others);
+	}
+	*p++ = '\0';
+	return (conninfo);
+}
+
+static char *
 gfarm_pgsql_initialize(void)
 {
 	int port;
-	char *e;
+	static const char *varnames[] = {
+		"host", "port", "dbname", "user", "password"
+	};
+	char *varvalues[GFARM_ARRAY_LENGTH(varnames)];
+	char *e, *conninfo;
 
-	if (gfarm_postgresql_server_name == NULL)
-		return ("gfarm.conf: postgresql_serverhost is missing");
-	if (gfarm_postgresql_server_port == NULL)
-		return ("gfarm.conf: postgresql_serverport is missing");
-	port = strtol(gfarm_postgresql_server_port, &e, 0);
-	if (e == gfarm_postgresql_server_port || port <= 0 || port >= 65536)
+	/*
+	 * sanity check:
+	 * all parameters can be NULL,
+	 * in such cases, enviroment variables will be used.
+	 */
+	if (gfarm_postgresql_server_port != NULL) {
+		port = strtol(gfarm_postgresql_server_port, &e, 0);
+		if (e == gfarm_postgresql_server_port ||
+		    port <= 0 || port >= 65536)
 		return ("gfarm.conf: postgresql_serverport: "
 			"illegal value");
-	if (gfarm_postgresql_dbname == NULL)
-		return ("gfarm.conf: postgresql_dbname is missing");
-	if (gfarm_postgresql_username == NULL)
-		return ("gfarm.conf: postgresql_username is missing");
-	if (gfarm_postgresql_passwd == NULL)
-		return ("gfarm.conf: postgresql_passwd is missing");
+	}
+
+	varvalues[0] = gfarm_postgresql_server_name;
+	varvalues[1] = gfarm_postgresql_server_port;
+	varvalues[2] = gfarm_postgresql_dbname;
+	varvalues[3] = gfarm_postgresql_user;
+	varvalues[4] = gfarm_postgresql_password;
+	conninfo = gfarm_pgsql_make_conninfo(
+	    varnames, varvalues, GFARM_ARRAY_LENGTH(varnames),
+	    gfarm_postgresql_conninfo);
+	if (conninfo == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
 	/*
 	 * initialize PostgreSQL
 	 */
 
 	/* open a connection */
-	conn = PQsetdbLogin(gfarm_postgresql_server_name,
-			    gfarm_postgresql_server_port,
-			    NULL, /* options */
-			    NULL, /* tty */
-			    gfarm_postgresql_dbname,
-			    gfarm_postgresql_username,
-			    gfarm_postgresql_passwd);
+	conn = PQconnectdb(conninfo);
+	free(conninfo);
+
 	e = NULL;
 	if (PQstatus(conn) != CONNECTION_OK) {
 		/* PQerrorMessage's return value will be freed in PQfinish() */

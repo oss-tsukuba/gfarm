@@ -13,8 +13,40 @@
 
 /**********************************************************************/
 
+/*
+ * XXX it may be better to initialize this by a table of functions which
+ * always report "metadb is not correctly initialized".
+ */
 static const struct gfarm_metadb_internal_ops *metadb_ops =
+#ifdef HAVE_LDAP
 	&gfarm_ldap_metadb_ops;
+#else
+	&gfarm_pgsql_metadb_ops;
+#endif
+
+char *
+gfarm_metab_use_ldap(void)
+{
+#ifdef HAVE_LDAP
+	metadb_ops = &gfarm_ldap_metadb_ops;
+	return (NULL);
+#else
+	return ("gfarm.conf: postgresql is specified, "
+	    "but it is not linked into the gfarm library");
+#endif
+}
+
+char *
+gfarm_metab_use_postgresql(void)
+{
+#ifdef HAVE_POSTGRESQL
+	metadb_ops = &gfarm_pgsql_metadb_ops;
+	return (NULL);
+#else
+	return ("gfarm.conf: postgresql is specified, "
+	    "but it is not linked into the gfarm library");
+#endif
+}
 
 static pid_t gfarm_metadb_client_pid = 0;
 static int gfarm_metadb_connection_shared = 0;

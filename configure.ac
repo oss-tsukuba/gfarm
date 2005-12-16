@@ -152,10 +152,10 @@ yes)
   AC_MSG_RESULT([using CFLAGS=\"${pthread_includes}\" and LDLIBS=\"${pthread_libs}\"])
   AC_DEFINE(HAVE_PTHREAD, 1, [pthread library exists])
 
-  pthread_srcs='$(PTHREAD_SRCS)'
-  pthread_objs='$(PTHREAD_OBJS)'
-  pthread_cflags='$(PTHREAD_CFLAGS)'
-  pthread_targets='$(PTHREAD_TARGETS)'
+  pthread_srcs='${PTHREAD_SRCS}'
+  pthread_objs='${PTHREAD_OBJS}'
+  pthread_cflags='${PTHREAD_CFLAGS}'
+  pthread_targets='${PTHREAD_TARGETS}'
   ;;
 *)
   if test x"${with_pthread}" = x"no"; then
@@ -312,10 +312,10 @@ AC_ARG_WITH(globus,
  esac
 
  # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs='$(GLOBUS_SRCS)'
- globus_objs='$(GLOBUS_OBJS)'
- globus_cflags='$(GLOBUS_CFLAGS)'
- globus_targets='$(GLOBUS_TARGETS)'
+ globus_srcs='${GLOBUS_SRCS}'
+ globus_objs='${GLOBUS_OBJS}'
+ globus_cflags='${GLOBUS_CFLAGS}'
+ globus_targets='${GLOBUS_TARGETS}'
 
  openssl_includes='$(globus_includes)'
  case ${globus_static} in
@@ -366,10 +366,10 @@ AC_ARG_WITH(mpi,
  AC_MSG_RESULT([using \"${mpicc}\"])
 
  # for conditional compilation which depends on whether MPI is enabled or not
- mpi_srcs='$(MPI_SRCS)'
- mpi_objs='$(MPI_OBJS)'
- mpi_srcs='$(MPI_CFLAGS)'
- mpi_targets='$(MPI_TARGETS)'
+ mpi_srcs='${MPI_SRCS}'
+ mpi_objs='${MPI_OBJS}'
+ mpi_srcs='${MPI_CFLAGS}'
+ mpi_targets='${MPI_TARGETS}'
 ],
 [AC_MSG_RESULT([disabled])
  with_mpi=
@@ -569,10 +569,10 @@ if ( getconf LFS64_CFLAGS &&
      getconf LFS64_LIBS ) > /dev/null 2>&1; then
 	AC_MSG_RESULT([yes])
 
-	largefile64_srcs='$(LARGEFILE64_SRCS)'
-	largefile64_objs='$(LARGEFILE64_OBJS)'
-	largefile64_cflags='$(LARGEFILE64_CFLAGS)'
-	largefile64_targets='$(LARGEFILE64_TARGETS)'
+	largefile64_srcs='${LARGEFILE64_SRCS}'
+	largefile64_objs='${LARGEFILE64_OBJS}'
+	largefile64_cflags='${LARGEFILE64_CFLAGS}'
+	largefile64_targets='${LARGEFILE64_TARGETS}'
 else
 	AC_MSG_RESULT([no])
 
@@ -678,7 +678,7 @@ else
 	fi
 	ldap_usable=yes
 	# this needs to be checked here due to settings of $CPPFLAGS and $LIBS
-	AC_CHECK_FUNCS(ldap_memfree ldap_set_option)
+	AC_CHECK_FUNCS(ldap_memfree ldap_set_option ldap_start_tls_s ldap_perror)
     ], [])
     CPPFLAGS="$CPPFLAGS_SAVE"
     LIBS="$LIBS_SAVE"
@@ -723,10 +723,10 @@ fi
 
 case $ldap_usable in
 yes)	AC_DEFINE(HAVE_LDAP, 1, [LDAP library exists])
-	ldap_srcs='$(LDAP_SRCS)'
-	ldap_objs='$(LDAP_OBJS)'
-	ldap_cflags='$(LDAP_CFLAGS)'
-	ldap_targets='$(LDAP_TARGETS)'
+	ldap_srcs='${LDAP_SRCS}'
+	ldap_objs='${LDAP_OBJS}'
+	ldap_cflags='${LDAP_CFLAGS}'
+	ldap_targets='${LDAP_TARGETS}'
 	;;
 *)	ldap_includes=
 	ldap_libs=
@@ -831,10 +831,10 @@ fi
 
 case $postgresql_usable in
 yes)	AC_DEFINE(HAVE_POSTGRESQL, 1, [PostgreSQL library exists])
-	postgresql_srcs='$(POSTGRESQL_SRCS)'
-	postgresql_objs='$(POSTGRESQL_OBJS)'
-	postgresql_cflags='$(POSTGRESQL_CFLAGS)'
-	postgresql_targets='$(POSTGRESQL_TARGETS)'
+	postgresql_srcs='${POSTGRESQL_SRCS}'
+	postgresql_objs='${POSTGRESQL_OBJS}'
+	postgresql_cflags='${POSTGRESQL_CFLAGS}'
+	postgresql_targets='${POSTGRESQL_TARGETS}'
 	;;
 *)	postgresql_includes=
 	postgresql_libs=

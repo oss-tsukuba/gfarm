@@ -11,10 +11,34 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+
+#define LDAP_DEPRECATED 1 /* export deprecated functions on OpenLDAP-2.3 */
 #include <lber.h>
 #include <ldap.h>
+
 #include <gfarm/gfarm.h>
 
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_X_TLS_CTX)
+#define	OPENLDAP_TLS_USABLE
+#else
+#undef	OPENLDAP_TLS_USABLE
+#endif
+
+#ifdef OPENLDAP_TLS_USABLE
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
+
+#ifndef LDAP_PORT
+#define LDAP_PORT	389
+#endif
+#ifndef LDAPS_PORT
+#define LDAPS_PORT	636	/* ldap over SSL/TLS */
+#endif
+
+#include "gfutil.h"
+
+#include "gfpath.h"
 #include "config.h"
 #include "metadb_access.h"
 #include "metadb_sw.h"
@@ -61,9 +85,203 @@ gfarm_ldap_sanity(void)
 	return (e);
 }
 
+#ifdef OPENLDAP_TLS_USABLE /* OpenLDAP dependent SSL/TLS handling */
+
+/*
+ * The reason we do this is because OpenLDAP's handling of the following
+ * options are fragile:
+ *	LDAP_OPT_X_TLS_CIPHER_SUITE
+ *	LDAP_OPT_X_TLS_CACERTDIR
+ *	LDAP_OPT_X_TLS_KEYFILE
+ *	LDAP_OPT_X_TLS_CERTFILE
+ *	LDAP_OPT_X_TLS_REQUIRE_CERT
+ *
+ * These options affect global state, and need to be set before ldap_init().
+ * Furthermore, these options only affect at initialization phase of
+ * OpenLDAP's default SSL context (libraries/libldap/tls.c:tls_def_ctx)
+ * at least in openldap-2.2.27.
+ * Thus, if there is any other user of these options in the same process,
+ * these options don't work (for gfarm if other uses the options first,
+ * or for other user if gfarm uses the options first).
+ * To avoid such problem, we have to set the default SSL context by
+ * using LDAP_OPT_X_TLS_CTX and OpenSSL functions, instead of the OpenLDAP's
+ * default one.
+ */
+
+/*
+ * Initialize SSL context, but only for things needed by clients.
+ *
+ * This function is nearly equivalent to ldap_pvt_tls_init_def_ctx()
+ * in libraries/libldap/tls.c:tls_def_ctx of openldap-2.2.27,
+ * but only does client side initialization.
+ *
+ * XXX make this possible to use Globus LDAP certificate ("CN=ldap/HOSTNAME")
+ */
+static char *
+gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
+{
+	char *e;
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
+
+	if (ctx == NULL)
+		return ("LDAP: cannot allocate SSL/TLS context");
+
+	/*
+	 * The following operation is nearly equivalent to:
+	 * rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_CIPHER_SUITE,
+	 *     gfarm_ldap_tls_cipher_suite);
+	 */
+	if (gfarm_ldap_tls_cipher_suite != NULL &&
+	    !SSL_CTX_set_cipher_list(ctx, gfarm_ldap_tls_cipher_suite)) {
+		e = "cannot set ldap_tls_cipher_suite";
+		goto error;
+	}
+
+	/*
+	 * The following operation is nearly equivalent to:
+	 * rv = ldap_set_option(NULL,LDAP_OPT_X_TLS_CACERTDIR,GRID_CACERT_DIR);
+	 */
+	if (!SSL_CTX_load_verify_locations(ctx, NULL, GRID_CACERT_DIR)) {
+		e = "cannot use " GRID_CACERT_DIR
+		    " for LDAP TLS certificates directory";
+		goto error;
+	} else if (!SSL_CTX_set_default_verify_paths(ctx)) {
+		e = "failed to verify " GRID_CACERT_DIR
+		    " for LDAP TLS certificates directory";
+		goto error;
+	}
+
+	/*
+	 * The following operation is nearly equivalent to:
+	 * rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_KEYFILE,
+	 *     gfarm_ldap_tls_certificate_key_file);
+	 */
+	if (gfarm_ldap_tls_certificate_key_file != NULL &&
+	    !SSL_CTX_use_PrivateKey_file(ctx,
+	    gfarm_ldap_tls_certificate_key_file, SSL_FILETYPE_PEM)) {
+		e = "failed to use ldap_tls_certificate_key_file";
+		goto error;
+	}
+
+	/*
+	 * The following operation is nearly equivalent to:
+	 * rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_CERTFILE,
+	 *     gfarm_ldap_tls_certificate_file);
+	 */
+	if (gfarm_ldap_tls_certificate_file != NULL &&
+	    !SSL_CTX_use_certificate_file(ctx,
+	    gfarm_ldap_tls_certificate_file, SSL_FILETYPE_PEM)) {
+		e = "failed to use ldap_tls_certificate_file";
+		goto error;
+	}
+
+	if ((gfarm_ldap_tls_certificate_key_file != NULL ||
+	     gfarm_ldap_tls_certificate_file != NULL) &&
+	    !SSL_CTX_check_private_key(ctx)) {
+		e = "ldap_tls_certificate_file/key_file check failure";
+		goto error;
+	}
+
+	/*
+	 * The following operation is nearly equivalent to:
+	 * tls = LDAP_OPT_X_TLS_HARD;
+	 * rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, &tls);
+	 */
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+
+	*ctxp = ctx;
+	return (NULL);
+
+error:
+	SSL_CTX_free(ctx);
+	if (gflog_auth_get_verbose()) {
+		if (!ERR_peek_error()) {
+			gflog_error("%s", e);
+		} else {
+			gflog_error("%s, because:", e);
+			do {
+				gflog_error("%s", ERR_error_string(
+				    ERR_get_error(), NULL));
+			} while (ERR_peek_error());
+		}
+	}
+	return (e);
+
+}
+
+static SSL_CTX *ldap_ssl_context = NULL;
+static SSL_CTX *ldap_ssl_default_context = NULL;
+
+static char *
+gfarm_ldap_set_ssl_context(void)
+{
+	int rv;
+	
+	if (ldap_ssl_context == NULL) {
+		char *e = gfarm_ldap_new_default_ctx(&ldap_ssl_context);
+
+		if (e != NULL)
+			return (e);
+	}
+
+	rv = ldap_get_option(NULL, LDAP_OPT_X_TLS_CTX,
+	    &ldap_ssl_default_context);
+	if (rv != LDAP_SUCCESS) {
+		gflog_auth_error("LDAP get default SSL/TLS context: %s",
+		    ldap_err2string(rv));
+		return (ldap_err2string(rv));
+	}
+
+	rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_CTX, ldap_ssl_context);
+	if (rv != LDAP_SUCCESS) {
+		gflog_auth_error("LDAP set default SSL/TLS context: %s",
+		    ldap_err2string(rv));
+		return (ldap_err2string(rv));
+	}
+	return (NULL);
+}
+
+static char *
+gfarm_ldap_restore_ssl_context(void)
+{
+	int rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_CTX,
+	    ldap_ssl_default_context);
+
+	if (rv != LDAP_SUCCESS) {
+		gflog_auth_error("LDAP restore default SSL/TLS context: %s",
+		    ldap_err2string(rv));
+		return (ldap_err2string(rv));
+	}
+	return (NULL);
+}
+
+static char *
+gfarm_ldap_switch_ssl_context(LDAP *ld)
+{
+	int rv;
+
+	gfarm_ldap_restore_ssl_context();
+
+	rv = ldap_set_option(ld, LDAP_OPT_X_TLS_CTX, ldap_ssl_context);
+
+	if (rv != LDAP_SUCCESS) {
+		gflog_auth_error("LDAP set SSL/TLS context: %s",
+		    ldap_err2string(rv));
+		return (ldap_err2string(rv));
+	}
+	return (NULL);
+}
+
+#else
+#define gfarm_ldap_restore_ssl_context()
+#define gfarm_ldap_switch_ssl_context(ld)
+#endif /* OPENLDAP_TLS_USABLE */
+
 static char *
 gfarm_ldap_initialize(void)
 {
+	enum { LDAP_WITHOUT_TLS, LDAP_WITH_TLS, LDAP_WITH_START_TLS }
+		tls_mode = LDAP_WITHOUT_TLS;
 	int rv, port;
 #if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_VERSION3)
 	int version;
@@ -71,16 +289,37 @@ gfarm_ldap_initialize(void)
 #if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_NETWORK_TIMEOUT)
 	struct timeval timeout = { 5, 0 };
 #endif
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_X_TLS)
+	int tls;
+#endif
 	char *e;
 
+	/* we need to check "ldap_tls" at first to see default port number */
+	if (gfarm_ldap_tls != NULL) {
+		if (strcasecmp(gfarm_ldap_tls, "false") == 0) {
+			tls_mode = LDAP_WITHOUT_TLS;
+		} else if (strcasecmp(gfarm_ldap_tls, "true") == 0) {
+			tls_mode = LDAP_WITH_TLS;
+		} else if (strcasecmp(gfarm_ldap_tls, "start_tls") == 0) {
+			tls_mode = LDAP_WITH_START_TLS;
+		} else {
+			return ("gfarm.conf: ldap_tls: unknown keyword");
+		}
+	}
+	/* sanity check */
 	if (gfarm_ldap_server_name == NULL)
 		return ("gfarm.conf: ldap_serverhost is missing");
-	if (gfarm_ldap_server_port == NULL)
-		return ("gfarm.conf: ldap_serverport is missing");
-	port = strtol(gfarm_ldap_server_port, &e, 0);
-	if (e == gfarm_ldap_server_port || port <= 0 || port >= 65536)
-		return ("gfarm.conf: ldap_serverport: "
-			"illegal value");
+	if (gfarm_ldap_server_port == NULL) {
+		if (tls_mode == LDAP_WITH_TLS)
+			port = LDAPS_PORT;
+		else
+			port = LDAP_PORT;
+	} else {
+		port = strtol(gfarm_ldap_server_port, &e, 0);
+		if (e == gfarm_ldap_server_port || port <= 0 || port >= 65536)
+			return ("gfarm.conf: ldap_serverport: "
+				"illegal value");
+	}
 	if (gfarm_ldap_base_dn == NULL)
 		return ("gfarm.conf: ldap_base_dn is missing");
 
@@ -91,45 +330,111 @@ gfarm_ldap_initialize(void)
 	/* open a connection */
 	gfarm_ldap_server = ldap_init(gfarm_ldap_server_name, port);
 	if (gfarm_ldap_server == NULL) {
-		switch (errno) {
-		case EHOSTUNREACH:
-			return ("gfarm meta-db ldap_serverhost "
-				"access failed");
-		case ECONNREFUSED:
-			return ("gfarm meta-db ldap_serverport "
-				"connection refused");
-		default:
-			return ("gfarm meta-db ldap_server "
-				"access failed");
-			/*return (strerror(errno));*/
-		}
+		/* ldap_init() defers actual connect(2) operation later */
+		gflog_auth_error("ldap_init: %s", strerror(errno));
+		return ("gfarm meta-db ldap_server access failed");
 	}
 
-#ifdef HAVE_LDAP_SET_OPTION
-	/* options */
-#ifdef LDAP_VERSION3
+	if (tls_mode != LDAP_WITHOUT_TLS) {
+#ifdef OPENLDAP_TLS_USABLE
+		e = gfarm_ldap_set_ssl_context();
+		if (e != NULL) {
+			(void)gfarm_metadb_terminate();
+			return (e);
+		}
+#else
+		(void)gfarm_metadb_terminate();
+		return ("gfarm.conf: \"ldap_tls\" is specified, but "
+		    "the LDAP library linked with gfarm doesn't support it");
+#endif
+	}
+
+
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_VERSION3)
 	version = LDAP_VERSION3;
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_PROTOCOL_VERSION, &version);
 #endif
+
 	ldap_set_option(gfarm_ldap_server, LDAP_OPT_REFERRALS, LDAP_OPT_ON);
-#ifdef LDAP_OPT_NETWORK_TIMEOUT
-	ldap_set_option(
-		gfarm_ldap_server, LDAP_OPT_NETWORK_TIMEOUT, (void *)&timeout);
+
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_NETWORK_TIMEOUT)
+	ldap_set_option(gfarm_ldap_server, LDAP_OPT_NETWORK_TIMEOUT,
+	    (void *)&timeout);
 #endif
+
+	if (tls_mode == LDAP_WITH_TLS) {
+#if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_X_TLS)
+		tls = LDAP_OPT_X_TLS_HARD;
+		rv = ldap_set_option(gfarm_ldap_server, LDAP_OPT_X_TLS, &tls);
+		if (rv != LDAP_SUCCESS) {
+			gflog_auth_error("LDAP use SSL/TLS: %s",
+			    ldap_err2string(rv));
+#ifdef HAVE_LDAP_PERROR
+			if (gflog_auth_get_verbose()) {
+				/* XXX this can only output to stderr */
+				ldap_perror(gfarm_ldap_server,
+				    "ldap_start_tls");
+			}
 #endif
-	/* authenticate as nobody */
-	rv = ldap_simple_bind_s(gfarm_ldap_server, NULL, NULL);
+			gfarm_ldap_restore_ssl_context();
+			(void)gfarm_metadb_terminate();
+			return (ldap_err2string(rv));
+		}
+#else
+		gfarm_ldap_restore_ssl_context();
+		(void)gfarm_metadb_terminate();
+		return ("gfarm.conf: \"ldap_tls true\" is specified, but "
+		    "the LDAP library linked with gfarm doesn't support it");
+#endif /* defined(LDAP_OPT_X_TLS) && defined(HAVE_LDAP_SET_OPTION) */
+	}
+
+	if (tls_mode == LDAP_WITH_START_TLS) {
+#if defined(HAVE_LDAP_START_TLS_S) && defined(HAVE_LDAP_SET_OPTION)
+		rv = ldap_start_tls_s(gfarm_ldap_server, NULL, NULL);
+		if (rv != LDAP_SUCCESS) {
+			gflog_auth_error("LDAP start TLS: %s",
+			    ldap_err2string(rv));
+#ifdef HAVE_LDAP_PERROR
+			if (gflog_auth_get_verbose()) {
+				/* XXX this cannot output to syslog */
+				ldap_perror(gfarm_ldap_server,
+				    "ldap_start_tls");
+			}
+#endif
+			gfarm_ldap_restore_ssl_context();
+			(void)gfarm_metadb_terminate();
+			return ("gfarm meta-db ldap_server TLS access failed");
+		}
+#else
+		gfarm_ldap_restore_ssl_context();
+		(void)gfarm_metadb_terminate();
+		return ("gfarm.conf: \"ldap_tls start_tls\" is specified, but "
+		    "the LDAP library linked with gfarm doesn't support it");
+#endif /* defined(HAVE_LDAP_START_TLS_S) && defined(HAVE_LDAP_SET_OPTION) */
+	}
+
+	/* gfarm_ldap_bind_dn and gfarm_ldap_bind_password may be NULL */
+	rv = ldap_simple_bind_s(gfarm_ldap_server,
+	    gfarm_ldap_bind_dn, gfarm_ldap_bind_password);
 	if (rv != LDAP_SUCCESS) {
+		gflog_auth_error("LDAP simple bind: %s", ldap_err2string(rv));
+		if (tls_mode != LDAP_WITHOUT_TLS)
+			gfarm_ldap_restore_ssl_context();
 		(void)gfarm_metadb_terminate();
 		return (ldap_err2string(rv));
 	}
+
 	/* sanity check. base_dn can be accessed? */
 	e = gfarm_ldap_sanity();
 	if (e != NULL) {
+		if (tls_mode != LDAP_WITHOUT_TLS)
+			gfarm_ldap_restore_ssl_context();
 		(void)gfarm_metadb_terminate();
 		return (e);
 	}
 
+	if (tls_mode != LDAP_WITHOUT_TLS)
+		gfarm_ldap_switch_ssl_context(gfarm_ldap_server);
 	return (NULL);
 }
 
@@ -154,9 +459,12 @@ gfarm_ldap_terminate(void)
 }
 
 /*
- * LDAP connection cannot be used from forked children unless the
- * connection is ensured to be used exclusively.
+ * LDAP connection cannot be used from forked children unless
+ * the connection is ensured to be used exclusively.
  * This routine guarantees that never happens.
+ * NOTE:
+ * This is where gfarm_metadb_initialize() is called from.
+ * Nearly every interface functions must call this function.
  */
 static char *
 gfarm_ldap_check(void)
@@ -167,7 +475,7 @@ gfarm_ldap_check(void)
 	 */
 	if (gfarm_ldap_server != NULL && gfarm_does_own_metadb_connection())
 		return (NULL);
-	/* XXX close the file descriptor for gfarm_ldap_server */
+	/* XXX close the file descriptor for gfarm_ldap_server, but how? */
 	gfarm_ldap_server = NULL;
 	return (gfarm_metadb_initialize());
 }

@@ -13,12 +13,9 @@
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
+#include "gfpath.h"
 #include "auth.h"
 #include "auth_gsi.h"
-
-#ifndef GFSL_CONF_USERMAP
-#define GFSL_CONF_USERMAP "/etc/grid-security/grid-mapfile"
-#endif
 
 static int gsi_initialized;
 static int gsi_server_initialized;
@@ -33,7 +30,7 @@ gfarm_gsi_client_initialize(void)
 	if (gsi_initialized)
 		return (NULL);
 
-	rv = gfarmSecSessionInitializeInitiator(NULL, GFSL_CONF_USERMAP,
+	rv = gfarmSecSessionInitializeInitiator(NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {
@@ -103,8 +100,8 @@ gfarm_gsi_server_initialize(void)
 		gsi_initialized = 0;
 	}
 
-	rv = gfarmSecSessionInitializeBoth(NULL, NULL,
-	    GFSL_CONF_USERMAP, &e_major, &e_minor);
+	rv = gfarmSecSessionInitializeBoth(NULL, NULL, GRID_MAPFILE,
+	    &e_major, &e_minor);
 	if (rv <= 0) {
 		if (gflog_auth_get_verbose()) {
 			gflog_error(

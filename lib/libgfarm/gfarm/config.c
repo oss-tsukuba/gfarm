@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <assert.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h> /* ntohs */
@@ -25,27 +26,19 @@
 
 #include "gfutil.h"
 
+#include "gfpath.h"
 #include "hostspec.h"
 #include "host.h"
 #include "param.h"
 #include "sockopt.h"
 #include "auth.h"
 #include "config.h"
+#include "metadb_access.h" /* for gfarm_metab_use_*() */
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers, ... */
 #include "timer.h"
-
-#ifndef GFARM_CONFIG
-#define GFARM_CONFIG	"/etc/gfarm.conf"
-#endif
-#ifndef GFARM_CLIENT_RC
-#define GFARM_CLIENT_RC		".gfarmrc"
-#endif
-#ifndef GFARM_SPOOL_ROOT
-#define GFARM_SPOOL_ROOT	"/var/spool/gfarm"
-#endif
 
 static int gfarm_initialized = 0;
 int gfarm_is_active_file_system_node = 0;
@@ -351,6 +344,26 @@ static char *gfarm_metadb_server_portname = NULL;
 char *gfarm_ldap_server_name = NULL;
 char *gfarm_ldap_server_port = NULL;
 char *gfarm_ldap_base_dn = NULL;
+char *gfarm_ldap_bind_dn = NULL;
+char *gfarm_ldap_bind_password = NULL;
+char *gfarm_ldap_tls = NULL;
+char *gfarm_ldap_tls_cipher_suite = NULL;
+char *gfarm_ldap_tls_certificate_key_file = NULL;
+char *gfarm_ldap_tls_certificate_file = NULL;
+
+/* PostgreSQL dependent */
+char *gfarm_postgresql_server_name = NULL;
+char *gfarm_postgresql_server_port = NULL;
+char *gfarm_postgresql_dbname = NULL;
+char *gfarm_postgresql_user = NULL;
+char *gfarm_postgresql_password = NULL;
+char *gfarm_postgresql_conninfo = NULL;
+
+enum gfarm_metadb_backend_type {
+	GFARM_METADB_TYPE_UNKNOWN,
+	GFARM_METADB_TYPE_LDAP,
+	GFARM_METADB_TYPE_POSTGRESQL
+};
 
 static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
@@ -366,6 +379,28 @@ static enum {
 static void
 gfarm_config_clear(void)
 {
+	static char **vars[] = {
+		&gfarm_spool_server_portname,
+		&gfarm_metadb_server_name,
+		&gfarm_metadb_server_portname,
+		&gfarm_ldap_server_name,
+		&gfarm_ldap_server_port,
+		&gfarm_ldap_base_dn,
+		&gfarm_ldap_bind_dn,
+		&gfarm_ldap_bind_password,
+		&gfarm_ldap_tls,
+		&gfarm_ldap_tls_cipher_suite,
+		&gfarm_ldap_tls_certificate_key_file,
+		&gfarm_ldap_tls_certificate_file,
+		&gfarm_postgresql_server_name,
+		&gfarm_postgresql_server_port,
+		&gfarm_postgresql_dbname,
+		&gfarm_postgresql_user,
+		&gfarm_postgresql_password,
+		&gfarm_postgresql_conninfo,
+	};
+	int i;
+
 	if (gfarm_spool_root != NULL) {
 		/*
 		 * In case of the default spool root, do not free the
@@ -375,31 +410,65 @@ gfarm_config_clear(void)
 			free(gfarm_spool_root);
 		gfarm_spool_root = NULL;
 	}
-	if (gfarm_spool_server_portname != NULL) {
-		free(gfarm_spool_server_portname);
-		gfarm_spool_server_portname = NULL;
+	for (i = 0; i < GFARM_ARRAY_LENGTH(vars); i++) {
+		if (*vars[i] != NULL) {
+			free(*vars[i]);
+			*vars[i] = NULL;
+		}
 	}
-	if (gfarm_metadb_server_name != NULL) {
-		free(gfarm_metadb_server_name);
-		gfarm_metadb_server_name = NULL;
-	}
-	if (gfarm_metadb_server_portname != NULL) {
-		free(gfarm_metadb_server_portname);
-		gfarm_metadb_server_portname = NULL;
-	}
-	if (gfarm_ldap_server_name != NULL) {
-		free(gfarm_ldap_server_name);
-		gfarm_ldap_server_name = NULL;
-	}
-	if (gfarm_ldap_server_port != NULL) {
-		free(gfarm_ldap_server_port);
-		gfarm_ldap_server_port = NULL;
-	}
-	if (gfarm_ldap_base_dn != NULL) {
-		free(gfarm_ldap_base_dn);
-		gfarm_ldap_base_dn = NULL;
-	}
+
 	config_read = gfarm_config_not_read;
+}
+
+static char *
+config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
+{
+	switch (metadb_type) {
+	case GFARM_METADB_TYPE_UNKNOWN:
+		return ("neither ldap_ option or postgresql_ option "
+		    "is specified");
+	case GFARM_METADB_TYPE_LDAP:
+		return (gfarm_metab_use_ldap());
+	case GFARM_METADB_TYPE_POSTGRESQL:
+		return (gfarm_metab_use_postgresql());
+	default:
+		assert(0);
+		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
+	}
+}
+
+static char *
+set_metadb_type(enum gfarm_metadb_backend_type *metadb_typep,
+	enum gfarm_metadb_backend_type set)
+{
+	if (*metadb_typep == set)
+		return (NULL);
+	switch (*metadb_typep) {
+	case GFARM_METADB_TYPE_UNKNOWN:
+		*metadb_typep = set;
+		return (NULL);
+	case GFARM_METADB_TYPE_LDAP:
+		return ("inconsistent configuration, "
+		    "LDAP is specified as metadata backend before");
+	case GFARM_METADB_TYPE_POSTGRESQL:
+		return ("inconsistent configuration, "
+		    "PostgreSQL is specified as metadata backend before");
+	default:
+		assert(0);
+		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
+	}
+}
+
+static char *
+set_metadb_type_ldap(enum gfarm_metadb_backend_type *metadb_typep)
+{
+	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LDAP));
+}
+
+static char *
+set_metadb_type_postgresql(enum gfarm_metadb_backend_type *metadb_typep)
+{
+	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_POSTGRESQL));
 }
 
 /*
@@ -827,7 +896,8 @@ parse_cred_config(char *p, char *service,
 }
 
 static char *
-parse_one_line(char *s, char *p, char **op)
+parse_one_line(char *s, char *p, char **op,
+	enum gfarm_metadb_backend_type *metadb_typep)
 {
 	char *e, *o;
 
@@ -861,10 +931,65 @@ parse_one_line(char *s, char *p, char **op)
 
 	} else if (strcmp(s, o = "ldap_serverhost") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_name);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
 	} else if (strcmp(s, o = "ldap_serverport") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_port);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
 	} else if (strcmp(s, o = "ldap_base_dn") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_base_dn);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_bind_dn") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_bind_dn);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_bind_password") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_bind_password);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_tls") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_tls);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_tls_cipher_suite") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_tls_cipher_suite);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_tls_certificate_key_file") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_tls_certificate_key_file);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+	} else if (strcmp(s, o = "ldap_tls_certificate_file") == 0) {
+		e = parse_set_var(p, &gfarm_ldap_tls_certificate_file);
+		if (e == NULL)
+			e = set_metadb_type_ldap(metadb_typep);
+
+	} else if (strcmp(s, o = "postgresql_serverhost") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_server_name);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
+	} else if (strcmp(s, o = "postgresql_serverport") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_server_port);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
+	} else if (strcmp(s, o = "postgresql_dbname") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_dbname);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
+	} else if (strcmp(s, o = "postgresql_user") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_user);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
+	} else if (strcmp(s, o = "postgresql_password") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_password);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
+	} else if (strcmp(s, o = "postgresql_conninfo") == 0) {
+		e = parse_set_var(p, &gfarm_postgresql_conninfo);
+		if (e == NULL)
+			e = set_metadb_type_postgresql(metadb_typep);
 
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
@@ -887,7 +1012,8 @@ parse_one_line(char *s, char *p, char **op)
 }
 
 static char *
-gfarm_config_read_file(char *config_file, int *open_failedp)
+gfarm_config_read_file(char *config_file, int *open_failedp,
+	enum gfarm_metadb_backend_type *metadb_typep)
 {
 	int lineno = 0;
 	char *s, *p, *e, *o, buffer[1024];
@@ -943,7 +1069,7 @@ gfarm_config_read_file(char *config_file, int *open_failedp)
 
 		if (s == NULL) /* blank or comment line */
 			continue;
-		e = parse_one_line(s, p, &o);
+		e = parse_one_line(s, p, &o, metadb_typep);
 		if (e != NULL) {
 #ifdef HAVE_SNPRINTF
 			snprintf(error, sizeof(error), syntax_error_fmt,
@@ -1054,6 +1180,10 @@ gfarm_config_read(void)
 {
 	char *e, *home;
 	int rc_open_failed, etc_open_failed, rc_need_free;
+	enum gfarm_metadb_backend_type
+		etc_config = GFARM_METADB_TYPE_UNKNOWN,
+		rc_config = GFARM_METADB_TYPE_UNKNOWN;
+
 	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
 	char *rc;
 
@@ -1085,20 +1215,22 @@ gfarm_config_read(void)
 		rc_need_free = 1;
 	}
 	gfarm_stringlist_init(&local_user_map_file_list);
-	e = gfarm_config_read_file(rc, &rc_open_failed);
+	e = gfarm_config_read_file(rc, &rc_open_failed, &rc_config);
 	if (rc_need_free)
 		free(rc);
 	if (e != NULL && !rc_open_failed)
 		return (e);
 	
-	e = gfarm_config_read_file(gfarm_config_file, &etc_open_failed);
+	e = gfarm_config_read_file(gfarm_config_file,
+	    &etc_open_failed, &etc_config);
 	/* if ~/.gfarmrc was successfully read, an error at open here is ok */
 	if (e != NULL && (!etc_open_failed || rc_open_failed))
 		return (e);
 
 	gfarm_config_set_default_ports();
 
-	return (NULL);
+	return (config_metadb_type(rc_config != GFARM_METADB_TYPE_UNKNOWN ?
+	    rc_config : etc_config));
 }
 
 /* the following function is for server. */
@@ -1106,6 +1238,7 @@ char *
 gfarm_server_config_read(void)
 {
 	char *e;
+	enum gfarm_metadb_backend_type etc_config = GFARM_METADB_TYPE_UNKNOWN;
 
 	switch (config_read) {
 	case gfarm_config_not_read:
@@ -1120,13 +1253,17 @@ gfarm_server_config_read(void)
 	}
 
 	gfarm_stringlist_init(&local_user_map_file_list);
-	e = gfarm_config_read_file(gfarm_config_file, NULL);
+	e = gfarm_config_read_file(gfarm_config_file, NULL, &etc_config);
 	if (e != NULL)
 		return (e);
 
 	gfarm_config_set_default_ports();
 
-	return (NULL);
+	/*
+	 * the following config_metadb_type() may be unnecessary,
+	 * because both gfmd and gfsd don't need metadb for now.
+	 */
+	return (config_metadb_type(etc_config));
 }
 
 #ifdef STRTOKEN_TEST
