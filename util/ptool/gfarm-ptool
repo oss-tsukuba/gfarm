@@ -55,10 +55,7 @@ if [ ! -f $hostfile ]; then
 	exit 1
 fi
 
-STDIN=cat
-if [ "X$PRUN_STDIN" = X ]; then
-    STDIN=true
-else
+if [ "X$PRUN_STDIN" != X ]; then
     for f in $PRUN_STDIN; do
 	if [ X$f = X- ]; then
 	    if [ X$REMOVE_HOSTFILE != X -o X$REMOVE_STDIN_FILE != X ]; then
@@ -104,8 +101,12 @@ fi
 for host in `sed -e 's/#.*//' -e '/^[ 	]*$/d' $hostfile`; do
     [ "X$host" = X$HOSTNAME -a "X$PRUN_ALL_INCLUDE_MYSELF" != Xyes ] && continue
     $MESSAGE $host
-    $STDIN $PRUN_STDIN | $CMD $host$HOSTSUF $ARG &
-    [ "X$PRUN_PARALLEL" != Xyes ] && wait
+    case $PRUN_PARALLEL$PRUN_STDIN in
+	no) $CMD $host$HOSTSUF $ARG ;;
+	no*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG ;;
+	yes) $CMD $host$HOSTSUF $ARG & ;;
+	yes*) cat $PRUN_STDIN | $CMD $host$HOSTSUF $ARG & ;;
+    esac
 done
 wait
 
