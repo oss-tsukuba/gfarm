@@ -501,11 +501,12 @@ gfs_chmod_file_spool(
 }
 
 /*
- * Sets NULL to the parameter 'changed_sectionp' in following cases.
+ * NOTE: `*changed_sectionp' is always set,
+ *	and may be NULL in the following cases:
  * 1. An error occurs.
- * 2. No error occurs but file's exacutabity does not change i.e.
- *    all execute bits are unset in both of old and new mode or
- *    some execute bits are set in both mode.
+ * 2. No error occurs, but the file's executability was not changed.
+ *    i.e. all execute-bits are unset in both old and new mode,
+ *    or some execute-bits are set in both modes.
  */
 char *
 gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t mode,
