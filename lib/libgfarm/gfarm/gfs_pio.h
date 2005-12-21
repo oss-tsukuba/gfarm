@@ -16,6 +16,7 @@ struct gfs_pio_ops {
 	char *(*view_fsync)(GFS_File, int);
 	int (*view_fd)(GFS_File);
 	char *(*view_stat)(GFS_File, struct gfs_stat *);
+	char *(*view_chmod)(GFS_File, gfarm_mode_t);
 };
 
 struct gfs_file {

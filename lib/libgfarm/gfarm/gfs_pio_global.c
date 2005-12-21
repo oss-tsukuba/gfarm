@@ -288,6 +288,12 @@ gfs_pio_view_global_stat(GFS_File gf, struct gfs_stat *status)
 	return (gfs_stat(gc->url, status));
 }
 
+static char *
+gfs_pio_view_global_chmod(GFS_File gf, gfarm_mode_t mode)
+{
+	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+}
+
 struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_close,
 	gfs_pio_view_global_write,
@@ -296,7 +302,8 @@ struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_ftruncate,
 	gfs_pio_view_global_fsync,
 	gfs_pio_view_global_fd,
-	gfs_pio_view_global_stat
+	gfs_pio_view_global_stat,
+	gfs_pio_view_global_chmod
 };
 
 char *

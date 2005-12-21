@@ -346,12 +346,14 @@ gfs_chmod_execfile_metadata(
 	struct gfarm_file_section_info *from_section,
 	int ncopy,
 	struct gfarm_file_section_copy_info *copies,
-	enum exec_change change)
+	enum exec_change change,
+	char **changed_sectionp)
 {
 	struct gfarm_file_section_info to_section;
 	char *e;
 	int i;
 
+	*changed_sectionp = NULL;
 	to_section = *from_section;
 	to_section.section = get_new_section_name(change, ncopy, copies);
 	if (to_section.section == NULL)
@@ -361,7 +363,7 @@ gfs_chmod_execfile_metadata(
 					to_section.section,
 					&to_section);
 	if (e != NULL)
-		goto finish_free_to_section_section;
+		goto finish;
 
 	e = change_path_info_mode_nsections(pi, mode, change);
 	if (e != NULL) {
@@ -370,7 +372,7 @@ gfs_chmod_execfile_metadata(
 				to_section.pathname, to_section.section);
 		gflog_warning(
 		    "gfs_chmod: gfarm_file_section_info_remove(): %s", e2);
-		goto finish_free_to_section_section;
+		goto finish;
 	}
 
 	for (i = 0; i < ncopy; i++) {
@@ -388,8 +390,11 @@ gfs_chmod_execfile_metadata(
 		gflog_warning("gfs_chmod:gfarm_file_section_info_remove(): %s",
 		    e);
 
-finish_free_to_section_section:
-	free(to_section.section);
+ finish:
+	if (e == NULL)
+		*changed_sectionp = to_section.section;
+	else
+		free(to_section.section);
 	return(e);
 }
 
@@ -495,8 +500,16 @@ gfs_chmod_file_spool(
 	return (NULL);
 }
 
-static char *
-gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
+/*
+ * Sets NULL to the parameter 'changed_sectionp' in following cases.
+ * 1. An error occurs.
+ * 2. No error occurs but file's exacutabity does not change i.e.
+ *    all execute bits are unset in both of old and new mode or
+ *    some execute bits are set in both mode.
+ */
+char *
+gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t mode,
+		     char **changed_sectionp)
 {
 	char *e;
 	int nsection, *ncopy, i;
@@ -504,6 +517,7 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 	struct gfarm_file_section_copy_info **copies;
 	enum exec_change change;
 
+	*changed_sectionp = NULL;
 	if (strcmp(pi->status.st_user, gfarm_get_global_username()) != 0) {
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -557,7 +571,8 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 		e = change_path_info_mode(pi, mode);
 	} else {
 		e = gfs_chmod_execfile_metadata(pi, mode, &sections[0],
-						ncopy[0], copies[0], change);
+						ncopy[0], copies[0], change,
+						changed_sectionp);
 	}
 	if (e != NULL)
 		goto finish_free_section_copy_info;
@@ -582,6 +597,7 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
+	char *changed_section;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -592,7 +608,9 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_chmod_internal(&pi, mode);
+	e = gfs_chmod_meta_spool(&pi, mode, &changed_section);
+	if (changed_section != NULL)
+		free(changed_section);
 	gfarm_path_info_free(&pi);
 	return (e);
 }
@@ -600,7 +618,7 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 char *
 gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
 {
-	return (gfs_chmod_internal(&gf->pi, mode));
+	return (*gf->ops->view_chmod)(gf, mode);
 }
 
 char *

@@ -308,6 +308,26 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 	return (NULL);
 }
 
+static char *
+gfs_pio_view_section_chmod(GFS_File gf, gfarm_mode_t mode)
+{
+        char *e;
+        char *changed_section;
+        struct gfs_file_section_context *vc = gf->view_context;
+
+        e = gfs_chmod_meta_spool(&gf->pi, mode, &changed_section);
+        if (e != NULL) {
+		if (changed_section != NULL)
+			free(changed_section);
+		return (e);
+	}	
+	if (changed_section != NULL) {
+		free(vc->section);
+		vc->section = changed_section;
+	}	
+        return (NULL);
+}
+
 struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_close,
 	gfs_pio_view_section_write,
@@ -316,7 +336,8 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_ftruncate,
 	gfs_pio_view_section_fsync,
 	gfs_pio_view_section_fd,
-	gfs_pio_view_section_stat
+	gfs_pio_view_section_stat,
+	gfs_pio_view_section_chmod
 };
 
 
