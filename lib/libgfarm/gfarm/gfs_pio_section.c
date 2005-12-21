@@ -355,6 +355,49 @@ finish:
 
 double gfs_pio_set_view_section_time;
 
+static char *
+gfs_set_path_info(GFS_File gf)
+{
+	struct gfarm_path_info pi;
+	char *e;
+
+	e = gfarm_path_info_set(gf->pi.pathname, &gf->pi);
+	if (e == GFARM_ERR_ALREADY_EXISTS &&
+	    (gf->open_flags & GFARM_FILE_EXCLUSIVE) != 0) {
+		return (e);
+	}
+	if (e == GFARM_ERR_ALREADY_EXISTS &&
+	    (e = gfarm_path_info_get(gf->pi.pathname, &pi)) == NULL) {
+		if (GFS_FILE_IS_PROGRAM(gf) !=
+		    GFARM_S_IS_PROGRAM(pi.status.st_mode))
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		if (e == NULL && !GFS_FILE_IS_PROGRAM(gf)) {
+			if (gf->pi.status.st_nsections !=
+			    pi.status.st_nsections) {
+				e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
+			} else {
+#if 0
+				assert(gf->pi.status.st_mode &
+				       GFS_FILE_MODE_NSEGMENTS_FIXED);
+#endif
+			}
+		}
+		if (e != NULL) {
+			gfarm_path_info_free(&pi);
+		} else {
+			gfarm_path_info_free(&gf->pi);
+			gf->pi = pi;
+		}
+		/*
+		 * XXX should check the follows:
+		 * - creator of the metainfo has same job id
+		 * - mode is consistent among same job
+		 * - nfragments is consistent among same job
+		 */
+	}
+	return (e);
+}
+
 char *
 gfs_pio_set_view_section(GFS_File gf, const char *section,
 			 char *if_hostname, int flags)
@@ -457,48 +500,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	is_local_host = gfarm_canonical_hostname_is_local(
 	    vc->canonical_hostname);
 
-	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
-		struct gfarm_path_info pi;
-
-		e = gfarm_path_info_set(gf->pi.pathname, &gf->pi);
-		if (e == GFARM_ERR_ALREADY_EXISTS &&
-		    (gf->open_flags & GFARM_FILE_EXCLUSIVE) != 0) {
-			e = GFARM_ERR_ALREADY_EXISTS;
-			goto free_host;
-		}
-		if (e == GFARM_ERR_ALREADY_EXISTS &&
-		    (e = gfarm_path_info_get(gf->pi.pathname, &pi)) == NULL) {
-			if (GFS_FILE_IS_PROGRAM(gf) !=
-			    GFARM_S_IS_PROGRAM(pi.status.st_mode))
-				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			if (e == NULL && !GFS_FILE_IS_PROGRAM(gf)) {
-				if (gf->pi.status.st_nsections !=
-				    pi.status.st_nsections) {
-					e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
-				} else {
-#if 0
-					 assert(gf->pi.status.st_mode &
-					     GFS_FILE_MODE_NSEGMENTS_FIXED);
-#endif
-				}
-			}
-			if (e != NULL) {
-				gfarm_path_info_free(&pi);
-			} else {
-				gfarm_path_info_free(&gf->pi);
-				gf->pi = pi;
-			}
-			/*
-			 * XXX should check the follows:
-			 * - creator of the metainfo has same job id
-			 * - mode is consistent among same job
-			 * - nfragments is consistent among same job
-			 */
-		}
-		if (e != NULL)
-			goto free_host;
-	}
-
 	gf->ops = &gfs_pio_view_section_ops;
 	gf->view_context = vc;
 	gf->view_flags = flags;
@@ -556,6 +557,11 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		goto free_host;
 
 	/* update metadata */
+	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
+		e = gfs_set_path_info(gf);
+		if (e != NULL)
+			goto storage_close;
+	}
 	if ((gf->mode & GFS_FILE_MODE_WRITE) ||
 	    (gf->open_flags & GFARM_FILE_TRUNC)) {
 		/*
@@ -580,6 +586,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (gf->open_flags & GFARM_FILE_APPEND)
 		e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
 
+storage_close:
+	if (e != NULL)
+		(void)(*vc->ops->storage_close)(gf);
 free_host:
 	if (e != NULL)
 		free(vc->canonical_hostname);
