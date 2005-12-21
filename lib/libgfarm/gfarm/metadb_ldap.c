@@ -20,8 +20,10 @@
 
 #if defined(HAVE_LDAP_SET_OPTION) && defined(LDAP_OPT_X_TLS_CTX)
 #define	OPENLDAP_TLS_USABLE
+#define OPENSSL_NO_KRB5 /* XXX - disabled for now to avoid conflict with GSI */
 #else
 #undef	OPENLDAP_TLS_USABLE
+#undef  OPENSSL_NO_KRB5
 #endif
 
 #ifdef OPENLDAP_TLS_USABLE
