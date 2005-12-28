@@ -16,7 +16,7 @@
 #endif
 
 
-#define USE_HASH	1
+#define USE_HASH	0
 
 #include <gfarm/gfarm.h>
 
