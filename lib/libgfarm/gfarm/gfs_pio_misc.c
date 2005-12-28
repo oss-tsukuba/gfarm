@@ -359,36 +359,40 @@ gfs_chmod_execfile_metadata(
 	if (to_section.section == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	e = gfarm_file_section_info_set(to_section.pathname,
-					to_section.section,
-					&to_section);
+	e = gfarm_file_section_info_set(
+		to_section.pathname, to_section.section, &to_section);
 	if (e != NULL)
 		goto finish;
 
 	e = change_path_info_mode_nsections(pi, mode, change);
 	if (e != NULL) {
 		char *e2;
+
 		e2 = gfarm_file_section_info_remove(
 				to_section.pathname, to_section.section);
 		gflog_warning(
-		    "gfs_chmod: gfarm_file_section_info_remove(): %s", e2);
+			"gfs_chmod: file_section_info_remove: %s (%s): %s",
+			to_section.pathname, to_section.section, e2);
 		goto finish;
 	}
 
 	for (i = 0; i < ncopy; i++) {
 		e = gfarm_file_section_copy_info_remove(copies[i].pathname,
-							copies[i].section,
-							copies[i].hostname);
+			copies[i].section, copies[i].hostname);
 		if (e != NULL)
-			gflog_warning("gfs_chmod: "
-			  "gfarm_file_section_copy_info_remove(): %s", e);
+			gflog_warning(
+				"gfs_chmod: file_section_copy_info_remove: "
+				"%s (%s) on %s: %s",
+				copies[i].pathname, copies[i].section,
+				copies[i].hostname, e);
 	}
 
 	e = gfarm_file_section_info_remove(from_section->pathname,
 					   from_section->section);
 	if (e != NULL)
-		gflog_warning("gfs_chmod:gfarm_file_section_info_remove(): %s",
-		    e);
+		gflog_warning(
+			"gfs_chmod: file_section_info_remove: %s (%s): %s",
+			from_section->pathname, from_section->section, e);
 
  finish:
 	if (e == NULL)
@@ -444,15 +448,17 @@ gfs_chmod_file_spool(
 				gfarm_spool_server_port, &peer_addr, NULL);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_host_address_get(): %s", e);
+					"gfs_chmod: host_address_get: %s: %s",
+					copies[i][j].hostname, e);
 				continue;
 			}
 
 			e = gfs_client_connect(copies[i][j].hostname,
-						 &peer_addr, &gfs_server);
+					       &peer_addr, &gfs_server);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_client_connection(): %s",e);
+					"gfs_chmod: gfs_client_connect: %s: %s",
+					copies[i][j].hostname, e);
 				continue;
 			}
 
@@ -460,18 +466,19 @@ gfs_chmod_file_spool(
 					     mode);
 			if (e != NULL) {
 				gflog_warning(
-				    "gfs_chmod:gfs_client_chmod(): %s", e);
+				   "gfs_chmod: gfs_client_chmod: %s on %s: %s",
+				   from_path_section, copies[i][j].hostname, e);
 				gfs_client_disconnect(gfs_server);
 				continue;
 			}
 			if (change != EXECUTABILITY_NOT_CHANGED) {
 				e = gfs_client_rename(gfs_server,
-						      from_path_section,
-						      to_path_section);
+					from_path_section, to_path_section);
 				if (e != NULL) {
 					gflog_warning(
-					   "gfs_chmod:gfs_client_rename(): %s",
-					   e);
+					   "gfs_chmod: gfs_client_rename"
+					   "(%s, %s): %s", from_path_section,
+					   to_path_section, e);
 					gfs_client_disconnect(gfs_server);
 					continue;
 				}
@@ -479,16 +486,15 @@ gfs_chmod_file_spool(
 				new_copy = copies[i][j];
 				new_copy.section = section;
 				e = gfarm_file_section_copy_info_set(
-							new_copy.pathname,
-							new_copy.section,
-							new_copy.hostname,
-							&new_copy);
+					new_copy.pathname, new_copy.section,
+					new_copy.hostname, &new_copy);
 				if (e != NULL) {
 					gflog_warning(
-					  "gfs_chmod:"
-					  "gfarm_file_section_copy_info_set()"
-					  "%s: ",
-					  e);
+					  "gfs_chmod: "
+					  "file_section_copy_info_set: "
+					  "%s (%s) on %s: %s",
+					  new_copy.pathname, new_copy.section,
+					  new_copy.hostname, e);
 				}
 			}
 			gfs_client_disconnect(gfs_server);
@@ -745,16 +751,18 @@ rename_file_spool(
 			e = gfarm_host_address_get(copies[i][j].hostname,
 				gfarm_spool_server_port, &peer_addr, NULL);
 			if (e != NULL) {
-				gflog_warning("rename_file_spool:"
-				    "gfarm_host_address_get(): %s", e);
+				gflog_warning(
+					"rename_file_spool: host_address_get: "
+					"%s: %s", copies[i][j].hostname, e);
 				continue;
 			}
 
 			e = gfs_client_connect(copies[i][j].hostname,
-						 &peer_addr, &gfs_server);
+					       &peer_addr, &gfs_server);
 			if (e != NULL) {
-				gflog_warning("rename_file_spool:"
-				    "gfarm_client_connect(): %s", e);
+				gflog_warning("rename_file_spool: "
+					      "gfs_client_connect: %s: %s",
+					      copies[i][j].hostname, e);
 				continue;
 			}
 
@@ -769,21 +777,21 @@ rename_file_spool(
 			}
 			gfs_client_disconnect(gfs_server);
 			if (e != NULL) {
-				gflog_warning("rename_file_spool:"
-				    "gfs_client_link(): %s", e);
+				gflog_warning("rename_file_spool: "
+				    "gfs_client_link(%s, %s): %s",
+				    from_path_section, to_path_section, e);
 				continue;
 			}
 
 			new_copy = copies[i][j];
 			new_copy.pathname = to_pathname;
 			e = gfarm_file_section_copy_info_set(new_copy.pathname,
-							     new_copy.section,
-							     new_copy.hostname,
-							     &new_copy);
+				new_copy.section, new_copy.hostname, &new_copy);
 			if (e != NULL) {
-				gflog_warning("rename_file_spool:"
-				    "gfarm_file_section_copy_info_set(): %s",
-				    e);
+				gflog_warning("rename_file_spool: "
+				    "file_section_copy_info_set: "
+				    "%s (%s) on %s: %s", new_copy.pathname,
+				    new_copy.section, new_copy.hostname, e);
 				continue;
 			}
 			ok = 1;
@@ -813,17 +821,16 @@ remove_infos_all(char *pathname)
 	e = gfarm_file_section_copy_info_remove_all_by_file(pathname);
 	e2 = gfarm_file_section_info_remove_all_by_file(pathname);
 	if (e2 != NULL)
-		gflog_warning("remove_infos_all:"
-		    "gfarm_file_section_info_remove_all_by_file(): %s", e2);
+		gflog_warning("remove_infos_all: "
+			      "file_section_info_remove_all_by_file: %s: %s",
+			      pathname, e2);
 	if (e == NULL)
 		e = e2;
 	e2 = gfarm_path_info_remove(pathname);
 	if (e2 != NULL)
 		gflog_warning("remove_infos_all:"
-		    "gfarm_file_path_info_remove(): %s", e2);
-	if (e == NULL)
-		e = e2;
-	return (e);
+			      "path_info_remove: %s: %s", pathname, e2);
+	return (e == NULL ? e2 : e);
 }
 
 static char *
@@ -846,8 +853,8 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 	if (e != NULL) {
 		e2 = gfarm_path_info_remove(to_pi.pathname);
 		if (e2 != NULL)
-			gflog_warning("link_a_file:"
-			    "gfarm_path_info_remove(): %s", e);
+			gflog_warning("link_a_file: "
+				"path_info_remove: %s: %s", to_pi.pathname, e2);
 		return (e);
 	}
 
@@ -856,24 +863,24 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 
 		to_section = (*sections)[i];
 		to_section.pathname = to_pi.pathname;
-		e = gfarm_file_section_info_set(to_section.pathname,
-						to_section.section,
-						&to_section);
+		e = gfarm_file_section_info_set(
+			to_section.pathname, to_section.section, &to_section);
 		if (e != NULL) {
 			while (--i >= 0) {
 				e2 = gfarm_file_section_info_remove(
-						to_section.pathname,
-						(*sections)[i].section);
+					to_section.pathname,
+					(*sections)[i].section);
 				if (e2 != NULL)
-					gflog_warning("link_a_file:"
-					   "gfarm_file_section_info_remove(): "
-					   "%s", 
-					   e);
+					gflog_warning("link_a_file: "
+					    "file_section_info_remove: "
+					    "%s (%s): %s", to_section.pathname,
+					    (*sections)[i].section, e2);
 			}
 			e2 = gfarm_path_info_remove(to_pi.pathname);
 			if (e2 != NULL)
-				gflog_warning("link_a_file:"
-				    "gfarm_path_info_remove(): %s", e);
+				gflog_warning("link_a_file: "
+					"path_info_remove: %s: %s",
+					to_pi.pathname, e2);
 			goto finish_free_section_info;
 		}
 	}
@@ -911,7 +918,7 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 
 	for (i = 0; i < *nsection; i++)
 		gfarm_file_section_copy_info_free_all((*ncopy)[i],
-								(*copies)[i]);
+						      (*copies)[i]);
 finish_free_copies:
 	free(*copies);
 finish_free_ncopy:
@@ -942,17 +949,19 @@ rename_single_file(struct gfarm_path_info *from_pi, char *newpath)
 					nsection, sections,
 					ncopy, copies);
 		if (e2 != NULL)
-			gflog_warning("rename_single_file:"
-				      "rename_clean_spool(): %s", e2);
+			gflog_warning("rename_single_file: "
+				      "rename_clean_spool: %s: %s",
+				      from_pi->pathname, e2);
 
 		e2 = remove_infos_all(from_pi->pathname);
 		if (e2 != NULL)
-			gflog_warning("rename_single_file:"
-				      "rename_infos_all(): %s", e2);
+			gflog_warning("rename_single_file: "
+				      "rename_infos_all: %s: %s",
+				      from_pi->pathname, e2);
 
 		for (i = 0; i < nsection; i++)
 			gfarm_file_section_copy_info_free_all(ncopy[i],
-								copies[i]);
+							      copies[i]);
 		free(copies);
 		free(ncopy);
 		gfarm_file_section_info_free_all(nsection, sections);
@@ -1038,19 +1047,22 @@ rename_spool_node_dir(char *hostname,
 		gfarm_spool_server_port, &peer_addr, NULL);
 	if (e != NULL) {
 		gflog_warning(
-		    "rename_spool_node_dir:gfarm_host_address_get(): %s", e);
+			"rename_spool_node_dir: host_address_get: %s: %s",
+			hostname, e);
 		return;
 	}
 	e = gfs_client_connect(hostname, &peer_addr, &gfs_server);
 	if (e != NULL) {
 		gflog_warning(
-		    "rename_spool_node_dir:gfarm_client_connect(): %s", e);
+			"rename_spool_node_dir: gfs_client_connect: %s: %s",
+			hostname, e);
 		return;
 	}
 	e = gfs_client_rename(gfs_server, from, to);
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
 		gflog_warning(
-		    "rename_spool_node_dir:gfarm_client_rename(): %s", e);
+			"rename_spool_node_dir: gfs_client_rename(%s, %s): %s",
+			from, to, e);
 		return;
 	}
 	for (i = 0; i < nfile; i++) {
