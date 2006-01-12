@@ -1,0 +1,100 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-unlink-section.3'>
+
+<refentryinfo><date>19 May 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_unlink_section</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_unlink_section</refname>
+<refpurpose>ファイルセクション削除</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_unlink_section</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+    <paramdef>char * <parameter>section</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数
+<parameter>gfarm_url</parameter>,
+<parameter>section</parameter>
+に指定したファイルセクションを削除します。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>
+の親ディレクトリへ書き込みアクセスする権限がありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定されたファイルセクションが存在しません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
+</listitem>
+</varlistentry>
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
+</listitem>
+</varlistentry>
+-->
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><title>Grid Datafarm: Gfarm hook + Samba [English]</title>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-jp">
+<meta content="document" name="resource-type"></head>
+<body>
+<a href="http://datafarm.apgrid.org/">
+<img alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></a> 
+<a href="../../index.html">documents</a> &gt;
+<a href="index.html">User's Manual</a> &gt;
+samba/hook
+
+<h1>Access Gfarm file system via Samba
+-- using Gfarm syscall-hooking library</h1>
+English | <A href="../../ja/user/samba-hook.html">Japanese</A>
+
+<h2>1. Summary</h2>
+
+  <p>
+  This document describes how to configure samba to access Gfarm
+  file system from Windows clients, by invoking samba with preloaded
+  Gfarm system-call-hooking library.<br>
+
+  <p>
+  Another solution:
+  <a href="samba-gfarmfs.html">GfarmFS-FUSE + Samba</a><br>
+  You can access Gfarm file system using Samba via FUSE, but we 
+  recommend using syscall-hooking library because it is easier
+  to configure and use.
+
+<h2>2. Prerequisites</h2>
+   
+<ul>
+  <li>Samba server host
+  <ul>
+    <li><strong>must</strong> be able to use Samba version 3.X.</li>
+    <li><strong>must</strong> be able to use Gfarm client on the host.</li>
+    <li><strong>must</strong> be able to link ilbgfs_hook.<br>
+      Please refer to "Configuration of Gfarm client node" in "INSTALL.RPM.en"
+      for steps in detail.</li>
+    <li><strong>recommended</strong> that the host isn't a Gfarm file system
+       node.<br>
+      Because all new files will be created on th host if the smbd server host
+      is a Gfarm file system node.</li>
+    <li><strong>recommended</strong> that all users use sharedsecret as the
+      gfarm authentication method, and all users share their home directories,
+      by e.g. using NFS, on all file system nodes and the host that smbd is
+      running.
+
+      If a user use GSI authentication she must issue grid-proxy-init
+      in advance and whenever GSI key expires.
+
+      However GSI is easier to use than sharedsecret in case of a user
+      doesn't share her home directory.  Because she must issue "gfkey -c"
+      on the smbd host and copy her ~/.gfarm_shared_key to her home
+      directory of all file system nodes and do this whenever her
+      sharedsecret key expires.</li>
+
+  </ul>
+</ul>
+
+  Related Softwares
+  <ul>
+    <li>Gfarm: <a href="http://datafarm.apgrid.org/software/">
+        http://datafarm.apgrid.org/software/</a></li>
+    <li>Samba: <a href="http://www.samba.org/">
+        http://www.samba.org/</a></li>
+  </ul>
+
+<h2>3. Configure LDAP server</h2>
+
+  <h3>3.1 Configuration for Japanese file name</h3>
+   See <a href="../../ja/user/samba-hook.html">Gfarm hook + Samba in Japanese</a>
+<h2>4. Configure Samba server</h2>
+
+  <h3>4.1 changes to smb.conf </h3>
+   
+    <h4>4.1.1 Add lines to [global] section</h4>
+	
+      <h5>4.1.1.1 Configuration for Japanese file name</h5>
+       See <a href="../../ja/user/samba-hook.html">Gfarm hook + Samba in Japanese</a>
+      <h5>4.1.1.2 Disable kernel change notify (Samba 3.X)</h5>
+          Make Samba not call F_NOTIFY feature of fcntl(2)
+	  because Gfarm system-call-hook library does not support it.
+    <p>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+kernel change notify = no</pre></td></tr></tbody></table>
+A Windows client may be disconnected from the Samba server host without 
+this setting. We have found this problem at least on Samba 3.0.10 and 3.0.20. 
+But this setting has a side effect that file status changes doesn't
+displayed immediately. <br>
+This problem is not avoided on Samba version 2.X,
+because Samba version 2.X cannot disable 'kernel change notify'.
+
+    <h4>4.1.2 Adding a section to define a file space share</h4>
+    <p>Add a section to access Gfarm file system．</p>
+
+      <h5>4.1.2.1 Parameters to access Gfarm file system</h5>
+
+	<p>Define the following parameters in the section.</p>
+
+	<p>Specify as following to make files unexecutable.
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+create mask = 0644</pre></td></tr></tbody></table>
+
+	   In default configuration, if you create a new file on Gfarm file
+	   sysmtem from a Windows client or copy a file from a Windows client
+	   to Gfarm file system, the file will be registered as an 
+	   executable program that has the same architectue as 
+	   the file system node on which the file's body will be located.
+	   This is different from what you would expect.
+
+	<p>Specify following parameters to make Samba not invoke such
+	   system calls.
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+oplocks = no 
+level2 oplocks = no</pre></td></tr></tbody></table>
+
+	   In default configuration, if you access a file on
+	   Gfarm file system from a Windows client, Samba invokes system
+	   calls that Gfarm doesn't support hooking them.
+
+      <h5>4.1.2.2 Example</h5>
+
+	<p>We show you an example section to add for multiple users to
+	   share the whole Gfarm file system.</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+[gfarm-public]
+   comment = Gfarm Public Stuff
+   path = /gfarm
+   public = yes
+   writable = yes
+   printable = no
+   create mask = 0644
+   oplocks = no
+   level2 oplocks = no</pre></td></tr></tbody></table>
+
+<h2>5. Start Samba</h2>
+
+  <h3>5.1 Change start script</h3>
+
+     <p>We explain using a case on RedHat Linux here.</p>
+
+     <p>Add or change the following items for starting smbd.  In case of
+        RedHat Linux, starting smbd is described in the function start()
+	in the script file '/etc/init.d/smb'.</p> 
+
+     <h4>5.1.1 Add lines to increase the number of file descriptors</h4>
+
+       <p>Add the following lines just before invoking smbd:</p>
+
+       <table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi</pre></td></tr></tbody></table>
+
+     <h4>5.1.2 Add  environment setting to the line which invokes smbd</h4>
+
+       <p>Add the setting of environment variables LD_PRELOAD and
+          LD_LIBRARY_PATH to the beginning of the line which invokes smbd.
+	  Refer to the README.hook.en document for detail.</p>
+	  
+       <p>For example, in case of RedHat Linux, change the following line</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
+
+       <p>to</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
+
+       <p>Configure the variable gfarm_prefix and globus_location to match
+	your installation pathnames of Gfarm and Globus, and configure
+	globus_flavor variable to match your Globus flavor name which is
+	linked with Gfarm.
+
+       <p>Before adding these Globus related paths, you need to install 
+	Globus shared libraries if you have linked Globus libraries to 
+	Gfarm binaries, otherwise you need not this addition.
+	If you install Gfarm binary distribution for RedHat Linux,
+        you need this addition because they are linked with Globus.</p>
+       
+       <p>Adding assignment to LD_LIBRALY_PATH is necessary only if Globus is
+       dynamically linked to Gfarm binaries.  Binary distribution for RedHat
+       Linux is statically linked with Globus so it can be omitted.
+
+       <p>Specifying "*-not-hiddden.so" is unnecessary on OS other than Linux.
+
+   <h3>5.2 Sample of configured script to start Samba</h3>
+
+	<p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+#!/bin/sh
+
+(*snip*)
+
+start() {
+	KIND="SMB"
+	echo -n $"Starting $KIND services: "
+	m=`ulimit -n`
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBOPTIONS
+	RETVAL=$?
+	echo
+	KIND="NMB"
+	echo -n $"Starting $KIND services: "
+	daemon nmbd $NMBDOPTIONS
+	RETVAL2=$?
+	echo
+	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] &amp;&amp; touch /var/lock/subsys/smb || \
+	   RETVAL=1
+	return $RETVAL
+}	
+
+(*snip*)</pre></td></tr></tbody></table>
+
+   <h3>5.3 Starting or Restarting Samba</h3>
+
+     <p>For example, invoke the following command on RedHat Linux.</p>
+
+     <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table>
+
+<h2>6. Access Samba server from Windows Client</h2>
+
+     <p>Map a network drive to the Samba share.
+      The following sample steps shows how to map</p>
+     <ol>    
+     <li>Right-click on "'My Network" icon.</li>
+     <li>Left-click on "Map Network Drive" menu item.</li>
+     <li>Input a drive name and shared folder name on the displayed dialog.</li>
+     </ol>
+</body>
+</html>

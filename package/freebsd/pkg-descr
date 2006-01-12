@@ -1,0 +1,18 @@
+Gfarm (Grid Datafarm) provides a user-level grid filesystem and
+parallel process management based on file-affinity scheduling.
+
+The filesystem can be accessed by either every existing
+dynamically-linked program (please read README.hook.{en,ja} in
+the document directory to do this), or programs which are using
+Gfarm file access API.
+Parallel process scheduling and invokation are done by gfrun command.
+
+If this package is configured with globus, don't forget to configure
+your environment by the following procedure:
+	on Bourne shell:
+		GLOBUS_LOCATION=/usr/local/globus
+		export GLOBUS_LOCATION
+		. $GLOBUS_LOCATION/etc/globus-user-env.sh 
+	on csh:
+		setenv GLOBUS_LOCATION /usr/local/globus
+		. $GLOBUS_LOCATION/etc/globus-user-env.csh 

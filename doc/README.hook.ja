@@ -1,0 +1,427 @@
+	      既存アプリケーションからのアクセスについて
+	     --- システムコールフックライブラリの利用 ---
+
+システムコールフックライブラリ(libgfs_hook.so あるいは gfs_hook.o)を利
+用することにより，Gfarm ファイルシステムを /gfarm にマウントしているよ
+うにアクセスすることが可能になります．/gfarm が，Gfarm ファイルシステム
+の root ディレクトリとなります．
+
+目次
+====
+
+1) 設定方法
+
+  1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX の場合
+
+  無修整で，既存のアプリケーションから Gfarm ファイルシステムをアクセス
+  できます．
+
+  1-2) AIX の場合
+
+  システムコールフックライブラリと再リンクして作成し直すことにより，既
+  存のアプリケーションからのアクセスが可能です．
+
+  1-3) その他の OS の場合
+
+  datafarm@apgrid.org までご相談ください．
+
+2) 制限事項
+
+3) セマンティックスと拡張 API
+
+======================================================================
+
+1) 設定方法
+-----------
+
+1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX, Tru64 の場合
+-------------------------------------------------------------------
+
+アプリケーションの起動に先立ち，libgfs_hook.so を preload することによ
+り，無修整で，既存のアプリケーションからの Gfarm ファイルシステムのアク
+セスが可能になります．
+
+preload にあたり，OS 個別の設定，注意事項があります．
+
+ (1) Linux の場合
+==================
+
+まず，必要なシステムコールを正しくフックするため，glibc-not-hidden パッ
+ケージをインストールします．
+http://datafarm.apgrid.org/software/sycall-hook.ja.html#glibc-not-hidden
+
+もしも glibc-not-hidden をインストールできない場合は，2) に従い，システ
+ムコールフックライブラリと静的に再リンクしてアプリケーションを作成し直
+すことでも実現できます．あるいは，GfarmFS-FUSE を利用することもできます．
+       http://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html
+
+次に，LD_PRELOAD 環境変数に，libgfs_hook.so.0 および
+glib{rt,pthread,c}-not-hidden.so を指定します．
+
+シェルが sh あるいは bash の場合は，以下のように設定します．
+
+	$ LD_PRELOAD='%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合は，以下のように設定します．
+
+	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+
+この設定以降に起動するアプリケーションは，/gfarm に Gfarm ファイルシス
+テムをマウントしているように利用することが可能になります．
+
+上記の設定を行ったら，まず，ふだん利用しているシェルを起動して，動作
+するかどうか確認してください．
+
+	% bash
+
+なお，GSI 認証を含んだ Gfarm を利用している場合，Kerberos ベースの
+libgssapi をリンクしているプログラムが Segmentation fault で落ちて
+しまったり，それらのプログラムからの Gfarm ファイルシステムのアクセス
+ができない場合があります．その場合は，GSI ベースの libgssapi と
+libssl も LD_PRELOAD で指定します．たとえば scp や wget のようなプロ
+グラムが，これに該当することがあります。
+
+例えば，Gfarm にリンクされている Globus の flavor が %%GLOBUS_FLAVOR%% だった場合，
+以下のように $GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 
+および $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 を指定することになります．
+
+	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
+	$ export LD_PRELOAD
+
+ (2) FreeBSD の場合
+====================
+
+LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+
+ところで，FreeBSD の 4.X までのリリースでは，/bin にあるコマンドはスタ
+ティックリンクされているため LD_PRELOAD が効きません．この場合，下記の
+ような手順でダイナミックリンクしたコマンドを /usr/local/dynbin のような
+場所に作成し，パスの先頭に加えておくと良いでしょう．
+
+(1) ソース配布中の sbin.??, subin.?? を展開する．
+	# cd /usr/src
+	# cat 配布ディレクトリ/src/sbin.?? | tar zpxf -
+	# cat 配布ディレクトリ/src/subin.?? | tar zpxf -
+
+(2) 動的リンクに変更する．
+	# cd bin
+	# vi Makefile.inc
+		下記の行をコメントに変更する．
+		NOSHARED?=	YES
+
+(3) make して，適当なディレクトリにインストールする．
+  ここでは /usr/local/dynbin/ にインストールしています．
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make NOMAN=noman BINDIR=/usr/local/dynbin install ); done'
+
+なお，以下に FreeBSD-4.11/i386 用のダイナミックリンクされた /bin バイナリ
+があります．
+
+https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
+
+ (3) NetBSD の場合
+===================
+
+LD_PRELOAD 環境変数に，libgfs_hook.so.0 を指定します．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.so.0
+
+ところで，NetBSD の 1.X までのリリースでは，/bin にあるコマンドはスタ
+ティックリンクされているため LD_PRELOAD が効きません．この場合，下記の
+ような手順でダイナミックリンクしたコマンドを /usr/local/dynbin のような
+場所に作成し，パスの先頭に加えておくと良いでしょう．
+
+(1) ソース配布中の src.tgz を展開する．
+	# cd /
+	# tar zpxf 配布ディレクトリ/source/sets/src.tgz
+
+(2) 動的リンクに変更する．
+	# cd usr/src/bin
+	# vi Makefile.inc
+		下記の行をコメントに変更する．
+		LDSTATIC?=	-static
+
+(3) make して，適当なディレクトリにインストールする．
+  ここでは /usr/local/dynbin/ にインストールしています．
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make ); done'
+	# sh -c 'for d in cat chmod cp ls mkdir mv pax pwd rcp rm rmdir sh test; do ( cd $d; make MKMAN=no BINDIR=/usr/local/dynbin install ); done'
+
+なお，以下に NetBSD-1.6.2/i386 用のダイナミックリンクされた /bin バイナリ
+があります．
+
+https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
+
+ (4) Solaris
+=============
+
+LD_PRELOAD_32 環境変数に，libgfs_hook.so.0 を指定します．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ export LD_PRELOAD_32
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
+
+なお，Solaris では十分なテストができていません．今のところ，opendir(3)
+ライブラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
+
+ (5) MacOS X
+=============
+
+DYLD_INSERT_LIBRARIES 環境変数に，libgfs_hook.dylib を指定し，
+さらに DYLD_FORCE_FLAT_NAMESPACE 環境変数を設定します．
+DYLD_INSERT_LIBRARIES 環境変数に複数のライブラリを指定する場合には，
+「:」で区切ります。
+DYLD_FORCE_FLAT_NAMESPACE 環境変数に指定する値は，どんな値でも結構です．
+
+シェルが sh あるいは bash の場合:
+
+	$ DYLD_INSERT_LIBRARIES=%%LIBDIR%%/libgfs_hook.dylib
+	$ DYLD_FORCE_FLAT_NAMESPACE=
+	$ export DYLD_INSERT_LIBRARIES DYLD_FORCE_FLAT_NAMESPACE
+
+シェルが csh (tcsh) の場合:
+
+	% setenv DYLD_INSERT_LIBRARIES %%LIBDIR%%/libgfs_hook.dylib
+	% setenv DYLD_FORCE_FLAT_NAMESPACE ""
+
+なお，MacOS X はほとんどテストがされていません．
+
+ (6) HP-UX
+=============
+
+LD_PRELOAD 環境変数に，libgfs_hook.sl を指定します．
+
+シェルが sh あるいは bash の場合:
+
+	$ LD_PRELOAD=%%LIBDIR%%/libgfs_hook.sl
+	$ export LD_PRELOAD
+
+シェルが csh (tcsh) の場合:
+
+	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.sl
+
+なお，HP-UX はほとんどテストがされていません．今のところ，readdir(3)
+ライブラリ関数を用いたディレクトリアクセスが動作しないことが判明しています．
+
+ (7) Tru64
+=============
+
+_RLD_LIST 環境変数に，libgfs_hook.so.0 を指定します．
+_RLD_LIST 環境変数に複数のライブラリを指定する場合には，「:」で区切ります．
+また、最後に「:DEFAULT」の指定も必要です．
+
+シェルが sh あるいは bash の場合:
+
+	$ _RLD_LIST=%%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+	$ export _RLD_LIST
+
+シェルが csh (tcsh) の場合:
+
+	% setenv _RLD_LIST %%LIBDIR%%/libgfs_hook.so.0:DEFAULT
+
+Tru64 は，現在のところ gfhost コマンドやスケジューリング機能に問題が
+あることが判明しています．また readdir(3) ライブラリ関数を用いたディレ
+クトリアクセスも動作しません．
+
+ (8) OS に依存しない設定事項
+=============================
+
+上記設定は，.bashrc や .cshrc など起動スクリプトに記述すると，以降の設
+定が必要なくなり，便利です．
+
+対話シェル自体で，Gfarm ファイルシステムを利用したい場合は，もう一度立
+ち上げてください．
+
+	% exec bash -l
+
+その後は，cd や，ファイル名の補完が利用できるようになります．
+
+	bash$ cd /gfarm
+
+また，以下の制限事項も参照ください．
+
+-----------------------------------------------------------------------
+
+1-2) AIX の場合
+---------------
+
+AIX など preload の機能をもたない OS の場合は，gfs_hook.o と再リンクし
+てアプリケーションを作成し直すことにより，既存のアプリケーションからの
+アクセスが可能です．
+
+ただし，（Linux など）ダイナミックリンクでは必要なシステムコールのフッ
+クできない場合があります．その場合は，静的にリンクすると解決する場合が
+あります．
+
+* C プログラム
+
+gfs_hook.o と -lgfarm をリンクしてアプリケーションを再作成します．
+
+	% cc prog.o %%LIBDIR%%/gfs_hook.o -lgfarm
+
+静的にリンクする場合は，libtool を利用して，-all-static オプションをつ
+けます．
+
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_%%GLOBUS_FLAVOR%% -lsasl 
+
+＃ RedHat 8.0 あるいは RedHat 7.3 で，アカウントの認証に LDAP を利用し
+＃ ている場合，静的リンクされたプログラムは正しく実行されず，
+＃ Segmentation fault になるというバグがあります．
+
+* Fortran あるいは C++ プログラム
+
+C プログラムの場合と同様に gfs_hook.o と -lgfarm をリンクします．
+
+* MPI プログラム
+
+MPI プログラムの場合は，gfs_hook.o の代りに，gfs_hook_no_init.o と
+hooks_init_mpi.c をリンクします．
+
+	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c \
+		-lgfarm
+
+-----------------------------------------------------------------------
+
+1-3) その他の OS の場合
+-----------------------
+
+datafarm@apgrid.org までご相談ください．
+
+======================================================================
+
+2) 制限事項
+-----------
+
+（この項における制限は GfarmFS-FUSE にはありません．）
+
+2-1) ファイルシステムノードを兼ねていないクライアントからのアクセスの
+     制限
+
+Gfarm ファイルシステムに保持されているプログラム，共有ライブラリ，ファ
+イルに対する，ファイルシステムノードを兼ねていないクライアントからのア
+クセスに関して，現在，実装上の制限で以下がサポートされていません．
+
+ ・プログラムの起動
+ ・共有ライブラリのリンク
+ ・リダイレクトによる子プロセスのファイル作成
+ ・リダイレクトによるファイルの入力
+
+なお，実行属性のついたファイルの作成や，読み込みアクセスのためには，環
+境変数や ~/.gfarmrc ファイルでクライアントノードのアーキテクチャ名を指
+定する必要があります．
+
+環境変数を用いる場合には，下記のようにして行います．~/.gfarmrc ファイル
+で設定する場合については，gfarm.conf(5) のマニュアルを参照してください．
+
+	$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
+
+2-2) ファイルシステムノードからのアクセスの制限
+
+ファイルシステムノードでは，上記のプログラムの起動，共有ライブラリの読
+込みはサポートされますが，リダイレクト関係には以下の制限があります．
+
+リダイレクトによる子プロセスのファイル作成は，新規作成に限りサポートさ
+れます．
+
+リダイレクトによるファイルの入力をサポートするためには，
+
+	bash$ export GFARM_FLAGS=r
+
+と，GFARM_FLAGS に r を設定して，オンデマンドファイル複製の設定をする必
+要があります．この場合，参照されるファイルはまず自ノードにファイル複製
+を作成してから参照されるようになります．例えば，この設定は，'tar zxfp
+foo.tar.gz' などで，ファイルを展開する場合にも必要となります．
+
+======================================================================
+
+3) セマンティックスと拡張 API
+-----------------------------
+
+3-1) ファイル・ビューのセマンティクス
+-------------------------------------
+
+ファイルを新規に作成する時のデフォルトのファイルビューはローカル・ファ
+イル・ビューとなります．
+
+存在するファイルの場合は，並列プロセスの数とファイル断片の数が同じ場合
+は，デフォルトビューはローカル・ファイル・ビューとなりますが，それ以外
+は，グローバル・ファイル・ビューとなります．
+
+gfrun のオプションに -b を付けて起動すると，新規ファイルを含めたデフォ
+ルトビューがグローバルファイルビューとなります．
+
+3-2) 拡張 Gfarm URL
+--------------------
+
+ROOT I/O を含む，いくつかのアプリケーションでは，パス名に ':' をつける
+ことができないものがあります．そのため，'gfarm@' を 'gfarm:' の代りに利
+用できるようにしています．例えば，'gfarm:~/foo.txt' は 'gfarm@~/foo.txt'
+でも参照可能です．
+
+また，疑似マウントポイントとして /gfarm を設定し，/gfarm に Gfarm ファ
+イルシステムをマウントしているようにアクセスすることが可能です．この場
+合，Gfarm ファイルシステム上のホームディレクトリ，カレント・ワーキング・
+ディレクトリを指定するためには．'/gfarm/~'，'/gfarm/.' と指定します．
+
+さらに，ファイル断片の番号，アーキテクチャ名を明示的に指定することもで
+きます．'gfarm::0:foo.txt'，'gfarm@:0:foo.txt'，'/gfarm:0:/./foo.txt'
+はすべて，'gfarm:foo.txt' の第 0 番目のファイル断片を表します．
+
+3-3) gfs_hook API
+-----------------
+
+デフォルトのファイルビューなどの動作を変更するために，gfs_hook API が準
+備されています．
+
+3-3-1 デフォルト・ファイル・ビューの変更
+
+以下の API は，以降のファイル・オープン，ファイル作成に対して，デフォル
+ト・ファイル・ビューを変更します．
+
+void gfs_hook_set_default_view_local(void);
+void gfs_hook_set_default_view_index(int index, int nfrags);
+void gfs_hook_set_default_view_section(char *section);
+void gfs_hook_set_default_view_global(void);
+
+3-3-2 ファイル・ビューの変更
+
+以下の API は，ファイル・デスクリプタで指定されるファイルのファイル・
+ビューを変更します．引数は，一番はじめの引数を除き，
+gfs_pio_set_view_local(3)，gfs_pio_set_view_index(3)，
+gfs_pio_set_view_section(3) および gfs_pio_set_view_global(3) と同様で
+す．
+
+char *
+gfs_hook_set_view_local(int fd, int flags);
+
+char *
+gfs_hook_set_view_index(int fd, int nfrags, int index, char *host, int flags);
+
+char *
+gfs_hook_set_view_section(int fd, char *section, char *host, int flags);
+
+char *
+gfs_hook_set_view_global(int fd, int flags);
+
+$Id$

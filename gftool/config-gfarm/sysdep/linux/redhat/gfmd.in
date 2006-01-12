@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Init file for Gfarm filesystem metaserver
+#
+# chkconfig: 2345 90 10
+# description: Gfarm filesystem metaserver
+#
+# processname: gfmd
+# config: @config_gfarm_gfarm_config@
+# pidfile: @config_gfarm_run_dir@/gfmd.pid
+#
+# $Id$
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+prog="gfmd"
+FILE=$prog
+
+DAEMON="@config_gfarm_prefix@/sbin/$prog"
+PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
+OPTIONS="@config_gfarm_gfmd_option@"
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+RETVAL=0
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+start()
+{
+	echo -n "Starting $FILE:"
+	initlog -c "$DAEMON -P $PIDFILE $OPTIONS" && success || failure
+	RETVAL=$?
+	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
+	echo
+}
+
+stop()
+{
+	echo -n "Stopping $FILE:"
+	if [ -f "$PIDFILE" ]; then
+		kill -TERM `cat "$PIDFILE"` && success || failure
+		RETVAL=$?
+		rm -f "$PIDFILE"
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		failure
+		RETVAL=1
+	fi
+	[ "$RETVAL" = 0 ] && rm -f "$LOCKFILE"
+	echo
+}
+
+checkstatus()
+{
+	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
+	then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+		return 0
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+		return 1
+	elif [ -f "$LOCKFILE" ]; then
+		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
+		return 2
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		return 3
+	fi
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	status)
+		checkstatus
+		RETVAL=$?
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|status}"
+		RETVAL=1
+esac
+exit $RETVAL

@@ -1,0 +1,206 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + Samba [English]</TITLE>
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<a href="../../index.html">documents</a> &gt;
+<a href="index.html">User's Manual</a> &gt;
+samba/gfarmfs-fuse
+
+<H1>GfarmFS-FUSE + Samba</H1>
+English | <A href="../../ja/user/samba-gfarmfs.html">Japanese</A>
+<P>
+Another solution: <A href="samba-hook.html">Gfarm syscall-hooking library + Samba is here</A>
+
+<H2>1. Summary</H2>
+
+
+You can access to Gfarm filesystem via GfarmFS-FUSE via Samba from Windows.
+<P>
+Configurations
+<UL>
+<LI>on Linux (Samba) machine
+  <UL>
+  <LI>You can access to the Gfarm environment which you will use.
+  <LI>FUSE is installed. (= environment of Linux kernel 2.4 or 2.6)
+  <LI>'user_allow_other' is set in /etc/fuse.conf.
+  <LI>GfarmFS-FUSE is installed. You can run the 'gfarmfs' command.
+  <LI>Samba server (smbd) is running.
+  <LI>You can access via Samba to the mountpoint which you mounted using gfarmfs.
+  </UL>
+<LI>on Windows machine
+  <UL>
+  <LI>You can access to the Samba server mentioned above.
+  </UL>
+</UL>
+
+Softwares
+<UL>
+<LI>Gfarm: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
+<LI>GfarmFS-FUSE: <A HREF="https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html">https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html</A>
+<LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
+<LI>Samba:  <A HREF="http://www.samba.org/">http://www.samba.org/</A>
+</UL>
+
+<H2>2. Japanese Filename</H2>
+
+See <A href="../../ja/user/samba-gfarmfs.html">GfarmFS-FUSE + Samba in Japanese</A>
+
+<H2>3. Samba Configuration</H2>
+
+Setting shares configuration in smb.conf.
+Adding [homes] or 'Path' in [Section Name] for publishing the mountpoint by GfarmFS-FUSE.<BR>
+This mountpoint is ~/.../mountpoint or ~/mountpoint or 'Path'/.../mountpoint or 'Path'/mountpoint.
+<P>
+And, adding the Samba member corresponding to the unix user (for this purpose).
+<P>
+See Samba documentations about the details of Samba configurations.
+
+<H2>4. FUSE Configuration</H2>
+
+If you will access to GfarmFS-FUSE via Samba when FUSE version 2.3.0 (or later) is installed, you should set the following.
+<P>
+/etc/fuse.conf 
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+user_allow_other
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+This setting is that normal users can use the options of -o allow_root and -o allow_other. (See README of FUSE)
+
+<H2>5. Mount by GfarmFS-FUSE</H2>
+
+Please check whether you can access to Gfarm with 'gfhost -l'.
+Run the 'gfarmfs' to mount on the Samba server.<BR>
+(See documentations of Gfarm and GfarmFS-FUSE about these details.)
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+  $ gfarmfs [GfarmFS options] mountpoint [FUSE options]
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+This mountpoint must be published by Samba. (See section 3)
+
+<H3>Attention</H3>
+You shall not set '-o allow_other' of FUSE option.
+If '-o allow_other' is set, other normal users can access to your Gfarm environment via the mountpoint by your authority.
+
+
+<H2>6. Access to Samba from Windows</H2>
+
+You access to the Samba and you open the share folder and the mountpoint by gfarmfs.
+And, you can assign this share folder to a network drive.
+
+
+<H2>7. Example of Samba Configuration and Application</H2>
+
+This is an example that the mountpoint for gfarmfs is automatically mounted
+, if you connect to the share folder named 'Gfarm'.
+<UL>
+<LI>A name of the share folder is 'Gfarm'.
+<LI>The mountpoint is ~/samba-fuse for gfarmfs, and publishing ~/samba-fuse of any users.
+  <UL>
+  <LI>It is necessary for ~/samba-fuse directory to be created.
+  </UL>
+<LI>The mountpoint is automatically mounted by gfarmfs when you connect to the share folder.
+  <UL>
+  <LI>But you are limited when you use sharedsecret authentication of Gfarm on the home directories shared by NFS.
+  <LI>Or if you use GSI authentication, you must run the grid-proxy-init on the Samba machine.
+  </UL>
+<LI>If you fail to mount the mountpoint, you fail to access to the share folder too.
+<LI>The mountpoint is automatically unmount in disconnected.
+</UL>
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+[Gfarm]
+  path = %H/samba-fuse
+  exec = /usr/local/bin/gfarmfsmount.sh %P
+  preexec close = Yes
+  postexec = /usr/local/bin/gfarmfsumount.sh %P
+  read only = no
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+gfarmfsmount.sh
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+#! /bin/sh
+
+GFARMFS=/usr/local/bin/gfarmfs
+USERNAME=`/usr/bin/whoami`
+LOGFILE=/tmp/gfarmfs-$USERNAME.log
+
+#ARCH="-a i686-FC3-linux"
+ALLOWROOT="-o allow_root"
+
+GREP=/bin/grep
+DF=/bin/df
+TAIL=/usr/bin/tail
+DATE=/bin/date
+
+# for fusermount
+export PATH=$PATH:/usr/local/bin
+
+#####
+if [ $# -ne 1 ]; then
+    echo "usage: `basename $0` MOUNTPOINT"
+    exit 1
+fi
+
+if [ ! -f $LOGFILE ]; then
+    touch $LOGFILE
+    chmod 600 $LOGFILE
+fi
+
+DATE=`$DATE '+%Y%m%d-%H%M%S'`
+MOUNTP=$1
+
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null &amp;&amp; \
+    (echo $DATE MOUNT:ALREADY $MOUNTP) || \
+    ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT &amp;&amp; \
+    echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
+) &gt;&gt; $LOGFILE 2&gt;&amp;1
+
+exit $?
+</PRE></TD></TR></TBODY></TABLE>
+
+<P>
+gfarmfsumount.sh
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+#! /bin/sh
+
+FUSERMOUNT=/usr/local/bin/fusermount
+
+USERNAME=`/usr/bin/whoami`
+LOGFILE=/tmp/gfarmfs-$USERNAME.log
+
+DATE=/bin/date
+SLEEP=/bin/sleep
+
+#####
+if [ $# -ne 1 ]; then
+    echo "usage: `basename $0` MOUNTPOINT"
+    exit 1
+fi
+
+if [ ! -f $LOGFILE ]; then
+    touch $LOGFILE
+    chmod 600 $LOGFILE
+fi
+
+DATE=`date '+%Y%m%d-%H%M%S'`
+MOUNTP=$1
+
+(cd /; $SLEEP 1;
+    $FUSERMOUNT -u $MOUNTP &amp;&amp; \
+        echo $DATE UMOUNT:SUCCESS $MOUNTP || \
+        echo $DATE UMOUNT:FAIL $MOUNTP
+) &gt;&gt; $LOGFILE 2&gt;&amp;1 &amp;
+</PRE></TD></TR></TBODY></TABLE>
+
+
+<H2>8. comment</H2>
+If you have any question or comment, feel free to send email to 
+<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A>.
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>

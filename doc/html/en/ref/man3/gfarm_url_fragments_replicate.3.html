@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfarm_url_fragments_replicate</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM-URL-FRAGMENTS-REPLICATE.3"
+></A
+>gfarm_url_fragments_replicate</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm_url_fragments_replicate&nbsp;--&nbsp;Create a file replica of a file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfarm_url_fragments_replicate</TT
+></CODE
+>(const char *<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, int <TT
+CLASS="PARAMETER"
+><I
+>ndsthosts</I
+></TT
+>, char **<TT
+CLASS="PARAMETER"
+><I
+>dsthosts</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+> <TT
+CLASS="FUNCTION"
+>gfarm_url_fragments_replicate()</TT
+> creates a
+file replica of a file <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> to destination
+hosts specified by a string array <TT
+CLASS="PARAMETER"
+><I
+>dsthosts</I
+></TT
+> with
+a length <TT
+CLASS="PARAMETER"
+><I
+>ndsthosts</I
+></TT
+>.  It cannot replicate an
+executable file.</P
+><P
+> When the total number of file fragments is greater than the
+specified total number of hosts <TT
+CLASS="PARAMETER"
+><I
+>ndsthosts</I
+></TT
+>,
+destination hosts are allocated in round robin.  </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_OPERATION_NOT_PERMITTED</TT
+></DT
+><DD
+><P
+>The file is not a regular fragmented file.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_from_to</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_from_to</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

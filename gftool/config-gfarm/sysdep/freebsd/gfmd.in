@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+# PROVIDE: gfmd
+# REQUIRE: NETWORKING SERVERS
+# BEFORE: DAEMON
+# KEYWORD: FreeBSD shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable gfmd:
+# gfmd_enable (bool):      Set to "NO" by default.
+# gfmd_flags (str):        Set to "" by default.
+#                             Extra flags passed to start command
+#
+if [ -f /usr/local/etc/rc.subr ]; then
+	. /usr/local/etc/rc.subr
+elif [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+else
+	echo "$0: abort: rc.subr not found"
+	exit 2
+fi
+
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_gfmd_option@"
+
+name="gfmd"
+FILE=${name}
+rcvar=`set_rcvar`
+
+command="@config_gfarm_prefix@/sbin/${name}"
+pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+required_files="$CONF"
+# add more flags through ${${name}_flags}
+command_args="-P $pidfile $OPTIONS"
+globus_location="@config_gfarm_globus_location@"
+
+[ -z "$gfmd_enable" ]       && gfmd_enable="NO"
+[ -z "$gfmd_flags" ]        && gfmd_flags=""
+
+load_rc_config ${FILE}
+
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
+then
+	GLOBUS_LOCATION="$globus_location"
+	export GLOBUS_LOCATION
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+fi
+
+run_rc_command "$1"

@@ -1,0 +1,648 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfarm</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM.3"
+></A
+>gfarm</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm&nbsp;--&nbsp;Gfarm native API library</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>#include &#60;gfarm/gfarm.h&#62;&#13;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The Gfarm library provides an interface layer to
+the gfarm filesystem. This manual only gives an overview of the
+library, please use manual pages of each functions to see the
+detail of the functions.</P
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN16"
+></A
+><H3
+>Initialize / Finalize</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_initialize</SPAN
+>(3)</SPAN
+> function is used for the initilization of the Gfarm
+library, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_terminate</SPAN
+>(3)</SPAN
+> function is used for the termination of the library.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN25"
+></A
+><H3
+>File input/output operations</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_local</SPAN
+>(3)</SPAN
+> function specifies current node number and total number
+of nodes as an initialization step of a parallel process.
+
+To open an existing file as a stream,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+> function is used.
+To create an file and open the file as a stream,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_create</SPAN
+>(3)</SPAN
+> function is used.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_close</SPAN
+>(3)</SPAN
+> function is used to close such streams.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_view_index</SPAN
+>(3)</SPAN
+> function and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_view_local</SPAN
+>(3)</SPAN
+> function specifies an access method of a parallel file.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_error</SPAN
+>(3)</SPAN
+> function is used to see whether an error happens or not
+about a stream.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_eof</SPAN
+>(3)</SPAN
+> function is used to see whether a stream,
+which is opened for read, already reaches end-of-file or not.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_seek</SPAN
+>(3)</SPAN
+> function changes the current position of the stream.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getc</SPAN
+>(3)</SPAN
+> functions reads a character from a stream, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_ungetc</SPAN
+>(3)</SPAN
+> functions puts back a character to a stream.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getline</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_gets</SPAN
+>(3)</SPAN
+> function, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readline</SPAN
+>(3)</SPAN
+> function read one line from a stream, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readdelim</SPAN
+>(3)</SPAN
+> function reads from stream until delimiter character,
+specified by the function argument, appears.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_read</SPAN
+>(3)</SPAN
+> functions reads specified bytes from a stream.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_putc</SPAN
+>(3)</SPAN
+> function writes one character to a stream, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_putline</SPAN
+>(3)</SPAN
+> function and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_puts</SPAN
+>(3)</SPAN
+> function write one line to a stream.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_write</SPAN
+>(3)</SPAN
+> function writes specified bytes to a stream.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_flush</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_sync</SPAN
+>(3)</SPAN
+> function and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_datasync</SPAN
+>(3)</SPAN
+> function moves buffered data to a storage device.
+
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_truncate</SPAN
+>(3)</SPAN
+> function truncates a file.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN103"
+></A
+><H3
+>Directory access</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_chdir</SPAN
+>(3)</SPAN
+> function changes current working directory.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_realpath</SPAN
+>(3)</SPAN
+> function returns full pathname of the argument.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_opendir</SPAN
+>(3)</SPAN
+> function opens a directory, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_readdir</SPAN
+>(3)</SPAN
+> function retrieves entries of the directory.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_closedir</SPAN
+>(3)</SPAN
+> function closes the directory.</P
+><P
+>A gfs_glob_t data, which is initilized by
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_init</SPAN
+>(3)</SPAN
+> function,
+can be passed to
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob</SPAN
+>(3)</SPAN
+> function, and the gfs_glob function returns
+list of matched file/directory names in the gfs_glob_t.
+The gfs_glob_t must be released by 
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_free</SPAN
+>(3)</SPAN
+> function.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_glob_add</SPAN
+>(3)</SPAN
+> function is used add an entry to gfs_glob_t.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN135"
+></A
+><H3
+>File / Directory manipulation</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_chmod</SPAN
+>(3)</SPAN
+> function changes the mode of a file, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_utimes</SPAN
+>(3)</SPAN
+> function changes file's modified time and access time.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_mkdir</SPAN
+>(3)</SPAN
+> function creates a directory, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_rmdir</SPAN
+>(3)</SPAN
+> function removes a directory.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_unlink</SPAN
+>(3)</SPAN
+> function removes a file, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_unlink_section</SPAN
+>(3)</SPAN
+> function removes a fragment which is a member of
+a parallel file.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_rename</SPAN
+>(3)</SPAN
+> function renames a file or a directory.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_stat</SPAN
+>(3)</SPAN
+> function returns information like size, modified/access
+time, etc.
+The struct gfs_stat returned by gfs_stat function must be released by
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_stat_free</SPAN
+>(3)</SPAN
+> function.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN167"
+></A
+><H3
+>Utility functions</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_hostlist_read</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_import_fragment_config_read</SPAN
+>(3)</SPAN
+> function, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_import_fragment_size_alloc</SPAN
+>(3)</SPAN
+> function are utility functions used to register
+a file as a fragmented parallel file. Please see the source code of
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_text</SPAN
+>(1)</SPAN
+> command and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_fixed</SPAN
+>(1)</SPAN
+> command as an example how to use these functions.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN185"
+></A
+><H3
+>String Array manipulation utilities</H3
+><P
+>A gfarm_stringlist type variable represents an array of strings,
+and this type is initialized by
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_init</SPAN
+>(3)</SPAN
+> function.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_add</SPAN
+>(3)</SPAN
+> function is used to add a string to a gfarm_stringlist.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_cat</SPAN
+>(3)</SPAN
+> function is used to add strings to a gfarm_stringlist.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_free</SPAN
+>(3)</SPAN
+> function releases gfarm_stringlist.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_elem</SPAN
+>(3)</SPAN
+> function or
+GFARM_STRINGLIST_ELEM() macro
+can be used to access each string of an array.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_length</SPAN
+>(3)</SPAN
+> function can be used to see number of strings in an array.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_strings_free_deeply</SPAN
+>(3)</SPAN
+> function releases a string array and each element of the
+array by calling standard library function free().</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN210"
+></A
+><H3
+>String Array manipulation macros</H3
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>GFARM_STRINGLIST_ELEM(list, i)</DT
+><DD
+><P
+>represents <TT
+CLASS="PARAMETER"
+><I
+>i</I
+></TT
+>-th element of
+the <TT
+CLASS="PARAMETER"
+><I
+>list</I
+></TT
+> argument which type is gfarm_stringlist.
+This macro can be used as a L-value.
+If this macro is used as a value, it returns same result with
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_stringlist_elem</SPAN
+>(3)</SPAN
+> function.</P
+></DD
+><DT
+>GFARM_STRINGLIST_STRARRAY(list)</DT
+><DD
+><P
+>returns pointer to first element of the <TT
+CLASS="PARAMETER"
+><I
+>list</I
+></TT
+> argument
+which type is gfarm_stringlist.
+The type of the return value is a pointer to pointer to a character.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN227"
+></A
+><H3
+>Internal functions</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_program_register</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_hosts_schedule</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_fragments_replicate</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_program_deliver</SPAN
+>(3)</SPAN
+> function,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_from_to</SPAN
+>(3)</SPAN
+> function, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_to</SPAN
+>(3)</SPAN
+> functions are internal functions of Gfarm.
+These manual are provided by historical reasons, but these specification
+may be changed later.</P
+></DIV
+></DIV
+></BODY
+></HTML
+>

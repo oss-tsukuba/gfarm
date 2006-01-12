@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + Samba [Japanese]</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=euc-jp">
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+samba/gfarmfs-fuse
+
+<H1>GfarmFS-FUSE + Samba</H1>
+<A href="../../en/user/samba-gfarmfs.html">English</A> | 日本語 
+<P>
+別の方法: <A href="samba-hook.html">Gfarm システムコールフックライブラリ + Samba の方法はこちら</A>
+
+<H2>1. 概要</H2>
+
+GfarmFS-FUSE を使って Gfarm ファイルシステムをマウントし，そのマウントポイントを Samba で公開することで，Windows から Gfarm のファイルにアクセスできます．
+<P>
+必要な環境や設定
+<UL>
+<LI>Samba サーバマシン側
+  <UL>
+  <LI>Gfarm のクライアントが利用できる．利用しようと思っている Gfarm の環境にアクセスできる．
+  <LI>認証方法は，sharedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shared_key を各ノードに配布するか，grid-proxy-init を実行しておかなければならない．
+  <LI>FUSE がインストールされている．(= Linux カーネル 2.4 or 2.6 環境)
+  <LI>一般ユーザが FUSE でマウントしたマウントポイントに，他のユーザがアクセスすることを許可されている．(user_allow_other 設定)
+  <LI>GfarmFS-FUSE がインストールされていて，実行できる．
+  <LI>一般ユーザが FUSE でマウントした(する予定の)マウントポイントに Samba 経由でアクセスできるような Samba の設定にして動かすことができる．
+  <LI>この Samba サーバのマシン上で Gfarm のファイルシステムノード(gfsd)を動かしていないことを推奨する．gfsd を動かしている場合に，この Samba を経由して Gfarm 上にファイルを作成した場合は，このファイルシステムノードにしかファイルが作成されない．
+  </UL>
+<LI>Windows マシン側
+  <UL>
+  <LI>上記 Samba のサービスにアクセスができる．
+  </UL>
+</UL>
+
+関連ソフトウエア一覧
+<UL>
+<LI>Gfarm: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
+<LI>GfarmFS-FUSE: <A HREF="https://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html">https://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html</A>
+<LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
+<LI>Samba:  <A HREF="http://www.samba.org/">http://www.samba.org/</A>
+</UL>
+
+<H2>2. 日本語ファイル名を扱う場合</H2>
+
+日本語ファイル名を扱う場合は，Gfarm 用の LDAP サーバ側に対応がされている必要があります．<BR>
+日本語ファイル名を扱えない場合は，たとえば，Windows から「新しいフォルダ」を作成できません．
+<P>
+/etc/gfarm-ldap/gfarm.schema の 'pathname' に関する部分が，以下のようになっていることを確認します．<BR>
+以下のようになっていない場合は，修正して，LDAP サーバを再起動してください．<BR>
+Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，下記の設定になっていません．
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+        EQUALITY caseExactMatch
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)
+</PRE></TD></TR></TBODY></TABLE>
+# 修正する場合は，この 3 行のうち，下 2 行が変更となります．
+<P>
+また，Samba も UTF-8 のファイル名を扱えるようにします．
+smb.conf にファイル名に関する設定をします．
+Linux 側ではファイル名の文字コードとして UTF-8 を使うようにし，それを Windows から見えるように設定します．
+<P>
+[global] の部分に記述します．
+Samba の設定は SWAT を使うと簡単にできます．<BR>
+
+<P>
+Samba 2系の場合
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+client code page =  932
+coding system = utf8
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+Samba 3系の場合
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+dos charset = CP932
+unix charset = UTF-8
+display charset = UTF-8
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+
+<H2>3. Samba の設定</H2>
+
+まず，公開するディレクトリを設定をします．
+そのために，[homes] や [セクション名] を smb.conf に設定します． 
+GfarmFS-FUSE を使ってマウントする予定のパス，またはそれより上のディレクトリのパスを指定します．
+これらは SWAT を使うと簡単に設定できます．
+<BR>
+そして GfarmFS-FUSE にアクセスするセクションには，ファイルを書き込めるようにし，ファイル新規作成時に，実行ビットが付かないようにします．
+<P>
+例
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+[GfarmFS-FUSE]
+path = /tmp/gfarmfs/%u
+create mask = 0644
+read only = no
+</PRE></TD></TR></TBODY></TABLE>
+これで， /tmp/gfarmfs の下に各ユーザがユーザ名のディレクトリを作って gfarmfs でマウントしておけば，GfarmFS-FUSE という共有名でアクセスできます．
+<P>
+次に，GfarmFS-FUSE を実行する UNIX ユーザ名と対応する Samba でのユーザを，無ければ作成します．<BR>
+たとえば，SWAT で行う場合は，「PASSWORD→ローカルマシンのパスワード管理→新規ユーザ追加」でユーザを追加できます．
+<P>
+その他 Samba の設定に関する詳細は，Samba のドキュメントをご覧ください．
+
+<H2>4. FUSE の設定</H2>
+
+Samba を経由して FUSE を使ったマウントポイントにアクセスするには，
+FUSE のセキュリティに関する設定が必要になります．<BR>
+FUSE 2.2.1 以前では，以下の /etc/fuse.conf の設定は必要ありません．(補足もご覧ください．)
+<P>
+/etc/fuse.conf を作成し，以下のように編集します．
+FUSE のインストール直後は，このファイルがありません．
+<P>
+/etc/fuse.conf
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+user_allow_other
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+この設定に関しては，FUSE パッケージの README をご覧ください．<BR>
+これで，マウント時に -o allow_root オプションが使えるようになります．
+
+<H3>注意</H3>
+FUSE をインストールしてある環境では，
+各一般ユーザは自由に FUSE を使ってファイルシステムを作成，マウントができます．<BR>
+さらに user_allow_other の設定がされている場合，各一般ユーザはマウント時に，
+そのマウントポイントに他人もアクセスできるようにするオプション(-o allow_root と -o allow_other)
+を付けてマウントすることができるようになります．<BR>
+この時，誰かがアクセスしたときに，操作がロックされてしまうようなファイルシステムであった場合などで問題になります．
+<BR>
+たとえば，あるユーザがあるファイルシステムを作ります．
+そのファイルシステムに，ls をすると操作が固まってしまうというファイルシステムです．
+誰かがそのファイルシステムを使ってマウントし，マウントした人とは異なるユーザが ls した場合，
+その FUSE によるファイルシステムのプロセスを kill しない限り，
+ls を終了できません．
+しかし，自分のプロセスではないので，kill できません．
+
+<H3>補足</H3>
+FUSE 2.2.1 以前と FUSE 2.3.0 とでは，ファイルシステムにアクセスしてきたプロセスの権限
+(uid, gid 関係) と，マウントしたときのユーザとの比較方法が異なっています．
+そのため，FUSE のバージョンと，Samba や ftpd などの各種サーバ類との組み合わせによって，
+user_allow_other の設定が必要であったり，必要でなかったりします．
+たとえば，vsftpd は user_allow_other の設定が必要ありません．
+smbd も完全に一般ユーザの権限(uid, gid) になって動く方法があれば user_allow_other の設定は要らないはずです．(ご存知の方いらっしゃいませんか？)
+<P>
+<H3>参考</H3>
+上記の設定をせずに FUSE を使ったファイルシステムを -o allow_root をつけてマウントすると，以下のエラーメッセージが出ます。
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+fusermount: option allow_other only allowed if 'user_allow_other' is set in /etc/fuse.conf
+</PRE></TD></TR></TBODY></TABLE>
+
+
+<H2>5. GfarmFS-FUSE で Gfarm をマウント</H2>
+gfarmfs コマンドを実行して，Gfarm ファイルシステムをマウントします．
+上記で設定した Samba を動かしている Linux マシン上で，
+かつ Gfarm の環境を使う準備ができている一般ユーザ権限で実行します．
+<P>
+gfhost -l などで，ファイルシステムノードにアクセスできる状態であることを確認してから，
+以下のコマンドを実行してマウントします．<BR>
+詳しくは Gfarm と GfarmFS-FUSE のドキュメントをご覧ください．
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+  $ gfarmfs [gfarmfs のオプション] <B>マウントポイント</B> -o allow_root [FUSE のオプション]
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+マウントポイントは Samba で公開しているディレクトリ自体，またはそれ以下のディレクトリにします．
+
+<H3>注意</H3>
+-o allow_other オプションを指定しないでください．
+-o allow_other オプションをつけると，他の一般ユーザがアクセスできてしまいます．
+しかも，マウントしたユーザの権限で Gfarm の環境にアクセスすることになります．
+
+
+<H2>6. Windows から Samba にアクセスする</H2>
+
+ワークグループのコンピュータを表示して探したり，アドレスバーに IP アドレスやマシン名を入力して，
+上記で設定した Samba マシンに接続します．
+次に，GfarmFS-FUSE でマウントしたディレクトリが含まれる共有フォルダを開きます．
+ここで，ネットワークドライブに割り当てることもできます．
+そして，gfarmfs コマンドでマウントしたディレクトリを開き，各ファイルをアクセスできます．
+
+
+<H2>7. Samba の設定例，応用</H2>
+
+Gfarm という共有名にアクセスするだけで，自動で GfarmFS-FUSE でマウントしてアクセスできるようになる例を考えてみました．<BR>
+参考にして，応用してみてください．
+<UL>
+<LI>Gfarm という共有名で公開する．
+<LI>誰がアクセスしても，gfarmfs によるマウントポイントが共有フォルダの直下になるようにする．
+  <UL>
+  <LI>各ユーザのホームディレクトリ直下の samba-fuse というディレクトリを公開する．
+  <LI>ディレクトリを作成しておく必要がある．(mkdir ~/samba-fuse)
+  </UL>
+<LI>共有フォルダへ接続時に各ユーザの権限で自動で gfarmfs を使ってマウントする．
+  <UL>
+  <LI>しかし，共通鍵認証方式を使って，すべてのファイルシステムノードのホームディレクトリを共有しておかないと完全に自動にならない．
+  <LI>または GSI 認証を使うようにし，Samba を動かしているマシンで grid-proxy-init を実行しておく必要がある．
+  </UL>
+<LI>マウントに失敗したら，この共有名の接続も失敗するようにする．
+<LI>切断時には自動でアンマウントする．
+</UL>
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+[Gfarm]
+  path = %H/samba-fuse
+  create mask = 0644
+  exec = /usr/local/bin/gfarmfsmount.sh %P
+  preexec close = Yes
+  postexec = /usr/local/bin/gfarmfsumount.sh %P
+  read only = no
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+%H は各ユーザのホームディレクトリになります．<BR>
+%P は path の内容になります．<BR>
+exec は接続時に実行するコマンドです．<BR>
+preexec close は exec に失敗した場合に接続できないようにします．<BR>
+postexec は切断時に実行するコマンドです．<BR>
+詳しくは smb.conf のマニュアルをご覧ください．
+
+<P>
+以下は，自動でマウント／アンマウントするためのスクリプトの例です．
+状況により修正してお使いください．
+<P>
+gfarmfsmount.sh
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+#! /bin/sh
+
+GFARMFS=/usr/local/bin/gfarmfs
+USERNAME=`/usr/bin/whoami`
+LOGFILE=/tmp/gfarmfs-$USERNAME.log
+
+#ARCH="-a i686-FC3-linux"
+ALLOWROOT="-o allow_root"
+
+GREP=/bin/grep
+DF=/bin/df
+TAIL=/usr/bin/tail
+DATE=/bin/date
+
+# for fusermount
+export PATH=$PATH:/usr/local/bin
+
+#####
+if [ $# -ne 1 ]; then
+    echo "usage: `basename $0` MOUNTPOINT"
+    exit 1
+fi
+
+if [ ! -f $LOGFILE ]; then
+    touch $LOGFILE
+    chmod 600 $LOGFILE
+fi
+
+DATE=`$DATE '+%Y%m%d-%H%M%S'`
+MOUNTP=$1
+
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null &amp;&amp; \
+    (echo $DATE MOUNT:ALREADY $MOUNTP) || \
+    ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT &amp;&amp; \
+    echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
+) &gt;&gt; $LOGFILE 2&gt;&amp;1
+
+exit $?
+</PRE></TD></TR></TBODY></TABLE>
+
+<P>
+gfarmfsumount.sh
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+#! /bin/sh
+
+FUSERMOUNT=/usr/local/bin/fusermount
+
+USERNAME=`/usr/bin/whoami`
+LOGFILE=/tmp/gfarmfs-$USERNAME.log
+
+DATE=/bin/date
+SLEEP=/bin/sleep
+
+#####
+if [ $# -ne 1 ]; then
+    echo "usage: `basename $0` MOUNTPOINT"
+    exit 1
+fi
+
+if [ ! -f $LOGFILE ]; then
+    touch $LOGFILE
+    chmod 600 $LOGFILE
+fi
+
+DATE=`date '+%Y%m%d-%H%M%S'`
+MOUNTP=$1
+
+(cd /; $SLEEP 1;
+    $FUSERMOUNT -u $MOUNTP &amp;&amp; \
+        echo $DATE UMOUNT:SUCCESS $MOUNTP || \
+        echo $DATE UMOUNT:FAIL $MOUNTP
+) &gt;&gt; $LOGFILE 2&gt;&amp;1 &amp;
+</PRE></TD></TR></TBODY></TABLE>
+
+
+<H2>8. コメント</H2>質問やコメントがありましたら，
+<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A> まで自由にメールを送付してください． 
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>

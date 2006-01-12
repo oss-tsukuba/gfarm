@@ -1,0 +1,100 @@
+#
+# OID Base is:
+#	iso(1) org(3) dod(6) internet(1) private(4) enterprise(1) 
+#		sra(13122) experimental(2) user(1) 
+#			soda(2924) gfarm(100)
+# i.e. gfarm schema OID base is 1.3.6.1.4.1.13122.2.1.2924.100
+#
+# gfarm schema:
+#	1.3.6.1.4.1.13122.2.1.2924.100.1.x attribute syntax
+#	1.3.6.1.4.1.13122.2.1.2924.100.2.x attribute type
+#	1.3.6.1.4.1.13122.2.1.2924.100.3.x object class
+
+# Attribute Type Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.2.x
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.1 NAME 'hostname'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.2 NAME 'hostalias'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.3 NAME 'architecture'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.4 NAME 'ncpu'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+	EQUALITY caseExactMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.6 NAME 'mode'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.7 NAME 'user'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.8 NAME 'group'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.9 NAME 'atimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.10 NAME 'atimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.11 NAME 'mtimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.12 NAME 'mtimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.13 NAME 'ctimesec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.14 NAME 'ctimensec'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.15 NAME 'nsections'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.16 NAME 'section'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.17 NAME 'filesize'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.18 NAME 'checksumType'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.19 NAME 'checksum'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+# Object Class Definitions
+# 1.3.6.1.4.1.13122.2.1.2924.100.3.x
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.1
+	NAME 'GFarmHost' SUP top STRUCTURAL
+	MUST ( hostname $ architecture )
+	MAY ( ncpu $ hostalias ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.2
+	NAME 'GFarmPath' SUP top STRUCTURAL
+	MUST ( pathname )
+	MAY (	mode $ user $ group $
+		atimesec $ atimensec $
+		mtimesec $ mtimensec $
+		ctimesec $ ctimensec $
+		nsections ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.3
+	NAME 'GFarmFileSection' SUP top STRUCTURAL
+	MUST ( pathname $ section )
+	MAY ( filesize $ checksumType $ checksum ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.4
+	NAME 'GFarmFileSectionCopy' SUP top STRUCTURAL
+	MUST ( pathname $ section $ hostname ) )

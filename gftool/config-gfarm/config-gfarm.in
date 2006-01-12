@@ -1,0 +1,449 @@
+#!/bin/sh
+#
+# $Id$
+
+${DEBUG:="false"} && set -xu
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+config_dir="@datadir@/gfarm/config"
+globus_location="@globus_location@"
+
+#
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+slapadd_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb
+
+PROGNAME=`basename $0`
+
+#
+# check whether shell function does work or not.
+#
+BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
+if [ x"$1" = x--re-invoked ]; then
+	# shell function works with this shell, remove --re-invoked option
+	shift
+elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
+	# shell function works
+	:
+else
+	# Search other shell that supports shell functions
+	for sh in ksh bash zsh sh ash bsh sh5; do
+		set `IFS=:;
+		 P="/bin:/usr/5bin:/usr/bin:/usr/local/bin:/usr/pkg/bin:$PATH";
+		 echo $P`
+		for dir
+		do
+			shell="$dir/$sh"
+			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
+				"$shell" -c 'shellfunc() { exit 0; };
+					shellfunc' 2>/dev/null
+			then
+				BOURNE_SHELL="$shell" exec "$shell" "$0" \
+					--re-invoked ${1+"$@"}
+			fi
+		done
+	done
+	echo "$PROGNAME: cannot find a shell which supports functions" >&2
+	exit 1
+fi
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo >&2 "	[-d domain_name] [-h hostname]"
+	echo >&2 "	[-V openldap_version] [-l metadata_directory]"
+	echo >&2 "	[-p slapd_port] [-s gfsd_port] [-m gfmd_port]"
+	exit 1
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+sanity()
+{
+	rv=0
+	if [ ! -x "$OPENLDAP_SLAPADD" ]; then
+		echo "WARNING: command not found: slapadd" >&2
+		rv=1
+	fi
+	if [ ! -x "$OPENLDAP_LIBEXEC/slapd" ]; then
+		echo "WARNING: command not found: slapd" >&2
+		rv=1
+	fi
+	if [ ! -f "$OPENLDAP_ETC/schema/core.schema" ]; then
+		echo "WARNING: file not found:" \
+			"$OPENLDAP_ETC/schema/core.schema" >&2
+		rv=1
+	fi
+	return $rv
+}
+
+display_params()
+{
+	echo "prefix [--prefix]: $CONFIG_PREFIX"
+	echo "domain name  [-d]: $DOMAIN_NAME"
+	echo "openldap prefix     [-P]: $OPENLDAP_PREFIX"
+	echo "openldap version    [-V]: $OPENLDAP_VERSION"
+	echo "metadata directory  [-l]: $LDAP_DATA_DIR"
+	echo "metaserver hostname [-h]: $SLAPD_HOSTNAME"
+	echo "slapd port [-p]: $SLAPD_PORT"
+	echo "gfmd port  [-m]: $GFMD_PORT"
+	echo "gfsd port  [-s]: $GFSD_PORT"
+
+	echo 'slapd DB cache size [-c]:' `
+	  case $SLAPD_DB in
+	  bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
+	  *)	echo '(this option is only available for SLAPD_DB="bdb")';;
+	  esac`
+	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
+
+	sanity
+	exit 0
+}
+
+#
+# parse arguments
+#
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -d) shift; [ $# -ge 1 ] || usage
+		DOMAIN_NAME=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		OPENLDAP_PREFIX=$1
+		;;
+	  -V) shift; [ $# -ge 1 ] || usage
+		OPENLDAP_VERSION=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		LDAP_DATA_DIR=$1
+		;;
+	  -h) shift; [ $# -ge 1 ] || usage
+		SLAPD_HOSTNAME=$1
+		;;
+	  -p) shift; [ $# -ge 1 ] || usage
+		SLAPD_PORT=$1
+		;;
+	  -m) shift; [ $# -ge 1 ] || usage
+		GFMD_PORT=$1
+		;;
+	  -s) shift; [ $# -ge 1 ] || usage
+		GFSD_PORT=$1
+		;;
+	  -c) shift; [ $# -ge 1 ] || usage
+		SLAPD_BDB_CACHESIZE=$1
+		;;
+
+	# control options
+	  -N)
+		START_SERVICE=false
+		;;
+	  -f)
+		FORCE=true
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
+		;;
+	  *)
+		usage
+		;;
+	esac
+	shift
+done
+
+#
+# search default $OPENLDAP_PREFIX
+#
+
+if [ -z "${OPENLDAP_PREFIX-}" ]; then
+	OIFS=$IFS
+	IFS=":"
+	set $slapadd_path
+	IFS=$OIFS
+	for d
+	do
+		if [ -x "$d/slapadd" ]; then
+			OPENLDAP_PREFIX=`dirname "$d"`
+			: ${OPENLDAP_SLAPADD:="$d/slapadd"}
+			break
+		fi
+	done
+fi
+if [ -z "${OPENLDAP_PREFIX-}" ]; then
+	OIFS=$IFS
+	IFS=":"
+	set $slapadd_path
+	IFS=$OIFS
+	for d
+	do
+		b=`dirname "$d"`
+		if [ -x "$b/sbin/slapadd" ]; then
+			OPENLDAP_PREFIX=$b
+			: ${OPENLDAP_SLAPADD:="$b/sbin/slapadd"}
+			break
+		fi
+	done
+fi
+
+
+. $config_dir/config-gfarm.sysdep
+
+#
+# default values
+#
+
+: ${CONFIG_PREFIX:=}
+
+if [ -f "$OPENLDAP_PREFIX/etc/openldap/schema/core.schema" ]; then
+	: ${OPENLDAP_ETC:="$OPENLDAP_PREFIX/etc/openldap"}
+fi
+if [ -x "$OPENLDAP_PREFIX/sbin/slapadd" ]; then
+	: ${OPENLDAP_SLAPADD:="$OPENLDAP_PREFIX/sbin/slapadd"}
+fi
+
+# NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+: ${START_SERVICE:=true}
+: ${FORCE:=false}
+: ${DISPLAY_PARAMS:=false}
+
+: ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
+
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
+
+: ${FQ_HOSTNAME:=`fq_hostname`}
+
+# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+: ${DOMAIN_NAME:=`dns_domainname`}
+[ X"$DOMAIN_NAME" = X ] && ABORT 'cannot determine DNS domain name'
+
+: ${SLAPD_HOSTNAME:="$FQ_HOSTNAME"}
+[ X$SLAPD_HOSTNAME = X ] && ABORT 'cannot determine slapd hostname'
+
+: ${SLAPD_PORT:="389"}
+
+: ${GFMD_PORT:="601"}
+: ${GFSD_PORT:="600"}
+
+: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/gp'`"}
+: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
+
+: ${OPENLDAP_ETC:="/etc/openldap"}
+
+if [ -x "$OPENLDAP_PREFIX/sbin/slapd" ]; then
+	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/sbin"}
+else
+	: ${OPENLDAP_LIBEXEC:="$OPENLDAP_PREFIX/libexec"}
+fi
+
+if [ -z "${OPENLDAP_VERSION-}" ]; then
+	if [ -x "$OPENLDAP_PREFIX/bin/ldapsearch" ]; then
+		OPENLDAP_VERSION=`"$OPENLDAP_PREFIX/bin/ldapsearch" -Vxn 2>&1 |
+		  sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+		if [ -z "$OPENLDAP_VERSION" ]
+		then
+			OPENLDAP_VERSION="2.0" # assumes older version
+		elif expr "$OPENLDAP_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
+				>/dev/null; then
+			:
+		else
+			OPENLDAP_VERSION="unknown"
+		fi
+	else
+		OPENLDAP_VERSION="unknown"
+	fi
+fi
+
+case $OPENLDAP_VERSION in
+[01].*|2.0)	# 2.0.X or before
+	: ${SLAPD_DB:="ldbm"}
+	: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.0.in"}
+	;;
+*)		# 2.1.X or later
+	: ${SLAPD_DB:="bdb"}
+	: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.1.in"}
+	;;
+esac
+
+: ${LDAP_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-ldap"}
+: ${LDAP_CONF_DIR:="$CONFIG_PREFIX/etc/gfarm-ldap"}
+: ${SLAPD_CONF:="$LDAP_CONF_DIR/slapd.conf"}
+: ${GFARM_SCHEMA:="$LDAP_CONF_DIR/gfarm.schema"}
+: ${INITIAL_LDIF:="$LDAP_CONF_DIR/initial.ldif"}
+
+# Debian uses dynamic loading for backend db module.
+# (e.g. /usr/lib/ldap/back_bdb.so)
+# We need "\" at the end-of-line, because this is used for
+# s/// statement for sed.
+if [ -f "$OPENLDAP_PREFIX/lib/openldap/back_$SLAPD_DB.so" ]; then
+	: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$OPENLDAP_PREFIX/openlib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+elif [ -f "$OPENLDAP_PREFIX/lib/ldap/back_$SLAPD_DB.so" ]; then
+	: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$OPENLDAP_PREFIX/lib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+fi
+
+: ${SLAPD_CONF_HOOK:=""}
+
+: ${SLAPD_BDB_CACHESIZE:="`memory_size|awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
+: ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
+
+: ${RC_GFARM_SLAPD_IN="$config_dir/gfarm-slapd.in"}
+: ${RC_GFMD_IN="$config_dir/gfmd.in"}
+
+# -t option; display parameters
+$DISPLAY_PARAMS && display_params
+
+sanity || ABORT "aborted"
+
+#########################################################################
+
+config()
+{
+	sed \
+	-e "s|@config_gfarm_prefix@|$prefix|" \
+	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
+	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|" \
+	-e "s|@config_gfarm_ldap_base_dn@|$LDAP_BASE_DN|" \
+	-e "s|@config_gfarm_ldap_leaf_dc@|$LDAP_LEAF_DC|" \
+	-e "s|@config_gfarm_slapd_hostname@|$SLAPD_HOSTNAME|" \
+	-e "s|@config_gfarm_slapd_port@|$SLAPD_PORT|" \
+	-e "s|@config_gfarm_slapd_config@|$SLAPD_CONF|" \
+	-e "s|@config_gfarm_slapd_config_hook@|$SLAPD_CONF_HOOK|" \
+	-e "s|@config_gfarm_slapd_database@|$SLAPD_DB|" \
+	-e "s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|" \
+	-e "s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|" \
+	-e "s|@config_gfarm_openldap_libexec@|$OPENLDAP_LIBEXEC|" \
+	-e "s|@config_gfarm_openldap_etc@|$OPENLDAP_ETC|" \
+	-e "s|@config_gfarm_ldap_conf_dir@|$LDAP_CONF_DIR|" \
+	-e "s|@config_gfarm_ldap_data_dir@|$LDAP_DATA_DIR|" \
+	-e "s|@config_gfarm_ldap_schema@|$GFARM_SCHEMA|" \
+	-e "s|@config_gfarm_gfmd_port@|$GFMD_PORT|" \
+	-e "s|@config_gfarm_gfmd_option@|-f $GFARM_CONF|" \
+	-e "s|@config_gfarm_gfsd_port@|$GFSD_PORT|" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|" \
+	-e "s|@config_gfarm_run_dir@|$RUN_DIR|" \
+	${1+"$@"} | config_sysdep
+}
+
+mkcnf()
+{
+	# local out
+
+	out=$1
+	shift
+	if ${1+"$@"} >$out; then
+		echo created $out
+	else
+		ABORT "cannot create $out"
+	fi
+}
+
+mkscript()
+{
+	mkcnf ${1+"$@"}
+	chmod +x "$1" || ABORT "cannot chmod +x $1"
+}
+
+delete_file_or_directory()
+{
+	# local p
+
+	for p
+	do
+		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
+		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
+		if ls -1d "$p" >/dev/null 2>&1; then
+			if $FORCE; then
+				rm -rf "$p"
+				echo removed "$p"
+			else
+				ABORT "$p already exist"
+			fi
+		fi
+	done
+}
+
+create_directory()
+{
+	# local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
+}
+
+#########################################################################
+
+delete_file_or_directory \
+	"$GFARM_CONF" \
+	"$LDAP_DATA_DIR" \
+	"$RC_DIR/gfarm-slapd"
+
+create_directory \
+	"$GFARM_CONF_DIR" \
+	"$LDAP_CONF_DIR" \
+	"$LDAP_DATA_DIR" \
+	"$RC_DIR" \
+	"$RUN_DIR"
+
+# this needs to be called before other "mkcnf" operations
+# to make some directories.
+mkcnf_gfmd_sysdep
+
+# create configuration files
+mkcnf "$GFARM_CONF"	config "$config_dir/gfarm.conf.in"
+mkcnf "$GFARM_SCHEMA"	cat "$config_dir/gfarm.schema"
+mkcnf "$INITIAL_LDIF"	config "$config_dir/initial.ldif.in"
+mkcnf "$SLAPD_CONF"	config "$SLAPD_CONF_IN"
+case $SLAPD_DB in
+bdb)	mkcnf "$LDAP_DATA_DIR/DB_CONFIG" config "$config_dir/bdb.DB_CONFIG.in"
+	;;
+esac
+
+# add initial data
+"${OPENLDAP_SLAPADD}" -f $SLAPD_CONF -l $INITIAL_LDIF &&
+	echo add initial metadata ||
+	ABORT "cannot add initial metadata"
+
+# create run scripts
+mkscript "$RC_DIR/gfarm-slapd"	config "$RC_GFARM_SLAPD_IN"
+mkscript "$RC_DIR/gfmd"		config "$RC_GFMD_IN"
+
+if $START_SERVICE; then
+	if start_service gfarm-slapd && start_service gfmd; then
+		:
+	else
+		ABORT "failed to start service"
+	fi
+fi
+
+echo "$PROGNAME success"
+exit 0

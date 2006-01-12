@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfdf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFDF.1"
+></A
+>gfdf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfdf&nbsp;--&nbsp;gfarm ディスク空き容量取得</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+>  -H <VAR
+CLASS="REPLACEABLE"
+>ホスト指定ファイル</VAR
+>  [-i]</P
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+>  -h <VAR
+CLASS="REPLACEABLE"
+>ホスト</VAR
+>...  [-i]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdf</B
+> は、指定した gfarm のファイルシステムノードの
+ディスク空き容量を表示します。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-H</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>ファイルシステムノードのホスト名のリストを記載したファイル名を指定します。
+ホスト名は、各行に一ホストずつ記述します。</P
+><P
+>ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-h</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト名</I
+></TT
+></DT
+><DD
+><P
+>指定したファイルシステムノードの表示を行います。
+このオプションは、複数回指定することができます。</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-i</VAR
+></DT
+><DD
+><P
+>ディスク容量の代わりに、i-node の使用状況を表示します。</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-?</VAR
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfhost</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

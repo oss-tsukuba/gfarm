@@ -1,0 +1,354 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm.3'>
+
+<refentryinfo><date>22 Aug 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm</refname>
+<refpurpose>Gfarm native API library</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<synopsis>
+#include &lt;gfarm/gfarm.h&gt;
+
+</synopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>The Gfarm library provides an interface layer to
+the gfarm filesystem. This manual only gives an overview of the
+library, please use manual pages of each functions to see the
+detail of the functions.
+</para>
+
+<refsect2>
+<title>Initialize / Finalize</title>
+<para>
+<citerefentry>
+<refentrytitle>gfarm_initialize</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used for the initilization of the Gfarm
+library, and
+<citerefentry>
+<refentrytitle>gfarm_terminate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used for the termination of the library.
+</para>
+</refsect2>
+
+<refsect2>
+<title>File input/output operations</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_set_local</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function specifies current node number and total number
+of nodes as an initialization step of a parallel process.
+
+To open an existing file as a stream,
+<citerefentry>
+<refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used.
+To create an file and open the file as a stream,
+<citerefentry>
+<refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used.
+<citerefentry>
+<refentrytitle>gfs_pio_close</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used to close such streams.
+<citerefentry>
+<refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function and
+<citerefentry>
+<refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function specifies an access method of a parallel file.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_error</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used to see whether an error happens or not
+about a stream.
+<citerefentry>
+<refentrytitle>gfs_pio_eof</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used to see whether a stream,
+which is opened for read, already reaches end-of-file or not.
+<citerefentry>
+<refentrytitle>gfs_pio_seek</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function changes the current position of the stream.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_getc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> functions reads a character from a stream, and
+<citerefentry>
+<refentrytitle>gfs_pio_ungetc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> functions puts back a character to a stream.
+<citerefentry>
+<refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfs_pio_gets</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function, and
+<citerefentry>
+<refentrytitle>gfs_pio_readline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function read one line from a stream, and
+<citerefentry>
+<refentrytitle>gfs_pio_readdelim</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function reads from stream until delimiter character,
+specified by the function argument, appears.
+<citerefentry>
+<refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> functions reads specified bytes from a stream.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_pio_putc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function writes one character to a stream, and
+<citerefentry>
+<refentrytitle>gfs_pio_putline</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function and
+<citerefentry>
+<refentrytitle>gfs_pio_puts</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function write one line to a stream.
+<citerefentry>
+<refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function writes specified bytes to a stream.
+<citerefentry>
+<refentrytitle>gfs_pio_flush</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfs_pio_sync</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function and
+<citerefentry>
+<refentrytitle>gfs_pio_datasync</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function moves buffered data to a storage device.
+
+<citerefentry>
+<refentrytitle>gfs_pio_truncate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function truncates a file.
+</para>
+</refsect2>
+
+<refsect2>
+<title>Directory access</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_chdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function changes current working directory.
+<citerefentry>
+<refentrytitle>gfs_realpath</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function returns full pathname of the argument.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function opens a directory, and
+<citerefentry>
+<refentrytitle>gfs_readdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function retrieves entries of the directory.
+<citerefentry>
+<refentrytitle>gfs_closedir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function closes the directory.
+</para>
+
+<para>
+A gfs_glob_t data, which is initilized by
+<citerefentry>
+<refentrytitle>gfs_glob_init</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+can be passed to
+<citerefentry>
+<refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function, and the gfs_glob function returns
+list of matched file/directory names in the gfs_glob_t.
+The gfs_glob_t must be released by 
+<citerefentry>
+<refentrytitle>gfs_glob_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function.
+<citerefentry>
+<refentrytitle>gfs_glob_add</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used add an entry to gfs_glob_t.
+</para>
+</refsect2>
+
+<refsect2>
+<title>File / Directory manipulation</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_chmod</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function changes the mode of a file, and
+<!--
+<citerefentry>
+<refentrytitle>gfs_chown</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function changes the owner of a file, and
+-->
+<citerefentry>
+<refentrytitle>gfs_utimes</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function changes file's modified time and access time.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_mkdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function creates a directory, and
+<citerefentry>
+<refentrytitle>gfs_rmdir</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function removes a directory.
+<citerefentry>
+<refentrytitle>gfs_unlink</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function removes a file, and
+<citerefentry>
+<refentrytitle>gfs_unlink_section</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function removes a fragment which is a member of
+a parallel file.
+<citerefentry>
+<refentrytitle>gfs_rename</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function renames a file or a directory.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfs_stat</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function returns information like size, modified/access
+time, etc.
+The struct gfs_stat returned by gfs_stat function must be released by
+<citerefentry>
+<refentrytitle>gfs_stat_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function.
+</para>
+</refsect2>
+
+<refsect2>
+<title>Utility functions</title>
+<para>
+<citerefentry>
+<refentrytitle>gfarm_hostlist_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function, and
+<citerefentry>
+<refentrytitle>gfarm_import_fragment_size_alloc</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function are utility functions used to register
+a file as a fragmented parallel file. Please see the source code of
+<citerefentry>
+<refentrytitle>gfimport_text</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> command and
+<citerefentry>
+<refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>
+</citerefentry> command as an example how to use these functions.
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>String Array manipulation utilities</title>
+<para>
+A gfarm_stringlist type variable represents an array of strings,
+and this type is initialized by
+<citerefentry>
+<refentrytitle>gfarm_stringlist_init</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function.
+<citerefentry>
+<refentrytitle>gfarm_stringlist_add</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used to add a string to a gfarm_stringlist.
+<citerefentry>
+<refentrytitle>gfarm_stringlist_cat</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function is used to add strings to a gfarm_stringlist.
+<citerefentry>
+<refentrytitle>gfarm_stringlist_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function releases gfarm_stringlist.
+<citerefentry>
+<refentrytitle>gfarm_stringlist_elem</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function or
+GFARM_STRINGLIST_ELEM() macro
+can be used to access each string of an array.
+<citerefentry>
+<refentrytitle>gfarm_stringlist_length</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function can be used to see number of strings in an array.
+</para>
+
+<para>
+<citerefentry>
+<refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function releases a string array and each element of the
+array by calling standard library function free().
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>String Array manipulation macros</title>
+<variablelist>
+
+<varlistentry>
+<term>GFARM_STRINGLIST_ELEM(list, i)</term>
+<listitem>
+<para>
+represents <parameter>i</parameter>-th element of
+the <parameter>list</parameter> argument which type is gfarm_stringlist.
+This macro can be used as a L-value.
+If this macro is used as a value, it returns same result with
+<citerefentry>
+<refentrytitle>gfarm_stringlist_elem</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>GFARM_STRINGLIST_STRARRAY(list)</term>
+<listitem>
+<para>
+returns pointer to first element of the <parameter>list</parameter> argument
+which type is gfarm_stringlist.
+The type of the return value is a pointer to pointer to a character.
+</para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+</refsect2>
+
+<refsect2>
+<title>Internal functions</title>
+
+<para>
+<citerefentry>
+<refentrytitle>gfarm_url_program_register</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfarm_url_hosts_schedule</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfarm_url_fragments_replicate</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function,
+<citerefentry>
+<refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> function, and
+<citerefentry>
+<refentrytitle>gfarm_url_section_replicate_to</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> functions are internal functions of Gfarm.
+These manual are provided by historical reasons, but these specification
+may be changed later.
+</para>
+
+</refsect2>
+
+</refsect1>
+
+</refentry>

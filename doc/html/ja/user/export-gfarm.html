@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: Servers which export Gfarm [Japanese]</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=euc-jp">
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+他のプロトコルを用いてGfarmにアクセス
+
+<H1>他のプロトコルを用いて Gfarm ファイルシステムにアクセスする</H1>
+<A href="../../en/user/export-gfarm.html">English</A> | 日本語 
+
+<H2>1. 概要</H2>
+
+ファイル共有／公開サーバアプリケーションを経由して，Gfarm ファイルシステムをエクスポートできるかどうか，いくつか調査しました．
+各サーバに対して，システムコールフックや GfarmFS-FUSE を組み合わせれば実現できます．
+
+<H2>2. 組み合わせ調査結果</H2>
+
+<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=5>
+<THEAD ALIGN="center">
+<TR>
+<TH>Servers</TH>
+<TH>syscall-hooking library</TH>
+<TH>GfarmFS-FUSE</TH>
+</TR>
+</THEAD>
+<TBODY ALIGN="center">
+<TR>
+<TD><A HREF="http://www.samba.org/">Samba</A></TD>
+<TD><A HREF="samba-hook.html">◎</A></TD>
+<TD><A HREF="samba-gfarmfs.html">◎<BR>allow_root 必要</A></TD>
+</TR>
+<TR>
+<TD>NFS</TD>
+<TD>×</TD>
+<TD><A HREF="nfs-gfarmfs.html">○<BR>allow_root 必要</A></TD>
+</TR>
+<TR>
+<TD><A HREF="http://vsftpd.beasts.org/">vsftpd</A></TD>
+<TD>○</TD>
+<TD>○</TD>
+</TR>
+<TR>
+<TD><A HREF="http://www.proftpd.org/">ProFTPD</A></TD>
+<TD>○</TD>
+<TD>○<BR>allow_root 必要</TD>
+</TR>
+<TR>
+<TD><A HREF="http://www.globus.org/toolkit/docs/4.0/data/gridftp/">globus-gridftp-server</A><BR>(GT4) (root 権限起動）</TD>
+<TD>○<BR>サーバ側でも grid-proxy-init 必要</TD>
+<TD>○<BR>サーバ側でも grid-proxy-init 必要</TD>
+</TR>
+<TR>
+<TD><A HREF="http://httpd.apache.org/">Apache HTTP Server</A><BR>
+(Gfarm にアクセスできる<BR>ユーザの権限で起動)</TD>
+<TD>○<BR>httpd.conf に<BR>
+EnableMMAP Off<BR>
+EnableSendfile Off<BR>
+が必要である</TD>
+<TD>○<BR></TD>
+</TR>
+</TBODY>
+</TABLE>
+<P>
+リンク先があれば詳細な解説があります．他のサーバにも応用してみてください．
+
+<UL>
+<LI>◎: テスト済み
+<LI>○: 簡単な動作確認のみ
+<LI>×: 不可能
+<LI>allow_root 必要とは、FUSE のオプションである -o allow_root を付けてマウントする必要があります．詳しくは FUSE パッケージの README をご覧ください．
+</UL>
+
+
+<H2>3. コメント</H2>質問やコメントがありましたら，
+<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A> まで自由にメールを送付してください． 
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>
