@@ -1,7 +1,7 @@
 Gfarm FAQ - Frequently Asked Questions about Gfarm
 
-Copyright (c) 2003 National Institute of Advanced Industrial Science
-and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003, 2004, 2005 National Institute of Advanced
+Industrial Science and Technology (AIST).  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -12,13 +12,17 @@ Table of Contents:
 
 2. Trouble Shooting
   2.1 'gfls' results in 'gfarm:.: no such object'.
-  2.2 [GSI authentication] "Authentication error" or "no filesystem
+  2.2 We cannot connect to file system nodes and/or a metadata server.
+  2.3 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
-  2.3 Unregistered or unnecessary files seem to remain in a spool
+  2.4 It is not possible to access files that should be created.
+  2.5 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.4 Due to disk crash, files in a file system node are lost.  What
+  2.6 Due to disk crash, files in a file system node are lost.  What
      we need to do?
+  2.7 "Operation not permitted" error happens when accessing or
+     creating a file having execution bits.
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -27,8 +31,9 @@ Table of Contents:
     gsi_auth method and gsi authentication?
 
 4. Performance Tuning
-  4.1 How to speed up writes to metadata database using OpenLDAP
-    version 2.1.X and Berkeley DB?
+  4.1 How to speed up reads and writes to metadata database using an
+    OpenLDAP server?
+  4.2 How to execute gfarm_agent automatically only when it is not there?
 
 5. Limitation
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -39,11 +44,15 @@ Table of Contents:
 1. General
 **********
   1.1 What is Gfarm?
+
 	Please refer to the following URL:
+
 		http://datafarm.apgrid.org/
 
   1.2 Where can I download Gfarm?
+
 	It is delivered from the following URL:
+
 		http://datafarm.apgrid.org/software/
 
 2. Trouble Shooting
@@ -55,9 +64,24 @@ Table of Contents:
 	creating your home directory, you always encounter this error
 	message.  In this case, it is necessary to create a home
 	directory.
-		% gfmkdir gfarm:~
 
-  2.2 [GSI authentication] "Authentication error" or "no filesystem
+		$ gfmkdir gfarm:~
+
+  2.2 We cannot connect to file system nodes and/or a metadata server.
+
+	By default setting, 600/tcp and 600/udp need to be opened for
+	file system nodes, and 601/tcp and 389/tcp need to be opened
+	for a metadata server.
+
+	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these file system
+	nodes cannot be connected by the client using 600/udp.
+
+	The port number can be specified by a Gfarm configuration file
+	or a command-line option for gfsd and gfmd.  For details,
+	refer to the installation manual and manual pages of gfsd(8),
+	gfmd(8) and gfarm.conf(5).
+
+  2.3 [GSI authentication] "Authentication error" or "no filesystem
      node" error happens when executing programs or replicating files.
 
 	Verbose error messages are displayed with the -v option of
@@ -67,6 +91,13 @@ Table of Contents:
 
 	(1) Is a valid entry included in the grid-mapfile on file
 	system nodes and file system metadata node?
+
+	Note that the subject names displayed for certain certificates
+	changed between Globus Toolkit version 2 (GT2) and the version
+	3 (GT3).  'Email' field in GT2 becomes 'emailAddress' in GT3.
+	'USERID' field in GT2 becomes 'UID' in GT3.  For
+	compatibility, you need to register both entries in
+	grid-mapfile.
 
 	(2) Are permissions of user certificate
 	 (~/.globus/usercert.pem) and/or host certificate
@@ -80,12 +111,29 @@ Table of Contents:
 	certificate, registered in /etc/grid-security/certificates?
 	Is not it expired?
 
+	Note that CA subject name in signing_policy files is also
+	affected the same as (1).  If you would like to use the same
+	signing_policy file for GT2 and GT3, you need both entries in
+	a signing_policy file.
+
 	(5) Are the clocks of all file system nodes, file system
 	metadata node, and a client are synchronized?  The GSI library
 	provided by the Globus fails to authenticate each other when
 	the time difference is more than five minutes.
 
-  2.3 Unregistered or unnecessary files seem to remain in a spool
+  2.4 It is not possible to access files that should be created.
+
+	Files that are not closed by a creating process are not
+	registered correctly to metadata since the file close
+	operation in Gfarm I/O library cannot be called.
+
+	Such files are displayed as "no fragment information" by 'gfls
+	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
+	be used.  When gfarm:file needs to be registered, execute
+
+		$ gfhost | gfrun -H - gfsplck gfarm:file
+
+  2.5 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -94,24 +142,62 @@ Table of Contents:
 	file, unnecessary files may remain in a spool directory on
 	filesystem nodes.
 
-	gfarm:/bin/gfsplck is prepared for checking and deleting these
+	'gfsplck' is prepared for checking and deleting these
 	unregistered files in a spool directory on filesystem nodes.
 	You can check which files are unregistered or not by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck gfarm:~
+
+		$ gfhost | gfrun -H - gfsplck gfarm:~
+
 	After checking files, you can delete them by
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d gfarm:~
+
+		$ gfhost | gfrun -H - gfsplck -d gfarm:~
+
 	The above command examples do not check the file integrity.
 	When you want to check it by calculating md5 checksum, execute
 	with the -a option.
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad gfarm:~
 
-  2.4 Due to disk crash, all files in a file system node are lost.
+		$ gfhost | gfrun -H - gfsplck -ad gfarm:~
+
+  2.6 Due to disk crash, all files in a file system node are lost.
      What we need to do?
 
 	For all data files including execution programs, there is
-	nothing you need to do.  When opening these missing files, the
-	Gfarm system detects that, and opens the other file replica
-	automatically, or replicates it dynamically.
+	nothing you need to do when there is at least one file copy.
+	When opening these missing files, the Gfarm system detects
+	that, and opens another file replica automatically, or
+	replicates it dynamically.
+
+	Since invalid metadata of lost file replicas remain in a
+	metadata database, it is necessary to delete these metadata.
+	When a crashed file system node is gfm01.aist.go.jp, run
+
+		$ gfrm -h gfm01.aist.go.jp -r gfarm:/
+
+  2.7 "Operation not permitted" error happens when accessing or
+     creating a file having execution bits.
+	
+	Gfarm file system can store multiple binaries in the same
+	pathname to make it possible to execute the corresponding
+	binary for each different architecture.  For this
+	functionality, it is necessary to determine the architecture
+	name to access files that has execution bits.
+
+	When the client host is a file system node, the architecture
+	is automatically determined by the Gfarm metadata database.
+	On the other hand, when the registered hostname and the output
+	of hostname command are different, the output of hostname
+	command needs to be registered as a hostname alias.  The
+	following example shows to register a hostname alias 'host'
+	to the host 'host.example.com';
+
+		$ gfhost -m host.example.com host
+
+	Otherwise, you need to specify the client architecture
+	explicitly to access files that has execution bits by either
+	the 'client_architecture' directive in the configuration file
+	or the environment variable GFARM_ARCHITECTURE.
+
+		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
 3. Security
 ***********
@@ -198,8 +284,8 @@ Table of Contents:
 
 4. Performance Tuning
 *********************
-  4.1 How to speed up writes to metadata database using OpenLDAP
-    version 2.1.X and Berkeley DB?
+  4.1 How to speed up reads and writes to metadata database using an
+    OpenLDAP server?
 
 	When you are using Berkeley DB as database backend, it is
 	possible to improve write performance significantly to tune
@@ -215,28 +301,78 @@ set_cachesize 0 536870912 2
 set_flags DB_TXN_NOSYNC
 -------------------------------- END --------------------------------
 
+	When you are using LDBM database backend, it is possible to
+	improve the performance by increasing the size of in-memory
+	cache.  The size of entries and the size in bytes of the
+	in-memory cache can be specified by 'cachesize' and
+	'dbcachesize', respectively, in slapd.conf.  The following
+	setting example sets both parameters 10 times larger than the
+	default.
+
+----------------------------- BEGIN HERE -----------------------------
+cachesize 10000
+dbcachesize 1000000
+-------------------------------- END --------------------------------
+
+  4.2 How to execute gfarm_agent automatically only when it is not there?
+
+	Add the following script to ~/.bashrc.
+
+----------------------------- BEGIN HERE -----------------------------
+GFARMENV=/tmp/gfarm-env-$USER
+
+source_gfarm_env()
+{
+	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
+}
+
+restart_gfarm_agent()
+{
+	touch $GFARMENV
+	chmod go-rw $GFARMENV
+	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
+}
+
+check_gfarm_agent()
+{
+	source_gfarm_env
+	if test "X$GFARM_AGENT_PID" = X
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	elif ! ps -p $GFARM_AGENT_PID > /dev/null
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	fi
+}
+
+check_gfarm_agent
+-------------------------------- END --------------------------------
+
 5. Limitation
 *************
   5.1 Where are gfchmod, gfchown and gfmv?
 
-	Unfortunately, not implemented yet.
+	Unfortunately, not implemented yet.  Instead, you can use
+	chmod and mv commands when LD_PRELOAD environment variable is
+	set.  For details, see README.hook.en.
 
 	We plan to add these commands in the next major release.
 
-  5.2 Can I open a file with read-write mode?
+  5.2 Can I open a file in read-write mode?
 
-	Currently, no error happens even if you open a file with
-	read-write mode. But if there are some replicas of the file,
-	inconsistency may be caused by this operation.
-
-	We plan to fix this problem in the next major release.
+	Since the version 1.0.4, a file can be opened in read-write
+	mode.  When there are several replicas of the file, every
+	other replicas except the updated one will be automatically
+	deleted.
 
   5.3 Are file names case-sensitive in a Gfarm file system?
 
-	If you are using latest version of openldap 2.1 series or
-	2.2 series, file names are case-sensitive.
-	But if you are using older version like openldap 2.0 series,
-	Gfarm cannot distinguish upper case and lower case in file names.
+	If you are using the latest version of openldap 2.1 series or
+	2.2 series, file names are case-sensitive.  But if you are
+	using old version like openldap 2.0 series, Gfarm cannot
+	distinguish upper case and lower case for file names.
 
   5.4 Can a file name include ',' or '+'?
 

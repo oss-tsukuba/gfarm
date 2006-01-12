@@ -1,7 +1,7 @@
 Gfarm FAQ - Gfarm に関するよくある質問
 
-Copyright (c) 2003 National Institute of Advanced Industrial Science
-and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003, 2004, 2005 National Institute of Advanced
+Industrial Science and Technology (AIST).  All Rights Reserved.
 
 目次:
 *****
@@ -10,24 +10,30 @@ and Technology (AIST).  All Rights Reserved.
   1.2 Gfarm はどこからダウンロードできますか？
 
 2. トラブル・シューティング
-  2.1 gfls を実行すると gfarm:.:no such object というエラーメッセージ
+  2.1 gfls を実行すると gfarm:.: no such object というエラーメッセージ
     がでます．
-  2.2 [GSI認証] プログラム起動時，ファイル複製作成時などに認証エラーが
+  2.2 ファイルシステムノード，メタサーバに接続できません．
+  2.3 [GSI認証] プログラム起動時，ファイル複製作成時などに認証エラーが
      起きてしまいます．あるいは，no filesystem node というエラーが発生
      してしまいます．
-  2.3 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
+  2.4 作成したはずのファイルがありません．
+  2.5 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
      ステムに登録されていないファイルが残っているようです．消したいの
      ですが，どうしたらいいでしょうか？
-  2.4 ファイルシステムノードのディスクがクラッシュして，ファイルがなく
+  2.6 ファイルシステムノードのディスクがクラッシュして，ファイルがなく
      なってしまいました．どうすればいいでしょうか？
+  2.7 実行ビットの立っているファイルを作成，参照しようとすると
+     Operation not permitted というエラーが発生してしまいます．
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
   3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
 
 4. 性能チューニング
-  4.1 OpenLDAP version 2.1.X で，メタデータの書き込み性能を向上させる
-     にはどうすればいいでしょうか？
+  4.1 OpenLDAP サーバで，メタデータの読込み，書込み性能を向上させるには
+    どうすればいいでしょうか？
+  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
+    しょうか？
 
 5. 制限事項
   5.1 gfchmod, gfchown, gfmv 等はないのですか？
@@ -40,16 +46,20 @@ and Technology (AIST).  All Rights Reserved.
 1. 一般
 **********
   1.1 Gfarm とは何ですか？
+
 	下記の URL をご覧ください．
+
 		http://datafarm.apgrid.org/
 
   1.2 Gfarm はどこからダウンロードできますか？
+
 	下記の URL から配布されています．
+
 		http://datafarm.apgrid.org/software/
 
 2. トラブル・シューティング
 *******************
-  2.1 gfls を実行すると gfarm:.:no such object というエラーメッセージ
+  2.1 gfls を実行すると gfarm:.: no such object というエラーメッセージ
     がでます．
 
 	エラーメッセージは，Gfarm ファイルシステム上の現在の作業ディレ
@@ -57,9 +67,24 @@ and Technology (AIST).  All Rights Reserved.
 	には，ユーザのホームディレクトリが作成されていないため，このエ
 	ラーメッセージが出ます．以下のコマンドにより Gfarm ファイルシ
 	ステムにホームディレクトリを作成してください．
-		% gfmkdir gfarm:~
 
-  2.2 [GSI認証] プログラム起動時，ファイル複製作成時などに認証エラーが
+		$ gfmkdir gfarm:~
+
+  2.2 ファイルシステムノード，メタサーバに接続できません．
+
+	デフォルトの設定では，ファイルシステムノードは 600/tcp と
+	600/udp を利用し，メタサーバノードは 601/tcp と 389/tcp を利用
+	します．
+
+	特に 'gfhost -lv' で，'x.xx/x.xx/x.xx' と表示されるファイルシス
+	テムノードは，600/udp での接続に失敗しています．
+
+	デフォルトのポート番号は，設定ファイル，gfsd, gfmd の起動時オプ
+	ションで変更することができます．詳細はインストールガイドおよび
+	gfsd(8), gfmd(8), gfarm.conf(5) のマニュアルページを参照してく
+	ださい．
+
+  2.3 [GSI認証] プログラム起動時，ファイル複製作成時などに認証エラーが
      起きてしまいます．あるいは，no filesystem node というエラーが発生
      してしまいます．
 
@@ -71,6 +96,12 @@ and Technology (AIST).  All Rights Reserved.
 	リッドマップファイル(/etc/grid-security/grid-mapfile)
 	に正しいエントリが登録されていますか？
 
+	特に，Globus Toolkit version 2 (GT2) と version 3 (GT3) では，
+	サブジェクト名の Email フィールド，USERID フィールドはフィール
+	ド名が変わるので注意が必要です．それぞれ GT3 では emailAddress，
+	UID となります．両方のライブラリを利用する場合は，互換性のため
+	に，両方のエントリを grid-mapfile に登録する必要があります．
+
 	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
         (/etc/grid-security/hostcert.pem)のパミッションが 0644 になって
         いますか？
@@ -81,11 +112,27 @@ and Technology (AIST).  All Rights Reserved.
 	効なものが正しく /etc/grid-security/certificates に登録されてい
 	ますか？ 有効期限が切れていませんか？
 
+	signing_policy ファイルにおける CA のサブジェクト名も (1) と同
+	様に変化するので注意が必要です．
+
 	(5) 全てのホストで時刻が正しく設定されていますか？ Globus の 
 	GSI ライブラリの場合，ホスト間で 5分以上時刻が狂っていると認証
 	に失敗してしまいます．
 
-  2.3 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
+  2.4 作成したはずのファイルがありません．
+
+	ファイル生成中のプログラムが作成途中に強制中断してしまった場合，
+	Gfarm ライブラリとしてのファイルのクローズを呼ぶことができず，
+	メタデータに正しく登録されません．
+
+	このようなファイルは gfls -l や gfwhere により no fragment
+	information と表示されます．正しく登録し直すためには，gfsplck
+	コマンドを利用します．例えば，gfarm:file を登録し直すためには，
+	以下のように実行します．
+
+		$ gfhost | gfrun -H - gfsplck gfarm:file
+
+  2.5 ファイルシステムノードのスプールディレクトリに Gfarm ファイルシ
      ステムに登録されていないファイルが残っているようです．消したいの
      ですが，どうしたらいいでしょうか？
 
@@ -93,24 +140,62 @@ and Technology (AIST).  All Rights Reserved.
 	システムノードが利用不可などの原因で，必要のないファイルがスプー
 	ルディレクトリに残ることがあります．
 
-	gfarm:/bin/gfsplck というプログラムで，登録されていないファイ
-	ルの確認，消去ができます．まず，以下のコマンドで登録されていな
-	いファイルが確認してください．
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck gfarm:~
+	gfsplck というプログラムで，登録されていないファイルの確認，消
+	去ができます．まず，以下のコマンドで登録されていないファイルが
+	確認してください．
+
+		$ gfhost | gfrun -H - gfsplck gfarm:~
+
 	確認したら，以下のコマンドで消去します．
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -d gfarm:~
+
+		$ gfhost | gfrun -H - gfsplck -d gfarm:~
+
 	なお，上記コマンドでは，md5チェックサムによるファイルの一貫性
 	チェックを行いません．完全なチェックを行って，ファイルを消去す
 	るためには，以下のように -a オプションをつけて実行します．
-		% gfhost | gfrun -H - gfarm:/bin/gfsplck -ad gfarm:~
 
-  2.4 ファイルシステムノードのディスクがクラッシュして，ファイルがなく
-     なってしまいました．どうすればいいでしょうか？
+		$ gfhost | gfrun -H - gfsplck -ad gfarm:~
+
+  2.6 ファイルシステムノードのディスクがクラッシュしてしまいました．ど
+    うすればいいでしょうか？
 
 	実行プログラムを含むファイルは，ファイル参照時に自動的にファイ
-	ルがなくなったことが検出され，別のファイル複製が参照，あるいは
-	動的にファイル複製が作成されされますので，複製が他のノードに存
-	在していれば問題ありません．
+	ルがなくなったことが検出され，別のファイル複製が参照されますの
+	で，複製が他のノードに存在していれば問題なくアクセスすることが
+	できます．
+
+	ただし，失われたファイル複製の無効な情報がメタデータサーバに登
+	録されたままですので，その情報を消去する必要があります．例えば，
+	クラッシュしたホストが gfm01.aist.go.jp の場合は，以下のコマン
+	ドを実行します．
+
+		$ gfrm -h gfm01.aist.go.jp -r gfarm:/
+
+  2.7 実行ビットの立っているファイルを作成，参照しようとすると
+     Operation not permitted というエラーが発生してしまいます．
+
+	Gfarm ファイルシステムでは，実行ビットの立ったファイルはアーキ
+	テクチャにより複数格納することができます．これにより，同じパス
+	名で異るバイナリを実行させることが可能になります．
+
+	一方で，この機構を実現するために，実行ビットの立ったファイルを
+	作成，参照する場合には，アーキテクチャを決定する必要があります．
+
+	ファイルシステムノードであれば，アーキテクチャはメタデータとし
+	て登録されているため，それを利用します．ただし，登録されている
+	ホスト名と hostname コマンドの出力が異る場合は，hostname コマン
+	ドの出力をホスト名の別名としてメタデータに登録する必要がありま
+	す．例えば，登録されているホスト名が host.example.com で，
+	hostname コマンドの出力が host の場合は，以下のように登録します．
+
+		$ gfhost -m host.example.com host
+
+	また，ファイルシステムノードではないクライアントから実行ビット
+	のたったファイルをアクセスする場合は，.gfarmrc の
+	client_architecture，あるいは環境変数 GFARM_ARCHITECTURE を利用
+	して，アーキテクチャ名を指定する必要があります．
+
+		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
 3. セキュリティ
 ***************
@@ -185,8 +270,8 @@ and Technology (AIST).  All Rights Reserved.
 
 4. 性能チューニング
 *******************
-  4.1 OpenLDAP version 2.1.X で，メタデータの書き込み性能を向上させる
-     にはどうすればいいでしょうか？
+  4.1 OpenLDAP サーバで，メタデータの読込み，書込み性能を向上させるには
+    どうすればいいでしょうか？
 
 	バックエンドのデータベースに Berkeley DB を利用している場合，デー
 	タベースの環境設定ファイル /var/gfarm-ldap/DB_CONFIG で，キャッ
@@ -200,19 +285,71 @@ set_cachesize 0 536870912 2
 set_flags DB_TXN_NOSYNC
 ------------------------------ ここまで ------------------------------
 
+	バックエンドのデータベースに LDBM を利用している場合，メモリ上
+	にキャッシュサイズを大きくすることにより，性能を向上させること
+	ができます．キャッシュされるエントリサイズ，メモリサイズは
+	slapd.conf の cachesize, dbcachesize でそれぞれ指定することがで
+	き，例えば以下のように記述するとデフォルトの 10 倍に設定するこ
+	とができます．
+
+------------------------------ ここから ------------------------------
+cachesize 10000
+dbcachesize 1000000
+------------------------------ ここまで ------------------------------
+
+  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
+    しょうか？
+
+	例えば，以下のようなスクリプトを .bashrc などに記述します．
+
+------------------------------ ここから ------------------------------
+GFARMENV=/tmp/gfarm-env-$USER
+
+source_gfarm_env()
+{
+	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
+}
+
+restart_gfarm_agent()
+{
+	touch $GFARMENV
+	chmod go-rw $GFARMENV
+	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
+}
+
+check_gfarm_agent()
+{
+	source_gfarm_env
+	if test "X$GFARM_AGENT_PID" = X
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	elif ! ps -p $GFARM_AGENT_PID > /dev/null
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	fi
+}
+
+check_gfarm_agent
+------------------------------ ここまで ------------------------------
+
 5. 制限事項
 ***********
   5.1 gfchmod, gfchown, gfmv 等はないのですか？
 
-	ありません．
+	ありません．ただし，gfchmod, gfmv に関しては，LD_PRELOAD 環境変
+	数を設定し，既存アプリケーションからのアクセスが可能になってい
+	る場合は，chmod，mv コマンドが利用可能です．詳細は，
+	README.hook.ja をご覧ください．
+
 	この問題は，次期メジャーリリースで解決する予定です．
 
   5.2 ファイルを読み書き可能な状態でオープンできますか？
 
-	現在，ファイルを読み書き可能な状態でオープンしてもエラーには
-	していませんが，そのファイルにレプリカが存在する場合，
-	レプリカの状態に不整合が生じます．
-	この問題は，次期メジャーリリースで解決する予定です．
+	Version 1.0.4 でサポートされました．ただし，そのファイルにレプ
+	リカが存在した場合，更新されたレプリカ以外のレプリカは自動的に
+	消去されます．
 
   5.3 Gfarm ファイルシステム上のファイル名は大文字，小文字を区別します
      か？
@@ -226,4 +363,4 @@ set_flags DB_TXN_NOSYNC
      できますか？
 
 	Version 1.0.2 よりファイル名として '#', ' ', ',', '+', '"',
-	'\', '>', '<', ';' の文字を利用可能となりました．
+	'\', '>', '<', ';' の文字が利用可能となりました．

@@ -5,8 +5,7 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -37,15 +36,17 @@ NAME="DESCRIPTION"
 ><P
 >gfarm.conf ¥Õ¥¡¥¤¥ë¤Ï¡¢gfarm ¥×¥í¥°¥é¥à¤ÎÀßÄê¥Õ¥¡¥¤¥ë¤Ç¤¹¡£
 ¥µ¡¼¥Ð¡¼¡¦¥×¥í¥»¥¹¤Ç¤¢¤ë gfmd ¤È gfsd ¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢
-¤³¤Î /etc/gfarm.conf ¤òÀßÄê¥Õ¥¡¥¤¥ë¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£
+¤³¤Î %%SYSCONFDIR%%/gfarm.conf ¤òÀßÄê¥Õ¥¡¥¤¥ë¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£
 ¤Ê¤ª¡¢ÀßÄêÆâÍÆ¤¬ÆÉ¤ß¹þ¤Þ¤ì¤ë¤Î¤Ïµ¯Æ°»þ¤À¤±¤Ê¤Î¤Ç¡¢
 ÀßÄêÆâÍÆ¤òÊÑ¹¹¤·¤¿¾ì¹ç¡¢¥µ¡¼¥Ð¡¼¤òºÆµ¯Æ°¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£</P
 ><P
->¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤Ï¡¢/etc/gfarm.conf ¤È¡¢¥æ¡¼¥¶¡¼¤Î
-¥Û¡¼¥à¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë .gfarmrc ¥Õ¥¡¥¤¥ë¤ò¡¢ÀßÄê¥Õ¥¡¥¤¥ë
-¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£.gfarmrc ¥Õ¥¡¥¤¥ë¤Ï¡¢/etc/gfarm.conf ¤È
-Æ±°ì¤Î·Á¼°¤Çµ­½Ò¤·¤Þ¤¹¡£.gfarmrc ¤È /etc/gfarm.conf ¤Ç¤Ï¡¢
- .gfarmrc ¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£</P
+>¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤Ç
+»ØÄê¤·¤¿¥Õ¥¡¥¤¥ë¤È¡¢%%SYSCONFDIR%%/gfarm.conf ¤ò¡¢ÀßÄê¥Õ¥¡¥¤¥ë
+¤È¤·¤Æ»²¾È¤·¤Þ¤¹¡£¤³¤ÎÆó¤Ä¤Î¥Õ¥¡¥¤¥ë¤Ç¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤Ç
+»ØÄê¤·¤¿¥Õ¥¡¥¤¥ë¤ÎÀßÄê¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
+¤É¤Á¤é¤ÎÀßÄê¥Õ¥¡¥¤¥ë¤â¡¢Æ±°ì¤ÎÊ¸Ë¡¤Çµ­½Ò¤·¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_CONFIG_FILE ¤¬ÀßÄê¤µ¤ì¤Æ¤Ê¤¤¾ì¹ç¡¢Âå¤ï¤ê¤Ë
+¥æ¡¼¥¶¡¼¤Î¥Û¡¼¥à¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë .gfarmrc ¥Õ¥¡¥¤¥ë¤ò»ÈÍÑ¤·¤Þ¤¹¡£&#13;</P
 ><P
 >gfarm.conf ¤Ï¡¢°ì¹Ô¤Ë°ìÊ¸¤Î·Á¼°¤ÇÀßÄê¤·¤Þ¤¹¡£
 ¤¿¤À¤·¡¢¹ÔËö¤ËÊ¸»ú ``\'' ¤òµ­½Ò¤¹¤ë¤³¤È¤Ë¤è¤Ã¤Æ¡¢¹Ô¤ò·ÑÂ³¤µ¤»¤ë¤³¤È¤¬
@@ -205,6 +206,269 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢gfsd¤¬ÍÑ¤¤¤ë¾ÚÌÀ½ñ¤Î¼ïÎà¤ò»ØÄê¤·¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£</P
+><P
+>¥µ¡¼¥ÐÂ¦¤Ç¤³¤Î»ØÄê¤ò¾ÊÎ¬¤·¤¿¾ì¹ç¡¢¥µ¡¼¥Ð¤ò root ¸¢¸Â¤Çµ¯Æ°¤·¤¿¾ì¹ç¤Ï
+¥Û¥¹¥È¾ÚÌÀ½ñ¤òÍÑ¤¤¤Þ¤¹¡£¤Þ¤¿¥µ¡¼¥Ð¤ò°ìÈÌ¥æ¡¼¥¶¸¢¸Â¤Çµ¯Æ°¤·¤¿¾ì¹ç¤Ï
+¥æ¡¼¥¶¾ÚÌÀ½ñ¤òÍÑ¤¤¤Þ¤¹¡£¤³¤Î¤¿¤á¡¢¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤òÍøÍÑ¤¹¤ë¾ì¹ç¤ò
+½ü¤¤¤Æ¡¢¥µ¡¼¥ÐÂ¦¤Ç¤Ï¤³¤Î»ØÄê¤ò¹Ô¤¦É¬Í×¤ÏÄÌ¾ï¤Ê¤¤¤Ç¤·¤ç¤¦¡£</P
+><P
+>¥¯¥é¥¤¥¢¥ó¥ÈÂ¦¤Ç¤³¤Î»ØÄê¤ò¾ÊÎ¬¤·¤¿¾ì¹ç¡¢¥µ¡¼¥Ð¤¬¥Û¥¹¥È¾ÚÌÀ½ñ¤òÍøÍÑ¤·¤Æ¤¤¤ë
+¤È²¾Äê¤·¤Æ¥µ¡¼¥ÐÇ§¾Ú¤ò¹Ô¤¤¤Þ¤¹¡£¤³¤Î¤¿¤á¥µ¡¼¥Ð¤ò¥¯¥é¥¤¥¢¥ó¥È¤ÈÆ±¤¸¥æ¡¼¥¶
+¸¢¸Â¤Çµ¯Æ°¤·¤Æ¤¤¤ë¾ì¹ç¡¢¥¯¥é¥¤¥¢¥ó¥ÈÂ¦¤Ç¤Ï¡¢²¼µ­¤Î°ì¹Ô¤òÀßÄê¤·¤Æ
+¤ª¤¯É¬Í×¤¬¤¢¤ê¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;self</P
+><P
+>»ØÄê²ÄÇ½¤Ê <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+> ¤È¤·¤Æ¤Ï¡¢
+¡Ö<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>¡×¡¢
+¡Ö<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>¡×¡¢¡Ö<SPAN
+CLASS="TOKEN"
+>user</SPAN
+>¡×¡¢
+¡Ö<SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+>¡×¤¬¤¢¤ê¡¢
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> ¤ª¤è¤Ó
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> ¤ÈÁÈ¤ß¹ç¤ï¤»¤Æ
+²¼µ­¤Î¤è¤¦¤ËÍÑ¤¤¤Þ¤¹¡£</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>self</SPAN
+></DT
+><DD
+><P
+>¤½¤Î¥æ¡¼¥¶¤¬¸½ºß½ê»ý¤·¤Æ¤¤¤ë¥æ¡¼¥¶¾ÚÌÀ½ñ¤òÍÑ¤¤¤ë¤³¤È¤ò¼¨¤·¤Þ¤¹¡£
+¤³¤Î»ØÄê¤òÍøÍÑ¤¹¤ëºÝ¤Ë¤Ï¡¢
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> ¤ª¤è¤Ó
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> ¤Î
+»ØÄê¤ò¹Ô¤Ã¤Æ¤Ï¤¤¤±¤Þ¤»¤ó¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host</SPAN
+></DT
+><DD
+><P
+>¥Û¥¹¥È¾ÚÌÀ½ñ¤¢¤ë¤¤¤Ï¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤òÍÑ¤¤¤ë¤³¤È¤ò¼¨¤·¤Þ¤¹¡£
+¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤òÍÑ¤¤¤ë¾ì¹ç¡¢¤½¤Î¥µ¡¼¥Ó¥¹¤ÎÌ¾Á°¤ò
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> ¤Ç»ØÄê¤·¤Þ¤¹¡£
+¥µ¡¼¥Ó¥¹Ì¾¤Ë¡Ö<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>¡×¤ò»ØÄê¤·¤¿¾ì¹ç¡¢
+¥Õ¥¡¥¤¥ë ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/hostcert.pem</TT
+>'' ¤Ë
+¤¢¤ë¥Û¥¹¥È¾ÚÌÀ½ñ¤òÍÑ¤¤¤Þ¤¹¡£
+¤½¤ì°Ê³°¤Î¥µ¡¼¥Ó¥¹Ì¾¤ò»ØÄê¤·¤¿¾ì¹ç¡¢
+¥Õ¥¡¥¤¥ë ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/¥µ¡¼¥Ó¥¹/¥µ¡¼¥Ó¥¹cert.pem</TT
+>''
+¤Ë¤¢¤ë¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤òÍÑ¤¤¤Þ¤¹¡£
+¥µ¡¼¥Ó¥¹Ì¾¤ò¾ÊÎ¬¤·¤¿¾ì¹ç¡¢¡Ö<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>¡×¤¬»ØÄê¤µ¤ì¤¿¤È¤ß¤Ê¤·¤Þ¤¹¡£
+¥Û¥¹¥È¾ÚÌÀ½ñ¤ª¤è¤Ó¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤Î¾ì¹ç¡¢¾ÚÌÀ½ñ¤Î Common Name Íó¤Î¤ß¤ò
+Èæ³Ó¤·¤Þ¤¹¡£Common Name ¤Ï¡¢¡ÖCN=¥µ¡¼¥Ó¥¹Ì¾/¥Û¥¹¥ÈÌ¾¡×¤Î·Á¼°¤Ç¤¢¤ëÉ¬Í×¤¬
+¤¢¤ê¤Þ¤¹¡£¤Þ¤¿¡¢¥Û¥¹¥ÈÌ¾¤Ï¡¢<B
+CLASS="COMMAND"
+>gfhost</B
+> ¥³¥Þ¥ó¥É¤Ç»ØÄê¤·¤¿
+Àµ¼°Ì¾¤ÈÀµ³Î¤Ë°ìÃ×¤·¤Æ¤¤¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£¥Û¥¹¥ÈÊÌÌ¾¤Ïµö¤µ¤ì¤Þ¤»¤ó¡£</P
+><P
+>¤³¤ì¤Ï¡¢GSSAPI (RFC2743/RFC2744) ¤Î GSS_C_NT_HOSTBASED_SERVICE ¤Ë
+ÂÐ±þ¤¹¤ëµ¡Ç½¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;host<br>
+	spool_server_cred_service&nbsp;host</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>user</SPAN
+></DT
+><DD
+><P
+>¥æ¡¼¥¶¾ÚÌÀ½ñ¤òÍÑ¤¤¤ë¤³¤È¤ò¼¨¤·¤Þ¤¹¡£
+¥æ¡¼¥¶¤Î¥¢¥«¥¦¥ó¥ÈÌ¾¤ò <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> ¤Ç»ØÄê¤·¤Þ¤¹¡£
+¥¢¥«¥¦¥ó¥ÈÌ¾¤ò¾ÊÎ¬¤·¤¿¾ì¹ç¤Ë¤Ï¡¢¤½¤Î¥³¥Þ¥ó¥É¤òµ¯Æ°¤·¤¿¥æ¡¼¥¶Ì¾¤¬»È¤ï¤ì¤Þ¤¹¡£
+¤³¤Î»ØÄê¤òÍøÍÑ¤¹¤ëºÝ¤Ë¤Ï¡¢<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> ¤Î
+»ØÄê¤ò¹Ô¤Ã¤Æ¤Ï¤¤¤±¤Þ¤»¤ó¡£</P
+><P
+>¸½»þÅÀ¤Ç¤Ï¡¢¤³¤Îµ¡Ç½¤Î¼ÂÁõ¤Ë¡¢¤¤¤¯¤Ä¤«¤Î¼ÂÁõ¾å¤ÎÀ©¸Â»ö¹à¤¬¤¢¤ê¤Þ¤¹¡£
+¤Þ¤º¡¢¥æ¡¼¥¶Ì¾¤Ï¥í¡¼¥«¥ë¥Û¥¹¥È¤Î¥¢¥«¥¦¥ó¥ÈÌ¾¤È¤·¤Æ²ò¼á¤µ¤ì¤Þ¤¹¤¬¡¢
+¤³¤ì¤Ï¥Ð¥°¤Ç¤¢¤ê¡¢gfarm ¤Î¥°¥í¡¼¥Ð¥ë¥æ¡¼¥¶Ì¾¤ËÊÑ¹¹¤µ¤ì¤ëÍ½Äê¤Ç¤¹¡£
+¥æ¡¼¥¶Ì¾¤È¾ÚÌÀ½ñ¤Î Distinguished Name ¤ÎÂÐ±þ¤ò¤È¤ë¤¿¤á¡¢
+``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' ¤òÍÑ¤¤¤Þ¤¹¡£
+¤³¤Î¤¿¤á¡¢¤³¤Î¥Õ¥¡¥¤¥ë¤¬Â¸ºß¤·¤Ê¤«¤Ã¤¿¤ê¡¢¤¢¤ë¤¤¤Ï¤³¤Î¥Õ¥¡¥¤¥ë¤ËÅÐÏ¿
+¤µ¤ì¤Æ¤Ê¤¤¥æ¡¼¥¶¤Ï¡¢¤³¤Îµ¡Ç½¤òÍÑ¤¤¤ë¤³¤È¤¬¤Ç¤­¤Þ¤»¤ó¡£
+¤µ¤é¤Ë¡¢¤³¤Î¥Õ¥¡¥¤¥ëÃæ¤Ç¡¢Æ±°ì¤Î¥æ¡¼¥¶¥¢¥«¥¦¥ó¥È¤ËÂÐ¤·¤Æ2¤Ä°Ê¾å¤Î
+Distinguished Name ¤¬ÀßÄê¤µ¤ì¤Æ¤¤¤¿¾ì¹ç¡¢2¤ÄÌ¾°Ê¹ß¤ÎÀßÄê¤ÏÌµ»ë¤µ¤ì¤Æ
+¤·¤Þ¤¤¤Þ¤¹¡£</P
+><P
+>¤³¤ì¤Ï¡¢GSSAPI (RFC2743/RFC2744) ¤Î GSS_C_NT_USER_NAME ¤ËÂÐ±þ¤¹¤ëµ¡Ç½¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;user<br>
+	spool_server_cred_name&nbsp;guest</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+></DT
+><DD
+><P
+>¥µ¡¼¥Ð¤Î X.509 Distinguished Name ¤ò <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> ¤Ç
+Ä¾ÀÜ»ØÄê¤·¤Þ¤¹¡£
+¤³¤Î»ØÄê¤òÍøÍÑ¤¹¤ëºÝ¤Ë¤Ï¡¢<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> ¤Î
+»ØÄê¤ò¹Ô¤Ã¤Æ¤Ï¤¤¤±¤Þ¤»¤ó¡£</P
+><P
+>¤³¤ì¤Ï¡¢GSSAPI (RFC2743/RFC2744) ¤Ç Name Type ¤È¤·¤Æ GSS_C_NO_OID ¤ò
+»ØÄê¤·¤¿¾ì¹ç¤ËÂÐ±þ¤¹¤ëµ¡Ç½¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;mechanism-specific<br>
+	spool_server_cred_name&nbsp;"/O=Grid/O=Globus/OU=example.com/CN=John&nbsp;Smith"</P
+></DD
+></DL
+></DIV
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢<SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤È¤·¤Æ
+¡Ö<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>¡×¤ò»ØÄê¤·¤Æ¤¤¤ë¾ì¹ç¤Ë¡¢gfsd ¤¬ÍÑ¤¤¤ë¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤Î
+¼ïÎà¤ò»ØÄê¤·¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£
+¾Ü¤·¤¯¤Ï <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Î¹à¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢<SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Ç»ØÄê¤·¤¿ÃÍ¤Ë
+±þ¤¸¤Æ¡¢gfsd ¤¬ÍÑ¤¤¤ë¾ÚÌÀ½ñ¤ÎÀßÄê¤ò¹Ô¤¤¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£
+¾Ü¤·¤¯¤Ï <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Î¹à¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -242,6 +506,87 @@ CLASS="PARAMETER"
 ><P
 CLASS="LITERALLAYOUT"
 >	metadb_serverport&nbsp;601</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢gfmd ¤¬ÍÑ¤¤¤ë¾ÚÌÀ½ñ¤Î¼ïÎà¤ò»ØÄê¤·¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£
+ÀßÄê¤Î°ÕÌ£¤Ë¤Ä¤¤¤Æ¤Ï  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Î¹à¤ò
+»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢<SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> ¤È¤·¤Æ
+¡Ö<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>¡×¤ò»ØÄê¤·¤Æ¤¤¤ë¾ì¹ç¤Ë¡¢gfmd ¤¬ÍÑ¤¤¤ë¥µ¡¼¥Ó¥¹¾ÚÌÀ½ñ¤Î
+¼ïÎà¤ò»ØÄê¤·¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£
+ÀßÄê¤Î°ÕÌ£¤Ë¤Ä¤¤¤Æ¤Ï  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Î¹à¤ò
+»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>GSIÇ§¾Ú¤Ë¤ª¤¤¤Æ¡¢<SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> ¤Ç»ØÄê¤·¤¿ÃÍ¤Ë
+±þ¤¸¤Æ¡¢gfmd ¤¬ÍÑ¤¤¤ë¾ÚÌÀ½ñ¤ÎÀßÄê¤ò¹Ô¤¤¤Þ¤¹¡£
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ÍøÍÑ»þ¤Ë¤Ï¡¢¤³¤Î»ØÄê¤ÏÃ±¤ËÌµ»ë¤µ¤ì¤Þ¤¹¡£
+ÀßÄê¤Î°ÕÌ£¤Ë¤Ä¤¤¤Æ¤Ï  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> ¤Î¹à¤ò
+»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
 ></DD
 ><DT
 ><SPAN
@@ -316,12 +661,12 @@ CLASS="PARAMETER"
 ><I
 >Í­¸úÌµ¸ú</I
 ></TT
-> <TT
+>  <TT
 CLASS="PARAMETER"
 ><I
 >Ç§¾ÚÊýË¡</I
 ></TT
-> <TT
+>  <TT
 CLASS="PARAMETER"
 ><I
 >¥Û¥¹¥È»ØÄê</I
@@ -583,44 +928,44 @@ CLASS="TOKEN"
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_DEBUG</TT
+>SO_DEBUG</CODE
 > ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_KEEPALIVE</TT
+>SO_KEEPALIVE</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_SNDBUF</TT
+>SO_SNDBUF</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤Î»ØÄê¤¬É¬Í×¤Ç¤¹¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->SO_RCVBUF</TT
+>SO_RCVBUF</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤Î»ØÄê¤¬É¬Í×¤Ç¤¹¡£</P
 ><P
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<TT
+>¡£setsockopt(2) ¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢<CODE
 CLASS="CONSTANT"
->TCP_NODELAY</TT
+>TCP_NODELAY</CODE
 >
 ¥½¥±¥Ã¥È¡¦¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£ÃÍ¤òµ­½Ò¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£</P
 ><P
@@ -654,6 +999,40 @@ IP¥¢¥É¥ì¥¹¤òÄÌ¿®¤ËÍÑ¤¤¤ë¤«¤ò»ØÄê¤·¤Þ¤¹¡£
 ><P
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_architecture</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾</I
+></TT
+>  <TT
+CLASS="PARAMETER"
+><I
+>¥Û¥¹¥È»ØÄê</I
+></TT
+></DT
+><DD
+><P
+>¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤¬¼Â¹Ô¥Õ¥¡¥¤¥ë¤Ë¥¢¥¯¥»¥¹¤¹¤ë¾ì¹ç¤ËÁªÂò¤¹¤ë
+¥Ç¥Õ¥©¥ë¥È¤Î¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£
+¤³¤Î»ØÄê¤Ï¡¢¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤Î¤ßºîÍÑ¤·¤Þ¤¹¡£
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤Ï¡¢¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ð¤ËÅÐÏ¿¤µ¤ì¤Æ¤¤¤ë
+¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤¬»È¤ï¤ì¤Þ¤¹¡£</P
+><P
+>¤³¤ì¤ËÂÐ¤·¡¢´Ä¶­ÊÑ¿ô GFARM_ARCHITECTURE ¤ò»È¤¦¤È¡¢¥¯¥é¥¤¥¢¥ó¥È¥Î¡¼¥É¤ËÂÐ¤·¤Æ¤â
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ë¤Ä¤¤¤Æ¤â¡¢¼Â¹Ô¥Õ¥¡¥¤¥ë¤Î¥Ç¥Õ¥©¥ë¥È¤Î¥¢¡¼¥­¥Æ¥¯¥Á¥ãÌ¾¤ò
+»ØÄê¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-1.example.com<br>
+	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-2.example.com<br>
+	client_architecture&nbsp;sparc-sun-solaris8&nbsp;solaris-1.example.com</P
 ></DD
 ><DT
 ><SPAN
@@ -709,41 +1088,62 @@ NAME="GRAMMAR"
 ><P
 CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
-		&#60;spool_statement&#62;&nbsp;|<br>
-		&#60;spool_serverport_statement&#62;&nbsp;|<br>
-		&#60;metadb_serverhost_statement&#62;&nbsp;|<br>
-		&#60;metadb_serverport_statement&#62;&nbsp;|<br>
-		&#60;ldap_serverhost_statement&#62;&nbsp;|<br>
-		&#60;ldap_serverport_statement&#62;&nbsp;|<br>
-		&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
-		&#60;auth_statement&#62;&nbsp;|<br>
-		&#60;netparam_statement&#62;&nbsp;|<br>
-		&#60;sockopt_statement&#62;&nbsp;|<br>
-		&#60;address_use_statement&#62;&nbsp;|<br>
-		&#60;local_user_map_statement&#62;<br>
+		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_serverport_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;metadb_serverport_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;ldap_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;ldap_serverport_statement&#62;&nbsp;|<br>
+		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;auth_statement&#62;&nbsp;|<br>
+		  &#60;netparam_statement&#62;&nbsp;|<br>
+		  &#60;sockopt_statement&#62;&nbsp;|<br>
+		  &#60;address_use_statement&#62;&nbsp;|<br>
+		  &#60;client_architecture_statement&#62;&nbsp;|<br>
+		  &#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;metadb_serverhost_statement&#62;&nbsp;::=&nbsp;"metadb_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;metadb_serverport_statement&#62;&nbsp;::=&nbsp;"metadb_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
-		"auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
+		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
 	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
-		"netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
+		  "netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
 	&#60;netparam_option&#62;&nbsp;::=&nbsp;"parallel_streams"&nbsp;|&nbsp;"stripe_unit_size"&nbsp;|<br>
-		"rate_limit"<br>
+		  "rate_limit"<br>
 	&#60;sockopt_statement&#62;&nbsp;::=<br>
-		"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
+		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
-		"tcp_nodelay"<br>
+		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;client_architecture_statement&#62;&nbsp;::=<br>
+		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
-		&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
+		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
 	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
@@ -753,8 +1153,8 @@ CLASS="LITERALLAYOUT"
 	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
-		&#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		"\\"&nbsp;|&nbsp;"\""</P
+		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
+		  "\\"&nbsp;|&nbsp;"\""</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -789,7 +1189,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P

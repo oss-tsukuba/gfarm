@@ -10,32 +10,66 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
+#include "timer.h"
+#include "gfutil.h"
+
 #include "host.h"
+#include "config.h"
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
 #include "gfs_client.h"
 #include "gfs_pio.h"
+#include "gfs_lock.h"
+#include "gfs_misc.h"
 #include "schedule.h"
-#include "timer.h"
-#include "gfutil.h"
+
+char *
+gfs_stat_size_canonical_path(
+	char *gfarm_file, file_offset_t *size, int *nsection)
+{
+	char *e, *e_save = NULL;
+	int i, nsections;
+	struct gfarm_file_section_info *sections;
+	file_offset_t s;
+
+	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
+	    &nsections, &sections);
+	if (e != NULL)
+		return (e);
+
+	s = 0;
+	for (i = 0; i < nsections; i++) {
+		e = gfs_check_section_busy_by_finfo(&sections[i]);
+		if (e_save == NULL)
+			e_save = e;
+		s += sections[i].filesize;
+	}
+	*size = s;
+	*nsection = nsections;
+
+	gfarm_file_section_info_free_all(nsections, sections);
+
+	return (e_save);
+}
 
 char *
 gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 {
-	char *e;
-	int i, nsections;
-	struct gfarm_file_section_info *sections;
 	struct gfarm_path_info pi;
 	long ino;
+	char *e;
 
-	e = gfs_get_ino(gfarm_file, &ino);
+	e = gfarm_path_info_get(gfarm_file, &pi);
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_path_info_get(gfarm_file, &pi);
+	e = gfs_get_ino(gfarm_file, &ino);
 	if (e != NULL)
 		return (e);
 
@@ -53,8 +87,11 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 		return (NULL);
 
 	/* regular file */
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
-	    &nsections, &sections);
+	e = gfs_stat_size_canonical_path(
+		gfarm_file, &s->st_size, &s->st_nsections);
+	/* allow stat() during text file busy */
+	if (e == GFARM_ERR_TEXT_FILE_BUSY)
+		e = NULL;
 	if (e != NULL) {
 		gfs_stat_free(s);
 		/*
@@ -64,15 +101,7 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 		 */
 		return (GFARM_ERR_NO_FRAGMENT_INFORMATION);
 	}
-
-	s->st_size = 0;
-	for (i = 0; i < nsections; i++)
-		s->st_size += sections[i].filesize;
-	s->st_nsections = nsections;
-
-	gfarm_file_section_info_free_all(nsections, sections);
-
-	return (NULL);
+	return (e);
 }
 
 double gfs_stat_time;
@@ -202,43 +231,19 @@ gfs_access(const char *gfarm_url, int mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
-	gfarm_mode_t stat_mode;
-	int stat_nsections, nsections;
-	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
 	e = gfarm_path_info_get(gfarm_file, &pi);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
-	stat_mode = pi.status.st_mode;
-	stat_nsections = pi.status.st_nsections;
+	if (e != NULL)
+		goto free_gfarm_file;
+
 	e = gfarm_path_info_access(&pi, mode);
 	gfarm_path_info_free(&pi);
-	if (e != NULL) {
-		free(gfarm_file);
-		return (e);
-	}
-	if (GFARM_S_ISDIR(stat_mode)) {
-		free(gfarm_file);
-		return (NULL);
-	}
-	/*
-	 * Check all fragments are ready or not.
-	 * XXX - is this check necessary?
-	 */
-	e = gfarm_file_section_info_get_all_by_file(
-		gfarm_file, &nsections, &sections);
+
+free_gfarm_file:
 	free(gfarm_file);
-	if (e != NULL)
-		return (e);
-	gfarm_file_section_info_free_all(nsections, sections);
-	if (!GFARM_S_IS_PROGRAM(stat_mode)
-	    && nsections != stat_nsections)
-		e = GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH;
 	return (e);
 }
 
@@ -252,9 +257,28 @@ change_path_info_mode(struct gfarm_path_info *p, gfarm_mode_t mode)
 
 enum exec_change {
 	EXECUTABILITY_NOT_CHANGED,
-	TO_EXECUTABLE,	
-	TO_UNEXECUTABLE
+	TO_EXECUTABLE,
+	TO_NONEXECUTABLE
 };
+
+static char *
+change_path_info_mode_nsections(
+	struct gfarm_path_info *p,
+	gfarm_mode_t mode,
+	enum exec_change change)
+{
+	switch (change) {
+	case TO_EXECUTABLE:
+		p->status.st_nsections = 0;
+		break;
+	case TO_NONEXECUTABLE:
+		p->status.st_nsections = 1;
+		break;
+	default:
+		break;
+	}
+	return (change_path_info_mode(p, mode));
+}
 
 static enum exec_change
 diff_exec(gfarm_mode_t old, gfarm_mode_t new)
@@ -264,7 +288,7 @@ diff_exec(gfarm_mode_t old, gfarm_mode_t new)
 	if ((old & xmask) == 0 && (new & xmask) != 0)
 		return (TO_EXECUTABLE);
 	else if ((old & xmask) != 0 && (new & xmask) == 0)
-		return (TO_UNEXECUTABLE);
+		return (TO_NONEXECUTABLE);
 	else
 		return (EXECUTABILITY_NOT_CHANGED);
 }
@@ -272,20 +296,14 @@ diff_exec(gfarm_mode_t old, gfarm_mode_t new)
 static char *
 get_architecture_name(int ncopy, struct gfarm_file_section_copy_info *copies)
 {
-	/* XXX - this selection of architecture is stopgap. */
+	char *architecture;
 
-	char *e, *hostname;
-	int i;
+	/* if architecture of this node is known, use it */
+	if (gfarm_host_get_self_architecture(&architecture) == NULL)
+		return (strdup(architecture));
 
-	e = gfarm_host_get_canonical_self_name(&hostname);
-	if (e != NULL)
-		hostname = copies[0].hostname;
-	for (i = 0; i < ncopy; i++)
-		if (strcmp(copies[i].hostname, hostname) == 0) 
-			break;
-	if (i >= ncopy)
-		hostname = copies[0].hostname;
-	return gfarm_host_info_get_architecture_by_host(hostname);
+	/* XXX stopgap. use architecture of a node which has a replica. */
+	return (gfarm_host_info_get_architecture_by_host(copies[0].hostname));
 }
 
 struct gfs_chmod_args {
@@ -294,23 +312,32 @@ struct gfs_chmod_args {
 };
 
 static char *
-chmod_request_parallel(struct gfs_connection *gfs_server, void *args)
+chmod_dir_request_parallel(struct gfs_connection *gfs_server, void *args)
 {
 	struct gfs_chmod_args *a = args;
+	char *e;
 
-	return (gfs_client_chmod(gfs_server, a->path, a->mode));
+	/*
+	 *  XXX - Not to issue a error message "no such object" for directory.
+	 *        A directory in spool is created on demand, so generally it
+	 *        does not exist in spool though its meta data exist.
+	 */
+	e = gfs_client_chmod(gfs_server, a->path, a->mode);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = NULL;
+	return (e);
 }
 
 static char *
 get_new_section_name(enum exec_change change,
-	int ncopy, 
+	int ncopy,
 	struct gfarm_file_section_copy_info *copies)
 {
 	if (change == TO_EXECUTABLE)
 		return get_architecture_name(ncopy, copies);
-	else /* change == TO_UNEXECUTABLE */
+	else /* change == TO_NONEXECUTABLE */
 		return strdup("0");
-}	
+}
 
 static char *
 gfs_chmod_execfile_metadata(
@@ -319,51 +346,59 @@ gfs_chmod_execfile_metadata(
 	struct gfarm_file_section_info *from_section,
 	int ncopy,
 	struct gfarm_file_section_copy_info *copies,
-	enum exec_change change)
+	enum exec_change change,
+	char **changed_sectionp)
 {
 	struct gfarm_file_section_info to_section;
 	char *e;
 	int i;
 
+	*changed_sectionp = NULL;
 	to_section = *from_section;
 	to_section.section = get_new_section_name(change, ncopy, copies);
 	if (to_section.section == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	e = gfarm_file_section_info_set(to_section.pathname,
-					to_section.section,
-					&to_section);
+	e = gfarm_file_section_info_set(
+		to_section.pathname, to_section.section, &to_section);
 	if (e != NULL)
-		goto finish_free_to_section_section;
+		goto finish;
 
-	e = change_path_info_mode(pi, mode);
+	e = change_path_info_mode_nsections(pi, mode, change);
 	if (e != NULL) {
 		char *e2;
+
 		e2 = gfarm_file_section_info_remove(
 				to_section.pathname, to_section.section);
-		gflog_warning("gfs_chmod: gfarm_file_section_info_remove()",
-			      e2);
-		goto finish_free_to_section_section;
+		gflog_warning(
+			"gfs_chmod: file_section_info_remove: %s (%s): %s",
+			to_section.pathname, to_section.section, e2);
+		goto finish;
 	}
 
 	for (i = 0; i < ncopy; i++) {
 		e = gfarm_file_section_copy_info_remove(copies[i].pathname,
-							copies[i].section,
-							copies[i].hostname);
+			copies[i].section, copies[i].hostname);
 		if (e != NULL)
 			gflog_warning(
-			  "gfs_chmod:gfarm_file_section_copy_info_remove()",
-			  e);
+				"gfs_chmod: file_section_copy_info_remove: "
+				"%s (%s) on %s: %s",
+				copies[i].pathname, copies[i].section,
+				copies[i].hostname, e);
 	}
 
 	e = gfarm_file_section_info_remove(from_section->pathname,
 					   from_section->section);
 	if (e != NULL)
-		gflog_warning("gfs_chmod:gfarm_file_section_info_remove()",
-		e);		
+		gflog_warning(
+			"gfs_chmod: file_section_info_remove: %s (%s): %s",
+			from_section->pathname, from_section->section, e);
 
-finish_free_to_section_section:
-	free(to_section.section);
+ finish:
+	if (e == NULL)
+		*changed_sectionp = to_section.section;
+	else
+		free(to_section.section);
 	return(e);
 }
 
@@ -372,7 +407,7 @@ gfs_chmod_file_spool(
 	gfarm_mode_t mode,
 	int nsection,
 	struct gfarm_file_section_info *sections,
-	int *ncopy, 
+	int *ncopy,
 	struct gfarm_file_section_copy_info **copies,
 	enum exec_change change)
 {
@@ -382,18 +417,18 @@ gfs_chmod_file_spool(
 	struct gfarm_file_section_copy_info new_copy;
 
 	for (i = 0; i < nsection; i++) {
-		char *section; 
+		char *section;
 
 		e = gfarm_path_section(sections[i].pathname,
 				       sections[i].section,
-			       	       &from_path_section);
-		if (e != NULL) 
+				       &from_path_section);
+		if (e != NULL)
 			return (e);
 
 		section = get_new_section_name(
-					change, ncopy[i], copies[i]); 
+					change, ncopy[i], copies[i]);
 		if (section == NULL) {
-			free(from_path_section); 
+			free(from_path_section);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 
@@ -413,33 +448,37 @@ gfs_chmod_file_spool(
 				gfarm_spool_server_port, &peer_addr, NULL);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_host_address_get()", e);
+					"gfs_chmod: host_address_get: %s: %s",
+					copies[i][j].hostname, e);
 				continue;
 			}
 
 			e = gfs_client_connect(copies[i][j].hostname,
-						 &peer_addr, &gfs_server);
+					       &peer_addr, &gfs_server);
 			if (e != NULL) {
 				gflog_warning(
-				  "gfs_chmod:gfarm_client_connection()", e);
+					"gfs_chmod: gfs_client_connect: %s: %s",
+					copies[i][j].hostname, e);
 				continue;
 			}
 
 			e = gfs_client_chmod(gfs_server, from_path_section,
 					     mode);
 			if (e != NULL) {
-				gflog_warning("gfs_chmod:gfs_client_chmod()",
-					      e);
+				gflog_warning(
+				   "gfs_chmod: gfs_client_chmod: %s on %s: %s",
+				   from_path_section, copies[i][j].hostname, e);
 				gfs_client_disconnect(gfs_server);
 				continue;
 			}
 			if (change != EXECUTABILITY_NOT_CHANGED) {
 				e = gfs_client_rename(gfs_server,
-						      from_path_section,
-						      to_path_section);
+					from_path_section, to_path_section);
 				if (e != NULL) {
 					gflog_warning(
-					  "gfs_chmod:gfs_client_rename()", e);
+					   "gfs_chmod: gfs_client_rename"
+					   "(%s, %s): %s", from_path_section,
+					   to_path_section, e);
 					gfs_client_disconnect(gfs_server);
 					continue;
 				}
@@ -447,15 +486,15 @@ gfs_chmod_file_spool(
 				new_copy = copies[i][j];
 				new_copy.section = section;
 				e = gfarm_file_section_copy_info_set(
-							new_copy.pathname,
-							new_copy.section,
-							new_copy.hostname,
-							&new_copy);
+					new_copy.pathname, new_copy.section,
+					new_copy.hostname, &new_copy);
 				if (e != NULL) {
 					gflog_warning(
-					  "gfs_chmod:"
-					  "gfarm_file_section_copy_info_set()",
-					  e);
+					  "gfs_chmod: "
+					  "file_section_copy_info_set: "
+					  "%s (%s) on %s: %s",
+					  new_copy.pathname, new_copy.section,
+					  new_copy.hostname, e);
 				}
 			}
 			gfs_client_disconnect(gfs_server);
@@ -467,8 +506,17 @@ gfs_chmod_file_spool(
 	return (NULL);
 }
 
-static char *
-gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
+/*
+ * NOTE: `*changed_sectionp' is always set,
+ *	and may be NULL in the following cases:
+ * 1. An error occurs.
+ * 2. No error occurs, but the file's executability was not changed.
+ *    i.e. all execute-bits are unset in both old and new mode,
+ *    or some execute-bits are set in both modes.
+ */
+char *
+gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t mode,
+		     char **changed_sectionp)
 {
 	char *e;
 	int nsection, *ncopy, i;
@@ -476,10 +524,11 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 	struct gfarm_file_section_copy_info **copies;
 	enum exec_change change;
 
+	*changed_sectionp = NULL;
 	if (strcmp(pi->status.st_user, gfarm_get_global_username()) != 0) {
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	} 
-	
+	}
+
 	if (GFARM_S_ISDIR(pi->status.st_mode)) {
 		struct gfs_chmod_args a;
 		int nhosts_succeed;
@@ -489,28 +538,28 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 			return (e);
 		a.path = pi->pathname;
 		a.mode = mode;
-		e = gfs_client_apply_all_hosts(chmod_request_parallel,
-					 &a, "gfs_chmod", &nhosts_succeed);
+		e = gfs_client_apply_all_hosts(chmod_dir_request_parallel,
+					 &a, "gfs_chmod", 1, &nhosts_succeed);
 		return (e);
 	}
 
 	e = gfarm_file_section_info_get_all_by_file(pi->pathname,
-					 	    &nsection, &sections);
+						    &nsection, &sections);
 	if (e != NULL)
 		return (e);
 
 	change = diff_exec(pi->status.st_mode, mode);
 	if (change != EXECUTABILITY_NOT_CHANGED && nsection > 1) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;	
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		goto finish_free_section_info;
 	}
-	
+
 	ncopy = malloc(nsection * sizeof(*ncopy));
 	if (ncopy == NULL)
 		goto finish_free_section_info;
 
 	copies = malloc(nsection * sizeof(*copies));
-	if (copies == NULL)			
+	if (copies == NULL)
 		goto finish_free_ncopy;
 
 	for (i = 0; i < nsection; i++) {
@@ -518,7 +567,7 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 			sections[i].pathname, sections[i].section,
 			&ncopy[i], &copies[i]);
 		if (e != NULL) {
-			while (i--)
+			while (--i >= 0)
 				gfarm_file_section_copy_info_free_all(
 							ncopy[i], copies[i]);
 			goto finish_free_copies;
@@ -529,7 +578,8 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode)
 		e = change_path_info_mode(pi, mode);
 	} else {
 		e = gfs_chmod_execfile_metadata(pi, mode, &sections[0],
-						ncopy[0], copies[0], change);
+						ncopy[0], copies[0], change,
+						changed_sectionp);
 	}
 	if (e != NULL)
 		goto finish_free_section_copy_info;
@@ -554,6 +604,7 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
+	char *changed_section;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -564,7 +615,9 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_chmod_internal(&pi, mode);	
+	e = gfs_chmod_meta_spool(&pi, mode, &changed_section);
+	if (changed_section != NULL)
+		free(changed_section);
 	gfarm_path_info_free(&pi);
 	return (e);
 }
@@ -572,13 +625,13 @@ gfs_chmod(const char *gfarm_url, gfarm_mode_t mode)
 char *
 gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
 {
-	return (gfs_chmod_internal(&gf->pi, mode));
+	return (*gf->ops->view_chmod)(gf, mode);
 }
 
 char *
 gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 {
-	char *e, *gfarm_file;
+	char *e, *gfarm_file, *user;
 	struct gfarm_path_info pi;
 	struct timeval now;
 
@@ -589,15 +642,18 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 	free(gfarm_file);
 	if (e != NULL)
 		return (e);
-	e = gfarm_path_info_access(&pi, GFS_W_OK);
-	if (e != NULL)
+	user = gfarm_get_global_username();
+	if (user == NULL)
+		return ("gfs_utimes(): programming error, "
+			"gfarm library isn't properly initialized");
+	if (strcmp(pi.status.st_user, user) != 0)
 		goto finish_free_path_info;
 
 	gettimeofday(&now, NULL);
 	if (tsp == NULL) {
-		pi.status.st_atimespec.tv_sec = 
+		pi.status.st_atimespec.tv_sec =
 		pi.status.st_mtimespec.tv_sec = now.tv_sec;
-		pi.status.st_atimespec.tv_nsec = 
+		pi.status.st_atimespec.tv_nsec =
 		pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
 	} else {
 		pi.status.st_atimespec = tsp[0];
@@ -612,12 +668,959 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 }
 
 /*
+ * gfs_rename
+ */
+static char *
+rename_clean_spool(
+	char *pathname,
+	int nsection,
+	struct gfarm_file_section_info *sections,
+	int *ncopy,
+	struct gfarm_file_section_copy_info **copies)
+{
+	char *e, *e2, *path_section;
+	int i, j;
+	struct gfs_connection *gfs_server;
+	struct sockaddr peer_addr;
+
+	for (i = 0; i < nsection; i++) {
+		e = gfarm_path_section(pathname,
+				       sections[i].section,
+				       &path_section);
+		if (e != NULL)
+			return (e);
+		for (j = 0; j < ncopy[i]; j++) {
+			e2 = gfarm_host_address_get(copies[i][j].hostname,
+						   gfarm_spool_server_port,
+						   &peer_addr,
+						   NULL);
+			if (e2 != NULL)
+				continue;
+			e2 = gfs_client_connect(copies[i][j].hostname,
+						 &peer_addr, &gfs_server);
+			if (e2 != NULL)
+				continue;
+			e2 = gfs_client_unlink(gfs_server, path_section);
+			gfs_client_disconnect(gfs_server);
+		}
+		free(path_section);
+	}
+	return (NULL);
+}
+
+static char *
+rename_file_spool(
+	char *from_pathname,
+	char *to_pathname,
+	int nsection,
+	struct gfarm_file_section_info *sections,
+	int *ncopy,
+	struct gfarm_file_section_copy_info **copies)
+{
+	int i, j;
+	char *e;
+	char *from_path_section, *to_path_section;
+	struct gfarm_file_section_copy_info new_copy;
+	struct gfs_connection *gfs_server;
+	struct sockaddr peer_addr;
+
+	/*
+	 * 1 - succeed in linking at least 1 spool file for all sections
+	 * 0 - otherwise
+	 */
+	int ok;
+
+	e = NULL;
+	ok = 1;
+	for (i = 0; i < nsection; i++) {
+		e = gfarm_path_section(sections[i].pathname,
+				       sections[i].section,
+				       &from_path_section);
+		if (e != NULL)
+			return (e); /* XXX this leaves inconsistent state */
+
+		e = gfarm_path_section(to_pathname,
+				       sections[i].section,
+				       &to_path_section);
+		if (e != NULL) {
+			free(from_path_section);
+			return (e); /* XXX this leaves inconsistent state */
+		}
+		ok = 0;
+		for (j = 0; j < ncopy[i]; j++) {
+			e = gfarm_host_address_get(copies[i][j].hostname,
+				gfarm_spool_server_port, &peer_addr, NULL);
+			if (e != NULL) {
+				gflog_warning(
+					"rename_file_spool: host_address_get: "
+					"%s: %s", copies[i][j].hostname, e);
+				continue;
+			}
+
+			e = gfs_client_connect(copies[i][j].hostname,
+					       &peer_addr, &gfs_server);
+			if (e != NULL) {
+				gflog_warning("rename_file_spool: "
+					      "gfs_client_connect: %s: %s",
+					      copies[i][j].hostname, e);
+				continue;
+			}
+
+			e = gfs_client_link(gfs_server, from_path_section,
+							to_path_section);
+			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+				if (gfs_pio_remote_mkdir_parent_canonical_path(
+				    gfs_server, to_path_section) == NULL)
+					e = gfs_client_link(gfs_server,
+							    from_path_section,
+							    to_path_section);
+			}
+			gfs_client_disconnect(gfs_server);
+			if (e != NULL) {
+				gflog_warning("rename_file_spool: "
+				    "gfs_client_link(%s, %s): %s",
+				    from_path_section, to_path_section, e);
+				continue;
+			}
+
+			new_copy = copies[i][j];
+			new_copy.pathname = to_pathname;
+			e = gfarm_file_section_copy_info_set(new_copy.pathname,
+				new_copy.section, new_copy.hostname, &new_copy);
+			if (e != NULL) {
+				gflog_warning("rename_file_spool: "
+				    "file_section_copy_info_set: "
+				    "%s (%s) on %s: %s", new_copy.pathname,
+				    new_copy.section, new_copy.hostname, e);
+				continue;
+			}
+			ok = 1;
+		}
+		if (j == 0) /* this section has no section copy info */
+			ok = 1;
+		free(to_path_section);
+		free(from_path_section);
+		if (!ok) /* none of copies of this section can be renamed */
+			break;
+	}
+	if (ok) {
+		e = NULL;
+	} else {  /* unlink new spool file */
+		/* ignore error code here */
+		rename_clean_spool(to_pathname, nsection, sections,
+		    ncopy, copies);
+	}
+	return (e);
+}
+
+static char *
+remove_infos_all(char *pathname)
+{
+	char *e, *e2;
+
+	e = gfarm_file_section_copy_info_remove_all_by_file(pathname);
+	e2 = gfarm_file_section_info_remove_all_by_file(pathname);
+	if (e2 != NULL)
+		gflog_warning("remove_infos_all: "
+			      "file_section_info_remove_all_by_file: %s: %s",
+			      pathname, e2);
+	if (e == NULL)
+		e = e2;
+	e2 = gfarm_path_info_remove(pathname);
+	if (e2 != NULL)
+		gflog_warning("remove_infos_all:"
+			      "path_info_remove: %s: %s", pathname, e2);
+	return (e == NULL ? e2 : e);
+}
+
+static char *
+link_a_file(struct gfarm_path_info *from_pip, char *newpath,
+	    int *nsection, struct gfarm_file_section_info **sections,
+	    int **ncopy, struct gfarm_file_section_copy_info ***copies)
+{
+	char *e, *e2;
+	int i;
+	struct gfarm_path_info to_pi;
+
+	to_pi = *from_pip;
+	to_pi.pathname = newpath;
+	e = gfarm_path_info_set(to_pi.pathname, &to_pi);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_file_section_info_get_all_by_file(from_pip->pathname,
+						    nsection, sections);
+	if (e != NULL) {
+		e2 = gfarm_path_info_remove(to_pi.pathname);
+		if (e2 != NULL)
+			gflog_warning("link_a_file: "
+				"path_info_remove: %s: %s", to_pi.pathname, e2);
+		return (e);
+	}
+
+	for (i = 0; i < *nsection; i++) {
+		struct gfarm_file_section_info to_section;
+
+		to_section = (*sections)[i];
+		to_section.pathname = to_pi.pathname;
+		e = gfarm_file_section_info_set(
+			to_section.pathname, to_section.section, &to_section);
+		if (e != NULL) {
+			while (--i >= 0) {
+				e2 = gfarm_file_section_info_remove(
+					to_section.pathname,
+					(*sections)[i].section);
+				if (e2 != NULL)
+					gflog_warning("link_a_file: "
+					    "file_section_info_remove: "
+					    "%s (%s): %s", to_section.pathname,
+					    (*sections)[i].section, e2);
+			}
+			e2 = gfarm_path_info_remove(to_pi.pathname);
+			if (e2 != NULL)
+				gflog_warning("link_a_file: "
+					"path_info_remove: %s: %s",
+					to_pi.pathname, e2);
+			goto finish_free_section_info;
+		}
+	}
+
+	*ncopy = malloc(*nsection * sizeof(**ncopy));
+	if (*ncopy == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish_free_section_info;
+	}
+	*copies = malloc(*nsection * sizeof(**copies));
+	if (*copies == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish_free_ncopy;
+	}
+
+	for (i = 0; i < *nsection; i++) {
+		e = gfarm_file_section_copy_info_get_all_by_section(
+			(*sections)[i].pathname, (*sections)[i].section,
+			&(*ncopy)[i], &(*copies)[i]);
+		if (e != NULL) {
+			while (--i >= 0)
+				gfarm_file_section_copy_info_free_all(
+						(*ncopy)[i], (*copies)[i]);
+			goto finish_free_copies;
+		}
+	}
+
+	/* change spool file name and set section copy info */
+	e = rename_file_spool(from_pip->pathname, to_pi.pathname,
+				  *nsection, *sections, *ncopy, *copies);
+	if (e == NULL)
+		return (NULL);
+
+	e2 = remove_infos_all(to_pi.pathname);
+
+	for (i = 0; i < *nsection; i++)
+		gfarm_file_section_copy_info_free_all((*ncopy)[i],
+						      (*copies)[i]);
+finish_free_copies:
+	free(*copies);
+finish_free_ncopy:
+	free(*ncopy);
+finish_free_section_info:
+	gfarm_file_section_info_free_all(*nsection, *sections);
+	return (e);
+}
+
+static char *
+rename_single_file(struct gfarm_path_info *from_pi, char *newpath)
+{
+	char *e, *e2;
+	int i, nsection, *ncopy;
+	struct gfarm_file_section_info *sections;
+	struct gfarm_file_section_copy_info **copies;
+
+#ifdef __GNUC__
+	/* workaround gcc warning: 'copies' may be used uninitialized */
+	copies = NULL;
+	/* workaround gcc warning: 'ncopy' may be used uninitialized */
+	ncopy = NULL;
+#endif
+	e = link_a_file(from_pi, newpath,
+			&nsection, &sections, &ncopy, &copies);
+	if (e == NULL) {
+		e2 = rename_clean_spool(from_pi->pathname,
+					nsection, sections,
+					ncopy, copies);
+		if (e2 != NULL)
+			gflog_warning("rename_single_file: "
+				      "rename_clean_spool: %s: %s",
+				      from_pi->pathname, e2);
+
+		e2 = remove_infos_all(from_pi->pathname);
+		if (e2 != NULL)
+			gflog_warning("rename_single_file: "
+				      "rename_infos_all: %s: %s",
+				      from_pi->pathname, e2);
+
+		for (i = 0; i < nsection; i++)
+			gfarm_file_section_copy_info_free_all(ncopy[i],
+							      copies[i]);
+		free(copies);
+		free(ncopy);
+		gfarm_file_section_info_free_all(nsection, sections);
+	}
+	return (e);
+}
+
+static char *
+add_cwd_to_relative_path(char *cwd, const char *path)
+{
+	char *p;
+
+	p = malloc(strlen(cwd) + strlen(path) + 2);
+	if (p == NULL)
+		return (NULL);
+	sprintf(p, "%s/%s", cwd, path);
+	return (p);
+}
+
+static char *
+traverse_file_tree(char *cwd, char *path,
+		   gfarm_stringlist *dir_list, gfarm_stringlist *file_list)
+{
+	char *e;
+	struct gfs_stat gs;
+	GFS_Dir dir;
+	struct gfs_dirent *entry;
+	gfarm_mode_t mode;
+	char *dpath;
+
+	e = gfs_stat(path, &gs);
+	if (e != NULL)
+		return (e);
+	mode = gs.st_mode;
+	gfs_stat_free(&gs);
+	dpath = add_cwd_to_relative_path(cwd, path);
+	if (dpath == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	if (GFARM_S_ISREG(mode)) {
+		e = gfarm_stringlist_add(file_list, dpath);
+	} else if (GFARM_S_ISDIR(mode)) {
+		e = gfarm_stringlist_add(dir_list, dpath);
+		if (e != NULL)
+			return (e);
+		e = gfs_chdir(path);
+		if (e != NULL)
+			return (e);
+		e = gfs_opendir(".", &dir);
+		if (e != NULL)
+			return (e);
+		while ((e = gfs_readdir(dir, &entry)) == NULL &&
+				entry != NULL) {
+			if (strcmp(entry->d_name, ".") == 0 ||
+			    strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
+			e = traverse_file_tree(dpath, entry->d_name,
+					       dir_list, file_list);
+			if (e != NULL)
+				return (e);
+		}
+		if (e != NULL)
+			return (e);
+		gfs_closedir(dir);
+		e = gfs_chdir("..");
+	}
+	return (e);
+}
+
+static void
+rename_spool_node_dir(char *hostname,
+		      char *from, char *to,
+		      int nfile, int *nsection, int **ncopy,
+		      struct gfarm_file_section_copy_info ***copies,
+		      unsigned char ***exist)
+{
+	char *e;
+	struct sockaddr peer_addr;
+	struct gfs_connection *gfs_server;
+	int i, j, k;
+
+	e = gfarm_host_address_get(hostname,
+		gfarm_spool_server_port, &peer_addr, NULL);
+	if (e != NULL) {
+		gflog_warning(
+			"rename_spool_node_dir: host_address_get: %s: %s",
+			hostname, e);
+		return;
+	}
+	e = gfs_client_connect(hostname, &peer_addr, &gfs_server);
+	if (e != NULL) {
+		gflog_warning(
+			"rename_spool_node_dir: gfs_client_connect: %s: %s",
+			hostname, e);
+		return;
+	}
+	e = gfs_client_rename(gfs_server, from, to);
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_warning(
+			"rename_spool_node_dir: gfs_client_rename(%s, %s): %s",
+			from, to, e);
+		return;
+	}
+	for (i = 0; i < nfile; i++) {
+		for (j = 0; j < nsection[i]; j++) {
+			for (k = 0; k < ncopy[i][j]; k++) {
+				if (strcmp(
+				      copies[i][j][k].hostname, hostname) == 0)
+					exist[i][j][k] = 1;
+			}
+		}
+	}
+	gfs_client_disconnect(gfs_server);
+}
+
+static char *
+get_lists(const char *from_url,
+		       gfarm_stringlist *dir_list, gfarm_stringlist *file_list)
+{
+	char *e, cwdbf[PATH_MAX * 2];
+	GFS_Dir dir;
+	struct gfs_dirent *entry;
+
+	e = gfs_getcwd(cwdbf, sizeof(cwdbf));
+	if (e != NULL)
+		return (e);
+	e = gfs_chdir(from_url);
+	if (e != NULL)
+		return (e);
+	e = gfs_opendir(".", &dir);
+	if (e != NULL)
+		return (e);
+	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		if (strcmp(entry->d_name, "..") == 0) {
+			continue;
+		}
+		if (strcmp(entry->d_name, ".") == 0) {
+			gfarm_stringlist_add(dir_list, "");
+			continue;
+		}
+		e = traverse_file_tree("", entry->d_name, dir_list, file_list);
+		if (e != NULL)
+			return (e);
+	}
+	if (e != NULL)
+		return (e);
+	gfs_closedir(dir);
+	e = gfs_chdir(cwdbf);
+	return (e);
+}
+
+static char *get_infos_by_file(char *pathname,
+		int *nsection, struct gfarm_file_section_info **sections,
+		int **ncopy, struct gfarm_file_section_copy_info ***copies)
+{
+	char *e;
+	int i;
+
+	e = gfarm_file_section_info_get_all_by_file(pathname,
+						    nsection, sections);
+	if (e != NULL)
+		return (e);
+	*ncopy = malloc(*nsection * sizeof(**ncopy));
+	if (*ncopy == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish_free_section_info;
+	}
+	*copies = malloc(*nsection * sizeof(**copies));
+	if (*copies == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish_free_ncopy;
+	}
+	for (i = 0; i < *nsection; i++) {
+		e = gfarm_file_section_copy_info_get_all_by_section(
+			(*sections)[i].pathname, (*sections)[i].section,
+			&(*ncopy)[i], &(*copies)[i]);
+		if (e != NULL) {
+			while (--i >= 0)
+				gfarm_file_section_copy_info_free_all(
+						(*ncopy)[i], (*copies)[i]);
+			goto finish_free_copies;
+		}
+	}
+	return (NULL);
+
+finish_free_copies:
+	free(*copies);
+finish_free_ncopy:
+	free(*ncopy);
+finish_free_section_info:
+	gfarm_file_section_info_free_all(*nsection, *sections);
+	return (e);
+}
+
+static void
+free_infos(int nsection, struct gfarm_file_section_info *sections,
+	   int *ncopy, struct gfarm_file_section_copy_info **copies)
+{
+	int i;
+
+	for (i = 0; i < nsection; i++) {
+		gfarm_file_section_copy_info_free_all(ncopy[i], copies[i]);
+	}
+	gfarm_file_section_info_free_all(nsection, sections);
+}
+
+static char *
+get_path_infos(char *from_canonic_path,
+	       gfarm_stringlist *list, struct gfarm_path_info *path_infos)
+{
+	int i;
+	char *e = NULL;
+
+	for (i = 0; i < gfarm_stringlist_length(list); i++) {
+		char *p, *elem;
+
+		elem = gfarm_stringlist_elem(list, i);
+		p = malloc(strlen(from_canonic_path) + strlen(elem) + 1);
+		if (p == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		sprintf(p, "%s%s", from_canonic_path, elem);
+		e = gfarm_path_info_get(p, &path_infos[i]);
+		free(p);
+		if (e != NULL)
+			break;
+	}
+	if (e != NULL) {
+		while (--i >= 0)
+			 gfarm_path_info_free(&path_infos[i]);
+	}
+	return (e);
+}
+
+static void
+free_path_infos(int n, struct gfarm_path_info *path_infos)
+{
+	int i;
+
+	for (i = 0; i < n; i++)
+		gfarm_path_info_free(&path_infos[i]);
+}
+
+static char *
+get_meta_data(const char *from_url,
+	      gfarm_stringlist *dir_list,
+	      gfarm_stringlist *file_list,
+	      struct gfarm_path_info *dir_path_infos,
+	      struct gfarm_path_info *file_path_infos,
+	      int *nsection, struct gfarm_file_section_info **sections,
+	      int **ncopy, struct gfarm_file_section_copy_info ***copies)
+{
+	char *e, *from_canonic_path;
+	int i;
+
+	e = gfarm_url_make_path_for_creation(from_url, &from_canonic_path);
+	if (e != NULL)
+		return (e);
+	e = get_path_infos(from_canonic_path, dir_list, dir_path_infos);
+	if (e != NULL)
+		goto free_from_canonic_path;
+	e = get_path_infos(from_canonic_path, file_list, file_path_infos);
+	if (e != NULL)
+		goto free_dir_path_infos;
+	for (i = 0; i < gfarm_stringlist_length(file_list); i++) {
+		e = get_infos_by_file(
+			file_path_infos[i].pathname,
+			&nsection[i], &sections[i], &ncopy[i], &copies[i]);
+		if (e != NULL) {
+			while (--i >= 0) {
+				free_infos(nsection[i], sections[i],
+					   ncopy[i], copies[i]);
+			}
+			goto free_file_path_infos;
+		}
+	}
+	return (NULL);
+
+free_file_path_infos:
+	free_path_infos(gfarm_stringlist_length(file_list), file_path_infos);
+free_dir_path_infos:
+	free_path_infos(gfarm_stringlist_length(dir_list), dir_path_infos);
+free_from_canonic_path:
+	free(from_canonic_path);
+	return(e);
+}
+
+static char *
+set_a_path_info(char *from_dir_canonical_path,
+		char *to_dir_canonical_path,
+		struct gfarm_path_info *from_path_info,
+		char **to_path)
+{
+	char *p;
+	struct gfarm_path_info to_pi;
+
+	p = malloc(strlen(from_path_info->pathname) -
+			 strlen(from_dir_canonical_path) +
+			 strlen(to_dir_canonical_path) + 1);
+	if (p == NULL) {
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	sprintf(p, "%s%s", to_dir_canonical_path,
+	    from_path_info->pathname + strlen(from_dir_canonical_path));
+	to_pi = *from_path_info;
+	to_pi.pathname = p;
+	*to_path = p;
+	return (gfarm_path_info_set(to_pi.pathname, &to_pi));
+}
+
+static char *
+set_meta_data(int ndir, int nfile,
+	      char *from_canonical_path, char *to_canonical_path,
+	      struct gfarm_path_info *dir_path_infos,
+	      struct gfarm_path_info *file_path_infos,
+	      int *nsection, struct gfarm_file_section_info **sections,
+	      int **ncopy, struct gfarm_file_section_copy_info ***copies,
+	      unsigned char ***exist)
+{
+	int i, j, k;
+	char *e, *to_path;
+
+	e = NULL;
+	for (i = 0; i < ndir; i++) {
+		e = set_a_path_info(from_canonical_path,
+			to_canonical_path, &dir_path_infos[i], &to_path);
+		if (e != NULL)
+			return (e);
+	}
+	for (i = 0; i < nfile; i++) {
+		e = set_a_path_info(from_canonical_path,
+			to_canonical_path, &file_path_infos[i], &to_path);
+		if (e != NULL)
+			return (e);
+
+		for (j = 0; j < nsection[i]; j++) {
+			struct gfarm_file_section_info to_si;
+			to_si = sections[i][j];
+			to_si.pathname = to_path;
+			e = gfarm_file_section_info_set(to_si.pathname,
+						to_si.section, &to_si);
+			if (e != NULL)
+				return (e);
+			for (k = 0; k < ncopy[i][j]; k++) {
+				struct gfarm_file_section_copy_info
+					to_ci;
+					if (exist[i][j][k] == 0)
+					continue;
+				to_ci = copies[i][j][k];
+				to_ci.pathname = to_path;
+				e = gfarm_file_section_copy_info_set(
+					to_ci.pathname, to_ci.section,
+					to_ci.hostname,  &to_ci);
+				if (e != NULL)
+					return (e);
+			}
+		}
+	}
+	return (e);
+}
+
+static void
+free_meta_data(int ndir, struct gfarm_path_info *dir_path_infos,
+	       int nfile, struct gfarm_path_info *file_path_infos,
+	       int *nsection, struct gfarm_file_section_info **sections,
+	       int **ncopy, struct gfarm_file_section_copy_info ***copies)
+{
+	int i;
+
+	for (i = 0; i < nfile; i++) {
+		free_infos(nsection[i], sections[i], ncopy[i], copies[i]);
+	}
+	free_path_infos(nfile, file_path_infos);
+	free_path_infos(ndir, dir_path_infos);
+}
+
+static int
+check_existence_spool_file(int nfile, int *nsection, int **ncopy,
+			   unsigned char ***exist)
+{
+	int i, j, k;
+
+	for (i = 0; i < nfile; i++) {
+		if (nsection[i] == 0)
+			continue;
+		for (j = 0; j < nsection[i]; j++) {
+			if (ncopy[i][j] == 0)
+				continue;
+			for (k = 0; k < ncopy[i][j]; k++) {
+				if (exist[i][j][k] == 1)
+					break;
+			}
+			if (k >= ncopy[i][j])
+				return (0);
+		}
+	}
+	return (1);
+}
+
+static char *
+rename_dir(const char *from_url, const char *to_url,
+	   char *from_canonical_path, char *to_canonical_path)
+{
+	int i, j, nhosts;
+	char *e;
+	struct gfarm_host_info *hosts;
+	gfarm_stringlist dir_list, file_list;
+	int ndir, nfile;
+	int *nsection, **ncopy;
+	struct gfarm_path_info *dir_path_infos, *file_path_infos;
+	struct gfarm_file_section_info **sections;
+	struct gfarm_file_section_copy_info ***copies;
+	unsigned char ***exist; /* whether spool file exists at the host */
+
+	e = gfarm_stringlist_init(&dir_list);
+	if (e != NULL)
+		return (e);
+	e = gfarm_stringlist_init(&file_list);
+	if (e != NULL)
+		goto free_dir_list;
+	e = get_lists(from_url, &dir_list, &file_list);
+	if (e != NULL)
+		goto free_file_list;
+	ndir = gfarm_stringlist_length(&dir_list);
+	nfile = gfarm_stringlist_length(&file_list);
+
+	dir_path_infos = malloc(ndir * sizeof(*dir_path_infos));
+	if (dir_path_infos == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_file_list;
+	}
+	file_path_infos = malloc(nfile * sizeof(*file_path_infos));
+	if (file_path_infos == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_dir_path_infos;
+	}
+	nsection = malloc(nfile * sizeof(*nsection));
+	if (nsection == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_file_path_infos;
+	}
+	sections = malloc(nfile * sizeof(*sections));
+	if (sections == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_nsection;
+	}
+	ncopy = malloc(nfile * sizeof(*ncopy));
+	if (ncopy == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_sections;
+	}
+	copies = malloc(nfile * sizeof(*copies));
+	if (copies == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_ncopy;
+	}
+	e = get_meta_data(from_url, &dir_list, &file_list,
+			  dir_path_infos, file_path_infos,
+			  nsection, sections, ncopy, copies);
+	if (e != NULL)
+		goto free_copies;
+	/*
+	 * allocate table to check spool files existence
+	 */
+	exist = malloc(nfile * sizeof(*exist));
+	if (exist == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_meta_data;
+	}
+	for (i = 0; i < nfile; i++) {
+		exist[i] = malloc(nsection[i] * sizeof(**exist));
+		if (exist[i] == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			while (--i >= 0)
+				free(exist[i]);
+			goto free_meta_data;
+		}
+		for (j = 0; j < nsection[i]; j++) {
+			int size = ncopy[i][j] * sizeof(***exist);
+
+			exist[i][j] = malloc(size);
+			if (exist[i][j] == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				while (--j >= 0)
+					free(exist[i][j]);
+				while (--i >= 0) {
+					for (j = 0; nsection[i]; j++)
+						free(exist[i][j]);
+					free(exist[i]);
+				}
+				goto free_meta_data;
+			}
+			memset(exist[i][j], 0, size);
+		}
+	}
+
+	e = gfarm_host_info_get_all(&nhosts, &hosts);
+	if (e != NULL)
+		goto free_exist;
+	for (i = 0; i < nhosts; i++) {
+		rename_spool_node_dir(hosts[i].hostname,
+				      from_canonical_path,
+				      to_canonical_path,
+				      nfile, nsection, ncopy, copies, exist);
+	}
+
+	/*
+	 * check existence of section copy in spool node
+	 */
+	if (!check_existence_spool_file(nfile,
+				       nsection, ncopy, exist)) {
+		/* undo rename spool directory */
+		for (i = 0; i < nhosts; i++) {
+			rename_spool_node_dir(hosts[i].hostname,
+					      to_canonical_path,
+					      from_canonical_path,
+					      nfile, nsection, ncopy,
+					      copies, exist);
+		}
+		goto free_hosts;
+	}
+	e = set_meta_data(ndir, nfile, from_canonical_path, to_canonical_path,
+			  dir_path_infos, file_path_infos,
+			  nsection, sections, ncopy, copies, exist);
+	if (e != NULL) {
+		for (i = 0; i < nhosts; i++) {
+			rename_spool_node_dir(hosts[i].hostname,
+					      to_canonical_path,
+					      from_canonical_path,
+					      nfile, nsection, ncopy,
+					      copies, exist);
+		}
+		goto free_hosts;
+	}
+	for (i = 0; i < nfile; i++) {
+		e = remove_infos_all(file_path_infos[i].pathname);
+	}
+	i = ndir;
+	while (--i >= 0) {
+		e = gfarm_path_info_remove(dir_path_infos[i].pathname);
+	}
+
+free_hosts:
+	gfarm_host_info_free_all(nhosts, hosts);
+free_exist:
+	for (i = 0; i < nfile; i++) {
+		for (j = 0; j < nsection[i]; j++) {
+			free(exist[i][j]);
+		}
+		free(exist[i]);
+	}
+free_meta_data:
+	free_meta_data(ndir, dir_path_infos, nfile, file_path_infos,
+		       nsection, sections, ncopy, copies);
+free_copies:
+	free(copies);
+free_ncopy:
+	free(ncopy);
+free_sections:
+	free(sections);
+free_nsection:
+	free(nsection);
+free_file_path_infos:
+	free(file_path_infos);
+free_dir_path_infos:
+	free(dir_path_infos);
+free_file_list:
+	gfarm_stringlist_free(&file_list);
+free_dir_list:
+	gfarm_stringlist_free(&dir_list);
+	return (e);
+}
+
+char *
+gfs_rename(const char *from_url, const char *to_url)
+{
+	char *e, *from_canonical_path, *to_canonical_path;
+	struct gfarm_path_info from_pi, to_pi;
+
+	e = gfarm_url_make_path(from_url, &from_canonical_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_info_get(from_canonical_path, &from_pi);
+	if (e != NULL)
+		goto free_from_canonical_path;
+	e = gfarm_url_make_path_for_creation(to_url, &to_canonical_path);
+	if (e != NULL)
+		goto free_from_pi;
+	if (strcmp(from_canonical_path, to_canonical_path) == 0)
+		goto free_to_canonical_path;
+	e = gfarm_path_info_get(to_canonical_path, &to_pi);
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+		goto free_to_canonical_path;
+	}
+
+	if (GFARM_S_ISREG(from_pi.status.st_mode)) {
+		if (e == NULL) {
+			if (GFARM_S_ISDIR(to_pi.status.st_mode)) {
+				e = GFARM_ERR_IS_A_DIRECTORY;
+				gfarm_path_info_free(&to_pi);
+				goto free_to_canonical_path;
+			}
+			gfarm_path_info_free(&to_pi);
+			e = gfs_unlink(to_url);
+			/* FT - allows no physical file case */
+			if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
+				goto free_to_canonical_path;
+		}
+		e = rename_single_file(&from_pi, to_canonical_path);
+	} else if (GFARM_S_ISDIR(from_pi.status.st_mode)) {
+		if (e == NULL) {
+			if (!GFARM_S_ISDIR(to_pi.status.st_mode)) {
+				e = GFARM_ERR_NOT_A_DIRECTORY;
+				gfarm_path_info_free(&to_pi);
+				goto free_to_canonical_path;
+			}
+			gfarm_path_info_free(&to_pi);
+			if (strstr(to_canonical_path, from_canonical_path) ==
+				to_canonical_path &&
+			    to_canonical_path[strlen(from_canonical_path)] ==
+									'/') {
+				e = GFARM_ERR_INVALID_ARGUMENT;
+				goto free_to_canonical_path;
+			}
+			e = gfs_rmdir(to_url);
+			if (e != NULL)
+				goto free_to_canonical_path;
+		} else { /* to_canonical_path does not exist */
+			if (strstr(to_canonical_path, from_canonical_path) ==
+				to_canonical_path &&
+			    to_canonical_path[strlen(from_canonical_path)] ==
+									'/') {
+				e = GFARM_ERR_INVALID_ARGUMENT;
+				goto free_to_canonical_path;
+			}
+		}
+		e = rename_dir(from_url, to_url,
+			       from_canonical_path, to_canonical_path);
+	} else {
+		if (e == NULL)
+			gfarm_path_info_free(&to_pi);
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	}
+
+free_to_canonical_path:
+	free(to_canonical_path);
+free_from_pi:
+	gfarm_path_info_free(&from_pi);
+free_from_canonical_path:
+	free(from_canonical_path);
+	return (e);
+}
+
+/*
  *
  */
 
 static char *
 digest_calculate(char *filename,
-		 char **digest_type, char *digest_string, unsigned *md_len_p,
+		 char **digest_type, char *digest_string, size_t *md_len_p,
 		 file_offset_t *filesizep)
 {
 	int fd, i, rv;
@@ -655,12 +1658,15 @@ gfs_pio_set_fragment_info_local(char *filename,
 {
 	char *digest_type;
 	char digest_value_string[EVP_MAX_MD_SIZE * 2 + 1];
-	unsigned int digest_len;
+	size_t digest_len;
 	file_offset_t filesize;
 	char *e = NULL;
 	struct gfarm_file_section_info fi;
 	struct gfarm_file_section_copy_info fci;
 
+#ifdef __GNUC__ /* workaround gcc warning: 'digest_type' may be used uninitialized */
+	digest_type = NULL;
+#endif
 	/* Calculate checksum. */
 	e = digest_calculate(filename, &digest_type, digest_value_string,
 			     &digest_len, &filesize);
@@ -698,6 +1704,38 @@ gfs_pio_set_fragment_info_local(char *filename,
 	}
 
 	return (e);
+}
+
+static int
+gfarm_file_missing_replica(char *gfarm_file, char *section,
+	char *canonical_hostname)
+{
+	char *e, *path_section;
+	struct sockaddr peer_addr;
+	struct gfs_connection *peer_conn;
+	int peer_fd, missing;
+
+	e = gfarm_host_address_get(canonical_hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		return (0);
+
+	e = gfs_client_connection(canonical_hostname, &peer_addr, &peer_conn);
+	if (e != NULL)
+		return (0);
+
+	e = gfarm_path_section(gfarm_file, section, &path_section);
+	if (e != NULL)
+		return (0);
+
+	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
+	    &peer_fd);
+	missing = e == GFARM_ERR_NO_SUCH_OBJECT;
+	if (e == NULL)
+		gfs_client_close(peer_conn, peer_fd);
+
+	free(path_section);
+	return (missing);
 }
 
 static char *
@@ -751,8 +1789,89 @@ gfarm_replication_set_method(int method)
 }
 
 /*
- * `srchost' must already reflect "address_use" directive.
+ * NOTE: gfarm_file_section_replicate_without_busy_check() assumes
+ *	that the caller of this function already checked the section
+ *	by gfs_check_section_busy(gfarm_file, section)
  */
+static char *
+gfarm_file_section_replicate_without_busy_check(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char *dst_canonical_hostname)
+{
+	char *e, *path_section;
+	struct gfarm_file_section_copy_info ci;
+	struct gfs_connection *gfs_server;
+	struct sockaddr peer_addr;
+
+	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD)
+		return (gfarm_file_section_replicate_from_to_by_gfrepbe(
+		    gfarm_file, section,
+		    src_canonical_hostname, dst_canonical_hostname));
+
+	e = gfarm_path_section(gfarm_file, section, &path_section);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_host_address_get(dst_canonical_hostname,
+	    gfarm_spool_server_port, &peer_addr, NULL);
+	if (e != NULL)
+		goto finish;
+
+	e = gfs_client_connect(dst_canonical_hostname, &peer_addr,
+	    &gfs_server);
+	if (e != NULL)
+		goto finish;
+	e = gfs_client_bootstrap_replicate_file(gfs_server,
+	    path_section, mode, file_size,
+	    src_canonical_hostname, src_if_hostname);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* FT - the parent directory may be missing */
+		if (gfarm_file_missing_replica(gfarm_file, section,
+		    src_canonical_hostname)) {
+			/* Delete the section copy info */
+			(void)gfarm_file_section_copy_info_remove(gfarm_file,
+			    section, src_canonical_hostname);
+			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+			goto disconnect;
+		}
+		/* FT - the parent directory of the destination may be missing */
+		(void)gfs_pio_remote_mkdir_parent_canonical_path(
+			gfs_server, gfarm_file);
+		e = gfs_client_bootstrap_replicate_file(
+			gfs_server, path_section, mode, file_size,
+			src_canonical_hostname, src_if_hostname);
+	}
+	if (e == NULL)
+		e = gfarm_file_section_copy_info_set(gfarm_file, section,
+		    dst_canonical_hostname, &ci);
+
+disconnect:
+	gfs_client_disconnect(gfs_server);
+
+finish:
+	free(path_section);
+	return (e);
+}
+
+static char *
+gfarm_file_section_replicate(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char *dst_canonical_hostname)
+{
+	char *e = gfs_check_section_busy(gfarm_file, section);
+
+	if (e != NULL)
+		return (e);
+	return (gfarm_file_section_replicate_without_busy_check(
+	    gfarm_file, section, mode, file_size,
+	    src_canonical_hostname, src_if_hostname,
+	    dst_canonical_hostname));
+}
+
 static char *
 gfarm_file_section_replicate_from_to_internal(
 	char *gfarm_file, char *section,
@@ -760,111 +1879,130 @@ gfarm_file_section_replicate_from_to_internal(
 	char *src_canonical_hostname, char *src_if_hostname,
 	char *dsthost)
 {
-	char *e, *path_section;
-	struct gfarm_file_section_copy_info ci;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
+	char *e, *dst_canonical_hostname;
 
-	e = gfarm_host_get_canonical_name(dsthost, &ci.hostname);
+	e = gfarm_host_get_canonical_name(dsthost, &dst_canonical_hostname);
 	if (e != NULL)
-		goto finish;
-	if (gfarm_file_section_copy_info_does_exist(gfarm_file, section,
-	    ci.hostname)) /* already exists, don't have to replicate */
-		goto finish_hostname;
-
-	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD) {
-		e = gfarm_file_section_replicate_from_to_by_gfrepbe(
-		    gfarm_file, section,
-		    src_canonical_hostname, ci.hostname);
-		goto finish_hostname;
+		return (e);
+	/* already exists? don't have to replicate in that case */
+	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
+	    dst_canonical_hostname)) {
+		e = gfarm_file_section_replicate(
+		    gfarm_file, section, mode, file_size,
+		    src_canonical_hostname, src_if_hostname,
+		    dst_canonical_hostname);
 	}
-
-	e = gfarm_path_section(gfarm_file, section, &path_section);
-	if (e != NULL)
-		goto finish_hostname;
-
-	e = gfarm_host_address_get(dsthost, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL)
-		goto finish_path_section;
-
-	e = gfs_client_connect(ci.hostname, &peer_addr, &gfs_server);
-	if (e != NULL)
-		goto finish_path_section;
-	e = gfs_client_bootstrap_replicate_file(gfs_server,
-	    path_section, mode, file_size,
-	    src_canonical_hostname, src_if_hostname);
-	/* FT - the parent directory of the destination may be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		if (gfs_pio_remote_mkdir_parent_canonical_path(
-			    gfs_server, gfarm_file) == NULL)
-			e = gfs_client_bootstrap_replicate_file(
-				gfs_server, path_section, mode, file_size,
-				src_canonical_hostname, src_if_hostname);
-	}
-#if 0 /* XXX - not implemented yet */
-	/* FT - source file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		/* XXX - need to check explicitly */
-		if (gfs_client_exist() == GFARM_ERR_NO_SUCH_OBJECT)
-			/* Delete the section copy info */
-			if (gfarm_file_section_copy_info_remove(gfarm_file,
-				section, src_canonical_hostname) == NULL)
-				e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
-	}
-#endif
-	gfs_client_disconnect(gfs_server);
-	if (e != NULL)
-		goto finish_path_section;
-	e = gfarm_file_section_copy_info_set(gfarm_file, section,
-	    ci.hostname, &ci);
-
-finish_path_section:
-	free(path_section);
-finish_hostname:
-	free(ci.hostname);
-finish:
+	free(dst_canonical_hostname);
 	return (e);
 }
 
 static char *
-gfarm_file_section_replicate_to_internal(char *gfarm_file, char *section,
+gfarm_file_section_migrate_from_to_internal(
+	char *gfarm_file, char *section,
 	gfarm_mode_t mode, file_offset_t file_size,
+	char *src_canonical_hostname, char *src_if_hostname,
 	char *dsthost)
+{
+	char *e, *dst_canonical_hostname;
+
+	e = gfarm_host_get_canonical_name(dsthost, &dst_canonical_hostname);
+	if (e != NULL)
+		return (e);
+	/* already exists? don't have to replicate in that case */
+	if (!gfarm_file_section_copy_info_does_exist(gfarm_file, section,
+	    dst_canonical_hostname)) {
+		e = gfarm_file_section_replicate(
+		    gfarm_file, section, mode, file_size,
+		    src_canonical_hostname, src_if_hostname,
+		    dst_canonical_hostname);
+		if (e == NULL) {
+			e = gfs_unlink_replica_internal(
+			    gfarm_file, section, src_canonical_hostname);
+		}
+	}
+	free(dst_canonical_hostname);
+	return (e);
+}
+
+static char *
+gfarm_file_section_transfer_to_internal(char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *srchost, *if_hostname;
 	struct sockaddr peer_addr;
 
-	e = gfarm_file_section_host_schedule(gfarm_file, section, &srchost);
-	if (e != NULL)
-		goto finish;
+	do {
+		e = gfarm_file_section_host_schedule(gfarm_file, section,
+		    &srchost);
+		if (e != NULL)
+			break;
 
-	/* reflect "address_use" directive in the `srchost' */
-	e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
-	    &peer_addr, &if_hostname);
-	if (e != NULL)
-		goto finish_srchost;
+		/* reflect "address_use" directive in the `srchost' */
+		e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
+		    &peer_addr, &if_hostname);
+		if (e != NULL) {
+			free(srchost);
+			break; /* XXX should try next candidate */
+		}
 
-	e = gfarm_file_section_replicate_from_to_internal(
-	    gfarm_file, section, mode & GFARM_S_ALLPERM, file_size,
-	    srchost, if_hostname, dsthost);
+		e = (*transfer_from_to_internal)(gfarm_file, section,
+		    mode & GFARM_S_ALLPERM, file_size,
+		    srchost, if_hostname, dsthost);
 
-	free(if_hostname);
-finish_srchost:
-	free(srchost);
-finish:
+		free(if_hostname);
+		free(srchost);
+
+	} while (e == GFARM_ERR_INCONSISTENT_RECOVERABLE);
 	return (e);
 }
 
+static char *
+gfarm_file_section_replicate_to_internal(
+	char *gfarm_file, char *section,
+	gfarm_mode_t mode, file_offset_t file_size,
+	char *dsthost)
+{
+	return (gfarm_file_section_transfer_to_internal(gfarm_file, section,
+	    mode, file_size, dsthost,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+/*
+ * XXX FIXME
+ * if the owner of a file is not the same, permit a group/other write access.
+ *	- This should be fixed in the release of gfarm version 2.
+ */
 char *
-gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
-	char *srchost, char *dsthost)
+gfarm_fabricate_mode_for_replication(struct gfs_stat *gst, gfarm_mode_t *modep)
+{
+	char *e;
+
+	if (strcmp(gst->st_user, gfarm_get_global_username()) == 0) {
+		*modep = gst->st_mode & GFARM_S_ALLPERM;
+	} else {
+		e = gfs_stat_access(gst, R_OK);
+		if (e != NULL)
+			return (e);
+		/* don't allow setuid/setgid */
+		*modep = (gst->st_mode | 022) & 0777;
+	}
+	return (NULL);
+}
+
+static char *
+gfarm_url_section_transfer_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file, *canonical_hostname, *if_hostname;
 	struct sockaddr peer_addr;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -878,30 +2016,20 @@ gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
 
 	e = gfarm_host_get_canonical_name(srchost, &canonical_hostname);
 	if (e != NULL)
-		goto finish_canonical_hostname;
+		goto finish_section_info;
 
 	/* reflect "address_use" directive in the `srchost' */
 	e = gfarm_host_address_get(srchost, gfarm_spool_server_port,
 	    &peer_addr, &if_hostname);
 	if (e != NULL)
-		goto finish_section_info;
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL)
-			goto finish_path_info;
-		mode_allowed = 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
-	e = gfarm_file_section_replicate_from_to_internal(
-	    gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
+		goto finish_canonical_hostname;
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
+	if (e != NULL)
+		goto finish_if_hostname;
+	e = (*transfer_from_to_internal)(gfarm_file, section,
+	    mode, si.filesize,
 	    canonical_hostname, if_hostname, dsthost);
-
+finish_if_hostname:
 	free(if_hostname);
 finish_canonical_hostname:
 	free(canonical_hostname);
@@ -916,13 +2044,31 @@ finish:
 }
 
 char *
-gfarm_url_section_replicate_to(
-	const char *gfarm_url, char *section, char *dsthost)
+gfarm_url_section_replicate_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost)
+{
+	return (gfarm_url_section_transfer_from_to(gfarm_url, section,
+	    srchost, dsthost, gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_section_migrate_from_to(const char *gfarm_url, char *section,
+	char *srchost, char *dsthost)
+{
+	return (gfarm_url_section_transfer_from_to(gfarm_url, section,
+	    srchost, dsthost, gfarm_file_section_migrate_from_to_internal));
+}
+
+static char *
+gfarm_url_section_transfer_to(
+	const char *gfarm_url, char *section, char *dsthost,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file;
 	struct gfarm_path_info pi;
 	struct gfarm_file_section_info si;
-	gfarm_mode_t mode_allowed = 0, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -933,23 +2079,13 @@ gfarm_url_section_replicate_to(
 	e = gfarm_file_section_info_get(gfarm_file, section, &si);
 	if (e != NULL)
 		goto finish_path_info;
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL)
-			goto finish_path_info;
-		mode_allowed = 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
-	e = gfarm_file_section_replicate_to_internal(
-	    gfarm_file, section,
-	    (pi.status.st_mode | mode_allowed) & mode_mask, si.filesize,
-	    dsthost);
-
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
+	if (e != NULL)
+		goto finish_section_info;
+	e = gfarm_file_section_transfer_to_internal(gfarm_file, section,
+	    mode, si.filesize,
+	    dsthost, transfer_from_to_internal);
+finish_section_info:
 	gfarm_file_section_info_free(&si);
 finish_path_info:
 	gfarm_path_info_free(&pi);
@@ -957,6 +2093,22 @@ finish_gfarm_file:
 	free(gfarm_file);
 finish:
 	return (e);
+}
+
+char *
+gfarm_url_section_replicate_to(
+	const char *gfarm_url, char *section, char *dsthost)
+{
+	return (gfarm_url_section_transfer_to(gfarm_url, section, dsthost,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_section_migrate_to(
+	const char *gfarm_url, char *section, char *dsthost)
+{
+	return (gfarm_url_section_transfer_to(gfarm_url, section, dsthost,
+	    gfarm_file_section_migrate_from_to_internal));
 }
 
 char *
@@ -1014,7 +2166,7 @@ gfarm_url_program_register(
 			tmp = hostnames[0];
 			hostnames[0] = hostnames[i];
 			hostnames[i] = tmp;
-		}	
+		}
 		if (nreplicas > 1)
 			e = gfarm_schedule_search_idle_hosts(nhosts - 1,
 							     hostnames + 1,
@@ -1039,7 +2191,7 @@ gfarm_url_program_register(
 		goto finish_if_hostname;
 	}
 	/* XXX - overwrite case */
-	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY,
+	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC,
 	    s.st_mode & GFARM_S_ALLPERM, &gf);
 	if (e != NULL) {
 		close(fd);
@@ -1105,7 +2257,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			  char ***delivered_paths)
 {
 	char *e, **dp, *gfarm_file, *root, *arch, **canonical_hostnames;
-	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 	int i;
 	struct gfarm_path_info pi;
 
@@ -1118,33 +2270,22 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		free(gfarm_file);
 		return (e);
 	}
-	mode = pi.status.st_mode;
-	if (!GFARM_S_IS_PROGRAM(mode)) {
+	if (!GFARM_S_IS_PROGRAM(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
 		free(gfarm_file);
 		return ("gfarm_url_program_deliver(): not a program");
 	}
 	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	/*
 	 * XXX FIXME
 	 * This may be called with GFARM_REPLICATION_BOOTSTRAP_METHOD
 	 * to deliver gfrepbe_client/gfrepbe_server.
 	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_X_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&pi);
-			free(gfarm_file);
-			return (e);
-		}
-		mode |= 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
 	gfarm_path_info_free(&pi);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (e);
+	}
 	dp = malloc(sizeof(char *) * (nhosts + 1));
 	if (dp == NULL) {
 		free(gfarm_file);
@@ -1211,7 +2352,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		 * replicate the program
 		 */
 		e = gfarm_file_section_replicate_to_internal(gfarm_file, arch,
-		    mode & mode_mask, si.filesize, hosts[i]);
+		    mode, si.filesize, hosts[i]);
 		gfarm_file_section_info_free(&si);
 		free(arch);
 		if (e != NULL)
@@ -1231,13 +2372,15 @@ error:
 	return (e);
 }
 
-char *
-gfarm_url_fragments_replicate(
-	const char *gfarm_url, int ndsthosts, char **dsthosts)
+static char *
+gfarm_url_fragments_transfer(
+	const char *gfarm_url, int ndsthosts, char **dsthosts,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, *gfarm_file, **srchosts, **edsthosts;
 	int nsrchosts;
-	gfarm_mode_t mode, mode_mask = GFARM_S_ALLPERM;
+	gfarm_mode_t mode;
 	int i, pid, *pids;
 	struct gfarm_path_info pi;
 
@@ -1249,28 +2392,15 @@ gfarm_url_fragments_replicate(
 	if (e != NULL)
 		goto finish_gfarm_file;
 
-	mode = pi.status.st_mode;
-	if (!GFARM_S_IS_FRAGMENTED_FILE(mode)) {
+	if (!GFARM_S_IS_FRAGMENTED_FILE(pi.status.st_mode)) {
 		gfarm_path_info_free(&pi);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		goto finish_gfarm_file;
 	}
-	/*
-	 * XXX - if the owner of a file is not the same, permit a
-	 * group/other write access - This should be fixed in the next
-	 * major release.
-	 */
-	if (strcmp(pi.status.st_user, gfarm_get_global_username()) != 0) {
-		e = gfarm_path_info_access(&pi, GFS_R_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&pi);
-			free(gfarm_file);
-			return (e);
-		}
-		mode |= 022;
-		mode_mask = 0777; /* don't allow setuid/setgid */
-	}
+	e = gfarm_fabricate_mode_for_replication(&pi.status, &mode);
 	gfarm_path_info_free(&pi);
+	if (e != NULL)
+		goto finish_gfarm_file;
 	e = gfarm_url_hosts_schedule(gfarm_url, "", &nsrchosts, &srchosts);
 	if (e != NULL)
 		goto finish_gfarm_file;
@@ -1287,14 +2417,6 @@ gfarm_url_fragments_replicate(
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_edsthosts;
 	}
-	/*
-	 * To use different connection for each metadb access.
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	e = gfarm_metadb_terminate();
-	if (e != NULL)
-		goto finish_pids;
 
 	for (i = 0; i < nsrchosts; i++) {
 		struct sockaddr peer_addr;
@@ -1312,15 +2434,6 @@ gfarm_url_fragments_replicate(
 		}
 		/* child */
 
-		/*
-		 * use different connection for each metadb access.
-		 *
-		 * XXX: FIXME layering violation
-		 */
-		e = gfarm_metadb_initialize();
-		if (e != NULL)
-			_exit(1);
-
 		/* reflect "address_use" directive in the `srchosts[i]' */
 		e = gfarm_host_address_get(srchosts[i],
 		    gfarm_spool_server_port, &peer_addr, &if_hostname);
@@ -1333,9 +2446,8 @@ gfarm_url_fragments_replicate(
 		if (e != NULL)
 			_exit(3);
 
-		e = gfarm_file_section_replicate_from_to_internal(
-		    gfarm_file, section_string,
-		    mode & mode_mask, si.filesize,
+		e = (*transfer_from_to_internal)(gfarm_file, section_string,
+		    mode, si.filesize,
 		    srchosts[i], if_hostname, edsthosts[i]);
 		if (e != NULL)
 			_exit(1);
@@ -1353,17 +2465,6 @@ gfarm_url_fragments_replicate(
 			e = "error happens on replication";
 		}
 	}
-	/*
-	 * recover temporary closed metadb connection
-	 *
-	 * XXX: FIXME layering violation
-	 */
-	if (e != NULL) {
-		gfarm_metadb_initialize();
-	} else {
-		e = gfarm_metadb_initialize();
-	}
- finish_pids:
 	free(pids);
  finish_edsthosts:
 	free(edsthosts);
@@ -1375,8 +2476,26 @@ gfarm_url_fragments_replicate(
 }
 
 char *
-gfarm_url_fragments_replicate_to_domainname(
-	const char *gfarm_url, const char *domainname)
+gfarm_url_fragments_replicate(
+	const char *gfarm_url, int ndsthosts, char **dsthosts)
+{
+	return (gfarm_url_fragments_transfer(gfarm_url, ndsthosts, dsthosts,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_migrate(
+	const char *gfarm_url, int ndsthosts, char **dsthosts)
+{
+	return (gfarm_url_fragments_transfer(gfarm_url, ndsthosts, dsthosts,
+	    gfarm_file_section_migrate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_transfer_to_domainname(
+	const char *gfarm_url, const char *domainname,
+	char *(*transfer_from_to_internal)(char *, char *,
+	    gfarm_mode_t, file_offset_t, char *, char *, char *))
 {
 	char *e, **dsthosts;
 	int nfrags;
@@ -1394,12 +2513,148 @@ gfarm_url_fragments_replicate_to_domainname(
 	if (e != NULL)
 		goto free_dsthosts;
 
-	e = gfarm_url_fragments_replicate(gfarm_url, nfrags, dsthosts);
+	e = gfarm_url_fragments_transfer(gfarm_url, nfrags, dsthosts,
+	    transfer_from_to_internal);
 
 	while (--nfrags >= 0)
 		free(dsthosts[nfrags]);
  free_dsthosts:
 	free(dsthosts);
 
+	return (e);
+}
+
+char *
+gfarm_url_fragments_replicate_to_domainname(
+	const char *gfarm_url, const char *domainname)
+{
+	return (gfarm_url_fragments_transfer_to_domainname(
+	    gfarm_url, domainname,
+	    gfarm_file_section_replicate_from_to_internal));
+}
+
+char *
+gfarm_url_fragments_migrate_to_domainname(
+	const char *gfarm_url, const char *domainname)
+{
+	return (gfarm_url_fragments_transfer_to_domainname(
+	    gfarm_url, domainname,
+	    gfarm_file_section_migrate_from_to_internal));
+}
+
+/*
+ * internal functions which are used from gfs_pio_section.c and gfs_exec.c
+ */
+
+static char *
+lock_local_file_section(struct gfarm_file_section_info *sinfo,
+	char *canonical_self_hostname,
+	char **localpathp, int *replication_neededp)
+{
+	char *e, *localpath;
+	struct stat st;
+	int metadata_exist, localfile_exist;
+
+	e = gfs_check_section_busy_by_finfo(sinfo);
+	if (e != NULL)
+		return (e);
+
+	e = gfarm_path_localize_file_section(sinfo->pathname, sinfo->section,
+	    &localpath);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	gfs_lock_local_path_section(localpath);
+
+	/* FT - check existence of the local file and its metadata */
+	metadata_exist = gfarm_file_section_copy_info_does_exist(
+	    sinfo->pathname, sinfo->section, canonical_self_hostname);
+	localfile_exist = stat(localpath, &st) == 0 && S_ISREG(st.st_mode);
+
+	if (metadata_exist &&
+	    localfile_exist && st.st_size == sinfo->filesize) {
+		/* already exist */
+		/* XXX - need integrity check by checksum */
+		*replication_neededp = 0;
+	} else {
+		if (localfile_exist) /* FT - unknown local file.  delete it */
+			unlink(localpath);
+		if (metadata_exist)  /* FT - delete dangling metadata */
+			gfarm_file_section_copy_info_remove(
+			    sinfo->pathname, sinfo->section,
+			    canonical_self_hostname);
+		*replication_neededp = 1;
+	}
+	*localpathp = localpath;
+	return (NULL);
+}
+
+char *
+gfarm_file_section_replicate_from_to_local_with_locking(
+	struct gfarm_file_section_info *sinfo, gfarm_mode_t mode,
+	char *src_canonical_hostname, char *src_if_hostname,
+	char **localpathp)
+{
+	char *e, *canonical_self_hostname, *localpath;
+	int replication_needed;
+
+	e = gfarm_host_get_canonical_self_name(&canonical_self_hostname);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	e = lock_local_file_section(sinfo, canonical_self_hostname,
+	    &localpath, &replication_needed);
+	if (e != NULL)
+		return (e);
+
+	if (replication_needed)
+		e = gfarm_file_section_replicate_without_busy_check(
+		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
+		    src_canonical_hostname, src_if_hostname,
+		    canonical_self_hostname);
+
+	gfs_unlock_local_path_section(localpath);
+	/* critical section ends */
+
+	if (e == NULL && localpathp != NULL)
+		*localpathp = localpath;
+	else
+		free(localpath);
+	return (e);
+}
+
+char *
+gfarm_file_section_replicate_to_local_with_locking(
+	struct gfarm_file_section_info *sinfo, gfarm_mode_t mode,
+	char **localpathp)
+{
+	char *e, *canonical_self_hostname, *localpath;
+	int replication_needed;
+
+	e = gfarm_host_get_canonical_self_name(&canonical_self_hostname);
+	if (e != NULL)
+		return (e);
+
+	/* critical section starts */
+	e = lock_local_file_section(sinfo, canonical_self_hostname,
+	    &localpath, &replication_needed);
+	if (e != NULL)
+		return (e);
+
+	if (replication_needed)
+		e = gfarm_file_section_transfer_to_internal(
+		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
+		    canonical_self_hostname,
+		    gfarm_file_section_replicate_without_busy_check);
+
+	gfs_unlock_local_path_section(localpath);
+	/* critical section ends */
+
+	if (e == NULL && localpathp != NULL)
+		*localpathp = localpath;
+	else
+		free(localpath);
 	return (e);
 }

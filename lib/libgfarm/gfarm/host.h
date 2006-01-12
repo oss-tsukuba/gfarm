@@ -13,3 +13,5 @@ struct gfarm_host_info;
 gfarm_error_t gfarm_host_info_address_get(const char *, int,
 	struct gfarm_host_info *, struct sockaddr *, char **);
 #endif /* for now */
+
+gfarm_error_t gfarm_set_client_architecture(char *, struct gfarm_hostspec *);

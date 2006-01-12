@@ -1,46 +1,96 @@
 # $Id$
 
-top_objdir = ../../..
-top_srcdir = $(top_objdir)
+top_builddir = ../../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-# PURE = /usr/local/rational/releases/purify.sol.2001a.04.00/purify
+###
+### variables
+###
+
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFSL_SRCDIR) \
+	$(globus_includes) \
+	-DGFARM_INSTALL_ETC_DIR='"$(sysconfdir)"' \
+	-DGLOBUS_BUG=1 # see gsi.c
+
+### for library
+
+LIBRARY = libgfsl.la
+LIBRARY_RESULT = # do not install
+
+SRCS = gsi.c tcputil.c auth.c session.c misc.c
+OBJS = gsi.lo tcputil.lo auth.lo session.lo misc.lo
+
+### for programs
+
+PURE = /usr/local/rational/releases/purify.sol.2001a.04.00/purify
+# LINK = $(PURE) $(CC) $(CFLAGS)
+# PROG_DEPLIBS = ../gfutil/.libs/libgfutil.a .libs/libgfsl.a
+
+LINK = $(LTLINK)
 
 PROGRAMS = server client server2 client2
-SCOBJS = scsub.o
+SCOBJS = scarg.o scsub.o
+SCOBJS2 = scarg.o
+PROG_DEPLIBS = $(LIBRARY) ../gfutil/libgfutil.la
+PROG_LDLIBS = $(COMMON_LDFLAGS) $(PROG_DEPLIBS) \
+	$(globus_gssapi_libs) $(openssl_libs) $(LIBS)
 
-CFLAGS = $(COMMON_CFLAGS) -I$(GFSL_SRCDIR) $(globus_includes) \
-	-DGLOBUS_BUG=1 # see gsi.c
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
+###
+### rules
+###
 
-all:	$(PROGRAMS) 
+all: $(LIBRARY) $(PROGRAMS)
 
-server:	server.o $(SCOBJS) $(DEPGFARMLIB)
+### for library
+
+$(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h
+
+include $(top_srcdir)/makes/lib.mk
+
+# dependencies
+auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
+auth.lo: gfsl_config.h gfarm_auth.h misc.h
+gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
+gsi.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+gsi.lo: gfsl_config.h gfarm_gsi.h gfarm_auth.h
+misc.lo: gfsl_config.h gfarm_auth.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
+session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
+session.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+session.lo: gfarm_secure_session.h misc.h
+tcputil.lo: $(GFUTIL_SRCDIR)/gfutil.h
+tcputil.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+
+server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
+    $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
+    gfsl_config.h gfarm_gsi.h gfarm_secure_session.h misc.h scarg.h
+server.o server2.o: gfarm_auth.h
+scarg.o: $(INC_SRCDIR)/gfarm_misc.h gfarm_gsi.h misc.h scarg.h
+scsub.o: gfarm_secure_session.h gfarm_auth.h scarg.h \
+    $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+
+### for programs
+
+server:	server.o $(SCOBJS) $(PROG_DEPLIBS)
 	rm -f $@
-	$(PURE) $(CC) $(CFLAGS) -o $@ server.o $(SCOBJS) $(LDLIBS)
+	$(LINK) -o $@ server.o $(SCOBJS) $(PROG_LDLIBS)
 
-client:	client.o $(SCOBJS) $(DEPGFARMLIB)
+client:	client.o $(SCOBJS) $(PROG_DEPLIBS)
 	rm -f $@
-	$(PURE) $(CC) $(CFLAGS) -o $@ client.o $(SCOBJS) $(LDLIBS)
+	$(LINK) -o $@ client.o $(SCOBJS) $(PROG_LDLIBS)
 
-server2: server2.o $(DEPGFARMLIB)
+server2: server2.o $(SCOBJS2) $(PROG_DEPLIBS)
 	rm -f $@
-	$(PURE) $(CC) $(CFLAGS) -o $@ server2.o $(LDLIBS)
+	$(LINK) -o $@ server2.o $(SCOBJS2) $(PROG_LDLIBS)
 
-client2: client2.o $(DEPGFARMLIB)
+client2: client2.o $(SCOBJS2) $(PROG_DEPLIBS)
 	rm -f $@
-	$(PURE) $(CC) $(CFLAGS) -o $@ client2.o $(LDLIBS)
+	$(LINK) -o $@ client2.o $(SCOBJS2) $(PROG_LDLIBS)
 
 clean:
-	$(RM) -f $(PROGRAMS) *.o *~ core *.core
+	$(RM) -f *.o
 
-distclean: clean
-
-# don't install anything
-install:
-
-gfregister:
-man:
-html:
+veryclean:
+	$(LTCLEAN) $(PROGRAMS) *~ core *.core

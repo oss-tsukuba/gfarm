@@ -1,7 +1,7 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
@@ -29,6 +29,7 @@ $(OBJS): \
 	$(GFARMLIB_SRCDIR)/param.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfs_proto.h \
 	$(GFARMLIB_SRCDIR)/gfs_client.h \
 	$(DEPGFARMINC)

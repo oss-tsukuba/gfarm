@@ -36,6 +36,9 @@ enum gfs_proto_command {
 
 #define GFS_PROTO_MAX_IOSIZE	65536
 
+/* other flags are defined in <gfarm/gfs.h> */
+#define GFARM_FILE_CREATE		0x00000200
+
 /*
  * sub protocols of GFS_PROTO_COMMAND
  */
@@ -52,6 +55,15 @@ enum gfs_proto_command_server {
 	GFS_PROTO_COMMAND_FD_OUTPUT,
 };
 
+/*
+ * sub protocol of GFS_PROTO_FSYNC
+ */
+
+enum gfs_proto_fsync_operation {
+	GFS_PROTO_FSYNC_WITHOUT_METADATA,
+	GFS_PROTO_FSYNC_WITH_METADATA
+};
+
 #define GFARM_DEFAULT_COMMAND_IOBUF_SIZE 0x4000
 
 #define GFSD_MAX_PASSING_FD 5
@@ -63,8 +75,10 @@ enum gfs_proto_command_server {
 #define FDESC_STDERR	2
 #define NFDESC		3
 
+extern char GFS_SERVICE_TAG[];
+
 #include <openssl/evp.h> /* for EVP_MD, EVP_MD_CTX */
 
 int gfs_digest_calculate_local(int, char *, size_t,
 	const EVP_MD *, EVP_MD_CTX *,
-	unsigned int *, unsigned char *, gfarm_off_t *);
+	size_t *, unsigned char *, gfarm_off_t *);

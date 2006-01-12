@@ -14,33 +14,76 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo auth_server_gsi.lo \
 	io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
-LDAP_SRCS = metadb_ldap.c
-LDAP_OBJS = metadb_ldap.lo
-POSTGRESQL_SRCS = metadb_pgsql.c
-POSTGRESQL_OBJS = metadb_pgsql.lo
+#LDAP_SRCS = metadb_ldap.c
+#LDAP_OBJS = metadb_ldap.lo
+#POSTGRESQL_SRCS = metadb_pgsql.c
+#POSTGRESQL_OBJS = metadb_pgsql.lo
 
 SRCS = \
-	auth_client.c auth_common.c auth_config.c auth_server.c \
-	agent_wrap.c agent_client.c agent_proto.c \
-	config.c error.c gfm_client.c gfs_client.c gfs_client_rep.c \
-	gfs_dir.c gfs_pio.c gfs_pio_global.c \
-	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
-	gfs_exec.c gfs_unlink.c gfs_lock.c \
-	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
-	import_help.c metadb_misc.c metadb_sw.c param.c schedule.c \
-	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
-	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
+	liberror.c \
+	hostspec.c \
+	param.c \
+	sockopt.c \
+	auth_config.c \
+	stringlist.c \
+	config.c \
+	config_server.c \
+	iobuffer.c \
+	gfp_xdr.c \
+	gfs_proto.c \
+	io_fd.c \
+	auth_common.c \
+	auth_client.c \
+	auth_server.c \
+	conn_hash.c
+
+#	gfm_client.c \
+#	gfs_client.c \
+
+#	gfs_pio.c gfs_pio_global.c \
+#	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
+#	gfs_exec.c gfs_unlink.c gfs_lock.c \
+#	glob.c host.c hostcache.c \
+#	import_help.c metadb_misc.c metadb_sw.c schedule.c \
+#	url.c
+
+#	agent_wrap.c agent_client.c agent_proto.c \
+#	gfs_client_rep.c \
+#	gfs_dir.c
+#	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
+
 OBJS = \
-	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
-	agent_wrap.lo agent_client.lo agent_proto.lo \
-	config.lo error.lo gfm_client.lo gfs_client.lo gfs_client_rep.lo \
-	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
-	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
-	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
-	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
-	import_help.lo metadb_misc.lo metadb_sw.lo param.lo schedule.lo \
-	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
-	$(ldap_objs) $(postgresql_objs) $(globus_objs)
+	liberror.lo \
+	hostspec.lo \
+	param.lo \
+	sockopt.lo \
+	auth_config.lo \
+	stringlist.lo \
+	config.lo \
+	config_server.lo \
+	iobuffer.lo \
+	gfp_xdr.lo \
+	gfs_proto.lo \
+	io_fd.lo \
+	auth_common.lo \
+	auth_client.lo \
+	auth_server.lo \
+	conn_hash.lo
+
+#	gfm_client.lo \
+#	gfs_client.lo \
+
+#	gfs_pio.lo gfs_pio_global.lo \
+#	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
+#	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
+#	glob.lo host.lo hostcache.lo \
+#	import_help.lo metadb_misc.lo metadb_sw.lo schedule.lo \
+#	url.lo
+
+#	agent_wrap.lo agent_client.lo agent_proto.lo \
+#	gfs_client_rep.lo \
+#	gfs_dir.lo
+#	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \

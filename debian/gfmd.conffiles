@@ -1,1 +1,2 @@
 /etc/init.d/gfmd
+/etc/default/gfarm-slapd

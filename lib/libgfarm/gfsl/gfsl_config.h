@@ -3,6 +3,13 @@
 
 #define USE_GLOBUS
 
+#if defined(USE_GLOBUS) && GLOBUS_BUG
+/* currently Globus doesn't actually support GSS_C_NT_USER_NAME */
+#define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 1
+#else
+#define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 0
+#endif /*  defined(USE_GLOBUS) && GLOBUS_BUG */
+
 #ifdef USE_GLOBUS
 /* draft-engert-ggf-gss-extensions @ IETF & draft-ggf-gss-extensions @ GGF */
 # define GFARM_GSS_EXPORT_CRED_ENABLED	1
@@ -36,14 +43,27 @@
 #define GFARM_GSS_DEFAULT_QOP	GSS_C_QOP_DEFAULT
 #endif
 
+#ifdef USE_GLOBUS
+/* enable to accept level N limited proxy certificate */
+#define GFARM_GSS_C_GLOBUS_INIT_FLAG GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
+#define GFARM_GSS_C_GLOBUS_ACCEPT_FLAG GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
+#else
+#define GFARM_GSS_C_GLOBUS_INIT_FLAG 0
+#define GFARM_GSS_C_GLOBUS_ACCEPT_FLAG 0
+#endif /* USE_GLOBUS */
+
 #define GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG \
 	(OM_uint32)(GSS_C_DELEG_FLAG | 		/* delegation */ \
 		    GSS_C_MUTUAL_FLAG |		/* mutual authentication */ \
 		    GSS_C_REPLAY_FLAG |		/* reply message detection */ \
 		    GSS_C_SEQUENCE_FLAG |	/* out of sequence detection */ \
 		    GFARM_GSS_C_CONF_FLAG |	/* confidentiality service */ \
-		    GSS_C_INTEG_FLAG		/* integrity check service */ \
+		    GSS_C_INTEG_FLAG |		/* integrity check service */ \
+		    GFARM_GSS_C_GLOBUS_INIT_FLAG /* globus optional flag */ \
 		    )
+
+#define GFARM_GSS_DEFAULT_SECURITY_ACCEPT_FLAG \
+	(OM_uint32)(GFARM_GSS_C_GLOBUS_ACCEPT_FLAG) /* globus optional flag */
 
 #define GFARM_GSS_DEFAULT_MAX_MESSAGE_REQUEST_SIZE 8 * 1024 * 1024
 

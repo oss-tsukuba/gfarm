@@ -9,6 +9,7 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+#include "gfs_proto.h"	/* GFARM_FILE_CREATE */
 #include "gfs_pio.h"
 
 struct gfs_file_global_context {
@@ -77,7 +78,7 @@ gfs_pio_view_global_adjust(GFS_File gf, const char *buffer, size_t *sizep)
 	size_t size = *sizep;
 	char *e = NULL;
 
-	if (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
+	while (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset >= gc->offsets[gc->fragment_index + 1]) {
 		e = gfs_pio_view_global_move_to(gf, gc->fragment_index + 1);
 		if (e != NULL)
@@ -188,8 +189,87 @@ gfs_pio_view_global_seek(GFS_File gf, file_offset_t offset, int whence,
 	e = gfs_pio_seek(gc->fragment_gf, offset, SEEK_SET, &offset);
 	if (e != NULL)
 		return (e);
-	*resultp = gc->offsets[gc->fragment_index] + offset;
+	if (resultp != NULL)
+		*resultp = gc->offsets[gc->fragment_index] + offset;
 	return (NULL);
+}
+
+static char *
+gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
+{
+	struct gfs_file_global_context *gc = gf->view_context;
+	char *e;
+	int i, fragment, nsections;
+	file_offset_t section_length;
+	struct gfarm_file_section_info *sections;
+	char section_string[GFARM_INT32STRLEN + 1];
+
+	if (length < 0)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	if (length >= gc->offsets[gf->pi.status.st_nsections - 1])
+		fragment = gf->pi.status.st_nsections - 1;
+	else
+		fragment = gfs_pio_view_global_bsearch(
+		    length, gc->offsets, gf->pi.status.st_nsections - 1);
+
+	section_length = length - gc->offsets[fragment];
+
+	e = gfs_pio_view_global_move_to(gf, fragment);
+	if (e != NULL)
+		return (e);
+	e = gfs_pio_truncate(gc->fragment_gf, section_length);
+	if (e != NULL)
+		return (e);
+
+	gf->pi.status.st_size = length;
+	gf->pi.status.st_nsections = fragment + 1;
+	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
+	if (e != NULL)
+		return (e);
+	
+	e = gfarm_file_section_info_get_sorted_all_serial_by_file(
+		gf->pi.pathname, &nsections, &sections);
+	if (e != NULL)
+		return (e);
+	sections[fragment].filesize = section_length;
+	sprintf(section_string, "%d", fragment);
+	e = gfarm_file_section_info_replace(gf->pi.pathname, section_string,
+					    &sections[fragment]);
+	for (i = fragment + 1; i < nsections; i++)
+		(void)gfs_unlink_section_internal(gf->pi.pathname,
+						  sections[i].section);
+	gfarm_file_section_info_free_all(nsections, sections);
+	
+	return (e);
+}
+
+static char *
+gfs_pio_view_global_fsync(GFS_File gf, int operation)
+{
+	struct gfs_file_global_context *gc = gf->view_context;
+	char *e = NULL;
+	int i;
+
+	for (i = 0; i < gf->pi.status.st_nsections; i++) {
+		e = gfs_pio_view_global_move_to(gf, i);
+		if (e != NULL)
+			return (e);
+
+		switch (operation) {
+		case GFS_PROTO_FSYNC_WITHOUT_METADATA:
+			e = gfs_pio_datasync(gc->fragment_gf);
+			break;
+		case GFS_PROTO_FSYNC_WITH_METADATA:
+			e = gfs_pio_sync(gc->fragment_gf);
+			break;
+		default:	
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			break;
+		}	
+		if (e != NULL)
+			return (e);
+	}
+	return (e);
 }
 
 static int
@@ -204,13 +284,14 @@ static char *
 gfs_pio_view_global_stat(GFS_File gf, struct gfs_stat *status)
 {
 	struct gfs_file_global_context *gc = gf->view_context;
-	char *e;
 
-	e = gfs_stat(gc->url, status);
-	if (e != NULL)
-		return (e);
+	return (gfs_stat(gc->url, status));
+}
 
-	return (NULL);
+static char *
+gfs_pio_view_global_chmod(GFS_File gf, gfarm_mode_t mode)
+{
+	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
 
 struct gfs_pio_ops gfs_pio_view_global_ops = {
@@ -218,8 +299,11 @@ struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_write,
 	gfs_pio_view_global_read,
 	gfs_pio_view_global_seek,
+	gfs_pio_view_global_ftruncate,
+	gfs_pio_view_global_fsync,
 	gfs_pio_view_global_fd,
-	gfs_pio_view_global_stat
+	gfs_pio_view_global_stat,
+	gfs_pio_view_global_chmod
 };
 
 char *
@@ -242,8 +326,36 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
 	}
 
-	if ((gf->open_flags & GFARM_FILE_CREATE) != 0)
+	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0)
 		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
+
+	if (gf->open_flags & GFARM_FILE_TRUNC) {
+		int nsections;
+		struct gfarm_file_section_info *sections;
+
+		/* XXX this may not be OK, if a parallel process does this */
+		/* remove all sections except section "0" */
+		e = gfarm_file_section_info_get_all_by_file(gf->pi.pathname,
+		    &nsections, &sections);
+		if (e != NULL)
+			return (e);
+		for (i = 0; i < nsections; i++) {
+			if (strcmp(sections[i].section, "0") == 0)
+				continue;
+			(void)gfs_unlink_section_internal(gf->pi.pathname,
+			    sections[i].section);
+		}
+		gfarm_file_section_info_free_all(nsections, sections);
+
+		gf->pi.status.st_nsections = 1;
+		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
+	}
+
+	/* XXX - GFARM_FILE_APPEND is not supported */
+	if (gf->open_flags & GFARM_FILE_APPEND) {
+		gf->error = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		return (gf->error);
+	}
 
 	gc = malloc(sizeof(struct gfs_file_global_context));
 	if (gc == NULL) {

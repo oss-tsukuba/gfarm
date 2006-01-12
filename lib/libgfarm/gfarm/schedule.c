@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "auth.h" /* XXX gfarm_random_initialize() */
+#include "config.h"
 #include "gfs_client.h"
 
 char GFARM_ERR_NO_REPLICA[] = "no replica";
@@ -79,7 +80,7 @@ alloc_hosts_state(int *n_all_hostsp, struct gfarm_host_info **all_hostsp,
 	*n_all_hostsp = n_all_hosts;
 	*all_hostsp = all_hosts;
 	*hosts_statep = hosts_state;
-	return (NULL);			
+	return (NULL);
 }
 
 /*
@@ -166,6 +167,9 @@ hosts_for_program(char *program,
 
 	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
 	if (e == NULL) {
+#ifdef __GNUC__ /* workaround gcc warning: 'arch_set' may be used uninitialized */
+	  arch_set = NULL;
+#endif
 		e = program_arch_set(program, &arch_set);
 		if (e == NULL) {
 			n_runnable_hosts = 0;
@@ -483,7 +487,7 @@ loadavg_compare(const void *a, const void *b)
 
 	if (l1 < l2)
 		return (-1);
-        else if (l1 > l2)
+	else if (l1 > l2)
 		return (1);
 	else
 		return (0);
@@ -491,19 +495,18 @@ loadavg_compare(const void *a, const void *b)
 
 /* check authentication success or not? */
 
+enum gfarm_schedule_search_mode {
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH
+};
+
 static enum gfarm_schedule_search_mode default_search_method =
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH;
 
-enum gfarm_schedule_search_mode
-gfarm_schedule_search_mode_get(void)
-{
-	return (default_search_method);
-}
-
 void
-gfarm_schedule_search_mode_set(enum gfarm_schedule_search_mode mode)
+gfarm_schedule_search_mode_use_loadavg(void)
 {
-	default_search_method = mode;
+	default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
 }
 
 /*
@@ -531,7 +534,13 @@ search_idle(int concurrency, int enough_number,
 	struct sockaddr addr;
 	struct gfs_client_get_load_state *gls;
 
-	if (nihosts == 0)
+	/*
+	 * If we don't check enough_number or desired_number here,
+	 * the behavior of search_idle() becomes undeterministic.
+	 * i.e. If first ihost, which meets ihost_filter, is available,
+	 * search_idle() returns NULL, otherwise GFARM_ERR_NO_HOST.
+	 */
+	if (enough_number == 0 || desired_number == 0 || nihosts == 0)
 		return (GFARM_ERR_NO_HOST);
 	s.q = gfarm_eventqueue_alloc();
 	if (s.q == NULL)
@@ -672,7 +681,7 @@ search_idle_shuffled(int concurrency, int enough_number,
 		do {
 			ihost = (*ihost_iterator->get_next)(ihost_iterator);
 		} while (!(*ihost_filter->suitable)(ihost_filter, ihost));
-		shuffled_ihosts[i++] = ihost;
+		shuffled_ihosts[i] = ihost;
 	}
 	shuffle_strings(nihosts, shuffled_ihosts);
 
@@ -735,11 +744,16 @@ search_idle_cyclic(struct gfarm_hash_table *hosts_state,
 	return (NULL);
 }
 
-/* 
+/*
  * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
  * load average, and return to 'ohosts'.
  * When enough number of hosts are not available, the available hosts
  * will be listed in the cyclic manner.
+ * NOTE: all of ihosts[] must be canonical hostnames.
+ *
+ * NOTE2: each entry of ohosts is not strdup'ed unlike other
+ * gfarm_schedule_* functions.  Do not call
+ * gfarm_strings_free_deeply() or free(*ohosts).
  */
 char *
 gfarm_schedule_search_idle_hosts(
@@ -755,6 +769,33 @@ gfarm_schedule_search_idle_hosts(
 	if (e != NULL)
 		return (e);
 	e = search_idle_cyclic(hosts_state, nihosts, &null_filter,
+	    init_string_array_iterator(&host_iterator, ihosts),
+	    nohosts, ohosts);
+	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
+	return (e);
+}
+
+/*
+ * Similar to 'gfarm_schedule_search_idle_hosts' except for the fact that
+ * the available hosts will be listed only once even if enough number of
+ * hosts are not available, 
+ */
+char *
+gfarm_schedule_search_idle_acyclic_hosts(
+	int nihosts, char **ihosts, int *nohosts, char **ohosts)
+{
+	char *e;
+	int n_all_hosts;
+	struct gfarm_host_info *all_hosts;
+	struct gfarm_hash_table *hosts_state;
+	struct string_array_iterator host_iterator;
+
+	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
+	if (e != NULL)
+		return (e);
+	e = search_idle(CONCURRENCY, nihosts * ENOUGH_RATE, 
+	    hosts_state, 
+	    nihosts, &null_filter,
 	    init_string_array_iterator(&host_iterator, ihosts),
 	    nohosts, ohosts);
 	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
@@ -812,6 +853,38 @@ gfarm_schedule_search_idle_by_domainname(const char *domainname,
 	    nohosts, ohosts);
 	if (e == NULL)
 		e = gfarm_fixedstrings_dup(nohosts, ohosts, ohosts);
+	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
+	return (e);
+}
+
+char *
+gfarm_schedule_search_idle_acyclic_by_domainname(const char *domainname,
+	int *niohosts, char **ohosts)
+{
+	char *e;
+	int i, nhosts, n_all_hosts;
+	struct gfarm_host_info *all_hosts;
+	struct gfarm_hash_table *hosts_state;
+	struct host_info_array_iterator host_iterator;
+	struct domainname_filter domain_filter;
+
+	e = alloc_hosts_state(&n_all_hosts, &all_hosts, &hosts_state);
+	if (e != NULL)
+		return (e);
+
+	nhosts = 0;
+	for (i = 0; i < n_all_hosts; i++) {
+		if (gfarm_host_is_in_domain(all_hosts[i].hostname, domainname))
+			++nhosts;
+	}
+
+	e = search_idle(CONCURRENCY, *niohosts * ENOUGH_RATE,
+	    hosts_state,
+	    nhosts, init_domainname_filter(&domain_filter, domainname),
+	    init_host_info_array_iterator(&host_iterator, all_hosts),
+	    niohosts, ohosts);
+	if (e == NULL)
+		e = gfarm_fixedstrings_dup(*niohosts, ohosts, ohosts);
 	free_hosts_state(n_all_hosts, all_hosts, hosts_state);
 	return (e);
 }

@@ -122,7 +122,8 @@ main(argc, argv)
 		exit(1);
 	}
 
-	e = gfs_pio_create(output, GFARM_FILE_WRONLY, 0666, &ogf);
+	e = gfs_pio_create(output, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	    &ogf);
 	if (e != NULL) {
 		fprintf(stderr, "%s: node %d, cannot open %s: %s\n",
 			program_name, node_index, output, e);

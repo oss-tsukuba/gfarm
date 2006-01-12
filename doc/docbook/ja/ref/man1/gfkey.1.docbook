@@ -24,7 +24,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>信頼された環境で gfsd をアクセスするのに必要なセッション・
+<para>信頼された環境で gfsd、gfmd をアクセスするのに必要なセッション・
 キー・ファイル 
 <option>$HOME/.gfarm_shared_key</option>
 を扱うコマンドです。</para>
@@ -51,6 +51,14 @@
 <para>強制的にセッション・キーを作成します。
 既に有効なセッション・キーが存在する場合でも、そのキーを捨てて新た
 にキーを作成します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-p</option> <parameter>period</parameter></term>
+<listitem>
+<para>セッション・キーの有効期限を指定します。単位は秒です。
+このオプションは -c オプションあるいは -f
+オプションと同時に指定する必要があります。</para>
 </listitem>
 </varlistentry>
 <varlistentry>

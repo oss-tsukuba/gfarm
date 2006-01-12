@@ -32,7 +32,7 @@ gfmd は Gfarm のメタDBサーバー・ホスト上で、
 あらかじめ立ち上げておく必要があります。</para>
 
 <para>gfmd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfmd を利用することができません．また，GSI認証も利用できません．</para>
+の gfmd を利用することができません．</para>
 
 <para>ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
 で指定して gfmd を立ち上げます．ユーザ権限による gfmd の起動には少なく
@@ -41,7 +41,7 @@ gfmd は Gfarm のメタDBサーバー・ホスト上で、
 します．</para>
 
 <para>デフォルト以外のポート番号で立ち上がっている gfmd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは /etc/gfarm.conf の 
+クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
 metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 す．</para>
 
@@ -103,7 +103,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>/etc/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
 <para>gfmd が参照する設定ファイルです。</para>
 </listitem>

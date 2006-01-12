@@ -1,5 +1,5 @@
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 javadir = $(prefix)/share/java
 
@@ -10,23 +10,15 @@ include $(top_srcdir)/makes/var.mk
 SCRIPTS= gfront
 JAR= gfront.jar
 
-all:
+include $(top_srcdir)/makes/script.mk
 
 install:
-	@for i in / $(SCRIPTS); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
-	done
-	@for i in / $(JAR); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(javadir)/$${i} ); \
+	@$(MKDIR_P) $(DESTDIR)$(javadir)
+	@for i in -- $(JAR); do \
+		case $$i in --) continue;; esac; \
+		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} \
+			$(DESTDIR)$(javadir)/$${i} ); \
 	done
 
-clean:
-veryclean: clean
-distclean: veryclean
+distclean:
 	-rm -f $(SCRIPTS)
-
-gfregister:
-man:
-html:

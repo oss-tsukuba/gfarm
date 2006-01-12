@@ -17,23 +17,26 @@ post-gfregister-hook:
 html-all:
 
 html-install:
-	@for i in / $(HTML); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} $(htmldir)/$${i} ); \
+	@$(MKDIR_P) $(DESTDIR)$(htmldir)
+	@for i in -- $(HTML); do \
+		case $$i in --) continue;; esac; \
+		( set -x; $(INSTALL_DOC) $(srcdir)/$${i} \
+			$(DESTDIR)$(htmldir)/$${i} ); \
 	done
-	@for i in / $(HTMLSRC); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i}.html $(htmldir)/$${i}.html ); \
+	@for i in -- $(HTMLSRC); do \
+		case $$i in --) continue;; esac; \
+		( set -x; $(INSTALL_DOC) $(srcdir)/$${i}.html \
+			$(DESTDIR)$(htmldir)/$${i}.html ); \
 	done
 
 html-clean:
-	-rm -f $(EXTRA_CLEAN_TARGETS)
+	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
 html-veryclean: clean
-	-rm -f $(EXTRA_VERYCLEAN_TARGETS)
+	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
 
 html-distclean: veryclean
-	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
+	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
 html-gfregister:
 html-man:
@@ -42,8 +45,8 @@ $(dstsubst): $(srcsubst)
 	$(DOCBOOK2HTML) $(srcsubst)
 
 html-html:
-	for i in / $(HTMLSRC); do \
-		case $$i in /) continue;; esac; \
+	for i in -- $(HTMLSRC); do \
+		case $$i in --) continue;; esac; \
 		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$${i}.html $${i}.html; \
 	done

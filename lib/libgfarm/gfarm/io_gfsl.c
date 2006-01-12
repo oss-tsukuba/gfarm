@@ -16,6 +16,8 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "gfutil.h"
+
 #include "gfarm_secure_session.h"
 
 #include "liberror.h"
@@ -30,6 +32,7 @@
 
 struct io_gfsl {
 	gfarmSecSession *session;
+	gss_cred_id_t cred_to_be_freed; /* cred which will be freed at close */
 	gfarmExportedCredential *exported_credential;
 
 	/* for read */
@@ -110,7 +113,19 @@ gfarm_iobuffer_write_secsession_op(struct gfarm_iobuffer *b,
 static void
 free_secsession(struct io_gfsl *io)
 {
+	OM_uint32 e_major, e_minor;
+
 	gfarmSecSessionTerminate(io->session);
+
+	if (io->cred_to_be_freed != GSS_C_NO_CREDENTIAL &&
+	    gfarmGssDeleteCredential(&io->cred_to_be_freed,
+	    &e_major, &e_minor) < 0 &&
+	    gflog_auth_get_verbose()) {
+		gflog_error("Can't free my credential because of:");
+		gfarmGssPrintMajorStatus(e_major);
+		gfarmGssPrintMinorStatus(e_minor);
+	}
+		
 	if (io->buffer != NULL)
 		free(io->buffer);
 	free(io);
@@ -184,13 +199,14 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 
 gfarm_error_t
 gfp_xdr_set_secsession(struct gfp_xdr *conn,
-	gfarmSecSession *secsession)
+	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed)
 {
 	struct io_gfsl *io = malloc(sizeof(struct io_gfsl));
 
 	if (io == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	io->session = secsession;
+	io->cred_to_be_freed = cred_to_be_freed;
 	io->exported_credential = NULL;
 	io->buffer = NULL;
 	io->p = io->residual = 0;

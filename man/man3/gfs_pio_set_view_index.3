@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_SET_VIEW_INDEX" "3" "25 April 2003" "Gfarm" ""
+.TH "GFS_PIO_SET_VIEW_INDEX" "3" "06 September 2005" "Gfarm" ""
+
 .SH NAME
 gfs_pio_set_view_index \- change file view to an individual fragment
 .SH SYNOPSIS
@@ -54,7 +55,7 @@ The function terminated successfully.
 Insufficient memory was available.
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-The file is not a fragmented file.
+The file is not a regular fragmented file.
 .TP
 \fBGFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH\fR
 The total number of file fragments is different from the existence

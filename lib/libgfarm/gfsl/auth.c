@@ -19,6 +19,10 @@
 #define AUTH_TABLE_SIZE       139
 static struct gfarm_hash_table *authTable = NULL;
 
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+static struct gfarm_hash_table *userToDNTable = NULL;
+#endif
+
 #if 0
 static void
 dumpAuthEntry(aePtr)
@@ -65,6 +69,7 @@ gfarmAuthInitialize(usermapFile)
 	if (usermapFile == NULL || usermapFile[0] == '\0') {
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
+		gflog_auth_error("gfarmAuthInitialize(): no memory");
 		ret = -1;
 		goto done;
 	    }
@@ -78,6 +83,8 @@ gfarmAuthInitialize(usermapFile)
 	    (void)free(confDir);
 	}
 	if ((mFd = fopen(usermapFile, "r")) == NULL) {
+	    gflog_auth_error("%s: cannot open: %s",
+		usermapFile, strerror(errno));
 	    ret = -1;
 	    goto done;
 	}
@@ -86,9 +93,21 @@ gfarmAuthInitialize(usermapFile)
 					   gfarm_hash_default,
 					   gfarm_hash_key_equal_default);
 	if (authTable == NULL) { /* no memory */
+	    gflog_auth_error("gfarmAuthInitialize(): no memory");
 	    ret = -1;
 	    goto done;
 	}
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	userToDNTable = gfarm_hash_table_alloc(AUTH_TABLE_SIZE,
+					      gfarm_hash_default,
+					      gfarm_hash_key_equal_default);
+	if (userToDNTable == NULL) { /* no memory */
+	    gflog_auth_error("gfarmAuthInitialize(): no memory");
+	    gfarm_hash_table_free(authTable);
+	    ret = -1;
+	    goto done;
+	}
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 	while (fgets(lineBuf, sizeof lineBuf, mFd) != NULL) {
 	    char *token[64];
 	    int nToken = gfarmGetToken(lineBuf, token, sizeof token);
@@ -115,9 +134,8 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (nToken == 0) {
 		continue;
 	    } else {
-		gflog_warning(distName,
-			      "WARNING: missing local username for DN."
-			      " Ignored.");
+		gflog_warning("%s: WARNING: missing local username for DN."
+			      " Ignored.", distName);
 		continue;
 	    }
 
@@ -137,21 +155,19 @@ gfarmAuthInitialize(usermapFile)
 	    if (strcmp(mode, "@user@") == 0) {
 		pPtr = getpwnam(localName);
 		if (pPtr == NULL) {
-		    gflog_warning(localName,
-				  "WARNING: Account doesn't exist."
-				  " Ignored.\n");
+		    gflog_auth_warning("%s: WARNING: Account doesn't exist."
+				       " Ignored.", localName);
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
-		    gflog_warning(localName,
-				  "WARNING: This user is a super user."
-				  " Ignored.\n");
+		    gflog_warning("%s: WARNING: This user is a super user."
+				  " Ignored.", localName);
 		    continue;
 		}
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
 		if (aePtr == NULL) {
+		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;
-		    fclose(mFd);
 		    goto initDone;
 		}
 		(void)memset(aePtr, 0, sizeof(gfarmAuthEntry));
@@ -160,16 +176,31 @@ gfarmAuthInitialize(usermapFile)
 		aePtr->orphaned = 0;
 		aePtr->authType = GFARM_AUTH_USER;
 		aePtr->distName = strdup(distName);
-		aePtr->authData.userAuth.localName = strdup(token[1]);
+		aePtr->authData.userAuth.localName = strdup(localName);
 		aePtr->authData.userAuth.uid = pPtr->pw_uid;
 		aePtr->authData.userAuth.gid = pPtr->pw_gid;
 		aePtr->authData.userAuth.homeDir = strdup(pPtr->pw_dir);
 		aePtr->authData.userAuth.loginShell = strdup(pPtr->pw_shell);
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+		ePtr = gfarm_hash_enter(userToDNTable, localName,
+					strlen(localName) + 1,
+					sizeof(aePtr), &isNew);
+		if (ePtr == NULL) { /* no memory */
+		    gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+				  localName);
+		} else if (!isNew) {
+		    gflog_auth_warning(
+			"%s: WARNING: multiple X.509 Distinguish name "
+			"for a UNIX user account. Ignored.", localName);
+		} else {
+		    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;
+		}
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 	    } else if (strcmp(mode, "@host@") == 0) {
 		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
 		if (aePtr == NULL) {
+		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;
-		    fclose(mFd);
 		    goto initDone;
 		}
 		(void)memset(aePtr, 0, sizeof(gfarmAuthEntry));
@@ -180,9 +211,8 @@ gfarmAuthInitialize(usermapFile)
 		aePtr->distName = strdup(distName);
 		aePtr->authData.hostAuth.FQDN = strdup(localName);
 	    } else {
-		gflog_warning(localName,
-			      "WARNING: Unknown keyword at second field."
-			      " Ignored.");
+		gflog_warning("%s: WARNING: Unknown keyword at second field."
+			      " Ignored.", localName);
 		continue;
 	    }
 
@@ -190,12 +220,26 @@ gfarmAuthInitialize(usermapFile)
 				    strlen(aePtr->distName) + 1,
 				    sizeof(aePtr), &isNew);
 	    if (ePtr == NULL) { /* no memory */
-		gflog_warning(distName,
-			      "WARNING: no memory for DN. Ignored.");
+		gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+			      distName);
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+		if (aePtr->authType == GFARM_AUTH_USER)
+		    gfarm_hash_purge(userToDNTable,
+				     localName, strlen(localName) + 1);
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+		aePtr->orphaned = 1;
+		gfarmAuthDestroyUserEntry(aePtr);
 		goto initDone;
 	    }
 	    if (!isNew) {
-		gflog_warning(distName, "WARNING: duplicate DN. Ignored.");
+		gflog_warning("%s: WARNING: duplicate DN. Ignored.", distName);
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+		if (aePtr->authType == GFARM_AUTH_USER)
+		    gfarm_hash_purge(userToDNTable,
+				     localName, strlen(localName) + 1);
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+		aePtr->orphaned = 1;
+		gfarmAuthDestroyUserEntry(aePtr);
 		continue;
 	    }
 	    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;
@@ -203,9 +247,9 @@ gfarmAuthInitialize(usermapFile)
 	    dumpAuthEntry(aePtr);
 #endif
 	}
+	initDone:
 	fclose(mFd);
 
-	initDone:
 	if (ret == -1) {
 	    /*
 	     * Destroy mapping table.
@@ -221,6 +265,10 @@ gfarmAuthInitialize(usermapFile)
 	    }
 	    gfarm_hash_table_free(authTable);
 	    authTable = NULL;
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	    gfarm_hash_table_free(userToDNTable);
+	    userToDNTable = NULL;
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 	}
     }
 
@@ -252,6 +300,10 @@ gfarmAuthFinalize()
 	}
 	gfarm_hash_table_free(authTable);
 	authTable = NULL;
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	gfarm_hash_table_free(userToDNTable);
+	userToDNTable = NULL;
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     }
 }
 
@@ -273,6 +325,27 @@ gfarmAuthGetUserEntry(distUserName)
     }
     return ret;
 }
+
+
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+gfarmAuthEntry *
+gfarmAuthGetLocalUserEntry(localUserName)
+     char *localUserName;
+{
+    gfarmAuthEntry *ret = NULL;
+    if (userToDNTable != NULL) {
+	struct gfarm_hash_entry *ePtr = gfarm_hash_lookup(userToDNTable,
+		localUserName, strlen(localUserName) + 1);
+	if (ePtr != NULL) {
+	    ret = *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr);
+#if 0
+	    dumpAuthEntry(ret);
+#endif
+	}
+    }
+    return ret;
+}
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 
 
 int
@@ -377,5 +450,9 @@ gfarmAuthMakeThisAlone(laePtr)
 	}
 	gfarm_hash_table_free(authTable);
 	authTable = NULL;
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+	gfarm_hash_table_free(userToDNTable);
+	userToDNTable = NULL;
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     }
 }

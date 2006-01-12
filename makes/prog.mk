@@ -16,19 +16,20 @@ post-man-hook:
 post-html-hook:
 
 $(PROGRAM): $(OBJS) $(DEPLIBS)
-	$(CC) -o $(PROGRAM) $(CFLAGS) $(OBJS) $(LDLIBS)
+	$(LTLINK) $(OBJS) $(LDLIBS)
 
 prog-install:
-	$(INSTALL_PROGRAM) $(PROGRAM) $(bindir)/$(PROGRAM)
+	@$(MKDIR_P) $(DESTDIR)$(bindir)
+	$(LTINSTALL_PROGRAM) $(PROGRAM) $(DESTDIR)$(bindir)/$(PROGRAM)
 
 prog-clean:
-	-rm -f $(OBJS) $(EXTRA_CLEAN_TARGETS)
+	-$(LTCLEAN) $(OBJS) $(EXTRA_CLEAN_TARGETS)
 
 prog-veryclean: clean
-	-rm -f $(PROGRAM) $(EXTRA_VERYCLEAN_TARGETS)
+	-$(LTCLEAN) $(PROGRAM) $(EXTRA_VERYCLEAN_TARGETS)
 
 prog-distclean: veryclean
-	if [ -f $(srcdir)/Makefile.in ]; then rm -f Makefile; fi
+	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
 
 prog-gfregister:
 prog-man:

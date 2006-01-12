@@ -88,19 +88,34 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->The mode of the file given by 
-<TT
+><TT
+CLASS="FUNCTION"
+>gfs_chmod()</TT
+> changes the mode of the file
+given by <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
->
-is changed.</P
+>.  Permission bit masks of
+<TT
+CLASS="PARAMETER"
+><I
+>mode</I
+></TT
+> are similar to ones of mode parameter to
+<TT
+CLASS="FUNCTION"
+>chmod(2)</TT
+>, though only the least 9 bit are
+effective.</P
 ><P
->A file with any execution bit should not be changed to that with no
-execution bit.  It is necessary to keep at least one execution bit.
-Oppositely, a file with no execution bit should not be changed to that
-with any execution bit.</P
+>An executable file cannot be changed to a non-executable file
+and vice versa, unless the number of fragment of the file is only one.
+In detail, a file has multiple fragments with any execution bit should not
+be changed to that with no execution bit.  It is necessary to have
+at least one execution bit.  Similarly, a file has multiple fragments
+with no execution bit should not be changed to that with any execution bit.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -148,13 +163,13 @@ CLASS="CONSTANT"
 ></DT
 ><DD
 ><P
-><TT
+>The parent directory of <TT
 CLASS="PARAMETER"
 ><I
 >gfarm_url</I
 ></TT
 >
-points outside your accessible address space.</P
+did not allow write permission.</P
 ></DD
 ><DT
 ><TT
@@ -164,7 +179,8 @@ CLASS="CONSTANT"
 ><DD
 ><P
 >The effective UID does not match the owner of the file, and is not
-zero.</P
+zero.  Or an attempt was made to change an executable file with more than
+one fragment to a non-executable file, or vice versa.</P
 ></DD
 ><DT
 ><TT

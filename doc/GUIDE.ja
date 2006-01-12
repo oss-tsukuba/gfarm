@@ -2,7 +2,7 @@ Gfarm システム ユーザーガイド
 
 独立行政法人産業技術総合研究所
 グリッド研究センター
-2003 年 4 月 25 日
+2005 年 2 月 16 日
 
 
 1. はじめに
@@ -28,8 +28,7 @@ Gfarm の日本語マニュアルを読むには，環境変数 LANG を ja_JP.ujis に設定
 本書では，以下のような環境を例に挙げて説明します．
 
     メタデータサーバ       : metaserver.example.com
-    Gfarm インストール先   : /usr/grid
-    Gfarm 設定ファイル     : /etc/gfarm.conf
+    Gfarm インストール先   : /usr
 
 コマンド実行例では，Gfarm を利用しようとするホスト(以下，クライアント
 ホストと表記)で実行することを前提としています．ファイルシステムノード
@@ -39,10 +38,10 @@ Gfarm の日本語マニュアルを読むには，環境変数 LANG を ja_JP.ujis に設定
 1.3 Gfarm のユーザ設定の確認
 
 クライアントホストにおいて，ユーザが正しく Gfarm を利用できるよう設定
-されていることを確認します．Gfarm の設定ファイルは /etc/gfarm.conf も
+されていることを確認します．Gfarm の設定ファイルは %%SYSCONFDIR%%/gfarm.conf も
 しくは ~/.gfarmrc です．これらのファイルが存在するかを確認します．
 
- % ls /etc/gfarm.conf
+ % ls %%SYSCONFDIR%%/gfarm.conf
  % ls ~/.gfarmrc
 
 これらのファイルが両方存在する場合は，~/.gfarmrc が優先されます．
@@ -63,7 +62,7 @@ Gfarm を利用するためには，まず最初に認証を行なう必要があります．以下
      を行わない方式
 
 利用している Gfarm 環境がどの認証方式を採用しているか分からない場合は，
-Gfarm 設定ファイル /etc/gfarm.conf を参照してください．
+Gfarm 設定ファイル %%SYSCONFDIR%%/gfarm.conf を参照してください．
 gfarm.conf の書式については，man gfarm.conf を参考にしてください．
 
 2.1 共有秘密鍵方式の場合
@@ -151,27 +150,17 @@ Gfarm が正しく設定されているか，Gfarm ファイルシステムが正しく動作してい
 登録されていることを確認します．gfls コマンドを使って，Gfarm ファイル
 システムの内容を一覧表示することができます．
 
- % gfls -l gfarm:/bin
- -rwxrwxr-x tatebe   *            616482 Apr  3 19:30 gfcombine
- -rwxrwxr-x tatebe   *            727648 Apr  3 19:30 gfcombine_hook
- -rwxrwxr-x tatebe   *            613995 Apr  3 19:30 gfcp
- -rwxrwxr-x tatebe   *            725573 Apr  3 19:30 gfcp_hook
- -rwxrwxr-x tatebe   *            618384 Apr  3 19:30 gfgrep
- -rwxrwxr-x tatebe   *            656996 Apr  3 19:30 gfreg
- -rwxrwxr-x tatebe   *            658108 Apr  3 19:31 gfsplck
- -rwxrwxr-x tatebe   *            809797 Apr  3 19:31 gfwc
- -rwxrwxr-x tatebe   *            663226 Apr  3 19:31 thput-gfpio
+ % gfls -la
+ drwxr-xr-x tatebe   *                 0 Feb 10 03:07 .
+ drwxrwxrwx root     gfarm             0 Jan  1  1970 ..
 
-次章のサンプル実行には，gfgrep と gfwc コマンドが登録されていることが
-必要です．この 2 つのコマンドが上記 gfls の出力に含まれない場合は，管
-理者に相談してください．gfls の詳細については man gfls を参照してくだ
-さい．
+gfls の詳細については man gfls を参照してください．
 
 4.2 ファイルシステムノードの確認(gfhost)
 
 Gfarm ファイルシステムを構成しているファイルシステムノードが正しく起動
-しているかどうかを確認します．以下のように gfhost コマンドを使って，ファ
-イルシステムノードの状況を調べます．
+しているかどうか，認証に成功するかどうかを確認します．以下のように
+gfhost コマンドを使って，ファイルシステムノードの状況を調べます．
 
  % gfhost -l
  0.00/0.00/0.00 s i386-redhat8.0-linux 1 gfm01.example.com
@@ -216,9 +205,9 @@ gfhost コマンドをオプションなしで実行すると，利用可能なファイルシステム
 
 4.3 メタデータサーバの確認
 
-Gfarm ファイルシステムのメタデータサーバが正しく起動されているかどうかを
-確認します．オプションを指定せずに gfps コマンドを実行し，何も表示されず
-に即座に終了すれば，メタデータサーバが正しく動作しています．
+Gfarm ファイルシステムのメタデータサーバ(gfmd)が正しく起動されているか
+どうかを確認します．オプションを指定せずに gfps コマンドを実行し，何も
+表示されずに即座に終了すれば，メタデータサーバが正しく動作しています．
 
  % gfps
 
@@ -430,7 +419,53 @@ Gfarm ファイルは，1 つのファイル断片から構成される Gfarm ファイルとして
 ル以外の分割方法や，アプリケーション固有の分割を行いたい場合は，これら
 のツールのソースを参照してください．
 
-5.3 Gfarm ファイルの複製を作る
+5.3 アプリケーションプログラムを登録する
+
+アプリケーションプログラムを Gfarm ファイルシステムに登録して実行するこ
+とができます．ここでは例として，/bin/echo コマンドを登録し，実行します．
+
+ (1) /bin/echo コマンドの登録
+     gfreg で /bin/echo を Gfarm ファイルシステムに登録します．
+
+     % gfreg /bin/echo gfarm:~/echo
+
+     実行するホストがファイルシステムノードではない場合は，登録したいファ
+     イルシステムノードあるいは実行プログラムのアーキテクチャを指定する
+     必要があります．ファイルシステムノードは -h オプションで指定し，アー
+     キテクチャは -a オプションで指定します．
+
+     % gfreg -h gfm01.example.com /bin/echo gfarm:~/echo
+     % gfreg -a i386-redhat8.0-linux /bin/echo gfarm:~/echo
+
+     ファイルシステムノードが複数のアーキテクチャで構成されている場合も，
+     それぞれのアーキテクチャ毎にプログラムが登録されていれば，異なるアー
+     キテクチャのノードで同じプログラムを実行することができます．
+
+     いくつものコマンドを登録するには，以下のような書式が使えます．
+
+     % gfreg executable1 executable2 executable3 gfarm:~
+
+     gfls で正しく登録されていることが確認できます．
+
+     % gfls -l gfarm:~/echo
+     -rwxrwxr-x tatebe   *             11832 Apr  3 19:31 echo
+
+     gfreg コマンドの詳細は man gfreg を参照してください．
+
+ (2) コマンドの実行
+     Gfarm ファイルシステムに登録したアプリケーションは，登録されてい
+     るアーキテクチャのファイルシステムノードであれば，どこでも実行す
+     ることができます．gfrun は，該当するファイルシステムノードで遠隔
+     にアプリケーションを実行するコマンドです．以下は gfarm:~/echo が
+     実行可能なファイルシステムノードのうち，最も CPU 負荷が軽いノード
+     で実行する例です．
+
+     % gfrun gfarm:~/echo Hello from \`hostname\`
+     Hello from gfm02.example.com
+
+     gfrun コマンドの詳細は man gfrun を参照してください．
+
+5.4 Gfarm ファイルの複製を作る
 
 Gfarm ファイルは，Gfarm ファイルシステム中に 1 つ以上の複製を持つこと
 ができます．単に gfls しただけでは複製の存在は分かりませんが，gfwhere
@@ -457,10 +492,14 @@ Gfarm ファイルは，Gfarm ファイルシステム中に 1 つ以上の複製を持つこと
 
  (2) Gfarm ファイルを複製する
 
-     gfrep コマンドで，Gfarm ファイルの複製を作成します．複製にあたって，
-     どのファイルシステムノードに複製を作成するのかをあらかじめ決めてお
-     く必要があります．この例では，gfm02.example.com に複製を作成する
-     ことにします．
+     gfrep コマンドで，Gfarm ファイルの複製を作成します．作成したいファ
+     イル複製の数を -N オプションで指定します．
+
+      % gfrep -N 2 gfarm:sample.file
+
+      この場合，ファイルの複製が作成されるファイルシステムノードは自動
+      的に選択されます．あるいは，複製作成先を -d オプションで明示的に
+      指定することもできます．
 
       % gfrep -d gfm02.example.com gfarm:sample.file
 
@@ -493,7 +532,7 @@ gfrep コマンドは，ファイル全体を複製するだけでなく，ファイル中の特定の
 
 gfrep コマンドの詳細については，man gfrep を参照してください．
 
-5.4 Gfarm ファイルを削除する
+5.5 Gfarm ファイルを削除する
 
 Gfarm ファイルシステム中のファイルを削除するには，gfrm コマンドを使いま
 す．gfarm:sample.file を削除する場合は，次のコマンドを実行します．
@@ -695,22 +734,20 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
 
 以下のような手順にしたがって gfgrep を実行してください．
 
- (1) gfgrep プログラムが登録されていることを確認
+ (1) gfgrep プログラムを登録
 
-     gfgrep プログラムが，gfarm:/bin/gfgrep という名称で登録されている
-     ことを確認します．
+     gfgrep プログラムを Gfarm ファイルシステムに登録します．
 
-      % gfls -l gfarm:/bin/gfgrep
-      -rwxrwxr-x tatebe   *            618384 Apr  3 19:30 gfgrep
+      % gfreg /usr/bin/gfgrep gfarm:gfgrep
 
-     もし登録されていない場合は，管理者に相談してください．
+     詳しくは，5.3 節を参照してください．
 
  (2) gfgrep の実行
 
      並列プログラム gfgrep は，以下のように gfrun コマンドを使って実行
      します．
 
-      % gfrun -G gfarm:testfile.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out 正規表現 gfarm:testfile.txt
+      % gfrun -G gfarm:testfile.txt gfarm:gfgrep -o gfarm:gfgrep.out 正規表現 gfarm:testfile.txt
 
      ここで実行されているコマンドは，以下のような意味になっています．
 
@@ -720,10 +757,10 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
          gfarm:testfile.txt のファイル断片を利用して，並列コマンドを起動
          すべきホストを決定しています．
 
-       - "gfarm:/bin/gfgrep"
+       - "gfarm:gfgrep"
          gfrun コマンドに対する引数で，起動すべき並列コマンドが収められ
          ている Gfarm ファイルを指定します．この例では，Gfarm ファイル
-         システム中の /bin/gfgrep を起動するよう指定しています．
+         システム中の gfgrep を起動するよう指定しています．
 
        - "-o gfarm:gfgrep.out"
          gfgrep 並列コマンドに対する引数で，grep した結果を格納する Gfarm
@@ -757,46 +794,3 @@ Gfarm を使ったサンプルプログラムの実行例を説明します．この章のサンプル
       % diff grep.out gfgrep.out
 
      結果が一致し，正しく grep が実行されたことがわかります．
-
-6.4 アプリケーションプログラムを登録(gfreg)，実行する(gfrun)
-
-自分で作成したアプリケーションプログラムを Gfarm ファイルシステムで実行
-するには，まずプログラムを Gfarm ファイルシステムに登録しておき，登録し
-たプログラムを gfrun コマンドで実行します．
-ここでは例として，/bin/echo コマンドを登録し，実行します．echo コマンド
-は Gfarm アプリケーションではありませんが，Gfarm 上で実行できます．
-
- (1) /bin/echo コマンドの登録
-     gfreg で /bin/echo を Gfarm ファイルシステムに登録します．
-
-     % gfreg /bin/echo gfarm:~/echo
-
-     実行するホストがファイルシステムノードではない場合は，登録したいファ
-     イルシステムノードあるいは実行プログラムのアーキテクチャを指定する
-     必要があります．ファイルシステムノードは -h オプションで指定し，アー
-     キテクチャは -a オプションで指定します．
-
-     % gfreg -h gfm01.example.com /bin/echo gfarm:~/echo
-     % gfreg -a i386-redhat8.0-linux /bin/echo gfarm:~/echo
-
-     ファイルシステムノードが複数のアーキテクチャで構成されている場合も，
-     それぞれのアーキテクチャ毎にプログラムが登録されていれば，異なるアー
-     キテクチャのノードで同じプログラムを実行することができます．
-
-     いくつものコマンドを登録するには，以下のような書式が使えます．
-
-     % gfreg executable1 executable2 executable3 gfarm:~
-
-     gfls で正しく登録されていることが確認できます．
-
-     % gfls -l gfarm:~/echo
-     -rwxrwxr-x tatebe   *             11832 Apr  3 19:31 echo
-
-     gfreg コマンドの詳細は man gfreg を参照してください．
-
- (2) コマンドの実行
-     gfrun コマンドで Gfarm ファイルシステムに登録したコマンドを実行し
-     ます．
-
-     % gfrun gfarm:~/echo Hello from \`hostname\`
-     Hello from gfm02.example.com

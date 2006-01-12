@@ -44,7 +44,6 @@ gfarm_error_t gfarm_set_global_user_for_this_local_account(void);
 
 /* the following functions are for client, */
 /* server/daemon process shouldn't call follows: */
-extern int gfarm_initialized;
 gfarm_error_t gfarm_initialize(int *, char ***);
 gfarm_error_t gfarm_terminate(void);
 gfarm_error_t gfarm_config_read(void);
@@ -54,20 +53,6 @@ gfarm_error_t gfarm_server_initialize(void);
 gfarm_error_t gfarm_server_terminate(void);
 gfarm_error_t gfarm_server_config_read(void);
 void gfarm_config_set_filename(char *);
-
-extern int gfarm_authentication_verbose;
-
-extern char *gfarm_spool_root;
-extern int gfarm_spool_server_port;
-
-/* GFM dependent */
-extern char *gfarm_metadb_server_name;
-extern int gfarm_metadb_server_port;
-
-/* LDAP dependent */
-extern char *gfarm_ldap_server_name;
-extern char *gfarm_ldap_server_port;
-extern char *gfarm_ldap_base_dn;
 
 /*
  * GFarm URL and pathname handling
@@ -100,17 +85,13 @@ extern char GFARM_URL_PREFIX[];
  * Pool Host Scheduling
  * XXX - will be separated to <gfarm_schedule.h>?
  */
-enum gfarm_schedule_search_mode {
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH
-};
-enum gfarm_schedule_search_mode gfarm_schedule_search_mode_get(void);
-void gfarm_schedule_search_mode_set(enum gfarm_schedule_search_mode);
-
+void gfarm_schedule_search_mode_use_loadavg(void);
 gfarm_error_t gfarm_schedule_search_idle_hosts(int, char **, int, char **);
+gfarm_error_t gfarm_schedule_search_idle_acyclic_hosts(int, char **, int *, char **);
 gfarm_error_t gfarm_schedule_search_idle_by_all(int, char **);
-gfarm_error_t gfarm_schedule_search_idle_by_domainname(const char *,
-						       int, char **);
+gfarm_error_t gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
+gfarm_error_t gfarm_schedule_search_idle_acyclic_by_domainname(const char *, int *,
+	char **);
 gfarm_error_t gfarm_schedule_search_idle_by_program(char *, int, char **);
 gfarm_error_t gfarm_url_hosts_schedule(const char *, char *, int *, char ***);
 gfarm_error_t gfarm_url_hosts_schedule_by_program(char *, char *, char *,

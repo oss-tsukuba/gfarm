@@ -223,7 +223,7 @@ host_info_read_next(struct gfarm_host_info *hi)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if (sscanf(buffer, "%s %d %d %d %s",
 	    hostname, &port, &ncpu, &flags, architecture) != 5) {
-		gflog_warning("host: invalid field number", buffer);
+		gflog_warning("host: invalid field number: %s", buffer);
 	} else {
 	}
 	
@@ -269,7 +269,7 @@ host_load_all(void)
 	while (host_info_read_next(&hi) == GFARM_ERR_NO_ERROR) {
 		e = host_enter(&hi, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning("host_load", gfarm_error_string(e));
+			gflog_warning("host_load: %s", gfarm_error_string(e));
 	}
 	host_info_close_for_seq_read();
 	return (GFARM_ERR_NO_ERROR);
@@ -545,7 +545,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("host_info_modify", "not implemented");
+	gflog_error("host_info_modify: not implemented");
 
 	e = gfm_server_put_reply(peer, "host_info_modify",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -559,7 +559,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("host_info_remove", "not implemented");
+	gflog_error("host_info_remove: not implemented");
 
 	e = gfm_server_put_reply(peer, "host_info_remove",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");

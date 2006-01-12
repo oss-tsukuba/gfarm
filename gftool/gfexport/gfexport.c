@@ -8,22 +8,20 @@
 
 char *program_name = "gfexport";
 
-void
+char *
 gfprint(GFS_File gf, FILE *ofp)
 {
 	int c;
 
 	while ((c = gfs_pio_getc(gf)) != EOF)
 		putc(c, ofp);
-	if (gfs_pio_error(gf) != NULL)
-		fprintf(stderr, "%s: error: %s\n",
-			program_name, gfs_pio_error(gf));
+	return (gfs_pio_error(gf));
 }
 
 char *
 gfexport_section(char *gfarm_url, char *section, FILE *ofp)
 {
-	char *e;
+	char *e, *e2;
 	GFS_File gf;
 
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
@@ -34,15 +32,15 @@ gfexport_section(char *gfarm_url, char *section, FILE *ofp)
 		gfs_pio_close(gf);
 		return (e);
 	}
-	gfprint(gf, ofp);
-	gfs_pio_close(gf);
-	return (NULL);
+	e = gfprint(gf, ofp);
+	e2 = gfs_pio_close(gf);
+	return (e != NULL ? e : e2);
 }
 
 char *
 gfexport(char *gfarm_url, FILE *ofp, int nhosts, char **hostlist)
 {
-	char *e;
+	char *e, *e2;
 	GFS_File gf;
 	int i, nfrags;
 
@@ -69,17 +67,19 @@ gfexport(char *gfarm_url, FILE *ofp, int nhosts, char **hostlist)
 		    GFARM_FILE_SEQUENTIAL);
 		if (e != NULL)
 			break;
-		gfprint(gf, ofp);
+		e = gfprint(gf, ofp);
+		if (e != NULL)
+			break;
 	}
-	gfs_pio_close(gf);
-	return (e);
+	e2 = gfs_pio_close(gf);
+	return (e != NULL ? e : e2);
 }
 
 /* just a test routine for global view (and default view) */
 char *
 gfexport_test(char *gfarm_url, FILE *ofp, int explicit)
 {
-	char *e;
+	char *e, *e2;
 	GFS_File gf;
 
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
@@ -96,9 +96,9 @@ gfexport_test(char *gfarm_url, FILE *ofp, int explicit)
 			return (e);
 		}
 	}
-	gfprint(gf, ofp);
-	gfs_pio_close(gf);
-	return (NULL);
+	e = gfprint(gf, ofp);
+	e2 = gfs_pio_close(gf);
+	return (e != NULL ? e : e2);
 }
 
 void

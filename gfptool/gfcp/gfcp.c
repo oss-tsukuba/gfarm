@@ -130,7 +130,8 @@ main(int argc, char *argv[])
 
 	/** **/
 
-	e = gfs_pio_create(output, GFARM_FILE_WRONLY, mode, &ogf);
+	e = gfs_pio_create(output, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, mode,
+	    &ogf);
 	if (e != NULL) {
 		fprintf(stderr, "%s: cannot open %s: %s\n",
 			program_name, output, e);

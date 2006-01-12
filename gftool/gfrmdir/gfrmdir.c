@@ -7,10 +7,8 @@
 #include <string.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h>
-#include <gfarm/gfarm_metadb.h>
-#include <gfarm/gfarm_error.h>
+#include <sys/socket.h>
+#include <gfarm/gfarm.h>
 #include "gfs_client.h"
 
 char *program_name = "gfrmdir";
@@ -47,7 +45,7 @@ int
 main(int argc, char **argv)
 {
 	char *e, *canonic_path;
-	int i, c, remove_directory_in_spool = 0;
+	int i, c, remove_directory_in_spool = 0, status = 0;
 	extern int optind;
 
 	if (argc <= 1)
@@ -102,18 +100,14 @@ main(int argc, char **argv)
 		}
 
 		a.path = canonic_path;
-		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name,
+		e = gfs_client_apply_all_hosts(gfrmdir, &a, program_name, 1,
 			&nhosts_succeed);
-#if 0 /* XXX - gfrmdir may fail.  In the current release, Only problem
-       * is that a new directory cannot be created in the other
-       * owner/permission.  */
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
+			status = 1;
 		}
-#endif
 		free(canonic_path);
 	}
 	e = gfarm_terminate();
-	return (0);
+	return (status);
 }

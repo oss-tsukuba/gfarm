@@ -3,7 +3,7 @@
 
 <refentry id='gfps.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>11 Oct 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfps</refentrytitle>
@@ -19,7 +19,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfps</command>
-    <arg choice='opt'>-al </arg>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>jobID</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -27,10 +27,10 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfps</command> prints information about processes specified by the
-arguments.  If the argments is missing, all processes that have the
-same effective user ID.</para>
-
+<para><command>gfps</command> prints information about processes
+specified by the arguments.  If the argments are missing, it prints
+information about all processes that have the same effective user
+ID.</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -47,6 +47,14 @@ same effective user ID.</para>
 <term><option>-l</option></term>
 <listitem>
 <para>displays with a long format.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>displays error message verbosely.
+</para>
 </listitem>
 </varlistentry>
 

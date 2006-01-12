@@ -13,7 +13,11 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+
 #include "host.h"
+#include "config.h"
 #include "gfj_client.h"
 #include "schedule.h"
 
@@ -58,12 +62,12 @@ usage()
 {
 	fprintf(stderr,
 #ifdef HAVE_GSI
-		"Usage: %s [-gnuprvS] [-l <login>]\n"
+		"Usage: %s [-bghnuprvS] [-l <login>]\n"
 #else		
-		"Usage: %s [-gnuprS] [-l <login>]\n"
+		"Usage: %s [-bghnuprS] [-l <login>]\n"
 #endif
-		"\t[-G <Gfarm file> [ -I <section> ]|-H <hostfile>|"
-		"-N <number of hosts>]\n"
+		"\t[-G <Gfarm file>|-H <hostfile>|-N <number of hosts>] "
+		"[-I <section>]\n"
 		"\t[-o <Gfarm file>] [-e <Gfarm file>]"
 		" command ...\n",
 		program_name);
@@ -83,6 +87,7 @@ struct gfrun_options {
 	int profile;
 	int replicate;
 	int use_gfexec;
+	int hook_global;
 };
 
 static void
@@ -100,22 +105,22 @@ default_gfrun_options(struct gfrun_options *options)
 	options->profile = 0;
 	options->replicate = 0;
 	options->use_gfexec = 1;
+	options->hook_global = 0;
 }
 
 char *
 gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
-	struct gfrun_options *options,
+	char *canonical_name_option, struct gfrun_options *options,
 	int nhosts, char **hosts, char *cmd, char **argv)
 {
-	int i, save_errno, pid, status, command_alist_index;
+	int i, save_errno, status;
+	int base_alist_index, host_alist_index, command_alist_index;
 	gfarm_stringlist arg_list;
 	char total_nodes[GFARM_INT32STRLEN], node_index[GFARM_INT32STRLEN];
 	char **delivered_paths = NULL, *e;
 	enum command_type cmd_type_guess = USUAL_COMMAND, cmd_type;
 	char *stdout_file = options->stdout_file;
 	char *stderr_file = options->stderr_file;
-	int profile_mode = options->profile;
-	int replication_mode = options->replicate;
 	static char gfexec_command[] = "gfexec";
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
@@ -145,7 +150,11 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 	sprintf(total_nodes, "%d", nhosts);
 
 	gfarm_stringlist_init(&arg_list);
-	gfarm_stringlist_add(&arg_list, rsh_command);
+	/* make room for "gfrcmd -N <canonical_hostname>" */
+	gfarm_stringlist_add(&arg_list, "(dummy)");
+	gfarm_stringlist_add(&arg_list, "(dummy)");
+	gfarm_stringlist_add(&arg_list, "(dummy)");
+	host_alist_index = gfarm_stringlist_length(&arg_list);
 	gfarm_stringlist_add(&arg_list, "(dummy)");
 	if (rsh_options != NULL)
 		gfarm_stringlist_add_list(&arg_list, rsh_options);
@@ -170,10 +179,12 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			gfarm_stringlist_add(&arg_list, "--gfarm_stderr");
 			gfarm_stringlist_add(&arg_list, stderr_file);
 		}
-		if (profile_mode)
+		if (options->profile)
 			gfarm_stringlist_add(&arg_list, "--gfarm_profile");
-		if (replication_mode)
+		if (options->replicate)
 			gfarm_stringlist_add(&arg_list, "--gfarm_replicate");
+		if (options->hook_global)
+			gfarm_stringlist_add(&arg_list, "--gfarm_hook_global");
 		cwd = getenv("GFS_PWD");
 		if (cwd != NULL) {
 			gfarm_stringlist_add(&arg_list, "--gfarm_cwd");
@@ -203,6 +214,8 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 					return (e);
 				sprintf(total_nodes, "%d", nfrags);
 			}
+			else if (options->nprocs > 0)
+				sprintf(total_nodes, "%d", options->nprocs);
 		}
 		else
 			sprintf(node_index, "%d", i);
@@ -210,8 +223,27 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 		/* reflect "address_use" directive in the `if_hostname'  */
 		e = gfarm_host_address_get(hosts[i],
 		    gfarm_spool_server_port, &peer_addr, &if_hostname);
-		GFARM_STRINGLIST_ELEM(arg_list, 1) =
-		    e == NULL ? if_hostname : hosts[i];
+
+		if (e != NULL) {
+			GFARM_STRINGLIST_ELEM(arg_list, host_alist_index) =
+			    hosts[i];
+			base_alist_index = 2;
+		} else {
+			GFARM_STRINGLIST_ELEM(arg_list, host_alist_index) =
+			    if_hostname;
+			if (canonical_name_option == NULL ||
+			    strcmp(hosts[i], if_hostname) == 0) {
+				base_alist_index = 2;
+			} else {
+				base_alist_index = 0;
+				GFARM_STRINGLIST_ELEM(arg_list, 1) =
+				    canonical_name_option;
+				GFARM_STRINGLIST_ELEM(arg_list, 2) =
+				    hosts[i];
+			}
+		}
+		GFARM_STRINGLIST_ELEM(arg_list, base_alist_index) =
+		    rsh_command;
 
 		if (delivered_paths == NULL) {
 			GFARM_STRINGLIST_ELEM(arg_list, command_alist_index) =
@@ -220,10 +252,11 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 			GFARM_STRINGLIST_ELEM(arg_list, command_alist_index) =
 			    delivered_paths[i];
 		}
-		switch (pid = fork()) {
+		switch (fork()) {
 		case 0:
 			execvp(rsh_command,
-			    GFARM_STRINGLIST_STRARRAY(arg_list));
+			    GFARM_STRINGLIST_STRARRAY(arg_list) +
+			    base_alist_index);
 			perror(rsh_command);
 			exit(1);
 		case -1:
@@ -262,7 +295,7 @@ gfrun(char *rsh_command, gfarm_stringlist *rsh_options,
 void
 register_stdout_stderr(char *stdout_file, char *stderr_file,
 	char *rsh_command, gfarm_stringlist *rsh_options,
-	int nhosts, char **hosts)
+	char *canonical_name_option, int nhosts, char **hosts)
 {
 	char gfsplck_cmd[] = "gfarm:/bin/gfsplck";
 	struct gfs_stat sb;
@@ -305,8 +338,8 @@ register_stdout_stderr(char *stdout_file, char *stderr_file,
 		default_gfrun_options(&options);
 		options.cmd_type = GFARM_COMMAND;
 
-		e = gfrun(rsh_command, rsh_options, &options,
-			  nhosts, hosts, gfsplck_cmd, gfarm_files);
+		e = gfrun(rsh_command, rsh_options, canonical_name_option,
+		    &options, nhosts, hosts, gfsplck_cmd, gfarm_files);
 		if (e != NULL)
 			fprintf(stderr,
 				"%s: cannot register a stdout file: "
@@ -360,10 +393,10 @@ schedule(char *command_name, struct gfrun_options *options,
 		scheduling_file = options->hosts_file;
 	} else if (options->nprocs > 0) {
 		if (options->section != NULL)
-			fprintf(stderr, "%s: warning: -I option is ignored\n",
-				program_name);
-
-		nhosts = options->nprocs;
+			/* schedule a process for specified section */
+			nhosts = 1;
+		else
+			nhosts = options->nprocs;
 		hosts = malloc(sizeof(*hosts) * nhosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: not enough memory for %d hosts",
@@ -378,7 +411,7 @@ schedule(char *command_name, struct gfrun_options *options,
 		}
 		if (e != NULL) {
 			fprintf(stderr, "%s: scheduling %d nodes: %s\n",
-			    program_name, options->nprocs, e);
+			    program_name, nhosts, e);
 			exit(1);
 		}
 		scheduling_file = "";
@@ -467,9 +500,10 @@ schedule(char *command_name, struct gfrun_options *options,
 void
 decide_rsh_command(char *program_name,
 	char **rsh_commandp, gfarm_stringlist *rsh_options,
-	int *remove_gfarm_url_prefixp)
+	char **canonical_name_optionp, int *remove_gfarm_url_prefixp)
 {
-	char *rsh_command, *rsh_flags;
+	char *rsh_command, *rsh_flags, *base;
+	char *canonical_name_option = NULL;
 	int have_redirect_stdin_option = 1, remove_gfarm_url_prefix = 0;
 
 	rsh_command = getenv(ENV_GFRUN_CMD);
@@ -489,8 +523,11 @@ decide_rsh_command(char *program_name,
 		remove_gfarm_url_prefix = 1;
 	}
 
-	/* Globus-job-run hack */
-	if (strcmp(basename(rsh_command), "globus-job-run") == 0)
+	/* Hack */
+	base = basename(rsh_command);
+	if (strcmp(base, "gfrcmd") == 0)
+		canonical_name_option = "-N";
+	else if (strcmp(base, "globus-job-run") == 0)
 		have_redirect_stdin_option = 0;
 
 	/* $GFRUN_FLAGS: XXX - Currently, You can specify at most one flag */
@@ -501,6 +538,7 @@ decide_rsh_command(char *program_name,
 		gfarm_stringlist_add(rsh_options, "-n");
 
 	*rsh_commandp = rsh_command;
+	*canonical_name_optionp = canonical_name_option;
 	*remove_gfarm_url_prefixp = remove_gfarm_url_prefix;
 }
 
@@ -616,6 +654,14 @@ parse_option(int is_last_arg, char *arg, char *next_arg,
 
 	for (i = 1; arg[i] != '\0'; i++) {
 		switch (arg[i]) {
+		case 'b':
+			options->hook_global = 1;
+			if (remove_option(arg, &i))
+				return (0);
+			break;
+		case 'h':
+		case '?':
+			usage();
 		case 'g':
 			options->cmd_type = GFARM_COMMAND;
 			if (remove_option(arg, &i))
@@ -711,19 +757,20 @@ main(int argc, char **argv)
 	int i, command_index, nhosts, job_id, nfrags;
 	struct gfrun_options options;
 	gfarm_stringlist input_list, output_list, rsh_options;
-	int remove_gfarm_url_prefix = 0;
+	char *canonical_name_option;
+	int remove_gfarm_url_prefix = 0, command_url_need_free;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gfarm_stringlist_init(&rsh_options);
 	decide_rsh_command(program_name, &rsh_command, &rsh_options,
-	    &remove_gfarm_url_prefix);
+	    &canonical_name_option, &remove_gfarm_url_prefix);
 	command_index = parse_options(argc, argv, &rsh_options, &options);
 	if (command_index >= argc) /* no command name */
 		usage();
 	command_name = argv[command_index];
 	if (options.authentication_verbose_mode)
-		gfarm_authentication_verbose = 1;
+		gflog_auth_set_verbose(1);
 	if ((e = gfarm_initialize(&argc, &argv)) != NULL) {
 		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
 		exit(1);
@@ -767,6 +814,7 @@ main(int argc, char **argv)
 			free(command_url);
 			exit(1);
 		}
+		command_url_need_free = 1;
 	}
 	else {
 		if (gfarm_is_url(command_name)) {
@@ -775,6 +823,7 @@ main(int argc, char **argv)
 		}
 		/* not a command in Gfarm file system */
 		command_url = command_name;
+		command_url_need_free = 0;
 	}
 	schedule(command_url, &options, &input_list,
 	    &nhosts, &hosts, &scheduling_file);
@@ -790,13 +839,22 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	e_save = gfrun(rsh_command, &rsh_options, &options, nhosts, hosts,
-		       command_url, &argv[command_index + 1]);
+	e_save = gfrun(rsh_command, &rsh_options, canonical_name_option,
+	    &options, nhosts, hosts,
+	    command_url, &argv[command_index + 1]);
+#if 0
+	/*
+	 * gfarm_terminate() should be called after the change of
+	 * hooks_init.c on 2 March, 2005.  It is not necessary to call
+	 * costly register_stdout_stderr() any more.
+	 */
 	if (e_save == NULL) {
 		register_stdout_stderr(
 		    options.stdout_file, options.stderr_file,
-		    rsh_command, &rsh_options, nhosts, hosts);
+		    rsh_command, &rsh_options, canonical_name_option,
+		    nhosts, hosts);
 	}
+#endif
 #if 0 /* XXX - temporary solution; it is not necessary for the output
 	 file to be the same number of fragments. */
 	for (i = 0; i < gfarm_stringlist_length(&output_list); i++)
@@ -807,6 +865,8 @@ main(int argc, char **argv)
 	gfarm_stringlist_free(&output_list);
 	gfarm_stringlist_free(&input_list);
 	gfarm_stringlist_free(&rsh_options);
+	if (command_url_need_free)
+		free(command_url);
 	if ((e = gfarm_terminate()) != NULL) {
 		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);
 		exit(1);

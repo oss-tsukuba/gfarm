@@ -22,9 +22,10 @@
 
 struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
-	gfarm_error_t (*request)(struct gfp_xdr *, enum gfarm_auth_id_type);
+	gfarm_error_t (*request)(struct gfp_xdr *,
+		char *, char *, enum gfarm_auth_id_type);
 	gfarm_error_t (*request_multiplexed)(struct gfarm_eventqueue *,
-		struct gfp_xdr *, enum gfarm_auth_id_type,
+		struct gfp_xdr *, char *, char *, enum gfarm_auth_id_type,
 		void (*)(void *), void *,
 		void **);
 	gfarm_error_t (*result_multiplexed)(void *);
@@ -51,7 +52,7 @@ struct gfarm_auth_client_method {
 
 gfarm_error_t
 gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
-	enum gfarm_auth_id_type self_type)
+	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type)
 {
 	/*
 	 * too weak authentication.
@@ -80,7 +81,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 
 	do {
 		e = gfarm_auth_shared_key_get(&expire, shared_key, home,
-		    key_create);
+		    key_create, 0);
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
 		if (e != GFARM_ERR_NO_ERROR) {
 			e_save = e;
@@ -141,7 +142,8 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 }
 
 gfarm_error_t
-gfarm_auth_request(struct gfp_xdr *conn, char *name, struct sockaddr *addr,
+gfarm_auth_request(struct gfp_xdr *conn,
+	char *service_tag, char *name, struct sockaddr *addr,
 	enum gfarm_auth_id_type self_type,
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -199,7 +201,8 @@ gfarm_auth_request(struct gfp_xdr *conn, char *name, struct sockaddr *addr,
 			return (e_save != GFARM_ERR_NO_ERROR ? e_save :
 			    GFARM_ERRMSG_AUTH_REQUEST_IMPLEMENTATION_ERROR);
 		}
-		e = (*gfarm_auth_trial_table[i].request)(conn, self_type);
+		e = (*gfarm_auth_trial_table[i].request)(conn,
+		    service_tag, name, self_type);
 		if (e == GFARM_ERR_NO_ERROR) {
 			if (auth_methodp != NULL)
 				*auth_methodp = method;
@@ -462,7 +465,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    &state->expire, state->shared_key, state->home,
 	    state->try == 0 ?
 	    GFARM_AUTH_SHARED_KEY_CREATE :
-	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE);
+	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE, 0);
 	if (state->error_save != GFARM_ERR_NO_ERROR) {
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,
 		    closure, t);
@@ -487,7 +490,8 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 
 gfarm_error_t
 gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
-	struct gfp_xdr *conn, enum gfarm_auth_id_type self_type,
+	struct gfp_xdr *conn,
+	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -576,6 +580,7 @@ struct gfarm_auth_request_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
 	struct gfp_xdr *conn;
+	char *service_tag;
 	char *name;
 	struct sockaddr *addr;
 	enum gfarm_auth_id_type self_type;
@@ -653,8 +658,8 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 		    != GFARM_AUTH_METHOD_NONE) {
 			state->last_error =
 			    (*gfarm_auth_trial_table[state->auth_method_index].
-			    request_multiplexed)(state->q,
-			    state->conn, state->self_type,
+			    request_multiplexed)(state->q, state->conn,
+			    state->service_tag, state->name, state->self_type,
 			    gfarm_auth_request_dispatch_result, state,
 			    &state->method_state);
 			if (state->last_error == GFARM_ERR_NO_ERROR) {
@@ -759,7 +764,8 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 
 gfarm_error_t
 gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
-	struct gfp_xdr *conn, char *name, struct sockaddr *addr,
+	struct gfp_xdr *conn,
+	char *service_tag, char *name, struct sockaddr *addr,
 	enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)
@@ -812,6 +818,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 
 	state->q = q;
 	state->conn = conn;
+	state->service_tag = service_tag;
 	state->name = name;
 	state->addr = addr;
 	state->self_type = self_type;

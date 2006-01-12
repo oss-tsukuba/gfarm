@@ -21,7 +21,7 @@ giant_init(void)
 	int err = pthread_mutex_init(&giant_mutex, NULL);
 
 	if (err != 0)
-		gflog_fatal("giant mutex init", strerror(err));
+		gflog_fatal("giant mutex init: %s", strerror(err));
 }
 
 void
@@ -30,7 +30,7 @@ giant_lock(void)
 	int err = pthread_mutex_lock(&giant_mutex);
 
 	if (err != 0)
-		gflog_fatal("giant mutex lock", strerror(err));
+		gflog_fatal("giant mutex lock: %s", strerror(err));
 }
 
 void
@@ -39,7 +39,7 @@ giant_unlock(void)
 	int err = pthread_mutex_unlock(&giant_mutex);
 
 	if (err != 0)
-		gflog_fatal("giant mutex unlock", strerror(err));
+		gflog_fatal("giant mutex unlock: %s", strerror(err));
 }
 
 gfarm_error_t
@@ -55,17 +55,18 @@ gfm_server_get_request(struct peer *peer, char *diag, const char *format, ...)
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(diag, gfarm_error_string(e));
+		gflog_warning("%s: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (eof) {
-		gflog_warning(diag, "missing RPC argument");
+		gflog_warning("%s: missing RPC argument", diag);
 		peer_record_protocol_error(peer);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
-		gflog_fatal(diag, "invalid format character to get request");
+		gflog_fatal("%s: invalid format character to get request",
+		    diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 

@@ -1,7 +1,7 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
@@ -13,7 +13,7 @@ PROGRAM = gfrun
 PROGRAM_LINKS = gfrsh gfssh gfrshl gfsshl
 EXTRA_VERYCLEAN_TARGETS = $(PROGRAM_LINKS)
 
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -27,12 +27,15 @@ $(PROGRAM_LINKS): $(PROGRAM)
 
 post-install-hook:
 	for f in $(PROGRAM_LINKS); do \
-		rm -f $(bindir)/$$f; ln $(bindir)/$(PROGRAM) $(bindir)/$$f; \
+		rm -f $(DESTDIR)$(bindir)/$$f; \
+		ln $(DESTDIR)$(bindir)/$(PROGRAM) $(DESTDIR)$(bindir)/$$f; \
 	done
 
 ###
 
 $(OBJS): $(DEPGFARMINC) \
+	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/host.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/schedule.h

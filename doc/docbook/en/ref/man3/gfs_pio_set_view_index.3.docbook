@@ -107,7 +107,7 @@ view where each fragment can be seamlessly accessed.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
-<para>The file is not a fragmented file.</para>
+<para>The file is not a regular fragmented file.</para>
 </listitem>
 </varlistentry>
 

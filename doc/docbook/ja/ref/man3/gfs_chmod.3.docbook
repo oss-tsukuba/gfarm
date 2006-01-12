@@ -2,7 +2,7 @@
 
 <refentry id='gfs-chmod.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>21 Feb 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_chmod</refentrytitle>
@@ -37,10 +37,17 @@
 <parameter>gfarm_url</parameter>
 に指定した名前のファイル・ディレクトリのモードを、
 <parameter>mode</parameter>
-に変更します。なお、実行属性のあるファイルから、実行属性を
-すべて落すことはできません。少なくとも一つの実行ビットは残しておく
-必要があります。また、実行属性の全くないファイルに対して、実行属性を
-立てることはできません。</para>
+に変更します。この
+<parameter>mode</parameter>
+の値の意味は
+<function>chmod(2)</function>
+と同様ですが、下位9ビットのみ有効です。
+</para>
+
+<para>複数のフラグメントからなるファイルの実行属性の変更には制約が
+あります。実行属性がある場合には実行属性をすべて落すことはできません。
+少なくとも一つの実行ビットは残しておく必要があります。
+逆に、実行属性が全くない場合に実行属性を立てることはできません。</para>
 
 </refsect1>
 
@@ -79,7 +86,9 @@
 <term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
 <listitem>
 <para>プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
-でもありません。</para>
+でもありません。または、複数のフラグメントをもつファイルの実行ビットを
+少なくとも一つはある状態から全くない状態に、あるいはその逆に変更しようと
+しました。</para>
 </listitem>
 </varlistentry>
 

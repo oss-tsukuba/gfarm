@@ -9,35 +9,35 @@ Gfarm システムは複数組織で高信頼なデータ共有，高速なデータアクセスを実
 並列処理を実現します．
 
 そのため，Gfarm システムでは，耐故障性を備えた広域仮想ファイルシステム
-の Gfarm ファイルシステムと，そのファイルシステムを利用した分散並列処理
-環境を提供します．
+の Gfarm ファイルシステムと，そのファイルシステムと計算グリッドを連携さ
+せた分散並列処理環境を提供します．
 
-Gfarm ファイルシステムは，インターネット上に分散して存在する PC のディ
-スクを統合して構成される共有仮想ファイルシステムです．それぞれの PC で
-は gfsd と呼ばれる I/O デーモンが走り，PC のディスクへのアクセスを安全
-かつ効率的に可能とします．Gfarm ファイルシステムにおけるファイルは
-Gfarm ファイルあるいはスーパーファイルと呼ばれ，任意の数のファイルから
-構成されます．それぞれの構成ファイルは，分散する PC のディスクに配置さ
-れます．それら構成ファイルは複製され，分散して配置され，PC やディスク，
-ネットワークなどの故障時でも，どれかの複製にアクセス可能である限りアク
-セスが可能です．また，ファイルの複製はアクセス集中を回避する目的にも利
-用されます．
+Gfarm ファイルシステムは，インターネット上に分散して存在する PC のスク
+ラッチディスク（ローカルファイルシステム）を統合して構成される共有仮想
+ファイルシステムです．それぞれの PC では gfsd と呼ばれる I/O デーモンが
+走り，PC のディスクへのアクセスを安全かつ効率的に可能とします．Gfarm ファ
+イルシステムにおけるファイルは Gfarm ファイルあるいはスーパーファイルと
+呼ばれ，任意の数のファイルから構成されます．それぞれの構成ファイルは，
+分散する PC のディスクに配置されます．それら構成ファイルは複製され，分
+散して配置され，PC やディスク，ネットワークなどの故障時でも，どれかの複
+製にアクセス可能である限りアクセスが可能です．また，ファイルの複製はア
+クセス集中を回避する目的にも利用されます．
 
 どのファイルがどこに格納されているか，などのファイルシステムメタデータ
 は Gfarm メタデータサーバにより管理されます．
 
 Gfarm ファイルシステムは，Gfarm 並列入出力 APIのほか，殆んどの POSIX 入
 出力 API で利用することができるため，従来のアプリケーションもソースコー
-ドの修正なしに，あたかもローカルのファイルシステムのように Gfarm ファイ
-ルシステムを利用することができます．
+ドの修正なしに，あたかもマウントされたネットワークファイルシステムのよ
+うに Gfarm ファイルシステムを利用することができます．
 
-また，Gfarm システムでは，Gfarm ファイルシステムを構成する PC でプログ
-ラムを実行することができます．特に，ファイルを所持する PC で遠隔実行す
-ることにより，ネットワーク上のデータ転送を抑え，効率的にファイルをアク
-セスすることができます．さらに，任意の数のファイルからなる Gfarm ファイ
-ルに対しては，分散格納された構成ファイルを所持する PC における分散並列
-実行により，高速な並列データアクセス，並列データ処理を行うことができま
-す．
+また，Gfarm システムでは，Gfarm ファイルシステムを構成する PC の CPU を
+利用した計算グリッドも提供します．特に，ファイルを所持する PC で遠隔実
+行することにより，ネットワーク上のデータ転送を抑え，効率的にファイルを
+アクセスすることができます．さらに，任意の数のファイルからなる Gfarm ファ
+イルに対しては，分散格納された構成ファイルを所持する PC における分散並
+列実行により，高速な並列データアクセス，並列データ処理を行うことができ
+ます．
 
 グリッドデータファームの詳細は，以下の論文を参照してください．
 
@@ -46,6 +46,7 @@ Gfarm ファイルシステムは，Gfarm 並列入出力 APIのほか，殆んどの POSIX 入
      Grid Datafarm アーキテクチャ」，
     情報処理学会論文誌：ハイパフォーマンスコンピューティングシステム，
     情報処理学会，Vol.43，No.SIG 6 (HPS 5)，pp.184-195，2002 年
+    http://datafarm.apgrid.org/
 
 ========================================================================
 
@@ -67,14 +68,25 @@ Gfarm システムは，下記の種類のホストから構成されます．
 
   Gfarm ファイルシステムのメタデータと，ユーザがリクエストした並列プロ
   セスを管理するホストです．並列プロセスはファイルシステムノードのホス
-  ト群で実行されることになります．ホスト上では gfmd および LDAPサーバ
-  (slapd) が走ります．
+  ト群で実行されることになります．ホスト上では LDAP サーバ(slapd) と
+  PostgreSQL サーバ(postmaster) のいずれか一方と, gfmd が走ります．
 
-Gfarm ファイルシステムは，大容量ファイルを，ファイルシステムノード上の
-複数のホストに分散して配置します．この分散されたファイルの個々をファイ
-ル断片と呼びます．ファイルシステムノード上のホストそれぞれが，自ホスト
-上に存在するファイル断片を処理するような，データ並列処理アプリケーショ
-ンをグリッドサービスとして支援することが，Gfarm システムの主な目的です．
+Gfarm ファイルシステムでは，ファイルは任意のファイルシステムノードに配
+置されます．また，ファイルは複製され，異るノードに配置されます．さらに，
+ファイルは（分割された）ファイルの集合として構成することもできます．こ
+の時，個々の構成ファイルは特にファイル断片と呼ばれ，任意のファイルシス
+テムノードに配置されます．
+
+Gfarm では，
+
+・ファイルが格納されているファイルシステムノードで処理する
+
+・ファイル集合の構成ファイルが格納されているファイルシステムノードで並
+  列処理する
+
+といった並列分散処理を支援します．この「なるべくファイルの存在するノー
+ドで処理する」という処理方式により，高いファイル I/O 性能と，高速なデー
+タ処理が実現されます．
 
 例えば，「gfrun gfarm:gfgrep -o gfarm:output 正規表現 gfarm:input」を
 実行すると，引数で指定した Gfarm ファイル ``gfarm:input'' が分散配置さ
@@ -93,22 +105,30 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
   ライブラリです．Gfarm の並列ファイルシステムのライブラリ・インタフェー
   スや，ユーティリティ関数からなります．
 
-  並列ファイルシステムは，内部的には LDAP サーバーを利用した，Gfarm メ
-  タデータベース・ライブラリを用いて実装されています．
+  並列ファイルシステムは，内部的には LDAP サーバーないし PostgreSQL サー
+  バーを利用した，Gfarm メタデータベース・ライブラリを用いて実装されてい
+  ます．
 
-  既存アプリケーションで Gfarm ファイルシステムを利用するためのライブ
-  ラリ gfs_hook.o も準備されています．この場合，プログラムリンク時に 
-  gfs_hook.o と libgfarm.a をいっしょにリンクするだけで，Gfarm ファイ
-  ルシステムが利用できるようになります．
+  既存アプリケーションで Gfarm ファイルシステムを利用するためのライブラ
+  リ gfs_hook.o も準備されています．この場合，プログラムリンク時に
+  gfs_hook.o と libgfarm.a をリンクするだけで，Gfarm ファイルシステムが
+  利用できるようになります．
 
-  gfs_hook.o の利用に関しては，doc/README.hook.en をご参照ください．
+  さらに，Linux の場合は，提供される共有ライブラリ libgfs_hook.so を
+  LD_PRELOAD 環境変数で指定することにより，既存の（バイナリ）アプリケー
+  ションがそのまま無修整，再リンクなしに Gfarm ファイルシステムを利用可
+  能となります．
+
+  gfs_hook.o および libgfs_hook.so の利用に関しては，
+  doc/README.hook.ja をご参照ください．
 
 ・gfmd - Gfarm メタデータサーバ
 
   メタデータサーバ・マシン上で動作するデーモンプログラムです．
   現状の実装では，実行中のプロセス情報のみを管理しており，
   ファイルシステムメタデータサーバの機能は果たしていません．ファイルシ
-  ステムメタデータサーバは LDAP サーバを直接利用しています．
+  ステムメタデータサーバは LDAP サーバないし PostgreSQL サーバーを直接
+  利用しています．
 
 ・gfsd - Gfarm ファイルシステム・デーモン
 
@@ -141,33 +161,37 @@ Gfarm ソフトウェアは，大きく下記の項目に分類されます．
 今回のシステムは，Linux 上で実行テストされています．
 構築に関しては NetBSD, Solaris 上でテストされています．
 
-システムの構築のためには，OpenLDAP と OpenSSL ライブラリが必要です．認
-証方式として GSI を利用するためには，GSSAPI ライブラリが必要となります．
+システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちらか
+片方と OpenSSL ライブラリが必要です．認証方式として GSI を利用するために
+は，GSSAPI ライブラリが必要となります．
 現在の configure では GSSAPI ライブラリとして Globus toolkit version 2
-(GT2) に含まれるライブラリをサポートしています．また，既存の MPI アプ
-リケーションで Gfarm ファイルシステムを利用するためのライブラリ
-gfs_hook_mpi.o の構築，および MPI サンプルアプリケーションの構築，実行
-するためには MPI が必要となります．
-
-また、Linux で glibc-2.2.93 ないし glibc-2.3 以降を利用しているディス
-トリビューションでは、libattr およびその開発パッケージも必要です。
-RedHat Linux を例にとると、RedHat 8 以降を利用している場合は、
-libattr および libattr-devel RPM パッケージをインストールする必要が
-あります。
+(GT2) あるいは version 3 (GT3) に含まれるライブラリをサポートしています．
+また，既存の MPI アプリケーションで Gfarm ファイルシステムを利用するた
+めのライブラリ gfs_hook_mpi.o の構築，および MPI サンプルアプリケーショ
+ンの構築，実行するためには MPI が必要となります．
 
 システムを構築するには，下記のようにします．
+Linux と NetBSD 以外の OS では，GNU make を使ってください．
 
 	% ./configure [オプション]
 	% make
-	% make install
+	% su
+	Password:
+	# make install
 
 configure コマンドには，下記のオプションがあります．
-このうち，--with-openldap は必須です．
 
 ・--with-openldap=ディレクトリ
 
   OpenLDAP のインストールされているディレクトリを指定します．
-  このオプションは必ず指定してください．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
+
+・--with-postgresql=ディレクトリ
+
+  PostgreSQL のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
 
 ・--with-openssl=ディレクトリ
 
@@ -184,21 +208,30 @@ configure コマンドには，下記のオプションがあります．
 
 ・--with-globus=ディレクトリ
 
-  認証方式として GSI を可能とします．ディレクトリは Globus toolkit
-  version 2 (GT2) のインストールされているディレクトリを指定します%．
-  GT2 のうち GSSAPI ライブラリが必要となります．ディレクトリを指定しな
-  いと，環境変数 GLOBUS_LOCATION の示すディレクトリが利用されます．
+  認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
+  インストールされているディレクトリを指定します．
+  Globus toolkit のうち GSSAPI ライブラリが必要となります．ディレクト
+  リを指定しないと，環境変数 GLOBUS_LOCATION の示すディレクトリが利用
+  されます．
   このオプションは省略可能です．
-  デフォールトでは，"gcc32" flavor でコンパイルされた Globus toolkit
-  ライブラリをリンクします．これ以外の flavor を利用したい場合には，
-  例えば --with-globus-flavor="gcc32dbg" のようにして flavor 名を指定して
-  ください．
+  デフォールトでは，インストールされている flavor を自動的に検索します
+  が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
+  ともできます．
 
 ・--prefix=ディレクトリ
 
   インストール先のディレクトリを指定します．このオプションを省略した場
   合は /usr/local ディレクトリの下にインストールします．
   このオプションは省略可能です．
+
+・--sysconfdir=ディレクトリ
+
+  設定ファイル「gfarm.conf」を置くディレクトリを指定します．このオプショ
+  ンを省略した場合は上記の --prefix オプションで指定したディレクトリの
+  下の「etc」ディレクトリが指定されたものとみなします．本文書は，オプ
+  ション --sysconfdir=/etc が指定されたものと仮定して記述してあります．
+  このオプションは省略可能です．
+  
 
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
@@ -218,13 +251,20 @@ configure コマンドには，下記のオプションがあります．
 
 	/usr/grid
 
+・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクトリ
+
+	/var/spool/gfarm
+
+
+LDAP を使用する場合:
+
 ・OpenLDAP インストール・ディレクトリ
 
 	/usr/local/openldap
 
 ・LDAP サーバーを実行するホスト
 
-	ldap.example.com
+	metadb.example.com
 
 ・LDAP サーバーの利用する TCP ポート番号
 
@@ -257,31 +297,111 @@ configure コマンドには，下記のオプションがあります．
 
 	Example Com
 
-・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクト
-  リ
 
-	/var/spool/gfarm
+PostgreSQL を使用する場合:
+
+・PostgreSQL インストール・ディレクトリ
+
+	/usr/local/pgsql
+
+・PostgreSQL サーバーを実行するホスト
+
+	metadb.example.com
+
+・PostgreSQL サーバーの利用する TCP ポート番号
+
+	5432
+
+・PostgreSQL データベース・サーバを動作させる UNIX ユーザ権限
+
+	postgres
+
+・PostgreSQL データベース・ファイルを置くディレクトリ
+
+	/var/gfarm-pgsql
+
+・PostgreSQL データベース名
+
+	gfarm		
+
+・PostgreSQL データベースに接続する データベース管理下のユーザ名
+
+	gfarm
+
+・PostgreSQL データベースに接続する データベース管理下のユーザのパスワード
+
+	secret-postgresql-password
 
 ------------------------------------------------------------------------
 
-◇ LDAP サーバー
+◇ 簡易な設定方法
+
+1. メタデータサーバ上で以下のコマンドを実行して，これから行う設定に
+  関して，適切なデフォルト値が設定されているか確認します．
+	# config-gfarm -t
+
+  もしデフォルト値が適切でない場合には，表示されるオプションを指定して
+  設定を変更できます．
+
+2. 適切な設定になったら，config-gfarm コマンドのオプションから -t を
+  取り除いて実行します．
+  特にオプションを指定する必要がなかったのであれば，以下を実行すること
+  になります．
+	# config-gfarm
+
+3. config-gfarm コマンドによって，/etc/gfarm.conf が作成された筈です．
+  この gfarm.conf をファイルシステムノードの /etc にコピーします．
+
+4. ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
+  関して，適切なデフォルト値が設定されているか確認します．
+	# config-gfsd -t /var/spool/gfarm
+
+  もしデフォルト値が適切でない場合には，表示されるオプションを指定して
+  設定を変更できます．
+
+5. 適切な設定になったら，config-gfsd コマンドのオプションから -t を
+  取り除いて実行します．
+  特にオプションを指定する必要がなかったのであれば，以下を実行すること
+  になります．
+	# config-gfsd /var/spool/gfarm
+
+以上で設定は完了です．
+ここからは，config-gfarm コマンドや config-gfsd コマンドが内部的に
+どういう設定を行っているかを解説します．
+解説が不要な方は，「各ユーザの設定」の節まで読み飛ばしてください．
+
+なお，config-gfarm, config-gfsd のより詳しい利用法に関しては，
+INSTALL.RPM.ja を参照してください．
+
+------------------------------------------------------------------------
+
+◆ メタデータサーバー
 
 まず，Gfarm ファイルシステムのファイルシステムメタデータを保持する 
-LDAP サーバーを用意する必要があります．
+LDAP サーバー，PostgreSQLサーバーのいずれか一方を用意する必要があります．
 
-Gfarm バージョン 1.0.X では，OpenLDAP version 2.0.X および version
-2.1.X で動作が確認されていますが，それ以外の LDAP サーバでは動作確認が
-十分におこなわれていません．
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+◇ LDAP サーバー
+
+Gfarm では，OpenLDAP version 2.1.X および version 2.2.X で動作が確認さ
+れていますが，それ以外の LDAP サーバでは動作確認が十分におこなわれてい
+ません．OpenLDAP 2.0.X でも動作は可能ですが，2.1 系列以降の最新版を利
+用することを強くお勧めします．2.0 系列の場合，Gfarm ファイルシステム上
+のファイル名は大文字，小文字を区別できません．
 
 ▽ slapd.conf
 
 OpenLDAP 付属の LDAP サーバーの設定ファイルです．Gfarm ファイルシステ
 ムのためのスキーマファイルを include します．また，base distinguished
 name を，このファイルの suffix および rootdn で参照しているのに注意し
-てください．
+てください．このファイルにはパスワードが含まれていますから，slapd を
+起動するユーザ権限以外では読みとりできないようにしておくのが良いでしょう．
 
-以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X のそれぞれの場
-合における，ホスト ldap.example.com のファイル 
+	# chmod 600 /etc/gfarm-ldap/slapd.conf
+
+以下に OpenLDAP version 2.0.X と OpenLDAP version 2.1.X 以降のそれぞれ
+の場合における，ホスト metadb.example.com のファイル 
 /etc/gfarm-ldap/slapd.conf 設定例を示します．設定ファイル中で include 
 している core.schema のパス名は OpenLDAP のインストレーションにより変
 わりますので気を付けてください．
@@ -291,11 +411,11 @@ name を，このファイルの suffix および rootdn で参照しているのに注意し
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 defaultaccess write
@@ -303,17 +423,20 @@ defaultaccess write
 # unlimit search result
 sizelimit 2000000000
 
+# disable syslog
+loglevel 0
+
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        ldbm
+database	ldbm
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq
@@ -321,20 +444,21 @@ index	objectClass	eq
 index	pathname	pres,eq
 index	section		pres,eq
 index	hostname	pres,eq
-#
+
+# dangerous, but faster
 dbnosync
 ------------------------------ ここまで ------------------------------
 
------------------- ここから （OpenLDAP-2.1.X の場合）-----------------
+------------------ ここから （OpenLDAP-2.1.X 以降の場合）-------------
 #
 # See slapd.conf(5) for details on configuration options.
 # This file should NOT be world readable.
 #
-include         /etc/openldap/schema/core.schema
-include         /etc/gfarm-ldap/gfarm.schema
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
 
-pidfile         /var/run/gfarm-slapd.pid
-argsfile        /var/run/gfarm-slapd.args
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
 
 # enable global write access for now. XXX
 allow bind_anon_dn update_anon
@@ -343,17 +467,20 @@ access to * by anonymous write
 # unlimit search result
 sizelimit unlimited
 
+# disable syslog
+loglevel 0
+
 #######################################################################
-# ldbm database definitions
+# database definitions
 #######################################################################
 
-database        bdb
+database	bdb
 
-suffix          "dc=example, dc=com"
-rootdn          "cn=root, dc=example, dc=com"
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
 
-directory       /var/gfarm-ldap
-rootpw          secret-ldap-password
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
 
 # Indices to maintain
 index	objectClass	eq
@@ -367,11 +494,11 @@ index	hostname	pres,eq
 
 slapd.conf から include されているファイルです．
 
-ソース配布中のファイル doc/conf/gfarm.schema を，ホスト 
-ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
+ソース配布中のファイル gftool/config-gfarm/gfarm.schema を，ホスト 
+metadb.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 
 バイナリ配布の場合，gfarm-server パッケージ中の
-/etc/gfarm-ldap/gfarm.schema に，このファイルが含まれています．
+/usr/grid/share/gfarm/config/gfarm.schema に，このファイルが含まれています．
 
 特にカスタマイズする項目はありません．
 
@@ -384,7 +511,7 @@ ldap.example.com の /etc/gfarm-ldap/gfarm.schema に置いてください．
 name) 属性に base distinguished name を，また objectclass 属性に top 
 を設定します．
 
-例えばホスト ldap.example.com のファイル /etc/gfarm-ldap/initial.ldif 
+例えばホスト metadb.example.com のファイル /etc/gfarm-ldap/initial.ldif 
 に，下記のような内容を設定することになります．
 
 ------------------------------ ここから ------------------------------
@@ -399,20 +526,22 @@ o: Example Com
 ▽ LDAP データベースの作成
 
 前節で作成したファイルシステムメタデータの初期情報を元に，LDAP データ
-ベースを作成します．これには，ホスト ldap.example.com で，下記のコマン
+ベースを作成します．これには，ホスト metadb.example.com で，下記のコマン
 ドを実行します．
 
-	% rm -f /var/gfarm-ldap/*
-	% cd /etc/gfarm-ldap
-	% /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+	# rm -rf /var/gfarm-ldap
+	# mkdir /var/gfarm-ldap
+	# chmod 700 /var/gfarm-ldap
+	# cd /etc/gfarm-ldap
+	# /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
 
 ▽ LDAP サーバーの起動
 
-ホスト ldap.example.com で，LDAP サーバーを起動します．下記のコマンド
+ホスト metadb.example.com で，LDAP サーバーを起動します．下記のコマンド
 を実行します．
 
-	% cd /usr/local/openldap/libexec/
-	% ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
+	# cd /usr/local/openldap/libexec/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
 
 このオプション -h で指定した 389 が，LDAP サーバーのポート番号です．ポー
 ト番号として，この例のように1024番未満を利用する場合，slapd の起動を 
@@ -424,35 +553,163 @@ root 権限で行なう必要があります．
 と同じ内容が表示されれば，正しく動作しています．
 
 Bourne Shell の場合:
-	% host=ldap.example.com
+	% host=metadb.example.com
 	% port=389
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 csh の場合:
-	% set host=ldap.example.com
+	% set host=metadb.example.com
 	% set port=389
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+◇ PostgreSQL サーバー
+
+Gfarm では，PostgreSQL version 8.0.3 で動作が確認されていますが，それ
+以外の PostgreSQL サーバでは動作確認がおこなわれていません．8.0.3 以降
+の最新版を利用することをお勧めします．
+
+▽ データベースクラスタの作成
+
+ホスト metadb.example.com で下記のコマンドを実行します．
+
+	# /bin/rm -rf /var/gfarm-pgsql
+	# mkdir /var/gfarm-pgsql
+	# chown postgres:postgres /var/gfarm-pgsql
+	# chmod 700 /var/gfarm-pgsql
+	# su - postgres
+	$ initdb -D /var/gfarm-pgsql
+
+▽ postgresql.conf
+
+initdb コマンドにより metadb.example.com 上に ファイル
+/var/gfarm-pgsql/postgresql.conf が作成されます．metadb.example.com 以
+外のホストからの接続を許可するために，このファイルの
+------------------------------ ここから ------------------------------
+#listen_addres = 'localhost'
+------------------------------ ここまで ------------------------------
+と記述されている行をコメントアウトして
+------------------------------ ここから ------------------------------
+listen_addres = '*'
+------------------------------ ここまで ------------------------------
+とします．
+
+▽ pg_hba.conf
+
+initdb コマンドにより metadb.example.com 上にファイル
+/var/gfarm-pgsql/pg_hba.conf が作成されます．
+データベースユーザー gfarm が データベース gfarm へ接続することを許可
+するために，このファイルに行を追加します．
+例えば，ホスト 192.168.12.10 と 192.168.12.11 からの接続を許可する場合，
+下記の行を追加します．
+------------------------------ ここから ------------------------------
+# TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+host    gfarm       gfarm       192.168.12.10/32      password
+------------------------------ ここまで ------------------------------
+また，IPアドレス 192.168.12.x をもつ全ホストからの接続を許可する場合，
+下記の行を追加します．
+------------------------------ ここから ------------------------------
+# TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+host    gfarm       gfarm       192.168.12.0/24       password
+------------------------------ ここまで ------------------------------
+
+▽ PostgreSQL データベースサーバーの起動
+
+ホスト metadb.example.com で，データベースサーバー postmaster を起動し
+ます．下記のコマンドを実行します．
+
+	$ cd /usr/local/pgsql/bin
+	$ ./postmaster -D /var/gfarm-pgsql >logfile 2>&1 &
+
+▽ PostgreSQL データベースユーザ gfarm の作成
+
+ホスト metadb.example.com で，データベースユーザ gfarm を作成します．
+下記のコマンドを実行します．
+
+        $ psql template1
+	template1=# create user gfarm createdb password 'secret-postgresql-password';
+	template1=# \q
+	$
+
+▽ PostgreSQL データベース gfarm の作成
+
+ホスト metadb.example.com で，データベース gfarm を作成します．
+上記で作成したユーザ gfarm で作成します．下記のコマンドを実行します．
+
+	$ psql template1 gfarm
+	$ template1=> create database gfarm; 
+	template1=> \q
+
+▽ gfarm.sql
+
+ソース配布中のファイル gftool/config-gfarm/gfarm.sql を ホスト
+metadb.example.com の /etc/gfarm-pgsql/gfarm.sql に置いてください．
+
+バイナリ配布の場合， gfarm-server パッケージ中の
+/usr/grid/share/gfarm/config/gfarm.sql に，このファイルが含まれていま
+す．特にカスタマイズする項目はありません．
+
+▽ PostgreSQL データベーステーブルの作成
+
+上記で作成したデータベースに gfarm.sql を用いてデータベーステーブルを
+作成します．下記のコマンドを実行します．
+	$ psql gfarm gfarm -f gfarm.sql
+
+▽ PostreSQO データベースサーバ の動作確認
+
+下記のコマンドを実行し，Host テーブルの件数が 0件で表示されれば
+正しく動作しています．
+
+	$ psql gfarm gfarm
+	gfarm=> select * from Host;	
+	
+------------------------------------------------------------------------
+
 ◇ ~/.gfarmrc
 
 クライアントホストで ~/.gfarmrc を下記のように設定します．
 
+LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
 
+PostgreSQL を使用する場合:
+------------------------------ ここから ------------------------------
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
+auth enable sharedsecret *
+------------------------------ ここまで ------------------------------
+上記のパラメータのうち、postgresql_user および postgresql_password は，
+PostgreSQL の認証の設定によっては省略できる場合があります．
+PostgreSQL に関して、さらに他の接続オプションを指定したい場合，
+たとえば sslmode オプションに require を指定し，接続タイムアウト時間を
+30秒に設定したい場合は以下の行を追加します．
+------------------------------ ここから ------------------------------
+postgresql_conninfo "sslmode=require connect_timeout=30"
+------------------------------ ここまで ------------------------------
+postgresql_conninfo に指定できるパラメータの詳細ついては，PostgreSQL の
+iibpq ライブラリの関数 PQconnectdb についての文書， 例えば
+http://www.postgresql.jp/document/pg804doc/html/libpq.html#LIBPQ-CONNECT
+を参照してください．
+
 ▽ ファイルシステムノードの登録
 
-LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
-ノードの情報を登録します．
+LDAP サーバーの起動ないし PostgreSQL サーバーの設定を完了したら，
+gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 
 ファイルシステムノードを構成するホストの情報には，下記のような項目があ
 ります．
@@ -485,33 +742,31 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
 例えば下記のようなコマンドで設定することになります．
 オプション -c は，登録を指示するコマンドです．
 
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-1.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-2.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-3.example.com
-	% gfhost -c -a i386-redhat8.0-linux linuxhost-4.example.com
-	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-5.example.com
-	% gfhost -c -a i386-debian3.0-linux -n 2 linuxhost-6.example.com
-	% gfhost -c -a sparc-sun-solaris8 solarishost-1.example.com
-	% gfhost -c -a sparc-sun-solaris8 solarishost-2.example.com
-	% gfhost -c -a alpha-hp-osf5.0 osfhost-1.example.com
-	% gfhost -c -a mips-sgi-irix6.5 -n 16 irixhost-1.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-1.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-2.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-3.example.com
+	% gfhost -c -a i386-redhat8.0-linux linux-4.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-5.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-6.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-1.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-2.example.com
+	% gfhost -c -a alpha-hp-osf5.0 osf-1.example.com
+	% gfhost -c -a mips-sgi-irix6.5 -n 16 irix-1.example.com
 
 登録結果は，オプション -M を指定して gfhost を実行することで，確認でき
 ます．
 
 	% gfhost -M
-	i386-redhat8.0-linux 1 linuxhost-1.example.com
-	i386-redhat8.0-linux 1 linuxhost-2.example.com
-	i386-redhat8.0-linux 1 linuxhost-3.example.com
-	i386-redhat8.0-linux 1 linuxhost-4.example.com
-	i386-debian3.0-linux 2 linuxhost-5.example.com
-	i386-debian3.0-linux 2 linuxhost-6.example.com
-	sparc-sun-solaris8 1 solarishost-1.example.com
-	sparc-sun-solaris8 1 solarishost-2.example.com
-	alpha-hp-osf5.0 1 osfhost-1.example.com
-	mips-sgi-irix6.5 16 irixhost-1.example.com
-
-------------------------------------------------------------------------
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	i386-redhat8.0-linux 1 linux-4.example.com
+	i386-debian3.0-linux 2 linux-5.example.com
+	i386-debian3.0-linux 2 linux-6.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
+	alpha-hp-osf5.0 1 osf-1.example.com
+	mips-sgi-irix6.5 16 irix-1.example.com
 
 ◇ gfsd スプール・ディレクトリの作成
 
@@ -530,14 +785,33 @@ LDAP サーバーを起動したら，gfhost コマンドを利用して，ファイルシステム
 メタデータサーバのホストと，ファイルシステムノード上の全ホストで，
 /etc/gfarm.conf を下記のように設定します．
 
+LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
+
+PostgreSQL を使用する場合:
+------------------------------ ここから ------------------------------
+spool /var/spool/gfarm
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
+auth enable sharedsecret *
+------------------------------ ここまで ------------------------------
+
+すなわち，ファイルシステムノードの /etc/gfarm.conf には，クライアント
+ホストでの ~/.gfarmrc の設定に加え，「spool」パラメータで，gfsd が
+使用するスプールディレクトリを指定します．
+「spool」以外のパラメータに関しては，上述の ~/.gfarmrc の項を参照
+してください．
 
 メタデータサーバのホストあるいはファイルシステムノードがクライアントと
 なる場合は，クライアントプログラムはまず ~/.gfarmrc を読み込み，次に
@@ -553,7 +827,7 @@ auth enable sharedsecret *
 意されています．
 	RedHat Linux:		/etc/rc.d/init.d/gfmd
 	Debian GNU/Linux:	/etc/init.d/gfmd
-	Solaris:		/etc/rc3.d/S98gfmd
+	Solaris:		/etc/rc3.d/S90gfmd
 
 ソース配布を利用している場合，make が完了すると package/<OS>/gfmd にス
 タートアップスクリプトが作成されます．ただし Debian GNU/Linux の場合，
@@ -566,7 +840,7 @@ debian/gfmd.init にスタートアップスクリプトがあります．このスクリプト
 		% su
 		Password: 
 		# /sbin/chkconfig --add gfmd
-		# /etc/rc.d/init.d/gfmd start
+		# service gfmd start
 	Debian GNU/Linux:
 		% su
 		Password: 
@@ -574,7 +848,7 @@ debian/gfmd.init にスタートアップスクリプトがあります．このスクリプト
 	Solaris:
 		% su
 		Password: 
-		# /etc/rc3.d/S98gfmd start
+		# /etc/rc3.d/S90gfmd start
 
 スクリプトを使わずに直接起動する場合には，下記の手順になります．
 	% su
@@ -583,8 +857,8 @@ debian/gfmd.init にスタートアップスクリプトがあります．このスクリプト
 
 なお，テストなどの目的で gfmd をユーザ権限で立ち上げたい場合は -f オプ
 ションをつけて設定ファイルを指定して立ち上げます．詳細は man gfmd を参
-照してください．gfmd をユーザ権限で立ち上げた場合に利用可能な認証方式
-は，共有秘密鍵方式 (sharedsecret) のみです．
+照してください．gfmd をユーザ権限で立ち上げた場合，そのユーザとの認証
+しかできません．
 
 gfmd が正しく起動されているかどうかは，オプションを指定せずに gfps コ
 マンドを実行することで確認できます．正しく起動されている場合は，なにも
@@ -602,7 +876,7 @@ gfmd が正しく起動されているかどうかは，オプションを指定せずに gfps コ
 意されています．
 	RedHat Linux:		/etc/rc.d/init.d/gfsd
 	Debian GNU/Linux:	/etc/init.d/gfsd
-	Solaris:		/etc/rc3.d/S99gfsd
+	Solaris:		/etc/rc3.d/S95gfsd
 
 ソース配布を利用している場合，make が完了すると package/<OS>/gfsd にス
 タートアップスクリプトが作成されます．ただし Debian GNU/Linux の場合，
@@ -615,7 +889,7 @@ debian/gfsd.init にスタートアップスクリプトがあります．このスクリプト
 		% su
 		Password: 
 		# /sbin/chkconfig --add gfsd
-		# /etc/rc.d/init.d/gfsd start
+		# service gfsd start
 	Debian GNU/Linux:
 		% su
 		Password: 
@@ -623,7 +897,7 @@ debian/gfsd.init にスタートアップスクリプトがあります．このスクリプト
 	Solaris:
 		% su
 		Password: 
-		# /etc/rc3.d/S99gfsd start
+		# /etc/rc3.d/S95gfsd start
 
 スクリプトを使わずに直接起動する場合には，下記の手順になります．
 	% su
@@ -632,28 +906,29 @@ debian/gfsd.init にスタートアップスクリプトがあります．このスクリプト
 
 なお，テストなどの目的で gfsd をユーザ権限で立ち上げたい場合は -f オプ
 ションをつけて設定ファイルを指定して立ち上げます．詳細は man gfsd を参
-照してください．gfsd をユーザ権限で立ち上げた場合に利用可能な認証方式
-は，共有秘密鍵方式 (sharedsecret) のみです．
+照してください．gfsd をユーザ権限で立ち上げた場合，そのユーザとの認証
+しかできません．
 
 gfsd が正しく起動されているかどうかは，オプション -l を指定して gfhost 
 を実行することで確認できます．行頭に表示されている3つの数字はロード・
-アベレージ，その次の一文字は用いられる認証方法です．
+アベレージ，その次の一文字は用いられる認証方法です．認証方法として「x」
+が表示されている場合は，認証に失敗していることを示します．
 
 	% gfhost -l
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-1.example.com
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-2.example.com
-	-.--/-.--/-.-- - i386-redhat8.0-linux 1 linuxhost-3.example.com
-	0.00/0.00/0.00 s i386-redhat8.0-linux 1 linuxhost-4.example.com
-	0.40/0.45/0.42 s i386-debian3.0-linux 2 linuxhost-5.example.com
-	0.43/0.50/0.40 s i386-debian3.0-linux 2 linuxhost-6.example.com
-	0.10/0.00/0.00 s sparc-sun-solaris8 1 solarishost-1.example.com
-	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solarishost-2.example.com
-	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osfhost-1.example.com
-	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irixhost-1.example.com
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com(10.0.0.4)
+	0.40/0.45/0.42 s i386-debian3.0-linux 2 linux-5.example.com(10.0.0.5)
+	0.43/0.50/0.40 s i386-debian3.0-linux 2 linux-6.example.com(10.0.0.6)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
+	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osf-1.example.com(10.0.1.17)
+	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irix-1.example.com(10.0.1.18)
 
-linuxhost-3.example.com の -.-- は，このノード上に（指定したポートで） 
-gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
-のノードに接続できない（ノードかネットワークが落ちている）ことを示して
+linux-3.example.com の -.-- は，このノード上に（指定したポートで） 
+gfsd が動いていないことを示し，solaris-2.example.com の x.xx はこの
+ノードに接続できない（ノードかネットワークが落ちている）ことを示して
 います．このような問題を追及するには，"-v" オプションを追加してエラー
 メッセージを表示させるようにしてください．
 
@@ -663,10 +938,10 @@ gfsd が動いていないことを示し，solarishost-2.example.com の x.xx はこ
 します．
 
 Bourne Shell の場合:
-	gfcd() { eval "`gfsetdir $1`"; }
+	gfcd() { eval "`gfsetdir -s $1`"; }
 
 csh の場合:
-	alias gfcd 'eval `gfsetdir \!*`'
+	alias gfcd 'eval `gfsetdir -c \!*`'
 
 また，環境変数 PATH の設定に /usr/grid/bin を追加します．
 
@@ -746,32 +1021,6 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 	% gfhost | gfrun -H - hostname
 
-◇ Gfarm 並列コマンドの登録
-
-この項は，システム管理者が，ファイルシステムノードを構成するアーキ
-テクチャそれぞれについて，一度づつ実行する必要のある項目です．
-
-並列ファイルコピー，並列 grep などのコマンドを Gfarm ファイルシステム
-に登録するために，それぞれのアーキテクチャのファイルシステムノードで
-以下を実行します．
-
-	% /usr/grid/sbin/gfregister
-
-この結果，並列コマンドが gfarm:/bin ディレクトリに登録されます．
-
-	% gfls -l gfarm:/bin
-	-rwxr-xr-x tatebe   *            404988 Feb  7 01:30 gfcombine
-	-rwxr-xr-x tatebe   *            479056 Feb  7 01:30 gfcombine_hook
-	-rwxr-xr-x tatebe   *            404133 Feb  7 01:30 gfcp
-	-rwxr-xr-x tatebe   *            478109 Feb  7 01:30 gfcp_hook
-	-rwxr-xr-x tatebe   *            406474 Feb  7 01:30 gfgrep
-	-rwxr-xr-x tatebe   *            423342 Feb  7 01:44 gfreg
-	-rwxr-xr-x tatebe   *            423255 Feb  7 01:30 gfsplck
-
-登録されているアーキテクチャは gfwhere で確認できます．
-
-	% gfwhere gfarm:/bin/gfcp
-
 ◇ Gfarmファイルシステムの利用例
 
 以下に，Gfarmファイルシステムの利用例を示します．
@@ -798,16 +1047,16 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   しょう．
 
 	% gfwhere gfarm:file
-	0: gfm01.apgrid.org
-	1: gfm02.apgrid.org
-	2: gfm03.apgrid.org
-	3: gfm04.apgrid.org
-	4: gfm05.apgrid.org
-	5: gfm06.apgrid.org
-	6: gfm07.apgrid.org
-	7: gfm08.apgrid.org
-	8: gfm09.apgrid.org
-	9: gfm10.apgrid.org
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
+	5: linux-6.example.com
+	6: solaris-1.example.com
+	7: solaris-2.example.com
+	8: osf-1.example.com
+	9: irix-1.example.com
 
   gfwhere コマンドも gfls と同様に Gfarm URL の gfarm: は省略可能です．
   gfwhere コマンドの出力で : の左はファイルインデックス番号と呼ばれ，
@@ -887,26 +1136,20 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
 
 ・gfgrep - parallel grep
 
-  gfgrep プログラムが，gfarm:/bin/gfgrep という名称で登録されているこ
-  とを確認します．
+  まず gfreg コマンドを用いて，ファイルシステムノードで gfgrep プログラ
+  ムを登録します．
 
-	% gfls -l gfarm:/bin/gfgrep
+	% gfreg /usr/bin/gfgrep gfarm:gfgrep
 
-  もし登録されていないない場合は，システム管理者に，前述の
-  Gfarm 並列コマンドの登録の作業の実行を依頼します．
+  ファイルシステムノード以外からプログラムを登録する場合は，ファイルシ
+  ステムノード名を -h オプションで，あるいはアーキテクチャ名を -a オプ
+  ションで指定する必要があります．
 
-  あるいは，gfreg コマンドを用いて，自分自身で登録することもできます．
-
-	% gfreg /usr/grid/bin/gfgrep gfarm:gfgrep
-
-  この場合，下記の「gfarm:/bin/gfgrep」は「gfarm:gfgrep」で置き換えて
-  ください．
-  なお，ファイルシステムノード以外からプログラムを登録する場合は，
-  アーキテクチャ名を -a オプションで指定する必要があります．
+	% gfreg -h linux-1.example.com /usr/bin/gfgrep gfarm:gfgrep
 
   登録されたら，実行してみましょう．
 
-	% gfrun -G gfarm:テスト.txt gfarm:/bin/gfgrep -o gfarm:gfgrep.out \
+	% gfrun -G gfarm:テスト.txt gfarm:gfgrep -o gfarm:gfgrep.out \
 		正規表現 gfarm:テスト.txt
 
   結果を確認してみましょう．
@@ -919,13 +1162,13 @@ GSI ではユーザ代理証明書を作成することでサインオンが完了します．
   このコマンドは，バイナリ作成時に --with-mpi オプションが指定されて
   いた場合のみ存在します．  
 
-  gfgrep と同様に gfwc プログラムが，gfarm:/bin/gfwc という名称で登録
-  されていることを確認し，登録されていない場合は，システム管理者に
-  Gfarm 並列コマンドの登録の作業の実行を依頼します．
+  gfgrep と同様に gfwc プログラムを gfarm:gfwc という名称で登録します．
+
+	% gfreg /usr/bin/gfwc gfarm:gfwc
 
   実行してみましょう．
 
-	% gfmpirun_p4 gfarm:/bin/gfwc gfarm:テスト.txt
+	% gfmpirun_p4 gfarm:gfwc gfarm:テスト.txt
 
   結果を確認してみましょう．
 

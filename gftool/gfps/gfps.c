@@ -7,16 +7,20 @@
 #include <gfarm/gfarm_misc.h>
 #include "gfj_client.h"
 #include "auth.h"
+#include "gfutil.h"
 
 char *program_name = "gfps";
 
 void
 usage()
 {
-	fprintf(stderr, "Usage: %s [-al] [<job_id>...]\n", program_name);
+	fprintf(stderr, "Usage: %s [option] [<job_id>...]\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-a\tlist all user\n");
 	fprintf(stderr, "\t-l\tdetailed output\n");
+#ifdef HAVE_GSI
+	fprintf(stderr, "\t-v: display GSS minor status error.\n");
+#endif
 	exit(1);
 }
 
@@ -27,6 +31,7 @@ main(argc, argv)
 {
 	extern int optind;
 	int ch, do_all = 0, do_detailed = 0;
+	int opt_auth_verbose = 0;
 	int n, i, j, *joblist;
 	struct gfarm_job_info *info, *infos;
 	char *e;
@@ -34,13 +39,16 @@ main(argc, argv)
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "al?")) != -1) {
+	while ((ch = getopt(argc, argv, "alv?")) != -1) {
 		switch (ch) {
 		case 'a':
 			do_all = 1;
 			break;
 		case 'l':
 			do_detailed = 1;
+			break;
+		case 'v':
+			opt_auth_verbose = 1;
 			break;
 		case '?':
 		default:
@@ -49,6 +57,9 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (opt_auth_verbose)
+		gflog_auth_set_verbose(1);
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
@@ -113,6 +124,9 @@ main(argc, argv)
 			printf("\n");
 		}
 	}
+	gfarm_job_info_free_contents(infos, n);
+	free(infos);
+	free(joblist);
 
 	e = gfarm_terminate();
 	if (e != NULL) {

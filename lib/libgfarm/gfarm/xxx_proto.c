@@ -1,14 +1,19 @@
+#include <sys/types.h>
+#include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
 #include "xxx_proto.h"
+
+#ifndef	va_copy
+#define	va_copy(dst, src)	((dst) = (src))
+#endif
 
 #if FILE_OFFSET_T_IS_FLOAT
 #include <math.h>
@@ -146,7 +151,7 @@ char *
 xxx_proto_purge(struct xxx_connection *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
-		return (GFARM_ERR_PROTOCOL); /* unexpected eof */
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	return (NULL);
 }
 
@@ -154,7 +159,7 @@ char *
 xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap = *app;
+	va_list ap;
 	gfarm_uint8_t c;
 	gfarm_int16_t h;
 	gfarm_int32_t i, n;
@@ -165,6 +170,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 #endif
 	char *s;
 
+	va_copy(ap, *app);
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
@@ -241,7 +247,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 	}
  finish:
 	*formatp = format;
-	*app = ap;
+	va_copy(*app, ap);
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
@@ -250,7 +256,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap = *app;
+	va_list ap;
 	gfarm_int8_t *cp;
 	gfarm_int16_t *hp;
 	gfarm_int32_t *ip, i;
@@ -263,6 +269,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	size_t *szp, sz;
 	char *e;
 
+	va_copy(ap, *app);
 	e = xxx_proto_flush(conn);
 	if (e != NULL)
 		return (e);
@@ -367,7 +374,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	}
  finish:
 	*formatp = format;
-	*app = ap;
+	va_copy(*app, ap);
 	*eofp = 0;
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
@@ -447,14 +454,14 @@ xxx_proto_vrpc_result(struct xxx_connection *conn,
 	if (e != NULL)
 		return (e);
 	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc status missing */
+		return (GFARM_ERR_UNEXPECTED_EOF); /* rpc status missing */
 	if (*errorp != 0)
 		return (NULL); /* should examine error in this case */
 	e = xxx_proto_vrecv(conn, just, &eof, formatp, app);
 	if (e != NULL)
 		return (e);
 	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc return value missing */
+		return (GFARM_ERR_UNEXPECTED_EOF); /* rpc return value missing */
 	return (NULL);
 }
 

@@ -70,11 +70,11 @@ fast invocation, node resource status monitoring.</P
 CLASS="COMMAND"
 >gfsd</B
 > to be executed as a non-privileged user
-process although other users cannot use it.  Moreover, a <B
+process although only the user that executes the <B
 CLASS="COMMAND"
 >gfsd</B
->
-with a user privilege cannot authenticate using the GSI.</P
+> can be authenticated.
+Other users cannot use it.</P
 ><P
 >In order to execute <B
 CLASS="COMMAND"
@@ -93,7 +93,7 @@ CLASS="COMMAND"
 >gfsd</B
 > should be
 specified by the spool_serverport statement in ~/.gfarmrc or
-/etc/gfarm.conf on a client node.</P
+%%SYSCONFDIR%%/gfarm.conf on a client node.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -203,7 +203,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P

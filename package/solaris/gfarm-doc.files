@@ -1,2 +1,2 @@
-usr/grid/man
-usr/grid/share/doc
+@PREFIX@/man
+@PREFIX@/share/doc

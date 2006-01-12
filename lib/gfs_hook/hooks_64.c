@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <pwd.h>
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -12,6 +14,7 @@
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include "gfutil.h"
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
@@ -74,7 +77,71 @@ gfs_hook_syscall_getdents64(int filedes, struct dirent64 *buf, size_t nbyte)
 }
 #endif
 
+#ifdef SYS_truncate64
+int
+gfs_hook_syscall_truncate64(const char *path, off64_t length)
+{
+	return (syscall(SYS_truncate64, path, length));
+}
+
+#define SYSCALL_TRUNCATE(path, length) \
+	gfs_hook_syscall_truncate64(path, length)
+#define FUNC___TRUNCATE	__truncate64
+#define FUNC__TRUNCATE	_truncate64
+#define FUNC_TRUNCATE	truncate64
+#endif
+
+#ifdef SYS_ftruncate64
+int
+gfs_hook_syscall_ftruncate64(int filedes, off64_t length)
+{
+	return (syscall(SYS_ftruncate64, filedes, length));
+}
+
+#define SYSCALL_FTRUNCATE(filedes, length) \
+	gfs_hook_syscall_ftruncate64(filedes, length)
+#define FUNC___FTRUNCATE	__ftruncate64
+#define FUNC__FTRUNCATE		_ftruncate64
+#define FUNC_FTRUNCATE		ftruncate64
+#endif
+
 /* see lseek64.c for gfs_hook_syscall_lseek64() implementation */
+
+#if defined(SYS_pread) || defined(SYS_pread64)
+int
+gfs_hook_syscall_pread64(int filedes, void *buf, size_t nbyte, off64_t offset)
+{
+# ifdef SYS_pread64
+	return (syscall(SYS_pread64, filedes, buf, nbyte, offset));
+# else
+	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
+# endif
+}
+
+#define SYSCALL_PREAD(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pread64(filedes, buf, nbyte, offset)
+#define FUNC___PREAD	__pread64
+#define FUNC__PREAD	_pread64
+#define FUNC_PREAD	pread64
+#endif
+
+#if defined(SYS_pwrite) || defined(SYS_pwrite64)
+int
+gfs_hook_syscall_pwrite64(int filedes, const void *buf, size_t nbyte, off64_t offset)
+{
+# ifdef SYS_pwrite64
+	return (syscall(SYS_pwrite64, filedes, buf, nbyte, offset));
+# else
+	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
+# endif
+
+#define SYSCALL_PWRITE(filedes, buf, nbyte, offset)	\
+	gfs_hook_syscall_pwrite64(filedes, buf, nbyte, offset)
+#define FUNC___PWRITE	__pwrite64
+#define FUNC__PWRITE	_pwrite64
+#define FUNC_PWRITE	pwrite64
+}
+#endif
 
 int
 gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
@@ -151,8 +218,6 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 	gfs_hook_syscall_creat64(path, mode)
 #define SYSCALL_LSEEK(filedes, offset, whence)	\
 	gfs_hook_syscall_lseek64(filedes, offset, whence)
-#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
-	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 
 #define FUNC___OPEN	__open64
 #define FUNC__OPEN	_open64
@@ -164,6 +229,10 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define FUNC___LSEEK	__lseek64
 #define FUNC__LSEEK	_lseek64
 #define FUNC_LSEEK	lseek64
+
+
+#define SYSCALL_GETDENTS(filedes, buf, nbyte) \
+	gfs_hook_syscall_getdents64(filedes, buf, nbyte)
 #define FUNC___GETDENTS	__getdents64
 #define FUNC__GETDENTS	_getdents64
 #define FUNC_GETDENTS	getdents64
@@ -172,12 +241,12 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define ALIGNMENT 8
 #define ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
+
 #include "hooks_common.c"
 
 /* stat */
 
 #define STRUCT_STAT	struct stat64
-#define GFS_BLKSIZE	8192
 
 #define SYSCALL_STAT(path, buf)	\
 	gfs_hook_syscall_stat64(path, buf)
@@ -252,7 +321,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 OFF_T
 __llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "__llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "__llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -260,7 +329,7 @@ __llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 _llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "_llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "_llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -268,7 +337,7 @@ _llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(fprintf(stderr, "Hooking " "llseek" ": %d\n",
+	_gfs_hook_debug_v(gflog_info("Hooking " "llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }

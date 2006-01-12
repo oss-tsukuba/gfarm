@@ -302,7 +302,7 @@ gfarm_error_t
 gfj_server_register_node(struct peer *peer, int from_client, int skip)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("register_node", "not implemented");
+	gflog_fatal("register_node: not implemented");
 
 	return (gfj_server_put_reply(peer, "register_node",
 	    GFARM_ERR_NO_ERROR, ""));
@@ -476,7 +476,7 @@ gfj_server_hostinfo(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal("host_info", "not implemented");
+	gflog_fatal("host_info: not implemented");
 
 	return (gfj_server_put_reply(peer, "host_info",
 	    GFARM_ERR_NO_ERROR, ""));

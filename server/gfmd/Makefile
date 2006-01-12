@@ -1,15 +1,15 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 include $(srcdir)/../Makefile.inc
 
-CFLAGS = $(COMMON_CFLAGS) $(PTHREAD_CFLAGS) \
-	-I$(srcdir) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS) $(PTHREAD_LIBS)
+CFLAGS = $(pthread_includes) \
+	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS) $(pthread_libs)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfmd
@@ -34,6 +34,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	subr.h id_table.h user.h group.h host.h peer.h process.h job.h \

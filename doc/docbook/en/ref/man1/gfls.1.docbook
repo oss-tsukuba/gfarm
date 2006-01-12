@@ -36,6 +36,13 @@
 
 <variablelist>
 
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>Display pathnames whose names begin with ``.''.</para>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><option>-c</option></term>
@@ -63,6 +70,13 @@
 <term><option>-F</option></term>
 <listitem>
 <para>Append indicator (one of */=@|) to entries.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-i</option></term>
+<listitem>
+<para>Display inode number.</para>
 </listitem>
 </varlistentry>
 

@@ -30,13 +30,19 @@
 
 #include "hooks_subr.h"
 
+#if defined(__i386__)
 #define NEEDS_XSTAT_CONV
+#endif
+
+#ifdef NEEDS_XSTAT_CONV
 #include "xstatconv.c"
+#endif
 
 /* Get information about the file NAME in BUF.  */
 int
 gfs_hook_syscall_xstat (int vers, const char *name, struct stat *buf)
 {
+#ifdef NEEDS_XSTAT_CONV
   struct kernel_stat kbuf;
   int result;
 
@@ -48,4 +54,7 @@ gfs_hook_syscall_xstat (int vers, const char *name, struct stat *buf)
     result = xstat_conv (vers, &kbuf, buf);
 
   return result;
+#else /* NEEDS_XSTAT_CONV */
+  return syscall (SYS_stat, name, buf);
+#endif
 }

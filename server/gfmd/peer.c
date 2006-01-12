@@ -53,7 +53,7 @@ peer_init(int max_peers)
 
 	peer_table = malloc(max_peers * sizeof(*peer_table));
 	if (peer_table == NULL)
-		gflog_fatal("peer table", strerror(ENOMEM));
+		gflog_fatal("peer table: %s", strerror(ENOMEM));
 	peer_table_size = max_peers;
 
 	for (i = 0; i < peer_table_size; i++) {
@@ -136,10 +136,6 @@ peer_authorized(struct peer *peer,
 void
 peer_free(struct peer *peer)
 {
-	static char m1[] = "(";
-	static char m2[] = "@";
-	static char m3[] = ") disconnected";
-	char *msg;
 	char *username = peer_get_username(peer);
 	char *hostname = peer_get_hostname(peer);
 
@@ -149,16 +145,7 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
-	/* disconnect, do logging */
-	msg = malloc(sizeof(m1) - 1 + strlen(username) +
-	    sizeof(m2) - 1 + strlen(peer->hostname) + sizeof(m3));
-	if (msg == NULL) {
-		gflog_notice("(:@not enough memory) disconnected", username);
-	} else {
-		sprintf(msg, "%s%s%s%s%s", m1, username, m2, hostname, m3);
-		gflog_notice(msg, NULL);
-		free(msg);
-	}
+	gflog_notice("(%s@%s) disconnected", username, hostname);
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
@@ -209,7 +196,7 @@ peer_get_fd(struct peer *peer)
 	int fd = peer - peer_table;
 
 	if (fd < 0 || fd >= peer_table_size)
-		gflog_fatal("peer_get_fd", "invalid peer pointer");
+		gflog_fatal("peer_get_fd: invalid peer pointer");
 	return (fd);
 }
 #endif
@@ -236,7 +223,7 @@ void
 peer_set_user(struct peer *peer, struct user *user)
 {
 	if (peer->user != NULL)
-		gflog_fatal("peer_set_user", "overriding user");
+		gflog_fatal("peer_set_user: overriding user");
 	peer->user = user;
 }
 
@@ -256,7 +243,7 @@ void
 peer_set_process(struct peer *peer, struct process *process)
 {
 	if (peer->process != NULL)
-		gflog_fatal("peer_set_process", "overriding process");
+		gflog_fatal("peer_set_process: overriding process");
 	peer->process = process;
 	process_add_ref(process);
 }
@@ -291,11 +278,12 @@ peer_schedule(struct peer *peer, void *(*handler)(void *))
 	if (!initialized) {
 		err = pthread_attr_init(&attr);
 		if (err != 0)
-			gflog_fatal("pthread_attr_init()", strerror(err));
+			gflog_fatal("pthread_attr_init(): %s", strerror(err));
 		err = pthread_attr_setdetachstate(&attr,
 		    PTHREAD_CREATE_DETACHED);
 		if (err != 0)
-			gflog_fatal("PTHREAD_CREATE_DETACHED", strerror(err));
+			gflog_fatal("PTHREAD_CREATE_DETACHED: %s",
+			    strerror(err));
 		initialized = 1;
 	}
 

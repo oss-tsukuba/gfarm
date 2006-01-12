@@ -77,7 +77,7 @@ process_alloc(struct user *user,
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
 		if (process_id_table == NULL)
-			gflog_fatal("allocating pid table", "no memory");
+			gflog_fatal("allocating pid table: no memory");
 	}
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
@@ -485,7 +485,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("process_free", "not implemented");
+	gflog_error("process_free: not implemented");
 
 	e = gfm_server_put_reply(peer, "process_free",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");

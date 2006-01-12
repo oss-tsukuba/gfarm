@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,13 +8,16 @@
 #include <gssapi.h>
 #include <limits.h>
 
+#include "gfutil.h"
+
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
 #include "misc.h"
 
-static int port = 0;
+#include "scarg.h"
+
 static unsigned long int addr = 0L;
 static char *hostname = NULL;
 
@@ -21,38 +26,28 @@ ParseArgs(argc, argv)
      int argc;
      char *argv[];
 {
-    while (*argv != NULL) {
-	if (strcmp(*argv, "-p") == 0) {
-	    if (*(argv + 1) != NULL) {
-		int tmp;
-		if (gfarmGetInt(*(++argv), &tmp) < 0) {
-		    fprintf(stderr, "illegal port number.\n");
-		    return -1;
-		}
-		if (tmp <= 0) {
-		    fprintf(stderr, "port number must be > 0.\n");
-		    return -1;
-		} else if (tmp > 65535) {
-		    fprintf(stderr, "port number must be < 65536.\n");
-		    return -1;
-		}
-		port = tmp;
-	    }
-	} else if (strcmp(*argv, "-h") == 0) {
-	    if (*(argv + 1) != NULL) {
-		unsigned long int tmp;
-		argv++;
-		tmp = gfarmIPGetAddressOfHost(*argv);
-		if (tmp == ~0L || tmp == 0L) {
-		    fprintf(stderr, "Invalid hostname.\n");
-		    return -1;
-		}
-		addr = tmp;
-		hostname = *argv;
-	    }
-	}
+    int c;
 
-	argv++;
+    while ((c = getopt(argc, argv, "h:"  COMMON_OPTIONS)) != -1) {
+	switch (c) {
+	case 'h':
+	    addr = gfarmIPGetAddressOfHost(optarg);
+	    if (addr == ~0L || addr == 0L) {
+		fprintf(stderr, "Invalid hostname.\n");
+		return -1;
+	    }
+	    hostname = optarg;
+	    break;
+	default:
+	    if (HandleCommonOptions(c, optarg) != 0)
+		return -1;
+	    break;
+	}
+    }
+
+    if (optind < argc) {
+	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
+	return -1;
     }
 
     if (addr == 0L) {
@@ -82,25 +77,43 @@ main(argc, argv)
     int ret = 1;
     int len;
 
-    if (ParseArgs(argc - 1, argv + 1) != 0) {
-	goto Done;
-    }
-
-    if (gfarmSecSessionInitializeInitiator(NULL, &majStat, &minStat) <= 0) {
+    gflog_auth_set_verbose(1);
+    if (gfarmSecSessionInitializeInitiator(NULL, NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
 
-    ss0 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
+    if (ParseArgs(argc, argv) != 0) {
+	goto Done;
+    }
+
+    if (!acceptorSpecified) {
+	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
+				     &majStat, &minStat) < 0) {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    goto Done;
+	}
+    }
+
+    ss0 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+					GSS_C_NO_CREDENTIAL,
+					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+					NULL,
+					&majStat, &minStat);
     if (ss0 == NULL) {
 	fprintf(stderr, "Can't initiate session 0 because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
-    ss1 = gfarmSecSessionInitiateByAddr(addr, port, GSS_C_NO_CREDENTIAL, NULL, &majStat, &minStat);
+    ss1 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+					GSS_C_NO_CREDENTIAL,
+					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+					NULL,
+					&majStat, &minStat);
     if (ss1 == NULL) {
 	fprintf(stderr, "Can't initiate session 1 because of:\n");
 	gfarmGssPrintMajorStatus(majStat);

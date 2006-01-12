@@ -1,3 +1,47 @@
+gfarm (1:1.2-2) unstable; urgency=low
+
+  * New upstream release, version number is still 1.2 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 12 Sep 2005 05:41:27 +0900
+
+gfarm (1:1.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 22 Aug 2005 16:08:00 +0900
+
+gfarm (1:1.1.1-2) unstable; urgency=low
+
+  * changed build environments (Bug#14)
+  * fixed some problems to build package 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Thu,  2 Jun 2005 10:40:48 +0900
+
+gfarm (1:1.1.1-1) unstable; urgency=low
+
+  * New upstream release
+  * added some manpages 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 13 Apr 2005 09:06:42 +0900
+
+gfarm (1:1.1.0-2) unstable; urgency=low
+
+  * fixed invalid dependencies 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 14 Mar 2005 14:52:24 +0900
+
+gfarm (1:1.1.0-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 16 Feb 2005 13:36:17 +0900
+
+gfarm (1:1.0.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Tue, 24 Aug 2004 16:56:30 +0900
+
 gfarm (1:1.0.3.1-1) unstable; urgency=low
 
   * upstream release 

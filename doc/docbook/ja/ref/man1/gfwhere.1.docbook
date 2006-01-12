@@ -18,6 +18,7 @@
 <cmdsynopsis>
   <command>gfwhere</command>
     <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
+    <arg choice='opt'>-s</arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -55,6 +56,12 @@
 実行形式のファイルの場合には、このオプションで実行アーキ
 テクチャ(例 「sparc-sun-solaris8」) を指定することによっ
 て、指定したアーキテクチャのレプリカの所在を表示できます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>ファイル・フラグメントのサイズも表示します。</para>
 </listitem>
 </varlistentry>
 <varlistentry>

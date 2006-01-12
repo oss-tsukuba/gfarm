@@ -11,6 +11,66 @@
 #include <gfarm/gfarm.h>
 
 static int option_verbose;
+static char GFARM_MSG_DELETED[] = "deleted";
+
+static char *
+path_info_remove(char *url, char *canonical_path, char *errmsg)
+{
+	char *e, *c_path = NULL;
+	FILE *out = stdout;
+
+	if (canonical_path == NULL) {
+		e = gfarm_url_make_path(url, &c_path);
+		if (e != NULL)
+			return (e);
+		canonical_path = c_path;
+	}
+
+	e = gfarm_path_info_remove(canonical_path);
+	if (e == NULL)
+		e = GFARM_MSG_DELETED;
+	else
+		out = stderr;
+
+	fprintf(out, "%s: %s: %s\n", url, errmsg, e);
+
+	if (c_path != NULL)
+		free(c_path);
+	return (e == GFARM_MSG_DELETED ? NULL : e);
+}
+
+static char *
+section_info_remove(char *url, char *gfarm_file, char *section, char *errmsg)
+{
+	char *e = gfarm_file_section_info_remove(gfarm_file, section);
+	FILE *out = stdout;
+
+	if (e == NULL)
+		e = GFARM_MSG_DELETED;
+	else
+		out = stderr;
+
+	fprintf(out, "%s (%s): %s: %s\n", url, section, errmsg, e);
+
+	return (e == GFARM_MSG_DELETED ? NULL : e);
+}
+
+static char *
+section_copy_info_remove(
+	char *url, char *pathname, char *section, char *host, char *errmsg)
+{
+	char *e = gfarm_file_section_copy_info_remove(pathname, section, host);
+	FILE *out = stdout;
+
+	if (e == NULL)
+		e = GFARM_MSG_DELETED;
+	else
+		out = stderr;
+
+	fprintf(out, "%s (%s) on %s: %s: %s\n", url, section, host, errmsg, e);
+
+	return (e == GFARM_MSG_DELETED ? NULL : e);
+}
 
 static char *
 gfsck_file(char *gfarm_url)
@@ -20,27 +80,22 @@ gfsck_file(char *gfarm_url)
 	struct gfarm_file_section_info *sections;
 	GFS_File gf;
 
-	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-	if (e != NULL) {
-		return (e);
-	}
-
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e != NULL) {
-		(void)gfs_pio_close(gf);
+	if (e != NULL)
 		return (e);
-	}
+
 	e = gfarm_file_section_info_get_all_by_file(
 		gfarm_file, &nsections, &sections);
 	if (e != NULL) {
 		/* no section info, remove path info */
-		e = gfarm_path_info_remove(gfarm_file);
-		if (e == NULL)
-			printf("%s: invalid metadata deleted\n", gfarm_url);
-		else
-			fprintf(stderr, "%s: %s\n", gfarm_url, e);
+		e = path_info_remove(gfarm_url, gfarm_file, e);
 		free(gfarm_file);
-		(void)gfs_pio_close(gf);
+		return (e);
+	}
+
+	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
+	if (e != NULL) {
+		free(gfarm_file);
 		return (e);
 	}
 
@@ -53,21 +108,13 @@ gfsck_file(char *gfarm_url)
 			gfarm_file, section, &ncopies, &copies);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 			/* no section copy info, remove section info */
-			e = gfarm_file_section_info_remove(
-				gfarm_file, section);
-			if (e == NULL) {
-				printf("%s (%s): invalid metadata deleted\n",
-				       gfarm_url, section);
-			}
-			else {
-				fprintf(stderr, "%s (%s): %s\n",
-					gfarm_url, section, e);
-				if (e_save == NULL)
-					e_save = e;
-			}
+			e = section_info_remove(
+				gfarm_url, gfarm_file, section, e);
+			if (e != NULL && e_save == NULL)
+				e_save = e;
 			continue;
 		}
-		if (e != NULL) {
+		else if (e != NULL) {
 			fprintf(stderr, "%s (%s): %s\n",
 				gfarm_url, section, e);
 			if (e_save == NULL)
@@ -75,62 +122,55 @@ gfsck_file(char *gfarm_url)
 			continue;
 		}
 		for (j = 0; j < ncopies; ++j) {
+			char *hostname = copies[j].hostname;
+
 			if (option_verbose)
 				printf("%s (%s) on %s\n", gfarm_url, section,
-				       copies[j].hostname);
-			e = gfs_pio_set_view_section(gf, section,
-			    copies[j].hostname,
+				       hostname);
+			e = gfs_pio_set_view_section(gf, section, hostname,
 			    GFARM_FILE_NOT_REPLICATE | GFARM_FILE_NOT_RETRY);
 			if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE) {
 				/* invalid section copy info removed */
 				printf("%s (%s) on %s: "
 				       "invalid metadata deleted\n",
-				       gfarm_url, section,
-				       copies[j].hostname);
+				       gfarm_url, section, hostname);
 				e = NULL;
+				continue;
 			}
-			else {
-				++valid_ncopies;
-				if (e != NULL) {
-					fprintf(stderr, "%s (%s) on %s: %s\n",
-						gfarm_url, section,
-						copies[j].hostname, e);
-					if (e_save == NULL)
-						e_save = e;
-				}
+			else if (e == GFARM_ERR_NO_ROUTE_TO_HOST) {
+				e = section_copy_info_remove(gfarm_url,
+					gfarm_file, section, hostname, e);
+				if (e != NULL && e_save == NULL)
+					e_save = e;
+				continue;
 			}
-
+			else if (e != NULL) {
+				/* need to delete metadata? */
+				fprintf(stderr, "%s (%s) on %s: %s\n",
+					gfarm_url, section, hostname, e);
+				if (e_save == NULL)
+					e_save = e;
+				/* keep metadata */
+			}
+			++valid_ncopies;
 		}
 		gfarm_file_section_copy_info_free_all(ncopies, copies);
 		if (valid_ncopies == 0) {
 			/* no section copy info, remove section info */
-			e = gfarm_file_section_info_remove(
-				gfarm_file, section);
-			if (e == NULL) {
-				printf("%s (%s): invalid metadata deleted\n",
-				       gfarm_url, section);
-			}
-			else {
-				fprintf(stderr, "%s (%s): %s\n",
-					gfarm_url, section, e);
-				if (e_save == NULL)
-					e_save = e;
-			}
+			e = section_info_remove(gfarm_url, gfarm_file, section,
+				"no file replica");
+			if (e != NULL && e_save == NULL)
+				e_save = e;
 		}
 		else
 			++valid_nsections;
 	}
 	if (valid_nsections == 0) {
 		/* no section info, remove path info */
-		e = gfarm_path_info_remove(gfarm_file);
-		if (e == NULL) {
-			printf("%s: invalid metadata deleted\n", gfarm_url);
-		}
-		else {
-			fprintf(stderr, "%s: %s\n", gfarm_url, e);
-			if (e_save == NULL)
-				e_save = e;
-		}
+		e = path_info_remove(gfarm_url, gfarm_file,
+			GFARM_ERR_NO_FRAGMENT_INFORMATION);
+		if (e != NULL && e_save == NULL)
+			e_save = e;
 	}
 	else if (valid_nsections < nsections) {
 		printf("%s: warning: number of file sections reduced\n",
@@ -150,7 +190,7 @@ gfsck_file(char *gfarm_url)
 static char *
 gfsck_dir(char *gfarm_dir, char *file)
 {
-	char *e, *e_save = NULL, *gfarm_url;
+	char *e, *gfarm_url;
 	struct gfs_stat gsb;
 	GFS_Dir gdir;
 	struct gfs_dirent *gdent;
@@ -160,11 +200,17 @@ gfsck_dir(char *gfarm_dir, char *file)
 		return (GFARM_ERR_NO_MEMORY);
 	if (gfarm_dir[0] == '\0')
 		sprintf(gfarm_url, "%s", file);
+	else if (strcmp(gfarm_dir, GFARM_URL_PREFIX) == 0)
+		sprintf(gfarm_url, "%s%s", gfarm_dir, file);
 	else
 		sprintf(gfarm_url, "%s/%s", gfarm_dir, file);
 
 	e = gfs_stat(gfarm_url, &gsb);
 	if (e != NULL) {
+		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION) {
+			/* no fragment information, remove path info */
+			e = path_info_remove(gfarm_url, NULL, e);
+		}
 		free(gfarm_url);
 		return (e);
 	}
@@ -187,18 +233,22 @@ gfsck_dir(char *gfarm_dir, char *file)
 		return (e);
 	}
 	while ((e = gfs_readdir(gdir, &gdent)) == NULL && gdent != NULL) {
+		if (gdent->d_name[0] == '.' && (gdent->d_name[1] == '\0' ||
+		    (gdent->d_name[1] == '.' && gdent->d_name[2] == '\0')))
+			continue; /* "." or ".." */
 		e = gfsck_dir(gfarm_url, gdent->d_name);
 		if (e != NULL) {
-			fprintf(stderr, "%s/%s: %s\n",
-				gfarm_url, gdent->d_name, e);
-			if (e_save == NULL)
-				e_save = e;
+			fprintf(stderr, "%s%s%s: %s\n",
+				gfarm_url, 
+				strcmp(gfarm_url, GFARM_URL_PREFIX) == 0
+				? "" : "/", gdent->d_name, e);
+			/* it is not necessary to save error */
 		}
 	}
 	(void)gfs_closedir(gdir);
 	free(gfarm_url);
 
-	return (e_save);
+	return (NULL);
 }
 
 char *program_name = "gfsck";

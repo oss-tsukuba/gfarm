@@ -10,6 +10,8 @@
 
 extern char *gfarm_config_file;
 extern char *gfarm_spool_root;
+extern int gfarm_spool_server_port;
+extern int gfarm_metadb_server_port;
 
 void gfarm_config_clear(void);
 gfarm_error_t gfarm_config_read_file(FILE *, char *, int *);

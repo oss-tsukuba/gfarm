@@ -161,7 +161,7 @@ void
 inode_remove(struct inode *inode)
 {
 	if (inode->u.c.openings.opening_next != &inode->u.c.openings)
-		gflog_fatal("inode_remove", "still opened");
+		gflog_fatal("inode_remove: still opened");
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
 		gfarm_error_t e;
@@ -170,7 +170,7 @@ inode_remove(struct inode *inode)
 		    copy = cn) {
 			e = host_remove_replica(copy->host, inode->i_number);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error("host_remove_replica",
+				gflog_error("host_remove_replica: %s",
 				    host_name(copy->host));
 			cn = copy->host_next;
 			free(copy);
@@ -178,7 +178,7 @@ inode_remove(struct inode *inode)
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
 	} else {
-		gflog_fatal("inode_unlink", "unknown inode type");
+		gflog_fatal("inode_unlink: unknown inode type");
 		/*NOTREACHED*/
 	}
 	inode_free(inode);
@@ -652,7 +652,7 @@ inode_unlink(char *path, struct process *process)
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	} else {
-		gflog_fatal("inode_unlink", "unknown inode type");
+		gflog_fatal("inode_unlink: unknown inode type");
 		/*NOTREACHED*/
 		return (GFARM_ERR_UNKNOWN);
 	}
@@ -744,7 +744,7 @@ inode_has_replica(struct inode *inode, struct host *spool_host)
 	struct file_copy *copy;
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_has_replica", "not a file");
+		gflog_fatal("inode_has_replica: not a file");
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (copy->host == spool_host)
@@ -787,7 +787,7 @@ inode_schedule_host_for_write(struct inode *inode, struct host *spool_host)
 	int host_match = 0;
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_schedule_host_for_write", "not a file");
+		gflog_fatal("inode_schedule_host_for_write: not a file");
 	fo = inode->u.c.openings.opening_next;
 	if (fo == &inode->u.c.openings)
 		return (inode_schedule_spool_host(inode, spool_host));

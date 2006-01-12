@@ -44,4 +44,8 @@ extern void	gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr);
 
 extern int	gfarmAuthGetAuthEntryType(gfarmAuthEntry *aePtr);
 
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
+gfarmAuthEntry *gfarmAuthGetLocalUserEntry(char *localUserName);
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
+
 #endif /* _GFARM_AUTH_H_ */

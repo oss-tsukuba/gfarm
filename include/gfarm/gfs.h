@@ -60,13 +60,18 @@ gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 #define GFARM_FILE_WRONLY		1
 #define GFARM_FILE_RDWR			2
 #define GFARM_FILE_ACCMODE		3	/* RD/WR/RDWR mode mask */
-#define GFARM_FILE_CREATE		0x00000200
+/* #define GFARM_FILE_CREATE		0x00000200 */ /* internal use only */
 #define GFARM_FILE_TRUNC		0x00000400
+#define GFARM_FILE_APPEND		0x00000800
+#define GFARM_FILE_EXCLUSIVE		0x00001000
 /* the followings are just hints */
 #define GFARM_FILE_SEQUENTIAL		0x01000000
 #define GFARM_FILE_REPLICATE		0x02000000
 #define GFARM_FILE_NOT_REPLICATE	0x04000000
 #define GFARM_FILE_NOT_RETRY		0x08000000
+#define GFARM_FILE_UNBUFFERED		0x10000000
+
+char *gfs_pio_truncate(GFS_File, gfarm_off_t);
 
 gfarm_error_t gfs_pio_set_local(int, int);
 gfarm_error_t gfs_pio_set_local_check(void);
@@ -93,6 +98,8 @@ gfarm_error_t gfs_pio_flush(GFS_File);
 gfarm_error_t gfs_pio_seek(GFS_File, gfarm_off_t, int, gfarm_off_t *);
 gfarm_error_t gfs_pio_read(GFS_File, void *, int, int *);
 gfarm_error_t gfs_pio_write(GFS_File, const void *, int, int *);
+gfarm_error_t gfs_pio_sync(GFS_File);
+gfarm_error_t gfs_pio_datasync(GFS_File);
 
 int gfs_pio_getc(GFS_File);
 int gfs_pio_ungetc(GFS_File, int);
@@ -115,6 +122,7 @@ gfarm_error_t gfs_pio_set_fragment_info_local(char *, char *, char *);
  */
 
 gfarm_error_t gfs_unlink(const char *);
+gfarm_error_t gfs_unlink_section(const char *, const char *);
 gfarm_error_t gfs_unlink_section_replica(const char *, const char *,
 	int, char **, int);
 gfarm_error_t gfs_unlink_replicas_on_host(const char *,	const char *, int);
@@ -143,6 +151,7 @@ gfarm_error_t gfs_access(const char *, int);
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
 	gfarm_ino_t d_fileno;
+	unsigned short d_reclen;
 	unsigned char d_type;
 	unsigned char d_namlen;
 	char d_name[GFS_MAXNAMLEN + 1];
@@ -158,6 +167,9 @@ gfarm_error_t gfs_opendir(const char *, GFS_Dir *);
 gfarm_error_t gfs_readdir(GFS_Dir, struct gfs_dirent **);
 gfarm_error_t gfs_closedir(GFS_Dir);
 gfarm_error_t gfs_dirname(GFS_Dir);
+gfarm_error_t gfs_seekdir(GFS_Dir, gfarm_off_t);
+gfarm_error_t gfs_telldir(GFS_Dir, gfarm_off_t *);
+gfarm_error_t gfs_realpath(const char *, char **);
 gfarm_error_t gfs_realpath(const char *, char **);
 
 /*

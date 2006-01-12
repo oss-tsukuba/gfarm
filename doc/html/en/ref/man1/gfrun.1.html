@@ -331,12 +331,15 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >specifies a Gfarm fragment index executed by the gfrun command.
-This option is only available, when file-affinity scheduling is
+This option is available only when either file-affinity scheduling is
 selected by the <TT
 CLASS="OPTION"
 >-G</TT
 > option or a gfarm file in the
-argument list.</P
+argument list, or the <TT
+CLASS="OPTION"
+>-N</TT
+> option is specified.</P
 ></DD
 ><DT
 ><TT
@@ -376,6 +379,17 @@ CLASS="OPTION"
 ><P
 >explicitly specifies that the command is an usual program, and
 does not take Gfarm specific options.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-b</TT
+></DT
+><DD
+><P
+>specifies global file view as a defult file view for programs
+linked with Gfarm syscall-hooking library.  If this option is not
+specified, the default is local file view.</P
 ></DD
 ><DT
 ><TT

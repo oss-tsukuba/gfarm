@@ -14,8 +14,9 @@
 #include <libgen.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
-#include "gfs_proto.h" /* for gfs_digest_calculate_local() */
+#include "gfs_proto.h" /* GFARM_FILE_CREATE, gfs_digest_calculate_local() */
 #include "gfs_pio.h"
+#include "gfs_misc.h"
 
 int gfarm_node = -1;
 int gfarm_nnode = -1;
@@ -132,6 +133,44 @@ gfs_pio_local_storage_seek(GFS_File gf, file_offset_t offset, int whence,
 }
 
 static char *
+gfs_pio_local_storage_ftruncate(GFS_File gf, file_offset_t length)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	int rv;
+
+	rv = ftruncate(vc->fd, length);
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (NULL);
+}
+
+static char *
+gfs_pio_local_storage_fsync(GFS_File gf, int operation)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	int rv;
+
+	switch (operation) {
+	case GFS_PROTO_FSYNC_WITHOUT_METADATA:
+#ifdef HAVE_FDATASYNC
+		rv = fdatasync(vc->fd);
+		break;
+#else
+		/*FALLTHROUGH*/
+#endif
+	case GFS_PROTO_FSYNC_WITH_METADATA:
+		rv = fsync(vc->fd);
+		break;
+	default:
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (NULL);
+}
+
+static char *
 gfs_pio_local_storage_calculate_digest(GFS_File gf, char *digest_type,
 				       size_t digest_size,
 				       size_t *digest_lengthp,
@@ -173,6 +212,8 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_write,
 	gfs_pio_local_storage_read,
 	gfs_pio_local_storage_seek,
+	gfs_pio_local_storage_ftruncate,
+	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_calculate_digest,
 	gfs_pio_local_storage_fd,
 };
@@ -182,11 +223,21 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e, *local_path;
-	int fd, open_flags = gfs_open_flags_localize(gf->open_flags);
+	/*
+	 * We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
+	 * level access (at least for now) to avoid the effect of
+	 * remaining junk files.
+	 * It's already handled anyway at the metadata level.
+	 *
+	 * NOTE: Same thing must be done in gfs_pio_remote.c.
+	 */
+	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE) |
+	    (flags & GFARM_FILE_CREATE);
+	int fd, local_oflags = gfs_open_flags_localize(oflags);
 	int saved_errno;
 	mode_t saved_umask;
 
-	if (open_flags == -1)
+	if (local_oflags == -1)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	e = gfarm_path_localize_file_section(gf->pi.pathname, vc->section,
@@ -195,29 +246,32 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 		return (e);
 
 	saved_umask = umask(0);
-	fd = open(local_path, open_flags,
+	fd = open(local_path, local_oflags,
 		  gf->pi.status.st_mode & GFARM_S_ALLPERM);
 	saved_errno = errno;
 	umask(saved_umask);
 	/* FT - the parent directory may be missing */
-	if (fd == -1 && (gf->open_flags & GFARM_FILE_CREATE) != 0
-	    && gfarm_errno_to_error(saved_errno) == GFARM_ERR_NO_SUCH_OBJECT) {
-		if (gfs_pio_local_mkdir_parent_canonical_path(
-			    gf->pi.pathname) == NULL) {
-			fd = open(local_path, open_flags,
-				  gf->pi.status.st_mode & GFARM_S_ALLPERM);
-			saved_errno = errno;
-		}
+	if (fd == -1 && (oflags & GFARM_FILE_CREATE) != 0
+	    && saved_errno == ENOENT) {
+		/* the parent directory can be created by some other process */
+		(void)gfs_pio_local_mkdir_parent_canonical_path(
+			gf->pi.pathname);
+		umask(0);
+		fd = open(local_path, local_oflags,
+			  gf->pi.status.st_mode & GFARM_S_ALLPERM);
+		saved_errno = errno;
+		umask(saved_umask);
 	}
 	free(local_path);
 	/* FT - physical file should be missing */
-	if (fd == -1 && (gf->open_flags & GFARM_FILE_CREATE) == 0
-	    && gfarm_errno_to_error(saved_errno) == GFARM_ERR_NO_SUCH_OBJECT) {
+	if (fd == -1 && (oflags & GFARM_FILE_CREATE) == 0
+	    && saved_errno == ENOENT) {
 		/* Delete the section copy info */
 		char *localhost;
-		if (gfarm_host_get_canonical_self_name(&localhost) == NULL &&
-		    gfarm_file_section_copy_info_remove(
-			    gf->pi.pathname, vc->section, localhost) == NULL) {
+		if (gfarm_host_get_canonical_self_name(&localhost) == NULL) {
+			/* section copy may be removed by some other process */
+			(void)gfarm_file_section_copy_info_remove(
+				gf->pi.pathname, vc->section, localhost);
 			return (GFARM_ERR_INCONSISTENT_RECOVERABLE);
 		}
 	}
@@ -242,6 +296,11 @@ gfs_pio_local_mkdir_p(char *canonic_dir)
 	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
 		return (NULL); /* should exist */
 
+	user = gfarm_get_global_username();
+	if (user == NULL)
+		return ("gfs_pio_local_mkdir_p(): programming error, "
+			"gfarm library isn't properly initialized");
+
 	e = gfs_stat_canonical_path(canonic_dir, &stata);
 	if (e != NULL)
 		return (e);
@@ -251,7 +310,6 @@ gfs_pio_local_mkdir_p(char *canonic_dir)
 	 * directory with permission 0777 - This should be fixed in
 	 * the next major release.
 	 */
-	user = gfarm_get_global_username();
 	if (strcmp(stata.st_user, user) != 0)
 		mode |= 0777;
 	gfs_stat_free(&stata);

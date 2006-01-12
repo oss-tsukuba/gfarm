@@ -135,16 +135,68 @@ CLASS="VARNAME"
 >umask</TT
 >.</P
 ><P
->Currently, <TT
-CLASS="CONSTANT"
->GFARM_FILE_WRONLY</TT
-> is only supported for values of
+>The
 <TT
 CLASS="PARAMETER"
 ><I
 >flags</I
 ></TT
->.</P
+>
+argument has the same meaning as the second argument of
+<TT
+CLASS="FUNCTION"
+>gfs_pio_open()</TT
+>, including the point
+such that exactly one of
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_RDONLY</I
+></TT
+>,
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_WRONLY</I
+></TT
+>, and
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_RDWR</I
+></TT
+>
+should be specified.
+In addition, it is possible to specify
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_EXCLUSIVE</I
+></TT
+>.
+With this flag, 
+<TT
+CLASS="FUNCTION"
+>gfs_pio_create()</TT
+>
+will fail when the file already exists.</P
+><P
+>Note that
+<TT
+CLASS="PARAMETER"
+><I
+>GFARM_FILE_TRUNC</I
+></TT
+>
+must be explicitly specified by the
+<TT
+CLASS="PARAMETER"
+><I
+>flags</I
+></TT
+>
+argument since gfarm-1.0.4, if it's needed.
+Although this was implicitly assumed before.</P
 ><P
 >When <TT
 CLASS="FUNCTION"
@@ -217,6 +269,20 @@ CLASS="PARAMETER"
 > did not allow search (execute)
 permission, or the file did not exist yet and write access to the
 parent directory is not allowed.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_ALREADY_EXISTS</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> already exists and GFARM_FILE_EXCLUSIVE was used.</P
 ></DD
 ><DT
 ><TT

@@ -31,8 +31,8 @@ filesystem metadata of the Gfarm filesystem.  <command>gfmd</command> is needed 
 be running on a metadata server node in advance.</para>
 
 <para>It is possible for <command>gfmd</command> to be executed as a non-privileged user
-process although other users cannot use it.  Moreover, a <command>gfmd</command>
-with a user privilege cannot authenticate using the GSI.</para>
+process although only the user that executes the <command>gfmd</command> can be authenticated.
+Other users cannot use it.</para>
 
 <para>In order to execute <command>gfmd</command> as a non-privileged user process, a
 configuration file for a user needs to be specified by the -f option.
@@ -42,7 +42,7 @@ configuration file or the -p option.</para>
 
 <para>In this case, the altered port number of <command>gfmd</command> should be
 specified by the metadb_serverport statement in <filename>~/.gfarmrc</filename>
-or <filename>/etc/gfarm.conf</filename> on a client node.</para>
+or <filename>%%SYSCONFDIR%%/gfarm.conf</filename> on a client node.</para>
 
 </refsect1>
 
@@ -109,7 +109,7 @@ local0 is used.</para>
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>/etc/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>

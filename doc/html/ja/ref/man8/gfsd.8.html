@@ -60,7 +60,7 @@ root 権限であらかじめ立ち上げておく必要があります。</P
 >gfsd が提供するのは、ファイル・フラグメントの実体へのアクセスです。</P
 ><P
 >gfsd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfsd を利用することができません．また，GSI認証も利用できません．</P
+の gfsd を利用することができません．</P
 ><P
 >ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
 で指定して gfsd を立ち上げます．ユーザ権限による gfsd の起動には少なく
@@ -69,7 +69,7 @@ root 権限であらかじめ立ち上げておく必要があります。</P
 ます．</P
 ><P
 >デフォルト以外のポート番号で立ち上がっている gfsd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは /etc/gfarm.conf の 
+クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
 spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 す．</P
 ></DIV
@@ -180,7 +180,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P

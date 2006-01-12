@@ -35,7 +35,7 @@ static int
 gfs_i_lock(char *file)
 {
 	char *lockfile;
-	int fd;
+	int fd, saved_errno;
 	mode_t saved_mask;
 
 	if (file == NULL)
@@ -45,13 +45,14 @@ gfs_i_lock(char *file)
 	
 	saved_mask = umask(0);
 	fd = open(lockfile, O_CREAT | O_EXCL, 0644);
+	saved_errno = errno;
 	umask(saved_mask);
 	free(lockfile);
 	if (fd != -1) {
 		close(fd);
 		return (0);
 	}
-	else if (errno != EEXIST)
+	else if (saved_errno != EEXIST)
 		return (-2); /* other reasons.  cannot lock */
 
 	return (-1);

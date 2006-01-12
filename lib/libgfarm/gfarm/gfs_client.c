@@ -21,6 +21,7 @@
 #include <time.h>
 #include <openssl/evp.h>
 
+#include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
@@ -177,7 +178,7 @@ gfs_client_connection0(const char *canonical_hostname,
 #else
 		socklen += sizeof(peer_un) - sizeof(peer_un.sun_path);
 #endif
-		if (connect(sock, &peer_un, socklen) < 0) {
+		if (connect(sock, (struct sockaddr *)&peer_un, socklen) < 0) {
 			e = gfarm_errno_to_error(errno);
 			close(sock);
 			return (e);
@@ -218,8 +219,9 @@ gfs_client_connection0(const char *canonical_hostname,
 		gfp_xdr_free(gfs_server->conn);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_auth_request(gfs_server->conn, host_fqdn, peer_addr,
-	    gfarm_get_auth_id_type(), &gfs_server->auth_method);
+	e = gfarm_auth_request(gfs_server->conn,
+	    GFS_SERVICE_TAG, host_fqdn, peer_addr, gfarm_get_auth_id_type(),
+	    &gfs_server->auth_method);
 	free(host_fqdn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_free(gfs_server->conn);
@@ -354,7 +356,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		state->error = gfarm_errno_to_error(error);
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
-		    state->gfs_server->conn,
+		    state->gfs_server->conn, GFS_SERVICE_TAG,
 		    state->gfs_server->hostname, &state->peer_addr,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
@@ -372,7 +374,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 
 gfarm_error_t
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
-	char *canonical_hostname, struct sockaddr *peer_addr,
+	const char *canonical_hostname, struct sockaddr *peer_addr,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_connect_state **statepp)
 {
@@ -448,7 +450,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		    NULL)) == 0) {
 			*statepp = state;
 			/* go to gfs_client_connect_start_auth() */
-			return (0);
+			return (NULL);
 		} else {
 			e = gfarm_errno_to_error(rv);
 			gfarm_event_free(state->writable);
@@ -456,7 +458,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	} else {
 		state->writable = NULL;
 		e = gfarm_auth_request_multiplexed(q,
-		    gfs_server->conn,
+		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
@@ -466,7 +468,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 			 * call gfarm_auth_request,
 			 * then go to gfs_client_connect_end_auth()
 			 */
-			return (0);
+			return (NULL);
 		}
 	}
 	free(state);

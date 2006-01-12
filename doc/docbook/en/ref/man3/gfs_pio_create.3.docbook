@@ -3,7 +3,7 @@
 
 <refentry id='gfs-pio-create.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>30 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -42,8 +42,30 @@ and returns a <parameter>GFS_File</parameter> structure to the address pointed t
 <parameter>gfp</parameter>.  <parameter>Mode</parameter> specifies the file permissions to be created,
 and is modified by the process's <varname>umask</varname>.</para>
 
-<para>Currently, <constant>GFARM_FILE_WRONLY</constant> is only supported for values of
-<parameter>flags</parameter>.</para>
+<para>
+The
+<parameter>flags</parameter>
+argument has the same meaning as the second argument of
+<function>gfs_pio_open()</function>, including the point
+such that exactly one of
+<parameter>GFARM_FILE_RDONLY</parameter>,
+<parameter>GFARM_FILE_WRONLY</parameter>, and
+<parameter>GFARM_FILE_RDWR</parameter>
+should be specified.
+In addition, it is possible to specify
+<parameter>GFARM_FILE_EXCLUSIVE</parameter>.
+With this flag, 
+<function>gfs_pio_create()</function>
+will fail when the file already exists.
+</para>
+<para>
+Note that
+<parameter>GFARM_FILE_TRUNC</parameter>
+must be explicitly specified by the
+<parameter>flags</parameter>
+argument since gfarm-1.0.4, if it's needed.
+Although this was implicitly assumed before.
+</para>
 
 <para>When <function>gfs_pio_create()</function> is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
@@ -81,16 +103,12 @@ permission, or the file did not exist yet and write access to the
 parent directory is not allowed.</para>
 </listitem>
 </varlistentry>
-
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter> already exists and O_EXCL was used.</para>
+<para><parameter>gfarm_url</parameter> already exists and GFARM_FILE_EXCLUSIVE was used.</para>
 </listitem>
 </varlistentry>
--->
-
 <varlistentry>
 <term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
 <listitem>

@@ -1061,45 +1061,35 @@ AH_TOP([
 ])
 
 AH_BOTTOM([
+/* Grid Security Infrastructure exists */
+#undef HAVE_GSI
+
+/* 5 arguments getpwnam_r() which is compatible with SUSv2 exists */
+#undef HAVE_GETPWNAM_R
+
+/* 5 arguments getspnam_r() exists */
+#undef HAVE_GETSPNAM_R
+
+/* sys_nerr is defined */
+#undef HAVE_SYS_NERR
+
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
+#undef socklen_t
+
 #if SIZEOF_LONG == 8
-	typedef long file_offset_t;
-#	define FILE_OFFSET_T_IS_FLOAT		0
-#	define FILE_OFFSET_T_MAX		0x7fffffffffffffffL
-#	define file_offset_floor(offset)	(offset)
-#	define PR_FILE_OFFSET "ld"
-#	define CAST_PR_FILE_OFFSET
-#	define string_to_file_offset(s, endptr)	strtol(s, endptr, 0)
+	typedef long gfarm_int64_t;
+	typedef unsigned long gfarm_uint64_t;
+#	define GFARM_INT64_MAX		0x7fffffffffffffffL
+#	define GFARM_PRId64 "ld"
+#	define gfarm_strtoi64(s, endptr)	strtol(s, endptr, 0)
 #elif SIZEOF_LONG_LONG == 8
-	typedef long long file_offset_t;
-#	define FILE_OFFSET_T_IS_FLOAT		0
-#	define FILE_OFFSET_T_MAX		0x7fffffffffffffffLL
-#	define file_offset_floor(offset)	(offset)
-#  if defined(HAVE_STRTOLL) || defined(HAVE_STRTOQ)
-#	define PR_FILE_OFFSET "lld"
-#	define CAST_PR_FILE_OFFSET
-#    if defined(HAVE_STRTOLL)
-#	define string_to_file_offset(s, endptr)	strtoll(s, endptr, 0)
-#    else
-#	define string_to_file_offset(s, endptr)	strtoq(s, endptr, 0)
-#    endif
-#  else
-#	define PR_FILE_OFFSET ".0f"
-#	define CAST_PR_FILE_OFFSET		(double)
-#	define string_to_file_offset(s, endptr)	(long long)strtod(s, endptr)
-#  endif
+	typedef long long gfarm_int64_t;
+	typedef unsigned long long gfarm_uint64_t;
+#	define GFARM_INT64_MAX		0x7fffffffffffffffLL
+#	define GFARM_PRId64 "lld"
+#	define gfarm_strtoi64(s, endptr)	strtoll(s, endptr, 0)
 #else
-	/*
-	 * With IEEE floating point, usually double has 53bits fraction,
-	 * 10bits biased exponent, and 1 sign bit.
-	 * Thus, this can represent -8192T (== -2^53) ... +8192T (== 2^53).
-	 */
-	typedef double file_offset_t;
-#	define FILE_OFFSET_T_IS_FLOAT		1
-#	define FILE_OFFSET_T_MAX		9007199254740991.0 /* 2^53-1 */
-#	define file_offset_floor(offset)	floor(offset)
-#	define PR_FILE_OFFSET ".0f"
-#	define CAST_PR_FILE_OFFSET
-#	define string_to_file_offset(s, endptr)	strtod(s, endptr)
+	error! cannot find 64bit integer type
 #endif
 
 #endif /* GFARM_CONFIG_H */

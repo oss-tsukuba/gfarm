@@ -11,9 +11,12 @@ struct gfs_pio_ops {
 
 	char *(*view_write)(GFS_File, const char *, size_t, size_t *);
 	char *(*view_read)(GFS_File, char *, size_t, size_t *);
-	char *(*view_seek)(GFS_File, file_offset_t, int, file_offset_t *);
+	char *(*view_seek)(GFS_File, gfarm_off_t, int, gfarm_off_t *);
+	char *(*view_ftruncate)(GFS_File, gfarm_off_t);
+	char *(*view_fsync)(GFS_File, int);
 	int (*view_fd)(GFS_File);
 	char *(*view_stat)(GFS_File, struct gfs_stat *);
+	char *(*view_chmod)(GFS_File, gfarm_mode_t);
 };
 
 struct gfs_file {
@@ -24,9 +27,9 @@ struct gfs_file {
 #define GFS_FILE_MODE_READ		0x00000001
 #define GFS_FILE_MODE_WRITE		0x00000002
 #define GFS_FILE_MODE_NSEGMENTS_FIXED	0x01000000
-#define GFS_FILE_MODE_CALC_DIGEST	0x02000000
-#define GFS_FILE_MODE_FILE_DIRTY	0x10000000
-#define GFS_FILE_MODE_SECTION_DIRTY	0x20000000
+#define GFS_FILE_MODE_CALC_DIGEST	0x02000000 /* keep updating md_ctx */
+#define GFS_FILE_MODE_UPDATE_METADATA	0x04000000 /* need to update */
+#define GFS_FILE_MODE_FILE_CREATED	0x08000000 /* path_info created */
 #define GFS_FILE_MODE_BUFFER_DIRTY	0x40000000
 
 	/* remember parameter of open/set_view */
@@ -35,26 +38,23 @@ struct gfs_file {
 
 	char *error; /* GFS_FILE_ERROR_EOF, if end of file */
 
-	file_offset_t io_offset;
+	gfarm_off_t io_offset;
 
 #define GFS_FILE_BUFSIZE 65536
 	char *buffer;
 	int p;
 	int length;
 
-	file_offset_t offset;
+	gfarm_off_t offset;
 
 	struct gfarm_path_info pi;
 };
 
-char *gfs_unlink_section(const char *, const char *);
-
-#define GFS_F_OK	0
-#define GFS_X_OK	1
-#define GFS_W_OK	2
-#define GFS_R_OK	4
-
-char *gfarm_path_info_access(struct gfarm_path_info *, int);
+char *gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *);
+char *gfs_check_section_busy(char *, char *);
+char *gfs_unlink_section_internal(const char *, const char *);
+char *gfs_unlink_every_other_replicas(
+	const char *, const char *, const char *);
 
 char *gfs_pio_set_view_default(GFS_File);
 char *gfs_pio_set_view_global(GFS_File, int);
@@ -71,9 +71,11 @@ struct gfs_storage_ops {
 	char *(*storage_close)(GFS_File);
 	char *(*storage_write)(GFS_File, const char *, size_t, size_t *);
 	char *(*storage_read)(GFS_File, char *, size_t, size_t *);
-	char *(*storage_seek)(GFS_File, file_offset_t, int, file_offset_t *);
+	char *(*storage_seek)(GFS_File, gfarm_off_t, int, gfarm_off_t *);
+	char *(*storage_ftruncate)(GFS_File, gfarm_off_t);
+	char *(*storage_fsync)(GFS_File, int);
 	char *(*storage_calculate_digest)(GFS_File, char *, size_t,
-	    size_t *, unsigned char *, file_offset_t *);
+	    size_t *, unsigned char *, gfarm_off_t *);
 	int (*storage_fd)(GFS_File);
 };
 
@@ -87,6 +89,7 @@ struct gfs_file_section_context {
 	char *section;
 	char *canonical_hostname;
 	int fd; /* socket (for remote) or file (for local) descriptor */
+	pid_t pid;
 
 	/* for checksum, maintained only if GFS_FILE_MODE_CALC_DIGEST */
 	EVP_MD_CTX md_ctx;
@@ -115,6 +118,7 @@ struct gfs_file_section_context {
 extern GFS_File gf_stdout, gf_stderr;
 extern int gf_profile;
 extern int gf_on_demand_replication;
+extern int gf_hook_default_global;
 #define gfs_profile(x) if (gf_profile == 1) { x; }
 
 extern double gfs_pio_set_view_section_time;
@@ -122,13 +126,3 @@ extern double gfs_unlink_time;
 extern double gfs_stat_time;
 
 void gfs_display_timers();
-
-/* url.c */
-char *gfarm_path_expand_home(const char *_file, char **);
-
-/* gfs_pio_misc.c */
-char *gfs_stat_canonical_path(char *, struct gfs_stat *);
-
-/* gfs_dir.c */
-char *gfs_realpath_canonical(const char *, char **);
-char *gfs_get_ino(const char *, long *);

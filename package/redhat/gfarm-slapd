@@ -8,12 +8,16 @@
 # pidfile: /var/run/gfarm-slapd.pid
 # config: /etc/gfarm-ldap/slapd.conf
 
-bindir=/usr/sbin
-config=/etc/gfarm-ldap/slapd.conf
-port=389
-
 # Source function library.
 . /etc/rc.d/init.d/functions
+
+prog="slapd"
+FILE="gfarm-slapd"
+
+CONF=/etc/gfarm-ldap/slapd.conf
+PORT=389
+DAEMON=/usr/sbin/$prog
+LOCKFILE=/var/lock/subsys/$FILE
 
 # Get config.
 . /etc/sysconfig/network
@@ -24,42 +28,41 @@ then
 	exit 0
 fi
 
-[ -f $bindir/slapd ] || exit 0
-[ -f $config ] || exit 0
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+[ -f "$DAEMON" ] || exit 0
+[ -f "$CONF" ] || exit 0
 
 RETVAL=0
 
-# See how we were called.
 case "$1" in
   start)
-	echo -n "Starting Gfarm LDAP services: "
-	daemon $bindir/slapd -f $config -h ldap://:$port/
+	echo -n "Starting $FILE: "
+	daemon "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"
 	RETVAL=$?
-
+	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
 	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/gfarm-slapd
-
 	;;
   stop)
-	echo -n "Stopping Gfarm LDAP services: "
-	killproc gfarm-slapd
+	echo -n "Stopping $FILE: "
+	killproc "$FILE"
 	RETVAL=$?
-
+	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
 	echo
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/gfarm-slapd
 	;;
   status)
-	status slapd
+	status "$PROG"
 	RETVAL=$?
 	;;
   restart|reload)
   	$0 stop
 	$0 start
-	# is this available?: killall -HUP slapd
+	# is this available?: killall -HUP "$PROG"
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: inet {start|stop|status|restart|reload}"
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
 	exit 1
 esac
 

@@ -2,7 +2,7 @@
 
 <refentry id='gfs-pio-open.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>30 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_open</refentrytitle>
@@ -39,11 +39,84 @@
 ファイルをオープンし、GFS_File 構造体を
 <parameter>gfp</parameter>
 の指す先に返します。
+</para>
 
-<parameter>flags</parameter></para>
-<para>には、現時点では、常に
-<constant>GFARM_FILE_RDONLY</constant>
-を渡すようにしてください。</para>
+<para>
+<parameter>flags</parameter>
+は、以下のフラグの bitwise-or で指定します。
+はじめの三つのフラグはどれかが指定されている必要があります。
+</para>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_FILE_RDONLY</constant></term>
+<listitem>
+<para>読込みモードでファイルをオープンします。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_WRONLY</constant></term>
+<listitem>
+<para>書込みモードでファイルをオープンします。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_RDWR</constant></term>
+<listitem>
+<para>読み書きモードでファイルをオープンします。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_TRUNC</constant></term>
+<listitem>
+<para>ファイルが存在し，レギュラーファイルで、書込みが許される場合、ファイルサイズを0にします。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_APPEND</constant></term>
+<listitem>
+<para>ファイルをアペンドモードでオープンします。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+以下のフラグは効率的な実行のためのヒントとして指定することができます。
+</para>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_FILE_SEQUENTIAL</constant></term>
+<listitem>
+<para>ファイルが連続的にアクセスされることを示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_REPLICATION</constant></term>
+<listitem>
+<para>ファイルの複製がローカル・ファイルシステムにない場合は、
+ファイルアクセスに先立ち、
+ローカル・ファイルシステムにファイルの複製を作成します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_NOT_REPLICATION</constant></term>
+<listitem>
+<para>ファイルの複製がローカル・ファイルシステムにない場合でも、
+ファイルの複製を作成せず、
+遠隔のファイルシステムノードに格納されているファイルコピーを直接参照します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_NOT_RETRY</constant></term>
+<listitem>
+<para>選択されたファイル複製が何らかの理由で存在しない、
+あるいはアクセスできない場合でも、
+自動的には別のファイル複製の参照を試みず、オープンに失敗します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+<constant>GFARM_FILE_REPLICATION</constant>と
+<constant>GFARM_FILE_NOT_REPLICATION</constant>は同時に指定することはできません。
+</para>
 
 <para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <function>gfs_pio_open()</function>

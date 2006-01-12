@@ -368,7 +368,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_set", "not implemented");
+	gflog_error("group_info_set: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_set",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -382,7 +382,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_modify", "not implemented");
+	gflog_error("group_info_modify: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_modify",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -396,7 +396,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_remove", "not implemented");
+	gflog_error("group_info_remove: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_remove",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -410,7 +410,7 @@ gfm_server_group_info_add_users(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_add_users", "not implemented");
+	gflog_error("group_info_add_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_add_users",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -425,7 +425,7 @@ gfm_server_group_info_remove_users(struct peer *peer,
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_remove_users", "not implemented");
+	gflog_error("group_info_remove_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_remove_users",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -440,7 +440,7 @@ gfm_server_group_names_get_by_users(struct peer *peer,
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_names_get_by_users", "not implemented");
+	gflog_error("group_names_get_by_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_names_get_by_users",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");

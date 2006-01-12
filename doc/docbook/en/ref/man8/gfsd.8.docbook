@@ -34,8 +34,8 @@ Gfarm filesystem as well as user authentication, file replication,
 fast invocation, node resource status monitoring.</para>
 
 <para>It is possible for <command>gfsd</command> to be executed as a non-privileged user
-process although other users cannot use it.  Moreover, a <command>gfsd</command>
-with a user privilege cannot authenticate using the GSI.</para>
+process although only the user that executes the <command>gfsd</command> can be authenticated.
+Other users cannot use it.</para>
 
 <para>In order to execute <command>gfsd</command> as a non-privileged user process, a
 configuration file for a user needs to be specified by the -f option.
@@ -45,7 +45,7 @@ configuration file or the -p option.</para>
 
 <para>In this case, the altered port number of <command>gfsd</command> should be
 specified by the spool_serverport statement in ~/.gfarmrc or
-/etc/gfarm.conf on a client node.</para>
+%%SYSCONFDIR%%/gfarm.conf on a client node.</para>
 
 </refsect1>
 
@@ -103,7 +103,7 @@ local0 is used.</para>
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>/etc/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>

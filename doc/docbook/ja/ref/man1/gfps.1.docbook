@@ -2,7 +2,7 @@
 
 <refentry id='gfps.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>11 Oct 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfps</refentrytitle>
@@ -18,7 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfps</command>
-    <arg choice='opt'>-al</arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>ジョブID</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -44,6 +44,13 @@
 <term><option>-l</option></term>
 <listitem>
 <para>より詳細な情報を表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>詳細にエラーメッセージを表示します．
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>

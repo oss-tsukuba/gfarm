@@ -44,7 +44,7 @@ gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 }
 
 gfarm_error_t
-gfarm_hostspec_af_inet4_new(gfarm_int32_t addr, gfarm_int32_t mask,
+gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
@@ -203,6 +203,8 @@ gfarm_host_is_in_domain(const char *hostname, const char *domainname)
 		return (0);
 	if (hlen == dlen)
 		return (strcasecmp(hostname, domainname) == 0);
+	if (dlen == 0)
+		return (1); /* null string matches with all hosts */
 	if (hlen == dlen + 1)
 		return (0);
 	return (hostname[hlen - (dlen + 1)] == '.' &&
@@ -224,7 +226,7 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 			return (strcasecmp(name, hostspecp->u.name) == 0);
 		}
 	case GFHS_AF_INET4:
-		if (addr->sa_family != AF_INET)
+		if (addr == NULL || addr->sa_family != AF_INET)
 			return (0);
 		return ((((struct sockaddr_in *)addr)->sin_addr.s_addr &
 			 hostspecp->u.in4_addr.mask.s_addr) ==
@@ -251,7 +253,7 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 	}
 	hp = gethostbyaddr(addrp, addrlen, addrfamily);
 	if (hp == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return(GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME);
 	name = strdup(hp->h_name);
 	if (name == NULL)
 		return (GFARM_ERR_NO_MEMORY);

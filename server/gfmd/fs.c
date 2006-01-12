@@ -73,7 +73,7 @@ gfm_server_push_fd(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("push_fd", "not implemented");
+	gflog_error("push_fd: not implemented");
 
 	e = gfm_server_put_reply(peer, "push_fd",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -87,7 +87,7 @@ gfm_server_swap_fd(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("swap_fd", "not implemented");
+	gflog_error("swap_fd: not implemented");
 
 	e = gfm_server_put_reply(peer, "swap_fd",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -234,7 +234,7 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("open_root", "not implemented");
+	gflog_error("open_root: not implemented");
 
 	e = gfm_server_put_reply(peer, "open_root",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -248,7 +248,7 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("close", "not implemented");
+	gflog_error("close: not implemented");
 
 	e = gfm_server_put_reply(peer, "close",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -330,7 +330,7 @@ gfm_server_verify_type(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("verify_type", "not implemented");
+	gflog_error("verify_type: not implemented");
 
 	e = gfm_server_put_reply(peer, "verify_type",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -344,7 +344,7 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("verify_type_not", "not implemented");
+	gflog_error("verify_type_not: not implemented");
 
 	e = gfm_server_put_reply(peer, "verify_type_not",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -541,7 +541,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("cksum_get", "not implemented");
+	gflog_error("cksum_get: not implemented");
 
 	e = gfm_server_put_reply(peer, "cksum_get",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -555,7 +555,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("cksum_set", "not implemented");
+	gflog_error("cksum_set: not implemented");
 
 	e = gfm_server_put_reply(peer, "cksum_set",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -569,7 +569,7 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("schedule_file", "not implemented");
+	gflog_error("schedule_file: not implemented");
 
 	e = gfm_server_put_reply(peer, "schedule_file",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -584,7 +584,7 @@ gfm_server_schedule_file_with_program(struct peer *peer, int from_client,
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("schedule_file_with_program", "not implemented");
+	gflog_error("schedule_file_with_program: not implemented");
 
 	e = gfm_server_put_reply(peer, "schedule_file_with_program",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -598,7 +598,7 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("remove", "not implemented");
+	gflog_error("remove: not implemented");
 
 	e = gfm_server_put_reply(peer, "remove",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -612,7 +612,7 @@ gfm_server_rmdir(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("rmdir", "not implemented");
+	gflog_error("rmdir: not implemented");
 
 	e = gfm_server_put_reply(peer, "rmdir",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -626,7 +626,7 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("rename", "not implemented");
+	gflog_error("rename: not implemented");
 
 	e = gfm_server_put_reply(peer, "rename",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -640,7 +640,7 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("flink", "not implemented");
+	gflog_error("flink: not implemented");
 
 	e = gfm_server_put_reply(peer, "flink",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -654,7 +654,7 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("mkdir", "not implemented");
+	gflog_error("mkdir: not implemented");
 
 	e = gfm_server_put_reply(peer, "mkdir",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -668,7 +668,7 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("symlink", "not implemented");
+	gflog_error("symlink: not implemented");
 
 	e = gfm_server_put_reply(peer, "symlink",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -682,7 +682,7 @@ gfm_server_readlink(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("readlink", "not implemented");
+	gflog_error("readlink: not implemented");
 
 	e = gfm_server_put_reply(peer, "readlink",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -696,7 +696,7 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("getdirpath", "not implemented");
+	gflog_error("getdirpath: not implemented");
 
 	e = gfm_server_put_reply(peer, "getdirpath",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -809,7 +809,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			e = gfp_xdr_send(client, "sil",
 			    p[i].s, p[i].type, p[i].inum);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_fatal("getdirent",gfarm_error_string(e));
+				gflog_fatal("getdirent: %s",
+				    gfarm_error_string(e));
 				break;
 			}
 		}
@@ -883,7 +884,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("reopen", "not implemented");
+	gflog_error("reopen: not implemented");
 
 	e = gfm_server_put_reply(peer, "reopen",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -897,7 +898,7 @@ gfm_server_lock(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("lock", "not implemented");
+	gflog_error("lock: not implemented");
 
 	e = gfm_server_put_reply(peer, "lock",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -911,7 +912,7 @@ gfm_server_trylock(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("trylock", "not implemented");
+	gflog_error("trylock: not implemented");
 
 	e = gfm_server_put_reply(peer, "trylock",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -925,7 +926,7 @@ gfm_server_unlock(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("unlock", "not implemented");
+	gflog_error("unlock: not implemented");
 
 	e = gfm_server_put_reply(peer, "unlock",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -939,7 +940,7 @@ gfm_server_lock_info(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("lock_info", "not implemented");
+	gflog_error("lock_info: not implemented");
 
 	e = gfm_server_put_reply(peer, "lock_info",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -953,7 +954,7 @@ gfm_server_glob(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("glob", "not implemented");
+	gflog_error("glob: not implemented");
 
 	e = gfm_server_put_reply(peer, "glob",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -967,7 +968,7 @@ gfm_server_schedule(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("schedule", "not implemented");
+	gflog_error("schedule: not implemented");
 
 	e = gfm_server_put_reply(peer, "schedule",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -981,7 +982,7 @@ gfm_server_pio_open(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("pio_open", "not implemented");
+	gflog_error("pio_open: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_open",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -995,7 +996,7 @@ gfm_server_pio_set_paths(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("pio_set_paths", "not implemented");
+	gflog_error("pio_set_paths: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_set_paths",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1009,7 +1010,7 @@ gfm_server_pio_close(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("pio_close", "not implemented");
+	gflog_error("pio_close: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_close",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1023,7 +1024,7 @@ gfm_server_pio_visit(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("pio_visit", "not implemented");
+	gflog_error("pio_visit: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_visit",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1037,7 +1038,7 @@ gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_list_by_name", "not implemented");
+	gflog_error("replica_list_by_name: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_list_by_name",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1051,7 +1052,7 @@ gfm_server_replica_list_by_host(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_list_by_host", "not implemented");
+	gflog_error("replica_list_by_host: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_list_by_host",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1065,7 +1066,7 @@ gfm_server_replica_remove_by_host(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_remove_by_host", "not implemented");
+	gflog_error("replica_remove_by_host: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_remove_by_host",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1079,7 +1080,7 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_adding", "not implemented");
+	gflog_error("replica_adding: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_adding",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1093,7 +1094,7 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_added", "not implemented");
+	gflog_error("replica_added: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_added",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1107,7 +1108,7 @@ gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_remove", "not implemented");
+	gflog_error("replica_remove: not implemented");
 
 	e = gfm_server_put_reply(peer, "replica_remove",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");

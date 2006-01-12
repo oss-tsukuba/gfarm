@@ -1,11 +1,11 @@
-top_objdir = ..
-top_srcdir = $(top_objdir)
+top_builddir = ..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
-	digest \
+	gfdf \
 	gfexec \
 	gfexport \
 	gfhost \
@@ -27,6 +27,7 @@ SUBDIRS = \
 	gfrun \
 	gfwhere \
 	gfwhoami \
-	example
+	example \
+	config-gfarm
 
 include $(top_srcdir)/makes/subdir.mk

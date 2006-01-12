@@ -5,8 +5,7 @@
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,16 +35,18 @@ NAME="DESCRIPTION"
 >DESCRIPTION</H2
 ><P
 >gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes such as gfmd and gfsd refer to /etc/gfarm.conf
+Gfarm server processes such as gfmd and gfsd refer to %%SYSCONFDIR%%/gfarm.conf
 by default.  Since this configuration file is only read at the startup
 time, it is necessary to restart servers when updating the content of
 the configuration file.</P
 ><P
 >Application programs such as gfls and gfhost refer to both
-/etc/gfarm.conf and ~/.gfarmrc in a user's home directory as a
-configuration file.  .gfarmrc has the same grammar as /etc/gfarm.conf.
-If both .gfarmrc and /etc/gfarm.conf exist, .gfarmrc is read at
-first.</P
+%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+GFARM_CONFIG_FILE. If both configuration files exist, the file
+specified by the environment variable GFARM_CONFIG_FILE is read at
+first. Both files have same grammar.
+If the environment variable GFARM_CONFIG_FILE doesn't exist,
+ ~/.gfarmrc in a user's home directory is used instead.</P
 ><P
 >Each line of gfarm.conf consists of one statement.  When the
 line ends with the character ``\'', the line continues for the next
@@ -58,12 +59,12 @@ CLASS="REFSECT1"
 NAME="HOSTSPECIFICATION"
 ></A
 ><H2
->Host specification</H2
+>Host_specification</H2
 ><P
 ><TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > has the following
 forms.</P
@@ -200,6 +201,292 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the type of a credential used by gfsd for GSI
+authentication.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.</P
+><P
+>If this statement isn't used on a server side, the server uses
+a host certificate, if the server is invoked with root privilege.
+Or, if the server is invoked as a non-privileged user, the server
+uses the user's certificate. Thus, usually you don't need to use
+this statement on a server side.</P
+><P
+>If this statement isn't used on a client side, the client assumes
+that a server that the client is going to connect is using
+a host certificate of the server host. Thus, if the server is not
+invoked with root privilege, but invoked as a user privilege that
+the user is same with the user who invoked the client, the client
+side needs to specify the following one line.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;self</P
+><P
+>The possible types of the <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+> are
+``<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>'', 
+``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'', ``<SPAN
+CLASS="TOKEN"
+>user</SPAN
+>'' and 
+``<SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+>''.
+And those are used with <SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+>
+and <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement as follows:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>self</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a certificate that currently the user
+has is used.
+You must not use either
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> or
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement,
+if you are using this type.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a host certificate or a service certificate
+is used.
+To choose a service certificate, the name of the service may be specified
+by <SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement.
+If ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified as the service name, a host certificate
+in the file ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/hostcert.pem</TT
+>'' will
+be used.
+If any server name other than ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified,
+a service certificate in the file
+``<TT
+CLASS="FILENAME"
+>/etc/grid-security/SERVICE/SERVICEcert.pem</TT
+>''
+will be used.
+If the service name is omitted, ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' will be used as
+the service name by default.
+Only the Common Name field of a certificate will be used to check
+the server's identity for a host certificate and a service certificate.
+And the Common Name field must be ``CN=SERVERNAME/HOSTNAME'' format.
+Also the hostname must exactly match with the canonical name configured by
+the <B
+CLASS="COMMAND"
+>gfhost</B
+> command. Any alias hostnames are not allowed.</P
+><P
+>This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
+(RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;host<br>
+	spool_server_cred_service&nbsp;host</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>user</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a user certificate is used.
+The account name of the user may be specified by 
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement.
+If the account name is omitted, the user who invoked the command
+will be used by default.
+You must not specify a service name by
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement, if you are using
+any user certificate.</P
+><P
+>Currently, there are several implementation limits in this feature.
+First, the account name is interpreted as an account on the local host,
+but this is a bug, and will be changed to a gfarm global user name
+in the future.
+Second, to map from the account name to a Distinguished Name of a certificate,
+file ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' is used.
+Thus, if there isn't such file, or if the user isn't specified in this file,
+this feature cannot be used.
+Third, if there are multiple Distinguished Names per one account in this file,
+only first Distinguished Name is used, and rest Distinguished Names for
+the account are ignored.</P
+><P
+>This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
+(RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;user<br>
+	spool_server_cred_name&nbsp;guest</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+>
+is treated as a raw X.509 Distinguished Name as a server's certificate.
+You must not specify a service name by
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement, if you are using
+this type.</P
+><P
+>This feature corresponds to a case that GSS_C_NO_OID is specified
+as a Name Type in GSSAPI (RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;mechanism-specific<br>
+	spool_server_cred_name&nbsp;"/O=Grid/O=Globus/OU=example.com/CN=John&nbsp;Smith"</P
+></DD
+></DL
+></DIV
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the service name of a service certificate
+used by gfsd for GSI authentication, when ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified
+in <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> statement.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement for detail.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies a setting of a certificate used by gfsd
+for GSI authentication. What this setting means depends of the type
+specified in <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> statement.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement for detail.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -245,6 +532,92 @@ port number the gfsd is listening on.  The default port number is
 ><P
 CLASS="LITERALLAYOUT"
 >	metadb_serverport&nbsp;601</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the type of a credential used by gfmd
+for GSI authentication.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement about the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the service name of a service certificate
+used by gfmd for GSI authentication, when ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified
+in <SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> statement.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement about the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies a setting of a certificate used by gfmd
+for GSI authentication. What this setting means depends of the type
+specified in <SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> statement.
+This is just ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement about the configuration of this statement.</P
 ></DD
 ><DT
 ><SPAN
@@ -340,7 +713,7 @@ CLASS="PARAMETER"
 > <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ></DT
 ><DD
@@ -386,7 +759,7 @@ CLASS="TOKEN"
 >auth</SPAN
 > statement may be specified any number of
 times.  For each authentication method, it becomes a candidate when
-the first entry whose host specification matches the target host has
+the first entry whose host_specification matches the target host has
 the <SPAN
 CLASS="TOKEN"
 >enable</SPAN
@@ -491,7 +864,7 @@ CLASS="EMPHASIS"
 ><TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ><I
 CLASS="EMPHASIS"
@@ -521,7 +894,7 @@ effective on a client node where gfrep(1) command is executed.
 <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > specifies the source host(s)
 of file replication instead of the destination host(s).</P
@@ -550,7 +923,7 @@ only effective on a client node where gfrep(1) command is executed.
 <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 > specifies the source host(s)
 of file replication instead of the destination host(s).</P
@@ -604,7 +977,7 @@ CLASS="TOKEN"
 > | <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 >]</I
 ></DT
@@ -628,7 +1001,7 @@ CLASS="TOKEN"
 by the second argument, the socket option is applied to any socket
 in server side (accepting side).</P
 ><P
->When the host specification is specified by the second argument,
+>When the host_specification is specified by the second argument,
 the socket option is applied to sockets that connect to specified host(s).
 If the second argument is "*", the socket option is applied to any
 hosts in client side (connecting side).</P
@@ -641,9 +1014,9 @@ to every socket.</P
 ><SPAN
 CLASS="TOKEN"
 >debug</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_DEBUG</TT
+>SO_DEBUG</CODE
 > socket
 option is specified.  The <TT
 CLASS="PARAMETER"
@@ -656,9 +1029,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >keepalive</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_KEEPALIVE</TT
+>SO_KEEPALIVE</CODE
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"
@@ -671,9 +1044,9 @@ necessary.</P
 ><SPAN
 CLASS="TOKEN"
 >sndbuf</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_SNDBUF</TT
+>SO_SNDBUF</CODE
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -685,9 +1058,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >rcvbuf</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->SO_RCVBUF</TT
+>SO_RCVBUF</CODE
 > socket
 option is specified with the <TT
 CLASS="PARAMETER"
@@ -699,9 +1072,9 @@ CLASS="PARAMETER"
 ><SPAN
 CLASS="TOKEN"
 >tcp_nodelay</SPAN
->.  <TT
+>.  <CODE
 CLASS="CONSTANT"
->TCP_NODELAY</TT
+>TCP_NODELAY</CODE
 >
 socket option is specified.  The <TT
 CLASS="PARAMETER"
@@ -727,7 +1100,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->Host specification</I
+>Host_specification</I
 ></TT
 ></DT
 ><DD
@@ -743,6 +1116,40 @@ target host has several IP addresses.</P
 ><P
 CLASS="LITERALLAYOUT"
 >	address_use&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_architecture</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>architecture</I
+></TT
+> <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies default architecture name which may be used
+when a client node accesses an executable file.
+This directive only affects client nodes.
+For filesystem nodes, architecture names which are registered in
+the metadata server are used.</P
+><P
+>On the other hand, environment variable GFARM_ARCHITECTURE,
+which specifies default architecture name just like this directive,
+affects both client nodes and filesystem nodes.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-1.example.com<br>
+	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-2.example.com<br>
+	client_architecture&nbsp;sparc-sun-solaris8&nbsp;solaris-1.example.com</P
 ></DD
 ><DT
 ><SPAN
@@ -822,41 +1229,62 @@ notation.</P
 ><P
 CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
-		&#60;spool_statement&#62;&nbsp;|<br>
-		&#60;spool_serverport_statement&#62;&nbsp;|<br>
-		&#60;metadb_serverhost_statement&#62;&nbsp;|<br>
-		&#60;metadb_serverport_statement&#62;&nbsp;|<br>
-		&#60;ldap_serverhost_statement&#62;&nbsp;|<br>
-		&#60;ldap_serverport_statement&#62;&nbsp;|<br>
-		&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
-		&#60;auth_statement&#62;&nbsp;|<br>
-		&#60;netparam_statement&#62;&nbsp;|<br>
-		&#60;sockopt_statement&#62;&nbsp;|<br>
-		&#60;address_use_statement&#62;&nbsp;|<br>
-		&#60;local_user_map_statement&#62;<br>
+		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_serverport_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;metadb_serverport_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;ldap_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;ldap_serverport_statement&#62;&nbsp;|<br>
+		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;auth_statement&#62;&nbsp;|<br>
+		  &#60;netparam_statement&#62;&nbsp;|<br>
+		  &#60;sockopt_statement&#62;&nbsp;|<br>
+		  &#60;address_use_statement&#62;&nbsp;|<br>
+		  &#60;client_architecture_statement&#62;&nbsp;|<br>
+		  &#60;local_user_map_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;metadb_serverhost_statement&#62;&nbsp;::=&nbsp;"metadb_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;metadb_serverport_statement&#62;&nbsp;::=&nbsp;"metadb_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
-		"auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
+		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
 	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
-		"netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
+		  "netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
 	&#60;netparam_option&#62;&nbsp;::=&nbsp;"parallel_streams"&nbsp;|&nbsp;"stripe_unit_size"&nbsp;|<br>
-		"rate_limit"<br>
+		  "rate_limit"<br>
 	&#60;sockopt_statement&#62;&nbsp;::=<br>
-		"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
+		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
-		"tcp_nodelay"<br>
+		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;client_architecture_statement&#62;&nbsp;::=<br>
+		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
-		&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;&nbsp;|&nbsp;"*"<br>
+		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
 	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
@@ -866,8 +1294,8 @@ CLASS="LITERALLAYOUT"
 	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
-		&#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		"\\"&nbsp;|&nbsp;"\""</P
+		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
+		  "\\"&nbsp;|&nbsp;"\""</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -902,7 +1330,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P

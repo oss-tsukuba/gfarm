@@ -1,22 +1,9 @@
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS= pcat pcp pdel pdist prun
+SCRIPTS= $(srcdir)/gfarm-ptool $(srcdir)/gfarm-prun $(srcdir)/gfarm-pcp
 
-all:
-
-install:
-	@for i in / $(SCRIPTS); do \
-		case $$i in /) continue;; esac; \
-		( set -x; $(INSTALL_PROGRAM) $(srcdir)/$${i} $(bindir)/$${i} ); \
-	done
-
-clean:
-veryclean: clean
-distclean: veryclean
-gfregister:
-man:
-html:
+include $(top_srcdir)/makes/script.mk

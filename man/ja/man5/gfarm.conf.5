@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "22 August 2003" "Gfarm" ""
+.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -11,15 +11,17 @@ gfarm.conf \- Gfarm 設定ファイル
 .PP
 gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
 サーバー・プロセスである gfmd と gfsd は、デフォルトでは、
-この /etc/gfarm.conf を設定ファイルとして参照します。
+この %%SYSCONFDIR%%/gfarm.conf を設定ファイルとして参照します。
 なお、設定内容が読み込まれるのは起動時だけなので、
 設定内容を変更した場合、サーバーを再起動する必要があります。
 .PP
-アプリケーションプログラムは、/etc/gfarm.conf と、ユーザーの
-ホームディレクトリにある .gfarmrc ファイルを、設定ファイル
-として参照します。.gfarmrc ファイルは、/etc/gfarm.conf と
-同一の形式で記述します。.gfarmrc と /etc/gfarm.conf では、
-\&.gfarmrc の方が優先されます。
+アプリケーションプログラムは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルと、%%SYSCONFDIR%%/gfarm.conf を、設定ファイル
+として参照します。この二つのファイルでは、環境変数 GFARM_CONFIG_FILE で
+指定したファイルの設定の方が優先されます。
+どちらの設定ファイルも、同一の文法で記述します。
+環境変数 GFARM_CONFIG_FILE が設定されてない場合、代わりに
+ユーザーのホームディレクトリにある .gfarmrc ファイルを使用します。
 .PP
 gfarm.conf は、一行に一文の形式で設定します。
 ただし、行末に文字 ``\\'' を記述することによって、行を継続させることが
@@ -40,7 +42,7 @@ IP アドレスと、"/" で区切られた 0〜31 までの数字で、ネットワークを
 \fB\fIdomain.name\fB\fR
 ホスト名をドメイン名で指定します。
 .TP
-\fB .\fIdomain.name\fB\fR
+\fB \&.\fIdomain.name\fB\fR
 ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
 ホストを意味します。
 .TP
@@ -74,6 +76,125 @@ gfsdが利用するTCPおよびUDPポートの番号を指定します。
 	spool_serverport 600
 .fi
 .TP
+\fBspool_server_cred_type \fIcred_type\fB\fR
+GSI認証において、gfsdが用いる証明書の種類を指定します。
+sharedsecret 利用時には、この指定は単に無視されます。
+
+サーバ側でこの指定を省略した場合、サーバを root 権限で起動した場合は
+ホスト証明書を用います。またサーバを一般ユーザ権限で起動した場合は
+ユーザ証明書を用います。このため、サービス証明書を利用する場合を
+除いて、サーバ側ではこの指定を行う必要は通常ないでしょう。
+
+クライアント側でこの指定を省略した場合、サーバがホスト証明書を利用している
+と仮定してサーバ認証を行います。このためサーバをクライアントと同じユーザ
+権限で起動している場合、クライアント側では、下記の一行を設定して
+おく必要があります。
+
+例:
+
+.nf
+	spool_server_cred_type self
+.fi
+
+指定可能な \fIcred_type\fR としては、
+「self」、
+「host」、「user」、
+「mechanism-specific」があり、
+spool_server_cred_service および
+spool_server_cred_name と組み合わせて
+下記のように用います。
+.RS
+.TP
+\fBself\fR
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+spool_server_cred_service および
+spool_server_cred_name の
+指定を行ってはいけません。
+.TP
+\fBhost\fR
+ホスト証明書あるいはサービス証明書を用いることを示します。
+サービス証明書を用いる場合、そのサービスの名前を
+spool_server_cred_service で指定します。
+サービス名に「host」を指定した場合、
+ファイル ``\fI/etc/grid-security/hostcert.pem\fR\&'' に
+あるホスト証明書を用います。
+それ以外のサービス名を指定した場合、
+ファイル ``\fI/etc/grid-security/サービス/サービスcert.pem\fR\&''
+にあるサービス証明書を用います。
+サービス名を省略した場合、「host」が指定されたとみなします。
+ホスト証明書およびサービス証明書の場合、証明書の Common Name 欄のみを
+比較します。Common Name は、「CN=サービス名/ホスト名」の形式である必要が
+あります。また、ホスト名は、\fBgfhost\fR コマンドで指定した
+正式名と正確に一致している必要があります。ホスト別名は許されません。
+
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_HOSTBASED_SERVICE に
+対応する機能です。
+
+例:
+
+.nf
+	spool_server_cred_type host
+	spool_server_cred_service host
+.fi
+.TP
+\fBuser\fR
+ユーザ証明書を用いることを示します。
+ユーザのアカウント名を spool_server_cred_name で指定します。
+アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
+この指定を利用する際には、spool_server_cred_service の
+指定を行ってはいけません。
+
+現時点では、この機能の実装に、いくつかの実装上の制限事項があります。
+まず、ユーザ名はローカルホストのアカウント名として解釈されますが、
+これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
+ユーザ名と証明書の Distinguished Name の対応をとるため、
+``\fI/etc/grid-security/grid-mapfile\fR\&'' を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
+さらに、このファイル中で、同一のユーザアカウントに対して2つ以上の
+Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
+しまいます。
+
+これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_USER_NAME に対応する機能です。
+
+例:
+
+.nf
+	spool_server_cred_type user
+	spool_server_cred_name guest
+.fi
+.TP
+\fBmechanism-specific\fR
+サーバの X.509 Distinguished Name を spool_server_cred_name で
+直接指定します。
+この指定を利用する際には、spool_server_cred_service の
+指定を行ってはいけません。
+
+これは、GSSAPI (RFC2743/RFC2744) で Name Type として GSS_C_NO_OID を
+指定した場合に対応する機能です。
+
+例:
+
+.nf
+	spool_server_cred_type mechanism-specific
+	spool_server_cred_name "/O=Grid/O=Globus/OU=example.com/CN=John Smith"
+.fi
+.RE
+.TP
+\fBspool_server_cred_service \fIcred_service\fB\fR
+GSI認証において、spool_server_cred_type として
+「host」を指定している場合に、gfsd が用いるサービス証明書の
+種類を指定します。
+sharedsecret 利用時には、この指定は単に無視されます。
+詳しくは spool_server_cred_type の項を参照してください。
+.TP
+\fBspool_server_cred_name \fIcred_name\fB\fR
+GSI認証において、spool_server_cred_type で指定した値に
+応じて、gfsd が用いる証明書の設定を行います。
+sharedsecret 利用時には、この指定は単に無視されます。
+詳しくは spool_server_cred_type の項を参照してください。
+.TP
 \fBmetadb_serverhost \fIgfmdホスト名\fB\fR
 gfmdが動作しているホスト名を指定します。
 
@@ -94,6 +215,27 @@ gfmdが利用するTCPポートの番号を指定します。
 .nf
 	metadb_serverport 601
 .fi
+.TP
+\fBmetadb_server_cred_type \fIcred_type\fB\fR
+GSI認証において、gfmd が用いる証明書の種類を指定します。
+sharedsecret 利用時には、この指定は単に無視されます。
+設定の意味については  spool_server_cred_type の項を
+参照してください。
+.TP
+\fBmetadb_server_cred_service \fIcred_service\fB\fR
+GSI認証において、metadb_server_cred_type として
+「host」を指定している場合に、gfmd が用いるサービス証明書の
+種類を指定します。
+sharedsecret 利用時には、この指定は単に無視されます。
+設定の意味については  spool_server_cred_type の項を
+参照してください。
+.TP
+\fBmetadb_server_cred_name \fIcred_name\fB\fR
+GSI認証において、metadb_server_cred_type で指定した値に
+応じて、gfmd が用いる証明書の設定を行います。
+sharedsecret 利用時には、この指定は単に無視されます。
+設定の意味については  spool_server_cred_type の項を
+参照してください。
 .TP
 \fBldap_serverhost \fILDAPサーバー・ホスト名\fB\fR
 LDAP サーバーが動作しているホスト名を指定します。
@@ -129,7 +271,7 @@ LDAP データベースで保持するデータのキーの根となるノードの
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fI有効無効\fB \fI認証方法\fB \fIホスト指定\fB\fR
+\fBauth \fI有効無効\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
 この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
 
 第1引数の\fI有効無効\fR部には、enable ないし disable
@@ -275,6 +417,25 @@ IPアドレスを通信に用いるかを指定します。
 	address_use 192.168.0.0/24
 .fi
 .TP
+\fBclient_architecture \fIアーキテクチャ名\fB\~ \fIホスト指定\fB\fR
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
+
+これに対し、環境変数 GFARM_ARCHITECTURE を使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
+
+例:
+
+.nf
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
+.fi
+.TP
 \fBlocal_user_map \fIユーザマップファイルパス名\fB\fR
 グローバルユーザ名とローカルユーザ名の対応関係を記述した
 ユーザマップファイルパス名を指定します。
@@ -310,41 +471,62 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 
 .nf
 	<statement> ::=
-		<spool_statement> |
-		<spool_serverport_statement> |
-		<metadb_serverhost_statement> |
-		<metadb_serverport_statement> |
-		<ldap_serverhost_statement> |
-		<ldap_serverport_statement> |
-		<ldap_base_dn_statement> |
-		<auth_statement> |
-		<netparam_statement> |
-		<sockopt_statement> |
-		<address_use_statement> |
-		<local_user_map_statement>
+		\~\~<spool_statement> |
+		\~\~<spool_serverport_statement> |
+		\~\~<spool_server_cred_type_statement> |
+		\~\~<spool_server_cred_service_statement> |
+		\~\~<spool_server_cred_name_statement> |
+		\~\~<metadb_serverhost_statement> |
+		\~\~<metadb_serverport_statement> |
+		\~\~<metadb_server_cred_type_statement> |
+		\~\~<metadb_server_cred_service_statement> |
+		\~\~<metadb_server_cred_name_statement> |
+		\~\~<ldap_serverhost_statement> |
+		\~\~<ldap_serverport_statement> |
+		\~\~<ldap_base_dn_statement> |
+		\~\~<auth_statement> |
+		\~\~<netparam_statement> |
+		\~\~<sockopt_statement> |
+		\~\~<address_use_statement> |
+		\~\~<client_architecture_statement> |
+		\~\~<local_user_map_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
+	<spool_server_cred_type_statement> ::=
+		\~\~"spool_server_cred_type" <cred_type>
+	<spool_server_cred_service_statement> ::=
+		\~\~"spool_server_cred_service" <cred_service>
+	<spool_server_cred_name_statement> ::=
+		\~\~"spool_server_cred_name" <cred_name>
 	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
 	<metadb_serverport_statement> ::= "metadb_serverport" <portnumber>
+	<metadb_server_cred_type_statement> ::=
+		\~\~"metadb_server_cred_type" <cred_type>
+	<metadb_server_cred_service_statement> ::=
+		\~\~"metadb_server_cred_service" <cred_service>
+	<metadb_server_cred_name_statement> ::=
+		\~\~"metadb_server_cred_name" <cred_name>
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
 	<auth_statement> ::=
-		"auth" <auth_command> <auth_method> <hostspec>
+		\~\~"auth" <auth_command> <auth_method> <hostspec>
 	<auth_command> ::= "enable" | "disable"
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
-		"netparam" <netparam_option>=<number> [<hostspec>]
+		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
 	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
-		"rate_limit"
+		\~\~"rate_limit"
 	<sockopt_statement> ::=
-		"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
+		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
 	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
-		"tcp_nodelay"
+		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
+	<client_architecture_statement> ::=
+		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
-		<hostname> | "." <domain_name> | "*"
+		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
 	<pathname_character> ::= <hostname_character> | "," | "/" | "_"
 	<hostname> ::= <hostname_character> <hostname_character>*
@@ -354,8 +536,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	<string> ::= """ <double_quoted_character>* """
 	<double_quoted_character> ::=
-		<any_character_except_backslash_and_double_quotation> |
-		"\\\\" | "\\""
+		\~\~<any_character_except_backslash_and_double_quotation> |
+		\~\~"\\\\" | "\\""
 .fi
 .SH "EXAMPLES"
 
@@ -371,7 +553,7 @@ auth enable gsi *
 .fi
 .SH "FILES"
 .TP
-\fB\fI/etc/gfarm.conf\fB\fR
+\fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
 .TP
 \fB\fI$HOME/.gfarmrc\fB\fR
 .SH "SEE ALSO"

@@ -7,6 +7,7 @@
 #include <pthread.h>
 
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/resource.h>
@@ -77,7 +78,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("receiving request number",
+		gflog_warning("receiving request number: %s",
 		    gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e); /* finish on error */
@@ -322,18 +323,14 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFJ_PROTO_HOSTINFO:
 		e = gfj_server_hostinfo(peer, from_client, skip); break;
 	default:
-		{
-			char buffer[GFARM_INT32STRLEN];
-
-			sprintf(buffer, "%d", request);
-			gflog_warning("unknown request", buffer);
-		}
+		gflog_warning("unknown request: %d", request);
 		e = GFARM_ERR_PROTOCOL;
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfp_xdr_flush(peer_get_conn(peer));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning("protocol flush", gfarm_error_string(e));
+			gflog_warning("protocol flush: %s",
+			    gfarm_error_string(e));
 	}
 
 	/* continue unless protocol error happens */
@@ -447,10 +444,10 @@ protocol_main(void *arg)
 	char *username, *hostname;
 	enum gfarm_auth_method auth_method;
 
-	e = gfarm_authorize(peer_get_conn(peer), 0,
+	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
 	    &id_type, &username, &hostname, &auth_method);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("authorize", gfarm_error_string(e));
+		gflog_warning("authorize: %s", gfarm_error_string(e));
 	} else {
 		peer_authorized(peer,
 		    id_type, username, hostname, auth_method);
@@ -479,11 +476,11 @@ main_loop(int accepting_socket)
 				gflog_warning_errno("accept");
 		} else if ((e = peer_alloc(client_socket, &peer)) !=
 		    GFARM_ERR_NO_ERROR) {
-			gflog_warning("peer_alloc", gfarm_error_string(e));
+			gflog_warning("peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
 		} else if ((e = peer_schedule(peer, protocol_main)) !=
 		    GFARM_ERR_NO_ERROR) {
-			gflog_warning("peer_schedule: authorize",
+			gflog_warning("peer_schedule: authorize: %s",
 			    gfarm_error_string(e));
 			peer_free(peer);
 		}
@@ -514,7 +511,7 @@ open_accepting_socket(int port)
 		gflog_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("setsockopt", gfarm_error_string(e));
+		gflog_warning("setsockopt: %s", gfarm_error_string(e));
 	if (listen(sock, LISTEN_BACKLOG) < 0)
 		gflog_fatal_errno("listen");
 	return (sock);
@@ -566,10 +563,11 @@ main(int argc, char **argv)
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				gflog_fatal(optarg, "unknown syslog facility");
+				gflog_fatal("%s: unknown syslog facility",
+				    optarg);
 			break;
 		case 'v':
-			gfarm_authentication_verbose = 1;
+			gflog_auth_set_verbose(1);
 			break;
 		case '?':
 		default:

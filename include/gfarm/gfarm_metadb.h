@@ -4,9 +4,6 @@
 
 #include <gfarm/gfarm_config.h>
 
-char *gfarm_metadb_initialize(void);
-char *gfarm_metadb_terminate(void);
-
 /* ---------------------------------------- */
 
 /*
@@ -93,6 +90,8 @@ char *gfarm_file_section_info_get(
 	const char *, const char *, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_set(
 	char *, char *, struct gfarm_file_section_info *);
+char *gfarm_file_section_info_replace(
+	char *, char *, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_remove(const char *, const char *);
 void gfarm_file_section_info_free_all(int, struct gfarm_file_section_info *);
 char *gfarm_file_section_info_get_all_by_file(
@@ -145,6 +144,8 @@ int gfarm_file_section_copy_info_does_exist(
 
 /* ---------------------------------------- */
 
+#if 0 /* GFarmFile history isn't actually used yet */
+
 /*
  * GFarmFile history database:
  * (pathname) -> (history)
@@ -165,3 +166,5 @@ void gfarm_file_history_free_allfile(int, char **);
 char *gfarm_file_history_get_allfile_by_program(char *, int *, char ***);
 /* get GFarmFiles which were created from the file as a input */
 char *gfarm_file_history_get_allfile_by_file(char *, int *, char ***);
+
+#endif /* GFarmFile history isn't actually used yet */

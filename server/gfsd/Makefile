@@ -1,7 +1,7 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
@@ -14,8 +14,8 @@ LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfsd
-SRCS =	gfsd.c loadavg.c
-OBJS =	gfsd.o loadavg.o
+SRCS =	gfsd.c loadavg.c statfs.c
+OBJS =	gfsd.o loadavg.o statfs.o
 
 all: $(PROGRAM)
 
@@ -24,6 +24,7 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
+	$(srcdir)/gfsd_subr.h \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/iobuffer.h \
 	$(GFARMLIB_SRCDIR)/xxx_proto.h \
@@ -32,5 +33,6 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
 	$(GFARMLIB_SRCDIR)/host.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfs_proto.h \
 	$(GFARMLIB_SRCDIR)/gfs_client.h

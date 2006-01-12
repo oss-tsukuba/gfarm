@@ -1,7 +1,7 @@
 # $Id$
 
-top_objdir = ../..
-top_srcdir = $(top_objdir)
+top_builddir = ../..
+top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
@@ -22,4 +22,5 @@ include $(top_srcdir)/makes/prog.mk
 $(OBJS): $(DEPGFARMINC)
 $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/host.h \
+	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h

@@ -3,30 +3,30 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM_URL_FRAGMENTS_REPLICATE" "3" "18 March 2003" "Gfarm" ""
+.TH "GFARM_URL_FRAGMENTS_REPLICATE" "3" "06 September 2005" "Gfarm" ""
+
 .SH NAME
 gfarm_url_fragments_replicate \- ファイルのレプリカを作成する
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfarm_url_fragments_replicate (char *\fIgfarm_url\fB, int \fIndsthosts\fB, char **\fIdsthosts\fB);
+char *gfarm_url_fragments_replicate (const char *\fIgfarm_url\fB, int \fIndsthosts\fB, char **\fIdsthosts\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-ファイル\fIgfarm_url\fR
-を構成する、
+ファイル
+\fIgfarm_url\fR
+の複製を、長さ
 \fIndsthosts\fR
-個のフラグメントのレプリカを、文字列配列
+の文字列配列
 \fIdsthosts\fR
 で指定したホストに作成します。
-N 番目のフラグメントは、配列
-\fIdsthosts\fR
-の N 番目の要素で指定したホストに複製されます。
+この関数では、実行形式のファイルの複製には利用できません。
 .PP
-フラグメントの数と異なる値を
+ファイルのファイルインデックスの総数より、指定されたホストの総数
 \fIndsthosts\fR
-に指定した場合には、エラーとなります。
+が少ない場合は、指定されたホストがラウンドロビンで割り当てられます。
 .SH "RETURN VALUES"
 .TP
 \fBNULL\fR
@@ -36,7 +36,8 @@ N 番目のフラグメントは、配列
 メモリ不足のため処理を中止しました。
 .TP
 \fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
-引数として、フラグメント化ファイル以外のファイルを指定しました。
+引数として、実行形式のファイル、
+ディレクトリなど通常ファイル以外のファイルを指定しました。
 .TP
 \fBその他\fR
 上記以外のエラーが生じたことを示します。

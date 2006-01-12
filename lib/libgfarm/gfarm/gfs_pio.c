@@ -9,10 +9,15 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>	/* [FRWX]_OK */
 #include <errno.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
+#include "gfs_proto.h"
 #include "gfs_pio.h"
+#include "gfs_misc.h"
 #include "timer.h"
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
@@ -20,15 +25,20 @@ char GFS_FILE_ERROR_EOF[] = "end of file";
 char *
 gfs_pio_set_view_default(GFS_File gf)
 {
-	char *e = NULL;
+	char *e, *e_save = NULL;
 
-	if (gf->view_context != NULL)
+	if (gf->view_context != NULL) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
+		if (e_save == NULL)
+			e_save = e;
+	}
 	gf->ops = NULL;
 	gf->view_context = NULL;
 	gf->view_flags = 0;
-	gf->error = e;
-	return (e);
+	gf->error = e_save;
+	return (e_save);
 }
 
 static char *
@@ -94,49 +104,61 @@ gfs_file_free(GFS_File gf)
 	free(gf);
 }
 
-/*
- * note that unlike access(2), gfarm_path_info_access() doesn't/can't check
- * access permission of ancestor directories.
- */
-char *
-gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
+static void
+gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
 {
-	gfarm_mode_t mask = 0;
+	/*
+	 * It may be necessary to calculate checksum of the
+	 * whole file when closing on either random access case
+	 * or even sequential access without truncation,
+	 * which requires a read mode.
+	 */
+	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY &&
+	    (flags & (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) !=
+	    (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL))
+		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
+	gf->open_flags = flags;
 
-	if (strcmp(pi->status.st_user, gfarm_get_global_username()) == 0) {
-		if (mode & GFS_X_OK)
-			mask |= 0100;
-		if (mode & GFS_W_OK)
-			mask |= 0200;
-		if (mode & GFS_R_OK)
-			mask |= 0400;
-#if 0 /* XXX - check against st_group */
-	} else if (gfarm_is_group_member(pi->status.st_group)) {
-		if (mode & GFS_X_OK)
-			mask |= 0010;
-		if (mode & GFS_W_OK)
-			mask |= 0020;
-		if (mode & GFS_R_OK)
-			mask |= 0040;
-#endif
-	} else {
-		if (mode & GFS_X_OK)
-			mask |= 0001;
-		if (mode & GFS_W_OK)
-			mask |= 0002;
-		if (mode & GFS_R_OK)
-			mask |= 0004;
+	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
+	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
+		gf->mode |= GFS_FILE_MODE_READ;
+	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
+	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY))
+		gf->mode |= GFS_FILE_MODE_WRITE;
+}
+
+static char *
+gfs_pio_open_check_perm(GFS_File gf)
+{
+	char *e;
+	int check= 0;
+
+	if ((gf->mode & GFS_FILE_MODE_READ) != 0)
+		check |= R_OK;
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+	    (gf->open_flags & GFARM_FILE_TRUNC) != 0)
+		check |= W_OK;
+	e = gfarm_path_info_access(&gf->pi, check);
+	if (e != NULL)
+		return (e);
+	if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
+		if (GFARM_S_ISDIR(gf->pi.status.st_mode))
+			return (GFARM_ERR_IS_A_DIRECTORY);
+		else
+			return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 	}
-	return (((pi->status.st_mode & mask) == mask) ?
-		NULL : GFARM_ERR_PERMISSION_DENIED);
+	return (NULL);
 }
 
 static double gfs_pio_create_time;
 static double gfs_pio_open_time;
 static double gfs_pio_close_time;
 static double gfs_pio_seek_time;
+static double gfs_pio_truncate_time;
 static double gfs_pio_read_time;
 static double gfs_pio_write_time;
+static double gfs_pio_sync_time;
+static double gfs_pio_datasync_time;
 static double gfs_pio_getline_time;
 
 char *
@@ -144,8 +166,6 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
-	int pi_available = 0;
-	mode_t mask;
 	char *user;
 	gfarm_timerval_t t1, t2;
 
@@ -153,20 +173,10 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 
 	user = gfarm_get_global_username();
 	if (user == NULL) {
-		e = "gfarm_pio_create(): programming error, "
+		e = "gfs_pio_create(): programming error, "
 		    "gfarm library isn't properly initialized";
 		goto finish;
 	}
-#if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
-	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_WRONLY) {
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED; /* XXX */
-		goto finish;
-	}
-#endif
-
-	mask = umask(0);
-	umask(mask);
-	mode &= ~mask;
 
 	e = gfarm_url_make_path_for_creation(url, &pathname);
 	if (e != NULL)
@@ -177,66 +187,42 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		goto finish;
 	}
 
-	/* gfs_pio_create() always assumes CREATE, TRUNC */
-	flags |= GFARM_FILE_CREATE | GFARM_FILE_TRUNC;
+	flags |= GFARM_FILE_CREATE;
 
-	if ((flags & (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) !=
-	    (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) {
-		/* MODE_READ is needed to re-calculate checksum. */
-		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
-	} else if ((flags & ~GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY) {
-		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_WRONLY;
-	} 
-	gf->open_flags = flags;
+	gfs_pio_open_initialize_mode_flags(gf, flags);
 
-	gf->mode = GFS_FILE_MODE_WRITE;
-	if ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
-		gf->mode |= GFS_FILE_MODE_READ;
 	e = gfarm_path_info_get(pathname, &gf->pi);
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
 		free(pathname);
-		gfs_file_free(gf);
-		goto finish;
+		goto free_gf;
 	}
 	if (e == NULL) {
-		/* XXX unlink and re-create the file? */
 		free(pathname);
-		e = gfarm_path_info_access(&gf->pi, GFS_W_OK);
-		if (e != NULL) {
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			goto finish;
+		if ((flags & GFARM_FILE_EXCLUSIVE) != 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			goto free_gf_pi;
 		}
-		if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
-			if (GFARM_S_ISDIR(gf->pi.status.st_mode))
-				e = GFARM_ERR_IS_A_DIRECTORY;
-			else
-				e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			goto finish;
-		}
+		e = gfs_pio_open_check_perm(gf);
+		if (e != NULL)
+			goto free_gf_pi;
 		/*
 		 * XXX should check the follows:
 		 * - the mode is consistent among same job
 		 * - creator of the metainfo has same job id
 		 * - O_TRUNC / !O_TRUNC case
 		 */
-		mode |= GFARM_S_IFREG;
-		if (GFARM_S_IS_PROGRAM(mode) != GFS_FILE_IS_PROGRAM(gf)) {
-			gfarm_path_info_free(&gf->pi);
-			gfs_file_free(gf);
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			goto finish;
-		}
-		pi_available = 1;
-	}
-	if (!pi_available) {
+		if ((flags & GFARM_FILE_TRUNC) == 0)
+			gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+	} else {
+		mode_t mask;
 		struct timeval now;
+
+		mask = umask(0);
+		umask(mask);
 
 		gettimeofday(&now, NULL);
 		gf->pi.pathname = pathname;
-		gf->pi.status.st_mode = (GFARM_S_IFREG | mode);
+		gf->pi.status.st_mode = (GFARM_S_IFREG | (mode & ~mask));
 		gf->pi.status.st_user = strdup(user); /* XXX NULL check */
 		gf->pi.status.st_group = strdup("*"); /* XXX for now */
 		gf->pi.status.st_atimespec.tv_sec =
@@ -247,11 +233,16 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		gf->pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
 		gf->pi.status.st_size = 0;
 		gf->pi.status.st_nsections = 0;
+		gf->mode |= GFS_FILE_MODE_FILE_CREATED;
 	}
 	*gfp = gf;
-	gfs_uncachedir();
 
 	e = NULL;
+	goto finish;
+free_gf_pi:
+	gfarm_path_info_free(&gf->pi);
+free_gf:
+	gfs_file_free(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
@@ -264,17 +255,15 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 {
 	char *e, *pathname;
 	GFS_File gf;
+	file_offset_t s;
+	int nsec;
 	gfarm_timerval_t t1, t2;
 
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((flags & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY) {
-#if 0 /*  XXX - ROOT I/O opens a new file with O_CREAT|O_RDRW mode. */
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED; /* XXX */
+	if (flags & GFARM_FILE_CREATE) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		goto finish;
-#else
-		flags |= GFARM_FILE_CREATE;
-#endif
 	}
 	e = gfarm_url_make_path(url, &pathname);
 	if (e != NULL)
@@ -284,34 +273,38 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		free(pathname);
 		goto finish;
 	}
-	gf->open_flags = flags;
-	gf->mode |= GFS_FILE_MODE_READ;
-	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
-	    || ((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_WRONLY))
-		gf->mode |= GFS_FILE_MODE_WRITE;
+
+	/* GFARM_FILE_EXCLUSIVE is a NOP with gfs_pio_open(). */
+	flags &= ~GFARM_FILE_EXCLUSIVE;
+
+	gfs_pio_open_initialize_mode_flags(gf, flags);
+
 	e = gfarm_path_info_get(pathname, &gf->pi);
 	free(pathname);
 	if (e != NULL)
-		goto finish;
-	e = gfarm_path_info_access(&gf->pi, GFS_R_OK);
-	if (e != NULL) {
-		gfarm_path_info_free(&gf->pi);
-		gfs_file_free(gf);
-		goto finish;
-	}
-	if (!GFARM_S_ISREG(gf->pi.status.st_mode)) {
-		if (GFARM_S_ISDIR(gf->pi.status.st_mode))
-			e = GFARM_ERR_IS_A_DIRECTORY;
-		else
-			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		gfarm_path_info_free(&gf->pi);
-		gfs_file_free(gf);
-		goto finish;
-	}
-	gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+		goto free_gf;
+	e = gfs_pio_open_check_perm(gf);
+	if (e != NULL)
+		goto free_gf_pi;
+	if ((flags & GFARM_FILE_TRUNC) == 0)
+		gf->mode |= GFS_FILE_MODE_NSEGMENTS_FIXED;
+	/*
+	 * XXX - Add GFARM_FILE_TRUNC when writing a file with size 0
+	 * to avoid re-calculation of checksum on close.
+	 */
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
+	    gfs_stat_size_canonical_path(gf->pi.pathname, &s, &nsec) == NULL &&
+	    s == 0)
+		gf->open_flags |= GFARM_FILE_TRUNC;
+
 	*gfp = gf;
 
 	e = NULL;
+	goto finish;
+free_gf_pi:
+	gfarm_path_info_free(&gf->pi);
+free_gf:
+	gfs_file_free(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));
@@ -351,6 +344,24 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 	return (NULL);
 }
 
+/* XXX this must be done only if the file was really read or written */
+static char *
+gfs_pio_update_times(GFS_File gf)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	if (gf->mode & GFS_FILE_MODE_READ) {
+		gf->pi.status.st_atimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_atimespec.tv_nsec = now.tv_usec * 1000;
+	}
+	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
+}
+
 char *
 gfs_pio_close(GFS_File gf)
 {
@@ -368,9 +379,16 @@ gfs_pio_close(GFS_File gf)
 		if (e_save == NULL)
 			e_save = e;
 	}
+	/*
+	 * When there is inconsistency, do not update/overwrite the
+	 * metadata. This inconsistency may come from the update by
+	 * other process or oneself such as 'nvi'.
+	 */
+	if (e_save == NULL)
+		e_save = gfs_pio_update_times(gf);
+
 	gfarm_path_info_free(&gf->pi);
-	free(gf->buffer);
-	free(gf);
+	gfs_file_free(gf);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
@@ -378,9 +396,10 @@ gfs_pio_close(GFS_File gf)
 	return (e_save);
 }
 
-char *
+static char *
 gfs_pio_purge(GFS_File gf)
 {
+	gf->offset += gf->p;
 	gf->p = gf->length = 0;
 	return (NULL);
 }
@@ -420,10 +439,9 @@ gfs_pio_fillbuf(GFS_File gf)
 		e = gfs_pio_flush(gf);
 		if (e != NULL)
 			return (e);
-	} else {
-		gf->offset += gf->p;
-		gf->p = gf->length = 0;
-	}
+	} else
+		gfs_pio_purge(gf);
+
 	assert(gf->io_offset == gf->offset);
 
 	e = (*gf->ops->view_read)(gf, gf->buffer, GFS_FILE_BUFSIZE, &len);
@@ -452,7 +470,7 @@ do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 	if (gf->io_offset != gf->offset) {
 		/* this happens when switching from reading to writing */
 		gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-		e = (*gf->ops->view_seek)(gf, SEEK_SET, gf->offset, NULL);
+		e = (*gf->ops->view_seek)(gf, gf->offset, SEEK_SET, NULL);
 		if (e != NULL) {
 			gf->error = e;
 			*writtenp = 0;
@@ -491,10 +509,9 @@ gfs_pio_flush(GFS_File gf)
 			return (e);
 		gf->mode &= ~GFS_FILE_MODE_BUFFER_DIRTY;
 	}
-	if (gf->p >= gf->length) {
-		gf->offset += gf->p;
-		gf->p = gf->length = 0;
-	}
+	if (gf->p >= gf->length)
+		gfs_pio_purge(gf);
+
 	return (NULL);
 }
 
@@ -547,12 +564,19 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	}
 
 	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-	    
+
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
-		if (e != NULL)
+		if (e != NULL) {
+			gf->error = e;
 			goto finish;
+		}
 	}
+
+	if (whence == SEEK_CUR)
+		/* modify offset based on io_offset */
+		offset += gf->offset + gf->p - gf->io_offset;
+
 	gf->error = NULL; /* purge EOF/error state */
 	gfs_pio_purge(gf);
 	e = (*gf->ops->view_seek)(gf, offset, whence, &where);
@@ -568,6 +592,41 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+char *
+gfs_pio_truncate(GFS_File gf, file_offset_t length)
+{
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		goto finish;
+
+	CHECK_WRITABLE(gf);
+
+	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+
+	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
+		e = gfs_pio_flush(gf);
+		if (e != NULL)
+			goto finish;
+	}
+
+	gf->error = NULL; /* purge EOF/error state */
+	gfs_pio_purge(gf);
+
+	e = (*gf->ops->view_ftruncate)(gf, length);
+	if (e != NULL)
+		gf->error = e;
+finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_truncate_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -662,13 +721,49 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		gf->length = gf->p;
 	*np = size;
 	e = NULL;
-	if (gf->p >= GFS_FILE_BUFSIZE)
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED || gf->p >= GFS_FILE_BUFSIZE)
 		e = gfs_pio_flush(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
+}
+
+static char *
+sync_internal(GFS_File gf, int operation, double *time)
+{
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_flush(gf);
+	if (e != NULL)
+		goto finish;
+
+	e = (*gf->ops->view_fsync)(gf, operation);
+	if (e != NULL)
+		gf->error = e;
+finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(*time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+char *
+gfs_pio_sync(GFS_File gf)
+{
+	return (sync_internal(gf, GFS_PROTO_FSYNC_WITH_METADATA,
+			      &gfs_pio_sync_time));
+}
+
+char *
+gfs_pio_datasync(GFS_File gf)
+{
+	return (sync_internal(gf, GFS_PROTO_FSYNC_WITHOUT_METADATA,
+			      &gfs_pio_datasync_time));
 }
 
 int
@@ -927,7 +1022,6 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 	*bufp = buf;
 	*sizep = size;
 	*lenp = len;
-	
 
 	return (NULL);
 }
@@ -1050,8 +1144,10 @@ gfs_display_timers()
 	fprintf(stderr, "gfs_pio_open    : %g sec\n", gfs_pio_open_time);
 	fprintf(stderr, "gfs_pio_close   : %g sec\n", gfs_pio_close_time);
 	fprintf(stderr, "gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
+	fprintf(stderr, "gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
 	fprintf(stderr, "gfs_pio_read    : %g sec\n", gfs_pio_read_time);
 	fprintf(stderr, "gfs_pio_write   : %g sec\n", gfs_pio_write_time);
+	fprintf(stderr, "gfs_pio_sync    : %g sec\n", gfs_pio_sync_time);
 	fprintf(stderr, "gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
 	fprintf(stderr, "gfs_pio_set_view_section : %g sec\n",
 		gfs_pio_set_view_section_time);

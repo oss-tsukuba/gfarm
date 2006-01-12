@@ -8,7 +8,7 @@ libexecdir=@libexecdir@
 
 PATH=${bindir}:${PATH}; export PATH
 
-PTOOLS_BIN='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfrcmd gfreg gfsplck'
+PTOOLS_BIN='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfrcmd gfreg'
 PTOOLS_LIBEXEC='gfrepbe_client gfrepbe_server'
 
 # gfwc may not be included in a release binary

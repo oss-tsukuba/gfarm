@@ -132,7 +132,8 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 <para>指定されたフラグメント番号のプロセスだけが実行されます．
 このオプションは，<option>-G</option> オプションあるいは引数に与えた Gfarm
 ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
-場合のみ利用可能です．
+場合，および <option>-N</option> オプションが指定されている場合のみ利
+用可能です．
 </para>
 </listitem>
 </varlistentry>
@@ -163,6 +164,17 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 <listitem>
 <para>実行されるプログラムを通常のプログラムであると明示的に指定します．
 この場合，プログラムに Gfarm 特有のオプションが渡されることはありません．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>
+Gfarm システムコール・フック・ライブラリを利用して実行されるプログラムにおいて，
+デフォルトのファイル・ビューをグローバル・ファイル・ビューに設定します．
+このオプションをつけないと，
+デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．
 </para>
 </listitem>
 </varlistentry>

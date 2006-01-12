@@ -292,3 +292,9 @@ enum gfm_proto_command {
 #define GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET	32
 
 #define GFM_PROTO_MAX_DIRENT	10240
+
+#if 0 /* There isn't gfm_proto.c for now. */
+extern char GFM_SERVICE_TAG[];
+#else
+#define GFM_SERVICE_TAG "gfarm-metadata"
+#endif

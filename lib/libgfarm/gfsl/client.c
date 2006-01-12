@@ -7,15 +7,19 @@
 #include <gssapi.h>
 #include <limits.h>
 
+#include "gfutil.h"
+
 #include "tcputil.h"
 #include "gfsl_config.h"
 #include "gfarm_gsi.h"
 #include "gfarm_secure_session.h"
 #include "misc.h"
 
-extern void	doClient(char *host, int port, gss_cred_id_t deleCred, int deleCheck);
+#include "scarg.h"
 
-static int port = 0;
+extern void	doClient(char *host, int port, gss_name_t acceptorName,
+			 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
+
 static unsigned long int addr = 0L;
 static char *hostname = NULL;
 
@@ -26,50 +30,39 @@ ParseArgs(argc, argv)
      int argc;
      char *argv[];
 {
-    while (*argv != NULL) {
-	if (strcmp(*argv, "-p") == 0) {
-	    if (*(argv + 1) != NULL) {
-		int tmp;
-		if (gfarmGetInt(*(++argv), &tmp) < 0) {
-		    fprintf(stderr, "illegal port number.\n");
-		    return -1;
-		}
-		if (tmp <= 0) {
-		    fprintf(stderr, "port number must be > 0.\n");
-		    return -1;
-		} else if (tmp > 65535) {
-		    fprintf(stderr, "port number must be < 65536.\n");
-		    return -1;
-		}
-		port = tmp;
+    int c, tmp;
+
+    while ((c = getopt(argc, argv, "s:h:" COMMON_OPTIONS)) != -1) {
+	switch (c) {
+	case 's':
+	    if (gfarmGetInt(optarg, &tmp) < 0) {
+		fprintf(stderr, "illegal buffer size.\n");
+		return -1;
 	    }
-	} else if (strcmp(*argv, "-h") == 0) {
-	    if (*(argv + 1) != NULL) {
-		unsigned long int tmp;
-		argv++;
-		tmp = gfarmIPGetAddressOfHost(*argv);
-		if (tmp == ~0L || tmp == 0L) {
-		    fprintf(stderr, "Invalid hostname.\n");
-		    return -1;
-		}
-		addr = tmp;
-		hostname = *argv;
+	    if (tmp <= 0) {
+		fprintf(stderr, "buffer size must be > 0.\n");
+		return -1;
 	    }
-	} else if (strcmp(*argv, "-s") == 0) {
-	    if (*(argv + 1) != NULL) {
-		int tmp;
-		if (gfarmGetInt(*(++argv), &tmp) < 0) {
-		    fprintf(stderr, "illegal buffer size.\n");
-		    return -1;
-		}
-		if (tmp <= 0) {
-		    fprintf(stderr, "buffer size must be > 0.\n");
-		    return -1;
-		}
-		testBufSize = tmp;
+	    testBufSize = tmp;
+	    break;
+	case 'h':
+	    addr = gfarmIPGetAddressOfHost(optarg);
+	    if (addr == ~0L || addr == 0L) {
+		fprintf(stderr, "Invalid hostname.\n");
+		return -1;
 	    }
+	    hostname = optarg;
+	    break;
+	default:
+	    if (HandleCommonOptions(c, optarg) != 0)
+		return -1;
+	    break;
 	}
-	argv++;
+    }
+
+    if (optind < argc) {
+	fprintf(stderr, "unknown extra argument %s\n", argv[optind]);
+	return -1;
     }
 
     if (addr == 0L) {
@@ -93,11 +86,8 @@ main(argc, argv)
     OM_uint32 majStat;
     OM_uint32 minStat;
 
-    if (ParseArgs(argc - 1, argv + 1) != 0) {
-	return 1;
-    }
-
-    if (gfarmSecSessionInitializeInitiator(NULL, &majStat, &minStat) <= 0) {
+    gflog_auth_set_verbose(1);
+    if (gfarmSecSessionInitializeInitiator(NULL, NULL, &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
@@ -105,7 +95,20 @@ main(argc, argv)
 	return 1;
     }
 
-    doClient(hostname, port, GSS_C_NO_CREDENTIAL, 1);
+    if (ParseArgs(argc, argv) != 0) {
+	return 1;
+    }
+
+    if (!acceptorSpecified) {
+	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
+				     &majStat, &minStat) < 0) {
+	    gfarmGssPrintMajorStatus(majStat);
+	    gfarmGssPrintMinorStatus(minStat);
+	    return 1;
+	}
+    }
+
+    doClient(hostname, port, acceptorName, GSS_C_NO_CREDENTIAL, 1);
     gfarmSecSessionFinalizeInitiator();
 
     return 0;

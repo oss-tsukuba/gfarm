@@ -9,6 +9,10 @@
 #include "hostspec.h"
 #include "auth.h"
 
+/*
+ * gfarm_auth_method
+ */
+
 struct gfarm_auth_method_name_value {
 	char mnemonic;
 	char *name;
@@ -118,7 +122,8 @@ gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
 
 /* this i/f have to be changed, if we support more than 31 auth methods */
 gfarm_int32_t
-gfarm_auth_method_get_enabled_by_name_addr(char *name, struct sockaddr *addr)
+gfarm_auth_method_get_enabled_by_name_addr(
+	char *name, struct sockaddr *addr)
 {
 	struct gfarm_auth_config *acp = gfarm_auth_config_list;
 	gfarm_int32_t enabled = 0, disabled = 0, methods;
@@ -175,4 +180,184 @@ gfarm_auth_method_get_available(void)
 		}
 	}
 	return (methods);
+}
+
+/*
+ * gfarm_auth_server_cred
+ */
+
+struct gfarm_auth_cred_type_name_value {
+	char *name;
+	enum gfarm_auth_cred_type type;
+} gfarm_auth_cred_type_name_value_table[] = {
+	{ "",			GFARM_AUTH_CRED_TYPE_DEFAULT },
+	{ "no-name",		GFARM_AUTH_CRED_TYPE_NO_NAME },
+	{ "mechanism-specific",	GFARM_AUTH_CRED_TYPE_MECHANISM_SPECIFIC },
+	{ "host",		GFARM_AUTH_CRED_TYPE_HOST },
+	{ "user",		GFARM_AUTH_CRED_TYPE_USER },
+	{ "self",		GFARM_AUTH_CRED_TYPE_SELF },
+};
+
+gfarm_error_t 
+gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
+{
+	int i;
+
+	for (i = 0;
+	     i < GFARM_ARRAY_LENGTH(gfarm_auth_cred_type_name_value_table);
+	     i++) {
+		struct gfarm_auth_cred_type_name_value *entry = 
+		    &gfarm_auth_cred_type_name_value_table[i];
+
+		if (strcmp(type_name, entry->name) == 0) {
+			*typep = entry->type;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERRMSG_UNKNOWN_CREDENTIAL_TYPE);
+}
+
+struct gfarm_auth_cred_config {
+	struct gfarm_auth_cred_config *next;
+	char *service_tag;
+	enum gfarm_auth_cred_type type;
+	char *service;
+	char *name;
+};
+
+struct gfarm_auth_cred_config *gfarm_auth_server_cred_config_list = NULL;
+
+static struct gfarm_auth_cred_config **
+gfarm_auth_server_cred_config_lookup(char *service_tag)
+{
+	struct gfarm_auth_cred_config *conf, **p;
+
+	for (p = &gfarm_auth_server_cred_config_list;
+	    (conf = *p) != NULL; p = &conf->next) {
+		if (strcmp(service_tag, conf->service_tag) == 0)
+			break;
+	}
+	return (p);
+}
+
+/* service_tag must be statically allocated */
+static gfarm_error_t
+gfarm_auth_server_cred_config_enter(char *service_tag,
+	struct gfarm_auth_cred_config **confp)
+{
+	struct gfarm_auth_cred_config *conf,
+	    **p = gfarm_auth_server_cred_config_lookup(service_tag);
+
+	if (*p != NULL) {
+		*confp = *p;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	*p = conf = malloc(sizeof(*conf));
+	if (conf == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	conf->next = NULL;
+	conf->service_tag = service_tag;
+	conf->type = GFARM_AUTH_CRED_TYPE_DEFAULT;
+	conf->service = NULL;
+	conf->name = NULL;
+	*confp = conf;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+enum gfarm_auth_cred_type
+gfarm_auth_server_cred_type_get(char *service_tag)
+{
+	struct gfarm_auth_cred_config *conf = 
+	    *gfarm_auth_server_cred_config_lookup(service_tag);
+
+	if (conf == NULL)
+		return (GFARM_AUTH_CRED_TYPE_DEFAULT);
+	return (conf->type);
+}
+
+char *
+gfarm_auth_server_cred_service_get(char *service_tag)
+{
+	struct gfarm_auth_cred_config *conf = 
+	    *gfarm_auth_server_cred_config_lookup(service_tag);
+
+	if (conf == NULL)
+		return (NULL);
+	return (conf->service);
+}
+
+char *
+gfarm_auth_server_cred_name_get(char *service_tag)
+{
+	struct gfarm_auth_cred_config *conf = 
+	    *gfarm_auth_server_cred_config_lookup(service_tag);
+
+	if (conf == NULL)
+		return (NULL);
+	return (conf->name);
+}
+
+/* service_tag must be statically allocated */
+gfarm_error_t 
+gfarm_auth_server_cred_type_set_by_string(char *service_tag, char *string)
+{
+	gfarm_error_t e;
+	enum gfarm_auth_cred_type type;
+
+	e = gfarm_auth_cred_type_parse(string, &type);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfarm_auth_server_cred_type_set(service_tag, type));
+}
+
+/* service_tag must be statically allocated */
+gfarm_error_t
+gfarm_auth_server_cred_type_set(char *service_tag,
+	enum gfarm_auth_cred_type type)
+{
+	struct gfarm_auth_cred_config *conf;
+	gfarm_error_t e =
+	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	/* first line has precedence */
+	if (conf->type != GFARM_AUTH_CRED_TYPE_DEFAULT)
+		return (GFARM_ERR_NO_ERROR);
+	conf->type = type;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* service_tag must be statically allocated */
+gfarm_error_t 
+gfarm_auth_server_cred_service_set(char *service_tag, char *service)
+{
+	struct gfarm_auth_cred_config *conf;
+	gfarm_error_t e =
+	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (conf->service != NULL) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	if ((conf->service = strdup(service)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* service_tag must be statically allocated */
+gfarm_error_t
+gfarm_auth_server_cred_name_set(char *service_tag, char *name)
+{
+	struct gfarm_auth_cred_config *conf;
+	gfarm_error_t e =
+	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (conf->name != NULL) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	if ((conf->name = strdup(name)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (GFARM_ERR_NO_ERROR);
 }

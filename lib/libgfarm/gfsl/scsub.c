@@ -19,18 +19,23 @@
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
+#include "scarg.h"
+
 gfarm_int32_t testBufSize = 4096;
 
-void	doServer(int fd, char *host, int port);
-void	doClient(char *host, int port,
+void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
+		 gss_name_t acceptorName);
+void	doClient(char *host, int port, gss_name_t acceptorName,
 		 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
 
 void
-doServer(fd, hostname, port)
+doServer(fd, hostname, port, myCred, acceptorName)
      int fd;
      char *hostname;
      int port;
+     gss_cred_id_t myCred;
+     gss_name_t acceptorName;
 {
     OM_uint32 majStat, minStat;
     char *rBuf = NULL;
@@ -40,10 +45,10 @@ doServer(fd, hostname, port)
     int dCheck = 0;
     gfarm_int32_t *tmpBuf;
     gfarmAuthEntry *aePtr = NULL;
+    char *name;
 
     gfarmSecSession *initialSession =
-    	gfarmSecSessionAccept(fd, GSS_C_NO_CREDENTIAL, NULL, &majStat,
-			     &minStat);
+    	gfarmSecSessionAccept(fd, myCred, NULL, &majStat, &minStat);
     int x;
 
     if (initialSession == NULL) {
@@ -52,8 +57,11 @@ doServer(fd, hostname, port)
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
+    name = newStringOfCredential(initialSession->cred);
+    fprintf(stderr, "Accept => Acceptor: '%s'\n", name);
+    free(name);
     aePtr = gfarmSecSessionGetInitiatorInfo(initialSession);
-    fprintf(stderr, "Initiator: '%s' -> '%s'\n",
+    fprintf(stderr, "Accept => Initiator: '%s' -> '%s'\n",
 	    aePtr->distName,
 	    (aePtr->authType == GFARM_AUTH_USER) ?
 	    aePtr->authData.userAuth.localName :
@@ -113,7 +121,7 @@ doServer(fd, hostname, port)
 	gss_cred_id_t deleCred = gfarmSecSessionGetDelegatedCredential(initialSession);
 	if (deleCred != GSS_C_NO_CREDENTIAL) {
 	    fprintf(stderr, "\nDelegation check.\n");
-	    doClient(hostname, port, deleCred, 0);
+	    doClient(hostname, port, acceptorName, deleCred, 0);
 	}
     }
 
@@ -143,20 +151,23 @@ randomizeIt(buf, len)
 
 
 void
-doClient(hostname, port, deleCred, deleCheck)
+doClient(hostname, port, acceptorName, deleCred, deleCheck)
      char *hostname;
      int port;
+     gss_name_t acceptorName;
      gss_cred_id_t deleCred;
      gfarm_int32_t deleCheck;
 {
     char *sBuf = NULL;
     char *rBuf = NULL;
+    char *name;
     int rSz = -1;
     OM_uint32 majStat;
     OM_uint32 minStat;
     gfarmSecSession *ss =
-    	gfarmSecSessionInitiateByName(hostname, port, deleCred, NULL,
-				      &majStat, &minStat);
+    	gfarmSecSessionInitiateByName(hostname, port, acceptorName, deleCred,
+				      GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
+				      NULL, &majStat, &minStat);
 
     if (ss == NULL) {
 	fprintf(stderr, "Can't create initiator session because of:\n");
@@ -164,6 +175,13 @@ doClient(hostname, port, deleCred, deleCheck)
 	gfarmGssPrintMinorStatus(minStat);
 	return;
     }
+
+    name = newStringOfCredential(ss->cred);
+    fprintf(stderr, "Initiate => Initiator: '%s'\n", name);
+    free(name);
+    name = newStringOfName(ss->iOaInfo.initiator.acceptorName);
+    fprintf(stderr, "Initiate => Acceptor: '%s'\n", name);
+    free(name);
 
     /*
      * Now, we can communicate securely.

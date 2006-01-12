@@ -67,11 +67,11 @@ be running on a metadata server node in advance.</P
 CLASS="COMMAND"
 >gfmd</B
 > to be executed as a non-privileged user
-process although other users cannot use it.  Moreover, a <B
+process although only the user that executes the <B
 CLASS="COMMAND"
 >gfmd</B
->
-with a user privilege cannot authenticate using the GSI.</P
+> can be authenticated.
+Other users cannot use it.</P
 ><P
 >In order to execute <B
 CLASS="COMMAND"
@@ -95,7 +95,7 @@ CLASS="FILENAME"
 >
 or <TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 > on a client node.</P
 ></DIV
 ><DIV
@@ -223,7 +223,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/etc/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P

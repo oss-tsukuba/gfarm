@@ -26,7 +26,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfrm&nbsp;--&nbsp;remove Gfarm files</DIV
+>gfrm&nbsp;--&nbsp;remove Gfarm files, directories, or file replicas</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,32 +38,17 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrm</B
-> [-h <TT
+> [-frR] [-I <TT
+CLASS="REPLACEABLE"
+><I
+>file-section</I
+></TT
+>] [-h <TT
 CLASS="REPLACEABLE"
 ><I
 >filesystem-node</I
 ></TT
 >]  <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
->... </P
-><P
-><B
-CLASS="COMMAND"
->gfrm</B
->  -h <TT
-CLASS="REPLACEABLE"
-><I
->filesystem-node</I
-></TT
->   -I <TT
-CLASS="REPLACEABLE"
-><I
->fragment-index</I
-></TT
->   <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
@@ -81,39 +66,35 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfrm</B
-> removes each specified file.  With the <TT
+> removes each specified file.  It does
+not remove directories unless the <TT
 CLASS="OPTION"
->-h</TT
-> option,
-<B
-CLASS="COMMAND"
->gfrm</B
-> removes file replicas of each specified file on the
-specified filesystem node(s).</P
+>-r</TT
+> or
+<TT
+CLASS="OPTION"
+>-R</TT
+> is specified.  '.' or '..' cannot be removed.</P
 ><P
->When both <TT
-CLASS="OPTION"
->-h</TT
-> and <TT
+>When <TT
 CLASS="OPTION"
 >-I</TT
-> options are specified, <B
+> option is specified, <B
 CLASS="COMMAND"
 >gfrm</B
 >
-removes a file replica specified by <TT
-CLASS="PARAMETER"
-><I
->fragment-index</I
-></TT
-> on the
-filesystem nodes <TT
-CLASS="PARAMETER"
-><I
->filesystem-node</I
-></TT
->.  It is not allowed to remove
-the last file repilca.</P
+removes the specified file section.  File section is an architecture
+name for executable files, or is a fragment index for a regular file.</P
+><P
+>With the <TT
+CLASS="OPTION"
+>-h</TT
+> option, <B
+CLASS="COMMAND"
+>gfrm</B
+> removes
+file replicas of each specified file or file section on the specified
+filesystem node(s).  All file replicas of a file cannot be removed.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -127,6 +108,33 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><TT
+CLASS="OPTION"
+>-f</TT
+></DT
+><DD
+><P
+>Even when all file repicas are specified by the
+<TT
+CLASS="OPTION"
+>-h</TT
+> option, force to delete all the file replica.  In
+this case, the specified file will be deleted.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-r</TT
+>, <TT
+CLASS="OPTION"
+>-R</TT
+></DT
+><DD
+><P
+>remove all entries under the directories specified by the
+command-line argument recursively.</P
+></DD
 ><DT
 ><TT
 CLASS="OPTION"
@@ -144,7 +152,7 @@ With the <TT
 CLASS="OPTION"
 >-I</TT
 > option, a file raplica of the specified
-file fragment will be removed.
+file section will be removed.
 This option can be used more than once to remove file
 replicas on several filesystem nodes at once.</P
 ></DD
@@ -155,21 +163,14 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->fragment-index</I
+>file-section</I
 ></TT
 ></DT
 ><DD
 ><P
->specifies the fragment index to be removed.</P
-><P
->If the <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> is an executable file, an architecture name,
-for example, sparc-sun-solaris8, can be used to specify the executable
-architecture to be removed.</P
+>specifies the file section to be removed.  File section is an
+architecture name such as sparc-sun-solaris8 for executable files, and
+an fragment index for regular files.</P
 ></DD
 ><DT
 ><TT

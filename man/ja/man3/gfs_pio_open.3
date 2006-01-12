@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "25 April 2003" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "30 October 2004" "Gfarm" ""
+
 .SH NAME
 gfs_pio_open \- Gfarmファイルのオープン
 .SH SYNOPSIS
@@ -19,11 +20,48 @@ char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\f
 ファイルをオープンし、GFS_File 構造体を
 \fIgfp\fR
 の指す先に返します。
-\fIflags\fR
 .PP
-には、現時点では、常に
-GFARM_FILE_RDONLY
-を渡すようにしてください。
+\fIflags\fR
+は、以下のフラグの bitwise-or で指定します。
+はじめの三つのフラグはどれかが指定されている必要があります。
+.TP
+\fBGFARM_FILE_RDONLY\fR
+読込みモードでファイルをオープンします。
+.TP
+\fBGFARM_FILE_WRONLY\fR
+書込みモードでファイルをオープンします。
+.TP
+\fBGFARM_FILE_RDWR\fR
+読み書きモードでファイルをオープンします。
+.TP
+\fBGFARM_FILE_TRUNC\fR
+ファイルが存在し，レギュラーファイルで、書込みが許される場合、ファイルサイズを0にします。
+.TP
+\fBGFARM_FILE_APPEND\fR
+ファイルをアペンドモードでオープンします。
+.PP
+以下のフラグは効率的な実行のためのヒントとして指定することができます。
+.TP
+\fBGFARM_FILE_SEQUENTIAL\fR
+ファイルが連続的にアクセスされることを示します。
+.TP
+\fBGFARM_FILE_REPLICATION\fR
+ファイルの複製がローカル・ファイルシステムにない場合は、
+ファイルアクセスに先立ち、
+ローカル・ファイルシステムにファイルの複製を作成します。
+.TP
+\fBGFARM_FILE_NOT_REPLICATION\fR
+ファイルの複製がローカル・ファイルシステムにない場合でも、
+ファイルの複製を作成せず、
+遠隔のファイルシステムノードに格納されているファイルコピーを直接参照します。
+.TP
+\fBGFARM_FILE_NOT_RETRY\fR
+選択されたファイル複製が何らかの理由で存在しない、
+あるいはアクセスできない場合でも、
+自動的には別のファイル複製の参照を試みず、オープンに失敗します。
+.PP
+GFARM_FILE_REPLICATIONと
+GFARM_FILE_NOT_REPLICATIONは同時に指定することはできません。
 .PP
 gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 \fBgfs_pio_open()\fR

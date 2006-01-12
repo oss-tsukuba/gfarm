@@ -245,13 +245,16 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		if (e != NULL)
 			return (e);
 		s = gfarm_url_prefix_add(path_buffer);
-		if (s == NULL)
+		if (s == NULL) {
+			gfs_stat_free(&st);
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		gfarm_stringlist_add(paths, s);
 		if (GFARM_S_ISDIR(st.st_mode))
 			gfs_glob_add(types, GFS_DT_DIR);
 		else
 			gfs_glob_add(types, GFS_DT_REG);
+		gfs_stat_free(&st);
 		return (NULL);
 	}
 	nomagic = i;
@@ -285,6 +288,8 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		*path_tail++ = '/';
 	}
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+		if (entry->d_name[0] == '.' && pattern[dirpos] != '.')
+			continue; /* initial '.' must be literally matched */
 		if (!glob_name_match(entry->d_name, &pattern[dirpos],
 		    i - dirpos))
 			continue;
@@ -324,6 +329,10 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 	if (*pattern == '~') {
 		if (pattern[1] == '\0' || pattern[1] == '/') {
 			s = gfarm_get_global_username();
+			if (s == NULL)
+				return (
+				    "gfs_glob(): programming error, "
+				    "gfarm library isn't properly initialized");
 			len = strlen(s);
 			pattern++;
 		} else {

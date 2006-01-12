@@ -1,2 +1,2 @@
-usr/grid/bin/gfront
-usr/grid/share/java
+@PREFIX@/bin/gfront
+@PREFIX@/share/java

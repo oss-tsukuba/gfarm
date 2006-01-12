@@ -1,8 +1,9 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
 
 <refentry id='gfarm-url-section-replicate-to.3'>
 
-<refentryinfo><date>10 Sep 2002</date></refentryinfo>
+<refentryinfo><date>4 Sep 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_url_section_replicate_to</refentrytitle>
@@ -12,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm_url_section_replicate_to</refname>
-<refpurpose>各フラグメントのレプリカを作成する</refpurpose>
+<refpurpose>ファイルセクションのレプリカを作成する</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -22,11 +23,10 @@
 
 <funcprototype>
   <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_section_replicate_to</function></funcdef>
-    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>const char *<parameter>gfarm_url</parameter></paramdef>
     <paramdef>char *<parameter>section</parameter></paramdef>
     <paramdef>char *<parameter>dsthost</parameter></paramdef>
 </funcprototype>
-
 
 </funcsynopsis>
 </refsynopsisdiv>
@@ -36,13 +36,16 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>ファイル
 <parameter>gfarm_url</parameter>
-のフラグメント
+のファイルセクション
 <parameter>section</parameter>
-のレプリカを、
+の複製を、
 <parameter>dsthost</parameter>
 に作成します。</para>
 
-<para>この関数では、フラグメント番号を整数ではなく、文字列
+<para>
+ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
+通常ファイルの場合はファイルインデックス番号となります。
+ファイルインデックス番号を整数ではなく、文字列
 <parameter>section</parameter>
 で指定する必要があることに注意してください。また、またこの文字列は、
 余分な空白や、先行 0 を含んではいけません。</para>
@@ -57,12 +60,29 @@
 <para>正常終了を示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>メモリ不足のため処理を中止しました。</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定されたファイルが存在しません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_TEXT_FILE_BUSY</constant></term>
+<listitem>
+<para>指定されたファイルが現在（他のプロセスにより）更新中のため、
+ファイルの複製が作成できません。</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term>その他</term>
 <listitem>

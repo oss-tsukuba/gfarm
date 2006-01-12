@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "25 April 2003" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "31 October 2004" "Gfarm" ""
+
 .SH NAME
 gfs_pio_create \- create a Gfarm file
 .SH SYNOPSIS
@@ -20,8 +21,27 @@ and returns a \fIGFS_File\fR structure to the address pointed to by
 \fIgfp\fR.  \fIMode\fR specifies the file permissions to be created,
 and is modified by the process's umask.
 .PP
-Currently, GFARM_FILE_WRONLY is only supported for values of
-\fIflags\fR.
+The
+\fIflags\fR
+argument has the same meaning as the second argument of
+\fBgfs_pio_open()\fR, including the point
+such that exactly one of
+\fIGFARM_FILE_RDONLY\fR,
+\fIGFARM_FILE_WRONLY\fR, and
+\fIGFARM_FILE_RDWR\fR
+should be specified.
+In addition, it is possible to specify
+\fIGFARM_FILE_EXCLUSIVE\fR.
+With this flag, 
+\fBgfs_pio_create()\fR
+will fail when the file already exists.
+.PP
+Note that
+\fIGFARM_FILE_TRUNC\fR
+must be explicitly specified by the
+\fIflags\fR
+argument since gfarm-1.0.4, if it's needed.
+Although this was implicitly assumed before.
 .PP
 When \fBgfs_pio_create()\fR is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
@@ -43,6 +63,9 @@ The requested access to the file is not allowed, or one of the
 directories in \fIgfarm_url\fR did not allow search (execute)
 permission, or the file did not exist yet and write access to the
 parent directory is not allowed.
+.TP
+\fBGFARM_ERR_ALREADY_EXISTS\fR
+\fIgfarm_url\fR already exists and GFARM_FILE_EXCLUSIVE was used.
 .TP
 \fBGFARM_ERR_IS_A_DIRECTORY\fR
 \fIgfarm_url\fR refers to a directory.

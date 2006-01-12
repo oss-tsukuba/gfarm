@@ -2,7 +2,7 @@
 
 <refentry id='gfs-pio-create.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>30 Oct 2004</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -45,11 +45,31 @@
 <parameter>gfp</parameter>
 の指す先に返します。</para>
 
-<para>引数
+<para>
+引数
 <parameter>flags</parameter>
-には 現時点では、常に
-<parameter>GFARM_FILE_WRONLY</parameter>
-を渡すようにしてください。</para>
+は、
+<function>gfs_pio_open()</function>
+の第二引数と同じ意味を持ちます。
+<parameter>GFARM_FILE_RDONLY</parameter>、
+<parameter>GFARM_FILE_WRONLY</parameter>、
+<parameter>GFARM_FILE_RDWR</parameter>
+のいずれか一つのフラグを必ず指定しなければならない点も同じです。
+ただし、
+<function>gfs_pio_create()</function>
+に特有のフラグとして、
+<parameter>GFARM_FILE_EXCLUSIVE</parameter>
+を指定することができます。この指定を行なった場合、
+ファイルが既に存在する場合は、ファイルのオープンに失敗します。
+</para>
+<para>
+以前のバージョンでは、引数
+<parameter>flags</parameter>
+の値として
+<parameter>GFARM_FILE_TRUNC</parameter>
+が暗黙裡に仮定されていましたが、gfarm-1.0.4 以降は、
+明示的に指定しなければならなくなりましたので、ご注意ください。
+</para>
 
 <para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
 <function>gfs_pio_create()</function>
@@ -91,17 +111,15 @@
 書き込み権限がありません。</para>
 </listitem>
 </varlistentry>
-<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
 <para><parameter>flags</parameter>引数に
 <constant>GFARM_FILE_EXCLUSIVE</constant>フラグが指定されたが、
-ファイルが既にそんざいしました。
+ファイルが既に存在しました。
 </para>
 </listitem>
 </varlistentry>
--->
 <varlistentry>
 <term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
 <listitem>

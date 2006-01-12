@@ -90,7 +90,8 @@ gfm_client_connection0(const char *hostname, int port,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = gfarm_auth_request(gfm_server->conn,
-	    host_fqdn, (struct sockaddr *)&peer_addr, gfarm_get_auth_id_type(),
+	    GFM_SERVICE_TAG, host_fqdn,
+	    (struct sockaddr *)&peer_addr, gfarm_get_auth_id_type(),
 	    &gfm_server->auth_method);
 	free(host_fqdn);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1461,7 +1462,7 @@ gfj_client_register(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &job_id);
 	if (e == GFARM_ERR_NO_ERROR)
 		*job_idp = job_id;
-	return (e);	
+	return (e);
 }
 
 gfarm_error_t
@@ -1496,7 +1497,6 @@ gfj_client_list(struct gfm_connection *gfm_server, char *user,
 			return (GFARM_ERR_PROTOCOL);
 		}
 		jobs[i] = job_id;
-		
 	}
 	*np = n;
 	*jobsp = jobs;

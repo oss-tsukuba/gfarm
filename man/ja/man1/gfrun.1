@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFRUN" "1" "05 January 2004" "Gfarm" ""
+.TH "GFRUN" "1" "11 February 2005" "Gfarm" ""
+
 .SH NAME
 gfrun, gfrsh, gfssh \- ファイルシステムノードで gfarm 並列コマンドを実行する
 .SH SYNOPSIS
@@ -77,7 +78,8 @@ gfarm-URL のファイル・アフィニティ・スケジューリングにより
 指定されたフラグメント番号のプロセスだけが実行されます．
 このオプションは，\fB-G\fR オプションあるいは引数に与えた Gfarm
 ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
-場合のみ利用可能です．
+場合，および \fB-N\fR オプションが指定されている場合のみ利
+用可能です．
 .TP
 \fB-v\fR
 詳細にエラーメッセージを表示します．
@@ -92,6 +94,12 @@ gfarm-URL のファイル・アフィニティ・スケジューリングにより
 \fB-u\fR
 実行されるプログラムを通常のプログラムであると明示的に指定します．
 この場合，プログラムに Gfarm 特有のオプションが渡されることはありません．
+.TP
+\fB-b\fR
+Gfarm システムコール・フック・ライブラリを利用して実行されるプログラムにおいて，
+デフォルトのファイル・ビューをグローバル・ファイル・ビューに設定します．
+このオプションをつけないと，
+デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．
 .TP
 \fB-?\fR
 引数オプションを表示します．

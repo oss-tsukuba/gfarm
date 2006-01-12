@@ -5,9 +5,11 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=gfmd
+FILE=$NAME
 DAEMON=/usr/sbin/$NAME
-PIDFILE=/var/run/$NAME.pid
+PIDFILE=/var/run/$FILE.pid
 CONF=/etc/gfarm.conf
+OPTIONS=
 
 trap "" 1
 export LANG=C
@@ -18,13 +20,13 @@ test -f $CONF || exit 0
 
 case "$1" in
   start)
-	echo -n "Starting gfarm server: $NAME"
-	start-stop-daemon --start \
-             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE
+	echo -n "Starting gfarm server: $FILE"
+	start-stop-daemon --quiet --start \
+             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE $OPTIONS
 	echo "."
 	;;
   stop)
-	echo -n "Stopping gfarm server: $NAME"
+	echo -n "Stopping gfarm server: $FILE"
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
 	echo "."
 	;;
@@ -33,7 +35,7 @@ case "$1" in
 	$0 start
 	;;
   *)
-	echo "Usage: /etc/init.d/$NAME {start|stop|restart}"
+	echo "Usage: /etc/init.d/$FILE {start|stop|restart}"
 	exit 1
 	;;
 esac

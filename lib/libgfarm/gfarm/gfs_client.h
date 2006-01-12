@@ -24,7 +24,7 @@ void gfs_client_connection_gc(void);
 
 #if 0 /* XXX FIXME - disable multiplexed version for now */
 gfarm_error_t gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
-	char *, struct sockaddr *,
+	const char *, struct sockaddr *,
 	void (*)(void *), void *,
 	struct gfs_client_connect_state **);
 gfarm_error_t gfs_client_connect_result_multiplexed(

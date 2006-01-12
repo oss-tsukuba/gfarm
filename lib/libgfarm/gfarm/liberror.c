@@ -106,6 +106,7 @@ const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"expired",
 	"protocol error",
 	"unknown host",
+	"cannot resolve an IP address into a hostname"
 
 	/* gfarm specific errors */
 	"no such object",
@@ -164,6 +165,8 @@ const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"missing 1st(sockopt-option) argument",
 	"missing <address> argument",
 	"missing <user map file> argument",
+	"missing 1st(architecture) argument",
+	"missing 2nd(host-spec) argument",
 	"cannot open gfarm.conf",
 
 	/* refered only from gfarm/gfp_xdr.c */
@@ -188,7 +191,11 @@ const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/auth_client_gsi.c */
 	"GSI credential initialization failed",
 	"GSI initialization failed",
-	"cannote initiate GSI connection",
+	"cannot initiate GSI connection",
+	"cannot acquire client-side GSI credential",
+
+	/* refered only from gfarm/auth_config.c */
+	"unknown cred_type",
 
 	/* refered only from gfarm/io_gfsl.c */
 	"GSI delegated credential doesn't exist",

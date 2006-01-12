@@ -1,7 +1,6 @@
-top_objdir = @top_objdir@
+top_builddir = .
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
-VPATH = @srcdir@
 
 include $(top_srcdir)/makes/var.mk
 
@@ -15,15 +14,19 @@ SUBDIRS = \
 	gftool \
 	gfptool \
 	util/gfront \
-	util/ptool
+	util/ptool \
+	bench/thput-gfpio
 
 all:
 
 include $(top_srcdir)/makes/subdir.mk
 
 post-distclean-hook:
-	rm -f config.log config.status config.cache \
-		$(INC_OBJDIR)/gfarm_config.h \
-		Makefile makes/config.mk \
+	-rm -rf autom4te.cache
+	rm -f config.log config.status config.cache libtool \
+		$(INC_BUILDDIR)/gfarm_config.h \
+		Makefile makes/config.mk makes/install-doc \
+		gftool/config-gfarm/config-gfarm \
+		gftool/config-gfarm/config-gfsd \
 		package/solaris/gfmd package/solaris/gfsd \
 		package/redhat/gfmd package/redhat/gfsd
