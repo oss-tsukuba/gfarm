@@ -30,4 +30,9 @@ int peer_had_protocol_error(struct peer *);
 struct job_table_entry;
 struct job_table_entry **peer_get_jobs_ref(struct peer *);
 
+gfarm_error_t peer_fdstack_push(struct peer *peer, gfarm_int32_t fd);
+gfarm_error_t peer_fdstack_swap(struct peer *peer);
+gfarm_error_t peer_fdstack_pop(struct peer *peer);
+gfarm_error_t peer_fdstack_top(struct peer *peer, gfarm_int32_t *);
+
 gfarm_error_t peer_schedule(struct peer *, void *(*)(void *));

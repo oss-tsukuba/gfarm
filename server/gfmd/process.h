@@ -11,6 +11,7 @@ struct user *process_get_user(struct process *);
 struct inode *process_get_cwd(struct process *);
 gfarm_error_t process_set_cwd(struct process *, struct inode *);
 
+gfarm_error_t process_verify_fd(struct process *, int);
 gfarm_error_t process_get_file_inode(struct process *, struct host *, int,
 	struct inode **);
 gfarm_error_t process_get_file_writable(struct process *, struct host *, int);

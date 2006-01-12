@@ -170,6 +170,19 @@ process_set_cwd(struct process *process, struct inode *cwd)
 }
 
 gfarm_error_t
+process_verify_fd(struct process *process, int fd)
+{
+	struct file_opening *fo;
+
+	if (fd < 0 || fd >= process->nfiles)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	fo = process->filetab[fd];
+	if (fo == NULL)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 process_get_file_opening(struct process *process, struct host *spool_host,
 	int fd, struct file_opening **fop)
 {

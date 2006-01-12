@@ -71,14 +71,19 @@ gfarm_error_t
 gfm_server_push_fd(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	gfarm_int32_t fd;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("push_fd: not implemented");
+	e = gfm_server_get_request(peer, "push_fd", "i", &fd);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_put_reply(peer, "push_fd",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_lock();
+	e = peer_fdstack_push(peer, fd);
+	giant_unlock();
+	
+	return (gfm_server_put_reply(peer, "push_fd", e, ""));
 }
 
 gfarm_error_t
@@ -86,13 +91,14 @@ gfm_server_swap_fd(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("swap_fd: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_put_reply(peer, "swap_fd",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_lock();
+	e = peer_fdstack_swap(peer);
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, "swap_fd", e, ""));
 }
 
 /* this assumes that giant_lock is already acquired */
@@ -256,7 +262,6 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_close_read(struct peer *peer, int from_client, int skip)
 {
@@ -267,8 +272,8 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	struct host *spool_host;
 	struct process *process;
 
-	e = gfm_server_get_request(peer, "close_read", "ili",
-	    &fd, &atime.tv_sec, &atime.tv_nsec);
+	e = gfm_server_get_request(peer, "close_read", "li",
+	    &atime.tv_sec, &atime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
@@ -281,6 +286,8 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else
 		error = process_close_file_read(process, spool_host,
 		    fd, &atime);
@@ -289,7 +296,6 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, "close_read", error, ""));
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_close_write(struct peer *peer, int from_client, int skip)
 {
@@ -301,8 +307,8 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	struct host *spool_host;
 	struct process *process;
 
-	e = gfm_server_get_request(peer, "close_write", "illili",
-	    &fd, &size,
+	e = gfm_server_get_request(peer, "close_write", "llili",
+	    &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -316,6 +322,8 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else
 		error = process_close_file_write(process, spool_host,
 		    fd, size, &atime, &mtime);
@@ -323,6 +331,7 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "close_write", error, ""));
 }
+
 
 gfarm_error_t
 gfm_server_verify_type(struct peer *peer, int from_client, int skip)
@@ -352,7 +361,6 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_fstat(struct peer *peer, int from_client, int skip)
 {
@@ -364,9 +372,6 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	struct inode *inode;
 	struct gfs_stat st;
 
-	e = gfm_server_get_request(peer, "fstat", "i", &fd);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
@@ -375,6 +380,8 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else if ((error = process_get_file_inode(process, spool_host, fd,
 	    &inode)) == GFARM_ERR_NO_ERROR) {
 		st.st_ino = inode_get_number(inode);
@@ -403,7 +410,6 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec));
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_futimes(struct peer *peer, int from_client, int skip)
 {
@@ -416,8 +422,8 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	struct user *user;
 	struct inode *inode;
 
-	e = gfm_server_get_request(peer, "futimes", "ilili",
-	    &fd, &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	e = gfm_server_get_request(peer, "futimes", "lili",
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
@@ -428,6 +434,8 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else if ((error = process_get_file_inode(process, spool_host, fd,
 	    &inode)) != GFARM_ERR_NO_ERROR)
 		;
@@ -446,7 +454,6 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, "futimes", error, ""));
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 {
@@ -459,7 +466,7 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 	struct user *user;
 	struct inode *inode;
 
-	e = gfm_server_get_request(peer, "fchmod", "ii", &fd, &mode);
+	e = gfm_server_get_request(peer, "fchmod", "i", &mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
@@ -472,6 +479,8 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((user = process_get_user(process)) == NULL)
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else if ((error = process_get_file_inode(process, spool_host, fd,
 	    &inode)) != GFARM_ERR_NO_ERROR)
 		;
@@ -484,7 +493,6 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, "fchmod", error, ""));
 }
 
-/* XXX protocol was changed, but implementation is not corrected */
 gfarm_error_t
 gfm_server_fchown(struct peer *peer, int from_client, int skip)
 {
@@ -498,8 +506,8 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	struct group *new_group = NULL;
 	struct inode *inode;
 
-	e = gfm_server_get_request(peer, "fchown", "iss",
-	    &fd, &username, &groupname);
+	e = gfm_server_get_request(peer, "fchown", "ss",
+	    &username, &groupname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
@@ -523,6 +531,8 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	else if (*groupname != '\0' &&
 	    (new_group = group_lookup(groupname)) == NULL)
 		error = GFARM_ERR_INVALID_ARGUMENT;
+	else if ((error = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
 	else if ((error = process_get_file_inode(process, spool_host, fd,
 	    &inode)) != GFARM_ERR_NO_ERROR)
 		;

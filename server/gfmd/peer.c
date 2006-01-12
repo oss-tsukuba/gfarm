@@ -39,6 +39,7 @@ struct peer {
 		struct {
 			/* only used by "gfrun" client */
 			struct job_table_entry *jobs;
+			gfarm_int32_t fd_current, fd_saved;
 		} client;
 	} u;
 };
@@ -65,6 +66,8 @@ peer_init(int max_peers)
 		peer_table[i].process = NULL;
 		peer_table[i].protocol_error = 0;
 		peer_table[i].u.client.jobs = NULL;
+		peer_table[i].u.client.fd_current = -1;
+		peer_table[i].u.client.fd_saved = -1;
 	}
 }
 
@@ -93,6 +96,8 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->process = NULL;
 	peer->protocol_error = 0;
 	peer->u.client.jobs = NULL;
+	peer->u.client.fd_current = -1;
+	peer->u.client.fd_saved = -1;
 
 	/* deal with reboots or network problems */
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &sockopt, sizeof(sockopt))
@@ -264,6 +269,63 @@ struct job_table_entry **
 peer_get_jobs_ref(struct peer *peer)
 {
 	return (&peer->u.client.jobs);
+}
+
+gfarm_error_t
+peer_fdstack_push(struct peer *peer, gfarm_int32_t fd)
+{
+	gfarm_error_t e;
+	struct process *process;
+
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
+		e = GFARM_ERR_NO_ERROR;
+		peer->u.client.fd_saved = peer->u.client.fd_current;
+		peer->u.client.fd_current = fd;
+	}
+	return (e);
+}
+
+gfarm_error_t
+peer_fdstack_swap(struct peer *peer)
+{
+	gfarm_int32_t fd;
+
+	fd = peer->u.client.fd_saved;
+	if (fd < 0)
+		return (GFARM_ERR_PROTOCOL);
+	peer->u.client.fd_saved = peer->u.client.fd_current;
+	peer->u.client.fd_current = fd;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+peer_fdstack_pop(struct peer *peer)
+{
+	if (peer->u.client.fd_current < 0)
+		return (GFARM_ERR_PROTOCOL);
+	peer->u.client.fd_current = peer->u.client.fd_saved;
+	peer->u.client.fd_saved = -1;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+peer_fdstack_top(struct peer *peer, gfarm_int32_t *fdp)
+{
+	gfarm_error_t e;
+	struct process *process;
+	int fd;
+
+	if ((process = peer_get_process(peer)) == NULL)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	fd = peer->u.client.fd_current;;
+	if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	*fdp = fd;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* XXX FIXME too many threads */
