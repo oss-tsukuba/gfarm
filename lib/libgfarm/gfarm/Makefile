@@ -29,6 +29,7 @@ SRCS = \
 	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
 	import_help.c metadb_misc.c metadb_sw.c param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
+	path_info_cache.c \
 	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
@@ -40,6 +41,7 @@ OBJS = \
 	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
 	import_help.lo metadb_misc.lo metadb_sw.lo param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
+	path_info_cache.lo \
 	$(ldap_objs) $(postgresql_objs) $(globus_objs)
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
@@ -69,7 +71,7 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
 gfs_lock.lo: 
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
@@ -98,3 +100,4 @@ sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:
 url.lo: config.h gfs_pio.h
 xxx_proto.lo: iobuffer.h xxx_proto.h
+path_info_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
