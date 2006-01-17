@@ -43,17 +43,8 @@ struct path_info_cache {
 static char *
 gfs_stat_dup(struct gfs_stat *src, struct gfs_stat *dest)
 {
-#if 0
-	dest->st_ino = src->st_ino;
-	dest->st_mode = src->st_mode;
-	dest->st_atimespec = src->st_atimespec;
-	dest->st_mtimespec = src->st_mtimespec;
-	dest->st_ctimespec = src->st_ctimespec;
-	dest->st_size = src->st_size;
-	dest->st_nsections = src->st_nsections;
-#else
 	*dest = *src;
-#endif
+
 	if (src->st_user != NULL) {
 		dest->st_user = strdup(src->st_user);
 		if (dest->st_user == NULL)
@@ -62,7 +53,7 @@ gfs_stat_dup(struct gfs_stat *src, struct gfs_stat *dest)
 	if (src->st_group != NULL) {
 		dest->st_group = strdup(src->st_group);
 		if (dest->st_group == NULL) {
-			if (dest->st_user != NULL)
+			if (src->st_user != NULL)
 				free(dest->st_user);
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -75,13 +66,13 @@ gfarm_path_info_dup(struct gfarm_path_info *src, struct gfarm_path_info *dest)
 {
 	char *e;
 
-	e = gfs_stat_dup(&(src->status), &(dest->status));
+	e = gfs_stat_dup(&src->status, &dest->status);
 	if (e != NULL)
 		return (e);
 	if (src->pathname != NULL) {
 		dest->pathname = strdup(src->pathname);
 		if (dest->pathname == NULL) {
-			gfs_stat_free(&(dest->status));
+			gfs_stat_free(&dest->status);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
@@ -169,7 +160,7 @@ cache_path_info_free()
 		_debug("! free path_info cache: %d: %s\n", pic->noent, path);
 #endif
 		if (pic->noent == CACHE_SET)
-			gfarm_path_info_free(&(pic->info));
+			gfarm_path_info_free(&pic->info);
 		gfarm_hash_iterator_next(&iterator);
 	}
 	/* ?? gfarm_hash_iterator_purge(&iterator); */
@@ -201,13 +192,13 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		if (pic != NULL) {
 			/* check term of validity */
 			gettimeofday(&now, NULL);
-			gfarm_timeval_sub(&now, &(pic->time));
+			gfarm_timeval_sub(&now, &pic->time);
 			if (gfarm_timeval_cmp(&now, &cache_timeout) >= 0) {
 				_debug("! expire path_info cache: %s\n",
 				       pathname);
 #if 1  /* purge */
 				if (pic->noent == CACHE_SET)
-					gfarm_path_info_free(&(pic->info));
+					gfarm_path_info_free(&pic->info);
 				if (gfarm_hash_purge(cache_table, pathname,
 						     strlen(pathname))) {
 					current_cache_num--;
@@ -219,7 +210,7 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 			if (pic->noent == CACHE_NOENT) /* NOENT cache */
 				return (GFARM_ERR_NO_SUCH_OBJECT);
 
-			return gfarm_path_info_dup(&(pic->info), info);
+			return gfarm_path_info_dup(&pic->info, info);
 		}
 	}
 	return "cache_path_info_get: no path_info cache";
@@ -256,7 +247,7 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 	if (created)  /* new cache */
 		current_cache_num++;
 	else if (pic->noent == CACHE_SET)  /* have path_info */
-		gfarm_path_info_free(&(pic->info));
+		gfarm_path_info_free(&pic->info);
 
 	if (info == NULL) {  /* set NOENT */
 		pic->noent = CACHE_NOENT;
@@ -268,11 +259,11 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 			_debug("! -> update cache from NOENT: %s\n", pathname);
 		}
 #endif
-		(void)gfarm_path_info_dup(info, &(pic->info));
+		(void)gfarm_path_info_dup(info, &pic->info);
 		pic->noent = CACHE_SET;
 	}
 	/* current time */
-	gettimeofday(&(pic->time), NULL);
+	gettimeofday(&pic->time, NULL);
 
 	return (NULL);
 }
@@ -296,9 +287,8 @@ cache_path_info_remove(const char *pathname)
 		pic = gfarm_hash_entry_data(he);
 		if (pic != NULL) {
 			if (pic->noent == CACHE_SET)
-				gfarm_path_info_free(&(pic->info));
-			if (gfarm_hash_purge(cache_table, pathname,
-					     strlen(pathname))) {
+				gfarm_path_info_free(&pic->info);
+			if (gfarm_hash_purge(cache_table, pathname, pathlen)) {
 				_debug("! remove path_info cache: %s\n",
 				       pathname);
 				current_cache_num--;
@@ -371,10 +361,10 @@ gfarm_timespec_add_microsec(struct gfarm_timespec *t, long microsec)
 /**********************************************************************/
 
 static int
-compare_path_info_without_time(struct gfarm_path_info *info1,
-			       struct gfarm_path_info *info2)
+compare_path_info_except_time(struct gfarm_path_info *info1,
+			      struct gfarm_path_info *info2)
 {
-	struct gfs_stat *s1 = &(info1->status), *s2 = &(info2->status);
+	struct gfs_stat *s1 = &info1->status, *s2 = &info2->status;
 
 #if 0  /* for debug */
 	_debug("mtime 1: %u %u\n",
@@ -451,16 +441,16 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
         if (e != NULL)
 		return (0); /* need updating */
 
-	while (compare_path_info_without_time(info, &nowinfo) == 0) {
+	while (compare_path_info_except_time(info, &nowinfo) == 0) {
 #if 1
 		tmp = info->status.st_mtimespec;
-		gfarm_timespec_sub(&tmp, &(nowinfo.status.st_mtimespec));
+		gfarm_timespec_sub(&tmp, &nowinfo.status.st_mtimespec);
 		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
 		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
 			break;
 #else /* force updating */
-		if (gfarm_timespec_cmp(&(info->status.st_mtimespec),
-				       &(nowinfo.status.st_mtimespec)) != 0) {
+		if (gfarm_timespec_cmp(&info->status.st_mtimespec,
+				       &nowinfo.status.st_mtimespec) != 0) {
 			_debug("!!! mtime updating.\n");
 			break;
 		}
@@ -468,13 +458,13 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 
 #if 1
 		tmp = info->status.st_atimespec;
-		gfarm_timespec_sub(&tmp, &(nowinfo.status.st_atimespec));
+		gfarm_timespec_sub(&tmp, &nowinfo.status.st_atimespec);
 		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
 		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
 			break;
 #else /* force updating */
-		if (gfarm_timespec_cmp(&(info->status.st_atimespec),
-				       &(nowinfo.status.st_atimespec)) != 0) {
+		if (gfarm_timespec_cmp(&info->status.st_atimespec,
+				       &nowinfo.status.st_atimespec) != 0) {
 			_debug("!!! atime updating.\n");
 			break;
 		}
@@ -482,13 +472,13 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 
 #if 1
 		tmp = info->status.st_ctimespec;
-		gfarm_timespec_sub(&tmp, &(nowinfo.status.st_ctimespec));
+		gfarm_timespec_sub(&tmp, &nowinfo.status.st_ctimespec);
 		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
 		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
 			break;
 #else /* force updating */
-		if (gfarm_timespec_cmp(&(info->status.st_ctimespec),
-				       &(nowinfo.status.st_ctimespec)) != 0) {
+		if (gfarm_timespec_cmp(&info->status.st_ctimespec,
+				       &nowinfo.status.st_ctimespec) != 0) {
 			_debug("!!! ctime updating.\n");
 			break;
 		}
@@ -515,7 +505,7 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		char *e2;
 		e2 = gfarm_metadb_path_info_get(pathname, &tmp);
 		if (e2 == NULL) {
-			if (compare_path_info_without_time(info, &tmp)
+			if (compare_path_info_except_time(info, &tmp)
 			    != 0) {
 				_debug("! different cache\n");
 			}
@@ -527,7 +517,7 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		e = gfarm_metadb_path_info_get(pathname, info);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			cache_path_info_put(pathname, NULL); /* cache NOENT */
-		else
+		else if (e == NULL)
 			cache_path_info_put(pathname, info);
 	}
 	return (e);
@@ -539,9 +529,9 @@ gfarm_cache_path_info_set(char *pathname, struct gfarm_path_info *info)
 	char *e;
 
 	e = gfarm_metadb_path_info_set(pathname, info);
-	if (e == NULL) {
+	if (e == NULL)
 		cache_path_info_put(pathname, info);
-	} else
+	else
 		cache_path_info_remove(pathname);
 	return (e);
 }
@@ -555,9 +545,9 @@ gfarm_cache_path_info_replace(char *pathname, struct gfarm_path_info *info)
 		return (NULL); /* cancel updating time */
 
 	e = gfarm_metadb_path_info_replace(pathname, info);
-	if (e == NULL) {
+	if (e == NULL)
 		cache_path_info_put(pathname, info);
-	} else
+	else
 		cache_path_info_remove(pathname);
 	return (e);
 }
