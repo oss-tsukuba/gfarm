@@ -640,7 +640,7 @@ init_replace
 if [ -n "$BACKEND_PRIVILEGE" ]; then
 	chown "$BACKEND_PRIVILEGE" "$BACKEND_DATA_DIR" \
 		$admin_password $password
-	run_with_backend_privilege="su $BACKEND_PRIVILEGE /bin/sh"
+	run_with_backend_privilege="su -l $BACKEND_PRIVILEGE /bin/sh"
 else
 	run_with_backend_privilege="/bin/sh"
 fi
@@ -662,8 +662,8 @@ _EOF_
 	# record the password
 	cp -p $admin_password $BACKEND_DATA_DIR/admin_password
 
-	mv "$BACKEND_DATA_DIR"/postgresql.conf \
-	   "$BACKEND_DATA_DIR"/postgresql.conf.org
+	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
+	      "$BACKEND_DATA_DIR"/postgresql.conf.org
 
 	awk '
 	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
@@ -699,11 +699,14 @@ _EOF_
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
 		>"$BACKEND_DATA_DIR"/postgresql.conf
 
+	cp -p "$BACKEND_DATA_DIR"/pg_hba.conf \
+	      "$BACKEND_DATA_DIR"/pg_hba.conf.org
+
 	(
 	echo ""
-	echo "# TYPE	DATABASE	USER	IP-ADDRESS	NETMASK		METHOD"
-	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0		0.0.0.0		md5"
-	) >> "$BACKEND_DATA_DIR"/pg_hba.conf \
+	echo "# TYPE	DATABASE	USER	CIDR-ADDRESS	METHOD"
+	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
+	) >> "$BACKEND_DATA_DIR"/pg_hba.conf
 	;;
 
 ldap)
