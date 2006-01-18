@@ -426,7 +426,7 @@ ldap)
 
 	: ${BACKEND_PORT:="389"}
 
-	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -n -e 's/\./, dc=/gp'`"}
+	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -e 's/\./, dc=/g'`"}
 	: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
 	: ${BACKEND_ADMIN_USER:="cn=root, $LDAP_BASE_DN"}
 	: ${BACKEND_USER:="$LDAP_BASE_DN"}
@@ -640,7 +640,7 @@ init_replace
 if [ -n "$BACKEND_PRIVILEGE" ]; then
 	chown "$BACKEND_PRIVILEGE" "$BACKEND_DATA_DIR" \
 		$admin_password $password
-	run_with_backend_privilege="su -l $BACKEND_PRIVILEGE /bin/sh"
+	run_with_backend_privilege="su -l $BACKEND_PRIVILEGE -c /bin/sh"
 else
 	run_with_backend_privilege="/bin/sh"
 fi
@@ -736,10 +736,10 @@ mkscript "$RC_DIR/gfmd"			replace "$RC_GFMD_IN"
 case $BACKEND_TYPE in
 postgresql)
 	# backup configuration during temporary change
-	mv "$BACKEND_DATA_DIR"/postgresql.conf \
-	   "$BACKEND_DATA_DIR"/postgresql.conf.bak
-	mv "$BACKEND_DATA_DIR"/pg_hba.conf \
-	   "$BACKEND_DATA_DIR"/pg_hba.conf.bak
+	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
+	      "$BACKEND_DATA_DIR"/postgresql.conf.bak
+	cp -p "$BACKEND_DATA_DIR"/pg_hba.conf \
+	      "$BACKEND_DATA_DIR"/pg_hba.conf.bak
 
 	# create temporary configuration files 
 	awk '
@@ -784,8 +784,10 @@ postgresql)
 	# PostgreSQL-8.0.3.
 	# Also, we cannot use "restart" here, because it doesn't work either
 	# at first invocation.
+	cat << _EOF_ | $run_with_backend_privilege
 	$BACKEND_PREFIX/bin/pg_ctl -s -m fast \
 		-D $BACKEND_DATA_DIR -l $BACKEND_DATA_DIR/logfile start
+_EOF_
 
 	# wait until portmaster actually starts. XXX are 3 seconds enough?
 	sleep 3
