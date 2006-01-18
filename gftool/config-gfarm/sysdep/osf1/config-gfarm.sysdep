@@ -46,7 +46,7 @@ mkcnf_gfsd_sysdep()
 	: # do nothing
 }
 
-start_service()
+service_add()
 {
 	# local service levels start kill level d
 
@@ -69,6 +69,14 @@ start_service()
 	else
 		echo add "$service" service: skipped
 	fi
+}
 
-	"$RC_DIR/$service" restart || ABORT "cannot start $service"
+service_ctl()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+
+	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
 }

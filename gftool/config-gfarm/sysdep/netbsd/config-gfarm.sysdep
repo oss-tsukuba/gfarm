@@ -45,9 +45,9 @@ mkcnf_gfsd_sysdep()
 	: # do nothing
 }
 
-start_service()
+service_add()
 {
-	# local service mode
+	# local service
 
 	service=$1
 
@@ -61,11 +61,23 @@ start_service()
 			ABORT "cannot add $service service"
 		fi
 		echo added "$service" service
-		mode=
 	else
 		echo add "$service" service: skipped
+	fi
+}
+
+service_ctl()
+{
+	# local service ctl mode
+
+	service=$1
+	ctl=$2
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		mode=
+	else
 		mode=force
 	fi
 
-	"$RC_DIR/$service" ${mode}restart || ABORT "cannot start $service"
+	"$RC_DIR/$service" ${mode}$ctl || ABORT "cannot $ctl $service"
 }

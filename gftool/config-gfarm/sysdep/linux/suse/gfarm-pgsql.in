@@ -1,30 +1,35 @@
 #! /bin/sh
 # $Id$
 #
-# /etc/init.d/gfarm-slapd
+# /etc/init.d/gfarm-pgsql
 #
 #   and its symbolic link
 #
-# /usr/sbin/rcgfarm-slapd
+# /usr/sbin/rcgfarm-pgsql
 #
 ### BEGIN INIT INFO
-# Provides: gfarm-slapd
+# Provides: gfarm-pgsql
 # Required-Start: $network $syslog
 # Required-Stop: $network $syslog
 # Default-Start: 3 5
 # Default-Stop: 0 1 2 6
-# Description: LDAP slapd for Gfarm
+# Description: LDAP pgsql for Gfarm
 ### END INIT INFO
 
 . /etc/rc.status
 
-prog="slapd"
-FILE="gfarm-slapd"
+FILE="gfarm-pgsql"
 
-CONF="@config_gfarm_slapd_config@"
-PORT=@config_gfarm_backend_port@
-DAEMON="@config_gfarm_openldap_libexec@/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+CTL="@config_gfarm_backend_prefix@/bin/pg_ctl"
+DATADIR="@config_gfarm_backend_data_dir@"
+LOGFILE="$DATADIR/logfile"
+PIDFILE="$DATADIR/portmaster.pid"
+OPTIONS="-s -w -m fast -D $DATADIR -l $LOGFILE"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="su $PRIVILEGE";;
+esac
 
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
@@ -38,8 +43,6 @@ rc_reset
 case $1 in
     start)
 	echo -n "Starting $FILE"
-	# increase the maximum number of open file descriptors
-	ulimit -n 16384 2> /dev/null
 	if [ ! -x "$DAEMON" ]; then
 		rc_failed 5 # program is not installed
 	elif "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"; then

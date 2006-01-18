@@ -1,0 +1,51 @@
+#! /bin/bash
+#
+# gfarm-pgsql	Start the PostgreSQL daemon - postmaster.
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+FILE="gfarm-pgsql"
+
+CTL="@config_gfarm_backend_prefix@/bin/pg_ctl"
+DATADIR="@config_gfarm_backend_data_dir@"
+LOGFILE="$DATADIR/logfile"
+PIDFILE="$DATADIR/portmaster.pid"
+OPTIONS="-s -w -m fast -D $DATADIR -l $LOGFILE"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="su $PRIVILEGE";;
+esac
+
+trap "" 1
+export LANG=C
+export PATH
+
+test -f $CTL || exit 0
+test -d $DATADIR || exit 0
+
+case "$1" in
+  start)
+	echo -n "Starting gfarm server: $FILE"
+	$RUN -c "$CTL $OPTIONS start"
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping gfarm server: $FILE"
+	$RUN -c "$CTL $OPTIONS stop"
+	echo "."
+	;;
+  status|restart)
+	$RUN -c "$CTL $OPTIONS $1"
+	;;
+  force-reload)
+	$RUN -c "$CTL $OPTIONS reload"
+	;;
+  *)
+	echo "Usage: /etc/init.d/$FILE {start|stop|restart}"
+	exit 1
+	;;
+esac
+
+exit 0

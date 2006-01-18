@@ -282,11 +282,8 @@ echo gfhost $GFSD_HOSTNAME: succeeded ||
 echo >&2 "gfhost $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
-	if start_service gfsd; then
-		:
-	else
-		ABORT "failed to start service"
-	fi
+	service_add gfsd && service_ctl gfsd restart ||
+		ABORT "failed to start gfsd"
 fi
 echo "$PROGNAME success"
 exit 0

@@ -61,12 +61,12 @@ sysdep_defaults()
 		;;
 	esac
 
-	: ${RC_GFARM_SLAPD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfarm-slapd.in"}
+	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
 	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.in"}
 
-	if [ ! -f "$RC_GFARM_SLAPD_IN" ]; then
-		RC_GFARM_SLAPD_IN="$config_dir/linux/default/gfarm-slapd.in"
+	if [ ! -f "$RC_BACKEND_IN" ]; then
+		RC_BACKEND_IN="$config_dir/linux/default/$RC_BACKEND_BASENAME.in"
 	fi
 	if [ ! -f "$RC_GFMD_IN" ]; then
 		RC_GFMD_IN="$config_dir/linux/default/gfmd.in"
@@ -105,7 +105,7 @@ mkcnf_gfsd_sysdep()
 	mkcnf_gfarm_sysdep
 }
 
-start_service_debian()
+service_add_debian()
 {
 	# local service
 
@@ -117,16 +117,9 @@ start_service_debian()
 	else
 		echo add "$service" service: skipped
 	fi
-
-	if [ -w / -a X"$CONFIG_PREFIX" = X \
-			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
-		invoke-rc.d $service restart
-	else
-		"$RC_DIR/$service" restart
-	fi || ABORT "cannot start "$service""
 }
 
-start_service_redhat()
+service_add_by_chkconfig()
 {
 	# local service
 
@@ -139,32 +132,9 @@ start_service_redhat()
 	else
 		echo add "$service" service: skipped
 	fi
-
-	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		service "$service" restart
-	else
-		"$RC_DIR/$service" restart
-	fi || ABORT "cannot start $service"
 }
 
-start_service_suse()
-{
-	# local service
-
-	service=$1
-
-	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		chkconfig "$service" --add ||
-			ABORT "cannot add $service service"
-		echo added "$service" service
-	else
-		echo add "$service" service: skipped
-	fi
-
-	"$RC_DIR/$service" restart || ABORT "cannot start $service"
-}
-
-start_service_default()
+service_add_default()
 {
 	# local service
 
@@ -175,16 +145,63 @@ start_service_default()
 	else
 		echo add "$service" service: skipped
 	fi
-
-	"$RC_DIR/$service" restart || ABORT "cannot start $service"
 }
 
-start_service()
+service_ctl_debian()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X \
+			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d $service $ctl
+	else
+		"$RC_DIR/$service" $ctl
+	fi || ABORT "cannot $ctl "$service""
+}
+
+service_ctl_redhat()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		service "$service" $ctl
+	else
+		"$RC_DIR/$service" $ctl
+	fi || ABORT "cannot $ctl $service"
+}
+
+service_ctl_default()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+
+	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
+}
+
+service_add()
 {
 	case $LINUX_RC_TYPE in
-	debian)	start_service_debian $1;;
-	redhat)	start_service_redhat $1;;
-	suse)	start_service_suse $1;;
-	*)	start_service_default $1;;
+	debian)	service_add_debian $1;;
+	redhat)	service_add_by_chkconfig $1;;
+	suse)	service_add_by_chkconfig $1;;
+	*)	service_add_default $1;;
+	esac
+}
+
+service_ctl()
+{
+	case $LINUX_RC_TYPE in
+	debian)	service_ctl_debian $1 $2;;
+	redhat)	service_ctl_redhat $1 $2;;
+	suse)	service_ctl_default $1 $2;;
+	*)	service_ctl_default $1 $2;;
 	esac
 }

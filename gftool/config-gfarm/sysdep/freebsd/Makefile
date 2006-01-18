@@ -9,6 +9,7 @@ include $(top_srcdir)/makes/var.mk
 datadir=$(default_datadir)/gfarm/config
 
 DATA =	$(srcdir)/config-gfarm.sysdep \
+	$(srcdir)/gfarm-pgsql.in \
 	$(srcdir)/gfarm-slapd.in \
 	$(srcdir)/gfmd.in \
 	$(srcdir)/gfsd.in

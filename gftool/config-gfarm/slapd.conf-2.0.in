@@ -26,10 +26,10 @@ loglevel 0
 database	@config_gfarm_slapd_database@
 
 suffix		"@config_gfarm_ldap_base_dn@"
-rootdn		"cn=root, @config_gfarm_ldap_base_dn@"
+rootdn		"@config_gfarm_backend_admin_user@"
+rootpw		@config_gfarm_backend_admin_password@
 
-directory	@config_gfarm_ldap_data_dir@
-rootpw		secret-ldap-password
+directory	@config_gfarm_backend_data_dir@
 
 # Indices to maintain
 index	objectClass	eq
