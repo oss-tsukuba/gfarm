@@ -31,7 +31,7 @@ gfarm_metab_use_ldap(void)
 	metadb_ops = &gfarm_ldap_metadb_ops;
 	return (NULL);
 #else
-	return ("gfarm.conf: postgresql is specified, "
+	return ("gfarm.conf: ldap is specified, "
 	    "but it is not linked into the gfarm library");
 #endif
 }
