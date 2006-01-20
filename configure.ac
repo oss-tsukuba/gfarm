@@ -811,8 +811,10 @@ else
   LIBS="`echo $postgresql_libs | sed 's/-R[[^ ]]*//g'` $LIBS_SAVE"
 
   AC_TRY_LINK([
+#include <stdio.h>
 #include <libpq-fe.h>],[
 	PGconn *conn = PQconnectdb("");
+	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
   ], [
 	postgresql_usable=yes
 	AC_MSG_RESULT([using \"${with_postgresql}\"])
