@@ -21980,12 +21980,14 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include <libpq-fe.h>
 int
 main ()
 {
 
 	PGconn *conn = PQconnectdb("");
+	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
 
   ;
   return 0;
