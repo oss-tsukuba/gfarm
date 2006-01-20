@@ -768,7 +768,7 @@ case ${with_postgresql} in
   else
 	AC_MSG_ERROR([not found in \"${with_postgresql}\", aborted])
   fi;;
-yas|'')
+yes|'')
   for d in /usr/local/pgsql /usr/local /usr/pkg /usr
   do
     if test -f $d/include/libpq-fe.h; then
