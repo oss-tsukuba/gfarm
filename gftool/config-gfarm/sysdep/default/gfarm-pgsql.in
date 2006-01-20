@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# $Id$
+#
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
+# chkconfig: 2345 85 15
+#
+## For RedHat Linux style rc.d
+# description: PostgreSQL daemon for Gfarm
+# processname: postmaster
+# pidfile: @config_gfarm_backend_data_dir@/postmaster.pid
+#
+## For SuSE/United-Linux style rc.d
+### BEGIN INIT INFO
+# Provides: gfarm-pgsql
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: PostgreSQL daemon for Gfarm
+### END INIT INFO
+
+PROG="pg_ctl"
+FILE="gfarm-pgsql"
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+DAEMON="@config_gfarm_backend_prefix@/bin/$PROG"
+LOGFILE="$PGDATA/logfile"
+OPTIONS="-s -w -m fast -l $LOGFILE"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="su - $PRIVILEGE";;
+esac
+export PGPORT
+export PGDATA
+
+case $1 in 
+start)
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
+		exit 1
+	fi
+	$RUN -c "$DAEMON $OPTIONS start"
+	;;
+
+stop)
+	$RUN -c "$CTL $OPTIONS stop"
+	;;
+
+  status|restart|reload)
+	$RUN -c "$CTL $OPTIONS $1"
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | restart | status | reload }"
+	exit 1
+	;;
+esac
+exit 0
