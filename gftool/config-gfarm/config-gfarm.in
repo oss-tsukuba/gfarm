@@ -118,11 +118,11 @@ gen_passwd()
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f] [-W] [-w]"
-	echo >&2 "	[-b metadata_backend]"
+	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
 	echo >&2 "	[-d domain_name] [-h hostname]"
-	echo >&2 "	[-V openldap_version] [-l metadata_directory]"
-	echo >&2 "	[-p postgresql/slapd_port] [-s gfsd_port] [-m gfmd_port]"
-	echo >&2 "  metadata_backend: 'ldap' or 'postgresql' (default is $backend_default)"
+	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
+	echo >&2 "	[-s gfsd_port] [-m gfmd_port]"
+	echo >&2 "  metadata_backend: $backend_candidates (default is $backend_default)"
 	exit 1
 }
 
@@ -170,6 +170,7 @@ display_params()
 {
     echo     "prefix [--prefix]: $CONFIG_PREFIX"
     echo     "metadata backend    [-b]: $BACKEND_TYPE"
+    echo     "(supported backend: $backend_candidates)"
     case $BACKEND_TYPE in
     postgresql)
 	echo "postgresql admin user     [-U]: $BACKEND_ADMIN_USER"
@@ -177,6 +178,7 @@ display_params()
 	echo "postgresql user           [-u]: $BACKEND_USER"
 	echo "postgresql password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
 	echo "postgresql prefix   [-P]: $BACKEND_PREFIX"
+	echo "postgresql version  [-V]: $BACKEND_VERSION"
 	;;
     ldap)
 	echo "domain name         [-d]: $DOMAIN_NAME"
@@ -414,6 +416,31 @@ postgresql)
 	: ${BACKEND_USER:="gfarm"}
 	: ${BACKEND_PORT:="5432"}
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
+
+	if [ -z "${BACKEND_VERSION-}" ]; then
+		if [ -x "$BACKEND_PREFIX/bin/initdb" ]; then
+			[ -n $BACKEND_PRIVILEGE ] && SU="su - $BACKEND_PRIVILEGE -c"
+			BACKEND_VERSION=`$SU "$BACKEND_PREFIX/bin/initdb --version" 2>&1 |
+			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+			if [ -z "$BACKEND_VERSION" ]
+			then
+				BACKEND_VERSION="unknown"
+			elif expr "$BACKEND_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
+					>/dev/null; then
+				:
+			else
+				BACKEND_VERSION="unknown"
+			fi
+		else
+			BACKEND_VERSION="unknown"
+		fi
+	fi
+
+	case $BACKEND_VERSION in
+	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
+		ABORT "PostgreSQL version 7.4 or later required: $BACKEND_VERSION"
+		;;
+	esac
 	;;
 
 ldap)
@@ -640,7 +667,7 @@ init_replace
 if [ -n "$BACKEND_PRIVILEGE" ]; then
 	chown "$BACKEND_PRIVILEGE" "$BACKEND_DATA_DIR" \
 		$admin_password $password
-	run_with_backend_privilege="su -l $BACKEND_PRIVILEGE -c /bin/sh"
+	run_with_backend_privilege="su - $BACKEND_PRIVILEGE -c /bin/sh"
 else
 	run_with_backend_privilege="/bin/sh"
 fi
@@ -654,9 +681,11 @@ mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 
 case $BACKEND_TYPE in
 postgresql)
-	cat << _EOF_ | $run_with_backend_privilege
-	initdb -D '$BACKEND_DATA_DIR' --no-locale -E UTF-8 -A md5 \
-		--pwfile=$admin_password
+	OPTION="--no-locale -E UTF-8"
+	[ $BACKEND_VERSION = 7.4 ] ||
+		OPTION="$OPTION -A md5 --pwfile=$admin_password"
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
+	initdb -D "$BACKEND_DATA_DIR" $OPTION
 _EOF_
 
 	# record the password
@@ -672,9 +701,21 @@ _EOF_
 		} else {
 			print $0
 		}
-		if (!listen_addresses_done) {
+		if (!tcpip_socket_done && !listen_addresses_done) {
 			print "listen_addresses = '"'*'"'"
 			listen_addresses_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*tcpip_socket[ 	]*=/ {
+		if (/^[ 	]*tcpip_socket/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			print "tcpip_socket = true"
+			tcpip_socket_done = 1
 		}
 		next
 	}
@@ -692,7 +733,7 @@ _EOF_
 	}
 	{print}
 	END {
-		if (!listen_addresses_done)
+		if (!listen_addresses_done && !tcpip_socket_done)
 			print "listen_addresses = '"'*'"'"
 		if (!port_done)
 			print "port = '$BACKEND_PORT'"
@@ -749,10 +790,23 @@ postgresql)
 		} else {
 			print $0
 		}
-		if (!listen_addresses_done) {
+		if (!tcpip_socket_done && !listen_addresses_done) {
 			# disable TCP access to be sure
 			print "listen_addresses = '"''"'"
 			listen_addresses_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*tcpip_socket[ 	]*=/ {
+		if (/^[ 	]*tcpip_socket/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			# disable TCP access to be sure
+			print "tcpip_socket = false"
+			tcpip_socket_done = 1
 		}
 		next
 	}
@@ -771,7 +825,7 @@ postgresql)
 	}
 	{print}
 	END {
-		if (!listen_addresses_done)
+		if (!tcpip_socket_done && !listen_addresses_done)
 			print "listen_addresses = '"''"'"
 		if (!unix_socket_directory_done)
 			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"

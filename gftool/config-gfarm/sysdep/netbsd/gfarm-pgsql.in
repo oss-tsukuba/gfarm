@@ -25,7 +25,7 @@ command_args="-s -w -m fast -D @config_gfarm_backend_data_dir@ -l @config_gfarm_
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su $PRIVILEGE";;
+*)	RUN="su - $PRIVILEGE";;
 esac
 
 start_cmd="echo $command $command_args start | $RUN"

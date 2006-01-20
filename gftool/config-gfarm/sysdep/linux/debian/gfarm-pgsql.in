@@ -15,7 +15,7 @@ OPTIONS="-s -w -m fast -D $DATADIR -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su $PRIVILEGE";;
+*)	RUN="su - $PRIVILEGE";;
 esac
 
 trap "" 1
