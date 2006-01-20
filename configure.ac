@@ -862,10 +862,6 @@ if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
 then
 	AC_MSG_ERROR([neither LDAP or PostgreSQL is found, aborted])
 fi
-# XXX this should be removed, when PostgreSQL support is completed.
-if test x"${ldap_usable}" != x"yes"; then
-	AC_MSG_ERROR([LDAP is not found, aborted])
-fi
 
 ###### 
 ###### Checks for header files.
