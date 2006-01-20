@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.2
-%define rel	6
+%define ver	1.2.9
+%define rel	0
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -56,10 +56,6 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-Patch0: gfarm-1.2-patch1.diff
-Patch1: gfarm-1.2-patch2.diff
-Patch2: gfarm-1.2-patch3.diff
-Patch3: gfarm-1.2-patch4.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology
@@ -149,10 +145,6 @@ mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
 #%patch -p1
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
 
 %build
 ./configure --prefix=%{prefix} \
@@ -209,8 +201,14 @@ if [ "$1" = 0 ]
 then
 	/sbin/service gfmd stop > /dev/null 2>&1 || :
 	/sbin/chkconfig --del gfmd
-	echo do not forget \'service gfarm-slapd stop\' and
-	echo \'chkconfig gfarm-slapd --del\'
+	if [ -f /etc/init.d/gfarm-slapd ]; then
+		echo do not forget \'service gfarm-slapd stop\' and
+		echo \'chkconfig gfarm-slapd --del\'
+	fi
+	if [ -f /etc/init.d/gfarm-pgsql ]; then
+		echo do not forget \'service gfarm-pgsql stop\' and
+		echo \'chkconfig gfarm-pgsql --del\'
+	fi
 fi
 
 # Part 3  file list
@@ -711,15 +709,21 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
-%{share_prefix}/config/gfarm.conf.in
+%{share_prefix}/config/gfarm.conf-ldap.in
+%{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.schema
+%{share_prefix}/config/gfarm.sql
 %{share_prefix}/config/initial.ldif.in
+%{share_prefix}/config/linux/debian/gfarm-pgsql.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in
 %{share_prefix}/config/linux/debian/gfmd.in
+%{share_prefix}/config/linux/default/gfarm-pgsql.in
 %{share_prefix}/config/linux/default/gfarm-slapd.in
 %{share_prefix}/config/linux/default/gfmd.in
+%{share_prefix}/config/linux/redhat/gfarm-pgsql.in
 %{share_prefix}/config/linux/redhat/gfarm-slapd.in
 %{share_prefix}/config/linux/redhat/gfmd.in
+%{share_prefix}/config/linux/suse/gfarm-pgsql.in
 %{share_prefix}/config/linux/suse/gfarm-slapd.in
 %{share_prefix}/config/linux/suse/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
