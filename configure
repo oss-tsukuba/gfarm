@@ -22080,12 +22080,6 @@ then
 echo "$as_me: error: neither LDAP or PostgreSQL is found, aborted" >&2;}
    { (exit 1); exit 1; }; }
 fi
-# XXX this should be removed, when PostgreSQL support is completed.
-if test x"${ldap_usable}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: LDAP is not found, aborted" >&5
-echo "$as_me: error: LDAP is not found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-fi
 
 ######
 ###### Checks for header files.
