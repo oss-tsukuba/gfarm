@@ -18,10 +18,10 @@
 #define _debug 1 ? (void)0: printf
 #endif
 
-/* default enviroment values */
+/* default parameters */
 static int hash_size = 1009; /* prime */
-static struct timeval cache_timeout = {0, 500000}; /* 500 millisec. */
-static struct gfarm_timespec update_time_interval = {0, 500000000};
+static struct timeval cache_timeout = {0, 0}; /* disable */
+static struct gfarm_timespec update_time_interval = {0, 0};
 
 static int current_cache_num;
 static int prepare_cache_table = 0;
@@ -30,8 +30,6 @@ static struct gfarm_hash_table *cache_table;
 #define CACHE_NOSET  0
 #define CACHE_NOENT  1
 #define CACHE_SET    2
-#define SIZE_NOSET   0
-#define SIZE_SET     1
 
 struct path_info_cache {
 	int noent;   /* CACHE_* */
@@ -80,50 +78,68 @@ gfarm_path_info_dup(struct gfarm_path_info *src, struct gfarm_path_info *dest)
 }
 
 static void
+cache_hash_size_set(unsigned int size)
+{
+	if (size > 0)
+		hash_size = size;
+}
+
+static void
+cache_timeout_set(unsigned int timeout)
+{
+	if (timeout >= 0) {
+		/* millisec -> microsec */
+		cache_timeout.tv_sec = timeout / 1000;
+		cache_timeout.tv_usec
+			= (timeout % 1000) * 1000;
+	}
+}
+
+static void
+cache_update_time_interval_set(unsigned int interval)
+{
+	if (interval >= 0) {
+		/* millisec -> nanosec */
+		update_time_interval.tv_sec = interval / 1000;
+		update_time_interval.tv_nsec
+			= (interval % 1000) * 1000000;
+	}
+}
+
+static int
 cache_path_info_init()
 {
 	static int env_init = 0;
 
 	if (env_init == 0) {
 		char *envval;
-		int tmpval;
 
 		envval = getenv("GFARM_PATH_INFO_HASH_SIZE");
-		if (envval != NULL) {
-			tmpval = atoi(envval);
-			if (tmpval >= 0)
-				hash_size = tmpval;
-		}
+		if (envval != NULL)
+			cache_hash_size_set(atoi(envval));
 
 		/* millisecond */
 		envval = getenv("GFARM_PATH_INFO_TIMEOUT");
-		if (envval != NULL) {
-			tmpval = atoi(envval);
-			if (tmpval >= 0) {
-				/* millisec -> microsec */
-				cache_timeout.tv_sec = tmpval / 1000;
-				cache_timeout.tv_usec
-					= (tmpval % 1000) * 1000;
-			}
-		}
+		if (envval != NULL)
+			cache_timeout_set(atoi(envval));
 
 		/* millisecond */
 		envval = getenv("GFARM_UPDATE_TIME_INTERVAL");
-		if (envval != NULL) {
-			tmpval = atoi(envval);
-			if (tmpval >= 0) {
-				/* millisec -> nanosec */
-				update_time_interval.tv_sec = tmpval / 1000;
-				update_time_interval.tv_nsec
-					= (tmpval % 1000) * 1000000;
-			}
-		}
+		if (envval != NULL)
+			cache_update_time_interval_set(atoi(envval));
+
 		env_init = 1;
 	}
 
+	if (cache_timeout.tv_sec == 0 && cache_timeout.tv_usec == 0)
+		return (0); /* disable */
+
+	if (prepare_cache_table == 1)
+		return (1); /* enable */
+
 	cache_table = gfarm_hash_table_alloc(hash_size,
-					    gfarm_hash_default,
-					    gfarm_hash_key_equal_default);
+					     gfarm_hash_default,
+					     gfarm_hash_key_equal_default);
 	prepare_cache_table = 1;
 	current_cache_num = 0;
 	_debug("! cache_path_info_init: hash_size=%d\n", hash_size);
@@ -133,6 +149,8 @@ cache_path_info_init()
 	_debug("! update_time_interval=%u.%u(sec.nanosec)\n",
 	       (unsigned int) update_time_interval.tv_sec,
 	       (unsigned int) update_time_interval.tv_nsec);
+
+	return (1); /* enable */
 }
 
 #include <limits.h> /* PATH_MAX */
@@ -179,11 +197,8 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 	struct path_info_cache *pic;
 	struct timeval now;
 
-	if (cache_timeout.tv_sec <= 0 && cache_timeout.tv_usec <= 0)
+	if (!cache_path_info_init())
 		return (GFARM_PATH_INFO_CACHE_CANCEL);
-
-	if (prepare_cache_table == 0)
-		cache_path_info_init();
 
 	pathlen = strlen(pathname);
 	he = gfarm_hash_lookup(cache_table, pathname, pathlen);
@@ -200,9 +215,8 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 				if (pic->noent == CACHE_SET)
 					gfarm_path_info_free(&pic->info);
 				if (gfarm_hash_purge(cache_table, pathname,
-						     strlen(pathname))) {
+						     strlen(pathname)))
 					current_cache_num--;
-				}
 #endif
 				return "expired path_info cache content";
 			}
@@ -224,14 +238,11 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 	int created;
 	struct path_info_cache *pic;
 
-	if (cache_timeout.tv_sec <= 0 && cache_timeout.tv_usec <= 0)
+	if (!cache_path_info_init())
 		return (GFARM_PATH_INFO_CACHE_CANCEL);
 
 	if (current_cache_num >= hash_size)
 		cache_path_info_free();  /* clear all cache */
-
-	if (prepare_cache_table == 0)
-		cache_path_info_init();
 
 	pathlen = strlen(pathname);
 	
@@ -275,11 +286,8 @@ cache_path_info_remove(const char *pathname)
 	int pathlen;
 	struct path_info_cache *pic;
 
-	if (cache_timeout.tv_sec <= 0 && cache_timeout.tv_usec <= 0)
+	if (!cache_path_info_init())
 		return (GFARM_PATH_INFO_CACHE_CANCEL);
-
-	if (prepare_cache_table == 0)
-		cache_path_info_init();
 
 	pathlen = strlen(pathname);
 	he = gfarm_hash_lookup(cache_table, pathname, pathlen);
@@ -493,6 +501,15 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 
 /**********************************************************************/
 
+void
+gfarm_cache_path_info_param_set(unsigned int timeout,
+				unsigned int update_time_interval)
+{
+	/* millisec. */
+	cache_timeout_set(timeout);
+	cache_update_time_interval_set(update_time_interval);
+}
+
 char *
 gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
@@ -573,9 +590,11 @@ gfarm_cache_size_set(const char *pathname, file_offset_t size)
 
 	e = cache_path_info_get(pathname, &info);
 	if (e == NULL) {
-		_debug("! cache size: %s\n", pathname);
-		info.status.st_size = size;
-		e = cache_path_info_put(pathname, &info);
+		if (info.status.st_size != size) {
+			_debug("! cache size: %s\n", pathname);
+			info.status.st_size = size;
+			e = cache_path_info_put(pathname, &info);
+		}
 		gfarm_path_info_free(&info);
 	}
 	return (e);
