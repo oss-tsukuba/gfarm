@@ -138,6 +138,12 @@ sanity()
 	rv=0
 	case $BACKEND_TYPE in
 	postgresql)
+		case $BACKEND_VERSION in
+		[1-6].*|7.[0-3]|unknown)	# 7.3 or before
+			echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION"
+			rv=1
+			;;
+		esac
 		if [ ! -x "$BACKEND_PREFIX/bin/pg_ctl" ]; then
 			echo "WARNING: command not found: pg_ctl" >&2
 			rv=1
@@ -419,7 +425,11 @@ postgresql)
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$BACKEND_PREFIX/bin/initdb" ]; then
-			[ -n $BACKEND_PRIVILEGE ] && SU="su - $BACKEND_PRIVILEGE -c"
+			if [ -n "$BACKEND_PRIVILEGE" ]; then
+				SU="su - $BACKEND_PRIVILEGE -c"
+			else
+				SU="/bin/sh -c"
+			fi
 			BACKEND_VERSION=`$SU "$BACKEND_PREFIX/bin/initdb --version" 2>&1 |
 			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
 			if [ -z "$BACKEND_VERSION" ]
@@ -432,16 +442,9 @@ postgresql)
 				BACKEND_VERSION="unknown"
 			fi
 		else
-			echo "WARNING: command not found: initdb" >&2
 			BACKEND_VERSION="unknown"
 		fi
 	fi
-
-	case $BACKEND_VERSION in
-	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
-		ABORT "PostgreSQL version 7.4 or later required: $BACKEND_VERSION"
-		;;
-	esac
 	;;
 
 ldap)
@@ -481,7 +484,6 @@ ldap)
 				BACKEND_VERSION="unknown"
 			fi
 		else
-			echo "WARNING: command not found: ldapsearch" >&2
 			BACKEND_VERSION="unknown"
 		fi
 	fi
