@@ -154,7 +154,6 @@ gfs_pio_view_section_close(GFS_File gf)
 		int i;
 		char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
 		struct gfarm_file_section_info fi;
-		struct gfarm_file_section_copy_info fci;
 
 		for (i = 0; i < md_len; i++)
 			sprintf(&md_value_string[i + i], "%02x",
