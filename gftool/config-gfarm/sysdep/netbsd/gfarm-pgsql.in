@@ -19,10 +19,10 @@ rcvar=${name}
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
 command="@config_gfarm_backend_prefix@/bin/pg_ctl"
-pidfile="@config_gfarm_backend_data_dir@/portmaster.pid"
-required_dirs="@config_gfarm_backend_data_dir@"
+pidfile="$PGDATA/portmaster.pid"
+required_dirs="$PGSATA"
 # add more flags through ${${name}_flags}
-command_args="-s -w -m fast -l @config_gfarm_backend_data_dir@/logfile"
+command_args="-s -w -m fast -D $PGDATA -l $PGDATA/logfile"
 export PGPORT
 export PGDATA
 

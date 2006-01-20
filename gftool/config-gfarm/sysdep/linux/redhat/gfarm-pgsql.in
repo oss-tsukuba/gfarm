@@ -16,7 +16,7 @@ PGDATA="@config_gfarm_backend_data_dir@"
 CTL="@config_gfarm_backend_prefix@/bin/pg_ctl"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 LOGFILE="$PGDATA/logfile"
-OPTIONS="-s -w -m fast -l $LOGFILE"
+OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
