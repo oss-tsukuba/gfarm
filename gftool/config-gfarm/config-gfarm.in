@@ -685,11 +685,8 @@ mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 
 case $BACKEND_TYPE in
 postgresql)
-	OPTION="--no-locale -E UTF-8"
-	[ $BACKEND_VERSION = 7.4 ] ||
-		OPTION="$OPTION -A md5 --pwfile=$admin_password"
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
-	initdb -D "$BACKEND_DATA_DIR" $OPTION
+	initdb -D "$BACKEND_DATA_DIR" --no-locale -E UTF-8
 _EOF_
 
 	# record the password
@@ -735,12 +732,26 @@ _EOF_
 		}
 		next
 	}
+	/^[ 	]*#*[ 	]*password_encryption[ 	]*=/ {
+		if (/^[ 	]*password_encryption/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!password_encryption_done) {
+			print "password_encryption = true"
+			password_encryption_done = 1
+		}
+		next
+	}
 	{print}
 	END {
 		if (!listen_addresses_done && !tcpip_socket_done)
 			print "listen_addresses = '"'*'"'"
 		if (!port_done)
 			print "port = '$BACKEND_PORT'"
+		if (!password_encryption_done)
+			print "password_encryption = true"
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
 		>"$BACKEND_DATA_DIR"/postgresql.conf
 
@@ -748,10 +759,23 @@ _EOF_
 	      "$BACKEND_DATA_DIR"/pg_hba.conf.org
 
 	(
+	# all comment out
+	sed 's/^[0-9A-Za-z]/#&/' "$BACKEND_DATA_DIR"/pg_hba.conf.org
+
+	echo ""
 	echo ""
 	echo "# TYPE	DATABASE	USER	CIDR-ADDRESS	METHOD"
+	echo ""
+	echo '# "local" is for Unix domain socket connections only'
+	echo 'local	all		all			md5'
+	echo '# IPv4 local connections:'
+	echo 'host	all		all	127.0.0.1/32	md5'
+	echo '# IPv6 local connections:'
+	echo 'host	all		all	::1/128		md5'
+
+	echo ""
 	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
-	) >> "$BACKEND_DATA_DIR"/pg_hba.conf
+	) > "$BACKEND_DATA_DIR"/pg_hba.conf
 	;;
 
 ldap)
@@ -864,10 +888,14 @@ _EOF_
 		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
 		print "	TO $BACKEND_USER;"
 	}
-	{
+	FILENAME == "$admin_password" {
+		print "ALTER USER $BACKEND_ADMIN_USER"
+		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
+	}
+	FILENAME == "$password" {
 		print "ALTER USER $BACKEND_USER"
 		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
-	}' $password | psql $DB_NAME
+	}' $admin_password $password | psql $DB_NAME
 _EOF_
 
 	service_ctl $RC_BACKEND_BASENAME stop
