@@ -20310,8 +20310,8 @@ echo "$as_me: error: cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.
  echo "$as_me:$LINENO: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
 echo "${ECHO_T}found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&6
 
- globus_includes='-I$(globus_location)/include/$(globus_flavor)'
- globus_libdir='$(globus_location)/lib'
+ globus_includes='-I${globus_location}/include/${globus_flavor}'
+ globus_libdir='${globus_location}/lib'
 
  cfgmhtmp=/tmp/cfgmh$$
  echo "$as_me:$LINENO: checking globus library names" >&5
@@ -20346,12 +20346,12 @@ echo "$as_me: error: Globus installation is incomplete, aborted." >&2;}
  globus_cflags='${GLOBUS_CFLAGS}'
  globus_targets='${GLOBUS_TARGETS}'
 
- openssl_includes='$(globus_includes)'
+ openssl_includes='${globus_includes}'
  case ${globus_static} in
- yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
+ yes)	openssl_libs="${globus_libdir}"'/libssl_${globus_flavor}.a '"${globus_libdir}"'/libcrypto_${globus_flavor}.a'
 	echo "$as_me:$LINENO: result: using globus static library: yes" >&5
 echo "${ECHO_T}using globus static library: yes" >&6;;
- *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
+ *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_${globus_flavor} -lcrypto_${globus_flavor}'
 	echo "$as_me:$LINENO: result: using globus static library: no" >&5
 echo "${ECHO_T}using globus static library: no" >&6;;
  esac
