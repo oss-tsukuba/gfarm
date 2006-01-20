@@ -287,8 +287,8 @@ AC_ARG_WITH(globus,
  fi
  AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
- globus_includes='-I$(globus_location)/include/$(globus_flavor)'
- globus_libdir='$(globus_location)/lib'
+ globus_includes='-I${globus_location}/include/${globus_flavor}'
+ globus_libdir='${globus_location}/lib'
 
  cfgmhtmp=/tmp/cfgmh$$
  AC_MSG_CHECKING([globus library names])
@@ -317,11 +317,11 @@ AC_ARG_WITH(globus,
  globus_cflags='${GLOBUS_CFLAGS}'
  globus_targets='${GLOBUS_TARGETS}'
 
- openssl_includes='$(globus_includes)'
+ openssl_includes='${globus_includes}'
  case ${globus_static} in
- yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
+ yes)	openssl_libs="${globus_libdir}"'/libssl_${globus_flavor}.a '"${globus_libdir}"'/libcrypto_${globus_flavor}.a'
 	AC_MSG_RESULT([using globus static library: yes]);;
- *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
+ *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_${globus_flavor} -lcrypto_${globus_flavor}'
 	AC_MSG_RESULT([using globus static library: no]);;
  esac
 
