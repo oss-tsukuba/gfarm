@@ -13,9 +13,9 @@ globus_location="@globus_location@"
 POSTGRESQL_TARGETS=postgresql
 LDAP_TARGETS=ldap
 backend_candidates="@postgresql_targets@ @ldap_targets@"
-case "@ldap_targets@" in
-'')	backend_default=postgresql;;
-*)	backend_default=ldap;;
+case "@postgresql_targets@" in
+'')	backend_default=ldap;;
+*)	backend_default=postgresql;;
 esac
 BACKEND_TYPE=$backend_default
 
