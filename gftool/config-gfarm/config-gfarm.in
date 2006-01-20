@@ -22,7 +22,7 @@ BACKEND_TYPE=$backend_default
 #
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
-search_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb
+search_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb:/usr/lib/postgresql
 
 PROGNAME=`basename $0`
 
@@ -297,7 +297,7 @@ while [ $# -gt 0 ] ; do
 done
 
 #
-# search default $BACKEND_PREFIX for OpenLDAP
+# search default $BACKEND_PREFIX
 #
 
 case $BACKEND_TYPE in
@@ -432,6 +432,7 @@ postgresql)
 				BACKEND_VERSION="unknown"
 			fi
 		else
+			echo "WARNING: command not found: initdb" >&2
 			BACKEND_VERSION="unknown"
 		fi
 	fi
@@ -480,6 +481,7 @@ ldap)
 				BACKEND_VERSION="unknown"
 			fi
 		else
+			echo "WARNING: command not found: ldapsearch" >&2
 			BACKEND_VERSION="unknown"
 		fi
 	fi
