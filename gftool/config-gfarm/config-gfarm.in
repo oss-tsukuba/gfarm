@@ -22,7 +22,7 @@ BACKEND_TYPE=$backend_default
 #
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
-search_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb:/usr/lib/postgresql
+search_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ucb:/usr/lib/postgresql/bin
 
 PROGNAME=`basename $0`
 
