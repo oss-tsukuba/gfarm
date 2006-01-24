@@ -28,7 +28,7 @@ struct agent_connection {
 };
 
 static char *
-agent_client_connection0(
+agent_client_connection0_unix(
 	struct sockaddr_un *peer_addr, struct agent_connection *agent_server)
 {
 	char *e;
@@ -53,7 +53,7 @@ agent_client_connection0(
 }
 
 char *
-agent_client_connect(struct sockaddr_un *peer_addr,
+agent_client_connect_unix(struct sockaddr_un *peer_addr,
 	struct agent_connection **agent_serverp)
 {
 	struct agent_connection *agent_server =
@@ -62,7 +62,53 @@ agent_client_connect(struct sockaddr_un *peer_addr,
 
 	if (agent_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	e = agent_client_connection0(peer_addr, agent_server);
+	e = agent_client_connection0_unix(peer_addr, agent_server);
+	if (e != NULL) {
+		free(agent_server);
+		return (e);
+	}
+	*agent_serverp = agent_server;
+	return (NULL);
+}
+
+static char *
+agent_client_connection0_inet(const char *if_hostname,
+	struct sockaddr *peer_addr, struct agent_connection *agent_server)
+{
+	char *e;
+	int sock;
+
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, if_hostname, peer_addr);
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		e = gfarm_errno_to_error(errno);
+		close(sock);
+		return (e);
+	}
+	e = xxx_fd_connection_new(sock, &agent_server->conn);
+	if (e != NULL) {
+		close(sock);
+		return (e);
+	}
+	return (NULL);
+}
+
+char *
+agent_client_connect_inet(const char *hostname,
+	struct sockaddr *peer_addr, struct agent_connection **agent_serverp)
+{
+	struct agent_connection *agent_server =
+		malloc(sizeof(struct agent_connection));
+	char *e;
+
+	if (agent_server == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = agent_client_connection0_inet(hostname, peer_addr, agent_server);
 	if (e != NULL) {
 		free(agent_server);
 		return (e);

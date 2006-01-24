@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@ gfarm_agent_disable(void)
 	gfarm_agent_enabled = 0;
 }
 
-char *gfarm_agent_connect(char *);
+char *gfarm_agent_connect(void);
 char *gfarm_agent_disconnect(void);
 
 static char *
@@ -46,33 +47,62 @@ gfarm_agent_check(void)
 		else
 			gfarm_agent_disconnect();
 	}
-	return (gfarm_agent_connect(NULL));
+	return (gfarm_agent_connect());
 }
 
 char *
-gfarm_agent_connect(char *path)
+gfarm_agent_connect()
 {
-	struct sockaddr_un peer_addr;
+	struct sockaddr_un unix_addr;
+	struct sockaddr inet_addr;
+	int port;
+	char *e, *path, *host, *port_number, *if_hostname;
 	size_t len;
+	enum { NO_AGENT, UNIX_DOMAIN, INET } agent_type;
 
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	host = NULL;
+	port = 0;
+#endif
 	if (agent_server != NULL)
 		return ("already connected");
 
-	if (path == NULL)
-		path = getenv("GFARM_AGENT_SOCK");
-	if (path == NULL)
-		return (GFARM_AGENT_ERR_NO_AGENT);
-
-	len = strlen(path);
-	if (len >= sizeof(peer_addr.sun_path))
-		return ("$GFARM_AGENT_SOCK: too long pathname");
-
-	memset(&peer_addr, 0, sizeof(peer_addr));
-	peer_addr.sun_family = AF_UNIX;
-	strcpy(peer_addr.sun_path, path);
+	path = getenv("GFARM_AGENT_SOCK");
+	if (path != NULL)
+		agent_type = UNIX_DOMAIN;
+	else {
+		host = getenv("GFARM_AGENT_HOST");
+		port_number = getenv("GFARM_AGENT_PORT");
+		if (host != NULL && port_number != NULL) {
+			agent_type = INET;
+			port = atoi(port_number);
+		}
+		else
+			return (GFARM_AGENT_ERR_NO_AGENT);
+	}
 
 	agent_pid = getpid();
-	return (agent_client_connect(&peer_addr, &agent_server));
+
+	if (agent_type == UNIX_DOMAIN) {
+		len = strlen(path);
+		if (len >= sizeof(unix_addr.sun_path))
+			return ("$GFARM_AGENT_SOCK: too long pathname");
+
+		memset(&unix_addr, 0, sizeof(unix_addr));
+		unix_addr.sun_family = AF_UNIX;
+		strcpy(unix_addr.sun_path, path);
+		e = agent_client_connect_unix(&unix_addr, &agent_server);
+	}
+	else /* if (agent_type == INET) */ {
+		e = gfarm_host_address_get(
+			host, port, &inet_addr, &if_hostname);
+		if (e != NULL)
+			return (e);
+		e = agent_client_connect_inet(
+			if_hostname, &inet_addr, &agent_server);
+		free(if_hostname);
+	}
+	return (e);
 }
 
 char *
@@ -95,7 +125,7 @@ char *
 gfarm_initialize(int *argc, char ***argv)
 {
 	if (gfarm_agent_enabled)
-		(void)gfarm_agent_connect(NULL);
+		(void)gfarm_agent_connect();
 	return (gfarm_client_initialize(argc, argv));
 }
 

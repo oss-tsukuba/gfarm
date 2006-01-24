@@ -21,6 +21,7 @@
 #include "gfutil.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
+#include "sockopt.h"
 #include "agent_proto.h"
 #include "agent_wrap.h"
 #include "agent_thr.h"
@@ -1333,6 +1334,10 @@ static enum {
 	B_SHELL_LIKE,
 	C_SHELL_LIKE
 } shell_type;
+static enum {
+	UNIX_DOMAIN,
+	INET
+} agent_type;
 
 static void
 guess_shell_type(void)
@@ -1351,26 +1356,43 @@ guess_shell_type(void)
 }
 
 static void
-display_env(int fd)
+display_env(int fd, int port)
 {
 	FILE *f = fdopen(fd, "w");
 	pid_t pid = getpid();
+	char *hostname;
 
 	if (f == NULL)
 		return;
 
 	guess_shell_type();
 
+	if (agent_type != UNIX_DOMAIN) {
+		if (gfarm_host_get_canonical_self_name(&hostname) != NULL)
+			hostname = gfarm_host_get_self_name();
+	}
 	switch (shell_type) {
 	case B_SHELL_LIKE:
-		fprintf(f, "GFARM_AGENT_SOCK=%s; export GFARM_AGENT_SOCK;\n",
-			sock_path);
+		if (agent_type == UNIX_DOMAIN)
+			fprintf(f, "GFARM_AGENT_SOCK=%s; "
+				"export GFARM_AGENT_SOCK;\n", sock_path);
+		else {
+			fprintf(f, "GFARM_AGENT_HOST=%s; "
+				"export GFARM_AGENT_HOST;\n", hostname);
+			fprintf(f, "GFARM_AGENT_PORT=%d; "
+				"export GFARM_AGENT_PORT;\n", port);
+		}			
 		fprintf(f, "GFARM_AGENT_PID=%d; export GFARM_AGENT_PID;\n",
 			pid);
 		fprintf(f, "echo Agent pid %d;\n", pid);
 		break;
 	case C_SHELL_LIKE:
-		fprintf(f, "setenv GFARM_AGENT_SOCK %s;\n", sock_path);
+		if (agent_type == UNIX_DOMAIN)
+			fprintf(f, "setenv GFARM_AGENT_SOCK %s;\n", sock_path);
+		else {
+			fprintf(f, "setenv GFARM_AGENT_HOST %s;\n", hostname);
+			fprintf(f, "setenv GFARM_AGENT_PORT %d;\n", port);
+		}
 		fprintf(f, "setenv GFARM_AGENT_PID %d;\n", pid);
 		fprintf(f, "echo Agent pid %d;\n", pid);
 		break;
@@ -1392,8 +1414,8 @@ sigterm_handler(int sig)
 
 #define AGENT_SOCK_TEMPLATE	"/tmp/.gfarm-XXXXXX"
 
-int
-open_accepting_socket(void)
+static int
+open_accepting_unix_domain(void)
 {
 	struct sockaddr_un self_addr;
 	socklen_t self_addr_size;
@@ -1435,6 +1457,39 @@ open_accepting_socket(void)
 	return (sock);
 }
 
+static int
+open_accepting_socket(int port)
+{
+	struct sockaddr_in self_addr;
+	socklen_t self_addr_size;
+	int sock, sockopt;
+	char *e;
+
+	if (agent_type == UNIX_DOMAIN)
+		return (open_accepting_unix_domain());
+
+	memset(&self_addr, 0, sizeof(self_addr));
+	self_addr.sin_family = AF_INET;
+	self_addr.sin_addr.s_addr = INADDR_ANY;
+	self_addr.sin_port = htons(port);
+	self_addr_size = sizeof(self_addr);
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock < 0)
+		gflog_fatal_errno("accepting socket");
+	sockopt = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+	    &sockopt, sizeof(sockopt)) == -1)
+		gflog_warning_errno("SO_REUSEADDR");
+	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
+		gflog_fatal_errno("bind accepting socket");
+	e = gfarm_sockopt_apply_listener(sock);
+	if (e != NULL)
+		gflog_warning("setsockopt: %s", e);
+	if (listen(sock, LISTEN_BACKLOG) < 0)
+		gflog_fatal_errno("listen");
+	return (sock);
+}
+
 void
 usage(void)
 {
@@ -1457,16 +1512,16 @@ main(int argc, char **argv)
 	extern int optind;
 	struct sockaddr_un client_addr;
 	socklen_t client_addr_size;
-	char *e, *config_file = NULL, *pid_file = NULL;
+	char *e, *config_file = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, accepting_sock, client, stdout_fd;
+	int ch, agent_port = 0, accepting_sock, client, stdout_fd;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "cdf:P:sS:v")) != -1) {
+	while ((ch = getopt(argc, argv, "cdf:p:P:sS:v")) != -1) {
 		switch (ch) {
 		case 'c':
 			shell_type = C_SHELL_LIKE;
@@ -1476,6 +1531,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			config_file = optarg;
+			break;
+		case 'p':
+			port_number = optarg;
 			break;
 		case 'P':
 			pid_file = optarg;
@@ -1503,7 +1561,10 @@ main(int argc, char **argv)
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
-
+	if (port_number != NULL) {
+		agent_port = strtol(port_number, NULL, 0);
+		agent_type = INET;
+	}
 	/*
 	 * Gfarm_initialize() may fail when the metadata server is not
 	 * running at start-up time.  In this case, retry at connection time.
@@ -1532,7 +1593,7 @@ main(int argc, char **argv)
 	 * libc_r isn't not longer default pthread library on FreeBSD-5.X,
 	 * but it's provided as an option, so we do this on FreeBSD-5.X too.
 	 */
-	accepting_sock = open_accepting_socket();
+	accepting_sock = open_accepting_socket(agent_port);
 #endif
 	stdout_fd = dup(1);
 
@@ -1550,7 +1611,7 @@ main(int argc, char **argv)
 		gfarm_daemon(0, 0);
 	}
 #ifdef __FreeBSD__ /* see above comment about FreeBSD */
-	accepting_sock = open_accepting_socket();
+	accepting_sock = open_accepting_socket(agent_port);
 #endif
 	if (pid_file != NULL) {
 		/*
@@ -1560,7 +1621,7 @@ main(int argc, char **argv)
 		fprintf(pid_fp, "%ld\n", (long)getpid());
 		fclose(pid_fp);
 	}
-	display_env(stdout_fd);
+	display_env(stdout_fd, agent_port);
 
 	signal(SIGTERM, sigterm_handler);
 	signal(SIGPIPE, SIG_IGN);

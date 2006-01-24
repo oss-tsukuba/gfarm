@@ -4,7 +4,10 @@
 
 struct agent_connection;
 
-char *agent_client_connect(struct sockaddr_un *, struct agent_connection **);
+char *agent_client_connect_unix(
+	struct sockaddr_un *, struct agent_connection **);
+char *agent_client_connect_inet(
+	const char *, struct sockaddr *, struct agent_connection **);
 char *agent_client_disconnect(struct agent_connection *);
 
 /* agent_client RPC */
