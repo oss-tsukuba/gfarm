@@ -763,7 +763,7 @@ AC_ARG_WITH(postgresql,
 postgresql_specified=
 case ${with_postgresql} in
 /*)
-  if test -f "${with_postgresql}"/include/libpq-fe.h; then
+  if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
   else
 	AC_MSG_ERROR([not found in \"${with_postgresql}\", aborted])
@@ -771,7 +771,7 @@ case ${with_postgresql} in
 yes|'')
   for d in /usr/local/pgsql /usr/local /usr/pkg /usr
   do
-    if test -f $d/include/libpq-fe.h; then
+    if test -f $d/bin/pg_config; then
 	with_postgresql=$d
 	postgresql_specified=yes
 	break
@@ -788,20 +788,25 @@ postgresql_usable=
 if test x"${postgresql_specified}" = x""; then
   AC_MSG_RESULT([no])
 else
-  case ${with_postgresql} in
-  /usr)
-	postgresql_includes=
-	postgresql_libs="-lpq"
-	;;
-  /*)
-	postgresql_includes="-I${with_postgresql}/include"
-	postgresql_libs="-R${with_postgresql}/lib -L${with_postgresql}/lib -lpq"
-	;;
-  *)
-	postgresql_includes="${with_postgresql}"
-	postgresql_libs="${with_postgresql}"
-	;;
-  esac
+  if test -x ${with_postgresql}/bin/pg_config; then  
+    if ! ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+	AC_MSG_RESULT([failed to call ${with_postgresql}/bin/pg_config command.])
+	AC_MSG_ERROR([PostgreSQL installation is incomplete, aborted.])
+    fi
+    postgresql_include_dir=`${with_postgresql}/bin/pg_config --includedir`
+    postgresql_lib_dir=`${with_postgresql}/bin/pg_config --libdir`
+    case ${postgresql_include_dir} in
+    /usr/include) postgresql_includes= ;;
+    *) postgresql_includes="-I${postgresql_include_dir}" ;;
+    esac
+    case ${postgresql_lib_dir} in
+    /usr/lib) postgresql_libs="-lpq" ;;
+    *) postgresql_libs="-R${postgresql_lib_dir} -L${postgresql_lib_dir} -lpq" ;;
+    esac
+  else
+    postgresql_includes="${with_postgresql}"
+    postgresql_libs="${with_postgresql}"
+  fi
 
   CPPFLAGS_SAVE="$CPPFLAGS"
   LIBS_SAVE="$LIBS"
