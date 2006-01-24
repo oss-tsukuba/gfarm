@@ -21,7 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <netdb.h>
 #include <pwd.h>
 #include <grp.h>
 #include <libgen.h>
