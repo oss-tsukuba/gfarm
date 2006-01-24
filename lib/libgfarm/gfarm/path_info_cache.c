@@ -241,8 +241,11 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 	if (!cache_path_info_init())
 		return (GFARM_PATH_INFO_CACHE_CANCEL);
 
-	if (current_cache_num >= hash_size)
+	if (current_cache_num >= hash_size) {
 		cache_path_info_free();  /* clear all cache */
+		if (!cache_path_info_init())
+			return (GFARM_PATH_INFO_CACHE_CANCEL);
+	}
 
 	pathlen = strlen(pathname);
 	
