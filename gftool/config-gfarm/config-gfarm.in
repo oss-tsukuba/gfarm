@@ -282,16 +282,18 @@ while [ $# -gt 0 ] ; do
 	  -W)
 		stty -echo;
 		( umask 077; 
-		  awk 'BEGIN{printf "admin password: ";}NR==1{print $0;exit}' \
-			> $admin_password
+		  printf "admin password: ";
+		  awk 'NR==1{print $0;exit}' > $admin_password
+		  echo
 		)
 		stty echo
 		;;
 	  -w)
 		stty -echo;
 		( umask 077;
-		  awk 'BEGIN{printf "user password: ";}NR==1{print $0;exit}' \
-			> $password
+		  printf "user password: ";
+		  awk 'NR==1{print $0;exit}' > $password
+		  echo
 		)
 		stty echo
 		;;
