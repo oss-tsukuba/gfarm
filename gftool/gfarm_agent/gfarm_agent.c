@@ -24,6 +24,7 @@
 #include "sockopt.h"
 #include "agent_proto.h"
 #include "agent_wrap.h"
+#include "path_info_cache.h"
 #include "agent_thr.h"
 #include "agent_ptable.h"
 
@@ -1571,6 +1572,9 @@ main(int argc, char **argv)
 	 */
 	gfarm_agent_disable();
 	gfarm_metadb_share_connection();
+	/* set timeout 500 msec for path_info cache */
+	gfarm_cache_path_info_param_set(500, 0);
+
 	e = gfarm_initialize(NULL, NULL);
 	if (e == NULL)
 		gfarm_initialized = 1;
