@@ -4,6 +4,13 @@
 
 void gfarm_agent_disable(void);
 
+enum agent_type { NO_AGENT, UNIX_DOMAIN, INET };
+
+char *gfarm_agent_type_set(enum agent_type);
+char *gfarm_agent_name_set(char *);
+char *gfarm_agent_port_set(char *);
+char *gfarm_agent_sock_path_set(char *);
+
 /* for direct access without agent */
 
 char *gfarm_i_path_info_get(const char *, struct gfarm_path_info *);

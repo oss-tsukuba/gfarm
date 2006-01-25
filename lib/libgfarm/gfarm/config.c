@@ -39,6 +39,7 @@
 #include "gfs_client.h"
 #include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers, ... */
 #include "timer.h"
+#include "agent_wrap.h"
 
 static int gfarm_initialized = 0;
 int gfarm_is_active_file_system_node = 0;
@@ -896,6 +897,18 @@ parse_cred_config(char *p, char *service,
 }
 
 static char *
+parse_set_func(char *p, char *(*set)(char *))
+{
+	char *e, *s;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	return ((*set)(s));
+}
+
+static char *
 parse_one_line(char *s, char *p, char **op,
 	enum gfarm_metadb_backend_type *metadb_typep)
 {
@@ -990,6 +1003,13 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_var(p, &gfarm_postgresql_conninfo);
 		if (e == NULL)
 			e = set_metadb_type_postgresql(metadb_typep);
+
+	} else if (strcmp(s, o = "agent_serverhost") == 0) {
+		e = parse_set_func(p, gfarm_agent_name_set);
+	} else if (strcmp(s, o = "agent_serverport") == 0) {
+		e = parse_set_func(p, gfarm_agent_port_set);
+	} else if (strcmp(s, o = "agent_socket_path") == 0) {
+		e = parse_set_func(p, gfarm_agent_sock_path_set);
 
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);

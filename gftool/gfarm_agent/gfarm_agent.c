@@ -1335,10 +1335,17 @@ static enum {
 	B_SHELL_LIKE,
 	C_SHELL_LIKE
 } shell_type;
-static enum {
-	UNIX_DOMAIN,
-	INET
-} agent_type;
+static enum agent_type agent_server_type;
+
+static char *
+agent_server_type_set(enum agent_type type)
+{
+	if (agent_server_type == NO_AGENT)
+		agent_server_type = type;
+	else if (agent_server_type != type)
+		return ("agent connection type already set");
+	return (NULL);
+}
 
 static void
 guess_shell_type(void)
@@ -1368,31 +1375,41 @@ display_env(int fd, int port)
 
 	guess_shell_type();
 
-	if (agent_type != UNIX_DOMAIN) {
+	if (agent_server_type != UNIX_DOMAIN) {
 		if (gfarm_host_get_canonical_self_name(&hostname) != NULL)
 			hostname = gfarm_host_get_self_name();
 	}
 	switch (shell_type) {
 	case B_SHELL_LIKE:
-		if (agent_type == UNIX_DOMAIN)
+		switch (agent_server_type) {
+		case UNIX_DOMAIN:
 			fprintf(f, "GFARM_AGENT_SOCK=%s; "
 				"export GFARM_AGENT_SOCK;\n", sock_path);
-		else {
+			break;
+		case INET:
 			fprintf(f, "GFARM_AGENT_HOST=%s; "
 				"export GFARM_AGENT_HOST;\n", hostname);
 			fprintf(f, "GFARM_AGENT_PORT=%d; "
 				"export GFARM_AGENT_PORT;\n", port);
+			break;
+		default:
+			break;
 		}			
 		fprintf(f, "GFARM_AGENT_PID=%d; export GFARM_AGENT_PID;\n",
 			pid);
 		fprintf(f, "echo Agent pid %d;\n", pid);
 		break;
 	case C_SHELL_LIKE:
-		if (agent_type == UNIX_DOMAIN)
+		switch (agent_server_type) {
+		case UNIX_DOMAIN:
 			fprintf(f, "setenv GFARM_AGENT_SOCK %s;\n", sock_path);
-		else {
+			break;
+		case INET:
 			fprintf(f, "setenv GFARM_AGENT_HOST %s;\n", hostname);
 			fprintf(f, "setenv GFARM_AGENT_PORT %d;\n", port);
+			break;
+		default:
+			break;
 		}
 		fprintf(f, "setenv GFARM_AGENT_PID %d;\n", pid);
 		fprintf(f, "echo Agent pid %d;\n", pid);
@@ -1466,7 +1483,7 @@ open_accepting_socket(int port)
 	int sock, sockopt;
 	char *e;
 
-	if (agent_type == UNIX_DOMAIN)
+	if (agent_server_type == UNIX_DOMAIN)
 		return (open_accepting_unix_domain());
 
 	memset(&self_addr, 0, sizeof(self_addr));
@@ -1513,7 +1530,7 @@ main(int argc, char **argv)
 	extern int optind;
 	struct sockaddr_un client_addr;
 	socklen_t client_addr_size;
-	char *e, *config_file = NULL, *port_number = NULL, *pid_file = NULL;
+	char *e, *config_file = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, agent_port = 0, accepting_sock, client, stdout_fd;
@@ -1534,7 +1551,8 @@ main(int argc, char **argv)
 			config_file = optarg;
 			break;
 		case 'p':
-			port_number = optarg;
+			agent_port = strtol(optarg, NULL, 0);
+			agent_server_type_set(INET);
 			break;
 		case 'P':
 			pid_file = optarg;
@@ -1562,10 +1580,9 @@ main(int argc, char **argv)
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
-	if (port_number != NULL) {
-		agent_port = strtol(port_number, NULL, 0);
-		agent_type = INET;
-	}
+	/* default is UNIX_DOMAIN */
+	agent_server_type_set(UNIX_DOMAIN);
+
 	/*
 	 * Gfarm_initialize() may fail when the metadata server is not
 	 * running at start-up time.  In this case, retry at connection time.

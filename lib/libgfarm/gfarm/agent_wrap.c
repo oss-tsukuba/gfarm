@@ -24,6 +24,11 @@ static int gfarm_agent_enabled = 1;
 static struct agent_connection *agent_server;
 static pid_t agent_pid;
 
+static char *gfarm_agent_name;
+static int gfarm_agent_port;
+static char *gfarm_agent_sock_path;
+static enum agent_type gfarm_agent_type;
+
 char GFARM_AGENT_ERR_NO_AGENT[] = "no agent connection";
 
 void
@@ -51,56 +56,110 @@ gfarm_agent_check(void)
 }
 
 char *
+gfarm_agent_type_set(enum agent_type type)
+{
+	if (gfarm_agent_type == NO_AGENT)
+		gfarm_agent_type = type;
+	else if (gfarm_agent_type != type)
+		return ("agent connection type already set");
+	return (NULL);
+}
+
+char *
+gfarm_agent_name_set(char *name)
+{
+	if (gfarm_agent_name != NULL)
+		free(gfarm_agent_name);
+	gfarm_agent_name = strdup(name);
+	if (gfarm_agent_name == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	return (gfarm_agent_type_set(INET));
+}
+
+char *
+gfarm_agent_port_set(char *port)
+{
+	gfarm_agent_port = atoi(port);
+
+	return (gfarm_agent_type_set(INET));
+}
+
+char *
+gfarm_agent_sock_path_set(char *path)
+{
+	if (gfarm_agent_sock_path != NULL)
+		free(gfarm_agent_sock_path);
+	gfarm_agent_sock_path = strdup(path);
+	if (gfarm_agent_sock_path == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	return (gfarm_agent_type_set(UNIX_DOMAIN));
+}
+
+static char *
+gfarm_agent_eval_env()
+{
+	char *env, *e = NULL;
+
+	env = getenv("GFARM_AGENT_SOCK");
+	if (env != NULL)
+		e = gfarm_agent_sock_path_set(env);
+	if (e != NULL)
+		return (e);
+
+	env = getenv("GFARM_AGENT_HOST");
+	if (env != NULL)
+		e = gfarm_agent_name_set(env);
+	if (e != NULL)
+		return (e);
+
+	env = getenv("GFARM_AGENT_PORT");
+	if (env != NULL)
+		e = gfarm_agent_port_set(env);
+
+	return (e);
+}
+
+char *
 gfarm_agent_connect()
 {
 	struct sockaddr_un unix_addr;
 	struct sockaddr inet_addr;
-	int port;
-	char *e, *path, *host, *port_number, *if_hostname;
+	char *e, *if_hostname;
 	size_t len;
-	enum { NO_AGENT, UNIX_DOMAIN, INET } agent_type;
 
-#ifdef __GNUC__ /* shut up stupid warning by gcc */
-	host = NULL;
-	port = 0;
-#endif
 	if (agent_server != NULL)
 		return ("already connected");
 
-	path = getenv("GFARM_AGENT_SOCK");
-	if (path != NULL)
-		agent_type = UNIX_DOMAIN;
-	else {
-		host = getenv("GFARM_AGENT_HOST");
-		port_number = getenv("GFARM_AGENT_PORT");
-		if (host != NULL && port_number != NULL) {
-			agent_type = INET;
-			port = atoi(port_number);
-		}
-		else
-			return (GFARM_AGENT_ERR_NO_AGENT);
-	}
-
+	e = gfarm_agent_eval_env();
+	if (e != NULL)
+		return (e);
 	agent_pid = getpid();
 
-	if (agent_type == UNIX_DOMAIN) {
-		len = strlen(path);
+	switch (gfarm_agent_type) {
+	case UNIX_DOMAIN:
+		len = strlen(gfarm_agent_sock_path);
 		if (len >= sizeof(unix_addr.sun_path))
 			return ("$GFARM_AGENT_SOCK: too long pathname");
 
 		memset(&unix_addr, 0, sizeof(unix_addr));
 		unix_addr.sun_family = AF_UNIX;
-		strcpy(unix_addr.sun_path, path);
+		strcpy(unix_addr.sun_path, gfarm_agent_sock_path);
 		e = agent_client_connect_unix(&unix_addr, &agent_server);
-	}
-	else /* if (agent_type == INET) */ {
+		break;
+	case INET:
 		e = gfarm_host_address_get(
-			host, port, &inet_addr, &if_hostname);
+			gfarm_agent_name, gfarm_agent_port,
+			&inet_addr, &if_hostname);
 		if (e != NULL)
 			return (e);
 		e = agent_client_connect_inet(
 			if_hostname, &inet_addr, &agent_server);
 		free(if_hostname);
+		break;
+	default:
+		e = GFARM_AGENT_ERR_NO_AGENT;
 	}
 	return (e);
 }
