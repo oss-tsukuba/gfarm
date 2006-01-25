@@ -144,11 +144,15 @@ sanity()
 			rv=1
 			;;
 		esac
-		if [ ! -x "$BACKEND_PREFIX/bin/pg_ctl" ]; then
+		if [ ! -x "$BACKEND_PREFIX/bin/pg_config" ]; then
+			echo "WARNING: command not found: pg_config" >&2
+			rv=1
+		fi
+		if [ ! -x "$PGSQL_BINDIR/pg_ctl" ]; then
 			echo "WARNING: command not found: pg_ctl" >&2
 			rv=1
 		fi
-		if [ ! -x "$BACKEND_PREFIX/bin/psql" ]; then
+		if [ ! -x "$PGSQL_BINDIR/psql" ]; then
 			echo "WARNING: command not found: psql" >&2
 			rv=1
 		fi
@@ -317,8 +321,9 @@ postgresql)
 		IFS=$OIFS
 		for d
 		do
-			if [ -x "$d/pg_ctl" ]; then
+			if [ -x "$d/pg_config" ]; then
 				BACKEND_PREFIX=`dirname "$d"`
+				: ${PGSQL_BINDIR:=`$d/pg_config --bindir`}
 				break
 			fi
 		done
@@ -369,6 +374,7 @@ esac
 case $BACKEND_TYPE in
 postgresql)
 	: ${RC_BACKEND_BASENAME=gfarm-pgsql}
+	: ${PGSQL_BINDIR:="$BACKEND_PREFIX/bin"}
 	;;
 ldap)
 	: ${RC_BACKEND_BASENAME=gfarm-slapd}
@@ -426,13 +432,8 @@ postgresql)
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
-		if [ -x "$BACKEND_PREFIX/bin/initdb" ]; then
-			if [ -n "$BACKEND_PRIVILEGE" ]; then
-				SU="su - $BACKEND_PRIVILEGE -c"
-			else
-				SU="/bin/sh -c"
-			fi
-			BACKEND_VERSION=`$SU "$BACKEND_PREFIX/bin/initdb --version" 2>&1 |
+		if [ -x "$BACKEND_PREFIX/bin/pg_config" ]; then
+			BACKEND_VERSION=`$BACKEND_PREFIX/bin/pg_config --version 2>&1 |
 			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
 			if [ -z "$BACKEND_VERSION" ]
 			then
@@ -688,7 +689,7 @@ mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 case $BACKEND_TYPE in
 postgresql)
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
-	initdb -D "$BACKEND_DATA_DIR" --no-locale -E UTF-8
+	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" --no-locale -E UTF-8
 _EOF_
 
 	# record the password
@@ -868,23 +869,23 @@ postgresql)
 	# PostgreSQL-8.0.3.
 	# Also, we cannot use "restart" here, because it doesn't work either
 	# at first invocation.
-	cat << _EOF_ | $run_with_backend_privilege
-	$BACKEND_PREFIX/bin/pg_ctl -s -m fast \
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "pg_ctl start failed"
+	$PGSQL_BINDIR/pg_ctl -s -m fast \
 		-D $BACKEND_DATA_DIR -l $BACKEND_DATA_DIR/logfile start
 _EOF_
 
 	# wait until portmaster actually starts. XXX are 3 seconds enough?
 	sleep 3
 
-	cat << _EOF_ | $run_with_backend_privilege
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "createdb failed"
 	PGHOST="$BACKEND_DATA_DIR"; export PGHOST
 	PGPORT="$BACKEND_PORT"; export PGPORT
 	unset PGDATABASE PGUSER PGPASSWORD PGSERVICE
 	unset PGREALM PGOPTIONS PGSSLMODE PGREQUIRESSL PGCONNECT_TIMEOUT
 
-	createuser -A -D $BACKEND_USER
-	createdb $DB_NAME
-	psql -f "$config_dir/gfarm.sql" $DB_NAME
+	$PGSQL_BINDIR/createuser -A -D $BACKEND_USER
+	$PGSQL_BINDIR/createdb $DB_NAME
+	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
 	awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
 		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
@@ -897,7 +898,7 @@ _EOF_
 	FILENAME == "$password" {
 		print "ALTER USER $BACKEND_USER"
 		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
-	}' $admin_password $password | psql $DB_NAME
+	}' $admin_password $password | $PGSQL_BINDIR/psql $DB_NAME
 _EOF_
 
 	service_ctl $RC_BACKEND_BASENAME stop
