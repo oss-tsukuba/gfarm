@@ -24,3 +24,5 @@ char *gfarm_file_section_replicate_from_to_local_with_locking(
 	char **);
 char *gfarm_file_section_replicate_to_local_with_locking(
 	struct gfarm_file_section_info *, gfarm_mode_t, char **);
+char *gfs_clean_spool(char *, int, struct gfarm_file_section_info *, int *,
+		      struct gfarm_file_section_copy_info **);

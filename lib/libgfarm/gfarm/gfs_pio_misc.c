@@ -290,8 +290,8 @@ gfs_utimes(const char *gfarm_url, const struct gfarm_timespec *tsp)
 /*
  * gfs_rename
  */
-static char *
-rename_clean_spool(
+char *
+gfs_clean_spool(
 	char *pathname,
 	int nsection,
 	struct gfarm_file_section_info *sections,
@@ -427,7 +427,7 @@ rename_file_spool(
 		e = NULL;
 	} else {  /* unlink new spool file */
 		/* ignore error code here */
-		rename_clean_spool(to_pathname, nsection, sections,
+		gfs_clean_spool(to_pathname, nsection, sections,
 		    ncopy, copies);
 	}
 	return (e);
@@ -565,12 +565,12 @@ rename_single_file(struct gfarm_path_info *from_pi, char *newpath)
 	e = link_a_file(from_pi, newpath,
 			&nsection, &sections, &ncopy, &copies);
 	if (e == NULL) {
-		e2 = rename_clean_spool(from_pi->pathname,
+		e2 = gfs_clean_spool(from_pi->pathname,
 					nsection, sections,
 					ncopy, copies);
 		if (e2 != NULL)
 			gflog_warning("rename_single_file: "
-				      "rename_clean_spool: %s: %s",
+				      "gfs_clean_spool: %s: %s",
 				      from_pi->pathname, e2);
 
 		e2 = remove_infos_all(from_pi->pathname);
