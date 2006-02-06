@@ -196,6 +196,12 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 	}
 
 	basename = gfarm_path_dir_skip(p1);
+	/* '.' or '..' - we do not have that entry. */
+	if (basename[0] == '.' && (basename[1] == '\0' ||
+		(basename[1] == '.' && basename[2] == '\0'))) {
+		e = gfarm_canonical_path(p1, canonic_pathp);
+		goto free_p1;
+	}
 	if (basename == p1)	     /* "filename" */
 		dir = ".";
 	else if (basename == p1 + 1) /* "/filename" */
