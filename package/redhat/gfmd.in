@@ -30,7 +30,7 @@ RETVAL=0
 start()
 {
 	echo -n "Starting $FILE:"
-	initlog -c "$DAEMON -P $PIDFILE $OPTIONS" && success || failure
+	daemon "$DAEMON" -P $PIDFILE $OPTIONS
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
 	echo
