@@ -8,6 +8,7 @@ PTHREAD_TARGETS = gfarm_agent
 SUBDIRS = \
 	$(pthread_targets) \
 	gfdf \
+	gfdump \
 	gfexec \
 	gfexport \
 	gfhost \
