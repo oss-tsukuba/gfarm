@@ -194,6 +194,7 @@ struct gfdump_ops {
 };
 struct gfdump_args {
 	FILE *f;
+	gfarm_stringlist *listp;
 	struct gfdump_ops *ops;
 };
 
@@ -216,42 +217,54 @@ struct gfdump_ops restore_ops = {
 void
 gfdump_callback(void *arg, struct gfarm_path_info *info)
 {
-	char *e;
-	int i, j, nsections, ncopies;
+	struct gfdump_args *a = arg;
+
+	a->ops->path_info(info, a->f);
+	gfarm_stringlist_add(a->listp, strdup(info->pathname));
+	return;
+}
+
+static void
+dump_section_info_all(struct gfdump_args *a)
+{
+	char *e, *pathname;
+	int i, j, k, nsections, ncopies;
 	struct gfarm_file_section_info *sections;
 	struct gfarm_file_section_copy_info *copies;
-	struct gfdump_args *a = arg;
 	FILE *f = a->f;
 
-	a->ops->path_info(info, f);
-	e = gfarm_file_section_info_get_all_by_file(
-		info->pathname, &nsections, &sections);
-	if (e != NULL)
-		return;
-	for (i = 0; i < nsections; ++i) {
-		a->ops->file_section_info(&sections[i], f);
-
-		e = gfarm_file_section_copy_info_get_all_by_section(
-			info->pathname, sections[i].section,
-			&ncopies, &copies);
+	for (i = 0; i < gfarm_stringlist_length(a->listp); ++i) {
+		pathname = gfarm_stringlist_elem(a->listp, i);
+		e = gfarm_file_section_info_get_all_by_file(
+			pathname, &nsections, &sections);
 		if (e != NULL)
 			continue;
 
-		for (j = 0; j < ncopies; ++j)
-			a->ops->file_section_copy_info(&copies[j], f);
+		for (j = 0; j < nsections; ++j) {
+			a->ops->file_section_info(&sections[j], f);
 
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
+			e = gfarm_file_section_copy_info_get_all_by_section(
+				pathname, sections[j].section,
+				&ncopies, &copies);
+			if (e != NULL)
+				continue;
+
+			for (k = 0; k < ncopies; ++k)
+				a->ops->file_section_copy_info(&copies[k], f);
+
+			gfarm_file_section_copy_info_free_all(ncopies, copies);
+		}
+		gfarm_file_section_info_free_all(nsections, sections);
 	}
-	gfarm_file_section_info_free_all(nsections, sections);
-
-	return;
 }
 
 static char *
 dump_all(char *filename, struct gfdump_ops *ops)
 {
-	FILE *f;
 	struct gfdump_args a;
+	gfarm_stringlist list;
+	FILE *f;
+	char *e;
 
 	if (filename == NULL)
 		f = stdout;
@@ -261,9 +274,21 @@ dump_all(char *filename, struct gfdump_ops *ops)
 		perror(filename);
 		exit(1);
 	}
-	a.ops = ops;
 	a.f = f;
-	return (gfarm_metadb_path_info_get_all_foreach(gfdump_callback, &a));
+	e = gfarm_stringlist_init(&list);
+	a.listp = &list;
+	a.ops = ops;
+	/* dump path info */
+	e = gfarm_metadb_path_info_get_all_foreach(gfdump_callback, &a);
+	if (e != NULL)
+		goto fclose_f;
+	/* dump section info and section copy info */
+	dump_section_info_all(&a);
+	gfarm_stringlist_free_deeply(&list);
+fclose_f:
+	if (f != stdin)
+		fclose(f);
+	return (e);
 }
 
 static char *
@@ -345,18 +370,16 @@ static struct gfarm_file_section_info section_info;
 static char *
 read_file_section_copy_info(struct gfdump_ops *ops, FILE *f)
 {
-	char *host, *e;
 	static struct gfarm_file_section_copy_info info;
+	char *e;
 
-	e = read_string(&host, f);
+	e = read_string(&info.hostname, f);
 	if (e != NULL)
 		return (e);
 
 	info.pathname = path_info.pathname;
 	info.section = section_info.section;
-	info.hostname = host;
 	return (ops->file_section_copy_info(&info, stdout));
-	/* no need to free 'host' */
 }
 
 static char *
@@ -450,6 +473,8 @@ restore_all(const char *filename, struct gfdump_ops *ops)
 		if (e != NULL)
 			break;
 	}
+	if (f != stdin)
+		fclose(f);
 	return (e);
 }
 
