@@ -20,6 +20,7 @@
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "config.h"
+#include "sockopt.h"
 #include "agent_proto.h"
 #include "agent_client.h"
 

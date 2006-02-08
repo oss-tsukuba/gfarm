@@ -57,7 +57,7 @@ include $(top_srcdir)/makes/lib.mk
 $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
 agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h
-agent_client.lo: xxx_proto.h io_fd.h config.h agent_proto.h agent_client.h
+agent_client.lo: xxx_proto.h io_fd.h config.h sockopt.h agent_proto.h agent_client.h
 agent_proto.lo: xxx_proto.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h
 auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h xxx_proto.h io_fd.h io_gfsl.h auth.h auth_gsi.h
