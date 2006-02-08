@@ -100,26 +100,61 @@ gfs_client_hostname(struct gfs_connection *gfs_server)
 	return (gfs_server->hostname);
 }
 
+static int
+connect_wait(int s)
+{
+	fd_set wset;
+	struct timeval timeout;
+	int rv, error;
+	socklen_t error_size;
+
+	FD_ZERO(&wset);
+	FD_SET(s, &wset);
+	/* timeout: 5 sec */
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 0;
+
+	rv = select(s + 1, NULL, &wset, NULL, &timeout);
+	if (rv == 0)
+		return (ETIMEDOUT);
+	if (rv < 0)
+		return (errno);
+
+	error_size = sizeof(error);
+	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
+	if (rv == -1)
+		return (errno);
+	if (error != 0)
+		return (error);
+	return (0);
+}
+
 static char *
 gfs_client_connection0(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfs_connection *gfs_server)
 {
 	char *e, *host_fqdn;
-	int sock;
+	int sock, flags;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-
+	flags = fcntl(sock, F_GETFL);
+	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
 
 	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-		e = gfarm_errno_to_error(errno);
-		close(sock);
-		return (e);
+		if (errno == EINPROGRESS)
+			errno = connect_wait(sock);
+		if (errno != 0) {
+			e = gfarm_errno_to_error(errno);
+			close(sock);
+			return (e);
+		}
 	}
+	fcntl(sock, F_SETFL, flags);
 	e = xxx_fd_connection_new(sock, &gfs_server->conn);
 	if (e != NULL) {
 		close(sock);
