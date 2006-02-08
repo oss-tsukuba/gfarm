@@ -15,7 +15,7 @@
 #ifdef DEBUG
 #define _debug printf
 #else
-#define _debug 1 ? (void)0: printf
+#define _debug 1 ? 0 : printf
 #endif
 
 /* default parameters */
