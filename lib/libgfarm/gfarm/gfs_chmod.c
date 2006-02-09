@@ -302,12 +302,13 @@ change_spool(
 	gfarm_mode_t old_mode,
 	gfarm_mode_t new_mode,
 	int nsection, struct gfarm_file_section_info *sections,
-	int *ncopy, struct gfarm_file_section_copy_info **copies)
+	int *ncopy, struct gfarm_file_section_copy_info **copies,
+	gfarm_stringlist *failed_sections,
+	gfarm_stringlist *failed_hosts)
 {
 	int i, j;
 	char *e;
 	char *from_path_section, *to_path_section;
-	int ***results; /* of each spool file */
 
 	/*
 	 * 1 - succeed in linking at least 1 spool file for all sections
@@ -318,16 +319,8 @@ change_spool(
 	e = NULL;
 	ok = 1;
 	
-	results = malloc(nsection * sizeof(*results));
-	if (results == NULL) {
-		return (GFARM_ERR_NO_MEMORY);
-	}	
 	for (i = 0; i < nsection; i++) {
 		char *section;
-#if 0
-		fprintf(stderr, "kill some gfsd and hit any key:");
-		getchar();
-#endif
 		if (ncopy[i] == 0)
 			continue;
 
@@ -359,8 +352,16 @@ change_spool(
 				&copies[i][j], old_mode, new_mode,
 				from_path_section, to_path_section,
 				section);
-			if (e == NULL)
+			if (e == NULL) {
 				ok = 1;
+			} else {	
+				char *e2;
+
+				e2 = gfarm_stringlist_add(
+					failed_sections, copies[i][j].section);
+				e2 = gfarm_stringlist_add(
+					failed_hosts, copies[i][j].hostname);
+			}
 		}
 		free(to_path_section);
 		free(section);
@@ -440,6 +441,7 @@ gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t new_mode,
 	struct gfarm_file_section_info *sections;
 	struct gfarm_file_section_copy_info **copies;
 	enum exec_change change;
+	gfarm_stringlist failed_sections, failed_hosts;
 
 	*changed_sectionp = NULL;
 	if (strcmp(pi->status.st_user, gfarm_get_global_username()) != 0) {
@@ -492,18 +494,30 @@ gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t new_mode,
 			goto finish_free_copies;
 		}
 	}
-
-	e = change_spool(old_mode, new_mode,
-			 nsection, sections, ncopy, copies);
+#if 0
+	fprintf(stderr, "kill any host's gfsd and hit any key:");
+	getchar();
+#endif
+	e = gfarm_stringlist_init(&failed_sections);
 	if (e != NULL)
 		goto finish_free_section_copy_info;
 
-        e = update_path_section(old_mode, new_mode, pi, nsection, sections,
+	e = gfarm_stringlist_init(&failed_hosts);
+	if (e != NULL)
+		goto finish_free_failed_sections;
+
+	e = change_spool(old_mode, new_mode,
+			 nsection, sections, ncopy, copies,
+			 &failed_sections, &failed_hosts);
+	if (e != NULL)
+		goto finish_free_failed_hosts;
+
+	e = update_path_section(old_mode, new_mode, pi, nsection, sections,
 				copies, changed_sectionp);
 	if (e != NULL) {
 		revert_spool(old_mode, new_mode,
 			     nsection, sections, ncopy, copies);
-		goto finish_free_section_copy_info;
+		goto finish_free_failed_hosts;
 	}	
 
 	if (change != EXECUTABILITY_NOT_CHANGED) {
@@ -516,7 +530,47 @@ gfs_chmod_meta_spool(struct gfarm_path_info *pi, gfarm_mode_t new_mode,
 		e2 = gfarm_file_section_info_remove(pi->pathname,
 						    sections[0].section);
 	}	
+#if 0 
+	fprintf(stderr, "rerun gfsd and hit any key:");
+	getchar();
+#endif
+	for (i = 0; i < gfarm_stringlist_length(&failed_sections); i++) {
+		char *e2, *path_section, *section, *hostname;
+		struct gfs_connection *gfs_server;
+		struct sockaddr peer_addr;
 
+		section = gfarm_stringlist_elem(&failed_sections, i);
+		hostname = gfarm_stringlist_elem(&failed_hosts, i); 
+
+		e2 = gfarm_file_section_copy_info_remove(
+			pi->pathname, section, hostname);
+
+		e2 = gfarm_path_section(pi->pathname, section, &path_section);
+		if (e2 != NULL)
+			continue;
+
+		e2 = gfarm_host_address_get(
+			hostname, gfarm_spool_server_port, &peer_addr, NULL);
+		if (e2 != NULL) {
+			free(path_section);
+			continue;
+		}	
+
+		e2 = gfs_client_connect(hostname, &peer_addr, &gfs_server);
+		if (e2 != NULL) {
+			free(path_section);
+			continue;
+		}	
+
+		e2 = gfs_client_unlink(gfs_server, path_section);
+		gfs_client_disconnect(gfs_server);
+		free(path_section);
+	}
+
+finish_free_failed_hosts:
+	gfarm_stringlist_free(&failed_hosts);
+finish_free_failed_sections:
+	gfarm_stringlist_free(&failed_sections);
 finish_free_section_copy_info:
 	for (i = 0; i < nsection; i++)
 		gfarm_file_section_copy_info_free_all(ncopy[i], copies[i]);
