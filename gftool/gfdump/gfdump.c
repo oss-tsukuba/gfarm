@@ -84,6 +84,8 @@ dump_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
 {
 	fputc(SECTION_COPY_INFO, f);
 
+	dump_string(info->pathname, f);
+	dump_string(info->section, f);
 	dump_string(info->hostname, f);
 	return (NULL);
 }
@@ -93,6 +95,7 @@ dump_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
 	fputc(SECTION_INFO, f);
 
+	dump_string(info->pathname, f);
 	dump_string(info->section, f);
 	dump_offset_t(info->filesize, f);
 	dump_string(info->checksum_type, f);
@@ -123,10 +126,8 @@ print_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
 {
 	fprintf(f, "C:");
 
-#if 0
 	fprintf(f, " %s", info->pathname);
 	fprintf(f, " %s", info->section);
-#endif
 	fprintf(f, " %s", info->hostname);
 	fputc('\n', f);
 	return (NULL);
@@ -137,9 +138,7 @@ print_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
 	fprintf(f, "S:");
 
-#if 0
 	fprintf(f, " %s", info->pathname);
-#endif
 	fprintf(f, " %s", info->section);
 	fprintf(f, " %" PR_FILE_OFFSET, info->filesize);
 	fprintf(f, " %s %s", info->checksum_type, info->checksum);
@@ -364,29 +363,34 @@ read_offset_t(file_offset_t *op, FILE *f)
 	return (e);
 }
 
-static struct gfarm_path_info path_info;
-static struct gfarm_file_section_info section_info;
-
 static char *
 read_file_section_copy_info(struct gfdump_ops *ops, FILE *f)
 {
 	static struct gfarm_file_section_copy_info info;
 	char *e;
 
+	e = read_string(&info.pathname, f);
+	if (e != NULL)
+		return (e);
+	e = read_string(&info.section, f);
+	if (e != NULL)
+		return (e);
 	e = read_string(&info.hostname, f);
 	if (e != NULL)
 		return (e);
 
-	info.pathname = path_info.pathname;
-	info.section = section_info.section;
 	return (ops->file_section_copy_info(&info, stdout));
 }
 
 static char *
 read_file_section_info(struct gfdump_ops *ops, FILE *f)
 {
+	static struct gfarm_file_section_info section_info;
 	char *e;
 
+	e = read_string(&section_info.pathname, f);
+	if (e != NULL)
+		return (e);
 	e = read_string(&section_info.section, f);
 	if (e != NULL)
 		return (e);
@@ -400,13 +404,13 @@ read_file_section_info(struct gfdump_ops *ops, FILE *f)
 	if (e != NULL)
 		return (e);
 
-	section_info.pathname = path_info.pathname;
 	return (ops->file_section_info(&section_info, stdout));
 }
 
 static char *
 read_path_info(struct gfdump_ops *ops, FILE *f)
 {
+	static struct gfarm_path_info path_info;
 	struct gfs_stat *st = &path_info.status;
 	char *e;
 
