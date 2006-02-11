@@ -167,13 +167,13 @@ print_path_info(struct gfarm_path_info *info, FILE *f)
 static char *
 restore_path_info(struct gfarm_path_info *info, FILE *f)
 {
-	return (gfarm_path_info_set(info->pathname, info));
+	return (gfarm_metadb_path_info_set(info->pathname, info));
 }
 
 static char *
 restore_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
-	return (gfarm_file_section_info_set(
+	return (gfarm_metadb_file_section_info_set(
 			info->pathname, info->section, info));
 }
 
@@ -181,7 +181,7 @@ static char *
 restore_file_section_copy_info(
 	struct gfarm_file_section_copy_info *info, FILE *f)
 {
-	return (gfarm_file_section_copy_info_set(
+	return (gfarm_metadb_file_section_copy_info_set(
 			info->pathname, info->section, info->hostname, info));
 }
 
