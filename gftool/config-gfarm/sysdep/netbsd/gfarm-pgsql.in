@@ -18,7 +18,7 @@ name="gfarm_pgsql"
 rcvar=${name}
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
-command="@config_gfarm_backend_prefix@/bin/pg_ctl"
+command="@config_gfarm_pgsql_bindir@/pg_ctl"
 pidfile="$PGDATA/portmaster.pid"
 required_dirs="$PGSATA"
 # add more flags through ${${name}_flags}

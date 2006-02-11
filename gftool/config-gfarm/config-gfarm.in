@@ -566,6 +566,7 @@ s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|g
 s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|g
 s|@config_gfarm_openldap_libexec@|$OPENLDAP_LIBEXEC|g
 s|@config_gfarm_openldap_etc@|$OPENLDAP_ETC|g
+s|@config_gfarm_pgsql_bindir@|$PGSQL_BINDIR|g
 s|@config_gfarm_gfmd_port@|$GFMD_PORT|g
 s|@config_gfarm_gfmd_option@|-f $GFARM_CONF|g
 s|@config_gfarm_gfsd_port@|$GFSD_PORT|g

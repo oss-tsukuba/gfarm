@@ -32,7 +32,7 @@ rcvar=`set_rcvar`
 
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
-command="@config_gfarm_backend_prefix@/bin/pg_ctl"
+command="@config_gfarm_pgsql_bindir@/pg_ctl"
 pidfile="$PGDATA/portmaster.pid"
 required_dirs="$PGDATA"
 # add more flags through ${${name}_flags}

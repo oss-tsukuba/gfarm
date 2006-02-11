@@ -25,7 +25,7 @@ FILE="gfarm-pgsql"
 
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
-DAEMON="@config_gfarm_backend_prefix@/bin/$PROG"
+DAEMON="@config_gfarm_pgsql_bindir@/$PROG"
 LOGFILE="$PGDATA/logfile"
 OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
