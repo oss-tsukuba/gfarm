@@ -748,6 +748,30 @@ _EOF_
 		}
 		next
 	}
+	/^[ 	]*#*[ 	]*autovacuum[ 	]*=/ {
+		if (/^[ 	]*autovacuum/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!autovacuum_done) {
+			print "autovacuum = true"
+			autovacuum_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*stats_row_level[ 	]*=/ {
+		if (/^[ 	]*stats_row_level/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!stats_row_level_done) {
+			print "stats_row_level = on"
+			stats_row_level_done = 1
+		}
+		next
+	}
 	{print}
 	END {
 		if (!listen_addresses_done && !tcpip_socket_done)
@@ -756,6 +780,8 @@ _EOF_
 			print "port = '$BACKEND_PORT'"
 		if (!password_encryption_done)
 			print "password_encryption = true"
+		# ignore autovacuum_done and stats_row_level_done for now.
+		# PostgreSQL should be earlier than 8.0.X
 	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
 		>"$BACKEND_DATA_DIR"/postgresql.conf
 
