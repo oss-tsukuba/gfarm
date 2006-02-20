@@ -13,9 +13,9 @@
 /* #define DEBUG */
 #include <stdio.h>
 #ifdef DEBUG
-#define _debug printf
+#define _debug(args) printf args
 #else
-#define _debug 1 ? 0 : printf
+#define _debug(args)
 #endif
 
 /* default parameters */
@@ -142,13 +142,13 @@ cache_path_info_init()
 					     gfarm_hash_key_equal_default);
 	prepare_cache_table = 1;
 	current_cache_num = 0;
-	_debug("! cache_path_info_init: hash_size=%d\n", hash_size);
-	_debug("! path_info_timeout=%u.%u(sec.microsec)\n",
+	_debug(("! cache_path_info_init: hash_size=%d\n", hash_size));
+	_debug(("! path_info_timeout=%u.%u(sec.microsec)\n",
 	       (unsigned int) cache_timeout.tv_sec,
-	       (unsigned int) cache_timeout.tv_usec);
-	_debug("! update_time_interval=%u.%u(sec.nanosec)\n",
+	       (unsigned int) cache_timeout.tv_usec));
+	_debug(("! update_time_interval=%u.%u(sec.nanosec)\n",
 	       (unsigned int) update_time_interval.tv_sec,
-	       (unsigned int) update_time_interval.tv_nsec);
+	       (unsigned int) update_time_interval.tv_nsec));
 
 	return (1); /* enable */
 }
@@ -175,7 +175,7 @@ cache_path_info_free()
 		key = gfarm_hash_entry_key(he);
 		memset(path, 0, PATH_MAX);
 		memcpy(path, key, gfarm_hash_entry_key_length(he));
-		_debug("! free path_info cache: %d: %s\n", pic->noent, path);
+		_debug(("! free path_info cache: %d: %s\n", pic->noent, path));
 #endif
 		if (pic->noent == CACHE_SET)
 			gfarm_path_info_free(&pic->info);
@@ -209,8 +209,8 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 			gettimeofday(&now, NULL);
 			gfarm_timeval_sub(&now, &pic->time);
 			if (gfarm_timeval_cmp(&now, &cache_timeout) >= 0) {
-				_debug("! expire path_info cache: %s\n",
-				       pathname);
+				_debug(("! expire path_info cache: %s\n",
+				       pathname));
 #if 1  /* purge */
 				if (pic->noent == CACHE_SET)
 					gfarm_path_info_free(&pic->info);
@@ -220,7 +220,7 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 #endif
 				return "expired path_info cache content";
 			}
-			_debug("! use path_info cache: %s\n", pathname);
+			_debug(("! use path_info cache: %s\n", pathname));
 			if (pic->noent == CACHE_NOENT) /* NOENT cache */
 				return (GFARM_ERR_NO_SUCH_OBJECT);
 
@@ -253,11 +253,11 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 	he = gfarm_hash_enter(cache_table, pathname, pathlen,
 			      sizeof(struct path_info_cache), &created);
 	if (he == NULL) {
-		_debug("! cache_path_info_put: no memory\n");
+		_debug(("! cache_path_info_put: no memory\n"));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	pic = gfarm_hash_entry_data(he);
-	_debug("! put path_info cache: %s\n", pathname);
+	_debug(("! put path_info cache: %s\n", pathname));
 	if (created)  /* new cache */
 		current_cache_num++;
 	else if (pic->noent == CACHE_SET)  /* have path_info */
@@ -265,12 +265,12 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 
 	if (info == NULL) {  /* set NOENT */
 		pic->noent = CACHE_NOENT;
-		_debug("! -> set NOENT: %s\n", pathname);
+		_debug(("! -> set NOENT: %s\n", pathname));
 	}
 	else {
 #ifdef DEBUG
 		if (pic->noent == CACHE_NOENT) {
-			_debug("! -> update cache from NOENT: %s\n", pathname);
+			_debug(("! -> update cache from NOENT: %s\n", pathname));
 		}
 #endif
 		(void)gfarm_path_info_dup(info, &pic->info);
@@ -300,8 +300,8 @@ cache_path_info_remove(const char *pathname)
 			if (pic->noent == CACHE_SET)
 				gfarm_path_info_free(&pic->info);
 			if (gfarm_hash_purge(cache_table, pathname, pathlen)) {
-				_debug("! remove path_info cache: %s\n",
-				       pathname);
+				_debug(("! remove path_info cache: %s\n",
+				       pathname));
 				current_cache_num--;
 				return (NULL);
 			}
@@ -378,18 +378,18 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 	struct gfs_stat *s1 = &info1->status, *s2 = &info2->status;
 
 #if 0  /* for debug */
-	_debug("mtime 1: %u %u\n",
-	       s1->st_mtimespec.tv_sec, s1->st_mtimespec.tv_nsec);
-	_debug("mtime 2: %u %u\n",
-	       s2->st_mtimespec.tv_sec, s2->st_mtimespec.tv_nsec);
-	_debug("atime 1: %u %u\n",
-	       s1->st_atimespec.tv_sec, s1->st_atimespec.tv_nsec);
-	_debug("atime 2: %u %u\n",
-	       s2->st_atimespec.tv_sec, s2->st_atimespec.tv_nsec);
-	_debug("ctime 1: %u %u\n",
-	       s1->st_ctimespec.tv_sec, s1->st_ctimespec.tv_nsec);
-	_debug("ctime 1: %u %u\n",
-	       s2->st_ctimespec.tv_sec, s2->st_ctimespec.tv_nsec);
+	_debug(("mtime 1: %u %u\n",
+	       s1->st_mtimespec.tv_sec, s1->st_mtimespec.tv_nsec));
+	_debug(("mtime 2: %u %u\n",
+	       s2->st_mtimespec.tv_sec, s2->st_mtimespec.tv_nsec));
+	_debug(("atime 1: %u %u\n",
+	       s1->st_atimespec.tv_sec, s1->st_atimespec.tv_nsec));
+	_debug(("atime 2: %u %u\n",
+	       s2->st_atimespec.tv_sec, s2->st_atimespec.tv_nsec));
+	_debug(("ctime 1: %u %u\n",
+	       s1->st_ctimespec.tv_sec, s1->st_ctimespec.tv_nsec));
+	_debug(("ctime 1: %u %u\n",
+	       s2->st_ctimespec.tv_sec, s2->st_ctimespec.tv_nsec));
 #endif
 
 #if 1
@@ -408,29 +408,29 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 		int ok = 0;
 
 		if (s1->st_ino != s2->st_ino) {
-			_debug("different st_ino: %d %d\n",
-			       (int)s1->st_ino, (int)s2->st_ino);
+			_debug(("different st_ino: %d %d\n",
+			       (int)s1->st_ino, (int)s2->st_ino));
 			ok = 1;
 		}
 		if (s1->st_mode != s2->st_mode) {
-			_debug("different st_mode: %d %d\n",
-			       (int)s1->st_mode, (int)s2->st_mode);
+			_debug(("different st_mode: %d %d\n",
+			       (int)s1->st_mode, (int)s2->st_mode));
 			ok = 1;
 		}
 		if (s1->st_size != s2->st_size) {
-			_debug("different st_size: %lu %lu\n",
+			_debug(("different st_size: %lu %lu\n",
 			       (unsigned long)s1->st_size,
-			       (unsigned long)s2->st_size);
+			       (unsigned long)s2->st_size));
 			ok = 1;
 		}
 		if (s1->st_nsections != s2->st_nsections) {
-			_debug("different st_nsections: %d %d\n",
-			       (int)s1->st_nsections, (int)s2->st_nsections);
+			_debug(("different st_nsections: %d %d\n",
+			       (int)s1->st_nsections, (int)s2->st_nsections));
 			ok = 1;
 		}
 		if (strcmp(s1->st_user, s2->st_user) != 0) {
-			_debug("different st_user: %s %s\n",
-			       s1->st_user, s2->st_user);
+			_debug(("different st_user: %s %s\n",
+			       s1->st_user, s2->st_user));
 			ok = 1;
 		}
 		/* if (strcmp(s1->st_group, s2->st_group) != 0) */
@@ -462,7 +462,7 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 #else /* force updating */
 		if (gfarm_timespec_cmp(&info->status.st_mtimespec,
 				       &nowinfo.status.st_mtimespec) != 0) {
-			_debug("!!! mtime updating.\n");
+			_debug(("!!! mtime updating.\n"));
 			break;
 		}
 #endif
@@ -476,7 +476,7 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 #else /* force updating */
 		if (gfarm_timespec_cmp(&info->status.st_atimespec,
 				       &nowinfo.status.st_atimespec) != 0) {
-			_debug("!!! atime updating.\n");
+			_debug(("!!! atime updating.\n"));
 			break;
 		}
 #endif
@@ -490,11 +490,11 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 #else /* force updating */
 		if (gfarm_timespec_cmp(&info->status.st_ctimespec,
 				       &nowinfo.status.st_ctimespec) != 0) {
-			_debug("!!! ctime updating.\n");
+			_debug(("!!! ctime updating.\n"));
 			break;
 		}
 #endif
-		_debug("! cancel updating mtime/atime/ctime: %s\n", pathname);
+		_debug(("! cancel updating mtime/atime/ctime: %s\n", pathname));
 		gfarm_path_info_free(&nowinfo);
 		return (1); /* do nothing */
 	}
@@ -527,7 +527,7 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		if (e2 == NULL) {
 			if (compare_path_info_except_time(info, &tmp)
 			    != 0) {
-				_debug("! different cache\n");
+				_debug(("! different cache\n"));
 			}
 			gfarm_path_info_free(&tmp);
 		}
@@ -594,7 +594,7 @@ gfarm_cache_size_set(const char *pathname, file_offset_t size)
 	e = cache_path_info_get(pathname, &info);
 	if (e == NULL) {
 		if (info.status.st_size != size) {
-			_debug("! cache size: %s\n", pathname);
+			_debug(("! cache size: %s\n", pathname));
 			info.status.st_size = size;
 			e = cache_path_info_put(pathname, &info);
 		}
