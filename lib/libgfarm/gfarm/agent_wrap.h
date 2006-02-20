@@ -11,6 +11,9 @@ char *gfarm_agent_name_set(char *);
 char *gfarm_agent_port_set(char *);
 char *gfarm_agent_sock_path_set(char *);
 
+char *gfarm_agent_connect(void);
+char *gfarm_agent_disconnect(void);
+
 /* for direct access without agent */
 
 char *gfarm_i_path_info_get(const char *, struct gfarm_path_info *);

@@ -23,6 +23,7 @@
 #include "sockopt.h"
 #include "agent_proto.h"
 #include "agent_client.h"
+#include "agent_wrap.h"
 
 struct agent_connection {
 	struct xxx_connection *conn;
@@ -139,7 +140,14 @@ agent_client_rpc_request(struct agent_connection *agent_server, int command,
 	char *e;
 
 	va_start(ap, format);
+retry:
 	e = xxx_proto_vrpc_request(agent_server->conn, command, &format, &ap);
+	if (e == GFARM_ERR_BROKEN_PIPE) {
+		gfarm_agent_disconnect();
+		e = gfarm_agent_connect();
+		if (e == NULL)
+			goto retry;
+	}
 	va_end(ap);
 	return (e);
 }
@@ -173,8 +181,15 @@ agent_client_rpc(struct agent_connection *agent_server, int just, int command,
 	int error;
 
 	va_start(ap, format);
+retry:
 	e = xxx_proto_vrpc(agent_server->conn, just,
 			   command, &error, &format, &ap);
+	if (e == GFARM_ERR_BROKEN_PIPE) {
+		gfarm_agent_disconnect();
+		e = gfarm_agent_connect();
+		if (e == NULL)
+			goto retry;
+	}
 	va_end(ap);
 
 	if (e != NULL)
