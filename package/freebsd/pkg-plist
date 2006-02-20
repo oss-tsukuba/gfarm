@@ -11,6 +11,7 @@ bin/gfcombine_hook
 bin/gfcp
 bin/gfcp_hook
 bin/gfdf
+bin/gfdump
 bin/gfexec
 bin/gfexport
 bin/gfgrep

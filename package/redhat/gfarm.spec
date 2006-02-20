@@ -706,6 +706,7 @@ fi
 %{prefix}/sbin/gfmd
 %{rc_prefix}/gfmd
 %{prefix}/bin/config-gfarm
+%{prefix}/bin/gfdump
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
