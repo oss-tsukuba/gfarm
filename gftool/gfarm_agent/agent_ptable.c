@@ -14,16 +14,10 @@ static pthread_key_t ptable_free_ptr_key;
 static pthread_once_t ptable_key_once = PTHREAD_ONCE_INIT;
 
 static void
-agent_ptable_destroy(void *buf)
-{
-	free(buf);
-}
-
-static void
 agent_ptable_key_alloc()
 {
-	pthread_key_create(&ptable_key, agent_ptable_destroy);
-	pthread_key_create(&ptable_free_ptr_key, NULL);
+	pthread_key_create(&ptable_key, free);
+	pthread_key_create(&ptable_free_ptr_key, free);
 }		
 
 static void
