@@ -223,7 +223,12 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 			return (strcasecmp(name, hostspecp->u.name) == 0);
 		}
 	case GFHS_AF_INET4:
-		if (addr == NULL || addr->sa_family != AF_INET)
+		if (addr == NULL)
+			return (0);
+		/* XXX */
+		if (addr->sa_family == AF_UNIX)
+			return (1);
+		if (addr->sa_family != AF_INET)
 			return (0);
 		return ((((struct sockaddr_in *)addr)->sin_addr.s_addr &
 			 hostspecp->u.in4_addr.mask.s_addr) ==
@@ -237,7 +242,7 @@ char *
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {
 	int i, addrlen, addrfamily = addr->sa_family;
-	char *addrp, *name;
+	char *addrp, *name, *e;
 	struct hostent *hp;
 
 	switch (addrfamily) {
@@ -245,6 +250,15 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 		addrp = (char *)&((struct sockaddr_in *)addr)->sin_addr;
 		addrlen = sizeof(struct in_addr);
 		break;
+	case AF_UNIX:
+		e = gfarm_host_get_canonical_self_name(&name);
+		if (e != NULL)
+			return (e);
+		*namep = strdup(name);
+		if (*namep == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		else
+			return (NULL);
 	default:
 		return (gfarm_errno_to_error(EAFNOSUPPORT));
 	}
