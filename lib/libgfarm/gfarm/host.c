@@ -270,7 +270,7 @@ gfarm_host_get_self_architecture(char **architecture)
 }
 
 int
-gfarm_canonical_hostname_is_local(char *canonical_hostname)
+gfarm_canonical_hostname_is_local(const char *canonical_hostname)
 {
 	char *e, *self_name;
 

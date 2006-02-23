@@ -1,4 +1,4 @@
-int gfarm_canonical_hostname_is_local(char *);
+int gfarm_canonical_hostname_is_local(const char *);
 int gfarm_host_is_local(char *);
 
 struct in_addr;
