@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "gfs_proto.h" /* GFARM_FILE_CREATE, gfs_digest_calculate_local() */
+#include "gfs_client.h"
 #include "gfs_pio.h"
 #include "gfs_misc.h"
 
@@ -222,7 +223,8 @@ char *
 gfs_pio_open_local_section(GFS_File gf, int flags)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-	char *e, *local_path;
+	char *e, *path_section;
+	struct gfs_connection *gfs_server;
 	/*
 	 * We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
 	 * level access (at least for now) to avoid the effect of
@@ -233,144 +235,45 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	 */
 	int oflags = (gf->open_flags & ~GFARM_FILE_EXCLUSIVE) |
 	    (flags & GFARM_FILE_CREATE);
-	int fd, local_oflags = gfs_open_flags_localize(oflags);
-	int saved_errno;
-	mode_t saved_umask;
+	int fd;
 
-	if (local_oflags == -1)
-		return (GFARM_ERR_INVALID_ARGUMENT);
-
-	e = gfarm_path_localize_file_section(gf->pi.pathname, vc->section,
-					     &local_path);
+	e = gfarm_path_section(gf->pi.pathname, vc->section, &path_section);
 	if (e != NULL)
 		return (e);
 
-	saved_umask = umask(0);
-	fd = open(local_path, local_oflags,
-		  gf->pi.status.st_mode & GFARM_S_ALLPERM);
-	saved_errno = errno;
-	umask(saved_umask);
+	e = gfs_client_connection(vc->canonical_hostname, NULL, &gfs_server);
+	if (e != NULL) {
+		free(path_section);
+		return (e);
+	}
+	vc->storage_context = gfs_server;
+
+	e = gfs_client_open_local(gfs_server, path_section, oflags,
+		gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	/* FT - the parent directory may be missing */
-	if (fd == -1 && (oflags & GFARM_FILE_CREATE) != 0
-	    && saved_errno == ENOENT) {
+	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	    && (oflags & GFARM_FILE_CREATE) != 0) {
 		/* the parent directory can be created by some other process */
-		(void)gfs_pio_local_mkdir_parent_canonical_path(
-			gf->pi.pathname);
-		umask(0);
-		fd = open(local_path, local_oflags,
-			  gf->pi.status.st_mode & GFARM_S_ALLPERM);
-		saved_errno = errno;
-		umask(saved_umask);
+		(void)gfs_pio_remote_mkdir_parent_canonical_path(
+			gfs_server, gf->pi.pathname);
+		e = gfs_client_open_local(gfs_server, path_section, oflags,
+			gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	}
-	free(local_path);
 	/* FT - physical file should be missing */
-	if (fd == -1 && (oflags & GFARM_FILE_CREATE) == 0
-	    && saved_errno == ENOENT) {
+	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	    && (oflags & GFARM_FILE_CREATE) == 0) {
 		/* Delete the section copy info */
-		char *localhost;
-		if (gfarm_host_get_canonical_self_name(&localhost) == NULL) {
-			/* section copy may be removed by some other process */
-			(void)gfarm_file_section_copy_info_remove(
-				gf->pi.pathname, vc->section, localhost);
-			return (GFARM_ERR_INCONSISTENT_RECOVERABLE);
-		}
+		/* section copy may be removed by some other process */
+		(void)gfarm_file_section_copy_info_remove(gf->pi.pathname,
+			vc->section, vc->canonical_hostname);
+		e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 	}
-	if (fd == -1)
-		return (gfarm_errno_to_error(saved_errno));
+
+	free(path_section);
+	if (e != NULL)
+		return (e);
 
 	vc->ops = &gfs_pio_local_storage_ops;
-	vc->storage_context = NULL; /* not needed */
 	vc->fd = fd;
 	return (NULL);
-}
-
-static char *
-gfs_pio_local_mkdir_p(char *canonic_dir)
-{
-	struct gfs_stat stata;
-	struct stat statb;
-	gfarm_mode_t mode;
-	char *e, *local_path, *user;
-
-	/* dirname(3) may return '.'.  This means the spool root directory. */
-	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
-		return (NULL); /* should exist */
-
-	user = gfarm_get_global_username();
-	if (user == NULL)
-		return ("gfs_pio_local_mkdir_p(): programming error, "
-			"gfarm library isn't properly initialized");
-
-	e = gfs_stat_canonical_path(canonic_dir, &stata);
-	if (e != NULL)
-		return (e);
-	mode = stata.st_mode;
-	/*
-	 * XXX - if the owner of a directory is not the same, create a
-	 * directory with permission 0777 - This should be fixed in
-	 * the next major release.
-	 */
-	if (strcmp(stata.st_user, user) != 0)
-		mode |= 0777;
-	gfs_stat_free(&stata);
-	if (!GFARM_S_ISDIR(mode))
-		return (GFARM_ERR_NOT_A_DIRECTORY);
-
-	e = gfarm_path_localize(canonic_dir, &local_path);
-	if (e != NULL)
-		return (e);
-	if (stat(local_path, &statb)) {
-		char *par_dir, *saved_par_dir;
-		mode_t saved_umask;
-		int r;
-
-		par_dir = saved_par_dir = strdup(canonic_dir);
-		if (par_dir == NULL) {
-			free(local_path);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		par_dir = dirname(par_dir);
-		e = gfs_pio_local_mkdir_p(par_dir);
-		free(saved_par_dir);
-		if (e != NULL) {
-			free(local_path);
-			return (e);
-		}
-		saved_umask = umask(0);
-		r = mkdir(local_path, mode);
-		umask(saved_umask);
-		if (r == -1) {
-			free(local_path);
-			return (gfarm_errno_to_error(errno));
-		}
-	}
-	free(local_path);
-	return (NULL);
-}
-
-char *
-gfs_pio_local_mkdir_parent_canonical_path(char *canonic_dir)
-{
-	char *par_dir, *saved_par_dir, *local_path, *e;
-	struct stat statb;
-
-	par_dir = saved_par_dir = strdup(canonic_dir);
-	if (par_dir == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	par_dir = dirname(par_dir);
-	e = gfarm_path_localize(par_dir, &local_path);
-	if (e != NULL)
-		goto finish_free_par_dir;
-
-	if (stat(local_path, &statb))
-		e = gfs_pio_local_mkdir_p(par_dir);
-	else
-		e = GFARM_ERR_ALREADY_EXISTS;
-
-	free(local_path);
- finish_free_par_dir:
-	free(saved_par_dir);
-
-	return (e);
 }

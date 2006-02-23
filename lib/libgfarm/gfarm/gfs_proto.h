@@ -33,7 +33,8 @@ enum gfs_proto_command {
 	GFS_PROTO_REPLICATE_FILE_SEQUENTIAL,
 	GFS_PROTO_REPLICATE_FILE_PARALLEL,
 	GFS_PROTO_STATFS,
-	GFS_PROTO_FSYNC
+	GFS_PROTO_FSYNC,
+	GFS_PROTO_OPEN_LOCAL
 };
 
 enum gfs_proto_error {
@@ -127,6 +128,10 @@ enum gfs_proto_fsync_operation {
 };
 
 #define GFARM_DEFAULT_COMMAND_IOBUF_SIZE 0x4000
+
+#define GFSD_MAX_PASSING_FD 5
+
+#define GFSD_LOCAL_SOCKET_NAME	"/tmp/.gfarm-gfsd%d/sock"
 
 #define FDESC_STDIN	0
 #define FDESC_STDOUT	1

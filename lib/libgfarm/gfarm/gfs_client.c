@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
@@ -130,31 +131,69 @@ connect_wait(int s)
 }
 
 static char *
+gfs_client_connection0_unix(int *sockp)
+{
+	struct sockaddr_un peer_un;
+	socklen_t socklen;
+	int sock;
+
+	sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
+	memset(&peer_un, 0, sizeof(peer_un));
+	socklen = snprintf(peer_un.sun_path, sizeof(peer_un.sun_path),
+	    GFSD_LOCAL_SOCKET_NAME, gfarm_spool_server_port);
+	peer_un.sun_family = AF_UNIX;
+#ifdef SUN_LEN /* derived from 4.4BSD */
+	socklen = SUN_LEN(&peer_un);
+#else
+	socklen += sizeof(peer_un) - sizeof(peer_un.sun_path);
+#endif
+	if (connect(sock, (struct sockaddr *)&peer_un, socklen) < 0) {
+		char *e = gfarm_errno_to_error(errno);
+		close(sock);
+		return (e);
+	}
+	*sockp = sock;
+	return (NULL);
+}
+
+static char *
 gfs_client_connection0(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfs_connection *gfs_server)
 {
 	char *e, *host_fqdn;
 	int sock, flags;
 
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock == -1)
-		return (gfarm_errno_to_error(errno));
-	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-	flags = fcntl(sock, F_GETFL);
-	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-	/* XXX - how to report setsockopt(2) failure ? */
-	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
-
-	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-		if (errno == EINPROGRESS)
-			errno = connect_wait(sock);
-		if (errno != 0) {
-			e = gfarm_errno_to_error(errno);
-			close(sock);
+	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
+		e = gfs_client_connection0_unix(&sock);
+		if (e != NULL)
 			return (e);
+	} else {
+		sock = socket(PF_INET, SOCK_STREAM, 0);
+		if (sock == -1)
+			return (gfarm_errno_to_error(errno));
+		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+		flags = fcntl(sock, F_GETFL);
+		fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+		/* XXX - how to report setsockopt(2) failure ? */
+		gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname,
+		    peer_addr);
+
+		if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+			if (errno == EINPROGRESS)
+				errno = connect_wait(sock);
+			if (errno != 0) {
+				e = gfarm_errno_to_error(errno);
+				close(sock);
+				return (e);
+			}
 		}
+		fcntl(sock, F_SETFL, flags);
 	}
-	fcntl(sock, F_SETFL, flags);
 	e = xxx_fd_connection_new(sock, &gfs_server->conn);
 	if (e != NULL) {
 		close(sock);
@@ -348,27 +387,34 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	/* clone of gfs_client_connection0() */
 
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock == -1)
-		return (gfarm_errno_to_error(errno));
-	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-
-	/* XXX - how to report setsockopt(2) failure ? */
-	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
-
-	fcntl(sock, F_SETFL, O_NONBLOCK);
-	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-		if (errno != EINPROGRESS) {
-			e = gfarm_errno_to_error(errno);
-			close(sock);
+	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
+		e = gfs_client_connection0_unix(&sock);
+		if (e != NULL)
 			return (e);
-		}
-		connection_in_progress = 1;
-	} else {
 		connection_in_progress = 0;
-	}
-	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+	} else {
+		sock = socket(PF_INET, SOCK_STREAM, 0);
+		if (sock == -1)
+			return (gfarm_errno_to_error(errno));
+		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
+		/* XXX - how to report setsockopt(2) failure ? */
+		gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname,
+		    peer_addr);
+
+		fcntl(sock, F_SETFL, O_NONBLOCK);
+		if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+			if (errno != EINPROGRESS) {
+				e = gfarm_errno_to_error(errno);
+				close(sock);
+				return (e);
+			}
+			connection_in_progress = 1;
+		} else {
+			connection_in_progress = 0;
+		}
+		fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+	}
 	gfs_server = malloc(sizeof(*gfs_server));
 	if (gfs_server == NULL) {
 		close(sock);
@@ -462,6 +508,101 @@ gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
  * gfs_client RPC
  */
 
+static int
+gfarm_fd_receive_message(int fd, void *buffer, size_t size,
+	int fdc, int *fdv)
+{
+	int i, rv;
+	struct iovec iov[1];
+	struct msghdr msg;
+#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+	struct {
+		struct cmsghdr hdr;
+		char data[CMSG_SPACE(sizeof(*fdv) * GFSD_MAX_PASSING_FD)
+			  - sizeof(struct cmsghdr)];
+	} cmsg;
+
+	if (fdc > GFSD_MAX_PASSING_FD) {
+#if 0
+		fprintf(stderr, "gfarm_fd_receive_message(%s): "
+			"fd count %d > %d\n", fdc, GFSD_MAX_PASSING_FD);
+#endif
+		return (EINVAL);
+	}
+#endif
+
+	while (size > 0) {
+		iov[0].iov_base = buffer;
+		iov[0].iov_len = size;
+		msg.msg_iov = iov;
+		msg.msg_iovlen = 1;
+		msg.msg_name = NULL;
+		msg.msg_namelen = 0;
+#ifndef SCM_RIGHTS
+		if (fdc > 0) {
+			msg.msg_accrights = (caddr_t)fdv;
+			msg.msg_accrightslen = sizeof(*fdv) * fdc;
+			for (i = 0; i < fdc; i++)
+				fdv[i] = -1;
+		} else {
+			msg.msg_accrights = NULL;
+			msg.msg_accrightslen = 0;
+		}
+#else /* 4.3BSD Reno or later */
+		if (fdc > 0) {
+			msg.msg_control = (caddr_t)&cmsg.hdr;
+			msg.msg_controllen = CMSG_SPACE(sizeof(*fdv) * fdc);
+			memset(msg.msg_control, 0, msg.msg_controllen);
+			for (i = 0; i < fdc; i++)
+				((int *)CMSG_DATA(&cmsg.hdr))[i] = -1;
+		} else {
+			msg.msg_control = NULL;
+			msg.msg_controllen = 0;
+		}
+#endif
+		rv = recvmsg(fd, &msg, 0);
+		if (rv == -1) {
+			if (errno == EINTR)
+				continue;
+			return (errno); /* failure */
+		} else if (rv == 0) {
+			return (-1); /* EOF */
+		}
+#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+		if (fdc > 0) {
+			if (msg.msg_controllen !=
+			    CMSG_SPACE(sizeof(*fdv) * fdc) ||
+			    cmsg.hdr.cmsg_len !=
+			    CMSG_LEN(sizeof(*fdv) * fdc) ||
+			    cmsg.hdr.cmsg_level != SOL_SOCKET ||
+			    cmsg.hdr.cmsg_type != SCM_RIGHTS) {
+#if 0
+				fprintf(stderr,
+					"gfarm_fd_receive_message():"
+					" descriptor not passed"
+					" msg_controllen: %d (%d),"
+					" cmsg_len: %d (%d),"
+					" cmsg_level: %d,"
+					" cmsg_type: %d\n",
+					msg.msg_controllen,
+					CMSG_SPACE(sizeof(*fdv) * fdc),
+					cmsg.hdr.cmsg_len,
+					CMSG_LEN(sizeof(*fdv) * fdc),
+					cmsg.hdr.cmsg_level,
+					cmsg.hdr.cmsg_type);
+#endif
+			}
+			for (i = 0; i < fdc; i++)
+				fdv[i] = ((int *)CMSG_DATA(&cmsg.hdr))[i];
+		}
+#endif
+		fdc = 0; fdv = NULL;
+		buffer += rv;
+		size -= rv;
+	}
+	return (0); /* success */
+}
+
 char *
 gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 		       char *format, ...)
@@ -523,6 +664,34 @@ gfs_client_open(struct gfs_connection *gfs_server,
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_OPEN, "sii/i",
 			       gfarm_file, flag, mode,
 			       fdp));
+}
+
+char *
+gfs_client_open_local(struct gfs_connection *gfs_server,
+	char *gfarm_file, gfarm_int32_t flag, gfarm_int32_t mode,
+	gfarm_int32_t *fdp)
+{
+	char *e;
+	int rv, local_fd, err;
+
+	/* we have to set `just' flag here */
+	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "sii/",
+		gfarm_file, flag, mode);
+	if (e != NULL)
+		return (e);
+
+	/* layering violation, but... */
+	rv = gfarm_fd_receive_message(xxx_connection_fd(gfs_server->conn),
+	    &err, sizeof(int), 1, &local_fd);
+	if (rv == -1)
+		return (GFARM_ERR_UNEXPECTED_EOF);
+	if (rv != 0)
+		return (gfarm_errno_to_error(rv));
+	/* both `err' and `local_fd` are passed by using host byte order. */
+	if (err != 0)
+		return (gfs_proto_error_string(err));
+	*fdp = local_fd;
+	return (NULL);
 }
 
 char *

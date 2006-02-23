@@ -30,6 +30,8 @@ char *gfs_client_disconnect(struct gfs_connection *);
 char *gfs_client_create(struct gfs_connection *, char *, gfarm_int32_t, int *);
 char *gfs_client_open(struct gfs_connection *,
 		      char *, gfarm_int32_t, gfarm_int32_t, gfarm_int32_t *);
+char *gfs_client_open_local(struct gfs_connection *,
+		      char *, gfarm_int32_t, gfarm_int32_t, gfarm_int32_t *);
 char *gfs_client_close(struct gfs_connection *, gfarm_int32_t);
 char *gfs_client_seek(struct gfs_connection *,
 		      gfarm_int32_t, file_offset_t, gfarm_int32_t,
