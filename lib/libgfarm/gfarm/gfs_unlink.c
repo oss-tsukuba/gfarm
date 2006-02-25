@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 #include "config.h"
@@ -66,15 +67,16 @@ gfs_unlink(const char *gfarm_url)
 		goto finish_unlink;
 
 	e = gfarm_path_info_get(gfarm_file, &pi);
+	if (e == NULL) {
+		if (GFARM_S_ISDIR(pi.status.st_mode))
+			e = GFARM_ERR_IS_A_DIRECTORY;
+		else
+			e = gfarm_path_info_access(&pi, W_OK);
+		gfarm_path_info_free(&pi);
+	}
 	if (e != NULL)
 		goto finish_free_gfarm_file;
 
-	if (GFARM_S_ISDIR(pi.status.st_mode)) {
-		gfarm_path_info_free(&pi);
-		e = GFARM_ERR_IS_A_DIRECTORY;
-		goto finish_free_gfarm_file;
-	}
-	gfarm_path_info_free(&pi);
 	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
 	if (e != NULL) {
