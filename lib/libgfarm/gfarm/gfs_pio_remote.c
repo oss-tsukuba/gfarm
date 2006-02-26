@@ -98,6 +98,15 @@ gfs_pio_remote_storage_fsync(GFS_File gf, int operation)
 }
 
 static char *
+gfs_pio_remote_storage_fstat(GFS_File gf, struct stat *st)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	return (gfs_client_fstat(gfs_server, vc->fd, st));
+}
+
+static char *
 gfs_pio_remote_storage_calculate_digest(GFS_File gf, char *digest_type,
 				       size_t digest_size,
 				       size_t *digest_lengthp,
@@ -127,6 +136,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_seek,
 	gfs_pio_remote_storage_ftruncate,
 	gfs_pio_remote_storage_fsync,
+	gfs_pio_remote_storage_fstat,
 	gfs_pio_remote_storage_calculate_digest,
 	gfs_pio_remote_storage_fd,
 };

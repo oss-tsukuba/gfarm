@@ -1301,20 +1301,29 @@ gfs_pio_set_fragment_info_local(char *filename,
 		fi.checksum = digest_value_string;
 
 		e = gfarm_file_section_info_set(gfarm_file, section, &fi);
-		if (e != NULL)
-			return (e);
 	}
 	else if (e == NULL) {
-		if (fi.filesize != filesize)
-			return "file size mismatch";
-		if (strcasecmp(fi.checksum_type, digest_type) != 0)
-			return "checksum type mismatch";
-		if (strcasecmp(fi.checksum,digest_value_string) != 0)
-			return "check sum mismatch";
+		if (gfs_check_section_checksum_unknown_by_finfo(&fi)) {
+			struct gfarm_file_section_info fi1;
 
+			fi1.filesize = filesize;
+			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
+			fi1.checksum = digest_value_string;
+
+			e = gfarm_file_section_info_replace(
+				gfarm_file, section, &fi1);
+		}
+		else {
+			if (fi.filesize != filesize)
+				e = "file size mismatch";
+			if (strcasecmp(fi.checksum_type, digest_type) != 0)
+				e = "checksum type mismatch";
+			if (strcasecmp(fi.checksum, digest_value_string) != 0)
+				e = "check sum mismatch";
+		}
 		gfarm_file_section_info_free(&fi);
 	}
-	else
+	if (e != NULL)
 		return (e);
 
 	e = gfarm_host_get_canonical_self_name(&fci.hostname);
@@ -1322,7 +1331,6 @@ gfs_pio_set_fragment_info_local(char *filename,
 		e = gfarm_file_section_copy_info_set(
 			gfarm_file, section, fci.hostname, &fci);
 	}
-
 	return (e);
 }
 

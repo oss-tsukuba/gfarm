@@ -2,6 +2,8 @@
  * $Id$
  */
 
+struct stat;
+
 #define	GFS_FILE_IS_PROGRAM(gf) (GFARM_S_IS_PROGRAM(gf->pi.status.st_mode))
 
 extern char GFS_FILE_ERROR_EOF[];
@@ -52,6 +54,8 @@ struct gfs_file {
 
 char *gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *);
 char *gfs_check_section_busy(char *, char *);
+char *gfs_check_section_checksum_unknown_by_finfo(
+	struct gfarm_file_section_info *);
 char *gfs_unlink_section_internal(const char *, const char *);
 char *gfs_unlink_every_other_replicas(
 	const char *, const char *, const char *);
@@ -74,6 +78,7 @@ struct gfs_storage_ops {
 	char *(*storage_seek)(GFS_File, file_offset_t, int, file_offset_t *);
 	char *(*storage_ftruncate)(GFS_File, file_offset_t);
 	char *(*storage_fsync)(GFS_File, int);
+	char *(*storage_fstat)(GFS_File, struct stat *);
 	char *(*storage_calculate_digest)(GFS_File, char *, size_t,
 	    size_t *, unsigned char *, file_offset_t *);
 	int (*storage_fd)(GFS_File);

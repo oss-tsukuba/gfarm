@@ -819,6 +819,21 @@ gfs_client_chgrp(struct gfs_connection *gfs_server, char *path, char *group)
 }
 
 char *
+gfs_client_fstat(struct gfs_connection *gfs_server, gfarm_int32_t fd,
+	struct stat *st)
+{
+	file_offset_t size;
+	char *e;
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSTAT, "i/iioiii", fd,
+			   &st->st_mode, &st->st_nlink, &size,
+			   &st->st_atime, &st->st_mtime, &st->st_ctime);
+	if (e == NULL)
+		st->st_size = size;
+	return (e);
+}
+
+char *
 gfs_client_exist(struct gfs_connection *gfs_server, char *path)
 {
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_EXIST, "s/",

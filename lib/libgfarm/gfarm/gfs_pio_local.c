@@ -172,6 +172,18 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 }
 
 static char *
+gfs_pio_local_storage_fstat(GFS_File gf, struct stat *st)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	int rv;
+
+	rv = fstat(vc->fd, st);
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (NULL);
+}
+
+static char *
 gfs_pio_local_storage_calculate_digest(GFS_File gf, char *digest_type,
 				       size_t digest_size,
 				       size_t *digest_lengthp,
@@ -215,6 +227,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_seek,
 	gfs_pio_local_storage_ftruncate,
 	gfs_pio_local_storage_fsync,
+	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_calculate_digest,
 	gfs_pio_local_storage_fd,
 };

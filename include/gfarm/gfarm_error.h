@@ -56,6 +56,7 @@ extern char GFARM_ERR_INCONSISTENT_RECOVERABLE[];
 extern char GFARM_ERR_NO_FRAGMENT_INFORMATION[];
 extern char GFARM_ERR_NO_REPLICA_ON_HOST[];
 extern char GFARM_ERR_UNEXPECTED_EOF[];
+extern char GFARM_ERR_CHECKSUM_UNKNOWN[];
 extern char GFARM_ERR_UNKNOWN[];
 
 int gfarm_error_to_errno(const char *);

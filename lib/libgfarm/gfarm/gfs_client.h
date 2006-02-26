@@ -8,6 +8,7 @@ struct gfarm_eventqueue;
 struct gfs_connection;
 struct gfs_stat;
 struct gfs_client_connect_state;
+struct stat;
 
 void gfs_client_terminate(void);
 
@@ -51,7 +52,7 @@ char *gfs_client_mkdir(struct gfs_connection *, char *, gfarm_int32_t);
 char *gfs_client_rmdir(struct gfs_connection *, char *);
 char *gfs_client_chmod(struct gfs_connection *, char *, gfarm_int32_t);
 char *gfs_client_chgrp(struct gfs_connection *, char *, char *);
-char *gfs_client_stat(struct gfs_connection *, char *);
+char *gfs_client_fstat(struct gfs_connection *, gfarm_int32_t, struct stat *);
 char *gfs_client_exist(struct gfs_connection *, char *);
 char *gfs_client_digest(struct gfs_connection *, int, char *, size_t,
 			size_t *, unsigned char *, file_offset_t *);

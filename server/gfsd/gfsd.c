@@ -121,6 +121,9 @@ gfs_server_get_request(struct xxx_connection *client, char *diag,
 	char *e;
 	int eof;
 
+	if (debug_mode)
+		gflog_notice("request: %s", diag);
+
 	va_start(ap, format);
 	e = xxx_proto_vrecv(client, 0, &eof, &format, &ap);
 	va_end(ap);
@@ -138,6 +141,10 @@ gfs_server_put_reply_common(struct xxx_connection *client, char *diag,
 	int ecode, char *format, va_list *app)
 {
 	char *e;
+
+	if (debug_mode)
+		gflog_notice("reply: %s (%d): %s", diag, ecode,
+			     gfs_proto_error_string(ecode));
 
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL)
@@ -617,6 +624,26 @@ gfs_server_chgrp(struct xxx_connection *client)
 	free(group);
 
 	gfs_server_put_reply_with_errno(client, "chgrp", save_errno, "");
+}
+
+void
+gfs_server_fstat(struct xxx_connection *client)
+{
+
+	struct stat st;
+	file_offset_t size;
+	int fd, save_errno = 0;
+
+	gfs_server_get_request(client, "fstat", "i", &fd);
+
+	if (fstat(file_table_get(fd), &st) == -1)
+		save_errno = errno;
+	else
+		size = st.st_size;
+
+	gfs_server_put_reply_with_errno(client, "fstat", save_errno,
+		"iioiii", st.st_mode, st.st_nlink, size,
+		st.st_atime, st.st_mtime, st.st_ctime);
 }
 
 void
@@ -2149,6 +2176,7 @@ server(int client_fd)
 		case GFS_PROTO_RMDIR:	gfs_server_rmdir(client); break;
 		case GFS_PROTO_CHMOD:	gfs_server_chmod(client); break;
 		case GFS_PROTO_CHGRP:	gfs_server_chgrp(client); break;
+		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;
 		case GFS_PROTO_EXIST:	gfs_server_exist(client); break;
 		case GFS_PROTO_DIGEST:	gfs_server_digest(client); break;
 		case GFS_PROTO_GET_SPOOL_ROOT:

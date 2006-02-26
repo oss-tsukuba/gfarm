@@ -30,26 +30,37 @@
 /*  */
 
 #define SECTION_BUSY "SECTION BUSY"
+#define CHECKSUM_UNKNOWN "UNKNOWN"
 
 static char *
-gfs_set_section_busy(char *pathname, char *section)
+gfs_set_section_status(GFS_File gf, char *status)
 {
-	struct gfarm_file_section_info fi, fi2;
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfarm_file_section_info fi;
+	struct stat st;
 	char *e;
 
 	fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-	fi.checksum = SECTION_BUSY;
+	fi.checksum = status;
 
-	e = gfarm_file_section_info_get(pathname, section, &fi2);
+	e = (*vc->ops->storage_fstat)(gf, &st);
 	if (e == NULL) {
-		fi.filesize = fi2.filesize;
-		gfarm_file_section_info_free(&fi2);
-		e = gfarm_file_section_info_replace(pathname, section, &fi);
-	} else {
-		fi.filesize = 0;
-		e = gfarm_file_section_info_set(pathname, section, &fi);
+		fi.filesize = st.st_size;
+		e = gfarm_file_section_info_replace(
+			gf->pi.pathname, vc->section, &fi);
+		/* FT */
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			e = gfarm_file_section_info_set(
+				gf->pi.pathname, vc->section, &fi);
 	}
 	return (e);
+
+}
+
+static char *
+gfs_set_section_busy(GFS_File gf)
+{
+	return (gfs_set_section_status(gf, SECTION_BUSY));
 }
 
 char *
@@ -59,7 +70,6 @@ gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *fi)
 		return (GFARM_ERR_TEXT_FILE_BUSY);
 	return (NULL);
 }
-
 
 char *
 gfs_check_section_busy(char *pathname, char *section)
@@ -75,6 +85,21 @@ gfs_check_section_busy(char *pathname, char *section)
 	return (e);
 }
 
+static char *
+gfs_set_section_checksum_unknown(GFS_File gf)
+{
+	return (gfs_set_section_status(gf, CHECKSUM_UNKNOWN));
+}
+
+char *
+gfs_check_section_checksum_unknown_by_finfo(struct gfarm_file_section_info *fi)
+{
+	if (strncmp(fi->checksum, CHECKSUM_UNKNOWN,
+		    sizeof(CHECKSUM_UNKNOWN) - 1) == 0)
+		return (GFARM_ERR_CHECKSUM_UNKNOWN);
+	return (NULL);
+}
+
 /*  */
 
 static char *
@@ -82,10 +107,13 @@ gfs_pio_view_section_close(GFS_File gf)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e = NULL, *e_save = NULL;
-	int md_calculated = 1;
+	int md_calculated = 0;
 	file_offset_t filesize;
 	size_t md_len;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
+	char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
+	struct gfarm_file_section_info fi, fi1;
+	int i;
 
 	/* calculate checksum */
 	if ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0) {
@@ -101,6 +129,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			write(2, message, sizeof(message) - 1);
 			abort(); /* XXX - not supported for now */
 #endif
+#if 0
 			/* re-read whole file to calculate digest value */
 			e = (*vc->ops->storage_calculate_digest)(gf,
 			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
@@ -110,6 +139,8 @@ gfs_pio_view_section_close(GFS_File gf)
 				if (e_save == NULL)
 					e_save = e;
 			}
+			md_calculated = 1;
+#endif
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 		    (gf->error != GFS_FILE_ERROR_EOF)) {
 			/*
@@ -124,6 +155,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			EVP_DigestFinal(&vc->md_ctx, md_value, &len);
 			md_len = len;
 			filesize = gf->offset + gf->length;
+			md_calculated = 1;
 		}
 	} else {
 		if ((gf->mode & GFS_FILE_MODE_UPDATE_METADATA) == 0) {
@@ -134,6 +166,7 @@ gfs_pio_view_section_close(GFS_File gf)
 			 */
 			md_calculated = 0;
 		} else {
+#if 0
 			/*
 			 * re-read whole file to calculate digest value
 			 * for writing.
@@ -147,42 +180,49 @@ gfs_pio_view_section_close(GFS_File gf)
 				if (e_save == NULL)
 					e_save = e;
 			}
+			md_calculated = 1;
+#endif
 		}
 	}
 
-	if (md_calculated) {
-		int i;
-		char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
-		struct gfarm_file_section_info fi;
-
+	if (md_calculated == 1) {
 		for (i = 0; i < md_len; i++)
-			sprintf(&md_value_string[i + i], "%02x",
-				md_value[i]);
+			sprintf(&md_value_string[i + i], "%02x", md_value[i]);
+	}
 
-		if (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) {
-			fi.filesize = filesize;
-			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-			fi.checksum = md_value_string;
+	if (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) {
+		if (md_calculated == 1) {
+			fi1.filesize = filesize;
+			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
+			fi1.checksum = md_value_string;
 
 			e = gfarm_file_section_info_replace(
-				gf->pi.pathname, vc->section, &fi);
-		} else {
-			e = gfarm_file_section_info_get(
-			    gf->pi.pathname, vc->section, &fi);
-			if (e == NULL) {
-				if (gfs_check_section_busy_by_finfo(&fi)
-				    == NULL) {
-					if (filesize != fi.filesize)
-						e = "filesize mismatch";
-					else if (strcasecmp(fi.checksum_type,
-					  GFS_DEFAULT_DIGEST_NAME) != 0 ||
-					  strcasecmp(
-					    fi.checksum, md_value_string) != 0)
-						e = "checksum mismatch";
-				}
-				gfarm_file_section_info_free(&fi);
-			}
+				gf->pi.pathname, vc->section, &fi1);
 		}
+		else
+			e = gfs_set_section_checksum_unknown(gf);
+	}
+	else if (md_calculated == 1 &&
+		 (e = gfarm_file_section_info_get(
+			  gf->pi.pathname, vc->section, &fi)) == NULL) {
+		if (gfs_check_section_busy_by_finfo(&fi))
+			/* skip check*/;
+		else if (gfs_check_section_checksum_unknown_by_finfo(&fi)) {
+			fi1.filesize = filesize;
+			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
+			fi1.checksum = md_value_string;
+
+			e = gfarm_file_section_info_replace(
+				gf->pi.pathname, vc->section, &fi1);
+		} else {
+			if (filesize != fi.filesize)
+				e = "filesize mismatch";
+			else if (strcasecmp(fi.checksum_type,
+					    GFS_DEFAULT_DIGEST_NAME) != 0 ||
+				 strcasecmp(fi.checksum, md_value_string) != 0)
+				e = "checksum mismatch";
+		}
+		gfarm_file_section_info_free(&fi);
 	}
 	if (e_save == NULL)
 		e_save = e;
@@ -582,7 +622,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		 * if write mode or read-but-truncate mode,
 		 * delete every other file copies
 		 */
-		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
+		(void)gfs_set_section_busy(gf);
 		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0)
 			(void)gfs_unlink_every_other_replicas(
 				gf->pi.pathname, vc->section,

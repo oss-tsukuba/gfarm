@@ -81,6 +81,7 @@ char GFARM_ERR_NO_REPLICA_ON_HOST[] =
 	"no file replica on the host";
 char GFARM_ERR_UNEXPECTED_EOF[] =
 	"unexpected EOF";
+char GFARM_ERR_CHECKSUM_UNKNOWN[] = "checksum unknown";
 char GFARM_ERR_UNKNOWN[] = "unknown error";
 
 /*
