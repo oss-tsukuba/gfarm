@@ -20,10 +20,11 @@ char *
 gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	const char *hostname)
 {
-	char *path_section, *e;
+	char *path_section, *e, *e_int;
 	struct gfs_connection *gfs_server;
 	struct sockaddr peer_addr;
 
+	/* metadata part */
 	e = gfarm_path_section(gfarm_file, section, &path_section);
 	if (e != NULL)
 		goto finish;
@@ -32,20 +33,25 @@ gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	if (e != NULL)
 		goto finish_path_section;
 
-	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
+	/* physical file part */
+	e_int = gfarm_host_address_get(hostname, gfarm_spool_server_port,
 		&peer_addr, NULL);
-	if (e != NULL)
+	if (e_int != NULL)
 		goto finish_path_section;
 
-	e = gfs_client_connection(hostname, &peer_addr, &gfs_server);
-	if (e != NULL)
+	e_int = gfs_client_connection(hostname, &peer_addr, &gfs_server);
+	if (e_int != NULL)
 		goto finish_path_section;
 
-	e = gfs_client_unlink(gfs_server, path_section);
+	e_int = gfs_client_unlink(gfs_server, path_section);
 
 finish_path_section:
 	free(path_section);
 finish:
+	/*
+	 * how to report e_int?  This usually results in a junk file
+	 * unless it is GFARM_ERR_NO_SUCH_OBJECT.
+	 */
 	return (e);
 }
 
@@ -101,7 +107,7 @@ gfs_unlink(const char *gfarm_url)
 		for (j = 0; j < ncopies; j++) {
 			e = gfs_unlink_replica_internal(gfarm_file,
 				sections[i].section, copies[j].hostname);
-			if (e != NULL && e_save == NULL)
+			if (e_save == NULL)
 				e_save = e;
 		}
 		gfarm_file_section_copy_info_free_all(ncopies, copies);
@@ -110,15 +116,12 @@ gfs_unlink(const char *gfarm_url)
 		for (i = 0; i < nsections; i++) {
 			e = gfarm_file_section_info_remove(
 				gfarm_file, sections[i].section);
-			if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT &&
-			    e_save == NULL)
+ 			if (e != GFARM_ERR_NO_SUCH_OBJECT && e_save == NULL)
 				e_save = e;
 		}
 		gfarm_file_section_info_free_all(nsections, sections);
 	}
 	e = gfarm_path_info_remove(gfarm_file);
-	if (e != NULL && e_save == NULL)
-		e_save = e;
 
 finish_free_gfarm_file:
 	free(gfarm_file);
@@ -142,8 +145,7 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 		gfarm_file, section, &ncopies, &copies);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		/* if there is the section info, remove it */
-		(void)gfarm_file_section_info_remove(gfarm_file, section);
-		return (e);
+		return (gfarm_file_section_info_remove(gfarm_file, section));
 	}
 	if (e != NULL)
 		return (e);
@@ -162,11 +164,6 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 	(void)gfarm_file_section_copy_info_remove_all_by_section(
 		gfarm_file, section);
 	e = gfarm_file_section_info_remove(gfarm_file, section);
-
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		if (e_save == NULL)
-			e_save = e;
-	}
 
 	return (e_save != NULL ? e_save : e);
 }
