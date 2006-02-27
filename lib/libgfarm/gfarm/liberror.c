@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <pthread.h>
 #include <sys/param.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,7 @@
 #include <gfarm/gfarm_misc.h> /* GFARM_ARRAY_LENGTH */
 #include "liberror.h"
 
-const char *errcode_string[GFARM_ERR_NUMBER] = {
+static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"success",
 
 	/* classic errno (1..10) */
@@ -114,11 +115,12 @@ const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"gfarm URL prefix is missing",
 	"too many jobs",
 	"file migrated",
+	"not a symbolic link",
 	"is a symbolic link",
 	"unknown error",
 };
 
-const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
+static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"inconsistent metadata fixed, try again",
 	"libgfarm internal error: too many error domain",
 
@@ -223,7 +225,7 @@ const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
  * (because that means errno is more detailed than gfarm_error_t).
  */
 
-struct gfarm_errno_error_map {
+static struct gfarm_errno_error_map {
 	int unix_errno;
 	gfarm_error_t gfarm_error;
 } gfarm_errno_error_map_table[] = {
@@ -341,8 +343,8 @@ struct gfarm_error_domain {
 
 #define MAX_ERROR_DOMAINS	10
 
-int gfarm_error_domain_number = 0;
-struct gfarm_error_domain gfarm_error_domains[MAX_ERROR_DOMAINS];
+static int gfarm_error_domain_number = 0;
+static struct gfarm_error_domain gfarm_error_domains[MAX_ERROR_DOMAINS];
 
 gfarm_error_t
 gfarm_error_domain_alloc(int min, int max,
@@ -438,7 +440,7 @@ gfarm_error_string(gfarm_error_t error)
 # define ERRNO_NUMBER 256 /* XXX */
 #endif
 
-struct gfarm_error_domain *gfarm_errno_domain = NULL;
+static struct gfarm_error_domain *gfarm_errno_domain = NULL;
 
 const char *
 gfarm_errno_to_string(void *cookie, int err)
@@ -446,7 +448,7 @@ gfarm_errno_to_string(void *cookie, int err)
 	return (strerror(err));
 }
 
-void
+static void
 gfarm_errno_to_error_initialize(void)
 {
 	gfarm_error_t e;
@@ -476,15 +478,18 @@ gfarm_errno_to_error_initialize(void)
 gfarm_error_t
 gfarm_errno_to_error(int no)
 {
-	if (gfarm_errno_domain == NULL)
-		gfarm_errno_to_error_initialize();
+	static pthread_once_t gfarm_errno_to_error_initialized =
+	    PTHREAD_ONCE_INIT;
+
+	pthread_once(&gfarm_errno_to_error_initialized,
+	    gfarm_errno_to_error_initialize);
+
 	return (gfarm_error_domain_map(gfarm_errno_domain, no));
 }
 
-int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
-int gfarm_error_to_errno_initialized = 0;
+static int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
 
-void
+static void
 gfarm_error_to_errno_initialize(void)
 {
 	int i;
@@ -499,8 +504,11 @@ gfarm_error_to_errno_initialize(void)
 int
 gfarm_error_to_errno(gfarm_error_t error)
 {
-	if (!gfarm_error_to_errno_initialized)
-		gfarm_error_to_errno_initialize();
+	static pthread_once_t gfarm_error_to_errno_initialized =
+	    PTHREAD_ONCE_INIT;
+
+	pthread_once(&gfarm_error_to_errno_initialized,
+	    gfarm_error_to_errno_initialize);
 	if (error < GFARM_ERR_NUMBER)
 		return (gfarm_error_to_errno_map[error]);
 	return (EINVAL);

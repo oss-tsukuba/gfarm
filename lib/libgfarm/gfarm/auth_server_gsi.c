@@ -39,7 +39,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 {
 	int fd = gfp_xdr_fd(conn);
 	gfarm_error_t e, e2;
-	char *global_username;
+	char *global_username, *aux = NULL;
 	OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
@@ -170,64 +170,50 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
-
-		static char method_prefix[] = "auth=";
-		static char user_prefix[] = " local_user=";
-		static char dnb[] = " DN=\"";
-		static char dne[] = "\"";
-		char *aux = malloc(strlen(global_username) + 1 +
-		    strlen(hostname) + 1);
-		char *msg = malloc(sizeof(method_prefix) - 1 +
-		    strlen(auth_method_name) + sizeof(user_prefix) - 1 +
-		    strlen(userinfo->authData.userAuth.localName) +
-		    sizeof(dnb)-1 + strlen(userinfo->distName) + sizeof(dne));
-
-		if (aux == NULL || msg == NULL) {
+		sprintf(msg, "%s%s%s%s%s%s%s",
+		    method_prefix, auth_method_name,
+		    user_prefix, userinfo->authData.userAuth.localName,
+		    dnb, userinfo->distName, dne);
+		gflog_notice(
+		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
+		    global_username, hostname,
+		    auth_method_name,
+		    userinfo->authData.userAuth.localName,
+		    userinfo->distName, dne);
+		if (switch_to && (aux = malloc(strlen(global_username) + 1 +
+		    strlen(hostname) + 1)) == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
-			if (aux != NULL)
-				free(aux);
-			if (msg != NULL)
-				free(msg);
-			gflog_error("authorize_gsi: %s",
+			gflog_error("(%s@%s) authorize_gsi: %s",
+			    global_username, hostname,
 			    gfarm_error_string(e));
-		} else {
-			sprintf(aux, "%s@%s", global_username, hostname);
-			gflog_set_auxiliary_info(aux);
-
-			sprintf(msg, "%s%s%s%s%s%s%s",
-			    method_prefix, auth_method_name,
-			    user_prefix, userinfo->authData.userAuth.localName,
-			    dnb, userinfo->distName, dne);
-			gflog_notice("authenticated: %s", msg);
-			free(msg);
-
-			if (!switch_to) {
-				gflog_set_auxiliary_info(NULL);
-				free(aux);
-			}
 		}
 	}
 
 	gfp_xdr_set_secsession(conn, session, GSS_C_NO_CREDENTIAL);
 	e2 = gfp_xdr_send(conn, "i", error);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: send reply: %s",
-		    gfarm_error_string(e2));
+		gflog_error("(%s@%s) authorize_gsi: send reply: %s",
+		    global_username, hostname, gfarm_error_string(e2));
 	} else if ((e2 = gfp_xdr_flush(conn)) != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: completion: %s",
-		    gfarm_error_string(e2));
+		gflog_error("(%s@%s) authorize_gsi: completion: %s",
+		    global_username, hostname, gfarm_error_string(e2));
 	}
 
 	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
 		if (global_username != NULL)
 			free(global_username);
+		if (aux != NULL)
+			free(aux);
 		gfp_xdr_reset_secsession(conn);
 		gfp_xdr_set_fd(conn, fd);
 		return (e);
 	}
 
 	if (switch_to) {
+		sprintf(aux, "%s@%s", global_username, hostname);
+		gflog_set_auxiliary_info(aux);
+
 		/*
 		 * because the name returned by getlogin() is
 		 * an attribute of a session on 4.4BSD derived OSs,

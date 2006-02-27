@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <pthread.h>
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,6 +12,7 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include "gfutil.h"
 #include "liberror.h"
 #include "hostspec.h"
 #include "param.h"
@@ -50,18 +52,13 @@ struct gfarm_param_config *gfarm_sockopt_listener_config_list = NULL;
 struct gfarm_param_config **gfarm_sockopt_listener_config_last =
     &gfarm_sockopt_listener_config_list;
 
-gfarm_error_t
-gfarm_sockopt_initialize(void)
+static void
+sockopt_initialize(void)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i;
 	struct gfarm_param_type *type;
 	struct gfarm_sockopt_info *info;
 	struct protoent *proto;
-	static int initialized = 0;
-
-	if (initialized)
-		return (GFARM_ERR_NO_ERROR);
 
 	for (i = 0; i < NSOCKOPTS; i++) {
 		type = &gfarm_sockopt_type_table[i];
@@ -69,13 +66,20 @@ gfarm_sockopt_initialize(void)
 		if (info->proto != NULL) {
 			proto = getprotobyname(info->proto);
 			if (proto == NULL)
-				e = GFARM_ERRMSG_GETPROTOBYNAME_FAILED;
-			else
-				info->level = proto->p_proto;
+				gflog_fatal("getprotobyname(%s) failed",
+				    info->proto);
+			info->level = proto->p_proto;
 		}
 	}
-	initialized = 1;
-	return (e);
+}
+
+gfarm_error_t
+gfarm_sockopt_initialize(void)
+{
+	static pthread_once_t initialized = PTHREAD_ONCE_INIT;
+
+	pthread_once(&initialized, sockopt_initialize);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

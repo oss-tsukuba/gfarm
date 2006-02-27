@@ -1,4 +1,6 @@
+#include <pthread.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
@@ -9,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pwd.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
@@ -75,21 +78,17 @@ write_hex(FILE *fp, void *buffer, size_t length)
 		fprintf(fp, "%02x", p[i]);
 }
 
-void
-gfarm_random_initialize(void)
+static void
+random_initialize(void)
 {
-	static int rand_initialized = 0;
 	struct timeval t;
 
-	if (!rand_initialized) {
-		rand_initialized = 1;
-		gettimeofday(&t, NULL);
+	gettimeofday(&t, NULL);
 #ifdef HAVE_RANDOM
-		srandom(t.tv_sec + t.tv_usec);
+	srandom(t.tv_sec + t.tv_usec + getpid());
 #else
-		srand(t.tv_sec + t.tv_usec);
+	srand(t.tv_sec + t.tv_usec + getpid());
 #endif
-	}
 }
 
 void
@@ -98,6 +97,7 @@ gfarm_auth_random(void *buffer, size_t length)
 	unsigned char *p = buffer;
 	size_t i = 0;
 	int fd, rv;
+	static pthread_once_t rand_initialized = PTHREAD_ONCE_INIT;
 
 	/*
 	 * do not use fopen(3) here,
@@ -116,7 +116,7 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 
 	/* XXX - this makes things too weak */
-	gfarm_random_initialize();
+	pthread_once(&rand_initialized, random_initialize);
 	for (; i < length; i++) {
 #ifdef HAVE_RANDOM
 		p[i] = random();
@@ -126,48 +126,83 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 }
 
+/*
+ * We switch the user's privilege to read ~/.gfarm_shared_key.
+ *
+ * NOTE: reading this file with root privilege may not work,
+ *	if home directory is NFS mounted and root access for
+ *	the home directory partition is not permitted.
+ *
+ * Do not leave the user privilege switched here, even in the switch_to case,
+ * because it is necessary to switch back to the original user privilege when
+ * gfarm_auth_sharedsecret fails.
+ */
 gfarm_error_t
 gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
-			  char *home, int create, int period)
+	char *home, struct passwd *pwd, int create, int period)
 {
+	gfarm_error_t e;
 	FILE *fp;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
 	char *keyfilename;
 	unsigned int expire;
 
+	static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
+	uid_t o_uid;
+	gid_t o_gid;
+
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	o_uid = o_gid = 0;
+#endif
 	keyfilename = malloc(strlen(home) + sizeof(keyfile_basename));
 	if (keyfilename == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(keyfilename, home);
 	strcat(keyfilename, keyfile_basename);
+
+	if (pwd != NULL) {
+		pthread_mutex_lock(&privilege_mutex);
+		o_gid = getegid();
+		o_uid = geteuid();
+		seteuid(0); /* recover root privilege */
+		initgroups(pwd->pw_name, pwd->pw_gid);
+		setegid(pwd->pw_gid);
+		seteuid(pwd->pw_uid);
+	}
+
 	if ((fp = fopen(keyfilename, "r+")) != NULL) {
 		if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
 			fclose(fp);
 			free(keyfilename);
-			return (GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD);
+			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD;
+			goto finish;
 		}
 		expire = ntohl(expire);
 		if (skip_space(fp) ||
 		    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN)) {
 			fclose(fp);
 			free(keyfilename);
-			return (GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD);
+			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD;
+			goto finish;
 		}
 	}
 	if (fp == NULL) {
 		if (create == GFARM_AUTH_SHARED_KEY_GET) {
 			free(keyfilename);
-			return (GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST);
+			e = GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST;
+			goto finish;
 		}
 		fp = fopen(keyfilename, "w+");
 		if (fp == NULL) {
+			e = gfarm_errno_to_error(errno);
 			free(keyfilename);
-			return (gfarm_errno_to_error(errno));
+			goto finish;
 		}
 		if (chmod(keyfilename, 0600) == -1) {
+			e = gfarm_errno_to_error(errno);
 			fclose(fp);
 			free(keyfilename);
-			return (gfarm_errno_to_error(errno));
+			goto finish;
 		}
 		expire = 0; /* force to regenerate key */
 	}
@@ -176,12 +211,14 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		if (create == GFARM_AUTH_SHARED_KEY_GET) {
 			fclose(fp);
 			free(keyfilename);
-			return (GFARM_ERR_EXPIRED);
+			e = GFARM_ERR_EXPIRED;
+			goto finish;
 		}
 		if (fseek(fp, 0L, SEEK_SET) == -1) {
+			e = gfarm_errno_to_error(errno);
 			fclose(fp);
 			free(keyfilename);
-			return (gfarm_errno_to_error(errno));
+			goto finish;
 		}
 		gfarm_auth_random(shared_key, GFARM_AUTH_SHARED_KEY_LEN);
 		if (period <= 0)
@@ -197,7 +234,16 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	fclose(fp);
 	free(keyfilename);
 	*expirep = expire;
-	return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_NO_ERROR;
+finish:
+	if (pwd != NULL) {
+		seteuid(0); /* recover root privilege */
+		setgroups(1, &o_gid); /* abandon group privileges */
+		setegid(o_gid);
+		seteuid(o_uid); /* suppress root privilege, if possible */
+		pthread_mutex_unlock(&privilege_mutex);
+	}
+	return (e);
 }
 
 void

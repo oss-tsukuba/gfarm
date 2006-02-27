@@ -85,7 +85,8 @@ OBJS = \
 #	gfs_dir.lo
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+CFLAGS = $(pthread_includes) \
+	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm.conf"'
 

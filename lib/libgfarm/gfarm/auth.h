@@ -40,12 +40,12 @@ enum gfarm_auth_cred_type {
  * 	note that this is too weak authentication for the Internet.
  */
 
-void gfarm_random_initialize(void);
 void gfarm_auth_random(void *, size_t);
 void gfarm_auth_sharedsecret_response_data(char *, char *, char *);
 
+struct passwd;
 gfarm_error_t gfarm_auth_shared_key_get(unsigned int *, char *,
-	char *, int, int);
+	char *, struct passwd *, int, int);
 #define GFARM_AUTH_SHARED_KEY_GET		0
 #define GFARM_AUTH_SHARED_KEY_CREATE		1
 #define GFARM_AUTH_SHARED_KEY_CREATE_FORCE	2
@@ -85,7 +85,8 @@ gfarm_error_t gfarm_auth_request_multiplexed(struct gfarm_eventqueue *,
 gfarm_error_t gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *,
 	enum gfarm_auth_method *);
 gfarm_error_t gfarm_authorize(struct gfp_xdr *, int, char *,
-	enum gfarm_auth_id_type *, char **, char **, enum gfarm_auth_method *);
+	char *, struct sockaddr *, 
+	enum gfarm_auth_id_type *, char **, enum gfarm_auth_method *);
 
 /* auth_config */
 struct gfarm_hostspec;

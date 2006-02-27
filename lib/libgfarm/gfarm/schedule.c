@@ -8,7 +8,6 @@
 #include "gfevent.h"
 #include "hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
-#include "auth.h" /* XXX gfarm_random_initialize() */
 #include "config.h"
 #include "gfs_client.h"
 
