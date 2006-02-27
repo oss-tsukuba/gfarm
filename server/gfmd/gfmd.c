@@ -32,6 +32,7 @@
 #include "gfutil.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
+#include "hostspec.h"
 #include "sockopt.h"
 #include "auth.h"
 #include "config.h"
@@ -174,14 +175,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_OPEN_ROOT:
 		e = gfm_server_open_root(peer, from_client, skip);
 		break;
+	case GFM_PROTO_OPEN_PARENT:
+		e = gfm_server_open_parent(peer, from_client, skip);
+		break;
 	case GFM_PROTO_CLOSE:
 		e = gfm_server_close(peer, from_client, skip);
-		break;
-	case GFM_PROTO_CLOSE_READ:
-		e = gfm_server_close_read(peer, from_client, skip);
-		break;
-	case GFM_PROTO_CLOSE_WRITE:
-		e = gfm_server_close_write(peer, from_client, skip);
 		break;
 	case GFM_PROTO_VERIFY_TYPE:
 		e = gfm_server_verify_type(peer, from_client, skip);
@@ -217,9 +215,6 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REMOVE:
 		e = gfm_server_remove(peer, from_client, skip);
 		break;
-	case GFM_PROTO_RMDIR:
-		e = gfm_server_rmdir(peer, from_client, skip);
-		break;
 	case GFM_PROTO_RENAME:
 		e = gfm_server_rename(peer, from_client, skip);
 		break;
@@ -246,6 +241,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_REOPEN:
 		e = gfm_server_reopen(peer, from_client, skip);
+		break;
+	case GFM_PROTO_CLOSE_READ:
+		e = gfm_server_close_read(peer, from_client, skip);
+		break;
+	case GFM_PROTO_CLOSE_WRITE:
+		e = gfm_server_close_write(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
 		e = gfm_server_lock(peer, from_client, skip);
@@ -439,13 +440,35 @@ void *
 protocol_main(void *arg)
 {
 	gfarm_error_t e;
+	int rv;
 	struct peer *peer = arg;
 	enum gfarm_auth_id_type id_type;
 	char *username, *hostname;
 	enum gfarm_auth_method auth_method;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	char addr_string[GFARM_SOCKADDR_STRLEN];
 
+	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
+	if (rv == -1) {
+		gflog_error("authorize: getpeername: %s", strerror(errno));
+		return (NULL);
+	}
+	e = gfarm_sockaddr_to_name(&addr, &hostname);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfarm_sockaddr_to_string(&addr,
+		    addr_string, GFARM_SOCKADDR_STRLEN);
+		gflog_warning("%s: %s", gfarm_error_string(e), addr_string);
+		hostname = strdup(addr_string);
+		if (hostname == NULL) {
+			gflog_warning("%s: %s", addr_string,
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (NULL);
+		}
+	}
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
-	    &id_type, &username, &hostname, &auth_method);
+	    hostname, &addr,
+	    &id_type, &username, &auth_method);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning("authorize: %s", gfarm_error_string(e));
 	} else {
