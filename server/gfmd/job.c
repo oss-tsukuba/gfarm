@@ -174,7 +174,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	struct gfp_xdr *client = peer_get_conn(peer);
 	char *user = peer_get_username(peer);
 	int i, eof;
-	gfarm_int32_t flags, total_nodes, argc, job_id, error;
+	gfarm_int32_t flags, total_nodes, argc, error, job_id = 0;
 	struct gfarm_job_info *info;
 
 	info = malloc(sizeof(*info));
