@@ -22,7 +22,7 @@ COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
 	-I$(top_builddir)/include -I$(top_srcdir)/include
 COMMON_LDFLAGS = $(largefile_ldflags)
 GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
-	$(globus_gssapi_libs) $(metadb_client_libs) $(openssl_libs)
+	$(globus_gssapi_libs) $(openssl_libs)
 
 INC_SRCDIR = $(top_srcdir)/include/gfarm
 INC_BUILDDIR = $(top_builddir)/include/gfarm
