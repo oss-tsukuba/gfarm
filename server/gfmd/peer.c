@@ -154,7 +154,8 @@ peer_free(struct peer *peer)
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
-		process_del_ref(peer->process); peer->process = NULL;
+		process_detach_peer(peer->process, peer);
+		peer->process = NULL;
 	}
 
 	peer->user = NULL;
@@ -250,7 +251,16 @@ peer_set_process(struct peer *peer, struct process *process)
 	if (peer->process != NULL)
 		gflog_fatal("peer_set_process: overriding process");
 	peer->process = process;
-	process_add_ref(process);
+	process_attach_peer(process, peer);
+}
+
+void
+peer_unset_process(struct peer *peer)
+{
+	if (peer->process == NULL)
+		gflog_fatal("peer_unset_process: already unset");
+	process_detach_peer(peer->process, peer);
+	peer->process = NULL;
 }
 
 void
@@ -322,6 +332,22 @@ peer_fdstack_top(struct peer *peer, gfarm_int32_t *fdp)
 	if ((process = peer_get_process(peer)) == NULL)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	fd = peer->u.client.fd_current;;
+	if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	*fdp = fd;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+peer_fdstack_next(struct peer *peer, gfarm_int32_t *fdp)
+{
+	gfarm_error_t e;
+	struct process *process;
+	int fd;
+
+	if ((process = peer_get_process(peer)) == NULL)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	fd = peer->u.client.fd_saved;
 	if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
 		return (e);
 	*fdp = fd;

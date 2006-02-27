@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
@@ -16,17 +17,15 @@
 #include "process.h"
 #include "id_table.h"
 
-#define FILETAB_INITIAL	16
-#define FILETAB_DELTA	16
-#define FILETAB_MAX	256
+#define FILETAB_INITIAL		16
+#define FILETAB_MULTIPLY	2
+#define FILETAB_MAX		256
 
 struct process {
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	gfarm_pid_t pid;
 	struct user *user;
 	int refcount;
-
-	struct file_opening *cwd;
 
 	int nfiles;
 	struct file_opening **filetab;
@@ -38,28 +37,40 @@ static struct gfarm_id_table_entry_ops process_id_table_ops = {
 };
 
 static struct file_opening *
-file_opening_alloc(struct inode *file, struct host *spool_host, int flag)
+file_opening_alloc(struct inode *inode,
+	struct peer *peer, struct host *spool_host, int flag)
 {
 	struct file_opening *fo = malloc(sizeof(*fo));
 
 	if (fo == NULL)
 		return (NULL);
-	fo->inode = file;
-	fo->spool_host = spool_host;
+	fo->inode = inode;
 	fo->flag = flag;
+	fo->opener = peer;
 
-	/* for directory */
-	fo->u.d.offset = 0;
-	fo->u.d.key = NULL;
+	if (inode_is_file(inode)) {
+		if (spool_host == NULL) {
+			fo->u.f.spool_opener = NULL;
+			fo->u.f.spool_host = NULL;
+		} else {
+			fo->u.f.spool_opener = peer;
+			fo->u.f.spool_host = spool_host;
+		}
+	} else { /* for directory */
+		fo->u.d.offset = 0;
+		fo->u.d.key = NULL;
+	}
 
 	return (fo);
 }
 
 void
-file_opening_free(struct file_opening *fo)
+file_opening_free(struct file_opening *fo, int is_file)
 {
-	if (fo->u.d.key != NULL)
-		free(fo->u.d.key);
+	if (!is_file) { /* i.e. is a directory */
+		if (fo->u.d.key != NULL)
+			free(fo->u.d.key);
+	}
 	free(fo);
 }
 
@@ -68,7 +79,6 @@ process_alloc(struct user *user,
 	gfarm_int32_t keytype, size_t keylen, char *sharedkey,
 	struct process **processp, gfarm_pid_t *pidp)
 {
-	gfarm_pid_t pid;
 	struct process *process;
 	struct file_opening **filetab;
 	int fd;
@@ -95,7 +105,6 @@ process_alloc(struct user *user,
 	process->pid = pid32;
 	process->user = user;
 	process->refcount = 0;
-	process->cwd = NULL;
 	process->nfiles = FILETAB_INITIAL;
 	process->filetab = filetab;
 	for (fd = 0; fd < FILETAB_INITIAL; fd++)
@@ -106,33 +115,56 @@ process_alloc(struct user *user,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-void
+static void
 process_add_ref(struct process *process)
 {
 	++process->refcount;
 }
 
-void
+static int
 process_del_ref(struct process *process)
 {
-	int fd;
+	int fd, is_file;
 	struct file_opening *fo;
 
-	if (--process->refcount <= 0) {
-		fo = process->cwd;
-		inode_close_read(fo, NULL);
-		file_opening_free(fo);
+	if (--process->refcount > 0)
+		return (1); /* still referenced */
 
-		for (fd = 0; fd < process->nfiles; fd++) {
-			fo = process->filetab[fd];
-			if (fo != NULL) {
-				inode_close_read(fo, NULL);
-				file_opening_free(fo);
-			}
+	for (fd = 0; fd < process->nfiles; fd++) {
+		fo = process->filetab[fd];
+		if (fo != NULL) {
+			is_file = inode_is_file(fo->inode);
+			inode_close_read(fo, NULL);
+			file_opening_free(fo, is_file);
 		}
-		free(process->filetab);
+	}
+	free(process->filetab);
+	gfarm_id_free(process_id_table, (gfarm_int32_t)process->pid);
 
-		gfarm_id_free(process_id_table, (gfarm_int32_t)process->pid);
+	return (0); /* process freed */
+}
+
+void
+process_attach_peer(struct process *process, struct peer *peer)
+{
+	process_add_ref(process);
+	/* We are currently not using peer here */
+}
+
+void
+process_detach_peer(struct process *process, struct peer *peer)
+{
+	int fd;
+
+	if (!process_del_ref(process)) /* process freed */
+		return;
+
+	for (fd = 0; fd < process->nfiles; fd++) {
+		/*
+		 * XXX This shouldn't be done,
+		 * if we'll support gfmd reconnection.
+		 */
+		process_close_file(process, peer, fd);
 	}
 }
 
@@ -140,33 +172,6 @@ struct user *
 process_get_user(struct process *process)
 {
 	return (process->user);
-}
-
-struct inode *
-process_get_cwd(struct process *process)
-{
-	if (process->cwd == NULL)
-		return (NULL);
-	return (process->cwd->inode);
-}
-
-gfarm_error_t
-process_set_cwd(struct process *process, struct inode *cwd)
-{
-	struct file_opening *fo;
-
-	if (!GFARM_S_ISDIR(inode_get_mode(cwd)))
-		return (GFARM_ERR_NOT_A_DIRECTORY);
-	fo = file_opening_alloc(cwd, NULL, GFARM_FILE_RDONLY);
-	if (fo == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	inode_open(fo);
-	if (process->cwd != NULL) {
-		inode_close_read(process->cwd, NULL);
-		file_opening_free(process->cwd);
-	}
-	process->cwd = fo;
-	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -183,27 +188,25 @@ process_verify_fd(struct process *process, int fd)
 }
 
 gfarm_error_t
-process_get_file_opening(struct process *process, struct host *spool_host,
-	int fd, struct file_opening **fop)
+process_get_file_opening(struct process *process, int fd,
+	struct file_opening **fop)
 {
 	struct file_opening *fo;
 
 	if (fd < 0 || fd >= process->nfiles)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	fo = process->filetab[fd];
-	if (fo == NULL || spool_host != fo->spool_host)
+	if (fo == NULL)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	*fop = fo;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-process_get_file_inode(struct process *process, struct host *spool_host,
-	int fd, struct inode **inp)
+process_get_file_inode(struct process *process,	int fd, struct inode **inp)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -212,52 +215,61 @@ process_get_file_inode(struct process *process, struct host *spool_host,
 }
 
 gfarm_error_t
-process_get_file_writable(struct process *process, struct host *spool_host,
-	int fd)
+process_get_file_writable(struct process *process, struct peer *peer, int fd)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	switch (fo->flag & GFARM_FILE_ACCMODE) {
-	case GFARM_FILE_RDONLY:	return (GFARM_ERR_PERMISSION_DENIED);
-	case GFARM_FILE_WRONLY:	
-	case GFARM_FILE_RDWR:	return (GFARM_ERR_NO_ERROR);
-	default:		assert(0); return (GFARM_ERR_UNKNOWN);
+	case GFARM_FILE_RDONLY:
+		return (GFARM_ERR_PERMISSION_DENIED);
+	case GFARM_FILE_WRONLY:
+		/*FALLTHROUGH*/
+	case GFARM_FILE_RDWR:
+		if (fo->opener == peer)
+			return (GFARM_ERR_NO_ERROR);
+		if (inode_is_file(fo->inode) && fo->u.f.spool_opener == peer)
+			return (GFARM_ERR_NO_ERROR);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	default:
+		assert(0);
+		return (GFARM_ERR_UNKNOWN);
 	}
 	
 }
 
 gfarm_error_t
-process_get_dir_offset(struct process *process, struct host *spool_host,
+process_get_dir_offset(struct process *process, struct peer *peer,
 	int fd, gfarm_off_t *offsetp)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_is_dir(fo->inode))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
+	if (fo->opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	*offsetp = fo->u.d.offset;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-process_set_dir_offset(struct process *process, struct host *spool_host,
+process_set_dir_offset(struct process *process, struct peer *peer,
 	int fd, gfarm_off_t offset)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_is_dir(fo->inode))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
+	if (fo->opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	fo->u.d.offset = offset;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -268,17 +280,18 @@ process_set_dir_offset(struct process *process, struct host *spool_host,
  */
 
 gfarm_error_t
-process_get_dir_key(struct process *process, struct host *spool_host,
+process_get_dir_key(struct process *process, struct peer *peer,
 	int fd, char **keyp, int *keylenp)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_is_dir(fo->inode))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
+	if (fo->opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.d.key == NULL) {
 		*keyp = NULL;
 		*keylenp = 0;
@@ -290,18 +303,19 @@ process_get_dir_key(struct process *process, struct host *spool_host,
 }
 
 gfarm_error_t
-process_set_dir_key(struct process *process, struct host *spool_host,
+process_set_dir_key(struct process *process, struct peer *peer,
 	int fd, char *key, int keylen)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 	char *s;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_is_dir(fo->inode))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
+	if (fo->opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	s = malloc(keylen + 1);
 	if (s == NULL)
@@ -316,16 +330,17 @@ process_set_dir_key(struct process *process, struct host *spool_host,
 }
 
 gfarm_error_t
-process_clear_dir_key(struct process *process, struct host *spool_host, int fd)
+process_clear_dir_key(struct process *process, struct peer *peer, int fd)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!inode_is_dir(fo->inode))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
+	if (fo->opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	if (fo->u.d.key != NULL)
 		free(fo->u.d.key);
@@ -361,7 +376,9 @@ process_does_match(gfarm_pid_t pid,
 
 gfarm_error_t
 process_open_file(struct process *process, struct inode *file,
-	gfarm_int32_t flag, struct host *spool_host, gfarm_int32_t *fdp)
+	gfarm_int32_t flag, int created,
+	struct peer *peer, struct host *spool_host,
+	gfarm_int32_t *fdp)
 {
 	int fd, fd2;
 	struct file_opening **p, *fo;
@@ -374,15 +391,16 @@ process_open_file(struct process *process, struct inode *file,
 		if (fd >= FILETAB_MAX)
 			return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 		p = realloc(process->filetab,
-		    sizeof(*p) * (process->nfiles + FILETAB_DELTA));
+		    sizeof(*p) * (process->nfiles * FILETAB_MULTIPLY));
 		if (p == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		process->filetab = p;
-		process->nfiles += FILETAB_DELTA;
+		process->nfiles *= FILETAB_MULTIPLY;
 		for (fd2 = fd + 1; fd2 < process->nfiles; fd2++)
 			process->filetab[fd2] = NULL;
 	}
-	fo = file_opening_alloc(file, spool_host, flag);
+	fo = file_opening_alloc(file, peer, spool_host,
+	    flag | (created ? GFARM_FILE_CREATE : 0));
 	if (fo == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	process->filetab[fd] = fo;
@@ -392,34 +410,130 @@ process_open_file(struct process *process, struct inode *file,
 }
 
 gfarm_error_t
-process_close_file_read(struct process *process, struct host *spool_host,
-	int fd, struct gfarm_timespec *atime)
+process_reopen_file(struct process *process,
+	struct peer *peer, struct host *spool_host, int fd,
+	gfarm_ino_t *inump, gfarm_uint64_t *genp,
+	gfarm_int32_t *flagsp, gfarm_int32_t *to_createp)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	inode_close_read(fo, atime);
-	file_opening_free(fo);
+	if (!inode_is_file(fo->inode)) /* i.e. is a directory */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	fo->u.f.spool_opener = peer;
+	fo->u.f.spool_host = spool_host;
+	*inump = inode_get_number(fo->inode);
+	*genp = inode_get_gen(fo->inode);
+	*flagsp = fo->flag & ~GFARM_FILE_CREATE;
+	*to_createp = (fo->flag & GFARM_FILE_CREATE) ? 1 : 0;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_close_file(struct process *process, struct peer *peer, int fd)
+{
+	int is_file;
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	is_file = inode_is_file(fo->inode);
+
+	if (fo->opener != peer) {
+		if (!is_file) /* i.e. is a directory */
+			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		if (fo->u.f.spool_opener != peer)
+			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		/* i.e. REOPENed file, and I am a gfsd. */
+		if (fo->opener != NULL) {
+			/*
+			 * a gfsd is closing a REOPENed file,
+			 * but the client is still opening it.
+			 */
+			fo->u.f.spool_opener = NULL;
+			fo->u.f.spool_host = NULL;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	} else {
+		if (is_file &&
+		    fo->u.f.spool_opener != NULL &&
+		    fo->u.f.spool_opener != peer) {
+			/*
+			 * a client is closing a file,
+			 * but the gfsd is still opening it.
+			 */
+			fo->opener = NULL;
+			return (GFARM_ERR_NO_ERROR);
+			
+		}
+	}
+
+	inode_close(fo);
+	file_opening_free(fo, is_file);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-process_close_file_write(struct process *process, struct host *spool_host,
-	int fd, gfarm_off_t size,
-	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
+process_close_file_read(struct process *process, struct peer *peer, int fd,
+	struct gfarm_timespec *atime)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, spool_host, fd,
-	    &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	if (fo->opener != peer && fo->opener != NULL) {
+		/* closing REOPENed file, but the client is still opening */
+		fo->u.f.spool_opener = NULL;
+		fo->u.f.spool_host = NULL;
+		inode_update_atime(fo->inode, atime);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	inode_close_read(fo, atime);
+	file_opening_free(fo, 1);
+	process->filetab[fd] = NULL;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_close_file_write(struct process *process, struct peer *peer, int fd,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	if (fo->opener != peer && fo->opener != NULL) {
+		/* closing REOPENed file, but the client is still opening */
+		fo->u.f.spool_opener = NULL;
+		fo->u.f.spool_host = NULL;
+		inode_update_atime(fo->inode, atime);
+		inode_update_mtime(fo->inode, mtime);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
 	inode_close_write(fo, size, atime, mtime);
-	file_opening_free(fo);
+	file_opening_free(fo, 1);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -497,11 +611,17 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("process_free: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	
+	giant_lock();
+	if (peer_get_process(peer) == NULL)
+		e = GFARM_ERR_NO_SUCH_PROCESS;
+	else {
+		peer_unset_process(peer);
+		e = GFARM_ERR_NO_ERROR;
+	}
 
-	e = gfm_server_put_reply(peer, "process_free",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "process_free", e, ""));
 }

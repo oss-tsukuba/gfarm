@@ -23,6 +23,8 @@ struct host *peer_get_host(struct peer *);
 struct process;
 struct process *peer_get_process(struct peer *);
 void peer_set_process(struct peer *, struct process *);
+void peer_unset_process(struct peer *);
+
 void peer_record_protocol_error(struct peer *);
 int peer_had_protocol_error(struct peer *);
 
@@ -34,5 +36,6 @@ gfarm_error_t peer_fdstack_push(struct peer *peer, gfarm_int32_t fd);
 gfarm_error_t peer_fdstack_swap(struct peer *peer);
 gfarm_error_t peer_fdstack_pop(struct peer *peer);
 gfarm_error_t peer_fdstack_top(struct peer *peer, gfarm_int32_t *);
+gfarm_error_t peer_fdstack_next(struct peer *peer, gfarm_int32_t *);
 
 gfarm_error_t peer_schedule(struct peer *, void *(*)(void *));

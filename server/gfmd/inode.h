@@ -35,11 +35,20 @@ void inode_status_changed(struct inode *);
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
 struct inode *inode_lookup(gfarm_ino_t);
-gfarm_error_t inode_lookup_by_name(char *, struct process *, int,
+gfarm_error_t inode_lookup_root(struct process *, struct inode **);
+gfarm_error_t inode_lookup_parent(struct inode *, struct process *,
 	struct inode **);
-gfarm_error_t inode_create_file(char *, struct process *, int, gfarm_mode_t,
+gfarm_error_t inode_lookup_by_name(struct inode *, char *,
+	struct process *, int,
+	struct inode **);
+gfarm_error_t inode_create_file(struct inode *, char *,
+	struct process *, int, gfarm_mode_t,
 	struct inode **, int *);
-gfarm_error_t inode_unlink(char *, struct process *);
+gfarm_error_t inode_create_dir(struct inode *, char *,
+	struct process *, gfarm_mode_t);
+gfarm_error_t inode_create_link(struct inode *, char *,
+	struct process *, struct inode *);
+gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 
 gfarm_error_t inode_add_replica(struct inode *, struct host *);
 gfarm_error_t inode_remove_replica(struct inode *, struct host *);
@@ -47,9 +56,13 @@ gfarm_error_t inode_remove_replica(struct inode *, struct host *);
 struct file_opening;
 
 void inode_open(struct file_opening *);
+void inode_close(struct file_opening *);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *);
 void inode_close_write(struct file_opening *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
+
+void inode_update_atime(struct inode *, struct gfarm_timespec *);
+void inode_update_mtime(struct inode *, struct gfarm_timespec *);
 
 int inode_has_replica(struct inode *, struct host *);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);
