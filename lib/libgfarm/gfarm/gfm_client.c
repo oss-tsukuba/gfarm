@@ -763,6 +763,19 @@ gfm_client_open_root_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_open_parernt_request(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_OPEN_PARENT, ""));
+}
+
+gfarm_error_t
+gfm_client_open_parent_result(struct gfm_connection *gfm_server,
+	gfarm_uint32_t *fdp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "i", fdp));
+}
+
+gfarm_error_t
 gfm_client_close_request(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE, ""));
@@ -770,35 +783,6 @@ gfm_client_close_request(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_close_result(struct gfm_connection *gfm_server)
-{
-	return (gfm_client_rpc_result(gfm_server, 0, ""));
-}
-
-gfarm_error_t
-gfm_client_close_read_request(struct gfm_connection *gfm_server,
-	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec)
-{
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_READ,
-	    "li", atime_sec, atime_nsec));
-}
-
-gfarm_error_t
-gfm_client_close_read_result(struct gfm_connection *gfm_server)
-{
-	return (gfm_client_rpc_result(gfm_server, 0, ""));
-}
-
-gfarm_error_t
-gfm_client_close_write_request(struct gfm_connection *gfm_server,
-	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
-	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
-{
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_WRITE,
-	    "lili", atime_sec, atime_nsec, mtime_sec, mtime_nsec));
-}
-
-gfarm_error_t
-gfm_client_close_write_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
@@ -966,19 +950,6 @@ gfm_client_remove_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
-gfm_client_rmdir_request(struct gfm_connection *gfm_server, const char *name)
-{
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_RMDIR, "s",
-	    name));
-}
-
-gfarm_error_t
-gfm_client_rmdir_result(struct gfm_connection *gfm_server)
-{
-	return (gfm_client_rpc_result(gfm_server, 0, ""));
-}
-
-gfarm_error_t
 gfm_client_rename_request(struct gfm_connection *gfm_server,
 	const char *src_name, const char *target_name)
 {
@@ -1127,6 +1098,35 @@ gfm_client_reopen_result(struct gfm_connection *gfm_server,
 	gfarm_ino_t *ino_p, gfarm_int32_t *flagsp)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, "li", ino_p, flagsp));
+}
+
+gfarm_error_t
+gfm_client_close_read_request(struct gfm_connection *gfm_server,
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_READ,
+	    "li", atime_sec, atime_nsec));
+}
+
+gfarm_error_t
+gfm_client_close_read_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_close_write_request(struct gfm_connection *gfm_server,
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
+	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_WRITE,
+	    "lili", atime_sec, atime_nsec, mtime_sec, mtime_nsec));
+}
+
+gfarm_error_t
+gfm_client_close_write_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
 gfarm_error_t
