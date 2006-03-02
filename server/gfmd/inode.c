@@ -1,13 +1,17 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h> /* sprintf */
 #include <sys/time.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+
+#include "gfm_proto.h"
 
 #include "host.h"
 #include "user.h"
@@ -20,6 +24,8 @@
 #define INODE_TABLE_SIZE_MULTIPLY	2
 
 #define INODE_MODE_FREE			0	/* struct inode:i_mode */
+
+#define GFS_MAX_DIR_DEPTH		256
 
 struct file_copy {
 	struct file_copy *host_next;
@@ -36,7 +42,6 @@ struct inode {
 	struct gfarm_timespec i_atimespec;
 	gfarm_mode_t i_mode;
 	struct gfarm_timespec i_mtimespec;
-	gfarm_uint32_t i_ncopy;
 	struct gfarm_timespec i_ctimespec;
 
 	union {
@@ -44,16 +49,34 @@ struct inode {
 			struct inode *prev, *next;
 		} l;
 		struct inode_common_data {
-			struct file_opening openings; /* dummy header */
 			union inode_type_specific_data {
 				struct inode_file {
 					struct file_copy *copies;
+					struct checksum *cksum;
 				} f;
 				struct inode_dir {
 					Dir entries;
 				} d;
 			} s;
+			struct inode_open_state *state;
 		} c;
+	} u;
+};
+
+struct checksum {
+	char *type;
+	size_t len;
+	char sum[1];
+};
+
+struct inode_open_state {
+	struct file_opening openings; /* dummy header */
+
+	union inode_state_type_specific {
+		struct inode_state_file {
+			int writers;
+			struct file_opening *cksum_owner;
+		} f;
 	} u;
 };
 
@@ -66,6 +89,144 @@ int inode_free_list_initialized = 0;
 
 static char dot[] = ".";
 static char dotdot[] = "..";
+
+void
+inode_cksum_clear(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(inode_is_file(inode));
+	if (ios != NULL && ios->u.f.cksum_owner != NULL)
+		ios->u.f.cksum_owner = NULL;
+	if (inode->u.c.s.f.cksum != NULL) {
+		free(inode->u.c.s.f.cksum);
+		inode->u.c.s.f.cksum = NULL;
+	}
+}
+
+void
+inode_cksum_invalidate(struct file_opening *fo)
+{
+	struct inode_open_state *ios = fo->inode->u.c.state;
+	struct file_opening *o;
+
+	for (o = ios->openings.opening_next;
+	    o != &ios->openings; o = o->opening_next) {
+		if (o != fo)
+			o->flag |= GFARM_FILE_CKSUM_INVALIDATED;
+	}
+}
+
+gfarm_error_t
+inode_cksum_set(struct file_opening *fo,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t flags, struct gfarm_timespec *mtime)
+{
+	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
+	struct checksum *cs;
+
+	assert(ios != NULL);
+
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+
+	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0)
+		return (GFARM_ERR_EXPIRED);
+
+	/* writable descriptor has precedence over read-only one */
+	if (ios->u.f.cksum_owner != NULL &&
+	    (ios->u.f.cksum_owner->flag & GFARM_FILE_ACCMODE)
+		!= GFARM_FILE_RDONLY &&
+	    (fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+		return (GFARM_ERR_EXPIRED);
+
+	cs = inode->u.c.s.f.cksum;
+
+	/* reduce memory reallocation */
+	if (cs != NULL &&
+	    strcmp(cksum_type, cs->type) == 0 && cksum_len == cs->len) {
+		memcpy(cs->sum, cksum, cksum_len);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	inode_cksum_clear(inode);
+
+	cs = malloc(sizeof(*cs) - sizeof(cs->sum) + cksum_len +
+	    strlen(cksum_type) + 1);
+	if (cs == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	cs->type = cs->sum + cksum_len;
+	cs->len = cksum_len;
+	memcpy(cs->sum, cksum, cksum_len);
+	strcpy(cs->type, cksum_type);
+	inode->u.c.s.f.cksum = cs;
+
+	ios->u.f.cksum_owner = fo;
+
+	if (flags & GFM_PROTO_CKSUM_SET_FILE_MODIFIED) {
+		inode_set_mtime(inode, mtime);
+		inode_cksum_invalidate(fo);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_cksum_get(struct file_opening *fo,
+	char **cksum_typep, size_t *cksum_lenp, char **cksump,
+	gfarm_int32_t *flagsp)
+{
+	struct inode_open_state *ios = fo->inode->u.c.state;
+	struct checksum *cs;
+	gfarm_int32_t flags = 0;
+
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+
+	if (ios->u.f.writers > 1 ||
+	    (ios->u.f.writers == 1 &&
+	     (fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
+		flags |= GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED;
+	if (fo->flag & GFARM_FILE_CKSUM_INVALIDATED)
+		flags |= GFM_PROTO_CKSUM_GET_EXPIRED;
+
+	cs = fo->inode->u.c.s.f.cksum;
+	if (cs == NULL) {
+		*cksum_typep = NULL;
+		*cksum_lenp = 0;
+		*cksump = NULL;
+		*flagsp = flags;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	/* NOTE: These values shoundn't be referered without giant_lock */
+	*cksum_typep = cs->type;
+	*cksum_lenp = cs->len;
+	*cksump = cs->sum;
+	*flagsp = flags;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+struct inode_open_state *
+inode_open_state_alloc(void)
+{
+	struct inode_open_state *ios = malloc(sizeof(*ios));
+
+	if (ios == NULL)
+		return (NULL);
+	/* make circular list `openings' empty */
+	ios->openings.opening_prev =
+	ios->openings.opening_next = &ios->openings;
+	ios->u.f.writers = 0;
+	ios->u.f.cksum_owner = NULL;
+	return (ios);
+}
+
+void
+inode_open_state_free(struct inode_open_state *ios)
+{
+	assert(ios->openings.opening_next == &ios->openings);
+	free(ios);
+}
 
 void
 inode_free_list_init(void)
@@ -135,8 +296,7 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode->u.l.prev->u.l.next = inode->u.l.next;
 		inode->i_gen++;
 	}
-	inode->u.c.openings.opening_prev =
-	inode->u.c.openings.opening_next = &inode->u.c.openings;
+	inode->u.c.state = NULL;
 	return (inode);
 }
 
@@ -167,7 +327,7 @@ inode_free(struct inode *inode)
 void
 inode_remove(struct inode *inode)
 {
-	if (inode->u.c.openings.opening_next != &inode->u.c.openings)
+	if (inode->u.c.state != NULL)
 		gflog_fatal("inode_remove: still opened");
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
@@ -182,6 +342,7 @@ inode_remove(struct inode *inode)
 			cn = copy->host_next;
 			free(copy);
 		}
+		inode_cksum_clear(inode);
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
 	} else {
@@ -226,6 +387,7 @@ inode_init_file(struct inode *inode)
 	inode->i_nlink = 1;
 	inode->i_mode = GFARM_S_IFREG;
 	inode->u.c.s.f.copies = NULL;
+	inode->u.c.s.f.cksum = NULL;
 	return (1);
 }
 
@@ -357,9 +519,9 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 
 
 void
-inode_set_mtime(struct inode *inode, struct gfarm_timespec *atime)
+inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 {
-	inode->i_atimespec = *atime;
+	inode->i_atimespec = *mtime;
 }
 
 
@@ -527,7 +689,6 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	n->i_user = user;
 	n->i_group = parent->i_group;
 	n->i_size = 0;
-	n->i_ncopy = 0;
 	inode_created(n);
 	dir_entry_set_inode(entry, n);
 	inode_modified(parent);
@@ -547,6 +708,8 @@ inode_lookup_relative(struct inode *n, char *name,
 	int len = strlen(name);
 	struct inode *nn;
 
+	if (!inode_is_dir(n))
+		return (GFARM_ERR_NOT_A_DIRECTORY);
 	if ((e = inode_access(n, user, GFS_X_OK)) != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (op == INODE_LINK)
@@ -670,7 +833,6 @@ gfarm_error_t
 inode_create_link(struct inode *base, char *name,
 	struct process *process, struct inode *inode)
 {
-	struct inode *inode;
 	int created;
 	struct user *user = process_get_user(process);
 	gfarm_error_t e = inode_lookup_relative(base, name, -1,
@@ -710,7 +872,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		/*NOTREACHED*/
 		return (GFARM_ERR_UNKNOWN);
 	}
-	if (inode->u.c.openings.opening_next == &inode->u.c.openings) {
+	if (inode->u.c.state == NULL) {
 		/* no process is opening this file, just remove it */
 		inode_remove(inode);
 		return (GFARM_ERR_NO_ERROR);
@@ -755,15 +917,26 @@ inode_remove_replica(struct inode *inode, struct host *spool_host)
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
-void
+gfarm_error_t
 inode_open(struct file_opening *fo)
 {
 	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
 
-	fo->opening_prev = &inode->u.c.openings;
-	fo->opening_next = inode->u.c.openings.opening_next;
-	inode->u.c.openings.opening_next = fo;
+	if (ios == NULL) {
+		ios = inode_open_state_alloc();
+		if (ios == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		inode->u.c.state = ios;
+	}
+	if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
+		++ios->u.f.writers;
+
+	fo->opening_prev = &ios->openings;
+	fo->opening_next = ios->openings.opening_next;
+	ios->openings.opening_next = fo;
 	fo->opening_next->opening_prev = fo;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -776,14 +949,21 @@ void
 inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 {
 	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
 
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
+	if (ios->openings.opening_next == &ios->openings) { /* all closed */
+		inode_open_state_free(inode->u.c.state);
+		inode->u.c.state = NULL;
+	}
+	if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
+		--ios->u.f.writers;
+
 	if (atime != NULL)
 		inode->i_atimespec = *atime;
-	if (inode->i_nlink == 0 &&
-	    inode->u.c.openings.opening_next == &inode->u.c.openings)
-		inode_remove(inode);
+	if (inode->i_nlink == 0 && inode->u.c.state == NULL)
+		inode_remove(inode); /* clears `ios->u.f.cksum_owner' too. */
 }
 
 void
@@ -791,6 +971,11 @@ inode_close_write(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
 {
 	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
+
+	inode_cksum_invalidate(fo);
+	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
+		inode_cksum_clear(inode);
 
 	inode->i_size = size;
 	if (mtime != NULL)
@@ -823,6 +1008,83 @@ inode_has_replica(struct inode *inode, struct host *spool_host)
 			return (1);
 	}
 	return (0);
+}
+
+gfarm_error_t
+inode_getdirpath(struct inode *inode, struct process *process, char **namep)
+{
+	gfarm_error_t e;
+	struct inode *parent, *dei;
+	int created, ok;
+	struct user *user = process_get_user(process);
+	struct inode *root = inode_lookup(ROOT_INUMBER);
+	Dir dir;
+	DirEntry entry;
+	DirCursor cursor;
+	char *s, *name, *names[GFS_MAX_DIR_DEPTH];
+	int i, namelen, depth = 0, totallen = 0;
+
+	for (; inode != root; inode = parent) {
+		e = inode_lookup_relative(inode, dotdot, 1, INODE_LOOKUP,
+		    user, &parent, &created);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		e = inode_access(parent, user, GFS_R_OK|GFS_X_OK);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+
+		/* search the inode in the parent directory. */
+		/* XXX this is slow. should we create a reverse index? */
+		dir = inode_get_dir(parent);
+		ok = dir_cursor_set_pos(dir, 0, &cursor);
+		assert(ok);
+		for (;;) {
+			entry = dir_cursor_get_entry(dir, &cursor);
+			assert(entry != NULL);
+			dei = dir_entry_get_inode(entry);
+			assert(dei != NULL);
+			if (dei == inode)
+				break;
+			ok = dir_cursor_next(dir, &cursor);
+			/*
+			 * For now, we won't remove a directory
+			 * while it's opened
+			 */
+			assert(ok);
+		}
+		name = dir_entry_get_name(entry, &namelen);
+		s = malloc(namelen + 1);
+		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
+			for (i = 0; i < depth; i++)
+				free(names[i]);
+			return (GFARM_ERR_NO_MEMORY); /* directory too deep */
+		}
+		names[depth++] = s;
+		totallen += namelen;
+	}
+	if (depth == 0)
+		s = malloc(1 + 1);
+	else
+		s = malloc(totallen + depth + 1);
+	if (s == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else if (depth == 0) {
+		strcpy(s, "/");
+		*namep = s;
+		e = GFARM_ERR_NO_ERROR;
+	} else {
+		totallen = 0;
+		for (i = depth - 1; i >= 0; --i) {
+			namelen = strlen(names[i]);
+			sprintf(s + totallen, "/%s", names[i]);
+			totallen += namelen + 1;
+		}
+		*namep = s;
+		e = GFARM_ERR_NO_ERROR;
+	}
+	for (i = 0; i < depth; i++)
+		free(names[i]);
+	return (e);
 }
 
 struct host *
@@ -858,6 +1120,7 @@ inode_schedule_host_for_read(struct inode *inode, struct host *spool_host)
 struct host *
 inode_schedule_host_for_write(struct inode *inode, struct host *spool_host)
 {
+	struct inode_open_state *ios = inode->u.c.state;
 	struct file_opening *fo;
 	struct host *h = NULL;
 	double loadav, best_loadav;
@@ -868,10 +1131,12 @@ inode_schedule_host_for_write(struct inode *inode, struct host *spool_host)
 #endif
 	if (!inode_is_file(inode))
 		gflog_fatal("inode_schedule_host_for_write: not a file");
-	fo = inode->u.c.openings.opening_next;
-	if (fo == &inode->u.c.openings)
+	if (ios == NULL) /* not opened */
 		return (inode_schedule_host_for_read(inode, spool_host));
-	for (; fo != &inode->u.c.openings; fo = fo->opening_next) {
+	fo = ios->openings.opening_next;
+	if (fo == &ios->openings) /* not opened */
+		return (inode_schedule_host_for_read(inode, spool_host));
+	for (; fo != &ios->openings; fo = fo->opening_next) {
 		if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
 			return (fo->u.f.spool_host);
 		/* XXX better scheduling is needed */
