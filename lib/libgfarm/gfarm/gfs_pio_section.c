@@ -344,21 +344,19 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 static char *
 gfs_pio_view_section_chmod(GFS_File gf, gfarm_mode_t mode)
 {
-        char *e;
-        char *changed_section;
-        struct gfs_file_section_context *vc = gf->view_context;
+	char *e, *changed_section;
+	struct gfs_file_section_context *vc = gf->view_context;
 
-        e = gfs_chmod_meta_spool(&gf->pi, mode, &changed_section);
-        if (e != NULL) {
-		if (changed_section != NULL)
-			free(changed_section);
-		return (e);
-	}	
+	e = gfs_chmod_internal(&gf->pi, mode, &changed_section);
 	if (changed_section != NULL) {
-		free(vc->section);
-		vc->section = changed_section;
-	}	
-        return (NULL);
+		if (e == NULL) {
+			free(vc->section);
+			vc->section = changed_section;
+		}
+		else
+			free(changed_section);
+	}
+	return (e);
 }
 
 struct gfs_pio_ops gfs_pio_view_section_ops = {
@@ -372,7 +370,6 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_stat,
 	gfs_pio_view_section_chmod
 };
-
 
 static char *
 replicate_section_to_local(GFS_File gf, char *section,

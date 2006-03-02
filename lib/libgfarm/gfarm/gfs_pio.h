@@ -59,6 +59,7 @@ char *gfs_check_section_checksum_unknown_by_finfo(
 char *gfs_unlink_section_internal(const char *, const char *);
 char *gfs_unlink_every_other_replicas(
 	const char *, const char *, const char *);
+char *gfs_chmod_internal(struct gfarm_path_info *, gfarm_mode_t, char **);
 
 char *gfs_pio_set_view_default(GFS_File);
 char *gfs_pio_set_view_global(GFS_File, int);
@@ -70,6 +71,12 @@ struct gfs_connection;
 char *gfs_pio_local_mkdir_parent_canonical_path(char *);
 char *gfs_pio_remote_mkdir_parent_canonical_path(
 	struct gfs_connection *, char *);
+
+char *foreach_copy(char *(*)(struct gfarm_file_section_copy_info *, void *),
+	const char *, const char *, void *, int *);
+char *foreach_section(char *(*)(struct gfarm_file_section_info *, void *),
+	const char *, void *,
+	char *(*)(struct gfarm_file_section_info *, void *));
 
 struct gfs_storage_ops {
 	char *(*storage_close)(GFS_File);
