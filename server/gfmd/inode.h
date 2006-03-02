@@ -55,7 +55,7 @@ gfarm_error_t inode_remove_replica(struct inode *, struct host *);
 
 struct file_opening;
 
-void inode_open(struct file_opening *);
+gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *);
 void inode_close_write(struct file_opening *,
@@ -64,5 +64,12 @@ void inode_close_write(struct file_opening *,
 void inode_update_atime(struct inode *, struct gfarm_timespec *);
 void inode_update_mtime(struct inode *, struct gfarm_timespec *);
 
+gfarm_error_t inode_cksum_set(struct file_opening *,
+	const char *, size_t, const char *,
+	gfarm_int32_t, struct gfarm_timespec *);
+gfarm_error_t inode_cksum_get(struct file_opening *,
+	char **, size_t *, char **, gfarm_int32_t *);
+
 int inode_has_replica(struct inode *, struct host *);
+gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);

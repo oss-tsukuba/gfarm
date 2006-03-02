@@ -222,22 +222,14 @@ process_get_file_writable(struct process *process, struct peer *peer, int fd)
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	switch (fo->flag & GFARM_FILE_ACCMODE) {
-	case GFARM_FILE_RDONLY:
+	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
 		return (GFARM_ERR_PERMISSION_DENIED);
-	case GFARM_FILE_WRONLY:
-		/*FALLTHROUGH*/
-	case GFARM_FILE_RDWR:
-		if (fo->opener == peer)
-			return (GFARM_ERR_NO_ERROR);
-		if (inode_is_file(fo->inode) && fo->u.f.spool_opener == peer)
-			return (GFARM_ERR_NO_ERROR);
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	default:
-		assert(0);
-		return (GFARM_ERR_UNKNOWN);
-	}
-	
+
+	if (fo->opener == peer)
+		return (GFARM_ERR_NO_ERROR);
+	if (inode_is_file(fo->inode) && fo->u.f.spool_opener == peer)
+		return (GFARM_ERR_NO_ERROR);
+	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
 
 gfarm_error_t
@@ -380,6 +372,7 @@ process_open_file(struct process *process, struct inode *file,
 	struct peer *peer, struct host *spool_host,
 	gfarm_int32_t *fdp)
 {
+	gfarm_error_t e;
 	int fd, fd2;
 	struct file_opening **p, *fo;
 
@@ -403,8 +396,13 @@ process_open_file(struct process *process, struct inode *file,
 	    flag | (created ? GFARM_FILE_CREATE : 0));
 	if (fo == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	e = inode_open(fo);
+	if (e != GFARM_ERR_NO_ERROR) {
+		file_opening_free(fo, inode_is_file(file));
+		return (e);
+	}
 	process->filetab[fd] = fo;
-	inode_open(fo);
+	
 	*fdp = fd;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -522,6 +520,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != peer)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
@@ -536,6 +536,44 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	file_opening_free(fo, 1);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_cksum_set(struct process *process, struct peer *peer, int fd,
+	const char *cksum_type, size_t cksum_len, const char *cksum,
+	gfarm_int32_t flags, struct gfarm_timespec *mtime)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener != peer)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+
+	return (inode_cksum_set(fo, cksum_type, cksum_len, cksum,
+	    flags, mtime));
+}
+
+gfarm_error_t
+process_cksum_get(struct process *process, struct peer *peer, int fd,
+	char **cksum_typep, size_t *cksum_lenp, char **cksump,
+	gfarm_int32_t *flagsp)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!inode_is_file(fo->inode))
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	return (inode_cksum_get(fo, cksum_typep, cksum_lenp, cksump,
+	    flagsp));
 }
 
 /*

@@ -78,6 +78,12 @@ gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
 
+gfarm_error_t process_cksum_set(struct process *, struct peer *, int ,
+	const char *, size_t, const char *,
+	gfarm_int32_t, struct gfarm_timespec *);
+gfarm_error_t process_cksum_get(struct process *, struct peer *, int,
+	char **, size_t *, char **, gfarm_int32_t *);
+
 struct peer;
 gfarm_error_t gfm_server_process_alloc(struct peer *, int, int);
 gfarm_error_t gfm_server_process_free(struct peer *, int, int);

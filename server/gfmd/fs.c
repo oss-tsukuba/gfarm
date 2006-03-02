@@ -128,7 +128,7 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (flag & GFARM_FILE_CREATE)
+	if (flag & ~GFARM_FILE_USER_MODE)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	switch (flag & GFARM_FILE_ACCMODE) {
 	case GFARM_FILE_RDONLY:	op = GFS_R_OK; break;
@@ -137,7 +137,6 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	default:
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	/* XXX FIXME verify all bits of the flags */
 
 	if (to_create) {
 		if (mode & ~GFARM_S_ALLPERM)
@@ -541,29 +540,83 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
+	gfarm_int32_t fd;
+	gfarm_int32_t cksum_len = 0, flags = 0;
+	struct host *spool_host = NULL;
+	struct process *process;
+	char *cksum_type = NULL, *cksumbuf = NULL, *cksum;
+	int alloced = 0;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("cksum_get: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "cksum_get",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_cksum_get(process, peer, fd,
+	    &cksum_type, &cksum_len, &cksum, &flags)) != GFARM_ERR_NO_ERROR) {
+		/* We cannot access cksum_type and cksum outside of giant */
+		if (cksum_type == NULL) {
+			cksum_type = "";
+			cksumbuf = "";
+		} else {
+			alloced = 1;
+			cksum_type = strdup(cksum_type);
+			cksumbuf = malloc(cksum_len);
+			memcpy(cksumbuf, cksum, cksum_len);
+		}
+	}
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, "cksum_get", e, "sbi",
+	    cksum_type, cksum_len, cksumbuf,  flags);
+	if (e == GFARM_ERR_NO_ERROR && alloced) {
+		free(cksum_type);
+		free(cksumbuf);
+	}
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	gfarm_int32_t fd;
+	gfarm_int32_t cksum_len, flags;
+	struct host *spool_host = NULL;
+	struct process *process;
+	char *cksum_type;
+	char cksum[GFM_PROTO_CKSUM_MAXLEN];
+	struct gfarm_timespec mtime;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("cksum_set: not implemented");
+	e = gfm_server_get_request(peer, "cksum_set", "sbili",
+	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags,
+	    &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "cksum_set",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (from_client) /* from gfsd only */
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = process_cksum_set(process, peer, fd,
+		    cksum_type, cksum_len, cksum, flags, &mtime);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "cksum_set", e, ""));
 }
 
 gfarm_error_t
@@ -772,13 +825,30 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("getdirpath: not implemented");
+	struct process *process;
+	gfarm_int32_t cfd;
+	struct inode *dir;
+	char *s;
 
-	e = gfm_server_put_reply(peer, "getdirpath",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdstack_top(peer, &cfd)) != GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, cfd, &dir)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = inode_getdirpath(dir, process, &s);
+
+	giant_unlock();
+	e = gfm_server_put_reply(peer, "getdirpath", e, "s", s);
+	if (e == GFARM_ERR_NO_ERROR)
+		free(s);
+	return (e);
 }
 
 gfarm_error_t
