@@ -631,7 +631,7 @@ gfs_server_fstat(struct xxx_connection *client)
 {
 
 	struct stat st;
-	file_offset_t size;
+	file_offset_t size = 0;
 	int fd, save_errno = 0;
 
 	gfs_server_get_request(client, "fstat", "i", &fd);
@@ -2120,7 +2120,10 @@ rpc_reply:
 void
 server(int client_fd)
 {
-	char *e, *user, *host, *aux;
+	char *e;
+#if 0
+	char *user, *host, *aux;
+#endif
 	struct xxx_connection *client;
 	int eof;
 	gfarm_int32_t request;

@@ -115,6 +115,9 @@ gfs_pio_view_section_close(GFS_File gf)
 	struct gfarm_file_section_info fi, fi1;
 	int i;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	filesize = 0;
+#endif
 	/* calculate checksum */
 	if ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0) {
 		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
