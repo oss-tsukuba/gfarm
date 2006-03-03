@@ -148,7 +148,7 @@ chmod_section(struct gfarm_file_section_info *info, void *arg)
 	int nsuccess;
 	char *e;
 
-	e = foreach_copy(
+	e = gfarm_foreach_copy(
 		chmod_copy, info->pathname, info->section, arg, &nsuccess);
 	if (nsuccess > 0)
 		e = NULL;
@@ -161,7 +161,7 @@ undo_chmod_section(struct gfarm_file_section_info *info, void *arg)
 	struct gfs_chmod_args *a = arg;
 
 	a->mode = a->o_mode;
-	foreach_copy(chmod_copy, info->pathname, info->section, a, NULL);
+	gfarm_foreach_copy(chmod_copy, info->pathname, info->section, a, NULL);
 	return (NULL);
 }
 
@@ -237,7 +237,8 @@ gfs_chmod_change_section_internal(
 	if (e != NULL)
 		goto free_o_sec;
 
-	e = foreach_copy(change_section_copy, a->path, a->o_sec, a, nsuccess);
+	e = gfarm_foreach_copy(change_section_copy,
+		a->path, a->o_sec, a, nsuccess);
 	if (*nsuccess == 0) {
 		gfarm_file_section_info_remove(a->path, a->n_sec);
 		goto free_o_sec;
@@ -286,7 +287,7 @@ gfs_chmod_internal(struct gfarm_path_info *pi, gfarm_mode_t mode, char **n_sec)
 			e = NULL;
 	}
 	else
-		e = foreach_section(
+		e = gfarm_foreach_section(
 			chmod_section, a.path, &a, undo_chmod_section);
 
 	if (e == NULL)

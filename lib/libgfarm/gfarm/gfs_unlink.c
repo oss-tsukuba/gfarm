@@ -20,7 +20,7 @@
 
 /* XXX - should provide parallel version. */
 char *
-foreach_copy(char *(*op)(struct gfarm_file_section_copy_info *, void *),
+gfarm_foreach_copy(char *(*op)(struct gfarm_file_section_copy_info *, void *),
 	const char *gfarm_file, const char *section, void *arg, int *nsuccessp)
 {
 	char *e, *e_save = NULL;
@@ -46,7 +46,7 @@ foreach_copy(char *(*op)(struct gfarm_file_section_copy_info *, void *),
 }
 
 char *
-foreach_section(char *(*op)(struct gfarm_file_section_info *, void *),
+gfarm_foreach_section(char *(*op)(struct gfarm_file_section_info *, void *),
 	const char *gfarm_file, void *arg,
 	char *(*undo_op)(struct gfarm_file_section_info *, void *))
 {
@@ -120,7 +120,7 @@ unlink_copy_remove(struct gfarm_file_section_copy_info *info, void *arg)
 static char *
 unlink_section_remove(struct gfarm_file_section_info *info, void *arg)
 {
-	foreach_copy(unlink_copy_remove,
+	gfarm_foreach_copy(unlink_copy_remove,
 		info->pathname, info->section, arg, NULL);
 	return (gfarm_file_section_info_remove(info->pathname, info->section));
 }
@@ -160,7 +160,8 @@ gfs_unlink(const char *gfarm_url)
 	if (e != NULL)
 		goto finish_free_gfarm_file;
 
-	e = foreach_section(unlink_section_remove, gfarm_file, NULL, NULL);
+	e = gfarm_foreach_section(unlink_section_remove,
+		gfarm_file, NULL, NULL);
 	e1 = gfarm_path_info_remove(gfarm_file);
 
 finish_free_gfarm_file:
@@ -179,7 +180,8 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 {
 	char *e1, *e2;
 
-	e1 = foreach_copy(unlink_copy_remove, gfarm_file, section, NULL, NULL);
+	e1 = gfarm_foreach_copy(unlink_copy_remove,
+		gfarm_file, section, NULL, NULL);
 	e2 = gfarm_file_section_info_remove(gfarm_file, section);
 
 	return (e1 != NULL ? e1 : e2);

@@ -72,9 +72,11 @@ char *gfs_pio_local_mkdir_parent_canonical_path(char *);
 char *gfs_pio_remote_mkdir_parent_canonical_path(
 	struct gfs_connection *, char *);
 
-char *foreach_copy(char *(*)(struct gfarm_file_section_copy_info *, void *),
+char *gfarm_foreach_copy(
+	char *(*)(struct gfarm_file_section_copy_info *, void *),
 	const char *, const char *, void *, int *);
-char *foreach_section(char *(*)(struct gfarm_file_section_info *, void *),
+char *gfarm_foreach_section(
+	char *(*)(struct gfarm_file_section_info *, void *),
 	const char *, void *,
 	char *(*)(struct gfarm_file_section_info *, void *));
 
