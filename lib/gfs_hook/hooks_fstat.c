@@ -6,7 +6,7 @@
 
 extern int gfarm_node;
 
-#ifndef _STAT_VER
+#ifndef FUNC__FXSTAT
 
 int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
@@ -88,7 +88,7 @@ FUNC_FSTAT(int filedes, STRUCT_STAT *buf)
     return (FUNC___FSTAT(filedes, buf));
 }
 
-#else /* defined(_STAT_VER) -- SVR4 or Linux */
+#else /* defined(FUNC__FXSTAT) -- SVR4 or Linux */
 /*
  * SVR4 and Linux do inline stat() and call _xstat/__xstat() with
  * an additional version argument.
