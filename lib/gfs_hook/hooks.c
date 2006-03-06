@@ -1756,7 +1756,11 @@ _mknod(const char *path, mode_t mode, dev_t dev)
 #endif /* __linux__ */
 
 int
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+__xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
+#else
 __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+#endif
 {
 	const char *e;
 	char *url;
@@ -1814,7 +1818,11 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 }
 
 int
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+_xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
+#else
 _xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+#endif
 {
 	_gfs_hook_debug_v(gflog_info("Hooking _xmknod"));
 	return (__xmknod(ver, path, mode, dev));
