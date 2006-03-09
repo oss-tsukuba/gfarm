@@ -211,13 +211,13 @@ host_info_get_one(
 	info->ncpu = ntohl(
 	    *((uint32_t *)PQgetvalue(res, startrow, PQfnumber(res, "ncpu"))));
 	info->nhostaliases = nhostaliases;
-	info->hostaliases = malloc(sizeof(*(info->hostaliases)) * 
+	info->hostaliases = malloc(sizeof(*(info->hostaliases)) *
 						(nhostaliases + 1));
 	for (i = 0; i < nhostaliases; i++) {
 		info->hostaliases[i] = strdup(
 			PQgetvalue(res, startrow + i,
 				   PQfnumber(res, "hostalias")));
-	}		
+	}
 	info->hostaliases[info->nhostaliases] = NULL;
 	return (NULL);
 }
@@ -242,16 +242,16 @@ host_info_get(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
-	}	
+	}
 	PQclear(res);
 
 	resc = PQexecParams(conn,
-	        csql,	    
+	        csql,
 	        nparams,
 		NULL, /* param types */
 		paramValues,
@@ -261,10 +261,10 @@ host_info_get(
 	if (PQresultStatus(resc) != PGRES_TUPLES_OK) {
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		goto clear_resc;
-	}	
+	}
 
 	resi = PQexecParams(conn,
-		isql,    
+		isql,
 		nparams, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -274,7 +274,7 @@ host_info_get(
 	if (PQresultStatus(resi) != PGRES_TUPLES_OK) {
 		e = save_pgsql_msg((PQresultErrorMessage(res)));
 		goto clear_resi;
-	}	
+	}
 	if (PQntuples(resi) == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		goto clear_resi;
@@ -289,9 +289,9 @@ host_info_get(
 						 PQfnumber(resc, "count")))),
 		info);
 
- clear_resi:      
+ clear_resi:
 	PQclear(resi);
- clear_resc:	
+ clear_resc:
 	PQclear(resc);
  end:
 	res = PQexec(conn, "END");
@@ -351,10 +351,10 @@ hostaliases_remove(const char *hostname)
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
-	}	
+	}
 	PQclear(res);
 	return (e);
 }
@@ -407,12 +407,12 @@ hostaliases_set(
 				    "duplicate key violates unique constraint")
 				    != NULL) {
 					e = GFARM_ERR_ALREADY_EXISTS;
-				}					
+				}
 				return (e);
 			}	
 			PQclear(res);
 		}
-	}	
+	}
 	return (e);
 }
 
@@ -437,12 +437,12 @@ gfarm_pgsql_host_info_set(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
-	}	
+	}
 	PQclear(res);
 
 	paramValues[0] = hostname;
@@ -467,14 +467,14 @@ gfarm_pgsql_host_info_set(
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
 		goto end;
-	}	
+	}
 	PQclear(res);
 
 	e = hostaliases_set(hostname, info);
  end:
 	if (e == NULL)
 		res = PQexec(conn, "COMMIT");
-	else 	
+	else
 		res = PQexec(conn, "ROLLBACK");
 	PQclear(res);
 
@@ -502,12 +502,12 @@ gfarm_pgsql_host_info_replace(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
-	}	
+	}
 	PQclear(res);
 
 	paramValues[0] = hostname;
@@ -527,7 +527,7 @@ gfarm_pgsql_host_info_replace(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
-	}	
+	}
 	if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		PQclear(res);
@@ -542,7 +542,7 @@ gfarm_pgsql_host_info_replace(
  end:
 	if (e == NULL)
 		res = PQexec(conn, "COMMIT");
-	else 	
+	else
 		res = PQexec(conn, "ROLLBACK");
 	PQclear(res);
 
@@ -576,7 +576,7 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
@@ -608,12 +608,12 @@ host_info_get_all(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		goto end;
-	}	
+	}
 	PQclear(res);
 
 	cres = PQexecParams(conn,
@@ -628,13 +628,12 @@ host_info_get_all(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(cres);
 		goto clear_cres;
-	}	
+	}
         *np = PQntuples(cres); /* number of hosts */
-	if (*np == 0)
-	{	
+	if (*np == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		goto clear_cres;
-	}	
+	}
 	ip = malloc(sizeof(*ip) * *np);
 	if (ip == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
@@ -642,7 +641,7 @@ host_info_get_all(
 	}
 
 	ires = PQexecParams(conn,
-		isql,	    
+		isql,
 		nparams,
 		NULL, /* param types */
 		paramValues,
@@ -659,7 +658,7 @@ host_info_get_all(
 	for (i = 0; i < PQntuples(cres); i++) {
 		int nhostaliases;
 
-	        nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
+		nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
 						i,
 					        PQfnumber(cres, "count"))));
 		gfarm_base_host_info_ops.clear(&ip[i]);
@@ -668,9 +667,9 @@ host_info_get_all(
 	}
 	*infosp = ip;
 
- clear_ires:	
+ clear_ires:
 	PQclear(ires);
- clear_cres:	
+ clear_cres:
 	PQclear(cres);
  end:
 	res = PQexec(conn, "END");
@@ -739,7 +738,7 @@ gfarm_pgsql_host_info_get_by_name_alias(
 		paramValues,
 		&n,
 		&infos);
-	if (e != NULL)	
+	if (e != NULL)
 		return (e);
 	if (n == 0)
 		return (GFARM_ERR_UNKNOWN_HOST);
@@ -843,7 +842,7 @@ gfarm_pgsql_path_info_get(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
@@ -918,7 +917,7 @@ gfarm_pgsql_path_info_set(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		if (strcmp(
@@ -926,7 +925,7 @@ gfarm_pgsql_path_info_set(
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
-	}	
+	}
 	PQclear(res);
 	return (e);
 }
@@ -951,7 +950,7 @@ gfarm_pgsql_path_info_replace(
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
- retry:	
+ retry:
 	paramValues[0] = pathname;
 	sprintf(mode, "%d", info->status.st_mode);
 	paramValues[1] = mode;
@@ -991,8 +990,8 @@ gfarm_pgsql_path_info_replace(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1026,8 +1025,8 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1063,7 +1062,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
@@ -1071,7 +1070,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 	}	
 	if (PQntuples(res) == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		PQclear(res);		
+		PQclear(res);
 		return (e);
 	}
 	for (i = 0; i < PQntuples(res); i++) {
@@ -1079,11 +1078,9 @@ gfarm_pgsql_path_info_get_all_foreach(
 		
 		gfarm_base_path_info_ops.clear(&info);
 		path_info_set_field(res, i, &info);
-		if (!gfarm_base_path_info_ops.validate(&info)) {
-			gfarm_base_path_info_ops.free(&info);
-			continue;
-		}
-		(*callback)(closure, &info);
+		if (gfarm_base_path_info_ops.validate(&info))
+			(*callback)(closure, &info);
+		gfarm_base_path_info_ops.free(&info);
 	}
 	PQclear(res);
 	return (NULL);
@@ -1171,7 +1168,7 @@ gfarm_pgsql_file_section_info_get(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
@@ -1224,7 +1221,7 @@ gfarm_pgsql_file_section_info_set(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		if (strcmp(
@@ -1232,7 +1229,7 @@ gfarm_pgsql_file_section_info_set(
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
-	}	
+	}
 	PQclear(res);
 	return (e);
 }
@@ -1273,8 +1270,8 @@ gfarm_pgsql_file_section_info_replace(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1310,8 +1307,8 @@ gfarm_pgsql_file_section_info_remove(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1349,12 +1346,12 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
+	}
         *np = PQntuples(res);
 	if (*np == 0) {
 		PQclear(res);
@@ -1368,7 +1365,7 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 	for (i = 0; i < *np; i++) {
 		gfarm_base_file_section_info_ops.clear(&ip[i]); 
 		file_section_info_set_field(res, i, &ip[i]);
-	}	
+	}
 	*infosp = ip;
 	PQclear(res);
 	return (NULL);
@@ -1422,7 +1419,7 @@ gfarm_pgsql_file_section_copy_info_get(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
@@ -1470,7 +1467,7 @@ gfarm_pgsql_file_section_copy_info_set(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		if (strcmp(
@@ -1514,8 +1511,8 @@ gfarm_pgsql_file_section_copy_info_remove(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
-		}	
+			}
+		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1551,7 +1548,7 @@ file_section_copy_info_get_all(
 			if (PQstatus(conn) == CONNECTION_OK) {
 				PQclear(res);
 				goto retry;
-			}	
+			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
@@ -1570,7 +1567,7 @@ file_section_copy_info_get_all(
 	for (i = 0; i < *np; i++) {
 		gfarm_base_file_section_copy_info_ops.clear(&ip[i]);
 		file_section_copy_info_set_field(res, i, &ip[i]);
-	}	
+	}
 	*infosp = ip;
 	PQclear(res);
 	return (NULL);
@@ -1592,7 +1589,7 @@ gfarm_pgsql_file_section_copy_info_get_all_by_file(
 	return (file_section_copy_info_get_all(
 		"SELECT * FROM FileSectionCopy where pathname = $1",
 		1,
-		paramValues,		
+		paramValues,
 		np,
 		infosp));
 }
@@ -1616,7 +1613,7 @@ gfarm_pgsql_file_section_copy_info_get_all_by_section(
 		"SELECT * FROM FileSectionCopy "
 		    "WHERE pathname = $1 AND section = $2",
 		2,
-		paramValues,		
+		paramValues,
 		np,
 		infosp));
 }
@@ -1637,7 +1634,7 @@ gfarm_pgsql_file_section_copy_info_get_all_by_host(
 	return (file_section_copy_info_get_all(
 		"SELECT * FROM FileSectionCopy where hostname = $1",
 		1,
-		paramValues,		
+		paramValues,
 		np,
 		infosp));
 }
