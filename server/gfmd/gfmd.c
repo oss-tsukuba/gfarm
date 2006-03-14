@@ -187,6 +187,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_VERIFY_TYPE_NOT:
 		e = gfm_server_verify_type_not(peer, from_client, skip);
 		break;
+	case GFM_PROTO_BEQUEATH_FD:
+		e = gfm_server_bequeath_fd(peer, from_client, skip);
+		break;
+	case GFM_PROTO_INHERIT_FD:
+		e = gfm_server_inherit_fd(peer, from_client, skip);
+		break;
 	case GFM_PROTO_FSTAT:
 		e = gfm_server_fstat(peer, from_client, skip);
 		break;
@@ -298,6 +304,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_PROCESS_ALLOC:
 		e = gfm_server_process_alloc(peer, from_client, skip);
+		break;
+	case GFM_PROTO_PROCESS_ALLOC_CHILD:
+		e = gfm_server_process_alloc_child(peer, from_client, skip);
 		break;
 	case GFM_PROTO_PROCESS_FREE:
 		e = gfm_server_process_free(peer, from_client, skip);

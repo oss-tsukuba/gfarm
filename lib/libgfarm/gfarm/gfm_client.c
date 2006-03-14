@@ -36,6 +36,7 @@
 struct gfm_connection {
 	struct gfp_xdr *conn;
 	enum gfarm_auth_method auth_method;
+	struct gfarm_hash_entry *hash_entry;
 };
 
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
@@ -102,7 +103,7 @@ gfm_client_connection0(const char *hostname, int port,
 }
 
 gfarm_error_t
-gfm_client_connection(const char *hostname, int port,
+gfm_client_connection_acquire(const char *hostname, int port,
 	struct gfm_connection **gfm_serverp)
 {
 	gfarm_error_t e;
@@ -123,9 +124,17 @@ gfm_client_connection(const char *hostname, int port,
 			gfp_conn_hash_purge(gfm_server_hashtab, entry);
 			return (e);
 		}
+		gfm_server->hash_entry = entry;
 	}
 	*gfm_serverp = gfm_server;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfm_client_connection_free(struct gfm_connection *gfm_server)
+{
+	gfp_xdr_free(gfm_server->conn);
+	gfp_conn_hash_purge(gfm_server_hastab, gfm_server->hash_entry);
 }
 
 gfarm_error_t
@@ -729,9 +738,9 @@ gfm_client_create_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_create_result(struct gfm_connection *gfm_server,
-	gfarm_uint32_t *fdp, gfarm_uint64_t *inump)
+	gfarm_uint32_t *fdp, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "il", fdp, inump));
+	return (gfm_client_rpc_result(gfm_server, 0, "ill", fdp, inump, genp));
 }
 
 gfarm_error_t
@@ -744,15 +753,17 @@ gfm_client_open_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_open_result(struct gfm_connection *gfm_server,
-	gfarm_uint32_t *fdp, gfarm_uint64_t *inump)
+	gfarm_uint32_t *fdp, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "il", fdp, inump));
+	return (gfm_client_rpc_result(gfm_server, 0, "ill", fdp, inump, genp));
 }
 
 gfarm_error_t
-gfm_client_open_root_request(struct gfm_connection *gfm_server)
+gfm_client_open_root_request(struct gfm_connection *gfm_server,
+	gfarm_uint32_t flags)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_OPEN_ROOT, ""));
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_OPEN_ROOT, "i",
+	    flags));
 }
 
 gfarm_error_t
@@ -763,9 +774,11 @@ gfm_client_open_root_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
-gfm_client_open_parernt_request(struct gfm_connection *gfm_server)
+gfm_client_open_parernt_request(struct gfm_connection *gfm_server,
+	gfarm_uint32_t flags)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_OPEN_PARENT, ""));
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_OPEN_PARENT, "i",
+	    flags));
 }
 
 gfarm_error_t
@@ -813,6 +826,33 @@ gfarm_error_t
 gfm_client_verify_type_not_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_bequeath_fd_request(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_BEQUEATH_FD, ""));
+}
+
+gfarm_error_t
+gfm_client_bequeath_fd_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_inherit_fd_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t fd)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_INHERIT_FD, "i",
+	    fd));
+}
+
+gfarm_error_t
+gfm_client_inherit_fd_result(struct gfm_connection *gfm_server,
+	gfarm_int32_t *fdp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "i", fdp));
 }
 
 gfarm_error_t
@@ -1095,9 +1135,11 @@ gfm_client_reopen_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_reopen_result(struct gfm_connection *gfm_server,
-	gfarm_ino_t *ino_p, gfarm_int32_t *flagsp)
+	gfarm_ino_t *ino_p, gfarm_uint64_t *gen_p,
+	gfarm_int32_t *flagsp, gfarm_int32_t *to_create_p)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "li", ino_p, flagsp));
+	return (gfm_client_rpc_result(gfm_server, 0, "llii", ino_p, gen_p,
+	    flagsp, to_create_p));
 }
 
 gfarm_error_t
@@ -1398,6 +1440,19 @@ gfm_client_process_alloc(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_PROCESS_ALLOC, "ib/l",
+	    keytype, sharedkey_size, sharedkey, pidp));
+}
+
+gfarm_error_t
+gfm_client_process_alloc_child(struct gfm_connection *gfm_server,
+	gfarm_int32_t parent_keytype, const char *parent_sharedkey,
+	size_t parent_sharedkey_size, gfarm_pid_t parent_pid,
+	gfarm_int32_t keytype, const char *sharedkey, size_t sharedkey_size,
+	gfarm_pid_t *pidp)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_PROCESS_ALLOC, "iblib/l", parent_keytype,
+	    parent_sharedkey_size, parent_sharedkey,parent_pid,
 	    keytype, sharedkey_size, sharedkey, pidp));
 }
 

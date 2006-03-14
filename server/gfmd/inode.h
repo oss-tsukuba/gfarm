@@ -35,8 +35,8 @@ void inode_status_changed(struct inode *);
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
 struct inode *inode_lookup(gfarm_ino_t);
-gfarm_error_t inode_lookup_root(struct process *, struct inode **);
-gfarm_error_t inode_lookup_parent(struct inode *, struct process *,
+gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
+gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
 	struct inode **);
 gfarm_error_t inode_lookup_by_name(struct inode *, char *,
 	struct process *, int,

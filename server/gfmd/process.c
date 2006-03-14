@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,7 +22,19 @@
 #define FILETAB_MULTIPLY	2
 #define FILETAB_MAX		256
 
+struct process_link {
+	struct process_link *next, *prev;
+};
+
+/* XXX hack */
+#define SIBLINGS_PTR_TO_PROCESS(sp) \
+	((struct process *)((char *)(sp) - offsetof(struct process, siblings)))
+
 struct process {
+	struct process_link siblings;
+	struct process_link children; /* dummy header of siblings list */
+	struct process *parent;
+
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	gfarm_pid_t pid;
 	struct user *user;
@@ -101,6 +114,9 @@ process_alloc(struct user *user,
 		free(filetab);
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	process->siblings.next = process->siblings.prev = &process->siblings;
+	process->children.next = process->children.prev = &process->children;
+	process->parent = NULL;
 	memcpy(process->sharedkey, sharedkey, keylen);
 	process->pid = pid32;
 	process->user = user;
@@ -116,6 +132,16 @@ process_alloc(struct user *user,
 }
 
 static void
+process_add_child(struct process *parent, struct process *child)
+{
+	child->siblings.next = &parent->children;
+	child->siblings.prev = parent->children.prev;
+	parent->children.prev->next = &child->siblings;
+	parent->children.prev = &child->siblings;
+	child->parent = parent;
+}
+
+static void
 process_add_ref(struct process *process)
 {
 	++process->refcount;
@@ -126,9 +152,22 @@ process_del_ref(struct process *process)
 {
 	int fd, is_file;
 	struct file_opening *fo;
+	struct process_link *pl, *pln;
+	struct process *child;
 
 	if (--process->refcount > 0)
 		return (1); /* still referenced */
+
+	/* make all children orphan */
+	for (pl = process->children.next; pl != &process->children; pl = pln) {
+		pln = pl->next;
+		child = SIBLINGS_PTR_TO_PROCESS(pl);
+		child->parent = NULL;
+		pl->next = pl->prev = pl;
+	}
+	/* detach myself from children list */
+	process->siblings.next->prev = process->siblings.prev;
+	process->siblings.prev->next = process->siblings.next;
 
 	for (fd = 0; fd < process->nfiles; fd++) {
 		fo = process->filetab[fd];
@@ -222,7 +261,7 @@ process_get_file_writable(struct process *process, struct peer *peer, int fd)
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0)
 		return (GFARM_ERR_PERMISSION_DENIED);
 
 	if (fo->opener == peer)
@@ -376,6 +415,7 @@ process_open_file(struct process *process, struct inode *file,
 	int fd, fd2;
 	struct file_opening **p, *fo;
 
+	/* XXX FIXME cache minimum unused fd, and avoid liner search */
 	for (fd = 0; fd < process->nfiles; fd++) {
 		if (process->filetab[fd] == NULL)
 			break;
@@ -426,7 +466,7 @@ process_reopen_file(struct process *process,
 	fo->u.f.spool_host = spool_host;
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
-	*flagsp = fo->flag & ~GFARM_FILE_CREATE;
+	*flagsp = fo->flag & GFARM_FILE_USER_MODE;
 	*to_createp = (fo->flag & GFARM_FILE_CREATE) ? 1 : 0;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -520,7 +560,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != peer)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
 	if (fo->opener != peer && fo->opener != NULL) {
@@ -552,7 +592,7 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != peer)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if ((fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
 	return (inode_cksum_set(fo, cksum_type, cksum_len, cksum,
@@ -574,6 +614,36 @@ process_cksum_get(struct process *process, struct peer *peer, int fd,
 
 	return (inode_cksum_get(fo, cksum_typep, cksum_lenp, cksump,
 	    flagsp));
+}
+
+gfarm_error_t
+process_bequeath_fd(struct process *process, gfarm_int32_t fd)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	fo->flag |= GFARM_FILE_BEQUEATHED;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
+	struct peer *peer, struct host *spool_host, gfarm_int32_t *fdp)
+{
+	struct file_opening *fo;
+	gfarm_error_t e;
+
+	if (process->parent == NULL)
+		return (GFARM_ERR_NO_SUCH_PROCESS);
+	e = process_get_file_opening(process, parent_fd, &fo);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((fo->flag & GFARM_FILE_BEQUEATHED) == 0)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	return (process_open_file(process, fo->inode, fo->flag,
+	    (fo->flag & GFARM_FILE_CREATE) != 0, peer, spool_host, fdp));
 }
 
 /*
@@ -609,6 +679,50 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "process_alloc", e, "l", pid));
+}
+
+gfarm_error_t
+gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
+{
+	gfarm_int32_t e;
+	struct user *user;
+	gfarm_int32_t parent_keytype, keytype;
+	size_t parent_keylen, keylen;
+	char parent_sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
+	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
+	struct process *parent_process, *process;
+	gfarm_pid_t parent_pid, pid;
+
+	e = gfm_server_get_request(peer, "process_alloc_child", "iblib",
+	    &parent_keytype,
+	    sizeof(parent_sharedkey), &parent_keylen, parent_sharedkey,
+	    &parent_pid,
+	    &keytype, sizeof(sharedkey), &keylen, sharedkey);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	if (peer_get_process(peer) != NULL) {
+		e = GFARM_ERR_ALREADY_EXISTS;
+	} else if (!from_client || (user = peer_get_user(peer)) == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (parent_keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
+	    parent_keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if ((e = process_does_match(parent_pid,
+	    parent_keytype, parent_keylen, parent_sharedkey,
+	    &parent_process)) != GFARM_ERR_NO_ERROR) {
+		/* error */
+	} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
+	    &process, &pid)) == GFARM_ERR_NO_ERROR) {
+		peer_set_process(peer, process);
+		process_add_child(parent_process, process);
+	}
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "process_alloc_child", e, "l",
+	    pid));
 }
 
 gfarm_error_t
@@ -663,3 +777,58 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "process_free", e, ""));
 }
+
+gfarm_error_t
+gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
+{
+	gfarm_int32_t e;
+	struct host *spool_host;
+	struct process *process;
+	gfarm_int32_t fd;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = process_bequeath_fd(process, fd);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "bequeath_fd", e, ""));
+}
+
+gfarm_error_t
+gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
+{
+	gfarm_int32_t e;
+	gfarm_int32_t parent_fd, fd;
+	struct host *spool_host;
+	struct process *process;
+
+	e = gfm_server_get_request(peer, "inherit_fd", "i", &parent_fd);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = process_inherit_fd(process, parent_fd, peer, NULL,
+	    &fd)) != GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = peer_fdstack_push(peer, fd)) != GFARM_ERR_NO_ERROR)
+		process_close_file(process, peer, fd);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "inherit_fd", e, "i", fd));
+}
+

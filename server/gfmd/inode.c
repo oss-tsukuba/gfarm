@@ -13,6 +13,7 @@
 
 #include "gfm_proto.h"
 
+#include "subr.h"
 #include "host.h"
 #include "user.h"
 #include "dir.h"
@@ -136,9 +137,8 @@ inode_cksum_set(struct file_opening *fo,
 
 	/* writable descriptor has precedence over read-only one */
 	if (ios->u.f.cksum_owner != NULL &&
-	    (ios->u.f.cksum_owner->flag & GFARM_FILE_ACCMODE)
-		!= GFARM_FILE_RDONLY &&
-	    (fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+	    (accmode_to_op(ios->u.f.cksum_owner->flag) & GFS_W_OK) != 0 &&
+	    (accmode_to_op(fo->flag) & GFS_W_OK) == 0)
 		return (GFARM_ERR_EXPIRED);
 
 	cs = inode->u.c.s.f.cksum;
@@ -185,7 +185,7 @@ inode_cksum_get(struct file_opening *fo,
 
 	if (ios->u.f.writers > 1 ||
 	    (ios->u.f.writers == 1 &&
-	     (fo->flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY))
+	     (accmode_to_op(fo->flag) & GFS_W_OK) == 0))
 		flags |= GFM_PROTO_CKSUM_GET_MAYBE_EXPIRED;
 	if (fo->flag & GFARM_FILE_CKSUM_INVALIDATED)
 		flags |= GFM_PROTO_CKSUM_GET_EXPIRED;
@@ -698,6 +698,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 }
 
 /* XXX TODO: namei cache */
+/* if (op == INODE_LINK) *inp is an input parameter instead of output */
 /* if (op != INODE_CREATE), (is_dir) may be -1, and that means "don't care". */
 gfarm_error_t
 inode_lookup_relative(struct inode *n, char *name,
@@ -727,21 +728,21 @@ inode_lookup_relative(struct inode *n, char *name,
 }
 
 gfarm_error_t
-inode_lookup_root(struct process *process, struct inode **inp)
+inode_lookup_root(struct process *process, int op, struct inode **inp)
 {
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(ROOT_INUMBER);
 
 	if (inode == NULL)
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX never happen */
-	e = inode_access(inode, process_get_user(process), GFS_X_OK);
+	e = inode_access(inode, process_get_user(process), op);
 	if (e == GFARM_ERR_NO_ERROR)
 		*inp = inode;
 	return (e);
 }
 
 gfarm_error_t
-inode_lookup_parent(struct inode *base, struct process *process,
+inode_lookup_parent(struct inode *base, struct process *process, int op,
 	struct inode **inp)
 {
 	struct inode *inode;
@@ -751,7 +752,7 @@ inode_lookup_parent(struct inode *base, struct process *process,
 	    INODE_LOOKUP, user, &inode, &created);
 
 	if (e == GFARM_ERR_NO_ERROR &&
-	    (e = inode_access(inode, user, GFS_X_OK)) == GFARM_ERR_NO_ERROR) {
+	    (e = inode_access(inode, user, op)) == GFARM_ERR_NO_ERROR) {
 		*inp = inode;
 	}
 	return (e);
@@ -772,8 +773,7 @@ inode_lookup_by_name(struct inode *base, char *name,
 		if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
 			e = GFARM_ERR_IS_A_DIRECTORY;
 		} else {
-			e = inode_access(inode, user, op |
-			    (inode_is_dir(inode) ? GFS_X_OK : 0));
+			e = inode_access(inode, user, op);
 		}
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
@@ -929,7 +929,7 @@ inode_open(struct file_opening *fo)
 			return (GFARM_ERR_NO_MEMORY);
 		inode->u.c.state = ios;
 	}
-	if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ios->u.f.writers;
 
 	fo->opening_prev = &ios->openings;
@@ -957,7 +957,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 		inode_open_state_free(inode->u.c.state);
 		inode->u.c.state = NULL;
 	}
-	if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ios->u.f.writers;
 
 	if (atime != NULL)
@@ -1137,7 +1137,7 @@ inode_schedule_host_for_write(struct inode *inode, struct host *spool_host)
 	if (fo == &ios->openings) /* not opened */
 		return (inode_schedule_host_for_read(inode, spool_host));
 	for (; fo != &ios->openings; fo = fo->opening_next) {
-		if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY)
+		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 			return (fo->u.f.spool_host);
 		/* XXX better scheduling is needed */
 		if (host_match)

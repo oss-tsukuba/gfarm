@@ -106,7 +106,7 @@ gfm_server_swap_fd(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_open_common(struct peer *peer, int from_client,
 	char *name, gfarm_int32_t flag, int to_create, gfarm_int32_t mode,
-	int *fdp, gfarm_ino_t *inump)
+	int *fdp, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 {
 	gfarm_error_t e;
 	struct host *spool_host = NULL;
@@ -130,13 +130,7 @@ gfm_server_open_common(struct peer *peer, int from_client,
 
 	if (flag & ~GFARM_FILE_USER_MODE)
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	switch (flag & GFARM_FILE_ACCMODE) {
-	case GFARM_FILE_RDONLY:	op = GFS_R_OK; break;
-	case GFARM_FILE_WRONLY:	op = GFS_W_OK; break;
-	case GFARM_FILE_RDWR:	op = GFS_R_OK|GFS_W_OK; break;
-	default:
-		return (GFARM_ERR_INVALID_ARGUMENT);
-	}
+	op = accmode_to_op(flag);
 
 	if (to_create) {
 		if (mode & ~GFARM_S_ALLPERM)
@@ -152,8 +146,7 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	if (!from_client) {
 		if (!inode_is_file(inode)) {
 			/* don't care */
-		} else if ((flag & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY &&
-		    !created) {
+		} else if ((op & GFS_W_OK) == 0 && !created) {
 			if (!inode_has_replica(inode, spool_host))
 				return (GFARM_ERR_FILE_MIGRATED);
 		} else {
@@ -181,6 +174,7 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	}
 	*fdp = fd;
 	*inump = inode_get_number(inode);
+	*genp = inode_get_gen(inode);
 	return(GFARM_ERR_NO_ERROR);
 }
 
@@ -192,6 +186,7 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t flag, mode;
 	gfarm_int32_t fd = -1;
 	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
 
 	e = gfm_server_get_request(peer, "create", "sii", &name, &flag, &mode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -203,11 +198,11 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_open_common(peer, from_client, name, flag, 1, mode,
-	    &fd, &inum);
+	    &fd, &inum, &gen);
 
 	free(name);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "create", e, "il", fd, inum));
+	return (gfm_server_put_reply(peer, "create", e, "ill", fd, inum, gen));
 }
 
 gfarm_error_t
@@ -215,9 +210,10 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	char *name;
-	gfarm_int32_t flag;
+	gfarm_uint32_t flag;
 	gfarm_int32_t fd = -1;
 	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
 
 	e = gfm_server_get_request(peer, "open", "si", &name, &flag);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -229,11 +225,11 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_open_common(peer, from_client, name, flag, 0, 0,
-	    &fd, &inum);
+	    &fd, &inum, &gen);
 
 	free(name);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "open", e, "il", fd, inum));
+	return (gfm_server_put_reply(peer, "open", e, "ill", fd, inum, gen));
 }
 
 gfarm_error_t
@@ -242,21 +238,30 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	struct host *spool_host = NULL;
 	struct process *process;
+	int op;
 	struct inode *inode;
+	gfarm_uint32_t flag;
 	gfarm_int32_t fd = -1;
 
+	e = gfm_server_get_request(peer, "open_root", "i", &flag);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+	if (flag & ~GFARM_FILE_USER_MODE)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else if ((op = accmode_to_op(flag)) & GFS_W_OK)
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = inode_lookup_root(process, &inode)) !=
+	else if ((e = inode_lookup_root(process, op, &inode)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_open_file(process, inode, GFARM_FILE_RDONLY, 0,
+	else if ((e = process_open_file(process, inode, flag, 0,
 	    peer, spool_host, &fd)) != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = peer_fdstack_push(peer, fd)) != GFARM_ERR_NO_ERROR)
@@ -271,15 +276,24 @@ gfm_server_open_parent(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct host *spool_host = NULL;
+	int op;
 	struct process *process;
+	gfarm_uint32_t flag;
 	gfarm_int32_t cfd, fd = -1;
 	struct inode *base, *inode;
 
+	e = gfm_server_get_request(peer, "open_parent", "i", &flag);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+	if (flag & ~GFARM_FILE_USER_MODE)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else if ((op = accmode_to_op(flag)) & GFS_W_OK)
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -288,10 +302,10 @@ gfm_server_open_parent(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, cfd, &base)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = inode_lookup_parent(base, process, &inode)) !=
+	else if ((e = inode_lookup_parent(base, process, op, &inode)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_open_file(process, inode, GFARM_FILE_RDONLY, 0,
+	else if ((e = process_open_file(process, inode, flag, 0,
 	    peer, spool_host, &fd)) != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = peer_fdstack_push(peer, fd)) != GFARM_ERR_NO_ERROR)

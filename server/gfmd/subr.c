@@ -1,10 +1,13 @@
 #include <pthread.h>
 
+#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
 
 #include "gfutil.h"
 #include "gfp_xdr.h"
@@ -40,6 +43,23 @@ giant_unlock(void)
 
 	if (err != 0)
 		gflog_fatal("giant mutex unlock: %s", strerror(err));
+}
+
+int
+accmode_to_op(gfarm_uint32_t flag)
+{
+	int op;
+
+	switch (flag & GFARM_FILE_ACCMODE) {
+	case GFARM_FILE_RDONLY:	op = GFS_R_OK; break;
+	case GFARM_FILE_WRONLY:	op = GFS_W_OK; break;
+	case GFARM_FILE_RDWR:	op = GFS_R_OK|GFS_W_OK; break;
+	case GFARM_FILE_DSRCH:	op = GFS_X_OK; break;
+	default:
+		assert(0);
+		op = 0;
+	}
+	return op;
 }
 
 gfarm_error_t
