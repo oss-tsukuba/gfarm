@@ -65,15 +65,6 @@ gfarm_error_t gfarm_url_make_path_for_creation(const char *, char **);
 int gfarm_is_url(const char *);
 gfarm_error_t gfarm_path_canonical_to_url(const char *, char **);
 
-#if 0
-gfarm_error_t gfarm_url_make_localized_path(char *, char **);
-gfarm_error_t gfarm_url_make_localized_file_fragment_path(char *, int, char **);
-#endif
-gfarm_error_t gfarm_path_section(const char *, const char *, char **);
-gfarm_error_t gfarm_full_path_file_section(char *, char *, char *, char **);
-gfarm_error_t gfarm_path_localize(char *, char **);
-gfarm_error_t gfarm_path_localize_file_section(char *, char *, char **);
-gfarm_error_t gfarm_path_localize_file_fragment(char *, int, char **);
 const char *gfarm_url_prefix_skip(const char *);
 gfarm_error_t gfarm_url_prefix_add(const char *);
 const char *gfarm_path_dir_skip(const char *);
