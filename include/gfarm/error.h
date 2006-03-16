@@ -10,7 +10,7 @@
  */
 
 enum gfarm_errcode {
- /* 0 */	GFARM_ERR_NO_ERROR,
+ /*  0 */	GFARM_ERR_NO_ERROR,
 
 /* classic errno (1..10) */
  /*  1 */	GFARM_ERR_OPERATION_NOT_PERMITTED, /* forbidden entirely */
