@@ -109,9 +109,9 @@ gfp_xdr_export_credential(struct gfp_xdr *conn)
 }
 
 gfarm_error_t
-gfp_xdr_delete_credential(struct gfp_xdr *conn)
+gfp_xdr_delete_credential(struct gfp_xdr *conn, int sighandler)
 {
-	return ((*conn->iob_ops->delete_credential)(conn->cookie));
+	return ((*conn->iob_ops->delete_credential)(conn->cookie, sighandler));
 }
 
 char *

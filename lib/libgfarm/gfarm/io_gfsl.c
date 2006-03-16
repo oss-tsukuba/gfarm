@@ -165,13 +165,13 @@ gfp_iobuffer_export_credential_secsession_op(void *cookie)
 }
 
 gfarm_error_t
-gfp_iobuffer_delete_credential_secsession_op(void *cookie)
+gfp_iobuffer_delete_credential_secsession_op(void *cookie, int sighandler)
 {
 	struct io_gfsl *io = cookie;
 
 	if (io->exported_credential == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	gfarmGssDeleteExportedCredential(io->exported_credential);
+	gfarmGssDeleteExportedCredential(io->exported_credential, sighandler);
 	io->exported_credential = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }

@@ -178,7 +178,7 @@ gfp_iobuffer_export_credential_fd_op(void *cookie)
 }
 
 gfarm_error_t
-gfp_iobuffer_delete_credential_fd_op(void *cookie)
+gfp_iobuffer_delete_credential_fd_op(void *cookie, int sighandler)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
