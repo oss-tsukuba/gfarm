@@ -8,8 +8,8 @@
 #include <sys/statvfs.h>
 
 int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
-	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
-	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp)
 {
 	struct statvfs buf;
 
@@ -34,8 +34,8 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 #endif
 
 int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
-	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
-	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp)
 {
 	struct statfs buf;
 
@@ -54,8 +54,8 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 #else
 
 int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
-	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
-	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp)
 {
 	return (ENOSYS);
 }
