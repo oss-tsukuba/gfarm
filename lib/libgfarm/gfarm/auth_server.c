@@ -19,7 +19,10 @@
 #include "gfutil.h"
 #include "gfp_xdr.h"
 #include "hostspec.h"
+#include "metadb_server.h"
 #include "auth.h"
+
+#include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
 	char *, char *,	enum gfarm_auth_id_type *, char **);
@@ -204,6 +207,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	gfarm_error_t e;
 	char *global_username, *local_username, *aux;
 	int eof;
+	enum gfarm_auth_id_type peer_type;
 	struct passwd *pwd;
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
@@ -216,8 +220,15 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		return (GFARM_ERR_PROTOCOL);
 	}
 
-	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
-	e = gfarm_global_to_local_username(global_username, &local_username);
+	if (strcmp(global_username, GFSD_USERNAME) == 0) {
+		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+	} else {
+		peer_type = GFARM_AUTH_ID_TYPE_USER;
+		e = gfarm_metadb_verify_username(global_username);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfarm_global_to_local_username(global_username,
+		    &local_username);
 	if (e != GFARM_ERR_NO_ERROR) {
 		local_username = NULL;
 		pwd = NULL;
@@ -281,9 +292,8 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		gfarm_set_local_homedir(pwd->pw_dir);
 	}
 	free(local_username);
-	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	if (peer_typep != NULL)
-		*peer_typep = GFARM_AUTH_ID_TYPE_USER;
+		*peer_typep = peer_type;
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
 	else
