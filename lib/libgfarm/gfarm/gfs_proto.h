@@ -10,11 +10,13 @@ enum gfs_proto_command {
 
 	GFS_PROTO_PROCESS_SET,
 
-	GFS_PROTO_OPEN,
 	GFS_PROTO_OPEN_LOCAL,
+	GFS_PROTO_OPEN,
 	GFS_PROTO_CLOSE,
 	GFS_PROTO_PREAD,
 	GFS_PROTO_PWRITE,
+	GFS_PROTO_FTRUNCATE,
+	GFS_PROTO_FSYNC,
 	GFS_PROTO_FSTAT,
 	GFS_PROTO_CKSUM_SET,
 
@@ -26,6 +28,7 @@ enum gfs_proto_command {
 	GFS_PROTO_REPLICA_ADD,
 	GFS_PROTO_REPLICA_RECV,
 
+	GFS_PROTO_STATFS,
 	GFS_PROTO_COMMAND,
 
 	/* from gfmd */
@@ -35,9 +38,6 @@ enum gfs_proto_command {
 };
 
 #define GFS_PROTO_MAX_IOSIZE	65536
-
-/* other flags are defined in <gfarm/gfs.h> */
-#define GFARM_FILE_CREATE		0x00000200
 
 /*
  * sub protocols of GFS_PROTO_COMMAND
@@ -68,7 +68,11 @@ enum gfs_proto_fsync_operation {
 
 #define GFSD_MAX_PASSING_FD 5
 
-#define GFSD_LOCAL_SOCKET_NAME	"/tmp/.gfarm-gfsd%d/sock"
+/* used for both gfsd local privilege and global username of sharedsecret */
+#define GFSD_USERNAME	"_gfarmfs"
+
+#define GFSD_LOCAL_SOCKET_DIR	"/tmp/.gfarm-gfsd%d"
+#define GFSD_LOCAL_SOCKET_NAME	GFSD_LOCAL_SOCKET_DIR "/sock"
 
 #define FDESC_STDIN	0
 #define FDESC_STDOUT	1
@@ -76,9 +80,3 @@ enum gfs_proto_fsync_operation {
 #define NFDESC		3
 
 extern char GFS_SERVICE_TAG[];
-
-#include <openssl/evp.h> /* for EVP_MD, EVP_MD_CTX */
-
-int gfs_digest_calculate_local(int, char *, size_t,
-	const EVP_MD *, EVP_MD_CTX *,
-	size_t *, unsigned char *, gfarm_off_t *);
