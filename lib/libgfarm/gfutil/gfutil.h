@@ -22,6 +22,9 @@ void gfarm_unlimit_nofiles(int *);
 #define GFLOG_PRINTF_ARG(M, N)
 #endif
 
+#ifdef GFLOG_USE_STDARG /* to make <stdarg.h> optional to use <gfutil.h> */
+void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
+#endif
 void gflog_message(int, const char *, ...) GFLOG_PRINTF_ARG(2, 3);
 void gflog_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 void gflog_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);

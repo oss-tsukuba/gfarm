@@ -6,13 +6,13 @@
 #include <string.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#define GFLOG_USE_STDARG
 #include "gfutil.h"
 
 static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 
-void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
 void
 gflog_vmessage(int priority, const char *format, va_list ap)
 {
