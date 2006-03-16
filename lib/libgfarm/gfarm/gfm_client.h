@@ -1,6 +1,11 @@
 struct gfm_connection;
 struct gfs_dirent;
 
+struct gfarm_host_info;
+struct gfarm_user_info;
+struct gfarm_group_info;
+struct gfarm_group_names;
+
 gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);
 void gfm_client_connection_free(struct gfm_connection *);
@@ -68,27 +73,30 @@ gfarm_error_t gfm_client_compound_on_eof_result(struct gfm_connection *);
 gfarm_error_t gfm_client_compound_on_error_request(struct gfm_connection *,
 	gfarm_error_t);
 gfarm_error_t gfm_client_compound_on_error_result(struct gfm_connection *);
-gfarm_error_t gfm_client_push_fd_request(struct gfm_connection *,
+gfarm_error_t gfm_client_get_fd_request(struct gfm_connection *);
+gfarm_error_t gfm_client_get_fd_result(struct gfm_connection *,
+	gfarm_int32_t *);
+gfarm_error_t gfm_client_put_fd_request(struct gfm_connection *,
 	gfarm_int32_t);
-gfarm_error_t gfm_client_push_fd_result(struct gfm_connection *);
-gfarm_error_t gfm_client_swap_fd_request(struct gfm_connection *);
-gfarm_error_t gfm_client_swap_fd_result(struct gfm_connection *);
+gfarm_error_t gfm_client_put_fd_result(struct gfm_connection *);
+gfarm_error_t gfm_client_save_fd_request(struct gfm_connection *);
+gfarm_error_t gfm_client_save_fd_result(struct gfm_connection *);
+gfarm_error_t gfm_client_restore_fd_request(struct gfm_connection *);
+gfarm_error_t gfm_client_restore_fd_result(struct gfm_connection *);
 gfarm_error_t gfm_client_create_request(struct gfm_connection *,
-	const char *, size_t, gfarm_uint32_t, gfarm_uint32_t);
+	const char *, gfarm_uint32_t, gfarm_uint32_t);
 gfarm_error_t gfm_client_create_result(struct gfm_connection *,
-	gfarm_uint32_t *, gfarm_ino_t *, gfarm_uint64_t *);
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_mode_t *);
 gfarm_error_t gfm_client_open_request(struct gfm_connection *,
 	const char *, size_t, gfarm_uint32_t);
 gfarm_error_t gfm_client_open_result(struct gfm_connection *,
-	gfarm_uint32_t *, gfarm_ino_t *, gfarm_uint64_t *);
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_mode_t *);
 gfarm_error_t gfm_client_open_root_request(struct gfm_connection *,
 	gfarm_uint32_t);
-gfarm_error_t gfm_client_open_root_result(struct gfm_connection *,
-	gfarm_uint32_t *);
+gfarm_error_t gfm_client_open_root_result(struct gfm_connection *);
 gfarm_error_t gfm_client_open_parent_request(struct gfm_connection *,
 	gfarm_uint32_t);
-gfarm_error_t gfm_client_open_parent_result(struct gfm_connection *,
-	gfarm_uint32_t *);
+gfarm_error_t gfm_client_open_parent_result(struct gfm_connection *);
 gfarm_error_t gfm_client_close_request(struct gfm_connection *);
 gfarm_error_t gfm_client_close_result(struct gfm_connection *);
 gfarm_error_t gfm_client_close_read_request(struct gfm_connection *,
@@ -107,8 +115,7 @@ gfarm_error_t gfm_client_bequeath_fd_request(struct gfm_connection *);
 gfarm_error_t gfm_client_bequeath_fd_result(struct gfm_connection *);
 gfarm_error_t gfm_client_inherit_fd_request(struct gfm_connection *,
 	gfarm_int32_t);
-gfarm_error_t gfm_client_inherit_fd_result(struct gfm_connection *,
-	gfarm_int32_t *);
+gfarm_error_t gfm_client_inherit_fd_result(struct gfm_connection *);
 gfarm_error_t gfm_client_fstat_request(struct gfm_connection *);
 gfarm_error_t gfm_client_fstat_result(struct gfm_connection *,
 	struct gfs_stat *);
@@ -138,8 +145,6 @@ gfarm_error_t gfm_client_schedule_file_with_program_result(
 	struct gfm_connection *, char **, gfarm_int32_t *);
 gfarm_error_t gfm_client_remove_request(struct gfm_connection *, const char *);
 gfarm_error_t gfm_client_remove_result(struct gfm_connection *);
-gfarm_error_t gfm_client_rmdir_request(struct gfm_connection *, const char *);
-gfarm_error_t gfm_client_rmdir_result(struct gfm_connection *);
 gfarm_error_t gfm_client_rename_request(struct gfm_connection *,
 	const char *, const char *);
 gfarm_error_t gfm_client_rename_result(struct gfm_connection *);
@@ -164,10 +169,10 @@ gfarm_error_t gfm_client_seek_request(struct gfm_connection *,
 gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);
 
 /* gfs from gfsd */
-gfarm_error_t gfm_client_reopen_request(struct gfm_connection *,
-	gfarm_int32_t);
+gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);
 gfarm_error_t gfm_client_reopen_result(struct gfm_connection *,
-	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *, gfarm_int32_t *);
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *, gfarm_int32_t *,
+	gfarm_int32_t *);
 gfarm_error_t gfm_client_lock_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_off_t, gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfm_client_lock_result(struct gfm_connection *);
@@ -201,12 +206,12 @@ gfarm_error_t gfm_client_replica_remove_by_host_result(
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_adding_result(struct gfm_connection *,
-	gfarm_ino_t *, gfarm_int64_t *, gfarm_int32_t *);
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int64_t *, gfarm_int32_t *);
 gfarm_error_t gfm_client_replica_added_request(struct gfm_connection *,
 	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_replica_added_result(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_remove_request(struct gfm_connection *,
-	gfarm_ino_t);
+	gfarm_ino_t, gfarm_uint64_t);
 gfarm_error_t gfm_client_replica_remove_result(struct gfm_connection *);
 
 /* process management */
