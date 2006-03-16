@@ -155,9 +155,15 @@ map_global_to_local(char *from, char *global_user, char *local_user)
 	return (NULL);
 }
 
+/*
+ * XXX FIXME This function should not be used by gfarm clients,
+ * because this doesn't cope with multiple metadata server.
+ * Thus, this function only should be called from gfmd and gfsd,
+ * and should move to config_server.c.
+ */
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_username_map_global_to_local(char *global_user, char **local_user_p)
+gfarm_global_to_local_username(char *global_user, char **local_user_p)
 {
 	return (map_user(global_user, local_user_p,
 	    map_global_to_local, GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
@@ -171,9 +177,15 @@ map_local_to_global(char *from, char *global_user, char *local_user)
 	return (NULL);
 }
 
+/*
+ * XXX FIXME This function should not be used by gfarm clients,
+ * because this doesn't cope with multiple metadata server.
+ * Thus, this function only should be called from gfmd and gfsd,
+ * and should move to config_server.c.
+ */
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_username_map_local_to_global(char *local_user, char **global_user_p)
+gfarm_local_to_global_username(char *local_user, char **global_user_p)
 {
 	return (map_user(local_user, global_user_p,
 	    map_local_to_global, GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
@@ -255,64 +267,19 @@ gfarm_error_t
 gfarm_set_local_user_for_this_local_account(void)
 {
 	gfarm_error_t error;
-	char *user;
-	char *home;
 	struct passwd *pwd;
 
 	pwd = getpwuid(geteuid());
-	if (pwd != NULL) {
-		user = pwd->pw_name;
-		home = pwd->pw_dir;
-	} else { /* XXX */
-		user = "nobody";
-		home = "/";
-	}
-	error = gfarm_set_local_username(user);
+	if (pwd == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	error = gfarm_set_local_username(pwd->pw_name);
 	if (error != GFARM_ERR_NO_ERROR)
 		return (error);
-	error = gfarm_set_local_homedir(home);
+	error = gfarm_set_local_homedir(pwd->pw_dir);
 	if (error != GFARM_ERR_NO_ERROR)
 		return (error);
 	return (error);
-}
-
-gfarm_error_t
-gfarm_set_global_user_for_this_local_account(void)
-{
-	gfarm_error_t e;
-	char *local_user, *global_user;
-
-#ifdef HAVE_GSI
-	/*
-	 * Global user name determined by the distinguished name.
-	 *
-	 * XXX - Currently, a local user map is used.
-	 */
-	local_user = gfarm_gsi_client_cred_name();
-	if (local_user != NULL) {
-		e = gfarm_local_to_global_username(local_user, &global_user);
-		if (e == NULL)
-			if (strcmp(local_user, global_user) == 0)
-				free(global_user);
-				/* continue to the next method */
-			else
-				goto set_global_username;
-		else
-			return (e);
-	}
-#endif
-	/* Global user name determined by the local user account. */
-	local_user = gfarm_get_local_username();
-	e = gfarm_local_to_global_username(local_user, &global_user);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-#ifdef HAVE_GSI
- set_global_username:
-#endif
-	e = gfarm_set_global_username(global_user);
-	free(global_user);
-	gfarm_stringlist_free_deeply(&local_user_map_file_list);
-	return (e);
 }
 
 /*
@@ -1077,6 +1044,10 @@ gfarm_config_read_file(FILE *config, char *config_file, int *lineno_p)
 void
 gfarm_config_set_default_ports(void)
 {
+	if (gfarm_metadb_server_name == NULL)
+		gflog_fatal("metadb_serverhost isn't specified in "
+		    GFARM_CONFIG " file");
+
 	if (gfarm_spool_server_portname != NULL) {
 		int p = strtol(gfarm_spool_server_portname, NULL, 0);
 		struct servent *sp =

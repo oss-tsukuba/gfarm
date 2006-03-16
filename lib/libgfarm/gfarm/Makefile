@@ -22,6 +22,7 @@ GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 SRCS = \
 	liberror.c \
 	hostspec.c \
+	host.c \
 	param.c \
 	sockopt.c \
 	auth_config.c \
@@ -32,13 +33,16 @@ SRCS = \
 	gfp_xdr.c \
 	gfs_proto.c \
 	io_fd.c \
+	metadb_common.c \
+	metadb_server.c \
 	auth_common.c \
 	auth_client.c \
 	auth_server.c \
-	conn_hash.c
+	conn_hash.c \
+	gfm_client.c \
+	gfs_client.c
 
-#	gfm_client.c \
-#	gfs_client.c \
+#	config_client.c \
 
 #	gfs_pio.c gfs_pio_global.c \
 #	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
@@ -55,6 +59,7 @@ SRCS = \
 OBJS = \
 	liberror.lo \
 	hostspec.lo \
+	host.lo \
 	param.lo \
 	sockopt.lo \
 	auth_config.lo \
@@ -65,13 +70,16 @@ OBJS = \
 	gfp_xdr.lo \
 	gfs_proto.lo \
 	io_fd.lo \
+	metadb_common.lo \
+	metadb_server.lo \
 	auth_common.lo \
 	auth_client.lo \
 	auth_server.lo \
-	conn_hash.lo
+	conn_hash.lo \
+	gfm_client.lo \
+	gfs_client.lo
 
-#	gfm_client.lo \
-#	gfs_client.lo \
+#	config_client.lo \
 
 #	gfs_pio.lo gfs_pio_global.lo \
 #	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \

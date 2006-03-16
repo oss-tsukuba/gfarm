@@ -54,6 +54,7 @@ gfarm_server_initialize(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	gfarm_init_user_map();
 	gfarm_config_set_default_spool_on_server();
 
 	return (GFARM_ERR_NO_ERROR);
