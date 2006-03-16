@@ -3,6 +3,7 @@ gfarm_error_t host_init(void);
 struct host;
 struct host *host_lookup(const char *);
 char *host_name(struct host *);
+int host_port(struct host *);
 
 gfarm_error_t host_get_loadav(struct host *, double *);
 gfarm_error_t host_remove_replica(struct host *, gfarm_ino_t);

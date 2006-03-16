@@ -167,6 +167,12 @@ host_name(struct host *h)
 	return (h->hi.hostname);
 }
 
+int
+host_port(struct host *h)
+{
+	return (h->hi.port);
+}
+
 gfarm_error_t
 host_get_loadav(struct host *host, double *loadavp)
 {

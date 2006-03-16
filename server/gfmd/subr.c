@@ -54,7 +54,7 @@ accmode_to_op(gfarm_uint32_t flag)
 	case GFARM_FILE_RDONLY:	op = GFS_R_OK; break;
 	case GFARM_FILE_WRONLY:	op = GFS_W_OK; break;
 	case GFARM_FILE_RDWR:	op = GFS_R_OK|GFS_W_OK; break;
-	case GFARM_FILE_DSRCH:	op = GFS_X_OK; break;
+	case GFARM_FILE_LOOKUP:	op = 0; break;
 	default:
 		assert(0);
 		op = 0;

@@ -72,4 +72,5 @@ gfarm_error_t inode_cksum_get(struct file_opening *,
 
 int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
+struct host *inode_schedule_host_for_read(struct inode *, struct host *);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);

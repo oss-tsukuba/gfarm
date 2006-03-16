@@ -71,7 +71,8 @@ gfarm_error_t process_open_file(struct process *, struct inode *,
 	gfarm_int32_t, int, struct peer *, struct host *, gfarm_int32_t *);
 gfarm_error_t process_reopen_file(struct process *,
 	struct peer *, struct host *, int,
-	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *, gfarm_int32_t *);
+	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *,
+	gfarm_int32_t *, gfarm_int32_t *);
 gfarm_error_t process_close_file(struct process *, struct peer *, int);
 gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 	struct gfarm_timespec *);

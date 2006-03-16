@@ -5,8 +5,11 @@ gfarm_error_t gfm_server_compound_begin(struct peer *, int, int, int);
 gfarm_error_t gfm_server_compound_end(struct peer *, int, int, int);
 gfarm_error_t gfm_server_compound_on_error(struct peer *, int, int, int,
 	gfarm_error_t *);
-gfarm_error_t gfm_server_push_fd(struct peer *, int, int);
-gfarm_error_t gfm_server_swap_fd(struct peer *, int, int);
+
+gfarm_error_t gfm_server_get_fd(struct peer *, int, int);
+gfarm_error_t gfm_server_put_fd(struct peer *, int, int);
+gfarm_error_t gfm_server_save_fd(struct peer *, int, int);
+gfarm_error_t gfm_server_restore_fd(struct peer *, int, int);
 
 gfarm_error_t gfm_server_create(struct peer *, int, int);
 gfarm_error_t gfm_server_open(struct peer *, int, int);

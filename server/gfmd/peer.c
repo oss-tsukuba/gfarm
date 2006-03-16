@@ -1,5 +1,6 @@
 #include <pthread.h>
 
+#include <assert.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -35,11 +36,15 @@ struct peer {
 	struct process *process;
 	int protocol_error;
 
+	gfarm_int32_t fd_current, fd_saved;
+	int flags;
+#define PEER_FLAGS_FD_CURRENT_EXTERNALIZED	1
+#define PEER_FLAGS_FD_SAVED_EXTERNALIZED	2
+
 	union {
 		struct {
 			/* only used by "gfrun" client */
 			struct job_table_entry *jobs;
-			gfarm_int32_t fd_current, fd_saved;
 		} client;
 	} u;
 };
@@ -65,9 +70,10 @@ peer_init(int max_peers)
 		peer_table[i].host = NULL;
 		peer_table[i].process = NULL;
 		peer_table[i].protocol_error = 0;
+		peer_table[i].fd_current = -1;
+		peer_table[i].fd_saved = -1;
+		peer_table[i].flags = 0;
 		peer_table[i].u.client.jobs = NULL;
-		peer_table[i].u.client.fd_current = -1;
-		peer_table[i].u.client.fd_saved = -1;
 	}
 }
 
@@ -95,9 +101,10 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->host = NULL;
 	peer->process = NULL;
 	peer->protocol_error = 0;
+	peer->fd_current = -1;
+	peer->fd_saved = -1;
+	peer->flags = 0;
 	peer->u.client.jobs = NULL;
-	peer->u.client.fd_current = -1;
-	peer->u.client.fd_saved = -1;
 
 	/* deal with reboots or network problems */
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &sockopt, sizeof(sockopt))
@@ -259,6 +266,9 @@ peer_unset_process(struct peer *peer)
 {
 	if (peer->process == NULL)
 		gflog_fatal("peer_unset_process: already unset");
+
+	peer_fdpair_clear(peer);
+
 	process_detach_peer(peer->process, peer);
 	peer->process = NULL;
 }
@@ -281,76 +291,117 @@ peer_get_jobs_ref(struct peer *peer)
 	return (&peer->u.client.jobs);
 }
 
-gfarm_error_t
-peer_fdstack_push(struct peer *peer, gfarm_int32_t fd)
+void
+peer_fdpair_clear(struct peer *peer)
 {
-	gfarm_error_t e;
-	struct process *process;
-
-	if ((process = peer_get_process(peer)) == NULL)
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
-		;
-	else {
-		e = GFARM_ERR_NO_ERROR;
-		peer->u.client.fd_saved = peer->u.client.fd_current;
-		peer->u.client.fd_current = fd;
+	if (peer->process == NULL) {
+		assert(peer->fd_current == -1 && peer->fd_saved == -1);
+		return;
 	}
-	return (e);
+	if (peer->fd_current != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current);
+	}
+	if (peer->fd_saved != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
+		process_close_file(peer->process, peer, peer->fd_saved);
+	}
+	peer->fd_current = -1;
+	peer->fd_saved = -1;
+	peer->flags &= ~(
+	    PEER_FLAGS_FD_CURRENT_EXTERNALIZED |
+	    PEER_FLAGS_FD_SAVED_EXTERNALIZED);
 }
 
 gfarm_error_t
-peer_fdstack_swap(struct peer *peer)
+peer_fdpair_externalize_current(struct peer *peer)
 {
-	gfarm_int32_t fd;
-
-	fd = peer->u.client.fd_saved;
-	if (fd < 0)
-		return (GFARM_ERR_PROTOCOL);
-	peer->u.client.fd_saved = peer->u.client.fd_current;
-	peer->u.client.fd_current = fd;
+	if (peer->fd_current == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	peer->flags |= PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
+	if (peer->fd_current == peer->fd_saved)
+		peer->flags |= PEER_FLAGS_FD_SAVED_EXTERNALIZED;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-peer_fdstack_pop(struct peer *peer)
+peer_fdpair_close_current(struct peer *peer)
 {
-	if (peer->u.client.fd_current < 0)
-		return (GFARM_ERR_PROTOCOL);
-	peer->u.client.fd_current = peer->u.client.fd_saved;
-	peer->u.client.fd_saved = -1;
+	if (peer->fd_current == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	if (peer->fd_current == peer->fd_saved) {
+		peer->flags &= ~PEER_FLAGS_FD_SAVED_EXTERNALIZED;
+		peer->fd_saved = -1;
+	}
+	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
+	peer->fd_current = -1;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
+{
+	if (peer->fd_current != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current);
+	}
+	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
+	peer->fd_current = fd;
+}
+
+gfarm_error_t
+peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
+{
+	if (peer->fd_current == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	*fdp = peer->fd_current;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-peer_fdstack_top(struct peer *peer, gfarm_int32_t *fdp)
+peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 {
-	gfarm_error_t e;
-	struct process *process;
-	int fd;
-
-	if ((process = peer_get_process(peer)) == NULL)
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	fd = peer->u.client.fd_current;;
-	if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	*fdp = fd;
+	if (peer->fd_saved == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	*fdp = peer->fd_saved;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-peer_fdstack_next(struct peer *peer, gfarm_int32_t *fdp)
+peer_fdpair_save(struct peer *peer)
 {
-	gfarm_error_t e;
-	struct process *process;
-	int fd;
+	if (peer->fd_current == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
-	if ((process = peer_get_process(peer)) == NULL)
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	fd = peer->u.client.fd_saved;
-	if ((e = process_verify_fd(process, fd)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	*fdp = fd;
+	if (peer->fd_saved != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
+	    peer->fd_saved != peer->fd_current) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_saved);
+	}
+	peer->fd_saved = peer->fd_current;
+	peer->flags = (peer->flags & ~PEER_FLAGS_FD_SAVED_EXTERNALIZED) |
+	    ((peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) ?
+	     PEER_FLAGS_FD_SAVED_EXTERNALIZED : 0);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+peer_fdpair_restore(struct peer *peer)
+{
+	if (peer->fd_saved == -1)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+
+	if (peer->fd_current != -1 &&
+	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
+	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+		process_close_file(peer->process, peer, peer->fd_current);
+	}
+	peer->fd_current = peer->fd_saved;
+	peer->flags = (peer->flags & ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED) |
+	    ((peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) ?
+	     PEER_FLAGS_FD_CURRENT_EXTERNALIZED : 0);
 	return (GFARM_ERR_NO_ERROR);
 }
 

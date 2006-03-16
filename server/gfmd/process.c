@@ -450,7 +450,7 @@ process_open_file(struct process *process, struct inode *file,
 gfarm_error_t
 process_reopen_file(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
-	gfarm_ino_t *inump, gfarm_uint64_t *genp,
+	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *modep,
 	gfarm_int32_t *flagsp, gfarm_int32_t *to_createp)
 {
 	struct file_opening *fo;
@@ -466,6 +466,7 @@ process_reopen_file(struct process *process,
 	fo->u.f.spool_host = spool_host;
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
+	*modep = inode_get_mode(fo->inode);
 	*flagsp = fo->flag & GFARM_FILE_USER_MODE;
 	*to_createp = (fo->flag & GFARM_FILE_CREATE) ? 1 : 0;
 	return (GFARM_ERR_NO_ERROR);
@@ -794,7 +795,8 @@ gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdstack_top(peer, &fd)) != GFARM_ERR_NO_ERROR)
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
 		;
 	else
 		e = process_bequeath_fd(process, fd);
@@ -825,10 +827,10 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 	else if ((e = process_inherit_fd(process, parent_fd, peer, NULL,
 	    &fd)) != GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = peer_fdstack_push(peer, fd)) != GFARM_ERR_NO_ERROR)
-		process_close_file(process, peer, fd);
+	else
+		peer_fdpair_set_current(peer, fd);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "inherit_fd", e, "i", fd));
+	return (gfm_server_put_reply(peer, "inherit_fd", e, ""));
 }
 

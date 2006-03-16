@@ -160,11 +160,17 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_compound_on_error(peer, from_client, skip,
 		    level, on_errorp);
 		break;
-	case GFM_PROTO_PUSH_FD:
-		e = gfm_server_push_fd(peer, from_client, skip);
+	case GFM_PROTO_GET_FD:
+		e = gfm_server_get_fd(peer, from_client, skip);
 		break;
-	case GFM_PROTO_SWAP_FD:
-		e = gfm_server_swap_fd(peer, from_client, skip);
+	case GFM_PROTO_PUT_FD:
+		e = gfm_server_put_fd(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SAVE_FD:
+		e = gfm_server_save_fd(peer, from_client, skip);
+		break;
+	case GFM_PROTO_RESTORE_FD:
+		e = gfm_server_restore_fd(peer, from_client, skip);
 		break;
 	case GFM_PROTO_CREATE:
 		e = gfm_server_create(peer, from_client, skip);
@@ -337,12 +343,14 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = GFARM_ERR_PROTOCOL;
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
+		/* XXX FIXME this shouldn't be done while COMPOUND loop. */
 		e = gfp_xdr_flush(peer_get_conn(peer));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_warning("protocol flush: %s",
 			    gfarm_error_string(e));
 	}
 
+	*requestp = request;
 	/* continue unless protocol error happens */
 	return (e);
 }
@@ -356,6 +364,7 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 	int skip = skip_base;
 	
 	for (;;) {
+		peer_fdpair_clear(peer);
 		e = protocol_switch(peer, from_client, skip, level,
 		    &request, &current_block);
 		if (peer_had_protocol_error(peer))
@@ -418,31 +427,6 @@ protocol_service(struct peer *peer, int from_client)
 				return; /* finish */
 		}
 	}
-}
-
-/* this routine is called from gfarm_authorize() */
-/* the return value of the following function should be free(3)ed */
-gfarm_error_t
-gfarm_global_to_local_username(char *global_user, char **local_user_p)
-{
-	if (user_lookup(global_user) == NULL)
-		return (GFARM_ERR_AUTHENTICATION);
-	return (gfarm_username_map_global_to_local(global_user, local_user_p));
-}
-
-/* this routine is called from gfarm_authorize() */
-/* the return value of the following function should be free(3)ed */
-gfarm_error_t
-gfarm_local_to_global_username(char *local_user, char **global_user_p)
-{
-	gfarm_error_t e = gfarm_username_map_local_to_global(local_user,
-	    global_user_p);
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (user_lookup(*global_user_p) == NULL)
-		return (GFARM_ERR_AUTHENTICATION);
-	return (GFARM_ERR_NO_ERROR);
 }
 
 void *

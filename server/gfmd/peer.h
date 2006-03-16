@@ -32,10 +32,13 @@ int peer_had_protocol_error(struct peer *);
 struct job_table_entry;
 struct job_table_entry **peer_get_jobs_ref(struct peer *);
 
-gfarm_error_t peer_fdstack_push(struct peer *peer, gfarm_int32_t fd);
-gfarm_error_t peer_fdstack_swap(struct peer *peer);
-gfarm_error_t peer_fdstack_pop(struct peer *peer);
-gfarm_error_t peer_fdstack_top(struct peer *peer, gfarm_int32_t *);
-gfarm_error_t peer_fdstack_next(struct peer *peer, gfarm_int32_t *);
+void peer_fdpair_clear(struct peer *);
+gfarm_error_t peer_fdpair_externalize_current(struct peer *);
+gfarm_error_t peer_fdpair_close_current(struct peer *);
+void peer_fdpair_set_current(struct peer *, gfarm_int32_t);
+gfarm_error_t peer_fdpair_get_current(struct peer *, gfarm_int32_t *);
+gfarm_error_t peer_fdpair_get_saved(struct peer *, gfarm_int32_t *);
+gfarm_error_t peer_fdpair_save(struct peer *);
+gfarm_error_t peer_fdpair_restore(struct peer *);
 
 gfarm_error_t peer_schedule(struct peer *, void *(*)(void *));
