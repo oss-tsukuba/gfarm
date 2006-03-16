@@ -15,10 +15,10 @@ DEPLIBS = $(DEPGFARMLIB)
 PROGRAM = gfmd
 SRCS =	gfmd.c \
 	subr.c id_table.c user.c group.c host.c peer.c process.c job.c \
-	dir.c inode.c fs.c
+	dir.c inode.c fs.c metadb_if.c
 OBJS =	gfmd.o \
 	subr.o id_table.o user.o group.o host.o peer.o process.o job.o \
-	dir.o inode.o fs.o
+	dir.o inode.o fs.o metadb_if.o
 
 all: $(PROGRAM)
 
