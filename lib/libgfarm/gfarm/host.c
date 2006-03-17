@@ -581,3 +581,34 @@ gfarm_host_address_get(const char *host, int port,
 		gfarm_host_info_free(&info);
 	return (e);
 }
+
+char *
+gfarm_hosts_in_domain(int *nhost, char ***hostnamesp, char *domain)
+{
+	char *e;
+	struct gfarm_host_info *hostinfos;
+	char **hostnames;
+	int i, j;
+
+	e = gfarm_host_info_get_all(nhost, &hostinfos);
+	if (e != NULL)
+		return (e);
+	hostnames = malloc(sizeof(*hostnames) * *nhost);
+	if (hostnames == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	j = 0;
+	for (i = 0; i < *nhost; i++) {
+		char *s = hostinfos[i].hostname;
+		if (gfarm_host_is_in_domain(s, domain)) {
+			hostnames[j] = strdup(s);
+			if (hostnames[j] == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+			j++;
+		}	
+	}
+	gfarm_host_info_free_all(*nhost, hostinfos);
+	*nhost = j;
+	*hostnamesp = hostnames;
+	return (NULL);
+}

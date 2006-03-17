@@ -17,6 +17,7 @@
 
 #include "gfs_client.h"
 #include "hash.h"
+#include "host.h"
 
 #define LINELEN	2048
 
@@ -851,41 +852,6 @@ search_not_have_replica_host(int pos,
 	return (-1);
 }
 
-static char *
-hosts_in_domain(int *nhost, char ***hostnamesp, char *domain) 
-{
-	char *e;
-	struct gfarm_host_info *hostinfos;
-	char **hostnames;
-	int i, j;
-
-	e = gfarm_host_info_get_all(nhost, &hostinfos);
-	if (e != NULL)
-		return (e);
-	hostnames = malloc(sizeof(*hostnames) * *nhost);
-	if (hostnames == NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
-		exit(EXIT_FAILURE);
-	}
-	j = 0;
-	for (i = 0; i < *nhost; i++) {
-		char *s = hostinfos[i].hostname;
-		if (gfarm_host_is_in_domain(s, domain)) {
-			hostnames[j] = strdup(s);
-			if (hostnames[j] == NULL) {
-				fprintf(stderr, "%s: %s\n", program_name,
-					GFARM_ERR_NO_MEMORY);
-				exit(EXIT_FAILURE);	
-			}
-			j++;
-		}	
-	}
-	gfarm_host_info_free_all(*nhost, hostinfos);
-	*nhost = j;
-	*hostnamesp = hostnames;
-	return (NULL);
-}
-
 /* 
  * eliminate common strings in a and b from a
  */ 
@@ -1529,12 +1495,12 @@ main(argc, argv)
 		if (dest_domain == NULL) {
 			dest_domain = "";
 		}	
-		e = hosts_in_domain(&nshosts, &shosts, src_domain);
+		e = gfarm_hosts_in_domain(&nshosts, &shosts, src_domain);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(EXIT_FAILURE);
 		}
-		e = hosts_in_domain(&ndhosts, &dhosts, dest_domain);
+		e = gfarm_hosts_in_domain(&ndhosts, &dhosts, dest_domain);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(EXIT_FAILURE);
