@@ -393,12 +393,12 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 #endif
 
 #if 1
-	if (s1->st_ino == s2->st_ino &&
+	if (/* s1->st_ino == s2->st_ino && */
 	    s1->st_mode == s2->st_mode &&
 	    s1->st_size == s2->st_size &&
 	    s1->st_nsections == s2->st_nsections &&
 	    strcmp(s1->st_user, s2->st_user) == 0
-      /* && strcmp(s1->st_group, s2->st_group) == 0 */
+	    /* && strcmp(s1->st_group, s2->st_group) == 0 */
 		)
 		return (0); /* equal */
 	else
@@ -407,11 +407,13 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 	{
 		int ok = 0;
 
+#if 0
 		if (s1->st_ino != s2->st_ino) {
 			_debug(("different st_ino: %d %d\n",
 			       (int)s1->st_ino, (int)s2->st_ino));
 			ok = 1;
 		}
+#endif
 		if (s1->st_mode != s2->st_mode) {
 			_debug(("different st_mode: %d %d\n",
 			       (int)s1->st_mode, (int)s2->st_mode));
@@ -447,6 +449,10 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 	struct gfarm_path_info nowinfo;
 	struct gfarm_timespec tmp;
 	struct gfarm_timespec zero = {0, 0};
+
+	if (update_time_interval.tv_sec == 0 &&
+	    update_time_interval.tv_nsec == 0)
+		return (0); /* need updating */
 
 	e = cache_path_info_get(pathname, &nowinfo);
         if (e != NULL)
@@ -495,6 +501,12 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 		}
 #endif
 		_debug(("! cancel updating mtime/atime/ctime: %s\n", pathname));
+#if 1  /* XXX temporary implements */
+		info->status.st_mtimespec = nowinfo.status.st_mtimespec;
+		info->status.st_atimespec = nowinfo.status.st_atimespec;
+		info->status.st_ctimespec = nowinfo.status.st_ctimespec;
+#endif
+
 		gfarm_path_info_free(&nowinfo);
 		return (1); /* do nothing */
 	}
