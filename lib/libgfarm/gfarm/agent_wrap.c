@@ -62,11 +62,20 @@ gfarm_agent_type_set(enum agent_type type)
 	return (NULL);
 }
 
+void
+gfarm_agent_name_clear()
+{
+	if (gfarm_agent_name != NULL)
+		free(gfarm_agent_name);
+	gfarm_agent_name = NULL;	
+}
+
 char *
 gfarm_agent_name_set(char *name)
 {
 	if (gfarm_agent_name != NULL)
-		free(gfarm_agent_name);
+		return (NULL);
+
 	gfarm_agent_name = strdup(name);
 	if (gfarm_agent_name == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -74,19 +83,38 @@ gfarm_agent_name_set(char *name)
 	return (gfarm_agent_type_set(INET));
 }
 
+void
+gfarm_agent_port_clear()
+{
+	if (gfarm_agent_port != 0)
+		gfarm_agent_port = 0;
+}
+
 char *
 gfarm_agent_port_set(char *port)
 {
+	if (gfarm_agent_port != 0)
+		return (NULL);
+
 	gfarm_agent_port = atoi(port);
 
 	return (gfarm_agent_type_set(INET));
+}
+
+void
+gfarm_agent_sock_path_clear()
+{
+	if (gfarm_agent_sock_path != NULL)
+		free(gfarm_agent_sock_path);
+	gfarm_agent_sock_path = NULL;
 }
 
 char *
 gfarm_agent_sock_path_set(char *path)
 {
 	if (gfarm_agent_sock_path != NULL)
-		free(gfarm_agent_sock_path);
+		return (NULL);
+
 	gfarm_agent_sock_path = strdup(path);
 	if (gfarm_agent_sock_path == NULL)
 		return (GFARM_ERR_NO_MEMORY);

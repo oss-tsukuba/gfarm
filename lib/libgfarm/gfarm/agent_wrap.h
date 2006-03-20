@@ -10,6 +10,9 @@ char *gfarm_agent_type_set(enum agent_type);
 char *gfarm_agent_name_set(char *);
 char *gfarm_agent_port_set(char *);
 char *gfarm_agent_sock_path_set(char *);
+void gfarm_agent_name_clear(void);
+void gfarm_agent_port_clear(void);
+void gfarm_agent_sock_path_clear(void);
 
 char *gfarm_agent_connect(void);
 char *gfarm_agent_disconnect(void);

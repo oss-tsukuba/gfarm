@@ -400,6 +400,11 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
 	};
+	static void (*funcs[])(void) = {
+		gfarm_agent_name_clear,
+		gfarm_agent_port_clear,
+		gfarm_agent_sock_path_clear
+	};
 	int i;
 
 	if (gfarm_spool_root != NULL) {
@@ -416,6 +421,9 @@ gfarm_config_clear(void)
 			free(*vars[i]);
 			*vars[i] = NULL;
 		}
+	}
+	for (i = 0; i < GFARM_ARRAY_LENGTH(funcs); i++) {
+		(*funcs[i])();
 	}
 
 	config_read = gfarm_config_not_read;
