@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -580,6 +581,77 @@ gfarm_host_address_get(const char *host, int port,
 	if (hir.got)
 		gfarm_host_info_free(&info);
 	return (e);
+}
+
+/*
+ * `*widendep' is only set, when this function returns True.
+ * `*widendep' means:
+ * -1: the addr is adjacent to the lower bound of the min address.
+ *  0: the addr is between min and max.
+ *  1: the addr is adjacent to the upper bound of the max address.
+ *
+ * XXX mostly works, but by somewhat haphazard way, if wild_guess is set.
+ */
+int
+gfarm_addr_is_same_net(struct sockaddr *addr,
+	struct sockaddr *min, struct sockaddr *max, int wild_guess,
+	int *widenedp)
+{
+	gfarm_uint32_t addr_in, min_in, max_in;
+	gfarm_uint32_t addr_net, min_net, max_net;
+
+	assert(addr->sa_family == AF_INET &&
+	    min->sa_family == AF_INET &&
+	    max->sa_family == AF_INET);
+	addr_in = ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
+	min_in = ntohl(((struct sockaddr_in *)min)->sin_addr.s_addr);
+	max_in = ntohl(((struct sockaddr_in *)max)->sin_addr.s_addr);
+	if (min_in <= addr_in && addr_in <= max_in) {
+		*widenedp = 0;
+		return (1);
+	}
+	if (!wild_guess) /* `*widenedp' is always false, if !wild_guess */
+		return (0);
+	/* do wild guess */
+
+	/* XXX - get IPv4 C class part */
+	addr_net = (addr_in >> 8) & 0xffffff;
+	min_net = (min_in >> 8) & 0xffffff;
+	max_net = (max_in >> 8) & 0xffffff;
+	/* adjacent or same IPv4 C class? */
+	if (addr_net == min_net - 1 ||
+	    (addr_net == min_net && addr_in < min_in)) {
+		*widenedp = -1;
+		return (1);
+	}
+	if (addr_net == max_net + 1 ||
+	    (addr_net == max_net && addr_in > max_in)) {
+		*widenedp = 1;
+		return (1);
+	}
+	return (0);
+}
+
+char *
+gfarm_addr_range_get(struct sockaddr *addr,
+	struct sockaddr *min, struct sockaddr *max)
+{
+	gfarm_uint32_t addr_in, addr_net;
+
+	assert(addr->sa_family == AF_INET);
+	addr_in = ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
+	/* XXX - get IPv4 C class part */
+	addr_net = addr_in & 0xffffff00;
+
+	/* XXX - minimum & maximum address in the IPv4 C class net  */
+	memset(min, 0, sizeof(*min));
+	min->sa_family = AF_INET;
+	((struct sockaddr_in *)min)->sin_addr.s_addr = htonl(addr_net);
+
+	memset(max, 0, sizeof(*max));
+	max->sa_family = AF_INET;
+	((struct sockaddr_in *)max)->sin_addr.s_addr = htonl(addr_net | 0xff);
+	return (NULL);
 }
 
 char *

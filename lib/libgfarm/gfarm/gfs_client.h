@@ -61,6 +61,15 @@ char *gfs_client_statfs(struct gfs_connection *, char *, gfarm_int32_t *,
 	file_offset_t *, file_offset_t *, file_offset_t *,
 	file_offset_t *, file_offset_t *, file_offset_t *);
 
+struct gfs_client_statfs_state;
+char *gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *,
+	struct gfs_connection *, char *, void (*)(void *), void *,
+	struct gfs_client_statfs_state **);
+char *gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *,
+	gfarm_int32_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+
 /* old interface. now mainly used for bootstrap. the followings */
 char *gfs_client_bootstrap_replicate_file(struct gfs_connection *,
 	char *, gfarm_int32_t, file_offset_t, char *, char *);

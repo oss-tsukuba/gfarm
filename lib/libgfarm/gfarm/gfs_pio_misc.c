@@ -1782,8 +1782,8 @@ gfarm_url_program_register(
 		nreplicas = nhosts;
 
 	if (gfarm_host_get_canonical_self_name(&self_name) != NULL) {
-		e = gfarm_schedule_search_idle_hosts(nhosts, hostnames,
-						     nreplicas, hostnames);
+		e = gfarm_schedule_search_idle_hosts_to_write(
+		    nhosts, hostnames, nreplicas, hostnames);
 	} else {
 		/* give the top priority to self host */
 		char * tmp;
@@ -1796,10 +1796,9 @@ gfarm_url_program_register(
 			hostnames[i] = tmp;
 		}
 		if (nreplicas > 1)
-			e = gfarm_schedule_search_idle_hosts(nhosts - 1,
-							     hostnames + 1,
-							     nreplicas - 1,
-							     hostnames + 1);
+			e = gfarm_schedule_search_idle_hosts_to_write(
+			    nhosts - 1, hostnames + 1,
+			    nreplicas - 1, hostnames + 1);
 	}
 	if (e != NULL)
 		goto finish_hostnames;
@@ -2136,7 +2135,7 @@ gfarm_url_fragments_transfer_to_domainname(
 	if (dsthosts == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	e = gfarm_schedule_search_idle_by_domainname(domainname,
+	e = gfarm_schedule_search_idle_by_domainname_to_write(domainname,
 		nfrags, dsthosts);
 	if (e != NULL)
 		goto free_dsthosts;

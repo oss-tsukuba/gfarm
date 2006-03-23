@@ -43,6 +43,8 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
+#define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
+
 #define XAUTH_NEXTRACT_MAXLEN	512
 
 static char GFARM_ERR_GFSD_ABORTED[] = "gfsd aborted";
@@ -873,6 +875,153 @@ gfs_client_statfs(struct gfs_connection *gfs_server, char *path,
 			       path, bsizep,
 			       blocksp, bfreep, bavailp,
 			       filesp, ffreep, favailp));
+}
+
+/*
+ * multiplexed version of gfs_client_statfs()
+ */
+struct gfs_client_statfs_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable, *readable;
+	void (*continuation)(void *);
+	void *closure;
+	struct gfs_connection *gfs_server;
+	char *path;
+
+	/* results */
+	char *error;
+	gfarm_int32_t bsize;
+	file_offset_t blocks, bfree, bavail;
+	file_offset_t files, ffree, favail;
+};
+
+static void
+gfs_client_statfs_send_request(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_statfs_state *state = closure;
+	int rv;
+	struct timeval timeout;
+
+	state->error = gfs_client_rpc_request(state->gfs_server,
+	    GFS_PROTO_STATFS, "s", state->path);
+	if (state->error == NULL &&
+	    (state->error = xxx_proto_flush(state->gfs_server->conn)) == NULL){
+		timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+		timeout.tv_usec = 0;
+		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
+		    &timeout)) == 0) {
+			/* go to gfs_client_statfs_recv_result() */
+			return;
+		}
+		state->error = gfarm_errno_to_error(rv);
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static void
+gfs_client_statfs_recv_result(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_statfs_state *state = closure;
+
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		state->error = GFARM_ERR_CONNECTION_TIMED_OUT;
+	} else {
+		assert(events == GFARM_EVENT_READ);
+		state->error = gfs_client_rpc_result(state->gfs_server, 0,
+		    "ioooooo", &state->bsize,
+		    &state->blocks, &state->bfree, &state->bavail,
+		    &state->files, &state->ffree, &state->favail);
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+char *
+gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
+	struct gfs_connection *gfs_server, char *path,
+	void (*continuation)(void *), void *closure,
+	struct gfs_client_statfs_state **statepp)
+{
+	char *e;
+	int rv;
+	struct gfs_client_statfs_state *state;
+
+	state = malloc(sizeof(*state));
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_return;
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->gfs_server = gfs_server;
+	state->path = path;
+	state->error = NULL;
+	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_statfs_send_request, state);
+	if (state->writable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_state;
+	}
+	/*
+	 * We cannot use two independent events (i.e. a fd_event with
+	 * GFARM_EVENT_READ flag and a timer_event) here, because
+	 * it's possible that both event handlers are called at once.
+	 */
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_statfs_recv_result, state);
+	if (state->readable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_writable;
+	}
+	/* go to gfs_client_statfs_send_request() */
+	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+	if (rv != 0) {
+		e = gfarm_errno_to_error(rv);
+		goto error_free_readable;
+	}
+	*statepp = state;
+	return (NULL);
+		
+error_free_readable:
+	gfarm_event_free(state->readable);
+error_free_writable:
+	gfarm_event_free(state->writable);
+error_free_state:
+	free(state);
+error_return:
+	return (e);
+}
+
+char *
+gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
+	gfarm_int32_t *bsizep,
+	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
+	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+{
+	char *e = state->error;
+
+	gfarm_event_free(state->writable);
+	gfarm_event_free(state->readable);
+	if (e == NULL) {
+		*bsizep = state->bsize;
+		*blocksp = state->blocks;
+		*bfreep = state->bfree;
+		*bavailp = state->bavail;
+		*filesp = state->files;
+		*ffreep = state->ffree;
+		*favailp = state->favail;
+	}
+	free(state);
+	return (e);
 }
 
 /*

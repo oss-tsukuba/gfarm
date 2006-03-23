@@ -13,11 +13,14 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
+
 #include <gfarm/gfarm.h>
 
-#include "gfs_client.h"
 #include "hash.h"
+
 #include "host.h"
+#include "gfs_client.h"
+#include "schedule.h"
 
 #define LINELEN	2048
 
@@ -1521,8 +1524,8 @@ main(argc, argv)
 					       nshosts, shosts);
 		ndhosts_alive = ndhosts;
 		dhosts_alive = malloc(sizeof(*dhosts_alive) * ndhosts_alive);
-		e = gfarm_schedule_search_idle_acyclic_hosts(ndhosts, dhosts,
-					     &ndhosts_alive, dhosts_alive);
+		e = gfarm_schedule_search_idle_acyclic_hosts_to_write(
+		    ndhosts, dhosts, &ndhosts_alive, dhosts_alive);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			exit(EXIT_FAILURE);

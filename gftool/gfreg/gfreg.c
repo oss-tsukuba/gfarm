@@ -11,8 +11,9 @@
 #include <assert.h>
 #include <dirent.h>
 #include <gfarm/gfarm.h>
-#include "schedule.h" /* gfarm_strings_expand_cyclic() */
+
 #include "host.h"
+#include "schedule.h" /* gfarm_strings_expand_cyclic() */
 
 /*
  *  Register a local file to Gfarm filesystem
@@ -766,7 +767,8 @@ get_hosts(char *hostname, char *hostfile, char *domainname,
 		exit(EXIT_FAILURE);
         }
 	nhosts = nh;
-	e = gfarm_schedule_search_idle_acyclic_hosts(nh, h, &nhosts, hosts);
+	e = gfarm_schedule_search_idle_acyclic_hosts_to_write(
+	    nh, h, &nhosts, hosts);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
