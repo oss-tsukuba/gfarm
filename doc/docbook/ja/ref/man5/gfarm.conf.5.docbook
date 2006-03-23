@@ -609,7 +609,7 @@ IPアドレスを通信に用いるかを指定します。
 <term><token>host_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
-キャッシュの有効期限を秒数で指定します。デフォルトは3600秒すなわち一時間です。
+キャッシュの有効期限を秒数で指定します。デフォルトは600秒すなわち10分です。
 </para>
 <para>例:</para>
 <literallayout>
