@@ -1213,6 +1213,76 @@ CLASS="LITERALLAYOUT"
 >According to the first line of this mapping file, a global user
 name "foobar" is mapped to a local user name "foo" on this node.</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>dir_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies time (in seconds) until directory cache
+in gfarm library will be expired.
+The default time is 86,400 seconds, i.e. one day.
+The time can be specified by an environment variable
+GFARM_DIRCACHE_TIMEOUT, too.
+And the environment variable takes precedence over the directive.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	dir_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies time (in seconds) until filesystem node
+cache in gfarm library will be expired.
+The default time is 3,600 seconds, i.e. one hour.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>minimum_free_disk_space</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies disk free space (by bytes) which is
+necessary on filesystem nodes. Gfarm scheduler tries to avoid to schedule
+nodes which have free space less than this parameter, when it
+schedules filesystem nodes for jobs which may write files.
+The size of free space may have a suffix like ``k'' (kilo bytes), 
+``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
+The default size is 128M bytes.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	minimum_free_disk_space&nbsp;1G</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1248,6 +1318,9 @@ CLASS="LITERALLAYOUT"
 		  &#60;address_use_statement&#62;&nbsp;|<br>
 		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;<br>
+		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
@@ -1277,12 +1350,16 @@ CLASS="LITERALLAYOUT"
 		  "rate_limit"<br>
 	&#60;sockopt_statement&#62;&nbsp;::=<br>
 		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
-	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
 	&#60;client_architecture_statement&#62;&nbsp;::=<br>
 		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
@@ -1290,6 +1367,7 @@ CLASS="LITERALLAYOUT"
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
 	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
 	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
 	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
 	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>

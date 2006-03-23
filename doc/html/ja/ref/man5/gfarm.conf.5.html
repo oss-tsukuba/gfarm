@@ -1073,6 +1073,73 @@ CLASS="LITERALLAYOUT"
 >¤³¤ÎÎã¤Î1¹ÔÌÜ¤Î»ØÄê¤Ç¤Ï¡¢¤³¤Î¥Î¡¼¥É¤Î¥í¡¼¥«¥ë¥æ¡¼¥¶Ì¾ foo ¤Ë
 ÂÐ¤·¤Æ¥°¥í¡¼¥Ð¥ë¥æ¡¼¥¶Ì¾ foobar ¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Þ¤¹¡£</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>dir_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Ç¥£¥ì¥¯¥È¥ê¥­¥ã¥Ã¥·¥å¤Î
+Í­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï86400ÉÃ¤¹¤Ê¤ï¤Á°ìÆü¤Ç¤¹¡£
+¤³¤ÎÃÍ¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_DIRCACHE_TIMEOUT ¤Ç¤â»ØÄê¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+ÀßÄê¥Õ¥¡¥¤¥ë¤È´Ä¶­ÊÑ¿ô¤Ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	dir_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É
+¥­¥ã¥Ã¥·¥å¤ÎÍ­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï3600ÉÃ¤¹¤Ê¤ï¤Á°ì»þ´Ö¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>minimum_free_disk_space</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥Ð¥¤¥È¿ô</I
+></TT
+></DT
+><DD
+><P
+>¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ÇÉ¬Í×¤ÊºÇ¾®¸ÂÅÙ¤Î¥Ç¥£¥¹¥¯¶õ¤­ÍÆÎÌ¤ò»ØÄê
+¤·¤Þ¤¹¡£¤³¤Î¥µ¥¤¥º°Ê²¼¤Î¶õ¤­ÍÆÎÌ¤·¤«¤Ê¤¤¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ï¡¢
+¥Õ¥¡¥¤¥ë½ñ¤­¹þ¤ß¤ò¹Ô¤¦²ÄÇ½À­¤Î¤¢¤ëÁàºî¤ò¹Ô¤¦ºÝ¤Ë¡¢ÁªÂò¤µ¤ì¤Ë¤¯¤¯¤Ê¤ê¤Þ¤¹¡£
+»ØÄê¤Ï¥Ð¥¤¥ÈÃ±°Ì¤Ç¹Ô¤¤¤Þ¤¹¤¬¡¢¿ô»ú¤ÎËöÈø¤Ë¶õÇò¤ò³«¤±¤º¤Ë k/M/G/T ¤ò»ØÄê
+¤¹¤ë¤³¤È¤Ç¡¢¤½¤ì¤¾¤ì 1k¥Ð¥¤¥È¡¿1M¥Ð¥¤¥È¡¿1G¥Ð¥¤¥È¡¿1T¥Ð¥¤¥È¤òÃ±°Ì¤È¤¹¤ë
+¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï128M¥Ð¥¤¥È¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	minimum_free_disk_space&nbsp;1G</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1107,6 +1174,9 @@ CLASS="LITERALLAYOUT"
 		  &#60;address_use_statement&#62;&nbsp;|<br>
 		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;<br>
+		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
@@ -1136,12 +1206,16 @@ CLASS="LITERALLAYOUT"
 		  "rate_limit"<br>
 	&#60;sockopt_statement&#62;&nbsp;::=<br>
 		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
-	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
 	&#60;client_architecture_statement&#62;&nbsp;::=<br>
 		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
@@ -1149,6 +1223,7 @@ CLASS="LITERALLAYOUT"
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
 	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
 	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
 	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
 	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>

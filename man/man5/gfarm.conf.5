@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
+.TH "GFARM.CONF" "5" "24 March 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -511,6 +511,46 @@ Example of the user mapping file:
 
 According to the first line of this mapping file, a global user
 name "foobar" is mapped to a local user name "foo" on this node.
+.TP
+\fBdir_cache_timeout \fIseconds\fB\fR
+This directive specifies time (in seconds) until directory cache
+in gfarm library will be expired.
+The default time is 86,400 seconds, i.e. one day.
+The time can be specified by an environment variable
+GFARM_DIRCACHE_TIMEOUT, too.
+And the environment variable takes precedence over the directive.
+
+For example,
+
+.nf
+	dir_cache_timeout 60
+.fi
+.TP
+\fBhost_cache_timeout \fIseconds\fB\fR
+This directive specifies time (in seconds) until filesystem node
+cache in gfarm library will be expired.
+The default time is 3,600 seconds, i.e. one hour.
+
+For example,
+
+.nf
+	host_cache_timeout 60
+.fi
+.TP
+\fBminimum_free_disk_space \fIbytes\fB\fR
+This directive specifies disk free space (by bytes) which is
+necessary on filesystem nodes. Gfarm scheduler tries to avoid to schedule
+nodes which have free space less than this parameter, when it
+schedules filesystem nodes for jobs which may write files.
+The size of free space may have a suffix like ``k'' (kilo bytes), 
+``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
+The default size is 128M bytes.
+
+For example,
+
+.nf
+	minimum_free_disk_space 1G
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm.conf described by the BNF
@@ -537,6 +577,9 @@ notation.
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
 		\~\~<local_user_map_statement>
+		\~\~<dir_cache_timeout_statement> |
+		\~\~<host_cache_timeout_statement> |
+		\~\~<minimum_free_disk_space_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
@@ -566,12 +609,16 @@ notation.
 		\~\~"rate_limit"
 	<sockopt_statement> ::=
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<client_architecture_statement> ::=
 		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
+	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<minimum_free_disk_space_statement> ::=
+		\~\~"minimum_free_disk_space" <size>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -579,6 +626,7 @@ notation.
 	<hostname> ::= <hostname_character> <hostname_character>*
 	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
 	<portnumber> ::= <number>
+	<size> ::= <number> [ "k" | "M" | "G" | "T" ]
 	<number> ::= <digit> [<digit>*]
 	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	<string> ::= """ <double_quoted_character>* """

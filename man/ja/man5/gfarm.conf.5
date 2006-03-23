@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
+.TH "GFARM.CONF" "5" "24 March 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -465,6 +465,43 @@ IPアドレスを通信に用いるかを指定します。
 
 この例の1行目の指定では、このノードのローカルユーザ名 foo に
 対してグローバルユーザ名 foobar が定義されています。
+.TP
+\fBdir_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
+有効期限を秒数で指定します。デフォルトは86400秒すなわち一日です。
+この値は、環境変数 GFARM_DIRCACHE_TIMEOUT でも指定することができます。
+設定ファイルと環境変数では、環境変数の方が優先されます。
+
+例:
+
+.nf
+	dir_cache_timeout 60
+.fi
+.TP
+\fBhost_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ファイルシステムノード
+キャッシュの有効期限を秒数で指定します。デフォルトは3600秒すなわち一時間です。
+
+例:
+
+.nf
+	host_cache_timeout 60
+.fi
+.TP
+\fBminimum_free_disk_space \fIバイト数\fB\fR
+ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
+することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
+
+例:
+
+.nf
+	minimum_free_disk_space 1G
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -490,6 +527,9 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
 		\~\~<local_user_map_statement>
+		\~\~<dir_cache_timeout_statement> |
+		\~\~<host_cache_timeout_statement> |
+		\~\~<minimum_free_disk_space_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
@@ -519,12 +559,16 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~"rate_limit"
 	<sockopt_statement> ::=
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<client_architecture_statement> ::=
 		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
+	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<minimum_free_disk_space_statement> ::=
+		\~\~"minimum_free_disk_space" <size>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -532,6 +576,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<hostname> ::= <hostname_character> <hostname_character>*
 	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
 	<portnumber> ::= <number>
+	<size> ::= <number> [ "k" | "M" | "G" | "T" ]
 	<number> ::= <digit> [<digit>*]
 	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	<string> ::= """ <double_quoted_character>* """
