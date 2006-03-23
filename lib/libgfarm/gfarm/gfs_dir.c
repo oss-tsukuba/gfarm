@@ -27,6 +27,7 @@
 #endif
 
 #include "gfutil.h"
+#include "config.h"
 
 #include "metadb_access.h"
 #include "gfs_misc.h"	/* gfarm_path_expand_home() */
@@ -1028,7 +1029,7 @@ mark_path(void *closure, struct gfarm_path_info *info)
 /* refresh directories as soon as possible */
 static int need_to_clear_cache = 0;
 
-struct timeval gfarm_dircache_timeout = { 86400, 0 }; /* 1 day */
+struct timeval gfarm_dircache_timeout = { GFARM_DIR_CACHE_TIMEOUT_DEFAULT, 0 };
 static struct timeval last_dircache = {0, 0};
 
 static char *
@@ -1070,6 +1071,9 @@ gfs_refreshdir(void)
 	if (!initialized) {
 		if ((s = getenv("GFARM_DIRCACHE_TIMEOUT")) != NULL)
 			gfarm_dircache_timeout.tv_sec = atoi(s);
+		else
+			gfarm_dircache_timeout.tv_sec =
+			    gfarm_dir_cache_timeout;
 		gfarm_dircache_timeout.tv_usec = 0;
 		initialized = 1;
 	}
