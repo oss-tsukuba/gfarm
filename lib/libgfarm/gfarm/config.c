@@ -328,18 +328,21 @@ gfarm_set_global_user_for_this_local_account(void)
 /*
  * GFarm Configurations.
  *
- * These initial values should be NULL, otherwise the value incorrectly
- * free(3)ed in the get_one_argument() function below.
+ * Initial string values should be NULL, otherwise the value incorrectly
+ * free(3)ed in the gfarm_config_clear() function below.
  * If you would like to provide default value other than NULL, set the
  * value at gfarm_config_set_default*().
  */
 /* GFS dependent */
+static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 char *gfarm_spool_root = NULL;
 static char *gfarm_spool_server_portname = NULL;
+int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
 static char *gfarm_metadb_server_portname = NULL;
+int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
@@ -366,9 +369,13 @@ enum gfarm_metadb_backend_type {
 	GFARM_METADB_TYPE_POSTGRESQL
 };
 
-static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
-int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
-int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
+/* miscellaneous */
+#define GFARM_HOST_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
+#define MISC_DEFAULT -1
+int gfarm_dir_cache_timeout = MISC_DEFAULT;
+int gfarm_host_cache_timeout = MISC_DEFAULT;
+file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 
 /* static variables */
 static enum {
@@ -892,6 +899,62 @@ parse_set_var(char *p, char **rv)
 }
 
 static char *
+parse_set_misc_int(char *p, int *vp)
+{
+	char *e, *ep, *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (NULL);
+	errno = 0;
+	v = strtol(s, &ep, 10);
+	if (errno != 0)
+		return (gfarm_errno_to_error(errno));
+	if (ep == s)
+		return ("integer expected");
+	if (*ep != '\0')
+		return ("invalid character");
+	*vp = v;
+	return (NULL);
+}
+
+static char *
+parse_set_misc_offset(char *p, file_offset_t *vp)
+{
+	char *e, *ep, *s;
+	file_offset_t v;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (NULL);
+	errno = 0;
+	v = string_to_file_offset(s, &ep);
+	if (errno != 0)
+		return (gfarm_errno_to_error(errno));
+	if (ep == s)
+		return ("integer expected");
+	if (*ep != '\0') {
+		switch (*ep) {
+		case 'k': case 'K': ep++; v *= 1024; break;
+		case 'm': case 'M': ep++; v *= 1024 * 1024; break;
+		case 'g': case 'G': ep++; v *= 1024 * 1024 * 1024; break;
+		case 't': case 'T': ep++; v *=1024*1024; v *=1024*1024; break;
+		}
+		if (*ep != '\0')
+			return ("invalid character");
+	}
+	*vp = v;
+	return (NULL);
+}
+
+static char *
 parse_cred_config(char *p, char *service,
 	char *(*set)(char *, char *))
 {
@@ -1031,6 +1094,14 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_local_user_map(p, &o);
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
+
+	} else if (strcmp(s, o = "dir_cache_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_dir_cache_timeout);
+	} else if (strcmp(s, o = "host_cache_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_host_cache_timeout);
+	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
+		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+
 	} else {
 		o = s;
 		e = "unknown keyword";
@@ -1197,6 +1268,18 @@ gfarm_config_set_default_spool_on_server(void)
 	}
 }
 
+static void
+gfarm_config_set_default_misc(void)
+{
+	if (gfarm_dir_cache_timeout == MISC_DEFAULT)
+		gfarm_dir_cache_timeout = GFARM_DIR_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_host_cache_timeout == MISC_DEFAULT)
+		gfarm_host_cache_timeout = GFARM_HOST_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
+		gfarm_minimum_free_disk_space =
+		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
+}
+
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -1256,6 +1339,7 @@ gfarm_config_read(void)
 		return (e);
 
 	gfarm_config_set_default_ports();
+	gfarm_config_set_default_misc();
 
 	return (config_metadb_type(rc_config != GFARM_METADB_TYPE_UNKNOWN ?
 	    rc_config : etc_config));
@@ -1286,6 +1370,7 @@ gfarm_server_config_read(void)
 		return (e);
 
 	gfarm_config_set_default_ports();
+	gfarm_config_set_default_misc();
 
 	/*
 	 * the following config_metadb_type() may be unnecessary,

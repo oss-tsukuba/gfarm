@@ -1,5 +1,6 @@
 extern int gfarm_is_active_file_system_node;
 
+/* GFS dependent */
 extern char *gfarm_spool_root;
 extern int gfarm_spool_server_port;
 
@@ -25,3 +26,9 @@ extern char *gfarm_postgresql_dbname;
 extern char *gfarm_postgresql_user;
 extern char *gfarm_postgresql_password;
 extern char *gfarm_postgresql_conninfo;
+
+/* miscellaneous */
+#define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */
+extern int gfarm_dir_cache_timeout;
+extern int gfarm_host_cache_timeout;
+extern file_offset_t gfarm_minimum_free_disk_space;

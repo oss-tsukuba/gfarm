@@ -590,6 +590,52 @@ IPアドレスを通信に用いるかを指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>dir_cache_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
+有効期限を秒数で指定します。デフォルトは86400秒すなわち一日です。
+この値は、環境変数 GFARM_DIRCACHE_TIMEOUT でも指定することができます。
+設定ファイルと環境変数では、環境変数の方が優先されます。
+</para>
+<para>例:</para>
+<literallayout>
+	dir_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>host_cache_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
+キャッシュの有効期限を秒数で指定します。デフォルトは3600秒すなわち一時間です。
+</para>
+<para>例:</para>
+<literallayout>
+	host_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
+することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
+</para>
+<para>例:</para>
+<literallayout>
+	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -616,6 +662,9 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
+		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
@@ -645,12 +694,16 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;"rate_limit"
 	&lt;sockopt_statement&gt; ::=
 		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
-	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
 	&lt;client_architecture_statement&gt; ::=
 		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
+	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
+	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+	&lt;minimum_free_disk_space_statement&gt; ::=
+		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -658,6 +711,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
 	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
 	&lt;portnumber&gt; ::= &lt;number&gt;
+	&lt;size&gt; ::= &lt;number&gt; [ "k" | "M" | "G" | "T" ]
 	&lt;number&gt; ::= &lt;digit&gt; [&lt;digit&gt;*]
 	&lt;digit&gt; ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	&lt;string&gt; ::= """ &lt;double_quoted_character&gt;* """
