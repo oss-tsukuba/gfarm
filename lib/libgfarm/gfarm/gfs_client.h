@@ -21,6 +21,7 @@ gfarm_error_t gfs_client_connection_acquire(const char *, int,
 	struct sockaddr *, struct gfs_connection **);
 void gfs_client_connection_free(struct gfs_connection *);
 void gfs_client_connection_gc(void);
+int gfs_client_connection_is_local(struct gfs_connection *);
 
 #if 0 /* XXX FIXME - disable multiplexed version for now */
 gfarm_error_t gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
@@ -44,6 +45,10 @@ gfarm_error_t gfs_client_pread(struct gfs_connection *,
 gfarm_error_t gfs_client_pwrite(struct gfs_connection *,
 			gfarm_int32_t, const void *, size_t, gfarm_off_t,
 			size_t *);
+gfarm_error_t gfs_client_ftruncate(struct gfs_connection *,
+	gfarm_int32_t, gfarm_off_t);
+gfarm_error_t gfs_client_fsync(struct gfs_connection *,
+	gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_fstat(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t *,
 	gfarm_int64_t *, gfarm_int32_t *,

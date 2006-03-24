@@ -88,6 +88,10 @@ gfarm_error_t gfarm_authorize(struct gfp_xdr *, int, char *,
 	char *, struct sockaddr *, 
 	enum gfarm_auth_id_type *, char **, enum gfarm_auth_method *);
 
+/* client side configuration */
+gfarm_error_t gfarm_set_auth_id_type(enum gfarm_auth_id_type);
+enum gfarm_auth_id_type gfarm_get_auth_id_type(void);
+
 /* auth_config */
 struct gfarm_hostspec;
 

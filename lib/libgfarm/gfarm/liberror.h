@@ -95,6 +95,9 @@ enum gfarm_errmsg {
 	GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL,
 	GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL,
 
+	/* refered from gfarm/gfs_pio.c and related modules */
+	GFARM_ERRMSG_GFS_PIO_IS_EOF,
+
 	GFARM_ERRMSG_END
 };
 

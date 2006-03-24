@@ -26,7 +26,3 @@ void gfarm_config_clear(void);
 gfarm_error_t gfarm_config_read_file(FILE *, char *, int *);
 gfarm_error_t gfarm_init_user_map(void);
 void gfarm_config_set_default_ports(void);
-
-enum gfarm_auth_id_type;
-gfarm_error_t gfarm_set_auth_id_type(enum gfarm_auth_id_type);
-enum gfarm_auth_id_type gfarm_get_auth_id_type(void);

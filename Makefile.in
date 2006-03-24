@@ -5,17 +5,18 @@ srcdir = @srcdir@
 include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
-	doc \
-	man \
 	include/gfarm \
 	lib \
-	`[ -d $(srcdir)/ns ] && echo ns` \
-	server \
-	gftool \
-	gfptool \
-	util/gfront \
-	util/ptool \
-	bench/thput-gfpio
+	server
+
+#	doc \
+#	man \
+#	`[ -d $(srcdir)/ns ] && echo ns` \
+#	gftool \
+#	gfptool \
+#	util/gfront \
+#	util/ptool \
+#	bench/thput-gfpio
 
 all:
 

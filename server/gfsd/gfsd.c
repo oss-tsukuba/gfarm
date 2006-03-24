@@ -472,10 +472,12 @@ gfs_open_flags_localize(int open_flags)
 #endif
 	if ((open_flags & GFARM_FILE_TRUNC) != 0)
 		local_flags |= O_TRUNC;
+#if 0 /* not yet in gfarm v2 */
 	if ((open_flags & GFARM_FILE_APPEND) != 0)
 		local_flags |= O_APPEND;
 	if ((open_flags & GFARM_FILE_EXCLUSIVE) != 0)
 		local_flags |= O_EXCL;
+#endif /* not yet in gfarm v2 */
 	return (local_flags);
 }
 

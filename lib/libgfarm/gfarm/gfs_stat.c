@@ -1,0 +1,73 @@
+#include <stdio.h>	/* config.h needs FILE */
+#include <stdlib.h>
+
+#define GFARM_INTERNAL_USE
+#include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+#include "timer.h"
+
+#include "gfs_profile.h"
+#include "gfm_client.h"
+#include "config.h"
+#include "lookup.h"
+
+gfarm_error_t
+gfs_stat(const char *path, struct gfs_stat *s)
+{
+	gfarm_error_t e;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
+	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+		gflog_warning("tmp_open(%s) request: %s", path,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fstat_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("fstat request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_end request: %s",
+		    gfarm_error_string(e));
+
+	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("tmp_open(%s) result: %s", path,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fstat_result(gfarm_metadb_server, s))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("fstat result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning("compound_end result: %s",
+		    gfarm_error_string(e));
+		gfs_stat_free(s);
+	}
+	/* NOTE: the opened descriptor is automatically closed by gfmd */
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+void
+gfs_stat_free(struct gfs_stat *s)
+{
+	if (s->st_user != NULL)
+		free(s->st_user);
+	if (s->st_group != NULL)
+		free(s->st_group);
+}

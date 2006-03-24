@@ -854,3 +854,18 @@ gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 	free(state);
 	return (e);
 }
+
+static enum gfarm_auth_id_type gfarm_auth_type = GFARM_AUTH_ID_TYPE_USER;
+
+gfarm_error_t
+gfarm_set_auth_id_type(enum gfarm_auth_id_type type)
+{
+	gfarm_auth_type = type;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+enum gfarm_auth_id_type
+gfarm_get_auth_id_type(void)
+{
+	return (gfarm_auth_type);
+}

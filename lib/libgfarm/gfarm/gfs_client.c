@@ -52,6 +52,8 @@ struct gfs_connection {
 	enum gfarm_auth_method auth_method;
 	struct gfarm_hash_entry *hash_entry;
 
+	int is_local;
+
 	/* reference counters */
 	int acquired;
 	int opened;
@@ -183,6 +185,7 @@ gfs_client_connection0(const char *canonical_hostname,
 			close(sock);
 			return (e);
 		}
+		gfs_server->is_local = 1;
 	} else {
 		sock = socket(PF_INET, SOCK_STREAM, 0);
 		if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
@@ -202,6 +205,7 @@ gfs_client_connection0(const char *canonical_hostname,
 			close(sock);
 			return (e);
 		}
+		gfs_server->is_local = 0;
 	}
 	e = gfp_xdr_new_fd(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -238,11 +242,11 @@ gfs_client_connection_free(struct gfs_connection *gfs_server)
 
 	/* sanity check */
 	if (gfs_server->opened > 0) {
-		fprintf(stderr, "gfs_server->acquired = %d, but\n",
+		gflog_error("gfs_server->acquired = %d, but\n",
 		    gfs_server->acquired);
-		fprintf(stderr, "gfs_server->opened = %d.\n",
+		gflog_error("gfs_server->opened = %d.\n",
 		    gfs_server->opened);
-		fprintf(stderr, "This shouldn't happen\n");
+		gflog_error("This shouldn't happen\n");
 		abort();
 	}
 
@@ -306,6 +310,12 @@ gfs_client_connection_acquire(const char *canonical_hostname, int port,
 	}
 	*gfs_serverp = gfs_server;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+int
+gfs_client_connection_is_local(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->is_local);
 }
 
 #if 0 /* XXX FIXME - disable multiplexed version for now */
@@ -386,6 +396,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	/* clone of gfs_client_connection0() */
 
+	/* XXX FIXME: use PF_UNIX, if possible */
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
@@ -412,6 +423,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		close(sock);
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	gfs_server->is_local = 0;
 
 	e = gfp_xdr_fd_connection_new(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -688,6 +700,9 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_error_t e;
 	int rv, local_fd;
 
+	if (!gfs_server->is_local)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
 	gfs_client_connection_used(gfs_server);
 
 	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_OPEN_LOCAL, "i", fd);
@@ -755,6 +770,26 @@ gfs_client_pwrite(struct gfs_connection *gfs_server,
 	if (n > size)
 		return (GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_client_ftruncate(struct gfs_connection *gfs_server,
+	gfarm_int32_t fd, gfarm_off_t size)
+{
+	gfs_client_connection_used(gfs_server);
+
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FTRUNCATE, "il/",
+	    fd, size));
+}
+
+gfarm_error_t
+gfs_client_fsync(struct gfs_connection *gfs_server,
+	gfarm_int32_t fd, gfarm_int32_t op)
+{
+	gfs_client_connection_used(gfs_server);
+
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
+	    fd, op));
 }
 
 gfarm_error_t

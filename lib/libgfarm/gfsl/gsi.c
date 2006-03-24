@@ -1080,11 +1080,15 @@ gfarmGssEnvForExportedCredential(exportedCred)
 }
 
 void
-gfarmGssDeleteExportedCredential(exportedCred)
+gfarmGssDeleteExportedCredential(exportedCred, int sigHandler)
     gfarmExportedCredential *exportedCred;
 {
     if (exportedCred->filename != NULL)
 	unlink(exportedCred->filename);
+
+    if (sigHandler) /* It's not safe to do the following operation */
+	    return;
+
     free(exportedCred->env);
     free(exportedCred);
 }

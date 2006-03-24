@@ -209,6 +209,9 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"unknown gfsd reply",
 	"GFS_PROTO_PREAD: protocol error",
 	"GFS_PROTO_WRITE: protocol error",
+
+	/* refered from gfarm/gfs_pio.c and related modules */
+	"internal error: end of file with gfs_pio",
 };
 
 /*

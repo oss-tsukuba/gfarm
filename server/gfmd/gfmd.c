@@ -363,8 +363,8 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 	gfarm_int32_t request;
 	int skip = skip_base;
 	
+	peer_fdpair_clear(peer);
 	for (;;) {
-		peer_fdpair_clear(peer);
 		e = protocol_switch(peer, from_client, skip, level,
 		    &request, &current_block);
 		if (peer_had_protocol_error(peer))
@@ -375,7 +375,7 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 				cause = e;
 			}
 		} else if (request == GFM_PROTO_COMPOUND_END) {
-			break;
+			return; /* finish */
 		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {
 			break;
 #if 0 /* We don't allow COMPOUND nesting to prevent stack overflow */
@@ -396,7 +396,7 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 		if (e != GFARM_ERR_NO_ERROR) {
 			skip = 1;
 		} else if (request == GFM_PROTO_COMPOUND_END) {
-			break;
+			break; /* finish */
 		} else if (request == GFM_PROTO_COMPOUND_ON_ERROR) {
 			skip = skip_base || current_block != cause;
 #if 0 /* We don't allow COMPOUND nesting to prevent stack overflow */
@@ -416,6 +416,7 @@ protocol_service(struct peer *peer, int from_client)
 	gfarm_int32_t request;
 
 	for (;;) {
+		peer_fdpair_clear(peer);
 		e = protocol_switch(peer, from_client, 0, 0,
 		    &request, &current_block);
 		if (peer_had_protocol_error(peer))

@@ -1113,7 +1113,7 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 		return (e);
 	for (i = 0; i < n; i++) {
 		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "bil",
-		    sizeof(dirents[i].d_name), &sz, dirents[i].d_name,
+		    sizeof(dirents[i].d_name) - 1, &sz, dirents[i].d_name,
 		    &type,
 		    &dirents[i].d_fileno);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
@@ -1121,9 +1121,14 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 				e = GFARM_ERR_PROTOCOL;
 			return (e);
 		}
-		if (sz < sizeof(dirents[i].d_name))
-			dirents[i].d_name[sz] = '\0';
+		if (sz >= sizeof(dirents[i].d_name) - 1)
+			sz = sizeof(dirents[i].d_name) - 1;
+		dirents[i].d_name[sz] = '\0';
+		dirents[i].d_namlen = sz;
 		dirents[i].d_type = type;
+		/* XXX */
+		dirents[i].d_reclen =
+		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;
 	}
 	*n_entriesp = n;
 	return (GFARM_ERR_NO_ERROR);

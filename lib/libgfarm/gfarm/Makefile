@@ -29,6 +29,7 @@ SRCS = \
 	stringlist.c \
 	config.c \
 	config_server.c \
+	config_client.c \
 	iobuffer.c \
 	gfp_xdr.c \
 	gfs_proto.c \
@@ -40,12 +41,18 @@ SRCS = \
 	auth_server.c \
 	conn_hash.c \
 	gfm_client.c \
-	gfs_client.c
-
-#	config_client.c \
+	gfs_client.c \
+	lookup.c \
+	gfs_io.c \
+	gfs_dir.c \
+	gfs_pio.c \
+	gfs_pio_section.c \
+	gfs_pio_local.c gfs_pio_remote.c \
+	gfs_stat.c \
+	gfs_mkdir.c
 
 #	gfs_pio.c gfs_pio_global.c \
-#	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
+#	gfs_pio_misc.c gfs_pio_section.c \
 #	gfs_exec.c gfs_unlink.c gfs_lock.c \
 #	glob.c host.c hostcache.c \
 #	import_help.c metadb_misc.c metadb_sw.c schedule.c \
@@ -53,7 +60,6 @@ SRCS = \
 
 #	agent_wrap.c agent_client.c agent_proto.c \
 #	gfs_client_rep.c \
-#	gfs_dir.c
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
 OBJS = \
@@ -66,6 +72,7 @@ OBJS = \
 	stringlist.lo \
 	config.lo \
 	config_server.lo \
+	config_client.lo \
 	iobuffer.lo \
 	gfp_xdr.lo \
 	gfs_proto.lo \
@@ -77,12 +84,18 @@ OBJS = \
 	auth_server.lo \
 	conn_hash.lo \
 	gfm_client.lo \
-	gfs_client.lo
+	gfs_client.lo \
+	lookup.lo \
+	gfs_io.lo \
+	gfs_dir.lo \
+	gfs_pio.lo \
+	gfs_pio_section.lo \
+	gfs_pio_local.lo gfs_pio_remote.lo \
+	gfs_stat.lo \
+	gfs_mkdir.lo
 
-#	config_client.lo \
-
-#	gfs_pio.lo gfs_pio_global.lo \
-#	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
+#	gfs_pio_global.lo \
+#	gfs_pio_misc.lo gfs_pio_section.lo \
 #	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
 #	glob.lo host.lo hostcache.lo \
 #	import_help.lo metadb_misc.lo metadb_sw.lo schedule.lo \
@@ -90,7 +103,6 @@ OBJS = \
 
 #	agent_wrap.lo agent_client.lo agent_proto.lo \
 #	gfs_client_rep.lo \
-#	gfs_dir.lo
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
 CFLAGS = $(pthread_includes) \
@@ -123,6 +135,7 @@ gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRC
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
+gfs_io.lo: gfs_io.h
 gfs_lock.lo: 
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h

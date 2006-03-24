@@ -110,7 +110,10 @@ extern int	gfarmGssInitiateSecurityContextResult(
 extern gfarmExportedCredential *
 		gfarmGssExportCredential(gss_cred_id_t cred,
 					 OM_uint32 *statPtr);
-extern char *	gfarmGssEnvForExportedCredential(gfarmExportedCredential *exportedCred);
-extern void	gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred);
+extern char *	gfarmGssEnvForExportedCredential(
+			gfarmExportedCredential *exportedCred);
+extern void	gfarmGssDeleteExportedCredential(
+			gfarmExportedCredential *exportedCred,
+			int sigHandler);
 
 #endif /* _GFARM_GSI_H_ */

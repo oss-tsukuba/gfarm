@@ -51,9 +51,14 @@ struct gfs_stat {
  * File/Directory operations
  */
 
-typedef struct gfs_file *GFS_File;
+#if 0 /* not yet on Gfarm v2 */
+typedef struct gfs_desc *GFS_Desc;
 
-gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
+gfarm_error_t gfs_desc_create(const char *, int, gfarm_mode_t, GFS_Desc *);
+gfarm_error_t gfs_desc_open(const char *, int, GFS_Desc *);
+gfarm_error_t gfs_desc_close(GFS_Desc);
+int gfs_desc_fileno(GFS_Desc);
+#endif /* not yet on Gfarm v2 */
 
 #define GFARM_FILE_RDONLY		0
 #define GFARM_FILE_WRONLY		1
@@ -64,16 +69,16 @@ gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
 #define GFARM_FILE_CREATE		0x00000200
 #endif
 #define GFARM_FILE_TRUNC		0x00000400
+#if 0 /* not yet on Gfarm v2 */
 #define GFARM_FILE_APPEND		0x00000800
 #define GFARM_FILE_EXCLUSIVE		0x00001000
-#if 0 /* not yet on Gfarm v2 */
 /* the followings are just hints */
 #define GFARM_FILE_SEQUENTIAL		0x01000000
 #define GFARM_FILE_REPLICATE		0x02000000
 #define GFARM_FILE_NOT_REPLICATE	0x04000000
 #define GFARM_FILE_NOT_RETRY		0x08000000
-#define GFARM_FILE_UNBUFFERED		0x10000000
 #endif
+#define GFARM_FILE_UNBUFFERED		0x10000000
 #ifdef GFARM_INTERNAL_USE /* internal use only */
 #define GFARM_FILE_BEQUEATHED		0x40000000
 #define GFARM_FILE_CKSUM_INVALIDATED	0x80000000
@@ -85,34 +90,36 @@ gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
 		GFARM_FILE_UNBUFFERED)
 #else
 #define GFARM_FILE_USER_MODE	(GFARM_FILE_ACCMODE|GFARM_FILE_TRUNC| \
-		GFARM_FILE_APPEND)
+	GFARM_FILE_UNBUFFERED)
 #endif /* not yet on Gfarm v2 */
 #endif /* GFARM_INTERNAL_USE */
 
-gfarm_error_t gfs_pio_close(GFS_File);
-int gfs_pio_fileno(GFS_File);
+#if 0 /* not yet on Gfarm v2 */
+gfarm_error_t gfs_desc_seek(GFS_Desc, gfarm_off_t, int, gfarm_off_t *);
+#endif /* not yet on Gfarm v2 */
 
-gfarm_error_t gfs_pio_seek(GFS_File, gfarm_off_t, int, gfarm_off_t *);
 #define GFARM_SEEK_SET	0
 #define GFARM_SEEK_CUR	1
 #define GFARM_SEEK_END	2
 
-gfarm_error_t gfs_pio_chmod(GFS_File, gfarm_mode_t);
-gfarm_error_t gfs_pio_stat(GFS_File, struct gfs_stat *);
+#if 0 /* not yet on Gfarm v2 */
+gfarm_error_t gfs_desc_chown(GFS_Desc, char *, char *);
+gfarm_error_t gfs_desc_chmod(GFS_Desc, gfarm_mode_t);
+gfarm_error_t gfs_desc_utimes(GFS_Desc, const struct gfarm_timespec *);
+
+gfarm_error_t gfs_desc_stat(GFS_Desc, struct gfs_stat *);
+#endif /* not yet on Gfarm v2 */
+
 void gfs_stat_free(struct gfs_stat *);
 
 /*
  * File operations
  */
 
-gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
+typedef struct gfs_file *GFS_File;
 
-int gfs_pio_eof(GFS_File);
-gfarm_error_t gfs_pio_error(GFS_File);
-void gfs_pio_clearerr(GFS_File);
-#if 0 /* not yet on Gfarm v2 */
-gfarm_error_t gfs_pio_get_nfragment(GFS_File, int *);
-#endif
+gfarm_error_t gfs_pio_open(const char *, int, GFS_File *);
+gfarm_error_t gfs_pio_create(const char *, int, gfarm_mode_t mode, GFS_File *);
 
 #if 0 /* not yet on Gfarm v2 */
 gfarm_error_t gfs_pio_set_local(int, int);
@@ -128,6 +135,17 @@ gfarm_error_t gfs_pio_set_view_global(GFS_File, int);
 #define GFARM_FILE_DONTCARE		(-1)
 #endif
 
+gfarm_error_t gfs_pio_close(GFS_File);
+
+int gfs_pio_eof(GFS_File);
+gfarm_error_t gfs_pio_error(GFS_File);
+void gfs_pio_clearerr(GFS_File);
+int gfs_pio_fileno(GFS_File);
+#if 0 /* not yet on Gfarm v2 */
+gfarm_error_t gfs_pio_get_nfragment(GFS_File, int *);
+#endif
+
+gfarm_error_t gfs_pio_seek(GFS_File, gfarm_off_t, int, gfarm_off_t *);
 gfarm_error_t gfs_pio_read(GFS_File, void *, int, int *);
 gfarm_error_t gfs_pio_write(GFS_File, const void *, int, int *);
 gfarm_error_t gfs_pio_flush(GFS_File);
@@ -164,17 +182,14 @@ struct gfs_dirent {
 #define	GFS_DT_DIR	 4
 #define	GFS_DT_REG	 8
 
-typedef GFS_File GFS_Dir; /* on Gfarm v2, GFS_Dir is actually GFS_File */
+typedef struct gfs_dir *GFS_Dir;
 
-#define gfs_opendir(path, dirp)	gfs_pio_open(path, GFARM_FILE_RDONLY, dirp)
-#define gfs_closedir(dir)	gfs_pio_close(dir)
-#define gfs_seekdir(dir, off)	\
-		gfs_pio_seek(dir, off, GFARM_SEEK_SET, (void*)0)
-#define gfs_telldir(dir, offp)	\
-		gfs_pio_seek(dir, (gfarm_off_t)0, GFARM_SEEK_CUR, offp)
-
+gfarm_error_t gfs_opendir(const char *, GFS_Dir *);
+gfarm_error_t gfs_closedir(GFS_Dir);
+gfarm_error_t gfs_seekdir(GFS_Dir, gfarm_off_t);
+gfarm_error_t gfs_telldir(GFS_Dir, gfarm_off_t *);
 gfarm_error_t gfs_readdir(GFS_Dir, struct gfs_dirent **);
-gfarm_error_t gfs_dirname(GFS_Dir);
+
 gfarm_error_t gfs_realpath(const char *, char **);
 
 /*
