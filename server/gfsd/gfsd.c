@@ -74,6 +74,8 @@ char *program_name = "gfsd";
 
 int debug_mode = 0;
 
+mode_t command_umask;
+
 int restrict_user = 0;
 uid_t restricted_user = 0;
 
@@ -1998,6 +2000,7 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		 * to make it possible to send a signal later
 		 */
 		setpgid(0, getpid());
+		umask(command_umask);
 		execve(command, argv_storage, envp);
 		fprintf(stderr, "%s: ", gfarm_host_get_self_name());
 		perror(path);
@@ -2155,7 +2158,7 @@ server(int client_fd)
 	gflog_set_auxiliary_info(aux);
 #endif
 	/* set file creation mask */
-	umask(0);
+	command_umask = umask(0);
 
 	for (;;) {
 		e = xxx_proto_recv(client, 0, &eof, "i", &request);
