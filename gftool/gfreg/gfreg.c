@@ -197,15 +197,69 @@ get_nsections(char *gfarm_url, int *nsectionsp)
 }
 
 static void
+register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
+	char *hostname,
+	char *filename, int use_file_mode, gfarm_mode_t file_mode)
+{
+	char *e;
+	int fd, fd_needs_close;
+	char *target_url;
+	GFS_File gf;
+	char section[GFARM_INT32STRLEN + 1];
+
+	if (!open_file(filename, &fd, &fd_needs_close))
+		return;
+	if (!use_file_mode && !get_file_mode(fd, filename, &file_mode))
+		goto finish;
+
+	if (!is_dest_dir)
+		target_url = gfarm_url;
+	else if (!concat_dir_name(gfarm_url, gfarm_path_dir_skip(filename),
+	    &target_url))
+		goto finish;
+
+	if (nfragments == GFARM_FILE_DONTCARE &&
+	    !get_nsections(target_url, &nfragments))
+		goto finish_url;
+
+	sprintf(section, "%d", index);
+	if (opt_force || section_does_not_exists(target_url, section)) {
+		e = gfs_pio_create(target_url,
+		    GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, file_mode, &gf);
+		if (e != NULL) {
+			fprintf(stderr,
+				"%s: gfs_pio_create: cannot open %s: %s\n",
+				program_name, target_url, e);
+			error_happened = 1;
+		} else {
+			if ((e = gfs_pio_set_view_index(gf, nfragments, index,
+			    hostname, 0)) != NULL) {
+				fprintf(stderr,
+					"%s: gfs_pio_set_view_index: "
+					"cannot open %s:%d: %s\n",
+				    program_name, target_url, index, e);
+				error_happened = 1;
+			} else {
+				copy_file(fd, gf, target_url, section);
+			}
+			gfs_pio_close(gf);
+		}
+	}
+ finish_url:
+	if (target_url != gfarm_url)
+		free(target_url);
+ finish:
+	if (fd_needs_close)
+		close(fd);
+}
+
+static void
 register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 {
 	char *e;
 	int fd, fd_needs_close;
 	GFS_File gf;
 	gfarm_mode_t file_mode;
-
-	static void register_fragment(int, char *, int, int, char *, char *,
-			int, gfarm_mode_t);
 
 	if (!open_file(filename, &fd, &fd_needs_close))
 		return;
@@ -393,63 +447,6 @@ get_lists(char *dir_path,
 		return (0);
 	}
 	return (1);
-}
-
-static void
-register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
-	char *hostname,
-	char *filename, int use_file_mode, gfarm_mode_t file_mode)
-{
-	char *e;
-	int fd, fd_needs_close;
-	char *target_url;
-	GFS_File gf;
-	char section[GFARM_INT32STRLEN + 1];
-
-	if (!open_file(filename, &fd, &fd_needs_close))
-		return;
-	if (!use_file_mode && !get_file_mode(fd, filename, &file_mode))
-		goto finish;
-
-	if (!is_dest_dir)
-		target_url = gfarm_url;
-	else if (!concat_dir_name(gfarm_url, gfarm_path_dir_skip(filename),
-	    &target_url))
-		goto finish;
-
-	if (nfragments == GFARM_FILE_DONTCARE &&
-	    !get_nsections(target_url, &nfragments))
-		goto finish_url;
-
-	sprintf(section, "%d", index);
-	if (opt_force || section_does_not_exists(target_url, section)) {
-		e = gfs_pio_create(target_url,
-		    GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, file_mode, &gf);
-		if (e != NULL) {
-			fprintf(stderr,
-				"%s: gfs_pio_create: cannot open %s: %s\n",
-				program_name, target_url, e);
-			error_happened = 1;
-		} else {
-			if ((e = gfs_pio_set_view_index(gf, nfragments, index,
-			    hostname, 0)) != NULL) {
-				fprintf(stderr,
-					"%s: gfs_pio_set_view_index: "
-					"cannot open %s:%d: %s\n",
-				    program_name, target_url, index, e);
-				error_happened = 1;
-			} else {
-				copy_file(fd, gf, target_url, section);
-			}
-			gfs_pio_close(gf);
-		}
-	}
- finish_url:
-	if (target_url != gfarm_url)
-		free(target_url);
- finish:
-	if (fd_needs_close)
-		close(fd);
 }
 
 static char *
