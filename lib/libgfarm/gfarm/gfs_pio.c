@@ -352,7 +352,9 @@ gfs_pio_update_times(GFS_File gf)
 
 	gettimeofday(&now, NULL);
 	if (gf->mode & GFS_FILE_MODE_WRITE) {
+		gf->pi.status.st_ctimespec.tv_sec =
 		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
+		gf->pi.status.st_ctimespec.tv_nsec =
 		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
 	}
 	if (gf->mode & GFS_FILE_MODE_READ) {

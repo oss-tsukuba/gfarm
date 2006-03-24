@@ -461,9 +461,14 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 	char *e, *e2;
 	int i;
 	struct gfarm_path_info to_pi;
+	struct timeval now;
 
 	to_pi = *from_pip;
 	to_pi.pathname = newpath;
+	gettimeofday(&now, NULL);
+	to_pi.status.st_ctimespec.tv_sec = now.tv_sec;
+	to_pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+
 	e = gfarm_path_info_set(to_pi.pathname, &to_pi);
 	if (e != NULL)
 		return (e);
@@ -876,6 +881,7 @@ set_a_path_info(char *from_dir_canonical_path,
 {
 	char *p;
 	struct gfarm_path_info to_pi;
+	struct timeval now;
 
 	p = malloc(strlen(from_path_info->pathname) -
 			 strlen(from_dir_canonical_path) +
@@ -888,6 +894,10 @@ set_a_path_info(char *from_dir_canonical_path,
 	to_pi = *from_path_info;
 	to_pi.pathname = p;
 	*to_path = p;
+	gettimeofday(&now, NULL);
+	to_pi.status.st_ctimespec.tv_sec = now.tv_sec;
+	to_pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+
 	return (gfarm_path_info_set(to_pi.pathname, &to_pi));
 }
 

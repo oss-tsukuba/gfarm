@@ -56,6 +56,7 @@ static char *
 gfs_chmod_path_info(struct gfarm_path_info *pi, gfarm_mode_t mode)
 {
 	gfarm_mode_t o_mode = pi->status.st_mode;
+	struct timeval now;
 
 	pi->status.st_mode &= ~GFARM_S_ALLPERM;
 	pi->status.st_mode |= (mode & GFARM_S_ALLPERM);
@@ -72,6 +73,11 @@ gfs_chmod_path_info(struct gfarm_path_info *pi, gfarm_mode_t mode)
 			break;
 		}
 	}
+
+	gettimeofday(&now, NULL);
+	pi->status.st_ctimespec.tv_sec = now.tv_sec;
+	pi->status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
+
 	return (gfarm_path_info_replace(pi->pathname, pi));
 }
 
