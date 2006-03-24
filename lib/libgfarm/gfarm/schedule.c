@@ -418,6 +418,8 @@ search_idle_candidate_list_reset(int host_flags)
 	for (net = search_idle_network_list; net != NULL; net = net->next) {
 		net->flags &= ~NET_FLAG_SCHEDULING;
 		net->ongoing = 0;
+		net->candidate_list = NULL;
+		net->candidate_last = &net->candidate_list;
 	}
 	return (NULL);
 }
