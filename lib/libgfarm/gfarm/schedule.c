@@ -665,22 +665,25 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	return (NULL);
 }
 
-static void
+static int
 search_idle_record_host(struct search_idle_state *s,
-	struct search_idle_host_state *h)
+	struct search_idle_host_state *h, int only_if_sufficient)
 {
 	float loadavg = h->loadavg;
 	int ncpu = h->ncpu;
+	int ok = 0;
 
 	if (s->write_mode &&
 	    (h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0 &&
 	    h->diskfree < gfarm_minimum_free_disk_space)
-		return; /* not enough free space */
+		return (0); /* not enough free space */
 
 	if (ncpu <= 0) /* sanity */
 		ncpu = 1;
-	if (loadavg / ncpu <= IDLE_LOAD_AVERAGE)
+	if (loadavg / ncpu <= IDLE_LOAD_AVERAGE) {
 		s->idle_hosts_number++;
+		ok = 1;
+	}
 
 	/*
 	 * We don't use (loadavg / h->host_info->ncpu) to count
@@ -688,11 +691,17 @@ search_idle_record_host(struct search_idle_state *s,
 	 * that there is a process which is consuming 100% of
 	 * memory or 100% of I/O bandwidth on the host.
 	 */
-	if (loadavg <= SEMI_IDLE_LOAD_AVERAGE)
+	if (loadavg <= SEMI_IDLE_LOAD_AVERAGE) {
 		s->semi_idle_hosts_number++;
+		ok = 1;
+	}
+
+	if (only_if_sufficient && !ok)
+		return (0);
 
 	h->flags |= HOST_STATE_FLAG_AVAILABLE;
 	s->available_hosts_number++;
+	return (1); /* recorded */
 }
 
 static int
@@ -726,7 +735,7 @@ search_idle_statfs_callback(void *closure)
 		c->h->flags |= HOST_STATE_FLAG_DISKFREE_AVAIL;
 		c->h->diskfree = bavail * bsize;
 		/* completed */
-		search_idle_record_host(c->state, c->h);
+		search_idle_record_host(c->state, c->h, 0);
 	}
 	gfs_client_disconnect(c->gfs_server);
 	c->state->concurrency--;
@@ -751,7 +760,7 @@ search_idle_connect_callback(void *closure)
 #if 0 /* We always see disk free space */
 		if (s->mode == GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH) {
 			/* completed */
-			search_idle_record_host(c->state, c->h);
+			search_idle_record_host(c->state, c->h, 0);
 			gfs_client_disconnect(c->gfs_server);
 		} else {
 			assert(s->mode ==
@@ -804,7 +813,7 @@ search_idle_load_callback(void *closure)
 
 		if (s->mode == GFARM_SCHEDULE_SEARCH_BY_LOADAVG) {
 			/* completed */
-			search_idle_record_host(c->state, c->h);
+			search_idle_record_host(c->state, c->h, 0);
 		} else {
 			c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
 			e = gfs_client_connect_request_multiplexed(c->state->q,
@@ -919,20 +928,21 @@ search_idle_try_host(struct search_idle_state *s,
 		switch (s->mode) {
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG:
 			assert((h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0);
-			h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-			search_idle_record_host(s, h);
-			return (NULL);
-		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
-			if ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0) {
+			if (search_idle_record_host(s, h, 1)) {
 				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-				search_idle_record_host(s, h);
+				return (NULL);
+			}
+		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
+			if ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0 &&
+			    search_idle_record_host(s, h, 1)) {
+				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
 				return (NULL);
 			}
 			break;
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE:
-			if ((h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0) {
+			if ((h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0 &&
+			    search_idle_record_host(s, h, 1)) {
 				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-				search_idle_record_host(s, h);
 				return (NULL);
 			}
 			break;
