@@ -578,7 +578,8 @@ search_idle_candidate_list_add_host_or_host_info(
 	/*
 	 * return hostname parameter, instead of cached hostname, as results.
 	 * this is needed for gfarm_schedule_search_idle_hosts()
-	 * and gfarm_schedule_search_idle_acyclic_hosts().
+	 * and gfarm_schedule_search_idle_acyclic_hosts() which return
+	 * input hostnames instead of newly allocated onews.
 	 */
 	h->return_value = hostname;
 	return (NULL);
@@ -918,16 +919,19 @@ search_idle_try_host(struct search_idle_state *s,
 		switch (s->mode) {
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG:
 			assert((h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0);
+			h->flags |= HOST_STATE_FLAG_JUST_CACHED;
 			search_idle_record_host(s, h);
 			return (NULL);
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
 			if ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0) {
+				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
 				search_idle_record_host(s, h);
 				return (NULL);
 			}
 			break;
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE:
 			if ((h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0) {
+				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
 				search_idle_record_host(s, h);
 				return (NULL);
 			}

@@ -550,8 +550,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			    gf->pi.pathname, vc->section, &if_hostname);
 		if (e != NULL)
 			goto finish;
-		vc->canonical_hostname = if_hostname; /* must be already
-							 canonical */
+		/* if_hostname must be already canonical here */
+		vc->canonical_hostname = if_hostname;
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	}
