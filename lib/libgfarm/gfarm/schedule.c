@@ -101,9 +101,12 @@
  *   If it's write-mode, we check whether disk free space is enough or not.
  * - invalidation of loadavg cache is a bit complicated.
  *   if the load average is cached in this scheduling process, the cache
- *   won't be invalidated. Otherwise, if LOADAVG_EXPIRATION seconds aren't
- *   passed yet, only `scheduled' member is invalidated (XXX is this OK?),
- *   otherwise `loadavg' member is invalidated, too.
+ *   won't be invalidated.
+#if 0 // this isn't done for now.
+ *   Otherwise, if LOADAVG_EXPIRATION seconds aren't passed yet, only
+ *   `scheduled' member is invalidated (XXX is this OK?), otherwise
+ *   `loadavg' member is invalidated, too.
+#endif
  */
 
 char GFARM_ERR_NO_REPLICA[] = "no replica";
@@ -228,6 +231,7 @@ struct search_idle_host_state {
 
 static struct gfarm_hash_table *search_idle_hosts_state = NULL;
 
+static int search_idle_candidate_host_number;
 static struct search_idle_host_state *search_idle_candidate_list;
 static struct search_idle_host_state **search_idle_candidate_last;
 
@@ -406,6 +410,7 @@ search_idle_candidate_list_reset(int host_flags)
 		search_idle_network_list_init(); /* ignore any error here */
 	}
 
+	search_idle_candidate_host_number = 0;
 	search_idle_candidate_list = NULL;
 	search_idle_candidate_last = &search_idle_candidate_list;
 	for (gfarm_hash_iterator_begin(search_idle_hosts_state, &it);
@@ -567,6 +572,7 @@ search_idle_candidate_list_add_host_or_host_info(
 
 	/* link to search_idle_candidate_list */
 	h->next = NULL;
+	search_idle_candidate_host_number++;
 	*search_idle_candidate_last = h;
 	search_idle_candidate_last = &h->next;
 
@@ -597,6 +603,23 @@ search_idle_candidate_list_add_host(char *hostname)
 {
 	return (search_idle_candidate_list_add_host_or_host_info(
 	    hostname, NULL));
+}
+
+char *
+gfarm_schedule_completed(const char *hostname)
+{
+	struct gfarm_hash_entry *entry;
+	struct search_idle_host_state *h;
+
+	entry = gfarm_hash_lookup(search_idle_hosts_state,
+	    hostname, strlen(hostname) + 1);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	h = gfarm_hash_entry_data(entry);
+	if (h->scheduled <= 0)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	--h->scheduled;
+	return (NULL);
 }
 
 /* whether need to see authentication, disk free space or not? */
@@ -680,6 +703,7 @@ search_idle_record_host(struct search_idle_state *s,
 
 	if (ncpu <= 0) /* sanity */
 		ncpu = 1;
+	loadavg += h->scheduled * VIRTUAL_LOAD_FOR_SCHEDULED_HOST;
 	if (loadavg / ncpu <= IDLE_LOAD_AVERAGE) {
 		s->idle_hosts_number++;
 		ok = 1;
@@ -708,7 +732,8 @@ static int
 search_idle_is_satisfied(struct search_idle_state *s)
 {
 	return (s->idle_hosts_number >= s->desired_number ||
-	    s->semi_idle_hosts_number >= s->enough_number);
+	    s->semi_idle_hosts_number >= s->enough_number ||
+	    s->available_hosts_number >= search_idle_candidate_host_number);
 }
 
 struct search_idle_callback_closure {
@@ -800,6 +825,7 @@ search_idle_load_callback(void *closure)
 	if (e == NULL) {
 		c->h->flags |= HOST_STATE_FLAG_RTT_AVAIL;
 		c->h->loadavg = load.loadavg_1min;
+		/* should do this too?: c->h->scheduled = 0; */
 
 		/* update RTT */
 		gettimeofday(&rtt, NULL);
@@ -876,8 +902,10 @@ loadavg_compare(const void *a, const void *b)
 	struct search_idle_host_state *const *bb = b;
 	const struct search_idle_host_state *p = *aa;
 	const struct search_idle_host_state *q = *bb;
-	const float l1 = p->loadavg / p->ncpu;
-	const float l2 = q->loadavg / q->ncpu;
+	const float l1 =
+	 (p->loadavg + p->scheduled*VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / p->ncpu;
+	const float l2 =
+	 (q->loadavg + q->scheduled*VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / q->ncpu;
 
 	if (l1 < l2)
 		return (-1);
@@ -1195,7 +1223,7 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 
 	for (i = 0; i < s.available_hosts_number && i < s.desired_number; i++){
 		ohosts[i] = results[i]->return_value;
-		results[i]->loadavg += VIRTUAL_LOAD_FOR_SCHEDULED_HOST;
+		results[i]->scheduled++;
 	}
 	*nohostsp = i;
 	free(results);
