@@ -806,7 +806,8 @@ search_idle_load_callback(void *closure)
 		gfarm_timeval_sub(&rtt, &c->h->cache_time);
 		c->h->rtt_usec = rtt.tv_sec * GFARM_SECOND_BY_MICROSEC +
 		    rtt.tv_usec;
-		if ((c->h->net->flags & NET_FLAG_RTT_AVAIL) == 0) {
+		if ((c->h->net->flags & NET_FLAG_RTT_AVAIL) == 0 ||
+		    c->h->net->rtt_usec > c->h->rtt_usec) {
 			c->h->net->flags |= NET_FLAG_RTT_AVAIL;
 			c->h->net->rtt_usec = c->h->rtt_usec;
 		}
@@ -922,34 +923,30 @@ search_idle_try_host(struct search_idle_state *s,
 	}
 
 	/* if cached result is available & not expired, use it */
-	if ((h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0 &&
-	    ((h->flags & HOST_STATE_FLAG_JUST_CACHED) != 0 ||
-	    (use_cache && !is_expired(&h->cache_time, LOADAVG_EXPIRATION)))) {
+	if (use_cache && !is_expired(&h->cache_time, LOADAVG_EXPIRATION)) {
 		switch (s->mode) {
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG:
-			assert((h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0);
-			if (search_idle_record_host(s, h, 1)) {
-				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-				return (NULL);
-			}
+			rv = (h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0
+			    && search_idle_record_host(s, h, 1);
+			break;
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
-			if ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0 &&
-			    search_idle_record_host(s, h, 1)) {
-				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-				return (NULL);
-			}
+			rv = (h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0
+			    && search_idle_record_host(s, h, 1);
 			break;
 		case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE:
-			if ((h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0 &&
-			    search_idle_record_host(s, h, 1)) {
-				h->flags |= HOST_STATE_FLAG_JUST_CACHED;
-				return (NULL);
-			}
+			rv = (h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0
+			    && search_idle_record_host(s, h, 1);
+			break;
+		default:
+			assert(0);
+			rv = 0;
 			break;
 		}
+		if (rv) {
+			h->flags |= HOST_STATE_FLAG_JUST_CACHED;
+			return (NULL);
+		}
 	}
-
-	assert((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) != 0);
 
 	/* We limit concurrency here */
 	rv = 0;
@@ -1003,7 +1000,6 @@ search_idle_in_the_local_net(struct search_idle_state *s)
 			break;
 	}
 	rv = gfarm_eventqueue_loop(s->q, NULL); /* XXX - report rv? */
-
 	if (search_idle_is_satisfied(s))
 		return;
 
@@ -1084,6 +1080,8 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 
 	nnets = 0;
 	for (net = search_idle_network_list; net != NULL; net = net->next) {
+		if (net == search_idle_local_net) /* already searched */
+			continue;
 		if ((net->flags &
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING)) ==
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING))
@@ -1097,6 +1095,8 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 		return (GFARM_ERR_NO_MEMORY);
 	i = 0;
 	for (net = search_idle_network_list; net != NULL; net = net->next) {
+		if (net == search_idle_local_net) /* already searched */
+			continue;
 		if ((net->flags &
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING)) ==
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING))
@@ -1182,12 +1182,13 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	for (h = search_idle_candidate_list; h != NULL; h = h->next)
 		if ((h->flags & HOST_STATE_FLAG_AVAILABLE) != 0)
 			results[i++] = h;
+	assert(i == s.available_hosts_number);
 	if (write_mode && search_idle_is_satisfied(&s)) {
-		/* sort hosts in the order of load average */
+		/* sort in order of free disk space */
 		qsort(results, s.available_hosts_number,
 		    sizeof(*results), diskfree_compare);
 	} else {
-		/* sort hosts in the order of load average */
+		/* sort in order of load average */
 		qsort(results, s.available_hosts_number,
 		    sizeof(*results), loadavg_compare);
 	}
