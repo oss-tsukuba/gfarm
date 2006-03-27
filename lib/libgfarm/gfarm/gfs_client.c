@@ -171,31 +171,33 @@ gfs_client_connection0(const char *canonical_hostname,
 
 	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
 		e = gfs_client_connection0_unix(&sock);
-		if (e != NULL)
+		if (e == NULL)
+			goto fd_connection_new;
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
 			return (e);
-	} else {
-		sock = socket(PF_INET, SOCK_STREAM, 0);
-		if (sock == -1)
-			return (gfarm_errno_to_error(errno));
-		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-		flags = fcntl(sock, F_GETFL);
-		fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-
-		/* XXX - how to report setsockopt(2) failure ? */
-		gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname,
-		    peer_addr);
-
-		if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-			if (errno == EINPROGRESS)
-				errno = connect_wait(sock);
-			if (errno != 0) {
-				e = gfarm_errno_to_error(errno);
-				close(sock);
-				return (e);
-			}
-		}
-		fcntl(sock, F_SETFL, flags);
+		/* to compatible with old gfsd, try to connect by INET */
 	}
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+	flags = fcntl(sock, F_GETFL);
+	fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
+
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		if (errno == EINPROGRESS)
+			errno = connect_wait(sock);
+		if (errno != 0) {
+			e = gfarm_errno_to_error(errno);
+			close(sock);
+			return (e);
+		}
+	}
+	fcntl(sock, F_SETFL, flags);
+fd_connection_new:
 	e = xxx_fd_connection_new(sock, &gfs_server->conn);
 	if (e != NULL) {
 		close(sock);
@@ -668,6 +670,37 @@ gfs_client_open(struct gfs_connection *gfs_server,
 			       fdp));
 }
 
+/*
+ * This function is prepared for backward compatibility to access old
+ * gfsd that does not support GFS_PROTO_OPEN_LOCAL.
+ */
+static char *
+gfs_client_open_direct(char *gfarm_file, gfarm_int32_t flag,
+	gfarm_int32_t mode, gfarm_int32_t *fdp)
+{
+	char *local_path, *e;
+	int local_fd, local_flag, saved_errno;
+	mode_t saved_umask;
+
+	local_flag = gfs_open_flags_localize(flag);
+	if (local_flag == -1)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+
+	e = gfarm_path_localize(gfarm_file, &local_path);
+	if (e != NULL)
+		return (e);
+
+	saved_umask = umask(0);
+	local_fd = open(local_path, local_flag, mode & GFARM_S_ALLPERM);
+	saved_errno = errno;
+	umask(saved_umask);
+	free(local_path);
+	if (local_fd == -1)
+		return (gfarm_errno_to_error(saved_errno));
+	*fdp = local_fd;
+	return (NULL);
+}
+
 char *
 gfs_client_open_local(struct gfs_connection *gfs_server,
 	char *gfarm_file, gfarm_int32_t flag, gfarm_int32_t mode,
@@ -679,6 +712,9 @@ gfs_client_open_local(struct gfs_connection *gfs_server,
 	/* we have to set `just' flag here */
 	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "sii/",
 		gfarm_file, flag, mode);
+	if (e == GFARM_ERR_UNEXPECTED_EOF)
+		/* try to open directly for backward compatibility */
+		return (gfs_client_open_direct(gfarm_file, flag, mode, fdp));
 	if (e != NULL)
 		return (e);
 
