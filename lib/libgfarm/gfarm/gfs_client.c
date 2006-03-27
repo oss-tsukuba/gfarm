@@ -60,6 +60,7 @@ struct gfs_connection {
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
 
 static struct gfarm_hash_table *gfs_server_hashtab = NULL;
+static int gfsd_version_1_2_or_earlier;
 
 void
 gfs_client_terminate(void)
@@ -176,6 +177,7 @@ gfs_client_connection0(const char *canonical_hostname,
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
 			return (e);
 		/* to compatible with old gfsd, try to connect by INET */
+		gfsd_version_1_2_or_earlier = 1;
 	}
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
@@ -709,12 +711,13 @@ gfs_client_open_local(struct gfs_connection *gfs_server,
 	char *e;
 	int rv, local_fd, err;
 
+	if (gfsd_version_1_2_or_earlier) {
+		/* try to open directly for backward compatibility */
+		return (gfs_client_open_direct(gfarm_file, flag, mode, fdp));
+	}
 	/* we have to set `just' flag here */
 	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "sii/",
 		gfarm_file, flag, mode);
-	if (e == GFARM_ERR_UNEXPECTED_EOF)
-		/* try to open directly for backward compatibility */
-		return (gfs_client_open_direct(gfarm_file, flag, mode, fdp));
 	if (e != NULL)
 		return (e);
 
