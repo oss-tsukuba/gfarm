@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
@@ -115,8 +116,13 @@ gfs_chmod_dir(struct gfarm_path_info *pi, gfarm_mode_t mode)
 	a.path = pi->pathname;
 	a.mode = mode;
 	a.tol = 1;
-	return (gfs_client_apply_all_hosts(client_chmod,
-			&a, "gfs_chmod", 1, &nhosts_succeed));
+	gfs_client_apply_all_hosts(client_chmod,
+		&a, "gfs_chmod", 1, &nhosts_succeed);
+	/*
+	 * XXX - always success for now.  It should be investiagted
+	 * that client_chmod successes on at least one host.
+	 */
+	return (NULL);
 }
 
 static char *
@@ -237,8 +243,7 @@ gfs_chmod_change_section_internal(
 
 	/* add new file section */
 	a->o_sec = sections[0].section;
-	a->n_sec = get_new_section_name(a->mode);
-	sections[0].section = a->n_sec;
+	a->n_sec = sections[0].section = get_new_section_name(a->mode);
 	e = gfarm_file_section_info_set(a->path, a->n_sec, &sections[0]);
 	if (e != NULL)
 		goto free_o_sec;
