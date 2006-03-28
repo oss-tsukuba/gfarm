@@ -125,6 +125,12 @@ gfs_file_free(GFS_File gf)
 static void
 gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
 {
+#if 0
+	/*
+	 * This is obsolete after the revision 1.59 of
+	 * gfs_pio_section.c on Feb 26, 2006.  We do not recalculate
+	 * chack sum in any case.
+	 */
 	/*
 	 * It may be necessary to calculate checksum of the
 	 * whole file when closing on either random access case
@@ -135,6 +141,7 @@ gfs_pio_open_initialize_mode_flags(GFS_File gf, int flags)
 	    (flags & (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL)) !=
 	    (GFARM_FILE_TRUNC|GFARM_FILE_SEQUENTIAL))
 		flags = (flags & ~GFARM_FILE_ACCMODE) | GFARM_FILE_RDWR;
+#endif
 	gf->open_flags = flags;
 
 	if (((flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDWR)
