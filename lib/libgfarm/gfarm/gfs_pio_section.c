@@ -113,12 +113,20 @@ gfs_pio_view_section_close(GFS_File gf)
 	unsigned char md_value[EVP_MAX_MD_SIZE];
 	char md_value_string[EVP_MAX_MD_SIZE * 2 + 1];
 	struct gfarm_file_section_info fi, fi1;
+	unsigned int len;
 	int i;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	filesize = 0;
+	md_len = 0;
 #endif
 	/* calculate checksum */
+	/*
+	 * EVP_DigestFinal should be called always to clean up
+	 * allocated memory by EVP_DigestInit.
+	 */
+	EVP_DigestFinal(&vc->md_ctx, md_value, &len);
+
 	if (gfs_pio_check_calc_digest(gf)) {
 		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
 		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
@@ -153,9 +161,6 @@ gfs_pio_view_section_close(GFS_File gf)
 			 */
 			md_calculated = 0;
 		} else {
-			unsigned int len;
-
-			EVP_DigestFinal(&vc->md_ctx, md_value, &len);
 			md_len = len;
 			filesize = gf->offset + gf->length;
 			md_calculated = 1;
