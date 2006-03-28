@@ -24,10 +24,11 @@
 #include <dirent.h>
 
 #include <errno.h>
-#include <gfarm/gfarm_error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h>
+#include <gfarm/gfarm.h>
 #include "gfutil.h"
+#include <openssl/evp.h>
+#include "gfs_pio.h"
+
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
@@ -473,7 +474,7 @@ __dup2(int oldfd, int newfd)
 		(void)gfs_pio_flush(gf1);
 		if (gf2 == NULL)
 			/* this file may be accessed by the child process */
-			gfs_hook_mode_calc_digest(gf1);
+			gfs_pio_unset_calc_digest(gf1);
 	}
 	d = gfs_hook_dup_descriptor(oldfd);
 	gfs_hook_set_descriptor(newfd, d);
@@ -520,7 +521,7 @@ __dup(int oldfd)
 	/* flush the buffer */
 	(void)gfs_pio_flush(gf);
 	/* this file may be accessed by the child process */
-	gfs_hook_mode_calc_digest(gf);
+	gfs_pio_unset_calc_digest(gf);
 
 	newfd = syscall(SYS_dup, oldfd);
 	if (newfd == -1)
@@ -566,7 +567,7 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 			/* flush all of buffer */
 			gfs_hook_flush_all();
 			/* all files may be accessed by the child process */
-			gfs_hook_mode_calc_digest_all();
+			gfs_hook_unset_calc_digest_all();
 			pid = fork();
 		}
 		else

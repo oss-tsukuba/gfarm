@@ -37,7 +37,7 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
-#include "gfs_pio.h"	/* GFS_FILE_MODE_CALC_DIGEST, display_timers, ... */
+#include "gfs_pio.h"	/* display_timers, ... */
 #include "timer.h"
 #include "agent_wrap.h"
 
@@ -1498,7 +1498,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
 
 	/* XXX - apparently violate the layer */
 	((struct gfs_file_section_context *)(*gf)->view_context)->fd = fd;
-	(*gf)->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+	gfs_pio_unset_calc_digest(*gf);
 
 	close(nfd);
 

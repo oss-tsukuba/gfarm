@@ -66,6 +66,10 @@ char *gfs_pio_set_view_global(GFS_File, int);
 char *gfs_pio_open_local_section(GFS_File, int);
 char *gfs_pio_open_remote_section(GFS_File, char *, int);
 
+void gfs_pio_set_calc_digest(GFS_File);
+void gfs_pio_unset_calc_digest(GFS_File);
+int gfs_pio_check_calc_digest(GFS_File);
+
 struct gfs_connection;
 
 char *gfs_pio_local_mkdir_parent_canonical_path(char *);

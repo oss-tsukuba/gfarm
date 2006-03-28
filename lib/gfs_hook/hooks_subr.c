@@ -20,7 +20,6 @@
 #include "gfs_pio.h"
 
 #include <gfarm/gfs_hook.h>
-
 #include "hooks_subr.h"
 
 #define MAX_GFS_FILE_BUF	2048
@@ -366,19 +365,12 @@ gfs_hook_clear_gfs_file(int fd)
 	return (e);
 }
 
-/* XXX - apparently violate the layer */
-void
-gfs_hook_mode_calc_digest(GFS_File gf)
-{
-	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-}
-
 /*
  * XXX - need to manage list of opened file descriptors exactly to
  * efficiently execute *_all() functions.
  */
 void
-gfs_hook_mode_calc_digest_all(void)
+gfs_hook_unset_calc_digest_all(void)
 {
 	int fd;
 	GFS_File gf;
@@ -386,7 +378,7 @@ gfs_hook_mode_calc_digest_all(void)
 	for (fd = 0; fd < _gfs_hook_gfs_files_max_plus_one; ++fd)
 		if (((gf = gfs_hook_is_open(fd)) != NULL) &&
 		    (gfs_hook_gfs_file_type(fd) == GFS_DT_REG))
-			gfs_hook_mode_calc_digest(gf);
+			gfs_pio_unset_calc_digest(gf);
 	return;
 }
 

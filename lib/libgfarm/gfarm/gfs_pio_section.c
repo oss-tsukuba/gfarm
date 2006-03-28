@@ -119,7 +119,7 @@ gfs_pio_view_section_close(GFS_File gf)
 	filesize = 0;
 #endif
 	/* calculate checksum */
-	if ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0) {
+	if (gfs_pio_check_calc_digest(gf)) {
 		if (((gf->mode & GFS_FILE_MODE_WRITE) != 0 &&
 		     (gf->open_flags & GFARM_FILE_TRUNC) == 0) ||
 		    ((gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
@@ -254,8 +254,7 @@ gfs_pio_view_section_write(GFS_File gf, const char *buffer, size_t size,
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e = (*vc->ops->storage_write)(gf, buffer, size, lengthp);
 
-	if (e == NULL && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
+	if (e == NULL && *lengthp > 0 && gfs_pio_check_calc_digest(gf))
 		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
 	return (e);
 }
@@ -267,8 +266,7 @@ gfs_pio_view_section_read(GFS_File gf, char *buffer, size_t size,
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e = (*vc->ops->storage_read)(gf, buffer, size, lengthp);
 
-	if (e == NULL && *lengthp > 0 &&
-	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
+	if (e == NULL && *lengthp > 0 && gfs_pio_check_calc_digest(gf))
 		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
 	return (e);
 }
@@ -279,7 +277,7 @@ gfs_pio_view_section_seek(GFS_File gf, file_offset_t offset, int whence,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 
-	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+	gfs_pio_unset_calc_digest(gf);
 	return ((*vc->ops->storage_seek)(gf, offset, whence, resultp));
 }
 
@@ -572,7 +570,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gf->p = gf->length = 0;
 	gf->io_offset = gf->offset = 0;
 
-	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
+	gfs_pio_set_calc_digest(gf);
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
 	if (!is_local_host && gfarm_is_active_file_system_node &&

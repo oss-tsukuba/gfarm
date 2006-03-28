@@ -55,6 +55,24 @@ gfs_pio_check_view_default(GFS_File gf)
 	return (NULL);
 }
 
+void
+gfs_pio_set_calc_digest(GFS_File gf)
+{
+	gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
+}
+
+void
+gfs_pio_unset_calc_digest(GFS_File gf)
+{
+	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+}
+
+int
+gfs_pio_check_calc_digest(GFS_File gf)
+{
+	return ((gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0);
+}
+
 int gfs_pio_fileno(GFS_File gf)
 {
 	char *e = gfs_pio_check_view_default(gf);
@@ -471,7 +489,7 @@ do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 	}
 	if (gf->io_offset != gf->offset) {
 		/* this happens when switching from reading to writing */
-		gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+		gfs_pio_unset_calc_digest(gf);
 		e = (*gf->ops->view_seek)(gf, gf->offset, SEEK_SET, NULL);
 		if (e != NULL) {
 			gf->error = e;
@@ -565,7 +583,7 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 		goto finish;
 	}
 
-	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+	gfs_pio_unset_calc_digest(gf);
 
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);
@@ -612,7 +630,7 @@ gfs_pio_truncate(GFS_File gf, file_offset_t length)
 
 	CHECK_WRITABLE(gf);
 
-	gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+	gfs_pio_unset_calc_digest(gf);
 
 	if (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) {
 		e = gfs_pio_flush(gf);

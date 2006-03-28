@@ -30,8 +30,7 @@ int gfs_hook_insert_gfs_file(struct gfs_file *);
 int gfs_hook_insert_gfs_dir(struct gfs_dir *, char *);
 unsigned char gfs_hook_gfs_file_type(int);
 char *gfs_hook_clear_gfs_file(int);
-void gfs_hook_mode_calc_digest(struct gfs_file *);
-void gfs_hook_mode_calc_digest_all(void);
+void gfs_hook_unset_calc_digest_all(void);
 char *gfs_hook_flush_all(void);
 char *gfs_hook_close_all(void);
 
