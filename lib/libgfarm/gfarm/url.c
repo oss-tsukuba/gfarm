@@ -517,6 +517,24 @@ gfarm_path_dir_skip(const char *path)
 	return (base);
 }
 
+char *
+gfarm_path_dirname(const char *pathname)
+{
+	char *parent = strdup(pathname), *b;
+
+	if (parent == NULL)
+		return (NULL);
+
+	/* create parent directory canonic path */
+	for (b = (char *)gfarm_path_dir_skip(parent);
+	    b > parent && b[-1] == '/'; --b)
+		;
+	*b = '\0';
+
+	/* note that the root directory is '\0'. */
+	return (parent);
+}
+
 #if 0
 char *
 gfarm_url_make_localized_path(char *gfarm_url, char **abs_pathp)

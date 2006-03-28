@@ -966,21 +966,16 @@ static char *
 gfs_dircache_modify_parent(const char *pathname)
 {
 	char *e = NULL;
-	char *parent = strdup(pathname), *b;
+	char *parent;
 	struct gfarm_path_info pi;
 	struct timeval now;
 
+	parent = gfarm_path_dirname(pathname);
 	if (parent == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	/* create parent directory canonic path */
-	for (b = (char *)gfarm_path_dir_skip(parent);
-	    b > parent && b[-1] == '/'; --b)
-		;
-	*b = '\0';
-
 	/* NOTE: We don't have path_info for the root directory */
-	if (b > parent &&
+	if (parent[0] != '\0' &&
 	    (e = gfarm_cache_path_info_get(parent, &pi)) == NULL) {
 		gettimeofday(&now, NULL);
 		pi.status.st_mtimespec.tv_sec = now.tv_sec;

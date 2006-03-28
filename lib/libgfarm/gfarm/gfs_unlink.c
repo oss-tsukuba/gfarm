@@ -129,16 +129,26 @@ static char *
 gfs_unlink_check_perm(char *gfarm_file)
 {
 	struct gfarm_path_info pi;
-	char *e;
+	char *e, *parent;
 
-	e = gfarm_path_info_get(gfarm_file, &pi);
+	parent = gfarm_path_dirname(gfarm_file);
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if (parent == '\0') {
+		/*
+		 * XXX - we always grant access for the root directory
+		 * because we do not have the metadata.
+		 */
+		free(parent);
+		return (NULL);
+	}
+	e = gfarm_path_info_get(parent, &pi);
 	if (e == NULL) {
-		if (GFARM_S_ISDIR(pi.status.st_mode))
-			e = GFARM_ERR_IS_A_DIRECTORY;
-		else
-			e = gfarm_path_info_access(&pi, W_OK);
+		e = gfarm_path_info_access(&pi, W_OK);
 		gfarm_path_info_free(&pi);
 	}
+	free(parent);
 	return (e);
 }
 

@@ -8,6 +8,7 @@ struct gfarm_path_info;
 char *gfs_stat_access(struct gfs_stat *, int);
 char *gfarm_path_info_access(struct gfarm_path_info *, int);
 char *gfarm_path_expand_home(const char *, char **);
+char *gfarm_path_dirname(const char *);
 
 /* gfs_unlink.c */
 char *gfs_unlink_replica_internal(const char *, const char *, const char *);
