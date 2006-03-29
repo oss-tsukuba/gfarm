@@ -1590,8 +1590,6 @@ gfarm_file_section_transfer_to_internal(char *gfarm_file, char *section,
 		    mode & GFARM_S_ALLPERM, file_size,
 		    srchost, if_hostname, dsthost);
 
-		gfarm_schedule_completed(srchost);
-
 		free(if_hostname);
 		free(srchost);
 
@@ -1886,7 +1884,6 @@ finish_if_hostname:
 finish_hostnames:
 	free(hostnames);
 finish_host_info:
-	/* XXX call gfarm_schedule_completed() for each host */
 	gfarm_host_info_free_all(nhosts, hosts);
 finish:
 	return (e);
@@ -2156,10 +2153,8 @@ gfarm_url_fragments_transfer_to_domainname(
 	e = gfarm_url_fragments_transfer(gfarm_url, nfrags, dsthosts,
 	    transfer_from_to_internal);
 
-	while (--nfrags >= 0) {
-		gfarm_schedule_completed(dsthosts[nfrags]);
+	while (--nfrags >= 0)
 		free(dsthosts[nfrags]);
-	}
  free_dsthosts:
 	free(dsthosts);
 

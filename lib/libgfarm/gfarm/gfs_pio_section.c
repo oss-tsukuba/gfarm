@@ -239,10 +239,6 @@ gfs_pio_view_section_close(GFS_File gf)
 	if (e_save == NULL)
 		e_save = e;
 
-	if (vc->scheduled) {
-		vc->scheduled = 0;
-		gfarm_schedule_completed(vc->canonical_hostname);
-	}
 	free(vc->canonical_hostname);
 	free(vc->section);
 	free(vc);
@@ -486,7 +482,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		e = gf->error = GFARM_ERR_NO_MEMORY;
 		goto profile_finish;
 	}
-	vc->scheduled = 0;
 
 	/* determine vc->canonical_hostname, GFS_FILE_MODE_UPDATE_METADATA */
  retry:
@@ -546,7 +541,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			if (e != NULL)
 				goto finish;
 			vc->canonical_hostname = if_hostname;
-			vc->scheduled = 1;
 		}
 		gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 		flags |= GFARM_FILE_CREATE;
@@ -561,7 +555,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto finish;
 		/* if_hostname must be already canonical here */
 		vc->canonical_hostname = if_hostname;
-		vc->scheduled = 1;
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	}
@@ -586,10 +579,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
 		e = replicate_section_to_local(gf, vc->section,
 		    vc->canonical_hostname, if_hostname);
-		if (vc->scheduled) {
-			vc->scheduled = 0;
-			gfarm_schedule_completed(vc->canonical_hostname);
-		}
 		/* FT - inconsistent metadata has been fixed.  try again. */
 		if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
 		    && (flags & GFARM_FILE_NOT_RETRY) == 0
@@ -622,10 +611,6 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
 	    && (flags & GFARM_FILE_NOT_RETRY) == 0
 	    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
-		if (vc->scheduled) {
-			vc->scheduled = 0;
-			gfarm_schedule_completed(vc->canonical_hostname);
-		}
 		if_hostname = NULL;
 		free(vc->canonical_hostname);
 		goto retry;
@@ -668,13 +653,8 @@ storage_close:
 	if (e != NULL)
 		(void)(*vc->ops->storage_close)(gf);
 free_host:
-	if (e != NULL) {
-		if (vc->scheduled) {
-			vc->scheduled = 0;
-			gfarm_schedule_completed(vc->canonical_hostname);
-		}
+	if (e != NULL)
 		free(vc->canonical_hostname);
-	}
 
 finish:
 	if (e != NULL) {

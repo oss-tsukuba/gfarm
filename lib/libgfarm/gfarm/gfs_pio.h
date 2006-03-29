@@ -106,7 +106,6 @@ struct gfs_file_section_context {
 
 	char *section;
 	char *canonical_hostname;
-	int scheduled;
 	int fd; /* socket (for remote) or file (for local) descriptor */
 	pid_t pid;
 

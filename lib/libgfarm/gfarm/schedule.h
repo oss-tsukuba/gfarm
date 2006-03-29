@@ -29,5 +29,3 @@ char *gfarm_file_section_host_schedule_by_program_to_write(
 
 char *gfarm_file_section_host_schedule_with_priority_to_local_to_write(
 	char *, char *, char **);
-
-char *gfarm_schedule_completed(const char *);
