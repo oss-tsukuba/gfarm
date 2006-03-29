@@ -27,7 +27,8 @@ SRCS = \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
 	gfs_exec.c gfs_unlink.c gfs_lock.c \
 	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
-	import_help.c metadb_misc.c metadb_sw.c param.c schedule.c \
+	import_help.c metadb_misc.c metadb_none.c metadb_sw.c \
+	param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
 	path_info_cache.c \
 	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
@@ -39,7 +40,8 @@ OBJS = \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
 	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
 	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
-	import_help.lo metadb_misc.lo metadb_sw.lo param.lo schedule.lo \
+	import_help.lo metadb_misc.lo metadb_none.lo metadb_sw.lo \
+	param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
 	path_info_cache.lo \
 	$(ldap_objs) $(postgresql_objs) $(globus_objs)
@@ -93,6 +95,7 @@ io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h
 iobuffer.lo: iobuffer.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
+metadb_none.lo: metadb_sw.h
 metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h
 metadb_sw.lo: config.h metadb_access.h metadb_sw.h
 param.lo: hostspec.h param.h

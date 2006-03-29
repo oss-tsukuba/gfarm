@@ -65,6 +65,7 @@ struct gfarm_metadb_internal_ops {
 		const char *, int *, struct gfarm_file_section_copy_info **);
 };
 
+extern const struct gfarm_metadb_internal_ops gfarm_none_metadb_ops;
 extern const struct gfarm_metadb_internal_ops gfarm_ldap_metadb_ops;
 extern const struct gfarm_metadb_internal_ops gfarm_pgsql_metadb_ops;
 

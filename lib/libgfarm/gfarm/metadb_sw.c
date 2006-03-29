@@ -62,6 +62,13 @@ gfarm_metab_use_postgresql(void)
 #endif
 }
 
+char *
+gfarm_metab_use_none(void)
+{
+	metadb_ops = &gfarm_none_metadb_ops;
+	return (NULL);
+}
+
 static pid_t gfarm_metadb_client_pid = 0;
 static int gfarm_metadb_connection_shared = 0;
 

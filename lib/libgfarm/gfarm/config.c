@@ -441,8 +441,7 @@ config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
 {
 	switch (metadb_type) {
 	case GFARM_METADB_TYPE_UNKNOWN:
-		return ("neither ldap_ option or postgresql_ option "
-		    "is specified");
+		return (gfarm_metab_use_none());
 	case GFARM_METADB_TYPE_LDAP:
 		return (gfarm_metab_use_ldap());
 	case GFARM_METADB_TYPE_POSTGRESQL:
