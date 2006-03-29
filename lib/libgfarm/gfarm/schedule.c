@@ -1191,7 +1191,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 	return (NULL);
 }
 
-/* `*nohostsp' and `*ohosts' are OUTPUT parameters */
+/* `*nohostsp' is INPUT/OUTPUT parameter, and `*ohosts' is OUTPUT parameter */
 static char *
 search_idle(int *nohostsp, char **ohosts, int write_mode)
 {
