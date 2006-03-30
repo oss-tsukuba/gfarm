@@ -170,7 +170,8 @@ gfs_client_connection0(const char *canonical_hostname,
 	char *e, *host_fqdn;
 	int sock, flags;
 
-	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
+	if (gfarm_canonical_hostname_is_local(canonical_hostname) &&
+	    !gfsd_version_1_2_or_earlier) {
 		e = gfs_client_connection0_unix(&sock);
 		if (e == NULL)
 			goto fd_connection_new;
@@ -393,34 +394,39 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	/* clone of gfs_client_connection0() */
 
-	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
+	if (gfarm_canonical_hostname_is_local(canonical_hostname) &&
+	    !gfsd_version_1_2_or_earlier) {
 		e = gfs_client_connection0_unix(&sock);
-		if (e != NULL)
-			return (e);
-		connection_in_progress = 0;
-	} else {
-		sock = socket(PF_INET, SOCK_STREAM, 0);
-		if (sock == -1)
-			return (gfarm_errno_to_error(errno));
-		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-
-		/* XXX - how to report setsockopt(2) failure ? */
-		gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname,
-		    peer_addr);
-
-		fcntl(sock, F_SETFL, O_NONBLOCK);
-		if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-			if (errno != EINPROGRESS) {
-				e = gfarm_errno_to_error(errno);
-				close(sock);
-				return (e);
-			}
-			connection_in_progress = 1;
-		} else {
+		if (e == NULL) {
 			connection_in_progress = 0;
+			goto malloc_gfs_server;
 		}
-		fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
+			return (e);
+		/* to compatible with old gfsd, try to connect by INET */
+		gfsd_version_1_2_or_earlier = 1;
 	}
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
+
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		if (errno != EINPROGRESS) {
+			e = gfarm_errno_to_error(errno);
+			close(sock);
+			return (e);
+		}
+		connection_in_progress = 1;
+	} else {
+		connection_in_progress = 0;
+	}
+	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+malloc_gfs_server:
 	gfs_server = malloc(sizeof(*gfs_server));
 	if (gfs_server == NULL) {
 		close(sock);
