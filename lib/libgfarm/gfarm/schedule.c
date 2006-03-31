@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <time.h>
 #include <gfarm/gfarm.h>
 
@@ -475,13 +476,7 @@ search_idle_candidate_list_clear(void)
 static char *
 search_idle_set_program_filter(char *program)
 {
-	struct gfarm_hash_table *arch_set;
-	char *e = program_arch_set(program, &arch_set);
-
-	if (e != NULL)
-		return (e);
-	search_idle_arch_filter = arch_set;
-	return (NULL);
+	return (program_arch_set(program, &search_idle_arch_filter));
 }
 
 static void
