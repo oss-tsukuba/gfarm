@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "24 March 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "31 March 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -479,13 +479,29 @@ gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
 .fi
 .TP
 \fBhost_cache_timeout \fI秒数\fB\fR
-gfarm ライブラリが内部的に保持している、ファイルシステムノード
-キャッシュの有効期限を秒数で指定します。デフォルトは600秒すなわち10分です。
+gfarm ライブラリが内部的に保持している、ファイルシステムノードに
+関するメタデータキャッシュの有効期限を秒数で指定します。
+新たにファイルシステムノードを追加したり削除したりした場合、この期限が
+切れるまでは、変更されたノードが見えないことがあります。
+デフォルトは600秒すなわち10分です。
 
 例:
 
 .nf
 	host_cache_timeout 60
+.fi
+.TP
+\fBschedule_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わるキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+
+例:
+
+.nf
+	schedule_cache_timeout 60
 .fi
 .TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
@@ -529,6 +545,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<local_user_map_statement>
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
+		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
@@ -588,8 +605,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 
 .nf
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24

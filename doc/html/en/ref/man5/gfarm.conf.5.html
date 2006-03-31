@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -1249,14 +1249,37 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->This directive specifies time (in seconds) until filesystem node
-cache in gfarm library will be expired.
+>This directive specifies time (in seconds) until metadata cache of
+filesystem nodes in gfarm library will be expired.
+Newly added or removed host might not be seen until this timeout has
+passed.
 The default time is 600 seconds, i.e. ten minutes.</P
 ><P
 >For example,</P
 ><P
 CLASS="LITERALLAYOUT"
 >	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies time (in seconds) until cache for
+filesystem node scheduling will be expired.
+The default time is 600 seconds, i.e. ten minutes.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
 ></DD
 ><DT
 ><SPAN
@@ -1320,6 +1343,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;local_user_map_statement&#62;<br>
 		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
@@ -1385,8 +1409,8 @@ NAME="EXAMPLES"
 ><P
 CLASS="LITERALLAYOUT"
 >spool&nbsp;/var/spool/gfarm<br>
-metadb_serverhost&nbsp;ldap.example.com<br>
-ldap_serverhost&nbsp;ldap.example.com<br>
+metadb_serverhost&nbsp;metadb.example.com<br>
+ldap_serverhost&nbsp;metadb.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>

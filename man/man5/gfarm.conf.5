@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "24 March 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "31 March 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -527,14 +527,27 @@ For example,
 .fi
 .TP
 \fBhost_cache_timeout \fIseconds\fB\fR
-This directive specifies time (in seconds) until filesystem node
-cache in gfarm library will be expired.
+This directive specifies time (in seconds) until metadata cache of
+filesystem nodes in gfarm library will be expired.
+Newly added or removed host might not be seen until this timeout has
+passed.
 The default time is 600 seconds, i.e. ten minutes.
 
 For example,
 
 .nf
 	host_cache_timeout 60
+.fi
+.TP
+\fBschedule_cache_timeout \fIseconds\fB\fR
+This directive specifies time (in seconds) until cache for
+filesystem node scheduling will be expired.
+The default time is 600 seconds, i.e. ten minutes.
+
+For example,
+
+.nf
+	schedule_cache_timeout 60
 .fi
 .TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
@@ -579,6 +592,7 @@ notation.
 		\~\~<local_user_map_statement>
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
+		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
@@ -638,8 +652,8 @@ notation.
 
 .nf
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24

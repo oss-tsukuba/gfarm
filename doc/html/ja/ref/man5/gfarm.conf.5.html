@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -1107,13 +1107,39 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔
-енеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бге╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
+>gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔д╦
+┤╪д╣дыесе┐е╟б╝е┐енеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
+┐╖д┐д╦е╒ебедеые╖е╣е╞ере╬б╝е╔дЄ─╔▓├д╖д┐дъ║я╜№д╖д┐дъд╖д┐╛ь╣чбвд│д╬┤№╕┬дм
+└┌дьдыд▐д╟д╧бв╩╤╣╣д╡дьд┐е╬б╝е╔дм╕лдид╩ддд│д╚дмдвдъд▐д╣бг
+е╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
 ><P
 >╬у:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>╔├┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔
+д╬е╣е▒е╕ехб╝еъеєе░╜ш═¤д╦┤╪дядыенеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
+─ф╗▀д╖д╞ддд┐е╒ебедеые╖е╣е╞ере╬б╝е╔дм╔№│шд╖д┐дшджд╩╛ь╣чбвд│д╬┤№╕┬дм
+└┌дьдыд▐д╟д╧бвд╜д╬е╬б╝е╔дме╣е▒е╕ехб╝еъеєе░д╡дьд╩ддд│д╚дмдвдъд▐д╣бг
+е╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
 ></DD
 ><DT
 ><SPAN
@@ -1176,6 +1202,7 @@ CLASS="LITERALLAYOUT"
 		аа&#60;local_user_map_statement&#62;<br>
 		аа&#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		аа&#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		аа&#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		аа&#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
@@ -1241,8 +1268,8 @@ NAME="EXAMPLES"
 ><P
 CLASS="LITERALLAYOUT"
 >spool&nbsp;/var/spool/gfarm<br>
-metadb_serverhost&nbsp;ldap.example.com<br>
-ldap_serverhost&nbsp;ldap.example.com<br>
+metadb_serverhost&nbsp;metadb.example.com<br>
+ldap_serverhost&nbsp;metadb.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
