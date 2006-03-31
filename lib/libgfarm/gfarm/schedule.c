@@ -116,8 +116,8 @@ char GFARM_ERR_NO_HOST[] = "no filesystem node";
 #define PER_NET_CONCURRENCY	3	/* used when examining RTT */
 #define ENOUGH_RATE		4
 
-#define	ADDR_EXPIRATION		gfarm_host_cache_timeout	/* seconds */
-#define	LOADAVG_EXPIRATION	gfarm_host_cache_timeout	/* seconds */
+#define	ADDR_EXPIRATION		gfarm_schedule_cache_timeout	/* seconds */
+#define	LOADAVG_EXPIRATION	gfarm_schedule_cache_timeout	/* seconds */
 
 #define RTT_THRESH		4 /* range to treat as similar distance */
 

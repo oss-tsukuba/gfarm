@@ -371,10 +371,12 @@ enum gfarm_metadb_backend_type {
 
 /* miscellaneous */
 #define GFARM_HOST_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define MISC_DEFAULT -1
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
+int gfarm_schedule_cache_timeout = MISC_DEFAULT;
 file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 
 /* static variables */
@@ -1098,6 +1100,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_int(p, &gfarm_dir_cache_timeout);
 	} else if (strcmp(s, o = "host_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_host_cache_timeout);
+	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
 
@@ -1274,6 +1278,9 @@ gfarm_config_set_default_misc(void)
 		gfarm_dir_cache_timeout = GFARM_DIR_CACHE_TIMEOUT_DEFAULT;
 	if (gfarm_host_cache_timeout == MISC_DEFAULT)
 		gfarm_host_cache_timeout = GFARM_HOST_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
+		gfarm_schedule_cache_timeout =
+		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;

@@ -655,13 +655,29 @@ And the environment variable takes precedence over the directive.
 <varlistentry>
 <term><token>host_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
-<para>This directive specifies time (in seconds) until filesystem node
-cache in gfarm library will be expired.
+<para>This directive specifies time (in seconds) until metadata cache of
+filesystem nodes in gfarm library will be expired.
+Newly added or removed host might not be seen until this timeout has
+passed.
 The default time is 600 seconds, i.e. ten minutes.
 </para>
 <para>For example,</para>
 <literallayout>
 	host_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
+<listitem>
+<para>This directive specifies time (in seconds) until cache for
+filesystem node scheduling will be expired.
+The default time is 600 seconds, i.e. ten minutes.
+</para>
+<para>For example,</para>
+<literallayout>
+	schedule_cache_timeout 60
 </literallayout>
 </listitem>
 </varlistentry>
@@ -713,6 +729,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
@@ -780,8 +797,8 @@ notation.</para>
 <refsect1 id='examples'><title>EXAMPLES</title>
 <literallayout>
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24

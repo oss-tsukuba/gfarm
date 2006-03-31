@@ -31,4 +31,5 @@ extern char *gfarm_postgresql_conninfo;
 #define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */
 extern int gfarm_dir_cache_timeout;
 extern int gfarm_host_cache_timeout;
+extern int gfarm_schedule_cache_timeout;
 extern file_offset_t gfarm_minimum_free_disk_space;

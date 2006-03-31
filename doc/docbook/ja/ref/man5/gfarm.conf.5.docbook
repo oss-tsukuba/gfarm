@@ -608,12 +608,31 @@ IPアドレスを通信に用いるかを指定します。
 <varlistentry>
 <term><token>host_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
-キャッシュの有効期限を秒数で指定します。デフォルトは600秒すなわち10分です。
+<para>gfarm ライブラリが内部的に保持している、ファイルシステムノードに
+関するメタデータキャッシュの有効期限を秒数で指定します。
+新たにファイルシステムノードを追加したり削除したりした場合、この期限が
+切れるまでは、変更されたノードが見えないことがあります。
+デフォルトは600秒すなわち10分です。
 </para>
 <para>例:</para>
 <literallayout>
 	host_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わるキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_cache_timeout 60
 </literallayout>
 </listitem>
 </varlistentry>
@@ -664,6 +683,7 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
@@ -731,8 +751,8 @@ IPアドレスを通信に用いるかを指定します。
 <refsect1 id='examples'><title>EXAMPLES</title>
 <literallayout>
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24

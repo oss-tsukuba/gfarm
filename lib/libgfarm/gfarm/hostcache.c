@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "gfutil.h"
 #include "metadb_access.h"
+#include "config.h"
 
 #define HOSTCACHE_HASHTAB_SIZE	53	/* prime number */
 
@@ -130,9 +131,10 @@ gfarm_cache_host_info_invalidate()
 static int
 gfarm_cache_host_info_expired()
 {
-	struct timeval now;
-	struct timeval timeout = { 600, 0 }; /* 10 min */
+	struct timeval now, timeout;
 
+	timeout.tv_sec = gfarm_host_cache_timeout;
+	timeout.tv_usec = 0;
 	gettimeofday(&now, NULL);
 	gfarm_timeval_sub(&now, &host_cache->last_cache);
 	return (gfarm_timeval_cmp(&now, &timeout) >= 0);
