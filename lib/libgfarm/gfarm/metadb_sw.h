@@ -68,6 +68,7 @@ struct gfarm_metadb_internal_ops {
 extern const struct gfarm_metadb_internal_ops gfarm_none_metadb_ops;
 extern const struct gfarm_metadb_internal_ops gfarm_ldap_metadb_ops;
 extern const struct gfarm_metadb_internal_ops gfarm_pgsql_metadb_ops;
+extern const struct gfarm_metadb_internal_ops gfarm_localfsdb_metadb_ops;
 
 int gfarm_does_own_metadb_connection(void);
 

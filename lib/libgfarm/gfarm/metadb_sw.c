@@ -63,6 +63,13 @@ gfarm_metab_use_postgresql(void)
 }
 
 char *
+gfarm_metab_use_localfsdb(void)
+{
+	metadb_ops = &gfarm_localfsdb_metadb_ops;
+	return (NULL);
+}
+
+char *
 gfarm_metab_use_none(void)
 {
 	metadb_ops = &gfarm_none_metadb_ops;

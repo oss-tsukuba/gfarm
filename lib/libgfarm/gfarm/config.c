@@ -363,10 +363,14 @@ char *gfarm_postgresql_user = NULL;
 char *gfarm_postgresql_password = NULL;
 char *gfarm_postgresql_conninfo = NULL;
 
+/* LocalFS DB dependent */
+char *gfarm_localfsdb_datadir = NULL;
+
 enum gfarm_metadb_backend_type {
 	GFARM_METADB_TYPE_UNKNOWN,
 	GFARM_METADB_TYPE_LDAP,
-	GFARM_METADB_TYPE_POSTGRESQL
+	GFARM_METADB_TYPE_POSTGRESQL,
+	GFARM_METADB_TYPE_LOCALFSDB
 };
 
 /* miscellaneous */
@@ -408,6 +412,7 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_user,
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
+		&gfarm_localfsdb_datadir,
 	};
 	static void (*funcs[])(void) = {
 		gfarm_agent_name_clear,
@@ -448,6 +453,8 @@ config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
 		return (gfarm_metab_use_ldap());
 	case GFARM_METADB_TYPE_POSTGRESQL:
 		return (gfarm_metab_use_postgresql());
+	case GFARM_METADB_TYPE_LOCALFSDB:
+		return (gfarm_metab_use_localfsdb());
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
@@ -470,6 +477,9 @@ set_metadb_type(enum gfarm_metadb_backend_type *metadb_typep,
 	case GFARM_METADB_TYPE_POSTGRESQL:
 		return ("inconsistent configuration, "
 		    "PostgreSQL is specified as metadata backend before");
+	case GFARM_METADB_TYPE_LOCALFSDB:
+		return ("inconsistent configuration, "
+		    "LocalFS DB is specified as metadata backend before");
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
@@ -486,6 +496,12 @@ static char *
 set_metadb_type_postgresql(enum gfarm_metadb_backend_type *metadb_typep)
 {
 	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_POSTGRESQL));
+}
+
+static char *
+set_metadb_type_localfsdb(enum gfarm_metadb_backend_type *metadb_typep)
+{
+	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LOCALFSDB));
 }
 
 /*
@@ -1075,6 +1091,11 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_var(p, &gfarm_postgresql_conninfo);
 		if (e == NULL)
 			e = set_metadb_type_postgresql(metadb_typep);
+
+	} else if (strcmp(s, o = "localfsdb_datadir") == 0) {
+		e = parse_set_var(p, &gfarm_localfsdb_datadir);
+		if (e == NULL)
+			e = set_metadb_type_localfsdb(metadb_typep);
 
 	} else if (strcmp(s, o = "agent_serverhost") == 0) {
 		e = parse_set_func(p, gfarm_agent_name_set);
