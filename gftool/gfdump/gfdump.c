@@ -412,14 +412,16 @@ read_path_info(struct gfdump_ops *ops, FILE *f)
 {
 	static struct gfarm_path_info path_info;
 	struct gfs_stat *st = &path_info.status;
+	gfarm_int32_t i32;
 	char *e;
 
 	e = read_string(&path_info.pathname, f);
 	if (e != NULL)
 		return (e);
-	e = read_int32(&st->st_mode, f);
+	e = read_int32(&i32, f);
 	if (e != NULL)
 		return (e);
+	st->st_mode = i32;
 	e = read_string(&st->st_user, f);
 	if (e != NULL)
 		return (e);
