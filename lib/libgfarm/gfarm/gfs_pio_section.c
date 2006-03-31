@@ -464,6 +464,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	int is_local_host;
 	gfarm_timerval_t t1, t2;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	t1 = 0;
+#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_set_view_default(gf);

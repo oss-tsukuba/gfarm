@@ -113,6 +113,9 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfarm_timerval_t t1, t2;
 	long ino;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	t1 = 0;
+#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	path = gfarm_url_prefix_skip(path);

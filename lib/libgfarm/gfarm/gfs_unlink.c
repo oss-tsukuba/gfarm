@@ -160,6 +160,9 @@ gfs_unlink(const char *gfarm_url)
 	char *gfarm_file, *e, *e1 = NULL;
 	gfarm_timerval_t t1, t2;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	t1 = 0;
+#endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
