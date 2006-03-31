@@ -921,7 +921,6 @@ gfs_pio_gets(GFS_File gf, char *s, size_t size)
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	t1 = 0;
-	c = EOF;
 #endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -1026,7 +1025,6 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	t1 = 0;
-	c = EOF;
 #endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -1102,7 +1100,6 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	t1 = 0;
-	c = EOF;
 #endif
 	gfs_profile(gfarm_gettimerval(&t1));
 
