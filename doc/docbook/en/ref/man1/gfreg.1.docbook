@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>20 May 2005</date></refentryinfo>
+<refentryinfo><date>5 Apr 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -20,7 +20,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='opt'>-p </arg>
-    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>filesystem-node</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
+    </group>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <!-- arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg -->
     <arg choice='plain'><replaceable>program</replaceable></arg>
@@ -31,8 +35,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='opt'>-i </arg>
-    <arg choice='opt'>-H <replaceable>hostfile</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>filesystem-node</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
+    </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -42,7 +49,11 @@
   <command>gfreg</command>
     <arg choice='plain'>-N <replaceable>total-num-of-fragments</replaceable></arg>
     <arg choice='plain'>-I <replaceable>fragment-index</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>filesystem-node</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
+    </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -51,7 +62,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='plain'>-r</arg>
-    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>filesystem-node</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
+    </group>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <group choice='opt'>
       <arg choice='plain'><replaceable>directory</replaceable></arg>
@@ -77,7 +92,7 @@ gfrun(1) and gfmpirun_p4(1).  Without the <option>-p</option> option,
 only executable file can be specified.  With the <option>-p</option>
 option, non-executable file can be specified as well.  Without the
 <option>-a</option> option or the <option>-h</option>
-option,architecture of the <parameter>program</parameter> is assumed
+option, architecture of the <parameter>program</parameter> is assumed
 to be the same architecture as the client host on that gfreg(1) is
 executed, which is obtained by the Gfarm metaserver.
 <!--
@@ -96,8 +111,9 @@ as <parameter>localfile</parameter>.  With the <option>-i</option>
 option, both excutable and non-executable file can be specified as
 <parameter>localfile</parameter>. 
 The destination filesystem node will be automatically selected by CPU
-load average.  With the <option>-D</option> option, the selection of
-filesystem nodes is limited in the specified domain name.</para>
+load average.  With any one of <option>-h</option>, <option>-H</option>, 
+<option>-D</option> options, filesystem node can be limited.
+</para>
 
 <para>The third form registers <parameter>localfile</parameter> as a
 file fragment of a Gfarm file.  The total number of fragments and the
@@ -105,13 +121,15 @@ fragment index are specified by the <option>-N</option> option and the
 <option>-I</option> option, respectively.  When
 <parameter>gfarm-URL</parameter> is a directory, multiple
 <parameter>localfile</parameter>s can be specified.
-The destination filesystem
-node will be automatically decided by CPU load average except that the
-<option>-h</option> option is explicitly specified.  When the gfreg
-command of this form is executed on a filesystem node, the local
-filesystem node is always selected rather than a remote filesystem
-node.  In this case, the <option>-h</option> option helps to store
-files dispersively.</para>
+The destination filesystemnode will be automatically decided by CPU
+load average unless any one of <option>-h</option>,
+<option>-H</option>, <option>-D</option> options is explicitly
+specified.  When the gfreg command of this form is executed on a
+filesystem node, the local filesystem node is always selected rather
+than a remote filesystemnode.  In this case, <option>-h</option>,
+<option>-H</option>, <option>-D</option> options help to store files
+dispersively.
+</para>
 
 <para>The fourth form registers the <parameter>directory</parameter>
 as a Gfarm directory <parameter>gfarm-URL</parameter>, the
