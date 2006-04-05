@@ -43,6 +43,16 @@ CLASS="REPLACEABLE"
 ><I
 >ファイルシステムノード</I
 ></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
 >] [-a <TT
 CLASS="REPLACEABLE"
 ><I
@@ -63,12 +73,17 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfreg</B
-> [-i ] [-H <TT
+> [-i ] [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+> | -H <TT
 CLASS="REPLACEABLE"
 ><I
 >ホストファイル名</I
 ></TT
->] [-D <TT
+> | -D <TT
 CLASS="REPLACEABLE"
 ><I
 >ドメイン名</I
@@ -103,6 +118,16 @@ CLASS="REPLACEABLE"
 ><I
 >ファイルシステムノード</I
 ></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
@@ -122,6 +147,16 @@ CLASS="COMMAND"
 CLASS="REPLACEABLE"
 ><I
 >ファイルシステムノード</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
 ></TT
 >] [-a <TT
 CLASS="REPLACEABLE"
@@ -175,8 +210,8 @@ gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
 登録します．オプション -i がない場合には，実行が許可されていない
 localfile のみを指定できます．ある場合には，実行許可とは無関係に
 localfile を指定できます．ファイルの複製が作成されるファイルシス
-テムノードは自動的にCPU負荷により選ばれますが，オプション -D により選
-択されるファイルシステムノードのドメイン名を制限することができます．</P
+テムノードは自動的にCPU負荷により選ばれますが，オプション -h, -H, -D
+のいずれかにより選択されるファイルシステムノードを制限することができます．</P
 ><P
 >第3の形式の場合，localfileをGfarmファイルのフラグメントとして登
 録します．オプション -N と -I で，総フラグメント数と，このlocalfileの
