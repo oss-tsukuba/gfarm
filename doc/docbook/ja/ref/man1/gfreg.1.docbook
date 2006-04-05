@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>20 May 2005</date></refentryinfo>
+<refentryinfo><date>5 Apr 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -20,7 +20,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='opt'>-p </arg>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    </group>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <!-- arg choice='opt'>-N <replaceable>複製の数</replaceable></arg -->
     <arg choice='plain'><replaceable>program</replaceable></arg>
@@ -30,8 +34,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='opt'>-i </arg>
-    <arg choice='opt'>-H <replaceable>ホストファイル名</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -40,7 +47,11 @@
   <command>gfreg</command>
     <arg choice='plain'>-N <replaceable>フラグメント総数</replaceable></arg>
     <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
     <arg choice='plain'>...</arg>
     <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
@@ -48,7 +59,11 @@
 <cmdsynopsis>
   <command>gfreg</command>
     <arg choice='plain'>-r</arg>
-    <arg choice='opt'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
+      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
+      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    </group>
     <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <group choice='opt'>
       <arg choice='plain'><replaceable>directory</replaceable></arg>
@@ -85,8 +100,8 @@ gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
 登録します．オプション -i がない場合には，実行が許可されていない
 localfile のみを指定できます．ある場合には，実行許可とは無関係に
 localfile を指定できます．ファイルの複製が作成されるファイルシス
-テムノードは自動的にCPU負荷により選ばれますが，オプション -D により選
-択されるファイルシステムノードのドメイン名を制限することができます．
+テムノードは自動的にCPU負荷により選ばれますが，オプション -h, -H, -D
+のいずれかにより選択されるファイルシステムノードを制限することができます．
 </para>
 
 <para>第3の形式の場合，localfileをGfarmファイルのフラグメントとして登
@@ -94,9 +109,10 @@ localfile を指定できます．ファイルの複製が作成されるファイルシス
 フラグメント番号を必ず指定する必要があります．Gfarm-URL がディレクトリ
 の場合は localfile を複数指定することが可能です．ファイルの複製が作成
 されるファイルシステムノードは自動的にCPU負荷により選ばれますが，オプ
-ション -h により明示的に指定することもできます．ただ，ファイルシステム
-ノードで gfreg を実行した場合は常に自ノードが選ばれてしまうため，ファ
-イルを分散させて配置したい場合はオプション -h を指定する必要があります．
+ション -h, -H, -D のいずれかによりにより明示的に指定することもできます．
+ただ，ファイルシステムノードで gfreg を実行した場合は常に自ノードが
+選ばれてしまうため，ファイルを分散させて配置したい場合はオプション -h,
+-H, -D のいずれかを指定する必要があります．
 </para>
 
 <para>第4の形式の場合，directory, program, localfile を gfarm-URL に
