@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/un.h>
@@ -521,9 +522,10 @@ gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
  */
 
 static int
-gfarm_fd_receive_message(int fd, void *buffer, size_t size,
+gfarm_fd_receive_message(int fd, void *buf, size_t size,
 	int fdc, int *fdv)
 {
+	char *buffer = buf;
 	int i, rv;
 	struct iovec iov[1];
 	struct msghdr msg;

@@ -257,8 +257,9 @@ local_path(char *file, char **pathp, char *diag)
 }
 
 static int
-gfarm_fd_send_message(int fd, void *buffer, size_t size, int fdc, int *fdv)
+gfarm_fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 {
+	char *buffer = buf;
 	int i, rv;
 	struct iovec iov[1];
 	struct msghdr msg;
