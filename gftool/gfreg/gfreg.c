@@ -609,10 +609,11 @@ check_arguments(int argc, char *argv[],
 				/* gfarm_url is a regular file */
 				fprintf(stderr,
 					"%s: cannot register "
-					"%s(directory) "
-					"as %s(regular file)\n",
+					"directory %s "
+					"as regular file %s\n",
 					program_name, argv[i],
-					file_mode_arg);
+					file_mode_arg == NULL ?
+						"" : file_mode_arg);
 				exit(EXIT_FAILURE);
 			}	
 		}
