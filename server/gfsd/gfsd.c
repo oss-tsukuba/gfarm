@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#define _POSIX_PII_SOCKET /* to use struct msghdr on Tru64 */
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
