@@ -1,6 +1,6 @@
 # $Id$
 
-top_builddir = ../../../../..
+top_builddir = ../../../..
 top_srcdir = $(top_builddir)
 srcdir = .
 
