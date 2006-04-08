@@ -535,6 +535,18 @@ AC_CHECK_LIB(compat, cuserid)
 AC_CHECK_LIB(gen, basename)
 AC_CHECK_LIB(rt, fdatasync)
 
+# Since gfarm-1.3, libgfarm calls pthread functions internally,
+# thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
+for i in ${pthread_libs}
+do
+  case $i in
+  -L/usr/lib) :;;
+  -L/usr/lib/) :;;
+  -L*) # 3rd party pthread library, We need to link it always.
+	LIBS="${LIBS} ${pthread_libs}";;
+  esac
+done
+
 ### use 64bit off_t, if possible.
 
 AC_MSG_CHECKING([Large File extention for 64bit off_t])
