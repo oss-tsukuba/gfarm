@@ -152,7 +152,6 @@ mkdir -p $RPM_BUILD_ROOT
 	--sysconfdir=%{sysconfdir} \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
-	--with-readline=/usr \
 	`test "%{globus}" -ne 0 && echo	\
 		--with-globus=%{globus_prefix} \
 		--with-globus-flavor=%{globus_flavor}` \
