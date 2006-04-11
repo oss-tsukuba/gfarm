@@ -156,7 +156,7 @@ remove_whole_file_or_dir(char *path,
 		if (e != NULL)
 			return (e);
 		remove_cwd_entries(ops, closure);
-		e = gfs_chdir_canonical(cwdbuf);
+		e = gfs_chdir(cwdbuf);
 		if (e != NULL)
 			return (e);
 		e = ops->rmdir(path, closure);
