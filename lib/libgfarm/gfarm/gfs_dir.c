@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <openssl/evp.h>
@@ -148,7 +149,16 @@ gfs_chdir_canonical(const char *canonic_dir)
 	static char *env = NULL;
 	static int env_len = 0;
 	int len;
-	char *tmp;
+	char *tmp, *e;
+	struct gfarm_path_info pi;
+
+	e = gfarm_path_info_get(canonic_dir, &pi);
+	if (e == NULL) {
+		e = gfarm_path_info_access(&pi, X_OK);
+		gfarm_path_info_free(&pi);
+	}
+	if (e != NULL)
+		return (e);
 
 	len = 1 + strlen(canonic_dir) + 1;
 	if (cwd_len < len) {
@@ -1416,19 +1426,26 @@ struct gfs_dir {
 char *
 gfs_i_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e, *canonic_path;
+	char *e, *e1, *canonic_path;
 	struct node *n;
 	struct gfs_dir *dir;
+	struct gfarm_path_info pi;
 
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
 	if (e != NULL)
 		return (e);
 
+	e1 = gfarm_path_info_get(canonic_path, &pi);
+	if (e1 == NULL) {
+		e1 = gfarm_path_info_access(&pi, R_OK);
+		gfarm_path_info_free(&pi);
+	}
+
 	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
 	    GFARM_INODE_LOOKUP, &n);
 	free(canonic_path);
-	if (e != NULL)
-		return (e);
+	if (e != NULL || e1 != NULL)
+		return (e != NULL ? e : e1);
 
 	/* here, refresh directory cache */
 	if (n->flags & NODE_FLAG_INVALID) {
