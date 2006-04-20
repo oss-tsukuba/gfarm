@@ -76,7 +76,7 @@ gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRC
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
-gfs_lock.lo: 
+gfs_lock.lo:
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_client.h gfs_pio.h
@@ -96,7 +96,7 @@ iobuffer.lo: iobuffer.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
 metadb_none.lo: metadb_sw.h
-metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h gfutil.h
+metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h $(GFUTIL_SRCDIR)/gfutil.h
 metadb_sw.lo: config.h metadb_access.h metadb_sw.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h
