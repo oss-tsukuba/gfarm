@@ -96,7 +96,7 @@ iobuffer.lo: iobuffer.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
 metadb_none.lo: metadb_sw.h
-metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h
+metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h gfutil.h
 metadb_sw.lo: config.h metadb_access.h metadb_sw.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h

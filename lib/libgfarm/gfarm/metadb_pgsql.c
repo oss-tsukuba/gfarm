@@ -25,6 +25,7 @@
 #include "config.h"
 #include "metadb_access.h"
 #include "metadb_sw.h"
+#include "gfutil.h"
 
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION "23505"
 
@@ -194,17 +195,17 @@ uint64_t
 gfarm_hton64(uint64_t h64)
 {
 #ifdef WORDS_BIGENDIAN
-        return (h64); /* same order */
+	return (h64); /* same order */
 #else
-        return (htonl((uint32_t)((h64 >> 32) & 0xffffffff)) |
-            ((uint64_t)htonl((uint32_t)h64 & 0xffffffff) << 32));
+	return (htonl((uint32_t)((h64 >> 32) & 0xffffffff)) |
+	    ((uint64_t)htonl((uint32_t)h64 & 0xffffffff) << 32));
 #endif
 }
 
 uint64_t
 gfarm_ntoh64(uint64_t n64)
 {
-        return (gfarm_hton64(n64));
+	return (gfarm_hton64(n64));
 }
 
 /**********************************************************************/
@@ -265,8 +266,8 @@ host_info_get(
 	PQclear(res);
 
 	resc = PQexecParams(conn,
-	        csql,
-	        nparams,
+		csql,
+		nparams,
 		NULL, /* param types */
 		paramValues,
 		NULL, /* param lengths */
@@ -423,7 +424,7 @@ hostaliases_set(
 					e = GFARM_ERR_ALREADY_EXISTS;
 				}
 				return (e);
-			}	
+			}
 			PQclear(res);
 		}
 	}
@@ -643,7 +644,7 @@ host_info_get_all(
 		PQclear(cres);
 		goto clear_cres;
 	}
-        *np = PQntuples(cres); /* number of hosts */
+	*np = PQntuples(cres); /* number of hosts */
 	if (*np == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		goto clear_cres;
@@ -674,7 +675,7 @@ host_info_get_all(
 
 		nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
 						i,
-					        PQfnumber(cres, "count"))));
+						PQfnumber(cres, "count"))));
 		gfarm_base_host_info_ops.clear(&ip[i]);
 		e = host_info_get_one(ires, startrow, nhostaliases, &ip[i]);
 		startrow += (nhostaliases == 0 ? 1 : nhostaliases);
@@ -702,16 +703,16 @@ gfarm_pgsql_host_info_get_all(
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
 
-	return (host_info_get_all( 
+	return (host_info_get_all(
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "ORDER BY Host.hostname, hostalias",
 
 		0,
@@ -737,14 +738,14 @@ gfarm_pgsql_host_info_get_by_name_alias(
 	e = host_info_get_all(
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE Host.hostname = $1 OR hostalias = $1 "
 		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE Host.hostname = $1 OR hostalias = $1 "
 		    "ORDER BY Host.hostname, hostalias",
 
@@ -774,17 +775,17 @@ gfarm_pgsql_host_info_get_allhost_by_architecture(const char *architecture,
 		return (e);
 
 	paramValues[0] = architecture;
-	return (host_info_get_all( 
+	return (host_info_get_all(
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE architecture = $1 "
 		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
-		        "ON Host.hostname = HostAliases.hostname "
+			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE architecture = $1 "
 		    "ORDER BY Host.hostname, hostalias",
 
@@ -826,7 +827,7 @@ path_info_set_field(
 	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "ctimensec"))));
 	info->status.st_nsections = ntohl(
 	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "nsections"))));
-}	
+}
 
 static char *
 gfarm_pgsql_path_info_get(
@@ -861,7 +862,7 @@ gfarm_pgsql_path_info_get(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
+	}
 	if (PQntuples(res) == 0) {
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -1048,29 +1049,112 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 	return (e);
 }
 
+static char *
+get_value_from_varchar_copy_binary(char **bufp)
+{
+	size_t len;
+	char *p;
+
+	if (*(int32_t *)*bufp == -1) { /* NULL */
+		*bufp += sizeof(uint32_t);
+		/* XXX - stopgap for NULL value */
+		return (NULL);
+	}
+
+	len = ntohl(*(uint32_t *)*bufp);
+	*bufp += sizeof(uint32_t);
+	p = strndup(*bufp, len);
+	*bufp += len;
+	return (p);
+}
+
+static uint32_t
+get_value_from_integer_copy_binary(char **bufp)
+{
+	uint32_t val;
+
+	if (*(int32_t *)*bufp == -1) { /* NULL */
+		*bufp += sizeof(uint32_t);
+		/* XXX - stopgap for NULL value */
+		return (0);
+	}
+
+	*bufp += sizeof(uint32_t);
+	val = ntohl(*(uint32_t *)*bufp);
+	*bufp += sizeof(uint32_t);
+	return (val);
+}
+
+static uint64_t
+get_value_from_int8_copy_binary(char **bufp)
+{
+	uint64_t val;
+
+	if (*(int32_t *)*bufp == -1) { /* NULL */
+		*bufp += sizeof(uint32_t);
+		/* XXX - stopgap for NULL value */
+		return (0);
+	}
+
+	*bufp += sizeof(uint32_t);
+	val = gfarm_ntoh64(*(uint64_t *)*bufp);
+	*bufp += sizeof(uint64_t);
+	return (val);
+}
+
+static void
+path_info_set_field_from_copy_binary(
+	char *buf,
+	struct gfarm_path_info *info)
+{
+	/* XXX - info->status.st_ino is set not here but at upper level */
+
+	buf += 2; /* skip the number of fields */
+
+	info->pathname = get_value_from_varchar_copy_binary(&buf);
+	info->status.st_mode = get_value_from_integer_copy_binary(&buf);
+	info->status.st_user = get_value_from_varchar_copy_binary(&buf);
+	info->status.st_group = get_value_from_varchar_copy_binary(&buf);
+	info->status.st_atimespec.tv_sec =
+		get_value_from_int8_copy_binary(&buf);
+	info->status.st_atimespec.tv_nsec =
+		get_value_from_integer_copy_binary(&buf);
+	info->status.st_mtimespec.tv_sec =
+		get_value_from_int8_copy_binary(&buf);
+	info->status.st_mtimespec.tv_nsec =
+		get_value_from_integer_copy_binary(&buf);
+	info->status.st_ctimespec.tv_sec =
+		get_value_from_int8_copy_binary(&buf);
+	info->status.st_ctimespec.tv_nsec =
+		get_value_from_integer_copy_binary(&buf);
+	info->status.st_nsections = get_value_from_integer_copy_binary(&buf);
+}
+
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
+#define COPY_BINARY_SIGNATURE_LEN		11
+#define COPY_BINARY_FLAGS_FIELD_LEN		4
+#define COPY_BINARY_HEADER_EXTENSION_AREA_LEN	4
+#define COPY_BINARY_HEADER_LEN (COPY_BINARY_SIGNATURE_LEN + \
+	    COPY_BINARY_FLAGS_FIELD_LEN +COPY_BINARY_HEADER_EXTENSION_AREA_LEN)
+
 static char *
 gfarm_pgsql_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
 {
 	PGresult *res;
-	char *e;
-	int i;
+	char *e, *buf, *bp;
+	int ret;
+	struct gfarm_path_info info;
+
+	static const char binary_signature[11] = "PGCOPY\n\377\r\n\0";
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
-
  retry:
-	res = PQexecParams(conn,
-		"SELECT * FROM Path",
-		0, /* number of params */
-		NULL, /* param types */
-		NULL, /* param values */
-		NULL, /* param lengths */
-		NULL, /* param formats */
-		1); /* ask for binary results */
-	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+	res = PQexec(conn,
+		"COPY Path to STDOUT BINARY");
+	if (PQresultStatus(res) != PGRES_COPY_OUT) {
 		if (PQstatus(conn) == CONNECTION_BAD) {
 			PQreset(conn);
 			if (PQstatus(conn) == CONNECTION_OK) {
@@ -1078,23 +1162,45 @@ gfarm_pgsql_path_info_get_all_foreach(
 				goto retry;
 			}
 		}
+
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
-	if (PQntuples(res) == 0) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-		PQclear(res);
+	}
+	PQclear(res);
+
+	ret = PQgetCopyData(conn, &buf,	0);
+	if (ret < COPY_BINARY_SIGNATURE_LEN ||
+	    memcmp(buf, binary_signature, COPY_BINARY_SIGNATURE_LEN) != 0) {
+		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
+			    "Fatal Error, COPY file signature not recognized");
+	}
+
+	bp = buf + COPY_BINARY_HEADER_LEN;
+	while (ret > 2) { /* not trailer */
+		if (buf) {
+			gfarm_base_path_info_ops.clear(&info);
+			path_info_set_field_from_copy_binary(bp, &info);
+			if (gfarm_base_path_info_ops.validate(&info))
+				(*callback)(closure, &info);
+			gfarm_base_path_info_ops.free(&info);
+			PQfreemem(buf);
+		}
+		ret = PQgetCopyData(conn, &buf, 0);
+		bp = buf;
+	}
+	if (ret == -2) {
+		e = save_pgsql_msg(PQerrorMessage(conn));
 		return (e);
 	}
-	for (i = 0; i < PQntuples(res); i++) {
-		struct gfarm_path_info info;
-		
-		gfarm_base_path_info_ops.clear(&info);
-		path_info_set_field(res, i, &info);
-		if (gfarm_base_path_info_ops.validate(&info))
-			(*callback)(closure, &info);
-		gfarm_base_path_info_ops.free(&info);
+	if (ret == 2) { /* trailer */
+		ret = PQgetCopyData(conn, &buf, 0);
+		PQfreemem(buf);
+	}
+	res = PQgetResult(conn);
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = save_pgsql_msg(PQerrorMessage(conn));
+		return (e);
 	}
 	PQclear(res);
 	return (NULL);
@@ -1150,7 +1256,7 @@ file_section_info_set_field(
 		PQgetvalue(res, row, PQfnumber(res, "checksumType")));
 	info->checksum = strdup(
 		PQgetvalue(res, row, PQfnumber(res, "checksum")));
-}	
+}
 
 static char *
 gfarm_pgsql_file_section_info_get(
@@ -1187,7 +1293,7 @@ gfarm_pgsql_file_section_info_get(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
+	}
 	if (PQntuples(res) == 0) {
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -1217,7 +1323,7 @@ gfarm_pgsql_file_section_info_set(
 	paramValues[1] = section;
 	sprintf(filesize, "%lld", (long long)info->filesize);
 	paramValues[2] = filesize;
-        paramValues[3] = info->checksum_type;
+	paramValues[3] = info->checksum_type;
 	paramValues[4] = info->checksum;
 	res = PQexecParams(conn,
 		"INSERT INTO FileSection (pathname, section, filesize,"
@@ -1266,7 +1372,7 @@ gfarm_pgsql_file_section_info_replace(
 	paramValues[1] = section;
 	sprintf(filesize, "%lld", (long long)info->filesize);
 	paramValues[2] = filesize;
-        paramValues[3] = info->checksum_type;
+	paramValues[3] = info->checksum_type;
 	paramValues[4] = info->checksum;
 	res = PQexecParams(conn,
 		"UPDATE FileSection SET filesize = $3, "
@@ -1366,7 +1472,7 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 		PQclear(res);
 		return (e);
 	}
-        *np = PQntuples(res);
+	*np = PQntuples(res);
 	if (*np == 0) {
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -1377,7 +1483,7 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	for (i = 0; i < *np; i++) {
-		gfarm_base_file_section_info_ops.clear(&ip[i]); 
+		gfarm_base_file_section_info_ops.clear(&ip[i]);
 		file_section_info_set_field(res, i, &ip[i]);
 	}
 	*infosp = ip;
@@ -1399,7 +1505,7 @@ file_section_copy_info_set_field(
 		PQgetvalue(res, row, PQfnumber(res, "section")));
 	info->hostname = strdup(
 		PQgetvalue(res, row, PQfnumber(res, "hostname")));
-}	
+}
 
 static char *
 gfarm_pgsql_file_section_copy_info_get(
@@ -1438,7 +1544,7 @@ gfarm_pgsql_file_section_copy_info_get(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
+	}
 	if (PQntuples(res) == 0) {
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -1489,7 +1595,7 @@ gfarm_pgsql_file_section_copy_info_set(
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
-	}	
+	}
 	PQclear(res);
 	return (e);
 }
@@ -1567,8 +1673,8 @@ file_section_copy_info_get_all(
 		e = save_pgsql_msg(PQresultErrorMessage(res));
 		PQclear(res);
 		return (e);
-	}	
-        *np = PQntuples(res);
+	}
+	*np = PQntuples(res);
 	if (*np == 0) {
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
