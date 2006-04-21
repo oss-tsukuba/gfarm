@@ -1175,25 +1175,27 @@ gfarm_pgsql_path_info_get_all_foreach(
 		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
 			    "Fatal Error, COPY file signature not recognized");
 	}
-
-	bp = buf + COPY_BINARY_HEADER_LEN;
-	while (ret > 2) { /* not trailer */
-		if (buf) {
-			gfarm_base_path_info_ops.clear(&info);
-			path_info_set_field_from_copy_binary(bp, &info);
-			if (gfarm_base_path_info_ops.validate(&info))
-				(*callback)(closure, &info);
-			gfarm_base_path_info_ops.free(&info);
-			PQfreemem(buf);
+	if (ret > COPY_BINARY_HEADER_LEN + 2) {
+		bp = buf + COPY_BINARY_HEADER_LEN;
+		while (ret > 2) { /* not trailer */
+			if (buf) {
+				gfarm_base_path_info_ops.clear(&info);
+				path_info_set_field_from_copy_binary(bp,
+					&info);
+				if (gfarm_base_path_info_ops.validate(&info))
+					(*callback)(closure, &info);
+				gfarm_base_path_info_ops.free(&info);
+				PQfreemem(buf);
+			}
+			ret = PQgetCopyData(conn, &buf, 0);
+			bp = buf;
 		}
-		ret = PQgetCopyData(conn, &buf, 0);
-		bp = buf;
 	}
 	if (ret == -2) {
 		e = save_pgsql_msg(PQerrorMessage(conn));
 		return (e);
 	}
-	if (ret == 2) { /* trailer */
+	if (ret == 2 || ret == COPY_BINARY_HEADER_LEN + 2) { /* trailer */
 		ret = PQgetCopyData(conn, &buf, 0);
 		PQfreemem(buf);
 	}
