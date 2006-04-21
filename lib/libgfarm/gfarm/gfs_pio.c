@@ -459,7 +459,7 @@ gfs_pio_purge(GFS_File gf)
 }
 
 static char *
-gfs_pio_fillbuf(GFS_File gf)
+gfs_pio_fillbuf(GFS_File gf, size_t size)
 {
 	char *e;
 	size_t len;
@@ -480,7 +480,7 @@ gfs_pio_fillbuf(GFS_File gf)
 
 	assert(gf->io_offset == gf->offset);
 
-	e = (*gf->ops->view_read)(gf, gf->buffer, GFS_FILE_BUFSIZE, &len);
+	e = (*gf->ops->view_read)(gf, gf->buffer, size, &len);
 	if (e != NULL) {
 		gf->error = e;
 		return (e);
@@ -694,7 +694,10 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	CHECK_READABLE(gf);
 
 	while (size > 0) {
-		if ((e = gfs_pio_fillbuf(gf)) != NULL)
+		if ((e = gfs_pio_fillbuf(gf,
+		    ((gf->open_flags & GFARM_FILE_UNBUFFERED) &&
+		    size < GFS_FILE_BUFSIZE) ? size : GFS_FILE_BUFSIZE))
+		    != NULL)
 			break;
 		if (gf->error != NULL) /* EOF or error */
 			break;
@@ -709,8 +712,10 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	}
 	if (e != NULL && n == 0)
 		goto finish;
-	*np = n;
 
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED)
+		gfs_pio_purge(gf);
+	*np = n;
 	e = NULL;
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -743,7 +748,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		 * by buffer.
 		 */
 		gf->length = gf->p;
-		e = gfs_pio_flush(gf);
+		e = gfs_pio_flush(gf); /* this does purge too */
 		if (e != NULL)
 			goto finish;
 	}
@@ -769,8 +774,12 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		gf->length = gf->p;
 	*np = size;
 	e = NULL;
-	if (gf->open_flags & GFARM_FILE_UNBUFFERED || gf->p >= GFS_FILE_BUFSIZE)
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED ||
+	    gf->p >= GFS_FILE_BUFSIZE) {
 		e = gfs_pio_flush(gf);
+		if (gf->open_flags & GFARM_FILE_UNBUFFERED)
+			gfs_pio_purge(gf);
+	}
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1));
@@ -821,6 +830,7 @@ int
 gfs_pio_getc(GFS_File gf)
 {
 	char *e = gfs_pio_check_view_default(gf);
+	int c;
 
 	if (e != NULL) {
 		gf->error = e;
@@ -830,12 +840,17 @@ gfs_pio_getc(GFS_File gf)
 	CHECK_READABLE_EOF(gf);
 
 	if (gf->p >= gf->length) {
-		if (gfs_pio_fillbuf(gf) != NULL)
+		if (gfs_pio_fillbuf(gf,
+		    gf->open_flags & GFARM_FILE_UNBUFFERED ?
+		    1 : GFS_FILE_BUFSIZE) != NULL)
 			return (EOF); /* can get reason via gfs_pio_error() */
 		if (gf->error != NULL)
 			return (EOF);
 	}
-	return (((unsigned char *)gf->buffer)[gf->p++]);
+	c = ((unsigned char *)gf->buffer)[gf->p++];
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED)
+		gfs_pio_purge(gf);
+	return (c);
 }
 
 int
@@ -872,7 +887,7 @@ gfs_pio_putc(GFS_File gf, int c)
 	CHECK_WRITABLE(gf);
 
 	if (gf->p >= GFS_FILE_BUFSIZE) {
-		char *e = gfs_pio_flush(gf);
+		char *e = gfs_pio_flush(gf); /* this does purge too */
 
 		if (e != NULL)
 			return (e);
@@ -881,8 +896,13 @@ gfs_pio_putc(GFS_File gf, int c)
 	gf->buffer[gf->p++] = c;
 	if (gf->p > gf->length)
 		gf->length = gf->p;
-	if (gf->p >= GFS_FILE_BUFSIZE)
-		return (gfs_pio_flush(gf));
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED ||
+	    gf->p >= GFS_FILE_BUFSIZE) {
+		e = gfs_pio_flush(gf);
+		if (gf->open_flags & GFARM_FILE_UNBUFFERED)
+			gfs_pio_purge(gf);
+		return (e);
+	}
 	return (NULL);
 }
 
