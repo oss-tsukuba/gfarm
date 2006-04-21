@@ -1,6 +1,7 @@
 extern int gfarm_is_active_file_system_node;
 
 /* GFS dependent */
+extern char *gfarm_spool_server_listen_address;
 extern char *gfarm_spool_root;
 extern int gfarm_spool_server_port;
 

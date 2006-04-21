@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>26 Aug 2005</date></refentryinfo>
+<refentryinfo><date>21 Apr 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -106,6 +106,22 @@
 <para>例:</para>
 <literallayout>
 	spool /var/spool/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
+<listitem>
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_listen_address 192.168.121.1
 </literallayout>
 </listitem>
 </varlistentry>
@@ -663,6 +679,7 @@ IPアドレスを通信に用いるかを指定します。
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
@@ -686,6 +703,8 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
+	&lt;spool_server_listen_address_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;

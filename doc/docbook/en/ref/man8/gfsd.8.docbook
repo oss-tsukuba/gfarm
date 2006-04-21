@@ -76,10 +76,30 @@ configuration file.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-l</option> <parameter>IP-address</parameter></term>
+<listitem>
+<para>specifies the IP address that the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-p</option> <parameter>port-number</parameter></term>
 <listitem>
 <para>specifies a port number of TCP and UDP used by gfsd.  By default, 600
 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option> <parameter>directory</parameter></term>
+<listitem>
+<para>specifies a spool directory
+for a Gfarm filesystem on this filesystem node.
+</para>
 </listitem>
 </varlistentry>
 

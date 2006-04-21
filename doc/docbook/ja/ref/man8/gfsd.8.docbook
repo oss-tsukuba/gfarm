@@ -73,10 +73,30 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 </varlistentry>
 
 <varlistentry>
+<term><option>-l</option> <parameter>IPアドレス</parameter></term>
+<listitem>
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-p</option> <parameter>ポート番号</parameter></term>
 <listitem>
 <para>gfsd が利用する TCP および UDP のポート番号を指定します。
 省略した場合には 600 番を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option> <parameter>スプール・ディレクトリ</parameter></term>
+<listitem>
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。
+</para>
 </listitem>
 </varlistentry>
 

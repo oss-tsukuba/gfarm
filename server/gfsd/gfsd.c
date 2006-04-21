@@ -72,6 +72,7 @@
 #endif
 
 char *program_name = "gfsd";
+char *spool_root = NULL;
 
 int debug_mode = 0;
 
@@ -704,7 +705,7 @@ void
 gfs_server_get_spool_root(struct xxx_connection *client)
 {
 	gfs_server_put_reply(client, "get_spool_root",
-	    GFS_ERROR_NOERROR, "s", gfarm_spool_root);
+	    GFS_ERROR_NOERROR, "s", spool_root);
 }
 
 void
@@ -2375,17 +2376,25 @@ error:
 }
 
 int
-open_accepting_socket(int port)
+open_accepting_socket(const char *address, int port)
 {
 	char *e;
+	struct hostent *hp;
 	struct sockaddr_in self_addr;
 	socklen_t self_addr_size;
 	int sock, sockopt;
 
 	memset(&self_addr, 0, sizeof(self_addr));
 	self_addr.sin_family = AF_INET;
-	self_addr.sin_addr.s_addr = INADDR_ANY;
 	self_addr.sin_port = htons(port);
+	if (address == NULL)
+		self_addr.sin_addr.s_addr = INADDR_ANY;
+	else if ((hp = gethostbyname(address)) == NULL ||
+	    hp->h_addrtype != AF_INET)
+		gflog_fatal("listen address can't be resolved: %s", address);
+	else
+		memcpy(&self_addr.sin_addr, hp->h_addr,
+		    sizeof(self_addr.sin_addr));
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
@@ -2405,7 +2414,8 @@ open_accepting_socket(int port)
 }
 
 void
-open_datagram_service_sockets(int port, int *countp, int **socketsp)
+open_datagram_service_sockets(const char *address, int port,
+	int *countp, int **socketsp)
 {
 	char *e;
 	int i, self_addresses_count, *sockets, s;
@@ -2413,9 +2423,23 @@ open_datagram_service_sockets(int port, int *countp, int **socketsp)
 	struct sockaddr_in bind_addr;
 	socklen_t bind_addr_size;
 
-	e = gfarm_get_ip_addresses(&self_addresses_count, &self_addresses);
-	if (e != NULL)
-		gflog_fatal("get_ip_addresses: %s", e);
+	if (address == NULL) {
+		e = gfarm_get_ip_addresses(
+		    &self_addresses_count, &self_addresses);
+		if (e != NULL)
+			gflog_fatal("get_ip_addresses: %s", e);
+	} else {
+		struct hostent *hp = gethostbyname(address);
+
+		if (hp == NULL || hp->h_addrtype != AF_INET)
+			gflog_fatal("listen address can't be resolved: %s",
+			    address);
+		self_addresses_count = 1;
+		self_addresses = malloc(sizeof(*self_addresses));
+		if (self_addresses == NULL)
+			gflog_fatal(GFARM_ERR_NO_MEMORY);
+		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
+	}
 	sockets = malloc(sizeof(*sockets) * self_addresses_count);
 	if (sockets == NULL)
 		gflog_fatal_errno("malloc datagram sockets");
@@ -2444,7 +2468,9 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
+	fprintf(stderr, "\t-l <listen_address>\n");
 	fprintf(stderr, "\t-p <port>\n");
+	fprintf(stderr, "\t-r <spool_root>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
 	fprintf(stderr, "\t-v>\n");
 	exit(1);
@@ -2455,7 +2481,8 @@ main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
-	char *e, *config_file = NULL, *port_number = NULL, *pid_file = NULL;
+	char *e, *config_file = NULL;
+	char *listen_address = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, table_size, i, nfound, max_fd;
@@ -2466,7 +2493,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:df:p:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "P:df:l:p:r:s:uv")) != -1) {
 		switch (ch) {
 		case 'P':
 			pid_file = optarg;
@@ -2477,8 +2504,14 @@ main(int argc, char **argv)
 		case 'f':
 			config_file = optarg;
 			break;
+		case 'l':
+			listen_address = optarg;
+			break;
 		case 'p':
 			port_number = optarg;
+			break;
+		case 'r':
+			spool_root = optarg;
 			break;
 		case 's':
 			syslog_facility =
@@ -2509,16 +2542,21 @@ main(int argc, char **argv)
 		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
 		exit(1);
 	}
+	if (listen_address == NULL)
+		listen_address = gfarm_spool_server_listen_address;
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
+	if (spool_root == NULL)
+		spool_root = gfarm_spool_root;
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(gfarm_spool_root);
+	if (chdir(spool_root) == -1)
+		gflog_fatal_errno(spool_root);
 
-	accepting_sock = open_accepting_socket(gfarm_spool_server_port);
+	accepting_sock = open_accepting_socket(
+	    listen_address, gfarm_spool_server_port);
 	accepting_unix = open_accepting_unix_domain(gfarm_spool_server_port);
-	open_datagram_service_sockets(gfarm_spool_server_port,
+	open_datagram_service_sockets(listen_address, gfarm_spool_server_port,
 	    &datagram_socks_count, &datagram_socks);
 
 	max_fd = accepting_sock;

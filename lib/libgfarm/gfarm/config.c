@@ -334,6 +334,7 @@ gfarm_set_global_user_for_this_local_account(void)
  * value at gfarm_config_set_default*().
  */
 /* GFS dependent */
+char *gfarm_spool_server_listen_address = NULL;
 static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 char *gfarm_spool_root = NULL;
 static char *gfarm_spool_server_portname = NULL;
@@ -394,6 +395,7 @@ static void
 gfarm_config_clear(void)
 {
 	static char **vars[] = {
+		&gfarm_spool_server_listen_address,
 		&gfarm_spool_server_portname,
 		&gfarm_metadb_server_name,
 		&gfarm_metadb_server_portname,
@@ -1004,6 +1006,8 @@ parse_one_line(char *s, char *p, char **op,
 
 	if (strcmp(s, o = "spool") == 0) {
 		e = parse_set_var(p, &gfarm_spool_root);
+	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
+		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_serverport") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_portname);
 	} else if (strcmp(s, o = "spool_server_cred_type") == 0) {

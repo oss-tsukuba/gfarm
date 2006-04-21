@@ -103,6 +103,22 @@ node, this statement should be specified.</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_listen_address</token> <parameter>IP-address</parameter></term>
+<listitem>
+<para>The <token>spool_server_listen_address</token> statement specifies
+the IP address that the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_server_listen_address 192.168.121.1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_serverport</token> <parameter>port</parameter></term>
 <listitem>
 <para>The <token>spool_serverport</token> statement specifies the tcp
@@ -709,6 +725,7 @@ notation.</para>
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
@@ -732,6 +749,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
+	&lt;spool_server_listen_address_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
 	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
