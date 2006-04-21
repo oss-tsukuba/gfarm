@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "10 August 2004" "Gfarm" ""
+.TH "GFSD" "8" "21 April 2006" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm 並列ファイルシステム・デーモン
@@ -44,9 +44,19 @@ gfsd の process ID を、指定したファイルに記録します。
 \fB-f \fI設定ファイル\fB\fR
 起動時に読み込む設定ファイルを指定します．
 .TP
+\fB-l \fIIPアドレス\fB\fR
+gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+.TP
 \fB-p \fIポート番号\fB\fR
 gfsd が利用する TCP および UDP のポート番号を指定します。
 省略した場合には 600 番を使用します。
+.TP
+\fB-r \fIスプール・ディレクトリ\fB\fR
+gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。
 .TP
 \fB-s \fIsyslogファシリティ\fB\fR
 gfsd がエラー報告に用いる syslog のファシリティを指定します。省略

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "31 March 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "21 April 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -64,6 +64,19 @@ gfsdが、gfarmファイルの実体を保持するディレクトリ名を
 
 .nf
 	spool /var/spool/gfarm
+.fi
+.TP
+\fBspool_server_listen_address \fIIPアドレス\fB\fR
+gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+
+例:
+
+.nf
+	spool_server_listen_address 192.168.121.1
 .fi
 .TP
 \fBspool_serverport \fIgfsdポート番号\fB\fR
@@ -525,6 +538,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 .nf
 	<statement> ::=
 		\~\~<spool_statement> |
+		\~\~<spool_server_listen_address_statement> |
 		\~\~<spool_serverport_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
@@ -548,6 +562,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement>
 	<spool_statement> ::= "spool" <pathname>
+	<spool_server_listen_address_statement> ::=
+		\~\~"spool_server_listen_address" <ipv4_address>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>

@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -182,6 +182,29 @@ CLASS="PARAMETER"
 ><P
 CLASS="LITERALLAYOUT"
 >	spool&nbsp;/var/spool/gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>IP¥¢¥É¥ì¥¹</I
+></TT
+></DT
+><DD
+><P
+>gfsd¤¬TCP¤ª¤è¤ÓUDP¤ÎÍ×µá¤ò¼õ¤±ÉÕ¤±¤ëIP¥¢¥É¥ì¥¹¤ò»ØÄê¤·¤Þ¤¹¡£
+¾ÊÎ¬»þ¤Ï¡¢¤½¤Î¥Û¥¹¥È¤ÎÁ´¤Æ¤ÎIP¥¢¥É¥ì¥¹¤Ç¼õ¤±ÉÕ¤±¤Þ¤¹¡£
+¤³¤Î¥ª¥×¥·¥ç¥ó¤Ï¡¢°ì¤Ä¤Î¥Î¡¼¥É¤ÇÊ£¿ô¤Î¥¹¥×¡¼¥ë¤òÄó¶¡¤¹¤ë¾ì¹ç¤Ë¡¢
+¤½¤ì¤¾¤ì¤Î¥¹¥×¡¼¥ë¤´¤È¤Ë¡¢ÊÌ¡¹¤ÎIP¥¢¥É¥ì¥¹¤ò»È¤Ã¤Ægfsd¤òµ¯Æ°¤¹¤ë
+¤¿¤á¤ËÍÑ¤¤¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_address&nbsp;192.168.121.1</P
 ></DD
 ><DT
 ><SPAN
@@ -1182,6 +1205,7 @@ NAME="GRAMMAR"
 CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
 		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
 		  &#60;spool_serverport_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
@@ -1205,6 +1229,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>

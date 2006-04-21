@@ -5,8 +5,7 @@
 >gfsd</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,11 +37,9 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> [<TT
+> [<VAR
 CLASS="REPLACEABLE"
-><I
->options</I
-></TT
+>options</VAR
 >]</P
 ></DIV
 ><DIV
@@ -108,9 +105,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-P</TT
+>-P</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -122,9 +119,9 @@ CLASS="PARAMETER"
 >specifies a file name which records the process ID of gfsd.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-d</TT
+>-d</VAR
 ></DT
 ><DD
 ><P
@@ -132,9 +129,9 @@ CLASS="OPTION"
 foreground process not a daemon.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-f</TT
+>-f</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -147,9 +144,26 @@ CLASS="PARAMETER"
 configuration file.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-p</TT
+>-l</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>IP-address</I
+></TT
+></DT
+><DD
+><P
+>specifies the IP address that the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-p</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -162,9 +176,24 @@ CLASS="PARAMETER"
 is used.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-s</TT
+>-r</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+></DT
+><DD
+><P
+>specifies a spool directory
+for a Gfarm filesystem on this filesystem node.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-s</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -177,9 +206,9 @@ CLASS="PARAMETER"
 local0 is used.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-?</TT
+>-?</VAR
 ></DT
 ><DD
 ><P

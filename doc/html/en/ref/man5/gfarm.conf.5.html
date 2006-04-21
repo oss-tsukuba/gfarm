@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -173,6 +173,32 @@ node, this statement should be specified.</P
 ><P
 CLASS="LITERALLAYOUT"
 >	spool&nbsp;/var/spool/gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>IP-address</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> statement specifies
+the IP address that the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_address&nbsp;192.168.121.1</P
 ></DD
 ><DT
 ><SPAN
@@ -1323,6 +1349,7 @@ notation.</P
 CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
 		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
 		  &#60;spool_serverport_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
@@ -1346,6 +1373,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
