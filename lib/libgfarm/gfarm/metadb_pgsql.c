@@ -1137,6 +1137,8 @@ path_info_set_field_from_copy_binary(
 #define COPY_BINARY_HEADER_EXTENSION_AREA_LEN	4
 #define COPY_BINARY_HEADER_LEN (COPY_BINARY_SIGNATURE_LEN + \
 	    COPY_BINARY_FLAGS_FIELD_LEN +COPY_BINARY_HEADER_EXTENSION_AREA_LEN)
+#define COPY_BINARY_TRAILER_LEN			2
+#define PQ_GET_COPY_DATA_ERROR			-2
 
 static char *
 gfarm_pgsql_path_info_get_all_foreach(
@@ -1148,7 +1150,8 @@ gfarm_pgsql_path_info_get_all_foreach(
 	int ret;
 	struct gfarm_path_info info;
 
-	static const char binary_signature[11] = "PGCOPY\n\377\r\n\0";
+	static const char binary_signature[COPY_BINARY_SIGNATURE_LEN] =
+		"PGCOPY\n\377\r\n\0";
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1176,9 +1179,9 @@ gfarm_pgsql_path_info_get_all_foreach(
 		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
 			    "Fatal Error, COPY file signature not recognized");
 	}
-	if (ret > COPY_BINARY_HEADER_LEN + 2) {
+	if (ret > COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN) {
 		bp = buf + COPY_BINARY_HEADER_LEN;
-		while (ret > 2) { /* not trailer */
+		while (ret > COPY_BINARY_TRAILER_LEN) {
 			if (buf) {
 				gfarm_base_path_info_ops.clear(&info);
 				path_info_set_field_from_copy_binary(bp,
@@ -1192,11 +1195,12 @@ gfarm_pgsql_path_info_get_all_foreach(
 			bp = buf;
 		}
 	}
-	if (ret == -2) {
+	if (ret == PQ_GET_COPY_DATA_ERROR) {
 		e = save_pgsql_msg(PQerrorMessage(conn));
 		return (e);
 	}
-	if (ret == 2 || ret == COPY_BINARY_HEADER_LEN + 2) { /* trailer */
+	if (ret == COPY_BINARY_TRAILER_LEN ||
+	    ret == COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN) {
 		ret = PQgetCopyData(conn, &buf, 0);
 		PQfreemem(buf);
 	}
