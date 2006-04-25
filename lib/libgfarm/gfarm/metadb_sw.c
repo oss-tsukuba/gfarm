@@ -39,7 +39,7 @@ static const struct gfarm_metadb_internal_ops *metadb_ops =
 #endif
 
 char *
-gfarm_metab_use_ldap(void)
+gfarm_metadb_use_ldap(void)
 {
 #ifdef HAVE_LDAP
 	metadb_ops = &gfarm_ldap_metadb_ops;
@@ -51,7 +51,7 @@ gfarm_metab_use_ldap(void)
 }
 
 char *
-gfarm_metab_use_postgresql(void)
+gfarm_metadb_use_postgresql(void)
 {
 #ifdef HAVE_POSTGRESQL
 	metadb_ops = &gfarm_pgsql_metadb_ops;
@@ -63,14 +63,14 @@ gfarm_metab_use_postgresql(void)
 }
 
 char *
-gfarm_metab_use_localfsdb(void)
+gfarm_metadb_use_localfsdb(void)
 {
 	metadb_ops = &gfarm_localfsdb_metadb_ops;
 	return (NULL);
 }
 
 char *
-gfarm_metab_use_none(void)
+gfarm_metadb_use_none(void)
 {
 	metadb_ops = &gfarm_none_metadb_ops;
 	return (NULL);

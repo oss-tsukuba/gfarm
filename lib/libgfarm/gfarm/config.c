@@ -33,7 +33,7 @@
 #include "sockopt.h"
 #include "auth.h"
 #include "config.h"
-#include "metadb_access.h" /* for gfarm_metab_use_*() */
+#include "metadb_access.h" /* for gfarm_metadb_use_*() */
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
@@ -450,13 +450,13 @@ config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
 {
 	switch (metadb_type) {
 	case GFARM_METADB_TYPE_UNKNOWN:
-		return (gfarm_metab_use_none());
+		return (gfarm_metadb_use_none());
 	case GFARM_METADB_TYPE_LDAP:
-		return (gfarm_metab_use_ldap());
+		return (gfarm_metadb_use_ldap());
 	case GFARM_METADB_TYPE_POSTGRESQL:
-		return (gfarm_metab_use_postgresql());
+		return (gfarm_metadb_use_postgresql());
 	case GFARM_METADB_TYPE_LOCALFSDB:
-		return (gfarm_metab_use_localfsdb());
+		return (gfarm_metadb_use_localfsdb());
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */

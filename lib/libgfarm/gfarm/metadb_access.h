@@ -53,7 +53,7 @@ char *gfarm_metadb_file_section_copy_info_get_all_by_host(
 	const char *, int *, struct gfarm_file_section_copy_info **);
 
 /* external interface to select metadb backend type */
-char *gfarm_metab_use_none(void);
-char *gfarm_metab_use_ldap(void);
-char *gfarm_metab_use_postgresql(void);
-char *gfarm_metab_use_localfsdb(void);
+char *gfarm_metadb_use_none(void);
+char *gfarm_metadb_use_ldap(void);
+char *gfarm_metadb_use_postgresql(void);
+char *gfarm_metadb_use_localfsdb(void);
