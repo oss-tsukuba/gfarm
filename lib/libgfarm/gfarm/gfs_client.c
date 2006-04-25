@@ -30,6 +30,11 @@
 #include <gfarm/gfs.h>
 #include <gfarm/gfarm_metadb.h>
 
+#if defined(SCM_RIGHTS) && \
+		(!defined(sun) || (!defined(__svr4__) && !defined(__SVR4)))
+#define HAVE_MSG_CONTROL 1
+#endif
+
 #include "gfutil.h"
 #include "gfevent.h"
 #include "hash.h"
@@ -530,7 +535,7 @@ gfarm_fd_receive_message(int fd, void *buf, size_t size,
 	int i, rv;
 	struct iovec iov[1];
 	struct msghdr msg;
-#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+#ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
 	struct {
 		struct cmsghdr hdr;
 		char data[CMSG_SPACE(sizeof(*fdv) * GFSD_MAX_PASSING_FD)
@@ -553,7 +558,7 @@ gfarm_fd_receive_message(int fd, void *buf, size_t size,
 		msg.msg_iovlen = 1;
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-#ifndef SCM_RIGHTS
+#ifndef HAVE_MSG_CONTROL
 		if (fdc > 0) {
 			msg.msg_accrights = (caddr_t)fdv;
 			msg.msg_accrightslen = sizeof(*fdv) * fdc;
@@ -583,7 +588,7 @@ gfarm_fd_receive_message(int fd, void *buf, size_t size,
 		} else if (rv == 0) {
 			return (-1); /* EOF */
 		}
-#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+#ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
 		if (fdc > 0) {
 			if (msg.msg_controllen !=
 			    CMSG_SPACE(sizeof(*fdv) * fdc) ||
