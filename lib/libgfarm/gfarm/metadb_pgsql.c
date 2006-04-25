@@ -1064,7 +1064,7 @@ get_value_from_varchar_copy_binary(char **bufp)
 	len = ntohl(*(uint32_t *)*bufp);
 	*bufp += sizeof(uint32_t);
 	p = malloc(len + 1);
-	strncpy(p, *bufp, len);
+	memcpy(p, *bufp, len);
 	p[len] = '\0';
 	*bufp += len;
 	return (p);
