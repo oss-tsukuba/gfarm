@@ -60,6 +60,20 @@ specified by the spool_serverport statement in ~/.gfarmrc or
 </varlistentry>
 
 <varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>
+makes gfsd not create UNIX domain socket.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.
+When new files are created by processes on local host,
+the gfsd which isn't specified this -U option will be used
+to provide spool directory for the new files.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>specifies the debug mode.  With the -d option, gfsd is running as a
@@ -108,6 +122,15 @@ for a Gfarm filesystem on this filesystem node.
 <listitem>
 <para>specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>makes gfsd output verbose log message about authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+</para>
 </listitem>
 </varlistentry>
 

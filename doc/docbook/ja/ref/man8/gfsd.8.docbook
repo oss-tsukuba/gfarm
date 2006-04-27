@@ -58,6 +58,19 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 </varlistentry>
 
 <varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>
+UNIX ドメインソケットを作成しなくなります。
+このオプションは、一つのノードで複数のスプールを提供するために、
+複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
+場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
+スプールになります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
@@ -105,6 +118,16 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <listitem>
 <para>gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
 した場合には、local0 を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+認証処理に関するログを詳しく出力します。
+GSI 認証の問題を解決する場合に有用なオプションです。
+</para>
 </listitem>
 </varlistentry>
 
