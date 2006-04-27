@@ -37,6 +37,7 @@ void gflog_set_identifier(char *);
 void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int); 
+int gflog_syslog_enabled(void);
 
 int gflog_syslog_name_to_facility(char *);
 

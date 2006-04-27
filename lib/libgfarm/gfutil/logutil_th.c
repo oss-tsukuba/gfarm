@@ -4,78 +4,56 @@
 
 #ifdef _REENTRANT
 
-#include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <syslog.h>
+
+#include "gfutil.h"
 #include "logutil.h"
 
-struct log_key {
-	char *identifier;
+struct gflog_specific {
 	char *auxiliary_info;
-	int use_syslog;
-	int verbose;
 };
 
 static pthread_key_t log_key;
 static pthread_once_t log_key_once = PTHREAD_ONCE_INIT;
 
 static void
-gflog_pthread_key_create()
+gflog_pthread_key_init(void)
 {
-	pthread_key_create(&log_key, free);
-}		
+	struct gflog_specific *p = malloc(sizeof(struct gflog_specific));
 
-static void
-gflog_pthread_key_init()
-{
-	pthread_once(&log_key_once, gflog_pthread_key_create);
-	pthread_setspecific(log_key, malloc(sizeof(struct log_key)));
+	if (p == NULL) {
+		if (gflog_syslog_enabled())
+			syslog(LOG_ERR,
+			    "gfarm gflog: cannot allocate %d bytes, aborted",
+			    sizeof(*p));
+		else
+			fprintf(stderr,
+			    "gfarm gflog: cannot allocate %d bytes, aborted\n",
+			    sizeof(*p));
+		exit(2);
+	}
 
 	/* initialization */
-	log_identifier = "libgfarm";
-	log_auxiliary_info = NULL;
-	log_use_syslog = 0;
-	authentication_verbose = 0;
+	p->auxiliary_info = NULL;
+
+	pthread_key_create(&log_key, free);
+	pthread_setspecific(log_key, p);
 }
 
-static void *
-gflog_pthread_getspecific(pthread_key_t key)
+static struct gflog_specific *
+gflog_pthread_getspecific(void)
 {
-	void *r;
-
-	r = pthread_getspecific(key);
-	if (r == NULL) {
-		gflog_pthread_key_init();
-		r = pthread_getspecific(key);
-	}
-	return (r);
-}
-
-char **
-gflog_log_identifier_location()
-{
-	struct log_key *key = gflog_pthread_getspecific(log_key);
-	return (&key->identifier);
+	pthread_once(&log_key_once, gflog_pthread_key_init);
+	return (pthread_getspecific(log_key));
 }
 
 char **
 gflog_log_auxiliary_info_location()
 {
-	struct log_key *key = gflog_pthread_getspecific(log_key);
-	return (&key->auxiliary_info);
-}
-
-int *
-gflog_log_use_syslog_location()
-{
-	struct log_key *key = gflog_pthread_getspecific(log_key);
-	return (&key->use_syslog);
-}
-
-int *
-gflog_authentication_verbose_location()
-{
-	struct log_key *key = gflog_pthread_getspecific(log_key);
-	return (&key->verbose);
+	return (&gflog_pthread_getspecific()->auxiliary_info);
 }
 
 #endif

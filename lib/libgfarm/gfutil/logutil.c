@@ -8,13 +8,22 @@
 #include "gfutil.h"
 #include "logutil.h"
 
-#ifndef _REENTRANT
 static char *log_identifier = "libgfarm";
-static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
-#endif
+
+#ifndef _REENTRANT
+static char *log_auxiliary_info = NULL;
+#else /* _REENTRANT */
+#define log_auxiliary_info (*gflog_log_auxiliary_info_location())
+#endif /* _REENTRANT */
 
 void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
+
+int
+gflog_syslog_enabled(void)
+{
+	return (log_use_syslog);
+}
 
 void
 gflog_vmessage(int priority, const char *format, va_list ap)
@@ -206,9 +215,7 @@ gflog_syslog_name_to_facility(char *name)
  * authentication log
  */
 
-#ifndef _REENTRANT
 static int authentication_verbose;
-#endif
 
 int
 gflog_auth_set_verbose(int verbose)
