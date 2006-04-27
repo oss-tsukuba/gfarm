@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "21 April 2006" "Gfarm" ""
+.TH "GFSD" "8" "27 April 2006" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm 並列ファイルシステム・デーモン
@@ -37,6 +37,13 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 \fB-P \fIPIDファイル\fB\fR
 gfsd の process ID を、指定したファイルに記録します。
 .TP
+\fB-U\fR
+UNIX ドメインソケットを作成しなくなります。
+このオプションは、一つのノードで複数のスプールを提供するために、
+複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
+場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
+スプールになります。
+.TP
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。
@@ -61,6 +68,10 @@ gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。
 \fB-s \fIsyslogファシリティ\fB\fR
 gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
 した場合には、local0 を使用します。
+.TP
+\fB-v\fR
+認証処理に関するログを詳しく出力します。
+GSI 認証の問題を解決する場合に有用なオプションです。
 .TP
 \fB-?\fR
 引数オプションを表示します。

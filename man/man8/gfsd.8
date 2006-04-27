@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "21 April 2006" "Gfarm" ""
+.TH "GFSD" "8" "27 April 2006" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
@@ -38,6 +38,14 @@ specified by the spool_serverport statement in ~/.gfarmrc or
 \fB-P \fIpid-file\fB\fR
 specifies a file name which records the process ID of gfsd.
 .TP
+\fB-U\fR
+makes gfsd not create UNIX domain socket.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.
+When new files are created by processes on local host,
+the gfsd which isn't specified this -U option will be used
+to provide spool directory for the new files.
+.TP
 \fB-d\fR
 specifies the debug mode.  With the -d option, gfsd is running as a
 foreground process not a daemon.
@@ -63,6 +71,10 @@ for a Gfarm filesystem on this filesystem node.
 \fB-s \fIsyslog-facility\fB\fR
 specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.
+.TP
+\fB-v\fR
+makes gfsd output verbose log message about authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
 .TP
 \fB-?\fR
 displays a list of command options.

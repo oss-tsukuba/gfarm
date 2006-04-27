@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfsd</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -37,9 +37,11 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> [<VAR
+> [<TT
 CLASS="REPLACEABLE"
->オプション</VAR
+><I
+>オプション</I
+></TT
 >]</P
 ></DIV
 ><DIV
@@ -83,9 +85,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-P</VAR
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -97,9 +99,22 @@ CLASS="PARAMETER"
 >gfsd の process ID を、指定したファイルに記録します。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-d</VAR
+>-U</CODE
+></DT
+><DD
+><P
+>UNIX ドメインソケットを作成しなくなります。
+このオプションは、一つのノードで複数のスプールを提供するために、
+複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
+場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
+スプールになります。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
 ></DT
 ><DD
 ><P
@@ -107,9 +122,9 @@ CLASS="OPTION"
 プロセスとして立ち上がります。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-f</VAR
+>-f</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -121,9 +136,9 @@ CLASS="PARAMETER"
 >起動時に読み込む設定ファイルを指定します．</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-l</VAR
+>-l</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -139,9 +154,9 @@ CLASS="PARAMETER"
 ために用います。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-p</VAR
+>-p</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -154,9 +169,9 @@ CLASS="PARAMETER"
 省略した場合には 600 番を使用します。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-r</VAR
+>-r</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -168,9 +183,9 @@ CLASS="PARAMETER"
 >gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -183,9 +198,19 @@ CLASS="PARAMETER"
 した場合には、local0 を使用します。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-?</VAR
+>-v</CODE
+></DT
+><DD
+><P
+>認証処理に関するログを詳しく出力します。
+GSI 認証の問題を解決する場合に有用なオプションです。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
 ></DT
 ><DD
 ><P
