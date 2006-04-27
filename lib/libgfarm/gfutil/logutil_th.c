@@ -29,20 +29,10 @@ gflog_thread_fatal(const char *diag, const char *status)
 	exit(2);
 }
 
-static void
-gflog_key_create(void)
-{
-	int rv = pthread_key_create(&gflog_key, free);
-
-	if (rv != 0)
-		gflog_thread_fatal("pthread_key_create(): ", strerror(rv));
-}
-
 static struct gflog_thread_specific *
 gflog_thread_specific_alloc(void)
 {
 	struct gflog_thread_specific *p;
-	int rv;
 
 	p = malloc(sizeof(*p));
 	if (p == NULL)
@@ -51,11 +41,16 @@ gflog_thread_specific_alloc(void)
 	/* initialization */
 	p->auxiliary_info = NULL;
 
-	rv = pthread_setspecific(gflog_key, p);
-	if (rv != 0)
-		gflog_thread_fatal("pthread_setspecific(): ", strerror(rv));
-
 	return (p);
+}
+
+static void
+gflog_key_create(void)
+{
+	int rv = pthread_key_create(&gflog_key, free);
+
+	if (rv != 0)
+		gflog_thread_fatal("pthread_key_create(): ", strerror(rv));
 }
 
 static struct gflog_thread_specific *
@@ -67,10 +62,17 @@ gflog_thread_specific_get(void)
 
 	if (rv != 0)
 		gflog_thread_fatal("pthread_once(): ", strerror(rv));
+
 	p = pthread_getspecific(gflog_key);
 	if (p != NULL)
 		return (p);
-	return (gflog_thread_specific_alloc());
+
+	p = gflog_thread_specific_alloc();
+	rv = pthread_setspecific(gflog_key, p);
+	if (rv != 0)
+		gflog_thread_fatal("pthread_setspecific(): ", strerror(rv));
+
+	return (p);
 }
 
 char **
