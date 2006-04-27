@@ -77,7 +77,6 @@
 #endif
 
 char *program_name = "gfsd";
-char *spool_root = NULL;
 
 int debug_mode = 0;
 
@@ -710,7 +709,7 @@ void
 gfs_server_get_spool_root(struct xxx_connection *client)
 {
 	gfs_server_put_reply(client, "get_spool_root",
-	    GFS_ERROR_NOERROR, "s", spool_root);
+	    GFS_ERROR_NOERROR, "s", gfarm_spool_root);
 }
 
 void
@@ -2472,12 +2471,13 @@ usage(void)
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-U\t\t\t\t... don't bind UNIX domain socket\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-l <listen_address>\n");
 	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-r <spool_root>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
-	fprintf(stderr, "\t-v>\n");
+	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
 	exit(1);
 }
 
@@ -2490,7 +2490,7 @@ main(int argc, char **argv)
 	char *listen_address = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, table_size, i, nfound, max_fd;
+	int ch, table_size, i, nfound, max_fd, bind_unix_domain = 1;
 	struct sigaction sa;
 	fd_set requests;
 
@@ -2498,10 +2498,13 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:df:l:p:r:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "P:Udf:l:p:r:s:uv")) != -1) {
 		switch (ch) {
 		case 'P':
 			pid_file = optarg;
+			break;
+		case 'U':
+			bind_unix_domain = 0;
 			break;
 		case 'd':
 			debug_mode = 1;
@@ -2516,7 +2519,9 @@ main(int argc, char **argv)
 			port_number = optarg;
 			break;
 		case 'r':
-			spool_root = optarg;
+			gfarm_spool_root = strdup(optarg);
+			if (gfarm_spool_root == NULL)
+				gflog_fatal("%s", GFARM_ERR_NO_MEMORY);
 			break;
 		case 's':
 			syslog_facility =
@@ -2551,16 +2556,15 @@ main(int argc, char **argv)
 		listen_address = gfarm_spool_server_listen_address;
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
-	if (spool_root == NULL)
-		spool_root = gfarm_spool_root;
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	if (chdir(spool_root) == -1)
-		gflog_fatal_errno(spool_root);
+	if (chdir(gfarm_spool_root) == -1)
+		gflog_fatal_errno(gfarm_spool_root);
 
 	accepting_sock = open_accepting_socket(
 	    listen_address, gfarm_spool_server_port);
-	accepting_unix = open_accepting_unix_domain(gfarm_spool_server_port);
+	accepting_unix = bind_unix_domain ? 
+	    open_accepting_unix_domain(gfarm_spool_server_port) : -1;
 	open_datagram_service_sockets(listen_address, gfarm_spool_server_port,
 	    &datagram_socks_count, &datagram_socks);
 
@@ -2620,7 +2624,8 @@ main(int argc, char **argv)
 	for (;;) {
 		FD_ZERO(&requests);
 		FD_SET(accepting_sock, &requests);
-		FD_SET(accepting_unix, &requests);
+		if (bind_unix_domain)
+			FD_SET(accepting_unix, &requests);
 		for (i = 0; i < datagram_socks_count; i++)
 			FD_SET(datagram_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
@@ -2632,7 +2637,7 @@ main(int argc, char **argv)
 
 		if (FD_ISSET(accepting_sock, &requests))
 			start_server(accepting_sock);
-		if (FD_ISSET(accepting_unix, &requests))
+		if (bind_unix_domain && FD_ISSET(accepting_unix, &requests))
 			start_server(accepting_unix);
 		for (i = 0; i < datagram_socks_count; i++) {
 			if (FD_ISSET(datagram_socks[i], &requests))
