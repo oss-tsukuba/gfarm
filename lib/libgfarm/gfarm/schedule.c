@@ -31,6 +31,7 @@
 #include "auth.h" /* XXX gfarm_random_initialize() */
 #include "config.h"
 #include "gfs_client.h"
+#include "schedule.h"
 
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -49,23 +50,33 @@
  *	if (it's read-mode)
  *		select hosts by load average order.
  *	if (it's write-mode)
- *		select hosts by disk free space order.
+ *		if there isn't enough hosts which have enough free space
+ *			select only the hosts which have enough free space
+ *		else if there isn't enough idle hosts
+ *			select hosts by load average order
+ *		else
+ *			select hosts by disk free space order.
  *
  * void finish():
  *	- add VIRTUAL_LOAD_FOR_SCHEDULED_HOST to loadavg cache of
  *	  each scheduled hosts.
  *	- return the hosts.
  *
+ * void search_idle_in_networks(networks):
+ *	search hosts in the network from cache
+ *	if (is_satisfied())
+ *		return;
+ *	search hosts in the network. i.e. actually call try_host()
+ *	if (is_satisfied())
+ *		return;
+ *	clear `scheduled` member in the cache, and search the cache again.
+ *
+ *
  * 1. grouping hosts by its network.
  *
  * 2. at first, search hosts on the local network
  *   (i.e. the same network with this client host).
- *		search with loadavg cache enabled.
- *		if (is_satisfied())
- *			do select_hosts(), and finish().
- *		invalidate loadavg cache, and search the local network again.
- *		if (is_satisfied())
- *			do select_hosts(), and finish().
+ *	search_idle_in_networks(the local network)
  *
  * 3. if there is at least one network which RTT isn't known yet,
  *    examine the RTT.
@@ -82,12 +93,7 @@
  *
  * 4. search networks by RTT order.
  *	for each: current network ... a network which RTT <= current*RTT_THRESH
- *		search with loadavg cache enabled.
- *		if (is_satisfied())
- *			do select_hosts(), and finish().
- *		invalidate loadavg cache, and search the network again.
- *		if (is_satisfied())
- *			do select_hosts(), and finish().
+ *		search_idle_in_networks(the networks)
  *		proceed current network pointer to next RTT level
  *
  * 5. reaching this phase means that not enough_number of hosts are found.
@@ -119,6 +125,7 @@ char GFARM_ERR_NO_HOST[] = "no filesystem node";
 
 #define	ADDR_EXPIRATION		gfarm_schedule_cache_timeout	/* seconds */
 #define	LOADAVG_EXPIRATION	gfarm_schedule_cache_timeout	/* seconds */
+#define	STATFS_EXPIRATION	gfarm_schedule_cache_timeout	/* seconds */
 
 #define RTT_THRESH		4 /* range to treat as similar distance */
 
@@ -202,24 +209,30 @@ struct search_idle_host_state {
 
 	struct search_idle_network *net;
 
-	struct timeval rpc_cache_time;	/* if HOST_STATE_FLAG_RTT_TRIED */
+	struct timeval rtt_cache_time;	/* if HOST_STATE_FLAG_RTT_TRIED */
 	int rtt_usec;			/* if HOST_STATE_FLAG_RTT_AVAIL */
 	float loadavg;			/* if HOST_STATE_FLAG_RTT_AVAIL */
-	file_offset_t diskfree;		/* if HOST_STATE_FLAG_DISKFREE_AVAIL */
+
+	/*if HOST_STATE_FLAG_STATFS_AVAIL*/
+	struct timeval statfs_cache_time;
+	file_offset_t blocks, bfree, bavail; 
+	file_offset_t files, ffree, favail;
+	gfarm_int32_t bsize;
+
 	int scheduled;
 
 	int flags;
-#define HOST_STATE_FLAG_ADDR_AVAIL		0x002
-#define HOST_STATE_FLAG_RTT_TRIED		0x004
-#define HOST_STATE_FLAG_RTT_AVAIL		0x008
-#define HOST_STATE_FLAG_AUTH_TRIED		0x010
-#define HOST_STATE_FLAG_AUTH_SUCCEED		0x020
-#define HOST_STATE_FLAG_DISKFREE_AVAIL		0x040
+#define HOST_STATE_FLAG_ADDR_AVAIL		0x001
+#define HOST_STATE_FLAG_RTT_TRIED		0x002
+#define HOST_STATE_FLAG_RTT_AVAIL		0x004
+#define HOST_STATE_FLAG_AUTH_TRIED		0x008
+#define HOST_STATE_FLAG_AUTH_SUCCEED		0x010
+#define HOST_STATE_FLAG_STATFS_AVAIL		0x020
 /* The followings are working area during scheduling */
-#define HOST_STATE_FLAG_JUST_CACHED		0x080
-#define HOST_STATE_FLAG_SCHEDULING		0x100
-#define HOST_STATE_FLAG_AVAILABLE		0x200
-#define HOST_STATE_FLAG_CACHE_WAS_USED		0x400
+#define HOST_STATE_FLAG_JUST_CACHED		0x040
+#define HOST_STATE_FLAG_SCHEDULING		0x080
+#define HOST_STATE_FLAG_AVAILABLE		0x100
+#define HOST_STATE_FLAG_CACHE_WAS_USED		0x200
 
 	/* linked in search_idle_candidate_list */
 	struct search_idle_host_state *next;
@@ -400,6 +413,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 	net->flags = 0;
 	net->candidate_list = NULL;
 	net->candidate_last = &net->candidate_list;
+	net->ongoing = 0;
 	net->next = search_idle_network_list;
 	search_idle_network_list = net;
 	*netp = net;
@@ -615,7 +629,7 @@ search_idle_candidate_list_add_host(char *hostname)
 enum gfarm_schedule_search_mode {
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG,
 	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH,
-	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE
+	GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL
 };
 
 static enum gfarm_schedule_search_mode default_search_method =
@@ -657,7 +671,7 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	s->write_mode = write_mode;
 	if (write_mode)
 		s->mode =
-		    GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE;
+		    GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL;
 	/*
 	 * If we don't check enough_number or desired_number here,
 	 * the behavior of search_idle() becomes undeterministic.
@@ -687,8 +701,8 @@ search_idle_count(struct search_idle_state *s,
 	int ok = 1;
 
 	if (s->write_mode &&
-	    (h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0 &&
-	    h->diskfree < gfarm_minimum_free_disk_space)
+	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0 &&
+	    h->bavail * h->bsize < gfarm_minimum_free_disk_space)
 		ok = 0; /* not enough free space */
 	if (ok)
 		(*usable_numberp)++;
@@ -776,19 +790,16 @@ search_idle_statfs_callback(void *closure)
 {
 	struct search_idle_callback_closure *c = closure;
 	char *e;
-	gfarm_int32_t bsize;
-	file_offset_t blocks, bfree, bavail;
-	file_offset_t files, ffree, favail;
+	struct search_idle_host_state *h = c->h;
 
 	e = gfs_client_statfs_result_multiplexed(c->protocol_state,
-	    &bsize,
-	    &blocks, &bfree, &bavail,
-	    &files, &ffree, &favail);
+	    &h->bsize,
+	    &h->blocks, &h->bfree, &h->bavail,
+	    &h->files, &h->ffree, &h->favail);
 	if (e == NULL) {
-		c->h->flags |= HOST_STATE_FLAG_DISKFREE_AVAIL;
-		c->h->diskfree = bavail * bsize;
-		/* completed */
-		search_idle_record(c);
+		c->h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
+		c->h->statfs_cache_time = c->h->rtt_cache_time;
+		search_idle_record(c); /* completed */
 	}
 	gfs_client_disconnect(c->gfs_server);
 	c->state->concurrency--;
@@ -817,7 +828,7 @@ search_idle_connect_callback(void *closure)
 			gfs_client_disconnect(c->gfs_server);
 		} else {
 			assert(s->mode ==
-			 GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE
+			 GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL
 			);
 #endif
 			e = gfs_client_statfs_request_multiplexed(c->state->q,
@@ -857,7 +868,7 @@ search_idle_load_callback(void *closure)
 
 		/* update RTT */
 		gettimeofday(&rtt, NULL);
-		gfarm_timeval_sub(&rtt, &c->h->rpc_cache_time);
+		gfarm_timeval_sub(&rtt, &c->h->rtt_cache_time);
 		c->h->rtt_usec = rtt.tv_sec * GFARM_SECOND_BY_MICROSEC +
 		    rtt.tv_usec;
 		if ((c->h->net->flags & NET_FLAG_RTT_AVAIL) == 0 ||
@@ -906,14 +917,14 @@ net_rtt_compare(const void *a, const void *b)
 }
 
 static int
-diskfree_compare(const void *a, const void *b)
+davail_compare(const void *a, const void *b)
 {
 	struct search_idle_host_state *const *aa = a;
 	struct search_idle_host_state *const *bb = b;
 	const struct search_idle_host_state *p = *aa;
 	const struct search_idle_host_state *q = *bb;
-	const float df1 = p->diskfree;
-	const float df2 = q->diskfree;
+	const float df1 = p->bavail * p->bsize;
+	const float df2 = q->bavail * q->bsize;
 
 	if (df1 > df2)
 		return (-1);
@@ -954,7 +965,7 @@ search_idle_cache_should_be_used(struct search_idle_host_state *h)
 		return (1); /* IP address isn't resolvable, even */
 
 	return ((h->flags & HOST_STATE_FLAG_RTT_TRIED) != 0 &&
-	    !is_expired(&h->rpc_cache_time, LOADAVG_EXPIRATION));
+	    !is_expired(&h->rtt_cache_time, LOADAVG_EXPIRATION));
 
 }
 
@@ -970,7 +981,7 @@ search_idle_cache_is_available(struct search_idle_state *s,
 		return (0);
 
 	if ((h->flags & HOST_STATE_FLAG_RTT_TRIED) == 0 ||
-	    is_expired(&h->rpc_cache_time, LOADAVG_EXPIRATION))
+	    is_expired(&h->rtt_cache_time, LOADAVG_EXPIRATION))
 		return (0);
 
 	switch (s->mode) {
@@ -978,8 +989,8 @@ search_idle_cache_is_available(struct search_idle_state *s,
 		return ((h->flags & HOST_STATE_FLAG_RTT_AVAIL) != 0);
 	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
 		return ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0);
-	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKFREE:
-		return ((h->flags & HOST_STATE_FLAG_DISKFREE_AVAIL) != 0);
+	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL:
+		return ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0);
 	default:
 		assert(0);
 		return (0);
@@ -1021,7 +1032,7 @@ search_idle_try_host(struct search_idle_state *s,
 	h->flags |=
 	    HOST_STATE_FLAG_JUST_CACHED|
 	    HOST_STATE_FLAG_RTT_TRIED;
-	gettimeofday(&h->rpc_cache_time, NULL);
+	gettimeofday(&h->rtt_cache_time, NULL);
 	e = gfs_client_get_load_request_multiplexed(s->q, &h->addr,
 	    search_idle_load_callback, c,
 	    &gls);
@@ -1231,7 +1242,7 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	if (write_mode) {
 		/* sort in order of free disk space */
 		qsort(results, s.available_hosts_number, sizeof(*results),
-		    diskfree_compare);
+		    davail_compare);
 		if (s.usable_hosts_number < s.desired_number) {
 			n = s.usable_hosts_number;
 		} else {
@@ -1250,7 +1261,7 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 					n = s.semi_idle_hosts_number;
 				/* sort in order of free disk space */
 				qsort(results, n, sizeof(*results),
-				    diskfree_compare);
+				    davail_compare);
 			}
 		}
 	} else {
@@ -1301,19 +1312,12 @@ search_idle_cyclic(int nohosts, char **ohosts, int write_mode)
 }
 
 /*
- * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
- * load average, and return to 'ohosts'.
- * When enough number of hosts are not available, the available hosts
- * will be listed in the cyclic manner.
- * NOTE: all of ihosts[] must be canonical hostnames.
- *
- * NOTE2: each entry of ohosts is not strdup'ed unlike other
- * gfarm_schedule_* functions.  Do not call
- * gfarm_strings_free_deeply() or free(*ohosts).
+ * If acyclic, *nohostsp is an input/output parameter,
+ * otherwise *nohostsp is an input parameter.
  */
 static char *
-gfarm_schedule_search_idle_hosts_x(
-	int nihosts, char **ihosts, int nohosts, char **ohosts, int write_mode)
+schedule_search_idle_hosts(int acyclic, int write_mode,
+	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
 {
 	char *e;
 	int i;
@@ -1326,23 +1330,36 @@ gfarm_schedule_search_idle_hosts_x(
 		if (e != NULL)
 			return (e);
 	}
-	return (search_idle_cyclic(nohosts, ohosts, write_mode));
+	return (acyclic ?
+	    search_idle(nohostsp, ohosts, write_mode) :
+	    search_idle_cyclic(*nohostsp, ohosts, write_mode));
 }
 
+/*
+ * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
+ * load average, and return to 'ohosts'.
+ * When enough number of hosts are not available, the available hosts
+ * will be listed in the cyclic manner.
+ * NOTE:
+ *	- all of ihosts[] must be canonical hostnames.
+ *	- each entry of ohosts is not strdup'ed unlike other
+ *	  gfarm_schedule_* functions.
+ *	  DO NOT call gfarm_strings_free_deeply() or free(*ohosts).
+ */
 char *
 gfarm_schedule_search_idle_hosts(
 	int nihosts, char **ihosts, int nohosts, char **ohosts)
 {
-	return (gfarm_schedule_search_idle_hosts_x(nihosts, ihosts,
-	    nohosts, ohosts, 0));
+	return (schedule_search_idle_hosts(0, 0, nihosts, ihosts,
+	    &nohosts, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_hosts_to_write(
 	int nihosts, char **ihosts, int nohosts, char **ohosts)
 {
-	return (gfarm_schedule_search_idle_hosts_x(nihosts, ihosts,
-	    nohosts, ohosts, 1));
+	return (schedule_search_idle_hosts(0, 1, nihosts, ihosts,
+	    &nohosts, ohosts));
 }
 
 /*
@@ -1350,39 +1367,20 @@ gfarm_schedule_search_idle_hosts_to_write(
  * the available hosts will be listed only once even if enough number of
  * hosts are not available, 
  */
-static char *
-gfarm_schedule_search_idle_acyclic_hosts_x(
-	int nihosts, char **ihosts, int *nohostsp, char **ohosts,
-	int write_mode)
-{
-	char *e;
-	int i;
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	for (i = 0; i < nihosts; i++) {
-		e = search_idle_candidate_list_add_host(ihosts[i]);
-		if (e != NULL)
-			return (e);
-	}
-	return (search_idle(nohostsp, ohosts, write_mode));
-}
-
 char *
 gfarm_schedule_search_idle_acyclic_hosts(
 	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
 {
-	return (gfarm_schedule_search_idle_acyclic_hosts_x(
-	    nihosts, ihosts, nohostsp, ohosts, 0));
+	return (schedule_search_idle_hosts(1, 0, nihosts, ihosts,
+	    nohostsp, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_acyclic_hosts_to_write(
 	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
 {
-	return (gfarm_schedule_search_idle_acyclic_hosts_x(
-	    nihosts, ihosts, nohostsp, ohosts, 1));
+	return (schedule_search_idle_hosts(1, 1, nihosts, ihosts,
+	    nohostsp, ohosts));
 }
 
 /*
@@ -1417,24 +1415,39 @@ free_ihosts:
 	return (e);
 }
 
-char *
-gfarm_schedule_search_idle_by_all(int nohosts, char **ohosts)
+static char *
+schedule_search_idle(int acyclic, int write_mode,
+	char *program, const char *domainname, int *nohostsp, char **ohosts)
 {
 	char *e = search_idle_candidate_list_init();
+	int program_filter_alloced = 0;
 
 	if (e != NULL)
 		return (e);
-	return (schedule_search_idle_common(0, 0, &nohosts, ohosts));
+	if (program != NULL && gfarm_is_url(program)) {
+		e = search_idle_set_program_filter(program);
+		if (e != NULL)
+			return (e);
+		program_filter_alloced = 1;
+	}
+	if (domainname != NULL)
+		search_idle_set_domain_filter(domainname);
+	e = schedule_search_idle_common(acyclic, write_mode, nohostsp, ohosts);
+	if (program_filter_alloced)
+		search_idle_free_program_filter();
+	return (e);
+}
+
+char *
+gfarm_schedule_search_idle_by_all(int nohosts, char **ohosts)
+{
+	return (schedule_search_idle(0, 0, NULL, NULL, &nohosts, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_by_all_to_write(int nohosts, char **ohosts)
 {
-	char *e = search_idle_candidate_list_init();
-
-	if (e != NULL)
-		return (e);
-	return (schedule_search_idle_common(0, 1, &nohosts, ohosts));
+	return (schedule_search_idle(0, 1, NULL, NULL, &nohosts, ohosts));
 }
 
 /*
@@ -1444,95 +1457,48 @@ char *
 gfarm_schedule_search_idle_by_domainname(const char *domainname,
 	int nohosts, char **ohosts)
 {
-	char *e = search_idle_candidate_list_init();
-
-	if (e != NULL)
-		return (e);
-	search_idle_set_domain_filter(domainname);
-	return (schedule_search_idle_common(0, 0, &nohosts, ohosts));
+	return (schedule_search_idle(0, 0, NULL, domainname,
+	    &nohosts, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_by_domainname_to_write(const char *domainname,
 	int nohosts, char **ohosts)
 {
-	char *e = search_idle_candidate_list_init();
-
-	if (e != NULL)
-		return (e);
-	search_idle_set_domain_filter(domainname);
-	return (schedule_search_idle_common(0, 1, &nohosts, ohosts));
+	return (schedule_search_idle(0, 1, NULL, domainname,
+	    &nohosts, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_acyclic_by_domainname(const char *domainname,
 	int *nohostsp, char **ohosts)
 {
-	char *e = search_idle_candidate_list_init();
-
-	if (e != NULL)
-		return (e);
-	search_idle_set_domain_filter(domainname);
-	return (schedule_search_idle_common(1, 0, nohostsp, ohosts));
+	return (schedule_search_idle(1, 0, NULL, domainname,
+	    nohostsp, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_acyclic_by_domainname_to_write(
 	const char *domainname, int *nohostsp, char **ohosts)
 {
-	char *e = search_idle_candidate_list_init();
-
-	if (e != NULL)
-		return (e);
-	search_idle_set_domain_filter(domainname);
-	return (schedule_search_idle_common(1, 1, nohostsp, ohosts));
+	return (schedule_search_idle(1, 1, NULL, domainname,
+	    nohostsp, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_by_program(char *program,
 	int nohosts, char **ohosts)
 {
-	char *e;
-
-	if (!gfarm_is_url(program))
-		return (gfarm_schedule_search_idle_by_all(nohosts, ohosts));
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	e = search_idle_set_program_filter(program);
-	if (e != NULL)
-		return (e);
-	e = schedule_search_idle_common(0, 0, &nohosts, ohosts);
-	search_idle_free_program_filter();
-	return (e);
+	return (schedule_search_idle(0, 0, program, NULL, &nohosts, ohosts));
 }
 
 char *
 gfarm_schedule_search_idle_by_program_to_write(char *program,
 	int nohosts, char **ohosts)
 {
-	char *e;
-
-	if (!gfarm_is_url(program))
-		return (gfarm_schedule_search_idle_by_all(nohosts, ohosts));
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	e = search_idle_set_program_filter(program);
-	if (e != NULL)
-		return (e);
-	e = schedule_search_idle_common(0, 1, &nohosts, ohosts);
-	search_idle_free_program_filter();
-	return (e);
+	return (schedule_search_idle(0, 1, program, NULL, &nohosts, ohosts));
 }
 
-/*
- * priority_to_local must be false, if arch_set != NULL and if
- * !IS_IN_ARCH_SET(gfarm_host_info_get_architecture_by_host(self_name),
- * arch_set).
- */
 static char *
 file_section_host_schedule_common(char *gfarm_file, char *section,
 	int priority_to_local, int write_mode,
@@ -1548,7 +1514,16 @@ file_section_host_schedule_common(char *gfarm_file, char *section,
 		return (e);
 	if (ncopies == 0)
 		return (GFARM_ERR_NO_REPLICA);
-	if (priority_to_local && gfarm_is_active_file_system_node &&
+	/*
+	 * We don't honor gfarm_schedule_write_local_prior()
+	 * for the priority_to_local case.
+	 * because "write_local_prior" only applies to the case
+	 * where the file is newly created.
+	 */
+	if (priority_to_local &&
+	    (write_mode ?
+	     gfarm_is_active_fsnode_to_write() :
+	     gfarm_is_active_fsnode()) &&
 	    (e = gfarm_host_get_canonical_self_name(&self_name)) == NULL) {
 		for (i = 0; i < ncopies; i++) {
 			if (strcasecmp(self_name, copies[i].hostname) == 0) {
@@ -1573,15 +1548,37 @@ file_section_host_schedule_common(char *gfarm_file, char *section,
 	return (e);
 }
 
-char *
-gfarm_file_section_host_schedule(char *gfarm_file, char *section, char **hostp)
+static char *
+file_section_host_schedule(char *gfarm_file, char *section, char *program,
+	int priority_to_local, int write_mode,
+	char **hostp)
 {
 	char *e;
+	int program_filter_alloced = 0;
+
+	assert(!priority_to_local || program == NULL);
+	/* otherwise not supported */
 
 	e = search_idle_candidate_list_init();
 	if (e != NULL)
 		return (e);
-	return (file_section_host_schedule_common(gfarm_file, section, 0, 0,
+	if (program != NULL && gfarm_is_url(program)) {
+		e = search_idle_set_program_filter(program);
+		if (e != NULL)
+			return (e);
+		program_filter_alloced = 1;
+	}
+	e = file_section_host_schedule_common(gfarm_file, section, 0, 0,
+	    hostp);
+	if (program_filter_alloced)
+		search_idle_free_program_filter();
+	return (e);
+}
+
+char *
+gfarm_file_section_host_schedule(char *gfarm_file, char *section, char **hostp)
+{
+	return (file_section_host_schedule(gfarm_file, section, NULL, 0, 0,
 	    hostp));
 }
 
@@ -1589,12 +1586,7 @@ char *
 gfarm_file_section_host_schedule_to_write(
 	char *gfarm_file, char *section, char **hostp)
 {
-	char *e;
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	return (file_section_host_schedule_common(gfarm_file, section, 0, 1,
+	return (file_section_host_schedule(gfarm_file, section, NULL, 0, 1,
 	    hostp));
 }
 
@@ -1602,22 +1594,8 @@ char *
 gfarm_file_section_host_schedule_by_program(char *gfarm_file, char *section,
 	char *program, char **hostp)
 {
-	char *e;
-
-	if (!gfarm_is_url(program))
-		return (gfarm_file_section_host_schedule(gfarm_file, section,
-		    hostp));
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	e = search_idle_set_program_filter(program);
-	if (e != NULL)
-		return (e);
-	e = file_section_host_schedule_common(gfarm_file, section, 0, 0,
-	    hostp);
-	search_idle_free_program_filter();
-	return (e);
+	return (file_section_host_schedule(gfarm_file, section, program, 0, 0,
+	    hostp));
 }
 
 char *
@@ -1625,34 +1603,15 @@ gfarm_file_section_host_schedule_by_program_to_write(
 	char *gfarm_file, char *section,
 	char *program, char **hostp)
 {
-	char *e;
-
-	if (!gfarm_is_url(program))
-		return (gfarm_file_section_host_schedule(gfarm_file, section,
-		    hostp));
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	e = search_idle_set_program_filter(program);
-	if (e != NULL)
-		return (e);
-	e = file_section_host_schedule_common(gfarm_file, section, 1, 0,
-	    hostp);
-	search_idle_free_program_filter();
-	return (e);
+	return (file_section_host_schedule(gfarm_file, section, program, 0, 1,
+	    hostp));
 }
 
 char *
 gfarm_file_section_host_schedule_with_priority_to_local(
 	char *gfarm_file, char *section, char **hostp)
 {
-	char *e;
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	return (file_section_host_schedule_common(gfarm_file, section, 1, 0,
+	return (file_section_host_schedule(gfarm_file, section, NULL, 1, 0,
 	    hostp));
 }
 
@@ -1660,12 +1619,7 @@ char *
 gfarm_file_section_host_schedule_with_priority_to_local_to_write(
 	char *gfarm_file, char *section, char **hostp)
 {
-	char *e;
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	return (file_section_host_schedule_common(gfarm_file, section, 1, 1,
+	return (file_section_host_schedule(gfarm_file, section, NULL, 1, 1,
 	    hostp));
 }
 
@@ -1776,4 +1730,126 @@ gfarm_url_hosts_schedule_by_program(
 	    nhostsp, hostsp);
 	search_idle_free_program_filter();
 	return (e);
+}
+
+static char *
+statfsnode(char *canonical_hostname, int use_cache,
+	gfarm_int32_t *bsizep,
+	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
+	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+{
+	char *e;
+	struct search_idle_host_state *h;
+	struct gfs_connection *gfs_server;
+
+	e = search_idle_candidate_list_init();
+	if (e != NULL)
+		return (e);
+	e = search_idle_candidate_list_add_host(canonical_hostname);
+	if (e != NULL)
+		return (e);
+	h = search_idle_candidate_list; /* must be this host now. */
+	assert(search_idle_candidate_list->next == NULL);
+
+	if (!use_cache ||
+	    is_expired(&h->statfs_cache_time, STATFS_EXPIRATION) ||
+	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0) {
+
+		if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
+			return (GFARM_ERR_UNKNOWN_HOST);
+
+		e = gfs_client_connection(canonical_hostname, &h->addr,
+		    &gfs_server);
+		if (e != NULL)
+			return (e);
+		e = gfs_client_statfs(gfs_server, ".", &h->bsize,
+		    &h->blocks, &h->bfree, &h->bavail,
+		    &h->files, &h->ffree, &h->favail);
+		if (e != NULL)
+			return (e);
+		h->statfs_cache_time = search_idle_now;
+		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
+	}
+	*bsizep = h->bsize;
+	*blocksp = h->blocks;
+	*bfreep = h->bfree;
+	*bavailp = h->bavail;
+	*filesp = h->files;
+	*ffreep = h->ffree;
+	*favailp = h->favail;
+	return (NULL);
+}
+
+char *
+gfs_statfsnode(char *canonical_hostname,
+	gfarm_int32_t *bsizep,
+	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
+	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+{
+	return (statfsnode(canonical_hostname, 0,
+	    bsizep,
+	    blocksp, bfreep, bavailp,
+	    filesp, ffreep, favailp));
+}
+
+char *
+gfs_statfsnode_cached(char *canonical_hostname,
+	gfarm_int32_t *bsizep,
+	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
+	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
+{
+	char *e;
+	struct search_idle_host_state *h;
+
+	e = search_idle_candidate_list_init();
+	if (e != NULL)
+		return (e);
+	e = search_idle_candidate_list_add_host(canonical_hostname);
+	if (e != NULL)
+		return (e);
+	h = search_idle_candidate_list; /* must be this host now. */
+	assert(search_idle_candidate_list->next == NULL);
+
+	if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
+		return (GFARM_ERR_UNKNOWN_HOST);
+	if ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0)
+		return (GFARM_ERR_NO_SUCH_OBJECT); /* not cached */
+
+	*bsizep = h->bsize;
+	*blocksp = h->blocks;
+	*bfreep = h->bfree;
+	*bavailp = h->bavail;
+	*filesp = h->files;
+	*ffreep = h->ffree;
+	*favailp = h->favail;
+	return (NULL);
+}
+
+int
+gfarm_is_active_fsnode(void)
+{
+	return (gfarm_is_active_file_system_node);
+}
+
+int
+gfarm_is_active_fsnode_to_write(void)
+{
+	char *e, *self_name;
+	gfarm_int32_t bsize;
+	file_offset_t blocks, bfree, bavail;
+	file_offset_t files, ffree, favail;
+
+	if (!gfarm_is_active_file_system_node)
+		return (0);
+
+	e = gfarm_host_get_canonical_self_name(&self_name);
+	if (e != NULL)
+		return (0);
+
+	e = statfsnode(self_name, 1, &bsize, &blocks, &bfree, &bavail,
+	    &files, &ffree, &favail);
+	if (e != NULL)
+		return (0);
+
+	return (bavail * bsize >= gfarm_minimum_free_disk_space);
 }
