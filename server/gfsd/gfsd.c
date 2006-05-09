@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/un.h>
 #include <sys/resource.h>
 #include <netdb.h>
@@ -39,7 +40,9 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
+#define GFLOG_USE_STDARG
 #include "gfutil.h"
+
 #include "iobuffer.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
@@ -92,12 +95,12 @@ struct xxx_connection *credential_exported = NULL;
 
 /* this routine should be called before calling exit(). */
 void
-cleanup(void)
+cleanup_service(void)
 {
 	if (credential_exported != NULL)
 		xxx_connection_delete_credential(credential_exported);
 	credential_exported = NULL;
-	
+
 	/* disconnect, do logging */
 	gflog_notice("disconnected");
 }
@@ -107,7 +110,7 @@ cleanup(void)
 void
 fatal(char *message, char *status)
 {
-	cleanup();
+	cleanup_service();
 	if (status != NULL)
 		gflog_fatal("%s: %s", message, status);
 	else
@@ -117,8 +120,55 @@ fatal(char *message, char *status)
 void
 fatal_errno(char *message)
 {
-	cleanup();
+	int save_errno = errno;
+
+	cleanup_service();
+	errno = save_errno;
 	gflog_fatal_errno(message);
+}
+
+int accepting_unix_socks_count;
+char **unix_sock_names, **unix_sock_dirs;
+
+/* this routine should be called before accepting server calls exit(). */
+void
+cleanup_accepting(void)
+{
+	int i;
+
+	for (i = 0; i < accepting_unix_socks_count; i++) {
+		unlink(unix_sock_names[i]);
+		rmdir(unix_sock_dirs[i]);
+	}
+}
+
+void
+accepting_fatal(const char *format, ...)
+{
+	va_list ap;
+
+	cleanup_accepting();
+	va_start(ap, format);
+	gflog_vmessage(LOG_ERR, format, ap);
+	va_end(ap);
+	exit(2);
+}
+
+void
+accepting_fatal_errno(char *message)
+{
+	int save_errno = errno;
+
+	cleanup_accepting();
+	errno = save_errno;
+	gflog_fatal_errno(message);
+}
+
+void
+accepting_sigterm_handler(int sig)
+{
+	cleanup_accepting();
+	exit(1);
 }
 
 void
@@ -1390,19 +1440,6 @@ sigchld_handler(int sig)
 	}
 }
 
-static char *sock_dir;
-static char *sock_path;
-
-void
-sigterm_handler(int sig)
-{
-	if (sock_path)
-		unlink(sock_path);
-	if (sock_dir)
-		rmdir(sock_dir);
-	exit(1);
-}
-
 void
 fatal_command(char *message, char *status)
 {
@@ -2172,7 +2209,7 @@ server(int client_fd)
 		if (e != NULL)
 			fatal_proto("request number", e);
 		if (eof) {
-			cleanup();
+			cleanup_service();
 			exit(0);
 		}
 		switch (request) {
@@ -2227,13 +2264,13 @@ server(int client_fd)
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		default:
 			gflog_warning("unknown request %d", (int)request);
-			cleanup();
+			cleanup_service();
 			exit(1);
 		}
 	}
 }
 
-static int accepting_sock, accepting_unix, *datagram_socks;
+static int accepting_inet_sock, *accepting_unix_socks, *datagram_socks;
 static int datagram_socks_count;
 
 void
@@ -2250,14 +2287,24 @@ start_server(int sock)
 	if (client < 0) {
 		if (errno == EINTR)
 			return;
-		gflog_fatal_errno("accept");
+		accepting_fatal_errno("accept");
 	}
 #ifndef GFSD_DEBUG
 	switch (fork()) {
 	case 0:
+		/*
+		 * NOTE: The following signals should match with signals that
+		 * main() routine makes them call accepting_sigterm_handler().
+		 * The reason why we won't make them call cleanup_service() is
+		 * because xxx_connection_delete_credential() is not
+		 * async signal safe.
+		 */
+		signal(SIGTERM, SIG_DFL);
+		signal(SIGINT, SIG_DFL);
 #endif
-		close(accepting_sock);
-		close(accepting_unix);
+		close(accepting_inet_sock);
+		for (i = 0; i < accepting_unix_socks_count; i++)
+			close(accepting_unix_socks[i]);
 		for (i = 0; i < datagram_socks_count; i++)
 			close(datagram_socks[i]);
 
@@ -2266,14 +2313,14 @@ start_server(int sock)
 			NULL, (struct sockaddr *)&client_addr,
 			&file_read_size);
 		if (e != NULL) /* shouldn't happen */
-			gflog_fatal("file_read_size: %s", e);
+			accepting_fatal("file_read_size: %s", e);
 
 		e = gfarm_netparam_config_get_long(
 			&gfarm_netparam_rate_limit,
 			NULL, (struct sockaddr *)&client_addr,
 			&rate_limit);
 		if (e != NULL) /* shouldn't happen */
-			gflog_fatal("rate_limit: %s", e);
+			accepting_fatal("rate_limit: %s", e);
 
 		server(client);
 		/*NOTREACHED*/
@@ -2320,45 +2367,43 @@ datagram_server(int sock)
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
-static int
-open_accepting_unix_domain(int port)
+void
+open_accepting_unix_domain(struct in_addr address, int port,
+	int *sockp, char **sock_namep, char **sock_dirp)
 {
 	struct sockaddr_un self_addr;
 	socklen_t self_addr_size;
-	int sock, sockopt;
-	char sockname[sizeof(self_addr.sun_path)], *msg;
+	int sock;
+	char *msg, *sock_name, *sock_dir;
 	int save_errno;
-
-	snprintf(sockname, sizeof(self_addr.sun_path), GFSD_LOCAL_SOCKET_NAME,
-	    port);
-	sock_dir = strdup(sockname);
-	if (sock_dir == NULL)
-		gflog_fatal("not enough memory");
-	sock_dir = dirname(sock_dir);
-	/* to make sure */
-	unlink(sockname);
-	rmdir(sock_dir);
-	mkdir(sock_dir, 0755);
 
 	memset(&self_addr, 0, sizeof(self_addr));
 	self_addr.sun_family = AF_UNIX;
-	strcpy(self_addr.sun_path, sockname);
+	snprintf(self_addr.sun_path, sizeof(self_addr.sun_path),
+	    GFSD_LOCAL_SOCKET_NAME, inet_ntoa(address), port);
 	self_addr_size = sizeof(self_addr);
+
+	sock_name = strdup(self_addr.sun_path);
+	sock_dir = strdup(dirname(sock_name));
+	if (sock_name == NULL || sock_dir == NULL)
+		accepting_fatal("not enough memory");
+	/* to make sure */
+	unlink(sock_name);
+	rmdir(sock_dir);
+	mkdir(sock_dir, 0755);
+
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
 		save_errno = errno;
 		(void)rmdir(sock_dir);
-		gflog_fatal("accepting socket: %s", strerror(save_errno));
+		accepting_fatal("accepting unix socket: %s",
+		    strerror(save_errno));
 	}
-	sockopt = 1;
-	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-	    &sockopt, sizeof(sockopt)) == -1)
-		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0) {
 		msg = "bind accepting socket";
 		goto error;
 	}
-	/* ensure to access from every user */
+	/* ensure access from every user */
 	if (chmod(self_addr.sun_path, 0777) < 0) {
 		msg = "chmod";
 		goto error;
@@ -2367,86 +2412,84 @@ open_accepting_unix_domain(int port)
 		msg = "listen";
 		goto error;
 	}
-	sock_path = strdup(self_addr.sun_path);
-	return (sock);
+	*sockp = sock;
+	*sock_namep = sock_name;
+	*sock_dirp = sock_dir;
+	return;
 error:
 	save_errno = errno;
 	(void)unlink(self_addr.sun_path);
 	(void)rmdir(sock_dir);
-	gflog_fatal("%s: %s", msg, strerror(save_errno));
-#ifdef __GNUC__ /* to shut up warning */
-	return (0);
-#endif
+	accepting_fatal("%s: %s", msg, strerror(save_errno));
+}
+
+void
+open_accepting_unix_sockets(
+	int self_addresses_count, struct in_addr *self_addresses, int port)
+{
+	int i;
+
+	accepting_unix_socks =
+	    malloc(sizeof(*accepting_unix_socks) * self_addresses_count);
+	unix_sock_names =
+	    malloc(sizeof(*unix_sock_names) * self_addresses_count);
+	unix_sock_dirs =
+	    malloc(sizeof(*unix_sock_dirs) * self_addresses_count);
+	if (accepting_unix_socks == NULL ||
+	    unix_sock_names == NULL || unix_sock_dirs == NULL)
+		accepting_fatal("not enough memory for unix sockets");
+
+	for (i = 0; i < self_addresses_count; i++) {
+		open_accepting_unix_domain(self_addresses[i], port,
+		    &accepting_unix_socks[i],
+		    &unix_sock_names[i], &unix_sock_dirs[i]);
+
+		/* for cleanup_accepting() */
+		accepting_unix_socks_count = i + 1;
+	}
 }
 
 int
-open_accepting_socket(const char *address, int port)
+open_accepting_inet_socket(struct in_addr address, int port)
 {
 	char *e;
-	struct hostent *hp;
 	struct sockaddr_in self_addr;
 	socklen_t self_addr_size;
 	int sock, sockopt;
 
 	memset(&self_addr, 0, sizeof(self_addr));
 	self_addr.sin_family = AF_INET;
+	self_addr.sin_addr = address;
 	self_addr.sin_port = htons(port);
-	if (address == NULL)
-		self_addr.sin_addr.s_addr = INADDR_ANY;
-	else if ((hp = gethostbyname(address)) == NULL ||
-	    hp->h_addrtype != AF_INET)
-		gflog_fatal("listen address can't be resolved: %s", address);
-	else
-		memcpy(&self_addr.sin_addr, hp->h_addr,
-		    sizeof(self_addr.sin_addr));
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		gflog_fatal_errno("accepting socket");
+		accepting_fatal_errno("accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
 		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		gflog_fatal_errno("bind accepting socket");
+		accepting_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != NULL)
 		gflog_warning("setsockopt: %s", e);
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		gflog_fatal_errno("listen");
+		accepting_fatal_errno("listen");
 	return (sock);
 }
 
-void
-open_datagram_service_sockets(const char *address, int port,
-	int *countp, int **socketsp)
+int *
+open_datagram_service_sockets(
+	int self_addresses_count, struct in_addr *self_addresses, int port)
 {
-	char *e;
-	int i, self_addresses_count, *sockets, s;
-	struct in_addr *self_addresses;
+	int i, *sockets, s;
 	struct sockaddr_in bind_addr;
 	socklen_t bind_addr_size;
 
-	if (address == NULL) {
-		e = gfarm_get_ip_addresses(
-		    &self_addresses_count, &self_addresses);
-		if (e != NULL)
-			gflog_fatal("get_ip_addresses: %s", e);
-	} else {
-		struct hostent *hp = gethostbyname(address);
-
-		if (hp == NULL || hp->h_addrtype != AF_INET)
-			gflog_fatal("listen address can't be resolved: %s",
-			    address);
-		self_addresses_count = 1;
-		self_addresses = malloc(sizeof(*self_addresses));
-		if (self_addresses == NULL)
-			gflog_fatal(GFARM_ERR_NO_MEMORY);
-		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
-	}
 	sockets = malloc(sizeof(*sockets) * self_addresses_count);
 	if (sockets == NULL)
-		gflog_fatal_errno("malloc datagram sockets");
+		accepting_fatal_errno("malloc datagram sockets");
 	for (i = 0; i < self_addresses_count; i++) {
 		memset(&bind_addr, 0, sizeof(bind_addr));
 		bind_addr.sin_family = AF_INET;
@@ -2455,14 +2498,12 @@ open_datagram_service_sockets(const char *address, int port,
 		bind_addr_size = sizeof(bind_addr);
 		s = socket(PF_INET, SOCK_DGRAM, 0);
 		if (s < 0)
-			gflog_fatal_errno("datagram socket");
+			accepting_fatal_errno("datagram socket");
 		if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
-			gflog_fatal_errno("datagram bind");
+			accepting_fatal_errno("datagram bind");
 		sockets[i] = s;
 	}
-	*countp = self_addresses_count;
-	*socketsp = sockets;
-	free(self_addresses);
+	return (sockets);
 }
 
 void
@@ -2487,10 +2528,12 @@ main(int argc, char **argv)
 	extern char *optarg;
 	extern int optind;
 	char *e, *config_file = NULL;
-	char *listen_address = NULL, *port_number = NULL, *pid_file = NULL;
+	char *listen_addrname = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, table_size, i, nfound, max_fd, bind_unix_domain = 1;
+	struct in_addr *self_addresses, listen_address;
+	int table_size, self_addresses_count, bind_unix_domain = 1;
+	int ch, i, nfound, max_fd;
 	struct sigaction sa;
 	fd_set requests;
 
@@ -2513,7 +2556,7 @@ main(int argc, char **argv)
 			config_file = optarg;
 			break;
 		case 'l':
-			listen_address = optarg;
+			listen_addrname = optarg;
 			break;
 		case 'p':
 			port_number = optarg;
@@ -2552,31 +2595,60 @@ main(int argc, char **argv)
 		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
 		exit(1);
 	}
-	if (listen_address == NULL)
-		listen_address = gfarm_spool_server_listen_address;
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
+	if (listen_addrname == NULL)
+		listen_addrname = gfarm_spool_server_listen_address;
+	if (listen_addrname == NULL) {
+		e = gfarm_get_ip_addresses(
+		    &self_addresses_count, &self_addresses);
+		if (e != NULL)
+			gflog_fatal("get_ip_addresses: %s", e);
+		listen_address.s_addr = INADDR_ANY;
+	} else {
+		struct hostent *hp = gethostbyname(listen_addrname);
+
+		if (hp == NULL || hp->h_addrtype != AF_INET)
+			gflog_fatal("listen address can't be resolved: %s",
+			    listen_addrname);
+		self_addresses_count = 1;
+		self_addresses = malloc(sizeof(*self_addresses));
+		if (self_addresses == NULL)
+			gflog_fatal(GFARM_ERR_NO_MEMORY);
+		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
+		listen_address = *self_addresses;
+	}
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
 	if (chdir(gfarm_spool_root) == -1)
 		gflog_fatal_errno(gfarm_spool_root);
 
-	accepting_sock = open_accepting_socket(
+	accepting_inet_sock = open_accepting_inet_socket(
 	    listen_address, gfarm_spool_server_port);
-	accepting_unix = bind_unix_domain ? 
-	    open_accepting_unix_domain(gfarm_spool_server_port) : -1;
-	open_datagram_service_sockets(listen_address, gfarm_spool_server_port,
-	    &datagram_socks_count, &datagram_socks);
+	if (bind_unix_domain) {
+		/* sets accepting_unix_socks and accepting_unix_socks_count */
+		open_accepting_unix_sockets(
+		    self_addresses_count, self_addresses,
+		    gfarm_spool_server_port);
+	} else {
+		accepting_unix_socks = NULL;
+		accepting_unix_socks_count = 0;
+	}
+	datagram_socks = open_datagram_service_sockets(
+	    self_addresses_count, self_addresses, gfarm_spool_server_port);
+	datagram_socks_count = self_addresses_count;
 
-	max_fd = accepting_sock;
-	if (max_fd < accepting_unix)
-		max_fd = accepting_unix;
+	max_fd = accepting_inet_sock;
+	for (i = 0; i < accepting_unix_socks_count; i++) {
+		if (max_fd < accepting_unix_socks[i])
+			max_fd = accepting_unix_socks[i];
+	}
 	for (i = 0; i < datagram_socks_count; i++) {
 		if (max_fd < datagram_socks[i])
 			max_fd = datagram_socks[i];
 	}
 	if (max_fd > FD_SETSIZE)
-		gflog_fatal("datagram_service: too big file descriptor");
+		accepting_fatal("datagram_service: too big file descriptor");
 
 	if (pid_file != NULL) {
 		/*
@@ -2585,7 +2657,7 @@ main(int argc, char **argv)
 		 */
 		pid_fp = fopen(pid_file, "w");
 		if (pid_fp == NULL)
-			gflog_fatal_errno(pid_file);
+			accepting_fatal_errno(pid_file);
 	}
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
@@ -2619,26 +2691,33 @@ main(int argc, char **argv)
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	signal(SIGPIPE, SIG_IGN);
-	signal(SIGTERM, sigterm_handler);
+	/*
+	 * NOTE: The following signals should match with signals that
+	 * start_server() routine makes them SIG_DFL.
+	 */
+	signal(SIGTERM, accepting_sigterm_handler);
+	signal(SIGINT, accepting_sigterm_handler);
 
 	for (;;) {
 		FD_ZERO(&requests);
-		FD_SET(accepting_sock, &requests);
-		if (bind_unix_domain)
-			FD_SET(accepting_unix, &requests);
+		FD_SET(accepting_inet_sock, &requests);
+		for (i = 0; i < accepting_unix_socks_count; i++)
+			FD_SET(accepting_unix_socks[i], &requests);
 		for (i = 0; i < datagram_socks_count; i++)
 			FD_SET(datagram_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
 		if (nfound <= 0) {
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
 				continue;
-			gflog_fatal_errno("select");
+			accepting_fatal_errno("select");
 		}
 
-		if (FD_ISSET(accepting_sock, &requests))
-			start_server(accepting_sock);
-		if (bind_unix_domain && FD_ISSET(accepting_unix, &requests))
-			start_server(accepting_unix);
+		if (FD_ISSET(accepting_inet_sock, &requests))
+			start_server(accepting_inet_sock);
+		for (i = 0; i < accepting_unix_socks_count; i++) {
+			if (FD_ISSET(accepting_unix_socks[i], &requests))
+				start_server(accepting_unix_socks[i]);
+		}
 		for (i = 0; i < datagram_socks_count; i++) {
 			if (FD_ISSET(datagram_socks[i], &requests))
 				datagram_server(datagram_socks[i]);
