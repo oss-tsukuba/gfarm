@@ -162,6 +162,9 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			fprintf(stderr, "%s: %s\n", buffer, e);
 			if (e_save != NULL)
 				e_save = e;
+
+			/* mark this stats[i] isn't initialized */
+			stats[i].st_user = stats[i].st_group = NULL;
 			continue;
 		}
 		ls[m].path = files[i];
@@ -326,8 +329,11 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 	if (n > 0 || e != NULL)
 		*need_newline = 1;
 	if (stats != NULL) {
-		for (i = 0; i < n; i++)
-			gfs_stat_free(&stats[i]);
+		for (i = 0; i < n; i++) {
+			if (stats[i].st_user != NULL ||
+			    stats[i].st_group != NULL)
+				gfs_stat_free(&stats[i]);
+		}
 		free(stats);
 	}
 	free(ls);
