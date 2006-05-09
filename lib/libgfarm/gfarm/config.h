@@ -38,4 +38,4 @@ extern int gfarm_host_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
 extern file_offset_t gfarm_minimum_free_disk_space;
 
-int gfarm_schedule_write_local_prior(void);
+int gfarm_schedule_write_local_priority(void);
