@@ -656,7 +656,11 @@ main_loop(int accepting_socket)
 			client_socket = accept(accepting_socket,
 			   (struct sockaddr *)&client_addr, &client_addr_size);
 			if (client_socket < 0) {
-				if (errno != EINTR)
+				if (errno != EINTR && errno != ECONNABORTED &&
+#ifdef EPROTO
+				    errno != EPROTO &&
+#endif
+				    errno != EAGAIN)
 					gflog_warning_errno("accept");
 			} else if ((e = xxx_fd_connection_new(client_socket,
 			    &client_conn)) != NULL) {
