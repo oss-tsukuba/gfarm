@@ -156,7 +156,7 @@ fi
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
-[ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname'
+[ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname, please specify it by -h option'
 
 : ${NCPU:=`number_of_cpus`}
 [ X"$NCPU" = X ] && ABORT 'cannot determine number of CPUs'
