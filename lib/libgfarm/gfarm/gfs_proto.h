@@ -132,7 +132,7 @@ enum gfs_proto_fsync_operation {
 
 #define GFSD_MAX_PASSING_FD 5
 
-#define GFSD_LOCAL_SOCKET_NAME	"/tmp/.gfarm-gfsd%d/sock"
+#define GFSD_LOCAL_SOCKET_NAME	"/tmp/.gfarm-gfsd%s-%d/sock"
 
 #define FDESC_STDIN	0
 #define FDESC_STDOUT	1

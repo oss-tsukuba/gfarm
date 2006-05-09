@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
 #include <ctype.h>
@@ -141,7 +142,7 @@ connect_wait(int s)
 }
 
 static char *
-gfs_client_connection0_unix(int *sockp)
+gfs_client_connection0_unix(struct sockaddr *peer_in, int *sockp)
 {
 	struct sockaddr_un peer_un;
 	socklen_t socklen;
@@ -152,9 +153,12 @@ gfs_client_connection0_unix(int *sockp)
 		return (gfarm_errno_to_error(errno));
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
+	assert(peer_in->sa_family == AF_INET);
 	memset(&peer_un, 0, sizeof(peer_un));
 	socklen = snprintf(peer_un.sun_path, sizeof(peer_un.sun_path),
-	    GFSD_LOCAL_SOCKET_NAME, gfarm_spool_server_port);
+	    GFSD_LOCAL_SOCKET_NAME,
+	    inet_ntoa(((struct sockaddr_in *)peer_in)->sin_addr),
+	    gfarm_spool_server_port);
 	peer_un.sun_family = AF_UNIX;
 #ifdef SUN_LEN /* derived from 4.4BSD */
 	socklen = SUN_LEN(&peer_un);
@@ -170,6 +174,35 @@ gfs_client_connection0_unix(int *sockp)
 	return (NULL);
 }
 
+static int
+sockaddr_is_local(struct sockaddr *peer_addr)
+{
+	static int self_ip_asked = 0;
+	static int self_ip_count = 0;
+	static struct in_addr *self_ip_list;
+
+	struct sockaddr_in *peer_in;
+	int i;
+
+	if (!self_ip_asked) {
+		self_ip_asked = 1;
+		if (gfarm_get_ip_addresses(&self_ip_count, &self_ip_list) !=
+		    NULL) {
+			/* self_ip_count remains 0 */
+			return (0);
+		}
+	}
+	if (peer_addr->sa_family != AF_INET)
+		return (0);
+	peer_in = (struct sockaddr_in *)peer_addr;
+	/* XXX if there are lots of IP address on this host, this is slow */
+	for (i = 0; i < self_ip_count; i++) {
+		if (peer_in->sin_addr.s_addr == self_ip_list[i].s_addr)
+			return (1);
+	}
+	return (0);
+}
+
 static char *
 gfs_client_connection0(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfs_connection *gfs_server)
@@ -177,9 +210,8 @@ gfs_client_connection0(const char *canonical_hostname,
 	char *e, *host_fqdn;
 	int sock, flags;
 
-	if (gfarm_canonical_hostname_is_local(canonical_hostname) &&
-	    !gfsd_version_1_2_or_earlier) {
-		e = gfs_client_connection0_unix(&sock);
+	if (sockaddr_is_local(peer_addr) && !gfsd_version_1_2_or_earlier) {
+		e = gfs_client_connection0_unix(peer_addr, &sock);
 		if (e == NULL)
 			goto fd_connection_new;
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
@@ -403,7 +435,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	if (gfarm_canonical_hostname_is_local(canonical_hostname) &&
 	    !gfsd_version_1_2_or_earlier) {
-		e = gfs_client_connection0_unix(&sock);
+		e = gfs_client_connection0_unix(peer_addr, &sock);
 		if (e == NULL) {
 			connection_in_progress = 0;
 			goto malloc_gfs_server;
