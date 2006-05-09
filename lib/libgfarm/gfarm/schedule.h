@@ -29,3 +29,15 @@ char *gfarm_file_section_host_schedule_by_program_to_write(
 
 char *gfarm_file_section_host_schedule_with_priority_to_local_to_write(
 	char *, char *, char **);
+
+char *gfs_statfsnode(char *,
+	gfarm_int32_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+char *gfs_statfsnode_cached(char *,
+	gfarm_int32_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+
+int gfarm_is_active_fsnode(void);
+int gfarm_is_active_fsnode_to_write(void);
