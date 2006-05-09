@@ -1792,7 +1792,9 @@ gfarm_url_program_register(
 	if (nhosts < nreplicas)
 		nreplicas = nhosts;
 
-	if (gfarm_host_get_canonical_self_name(&self_name) != NULL) {
+	if (!gfarm_schedule_write_local_prior() ||
+	    !gfarm_is_active_fsnode_to_write() ||
+	    gfarm_host_get_canonical_self_name(&self_name) != NULL) {
 		e = gfarm_schedule_search_idle_hosts_to_write(
 		    nhosts, hostnames, nreplicas, hostnames);
 	} else {
@@ -2247,11 +2249,17 @@ gfarm_file_section_replicate_from_to_local_with_locking(
 	if (e != NULL)
 		return (e);
 
-	if (replication_needed)
-		e = gfarm_file_section_replicate_without_busy_check(
-		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
-		    src_canonical_hostname, src_if_hostname,
-		    canonical_self_hostname);
+	if (replication_needed) {
+		if (!gfarm_is_active_fsnode())
+			e = "gfsd is not running now";
+		else if (!gfarm_is_active_fsnode_to_write())
+			e = "not enough free disk space";
+		else
+			e = gfarm_file_section_replicate_without_busy_check(
+			    sinfo->pathname, sinfo->section,
+			    mode, sinfo->filesize, src_canonical_hostname,
+			    src_if_hostname, canonical_self_hostname);
+	}
 
 	gfs_unlock_local_path_section(localpath);
 	/* critical section ends */
@@ -2281,11 +2289,17 @@ gfarm_file_section_replicate_to_local_with_locking(
 	if (e != NULL)
 		return (e);
 
-	if (replication_needed)
-		e = gfarm_file_section_transfer_to_internal(
-		    sinfo->pathname, sinfo->section, mode, sinfo->filesize,
-		    canonical_self_hostname,
-		    gfarm_file_section_replicate_without_busy_check);
+	if (replication_needed) {
+		if (!gfarm_is_active_fsnode())
+			e = "gfsd is not running now";
+		else if (!gfarm_is_active_fsnode_to_write())
+			e = "not enough free disk space";
+		else
+			e = gfarm_file_section_transfer_to_internal(
+			    sinfo->pathname, sinfo->section,
+			    mode, sinfo->filesize, canonical_self_hostname,
+			    gfarm_file_section_replicate_without_busy_check);
+	}
 
 	gfs_unlock_local_path_section(localpath);
 	/* critical section ends */
