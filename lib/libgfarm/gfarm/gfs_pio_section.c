@@ -525,7 +525,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
-		if (gfarm_is_active_file_system_node &&
+		if (gfarm_schedule_write_local_prior() &&
+		    gfarm_is_active_fsnode_to_write() &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
 			vc->canonical_hostname = strdup(if_hostname);
 			if (vc->canonical_hostname == NULL) {
@@ -534,11 +535,21 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			}
 		} else {
 			/*
+			 * we don't give priority to local host, or
 			 * local host is not a file system node, or
-			 * 'gfsd' on a local host is not running.
+			 * 'gfsd' on a local host is not running, or
+			 * local host is nearly disk full.
 			 */
-			e = gfarm_schedule_search_idle_by_all_to_write(
-			    1, &if_hostname);
+			char *domain = getenv("GFARM_WRITE_TARGET_DOMAIN");
+
+			if (domain == NULL)
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+			else
+				e = gfarm_schedule_search_idle_by_domainname_to_write(
+				    domain, 1, &if_hostname);
+			if (e != NULL)
+				e = gfarm_schedule_search_idle_by_all_to_write(
+				    1, &if_hostname);
 			if (e != NULL)
 				goto finish;
 			vc->canonical_hostname = if_hostname;
@@ -572,7 +583,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gfs_pio_set_calc_digest(gf);
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
-	if (!is_local_host && gfarm_is_active_file_system_node &&
+	if (!is_local_host && gfarm_is_active_fsnode_to_write() &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&
