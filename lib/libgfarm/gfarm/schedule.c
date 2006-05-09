@@ -1782,19 +1782,26 @@ statfsnode(char *canonical_hostname, int use_cache,
 
 char *
 gfs_statfsnode(char *canonical_hostname,
-	gfarm_int32_t *bsizep,
+	int *bsizep,
 	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
 	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
 {
-	return (statfsnode(canonical_hostname, 0,
-	    bsizep,
+	char *e;
+	int bsize;
+
+	e = statfsnode(canonical_hostname, 0,
+	    &bsize,
 	    blocksp, bfreep, bavailp,
-	    filesp, ffreep, favailp));
+	    filesp, ffreep, favailp);
+	if (e != NULL)
+		return (e);
+	*bsizep = bsize;
+	return (NULL);
 }
 
 char *
 gfs_statfsnode_cached(char *canonical_hostname,
-	gfarm_int32_t *bsizep,
+	int *bsizep,
 	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
 	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
 {

@@ -140,6 +140,16 @@ char *gfs_fstat(GFS_File, struct gfs_stat *);
 void gfs_stat_free(struct gfs_stat *);
 char *gfs_access(const char *, int);
 
+/* diskspace of node */
+char *gfs_statfsnode(char *,
+	int *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+char *gfs_statfsnode_cached(char *,
+	int *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
 	long d_fileno;
