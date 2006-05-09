@@ -377,11 +377,13 @@ enum gfarm_metadb_backend_type {
 /* miscellaneous */
 #define GFARM_HOST_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_WRITE_LOCAL_PRIOR_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define MISC_DEFAULT -1
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
+static int schedule_write_local_prior = MISC_DEFAULT;
 file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 
 /* static variables */
@@ -504,6 +506,20 @@ static char *
 set_metadb_type_localfsdb(enum gfarm_metadb_backend_type *metadb_typep)
 {
 	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LOCALFSDB));
+}
+
+int
+gfarm_schedule_write_local_prior(void)
+{
+	char *s = getenv("GFARM_WRITE_LOCAL_PRIOR");
+
+	if (s == NULL)
+		return (schedule_write_local_prior);
+	if (isdigit(*(unsigned char *)s))
+		return (atoi(s) != 0);
+	if (strcasecmp(s, "disable") == 0)
+		return (0);
+	return (1);
 }
 
 /*
@@ -974,6 +990,28 @@ parse_set_misc_offset(char *p, file_offset_t *vp)
 }
 
 static char *
+parse_set_misc_enabled(char *p, int *vp)
+{
+	char *e, *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (NULL);
+	if (strcmp(s, "enable") == 0)
+		v = 1;
+	else if (strcmp(s, "disable") == 0)
+		v = 0;
+	else
+		return ("\"enable\" or \"disable\" is expected");
+	*vp = v;
+	return (NULL);
+}
+
+static char *
 parse_cred_config(char *p, char *service,
 	char *(*set)(char *, char *))
 {
@@ -1127,6 +1165,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_int(p, &gfarm_host_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
+	} else if (strcmp(s, o = "write_local_prior") == 0) {
+		e = parse_set_misc_enabled(p, &schedule_write_local_prior);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
 
@@ -1306,6 +1346,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
 		gfarm_schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (schedule_write_local_prior == MISC_DEFAULT)
+		schedule_write_local_prior =
+		    GFARM_SCHEDULE_WRITE_LOCAL_PRIOR_DEFAULT;
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
