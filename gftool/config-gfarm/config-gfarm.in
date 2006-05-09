@@ -416,7 +416,7 @@ fi
 
 : ${BACKEND_HOSTNAME:="$FQ_HOSTNAME"}
 [ X$BACKEND_HOSTNAME = X ] &&
-	ABORT 'cannot determine metadata server hostname'
+	ABORT 'cannot determine metadata server hostname, please use -h option'
 
 case $BACKEND_TYPE in
 postgresql)
