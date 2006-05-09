@@ -4,7 +4,10 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+
 #include <gfarm/gfarm_misc.h>
+
+#define GFLOG_USE_STDARG
 #include "gfutil.h"
 #include "logutil.h"
 
@@ -16,8 +19,6 @@ static char *log_auxiliary_info = NULL;
 #else /* _REENTRANT */
 #define log_auxiliary_info (*gflog_log_auxiliary_info_location())
 #endif /* _REENTRANT */
-
-void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
 
 int
 gflog_syslog_enabled(void)
