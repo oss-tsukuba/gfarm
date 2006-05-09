@@ -377,13 +377,13 @@ enum gfarm_metadb_backend_type {
 /* miscellaneous */
 #define GFARM_HOST_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
-#define GFARM_SCHEDULE_WRITE_LOCAL_PRIOR_DEFAULT 1 /* enable */
+#define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define MISC_DEFAULT -1
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
-static int schedule_write_local_prior = MISC_DEFAULT;
+static int schedule_write_local_priority = MISC_DEFAULT;
 file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 
 /* static variables */
@@ -509,12 +509,12 @@ set_metadb_type_localfsdb(enum gfarm_metadb_backend_type *metadb_typep)
 }
 
 int
-gfarm_schedule_write_local_prior(void)
+gfarm_schedule_write_local_priority(void)
 {
-	char *s = getenv("GFARM_WRITE_LOCAL_PRIOR");
+	char *s = getenv("GFARM_WRITE_LOCAL_PRIORITY");
 
 	if (s == NULL)
-		return (schedule_write_local_prior);
+		return (schedule_write_local_priority);
 	if (isdigit(*(unsigned char *)s))
 		return (atoi(s) != 0);
 	if (strcasecmp(s, "disable") == 0)
@@ -1165,8 +1165,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_int(p, &gfarm_host_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
-	} else if (strcmp(s, o = "write_local_prior") == 0) {
-		e = parse_set_misc_enabled(p, &schedule_write_local_prior);
+	} else if (strcmp(s, o = "write_local_priority") == 0) {
+		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
 
@@ -1346,9 +1346,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
 		gfarm_schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
-	if (schedule_write_local_prior == MISC_DEFAULT)
-		schedule_write_local_prior =
-		    GFARM_SCHEDULE_WRITE_LOCAL_PRIOR_DEFAULT;
+	if (schedule_write_local_priority == MISC_DEFAULT)
+		schedule_write_local_priority =
+		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;

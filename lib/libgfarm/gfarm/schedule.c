@@ -1515,9 +1515,9 @@ file_section_host_schedule_common(char *gfarm_file, char *section,
 	if (ncopies == 0)
 		return (GFARM_ERR_NO_REPLICA);
 	/*
-	 * We don't honor gfarm_schedule_write_local_prior()
+	 * We don't honor gfarm_schedule_write_local_priority()
 	 * for the priority_to_local case.
-	 * because "write_local_prior" only applies to the case
+	 * because "write_local_priority" only applies to the case
 	 * where the file is newly created.
 	 */
 	if (priority_to_local &&

@@ -525,7 +525,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
 			gf->pi.pathname, vc->section))) {
-		if (gfarm_schedule_write_local_prior() &&
+		if (gfarm_schedule_write_local_priority() &&
 		    gfarm_is_active_fsnode_to_write() &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
 			vc->canonical_hostname = strdup(if_hostname);

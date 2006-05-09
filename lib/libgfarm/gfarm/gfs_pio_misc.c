@@ -1792,7 +1792,7 @@ gfarm_url_program_register(
 	if (nhosts < nreplicas)
 		nreplicas = nhosts;
 
-	if (!gfarm_schedule_write_local_prior() ||
+	if (!gfarm_schedule_write_local_priority() ||
 	    !gfarm_is_active_fsnode_to_write() ||
 	    gfarm_host_get_canonical_self_name(&self_name) != NULL) {
 		e = gfarm_schedule_search_idle_hosts_to_write(
