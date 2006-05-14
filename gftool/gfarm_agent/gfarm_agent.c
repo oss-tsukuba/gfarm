@@ -1336,17 +1336,6 @@ static enum {
 	B_SHELL_LIKE,
 	C_SHELL_LIKE
 } shell_type;
-static enum agent_type agent_server_type;
-
-static char *
-agent_server_type_set(enum agent_type type)
-{
-	if (agent_server_type == NO_AGENT)
-		agent_server_type = type;
-	else if (agent_server_type != type)
-		return ("agent connection type already set");
-	return (NULL);
-}
 
 static void
 guess_shell_type(void)
@@ -1370,19 +1359,20 @@ display_env(int fd, int port)
 	FILE *f = fdopen(fd, "w");
 	pid_t pid = getpid();
 	char *hostname;
+	enum agent_type server_type = gfarm_agent_type_get();
 
 	if (f == NULL)
 		return;
 
 	guess_shell_type();
 
-	if (agent_server_type != UNIX_DOMAIN) {
+	if (server_type != UNIX_DOMAIN) {
 		if (gfarm_host_get_canonical_self_name(&hostname) != NULL)
 			hostname = gfarm_host_get_self_name();
 	}
 	switch (shell_type) {
 	case B_SHELL_LIKE:
-		switch (agent_server_type) {
+		switch (server_type) {
 		case UNIX_DOMAIN:
 			fprintf(f, "GFARM_AGENT_SOCK=%s; "
 				"export GFARM_AGENT_SOCK;\n", sock_path);
@@ -1401,7 +1391,7 @@ display_env(int fd, int port)
 		fprintf(f, "echo Agent pid %d;\n", pid);
 		break;
 	case C_SHELL_LIKE:
-		switch (agent_server_type) {
+		switch (server_type) {
 		case UNIX_DOMAIN:
 			fprintf(f, "setenv GFARM_AGENT_SOCK %s;\n", sock_path);
 			break;
@@ -1482,9 +1472,10 @@ open_accepting_socket(int port)
 	struct sockaddr_in self_addr;
 	socklen_t self_addr_size;
 	int sock, sockopt;
+	enum agent_type server_type = gfarm_agent_type_get();
 	char *e;
 
-	if (agent_server_type == UNIX_DOMAIN)
+	if (server_type == UNIX_DOMAIN)
 		return (open_accepting_unix_domain());
 
 	memset(&self_addr, 0, sizeof(self_addr));
@@ -1534,7 +1525,7 @@ main(int argc, char **argv)
 	char *e, *config_file = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, agent_port = 0, accepting_sock, client, stdout_fd;
+	int ch, agent_port = -1, accepting_sock, client, stdout_fd;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -1553,7 +1544,7 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			agent_port = strtol(optarg, NULL, 0);
-			agent_server_type_set(INET);
+			gfarm_agent_type_set(INET);
 			break;
 		case 'P':
 			pid_file = optarg;
@@ -1581,8 +1572,6 @@ main(int argc, char **argv)
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
-	/* default is UNIX_DOMAIN */
-	agent_server_type_set(UNIX_DOMAIN);
 
 	/*
 	 * Gfarm_initialize() may fail when the metadata server is not
@@ -1598,6 +1587,11 @@ main(int argc, char **argv)
 		gfarm_initialized = 1;
 	else
 		(void)gfarm_terminate();
+
+	/* default is UNIX_DOMAIN */
+	gfarm_agent_type_set(UNIX_DOMAIN);
+	if (gfarm_agent_type_get() == INET && agent_port == -1)
+		agent_port = gfarm_agent_port_get();
 
 #ifndef __FreeBSD__
 	/*

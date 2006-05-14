@@ -62,6 +62,12 @@ gfarm_agent_type_set(enum agent_type type)
 	return (NULL);
 }
 
+enum agent_type
+gfarm_agent_type_get()
+{
+	return (gfarm_agent_type);
+}
+
 void
 gfarm_agent_name_clear()
 {
@@ -99,6 +105,12 @@ gfarm_agent_port_set(char *port)
 	gfarm_agent_port = atoi(port);
 
 	return (gfarm_agent_type_set(INET));
+}
+
+int
+gfarm_agent_port_get()
+{
+	return (gfarm_agent_port);
 }
 
 void
