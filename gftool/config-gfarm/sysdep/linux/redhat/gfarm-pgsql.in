@@ -1,0 +1,71 @@
+#!/bin/sh
+# postgresql	This is the init script for starting up the PostgreSQL server
+#
+# chkconfig: 2345 85 15
+# description: PostgreSQL daemon for Gfarm
+# processname: postmaster
+# pidfile: @config_gfarm_backend_data_dir@/postmaster.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+FILE="gfarm-pgsql"
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
+LOGFILE="$PGDATA/logfile"
+OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="su - $PRIVILEGE";;
+esac
+
+# Get config.
+. /etc/sysconfig/network
+export PGPORT
+export PGDATA
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+RETVAL=0
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+case "$1" in
+  start)
+	echo -n "Starting $FILE: "
+	# increase the maximum number of open file descriptors
+	ulimit -n 16384 2> /dev/null
+	$RUN -c "$CTL $OPTIONS start"
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
+	echo
+	;;
+  stop)
+	echo -n "Stopping $FILE: "
+	$RUN -c "$CTL $OPTIONS stop"
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
+	echo
+	;;
+  status|restart|reload)
+	$RUN -c "$CTL $OPTIONS $1"
+	;;
+  *)
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $REVAL
