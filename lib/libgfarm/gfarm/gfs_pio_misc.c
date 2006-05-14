@@ -992,7 +992,7 @@ check_existence_spool_file(int nfile, int *nsection, int **ncopy,
 }
 
 static char *
-rename_dir(const char *from_url, const char *to_url,
+rename_dir(const char *from_url,
 	   char *from_canonical_path, char *to_canonical_path)
 {
 	int i, j, nhosts;
@@ -1166,7 +1166,7 @@ free_dir_list:
 }
 
 char *
-gfs_rename(const char *from_url, const char *to_url)
+gfs_rename_old(const char *from_url, const char *to_url)
 {
 	char *e, *from_canonical_path, *to_canonical_path;
 	struct gfarm_path_info from_pi, to_pi;
@@ -1228,7 +1228,7 @@ gfs_rename(const char *from_url, const char *to_url)
 				goto free_to_canonical_path;
 			}
 		}
-		e = rename_dir(from_url, to_url,
+		e = rename_dir(from_url,
 			       from_canonical_path, to_canonical_path);
 	} else {
 		if (e == NULL)

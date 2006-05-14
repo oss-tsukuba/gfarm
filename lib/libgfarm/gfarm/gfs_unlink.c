@@ -125,7 +125,7 @@ unlink_section_remove(struct gfarm_file_section_info *info, void *arg)
 	return (gfarm_file_section_info_remove(info->pathname, info->section));
 }
 
-static char *
+char *
 gfs_unlink_check_perm(char *gfarm_file)
 {
 	struct gfarm_path_info pi;
@@ -155,9 +155,21 @@ gfs_unlink_check_perm(char *gfarm_file)
 double gfs_unlink_time;
 
 char *
+gfs_unlink_internal(const char *gfarm_file)
+{
+	char *e, *e1;
+
+	e = gfarm_foreach_section(unlink_section_remove,
+		gfarm_file, NULL, NULL);
+	e1 = gfarm_path_info_remove(gfarm_file);
+
+	return (e != NULL ? e : e1);
+}
+
+char *
 gfs_unlink(const char *gfarm_url)
 {
-	char *gfarm_file, *e, *e1 = NULL;
+	char *gfarm_file, *e;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -171,9 +183,7 @@ gfs_unlink(const char *gfarm_url)
 	if (e != NULL)
 		goto finish_free_gfarm_file;
 
-	e = gfarm_foreach_section(unlink_section_remove,
-		gfarm_file, NULL, NULL);
-	e1 = gfarm_path_info_remove(gfarm_file);
+	e = gfs_unlink_internal(gfarm_file);
 
 finish_free_gfarm_file:
 	free(gfarm_file);
@@ -182,7 +192,7 @@ finish_unlink:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 
-	return (e != NULL ? e : e1);
+	return (e);
 }
 
 /* internal use in the gfarm library */

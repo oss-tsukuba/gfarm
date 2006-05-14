@@ -11,6 +11,8 @@ char *gfarm_path_expand_home(const char *, char **);
 char *gfarm_path_dirname(const char *);
 
 /* gfs_unlink.c */
+char *gfs_unlink_check_perm(char *);
+char *gfs_unlink_internal(const char *);
 char *gfs_unlink_replica_internal(const char *, const char *, const char *);
 
 /* gfs_pio_misc.c */
@@ -27,3 +29,6 @@ char *gfarm_file_section_replicate_to_local_with_locking(
 	struct gfarm_file_section_info *, gfarm_mode_t, char **);
 char *gfs_clean_spool(char *, int, struct gfarm_file_section_info *, int *,
 		      struct gfarm_file_section_copy_info **);
+
+/* old interface - temporary use */
+char *gfs_rename_old(const char *, const char *);
