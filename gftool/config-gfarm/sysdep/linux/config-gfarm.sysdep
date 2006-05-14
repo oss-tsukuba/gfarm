@@ -63,6 +63,7 @@ sysdep_defaults()
 
 	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
+	: ${RC_AGENT_IN="$config_dir/linux/$LINUX_RC_TYPE/gfarm_agent.in"}
 	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.in"}
 
 	if [ ! -f "$RC_BACKEND_IN" ]; then
@@ -70,6 +71,9 @@ sysdep_defaults()
 	fi
 	if [ ! -f "$RC_GFMD_IN" ]; then
 		RC_GFMD_IN="$config_dir/linux/default/gfmd.in"
+	fi
+	if [ ! -f "$RC_AGENT_IN" ]; then
+		RC_AGENT_IN="$config_dir/linux/default/gfarm_agent.in"
 	fi
 	if [ ! -f "$RC_GFSD_IN" ]; then
 		RC_GFSD_IN="$config_dir/linux/default/gfsd.in"

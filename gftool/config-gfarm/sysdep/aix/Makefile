@@ -12,6 +12,7 @@ DATA =	$(srcdir)/config-gfarm.sysdep \
 	$(srcdir)/../default/gfarm-pgsql.in \
 	$(srcdir)/../default/gfarm-slapd.in \
 	$(srcdir)/../default/gfmd.in \
+	$(srcdir)/../default/gfarm_agent.in \
 	$(srcdir)/../default/gfsd.in
 
 include $(top_srcdir)/makes/data.mk

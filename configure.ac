@@ -1178,6 +1178,7 @@ test -d util || mkdir util
 AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	${ns_makefiles}
 	gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd
+	gftool/config-gfarm/config-agent
 	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
 	package/redhat/gfmd package/redhat/gfsd
