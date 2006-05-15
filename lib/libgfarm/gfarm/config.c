@@ -1758,7 +1758,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 	 * displayed later in gfarm_auth_request_gsi().
 	 */
 	saved_auth_verb = gflog_auth_set_verbose(0);
-	(void*)gfarm_gsi_client_initialize();
+	(void)gfarm_gsi_client_initialize();
 	gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	e = gfarm_set_global_user_for_this_local_account();

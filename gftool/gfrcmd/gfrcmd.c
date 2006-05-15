@@ -215,7 +215,7 @@ main(argc, argv)
 		e = gfarm_config_read();
 #ifdef HAVE_GSI /* XXX this initialization must be removed eventually */
 	if (e == NULL)
-		(void*)gfarm_gsi_client_initialize();
+		(void)gfarm_gsi_client_initialize();
 #endif
 	if (e == NULL)
 		e = gfarm_set_global_user_for_this_local_account();
