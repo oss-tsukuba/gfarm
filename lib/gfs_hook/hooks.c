@@ -2014,7 +2014,7 @@ fdatasync(int filedes)
 }
 #endif /* SYS_fdatasync */
 
-#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#if defined(HAVE_FDOPENDIR) && defined(sun) && (defined(__svr4__) || defined(__SVR4))
 /*
  * opendir - this entry is needed to hook opendir on Solaris 9
  */
