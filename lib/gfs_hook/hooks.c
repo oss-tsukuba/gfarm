@@ -2014,6 +2014,27 @@ fdatasync(int filedes)
 }
 #endif /* SYS_fdatasync */
 
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+/*
+ * opendir - this entry is needed to hook opendir on Solaris 9
+ */
+
+DIR *
+opendir(const char *dirname)
+{
+	DIR *dirp;
+	int d;
+
+	d = open(dirname, O_RDONLY | O_NDELAY | O_LARGEFILE, 0);
+	if (d < 0)
+		return (NULL);
+	dirp = fdopendir(d);
+	if (dirp == NULL)
+		(void)close(d);
+	return (dirp);
+}
+#endif /* sun */
+
 /*
  * definitions for "hooks_common.c"
  */
