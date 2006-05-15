@@ -1,5 +1,6 @@
 @comment $NetBSD$
 bin/config-gfarm
+bin/config-agent
 bin/config-gfsd
 bin/gfarm.arch.guess
 bin/gfarm_agent
@@ -450,6 +451,7 @@ share/gfarm/config/gfarm.schema
 share/gfarm/config/initial.ldif.in
 share/gfarm/config/gfarm-slapd.in
 share/gfarm/config/gfmd.in
+share/gfarm/config/gfarm_agent.in
 share/gfarm/config/gfsd.in
 share/gfarm/config/slapd.conf-2.0.in
 share/gfarm/config/slapd.conf-2.1.in

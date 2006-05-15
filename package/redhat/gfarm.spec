@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.2.9
+%define ver	1.3
 %define rel	0
 
 # a hook to make RPM version number different from %{ver}
@@ -93,6 +93,10 @@ Requires: %{package_name}-client
 Summary: metadata server for gfarm
 Group: System Environment/Daemons
 
+%package agent
+Summary: metadata cache server for gfarm
+Group: System Environment/Daemons
+
 %package devel
 Summary: development library for gfarm
 Group: Development/Libraries
@@ -124,6 +128,9 @@ fsnode for gfarm
 
 %description server
 metadata server for gfarm
+
+%description agent
+metadata cache server for gfarm
 
 %description devel
 development library for gfarm
@@ -188,6 +195,10 @@ echo run %{prefix}/bin/config-gfsd '<spool_directory>'
 /sbin/chkconfig --add gfmd
 echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 
+%post agent
+/sbin/chkconfig --add gfarm_agent
+echo run %{prefix}/bin/config-agent to configure Gfarm metadata cache server
+
 %preun fsnode
 if [ "$1" = 0 ]
 then
@@ -208,6 +219,13 @@ then
 		echo do not forget \'service gfarm-pgsql stop\' and
 		echo \'chkconfig gfarm-pgsql --del\'
 	fi
+fi
+
+%preun agent
+if [ "$1" = 0 ]
+then
+	/sbin/service gfarm_agent stop > /dev/null 2>&1 || :
+	/sbin/chkconfig --del gfarm_agent
 fi
 
 # Part 3  file list
@@ -622,7 +640,6 @@ fi
 %endif
 
 %files client
-%{prefix}/bin/gfarm_agent
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
@@ -728,6 +745,14 @@ fi
 %{share_prefix}/config/linux/suse/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
 %{share_prefix}/config/slapd.conf-2.1.in
+
+%files agent
+%{prefix}/bin/config-agent
+%{prefix}/bin/gfarm_agent
+%{share_prefix}/config/linux/debian/gfarm_agent.in
+%{share_prefix}/config/linux/default/gfarm_agent.in
+%{share_prefix}/config/linux/redhat/gfarm_agent.in
+%{share_prefix}/config/linux/suse/gfarm_agent.in
 
 %files devel
 %{prefix}/include/gfarm/gfarm.h
