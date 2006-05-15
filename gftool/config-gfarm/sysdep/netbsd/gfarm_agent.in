@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# $NetBSD$
+#
+# Gfarm filesystem metadata cache daemon
+#
+# PROVIDE: gfarm_agent
+# REQUIRE: DAEMON
+
+if [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+fi
+
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_agent_option@"
+
+name="gfarm_agent"
+FILE=${name}
+rcvar=${name}
+command="@config_gfarm_prefix@/bin/${name}"
+pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+required_files="$CONF"
+# add more flags through ${${name}_flags}
+command_args="-P $pidfile $OPTIONS"
+
+if [ -f /etc/rc.subr ]; then
+	load_rc_config ${FILE}
+	run_rc_command "$1"
+else
+	echo -n " ${name}"
+	${command} ${agent_flags} ${command_args}
+fi
