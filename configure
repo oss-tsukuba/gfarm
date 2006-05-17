@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets gfshook_srcs gfshook_objs gfshook_cflags gfshook_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1045,6 +1045,9 @@ Optional Packages:
 				[default=guessed]
   --with-globus=GLOBUS_ROOT	globus root directory
 				[default=disable]
+  --with-gfshook		build libgfs_hook.so syscall hooking library
+				[default]
+  --without-gfshook             disable to build syscall hooking library
   --with-mpi=MPI_ROOT		MPI root directory
 				[default=disable]
   --with-readline=READLINE_ROOT	readline root directory
@@ -3364,7 +3367,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3367 "configure"' > conftest.$ac_ext
+  echo '#line 3370 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -4834,7 +4837,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4837:" \
+echo "$as_me:4840:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5936,11 +5939,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:5939: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:5942: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:5943: \$? = $ac_status" >&5
+   echo "$as_me:5946: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6198,11 +6201,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6201: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6204: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6205: \$? = $ac_status" >&5
+   echo "$as_me:6208: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6260,11 +6263,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6263: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6266: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6267: \$? = $ac_status" >&5
+   echo "$as_me:6270: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8500,7 +8503,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8503 "configure"
+#line 8506 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8598,7 +8601,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8601 "configure"
+#line 8604 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10850,11 +10853,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10853: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10856: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10857: \$? = $ac_status" >&5
+   echo "$as_me:10860: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10912,11 +10915,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10915: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10918: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10919: \$? = $ac_status" >&5
+   echo "$as_me:10922: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12281,7 +12284,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12284 "configure"
+#line 12287 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12379,7 +12382,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12382 "configure"
+#line 12385 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13264,11 +13267,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13267: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13270: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13271: \$? = $ac_status" >&5
+   echo "$as_me:13274: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13326,11 +13329,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13329: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13332: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13333: \$? = $ac_status" >&5
+   echo "$as_me:13336: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15452,11 +15455,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15455: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15458: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15459: \$? = $ac_status" >&5
+   echo "$as_me:15462: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15714,11 +15717,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15717: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15720: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15721: \$? = $ac_status" >&5
+   echo "$as_me:15724: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15776,11 +15779,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15779: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15782: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15783: \$? = $ac_status" >&5
+   echo "$as_me:15786: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18016,7 +18019,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18019 "configure"
+#line 18022 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18114,7 +18117,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18117 "configure"
+#line 18120 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20389,6 +20392,41 @@ fi;
 
 
 ###
+### --with-gfshook
+###
+
+
+# Check whether --with-gfshook or --without-gfshook was given.
+if test "${with_gfshook+set}" = set; then
+  withval="$with_gfshook"
+
+fi;
+
+if test x${with_gfshook} != xno
+then
+ gfshook_srcs='${GFSHOOK_SRCS}'
+ gfshook_objs='${GFSHOOK_OBJS}'
+ gfshook_cflags='${GFSHOOK_CFLAGS}'
+ gfshook_targets='${GFSHOOK_TARGETS}'
+else
+ echo "$as_me:$LINENO: checking gfshook" >&5
+echo $ECHO_N "checking gfshook... $ECHO_C" >&6
+ echo "$as_me:$LINENO: result: disable" >&5
+echo "${ECHO_T}disable" >&6
+
+ gfshook_srcs=
+ gfshook_objs=
+ gfshook_cflags=
+ gfshook_targets=
+fi
+
+# for conditional compilation related to syscall hooking library
+
+
+
+
+
+###
 ### --with-mpi=MPI_ROOT
 ###
 
@@ -20410,7 +20448,7 @@ echo "${ECHO_T}using \"${mpicc}\"" >&6
  # for conditional compilation which depends on whether MPI is enabled or not
  mpi_srcs='${MPI_SRCS}'
  mpi_objs='${MPI_OBJS}'
- mpi_srcs='${MPI_CFLAGS}'
+ mpi_cflags='${MPI_CFLAGS}'
  mpi_targets='${MPI_TARGETS}'
 
 else
@@ -24750,6 +24788,10 @@ s,@globus_srcs@,$globus_srcs,;t t
 s,@globus_objs@,$globus_objs,;t t
 s,@globus_cflags@,$globus_cflags,;t t
 s,@globus_targets@,$globus_targets,;t t
+s,@gfshook_srcs@,$gfshook_srcs,;t t
+s,@gfshook_objs@,$gfshook_objs,;t t
+s,@gfshook_cflags@,$gfshook_cflags,;t t
+s,@gfshook_targets@,$gfshook_targets,;t t
 s,@mpicc@,$mpicc,;t t
 s,@mpi_srcs@,$mpi_srcs,;t t
 s,@mpi_objs@,$mpi_objs,;t t
