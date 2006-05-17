@@ -351,6 +351,37 @@ AC_SUBST(globus_cflags)
 AC_SUBST(globus_targets)
 
 ###
+### --with-gfshook
+###
+
+AC_ARG_WITH(gfshook,
+[  --with-gfshook		build libgfs_hook.so syscall hooking library
+				[[default]]
+  --without-gfshook             disable to build syscall hooking library])
+
+if test x${with_gfshook} != xno
+then
+ gfshook_srcs='${GFSHOOK_SRCS}'
+ gfshook_objs='${GFSHOOK_OBJS}'
+ gfshook_cflags='${GFSHOOK_CFLAGS}'
+ gfshook_targets='${GFSHOOK_TARGETS}'
+else
+ AC_MSG_CHECKING([gfshook])
+ AC_MSG_RESULT([disable])
+
+ gfshook_srcs=
+ gfshook_objs=
+ gfshook_cflags=
+ gfshook_targets=
+fi
+
+# for conditional compilation related to syscall hooking library
+AC_SUBST(gfshook_srcs)
+AC_SUBST(gfshook_objs)
+AC_SUBST(gfshook_cflags)
+AC_SUBST(gfshook_targets)
+
+###
 ### --with-mpi=MPI_ROOT
 ###
 
@@ -369,7 +400,7 @@ AC_ARG_WITH(mpi,
  # for conditional compilation which depends on whether MPI is enabled or not
  mpi_srcs='${MPI_SRCS}'
  mpi_objs='${MPI_OBJS}'
- mpi_srcs='${MPI_CFLAGS}'
+ mpi_cflags='${MPI_CFLAGS}'
  mpi_targets='${MPI_TARGETS}'
 ],
 [AC_MSG_RESULT([disabled])

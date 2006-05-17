@@ -5,17 +5,17 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 MPI_TARGETS = gfwc
+GFSHOOK_TARGETS = gfcombine_hook gfcp_hook
 
 SUBDIRS = \
 	gfcombine \
-	gfcombine_hook \
 	gfcp \
-	gfcp_hook \
 	gfgrep \
 	gfrepbe_client \
 	gfrepbe_server \
 	gfsplck \
 	$(mpi_targets) \
-	util
+	util \
+	$(gfshook_targets)
 
 include $(top_srcdir)/makes/subdir.mk
