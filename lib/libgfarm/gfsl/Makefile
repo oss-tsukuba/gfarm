@@ -42,9 +42,9 @@ PROG_LDLIBS = $(COMMON_LDFLAGS) $(PROG_DEPLIBS) \
 ### rules
 ###
 
-library: $(LIBRARY)
+all: $(LIBRARY)
 
-all: library $(PROGRAMS)
+program: $(PROGRAMS)
 
 ### for library
 
