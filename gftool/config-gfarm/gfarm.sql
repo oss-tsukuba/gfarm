@@ -1,20 +1,44 @@
 CREATE TABLE Host (
 	hostname	VARCHAR(256)	PRIMARY KEY,
+	port		INTEGER		NOT NULL,
 	architecture	VARCHAR(128)	NOT NULL,
-	ncpu		INTEGER
+	ncpu		INTEGER		NOT NULL,
+	flags		INTEGER		NOT NULL,
 );
 
 
 CREATE TABLE HostAliases (
 	hostalias	VARCHAR(256)	PRIMARY KEY,
-	hostname	VARCHAR(256)	REFERENCES Host(hostname) ON DELETE CASCADE
+	hostname	VARCHAR(256)
+		REFERENCES Host(hostname) ON DELETE CASCADE
 );
 
 CREATE INDEX HostAliasesByHostname ON HostAliases (hostname);
 
 
-CREATE TABLE Path (
-	pathname	VARCHAR(1024)	PRIMARY KEY,
+CREATE TABLE User (
+	username	VARCHAR(64)	PRIMARY KEY,
+	homedir		VARCHAR(1024)	NOT NULL,
+	realname	VARCHAR(256)	NOT NULL,
+	gsiDN		VARCHAR(1024)
+);
+
+CREATE TABLE Group (
+	groupname	VARCHAR(64)	PRIMARY KEY
+);
+
+CREATE TABLE GroupAssignment (
+	username	VARCHAR(64)	NOT NULL,
+	groupname	VARCHAR(64)	NOT NULL,
+	PRIMARY KEY(username, groupname)
+);
+
+
+CREATE TABLE INode (
+	inumber		INT8		PRIMARY KEY,
+	igen		INT8		NOT NULL,
+	nlink		INT8		NOT NULL,
+	size		INT8		NOT NULL,
 	mode		INTEGER		NOT NULL,
 	username	VARCHAR(64)	NOT NULL,
 	groupname	VARCHAR(64)	NOT NULL,
@@ -23,30 +47,38 @@ CREATE TABLE Path (
 	mtimesec	INT8		NOT NULL,
 	mtimensec	INTEGER		NOT NULL,
 	ctimesec	INT8		NOT NULL,
-	ctimensec	INTEGER		NOT NULL,
-	nsections	INTEGER
+	ctimensec	INTEGER		NOT NULL
 );
 
-
-CREATE TABLE FileSection (
-	pathname	VARCHAR(1024),
-	section		VARCHAR(256),
-	filesize	INT8		NOT NULL,
-	checksumType	VARCHAR(32),
-	checksum	VARCHAR(256),
-	PRIMARY KEY(pathname, section)
+CREATE TABLE DirEntry (
+	dirINumber	INT8		NOT NULL,
+	entryName	VARCHAR(1024)	NOT NULL,
+	entryINumber	INT8		NOT NULL,
+	PRIMARY KEY(dirINumber, entryName)
 );
 
-CREATE INDEX fileSectionByPath ON FileSection (pathname);
+CREATE INDEX dirEntryByINode ON DirEntry (dirINumber);
 
-
-CREATE TABLE FileSectionCopy (
-	pathname	VARCHAR(1024),
-	section		VARCHAR(256),
-	hostname	VARCHAR(256),
-	PRIMARY KEY(pathname, section, hostname)
+CREATE TABLE FileInfo (
+	inumber		INT8		PRIMARY KEY
+		REFERENCES INode(inumber) ON DELETE CASCADE,
+	checksumType	VARCHAR(32)	NOT NULL,
+	checksum	VARCHAR(256)	NOT NULL,
 );
 
-CREATE INDEX fileSectionCopyByPath ON FileSectionCopy (pathname);
+CREATE TABLE FileCopy (
+	inumber		INT8		NOT NULL,
+	hostname	VARCHAR(256)	NOT NULL,
+	PRIMARY KEY(inumber, hostname)
+);
 
-CREATE INDEX fileSectionCopyByFileSection ON FileSectionCopy (pathname, section);
+CREATE INDEX fileCopyByINode ON FileCopy (inode);
+
+CREATE TABLE DeadFileCopy (
+	inumber		INT8		NOT NULL,
+	igen		INT8		NOT NULL,
+	hostname	VARCHAR(256)	NOT NULL,
+	PRIMARY KEY(inumber, igen, hostname)
+);
+
+CREATE INDEX deadFileCopyByHostname ON DeadFileCopy (hostname);

@@ -25,7 +25,7 @@ PROG="slapd"
 FILE="gfarm-slapd"
 
 CONF="@config_gfarm_slapd_config@"
-PORT=@config_gfarm_slapd_port@
+PORT=@config_gfarm_backend_port@
 DAEMON="@config_gfarm_openldap_libexec@/$PROG"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 

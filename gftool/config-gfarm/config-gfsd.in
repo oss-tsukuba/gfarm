@@ -156,7 +156,7 @@ fi
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
-[ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname'
+[ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname, please specify it by -h option'
 
 : ${NCPU:=`number_of_cpus`}
 [ X"$NCPU" = X ] && ABORT 'cannot determine number of CPUs'
@@ -282,11 +282,8 @@ echo gfhost $GFSD_HOSTNAME: succeeded ||
 echo >&2 "gfhost $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
-	if start_service gfsd; then
-		:
-	else
-		ABORT "failed to start service"
-	fi
+	service_add gfsd && service_ctl gfsd restart ||
+		ABORT "failed to start gfsd"
 fi
 echo "$PROGNAME success"
 exit 0

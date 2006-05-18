@@ -6,7 +6,7 @@ set -e
 FILE=gfarm-slapd
 DAEMON="@config_gfarm_openldap_libexec@/slapd"
 SLAPD_CONF="@config_gfarm_slapd_config@"
-SLAPD_SERVICES="ldap://:@config_gfarm_slapd_port@/"
+SLAPD_SERVICES="ldap://:@config_gfarm_backend_port@/"
 SLAPD_OPTIONS=""
 
 # Stop processing if slapd is not there
