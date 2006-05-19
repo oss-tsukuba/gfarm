@@ -2384,9 +2384,10 @@ open_accepting_unix_domain(struct in_addr address, int port,
 	self_addr_size = sizeof(self_addr);
 
 	sock_name = strdup(self_addr.sun_path);
-	sock_dir = strdup(dirname(sock_name));
+	sock_dir = strdup(sock_name);
 	if (sock_name == NULL || sock_dir == NULL)
 		accepting_fatal("not enough memory");
+	sock_dir = dirname(sock_dir);
 	/* to make sure */
 	unlink(sock_name);
 	rmdir(sock_dir);
