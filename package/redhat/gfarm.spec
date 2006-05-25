@@ -171,10 +171,6 @@ make
 make DESTDIR=${RPM_BUILD_ROOT} \
 	default_docdir=%{doc_prefix} \
 	default_mandir=%{man_prefix} install
-mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
-cp -p package/redhat/gfmd package/redhat/gfsd \
-	${RPM_BUILD_ROOT}%{rc_prefix}
-chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
@@ -187,16 +183,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %postun libs -p /sbin/ldconfig
 
 %post fsnode
-/sbin/chkconfig --add gfsd
 echo copy /etc/gfarm.conf from metadata server and
 echo run %{prefix}/bin/config-gfsd '<spool_directory>'
 
 %post server
-/sbin/chkconfig --add gfmd
 echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 
 %post agent
-/sbin/chkconfig --add gfarm_agent
 echo run %{prefix}/bin/config-agent to configure Gfarm metadata cache server
 
 %preun fsnode
@@ -710,7 +703,6 @@ fi
 %{prefix}/bin/gfsplck
 %{prefix}/bin/thput-gfpio
 %{prefix}/sbin/gfsd
-%{rc_prefix}/gfsd
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/linux/debian/gfsd.in
@@ -720,7 +712,6 @@ fi
 
 %files server
 %{prefix}/sbin/gfmd
-%{rc_prefix}/gfmd
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/gfdump
 %dir %{share_prefix}

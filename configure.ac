@@ -1212,7 +1212,6 @@ AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	gftool/config-gfarm/config-agent
 	gfptool/util/gfregister
 	package/solaris/gfmd package/solaris/gfsd
-	package/redhat/gfmd package/redhat/gfsd
 	util/gfront/gfront
 )
 AC_OUTPUT
