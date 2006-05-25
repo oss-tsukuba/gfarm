@@ -54,8 +54,15 @@ Gfarm system consists of the following nodes
 
   Metadata server node manages Gfarm filesystem metadata and parallel
   process information.  On the metadata server node, a Gfarm
-  filesystem metaserver (gfmd), and either an LDAP server (slapd) or
-  PostgreSQL server (postmaster) are running.
+  filesystem metaserver (gfmd), and a backend database server such as
+  an LDAP server (slapd) and a PostgreSQL server (postmaster) are
+  running.
+
+ - metadata cache server node
+
+  Metadata cache server is a proxy server to make metadata access
+  faster, and to prevent metadata access concentration.  On metadata
+  cache server nodes, gfarm_agent is running.
 
 A file in the Gfarm filesystem is a standard file or a large-scale
 file that is divided into fragments or a ranked group of files.
@@ -80,18 +87,9 @@ Gfarm software consists of
   provide new file views; index file view and local file view, for
   parallel processes.
 
-  A syscall-hook library, gfs_hook.o, is provided for porting legacy
-  applications.  Just linking with gfs_hook.o and libgfarm.a, the
-  legacy applications can exploit the Gfarm filesystem.
-
-  For Linux system, a dynamic library, libgfs_hook.so, for pre-loading
-  is also provided for binary programs to access Gfarm file system
-  without any modification as well as re-linking.  You can access
-  Gfarm file system as if it is mounted at /gfarm, just setting
-  LD_PRELOAD environment variable.
-
-  For details about a Gfarm syscall-hook library, refer to
-  doc/README.hook.en.
+  To enable every existing (binary) program to access Gfarm file
+  system without any modification, there are two ways; using Gfarm
+  syscall hook library and using GfarmFS-FUSE.
 
  - gfmd - Gfarm filesystem metadata server
 
@@ -102,6 +100,12 @@ Gfarm software consists of
   In the current implementation, filesystem metadata is managed by
   either an LDAP server or PostgreSQL server.  It is also needed to be
   running on, typically, a metadata server node.
+
+ - gfarm_agent - Gfarm metadata cache server
+
+  gfarm_agent is a proxy server for the filesystem metadata server,
+  which improves metadata access performance.  Typically, it is needed
+  for each PC cluster.
 
  - gfsd - Gfarm filesystem daemon
 
@@ -145,10 +149,11 @@ To build the Gfarm system, OpenSSL library and either OpenLDAP library
 or PostgreSQL library are required.  To utilize the Grid Security
 Infrastructure (GSI) for authentication method, GSSAPI library is
 needed.  Currently, GSSAPI library provided by the Globus toolkit
-version 2 and 3 (GT2 and GT3) are supported by the configure.  When
-building a gfs_hook_mpi.o syscall-hook library for executing legacy
-MPI applications on the Gfarm filesystem, and when building sample MPI
-applications in this distribution, an MPI library is needed.
+version 2, 3, and 4 (GT2, GT3, and GT4) are supported by the
+configure.  When building a gfs_hook_mpi.o syscall-hook library for
+executing legacy MPI applications on the Gfarm filesystem, and when
+building sample MPI applications in this distribution, an MPI library
+is needed.
 
 Here are installation steps of the Gfarm system.
 Please use GNU make on Operating Systems other than Linux and NetBSD.
@@ -194,6 +199,12 @@ Options for configure:
   Globus library automatically tries to be searched.  If you need to
   specify a flavor, specify it by the --with-globus-flavor=flavor
   option.
+
+  --without-gfs_hook
+
+  disables to build a syscall-hook library such as gfs_hook.o and
+  libgfs_hook.so.  It is needed for AIX, on which syscall-hook library
+  is not supported.
 
   --prefix=directory
 
@@ -306,43 +317,65 @@ In the case to use PostgreSQL:
 
 ** Easy Installation Method
 
-1. Run the folloing command on your metadata server to see whether
+0. Prepare a filesystem metadata server node, (several) metadata cache
+   server nodes, and (many) filesystem nodes.
+
+1. Run the following command on the metadata server to see whether
   appropriate default values will be automatically configured or not:
 	# config-gfarm -t
 
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
 
-2. Run the 'config-gfarm' command without '-t' option, this actually
+2. Run the 'config-gfarm' command without '-t' option, which actually
   makes gfarm configured.
   For example, if you don't have to specify any option in the step 1.
   you can use the following command:
 	# config-gfarm
 
 3. The 'config-gfarm' command should generate /etc/gfarm.conf.
-  Please copy this file to /etc of all filesystem nodes.
+  Please copy this file to /etc of all metadata cache server nodes.
 
-4. Run the folloing command on every your filesystem node to see whether
+4. Run the following command on every metadata cache server node to
+  see whether appropriate default values will be automatically
+  configured or not:
+	# config-agent -t
+
+  If there are some default values which are not appropriate, you can
+  change the values by specifying displayed options.
+
+5. Run the 'config-agent' command without '-t' option, which actually
+  makes gfarm_agent configured.
+  For example, if you don't have to specify any option in the step 4.
+  you can use the following command:
+	# config-agent
+
+6. The 'config-agent' command should update /etc/gfarm.conf.
+  Please copy this file from an appropriate metadata cache server node
+  that would be accessed to /etc of filesystem nodes.
+
+7. Run the following command on every filesystem node to see whether
   appropriate default values will be automatically configured or not:
 	# config-gfsd -t /var/spool/gfarm
 
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
 
-5. Run the 'config-gfsd' command without '-t' option, this actually
+8. Run the 'config-gfsd' command without '-t' option, which actually
   makes gfsd configured.
-  For example, if you don't have to specify any option in the step 4.
+  For example, if you don't have to specify any option in the step 7.
   you can use the following command:
 	# config-gfsd /var/spool/gfarm
 
 That's all.
-The following describes what this config-gfarm command and config-gfsd
-command actually do.
+
+The following section describes what this config-gfarm command and
+config-gfsd command actually do.
 If you don't have to know detailed description, please skip to "setting
 of each user" section.
 
-If you'd like to see further usage of config-gfarm and config-gfsd
-command, please read INSTALL.RPM.en.
+If you'd like to see further usage of config-gfarm, config-agent and
+config-gfsd commands, please read INSTALL.RPM.en.
 
 ------------------------------------------------------------------------
 
@@ -354,7 +387,7 @@ filesystem metadata.
 The Gfarm supports OpenLDAP 2.1.X, and 2.2.X.  Other versions or other
 LDAP servers are not tested enough.  OpenLDAP 2.0.X is known to work,
 but OpenLDAP 2.1.X or later is strongly recommended, because 2.0.X
-cannot distinguish upper case letters and lower case latters.
+cannot distinguish upper case letters and lower case letters.
 
 
  - gfarm.schema
@@ -593,9 +626,9 @@ Also, if you need some more parameters with regard to PostgreSQL, you
 may be able to use postgresql_conninfo parameter. For example, if you
 want to specify "require" as SSL mode, and 30 seconds for connection
 timeout, you can use the following setting:
------------------------------- ここから ------------------------------
+----------------------------- BEGIN HERE -----------------------------
 postgresql_conninfo "sslmode=require connect_timeout=30"
------------------------------- ここまで ------------------------------
+-------------------------------- END --------------------------------
 Please read the following PQconnectdb() function manual page in libpq
 library of PostgreSQL for detail parameters that you can specify in
 the postgresql_conninfo directive:
@@ -691,7 +724,7 @@ In the case to use PostgreSQL:
 ----------------------------- BEGIN HERE -----------------------------
 spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
-ostgresql_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
 postgresql_serverport 5432
 postgresql_dbname gfarm
 postgresql_user gfarm

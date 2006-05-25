@@ -9,14 +9,22 @@ file system by RPM binary packages.
 About Gfarm file system
 =======================
 
-Gfarm file system is a virtual file system (cluster/Grid file system)
-consisting of a metadata server and many file system nodes.  It is a
-network shared file system like NFS or AFS in the user's view; and
-besides, it provides scalable I/O performance.
+Gfarm file system is a distributed file system consisting of local
+storage of commodity PCs.  Many PCs in local area network, compute
+nodes in a single cluster, multiple clusters in wide area compose a
+large-scale, high-performance shared network file system.
+
+It solves performance and reliability problems in NFS and AFS by
+multiple file replicas.  It not only prevents performance degradation
+due to access concentration, but also supports fault tolerance and
+disaster recovery.
 
 Unique feature of Gfarm is that each file system node is also a client
 to the Gfarm file system.  Distributed access by file system nodes
 realizes super-scalable I/O performance.
+
+To introduce Gfarm file system, a metadata server, metadata cache
+servers, and file system nodes need to be configured.
 
 Configuration of Gfarm metadata server
 ======================================
@@ -79,7 +87,7 @@ You can modify any default parameter by the option shown in [ ].  For
 example, to change the port for slapd because there is another LDAP
 server running, you can change the port by the -p option.
 
-	# config-gfarm -t -p 10389
+	# config-gfarm -t -p 10602
 
 'prefix' is used to configure several Gfarm file systems or to
 configure it in user privilege. It makes all configuration files
@@ -95,7 +103,7 @@ Note: If you are using an openldap server version 2.0 series or
 When you confirm the parameter, run 'config-gfarm' without the -t
 option.
 
-	# config-gfarm -p 10389
+	# config-gfarm -p 10602
 
 config-gfarm set up the metadata directory that keeps file system
 metadata, creates a Gfarm configuration file %%SYSCONFDIR%%/gfarm.conf, and
@@ -110,6 +118,53 @@ directory and/or a configuration file.
 Created %%SYSCONFDIR%%/gfarm.conf assumes security in the cluster or LAN
 environment.  For further information, refer to the man page of
 gfarm.conf.
+
+Configuration of Gfarm metadata cache server
+============================================
+
+Gfarm metadata cache server serves a proxy server of the Gfarm
+metadata server, which caches metadata to prevent access concentration
+of metadata, and to access metadata efficiently in wide area.  It is
+possible to set up multiple Gfarm metadata cache servers if needed.
+
+o Installation by Gfarm RPM binary packages
+
+Install RPM packages for Gfarm metadata cache server.
+
+	# rpm -Uvh gfarm-gsi-agent-X.X.X-X.ARCH.rpm \
+		   gfarm-gsi-libs-X.X.X-X.ARCH.rpm
+
+o Configuration of metadata cache server
+
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server that is created by
+'config-gfarm' as described in the previous section.  For example,
+when the metadata server is 'metadb.example.com', you can copy it from
+the server using scp.
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+Note: The location of the Gfarm configuration file can be specified by
+      'prefix' of config-gfsd as described below.
+
+Run 'config-agent' to configure the metadata cache server.  At first,
+make sure the default setting with the -t option.  With the -t option,
+nothing is really executed except displaying the setting for
+configuration.
+
+	# config-agent -t
+	prefix [--prefix]: 
+	hostname     [-h]: agent.example.com
+	port         [-p]: 603
+
+You can modify any default parameter by the option shown in [ ].
+
+When you confirm the parameter, run 'config-agent' without the -t
+option.
+
+	# config-agent
+
+config-agent updates the Gfarm configuration file to access the
+metadata cache server, and executes gfarm_agent.
 
 Configuration of Gfarm file system node (and client node)
 =========================================================
@@ -141,12 +196,13 @@ file system as a client node, install glibc-not-hidden package.
 
 o Configuration of file system node
 
-Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server that is created by
-'config-gfarm' as described in the previous section.  For example,
-when the metadata server is 'metadb.example.com', you can copy it from
-the server using scp.
+Copy %%SYSCONFDIR%%/gfarm.conf from an appropriate metadata cache
+server that is created by 'config-agent' as described in the previous
+section.  For example, when client programs on the file system node
+like to access a metadata cache server 'agent.example.com', you can
+copy it from the server using scp.
 
-	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+	# scp -p agent.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
 
 Note: The location of the Gfarm configuration file can be specified by
       'prefix' of config-gfsd as described below.
@@ -262,7 +318,8 @@ o LD_PRELOAD environment variable
 
 Existing dynamically linked executables on every client node can
 access the Gfarm file system by specifying LD_PRELOAD environment
-variable. Please look at README.hook.en for detail.
+variable.  The following setting is for Linux.  For any other
+operating system or for details, refer to README.hook.en.
 
 When the login shell is bash, add the following to .bashrc,
 
@@ -345,6 +402,10 @@ For details of the above Gfarm commands, refer to each man page.
 
 Access from existing applications
 =================================
+
+This section explains how to access Gfarm file system from existing
+applications in Linux.  For any other operating system or for details,
+refer to README.hook.en.
 
 To enable the setting of LD_PRELOAD in the section "Setting for each
 user", log in again, or, set the LD_PRELOAD environment variable.
