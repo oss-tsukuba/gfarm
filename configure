@@ -24106,7 +24106,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                                                                  ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gftool/config-gfarm/config-agent gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd util/gfront/gfront"
+                                                                                                              ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gftool/config-gfarm/config-agent gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd util/gfront/gfront"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -24643,8 +24643,6 @@ do
   "gfptool/util/gfregister" ) CONFIG_FILES="$CONFIG_FILES gfptool/util/gfregister" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
   "package/solaris/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
-  "package/redhat/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfmd" ;;
-  "package/redhat/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfsd" ;;
   "util/gfront/gfront" ) CONFIG_FILES="$CONFIG_FILES util/gfront/gfront" ;;
   "include/gfarm/gfarm_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/gfarm/gfarm_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
