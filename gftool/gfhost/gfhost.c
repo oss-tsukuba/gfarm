@@ -378,6 +378,143 @@ char *(*opt_resolv_addr)(const char *, int, struct gfarm_host_info *,
     struct sockaddr *, char **) = gfarm_host_info_address_get;
 
 /*
+ * extend the result of gfarm_auth_method_mnemonic()
+ */
+
+#define MNEMONIC_AUTH_FAIL	'x'
+#define MNEMONIC_NOT_TRIED	'-'
+
+char
+mnemonic(struct gfs_connection *gfs_server, struct gfs_client_load *load)
+{
+	if (gfs_server != NULL)
+		return (gfarm_auth_method_mnemonic(
+		    gfs_client_connection_auth_method(gfs_server)));
+	if (load != NULL)
+		return (MNEMONIC_AUTH_FAIL); /* c.f. LOADAVG_AVAIL() */
+	return (MNEMONIC_NOT_TRIED);
+}
+
+/*
+ * sort output
+ */
+
+struct output {
+	void *closure;
+	char *canonical_hostname;
+	struct sockaddr peer_addr;
+	struct gfs_client_load load;
+	char auth_mnemonic;
+	char *error;
+};
+
+#define OUTPUT_INITIAL_SPACE	130
+
+int output_number = 0, output_space;
+struct output *output_buffer = NULL;
+
+void (*output_callback)(struct output *);
+int output_record;
+int output_sort_reverse = 0;
+
+#define LOADAVG_AVAIL(o)	((o)->auth_mnemonic != MNEMONIC_NOT_TRIED)
+
+int
+output_cmp_by_name(const void *a, const void *b)
+{
+	const struct output *o1, *o2;
+
+	if (output_sort_reverse) {
+		o1 = b;
+		o2 = a;
+	} else {
+		o1 = a;
+		o2 = b;
+	}
+	return (strcmp(o1->canonical_hostname, o2->canonical_hostname));
+}
+
+int
+output_cmp_by_loadavg(const void *a, const void *b)
+{
+	const struct output *o1, *o2;
+
+	if (output_sort_reverse) {
+		o1 = b;
+		o2 = a;
+	} else {
+		o1 = a;
+		o2 = b;
+	}
+	if (!LOADAVG_AVAIL(o1) && !LOADAVG_AVAIL(o2))
+		return (0);
+	else if (!LOADAVG_AVAIL(o2)) /* treat NULL as infinity */
+		return (-1);
+	else if (!LOADAVG_AVAIL(o1))
+		return (1);
+	else if (o1->load.loadavg_1min < o2->load.loadavg_1min)
+		return (-1);
+	else if (o1->load.loadavg_1min > o2->load.loadavg_1min)
+		return (1);
+	else
+		return (0);
+}
+
+void
+output_sort(int (*cmp)(const void *, const void *))
+{
+	int i;
+
+	qsort(output_buffer, output_number, sizeof(*output_buffer), cmp);
+	for (i = 0; i < output_number; i++)
+		(*output_callback)(&output_buffer[i]);
+}
+
+void
+output_add(struct output *o)
+{
+	if (output_buffer == NULL || output_number >= output_space) {
+		if (output_buffer == NULL)
+			output_space = OUTPUT_INITIAL_SPACE;
+		else
+			output_space += output_space;
+		output_buffer = realloc(output_buffer,
+		    sizeof(*output_buffer) * output_space);
+		if (output_buffer == NULL) {
+			fprintf(stderr, "no memory to record %d hosts\n",
+			    output_number);
+			exit(EXIT_FAILURE);
+		}
+	}
+	output_buffer[output_number++] = *o;
+}
+
+void
+output_process(void *closure,
+	char *canonical_hostname, struct sockaddr *peer_addr,
+	struct gfs_client_load *load, struct gfs_connection *gfs_server,
+	char *error)
+{
+	struct output o;
+
+	o.closure = closure;
+	o.canonical_hostname = canonical_hostname;
+	if (peer_addr != NULL)
+		o.peer_addr = *peer_addr;
+	if (load != NULL)
+		o.load = *load;
+	o.auth_mnemonic = mnemonic(gfs_server, load);
+	o.error = error;
+
+	assert((load != NULL) == LOADAVG_AVAIL(&o));
+
+	if (output_record)
+		output_add(&o);
+	else /* i.e. don't sort */
+		(*output_callback)(&o);
+}
+
+/*
  * parallel access wrapper
  */
 
@@ -386,9 +523,6 @@ struct gfarm_paraccess {
 	int try_auth;
 
 	struct gfarm_access {
-		void (*callback)(void *, char *, struct sockaddr *,
-		    struct gfs_client_load *, struct gfs_connection *,
-		    char *);
 		void *closure;
 		char *canonical_hostname;
 		struct sockaddr peer_addr;
@@ -446,7 +580,7 @@ gfarm_paraccess_callback(struct gfarm_paraccess *pa, struct gfarm_access *a,
 	struct gfs_client_load *load, struct gfs_connection *gfs_server,
 	char *e)
 {
-	(*a->callback)(a->closure, a->canonical_hostname, &a->peer_addr,
+	output_process(a->closure, a->canonical_hostname, &a->peer_addr,
 	    load, gfs_server, e);
 
 	/* bring this back to the free slot list */
@@ -510,11 +644,7 @@ gfarm_paraccess_connect_request(void *closure)
 
 char *
 gfarm_paraccess_request(struct gfarm_paraccess *pa,
-	void (*callback)(void *, char *, struct sockaddr *,
-	    struct gfs_client_load *, struct gfs_connection *,
-	    char *),
-	void *closure,
-	char *canonical_hostname, struct sockaddr *peer_addr)
+	void *closure, char *canonical_hostname, struct sockaddr *peer_addr)
 {
 	int rv;
 	char *e;
@@ -539,7 +669,6 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 	pa->free_list = a->next;
 	--pa->nfree;
 
-	a->callback = callback;
 	a->closure = closure;
 	a->canonical_hostname = canonical_hostname;
 	a->peer_addr = *peer_addr;
@@ -584,45 +713,33 @@ int opt_udp_only = 0;
 
 #define round_loadavg(l) ((l) < 0.0 ? 0.0 : (l) > 9.99 ? 9.99 : (l))
 
-#define MNEMONIC_AUTH_FAIL	'x'
-#define MNEMONIC_NOT_TRIED	'-'
-
 void
-print_loadavg_authinfo(struct gfs_client_load *load,
-	struct gfs_connection *gfs_server, char *error)
+print_loadavg_authinfo(struct output *o)
 {
-	if (load != NULL)
+	if (LOADAVG_AVAIL(o))
 		printf("%4.2f/%4.2f/%4.2f ",
-		    round_loadavg(load->loadavg_1min),
-		    round_loadavg(load->loadavg_5min),
-		    round_loadavg(load->loadavg_15min));
-	else if (error == GFARM_ERR_CONNECTION_REFUSED) /* machine is up */
+		    round_loadavg(o->load.loadavg_1min),
+		    round_loadavg(o->load.loadavg_5min),
+		    round_loadavg(o->load.loadavg_15min));
+	else if (o->error == GFARM_ERR_CONNECTION_REFUSED) /* machine is up */
 		printf("-.--/-.--/-.-- ");
 	else
 		printf("x.xx/x.xx/x.xx ");
-	if (!opt_udp_only) {
-		printf("%c ",
-		    gfs_server != NULL ?
-		    gfarm_auth_method_mnemonic(
-		    gfs_client_connection_auth_method(gfs_server)) :
-		    load == NULL ? MNEMONIC_NOT_TRIED : MNEMONIC_AUTH_FAIL);
-	}
+	if (!opt_udp_only)
+		printf("%c ", o->auth_mnemonic);
 }
 
 void
-callback_gfsd_info(void *closure,
-	char *canonical_hostname, struct sockaddr *peer_addr,
-	struct gfs_client_load *load, struct gfs_connection *gfs_server,
-	char *error)
+callback_gfsd_info(struct output *o)
 {
-	char *if_hostname = closure;
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)peer_addr;
+	char *if_hostname = o->closure;
+	struct sockaddr_in *addr_in = (struct sockaddr_in *)&o->peer_addr;
 
-	print_loadavg_authinfo(load, gfs_server, error);
+	print_loadavg_authinfo(o);
 	printf("%s(%s)\n", if_hostname, inet_ntoa(addr_in->sin_addr));
-	if (opt_verbose && error != NULL)
-		fprintf(stderr, "%s: %s\n", if_hostname, error);
-	free(canonical_hostname);
+	if (opt_verbose && o->error != NULL)
+		fprintf(stderr, "%s: %s\n", if_hostname, o->error);
+	free(o->canonical_hostname);
 	free(if_hostname);
 }
 
@@ -653,29 +770,8 @@ request_gfsd_info(struct gfarm_host_info *info,
 			free(canonical_hostname);
 		return (e);
 	}
-	return (gfarm_paraccess_request(pa, callback_gfsd_info, if_hostname,
-	    canonical_hostname, &addr));
-}
-
-/*
- * This function is a special case to avoid Meta DB access,
- * and only called if opt_use_metadb == 0.
- */
-char *
-list_gfsd_info(int nhosts, char **hosts,
-	struct gfarm_paraccess *pa)
-{
-	char *e, *e_save = NULL;
-	int i;
-	struct gfarm_host_info host;
-
-	for (i = 0; i < nhosts; i++) {
-		host.hostname = hosts[i]; /* host_info is faked */
-		e = request_gfsd_info(&host, pa);
-		if (e_save == NULL)
-			e_save = e;
-	}
-	return (e_save);
+	return (gfarm_paraccess_request(pa,
+	    if_hostname, canonical_hostname, &addr));
 }
 
 struct long_format_parameter {
@@ -684,21 +780,20 @@ struct long_format_parameter {
 };
 
 void
-callback_long_format(void *closure,
-	char *canonical_hostname, struct sockaddr *peer_addr,
-	struct gfs_client_load *load, struct gfs_connection *gfs_server,
-	char *error)
+callback_long_format(struct output *o)
 {
-	struct long_format_parameter *param = closure;
+	struct long_format_parameter *param = o->closure;
 	char *if_hostname = param->if_hostname;
 	struct gfarm_host_info *info = &param->info;
 	/* sizeof(struct sockaddr_in) == sizeof(struct sockaddr) */
-	struct sockaddr_in *addr_in = (struct sockaddr_in *)peer_addr;
+	struct sockaddr_in *addr_in = (struct sockaddr_in *)&o->peer_addr;
 	int i, print_ifaddr = if_hostname != NULL;
 
-	print_loadavg_authinfo(load, gfs_server, error);
-	printf("%s %d %s", info->architecture, info->ncpu, canonical_hostname);
-	if (print_ifaddr && strcasecmp(canonical_hostname, if_hostname) == 0) {
+	print_loadavg_authinfo(o);
+	printf("%s %d %s",
+	    info->architecture, info->ncpu, o->canonical_hostname);
+	if (print_ifaddr &&
+	    strcasecmp(o->canonical_hostname, if_hostname) == 0) {
 		print_ifaddr = 0;
 		printf("(%s)", inet_ntoa(addr_in->sin_addr));
 	}
@@ -714,8 +809,8 @@ callback_long_format(void *closure,
 		printf(" [%s(%s)]", if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	putchar('\n');
-	if (opt_verbose && error != NULL)
-		fprintf(stderr, "%s: %s\n", canonical_hostname, error);
+	if (opt_verbose && o->error != NULL)
+		fprintf(stderr, "%s: %s\n", o->canonical_hostname, o->error);
 	gfarm_host_info_free(info);
 	if (if_hostname != NULL)
 		free(if_hostname);
@@ -763,26 +858,21 @@ request_long_format(struct gfarm_host_info *host_info,
 	e = (*opt_resolv_addr)(info->hostname, gfarm_spool_server_port, info,
 	    &addr, &param->if_hostname);
 	if (e != NULL) {
-		callback_long_format(param, info->hostname, NULL,
-		    NULL, NULL, e);
+		output_process(param, info->hostname, NULL, NULL, NULL, e);
 		return (e);
 	}
 
-	return (gfarm_paraccess_request(pa, callback_long_format,
-	    param, info->hostname, &addr));
+	return (gfarm_paraccess_request(pa, param, info->hostname, &addr));
 }
 
 void
-callback_nodename(void *closure,
-	char *canonical_hostname, struct sockaddr *peer_addr,
-	struct gfs_client_load *load, struct gfs_connection *gfs_server,
-	char *error)
+callback_nodename(struct output *o)
 {
-	if (error == NULL)
-		puts(canonical_hostname);
+	if (o->error == NULL)
+		puts(o->canonical_hostname);
 	else if (opt_verbose)
-		fprintf(stderr, "%s: %s\n", canonical_hostname, error);
-	free(canonical_hostname);
+		fprintf(stderr, "%s: %s\n", o->canonical_hostname, o->error);
+	free(o->canonical_hostname);
 }
 
 char *
@@ -804,13 +894,11 @@ request_nodename(struct gfarm_host_info *host_info,
 	    canonical_hostname, gfarm_spool_server_port, host_info,
 	    &addr, NULL);
 	if (e != NULL) {
-		callback_nodename(NULL, canonical_hostname, NULL,
-		    NULL, NULL, e);
+		output_process(NULL, canonical_hostname, NULL, NULL, NULL, e);
 		return (e);
 	}
 
-	return (gfarm_paraccess_request(pa, callback_nodename,
-	    NULL, canonical_hostname, &addr));
+	return (gfarm_paraccess_request(pa, NULL, canonical_hostname, &addr));
 }
 
 char *
@@ -883,52 +971,80 @@ list(int nhosts, char **hosts,
 	return (e_save);
 }
 
-/* Well, this is really ad hoc manner to sort output... */
-int
-setup_sort(char *sort_arg)
+/*
+ * This function is a special case to avoid Meta DB access,
+ * and only called if opt_use_metadb == 0.
+ */
+char *
+list_without_metadb(int nhosts, char **hosts,
+	char *(*request_op)(struct gfarm_host_info *,
+	    struct gfarm_paraccess *),
+	struct gfarm_paraccess *pa)
 {
-	int pid, fds[2];
+	char *e, *e_save = NULL;
+	int i;
+	struct gfarm_host_info host;
 
-	if (pipe(fds) == -1)
-		return (-1);
-	pid = fork();
-	switch (pid) {
-	case -1: /* error */
-		close(fds[0]);
-		close(fds[1]);
-		return (-1);
-	case 0: /* child */
-		close(fds[1]);
-		dup2(fds[0], 0);
-		close(fds[0]);
-		execlp("sort", "sort", sort_arg, NULL);
-		exit(1);
-	default: /* parent */
-		close(fds[0]);
-		dup2(fds[1], 1);
-		close(fds[1]);
-		return (pid);
+	for (i = 0; i < nhosts; i++) {
+		host.hostname = hosts[i]; /* host_info is faked */
+		/*
+		 * Because request_op is always request_gfsd_info for now,
+		 * the following fields aren't actually used.
+		 */
+		host.nhostaliases = 0;
+		host.hostaliases = NULL;
+		host.architecture = NULL;
+		host.ncpu = 0;
+
+		e = (*request_op)(&host, pa);
+		if (e_save == NULL)
+			e_save = e;
 	}
+	return (e_save);
 }
 
 char *
-wait_sort(int pid)
+paraccess_list(int opt_concurrency, int opt_udp_only,
+	char *opt_architecture, char *opt_domainname,
+	int opt_plain_order, int opt_sort_by_loadavg,
+	int opt_use_metadb, int nhosts, char **hosts,
+	char *(*request_op)(struct gfarm_host_info *,
+	    struct gfarm_paraccess *),
+	void (*callback_op)(struct output *))
 {
-	char *e;
-	int status;
+	char *e, *e_save;
+	struct gfarm_paraccess *pa;
 
-	fclose(stdout);
-	if (waitpid(pid, &status, 0) == -1)
-		e = gfarm_errno_to_error(errno);
-	else if (WIFSIGNALED(status))
-		e = "killed by signal";
-	else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-		e = "failed to invoke";
+	if (opt_plain_order) /* i.e. don't sort */
+		output_record = 0;
 	else
-		e = NULL;
-	if (e != NULL)
-		fprintf(stderr, "%s: sort command: %s\n", program_name, e);
-	return (e);
+		output_record = 1;
+
+	output_callback = callback_op;
+
+	e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
+	}
+
+	if (nhosts == 0) {
+		e_save = list_all(opt_architecture, opt_domainname,
+			request_op, pa);
+	} else if (opt_use_metadb) {
+		e_save = list(nhosts, hosts, request_op, pa);
+	} else {
+		e_save = list_without_metadb(nhosts, hosts, request_op, pa);
+	}
+	e = gfarm_paraccess_free(pa);
+	if (e_save == NULL)
+		e_save = e;
+
+	if (!opt_plain_order)
+		output_sort(opt_sort_by_loadavg ? output_cmp_by_loadavg :
+		    output_cmp_by_name);
+
+	return (e_save);
 }
 
 void
@@ -1012,14 +1128,9 @@ main(int argc, char **argv)
 	char *opt_domainname = NULL;
 	long opt_ncpu = 0;
 	int opt_plain_order = 0; /* i.e. do not sort */
-	int opt_sort_reverse = 0;
 	int opt_sort_by_loadavg = 0;
-	int i, c, sort_pid, opt_use_metadb = 1;
-	struct gfarm_paraccess *pa;
+	int i, c, opt_use_metadb = 1;
 
-#ifdef __GNUC__ /* shut up "warning: `...' might be used uninitialized" */
-	sort_pid = 0;
-#endif
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	while ((c = getopt(argc, argv, "AD:HLMRUa:cdij:lmn:prv?")) != -1) {
@@ -1080,7 +1191,7 @@ main(int argc, char **argv)
 			opt_plain_order = 1;
 			break;
 		case 'r':
-			opt_sort_reverse = 1;
+			output_sort_reverse = 1;
 			break;
 		case 'U':
 			opt_udp_only = 1;
@@ -1198,118 +1309,25 @@ main(int argc, char **argv)
 		e_save = register_db();
 		break;
 	case OP_LIST_GFSD_INFO:
-		if (!opt_plain_order) {
-			if (opt_sort_by_loadavg) {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+0nr");
-				} else {
-					sort_pid = setup_sort("+0n");
-				}
-			} else if (opt_udp_only) {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+1r");
-				} else {
-					sort_pid = setup_sort("+1");
-				}
-			} else {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+2r");
-				} else {
-					sort_pid = setup_sort("+2");
-				}
-			}
-		}
-		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
-		if (argc == 0) {
-			e_save = list_all(opt_architecture, opt_domainname, 
-				request_gfsd_info, pa);
-		} else if (opt_use_metadb) {
-			e_save = list(argc, argv, request_gfsd_info, pa);
-		} else {
-			e_save = list_gfsd_info(argc, argv, pa);
-		}
-		e = gfarm_paraccess_free(pa);
-		if (e_save == NULL)
-			e_save = e;
-		if (!opt_plain_order && sort_pid != -1) {
-			e = wait_sort(sort_pid);
-			if (e_save == NULL)
-				e_save = e;
-		}
+		e = paraccess_list(opt_concurrency, opt_udp_only,
+		    opt_architecture, opt_domainname,
+		    opt_plain_order, opt_sort_by_loadavg,
+		    opt_use_metadb, argc, argv,
+		    request_gfsd_info, callback_gfsd_info);
 		break;
 	case OP_NODENAME:
-		if (!opt_plain_order) {
-			if (opt_sort_reverse) {
-				sort_pid = setup_sort("+0r");
-			} else {
-				sort_pid = setup_sort("+0");
-			}
-		}
-		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
-		if (argc == 0) {
-			e_save = list_all(opt_architecture, opt_domainname,
-				request_nodename, pa);
-		} else {
-			e_save = list(argc, argv, request_nodename, pa);
-		}
-		e = gfarm_paraccess_free(pa);
-		if (e_save == NULL)
-			e_save = e;
-		if (!opt_plain_order && sort_pid != -1) {
-			e = wait_sort(sort_pid);
-			if (e_save == NULL)
-				e_save = e;
-		}
+		e = paraccess_list(opt_concurrency, opt_udp_only,
+		    opt_architecture, opt_domainname,
+		    opt_plain_order, opt_sort_by_loadavg,
+		    opt_use_metadb, argc, argv,
+		    request_nodename, callback_nodename);
 		break;
 	case OP_LIST_LONG:
-		if (!opt_plain_order) {
-			if (opt_sort_by_loadavg) {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+0nr");
-				} else {
-					sort_pid = setup_sort("+0n");
-				}
-			} else if (opt_udp_only) {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+3r");
-				} else {
-					sort_pid = setup_sort("+3");
-				}
-			} else {
-				if (opt_sort_reverse) {
-					sort_pid = setup_sort("+4r");
-				} else {
-					sort_pid = setup_sort("+4");
-				}
-			}
-		}
-		e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
-		if (argc == 0) {
-			e_save = list_all(opt_architecture, opt_domainname,
-				request_long_format, pa);
-		} else {
-			e_save = list(argc, argv, request_long_format, pa);
-		}
-		e = gfarm_paraccess_free(pa);
-		if (e_save == NULL)
-			e_save = e;
-		if (!opt_plain_order && sort_pid != -1) {
-			e = wait_sort(sort_pid);
-			if (e_save == NULL)
-				e_save = e;
-		}
+		e = paraccess_list(opt_concurrency, opt_udp_only,
+		    opt_architecture, opt_domainname,
+		    opt_plain_order, opt_sort_by_loadavg,
+		    opt_use_metadb, argc, argv,
+		    request_long_format, callback_long_format);
 		break;
 	case OP_DUMP_METADB:
 		if (argc == 0) {
@@ -1320,12 +1338,10 @@ main(int argc, char **argv)
 		}
 		break;
 	}
-	if (opt_use_metadb) {
-		e = gfarm_terminate();
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", program_name, e);
-			exit(1);
-		}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", program_name, e);
+		exit(1);
 	}
 	exit(e_save == NULL ? 0 : 1);
 }
