@@ -225,16 +225,23 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	} else {
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = gfarm_metadb_verify_username(global_username);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("(%s@%s) authorize_sharedsecret: "
+			    "the global username isn't registered in gfmd: %s",
+			    global_username, hostname, gfarm_error_string(e));
 	}
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfarm_global_to_local_username(global_username,
 		    &local_username);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("(%s@%s) authorize_sharedsecret: "
+			    "cannot map global username into local username: "
+			    "%s",
+			    global_username, hostname, gfarm_error_string(e));
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		local_username = NULL;
 		pwd = NULL;
-		gflog_error("(%s@%s) authorize_sharedsecret: "
-		    "cannot map global username into local username",
-		    global_username, hostname);
 	} else {
 		pwd = getpwnam(local_username);
 		if (pwd == NULL)

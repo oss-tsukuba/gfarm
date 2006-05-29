@@ -13,6 +13,8 @@ sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
 globus_location="@globus_location@"
 
+spool_owner=_gfarmfs
+
 PROGNAME=`basename $0`
 
 #
@@ -50,7 +52,7 @@ fi
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
-	echo >&2 "	[-a arch] [-h hostname] [-n ncpu] spool_directory"
+	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] spool_directory"
 	exit 1
 }
 
@@ -76,6 +78,7 @@ display_params()
 	echo "prefix [--prefix]: $CONFIG_PREFIX"
 	echo "hostname     [-h]: $GFSD_HOSTNAME"
 	echo "architecture [-a]: $ARCH"
+	echo "port         [-p]: $GFSD_PORT"
 	echo "ncpu         [-n]: $NCPU"
 	echo "spool directory  : $SPOOL_DIRECTORY"
 
@@ -92,6 +95,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -a) shift; [ $# -ge 1 ] || usage
 		ARCH=$1
+		;;
+	  -p) shift; [ $# -ge 1 ] || usage
+		GFSD_PORT=$1
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		GFSD_HOSTNAME=$1
@@ -151,12 +157,14 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
 [ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname, please specify it by -h option'
+
+: ${GFSD_PORT:="600"}
 
 : ${NCPU:=`number_of_cpus`}
 [ X"$NCPU" = X ] && ABORT 'cannot determine number of CPUs'
@@ -246,15 +254,18 @@ create_directory $RC_DIR $RUN_DIR
 # spool directory
 # delete_file_or_directory $SPOOL_DIRECTORY # XXX keep this
 create_directory $SPOOL_DIRECTORY
-[ X"`ls -ld $SPOOL_DIRECTORY | awk '{print $1}'`" = X"drwxrwxrwt" ] ||
-	chmod 1777 $SPOOL_DIRECTORY ||
-	ABORT "chmod 1777 $SPOOL_DIRECTORY, failed"
+[ X"`ls -ld $SPOOL_DIRECTORY | awk '{print $1}'`" = X"drwx------" ] ||
+	chmod 0700 $SPOOL_DIRECTORY ||
+	ABORT "chmod 0777 $SPOOL_DIRECTORY, failed"
+chown _gfarmfs $SPOOL_DIRECTORY ||
+	ABORT "chown _gfarmfs $SPOOL_DIRECTORY, failed. User '_gfarmfs' is needed"
 
 mkcnf_gfsd_sysdep
 
 # create configuration files
 grep -v "^spool " $GFARM_CONF > $GFARM_CONF.tmp &&
 echo spool $SPOOL_DIRECTORY >> $GFARM_CONF.tmp &&
+echo spool_server_port $GFSD_PORT >> $GFARM_CONF.tmp &&
 mv $GFARM_CONF.tmp $GFARM_CONF &&
 echo $GFARM_CONF: updated ||
 ABORT "$GFARM_CONF: cannot append spool statement"
@@ -274,10 +285,17 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 	GFARM_CONFIG_FILE="$GFARM_CONF"
 	export GFARM_CONFIG_FILE
 fi
+
+echo "$PROGNAME success"
+echo Please invoke the following command by admin_user:
+echo "$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME
+exit 0
+
+# XXX not yet in gfarm v2
 if $FORCE; then
 	"$prefix/bin/gfhost" -d $GFSD_HOSTNAME > /dev/null 2>&1
 fi
-"$prefix/bin/gfhost" -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
+"$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME &&
 echo gfhost $GFSD_HOSTNAME: succeeded ||
 echo >&2 "gfhost $GFSD_HOSTNAME: failed"
 

@@ -16,6 +16,8 @@
 #include "subr.h"
 #include "peer.h"
 
+int debug_mode = 0;
+
 static pthread_mutex_t giant_mutex;
 
 void
@@ -45,6 +47,34 @@ giant_unlock(void)
 		gflog_fatal("giant mutex unlock: %s", strerror(err));
 }
 
+gfarm_error_t
+create_detached_thread(void *(*thread_main)(void *), void *arg)
+{
+	int err;
+	pthread_t thread_id;
+	static int initialized = 0;
+	static pthread_attr_t attr;
+
+	/*
+	 * currently, this function is only called from the main thread,
+	 * so, it's safe to use mere static variable instead of pthread_once().
+	 */
+	if (!initialized) {
+		err = pthread_attr_init(&attr);
+		if (err != 0)
+			gflog_fatal("pthread_attr_init(): %s", strerror(err));
+		err = pthread_attr_setdetachstate(&attr,
+		    PTHREAD_CREATE_DETACHED);
+		if (err != 0)
+			gflog_fatal("PTHREAD_CREATE_DETACHED: %s",
+			    strerror(err));
+		initialized = 1;
+	}
+
+	err = pthread_create(&thread_id, &attr, thread_main, arg);
+	return (err == 0 ? GFARM_ERR_NO_ERROR : gfarm_errno_to_error(err));
+}
+
 int
 accmode_to_op(gfarm_uint32_t flag)
 {
@@ -63,12 +93,16 @@ accmode_to_op(gfarm_uint32_t flag)
 }
 
 gfarm_error_t
-gfm_server_get_request(struct peer *peer, char *diag, const char *format, ...)
+gfm_server_get_request(struct peer *peer, const char *diag,
+	const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
 	int eof;
 	struct gfp_xdr *client = peer_get_conn(peer);
+
+	if (debug_mode)
+		gflog_info("<%s> start receiving", diag);
 
 	va_start(ap, format);
 	e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
@@ -91,12 +125,15 @@ gfm_server_get_request(struct peer *peer, char *diag, const char *format, ...)
 }
 
 gfarm_error_t
-gfm_server_put_reply(struct peer *peer, char *diag,
+gfm_server_put_reply(struct peer *peer, const char *diag,
 	gfarm_error_t ecode, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
+
+	if (debug_mode)
+		gflog_info("<%s> sending reply: %d", diag, (int)ecode);
 
 	va_start(ap, format);
 	e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);

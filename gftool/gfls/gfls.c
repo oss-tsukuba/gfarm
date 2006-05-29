@@ -135,12 +135,13 @@ ls_sort(int n, struct ls_entry *ls)
 	qsort(ls, n, sizeof(*ls), compare);
 }
 
-char *
+gfarm_error_t
 do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 	struct ls_entry *ls)
 {
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i, n = *np, m, prefix_len, space;
-	char *namep, buffer[PATH_MAX * 2 + 1], *e, *e_save = NULL;
+	char *namep, buffer[PATH_MAX * 2 + 1];
 
 	prefix_len = strlen(prefix);
 	if (prefix_len > sizeof(buffer) - 1)
@@ -158,9 +159,10 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			namep[space] = '\0';
 		}
 		e = gfs_stat(buffer, &stats[i]);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", buffer, e);
-			if (e_save != NULL)
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", buffer,
+			    gfarm_error_string(e));
+			if (e_save != GFARM_ERR_NO_ERROR)
 				e_save = e;
 			continue;
 		}
@@ -245,18 +247,18 @@ put_stat(struct gfs_stat *st)
 	put_perm(st->st_mode);
 	putchar(' ');
 	printf("%-8s %-8s ", st->st_user, st->st_group);
-	printf("%10" PR_FILE_OFFSET " ", st->st_size);
+	printf("%10" GFARM_PRId64 " ", st->st_size);
 	put_time(&st->st_mtimespec);
 	putchar(' ');
 }
 
-char *
+gfarm_error_t
 list_files(char *prefix, int n, char **files, int *need_newline)
 {
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i;
 	struct ls_entry *ls = malloc(sizeof(struct ls_entry) * n);
 	struct gfs_stat *stats = NULL;
-	char *e = NULL;
 
 	if (ls == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -323,7 +325,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 			putchar('\n');
 		}
 	}
-	if (n > 0 || e != NULL)
+	if (n > 0 || e != GFARM_ERR_NO_ERROR)
 		*need_newline = 1;
 	if (stats != NULL) {
 		for (i = 0; i < n; i++)
@@ -334,12 +336,13 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 	return (e);
 }
 
-char *list_dirs(char *, int, char **, int *);
+gfarm_error_t list_dirs(char *, int, char **, int *);
 
-char *
+gfarm_error_t
 list_dir(char *prefix, char *dirname, int *need_newline)
 {
-	char *e, *s, *path, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	char *s, *path;
 	gfarm_stringlist names;
 	gfs_glob_t types;
 	GFS_Dir dir;
@@ -351,27 +354,30 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(path, "%s%s", prefix, dirname);
 	e = gfarm_stringlist_init(&names);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		free(path);
 		return (e);
 	}
 	e = gfs_glob_init(&types);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		gfarm_stringlist_free(&names);
 		free(path);
 		return (e);
 	}
 	e = gfs_opendir(path, &dir);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", path, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", path, gfarm_error_string(e));
 		gfs_glob_free(&types);
 		gfarm_stringlist_free(&names);
 		free(path);
 		return (e);
 	}
-	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+	while ((e = gfs_readdir(dir, &entry)) == GFARM_ERR_NO_ERROR &&
+	    entry != NULL) {
 		if (!option_all && entry->d_name[0] == '.')
 			continue;
 		s = strdup(entry->d_name);
@@ -382,18 +388,19 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		gfarm_stringlist_add(&names, s);
 		gfs_glob_add(&types, entry->d_type);
 	}
-	if (e != NULL) {
-		fprintf(stderr, "%s%s: %s\n", prefix, dirname, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s%s: %s\n", prefix, dirname,
+		    gfarm_error_string(e));
 		e_save = e;
 	}
 	gfs_closedir(dir);
-	if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(path)) != '\0') {
+	if (*gfarm_path_dir_skip(path) != '\0') {
 		path[len] = '/';
 		path[len + 1] = '\0';
 	}
 	e = list_files(path, gfarm_stringlist_length(&names),
 	    GFARM_STRINGLIST_STRARRAY(names), need_newline);
-	if (e_save == NULL)
+	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
 	if (option_recursive) {
 		int i;
@@ -407,7 +414,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 				continue;
 			if (gfs_glob_elem(&types, i) == GFS_DT_DIR) {
 				e = list_dirs(path, 1, &s, need_newline);
-				if (e_save == NULL)
+				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = e;
 			}
 		}
@@ -432,10 +439,10 @@ string_sort(int n, char **v)
 	qsort(v, n, sizeof(*v), string_compare);
 }
 
-char *
+gfarm_error_t
 list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i;
 
 	string_sort(n, dirs);
@@ -447,16 +454,16 @@ list_dirs(char *prefix, int n, char **dirs, int *need_newline)
 		printf("%s%s:\n", prefix, dirs[i]);
 		e = list_dir(prefix, dirs[i], need_newline);
 		*need_newline = 1;
-		if (e_save == NULL)
+		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	return (e_save);
 }
 
-char *
+gfarm_error_t
 list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	gfarm_stringlist dirs, files;
 	int i, nfiles, ndirs;
 
@@ -466,13 +473,15 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 	}
 
 	e = gfarm_stringlist_init(&dirs);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 	e = gfarm_stringlist_init(&files);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		gfarm_stringlist_free(&dirs);
 		return (e);
 	}
@@ -491,7 +500,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 		e = list_files("",
 		    nfiles, GFARM_STRINGLIST_STRARRAY(files), need_newline);
 		/* warning is already printed in list_files() */
-		if (e_save == NULL)
+		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	gfarm_stringlist_free(&files);
@@ -505,7 +514,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 		    need_newline);
 		/* warning is already printed in list_dirs() */
 	}
-	if (e_save == NULL)
+	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
 	gfarm_stringlist_free(&dirs);
 
@@ -522,7 +531,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	char *e;
+	gfarm_error_t e;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
@@ -530,8 +539,9 @@ main(int argc, char **argv)
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 
@@ -575,17 +585,19 @@ main(int argc, char **argv)
 	argv += optind;
 
 	e = gfarm_stringlist_init(&paths);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 	e = gfs_glob_init(&types);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
-		gfarm_stringlist_add(&paths, strdup("gfarm:."));
+		gfarm_stringlist_add(&paths, strdup("."));
 		gfs_glob_add(&types, GFS_DT_DIR);
 	} else {
 		for (i = 0; i < argc; i++) {
@@ -610,8 +622,9 @@ main(int argc, char **argv)
 				    last);
 
 				e = gfs_stat(path, &s);
-				if (e != NULL) {
-					fprintf(stderr, "%s: %s\n", path, e);
+				if (e != GFARM_ERR_NO_ERROR) {
+					fprintf(stderr, "%s: %s\n", path,
+					    gfarm_error_string(e));
 					exit_code = EXIT_FAILURE;
 					/* remove last entry */
 					/* XXX: FIXME layering violation */
@@ -631,7 +644,7 @@ main(int argc, char **argv)
 		int need_newline = 0;
 
 #if 1
-		if (list(&paths, &types, &need_newline) != NULL) {
+		if (list(&paths, &types, &need_newline) != GFARM_ERR_NO_ERROR){
 			/* warning is already printed in list() */
 			exit_code = EXIT_FAILURE;
 		}

@@ -8,7 +8,7 @@ struct gfarm_eventqueue;
 struct gfs_connection;
 struct gfs_stat;
 enum gfarm_auth_method;
-struct gfs_client_connect_state;
+struct gfs_client_connection_acquire_state;
 
 void gfs_client_terminate(void);
 
@@ -16,6 +16,7 @@ int gfs_client_connection_fd(struct gfs_connection *);
 enum gfarm_auth_method gfs_client_connection_auth_method(
 	struct gfs_connection *);
 const char *gfs_client_hostname(struct gfs_connection *);
+gfarm_pid_t gfs_client_pid(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_acquire(const char *, int,
 	struct sockaddr *, struct gfs_connection **);
@@ -23,14 +24,13 @@ void gfs_client_connection_free(struct gfs_connection *);
 void gfs_client_connection_gc(void);
 int gfs_client_connection_is_local(struct gfs_connection *);
 
-#if 0 /* XXX FIXME - disable multiplexed version for now */
-gfarm_error_t gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
-	const char *, struct sockaddr *,
+gfarm_error_t gfs_client_connection_acquire_request_multiplexed(
+	struct gfarm_eventqueue *, const char *, int, struct sockaddr *,
 	void (*)(void *), void *,
-	struct gfs_client_connect_state **);
-gfarm_error_t gfs_client_connect_result_multiplexed(
-	struct gfs_client_connect_state *, struct gfs_connection **);
-#endif
+	struct gfs_client_connection_acquire_state **);
+gfarm_error_t gfs_client_connection_acquire_result_multiplexed(
+	struct gfs_client_connection_acquire_state *,
+	struct gfs_connection **);
 
 /* from client */
 
@@ -65,6 +65,20 @@ gfarm_error_t gfs_client_lock_info(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t, gfarm_off_t, gfarm_int32_t, gfarm_int32_t,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char**, gfarm_pid_t **);
 gfarm_error_t gfs_client_replica_add(struct gfs_connection *, gfarm_int32_t);
+gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
+	gfarm_int32_t *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+
+struct gfs_client_statfs_state;
+gfarm_error_t gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *,
+	struct gfs_connection *, char *, void (*)(void *), void *,
+	struct gfs_client_statfs_state **);
+gfarm_error_t gfs_client_statfs_result_multiplexed(
+	struct gfs_client_statfs_state *,
+	gfarm_int32_t *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 
 #define GFS_CLIENT_COMMAND_FLAG_STDIN_EOF	0x01
 #define GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND	0x02
@@ -88,3 +102,25 @@ gfarm_error_t gfs_client_command(struct gfs_connection *,
 gfarm_error_t gfs_client_fhstat(struct gfs_connection *, gfarm_ino_t,
 	struct gfs_stat *);
 gfarm_error_t gfs_client_fhremove(struct gfs_connection *, gfarm_ino_t);
+
+/*
+ * gfsd service on UDP port.
+ */
+
+extern int gfs_client_datagram_timeouts[]; /* milli seconds */
+extern int gfs_client_datagram_ntimeouts;
+
+struct gfs_client_load {
+	double loadavg_1min, loadavg_5min, loadavg_15min;
+};
+
+gfarm_error_t gfs_client_get_load_request(int, struct sockaddr *, int);
+gfarm_error_t gfs_client_get_load_result(int, struct sockaddr *, socklen_t *,
+	struct gfs_client_load *);
+
+struct gfs_client_get_load_state;
+gfarm_error_t gfs_client_get_load_request_multiplexed(
+	struct gfarm_eventqueue *, struct sockaddr *,
+	void (*)(void *), void *, struct gfs_client_get_load_state **);
+gfarm_error_t gfs_client_get_load_result_multiplexed(
+	struct gfs_client_get_load_state *, struct gfs_client_load *);

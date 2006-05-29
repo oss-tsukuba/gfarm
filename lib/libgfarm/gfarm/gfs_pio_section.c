@@ -27,6 +27,7 @@
 #include "gfs_proto.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "schedule.h"
 
 static gfarm_error_t
 gfs_pio_view_section_close(GFS_File gf)
@@ -264,11 +265,12 @@ finish:
 #endif /* not yet in gfarm v2 */
 
 static gfarm_error_t
-gfm_schedule_file(gfarm_int32_t fd, char **hostp, gfarm_int32_t *portp)
+gfm_schedule_file(gfarm_int32_t fd,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
-	char *host;
-	gfarm_int32_t port;
+	int nhosts;
+	struct gfarm_host_sched_info *infos;
 
 	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -296,18 +298,18 @@ gfm_schedule_file(gfarm_int32_t fd, char **hostp, gfarm_int32_t *portp)
 		gflog_warning("put_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_schedule_file_result(gfarm_metadb_server,
-	    &host, &port)) != GFARM_ERR_NO_ERROR)
+	    &nhosts, &infos)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("schedule_file result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));
-		free(host);
+		gfarm_host_sched_info_free(nhosts, infos);
 
 	} else {
-		*hostp = host;
-		*portp = port;
+		*nhostsp = nhosts;
+		*infosp = infos;
 	}
 	return (e);
 }
@@ -316,6 +318,8 @@ static gfarm_error_t
 schedule_and_open(GFS_File gf, gfarm_int32_t fd)
 {
 	gfarm_error_t e;
+	int nhosts;
+	struct gfarm_host_sched_info *infos;
 	char *host;
 	gfarm_int32_t port;
 	int is_local_host;
@@ -325,19 +329,37 @@ schedule_and_open(GFS_File gf, gfarm_int32_t fd)
 	/*
 	 * XXX FIXME: Or, call replicate_section_to_local(), if that's prefered
 	 */
-	e = gfm_schedule_file(gf->fd, &host, &port);
+	e = gfm_schedule_file(gf->fd, &nhosts, &infos);
+/*gflog_info("schedule_file: %s", gfarm_error_string(e));*/
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+/*gflog_info("schedule_file -> %d hosts", nhosts);*/
+	e = gfarm_schedule_select_host(nhosts, infos,
+	    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
+	gfarm_host_sched_info_free(nhosts, infos);
+/*gflog_info("select_host: %s",  gfarm_error_string(e));*/
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+/*gflog_info("host -> %s",  host);*/
 
 	if ((e = gfarm_host_address_get(host, port, &peer_addr, NULL))
 	    == GFARM_ERR_NO_ERROR &&
 	    (e = gfs_client_connection_acquire(host, port, &peer_addr,
 	    &gfs_server)) == GFARM_ERR_NO_ERROR) {
-		is_local_host = gfs_client_connection_is_local(gfs_server);
-		if (is_local_host)
-			e = gfs_pio_open_local_section(gf, gfs_server);
-		else
-			e = gfs_pio_open_remote_section(gf, gfs_server);
+{
+		if (gfs_client_pid(gfs_server) == 0)
+			e = gfarm_client_process_set(gfs_server);
+/*gflog_info("gfarm_client_process_set: %s",  gfarm_error_string(e));*/
+}
+		if (e == GFARM_ERR_NO_ERROR) {
+			is_local_host =
+			    gfs_client_connection_is_local(gfs_server);
+			if (is_local_host)
+				e = gfs_pio_open_local_section(gf, gfs_server);
+			else
+				e = gfs_pio_open_remote_section(gf,gfs_server);
+/*gflog_info("gfs_pio_open_section, local=%d: %s", is_local_host, gfarm_error_string(e));*/
+		}
 		if (e != GFARM_ERR_NO_ERROR)
 			gfs_client_connection_free(gfs_server);
 	}
@@ -362,10 +384,10 @@ gfs_pio_internal_set_view_section(GFS_File gf)
 	if (e == GFARM_ERR_NO_ERROR) {
 		vc = malloc(sizeof(*vc));
 		if (vc != NULL) {
+			gf->view_context = vc;
 			e = schedule_and_open(gf, gf->fd);
 			if (e == GFARM_ERR_NO_ERROR) {
 				gf->ops = &gfs_pio_view_section_ops;
-				gf->view_context = vc;
 				gf->p = gf->length = 0;
 				gf->io_offset = gf->offset = 0;
 

@@ -1,0 +1,16 @@
+locking hierarchy:
+	lower hierarchy should be locked earlier, unlocked later.
+	higher hierarchy should be locked later, unlocked earlier.
+	same hierarchy shouldn't be locked at once.
+
+	level	mutex
+	  1	giant_mutex
+	  2	peer_table_mutex
+	  2 	dbq.mutex
+
+	i.e.
+	locking order must be:
+		giant -> (dbq OR peer_table)
+	unlocking order must be:
+		(dbq OR peer_table) -> giant
+	dbq.mutex and peer_table_mutex shouldn't be locked at once.

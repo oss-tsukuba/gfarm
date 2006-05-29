@@ -2,7 +2,7 @@
 
 <refentry id='gfhost.1'>
 
-<refentryinfo><date>20 Aug 2003</date></refentryinfo>
+<refentryinfo><date>29 May 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -34,6 +34,7 @@
   <command>gfhost</command>
     <arg choice='plain'>-c</arg>
     <arg choice='plain'>-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice='plain'>-p<replaceable>ポート番号</replaceable></arg>
     <arg choice='opt'  >-n<replaceable>CPU数</replaceable></arg>
     <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>ホスト別名</replaceable></arg>
@@ -43,6 +44,7 @@
   <command>gfhost</command>
     <arg choice='plain'>-m</arg>
     <arg choice='opt'>-a<replaceable>アーキテクチャ</replaceable></arg>
+    <arg choice='opt'>-p<replaceable>ポート番号</replaceable></arg>
     <arg choice='opt'>-n<replaceable>CPU数</replaceable></arg>
     <arg choice='opt'>-A</arg>
     <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
@@ -76,10 +78,11 @@
     -M		<function> display hosts in MetaDB
     -m		<function> modify a host in MetaDB
     -n <number>	number of CPUs, for -c/-m
-    -p		display by plain order (don't sort), for (default)/-H/-l/-M
+    -p <port>	gfsd port number, for -c
     -R		<function> restore hosts to MetaDB
     -r		display by reverse order, for (default)/-H/-l/-M
     -U		UDP only, do not try authentication, for (default)/-H/-l
+    -u		display by plain order (don't sort), for (default)/-H/-l/-M
     -v		verbose, print error message, for (default)/-H/-l
 -->
 
@@ -130,7 +133,7 @@
   メタデータに登録されている全てのホストに関する表示を試みます。
   また、-a および -D オプションで表示するホストの種類を限定
   することもできます。
-  表示の順序は、ホスト名のアルファベット順ですが、-L, -p, -r オプションで
+  表示の順序は、ホスト名のアルファベット順ですが、-L, -r, -u オプションで
   順序を変更することができます。ただし、-M 機能
   <!-- XXX FIXME BEGIN --> と、機能を指定しなかった場合 <!-- FIXME END -->
   に関しては -L オプションは無効です。
@@ -158,6 +161,7 @@
       <para>
 	引数で指定したホストをメタデータへ登録します。
 	オプション -a で、そのホストのアーキテクチャを指定する必要があります。
+	同様にオプション -p で、そのホストのポート番号を指定する必要があります。
 	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
 	1 CPU だとみなします。
       </para>
@@ -396,7 +400,26 @@
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option></term>
+    <term><option>-p</option> <parameter>ポート番号</parameter></term>
+    <listitem>
+      <para>
+	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストの gfsd が用いるポート番号を指定します。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-r</option></term>
+    <listitem>
+      <para>
+	表示を整列している場合、表示の順序を逆にします。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-u</option></term>
     <listitem>
       <para>
 	-H, -l, -M および特に機能を指定しなかった場合に、表示する順序を
@@ -407,15 +430,6 @@
 	
 	-H, -l 機能の場合および特に機能を指定しなかった場合、
 	ホストに順に問い合わせを行い、返事の返ってきた順序で表示します。
-      </para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry>
-    <term><option>-r</option></term>
-    <listitem>
-      <para>
-	表示を整列している場合、表示の順序を逆にします。
       </para>
     </listitem>
   </varlistentry>

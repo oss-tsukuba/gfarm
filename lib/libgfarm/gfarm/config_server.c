@@ -8,6 +8,8 @@
 #include "gfutil.h"
 #include "liberror.h"
 #include "auth.h"
+#include "gfpath.h"
+#define GFARM_USE_STDIO
 #include "config.h"
 
 static void
@@ -26,20 +28,20 @@ gfarm_server_config_read(void)
 	gfarm_error_t e;
 	int lineno;
 	FILE *config;
-	char lineno_buffer[GFARM_INT64STRLEN + 1];
 
 	gfarm_init_user_map();
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
 		return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	}
-	e = gfarm_config_read_file(config, gfarm_config_file, &lineno);
+	e = gfarm_config_read_file(config, &lineno);
 	if (e != GFARM_ERR_NO_ERROR) {
-		sprintf(lineno_buffer, "%d", lineno);
-		gflog_error(gfarm_error_string(e), lineno_buffer);
+		gflog_error("%s: %d: %s",
+		    gfarm_config_file, lineno, gfarm_error_string(e));
 		return (e);
 	}
 
 	gfarm_config_set_default_ports();
+	gfarm_config_set_default_misc();
 
 	return (GFARM_ERR_NO_ERROR);
 }

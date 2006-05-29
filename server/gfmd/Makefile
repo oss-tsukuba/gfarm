@@ -8,17 +8,28 @@ include $(top_srcdir)/makes/var.mk
 include $(srcdir)/../Makefile.inc
 
 CFLAGS = $(pthread_includes) \
-	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS) $(pthread_libs)
+	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(metadb_client_includes) \
+	-DGFMD_CONFIG='"$(sysconfdir)/gfmd.conf"'
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(metadb_client_libs) \
+	$(LIBS) $(pthread_libs)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfmd
+
+LDAP_SRCS = db_ldap.c
+LDAP_OBJS = db_ldap.lo
+POSTGRESQL_SRCS = db_pgsql.c
+POSTGRESQL_OBJS = db_pgsql.lo
+
 SRCS =	gfmd.c \
 	subr.c id_table.c user.c group.c host.c peer.c process.c job.c \
-	dir.c inode.c fs.c metadb_if.c
+	dir.c inode.c fs.c metadb_if.c \
+	db_access.c db_common.c db_none.c $(ldap_srcs) $(postgresql_srcs)
 OBJS =	gfmd.o \
 	subr.o id_table.o user.o group.o host.o peer.o process.o job.o \
-	dir.o inode.o fs.o metadb_if.o
+	dir.o inode.o fs.o metadb_if.o \
+	db_access.o db_common.o db_none.o $(ldap_objs) $(postgresql_objs)
 
 all: $(PROGRAM)
 

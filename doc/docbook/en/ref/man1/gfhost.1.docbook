@@ -2,7 +2,7 @@
 
 <refentry id='gfhost.1'>
 
-<refentryinfo><date>20 Aug 2003</date></refentryinfo>
+<refentryinfo><date>29 May 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -34,6 +34,7 @@
   <command>gfhost</command>
     <arg choice='plain'>-c</arg>
     <arg choice='plain'>-a<replaceable>architecture</replaceable></arg>
+    <arg choice='plain'>-p<replaceable>port-number</replaceable></arg>
     <arg choice='opt'  >-n<replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
@@ -43,6 +44,7 @@
   <command>gfhost</command>
     <arg choice='plain'>-m</arg>
     <arg choice='opt'>-a<replaceable>architecture</replaceable></arg>
+    <arg choice='opt'>-p<replaceable>port-number</replaceable></arg>
     <arg choice='opt'>-n<replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='opt'>-A</arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
@@ -76,10 +78,10 @@
     -M		<function> display hosts in MetaDB
     -m		<function> modify a host in MetaDB
     -n <number>	number of CPUs, for -c/-m
-    -p		display by plain order (don't sort), for (default)/-H/-l/-M
     -R		<function> restore hosts to MetaDB
     -r		display by reverse order, for (default)/-H/-l/-M
     -U		UDP only, do not try authentication, for (default)/-H/-l
+    -u		display by plain order (don't sort), for (default)/-H/-l/-M
     -v		verbose, print error message, for (default)/-H/-l
 -->
 
@@ -136,7 +138,7 @@ the default function of <command>gfhost</command>.
   tried to be displayed, and you can limit type of hosts to display
   by -a or -D option.
   By default, hosts are displayed by alphabetical order, but you can
-  change this by -L, -p, and -r options. Although -L option is ignored
+  change this by -L, -r, and -u options. Although -L option is ignored
   in -M function <!-- XXX FIXME BEGIN --> and default function
   <!-- FIXME END -->.
 </para>
@@ -167,6 +169,8 @@ the default function of <command>gfhost</command>.
 	in the argument.
 	Option -a is mandatory in this function, this option specifies
 	the architecture of the host.
+	Option -p is mandatory in this function too, this option specifies
+	the port number of <command>gfsd</command> on the host.
 	Option -n may be used to specify number of CPU of the host,
 	and 1 CPU is assumed, if -n is omitted.
       </para>
@@ -420,7 +424,26 @@ the default function of <command>gfhost</command>.
   </varlistentry>
 
   <varlistentry>
-    <term><option>-p</option></term>
+    <term><option>-p</option> <parameter>port-number</parameter></term>
+    <listitem>
+      <para>
+	This option is used with -c or -m function, and specifies
+	the port number of <command>gfsd</command> on the host.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-r</option></term>
+    <listitem>
+      <para>
+	Reverse the order of sort.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-u</option></term>
     <listitem>
       <para>
 	Plain order. This option stops sorting on -H, -l, -M function
@@ -431,15 +454,6 @@ the default function of <command>gfhost</command>.
 
 	With -H, -l function or default function, the result
 	is displayed with the order that each <command>gfsd</command> answers.
-      </para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry>
-    <term><option>-r</option></term>
-    <listitem>
-      <para>
-	Reverse the order of sort.
       </para>
     </listitem>
   </varlistentry>

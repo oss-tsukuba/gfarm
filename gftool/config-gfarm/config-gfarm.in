@@ -121,7 +121,7 @@ usage()
 	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
 	echo >&2 "	[-d domain_name] [-h hostname]"
 	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
-	echo >&2 "	[-s gfsd_port] [-m gfmd_port]"
+	echo >&2 "	[-a metadata_admin_user] [-m gfmd_port]"
 	echo >&2 "  metadata_backend: $backend_candidates (default is $backend_default)"
 	exit 1
 }
@@ -202,6 +202,7 @@ display_params()
     esac
     echo     "metadata directory  [-l]: $BACKEND_DATA_DIR"
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
+    echo     "matadata admin user [-a]: $METADATA_ADMIN_USER"
     case $BACKEND_TYPE in
     postgresql)
 	echo "portmaster port     [-p]: $BACKEND_PORT";;
@@ -209,7 +210,6 @@ display_params()
 	echo "slapd port [-p]: $BACKEND_PORT";;
     esac
     echo     "gfmd port  [-m]: $GFMD_PORT"
-    echo     "gfsd port  [-s]: $GFSD_PORT"
 
     case $BACKEND_TYPE in
     ldap)
@@ -260,14 +260,14 @@ while [ $# -gt 0 ] ; do
 	  -h) shift; [ $# -ge 1 ] || usage
 		BACKEND_HOSTNAME=$1
 		;;
+	  -a) shift; [ $# -ge 1 ] || usage
+		METADATA_ADMIN_USER=$1
+		;;
 	  -p) shift; [ $# -ge 1 ] || usage
 		BACKEND_PORT=$1
 		;;
 	  -m) shift; [ $# -ge 1 ] || usage
 		GFMD_PORT=$1
-		;;
-	  -s) shift; [ $# -ge 1 ] || usage
-		GFSD_PORT=$1
 		;;
 	  -c) shift; [ $# -ge 1 ] || usage
 		SLAPD_BDB_CACHESIZE=$1
@@ -403,9 +403,10 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+: ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
-: ${GFSD_PORT:="600"}
+: ${METADATA_ADMIN_USER:=`who am i | awk '{print $1}'`}
 
 : ${GFMD_PORT:="601"}
 : ${RC_GFMD_IN="$config_dir/gfmd.in"}
@@ -548,6 +549,7 @@ init_replace()
 		cat <<_EOF_
 s|@config_gfarm_prefix@|$prefix|g
 s|@config_gfarm_gfarm_config@|$GFARM_CONF|g
+s|@config_gfarm_gfmd_config@|$GFMD_CONF|g
 s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g
 s|@config_gfarm_backend_privilege@|$BACKEND_PRIVILEGE|g
 s|@config_gfarm_backend_admin_user@|$BACKEND_ADMIN_USER|g
@@ -569,9 +571,9 @@ s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|g
 s|@config_gfarm_openldap_libexec@|$OPENLDAP_LIBEXEC|g
 s|@config_gfarm_openldap_etc@|$OPENLDAP_ETC|g
 s|@config_gfarm_pgsql_bindir@|$PGSQL_BINDIR|g
+s|@config_gfarm_metadata_admin_user@|$METADATA_ADMIN_USER|g
 s|@config_gfarm_gfmd_port@|$GFMD_PORT|g
-s|@config_gfarm_gfmd_option@|-f $GFARM_CONF|g
-s|@config_gfarm_gfsd_port@|$GFSD_PORT|g
+s|@config_gfarm_gfmd_option@|-f $GFMD_CONF|g
 s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g
 s|@config_gfarm_run_dir@|$RUN_DIR|g
 _EOF_
@@ -647,6 +649,7 @@ create_directory()
 
 delete_file_or_directory \
 	"$GFARM_CONF" \
+	"$GFMD_CONF" \
 	"$BACKEND_DATA_DIR" \
 	"$RC_DIR/$RC_BACKEND_BASENAME"
 
@@ -687,7 +690,8 @@ fi
 mkcnf_gfmd_sysdep
 
 # create configuration files
-mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
+mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
+mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 
 case $BACKEND_TYPE in
 postgresql)
@@ -917,7 +921,9 @@ _EOF_
 	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
 	awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
-		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
+		print "	ON Host, HostAliases, "
+		print "    GfarmUser, GfarmGroup, GfarmGroupAssignment, "
+		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry"
 		print "	TO $BACKEND_USER;"
 	}
 	FILENAME == "$admin_password" {

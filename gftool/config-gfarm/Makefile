@@ -13,6 +13,7 @@ datadir=$(default_datadir)/gfarm/config
 SCRIPTS = config-gfarm config-gfsd $(srcdir)/gfarm.arch.guess
 DATA =	$(srcdir)/gfarm.conf-postgresql.in \
 	$(srcdir)/gfarm.conf-ldap.in \
+	$(srcdir)/gfarm.conf.in \
 	$(srcdir)/slapd.conf-2.0.in \
 	$(srcdir)/slapd.conf-2.1.in \
 	$(srcdir)/gfarm.sql \

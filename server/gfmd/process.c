@@ -455,6 +455,7 @@ process_reopen_file(struct process *process,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	int to_create;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -462,13 +463,30 @@ process_reopen_file(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+
+	to_create = inode_is_creating_file(fo->inode);
+
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || to_create) {
+		if (!inode_schedule_confirm_for_write(fo->inode,
+		    spool_host, to_create))
+			return (GFARM_ERR_FILE_MIGRATED);
+		if (to_create) {
+			e = inode_add_replica(fo->inode, spool_host);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+		}
+	} else {
+		if (!inode_has_replica(fo->inode, spool_host))
+			return (GFARM_ERR_FILE_MIGRATED);
+	}
+
 	fo->u.f.spool_opener = peer;
 	fo->u.f.spool_host = spool_host;
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
 	*modep = inode_get_mode(fo->inode);
 	*flagsp = fo->flag & GFARM_FILE_USER_MODE;
-	*to_createp = (fo->flag & GFARM_FILE_CREATE) ? 1 : 0;
+	*to_createp = to_create;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -537,7 +555,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-		inode_update_atime(fo->inode, atime);
+		inode_set_atime(fo->inode, atime);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -568,8 +586,9 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-		inode_update_atime(fo->inode, atime);
-		inode_update_mtime(fo->inode, mtime);
+		inode_set_size(fo->inode, size);
+		inode_set_atime(fo->inode, atime);
+		inode_set_mtime(fo->inode, mtime);
 		return (GFARM_ERR_NO_ERROR);
 	}
 

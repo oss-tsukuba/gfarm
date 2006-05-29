@@ -14,7 +14,7 @@ LT_AGE=0
 
 LIBRARY = libgfarm.la
 CFLAGS = $(COMMON_CFLAGS)
-LDLIBS = $(metadb_client_libs) $(globus_gssapi_libs) $(openssl_libs) $(LIBS)
+LDLIBS = $(globus_gssapi_libs) $(openssl_libs) $(LIBS)
 
 GLOBUS_TARGETS = gfsl
 SUBDIRS = gfutil $(globus_targets) gfarm 

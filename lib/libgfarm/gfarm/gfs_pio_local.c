@@ -8,11 +8,13 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h> /* gfs_client.h needs socklen_t */
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <libgen.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
@@ -117,7 +119,15 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 	const char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	int rv = pwrite(vc->fd, buffer, offset, size);
+#else
+	int rv;
+
+	if (lseek(vc->fd, offset, SEEK_SET) == -1)
+		return (gfarm_errno_to_error(errno));
+	rv = write(vc->fd, buffer, size);
+#endif
 
 	if (rv == -1)
 		return (gfarm_errno_to_error(errno));
@@ -130,7 +140,15 @@ gfs_pio_local_storage_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	int rv = pread(vc->fd, buffer, offset, size);
+#else
+	int rv;
+
+	if (lseek(vc->fd, offset, SEEK_SET) == -1)
+		return (gfarm_errno_to_error(errno));
+	rv = read(vc->fd, buffer, size);
+#endif
 
 	if (rv == -1)
 		return (gfarm_errno_to_error(errno));

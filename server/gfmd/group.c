@@ -5,16 +5,17 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/group_info.h>
+#include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 #include "hash.h"
+
+#include "config.h"	/* gfarm_metadb_admin_user */
 #include "gfp_xdr.h"
 #include "auth.h"
 
 #include "subr.h"
+#include "db_access.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
@@ -26,9 +27,31 @@ struct group {
 	struct group_assignment users;
 };
 
+char ADMIN_GROUP_NAME[] = "gfarmadm";
 char REMOVED_GROUP_NAME[] = "gfarm-removed-group";
 
 static struct gfarm_hash_table *group_hashtab = NULL;
+
+gfarm_error_t
+grpassign_add(struct user *u, struct group *g)
+{
+	struct group_assignment *ga = malloc(sizeof(*ga));
+
+	if (ga == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	ga->u = u;
+	ga->g = g;
+
+	ga->user_next = &g->users;
+	ga->user_prev = g->users.user_prev;
+	g->users.user_prev->user_next = ga;
+	g->users.user_prev = ga;
+
+	grpassign_add_group(ga);
+
+	return (GFARM_ERR_NO_ERROR);
+}
 
 void
 grpassign_remove(struct group_assignment *ga)
@@ -69,24 +92,6 @@ hash_key_equal_group(
 		return (0);
 
 	return (gfarm_hash_key_equal_default(k1, l1, k2, l2));
-}
-
-gfarm_error_t
-grpassign_init(void)
-{
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-group_init(void)
-{
-	group_hashtab =
-	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
-		hash_group, hash_key_equal_group);
-	if (group_hashtab == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	return (GFARM_ERR_NO_ERROR);
 }
 
 struct group *
@@ -161,55 +166,134 @@ group_name(struct group *g)
 	return (g->groupname);
 }
 
-/*
- * I/O
- */
-
-static FILE *group_fp;
-
-gfarm_error_t
-group_info_open_for_seq_read(void)
+/* The memory owner of `*gi' is changed to group.c */
+void
+group_add_one(void *closure, struct gfarm_group_info *gi)
 {
-	group_fp = fopen("group", "r");
-	if (group_fp == NULL)
-		return (gfarm_errno_to_error(errno));
-	return (GFARM_ERR_NO_ERROR);
+	struct group *g;
+	gfarm_error_t e = group_enter(gi->groupname, &g);
+	int i;
+	struct user *u;
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning("group_add_one: adding group %s: %s",
+		    gi->groupname, gfarm_error_string(e));
+		gfarm_group_info_free(gi);
+		return;
+	}
+	for (i = 0; i < gi->nusers; i++) {
+		u = user_lookup(gi->usernames[i]);
+		if (u == NULL) {
+			group_remove(gi->groupname);
+			gflog_warning("group_add_one: unknown user %s",
+			    gi->usernames[i]);
+			gfarm_group_info_free(gi);
+			return;
+		}
+		e = grpassign_add(u, g);
+		if (e != GFARM_ERR_NO_ERROR) {
+			group_remove(gi->groupname);
+			gflog_warning("group_add_one: grpassign(%s, %s): %s",
+			    gi->usernames[i], gi->groupname,
+			    gfarm_error_string(e));
+			gfarm_group_info_free(gi);
+			return;
+		}
+	}
+	for (i = 0; i < gi->nusers; i++)
+		free(gi->usernames[i]);
+	free(gi->usernames);
 }
 
 gfarm_error_t
-group_info_open_for_seq_write(void)
+group_add_user(struct group *g, const char *username)
 {
-	group_fp = fopen("group", "w");
-	if (group_fp == NULL)
-		return (gfarm_errno_to_error(errno));
-	return (GFARM_ERR_NO_ERROR);
+	struct user *u = user_lookup(username);
+
+	if (u == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	if (user_in_group(u, g))
+		return (GFARM_ERR_ALREADY_EXISTS);
+	return (grpassign_add(u, g));
 }
 
-/* This function needs to allocate strings */
-gfarm_error_t
-group_info_read_next(struct gfarm_group_info *ui)
+void
+group_add_user_and_record(struct group *g, const char *username)
 {
-	return (GFARM_ERR_NO_ERROR);
+	gfarm_error_t e = group_add_user(g, username);
+	struct gfarm_group_info gi;
+	int n;
+	struct group_assignment *ga;
+
+	if (e == GFARM_ERR_ALREADY_EXISTS)
+		return;
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info("failed to add user %s to group %s: %s",
+		    username, group_name(g), gfarm_error_string(e));
+		return;
+	}
+
+	gflog_info("added user %s to group %s", username, group_name(g));
+	gi.groupname = group_name(g);
+	n = 0;
+	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
+		n++;
+	gi.nusers = n;
+	gi.usernames = malloc(sizeof(*gi.usernames) * n);
+	n = 0;
+	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
+		gi.usernames[n] = user_name(ga->u);
+
+	e = db_group_modify(&gi, 0, 1, &username, 0, NULL);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(
+		    "failed to record user '%s' as group '%s' to storage: %s",
+		    username, gi.groupname, gfarm_error_string(e));
+	}
+
+	free(gi.usernames);
 }
 
-gfarm_error_t
-group_info_write_next(struct gfarm_group_info *ui)
+void
+group_init(void)
 {
-	return (GFARM_ERR_NO_ERROR);
-}
+	gfarm_error_t e;
+	struct group *admin;
+	struct gfarm_group_info gi;
 
-gfarm_error_t
-group_info_close_for_seq_read(void)
-{
-	fclose(group_fp);
-	return (GFARM_ERR_NO_ERROR);
-}
+	group_hashtab =
+	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
+		hash_group, hash_key_equal_group);
+	if (group_hashtab == NULL)
+		gflog_fatal("no memory for group hashtab");
 
-gfarm_error_t
-group_info_close_for_seq_write(void)
-{
-	fclose(group_fp);
-	return (GFARM_ERR_NO_ERROR);
+	e = db_group_load(NULL, group_add_one);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("loading groups: %s", gfarm_error_string(e));
+
+	if ((admin = group_lookup(ADMIN_GROUP_NAME)) == NULL) {
+		gflog_info("group %s not found, creating it",
+		    ADMIN_GROUP_NAME);
+
+		gi.groupname = strdup(ADMIN_GROUP_NAME);
+		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
+		gi.usernames = malloc(sizeof(*gi.usernames) * gi.nusers);
+		gi.usernames[0] = strdup(ADMIN_USER_NAME);
+		if (gfarm_metadb_admin_user != NULL)
+			gi.usernames[1] = strdup(gfarm_metadb_admin_user);
+		group_add_one(NULL, &gi);
+		e = db_group_add(&gi);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(
+			    "failed to store group '%s' to storage: %s",
+			    gi.groupname, gfarm_error_string(e));
+		
+	} else {
+		group_add_user_and_record(admin, ADMIN_USER_NAME);
+		if (gfarm_metadb_admin_user != NULL)
+			group_add_user_and_record(admin,
+			    gfarm_metadb_admin_user);
+	}
 }
 
 #ifndef TEST
@@ -245,6 +329,7 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t ngroups;
+	struct group **gp;
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -266,8 +351,8 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 	for (gfarm_hash_iterator_begin(group_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
-		e = group_info_send(client,
-		    gfarm_hash_entry_data(gfarm_hash_iterator_access(&it)));
+		gp = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
+		e = group_info_send(client, *gp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_unlock();
 			return (e);

@@ -12,6 +12,12 @@
  * must include this notice in the file.
  */
 
+struct gfarm_host_sched_info;
+gfarm_error_t gfarm_schedule_select_host(int, struct gfarm_host_sched_info *,
+	int, char **, int *);
+
+#if 0 /* not yet in gfarm v2 */
+
 void gfarm_strings_expand_cyclic(int, char **, int, char **);
 
 char *gfarm_schedule_search_idle_hosts_to_write(int, char **, int, char **);
@@ -32,3 +38,5 @@ char *gfarm_file_section_host_schedule_with_priority_to_local_to_write(
 
 int gfarm_is_active_fsnode(void);
 int gfarm_is_active_fsnode_to_write(void);
+
+#endif

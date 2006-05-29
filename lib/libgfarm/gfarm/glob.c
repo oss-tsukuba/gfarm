@@ -3,21 +3,23 @@
 #include <limits.h>
 #include <gfarm/gfarm.h>
 
+#include "liberror.h"
+
 #define GFS_GLOB_INITIAL	200
 #define GFS_GLOB_DELTA		200
 
-char *
+gfarm_error_t
 gfs_glob_init(gfs_glob_t *listp)
 {
 	unsigned char *v;
 
-	v = malloc(sizeof(unsigned char) * GFS_GLOB_INITIAL);
+	v = malloc(sizeof(*v) * GFS_GLOB_INITIAL);
 	if (v == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	listp->size = GFS_GLOB_INITIAL;
 	listp->length = 0;
 	listp->array = v;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -31,7 +33,7 @@ gfs_glob_free(gfs_glob_t *listp)
 	listp->array = NULL;
 }
 
-char *
+gfarm_error_t
 gfs_glob_add(gfs_glob_t *listp, int dtype)
 {
 	int length = gfs_glob_length(listp);
@@ -48,7 +50,7 @@ gfs_glob_add(gfs_glob_t *listp, int dtype)
 	}
 	listp->array[length] = dtype;
 	listp->length++;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 
@@ -208,15 +210,14 @@ glob_name_match(char *name, const char *pattern, int pattern_length)
 	    glob_name_submatch(name + residual - sublen, pattern, sublen));
 }
 
-static char GFARM_ERR_PATHNAME_TOO_LONG[] = "pathname too long";
-
 #define GLOB_PATH_BUFFER_SIZE	(PATH_MAX * 2)
 
-static char *
+static gfarm_error_t
 gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	gfarm_stringlist *paths, gfs_glob_t *types)
 {
-	char *s, *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	char *s;
 	int i, nomagic, dirpos = -1;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
@@ -239,12 +240,12 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	if (pattern[i] == '\0') { /* no magic */
 		if (path_tail - path_buffer + strlen(pattern) >
 		    GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
+			return (GFARM_ERR_FILE_NAME_TOO_LONG);
 		glob_pattern_to_name(path_tail, pattern, strlen(pattern));
 		e = gfs_stat(path_buffer, &st);
-		if (e != NULL)
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		s = gfarm_url_prefix_add(path_buffer);
+		s = strdup(path_buffer);
 		if (s == NULL) {
 			gfs_stat_free(&st);
 			return (GFARM_ERR_NO_MEMORY);
@@ -255,14 +256,14 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		else
 			gfs_glob_add(types, GFS_DT_REG);
 		gfs_stat_free(&st);
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	}
 	nomagic = i;
 	if (dirpos >= 0) {
 		int dirlen = dirpos == 0 ? 1 : dirpos;
 
 		if (path_tail - path_buffer + dirlen > GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
+			return (GFARM_ERR_FILE_NAME_TOO_LONG);
 		glob_pattern_to_name(path_tail, pattern, dirlen);
 		path_tail += strlen(path_tail);
 	}
@@ -280,14 +281,15 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		}
 	}
 	e = gfs_opendir(path_buffer, &dir);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (path_tail > path_buffer && path_tail[-1] != '/') {
 		if (path_tail - path_buffer + 1 > GLOB_PATH_BUFFER_SIZE)
-			return (GFARM_ERR_PATHNAME_TOO_LONG);
+			return (GFARM_ERR_FILE_NAME_TOO_LONG);
 		*path_tail++ = '/';
 	}
-	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
+	while ((e = gfs_readdir(dir, &entry)) == GFARM_ERR_NO_ERROR &&
+	    entry != NULL) {
 		if (entry->d_name[0] == '.' && pattern[dirpos] != '.')
 			continue; /* initial '.' must be literally matched */
 		if (!glob_name_match(entry->d_name, &pattern[dirpos],
@@ -295,13 +297,13 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			continue;
 		if (path_tail - path_buffer + strlen(entry->d_name) >
 		    GLOB_PATH_BUFFER_SIZE) {
-			if (e_save == NULL)
-				e_save = GFARM_ERR_PATHNAME_TOO_LONG;
+			if (e_save == GFARM_ERR_NO_ERROR)
+				e_save = GFARM_ERR_FILE_NAME_TOO_LONG;
 			continue;
 		}
 		strcpy(path_tail, entry->d_name);
 		if (pattern[i] == '\0') {
-			s = gfarm_url_prefix_add(path_buffer);
+			s = strdup(path_buffer);
 			if (s == NULL)
 				return (GFARM_ERR_NO_MEMORY);
 			gfarm_stringlist_add(paths, s);
@@ -310,29 +312,32 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		}
 		e = gfs_glob_sub(path_buffer, path_tail + strlen(path_tail),
 		    pattern + i, paths, types);
-		if (e_save == NULL)
+		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	gfs_closedir(dir);
 	return (e_save);
 }
 
-char *
+gfarm_error_t
 gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 {
-	const char *s;
-	char *p = NULL, *e = NULL;
-	int len, n = gfarm_stringlist_length(paths);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	char *p = NULL;
+	int n = gfarm_stringlist_length(paths);
 	char path_buffer[GLOB_PATH_BUFFER_SIZE + 1];
 
-	pattern = gfarm_url_prefix_skip(pattern);
+#if 0 /* XXX FIXME - "~" handling isn't implemented on v2, yet */
+	const char *s;
+	int len;
+
 	if (*pattern == '~') {
 		if (pattern[1] == '\0' || pattern[1] == '/') {
 			s = gfarm_get_global_username();
 			if (s == NULL)
 				return (
-				    "gfs_glob(): programming error, "
-				    "gfarm library isn't properly initialized");
+				 GFARM_ERRMSG_GFS_GLOB_NOT_PROPERLY_INITIALIZED
+				);
 			len = strlen(s);
 			pattern++;
 		} else {
@@ -342,22 +347,24 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 		}
 		p = malloc(1 + len + strlen(pattern) + 1);
 		if (p == NULL) {
-			e = GFARM_ERR_PATHNAME_TOO_LONG;
+			e = GFARM_ERR_FILE_NAME_TOO_LONG;
 		} else {
 			p[0] = '/';
 			memcpy(p + 1, s, len);
 			strcpy(p + 1 + len, pattern);
 			pattern = p;
 		}
-	} else {
+	} else
+#endif
+	{
 		strcpy(path_buffer, ".");
 	}
-	if (e == NULL) {
+	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_glob_sub(path_buffer, path_buffer, pattern,
 		    paths, types);
 	}
 	if (gfarm_stringlist_length(paths) <= n) {
-		gfarm_stringlist_add(paths, gfarm_url_prefix_add(pattern));
+		gfarm_stringlist_add(paths, strdup(pattern));
 		gfs_glob_add(types, GFS_DT_UNKNOWN);
 	}
 	if (p != NULL)

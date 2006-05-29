@@ -51,11 +51,31 @@ struct peer {
 
 static struct peer *peer_table;
 static int peer_table_size;
+static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+peer_table_lock(void)
+{
+	int err = pthread_mutex_lock(&peer_table_mutex);
+
+	if (err != 0)
+		gflog_warning("peer_table_lock: %s", strerror(err));
+}
+
+static void
+peer_table_unlock(void)
+{
+	int err = pthread_mutex_unlock(&peer_table_mutex);
+
+	if (err != 0)
+		gflog_warning("peer_table_lock: %s", strerror(err));
+}
 
 void
 peer_init(int max_peers)
 {
 	int i;
+	struct peer *peer;
 
 	peer_table = malloc(max_peers * sizeof(*peer_table));
 	if (peer_table == NULL)
@@ -63,17 +83,18 @@ peer_init(int max_peers)
 	peer_table_size = max_peers;
 
 	for (i = 0; i < peer_table_size; i++) {
-		peer_table[i].conn = NULL;
-		peer_table[i].username = NULL;
-		peer_table[i].hostname = NULL;
-		peer_table[i].user = NULL;
-		peer_table[i].host = NULL;
-		peer_table[i].process = NULL;
-		peer_table[i].protocol_error = 0;
-		peer_table[i].fd_current = -1;
-		peer_table[i].fd_saved = -1;
-		peer_table[i].flags = 0;
-		peer_table[i].u.client.jobs = NULL;
+		peer = &peer_table[i];
+		peer->conn = NULL;
+		peer->username = NULL;
+		peer->hostname = NULL;
+		peer->user = NULL;
+		peer->host = NULL;
+		peer->process = NULL;
+		peer->protocol_error = 0;
+		peer->fd_current = -1;
+		peer->fd_saved = -1;
+		peer->flags = 0;
+		peer->u.client.jobs = NULL;
 	}
 }
 
@@ -88,13 +109,18 @@ peer_alloc(int fd, struct peer **peerp)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	if (fd >= peer_table_size)
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
+	peer_table_lock();
 	peer = &peer_table[fd];
-	if (peer->conn != NULL) /* must be an implementation error */
+	if (peer->conn != NULL) { /* must be an implementation error */
+		peer_table_unlock();
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	/* XXX FIXME gfp_xdr requires too much memory */
 	e = gfp_xdr_new_fd(fd, &peer->conn);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		peer_table_unlock();
 		return (e);
+	}
 	peer->username = NULL;
 	peer->hostname = NULL;
 	peer->user = NULL;
@@ -111,6 +137,8 @@ peer_alloc(int fd, struct peer **peerp)
 	    == -1)
 		gflog_warning_errno("SO_KEEPALIVE");
 
+	*peerp = peer;
+	peer_table_unlock();
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -118,7 +146,7 @@ peer_alloc(int fd, struct peer **peerp)
 void
 peer_authorized(struct peer *peer,
 	enum gfarm_auth_id_type id_type, char *username, char *hostname,
-	enum gfarm_auth_method auth_method)
+	struct sockaddr *addr, enum gfarm_auth_method auth_method)
 {
 #if 0 /* We don't record id_type for now */
 	peer->id_type = id_type;
@@ -135,7 +163,7 @@ peer_authorized(struct peer *peer,
 		peer->user = NULL;
 		peer->username = username;
 	}
-	peer->host = host_lookup(hostname);
+	peer->host = host_addr_lookup(hostname, addr);
 	if (peer->host != NULL) {
 		free(hostname);
 		peer->hostname = NULL;
@@ -148,8 +176,12 @@ peer_authorized(struct peer *peer,
 void
 peer_free(struct peer *peer)
 {
-	char *username = peer_get_username(peer);
-	char *hostname = peer_get_hostname(peer);
+	char *username, *hostname;
+
+	peer_table_lock();
+
+	username = peer_get_username(peer);
+	hostname = peer_get_hostname(peer);
 
 	/*XXX XXX*/
 	while (peer->u.client.jobs != NULL)
@@ -175,13 +207,40 @@ peer_free(struct peer *peer)
 	}
 
 	gfp_xdr_free(peer->conn); peer->conn = NULL;
+
+	peer_table_unlock();
 }
+
+void
+peer_shutdown_all(void)
+{
+	int i;
+	struct peer *peer;
+
+	/* We never unlock this mutex any more */
+	peer_table_lock();
+
+	for (i = 0; i < peer_table_size; i++) {
+		peer = &peer_table[i];
+		if (peer->process == NULL)
+			continue;
+
+		gflog_notice("(%s@%s) shutting down",
+		    peer->username, peer->hostname);
+		process_detach_peer(peer->process, peer);
+		peer->process = NULL;
+	}
+}
+
+#if 0
 
 struct peer *
 peer_by_fd(int fd)
 {
+	peer_table_lock();
 	if (fd < 0 || fd >= peer_table_size || peer_table[fd].conn == NULL)
 		return (NULL);
+	peer_table_unlock();
 	return (&peer_table[fd]);
 }
 
@@ -195,6 +254,8 @@ peer_free_by_fd(int fd)
 	peer_free(peer);
 	return (GFARM_ERR_NO_ERROR);
 }
+
+#endif /* 0 */
 
 struct gfp_xdr *
 peer_get_conn(struct peer *peer)
@@ -402,32 +463,5 @@ peer_fdpair_restore(struct peer *peer)
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED) |
 	    ((peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) ?
 	     PEER_FLAGS_FD_CURRENT_EXTERNALIZED : 0);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/* XXX FIXME too many threads */
-gfarm_error_t
-peer_schedule(struct peer *peer, void *(*handler)(void *))
-{
-	int err;
-	pthread_t thread_id;
-	static int initialized = 0;
-	static pthread_attr_t attr;
-
-	if (!initialized) {
-		err = pthread_attr_init(&attr);
-		if (err != 0)
-			gflog_fatal("pthread_attr_init(): %s", strerror(err));
-		err = pthread_attr_setdetachstate(&attr,
-		    PTHREAD_CREATE_DETACHED);
-		if (err != 0)
-			gflog_fatal("PTHREAD_CREATE_DETACHED: %s",
-			    strerror(err));
-		initialized = 1;
-	}
-
-	err = pthread_create(&thread_id, &attr, handler, peer);
-	if (err != 0)
-		return (gfarm_errno_to_error(err));
 	return (GFARM_ERR_NO_ERROR);
 }

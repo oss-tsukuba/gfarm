@@ -8,7 +8,7 @@ NAME=gfmd
 FILE=$NAME
 DAEMON="@config_gfarm_prefix@/sbin/$NAME"
 PIDFILE="@config_gfarm_run_dir@/$FILE.pid"
-CONF="@config_gfarm_gfarm_config@"
+CONF="@config_gfarm_gfmd_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
 
 trap "" 1

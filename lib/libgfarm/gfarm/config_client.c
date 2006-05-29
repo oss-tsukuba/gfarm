@@ -16,6 +16,8 @@
 #include "gfs_profile.h"
 #include "host.h"
 #include "auth.h"
+#include "gfpath.h"
+#define GFARM_USE_STDIO
 #include "config.h"
 #include "gfm_client.h"
 #include "metadb_server.h" /* XXX FIXME this shouldn't be needed here */
@@ -81,56 +83,56 @@ gfarm_config_read(void)
 	gfarm_error_t e;
 	char *home;
 	FILE *config;
-	int lineno, user_config_errno;
+	int lineno, user_config_errno, rc_need_free;;
 	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
-	char lineno_buffer[GFARM_INT64STRLEN + 1];
 	char *rc;
 
-	/*
-	 * result of gfarm_get_local_homedir() should not be trusted.
-	 * (maybe forged)
-	 */
-	home = gfarm_get_local_homedir();
+	rc_need_free = 0;
+	rc = getenv("GFARM_CONFIG_FILE");
+	if (rc == NULL) {
+		/*
+		 * result of gfarm_get_local_homedir() should not be trusted.
+		 * (maybe forged)
+		 */
+		home = gfarm_get_local_homedir();
 
-	rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
-	if (rc == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	sprintf(rc, "%s/%s", home, gfarm_client_rc);
+		rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
+		if (rc == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		sprintf(rc, "%s/%s", home, gfarm_client_rc);
+		rc_need_free = 1;
+	}
 	gfarm_init_user_map();
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
 		user_config_errno = 0;
-		/*
-		 * The reason why we don't just pass `rc' as the
-		 * second argument of gfarm_config_read_file() is
-		 * because `rc' may be too long name to generate error
-		 * message.
-		 */
-		e = gfarm_config_read_file(config, "~/" GFARM_CLIENT_RC,
-		    &lineno);
+		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			free(rc);
-			sprintf(lineno_buffer, "%d", lineno);
-			gflog_error(gfarm_error_string(e), lineno_buffer);
+			gflog_error("%s: %d: %s",
+			    rc, lineno, gfarm_error_string(e));
+			if (rc_need_free)
+				free(rc);
 			return (e);
 		}
 	}
-	free(rc);
+	if (rc_need_free)
+		free(rc);
 
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
 		if (user_config_errno != 0)
 			return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	} else {
-		e = gfarm_config_read_file(config, gfarm_config_file, &lineno);
+		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			sprintf(lineno_buffer, "%d", lineno);
-			gflog_error(gfarm_error_string(e), lineno_buffer);
+			gflog_error("%s: %d: %s",
+			    gfarm_config_file, lineno, gfarm_error_string(e));
 			return (e);
 		}
 	}
 
 	gfarm_config_set_default_ports();
+	gfarm_config_set_default_misc();
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -342,6 +344,12 @@ gfarm_debug_initialize(char *command)
 	signal(SIGSEGV, gfarm_sig_debug);
 }
 
+
+gfarm_pid_t gfarm_client_pid;
+gfarm_int32_t gfarm_client_pid_key_type = 1; /* XXX FIXME */
+char gfarm_client_pid_key[32];
+size_t gfarm_client_pid_key_len = sizeof(gfarm_client_pid_key);
+
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -390,20 +398,37 @@ gfarm_initialize(int *argcp, char ***argvp)
 	gfarm_metadb_set_server(gfarm_metadb_server);
 
 	if (argvp != NULL) {
+#if 0 /* not yet in gfarm v2 */
 		if (getenv("DISPLAY") != NULL)
 			gfarm_debug_initialize((*argvp)[0]);
-#if 0 /* not yet in gfarm v2 */
 		e = gfarm_parse_argv(argcp, argvp);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 #endif /* not yet in gfarm v2 */
 	}
+
+	gfarm_auth_random(gfarm_client_pid_key, gfarm_client_pid_key_len);
+	e = gfm_client_process_alloc(gfarm_metadb_server,
+	    gfarm_client_pid_key_type,
+	    gfarm_client_pid_key, gfarm_client_pid_key_len, &gfarm_client_pid);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal("failed to allocate gfarm PID: %s",
+		    gfarm_error_string(e));
 			
 #if 0 /* not yet in gfarm v2 */
 	gfarm_initialized = 1;
 #endif /* not yet in gfarm v2 */
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_client_process_set(struct gfs_connection *gfs_server)
+{
+	return (gfs_client_process_set(gfs_server,
+	    gfarm_client_pid_key_type,
+	    gfarm_client_pid_key_len, gfarm_client_pid_key,
+	    gfarm_client_pid));
 }
 
 /*

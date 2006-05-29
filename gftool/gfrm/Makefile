@@ -6,8 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SRCS = gfrm.c
-OBJS = gfrm.o
+SRCS = gfrm_simple.c
+OBJS = gfrm_simple.o
 PROGRAM = gfrm
 CFLAGS = $(COMMON_CFLAGS)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)

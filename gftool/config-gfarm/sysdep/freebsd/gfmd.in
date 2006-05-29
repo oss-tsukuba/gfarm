@@ -23,7 +23,7 @@ else
 	exit 2
 fi
 
-CONF="@config_gfarm_gfarm_config@"
+CONF="@config_gfarm_gfmd_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
 
 name="gfmd"

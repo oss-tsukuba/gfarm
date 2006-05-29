@@ -4,18 +4,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/time.h>
+
 #include <gfarm/gfarm.h>
-#include "gfs_client.h"
 
 char *program_name = "gfmkdir";
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "Usage: %s directory...\n", program_name);
 	exit(1);
@@ -24,13 +21,18 @@ usage()
 int
 main(int argc, char **argv)
 {
-	char *e;
-	int i, c, err = 0;
+	gfarm_error_t e;
+	int i, c, status = 0;
 	extern int optind;
 
-	if (argc <= 1)
-		usage();
-	program_name = basename(argv[0]);
+	if (argc > 0)
+		program_name = basename(argv[0]);
+	e = gfarm_initialize(&argc, &argv);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(1);
+	}
 
 	while ((c = getopt(argc, argv, "h?")) != EOF) {
 		switch (c) {
@@ -42,24 +44,22 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+	if (argc <= 0)
+		usage();
 
-	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		exit(1);
-	}
 	for (i = 0; i < argc; i++) {
 		e = gfs_mkdir(argv[i], 0755);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
-				program_name, argv[i], e);
-			err++;
+			    program_name, argv[i], gfarm_error_string(e));
+			status = 1;
 		}
 	}
 	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
-		err++;
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		status = 1;
 	}
-	return (err > 0);
+	return (status);
 }

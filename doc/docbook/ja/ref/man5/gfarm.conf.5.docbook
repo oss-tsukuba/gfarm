@@ -111,13 +111,13 @@
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_serverport</token> <parameter>gfsdポート番号</parameter></term>
+<term><token>spool_server_port</token> <parameter>gfsdポート番号</parameter></term>
 <listitem>
 <para>gfsdが利用するTCPおよびUDPポートの番号を指定します。
 省略時のデフォルト・ポート番号は600番です。</para>
 <para>例:</para>
 <literallayout>
-	spool_serverport 600
+	spool_server_port 600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -279,25 +279,25 @@ GSI認証において、<token>spool_server_cred_type</token> で指定した値に
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_serverhost</token> <parameter>gfmdホスト名</parameter></term>
+<term><token>metadb_server_host</token> <parameter>gfmdホスト名</parameter></term>
 <listitem>
 <para>gfmdが動作しているホスト名を指定します。</para>
 <para>この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
-	metadb_serverhost ldap.example.com
+	metadb_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_serverport</token> <parameter>gfmdポート番号</parameter></term>
+<term><token>metadb_server_port</token> <parameter>gfmdポート番号</parameter></term>
 <listitem>
 <para>gfmdが利用するTCPポートの番号を指定します。
 省略時のデフォルト・ポート番号は601番です。</para>
 <para>例:</para>
 <literallayout>
-	metadb_serverport 601
+	metadb_server_port 601
 </literallayout>
 </listitem>
 </varlistentry>
@@ -342,26 +342,26 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_serverhost</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
+<term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
 <para>LDAP サーバーが動作しているホスト名を指定します。</para>
 <para>この設定は必須です。</para>
 
 <para>例:</para>
 <literallayout>
-	ldap_serverhost ldap.example.com
+	ldap_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_serverport</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
+<term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
 <para>LDAP サーバーが利用するTCPポートの番号を指定します。</para>
 <para>現在のところ、この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
-	ldap_serverport 389
+	ldap_server_port 389
 </literallayout>
 </listitem>
 </varlistentry>
@@ -598,17 +598,17 @@ IPアドレスを通信に用いるかを指定します。
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
@@ -617,23 +617,23 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
-	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
+	&lt;spool_server_port_statement&gt; ::= "spool_server_port" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
-	&lt;metadb_serverhost_statement&gt; ::= "metadb_serverhost" &lt;hostname&gt;
-	&lt;metadb_serverport_statement&gt; ::= "metadb_serverport" &lt;portnumber&gt;
+	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
+	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_type" &lt;cred_type&gt;
 	&lt;metadb_server_cred_service_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
-	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
-	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
+	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
+	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
 		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
@@ -677,9 +677,9 @@ IPアドレスを通信に用いるかを指定します。
 <refsect1 id='examples'><title>EXAMPLES</title>
 <literallayout>
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
-ldap_serverport 389
+metadb_server_host ldap.example.com
+ldap_server_host ldap.example.com
+ldap_server_port 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8

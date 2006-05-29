@@ -3,7 +3,7 @@ CREATE TABLE Host (
 	port		INTEGER		NOT NULL,
 	architecture	VARCHAR(128)	NOT NULL,
 	ncpu		INTEGER		NOT NULL,
-	flags		INTEGER		NOT NULL,
+	flags		INTEGER		NOT NULL
 );
 
 
@@ -16,20 +16,22 @@ CREATE TABLE HostAliases (
 CREATE INDEX HostAliasesByHostname ON HostAliases (hostname);
 
 
-CREATE TABLE User (
+CREATE TABLE GfarmUser (
 	username	VARCHAR(64)	PRIMARY KEY,
 	homedir		VARCHAR(1024)	NOT NULL,
 	realname	VARCHAR(256)	NOT NULL,
 	gsiDN		VARCHAR(1024)
 );
 
-CREATE TABLE Group (
+CREATE TABLE GfarmGroup (
 	groupname	VARCHAR(64)	PRIMARY KEY
 );
 
-CREATE TABLE GroupAssignment (
-	username	VARCHAR(64)	NOT NULL,
-	groupname	VARCHAR(64)	NOT NULL,
+CREATE TABLE GfarmGroupAssignment (
+	username	VARCHAR(64)
+		REFERENCES GfarmUser(username) ON DELETE CASCADE,
+	groupname	VARCHAR(64)
+		REFERENCES GfarmGroup(groupname) ON DELETE CASCADE,
 	PRIMARY KEY(username, groupname)
 );
 
@@ -50,20 +52,11 @@ CREATE TABLE INode (
 	ctimensec	INTEGER		NOT NULL
 );
 
-CREATE TABLE DirEntry (
-	dirINumber	INT8		NOT NULL,
-	entryName	VARCHAR(1024)	NOT NULL,
-	entryINumber	INT8		NOT NULL,
-	PRIMARY KEY(dirINumber, entryName)
-);
-
-CREATE INDEX dirEntryByINode ON DirEntry (dirINumber);
-
 CREATE TABLE FileInfo (
 	inumber		INT8		PRIMARY KEY
 		REFERENCES INode(inumber) ON DELETE CASCADE,
 	checksumType	VARCHAR(32)	NOT NULL,
-	checksum	VARCHAR(256)	NOT NULL,
+	checksum	VARCHAR(256)	NOT NULL
 );
 
 CREATE TABLE FileCopy (
@@ -72,7 +65,7 @@ CREATE TABLE FileCopy (
 	PRIMARY KEY(inumber, hostname)
 );
 
-CREATE INDEX fileCopyByINode ON FileCopy (inode);
+CREATE INDEX fileCopyByINode ON FileCopy (inumber);
 
 CREATE TABLE DeadFileCopy (
 	inumber		INT8		NOT NULL,
@@ -82,3 +75,12 @@ CREATE TABLE DeadFileCopy (
 );
 
 CREATE INDEX deadFileCopyByHostname ON DeadFileCopy (hostname);
+
+CREATE TABLE DirEntry (
+	dirINumber	INT8		NOT NULL,
+	entryName	VARCHAR(1024)	NOT NULL,
+	entryINumber	INT8		NOT NULL,
+	PRIMARY KEY(dirINumber, entryName)
+);
+
+CREATE INDEX dirEntryByINode ON DirEntry (dirINumber);

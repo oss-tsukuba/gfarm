@@ -196,6 +196,7 @@ gfarm_error_t gfs_realpath(const char *, char **);
  * Meta operations
  */
 
+gfarm_error_t gfs_remove(const char *); /* XXX shouldn't be exported? */
 gfarm_error_t gfs_unlink(const char *);
 #if 0 /* not yet on Gfarm v2 */
 gfarm_error_t gfs_unlink_section(const char *, const char *);

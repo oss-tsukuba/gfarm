@@ -16,9 +16,9 @@ gfs_desc_open_common(gfarm_int32_t fd, int flags, int is_dir,
 	struct gfs_desc **gdp)
 {
 	if (is_dir) {
-		return (gfs_file_alloc(fd, flags, gdp));
-	} else {
 		return (gfs_dir_alloc(fd, flags, gdp));
+	} else {
+		return (gfs_file_alloc(fd, flags, gdp));
 	}
 }
 

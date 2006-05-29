@@ -16,88 +16,149 @@
 #include <libgen.h>
 #include <limits.h>
 #include <errno.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfevent.h"
+
+#include "liberror.h"
+
 #include "host.h" /* gfarm_host_info_address_get() */
 #include "auth.h"
 #include "config.h"
+#include "gfm_client.h"
 #include "gfs_client.h"
 
 char *program_name = "gfhost";
 
-static char *
-update_host(char *hostname, int nhostaliases, char **hostaliases,
-	char *architecture, int ncpu,
-	char *(*update_op)(char *, struct gfarm_host_info *))
+/**********************************************************************/
+
+/* register application specific error number */
+
+static const char *app_error_map[] = {
+#define APP_ERR_IMPLEMENTATION_INDEX		0
+#define APP_ERR_IMPLEMENTATION			app_error(0)
+	"implementation error, invalid error number",
+#define APP_ERR_HOSTNAME_IS_ALREADY_REGISERED	app_error(1)
+	"the hostname is already registered",
+#define APP_ERR_HOSTALIAS_IS_ALREADY_REGISERED	app_error(2)
+	"the hostalias is already registered",
+};
+
+const char *
+app_error_code_to_message(void *cookie, int code)
+{
+	if (code < 0 || code >= GFARM_ARRAY_LENGTH(app_error_map))
+		return (app_error_map[APP_ERR_IMPLEMENTATION_INDEX]);
+	else
+		return (app_error_map[code]);
+}
+
+gfarm_error_t
+app_error(int code)
+{
+	static struct gfarm_error_domain *app_error_domain = NULL;
+
+	if (app_error_domain == NULL) {
+		gfarm_error_t e = gfarm_error_domain_alloc(
+		    0, GFARM_ARRAY_LENGTH(app_error_map) - 1,
+		    app_error_code_to_message, NULL,
+		    &app_error_domain);
+
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: gfarm_error_domain_alloc: %s\n",
+			    program_name, gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return (gfarm_error_domain_map(app_error_domain, code));
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+update_host(const char *hostname, int port,
+	int nhostaliases, char **hostaliases,
+	char *architecture, int ncpu, int flags,
+	gfarm_error_t (*update_op)(struct gfm_connection *,
+		const struct gfarm_host_info *))
 {
 	struct gfarm_host_info hi;
 
-	hi.hostname = hostname;
+	hi.hostname = (char *)hostname; /* UNCONST */
+	hi.port = port;
 	hi.nhostaliases = nhostaliases;
 	hi.hostaliases = hostaliases;
 	hi.architecture = architecture;
 	hi.ncpu = ncpu;
-	return ((*update_op)(hostname, &hi));
+	hi.flags = flags;
+	return ((*update_op)(gfarm_metadb_server, &hi));
 }
 
-static char *
+static gfarm_error_t
 check_hostname(char *hostname)
 {
-	char *e, *n;
+	gfarm_error_t e;
+	char *n;
 
 	e = gfarm_host_get_canonical_name(hostname, &n);
-	if (e == NULL || e == GFARM_ERR_AMBIGUOUS_RESULT) {
-		if (e == NULL)
-			free(n);
-		return ("the hostname is already registered");
+	if (e == GFARM_ERR_NO_ERROR) {
+		free(n);
+		return (APP_ERR_HOSTNAME_IS_ALREADY_REGISERED);
 	}
-	return (NULL);
+	/* XXX TODO: e == GFARM_ERR_AMBIGUOUS_RESULT? */
+	return (GFARM_ERR_NO_ERROR);
 }
 
-static char *
+static gfarm_error_t
 check_hostaliases(int nhostaliases, char **hostaliases)
 {
 	int i;
 
 	for (i = 0; i < nhostaliases; i++) {
-		if (check_hostname(hostaliases[i]) != NULL)
-			return ("the hostalias is already registered");
+		if (check_hostname(hostaliases[i]) != GFARM_ERR_NO_ERROR)
+			return (APP_ERR_HOSTALIAS_IS_ALREADY_REGISERED);
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
-add_host(char *hostname, char **hostaliases, char *architecture,
-	int ncpu)
+gfarm_error_t
+add_host(char *hostname, int port, char **hostaliases, char *architecture,
+	int ncpu, int flags)
 {
 	int nhostaliases = gfarm_strarray_length(hostaliases);
-	char *e;
+	gfarm_error_t e;
 
 	e = check_hostname(hostname);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = check_hostaliases(nhostaliases, hostaliases);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	return (update_host(hostname, nhostaliases, hostaliases,
-	    architecture, ncpu, gfarm_host_info_set));
+	return (update_host(hostname, port, nhostaliases, hostaliases,
+	    architecture, ncpu, flags, gfm_client_host_info_set));
 }
 
-char *
-gfarm_modify_host(char *hostname, char **hostaliases, char *architecture,
-	int ncpu, int add_aliases)
+gfarm_error_t
+gfarm_modify_host(const char *hostname, int port,
+	char **hostaliases, char *architecture,
+	int ncpu, int flags, int add_aliases)
 {
-	char *e;
+	gfarm_error_t e, e2;
 	struct gfarm_host_info hi;
 	int host_info_needs_free = 0;
 	gfarm_stringlist aliases;
 
-	if (*hostaliases == NULL || architecture == NULL || ncpu < 1 ||
-	    add_aliases) {
-		e = gfarm_host_info_get(hostname, &hi);
-		if (e != NULL)
+	if (port == 0 || *hostaliases == NULL || architecture == NULL ||
+	    ncpu < 1 || flags == -1 || add_aliases) {
+		e = gfm_client_host_info_get_by_names(gfarm_metadb_server,
+		    1, &hostname, &e2, &hi);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
+		if (e2 != GFARM_ERR_NO_ERROR)
+			return (e2);
 		host_info_needs_free = 1;
 		if (!add_aliases) {
 			/* XXX - do check_hostaliases() here, too. */
@@ -105,40 +166,46 @@ gfarm_modify_host(char *hostname, char **hostaliases, char *architecture,
 		} else {
 			e = check_hostaliases(
 			    gfarm_strarray_length(hostaliases), hostaliases);
-			if (e != NULL)
+			if (e != GFARM_ERR_NO_ERROR)
 				goto free_host_info;
 
 			e = gfarm_stringlist_init(&aliases);
-			if (e != NULL)
+			if (e != GFARM_ERR_NO_ERROR)
 				goto free_host_info;
 			if (hi.hostaliases != NULL) {
 				e = gfarm_stringlist_cat(&aliases,
 				    hi.hostaliases);
-				if (e != NULL)
+				if (e != GFARM_ERR_NO_ERROR)
 					goto free_aliases;
 			}
 			if (hostaliases != NULL) {
 				e = gfarm_stringlist_cat(&aliases,
 				    hostaliases);
-				if (e != NULL)
+				if (e != GFARM_ERR_NO_ERROR)
 					goto free_aliases;
 			}
 			e = gfarm_stringlist_add(&aliases, NULL);
-			if (e != NULL)
+			if (e != GFARM_ERR_NO_ERROR)
 				goto free_aliases;
 			hostaliases = GFARM_STRINGLIST_STRARRAY(aliases);
 		}
+		if (port == 0)
+			port = hi.port;
 		if (architecture == NULL)
 			architecture = hi.architecture;
 		if (ncpu < 1)
 			ncpu = hi.ncpu;
+		if (flags == -1)
+			flags = hi.flags;
 	}
-	e = update_host(hostname,
+	e = update_host(hostname, port,
 	    gfarm_strarray_length(hostaliases), hostaliases,
-	    architecture, ncpu,
-	    gfarm_host_info_replace);
-	if (e == NULL && !add_aliases && *hostaliases == NULL)
+	    architecture, ncpu, flags,
+	    gfm_client_host_info_modify);
+#if 0 /* XXX FIXME not yet in v2 */
+	if (e == GFARM_ERR_NO_ERROR && !add_aliases && *hostaliases == NULL)
 		e = gfarm_host_info_remove_hostaliases(hostname);
+#endif
  free_aliases:
 	if (add_aliases)
 		gfarm_stringlist_free(&aliases);
@@ -172,27 +239,61 @@ validate_hostname(char *hostname)
 	return (NULL);
 }
 
-char *
+gfarm_error_t
 invalid_input(int lineno)
 {
 	fprintf(stderr, "line %d: invalid input format\n", lineno);
-	fprintf(stderr, "%s: input must be "
-	    "\"<architecture> <ncpu> <hostname> <hostalias>...\" format\n",
+	fprintf(stderr, "%s: input must be \""
+	    "<architecture> <ncpu> <hostname> <port> <flags> <hostalias>..."
+	    "\" format\n",
 	    program_name);
 	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+static char space[] = " \t";
+
+gfarm_error_t
+parse_string_long(char **linep, int lineno, const char *diag, long *retvalp)
+{
+	char *line = *linep, *s;
+	int len;
+	long retval;
+
+	line += strspn(line, space); /* skip space */
+	len = strcspn(line, space);
+	if (len == 0 || line[len] == '\0')
+		return (invalid_input(lineno));
+	line[len] = '\0';
+	errno = 0;
+	retval = strtol(line, &s, 0);
+	if (s == line) {
+		return (invalid_input(lineno));
+	} else if (*s != '\0') {
+		fprintf(stderr, "line %d: garbage \"%s\" in %s \"%s\"\n",
+		    lineno, s, diag, line);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	} else if (errno != 0 && (retval == LONG_MIN || retval == LONG_MAX)) {
+		fprintf(stderr, "line %d: %s on \"%s\"\n",
+		    lineno, strerror(errno), line);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	line += len + 1;
+	*linep = line;
+	*retvalp = retval;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 #define LINE_BUFFER_SIZE 16384
 #define MAX_HOSTALIASES 256
 
-char *
+gfarm_error_t
 add_line(char *line, int lineno)
 {
-	long ncpu;
+	gfarm_error_t e;
+	long port, ncpu, flags;
 	int len, nhostaliases;
-	char *e, *hostname, *architecture;
+	char *s, *hostname, *architecture;
 	char *hostaliases[MAX_HOSTALIASES + 1];
-	static char space[] = " \t";
 
 	/* parse architecture */
 	line += strspn(line, space); /* skip space */
@@ -202,34 +303,17 @@ add_line(char *line, int lineno)
 	line[len] = '\0';
 	architecture = line;
 	line += len + 1;
-	e = validate_architecture(architecture);
-	if (e != NULL) {
+	s = validate_architecture(architecture);
+	if (s != NULL) {
 		fprintf(stderr,
 		    "line %d: invalid character '%c' in architecture \"%s\"\n",
-		    lineno, *e, architecture);
+		    lineno, *s, architecture);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	/* parse ncpu */
-	line += strspn(line, space); /* skip space */
-	len = strcspn(line, space);
-	if (len == 0 || line[len] == '\0')
-		return (invalid_input(lineno));
-	line[len] = '\0';
-	errno = 0;
-	ncpu = strtol(line, &e, 0);
-	if (e == line) {
-		return (invalid_input(lineno));
-	} else if (*e != '\0') {
-		fprintf(stderr, "line %d: garbage \"%s\" in ncpu \"%s\"\n",
-		    lineno, e, line);
-		return (GFARM_ERR_INVALID_ARGUMENT);
-	} else if (errno != 0 && (ncpu == LONG_MIN || ncpu == LONG_MAX)) {
-		fprintf(stderr, "line %d: %s on \"%s\"\n",
-		    lineno, strerror(errno), line);
-		return (GFARM_ERR_INVALID_ARGUMENT);
-	}
-	line += len + 1;
+	e = parse_string_long(&line, lineno, "ncpu", &ncpu);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	/* parse hostname */
 	line += strspn(line, space); /* skip space */
@@ -243,13 +327,21 @@ add_line(char *line, int lineno)
 		line[len] = '\0';
 		line += len + 1;
 	}
-	e = validate_hostname(hostname);
-	if (e != NULL) {
+	s = validate_hostname(hostname);
+	if (s != NULL) {
 		fprintf(stderr,
 		    "line %d: invalid character '%c' in hostname \"%s\"\n",
-		    lineno, *e, hostname);
+		    lineno, *s, hostname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
+
+	e = parse_string_long(&line, lineno, "port", &port);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = parse_string_long(&line, lineno, "flags", &flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	/* parse hostaliases */
 	for (nhostaliases = 0;; nhostaliases++) {
@@ -271,38 +363,39 @@ add_line(char *line, int lineno)
 			line[len] = '\0';
 			line += len + 1;
 		}
-		e = validate_hostname(hostaliases[nhostaliases]);
-		if (e != NULL) {
+		s = validate_hostname(hostaliases[nhostaliases]);
+		if (s != NULL) {
 			fprintf(stderr, "line %d: "
 			    "invalid character '%c' in hostalias \"%s\"\n",
-			    lineno, *e, hostaliases[nhostaliases]);
+			    lineno, *s, hostaliases[nhostaliases]);
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		}
 	}
 	hostaliases[nhostaliases] = NULL;
 
-	e = add_host(hostname, hostaliases, architecture, ncpu);
-	if (e != NULL)
-		fprintf(stderr, "line %d: %s\n", lineno, e);
+	e = add_host(hostname, port, hostaliases, architecture, ncpu, flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "line %d: %s\n",
+		    lineno, gfarm_error_string(e));
 	return (e);
 }
 
-char *
+gfarm_error_t
 register_db(void)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int len, lineno;
 	char line[LINE_BUFFER_SIZE];
 
 	if (fgets(line, sizeof line, stdin) == NULL)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	len = strlen(line);
 	for (lineno = 1;; lineno++) {
 		if (len > 0 && line[len - 1] == '\n') {
 			line[len - 1] = '\0';
 		} else {
 			fprintf(stderr, "line %d: too long line\n", lineno);
-			if (e_save == NULL)
+			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = GFARM_ERR_INVALID_ARGUMENT;
 			do {
 				if (fgets(line, sizeof line, stdin) == NULL)
@@ -312,7 +405,7 @@ register_db(void)
 			continue;
 		}
 		e = add_line(line, lineno);
-		if (e_save == NULL)
+		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 		if (fgets(line, sizeof line, stdin) == NULL)
 			break;
@@ -326,7 +419,7 @@ register_db(void)
  * In that case, the host_info is faked, and all members in the info structure
  * except info->hostname are not valid. (see list_gfsd_info())
  */
-char *
+gfarm_error_t
 resolv_addr_without_metadb(
 	const char *hostname, int port, struct gfarm_host_info *info,
 	struct sockaddr *addr, char **if_hostnamep)
@@ -348,34 +441,39 @@ resolv_addr_without_metadb(
 		if (*if_hostnamep == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
  * handle option "-i" (ignore "address_use" directive in gfarm.conf(5))
  */
-char *
+gfarm_error_t
 resolv_addr_without_address_use(
 	const char *hostname, int port, struct gfarm_host_info *info,
 	struct sockaddr *addr, char **if_hostnamep)
 {
-	char *e = resolv_addr_without_metadb(hostname, port, NULL,
+	gfarm_error_t e = resolv_addr_without_metadb(hostname, port, NULL,
 	    addr, if_hostnamep);
 	int i;
 
-	if (e == NULL)
-		return (NULL);
+	if (e == GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR);
 	for (i = 0; i < info->nhostaliases; i++) {
 		e = resolv_addr_without_metadb(
 		    info->hostaliases[i], port, NULL, addr, if_hostnamep);
-		if (e == NULL)
-			return (NULL);
+		if (e == GFARM_ERR_NO_ERROR)
+			return (GFARM_ERR_NO_ERROR);
 	}
 	return (e);
 }
 
-char *(*opt_resolv_addr)(const char *, int, struct gfarm_host_info *,
-    struct sockaddr *, char **) = gfarm_host_info_address_get;
+gfarm_error_t (*opt_resolv_addr)(const char *, int, struct gfarm_host_info *,
+    struct sockaddr *, char **) =
+#if 0 /* XXX FIXME not yet in v2 */
+	gfarm_host_info_address_get;
+#else
+	resolv_addr_without_address_use;
+#endif
 
 /*
  * extend the result of gfarm_auth_method_mnemonic()
@@ -405,7 +503,7 @@ struct output {
 	struct sockaddr peer_addr;
 	struct gfs_client_load load;
 	char auth_mnemonic;
-	char *error;
+	gfarm_error_t error;
 };
 
 #define OUTPUT_INITIAL_SPACE	130
@@ -493,7 +591,7 @@ void
 output_process(void *closure,
 	char *canonical_hostname, struct sockaddr *peer_addr,
 	struct gfs_client_load *load, struct gfs_connection *gfs_server,
-	char *error)
+	gfarm_error_t error)
 {
 	struct output o;
 
@@ -525,6 +623,7 @@ struct gfarm_paraccess {
 	struct gfarm_access {
 		void *closure;
 		char *canonical_hostname;
+		int port;
 		struct sockaddr peer_addr;
 		struct gfs_client_load load;
 
@@ -537,7 +636,7 @@ struct gfarm_paraccess {
 	int concurrency, nfree;
 };
 
-char *
+gfarm_error_t
 gfarm_paraccess_alloc(
 	int concurrency, int try_auth,
 	struct gfarm_paraccess **pap)
@@ -572,13 +671,13 @@ gfarm_paraccess_alloc(
 
 	pa->try_auth = try_auth;
 	*pap = pa;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static void
 gfarm_paraccess_callback(struct gfarm_paraccess *pa, struct gfarm_access *a,
 	struct gfs_client_load *load, struct gfs_connection *gfs_server,
-	char *e)
+	gfarm_error_t e)
 {
 	output_process(a->closure, a->canonical_hostname, &a->peer_addr,
 	    load, gfs_server, e);
@@ -593,61 +692,62 @@ static void
 gfarm_paraccess_load_finish(void *closure)
 {
 	struct gfarm_access *a = closure;
-	char *e;
+	gfarm_error_t e;
 
 	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
 	    &a->load);
-	gfarm_paraccess_callback(a->pa, a, e == NULL ? &a->load : NULL, NULL,
-	    e);
+	gfarm_paraccess_callback(a->pa, a,
+	    e == GFARM_ERR_NO_ERROR ? &a->load : NULL, NULL, e);
 }
 
 static void
 gfarm_paraccess_connect_finish(void *closure)
 {
 	struct gfarm_access *a = closure;
-	char *e;
+	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
 
-	e = gfs_client_connect_result_multiplexed(a->protocol_state,
+	e = gfs_client_connection_acquire_result_multiplexed(a->protocol_state,
 	    &gfs_server);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
 		return;
 	}
 	gfarm_paraccess_callback(a->pa, a, &a->load, gfs_server, e);
-	gfs_client_disconnect(gfs_server);
+	gfs_client_connection_free(gfs_server);
 }
 
 static void
 gfarm_paraccess_connect_request(void *closure)
 {
 	struct gfarm_access *a = closure;
-	char *e;
-	struct gfs_client_connect_state *cs;
+	gfarm_error_t e;
+	struct gfs_client_connection_acquire_state *cs;
 
 	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
 	    &a->load);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, NULL, NULL, e);
 		return;
 	}
-	e = gfs_client_connect_request_multiplexed(a->pa->q,
-	    a->canonical_hostname, &a->peer_addr,
+	e = gfs_client_connection_acquire_request_multiplexed(a->pa->q,
+	    a->canonical_hostname, a->port, &a->peer_addr,
 	    gfarm_paraccess_connect_finish, a,
 	    &cs);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
 		return;
 	}
 	a->protocol_state = cs;
 }
 
-char *
+gfarm_error_t
 gfarm_paraccess_request(struct gfarm_paraccess *pa,
-	void *closure, char *canonical_hostname, struct sockaddr *peer_addr)
+	void *closure, char *canonical_hostname, int port,
+	struct sockaddr *peer_addr)
 {
 	int rv;
-	char *e;
+	gfarm_error_t e;
 	struct gfarm_access *a;
 	struct gfs_client_get_load_state *gls;
 
@@ -671,6 +771,7 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 
 	a->closure = closure;
 	a->canonical_hostname = canonical_hostname;
+	a->port = port;
 	a->peer_addr = *peer_addr;
 
 	e = gfs_client_get_load_request_multiplexed(pa->q, &a->peer_addr,
@@ -679,28 +780,28 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 	    gfarm_paraccess_load_finish,
 	    a,
 	    &gls);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(pa, a, NULL, NULL, e);
 		return (e);
 	}
 	a->protocol_state = gls;
 	a->pa = pa;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 gfarm_paraccess_free(struct gfarm_paraccess *pa)
 {
 	int rv = gfarm_eventqueue_loop(pa->q, NULL);
-	char *e;
+	gfarm_error_t e;
 
 	free(pa->access_state);
 	gfarm_eventqueue_free(pa->q);
 	free(pa);
 	if (rv == 0)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	e = gfarm_errno_to_error(rv);
-	fprintf(stderr, "%s: %s\n", program_name, e);
+	fprintf(stderr, "%s: %s\n", program_name, gfarm_error_string(e));
 	return (e);
 }
 
@@ -737,8 +838,9 @@ callback_gfsd_info(struct output *o)
 
 	print_loadavg_authinfo(o);
 	printf("%s(%s)\n", if_hostname, inet_ntoa(addr_in->sin_addr));
-	if (opt_verbose && o->error != NULL)
-		fprintf(stderr, "%s: %s\n", if_hostname, o->error);
+	if (opt_verbose && o->error != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", if_hostname,
+		    gfarm_error_string(o->error));
 	free(o->canonical_hostname);
 	free(if_hostname);
 }
@@ -748,11 +850,11 @@ callback_gfsd_info(struct output *o)
  * In that case, the host_info is faked, and all members in the info structure
  * except info->hostname are not valid. (see list_gfsd_info())
  */
-char *
+gfarm_error_t
 request_gfsd_info(struct gfarm_host_info *info,
 	struct gfarm_paraccess *pa)
 {
-	char *e;
+	gfarm_error_t e;
 	struct sockaddr addr;
 	char *canonical_hostname, *if_hostname;
 
@@ -761,17 +863,18 @@ request_gfsd_info(struct gfarm_host_info *info,
 		e = GFARM_ERR_NO_MEMORY;
 	} else {
 		e = (*opt_resolv_addr)(
-		    canonical_hostname, gfarm_spool_server_port, info,
+		    canonical_hostname, info->port, info,
 		    &addr, &if_hostname);
 	}
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", info->hostname, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", info->hostname,
+		    gfarm_error_string(e));
 		if (canonical_hostname != NULL)
 			free(canonical_hostname);
 		return (e);
 	}
 	return (gfarm_paraccess_request(pa,
-	    if_hostname, canonical_hostname, &addr));
+	    if_hostname, canonical_hostname, info->port, &addr));
 }
 
 struct long_format_parameter {
@@ -790,8 +893,9 @@ callback_long_format(struct output *o)
 	int i, print_ifaddr = if_hostname != NULL;
 
 	print_loadavg_authinfo(o);
-	printf("%s %d %s",
-	    info->architecture, info->ncpu, o->canonical_hostname);
+	printf("%s %d %s %d %d",
+	    info->architecture, info->ncpu,
+	    o->canonical_hostname, info->port, info->flags);
 	if (print_ifaddr &&
 	    strcasecmp(o->canonical_hostname, if_hostname) == 0) {
 		print_ifaddr = 0;
@@ -809,19 +913,20 @@ callback_long_format(struct output *o)
 		printf(" [%s(%s)]", if_hostname, inet_ntoa(addr_in->sin_addr));
 	}
 	putchar('\n');
-	if (opt_verbose && o->error != NULL)
-		fprintf(stderr, "%s: %s\n", o->canonical_hostname, o->error);
+	if (opt_verbose && o->error != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", o->canonical_hostname,
+		    gfarm_error_string(o->error));
 	gfarm_host_info_free(info);
 	if (if_hostname != NULL)
 		free(if_hostname);
 	free(param);
 }
 
-char *
+gfarm_error_t
 request_long_format(struct gfarm_host_info *host_info,
 	struct gfarm_paraccess *pa)
 {
-	char *e;
+	gfarm_error_t e;
 	struct sockaddr addr;
 	struct long_format_parameter *param;
 	struct gfarm_host_info *info;
@@ -829,13 +934,15 @@ request_long_format(struct gfarm_host_info *host_info,
 	param = malloc(sizeof(*param));
 	if (param == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 	info = &param->info;
 
 	/* dup `*host_info' -> `*info' */
 	info->hostname = strdup(host_info->hostname);
+	info->port = host_info->port;
 	info->nhostaliases = host_info->nhostaliases;
 	if (host_info->nhostaliases == 0) {
 		info->hostaliases = NULL;
@@ -846,98 +953,108 @@ request_long_format(struct gfarm_host_info *host_info,
 	}
 	info->architecture = strdup(host_info->architecture);
 	info->ncpu = host_info->ncpu;
+	info->flags = host_info->flags;
 	if (info->hostname == NULL || info->architecture == NULL) {
 		gfarm_host_info_free(info);
 		free(param);
 		e = GFARM_ERR_NO_MEMORY;
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 
 	param->if_hostname = NULL;
-	e = (*opt_resolv_addr)(info->hostname, gfarm_spool_server_port, info,
+	e = (*opt_resolv_addr)(info->hostname, info->port, info,
 	    &addr, &param->if_hostname);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		output_process(param, info->hostname, NULL, NULL, NULL, e);
 		return (e);
 	}
 
-	return (gfarm_paraccess_request(pa, param, info->hostname, &addr));
+	return (gfarm_paraccess_request(pa, param, info->hostname, info->port,
+	    &addr));
 }
 
 void
 callback_nodename(struct output *o)
 {
-	if (o->error == NULL)
+	if (o->error == GFARM_ERR_NO_ERROR)
 		puts(o->canonical_hostname);
 	else if (opt_verbose)
-		fprintf(stderr, "%s: %s\n", o->canonical_hostname, o->error);
+		fprintf(stderr, "%s: %s\n",
+		    o->canonical_hostname, gfarm_error_string(o->error));
 	free(o->canonical_hostname);
 }
 
-char *
+gfarm_error_t
 request_nodename(struct gfarm_host_info *host_info,
 	struct gfarm_paraccess *pa)
 {
-	char *e, *canonical_hostname;
+	gfarm_error_t e;
+	char *canonical_hostname;
 	struct sockaddr addr;
 
 	/* dup `host_info->hostname' -> `hostname' */
 	canonical_hostname = strdup(host_info->hostname);
 	if (canonical_hostname == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 
 	e = (*opt_resolv_addr)(
-	    canonical_hostname, gfarm_spool_server_port, host_info,
+	    canonical_hostname, host_info->port, host_info,
 	    &addr, NULL);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		output_process(NULL, canonical_hostname, NULL, NULL, NULL, e);
 		return (e);
 	}
 
-	return (gfarm_paraccess_request(pa, NULL, canonical_hostname, &addr));
+	return (gfarm_paraccess_request(pa, NULL,
+	    canonical_hostname, host_info->port, &addr));
 }
 
-char *
+gfarm_error_t
 print_host_info(struct gfarm_host_info *info,
 	struct gfarm_paraccess *pa)
 {
 	int i;
 
-	printf("%s %d %s", info->architecture, info->ncpu, info->hostname);
+	printf("%s %d %s %d %d", info->architecture, info->ncpu,
+	    info->hostname, info->port, info->flags);
 	for (i = 0; i < info->nhostaliases; i++)
 		printf(" %s", info->hostaliases[i]);
 	putchar('\n');
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
+gfarm_error_t
 list_all(const char *architecture, const char *domainname,
-	char *(*request_op)(struct gfarm_host_info *,
+	gfarm_error_t (*request_op)(struct gfarm_host_info *,
 	    struct gfarm_paraccess *),
 	struct gfarm_paraccess *pa)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i, nhosts;
 	struct gfarm_host_info *hosts;
 
 	if (architecture != NULL)
-		e = gfarm_host_info_get_allhost_by_architecture(
-			architecture, &nhosts, &hosts);
+		e = gfm_client_host_info_get_by_architecture(
+		    gfarm_metadb_server, architecture, &nhosts, &hosts);
 	else
-		e = gfarm_host_info_get_all(&nhosts, &hosts);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		e = gfm_client_host_info_get_all(
+		    gfarm_metadb_server, &nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		return (e);
 	}
 	for (i = 0; i < nhosts; i++) {
 		if (domainname == NULL ||
 	 	    gfarm_host_is_in_domain(hosts[i].hostname, domainname)) {
 			e = (*request_op)(&hosts[i], pa);
-			if (e_save == NULL)
+			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 		}
 	}
@@ -945,25 +1062,26 @@ list_all(const char *architecture, const char *domainname,
 	return (e_save);
 }
 
-char *
+gfarm_error_t
 list(int nhosts, char **hosts,
-	char *(*request_op)(struct gfarm_host_info *,
+	gfarm_error_t (*request_op)(struct gfarm_host_info *,
 	    struct gfarm_paraccess *),
 	struct gfarm_paraccess *pa)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i;
 	struct gfarm_host_info hi;
 
 	for (i = 0; i < nhosts; i++) {
 		e = gfarm_host_info_get_by_if_hostname(hosts[i], &hi);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", hosts[i], e);
-			if (e_save == NULL)
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", hosts[i],
+		    	    gfarm_error_string(e));
+			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 		} else {
 			e = (*request_op)(&hi, pa);
-			if (e_save == NULL)
+			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 			gfarm_host_info_free(&hi);
 		}
@@ -975,18 +1093,19 @@ list(int nhosts, char **hosts,
  * This function is a special case to avoid Meta DB access,
  * and only called if opt_use_metadb == 0.
  */
-char *
-list_without_metadb(int nhosts, char **hosts,
-	char *(*request_op)(struct gfarm_host_info *,
+gfarm_error_t
+list_without_metadb(int nhosts, char **hosts, int port,
+	gfarm_error_t (*request_op)(struct gfarm_host_info *,
 	    struct gfarm_paraccess *),
 	struct gfarm_paraccess *pa)
 {
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int i;
 	struct gfarm_host_info host;
 
 	for (i = 0; i < nhosts; i++) {
 		host.hostname = hosts[i]; /* host_info is faked */
+		host.port = port;
 		/*
 		 * Because request_op is always request_gfsd_info for now,
 		 * the following fields aren't actually used.
@@ -995,24 +1114,25 @@ list_without_metadb(int nhosts, char **hosts,
 		host.hostaliases = NULL;
 		host.architecture = NULL;
 		host.ncpu = 0;
+		host.flags = -1;
 
 		e = (*request_op)(&host, pa);
-		if (e_save == NULL)
+		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 	return (e_save);
 }
 
-char *
+gfarm_error_t
 paraccess_list(int opt_concurrency, int opt_udp_only,
-	char *opt_architecture, char *opt_domainname,
+	char *opt_architecture, char *opt_domainname, int opt_port,
 	int opt_plain_order, int opt_sort_by_loadavg,
 	int opt_use_metadb, int nhosts, char **hosts,
-	char *(*request_op)(struct gfarm_host_info *,
+	gfarm_error_t (*request_op)(struct gfarm_host_info *,
 	    struct gfarm_paraccess *),
 	void (*callback_op)(struct output *))
 {
-	char *e, *e_save;
+	gfarm_error_t e, e_save;
 	struct gfarm_paraccess *pa;
 
 	if (opt_plain_order) /* i.e. don't sort */
@@ -1023,8 +1143,9 @@ paraccess_list(int opt_concurrency, int opt_udp_only,
 	output_callback = callback_op;
 
 	e = gfarm_paraccess_alloc(opt_concurrency, !opt_udp_only, &pa);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n",
+		    program_name, gfarm_error_string(e));
 		exit(1);
 	}
 
@@ -1034,10 +1155,11 @@ paraccess_list(int opt_concurrency, int opt_udp_only,
 	} else if (opt_use_metadb) {
 		e_save = list(nhosts, hosts, request_op, pa);
 	} else {
-		e_save = list_without_metadb(nhosts, hosts, request_op, pa);
+		e_save = list_without_metadb(nhosts, hosts, opt_port,
+		    request_op, pa);
 	}
 	e = gfarm_paraccess_free(pa);
-	if (e_save == NULL)
+	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
 
 	if (!opt_plain_order)
@@ -1053,11 +1175,11 @@ usage(void)
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
 	    program_name,
-	    "[-lMH] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iprv]",
+	    "[-lMH] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iruv]",
 	    program_name,
-	    "-c  -a <architecture>  [-n <ncpu>] <hostname> [<hostalias>...]",
+	    "-c  -a <architecture>  [-n <ncpu>] [-p <port>] [-f <flags>] <hostname> [<hostalias>...]",
 	    program_name,
-	    "-m [-a <architecture>] [-n <ncpu>] [-A] <hostname> [<hostalias>...]",
+	    "-m [-a <architecture>] [-n <ncpu>] [-p <port>] [-f <flags>] [-A] <hostname> [<hostalias>...]",
 	    program_name, "-d <hostname>...",
 	    program_name, "-R");
 	exit(EXIT_FAILURE);
@@ -1120,20 +1242,22 @@ main(int argc, char **argv)
 {
 	int argc_save = argc;
 	char **argv_save = argv;
-	char *e, *e_save = NULL;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	char opt_operation = '\0'; /* default operation */
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
 	char *opt_architecture = NULL;
 	char *opt_domainname = NULL;
 	long opt_ncpu = 0;
+	int opt_port = 0, opt_flags = -1;
 	int opt_plain_order = 0; /* i.e. do not sort */
 	int opt_sort_by_loadavg = 0;
 	int i, c, opt_use_metadb = 1;
+	char *s;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMRUa:cdij:lmn:prv?")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMPUa:cdf:ij:lmn:p:ruv?")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
@@ -1154,21 +1278,21 @@ main(int argc, char **argv)
 			break;
 		case 'a':
 			opt_architecture = optarg;
-			e = validate_architecture(opt_architecture);
-			if (e != NULL) {
+			s = validate_architecture(opt_architecture);
+			if (s != NULL) {
 				fprintf(stderr, "%s: "
 				    "invalid character '%c' in \"-a %s\"\n",
-				    program_name, *e, opt_architecture);
+				    program_name, *s, opt_architecture);
 				exit(1);
 			}
 			break;
 		case 'D':
 			opt_domainname = optarg;
-			e = validate_hostname(opt_domainname);
-			if (e != NULL) {
+			s = validate_hostname(opt_domainname);
+			if (s != NULL) {
 				fprintf(stderr, "%s: "
 				    "invalid character '%c' in \"-a %s\"\n",
-				    program_name, *e, opt_domainname);
+				    program_name, *s, opt_domainname);
 				exit(1);
 			}
 			break;
@@ -1184,17 +1308,23 @@ main(int argc, char **argv)
 				usage();
 			}
 			break;
+		case 'f':
+			opt_flags = parse_opt_long(optarg, c, "<flags>");
+			break;
 		case 'n':
 			opt_ncpu = parse_opt_long(optarg, c, "<ncpu>");
 			break;
 		case 'p':
-			opt_plain_order = 1;
+			opt_port = parse_opt_long(optarg, c, "<port>");
 			break;
 		case 'r':
 			output_sort_reverse = 1;
 			break;
 		case 'U':
 			opt_udp_only = 1;
+			break;
+		case 'u':
+			opt_plain_order = 1;
 			break;
 		case 'v':
 			opt_verbose = 1;
@@ -1213,9 +1343,10 @@ main(int argc, char **argv)
 			    program_name);
 			usage();
 		}
-		if (opt_ncpu == 0) {
+		if (opt_ncpu == 0)
 			opt_ncpu = 1;
-		}
+		if (opt_flags == -1)
+			opt_flags = 0;
 		/* opt_alter_aliases is meaningless, but allowed */
 		break;
 	case OP_REGISTER_DB:
@@ -1243,11 +1374,11 @@ main(int argc, char **argv)
 	}
 
 	for (i = 0; i < argc; i++) {
-		e = validate_hostname(argv[i]);
-		if (e != NULL) {
+		s = validate_hostname(argv[i]);
+		if (s != NULL) {
 			fprintf(stderr, "%s: "
 			    "invalid character '%c' in hostname \"%s\"\n",
-			    program_name, *e, argv[i]);
+			    program_name, *s, argv[i]);
 			exit(1);
 		}
 	}
@@ -1268,34 +1399,42 @@ main(int argc, char **argv)
 		 */
 		opt_use_metadb = 0;
 		opt_resolv_addr = resolv_addr_without_metadb;
-	} else if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	} else if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(1);
 	}
+	if (opt_port == 0)
+		opt_port = gfarm_spool_server_port;
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
 		if (argc > 0) {
-			e_save = add_host(argv[0], &argv[1],
-			    opt_architecture, opt_ncpu);
-			if (e_save != NULL)
-				fprintf(stderr, "%s: %s\n", argv[0], e_save);
+			e_save = add_host(argv[0], opt_port, &argv[1],
+			    opt_architecture, opt_ncpu, opt_flags);
+			if (e_save != GFARM_ERR_NO_ERROR)
+				fprintf(stderr, "%s: %s\n", argv[0],
+				    gfarm_error_string(e_save));
 		}
 		break;
 	case OP_MODIFY_ENTRY:
 		if (argc > 0) {
-			e_save = gfarm_modify_host(argv[0], &argv[1],
-			    opt_architecture, opt_ncpu, !opt_alter_aliases);
-			if (e_save != NULL)
-				fprintf(stderr, "%s: %s\n", argv[0], e_save);
+			e_save = gfarm_modify_host(argv[0], opt_port, &argv[1],
+			    opt_architecture, opt_ncpu, opt_flags,
+			    !opt_alter_aliases);
+			if (e_save != GFARM_ERR_NO_ERROR)
+				fprintf(stderr, "%s: %s\n", argv[0],
+				    gfarm_error_string(e_save));
 		}
 		break;
 	case OP_DELETE_ENTRY:
 		for (i = 0; i < argc; i++) {
-			e = gfarm_host_info_remove(argv[i]);
-			if (e != NULL) {
-				fprintf(stderr, "%s: %s\n", argv[i], e);
-				if (e_save == NULL)
+			e = gfm_client_host_info_remove(gfarm_metadb_server,
+			    argv[i]);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: %s\n", argv[i],
+				    gfarm_error_string(e));
+				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = e;
 			}
 		}
@@ -1310,21 +1449,21 @@ main(int argc, char **argv)
 		break;
 	case OP_LIST_GFSD_INFO:
 		e = paraccess_list(opt_concurrency, opt_udp_only,
-		    opt_architecture, opt_domainname,
+		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
 		    request_gfsd_info, callback_gfsd_info);
 		break;
 	case OP_NODENAME:
 		e = paraccess_list(opt_concurrency, opt_udp_only,
-		    opt_architecture, opt_domainname,
+		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
 		    request_nodename, callback_nodename);
 		break;
 	case OP_LIST_LONG:
 		e = paraccess_list(opt_concurrency, opt_udp_only,
-		    opt_architecture, opt_domainname,
+		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
 		    request_long_format, callback_long_format);
@@ -1339,9 +1478,10 @@ main(int argc, char **argv)
 		break;
 	}
 	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(1);
 	}
-	exit(e_save == NULL ? 0 : 1);
+	exit(e_save == GFARM_ERR_NO_ERROR ? 0 : 1);
 }

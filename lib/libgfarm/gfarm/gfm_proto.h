@@ -300,8 +300,16 @@ enum gfm_proto_command {
 /* GFM_PROTO_CKSUM_SET flags */
 #define	GFM_PROTO_CKSUM_SET_FILE_MODIFIED	0x00000001
 
-#define GFM_PROTO_MAX_DIRENT	10240
 #define GFM_PROTO_CKSUM_MAXLEN	256
+
+#define GFM_PROTO_MAX_DIRENT	10240
+
+/* GFM_PROTO_SCHEDULE_FILE, GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM */
+#define GFM_PROTO_SCHED_FLAG_HOST_AVAIL		1 /* always TRUE for now */
+#define GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL	2 /* always TRUE for now */
+#define GFM_PROTO_SCHED_FLAG_RTT_AVAIL		4 /* always FALSE for now */
+#define GFM_PROTO_LOADAVG_FSCALE 		2048
+
 
 #if 0 /* There isn't gfm_proto.c for now. */
 extern char GFM_SERVICE_TAG[];

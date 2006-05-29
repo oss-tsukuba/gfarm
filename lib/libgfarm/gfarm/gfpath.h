@@ -13,10 +13,10 @@
 /* Gfarm related pathnames */
 
 #ifndef GFARM_CONFIG
-#define GFARM_CONFIG		"/etc/gfarm.conf"
+#define GFARM_CONFIG		"/etc/gfarm2.conf"
 #endif
 #ifndef GFARM_CLIENT_RC
-#define GFARM_CLIENT_RC		".gfarmrc"
+#define GFARM_CLIENT_RC		".gfarm2rc"
 #endif
 #ifndef GFARM_SPOOL_ROOT
 #define GFARM_SPOOL_ROOT	"/var/spool/gfarm"

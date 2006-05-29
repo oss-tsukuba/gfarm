@@ -4,8 +4,10 @@ void peer_init(int);
 
 gfarm_error_t peer_alloc(int, struct peer **);
 void peer_authorized(struct peer *,
-	enum gfarm_auth_id_type, char *, char *, enum gfarm_auth_method);
+	enum gfarm_auth_id_type, char *, char *, struct sockaddr *,
+	enum gfarm_auth_method);
 void peer_free(struct peer *);
+void peer_shutdown_all(void);
 
 struct peer *peer_by_fd(int);
 gfarm_error_t peer_free_by_fd(int);
@@ -40,5 +42,3 @@ gfarm_error_t peer_fdpair_get_current(struct peer *, gfarm_int32_t *);
 gfarm_error_t peer_fdpair_get_saved(struct peer *, gfarm_int32_t *);
 gfarm_error_t peer_fdpair_save(struct peer *);
 gfarm_error_t peer_fdpair_restore(struct peer *);
-
-gfarm_error_t peer_schedule(struct peer *, void *(*)(void *));

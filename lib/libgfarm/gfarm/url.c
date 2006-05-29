@@ -12,8 +12,11 @@
 #include <limits.h>
 #include <assert.h>
 
-#include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+
+#if 0
+#include <openssl/evp.h>
+
 #include "config.h"
 #include "gfs_misc.h"
 
@@ -494,6 +497,7 @@ gfarm_url_prefix_add(const char *s)
 	strcpy(p + GFARM_URL_PREFIX_LENGTH, s);
 	return (p);
 }
+#endif
 
 /*
  * Skip directory in the pathname.

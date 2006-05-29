@@ -6,10 +6,10 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SRCS = gfreg.c
-OBJS = gfreg.o
+SRCS = gfreg_simple.c
+OBJS = gfreg_simple.o
 PROGRAM = gfreg
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
+CFLAGS = $(COMMON_CFLAGS)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 

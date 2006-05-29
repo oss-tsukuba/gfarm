@@ -10,10 +10,13 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h> /* TCP_NODELAY */
+#include <netdb.h> /* getprotobyname() */
 #include <sys/resource.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <setjmp.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <signal.h>
@@ -40,6 +43,7 @@
 #include "gfj_client.h"
 
 #include "subr.h"
+#include "db_access.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
@@ -55,6 +59,10 @@
 #define LISTEN_BACKLOG	5
 #endif
 
+#ifndef GFMD_CONFIG
+#define GFMD_CONFIG		"/etc/gfmd.conf"
+#endif
+
 /* limit maximum connections, when system limit is very high */
 #ifndef GFMD_CONNECTION_LIMIT
 #define GFMD_CONNECTION_LIMIT	65536
@@ -62,7 +70,7 @@
 
 char *program_name = "gfmd";
 
-int debug_mode = 0;
+struct protoent *tcp_proto;
 
 gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
@@ -96,7 +104,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_host_info_get_by_names(peer, from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_GET_BY_NAMEALIASES:
-		e = gfm_server_host_info_get_by_namealises(peer,
+		e = gfm_server_host_info_get_by_namealiases(peer,
 		    from_client, skip);
 		break;
 	case GFM_PROTO_HOST_INFO_SET:
@@ -443,6 +451,11 @@ protocol_main(void *arg)
 	socklen_t addrlen = sizeof(addr);
 	char addr_string[GFARM_SOCKADDR_STRLEN];
 
+	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
+	rv = 1;
+	setsockopt(gfp_xdr_fd(peer_get_conn(peer)), tcp_proto->p_proto,
+	    TCP_NODELAY, &rv, sizeof(rv));
+
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
 		gflog_error("authorize: getpeername: %s", strerror(errno));
@@ -466,8 +479,10 @@ protocol_main(void *arg)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning("authorize: %s", gfarm_error_string(e));
 	} else {
+		giant_lock();
 		peer_authorized(peer,
-		    id_type, username, hostname, auth_method);
+		    id_type, username, hostname, &addr, auth_method);
+		giant_unlock();
 		protocol_service(peer, id_type == GFARM_AUTH_ID_TYPE_USER);
 	}
 	peer_free(peer);
@@ -484,6 +499,7 @@ main_loop(int accepting_socket)
 	socklen_t client_addr_size;
 	struct peer *peer;
 
+	/* XXX FIXME too many threads, maybe */
 	for (;;) {
 		client_addr_size = sizeof(client_addr);
 		client_socket = accept(accepting_socket,
@@ -495,9 +511,9 @@ main_loop(int accepting_socket)
 		    GFARM_ERR_NO_ERROR) {
 			gflog_warning("peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
-		} else if ((e = peer_schedule(peer, protocol_main)) !=
+		} else if ((e = create_detached_thread(protocol_main, peer)) !=
 		    GFARM_ERR_NO_ERROR) {
-			gflog_warning("peer_schedule: authorize: %s",
+			gflog_warning("create_detached_thread: %s",
 			    gfarm_error_string(e));
 			peer_free(peer);
 		}
@@ -534,6 +550,35 @@ open_accepting_socket(int port)
 	return (sock);
 }
 
+void *
+termsigs_handler(void *p)
+{
+	sigset_t *termsigs = p;
+	int sig;
+
+	if (sigwait(termsigs, &sig) == -1)
+		gflog_warning("termsigs_handler: %s", strerror(errno));
+
+	gflog_info("terminating");
+
+	/* we never release the giant lock until exit */
+	/* so, it's safe to modify the state of all peers */
+	giant_lock();
+
+	gflog_info("shutting down peers");
+	peer_shutdown_all();
+
+	/* save all pending transactions */
+	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
+	db_terminate();
+
+	gflog_info("bye");
+	exit(0);
+
+	/*NOTREACHED*/
+	return (0); /* to shut up warning */
+}
+
 void
 usage(void)
 {
@@ -557,6 +602,7 @@ main(int argc, char **argv)
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
+	sigset_t termsigs;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -594,8 +640,14 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	tcp_proto = getprotobyname("tcp");
+	if (tcp_proto == NULL)
+		gflog_fatal("getprotobyname(\"tcp\") failed");
+
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
+	else
+		gfarm_config_set_filename(GFMD_CONFIG);
 	e = gfarm_server_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
@@ -635,10 +687,35 @@ main(int argc, char **argv)
 	if (table_size > GFMD_CONNECTION_LIMIT)
 		table_size = GFMD_CONNECTION_LIMIT;
 
+	switch (gfarm_backend_db_type) {
+	case GFARM_BACKEND_DB_TYPE_LDAP:
+#ifdef HAVE_LDAP
+		db_use(&db_ldap_ops);
+#else
+		gflog_fatal("LDAP DB is specified, but it's not built in");
+#endif
+		break;
+	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
+#ifdef HAVE_POSTGRESQL
+		db_use(&db_pgsql_ops);
+#else
+		gflog_fatal("PostgreSQL is specified, but it's not built in");
+#endif
+		break;
+	default:
+		gflog_fatal("neither LDAP or PostgreSQL is specified "
+		    "in configuration");
+		break;
+	}
+	e = db_initialize();
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error("database initialization failed: %s",
+		    gfarm_error_string(e));
+	}
+
 	host_init();
 	user_init();
 	group_init();
-	grpassign_init();
 	inode_init();
 	dir_entry_init();
 	file_copy_init();
@@ -651,6 +728,20 @@ main(int argc, char **argv)
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	signal(SIGPIPE, SIG_IGN);
+
+	sigemptyset(&termsigs);
+	sigaddset(&termsigs, SIGINT);
+	sigaddset(&termsigs, SIGTERM);
+	sigprocmask(SIG_BLOCK, &termsigs, NULL);
+	e = create_detached_thread(termsigs_handler, &termsigs);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal("create_detached_thread(termsigs_handler): %s",
+			    gfarm_error_string(e));
+
+	e = create_detached_thread(db_thread, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal("create_detached_thread(db_thread): %s",
+			    gfarm_error_string(e));
 
 	main_loop(sock);
 

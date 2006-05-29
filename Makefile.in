@@ -7,12 +7,12 @@ include $(top_srcdir)/makes/var.mk
 SUBDIRS = \
 	include/gfarm \
 	lib \
-	server
+	server \
+	gftool
 
 #	doc \
 #	man \
 #	`[ -d $(srcdir)/ns ] && echo ns` \
-#	gftool \
 #	gfptool \
 #	util/gfront \
 #	util/ptool \

@@ -210,15 +210,19 @@ get_nhosts(struct gfm_connection *gfm_server,
 {
 	gfarm_error_t e;
 	int i, eof;
+	gfarm_int32_t naliases;
 
 	for (i = 0; i < nhosts; i++) {
-		if ((e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ssiii",
-		    &hosts[i].hostname, hosts[i].architecture,
-		    &hosts[i].ncpu, &hosts[i].port, &hosts[i].flags)) !=
-		    GFARM_ERR_NO_ERROR)
+		if ((e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ssiiii",
+		    &hosts[i].hostname, &hosts[i].architecture,
+		    &hosts[i].ncpu, &hosts[i].port, &hosts[i].flags,
+		    &naliases)) != GFARM_ERR_NO_ERROR)
 			return (e); /* XXX */
 		if (eof)
 			return (GFARM_ERR_PROTOCOL); /* XXX */
+		/* XXX FIXME */
+		hosts[i].nhostaliases = 0;
+		hosts[i].hostaliases = NULL;
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -238,7 +242,7 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 	int *nhostsp, struct gfarm_host_info **hostsp)
 {
 	gfarm_error_t e;
-	int nhosts;
+	gfarm_int32_t nhosts;
 	struct gfarm_host_info *hosts;
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
@@ -350,7 +354,7 @@ get_nusers(struct gfm_connection *gfm_server,
 
 	for (i = 0; i < nusers; i++) {
 		if ((e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ssss",
-		    &users[i].username, users[i].realname,
+		    &users[i].username, &users[i].realname,
 		    &users[i].homedir, &users[i].gsi_dn)) !=
 		    GFARM_ERR_NO_ERROR)
 			return (e); /* XXX */
@@ -968,6 +972,51 @@ gfm_client_cksum_set_result(struct gfm_connection *gfm_server)
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
+void
+gfarm_host_sched_info_free(int nhosts, struct gfarm_host_sched_info *infos)
+{
+	int i;
+
+	for (i = 0; i < nhosts; i++)
+		free(infos[i].host);
+	free(infos);
+}
+
+static gfarm_error_t
+get_schedule_result(struct gfm_connection *gfm_server,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
+{
+	gfarm_error_t e;
+	gfarm_int32_t i, nhosts, loadavg;
+	struct gfarm_host_sched_info *infos;
+	int eof;
+
+	if ((e = gfm_client_rpc_result(gfm_server, 0, "i", &nhosts)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+	infos = malloc(sizeof(*infos) * nhosts);
+	if (infos == NULL) /* XXX this breaks gfm protocol */
+		return (GFARM_ERR_NO_MEMORY);
+
+	for (i = 0; i < nhosts; i++) {
+		if ((e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "siiillllii",
+		    &infos[i].host, &infos[i].port, &infos[i].ncpu,
+		    &loadavg, &infos[i].cache_time,
+		    &infos[i].disk_used, &infos[i].disk_avail,
+		    &infos[i].rtt_cache_time,
+		    &infos[i].rtt_usec, &infos[i].flags)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e); /* XXX */
+		if (eof)
+			return (GFARM_ERR_PROTOCOL); /* XXX */
+		infos[i].loadavg = (float)loadavg / GFM_PROTO_LOADAVG_FSCALE;
+	}
+
+	*nhostsp = nhosts;
+	*infosp = infos;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_client_schedule_file_request(struct gfm_connection *gfm_server,
 	const char *domain)
@@ -978,9 +1027,9 @@ gfm_client_schedule_file_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_schedule_file_result(struct gfm_connection *gfm_server,
-	char **hostp, gfarm_int32_t *portp)
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "si", hostp, portp));
+	return (get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
 gfarm_error_t
@@ -993,15 +1042,15 @@ gfm_client_schedule_file_with_program_request(
 
 gfarm_error_t
 gfm_client_schedule_file_with_program_result(struct gfm_connection *gfm_server,
-	char **hostp, gfarm_int32_t *portp)
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "si", hostp, portp));
+	return (get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
 gfarm_error_t
 gfm_client_remove_request(struct gfm_connection *gfm_server, const char *name)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_RENAME, "s",
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_REMOVE, "s",
 	    name));
 }
 
@@ -1183,11 +1232,12 @@ gfm_client_close_read_result(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_close_write_request(struct gfm_connection *gfm_server,
+	gfarm_off_t size,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
 	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_WRITE,
-	    "lili", atime_sec, atime_nsec, mtime_sec, mtime_nsec));
+	    "llili", size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
 
 gfarm_error_t
@@ -1493,7 +1543,7 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 	gfarm_pid_t pid)
 {
 	return (gfm_client_rpc(gfm_server, 0,
-	    GFM_PROTO_PROCESS_SET, "ibl",
+	    GFM_PROTO_PROCESS_SET, "ibl/",
 	    keytype, sharedkey_size, sharedkey, pid));
 }
 

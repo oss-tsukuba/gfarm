@@ -1,5 +1,4 @@
-gfarm_error_t group_init(void);
-gfarm_error_t grpassign_init(void);
+void group_init(void);
 
 struct user;
 struct group;
@@ -15,9 +14,13 @@ struct group_assignment {
 	struct group *g;
 };
 
+extern char ADMIN_GROUP_NAME[];
+
 struct group *group_lookup(const char *);
+gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
+
 
 struct peer;
 gfarm_error_t gfm_server_group_info_get_all(struct peer *, int, int);

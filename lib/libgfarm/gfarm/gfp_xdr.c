@@ -7,6 +7,9 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "gfutil.h" /* gflog_fatal() */
+
 #include "liberror.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -486,8 +489,13 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (**formatp != '/')
+	if (**formatp != '/') {
+#if 1
+		gflog_fatal(gfarm_error_string(GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING));
+		abort();
+#endif
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING);
+	}
 	(*formatp)++;
 
 	e = gfp_xdr_vrpc_result(conn, just, errorp, formatp, app);

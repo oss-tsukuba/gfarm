@@ -43,12 +43,20 @@ gfs_stat(const char *path, struct gfs_stat *s)
 		    gfarm_error_string(e));
 	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
 	    != GFARM_ERR_NO_ERROR)
+#if 0
 		gflog_warning("tmp_open(%s) result: %s", path,
 		    gfarm_error_string(e));
+#else
+		;
+#endif
 	else if ((e = gfm_client_fstat_result(gfarm_metadb_server, s))
 	    != GFARM_ERR_NO_ERROR)
+#if 0
 		gflog_warning("fstat result: %s",
 		    gfarm_error_string(e));
+#else
+		;
+#endif
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning("compound_end result: %s",
@@ -61,13 +69,4 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
-}
-
-void
-gfs_stat_free(struct gfs_stat *s)
-{
-	if (s->st_user != NULL)
-		free(s->st_user);
-	if (s->st_group != NULL)
-		free(s->st_group);
 }

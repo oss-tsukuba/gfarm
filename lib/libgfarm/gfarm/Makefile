@@ -14,11 +14,6 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo auth_server_gsi.lo \
 	io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
-#LDAP_SRCS = metadb_ldap.c
-#LDAP_OBJS = metadb_ldap.lo
-#POSTGRESQL_SRCS = metadb_pgsql.c
-#POSTGRESQL_OBJS = metadb_pgsql.lo
-
 SRCS = \
 	liberror.c \
 	hostspec.c \
@@ -49,14 +44,20 @@ SRCS = \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
 	gfs_stat.c \
-	gfs_mkdir.c
+	gfs_mkdir.c \
+	gfs_rmdir.c \
+	gfs_remove.c \
+	gfs_rename.c \
+	gfs_unlink.c \
+	glob.c \
+	schedule.c \
+	url.c
 
 #	gfs_pio.c gfs_pio_global.c \
 #	gfs_pio_misc.c gfs_pio_section.c \
 #	gfs_exec.c gfs_unlink.c gfs_lock.c \
-#	glob.c host.c hostcache.c \
-#	import_help.c metadb_misc.c metadb_sw.c schedule.c \
-#	url.c
+#	host.c hostcache.c \
+#	import_help.c metadb_misc.c metadb_sw.c \
 
 #	agent_wrap.c agent_client.c agent_proto.c \
 #	gfs_client_rep.c \
@@ -92,14 +93,20 @@ OBJS = \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
 	gfs_stat.lo \
-	gfs_mkdir.lo
+	gfs_mkdir.lo \
+	gfs_rmdir.lo \
+	gfs_remove.lo \
+	gfs_rename.lo \
+	gfs_unlink.lo \
+	glob.lo \
+	schedule.lo \
+	url.lo
 
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo gfs_pio_section.lo \
 #	gfs_exec.lo gfs_unlink.lo gfs_lock.lo \
-#	glob.lo host.lo hostcache.lo \
+#	host.lo hostcache.lo \
 #	import_help.lo metadb_misc.lo metadb_sw.lo schedule.lo \
-#	url.lo
 
 #	agent_wrap.lo agent_client.lo agent_proto.lo \
 #	gfs_client_rep.lo \
@@ -108,7 +115,7 @@ OBJS = \
 CFLAGS = $(pthread_includes) \
 	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
-	-DGFARM_CONFIG='"$(sysconfdir)/gfarm.conf"'
+	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
 
 all: $(LIBRARY)
 
@@ -153,6 +160,7 @@ import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
+metadb_common.lo: metadb_common.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
 metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h

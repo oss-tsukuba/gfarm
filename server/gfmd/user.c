@@ -6,15 +6,17 @@
 #include <errno.h>
 #include <sys/types.h> /* fd_set for "filetab.h" */
 
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/user_info.h>
+#include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "hash.h"
+
+#include "config.h"	/* gfarm_metadb_admin_user */
 #include "auth.h"
 #include "gfp_xdr.h"
 
 #include "subr.h"
+#include "db_access.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
@@ -27,10 +29,22 @@ struct user {
 	struct group_assignment groups;
 };
 
-char ADMIN_USER_NAME[] = "gfadmin";
+char ADMIN_USER_NAME[] = "gfarmadm";
 char REMOVED_USER_NAME[] = "gfarm-removed-user";
 
 static struct gfarm_hash_table *user_hashtab = NULL;
+
+/* subroutine of grpassign_add(), shouldn't be called from elsewhere */
+void
+grpassign_add_group(struct group_assignment *ga)
+{
+	struct user *u = ga->u;
+
+	ga->group_next = &u->groups;
+	ga->group_prev = u->groups.group_prev;
+	u->groups.group_prev->group_next = ga;
+	u->groups.group_prev = ga;
+}
 
 int
 hash_user(const void *key, int keylen)
@@ -59,18 +73,6 @@ hash_key_equal_user(
 		return (0);
 
 	return (gfarm_hash_key_equal_default(k1, l1, k2, l2));
-}
-
-gfarm_error_t
-user_init(void)
-{
-	user_hashtab =
-	    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
-		hash_user, hash_key_equal_user);
-	if (user_hashtab == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	return (GFARM_ERR_NO_ERROR);
 }
 
 struct user *
@@ -158,16 +160,6 @@ user_is_removed(struct user *u)
 }
 
 int
-user_is_admin(struct user *user)
-{
-	static struct user *admin = NULL;
-
-	if (admin == NULL)
-		admin = user_lookup(ADMIN_USER_NAME);
-	return (user == admin);
-}
-
-int
 user_in_group(struct user *user, struct group *group)
 {
 	struct group_assignment *ga;
@@ -180,55 +172,65 @@ user_in_group(struct user *user, struct group *group)
 	return (0);
 }
 
-/*
- * I/O
- */
-
-static FILE *user_fp;
-
-gfarm_error_t
-user_info_open_for_seq_read(void)
+int
+user_is_admin(struct user *user)
 {
-	user_fp = fopen("user", "r");
-	if (user_fp == NULL)
-		return (gfarm_errno_to_error(errno));
-	return (GFARM_ERR_NO_ERROR);
+	static struct group *admin = NULL;
+
+	if (admin == NULL)
+		admin = group_lookup(ADMIN_GROUP_NAME);
+	return (user_in_group(user, admin));
 }
 
-gfarm_error_t
-user_info_open_for_seq_write(void)
+/* The memory owner of `*ui' is changed to user.c */
+void
+user_add_one(void *closure, struct gfarm_user_info *ui)
 {
-	user_fp = fopen("user", "w");
-	if (user_fp == NULL)
-		return (gfarm_errno_to_error(errno));
-	return (GFARM_ERR_NO_ERROR);
+	gfarm_error_t e = user_enter(ui, NULL);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("user_add_one: %s", gfarm_error_string(e));
 }
 
-/* This function needs to allocate strings */
-gfarm_error_t
-user_info_read_next(struct gfarm_user_info *ui)
+void
+create_user(const char *username)
 {
-	return (GFARM_ERR_NO_ERROR);
+	gfarm_error_t e;
+	struct gfarm_user_info ui;
+
+	gflog_info("user '%s' not found, creating...", username);
+
+	ui.username = strdup(username);
+	ui.realname = strdup("Gfarm administrator");
+	ui.homedir = strdup("/");
+	ui.gsi_dn = strdup("");
+	user_add_one(NULL, &ui);
+	e = db_user_add(&ui);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("failed to store user '%s' to storage: %s",
+		    username, gfarm_error_string(e));
 }
 
-gfarm_error_t
-user_info_write_next(struct gfarm_user_info *ui)
+void
+user_init(void)
 {
-	return (GFARM_ERR_NO_ERROR);
-}
+	gfarm_error_t e;
 
-gfarm_error_t
-user_info_close_for_seq_read(void)
-{
-	fclose(user_fp);
-	return (GFARM_ERR_NO_ERROR);
-}
+	user_hashtab =
+	    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
+		hash_user, hash_key_equal_user);
+	if (user_hashtab == NULL)
+		gflog_fatal("no memory for user hashtab");
 
-gfarm_error_t
-user_info_close_for_seq_write(void)
-{
-	fclose(user_fp);
-	return (GFARM_ERR_NO_ERROR);
+	e = db_user_load(NULL, user_add_one);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("loading users: %s", gfarm_error_string(e));
+
+	if (user_lookup(ADMIN_USER_NAME) == NULL)
+		create_user(ADMIN_USER_NAME);
+	if (gfarm_metadb_admin_user != NULL &&
+	    user_lookup(gfarm_metadb_admin_user) == NULL)
+		create_user(gfarm_metadb_admin_user);
 }
 
 #ifndef TEST
@@ -250,7 +252,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	struct gfp_xdr *client = peer_get_conn(peer);
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nusers;
-	struct user *u;
+	struct user **u;
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -274,7 +276,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		e = user_info_send(client, &u->ui);
+		e = user_info_send(client, &(*u)->ui);
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_unlock();
 			return (e);
@@ -285,6 +287,10 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * We need to allow gfsd use this operation
+ * to implement gfarm_metadb_verify_username()
+ */
 gfarm_error_t
 gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 {
@@ -300,14 +306,9 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	    "i", &nusers);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (!from_client) {
-		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		users = NULL;
-	} else {
-		users = malloc(sizeof(*users) * nusers);
-		if (users == NULL)
-			error = GFARM_ERR_NO_MEMORY;
-	}
+	users = malloc(sizeof(*users) * nusers);
+	if (users == NULL)
+		error = GFARM_ERR_NO_MEMORY;
 	for (i = 0; i < nusers; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &user);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
@@ -348,10 +349,16 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 		for (i = 0; i < nusers; i++) {
 			u = user_lookup(users[i]);
 			if (u == NULL) {
+				if (debug_mode)
+					gflog_info("user lookup <%s>: failed",
+					    users[i]);
 				e = gfm_server_put_reply(peer,
 				    "USER_INFO_GET_BY_NAMES/no-user",
 				    GFARM_ERR_NO_SUCH_OBJECT, "");
 			} else {
+				if (debug_mode)
+					gflog_info("user lookup <%s>: ok",
+					    users[i]);
 				e = gfm_server_put_reply(peer,
 				    "USER_INFO_GET_BY_NAMES/send-reply",
 				    GFARM_ERR_NO_ERROR, "");
@@ -394,12 +401,24 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else {
 		e = user_enter(&ui, NULL);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = db_user_add(&ui);
+			if (e != GFARM_ERR_NO_ERROR) {
+				db_user_remove(ui.username);
+				ui.username = ui.realname = ui.homedir =
+				    ui.gsi_dn = NULL;
+			}
+		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
+		if (ui.username != NULL)
+			free(ui.username);
+		if (ui.realname != NULL)
+			free(ui.realname);
+		if (ui.homedir != NULL)
+			free(ui.homedir);
+		if (ui.gsi_dn != NULL)
+			free(ui.gsi_dn);
 	}
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "USER_INFO_SET", e, ""));
@@ -411,6 +430,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	struct gfarm_user_info ui;
 	struct user *u, *user = peer_get_user(peer);
 	gfarm_error_t e;
+	int needs_free = 0;
 
 	e = gfm_server_get_request(peer, "USER_INFO_MODIFY",
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
@@ -426,16 +446,14 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
+		needs_free = 1;
 	} else if ((u = user_lookup(ui.username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
+		needs_free = 1;
+	} else if ((e = db_user_modify(&ui,
+	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=
+	    GFARM_ERR_NO_ERROR) {
+		needs_free = 1;
 	} else {
 		free(u->ui.realname);
 		free(u->ui.homedir);
@@ -445,6 +463,12 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		u->ui.gsi_dn = ui.gsi_dn;
 		free(ui.username);
 	}
+	if (needs_free) {
+		free(ui.username);
+		free(ui.realname);
+		free(ui.homedir);
+		free(ui.gsi_dn);
+	}
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "USER_INFO_MODIFY", e, ""));
 }
@@ -453,7 +477,7 @@ gfarm_error_t
 gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 {
 	char *username;
-	gfarm_int32_t e;
+	gfarm_int32_t e, e2;
 	struct user *user = peer_get_user(peer);
 
 	e = gfm_server_get_request(peer, "USER_INFO_REMOVE",
@@ -467,8 +491,10 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else {
-		e = user_remove(username);
+	} else if ((e = user_remove(username)) == GFARM_ERR_NO_ERROR) {
+		e2 = db_user_remove(username);
+		gflog_error("protocol USER_INFO_REMOVE db: %s",
+		    gfarm_error_string(e2));
 	}
 	free(username);
 	giant_unlock();

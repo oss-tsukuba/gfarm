@@ -10,10 +10,15 @@
 #include <errno.h>
 #include <stdio.h>
 #include <netdb.h>
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h> /* GFARM_ARRAY_LENGTH */
+
+#include "gfutil.h"
+
 #include "liberror.h"
+#include "gfpath.h"
 
 static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"success",
@@ -153,9 +158,13 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	/* refered only from gfarm/config.c */
 	"missing argument",
 	"too many arguments",
+	"integer expected",
+	"invalid character",
 	"local user name redifined",
 	"global user name redifined",
 	"missing second field (local user)",
+	"inconsistent configuration, LDAP is specified as metadata backend before",
+	"inconsistent configuration, PostgreSQL is specified as metadata backend before",
 	"unterminated single quote",
 	"unterminated double quote",
 	"incomplete escape: \\",
@@ -169,7 +178,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"missing <user map file> argument",
 	"missing 1st(architecture) argument",
 	"missing 2nd(host-spec) argument",
-	"cannot open gfarm.conf",
+	"cannot open " GFARM_CONFIG,
 
 	/* refered only from gfarm/gfp_xdr.c */
 	"gfp_xdr_send: invalid format character",
@@ -212,6 +221,12 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 
 	/* refered from gfarm/gfs_pio.c and related modules */
 	"internal error: end of file with gfs_pio",
+
+	/* refered only from gfarm/glob.c */
+	"gfs_glob(): gfarm library isn't properly initialized",
+
+	/* refered only from gfarm/schedule.c */
+	"no filesystem node",
 };
 
 /*
@@ -461,12 +476,9 @@ gfarm_errno_to_error_initialize(void)
 	e = gfarm_error_domain_alloc(0, ERRNO_NUMBER,
 	    gfarm_errno_to_string, NULL,
 	    &gfarm_errno_domain);
-	if (e != GFARM_ERR_NO_ERROR) {
-		/* really fatal problem */
-		fprintf(stderr,
-		    "libgfarm: cannot allocate error map for errno\n");
-		exit(EXIT_FAILURE);
-	}
+	if (e != GFARM_ERR_NO_ERROR) /* really fatal problem */
+		gflog_fatal("libgfarm: cannot allocate error map for errno");
+
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];
 		if (gfarm_error_domain_map(gfarm_errno_domain, map->unix_errno)

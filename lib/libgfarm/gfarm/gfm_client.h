@@ -6,6 +6,25 @@ struct gfarm_user_info;
 struct gfarm_group_info;
 struct gfarm_group_names;
 
+struct gfarm_host_sched_info {
+	char *host;
+	gfarm_uint32_t port;
+	gfarm_uint32_t ncpu;	/* XXX should have whole gfarm_host_info? */
+
+	/* if GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL */
+	float loadavg;
+	gfarm_uint64_t cache_time;
+	gfarm_uint64_t disk_used;
+	gfarm_uint64_t disk_avail;
+
+	/* if GFM_PROTO_SCHED_FLAG_RTT_AVAIL */
+	gfarm_uint64_t rtt_cache_time;
+	gfarm_uint32_t rtt_usec;
+
+	gfarm_uint32_t flags;			/* GFM_PROTO_SCHED_FLAG_* */
+};
+void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
+
 gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);
 void gfm_client_connection_free(struct gfm_connection *);
@@ -103,6 +122,7 @@ gfarm_error_t gfm_client_close_read_request(struct gfm_connection *,
 	gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_close_read_result(struct gfm_connection *);
 gfarm_error_t gfm_client_close_write_request(struct gfm_connection *,
+	gfarm_off_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_close_write_result(struct gfm_connection *);
 gfarm_error_t gfm_client_verify_type_request(struct gfm_connection *,
@@ -137,12 +157,12 @@ gfarm_error_t gfm_client_cksum_set_request(struct gfm_connection *,
 gfarm_error_t gfm_client_cksum_set_result(struct gfm_connection *);
 gfarm_error_t gfm_client_schedule_file_request(struct gfm_connection *,
 	const char *);
-gfarm_error_t gfm_client_schedule_file_result(struct gfm_connection *,
-	char **, gfarm_int32_t *);
+gfarm_error_t gfm_client_schedule_file_result(
+	struct gfm_connection *, int *, struct gfarm_host_sched_info **);
 gfarm_error_t gfm_client_schedule_file_with_program_request(
 	struct gfm_connection *, const char *);
 gfarm_error_t gfm_client_schedule_file_with_program_result(
-	struct gfm_connection *, char **, gfarm_int32_t *);
+	struct gfm_connection *, int *, struct gfarm_host_sched_info **);
 gfarm_error_t gfm_client_remove_request(struct gfm_connection *, const char *);
 gfarm_error_t gfm_client_remove_result(struct gfm_connection *);
 gfarm_error_t gfm_client_rename_request(struct gfm_connection *,

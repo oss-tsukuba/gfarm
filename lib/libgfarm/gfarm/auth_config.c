@@ -123,7 +123,7 @@ gfarm_auth_disable(enum gfarm_auth_method method, struct gfarm_hostspec *hsp)
 /* this i/f have to be changed, if we support more than 31 auth methods */
 gfarm_int32_t
 gfarm_auth_method_get_enabled_by_name_addr(
-	char *name, struct sockaddr *addr)
+	const char *name, struct sockaddr *addr)
 {
 	struct gfarm_auth_config *acp = gfarm_auth_config_list;
 	gfarm_int32_t enabled = 0, disabled = 0, methods;

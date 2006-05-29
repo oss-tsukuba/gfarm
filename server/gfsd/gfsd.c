@@ -28,6 +28,11 @@
 #include <grp.h>
 #include <libgen.h>
 
+#if defined(SCM_RIGHTS) && \
+		(!defined(sun) || (!defined(__svr4__) && !defined(__SVR4)))
+#define HAVE_MSG_CONTROL 1
+#endif
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
@@ -183,12 +188,13 @@ fatal_metadb_proto(const char *diag, const char *proto, gfarm_error_t e)
 }
 
 static int
-fd_send_message(int fd, void *buffer, size_t size, int fdc, int *fdv)
+fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 {
+	char *buffer = buf;
 	int i, rv;
 	struct iovec iov[1];
 	struct msghdr msg;
-#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+#ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
 	struct {
 		struct cmsghdr hdr;
 		char data[CMSG_SPACE(sizeof(*fdv) * GFSD_MAX_PASSING_FD)
@@ -209,7 +215,7 @@ fd_send_message(int fd, void *buffer, size_t size, int fdc, int *fdv)
 		msg.msg_iovlen = 1;
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-#ifndef SCM_RIGHTS
+#ifndef HAVE_MSG_CONTROL
 		if (fdc > 0) {
 			msg.msg_accrights = (caddr_t)fdv;
 			msg.msg_accrightslen = sizeof(*fdv) * fdc;
@@ -252,6 +258,9 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 	gfarm_error_t e;
 	int eof;
 
+	if (debug_mode)
+		gflog_info("<%s> start receiving", diag);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
 	va_end(ap);
@@ -269,6 +278,9 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfarm_int32_t ecode, const char *format, va_list *app)
 {
 	gfarm_error_t e;
+
+	if (debug_mode)
+		gflog_info("<%s> sending reply: %d", diag, (int)ecode);
 
 	e = gfp_xdr_send(client, "i", ecode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -549,7 +561,7 @@ open_data(char *path, int flags)
 		slashpos[i] = tail;
 		path[tail] = '\0';
 
-		if (stat(path, &st) < 0) {
+		if (stat(path, &st) == 0) {
 			/* maybe race? */
 		} else if (errno != ENOENT) {
 			gflog_warning("stat(`%s') failed: %s",
@@ -628,9 +640,11 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 		fatal_metadb_proto("put_fd result", diag, e);
 	else if ((e = gfm_client_reopen_result(gfm_server,
 	    &ino, &gen, &mode, &net_flags, &to_create))
-	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto("reopen result", diag, e);
-	else if ((e = gfm_client_compound_end_result(gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		if (debug_mode)
+			gflog_info("reopen(%s) result: %s", diag,
+			    gfarm_error_string(e));
+	} else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto("compound_end result", diag, e);
 
@@ -668,18 +682,25 @@ gfs_server_open(struct gfp_xdr *client)
 void
 gfs_server_open_local(struct gfp_xdr *client)
 {
+	gfarm_error_t e;
 	gfarm_int32_t net_fd;
-	int local_fd;
+	int local_fd, rv;
 	gfarm_int8_t dummy = 0; /* needs at least 1 byte */
 
 	if (gfs_server_open_common(client, "open_local", &net_fd, &local_fd) !=
 	    GFARM_ERR_NO_ERROR)
 		return;
 
-	gfp_xdr_flush(client);
-	/* XXX: FIXME layering violation */
-	fd_send_message(gfp_xdr_fd(client),
+	/* need to flush iobuffer before sending data w/o iobuffer */
+	e = gfp_xdr_flush(client);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("open_local: flush: %s", gfarm_error_string(e));
+
+	/* layering violation, but... */
+	rv = fd_send_message(gfp_xdr_fd(client),
 	    &dummy, sizeof(dummy), 1, &local_fd);
+	if (rv != 0)
+		gflog_warning("open_local: send_message: %s", strerror(rv));
 
 	file_table_set_flag(net_fd, FILE_FLAG_LOCAL);
 }
@@ -689,6 +710,7 @@ close_request(struct file_entry *fe)
 {
 	if (fe->flags & FILE_FLAG_WRITTEN) {
 		return (gfm_client_close_write_request(gfm_server,
+		    fe->size,
 		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)0,
 		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)0));
 		/* XXX FIXME st_atimespec.tv_nsec */
@@ -718,7 +740,7 @@ void
 gfs_server_close(struct gfp_xdr *client)
 {
 	gfarm_error_t e, e2;
-	int fd;
+	int fd, stat_is_done = 0;
 	struct file_entry *fe;
 	struct stat st;
 	static const char diag[] = "close";
@@ -734,17 +756,29 @@ gfs_server_close(struct gfp_xdr *client)
 			gflog_warning("fd %d: stat failed at close: %s",
 			    fd, strerror(errno));
 		} else {
+			stat_is_done = 1;
 			if (st.st_atime != fe->atime) {
 				fe->atime = st.st_atime;
 				fe->flags |= FILE_FLAG_READ;
 			}
 			/* XXX FIXME st_atimespec.tv_nsec */
 
-			if (st.st_mtime != fe->mtime) {
+			if (st.st_mtime != fe->mtime ||
+			    st.st_size != fe->size) {
 				fe->mtime = st.st_mtime;
+				fe->size = st.st_size;
 				fe->flags |= FILE_FLAG_WRITTEN;
+				/* XXX FIXME this may be caused by others */
 			}
 			/* XXX FIXME st_mtimespec.tv_nsec */
+		}
+		if ((fe->flags & FILE_FLAG_WRITTEN) != 0 && !stat_is_done) {
+			if (fstat(fe->local_fd, &st) == -1)
+				gflog_warning(
+				    "fd %d: stat failed at close: %s",
+				    fd, strerror(errno));
+			else
+				fe->size = st.st_size;
 		}
 
 		if ((e = gfm_client_compound_begin_request(gfm_server))
@@ -765,9 +799,11 @@ gfs_server_close(struct gfp_xdr *client)
 		else if ((e = gfm_client_put_fd_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			fatal_metadb_proto("put_fd result", diag, e);
-		else if ((e = close_result(fe)) != GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto("close result", diag, e);
-		else if ((e = gfm_client_compound_end_result(gfm_server))
+		else if ((e = close_result(fe)) != GFARM_ERR_NO_ERROR) {
+			if (debug_mode)
+				gflog_info("close(%s) result: %s", diag,
+				    gfarm_error_string(e));
+		} else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			fatal_metadb_proto("compound_end result", diag, e);
 
@@ -793,7 +829,14 @@ gfs_server_pread(struct gfp_xdr *client)
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
+#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
+#else
+	rv = 0;
+	if (lseek(file_table_get(fd), offset, SEEK_SET) == -1)
+		save_errno = errno;
+	else if ((rv = read(file_table_get(fd), buffer, size)) == -1)
+#endif
 		save_errno = errno;
 	else
 		file_table_set_read(fd);
@@ -822,7 +865,14 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	 */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
+#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	if ((rv = pwrite(file_table_get(fd), buffer, size, offset)) == -1)
+#else
+	rv = 0;
+	if (lseek(file_table_get(fd), offset, SEEK_SET) == -1)
+		save_errno = errno;
+	else if ((rv = write(file_table_get(fd), buffer, size)) == -1)
+#endif
 		save_errno = errno;
 	else
 		file_table_set_written(fd);
@@ -962,9 +1012,11 @@ gfs_server_cksum_set(struct gfp_xdr *client)
 		    != GFARM_ERR_NO_ERROR)
 			fatal_metadb_proto("put_fd result", diag, e);
 		else if ((e = gfm_client_cksum_set_result(gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto("close result", diag, e);
-		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    GFARM_ERR_NO_ERROR) {
+			if (debug_mode)
+				gflog_info("cksum_set(%s) result: %s", diag,
+				    gfarm_error_string(e));
+		} else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			fatal_metadb_proto("compound_end result", diag, e);
 	}
@@ -972,27 +1024,27 @@ gfs_server_cksum_set(struct gfp_xdr *client)
 	gfs_server_put_reply(client, diag, e, "");
 }
 
-#if 0 /* not yet in gfarm v2 */
-
 void
 gfs_server_statfs(struct gfp_xdr *client)
 {
-	char *dir, *path;
+	char *dir;
 	int save_errno = 0;
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 
+	/* XXX FIXME: is it OK to pass `dir'? */
 	gfs_server_get_request(client, "stafs", "s", &dir);
 
-	local_path(dir, &path, "statfs");
-	save_errno = gfsd_statfs(path, &bsize,
+	save_errno = gfsd_statfs(dir, &bsize,
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
-	free(path);
+	free(dir);
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
-	    "ioooooo", bsize, blocks, bfree, bavail, files, ffree, favail);
+	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
 }
+
+#if 0 /* not yet in gfarm v2 */
 
 void
 gfs_server_bulkread(struct gfp_xdr *client)
@@ -1642,6 +1694,8 @@ struct gfs_server_command_context {
 volatile sig_atomic_t sigchld_jmp_needed = 0;
 sigjmp_buf sigchld_jmp_buf;
 
+#endif /* not yet in gfarm v2 */
+
 void
 sigchld_handler(int sig)
 {
@@ -1651,14 +1705,20 @@ sigchld_handler(int sig)
 		pid = waitpid(-1, &status, WNOHANG);
 		if (pid == -1 || pid == 0)
 			break;
+#if 0 /* not yet in gfarm v2 */
 		server_command_context.exited_pid = pid;
 		server_command_context.status = status;
+#endif /* not yet in gfarm v2 */
 	}
+#if 0 /* not yet in gfarm v2 */
 	if (sigchld_jmp_needed) {
 		sigchld_jmp_needed = 0;
 		siglongjmp(sigchld_jmp_buf, 1);
 	}
+#endif /* not yet in gfarm v2 */
 }
+
+#if 0 /* not yet in gfarm v2 */
 
 void fatal_command(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 void
@@ -2499,8 +2559,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;
 		case GFS_PROTO_CKSUM_SET: gfs_server_cksum_set(client); break;
-#if 0 /* not yet in gfarm v2 */
 		case GFS_PROTO_STATFS:	gfs_server_statfs(client); break;
+#if 0 /* not yet in gfarm v2 */
 		case GFS_PROTO_COMMAND:
 			if (credential_exported == NULL) {
 				e = gfp_xdr_export_credential(client);
@@ -2524,6 +2584,54 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 }
 
+struct accepting_sockets {
+	int local_sock, tcp_sock, *udp_socks;
+	int udp_socks_count;
+};
+
+void
+start_server(int accepting_sock,
+	struct sockaddr *client_addr_storage, socklen_t client_addr_size,
+	struct sockaddr *client_addr, char *client_name,
+	struct accepting_sockets *accepting)
+{
+	int i, client = accept(accepting_sock,
+	   client_addr_storage, &client_addr_size);
+
+	if (client < 0) {
+		if (errno == EINTR || errno == ECONNABORTED ||
+#ifdef EPROTO
+		    errno == EPROTO ||
+#endif
+		    errno == EAGAIN)
+			return;
+		fatal_errno("accept");
+	}
+#ifndef GFSD_DEBUG
+	switch (fork()) {
+	case 0:
+#endif
+		close(accepting->local_sock);
+		close(accepting->tcp_sock);
+		for (i = 0; i < accepting->udp_socks_count; i++)
+			close(accepting->udp_socks[i]);
+		gfm_client_connection_free(gfm_server);
+		gfm_server = NULL;
+
+		server(client, client_name, client_addr);
+		/*NOTREACHED*/
+#ifndef GFSD_DEBUG
+	case -1:
+		gflog_warning_errno("fork");
+		/*FALLTHROUGH*/
+	default:
+		close(client);
+		break;
+	}
+#endif
+}
+
+/* XXX FIXME: add protocol magic number and transaction ID */
 void
 datagram_server(int sock)
 {
@@ -2651,6 +2759,8 @@ open_accepting_local_socket(int port)
 
 	/* Linux at least since 2.4 needs this. */
 	chmod(local_sockname.sun_path, LOCAL_SOCKET_MODE);
+	chown(local_sockname.sun_path, gfsd_uid, -1);
+	chown(local_sockdir, gfsd_uid, -1);
 
 	return (sock);
 }
@@ -2708,16 +2818,14 @@ main(int argc, char **argv)
 	extern int optind;
 	struct sockaddr_in client_addr, self_addr;
 	struct sockaddr_un client_local_addr;
-	socklen_t client_addr_size;
 	gfarm_error_t e;
 	char *config_file = NULL, *port_number = NULL, *pid_file = NULL;
 	char *canonical_self_name;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, table_size, datagram_socks_count, i, nfound;
-	int accepting_inet_sock, accepting_local_sock, *datagram_socks;
-	int client, max_fd;
+	struct accepting_sockets accepting;
+	int ch, table_size, i, nfound, max_fd;
 	struct sigaction sa;
 	fd_set requests;
 
@@ -2806,8 +2914,8 @@ main(int argc, char **argv)
 	e = gfarm_host_get_canonical_self_name(&canonical_self_name);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
-		    "cannot get canonical hostname of this node: %s\n",
-		    gfarm_error_string(e));
+		    "cannot get canonical hostname of this node (%s): %s\n",
+		    gfarm_host_get_self_name(), gfarm_error_string(e));
 		exit(1);
 	}
 	e = gfarm_host_address_get(canonical_self_name, 0,
@@ -2826,19 +2934,19 @@ main(int argc, char **argv)
 		gflog_fatal_errno(gfarm_spool_root);
 
 	open_datagram_service_sockets(gfarm_spool_server_port,
-	    &datagram_socks_count, &datagram_socks);
-	accepting_inet_sock =
+	    &accepting.udp_socks_count, &accepting.udp_socks);
+	accepting.tcp_sock =
 	    open_accepting_inet_socket(gfarm_spool_server_port);
-	accepting_local_sock =
+	accepting.local_sock =
 	    open_accepting_local_socket(gfarm_spool_server_port);
 
 	seteuid(gfsd_uid);
 
-	max_fd = accepting_inet_sock > accepting_local_sock ?
-	    accepting_inet_sock : accepting_local_sock;
-	for (i = 0; i < datagram_socks_count; i++) {
-		if (max_fd < datagram_socks[i])
-			max_fd = datagram_socks[i];
+	max_fd = accepting.tcp_sock > accepting.local_sock ?
+	    accepting.tcp_sock : accepting.local_sock;
+	for (i = 0; i < accepting.udp_socks_count; i++) {
+		if (max_fd < accepting.udp_socks[i])
+			max_fd = accepting.udp_socks[i];
 	}
 	if (max_fd > FD_SETSIZE)
 		gflog_fatal("datagram_service: too big file descriptor");
@@ -2880,7 +2988,6 @@ main(int argc, char **argv)
 	file_table_init(table_size);
 	OpenSSL_add_all_digests(); /* for EVP_get_digestbyname() */
 
-#if 0 /* not yet in gfarm v2 */
 	/*
 	 * Because SA_NOCLDWAIT is not implemented on some OS,
 	 * we do not rely on the feature.
@@ -2889,19 +2996,30 @@ main(int argc, char **argv)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_NOCLDSTOP;
 	sigaction(SIGCHLD, &sa, NULL);
-#endif
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	signal(SIGPIPE, SIG_IGN);
 
+	/*
+	 * To deal with race condition which may be caused by RST,
+	 * listening socket must be O_NONBLOCK, if the socket will be
+	 * used as a file descriptor for select(2) .
+	 * See section 15.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * Second Edition" by W. Richard Stevens, for detail.
+	 * We do report such case by gflog_warning_errno("accept");
+	 */
+	if (fcntl(accepting.tcp_sock, F_SETFL,
+	    fcntl(accepting.tcp_sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
+		gflog_warning_errno("accepting TCP socket O_NONBLOCK");
+
 	for (;;) {
 		FD_ZERO(&requests);
-		FD_SET(accepting_inet_sock, &requests);
-		FD_SET(accepting_local_sock, &requests);
-		for (i = 0; i < datagram_socks_count; i++)
-			FD_SET(datagram_socks[i], &requests);
+		FD_SET(accepting.tcp_sock, &requests);
+		FD_SET(accepting.local_sock, &requests);
+		for (i = 0; i < accepting.udp_socks_count; i++)
+			FD_SET(accepting.udp_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
 		if (nfound <= 0) {
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
@@ -2909,77 +3027,21 @@ main(int argc, char **argv)
 			fatal_errno("select");
 		}
 
-		if (FD_ISSET(accepting_inet_sock, &requests)) {
-			client_addr_size = sizeof(client_addr);
-			client = accept(accepting_inet_sock,
-			   (struct sockaddr *)&client_addr, &client_addr_size);
-			if (client < 0) {
-				if (errno == EINTR)
-					continue;
-				fatal_errno("accept");
-			}
-#ifndef GFSD_DEBUG
-			switch (fork()) {
-			case 0:
-#endif
-				close(accepting_inet_sock);
-				close(accepting_local_sock);
-				for (i = 0; i < datagram_socks_count; i++)
-					close(datagram_socks[i]);
-				gfm_client_connection_free(gfm_server);
-				gfm_server = NULL;
-
-				server(client, NULL,
-				    (struct sockaddr *)&client_addr);
-				/*NOTREACHED*/
-#ifndef GFSD_DEBUG
-			case -1:
-				gflog_warning_errno("fork");
-				/*FALLTHROUGH*/
-			default:
-				close(client);
-				break;
-			}
-#endif
+		if (FD_ISSET(accepting.tcp_sock, &requests)) {
+			start_server(accepting.tcp_sock,
+			    (struct sockaddr*)&client_addr,sizeof(client_addr),
+			    (struct sockaddr*)&client_addr, NULL, &accepting);
 		}
-		if (FD_ISSET(accepting_local_sock, &requests)) {
-			client_addr_size = sizeof(client_local_addr);
-			client = accept(accepting_inet_sock,
-			   (struct sockaddr *)&client_local_addr,
-			    &client_addr_size);
-			if (client < 0) {
-				if (errno == EINTR)
-					continue;
-				fatal_errno("accept local socket");
-			}
-#ifndef GFSD_DEBUG
-			switch (fork()) {
-			case 0:
-#endif
-				close(accepting_inet_sock);
-				close(accepting_local_sock);
-				for (i = 0; i < datagram_socks_count; i++)
-					close(datagram_socks[i]);
-				gfm_client_connection_free(gfm_server);
-				gfm_server = NULL;
-
-				/* NOTE: we pass IPv4 address here */
-				server(client, canonical_self_name,
-				    (struct sockaddr *)&self_addr);
-				/*NOTREACHED*/
-#ifndef GFSD_DEBUG
-			case -1:
-				gflog_warning_errno("fork");
-				/*FALLTHROUGH*/
-			default:
-				close(client);
-				break;
-			}
-#endif
+		if (FD_ISSET(accepting.local_sock, &requests)) {
+			start_server(accepting.local_sock,
+			    (struct sockaddr*)&client_local_addr,
+			    sizeof(client_local_addr),
+			    (struct sockaddr*)&self_addr, canonical_self_name,
+			    &accepting);
 		}
-		for (i = 0; i < datagram_socks_count; i++) {
-			if (FD_ISSET(datagram_socks[i], &requests))
-				datagram_server(datagram_socks[i]);
+		for (i = 0; i < accepting.udp_socks_count; i++) {
+			if (FD_ISSET(accepting.udp_socks[i], &requests))
+				datagram_server(accepting.udp_socks[i]);
 		}
 	}
 	/*NOTREACHED*/

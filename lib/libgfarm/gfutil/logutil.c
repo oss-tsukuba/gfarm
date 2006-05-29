@@ -4,8 +4,10 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
 #define GFLOG_USE_STDARG
 #include "gfutil.h"
 
@@ -117,6 +119,7 @@ gflog_fatal(const char *format, ...)
 	va_start(ap, format);
 	gflog_vmessage(LOG_ERR, format, ap);
 	va_end(ap);
+	abort();
 	exit(2);
 }
 

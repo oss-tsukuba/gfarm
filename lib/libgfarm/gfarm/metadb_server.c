@@ -18,7 +18,8 @@ gfarm_metadb_set_server(struct gfm_connection *server)
 	gfm_server = server;
 }
 
-gfarm_error_t gfarm_host_info_get_by_name_alias(const char *hostname,
+gfarm_error_t
+gfarm_host_info_get_by_name_alias(const char *hostname,
 	struct gfarm_host_info *info)
 {
 	gfarm_error_t e, e2;

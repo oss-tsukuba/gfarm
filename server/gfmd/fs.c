@@ -207,18 +207,6 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (!from_client) {
-		if (!inode_is_file(inode)) {
-			/* don't care */
-		} else if ((op & GFS_W_OK) == 0 && !created) {
-			if (!inode_has_replica(inode, spool_host))
-				return (GFARM_ERR_FILE_MIGRATED);
-		} else {
-			if (inode_schedule_host_for_write(inode, spool_host) !=
-			    spool_host)
-				return (GFARM_ERR_FILE_MIGRATED);
-		}
-	}
 	e = process_open_file(process, inode, flag, created, peer, spool_host,
 	    &fd);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -243,13 +231,12 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	char *name;
-	gfarm_int32_t flag, permission;
+	gfarm_int32_t flag, perm;
 	gfarm_ino_t inum = 0;
 	gfarm_uint64_t gen = 0;
 	gfarm_int32_t mode = 0;
 
-	e = gfm_server_get_request(peer, "create", "sii",
-	    &name, &flag, &permission);
+	e = gfm_server_get_request(peer, "create", "sii", &name, &flag, &perm);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
@@ -258,8 +245,21 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 	}
 	giant_lock();
 
-	e = gfm_server_open_common(peer, from_client, name, flag, 1, mode,
+	e = gfm_server_open_common(peer, from_client, name, flag, 1, perm,
 	    &inum, &gen, &mode);
+
+	if (debug_mode) {
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info("create(%s) -> error: %s",
+			    name, gfarm_error_string(e));
+		} else {
+			gfarm_int32_t fd;
+			peer_fdpair_get_current(peer, &fd);
+			gflog_info("create(%s) -> %d, %" GFARM_PRId64
+			    ":%" GFARM_PRId64 ", %3o",
+			    name, fd, inum, gen, mode);
+		}
+	}
 
 	free(name);
 	giant_unlock();
@@ -289,6 +289,19 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 	e = gfm_server_open_common(peer, from_client, name, flag, 0, 0,
 	    &inum, &gen, &mode);
 
+	if (debug_mode) {
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_info("open(%s) -> error: %s",
+			    name, gfarm_error_string(e));
+		} else {
+			gfarm_int32_t fd;
+			peer_fdpair_get_current(peer, &fd);
+			gflog_info("open(%s) -> %d, %" GFARM_PRId64
+			    ":%" GFARM_PRId64 ", %3o",
+			    name, fd, inum, gen, mode);
+		}
+	}
+
 	free(name);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "open", e, "lli", inum, gen, mode));
@@ -316,14 +329,22 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	else if ((op = accmode_to_op(flag)) & GFS_W_OK)
 		e = GFARM_ERR_IS_A_DIRECTORY;
-	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
+		if (debug_mode)
+			gflog_info("open_root: from_client=%d, spool?:%d\n",
+			    from_client, spool_host != NULL);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((process = peer_get_process(peer)) == NULL)
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		if (debug_mode)
+			gflog_info("get_process?:%d\n", process != NULL);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = inode_lookup_root(process, op, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_open_file(process, inode, flag, 0,
+
+	} else if ((e = inode_lookup_root(process, op, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		if (debug_mode)
+			gflog_info("inode_lookup_root?:%s\n",
+			    gfarm_error_string(e));
+	} else if ((e = process_open_file(process, inode, flag, 0,
 	    peer, spool_host, &fd)) != GFARM_ERR_NO_ERROR)
 		;
 	else
@@ -707,12 +728,11 @@ gfarm_error_t
 gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	char *domain, *hostname = NULL;
-	gfarm_int32_t fd, port = 0;
+	char *domain;
+	gfarm_int32_t fd;
 	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode;
-	struct host *host = NULL;
 
 	e = gfm_server_get_request(peer, "schedule_file", "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -733,27 +753,21 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR)
 		;
+	else if (!inode_is_file(inode))
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	else {
-		if (process_get_file_writable(process, peer, fd) ==
-		    GFARM_ERR_NO_ERROR)
-			host = inode_schedule_host_for_write(inode, NULL);
-		else
-			host = inode_schedule_host_for_read(inode, NULL);
-		if (host == NULL)
-			e = GFARM_ERR_NO_SUCH_OBJECT;
-		else {
-			hostname = host_name(host);
-			port = host_port(host);
-		}
-	}
-	/*
-	 * XXX assumes that host_name() is not broken even without giant_lock.
-	 */
+		/* XXX FIXME too long giant lock */
+		e = inode_schedule_file_reply(inode, peer,
+		    process_get_file_writable(process, peer, fd)
+		    == GFARM_ERR_NO_ERROR,
+		    inode_is_creating_file(inode), "schedule_file");
 
-	giant_unlock();
-	e = gfm_server_put_reply(peer, "schedule_file", e, "si",
-	    hostname, port);
-	return (e);
+		giant_unlock();
+		return (e);
+	}
+
+	assert(e != GFARM_ERR_NO_ERROR);
+	return (gfm_server_put_reply(peer, "schedule_file", e, ""));
 }
 
 gfarm_error_t
@@ -814,7 +828,7 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	char *sname, *dname;
 	struct process *process;
 	gfarm_int32_t sfd, dfd;
-	struct inode *sdir, *ddir, *src, *tmp;
+	struct inode *sdir, *ddir;
 
 	e = gfm_server_get_request(peer, "rename", "ss", &sname, &dname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -841,28 +855,13 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, dfd, &ddir))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = inode_lookup_by_name(sdir, sname, process, 0, &src))
-	    != GFARM_ERR_NO_ERROR)
-		;
-	else {
-		e = inode_lookup_by_name(ddir, dname, process, 0, &tmp);
-		if (e == GFARM_ERR_NO_ERROR) {
-			if (GFARM_S_ISDIR(inode_get_mode(src)) ==
-			    GFARM_S_ISDIR(inode_get_mode(tmp)))
-				e = inode_unlink(ddir, dname, process);
-			else if (GFARM_S_ISDIR(inode_get_mode(src)))
-				e = GFARM_ERR_NOT_A_DIRECTORY;
-			else
-				e = GFARM_ERR_IS_A_DIRECTORY;
-		}
-		if (e == GFARM_ERR_NO_ERROR)
-			e = inode_create_link(ddir, dname, process, src);
-	}
+	else
+		e = inode_rename(sdir, sname, ddir, dname, process);
 
 	free(sname);
 	free(dname);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "remove", e, ""));
+	return (gfm_server_put_reply(peer, "rename", e, ""));
 }
 
 gfarm_error_t
@@ -1065,8 +1064,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			inode_accessed(inode);
 
 		/* remember current position */
-		entry = dir_cursor_get_entry(dir, &cursor);
-		if (entry == NULL) {
+		if (!ok ||
+		    (entry = dir_cursor_get_entry(dir, &cursor)) == NULL) {
 			dir_offset = dir_get_entry_count(dir);
 		} else {
 			name = dir_entry_get_name(entry, &namelen);

@@ -23,11 +23,10 @@
 struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
 	gfarm_error_t (*request)(struct gfp_xdr *,
-		char *, char *, enum gfarm_auth_id_type);
+		const char *, const char *, enum gfarm_auth_id_type);
 	gfarm_error_t (*request_multiplexed)(struct gfarm_eventqueue *,
-		struct gfp_xdr *, char *, char *, enum gfarm_auth_id_type,
-		void (*)(void *), void *,
-		void **);
+		struct gfp_xdr *, const char *, const char *,
+		enum gfarm_auth_id_type, void (*)(void *), void *, void **);
 	gfarm_error_t (*result_multiplexed)(void *);
 } gfarm_auth_trial_table[] = {
 	/*
@@ -52,7 +51,8 @@ struct gfarm_auth_client_method {
 
 gfarm_error_t
 gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type)
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_type self_type)
 {
 	/*
 	 * too weak authentication.
@@ -143,7 +143,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 
 gfarm_error_t
 gfarm_auth_request(struct gfp_xdr *conn,
-	char *service_tag, char *name, struct sockaddr *addr,
+	const char *service_tag, const char *name, struct sockaddr *addr,
 	enum gfarm_auth_id_type self_type,
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -491,7 +491,8 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 gfarm_error_t
 gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type,
+	const char *service_tag, const char *hostname,
+	enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -580,8 +581,8 @@ struct gfarm_auth_request_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *readable, *writable;
 	struct gfp_xdr *conn;
-	char *service_tag;
-	char *name;
+	const char *service_tag;
+	const char *name;
 	struct sockaddr *addr;
 	enum gfarm_auth_id_type self_type;
 	void (*continuation)(void *);
@@ -765,7 +766,7 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 gfarm_error_t
 gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
-	char *service_tag, char *name, struct sockaddr *addr,
+	const char *service_tag, const char *name, struct sockaddr *addr,
 	enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	struct gfarm_auth_request_state **statepp)

@@ -6,7 +6,7 @@
 # description: Gfarm filesystem metaserver
 #
 # processname: gfmd
-# config: @config_gfarm_gfarm_config@
+# config: @config_gfarm_gfmd_config@
 # pidfile: @config_gfarm_run_dir@/gfmd.pid
 #
 # $Id$

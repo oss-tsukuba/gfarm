@@ -8,7 +8,7 @@
 ## For RedHat Linux style rc.d
 # description: Gfarm filesystem metaserver
 # processname: gfmd
-# config: @config_gfarm_gfarm_config@
+# config: @config_gfarm_gfmd_config@
 # pidfile: @config_gfarm_run_dir@/gfmd.pid
 #
 ## For SuSE/United-Linux style rc.d
@@ -24,7 +24,7 @@
 PROG="gfmd"
 FILE=$PROG
 
-CONF="@config_gfarm_gfarm_config@"
+CONF="@config_gfarm_gfmd_config@"
 DAEMON="@config_gfarm_prefix@/sbin/$PROG"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 OPTIONS="@config_gfarm_gfmd_option@"

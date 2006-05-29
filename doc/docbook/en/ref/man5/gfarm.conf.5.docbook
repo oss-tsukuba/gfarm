@@ -103,14 +103,14 @@ node, this statement should be specified.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_serverport</token> <parameter>port</parameter></term>
+<term><token>spool_server_port</token> <parameter>port</parameter></term>
 <listitem>
-<para>The <token>spool_serverport</token> statement specifies the tcp
+<para>The <token>spool_server_port</token> statement specifies the tcp
 and udp port number the gfsd is listening on.  The default port number
 is 600.</para>
 <para>For example,</para>
 <literallayout>
-	spool_serverport 600
+	spool_server_port 600
 </literallayout>
 </listitem>
 </varlistentry>
@@ -292,27 +292,27 @@ statement for detail.
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_serverhost</token> <parameter>hostname</parameter></term>
+<term><token>metadb_server_host</token> <parameter>hostname</parameter></term>
 <listitem>
-<para>The <token>metadb_serverhost</token> statement specifies the
+<para>The <token>metadb_server_host</token> statement specifies the
 host name on which gfmd is running.</para>
 <para>This statement cannot be omitted.</para>
 <para>For example,</para>
 <literallayout>
-	metadb_serverhost ldap.example.com
+	metadb_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>metadb_serverport</token> <parameter>port</parameter></term>
+<term><token>metadb_server_port</token> <parameter>port</parameter></term>
 <listitem>
-<para>The <token>metadb_serverport</token> statement specifies the tcp
+<para>The <token>metadb_server_port</token> statement specifies the tcp
 port number the gfsd is listening on.  The default port number is
 601.</para>
 <para>For example,</para>
 <literallayout>
-	metadb_serverport 601
+	metadb_server_port 601
 </literallayout>
 </listitem>
 </varlistentry>
@@ -362,29 +362,29 @@ statement about the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_serverhost</token> <parameter>hostname</parameter></term>
+<term><token>ldap_server_host</token> <parameter>hostname</parameter></term>
 <listitem>
-<para>The <token>ldap_serverhost</token> statement specifies the host
+<para>The <token>ldap_server_host</token> statement specifies the host
 name on which LDAP server for filesystem metadata is running.</para>
 <para>This statement cannot be omitted.</para>
 
 <para>For example,</para>
 <literallayout>
-	ldap_serverhost ldap.example.com
+	ldap_server_host ldap.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>ldap_serverport</token> <parameter>port</parameter></term>
+<term><token>ldap_server_port</token> <parameter>port</parameter></term>
 <listitem>
-<para>The <token>ldap_serverport</token> statement specifies the tcp
+<para>The <token>ldap_server_port</token> statement specifies the tcp
 port number of LDAP server.</para>
 <para>This statement cannot be omitted in the current
 implementation.</para>
 <para>For example,</para>
 <literallayout>
-	ldap_serverport 389
+	ldap_server_port 389
 </literallayout>
 </listitem>
 </varlistentry>
@@ -644,17 +644,17 @@ notation.</para>
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
@@ -663,23 +663,23 @@ notation.</para>
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
-	&lt;spool_serverport_statement&gt; ::= "spool_serverport" &lt;hostname&gt;
+	&lt;spool_server_port_statement&gt; ::= "spool_server_port" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
-	&lt;metadb_serverhost_statement&gt; ::= "metadb_serverhost" &lt;hostname&gt;
-	&lt;metadb_serverport_statement&gt; ::= "metadb_serverport" &lt;portnumber&gt;
+	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
+	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_type" &lt;cred_type&gt;
 	&lt;metadb_server_cred_service_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
-	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
-	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
+	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
+	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
 		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
@@ -723,9 +723,9 @@ notation.</para>
 <refsect1 id='examples'><title>EXAMPLES</title>
 <literallayout>
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
-ldap_serverport 389
+metadb_server_host ldap.example.com
+ldap_server_host ldap.example.com
+ldap_server_port 389
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8

@@ -19,6 +19,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+
+#if defined(SCM_RIGHTS) && \
+		(!defined(sun) || (!defined(__svr4__) && !defined(__SVR4)))
+#define HAVE_MSG_CONTROL 1
+#endif
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
@@ -43,6 +49,8 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
+#define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
+
 #define XAUTH_NEXTRACT_MAXLEN	512
 
 struct gfs_connection {
@@ -53,6 +61,7 @@ struct gfs_connection {
 	struct gfarm_hash_entry *hash_entry;
 
 	int is_local;
+	gfarm_pid_t pid;
 
 	/* reference counters */
 	int acquired;
@@ -113,6 +122,13 @@ gfs_client_hostname(struct gfs_connection *gfs_server)
 	return (gfp_conn_hash_hostname(gfs_server->hash_entry));
 }
 
+gfarm_pid_t
+gfs_client_pid(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->pid);
+}
+
+
 static void
 gfs_client_connection_gc_internal(int free_target)
 {
@@ -149,16 +165,45 @@ gfs_client_connection_gc(void)
 	gfs_client_connection_gc_internal(0);
 }
 
+static int
+sockaddr_is_local(struct sockaddr *peer_addr)
+{
+	static int self_ip_asked = 0;
+	static int self_ip_count = 0;
+	static struct in_addr *self_ip_list;
+
+	struct sockaddr_in *peer_in;
+	int i;
+
+	if (!self_ip_asked) {
+		self_ip_asked = 1;
+		if (gfarm_get_ip_addresses(&self_ip_count, &self_ip_list) !=
+		    GFARM_ERR_NO_ERROR) {
+			/* self_ip_count remains 0 */
+			return (0);
+		}
+	}
+	if (peer_addr->sa_family != AF_INET)
+		return (0);
+	peer_in = (struct sockaddr_in *)peer_addr;
+	/* XXX if there are lots of IP address on this host, this is slow */
+	for (i = 0; i < self_ip_count; i++) {
+		if (peer_in->sin_addr.s_addr == self_ip_list[i].s_addr)
+			return (1);
+	}
+	return (0);
+}
+
 static gfarm_error_t
 gfs_client_connection0(const char *canonical_hostname,
 	struct sockaddr *peer_addr, int port,
+	int nonblock, int *connection_in_progress_p,
 	struct gfs_connection *gfs_server)
 {
 	gfarm_error_t e;
-	char *host_fqdn;
-	int sock;
+	int rv, sock, connection_in_progress;
 
-	if (gfarm_canonical_hostname_is_local(canonical_hostname)) {
+	if (sockaddr_is_local(peer_addr)) {
 		struct sockaddr_un peer_un;
 		socklen_t socklen;
 
@@ -169,7 +214,6 @@ gfs_client_connection0(const char *canonical_hostname,
 		}
 		if (sock == -1)
 			return (gfarm_errno_to_error(errno));
-		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 		memset(&peer_un, 0, sizeof(peer_un));
 		socklen = snprintf(peer_un.sun_path, sizeof(peer_un.sun_path),
@@ -180,11 +224,9 @@ gfs_client_connection0(const char *canonical_hostname,
 #else
 		socklen += sizeof(peer_un) - sizeof(peer_un.sun_path);
 #endif
-		if (connect(sock, (struct sockaddr *)&peer_un, socklen) < 0) {
-			e = gfarm_errno_to_error(errno);
-			close(sock);
-			return (e);
-		}
+		if (nonblock)
+			fcntl(sock, F_SETFL, O_NONBLOCK);
+		rv = connect(sock, (struct sockaddr *)&peer_un, socklen);
 		gfs_server->is_local = 1;
 	} else {
 		sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -194,43 +236,40 @@ gfs_client_connection0(const char *canonical_hostname,
 		}
 		if (sock == -1)
 			return (gfarm_errno_to_error(errno));
-		fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 		/* XXX - how to report setsockopt(2) failure ? */
 		gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname,
 		    peer_addr);
 
-		if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		if (nonblock)
+			fcntl(sock, F_SETFL, O_NONBLOCK);
+		rv = connect(sock, peer_addr, sizeof(*peer_addr));
+		gfs_server->is_local = 0;
+	}
+	if (rv < 0) {
+		if (!nonblock || errno != EINPROGRESS) {
 			e = gfarm_errno_to_error(errno);
 			close(sock);
 			return (e);
 		}
-		gfs_server->is_local = 0;
+		connection_in_progress = 1;
+	} else {
+		connection_in_progress = 0;
 	}
+	if (nonblock)
+		fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
 	e = gfp_xdr_new_fd(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(sock);
 		return (e);
 	}
+	gfs_server->pid = 0;
 	gfs_server->context = NULL;
-	/*
-	 * the reason why we call strdup() is because
-	 * gfarm_auth_request() may break static work area of `*hp'.
-	 * XXX - now it's not hp->h_name, but canonical_hostname.
-	 */
-	host_fqdn = strdup(canonical_hostname);
-	if (host_fqdn == NULL) {
-		gfp_xdr_free(gfs_server->conn);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	e = gfarm_auth_request(gfs_server->conn,
-	    GFS_SERVICE_TAG, host_fqdn, peer_addr, gfarm_get_auth_id_type(),
-	    &gfs_server->auth_method);
-	free(host_fqdn);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfp_xdr_free(gfs_server->conn);
-		return (e);
-	}
+
+	if (connection_in_progress_p != NULL)
+		*connection_in_progress_p = connection_in_progress;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -268,6 +307,28 @@ gfs_client_connection_used(struct gfs_connection *gfs_server)
 	connection_list_head.next = gfs_server;
 }
 
+static void
+gfs_client_connection_created(struct gfs_connection *gfs_server,
+	struct gfarm_hash_entry *entry)
+{
+	gfs_server->hash_entry = entry;
+	gfs_server->next = connection_list_head.next;
+	gfs_server->prev = &connection_list_head;
+	connection_list_head.next->prev = gfs_server;
+	connection_list_head.next = gfs_server;
+	gfs_server->acquired = 1;
+	gfs_server->opened = 0;
+}
+
+static void
+gfs_client_connection_refered(struct gfs_connection *gfs_server)
+{
+	if (gfs_server->acquired == 0) /* now this isn't free */
+		--free_connections;
+	gfs_server->acquired++;
+	gfs_client_connection_used(gfs_server);
+}
+
 /*
  * XXX FIXME
  * `hostname' to `addr' conversion really should be done in this function,
@@ -291,22 +352,22 @@ gfs_client_connection_acquire(const char *canonical_hostname, int port,
 	gfs_server = gfarm_hash_entry_data(entry);
 	if (created) {
 		e = gfs_client_connection0(canonical_hostname, peer_addr, port,
-		    gfs_server);
+		    0, NULL, gfs_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfp_conn_hash_purge(gfs_server_hashtab, entry);
 			return (e);
 		}
-		gfs_server->hash_entry = entry;
-		gfs_server->next = connection_list_head.next;
-		gfs_server->prev = &connection_list_head;
-		connection_list_head.next->prev = gfs_server;
-		connection_list_head.next = gfs_server;
-		gfs_server->acquired = 1;
+		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
+		    canonical_hostname, peer_addr, gfarm_get_auth_id_type(),
+		    &gfs_server->auth_method);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfp_xdr_free(gfs_server->conn);
+			gfp_conn_hash_purge(gfs_server_hashtab, entry);
+			return (e);
+		}
+		gfs_client_connection_created(gfs_server, entry);
 	} else {
-		if (gfs_server->acquired == 0) /* now this isn't free */
-			--free_connections;
-		gfs_server->acquired++;
-		gfs_client_connection_used(gfs_server);
+		gfs_client_connection_refered(gfs_server);
 	}
 	*gfs_serverp = gfs_server;
 	return (GFARM_ERR_NO_ERROR);
@@ -318,15 +379,16 @@ gfs_client_connection_is_local(struct gfs_connection *gfs_server)
 	return (gfs_server->is_local);
 }
 
-#if 0 /* XXX FIXME - disable multiplexed version for now */
-
 /*
- * multiplexed version of gfs_client_connect() for parallel authentication
+ * multiplexed version of gfs_client_connection_acquire()
+ * for parallel authentication
  */
 
-struct gfs_client_connect_state {
+struct gfs_client_connection_acquire_state {
 	struct gfarm_eventqueue *q;
 	struct gfarm_event *writable;
+	char *hostname;
+	int port;
 	struct sockaddr peer_addr;
 	void (*continuation)(void *);
 	void *closure;
@@ -340,9 +402,9 @@ struct gfs_client_connect_state {
 };
 
 static void
-gfs_client_connect_end_auth(void *closure)
+gfs_client_connection_acquire_end_auth(void *closure)
 {
-	struct gfs_client_connect_state *state = closure;
+	struct gfs_client_connection_acquire_state *state = closure;
 
 	state->error = gfarm_auth_result_multiplexed(
 	    state->auth_state,
@@ -352,10 +414,10 @@ gfs_client_connect_end_auth(void *closure)
 }
 
 static void
-gfs_client_connect_start_auth(int events, int fd, void *closure,
+gfs_client_connection_acquire_start_auth(int events, int fd, void *closure,
 	const struct timeval *t)
 {
-	struct gfs_client_connect_state *state = closure;
+	struct gfs_client_connection_acquire_state *state = closure;
 	int error;
 	socklen_t error_size = sizeof(error);
 	int rv = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_size);
@@ -367,13 +429,14 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
 		    state->gfs_server->conn, GFS_SERVICE_TAG,
-		    state->gfs_server->hostname, &state->peer_addr,
-		    gfs_client_connect_end_auth, state,
+		    state->hostname, &state->peer_addr,
+		    gfarm_get_auth_id_type(),
+		    gfs_client_connection_acquire_end_auth, state,
 		    &state->auth_state);
-		if (state->error == NULL) {
+		if (state->error == GFARM_ERR_NO_ERROR) {
 			/*
 			 * call auth_request,
-			 * then go to gfs_client_connect_end_auth()
+			 * then go to gfs_client_connection_acquire_end_auth()
 			 */
 			return;
 		}
@@ -383,86 +446,94 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 }
 
 gfarm_error_t
-gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
-	const char *canonical_hostname, struct sockaddr *peer_addr,
+gfs_client_connection_acquire_request_multiplexed(struct gfarm_eventqueue *q,
+	const char *canonical_hostname, int port, struct sockaddr *peer_addr,
 	void (*continuation)(void *), void *closure,
-	struct gfs_client_connect_state **statepp)
+	struct gfs_client_connection_acquire_state **statepp)
 {
 	gfarm_error_t e;
-	int rv, sock;
+	int rv;
+	struct gfarm_hash_entry *entry;
 	struct gfs_connection *gfs_server;
-	struct gfs_client_connect_state *state;
+	struct gfs_client_connection_acquire_state *state;
 	int connection_in_progress;
 
-	/* clone of gfs_client_connection0() */
+	/* clone of gfs_client_connection_acquire() */
 
-	/* XXX FIXME: use PF_UNIX, if possible */
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock == -1)
-		return (gfarm_errno_to_error(errno));
-	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+	e = gfp_conn_hash_lookup(&gfs_server_hashtab, SERVER_HASHTAB_SIZE,
+	    canonical_hostname, port, gfarm_get_global_username(),
+	    &entry);
+	if (e == GFARM_ERR_NO_ERROR) { /* already connected */
+		state = malloc(sizeof(*state));
+		if (state == NULL)
+			return (GFARM_ERR_NO_MEMORY);
 
-	/* XXX - how to report setsockopt(2) failure ? */
-	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
+		gfs_server = gfarm_hash_entry_data(entry);
+		if (gfs_server->acquired == 0) /* now this isn't free */
+			--free_connections;
+		gfs_server->acquired++;
+		gfs_client_connection_used(gfs_server);
 
-	fcntl(sock, F_SETFL, O_NONBLOCK);
-	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
-		if (errno != EINPROGRESS) {
-			e = gfarm_errno_to_error(errno);
-			close(sock);
-			return (e);
-		}
-		connection_in_progress = 1;
-	} else {
-		connection_in_progress = 0;
+		state->q = q;
+		state->writable = NULL;
+		state->hostname = NULL; /* mark already connected */
+		state->port = 0;
+		state->peer_addr = *peer_addr;
+		state->continuation = continuation;
+		state->closure = closure;
+		state->gfs_server = gfs_server;
+		state->auth_state = NULL;
+		state->error = GFARM_ERR_NO_ERROR;
+		if (continuation != NULL)
+			(*continuation)(closure);
+		return (GFARM_ERR_NO_ERROR);
 	}
-	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+	if (e != GFARM_ERR_NO_SUCH_OBJECT)
+		return (e);
+	/* not connected yet in this case */
 
 	gfs_server = malloc(sizeof(*gfs_server));
-	if (gfs_server == NULL) {
-		close(sock);
+	if (gfs_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
-	gfs_server->is_local = 0;
-
-	e = gfp_xdr_fd_connection_new(sock, &gfs_server->conn);
+	e = gfs_client_connection0(canonical_hostname, peer_addr, port,
+	    1, &connection_in_progress, gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gfs_server);
-		close(sock);
 		return (e);
-	}
-	gfs_server->context = NULL;
-	gfs_server->hostname = strdup(canonical_hostname);
-	if (gfs_server->hostname == NULL) {
-		gfp_xdr_free(gfs_server->conn);
-		free(gfs_server);
-		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	state = malloc(sizeof(*state));
 	if (state == NULL) {
-		free(gfs_server->hostname);
 		gfp_xdr_free(gfs_server->conn);
 		free(gfs_server);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	state->q = q;
+	state->hostname = strdup(canonical_hostname);
+	if (state->hostname == NULL) {
+		free(state);
+		gfp_xdr_free(gfs_server->conn);
+		free(gfs_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	state->port = port;
 	state->peer_addr = *peer_addr;
 	state->continuation = continuation;
 	state->closure = closure;
 	state->gfs_server = gfs_server;
 	state->auth_state = NULL;
-	state->error = NULL;
+	state->error = GFARM_ERR_NO_ERROR;
 	if (connection_in_progress) {
 		state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
-		    sock, gfs_client_connect_start_auth, state);
+		    gfp_xdr_fd(gfs_server->conn),
+		    gfs_client_connection_acquire_start_auth, state);
 		if (state->writable == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 		} else if ((rv = gfarm_eventqueue_add_event(q, state->writable,
 		    NULL)) == 0) {
 			*statepp = state;
-			/* go to gfs_client_connect_start_auth() */
-			return (NULL);
+			/* go to gfs_client_connection_acquire_start_auth() */
+			return (GFARM_ERR_NO_ERROR);
 		} else {
 			e = gfarm_errno_to_error(rv);
 			gfarm_event_free(state->writable);
@@ -471,57 +542,80 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		state->writable = NULL;
 		e = gfarm_auth_request_multiplexed(q,
 		    gfs_server->conn, GFS_SERVICE_TAG,
-		    gfs_server->hostname, &state->peer_addr,
-		    gfs_client_connect_end_auth, state,
+		    state->hostname, &state->peer_addr,
+		    gfarm_get_auth_id_type(),
+		    gfs_client_connection_acquire_end_auth, state,
 		    &state->auth_state);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*statepp = state;
 			/*
 			 * call gfarm_auth_request,
-			 * then go to gfs_client_connect_end_auth()
+			 * then go to gfs_client_connection_acquire_end_auth()
 			 */
-			return (NULL);
+			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	free(state->hostname);
 	free(state);
-	free(gfs_server->hostname);
 	gfp_xdr_free(gfs_server->conn);
 	free(gfs_server);
 	return (e);
 }
 
 gfarm_error_t
-gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
+gfs_client_connection_acquire_result_multiplexed(
+	struct gfs_client_connection_acquire_state *state,
 	struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e = state->error;
 	struct gfs_connection *gfs_server = state->gfs_server;
+	char *canonical_hostname = state->hostname;
+	int port = state->port;
+	struct gfarm_hash_entry *entry;
+	int created;
 
 	if (state->writable != NULL)
 		gfarm_event_free(state->writable);
 	free(state);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_client_disconnect(gfs_server);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_conn_hash_enter(
+		    &gfs_server_hashtab, SERVER_HASHTAB_SIZE,
+		    sizeof(*gfs_server),
+		    canonical_hostname, port, gfarm_get_global_username(),
+		    &entry, &created);
+	if (canonical_hostname != NULL)
+		free(canonical_hostname);
+	if (e != GFARM_ERR_NO_ERROR || !created) {
+		gfp_xdr_free(gfs_server->conn);
+		free(gfs_server);
+		if (e == GFARM_ERR_NO_ERROR) { /* i.e. !created */
+			/* return existing connection */
+			gfs_server = gfarm_hash_entry_data(entry);
+			gfs_client_connection_refered(gfs_server);
+			*gfs_serverp = gfs_server;
+		}
 		return (e);
 	}
+	*(struct gfs_connection *)gfarm_hash_entry_data(entry) = *gfs_server;
+	gfs_server = gfarm_hash_entry_data(entry);
+	gfs_client_connection_created(gfs_server, entry);
 	*gfs_serverp = gfs_server;
 	return (GFARM_ERR_NO_ERROR);
 }
-
-#endif /* XXX FIXME - disable multiplexed version for now */
 
 /*
  * gfs_client RPC
  */
 
 int
-gfarm_fd_receive_message(int fd, void *buffer, size_t size,
+gfarm_fd_receive_message(int fd, void *buf, size_t size,
 	int fdc, int *fdv)
 {
+	char *buffer = buf;
 	int i, rv;
 	struct iovec iov[1];
 	struct msghdr msg;
-#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+#ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
 	struct {
 		struct cmsghdr hdr;
 		char data[CMSG_SPACE(sizeof(*fdv) * GFSD_MAX_PASSING_FD)
@@ -544,7 +638,7 @@ gfarm_fd_receive_message(int fd, void *buffer, size_t size,
 		msg.msg_iovlen = 1;
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-#ifndef SCM_RIGHTS
+#ifndef HAVE_MSG_CONTROL
 		if (fdc > 0) {
 			msg.msg_accrights = (caddr_t)fdv;
 			msg.msg_accrightslen = sizeof(*fdv) * fdc;
@@ -574,7 +668,7 @@ gfarm_fd_receive_message(int fd, void *buffer, size_t size,
 		} else if (rv == 0) {
 			return (-1); /* EOF */
 		}
-#ifdef SCM_RIGHTS /* 4.3BSD Reno or later */
+#ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
 		if (fdc > 0) {
 			if (msg.msg_controllen !=
 			    CMSG_SPACE(sizeof(*fdv) * fdc) ||
@@ -676,8 +770,13 @@ gfarm_error_t
 gfs_client_process_set(struct gfs_connection *gfs_server,
 	gfarm_int32_t type, size_t length, const char *key, gfarm_pid_t pid)
 {
-	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_SET, "ibl/",
-	    type, length, key, pid));
+	gfarm_error_t e;
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_SET, "ibl/",
+	    type, length, key, pid);
+	if (e == GFARM_ERR_NO_ERROR)
+		gfs_server->pid = pid;
+	return (e);
 }
 
 gfarm_error_t
@@ -699,23 +798,26 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 {
 	gfarm_error_t e;
 	int rv, local_fd;
+	gfarm_int8_t dummy; /* needs at least 1 byte */
 
 	if (!gfs_server->is_local)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
 	gfs_client_connection_used(gfs_server);
 
-	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_OPEN_LOCAL, "i", fd);
+	/* we have to set `just' flag here */
+	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
 	/* layering violation, but... */
 	rv = gfarm_fd_receive_message(gfp_xdr_fd(gfs_server->conn),
-	    &e, sizeof(e), 1, &local_fd);
-	if (rv != sizeof(e))
+	    &dummy, sizeof(dummy), 1, &local_fd);
+	if (rv == -1) /* EOF */
 		return (GFARM_ERR_PROTOCOL);
-	/* both `e' and `local_fd` are passed by using host byte order. */
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	if (rv != 0)
+		return (gfarm_errno_to_error(rv));
+	/* both `dummy' and `local_fd` are passed by using host byte order. */
 	*fd_ret = local_fd;
 	++gfs_server->opened;
 	return (GFARM_ERR_NO_ERROR);
@@ -869,6 +971,164 @@ gfs_client_replica_add(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD, "i/",
 	    fd));
+}
+
+gfarm_error_t
+gfs_client_statfs(struct gfs_connection *gfs_server, char *path,
+	gfarm_int32_t *bsizep,
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp)
+{
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_STATFS, "s/illllll",
+	    path, bsizep, blocksp, bfreep, bavailp, filesp, ffreep, favailp));
+}
+
+/*
+ * multiplexed version of gfs_client_statfs()
+ */
+struct gfs_client_statfs_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable, *readable;
+	void (*continuation)(void *);
+	void *closure;
+	struct gfs_connection *gfs_server;
+	char *path;
+
+	/* results */
+	gfarm_error_t error;
+	gfarm_int32_t bsize;
+	gfarm_off_t blocks, bfree, bavail;
+	gfarm_off_t files, ffree, favail;
+};
+
+static void
+gfs_client_statfs_send_request(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_statfs_state *state = closure;
+	int rv;
+	struct timeval timeout;
+
+	state->error = gfs_client_rpc_request(state->gfs_server,
+	    GFS_PROTO_STATFS, "s", state->path);
+	if (state->error == GFARM_ERR_NO_ERROR &&
+	    (state->error = gfp_xdr_flush(state->gfs_server->conn)) ==
+	    GFARM_ERR_NO_ERROR) {
+		timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+		timeout.tv_usec = 0;
+		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
+		    &timeout)) == 0) {
+			/* go to gfs_client_statfs_recv_result() */
+			return;
+		}
+		state->error = gfarm_errno_to_error(rv);
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static void
+gfs_client_statfs_recv_result(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_statfs_state *state = closure;
+
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+	} else {
+		assert(events == GFARM_EVENT_READ);
+		state->error = gfs_client_rpc_result(state->gfs_server, 0,
+		    "illllll", &state->bsize,
+		    &state->blocks, &state->bfree, &state->bavail,
+		    &state->files, &state->ffree, &state->favail);
+	}
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+gfarm_error_t
+gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
+	struct gfs_connection *gfs_server, char *path,
+	void (*continuation)(void *), void *closure,
+	struct gfs_client_statfs_state **statepp)
+{
+	gfarm_error_t e;
+	int rv;
+	struct gfs_client_statfs_state *state;
+
+	state = malloc(sizeof(*state));
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_return;
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->gfs_server = gfs_server;
+	state->path = path;
+	state->error = GFARM_ERR_NO_ERROR;
+	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_statfs_send_request, state);
+	if (state->writable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_state;
+	}
+	/*
+	 * We cannot use two independent events (i.e. a fd_event with
+	 * GFARM_EVENT_READ flag and a timer_event) here, because
+	 * it's possible that both event handlers are called at once.
+	 */
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT,
+	    gfs_client_connection_fd(gfs_server),
+	    gfs_client_statfs_recv_result, state);
+	if (state->readable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_writable;
+	}
+	/* go to gfs_client_statfs_send_request() */
+	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+	if (rv != 0) {
+		e = gfarm_errno_to_error(rv);
+		goto error_free_readable;
+	}
+	*statepp = state;
+	return (GFARM_ERR_NO_ERROR);
+		
+error_free_readable:
+	gfarm_event_free(state->readable);
+error_free_writable:
+	gfarm_event_free(state->writable);
+error_free_state:
+	free(state);
+error_return:
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
+	gfarm_int32_t *bsizep,
+	gfarm_off_t *blocksp, gfarm_off_t *bfreep, gfarm_off_t *bavailp,
+	gfarm_off_t *filesp, gfarm_off_t *ffreep, gfarm_off_t *favailp)
+{
+	gfarm_error_t e = state->error;
+
+	gfarm_event_free(state->writable);
+	gfarm_event_free(state->readable);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*bsizep = state->bsize;
+		*blocksp = state->blocks;
+		*bfreep = state->bfree;
+		*bavailp = state->bavail;
+		*filesp = state->files;
+		*ffreep = state->ffree;
+		*favailp = state->favail;
+	}
+	free(state);
+	return (e);
 }
 
 
@@ -1559,3 +1819,368 @@ gfs_client_command(struct gfs_connection *gfs_server,
 				       term_signal, exit_status, exit_flag);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
+
+/*
+ **********************************************************************
+ * gfsd datagram service
+ **********************************************************************
+ */
+
+int gfs_client_datagram_timeouts[] = {
+	10, 100, 1000, 2000, 4000 /* milli seconds */
+};
+int gfs_client_datagram_ntimeouts =
+	GFARM_ARRAY_LENGTH(gfs_client_datagram_timeouts);
+
+/*
+ * `server_addr_size' should be socklen_t, but that requires <sys/socket.h>
+ * for all source files which include "gfs_client.h".
+ */
+gfarm_error_t
+gfs_client_get_load_request(int sock,
+	struct sockaddr *server_addr, int server_addr_size)
+{
+	int rv, command = 0;
+
+	if (server_addr == NULL || server_addr_size == 0) {
+		/* using connected UDP socket */
+		rv = write(sock, &command, sizeof(command));
+	} else {
+		rv = sendto(sock, &command, sizeof(command), 0,
+		    server_addr, server_addr_size);
+	}
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * `*server_addr_sizep' is an IN/OUT parameter.
+ *
+ * `*server_addr_sizep' should be socklen_t, but that requires <sys/socket.h>
+ * for all source files which include "gfs_client.h".
+ */
+gfarm_error_t
+gfs_client_get_load_result(int sock,
+	struct sockaddr *server_addr, socklen_t *server_addr_sizep,
+	struct gfs_client_load *result)
+{
+	int rv;
+	double loadavg[3];
+#ifndef WORDS_BIGENDIAN
+	struct { char c[8]; } nloadavg[3];
+#else
+#	define nloadavg loadavg
+#endif
+
+	if (server_addr == NULL || server_addr_sizep == NULL) {
+		/* caller doesn't need server_addr */
+		rv = read(sock, nloadavg, sizeof(nloadavg));
+	} else {
+		rv = recvfrom(sock, nloadavg, sizeof(nloadavg), 0,
+		    server_addr, server_addr_sizep);
+	}
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+
+#ifndef WORDS_BIGENDIAN
+	swab(&nloadavg[0], &loadavg[0], sizeof(loadavg[0]));
+	swab(&nloadavg[1], &loadavg[1], sizeof(loadavg[1]));
+	swab(&nloadavg[2], &loadavg[2], sizeof(loadavg[2]));
+#endif
+	result->loadavg_1min = loadavg[0];
+	result->loadavg_5min = loadavg[1];
+	result->loadavg_15min = loadavg[2];
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * multiplexed version of gfs_client_get_load()
+ */
+
+struct gfs_client_get_load_state {
+	struct gfarm_eventqueue *q;
+	struct gfarm_event *writable, *readable;
+	void (*continuation)(void *);
+	void *closure;
+
+	int sock;
+	int try;
+
+	/* results */
+	gfarm_error_t error;
+	struct gfs_client_load load;
+};
+
+static void
+gfs_client_get_load_send(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_get_load_state *state = closure;
+	int rv;
+	struct timeval timeout;
+
+	state->error = gfs_client_get_load_request(state->sock, NULL, 0);
+	if (state->error == GFARM_ERR_NO_ERROR) {
+		timeout.tv_sec = timeout.tv_usec = 0;
+		gfarm_timeval_add_microsec(&timeout,
+		    gfs_client_datagram_timeouts[state->try] *
+		    GFARM_MILLISEC_BY_MICROSEC);
+		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
+		    &timeout)) == 0) {
+			/* go to gfs_client_get_load_receive() */
+			return;
+		}
+		state->error = gfarm_errno_to_error(rv);
+	}
+	close(state->sock);
+	state->sock = -1;
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+static void
+gfs_client_get_load_receive(int events, int fd, void *closure,
+	const struct timeval *t)
+{
+	struct gfs_client_get_load_state *state = closure;
+	int rv;
+
+	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
+		assert(events == GFARM_EVENT_TIMEOUT);
+		++state->try;
+		if (state->try >= gfs_client_datagram_ntimeouts) {
+			state->error = GFARM_ERR_OPERATION_TIMED_OUT;
+		} else if ((rv = gfarm_eventqueue_add_event(state->q,
+		    state->writable, NULL)) == 0) {
+			/* go to gfs_client_get_load_send() */
+			return;
+		} else {
+			state->error = gfarm_errno_to_error(rv);
+		}
+	} else {
+		assert(events == GFARM_EVENT_READ);
+		state->error = gfs_client_get_load_result(state->sock,
+		    NULL, NULL, &state->load);
+	}
+	close(state->sock);
+	state->sock = -1;
+	if (state->continuation != NULL)
+		(*state->continuation)(state->closure);
+}
+
+gfarm_error_t
+gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
+	struct sockaddr *peer_addr,
+	void (*continuation)(void *), void *closure,
+	struct gfs_client_get_load_state **statepp)
+{
+	gfarm_error_t e;
+	int rv, sock;
+	struct gfs_client_get_load_state *state;
+
+	/* use different socket for each peer, to identify error code */
+	sock = socket(PF_INET, SOCK_DGRAM, 0);
+	if (sock == -1) {
+		e = gfarm_errno_to_error(errno);
+		goto error_return;
+	}
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+	/* connect UDP socket, to get error code */
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) == -1) {
+		e = gfarm_errno_to_error(errno);
+		goto error_close_sock;
+	}
+
+	state = malloc(sizeof(*state));
+	if (state == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_close_sock;
+	}
+
+	state->writable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_WRITE, sock,
+	    gfs_client_get_load_send, state);
+	if (state->writable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_state;
+	}
+	/*
+	 * We cannot use two independent events (i.e. a fd_event with
+	 * GFARM_EVENT_READ flag and a timer_event) here, because
+	 * it's possible that both event handlers are called at once.
+	 */
+	state->readable = gfarm_fd_event_alloc(
+	    GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, sock,
+	    gfs_client_get_load_receive, state);
+	if (state->readable == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto error_free_writable;
+	}
+	/* go to gfs_client_get_load_send() */
+	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
+	if (rv != 0) {
+		e = gfarm_errno_to_error(rv);
+		goto error_free_readable;
+	}
+
+	state->q = q;
+	state->continuation = continuation;
+	state->closure = closure;
+	state->sock = sock;
+	state->try = 0;
+	state->error = GFARM_ERR_NO_ERROR;
+	*statepp = state;
+	return (GFARM_ERR_NO_ERROR);
+
+error_free_readable:
+	gfarm_event_free(state->readable);
+error_free_writable:
+	gfarm_event_free(state->writable);
+error_free_state:
+	free(state);
+error_close_sock:
+	close(sock);
+error_return:
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_get_load_result_multiplexed(
+	struct gfs_client_get_load_state *state, struct gfs_client_load *loadp)
+{
+	gfarm_error_t error = state->error;
+
+	if (state->sock >= 0) { /* sanity */
+		close(state->sock);
+		state->sock = -1;
+	}
+	if (error == GFARM_ERR_NO_ERROR)
+		*loadp = state->load;
+	gfarm_event_free(state->readable);
+	gfarm_event_free(state->writable);
+	free(state);
+	return (error);
+}
+
+#if 0
+
+/*
+ * gfs_client_apply_all_hosts()
+ */
+
+static int
+apply_one_host(char *(*op)(struct gfs_connection *, void *),
+	char *hostname, void *args, char *message, int tolerant)
+{
+	char *e;
+	int pid;
+	struct sockaddr addr;
+	struct gfs_connection *conn;
+
+	pid = fork();
+	if (pid) {
+		/* parent or error */
+		return pid;
+	}
+	/* child */
+
+	/* reflect "address_use" directive in the `hostname' */
+	e = gfarm_host_address_get(hostname, gfarm_spool_server_port, &addr,
+		NULL);
+	if (e != NULL) {
+		if (message != NULL)
+			fprintf(stderr, "%s: host %s: %s\n",
+			    message, hostname, e);
+		_exit(2);
+	}
+
+	e = gfs_client_connect(hostname, &addr, &conn);
+	if (e != NULL) {
+		/* if tolerant, we allow failure to connect the host */
+		if (message != NULL && !tolerant)
+			fprintf(stderr, "%s: connecting to %s: %s\n", message,
+			    hostname, e);
+		_exit(tolerant ? 0 : 3);
+	}
+
+	e = (*op)(conn, args);
+	if (e != NULL) {
+		/* if tolerant, we allow "no such file or directory" */
+		if (message != NULL &&
+		    (!tolerant || e != GFARM_ERR_NO_SUCH_OBJECT))
+			fprintf(stderr, "%s on %s: %s\n", message, hostname, e);
+		_exit(tolerant && e == GFARM_ERR_NO_SUCH_OBJECT ? 0 : 4);
+	}
+
+	e = gfs_client_disconnect(conn);
+	if (e != NULL) {
+		if (message != NULL)
+			fprintf(stderr, "%s: disconnecting to %s: %s\n",
+			    message, hostname, e);
+		_exit(5);
+	}
+
+	_exit(0);
+}
+
+static char *
+wait_pid(int pids[], int num, int *nhosts_succeed)
+{
+	char *e;
+	int rv, s;
+
+	e = NULL;
+	while (--num >= 0) {
+		while ((rv = waitpid(pids[num], &s, 0)) == -1 &&
+		        errno == EINTR)
+				;
+		if (rv == -1) {
+			if (e == NULL)
+				e = gfarm_errno_to_error(errno);
+		} else if (WIFEXITED(s)) {
+			if (WEXITSTATUS(s) == 0)
+				(*nhosts_succeed)++;
+			else
+				e = "error happened on the operation";
+		} else {
+			e = "operation aborted abnormally";
+		}
+	}
+	return (e);
+}
+
+#define CONCURRENCY	25
+
+char *
+gfs_client_apply_all_hosts(
+	char *(*op)(struct gfs_connection *, void *),
+	void *args, char *message, int tolerant, int *nhosts_succeed)
+{
+	char *e;
+	int i, j, nhosts, pids[CONCURRENCY];
+	struct gfarm_host_info *hosts;
+
+	e = gfarm_host_info_get_all(&nhosts, &hosts);
+	if (e != NULL)
+		return (e);
+
+        j = 0;
+	*nhosts_succeed = 0;
+        for (i = 0; i < nhosts; i++) {
+                pids[j] = apply_one_host(op, hosts[i].hostname, args,
+		    message, tolerant);
+                if (pids[j] < 0) /* fork error */
+                        break;
+                if (++j == CONCURRENCY) {
+                        e = wait_pid(pids, j, nhosts_succeed);
+                        j = 0;
+                }
+        }
+        if (j > 0)
+                e = wait_pid(pids, j, nhosts_succeed);
+
+	gfarm_host_info_free_all(nhosts, hosts);
+	return (e);
+}
+#endif

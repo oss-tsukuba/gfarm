@@ -128,10 +128,6 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.4
 		ctimesec $ ctimensec )
 	MAY ( checksumType $ checksum ) )
 
-objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.5
-	NAME 'GFarmDirEntry' SUP top STRUCTURAL
-	MUST ( inumber $ entryName, $ entryINumber ) )
-
 objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.6
 	NAME 'GFarmFileCopy' SUP top STRUCTURAL
 	MUST ( inumber $ hostname ) )
@@ -139,3 +135,7 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.6
 objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.7
 	NAME 'GFarmDeadFileCopy' SUP top STRUCTURAL
 	MUST ( inumber $ igen $ hostname ) )
+
+objectclass ( 1.3.6.1.4.1.13122.2.1.2924.101.3.5
+	NAME 'GFarmDirEntry' SUP top STRUCTURAL
+	MUST ( inumber $ entryName $ entryINumber ) )

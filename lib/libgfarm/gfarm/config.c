@@ -26,12 +26,12 @@
 #include "gfutil.h"
 
 #include "liberror.h"
-#include "gfpath.h"
 #include "hostspec.h"
 #include "param.h"
 #include "sockopt.h"
 #include "host.h" /* XXX address_use is disabled for now */
 #include "auth.h"
+#include "gfpath.h"
 #include "config.h"
 #include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
 #include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
@@ -283,6 +283,10 @@ static char *gfarm_spool_server_portname = NULL;
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
 static char *gfarm_metadb_server_portname = NULL;
+enum gfarm_backend_db_type gfarm_backend_db_type =
+	GFARM_BACKEND_DB_TYPE_UNKNOWN;
+
+char *gfarm_metadb_admin_user = NULL;
 
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
@@ -303,15 +307,16 @@ char *gfarm_postgresql_user = NULL;
 char *gfarm_postgresql_password = NULL;
 char *gfarm_postgresql_conninfo = NULL;
 
-enum gfarm_metadb_backend_type {
-	GFARM_METADB_TYPE_UNKNOWN,
-	GFARM_METADB_TYPE_LDAP,
-	GFARM_METADB_TYPE_POSTGRESQL
-};
-
 static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
+
+/* miscellaneous */
+#define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
+#define MISC_DEFAULT -1
+int gfarm_schedule_cache_timeout = MISC_DEFAULT;
+gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -320,6 +325,7 @@ gfarm_config_clear(void)
 		&gfarm_spool_server_portname,
 		&gfarm_metadb_server_name,
 		&gfarm_metadb_server_portname,
+		&gfarm_metadb_admin_user,
 		&gfarm_ldap_server_name,
 		&gfarm_ldap_server_port,
 		&gfarm_ldap_base_dn,
@@ -359,58 +365,36 @@ gfarm_config_clear(void)
 #endif
 }
 
-#if 0 /* XXX */
-static char *
-config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
+static gfarm_error_t
+set_backend_db_type(enum gfarm_backend_db_type set)
 {
-	switch (metadb_type) {
-	case GFARM_METADB_TYPE_UNKNOWN:
-		return ("neither ldap_ option or postgresql_ option "
-		    "is specified");
-	case GFARM_METADB_TYPE_LDAP:
-		return (gfarm_metab_use_ldap());
-	case GFARM_METADB_TYPE_POSTGRESQL:
-		return (gfarm_metab_use_postgresql());
+	if (gfarm_backend_db_type == set)
+		return (GFARM_ERR_NO_ERROR);
+	switch (gfarm_backend_db_type) {
+	case GFARM_BACKEND_DB_TYPE_UNKNOWN:
+		gfarm_backend_db_type = set;
+		return (GFARM_ERR_NO_ERROR);
+	case GFARM_BACKEND_DB_TYPE_LDAP:
+		return (GFARM_ERRMSG_BACKEND_ALREADY_LDAP);
+	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
+		return (GFARM_ERRMSG_BACKEND_ALREADY_POSTGRESQL);
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
 	}
 }
 
-static char *
-set_metadb_type(enum gfarm_metadb_backend_type *metadb_typep,
-	enum gfarm_metadb_backend_type set)
+static gfarm_error_t
+set_backend_db_type_ldap(void)
 {
-	if (*metadb_typep == set)
-		return (NULL);
-	switch (*metadb_typep) {
-	case GFARM_METADB_TYPE_UNKNOWN:
-		*metadb_typep = set;
-		return (NULL);
-	case GFARM_METADB_TYPE_LDAP:
-		return ("inconsistent configuration, "
-		    "LDAP is specified as metadata backend before");
-	case GFARM_METADB_TYPE_POSTGRESQL:
-		return ("inconsistent configuration, "
-		    "PostgreSQL is specified as metadata backend before");
-	default:
-		assert(0);
-		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
-	}
+	return (set_backend_db_type(GFARM_BACKEND_DB_TYPE_LDAP));
 }
 
-static char *
-set_metadb_type_ldap(enum gfarm_metadb_backend_type *metadb_typep)
+static gfarm_error_t
+set_backend_db_type_postgresql(void)
 {
-	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LDAP));
+	return (set_backend_db_type(GFARM_BACKEND_DB_TYPE_POSTGRESQL));
 }
-
-static char *
-set_metadb_type_postgresql(enum gfarm_metadb_backend_type *metadb_typep)
-{
-	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_POSTGRESQL));
-}
-#endif
 
 /*
  * get (almost) shell style token.
@@ -825,12 +809,6 @@ get_one_argument(char *p, char **rv)
 	if (tmp != NULL)
 		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 
-	if (*rv != NULL) /* first line has precedence */
-		return (GFARM_ERR_NO_ERROR);
-
-	s = strdup(s);
-	if (s == NULL)
-		return (GFARM_ERR_NO_MEMORY);
 	*rv = s;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -851,6 +829,64 @@ parse_set_var(char *p, char **rv)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	*rv = s;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+parse_set_misc_int(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *ep, *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	errno = 0;
+	v = strtol(s, &ep, 10);
+	if (errno != 0)
+		return (gfarm_errno_to_error(errno));
+	if (ep == s)
+		return (GFARM_ERRMSG_INTEGER_EXPECTED);
+	if (*ep != '\0')
+		return (GFARM_ERRMSG_INVALID_CHARACTER);
+	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+parse_set_misc_offset(char *p, gfarm_off_t *vp)
+{
+	gfarm_error_t e;
+	char *ep, *s;
+	gfarm_off_t v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	errno = 0;
+	v = gfarm_strtoi64(s, &ep);
+	if (errno != 0)
+		return (gfarm_errno_to_error(errno));
+	if (ep == s)
+		return (GFARM_ERRMSG_INTEGER_EXPECTED);
+	if (*ep != '\0') {
+		switch (*ep) {
+		case 'k': case 'K': ep++; v *= 1024; break;
+		case 'm': case 'M': ep++; v *= 1024 * 1024; break;
+		case 'g': case 'G': ep++; v *= 1024 * 1024 * 1024; break;
+		case 't': case 'T': ep++; v *=1024*1024; v *=1024*1024; break;
+		}
+		if (*ep != '\0')
+			return (GFARM_ERRMSG_INVALID_CHARACTER);
+	}
+	*vp = v;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -876,7 +912,7 @@ parse_one_line(char *s, char *p, char **op)
 
 	if (strcmp(s, o = "spool") == 0) {
 		e = parse_set_var(p, &gfarm_spool_root);
-	} else if (strcmp(s, o = "spool_serverport") == 0) {
+	} else if (strcmp(s, o = "spool_server_port") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_portname);
 	} else if (strcmp(s, o = "spool_server_cred_type") == 0) {
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
@@ -888,10 +924,12 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
 
-	} else if (strcmp(s, o = "metadb_serverhost") == 0) {
+	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);
-	} else if (strcmp(s, o = "metadb_serverport") == 0) {
+	} else if (strcmp(s, o = "metadb_server_port") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_portname);
+	} else if (strcmp(s, o = "admin_user") == 0) {
+		e = parse_set_var(p, &gfarm_metadb_admin_user);
 	} else if (strcmp(s, o = "metadb_server_cred_type") == 0) {
 		e = parse_cred_config(p, GFM_SERVICE_TAG,
 		    gfarm_auth_server_cred_type_set_by_string);
@@ -902,69 +940,67 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_cred_config(p, GFM_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
 
-#if 0
-	} else if (strcmp(s, o = "ldap_serverhost") == 0) {
+	} else if (strcmp(s, o = "ldap_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_name);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
-	} else if (strcmp(s, o = "ldap_serverport") == 0) {
+			e = set_backend_db_type_ldap();
+	} else if (strcmp(s, o = "ldap_server_port") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_server_port);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_base_dn") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_base_dn);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_bind_dn") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_bind_dn);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_bind_password") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_bind_password);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_tls") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_tls);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_tls_cipher_suite") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_tls_cipher_suite);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_tls_certificate_key_file") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_tls_certificate_key_file);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 	} else if (strcmp(s, o = "ldap_tls_certificate_file") == 0) {
 		e = parse_set_var(p, &gfarm_ldap_tls_certificate_file);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_ldap(metadb_typep);
+			e = set_backend_db_type_ldap();
 
-	} else if (strcmp(s, o = "postgresql_serverhost") == 0) {
+	} else if (strcmp(s, o = "postgresql_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_server_name);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
-	} else if (strcmp(s, o = "postgresql_serverport") == 0) {
+			e = set_backend_db_type_postgresql();
+	} else if (strcmp(s, o = "postgresql_server_port") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_server_port);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
+			e = set_backend_db_type_postgresql();
 	} else if (strcmp(s, o = "postgresql_dbname") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_dbname);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
+			e = set_backend_db_type_postgresql();
 	} else if (strcmp(s, o = "postgresql_user") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_user);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
+			e = set_backend_db_type_postgresql();
 	} else if (strcmp(s, o = "postgresql_password") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_password);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
+			e = set_backend_db_type_postgresql();
 	} else if (strcmp(s, o = "postgresql_conninfo") == 0) {
 		e = parse_set_var(p, &gfarm_postgresql_conninfo);
 		if (e == GFARM_ERR_NO_ERROR)
-			e = set_metadb_type_postgresql(metadb_typep);
-#endif
+			e = set_backend_db_type_postgresql();
 
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
@@ -982,6 +1018,12 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
 #endif
+
+	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
+	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
+		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+
 	} else {
 		o = s;
 		e = GFARM_ERRMSG_UNKNOWN_KEYWORD;
@@ -998,7 +1040,7 @@ gfarm_init_user_map(void)
 }
 
 gfarm_error_t
-gfarm_config_read_file(FILE *config, char *config_file, int *lineno_p)
+gfarm_config_read_file(FILE *config, int *lineno_p)
 {
 	gfarm_error_t e;
 	int lineno = 0;
@@ -1054,6 +1096,17 @@ gfarm_config_set_default_ports(void)
 		else if (p != 0)
 			gfarm_metadb_server_port = p;
 	}
+}
+
+void
+gfarm_config_set_default_misc(void)
+{
+	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
+		gfarm_schedule_cache_timeout =
+		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
+		gfarm_minimum_free_disk_space =
+		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
 }
 
 #ifdef STRTOKEN_TEST

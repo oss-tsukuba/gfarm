@@ -29,6 +29,7 @@ dir_free(Dir dir)
 	gfarm_hash_table_free(dir);
 }
 
+#if 0 /* need to check "." and ".." */
 int
 dir_is_empty(Dir dir)
 {
@@ -37,6 +38,7 @@ dir_is_empty(Dir dir)
 	gfarm_hash_iterator_begin(dir, &cursor);
 	return (gfarm_hash_iterator_is_end(&cursor));
 }
+#endif
 
 DirEntry
 dir_enter(Dir dir, const char *name, int namelen, int *createdp)
@@ -301,11 +303,13 @@ dir_free(Dir dir)
 	free(dir);
 }
 
+#if 0 /* need to check "." and ".." */
 int
 dir_is_empty(Dir dir)
 {
 	return (RB_ROOT(dir) == NULL);
 }
+#endif
 
 gfarm_off_t
 dir_get_entry_count(Dir dir)
@@ -320,14 +324,14 @@ dir_get_entry_count(Dir dir)
 DirEntry
 dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 {
-	DirEntry entry = malloc(sizeof(entry));
+	DirEntry entry = malloc(sizeof(*entry));
 	DirEntry found;
 	DirEntry prev;
 
 	if (entry == NULL)
 		return (NULL); /* no memory */
 	entry->keylen = namelen;
-	entry->key = malloc(strlen(name));
+	entry->key = malloc(namelen);
 	if (entry->key == NULL) {
 		free(entry);
 		return (NULL); /* no memory */
@@ -336,19 +340,22 @@ dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 	entry->nentries = 1; /* leaf */
 
 	found = RB_INSERT(rbdir, dir, entry);
+	if (found != NULL) {
+		rbdir_entry_free(entry);
+		*createdp = 0;
+		return (found);
+	}
+
 	rbdir_fixup(entry);
 	prev = rbdir_entry_prev(entry);
 	if (prev != NULL)
 		rbdir_fixup(prev);
-	*createdp = found == NULL;
-	if (!*createdp) {
-		rbdir_entry_free(entry);
-		return (found);
-	}
 
 	/* for assertion in dir_entry_set_inode() */
 	entry->inode = NULL;
 
+	if (createdp != NULL)
+		*createdp = 1;
 	return (entry);
 }
 

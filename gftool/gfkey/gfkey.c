@@ -7,9 +7,9 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>
-#include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
-#include <gfarm/gfarm_misc.h>
+
+#include <gfarm/gfarm.h>
+
 #include "auth.h"
 
 char *program_name = "gfkey";
@@ -46,7 +46,8 @@ main(argc, argv)
 {
 	extern int optind;
 	int ch, do_list = 0, do_expire_report = 0;
-	char *e, *home;
+	gfarm_error_t e;
+	char *home;
 	unsigned int expire;
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	int mode = GFARM_AUTH_SHARED_KEY_GET;
@@ -84,17 +85,18 @@ main(argc, argv)
 	     !do_list && !do_expire_report))
 		usage();
 
-	gfarm_error_initialize();
 	e = gfarm_set_local_user_for_this_local_account();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
 		exit(1);
 	}
 	home = gfarm_get_local_homedir();
 
-	e = gfarm_auth_shared_key_get(&expire, shared_key, home, mode, period);
-	if (e != NULL) {
-		fprintf(stderr, "%s\n", e);
+	e = gfarm_auth_shared_key_get(&expire, shared_key, home, NULL,
+	    mode, period);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s\n", gfarm_error_string(e));
 		exit(1);
 	}
 	if (do_list) {

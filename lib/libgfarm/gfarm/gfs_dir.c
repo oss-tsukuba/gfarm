@@ -262,7 +262,7 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 		}
 		dir->index = 0;
 	}
-	*entry = &dir->buffer[dir->index];
+	*entry = &dir->buffer[dir->index++];
 	return (GFARM_ERR_NO_ERROR);
 }
 
