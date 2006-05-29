@@ -13,7 +13,8 @@ SUBDIRS = \
 	gfreg \
 	gfrm \
 	gfrmdir \
-	gfuser
+	gfuser \
+	config-gfarm
 
 #	gfdf \
 #	gfexec \
@@ -30,6 +31,5 @@ SUBDIRS = \
 #	gfwhere \
 #	gfwhoami \
 #	example \
-#	config-gfarm
 
 include $(top_srcdir)/makes/subdir.mk
