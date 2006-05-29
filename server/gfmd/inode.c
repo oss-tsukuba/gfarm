@@ -1478,14 +1478,11 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 
 	/* XXX FIXME too long giant lock */
 
-gflog_info("inode_schedule_file_reply: a");
 	if (!inode_is_file(inode))
 		gflog_fatal("inode_schedule_file_reply: not a file");
 
-gflog_info("inode_schedule_file_reply: b");
 	if (creating)
 		return (host_schedule_reply_all(peer, diag));
-gflog_info("inode_schedule_file_reply: c");
 	if (writable && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 		n = 0;
@@ -1511,7 +1508,6 @@ gflog_info("inode_schedule_file_reply: c");
 			return (e_save);
 		}
 	}
-gflog_info("inode_schedule_file_reply: d");
 	/* read access, or write access && no process is opening the file */
 
 	if (inode->u.c.s.f.copies == NULL)
@@ -1523,18 +1519,14 @@ gflog_info("inode_schedule_file_reply: d");
 		    n++;
 	}
 	e_save = host_schedule_reply_n(peer, n, diag);
-gflog_info("inode_schedule_file_reply: e");
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-gflog_info("inode_schedule_file_reply: trying host %p", copy->host);
-gflog_info("inode_schedule_file_reply: trying host %s", host_name(copy->host));
 		if (host_is_up(copy->host)) {
 			e = host_schedule_reply(copy->host, peer, diag);
 			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 		}
 	}
-gflog_info("inode_schedule_file_reply: z");
 	return (e_save);
 }
 
