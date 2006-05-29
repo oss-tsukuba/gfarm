@@ -22,10 +22,11 @@
 #include <netinet/in.h>
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
+
 #include "config.h"
 #include "metadb_access.h"
 #include "metadb_sw.h"
-#include "gfutil.h"
 
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION "23505"
 
@@ -124,8 +125,8 @@ gfarm_pgsql_initialize(void)
 		port = strtol(gfarm_postgresql_server_port, &e, 0);
 		if (e == gfarm_postgresql_server_port ||
 		    port <= 0 || port >= 65536)
-		return ("gfarm.conf: postgresql_serverport: "
-			"illegal value");
+			return ("gfarm.conf: postgresql_serverport: "
+			    "illegal value");
 	}
 
 	varvalues[0] = gfarm_postgresql_server_name;
@@ -383,7 +384,7 @@ gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
 		return (e);
 	/*
 	 * XXX - needs to check if hostname exists in Hosts.
-	 *       this check and deletion should be done in a trunsuction
+	 *       this check and deletion should be done in a transaction
 	 */
 
 	return (hostaliases_remove(hostname));
