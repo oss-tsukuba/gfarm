@@ -22,7 +22,7 @@ int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	int i, c, status = 0;
+	int c, status = 0;
 	extern int optind;
 
 	if (argc > 0)
