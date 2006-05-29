@@ -232,8 +232,14 @@ if [ "$1" = 0 ]
 then
 	/sbin/service gfmd stop > /dev/null 2>&1 || :
 	/sbin/chkconfig --del gfmd
-	echo do not forget \'service gfarm-slapd stop\' and
-	echo \'chkconfig gfarm-slapd --del\'
+	if [ -f /etc/init.d/gfarm-pgsql ]; then
+		echo do not forget \'service gfarm-pgsql stop\' and
+		echo \'chkconfig gfarm-pgsql --del\'
+	fi
+	if [ -f /etc/init.d/gfarm-slapd ]; then
+		echo do not forget \'service gfarm-slapd stop\' and
+		echo \'chkconfig gfarm-slapd --del\'
+	fi
 fi
 
 # Part 3  file list
