@@ -661,6 +661,7 @@ fi
 %{prefix}/bin/gfarm-ptool
 %{prefix}/bin/gfdf
 %endif
+%{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfexport
