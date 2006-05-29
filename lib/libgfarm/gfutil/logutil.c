@@ -119,7 +119,9 @@ gflog_fatal(const char *format, ...)
 	va_start(ap, format);
 	gflog_vmessage(LOG_ERR, format, ap);
 	va_end(ap);
+#if 0
 	abort();
+#endif
 	exit(2);
 }
 
