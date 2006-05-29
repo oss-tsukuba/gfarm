@@ -46,7 +46,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "chl?")) != EOF) {
+	while ((c = getopt(argc, argv, "chl?")) != -1) {
 		switch (c) {
 		case 'c':
 		case 'l':
