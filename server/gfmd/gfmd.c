@@ -634,9 +634,8 @@ main_loop(int accepting_socket)
 	 * To deal with race condition which may be caused by RST,
 	 * listening socket must be O_NONBLOCK, if the socket will be
 	 * used as a file descriptor for select(2) .
-	 * See section 15.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
 	 * Second Edition" by W. Richard Stevens, for detail.
-	 * We do report such case by gflog_warning_errno("accept");
 	 */
 	if (fcntl(accepting_socket, F_SETFL,
 	    fcntl(accepting_socket, F_GETFL, NULL) | O_NONBLOCK) == -1)
