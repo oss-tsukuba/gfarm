@@ -1,66 +1,64 @@
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
 
-#include "config.h"
-#include "gfs_client.h"
-
 char *program_name = "gfdf";
 
-char *
-print_space(char *host, int print_inode)
+void
+inode_title(void)
 {
-	char *e, *canonical_hostname;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
+	printf("%12s%12s%12s%7s %s\n",
+	    "Inodes", "IUsed", "IAvail", "%IUsed", "Host");
+}
+
+void
+size_title(void)
+{
+	printf("%12s%12s%12s%9s %s\n",
+	    "1K-blocks", "Used", "Avail", "Capacity", "Host");
+}
+
+char *
+inode_print(char *host)
+{
+	char *e;
 	gfarm_int32_t bsize;
 	file_offset_t blocks, bfree, bavail, files, ffree, favail;
 
-	e = gfarm_host_address_get(host, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, host, e);
-		return (e);
-	}
-	e = gfarm_host_get_canonical_name(host, &canonical_hostname);
-	if (e != NULL)
-		canonical_hostname = host;
-	e = gfs_client_connect(canonical_hostname, &peer_addr, &gfs_server);
-	if (e != NULL) {
-		fprintf(stderr, "%s: connect to %s: %s\n", program_name, host,
-		    e);
-		if (canonical_hostname != host)
-			free(canonical_hostname);
-		return (e);
-	}
-
-	e = gfs_client_statfs(gfs_server, ".", &bsize,
+	e = gfs_statfsnode(host, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	if (e != NULL) {
-		fprintf(stderr, "%s: df on %s: %s\n", program_name, host, e);
-	} else if (print_inode) {
-		printf("%12.0f%12.0f%12.0f  %3.0f%%  %s\n", 
-		    (double)files,
-		    (double)files - ffree,
-		    (double)favail,
-		    (double)(files - ffree)/(files - (ffree - favail))*100.0,
-		    host);
-	} else {
-		printf("%12.0f%12.0f%12.0f   %3.0f%%   %s\n", 
-		    (double)(blocks * bsize) / 1024.0,
-		    (double)(blocks - bfree) * bsize / 1024.,
-		    (double)bavail * bsize / 1024.0,
-		    (double)(blocks - bfree)/(blocks - (bfree - bavail))*100.0,
-		    host);
+		fprintf(stderr, "%s: %s\n", host, e);
+		return (e);
 	}
-	gfs_client_disconnect(gfs_server);
-	if (canonical_hostname != host)
-		free(canonical_hostname);
-	return (e);
+	printf("%12.0f%12.0f%12.0f  %3.0f%%  %s\n", 
+	    (double)files, (double)files - ffree, (double)favail,
+	    (double)(files - ffree)/(files - (ffree - favail))*100.0, host);
+	return (NULL);
+}
+
+char *
+size_print(char *host)
+{
+	char *e;
+	gfarm_int32_t bsize;
+	file_offset_t blocks, bfree, bavail, files, ffree, favail;
+
+	e = gfs_statfsnode(host, &bsize,
+	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", host, e);
+		return (e);
+	}
+	printf("%12.0f%12.0f%12.0f   %3.0f%%   %s\n", 
+	    (double)(blocks * bsize) / 1024.0,
+	    (double)(blocks - bfree) * bsize / 1024.,
+	    (double)bavail * bsize / 1024.0,
+	    (double)(blocks - bfree)/(blocks - (bfree - bavail))*100.0,
+	    host);
+	return (NULL);
 }
 
 #define EXIT_INVALID_ARGUMENT	2
@@ -76,9 +74,13 @@ usage(void)
 int
 main(int argc, char **argv)
 {
+	int status = EXIT_SUCCESS;
+	void (*title)(void) = size_title;
+	char *(*print)(char *) = size_print;
 	char *e, **hosts = NULL;
-	int c, i, lineno, nhosts = 0, opt_print_inode = 0, failed = 0;
+	int c, i, lineno, ninfos, nhosts = 0;
 	gfarm_stringlist hostlist;
+	struct gfarm_host_info *infos;
 
 	if ((e = gfarm_initialize(&argc, &argv)) != NULL) {
 		fprintf(stderr, "%s: gfarm initialize: %s\n", program_name, e);
@@ -108,7 +110,8 @@ main(int argc, char **argv)
 			gfarm_stringlist_add(&hostlist, optarg);
 			break;
 		case 'i':
-			opt_print_inode = 1;
+			title = inode_title;
+			print = inode_print;
 			break;
 		case '?':
 			/*FALLTHROUGH*/
@@ -116,32 +119,40 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-	if (optind < argc ||
-	    (nhosts == 0 && gfarm_stringlist_length(&hostlist) == 0))
+	if (optind < argc)
 		usage();
 
-	if (opt_print_inode) {
-		printf("%12s%12s%12s%7s %s\n",
-		    "Inodes", "IUsed", "IAvail", "%IUsed", "Host");
+	(*title)();
+
+	if (nhosts == 0 && gfarm_stringlist_length(&hostlist) == 0) {
+		/* list all filesystem node */
+		e = gfarm_host_info_get_all(&ninfos, &infos);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, e);
+			status = EXIT_FAILURE;
+		} else {
+			for (i = 0; i < ninfos; i++) {
+				if ((*print)(infos[i].hostname) != NULL)
+					status = EXIT_FAILURE;
+			}
+		}
 	} else {
-		printf("%12s%12s%12s%9s %s\n",
-		    "1K-blocks", "Used", "Avail", "Capacity", "Host");
-	}
-	for (i = 0; i < nhosts; i++) {
-		if (print_space(hosts[i], opt_print_inode) != NULL)
-			failed = 1;
-	}
-	for (i = 0; i < gfarm_stringlist_length(&hostlist); i++) {
-		if (print_space(gfarm_stringlist_elem(&hostlist, i),
-		    opt_print_inode) != NULL)
-			failed = 1;
+		for (i = 0; i < nhosts; i++) {
+			if ((*print)(hosts[i]) != NULL)
+				status = EXIT_FAILURE;
+		}
+		for (i = 0; i < gfarm_stringlist_length(&hostlist); i++) {
+			if (print(gfarm_stringlist_elem(&hostlist, i)) != NULL)
+				status = EXIT_FAILURE;
+		}
 	}
 	gfarm_strings_free_deeply(nhosts, hosts);
 	gfarm_stringlist_free(&hostlist);
+
 
 	if ((e = gfarm_terminate()) != NULL) {
 		fprintf(stderr, "%s: gfarm terminate: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
-	return (failed ? EXIT_FAILURE : EXIT_SUCCESS);
+	return (status);
 }
