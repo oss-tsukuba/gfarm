@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.2
-%define rel	6
+%define ver	2.0
+%define rel	0
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -19,6 +19,8 @@
 
 # whether "ns" is included in this release or not.
 %define have_ns	0
+
+%define gfarm_v2_not_yet 0
 
 #
 # check && enable/disable MPI
@@ -56,10 +58,10 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-Patch0: gfarm-1.2-patch1.diff
-Patch1: gfarm-1.2-patch2.diff
-Patch2: gfarm-1.2-patch3.diff
-Patch3: gfarm-1.2-patch4.diff
+%Patch0: gfarm-1.2-patch1.diff
+%Patch1: gfarm-1.2-patch2.diff
+%Patch2: gfarm-1.2-patch3.diff
+%Patch3: gfarm-1.2-patch4.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology
@@ -67,26 +69,32 @@ URL: http://datafarm.apgrid.org/
 Packager: Tohru Sotoyama <sotoyama@sra.co.jp>
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
+%if %{gfarm_v2_not_yet}
 %package doc
 Summary: document for gfarm
 Group: Documentation
+%endif
 
 %package libs
 Summary: runtime libraries for gfarm
 Group: System Environment/Libraries
 
+%if %{gfarm_v2_not_yet}
 %package frontend
 Summary: frontends for gfarm
 Group: Applications/Internet
+%endif
 
 %package client
 Summary: clients for gfarm
 Group: Applications/Internet
 
+%if %{gfarm_v2_not_yet}
 %package gfptool
 Summary: parallel tools installed under gfarm:/bin/
 Group: System Environment/Daemons
 Requires: %{package_name}-client
+%endif
 
 %package fsnode
 Summary: gfsd for gfarm
@@ -101,27 +109,35 @@ Group: System Environment/Daemons
 Summary: development library for gfarm
 Group: Development/Libraries
 
+%if %{gfarm_v2_not_yet}
 %package gfront
 Summary: file system browser for gfarm
 Group: Applications/Internet
+%endif
 
 %description
 gfarm - Grid datafarm 
 
+%if %{gfarm_v2_not_yet}
 %description doc
 doc for gfarm
+%endif
 
 %description libs
 runtime libraries for gfarm
 
+%if %{gfarm_v2_not_yet}
 %description frontend
 frontends for gfarm
+%endif
 
 %description client
 clients for gfarm
 
+%if %{gfarm_v2_not_yet}
 %description gfptool
 parallel tools installed under gfarm:/bin
+%endif
 
 %description fsnode
 fsnode for gfarm
@@ -132,8 +148,10 @@ metadata server for gfarm
 %description devel
 development library for gfarm
 
+%if %{gfarm_v2_not_yet}
 %description gfront
 file system browser for gfarm
+%endif
 
 %changelog
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
@@ -149,15 +167,16 @@ mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
 #%patch -p1
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
+#%patch0 -p1
+#%patch1 -p1
+#%patch2 -p1
+#%patch3 -p1
 
 %build
 ./configure --prefix=%{prefix} \
 	--libdir=%{lib_prefix} \
 	--sysconfdir=%{sysconfdir} \
+	--with-postgresql=/usr \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
 	--with-readline=/usr \
@@ -204,6 +223,10 @@ then
 	/sbin/chkconfig --del gfsd
 fi
 
+%pre fsnode
+useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
+	-c "Gfarm gfsd" -u 600 _gfarmfs >/dev/null 2>&1 || :
+
 %preun server
 if [ "$1" = 0 ]
 then
@@ -214,6 +237,7 @@ then
 fi
 
 # Part 3  file list
+%if %{gfarm_v2_not_yet}
 %files doc
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
@@ -590,10 +614,12 @@ fi
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
+%endif
 
 %files libs
 %{lib_prefix}/libgfarm.so.0
 %{lib_prefix}/libgfarm.so.0.0.0
+%if %{gfarm_v2_not_yet}
 %{lib_prefix}/libgfs_hook.so.0
 %{lib_prefix}/libgfs_hook.so.0.0.0
 %{lib_prefix}/libgfs_hook_debug.so.0
@@ -602,6 +628,7 @@ fi
 %{lib_prefix}/libgfs_hook_no_init.so.0.0.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0
 %{lib_prefix}/libgfs_hook_no_init_debug.so.0.0.0
+%endif
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep
@@ -618,33 +645,46 @@ fi
 %{lib_prefix}/libnsexec.so.0.0.0
 %endif
 
+%if %{gfarm_v2_not_yet}
 %files frontend
 
 %if %{have_ns}
 %{prefix}/bin/gfarm
 %endif
+%endif
 
 %files client
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfarm_agent
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
 %{prefix}/bin/gfdf
+%endif
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
+%endif
 %{prefix}/bin/gfkey
 %{prefix}/bin/gfls
 %{prefix}/bin/gfmkdir
+%{prefix}/bin/gfmv
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfmpirun_p4
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
 %{prefix}/bin/gfrcmd
+%endif
 %{prefix}/bin/gfreg
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrep
+%endif
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
+%{prefix}/bin/gfuser
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrsh
 %{prefix}/bin/gfrshl
 %{prefix}/bin/gfrun
@@ -658,6 +698,7 @@ fi
 %{prefix}/bin/gfwhoami
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
+%endif
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
@@ -674,6 +715,7 @@ fi
 %{prefix}/bin/ns_unlink_dir
 %endif
 
+%if %{gfarm_v2_not_yet}
 %files gfptool
 %{prefix}/bin/gfcombine
 %{prefix}/bin/gfcombine_hook
@@ -688,13 +730,16 @@ fi
 %{prefix}/libexec/gfrepbe_client
 %{prefix}/libexec/gfrepbe_server
 %{prefix}/sbin/gfregister
+%endif
 
 %files fsnode
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfexec
 %{prefix}/bin/gfsplck
 %{prefix}/bin/thput-gfpio
+%endif
 %{prefix}/sbin/gfsd
 %{rc_prefix}/gfsd
 %dir %{share_prefix}
@@ -711,15 +756,22 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
+%{share_prefix}/config/gfarm.conf-postgresql.in
+%{share_prefix}/config/gfarm.conf-ldap.in
 %{share_prefix}/config/gfarm.conf.in
+%{share_prefix}/config/gfarm.sql
 %{share_prefix}/config/gfarm.schema
 %{share_prefix}/config/initial.ldif.in
+%{share_prefix}/config/linux/debian/gfarm-pgsql.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in
 %{share_prefix}/config/linux/debian/gfmd.in
+%{share_prefix}/config/linux/default/gfarm-pgsql.in
 %{share_prefix}/config/linux/default/gfarm-slapd.in
 %{share_prefix}/config/linux/default/gfmd.in
+%{share_prefix}/config/linux/redhat/gfarm-pgsql.in
 %{share_prefix}/config/linux/redhat/gfarm-slapd.in
 %{share_prefix}/config/linux/redhat/gfmd.in
+%{share_prefix}/config/linux/suse/gfarm-pgsql.in
 %{share_prefix}/config/linux/suse/gfarm-slapd.in
 %{share_prefix}/config/linux/suse/gfmd.in
 %{share_prefix}/config/slapd.conf-2.0.in
@@ -728,21 +780,26 @@ fi
 %files devel
 %{prefix}/include/gfarm/gfarm.h
 %{prefix}/include/gfarm/gfarm_config.h
-%{prefix}/include/gfarm/gfarm_error.h
-%{prefix}/include/gfarm/gfarm_metadb.h
+%{prefix}/include/gfarm/error.h
 %{prefix}/include/gfarm/gfarm_misc.h
 %{prefix}/include/gfarm/gfarm_stringlist.h
+%{prefix}/include/gfarm/host_info.h
+%{prefix}/include/gfarm/user_info.h
+%{prefix}/include/gfarm/group_info.h
 %{prefix}/include/gfarm/gfs.h
 %{prefix}/include/gfarm/gfs_glob.h
+%if %{gfarm_v2_not_yet}
 %{prefix}/include/gfarm/gfs_hook.h
 %{lib_prefix}/gfs_hook.o
 %{lib_prefix}/gfs_hook_debug.o
 %{lib_prefix}/gfs_hook_no_init.o
 %{lib_prefix}/gfs_hook_no_init_debug.o
 %{lib_prefix}/hooks_init_mpi.c
+%endif
 %{lib_prefix}/libgfarm.a
 %{lib_prefix}/libgfarm.la
 %{lib_prefix}/libgfarm.so
+%if %{gfarm_v2_not_yet}
 %{lib_prefix}/libgfs_hook.a
 %{lib_prefix}/libgfs_hook.la
 %{lib_prefix}/libgfs_hook.so
@@ -755,6 +812,7 @@ fi
 %{lib_prefix}/libgfs_hook_no_init_debug.a
 %{lib_prefix}/libgfs_hook_no_init_debug.la
 %{lib_prefix}/libgfs_hook_no_init_debug.so
+%endif
 %if %{mpi}
 %{lib_prefix}/gfs_hook_mpi.o
 %{lib_prefix}/gfs_hook_mpi_debug.o
@@ -786,6 +844,8 @@ fi
 %{lib_prefix}/libnsexec.so
 %endif
 
+%if %{gfarm_v2_not_yet}
 %files gfront
 %{prefix}/bin/gfront
 %{prefix}/share/java/gfront.jar
+%endif
