@@ -404,7 +404,7 @@
     <listitem>
       <para>
 	-c および -m 機能で、ホスト情報を追加・変更する際に、
-	そのホストの gfsd が用いるポート番号を指定します。
+	そのホストの <command>gfsd</command> が用いるポート番号を指定します。
       </para>
     </listitem>
   </varlistentry>
