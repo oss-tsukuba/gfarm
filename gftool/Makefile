@@ -5,6 +5,8 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
+	gfchmod \
+	gfchown \
 	gfexport \
 	gfhost \
 	gfkey \
