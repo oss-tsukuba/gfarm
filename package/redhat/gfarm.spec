@@ -661,6 +661,8 @@ fi
 %{prefix}/bin/gfarm-ptool
 %{prefix}/bin/gfdf
 %endif
+%{prefix}/bin/gfchmod
+%{prefix}/bin/gfchown
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
 %if %{gfarm_v2_not_yet}
