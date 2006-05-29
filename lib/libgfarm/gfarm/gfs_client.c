@@ -549,6 +549,7 @@ gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *state,
 	free(state);
 	if (e != NULL) {
 		gfs_client_disconnect(gfs_server);
+		free(gfs_server);
 		return (e);
 	}
 	*gfs_serverp = gfs_server;
