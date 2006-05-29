@@ -556,8 +556,22 @@ termsigs_handler(void *p)
 	sigset_t *termsigs = p;
 	int sig;
 
-	if (sigwait(termsigs, &sig) == -1)
-		gflog_warning("termsigs_handler: %s", strerror(errno));
+	for (;;) {
+		if (sigwait(termsigs, &sig) == -1)
+			gflog_warning("termsigs_handler: %s", strerror(errno));
+#ifdef __linux__
+		/* 
+		 * On linux-2.6.11 on Fedora Core 4,
+		 * spurious signal sig=8195840 arrives.
+		 */
+		if (sig >= 16) {
+			gflog_info("spurious signal %d received: ignoring...",
+			    sig);
+			continue;
+		}
+#endif
+		break;
+	}
 
 	gflog_info("signal %d received: terminating...", sig);
 
