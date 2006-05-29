@@ -49,8 +49,8 @@ grpassign_add_group(struct group_assignment *ga)
 int
 hash_user(const void *key, int keylen)
 {
-	const unsigned char *const *usernamep = key;
-	const unsigned char *k = *usernamep;
+	const char *const *usernamep = key;
+	const char *k = *usernamep;
 
 	return (gfarm_hash_default(k, strlen(k)));
 }
@@ -60,8 +60,8 @@ hash_key_equal_user(
 	const void *key1, int key1len,
 	const void *key2, int key2len)
 {
-	const unsigned char *const *u1 = key1, *const *u2 = key2;
-	const unsigned char *k1 = *u1, *k2 = *u2;
+	const char *const *u1 = key1, *const *u2 = key2;
+	const char *k1 = *u1, *k2 = *u2;
 	int l1, l2;
 
 	/* short-cut on most case */

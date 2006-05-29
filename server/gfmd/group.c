@@ -68,8 +68,8 @@ grpassign_remove(struct group_assignment *ga)
 int
 hash_group(const void *key, int keylen)
 {
-	const unsigned char *const *groupnamep = key;
-	const unsigned char *k = *groupnamep;
+	const char *const *groupnamep = key;
+	const char *k = *groupnamep;
 
 	return (gfarm_hash_default(k, strlen(k)));
 }
@@ -79,8 +79,8 @@ hash_key_equal_group(
 	const void *key1, int key1len,
 	const void *key2, int key2len)
 {
-	const unsigned char *const *u1 = key1, *const *u2 = key2;
-	const unsigned char *k1 = *u1, *k2 = *u2;
+	const char *const *u1 = key1, *const *u2 = key2;
+	const char *k1 = *u1, *k2 = *u2;
 	int l1, l2;
 
 	/* short-cut on most case */

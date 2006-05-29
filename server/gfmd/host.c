@@ -59,8 +59,8 @@ static struct gfarm_hash_table *hostalias_hashtab = NULL;
 int
 hash_host(const void *key, int keylen)
 {
-	const unsigned char *const *hostnamep = key;
-	const unsigned char *k = *hostnamep;
+	const char *const *hostnamep = key;
+	const char *k = *hostnamep;
 
 	return (gfarm_hash_casefold(k, strlen(k)));
 }
@@ -70,8 +70,8 @@ hash_key_equal_host(
 	const void *key1, int key1len,
 	const void *key2, int key2len)
 {
-	const unsigned char *const *u1 = key1, *const *u2 = key2;
-	const unsigned char *k1 = *u1, *k2 = *u2;
+	const char *const *u1 = key1, *const *u2 = key2;
+	const char *k1 = *u1, *k2 = *u2;
 	int l1, l2;
 
 	/* short-cut on most case */

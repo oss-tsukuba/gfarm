@@ -466,6 +466,9 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	struct inode *inode;
 	struct gfs_stat st;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	memset(&st, 0, sizeof(st));
+#endif
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();

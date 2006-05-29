@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <grp.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
