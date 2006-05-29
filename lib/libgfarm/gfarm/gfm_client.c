@@ -930,8 +930,9 @@ gfarm_error_t
 gfm_client_fchown_request(struct gfm_connection *gfm_server,
 	const char *user, const char *group)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FCHOWN,
-	    "ss", user, group));
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FCHOWN, "ss",
+	    user == NULL ? "" : user,
+	    group == NULL ? "" : group));
 }
 
 gfarm_error_t
