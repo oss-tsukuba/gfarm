@@ -1,0 +1,7 @@
+debian/tmp/usr/bin/config-agent
+debian/tmp/usr/bin/gfarm_agent
+debian/tmp/usr/share/gfarm/config/config-gfarm.sysdep
+debian/tmp/usr/share/gfarm/config/linux/debian/gfarm_agent.in
+debian/tmp/usr/share/gfarm/config/linux/default/gfarm_agent.in
+debian/tmp/usr/share/gfarm/config/linux/redhat/gfarm_agent.in
+debian/tmp/usr/share/gfarm/config/linux/suse/gfarm_agent.in
