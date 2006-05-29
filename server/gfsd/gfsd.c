@@ -2285,7 +2285,11 @@ start_server(int sock)
 	client = accept(sock,
 		(struct sockaddr *)&client_addr, &client_addr_size);
 	if (client < 0) {
-		if (errno == EINTR)
+		if (errno == EINTR || errno == ECONNABORTED ||
+#ifdef EPROTO
+		    errno == EPROTO ||
+#endif
+		    errno == EAGAIN)
 			return;
 		accepting_fatal_errno("accept");
 	}
@@ -2698,6 +2702,24 @@ main(int argc, char **argv)
 	 */
 	signal(SIGTERM, accepting_sigterm_handler);
 	signal(SIGINT, accepting_sigterm_handler);
+
+	/*
+	 * To deal with race condition which may be caused by RST,
+	 * listening socket must be O_NONBLOCK, if the socket will be
+	 * used as a file descriptor for select(2) .
+	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * Third Edition" by W. Richard Stevens, for detail.
+	 */
+	if (fcntl(accepting_inet_sock, F_SETFL,
+	    fcntl(accepting_inet_sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
+		gflog_warning_errno("accepting inet socket O_NONBLOCK");
+	for (i = 0; i < accepting_unix_socks_count; i++) {
+		if (fcntl(accepting_unix_socks[i],F_SETFL,
+		    fcntl(accepting_unix_socks[i],F_GETFL,NULL) | O_NONBLOCK)
+		    == -1)
+			gflog_warning_errno(
+			    "accepting unix socket O_NONBLOCK");
+	}
 
 	for (;;) {
 		FD_ZERO(&requests);
