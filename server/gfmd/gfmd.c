@@ -559,7 +559,7 @@ termsigs_handler(void *p)
 	if (sigwait(termsigs, &sig) == -1)
 		gflog_warning("termsigs_handler: %s", strerror(errno));
 
-	gflog_info("terminating");
+	gflog_info("signal %d received: terminating...", sig);
 
 	/* we never release the giant lock until exit */
 	/* so, it's safe to modify the state of all peers */
