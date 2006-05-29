@@ -58,10 +58,10 @@ Version: %pkgver
 Release: %rel
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
-%Patch0: gfarm-1.2-patch1.diff
-%Patch1: gfarm-1.2-patch2.diff
-%Patch2: gfarm-1.2-patch3.diff
-%Patch3: gfarm-1.2-patch4.diff
+#%Patch0: gfarm-1.2-patch1.diff
+#%Patch1: gfarm-1.2-patch2.diff
+#%Patch2: gfarm-1.2-patch3.diff
+#%Patch3: gfarm-1.2-patch4.diff
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology
@@ -696,9 +696,9 @@ fi
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
+%endif
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
-%endif
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
