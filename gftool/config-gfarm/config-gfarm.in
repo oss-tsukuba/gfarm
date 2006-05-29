@@ -692,6 +692,7 @@ mkcnf_gfmd_sysdep
 # create configuration files
 mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
 mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
+chmod 600 "$GFMD_CONF"
 
 case $BACKEND_TYPE in
 postgresql)
