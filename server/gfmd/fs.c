@@ -648,7 +648,8 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t fd;
-	gfarm_int32_t cksum_len = 0, flags = 0;
+	gfarm_int32_t flags = 0;
+	size_t cksum_len = 0;
 	struct host *spool_host = NULL;
 	struct process *process;
 	char *cksum_type = NULL, *cksumbuf = NULL, *cksum;
