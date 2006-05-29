@@ -364,14 +364,14 @@ char *gfarm_postgresql_user = NULL;
 char *gfarm_postgresql_password = NULL;
 char *gfarm_postgresql_conninfo = NULL;
 
-/* LocalFS DB dependent */
-char *gfarm_localfsdb_datadir = NULL;
+/* LocalFS dependent */
+char *gfarm_localfs_datadir = NULL;
 
 enum gfarm_metadb_backend_type {
 	GFARM_METADB_TYPE_UNKNOWN,
 	GFARM_METADB_TYPE_LDAP,
 	GFARM_METADB_TYPE_POSTGRESQL,
-	GFARM_METADB_TYPE_LOCALFSDB
+	GFARM_METADB_TYPE_LOCALFS
 };
 
 /* miscellaneous */
@@ -416,7 +416,7 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_user,
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
-		&gfarm_localfsdb_datadir,
+		&gfarm_localfs_datadir,
 	};
 	static void (*funcs[])(void) = {
 		gfarm_agent_name_clear,
@@ -457,8 +457,8 @@ config_metadb_type(enum gfarm_metadb_backend_type metadb_type)
 		return (gfarm_metadb_use_ldap());
 	case GFARM_METADB_TYPE_POSTGRESQL:
 		return (gfarm_metadb_use_postgresql());
-	case GFARM_METADB_TYPE_LOCALFSDB:
-		return (gfarm_metadb_use_localfsdb());
+	case GFARM_METADB_TYPE_LOCALFS:
+		return (gfarm_metadb_use_localfs());
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
@@ -481,9 +481,9 @@ set_metadb_type(enum gfarm_metadb_backend_type *metadb_typep,
 	case GFARM_METADB_TYPE_POSTGRESQL:
 		return ("inconsistent configuration, "
 		    "PostgreSQL is specified as metadata backend before");
-	case GFARM_METADB_TYPE_LOCALFSDB:
+	case GFARM_METADB_TYPE_LOCALFS:
 		return ("inconsistent configuration, "
-		    "LocalFS DB is specified as metadata backend before");
+		    "LocalFS is specified as metadata backend before");
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
@@ -503,9 +503,9 @@ set_metadb_type_postgresql(enum gfarm_metadb_backend_type *metadb_typep)
 }
 
 static char *
-set_metadb_type_localfsdb(enum gfarm_metadb_backend_type *metadb_typep)
+set_metadb_type_localfs(enum gfarm_metadb_backend_type *metadb_typep)
 {
-	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LOCALFSDB));
+	return (set_metadb_type(metadb_typep, GFARM_METADB_TYPE_LOCALFS));
 }
 
 int
@@ -1134,10 +1134,10 @@ parse_one_line(char *s, char *p, char **op,
 		if (e == NULL)
 			e = set_metadb_type_postgresql(metadb_typep);
 
-	} else if (strcmp(s, o = "localfsdb_datadir") == 0) {
-		e = parse_set_var(p, &gfarm_localfsdb_datadir);
+	} else if (strcmp(s, o = "localfs_datadir") == 0) {
+		e = parse_set_var(p, &gfarm_localfs_datadir);
 		if (e == NULL)
-			e = set_metadb_type_localfsdb(metadb_typep);
+			e = set_metadb_type_localfs(metadb_typep);
 
 	} else if (strcmp(s, o = "agent_serverhost") == 0) {
 		e = parse_set_func(p, gfarm_agent_name_set);

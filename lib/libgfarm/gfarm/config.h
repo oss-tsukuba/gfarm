@@ -28,8 +28,8 @@ extern char *gfarm_postgresql_user;
 extern char *gfarm_postgresql_password;
 extern char *gfarm_postgresql_conninfo;
 
-/* LocalFS DB dependent */
-extern char *gfarm_localfsdb_datadir;
+/* LocalFS dependent */
+extern char *gfarm_localfs_datadir;
 
 /* miscellaneous */
 #define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */

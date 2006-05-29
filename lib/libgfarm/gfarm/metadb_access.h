@@ -56,4 +56,4 @@ char *gfarm_metadb_file_section_copy_info_get_all_by_host(
 char *gfarm_metadb_use_none(void);
 char *gfarm_metadb_use_ldap(void);
 char *gfarm_metadb_use_postgresql(void);
-char *gfarm_metadb_use_localfsdb(void);
+char *gfarm_metadb_use_localfs(void);

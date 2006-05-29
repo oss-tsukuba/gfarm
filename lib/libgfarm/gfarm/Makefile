@@ -30,7 +30,7 @@ SRCS = \
 	import_help.c metadb_misc.c metadb_none.c metadb_sw.c \
 	param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
-	path_info_cache.c metadb_localfsdb.c \
+	path_info_cache.c metadb_localfs.c \
 	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
@@ -43,7 +43,7 @@ OBJS = \
 	import_help.lo metadb_misc.lo metadb_none.lo metadb_sw.lo \
 	param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
-	path_info_cache.lo metadb_localfsdb.lo \
+	path_info_cache.lo metadb_localfs.lo \
 	$(ldap_objs) $(postgresql_objs) $(globus_objs)
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
@@ -106,4 +106,4 @@ stringlist.lo:
 url.lo: config.h gfs_pio.h
 xxx_proto.lo: iobuffer.h xxx_proto.h
 path_info_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
-metadb_localfsdb.lo: config.h metadb_access.h metadb_sw.h
+metadb_localfs.lo: config.h metadb_access.h metadb_sw.h
