@@ -723,7 +723,8 @@ main(int argc, char **argv)
 	}
 	e = db_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("database initialization failed: %s",
+		/* XXX FIXME need to wait and try to reconnect */
+		gflog_fatal("database initialization failed: %s",
 		    gfarm_error_string(e));
 	}
 
