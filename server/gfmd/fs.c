@@ -620,20 +620,23 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((user = process_get_user(process)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (!user_is_admin(user))
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (*username != '\0' &&
-	    (new_user = user_lookup(username)) == NULL)
-		e = GFARM_ERR_INVALID_ARGUMENT;
-	else if (*groupname != '\0' &&
-	    (new_group = group_lookup(groupname)) == NULL)
-		e = GFARM_ERR_INVALID_ARGUMENT;
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR)
 		;
+	else if (*username != '\0' &&
+	    (new_user = user_lookup(username)) == NULL)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else if (*groupname != '\0' &&
+	    (new_group = group_lookup(groupname)) == NULL)
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	else if (new_user != NULL && !user_is_admin(user))
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if (new_group != NULL && !user_is_admin(user) &&
+	    (user != inode_get_user(inode) || !user_in_group(user, new_group)))
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else
 		e = inode_set_owner(inode, new_user, new_group);
 
