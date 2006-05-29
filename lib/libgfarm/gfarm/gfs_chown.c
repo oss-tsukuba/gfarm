@@ -13,7 +13,7 @@
 #include "lookup.h"
 
 gfarm_error_t
-gfs_chmod(const char *path, gfarm_mode_t mode)
+gfs_chown(const char *path, const char *username, const char *groupname)
 {
 	gfarm_error_t e;
 
@@ -25,9 +25,9 @@ gfs_chmod(const char *path, gfarm_mode_t mode)
 	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("tmp_open(%s) request: %s", path,
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_fchmod_request(gfarm_metadb_server, mode))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("fchmod request: %s", gfarm_error_string(e));
+	else if ((e = gfm_client_fchown_request(gfarm_metadb_server,
+	    username, groupname)) != GFARM_ERR_NO_ERROR)
+		gflog_warning("fchown request: %s", gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_end request: %s",
@@ -45,10 +45,10 @@ gfs_chmod(const char *path, gfarm_mode_t mode)
 #else
 		;
 #endif
-	else if ((e = gfm_client_fchmod_result(gfarm_metadb_server))
+	else if ((e = gfm_client_fchown_result(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
 #if 0
-		gflog_warning("fchmod result: %s", gfarm_error_string(e));
+		gflog_warning("fchown result: %s", gfarm_error_string(e));
 #else
 		;
 #endif

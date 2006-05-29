@@ -43,6 +43,8 @@ SRCS = \
 	gfs_pio.c \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
+	gfs_chmod.c \
+	gfs_chown.c \
 	gfs_stat.c \
 	gfs_mkdir.c \
 	gfs_rmdir.c \
@@ -92,6 +94,8 @@ OBJS = \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
+	gfs_chmod.lo \
+	gfs_chown.lo \
 	gfs_stat.lo \
 	gfs_mkdir.lo \
 	gfs_rmdir.lo \
