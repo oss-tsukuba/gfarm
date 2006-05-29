@@ -10,6 +10,7 @@ SUBDIRS = \
 	gfkey \
 	gfls \
 	gfmkdir \
+	gfmv \
 	gfreg \
 	gfrm \
 	gfrmdir \
