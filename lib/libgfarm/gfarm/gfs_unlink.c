@@ -170,6 +170,8 @@ char *
 gfs_unlink(const char *gfarm_url)
 {
 	char *gfarm_file, *e;
+	struct gfarm_path_info pi;
+	gfarm_mode_t mode;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -183,7 +185,18 @@ gfs_unlink(const char *gfarm_url)
 	if (e != NULL)
 		goto finish_free_gfarm_file;
 
-	e = gfs_unlink_internal(gfarm_file);
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	if (e != NULL)
+		goto finish_free_gfarm_file;
+	mode = pi.status.st_mode;
+	gfarm_path_info_free(&pi);
+
+	if (GFARM_S_ISDIR(mode))
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!GFARM_S_ISREG(mode))
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	else
+		e = gfs_unlink_internal(gfarm_file);
 
 finish_free_gfarm_file:
 	free(gfarm_file);
