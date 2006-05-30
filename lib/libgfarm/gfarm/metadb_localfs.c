@@ -1396,6 +1396,9 @@ gfarm_localfs_path_info_get_all_foreach(
 	struct my_find mf;
 	char *pathname;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	pathname = NULL;
+#endif
 	if ((e = gfarm_localfs_check()) != NULL)
 		return (e);
 
