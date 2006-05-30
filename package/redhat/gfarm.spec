@@ -227,6 +227,10 @@ fi
 useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
 	-c "Gfarm gfsd" -u 600 _gfarmfs >/dev/null 2>&1 || :
 
+%pre server
+useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
+	-c "Gfarm gfsd" -u 600 _gfarmfs >/dev/null 2>&1 || :
+
 %preun server
 if [ "$1" = 0 ]
 then
