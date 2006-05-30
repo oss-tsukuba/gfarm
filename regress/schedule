@@ -10,7 +10,7 @@ gftool/gfrm/1byte.sh
 gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfmv/file.sh
-gftool/gfmv/dir.sh
+# gftool/gfmv/dir.sh
 
 # gftool/gfchmod
 # gftool/gfchown
