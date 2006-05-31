@@ -1,22 +1,14 @@
 #!/bin/sh
 
-. regress.conf
+. ./regress.conf
 
-# prepare
-if gfmkdir $base && gfmkdir $base/xxx &&
-  [ x"`gfls -d $base/xxx`" = x"$base/xxx" ]; then
-	:
-else
-	echo Failed to prepare >&2; exit 1
+trap 'gfrmdir $gftmp/yyy $gftmp/xxx $gftmp; exit $exit_trap' $trap_sigs
+trap 'gfrmdir $gftmp/yyy $gftmp; exit $exit_code' 0
+
+if gfmkdir $gftmp &&
+   gfmkdir $gftmp/xxx &&
+   gfmv $gftmp/xxx $gftmp/yyy &&
+   [ x"`gfls -d $gftmp/xxx`" = x"" ] &&
+   [ x"`gfls -d $gftmp/yyy`" = x"$gftmp/yyy" ]; then
+	exit_code=$exit_pass
 fi
-
-# actual test
-if gfmv $base/xxx $base/yyy &&
-  [ x"`gfls -d $base/xxx`" = x"" ] &&
-  [ x"`gfls -d $base/yyy`" = x"$base/yyy" ]; then
-	status=0
-fi
-
-# cleanup
-gfrmdir $base/yyy
-gfrmdir $base

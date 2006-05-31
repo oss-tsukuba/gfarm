@@ -1,22 +1,13 @@
 #!/bin/sh
 
-. regress.conf
+. ./regress.conf
 
-# prepare
-if gfmkdir $base && gfreg data/1byte $base/1byte &&
-   gfexport $base/1byte | cmp -s - data/1byte; then
-	:
-else
-	echo Failed to prepare >&2; exit 1
+trap 'gfrm $gftmp/xxx $gftmp/1byte; gfrmdir $gftmp; exit $exit_trap' $trap_sigs
+trap 'gfrm $gftmp/xxx; gfrmdir $gftmp; exit $exit_code' 0
+
+if gfmkdir $gftmp &&
+   gfreg $data/1byte $gftmp/1byte &&
+   gfmv $gftmp/1byte $gftmp/xxx &&
+   gfexport $gftmp/xxx | cmp -s - data/1byte; then
+	exit_code=$exit_pass
 fi
-
-# actual test
-if gfmv $base/1byte $base/xxx &&
-   gfexport $base/xxx | cmp -s - data/1byte; then
-	status=0
-fi
-
-# cleanup
-gfrm $base/xxx
-gfrmdir $base
-

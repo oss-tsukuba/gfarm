@@ -1,8 +1,11 @@
 #!/bin/sh
 
-. regress.conf
+. ./regress.conf
 
-if gfls -d / >$tmp1 && cmp -s $tmp1 $scriptbase/root.out; then
-	status=0
+trap 'rm -f $localtmp; exit $exit_trap' $trap_sigs
+trap 'rm -f $localtmp; exit $exit_code' 0
+
+if gfls -d / >$localtmp && cmp -s $localtmp $testbase/root.out; then
+	exit_code=$exit_pass
 fi
 

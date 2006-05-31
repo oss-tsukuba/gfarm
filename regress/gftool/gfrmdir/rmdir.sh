@@ -1,8 +1,12 @@
 #!/bin/sh
 
-. regress.conf
+. ./regress.conf
 
-if gfmkdir $base && [ x"`gfls -d $base`" = x"$base" ] &&
-   gfrmdir $base && [ x"`gfls -d $base`" = x"" ]; then
-	status=0
+trap 'gfrmdir $gftmp; exit $exit_trap' $trap_sigs
+trap 'exit $exit_code' 0
+
+
+if gfmkdir $gftmp &&
+   gfrmdir $gftmp && [ x"`gfls -d $gftmp`" = x"" ]; then
+	exit_code=$exit_pass
 fi

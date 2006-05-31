@@ -1,9 +1,12 @@
 #!/bin/sh
 
-. regress.conf
+. ./regress.conf
 
-gfls /notexist 2>$tmp1
+trap 'rm -f $localtmp; exit $exit_trap' $trap_sigs
+trap 'rm -f $localtmp; exit $exit_code' 0
 
-if [ $? = 1 ] && cmp -s $tmp1 $scriptbase/notexist.out; then
-	status=0
+gfls /notexist 2>$localtmp
+
+if [ $? = 1 ] && cmp -s $localtmp $testbase/notexist.out; then
+	exit_code=$exit_pass
 fi
