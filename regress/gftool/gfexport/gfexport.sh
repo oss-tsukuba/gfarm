@@ -8,8 +8,8 @@ case $# in
 	exit $exit_fail;;
 esac
 
-trap 'rm -f $gftmp; exit $exit_trap' $trap_sigs
-trap 'rm -f $gftmp; exit $exit_code' 0
+trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
+trap 'gfrm $gftmp; exit $exit_code' 0
 
 datasize=`ls -l $datafile | awk '{print $5}'`
 
