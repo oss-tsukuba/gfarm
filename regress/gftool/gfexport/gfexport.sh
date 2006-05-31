@@ -8,13 +8,13 @@ case $# in
 	exit $exit_fail;;
 esac
 
-trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
-trap 'gfrm $gftmp; exit $exit_code' 0
+trap 'rm -f $localtmp; gfrm $gftmp; exit $exit_trap' $trap_sigs
+trap 'rm -f $localtmp; gfrm $gftmp; exit $exit_code' 0
 
 datasize=`ls -l $datafile | awk '{print $5}'`
 
-if gfreg $datafile $gftmp && [ x"`gfls $gftmp`" = x"$gftmp" ] &&
-   [ x"`gfls -l $gftmp | awk '{print $4}'`" = x"$datasize" ] &&
-   gfexport $gftmp | cmp -s - $datafile; then
+if gfreg $datafile $gftmp &&
+   gfexport $gftmp >$localtmp &&
+   cmp -s $localtmp $datafile; then
 	exit_code=$exit_pass
 fi
