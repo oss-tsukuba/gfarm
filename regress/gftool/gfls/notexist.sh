@@ -2,13 +2,15 @@
 
 . ./regress.conf
 
-trap 'rm -f $localtmp; exit $exit_trap' $trap_sigs
+gfls_out=$localtop/RT_gfls_out.$$
 
-gfls /notexist 2>$localtmp
+trap 'rm -f $gfls_out; exit $exit_trap' $trap_sigs
 
-if [ $? = 1 ] && cmp -s $localtmp $testbase/notexist.out; then
+gfls /notexist 2>$gfls_out
+
+if [ $? = 1 ] && cmp -s $gfls_out $testbase/notexist.out; then
 	exit_code=$exit_pass
 fi
 
-rm -f $localtmp
+rm -f $gfls_out
 exit $exit_code

@@ -2,11 +2,13 @@
 
 . ./regress.conf
 
-trap 'rm -f $localtmp; exit $exit_trap' $trap_sigs
+gfls_out=$localtop/RT_gfls_out.$$
 
-if gfls -d / >$localtmp && cmp -s $localtmp $testbase/root.out; then
+trap 'rm -f $gfls_out; exit $exit_trap' $trap_sigs
+
+if gfls -d / >$gfls_out && cmp -s $gfls_out $testbase/root.out; then
 	exit_code=$exit_pass
 fi
 
-rm -f $localtmp
+rm -f $gfls_out
 exit $exit_code

@@ -2,22 +2,24 @@
 
 . ./regress.conf
 
+gfexport_out=$localtop/RT_gfexport_out.$$
+
 case $# in
 1)	datafile=$1;;
 *)	echo "Usage: $0 <datafile>" >&2
 	exit $exit_fail;;
 esac
 
-trap 'rm -f $localtmp; gfrm $gftmp; exit $exit_trap' $trap_sigs
+trap 'rm -f $gfexport_out; gfrm $gftmp; exit $exit_trap' $trap_sigs
 
 datasize=`ls -l $datafile | awk '{print $5}'`
 
 if gfreg $datafile $gftmp &&
-   gfexport $gftmp >$localtmp &&
-   cmp -s $localtmp $datafile; then
+   gfexport $gftmp >$gfexport_out &&
+   cmp -s $gfexport_out $datafile; then
 	exit_code=$exit_pass
 fi
 
-rm -f $localtmp
+rm -f $gfexport_out
 gfrm $gftmp
 exit $exit_code
