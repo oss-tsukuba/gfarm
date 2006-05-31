@@ -1,0 +1,19 @@
+TO RUN TEST
+
+1. "/tmp" directory must exist and must be writable by the user who will
+  run this test.
+  e.g. the following should be done by a gfarm administrator:
+	gfmkdir /tmp
+	gfchmod 777 /tmp
+
+2. run "make check"
+
+TO WRITE TEST
+- each test should be independent from other test.
+i.e.
+- each test shouldn't assume the order of the tests.
+- each test should clear the changes made by the test before exiting.
+
+TODO
+- test by root?
+- make 

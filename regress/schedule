@@ -1,0 +1,19 @@
+# gftool/config-gfarm
+gftool/gfls/root.sh
+gftool/gfls/notexist.sh
+gftool/gfmkdir/mkdir.sh
+gftool/gfrmdir/rmdir.sh
+gftool/gfreg/0byte.sh
+gftool/gfrm/0byte.sh
+gftool/gfreg/1byte.sh
+gftool/gfrm/1byte.sh
+gftool/gfexport/0byte.sh
+gftool/gfexport/1byte.sh
+# gftool/gfmv/file.sh	# gfmv exists only in gfarm v2
+# gftool/gfmv/dir.sh	# gfmv exists only in gfarm v2
+
+# gftool/gfchmod
+# gftool/gfchown
+# gftool/gfuser
+# gftool/gfhost
+# gftool/gfkey
