@@ -9,7 +9,6 @@ case $# in
 esac
 
 trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
-trap 'gfrm $gftmp; exit $exit_code' 0
 
 datasize=`ls -l $datafile | awk '{print $5}'`
 
@@ -18,3 +17,5 @@ if gfreg $datafile $gftmp && [ x"`gfls $gftmp`" = x"$gftmp" ] &&
 	exit_code=$exit_pass
 fi
 
+gfrm $gftmp
+exit $exit_code

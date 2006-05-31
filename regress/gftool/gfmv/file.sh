@@ -3,7 +3,6 @@
 . ./regress.conf
 
 trap 'gfrm $gftmp/xxx $gftmp/1byte; gfrmdir $gftmp; exit $exit_trap' $trap_sigs
-trap 'gfrm $gftmp/xxx; gfrmdir $gftmp; exit $exit_code' 0
 
 if gfmkdir $gftmp &&
    gfreg $data/1byte $gftmp/1byte &&
@@ -11,3 +10,7 @@ if gfmkdir $gftmp &&
    gfexport $gftmp/xxx | cmp -s - data/1byte; then
 	exit_code=$exit_pass
 fi
+
+gfrm $gftmp/xxx
+gfrmdir $gftmp
+exit $exit_code

@@ -3,7 +3,6 @@
 . ./regress.conf
 
 trap 'gfrmdir $gftmp/yyy $gftmp/xxx $gftmp; exit $exit_trap' $trap_sigs
-trap 'gfrmdir $gftmp; exit $exit_code' 0
 
 if gfmkdir $gftmp &&
    gfmkdir $gftmp/xxx &&
@@ -14,3 +13,6 @@ if gfmkdir $gftmp &&
 then
 	exit_code=$exit_pass
 fi
+
+gfrmdir $gftmp
+exit $exit_code

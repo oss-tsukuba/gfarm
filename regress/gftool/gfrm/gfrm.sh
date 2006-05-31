@@ -9,10 +9,10 @@ case $# in
 esac
 
 trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
-trap 'exit $exit_code' 0
 
 if gfreg $datafile $gftmp &&
    gfrm $gftmp && [ x"`gfls $gftmp`" = x"" ]; then
 	exit_code=$exit_pass
 fi
 
+exit $exit_code
