@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ./regress.conf
+
 log=log
 rm -f $log
 
@@ -8,6 +10,7 @@ case $# in
 *)	schedule=$*;;
 esac
 
+killed=0
 pass=0
 fail=0
 skip=0
@@ -28,17 +31,23 @@ while read line; do
 		exit_code=$?
 
 		case $exit_code in
-		0)	echo "$msg PASS"
+		$exit_pass)
+			echo "$msg PASS"
 			echo "$msg PASS" >>$log
 			pass=`expr $pass + 1`;;
-		*)	echo "$msg FAIL"
+		$exit_fail)
+			echo "$msg FAIL"
 			echo "$msg FAIL" >>$log
-			fail=`expr $fail + 1`
-			case $exit_code in
-			1)	:;;
+			fail=`expr $fail + 1`;;
+		*)	case $exit_code in
+			$exit_trap)
+				echo "$msg KILLED"
+				echo "$msg KILLED" >>$log;;
 			*)	echo "$msg exit code = $exit_code"
 				echo "$msg exit code = $exit_code" >>$log;;
-			esac;;
+			esac
+			killed=1
+			break;;
 		esac
 		echo "$fin" >>$log
 	else
@@ -55,7 +64,8 @@ echo "  failure : $fail"
 
 if [ $skip != 0 ]; then
 echo ""
-echo "  skipepd : $skip"
+echo "  skipped : $skip"
 fi
 
+case $killed in $exit_trap) exit $exit_trap;; esac
 [ $fail = 0 ]
