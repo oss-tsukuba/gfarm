@@ -7,7 +7,6 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <libgen.h>
 #include <syslog.h>
@@ -1643,17 +1642,6 @@ main(int argc, char **argv)
 	signal(SIGTERM, sigterm_handler);
 	signal(SIGPIPE, SIG_IGN);
 
-	/*
-	 * To deal with race condition which may be caused by RST,
-	 * listening socket must be O_NONBLOCK, if the socket will be
-	 * used as a file descriptor for select(2) .
-	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
-	 * Third Edition" by W. Richard Stevens, for detail.
-	 */
-	if (fcntl(accepting_sock, F_SETFL,
-	    fcntl(accepting_sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
-		gflog_warning_errno("accepting socket O_NONBLOCK");
-
 	for (;;) {
 		int err;
 		void *arg;
@@ -1662,11 +1650,7 @@ main(int argc, char **argv)
 		client = accept(accepting_sock,
 			(struct sockaddr *)&client_addr, &client_addr_size);
 		if (client < 0) {
-			if (errno != EINTR && errno != ECONNABORTED &&
-#ifdef EPROTO
-			    errno != EPROTO &&
-#endif
-			    errno != EAGAIN)
+			if (errno != EINTR)
 				gflog_warning_errno("accept");
 			continue;
 		}
