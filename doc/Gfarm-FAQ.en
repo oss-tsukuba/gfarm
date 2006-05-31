@@ -316,13 +316,10 @@ dbcachesize 1000000
 
   4.2 How to execute gfarm_agent automatically only when it is not there?
 
-	Add the following script to the shell rc file
-	(e.g. ~/.bashrc., .cshrc).
-
-	In the case of the Bourne Shell:
+	Add the following script to ~/.bashrc.
 
 ----------------------------- BEGIN HERE -----------------------------
-GFARMENV=/tmp/gfarm-env-$USER.sh
+GFARMENV=/tmp/gfarm-env-$USER
 
 source_gfarm_env()
 {
@@ -336,43 +333,21 @@ restart_gfarm_agent()
 	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
 }
 
-source_gfarm_env
-if test "X$GFARM_AGENT_PID" = X
-then
-	restart_gfarm_agent	
+check_gfarm_agent()
+{
 	source_gfarm_env
-elif ! ps -p $GFARM_AGENT_PID > /dev/null
-then
-	restart_gfarm_agent	
-	source_gfarm_env
-fi
--------------------------------- END --------------------------------
+	if test "X$GFARM_AGENT_PID" = X
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	elif ! ps -p $GFARM_AGENT_PID > /dev/null
+	then
+		restart_gfarm_agent	
+		source_gfarm_env
+	fi
+}
 
-	In the case of the csh:
-
------------------------------ BEGIN HERE -----------------------------
-setenv GFARMENV /tmp/gfarm-env-$USER.csh
-
-if ( -f $GFARMENV ) then
-	source $GFARMENV > /dev/null
-endif
-
-set gfarm_agent_running=0
-if ( $?GFARM_AGENT_PID ) then
-	ps -p $GFARM_AGENT_PID > /dev/null && set gfarm_agent_running=1
-endif
-
-if ( $gfarm_agent_running == 0 ) then
-	touch $GFARMENV
-	chmod go-rw $GFARMENV
-	gfarm_agent -c > $GFARMENV
-	if ( $status == 0 ) then
-		source $GFARMENV > /dev/null
-	else
-		rm -f $GFARMENV
-	endif
-endif
-unset gfarm_agent_running
+check_gfarm_agent
 -------------------------------- END --------------------------------
 
 5. Limitation

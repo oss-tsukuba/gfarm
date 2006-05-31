@@ -34,21 +34,16 @@
 static char *
 gfs_set_section_busy(char *pathname, char *section)
 {
-	struct gfarm_file_section_info fi, fi2;
+	struct gfarm_file_section_info fi;
 	char *e;
 
+	fi.filesize = 0;
 	fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 	fi.checksum = SECTION_BUSY;
 
-	e = gfarm_file_section_info_get(pathname, section, &fi2);
-	if (e == NULL) {
-		fi.filesize = fi2.filesize;
-		gfarm_file_section_info_free(&fi2);
+	e = gfarm_file_section_info_set(pathname, section, &fi);
+	if (e == GFARM_ERR_ALREADY_EXISTS)
 		e = gfarm_file_section_info_replace(pathname, section, &fi);
-	} else {
-		fi.filesize = 0;
-		e = gfarm_file_section_info_set(pathname, section, &fi);
-	}
 	return (e);
 }
 
@@ -165,8 +160,19 @@ gfs_pio_view_section_close(GFS_File gf)
 			fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi.checksum = md_value_string;
 
-			e = gfarm_file_section_info_replace(
+			e = gfarm_file_section_info_set(
 				gf->pi.pathname, vc->section, &fi);
+			if (e == GFARM_ERR_ALREADY_EXISTS)
+				e = gfarm_file_section_info_replace(
+				    gf->pi.pathname, vc->section, &fi);
+			if (e == NULL) {
+				fci.hostname = vc->canonical_hostname;
+				e = gfarm_file_section_copy_info_set(
+				    gf->pi.pathname, vc->section,
+				    fci.hostname, &fci);
+				if (e == GFARM_ERR_ALREADY_EXISTS)
+					e = NULL;
+			}
 		} else {
 			e = gfarm_file_section_info_get(
 			    gf->pi.pathname, vc->section, &fi);
@@ -584,10 +590,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		 * delete every other file copies
 		 */
 		(void)gfs_set_section_busy(gf->pi.pathname, vc->section);
-		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0)
-			(void)gfs_unlink_every_other_replicas(
-				gf->pi.pathname, vc->section,
-				vc->canonical_hostname);
+		(void)gfs_unlink_every_other_replicas(
+			gf->pi.pathname, vc->section,
+			vc->canonical_hostname);
 	}
 	/* create section copy info */
 	if (flags & GFARM_FILE_CREATE) {

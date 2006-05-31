@@ -30,7 +30,6 @@
 
 #include "metadb_access.h"
 #include "gfs_misc.h"	/* gfarm_path_expand_home() */
-#include "path_info_cache.h"
 
 
 static char *gfarm_current_working_directory;
@@ -980,7 +979,7 @@ gfs_dircache_modify_parent(const char *pathname)
 
 	/* NOTE: We don't have path_info for the root directory */
 	if (b > parent &&
-	    (e = gfarm_cache_path_info_get(parent, &pi)) == NULL) {
+	    (e = gfarm_metadb_path_info_get(parent, &pi)) == NULL) {
 		gettimeofday(&now, NULL);
 		pi.status.st_mtimespec.tv_sec = now.tv_sec;
 		pi.status.st_mtimespec.tv_nsec = now.tv_usec *
@@ -1135,7 +1134,7 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		return (root_path_info(info));
 
 	/* real metadata */
-	e = gfarm_cache_path_info_get(pathname, info);
+	e = gfarm_metadb_path_info_get(pathname, info);
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
 		return (e); /* Can't connect LDAP server */
 
@@ -1196,7 +1195,7 @@ gfarm_i_path_info_set(char *pathname, struct gfarm_path_info *info)
 
 	if (e != NULL)
 		return (e);
-	e = gfarm_cache_path_info_set(pathname, info);
+	e = gfarm_metadb_path_info_set(pathname, info);
 	if (e == NULL) {
 		gfs_dircache_enter_path(GFARM_INODE_CREATE, pathname, info);
 		gfs_dircache_modify_parent(pathname);
@@ -1211,7 +1210,7 @@ gfarm_i_path_info_replace(char *pathname, struct gfarm_path_info *info)
 
 	if (e != NULL)
 		return (e);
-	e = gfarm_cache_path_info_replace(pathname, info);
+	e = gfarm_metadb_path_info_replace(pathname, info);
 	if (e == NULL) {
 		e = gfs_dircache_enter_path(GFARM_INODE_LOOKUP,
 		    pathname, info);
@@ -1231,7 +1230,7 @@ gfarm_i_path_info_remove(const char *pathname)
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_cache_path_info_remove(pathname);
+	e = gfarm_metadb_path_info_remove(pathname);
 	if (e == NULL) {
 		gfs_dircache_purge_path(pathname);
 		gfs_dircache_modify_parent(pathname);

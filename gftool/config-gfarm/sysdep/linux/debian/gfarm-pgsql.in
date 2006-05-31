@@ -7,23 +7,26 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 FILE="gfarm-pgsql"
 
-CTL="@config_gfarm_backend_prefix@/bin/pg_ctl"
-DATADIR="@config_gfarm_backend_data_dir@"
-LOGFILE="$DATADIR/logfile"
-PIDFILE="$DATADIR/portmaster.pid"
-OPTIONS="-s -w -m fast -D $DATADIR -l $LOGFILE"
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+LOGFILE="$PGDATA/logfile"
+PIDFILE="$PGDATA/portmaster.pid"
+OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su $PRIVILEGE";;
+*)	RUN="su - $PRIVILEGE";;
 esac
 
 trap "" 1
 export LANG=C
 export PATH
+export PGPORT
+export PGDATA
 
 test -f $CTL || exit 0
-test -d $DATADIR || exit 0
+test -d $PGDATA || exit 0
 
 case "$1" in
   start)

@@ -1,0 +1,12 @@
+TO RUN TEST
+
+1. run "make check"
+
+TO WRITE TEST
+- each test should be independent from other test.
+i.e.
+- each test shouldn't assume the order of the tests.
+- each test should clear the changes made by the test before exiting.
+
+TODO
+- test by root?
