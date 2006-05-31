@@ -14,6 +14,7 @@
 
 #include <gfarm/gfarm.h>
 #include "metadb_access.h"
+#include "gfs_misc.h"
 #include "agent_client.h"
 #include "agent_wrap.h"
 
@@ -333,7 +334,8 @@ gfs_get_ino(const char *canonic_path, long *inop)
 char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e, cwd[PATH_MAX + 1];
+	struct gfarm_path_info pi;
+	char *e, cwd[PATH_MAX + 1], *canonic_path;
 
 	path = gfarm_url_prefix_skip(path);
 
@@ -348,6 +350,20 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 		strcat(cwd, path);
 		path = cwd;
 	}
+
+	/* access control */
+	e = gfarm_canonical_path(path, &canonic_path);
+	if (e == NULL) {
+		e = gfarm_path_info_get(canonic_path, &pi);
+		if (e == NULL) {
+			e = gfarm_path_info_access(&pi, R_OK);
+			gfarm_path_info_free(&pi);
+		}
+		free(canonic_path);
+	}
+	if (e != NULL)
+		return (e);
+
 	if (gfarm_agent_check() == NULL) {
 		e = agent_client_opendir(agent_server, path, dirp);
 		if (e != GFARM_ERR_CONNECTION_REFUSED)

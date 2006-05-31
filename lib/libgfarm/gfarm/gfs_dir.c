@@ -1426,26 +1426,19 @@ struct gfs_dir {
 char *
 gfs_i_opendir(const char *path, GFS_Dir *dirp)
 {
-	char *e, *e1, *canonic_path;
+	char *e, *canonic_path;
 	struct node *n;
 	struct gfs_dir *dir;
-	struct gfarm_path_info pi;
 
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
 	if (e != NULL)
 		return (e);
 
-	e1 = gfarm_path_info_get(canonic_path, &pi);
-	if (e1 == NULL) {
-		e1 = gfarm_path_info_access(&pi, R_OK);
-		gfarm_path_info_free(&pi);
-	}
-
 	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
 	    GFARM_INODE_LOOKUP, &n);
 	free(canonic_path);
-	if (e != NULL || e1 != NULL)
-		return (e != NULL ? e : e1);
+	if (e != NULL)
+		return (e);
 
 	/* here, refresh directory cache */
 	if (n->flags & NODE_FLAG_INVALID) {
