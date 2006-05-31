@@ -67,5 +67,5 @@ echo ""
 echo "  skipped : $skip"
 fi
 
-case $killed in $exit_trap) exit $exit_trap;; esac
+case $killed in 1) exit $exit_trap;; esac
 [ $fail = 0 ]
