@@ -195,30 +195,36 @@ echo run %{prefix}/bin/config-agent to configure Gfarm metadata cache server
 %preun fsnode
 if [ "$1" = 0 ]
 then
-	/sbin/service gfsd stop > /dev/null 2>&1 || :
-	/sbin/chkconfig --del gfsd
+	if [ -f /etc/init.d/gfsd ]; then
+		/sbin/service gfsd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfsd > /dev/null 2>&1 || :
+	fi
 fi
 
 %preun server
 if [ "$1" = 0 ]
 then
-	/sbin/service gfmd stop > /dev/null 2>&1 || :
-	/sbin/chkconfig --del gfmd
+	if [ -f /etc/init.d/gfmd ]; then
+		/sbin/service gfmd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfmd > /dev/null 2>&1 || :
+	fi
 	if [ -f /etc/init.d/gfarm-slapd ]; then
-		echo do not forget \'service gfarm-slapd stop\' and
-		echo \'chkconfig gfarm-slapd --del\'
+		/sbin/service gfarm-slapd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfarm-slapd > /dev/null 2>&1 || :
 	fi
 	if [ -f /etc/init.d/gfarm-pgsql ]; then
-		echo do not forget \'service gfarm-pgsql stop\' and
-		echo \'chkconfig gfarm-pgsql --del\'
+		/sbin/service gfarm-pgsql stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfarm-pgsql > /dev/null 2>&1 || :
 	fi
 fi
 
 %preun agent
 if [ "$1" = 0 ]
 then
-	/sbin/service gfarm_agent stop > /dev/null 2>&1 || :
-	/sbin/chkconfig --del gfarm_agent
+	if [ -f /etc/init.d/gfarm_agent ]; then
+		/sbin/service gfarm_agent stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfarm_agent > /dev/null 2>&1 || :
+	fi
 fi
 
 # Part 3  file list
