@@ -4,4 +4,4 @@ check test:
 	@echo ""
 
 loop:
-	@loop.sh
+	@./loop.sh
