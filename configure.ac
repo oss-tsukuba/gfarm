@@ -568,15 +568,20 @@ AC_CHECK_LIB(rt, fdatasync)
 
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
-for i in ${pthread_libs}
-do
-  case $i in
-  -L/usr/lib) :;;
-  -L/usr/lib/) :;;
-  -L*) # 3rd party pthread library, We need to link it always.
-	LIBS="${LIBS} ${pthread_libs}";;
-  esac
-done
+# e.g. using 3rd party pthread library, FreeBSD-4.x, or NetBSD-2.x
+AC_MSG_CHECKING([whether libc supplies weak symbols for pthread])
+AC_TRY_LINK([
+#include <pthread.h>
+
+void init(void){}],[
+    pthread_once_t once;
+    pthread_once(&once, init);
+], [
+	AC_MSG_RESULT([yes])
+], [
+	AC_MSG_RESULT([no. WARNING: always link pthread])
+	LIBS="${LIBS} ${pthread_libs}"
+])
 
 ### use 64bit off_t, if possible.
 
@@ -912,7 +917,7 @@ AC_SUBST(postgresql_targets)
 
 if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
 then
-	AC_MSG_RESULT([warning: neither LDAP or PostgreSQL is found])
+	AC_MSG_RESULT([WARNING: neither LDAP or PostgreSQL is found])
 fi
 
 ######
