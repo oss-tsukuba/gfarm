@@ -21556,7 +21556,8 @@ else
     LIBS_SAVE="$LIBS"
     CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
-    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} ${openssl_libs} $LIBS_SAVE"
+	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21739,7 +21740,8 @@ rm -f conftest.err conftest.$ac_objext \
     LIBS_SAVE="$LIBS"
     CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
-    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'`   $LIBS_SAVE"
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'`   ${openssl_libs} $LIBS_SAVE"
+	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
