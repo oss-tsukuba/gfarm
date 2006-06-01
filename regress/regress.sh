@@ -27,7 +27,7 @@ while read line; do
 	if [ -f $tst ]; then
 		echo "$msg BEGIN" >>$log
 
-		sh $tst >>$log 2>&1
+		sh $tst </dev/null >>$log 2>&1
 		exit_code=$?
 
 		case $exit_code in
