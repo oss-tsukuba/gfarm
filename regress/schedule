@@ -12,6 +12,7 @@ gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfwhere/noopt_+x.sh
 gftool/gfwhere/noopt_-x.sh
+gftool/gfreg/gfreg-h.sh
 # gftool/gfmv/file.sh	# gfmv exists only in gfarm v2
 # gftool/gfmv/dir.sh	# gfmv exists only in gfarm v2
 
