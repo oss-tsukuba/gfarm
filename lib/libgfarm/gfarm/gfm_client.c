@@ -458,7 +458,8 @@ gfarm_user_job_register(int nhosts, char **hosts,
 	job_info.user = gfarm_get_global_username();
 	job_info.job_type = job_type;
 	e = gfarm_host_get_canonical_self_name(&job_info.originate_host);
-	if (e == GFARM_ERR_UNKNOWN_HOST || e == GFARM_ERR_AMBIGUOUS_RESULT ||
+	if (e == GFARM_ERR_NO_SUCH_OBJECT ||
+	    e == GFARM_ERR_UNKNOWN_HOST || e == GFARM_ERR_AMBIGUOUS_RESULT ||
 	    e == GFARM_ERR_INVALID_ARGUMENT /* XXX - via gfarm_agent */) {
 		/*
 		 * gfarm client doesn't have to be a compute host,
