@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
