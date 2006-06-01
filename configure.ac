@@ -126,7 +126,7 @@ void *foo(void *p){ return 0; }],[
 	else
 		AC_TRY_PTHREAD(-mt,-mt -lpthread,)
 	fi;;
-    *-*-sysv5uw7*) # UnixWare 7 
+    *-*-sysv5uw7*) # UnixWare 7
 	if test x"$GCC" = x"yes"; then
 		AC_TRY_PTHREAD(-pthread,-pthread,)
 	else
@@ -539,9 +539,9 @@ AC_ARG_WITH(gfarmd_username,
 [gfarmd_username="${withval}"], [gfarmd_username='nobody'])
 AC_SUBST(gfarmd_username)
 
-###### 
+######
 ###### Checks for libraries.
-###### 
+######
 
 ### check sanity of $CC, $CFLAGS and $CPPFLAGS
 
@@ -833,7 +833,7 @@ postgresql_usable=
 if test x"${postgresql_specified}" = x""; then
   AC_MSG_RESULT([no])
 else
-  if test -x ${with_postgresql}/bin/pg_config; then  
+  if test -x ${with_postgresql}/bin/pg_config; then
     if ! ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
 	AC_MSG_RESULT([failed to call ${with_postgresql}/bin/pg_config command.])
 	AC_MSG_ERROR([PostgreSQL installation is incomplete, aborted.])
@@ -915,15 +915,15 @@ then
 	AC_MSG_RESULT([warning: neither LDAP or PostgreSQL is found])
 fi
 
-###### 
+######
 ###### Checks for header files.
-###### 
+######
 
 AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h)
 
-###### 
+######
 ###### Checks for types.
-###### 
+######
 
 AC_C_BIGENDIAN
 
@@ -937,7 +937,7 @@ AC_MSG_CHECKING([socklen_t])
 case $host_os_nickname in
 hpux)
   # There are two ways to deal with socklen_t on HP-UX 11i.
-  # 1. Use system supplied socklen_t. 
+  # 1. Use system supplied socklen_t.
   #   This requires CPPFLAGS=-D_XOPEN_SOURCE_EXTENDED and LIBS=-lxnet.
   # 2. Use int.
   #   This is incompatible with both -D_XOPEN_SOURCE_EXTENDED and -lxnet.
@@ -990,9 +990,9 @@ else
    [3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define])
 fi
 
-###### 
+######
 ###### Checks for structures.
-###### 
+######
 
 AC_MSG_CHECKING([struct dirent::d_off])
 AC_TRY_COMPILE([
@@ -1039,9 +1039,9 @@ fi
 ###### Checks for compiler characteristics.
 # empty for now
 
-###### 
+######
 ###### Checks for library functions.
-###### 
+######
 
 AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
 
