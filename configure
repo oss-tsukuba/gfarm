@@ -21340,15 +21340,68 @@ fi
 
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
-for i in ${pthread_libs}
-do
-  case $i in
-  -L/usr/lib) :;;
-  -L/usr/lib/) :;;
-  -L*) # 3rd party pthread library, We need to link it always.
-	LIBS="${LIBS} ${pthread_libs}";;
-  esac
-done
+# e.g. using 3rd party pthread library, FreeBSD-4.x, or NetBSD-2.x
+echo "$as_me:$LINENO: checking whether libc supplies weak symbols for pthread" >&5
+echo $ECHO_N "checking whether libc supplies weak symbols for pthread... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <pthread.h>
+
+void init(void){}
+int
+main ()
+{
+
+    pthread_once_t once;
+    pthread_once(&once, init);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+	echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	echo "$as_me:$LINENO: result: no. WARNING: always link pthread" >&5
+echo "${ECHO_T}no. WARNING: always link pthread" >&6
+	LIBS="${LIBS} ${pthread_libs}"
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
 
 ### use 64bit off_t, if possible.
 
@@ -22139,8 +22192,8 @@ esac
 
 if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
 then
-	echo "$as_me:$LINENO: result: warning: neither LDAP or PostgreSQL is found" >&5
-echo "${ECHO_T}warning: neither LDAP or PostgreSQL is found" >&6
+	echo "$as_me:$LINENO: result: WARNING: neither LDAP or PostgreSQL is found" >&5
+echo "${ECHO_T}WARNING: neither LDAP or PostgreSQL is found" >&6
 fi
 
 ######
