@@ -11,7 +11,7 @@ struct gfarm_file_section_copy_info;
 
 #include "metadb_sw.h"
 
-char GFARM_ERR_UNKNOWN_METADB_TYPE[] = "no available meta server";
+char GFARM_ERR_UNKNOWN_METADB_TYPE[] = "metadata server type isn't configured";
 
 static char *
 gfarm_none_initialize(void)

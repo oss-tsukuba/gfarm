@@ -32,11 +32,7 @@
  * always report "metadb is not correctly initialized".
  */
 static const struct gfarm_metadb_internal_ops *metadb_ops =
-#ifdef HAVE_LDAP
-	&gfarm_ldap_metadb_ops;
-#else
-	&gfarm_pgsql_metadb_ops;
-#endif
+	&gfarm_none_metadb_ops;
 
 char *
 gfarm_metadb_use_ldap(void)
