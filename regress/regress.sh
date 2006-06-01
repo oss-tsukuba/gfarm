@@ -24,7 +24,7 @@ while read line; do
 	tst=$1
 	msg="`echo $tst | awk '{printf "%-50.50s ... ", $1}'`"
 	fin="-------------------------------------------------- --- ----"
-	if [ -x $tst ]; then
+	if [ -f $tst ]; then
 		echo "$msg BEGIN" >>$log
 
 		sh $tst >>$log 2>&1
