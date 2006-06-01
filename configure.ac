@@ -707,7 +707,8 @@ else
     LIBS_SAVE="$LIBS"
     CPPFLAGS="$1 $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
-    LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $3 $4 $LIBS_SAVE"
+    LIBS="`echo $2 | sed 's/-R[[^ ]]*//g'` $3 $4 ${openssl_libs} $LIBS_SAVE"
+	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
     AC_TRY_LINK([
 #include <lber.h>
 #include <ldap.h>],[
