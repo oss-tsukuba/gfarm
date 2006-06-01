@@ -11,4 +11,5 @@ then
 	exit_code=$exit_pass
 fi
 
+gfrm $gftmp
 exit $exit_code
