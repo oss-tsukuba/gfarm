@@ -1,7 +1,5 @@
 #!/bin/sh
 
-#gfrcmd srapc763.sra.co.jp echo OK
-
 . ./regress.conf
 
 trap 'exit $exit_trap' $trap_sigs
