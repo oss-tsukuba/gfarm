@@ -559,12 +559,15 @@ if test x"${ac_cv_func_printf}" != x"yes"; then
 	exit 1
 fi
 
-AC_CHECK_LIB(nsl, gethostname)
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(crypt, crypt)
-AC_CHECK_LIB(compat, cuserid)
-AC_CHECK_LIB(gen, basename)
-AC_CHECK_LIB(rt, fdatasync)
+# We need to add those libraries to $LIBS at first,
+# otherwise some libraries (e.g. OpenLDAP) cannot be linked.
+AC_CHECK_LIB(nsl, gethostname)	# SVR4 and derived
+AC_CHECK_LIB(socket, socket)	# SVR4 and derived
+AC_CHECK_LIB(crypt, crypt)	# 4.4BSD and derived
+AC_CHECK_LIB(compat, cuserid)	# NetBSD
+AC_CHECK_LIB(gen, basename)	# IRIX
+AC_CHECK_LIB(rt, fdatasync)	# Solaris
+AC_CHECK_LIB(cext, seteuid)	# HP-UX
 
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
