@@ -16,6 +16,10 @@
 #include <openssl/evp.h> /* "gfs_pio.h" needs this for now */
 #include "gfs_pio.h"
 
+#if !defined(WCOREDUMP) && defined(_AIX)
+#define WCOREDUMP(status)	((status) & 0x80)
+#endif
+
 #define PROGRAM_NAME "gfexec"
 static char progname[] = PROGRAM_NAME;
 

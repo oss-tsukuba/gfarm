@@ -34,6 +34,10 @@
 #define HAVE_MSG_CONTROL 1
 #endif
 
+#if !defined(WCOREDUMP) && defined(_AIX)
+#define WCOREDUMP(status)	((status) & 0x80)
+#endif
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>

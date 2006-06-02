@@ -24,6 +24,11 @@
 #include <dirent.h>
 
 #include <errno.h>
+
+#if !defined(WCOREDUMP) && defined(_AIX)
+#define WCOREDUMP(status)	((status) & 0x80)
+#endif
+
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
 #include <openssl/evp.h>

@@ -568,6 +568,7 @@ AC_CHECK_LIB(compat, cuserid)	# NetBSD
 AC_CHECK_LIB(gen, basename)	# IRIX
 AC_CHECK_LIB(rt, fdatasync)	# Solaris
 AC_CHECK_LIB(cext, seteuid)	# HP-UX
+AC_CHECK_LIB(perfstat, perfstat_cpu_total) # AIX, to implement getloadavg()
 
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
