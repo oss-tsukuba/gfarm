@@ -1130,12 +1130,18 @@ root_path_info(struct gfarm_path_info *info)
 	return (NULL);
 }
 
-static char *
-path_info_get_with_consistency(const char *pathname,
-	struct gfarm_path_info *info, struct node **np)
+char *
+gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
+	char *e = gfs_refreshdir(), *e2;
 	struct node *n;
-	char *e, *e2;
+
+	if (e != NULL)
+		return (e);
+
+	/* 'root' is a special case not having the metadata */
+	if (*pathname == '\0')
+		return (root_path_info(info));
 
 	/* real metadata */
 	e = gfarm_cache_path_info_get(pathname, info);
@@ -1189,26 +1195,7 @@ path_info_get_with_consistency(const char *pathname,
 			gfs_refreshdir();
 		}
 	}
-	if (e == NULL)
-		*np = n;
-
 	return (e);
-}
-
-char *
-gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
-{
-	char *e = gfs_refreshdir();
-	struct node *n;
-
-	if (e != NULL)
-		return (e);
-
-	/* 'root' is a special case not having the metadata */
-	if (*pathname == '\0')
-		return (root_path_info(info));
-
-	return (path_info_get_with_consistency(pathname, info, &n));
 }
 
 char *
@@ -1442,17 +1429,16 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 	char *e, *canonic_path;
 	struct node *n;
 	struct gfs_dir *dir;
-	struct gfarm_path_info info;
 
 	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
 	if (e != NULL)
 		return (e);
 
-	e = path_info_get_with_consistency(canonic_path, &info, &n);
+	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
+	    GFARM_INODE_LOOKUP, &n);
 	free(canonic_path);
 	if (e != NULL)
 		return (e);
-	gfarm_path_info_free(&info);
 
 	/* here, refresh directory cache */
 	if (n->flags & NODE_FLAG_INVALID) {
