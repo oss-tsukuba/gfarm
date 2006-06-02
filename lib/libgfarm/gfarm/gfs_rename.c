@@ -47,11 +47,17 @@ rename_copy(struct gfarm_file_section_copy_info *info, void *arg)
 
 	e = gfs_client_link(gfs_server, old_path, new_path);
 	/* FT */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		(void)gfs_pio_remote_mkdir_parent_canonical_path(
-			gfs_server, a->n_path);
-		e = gfs_client_link(gfs_server, old_path, new_path);
-	}		
+	if (e != NULL) {
+		char *e1 = e;
+
+		if (e == GFARM_ERR_ALREADY_EXISTS)
+			e1 = gfs_client_unlink(gfs_server, new_path);
+		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			e1 = gfs_pio_remote_mkdir_parent_canonical_path(
+				gfs_server, a->n_path);
+		if (e1 == NULL)
+			e = gfs_client_link(gfs_server, old_path, new_path);
+	}
 
 	free(new_path);
 free_old_path:
