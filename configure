@@ -20893,6 +20893,8 @@ echo "${ECHO_T}linker option error on: \"$ac_link\"" >&6
 	exit 1
 fi
 
+# We need to add those libraries to $LIBS at first,
+# otherwise some libraries (e.g. OpenLDAP) cannot be linked.
 
 echo "$as_me:$LINENO: checking for gethostname in -lnsl" >&5
 echo $ECHO_N "checking for gethostname in -lnsl... $ECHO_C" >&6
@@ -20966,7 +20968,7 @@ _ACEOF
   LIBS="-lnsl $LIBS"
 
 fi
-
+	# SVR4 and derived
 
 echo "$as_me:$LINENO: checking for socket in -lsocket" >&5
 echo $ECHO_N "checking for socket in -lsocket... $ECHO_C" >&6
@@ -21040,7 +21042,7 @@ _ACEOF
   LIBS="-lsocket $LIBS"
 
 fi
-
+	# SVR4 and derived
 
 echo "$as_me:$LINENO: checking for crypt in -lcrypt" >&5
 echo $ECHO_N "checking for crypt in -lcrypt... $ECHO_C" >&6
@@ -21114,7 +21116,7 @@ _ACEOF
   LIBS="-lcrypt $LIBS"
 
 fi
-
+	# 4.4BSD and derived
 
 echo "$as_me:$LINENO: checking for cuserid in -lcompat" >&5
 echo $ECHO_N "checking for cuserid in -lcompat... $ECHO_C" >&6
@@ -21188,7 +21190,7 @@ _ACEOF
   LIBS="-lcompat $LIBS"
 
 fi
-
+	# NetBSD
 
 echo "$as_me:$LINENO: checking for basename in -lgen" >&5
 echo $ECHO_N "checking for basename in -lgen... $ECHO_C" >&6
@@ -21262,7 +21264,7 @@ _ACEOF
   LIBS="-lgen $LIBS"
 
 fi
-
+	# IRIX
 
 echo "$as_me:$LINENO: checking for fdatasync in -lrt" >&5
 echo $ECHO_N "checking for fdatasync in -lrt... $ECHO_C" >&6
@@ -21336,7 +21338,155 @@ _ACEOF
   LIBS="-lrt $LIBS"
 
 fi
+	# Solaris
 
+echo "$as_me:$LINENO: checking for seteuid in -lcext" >&5
+echo $ECHO_N "checking for seteuid in -lcext... $ECHO_C" >&6
+if test "${ac_cv_lib_cext_seteuid+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcext  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char seteuid ();
+int
+main ()
+{
+seteuid ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_cext_seteuid=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_cext_seteuid=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_cext_seteuid" >&5
+echo "${ECHO_T}$ac_cv_lib_cext_seteuid" >&6
+if test $ac_cv_lib_cext_seteuid = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCEXT 1
+_ACEOF
+
+  LIBS="-lcext $LIBS"
+
+fi
+	# HP-UX
+
+echo "$as_me:$LINENO: checking for perfstat_cpu_total in -lperfstat" >&5
+echo $ECHO_N "checking for perfstat_cpu_total in -lperfstat... $ECHO_C" >&6
+if test "${ac_cv_lib_perfstat_perfstat_cpu_total+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lperfstat  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char perfstat_cpu_total ();
+int
+main ()
+{
+perfstat_cpu_total ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_perfstat_perfstat_cpu_total=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_perfstat_perfstat_cpu_total=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_perfstat_perfstat_cpu_total" >&5
+echo "${ECHO_T}$ac_cv_lib_perfstat_perfstat_cpu_total" >&6
+if test $ac_cv_lib_perfstat_perfstat_cpu_total = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPERFSTAT 1
+_ACEOF
+
+  LIBS="-lperfstat $LIBS"
+
+fi
+ # AIX, to implement getloadavg()
 
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
