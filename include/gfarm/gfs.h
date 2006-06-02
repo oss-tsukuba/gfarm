@@ -8,7 +8,7 @@
 
 struct gfarm_timespec {
 	unsigned int tv_sec;
-	unsigned int tv_nsec;
+	int tv_nsec;
 };
 
 typedef unsigned int gfarm_mode_t;
