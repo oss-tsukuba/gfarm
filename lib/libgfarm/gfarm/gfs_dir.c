@@ -1004,7 +1004,7 @@ gfs_dircache_enter_path(enum gfarm_node_lookup_op op,
 	const char *pathname, struct gfarm_path_info *info)
 {
 	struct node *n;
-	char *e = lookup_relative(root, info->pathname,
+	char *e = lookup_relative(root, pathname,
 	    GFARM_S_ISDIR(info->status.st_mode) ? NODE_FLAG_IS_DIR : 0,
 	    op, &n);
 
