@@ -64,11 +64,10 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 
 	mask = umask(0);
 	umask(mask);
-	mode &= ~mask;
 
 	gettimeofday(&now, NULL);
 	pi.pathname = canonic_path;
-	pi.status.st_mode = (GFARM_S_IFDIR | mode);
+	pi.status.st_mode = (GFARM_S_IFDIR | (mode & ~mask & GFARM_S_ALLPERM));
 	pi.status.st_user = user;
 	pi.status.st_group = "*"; /* XXX for now */
 	pi.status.st_atimespec.tv_sec =

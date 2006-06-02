@@ -248,7 +248,8 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 
 		gettimeofday(&now, NULL);
 		gf->pi.pathname = pathname;
-		gf->pi.status.st_mode = (GFARM_S_IFREG | (mode & ~mask));
+		gf->pi.status.st_mode =
+		    (GFARM_S_IFREG | (mode & ~mask & GFARM_S_ALLPERM));
 		gf->pi.status.st_user = strdup(user); /* XXX NULL check */
 		gf->pi.status.st_group = strdup("*"); /* XXX for now */
 		gf->pi.status.st_atimespec.tv_sec =
