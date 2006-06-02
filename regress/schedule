@@ -16,6 +16,7 @@ gftool/gfreg/gfreg-h.sh
 gftool/gfrep/gfrep-d.sh
 gftool/gfrep/gfrep-N2.sh
 gftool/gfrcmd/gfrcmd.sh
+gftool/gfsched/gfsched-N.sh
 gftool/gfrun/gfrun.sh
 gftool/gfrun/gfrun-u.sh
 # gftool/gfmv/file.sh	# gfmv exists only in gfarm v2
