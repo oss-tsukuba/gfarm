@@ -1637,7 +1637,8 @@ main(int argc, char **argv)
 		fprintf(pid_fp, "%ld\n", (long)getpid());
 		fclose(pid_fp);
 	}
-	display_env(stdout_fd, agent_port);
+	if (gfarm_agent_type_get() == UNIX_DOMAIN)
+		display_env(stdout_fd, agent_port);
 
 	signal(SIGTERM, sigterm_handler);
 	signal(SIGPIPE, SIG_IGN);
