@@ -4,7 +4,6 @@ debian/tmp/usr/bin/gfexec
 debian/tmp/usr/bin/gfsplck
 debian/tmp/usr/bin/thput-gfpio
 debian/tmp/usr/sbin/gfsd
-debian/tmp/usr/share/gfarm/config/config-gfarm.sysdep
 debian/tmp/usr/share/gfarm/config/linux/debian/gfsd.in
 debian/tmp/usr/share/gfarm/config/linux/default/gfsd.in
 debian/tmp/usr/share/gfarm/config/linux/redhat/gfsd.in
