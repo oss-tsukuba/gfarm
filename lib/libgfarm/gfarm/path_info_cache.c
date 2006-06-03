@@ -87,23 +87,17 @@ cache_hash_size_set(unsigned int size)
 static void
 cache_timeout_set(unsigned int timeout)
 {
-	if (timeout >= 0) {
-		/* millisec -> microsec */
-		cache_timeout.tv_sec = timeout / 1000;
-		cache_timeout.tv_usec
-			= (timeout % 1000) * 1000;
-	}
+	/* millisec -> microsec */
+	cache_timeout.tv_sec = timeout / 1000;
+	cache_timeout.tv_usec = (timeout % 1000) * 1000;
 }
 
 static void
 cache_update_time_interval_set(unsigned int interval)
 {
-	if (interval >= 0) {
-		/* millisec -> nanosec */
-		update_time_interval.tv_sec = interval / 1000;
-		update_time_interval.tv_nsec
-			= (interval % 1000) * 1000000;
-	}
+	/* millisec -> nanosec */
+	update_time_interval.tv_sec = interval / 1000;
+	update_time_interval.tv_nsec = (interval % 1000) * 1000000;
 }
 
 static int
