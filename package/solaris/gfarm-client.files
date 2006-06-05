@@ -1,4 +1,3 @@
-@PREFIX@/bin/gfarm_agent
 @PREFIX@/bin/gfarm-pcp
 @PREFIX@/bin/gfarm-prun
 @PREFIX@/bin/gfarm-ptool
