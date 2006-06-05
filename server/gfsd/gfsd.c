@@ -132,6 +132,13 @@ fatal_errno(char *message)
 	gflog_fatal_errno(message);
 }
 
+static void
+check_input_output_error(char *message, int eno)
+{
+	if (eno == EIO)
+		fatal(message, GFARM_ERR_INPUT_OUTPUT);
+}
+
 int accepting_unix_socks_count;
 char **unix_sock_names, **unix_sock_dirs;
 
@@ -388,17 +395,18 @@ gfs_server_open(struct xxx_connection *client)
 	char *file, *path;
 	gfarm_int32_t netflag, mode;
 	int hostflag, fd = -1, save_errno = 0;
+	char *msg = "open";
 
-	gfs_server_get_request(client, "open", "sii", &file, &netflag, &mode);
+	gfs_server_get_request(client, msg, "sii", &file, &netflag, &mode);
 
 	hostflag = gfs_open_flags_localize(netflag);
 	if (hostflag == -1) {
-		gfs_server_put_reply(client, "open", GFS_ERROR_INVAL, "");
+		gfs_server_put_reply(client, msg, GFS_ERROR_INVAL, "");
 		free(file);
 		return;
 	}
 
-	local_path(file, &path, "open");
+	local_path(file, &path, msg);
 	if ((fd = open(path, hostflag, mode)) < 0) {
 		save_errno = errno;
 	} else if ((fd = file_table_add(fd)) < 0) {
@@ -406,7 +414,7 @@ gfs_server_open(struct xxx_connection *client)
 	}
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "open", save_errno, "i", fd);
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "i", fd);
 }
 
 void
@@ -415,49 +423,52 @@ gfs_server_open_local(struct xxx_connection *client)
 	char *file, *path, *e;
 	gfarm_int32_t netflag, mode;
 	int hostflag, fd = -1, save_errno = 0, buf[1], rv;
+	char *msg = "open_local";
 
-	gfs_server_get_request(client, "open_local", "sii",
+	gfs_server_get_request(client, msg, "sii",
 	    &file, &netflag, &mode);
 
 	hostflag = gfs_open_flags_localize(netflag);
 	if (hostflag == -1) {
-		gfs_server_put_reply(client, "open_local", GFS_ERROR_INVAL, "");
+		gfs_server_put_reply(client, msg, GFS_ERROR_INVAL, "");
 		free(file);
 		return;
 	}
 
-	local_path(file, &path, "open_local");
+	local_path(file, &path, msg);
 	if ((fd = open(path, hostflag, mode)) < 0)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "open_local", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 	if (save_errno != 0)
 		return;
 
 	/* need to flush iobuffer before sending data w/o iobuffer */
 	e = xxx_proto_flush(client);
 	if (e != NULL)
-		gflog_warning("open_local: flush: %s", e);
+		gflog_warning("%s: flush: %s", msg, e);
 
 	buf[0] = 0;
 	rv = gfarm_fd_send_message(xxx_connection_fd(client),
 		buf, sizeof(buf), 1, &fd);
 	close(fd);
 	if (rv != 0)
-		gflog_fatal("open_local: %s", strerror(rv));
+		gflog_fatal("%s: %s", msg, strerror(rv));
 }
 
 void
 gfs_server_close(struct xxx_connection *client)
 {
 	int fd, save_errno;
+	char *msg = "close";
 
-	gfs_server_get_request(client, "close", "i", &fd);
+	gfs_server_get_request(client, msg, "i", &fd);
 
 	save_errno = file_table_close(fd);
 
-	gfs_server_put_reply_with_errno(client, "close", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -466,8 +477,9 @@ gfs_server_seek(struct xxx_connection *client)
 	int fd, whence, save_errno = 0;
 	file_offset_t offset;
 	off_t rv;
+	char *msg = "seek";
 
-	gfs_server_get_request(client, "seek", "ioi", &fd, &offset, &whence);
+	gfs_server_get_request(client, msg, "ioi", &fd, &offset, &whence);
 
 	rv = lseek(file_table_get(fd), (off_t)offset, whence);
 	if (rv == -1)
@@ -475,7 +487,7 @@ gfs_server_seek(struct xxx_connection *client)
 	else
 		offset = rv;
 
-	gfs_server_put_reply_with_errno(client, "seek", save_errno,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "o", offset);
 }
 
@@ -485,31 +497,37 @@ gfs_server_ftruncate(struct xxx_connection *client)
 	int fd;
 	file_offset_t length;
 	int save_errno = 0;
+	char *msg = "ftruncate";
 
-	gfs_server_get_request(client, "ftruncate", "io", &fd, &length);
+	gfs_server_get_request(client, msg, "io", &fd, &length);
 
 	if (ftruncate(file_table_get(fd), (off_t)length) == -1)
 		save_errno = errno;
 
-	gfs_server_put_reply_with_errno(client, "ftruncate", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
 gfs_server_read(struct xxx_connection *client)
 {
 	ssize_t rv;
-	int fd, size;
+	int fd, size, save_errno = 0;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
+	char *msg = "read";
 
-	gfs_server_get_request(client, "read", "ii", &fd, &size);
+	gfs_server_get_request(client, msg, "ii", &fd, &size);
 
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
 	rv = read(file_table_get(fd), buffer, size);
+	if (rv == -1)
+		save_errno = errno;
 
-	gfs_server_put_reply_with_errno(client, "read", rv == -1 ? errno : 0,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "b", rv, buffer);
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -519,8 +537,10 @@ gfs_server_write(struct xxx_connection *client)
 	size_t size;
 	gfarm_int32_t fd;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
+	int save_errno = 0;
+	char *msg = "write";
 
-	gfs_server_get_request(client, "write", "ib",
+	gfs_server_get_request(client, msg, "ib",
 	    &fd, sizeof(buffer), &size, buffer);
 
 	/*
@@ -531,9 +551,12 @@ gfs_server_write(struct xxx_connection *client)
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
 	rv = write(file_table_get(fd), buffer, size);
+	if (rv == -1)
+		save_errno = errno;
 
-	gfs_server_put_reply_with_errno(client, "write", rv == -1 ? errno : 0,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "i", (gfarm_int32_t)rv);
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -542,8 +565,9 @@ gfs_server_fsync(struct xxx_connection *client)
 	int fd;
 	int operation;
 	int save_errno = 0;
+	char *msg = "fsync";
 
-	gfs_server_get_request(client, "fsync", "ii", &fd, &operation);
+	gfs_server_get_request(client, msg, "ii", &fd, &operation);
 
 	switch (operation) {
 	case GFS_PROTO_FSYNC_WITHOUT_METADATA:      
@@ -563,7 +587,8 @@ gfs_server_fsync(struct xxx_connection *client)
 		break;
 	}
 
-	gfs_server_put_reply_with_errno(client, "fsync", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -571,17 +596,19 @@ gfs_server_link(struct xxx_connection *client)
 {
 	char *from, *to, *fpath, *tpath;
 	int save_errno = 0;
+	char *msg = "link";
 
-	gfs_server_get_request(client, "link", "ss", &from, &to);
+	gfs_server_get_request(client, msg, "ss", &from, &to);
 
-	local_path(from, &fpath, "link");
-	local_path(to, &tpath, "link");
+	local_path(from, &fpath, msg);
+	local_path(to, &tpath, msg);
 	if (link(fpath, tpath) == -1)
 		save_errno = errno;
 	free(fpath);
 	free(tpath);
 
-	gfs_server_put_reply_with_errno(client, "link", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -589,15 +616,17 @@ gfs_server_unlink(struct xxx_connection *client)
 {
 	char *file, *path;
 	int save_errno = 0;
+	char *msg = "unlink";
 
-	gfs_server_get_request(client, "unlink", "s", &file);
+	gfs_server_get_request(client, msg, "s", &file);
 
-	local_path(file, &path, "unlink");
+	local_path(file, &path, msg);
 	if (unlink(path) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "unlink", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -605,17 +634,18 @@ gfs_server_rename(struct xxx_connection *client)
 {
 	char *from, *to, *fpath, *tpath;
 	int save_errno = 0;
+	char *msg = "rename";
 
-	gfs_server_get_request(client, "rename", "ss", &from, &to);
+	gfs_server_get_request(client, msg, "ss", &from, &to);
 
-	local_path(from, &fpath, "rename");
-	local_path(to, &tpath, "rename");
+	local_path(from, &fpath, msg);
+	local_path(to, &tpath, msg);
 	if (rename(fpath, tpath) == -1)
 		save_errno = errno;
 	free(fpath);
 	free(tpath);
 
-	gfs_server_put_reply_with_errno(client, "rename", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 }
 
 void
@@ -624,15 +654,17 @@ gfs_server_mkdir(struct xxx_connection *client)
 	char *gpath, *path;
 	gfarm_int32_t mode;
 	int save_errno = 0;
+	char *msg = "mkdir";
 
-	gfs_server_get_request(client, "mkdir", "si", &gpath, &mode);
+	gfs_server_get_request(client, msg, "si", &gpath, &mode);
 
-	local_path(gpath, &path, "mkdir");
+	local_path(gpath, &path, msg);
 	if (mkdir(path, mode) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "mkdir", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -640,15 +672,16 @@ gfs_server_rmdir(struct xxx_connection *client)
 {
 	char *gpath, *path;
 	int save_errno = 0;
+	char *msg = "rmdir";
 
-	gfs_server_get_request(client, "rmdir", "s", &gpath);
+	gfs_server_get_request(client, msg, "s", &gpath);
 
-	local_path(gpath, &path, "rmdir");
+	local_path(gpath, &path, msg);
 	if (rmdir(path) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "rmdir", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 }
 
 void
@@ -657,15 +690,17 @@ gfs_server_chmod(struct xxx_connection *client)
 	char *file, *path;
 	gfarm_int32_t mode;
 	int save_errno = 0;
+	char *msg = "chmod";
 
-	gfs_server_get_request(client, "chmod", "si", &file, &mode);
+	gfs_server_get_request(client, msg, "si", &file, &mode);
 
-	local_path(file, &path, "chmod");
+	local_path(file, &path, msg);
 	if (chmod(path, mode) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "chmod", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -674,10 +709,11 @@ gfs_server_chgrp(struct xxx_connection *client)
 	char *file, *path, *group;
 	int save_errno = 0;
 	struct group *grp;
+	char *msg = "chgrp";
 
-	gfs_server_get_request(client, "chgrp", "ss", &file, &group);
+	gfs_server_get_request(client, msg, "ss", &file, &group);
 
-	local_path(file, &path, "chgrp");
+	local_path(file, &path, msg);
 	grp = getgrnam(group);
 	if (grp == NULL) {
 		save_errno = EPERM;
@@ -687,7 +723,8 @@ gfs_server_chgrp(struct xxx_connection *client)
 	free(path);
 	free(group);
 
-	gfs_server_put_reply_with_errno(client, "chgrp", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -697,15 +734,16 @@ gfs_server_fstat(struct xxx_connection *client)
 	struct stat st;
 	file_offset_t size = 0;
 	int fd, save_errno = 0;
+	char *msg = "fstat";
 
-	gfs_server_get_request(client, "fstat", "i", &fd);
+	gfs_server_get_request(client, msg, "i", &fd);
 
 	if (fstat(file_table_get(fd), &st) == -1)
 		save_errno = errno;
 	else
 		size = st.st_size;
 
-	gfs_server_put_reply_with_errno(client, "fstat", save_errno,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 		"iioiii", st.st_mode, st.st_nlink, size,
 		st.st_atime, st.st_mtime, st.st_ctime);
 }
@@ -716,16 +754,17 @@ gfs_server_exist(struct xxx_connection *client)
 	char *file, *path;
 	int save_errno = 0;
 	struct stat buf;
+	char *msg = "exist";
 
-	gfs_server_get_request(client, "exist", "s", &file);
+	gfs_server_get_request(client, msg, "s", &file);
 
-	local_path(file, &path, "exist");
+	local_path(file, &path, msg);
 	if (stat(path, &buf) == -1) {
 		save_errno = errno;
 	}
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "exist", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 }
 
 void
@@ -739,8 +778,9 @@ gfs_server_digest(struct xxx_connection *client)
 	size_t digest_length;
 	unsigned char digest_value[EVP_MAX_MD_SIZE];
 	char buffer[GFS_PROTO_MAX_IOSIZE];
+	char *msg = "digest";
 
-	gfs_server_get_request(client, "digest", "is", &fd, &digest_type);
+	gfs_server_get_request(client, msg, "is", &fd, &digest_type);
 	
 	if ((md_type = EVP_get_digestbyname(digest_type)) == NULL) {
 		save_errno = EINVAL;
@@ -756,8 +796,9 @@ gfs_server_digest(struct xxx_connection *client)
 	}
 	free(digest_type);
 
-	gfs_server_put_reply_with_errno(client, "digest", save_errno,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "bo", digest_length, digest_value, filesize);
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -774,17 +815,19 @@ gfs_server_statfs(struct xxx_connection *client)
 	int save_errno = 0;
 	gfarm_int32_t bsize;
 	file_offset_t blocks, bfree, bavail, files, ffree, favail;
+	char *msg = "statfs";
 
-	gfs_server_get_request(client, "stafs", "s", &dir);
+	gfs_server_get_request(client, msg, "s", &dir);
 
-	local_path(dir, &path, "statfs");
+	local_path(dir, &path, msg);
 	save_errno = gfsd_statfs(path, &bsize,
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
+	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "ioooooo", bsize, blocks, bfree, bavail, files, ffree, favail);
+	check_input_output_error(msg, save_errno);
 }
 
 void
@@ -1392,15 +1435,17 @@ gfs_server_chdir(struct xxx_connection *client)
 {
 	char *gpath, *path;
 	int save_errno = 0;
+	char *msg = "chdir";
 
-	gfs_server_get_request(client, "chdir", "s", &gpath);
+	gfs_server_get_request(client, msg, "s", &gpath);
 
-	local_path(gpath, &path, "chdir");
+	local_path(gpath, &path, msg);
 	if (chdir(path) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "chdir", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 struct gfs_server_command_context {
@@ -2275,6 +2320,29 @@ server(int client_fd)
 	}
 }
 
+static void
+check_spool_directory()
+{
+	int fd;
+	ssize_t rv;
+	char *file = ".GFARMTEST";
+
+	fd = open(file, O_CREAT|O_WRONLY, 0666);
+	if (fd == -1)
+		accepting_fatal_errno("creat(2) test");
+	rv = write(fd, "X", 1);
+	if (rv == -1)
+		accepting_fatal_errno("write(2) test");
+	if (rv == 0)
+		accepting_fatal("write(2) returned 0");
+	if (fsync(fd) == -1)
+		accepting_fatal_errno("fsync(2) test");
+	if (close(fd) == -1)
+		accepting_fatal_errno("close(2) test");
+	if (unlink(file) == -1)
+		accepting_fatal_errno("unlink(2) test");
+}
+
 static int accepting_inet_sock, *accepting_unix_socks, *datagram_socks;
 static int datagram_socks_count;
 
@@ -2298,6 +2366,9 @@ start_server(int sock)
 			return;
 		accepting_fatal_errno("accept");
 	}
+	/* sanity check for spool directory */
+	check_spool_directory();
+
 #ifndef GFSD_DEBUG
 	switch (fork()) {
 	case 0:
