@@ -774,6 +774,18 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	return (e);
 }
 
+char *
+gfs_fstat(GFS_File gf, struct gfs_stat *status)
+{
+	char *e;
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != NULL)
+		return (e);
+
+	return ((*gf->ops->view_stat)(gf, status));
+}
+
 static char *
 sync_internal(GFS_File gf, int operation, double *time)
 {

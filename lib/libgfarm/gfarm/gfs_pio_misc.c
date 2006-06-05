@@ -222,12 +222,6 @@ gfs_stat_index(char *gfarm_url, int index, struct gfs_stat *s)
 }
 
 char *
-gfs_fstat(GFS_File gf, struct gfs_stat *status)
-{
-	return ((*gf->ops->view_stat)(gf, status));
-}
-
-char *
 gfs_access(const char *gfarm_url, int mode)
 {
 	char *e, *gfarm_file;
