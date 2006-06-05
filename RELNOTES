@@ -6,6 +6,12 @@ Release note for Gfarm 1.3
 
 [2006.6.6]
 
+Compatibility Note
+
+ * libgfarm uses new protocols for gfsd.  If client library is updated
+   to the version 1.3, gfsd needs to be updated to the version 1.3 and
+   restarted.
+
 New Features
 
  * Solaris 9 and 10 syscall hooking support.
