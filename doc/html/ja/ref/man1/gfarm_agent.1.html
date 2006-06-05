@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm_agent</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -57,64 +56,11 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfarm_agent</B
 > は、
-同一ノードで実行される複数のアプリケーションで共有可能な
+複数ノード、複数ユーザで共有可能な
 Gfarm ファイルシステム・メタデータのキャッシュサーバです。
 キャッシュサーバにより、
-遠隔のメタデータサーバに対するネットワーク遅延の隠蔽、
-およびファイル数の増大に伴う性能低下を抑制し、
+遠隔のメタデータサーバに対する無駄なネットワーク転送が抑制され、
 Gfarm ファイルシステムに対するレスポンスを大幅に改善します。</P
-><P
->利用するためには、
-クライアントノードあるいは計算ノードで
-<B
-CLASS="COMMAND"
->gfarm_agent</B
->
-を実行し、出力される環境変数を定義します。</P
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="PROGRAMLISTING"
->% eval `<B
-CLASS="COMMAND"
->gfarm_agent</B
->`</PRE
-></TD
-></TR
-></TABLE
-><P
->出力される環境変数は、<B
-CLASS="COMMAND"
->gfarm_agent</B
->
-が listen している UNIX ドメインのソケットを示す
-<TT
-CLASS="ENVAR"
->GFARM_AGENT_SOCK</TT
-> と、
-<B
-CLASS="COMMAND"
->gfarm_agent</B
-> が起動している process ID を示す
-<TT
-CLASS="ENVAR"
->GFARM_AGENT_PID</TT
-> です。</P
-><P
-><B
-CLASS="COMMAND"
->gfarm_agent</B
-> は起動されると、
-バックグラウンドで動き続けます。
-上記の環境変数を定義することにより、起動している
-<B
-CLASS="COMMAND"
->gfarm_agent</B
-> を共有することが可能です。</P
 ><P
 ><B
 CLASS="COMMAND"
@@ -126,21 +72,6 @@ CLASS="COMMAND"
 >gfarm_agent</B
 >
 および Gfarm メタデータサーバ間の一貫性は保証されます。</P
-><P
->停止するためには TERM シグナルを送ります。</P
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="PROGRAMLISTING"
->% kill $GFARM_AGENT_PID</PRE
-></TD
-></TR
-></TABLE
-></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -154,57 +85,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-s</TT
-></DT
-><DD
-><P
->Bourne shell 系シェル用のコマンドを出力します。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-c</TT
-></DT
-><DD
-><P
->csh 系シェル用のコマンドを出力します。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-d</TT
-></DT
-><DD
-><P
->デバッグオプションです。バックグラウンドではなく、
-フォアグラウンドで実行します。
-フォアグラウンドで実行されるため、上記のように
-eval `<B
-CLASS="COMMAND"
->gfarm_agent</B
->`
-では実行できません。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-f</TT
-> <TT
-CLASS="PARAMETER"
-><I
->設定ファイル</I
-></TT
-></DT
-><DD
-><P
->起動時に読み込む設定ファイルを指定します。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-P</TT
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -220,9 +103,9 @@ CLASS="COMMAND"
 指定したファイルに記録します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -239,18 +122,56 @@ syslog のファシリティを指定します。
 省略した場合には、local0 を使用します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-d</CODE
+></DT
+><DD
+><P
+>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>設定ファイル</I
+></TT
+></DT
+><DD
+><P
+>起動時に読み込む設定ファイルを指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ポート番号</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agent が利用する TCP のポート番号を指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
 ></DT
 ><DD
 ><P
 >認証時のエラーメッセージの詳細を表示します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -274,22 +195,30 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/tmp/.gfarm-XXXXXX/agent.&#60;ppid&#62;</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P
->UNIX ドメインのソケットです。このソケットには、
-<B
-CLASS="COMMAND"
->gfarm_agent</B
-> を起動したユーザだけが接続可能です。
-また、<B
-CLASS="COMMAND"
->gfarm_agent</B
-> に TERM シグナルが送られると、
-自動的に消去されます。</P
+>gfarm_agent が参照する設定ファイルです。</P
 ></DD
 ></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
 ></DIV
 ></DIV
 ></BODY

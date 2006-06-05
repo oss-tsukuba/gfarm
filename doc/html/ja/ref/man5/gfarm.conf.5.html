@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -614,6 +614,50 @@ CLASS="TOKEN"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>agent_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agentホスト叹</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agentが瓢侯しているホスト叹を回年します。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>agent_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agentポ〖ト戎规</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agentが网脱するTCPポ〖トの戎规を回年します。</P
+><P
+><SPAN
+CLASS="TOKEN"
+>agent_serverhost</SPAN
+>を回年する眷圭には、
+この肋年は涩寇です。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverport&nbsp;603</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >ldap_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -623,9 +667,8 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->LDAP サ〖バ〖が瓢侯しているホスト叹を回年します。</P
-><P
->この肋年は涩寇です。</P
+>メタデ〖タのバックエンドˇデ〖タベ〖スとしてLDAPサ〖バを联买する眷圭、
+LDAP サ〖バ〖が瓢侯しているホスト叹を回年します。</P
 ><P
 >毋:</P
 ><P
@@ -646,12 +689,16 @@ CLASS="PARAMETER"
 ><P
 >LDAP サ〖バ〖が网脱するTCPポ〖トの戎规を回年します。</P
 ><P
->附哼のところ、この肋年は涩寇です。</P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>を回年する眷圭には、
+この肋年は涩寇です。</P
 ><P
 >毋:</P
 ><P
 CLASS="LITERALLAYOUT"
->	ldap_serverport&nbsp;389</P
+>	ldap_serverport&nbsp;602</P
 ></DD
 ><DT
 ><SPAN
@@ -668,12 +715,144 @@ CLASS="PARAMETER"
 >LDAP デ〖タベ〖スで瘦积するデ〖タのキ〖の含となるノ〖ドの
 叹疚、base distinguished name を回年します。</P
 ><P
->この肋年は涩寇です。</P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>を回年する眷圭には、
+この肋年は涩寇です。</P
 ><P
 >毋:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQLサ〖バ〖ˇホスト叹</I
+></TT
+></DT
+><DD
+><P
+>メタデ〖タのバックエンドˇデ〖タベ〖スとして
+PostgreSQL サ〖バを联买する眷圭、
+PostgreSQL サ〖バ〖が瓢侯しているホスト叹を回年します。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverhost&nbsp;postgresql.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQLサ〖バ〖ˇポ〖ト戎规</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL サ〖バ〖が网脱するTCPポ〖トの戎规を回年します。</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>を回年する眷圭には、
+この肋年は涩寇です。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverport&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>dbname</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL デ〖タベ〖ス叹を回年します。</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>を回年する眷圭には、
+この肋年は涩寇です。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_dbname&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL デ〖タベ〖スに儡鲁するデ〖タベ〖ス瓷妄布のユ〖ザ叹を回年します。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_user&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL デ〖タベ〖スに儡鲁するデ〖タベ〖ス瓷妄布のユ〖ザのパスワ〖ドを回年します。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_password&nbsp;secret-postgresql-password</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>connection_info</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL デ〖タベ〖スに儡鲁するときの儡鲁オプションを回年します。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_conninfo&nbsp;"sslmode=require&nbsp;connect_timeout=30"</P
 ></DD
 ><DT
 ><SPAN
@@ -1215,9 +1394,17 @@ CLASS="LITERALLAYOUT"
 		牋&#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		牋&#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		牋&#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		牋&#60;agent_serverhost_statement&#62;&nbsp;|<br>
+		牋&#60;agent_serverport_statement&#62;&nbsp;|<br>
 		牋&#60;ldap_serverhost_statement&#62;&nbsp;|<br>
 		牋&#60;ldap_serverport_statement&#62;&nbsp;|<br>
 		牋&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_serverhost_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_serverport_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_user_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_password_statement&#62;&nbsp;|<br>
+		牋&#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
 		牋&#60;auth_statement&#62;&nbsp;|<br>
 		牋&#60;netparam_statement&#62;&nbsp;|<br>
 		牋&#60;sockopt_statement&#62;&nbsp;|<br>
@@ -1246,9 +1433,17 @@ CLASS="LITERALLAYOUT"
 		牋"metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		牋"metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;agent_serverhost_statement&#62;&nbsp;::=&nbsp;"agent_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;agent_serverport_statement&#62;&nbsp;::=&nbsp;"agent_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_serverhost_statement&#62;&nbsp;::=&nbsp;"postgresql_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_serverport_statement&#62;&nbsp;::=&nbsp;"postgresql_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
 		牋"auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
@@ -1356,7 +1551,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfsd</SPAN
 >(8)</SPAN
->, <SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_agent</SPAN
+>(1)</SPAN
+>,
+  <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"

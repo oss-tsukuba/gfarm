@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "21 April 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "06 June 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -240,7 +240,7 @@ For example,
 .TP
 \fBmetadb_serverport \fIport\fB\fR
 The metadb_serverport statement specifies the tcp
-port number the gfsd is listening on.  The default port number is
+port number the gfmd is listening on.  The default port number is
 601.
 
 For example,
@@ -275,11 +275,29 @@ authentication.
 Please read the description of spool_server_cred_type 
 statement about the configuration of this statement.
 .TP
+\fBagent_serverhost \fIhostname\fB\fR
+The agent_serverhost statement specifies the
+host name on which gfarm_agent is running.
+
+For example,
+
+.nf
+	agent_serverhost ldap.example.com
+.fi
+.TP
+\fBagent_serverport \fIport\fB\fR
+The agent_serverport statement specifies the tcp
+port number the gfarm_agent is listening on.
+
+For example,
+
+.nf
+	agent_serverport 603
+.fi
+.TP
 \fBldap_serverhost \fIhostname\fB\fR
 The ldap_serverhost statement specifies the host
 name on which LDAP server for filesystem metadata is running.
-
-This statement cannot be omitted.
 
 For example,
 
@@ -291,25 +309,92 @@ For example,
 The ldap_serverport statement specifies the tcp
 port number of LDAP server.
 
-This statement cannot be omitted in the current
-implementation.
+This statement cannot be omitted
+if ldap_serverhost is specified.
 
 For example,
 
 .nf
-	ldap_serverport 389
+	ldap_serverport 602
 .fi
 .TP
 \fBldap_base_dn \fILDAP_base_distinguished_name\fB\fR
 The ldap_base_dn statement specifies the base
 distinguished name of LDAP database.
 
-This statement cannot be omitted.
+This statement cannot be omitted
+if ldap_serverhost is specified.
 
 For example,
 
 .nf
 	ldap_base_dn "dc=example, dc=com"
+.fi
+.TP
+\fBpostgresql_serverhost \fIhostname\fB\fR
+The postgresql_serverhost statement specifies the host
+name on which PostgreSQL server is running.
+
+For example,
+
+.nf
+	postgresql_serverhost postgresql.example.com
+.fi
+.TP
+\fBpostgresql_serverport \fIport\fB\fR
+The postgresql_serverport statement specifies the tcp
+port number of PostgreSQL server.
+
+This statement cannot be omitted
+if postgresql_serverhost is specified.
+
+For example,
+
+.nf
+	postgresql_serverport 602
+.fi
+.TP
+\fBpostgresql_dbname \fIdbname\fB\fR
+The postgresql_dbname statement specifies the
+database name of PostgreSQL database.
+
+This statement cannot be omitted
+if postgresql_serverhost is specified.
+
+For example,
+
+.nf
+	postgresql_dbname gfarm
+.fi
+.TP
+\fBpostgresql_user \fIuser\fB\fR
+The postgresql_user statement specifies the
+username to connect PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_user gfarm
+.fi
+.TP
+\fBpostgresql_password \fIpassword\fB\fR
+The postgresql_password statement specifies the
+password to connect PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_password gfarm
+.fi
+.TP
+\fBpostgresql_conninfo \fIconnection_info\fB\fR
+The postgresql_conninfo statement specifies the
+connection option to connect PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_conninfo "sslmode=require connect_timeout=30"
 .fi
 .TP
 \fBauth \fIenable/disable\fB \fImethod\fB \fIHost_specification\fB\fR
@@ -595,9 +680,17 @@ notation.
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<agent_serverhost_statement> |
+		\~\~<agent_serverport_statement> |
 		\~\~<ldap_serverhost_statement> |
 		\~\~<ldap_serverport_statement> |
 		\~\~<ldap_base_dn_statement> |
+		\~\~<postgresql_serverhost_statement> |
+		\~\~<postgresql_serverport_statement> |
+		\~\~<postgresql_dbname_statement> |
+		\~\~<postgresql_user_statement> |
+		\~\~<postgresql_password_statement> |
+		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
@@ -626,9 +719,17 @@ notation.
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<agent_serverhost_statement> ::= "agent_serverhost" <hostname>
+	<agent_serverport_statement> ::= "agent_serverport" <portnumber>
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
+	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
+	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
+	<postgresql_user_statement> ::= "postgresql_user" <string>
+	<postgresql_password_statement> ::= "postgresql_password" <string>
+	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
 		\~\~"auth" <auth_command> <auth_method> <hostspec>
 	<auth_command> ::= "enable" | "disable"
@@ -684,4 +785,6 @@ auth enable gsi *
 .SH "SEE ALSO"
 .PP
 \fBgfmd\fR(8),
-\fBgfsd\fR(8), \fBsetsockopt\fR(2)
+\fBgfsd\fR(8),
+\fBgfarm_agent\fR(1),
+\fBsetsockopt\fR(2)

@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -551,7 +551,7 @@ CLASS="PARAMETER"
 CLASS="TOKEN"
 >metadb_serverport</SPAN
 > statement specifies the tcp
-port number the gfsd is listening on.  The default port number is
+port number the gfmd is listening on.  The default port number is
 601.</P
 ><P
 >For example,</P
@@ -648,6 +648,52 @@ statement about the configuration of this statement.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>agent_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>agent_serverhost</SPAN
+> statement specifies the
+host name on which gfarm_agent is running.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>agent_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>agent_serverport</SPAN
+> statement specifies the tcp
+port number the gfarm_agent is listening on.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverport&nbsp;603</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >ldap_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -662,8 +708,6 @@ CLASS="TOKEN"
 >ldap_serverhost</SPAN
 > statement specifies the host
 name on which LDAP server for filesystem metadata is running.</P
-><P
->This statement cannot be omitted.</P
 ><P
 >For example,</P
 ><P
@@ -688,13 +732,16 @@ CLASS="TOKEN"
 > statement specifies the tcp
 port number of LDAP server.</P
 ><P
->This statement cannot be omitted in the current
-implementation.</P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+> is specified.</P
 ><P
 >For example,</P
 ><P
 CLASS="LITERALLAYOUT"
->	ldap_serverport&nbsp;389</P
+>	ldap_serverport&nbsp;602</P
 ></DD
 ><DT
 ><SPAN
@@ -714,12 +761,166 @@ CLASS="TOKEN"
 > statement specifies the base
 distinguished name of LDAP database.</P
 ><P
->This statement cannot be omitted.</P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+> is specified.</P
 ><P
 >For example,</P
 ><P
 CLASS="LITERALLAYOUT"
 >	ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> statement specifies the host
+name on which PostgreSQL server is running.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverhost&nbsp;postgresql.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_serverport</SPAN
+> statement specifies the tcp
+port number of PostgreSQL server.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverport&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>dbname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> statement specifies the
+  database name of PostgreSQL database.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_dbname&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> statement specifies the
+  username to connect PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_user&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> statement specifies the
+  password to connect PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_password&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>connection_info</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> statement specifies the
+  connection option to connect PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_conninfo&nbsp;"sslmode=require&nbsp;connect_timeout=30"</P
 ></DD
 ><DT
 ><SPAN
@@ -1359,9 +1560,17 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;agent_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;agent_serverport_statement&#62;&nbsp;|<br>
 		  &#60;ldap_serverhost_statement&#62;&nbsp;|<br>
 		  &#60;ldap_serverport_statement&#62;&nbsp;|<br>
 		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_serverport_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_user_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_password_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
 		  &#60;auth_statement&#62;&nbsp;|<br>
 		  &#60;netparam_statement&#62;&nbsp;|<br>
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
@@ -1390,9 +1599,17 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;agent_serverhost_statement&#62;&nbsp;::=&nbsp;"agent_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;agent_serverport_statement&#62;&nbsp;::=&nbsp;"agent_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_serverhost_statement&#62;&nbsp;::=&nbsp;"postgresql_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_serverport_statement&#62;&nbsp;::=&nbsp;"postgresql_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
 		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
@@ -1500,7 +1717,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfsd</SPAN
 >(8)</SPAN
->, <SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_agent</SPAN
+>(1)</SPAN
+>,
+  <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"

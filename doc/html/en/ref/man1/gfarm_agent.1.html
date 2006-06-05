@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm_agent</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -57,70 +56,10 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfarm_agent</B
 > is a cache server for a Gfarm metadata
-server that can be shared by multiple applications on the same
-machine.  The cache server greatly improves performance and response
-time for a Gfarm file system by hiding network latency to a distant
-metadata server, and by preventing performance degradation when
-thousands of files are stored in the Gfarm file system.</P
-><P
->To use the cache server, execute <B
-CLASS="COMMAND"
->gfarm_agent</B
-> on a
-client node or a compute node, and define environment variables
-output by <B
-CLASS="COMMAND"
->gfarm_agent</B
->.</P
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="PROGRAMLISTING"
->% eval `<B
-CLASS="COMMAND"
->gfarm_agent</B
->`</PRE
-></TD
-></TR
-></TABLE
-><P
->Output environment variables are <TT
-CLASS="ENVAR"
->GFARM_AGENT_SOCK</TT
-> and
-<TT
-CLASS="ENVAR"
->GFARM_AGENT_PID</TT
->.  <TT
-CLASS="ENVAR"
->GFARM_AGENT_SOCK</TT
->
-specifies a unix-domain socket that <B
-CLASS="COMMAND"
->gfarm_agent</B
-> is
-listening to.  <TT
-CLASS="ENVAR"
->GFARM_AGENT_PID</TT
-> specifies a process ID
-of <B
-CLASS="COMMAND"
->gfarm_agent</B
->.</P
-><P
-><B
-CLASS="COMMAND"
->gfarm_agent</B
-> is running in the background.  When
-defining the above environment variables, running
-<B
-CLASS="COMMAND"
->gfarm_agent</B
-> can be shared.</P
+server that can be shared by multiple hosts and multiple users.
+The cache server greatly improves performance and response
+time for a Gfarm file system by reducing network communication to a
+distant metadata server.</P
 ><P
 >Any number of <B
 CLASS="COMMAND"
@@ -129,21 +68,6 @@ CLASS="COMMAND"
 different nodes (or even on the same node) at the same time.
 Consistency among multiple cache servers and a metadata server is
 maintained.</P
-><P
->To terminate the cache server, send a TERM signal.</P
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
-><PRE
-CLASS="PROGRAMLISTING"
->% kill $GFARM_AGENT_PID</PRE
-></TD
-></TR
-></TABLE
-></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -157,60 +81,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-s</TT
-></DT
-><DD
-><P
->generates Bourne shell commands.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-c</TT
-></DT
-><DD
-><P
->generates C-shell commands.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-d</TT
-></DT
-><DD
-><P
->specifies the debug mode.  <B
-CLASS="COMMAND"
->gfarm_agent</B
-> is
-running in the foreground not in the background.  Note that 'eval
-`<B
-CLASS="COMMAND"
->gfarm_agent</B
->`' cannot work since it runs in the
-foreground.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-f</TT
-> <TT
-CLASS="PARAMETER"
-><I
->config-file</I
-></TT
-></DT
-><DD
-><P
->specifies a configuration file that is read instead of the default
-configuration file.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-P</TT
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -226,9 +99,9 @@ CLASS="COMMAND"
 >.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -244,18 +117,60 @@ CLASS="COMMAND"
 >.  By default, local0 is used.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-d</CODE
+></DT
+><DD
+><P
+>specifies the debug mode.  <B
+CLASS="COMMAND"
+>gfarm_agent</B
+> is
+running in the foreground not in the background.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>config-file</I
+></TT
+></DT
+><DD
+><P
+>specifies a configuration file that is read instead of the default
+configuration file.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>port-number</I
+></TT
+></DT
+><DD
+><P
+>specifies a port number of TCP used by gfarm_agent.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
 ></DT
 ><DD
 ><P
 >displays verbose error messages in authentication.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -279,22 +194,30 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->/tmp/.gfarm-XXXXXX/agent.&#60;ppid&#62;</TT
+>%%SYSCONFDIR%%/gfarm.conf</TT
 ></DT
 ><DD
 ><P
->a unix-domain socket that can be connected by the user that
-executes <B
-CLASS="COMMAND"
->gfarm_agent</B
-> only.  It is automatically
-removed when <B
-CLASS="COMMAND"
->gfarm_agent</B
-> exits by receiving a TERM
-signal.</P
+>configuration file</P
 ></DD
 ></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
 ></DIV
 ></DIV
 ></BODY

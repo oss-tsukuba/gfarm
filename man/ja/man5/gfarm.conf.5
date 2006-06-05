@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "21 April 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "06 June 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -250,10 +250,30 @@ sharedsecret 利用時には、この指定は単に無視されます。
 設定の意味については  spool_server_cred_type の項を
 参照してください。
 .TP
-\fBldap_serverhost \fILDAPサーバー・ホスト名\fB\fR
-LDAP サーバーが動作しているホスト名を指定します。
+\fBagent_serverhost \fIgfarm_agentホスト名\fB\fR
+gfarm_agentが動作しているホスト名を指定します。
 
+例:
+
+.nf
+	agent_serverhost ldap.example.com
+.fi
+.TP
+\fBagent_serverport \fIgfarm_agentポート番号\fB\fR
+gfarm_agentが利用するTCPポートの番号を指定します。
+
+agent_serverhostを指定する場合には、
 この設定は必須です。
+
+例:
+
+.nf
+	agent_serverport 603
+.fi
+.TP
+\fBldap_serverhost \fILDAPサーバー・ホスト名\fB\fR
+メタデータのバックエンド・データベースとしてLDAPサーバを選択する場合、
+LDAP サーバーが動作しているホスト名を指定します。
 
 例:
 
@@ -264,24 +284,88 @@ LDAP サーバーが動作しているホスト名を指定します。
 \fBldap_serverport \fILDAPサーバー・ポート番号\fB\fR
 LDAP サーバーが利用するTCPポートの番号を指定します。
 
-現在のところ、この設定は必須です。
+ldap_serverhostを指定する場合には、
+この設定は必須です。
 
 例:
 
 .nf
-	ldap_serverport 389
+	ldap_serverport 602
 .fi
 .TP
 \fBldap_base_dn \fILDAP_base_distinguished_name\fB\fR
 LDAP データベースで保持するデータのキーの根となるノードの
 名称、base distinguished name を指定します。
 
+ldap_serverhostを指定する場合には、
 この設定は必須です。
 
 例:
 
 .nf
 	ldap_base_dn "dc=example, dc=com"
+.fi
+.TP
+\fBpostgresql_serverhost \fIPostgreSQLサーバー・ホスト名\fB\fR
+メタデータのバックエンド・データベースとして
+PostgreSQL サーバを選択する場合、
+PostgreSQL サーバーが動作しているホスト名を指定します。
+
+例:
+
+.nf
+	postgresql_serverhost postgresql.example.com
+.fi
+.TP
+\fBpostgresql_serverport \fIPostgreSQLサーバー・ポート番号\fB\fR
+PostgreSQL サーバーが利用するTCPポートの番号を指定します。
+
+postgresql_serverhostを指定する場合には、
+この設定は必須です。
+
+例:
+
+.nf
+	postgresql_serverport 602
+.fi
+.TP
+\fBpostgresql_dbname \fIdbname\fB\fR
+PostgreSQL データベース名を指定します。
+
+postgresql_serverhostを指定する場合には、
+この設定は必須です。
+
+例:
+
+.nf
+	postgresql_dbname gfarm
+.fi
+.TP
+\fBpostgresql_user \fIuser\fB\fR
+PostgreSQL データベースに接続するデータベース管理下のユーザ名を指定します。
+
+例:
+
+.nf
+	postgresql_user gfarm
+.fi
+.TP
+\fBpostgresql_password \fIpassword\fB\fR
+PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。
+
+例:
+
+.nf
+	postgresql_password secret-postgresql-password
+.fi
+.TP
+\fBpostgresql_conninfo \fIconnection_info\fB\fR
+PostgreSQL データベースに接続するときの接続オプションを指定します。
+
+例:
+
+.nf
+	postgresql_conninfo "sslmode=require connect_timeout=30"
 .fi
 .TP
 \fBauth \fI有効無効\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
@@ -548,9 +632,17 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<agent_serverhost_statement> |
+		\~\~<agent_serverport_statement> |
 		\~\~<ldap_serverhost_statement> |
 		\~\~<ldap_serverport_statement> |
 		\~\~<ldap_base_dn_statement> |
+		\~\~<postgresql_serverhost_statement> |
+		\~\~<postgresql_serverport_statement> |
+		\~\~<postgresql_dbname_statement> |
+		\~\~<postgresql_user_statement> |
+		\~\~<postgresql_password_statement> |
+		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
@@ -579,9 +671,17 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<agent_serverhost_statement> ::= "agent_serverhost" <hostname>
+	<agent_serverport_statement> ::= "agent_serverport" <portnumber>
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
+	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
+	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
+	<postgresql_user_statement> ::= "postgresql_user" <string>
+	<postgresql_password_statement> ::= "postgresql_password" <string>
+	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
 		\~\~"auth" <auth_command> <auth_method> <hostspec>
 	<auth_command> ::= "enable" | "disable"
@@ -637,4 +737,6 @@ auth enable gsi *
 .SH "SEE ALSO"
 .PP
 \fBgfmd\fR(8),
-\fBgfsd\fR(8), \fBsetsockopt\fR(2)
+\fBgfsd\fR(8),
+\fBgfarm_agent\fR(1),
+\fBsetsockopt\fR(2)
