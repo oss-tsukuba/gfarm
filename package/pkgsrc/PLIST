@@ -156,7 +156,8 @@ man/ja_JP.eucJP/man3/gfs_stat_free.3
 man/ja_JP.eucJP/man3/gfs_unlink.3
 man/ja_JP.eucJP/man3/gfs_unlink_section.3
 man/ja_JP.eucJP/man3/gfs_utimes.3
-man/ja_JP.eucJP/man5/gfarm.conf.5
+man/ja_JP.eucJP/man5/gfarm.conf-ldap.5
+man/ja_JP.eucJP/man5/gfarm.conf-postgresql.5
 man/ja_JP.eucJP/man8/gfmd.8
 man/ja_JP.eucJP/man8/gfsd.8
 man/man1/gfarm_agent.1
@@ -448,7 +449,9 @@ share/gfarm/config/bdb.DB_CONFIG.in
 share/gfarm/config/config-gfarm.sysdep
 share/gfarm/config/gfarm.conf.in
 share/gfarm/config/gfarm.schema
+share/gfarm/config/gfarm.sql
 share/gfarm/config/initial.ldif.in
+share/gfarm/config/gfarm-pgsql.in
 share/gfarm/config/gfarm-slapd.in
 share/gfarm/config/gfmd.in
 share/gfarm/config/gfarm_agent.in

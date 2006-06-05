@@ -456,9 +456,12 @@ share/doc/gfarm/html/ja/user/smboverssh.html
 share/doc/gfarm/html/pic/gfarm-logo.gif
 share/gfarm/config/bdb.DB_CONFIG.in
 share/gfarm/config/config-gfarm.sysdep
-share/gfarm/config/gfarm.conf.in
+share/gfarm/config/gfarm.conf-ldap.in
+share/gfarm/config/gfarm.conf-postgresql.in
 share/gfarm/config/gfarm.schema
+share/gfarm/config/gfarm.sql
 share/gfarm/config/initial.ldif.in
+share/gfarm/config/gfarm-pgsql.in
 share/gfarm/config/gfarm-slapd.in
 share/gfarm/config/gfmd.in
 share/gfarm/config/gfarm_agent.in
