@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>26 Aug 2005</date></refentryinfo>
+<refentryinfo><date>7 Jun 2005</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -324,7 +324,7 @@ host name on which gfmd is running.</para>
 <term><token>metadb_serverport</token> <parameter>port</parameter></term>
 <listitem>
 <para>The <token>metadb_serverport</token> statement specifies the tcp
-port number the gfsd is listening on.  The default port number is
+port number the gfmd is listening on.  The default port number is
 601.</para>
 <para>For example,</para>
 <literallayout>
@@ -378,11 +378,34 @@ statement about the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
+<term><token>agent_serverhost</token> <parameter>hostname</parameter></term>
+<listitem>
+<para>The <token>agent_serverhost</token> statement specifies the
+host name on which gfarm_agent is running.</para>
+<para>For example,</para>
+<literallayout>
+	agent_serverhost ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>agent_serverport</token> <parameter>port</parameter></term>
+<listitem>
+<para>The <token>agent_serverport</token> statement specifies the tcp
+port number the gfarm_agent is listening on.</para>
+<para>For example,</para>
+<literallayout>
+	agent_serverport 603
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>ldap_serverhost</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>ldap_serverhost</token> statement specifies the host
 name on which LDAP server for filesystem metadata is running.</para>
-<para>This statement cannot be omitted.</para>
 
 <para>For example,</para>
 <literallayout>
@@ -396,11 +419,11 @@ name on which LDAP server for filesystem metadata is running.</para>
 <listitem>
 <para>The <token>ldap_serverport</token> statement specifies the tcp
 port number of LDAP server.</para>
-<para>This statement cannot be omitted in the current
-implementation.</para>
+<para>This statement cannot be omitted
+  if <token>ldap_serverhost</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
-	ldap_serverport 389
+	ldap_serverport 602
 </literallayout>
 </listitem>
 </varlistentry>
@@ -410,10 +433,88 @@ implementation.</para>
 <listitem>
 <para>The <token>ldap_base_dn</token> statement specifies the base
 distinguished name of LDAP database.</para>
-<para>This statement cannot be omitted.</para>
+<para>This statement cannot be omitted
+  if <token>ldap_serverhost</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverhost</token> <parameter>hostname</parameter></term>
+<listitem>
+<para>The <token>postgresql_serverhost</token> statement specifies the host
+name on which PostgreSQL server is running.</para>
+
+<para>For example,</para>
+<literallayout>
+	postgresql_serverhost postgresql.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverport</token> <parameter>port</parameter></term>
+<listitem>
+<para>The <token>postgresql_serverport</token> statement specifies the tcp
+port number of PostgreSQL server.</para>
+<para>This statement cannot be omitted
+  if <token>postgresql_serverhost</token> is specified.</para>
+<para>For example,</para>
+<literallayout>
+	postgresql_serverport 602
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
+<listitem>
+<para>The <token>postgresql_dbname</token> statement specifies the
+  database name of PostgreSQL database.</para>
+<para>This statement cannot be omitted
+  if <token>postgresql_serverhost</token> is specified.</para>
+<para>For example,</para>
+<literallayout>
+	postgresql_dbname gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_user</token> <parameter>user</parameter></term>
+<listitem>
+<para>The <token>postgresql_user</token> statement specifies the
+  username to connect PostgreSQL database.</para>
+<para>For example,</para>
+<literallayout>
+	postgresql_user gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>The <token>postgresql_password</token> statement specifies the
+  password to connect PostgreSQL database.</para>
+<para>For example,</para>
+<literallayout>
+	postgresql_password gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
+<listitem>
+<para>The <token>postgresql_conninfo</token> statement specifies the
+  connection option to connect PostgreSQL database.</para>
+<para>For example,</para>
+<literallayout>
+	postgresql_conninfo "sslmode=require connect_timeout=30"
 </literallayout>
 </listitem>
 </varlistentry>
@@ -735,9 +836,17 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;agent_serverhost_statement&gt; |
+		&nbsp;&nbsp;&lt;agent_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
@@ -766,9 +875,17 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;agent_serverhost_statement&gt; ::= "agent_serverhost" &lt;hostname&gt;
+	&lt;agent_serverport_statement&gt; ::= "agent_serverport" &lt;portnumber&gt;
 	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
 	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
+	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
+	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
+	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
+	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
+	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
 		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
@@ -847,7 +964,9 @@ auth enable gsi *
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
+  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfarm_agent</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
 

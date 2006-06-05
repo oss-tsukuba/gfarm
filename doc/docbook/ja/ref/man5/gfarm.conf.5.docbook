@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>21 Apr 2006</date></refentryinfo>
+<refentryinfo><date>7 Jun 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -358,10 +358,35 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 </varlistentry>
 
 <varlistentry>
+<term><token>agent_serverhost</token> <parameter>gfarm_agentホスト名</parameter></term>
+<listitem>
+<para>gfarm_agentが動作しているホスト名を指定します。</para>
+
+<para>例:</para>
+<literallayout>
+	agent_serverhost ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>agent_serverport</token> <parameter>gfarm_agentポート番号</parameter></term>
+<listitem>
+<para>gfarm_agentが利用するTCPポートの番号を指定します。</para>
+<para><token>agent_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	agent_serverport 603
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>ldap_serverhost</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
-<para>LDAP サーバーが動作しているホスト名を指定します。</para>
-<para>この設定は必須です。</para>
+<para>メタデータのバックエンド・データベースとしてLDAPサーバを選択する場合、
+LDAP サーバーが動作しているホスト名を指定します。</para>
 
 <para>例:</para>
 <literallayout>
@@ -374,10 +399,11 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <term><token>ldap_serverport</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
 <para>LDAP サーバーが利用するTCPポートの番号を指定します。</para>
-<para>現在のところ、この設定は必須です。</para>
+<para><token>ldap_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
-	ldap_serverport 389
+	ldap_serverport 602
 </literallayout>
 </listitem>
 </varlistentry>
@@ -387,10 +413,84 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <listitem>
 <para>LDAP データベースで保持するデータのキーの根となるノードの
 名称、base distinguished name を指定します。</para>
-<para>この設定は必須です。</para>
+<para><token>ldap_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverhost</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
+<listitem>
+<para>メタデータのバックエンド・データベースとして
+PostgreSQL サーバを選択する場合、
+PostgreSQL サーバーが動作しているホスト名を指定します。</para>
+
+<para>例:</para>
+<literallayout>
+	postgresql_serverhost postgresql.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverport</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
+<listitem>
+<para>PostgreSQL サーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_serverport 602
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
+<listitem>
+<para>PostgreSQL データベース名を指定します。</para>
+<para><token>postgresql_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_dbname gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_user</token> <parameter>user</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_user gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_password secret-postgresql-password
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するときの接続オプションを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_conninfo "sslmode=require connect_timeout=30"
 </literallayout>
 </listitem>
 </varlistentry>
@@ -689,9 +789,17 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;agent_serverhost_statement&gt; |
+		&nbsp;&nbsp;&lt;agent_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
@@ -720,9 +828,17 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;agent_serverhost_statement&gt; ::= "agent_serverhost" &lt;hostname&gt;
+	&lt;agent_serverport_statement&gt; ::= "agent_serverport" &lt;portnumber&gt;
 	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
 	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
+	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
+	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
+	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
+	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
+	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
 		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
@@ -801,6 +917,8 @@ auth enable gsi *
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
+  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfarm_agent</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
