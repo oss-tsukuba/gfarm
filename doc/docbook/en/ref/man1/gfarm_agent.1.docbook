@@ -2,7 +2,7 @@
 
 <refentry id='gfarm_agent.1'>
 
-<refentryinfo><date>22 Apr 2005</date></refentryinfo>
+<refentryinfo><date>7 Jun 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_agent</refentrytitle>
@@ -25,35 +25,10 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
 <command>gfarm_agent</command> is a cache server for a Gfarm metadata
-server that can be shared by multiple applications on the same
-machine.  The cache server greatly improves performance and response
-time for a Gfarm file system by hiding network latency to a distant
-metadata server, and by preventing performance degradation when
-thousands of files are stored in the Gfarm file system.
-</para>
-
-<para>
-To use the cache server, execute <command>gfarm_agent</command> on a
-client node or a compute node, and define environment variables
-output by <command>gfarm_agent</command>.
-</para>
-
-<programlisting>
-% eval `<command>gfarm_agent</command>`
-</programlisting>
-
-<para>
-Output environment variables are <envar>GFARM_AGENT_SOCK</envar> and
-<envar>GFARM_AGENT_PID</envar>.  <envar>GFARM_AGENT_SOCK</envar>
-specifies a unix-domain socket that <command>gfarm_agent</command> is
-listening to.  <envar>GFARM_AGENT_PID</envar> specifies a process ID
-of <command>gfarm_agent</command>.
-</para>
-
-<para>
-<command>gfarm_agent</command> is running in the background.  When
-defining the above environment variables, running
-<command>gfarm_agent</command> can be shared.
+server that can be shared by multiple hosts and multiple users.
+The cache server greatly improves performance and response
+time for a Gfarm file system by reducing network communication to a
+distant metadata server.
 </para>
 
 <para>
@@ -63,50 +38,8 @@ Consistency among multiple cache servers and a metadata server is
 maintained.
 </para>
 
-<para>
-To terminate the cache server, send a TERM signal.
-</para>
-
-<programlisting>
-% kill $GFARM_AGENT_PID
-</programlisting>
-</refsect1>
-
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
-<varlistentry>
-<term><option>-s</option></term>
-<listitem>
-<para>generates Bourne shell commands.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-c</option></term>
-<listitem>
-<para>generates C-shell commands.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-d</option></term>
-<listitem>
-<para>specifies the debug mode.  <command>gfarm_agent</command> is
-running in the foreground not in the background.  Note that 'eval
-`<command>gfarm_agent</command>`' cannot work since it runs in the
-foreground.
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-f</option> <parameter>config-file</parameter></term>
-<listitem>
-<para>specifies a configuration file that is read instead of the default
-configuration file.</para>
-</listitem>
-</varlistentry>
-
 <varlistentry>
 <term><option>-P</option> <parameter>pid-file</parameter></term>
 <listitem>
@@ -120,6 +53,29 @@ configuration file.</para>
 <listitem>
 <para>specifies a syslog facility to report errors by
 <command>gfarm_agent</command>.  By default, local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>specifies the debug mode.  <command>gfarm_agent</command> is
+running in the foreground not in the background.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>config-file</parameter></term>
+<listitem>
+<para>specifies a configuration file that is read instead of the default
+configuration file.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>port-number</parameter></term>
+<listitem>
+<para>specifies a port number of TCP used by gfarm_agent.</para>
 </listitem>
 </varlistentry>
 
@@ -142,15 +98,18 @@ configuration file.</para>
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>/tmp/.gfarm-XXXXXX/agent.&lt;ppid&gt;</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
-<para>a unix-domain socket that can be connected by the user that
-executes <command>gfarm_agent</command> only.  It is automatically
-removed when <command>gfarm_agent</command> exits by receiving a TERM
-signal.</para>
+<para>configuration file</para>
 </listitem>
 </varlistentry>
 </variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
 </refsect1>
 
 </refentry>
