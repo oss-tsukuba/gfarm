@@ -6,13 +6,13 @@ ls_err=$localtop/RT_ls_err.$$
 
 trap 'rm -f $ls_err; exit $exit_trap' $trap_sigs
 
-LANG=C ls /gfarm/notexist 2>$ls_err
+LANG=C ls $hooktop/notexist 2>$ls_err
 
 if [ $? = 1 ] &&
     awk '{
-	if ($0 ~ /\/gfarm\/notexist\: No such file or directory/)
+	if ($0 ~ /(: No such file or directory| not found)$/)
 	    exit 0
-    	else
+	else
 	    exit 1
     }' $ls_err
 then

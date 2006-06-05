@@ -4,7 +4,7 @@
 
 trap 'exit $exit_trap' $trap_sigs
 
-if [ x"`sh -c 'cd /gfarm && pwd'`" = x"/gfarm" ]; then
+if [ x"`sh -c 'cd $hooktop && pwd'`" = x"$hooktop" ]; then
 	exit_code=$exit_pass
 fi
 

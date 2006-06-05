@@ -2,8 +2,8 @@
 
 . ./regress.conf
 
-srcfile=/gfarm/$USER/RT_mv_src.$$
-destfile=/gfarm/$USER/RT_mv_dest.$$
+srcfile=$hooktmp.src
+destfile=$hooktmp.dst
 
 case $# in
 1)	datafile=$1;;
