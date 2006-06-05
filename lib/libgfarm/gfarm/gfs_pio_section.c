@@ -310,7 +310,7 @@ static char *
 gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-	struct gfarm_file_section_info sinfo;
+	struct stat st;
 	long ino;
 	char *e;
 
@@ -329,20 +329,14 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	status->st_size = 0;
-	status->st_nsections = 1;
-	e = gfarm_file_section_info_get(gf->pi.pathname, vc->section, &sinfo);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		/* this section is created but not closed yet. */
-		return (NULL);
-	}
-	else if (e != NULL) {
+	e = (*vc->ops->storage_fstat)(gf, &st);
+	if (e != NULL) {
 		free(status->st_user);
 		free(status->st_group);
 		return (e);
 	}
-	status->st_size = sinfo.filesize;
-	gfarm_file_section_info_free(&sinfo);
+	status->st_size = st.st_size;
+	status->st_nsections = 1;
 
 	return (NULL);
 }
