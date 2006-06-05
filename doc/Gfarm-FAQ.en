@@ -1,7 +1,7 @@
 Gfarm FAQ - Frequently Asked Questions about Gfarm
 
-Copyright (c) 2003, 2004, 2005 National Institute of Advanced
-Industrial Science and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003-2006 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -33,7 +33,6 @@ Table of Contents:
 4. Performance Tuning
   4.1 How to speed up reads and writes to metadata database using an
     OpenLDAP server?
-  4.2 How to execute gfarm_agent automatically only when it is not there?
 
 5. Limitation
   5.1 Where are gfchmod, gfchown and gfmv?
@@ -70,7 +69,7 @@ Table of Contents:
   2.2 We cannot connect to file system nodes and/or a metadata server.
 
 	By default setting, 600/tcp and 600/udp need to be opened for
-	file system nodes, and 601/tcp and 389/tcp need to be opened
+	file system nodes, and 601/tcp and 602/tcp need to be opened
 	for a metadata server.
 
 	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these file system
@@ -312,67 +311,6 @@ set_flags DB_TXN_NOSYNC
 ----------------------------- BEGIN HERE -----------------------------
 cachesize 10000
 dbcachesize 1000000
--------------------------------- END --------------------------------
-
-  4.2 How to execute gfarm_agent automatically only when it is not there?
-
-	Add the following script to the shell rc file
-	(e.g. ~/.bashrc., .cshrc).
-
-	In the case of the Bourne Shell:
-
------------------------------ BEGIN HERE -----------------------------
-GFARMENV=/tmp/gfarm-env-$USER.sh
-
-source_gfarm_env()
-{
-	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
-}
-
-restart_gfarm_agent()
-{
-	touch $GFARMENV
-	chmod go-rw $GFARMENV
-	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
-}
-
-source_gfarm_env
-if test "X$GFARM_AGENT_PID" = X
-then
-	restart_gfarm_agent	
-	source_gfarm_env
-elif ! ps -p $GFARM_AGENT_PID > /dev/null
-then
-	restart_gfarm_agent	
-	source_gfarm_env
-fi
--------------------------------- END --------------------------------
-
-	In the case of the csh:
-
------------------------------ BEGIN HERE -----------------------------
-setenv GFARMENV /tmp/gfarm-env-$USER.csh
-
-if ( -f $GFARMENV ) then
-	source $GFARMENV > /dev/null
-endif
-
-set gfarm_agent_running=0
-if ( $?GFARM_AGENT_PID ) then
-	ps -p $GFARM_AGENT_PID > /dev/null && set gfarm_agent_running=1
-endif
-
-if ( $gfarm_agent_running == 0 ) then
-	touch $GFARMENV
-	chmod go-rw $GFARMENV
-	gfarm_agent -c > $GFARMENV
-	if ( $status == 0 ) then
-		source $GFARMENV > /dev/null
-	else
-		rm -f $GFARMENV
-	endif
-endif
-unset gfarm_agent_running
 -------------------------------- END --------------------------------
 
 5. Limitation

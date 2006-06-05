@@ -1,7 +1,7 @@
 Gfarm FAQ - Gfarm に関するよくある質問
 
-Copyright (c) 2003, 2004, 2005 National Institute of Advanced
-Industrial Science and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003-2006 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
 
 目次:
 *****
@@ -32,8 +32,6 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
 4. 性能チューニング
   4.1 OpenLDAP サーバで，メタデータの読込み，書込み性能を向上させるには
     どうすればいいでしょうか？
-  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
-    しょうか？
 
 5. 制限事項
   5.1 gfchmod, gfchown, gfmv 等はないのですか？
@@ -73,7 +71,7 @@ Industrial Science and Technology (AIST).  All Rights Reserved.
   2.2 ファイルシステムノード，メタサーバに接続できません．
 
 	デフォルトの設定では，ファイルシステムノードは 600/tcp と
-	600/udp を利用し，メタサーバノードは 601/tcp と 389/tcp を利用
+	600/udp を利用し，メタサーバノードは 601/tcp と 602/tcp を利用
 	します．
 
 	特に 'gfhost -lv' で，'x.xx/x.xx/x.xx' と表示されるファイルシス
@@ -295,68 +293,6 @@ set_flags DB_TXN_NOSYNC
 ------------------------------ ここから ------------------------------
 cachesize 10000
 dbcachesize 1000000
------------------------------- ここまで ------------------------------
-
-  4.2 gfarm_agent を必要に応じて自動的に立ち上げるにはどうしたらいいで
-    しょうか？
-
-	各ユーザのシェル設定ファイル (.bashrc, .cshrc など) に以下の定
-	義を追加します．
-
-	Bourne Shell の場合:
-
------------------------------- ここから ------------------------------
-GFARMENV=/tmp/gfarm-env-$USER.sh
-
-source_gfarm_env()
-{
-	[ -f $GFARMENV ] && . $GFARMENV > /dev/null
-}
-
-restart_gfarm_agent()
-{
-	touch $GFARMENV
-	chmod go-rw $GFARMENV
-	gfarm_agent -s > $GFARMENV 2> /dev/null || rm -f $GFARMENV
-}
-
-source_gfarm_env
-if test "X$GFARM_AGENT_PID" = X
-then
-	restart_gfarm_agent	
-	source_gfarm_env
-elif ! ps -p $GFARM_AGENT_PID > /dev/null
-then
-	restart_gfarm_agent	
-	source_gfarm_env
-fi
------------------------------- ここまで ------------------------------
-
-	csh の場合:
-
------------------------------- ここから ------------------------------
-setenv GFARMENV /tmp/gfarm-env-$USER.csh
-
-if ( -f $GFARMENV ) then
-	source $GFARMENV > /dev/null
-endif
-
-set gfarm_agent_running=0
-if ( $?GFARM_AGENT_PID ) then
-	ps -p $GFARM_AGENT_PID > /dev/null && set gfarm_agent_running=1
-endif
-
-if ( $gfarm_agent_running == 0 ) then
-	touch $GFARMENV
-	chmod go-rw $GFARMENV
-	gfarm_agent -c > $GFARMENV
-	if ( $status == 0 ) then
-		source $GFARMENV > /dev/null
-	else
-		rm -f $GFARMENV
-	endif
-endif
-unset gfarm_agent_running
 ------------------------------ ここまで ------------------------------
 
 5. 制限事項
