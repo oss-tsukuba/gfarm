@@ -1,6 +1,7 @@
 # gftool/config-gfarm
 gftool/gfkey/gfkey-cl.sh
 gftool/gfhost/noopt.sh
+gftool/gfpwd/gfpwd.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
 gftool/gfmkdir/mkdir.sh
