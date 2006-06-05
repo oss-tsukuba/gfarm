@@ -462,9 +462,9 @@ ldap)
 	# official LDAP port number is 389
 	: ${BACKEND_PORT:="602"}
 
-	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -e 's/\./, dc=/g'`"}
+	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -e 's/\./,dc=/g'`"}
 	: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
-	: ${BACKEND_ADMIN_USER:="cn=root, $LDAP_BASE_DN"}
+	: ${BACKEND_ADMIN_USER:="cn=root,$LDAP_BASE_DN"}
 	: ${BACKEND_USER:="$LDAP_BASE_DN"}
 
 	: ${OPENLDAP_ETC:="/etc/openldap"}
