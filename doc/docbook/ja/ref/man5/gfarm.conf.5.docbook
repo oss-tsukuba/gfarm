@@ -423,6 +423,28 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
+<listitem>
+<para>LDAP データベースに接続する際の認証に用いる名称を、distinguished name で指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_bind_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>LDAP データベースに接続する際の認証パスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_password "secret-ldap-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>postgresql_serverhost</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
 <listitem>
 <para>メタデータのバックエンド・データベースとして
@@ -479,7 +501,7 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <para>PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
 <para>例:</para>
 <literallayout>
-	postgresql_password secret-postgresql-password
+	postgresql_password "secret-postgresql-password"
 </literallayout>
 </listitem>
 </varlistentry>
@@ -794,6 +816,8 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
@@ -833,6 +857,8 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
 	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
+	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
 	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
 	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
 	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
@@ -890,6 +916,8 @@ metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *

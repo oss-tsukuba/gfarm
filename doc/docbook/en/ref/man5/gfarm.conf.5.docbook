@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>7 Jun 2005</date></refentryinfo>
+<refentryinfo><date>7 Jun 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -443,6 +443,32 @@ distinguished name of LDAP database.</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
+<listitem>
+<para>The <token>ldap_bind_dn</token> statement specifies the
+distinguished name for the bind operation which is used for authentication
+to the LDAP database.</para>
+<para>For example,</para>
+<literallayout>
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_bind_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>The <token>ldap_bind_password</token> statement specifies the
+password for the bind operation which is used for authentication
+to the LDAP database.</para>
+<para>For example,</para>
+<literallayout>
+	ldap_bind_password "secret-ldap-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>postgresql_serverhost</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>postgresql_serverhost</token> statement specifies the host
@@ -841,6 +867,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;ldap_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
@@ -880,6 +908,8 @@ notation.</para>
 	&lt;ldap_serverhost_statement&gt; ::= "ldap_serverhost" &lt;hostname&gt;
 	&lt;ldap_serverport_statement&gt; ::= "ldap_serverport" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
+	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
 	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
 	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
 	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
@@ -937,6 +967,8 @@ metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *
