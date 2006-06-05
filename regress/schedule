@@ -1,4 +1,5 @@
 # gftool/config-gfarm
+gftool/gfkey/gfkey-cl.sh
 gftool/gfhost/noopt.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
