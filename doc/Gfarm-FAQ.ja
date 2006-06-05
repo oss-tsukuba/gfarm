@@ -201,11 +201,12 @@ Science and Technology (AIST).  All Rights Reserved.
 
 	現在のところ，4つの問題があります．
 
-	一つは，gfarm_agent へのアクセスは，現在認証が行なわれていないと
-	いう問題です．gfarm_agent を用いる場合，メタデータ情報，すなわち，
-	ホスト情報，ファイル名，ファイルのオーナー，およびファイルの所在
-	といった情報の読み書きは，すべて gfarm_agent を経由して行なわれ
-	ます．これが認証なしで行なわれるため，全く安全ではありません．
+	一つは，gfarm_agent へのアクセスについて，現状では認証が行なわれ
+	ていないという問題です．gfarm_agent を用いる場合，メタデータ情報，
+	すなわち，ホスト情報，ファイル名，ファイルのオーナー，およびファ
+	イルの所在といった情報の読み書きは，すべて gfarm_agent を経由して
+	行なわれます．これが認証なしで行なわれるため，全く安全ではありま
+	せん．
 	この問題があるため，gfarm_agent の利用は，できる限り firewall の
 	内側に限ることを勧めます．
 	firewall の外側で運用する場合には，IPsec を用いて gfarm_agent の
@@ -214,8 +215,8 @@ Science and Technology (AIST).  All Rights Reserved.
 	信頼できるホストからのアクセスだけに制限することも考えられます．
 	ただし，パケットフィルタのみでは，パケット盗聴や，TCP セッション
 	の乗っ取りなどの危険が残ります．
-	gfarm は gfarm_agent なしでも動作可能ですが，その場合，メタ
-	データ情報アクセスに関する性能が犠牲になります．
+	gfarm は gfarm_agent なしでも動作可能ですが，その場合，メタデータ
+	情報アクセスに関する性能が犠牲になります．
 
 	二つ目は，PostgreSQL サーバないし LDAP サーバに読み書きアクセス
 	する権限に関する問題です．PostgreSQL サーバないし LDAP サーバに
@@ -250,7 +251,7 @@ Science and Technology (AIST).  All Rights Reserved.
 	上記三つの問題は，次期メジャーリリースで解決する予定です．
 
 	もう一つの問題は，認証の問題です．
-	Gfarm-1.0 は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
+	Gfarm-1.x は，sharedsecret 認証，gsi_auth 手法，gsi 認証の
 	3 種類の認証方法をサポートしていますが，
 	Internet 環境では，sharedsecret 認証や gsi_auth 手法では
 	安全とは言えません．gsi 認証の利用を推奨します．
