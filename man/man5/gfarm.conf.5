@@ -331,6 +331,28 @@ For example,
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
+\fBldap_bind_dn \fILDAP_bind_distinguished_name\fB\fR
+The ldap_bind_dn statement specifies the
+distinguished name for the bind operation which is used for authentication
+to the LDAP database.
+
+For example,
+
+.nf
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+.fi
+.TP
+\fBldap_bind_password \fIpassword\fB\fR
+The ldap_bind_password statement specifies the
+password for the bind operation which is used for authentication
+to the LDAP database.
+
+For example,
+
+.nf
+	ldap_bind_password "secret-ldap-password"
+.fi
+.TP
 \fBpostgresql_serverhost \fIhostname\fB\fR
 The postgresql_serverhost statement specifies the host
 name on which PostgreSQL server is running.
@@ -685,6 +707,8 @@ notation.
 		\~\~<ldap_serverhost_statement> |
 		\~\~<ldap_serverport_statement> |
 		\~\~<ldap_base_dn_statement> |
+		\~\~<ldap_bind_dn_statement> |
+		\~\~<ldap_bind_password_statement> |
 		\~\~<postgresql_serverhost_statement> |
 		\~\~<postgresql_serverport_statement> |
 		\~\~<postgresql_dbname_statement> |
@@ -724,6 +748,8 @@ notation.
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<ldap_bind_dn_statement> ::= "ldap_bind_dn" <string>
+	<ldap_bind_password_statement> ::= "ldap_bind_password" <string>
 	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
 	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
 	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
@@ -773,6 +799,8 @@ metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable sharedsecret 192.168.0.0/24
 auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *

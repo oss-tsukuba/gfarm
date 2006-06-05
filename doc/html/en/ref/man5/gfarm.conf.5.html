@@ -775,6 +775,54 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_bind_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> statement specifies the
+distinguished name for the bind operation which is used for authentication
+to the LDAP database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> statement specifies the
+password for the bind operation which is used for authentication
+to the LDAP database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_password&nbsp;"secret-ldap-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >postgresql_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1565,6 +1613,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;ldap_serverhost_statement&#62;&nbsp;|<br>
 		  &#60;ldap_serverport_statement&#62;&nbsp;|<br>
 		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_password_statement&#62;&nbsp;|<br>
 		  &#60;postgresql_serverhost_statement&#62;&nbsp;|<br>
 		  &#60;postgresql_serverport_statement&#62;&nbsp;|<br>
 		  &#60;postgresql_dbname_statement&#62;&nbsp;|<br>
@@ -1604,6 +1654,8 @@ CLASS="LITERALLAYOUT"
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
 	&#60;postgresql_serverhost_statement&#62;&nbsp;::=&nbsp;"postgresql_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;postgresql_serverport_statement&#62;&nbsp;::=&nbsp;"postgresql_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
@@ -1659,6 +1711,8 @@ metadb_serverhost&nbsp;metadb.example.com<br>
 ldap_serverhost&nbsp;metadb.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
+ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"<br>
+ldap_bind_password&nbsp;"secret-ldap-password"<br>
 auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
 auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
 auth&nbsp;enable&nbsp;gsi&nbsp;*</P
