@@ -35,3 +35,5 @@ gfs_hook/tool/cp/0byte.sh
 gfs_hook/tool/rm/0byte.sh
 gfs_hook/tool/cp/1byte.sh
 gfs_hook/tool/rm/1byte.sh
+gfs_hook/tool/mv/0byte.sh
+gfs_hook/tool/mv/1byte.sh
