@@ -2594,6 +2594,7 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-U\t\t\t\t... don't bind UNIX domain socket\n");
+	fprintf(stderr, "\t-d\t\t\t\tdebug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-l <listen_address>\n");
 	fprintf(stderr, "\t-p <port>\n");

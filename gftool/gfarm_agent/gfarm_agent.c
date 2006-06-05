@@ -1505,12 +1505,13 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-c\t\tGenerate C-shell commands\n");
-	fprintf(stderr, "\t-s\t\tGenerate Bourne shell commands\n");
-	fprintf(stderr, "\t-d\t\tdebug mode\n");
-	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-S <syslog-facility>\n");
+	fprintf(stderr, "\t-c\t\tGenerate C-shell commands\n");
+	fprintf(stderr, "\t-d\t\tdebug mode\n");
+	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
+	fprintf(stderr, "\t-p <port>\n");
+	fprintf(stderr, "\t-s\t\tGenerate Bourne shell commands\n");
 	fprintf(stderr, "\t-v\n");
 	exit(1);
 }
