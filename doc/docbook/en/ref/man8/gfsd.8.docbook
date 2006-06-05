@@ -154,13 +154,11 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 </variablelist>
 </refsect1>
 
-<!--
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
 <citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>
 </refsect1>
--->
 
 </refentry>
 

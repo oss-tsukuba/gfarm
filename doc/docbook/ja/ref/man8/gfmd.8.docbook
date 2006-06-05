@@ -53,7 +53,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <varlistentry>
 <term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
-<para>gfsd の process ID を、指定したファイルに記録します。</para>
+<para>gfmd の process ID を、指定したファイルに記録します。</para>
 </listitem>
 </varlistentry>
 

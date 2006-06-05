@@ -146,7 +146,7 @@ GSI 認証の問題を解決する場合に有用なオプションです。
 <varlistentry>
 <term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
-<para>gfmd が参照する設定ファイルです。</para>
+<para>gfsd が参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>
