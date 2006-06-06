@@ -26,6 +26,9 @@ search_path="$PATH":/usr/local/sbin:/usr/local/bin:/usr/pkg/sbin:/usr/pkg/bin:/u
 
 PROGNAME=`basename $0`
 
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
 status=1
 sed_script=/tmp/cf$$
 admin_password=/tmp/ap$$
@@ -73,7 +76,7 @@ gen_passwd()
 		# enough entropy, use 258bit(=log2(64)*43) key
 
 		dd if=/dev/urandom bs=44 count=1 2>/dev/null | od -d |
-		awk '
+		$awk '
 		BEGIN{
 			chars="'"$chars"'"
 			k=length(chars)
@@ -98,7 +101,7 @@ gen_passwd()
 	else
 		# 32bit entropy due to the seed, use 66bit(=log2(64)*11) key
 
-		awk '
+		$awk '
 		BEGIN {
 			chars="'"$chars"'"
 			k=length(chars)
@@ -287,7 +290,7 @@ while [ $# -gt 0 ] ; do
 		stty -echo;
 		( umask 077; 
 		  printf "admin password: ";
-		  awk 'NR==1{print $0;exit}' > $admin_password
+		  $awk 'NR==1{print $0;exit}' > $admin_password
 		  echo
 		)
 		stty echo
@@ -296,7 +299,7 @@ while [ $# -gt 0 ] ; do
 		stty -echo;
 		( umask 077;
 		  printf "user password: ";
-		  awk 'NR==1{print $0;exit}' > $password
+		  $awk 'NR==1{print $0;exit}' > $password
 		  echo
 		)
 		stty echo
@@ -526,7 +529,7 @@ moduleload	back_'"$SLAPD_DB"}
 
 	: ${SLAPD_CONF_HOOK:=""}
 
-	: ${SLAPD_BDB_CACHESIZE:="`memory_size|awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
+	: ${SLAPD_BDB_CACHESIZE:="`memory_size|$awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
 	: ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
 	;;
 esac
@@ -575,10 +578,10 @@ s|@config_gfarm_gfsd_port@|$GFSD_PORT|g
 s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g
 s|@config_gfarm_run_dir@|$RUN_DIR|g
 _EOF_
-		awk '{
+		$awk '{
 		printf "s|@config_gfarm_backend_admin_password@|%s|g\n", $0
 		}' $admin_password
-		awk '{
+		$awk '{
 		printf "s|@config_gfarm_backend_password@|%s|g\n", $0
 		}' $password
 	    ) > $sed_script
@@ -701,7 +704,7 @@ _EOF_
 	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
 	      "$BACKEND_DATA_DIR"/postgresql.conf.org
 
-	awk '
+	$awk '
 	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
 		if (/^[ 	]*listen_addresses/) {
 			print "#" $0
@@ -843,7 +846,7 @@ postgresql)
 	      "$BACKEND_DATA_DIR"/pg_hba.conf.bak
 
 	# create temporary configuration files 
-	awk '
+	$awk '
 	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
 		if (/^[ 	]*listen_addresses/) {
 			print "#" $0
@@ -915,7 +918,7 @@ _EOF_
 	$PGSQL_BINDIR/createuser -A -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb $DB_NAME
 	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
-	awk 'BEGIN {
+	$awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
 		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
 		print "	TO $BACKEND_USER;"
