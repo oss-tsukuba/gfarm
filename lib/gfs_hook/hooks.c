@@ -330,9 +330,11 @@ __unlink(const char *path)
 			char *arch;
 
 			e = gfarm_host_get_self_architecture(&arch);
-			if (e != NULL)
-				arch = "noarch";
-			e = gfs_unlink_section(url, arch);
+			if (e != NULL) {
+				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			} else {
+				e = gfs_unlink_section(url, arch);
+			}
 		} else {
 			e = gfs_unlink(url);
 		}
