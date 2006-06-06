@@ -534,7 +534,7 @@ gfarm_path_dir(const char *pathname)
 	p = tail = dir + strlen(dir) - 1;
 	while (p > dir && *p == '/')
 		--p;
-	if (p > dir && p < tail)
+	if (p < tail)
 		p[1] = '\0';
 
 	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
