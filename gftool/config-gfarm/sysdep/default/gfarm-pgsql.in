@@ -20,12 +20,11 @@
 # Description: PostgreSQL daemon for Gfarm
 ### END INIT INFO
 
-PROG="pg_ctl"
 FILE="gfarm-pgsql"
 
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
-DAEMON="@config_gfarm_pgsql_bindir@/$PROG"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
 LOGFILE="$PGDATA/logfile"
 OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
@@ -38,11 +37,11 @@ export PGDATA
 
 case $1 in 
 start)
-	if [ ! -x "$DAEMON" ]; then
-		echo -n "$DAEMON is not installed"
+	if [ ! -x "$CTL" ]; then
+		echo -n "$CTL is not installed"
 		exit 1
 	fi
-	$RUN -c "$DAEMON $OPTIONS start"
+	$RUN -c "$CTL $OPTIONS start"
 	;;
 
 stop)
