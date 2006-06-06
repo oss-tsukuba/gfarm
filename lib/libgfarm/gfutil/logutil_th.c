@@ -18,6 +18,7 @@ struct gflog_thread_specific {
 };
 
 static pthread_key_t gflog_key;
+static int gflog_key_created = 0; /* to workaround a problem on SunOS 5.9 */
 
 static void
 gflog_thread_fatal(const char *diag, const char *status)
@@ -51,6 +52,7 @@ gflog_key_create(void)
 
 	if (rv != 0)
 		gflog_thread_fatal("pthread_key_create(): ", strerror(rv));
+	gflog_key_created = 1; /* to workaround a problem on SunOS 5.9 */
 }
 
 static struct gflog_thread_specific *
@@ -62,6 +64,17 @@ gflog_thread_specific_get(void)
 
 	if (rv != 0)
 		gflog_thread_fatal("pthread_once(): ", strerror(rv));
+
+	/*
+	 * to workaround a problem on SunOS 5.9:
+	 * The following condition never can be true, if pthread_once() works
+	 * correctly. But it becomes true on SunOS 5.9, if the command is not
+	 * linked with pthread library.
+	 * We don't protect `gflog_key_created' by a mutex, because this
+	 * only becomes true on a non-threaded program.
+	 */
+	if (!gflog_key_created)
+		gflog_key_create();
 
 	p = pthread_getspecific(gflog_key);
 	if (p != NULL)
