@@ -281,35 +281,35 @@ In the case to use LDAP:
 
 In the case to use PostgreSQL:
 
-・PostgreSQL installation directory
+ - PostgreSQL installation directory
 
 	/usr/local/pgsql
 
-・hostname of a PostgreSQL server
+ - hostname of a PostgreSQL server
 
 	metadb.example.com
 
-・TCP port number of the PostgreSQL server
+ - TCP port number of the PostgreSQL server
 
 	5432
 
-・UNIX user name to run the PostgreSQL database server
+ - UNIX user name to run the PostgreSQL database server
 
 	postgres
 
-・directory for the PostgreSQL database file
+ - directory for the PostgreSQL database file
 
 	/var/gfarm-pgsql
 
-・database name for PostgreSQL
+ - database name for PostgreSQL
 
 	gfarm		
 
-・database user name for PostgreSQL
+ - database user name for PostgreSQL
 
 	gfarm
 
-・database user password for PostgreSQL
+ - database user password for PostgreSQL
 
 	secret-postgresql-password
 
