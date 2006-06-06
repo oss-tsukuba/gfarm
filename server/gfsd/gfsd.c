@@ -2701,10 +2701,6 @@ main(int argc, char **argv)
 		listen_address = *self_addresses;
 	}
 
-	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(gfarm_spool_root);
-
 	accepting_inet_sock = open_accepting_inet_socket(
 	    listen_address, gfarm_spool_server_port);
 	if (bind_unix_domain) {
@@ -2753,6 +2749,10 @@ main(int argc, char **argv)
 		fprintf(pid_fp, "%ld\n", (long)getpid());
 		fclose(pid_fp);
 	}
+
+	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
+	if (chdir(gfarm_spool_root) == -1)
+		gflog_fatal_errno(gfarm_spool_root);
 
 	table_size = FILE_TABLE_LIMIT;
 	gfarm_unlimit_nofiles(&table_size);
