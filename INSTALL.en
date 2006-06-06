@@ -252,7 +252,7 @@ In the case to use LDAP:
 
  - TCP port number of the LDAP server
 
-	389
+	10602
 
  - directory for configuration files of LDAP server
 
@@ -291,7 +291,7 @@ In the case to use PostgreSQL:
 
  - TCP port number of the PostgreSQL server
 
-	5432
+	10602
 
  - UNIX user name to run the PostgreSQL database server
 
@@ -320,23 +320,48 @@ In the case to use PostgreSQL:
 0. Prepare a filesystem metadata server node, (several) metadata cache
    server nodes, and (many) filesystem nodes.
 
-1. Run the following command on the metadata server to see whether
+1. If you will select PostgreSQL as the metadata backend database,
+  please create the user ("postgresql" in the assumption above)
+  for PostgreSQL database privilege. Although this user may be already
+  created, especially if you are using a binary package like RPM.
+
+2. Run the following command on the metadata server to see whether
   appropriate default values will be automatically configured or not:
 	# config-gfarm -t
 
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
 
-2. Run the 'config-gfarm' command without '-t' option, which actually
+  If you choosed postgresql as the metadata backend database, you must
+  make sure that the user, which is displayed in "postgresql admin user"
+  section, does exist on the system. If the user doesn't exist, either
+  you have to create the user, or you have to specify a valid user
+  as an option of config-gfarm command.
+
+  Also, you must make sure that three port numbers, which are displayed
+  at the bottom of the config-gfarm command, are not used on your system.
+  If some of them are currently used, you must specify free port number
+  by an option of the config-gfarm command.
+  Please note that If you choosed postgresql as the backend database,
+  if have to specify a port number more than 1024.
+
+3. Run the 'config-gfarm' command without '-t' option, which actually
   makes gfarm configured.
   For example, if you don't have to specify any option in the step 1.
   you can use the following command:
 	# config-gfarm
 
-3. The 'config-gfarm' command should generate /etc/gfarm.conf.
+4. The 'config-gfarm' command should generate /etc/gfarm.conf.
+  (Or, if you are using FreeBSD binary package, it should generate
+  /usr/local/etc/gfarm.conf. Or if you are using NetBSD binary package,
+  it should generate /usr/pkg/etc/gfarm.conf)
   Please copy this file to /etc of all metadata cache server nodes.
+  (Or, if you are using FreeBSD binary package on the metadata cache
+  server, please copy it to /usr/local/etc. Or, if you are using
+  NetBSD binary package on the metadata cache server, copy it to
+  /usr/pkg/etc.)
 
-4. Run the following command on every metadata cache server node to
+5. Run the following command on every metadata cache server node to
   see whether appropriate default values will be automatically
   configured or not:
 	# config-agent -t
@@ -344,28 +369,37 @@ In the case to use PostgreSQL:
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
 
-5. Run the 'config-agent' command without '-t' option, which actually
+6. Run the 'config-agent' command without '-t' option, which actually
   makes gfarm_agent configured.
-  For example, if you don't have to specify any option in the step 4.
+  For example, if you don't have to specify any option in the step 5.
   you can use the following command:
 	# config-agent
 
-6. The 'config-agent' command should update /etc/gfarm.conf.
+7. If you will use multiple metadata cache server, please repeat
+  the step 4 through the step 6 on each metadata cache server.
+
+8. The 'config-agent' command should update gfarm.conf.
   Please copy this file from an appropriate metadata cache server node
   that would be accessed to /etc of filesystem nodes.
+  (Or, if you are using FreeBSD binary package on the filesystem node,
+  please copy it to /usr/local/etc. Or, if you are using NetBSD binary
+  package on the filesystem node, copy it to /usr/pkg/etc.)
 
-7. Run the following command on every filesystem node to see whether
+9. Run the following command on every filesystem node to see whether
   appropriate default values will be automatically configured or not:
 	# config-gfsd -t /var/spool/gfarm
 
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
 
-8. Run the 'config-gfsd' command without '-t' option, which actually
+10. Run the 'config-gfsd' command without '-t' option, which actually
   makes gfsd configured.
-  For example, if you don't have to specify any option in the step 7.
+  For example, if you don't have to specify any option in the step 8.
   you can use the following command:
 	# config-gfsd /var/spool/gfarm
+
+11. Please repeat the step 8 through the step 10 on each filesystem
+  node.
 
 That's all.
 
@@ -537,12 +571,12 @@ initial entries on metadb.example.com.
 An LDAP server is invoked by the 'slapd' command.
 
 	# cd /usr/local/openldap/libexec/
-	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:10602/
 
-The -h option specifies a listening port number of the LDAP server.  A
-sample start-up script can be found at package/<arch>/gfarm-slapd.
-If you choose a port number less than 1024 like this example, you
-have to do above with the root privilege.
+The -h option specifies a listening port number of the LDAP server.  
+A sample start-up script can be found at package/<arch>/gfarm-slapd.
+If you choose a port number less than 1024, you have to do above with
+the root privilege.
 
  - Test the LDAP server
 
@@ -552,7 +586,7 @@ initial.ldif file is displayed, the LDAP server works fine.
 In the case of the Bourne Shell:
 
 	% host=metadb.example.com
-	% port=389
+	% port=10602
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
@@ -560,7 +594,7 @@ In the case of the Bourne Shell:
 In the case of the csh:
 
 	% set host=metadb.example.com
-	% set port=389
+	% set port=10602
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
@@ -602,7 +636,7 @@ In the case to use LDAP:
 ----------------------------- BEGIN HERE -----------------------------
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
-ldap_serverport 389
+ldap_serverport 10602
 ldap_base_dn "dc=example, dc=com"
 auth disable sharedsecret *
 auth enable gsi *
@@ -612,7 +646,7 @@ In the case to use PostgreSQL:
 ----------------------------- BEGIN HERE -----------------------------
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
-postgresql_serverport 5432
+postgresql_serverport 10602
 postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password secret-postgresql-password
@@ -714,7 +748,7 @@ In the case to use LDAP:
 spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
-ldap_serverport 389
+ldap_serverport 10602
 ldap_base_dn "dc=example, dc=com"
 auth disable sharedsecret *
 auth enable gsi *
@@ -725,7 +759,7 @@ In the case to use PostgreSQL:
 spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
-postgresql_serverport 5432
+postgresql_serverport 10602
 postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password secret-postgresql-password
