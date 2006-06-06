@@ -521,7 +521,7 @@ gfarm_path_dir_skip(const char *path)
 char *
 gfarm_path_dir(const char *pathname)
 {
-	char *dir, *tail, *p;
+	char *dir, *p;
 	const char dot[] = ".";
 
 	if (pathname[0] == '\0')
@@ -531,11 +531,10 @@ gfarm_path_dir(const char *pathname)
 		return (NULL);
 		
 	/* remove trailing '/' */
-	p = tail = dir + strlen(dir) - 1;
+	p = dir + strlen(dir) - 1;
 	while (p > dir && *p == '/')
 		--p;
-	if (p < tail)
-		p[1] = '\0';
+	p[1] = '\0';
 
 	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
 	if (p == dir) /* i.e. no slash */
