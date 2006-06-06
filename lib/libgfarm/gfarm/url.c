@@ -537,8 +537,10 @@ gfarm_path_dir(const char *pathname)
 	p[1] = '\0';
 
 	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
-	if (p == dir) /* i.e. no slash */
+	if (p == dir) { /* i.e. no slash */
+		free(dir);
 		return (strdup(dot));
+	}
 	--p;
 
 	/* remove trailing '/' */
