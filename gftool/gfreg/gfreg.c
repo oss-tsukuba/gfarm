@@ -463,11 +463,8 @@ get_section(char *hostname, char **section, int *section_alloced) {
 	*section_alloced = 0;
 	if (hostname == NULL) {	
 		e = gfarm_host_get_self_architecture(&s);
-		if (e != NULL)
-			*section = "noarch";
-		else
+		if (e == NULL)
 			*section = s;
-		e = NULL;
 		goto finish;		
 	}	
 	e = gfarm_host_get_canonical_name(hostname, &canonical);
