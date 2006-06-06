@@ -935,13 +935,11 @@ end:
 #define NOTCREATE_DIR 0
 
 static char *
-localfs_path_info_data_open(
-	const char *pathname,
-	const char *mode, int checkexist, int createdir, FILE **fpp)
+localfs_path_info_data_pathname_get(
+	const char *pathname, char **pinfo_datap, int createdir)
 {
 	char *e = NULL;
 	char *pi_real, *pi_data;
-	FILE *fp;
 
 	pi_real = join_path(pathinfodir, pathname);
 	if (pi_real == NULL)
@@ -952,6 +950,8 @@ localfs_path_info_data_open(
 			if (mkdir(pi_real, 0755) != 0) { /* XXX permission */
 				e = gfarm_errno_to_error(errno);
 				goto free_pi_real;
+			} else {
+				e = NULL;
 			}
 		} else if (e != NULL)
 			goto free_pi_real;
@@ -961,6 +961,26 @@ localfs_path_info_data_open(
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_pi_real;
 	}
+	*pinfo_datap = pi_data;
+free_pi_real:
+	free(pi_real);
+
+	return (e);
+}
+
+static char *
+localfs_path_info_data_open(
+	const char *pathname,
+	const char *mode, int checkexist, int createdir, FILE **fpp)
+{
+	char *e = NULL;
+	char *pi_data;
+	FILE *fp;
+
+	e = localfs_path_info_data_pathname_get(pathname, &pi_data, createdir);
+	if (e != NULL)
+		return (e);
+
 	if (checkexist > OPEN_NOCHECK) {
 		e = is_file(pi_data);
 		if (e == NULL && checkexist == OPEN_FAILEXIST) {
@@ -981,8 +1001,6 @@ localfs_path_info_data_open(
 		*fpp = fp;
 free_pi_data:
 	free(pi_data);
-free_pi_real:
-	free(pi_real);
 
 	return (e);
 }
@@ -1020,12 +1038,14 @@ localfs_path_info_remove(
 	}
 
 	/* delete file_section_info data files */
-	/* no check */
-	localfs_file_section_info_remove_all_by_file(pathname);
-
-	/* delete path_info data file */
-	if (unlink(pi_data) != 0) {
-		e = gfarm_errno_to_error(errno);
+	e = localfs_file_section_info_remove_all_by_file(pathname);
+	if (e == NULL || e == GFARM_ERR_NO_SUCH_OBJECT) {
+		/* delete path_info data file */
+		if (unlink(pi_data) != 0) {
+			e = gfarm_errno_to_error(errno);
+		} else {
+			e = NULL;
+		}
 	}
 	free(pi_data);
 free_pi_real:
@@ -1450,7 +1470,7 @@ localfs_file_section_info_index_get2(
 	if (fgets(buf, BUFSIZE, fp) != NULL)
 		e = str_to_words(buf, np, sectionsp);
 	else
-		e = GFARM_ERR_NO_SUCH_OBJECT;
+		e = GFARM_ERR_INVALID_ARGUMENT;
 	fclose(fp);
 	return (e);
 }
@@ -1464,7 +1484,7 @@ localfs_file_section_info_index_replace2(
 	FILE *fp;
 	int i;
 
-	if (n == 0) {
+	if (n <= 0) {
 		if (unlink(data_file) != 0)
 			return gfarm_errno_to_error(errno);
 		else
@@ -1576,11 +1596,11 @@ localfs_file_section_info_index_remove(
 	int n, newn, i, j, found;
 
 	e = localfs_file_section_info_index_data_pathname_get(pathname,
-							     &index_data);
+							      &index_data);
 	if (e != NULL)
 		return (e);
 	e = localfs_file_section_info_index_get2(index_data, &n, &sections);
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
+	if (e != NULL)
 		goto free_index_data;
 	found = 0;
 	for (i = 0; i < n; i++) {
@@ -1590,7 +1610,7 @@ localfs_file_section_info_index_remove(
 		}
 	}
 	if (found == 0) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
+		e = GFARM_ERR_INVALID_ARGUMENT;
 		goto free_sections;
 	}
 	newn = n - 1;
@@ -1732,12 +1752,26 @@ localfs_file_section_info_set(
 {
 	char *e;
 	FILE *fp;
-
 #ifdef CREATE_FSCI_WITHOUT_FSI
 	struct gfarm_file_section_info fsi;
 	int ncopies = 0;
 	char **copies;
+#endif
+	char *pi_data;
 
+	e = localfs_path_info_data_pathname_get(pathname, &pi_data,
+						NOTCREATE_DIR);
+	if (e != NULL) {
+		return (e);
+	} else {
+		if (is_file(pi_data) != NULL)
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+		free(pi_data);
+		if (e != NULL)
+			return (e);
+	}
+
+#ifdef CREATE_FSCI_WITHOUT_FSI
 	/* XXX useless processing for file_section_copy_info_set */
 	e = localfs_file_section_info_get(pathname, section, &fsi,
 					 &ncopies, &copies);
@@ -1824,11 +1858,13 @@ localfs_file_section_info_remove(
 	char *si_data;
 
 	e = localfs_file_section_info_index_remove(pathname, section);
-	if (e != NULL)
+	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
 		return (e);
+
+	/* e == NULL || e == GFARM_ERR_NO_SUCH_OBJECT */
 	e = localfs_file_section_info_data_pathname_get(pathname, section,
-						       &si_data,
-						       OPEN_NEEDEXIST);
+							&si_data,
+							OPEN_NEEDEXIST);
 	if (e != NULL)
 		return (e);
 	if (unlink(si_data) == 0)
@@ -1908,9 +1944,10 @@ localfs_file_section_info_get_all_by_file(
 			goto free_sections;
 		}
 		for (i = 0; i < *np; i++) {
-			e = localfs_file_section_info_get(pathname, sections[i],
-							 &infos[i],
-							 NULL, NULL);
+			e = localfs_file_section_info_get(pathname,
+							  sections[i],
+							  &infos[i],
+							  NULL, NULL);
 		}
 		if (e != NULL)
 			free(infos);
@@ -1940,7 +1977,7 @@ static char *
 localfs_file_section_info_remove_all_by_file(
 	const char *pathname)
 {
-	char *e;
+	char *e, *e_save = NULL;
 	int n, i;
 	struct gfarm_file_section_info *infos;
 
@@ -1948,9 +1985,9 @@ localfs_file_section_info_remove_all_by_file(
 	if (e == NULL) {
 		for (i = 0; i < n; i++) {
 			e = localfs_file_section_info_remove(pathname,
-							    infos[i].section);
-			if (e != NULL)
-				break;
+							     infos[i].section);
+			if (e != GFARM_ERR_NO_SUCH_OBJECT && e_save == NULL)
+				e_save = e;
 		}
 		gfarm_file_section_info_free_all(n, infos);
 	}
