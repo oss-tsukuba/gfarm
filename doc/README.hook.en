@@ -20,12 +20,16 @@ Contents
   Every existing program can access Gfarm file system without any
   modification.
 
-  1-2) AIX
+  1-2) Operating system without library preload mechanism
 
   Just re-linking with the syscall-hooking library, every existing
   program can access Gfarm file system.
 
-  1-3) Other systems
+  1-3) AIX
+
+  AIX is not supported.
+
+  1-4) Other systems
 
   Contact datafarm@apgrid.org.
 
@@ -187,9 +191,6 @@ In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
 
-Solaris is not tested well.  At least, we know there is a restriction
-such that directory access via opendir(3) doesn't work.
-
  (5) MacOS X
 =============
 
@@ -275,8 +276,8 @@ the following "Limitation" section.
 
 -----------------------------------------------------------------------
 
-1-2) AIX
---------
+1-2) Operating system without library preload mechanism
+-------------------------------------------------------
 
 When an operating system does not support a preload mechanism, it is
 necessary to re-link with Gfarm syscal-hooking library, gfs_hook.o, to
@@ -314,7 +315,14 @@ hooks_init_mpi.c instead of gfs_hook.o.
 
 -----------------------------------------------------------------------
 
-1-3) Other systems
+1-3) AIX
+--------
+
+AIX is not supported.
+
+-----------------------------------------------------------------------
+
+1-4) Other systems
 ------------------
 
 Contact datafarm@apgrid.org.
