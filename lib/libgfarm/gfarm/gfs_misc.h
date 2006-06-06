@@ -8,6 +8,7 @@ struct gfarm_path_info;
 char *gfs_stat_access(struct gfs_stat *, int);
 char *gfarm_path_info_access(struct gfarm_path_info *, int);
 char *gfarm_path_expand_home(const char *, char **);
+char *gfarm_path_dir(const char *);
 char *gfarm_path_dirname(const char *);
 
 /* gfs_unlink.c */
@@ -21,6 +22,8 @@ char *gfs_stat_canonical_path(char *, struct gfs_stat *);
 
 char *gfs_chmod_meta_spool(struct gfarm_path_info *, gfarm_mode_t, char **);
 
+struct gfarm_file_section_info;
+struct gfarm_file_section_copy_info;
 char *gfarm_fabricate_mode_for_replication(struct gfs_stat *, gfarm_mode_t *);
 char *gfarm_file_section_replicate_from_to_local_with_locking(
 	struct gfarm_file_section_info *, gfarm_mode_t, char *, char *,

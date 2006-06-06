@@ -517,6 +517,38 @@ gfarm_path_dir_skip(const char *path)
 	return (base);
 }
 
+/* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
+char *
+gfarm_path_dir(const char *pathname)
+{
+	char *dir, *tail, *p;
+	const char dot[] = ".";
+
+	if (pathname[0] == '\0')
+		return (strdup(dot));
+	dir = strdup(pathname);
+	if (dir == NULL)
+		return (NULL);
+		
+	/* remove trailing '/' */
+	p = tail = dir + strlen(dir) - 1;
+	while (p > dir && *p == '/')
+		--p;
+	if (p > dir && p < tail)
+		p[1] = '\0';
+
+	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
+	if (p == dir) /* i.e. no slash */
+		return (strdup(dot));
+	--p;
+
+	/* remove trailing '/' */
+	while (p > dir && *p == '/')
+		--p;
+	p[1] = '\0';
+	return (dir);
+}
+
 char *
 gfarm_path_dirname(const char *pathname)
 {

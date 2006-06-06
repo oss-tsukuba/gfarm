@@ -218,7 +218,10 @@ gfs_pio_remote_mkdir_p(
 	gfarm_mode_t mode;
 	char *e, *user;
 
-	/* dirname(3) may return '.'.  This means the spool root directory. */
+	/*
+	 * gfarm_path_dir(3) may return '.'.
+	 * This means the spool root directory.
+	 */
 	if (strcmp(canonic_dir, "/") == 0 || strcmp(canonic_dir, ".") == 0)
 		return (NULL); /* should exist */
 
@@ -244,14 +247,13 @@ gfs_pio_remote_mkdir_p(
 
 	if (gfs_client_exist(gfs_server, canonic_dir)
 	    == GFARM_ERR_NO_SUCH_OBJECT) {
-		char *par_dir, *saved_par_dir;
+		char *par_dir;
 
-		par_dir = saved_par_dir = strdup(canonic_dir);
+		par_dir = gfarm_path_dir(canonic_dir);
 		if (par_dir == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		par_dir = dirname(par_dir);
 		e = gfs_pio_remote_mkdir_p(gfs_server, par_dir);
-		free(saved_par_dir);
+		free(par_dir);
 		if (e != NULL)
 			return (e);
 		
@@ -264,19 +266,18 @@ char *
 gfs_pio_remote_mkdir_parent_canonical_path(
 	struct gfs_connection *gfs_server, char *canonic_dir)
 {
-	char *par_dir, *saved_par_dir, *e;
+	char *par_dir, *e;
 
-	par_dir = saved_par_dir = strdup(canonic_dir);
+	par_dir = gfarm_path_dir(canonic_dir);
 	if (par_dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	par_dir = dirname(par_dir);
 	if (gfs_client_exist(gfs_server, par_dir) == GFARM_ERR_NO_SUCH_OBJECT)
 		e = gfs_pio_remote_mkdir_p(gfs_server, par_dir);
 	else
 		e = GFARM_ERR_ALREADY_EXISTS;
 
-	free(saved_par_dir);
+	free(par_dir);
 
 	return (e);
 }
