@@ -323,7 +323,10 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		e = gfarm_host_get_self_architecture(&arch);
 		if (e != NULL)
 			return (gf->error = e);
-		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
+		e = gfs_pio_set_view_section(gf, arch, NULL, flags);
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			return (gfs_pio_set_view_section(
+					gf, "noarch", NULL, flags));
 	}
 
 	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0)

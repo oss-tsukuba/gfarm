@@ -140,6 +140,9 @@ FUNC___OPEN(const char *path, int oflag, ...)
 			} else {
 				e = gfs_pio_set_view_section(gf,
 					 arch, NULL, 0);
+				if (e == GFARM_ERR_NO_SUCH_OBJECT)
+					e = gfs_pio_set_view_section(gf,
+						"noarch", NULL, 0);
 			}				
 		} else if (e == GFARM_ERR_FRAGMENT_INDEX_NOT_AVAILABLE ||
 		    (e == NULL && gfs_pio_get_node_size(&np) == NULL &&
