@@ -280,7 +280,7 @@ LDAP を使用する場合:
 
 ・LDAP サーバーの利用する TCP ポート番号
 
-	389
+	10602
 
 ・LDAP サーバーの設定ファイルを置くディレクトリ
 
@@ -322,7 +322,7 @@ PostgreSQL を使用する場合:
 
 ・PostgreSQL サーバーの利用する TCP ポート番号
 
-	5432
+	10602
 
 ・PostgreSQL データベース・サーバを動作させる UNIX ユーザ権限
 
@@ -351,57 +351,83 @@ PostgreSQL を使用する場合:
 0. まず，メタデータサーバ，（複数の）メタデータ・キャッシュ・サーバ，
    （複数の）ファイルシステムノードを準備します．
 
-1. メタデータサーバ上で以下のコマンドを実行して，これから行う設定に
+1. バックエンドデータベースとして PostgreSQL を利用する場合，PostgreSQL
+  を実行するユーザ (上の仮定では postgres) をあらかじめ作成しておく必要
+  があります．ただし，RPM などのバイナリパッケージからインストールした
+  場合には，その際に自動的にユーザが作成されている可能性もあります．
+
+2. メタデータサーバ上で以下のコマンドを実行して，これから行う設定に
   関して，適切なデフォルト値が設定されているか確認します．
 	# config-gfarm -t
 
   もしデフォルト値が適切でない場合には，表示されるオプションを指定して
   設定を変更できます．
 
-2. 適切な設定になったら，config-gfarm コマンドのオプションから -t を
+  メタデータバックエンドデータベースとして postgresql を選択している場合，
+  「postgresql admin user」の項目に表示されているユーザがシステムに存在
+  することを確認してください．もし存在しない場合には，ユーザを作成するか，
+  あるいは config-gfarm のオプションで適切なユーザを指定してください．
+
+  また，config-gfarm コマンドの末尾に表示される 3つ表示されるポート番号が，
+  れも現在未使用のポートであることを確認してください．もし使用中の場合には，
+  config-gfarm のオプションで未使用のポート番号を指定し直してください．
+  なお，バックエンドデータベースとして postgresql を選択している場合，
+  「portmaster port」のポート番号には 1024番以上のポートを指定する必要が
+  あります．
+
+3. 適切な設定になったら，config-gfarm コマンドのオプションから -t を
   取り除いて実行します．
   特にオプションを指定する必要がなかったのであれば，以下を実行すること
   になります．
 	# config-gfarm
 
-3. config-gfarm コマンドによって，/etc/gfarm.conf が作成された筈です．
-  この gfarm.conf をメタデータ・キャッシュ・サーバ上の /etc にコピーし
-  ます．
+4. config-gfarm コマンドによって，/etc/gfarm.conf が作成された筈です．
+  (ただし FreeBSD のバイナリパッケージの場合は /usr/local/etc/gfarm.conf，
+  NetBSD のバイナリパッケージの場合は /usr/pkg/etc/gfarm.conf に作成
+  されます．)
+  この gfarm.conf をメタデータ・キャッシュ・サーバ上の
+  /etc にコピーします．
+  (もしメタデータ・キャッシュ・サーバ上で，FreeBSD のバイナリパッケージを
+  利用している場合は /usr/local/etc，NetBSD のバイナリパッケージを利用し
+  ている場合は /usr/pkg/etc にコピーしてください．)
 
-4. メタデータ・キャッシュ・サーバ上で以下のコマンドを実行して，これか
+5. メタデータ・キャッシュ・サーバ上で以下のコマンドを実行して，これか
   ら行う設定に関して，適切なデフォルト値が設定されているか確認します．
 	# config-agent -t
 
   もしデフォルト値が適切でない場合には，表示されるオプションを指定して
   設定を変更できます．
 
-5. 適切な設定になったら，config-agent コマンドのオプションから -t を
+6. 適切な設定になったら，config-agent コマンドのオプションから -t を
   取り除いて実行します．
   特にオプションを指定する必要がなかったのであれば，以下を実行すること
   になります．
 	# config-agent
 
-6. メタデータ・キャッシュ・サーバが複数台存在する場合は，3-5 の手順をそ
+7. メタデータ・キャッシュ・サーバが複数台存在する場合は，4-6 の手順をそ
   の台数分実行します．
 
-7. config-agent コマンドにより，/etc/gfarm.conf が更新されます．設定し
-  たいファイルシステムノードが利用するメタデータ・キャッシュ・サーバ上
-  の /etc/gfarm.conf をファイルシステムノードの /etc にコピーします．
+8. config-agent コマンドにより，gfarm.conf が更新されます．設定したい
+  ファイルシステムノードが利用するメタデータ・キャッシュ・サーバ上の
+  gfarm.conf をファイルシステムノードの /etc にコピーします．
+  (もしファイルシステムノード上で，FreeBSD のバイナリパッケージを利用
+  している場合は /usr/local/etc，NetBSD のバイナリパッケージを利用し
+  ている場合は /usr/pkg/etc にコピーしてください．)
 
-8. ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
+9. ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
   関して，適切なデフォルト値が設定されているか確認します．
 	# config-gfsd -t /var/spool/gfarm
 
   もしデフォルト値が適切でない場合には，表示されるオプションを指定して
   設定を変更できます．
 
-9. 適切な設定になったら，config-gfsd コマンドのオプションから -t を
+10. 適切な設定になったら，config-gfsd コマンドのオプションから -t を
   取り除いて実行します．
   特にオプションを指定する必要がなかったのであれば，以下を実行すること
   になります．
 	# config-gfsd /var/spool/gfarm
 
-10. ファイルシステムノードが複数台存在する場合は，7-9 の手順をその台数
+11. ファイルシステムノードが複数台存在する場合は，8-10 の手順をその台数
   分実行します．
 
 以上で設定は完了です．
@@ -580,11 +606,11 @@ o: Example Com
 を実行します．
 
 	# cd /usr/local/openldap/libexec/
-	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:389/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:10602/
 
-このオプション -h で指定した 389 が，LDAP サーバーのポート番号です．ポー
-ト番号として，この例のように1024番未満を利用する場合，slapd の起動を 
-root 権限で行なう必要があります．
+このオプション -h で指定した 10602 が，LDAP サーバーのポート番号です．
+ポート番号として，もし1024番未満を利用する場合，slapd の起動を root 権限で
+行なう必要があります．
 
 ▽ LDAP サーバーの動作試験
 
@@ -593,14 +619,14 @@ root 権限で行なう必要があります．
 
 Bourne Shell の場合:
 	% host=metadb.example.com
-	% port=389
+	% port=10602
 	% basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
 
 csh の場合:
 	% set host=metadb.example.com
-	% set port=389
+	% set port=10602
 	% set basedn='dc=example, dc=com'
 	% cd /usr/local/openldap/bin
 	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
@@ -717,7 +743,7 @@ LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
-ldap_serverport 389
+ldap_serverport 10602
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
@@ -726,7 +752,7 @@ PostgreSQL を使用する場合:
 ------------------------------ ここから ------------------------------
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
-postgresql_serverport 5432
+postgresql_serverport 10602
 postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password secret-postgresql-password
@@ -829,7 +855,7 @@ LDAP を使用する場合:
 spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
-ldap_serverport 389
+ldap_serverport 10602
 ldap_base_dn "dc=example, dc=com"
 auth enable sharedsecret *
 ------------------------------ ここまで ------------------------------
@@ -839,7 +865,7 @@ PostgreSQL を使用する場合:
 spool /var/spool/gfarm
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
-postgresql_serverport 5432
+postgresql_serverport 10602
 postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password secret-postgresql-password
