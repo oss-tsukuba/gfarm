@@ -262,8 +262,8 @@ gfarm_host_get_self_architecture(char **architecture)
 			/* client case */
 			/* do nothing */
 		} else {
-			error_save = e;
-			return (e);
+			/* unknown architecture.  use "noarch". */
+			self_architecture = "noarch";
 		}
 	}
 	*architecture = self_architecture;
