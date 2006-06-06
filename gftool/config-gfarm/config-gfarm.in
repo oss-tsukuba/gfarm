@@ -432,7 +432,7 @@ postgresql)
 	: ${BACKEND_ADMIN_USER:=${BACKEND_PRIVILEGE:-"`whoami`"}}
 	: ${BACKEND_USER:="gfarm"}
 	# default PostgreSQL port number is 5432
-	: ${BACKEND_PORT:="602"}
+	: ${BACKEND_PORT:="10602"}
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
@@ -463,7 +463,7 @@ ldap)
 	[ X"$DOMAIN_NAME" = X ] && ABORT 'cannot determine DNS domain name'
 
 	# official LDAP port number is 389
-	: ${BACKEND_PORT:="602"}
+	: ${BACKEND_PORT:="10602"}
 
 	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -e 's/\./,dc=/g'`"}
 	: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
