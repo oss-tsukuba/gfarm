@@ -14,6 +14,7 @@ killed=0
 pass=0
 fail=0
 skip=0
+fmt="%-50.50s ... %s\n"
 
 while read line; do
 	set x $line
@@ -22,36 +23,37 @@ while read line; do
 	case $1 in '#'*) continue;; esac
 
 	tst=$1
-	msg="`echo $tst | awk '{printf "%-50.50s ... ", $1}'`"
 	fin="-------------------------------------------------- --- ----"
 	if [ -f $tst ]; then
-		echo "$msg BEGIN" >>$log
+		printf "$fmt" "$tst" "BEGIN" >>$log
 
 		sh $tst </dev/null >>$log 2>&1
 		exit_code=$?
 
 		case $exit_code in
 		$exit_pass)
-			echo "$msg PASS"
-			echo "$msg PASS" >>$log
+			printf "$fmt" "$tst" "PASS"
+			printf "$fmt" "$tst" "PASS" >>$log
 			pass=`expr $pass + 1`;;
 		$exit_fail)
-			echo "$msg FAIL"
-			echo "$msg FAIL" >>$log
+			printf "$fmt" "$tst" "FAIL"
+			printf "$fmt" "$tst" "FAIL" >>$log
 			fail=`expr $fail + 1`;;
 		*)	case $exit_code in
 			$exit_trap)
-				echo "$msg KILLED"
-				echo "$msg KILLED" >>$log;;
-			*)	echo "$msg exit code = $exit_code"
-				echo "$msg exit code = $exit_code" >>$log;;
+				printf "$fmt" "$tst" "KILLED"
+				printf "$fmt" "$tst" "KILLED" >>$log;;
+			*)	printf "$fmt" "$tst" "exit code = $exit_code"
+				printf "$fmt" "$tst" "exit code = $exit_code" \
+					>>$log;;
 			esac
 			killed=1
 			break;;
 		esac
 		echo "$fin" >>$log
 	else
-		echo "$msg SKIPPED" >>$log
+		printf "$fmt" "$tst" "SKIPPED"
+		printf "$fmt" "$tst" "SKIPPED" >>$log
 		skip=`expr $skip + 1`
 	fi
 	

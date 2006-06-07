@@ -1,15 +1,15 @@
 #!/bin/sh
 
 log=log
+fmt="%-50.50s ... %s\n"
 
 for tst
 do
-	msg="`echo $tst | awk '{printf "%-50.50s ... ", $1}'`"
 	sh $tst >>$log 2>&1
 	exit_code=$?
 	case $exit_code in
-	0)	echo "$msg PASS";;
-	1)	echo "$msg FAIL";;
-	*)	echo "$msg exit code = $exit_code";;
+	0)	printf "$fmt" "$tst" "PASS";;
+	1)	printf "$fmt" "$tst" "FAIL";;
+	*)	printf "$fmt" "$tst" "exit code = $exit_code";;
 	esac
 done
