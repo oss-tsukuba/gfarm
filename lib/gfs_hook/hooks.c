@@ -2083,8 +2083,7 @@ gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 		return ((int)((uint64_t)q >> 32));
 #  endif
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-	return ((ssize_t)syscall((int64_t)SYS_pread,
-	    filedes, buf, nbyte, 0, offset));
+	return (syscall((int64_t)SYS_pread, filedes, buf, nbyte, 0, offset));
 #else
 	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
 #endif
@@ -2114,8 +2113,7 @@ gfs_hook_syscall_pwrite(int filedes, const void *buf, size_t nbyte, off_t offset
 		return ((int)((uint64_t)q >> 32));
 #  endif
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-	return ((ssize_t)syscall((int64_t)SYS_pwrite,
-	    filedes, buf, nbyte, 0, offset));
+	return (syscall((int64_t)SYS_pwrite, filedes, buf, nbyte, 0, offset));
 #else
 	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
 #endif
@@ -2146,7 +2144,23 @@ gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
 int
 gfs_hook_syscall_truncate(const char *path, off_t length)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_truncate, path, 0, length);
+#  ifndef WORDS_BIGENDIAN
+	return (q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return (q);
+	else
+		return (((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_truncate, path, 0, length));
+#else
 	return (syscall(SYS_truncate, path, length));
+#endif
 }
 
 #define SYSCALL_TRUNCATE(path, length) \
@@ -2160,7 +2174,23 @@ gfs_hook_syscall_truncate(const char *path, off_t length)
 int
 gfs_hook_syscall_ftruncate(int filedes, off_t length)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_ftruncate, filedes, 0, length);
+#  ifndef WORDS_BIGENDIAN
+	return (q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return (q);
+	else
+		return (((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_ftruncate, filedes, 0, length));
+#else
 	return (syscall(SYS_ftruncate, filedes, length));
+#endif
 }
 
 #define SYSCALL_FTRUNCATE(filedes, length) \
