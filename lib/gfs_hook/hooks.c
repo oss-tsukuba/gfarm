@@ -2067,10 +2067,27 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 }
 
 #ifdef SYS_pread
-int
+ssize_t
 gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_pread, filedes, buf, nbyte, 0, offset);
+#  ifndef WORDS_BIGENDIAN
+	return ((int)q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return ((int)q);
+	else
+		return ((int)((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return ((ssize_t)syscall((int64_t)SYS_pread,
+	    filedes, buf, nbyte, 0, offset));
+#else
 	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
+#endif
 }
 
 #define SYSCALL_PREAD(filedes, buf, nbyte, offset)	\
@@ -2084,7 +2101,24 @@ gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 int
 gfs_hook_syscall_pwrite(int filedes, const void *buf, size_t nbyte, off_t offset)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_pwrite, filedes, buf, nbyte, 0, offset);
+#  ifndef WORDS_BIGENDIAN
+	return ((int)q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return ((int)q);
+	else
+		return ((int)((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return ((ssize_t)syscall((int64_t)SYS_pwrite,
+	    filedes, buf, nbyte, 0, offset));
+#else
 	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
+#endif
 }
 
 #define SYSCALL_PWRITE(filedes, buf, nbyte, offset)	\
