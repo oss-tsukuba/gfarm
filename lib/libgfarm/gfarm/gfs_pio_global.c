@@ -326,7 +326,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		e = gfs_pio_set_view_section(gf, arch, NULL, flags);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = gfs_pio_set_view_section(
-				gf, "noarch", NULL, flags));
+				gf, "noarch", NULL, flags);
 		return (e);
 	}
 
