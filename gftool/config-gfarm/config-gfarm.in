@@ -701,7 +701,16 @@ init_replace
 if [ -n "$BACKEND_PRIVILEGE" ]; then
 	chown "$BACKEND_PRIVILEGE" "$BACKEND_DATA_DIR" \
 		$admin_password $password
-	run_with_backend_privilege="su - $BACKEND_PRIVILEGE -c /bin/sh"
+	case `uname` in
+	SunOS|HP-UX|NetBSD|DragonFly)
+		# "-" option makes Solaris and HP-UX display /etc/motd,
+		# and it makes pkgsrc platforms (NetBSD/DragonFly) fail
+		# because pkgsrc doesn't create the home directory by default.
+		run_with_backend_privilege="su $BACKEND_PRIVILEGE -c /bin/sh";;
+	*)
+		run_with_backend_privilege="su - $BACKEND_PRIVILEGE -c /bin/sh"
+		;;
+	esac
 else
 	run_with_backend_privilege="/bin/sh"
 fi
