@@ -122,6 +122,7 @@ usage()
 {
 	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f] [-W] [-w]"
 	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
+	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-d domain_name] [-h hostname]"
 	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
 	echo >&2 "	[-s gfsd_port] [-m gfmd_port]"
@@ -250,6 +251,12 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -d) shift; [ $# -ge 1 ] || usage
 		DOMAIN_NAME=$1
+		;;
+	  -U) shift; [ $# -ge 1 ] || usage
+		BACKEND_ADMIN_USER=$1
+		;;
+	  -u) shift; [ $# -ge 1 ] || usage
+		BACKEND_USER=$1
 		;;
 	  -P) shift; [ $# -ge 1 ] || usage
 		BACKEND_PREFIX=$1
