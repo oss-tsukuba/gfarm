@@ -430,13 +430,27 @@ fi
 
 case $BACKEND_TYPE in
 postgresql)
+	: ${DB_NAME:="gfarm"}
+
 	if [ -w / ]; then # is root?
-		: ${BACKEND_PRIVILEGE:="postgres"}
+		case `uname` in
+		*BSD|DragonFly)
+			: ${BACKEND_ADMIN_USER:="pgsql"};;
+		*)	: ${BACKEND_ADMIN_USER:="postgres"};;
+		esac
+		: ${BACKEND_PRIVILEGE:="$BACKEND_ADMIN_USER"}
 	else
+		: ${BACKEND_ADMIN_USER:="`whoami`"}
 		: ${BACKEND_PRIVILEGE:=""}
 	fi
-	: ${DB_NAME:="gfarm"}
-	: ${BACKEND_ADMIN_USER:=${BACKEND_PRIVILEGE:-"`whoami`"}}
+	if [ -f /usr/bin/getent ]; then
+		if getent passwd "$BACKEND_ADMIN_USER" >/dev/null; then
+			:
+		else
+			ABORT "postgresql admin user '$$BACKEND_ADMIN_USER' doesn't exist"
+		fi
+	fi
+
 	: ${BACKEND_USER:="gfarm"}
 	# default PostgreSQL port number is 5432
 	: ${BACKEND_PORT:="10602"}
