@@ -18,9 +18,11 @@ LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 LOGFILE="$PGDATA/logfile"
 OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
+# For SELinux we need to use 'runuser' not 'su'
+[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su - $PRIVILEGE";;
+*)	RUN="$SU - $PRIVILEGE";;
 esac
 
 # Get config.

@@ -27,9 +27,11 @@ LOGFILE="$PGDATA/logfile"
 PIDFILE="$PGDATA/portmaster.pid"
 OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
 PRIVILEGE="@config_gfarm_backend_privilege@"
+# For SELinux we need to use 'runuser' not 'su'
+[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su - $PRIVILEGE";;
+*)	RUN="$SU - $PRIVILEGE";;
 esac
 
 # pull in sysconfig settings

@@ -708,7 +708,9 @@ if [ -n "$BACKEND_PRIVILEGE" ]; then
 		# because pkgsrc doesn't create the home directory by default.
 		run_with_backend_privilege="su $BACKEND_PRIVILEGE -c /bin/sh";;
 	*)
-		run_with_backend_privilege="su - $BACKEND_PRIVILEGE -c /bin/sh"
+		# For SELinux we need to use 'runuser' not 'su'
+		[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
+		run_with_backend_privilege="$SU - $BACKEND_PRIVILEGE -c /bin/sh"
 		;;
 	esac
 else
