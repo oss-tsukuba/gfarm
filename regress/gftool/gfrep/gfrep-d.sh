@@ -4,12 +4,14 @@
 
 trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
 
+if [ -f /usr/bin/nawk ]; then awk=nawk; else awk=awk; fi
+
 shost=`gfhost | sed -n '1p'`
 dhost=`gfhost | sed -n '2p'`
 
 if gfreg -h $shost $data/1byte $gftmp &&
    gfrep -d $dhost $gftmp && 
-   gfwhere $gftmp | awk '
+   gfwhere $gftmp | $awk '
       { if ($2 == "'$shost'" && $3 == "'$dhost'"  || 
 	    $2 == "'$dhost'" && $3 == "'$shost'") 
 	   exit 0
