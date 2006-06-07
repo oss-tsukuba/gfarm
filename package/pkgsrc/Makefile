@@ -18,6 +18,8 @@ USE_LIBTOOL=	yes
 GNU_CONFIGURE=	yes
 CONFIGURE_ARGS+=--sysconfdir=${PKG_SYSCONFDIR}
 
+PGSQL_VERSIONS_ACCEPTED?=	81 80 # 74 # 7.4 has some minor problems
+
 default_htmldir=${PREFIX}/share/doc/html/gfarm
 ja_mandir=	${PREFIX}/man/ja_JP.eucJP
 MAKEFLAGS+=	default_htmldir=${default_htmldir} ja_mandir=${ja_mandir}
@@ -28,6 +30,7 @@ FILES_SUBST+=	GFARM_PID_DIR=${GFARM_PID_DIR}
 
 .include "../../security/openssl/buildlink3.mk"
 .include "../../databases/openldap/buildlink3.mk"
+.include "../../mk/pgsql.buildlink3.mk"
 .include "../../mk/pthread.buildlink3.mk"
 .include "../../mk/bsd.pkg.mk"
 
