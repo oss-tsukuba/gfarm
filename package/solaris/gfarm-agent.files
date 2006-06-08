@@ -1,3 +1,0 @@
-@PREFIX@/bin/config-agent
-@PREFIX@/bin/gfarm_agent
-@PREFIX@/share/gfarm/config/gfarm_agent.in
