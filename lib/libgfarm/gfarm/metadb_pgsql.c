@@ -1054,17 +1054,15 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 static char *
 get_value_from_varchar_copy_binary(char **bufp)
 {
-	size_t len;
+	int32_t len;
 	char *p;
 
-	if (*(int32_t *)*bufp == -1) { /* NULL */
-		*bufp += sizeof(uint32_t);
-		/* XXX - stopgap for NULL value */
-		return (NULL);
-	}
+	memcpy(&len, *bufp, sizeof(len));
+	*bufp += sizeof(len);
+	len = ntohl(len);
+	if (len == -1) /* NULL */
+		return (NULL); /* XXX - stopgap for NULL value */
 
-	len = ntohl(*(uint32_t *)*bufp);
-	*bufp += sizeof(uint32_t);
 	p = malloc(len + 1);
 	memcpy(p, *bufp, len);
 	p[len] = '\0';
@@ -1075,34 +1073,36 @@ get_value_from_varchar_copy_binary(char **bufp)
 static uint32_t
 get_value_from_integer_copy_binary(char **bufp)
 {
+	int32_t len;
 	uint32_t val;
 
-	if (*(int32_t *)*bufp == -1) { /* NULL */
-		*bufp += sizeof(uint32_t);
-		/* XXX - stopgap for NULL value */
-		return (0);
-	}
+	memcpy(&len, *bufp, sizeof(len));
+	*bufp += sizeof(len);
+	len = ntohl(len);
+	if (len == -1) /* NULL */
+		return (0); /* XXX - stopgap for NULL value */
 
-	*bufp += sizeof(uint32_t);
-	val = ntohl(*(uint32_t *)*bufp);
-	*bufp += sizeof(uint32_t);
+	memcpy(&val, *bufp, sizeof(val));
+	*bufp += sizeof(val);
+	val = ntohl(val);
 	return (val);
 }
 
 static uint64_t
 get_value_from_int8_copy_binary(char **bufp)
 {
+	int32_t len;
 	uint64_t val;
 
-	if (*(int32_t *)*bufp == -1) { /* NULL */
-		*bufp += sizeof(uint32_t);
-		/* XXX - stopgap for NULL value */
-		return (0);
-	}
+	memcpy(&len, *bufp, sizeof(len));
+	*bufp += sizeof(len);
+	len = ntohl(len);
+	if (len == -1) /* NULL */
+		return (0); /* XXX - stopgap for NULL value */
 
-	*bufp += sizeof(uint32_t);
-	val = gfarm_ntoh64(*(uint64_t *)*bufp);
-	*bufp += sizeof(uint64_t);
+	memcpy(&val, *bufp, sizeof(val));
+	*bufp += sizeof(val);
+	val = gfarm_ntoh64(val);
 	return (val);
 }
 
