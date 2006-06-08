@@ -8,7 +8,7 @@ trap 'rm -f $ls_err; exit $exit_trap' $trap_sigs
 
 LANG=C ls $hooktop/notexist 2>$ls_err
 
-if [ $? = 1 ] &&
+if [ $? -ne 0 ] &&
     awk '{
 	if ($0 ~ /(: No such file or directory| not found)$/)
 	    exit 0
