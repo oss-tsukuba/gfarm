@@ -4,7 +4,7 @@
 
 trap 'exit $exit_trap' $trap_sigs
 
-if cd $hooktop; then
+if $shell -c "cd $hooktop"; then
 	exit_code=$exit_pass
 fi
 
