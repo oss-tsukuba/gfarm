@@ -1051,17 +1051,25 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 	return (e);
 }
 
+#define COPY_BINARY(data, buf) { \
+	memcpy(&(data), buf, sizeof(data)); \
+	buf += sizeof(data); \
+}
+
+#define COPY_INT32(int32, buf) { \
+	COPY_BINARY(int32, buf); \
+	int32 = ntohl(int32); \
+}
+
 static char *
 get_value_from_varchar_copy_binary(char **bufp)
 {
 	int32_t len;
 	char *p;
 
-	memcpy(&len, *bufp, sizeof(len));
-	*bufp += sizeof(len);
-	len = ntohl(len);
-	if (len == -1) /* NULL */
-		return (NULL); /* XXX - stopgap for NULL value */
+	COPY_INT32(len, *bufp);
+	if (len < 0)
+		gflog_fatal("metadb_pgsql: copy varchar length=%d", len);
 
 	p = malloc(len + 1);
 	memcpy(p, *bufp, len);
@@ -1076,15 +1084,11 @@ get_value_from_integer_copy_binary(char **bufp)
 	int32_t len;
 	uint32_t val;
 
-	memcpy(&len, *bufp, sizeof(len));
-	*bufp += sizeof(len);
-	len = ntohl(len);
-	if (len == -1) /* NULL */
-		return (0); /* XXX - stopgap for NULL value */
+	COPY_INT32(len, *bufp);
+	if (len != sizeof(val))
+		gflog_fatal("metadb_pgsql: copy int32 length=%d", len);
 
-	memcpy(&val, *bufp, sizeof(val));
-	*bufp += sizeof(val);
-	val = ntohl(val);
+	COPY_INT32(val, *bufp);
 	return (val);
 }
 
@@ -1094,14 +1098,11 @@ get_value_from_int8_copy_binary(char **bufp)
 	int32_t len;
 	uint64_t val;
 
-	memcpy(&len, *bufp, sizeof(len));
-	*bufp += sizeof(len);
-	len = ntohl(len);
-	if (len == -1) /* NULL */
-		return (0); /* XXX - stopgap for NULL value */
+	COPY_INT32(len, *bufp);
+	if (len != sizeof(val))
+		gflog_fatal("metadb_pgsql: copy int64 length=%d", len);
 
-	memcpy(&val, *bufp, sizeof(val));
-	*bufp += sizeof(val);
+	COPY_BINARY(val, *bufp);
 	val = gfarm_ntoh64(val);
 	return (val);
 }
@@ -1111,9 +1112,15 @@ path_info_set_field_from_copy_binary(
 	char *buf,
 	struct gfarm_path_info *info)
 {
+	uint16_t num_fields;
+
 	/* XXX - info->status.st_ino is set not here but at upper level */
 
-	buf += 2; /* skip the number of fields */
+	memcpy(&num_fields, buf, sizeof(num_fields));
+	buf += sizeof(num_fields);
+	num_fields = ntohs(num_fields);
+	if (num_fields != 11)
+		gflog_fatal("metadb_pgsql: path_info fields = %d", num_fields);
 
 	info->pathname = get_value_from_varchar_copy_binary(&buf);
 	info->status.st_mode = get_value_from_integer_copy_binary(&buf);
