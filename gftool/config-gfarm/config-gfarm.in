@@ -941,13 +941,21 @@ _EOF_
 	# wait until portmaster actually starts. XXX are 3 seconds enough?
 	sleep 3
 
+	case "$BACKEND_VERSION" in
+	[1-7].*|8.0)
+		createuser_option=;;
+	*)  # Don't ask the following question on PostgreSQL 8.1 or later:
+	    #    Shall the new role be allowed to create more new roles? (y/n) 
+		createuser_option=--no-createrole;;
+	esac
+
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "createdb failed"
 	PGHOST="$BACKEND_DATA_DIR"; export PGHOST
 	PGPORT="$BACKEND_PORT"; export PGPORT
 	unset PGDATABASE PGUSER PGPASSWORD PGSERVICE
 	unset PGREALM PGOPTIONS PGSSLMODE PGREQUIRESSL PGCONNECT_TIMEOUT
 
-	$PGSQL_BINDIR/createuser -A -D $BACKEND_USER
+	$PGSQL_BINDIR/createuser -A -D $BACKEND_USER $createuser_option
 	$PGSQL_BINDIR/createdb $DB_NAME
 	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
 	$awk 'BEGIN {
