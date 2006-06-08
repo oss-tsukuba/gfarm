@@ -1395,6 +1395,89 @@ fchown(int fd, uid_t owner, gid_t group)
 }
 
 /*
+ * acl
+ */
+#ifdef SYS_acl
+#ifdef OS_SOLARIS /* make `mv' command work with gfs_hook on Solaris */
+#include <sys/acl.h>
+
+int
+__acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	const char *e;
+	char *url;
+	struct gfs_stat s;
+	gfarm_mode_t mode;
+	int n;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __acl(%s, 0x%x)", path, cmd));
+
+	if (!gfs_hook_is_url(path, &url))
+		return (syscall(SYS_acl, path, cmd, nentries, aclbuf));
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __acl(%s, 0x%x)", path, cmd));
+
+	e = gfs_stat(url, &s);
+	free(url);
+	if (e != NULL) {
+		_gfs_hook_debug(gflog_info("GFS: __acl: %s", e));
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+	mode = s.st_mode;
+	gfs_stat_free(&s);
+
+	switch (cmd) {
+	case SETACL:
+		errno = ENOSYS;
+		return (-1);
+	case GETACL:
+		if (nentries < 4) {
+			errno = nentries < 3 ? EINVAL : ENOSPC;
+			return (-1);
+		}
+		aclbuf[0].a_type = USER_OBJ;
+		aclbuf[0].a_id = getuid(); /* XXX */
+		aclbuf[0].a_perm = (mode >> 6) & 07;
+
+		aclbuf[1].a_type = GROUP_OBJ;
+		aclbuf[1].a_id = getgid(); /* XXX */
+		aclbuf[1].a_perm = (mode >> 3) & 07;
+
+		aclbuf[2].a_type = CLASS_OBJ;
+		aclbuf[2].a_id = 0; /* ??? */
+		aclbuf[2].a_perm = (mode >> 3) & 07; /* ??? */
+
+		aclbuf[3].a_type = OTHER_OBJ;
+		aclbuf[3].a_id = 0;
+		aclbuf[3].a_perm = mode & 07;
+		return (4);
+	case GETACLCNT:
+		return (4); /* USER_OBJ, GROUP_OBJ, CLASS_OBJ, OTHER_OBJ */
+	default:
+		errno = EINVAL;
+		return (-1);
+	}
+}
+
+int
+_acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _acl"));
+	return (__acl(path, cmd, nentries, aclbuf));
+}
+
+int
+acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking acl"));
+	return (__acl(path, cmd, nentries, aclbuf));
+}
+
+#endif /* OS_SOLARIS */
+#endif /* acl */
+
+/*
  * rename
  */
 
