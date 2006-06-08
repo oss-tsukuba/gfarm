@@ -29,6 +29,8 @@ gftool/gfrun/gfrun-u.sh
 # gftool/gfuser
 # gftool/gfkey
 
+gfs_hook/tool/cd/cd.sh
+gfs_hook/tool/pwd/pwd.sh
 gfs_hook/tool/ls/root-gfarm.sh
 gfs_hook/tool/ls/notexist.sh
 gfs_hook/tool/cp/0byte.sh
@@ -37,3 +39,6 @@ gfs_hook/tool/cp/1byte.sh
 gfs_hook/tool/rm/1byte.sh
 gfs_hook/tool/mv/0byte.sh
 gfs_hook/tool/mv/1byte.sh
+gfs_hook/tool/gzip/gzip-d.sh
+gfs_hook/tool/chmod/chmod_644_file.sh
+gfs_hook/tool/chmod/chmod_755_file.sh
