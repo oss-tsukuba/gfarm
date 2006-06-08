@@ -456,6 +456,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	struct gfs_file_section_context *vc;
 	char *e;
 	int is_local_host;
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	unsigned int md_len;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -583,28 +585,31 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	       || gf_on_demand_replication ) &&
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
+		char *canonical_self_name;
+
 		e = replicate_section_to_local(gf, vc->section,
 		    vc->canonical_hostname, if_hostname);
 		/* FT - inconsistent metadata has been fixed.  try again. */
 		if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
 		    && (flags & GFARM_FILE_NOT_RETRY) == 0
 		    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
+			EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
 			if_hostname = NULL;
 			free(vc->canonical_hostname);
 			goto retry;
 		}
 		if (e != NULL)
-			goto free_host;
-		free(vc->canonical_hostname);
-		e = gfarm_host_get_canonical_self_name(
-		    &vc->canonical_hostname);
+			goto free_digest;
+		e = gfarm_host_get_canonical_self_name(&canonical_self_name);
 		if (e != NULL)
-			goto finish;
-		vc->canonical_hostname = strdup(vc->canonical_hostname);
-		if (vc->canonical_hostname == NULL) {
+			goto free_digest;
+		canonical_self_name = strdup(canonical_self_name);
+		if (canonical_self_name == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			goto finish;
+			goto free_digest;
 		}
+		free(vc->canonical_hostname);
+		vc->canonical_hostname = canonical_self_name;
 		is_local_host = 1;
 	}
 
@@ -617,12 +622,13 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE
 	    && (flags & GFARM_FILE_NOT_RETRY) == 0
 	    && (gf->open_flags & GFARM_FILE_NOT_RETRY) == 0) {
+		EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
 		if_hostname = NULL;
 		free(vc->canonical_hostname);
 		goto retry;
 	}
 	if (e != NULL)
-		goto free_host;
+		goto free_digest;
 
 	/* update metadata */
 	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
@@ -658,6 +664,9 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 storage_close:
 	if (e != NULL)
 		(void)(*vc->ops->storage_close)(gf);
+free_digest:
+	if (e != NULL)
+		EVP_DigestFinal(&vc->md_ctx, md_value, &md_len);
 free_host:
 	if (e != NULL)
 		free(vc->canonical_hostname);
