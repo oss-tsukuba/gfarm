@@ -22,8 +22,12 @@ DOCUMENTATION, OR ANY DERIVATIVES THEREOF, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 
-There is the following exception about the terms of the license:
+There is the following exceptions about the terms of the license:
 
 All files under the lib/gfs_hook/sysdep/linux/ directory can be
 redistributed and/or modified under the terms of the GNU Lesser
 General Public License as published by the Free Software Foundation.
+
+All files under the lib/gfs_hook/sysdep/solaris/ directory can be
+redistributed and/or modified under the terms of the Common Development
+and Distribution License (CDDL), Version 1.0 by Sun Microsystems, Inc.
