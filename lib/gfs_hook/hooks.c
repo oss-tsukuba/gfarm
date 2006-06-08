@@ -662,7 +662,7 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
- * utimes & utime
+ * utimes
  */
 
 int
@@ -723,6 +723,63 @@ utimes(const char *path, const struct timeval *tvp)
 	_gfs_hook_debug_v(gflog_info("Hooking utimes"));
 	return (__utimes(path, tvp));
 }
+
+/*
+ * lutimes
+ */
+
+#ifdef SYS_lutimes
+int
+__lutimes(const char *path, const struct timeval *tvp)
+{
+	char *e, *url;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __lutimes(%s, %p)",
+	    path, tvp));
+
+	if (!gfs_hook_is_url(path, &url)) {
+		return syscall(SYS_utimes, path, tvp);
+	}
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __lutimes(%s)", url));
+	if (tvp == NULL)
+		e = gfs_utimes(url, NULL);
+	else {
+		struct gfarm_timespec gt[2];
+
+		gt[0].tv_sec = tvp[0].tv_sec;
+		gt[0].tv_nsec= tvp[0].tv_usec * 1000;
+		gt[1].tv_sec = tvp[1].tv_sec;
+		gt[1].tv_nsec= tvp[1].tv_usec * 1000;
+		e = gfs_utimes(url, gt);
+	}
+	free(url);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(gflog_info("GFS: __lutimes: %s", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_lutimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _lutimes"));
+	return (__lutimes(path, tvp));
+}
+
+int
+lutimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking lutimes"));
+	return (__lutimes(path, tvp));
+}
+#endif /* SYS_lutimes */
+
+/*
+ * utime
+ */
 
 #ifdef SYS_utime
 int
@@ -1062,6 +1119,51 @@ chmod(const char *path, mode_t mode)
 	_gfs_hook_debug_v(gflog_info("Hooking chmod"));
 	return (__chmod(path, mode));
 }
+
+/*
+ * lchmod
+ */
+
+#ifdef SYS_lchmod
+int
+__lchmod(const char *path, mode_t mode)
+{
+	const char *e;
+	char *url;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __lchmod(%s, 0%o)",
+				path, mode));
+
+	if (!gfs_hook_is_url(path, &url))
+		return syscall(SYS_lchmod, path, mode);
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __lchmod(%s, 0%o)",
+				path, mode));
+	e = gfs_chmod(url, mode);
+	free(url);
+	if (e == NULL)
+		return (0);
+
+	_gfs_hook_debug(gflog_info("GFS: __lchmod: %s", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_lchmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _lchmod"));
+	return (__lchmod(path, mode));
+}
+
+int
+lchmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking lchmod"));
+	return (__lchmod(path, mode));
+}
+
+#endif /* SYS_lchmod */
 
 /*
  * fchmod
