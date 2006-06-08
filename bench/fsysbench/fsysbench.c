@@ -403,65 +403,95 @@ timer_func_set(int timer_func_type)
 /**********************************************************************/
 
 static int
+check_mode(char *name, int mode)
+{
+	struct stat st;
+
+	if (lstat(name, &st) != 0)
+		return (-1);
+
+	if ((st.st_mode & mode) == mode)
+		return (0);
+	else {
+		errno = EACCES;
+		return (-1);
+	}
+}
+
+/**********************************************************************/
+
+static int
 test_creat(char *name, void *time)
 {
 	void *timer;
-	int fd, save_errno;
+	int e, fd, save_errno;
 	struct stat buf;
 
 	timer = timer_start();
 	fd = creat(name, 0400);
-	if (fd >= 0)
-		close(fd);
-	if (conf.fuse_mode)  /* force RELEASE */
-		lstat(".", &buf);
+	if (fd < 0) goto error;
+	e = close(fd);
+	if (e != 0) goto error;
+	if (conf.fuse_mode) { /* force RELEASE */
+		e = lstat(".", &buf);
+		if (e != 0) goto error;
+	}
+	timer_stop(timer, time);
+	return (0);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	errno = save_errno;
+	return (-1);
 }
 
 static int
 test_open(char *name, void *time)
 {
 	void *timer;
-	int fd, save_errno;
+	int e, fd, save_errno;
 
 	timer = timer_start();
 	fd = open(name, O_RDONLY);
-	if (fd >= 0)
-		close(fd);
-	if (conf.fuse_mode)  /* force RELEASE */
-		utime(".", NULL);
+	if (fd < 0) goto error;
+	e = close(fd);
+	if (e != 0) goto error;
+	if (conf.fuse_mode) { /* force RELEASE */
+		e = utime(".", NULL);
+		if (e != 0) goto error;
+	}
+	timer_stop(timer, time);
+	return (0);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	errno = save_errno;
+	return (-1);
 }
 
 static int
 test_read_common(char *name, int len, void *time)
 {
 	void *timer;
-	int fd;
-	char c[8];
+	int e, fd, save_errno;
+	ssize_t l;
+	unsigned char c[8];
+
+	if (check_mode(name, 0400) != 0)
+		if (chmod(name, 0400) != 0)
+			return (1);
 
 	fd = open(name, O_RDONLY);
-	if (fd >= 0) {
-		timer = timer_start();
-		read(fd, c, len);
-		timer_stop(timer, time);
-		close(fd);
-	}
-	if (errno != 0)
-		return (1);
-	else
+	if (fd < 0) return (1);
+	timer = timer_start();
+	l = read(fd, c, len);
+	save_errno = errno;
+	timer_stop(timer, time);
+	e = close(fd);
+	if (l != len || e != 0) {
+		errno = save_errno;
+		return (-1);
+	} else
 		return (0);
 }
 
@@ -481,19 +511,26 @@ static int
 test_write_common(char *name, int len, void *time)
 {
 	void *timer;
-	int fd;
-	char c[8];
+	int e, fd, save_errno;
+	ssize_t l;
+	unsigned char c[8];
 
+	if (check_mode(name, 0200) != 0)
+		if (chmod(name, 0600) != 0)
+			return (1);
+
+	memset(c, 255, 8);
 	fd = open(name, O_WRONLY);
-	if (fd >= 0) {
-		timer = timer_start();
-		write(fd, c, len);
-		timer_stop(timer, time);
-		close(fd);
-	}
-	if (errno != 0)
-		return (1);
-	else
+	if (fd < 0) return (1);
+	timer = timer_start();
+	l = write(fd, c, len);
+	save_errno = errno;
+	timer_stop(timer, time);
+	e = close(fd);
+	if (l != len || e != 0) {
+		errno = save_errno;
+		return (-1);
+	} else
 		return (0);
 }
 
@@ -514,21 +551,23 @@ test_stat_noent(char *name, void *time)
 {
 	void *timer;
 	struct stat buf;
-	int save_errno;
+	int e, save_errno;
 
 	timer = timer_start();
-	lstat(name, &buf);
+	e = lstat(name, &buf);
+	if (e != 0) goto error;
+	timer_stop(timer, time);
+	errno = EEXIST;
+	return (-1);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
-	if (save_errno == 0) {
-		errno = EEXIST;
-		return (1);
-	} else if (save_errno == ENOENT) {
+	if (save_errno == ENOENT) {
 		errno = 0;
 		return (0);
 	} else {
 		errno = save_errno;
-		return (1);
+		return (-1);
 	}
 }
 
@@ -537,91 +576,93 @@ test_stat(char *name, void *time)
 {
 	void *timer;
 	struct stat buf;
-	int save_errno;
+	int e, save_errno;
 
 	timer = timer_start();
-	lstat(name, &buf);
+	e = lstat(name, &buf);
+	if (e != 0) goto error;
+	timer_stop(timer, time);
+	return (0);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	errno = save_errno;
+	return (-1);
 }
 
 static int
 test_utime(char *name, void *time)
 {
 	void *timer;
-	int save_errno;
+	int e, save_errno;
 
 	timer = timer_start();
-	utime(name, NULL);
+	e = utime(name, NULL);
+	if (e != 0) goto error;
+	timer_stop(timer, time);
+	return (0);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
+	errno = save_errno;
+	return (-1);
+}
 
-	if (save_errno != 0)
-		return (1);
-	else
-		return (0);
+static int
+test_chmod_common(char *name, mode_t mode, void *time)
+{
+	void *timer;
+	int e, save_errno;
+
+	timer = timer_start();
+	e = chmod(name, mode);
+	if (e != 0) goto error;
+	timer_stop(timer, time);
+	return (0);
+error:
+	save_errno = errno;
+	timer_stop(timer, time);
+	errno = save_errno;
+	return (-1);
 }
 
 static int
 test_chmod_w(char *name, void *time)
 {
-	void *timer;
-	int save_errno;
-
-	timer = timer_start();
-	chmod(name, 0600);
-	save_errno = errno;
-	timer_stop(timer, time);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	if (chmod(name, 0400) != 0) return (-1);
+	return test_chmod_common(name, 0600, time);
 }
 
 static int
 test_chmod_x(char *name, void *time)
 {
-	void *timer;
-	int save_errno;
-
-	timer = timer_start();
-	chmod(name, 0700);
-	save_errno = errno;
-	timer_stop(timer, time);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	if (chmod(name, 0400) != 0) return (-1);
+	return test_chmod_common(name, 0500, time);
 }
 
 static int
 test_rename_common(char *name, int overwrite, void *time)
 {
 	void *timer;
-	int save_errno;
+	int e, save_errno;
 	char newname[16];
 
 	sprintf(newname, "%s_rename", name);
-	if (overwrite)
-		mknod(newname, 0600, S_IFREG);
-
+	if (overwrite && check_mode(newname, 0000) != 0) {
+		e = mknod(newname, 0600|S_IFREG, 0);
+		if (e != 0) return (-1);
+	}
 	timer = timer_start();
-	rename(name, newname);
-	save_errno = errno;
+	e = rename(name, newname);
+	if (e != 0) goto error;
 	timer_stop(timer, time);
 	rename(newname, name);
-	if (save_errno != 0) {
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	return (0);
+error:
+	save_errno = errno;
+	timer_stop(timer, time);
+	errno = save_errno;
+	return (-1);
 }
 
 static int
@@ -640,20 +681,23 @@ static int
 test_unlink(char *name, void *time)
 {
 	void *timer;
-	int save_errno;
+	int e, save_errno;
 	char newname[16];
 
 	timer = timer_start();
-	unlink(name);
+	e = unlink(name);
+	if (e != 0) goto error;
+	timer_stop(timer, time);
+	return (0);
+error:
 	save_errno = errno;
 	timer_stop(timer, time);
 	if (save_errno != 0) {
 		sprintf(newname, "%s_rename", name);
 		unlink(newname);
-		errno = save_errno;
-		return (1);
-	} else
-		return (0);
+	}
+	errno = save_errno;
+	return (-1);
 }
 
 /**********************************************************************/
@@ -666,42 +710,50 @@ fsysbench_loop(struct fsb_op_st ops[], int deletemode)
 	int i, j, n;
 	char dirname[16], filename[16];
 	char cwd[PATH_MAX];
+	int retv, save_errno;
 
 	if (getcwd(cwd, PATH_MAX) == NULL)
 		return (1);
 	errno = 0;
+	retv = 0;
+	save_errno = 0;
 	for (i = 0; i < conf.dirs; i++) {
 		sprintf(dirname, "%d%s", i, DIR_SUFFIX);
 		if (chdir(dirname) != 0)
-			goto end;
+			return (1);
 		for (j = 0; j < conf.files; j++) {
 			sprintf(filename, "%d%s", j, FILE_SUFFIX);
 			if (deletemode == DELETE) {
-				test_unlink(filename, times.t_unlink);
-				/* ignore error */
+				if (test_unlink(filename, times.t_unlink)
+				    != 0) {
+					save_errno = errno;
+					retv = 1;
+				}
 			} else {
 				for (n = 0;
 				     ops[n].testname != NULL &&
 					     timer_interrupt == 0; n++) {
 					errno = 0;
-					if (ops[n].testfunc(filename,
-							    ops[n].time) != 0)
+					if (ops[n].testfunc(
+						    filename,
+						    ops[n].time) != 0) {
+						save_errno = errno;
+						retv = 1;
 						goto end;
+					}
 					ops[n].count++;
 				}
 			}
 		}
 		if (chdir(cwd) != 0)
-			goto end2;
+			return (1);
 	}
 end:
 	if (chdir(cwd) != 0)
 		return (1);
-end2:
-	if (errno != 0)
-		return (1);
-	else
-		return (0);
+
+	errno = save_errno;
+	return (retv);
 }
 
 static int
