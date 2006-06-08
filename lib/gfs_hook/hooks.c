@@ -1714,6 +1714,9 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 	case S_IFSOCK:
 		errno = EPERM;
 		return (-1);
+#if defined(OS_SOLARIS) || defined(__linux__)
+	case 0:
+#endif
 	case S_IFREG:
 		if ((e = gfs_pio_create(url,
 			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
@@ -1810,6 +1813,9 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 	case S_IFSOCK:
 		errno = EPERM;
 		return (-1);
+#if defined(OS_SOLARIS) || defined(__linux__)
+	case 0:
+#endif
 	case S_IFREG:
 		if ((e = gfs_pio_create(url,
 			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
