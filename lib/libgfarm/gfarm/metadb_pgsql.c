@@ -1068,7 +1068,9 @@ get_value_from_varchar_copy_binary(char **bufp)
 	char *p;
 
 	COPY_INT32(len, *bufp);
-	if (len < 0)
+	if (len == -1) /* NULL field */
+		return (NULL);
+	if (len < 0) /* We don't allow that long varchar */
 		gflog_fatal("metadb_pgsql: copy varchar length=%d", len);
 
 	p = malloc(len + 1);
@@ -1085,6 +1087,8 @@ get_value_from_integer_copy_binary(char **bufp)
 	uint32_t val;
 
 	COPY_INT32(len, *bufp);
+	if (len == -1)
+		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
 		gflog_fatal("metadb_pgsql: copy int32 length=%d", len);
 
@@ -1099,6 +1103,8 @@ get_value_from_int8_copy_binary(char **bufp)
 	uint64_t val;
 
 	COPY_INT32(len, *bufp);
+	if (len == -1)
+		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
 		gflog_fatal("metadb_pgsql: copy int64 length=%d", len);
 
@@ -1116,8 +1122,7 @@ path_info_set_field_from_copy_binary(
 
 	/* XXX - info->status.st_ino is set not here but at upper level */
 
-	memcpy(&num_fields, buf, sizeof(num_fields));
-	buf += sizeof(num_fields);
+	COPY_BINARY(num_fields, buf);
 	num_fields = ntohs(num_fields);
 	if (num_fields != 11)
 		gflog_fatal("metadb_pgsql: path_info fields = %d", num_fields);
