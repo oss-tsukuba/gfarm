@@ -211,6 +211,34 @@ gfarm_ntoh64(uint64_t n64)
 	return (gfarm_hton64(n64));
 }
 
+static int64_t
+pgsql_get_int64(PGresult *res, int row, const char *field_name)
+{
+	uint64_t val;
+
+	memcpy(&val, PQgetvalue(res, row, PQfnumber(res, field_name)),
+	    sizeof(val));
+	return (gfarm_ntoh64(val));
+}
+
+static int32_t
+pgsql_get_int32(PGresult *res, int row, const char *field_name)
+{
+	uint32_t val;
+
+	memcpy(&val, PQgetvalue(res, row, PQfnumber(res, field_name)),
+	    sizeof(val));
+	return (ntohl(val));
+}
+
+static char *
+pgsql_get_string(PGresult *res, int row, const char *field_name)
+{
+	uint64_t val;
+
+	return (strdup(PQgetvalue(res, row, PQfnumber(res, field_name))));
+}
+
 /**********************************************************************/
 
 static char *
@@ -221,20 +249,17 @@ host_info_get_one(
 	struct gfarm_host_info *info)
 {
 	int i;
+	uint32_t ncpu;
 
-	info->hostname = strdup(
-		PQgetvalue(res, startrow, PQfnumber(res, "hostname")));
-	info->architecture = strdup(
-		PQgetvalue(res, startrow, PQfnumber(res, "architecture")));
-	info->ncpu = ntohl(
-	    *((uint32_t *)PQgetvalue(res, startrow, PQfnumber(res, "ncpu"))));
+	info->hostname = pgsql_get_string(res, startrow, "hostname");
+	info->architecture = pgsql_get_string(res, startrow, "architecture");
+	info->ncpu = pgsql_get_int32(res, startrow, "ncpu");
 	info->nhostaliases = nhostaliases;
-	info->hostaliases = malloc(sizeof(*(info->hostaliases)) *
-						(nhostaliases + 1));
+	info->hostaliases =
+	    malloc(sizeof(*info->hostaliases) * (nhostaliases + 1));
 	for (i = 0; i < nhostaliases; i++) {
-		info->hostaliases[i] = strdup(
-			PQgetvalue(res, startrow + i,
-				   PQfnumber(res, "hostalias")));
+		info->hostaliases[i] = pgsql_get_string(res, startrow + i,
+		    "hostalias");
 	}
 	info->hostaliases[info->nhostaliases] = NULL;
 	return (NULL);
@@ -299,13 +324,8 @@ host_info_get(
 	}
 
 	gfarm_base_host_info_ops.clear(info);
-	e = host_info_get_one(resi,
-		0,
-		gfarm_ntoh64(
-			*((uint64_t *)PQgetvalue(resc,
-						 0,
-						 PQfnumber(resc, "count")))),
-		info);
+	e = host_info_get_one(resi, 0,
+	    pgsql_get_int64(resc, 0, "count"), info);
 
  clear_resi:
 	PQclear(resi);
@@ -674,11 +694,8 @@ host_info_get_all(
 
 	startrow = 0;
 	for (i = 0; i < PQntuples(cres); i++) {
-		int nhostaliases;
+		uint64_t nhostaliases = pgsql_get_int64(cres, i, "count");
 
-		nhostaliases = gfarm_ntoh64(*((uint64_t *)PQgetvalue(cres,
-						i,
-						PQfnumber(cres, "count"))));
 		gfarm_base_host_info_ops.clear(&ip[i]);
 		e = host_info_get_one(ires, startrow, nhostaliases, &ip[i]);
 		startrow += (nhostaliases == 0 ? 1 : nhostaliases);
@@ -808,28 +825,23 @@ path_info_set_field(
 {
 	/* XXX - info->status.st_ino is set not here but at upper level */
 
-	info->pathname = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "pathname")));
-	info->status.st_mode = ntohl(
-		*((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "mode"))));
-	info->status.st_user = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "username")));
-	info->status.st_group = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "groupname")));
-	info->status.st_atimespec.tv_sec = gfarm_ntoh64(
-	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "atimesec"))));
-	info->status.st_atimespec.tv_nsec = ntohl(
-	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "atimensec"))));
-	info->status.st_mtimespec.tv_sec = gfarm_ntoh64(
-	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "mtimesec"))));
-	info->status.st_mtimespec.tv_nsec = ntohl(
-	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "mtimensec"))));
-	info->status.st_ctimespec.tv_sec = gfarm_ntoh64(
-	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "ctimesec"))));
-	info->status.st_ctimespec.tv_nsec = ntohl(
-	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "ctimensec"))));
-	info->status.st_nsections = ntohl(
-	    *((uint32_t *)PQgetvalue(res, row, PQfnumber(res, "nsections"))));
+	info->pathname = pgsql_get_string(res, row, "pathname");
+	info->status.st_mode = pgsql_get_int32(res, row, "mode");
+	info->status.st_user = pgsql_get_string(res, row, "username");
+	info->status.st_group = pgsql_get_string(res, row, "groupname");
+	info->status.st_atimespec.tv_sec =
+	    pgsql_get_int64(res, row, "atimesec");
+	info->status.st_atimespec.tv_nsec =
+	    pgsql_get_int32(res, row, "atimensec");
+	info->status.st_mtimespec.tv_sec =
+	    pgsql_get_int64(res, row, "mtimesec");
+	info->status.st_mtimespec.tv_nsec =
+	    pgsql_get_int32(res, row, "mtimensec");
+	info->status.st_ctimespec.tv_sec =
+	    pgsql_get_int64(res, row, "ctimesec");
+	info->status.st_ctimespec.tv_nsec =
+	    pgsql_get_int32(res, row, "ctimensec");
+	info->status.st_nsections = pgsql_get_int32(res, row, "nsections");
 }
 
 static char *
@@ -1325,16 +1337,11 @@ file_section_info_set_field(
 	int row,
 	struct gfarm_file_section_info *info)
 {
-	info->pathname = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "pathname")));
-	info->section = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "section")));
-	info->filesize=gfarm_ntoh64(
-	    *((uint64_t *)PQgetvalue(res, row, PQfnumber(res, "filesize"))));
-	info->checksum_type = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "checksumType")));
-	info->checksum = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "checksum")));
+	info->pathname = pgsql_get_string(res, row, "pathname");
+	info->section = pgsql_get_string(res, row, "section");
+	info->filesize= pgsql_get_int64(res, row, "filesize");
+	info->checksum_type = pgsql_get_string(res, row, "checksumType");
+	info->checksum = pgsql_get_string(res, row, "checksum");
 }
 
 static char *
@@ -1578,12 +1585,9 @@ file_section_copy_info_set_field(
 	int row,
 	struct gfarm_file_section_copy_info *info)
 {
-	info->pathname = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "pathname")));
-	info->section = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "section")));
-	info->hostname = strdup(
-		PQgetvalue(res, row, PQfnumber(res, "hostname")));
+	info->pathname = pgsql_get_string(res, row, "pathname");
+	info->section = pgsql_get_string(res, row, "section");
+	info->hostname = pgsql_get_string(res, row, "hostname");
 }
 
 static char *
