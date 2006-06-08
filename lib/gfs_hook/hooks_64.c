@@ -19,6 +19,10 @@
 
 #include <sys/syscall.h>
 
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#define OS_SOLARIS	1
+#endif
+
 /*
  * The following hooks are not implemented:
  *
@@ -143,7 +147,7 @@ gfs_hook_syscall_pwrite64(int filedes, const void *buf, size_t nbyte, off64_t of
 }
 #endif
 
-#if defined(sun) && (defined(__svr4__) || defined(__SVR4)) /* Solaris 2 */
+#if defined(OS_SOLARIS)
 	/*
 	 * do not need xstat64 on Solaris 2.
 	 *

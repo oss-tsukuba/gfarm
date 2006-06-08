@@ -41,6 +41,10 @@
 #include <sys/file.h>		/* FSYNC, FDSYNC */
 #endif
 
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#define OS_SOLARIS	1
+#endif
+
 #ifdef __osf__
 #define HOOK_GETDIRENTRIES
 #endif
@@ -1762,7 +1766,7 @@ _mknod(const char *path, mode_t mode, dev_t dev)
 #endif /* __linux__ */
 
 int
-#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#ifdef OS_SOLARIS
 __xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
 #else
 __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
@@ -1824,7 +1828,7 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 }
 
 int
-#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#ifdef OS_SOLARIS
 _xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
 #else
 _xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
@@ -2019,7 +2023,7 @@ fdatasync(int filedes)
 }
 #endif /* SYS_fdatasync */
 
-#if defined(HAVE_FDOPENDIR) && defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#if defined(HAVE_FDOPENDIR) && defined(OS_SOLARIS)
 /*
  * opendir - this entry is needed to hook opendir on Solaris 9
  */
