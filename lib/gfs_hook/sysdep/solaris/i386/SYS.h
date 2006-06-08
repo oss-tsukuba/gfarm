@@ -36,7 +36,9 @@
 #include <sys/syscall.h>
 #include <sys/trap.h>
 #include <sys/errno.h>
+#if 0
 #include "synonyms.h"
+#endif
 
 #define	_prologue_			\
 	pushl	%ebx;			\

@@ -39,7 +39,9 @@
 #include <sys/asm_linkage.h>
 #include <sys/syscall.h>
 #include <sys/errno.h>
+#if 0
 #include "synonyms.h"
+#endif
 
 /*
  * While it's tempting to imagine we could use 'rd %pc' here,

@@ -39,17 +39,38 @@
 
 #include <sys/asm_linkage.h>
 
+#if 0
 	ANSI_PRAGMA_WEAK(llseek,function)
+#endif
 
+#define __cerror	_cerror
+#define __cerror64	_cerror64
+
+#if 0
 #include "SYS.h"
+#elif defined(sparc)
+#include "sparc/SYS.h"
+#elif defined(sparcv9)
+#include "sparcv9/SYS.h"
+#elif defined(i386)
+#include "i386/SYS.h"
+#elif defined(amd64) || defined(x86_64)
+#include "amd64/SYS.h"
+#endif
 
 #if CLONGSIZE == 8	/* from sys/asm_linkage.h */
 	/*
 	 * For _LP64, llseek() is the same as lseek().
 	 */
-	SYSCALL2_RVAL1(llseek,lseek)
+	SYSCALL2_RVAL1(gfs_hook_syscall_lseek64,lseek)
 #else
+#  if 0
 	SYSCALL64(llseek)
+#  else
+        ENTRY(gfs_hook_syscall_lseek64)
+        SYSTRAP_64RVAL(llseek)
+        SYSCERROR64
+#  endif
 #endif
 	RET
-	SET_SIZE(llseek)
+	SET_SIZE(gfs_hook_syscall_lseek64)

@@ -35,7 +35,9 @@
 #include <sys/asm_linkage.h>
 #include <sys/syscall.h>
 #include <sys/errno.h>
+#if 0
 #include "synonyms.h"
+#endif
 
 #undef	syscall		/* override synonyms.h */
 
