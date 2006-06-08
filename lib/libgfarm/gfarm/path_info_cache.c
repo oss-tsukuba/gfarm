@@ -60,15 +60,16 @@ gfs_stat_dup(struct gfs_stat *src, struct gfs_stat *dest)
 }
 
 static char *
-gfarm_path_info_dup(struct gfarm_path_info *src, struct gfarm_path_info *dest)
+gfarm_path_info_dup(const char *pathname,
+		    struct gfarm_path_info *src, struct gfarm_path_info *dest)
 {
 	char *e;
 
 	e = gfs_stat_dup(&src->status, &dest->status);
 	if (e != NULL)
 		return (e);
-	if (src->pathname != NULL) {
-		dest->pathname = strdup(src->pathname);
+	if (pathname != NULL) {
+		dest->pathname = strdup(pathname);
 		if (dest->pathname == NULL) {
 			gfs_stat_free(&dest->status);
 			return (GFARM_ERR_NO_MEMORY);
@@ -203,7 +204,7 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 			gettimeofday(&now, NULL);
 			gfarm_timeval_sub(&now, &pic->time);
 			if (gfarm_timeval_cmp(&now, &cache_timeout) >= 0) {
-				_debug(("! expire path_info cache: %s\n",
+				_debug(("!! expire path_info cache: %s\n",
 				       pathname));
 #if 1  /* purge */
 				if (pic->noent == CACHE_SET)
@@ -214,11 +215,15 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 #endif
 				return "expired path_info cache content";
 			}
-			_debug(("! use path_info cache: %s\n", pathname));
-			if (pic->noent == CACHE_NOENT) /* NOENT cache */
-				return (GFARM_ERR_NO_SUCH_OBJECT);
 
-			return gfarm_path_info_dup(&pic->info, info);
+			if (pic->noent == CACHE_NOENT) { /* NOENT cache */
+				_debug(("!! use path_info ENOENT cache: %s\n",
+					pathname));
+				return (GFARM_ERR_NO_SUCH_OBJECT);
+			}
+
+			_debug(("!! use path_info cache: %s\n", pathname));
+			return gfarm_path_info_dup(pathname, &pic->info, info);
 		}
 	}
 	return "cache_path_info_get: no path_info cache";
@@ -247,11 +252,11 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 	he = gfarm_hash_enter(cache_table, pathname, pathlen,
 			      sizeof(struct path_info_cache), &created);
 	if (he == NULL) {
-		_debug(("! cache_path_info_put: no memory\n"));
+		_debug(("!!! cache_path_info_put: no memory\n"));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	pic = gfarm_hash_entry_data(he);
-	_debug(("! put path_info cache: %s\n", pathname));
+	_debug(("!! put path_info cache: %s\n", pathname));
 	if (created)  /* new cache */
 		current_cache_num++;
 	else if (pic->noent == CACHE_SET)  /* have path_info */
@@ -259,15 +264,16 @@ cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
 
 	if (info == NULL) {  /* set NOENT */
 		pic->noent = CACHE_NOENT;
-		_debug(("! -> set NOENT: %s\n", pathname));
+		_debug(("!! -> set NOENT: %s\n", pathname));
 	}
 	else {
 #ifdef DEBUG
 		if (pic->noent == CACHE_NOENT) {
-			_debug(("! -> update cache from NOENT: %s\n", pathname));
+			_debug(("!! -> update cache from NOENT: %s\n",
+				pathname));
 		}
 #endif
-		(void)gfarm_path_info_dup(info, &pic->info);
+		(void)gfarm_path_info_dup(pathname, info, &pic->info);
 		pic->noent = CACHE_SET;
 	}
 	/* current time */
@@ -294,7 +300,7 @@ cache_path_info_remove(const char *pathname)
 			if (pic->noent == CACHE_SET)
 				gfarm_path_info_free(&pic->info);
 			if (gfarm_hash_purge(cache_table, pathname, pathlen)) {
-				_debug(("! remove path_info cache: %s\n",
+				_debug(("!! remove path_info cache: %s\n",
 				       pathname));
 				current_cache_num--;
 				return (NULL);
@@ -494,7 +500,8 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 			break;
 		}
 #endif
-		_debug(("! cancel updating mtime/atime/ctime: %s\n", pathname));
+		_debug(("! cancel updating mtime/atime/ctime: %s\n",
+			pathname));
 #if 1  /* XXX temporary implements */
 		info->status.st_mtimespec = nowinfo.status.st_mtimespec;
 		info->status.st_atimespec = nowinfo.status.st_atimespec;
@@ -524,8 +531,9 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 {
 	char *e;
 
+	_debug(("! cache_path_info_get: %s\n", pathname));
 	e = cache_path_info_get(pathname, info);
-#if 0  /* for debug */
+#ifdef DEBUG
 	if (e == NULL) {
 		struct gfarm_path_info tmp;
 		char *e2;
@@ -533,10 +541,19 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 		if (e2 == NULL) {
 			if (compare_path_info_except_time(info, &tmp)
 			    != 0) {
-				_debug(("! different cache\n"));
+				_debug(("!!! different cache: %s\n",
+					pathname));
 			}
 			gfarm_path_info_free(&tmp);
 		}
+	} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		struct gfarm_path_info tmp;
+		char *e2 = gfarm_metadb_path_info_get(pathname, &tmp);
+		if (e2 != GFARM_ERR_NO_SUCH_OBJECT) {
+			_debug(("!!! different ENOENT cache: %s\n", pathname));
+		}
+		if (e == NULL)
+			gfarm_path_info_free(&tmp);
 	}
 #endif
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
@@ -554,6 +571,7 @@ gfarm_cache_path_info_set(char *pathname, struct gfarm_path_info *info)
 {
 	char *e;
 
+	_debug(("! cache_path_info_set: %s\n", pathname));
 	e = gfarm_metadb_path_info_set(pathname, info);
 	if (e == NULL)
 		cache_path_info_put(pathname, info);
@@ -567,6 +585,7 @@ gfarm_cache_path_info_replace(char *pathname, struct gfarm_path_info *info)
 {
 	char *e;
 
+	_debug(("! cache_path_info_replace: %s\n", pathname));
 	if (check_update_time_interval(pathname, info))
 		return (NULL); /* cancel updating time */
 
@@ -583,6 +602,7 @@ gfarm_cache_path_info_remove(const char *pathname)
 {
 	char *e;
 
+	_debug(("! cache_path_info_remove: %s\n", pathname));
 	e = gfarm_metadb_path_info_remove(pathname);
 	if (e == NULL)
 		cache_path_info_put(pathname, NULL); /* cache NOENT */
