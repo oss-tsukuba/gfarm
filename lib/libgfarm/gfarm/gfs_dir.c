@@ -508,9 +508,14 @@ static void
 dir_for_each(struct node *n, void (*f)(void *, struct node *), void *cookie)
 {
 	if (!RB_EMPTY(&n->u.d.children)) {
-		struct node *child;
-
-		RB_FOREACH(child, rb_dir, &n->u.d.children) {
+		struct node *child, *next;
+		/*
+		 * we cannot use RB_FOREACH here, since 'child'
+		 * will be free'ed in f().
+		 */
+		for (child = RB_MIN(rb_dir, &n->u.d.children);
+		     child != NULL; child = next) {
+			next = RB_NEXT(rb_dir, &n->u.d.children, child);
 			dir_for_each(child, f, cookie);
 		}
 	}
@@ -540,9 +545,14 @@ purge_node(struct node *parent, struct node *n, const char *name, int len)
 static void
 recursive_free_children(struct node *n)
 {
-	struct node *child;
-
-	RB_FOREACH(child, rb_dir, &n->u.d.children) {
+	struct node *child, *next;
+	/*
+	 * we cannot use RB_FOREACH here, since 'child'
+	 * will be free'ed in recursive_free_nodes().
+	 */
+	for (child = RB_MIN(rb_dir, &n->u.d.children);
+	     child != NULL; child = next) {
+		next = RB_NEXT(rb_dir, &n->u.d.children, child);
 		recursive_free_nodes(child);
 	}
 }
@@ -747,9 +757,11 @@ enter_node(struct node *parent, const char *name, int len, int is_dir,
 static void
 sweep_nodes(struct node *n)
 {
-	struct node *c;
+	struct node *c, *next;
 
-	RB_FOREACH(c, rb_dir, &n->u.d.children) {
+	/* we cannot use RB_FOREACH here, since 'c' will be free'ed. */
+	for (c = RB_MIN(rb_dir, &n->u.d.children); c != NULL; c = next) {
+		next = RB_NEXT(rb_dir, &n->u.d.children, c);
 		if ((c->flags & NODE_FLAG_MARKED) == 0) {
 			if (opendir_count > 0) {
 				recursive_delayed_purge_nodes(c);
