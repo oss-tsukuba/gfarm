@@ -955,7 +955,7 @@ _EOF_
 	unset PGDATABASE PGUSER PGPASSWORD PGSERVICE
 	unset PGREALM PGOPTIONS PGSSLMODE PGREQUIRESSL PGCONNECT_TIMEOUT
 
-	$PGSQL_BINDIR/createuser -A -D $BACKEND_USER $createuser_option
+	$PGSQL_BINDIR/createuser $createuser_option -A -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb $DB_NAME
 	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
 	$awk 'BEGIN {
