@@ -68,7 +68,7 @@
 
 #define	__SYSCALLINT(name)		\
 	/* CSTYLED */			\
-	movl	$SYS_/**/name, %eax;	\
+	movl	$CONCAT(SYS_,name), %eax;	\
 	int	$T_SYSCALLINT
 
 /*

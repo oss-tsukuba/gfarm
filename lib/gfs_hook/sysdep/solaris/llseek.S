@@ -46,6 +46,12 @@
 #define __cerror	_cerror
 #define __cerror64	_cerror64
 
+#if __STDC__
+# define CONCAT(x,y)	x ## y
+#else
+# define CONCAT(x,y)	x/**/y
+#endif
+
 #if 0
 #include "SYS.h"
 #elif defined(sparc)

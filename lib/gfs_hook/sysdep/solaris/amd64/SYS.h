@@ -65,7 +65,7 @@
 #define	__SYSCALL(name)			\
 	movq	%rcx, %r10;		\
 	/* CSTYLED */			\
-	movl	$SYS_/**/name, %eax;	\
+	movl	$CONCAT(SYS_,name), %eax;	\
 	syscall
 
 #define	SYSTRAP_RVAL1(name)	__SYSCALL(name)

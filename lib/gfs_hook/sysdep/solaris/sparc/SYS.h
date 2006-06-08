@@ -74,7 +74,7 @@
  */
 #define	__SYSTRAP(name)			\
 	/* CSTYLED */			\
-	mov	SYS_/**/name, %g1;	\
+	mov	CONCAT(SYS_,name), %g1;	\
 	ta	SYSCALL_TRAPNUM
 
 #define	SYSTRAP_RVAL1(name)		__SYSTRAP(name)
