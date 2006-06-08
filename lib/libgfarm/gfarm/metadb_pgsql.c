@@ -16,6 +16,7 @@
  * $Id$
  */
 
+#include <assert.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1051,99 +1052,113 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 	return (e);
 }
 
-#define COPY_BINARY(data, buf) { \
+#define COPY_BINARY(data, buf, residual, msg) { \
+	if (sizeof(data) > residual) \
+		gflog_fatal(msg ": %d bytes needed, but only %d bytes", \
+		    sizeof(data), residual); \
 	memcpy(&(data), buf, sizeof(data)); \
 	buf += sizeof(data); \
+	residual -= sizeof(data); \
 }
 
-#define COPY_INT32(int32, buf) { \
-	COPY_BINARY(int32, buf); \
+#define COPY_INT32(int32, buf, residual, msg) { \
+	assert(sizeof(int32) == sizeof(int32_t)); \
+	COPY_BINARY(int32, buf, residual, msg); \
 	int32 = ntohl(int32); \
 }
 
 static char *
-get_value_from_varchar_copy_binary(char **bufp)
+get_value_from_varchar_copy_binary(char **bufp, int *residualp)
 {
 	int32_t len;
 	char *p;
 
-	COPY_INT32(len, *bufp);
+	COPY_INT32(len, *bufp, *residualp, "metdb_pgsql: copy varchar");
 	if (len == -1) /* NULL field */
 		return (NULL);
 	if (len < 0) /* We don't allow that long varchar */
 		gflog_fatal("metadb_pgsql: copy varchar length=%d", len);
 
+	if (len > *residualp)
+		gflog_fatal("metadb_pgsql: copy varchar %d > %d",
+		    len, *residualp);
 	p = malloc(len + 1);
 	memcpy(p, *bufp, len);
 	p[len] = '\0';
 	*bufp += len;
+	*residualp -= len;
 	return (p);
 }
 
 static uint32_t
-get_value_from_integer_copy_binary(char **bufp)
+get_value_from_integer_copy_binary(char **bufp, int *residualp)
 {
 	int32_t len;
 	uint32_t val;
 
-	COPY_INT32(len, *bufp);
+	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int32 len");
 	if (len == -1)
 		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
 		gflog_fatal("metadb_pgsql: copy int32 length=%d", len);
 
-	COPY_INT32(val, *bufp);
+	COPY_INT32(val, *bufp, *residualp, "metadb_pgsql: copy int32");
 	return (val);
 }
 
 static uint64_t
-get_value_from_int8_copy_binary(char **bufp)
+get_value_from_int8_copy_binary(char **bufp, int *residualp)
 {
 	int32_t len;
 	uint64_t val;
 
-	COPY_INT32(len, *bufp);
+	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int64 len");
 	if (len == -1)
 		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
 		gflog_fatal("metadb_pgsql: copy int64 length=%d", len);
 
-	COPY_BINARY(val, *bufp);
+	COPY_BINARY(val, *bufp, *residualp, "metadb_pgsql: copy int64");
 	val = gfarm_ntoh64(val);
 	return (val);
 }
 
 static void
 path_info_set_field_from_copy_binary(
-	char *buf,
+	char *buf, int residual,
 	struct gfarm_path_info *info)
 {
 	uint16_t num_fields;
 
 	/* XXX - info->status.st_ino is set not here but at upper level */
 
-	COPY_BINARY(num_fields, buf);
+	COPY_BINARY(num_fields, buf, residual, "metadb_pgsql: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields != 11)
 		gflog_fatal("metadb_pgsql: path_info fields = %d", num_fields);
 
-	info->pathname = get_value_from_varchar_copy_binary(&buf);
-	info->status.st_mode = get_value_from_integer_copy_binary(&buf);
-	info->status.st_user = get_value_from_varchar_copy_binary(&buf);
-	info->status.st_group = get_value_from_varchar_copy_binary(&buf);
+	info->pathname =
+	    get_value_from_varchar_copy_binary(&buf, &residual);
+	info->status.st_mode =
+	    get_value_from_integer_copy_binary(&buf, &residual);
+	info->status.st_user =
+	    get_value_from_varchar_copy_binary(&buf, &residual);
+	info->status.st_group =
+	    get_value_from_varchar_copy_binary(&buf, &residual);
 	info->status.st_atimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf);
+	    get_value_from_int8_copy_binary(&buf, &residual);
 	info->status.st_atimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf);
+	    get_value_from_integer_copy_binary(&buf, &residual);
 	info->status.st_mtimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf);
+	    get_value_from_int8_copy_binary(&buf, &residual);
 	info->status.st_mtimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf);
+	    get_value_from_integer_copy_binary(&buf, &residual);
 	info->status.st_ctimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf);
+	    get_value_from_int8_copy_binary(&buf, &residual);
 	info->status.st_ctimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf);
-	info->status.st_nsections = get_value_from_integer_copy_binary(&buf);
+	    get_value_from_integer_copy_binary(&buf, &residual);
+	info->status.st_nsections =
+	    get_value_from_integer_copy_binary(&buf, &residual);
 }
 
 /* XXX - this is for a stopgap implementation of gfs_opendir() */
@@ -1153,7 +1168,11 @@ path_info_set_field_from_copy_binary(
 #define COPY_BINARY_HEADER_LEN (COPY_BINARY_SIGNATURE_LEN + \
 	    COPY_BINARY_FLAGS_FIELD_LEN +COPY_BINARY_HEADER_EXTENSION_AREA_LEN)
 #define COPY_BINARY_TRAILER_LEN			2
+#define PQ_GET_COPY_DATA_DONE			-1
 #define PQ_GET_COPY_DATA_ERROR			-2
+
+#define	COPY_BINARY_FLAGS_CRITICAL		0xffff0000
+#define	COPY_BINARY_TRAILER_VALUE		-1
 
 static char *
 gfarm_pgsql_path_info_get_all_foreach(
@@ -1163,6 +1182,8 @@ gfarm_pgsql_path_info_get_all_foreach(
 	PGresult *res;
 	char *e, *buf, *bp;
 	int ret;
+	uint32_t header_flags, extension_area_len;
+	int16_t trailer;
 	struct gfarm_path_info info;
 
 	static const char binary_signature[COPY_BINARY_SIGNATURE_LEN] =
@@ -1189,35 +1210,71 @@ gfarm_pgsql_path_info_get_all_foreach(
 	PQclear(res);
 
 	ret = PQgetCopyData(conn, &buf,	0);
-	if (ret < COPY_BINARY_SIGNATURE_LEN ||
+	if (ret < COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN ||
 	    memcmp(buf, binary_signature, COPY_BINARY_SIGNATURE_LEN) != 0) {
 		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
-			    "Fatal Error, COPY file signature not recognized");
+		    "Fatal Error, COPY file signature not recognized: %d",ret);
 	}
-	if (ret > COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN) {
-		bp = buf + COPY_BINARY_HEADER_LEN;
-		while (ret > COPY_BINARY_TRAILER_LEN) {
-			if (buf) {
-				gfarm_base_path_info_ops.clear(&info);
-				path_info_set_field_from_copy_binary(bp,
-					&info);
-				if (gfarm_base_path_info_ops.validate(&info))
-					(*callback)(closure, &info);
-				gfarm_base_path_info_ops.free(&info);
-				PQfreemem(buf);
-			}
+	bp = buf;
+	bp  += COPY_BINARY_SIGNATURE_LEN;
+	ret -= COPY_BINARY_SIGNATURE_LEN;
+
+	COPY_INT32(header_flags, bp, ret, "metadb_pgsql: COPY header flag");
+	if (header_flags & COPY_BINARY_FLAGS_CRITICAL)
+		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
+		    "Fatal Error, COPY file protocol incompatible: 0x%08x",
+		    header_flags);
+
+	COPY_INT32(extension_area_len, bp, ret,
+	    "metadb_pgsql: COPY extension area length");
+	if (ret < extension_area_len)
+		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
+		    "Fatal Error, COPY file extension_area too short: %d < %d",
+		    ret, extension_area_len);
+	bp  += extension_area_len;
+	ret -= extension_area_len;
+	
+	for (;;) {
+		if (ret < COPY_BINARY_TRAILER_LEN)
+			gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
+			    "Fatal error, COPY file trailer too short: %d",
+			    ret);
+		/* don't use COPY_BINARY() here to not proceed the pointer */
+		memcpy(&trailer, bp, sizeof(trailer));
+		trailer = ntohs(trailer);
+
+		if (trailer == COPY_BINARY_TRAILER_VALUE) {
+			PQfreemem(buf);
+			/* make sure that the COPY is done */
 			ret = PQgetCopyData(conn, &buf, 0);
-			bp = buf;
+			if (ret >= 0)
+				gflog_fatal(
+				    "gfarm_pgsql_path_info_get_all_foreach: "
+				    "Fatal error, COPY file data after trailer"
+				    ": %d", ret);
+			break;
+		}
+		gfarm_base_path_info_ops.clear(&info);
+		path_info_set_field_from_copy_binary(bp, ret, &info);
+		if (gfarm_base_path_info_ops.validate(&info))
+			(*callback)(closure, &info);
+		gfarm_base_path_info_ops.free(&info);
+		PQfreemem(buf);
+
+		ret = PQgetCopyData(conn, &buf, 0);
+		bp = buf;
+		if (ret < 0) {
+			gflog_warning("gfarm_pgsql_path_info_get_all_foreach: "
+			    "warning: COPY file expected end of data");
+			break;
 		}
 	}
+	if (buf != NULL)
+		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
+		    "Fatal error, COPY file NULL expected but: %p", buf);
 	if (ret == PQ_GET_COPY_DATA_ERROR) {
 		e = save_pgsql_msg(PQerrorMessage(conn));
 		return (e);
-	}
-	if (ret == COPY_BINARY_TRAILER_LEN ||
-	    ret == COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN) {
-		ret = PQgetCopyData(conn, &buf, 0);
-		PQfreemem(buf);
 	}
 	res = PQgetResult(conn);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
