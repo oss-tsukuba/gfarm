@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <gfarm/gfarm_config.h>
+#include <gfarm/gfarm.h>
 
 #include "gfsd_subr.h"
 
