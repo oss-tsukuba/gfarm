@@ -625,13 +625,13 @@ traverse_file_tree(char *cwd, char *path,
 	} else if (GFARM_S_ISDIR(mode)) {
 		e = gfarm_stringlist_add(dir_list, dpath);
 		if (e != NULL)
-			return (e);
+			goto free_dpath;
 		e = gfs_chdir(path);
 		if (e != NULL)
-			return (e);
+			goto free_dpath;
 		e = gfs_opendir(".", &dir);
 		if (e != NULL)
-			return (e);
+			goto free_dpath;
 		while ((e = gfs_readdir(dir, &entry)) == NULL &&
 				entry != NULL) {
 			if (strcmp(entry->d_name, ".") == 0 ||
@@ -641,13 +641,15 @@ traverse_file_tree(char *cwd, char *path,
 			e = traverse_file_tree(dpath, entry->d_name,
 					       dir_list, file_list);
 			if (e != NULL)
-				return (e);
+				goto free_dpath;
 		}
 		if (e != NULL)
-			return (e);
+			goto free_dpath;
 		gfs_closedir(dir);
 		e = gfs_chdir("..");
 	}
+ free_dpath:	
+	free(dpath);
 	return (e);
 }
 
@@ -765,7 +767,6 @@ static char *get_infos_by_file(char *pathname,
 			goto finish_free_copies;
 		}
 	}
-	return (NULL);
 
 finish_free_copies:
 	free(*copies);
@@ -857,7 +858,6 @@ get_meta_data(const char *from_url,
 			goto free_file_path_infos;
 		}
 	}
-	return (NULL);
 
 free_file_path_infos:
 	free_path_infos(gfarm_stringlist_length(file_list), file_path_infos);
@@ -912,23 +912,27 @@ set_meta_data(int ndir, int nfile,
 	for (i = 0; i < ndir; i++) {
 		e = set_a_path_info(from_canonical_path,
 			to_canonical_path, &dir_path_infos[i], &to_path);
+		free(to_path);
 		if (e != NULL)
 			return (e);
 	}
 	for (i = 0; i < nfile; i++) {
 		e = set_a_path_info(from_canonical_path,
 			to_canonical_path, &file_path_infos[i], &to_path);
-		if (e != NULL)
+		if (e != NULL) {
+			free(to_path);
 			return (e);
-
+		}
 		for (j = 0; j < nsection[i]; j++) {
 			struct gfarm_file_section_info to_si;
 			to_si = sections[i][j];
 			to_si.pathname = to_path;
 			e = gfarm_file_section_info_set(to_si.pathname,
 						to_si.section, &to_si);
-			if (e != NULL)
+			if (e != NULL) {
+				free(to_path);
 				return (e);
+			}	
 			for (k = 0; k < ncopy[i][j]; k++) {
 				struct gfarm_file_section_copy_info
 					to_ci;
@@ -939,10 +943,13 @@ set_meta_data(int ndir, int nfile,
 				e = gfarm_file_section_copy_info_set(
 					to_ci.pathname, to_ci.section,
 					to_ci.hostname,  &to_ci);
-				if (e != NULL)
+				if (e != NULL) {
+					free(to_path);
 					return (e);
+				}	
 			}
 		}
+		free(to_path);
 	}
 	return (e);
 }
@@ -1061,7 +1068,7 @@ rename_dir(const char *from_url,
 			e = GFARM_ERR_NO_MEMORY;
 			while (--i >= 0)
 				free(exist[i]);
-			goto free_meta_data;
+			goto free_exist;
 		}
 		for (j = 0; j < nsection[i]; j++) {
 			int size = ncopy[i][j] * sizeof(***exist);
@@ -1076,7 +1083,7 @@ rename_dir(const char *from_url,
 						free(exist[i][j]);
 					free(exist[i]);
 				}
-				goto free_meta_data;
+				goto free_exist;
 			}
 			memset(exist[i][j], 0, size);
 		}
