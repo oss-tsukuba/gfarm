@@ -605,7 +605,7 @@ static char *
 traverse_file_tree(char *cwd, char *path,
 		   gfarm_stringlist *dir_list, gfarm_stringlist *file_list)
 {
-	char *e;
+	char *e, *e_save = NULL;
 	struct gfs_stat gs;
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
@@ -631,7 +631,7 @@ traverse_file_tree(char *cwd, char *path,
 			goto free_dpath;
 		e = gfs_opendir(".", &dir);
 		if (e != NULL)
-			goto free_dpath;
+			goto pop_dir;
 		while ((e = gfs_readdir(dir, &entry)) == NULL &&
 				entry != NULL) {
 			if (strcmp(entry->d_name, ".") == 0 ||
@@ -641,15 +641,18 @@ traverse_file_tree(char *cwd, char *path,
 			e = traverse_file_tree(dpath, entry->d_name,
 					       dir_list, file_list);
 			if (e != NULL)
-				goto free_dpath;
+				goto close_dir;
 		}
-		if (e != NULL)
-			goto free_dpath;
+ close_dir:
 		gfs_closedir(dir);
-		e = gfs_chdir("..");
+ pop_dir:
+		e_save = gfs_chdir("..");
 	}
- free_dpath:	
-	free(dpath);
+	if (e == NULL)
+		e = e_save;
+ free_dpath:
+	if (e != NULL)
+		free(dpath);
 	return (e);
 }
 
@@ -767,6 +770,7 @@ static char *get_infos_by_file(char *pathname,
 			goto finish_free_copies;
 		}
 	}
+	return (NULL);
 
 finish_free_copies:
 	free(*copies);
@@ -786,6 +790,8 @@ free_infos(int nsection, struct gfarm_file_section_info *sections,
 	for (i = 0; i < nsection; i++) {
 		gfarm_file_section_copy_info_free_all(ncopy[i], copies[i]);
 	}
+	free(copies);
+	free(ncopy);
 	gfarm_file_section_info_free_all(nsection, sections);
 }
 
@@ -858,6 +864,8 @@ get_meta_data(const char *from_url,
 			goto free_file_path_infos;
 		}
 	}
+	free(from_canonic_path);
+	return (NULL);
 
 free_file_path_infos:
 	free_path_infos(gfarm_stringlist_length(file_list), file_path_infos);
@@ -874,7 +882,7 @@ set_a_path_info(char *from_dir_canonical_path,
 		struct gfarm_path_info *from_path_info,
 		char **to_path)
 {
-	char *p;
+	char *e, *p;
 	struct gfarm_path_info to_pi;
 	struct timeval now;
 
@@ -888,12 +896,17 @@ set_a_path_info(char *from_dir_canonical_path,
 	    from_path_info->pathname + strlen(from_dir_canonical_path));
 	to_pi = *from_path_info;
 	to_pi.pathname = p;
-	*to_path = p;
 	gettimeofday(&now, NULL);
 	to_pi.status.st_ctimespec.tv_sec = now.tv_sec;
 	to_pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
 
-	return (gfarm_path_info_set(to_pi.pathname, &to_pi));
+	e = gfarm_path_info_set(to_pi.pathname, &to_pi);
+	if (e != NULL)
+		free(p);
+	else
+		*to_path = p;
+
+	return (e);
 }
 
 static char *
@@ -912,17 +925,16 @@ set_meta_data(int ndir, int nfile,
 	for (i = 0; i < ndir; i++) {
 		e = set_a_path_info(from_canonical_path,
 			to_canonical_path, &dir_path_infos[i], &to_path);
-		free(to_path);
 		if (e != NULL)
 			return (e);
+		free(to_path);
 	}
 	for (i = 0; i < nfile; i++) {
 		e = set_a_path_info(from_canonical_path,
 			to_canonical_path, &file_path_infos[i], &to_path);
-		if (e != NULL) {
-			free(to_path);
+		if (e != NULL)
 			return (e);
-		}
+
 		for (j = 0; j < nsection[i]; j++) {
 			struct gfarm_file_section_info to_si;
 			to_si = sections[i][j];
@@ -932,11 +944,11 @@ set_meta_data(int ndir, int nfile,
 			if (e != NULL) {
 				free(to_path);
 				return (e);
-			}	
+			}
 			for (k = 0; k < ncopy[i][j]; k++) {
-				struct gfarm_file_section_copy_info
-					to_ci;
-					if (exist[i][j][k] == 0)
+				struct gfarm_file_section_copy_info to_ci;
+
+				if (exist[i][j][k] == 0)
 					continue;
 				to_ci = copies[i][j][k];
 				to_ci.pathname = to_path;
@@ -946,10 +958,10 @@ set_meta_data(int ndir, int nfile,
 				if (e != NULL) {
 					free(to_path);
 					return (e);
-				}	
+				}
 			}
+			free(to_path);
 		}
-		free(to_path);
 	}
 	return (e);
 }
@@ -1079,7 +1091,7 @@ rename_dir(const char *from_url,
 				while (--j >= 0)
 					free(exist[i][j]);
 				while (--i >= 0) {
-					for (j = 0; nsection[i]; j++)
+					for (j = 0; j < nsection[i]; j++)
 						free(exist[i][j]);
 					free(exist[i]);
 				}
@@ -1091,7 +1103,7 @@ rename_dir(const char *from_url,
 
 	e = gfarm_host_info_get_all(&nhosts, &hosts);
 	if (e != NULL)
-		goto free_exist;
+		goto free_exist_sections;
 	for (i = 0; i < nhosts; i++) {
 		rename_spool_node_dir(hosts[i].hostname,
 				      from_canonical_path,
@@ -1137,13 +1149,14 @@ rename_dir(const char *from_url,
 
 free_hosts:
 	gfarm_host_info_free_all(nhosts, hosts);
-free_exist:
+free_exist_sections:
 	for (i = 0; i < nfile; i++) {
-		for (j = 0; j < nsection[i]; j++) {
+		for (j = 0; j < nsection[i]; j++)
 			free(exist[i][j]);
-		}
 		free(exist[i]);
 	}
+free_exist:
+	free(exist);
 free_meta_data:
 	free_meta_data(ndir, dir_path_infos, nfile, file_path_infos,
 		       nsection, sections, ncopy, copies);
@@ -1160,9 +1173,9 @@ free_file_path_infos:
 free_dir_path_infos:
 	free(dir_path_infos);
 free_file_list:
-	gfarm_stringlist_free(&file_list);
+	gfarm_stringlist_free_deeply(&file_list);
 free_dir_list:
-	gfarm_stringlist_free(&dir_list);
+	gfarm_stringlist_free_deeply(&dir_list);
 	return (e);
 }
 
