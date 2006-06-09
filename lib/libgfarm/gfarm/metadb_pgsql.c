@@ -1146,7 +1146,7 @@ path_info_set_field_from_copy_binary(
 
 	COPY_BINARY(num_fields, buf, residual, "metadb_pgsql: field number");
 	num_fields = ntohs(num_fields);
-	if (num_fields != 11)
+	if (num_fields < 11) /* allow fields addition in future */
 		gflog_fatal("metadb_pgsql: path_info fields = %d", num_fields);
 
 	info->pathname =
@@ -1282,8 +1282,8 @@ gfarm_pgsql_path_info_get_all_foreach(
 		}
 	}
 	if (buf != NULL)
-		gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
-		    "Fatal error, COPY file NULL expected but: %p", buf);
+		gflog_warning("gfarm_pgsql_path_info_get_all_foreach: "
+		    "warning: COPY file NULL expected, possibly leak?");
 	if (ret == PQ_GET_COPY_DATA_ERROR) {
 		e = save_pgsql_msg(PQerrorMessage(conn));
 		return (e);
