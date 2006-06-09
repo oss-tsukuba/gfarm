@@ -179,12 +179,18 @@ LD_PRELOAD_32 環境変数に，libgfs_hook.so.0 を指定します．
 
 シェルが sh あるいは bash の場合:
 
-	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
 	$ export LD_PRELOAD_32
 
 シェルが csh (tcsh) の場合:
 
-	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
+
+  ※ ここで libresolv.so を指定する必要がある理由は，Solaris 用のバイナリ
+    配布に含まれる libgfarm.so が，内部に libresolv.so を参照する OpenLDAP
+    の静的リンクライブラリを含んでおり、それが libresolv.so のシンボルを
+    参照しているためです．gfarm をソースから作成した場合などは，libresolv.so
+    が必要ない場合もあります．
 
  (5) MacOS X
 =============

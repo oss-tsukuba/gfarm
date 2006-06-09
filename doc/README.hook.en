@@ -184,12 +184,18 @@ Specify libgfs_hook.so.0 in LD_PRELOAD_32 environment variable.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
 	$ export LD_PRELOAD_32
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
+
+  NOTE: The reason why libresolv.so is needed here is because libgfarm.so
+    library, which is included in gfarm binary package for Solaris, has
+    statically-linked OpenLDAP library in it, and the OpenLDAP library
+    refers a symbol in libresolv.so. If you are making gfarm from source
+    distribution, it is possible that libresolv.so is not necessary.
 
  (5) MacOS X
 =============
