@@ -1387,8 +1387,8 @@ display_env(int fd, int port)
 			break;
 		}			
 		fprintf(f, "GFARM_AGENT_PID=%d; export GFARM_AGENT_PID;\n",
-			pid);
-		fprintf(f, "echo Agent pid %d;\n", pid);
+			(int)pid);
+		fprintf(f, "echo Agent pid %d;\n", (int)pid);
 		break;
 	case C_SHELL_LIKE:
 		switch (server_type) {
@@ -1402,8 +1402,8 @@ display_env(int fd, int port)
 		default:
 			break;
 		}
-		fprintf(f, "setenv GFARM_AGENT_PID %d;\n", pid);
-		fprintf(f, "echo Agent pid %d;\n", pid);
+		fprintf(f, "setenv GFARM_AGENT_PID %d;\n", (int)pid);
+		fprintf(f, "echo Agent pid %d;\n", (int)pid);
 		break;
 	default:
 		break;

@@ -2271,10 +2271,10 @@ gfs_client_get_load_result(int sock,
 	if (rv == -1)
 		return (gfarm_errno_to_error(errno));
 
-#ifndef WORDS_BIGENDIAN
-	swab(&nloadavg[0], &loadavg[0], sizeof(loadavg[0]));
-	swab(&nloadavg[1], &loadavg[1], sizeof(loadavg[1]));
-	swab(&nloadavg[2], &loadavg[2], sizeof(loadavg[2]));
+#ifndef WORDS_BIGENDIAN /* prototype of swab() uses (char *) on Solaris */
+	swab((void *)&nloadavg[0], (void *)&loadavg[0], sizeof(loadavg[0]));
+	swab((void *)&nloadavg[1], (void *)&loadavg[1], sizeof(loadavg[1]));
+	swab((void *)&nloadavg[2], (void *)&loadavg[2], sizeof(loadavg[2]));
 #endif
 	result->loadavg_1min = loadavg[0];
 	result->loadavg_5min = loadavg[1];

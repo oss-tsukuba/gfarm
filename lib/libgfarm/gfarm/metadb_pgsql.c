@@ -234,8 +234,6 @@ pgsql_get_int32(PGresult *res, int row, const char *field_name)
 static char *
 pgsql_get_string(PGresult *res, int row, const char *field_name)
 {
-	uint64_t val;
-
 	return (strdup(PQgetvalue(res, row, PQfnumber(res, field_name))));
 }
 
@@ -249,7 +247,6 @@ host_info_get_one(
 	struct gfarm_host_info *info)
 {
 	int i;
-	uint32_t ncpu;
 
 	info->hostname = pgsql_get_string(res, startrow, "hostname");
 	info->architecture = pgsql_get_string(res, startrow, "architecture");

@@ -329,10 +329,11 @@ static int
 gfarm_fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 {
 	char *buffer = buf;
-	int i, rv;
+	int rv;
 	struct iovec iov[1];
 	struct msghdr msg;
 #ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
+	int i;
 	struct {
 		struct cmsghdr hdr;
 		char data[CMSG_SPACE(sizeof(*fdv) * GFSD_MAX_PASSING_FD)
@@ -2439,10 +2440,10 @@ datagram_server(int sock)
 		gflog_warning("datagram_server: cannot get load average");
 		return;
 	}
-#ifndef WORDS_BIGENDIAN
-	swab(&loadavg[0], &nloadavg[0], sizeof(nloadavg[0]));
-	swab(&loadavg[1], &nloadavg[1], sizeof(nloadavg[1]));
-	swab(&loadavg[2], &nloadavg[2], sizeof(nloadavg[2]));
+#ifndef WORDS_BIGENDIAN /* prototype of swab() uses (char *) on Solaris */
+	swab((void *)&loadavg[0], (void *)&nloadavg[0], sizeof(nloadavg[0]));
+	swab((void *)&loadavg[1], (void *)&nloadavg[1], sizeof(nloadavg[1]));
+	swab((void *)&loadavg[2], (void *)&nloadavg[2], sizeof(nloadavg[2]));
 #endif
 	rv = sendto(sock, nloadavg, sizeof(nloadavg), 0,
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));

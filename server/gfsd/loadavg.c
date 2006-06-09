@@ -4,6 +4,8 @@
 
 #include <gfarm/gfarm_config.h>
 
+#include "gfsd_subr.h"
+
 /*
  * getloadavg() function may require root user or kmem group privilege
  * on some OSes.
