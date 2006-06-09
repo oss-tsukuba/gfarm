@@ -960,8 +960,8 @@ set_meta_data(int ndir, int nfile,
 					return (e);
 				}
 			}
-			free(to_path);
 		}
+		free(to_path);
 	}
 	return (e);
 }
