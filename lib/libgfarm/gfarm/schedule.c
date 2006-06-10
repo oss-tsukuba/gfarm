@@ -1752,8 +1752,8 @@ statfsnode(char *canonical_hostname, int use_cache,
 	assert(search_idle_candidate_list->next == NULL);
 
 	if (!use_cache ||
-	    is_expired(&h->statfs_cache_time, STATFS_EXPIRATION) ||
-	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0) {
+	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0 ||
+	    is_expired(&h->statfs_cache_time, STATFS_EXPIRATION)) {
 
 		if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
 			return (GFARM_ERR_UNKNOWN_HOST);
