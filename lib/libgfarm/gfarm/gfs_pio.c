@@ -395,13 +395,27 @@ gfs_pio_update_times(GFS_File gf)
 char *
 gfs_pio_close(GFS_File gf)
 {
-	char *e, *e_save = NULL;
+	char *e, *e_save;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	/* We don't have to call gfs_pio_check_view_default() here */
+	/*
+	 * If we won't call gfs_pio_clearerr() here,
+	 * gfs_pio_check_view_default() might return error immediately.
+	 */
+	gfs_pio_clearerr(gf);
+	/*
+	 * need to set default view, otherwise the following code sequence
+	 * will be broken. i.e. the file won't be created:
+	 *   e = gfs_pio_create(file, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
+	 *       &gf);
+	 *   if (e == NULL)
+	 *	e = gfs_pio_close(gf);
+	 */
+	e_save = gfs_pio_check_view_default(gf);
+
 	if (gf->view_context != NULL) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
