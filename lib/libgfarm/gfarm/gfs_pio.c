@@ -395,14 +395,14 @@ gfs_pio_update_times(GFS_File gf)
 char *
 gfs_pio_close(GFS_File gf)
 {
-	char *e, *e_save;
+	char *e, *e_save = NULL;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e_save = gfs_pio_check_view_default(gf);
-	if (e_save == NULL) {
+	/* We don't have to call gfs_pio_check_view_default() here */
+	if (gf->view_context != NULL) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
 
