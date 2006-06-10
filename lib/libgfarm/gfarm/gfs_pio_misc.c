@@ -706,7 +706,7 @@ static char *
 get_lists(const char *from_url,
 		       gfarm_stringlist *dir_list, gfarm_stringlist *file_list)
 {
-	char *e, cwdbf[PATH_MAX * 2];
+	char *e, *e_save, *s, cwdbf[PATH_MAX * 2];
 	GFS_Dir dir;
 	struct gfs_dirent *entry;
 
@@ -717,25 +717,30 @@ get_lists(const char *from_url,
 	if (e != NULL)
 		return (e);
 	e = gfs_opendir(".", &dir);
-	if (e != NULL)
+	if (e != NULL) {
+		gfs_chdir(cwdbf);
 		return (e);
+	}
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
 		if (strcmp(entry->d_name, "..") == 0) {
 			continue;
 		}
 		if (strcmp(entry->d_name, ".") == 0) {
-			gfarm_stringlist_add(dir_list, "");
+			s = strdup("");
+			if (s == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				break;
+			}
+			gfarm_stringlist_add(dir_list, s);
 			continue;
 		}
 		e = traverse_file_tree("", entry->d_name, dir_list, file_list);
 		if (e != NULL)
-			return (e);
+			break;
 	}
-	if (e != NULL)
-		return (e);
 	gfs_closedir(dir);
-	e = gfs_chdir(cwdbf);
-	return (e);
+	e_save = gfs_chdir(cwdbf);
+	return (e != NULL ? e : e_save);
 }
 
 static char *get_infos_by_file(char *pathname,
