@@ -61,6 +61,7 @@ char *gfs_unlink_every_other_replicas(
 	const char *, const char *, const char *);
 char *gfs_chmod_internal(struct gfarm_path_info *, gfarm_mode_t, char **);
 
+char *gfs_pio_close_internal(GFS_File);
 char *gfs_pio_set_view_default(GFS_File);
 char *gfs_pio_set_view_global(GFS_File, int);
 char *gfs_pio_open_local_section(GFS_File, int);

@@ -26,7 +26,7 @@ gfs_pio_view_global_close(GFS_File gf)
 	struct gfs_file_global_context *gc = gf->view_context;
 	char *e;
 
-	e = gfs_pio_close(gc->fragment_gf);
+	e = gfs_pio_close_internal(gc->fragment_gf);
 	free(gc->url);
 	free(gc->offsets);
 	free(gc);
@@ -59,11 +59,11 @@ gfs_pio_view_global_move_to(GFS_File gf, int fragment_index)
 	e = gfs_pio_set_view_index(new_fragment, gf->pi.status.st_nsections,
 	    fragment_index, NULL, gf->view_flags);
 	if (e != NULL) {
-		gfs_pio_close(new_fragment);
+		gfs_pio_close_internal(new_fragment);
 		return (e);
 	}
 	if (gc->fragment_gf != NULL) {
-		gfs_pio_close(gc->fragment_gf);
+		gfs_pio_close_internal(gc->fragment_gf);
 		/* XXX need a way to report error on here */
 	}
 	gc->fragment_gf = new_fragment;

@@ -392,6 +392,34 @@ gfs_pio_update_times(GFS_File gf)
 	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
 }
 
+/* common routine of gfs_pio_close_internal() and gfs_pio_close() */
+static char *
+gfs_pio_close_common(GFS_File gf)
+{
+	char *e, *e_save = NULL;
+
+	if (gf->view_context != NULL) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			e_save = gfs_pio_flush(gf);
+
+		e = (*gf->ops->view_close)(gf);
+		if (e_save == NULL)
+			e_save = e;
+	}
+	/*
+	 * When there is inconsistency, do not update/overwrite the
+	 * metadata. This inconsistency may come from the update by
+	 * other process or oneself such as 'nvi'.
+	 */
+	if (e_save == NULL)
+		e_save = gfs_pio_update_times(gf);
+
+	gfarm_path_info_free(&gf->pi);
+	gfs_file_free(gf);
+
+	return (e_save);
+}
+
 char *
 gfs_pio_close(GFS_File gf)
 {
@@ -416,29 +444,53 @@ gfs_pio_close(GFS_File gf)
 	 */
 	e_save = gfs_pio_check_view_default(gf);
 
-	if (gf->view_context != NULL) {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
-			e_save = gfs_pio_flush(gf);
-
-		e = (*gf->ops->view_close)(gf);
-		if (e_save == NULL)
-			e_save = e;
-	}
-	/*
-	 * When there is inconsistency, do not update/overwrite the
-	 * metadata. This inconsistency may come from the update by
-	 * other process or oneself such as 'nvi'.
-	 */
+	e = gfs_pio_close_common(gf);
 	if (e_save == NULL)
-		e_save = gfs_pio_update_times(gf);
-
-	gfarm_path_info_free(&gf->pi);
-	gfs_file_free(gf);
+		e_save = e;
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e_save);
+}
+
+/*
+ * gfs_pio_close_internal() is private interface, and only called from
+ * global view processing.
+ *
+ * gfs_pio_close_internal() is almost similar to gfs_pio_close(), but
+ * won't call gfs_pio_check_view_default() to try to set its view to
+ * the default view. because:
+ * - global view procedures always set its fragment_gf to index view,
+ *   so we don't have to try to set the view to the default.
+ * - if we try to set the view to the default by gfs_pio_check_view_default(),
+ *   the following infinite recursive call may be caused by a file which
+ *   causes gfs_pio_set_view_index() fail:
+ *	gfs_pio_close(gf)
+ *	-> gfs_pio_check_view_default(gf)
+ *	-> gfs_pio_set_view_global(gf, 0)
+ *	-> gfs_pio_view_global_move_to(gf, 0)
+ *	-> gfs_pio_create or gfs_pio_open(..., &new_fragment) (-> success) +
+ *	   gfs_pio_set_view_index(new_fragment, ...) (-> fail) +
+ *	   gfs_pio_close(new_fragment)
+ *	   and this gfs_pio_close(new_fragment) may causes
+ *	   the infinite recursive call.
+ */
+char *
+gfs_pio_close_internal(GFS_File gf)
+{
+	char *e;
+	gfarm_timerval_t t1, t2;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_close_common(gf);
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
 }
 
 static char *
