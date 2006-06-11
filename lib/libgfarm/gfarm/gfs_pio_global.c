@@ -201,6 +201,7 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 	char *e;
 	int i, fragment, nsections;
 	file_offset_t section_length;
+	struct gfarm_path_info pi;
 	struct gfarm_file_section_info *sections;
 	char section_string[GFARM_INT32STRLEN + 1];
 
@@ -224,9 +225,11 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 	/*
 	 * Before updating path_info, try to update most recent information,
 	 * because the file mode may be updated by e.g. gfs_chmod().
-	 * We ignore any error for this, though.
 	 */
-	gfarm_path_info_get(gf->pi.pathname, &gf->pi);
+	if (gfarm_path_info_get(gf->pi.pathname, &pi) == NULL) {
+		gfarm_path_info_free(&gf->pi);
+		gf->pi = pi;
+	}
 
 #if 0 /* We don't store file size in gfarm_path_info, this is just ignored */
 	gf->pi.status.st_size = length;
