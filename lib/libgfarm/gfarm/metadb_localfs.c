@@ -233,6 +233,8 @@ str_to_words(char *str, int *np, char ***wordsp)
 	tmpbuf[*np] = NULL;
 
 	tmp = malloc(sizeof(char*) * (*np + 1));
+	if (tmp == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; i++) {
                 tmp[i] = strdup(tmpbuf[i]);
         }
@@ -1156,6 +1158,9 @@ localfs_path_info_set(
 	FILE *fp;
 	int createdir;
 
+	if (!gfarm_base_path_info_ops.validate(info))
+		return (GFARM_ERR_INVALID_ARGUMENT);
+
 	if (GFARM_S_ISDIR(info->status.st_mode))
 		createdir = CREATE_DIR;
 	else
@@ -1175,6 +1180,9 @@ localfs_path_info_replace(
 {
 	char *e;
 	FILE *fp;
+
+	if (!gfarm_base_path_info_ops.validate(info))
+		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	e = localfs_path_info_data_open(pathname, "w", OPEN_NEEDEXIST,
 				       NOTCREATE_DIR, &fp);
@@ -1689,6 +1697,19 @@ localfs_file_section_info_data_open(
 }
 
 static char *
+localfs_file_section_info_validate(
+	struct gfarm_file_section_info *info)
+{
+	if (info->pathname == NULL || info->section == NULL ||
+	    info->checksum == NULL || info->checksum_type == NULL)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	else
+		return (NULL);
+}
+
+static char * localfs_file_section_info_remove(const char *, const char *);
+
+static char *
 localfs_file_section_info_get(
 	const char *pathname, const char *section,
 	struct gfarm_file_section_info *info,
@@ -1718,10 +1739,14 @@ localfs_file_section_info_get(
 			free(tmp);
 		}
 	}
-	/* XXX check error (invalid format) */
-
 	fclose(fp);
-	return (NULL);
+
+	/* XXX check error (invalid format) */
+	e = localfs_file_section_info_validate(info);
+	if (e != NULL)
+		localfs_file_section_info_remove(pathname, section);
+
+	return (e);
 }
 
 static char *
@@ -1753,11 +1778,18 @@ localfs_file_section_info_set(
 	char *e;
 	FILE *fp;
 #ifdef CREATE_FSCI_WITHOUT_FSI
-	struct gfarm_file_section_info fsi;
 	int ncopies = 0;
 	char **copies;
 #endif
+	struct gfarm_file_section_info fsi;
 	char *pi_data;
+
+	fsi = *info;
+	fsi.pathname = pathname;
+	fsi.section = section;
+	e = localfs_file_section_info_validate(&fsi);
+	if (e != NULL)
+		return (e);
 
 	e = localfs_path_info_data_pathname_get(pathname, &pi_data,
 						NOTCREATE_DIR);
@@ -1822,9 +1854,16 @@ localfs_file_section_info_replace(
 {
 	char *e;
 	FILE *fp;
-	struct gfarm_file_section_info fsi; /* XXX */
+	struct gfarm_file_section_info fsi; /* tmp */
 	int ncopies2 = 0;
 	char **copies2;
+
+	fsi = *info;
+	fsi.pathname = pathname;
+	fsi.section = section;
+	e = localfs_file_section_info_validate(&fsi);
+	if (e != NULL)
+		return (e);
 
 	if (ncopies < 0) {
 		/* not modify file_section_copy infos */
