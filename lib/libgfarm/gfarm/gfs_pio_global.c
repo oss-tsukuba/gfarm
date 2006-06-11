@@ -221,7 +221,16 @@ gfs_pio_view_global_ftruncate(GFS_File gf, file_offset_t length)
 	if (e != NULL)
 		return (e);
 
+	/*
+	 * Before updating path_info, try to update most recent information,
+	 * because the file mode may be updated by e.g. gfs_chmod().
+	 * We ignore any error for this, though.
+	 */
+	gfarm_path_info_get(gf->pi.pathname, &gf->pi);
+
+#if 0 /* We don't store file size in gfarm_path_info, this is just ignored */
 	gf->pi.status.st_size = length;
+#endif
 	gf->pi.status.st_nsections = fragment + 1;
 	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
 	if (e != NULL)
