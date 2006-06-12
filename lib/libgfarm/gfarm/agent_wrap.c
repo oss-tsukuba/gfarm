@@ -448,7 +448,11 @@ gfs_uncachedir(void)
 void
 gfarm_host_info_free(struct gfarm_host_info *info)
 {
-	gfarm_cache_host_info_free(info);
+	if (gfarm_agent_check() == NULL)
+		/* when connecting to agent, need to call metadb interface */
+		gfarm_metadb_host_info_free(info);
+	else
+		gfarm_cache_host_info_free(info);
 }
 
 char *
@@ -518,7 +522,11 @@ gfarm_host_info_remove(const char *hostname)
 void
 gfarm_host_info_free_all(int n, struct gfarm_host_info *infos)
 {
-	gfarm_cache_host_info_free_all(n, infos);
+	if (gfarm_agent_check() == NULL)
+		/* when connecting to agent, need to call metadb interface */
+		gfarm_metadb_host_info_free_all(n, infos);
+	else
+		gfarm_cache_host_info_free_all(n, infos);
 }
 
 char *
