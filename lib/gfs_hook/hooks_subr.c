@@ -436,6 +436,7 @@ gfs_hook_terminate(void)
 	char *e;
 
 	gfs_hook_close_all();
+	gfs_hook_disable_hook();
 	e = gfarm_terminate();
 	if (e != NULL)
 		_gfs_hook_debug(
