@@ -19,7 +19,7 @@
 #define AF_INET4_BIT	32
 
 struct gfarm_hostspec {
-	enum { GFHS_NAME, GFHS_AF_INET4 } type;
+	enum { GFHS_ANY, GFHS_NAME, GFHS_AF_INET4 } type;
 	union gfhs_union {
 		char name[1];
 		struct gfhs_in4_addr {
@@ -27,6 +27,19 @@ struct gfarm_hostspec {
 		} in4_addr;
 	} u;
 };
+
+char *
+gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
+{
+	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
+	    - sizeof(union gfhs_union));
+
+	if (hsp == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	hsp->type = GFHS_ANY;
+	*hostspecpp = hsp;
+	return (NULL);
+}
 
 char *
 gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
@@ -141,8 +154,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 	unsigned long masklen;
 
 	if (strcmp(name, "*") == 0 || strcmp(name, "ALL") == 0) {
-		return (gfarm_hostspec_af_inet4_new(INADDR_ANY, INADDR_ANY,
-		    hostspecpp));
+		return (gfarm_hostspec_any_new(hostspecpp));
 	}
 	if (gfarm_string_to_in4addr(name, &end1p, &addr) == NULL) {
 		if (*end1p == '\0') {
@@ -213,6 +225,8 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	const char *name, struct sockaddr *addr)
 {
 	switch (hostspecp->type) {
+	case GFHS_ANY:
+		return (1);
 	case GFHS_NAME:
 		if (name == NULL)
 			return (0);
