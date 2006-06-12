@@ -291,13 +291,15 @@ agent_client_readdir(struct agent_connection *agent_server,
 	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 	char *e, *name;
 	static struct gfs_dirent de;
+	gfarm_uint32_t ino;
 
 	e = agent_client_rpc(
 		agent_server, 0, AGENT_PROTO_READDIR,
 		"i/ihccs", p,
-		&de.d_fileno, &de.d_reclen,
+		&ino, &de.d_reclen,
 		&de.d_type, &de.d_namlen, &name);
 	if (e == NULL) {
+		de.d_fileno = ino;
 		if (*name == '\0')
 			*entry = NULL;
 		else {
