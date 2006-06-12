@@ -71,6 +71,7 @@ Updated Features
 
  * gfsd(8) - multiple spool directories support by running multiple
    gfsds with a different virtual IP address on the same server host.
+   Sanity check is added to detect input/output error.
 
  * libgfarm - add access control for gfs_chdir, gfs_opendir,
    gfs_unlink, gfs_unlink_section, gfs_unlink_section_replica, and
@@ -121,6 +122,11 @@ Updated Features
  - fix a bug such that '.' and '..' can be registered incorrectly in
    metadata.
 
+ - plug memory leak.
+
+ - fix a segmentation fault when re-caching the directory cache
+   managed by red-black tree.
+
 Release note for Gfarm 1.2.9
 ============================
 
@@ -154,7 +160,7 @@ Updated Features
 
  * Performance Improvement
 
- - Directory cache is managed by a redblack tree instead of hash to
+ - Directory cache is managed by a red-black tree instead of hash to
    improve performance in large number of files in a directory.
 
  - Host information cache and path information cache are added to

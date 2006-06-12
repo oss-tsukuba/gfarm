@@ -1,3 +1,462 @@
+2006-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c:
+	fix memory leak which was caused by previous my change
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c:
+	gfs_pio_truncate() for global view:
+	update path_info in struct gfs_pio before changing st_nsection,
+	otherwise incorrect st_mode may be written (because st_mode may
+	be already updated by gfs_chmod() during the file is opened),
+	and such erroneous st_mode may make future gfs_chmod() not correctly work
+	(because gfs_chmod() does nothing, if old mode and new mode is same).
+
+	this fixes EACCES error in gfs_pio_set_view_index(),
+	reported by Ishibashi-san in [gfarm-developers:00504] ... [:0508]
+	In this case, the file is created as mode 0644 at first.
+	then gfs_pio_open() is called,
+	then gfs_chmod() changes the mode to 0200.
+	then gfs_pio_truncate() erroneously update the metadata to 0644.
+	Thus, subsequent gfs_pio_open(, GFARM_FILE_RDONLY, ) succeeds,
+	but gfs_pio_set_view_index() fails, because the mode of the file
+	in gfsd spool is actually 0200.
+
+2006-06-11  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_localfs.c:
+	check that path_info and section_info is valid.
+
+2006-06-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c:
+	fix the following infinite recursive call:
+		gfs_pio_close() -> gfs_pio_check_view_default()
+		-> gfs_pio_set_view_global() -> gfs_pio_view_global_move_to()
+		-> gfs_pio_close()
+	caused by [gfarm-cvs:07721].
+	problem reported by Ishibashi-san in [gfarm-developers:00500] ... [:00503]
+
+2006-06-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	correct a problem in previous change, and mention such case in a comment.
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	fix longstanding bug that the resources of view won't be freed,
+	if gfs_pio_error() != NULL before gfs_pio_close() is called.
+	problem reported by Ishibashi-san in [gfarm-developers:00460] and
+	[gfarm-developers:00494]
+
+	* lib/libgfarm/gfarm/schedule.c:
+	don't access uninitialised variable, although it wasn't actually harmful
+	(because the availability of the variable would be checked later anyway),
+	reported by Ishibashi-san in [gfarm-developers:00495]
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c: fix invalid free() about dir_list
+	reported by Ishibashi-san in [gfarm-developers:00494]
+
+2006-06-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c: fix multiple free()
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	really fix memory leaks (hopefully)
+
+2006-06-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/loadavg.c:
+	<gfarm/gfarm_misc.h> is needed for gfarm_int32_t in "gfsd_subr.h"
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/metadb_pgsql.c, ns/nstool/file/stat.c, server/gfsd/gfsd.c, server/gfsd/gfsd_subr.h, server/gfsd/loadavg.c, gftool/gfarm_agent/gfarm_agent.c:
+	Fix warnings on Solaris 10/opteron
+	reported by Yamamoto-san in [gfarm-developers:00470]
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	be more tolerant about non-fatal conditions
+
+2006-06-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	traverse_file_tree(), get_infos_by_file(), get_meta_data(), set_meta_data,
+	rename_dir(): plug memory leaks
+
+2006-06-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention that Solaris binary distribution needs /usr/lib/libresov.so in
+	$LD_PRELOAD_32 for now.
+
+2006-06-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in:
+	fix previous my change (argument order)
+
+	* gftool/config-gfarm/config-gfarm.in:
+	Don't ask the following question on PostgreSQL 8.1 or later:
+	Shall the new role be allowed to create more new roles? (y/n)
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	more fixes to unaligned memory accesss to deal with coredump on Solaris/sparc
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	call EVP_DigestFinal() in some error cases to free memory,
+	reported by Ishibashi-san in 3rd case of [gfarm-developers:00461]
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	gfarm_pgsql_path_info_get_all_foreach():
+	- more strict sanity check
+	- fix memory leak (hopefully)
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	recover NULL field check, which is lost by previous my change
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	more strict sanity check for COPY BINARY
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	use memcpy() instead of word acccess like "*(uint32_t *)pointer",
+	because the latter causes SIGBUS on RISC processors which don't allow
+	unaligned memory accesss.
+	This fixes core dump problem of gfs_hook'ed programs on Solaris/sparc.
+
+2006-06-08  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	we cannot use RB_FOREACH since a node needed to compute the next node by RB_NEXT can be free'ed by free_node() or other functions.  This causes a segmentation fault in sweep_nodes().
+
+2006-06-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/sysdep/solaris/amd64/SYS.h, lib/gfs_hook/sysdep/solaris/i386/SYS.h, lib/gfs_hook/sysdep/solaris/llseek.S, lib/gfs_hook/sysdep/solaris/sparc/SYS.h, lib/gfs_hook/sysdep/solaris/sparcv9/SYS.h:
+	make these compilable by gcc
+
+	* lib/gfs_hook/hooks.c:
+	partially implement acl(2) system call hook on Solaris,
+	to make the following regression tests work on Solaris 9:
+		gfs_hook/tool/mv/0byte.sh
+		gfs_hook/tool/mv/1byte.sh
+
+	* regress/gfs_hook/tool/cd/cd.sh, regress/gfs_hook/tool/pwd/pwd.sh, regress/regress.conf:
+	define bash as $shell, and use it appropriately.
+	e.g. "cd" & "pwd" of gfs_hook
+	Because /bin/sh on Solaris 9 doesn't work with gfs_hook.
+	/bin/sh on *BSD (i.e. ash) does pass these tests,
+	but fails to pass configure test.
+
+	* regress/gfs_hook/tool/ls/notexist.sh:
+	exit code of ls on Solaris 9 is not 1 but 2, when specified file doesn't exist.
+
+	* LICENSE: add CDDL Version 1.0 for lib/gfs_hook/sysdep/solaris/
+
+	* lib/gfs_hook/sysdep/solaris/sparc/SYS.h, lib/gfs_hook/sysdep/solaris/sparcv9/SYS.h, makes/var.mk, lib/gfs_hook/lseek64.c, lib/gfs_hook/sysdep/solaris/Makefile, lib/gfs_hook/sysdep/solaris/amd64/SYS.h, lib/gfs_hook/sysdep/solaris/i386/SYS.h, lib/gfs_hook/sysdep/solaris/llseek.S:
+	correct return value of gfs_hook_syscall_lseek64() on Solaris 9 / sparc
+	(32bit mode).  this fixes the following failures under regress with
+	`cmp' command in GNU diffutils, when gfs_hook is specified by LD_PRELOAD_32:
+
+	gftool/gfls/root.sh                                ... FAIL
+	gftool/gfls/notexist.sh                            ... FAIL
+	gfs_hook/tool/gzip/gzip-d.sh                       ... FAIL
+
+	* lib/gfs_hook/sysdep/solaris/OPENSOLARIS.LICENSE, lib/gfs_hook/sysdep/solaris/amd64/SYS.h, lib/gfs_hook/sysdep/solaris/i386/SYS.h, lib/gfs_hook/sysdep/solaris/llseek.S, lib/gfs_hook/sysdep/solaris/sparc/SYS.h, lib/gfs_hook/sysdep/solaris/sparcv9/SYS.h:
+	New file.
+
+	* lib/gfs_hook/sysdep/solaris/OPENSOLARIS.LICENSE, lib/gfs_hook/sysdep/solaris/amd64/SYS.h, lib/gfs_hook/sysdep/solaris/i386/SYS.h, lib/gfs_hook/sysdep/solaris/llseek.S, lib/gfs_hook/sysdep/solaris/sparc/SYS.h, lib/gfs_hook/sysdep/solaris/sparcv9/SYS.h:
+	from OpenSolaris 2005/06/12:
+
+	OPENSOLARIS.LICENSE
+	lib/libc/amd64/inc/SYS.h
+	lib/libc/i386/inc/SYS.h
+	lib/libc/sparc/inc/SYS.h
+	lib/libc/sparcv9/inc/SYS.h
+	lib/libc/common/sys/llseek.s
+
+	* lib/gfs_hook/hooks.c:
+	implement system call hooks for lutimes() and lchmod()
+	to make tar command work on NetBSD.
+
+2006-06-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/cp/mode755.sh:
+	test script for cp(1) an executable file.
+	this fails on a client of which default architecture is not defined
+	in any configuration files
+
+2006-06-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c:
+	mknod: if (mode & S_IFMT) == 0, treat it as S_IFREG on Solaris and Linux.
+	problem reported by ishibashi-san in [gfarm-developers:00450]
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c:
+	define OS_SOLARIS and use defined(OS_SOLARIS) instead of:
+	defined(sun) && (defined(__svr4__) || defined(__SVR4))
+
+2006-06-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gfs_hook/tool/gzip/gzip-cd.sh
+
+	* regress/gfs_hook/tool/gzip/gzip-cd.sh:
+	test script for "gzip -cd <file>"
+
+	* regress/gfs_hook/tool/gzip/gzip-d.sh:
+	correct an error which leaves temporay file
+
+	* regress/schedule: add gfs_hook/tool/cd/cd.sh
+	    gfs_hook/tool/pwd/pwd.sh
+	    gfs_hook/tool/gzip/gzip-d.sh
+	    gfs_hook/tool/chmod/chmod_644_file.sh
+	    gfs_hook/tool/chmod/chmod_755_file.sh
+
+2006-06-08  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* bench/fsysbench/fsysbench.c: check all return values.
+
+2006-06-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/README.ja:
+	add checking user's working directory to preperation
+
+2006-06-08  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/path_info_cache.c (gfarm_path_info_dup):
+	use pathname instead of src->pathname.
+
+2006-06-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c: fix truncate() and ftruncate() on *BSD.
+
+	* lib/gfs_hook/hooks.c: fix pread()/pwrite() on *BSD.
+
+	* regress/gftool/gfrep/gfrep-d.sh:
+	use nawk on Solaris, otherwise this fails.
+
+	* regress/tst.sh, regress/regress.sh:
+	make this work with /bin/sh on Solaris
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile:
+	add explicit dependency on PostgreSQL
+
+2006-06-07  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/sysdep/linux/debian/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in:
+	user 'runuser' instead of 'su' for SELinux
+
+2006-06-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/sysdep/default/gfarm-pgsql.in, gftool/config-gfarm/sysdep/netbsd/gfarm-pgsql.in:
+	don't use "su -", but use "su" for PostgreSQL on some platforms, because
+	on Solaris and HP-UX:
+		"su -" displays /etc/motd, and it's annoying.
+		(Tru64 doesn't, though....)
+	on NetBSD and DragonFly:
+		pkgsrc doesn't create home directory of pgsql by default,
+		thus, "su -" fails.
+	Other platforms continue to use "su -", the rationale from tatebe-san is:
+		- avoid to inherit unnecessary environment variables.
+		- use some environment variables which are set by postgres' dot files.
+		- system supplied rc script for PostgreSQL is using "su -l".
+
+	XXX TODO:
+		maybe we should use "/sbin/runuser -l" on SE Linux platforms.
+		(from tatebe-san too)
+
+2006-06-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/gzip/gzip-d.sh: "gftmp" -> "hooktmp"
+
+2006-06-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in:
+	- make $BACKEND_PRIVILEGE honor -U option too
+	- check existence of $BACKEND_ADMIN_USER, if there is /usr/bin/getent
+	- on *BSD, use "pgsql" instead of "postgres" as default PostgreSQL user account
+
+2006-06-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/gzip/gzip-d.sh:
+	test script for "gzip -d <file>"
+
+	* regress/gfs_hook/tool/pwd/pwd.sh, regress/gfs_hook/tool/cd/cd.sh:
+	simplify
+
+2006-06-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/pkgsrc/PLIST: correct mistake in previous my change
+
+2006-06-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/README.ja: how to use Gfarm regression test suite
+
+2006-06-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in: actually implement -U and -u
+
+2006-06-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c: correct a compile error
+
+2006-06-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c:
+	fix a bug when accessing program introduced by the previous commit
+
+2006-06-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/url.c: fix memory leak in gfarm_path_dir()
+
+	* lib/libgfarm/gfarm/url.c: simplify, by removing micro optimization
+
+	* lib/libgfarm/gfarm/url.c: remove unnecessary condition
+
+	* server/gfsd/gfsd.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/url.c:
+	introduce gfarm_path_dir() to avoid portability problem of dirname(3)
+
+2006-06-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/gfs_hook/hooks_common.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_pio_global.c:
+	if file does not have a section of requested architecture, try "noarch"
+
+	* gftool/gfreg/gfreg.c: gfreg does not need to take care about "noarch"
+
+	* lib/libgfarm/gfarm/host.c:
+	if architecture is not determined, return "noarch"
+
+	* lib/gfs_hook/hooks.c: revert to the revision 1.108
+
+2006-06-06  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_localfs.c:
+	confirm whether there is path_info when section_info is added.
+
+2006-06-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* server/gfsd/gfsd.c:
+	chdir(2) should be called after gfarm_daemon(0, 0).  Otherwise, cwd is /
+
+2006-06-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfutil/logutil_th.c:
+	add workaround for a problem on Solaris 9
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja: update output example of config-gfarm
+
+	* INSTALL.en:
+	- some notes about port number and postgresql user account.
+	- add installation step 7 and step 11, from INSTALL.ja
+
+	* INSTALL.ja: some notes about port number and postgresql user account.
+
+2006-06-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/gfs_hook/hooks.c (unlink):
+	when architecture is not known, use "noarch"
+
+2006-06-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in:
+	change default port number of backend server again, to 10602/tcp this time.
+	because PostgreSQL doesn't work with 602/tcp.
+	(it's invoked by normal user privilege, thus cannot bind port less than 1024)
+
+	* gftool/config-gfarm/config-gfarm.in: needs to use nawk on Solaris
+
+	* gftool/config-gfarm/sysdep/default/gfarm-pgsql.in:
+	make this actually work
+
+2006-06-06  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* INSTALL.en: removed multi-bytes characters
+
+2006-06-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	Solaris is now supported, but AIX is not.
+
+2006-06-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: correct wording and some mistakes
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5, man/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	describe "ldap_bind_dn" and "ldap_bind_password" statements.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: update FAQ entry about security
+
+	* gftool/config-gfarm/config-gfarm.in:
+	remove spaces from root DN and base DN to make OpenLDAP-2.0.* happy
+
+	* gftool/config-gfarm/slapd.conf-2.0.in:
+	make openldap-2.0.* authenticate clients, too
+
+	* package/solaris/gfarm-server.files, package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	support PostgreSQL
+
+2006-06-05  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	remove Section 4.2 since it is obsolete
+
+2006-06-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile:
+	gfarm-1.2pl4 -> gfarm-1.3
+
+2006-06-05  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* man/man5/gfarm.conf.5, man/man8/gfmd.8, man/man8/gfsd.8, doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, man/ja/man1/gfarm_agent.1, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man1/gfarm_agent.1, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html:
+	regen
+
+2006-06-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build, package/solaris/gfarm-agent.files, package/solaris/gfarm-client.files:
+	split gfarm_agent into its own subpackage
+
+2006-06-05  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* RELNOTES: add compatibility note
+
+	* gftool/gfarm_agent/gfarm_agent.c, server/gfsd/gfsd.c: update usage()
+
+	* doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook:
+	typo
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	add description about agent and postgresql related directives
+
+	* doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook:
+	update description for metadata cache server via ip connection
+
+	* server/gfsd/gfsd.c:
+	add sanity check for spool directory based on suggestion of soda-san.
+	add input/output error check.
+
+2006-06-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/chmod/chmod_755_file.sh:
+	test script for "chmod 755 <file>"
+
+	* regress/gfs_hook/tool/chmod/chmod_644_file.sh:
+	test script for "chmod 644 file"
+
+2006-06-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/regress.conf:
+	make $hooktop point working directory, instead of /gfarm,
+	no functional change.
+
+	* regress/gfs_hook/tool/cp/cp.sh, regress/gfs_hook/tool/ls/notexist.sh, regress/gfs_hook/tool/ls/root-gfarm.sh, regress/gfs_hook/tool/mv/mv.sh, regress/gfs_hook/tool/pwd/pwd.sh, regress/gfs_hook/tool/rm/rm.sh, regress/gfs_hook/tool/cd/cd.sh, regress/regress.conf:
+	use $hooktop and $hooktmp instead of /gfarm and hardcoded names in the scripts,
+	to make this regression test runnable on multiple hosts at once.
+
+	* regress/data/gftest-0.0.tar.gz:
+	tar archive which will be used for regression tests
+
+2006-06-05  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog, LICENSE, RELNOTES:
+	Release note for the version 1.3 (and 1.2.9).
+
 2006-06-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* regress/gfs_hook/tool/pwd/pwd.sh: test script for "pwd"
