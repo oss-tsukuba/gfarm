@@ -367,7 +367,7 @@ agent_server_readdir(struct xxx_connection *client)
 	if (entry)
 		e_rpc = agent_server_put_reply(
 			client, "readdir", e, "ihccs",
-			entry->d_fileno, entry->d_reclen,
+			(gfarm_uint32_t)entry->d_fileno, entry->d_reclen,
 			entry->d_type, entry->d_namlen, entry->d_name);
 	else
 		e_rpc = agent_server_put_reply(
