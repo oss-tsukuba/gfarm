@@ -67,6 +67,7 @@ gfs_mkdir(const char *pathname, gfarm_mode_t mode)
 
 	gettimeofday(&now, NULL);
 	pi.pathname = canonic_path;
+	pi.status.st_ino = 0; /* won't be used, but to make valgrind shut up */
 	pi.status.st_mode = (GFARM_S_IFDIR | (mode & ~mask & GFARM_S_ALLPERM));
 	pi.status.st_user = user;
 	pi.status.st_group = "*"; /* XXX for now */
