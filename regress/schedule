@@ -37,9 +37,15 @@ gfs_hook/tool/cp/0byte.sh
 gfs_hook/tool/rm/0byte.sh
 gfs_hook/tool/cp/1byte.sh
 gfs_hook/tool/rm/1byte.sh
+gfs_hook/tool/cp/mode755.sh
 gfs_hook/tool/mv/0byte.sh
 gfs_hook/tool/mv/1byte.sh
 gfs_hook/tool/gzip/gzip-d.sh
 gfs_hook/tool/gzip/gzip-cd.sh
 gfs_hook/tool/chmod/chmod_644_file.sh
 gfs_hook/tool/chmod/chmod_755_file.sh
+gfs_hook/tool/mkdir/mkdir.sh
+gfs_hook/tool/mkdir/mkdir-p.sh
+gfs_hook/tool/diff/diff.sh
+gfs_hook/tool/diff/diff-r.sh
+gfs_hook/tool/pax/pax-r.sh
