@@ -136,17 +136,22 @@ char *
 agent_client_rpc_request(struct agent_connection *agent_server, int command,
 			 char *format, ...)
 {
-	va_list ap;
-	char *e;
+	va_list ap, save_ap;
+	char *e, *save_format;
 
 	va_start(ap, format);
+	save_format = format;
+	save_ap = ap;
 retry:
 	e = xxx_proto_vrpc_request(agent_server->conn, command, &format, &ap);
-	if (e == GFARM_ERR_BROKEN_PIPE) {
+	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
 		gfarm_agent_disconnect();
 		e = gfarm_agent_connect();
-		if (e == NULL)
+		if (e == NULL) {
+			format = save_format;
+			ap = save_ap;
 			goto retry;
+		}
 	}
 	va_end(ap);
 	return (e);
@@ -176,19 +181,24 @@ char *
 agent_client_rpc(struct agent_connection *agent_server, int just, int command,
 	       char *format, ...)
 {
-	va_list ap;
-	char *e;
+	va_list ap, save_ap;
+	char *e, *save_format;
 	int error;
 
 	va_start(ap, format);
+	save_format = format;
+	save_ap = ap;
 retry:
 	e = xxx_proto_vrpc(agent_server->conn, just,
 			   command, &error, &format, &ap);
-	if (e == GFARM_ERR_BROKEN_PIPE) {
+	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
 		gfarm_agent_disconnect();
 		e = gfarm_agent_connect();
-		if (e == NULL)
+		if (e == NULL) {
+			format = save_format;
+			ap = save_ap;
 			goto retry;
+		}
 	}
 	va_end(ap);
 
