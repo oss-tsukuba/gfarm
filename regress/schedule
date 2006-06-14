@@ -49,3 +49,4 @@ gfs_hook/tool/mkdir/mkdir-p.sh
 gfs_hook/tool/diff/diff.sh
 gfs_hook/tool/diff/diff-r.sh
 gfs_hook/tool/pax/pax-r.sh
+gfs_hook/tool/build/configure.sh
