@@ -4,6 +4,11 @@
  * $Id$
  */
 
+typedef const char *gfarm_error_t;
+
+/* this is not an error, but success */
+extern char GFARM_ERR_NO_ERROR[]; /* forbidden entirely */
+
 /* classic errno (1..10, 12..34) */
 extern char GFARM_ERR_OPERATION_NOT_PERMITTED[]; /* forbidden entirely */
 extern char GFARM_ERR_NO_SUCH_OBJECT[];
