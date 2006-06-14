@@ -458,8 +458,13 @@ main(int argc, char *argv[], char *envp[])
 		free(gfarm_url);
 	}
 	else {
-		/* XXX check `e' */
+		struct stat sb;
+
 		local_path = search_path(path);
+		if (stat(local_path, &sb)) {
+			errmsg(local_path, strerror(errno));
+			exit(1);
+		}
 	}
 
 	e = modify_ld_library_path();
