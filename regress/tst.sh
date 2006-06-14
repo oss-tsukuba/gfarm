@@ -5,7 +5,7 @@ fmt="%-50.50s ... %s\n"
 
 for tst
 do
-	sh $tst >>$log 2>&1
+	sh $tst </dev/null >>$log 2>&1
 	exit_code=$?
 	case $exit_code in
 	0)	printf "$fmt" "$tst" "PASS";;
