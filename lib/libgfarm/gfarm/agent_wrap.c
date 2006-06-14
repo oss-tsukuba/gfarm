@@ -229,8 +229,7 @@ gfarm_terminate(void)
 {
 	char *e;
 
-	if (gfarm_agent_check() == NULL)
-		(void)gfarm_agent_disconnect();
+	(void)gfarm_agent_disconnect();
 	e = gfarm_client_terminate();
 	(void)gfarm_metadb_terminate();
 
