@@ -221,8 +221,6 @@ gfarm_agent_disconnect()
 char *
 gfarm_initialize(int *argc, char ***argv)
 {
-	if (gfarm_agent_enabled)
-		(void)gfarm_agent_connect();
 	return (gfarm_client_initialize(argc, argv));
 }
 
