@@ -46,6 +46,7 @@ gfs_hook/tool/chmod/chmod_644_file.sh
 gfs_hook/tool/chmod/chmod_755_file.sh
 gfs_hook/tool/mkdir/mkdir.sh
 gfs_hook/tool/mkdir/mkdir-p.sh
+gfs_hook/tool/rmdir/rmdir.sh
 gfs_hook/tool/diff/diff.sh
 gfs_hook/tool/diff/diff-r.sh
 gfs_hook/tool/pax/pax-r.sh
