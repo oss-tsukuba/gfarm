@@ -46,6 +46,7 @@ static struct _gfs_file_descriptor *_gfs_file_buf[MAX_GFS_FILE_BUF];
 static void gfs_hook_disable_hook(void);
 static void gfs_hook_enable_hook(void);
 static int gfs_hook_check_hook_disabled(void);
+static int gfs_hook_init(void);
 static void gfs_hook_set_current_view_local(void);
 static void gfs_hook_set_current_view_index(int, int);
 static void gfs_hook_set_current_view_global(void);
@@ -566,7 +567,15 @@ gfs_hook_get_cwd_is_gfarm(void)
 {
 	if (_gfs_hook_cwd_is_gfarm == -1)
 		gfs_hook_check_cwd_is_gfarm();
-
+	else {
+		/*
+		 * hook functions can be called even after
+		 * gfarm_terminate() is called.  If initialization
+		 * succeeds, go ahead.  Otherwise, set 0.
+		 */
+		if (!gfs_hook_init())
+			gfs_hook_set_cwd_is_gfarm(0);
+	}
 	return (_gfs_hook_cwd_is_gfarm);
 }
 
@@ -718,11 +727,14 @@ gfs_hook_check_hook_disabled(void)
 	return (gfs_hook_is_disabled);
 }
 
-static int gfs_hook_initialized = 0;
-
 static int
 gfs_hook_init(void)
 {
+	static int gfs_hook_initialized = 0;
+
+	if (gfs_hook_initialized && gfarm_initialized())
+		return (1);
+
 	gfs_hook_disable_hook();
 	if (gfs_hook_initialize() != NULL) {
 		gfs_hook_not_initialized();
@@ -780,7 +792,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
-		if (!gfs_hook_initialized && !gfs_hook_init()) {
+		if (!gfs_hook_init()) {
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
@@ -890,7 +902,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	/* The current directory is *not* in the Gfarm file system */
 	if (*path_save != '/'
 	    && (path = gfs_hook_is_mount_point_relative(path_save))) {
-		if (!gfs_hook_initialized && !gfs_hook_init()) {
+		if (!gfs_hook_init()) {
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
