@@ -29,7 +29,7 @@ GFARM_PID_DIR=	${VARBASE}/run	# default directory for PID files
 FILES_SUBST+=	GFARM_PID_DIR=${GFARM_PID_DIR}
 
 .include "../../security/openssl/buildlink3.mk"
-.include "../../databases/openldap/buildlink3.mk"
+.include "../../databases/openldap-client/buildlink3.mk"
 .include "../../mk/pgsql.buildlink3.mk"
 .include "../../mk/pthread.buildlink3.mk"
 .include "../../mk/bsd.pkg.mk"
