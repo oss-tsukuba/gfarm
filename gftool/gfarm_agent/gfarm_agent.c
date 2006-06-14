@@ -1108,8 +1108,6 @@ agent_server_file_section_copy_info_get_all_by_host(
 
 /* */
 
-static int gfarm_initialized = 0;
-
 static int
 client_arg_alloc(int fd, void **argp)
 {
@@ -1143,11 +1141,9 @@ server(void *arg)
 	agent_ptable_alloc();
 
 	agent_lock();
-	if (!gfarm_initialized) {
+	if (!gfarm_initialized()) {
 		e = gfarm_initialize(NULL, NULL);
-		if (e == NULL)
-			gfarm_initialized = 1;
-		else {
+		if (e != NULL) {
 			(void)gfarm_terminate();
 			agent_unlock();
 			close(client_fd);
@@ -1584,9 +1580,7 @@ main(int argc, char **argv)
 	gfarm_cache_path_info_param_set(500, 0);
 
 	e = gfarm_initialize(NULL, NULL);
-	if (e == NULL)
-		gfarm_initialized = 1;
-	else
+	if (e != NULL)
 		(void)gfarm_terminate();
 
 	/* default is UNIX_DOMAIN */

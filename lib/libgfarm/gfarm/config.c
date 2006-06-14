@@ -41,7 +41,7 @@
 #include "timer.h"
 #include "agent_wrap.h"
 
-static int gfarm_initialized = 0;
+static int gfarm_initialize_done = 0;
 int gfarm_is_active_file_system_node = 0;
 
 char *gfarm_config_file = GFARM_CONFIG;
@@ -50,6 +50,12 @@ void
 gfarm_config_set_filename(char *filename)
 {
 	gfarm_config_file = filename;
+}
+
+int
+gfarm_initialized(void)
+{
+	return (gfarm_initialize_done);
 }
 
 /*
@@ -1731,7 +1737,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 	int saved_auth_verb;
 #endif
 
-	if (gfarm_initialized)
+	if (gfarm_initialize_done)
 		return (NULL);
 
 	gfarm_error_initialize();
@@ -1796,7 +1802,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 			return ("cannot revert SIGPIPE handler");
 	}
 			
-	gfarm_initialized = 1;
+	gfarm_initialize_done = 1;
 
 	return (NULL);
 }
@@ -1829,7 +1835,7 @@ gfarm_client_terminate(void)
 {
 	char *e, *e_save = NULL;
 
-	if (!gfarm_initialized)
+	if (!gfarm_initialize_done)
 		return (NULL);
 
 	gfs_profile(gfs_display_timers());
@@ -1864,7 +1870,7 @@ gfarm_client_terminate(void)
 		}
 	}
 			
-	gfarm_initialized = 0;
+	gfarm_initialize_done = 0;
 
 	return (e_save);
 }
