@@ -9,8 +9,24 @@ include $(top_srcdir)/makes/var.mk
 LIBRARY = libgfutil.la
 LIBRARY_RESULT = # do not install
 
-SRCS = daemon.c gfevent.c hash.c limit.c logutil.c logutil_th.c timer.c timeval.c
-OBJS = daemon.lo gfevent.lo hash.lo limit.lo logutil.lo logutil_th.lo timer.lo timeval.lo
+SRCS =	alloc.c \
+	daemon.c \
+	gfevent.c \
+	hash.c \
+	limit.c \
+	logutil.c \
+	logutil_th.c \
+	timer.c \
+	timeval.c
+OBJS =	alloc.lo \
+	daemon.lo \
+	gfevent.lo \
+	hash.lo \
+	limit.lo \
+	logutil.lo \
+	logutil_th.lo \
+	timer.lo \
+	timeval.lo
 
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR)
 
