@@ -1568,8 +1568,8 @@ file_section_host_schedule(char *gfarm_file, char *section, char *program,
 			return (e);
 		program_filter_alloced = 1;
 	}
-	e = file_section_host_schedule_common(gfarm_file, section, 0, 0,
-	    hostp);
+	e = file_section_host_schedule_common(gfarm_file, section,
+	    priority_to_local, write_mode, hostp);
 	if (program_filter_alloced)
 		search_idle_free_program_filter();
 	return (e);
