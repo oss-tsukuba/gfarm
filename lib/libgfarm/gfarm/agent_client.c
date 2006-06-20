@@ -25,6 +25,10 @@
 #include "agent_client.h"
 #include "agent_wrap.h"
 
+#ifndef	va_copy
+#define	va_copy(dst, src)	((dst) = (src))
+#endif
+
 struct agent_connection {
 	struct xxx_connection *conn;
 };
@@ -141,7 +145,7 @@ agent_client_rpc_request(struct agent_connection *agent_server, int command,
 
 	va_start(ap, format);
 	save_format = format;
-	save_ap = ap;
+	va_copy(save_ap, ap);
 retry:
 	e = xxx_proto_vrpc_request(agent_server->conn, command, &format, &ap);
 	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
@@ -149,11 +153,13 @@ retry:
 		e = gfarm_agent_connect();
 		if (e == NULL) {
 			format = save_format;
-			ap = save_ap;
+			va_end(ap);
+			va_copy(ap, save_ap);
 			goto retry;
 		}
 	}
 	va_end(ap);
+	va_end(save_ap);
 	return (e);
 }
 
@@ -187,7 +193,7 @@ agent_client_rpc(struct agent_connection *agent_server, int just, int command,
 
 	va_start(ap, format);
 	save_format = format;
-	save_ap = ap;
+	va_copy(save_ap, ap);
 retry:
 	e = xxx_proto_vrpc(agent_server->conn, just,
 			   command, &error, &format, &ap);
@@ -196,11 +202,13 @@ retry:
 		e = gfarm_agent_connect();
 		if (e == NULL) {
 			format = save_format;
-			ap = save_ap;
+			va_end(ap);
+			va_copy(ap, save_ap);
 			goto retry;
 		}
 	}
 	va_end(ap);
+	va_end(save_ap);
 
 	if (e != NULL)
 		return (e);
