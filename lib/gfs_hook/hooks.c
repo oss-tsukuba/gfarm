@@ -2292,7 +2292,7 @@ gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 #endif
 
 #ifdef SYS_pwrite
-int
+ssize_t
 gfs_hook_syscall_pwrite(int filedes, const void *buf, size_t nbyte, off_t offset)
 {
 #if defined(__NetBSD__)
