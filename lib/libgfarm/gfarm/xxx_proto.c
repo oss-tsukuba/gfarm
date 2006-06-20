@@ -11,10 +11,6 @@
 #include "iobuffer.h"
 #include "xxx_proto.h"
 
-#ifndef	va_copy
-#define	va_copy(dst, src)	((dst) = (src))
-#endif
-
 #if FILE_OFFSET_T_IS_FLOAT
 #include <math.h>
 
@@ -159,7 +155,6 @@ char *
 xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap;
 	gfarm_uint8_t c;
 	gfarm_int16_t h;
 	gfarm_int32_t i, n;
@@ -170,22 +165,21 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 #endif
 	char *s;
 
-	va_copy(ap, *app);
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
-			c = va_arg(ap, int);
+			c = va_arg(*app, int);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &c, sizeof(c));
 			break;
 		case 'h':
-			h = va_arg(ap, int);
+			h = va_arg(*app, int);
 			h = htons(h);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &h, sizeof(h));
 			break;
 		case 'i':
-			i = va_arg(ap, gfarm_int32_t);
+			i = va_arg(*app, gfarm_int32_t);
 			i = htonl(i);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
@@ -196,7 +190,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			o = va_arg(ap, file_offset_t);
+			o = va_arg(*app, file_offset_t);
 #if FILE_OFFSET_T_IS_FLOAT
 			minus = o < 0;
 			if (minus)
@@ -219,7 +213,7 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 			    ov, sizeof(ov));
 			break;
 		case 's':
-			s = va_arg(ap, char *);
+			s = va_arg(*app, char *);
 			n = strlen(s);
 			i = htonl(n);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
@@ -233,9 +227,9 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			n = va_arg(ap, size_t);
+			n = va_arg(*app, size_t);
 			i = htonl(n);
-			s = va_arg(ap, char *);
+			s = va_arg(*app, char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
 			gfarm_iobuffer_put_write(conn->sendbuffer,
@@ -247,7 +241,6 @@ xxx_proto_vsend(struct xxx_connection *conn, char **formatp, va_list *app)
 	}
  finish:
 	*formatp = format;
-	va_copy(*app, ap);
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
@@ -256,7 +249,6 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	char **formatp, va_list *app)
 {
 	char *format = *formatp;
-	va_list ap;
 	gfarm_int8_t *cp;
 	gfarm_int16_t *hp;
 	gfarm_int32_t *ip, i;
@@ -269,7 +261,6 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	size_t *szp, sz;
 	char *e;
 
-	va_copy(ap, *app);
 	e = xxx_proto_flush(conn);
 	if (e != NULL)
 		return (e);
@@ -279,20 +270,20 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
-			cp = va_arg(ap, gfarm_int8_t *);
+			cp = va_arg(*app, gfarm_int8_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    cp, sizeof(*cp), just) != sizeof(*cp))
 				return (NULL);
 			break;
 		case 'h':
-			hp = va_arg(ap, gfarm_int16_t *);
+			hp = va_arg(*app, gfarm_int16_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    hp, sizeof(*hp), just) != sizeof(*hp))
 				return (NULL);
 			*hp = ntohs(*hp);
 			break;
 		case 'i':
-			ip = va_arg(ap, gfarm_int32_t *);
+			ip = va_arg(*app, gfarm_int32_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    ip, sizeof(*ip), just) != sizeof(*ip))
 				return (NULL);
@@ -304,7 +295,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			op = va_arg(ap, file_offset_t *);
+			op = va_arg(*app, file_offset_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    ov, sizeof(ov), just) != sizeof(ov))
 				return (NULL);
@@ -326,7 +317,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 #endif
 			break;
 		case 's':
-			sp = va_arg(ap, char **);
+			sp = va_arg(*app, char **);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (NULL);
@@ -346,9 +337,9 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			sz = va_arg(ap, size_t);
-			szp = va_arg(ap, size_t *);
-			s = va_arg(ap, char *);
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (NULL);
@@ -374,7 +365,6 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	}
  finish:
 	*formatp = format;
-	va_copy(*app, ap);
 	*eofp = 0;
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
