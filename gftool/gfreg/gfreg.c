@@ -1111,12 +1111,6 @@ main(int argc, char *argv[])
 
 	gfarm_url = argv[argc - 1];
 	--argc;
-	if (!gfarm_is_url(gfarm_url)) {
-		fprintf(stderr, "%s: %s: %s\n",
-		    program_name, gfarm_url,
-		    GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
-		exit(EXIT_FAILURE);
-	}
 
 	e = gfs_stat(gfarm_url, &gs);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {

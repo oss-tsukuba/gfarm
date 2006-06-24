@@ -81,9 +81,6 @@ main(int argc, char **argv)
 		 * gfs_rmdir() for gfs_client_apply_all_hosts().
 		 */
 		e = gfarm_url_make_path(argv[i], &canonic_path);
-		/* Permit missing gfarm: prefix as a special case */
-		if (e == GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING)
-			e = gfarm_canonical_path(argv[i], &canonic_path);
 		if (e != NULL) {
 			fprintf(stderr, "%s: %s\n", program_name, e);
 			continue;
