@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfrep</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -139,18 +138,18 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-v</CODE
 ></DT
 ><DD
 ><P
 >複製処理に関して，冗長な表示を行ないます，</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-m</TT
+>-m</CODE
 ></DT
 ><DD
 ><P
@@ -159,9 +158,9 @@ CLASS="OPTION"
 動作しません．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-H</TT
+>-H</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -184,9 +183,9 @@ CLASS="PARAMETER"
 再帰的に複製します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -202,9 +201,9 @@ CLASS="PARAMETER"
 複製を作成します．</P
 ><P
 >このオプションで指定されたドメインのホストが
-<TT
+<CODE
 CLASS="OPTION"
->-D</TT
+>-D</CODE
 > オプションで指定された複製先ドメインにも属していても，
 そのホストには複製を作成しません．</P
 ><P
@@ -212,9 +211,9 @@ CLASS="OPTION"
 再帰的に複製します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-D</TT
+>-D</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -227,23 +226,23 @@ CLASS="PARAMETER"
 ><P
 >このオプションを省略し，他の複製先ホストを指定するオプションも
 使用しない場合は，メタデータに登録されているすべてのホストのいずれかに
-複製を作成します．ただし，この場合に<TT
+複製を作成します．ただし，この場合に<CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > オプションで
 2以上の複製数を指定しないと複製を行いません．
-詳しくは <TT
+詳しくは <CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > オプションの項を参照してください．</P
 ><P
 >指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
 再帰的に複製します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -253,39 +252,39 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >フラグメントごとに作成する複製の数を指定します．このオプションを
-省略すると <TT
+省略すると <CODE
 CLASS="OPTION"
->-N 1</TT
+>-N 1</CODE
 > と指定されたものとみなされます．
-このオプションは単独であるいは <TT
+このオプションは単独であるいは <CODE
 CLASS="OPTION"
->-D</TT
+>-D</CODE
 > オプション，
-<TT
+<CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > オプションとともに用います．</P
 ><P
-><TT
+><CODE
 CLASS="OPTION"
->-D</TT
+>-D</CODE
 > オプションで複製先ドメインが指定された場合，
 このドメインのホストにあるレプリカ数が指定された数になるように複製しま
 す．</P
 ><P
-><TT
+><CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > オプションで複製元ドメインが指定された場合，
 このドメイン以外のホストにあるレプリカ数が指定された数になるように複製
 します．</P
 ><P
-><TT
+><CODE
 CLASS="OPTION"
->-D</TT
->, <TT
+>-D</CODE
+>, <CODE
 CLASS="OPTION"
->-S</TT
+>-S</CODE
 > オプションがともに指定
 された場合は，複製先ドメインのホストから複製元ドメインのホストを除いた
 ホストにあるレプリカ数が，指定された数になるように複製します．
@@ -297,9 +296,9 @@ CLASS="OPTION"
 も行いません．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-P</TT
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -315,16 +314,13 @@ CLASS="PARAMETER"
 指定した Gfarm-URL を構成するファイルが，複製元ホストに存在する場合のみ，
 そのファイルを複製先ホストにコピーします．</P
 ><P
->ファイル名として ``-'' を指定した場合，標準入力からホス
-ト名のリストを読み込みます．</P
-><P
 >指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
 再帰的に複製します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-d</TT
+>-d</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -335,23 +331,23 @@ CLASS="PARAMETER"
 ><P
 >複製先のホストを1つだけ指定します．</P
 ><P
->このオプションは，通常 <TT
+>このオプションは，通常 <CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > オプションとともに用いる
 必要がありますが，それを省略できる場合もあります．
-詳しくは <TT
+詳しくは <CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > オプションの項を参照してください．</P
 ><P
 >指定した Gfarm-URL がディレクトリの場合，そのディレクトリを
 再帰的に複製します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-s</TT
+>-s</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -361,9 +357,9 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >ファイルフラグメントの複製元のホストを指定します．
-このオプションは単独で，あるいは，<TT
+このオプションは単独で，あるいは，<CODE
 CLASS="OPTION"
->-d</TT
+>-d</CODE
 > オプションと共に
 用います．
 単独で指定された場合は，ここで指定されたホストとは別のいずれかのホストに
@@ -372,9 +368,9 @@ CLASS="OPTION"
 >このオプションを省略した場合，複製元のホストは自動で選ばれます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -386,32 +382,32 @@ CLASS="PARAMETER"
 >指定した Gfarm-URL が通常のファイルなら，このオプションで
 そのフラグメント番号を，あるいはプログラムならアーキテクチャ名を
 指定します．
-このオプションは <TT
+このオプションは <CODE
 CLASS="OPTION"
->-d</TT
+>-d</CODE
 > オプションと共に用います．</P
 ><P
 >このオプションは省略できる場合があります．
 指定した Gfarm-URL が通常ファイルの場合，そのファイルがフラグメント一つから
-構成されているのなら，<TT
+構成されているのなら，<CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > オプションを省略できます．
-その場合，<TT
+その場合，<CODE
 CLASS="OPTION"
->-I 0</TT
+>-I 0</CODE
 > と指定されたものとみなされます．
-あるいは，指定した Gfarm-URL がプログラムの場合，<TT
+あるいは，指定した Gfarm-URL がプログラムの場合，<CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > 
 オプションを省略すると複製先ホストのアーキテクチャ名を指定したものと
 みなされます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
