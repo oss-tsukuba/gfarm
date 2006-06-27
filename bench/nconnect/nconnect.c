@@ -57,6 +57,8 @@ extern int errno;		/* some <errno.h> doesn't define `errno' */
 #include <sys/select.h>		/* fd_set, ... */
 #endif
 
+#include <gfarm/gfarm_config.h>
+
 /* 2nd argument of shutdown(2) */
 #define	SHUTDOWN_RECV	0	/* shutdown receive */
 #define	SHUTDOWN_SEND	1	/* shutdown send */
@@ -391,7 +393,7 @@ void print_sockname(fd)
 	int fd;
 {
 	union generic_sockaddr generic;
-	int addr_size = sizeof(generic);
+	socklen_t addr_size = sizeof(generic);
 
 	if (getsockname(fd, &generic.address, &addr_size) < 0) {
 		perror("getsockname");
@@ -405,7 +407,7 @@ void print_peername(fd)
 	int fd;
 {
 	union generic_sockaddr generic;
-	int addr_size = sizeof(generic);
+	socklen_t addr_size = sizeof(generic);
 
 	if (getpeername(fd, &generic.address, &addr_size) < 0) {
 		perror("getpeername");
@@ -420,7 +422,7 @@ void print_sockport(fp, fd)
 	int fd;
 {
 	union generic_sockaddr generic;
-	int addr_size = sizeof(generic);
+	socklen_t addr_size = sizeof(generic);
 
 	if (getsockname(fd, &generic.address, &addr_size) < 0) {
 		fatal("getsockname");
@@ -687,6 +689,11 @@ void transfer(fd, socket_mode, one_eof_exit)
 	case sock_send:
 		eof_socket = YES;
 		break;
+#ifdef __GNUC__ /* workaround gcc warning: enumeration value not handled */
+	case sock_sendrecv:
+		/* nothing to do */
+		break;
+#endif
 	}
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
@@ -780,7 +787,7 @@ void env_setup(fd)
 	int fd;
 {
 	union generic_sockaddr generic;
-	int addr_size = sizeof(generic);
+	socklen_t addr_size = sizeof(generic);
 
 	if (getsockname(fd, &generic.address, &addr_size) == 0)
 		putenv_address(&generic, addr_size, "SOCK");
@@ -806,6 +813,11 @@ void doit(argv, fd, socket_mode, one_eof_exit)
 		if (shutdown(fd, SHUTDOWN_RECV) < 0)
 			fatal("shutdown");
 		break;
+#ifdef __GNUC__ /* workaround gcc warning: enumeration value not handled */
+	case sock_sendrecv:
+		/* nothing to do */
+		break;
+#endif
 	}
 	if (argv == NULL) {
 		transfer(fd, socket_mode, one_eof_exit);
@@ -865,6 +877,10 @@ int main(argc, argv)
 	Bool one_eof_exit = YES;
 	Bool accept_one_client = YES;
 	FILE *port_output = stderr;
+
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	peer_addr_size = 0;
+#endif
 
 	if (argc >= 1)
 		progname = argv[0];
@@ -1039,7 +1055,7 @@ int main(argc, argv)
 			fatal("listen");
 		for (;;) {
 			union generic_sockaddr client_addr;
-			int client_addr_size = sizeof(client_addr);
+			socklen_t client_addr_size = sizeof(client_addr);
 
 			client = accept(fd, &client_addr.address,
 					&client_addr_size);
