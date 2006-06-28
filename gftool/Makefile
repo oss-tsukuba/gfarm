@@ -7,6 +7,7 @@ include $(top_srcdir)/makes/var.mk
 PTHREAD_TARGETS = gfarm_agent
 SUBDIRS = \
 	$(pthread_targets) \
+	gfchmod \
 	gfdf \
 	gfdump \
 	gfexec \
