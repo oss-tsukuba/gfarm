@@ -4,6 +4,9 @@
  * $Id$
  */
 
+/* for compatibility with gfarm v2 */
+#define gfarm_error_string(error)	(error)
+
 typedef const char *gfarm_error_t;
 
 /* this is not an error, but success */
