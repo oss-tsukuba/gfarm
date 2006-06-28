@@ -309,7 +309,7 @@
 - 下記のコマンドに関する参照マニュアルが存在しません。
 
   config-agent, config-gfarm, config-gfsd, gfarm-pcp, gfarm-prun, 
-  gfarm-ptool, gfarm.arch.guess, gfcombine, gfcombine_hook,
+  gfarm-ptool, gfarm.arch.guess, gfchmod, gfcombine, gfcombine_hook,
   gfcp, gfcp_hook, gfdump, gfrshl, gfsck, gfsplck, gfsshl, thput-gfpio
 
   対処予定:
