@@ -20,9 +20,6 @@
  * address constants which represents error conditions
  */
 
-/* this is not an error, but success */
-extern char GFARM_ERR_NO_ERROR[] = "[success]";
-
 /* classic errno (1..10, 12..34) */
 char GFARM_ERR_OPERATION_NOT_PERMITTED[] = "operation not permitted";
 char GFARM_ERR_NO_SUCH_OBJECT[] = "no such object";
