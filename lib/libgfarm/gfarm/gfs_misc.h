@@ -1,6 +1,8 @@
 /* gfs_client_dir.c */
 struct gfs_connection;
 char *gfs_client_mk_parent_dir(struct gfs_connection *, char *);
+char *gfs_client_link_faulttolerant(const char *, char *, char *,
+	struct gfs_connection **, char **);
 
 /* gfs_dir.c */
 char *gfs_realpath_canonical(const char *, char **);

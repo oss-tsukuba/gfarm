@@ -149,7 +149,7 @@ char *
 gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-	char *e, *path_section;
+	char *e, *e2, *path_section;
 	struct gfs_connection *gfs_server;
 	/*
 	 * We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
@@ -164,50 +164,48 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	int fd;
 	struct sockaddr peer_addr;
 
+	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
+	    &peer_addr, NULL);
+	if (e != NULL)
+		return (e);
+
 	e = gfarm_path_section(gf->pi.pathname, vc->section, &path_section);
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL) {
-		free(path_section);
-		return (e);
-	}
-
-	e = gfs_client_connection_acquire(vc->canonical_hostname, &peer_addr,
-	    &gfs_server);
+	e = gfs_client_open_with_reconnect_addr(
+	    vc->canonical_hostname, &peer_addr, path_section, oflags,
+	    gf->pi.status.st_mode & GFARM_S_ALLPERM,
+	    &gfs_server, &e2, &fd);
 	if (e != NULL) {
 		free(path_section);
 		return (e);
 	}
 	vc->storage_context = gfs_server;
-
-	e = gfs_client_open(gfs_server, path_section, oflags,
-			    gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
+		
 	/* FT - the parent directory may be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	if (e2 == GFARM_ERR_NO_SUCH_OBJECT
 	    && (oflags & GFARM_FILE_CREATE) != 0) {
 		/* the parent directory can be created by some other process */
 		(void)gfs_client_mk_parent_dir(
 			gfs_server, gf->pi.pathname);
-		e = gfs_client_open(gfs_server, path_section, oflags,
+		e2 = gfs_client_open(gfs_server, path_section, oflags,
 			gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	}
 	/* FT - physical file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	if (e2 == GFARM_ERR_NO_SUCH_OBJECT
 	    && (oflags & GFARM_FILE_CREATE) == 0) {
 		/* Delete the section copy info */
 		/* section copy may be removed by some other process */
 		(void)gfarm_file_section_copy_info_remove(gf->pi.pathname,
 			vc->section, vc->canonical_hostname);
-		e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+		e2 = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 	}
 
 	free(path_section);
-	if (e != NULL) {
+	if (e2 != NULL) {
 		gfs_client_connection_free(gfs_server);
-		return (e);
+		return (e2);
 	}
 
 	vc->ops = &gfs_pio_remote_storage_ops;

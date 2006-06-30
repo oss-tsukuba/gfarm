@@ -7,10 +7,13 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
 #include "config.h"
-#include "gfs_pio.h"
 #include "gfs_client.h"
+#include "gfs_pio.h"
+#include "gfs_misc.h"
 
 enum data_mode {
 	NOT_CHANGED,
@@ -129,29 +132,24 @@ static char *
 chmod_copy(struct gfarm_file_section_copy_info *info, void *arg)
 {
 	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 	char *path = info->pathname, *section = info->section;
 	char *host = info->hostname;
 	struct gfs_chmod_args *a = arg;
-	char *path_section, *e, *e2;
-
-	e = gfarm_host_address_get(host, gfarm_spool_server_port,
-		&peer_addr, NULL);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
-	if (e != NULL)
-		return (e);
+	char *path_section, *e, *e2, *e3;
 
 	e = gfarm_path_section(path, section, &path_section);
 	if (e == NULL) {
-		e = gfs_client_chmod(gfs_server, path_section, a->mode);
+		e = gfs_client_chmod_with_reconnection(host,
+		    path_section, a->mode, &gfs_server, &e2);
+		if (e == NULL) {
+			e3 = gfs_client_connection_free(gfs_server);
+			if (e2 != NULL)
+				e = e2;
+			else
+				e = e3;
+		}
 		free(path_section);
 	}
-	e2 = gfs_client_connection_free(gfs_server);
-	if (e == NULL)
-		e = e2;
 
 	return (e);
 }
@@ -183,26 +181,20 @@ static char *
 change_section_copy(struct gfarm_file_section_copy_info *info, void *arg)
 {
 	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 	char *path = info->pathname, *o_section = info->section;
 	char *host = info->hostname;
 	struct gfs_chmod_args *a = arg;
-	char *new_path, *old_path, *e;
-
-	e = gfarm_host_address_get(host, gfarm_spool_server_port,
-		&peer_addr, NULL);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
-	if (e != NULL)
-		return (e);
+	char *new_path, *old_path, *e, *e2;
 
 	e = gfarm_path_section(path, o_section, &old_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_section(path, a->n_sec, &new_path);
 	if (e == NULL) {
-		e = gfarm_path_section(path, a->n_sec, &new_path);
+		e = gfs_client_link_faulttolerant(host,
+		    old_path, new_path, &gfs_server, &e2);
 		if (e == NULL) {
-			e = gfs_client_link(gfs_server, old_path, new_path);
+			e = e2;
 			if (e == NULL) {
 				e = gfs_client_chmod(gfs_server,
 				    new_path, a->mode);
@@ -210,11 +202,11 @@ change_section_copy(struct gfarm_file_section_copy_info *info, void *arg)
 					gfs_client_unlink(gfs_server,
 					    new_path);
 			}
-			free(new_path);
+			gfs_client_connection_free(gfs_server);
 		}
-		free(old_path);
+		free(new_path);
 	}
-	gfs_client_connection_free(gfs_server);
+	free(old_path);
 
 	return (e != NULL ? e : gfarm_file_section_copy_info_set(
 			path, a->n_sec, host, NULL));

@@ -84,3 +84,36 @@ gfs_client_mk_parent_dir(struct gfs_connection *gfs_server, char *canonic_dir)
 
 	return (e);
 }
+
+char *
+gfs_client_link_faulttolerant(const char *hostname, char *from, char *to,
+	struct gfs_connection **gfs_serverp, char **op_errorp)
+{
+	char *e, *e2;
+	struct gfs_connection *gfs_server;
+
+	e = gfs_client_link_with_reconnection(hostname, from, to,
+	    &gfs_server, &e2);
+	if (e != NULL)
+		return (e);
+
+	e = e2;
+	if (e2 != NULL) {
+		if (e == GFARM_ERR_ALREADY_EXISTS)
+			e2 = gfs_client_unlink(gfs_server, to);
+		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			e2 = gfs_client_mk_parent_dir(gfs_server, to);
+		if (e2 == NULL)
+			e = gfs_client_link(gfs_server, from, to);
+	}
+
+	if (gfs_serverp != NULL)
+		*gfs_serverp = gfs_server;
+	else
+		gfs_client_connection_free(gfs_server);
+
+	if (op_errorp != NULL)
+		*op_errorp = e;
+
+	return (NULL);
+}

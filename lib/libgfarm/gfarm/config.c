@@ -1298,7 +1298,7 @@ gfarm_config_set_default_ports(void)
 static void
 gfarm_config_set_default_spool_on_client(void)
 {
-	char *host, *e;
+	char *host, *e, *e2;
 	/*
 	 * When this node is a filesystem node,
 	 * gfarm_spool_root should be obtained by gfsd
@@ -1306,29 +1306,16 @@ gfarm_config_set_default_spool_on_client(void)
 	 */
 	e = gfarm_host_get_canonical_self_name(&host);
 	if (e == NULL && gfarm_host_is_local(host)) {
-		struct sockaddr peer_addr;
-		struct gfs_connection *gfs_server;
 		char *old_ptr = gfarm_spool_root;
 
-		e = gfarm_host_address_get(host,
-			gfarm_spool_server_port, &peer_addr, NULL);
-		if (e != NULL)
-			goto ignore_error;
-
-		e = gfs_client_connection_acquire(host, &peer_addr,
-		    &gfs_server);
-		if (e != NULL)
-			goto ignore_error;
-
-		e = gfs_client_get_spool_root(gfs_server, &gfarm_spool_root);
-		if (e == NULL)
+		e = gfs_client_get_spool_root_with_reconnection(host,
+		    NULL, &e2, &gfarm_spool_root);
+		if (e == NULL && e2 == NULL) {
 			gfarm_is_active_file_system_node = 1;
-		gfs_client_connection_free(gfs_server);
-		if (old_ptr != NULL && old_ptr != gfarm_spool_root &&
-		    old_ptr != gfarm_spool_root_default)
-			free(old_ptr);
-	ignore_error:
-		;
+			if (old_ptr != NULL &&
+			    old_ptr != gfarm_spool_root_default)
+				free(old_ptr);
+		}
 	}
 	if (gfarm_spool_root == NULL)
 		/* XXX - this case is not recommended. */

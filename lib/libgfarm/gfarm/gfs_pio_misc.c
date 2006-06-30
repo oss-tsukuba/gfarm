@@ -293,10 +293,8 @@ gfs_clean_spool(
 	int *ncopy,
 	struct gfarm_file_section_copy_info **copies)
 {
-	char *e, *e2, *path_section;
+	char *e, *path_section;
 	int i, j;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 
 	for (i = 0; i < nsection; i++) {
 		e = gfarm_path_section(pathname,
@@ -305,18 +303,8 @@ gfs_clean_spool(
 		if (e != NULL)
 			return (e);
 		for (j = 0; j < ncopy[i]; j++) {
-			e2 = gfarm_host_address_get(copies[i][j].hostname,
-						   gfarm_spool_server_port,
-						   &peer_addr,
-						   NULL);
-			if (e2 != NULL)
-				continue;
-			e2 = gfs_client_connection_acquire(
-			    copies[i][j].hostname, &peer_addr, &gfs_server);
-			if (e2 != NULL)
-				continue;
-			e2 = gfs_client_unlink(gfs_server, path_section);
-			gfs_client_connection_free(gfs_server);
+			gfs_client_unlink_with_reconnection(
+			    copies[i][j].hostname, path_section, NULL, NULL);
 		}
 		free(path_section);
 	}
@@ -333,11 +321,9 @@ rename_file_spool(
 	struct gfarm_file_section_copy_info **copies)
 {
 	int i, j;
-	char *e;
+	char *e, *e2;
 	char *from_path_section, *to_path_section;
 	struct gfarm_file_section_copy_info new_copy;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 
 	/*
 	 * 1 - succeed in linking at least 1 spool file for all sections
@@ -363,38 +349,14 @@ rename_file_spool(
 		}
 		ok = 0;
 		for (j = 0; j < ncopy[i]; j++) {
-			e = gfarm_host_address_get(copies[i][j].hostname,
-				gfarm_spool_server_port, &peer_addr, NULL);
-			if (e != NULL) {
-				gflog_warning(
-					"rename_file_spool: host_address_get: "
-					"%s: %s", copies[i][j].hostname, e);
-				continue;
-			}
-
-			e = gfs_client_connection_acquire(
-			    copies[i][j].hostname, &peer_addr, &gfs_server);
-			if (e != NULL) {
+			e = gfs_client_link_faulttolerant(
+			    copies[i][j].hostname,
+			    from_path_section, to_path_section, NULL, &e2);
+			if (e != NULL || e2 != NULL) {
 				gflog_warning("rename_file_spool: "
-					      "gfs_client_connect: %s: %s",
-					      copies[i][j].hostname, e);
-				continue;
-			}
-
-			e = gfs_client_link(gfs_server, from_path_section,
-							to_path_section);
-			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-				if (gfs_client_mk_parent_dir(
-				    gfs_server, to_path_section) == NULL)
-					e = gfs_client_link(gfs_server,
-							    from_path_section,
-							    to_path_section);
-			}
-			gfs_client_connection_free(gfs_server);
-			if (e != NULL) {
-				gflog_warning("rename_file_spool: "
-				    "gfs_client_link(%s, %s): %s",
-				    from_path_section, to_path_section, e);
+				    "gfs_client_link_faulttolerant(%s, %s): %s",
+				    from_path_section, to_path_section,
+				    e != NULL ? e : e2);
 				continue;
 			}
 
@@ -663,31 +625,28 @@ rename_spool_node_dir(char *hostname,
 		      struct gfarm_file_section_copy_info ***copies,
 		      unsigned char ***exist)
 {
-	char *e;
-	struct sockaddr peer_addr;
+	char *e, *e2;
 	struct gfs_connection *gfs_server;
 	int i, j, k;
 
-	e = gfarm_host_address_get(hostname,
-		gfarm_spool_server_port, &peer_addr, NULL);
+	e = gfs_client_rename_with_reconnection(hostname, from, to,
+	    &gfs_server, &e2);
 	if (e != NULL) {
 		gflog_warning(
-			"rename_spool_node_dir: host_address_get: %s: %s",
+			"rename_spool_node_dir: gfs_client_connection: %s: %s",
 			hostname, e);
 		return;
 	}
-	e = gfs_client_connection_acquire(hostname, &peer_addr, &gfs_server);
-	if (e != NULL) {
-		gflog_warning(
-			"rename_spool_node_dir: gfs_client_connect: %s: %s",
-			hostname, e);
-		return;
+	if (e2 == GFARM_ERR_NO_SUCH_OBJECT &&
+	    gfs_client_exist(gfs_server, from) == NULL) {
+		if (gfs_client_mk_parent_dir(gfs_server, to) == NULL)
+			e2 = gfs_client_rename(gfs_server, from, to);
 	}
-	e = gfs_client_rename(gfs_server, from, to);
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
+	gfs_client_connection_free(gfs_server);
+	if (e2 != NULL && e2 != GFARM_ERR_NO_SUCH_OBJECT) {
 		gflog_warning(
 			"rename_spool_node_dir: gfs_client_rename(%s, %s): %s",
-			from, to, e);
+			from, to, e2);
 		return;
 	}
 	for (i = 0; i < nfile; i++) {
@@ -699,7 +658,6 @@ rename_spool_node_dir(char *hostname,
 			}
 		}
 	}
-	gfs_client_connection_free(gfs_server);
 }
 
 static char *
@@ -1368,33 +1326,26 @@ static int
 gfarm_file_missing_replica(char *gfarm_file, char *section,
 	char *canonical_hostname)
 {
-	char *e, *path_section;
-	struct sockaddr peer_addr;
-	struct gfs_connection *peer_conn;
+	char *e, *e2, *path_section;
+	struct gfs_connection *gfs_server;
 	int peer_fd, missing = 0;
 
-	e = gfarm_host_address_get(canonical_hostname, gfarm_spool_server_port,
-	    &peer_addr, NULL);
-	if (e != NULL)
-		return (0);
-
-	e = gfs_client_connection_acquire(canonical_hostname, &peer_addr,
-	    &peer_conn);
-	if (e != NULL)
-		return (0);
-
 	e = gfarm_path_section(gfarm_file, section, &path_section);
-	if (e == NULL) {
-		e = gfs_client_open(peer_conn, path_section,
-		    GFARM_FILE_RDONLY, 0, &peer_fd);
-		if (e == NULL)
-			gfs_client_close(peer_conn, peer_fd);
-		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
-			missing = 1;
-		
-		free(path_section);
-	}
-	gfs_client_connection_free(peer_conn);
+	if (e != NULL)
+		return (0);
+
+	e = gfs_client_open_with_reconnection(canonical_hostname,
+	    path_section, GFARM_FILE_RDONLY, 0, &gfs_server, &e2, &peer_fd);
+	free(path_section);
+	if (e != NULL)
+		return (0);
+
+	if (e2 == NULL)
+		gfs_client_close(gfs_server, peer_fd);
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		missing = 1;
+
+	gfs_client_connection_free(gfs_server);
 	return (missing);
 }
 
@@ -1460,10 +1411,9 @@ gfarm_file_section_replicate_without_busy_check(
 	char *src_canonical_hostname, char *src_if_hostname,
 	char *dst_canonical_hostname)
 {
-	char *e, *path_section;
+	char *e, *e2, *path_section;
 	struct gfarm_file_section_copy_info ci;
 	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 
 	if (gfarm_replication_method != GFARM_REPLICATION_BOOTSTRAP_METHOD)
 		return (gfarm_file_section_replicate_from_to_by_gfrepbe(
@@ -1474,44 +1424,34 @@ gfarm_file_section_replicate_without_busy_check(
 	if (e != NULL)
 		return (e);
 
-	e = gfarm_host_address_get(dst_canonical_hostname,
-	    gfarm_spool_server_port, &peer_addr, NULL);
-	if (e != NULL)
-		goto finish;
-
-	e = gfs_client_connection_acquire(dst_canonical_hostname, &peer_addr,
-	    &gfs_server);
-	if (e != NULL)
-		goto finish;
-	e = gfs_client_bootstrap_replicate_file(gfs_server,
-	    path_section, mode, file_size,
-	    src_canonical_hostname, src_if_hostname);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+	e = gfs_client_bootstrap_replicate_file_with_reconnection(
+	    dst_canonical_hostname, path_section, mode, file_size,
+	    src_canonical_hostname, src_if_hostname, &gfs_server, &e2);
+	if (e == NULL && e2 == GFARM_ERR_NO_SUCH_OBJECT) {
 		/* FT - the parent directory may be missing */
 		if (gfarm_file_missing_replica(gfarm_file, section,
 		    src_canonical_hostname)) {
 			/* Delete the section copy info */
 			(void)gfarm_file_section_copy_info_remove(gfarm_file,
 			    section, src_canonical_hostname);
-			e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
-			goto disconnect;
+			e2 = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+		} else {
+			/* FT - the parent directory of the destination may be missing */
+			(void)gfs_client_mk_parent_dir(gfs_server, gfarm_file);
+			e2 = gfs_client_bootstrap_replicate_file(
+			    gfs_server, path_section, mode, file_size,
+			    src_canonical_hostname, src_if_hostname);
 		}
-		/* FT - the parent directory of the destination may be missing */
-		(void)gfs_client_mk_parent_dir(gfs_server, gfarm_file);
-		e = gfs_client_bootstrap_replicate_file(
-			gfs_server, path_section, mode, file_size,
-			src_canonical_hostname, src_if_hostname);
 	}
-	if (e == NULL)
-		e = gfarm_file_section_copy_info_set(gfarm_file, section,
+	if (e == NULL && e2 == NULL)
+		e2 = gfarm_file_section_copy_info_set(gfarm_file, section,
 		    dst_canonical_hostname, &ci);
 
-disconnect:
-	gfs_client_connection_free(gfs_server);
+	if (e == NULL)
+		gfs_client_connection_free(gfs_server);
 
-finish:
 	free(path_section);
-	return (e);
+	return (e != NULL ? e : e2);
 }
 
 static char *
@@ -1916,7 +1856,7 @@ char *
 gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			  char ***delivered_paths)
 {
-	char *e, **dp, *gfarm_file, *root, *arch, **canonical_hostnames;
+	char *e, *e2, **dp, *gfarm_file, *root, *arch, **canonical_hostnames;
 	gfarm_mode_t mode;
 	int i;
 	struct gfarm_path_info pi;
@@ -1963,8 +1903,6 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 
 	/* XXX - this is too slow */
 	for (i = 0; i < nhosts; i++) {
-		struct sockaddr peer_addr;
-		struct gfs_connection *gfs_server;
 		struct gfarm_file_section_info si;
 
 		dp[i] = NULL; /* for error handling */
@@ -1977,22 +1915,11 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		}
 
 		/* XXX - which to use? `hosts[i]' vs `copies[j].hostname' */
-		e = gfarm_host_address_get(hosts[i],
-		    gfarm_spool_server_port, &peer_addr, NULL);
-		if (e != NULL) {
-			free(arch);
-			goto error;
-		}
-
-		e = gfs_client_connection_acquire(canonical_hostnames[i],
-		    &peer_addr, &gfs_server);
-		if (e != NULL) {
-			free(arch);
-			goto error;
-		}
-		e = gfs_client_get_spool_root(gfs_server, &root);
-		gfs_client_connection_free(gfs_server);
-		if (e != NULL) {
+		e = gfs_client_get_spool_root_with_reconnection(hosts[i],
+		    NULL, &e2, &root);
+		if (e != NULL || e2 != NULL) {
+			if (e == NULL)
+				e = e2;
 			free(arch);
 			goto error;
 		}

@@ -167,6 +167,40 @@ void gfs_client_rep_rate_control(struct gfs_client_rep_rate_info *, long);
 void gfs_client_rep_rate_info_free(struct gfs_client_rep_rate_info *);
 
 /*
+ * functions which try to reconnect the server
+ * when the cached connection is dead.
+ */
+
+char *gfs_client_open_with_reconnect_addr(
+	const char *, struct sockaddr *, char *, gfarm_int32_t, gfarm_int32_t,
+	struct gfs_connection **, char **, gfarm_int32_t *);
+char *gfs_client_open_with_reconnection(
+	const char *, char *, gfarm_int32_t, gfarm_int32_t,
+	struct gfs_connection **, char **, gfarm_int32_t *);
+char *gfs_client_open_local_with_reconnection(
+	const char *, char *, gfarm_int32_t, gfarm_int32_t,
+	struct gfs_connection **, char **, gfarm_int32_t *);
+char *gfs_client_link_with_reconnection(const char *, char *, char *,
+	struct gfs_connection **, char **);
+char *gfs_client_unlink_with_reconnection(const char *, char *,
+	struct gfs_connection **, char **);
+char *gfs_client_rename_with_reconnection(const char *, char *, char *,
+	struct gfs_connection **, char **);
+char *gfs_client_chmod_with_reconnection(const char *, char *, gfarm_int32_t,
+	struct gfs_connection **, char **);
+char *gfs_client_get_spool_root_with_reconnection(const char *,
+	struct gfs_connection **, char **, char **);
+char *gfs_client_statfs_with_reconnect_addr(
+	const char *, struct sockaddr *, char *,
+	struct gfs_connection **, char **,
+	gfarm_int32_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *,
+	file_offset_t *, file_offset_t *, file_offset_t *);
+char *gfs_client_bootstrap_replicate_file_with_reconnection(
+	char *, char *, gfarm_int32_t, file_offset_t, char *, char *,
+	struct gfs_connection **, char **);
+
+/*
  * gfsd service on UDP port.
  */
 

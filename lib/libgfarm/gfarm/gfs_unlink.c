@@ -78,38 +78,25 @@ char *
 gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	const char *hostname)
 {
-	char *path_section, *e, *e_int;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
+	char *path_section, *e, *e_int, *e_int2;
 
 	/* metadata part */
 	e = gfarm_file_section_copy_info_remove(gfarm_file, section, hostname);
 	if (e != NULL)
-		goto finish;
+		return (e);
 
 	/* physical file part */
-	e_int = gfarm_host_address_get(hostname, gfarm_spool_server_port,
-		&peer_addr, NULL);
-	if (e_int != NULL)
-		goto finish;
-
-	e_int = gfs_client_connection_acquire(hostname, &peer_addr,
-	    &gfs_server);
-	if (e_int != NULL)
-		goto finish;
-
 	e_int = gfarm_path_section(gfarm_file, section, &path_section);
 	if (e_int == NULL) {
-		e_int = gfs_client_unlink(gfs_server, path_section);
+		e_int = gfs_client_unlink_with_reconnection(hostname,
+		    path_section, NULL, &e_int2);
 		free(path_section);
 	}
-	gfs_client_connection_free(gfs_server);
-finish:
 	/*
-	 * how to report e_int?  This usually results in a junk file
+	 * how to report e_int{,2}?  This usually results in a junk file
 	 * unless it is GFARM_ERR_NO_SUCH_OBJECT.
 	 */
-	return (e);
+	return (NULL);
 }
 
 static char *

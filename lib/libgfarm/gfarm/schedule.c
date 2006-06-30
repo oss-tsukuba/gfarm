@@ -1738,9 +1738,8 @@ statfsnode(char *canonical_hostname, int use_cache,
 	file_offset_t *blocksp, file_offset_t *bfreep, file_offset_t *bavailp,
 	file_offset_t *filesp, file_offset_t *ffreep, file_offset_t *favailp)
 {
-	char *e;
+	char *e, *e2;
 	struct search_idle_host_state *h;
-	struct gfs_connection *gfs_server;
 
 	e = search_idle_candidate_list_init();
 	if (e != NULL)
@@ -1758,15 +1757,12 @@ statfsnode(char *canonical_hostname, int use_cache,
 		if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
 			return (GFARM_ERR_UNKNOWN_HOST);
 
-		e = gfs_client_connection_acquire(canonical_hostname, &h->addr,
-		    &gfs_server);
-		if (e != NULL)
-			return (e);
-		e = gfs_client_statfs(gfs_server, ".", &h->bsize,
+		e = gfs_client_statfs_with_reconnect_addr(
+		    canonical_hostname, &h->addr, ".", NULL, &e2,
+		    &h->bsize,
 		    &h->blocks, &h->bfree, &h->bavail,
 		    &h->files, &h->ffree, &h->favail);
-		gfs_client_connection_free(gfs_server);
-		if (e != NULL)
+		if (e != NULL || e2 != NULL)
 			return (e);
 		h->statfs_cache_time = search_idle_now;
 		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;

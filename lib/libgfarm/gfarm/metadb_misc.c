@@ -16,7 +16,6 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 	int i, j, nfrags, ncopies;
 	struct gfarm_file_section_info *frags;
 	struct gfarm_file_section_copy_info *copies;
-	struct gfs_connection *gfs_server;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -47,25 +46,16 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 	for (i = 0; i < nhosts; i++) {
 		char *path_section;
 		char section_string[GFARM_INT32STRLEN + 1];
-		struct sockaddr peer_addr;
 
 		sprintf(section_string, "%d", i);
 		e = gfarm_path_section(gfarm_file, section_string,
 		    &path_section);
 		if (e != NULL)
 			continue;
-		e = gfarm_host_address_get(hosts[i],
-		    gfarm_spool_server_port, &peer_addr, NULL);
-		if (e != NULL) {
-			free(path_section);
-			continue;
-		}
 		/* remove copy */
-		if (gfs_client_connection_acquire(canonical_hostnames[i],
-		    &peer_addr, &gfs_server) == NULL) {
-			gfs_client_unlink(gfs_server, path_section);
-			gfs_client_connection_free(gfs_server);
-		}
+		gfs_client_unlink_with_reconnection(canonical_hostnames[i],
+		    path_section, NULL, NULL);
+
 		e = gfarm_file_section_copy_info_get_all_by_section(
 		    gfarm_file, section_string, &ncopies, &copies);
 		if (e != NULL) {
@@ -84,14 +74,8 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 			if (strcasecmp(copies[j].hostname,
 			    canonical_hostnames[i]) == 0)
 				continue;
-			if (gfarm_host_address_get(copies[j].hostname,
-			    gfarm_spool_server_port, &peer_addr, NULL) != NULL)
-				continue;
-			if (gfs_client_connection_acquire(copies[j].hostname,
-			    &peer_addr, &gfs_server) == NULL) {
-				gfs_client_unlink(gfs_server, path_section);
-				gfs_client_connection_free(gfs_server);
-			}
+			gfs_client_unlink_with_reconnection(
+			    copies[j].hostname, path_section, NULL, NULL);
 		}
 		free(path_section);
 		gfarm_file_section_copy_info_free_all(ncopies, copies);

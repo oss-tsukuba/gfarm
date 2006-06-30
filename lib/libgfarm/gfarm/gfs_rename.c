@@ -21,47 +21,23 @@ struct gfs_rename_args {
 static char *
 rename_copy(struct gfarm_file_section_copy_info *info, void *arg)
 {
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
 	char *path = info->pathname, *section = info->section;
 	char *host = info->hostname;
 	struct gfs_rename_args *a = arg;
-	char *new_path, *old_path, *e;
-
-	e = gfarm_host_address_get(host, gfarm_spool_server_port,
-		&peer_addr, NULL);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
-	if (e != NULL)
-		return (e);
+	char *new_path, *old_path, *e, *e2;
 
 	e = gfarm_path_section(path, section, &old_path);
+	if (e != NULL)
+		return (e);
+	e = gfarm_path_section(a->n_path, section, &new_path);
 	if (e == NULL) {
-		e = gfarm_path_section(a->n_path, section, &new_path);
-		if (e == NULL) {
-			e = gfs_client_link(gfs_server, old_path, new_path);
-
-			/* FT */
-			if (e != NULL) {
-				char *e1 = e;
-
-				if (e == GFARM_ERR_ALREADY_EXISTS)
-					e1 = gfs_client_unlink(gfs_server,
-					    new_path);
-				else if (e == GFARM_ERR_NO_SUCH_OBJECT)
-					e1 = gfs_client_mk_parent_dir(
-					    gfs_server, a->n_path);
-				if (e1 == NULL)
-					e = gfs_client_link(gfs_server,
-					    old_path, new_path);
-			}
-			free(new_path);
-		}
-		free(old_path);
+		e = gfs_client_link_faulttolerant(host, old_path, new_path,
+		    NULL, &e2);
+		if (e == NULL)
+			e = e2;
+		free(new_path);
 	}
-	gfs_client_connection_free(gfs_server);
+	free(old_path);
 
 	return (e != NULL ? e : gfarm_file_section_copy_info_set(
 			a->n_path, section, host, NULL));

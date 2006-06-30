@@ -237,7 +237,7 @@ char *
 gfs_pio_open_local_section(GFS_File gf, int flags)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-	char *e, *path_section;
+	char *e, *e2, *path_section;
 	struct gfs_connection *gfs_server;
 	/*
 	 * We won't use GFARM_FILE_EXCLUSIVE flag for the actual storage
@@ -255,38 +255,37 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_client_connection_acquire(vc->canonical_hostname, NULL,
-	    &gfs_server);
+	e = gfs_client_open_local_with_reconnection(vc->canonical_hostname,
+	    path_section, oflags, gf->pi.status.st_mode & GFARM_S_ALLPERM,
+	    &gfs_server, &e2, &fd);
 	if (e != NULL) {
 		free(path_section);
 		return (e);
 	}
 	vc->storage_context = NULL;
 
-	e = gfs_client_open_local(gfs_server, path_section, oflags,
-		gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	/* FT - the parent directory may be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	if (e2 == GFARM_ERR_NO_SUCH_OBJECT
 	    && (oflags & GFARM_FILE_CREATE) != 0) {
 		/* the parent directory can be created by some other process */
 		(void)gfs_client_mk_parent_dir(gfs_server, gf->pi.pathname);
-		e = gfs_client_open_local(gfs_server, path_section, oflags,
+		e2 = gfs_client_open_local(gfs_server, path_section, oflags,
 			gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	}
 	/* FT - physical file should be missing */
-	if (e == GFARM_ERR_NO_SUCH_OBJECT
+	if (e2 == GFARM_ERR_NO_SUCH_OBJECT
 	    && (oflags & GFARM_FILE_CREATE) == 0) {
 		/* Delete the section copy info */
 		/* section copy may be removed by some other process */
 		(void)gfarm_file_section_copy_info_remove(gf->pi.pathname,
 			vc->section, vc->canonical_hostname);
-		e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
+		e2 = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 	}
 
 	gfs_client_connection_free(gfs_server);
 	free(path_section);
-	if (e != NULL)
-		return (e);
+	if (e2 != NULL)
+		return (e2);
 
 	vc->ops = &gfs_pio_local_storage_ops;
 	vc->fd = fd;
