@@ -247,6 +247,9 @@ gfs_client_connection0(const char *canonical_hostname,
 	char *e;
 	int rv = -1, sock, connection_in_progress;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	sock = -1;
+#endif
 	if (sockaddr_is_local(peer_addr) && !gfsd_version_1_2_or_earlier) {
 		struct sockaddr_un peer_un;
 		socklen_t socklen;
