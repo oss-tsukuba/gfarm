@@ -248,7 +248,11 @@ register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
 			} else {
 				copy_file(fd, gf, target_url, section);
 			}
-			gfs_pio_close(gf);
+			e = gfs_pio_close(gf);
+			if (e != NULL) {
+				fprintf(stderr, "%s: closing %s:%d: %s\n",
+				    program_name, target_url, index, e);
+			}
 		}
 	}
  finish_url:
@@ -300,7 +304,11 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 			} else {
 				copy_file(fd, gf, gfarm_url, section);
 			}
-			gfs_pio_close(gf);
+			e = gfs_pio_close(gf);
+			if (e != NULL) {
+				fprintf(stderr, "%s: closing %s:%s: %s\n",
+				    program_name, gfarm_url, section, e);
+			}
 		}
 	}
  finish:
