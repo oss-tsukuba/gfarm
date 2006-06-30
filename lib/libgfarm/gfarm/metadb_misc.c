@@ -61,9 +61,11 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 			continue;
 		}
 		/* remove copy */
-		if (gfs_client_connection(canonical_hostnames[i],
-		    &peer_addr, &gfs_server) == NULL)
+		if (gfs_client_connection_acquire(canonical_hostnames[i],
+		    &peer_addr, &gfs_server) == NULL) {
 			gfs_client_unlink(gfs_server, path_section);
+			gfs_client_connection_free(gfs_server);
+		}
 		e = gfarm_file_section_copy_info_get_all_by_section(
 		    gfarm_file, section_string, &ncopies, &copies);
 		if (e != NULL) {
@@ -85,9 +87,11 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 			if (gfarm_host_address_get(copies[j].hostname,
 			    gfarm_spool_server_port, &peer_addr, NULL) != NULL)
 				continue;
-			if (gfs_client_connection(copies[j].hostname,
-			    &peer_addr, &gfs_server) == NULL)
+			if (gfs_client_connection_acquire(copies[j].hostname,
+			    &peer_addr, &gfs_server) == NULL) {
 				gfs_client_unlink(gfs_server, path_section);
+				gfs_client_connection_free(gfs_server);
+			}
 		}
 		free(path_section);
 		gfarm_file_section_copy_info_free_all(ncopies, copies);

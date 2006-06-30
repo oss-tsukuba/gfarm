@@ -33,34 +33,35 @@ rename_copy(struct gfarm_file_section_copy_info *info, void *arg)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_client_connection(host, &peer_addr, &gfs_server);
+	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
 	if (e != NULL)
 		return (e);
 
 	e = gfarm_path_section(path, section, &old_path);
-	if (e != NULL)
-		return (e);
-
-	e = gfarm_path_section(a->n_path, section, &new_path);
-	if (e != NULL)
-		goto free_old_path;
-
-	e = gfs_client_link(gfs_server, old_path, new_path);
-	/* FT */
-	if (e != NULL) {
-		char *e1 = e;
-
-		if (e == GFARM_ERR_ALREADY_EXISTS)
-			e1 = gfs_client_unlink(gfs_server, new_path);
-		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
-			e1 = gfs_client_mk_parent_dir(gfs_server, a->n_path);
-		if (e1 == NULL)
+	if (e == NULL) {
+		e = gfarm_path_section(a->n_path, section, &new_path);
+		if (e == NULL) {
 			e = gfs_client_link(gfs_server, old_path, new_path);
-	}
 
-	free(new_path);
-free_old_path:
-	free(old_path);
+			/* FT */
+			if (e != NULL) {
+				char *e1 = e;
+
+				if (e == GFARM_ERR_ALREADY_EXISTS)
+					e1 = gfs_client_unlink(gfs_server,
+					    new_path);
+				else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+					e1 = gfs_client_mk_parent_dir(
+					    gfs_server, a->n_path);
+				if (e1 == NULL)
+					e = gfs_client_link(gfs_server,
+					    old_path, new_path);
+			}
+			free(new_path);
+		}
+		free(old_path);
+	}
+	gfs_client_connection_free(gfs_server);
 
 	return (e != NULL ? e : gfarm_file_section_copy_info_set(
 			a->n_path, section, host, NULL));

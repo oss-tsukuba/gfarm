@@ -255,12 +255,13 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_client_connection(vc->canonical_hostname, NULL, &gfs_server);
+	e = gfs_client_connection_acquire(vc->canonical_hostname, NULL,
+	    &gfs_server);
 	if (e != NULL) {
 		free(path_section);
 		return (e);
 	}
-	vc->storage_context = gfs_server;
+	vc->storage_context = NULL;
 
 	e = gfs_client_open_local(gfs_server, path_section, oflags,
 		gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
@@ -282,6 +283,7 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 		e = GFARM_ERR_INCONSISTENT_RECOVERABLE;
 	}
 
+	gfs_client_connection_free(gfs_server);
 	free(path_section);
 	if (e != NULL)
 		return (e);

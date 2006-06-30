@@ -22,7 +22,7 @@ POSTGRESQL_OBJS = metadb_pgsql.lo
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
 	agent_wrap.c agent_client.c agent_proto.c \
-	config.c error.c gfm_client.c gfs_chmod.c \
+	config.c conn_hash.c error.c gfm_client.c gfs_chmod.c \
 	gfs_client.c gfs_client_dir.c gfs_client_rep.c \
 	gfs_dir.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
@@ -36,7 +36,7 @@ SRCS = \
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
-	config.lo error.lo gfm_client.lo gfs_chmod.lo \
+	config.lo conn_hash.lo error.lo gfm_client.lo gfs_chmod.lo \
 	gfs_client.lo gfs_client_dir.lo gfs_client_rep.lo \
 	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
@@ -71,9 +71,10 @@ auth_config.lo: hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h hostspec.h auth.h
 auth_server_gsi.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h io_gfsl.h auth.h auth_gsi.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.h auth.h config.h gfm_proto.h gfs_proto.h gfs_client.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h agent_wrap.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
+conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
-gfs_chmod.lo: config.h gfs_client.h gfs_pio.h
+gfs_chmod.lo: config.h conn_hash.h gfs_client.h gfs_pio.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h

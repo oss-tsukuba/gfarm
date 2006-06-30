@@ -1315,13 +1315,15 @@ gfarm_config_set_default_spool_on_client(void)
 		if (e != NULL)
 			goto ignore_error;
 
-		e = gfs_client_connection(host, &peer_addr, &gfs_server);
+		e = gfs_client_connection_acquire(host, &peer_addr,
+		    &gfs_server);
 		if (e != NULL)
 			goto ignore_error;
 
 		e = gfs_client_get_spool_root(gfs_server, &gfarm_spool_root);
 		if (e == NULL)
 			gfarm_is_active_file_system_node = 1;
+		gfs_client_connection_free(gfs_server);
 		if (old_ptr != NULL && old_ptr != gfarm_spool_root &&
 		    old_ptr != gfarm_spool_root_default)
 			free(old_ptr);

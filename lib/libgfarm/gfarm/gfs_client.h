@@ -16,8 +16,9 @@ int gfs_client_connection_fd(struct gfs_connection *);
 enum gfarm_auth_method gfs_client_connection_auth_method(
 	struct gfs_connection *);
 const char *gfs_client_hostname(struct gfs_connection *);
-char *gfs_client_connection(const char *, struct sockaddr *,
+char *gfs_client_connection_acquire(const char *, struct sockaddr *,
 	struct gfs_connection **);
+char *gfs_client_connection_free(struct gfs_connection *);
 char *gfs_client_connect(const char *, struct sockaddr *,
 	struct gfs_connection **);
 char *gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,

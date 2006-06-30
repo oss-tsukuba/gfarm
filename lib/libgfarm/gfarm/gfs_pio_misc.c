@@ -311,12 +311,12 @@ gfs_clean_spool(
 						   NULL);
 			if (e2 != NULL)
 				continue;
-			e2 = gfs_client_connect(copies[i][j].hostname,
-						 &peer_addr, &gfs_server);
+			e2 = gfs_client_connection_acquire(
+			    copies[i][j].hostname, &peer_addr, &gfs_server);
 			if (e2 != NULL)
 				continue;
 			e2 = gfs_client_unlink(gfs_server, path_section);
-			gfs_client_disconnect(gfs_server);
+			gfs_client_connection_free(gfs_server);
 		}
 		free(path_section);
 	}
@@ -372,8 +372,8 @@ rename_file_spool(
 				continue;
 			}
 
-			e = gfs_client_connect(copies[i][j].hostname,
-					       &peer_addr, &gfs_server);
+			e = gfs_client_connection_acquire(
+			    copies[i][j].hostname, &peer_addr, &gfs_server);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool: "
 					      "gfs_client_connect: %s: %s",
@@ -390,7 +390,7 @@ rename_file_spool(
 							    from_path_section,
 							    to_path_section);
 			}
-			gfs_client_disconnect(gfs_server);
+			gfs_client_connection_free(gfs_server);
 			if (e != NULL) {
 				gflog_warning("rename_file_spool: "
 				    "gfs_client_link(%s, %s): %s",
@@ -676,7 +676,7 @@ rename_spool_node_dir(char *hostname,
 			hostname, e);
 		return;
 	}
-	e = gfs_client_connect(hostname, &peer_addr, &gfs_server);
+	e = gfs_client_connection_acquire(hostname, &peer_addr, &gfs_server);
 	if (e != NULL) {
 		gflog_warning(
 			"rename_spool_node_dir: gfs_client_connect: %s: %s",
@@ -699,7 +699,7 @@ rename_spool_node_dir(char *hostname,
 			}
 		}
 	}
-	gfs_client_disconnect(gfs_server);
+	gfs_client_connection_free(gfs_server);
 }
 
 static char *
@@ -1371,28 +1371,30 @@ gfarm_file_missing_replica(char *gfarm_file, char *section,
 	char *e, *path_section;
 	struct sockaddr peer_addr;
 	struct gfs_connection *peer_conn;
-	int peer_fd, missing;
+	int peer_fd, missing = 0;
 
 	e = gfarm_host_address_get(canonical_hostname, gfarm_spool_server_port,
 	    &peer_addr, NULL);
 	if (e != NULL)
 		return (0);
 
-	e = gfs_client_connection(canonical_hostname, &peer_addr, &peer_conn);
+	e = gfs_client_connection_acquire(canonical_hostname, &peer_addr,
+	    &peer_conn);
 	if (e != NULL)
 		return (0);
 
 	e = gfarm_path_section(gfarm_file, section, &path_section);
-	if (e != NULL)
-		return (0);
-
-	e = gfs_client_open(peer_conn, path_section, GFARM_FILE_RDONLY, 0,
-	    &peer_fd);
-	missing = e == GFARM_ERR_NO_SUCH_OBJECT;
-	if (e == NULL)
-		gfs_client_close(peer_conn, peer_fd);
-
-	free(path_section);
+	if (e == NULL) {
+		e = gfs_client_open(peer_conn, path_section,
+		    GFARM_FILE_RDONLY, 0, &peer_fd);
+		if (e == NULL)
+			gfs_client_close(peer_conn, peer_fd);
+		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			missing = 1;
+		
+		free(path_section);
+	}
+	gfs_client_connection_free(peer_conn);
 	return (missing);
 }
 
@@ -1477,7 +1479,7 @@ gfarm_file_section_replicate_without_busy_check(
 	if (e != NULL)
 		goto finish;
 
-	e = gfs_client_connect(dst_canonical_hostname, &peer_addr,
+	e = gfs_client_connection_acquire(dst_canonical_hostname, &peer_addr,
 	    &gfs_server);
 	if (e != NULL)
 		goto finish;
@@ -1505,7 +1507,7 @@ gfarm_file_section_replicate_without_busy_check(
 		    dst_canonical_hostname, &ci);
 
 disconnect:
-	gfs_client_disconnect(gfs_server);
+	gfs_client_connection_free(gfs_server);
 
 finish:
 	free(path_section);
@@ -1982,13 +1984,14 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 			goto error;
 		}
 
-		e = gfs_client_connection(canonical_hostnames[i], &peer_addr,
-		    &gfs_server);
+		e = gfs_client_connection_acquire(canonical_hostnames[i],
+		    &peer_addr, &gfs_server);
 		if (e != NULL) {
 			free(arch);
 			goto error;
 		}
 		e = gfs_client_get_spool_root(gfs_server, &root);
+		gfs_client_connection_free(gfs_server);
 		if (e != NULL) {
 			free(arch);
 			goto error;

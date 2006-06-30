@@ -93,7 +93,8 @@ gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	if (e_int != NULL)
 		goto finish;
 
-	e_int = gfs_client_connection(hostname, &peer_addr, &gfs_server);
+	e_int = gfs_client_connection_acquire(hostname, &peer_addr,
+	    &gfs_server);
 	if (e_int != NULL)
 		goto finish;
 
@@ -102,6 +103,7 @@ gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 		e_int = gfs_client_unlink(gfs_server, path_section);
 		free(path_section);
 	}
+	gfs_client_connection_free(gfs_server);
 finish:
 	/*
 	 * how to report e_int?  This usually results in a junk file

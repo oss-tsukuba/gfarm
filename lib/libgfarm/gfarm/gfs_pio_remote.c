@@ -21,6 +21,7 @@
 static char *
 gfs_pio_remote_storage_close(GFS_File gf)
 {
+	char *e, *e_save;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
@@ -32,7 +33,10 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	 */
 	if (vc->pid != getpid())
 		return (NULL);
-	return (gfs_client_close(gfs_server, vc->fd));
+
+	e_save = gfs_client_close(gfs_server, vc->fd);
+	e = gfs_client_connection_free(gfs_server);
+	return (e_save != NULL ? e_save : e);
 }
 
 static char *
@@ -171,7 +175,7 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 		return (e);
 	}
 
-	e = gfs_client_connection(vc->canonical_hostname, &peer_addr,
+	e = gfs_client_connection_acquire(vc->canonical_hostname, &peer_addr,
 	    &gfs_server);
 	if (e != NULL) {
 		free(path_section);
@@ -201,8 +205,10 @@ gfs_pio_open_remote_section(GFS_File gf, char *hostname, int flags)
 	}
 
 	free(path_section);
-	if (e != NULL)
+	if (e != NULL) {
+		gfs_client_connection_free(gfs_server);
 		return (e);
+	}
 
 	vc->ops = &gfs_pio_remote_storage_ops;
 	vc->fd = fd;

@@ -1758,13 +1758,14 @@ statfsnode(char *canonical_hostname, int use_cache,
 		if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0)
 			return (GFARM_ERR_UNKNOWN_HOST);
 
-		e = gfs_client_connection(canonical_hostname, &h->addr,
+		e = gfs_client_connection_acquire(canonical_hostname, &h->addr,
 		    &gfs_server);
 		if (e != NULL)
 			return (e);
 		e = gfs_client_statfs(gfs_server, ".", &h->bsize,
 		    &h->blocks, &h->bfree, &h->bavail,
 		    &h->files, &h->ffree, &h->favail);
+		gfs_client_connection_free(gfs_server);
 		if (e != NULL)
 			return (e);
 		h->statfs_cache_time = search_idle_now;

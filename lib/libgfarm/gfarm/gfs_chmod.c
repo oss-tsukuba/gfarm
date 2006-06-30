@@ -133,23 +133,25 @@ chmod_copy(struct gfarm_file_section_copy_info *info, void *arg)
 	char *path = info->pathname, *section = info->section;
 	char *host = info->hostname;
 	struct gfs_chmod_args *a = arg;
-	char *path_section, *e;
+	char *path_section, *e, *e2;
 
 	e = gfarm_host_address_get(host, gfarm_spool_server_port,
 		&peer_addr, NULL);
 	if (e != NULL)
 		return (e);
 
-	e = gfs_client_connection(host, &peer_addr, &gfs_server);
+	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
 	if (e != NULL)
 		return (e);
 
 	e = gfarm_path_section(path, section, &path_section);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_client_chmod(gfs_server, path_section, a->mode);
-	free(path_section);
+	if (e == NULL) {
+		e = gfs_client_chmod(gfs_server, path_section, a->mode);
+		free(path_section);
+	}
+	e2 = gfs_client_connection_free(gfs_server);
+	if (e == NULL)
+		e = e2;
 
 	return (e);
 }
@@ -192,30 +194,27 @@ change_section_copy(struct gfarm_file_section_copy_info *info, void *arg)
 	if (e != NULL)
 		return (e);
 
-	e = gfs_client_connection(host, &peer_addr, &gfs_server);
+	e = gfs_client_connection_acquire(host, &peer_addr, &gfs_server);
 	if (e != NULL)
 		return (e);
 
 	e = gfarm_path_section(path, o_section, &old_path);
-	if (e != NULL)
-		return (e);
-
-	e = gfarm_path_section(path, a->n_sec, &new_path);
-	if (e != NULL)
-		goto free_old_path;
-
-	e = gfs_client_link(gfs_server, old_path, new_path);
-	if (e != NULL)
-		goto free_new_path;
-
-	e = gfs_client_chmod(gfs_server, new_path, a->mode);
-	if (e != NULL)
-		gfs_client_unlink(gfs_server, new_path);
-
-free_new_path:
-	free(new_path);
-free_old_path:
-	free(old_path);
+	if (e == NULL) {
+		e = gfarm_path_section(path, a->n_sec, &new_path);
+		if (e == NULL) {
+			e = gfs_client_link(gfs_server, old_path, new_path);
+			if (e == NULL) {
+				e = gfs_client_chmod(gfs_server,
+				    new_path, a->mode);
+				if (e != NULL)
+					gfs_client_unlink(gfs_server,
+					    new_path);
+			}
+			free(new_path);
+		}
+		free(old_path);
+	}
+	gfs_client_connection_free(gfs_server);
 
 	return (e != NULL ? e : gfarm_file_section_copy_info_set(
 			path, a->n_sec, host, NULL));
