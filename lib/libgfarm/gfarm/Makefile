@@ -22,8 +22,9 @@ POSTGRESQL_OBJS = metadb_pgsql.lo
 SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
 	agent_wrap.c agent_client.c agent_proto.c \
-	config.c error.c gfm_client.c gfs_chmod.c gfs_client.c \
-	gfs_client_rep.c gfs_dir.c gfs_pio.c gfs_pio_global.c \
+	config.c error.c gfm_client.c gfs_chmod.c \
+	gfs_client.c gfs_client_dir.c gfs_client_rep.c \
+	gfs_dir.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
 	gfs_exec.c gfs_unlink.c gfs_rename.c gfs_lock.c \
 	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
@@ -35,8 +36,9 @@ SRCS = \
 OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
-	config.lo error.lo gfm_client.lo gfs_chmod.lo gfs_client.lo \
-	gfs_client_rep.lo gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
+	config.lo error.lo gfm_client.lo gfs_chmod.lo \
+	gfs_client.lo gfs_client_dir.lo gfs_client_rep.lo \
+	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
 	gfs_exec.lo gfs_unlink.lo gfs_rename.lo gfs_lock.lo \
 	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
@@ -73,6 +75,7 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_chmod.lo: config.h gfs_client.h gfs_pio.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
+gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h

@@ -384,7 +384,7 @@ rename_file_spool(
 			e = gfs_client_link(gfs_server, from_path_section,
 							to_path_section);
 			if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-				if (gfs_pio_remote_mkdir_parent_canonical_path(
+				if (gfs_client_mk_parent_dir(
 				    gfs_server, to_path_section) == NULL)
 					e = gfs_client_link(gfs_server,
 							    from_path_section,
@@ -1495,8 +1495,7 @@ gfarm_file_section_replicate_without_busy_check(
 			goto disconnect;
 		}
 		/* FT - the parent directory of the destination may be missing */
-		(void)gfs_pio_remote_mkdir_parent_canonical_path(
-			gfs_server, gfarm_file);
+		(void)gfs_client_mk_parent_dir(gfs_server, gfarm_file);
 		e = gfs_client_bootstrap_replicate_file(
 			gfs_server, path_section, mode, file_size,
 			src_canonical_hostname, src_if_hostname);

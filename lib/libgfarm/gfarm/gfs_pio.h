@@ -73,10 +73,6 @@ int gfs_pio_check_calc_digest(GFS_File);
 
 struct gfs_connection;
 
-char *gfs_pio_local_mkdir_parent_canonical_path(char *);
-char *gfs_pio_remote_mkdir_parent_canonical_path(
-	struct gfs_connection *, char *);
-
 char *gfarm_foreach_copy(
 	char *(*)(struct gfarm_file_section_copy_info *, void *),
 	const char *, const char *, void *, int *);

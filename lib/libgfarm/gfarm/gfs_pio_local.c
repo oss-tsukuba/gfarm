@@ -268,8 +268,7 @@ gfs_pio_open_local_section(GFS_File gf, int flags)
 	if (e == GFARM_ERR_NO_SUCH_OBJECT
 	    && (oflags & GFARM_FILE_CREATE) != 0) {
 		/* the parent directory can be created by some other process */
-		(void)gfs_pio_remote_mkdir_parent_canonical_path(
-			gfs_server, gf->pi.pathname);
+		(void)gfs_client_mk_parent_dir(gfs_server, gf->pi.pathname);
 		e = gfs_client_open_local(gfs_server, path_section, oflags,
 			gf->pi.status.st_mode & GFARM_S_ALLPERM, &fd);
 	}
