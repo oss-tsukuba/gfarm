@@ -52,31 +52,17 @@ gfp_conn_hash_username(struct gfarm_hash_entry *entry)
 }
 
 static char *
-gfp_conn_hash_lookup_prepare(
-	struct gfarm_hash_table **hashtabp, int hashtabsize,
-	const char *hostname, int port, const char *username,
-	struct gfp_conn_hash_id *id)
+gfp_conn_hash_table_init(
+	struct gfarm_hash_table **hashtabp, int hashtabsize)
 {
-	struct gfarm_hash_table *hashtab = *hashtabp;
+	struct gfarm_hash_table *hashtab;
 
-	if (hashtab == NULL) {
-		hashtab = gfarm_hash_table_alloc(hashtabsize,
-		    gfp_conn_hash_index, gfp_conn_hash_equal);
-		if (hashtab == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		*hashtabp = hashtab;
-	}
-	id->hostname = strdup(hostname);
-	id->port = port;
-	id->username = strdup(username);
-	if (id->hostname == NULL || id->username == NULL) {
-		if (id->hostname != NULL)
-			free(id->hostname);
-		if (id->username != NULL)
-			free(id->username);
+	hashtab = gfarm_hash_table_alloc(hashtabsize,
+	    gfp_conn_hash_index, gfp_conn_hash_equal);
+	if (hashtab == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	*hashtabp = hashtab;
+	return (NULL);
 }
 
 char *
@@ -86,21 +72,38 @@ gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	struct gfarm_hash_entry **entry_ret, int *created_ret)
 {
 	char *e;
-	struct gfp_conn_hash_id id;
+	struct gfp_conn_hash_id id, *idp;
 	struct gfarm_hash_entry *entry;
 	int created;
 
-	e = gfp_conn_hash_lookup_prepare(hashtabp, hashtabsize,
-	    hostname, port, username, &id);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (*hashtabp == NULL &&
+	    (e = gfp_conn_hash_table_init(hashtabp, hashtabsize)) != NULL)
 		return (e);
+
+	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
+	id.username = (char *)username; /* UNCONST */
 	entry = gfarm_hash_enter(*hashtabp, &id, sizeof(id), entrysize,
 	    &created);
-	if (entry == NULL) {
-		free(id.hostname);
-		free(id.username);
+	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+
+	if (created) {
+		idp = gfarm_hash_entry_key(entry);
+		idp->hostname = strdup(hostname);
+		idp->username = strdup(username);
+		if (idp->hostname == NULL || idp->username == NULL) {
+			if (idp->hostname != NULL)
+				free(idp->hostname);
+			if (idp->username != NULL)
+				free(idp->username);
+			idp->hostname = (char *)hostname; /* UNCONST */
+			idp->username = (char *)username; /* UNCONST */
+			gfarm_hash_purge(*hashtabp, &id, sizeof(id));
+			return (GFARM_ERR_NO_MEMORY);
+		}
 	}
+
 	*entry_ret = entry;
 	*created_ret = created;
 	return (GFARM_ERR_NO_ERROR);
@@ -115,16 +118,17 @@ gfp_conn_hash_lookup(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	struct gfp_conn_hash_id id;
 	struct gfarm_hash_entry *entry;
 
-	e = gfp_conn_hash_lookup_prepare(hashtabp, hashtabsize,
-	    hostname, port, username, &id);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (*hashtabp == NULL &&
+	    (e = gfp_conn_hash_table_init(hashtabp, hashtabsize)) != NULL)
 		return (e);
+
+	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
+	id.username = (char *)username; /* UNCONST */
 	entry = gfarm_hash_lookup(*hashtabp, &id, sizeof(id));
-	if (entry == NULL) {
-		free(id.hostname);
-		free(id.username);
+	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
-	}
+
 	*entry_ret = entry;
 	return (GFARM_ERR_NO_ERROR);
 }
