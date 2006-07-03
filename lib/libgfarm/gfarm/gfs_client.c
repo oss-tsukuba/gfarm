@@ -218,6 +218,7 @@ gfs_client_connection_gc_internal(int free_target)
 			/* abandon this free connection */
 			gfs_client_purge_from_cache(gfs_server);
 			gfs_client_disconnect(gfs_server);
+			--free_connections;
 		}
 	}
 }
