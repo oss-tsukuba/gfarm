@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	1.3
-%define rel	0
+%define rel	1
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -78,24 +78,27 @@ Group: Applications/Internet
 %package client
 Summary: clients for gfarm
 Group: Applications/Internet
+Requires: %{package_name}-libs
 
 %package gfptool
 Summary: parallel tools installed under gfarm:/bin/
 Group: System Environment/Daemons
-Requires: %{package_name}-client
+Requires: %{package_name}-client %{package_name}-libs
 
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
-Requires: %{package_name}-client
+Requires: %{package_name}-client %{package_name}-libs
 
 %package server
 Summary: metadata server for gfarm
 Group: System Environment/Daemons
+Requires: %{package_name}-libs
 
 %package agent
 Summary: metadata cache server for gfarm
 Group: System Environment/Daemons
+Requires: %{package_name}-libs
 
 %package devel
 Summary: development library for gfarm
