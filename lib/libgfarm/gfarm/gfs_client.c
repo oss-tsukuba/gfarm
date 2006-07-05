@@ -98,28 +98,6 @@ static int free_connections = 0;
 static struct gfarm_hash_table *gfs_server_hashtab = NULL;
 static int gfsd_version_1_2_or_earlier;
 
-void
-gfs_client_terminate(void)
-{
-	struct gfarm_hash_iterator it;
-	struct gfarm_hash_entry *entry;
-	struct gfs_connection *gfs_server;
-
-	if (gfs_server_hashtab == NULL)
-		return;
-	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
-	     !gfarm_hash_iterator_is_end(&it); ) {
-		entry = gfarm_hash_iterator_access(&it);
-		gfs_server =
-		    *(struct gfs_connection **)gfarm_hash_entry_data(entry);
-		gfp_conn_hash_iterator_purge(&it);
-		gfs_server->hash_entry = NULL;
-		gfs_client_disconnect(gfs_server);
-	}
-	gfarm_hash_table_free(gfs_server_hashtab);
-	gfs_server_hashtab = NULL;
-}
-
 int
 gfs_client_connection_fd(struct gfs_connection *gfs_server)
 {
@@ -412,7 +390,6 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	gfs_server->context = NULL;
 	gfs_server->acquired = 1;
 	gfs_server->opened = 0;
-	gfs_server->hash_entry = NULL; /* gfs_client_disconnect() uses this */
 
 	*connection_in_progress_p = connection_in_progress;
 	*gfs_serverp = gfs_server;
@@ -454,6 +431,38 @@ gfs_client_connection_free(struct gfs_connection *gfs_server)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static char *
+gfs_client_connection_dispose(struct gfs_connection *gfs_server)
+{
+	char *e = xxx_connection_free(gfs_server->conn);
+
+	free(gfs_server->hostname);
+	/* XXX - gfs_server->context should be NULL here */
+	free(gfs_server);
+	return (e);
+}
+
+void
+gfs_client_terminate(void)
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *entry;
+	struct gfs_connection *gfs_server;
+
+	if (gfs_server_hashtab == NULL)
+		return;
+	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
+	     !gfarm_hash_iterator_is_end(&it); ) {
+		entry = gfarm_hash_iterator_access(&it);
+		gfs_server =
+		    *(struct gfs_connection **)gfarm_hash_entry_data(entry);
+		gfp_conn_hash_iterator_purge(&it);
+		gfs_client_connection_dispose(gfs_server);
+	}
+	gfarm_hash_table_free(gfs_server_hashtab);
+	gfs_server_hashtab = NULL;
+}
+
 /*
  * `hostname' to `addr' conversion really should be done in this function,
  * rather than a caller of this function.
@@ -492,8 +501,7 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 			e = connect_wait(xxx_connection_fd(gfs_server->conn));
 			if (e != GFARM_ERR_NO_ERROR) {
 				gfp_conn_hash_purge(gfs_server_hashtab, entry);
-				gfs_server->hash_entry = NULL;
-				gfs_client_disconnect(gfs_server);
+				gfs_client_connection_dispose(gfs_server);
 				return (e);
 			}
 		}
@@ -502,8 +510,7 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 		    &gfs_server->auth_method);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfp_conn_hash_purge(gfs_server_hashtab, entry);
-			gfs_server->hash_entry = NULL;
-			gfs_client_disconnect(gfs_server);
+			gfs_client_connection_dispose(gfs_server);
 			return (e);
 		}
 		gfs_client_cached_connection_created(gfs_server, entry);
@@ -539,7 +546,7 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 		    gfs_server->hostname, peer_addr,
 		    &gfs_server->auth_method);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_client_disconnect(gfs_server);
+		gfs_client_connection_dispose(gfs_server);
 		return (e);
 	}
 
@@ -556,18 +563,11 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 char *
 gfs_client_disconnect(struct gfs_connection *gfs_server)
 {
-	char *e;
-
 	if (gfs_client_connection_is_cached(gfs_server)) {
 		gflog_error("gfs_client_disconnect: programming error");
 		abort();
 	}
-	/* XXX - gfs_server->context should be NULL here */
-
-	free(gfs_server->hostname);
-	e = xxx_connection_free(gfs_server->conn);
-	free(gfs_server);
-	return (e);
+	return (gfs_client_connection_dispose(gfs_server));
 }
 
 #if 0 /* this function is currently not used */
@@ -691,7 +691,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	state = malloc(sizeof(*state));
 	if (state == NULL) {
-		gfs_client_disconnect(gfs_server);
+		gfs_client_connection_dispose(gfs_server);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	state->q = q;
@@ -733,7 +733,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		}
 	}
 	free(state);
-	gfs_client_disconnect(gfs_server);
+	gfs_client_connection_dispose(gfs_server);
 	return (e);
 }
 
@@ -749,7 +749,7 @@ gfs_client_connect_result_multiplexed(
 		gfarm_event_free(state->writable);
 	free(state);
 	if (e != NULL) {
-		gfs_client_disconnect(gfs_server);
+		gfs_client_connection_dispose(gfs_server);
 		return (e);
 	}
 
