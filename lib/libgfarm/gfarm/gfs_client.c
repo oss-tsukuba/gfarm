@@ -412,7 +412,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	gfs_server->context = NULL;
 	gfs_server->acquired = 1;
 	gfs_server->opened = 0;
-	gfs_server->hash_entry = NULL;
+	gfs_server->hash_entry = NULL; /* gfs_client_disconnect() uses this */
 
 	*connection_in_progress_p = connection_in_progress;
 	*gfs_serverp = gfs_server;
@@ -691,9 +691,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 
 	state = malloc(sizeof(*state));
 	if (state == NULL) {
-		xxx_connection_free(gfs_server->conn);
-		free(gfs_server->hostname);
-		free(gfs_server);
+		gfs_client_disconnect(gfs_server);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	state->q = q;
