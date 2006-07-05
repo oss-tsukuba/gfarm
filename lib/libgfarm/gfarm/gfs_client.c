@@ -412,6 +412,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	gfs_server->context = NULL;
 	gfs_server->acquired = 1;
 	gfs_server->opened = 0;
+	gfs_server->hash_entry = NULL;
 
 	*connection_in_progress_p = connection_in_progress;
 	*gfs_serverp = gfs_server;
