@@ -4,13 +4,16 @@
 
 key=$HOME/.gfarm_shared_key
 
-trap 'rm -f $key; exit $exit_trap' $trap_sigs
+# NOTE:
+# We won't do "rm -f $key" at exit, because the key may be copied by hand,
+# or it may be a symbolic link.
+
+trap 'exit $exit_trap' $trap_sigs
 
 if gfkey -cl && [ -f $key ] &&
-   [ x"`ls -l $key | awk '{ print $1 }'`" = x"-rw-------" ] &&
+   ls -lL $key | awk '{ if ($1 == "-rw-------") exit 0; else exit 1}' &&
    awk '{ if (NF == 2) exit 0; else exit 1}' $key; then
 	exit_code=$exit_pass
 fi
 
-rm -f $key
 exit $exit_code
