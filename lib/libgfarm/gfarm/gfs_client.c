@@ -341,6 +341,10 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * The struct gfs_connection, which is acquired by this function, must be
+ * freed by gfs_client_connection_free().
+ */
 static char *
 gfs_client_connection_alloc(const char *canonical_hostname,
 	struct sockaddr *peer_addr, int port,
@@ -520,6 +524,9 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 }
 
 /*
+ * The struct gfs_connection, which is acquired by this function, must be
+ * freed by gfs_client_disconnect().
+ *
  * XXX FIXME
  * `hostname' to `addr' conversion really should be done in this function,
  * rather than a caller of this function.
@@ -557,7 +564,7 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 
 /*
  * Should be used for a gfs_connection created by gfs_client_connect().
- * Shouldn't be used for a gfs_connection which was created by
+ * Shouldn't be used for a gfs_connection which was acquired by
  * gfs_client_connection_acquire().
  */
 char *
