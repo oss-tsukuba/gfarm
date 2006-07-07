@@ -55,7 +55,6 @@ sysdep_defaults()
 	debian)	if [ -f /etc/ldap/schema/core.schema ]; then
 			: ${OPENLDAP_ETC:=/etc/ldap}
 		fi
-		: ${LDAP_DATADIRECTORY=$CONFIG_PREFIX/var/lib/gfarm-ldap}
 		;;
 	redhat)	: ${RC_LOCK_DIR:="$CONFIG_PREFIX/var/lock/subsys"}
 		;;
