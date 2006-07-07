@@ -14,7 +14,7 @@ killed=0
 pass=0
 fail=0
 skip=0
-fmt="%-50.50s ... %s\n"
+fmt="%-50.50s ... %s"
 
 while read line; do
 	set x $line
@@ -25,35 +25,36 @@ while read line; do
 	tst=$1
 	fin="-------------------------------------------------- --- ----"
 	if [ -f $tst ]; then
-		printf "$fmt" "$tst" "BEGIN" >>$log
+		( printf "$fmt" "$tst"; echo "BEGIN" ) >>$log
+		  printf "$fmt" "$tst"
 
 		sh $tst </dev/null >>$log 2>&1
 		exit_code=$?
 
 		case $exit_code in
 		$exit_pass)
-			printf "$fmt" "$tst" "PASS"
-			printf "$fmt" "$tst" "PASS" >>$log
+			( printf "$fmt" "$tst"; echo "PASS" ) >>$log
+						echo "PASS"
 			pass=`expr $pass + 1`;;
 		$exit_fail)
-			printf "$fmt" "$tst" "FAIL"
-			printf "$fmt" "$tst" "FAIL" >>$log
+			( printf "$fmt" "$tst"; echo "FAIL" ) >>$log
+						echo "FAIL"
 			fail=`expr $fail + 1`;;
 		*)	case $exit_code in
 			$exit_trap)
-				printf "$fmt" "$tst" "KILLED"
-				printf "$fmt" "$tst" "KILLED" >>$log;;
-			*)	printf "$fmt" "$tst" "exit code = $exit_code"
-				printf "$fmt" "$tst" "exit code = $exit_code" \
-					>>$log;;
+				( printf "$fmt" "$tst"; echo "KILLED" ) >>$log
+							echo "KILLED";;
+			*)	( printf "$fmt" "$tst";
+				  echo "exit code = $exit_code" ) >>$log
+				  echo "exit code = $exit_code";;
 			esac
 			killed=1
 			break;;
 		esac
 		echo "$fin" >>$log
 	else
-		printf "$fmt" "$tst" "SKIPPED"
-		printf "$fmt" "$tst" "SKIPPED" >>$log
+		( printf "$fmt" "$tst"; echo "SKIPPED" ) >>$log
+					echo "SKIPPED"
 		skip=`expr $skip + 1`
 	fi
 	
