@@ -232,6 +232,7 @@ fi
 
 # Part 3  file list
 %files doc
+%defattr(-,root,root)
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
 %{man_prefix}/man1/gfdf.1.gz
@@ -609,6 +610,7 @@ fi
 %{doc_prefix}/README.hook.ja
 
 %files libs
+%defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.0
 %{lib_prefix}/libgfarm.so.0.0.0
 %{lib_prefix}/libgfs_hook.so.0
@@ -636,15 +638,18 @@ fi
 %endif
 
 %files frontend
+%defattr(-,root,root)
 
 %if %{have_ns}
 %{prefix}/bin/gfarm
 %endif
 
 %files client
+%defattr(-,root,root)
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
+%{prefix}/bin/gfchmod
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
@@ -691,6 +696,7 @@ fi
 %endif
 
 %files gfptool
+%defattr(-,root,root)
 %{prefix}/bin/gfcombine
 %{prefix}/bin/gfcombine_hook
 %{prefix}/bin/gfcp
@@ -706,6 +712,7 @@ fi
 %{prefix}/sbin/gfregister
 
 %files fsnode
+%defattr(-,root,root)
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
 %{prefix}/bin/gfexec
@@ -720,6 +727,7 @@ fi
 %{share_prefix}/config/linux/suse/gfsd.in
 
 %files server
+%defattr(-,root,root)
 %{prefix}/sbin/gfmd
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/gfdump
@@ -747,6 +755,7 @@ fi
 %{share_prefix}/config/slapd.conf-2.1.in
 
 %files agent
+%defattr(-,root,root)
 %{prefix}/bin/config-agent
 %{prefix}/bin/gfarm_agent
 %{share_prefix}/config/linux/debian/gfarm_agent.in
@@ -755,6 +764,7 @@ fi
 %{share_prefix}/config/linux/suse/gfarm_agent.in
 
 %files devel
+%defattr(-,root,root)
 %{prefix}/include/gfarm/gfarm.h
 %{prefix}/include/gfarm/gfarm_config.h
 %{prefix}/include/gfarm/gfarm_error.h
@@ -798,6 +808,7 @@ fi
 
 %if %{have_ns}
 %{prefix}/include/gfarm/comm.h
+%{prefix}/include/gfarm/con.h
 %{prefix}/include/gfarm/debug.h
 %{prefix}/include/gfarm/gflib.h
 %{prefix}/include/gfarm/ns.h
@@ -816,5 +827,6 @@ fi
 %endif
 
 %files gfront
+%defattr(-,root,root)
 %{prefix}/bin/gfront
 %{prefix}/share/java/gfront.jar
