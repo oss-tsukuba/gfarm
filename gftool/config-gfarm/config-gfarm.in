@@ -138,7 +138,8 @@ usage()
 	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-d domain_name] [-h hostname]"
-	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
+	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
+	echo >&2 "	[-p metadata_backend_port]"
 	echo >&2 "	[-s gfsd_port] [-m gfmd_port]"
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
@@ -177,6 +178,7 @@ display_params()
     display_backend_params_$BACKEND_TYPE
 
     echo     "metadata directory  [-l]: $BACKEND_DATA_DIR"
+    echo     "metadata directory  [-L]: $BACKEND_LOG_DIR"
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
 
     display_backend_port_params_$BACKEND_TYPE
@@ -230,6 +232,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -l) shift; [ $# -ge 1 ] || usage
 		BACKEND_DATA_DIR=$1
+		;;
+	  -L) shift; [ $# -ge 1 ] || usage
+		BACKEND_LOG_DIR=$1
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		BACKEND_HOSTNAME=$1
@@ -354,6 +359,7 @@ s|@config_gfarm_backend_hostname@|$BACKEND_HOSTNAME|g
 s|@config_gfarm_backend_port@|$BACKEND_PORT|g
 s|@config_gfarm_backend_prefix@|$BACKEND_PREFIX|g
 s|@config_gfarm_backend_data_dir@|$BACKEND_DATA_DIR|g
+s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
 _EOF_
 }
 
@@ -453,8 +459,10 @@ create_directory()
 delete_file_or_directory \
 	"$GFARM_CONF" \
 	"$BACKEND_DATA_DIR" \
+	"$BACKEND_LOG_DIR" \
 	"$RC_DIR/$RC_BACKEND_BASENAME"
 
+# We won't create "$BACKEND_LOG_DIR", otherwise initdb of PostgreSQL fails.
 create_directory \
 	"$GFARM_CONF_DIR" \
 	"$BACKEND_DATA_DIR" \

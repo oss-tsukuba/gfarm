@@ -113,6 +113,8 @@ set_last_defaults_postgresql()
 	# default PostgreSQL port number is 5432
 	: ${BACKEND_PORT:="10602"}
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
+	BACKEND_LOG_DIR_DEFAULT="$BACKEND_DATA_DIR/pg_xlog"
+	: ${BACKEND_LOG_DIR:="$BACKEND_LOG_DIR_DEFAULT"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$BACKEND_PREFIX/bin/pg_config" ]; then
@@ -403,6 +405,14 @@ _EOF_
 	   "$BACKEND_DATA_DIR"/postgresql.conf
 	mv "$BACKEND_DATA_DIR"/pg_hba.conf.bak \
 	   "$BACKEND_DATA_DIR"/pg_hba.conf
+
+	if [ "$BACKEND_LOG_DIR" != "$BACKEND_LOG_DIR_DEFAULT" ]; then
+		# if [ -n "$BACKEND_PRIVILEGE" ], `whoami` should be root, and
+		# the following should preserve the owner of the directory.
+		# otherwise $BACKEND_ADMIN_USER must be `whoami`.
+		mv "$BACKEND_LOG_DIR_DEFAULT" "$BACKEND_LOG_DIR"
+		ln -s "$BACKEND_LOG_DIR" "$BACKEND_LOG_DIR_DEFAULT"
+	fi
 }
 
 start_service_postgresql()
