@@ -7,7 +7,7 @@
 /* for compatibility with gfarm v2 */
 #define gfarm_error_string(error)	(error)
 
-typedef const char *gfarm_error_t;
+typedef char *gfarm_error_t; /* must be "const char *", but... */
 
 /* this is not an error, but success */
 #define GFARM_ERR_NO_ERROR	NULL
