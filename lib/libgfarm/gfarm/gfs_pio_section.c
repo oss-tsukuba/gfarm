@@ -467,7 +467,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (e != NULL)
 		goto profile_finish;
 
-	vc = malloc(sizeof(struct gfs_file_section_context));
+	GFARM_MALLOC(vc);
 	if (vc == NULL) {
 		e = gf->error = GFARM_ERR_NO_MEMORY;
 		goto profile_finish;

@@ -85,9 +85,11 @@ int gfs_pio_fileno(GFS_File gf)
 static char *
 gfs_file_alloc(GFS_File *gfp)
 {
-	GFS_File gf = malloc(sizeof(struct gfs_file));
-	char *buffer = malloc(GFS_FILE_BUFSIZE);
+	GFS_File gf;
+	char *buffer;
 
+	GFARM_MALLOC(gf);
+	GFARM_MALLOC_ARRAY(buffer, GFS_FILE_BUFSIZE);
 	if (buffer == NULL || gf == NULL) {
 		if (buffer != NULL)
 			free(buffer);

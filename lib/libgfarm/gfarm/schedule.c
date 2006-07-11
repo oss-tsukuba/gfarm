@@ -301,7 +301,7 @@ search_idle_network_list_init(void)
 	    &peer_addr, NULL);
 	if (e != NULL)
 		return (e);
-	net = malloc(sizeof(*net));
+	GFARM_MALLOC(net);
 	if (net == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	net->rtt_usec = 0; /* i.e. local network */
@@ -405,7 +405,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 		return (NULL);
 	}
 	/* first host in the network */
-	net = malloc(sizeof(*net));
+	GFARM_MALLOC(net); 
 	if (net == NULL)
 		return (NULL);
 	net->min = min;
@@ -1023,7 +1023,7 @@ search_idle_try_host(struct search_idle_state *s,
 			return (gfarm_errno_to_error(rv));
 	}
 
-	c = malloc(sizeof(*c));
+	GFARM_MALLOC(c);
 	if (c == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	c->state = s;
@@ -1166,7 +1166,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 	if (nnets <= 0)
 		return (NULL);
 
-	netarray = malloc(sizeof(*netarray) * nnets);
+	GFARM_MALLOC_ARRAY(netarray, nnets);
 	if (netarray == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	i = 0;
@@ -1230,7 +1230,7 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 		return (GFARM_ERR_NO_HOST);
 
 	assert(s.available_hosts_number >= s.usable_hosts_number);
-	results = malloc(s.available_hosts_number * sizeof(*results));
+	GFARM_MALLOC_ARRAY(results, s.available_hosts_number);
 	if (results == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -1639,7 +1639,7 @@ url_hosts_schedule_common(const char *gfarm_url,
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
-	hosts = malloc(sizeof(char *) * nfrags);
+	GFARM_MALLOC_ARRAY(hosts, nfrags);
 	if (hosts == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_gfarm_file;
@@ -1663,7 +1663,7 @@ url_hosts_schedule_common(const char *gfarm_url,
 	}
 	if (shortage > 0) {
 		assert(not_require_file_affinity);
-		residual = malloc(shortage * sizeof(*residual));
+		GFARM_MALLOC_ARRAY(residual, shortage);
 		if (residual == NULL) {
 			gfarm_strings_free_deeply(nfrags, hosts);
 			e = GFARM_ERR_NO_MEMORY;

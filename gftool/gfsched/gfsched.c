@@ -119,7 +119,7 @@ main(int argc, char * argv[])
     }
 
     if (nhosts != -1) {
-	hosts = malloc(sizeof(*hosts) * nhosts);
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) {
 	    fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
 	    exit(2);

@@ -260,7 +260,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	if (e != NULL)
 		return (e);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

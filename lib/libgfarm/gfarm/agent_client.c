@@ -62,10 +62,10 @@ char *
 agent_client_connect_unix(struct sockaddr_un *peer_addr,
 	struct agent_connection **agent_serverp)
 {
-	struct agent_connection *agent_server =
-		malloc(sizeof(struct agent_connection));
+	struct agent_connection *agent_server;
 	char *e;
 
+	GFARM_MALLOC(agent_server);
 	if (agent_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = agent_client_connection0_unix(peer_addr, agent_server);
@@ -108,10 +108,10 @@ char *
 agent_client_connect_inet(const char *hostname,
 	struct sockaddr *peer_addr, struct agent_connection **agent_serverp)
 {
-	struct agent_connection *agent_server =
-		malloc(sizeof(struct agent_connection));
+	struct agent_connection *agent_server;
 	char *e;
 
+	GFARM_MALLOC(agent_server);
 	if (agent_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = agent_client_connection0_inet(hostname, peer_addr, agent_server);
@@ -460,7 +460,7 @@ agent_client_host_info_get_all(struct agent_connection *agent_server,
 		AGENT_PROTO_HOST_INFO_GET_ALL, "/i", np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_host_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -503,7 +503,7 @@ agent_client_host_info_get_allhost_by_architecture(
 		"s/i", architecture, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_host_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -600,7 +600,7 @@ agent_client_file_section_info_get_all_by_file(
 		"s/i", pathname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -675,7 +675,7 @@ agent_client_file_section_copy_info_get_all_by_file(
 		"s/i", pathname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -709,7 +709,7 @@ agent_client_file_section_copy_info_get_all_by_section(
 		"ss/i", pathname, section, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -742,7 +742,7 @@ agent_client_file_section_copy_info_get_all_by_host(
 		"s/i", hostname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {

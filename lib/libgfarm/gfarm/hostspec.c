@@ -31,6 +31,7 @@ struct gfarm_hostspec {
 char *
 gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
 {
+	/* allocation size never overflows */
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union));
 
@@ -44,6 +45,7 @@ gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
 char *
 gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 {
+	/* never overflows, because huge name will never be passed here */ 
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + strlen(name) + 1);
 
@@ -59,6 +61,7 @@ char *
 gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
+	/* allocation size never overvlows */
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + sizeof(struct gfhs_in4_addr));
 

@@ -545,7 +545,7 @@ gfarm_paraccess_alloc(
 	struct gfarm_paraccess *pa;
 	int i;
 
-	pa = malloc(sizeof(*pa));
+	GFARM_MALLOC(pa);
 	if (pa == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -555,7 +555,7 @@ gfarm_paraccess_alloc(
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-        pa->access_state = malloc(sizeof(*pa->access_state) * concurrency);
+	GFARM_MALLOC_ARRAY(pa->access_state, concurrency);
 	if (pa->access_state == NULL) {
 		gfarm_eventqueue_free(pa->q);
 		free(pa);
@@ -826,7 +826,7 @@ request_long_format(struct gfarm_host_info *host_info,
 	struct long_format_parameter *param;
 	struct gfarm_host_info *info;
 
-	param = malloc(sizeof(*param));
+	GFARM_MALLOC(param);
 	if (param == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		fprintf(stderr, "%s: %s\n", program_name, e);

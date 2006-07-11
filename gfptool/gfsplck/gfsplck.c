@@ -65,7 +65,8 @@ unlink_dir(const char *src)
 			    || strcmp(dp->d_name, "..") == 0 || dp->d_ino == 0)
 				continue;
 
-			f = malloc(strlen(src) + 1 + strlen(dp->d_name) + 1);
+			GFARM_MALLOC_ARRAY(f, 
+				strlen(src) + 1 + strlen(dp->d_name) + 1);
 			if (f == NULL) {
 				print_errmsg(dp->d_name, "not enough memory");
 				return (1);
@@ -109,7 +110,7 @@ append_prefix_pathname(const char *prefix, const char *path)
 {
 	char *url;
 
-	url = malloc(strlen(prefix) + strlen(path) + 2);
+	GFARM_MALLOC_ARRAY(url, strlen(prefix) + strlen(path) + 2);
 	if (url == NULL)
 		return (url);
 
@@ -280,7 +281,7 @@ fixurl(const char *gfarm_url)
 
 	/* investigate file sections */
 	len_path = strlen(local_path);
-	pat = malloc(len_path + 3);
+	GFARM_MALLOC_ARRAY(pat, len_path + 3);
 	if (pat == NULL) {
 		print_errmsg(gfarm_url, "not enough memory");
 		free(local_path);
@@ -442,7 +443,7 @@ fixdir(char *dir, const char *gfarm_prefix)
 		    || strcmp(dp->d_name, "..") == 0)
 			continue;
 
-		dir1 = malloc(strlen(dir) + strlen(dp->d_name) + 2);
+		GFARM_MALLOC_ARRAY(dir1, strlen(dir) + strlen(dp->d_name) + 2);
 		if (dir1 == NULL) {
 			print_errmsg(dp->d_name, "not enough memory");
 			closedir(dirp);

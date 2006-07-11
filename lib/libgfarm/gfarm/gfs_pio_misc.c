@@ -467,12 +467,12 @@ link_a_file(struct gfarm_path_info *from_pip, char *newpath,
 		}
 	}
 
-	*ncopy = malloc(*nsection * sizeof(**ncopy));
+	GFARM_MALLOC_ARRAY(*ncopy, *nsection);
 	if (*ncopy == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_free_section_info;
 	}
-	*copies = malloc(*nsection * sizeof(**copies));
+	GFARM_MALLOC_ARRAY(*copies, *nsection);
 	if (*copies == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_free_ncopy;
@@ -556,7 +556,7 @@ add_cwd_to_relative_path(char *cwd, const char *path)
 {
 	char *p;
 
-	p = malloc(strlen(cwd) + strlen(path) + 2);
+	GFARM_MALLOC_ARRAY(p, strlen(cwd) + strlen(path) + 2);
 	if (p == NULL)
 		return (NULL);
 	sprintf(p, "%s/%s", cwd, path);
@@ -712,12 +712,12 @@ static char *get_infos_by_file(char *pathname,
 						    nsection, sections);
 	if (e != NULL)
 		return (e);
-	*ncopy = malloc(*nsection * sizeof(**ncopy));
+	GFARM_MALLOC_ARRAY(*ncopy, *nsection);
 	if (*ncopy == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_free_section_info;
 	}
-	*copies = malloc(*nsection * sizeof(**copies));
+	GFARM_MALLOC_ARRAY(*copies, *nsection);
 	if (*copies == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_free_ncopy;
@@ -769,7 +769,8 @@ get_path_infos(char *from_canonic_path,
 		char *p, *elem;
 
 		elem = gfarm_stringlist_elem(list, i);
-		p = malloc(strlen(from_canonic_path) + strlen(elem) + 1);
+		GFARM_MALLOC_ARRAY(p,
+			strlen(from_canonic_path) + strlen(elem) + 1);
 		if (p == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(p, "%s%s", from_canonic_path, elem);
@@ -849,7 +850,7 @@ set_a_path_info(char *from_dir_canonical_path,
 	struct gfarm_path_info to_pi;
 	struct timeval now;
 
-	p = malloc(strlen(from_path_info->pathname) -
+	GFARM_MALLOC_ARRAY(p, strlen(from_path_info->pathname) -
 			 strlen(from_dir_canonical_path) +
 			 strlen(to_dir_canonical_path) + 1);
 	if (p == NULL) {
@@ -994,32 +995,32 @@ rename_dir(const char *from_url,
 	ndir = gfarm_stringlist_length(&dir_list);
 	nfile = gfarm_stringlist_length(&file_list);
 
-	dir_path_infos = malloc(ndir * sizeof(*dir_path_infos));
+	GFARM_MALLOC_ARRAY(dir_path_infos, ndir);
 	if (dir_path_infos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_file_list;
 	}
-	file_path_infos = malloc(nfile * sizeof(*file_path_infos));
+	GFARM_MALLOC_ARRAY(file_path_infos, nfile);
 	if (file_path_infos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_dir_path_infos;
 	}
-	nsection = malloc(nfile * sizeof(*nsection));
+	GFARM_MALLOC_ARRAY(nsection, nfile);
 	if (nsection == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_file_path_infos;
 	}
-	sections = malloc(nfile * sizeof(*sections));
+	GFARM_MALLOC_ARRAY(sections, nfile);
 	if (sections == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_nsection;
 	}
-	ncopy = malloc(nfile * sizeof(*ncopy));
+	GFARM_MALLOC_ARRAY(ncopy, nfile);
 	if (ncopy == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_sections;
 	}
-	copies = malloc(nfile * sizeof(*copies));
+	GFARM_MALLOC_ARRAY(copies, nfile);
 	if (copies == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_ncopy;
@@ -1032,13 +1033,13 @@ rename_dir(const char *from_url,
 	/*
 	 * allocate table to check spool files existence
 	 */
-	exist = malloc(nfile * sizeof(*exist));
+	GFARM_MALLOC_ARRAY(exist, nfile);
 	if (exist == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_meta_data;
 	}
 	for (i = 0; i < nfile; i++) {
-		exist[i] = malloc(nsection[i] * sizeof(**exist));
+		GFARM_MALLOC_ARRAY(exist[i], nsection[i]);
 		if (exist[i] == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			while (--i >= 0)
@@ -1046,9 +1047,7 @@ rename_dir(const char *from_url,
 			goto free_exist;
 		}
 		for (j = 0; j < nsection[i]; j++) {
-			int size = ncopy[i][j] * sizeof(***exist);
-
-			exist[i][j] = malloc(size);
+			GFARM_MALLOC_ARRAY(exist[i][j], ncopy[i][j]);
 			if (exist[i][j] == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				while (--j >= 0)
@@ -1060,7 +1059,7 @@ rename_dir(const char *from_url,
 				}
 				goto free_exist;
 			}
-			memset(exist[i][j], 0, size);
+			memset(exist[i][j], 0, ncopy[i][j] * sizeof(***exist));
 		}
 	}
 
@@ -1741,8 +1740,7 @@ gfarm_url_program_register(
 	if (e != NULL)
 		goto finish;
 
-
-	hostnames = malloc(sizeof(char *) * nhosts);
+	GFARM_MALLOC_ARRAY(hostnames, nhosts);
 	if (hostnames == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_host_info;
@@ -1886,7 +1884,7 @@ gfarm_url_program_deliver(const char *gfarm_url, int nhosts, char **hosts,
 		free(gfarm_file);
 		return (e);
 	}
-	dp = malloc(sizeof(char *) * (nhosts + 1));
+	GFARM_MALLOC_ARRAY(dp, nhosts + 1);
 	if (dp == NULL) {
 		free(gfarm_file);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1993,14 +1991,14 @@ gfarm_url_fragments_transfer(
 	if (e != NULL)
 		goto finish_gfarm_file;
 
-	edsthosts = malloc(sizeof(*edsthosts) * nsrchosts);
+	GFARM_MALLOC_ARRAY(edsthosts, nsrchosts);
 	if (edsthosts == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_srchosts;
 	}
 	gfarm_strings_expand_cyclic(ndsthosts, dsthosts, nsrchosts, edsthosts);
 
-	pids = malloc(sizeof(int) * nsrchosts);
+	GFARM_MALLOC_ARRAY(pids, nsrchosts);
 	if (pids == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_edsthosts;
@@ -2092,7 +2090,7 @@ gfarm_url_fragments_transfer_to_domainname(
 	if (e != NULL)
 		return (e);
 
-	dsthosts = malloc(nfrags * sizeof(char *));
+	GFARM_MALLOC_ARRAY(dsthosts, nfrags);
 	if (dsthosts == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

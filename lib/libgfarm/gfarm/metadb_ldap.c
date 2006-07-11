@@ -690,8 +690,10 @@ gfarm_ldap_generic_info_get_all(
 	char *a;
 	BerElement *ber;
 	char **vals;
-	char *infos, *tmp_info;
+	char *infos = NULL, *tmp_info;
 	char *error;
+	size_t size;
+	int overflow = 0;
 
 	if ((error = gfarm_ldap_check()) != NULL)
 		return (error);
@@ -719,7 +721,11 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto msgfree;
 	}
-	infos = malloc(ops->gen_ops->info_size * n);
+	size = gfarm_size_mul(&overflow, ops->gen_ops->info_size, n);
+	if (overflow)
+		errno = ENOMEM;
+	else
+		GFARM_MALLOC_ARRAY(infos, size);
 	if (infos == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		goto msgfree;
@@ -872,10 +878,11 @@ static char *
 gfarm_ldap_host_info_make_dn(void *vkey)
 {
 	struct gfarm_ldap_host_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_host_info_ops.dn_template) +
+	char *dn;
+
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_host_info_ops.dn_template) +
 			  strlen(key->hostname) +
 			  strlen(gfarm_ldap_base_dn) + 1);
-
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_host_info_ops.dn_template,
@@ -1056,9 +1063,17 @@ gfarm_ldap_host_info_get_by_name_alias(
 	struct gfarm_host_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmHost)(|(hostname=%s)(hostalias=%s)))";
-	char *query = malloc(sizeof(query_template) + strlen(name_alias) * 2);
+	char *query = NULL;
+	size_t size;
+	int overflow = 0;
 
-	if (query == NULL)
+	size = gfarm_size_add(&overflow, sizeof(query_template),
+			gfarm_size_mul(&overflow, strlen(name_alias), 2));
+	if (overflow)
+		errno = ENOMEM;
+	else
+		GFARM_MALLOC_ARRAY(query, size);
+	if (overflow || query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, name_alias, name_alias);
 	error = gfarm_ldap_generic_info_get_all(gfarm_ldap_base_dn,
@@ -1090,9 +1105,10 @@ gfarm_ldap_host_info_get_allhost_by_architecture(const char *architecture,
 	struct gfarm_host_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmHost)(architecture=%s))";
-	char *query = malloc(sizeof(query_template) +
-			     strlen(architecture));
+	char *query;
 
+	GFARM_MALLOC_ARRAY(query,
+		sizeof(query_template) + strlen(architecture));
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, architecture);
@@ -1139,13 +1155,19 @@ static char *
 gfarm_ldap_escape_pathname(const char *pathname)
 {
 	const char *s = pathname;
-	char *escaped_pathname, *d;
+	char *escaped_pathname = NULL, *d;
+	size_t size;
+	int overflow = 0;
 
 	/* if pathname is a null string, return immediately */
 	if (*s == '\0')
 		return (NULL);
-
-	escaped_pathname = malloc(strlen(pathname) * 3);
+	
+	size = gfarm_size_mul(&overflow, strlen(pathname), 3);
+	if (overflow)
+		errno = ENOMEM;
+	else
+		GFARM_MALLOC_ARRAY(escaped_pathname, size);
 	if (escaped_pathname == NULL)
 		return (escaped_pathname);
 
@@ -1191,7 +1213,7 @@ gfarm_ldap_path_info_make_dn(void *vkey)
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_ldap_path_info_ops.dn_template) +
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_path_info_ops.dn_template) +
 		    strlen(escaped_pathname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
 		free(escaped_pathname);
@@ -1396,8 +1418,9 @@ gfarm_ldap_file_history_get_allfile_by_program(
 	struct gfarm_path_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmFile)(generatorProgram=%s))";
-	char *query = malloc(sizeof(query_template) + strlen(program));
+	char *query;
 
+	GFARM_MALLOC_ARRAY(query, sizeof(query_template) + strlen(program));
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, program);
@@ -1426,9 +1449,10 @@ gfarm_ldap_file_history_get_allfile_by_file(
 	struct gfarm_path_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmFile)(generatorInputGFarmFiles=%s))";
-	char *query = malloc(sizeof(query_template) +
-			     strlen(input_gfarm_file));
+	char *query;
 
+	GFARM_MALLOC_ARRAY(query, sizeof(query_template) +
+			     strlen(input_gfarm_file));
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, input_gfarm_file);
@@ -1478,7 +1502,8 @@ gfarm_ldap_file_section_info_make_dn(void *vkey)
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_ldap_file_section_info_ops.dn_template) +
+	GFARM_MALLOC_ARRAY(dn, 
+		    strlen(gfarm_ldap_file_section_info_ops.dn_template) +
 		    strlen(key->section) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
@@ -1627,7 +1652,7 @@ gfarm_ldap_file_section_info_get_all_by_file(
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(sizeof(dn_template) + strlen(escaped_pathname) +
+	GFARM_MALLOC_ARRAY(dn, sizeof(dn_template) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn));
 	if (dn == NULL) {
 		free(escaped_pathname);
@@ -1679,7 +1704,8 @@ gfarm_ldap_file_section_copy_info_make_dn(void *vkey)
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	dn = malloc(strlen(gfarm_ldap_file_section_copy_info_ops.dn_template) +
+	GFARM_MALLOC_ARRAY(dn,
+		    strlen(gfarm_ldap_file_section_copy_info_ops.dn_template) +
 		    strlen(key->hostname) +
 		    strlen(key->section) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn) + 1);
@@ -1797,8 +1823,9 @@ gfarm_ldap_file_section_copy_info_get_all_by_file(
 	struct gfarm_file_section_copy_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmFileSectionCopy)(pathname=%s))";
-	char *query = malloc(sizeof(query_template) + strlen(pathname));
+	char *query;
 
+	GFARM_MALLOC_ARRAY(query, sizeof(query_template) + strlen(pathname));
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, pathname);
@@ -1852,8 +1879,9 @@ gfarm_ldap_file_section_copy_info_get_all_by_host(
 	struct gfarm_file_section_copy_info *infos;
 	static char query_template[] =
 		"(&(objectclass=GFarmFileSectionCopy)(hostname=%s))";
-	char *query = malloc(sizeof(query_template) + strlen(hostname));
+	char *query;
 
+	GFARM_MALLOC_ARRAY(query, sizeof(query_template) + strlen(hostname));
 	if (query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(query, query_template, hostname);
@@ -1892,10 +1920,12 @@ static char *
 gfarm_ldap_file_history_make_dn(void *vkey)
 {
 	struct gfarm_ldap_file_history_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_file_history_ops.dn_template) +
+	char *dn;
+	
+	GFARM_MALLOC_ARRAY(dn, 
+			  strlen(gfarm_ldap_file_history_ops.dn_template) +
 			  strlen(key->gfarm_file) +
 			  strlen(gfarm_ldap_base_dn) + 1);
-
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_file_history_ops.dn_template,

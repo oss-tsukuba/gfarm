@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+
+#include "gfutil.h"
 #include "hash.h"
 
 #define ALIGNMENT 16
@@ -77,9 +80,6 @@ struct gfarm_hash_entry {
 	 ALIGN(offsetof(struct gfarm_hash_entry, key_stub)))
 #define HASH_DATA(entry) \
 	(HASH_KEY(entry) + ALIGN((entry)->key_length))
-#define HASH_ENTRY_SIZE(keylen, datalen) \
-	(ALIGN(offsetof(struct gfarm_hash_entry, key_stub)) + \
-	 ALIGN(keylen) + (datalen))
 
 struct gfarm_hash_table {
 	int table_size;
@@ -96,9 +96,18 @@ gfarm_hash_table_alloc(int size,
 		       int (*equal)(const void *, int, const void *, int))
 {
 	struct gfarm_hash_table *hashtab;
-
-	hashtab = malloc(sizeof(struct gfarm_hash_table) +
-			 sizeof(struct gfarm_hash_entry *) * (size - 1));
+	size_t alloc_size;
+	int overflow = 0;
+	
+	alloc_size = gfarm_size_add(&overflow,
+			sizeof(struct gfarm_hash_table),
+			gfarm_size_mul(&overflow, 
+				sizeof(struct gfarm_hash_entry *), size - 1));
+	if (overflow) {
+		errno = ENOMEM;
+		return (NULL);
+	}	
+	hashtab = malloc(alloc_size); /* size is already checked */
 	if (hashtab == NULL)
 		return (NULL);
 	hashtab->table_size = size;
@@ -162,6 +171,8 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 {
 	struct gfarm_hash_entry *p, **pp =
 		GFARM_HASH_LOOKUP_INTERNAL(hashtab, key, keylen);
+	size_t hash_entry_size;
+	int overflow = 0;
 
 	if (createdp != NULL)
 		*createdp = 0;
@@ -172,7 +183,17 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 	/*
 	 * create if not found
 	 */
-	p = malloc(HASH_ENTRY_SIZE(keylen, datalen));
+	hash_entry_size =
+		gfarm_size_add(&overflow,
+		    gfarm_size_add(&overflow, 	 
+			ALIGN(offsetof(struct gfarm_hash_entry, key_stub)),
+			ALIGN(keylen)),
+		    datalen);
+	if (overflow) {
+		errno = ENOMEM;
+		return (NULL);
+	}	
+	p = malloc(hash_entry_size); /* size is already checked */
 	if (p == NULL)
 		return (NULL);
 	*pp = p;

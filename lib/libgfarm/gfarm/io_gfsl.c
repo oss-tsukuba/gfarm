@@ -200,8 +200,9 @@ char *
 xxx_connection_set_secsession(struct xxx_connection *conn,
 	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed)
 {
-	struct io_gfsl *io = malloc(sizeof(struct io_gfsl));
+	struct io_gfsl *io;
 
+	GFARM_MALLOC(io);
 	if (io == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	io->session = secsession;

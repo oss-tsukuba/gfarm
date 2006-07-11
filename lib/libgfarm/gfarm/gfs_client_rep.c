@@ -57,8 +57,9 @@ struct gfs_client_rep_rate_info {
 struct gfs_client_rep_rate_info *
 gfs_client_rep_rate_info_alloc(long rate)
 {
-	struct gfs_client_rep_rate_info *rinfo = malloc(sizeof(*rinfo));
+	struct gfs_client_rep_rate_info *rinfo;
 
+	GFARM_MALLOC(rinfo);
 	if (rinfo == NULL)
 		return (NULL);
 	rinfo->octets_per_tick = rate / 8 / RATECTL_TICK;
@@ -178,7 +179,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	if (algorithm_version >= 0 &&
 	    (arg != NULL || file_sync_stripe > 0 || recv_stripe_sync))
 		return ("gfs_client_rep_backend_invoke: argument invalid");
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -746,11 +747,11 @@ gfs_client_rep_transfer_state_alloc(file_offset_t file_size,
 	if (algorithm_version != GFS_CLIENT_REP_ALGORITHM_LATEST)
 		return ("unknown gfrep algorithm");
 
-	transfers = malloc(sizeof(*transfers) * ndivisions);
+	GFARM_MALLOC_ARRAY(transfers, ndivisions);
 	if (transfers == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < ndivisions; i++) {
-		transfers[i] = malloc(sizeof(*transfers[i]));
+		GFARM_MALLOC(transfers[i]);
 		if (transfers[i] == NULL) {
 			while (--i >= 0)
 				free(transfers[i]);

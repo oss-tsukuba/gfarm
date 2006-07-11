@@ -123,6 +123,8 @@ libgfs_hook_mpi$(SUFFIX).la: lib_tmp_gfs_hook_mpi$(SUFFIX).la
 ### objects needed by $(LIBRARY_TARGET)
 ###
 
+getcwd.lo: getcwd.c $(INC_SRCDIR)/gfarm_misc.h hooks_subr.h
+
 hooks_subr$(SUFFIX).lo: hooks_subr.c
 	$(LTCOMPILE) $(largefile_cflags) -o $@ -c $(srcdir)/hooks_subr.c
 

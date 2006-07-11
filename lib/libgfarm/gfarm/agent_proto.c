@@ -29,7 +29,7 @@ xxx_proto_recv_host_info_hostaliases(struct xxx_connection *client,
 	char *e, **aliases;
 	int i, eof;
 
-	aliases = malloc((info->nhostaliases + 1) * sizeof(char *));
+	GFARM_MALLOC_ARRAY(aliases, info->nhostaliases + 1);
 	if (aliases == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

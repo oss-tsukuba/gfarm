@@ -169,13 +169,14 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		static char user_prefix[] = " local_user=";
 		static char dnb[] = " DN=\"";
 		static char dne[] = "\"";
-		char *aux = malloc(strlen(global_username) + 1 +
+		char *aux, *msg;
+		
+		GFARM_MALLOC_ARRAY(aux, strlen(global_username) + 1 +
 		    strlen(hostname) + 1);
-		char *msg = malloc(sizeof(method_prefix) - 1 +
+		GFARM_MALLOC_ARRAY(msg, sizeof(method_prefix) - 1 +
 		    strlen(auth_method_name) + sizeof(user_prefix) - 1 +
 		    strlen(userinfo->authData.userAuth.localName) +
 		    sizeof(dnb)-1 + strlen(userinfo->distName) + sizeof(dne));
-
 		if (aux == NULL || msg == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;

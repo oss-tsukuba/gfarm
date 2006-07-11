@@ -9,6 +9,7 @@
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
+#include "gfutil.h"
 #include "xxx_proto.h"
 
 #if FILE_OFFSET_T_IS_FLOAT
@@ -51,7 +52,7 @@ xxx_connection_new(struct xxx_iobuffer_ops *ops, void *cookie, int fd,
 {
 	struct xxx_connection *conn;
 
-	conn = malloc(sizeof(struct xxx_connection));
+	GFARM_MALLOC(conn);
 	if (conn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	conn->recvbuffer = gfarm_iobuffer_alloc(XXX_BUFSIZE);
@@ -260,6 +261,8 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 	char **sp, *s;
 	size_t *szp, sz;
 	char *e;
+	size_t size;
+	int overflow = 0;
 
 	e = xxx_proto_flush(conn);
 	if (e != NULL)
@@ -322,8 +325,12 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (NULL);
 			i = ntohl(i);
-			*sp = malloc(i + 1);
-			if (*sp != NULL) {
+			size = gfarm_size_add(&overflow, i, 1);
+			if (overflow)
+				errno = ENOMEM;
+			else
+				GFARM_MALLOC_ARRAY(*sp, size);
+			if (!overflow && *sp != NULL) {
 				/* caller should check whether *sp == NULL */
 				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 				    *sp, i, just) != i)

@@ -206,7 +206,7 @@ skip_opt: ;
 	}
 	else if (nprocs > 0) {
 		nhosts = nprocs;
-		hosts = malloc(sizeof(*hosts) * nhosts);
+		GFARM_MALLOC_ARRAY(hosts, nhosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: not enough memory for %d hosts",
 			    program_name, nhosts);

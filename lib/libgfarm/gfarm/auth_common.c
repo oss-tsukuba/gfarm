@@ -134,7 +134,8 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	char *keyfilename;
 	unsigned int expire;
 
-	keyfilename = malloc(strlen(home) + sizeof(keyfile_basename));
+	GFARM_MALLOC_ARRAY(keyfilename, 
+		strlen(home) + sizeof(keyfile_basename));
 	if (keyfilename == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(keyfilename, home);

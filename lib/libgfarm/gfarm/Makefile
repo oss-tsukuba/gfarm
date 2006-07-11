@@ -80,8 +80,8 @@ gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
 gfs_exec.lo: gfs_pio.h gfs_lock.h
-gfs_lock.lo:
-gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
+gfs_lock.lo: $(INC_SRCDIR)/gfarm_misc.h
+gfs_pio.lo: gfs_proto.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
@@ -90,14 +90,14 @@ gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.
 gfs_proto.lo: gfs_proto.h
 gfs_rename.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
-glob.lo:
+glob.lo: $(INC_SRCDIR)/gfarm_misc.h $(GFUTIL_SRCDIR)/gfutil.h
 host.lo: hostspec.h host.h
 hostcache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
 hostspec.lo: hostspec.h
 import_help.lo:
 io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
-iobuffer.lo: iobuffer.h
+iobuffer.lo: $(INC_SRCDIR)/gfarm_misc.h iobuffer.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
 metadb_misc.lo: host.h config.h gfs_client.h
 metadb_none.lo: metadb_sw.h

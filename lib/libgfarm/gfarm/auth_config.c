@@ -90,9 +90,9 @@ gfarm_auth_config_add(
 	enum gfarm_auth_method method,
 	struct gfarm_hostspec *hsp)
 {
-	struct gfarm_auth_config *acp =
-	    malloc(sizeof(struct gfarm_auth_config));
+	struct gfarm_auth_config *acp;
 
+	GFARM_MALLOC(acp);    
 	if (acp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	acp->next = NULL;
@@ -251,7 +251,7 @@ gfarm_auth_server_cred_config_enter(char *service_tag,
 		*confp = *p;
 		return (NULL);
 	}
-	*p = conf = malloc(sizeof(*conf));
+	GFARM_MALLOC(conf);
 	if (conf == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	conf->next = NULL;

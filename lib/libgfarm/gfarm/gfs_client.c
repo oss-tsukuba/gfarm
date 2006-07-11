@@ -374,7 +374,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	}
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
-	gfs_server = malloc(sizeof(*gfs_server));
+	GFARM_MALLOC(gfs_server);
 	if (gfs_server == NULL) {
 		close(sock);
 		return (GFARM_ERR_NO_MEMORY);
@@ -696,7 +696,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL) {
 		gfs_client_connection_dispose(gfs_server);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1306,7 +1306,7 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 
 	gfs_client_connection_used(gfs_server);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto error_return;
@@ -1560,7 +1560,7 @@ gfs_client_striping_copyin_request(struct gfs_connection *gfs_server,
 	e = xxx_proto_flush(gfs_server->conn);
 	if (e != NULL)
 		return (e);
-	cc = malloc(sizeof(struct gfs_client_striping_copyin_context));
+	GFARM_MALLOC(cc);
 	gfs_server->context = cc;
 	assert(cc != NULL);
 
@@ -1911,12 +1911,13 @@ char *gfs_client_command_request(struct gfs_connection *gfs_server,
 		} else {
 			prefix = "";
 		}
-		xdisplay_name_cache = malloc(strlen(prefix) + strlen(dpy) + 1);
+		GFARM_MALLOC_ARRAY(xdisplay_name_cache,
+			strlen(prefix) + strlen(dpy) + 1);
 		if (xdisplay_name_cache == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(xdisplay_name_cache, "%s%s", prefix, dpy);
-		xdisplay_env_cache = malloc(sizeof(xdisplay_env_format) +
-					    strlen(xdisplay_name_cache));
+		GFARM_MALLOC_ARRAY(xdisplay_env_cache,
+		    sizeof(xdisplay_env_format) + strlen(xdisplay_name_cache));
 		if (xdisplay_env_cache == NULL) {
 			free(xdisplay_name_cache);
 			xdisplay_name_cache = NULL;
@@ -1938,10 +1939,10 @@ char *gfs_client_command_request(struct gfs_connection *gfs_server,
 		FILE *fp;
 		char *s, line[XAUTH_NEXTRACT_MAXLEN];
 
-		xauth_command =
-			malloc(sizeof(xauth_command_format) +
-			       strlen(XAUTH_COMMAND) +
-			       strlen(xdisplay_name_cache));
+		GFARM_MALLOC_ARRAY(xauth_command, 
+			sizeof(xauth_command_format) +
+			strlen(XAUTH_COMMAND) +
+			strlen(xdisplay_name_cache));
 		if (xauth_command == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(xauth_command, xauth_command_format,
@@ -2019,8 +2020,7 @@ char *gfs_client_command_request(struct gfs_connection *gfs_server,
 	if (e != NULL)
 		return (e);
 
-	cc = gfs_server->context =
-		malloc(sizeof(struct gfs_client_command_context));
+	gfs_server->context = GFARM_MALLOC(cc);
 	if (gfs_server->context == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -2964,7 +2964,7 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 		goto error_close_sock;
 	}
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto error_close_sock;

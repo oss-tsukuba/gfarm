@@ -257,16 +257,17 @@ char *
 list_files(char *prefix, int n, char **files, int *need_newline)
 {
 	int i;
-	struct ls_entry *ls = malloc(sizeof(struct ls_entry) * n);
+	struct ls_entry *ls;
 	struct gfs_stat *stats = NULL;
 	char *e = NULL;
 
+	GFARM_MALLOC_ARRAY(ls, n);
 	if (ls == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (option_output_format == OF_LONG ||
 	    option_sort_order != SO_NAME ||
 	    option_type_suffix || option_inumber) {
-		stats = malloc(sizeof(struct gfs_stat) * n);
+		GFARM_MALLOC_ARRAY(stats, n);
 		if (stats == NULL) {
 			free(ls);
 			return (GFARM_ERR_NO_MEMORY);
@@ -352,7 +353,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
 
-	path = malloc(len + 1 + 1);
+	GFARM_MALLOC_ARRAY(path, len + 1 + 1);
 	if (path == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(path, "%s%s", prefix, dirname);

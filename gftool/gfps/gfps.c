@@ -75,7 +75,7 @@ main(argc, argv)
 
 	if (argc > 0) {
 		n = argc;
-		joblist = malloc(sizeof(int) * n);
+		GFARM_MALLOC_ARRAY(joblist, n);
 		if (joblist == NULL) {
 			fprintf(stderr, "%s: no memory\n", program_name);
 			exit(1);
@@ -91,7 +91,7 @@ main(argc, argv)
 		fprintf(stderr, "%s: %s\n", program_name, e);
 		exit(1);
 	}
-	infos = malloc(sizeof(struct gfarm_job_info) * n);
+	GFARM_MALLOC_ARRAY(infos, n);
 	if (infos == NULL) {
 		fprintf(stderr, "%s: no memory\n", program_name);
 		exit(1);

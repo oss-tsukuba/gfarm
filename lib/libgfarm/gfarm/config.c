@@ -1388,7 +1388,8 @@ gfarm_config_read(void)
 		 */
 		home = gfarm_get_local_homedir();
 
-		rc = malloc(strlen(home) + 1 + sizeof(gfarm_client_rc));
+		GFARM_MALLOC_ARRAY(rc,
+			strlen(home) + 1 + sizeof(gfarm_client_rc));
 		if (rc == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(rc, "%s/%s", home, gfarm_client_rc);

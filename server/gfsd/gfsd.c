@@ -264,7 +264,7 @@ file_table_init(int table_size)
 {
 	int i;
 
-	file_table = malloc(sizeof(int) * table_size);
+	GFARM_MALLOC_ARRAY(file_table, table_size);
 	if (file_table == NULL) {
 		errno = ENOMEM; fatal_errno("file table");
 	}
@@ -1218,7 +1218,7 @@ gfs_server_replicate_file_parallel_common(struct xxx_connection *client,
 
 	limit_division(&ndivisions, file_size);
 
-	divisions = malloc(sizeof(*divisions) * ndivisions);
+	GFARM_MALLOC_ARRAY(divisions, ndivisions);
 	if (divisions == NULL) {
 		error = GFS_ERROR_NOMEM;
 		goto finish_ofd;
@@ -1874,8 +1874,9 @@ void
 gfs_server_command(struct xxx_connection *client, char *cred_env)
 {
 	struct gfs_server_command_context *cc = &server_command_context;
-	gfarm_int32_t argc, nenv, flags, error;
-	char *path, *command, **argv_storage, **argv, **envp, *xauth;
+	gfarm_int32_t argc, argc_opt, nenv, flags, error;
+	char *path, *command, **argv_storage = NULL, **argv = NULL;
+	char **envp, *xauth;
 	int stdin_pipe[2], stdout_pipe[2], stderr_pipe[2];
 	int conn_fd = xxx_connection_fd(client);
 	int i, eof;
@@ -1895,44 +1896,52 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 	static char xauth_template[] = "/tmp/.xaXXXXXX";
 	static char xauth_filename[sizeof(xauth_template)];
 	int use_xauth_env = 0;
+	size_t size;
+	int overflow;
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
 	envp = NULL; xauth_env = NULL;
 #endif
 	gfs_server_get_request(client, "command", "siii",
 			       &path, &argc, &nenv, &flags);
-	if ((flags & GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND) != 0) {
-		/* "$SHELL" + "-c" */
-		argv_storage = malloc(sizeof(char *) * (argc + 3));
-		argv = argv_storage + 2;
+	argc_opt = flags & GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND ? 2 : 0;
+	/* 2 for "$SHELL" + "-c" */
+
+	size = gfarm_size_add(&overflow, argc, argc_opt + 1);
+	if (overflow) {
+		errno = ENOMEM;
 	} else {
-		argv_storage = malloc(sizeof(char *) * (argc + 1));
-		argv = argv_storage;
-	}
-	if (argv_storage == NULL) {
+		GFARM_MALLOC_ARRAY(argv_storage, size);
+	}	
+	if (overflow || argv_storage == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto rpc_error;
 	}
-
+	argv = argv_storage + argc_opt;
 	if ((flags & GFS_CLIENT_COMMAND_FLAG_XAUTHCOPY) != 0)
 		use_xauth_env = 1;
-	envp = malloc(sizeof(char *) *
-	    (nenv + N_EXTRA_ENV + use_cred_env + use_xauth_env + 1));
-	if (envp == NULL) {
+	size = gfarm_size_add(&overflow, nenv, 
+			N_EXTRA_ENV + use_cred_env + use_xauth_env + 1);
+	if (overflow) {
+		errno = ENOMEM;
+	} else {
+		GFARM_MALLOC_ARRAY(envp, size);
+	}	
+	if (overflow || envp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_argv;
 	}
 
 	user = gfarm_get_local_username();
 	home = gfarm_get_local_homedir();
-	user_env = malloc(sizeof(user_format) + strlen(user));
+	GFARM_MALLOC_ARRAY(user_env, sizeof(user_format) + strlen(user));
 	if (user_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_envp;
 	}
 	sprintf(user_env, user_format, user);
 
-	home_env = malloc(sizeof(home_format) + strlen(home));
+	GFARM_MALLOC_ARRAY(home_env, sizeof(home_format) + strlen(home));
 	if (home_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_user_env;
@@ -1960,7 +1969,7 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		}
 	}
 
-	shell_env = malloc(sizeof(shell_format) + strlen(shell));
+	GFARM_MALLOC_ARRAY(shell_env, sizeof(shell_format) + strlen(shell));
 	if (shell_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_home_env;
@@ -2020,16 +2029,17 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 			goto free_xauth;
 		close(xauth_fd);
 
-		xauth_env = malloc(sizeof(xauth_format) +
-				   sizeof(xauth_filename));
+		GFARM_MALLOC_ARRAY(xauth_env,
+		    sizeof(xauth_format) + sizeof(xauth_filename));
 		if (xauth_env == NULL)
 			goto remove_xauth;
 		sprintf(xauth_env, xauth_format, xauth_filename);
 		envp[nenv + N_EXTRA_ENV + use_cred_env] = xauth_env;
 
-		xauth_command = malloc(sizeof(xauth_command_format) +
-				       strlen(xauth_env) +
-				       strlen(XAUTH_COMMAND));
+		GFARM_MALLOC_ARRAY(xauth_command,
+				   sizeof(xauth_command_format) +
+				   strlen(xauth_env) +
+				   strlen(XAUTH_COMMAND));
 		if (xauth_command == NULL)
 			goto free_xauth_env;
 		sprintf(xauth_command, xauth_command_format,
@@ -2247,8 +2257,12 @@ server(int client_fd)
 		gflog_fatal("gfarm_authorize: %s", e);
 
 	gfarm_set_global_username(user);
-	aux = malloc(strlen(user) + 1 + strlen(host) + 1);
-	if (aux == NULL)
+	size = gfarm_size_add(&overflow, strlen(user) + 1, strlen(host) + 1);
+	if (overflow)
+		errno = ENOMEM;
+	else	
+		GFARM_MALLOC_ARRAY(aux, size);
+	if (overflow || aux == NULL)
 		gflog_fatal("set_auxiliary_info: %s", GFARM_ERR_NO_MEMORY);
 	sprintf(aux, "%s@%s", user, host);
 	gflog_set_auxiliary_info(aux);
@@ -2511,12 +2525,9 @@ open_accepting_unix_sockets(
 {
 	int i;
 
-	accepting_unix_socks =
-	    malloc(sizeof(*accepting_unix_socks) * self_addresses_count);
-	unix_sock_names =
-	    malloc(sizeof(*unix_sock_names) * self_addresses_count);
-	unix_sock_dirs =
-	    malloc(sizeof(*unix_sock_dirs) * self_addresses_count);
+	GFARM_MALLOC_ARRAY(accepting_unix_socks, self_addresses_count);
+	GFARM_MALLOC_ARRAY(unix_sock_names, self_addresses_count);
+	GFARM_MALLOC_ARRAY(unix_sock_dirs, self_addresses_count);
 	if (accepting_unix_socks == NULL ||
 	    unix_sock_names == NULL || unix_sock_dirs == NULL)
 		accepting_fatal("not enough memory for unix sockets");
@@ -2569,7 +2580,7 @@ open_datagram_service_sockets(
 	struct sockaddr_in bind_addr;
 	socklen_t bind_addr_size;
 
-	sockets = malloc(sizeof(*sockets) * self_addresses_count);
+	GFARM_MALLOC_ARRAY(sockets, self_addresses_count);
 	if (sockets == NULL)
 		accepting_fatal_errno("malloc datagram sockets");
 	for (i = 0; i < self_addresses_count; i++) {
@@ -2695,7 +2706,7 @@ main(int argc, char **argv)
 			gflog_fatal("listen address can't be resolved: %s",
 			    listen_addrname);
 		self_addresses_count = 1;
-		self_addresses = malloc(sizeof(*self_addresses));
+		GFARM_MALLOC(self_addresses);
 		if (self_addresses == NULL)
 			gflog_fatal(GFARM_ERR_NO_MEMORY);
 		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));

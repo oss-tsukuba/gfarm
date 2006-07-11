@@ -186,7 +186,7 @@ unlink_replica_alloc_closure(
 {
 	struct unlink_replica_closure *c;
 
-	c = malloc(sizeof(struct unlink_replica_closure));
+	GFARM_MALLOC(c);
 	if (c == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	c->section = section;

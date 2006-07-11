@@ -38,10 +38,10 @@ include $(top_srcdir)/makes/lib.mk
 
 $(OBJS): $(DEPGFARMINC)
 daemon.lo: gfutil.h
-gfevent.lo: gfutil.h gfevent.h
-hash.lo: hash.h
+gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h
+hash.lo: gfutil.h hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h logutil.h
-logutil_th.lo: logutil.h
+logutil_th.lo: $(INC_SRCDIR)/gfarm_misc.h logutil.h
 timer.lo: timer.h
 timeval.lo: gfutil.h

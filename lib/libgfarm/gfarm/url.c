@@ -115,7 +115,8 @@ gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 		if (user == NULL)
 			return ("gfarm_path_expand_home(): programming error, "
 				"gfarm library isn't properly initialized");
-		s = malloc(strlen(user) + strlen(&gfarm_file[1]) + 2);
+		GFARM_MALLOC_ARRAY(s,
+			strlen(user) + strlen(&gfarm_file[1]) + 2);
 		if (s == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(s, "/%s%s", user, &gfarm_file[1]);
@@ -236,8 +237,8 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			goto free_dir_canonic;
 	}
 
-	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
-				strlen(basename) + 1); 
+	GFARM_MALLOC_ARRAY(*canonic_pathp, 
+		strlen(dir_canonic) + 1 + strlen(basename) + 1); 
 	if (*canonic_pathp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_dir_canonic;
@@ -300,7 +301,8 @@ gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
 
 	*gfarm_url = NULL;
 
-	url = malloc(GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
+	GFARM_MALLOC_ARRAY(url, 
+		GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
 	if (url == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -350,7 +352,7 @@ gfarm_path_section(const char *pathname, const char *section,
 
 	*section_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	s = malloc(strlen(pathname) + 1 + strlen(section) + 1);
+	GFARM_MALLOC_ARRAY(s, strlen(pathname) + 1 + strlen(section) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(s, "%s:%s", pathname, section);
@@ -377,7 +379,7 @@ gfarm_full_path_file_section(
 
 	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	s = malloc(strlen(spool_root) + 1 + strlen(canonic_path) +
+	GFARM_MALLOC_ARRAY(s, strlen(spool_root) + 1 + strlen(canonic_path) +
 		   1 + strlen(section) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -408,7 +410,8 @@ gfarm_path_localize(char *canonic_path, char **abs_pathp)
 		return ("gfarm_path_localize(): programming error, "
 			"gfarm library isn't properly initialized");
 
-	s = malloc(strlen(gfarm_spool_root) + 1 + strlen(canonic_path) + 1);
+	GFARM_MALLOC_ARRAY(s, 
+		strlen(gfarm_spool_root) + 1 + strlen(canonic_path) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(s, "%s/%s", gfarm_spool_root, canonic_path);
@@ -468,7 +471,7 @@ gfarm_url_remove_suffix(char *gfarm_url, char *suffix, char **out_urlp)
 		if (memcmp(gfarm_url + ulen - slen, suffix, slen) == 0)
 			ulen -= slen;
 	}
-	r = malloc(ulen + 1);
+	GFARM_MALLOC_ARRAY(r, ulen + 1);
 	if (r == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	memcpy(r, gfarm_url, ulen);
@@ -492,8 +495,9 @@ gfarm_url_prefix_skip(const char *gfarm_url)
 char *
 gfarm_url_prefix_add(const char *s)
 {
-	char *p = malloc(GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
+	char *p;
 
+	GFARM_MALLOC_ARRAY(p, GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
 	if (p == NULL)
 		return (NULL);
 	memcpy(p, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);

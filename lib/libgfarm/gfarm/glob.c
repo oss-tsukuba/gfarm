@@ -1,7 +1,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
+
 #include <gfarm/gfarm.h>
+#include "gfutil.h"
 
 #define GFS_GLOB_INITIAL	200
 #define GFS_GLOB_DELTA		200
@@ -11,7 +14,7 @@ gfs_glob_init(gfs_glob_t *listp)
 {
 	unsigned char *v;
 
-	v = malloc(sizeof(unsigned char) * GFS_GLOB_INITIAL);
+	GFARM_MALLOC_ARRAY(v, GFS_GLOB_INITIAL);
 	if (v == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	listp->size = GFS_GLOB_INITIAL;
@@ -324,6 +327,8 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 	char *p = NULL, *e = NULL;
 	int len, n = gfarm_stringlist_length(paths);
 	char path_buffer[GLOB_PATH_BUFFER_SIZE + 1];
+	size_t size;
+	int overflow = 0;
 
 	pattern = gfarm_url_prefix_skip(pattern);
 	if (*pattern == '~') {
@@ -340,8 +345,12 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 			len = strcspn(s, "/");
 			pattern += 1 + len;
 		}
-		p = malloc(1 + len + strlen(pattern) + 1);
-		if (p == NULL) {
+		size = gfarm_size_add(&overflow, 1 + len, strlen(pattern) + 1);
+		if (overflow)
+			errno = ENOMEM;
+		else 
+			GFARM_MALLOC_ARRAY(p, size);
+		if (overflow || p == NULL) {
 			e = GFARM_ERR_PATHNAME_TOO_LONG;
 		} else {
 			p[0] = '/';

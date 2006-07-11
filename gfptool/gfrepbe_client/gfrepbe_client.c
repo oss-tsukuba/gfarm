@@ -466,8 +466,8 @@ session(char *server_name, struct sockaddr *server_addr,
 #ifdef __GNUC__ /* workaround gcc warning:  might be used uninitialized */
 	ofd = -1;
 #endif
-	socks = malloc(sizeof(*socks) * ndivisions);
-	conns = malloc(sizeof(*conns) * ndivisions);
+	GFARM_MALLOC_ARRAY(socks, ndivisions);
+	GFARM_MALLOC_ARRAY(conns, ndivisions);
 	if (socks == NULL || conns == NULL) {
 		fprintf(stderr,
 		    "%s: no memory for %d connections to %s on %s\n",
@@ -569,7 +569,8 @@ session(char *server_name, struct sockaddr *server_addr,
 		if (*section == '\0') {
 			pathname = file;
 		} else {
-			pathname = malloc(strlen(file) + strlen(section) + 2);
+			GFARM_MALLOC_ARRAY(pathname,
+				strlen(file) + strlen(section) + 2);
 			if (pathname == NULL) {
 				fprintf(stderr,
 				    "%s: no memory for pathname %s:%s"
@@ -869,7 +870,7 @@ main(int argc, char **argv)
 	if (e != NULL)
 		fatal();
 
-	results = malloc(sizeof(*results) * n);
+	GFARM_MALLOC_ARRAY(results, n);
 	if (results == NULL) {
 		fprintf(stderr, "%s: no memory for %d ints on %s\n",
 		    program_name, n, my_name);
@@ -884,7 +885,7 @@ main(int argc, char **argv)
 		fatal();
 	}
 
-	path_infos = malloc(sizeof(*path_infos) * n);
+	GFARM_MALLOC_ARRAY(path_infos, n);
 	if (results == NULL) {
 		fprintf(stderr, "%s: no memory for %d path_info on %s\n",
 		    program_name, n, my_name);

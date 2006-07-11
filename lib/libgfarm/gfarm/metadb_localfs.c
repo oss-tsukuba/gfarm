@@ -147,7 +147,7 @@ join_path(const char *path1, const char *path2)
 {
 	char *newpath;
 
-	newpath = malloc(strlen(path1) + strlen(path2) + 2);
+	GFARM_MALLOC_ARRAY(newpath, strlen(path1) + strlen(path2) + 2);
 	if (newpath == NULL)
 		return (NULL);
 	strcpy(newpath, path1);
@@ -161,7 +161,7 @@ join_str(const char *str1, const char *str2)
 {
 	char *newstr;
 
-	newstr = malloc(strlen(str1) + strlen(str2) + 1);
+	GFARM_MALLOC_ARRAY(newstr, strlen(str1) + strlen(str2) + 1);
 	if (newstr == NULL)
 		return (NULL);
 	strcpy(newstr, str1);
@@ -174,7 +174,8 @@ join_str3(const char *str1, const char *str2, const char *str3)
 {
 	char *newstr;
 
-	newstr = malloc(strlen(str1) + strlen(str2) + strlen(str3) + 1);
+	GFARM_MALLOC_ARRAY(newstr,
+		strlen(str1) + strlen(str2) + strlen(str3) + 1);
 	if (newstr == NULL)
 		return (NULL);
 	strcpy(newstr, str1);
@@ -232,7 +233,7 @@ str_to_words(char *str, int *np, char ***wordsp)
 	}
 	tmpbuf[*np] = NULL;
 
-	tmp = malloc(sizeof(char*) * (*np + 1));
+	GFARM_MALLOC_ARRAY(tmp, *np + 1);
 	if (tmp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; i++) {
@@ -294,7 +295,7 @@ line_value_get(FILE *fp, const char *key)
 		if (p != NULL)
 			*p = '\0';
 		if (strncmp(buf, name, len) == 0) {
-			ret = malloc(BUFSIZE - len);
+			GFARM_MALLOC_ARRAY(ret, BUFSIZE - len);
 			strncpy(ret, &buf[len], BUFSIZE - len);
 			return (ret);
 		}
@@ -480,7 +481,7 @@ my_fopen(const char *filename, const char *mode)
 			return (NULL);
 		}
 		len = sfxlen + strlen(filename) + 1;
-		my_fopen_filename = malloc(len);
+		GFARM_MALLOC_ARRAY(my_fopen_filename, len);
 		if (my_fopen_filename == NULL) {
 			free(my_fopen_filename_orig);
 			errno = ENOMEM;
@@ -823,7 +824,7 @@ localfs_host_info_get_all(
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	rewinddir(dp);
-	infos = malloc(*np * sizeof(*infos));
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto end;
@@ -914,7 +915,7 @@ gfarm_localfs_host_info_get_allhost_by_architecture(
 			break;
 		}
 	}
-	newinfos = malloc(*np * sizeof(*infos));
+	GFARM_MALLOC_ARRAY(newinfos, *np);
 	if (newinfos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto end;
@@ -1288,8 +1289,9 @@ my_find_get_next(
 		    || strcmp(entry->d_name, "..") == 0) {
 			continue; /* ignore */
 		} else {
-			newpath = malloc(strlen(mfp->pathname) +
-					 strlen(entry->d_name) + 2);
+			GFARM_MALLOC_ARRAY(newpath, 
+				strlen(mfp->pathname) +
+				strlen(entry->d_name) + 2);
 			if (newpath == NULL) {
 				mfp->error = GFARM_ERR_NO_MEMORY;
 				break;
@@ -1572,7 +1574,7 @@ localfs_file_section_info_index_add(
 		}
 	}
 	newn = n + 1;
-	newsections = malloc(newn * sizeof(char *));
+	GFARM_MALLOC_ARRAY(newsections, newn);
 	if (newsections == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_sections;
@@ -1622,7 +1624,7 @@ localfs_file_section_info_index_remove(
 		goto free_sections;
 	}
 	newn = n - 1;
-	newsections = malloc(newn * sizeof(char *));
+	GFARM_MALLOC_ARRAY(newsections, newn);
 	if (newsections == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_sections;
@@ -1977,7 +1979,7 @@ localfs_file_section_info_get_all_by_file(
 
 	e = localfs_file_section_info_index_get(pathname, np, &sections);
 	if (e == NULL && *np > 0) {
-		infos = malloc(*np * sizeof(*infos));
+		GFARM_MALLOC_ARRAY(infos, *np);
 		if (infos == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			goto free_sections;
@@ -2109,7 +2111,7 @@ gfarm_localfs_file_section_copy_info_set(
 			}
 		}
 		if (e == NULL) { /* add hostname */
-			tmp = malloc((nhosts + 1) * sizeof(*tmp));
+			GFARM_MALLOC_ARRAY(tmp, nhosts + 1);
 			for (i = 0; i < nhosts; i++) {
 				tmp[i] = hosts[i];
 			}
@@ -2158,7 +2160,7 @@ gfarm_localfs_file_section_copy_info_remove(
 					(char*)pathname, (char*)section,
 					&fsi, 0, NULL); /* delete all fsci */
 			} else {
-				tmp = malloc((nhosts - 1) * sizeof(*tmp));
+				GFARM_MALLOC_ARRAY(tmp, nhosts - 1);
 				j = 0;
 				for (i = 0; i < nhosts; i++) {
 					if (strcmp(hostname, hosts[i]) != 0)
@@ -2225,7 +2227,7 @@ gfarm_localfs_file_section_copy_info_get_all_by_file(
 		goto free_list;
 	}
 	*np = nlist / 2;
-	infos = malloc(sizeof(*infos) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_list;
@@ -2276,7 +2278,7 @@ gfarm_localfs_file_section_copy_info_get_all_by_section(
 		goto end;
 	}
 
-	infos = malloc(sizeof(*infos) * nhosts);
+	GFARM_MALLOC_ARRAY(infos, nhosts);
 	if (infos == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gfarm_strarray_free(hosts);

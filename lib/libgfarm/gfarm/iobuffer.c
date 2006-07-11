@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
 
 /* XXX - This implementation is somewhat slow, but probably acceptable */
@@ -27,11 +28,12 @@ struct gfarm_iobuffer {
 struct gfarm_iobuffer *
 gfarm_iobuffer_alloc(int bufsize)
 {
-	struct gfarm_iobuffer *b = malloc(sizeof(struct gfarm_iobuffer));
+	struct gfarm_iobuffer *b;
 
+	GFARM_MALLOC(b);
 	if (b == NULL)
 		return (NULL);
-	b->buffer = malloc(bufsize);
+	GFARM_MALLOC_ARRAY(b->buffer, bufsize);
 	if (b->buffer == NULL) {
 		free(b);
 		return (NULL);

@@ -78,7 +78,7 @@ gfarm_host_get_canonical_names(int nhosts, char **hosts,
 	int i;
 	char *e, **canonical_hostnames;
 
-	canonical_hostnames = malloc(sizeof(char *) * nhosts);
+	GFARM_MALLOC_ARRAY(canonical_hostnames, nhosts);
 	if (canonical_hostnames == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -189,8 +189,9 @@ struct gfarm_client_architecture_config
 char *
 gfarm_set_client_architecture(char *architecture, struct gfarm_hostspec *hsp)
 {
-	struct gfarm_client_architecture_config *cacp = malloc(sizeof(*cacp));
+	struct gfarm_client_architecture_config *cacp;
 
+	GFARM_MALLOC(cacp);
 	if (cacp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -331,7 +332,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 
 	count = 0;
 	size = 2; /* ethernet address + loopback interface address */
-	addresses = (struct in_addr *)malloc(sizeof(struct in_addr ) * size);
+	GFARM_MALLOC_ARRAY(addresses, size);
 	if (addresses == NULL)
 		goto err;
 
@@ -412,8 +413,9 @@ struct gfarm_host_address_use_config **gfarm_host_address_use_config_last =
 char *
 gfarm_host_address_use(struct gfarm_hostspec *hsp)
 {
-	struct gfarm_host_address_use_config *haucp = malloc(sizeof(*haucp));
+	struct gfarm_host_address_use_config *haucp;
 
+	GFARM_MALLOC(haucp);
 	if (haucp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -665,7 +667,7 @@ gfarm_hosts_in_domain(int *nhost, char ***hostnamesp, char *domain)
 	e = gfarm_host_info_get_all(nhost, &hostinfos);
 	if (e != NULL)
 		return (e);
-	hostnames = malloc(sizeof(*hostnames) * *nhost);
+	GFARM_MALLOC_ARRAY(hostnames, *nhost);
 	if (hostnames == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

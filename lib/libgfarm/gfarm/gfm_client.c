@@ -284,7 +284,7 @@ gfj_client_list(struct gfm_connection *gfm_server, char *user,
 	e = gfm_client_rpc(gfm_server, 0, GFJ_PROTO_LIST, "s/i", user, &n);
 	if (e != NULL)
 		return (e);
-	jobs = malloc(sizeof(int) * n);
+	GFARM_MALLOC_ARRAY(jobs, n);
 	if (jobs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < n; i++) {
@@ -323,8 +323,8 @@ gfj_client_info_entry(struct xxx_connection *conn,
 		return (e);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
-	info->argv = malloc(sizeof(char *) * (argc + 1));
-	info->nodes = malloc(sizeof(struct gfarm_job_node_info) * total_nodes);
+	GFARM_MALLOC_ARRAY(info->argv, argc + 1);
+	GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
 	if (info->argv == NULL || info->nodes == NULL) {
 		free(info->job_type);
 		free(info->originate_host);
@@ -471,7 +471,7 @@ gfarm_user_job_register(int nhosts, char **hosts,
 	job_info.gfarm_url_for_scheduling = sched_file;
 	job_info.argc = argc;
 	job_info.argv = argv;
-	job_info.nodes = malloc(sizeof(struct gfarm_job_node_info) * nhosts);
+	GFARM_MALLOC_ARRAY(job_info.nodes, nhosts);
 	if (job_info.nodes == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < nhosts; i++) {

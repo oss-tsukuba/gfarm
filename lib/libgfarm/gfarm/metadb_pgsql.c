@@ -81,7 +81,7 @@ gfarm_pgsql_make_conninfo(const char **varnames, char **varvalues, int n,
 	}
 	++length; /* '\0' */
 
-	conninfo = malloc(length);
+	GFARM_MALLOC_ARRAY(conninfo, length);
 	if (conninfo == NULL)
 		return (NULL);
 
@@ -252,8 +252,7 @@ host_info_get_one(
 	info->architecture = pgsql_get_string(res, startrow, "architecture");
 	info->ncpu = pgsql_get_int32(res, startrow, "ncpu");
 	info->nhostaliases = nhostaliases;
-	info->hostaliases =
-	    malloc(sizeof(*info->hostaliases) * (nhostaliases + 1));
+	GFARM_MALLOC_ARRAY(info->hostaliases, nhostaliases + 1);
 	for (i = 0; i < nhostaliases; i++) {
 		info->hostaliases[i] = pgsql_get_string(res, startrow + i,
 		    "hostalias");
@@ -669,7 +668,7 @@ host_info_get_all(
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		goto clear_cres;
 	}
-	ip = malloc(sizeof(*ip) * *np);
+	GFARM_MALLOC_ARRAY(ip, *np);
 	if (ip == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto clear_cres;
@@ -1091,7 +1090,7 @@ get_value_from_varchar_copy_binary(char **bufp, int *residualp)
 	if (len > *residualp)
 		gflog_fatal("metadb_pgsql: copy varchar %d > %d",
 		    len, *residualp);
-	p = malloc(len + 1);
+	GFARM_MALLOC_ARRAY(p, len + 1);
 	memcpy(p, *bufp, len);
 	p[len] = '\0';
 	*bufp += len;
@@ -1560,7 +1559,7 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-	ip = malloc(sizeof(*ip) * *np);
+	GFARM_MALLOC_ARRAY(ip, *np);
 	if (ip == NULL) {
 		PQclear(res);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1759,7 +1758,7 @@ file_section_copy_info_get_all(
 		PQclear(res);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-	ip = malloc(sizeof(*ip) * *np);
+	GFARM_MALLOC_ARRAY(ip , *np);
 	if (ip == NULL) {
 		PQclear(res);
 		return (GFARM_ERR_NO_MEMORY);

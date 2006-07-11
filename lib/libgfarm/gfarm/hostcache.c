@@ -101,7 +101,7 @@ gfarm_cache_host_info_cache()
 	if (host_cache != NULL)
 		gfarm_cache_host_info_cache_free(host_cache);
 
-	host_cache = malloc(sizeof(struct gfarm_cache_host));
+	GFARM_MALLOC(host_cache);
 	if (host_cache == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -254,7 +254,9 @@ gfarm_cache_host_info_get_allhost_by_architecture(const char *architecture,
 		return (e);
 
 	/* XXX - linear search */
-	hosts = malloc(host_cache->nhosts * sizeof(struct gfarm_host_info));
+	GFARM_MALLOC_ARRAY(hosts, host_cache->nhosts);
+	if (hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	n = 0;
 	for (i = 0; i < host_cache->nhosts; ++i) {
 		if (strcmp(architecture, host_cache->hosts[i].architecture)

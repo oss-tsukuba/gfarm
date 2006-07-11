@@ -1113,7 +1113,7 @@ client_arg_alloc(int fd, void **argp)
 {
 	int *arg;
 
-	arg = malloc(sizeof(int));
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (-1);
 	arg[0] = fd;

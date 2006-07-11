@@ -221,7 +221,7 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 		save_errno = EBADF; /* XXX - something broken */
 		goto error_close_fd;
 	}
-	_gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
+	GFARM_MALLOC(_gfs_file_buf[fd]);
 	if (_gfs_file_buf[fd] == NULL) {
 		save_errno = ENOMEM;
 		goto error_close_fd;
@@ -274,12 +274,12 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 		save_errno = gfarm_error_to_errno(e);
 		goto error_close_fd;
 	}
-        _gfs_file_buf[fd] = malloc(sizeof(*_gfs_file_buf[fd]));
+	GFARM_MALLOC(_gfs_file_buf[fd]);
         if (_gfs_file_buf[fd] == NULL) {
 		save_errno = ENOMEM;
 		goto error_free_path;
         }
-        _gfs_file_buf[fd]->u.d = malloc(sizeof(*_gfs_file_buf[fd]->u.d));
+	GFARM_MALLOC(_gfs_file_buf[fd]->u.d);
 	if (_gfs_file_buf[fd]->u.d == NULL) {
 		save_errno = ENOMEM;
 		goto error_free_file_buf;
@@ -695,7 +695,7 @@ set_received_prefix(const char *path)
 		return (0); /* XXX */
 
 	len = end - path + 1;
-	p = malloc(len + 1);
+	GFARM_MALLOC_ARRAY(p, len + 1);
 	if (p == NULL)
 		return (0); /* XXX - should return ENOMEM */
 	received_prefix = p;
@@ -823,8 +823,8 @@ gfs_hook_is_url(const char *path, char **urlp)
 			}
 			urlsize = sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(p + secsize + remove_slash + 1);
-			*urlp = malloc(urlsize + 1);
-			sec = malloc(secsize + 1);
+			GFARM_MALLOC_ARRAY(*urlp, urlsize + 1);
+			GFARM_MALLOC_ARRAY(sec, secsize + 1);
 			if (*urlp == NULL || sec == NULL) {
 				if (*urlp != NULL)
 					free(*urlp);
@@ -857,8 +857,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 				add_slash = 1;
 				/*gfs_uncachedir();*/
 			}
-			*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
-				       + strlen(path + remove_slash) + 1);
+			GFARM_MALLOC_ARRAY(*urlp, 
+				sizeof_gfarm_prefix - 1 + add_slash
+				+ strlen(path + remove_slash) + 1);
 			if (*urlp == NULL)
 				return (0) ; /* XXX - should return ENOMEM */
 			/*
@@ -887,8 +888,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 		/* just '~filename' should be 'gfarm:./~filename' */
 		if (*path_save == '~')
 			add_dot_slash = 2;
-		*urlp = malloc(sizeof_gfarm_prefix + add_dot_slash +
-			       strlen(path_save));
+		GFARM_MALLOC_ARRAY(*urlp, 
+			sizeof_gfarm_prefix + add_dot_slash +
+			strlen(path_save));
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
 		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
@@ -918,8 +920,9 @@ gfs_hook_is_url(const char *path, char **urlp)
 			add_slash = 1;
 			/*gfs_uncachedir();*/
 		}
-		*urlp = malloc(sizeof_gfarm_prefix - 1 + add_slash
-			       + strlen(path + remove_slash) + 1);
+		GFARM_MALLOC_ARRAY(*urlp,
+			sizeof_gfarm_prefix - 1 + add_slash
+			+ strlen(path + remove_slash) + 1);
 		if (*urlp == NULL)
 			return (0) ; /* XXX - should return ENOMEM */
 		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);

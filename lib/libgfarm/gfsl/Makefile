@@ -53,6 +53,7 @@ $(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h
 include $(top_srcdir)/makes/lib.mk
 
 # dependencies
+auth.lo: $(INC_SRCDIR)/gfarm_misc.h
 auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
 auth.lo: gfsl_config.h gfarm_auth.h misc.h
 gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h

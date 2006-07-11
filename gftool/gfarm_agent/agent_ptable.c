@@ -43,6 +43,7 @@ agent_ptable_alloc(void)
 {
 	pthread_once(&ptable_key_once, agent_ptable_key_alloc);
 	pthread_setspecific(ptable_key, calloc(PTABLE_LEN, sizeof(void *)));
+	/* malloc() is safe because size is constant */
 	pthread_setspecific(ptable_free_ptr_key, malloc(sizeof(int)));
 	/* free pointer begins with 1 */
 	agent_ptable_free_ptr_set(1);

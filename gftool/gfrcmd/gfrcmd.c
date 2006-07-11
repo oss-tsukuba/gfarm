@@ -117,7 +117,7 @@ concat(int argc, char **argv)
 		len += strlen(argv[i]);
 
 	len += argc + 1;
-	s = malloc(len);
+	GFARM_MALLOC_ARRAY(s, len);
 	if (s == NULL) {
 		fprintf(stderr, "%s: no memory\n", program_name);
 		exit(1);

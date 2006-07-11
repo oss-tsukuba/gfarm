@@ -278,7 +278,7 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 		goto finish_copies;
 	}
 
-	do_delete = malloc(ncopies);
+	GFARM_MALLOC_ARRAY(do_delete, ncopies);
 	if (do_delete == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_copies;

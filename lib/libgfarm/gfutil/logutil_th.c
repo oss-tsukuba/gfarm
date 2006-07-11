@@ -10,6 +10,7 @@
 #include <string.h>
 #include <syslog.h>
 
+#include <gfarm/gfarm_misc.h>
 #include "gfutil.h"
 #include "logutil.h"
 
@@ -35,7 +36,7 @@ gflog_thread_specific_alloc(void)
 {
 	struct gflog_thread_specific *p;
 
-	p = malloc(sizeof(*p));
+	GFARM_MALLOC(p);
 	if (p == NULL)
 		gflog_thread_fatal("cannot allocate memory", "");
 

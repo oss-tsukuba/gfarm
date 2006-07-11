@@ -175,7 +175,7 @@ replication_job_list_add(struct replication_job_list *list,
 		return (0);
 	}
 
-	job = malloc(sizeof(*job));
+	GFARM_MALLOC(job);
 	if (job == NULL) {
 		fprintf(stderr, "%s: no memory\n", program_name);
 		exit(EXIT_FAILURE);
@@ -233,8 +233,9 @@ replication_pair_entry(struct replication_pair_list *transfers,
 {
 	char *e;
 	int i;
-	struct replication_pair *pair = malloc(sizeof(*pair));
+	struct replication_pair *pair;
 
+	GFARM_MALLOC(pair);
 	if (pair == NULL) {
 		fprintf(stderr, "%s: no memory\n", program_name);
 		exit(EXIT_FAILURE);
@@ -290,11 +291,11 @@ replication_pair_entry(struct replication_pair_list *transfers,
 static int
 replication_pair_results(struct replication_pair_list *transfers)
 {
-	char *e, **results =
-	    malloc(sizeof(*results) * transfers->max_fragments_per_pair);
+	char *e, **results;
 	struct replication_pair *pair;
 	int i, n, error_happend = 0;
 
+	GFARM_MALLOC_ARRAY(results, transfers->max_fragments_per_pair);
 	if (results == NULL) {
 		fprintf(stderr, "%s: cannot allocate memory for %d results\n",
 		    program_name, transfers->max_fragments_per_pair);
@@ -380,7 +381,7 @@ replication_job_list_execute(struct replication_job_list *list)
 
 	if (list->n == 0) /* do nothing */
 		return (0);
-	jobs = malloc(sizeof(*jobs) * list->n);
+	GFARM_MALLOC_ARRAY(jobs, list->n);
 	if (jobs == NULL) {
 		fprintf(stderr, "%s: no memory\n", program_name);
 		exit(EXIT_FAILURE);
@@ -599,7 +600,7 @@ add_cwd_to_relative_path(char *cwd, const char *path)
 			exit(EXIT_FAILURE);
 		}
 	} else {
-		p = malloc(strlen(cwd) + strlen(path) + 2);
+		GFARM_MALLOC_ARRAY(p, strlen(cwd) + strlen(path) + 2);
 		if (p == NULL) {
 			fprintf(stderr, "%s: %s\n", program_name,
 							 GFARM_ERR_NO_MEMORY);
@@ -796,7 +797,7 @@ get_hosts_have_replica(
 	if (e != NULL)
 		return (e);
 
-	hosts = malloc(sizeof(*hosts) * ncinfos);
+	GFARM_MALLOC_ARRAY(hosts, ncinfos);
 	if (hosts == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
 		exit(EXIT_FAILURE);
@@ -996,13 +997,12 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 	if (gfarm_stringlist_length(&path_list) == 0)
 		goto free_path_list;
 
-	nfragments = malloc(sizeof(*nfragments) *
-			gfarm_stringlist_length(&path_list));
+	GFARM_MALLOC_ARRAY(nfragments, gfarm_stringlist_length(&path_list));
 	if (nfragments == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
 		exit(EXIT_FAILURE);
 	}
-	sinfos = malloc(sizeof(*sinfos) * gfarm_stringlist_length(&path_list));
+	GFARM_MALLOC_ARRAY(sinfos, gfarm_stringlist_length(&path_list));
 	if (sinfos == NULL) {
 		fprintf(stderr, "%s: %s\n", path, GFARM_ERR_NO_MEMORY);
 		exit(EXIT_FAILURE);
@@ -1523,7 +1523,12 @@ main(argc, argv)
 			eliminate_intersection(&ndhosts, &dhosts,
 					       nshosts, shosts);
 		ndhosts_alive = ndhosts;
-		dhosts_alive = malloc(sizeof(*dhosts_alive) * ndhosts_alive);
+		GFARM_MALLOC_ARRAY(dhosts_alive, ndhosts_alive);
+		if (dhosts_alive == NULL) {
+			fprintf(stderr, "%s: %s\n", program_name, 
+				GFARM_ERR_NO_MEMORY);
+			exit(EXIT_FAILURE);
+		}
 		e = gfarm_schedule_search_idle_acyclic_hosts_to_write(
 		    ndhosts, dhosts, &ndhosts_alive, dhosts_alive);
 		if (e != NULL) {

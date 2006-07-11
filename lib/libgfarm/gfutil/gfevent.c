@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <gfarm/gfarm_misc.h>
 #include "gfutil.h"
 #include "gfevent.h"
 
@@ -49,8 +50,9 @@ gfarm_fd_event_alloc(int filter, int fd,
 	void (*callback)(int, int, void *, const struct timeval *),
 	void *closure)
 {
-	struct gfarm_event *ev = malloc(sizeof(*ev));
+	struct gfarm_event *ev;
 
+	GFARM_MALLOC(ev);
 	if (ev == NULL)
 		return (NULL);
 	ev->next = ev->prev = NULL; /* to be sure */
@@ -75,8 +77,9 @@ struct gfarm_event *
 gfarm_timer_event_alloc(
 	void (*callback)(void *, const struct timeval *), void *closure)
 {
-	struct gfarm_event *ev = malloc(sizeof(*ev));
+	struct gfarm_event *ev;
 
+	GFARM_MALLOC(ev);
 	if (ev == NULL)
 		return (NULL);
 	ev->next = ev->prev = NULL; /* to be sure */
@@ -114,8 +117,9 @@ struct gfarm_eventqueue {
 struct gfarm_eventqueue *
 gfarm_eventqueue_alloc(void)
 {
-	struct gfarm_eventqueue *q = malloc(sizeof(*q));
+	struct gfarm_eventqueue *q;
 
+	GFARM_MALLOC(q);
 	if (q == NULL)
 		return (NULL);
 
@@ -541,9 +545,10 @@ proto1_request_multiplexed(struct gfarm_eventqueue *q, int peer_socket,
 	void (*continuation)(void *), void *closure,
 	struct proto1_state **statepp)
 {
-	struct proto1_state *state = malloc(sizeof(*state));
+	struct proto1_state *state;
 	int rv = ENOMEM;
 
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (ENOMEM);
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE, peer_socket,

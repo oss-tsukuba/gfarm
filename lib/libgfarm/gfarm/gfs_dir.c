@@ -295,7 +295,7 @@ struct node {
 static inline struct node *
 init_node_name_primitive(struct node *n, const char *name, int len)
 {
-	n->name = malloc(len + 1);
+	GFARM_MALLOC_ARRAY(n->name, len + 1);
 	if (n->name == NULL)
 		return (NULL);
 	memcpy(n->name, name, len);
@@ -733,7 +733,7 @@ enter_node(struct node *parent, const char *name, int len, int is_dir,
 		*np = n;
 		return (NULL);
 	}
-	n = malloc(DIR_NODE_SIZE);
+	n = malloc(DIR_NODE_SIZE); /* DIR_NODE_SIZE is constant */
 	if (n == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -958,7 +958,7 @@ lookup_path(const char *path, int is_dir, enum gfarm_node_lookup_op op,
 static char *
 root_node(void)
 {
-	root = malloc(DIR_NODE_SIZE);
+	root = malloc(DIR_NODE_SIZE); /* DIR_NODE_SIZE is constant */
 	if (root == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	init_dir_node(root, "", 0);
@@ -1275,7 +1275,7 @@ canonical_pathname(const struct node *n, char **abspathp)
 			++len; /* for '/' */
 		len += strlen(p->name);
 	}
-	abspath = malloc(len + 1);
+	GFARM_MALLOC_ARRAY(abspath, len + 1);
 	if (abspath == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	abspath[len] = '\0';
@@ -1299,10 +1299,12 @@ static char *
 gfs_realpath_canonical_candidate(
 	char *path1, const char *path2, char **abspathp)
 {
-	char *e, *p_dir, *abspath;
+	char *e, *p_dir, *abspath = NULL;
 	const char *base;
 	int final = 0;
 	struct node *n;
+	size_t size;
+	int overflow = 0;
 
 	if (path1 == NULL || *path1 == '\0')
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -1344,8 +1346,13 @@ gfs_realpath_canonical_candidate(
 	if (e != NULL)
 		return (e);
 
-	abspath = malloc(strlen(p_dir) + 1 + strlen(base) + 1);
-	if (abspath == NULL) {
+	size = gfarm_size_add(&overflow,
+			      strlen(p_dir) + 1, strlen(base) + 1);
+	if (overflow)
+		errno = ENOMEM;
+	else
+		GFARM_MALLOC_ARRAY(abspath, size);
+	if (overflow || abspath == NULL) {
 		free(p_dir);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1455,7 +1462,7 @@ gfs_i_opendir(const char *path, GFS_Dir *dirp)
 		/* NODE_FLAG_INVALID is reset in gfs_cachedir() */
 	}
 
-	dir = malloc(sizeof(struct gfs_dir));
+	GFARM_MALLOC(dir);
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	dir->dir = n;

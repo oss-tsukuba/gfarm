@@ -151,7 +151,7 @@ gfs_mntpath_canonicalize(char *dir, size_t size, char **canonic_path)
 			return (GFARM_ERR_NO_MEMORY);
 		return (NULL);
 	}
-	gfarm_file = malloc(size + 1);
+	GFARM_MALLOC_ARRAY(gfarm_file, size + 1);
 	if (gfarm_file == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(gfarm_file, "%.*s", (int)size, dir);
@@ -208,7 +208,8 @@ replicate_so_and_symlink(char *dir, size_t size)
 	if (e != NULL)
 		return (e);
 
-	so_pat = malloc(strlen(gfarm_url) + sizeof(so_pat_template));
+	GFARM_MALLOC_ARRAY(so_pat,
+		strlen(gfarm_url) + sizeof(so_pat_template));
 	if (so_pat == NULL) {
 		free(gfarm_url);
 		return (GFARM_ERR_NO_MEMORY);
@@ -492,7 +493,7 @@ main(int argc, char *argv[], char *envp[])
 	}
 	for (envc = 0; envp[envc] != NULL; envc++)
 		;
-	new_env = malloc(sizeof(*new_env) * (envc + 5 + 1));
+	GFARM_MALLOC_ARRAY(new_env, envc + 5 + 1);
 	memcpy(cwdbuf, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
 	e = gfs_getcwd(cwdbuf + GFARM_URL_PREFIX_LENGTH,
 		sizeof(cwdbuf) - GFARM_URL_PREFIX_LENGTH);
@@ -500,14 +501,15 @@ main(int argc, char *argv[], char *envp[])
 		errmsg("cannot get current directory", e);
 		exit(1);
 	}
-	if ((cwd_env = malloc(strlen(cwdbuf) + sizeof(env_gfs_pwd))) == NULL) {
+	GFARM_MALLOC_ARRAY(cwd_env, strlen(cwdbuf) + sizeof(env_gfs_pwd));
+	if (cwd_env == NULL) {
 		fprintf(stderr, "%s: no memory for %s%s\n",
 		    progname, env_gfs_pwd, cwdbuf);
 		exit(1);
 	}
 	(void)chdir(cwdbuf); /* rely on syscall hook. it is ok if it fails */
 	getcwd(pwdbuf, sizeof pwdbuf);
-	pwd_env = malloc(strlen(pwdbuf) + sizeof(env_pwd));
+	GFARM_MALLOC_ARRAY(pwd_env, strlen(pwdbuf) + sizeof(env_pwd));
 	if (pwd_env == NULL) {
 		fprintf(stderr, "%s: no memory for %s%s\n",
 		    progname, env_pwd, pwdbuf);

@@ -195,7 +195,7 @@ gfsck_dir(char *gfarm_dir, char *file)
 	GFS_Dir gdir;
 	struct gfs_dirent *gdent;
 
-	gfarm_url = malloc(strlen(gfarm_dir) + strlen(file) + 2);
+	GFARM_MALLOC_ARRAY(gfarm_url, strlen(gfarm_dir) + strlen(file) + 2);
 	if (gfarm_url == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (gfarm_dir[0] == '\0')

@@ -210,7 +210,8 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 		return (GFARM_ERR_PROTOCOL);
 	}
 
-	aux = malloc(strlen(global_username) + 1 + strlen(hostname) + 1);
+	GFARM_MALLOC_ARRAY(aux,
+		strlen(global_username) + 1 + strlen(hostname) + 1);
 	if (aux == NULL) {
 		gflog_error("authorize_sharedsecret: %s", GFARM_ERR_NO_MEMORY);
 		return (GFARM_ERR_NO_MEMORY);
@@ -260,7 +261,8 @@ gfarm_authorize_sharedsecret(struct xxx_connection *conn, int switch_to,
 	if (e == NULL) {
 		/* succeed, do logging */
 
-		msg = malloc(sizeof(method) + strlen(local_username));
+		GFARM_MALLOC_ARRAY(msg,
+			sizeof(method) + strlen(local_username));
 		if (msg == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_error("authorize_sharedsecret: %s", e);

@@ -91,17 +91,16 @@ gfarm_client_init_load_requests(int max_requests,
 	struct gfs_client_udp_requests *p;
 	int i;
 
-	p = malloc(sizeof(**udp_requestsp));
+	GFARM_MALLOC(p);
 	if (p == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-        p->requests = malloc(sizeof(*p->requests) * max_requests);
+	GFARM_MALLOC_ARRAY(p->requests, max_requests);
 	if (p->requests == NULL) {
 		free(p);
 		return (GFARM_ERR_NO_MEMORY);
         }
 #ifdef HAVE_POLL
-	p->requests_poll_fds =
-	    malloc(sizeof(*p->requests_poll_fds) * max_requests);
+	GFARM_MALLOC_ARRAY(p->requests_poll_fds, max_requests);
 	if (p->requests_poll_fds == NULL) {
 		free(p->requests);
 		free(p);

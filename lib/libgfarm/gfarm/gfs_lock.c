@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <gfarm/gfarm_misc.h>
+
 #define GFARM_LOCKFILE_SUF	":::lock"
 #define GFARM_USLEEP_INTERVAL	100	/* 100 msec */
 
@@ -22,7 +24,7 @@ gfs_i_lockfile(char *file, char **lockfile)
 	if (file == NULL)
 		return (-1);
 
-	lfile = malloc(strlen(file) + sizeof(GFARM_LOCKFILE_SUF));
+	GFARM_MALLOC_ARRAY(lfile, strlen(file) + sizeof(GFARM_LOCKFILE_SUF));
 	if (lfile == NULL)
 		return (-1);
 	sprintf(lfile, "%s%s", file, GFARM_LOCKFILE_SUF);

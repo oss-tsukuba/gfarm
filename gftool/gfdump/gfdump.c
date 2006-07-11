@@ -318,7 +318,7 @@ read_string(char **string, FILE *f)
 	e = read_int32(&len, f);
 	if (e != NULL)
 		return (e);
-	s = malloc(len);
+	GFARM_MALLOC_ARRAY(s, len);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = fread(s, sizeof(char), len, f) == len

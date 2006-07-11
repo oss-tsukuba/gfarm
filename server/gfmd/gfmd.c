@@ -156,8 +156,7 @@ job_table_init(int table_size)
 {
 	int i;
 
-	job_table = malloc(sizeof(struct job_table_entry *)
-			   * table_size);
+	GFARM_MALLOC_ARRAY(job_table, table_size);
 	if (job_table == NULL) {
 		errno = ENOMEM; gflog_fatal_errno("job table");
 	}
@@ -182,7 +181,7 @@ job_table_add(struct gfarm_job_info *info,
 	}
 
 	id = job_table_free;
-	job_table[id] = malloc(sizeof(struct job_table_entry));
+	GFARM_MALLOC(job_table[id]);
 	if (job_table[id] == NULL)
 		return (-1);
 	job_table[id]->id = id;
@@ -235,7 +234,7 @@ file_table_init(int table_size)
 {
 	int i;
 
-	file_table = malloc(sizeof(struct file_table_entry) * table_size);
+	GFARM_MALLOC_ARRAY(file_table, table_size);
 	if (file_table == NULL) {
 		errno = ENOMEM; gflog_fatal_errno("job table");
 	}
@@ -335,8 +334,10 @@ gfj_server_register(int client_socket)
 	int i, eof;
 	gfarm_int32_t flags, total_nodes, argc, job_id, error;
 	struct gfarm_job_info *info;
+	size_t size;
+	int overflow;
 
-	info = malloc(sizeof(struct gfarm_job_info));
+	GFARM_MALLOC(info);
 	if (info == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	gfarm_job_info_clear(info, 1);
@@ -352,9 +353,14 @@ gfj_server_register(int client_socket)
 	/* XXX - currently `flags' is just igored */
 	info->total_nodes = total_nodes;
 	info->argc = argc;
-	info->argv = malloc(sizeof(char *) * (argc + 1));
-	info->nodes = malloc(sizeof(struct gfarm_job_node_info) * total_nodes);
-	if (info->argv == NULL || info->nodes == NULL) {
+	size = gfarm_size_add(&overflow, argc, 1);
+	if (overflow) {
+		errno = ENOMEM;
+	} else {
+		GFARM_MALLOC_ARRAY(info->argv, size);
+		GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
+	}	
+	if (overflow || info->argv == NULL || info->nodes == NULL) {
 		free(info->job_type);
 		free(info->originate_host);
 		free(info->gfarm_url_for_scheduling);
@@ -522,7 +528,7 @@ gfj_server_info(struct xxx_connection *client)
 	if (e != NULL)
 		return (e);
 
-	jobs = malloc(sizeof(*jobs) * n);
+	GFARM_MALLOC_ARRAY(jobs, n);
 	if (jobs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

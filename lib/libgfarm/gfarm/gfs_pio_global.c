@@ -373,7 +373,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gf->error);
 	}
 
-	gc = malloc(sizeof(struct gfs_file_global_context));
+	GFARM_MALLOC(gc);
 	if (gc == NULL) {
 		gf->error = GFARM_ERR_NO_MEMORY;
 		return (gf->error);
@@ -394,8 +394,9 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gf->error);
 	}
 
-	gc->offsets = malloc(sizeof(file_offset_t) * (n + 1));
-	gc->url = malloc(sizeof(gfarm_url_prefix) + strlen(gf->pi.pathname));
+	GFARM_MALLOC_ARRAY(gc->offsets, n + 1);
+	GFARM_MALLOC_ARRAY(gc->url,
+		sizeof(gfarm_url_prefix) + strlen(gf->pi.pathname));
 	if (gc->offsets == NULL || gc->url == NULL) {
 		if (gc->offsets != NULL)
 			free(gc->offsets);

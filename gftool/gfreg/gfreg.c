@@ -116,9 +116,10 @@ static int
 concat_dir_name(const char *gfarm_url, const char *base_name,
 	char **target_url_p)
 {
-	char *target_url =
-	    malloc(strlen(gfarm_url) + 1 + strlen(base_name) + 1);
+	char *target_url;
 
+	GFARM_MALLOC_ARRAY(target_url,
+		strlen(gfarm_url) + 1 + strlen(base_name) + 1);
 	if (target_url == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
 		error_happened = 1;
@@ -321,7 +322,7 @@ add_cwd_to_relative_path(char *cwd, const char *path)
 {
 	char *p;
 
-	p = malloc(strlen(cwd) + strlen(path) + 2);
+	GFARM_MALLOC_ARRAY(p, strlen(cwd) + strlen(path) + 2);
 	if (p == NULL) {
 		fprintf(stderr, "%s: %s\n",
 			    program_name, GFARM_ERR_NO_MEMORY);
@@ -751,7 +752,7 @@ get_hosts(int *np, char ***host_table_p)
 	int nhosts, error_line, nh;
 
 	if (opt_hostname != NULL) {
-		h = malloc(sizeof(*h) * 1);
+		GFARM_MALLOC_ARRAY(h, 1);
 		if (h == NULL) {
 			fprintf(stderr, "%s: %s\n",
 				program_name, GFARM_ERR_NO_MEMORY);
@@ -786,7 +787,7 @@ get_hosts(int *np, char ***host_table_p)
 		}
 	}	
 
-	hosts = malloc(sizeof(*hosts) * nh);
+	GFARM_MALLOC_ARRAY(hosts, nh);
 	if (hosts == NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
 		exit(EXIT_FAILURE);

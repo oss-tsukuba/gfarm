@@ -507,7 +507,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	if (e != NULL)
 		return (e);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -778,7 +778,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	if (methods == 0)
 		return ("usable auth-method isn't configured");
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

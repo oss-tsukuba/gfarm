@@ -1032,7 +1032,7 @@ __getcwd(char *buf, size_t size)
 
 	if (buf == NULL) {
 		size = 2048;
-		buf = malloc(size);
+		GFARM_MALLOC_ARRAY(buf, size);
 		if (buf == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			goto error;

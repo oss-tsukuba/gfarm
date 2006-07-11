@@ -45,11 +45,12 @@ gssCrackStatus(statValue, statType)
     OM_uint32 msgCtx;
     OM_uint32 minStat;
     gss_buffer_desc stStr;
-    char **ret = (char **)malloc(sizeof(char *) * 1);
+    char **ret;
     int i = 0;
     char *dP = NULL;
-    ret[0] = NULL;
 
+    GFARM_MALLOC_ARRAY(ret, 1);
+    ret[0] = NULL;
     while (1) {
 	msgCtx = 0;
 	(void)gss_display_status(&minStat,
@@ -59,7 +60,7 @@ gssCrackStatus(statValue, statType)
 				 &msgCtx,
 				 &stStr);
 	ret = (char **)realloc(ret, sizeof(char *) * (i + 2));
-	ret[i] = (char *)malloc(sizeof(char) * ((int)stStr.length + 1));
+	GFARM_MALLOC_ARRAY(ret[i], (int)stStr.length + 1);
 	dP = ret[i];
 	dP[(int)stStr.length] = '\0';
 	i++;
@@ -155,7 +156,7 @@ gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStat
 	char *user;
 	gfarmAuthEntry *aePtr;
 
-	user = malloc(nameLength + 1);
+	GFARM_MALLOC_ARRAY(user, nameLength + 1);
 	if (user == NULL) {
 	    gflog_auth_error("gfarmGssImportName(): no memory");
 	    majStat = GSS_S_FAILURE;
@@ -210,8 +211,9 @@ gfarmGssImportNameOfHostBasedService(namePtr, service, hostname, majStatPtr, min
     OM_uint32 minStat;
     int ret = -1;
     size_t nameLength = strlen(service) + 1 + strlen(hostname);
-    char *nameString = malloc(nameLength + 1);
+    char *nameString;
 
+    GFARM_MALLOC_ARRAY(nameString, nameLength + 1);
     if (nameString == NULL) {
 	gflog_auth_error("gfarmGssImportNameOfHostBasedService(): "
 			 "no memory");
@@ -337,7 +339,7 @@ gfarmGssNewDisplayName(inputName, majStatPtr, minStatPtr, outputNameTypePtr)
     } else if ((majStat = gss_display_name(&minStat, inputName,
 					   &buf, &outputNameType))
 	       == GSS_S_COMPLETE) {
-	ret = malloc(buf.length + 1);
+	GFARM_MALLOC_ARRAY(ret, buf.length + 1);
 	if (ret == NULL) {
 	    gflog_auth_error("gfarmGssNewDisplayName(): no memory");
 	    majStat = GSS_S_FAILURE;
@@ -501,6 +503,7 @@ gfarmGssReceiveToken(fd, gsBuf)
 {
     gfarm_int32_t iLen;
     gfarm_int8_t *buf = NULL;
+    char *p;
 
     if (gsBuf->value != NULL) {
 	OM_uint32 minStat;
@@ -518,10 +521,11 @@ gfarmGssReceiveToken(fd, gsBuf)
      * 	GSSAPI has no API for allocating a gss_buffer_t. It is not
      *	recommended to allocate it with malloc().
      */
-    buf = (void *)malloc(sizeof(char) * iLen);
-    if (buf == NULL) {
+    GFARM_MALLOC_ARRAY(p, iLen);
+    if (p == NULL) {
 	return -1;
     }
+    buf = (gfarm_int8_t *)p;
 
     if (gfarmReadInt8(fd, buf, iLen) != iLen) {
 	(void)free(buf);
@@ -941,7 +945,7 @@ gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
 	majStat = GSS_S_CALL_INACCESSIBLE_READ;
 	goto Done;
     }
-    buf = (char *)malloc(sizeof(*buf) * n);
+    GFARM_MALLOC_ARRAY(buf, n);
     if (buf == NULL) {
 	majStat = GSS_S_FAILURE;
 	goto Done;
@@ -1037,7 +1041,7 @@ gfarmGssExportCredential(cred, statPtr)
     }
     filename++;
     if (memcmp(exported, exported_name, sizeof(exported_name) - 1) == 0) {
-	env = malloc(sizeof(env_name) + strlen(filename));
+	GFARM_MALLOC_ARRAY(env, sizeof(env_name) + strlen(filename));
 	if (env == NULL) {
 	    majStat = GSS_S_FAILURE;
 	    goto Done;
@@ -1056,7 +1060,7 @@ gfarmGssExportCredential(cred, statPtr)
     if (memcmp(filename, file_prefix, sizeof(file_prefix) - 1) == 0)
 	filename += sizeof(file_prefix) - 1;
 
-    exportedCred = malloc(sizeof(*exportedCred));
+    GFARM_MALLOC(exportedCred);
     if (exportedCred == NULL) {
 	free(env);
 	majStat = GSS_S_FAILURE;
@@ -1280,7 +1284,7 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
 	goto ReturnStat;
     }
 
-    state = malloc(sizeof(*state));
+    GFARM_MALLOC(state);
     if (state == NULL) {
 	gflog_auth_error("gfarmGssInitiateSecurityContextRequest(): "
 			 "no memory");

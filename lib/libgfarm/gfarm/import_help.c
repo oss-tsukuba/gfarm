@@ -22,12 +22,13 @@ gfarm_import_fragment_config_read(char *config,
 {
 	char *e, **host_table, line[1024];
 	int i, table_size = TABLE_SIZE_INITIAL;
-	file_offset_t *size_table = malloc(sizeof(size_table[0]) * table_size);
+	file_offset_t *size_table;
 	file_offset_t *stab;
 	gfarm_stringlist host_list;
 	FILE *fp;
 
 	*error_linep = -1;
+	GFARM_MALLOC_ARRAY(size_table, table_size);
 	if (size_table == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = gfarm_stringlist_init(&host_list);
@@ -134,10 +135,11 @@ error:
 file_offset_t *
 gfarm_import_fragment_size_alloc(file_offset_t total_size, int n)
 {
-	file_offset_t *sizetab = malloc(sizeof(sizetab[0]) * n);
+	file_offset_t *sizetab;
 	file_offset_t fragment_size;
 	int i;
 
+	GFARM_MALLOC_ARRAY(sizetab, n);
 	if (sizetab == NULL)
 		return (NULL);
 
