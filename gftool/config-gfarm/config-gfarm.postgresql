@@ -1,0 +1,396 @@
+usage_postgresql()
+{
+	return 1 # backend-specific option doesn't exist
+}
+
+sanity_postgresql()
+{
+	rv=0
+	case $BACKEND_VERSION in
+	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
+		echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION"
+		rv=1
+		;;
+	esac
+	if [ ! -x "$BACKEND_PREFIX/bin/pg_config" ]; then
+		echo "WARNING: command not found: pg_config" >&2
+		rv=1
+	fi
+	if [ ! -x "$PGSQL_BINDIR/pg_ctl" ]; then
+		echo "WARNING: command not found: pg_ctl" >&2
+		rv=1
+	fi
+	if [ ! -x "$PGSQL_BINDIR/psql" ]; then
+		echo "WARNING: command not found: psql" >&2
+		rv=1
+	fi
+	return $rv
+}
+
+display_backend_params_postgresql()
+{
+	echo "postgresql admin user     [-U]: $BACKEND_ADMIN_USER"
+	echo "postgresql admin password [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
+	echo "postgresql user           [-u]: $BACKEND_USER"
+	echo "postgresql password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
+	echo "postgresql prefix   [-P]: $BACKEND_PREFIX"
+	echo "postgresql version  [-V]: $BACKEND_VERSION"
+}
+
+display_backend_port_params_postgresql()
+{
+	echo "portmaster port     [-p]: $BACKEND_PORT"
+}
+
+display_backend_optional_params_postgresql()
+{
+}
+
+parse_argument_postgresql()
+{
+	case "$1" in
+	  *)	false;;
+	esac
+}
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_perfix_postgresql()
+{
+	if [ -z "${BACKEND_PREFIX-}" ]; then
+		OIFS=$IFS
+		IFS=":"
+		set $search_path
+		IFS=$OIFS
+		for d
+		do
+			if [ -x "$d/pg_config" ]; then
+				BACKEND_PREFIX=`dirname "$d"`
+				: ${PGSQL_BINDIR:=`$d/pg_config --bindir`}
+				break
+			fi
+		done
+	fi
+}
+
+#
+# default values
+#
+
+# NOTE: This needs to set $RC_BACKEND_BASENAME, at least.
+set_first_defaults_postgresql()
+{
+	: ${RC_BACKEND_BASENAME=gfarm-pgsql}
+	: ${PGSQL_BINDIR:="$BACKEND_PREFIX/bin"}
+}
+
+set_last_defaults_postgresql()
+{
+	: ${DB_NAME:="gfarm"}
+
+	if [ -w / ]; then # is root?
+		case `uname` in
+		*BSD|DragonFly)
+			: ${BACKEND_ADMIN_USER:="pgsql"};;
+		*)	: ${BACKEND_ADMIN_USER:="postgres"};;
+		esac
+		: ${BACKEND_PRIVILEGE:="$BACKEND_ADMIN_USER"}
+	else
+		: ${BACKEND_ADMIN_USER:="`whoami`"}
+		: ${BACKEND_PRIVILEGE:=""}
+	fi
+	if [ -f /usr/bin/getent ]; then
+		if getent passwd "$BACKEND_ADMIN_USER" >/dev/null; then
+			:
+		else
+			ABORT "postgresql admin user '$$BACKEND_ADMIN_USER' doesn't exist"
+		fi
+	fi
+
+	: ${BACKEND_USER:="gfarm"}
+	# default PostgreSQL port number is 5432
+	: ${BACKEND_PORT:="10602"}
+	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
+
+	if [ -z "${BACKEND_VERSION-}" ]; then
+		if [ -x "$BACKEND_PREFIX/bin/pg_config" ]; then
+			BACKEND_VERSION=`$BACKEND_PREFIX/bin/pg_config --version 2>&1 |
+			  sed -n 's/.*PostgreSQL.* \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+			if [ -z "$BACKEND_VERSION" ]
+			then
+				BACKEND_VERSION="unknown"
+			elif expr "$BACKEND_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
+					>/dev/null; then
+				:
+			else
+				BACKEND_VERSION="unknown"
+			fi
+		else
+			BACKEND_VERSION="unknown"
+		fi
+	fi
+}
+
+#
+# do configuration
+#
+
+init_replace_postgresql()
+{
+	init_replace_common
+
+	cat <<_EOF_
+s|@config_gfarm_database_name@|$DB_NAME|g
+s|@config_gfarm_pgsql_bindir@|$PGSQL_BINDIR|g
+_EOF_
+}
+
+make_configuration_directory_postgresql()
+{
+}
+
+make_configuration_file_postgresql()
+{
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
+	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" --no-locale -E UTF-8
+_EOF_
+
+	# record the password
+	cp -p $admin_password $BACKEND_DATA_DIR/admin_password
+
+	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
+	      "$BACKEND_DATA_DIR"/postgresql.conf.org
+
+	$awk '
+	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
+		if (/^[ 	]*listen_addresses/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			print "listen_addresses = '"'*'"'"
+			listen_addresses_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*tcpip_socket[ 	]*=/ {
+		if (/^[ 	]*tcpip_socket/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			print "tcpip_socket = true"
+			tcpip_socket_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*port[ 	]*=/ {
+		if (/^[ 	]*port/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!port_done) {
+			print "port = '$BACKEND_PORT'"
+			port_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*password_encryption[ 	]*=/ {
+		if (/^[ 	]*password_encryption/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!password_encryption_done) {
+			print "password_encryption = true"
+			password_encryption_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*autovacuum[ 	]*=/ {
+		if (/^[ 	]*autovacuum/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!autovacuum_done) {
+			print "autovacuum = true"
+			autovacuum_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*stats_row_level[ 	]*=/ {
+		if (/^[ 	]*stats_row_level/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!stats_row_level_done) {
+			print "stats_row_level = on"
+			stats_row_level_done = 1
+		}
+		next
+	}
+	{print}
+	END {
+		if (!listen_addresses_done && !tcpip_socket_done)
+			print "listen_addresses = '"'*'"'"
+		if (!port_done)
+			print "port = '$BACKEND_PORT'"
+		if (!password_encryption_done)
+			print "password_encryption = true"
+		# ignore autovacuum_done and stats_row_level_done for now.
+		# PostgreSQL should be earlier than 8.0.X
+	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
+		>"$BACKEND_DATA_DIR"/postgresql.conf
+
+	cp -p "$BACKEND_DATA_DIR"/pg_hba.conf \
+	      "$BACKEND_DATA_DIR"/pg_hba.conf.org
+
+	(
+	# all comment out
+	sed 's/^[0-9A-Za-z]/#&/' "$BACKEND_DATA_DIR"/pg_hba.conf.org
+
+	echo ""
+	echo ""
+	echo "# TYPE	DATABASE	USER	CIDR-ADDRESS	METHOD"
+	echo ""
+	echo '# "local" is for Unix domain socket connections only'
+	echo 'local	all		all			md5'
+	echo '# IPv4 local connections:'
+	echo 'host	all		all	127.0.0.1/32	md5'
+	echo '# IPv6 local connections:'
+	echo '#host	all		all	::1/128		md5'
+
+	echo ""
+	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
+	) > "$BACKEND_DATA_DIR"/pg_hba.conf
+}
+
+apply_configuration_postgresql()
+{
+	# backup configuration during temporary change
+	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
+	      "$BACKEND_DATA_DIR"/postgresql.conf.bak
+	cp -p "$BACKEND_DATA_DIR"/pg_hba.conf \
+	      "$BACKEND_DATA_DIR"/pg_hba.conf.bak
+
+	# create temporary configuration files 
+	$awk '
+	/^[ 	]*#*[ 	]*listen_addresses[ 	]*=/ {
+		if (/^[ 	]*listen_addresses/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			# disable TCP access to be sure
+			print "listen_addresses = '"''"'"
+			listen_addresses_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*tcpip_socket[ 	]*=/ {
+		if (/^[ 	]*tcpip_socket/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!tcpip_socket_done && !listen_addresses_done) {
+			# disable TCP access to be sure
+			print "tcpip_socket = false"
+			tcpip_socket_done = 1
+		}
+		next
+	}
+	/^[ 	]*#*[ 	]*unix_socket_directory[ 	]*=/ {
+		if (/^[ 	]*unix_socket_directory/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!unix_socket_directory_done) {
+			# prevent access except $BACKEND_ADMIN_USER
+			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			unix_socket_directory_done = 1
+		}
+		next
+	}
+	{print}
+	END {
+		if (!tcpip_socket_done && !listen_addresses_done)
+			print "listen_addresses = '"''"'"
+		if (!unix_socket_directory_done)
+			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.bak \
+		>"$BACKEND_DATA_DIR"/postgresql.conf
+	echo 'local all	all trust' > "$BACKEND_DATA_DIR"/pg_hba.conf
+
+	# We can't use rc.d script here, because "-w" option of pg_ctl doesn't
+	# work, if unix_socket_directory is changed from default, at least on
+	# PostgreSQL-8.0.3.
+	# Also, we cannot use "restart" here, because it doesn't work either
+	# at first invocation.
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "pg_ctl start failed"
+	$PGSQL_BINDIR/pg_ctl -s -m fast \
+		-D $BACKEND_DATA_DIR -l $BACKEND_DATA_DIR/logfile start
+_EOF_
+
+	# wait until portmaster actually starts. XXX are 3 seconds enough?
+	sleep 3
+
+	case "$BACKEND_VERSION" in
+	[1-7].*|8.0)
+		createuser_option=;;
+	*)  # Don't ask the following question on PostgreSQL 8.1 or later:
+	    #    Shall the new role be allowed to create more new roles? (y/n) 
+		createuser_option=--no-createrole;;
+	esac
+
+	cat << _EOF_ | $run_with_backend_privilege || ABORT "createdb failed"
+	PGHOST="$BACKEND_DATA_DIR"; export PGHOST
+	PGPORT="$BACKEND_PORT"; export PGPORT
+	unset PGDATABASE PGUSER PGPASSWORD PGSERVICE
+	unset PGREALM PGOPTIONS PGSSLMODE PGREQUIRESSL PGCONNECT_TIMEOUT
+
+	$PGSQL_BINDIR/createuser $createuser_option -A -D $BACKEND_USER
+	$PGSQL_BINDIR/createdb $DB_NAME
+	$PGSQL_BINDIR/psql -f "$config_dir/gfarm.sql" $DB_NAME
+	$awk 'BEGIN {
+		print "GRANT SELECT, INSERT, UPDATE, DELETE"
+		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
+		print "	TO $BACKEND_USER;"
+	}
+	FILENAME == "$admin_password" {
+		print "ALTER USER $BACKEND_ADMIN_USER"
+		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
+	}
+	FILENAME == "$password" {
+		print "ALTER USER $BACKEND_USER"
+		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
+	}' $admin_password $password | $PGSQL_BINDIR/psql $DB_NAME
+_EOF_
+
+	service_ctl $RC_BACKEND_BASENAME stop
+
+	# save configuration for administration
+	mv "$BACKEND_DATA_DIR"/postgresql.conf \
+	   "$BACKEND_DATA_DIR"/postgresql.conf.adm
+	mv "$BACKEND_DATA_DIR"/pg_hba.conf \
+	   "$BACKEND_DATA_DIR"/pg_hba.conf.adm
+	# restore configuration
+	mv "$BACKEND_DATA_DIR"/postgresql.conf.bak \
+	   "$BACKEND_DATA_DIR"/postgresql.conf
+	mv "$BACKEND_DATA_DIR"/pg_hba.conf.bak \
+	   "$BACKEND_DATA_DIR"/pg_hba.conf
+}
+
+start_service_postgresql()
+{
+	start_service_common
+}
