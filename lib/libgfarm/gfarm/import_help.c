@@ -79,8 +79,7 @@ gfarm_import_fragment_config_read(char *config,
 		}
 		if (i >= table_size) {
 			table_size += TABLE_SIZE_DELTA;
-			stab = realloc(size_table,
-			    sizeof(size_table[0]) * table_size);
+			GFARM_REALLOC_ARRAY(stab, size_table, table_size);
 			if (stab == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				*error_linep = i + 1;
@@ -100,7 +99,7 @@ gfarm_import_fragment_config_read(char *config,
 		goto error;
 	}
 	if (i < table_size) {
-		stab = realloc(size_table, sizeof(size_table[0]) * i);
+		GFARM_REALLOC_ARRAY(stab, size_table, i);
 		if (stab == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			goto error;

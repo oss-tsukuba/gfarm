@@ -41,9 +41,9 @@ gfs_glob_add(gfs_glob_t *listp, int dtype)
 
 	if (length >= listp->size) {
 		int n = listp->size + GFS_GLOB_DELTA;
-		unsigned char *t = realloc(listp->array,
-		    sizeof(unsigned char) * n);
+		unsigned char *t;
 
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;

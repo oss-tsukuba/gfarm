@@ -836,7 +836,7 @@ search_not_have_replica_host(int pos,
 			char **p;
 
 			(*nrhosts)++;
-			p = realloc(*rhosts, sizeof(**rhosts) * (*nrhosts));
+			GFARM_REALLOC_ARRAY(p, *rhosts, *nrhosts);
 			if (p == NULL) {
 				fprintf(stderr, "%s: %s\n",
 					program_name, GFARM_ERR_NO_MEMORY);

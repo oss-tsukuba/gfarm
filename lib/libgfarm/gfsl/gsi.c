@@ -59,7 +59,7 @@ gssCrackStatus(statValue, statType)
 				 GSS_C_NO_OID,
 				 &msgCtx,
 				 &stStr);
-	ret = (char **)realloc(ret, sizeof(char *) * (i + 2));
+	GFARM_REALLOC_ARRAY(ret, ret, i + 2);
 	GFARM_MALLOC_ARRAY(ret[i], (int)stStr.length + 1);
 	dP = ret[i];
 	dP[(int)stStr.length] = '\0';

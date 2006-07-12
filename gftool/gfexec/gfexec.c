@@ -283,7 +283,7 @@ alloc_ldpath(size_t size)
 	if (ldpath_len < size) {
 		char *p;
 
-		p = realloc(ldpath, size);
+		GFARM_REALLOC_ARRAY(p, ldpath, size);
 		if (p == NULL)
 			return (NULL);
 		ldpath = p;

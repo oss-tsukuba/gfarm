@@ -156,7 +156,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 
 	len = 1 + strlen(canonic_dir) + 1;
 	if (cwd_len < len) {
-		tmp = realloc(gfarm_current_working_directory, len);
+		GFARM_REALLOC_ARRAY(tmp, gfarm_current_working_directory, len);
 		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		gfarm_current_working_directory = tmp;
@@ -174,7 +174,7 @@ gfs_chdir_canonical(const char *canonic_dir)
 		env_len = 0;
 	}
 	if (env_len < len) {
-		tmp = realloc(env, len);
+		GFARM_REALLOC_ARRAY(tmp, env, len);
 		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		env = tmp;

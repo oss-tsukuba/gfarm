@@ -1050,7 +1050,7 @@ __getcwd(char *buf, size_t size)
 		    buf[prefix_size] == '/' && buf[prefix_size + 1] == '\0')
 			buf[prefix_size] = '\0';
 		if (alloced) {
-			p = realloc(buf, strlen(buf) + 1);
+			GFARM_REALLOC_ARRAY(p, buf, strlen(buf) + 1);
 			if (p != NULL)
 				return (p);
 		}

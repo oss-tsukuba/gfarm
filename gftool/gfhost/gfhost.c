@@ -478,8 +478,8 @@ output_add(struct output *o)
 			output_space = OUTPUT_INITIAL_SPACE;
 		else
 			output_space += output_space;
-		output_buffer = realloc(output_buffer,
-		    sizeof(*output_buffer) * output_space);
+		GFARM_REALLOC_ARRAY(output_buffer,
+				output_buffer, output_space);
 		if (output_buffer == NULL) {
 			fprintf(stderr, "no memory to record %d hosts\n",
 			    output_number);

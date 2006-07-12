@@ -369,7 +369,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 
 		if (count + 1 > size) {
 			size += ADDRESSES_DELTA;
-			p = realloc(addresses, sizeof(struct in_addr) * size);
+			GFARM_REALLOC_ARRAY(p, addresses, size);
 			if (p == NULL)
 				goto err;
 			addresses = p;
@@ -382,7 +382,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 		free(addresses);
 		addresses = NULL;
 	} else if (size != count) {
-		p = realloc(addresses, sizeof(struct in_addr) * count);
+		GFARM_REALLOC_ARRAY(p, addresses, count);
 		if (p == NULL)
 			goto err;
 		addresses = p;

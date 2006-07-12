@@ -19,6 +19,7 @@
 #include "gfs_pio.h"
 #include "gfs_misc.h"
 #include "timer.h"
+#include "gfutil.h"
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
 
@@ -1098,9 +1099,11 @@ char *
 gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 {
 	char *e = gfs_pio_check_view_default(gf);
-	char *buf = *bufp, *p;
+	char *buf = *bufp, *p = NULL;
 	size_t size = *sizep, len = 0;
 	int c;
+	size_t alloc_size;
+	int overflow = 0;
 	gfarm_timerval_t t1, t2;
 
 	if (e != NULL)
@@ -1114,7 +1117,7 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 	if (buf == NULL || size <= 1) {
 		if (size <= 1)
 			size = ALLOC_SIZE_INIT;
-		buf = realloc(buf, size);
+		GFARM_REALLOC_ARRAY(buf, buf, size);
 		if (buf == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1123,8 +1126,12 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 		if (c == EOF)
 			break;
 		if (size <= len) {
-			p = realloc(buf, size + size);
-			if (p == NULL) {
+			alloc_size = gfarm_size_add(&overflow, size, size);
+			if (overflow)
+				errno = ENOMEM;
+			else
+				GFARM_REALLOC_ARRAY(p, buf, alloc_size);
+			if (overflow || p == NULL) {
 				*bufp = buf;
 				*sizep = size;
 				return (GFARM_ERR_NO_MEMORY);
@@ -1137,8 +1144,12 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 			break;
 	}
 	if (size <= len) {
-		p = realloc(buf, size + size);
-		if (p == NULL) {
+		alloc_size = gfarm_size_add(&overflow, size, size);
+		if (overflow)
+			errno = ENOMEM;
+		else
+			GFARM_REALLOC_ARRAY(p, buf, alloc_size);
+		if (overflow || p == NULL) {
 			*bufp = buf;
 			*sizep = size;
 			return (GFARM_ERR_NO_MEMORY);
@@ -1170,10 +1181,12 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	const char *delim, size_t delimlen)
 {
 	char *e = gfs_pio_check_view_default(gf);
-	char *buf = *bufp, *p;
+	char *buf = *bufp, *p = NULL;
 	size_t size = *sizep, len = 0;
 	int c, delimtail;
 	static const char empty_line[] = "\n\n";
+	size_t alloc_size;
+	int overflow = 0;
 	gfarm_timerval_t t1, t2;
 
 	if (e != NULL)
@@ -1196,7 +1209,7 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	if (buf == NULL || size <= 1) {
 		if (size <= 1)
 			size = ALLOC_SIZE_INIT;
-		buf = realloc(buf, size);
+		GFARM_REALLOC_ARRAY(buf, buf, size);
 		if (buf == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1205,8 +1218,12 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 		if (c == EOF)
 			break;
 		if (size <= len) {
-			p = realloc(buf, size + size);
-			if (p == NULL) {
+			alloc_size = gfarm_size_add(&overflow, size, size);
+			if (overflow)
+				errno = ENOMEM;
+			else
+				GFARM_REALLOC_ARRAY(p, buf, alloc_size);
+			if (overflow || p == NULL) {
 				*bufp = buf;
 				*sizep = size;
 				return (GFARM_ERR_NO_MEMORY);
@@ -1229,8 +1246,14 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 						break;
 					}
 					if (size <= len) {
-						p = realloc(buf, size + size);
-						if (p == NULL) {
+						alloc_size = gfarm_size_add(
+							&overflow, size, size);
+						if (overflow)
+							errno = ENOMEM;
+						else
+							GFARM_REALLOC_ARRAY(p,
+							    buf, alloc_size);
+						if (overflow || p == NULL) {
 							*bufp = buf;
 							*sizep = size;
 							return (
@@ -1246,8 +1269,12 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 		}
 	}
 	if (size <= len) {
-		p = realloc(buf, size + size);
-		if (p == NULL) {
+		alloc_size = gfarm_size_add(&overflow, size, size);
+		if (overflow)
+			errno = ENOMEM;
+		else
+			GFARM_REALLOC_ARRAY(p, buf, alloc_size);
+		if (overflow || p == NULL) {
 			*bufp = buf;
 			*sizep = size;
 			return (GFARM_ERR_NO_MEMORY);

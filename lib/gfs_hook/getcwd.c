@@ -75,7 +75,7 @@ gfs_hook_syscall_getcwd(char *buf, size_t size)
 	sz = syscall(SYS_getcwd, buf, size);
 	if (errno == 0) {
 		if (realloc_needed) {
-			tmp = realloc(buf, sz);
+			GFARM_REALLOC_ARRAY(tmp, buf, sz);
 			if (tmp != NULL)
 				buf = tmp;
 		}
@@ -187,7 +187,7 @@ gfs_hook_syscall_getcwd(char *pt, size_t size)
 		 * possible component name, plus a trailing NULL.
 		 */
 		if (bup + 3  + MAXNAMLEN + 1 >= eup) {
-			if ((up = realloc(up, upsize *= 2)) == NULL)
+			if (GFARM_REALLOC_ARRAY(up, up, upsize *= 2) == NULL)
 				goto err;
 			bup = up;
 			eup = up + upsize;
@@ -259,7 +259,7 @@ gfs_hook_syscall_getcwd(char *pt, size_t size)
 			}
 			off = bpt - pt;
 			len = ept - bpt;
-			if ((pt = realloc(pt, ptsize *= 2)) == NULL)
+			if (GFARM_REALLOC_ARRAY(pt, pt, ptsize *= 2) == NULL)
 				goto err;
 			bpt = pt + off;
 			ept = pt + ptsize;

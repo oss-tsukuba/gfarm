@@ -61,7 +61,7 @@ gfarm_stringlist_add_strings(gfarm_stringlist *listp, int al, char **av)
 		do {
 			n += GFARM_STRINGLIST_DELTA;
 		} while (ll + al > n);
-		t = realloc(listp->array, sizeof(char *) * n);
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -86,8 +86,9 @@ gfarm_stringlist_add(gfarm_stringlist *listp, char *s)
 
 	if (length >= listp->size) {
 		int n = listp->size + GFARM_STRINGLIST_DELTA;
-		char **t = realloc(listp->array, sizeof(char *) * n);
-
+		char **t;
+		
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
