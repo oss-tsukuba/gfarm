@@ -35,3 +35,16 @@ gfarm_malloc_array(size_t number, size_t size)
 	}
 	return (malloc(total_size));
 }
+
+void *
+gfarm_realloc_array(void *src, size_t number, size_t size)
+{
+	int overflow = 0;
+	size_t total_size = gfarm_size_mul(&overflow, number, size);
+
+	if (overflow) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	return (realloc(src, total_size));
+}

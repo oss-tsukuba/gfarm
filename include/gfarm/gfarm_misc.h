@@ -147,8 +147,10 @@ char *gfarm_host_address_get(const char *, int, struct sockaddr *, char **);
 
 #define GFARM_MALLOC(p)		((p) = malloc(sizeof(*(p))))
 #define GFARM_MALLOC_ARRAY(p,n)	((p) = gfarm_malloc_array((n), sizeof(*(p))))
+#define GFARM_REALLOC_ARRAY(d,s,n)	((d) = gfarm_realloc_array((s), (n), sizeof(*(d)))) 
 
 void *gfarm_malloc_array(size_t, size_t);
+void *gfarm_realloc_array(void *, size_t, size_t);
 
 char *gfarm_fixedstrings_dup(int, char **, char **);
 void gfarm_strings_free_deeply(int, char **);
