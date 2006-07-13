@@ -722,9 +722,7 @@ retry:
 		goto msgfree;
 	}
 	size = gfarm_size_mul(&overflow, ops->gen_ops->info_size, n);
-	if (overflow)
-		errno = ENOMEM;
-	else
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(infos, size);
 	if (overflow || infos == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
@@ -1069,9 +1067,7 @@ gfarm_ldap_host_info_get_by_name_alias(
 
 	size = gfarm_size_add(&overflow, sizeof(query_template),
 			gfarm_size_mul(&overflow, strlen(name_alias), 2));
-	if (overflow)
-		errno = ENOMEM;
-	else
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(query, size);
 	if (overflow || query == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -1164,9 +1160,7 @@ gfarm_ldap_escape_pathname(const char *pathname)
 		return (NULL);
 	
 	size = gfarm_size_mul(&overflow, strlen(pathname), 3);
-	if (overflow)
-		errno = ENOMEM;
-	else
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(escaped_pathname, size);
 	if (overflow || escaped_pathname == NULL)
 		return (escaped_pathname);

@@ -1,7 +1,6 @@
 #include <sys/types.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <stdio.h>
-#include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -326,9 +325,7 @@ xxx_proto_vrecv(struct xxx_connection *conn, int just, int *eofp,
 				return (NULL);
 			i = ntohl(i);
 			size = gfarm_size_add(&overflow, i, 1);
-			if (overflow)
-				errno = ENOMEM;
-			else
+			if (!overflow)
 				GFARM_MALLOC_ARRAY(*sp, size);
 			if (!overflow && *sp != NULL) {
 				/* caller should check whether *sp == NULL */

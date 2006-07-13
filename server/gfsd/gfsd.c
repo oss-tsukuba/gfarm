@@ -1913,11 +1913,8 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 	/* 2 for "$SHELL" + "-c" */
 
 	size = gfarm_size_add(&overflow, argc, argc_opt + 1);
-	if (overflow) {
-		errno = ENOMEM;
-	} else {
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(argv_storage, size);
-	}	
 	if (overflow || argv_storage == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto rpc_error;
@@ -1927,11 +1924,8 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		use_xauth_env = 1;
 	size = gfarm_size_add(&overflow, nenv, 
 			N_EXTRA_ENV + use_cred_env + use_xauth_env + 1);
-	if (overflow) {
-		errno = ENOMEM;
-	} else {
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(envp, size);
-	}	
 	if (overflow || envp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_argv;
@@ -2263,9 +2257,7 @@ server(int client_fd)
 
 	gfarm_set_global_username(user);
 	size = gfarm_size_add(&overflow, strlen(user) + 1, strlen(host) + 1);
-	if (overflow)
-		errno = ENOMEM;
-	else	
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(aux, size);
 	if (overflow || aux == NULL)
 		gflog_fatal("set_auxiliary_info: %s", GFARM_ERR_NO_MEMORY);

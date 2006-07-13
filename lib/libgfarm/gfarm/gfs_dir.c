@@ -1348,9 +1348,7 @@ gfs_realpath_canonical_candidate(
 
 	size = gfarm_size_add(&overflow,
 			      strlen(p_dir) + 1, strlen(base) + 1);
-	if (overflow)
-		errno = ENOMEM;
-	else
+	if (!overflow)
 		GFARM_MALLOC_ARRAY(abspath, size);
 	if (overflow || abspath == NULL) {
 		free(p_dir);

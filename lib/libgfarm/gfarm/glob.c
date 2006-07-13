@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <errno.h>
 
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
@@ -346,9 +345,7 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 			pattern += 1 + len;
 		}
 		size = gfarm_size_add(&overflow, 1 + len, strlen(pattern) + 1);
-		if (overflow)
-			errno = ENOMEM;
-		else 
+		if (!overflow)
 			GFARM_MALLOC_ARRAY(p, size);
 		if (overflow || p == NULL) {
 			e = GFARM_ERR_PATHNAME_TOO_LONG;

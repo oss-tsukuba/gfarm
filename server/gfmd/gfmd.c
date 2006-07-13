@@ -354,9 +354,7 @@ gfj_server_register(int client_socket)
 	info->total_nodes = total_nodes;
 	info->argc = argc;
 	size = gfarm_size_add(&overflow, argc, 1);
-	if (overflow) {
-		errno = ENOMEM;
-	} else {
+	if (!overflow) {
 		GFARM_MALLOC_ARRAY(info->argv, size);
 		GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
 	}	
