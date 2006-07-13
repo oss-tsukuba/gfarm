@@ -164,6 +164,9 @@
 /* Define to 1 if you have the `strtoq' function. */
 #undef HAVE_STRTOQ
 
+/* Define to 1 if you have the <sys/loadavg.h> header file. */
+#undef HAVE_SYS_LOADAVG_H
+
 /* sys_nerr is defined */
 #undef HAVE_SYS_NERR
 

@@ -22355,7 +22355,8 @@ fi
 
 
 
-for ac_header in inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h
+
+for ac_header in inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h sys/loadavg.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
