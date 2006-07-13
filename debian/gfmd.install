@@ -3,6 +3,8 @@ debian/tmp/usr/bin/gfdump
 debian/tmp/usr/sbin/gfmd
 debian/tmp/etc/init.d/gfmd
 debian/tmp/usr/share/gfarm/config/bdb.DB_CONFIG.in
+debian/tmp/usr/share/gfarm/config/config-gfarm.ldap
+debian/tmp/usr/share/gfarm/config/config-gfarm.postgresql
 debian/tmp/usr/share/gfarm/config/gfarm.conf-ldap.in
 debian/tmp/usr/share/gfarm/config/gfarm.conf-postgresql.in
 debian/tmp/usr/share/gfarm/config/gfarm.schema

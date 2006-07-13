@@ -2,6 +2,8 @@
 @PREFIX@/bin/gfdump
 @PREFIX@/sbin/gfmd
 @PREFIX@/share/gfarm/config/bdb.DB_CONFIG.in
+@PREFIX@/share/gfarm/config/config-gfarm.ldap
+@PREFIX@/share/gfarm/config/config-gfarm.postgresql
 @PREFIX@/share/gfarm/config/gfarm.conf-ldap.in
 @PREFIX@/share/gfarm/config/gfarm.conf-postgresql.in
 @PREFIX@/share/gfarm/config/gfarm.schema

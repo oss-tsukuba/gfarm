@@ -455,6 +455,8 @@ share/doc/gfarm/html/ja/user/samba-hook.html
 share/doc/gfarm/html/ja/user/smboverssh.html
 share/doc/gfarm/html/pic/gfarm-logo.gif
 share/gfarm/config/bdb.DB_CONFIG.in
+share/gfarm/config/config-gfarm.ldap
+share/gfarm/config/config-gfarm.postgresql
 share/gfarm/config/config-gfarm.sysdep
 share/gfarm/config/gfarm.conf-ldap.in
 share/gfarm/config/gfarm.conf-postgresql.in

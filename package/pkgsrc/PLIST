@@ -445,6 +445,8 @@ share/doc/html/gfarm/pic/gfarm-logo.gif
 share/examples/rc.d/gfmd
 share/examples/rc.d/gfsd
 share/gfarm/config/bdb.DB_CONFIG.in
+share/gfarm/config/config-gfarm.ldap
+share/gfarm/config/config-gfarm.postgresql
 share/gfarm/config/config-gfarm.sysdep
 share/gfarm/config/gfarm.conf-ldap.in
 share/gfarm/config/gfarm.conf-postgresql.in

@@ -734,6 +734,8 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
+%{share_prefix}/config/config-gfarm.ldap
+%{share_prefix}/config/config-gfarm.postgresql
 %{share_prefix}/config/gfarm.conf-ldap.in
 %{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.schema
