@@ -140,7 +140,7 @@ usage()
 	echo >&2 "	[-d domain_name] [-h hostname]"
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
 	echo >&2 "	[-p metadata_backend_port]"
-	echo >&2 "	[-s gfsd_port] [-m gfmd_port]"
+	echo >&2 "	[-s gfsd_port] [-m gfmd_port] [-a auth_type]"
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
 		echo >&2 "	no such option with backend=$BACKEND_TYPE"
@@ -185,6 +185,7 @@ display_params()
 
     echo     "gfmd port  [-m]: $GFMD_PORT"
     echo     "gfsd port  [-s]: $GFSD_PORT"
+    echo     "auth type  [-a]: $AUTH_TYPE"
 
     display_backend_optional_params_$BACKEND_TYPE
 
@@ -247,6 +248,15 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -s) shift; [ $# -ge 1 ] || usage
 		GFSD_PORT=$1
+		;;
+	  -a) shift; [ $# -ge 1 ] || usage
+		case $1 in
+		sharedsecret|gsi_auth|gsi)
+			AUTH_TYPE=$1;;
+		*)
+			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, gsi_auth or gsi."
+			exit 1;;
+		esac
 		;;
 
 	# control options
@@ -325,6 +335,8 @@ else
 fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm.conf"}
 
+: ${AUTH_TYPE:="sharedsecret"}
+
 : ${GFSD_PORT:="600"}
 
 : ${GFMD_PORT:="601"}
@@ -379,6 +391,7 @@ s|@config_gfarm_gfmd_option@|-f $GFARM_CONF|g
 s|@config_gfarm_gfsd_port@|$GFSD_PORT|g
 s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g
 s|@config_gfarm_run_dir@|$RUN_DIR|g
+s|@config_gfarm_auth_type@|$AUTH_TYPE|g
 _EOF_
 		$awk '{
 		printf "s|@config_gfarm_backend_admin_password@|%s|g\n", $0
