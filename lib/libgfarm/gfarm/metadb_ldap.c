@@ -726,7 +726,7 @@ retry:
 		errno = ENOMEM;
 	else
 		GFARM_MALLOC_ARRAY(infos, size);
-	if (infos == NULL) {
+	if (overflow || infos == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		goto msgfree;
 	}
@@ -1168,7 +1168,7 @@ gfarm_ldap_escape_pathname(const char *pathname)
 		errno = ENOMEM;
 	else
 		GFARM_MALLOC_ARRAY(escaped_pathname, size);
-	if (escaped_pathname == NULL)
+	if (overflow || escaped_pathname == NULL)
 		return (escaped_pathname);
 
 	d = escaped_pathname;
