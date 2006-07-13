@@ -177,8 +177,8 @@ display_params()
 
     display_backend_params_$BACKEND_TYPE
 
-    echo     "metadata directory  [-l]: $BACKEND_DATA_DIR"
-    echo     "metadata directory  [-L]: $BACKEND_LOG_DIR"
+    echo     "metadata     directory [-l]: $BACKEND_DATA_DIR"
+    echo     "metadata log directory [-L]: $BACKEND_LOG_DIR"
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
 
     display_backend_port_params_$BACKEND_TYPE
