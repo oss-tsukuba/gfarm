@@ -399,7 +399,12 @@ you have to use the following command:
 	bash$ env CONFIG_SHELL=`which bash` bash ./configure
 Please read 2-3) too.
 
-2-5) OS dependent limitation
+2-5) User ID and Group ID
+
+All files and directory look like owned by the user her/himself,
+from commands which use stat(2)/lstat(2)/fstat(2) system calls.
+
+2-6) OS dependent limitation
 
  (1) Linux
 ===========
