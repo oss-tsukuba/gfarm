@@ -75,25 +75,29 @@ configuration.
 	prefix [--prefix]: 
 	metadata backend    [-b]: postgresql
 	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-pgsql
+	metadata log directory    [-L]: /var/gfarm-pgsql/pg_xlog
 	postgresql admin user     [-U]: postgres
 	postgresql admin password [-W]: (auto generated)
 	postgresql user           [-u]: gfarm
 	postgresql password       [-w]: (auto generated)
 	postgresql prefix   [-P]: /usr/bin
 	postgresql version  [-V]: 8.1
-	metadata directory  [-l]: /var/gfarm-pgsql
 	metaserver hostname [-h]: metadb.example.com
 	portmaster port     [-p]: 10602
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
 
-When you specify "ldap" by -d option, LDAP will be used as the metadata
+When you specify "ldap" by -b option, LDAP will be used as the metadata
 backend database instead of the default PostgreSQL.
 
-	# config-gfarm -t -d ldap
+	# config-gfarm -t -b ldap
 	prefix [--prefix]: 
 	metadata backend    [-b]: ldap
 	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-ldap
+	metadata log directory    [-L]: /var/gfarm-ldap
 	domain name         [-d]: example.com
 	ldap root user      [-U]: cn=root,dc=example,dc=com
 	ldap root password  [-W]: (auto generated)
@@ -101,11 +105,11 @@ backend database instead of the default PostgreSQL.
 	ldap password       [-w]: (auto generated)
 	openldap prefix     [-P]: /usr/bin
 	openldap version    [-V]: 2.2
-	metadata directory  [-l]: /var/gfarm-ldap
 	metaserver hostname [-h]: metadb.example.com
 	slapd port [-p]: 10602
 	gfmd port  [-m]: 601
 	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
 	slapd DB cache size [-c]: 536870912 bytes
 	slapd DB type ($SLAPD_DB): bdb
 
