@@ -47,8 +47,10 @@ display_backend_port_params_postgresql()
 
 display_backend_optional_params_postgresql()
 {
+	:
 }
 
+# $argshift is an output parameter
 parse_argument_postgresql()
 {
 	case "$1" in
@@ -154,6 +156,7 @@ _EOF_
 
 make_configuration_directory_postgresql()
 {
+	:
 }
 
 make_configuration_file_postgresql()

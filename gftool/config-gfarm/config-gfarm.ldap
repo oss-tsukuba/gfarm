@@ -52,6 +52,7 @@ display_backend_optional_params_ldap()
 	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
 }
 
+# $argshift is an output parameter, if this function returns success.
 parse_argument_ldap()
 {
 	case "$1" in
@@ -256,6 +257,7 @@ make_configuration_file_ldap()
 
 apply_configuration_ldap()
 {
+	:
 }
 
 start_service_ldap()
