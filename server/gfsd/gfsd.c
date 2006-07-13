@@ -1902,7 +1902,7 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 	static char xauth_filename[sizeof(xauth_template)];
 	int use_xauth_env = 0;
 	size_t size;
-	int overflow;
+	int overflow = 0;
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
 	envp = NULL; xauth_env = NULL;

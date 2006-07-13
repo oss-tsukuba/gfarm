@@ -335,7 +335,7 @@ gfj_server_register(int client_socket)
 	gfarm_int32_t flags, total_nodes, argc, job_id, error;
 	struct gfarm_job_info *info;
 	size_t size;
-	int overflow;
+	int overflow = 0;
 
 	GFARM_MALLOC(info);
 	if (info == NULL)
