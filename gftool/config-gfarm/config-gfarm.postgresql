@@ -29,6 +29,9 @@ sanity_postgresql()
 
 display_backend_params_postgresql()
 {
+	display_backend_data_dir_param
+	display_backend_log_dir_param
+
 	echo "postgresql admin user     [-U]: $BACKEND_ADMIN_USER"
 	echo "postgresql admin password [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
 	echo "postgresql user           [-u]: $BACKEND_USER"

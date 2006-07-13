@@ -25,6 +25,9 @@ sanity_ldap()
 
 display_backend_params_ldap()
 {
+	display_backend_data_dir_param
+	display_backend_log_dir_param
+
 	echo "domain name         [-d]: $DOMAIN_NAME"
 	echo "ldap root user      [-U]: $BACKEND_ADMIN_USER"
 	echo "ldap root password  [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
