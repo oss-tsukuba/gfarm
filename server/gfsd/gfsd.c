@@ -41,6 +41,11 @@
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
+
+#ifdef HAVE_SYS_LOADAVG_H
+#include <sys/loadavg.h>	/* getloadavg() on Solaris */
+#endif
+
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
