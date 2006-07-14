@@ -50,7 +50,7 @@ display_backend_optional_params_postgresql()
 	:
 }
 
-# $argshift is an output parameter
+# $argshift is an output parameter, if this function returns success.
 parse_argument_postgresql()
 {
 	case "$1" in
