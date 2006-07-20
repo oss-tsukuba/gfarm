@@ -245,18 +245,19 @@ client パッケージもインストールします．doc パッケージは任意です．
 ファイルシステムノードのメタデータサーバへの登録を行います．
 
 まずは，-t オプションをつけて実行し，デフォルトの設定で問題ないかどうか
-確認してください．以下は，スプール・ディレクトリとして
-/var/spool/gfarm を指定した例です．
+確認してください．
 
-	# config-gfsd -t /var/spool/gfarm
+	# config-gfsd -t
 	prefix [--prefix]: 
 	hostname     [-h]: linux-1.example.com
 	architecture [-a]: i386-fedora3-linux
 	ncpu         [-n]: 2
-	spool directory  : /var/spool/gfarm
+	spool directory  : /var/gfarm-spool
 
-変更が必要な場合は [ ] のオプションで変更することができます．なお，スプー
-ル・ディレクトリは，他のノードと共有されない領域を指定してください．
+変更が必要な場合は [ ] のオプションで変更することができます．
+ただし，スプール・ディレクトリについては config-gfsd コマンドの最後の引数で
+指定します．スプール・ディレクトリは，他のノードと共有されない領域を指定し
+てください．
 
 （ヒント）prefix を設定することにより，設定ファイルの保存場所を
           <prefix>/etc/gfarm.conf に変更することができます． ただし，こ
@@ -267,7 +268,7 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 問題がなくなれば，-t オプションをはずして config-gfsd を実行します．
 
-	# config-gfsd /var/spool/gfarm
+	# config-gfsd
 
 config-gfsd により，スプール・ディレクトリの初期設定，Gfarm 設定ファイ
 ルの更新などがなされ，gfsd が起動します．

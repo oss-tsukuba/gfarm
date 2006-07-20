@@ -265,7 +265,7 @@ configure コマンドには，下記のオプションがあります．
 
 ・ファイルシステムノードに置く，データ・ファイル用スプール・ディレクトリ
 
-	/var/spool/gfarm
+	/var/gfarm-spool
 
 
 LDAP を使用する場合:
@@ -416,7 +416,7 @@ PostgreSQL を使用する場合:
 
 9. ファイルシステムノード上で以下のコマンドを実行して，これから行う設定に
   関して，適切なデフォルト値が設定されているか確認します．
-	# config-gfsd -t /var/spool/gfarm
+	# config-gfsd -t
 
   もしデフォルト値が適切でない場合には，表示されるオプションを指定して
   設定を変更できます．
@@ -425,7 +425,7 @@ PostgreSQL を使用する場合:
   取り除いて実行します．
   特にオプションを指定する必要がなかったのであれば，以下を実行すること
   になります．
-	# config-gfsd /var/spool/gfarm
+	# config-gfsd
 
 11. ファイルシステムノードが複数台存在する場合は，8-10 の手順をその台数
   分実行します．
@@ -836,12 +836,12 @@ gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 ◇ gfsd スプール・ディレクトリの作成
 
 ファイルシステムノード上の全ホストで，スプール・ルート・ディレクトリ
-/var/spool/gfarm を作成します．
+/var/gfarm-spool を作成します．
 
 	% su
 	Password: 
-	# mkdir /var/spool/gfarm
-	# chmod 1777 /var/spool/gfarm
+	# mkdir /var/gfarm-spool
+	# chmod 1777 /var/gfarm-spool
 	# exit
 	% 
 
@@ -852,7 +852,7 @@ gfhost コマンドを利用して，ファイルシステムノードの情報を登録します．
 
 LDAP を使用する場合:
 ------------------------------ ここから ------------------------------
-spool /var/spool/gfarm
+spool /var/gfarm-spool
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
 ldap_serverport 10602
@@ -862,7 +862,7 @@ auth enable sharedsecret *
 
 PostgreSQL を使用する場合:
 ------------------------------ ここから ------------------------------
-spool /var/spool/gfarm
+spool /var/gfarm-spool
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
 postgresql_serverport 10602

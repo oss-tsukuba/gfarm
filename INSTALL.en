@@ -237,7 +237,7 @@ This section assumes the following setting.
 
  - Gfarm spool directory on filesystem nodes
 
-	/var/spool/gfarm
+	/var/gfarm-spool
 
 
 In the case to use LDAP:
@@ -387,7 +387,7 @@ In the case to use PostgreSQL:
 
 9. Run the following command on every filesystem node to see whether
   appropriate default values will be automatically configured or not:
-	# config-gfsd -t /var/spool/gfarm
+	# config-gfsd -t
 
   If there are some default values which are not appropriate, you can
   change the values by specifying displayed options.
@@ -396,7 +396,7 @@ In the case to use PostgreSQL:
   makes gfsd configured.
   For example, if you don't have to specify any option in the step 8.
   you can use the following command:
-	# config-gfsd /var/spool/gfarm
+	# config-gfsd
 
 11. Please repeat the step 8 through the step 10 on each filesystem
   node.
@@ -729,12 +729,12 @@ option with the gfhost command:
 ** Create a gfsd spool directory on filesystem nodes
 
 On each filesystem node, create a spool root directory
-/var/spool/gfarm.
+/var/gfarm-spool.
 
 	% su
 	Password: 
-	# mkdir /var/spool/gfarm
-	# chmod 1777 /var/spool/gfarm
+	# mkdir /var/gfarm-spool
+	# chmod 1777 /var/gfarm-spool
 	# exit
 	% 
 
@@ -745,7 +745,7 @@ nodes.  Here is an example of the configuration file.
 
 In the case to use LDAP:
 ----------------------------- BEGIN HERE -----------------------------
-spool /var/spool/gfarm
+spool /var/gfarm-spool
 metadb_serverhost metadb.example.com
 ldap_serverhost metadb.example.com
 ldap_serverport 10602
@@ -756,7 +756,7 @@ auth enable gsi *
 
 In the case to use PostgreSQL:
 ----------------------------- BEGIN HERE -----------------------------
-spool /var/spool/gfarm
+spool /var/gfarm-spool
 metadb_serverhost metadb.example.com
 postgresql_serverhost metadb.example.com
 postgresql_serverport 10602

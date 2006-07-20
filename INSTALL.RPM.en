@@ -245,19 +245,19 @@ Run 'config-gfsd' to set up a spool directory in a local file system
 on the file system node, and to register to the metadata server.  At
 first, make sure the default setting with the -t option.  With the -t
 option, nothing is really executed except displaying the setting for
-configuration.  The following example specifies /var/spool/gfarm as a
-spool directory.
+configuration.
 
-	# config-gfsd -t /var/spool/gfarm
+	# config-gfsd -t
 	prefix [--prefix]: 
 	hostname     [-h]: linux-1.example.com
 	architecture [-a]: i386-fedora3-linux
 	ncpu         [-n]: 2
-	spool directory  : /var/spool/gfarm
+	spool directory  : /var/gfarm-spool
 
-You can modify any default parameter by the option shown in [ ].  Note
-that the spool directory should be a non-shared area among file system
-nodes.
+You can modify any default parameter by the option shown in [ ].
+The spool directory is only exception, and you can modify it
+by the last argument of the config-gfsd commmand. Note that the
+spool directory should be a non-shared area among file system nodes.
 
 Note: When 'prefix' is specified, it is possible to change the
       location of the Gfarm configuration file to
@@ -269,7 +269,7 @@ Note: When 'prefix' is specified, it is possible to change the
 When you confirm the parameter, run 'config-gfsd' without the -t
 option.
 
-	# config-gfsd /var/spool/gfarm
+	# config-gfsd
 
 config-gfsd initializes the spool directory, updates the Gfarm
 configuration file for the file system node, and executes gfsd.
