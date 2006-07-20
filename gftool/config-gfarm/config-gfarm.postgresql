@@ -117,6 +117,7 @@ set_last_defaults_postgresql()
 	: ${BACKEND_USER:="gfarm"}
 	# default PostgreSQL port number is 5432
 	: ${BACKEND_PORT:="10602"}
+
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
 	BACKEND_LOG_DIR_DEFAULT="$BACKEND_DATA_DIR/pg_xlog"
 	: ${BACKEND_LOG_DIR:="$BACKEND_LOG_DIR_DEFAULT"}
@@ -138,6 +139,11 @@ set_last_defaults_postgresql()
 			BACKEND_VERSION="unknown"
 		fi
 	fi
+	case $BACKEND_VERSION in
+	7.*) # -w option makes "pg_ctl start" ask password on PostgreSQL-7.4
+	    : ${PGSQL_OPTIONS:='-s    -m fast -D $PGDATA -l $PGDATA/logfile'};;
+	*)  : ${PGSQL_OPTIONS:='-s -w -m fast -D $PGDATA -l $PGDATA/logfile'};;
+	esac
 }
 
 #
@@ -151,6 +157,7 @@ init_replace_postgresql()
 	cat <<_EOF_
 s|@config_gfarm_database_name@|$DB_NAME|g
 s|@config_gfarm_pgsql_bindir@|$PGSQL_BINDIR|g
+s|@config_gfarm_pgsql_options@|$PGSQL_OPTIONS|g
 _EOF_
 }
 
@@ -276,7 +283,10 @@ _EOF_
 	echo '#host	all		all	::1/128		md5'
 
 	echo ""
-	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
+	echo "## The following should work, but actually doesn't with PostgreSQL-7.4"
+	echo "#host	$DB_NAME		$BACKEND_USER	0.0.0.0/0	md5"
+	echo "# TYPE	DATABASE	USER	IP-ADDRESS IP-MASK	METHOD"
+	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0	0.0.0.0	md5"
 	) > "$BACKEND_DATA_DIR"/pg_hba.conf
 }
 
@@ -423,5 +433,5 @@ _EOF_
 
 start_service_postgresql()
 {
-	start_service_common
+	start_service_common ${1+"$@"}
 }
