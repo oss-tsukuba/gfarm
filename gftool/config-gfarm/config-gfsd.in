@@ -50,7 +50,7 @@ fi
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
-	echo >&2 "	[-a arch] [-h hostname] [-n ncpu] spool_directory"
+	echo >&2 "	[-a arch] [-h hostname] [-n ncpu] [spool_directory]"
 	exit 1
 }
 
@@ -65,9 +65,14 @@ sanity()
 {
 	rv=0
 	if [ ! -x "$prefix/bin/gfhost" ]; then
-		echo "WARNING: command not found: $prefix/bin/gfhost" >&2
+		echo "ERROR: command not found: $prefix/bin/gfhost" >&2
 		rv=1
 	fi
+	case $SPOOL_DIRECTORY in
+	/*)	:;;
+	*)	echo "ERROR: spool directory ($SPOOL_DIRECTORY) must be absolute path"
+		rv=1;;
+	esac
 	return $rv
 }
 
@@ -123,12 +128,10 @@ while [ $# -gt 0 ] ; do
 	shift
 done
 
-[ $# -eq 1 ] || usage
-
-SPOOL_DIRECTORY=$1
-case $SPOOL_DIRECTORY in
-	/*) break ;;
-	*) ABORT "$SPOOL_DIRECTORY: should be absolute path" ;;
+case $# in
+0)	SPOOL_DIRECTORY=$CONFIG_PREFIX/var/gfarm-spool;;
+1)	SPOOL_DIRECTORY=$1;;
+*)	usage;;
 esac
 
 . $prefix/share/gfarm/config/config-gfarm.sysdep
