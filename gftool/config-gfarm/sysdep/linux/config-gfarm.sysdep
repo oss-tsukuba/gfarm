@@ -156,13 +156,14 @@ service_ctl_debian()
 
 	service=$1
 	ctl=$2
+	shift 2
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X \
 			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
-		invoke-rc.d $service $ctl
+		invoke-rc.d $service $ctl ${1+"$@"}
 	else
-		"$RC_DIR/$service" $ctl
-	fi || ABORT "cannot $ctl "$service""
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
 }
 
 service_ctl_redhat()
@@ -171,12 +172,13 @@ service_ctl_redhat()
 
 	service=$1
 	ctl=$2
+	shift 2
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		service "$service" $ctl
+		service "$service" $ctl ${1+"$@"}
 	else
-		"$RC_DIR/$service" $ctl
-	fi || ABORT "cannot $ctl $service"
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
 }
 
 service_ctl_default()
@@ -185,8 +187,9 @@ service_ctl_default()
 
 	service=$1
 	ctl=$2
+	shift 2
 
-	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
+	"$RC_DIR/$service" $ctl ${1+"$@"} || ABORT "cannot $ctl $service $@"
 }
 
 service_add()
@@ -202,9 +205,9 @@ service_add()
 service_ctl()
 {
 	case $LINUX_RC_TYPE in
-	debian)	service_ctl_debian $1 $2;;
-	redhat)	service_ctl_redhat $1 $2;;
-	suse)	service_ctl_default $1 $2;;
-	*)	service_ctl_default $1 $2;;
+	debian)	service_ctl_debian ${1+"$@"};;
+	redhat)	service_ctl_redhat ${1+"$@"};;
+	suse)	service_ctl_default ${1+"$@"};;
+	*)	service_ctl_default ${1+"$@"};;
 	esac
 }

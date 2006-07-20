@@ -262,5 +262,5 @@ apply_configuration_ldap()
 
 start_service_ldap()
 {
-	start_service_common
+	start_service_common ${1+"$@"}
 }
