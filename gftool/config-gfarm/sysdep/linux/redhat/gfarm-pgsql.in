@@ -15,8 +15,7 @@ PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
 CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
-LOGFILE="$PGDATA/logfile"
-OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
+OPTIONS="@config_gfarm_pgsql_options@"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 # For SELinux we need to use 'runuser' not 'su'
 [ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
@@ -39,35 +38,75 @@ fi
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
-RETVAL=0
-
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
 # same binary.
 
-case "$1" in
-  start)
+call_pg_ctl()
+{
+	$RUN -c "$CTL $OPTIONS $*"
+}
+
+start()
+{
 	echo -n "Starting $FILE: "
+
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
-	$RUN -c "$CTL $OPTIONS start"
+	call_pg_ctl start && success || failure
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
 	echo
-	;;
-  stop)
+	return $RETVAL
+}
+
+stop()
+{
 	echo -n "Stopping $FILE: "
-	$RUN -c "$CTL $OPTIONS stop"
+	call_pg_ctl stop && success || failure
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
 	echo
-	;;
-  status|restart|reload)
-	$RUN -c "$CTL $OPTIONS $1"
-	;;
-  *)
+	return $RETVAL
+}
+
+checkstatus()
+{
+	call_pg_ctl status
+}
+
+usage()
+{
 	echo "Usage: $FILE {start|stop|status|restart|reload}"
 	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
 esac
 
 exit $RETVAL
