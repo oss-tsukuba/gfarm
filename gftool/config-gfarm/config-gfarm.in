@@ -134,7 +134,7 @@ gen_passwd()
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f] [-W] [-w]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f] [-W] [-w]"
 	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-d domain_name] [-h hostname]"
@@ -159,9 +159,14 @@ ABORT()
 # but some may not.
 start_service_common()
 {
+	if [ -f $RUN_DIR/$RC_BACKEND_BASENAME.pid ]; then
+		ctl=restart
+	else
+		ctl=start
+	fi
 	service_add $RC_BACKEND_BASENAME &&
-	service_ctl $RC_BACKEND_BASENAME restart ||
-		ABORT "failed to start $RC_BACKEND_BASENAME"
+	service_ctl $RC_BACKEND_BASENAME $ctl ${1+"$@"} ||
+		ABORT "failed to $ctl $RC_BACKEND_BASENAME"
 }
 
 sanity()
@@ -269,6 +274,9 @@ while [ $# -gt 0 ] ; do
 		;;
 
 	# control options
+	  --help)
+		usage
+		;;
 	  -N)
 		START_SERVICE=false
 		;;
@@ -540,9 +548,10 @@ apply_configuration_$BACKEND_TYPE
 if $START_SERVICE; then
 	start_service_$BACKEND_TYPE
 
+	if [ -f $RUN_DIR/gfmd.pid ]; then ctl=restart; else ctl=start; fi
 	service_add gfmd &&
-	service_ctl gfmd restart ||
-		ABORT "failed to start gfmd"
+	service_ctl gfmd $ctl ||
+		ABORT "failed to $ctl gfmd"
 fi
 
 echo "$PROGNAME success"

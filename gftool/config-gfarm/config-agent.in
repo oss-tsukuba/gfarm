@@ -49,7 +49,7 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
 	echo >&2 "	[-h hostname] [-p port]"
 	exit 1
 }
@@ -96,6 +96,9 @@ while [ $# -gt 0 ] ; do
 		;;
 
 	# control options
+	  --help)
+		usage
+		;;
 	  -N)
 		START_SERVICE=false
 		;;
@@ -109,7 +112,7 @@ while [ $# -gt 0 ] ; do
 		usage
 		;;
 	  *)
-		break
+		usage
 		;;
 	esac
 	shift
@@ -237,8 +240,9 @@ ABORT "$GFARM_CONF: cannot append agent related statements"
 mkscript $RC_DIR/gfarm_agent	config "$RC_AGENT_IN"
 
 if $START_SERVICE; then
-	service_add gfarm_agent && service_ctl gfarm_agent restart ||
-		ABORT "failed to start gfarm_agent"
+	if [ -f $RUN_DIR/gfarm_agent.pid ];then ctl=restart; else ctl=start; fi
+	service_add gfarm_agent && service_ctl gfarm_agent $ctl ||
+		ABORT "failed to $ctl gfarm_agent"
 fi
 echo "$PROGNAME success"
 exit 0
