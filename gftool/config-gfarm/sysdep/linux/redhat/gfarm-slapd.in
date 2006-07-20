@@ -35,62 +35,94 @@ fi
 [ -f "$DAEMON" ] || exit 0
 [ -f "$CONF" ] || exit 0
 
-RETVAL=0
-
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
 # same binary.
 
-case "$1" in
-  start)
+start()
+{
 	echo -n "Starting $FILE: "
+
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
-	daemon "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"
+	initlog $INITLOG_ARGS -c "$DAEMON -f $CONF -h ldap://:$PORT/" &&
+		success || failure
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
 	echo
-	;;
-  stop)
+	return $RETVAL
+}
+
+stop()
+{
 	echo -n "Stopping $FILE: "
 	if [ -f "$PIDFILE" ]; then
 		PID=`cat "$PIDFILE"`
 		kill -TERM $PID && success || failure
 		RETVAL=$?
-		rm -f "$PIDFILE"
+		if [ $RETVAL -eq 0 ] ||
+		   [ ! -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
+			rm -f "$PIDFILE" "$LOCKFILE"
+		fi
 	else
 		echo "$FILE is already stopped (no $PIDFILE)"
 		failure
 		RETVAL=1
 	fi
-	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
 	echo
-	;;
-  status)
+	return $RETVAL
+}
+
+checkstatus()
+{
 	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
 	then
 		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
-		RETVAL=0
+		return 0
 	elif [ -f "$PIDFILE" ]; then
 		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
-		RETVAL=1
+		return 1
 	elif [ -f "$LOCKFILE" ]; then
 		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
-		RETVAL=2
+		return 2
 	else
 		echo "$FILE is stopped (no $PIDFILE)"
-		RETVAL=3
+		return 3
 	fi
+}
+
+usage()
+{
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
 	;;
   restart|reload)
-  	$0 stop
-	$0 start
-	# is this available?: killall -HUP "$prog"
+	stop
+	start
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: $FILE {start|stop|status|restart|reload}"
-	exit 1
+	usage
+	;;
 esac
 
 exit $RETVAL

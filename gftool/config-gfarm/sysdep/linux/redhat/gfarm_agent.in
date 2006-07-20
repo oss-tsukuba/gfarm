@@ -25,8 +25,6 @@ OPTIONS="@config_gfarm_agent_option@"
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
-RETVAL=0
-
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
 # same binary.
@@ -34,10 +32,12 @@ RETVAL=0
 start()
 {
 	echo -n "Starting $FILE:"
-	daemon "$DAEMON" -P $PIDFILE $OPTIONS
+	initlog $INITLOG_ARGS -c "$DAEMON -P $PIDFILE $OPTIONS" &&
+		success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
 	echo
+	return $RETVAL
 }
 
 stop()
@@ -54,6 +54,7 @@ stop()
 	fi
 	[ "$RETVAL" = 0 ] && rm -f "$LOCKFILE"
 	echo
+	return $RETVAL
 }
 
 checkstatus()
@@ -74,23 +75,38 @@ checkstatus()
 	fi
 }
 
-case "$1" in
-	start)
-		start
-		;;
-	stop)
-		stop
-		;;
-	restart)
-		stop
-		start
-		;;
-	status)
-		checkstatus
-		RETVAL=$?
-		;;
-	*)
-		echo $"Usage: $0 {start|stop|restart|status}"
-		RETVAL=1
+usage()
+{
+	echo $"Usage: $0 {start|stop|restart|status}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
 esac
+
 exit $RETVAL
