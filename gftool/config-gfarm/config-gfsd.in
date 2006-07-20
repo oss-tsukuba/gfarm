@@ -49,7 +49,7 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--prefix prefix] [-t] [-f]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
 	echo >&2 "	[-a arch] [-h hostname] [-n ncpu] spool_directory"
 	exit 1
 }
@@ -101,6 +101,9 @@ while [ $# -gt 0 ] ; do
 		;;
 
 	# control options
+	  --help)
+		usage
+		;;
 	  -N)
 		START_SERVICE=false
 		;;
@@ -176,11 +179,11 @@ sanity || ABORT "aborted"
 config()
 {
 	sed \
-	-e "s|@config_gfarm_prefix@|$prefix|" \
-	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|" \
-	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|" \
-	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|" \
-	-e "s|@config_gfarm_run_dir@|$RUN_DIR|" \
+	-e "s|@config_gfarm_prefix@|$prefix|g" \
+	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g" \
+	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g" \
+	-e "s|@config_gfarm_run_dir@|$RUN_DIR|g" \
 	${1+"$@"} | config_sysdep
 }
 
@@ -279,11 +282,13 @@ if $FORCE; then
 fi
 "$prefix/bin/gfhost" -c -a $ARCH -n $NCPU $GFSD_HOSTNAME &&
 echo gfhost $GFSD_HOSTNAME: succeeded ||
-echo >&2 "gfhost $GFSD_HOSTNAME: failed"
+echo >&2 "gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
-	service_add gfsd && service_ctl gfsd restart ||
-		ABORT "failed to start gfsd"
+	if [ -f $RUN_DIR/gfsd.pid ]; then ctl=restart; else ctl=start; fi
+	service_add gfsd &&
+		service_ctl gfsd $ctl ||
+		ABORT "failed to $ctl gfsd"
 fi
 echo "$PROGNAME success"
 exit 0
