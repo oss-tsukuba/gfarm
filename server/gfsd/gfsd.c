@@ -2273,6 +2273,14 @@ server(int client_fd)
 			fatal_proto("request number", e);
 		if (eof) {
 			cleanup_service();
+			/*
+			 * NOTE: cleanup_service() acceses `client' via
+			 * variable `credential_exported'.
+			 * Thus, xxx_connection_free() must be done after that.
+			 */
+			e = xxx_connection_free(client);
+			if (e != NULL)
+				gflog_error("%s", e);
 			exit(0);
 		}
 		switch (request) {

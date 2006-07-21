@@ -264,29 +264,35 @@ file_table_add(struct xxx_connection *client, char *username, char *hostname)
 	return (0);
 }
 
+/* disconnect & do logging */
 int
 file_table_close(int fd)
 {
+	char *e;
+
 	if (fd < 0 || fd >= file_table_size || file_table[fd].conn == NULL)
 		return (EBADF);
-
-	/* disconnect, do logging */
-	gflog_notice("(%s@%s) disconnected",
-	    file_table[fd].user, file_table[fd].host);
 
 	while (file_table[fd].jobs != NULL)
 		job_table_remove(file_table[fd].jobs->id, file_table[fd].user,
 				 &file_table[fd].jobs);
 	file_table[fd].jobs = NULL;
 
+	e = xxx_connection_free(file_table[fd].conn);
+	file_table[fd].conn = NULL;
+
+	if (e == NULL)
+		gflog_notice("(%s@%s) disconnected",
+		    file_table[fd].user, file_table[fd].host);
+	else
+		gflog_notice("(%s@%s) disconnected: %s",
+		    file_table[fd].user, file_table[fd].host, e);
+
 	free(file_table[fd].user);
 	file_table[fd].user = NULL;
 
 	free(file_table[fd].host);
 	file_table[fd].host = NULL;
-
-	xxx_connection_free(file_table[fd].conn);
-	file_table[fd].conn = NULL;
 
 	if (fd == file_table_max) {
 		while (--file_table_max >= 0)
