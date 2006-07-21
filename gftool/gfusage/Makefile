@@ -21,4 +21,5 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
+	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFARMLIB_SRCDIR)/metadb_access.h
