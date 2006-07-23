@@ -40,6 +40,8 @@ gfs_hook/tool/rm/1byte.sh
 gfs_hook/tool/cp/mode755.sh
 gfs_hook/tool/mv/0byte.sh
 gfs_hook/tool/mv/1byte.sh
+gfs_hook/tool/mv/empty-dir.sh
+gfs_hook/tool/mv/dir.sh
 gfs_hook/tool/gzip/gzip-d.sh
 gfs_hook/tool/gzip/gzip-cd.sh
 gfs_hook/tool/chmod/chmod_644_file.sh
