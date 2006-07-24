@@ -7,3 +7,5 @@ postgresql_dbname @config_gfarm_database_name@
 postgresql_user @config_gfarm_backend_user@
 postgresql_password "@config_gfarm_backend_password@"
 auth enable @config_gfarm_auth_type@ *
+
+sockopt keepalive

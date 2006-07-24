@@ -7,3 +7,5 @@ ldap_base_dn "@config_gfarm_ldap_base_dn@"
 ldap_bind_dn "@config_gfarm_backend_user@"
 ldap_bind_password "@config_gfarm_backend_password@"
 auth enable @config_gfarm_auth_type@ *
+
+sockopt keepalive
