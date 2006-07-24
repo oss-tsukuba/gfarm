@@ -91,7 +91,7 @@ gfs_proto.lo: gfs_proto.h
 gfs_rename.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h gfs_pio.h gfs_misc.h
 gfs_replicate.lo: config.h gfs_client.h gfs_lock.h gfs_pio.h gfs_misc.h schedule.h
 gfs_stat.lo: $(GFUTIL_SRCDIR)/timer.h gfs_pio.h gfs_misc.h
-gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
+gfs_unlink.lo: host.h config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 glob.lo: $(INC_SRCDIR)/gfarm_misc.h $(GFUTIL_SRCDIR)/gfutil.h
 host.lo: hostspec.h host.h
 hostcache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h
@@ -101,7 +101,7 @@ io_fd.lo: iobuffer.h xxx_proto.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h xxx_proto.h io_fd.h io_gfsl.h
 iobuffer.lo: $(INC_SRCDIR)/gfarm_misc.h iobuffer.h
 metadb_ldap.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h config.h metadb_access.h metadb_sw.h
-metadb_misc.lo: host.h config.h gfs_client.h
+metadb_misc.lo:
 metadb_none.lo: metadb_sw.h
 metadb_pgsql.lo: config.h metadb_access.h metadb_sw.h $(GFUTIL_SRCDIR)/gfutil.h
 metadb_sw.lo: config.h metadb_access.h metadb_sw.h
