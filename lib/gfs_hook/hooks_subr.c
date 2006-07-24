@@ -14,10 +14,9 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-#include "config.h"
 
-#include <openssl/evp.h>
-#include "gfs_pio.h"
+#include "config.h"
+#include "gfs_misc.h"
 
 #include <gfarm/gfs_hook.h>
 #include "hooks_subr.h"

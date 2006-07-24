@@ -1,20 +1,18 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-
-#include <openssl/evp.h> /* "gfs_pio.h" needs this */
+#include <stdio.h>
 
 #include <gfarm/gfarm.h>
 
 #include "config.h"
 #include "gfs_client.h"
 #include "gfs_lock.h"
-#include "gfs_pio.h"
 #include "gfs_misc.h"
 #include "schedule.h"
 
@@ -98,7 +96,7 @@ gfarm_replication_set_method(int method)
 /*
  * NOTE: gfarm_file_section_replicate_without_busy_check() assumes
  *	that the caller of this function already checked the section
- *	by gfs_check_section_busy(gfarm_file, section)
+ *	by gfs_file_section_check_busy(gfarm_file, section)
  */
 static char *
 gfarm_file_section_replicate_without_busy_check(
@@ -157,7 +155,7 @@ gfarm_file_section_replicate(
 	char *src_canonical_hostname, char *src_if_hostname,
 	char *dst_canonical_hostname)
 {
-	char *e = gfs_check_section_busy(gfarm_file, section);
+	char *e = gfs_file_section_check_busy(gfarm_file, section);
 
 	if (e != NULL)
 		return (e);
@@ -589,7 +587,7 @@ lock_local_file_section(struct gfarm_file_section_info *sinfo,
 	struct stat st;
 	int metadata_exist, localfile_exist;
 
-	e = gfs_check_section_busy_by_finfo(sinfo);
+	e = gfs_file_section_info_check_busy(sinfo);
 	if (e != NULL)
 		return (e);
 
@@ -837,7 +835,7 @@ gfarm_url_program_register(
 	int length; /* XXX - should be size_t */
 	GFS_File gf;
 	struct stat s;
-	char buffer[GFS_FILE_BUFSIZE];
+	char buffer[GFS_LOCAL_FILE_BUFSIZE];
 	char *self_name;
 	char **hostnames;
 

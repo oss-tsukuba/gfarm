@@ -9,12 +9,9 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include <openssl/evp.h>
-
 #include <gfarm/gfarm.h>
 
 #include "gfs_proto.h" /* for gfs_digest_calculate_local() */
-#include "gfs_pio.h"
 #include "gfs_misc.h"
 
 char *
@@ -90,13 +87,12 @@ digest_calculate(char *filename,
 	int fd, i, rv;
 	EVP_MD_CTX md_ctx;
 	unsigned char md_value[EVP_MAX_MD_SIZE];
-	char buffer[GFS_FILE_BUFSIZE];
+	char buffer[GFS_LOCAL_FILE_BUFSIZE];
 
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
 	EVP_DigestInit(&md_ctx, GFS_DEFAULT_DIGEST_MODE);
-	rv = gfs_digest_calculate_local(
-		fd, buffer, GFS_FILE_BUFSIZE,
+	rv = gfs_digest_calculate_local(fd, buffer, sizeof buffer,
 		GFS_DEFAULT_DIGEST_MODE,
 		&md_ctx, md_len_p, md_value, filesizep);
 	close(fd);
@@ -147,7 +143,7 @@ gfs_pio_set_fragment_info_local(char *filename,
 		e = gfarm_file_section_info_set(gfarm_file, section, &fi);
 	}
 	else if (e == NULL) {
-		if (gfs_check_section_checksum_unknown_by_finfo(&fi)) {
+		if (gfs_file_section_info_check_checksum_unknown(&fi)) {
 			struct gfarm_file_section_info fi1;
 
 			fi1.filesize = filesize;

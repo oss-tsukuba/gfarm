@@ -30,9 +30,10 @@
 #endif
 
 #include <gfarm/gfarm.h>
+
 #include "gfutil.h"
-#include <openssl/evp.h>
-#include "gfs_pio.h"
+
+#include "gfs_misc.h"
 
 #include "hooks_subr.h"
 

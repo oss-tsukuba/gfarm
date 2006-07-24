@@ -7,10 +7,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfs_proto.h"	/* GFARM_FILE_CREATE */
 #include "gfs_pio.h"
+#include "gfs_misc.h"	/* gfs_unlink_section_internal() */
 
 struct gfs_file_global_context {
 	GFS_File fragment_gf;

@@ -31,11 +31,29 @@ extern char *gfarm_postgresql_conninfo;
 /* LocalFS dependent */
 extern char *gfarm_localfs_datadir;
 
-/* miscellaneous */
+/* miscellaneous configurations */
 #define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */
 extern int gfarm_dir_cache_timeout;
 extern int gfarm_host_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
 extern file_offset_t gfarm_minimum_free_disk_space;
 
+extern int gf_on_demand_replication;
+extern int gf_hook_default_global;
+
 int gfarm_schedule_write_local_priority(void);
+
+/* redirection */
+extern struct gfs_file *gf_stdout, *gf_stderr;
+
+
+/* profile */
+#define gfs_profile(x) if (gf_profile == 1) { x; }
+
+extern int gf_profile;
+
+/* profile related subroutines: called from gfs_pio_display() */
+void gfs_pio_display_timers(void);
+void gfs_pio_section_display_timers(void);
+void gfs_stat_display_timers(void);
+void gfs_unlink_display_timers(void);

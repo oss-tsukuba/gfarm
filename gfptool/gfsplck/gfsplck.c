@@ -15,8 +15,7 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
-#include <openssl/evp.h>
-#include "gfs_pio.h"
+#include "gfs_misc.h"
 
 char *progname = "gfsplck";
 
@@ -164,7 +163,7 @@ fixfrag_ii(char *pathname, char *gfarm_file, char *sec)
 		return ("lock file");
 
 	/* check section busy */
-	e = gfs_check_section_busy(gfarm_file, sec);
+	e = gfs_file_section_check_busy(gfarm_file, sec);
 	/* allow no fragment case */
 	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
 		return (e);

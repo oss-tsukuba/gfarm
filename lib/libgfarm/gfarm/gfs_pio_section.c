@@ -4,6 +4,7 @@
  * $Id$
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,90 +15,47 @@
 #include <errno.h>
 
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 
 #include "timer.h"
+#include "gfutil.h"
 
 #include "host.h"
 #include "config.h"
 #include "schedule.h"
-#include "gfs_client.h"
 #include "gfs_proto.h"
+#include "gfs_client.h"
 #include "gfs_misc.h"
-#include "gfs_lock.h"
 #include "gfs_pio.h"
 
-/*  */
-
-#define SECTION_BUSY "SECTION BUSY"
-#define CHECKSUM_UNKNOWN "UNKNOWN"
-
 static char *
-gfs_set_section_status(GFS_File gf, char *status)
+gfs_pio_view_section_set_status(GFS_File gf,
+	char *(*modify)(char *, char *, file_offset_t))
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-	struct gfarm_file_section_info fi;
 	struct stat st;
 	char *e;
 
-	fi.checksum_type = GFS_DEFAULT_DIGEST_NAME;
-	fi.checksum = status;
-
 	e = (*vc->ops->storage_fstat)(gf, &st);
-	if (e == NULL) {
-		fi.filesize = st.st_size;
-		e = gfarm_file_section_info_replace(
-			gf->pi.pathname, vc->section, &fi);
-		/* FT */
-		if (e == GFARM_ERR_NO_SUCH_OBJECT)
-			e = gfarm_file_section_info_set(
-				gf->pi.pathname, vc->section, &fi);
-	}
+	if (e == NULL)
+		e = (*modify)(gf->pi.pathname, vc->section, st.st_size);
 	return (e);
 
 }
 
 static char *
-gfs_set_section_busy(GFS_File gf)
+gfs_pio_view_section_set_busy(GFS_File gf)
 {
-	return (gfs_set_section_status(gf, SECTION_BUSY));
-}
-
-char *
-gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *fi)
-{
-	if (strncmp(fi->checksum, SECTION_BUSY, sizeof(SECTION_BUSY) - 1) == 0)
-		return (GFARM_ERR_TEXT_FILE_BUSY);
-	return (NULL);
-}
-
-char *
-gfs_check_section_busy(char *pathname, char *section)
-{
-	struct gfarm_file_section_info fi;
-	char *e;
-
-	e = gfarm_file_section_info_get(pathname, section, &fi);
-	if (e != NULL)
-		return (e);
-	e = gfs_check_section_busy_by_finfo(&fi);
-	gfarm_file_section_info_free(&fi);
-	return (e);
+	return (gfs_pio_view_section_set_status(gf,
+	    gfs_file_section_set_busy));
 }
 
 static char *
-gfs_set_section_checksum_unknown(GFS_File gf)
+gfs_pio_view_section_set_checksum_unknown(GFS_File gf)
 {
-	return (gfs_set_section_status(gf, CHECKSUM_UNKNOWN));
-}
-
-char *
-gfs_check_section_checksum_unknown_by_finfo(struct gfarm_file_section_info *fi)
-{
-	if (strncmp(fi->checksum, CHECKSUM_UNKNOWN,
-		    sizeof(CHECKSUM_UNKNOWN) - 1) == 0)
-		return (GFARM_ERR_CHECKSUM_UNKNOWN);
-	return (NULL);
+	return (gfs_pio_view_section_set_status(gf,
+	    gfs_file_section_set_checksum_unknown));
 }
 
 /*  */
@@ -208,14 +166,14 @@ gfs_pio_view_section_close(GFS_File gf)
 				gf->pi.pathname, vc->section, &fi1);
 		}
 		else
-			e = gfs_set_section_checksum_unknown(gf);
+			e = gfs_pio_view_section_set_checksum_unknown(gf);
 	}
 	else if (md_calculated == 1 &&
 		 (e = gfarm_file_section_info_get(
 			  gf->pi.pathname, vc->section, &fi)) == NULL) {
-		if (gfs_check_section_busy_by_finfo(&fi))
+		if (gfs_file_section_info_check_busy(&fi))
 			/* skip check*/;
-		else if (gfs_check_section_checksum_unknown_by_finfo(&fi)) {
+		else if (gfs_file_section_info_check_checksum_unknown(&fi)) {
 			fi1.filesize = filesize;
 			fi1.checksum_type = GFS_DEFAULT_DIGEST_NAME;
 			fi1.checksum = md_value_string;
@@ -404,7 +362,7 @@ finish:
 	return (e);
 }
 
-double gfs_pio_set_view_section_time;
+static double gfs_pio_set_view_section_time;
 
 static char *
 gfs_set_path_info(GFS_File gf)
@@ -642,7 +600,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		 * if write mode or read-but-truncate mode,
 		 * delete every other file copies
 		 */
-		(void)gfs_set_section_busy(gf);
+		(void)gfs_pio_view_section_set_busy(gf);
 		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0)
 			(void)gfs_unlink_every_other_replicas(
 				gf->pi.pathname, vc->section,
@@ -736,4 +694,54 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 	sprintf(section_string, "%d", fragment_index);
 
 	return (gfs_pio_set_view_section(gf, section_string, host, flags));
+}
+
+char *
+gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
+{
+	int nfd;
+	char *e;
+	GFS_File gf;
+	struct gfs_file_section_context *vc;
+
+	if (file == NULL)
+		return (NULL);
+
+	e = gfs_pio_create(file, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0644,
+	    &gf);
+	if (e != NULL)
+		return (e);
+
+	e = gfs_pio_set_view_local(gf, 0);
+	if (e != NULL)
+		return (e);
+
+	nfd = gfs_pio_fileno(gf);
+	if (nfd == -1)
+		return (gfarm_errno_to_error(errno));
+
+	/*
+	 * XXX This assumes the file fragment is created in the local spool.
+	 */
+	if (dup2(nfd, fd) == -1)
+		e = gfarm_errno_to_error(errno);
+
+	/* XXX - apparently violating the layer */
+	assert(gf->ops == &gfs_pio_view_section_ops);
+	vc = gf->view_context;
+	vc->fd = fd;
+
+	gfs_pio_unset_calc_digest(gf);
+
+	close(nfd);
+
+	*gfp = gf;
+	return (NULL);
+}
+
+void
+gfs_pio_section_display_timers(void)
+{
+	gflog_info("gfs_pio_set_view_section : %g sec\n",
+		gfs_pio_set_view_section_time);
 }

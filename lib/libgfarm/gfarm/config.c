@@ -24,6 +24,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "timer.h"
 #include "gfutil.h"
 
 #include "gfpath.h"
@@ -37,8 +38,7 @@
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
-#include "gfs_pio.h"	/* display_timers, ... */
-#include "timer.h"
+#include "gfs_misc.h"	/* gfarm_redirect_file() */
 #include "agent_wrap.h"
 
 static int gfarm_initialize_done = 0;
@@ -1467,6 +1467,15 @@ main()
 }
 #endif
 
+void
+gfs_display_timers(void)
+{
+	gfs_pio_display_timers();
+	gfs_pio_section_display_timers();
+	gfs_stat_display_timers();
+	gfs_unlink_display_timers();
+}
+
 char *gfarm_debug_command;
 char gfarm_debug_pid[GFARM_INT64STRLEN + 1];
 
@@ -1537,43 +1546,6 @@ gfarm_debug_initialize(char *command)
 /*
  * redirect stdout
  */
-
-static char *
-gfarm_redirect_file(int fd, char *file, GFS_File *gf)
-{
-	int nfd;
-	char *e;
-
-	if (file == NULL)
-		return (NULL);
-
-	e = gfs_pio_create(file, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0644, gf);
-	if (e != NULL)
-		return (e);
-
-	e = gfs_pio_set_view_local(*gf, 0);
-	if (e != NULL)
-		return (e);
-
-	nfd = gfs_pio_fileno(*gf);
-	if (nfd == -1)
-		return (gfarm_errno_to_error(errno));
-
-	/*
-	 * This assumes the file fragment is created in the local
-	 * spool.
-	 */
-	if (dup2(nfd, fd) == -1)
-		e = gfarm_errno_to_error(errno);
-
-	/* XXX - apparently violate the layer */
-	((struct gfs_file_section_context *)(*gf)->view_context)->fd = fd;
-	gfs_pio_unset_calc_digest(*gf);
-
-	close(nfd);
-
-	return (e);
-}
 
 GFS_File gf_stdout, gf_stderr;
 int gf_profile;

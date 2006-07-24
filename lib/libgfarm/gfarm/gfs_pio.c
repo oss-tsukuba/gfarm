@@ -11,15 +11,18 @@
 #include <string.h>
 #include <unistd.h>	/* [FRWX]_OK */
 #include <errno.h>
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
+#include "timer.h"
+#include "gfutil.h"
+
+#include "config.h"	/* gfs_profile */
 #include "gfs_proto.h"
 #include "gfs_pio.h"
 #include "gfs_misc.h"
-#include "timer.h"
-#include "gfutil.h"
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
 
@@ -494,6 +497,12 @@ gfs_pio_close_internal(GFS_File gf)
 	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
+}
+
+char *
+gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
+{
+	return (*gf->ops->view_chmod)(gf, mode);
 }
 
 static char *
@@ -1286,19 +1295,15 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 }
 
 void
-gfs_display_timers()
+gfs_pio_display_timers(void)
 {
-	fprintf(stderr, "gfs_pio_create  : %g sec\n", gfs_pio_create_time);
-	fprintf(stderr, "gfs_pio_open    : %g sec\n", gfs_pio_open_time);
-	fprintf(stderr, "gfs_pio_close   : %g sec\n", gfs_pio_close_time);
-	fprintf(stderr, "gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
-	fprintf(stderr, "gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
-	fprintf(stderr, "gfs_pio_read    : %g sec\n", gfs_pio_read_time);
-	fprintf(stderr, "gfs_pio_write   : %g sec\n", gfs_pio_write_time);
-	fprintf(stderr, "gfs_pio_sync    : %g sec\n", gfs_pio_sync_time);
-	fprintf(stderr, "gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
-	fprintf(stderr, "gfs_pio_set_view_section : %g sec\n",
-		gfs_pio_set_view_section_time);
-	fprintf(stderr, "gfs_stat        : %g sec\n", gfs_stat_time);
-	fprintf(stderr, "gfs_unlink      : %g sec\n", gfs_unlink_time);
+	gflog_info("gfs_pio_create  : %g sec\n", gfs_pio_create_time);
+	gflog_info("gfs_pio_open    : %g sec\n", gfs_pio_open_time);
+	gflog_info("gfs_pio_close   : %g sec\n", gfs_pio_close_time);
+	gflog_info("gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
+	gflog_info("gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
+	gflog_info("gfs_pio_read    : %g sec\n", gfs_pio_read_time);
+	gflog_info("gfs_pio_write   : %g sec\n", gfs_pio_write_time);
+	gflog_info("gfs_pio_sync    : %g sec\n", gfs_pio_sync_time);
+	gflog_info("gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
 }

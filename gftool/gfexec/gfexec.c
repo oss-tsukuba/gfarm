@@ -12,9 +12,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
 #include <gfarm/gfarm.h>
-#include <openssl/evp.h> /* "gfs_pio.h" needs this for now */
-#include "gfs_pio.h"
+
+#include "config.h"	/* gfs_profile, ... */
 
 #if !defined(WCOREDUMP) && defined(_AIX)
 #define WCOREDUMP(status)	((status) & 0x80)

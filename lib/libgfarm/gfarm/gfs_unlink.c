@@ -5,74 +5,20 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <openssl/evp.h>
+
 #include <gfarm/gfarm.h>
 
-#include "host.h"
-#include "config.h"
-#include "gfs_client.h"
-#include "gfs_pio.h"	/* gfs_profile */
-#include "gfs_misc.h"	/* gfs_unlink_replica_internal() */
 #include "timer.h"
+#include "gfutil.h"
 
-/*  */
-
-/* XXX - should provide parallel version. */
-char *
-gfarm_foreach_copy(char *(*op)(struct gfarm_file_section_copy_info *, void *),
-	const char *gfarm_file, const char *section, void *arg, int *nsuccessp)
-{
-	char *e, *e_save = NULL;
-	int j, ncopies, nsuccess = 0;
-	struct gfarm_file_section_copy_info *copies;
-
-	e = gfarm_file_section_copy_info_get_all_by_section(
-		gfarm_file, section, &ncopies, &copies);
-	if (e == NULL) {
-		for (j = 0; j < ncopies; j++) {
-			e = op(&copies[j], arg);
-			if (e == NULL)
-				++nsuccess;
-			if (e_save == NULL)
-				e_save = e;
-		}
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
-	}
-	if (nsuccessp != NULL)
-		*nsuccessp = nsuccess;
-
-	return (e_save != NULL ? e_save : e);
-}
-
-char *
-gfarm_foreach_section(char *(*op)(struct gfarm_file_section_info *, void *),
-	const char *gfarm_file, void *arg,
-	char *(*undo_op)(struct gfarm_file_section_info *, void *))
-{
-	char *e, *e_save = NULL;
-	int i, nsections;
-	struct gfarm_file_section_info *sections;
-
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
-	    &nsections, &sections);
-	if (e == NULL) {
-		for (i = 0; i < nsections; i++) {
-			e = op(&sections[i], arg);
-			if (e != NULL && undo_op) {
-				for (; i >= 0; --i)
-					undo_op(&sections[i], arg);
-				break;
-			}
-			if (e_save == NULL)
-				e_save = e;
-		}
-		gfarm_file_section_info_free_all(nsections, sections);
-	}
-	return (e_save != NULL ? e_save : e);
-}
+#include "host.h"
+#include "config.h"	/* gfs_profile */
+#include "gfs_client.h"
+#include "gfs_misc.h"	/* gfs_unlink_replica_internal() */
 
 /*  */
 
@@ -143,7 +89,7 @@ gfs_unlink_check_perm(char *gfarm_file)
 	return (e);
 }
 
-double gfs_unlink_time;
+static double gfs_unlink_time;
 
 char *
 gfs_unlink_internal(const char *gfarm_file)
@@ -516,4 +462,10 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 	gfarm_strings_free_deeply(nhosts, canonical_hostnames);
 	free(gfarm_file);
 	return (NULL);
+}
+
+void
+gfs_unlink_display_timers(void)
+{
+	gflog_info("gfs_unlink      : %g sec\n", gfs_unlink_time);
 }

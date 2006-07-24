@@ -1,13 +1,13 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <openssl/evp.h> /* "gfs_pio.h" needs this */
 
 #include <gfarm/gfarm.h>
 
 #include "timer.h"
+#include "gfutil.h"
 
-#include "gfs_pio.h"
+#include "config.h"
 #include "gfs_misc.h"
 
 char *
@@ -26,7 +26,7 @@ gfs_stat_size_canonical_path(
 
 	s = 0;
 	for (i = 0; i < nsections; i++) {
-		e = gfs_check_section_busy_by_finfo(&sections[i]);
+		e = gfs_file_section_info_check_busy(&sections[i]);
 		if (e_save == NULL)
 			e_save = e;
 		s += sections[i].filesize;
@@ -85,7 +85,7 @@ gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 	return (e);
 }
 
-double gfs_stat_time;
+static double gfs_stat_time;
 
 char *
 gfs_stat(const char *path, struct gfs_stat *s)
@@ -200,4 +200,10 @@ gfs_stat_index(char *gfarm_url, int index, struct gfs_stat *s)
 	sprintf(section, "%d", index);
 
 	return (gfs_stat_section(gfarm_url, section, s));
+}
+
+void
+gfs_stat_display_timers(void)
+{
+	gflog_info("gfs_stat        : %g sec\n", gfs_stat_time);
 }

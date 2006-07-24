@@ -1,5 +1,11 @@
 /*
  * $Id$
+ *
+ * This defines internal structure of gfs_pio module.
+ *
+ * Only gfs_pio_{global,section}.c, gfs_pio_{local,remote}.c and gfs_pio.c
+ * are allowed to include this header file.
+ * Every other modules shouldn't include this.
  */
 
 struct stat;
@@ -52,15 +58,6 @@ struct gfs_file {
 	struct gfarm_path_info pi;
 };
 
-char *gfs_check_section_busy_by_finfo(struct gfarm_file_section_info *);
-char *gfs_check_section_busy(char *, char *);
-char *gfs_check_section_checksum_unknown_by_finfo(
-	struct gfarm_file_section_info *);
-char *gfs_unlink_section_internal(const char *, const char *);
-char *gfs_unlink_every_other_replicas(
-	const char *, const char *, const char *);
-char *gfs_chmod_internal(struct gfarm_path_info *, gfarm_mode_t, char **);
-
 char *gfs_pio_close_internal(GFS_File);
 char *gfs_pio_set_view_default(GFS_File);
 char *gfs_pio_set_view_global(GFS_File, int);
@@ -68,18 +65,9 @@ char *gfs_pio_open_local_section(GFS_File, int);
 char *gfs_pio_open_remote_section(GFS_File, char *, int);
 
 void gfs_pio_set_calc_digest(GFS_File);
-void gfs_pio_unset_calc_digest(GFS_File);
 int gfs_pio_check_calc_digest(GFS_File);
 
 struct gfs_connection;
-
-char *gfarm_foreach_copy(
-	char *(*)(struct gfarm_file_section_copy_info *, void *),
-	const char *, const char *, void *, int *);
-char *gfarm_foreach_section(
-	char *(*)(struct gfarm_file_section_info *, void *),
-	const char *, void *,
-	char *(*)(struct gfarm_file_section_info *, void *));
 
 struct gfs_storage_ops {
 	char *(*storage_close)(GFS_File);
@@ -93,9 +81,6 @@ struct gfs_storage_ops {
 	    size_t *, unsigned char *, file_offset_t *);
 	int (*storage_fd)(GFS_File);
 };
-
-#define GFS_DEFAULT_DIGEST_NAME	"md5"
-#define GFS_DEFAULT_DIGEST_MODE	EVP_md5()
 
 struct gfs_file_section_context {
 	struct gfs_storage_ops *ops;
@@ -129,15 +114,3 @@ struct gfs_file_section_context {
  * switching from reading to writing:
  *	usually, seek is needed.
  */
-
-extern GFS_File gf_stdout, gf_stderr;
-extern int gf_profile;
-extern int gf_on_demand_replication;
-extern int gf_hook_default_global;
-#define gfs_profile(x) if (gf_profile == 1) { x; }
-
-extern double gfs_pio_set_view_section_time;
-extern double gfs_unlink_time;
-extern double gfs_stat_time;
-
-void gfs_display_timers();

@@ -10,8 +10,8 @@
 #include <sys/wait.h>
 
 #include <gfarm/gfarm.h>
-#include <openssl/evp.h>/* EVP_MD_CTX */
-#include "gfs_pio.h"	/* gfs_profile */
+
+#include "config.h"	/* gfs_profile */
 #include "gfs_misc.h"
 
 char *

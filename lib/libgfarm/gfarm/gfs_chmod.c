@@ -6,13 +6,10 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <openssl/evp.h>
 
 #include <gfarm/gfarm.h>
 
-#include "config.h"
 #include "gfs_client.h"
-#include "gfs_pio.h"
 #include "gfs_misc.h"
 
 enum data_mode {
@@ -315,10 +312,4 @@ gfs_chmod(const char *path, gfarm_mode_t mode)
 	e = gfs_chmod_internal(&pi, mode, NULL);
 	gfarm_path_info_free(&pi);
 	return (e);
-}
-
-char *
-gfs_fchmod(GFS_File gf, gfarm_mode_t mode)
-{
-	return (*gf->ops->view_chmod)(gf, mode);
 }
