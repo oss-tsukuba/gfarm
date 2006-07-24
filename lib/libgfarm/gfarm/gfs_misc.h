@@ -26,6 +26,7 @@ char *gfs_unlink_replica_internal(const char *, const char *, const char *);
 char *gfs_stat_size_canonical_path(char *, file_offset_t *, int *);
 char *gfs_stat_canonical_path(char *, struct gfs_stat *);
 
+/* gfs_replicate.h */
 struct gfarm_file_section_info;
 struct gfarm_file_section_copy_info;
 char *gfarm_fabricate_mode_for_replication(struct gfs_stat *, gfarm_mode_t *);

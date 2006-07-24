@@ -24,10 +24,10 @@ SRCS = \
 	agent_wrap.c agent_client.c agent_proto.c \
 	config.c conn_hash.c error.c gfm_client.c gfs_chmod.c \
 	gfs_client.c gfs_client_dir.c gfs_client_rep.c \
-	gfs_dir.c gfs_pio.c gfs_pio_global.c \
-	gfs_pio_local.c gfs_pio_remote.c gfs_pio_misc.c gfs_pio_section.c \
-	gfs_exec.c gfs_unlink.c gfs_rename.c gfs_lock.c \
-	gfs_proto.c glob.c host.c hostspec.c hostcache.c iobuffer.c \
+	gfs_dir.c gfs_exec.c gfs_lock.c gfs_pio.c gfs_pio_global.c \
+	gfs_pio_local.c gfs_pio_misc.c gfs_pio_remote.c gfs_pio_section.c \
+	gfs_proto.c gfs_rename.c gfs_replicate.c gfs_stat.c gfs_unlink.c \
+	glob.c host.c hostspec.c hostcache.c iobuffer.c \
 	import_help.c metadb_misc.c metadb_none.c metadb_sw.c \
 	param.c schedule.c \
 	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
@@ -38,10 +38,10 @@ OBJS = \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
 	config.lo conn_hash.lo error.lo gfm_client.lo gfs_chmod.lo \
 	gfs_client.lo gfs_client_dir.lo gfs_client_rep.lo \
-	gfs_dir.lo gfs_pio.lo gfs_pio_global.lo \
-	gfs_pio_local.lo gfs_pio_remote.lo gfs_pio_misc.lo gfs_pio_section.lo \
-	gfs_exec.lo gfs_unlink.lo gfs_rename.lo gfs_lock.lo \
-	gfs_proto.lo glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
+	gfs_dir.lo gfs_exec.lo gfs_lock.lo gfs_pio.lo gfs_pio_global.lo \
+	gfs_pio_local.lo gfs_pio_misc.lo gfs_pio_remote.lo gfs_pio_section.lo \
+	gfs_proto.lo gfs_rename.lo gfs_replicate.lo gfs_stat.lo gfs_unlink.lo \
+	glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
 	import_help.lo metadb_misc.lo metadb_none.lo metadb_sw.lo \
 	param.lo schedule.lo \
 	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
@@ -84,11 +84,13 @@ gfs_lock.lo: $(INC_SRCDIR)/gfarm_misc.h
 gfs_pio.lo: gfs_proto.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_client.h gfs_pio.h
-gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
+gfs_pio_misc.lo: gfs_proto.h gfs_pio.h gfs_misc.h
 gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_lock.h
 gfs_proto.lo: gfs_proto.h
-gfs_rename.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h
+gfs_rename.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h gfs_pio.h gfs_misc.h
+gfs_replicate.lo: config.h gfs_client.h gfs_lock.h gfs_pio.h gfs_misc.h schedule.h
+gfs_stat.lo: $(GFUTIL_SRCDIR)/timer.h gfs_pio.h gfs_misc.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 glob.lo: $(INC_SRCDIR)/gfarm_misc.h $(GFUTIL_SRCDIR)/gfutil.h
 host.lo: hostspec.h host.h
