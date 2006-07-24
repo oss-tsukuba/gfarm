@@ -5,10 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+
 #include <gfarm/gfarm.h>
+
 #include "hash.h"
 #include "gfutil.h"
+
 #include "metadb_access.h"
+#include "path_info_cache.h"
 
 /* #define DEBUG */
 #include <stdio.h>
