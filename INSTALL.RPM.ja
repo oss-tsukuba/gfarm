@@ -249,10 +249,12 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 	# config-gfsd -t
 	prefix [--prefix]: 
-	hostname     [-h]: linux-1.example.com
-	architecture [-a]: i386-fedora3-linux
-	ncpu         [-n]: 2
-	spool directory  : /var/gfarm-spool
+	hostname       [-h]: linux-1.example.com
+	listen address [-l]: (all local IP addresses)
+	architecture   [-a]: i386-fedora3-linux
+	ncpu           [-n]: 2
+	spool directory    : /var/gfarm-spool
+	rc script name     : /etc/init.d/gfsd
 
 変更が必要な場合は [ ] のオプションで変更することができます．
 ただし，スプール・ディレクトリについては config-gfsd コマンドの最後の引数で
@@ -261,7 +263,8 @@ client パッケージもインストールします．doc パッケージは任意です．
 
 （ヒント）prefix を設定することにより，設定ファイルの保存場所を
           <prefix>/etc/gfarm.conf に変更することができます． ただし，こ
-          の場合，それぞれのユーザが以下のように ~/.gfarmrc を設定する
+          の場合，それぞれのユーザが以下のように ~/.gfarmrc を設定するか，
+          あるいは環境変数 $GFARM_CONFIG_FILE に、そのパス名を設定する
           必要があります．
 
 		% ln -s <prefix>/etc/gfarm.conf ~/.gfarmrc

@@ -249,10 +249,12 @@ configuration.
 
 	# config-gfsd -t
 	prefix [--prefix]: 
-	hostname     [-h]: linux-1.example.com
-	architecture [-a]: i386-fedora3-linux
-	ncpu         [-n]: 2
-	spool directory  : /var/gfarm-spool
+	hostname       [-h]: linux-1.example.com
+	listen address [-l]: (all local IP addresses)
+	architecture   [-a]: i386-fedora3-linux
+	ncpu           [-n]: 2
+	spool directory    : /var/gfarm-spool
+	rc script name     : /etc/init.d/gfsd
 
 You can modify any default parameter by the option shown in [ ].
 The spool directory is only exception, and you can modify it
@@ -262,7 +264,8 @@ spool directory should be a non-shared area among file system nodes.
 Note: When 'prefix' is specified, it is possible to change the
       location of the Gfarm configuration file to
       <prefix>/etc/gfarm.conf.  In this case, every user needs to
-      create ~/.gfarmrc in their home directory.
+      create ~/.gfarmrc in their home directory, or needs to set
+      environment variable $GFARM_CONFIG_FILE to the pathname.
 
 		% ln -s <prefix>/etc/gfarm.conf ~/.gfarmrc
 
