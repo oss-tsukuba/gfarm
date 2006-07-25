@@ -6,7 +6,6 @@ hostname=
 BACKEND_PORT=50602
 GFMD_PORT=50601
 GFSD_PORT=50600
-hostname=
 
 usage()
 {
