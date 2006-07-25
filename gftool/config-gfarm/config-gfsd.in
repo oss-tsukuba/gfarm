@@ -78,11 +78,13 @@ sanity()
 
 display_params()
 {
-	echo "prefix [--prefix]: $CONFIG_PREFIX"
-	echo "hostname     [-h]: $GFSD_HOSTNAME"
-	echo "architecture [-a]: $ARCH"
-	echo "ncpu         [-n]: $NCPU"
-	echo "spool directory  : $SPOOL_DIRECTORY"
+	echo "prefix   [--prefix]: $CONFIG_PREFIX"
+	echo "hostname       [-h]: $GFSD_HOSTNAME"
+	echo "listen address [-l]: `if [ x$LISTEN_ADDRESS != x ]; then echo $LISTEN_ADDRESS; else echo '(all local IP addresses)'; fi`"
+	echo "architecture   [-a]: $ARCH"
+	echo "ncpu           [-n]: $NCPU"
+	echo "spool directory    : $SPOOL_DIRECTORY"
+	echo "rc script name     : $RC_DIR/$RC_NAME"
 
 	sanity
 	exit 0
@@ -100,6 +102,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		GFSD_HOSTNAME=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		LISTEN_ADDRESS=$1
 		;;
 	  -n) shift; [ $# -ge 1 ] || usage
 		NCPU=$1
@@ -129,7 +134,7 @@ while [ $# -gt 0 ] ; do
 done
 
 case $# in
-0)	SPOOL_DIRECTORY=$CONFIG_PREFIX/var/gfarm-spool;;
+0)	:;; # see below
 1)	SPOOL_DIRECTORY=$1;;
 *)	usage;;
 esac
@@ -172,6 +177,22 @@ fi
 
 : ${RC_GFSD_IN="$config_dir/gfsd.in"}
 
+: ${LISTEN_ADDRESS:=""}
+
+if [ -n "$LISTEN_ADDRESS" ]; then
+	: ${SPOOL_DIRECTORY:="$CONFIG_PREFIX/var/gfarm-spool-$LISTEN_ADDRESS"}
+	: ${GFSD_EXTRA_OPTIONS:=" -l $LISTEN_ADDRESS"}
+	: ${RC_NAME:="gfsd-$LISTEN_ADDRESS"}
+	# $RC_VAR will be used as a shell variable name on *BSD ports & pkgsrc,
+	# thus, we only allow [0-9a-z_] as its value.
+	: ${RC_VAR:="`echo gfsd_$LISTEN_ADDRESS | sed 's/[^0-9a-z_]/_/g'`"}
+else
+	: ${SPOOL_DIRECTORY:="$CONFIG_PREFIX/var/gfarm-spool"}
+	: ${GFSD_EXTRA_OPTIONS:=""}
+	: ${RC_NAME:="gfsd"}
+	: ${RC_VAR:="$RC_NAME"}
+fi
+
 # -t option; display parameters
 $DISPLAY_PARAMS && display_params
 
@@ -185,7 +206,9 @@ config()
 	-e "s|@config_gfarm_prefix@|$prefix|g" \
 	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
-	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF|g" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF -r $SPOOL_DIRECTORY$GFSD_EXTRA_OPTIONS|g" \
+	-e "s|@config_gfarm_gfsd_rc_name@|$RC_NAME|g" \
+	-e "s|@config_gfarm_gfsd_rc_var@|$RC_VAR|g" \
 	-e "s|@config_gfarm_run_dir@|$RUN_DIR|g" \
 	${1+"$@"} | config_sysdep
 }
@@ -258,15 +281,8 @@ create_directory $SPOOL_DIRECTORY
 
 mkcnf_gfsd_sysdep
 
-# create configuration files
-grep -v "^spool " $GFARM_CONF > $GFARM_CONF.tmp &&
-echo spool $SPOOL_DIRECTORY >> $GFARM_CONF.tmp &&
-mv $GFARM_CONF.tmp $GFARM_CONF &&
-echo $GFARM_CONF: updated ||
-ABORT "$GFARM_CONF: cannot append spool statement"
-
 # create run scripts
-mkscript $RC_DIR/gfsd	config "$RC_GFSD_IN"
+mkscript $RC_DIR/$RC_NAME	config "$RC_GFSD_IN"
 
 # gfhost
 if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
@@ -288,10 +304,10 @@ echo gfhost $GFSD_HOSTNAME: succeeded ||
 echo >&2 "gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
-	if [ -f $RUN_DIR/gfsd.pid ]; then ctl=restart; else ctl=start; fi
-	service_add gfsd &&
-		service_ctl gfsd $ctl ||
-		ABORT "failed to $ctl gfsd"
+	if [ -f $RUN_DIR/$RC_NAME.pid ]; then ctl=restart; else ctl=start; fi
+	service_add $RC_NAME &&
+		service_ctl $RC_NAME $ctl ||
+		ABORT "failed to $ctl $RC_NAME"
 fi
 echo "$PROGNAME success"
 exit 0

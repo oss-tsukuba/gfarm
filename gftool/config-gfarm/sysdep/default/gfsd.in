@@ -9,11 +9,11 @@
 # description: Gfarm filesystem node daemon
 # processname: gfsd
 # config: @config_gfarm_gfarm_config@
-# pidfile: @config_gfarm_run_dir@/gfsd.pid
+# pidfile: @config_gfarm_run_dir@/@config_gfarm_gfsd_rc_name@.pid
 #
 ## For SuSE/United-Linux style rc.d
 ### BEGIN INIT INFO
-# Provides: gfsd
+# Provides: @config_gfarm_gfsd_rc_name@
 # Required-Start: $network $syslog
 # Required-Stop: $network $syslog
 # Default-Start: 3 5
@@ -22,7 +22,7 @@
 ### END INIT INFO
 
 PROG="gfsd"
-FILE=$PROG
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 CONF="@config_gfarm_gfarm_config@"
 DAEMON="@config_gfarm_prefix@/sbin/$PROG"

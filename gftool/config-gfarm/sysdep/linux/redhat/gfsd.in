@@ -7,7 +7,7 @@
 #
 # processname: gfsd
 # config: @config_gfarm_gfarm_config@
-# pidfile: @config_gfarm_run_dir@/gfsd.pid
+# pidfile: @config_gfarm_run_dir@/@config_gfarm_gfsd_rc_name@.pid
 #
 # $Id$
 
@@ -15,7 +15,7 @@
 . /etc/rc.d/init.d/functions
 
 prog="gfsd"
-FILE=$prog
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
