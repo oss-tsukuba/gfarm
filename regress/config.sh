@@ -36,8 +36,8 @@ while	case $1 in
 		shift; true;;
 	--help)	usage;;
 	-k)	remove_environment=true; true;;
-	-h)	hostname="${2?"$PROGNAME: -h option requires <hostname> argument"}
-		hostname="-h $hostname"
+	-h)	BACKEND_HOSTNAME=${2?"$PROGNAME: -h option requires <hostname> argument"}
+		hostname="-h $BACKEND_HOSTNAME"
 		shift; true;;
 	-p)	BACKEND_PORT="${2?"$PROGNAME: -p option requires <metadata_backend_port> argument"}
 		shift; true;;
@@ -89,6 +89,9 @@ set_first_defaults_$BACKEND_TYPE
 
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
+
+: ${FQ_HOSTNAME:=`fq_hostname`}
+: ${BACKEND_HOSTNAME:="$FQ_HOSTNAME"}
 
 set_last_defaults_$BACKEND_TYPE
 
