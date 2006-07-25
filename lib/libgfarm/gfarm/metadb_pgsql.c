@@ -1063,7 +1063,7 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 #define COPY_BINARY(data, buf, residual, msg) { \
 	if (sizeof(data) > residual) \
 		gflog_fatal(msg ": %d bytes needed, but only %d bytes", \
-		    sizeof(data), residual); \
+		    (int)sizeof(data), residual); \
 	memcpy(&(data), buf, sizeof(data)); \
 	buf += sizeof(data); \
 	residual -= sizeof(data); \
