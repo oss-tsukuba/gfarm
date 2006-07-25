@@ -1,5 +1,6 @@
 @PREFIX@/bin/config-gfarm
 @PREFIX@/bin/gfdump
+@PREFIX@/bin/gfusage
 @PREFIX@/sbin/gfmd
 @PREFIX@/share/gfarm/config/bdb.DB_CONFIG.in
 @PREFIX@/share/gfarm/config/config-gfarm.ldap

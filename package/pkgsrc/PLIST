@@ -41,6 +41,7 @@ bin/gfsplck
 bin/gfssh
 bin/gfsshl
 bin/gfstat
+bin/gfusage
 bin/gfwhere
 bin/gfwhoami
 bin/thput-gfpio
@@ -92,6 +93,7 @@ man/ja_JP.eucJP/man1/gfsched.1
 man/ja_JP.eucJP/man1/gfsetdir.1
 man/ja_JP.eucJP/man1/gfssh.1
 man/ja_JP.eucJP/man1/gfstat.1
+man/ja_JP.eucJP/man1/gfusage.1
 man/ja_JP.eucJP/man1/gfwc.1
 man/ja_JP.eucJP/man1/gfwhere.1
 man/ja_JP.eucJP/man1/gfwhoami.1
@@ -186,6 +188,7 @@ man/man1/gfsched.1
 man/man1/gfsetdir.1
 man/man1/gfssh.1
 man/man1/gfstat.1
+man/man1/gfusage.1
 man/man1/gfwc.1
 man/man1/gfwhere.1
 man/man1/gfwhoami.1
@@ -282,6 +285,7 @@ share/doc/html/gfarm/en/ref/man1/gfrun.1.html
 share/doc/html/gfarm/en/ref/man1/gfsched.1.html
 share/doc/html/gfarm/en/ref/man1/gfsetdir.1.html
 share/doc/html/gfarm/en/ref/man1/gfstat.1.html
+share/doc/html/gfarm/en/ref/man1/gfusage.1.html
 share/doc/html/gfarm/en/ref/man1/gfwc.1.html
 share/doc/html/gfarm/en/ref/man1/gfwhere.1.html
 share/doc/html/gfarm/en/ref/man1/gfwhoami.1.html
@@ -368,6 +372,7 @@ share/doc/html/gfarm/ja/ref/man1/gfrun.1.html
 share/doc/html/gfarm/ja/ref/man1/gfsched.1.html
 share/doc/html/gfarm/ja/ref/man1/gfsetdir.1.html
 share/doc/html/gfarm/ja/ref/man1/gfstat.1.html
+share/doc/html/gfarm/ja/ref/man1/gfusage.1.html
 share/doc/html/gfarm/ja/ref/man1/gfwc.1.html
 share/doc/html/gfarm/ja/ref/man1/gfwhere.1.html
 share/doc/html/gfarm/ja/ref/man1/gfwhoami.1.html

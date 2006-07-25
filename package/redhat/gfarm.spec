@@ -260,6 +260,7 @@ fi
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
 %{man_prefix}/man1/gfstat.1.gz
+%{man_prefix}/man1/gfusage.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
@@ -343,6 +344,7 @@ fi
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
 %{man_prefix}/ja/man1/gfstat.1.gz
+%{man_prefix}/ja/man1/gfusage.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
@@ -437,6 +439,7 @@ fi
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
 %{html_prefix}/en/ref/man1/gfstat.1.html
+%{html_prefix}/en/ref/man1/gfusage.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
@@ -523,6 +526,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %{html_prefix}/ja/ref/man1/gfstat.1.html
+%{html_prefix}/ja/ref/man1/gfusage.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
@@ -731,6 +735,7 @@ fi
 %{prefix}/sbin/gfmd
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/gfdump
+%{prefix}/bin/gfusage
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
