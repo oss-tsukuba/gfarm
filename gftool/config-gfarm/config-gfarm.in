@@ -27,11 +27,6 @@ if [ -z "$backend_default" ]; then
 fi
 BACKEND_TYPE=$backend_default
 
-for i in $backend_all
-do
-  . $config_dir/config-gfarm.$i
-done
-
 #
 #
 #
@@ -81,6 +76,12 @@ else
 	echo "$PROGNAME: cannot find a shell which supports functions" >&2
 	exit 1
 fi
+
+# load backend-dependent functions. should be done after shell detection above.
+for i in $backend_all
+do
+  . $config_dir/config-gfarm.$i
+done
 
 gen_passwd()
 {
