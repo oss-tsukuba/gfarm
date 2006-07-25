@@ -260,7 +260,12 @@ apply_configuration_ldap()
 	:
 }
 
-start_service_ldap()
+service_start_ldap()
 {
-	start_service_common ${1+"$@"}
+	service_start_common ${1+"$@"}
+}
+
+service_stop_ldap()
+{
+	service_ctl $RC_BACKEND_BASENAME stop ${1+"$@"}
 }

@@ -156,9 +156,9 @@ ABORT()
 	exit 1
 }
 
-# most $BACKEND_TYPE uses the following as "start_service_$BACKEND_TYPE"
+# most $BACKEND_TYPE uses the following as "service_start_$BACKEND_TYPE"
 # but some may not.
-start_service_common()
+service_start_common()
 {
 	if [ -f $RUN_DIR/$RC_BACKEND_BASENAME.pid ]; then
 		ctl=restart
@@ -547,7 +547,7 @@ mkscript "$RC_DIR/gfmd"			replace "$RC_GFMD_IN"
 apply_configuration_$BACKEND_TYPE
 
 if $START_SERVICE; then
-	start_service_$BACKEND_TYPE
+	service_start_$BACKEND_TYPE
 
 	if [ -f $RUN_DIR/gfmd.pid ]; then ctl=restart; else ctl=start; fi
 	service_add gfmd &&

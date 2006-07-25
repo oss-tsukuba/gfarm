@@ -431,7 +431,12 @@ _EOF_
 	fi
 }
 
-start_service_postgresql()
+service_start_postgresql()
 {
-	start_service_common ${1+"$@"}
+	service_start_common ${1+"$@"}
+}
+
+service_stop_postgresql()
+{
+	service_ctl $RC_BACKEND_BASENAME stop ${1+"$@"}
 }
