@@ -23,7 +23,6 @@ selfcheck:
 	@for backend in ${backend_candidates}; do \
 		echo "Trying -b $$backend"; \
 		${srcdir}/config.sh --prefix ${prefix} \
-		-h boaz \
 			-b $$backend --config-prefix /var/tmp/`whoami` \
 			${srcdir}/regress.sh; \
 	 done
