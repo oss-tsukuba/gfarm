@@ -2,7 +2,7 @@ fq_hostname()
 {
 	case `hostname` in
 	*.*)	hostname;;
-	*)	nslookup "`hostname`" | awk '/^Name:/ {print $2}';;
+	*)	nslookup "`hostname`" 2>/dev/null | awk '/^Name:/ {print $2}';;
 	esac
 }
 
