@@ -38,11 +38,11 @@ while	case $1 in
 	-h)	BACKEND_HOSTNAME=${2?"$PROGNAME: -h option requires <hostname> argument"}
 		hostname="-h $BACKEND_HOSTNAME"
 		shift; true;;
-	-p)	BACKEND_PORT="${2?"$PROGNAME: -p option requires <metadata_backend_port> argument"}
+	-p)	BACKEND_PORT=${2?"$PROGNAME: -p option requires <metadata_backend_port> argument"}
 		shift; true;;
-	-m)	GFMD_PORT="${2?"$PROGNAME: -m option requires <gfmd_port> argument"}
+	-m)	GFMD_PORT=${2?"$PROGNAME: -m option requires <gfmd_port> argument"}
 		shift; true;;
-	-s)	GFSD_PORT="${2?"$PROGNAME: -s option requires <gfsd_port> argument"}
+	-s)	GFSD_PORT=${2?"$PROGNAME: -s option requires <gfsd_port> argument"}
 		shift; true;;
 	-*)	echo >&2 "$PROGNAME: unknown option $1"
 		usage;;
