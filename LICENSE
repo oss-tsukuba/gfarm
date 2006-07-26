@@ -22,7 +22,7 @@ DOCUMENTATION, OR ANY DERIVATIVES THEREOF, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 
-There is the following exceptions about the terms of the license:
+There are the following exceptions about the terms of the license:
 
 All files under the lib/gfs_hook/sysdep/linux/ directory can be
 redistributed and/or modified under the terms of the GNU Lesser
