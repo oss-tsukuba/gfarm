@@ -420,7 +420,7 @@
 
 *** Problems about system call hooks.
 
-  Limitations about libgfs_hook is described in README.hook.ja.
+  Limitations about libgfs_hook is described in README.hook.en.
   Please read it instead.
   The plan to each problem in README.hook.ja is not determined yet.
 
