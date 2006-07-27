@@ -1,6 +1,29 @@
 Gfarm テストスイート
 
-0. 準備 
+0. 概要
+
+   このディレクトリでは、いくつかのテストターゲットおよびスクリプトを
+   用意しています。
+   それぞれのターゲットの用途は下記の通りです。
+
+   ・「make」、「make check」ターゲットあるいは regress.sh スクリプト
+	現在存在する gfarm 環境に対して、テストスイートを実行します。
+
+   ・「make selfcheck」ターゲット
+	PostgreSQL バックエンドと LDAP バックエンドそれぞれについて
+	自ホストだけで構成される gfarm 環境を作成し、regress.sh
+	スクリプトを実行します。
+	内部では、下記の config.sh スクリプトを呼び出しています。
+
+   ・config.sh スクリプト
+	hostname コマンドが返すホスト名および localhost の 2 つの
+	gfsd からなるテスト用の gfarm 環境を作成し、引数に与えたを
+	実行します。
+	コマンド引数を省略した場合は ./regress.sh を実行します。
+
+1. 「make」、「make check」ターゲットあるいは regress.sh スクリプト
+
+1.1. 実行に必要な準備
 
    ・システムコールをフックするための設定をします。doc/README.hook.* を
      参照して、使用する OS/シェルごとに必要な設定を行ってください。
@@ -22,20 +45,76 @@ Gfarm テストスイート
      - リモートホスト側でも、同一の gfarm.conf (あるいは .gfarmrc) が
        参照されること。
 
-1. 実行方法
+1.2. 実行方法
 
    ファイル regress/schedule にテスト対象ファイルのパス名が登録してあります。
    以下の手順でそれらのスクリプトが実行され、結果の一覧が表示されます。
 
-	$ cd regress
-	$ make (または ./regress.sh)
+   configure コマンドを実行済みの CVS 作業スペースでは、
+  「make」あるいは「make check」ターゲットを使ってください。
 
-2. regress ディレクトリの内容
+	$ cd regress
+	$ make (または「make check」)
+
+   単に checkout しただけで configure コマンド未実行の CVS 作業スペースで
+   テストスイートを走らせる場合は regress.sh スクリプトを使ってください。
+
+	$ cd regress
+	$ ./regress.sh
+
+2. 「make selfcheck」ターゲット
+
+2.1. 実行に必要な準備
+
+     - テスト対象のバイナリ中の gfexec コマンドが検索されるように、
+       .bashrc や .cshrc の中で環境変数 $PATH を設定していること。
+       (gfexec は絶対パス名の指定なしで実行されますから、.bashrc や
+	.cshrc で設定されている $PATH 上に存在する必要があります。)
+     - .bashrc や .cshrc の中で環境変数 $GFARM_CONFIG_FILE に、
+       /var/tmp/`whoami`/etc/gfarm.conf を設定していること。
+       (「make selfcheck」が内部で呼び出す config.sh は、テスト環境用の
+	gfarm.conf を /var/tmp/`whoami`/etc/ に生成します。
+	gfrcmd や gfrun コマンドで呼び出したコマンドに、この gfarm.conf
+	のパス名を伝えるために、この .bashrc や .cshrc の設定が必要です。)
+
+2.2. 実行方法
+
+   configure コマンドを実行済みの CVS 作業スペースで下記を行ないます。
+
+	$ cd regress
+	$ make selfcheck
+
+
+3. config.sh スクリプト
+
+3.1. 実行に必要な準備
+
+   2.1. 「make selfcheck」ターゲットの実行に必要な準備
+   と同じ準備が必要です。
+
+3.2. 実行方法
+
+   下記のように実行します。
+   ただし、--prefix で指定するのは、テスト対象の Gfarm がインストールされ
+   ているディレクトリ (Gfarm の configure 時に --prefix オプションで指定した
+   ディレクトリ) です。
+
+	$ cd regress
+	$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b postgresql
+	$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b ldap
+
+
+4. regress ディレクトリの内容
 
    regress.sh   引数で指定したファイルにリストされたテストプログラムを
 		順次実行して結果を表示するスクリプト
 
    schedule     regress.sh がデフォルトで参照するテストプログラムのリスト
+
+   config.sh	メタデータサーバおよび gfsd を起動して、自ホストだけからなる
+		テスト用 gfarm 環境を作成し、引数のコマンドを実行します。
+		-k オプションを与えない限り、終了後、その gfarm 環境を消去
+		します。
 
    loop.sh      regress.sh を無限回実行するスクリプト
 
