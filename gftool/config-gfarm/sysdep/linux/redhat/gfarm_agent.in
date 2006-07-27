@@ -25,6 +25,16 @@ OPTIONS="@config_gfarm_agent_option@"
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
+call_daemon()
+{
+	# initlog is deprecated and warning is displayed since Fedora Core 4.
+	if egrep -q '^[^#]*[     ]initlog' /etc/init.d/functions; then
+		initlog $INITLOG_ARGS -c "$*"
+	else
+		$*
+	fi
+}
+
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
 # same binary.
@@ -32,8 +42,7 @@ OPTIONS="@config_gfarm_agent_option@"
 start()
 {
 	echo -n "Starting $FILE:"
-	initlog $INITLOG_ARGS -c "$DAEMON -P $PIDFILE $OPTIONS" &&
-		success || failure
+	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
 	echo

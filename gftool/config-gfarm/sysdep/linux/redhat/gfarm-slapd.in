@@ -35,6 +35,16 @@ fi
 [ -f "$DAEMON" ] || exit 0
 [ -f "$CONF" ] || exit 0
 
+call_daemon()
+{
+	# initlog is deprecated and warning is displayed since Fedora Core 4.
+	if egrep -q '^[^#]*[     ]initlog' /etc/init.d/functions; then
+		initlog $INITLOG_ARGS -c "$*"
+	else
+		$*
+	fi
+}
+
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
 # same binary.
@@ -45,8 +55,7 @@ start()
 
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
-	initlog $INITLOG_ARGS -c "$DAEMON -f $CONF -h ldap://:$PORT/" &&
-		success || failure
+	call_daemon $DAEMON -f $CONF -h ldap://:$PORT/ && success || failure
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
 	echo
