@@ -360,8 +360,9 @@
   FAT and NTFS have, too.
 
   Plan to fix:
-	Currently, this limitation is part of specification.
-	Thus, we don't have a plan to relax this limitation for now.
+	Gfarm v2 doesn't have this problem, because of its spool structure.
+	In gfarm v1, this limitation is part of specification, and
+	we don't have a plan to relax this limitation.
 
 - We don't have manual pages about environment variables supported by Gfarm.
 
