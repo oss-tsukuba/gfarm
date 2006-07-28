@@ -4,6 +4,7 @@
  * This module depends on both gfs_client.c and url.c and also config.c
  */
 
+#include <sys/types.h>
 #include <sys/socket.h> /* socklen_t for "gfs_client.h" */
 #include <stdlib.h>
 #include <string.h>
