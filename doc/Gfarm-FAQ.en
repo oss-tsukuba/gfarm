@@ -23,6 +23,7 @@ Table of Contents:
      we need to do?
   2.7 "Operation not permitted" error happens when accessing or
      creating a file having execution bits.
+  2.8 Sometimes some gfarm client or gfsd stops without doing anything.
 
 3. Security
   3.1 It is safe to use Gfarm in the environment which is NOT protected by
@@ -197,6 +198,17 @@ Table of Contents:
 	or the environment variable GFARM_ARCHITECTURE.
 
 		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
+
+  2.8 Sometimes some gfarm client or gfsd stops without doing anything.
+
+	If your network interface card or your network itself has a
+	trouble more than few minutes, such symptom may happen.
+	Such possibility increases especially if you are using a wide
+	area network for communcation between a gfarm client and a server.
+	Such stopped gfarm client or gfsd is able to exit automatically
+	with an error, if you add "sockopt keepalive" setting to your
+	gfarm.conf. The config-gfarm command generates such setting
+	by default since gfarm 1.3.1.
 
 3. Security
 ***********

@@ -24,6 +24,8 @@ Science and Technology (AIST).  All Rights Reserved.
      なってしまいました．どうすればいいでしょうか？
   2.7 実行ビットの立っているファイルを作成，参照しようとすると
      Operation not permitted というエラーが発生してしまいます．
+  2.8 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
+     あるのですが？
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
@@ -194,6 +196,18 @@ Science and Technology (AIST).  All Rights Reserved.
 	して，アーキテクチャ名を指定する必要があります．
 
 		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
+
+  2.8 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
+     あるのですが？
+
+	ネットワークインターフェースカードの問題や、ネットワーク自体の
+	トラブルで、数分間によって通信が途絶した場合、このようなことが
+	起きる可能性があります。特に広域ネットワークを通して通信して
+	いる場合はこのような可能性が増えます。そのような場合、
+	gfarm.conf に「sockopt keepalive」という設定を加えることで、
+	停止したプログラムを自動的にエラーで終了させることができるよう
+	になります。Gfarm 1.3.1 以降の config-gfarm で生成した
+	gfarm.conf は、デフォルトでこの設定を含んでいます。
 
 3. セキュリティ
 ***************
