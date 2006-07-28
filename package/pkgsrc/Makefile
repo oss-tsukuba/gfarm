@@ -10,7 +10,7 @@ MAINTAINER=	soda@NetBSD.org
 HOMEPAGE=	http://datafarm.apgrid.org/
 COMMENT=	User-level grid filesystem and parallel process management
 
-GFARM_VERSION=	1.3
+GFARM_VERSION=	1.3.1
 
 USE_PKGINSTALL=	yes
 USE_TOOLS+=	gmake # NetBSD-make works too, but pkgsrc supports non-NetBSD.
