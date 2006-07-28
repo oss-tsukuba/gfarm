@@ -36,7 +36,7 @@ Table of Contents:
     OpenLDAP server?
 
 5. Limitation
-  5.1 Where are gfchmod, gfchown and gfmv?
+  5.1 Where are gfchown and gfmv?
   5.2 Can I open a file with read-write mode?
   5.3 Are file names case-sensitive in a Gfarm file system?
   5.4 Can a file name include ',' or '+'?
@@ -349,11 +349,11 @@ dbcachesize 1000000
 
 5. Limitation
 *************
-  5.1 Where are gfchmod, gfchown and gfmv?
+  5.1 Where are gfchown and gfmv?
 
 	Unfortunately, not implemented yet.  Instead, you can use
-	chmod and mv commands when LD_PRELOAD environment variable is
-	set.  For details, see README.hook.en.
+	mv commands by using syscall-hooking library.  Please read
+	README.hook.en for detail.
 
 	We plan to add these commands in the next major release.
 
