@@ -26,8 +26,8 @@
 - Filesystem metadata isn't really protected on a per-user basis.
 
   Any filesystem metadata can be modified by an user, by bypassing
-  checks in libgfarm and accessing LDAP or PostgreSQL server directly,
-  if the user is a legitimate gfarm user.
+  checks in gfarm library and accessing LDAP or PostgreSQL server
+  directly, if the user is a legitimate gfarm user.
   This only applies to users who can access gfarm.conf, because
   access to LDAP server and PostgreSQL server is protected by
   a password written in gfarm.conf file.
