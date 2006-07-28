@@ -76,7 +76,7 @@ if [ -z "$BACKEND_TYPE" ]; then
 	exit 1
 fi
 
-PATH="$prefix/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+PATH="$prefix/bin:$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin"
 export PATH
 awk=awk
 if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
