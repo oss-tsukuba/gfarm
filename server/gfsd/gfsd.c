@@ -1904,8 +1904,9 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 	size_t size;
 	int overflow = 0;
 
-#ifdef __GNUC__ /* workaround gcc warning: unused variable */
-	envp = NULL; xauth_env = NULL;
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	envp = NULL;
+	user_env = home_env =shell_env = xauth_env = NULL;
 #endif
 	gfs_server_get_request(client, "command", "siii",
 			       &path, &argc, &nenv, &flags);
