@@ -2220,6 +2220,9 @@ rpc_reply:
 		free(envp[i]);
 	for (i = 0; i < argc; i++)
 		free(argv[i]);
+	free(shell_env);
+	free(home_env);
+	free(user_env);
 	free(envp);
 	free(argv_storage);
 	free(path);
