@@ -10,6 +10,7 @@ backend_candidates=${postgresql_targets} ${ldap_targets}
 
 CONFIG_PREFIX=	/var/tmp/`whoami`
 CONFIG_OPT=	# -k
+TEST_TARGET=	${srcdir}/regress.sh
 
 # These environment settings aren't enough,
 # and .bashrc, .zshenv or .cshrc must be modified to set those environments,
@@ -19,7 +20,7 @@ CHECK_ENV=	PATH=$(prefix)/bin:$PATH
 
 check test:
 	@echo ""
-	@$(CHECK_ENV) ${srcdir}/regress.sh
+	@$(CHECK_ENV) $(TEST_TARGET)
 	@echo ""
 
 loop:
@@ -43,4 +44,4 @@ selfcheck-postgresql selfcheck-ldap:
 	${srcdir}/config.sh --prefix ${prefix} -b $$backend \
 		--config-prefix $(CONFIG_PREFIX) $(CONFIG_OPT) \
 		${srcdir}/gfs_hook.sh --prefix ${prefix} \
-			${srcdir}/regress.sh;
+			$(TEST_TARGET)
