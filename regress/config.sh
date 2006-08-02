@@ -34,7 +34,7 @@ while	case $1 in
 	-b)	BACKEND_TYPE=${2?"$PROGNAME: -b option requires <backend> argument"}
 		shift; true;;
 	--help)	usage;;
-	-k)	remove_environment=true; true;;
+	-k)	remove_environment=false; true;;
 	-h)	BACKEND_HOSTNAME=${2?"$PROGNAME: -h option requires <hostname> argument"}
 		hostname="-h $BACKEND_HOSTNAME"
 		shift; true;;
