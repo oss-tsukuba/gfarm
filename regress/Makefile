@@ -16,7 +16,8 @@ TEST_TARGET=	${srcdir}/regress.sh
 # and .bashrc, .zshenv or .cshrc must be modified to set those environments,
 # otherwise gfrcmd and gfrun may not work correctly.
 # But these settings save tests other than those.
-CHECK_ENV=	PATH=$(prefix)/bin:$PATH
+CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$PATH
+SELFCHECK_ENV=	LANG=C
 
 check test:
 	@echo ""
@@ -41,7 +42,7 @@ selfcheck:
 selfcheck-postgresql selfcheck-ldap:
 	@backend=`expr $@ : 'selfcheck-\(.*\)'`; \
 	echo "Trying -b $$backend"; \
-	${srcdir}/config.sh --prefix ${prefix} -b $$backend \
+	$(SELFCHECK_ENV) ${srcdir}/config.sh --prefix ${prefix} -b $$backend \
 		--config-prefix $(CONFIG_PREFIX) $(CONFIG_OPT) \
 		${srcdir}/gfs_hook.sh --prefix ${prefix} \
 			$(TEST_TARGET)
