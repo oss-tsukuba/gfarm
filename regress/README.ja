@@ -76,6 +76,8 @@ Gfarm テストスイート
 	gfarm.conf を /var/tmp/`whoami`/etc/ に生成します。
 	gfrcmd や gfrun コマンドで呼び出したコマンドに、この gfarm.conf
 	のパス名を伝えるために、この .bashrc や .cshrc の設定が必要です。)
+     - Linux の場合は、/usr/lib/gfarm/ 以下に、glibc-not-hidden パッケージ
+       附属の shared object がインストールされていること。
 
 2.2. 実行方法
 
