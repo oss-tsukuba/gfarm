@@ -24,6 +24,13 @@ usage()
 	exit 2
 }
 
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
 while	case $1 in
 	--prefix)
 		prefix=${2?"$PROGNAME: --prefix option requires <installation_prefix> argument"}
