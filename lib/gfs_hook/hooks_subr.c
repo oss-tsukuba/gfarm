@@ -762,6 +762,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	int sizeof_gfarm_prefix = sizeof(prefix);
 	int sizeof_prefix = sizeof_gfarm_prefix;
 	const char *path_save;
+	int errno_save = errno;
 	int is_mount_point = 0, remove_slash = 0, add_slash = 0;
 	int add_dot_slash = 0;
 	/*
@@ -778,6 +779,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	gfs_hook_disable_hook();
 	if ((access(path, F_OK) == -1 && errno == EFAULT) || *path == '\0') {
 		gfs_hook_enable_hook();
+		errno = errno_save;
 		return (0);
 	}
 	gfs_hook_enable_hook();
@@ -792,6 +794,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
 		if (!gfs_hook_init()) {
+			rrno = errno_save;
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
@@ -804,8 +807,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 			int secsize = strcspn(p, "/:");
 			int urlsize;
 
-			if (p[secsize] != ':')
+			if (p[secsize] != ':') {
+				errno = errno_save;
 				return (0); /* gfarm::foo/:bar or gfarm::foo */
+			}
 			/*
 			 * '/gfarm/~' and '/gfarm/.' will be translated
 			 * to 'gfarm:~' and 'gfarm:.', respectively.
@@ -829,6 +834,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 					free(*urlp);
 				if (sec != NULL)
 					free(sec);
+				errno = errno_save;
 				return (0); /* XXX - should return ENOMEM */
 			}
 			memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
@@ -859,8 +865,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 			GFARM_MALLOC_ARRAY(*urlp, 
 				sizeof_gfarm_prefix - 1 + add_slash
 				+ strlen(path + remove_slash) + 1);
-			if (*urlp == NULL)
+			if (*urlp == NULL) {
+				errno = errno_save;
 				return (0) ; /* XXX - should return ENOMEM */
+			}
 			/*
 			 * the reason why we don't just call strcpy(*url, path)
 			 * is because the path may be "gfarm@path/name".
@@ -874,8 +882,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 
 			gfs_hook_set_current_view_default();
 		}
-		if (!set_received_prefix(path_save))
+		if (!set_received_prefix(path_save)) {
+			errno = errno_save;
 			return (0);
+		}
 		return (1);
 	}
 	/* The current directory is in the Gfarm file system */
@@ -890,8 +900,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 		GFARM_MALLOC_ARRAY(*urlp, 
 			sizeof_gfarm_prefix + add_dot_slash +
 			strlen(path_save));
-		if (*urlp == NULL)
+		if (*urlp == NULL) {
+			errno = errno_save;
 			return (0) ; /* XXX - should return ENOMEM */
+		}
 		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
 		if (add_dot_slash)
 			strcpy(*urlp + sizeof_gfarm_prefix - 1, "./");
@@ -904,6 +916,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	if (*path_save != '/'
 	    && (path = gfs_hook_is_mount_point_relative(path_save))) {
 		if (!gfs_hook_init()) {
+			errno = errno_save;
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
@@ -922,8 +935,10 @@ gfs_hook_is_url(const char *path, char **urlp)
 		GFARM_MALLOC_ARRAY(*urlp,
 			sizeof_gfarm_prefix - 1 + add_slash
 			+ strlen(path + remove_slash) + 1);
-		if (*urlp == NULL)
+		if (*urlp == NULL) {
+			errno = errno_save;
 			return (0) ; /* XXX - should return ENOMEM */
+		}
 		memcpy(*urlp, prefix, sizeof_gfarm_prefix - 1);
 		if (add_slash)
 			strcpy(*urlp + sizeof_gfarm_prefix - 1, "/");
@@ -932,6 +947,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 		/* It is not necessary to change the current view. */
 		return (1);
 	}
+	errno = errno_save;
 	return (0);
 }
 
