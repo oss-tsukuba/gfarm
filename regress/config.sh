@@ -52,10 +52,6 @@ do
 	shift
 done
 
-case $# in
-0)	set ./regress.sh;;
-esac
-
 if [ -z "$prefix" ]; then
 	echo >&2 $PROGNAME: '"--prefix <installation_prefix>" option is not set, aborted'
 	exit 1
@@ -75,6 +71,10 @@ if [ -z "$BACKEND_TYPE" ]; then
 	echo >&2 $PROGNAME: "-b <backend_type> option is necessary, aborted"
 	exit 1
 fi
+
+case $# in
+0)	set ./gfs_hook.sh --prefix "$prefix" ./regress.sh;;
+esac
 
 PATH="$prefix/bin:$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin"
 export PATH
@@ -104,18 +104,7 @@ export GFARM_CONFIG_FILE
 
 gfmkdir '~'
 
-case `uname` in
-Linux)	env LD_PRELOAD="$prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" "$@";;
-SunOS)	env LD_PRELOAD_32=$prefix/lib/libgfs_hook.so.0:/usr/lib/libresolv.so "$@";;
-HP-UX)	env LD_PRELOAD=$prefix/lib/libgfs_hook.sl "$@";;
-OSF1)	env _RLD_LIST="$prefix/lib/libgfs_hook.so.0:DEFAULT" "$@";;
-Darwin)	env DYLD_INSERT_LIBRARIES=$prefix/lib/libgfs_hook.dylib DYLD_FORCE_FLAT_NAMESPACE= "$@";;
-NetBSD|FreeBSD)
-	env LD_PRELOAD=$prefix/lib/libgfs_hook.so.0 "$@";;
-*)	echo >&2 "WARNING: unknown OS type `uname`. gfs_hook test may fail."
-	env LD_PRELOAD=$prefix/lib/libgfs_hook.so.0 "$@";;
-esac
-
+"$@"
 
 service_ctl gfsd-localhost stop
 service_ctl gfsd-`hostname` stop
