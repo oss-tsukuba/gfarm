@@ -794,7 +794,7 @@ gfs_hook_is_url(const char *path, char **urlp)
 	    memcmp(path, gfarm_url_prefix_for_root,
 	    sizeof(gfarm_url_prefix_for_root) - 1) == 0) {
 		if (!gfs_hook_init()) {
-			rrno = errno_save;
+			errno = errno_save;
 			return (0); /* don't perform gfarm operation */
 		}
 		/*
