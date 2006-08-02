@@ -6,6 +6,7 @@ hostname=
 BACKEND_PORT=50602
 GFMD_PORT=50601
 GFSD_PORT=50600
+wait_seconds=3
 
 usage()
 {
@@ -103,6 +104,7 @@ set_last_defaults_$BACKEND_TYPE
 
 config-gfarm --prefix $CONFIG_PREFIX -b $BACKEND_TYPE $hostname \
 	-p $BACKEND_PORT -m $GFMD_PORT -s $GFSD_PORT 
+sleep $wait_seconds
 config-gfsd --prefix $CONFIG_PREFIX -l `hostname` $hostname
 config-gfsd --prefix $CONFIG_PREFIX -l localhost -h localhost
 
