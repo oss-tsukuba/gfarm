@@ -106,7 +106,7 @@ gfmkdir '~'
 
 case `uname` in
 Linux)	env LD_PRELOAD="$prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" "$@";;
-SunOS)	env LD_PRELOAD_32=$prefix/lib/libgfs_hook.so.0 "$@";;
+SunOS)	env LD_PRELOAD_32=$prefix/lib/libgfs_hook.so.0:/usr/lib/libresolv.so "$@";;
 HP-UX)	env LD_PRELOAD=$prefix/lib/libgfs_hook.sl "$@";;
 OSF1)	env _RLD_LIST="$prefix/lib/libgfs_hook.so.0:DEFAULT" "$@";;
 Darwin)	env DYLD_INSERT_LIBRARIES=$prefix/lib/libgfs_hook.dylib DYLD_FORCE_FLAT_NAMESPACE= "$@";;
