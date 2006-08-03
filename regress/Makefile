@@ -16,7 +16,7 @@ TEST_TARGET=	${srcdir}/regress.sh
 # and .bashrc, .zshenv or .cshrc must be modified to set those environments,
 # otherwise gfrcmd and gfrun may not work correctly.
 # But these settings save tests other than those.
-CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$PATH
+CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$$PATH
 SELFCHECK_ENV=	LANG=C
 
 check test:
