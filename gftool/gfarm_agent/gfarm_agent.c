@@ -1507,6 +1507,7 @@ usage(void)
 	fprintf(stderr, "\t-c\t\tGenerate C-shell commands\n");
 	fprintf(stderr, "\t-d\t\tdebug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
+	fprintf(stderr, "\t-m\t\tmaster mode\n");
 	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-s\t\tGenerate Bourne shell commands\n");
 	fprintf(stderr, "\t-v\n");
