@@ -74,6 +74,15 @@ syslog のファシリティを指定します。
 </varlistentry>
 
 <varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>単一の <command>gfarm_agent</command> を利用する場合に利用可能です。
+このオプションを利用するとパス情報もキャッシュするようになるため、
+メタデータサーバへのアクセス数が減り、高速になります。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-p</option> <parameter>ポート番号</parameter></term>
 <listitem>
 <para>gfarm_agent が利用する TCP のポート番号を指定します。</para>

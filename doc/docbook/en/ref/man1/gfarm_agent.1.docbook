@@ -73,6 +73,16 @@ configuration file.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>specifies the master mode.  This improves metadata access
+  performance by caching the path information.  This option is only
+  available when there is a single <command>gfarm_agent</command>
+  running.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-p</option> <parameter>port-number</parameter></term>
 <listitem>
 <para>specifies a port number of TCP used by gfarm_agent.</para>
