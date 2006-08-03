@@ -6005,11 +6005,6 @@
 	* lib/libgfarm/gfarm/gfs_pio_global.c (gfs_pio_view_global_adjust):
 	take care of the case that file fragment need to be moved more than one.
 
-2005-01-22  Osamu Tatebe  <o.tatebe@aist.go.jp>
-
-	* lib/libgfarm/gfarm/auth_common_gsi.c:
-	Introduce 'GFARM_GSI_MAPFILE' to specify a user mapfile.
-
 2005-01-21  Osamu Tatebe  <o.tatebe@aist.go.jp>
 
 	* lib/libgfarm/gfsl/session.c:
