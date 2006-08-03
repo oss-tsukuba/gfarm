@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM_AGENT" "1" "06 June 2006" "Gfarm" ""
+.TH "GFARM_AGENT" "1" "03 August 2006" "Gfarm" ""
 
 .SH NAME
 gfarm_agent \- Gfarm メタデータキャッシュサーバ
@@ -41,6 +41,11 @@ syslog のファシリティを指定します。
 .TP
 \fB-f \fI設定ファイル\fB\fR
 起動時に読み込む設定ファイルを指定します。
+.TP
+\fB-m\fR
+単一の \fBgfarm_agent\fR を利用する場合に利用可能です。
+このオプションを利用するとパス情報もキャッシュするようになるため、
+メタデータサーバへのアクセス数が減り、高速になります。
 .TP
 \fB-p \fIポート番号\fB\fR
 gfarm_agent が利用する TCP のポート番号を指定します。
