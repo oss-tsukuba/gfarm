@@ -35,7 +35,8 @@ selfcheck:
 		exit 1; \
 	 fi;
 	@for backend in ${backend_candidates}; do \
-		$(MAKE) -f $(srcdir)/Makefile selfcheck-$${backend}; \
+		$(MAKE) -f $(srcdir)/Makefile selfcheck-$${backend} || \
+			exit $$?; \
 	 done
 	@echo ""
 
