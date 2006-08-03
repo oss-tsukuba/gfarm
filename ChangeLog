@@ -1,3 +1,979 @@
+2006-08-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: revert previous change,
+	because documents of gfusage haven't merged into GNEO branch yet.
+
+	* package/redhat/gfarm.spec: add documents of gfusage
+
+	* package/redhat/gfarm.spec: add gfusage
+
+	* package/redhat/gfarm.spec: one missed change in previous commit
+
+	* package/redhat/gfarm.spec:
+	use "gneo-gfarm" instead of "gfarm" as RPM package name and source tarball name
+
+	* regress/Makefile:
+	set "LANG=C", otherwise the result of sort command may differ.
+	from [gfarm-developers:01083]
+
+	* regress/config.sh: wait 3 seconds before invoking config-gfsd,
+	because "FATAL:  the database system is starting up" error happend
+	with PostgreSQL backend in [gfarm-developers:01080]
+
+	* package/redhat/gfarm.spec: add commands under gneo_gfextra
+
+	* regress/config.sh:
+	shell function ABORT is needed to use config-gfarm.$BACKEND_TYPE and
+	config-gfarm.sysdep, from error message in [gfarm-developers:01074]
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention that OS-supplied "tar" command and "pax" command don't work
+	on Solaris, because of lack of fsat(2) system call hook.
+
+	* lib/gfs_hook/hooks_subr.c: fix typo in previous commit
+
+	* lib/gfs_hook/hooks_subr.c:
+	Do not break `errno' in gfs_hook_is_url() function,
+	if it returns 0 (i.e. not gfarm hook, but native system call case).
+	This fixes a problem that mkdir(1) on Solaris 9 return 2 as its exit code,
+	even if the mkdir(2) call succeed.
+	The mkdir(1) command is checking `errno' variable after its mkdir(2) call
+	regardless whether mkdir(2) return -1 or not.
+
+	* regress/Makefile:
+	add $(TEST_TARGET) variable to specify which case will be tested.
+
+	* regress/Makefile, regress/README.ja:
+	add "make selfcheck-postgresql" and "make selfcheck-ldap" targets
+	to test particular backend only.
+
+	* regress/config.sh, regress/gfs_hook.sh:
+	split gfs_hook environment settings into independent script (gfs_hook.sh)
+
+	* regress/config.sh:
+	libresolv.so is necessary on Solaris, as written in README.hook.*
+
+	* gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/gfsd.in, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/debian/gfsd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, gftool/config-gfarm/sysdep/linux/suse/gfsd.in, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/gfsd.in, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/gfsd.in:
+	merge changes of gfarm_v1 main trunk on 02 August, 2006.
+
+	* regress/README.ja: mention glibc-not-hidden package on Linux
+
+	* regress/config.sh: make "-k" option actually work
+
+2006-07-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfutil/logutil_th.c:
+	fix race condition about calling pthread_setspecific()
+
+	* server/gfsd/statfs.c:
+	fix disk space calculation of statvfs() on filesystems
+	which fragment size != block size, e.g. FFS on *BSDs.
+
+	* server/gfsd/gfsd.c:
+	workaround gcc warning: might be used uninitialized
+
+	* server/gfsd/gfsd.c: fix memory leak
+	(not really fatal, because this only happens when gfsd is invoked from gfrcmd)
+
+2006-07-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/config.sh:
+	add $PATH before system paths, to use dynamically linked binaries
+	on FreeBSD before 5 and NetBSD before 2
+
+	* lib/libgfarm/gfarm/gfs_client_dir.c:
+	FreeBSD-4.11 needs <sys/types.h> before including <sys/socket.h>
+
+2006-07-28  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* server/gfsd/gfsd.c (gfs_server_readex): correct iosize for O_DIRECT.
+
+2006-07-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile, package/pkgsrc/Makefile, package/redhat/gfarm.spec, package/solaris/build:
+	change gfarm version form 1.3 to 1.3.1
+
+	* lib/libgfarm/gfarm/gfs_replicate.c:
+	fix portability problem: <sys/stat.h> is needed.
+	found on FreeBSD
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	filesystem case insensitivity isn't a problem in gfarm v2,
+	pointed out by Yamamoto-san in [gfarm-developers:01046]
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja: there is gfchmod command now.
+
+	* doc/Gfarm-FAQ.ja, doc/Gfarm-FAQ.en: add "sockopt keepalive"
+
+	* doc/KNOWN_PROBLEMS.ja: wording
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	replace "libgfarm" by "gfarm library"
+
+2006-07-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/README.ja:
+	record the way to use "make selfcheck" target and "config.sh" command,
+	from [gfarm-developers:00995] and [gfarm-developers:00997]
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	don't use "initlog" command if /etc/init.d/functions doesn't used it.
+	this suppress the following messages since Fedora Core 4:
+	WARNING: initlog is deprecated and will be removed in a future release
+
+2006-07-27  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: updated to 1.3.1
+
+2006-07-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* LICENSE: fix about singular vs plural about license exceptions
+
+	* doc/KNOWN_PROBLEMS.en: more fix about the problem in previous commit
+
+	* doc/KNOWN_PROBLEMS.en: point README.hook.en instead of README.hook.ja
+
+	* doc/KNOWN_PROBLEMS.en: add missed entry in the translation
+
+	* doc/KNOWN_PROBLEMS.en: translate KNOWN_PROBLEMS into English.
+
+	* doc/KNOWN_PROBLEMS.ja:
+	- change some plans of fix in gfarm v1 from "not decided" to "no plan"
+	- modify expression about per-user basis protection of metadata
+	- clarify description about a problem of remove operation vs. garbage files
+	- add FAT and NTFS to the description about case insensitive filesystem problem
+	- modify description about "fork safe" problem, by reflecting the comment
+	  by tatebe-san in [gfarm-cvs:08217] and [gfarm-cvs:08219]
+	- add description about sharedsecret authentication failure
+	  from [gfarm-developers:00806] ... [gfarm-developers:00816] by Yamamoto-san
+	  and [gfarm-developers:00836] from Tatebe-san
+
+2006-07-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/config.sh: typo
+
+	* regress/config.sh: don't do same thing twice
+
+	* regress/config.sh: need to set $FQ_HOSTNAME to make LDAP backend work
+
+	* regress/Makefile: forgot to remove temporary option
+
+	* regress/Makefile: test LDAP as well as PostgreSQL
+
+	* regress/config.sh: add various options
+
+	* regress/Makefile, regress/config.sh:
+	add "make selfcheck" target which configures self test environment, and invokes
+	regression tests.
+
+	But the self test environment assumes that ~/.bashrc, ~/.zshrc or ~/.cshrc
+	does the following settings:
+	- set $PATH environment variable so that "gfexec" command of the tested
+	  binary image can be found.
+	- set $GFARM_CONFIG_FILE environment variable to "/var/tmp/`whoami`/gfarm.conf"
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	provide "service_stop_$BACKEND" for regression test
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, gftool/config-gfarm/sysdep/linux/suse/gfsd.in, gftool/config-gfarm/sysdep/netbsd/gfsd.in, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/sysdep/default/gfsd.in, gftool/config-gfarm/sysdep/freebsd/gfsd.in, gftool/config-gfarm/sysdep/linux/debian/gfsd.in:
+	changes for "make selfcheck" target of regression test as follows:
+	- support -l option which specifies listen address
+	- do not rewrite gfarm.conf, and use -r option of gfsd top specify spool root.
+
+	* gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep:
+	do not display warning message, when hostname cannot be resolved by DNS.
+
+	* gftool/config-gfarm/config-gfarm.in:
+	load backend-dependent functions after shell type detection,
+	instead of before.
+
+	* lib/libgfarm/gfarm/gfs_stat.c:
+	<sys/time.h> is necessary to use gettimeofday(),
+	from Yamamoto-san in [gfarm-developers:00973]
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c: fix LP64 portability problem,
+	from Yamamoto-san in [gfarm-developers:00973]
+
+2006-07-25  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* debian/gfmd.manpages, debian/gfmd.install, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/gfarm-server.files:
+	add gfusage
+
+	* man/ja/man1/gfusage.1, man/man1/gfusage.1:
+	gfusage - display Gfarm filesystem space usage
+
+	* doc/html/ja/ref/index.html, doc/html/ja/ref/man1/gfusage.1.html, doc/html/en/ref/index.html, doc/html/en/ref/man1/gfusage.1.html:
+	add gfusage
+
+	* doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfusage.1.docbook, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfusage.1.docbook:
+	gfusage - display Gfarm filesystem space usage
+
+2006-07-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gfptool/gfsplck/Makefile, gfptool/gfsplck/gfsplck.c, gftool/gfexec/Makefile, gftool/gfexec/gfexec.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_rename.c, lib/libgfarm/gfarm/gfs_replicate.c, lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/url.c:
+	gfs_pio.h is really private header among gfs_pio_{global,section}.c,
+	gfs_pio_{local,remote}.c and gfs_pio.c.
+	thus, don't let other modules include gfs_pio.h.
+	instead, move interface definitions from gfs_pio.h to config.h and gfs_misc.h.
+
+	also, move some functions to more appropriate place as follows:
+	gfs_display_timer(): gfs_pio.c -> config.c
+	gfarm_redirect_file(): config.c -> gfs_pio_section.c
+	gfs_fchmod(): gfs_chmod.c -> gfs_pio.c
+	gfs_check_section_{checksum_unknown,busy}*(): gfs_pio_section.c -> metadb_misc.c
+		those functions are renamed to
+		gfs_file_section{,_info}_{check,set}_{checksum_unknown,busy}().
+	gfarm_foreach_copy(), gfarm_foreach_section(): gfs_unlink.c -> metadb_misc.c
+
+	* doc/KNOWN_PROBLEMS.ja: clarify what trouble will happen with fork(2)
+
+	* gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in:
+	enable "setsockopt keepalive" by default, discussed in the meeting today
+
+	* lib/libgfarm/gfarm/path_info_cache.c:
+	include "path_info_cache.h" to check function prototype consistency
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_misc.c:
+	move gfarm_url_fragment_cleanup() from metadb_misc.c to gfs_unlink.c,
+	because the latter is more appropriate place.
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_replicate.c, lib/libgfarm/gfarm/gfs_stat.c:
+	- move gfs_stat() and related functions from gfs_pio_misc.c to gfs_stat.c
+	- move replication related functions from gfs_pio_misc.c to gfs_replicate.c
+
+	* lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_rename.c:
+	remove unused functions
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_rename.c:
+	move gfs_rename_old() from gfs_pio_misc.c to gfs_rename.c
+
+2006-07-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/schedule, regress/gfs_hook/tool/mv/dir.sh, regress/gfs_hook/tool/mv/empty-dir.sh:
+	add simple test cases to move a directory
+
+	* lib/libgfarm/gfarm/gfs_client_udp.c:
+	this file hasn't been used since 2003-08-12 when parallel authentication was
+	implemented.
+
+2006-07-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c, server/gfmd/gfmd.c:
+	report error code of xxx_connection_free(). i.e. xxx_proto_flush() and close().
+
+2006-07-21  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* gftool/Makefile, gftool/gfusage/Makefile, gftool/gfusage/gfusage.c:
+	bring gfusage from main trunk
+
+	* gftool/gfusage/Makefile: add hash.h
+
+	* gftool/Makefile: add gfusage
+
+	* gftool/gfusage/gfusage.c: add Id
+
+	* gftool/gfusage/Makefile, gftool/gfusage/gfusage.c:
+	display gfarm space usage
+
+2006-07-20  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, INSTALL.RPM.en:
+	spool-directory argument of config-gfsd is now optional,
+	and the default value is /var/gfarm-spool.
+
+	* gftool/config-gfarm/config-gfsd.in:
+	make spool-directory argument optional
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	reduce difference between main trunk and GNEO
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	reduce difference between main trunk and GNEO by
+	- prevent PostgreSQL 7.4 from asking password
+	  by removing "-w" option of pg_ctl, if the version is 7.4.
+	- make pg_hba.conf use netmask instead of CIDR bit length,
+	  to make it actually work with PostgreSQL 7.4
+	  (handling of CIDR bits == 0 is broken in 7.4?)
+
+	* gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/sysdep/netbsd/gfarm-pgsql.in, gftool/config-gfarm/sysdep/default/gfarm-pgsql.in, gftool/config-gfarm/sysdep/freebsd/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/debian/gfarm-pgsql.in:
+	prevent PostgreSQL 7.4 from asking password
+	by removing "-w" option of pg_ctl, if the version is 7.4.
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in:
+	- reduce difference between main trunk and GNEO.
+	- prevent PostgreSQL 7.4 from asking password
+	  by removing "-w" option of pg_ctl, if the version is 7.4.
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	- reduce difference between main trunk and GNEO.
+	- don't use "daemon" function in /etc/init.d/functions,
+	  because it may refer /var/run/${FILE}.pid
+	  instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+
+	* gftool/config-gfarm/config-gfsd.in:
+	reduce difference between main trunk and GNEO by
+	- don't "restart" the service, but "start" it,
+	  if pid file for the service doesn't exist.
+	- add --help option
+	- add "g" option to sed in config()
+
+	* gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	reduce difference between main trunk and GNEO
+
+	* gftool/config-gfarm/config-agent.in, gftool/config-gfarm/config-gfarm.in:
+	- don't "restart" the service, but "start" it,
+	  if pid file for the service doesn't exist.
+	- add --help option
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in:
+	add a comment
+
+	* gftool/config-gfarm/config-gfsd.in:
+	fix typo about $GLOBUS_LOCATION setting
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	sync comment with main trunk
+
+2006-07-19  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/schedule.c (gfarm_schedule_random_host_init):
+	plug memory leak in error case
+
+2006-07-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfchmod/gfchmod_755_file.sh:
+	test script for "gfchmod 755 <file>"
+
+	* regress/gftool/gfchmod/gfchmod_644_file.sh:
+	test script for "gfchmod 644 <file>"
+
+2006-07-19  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_proto.h:
+	reserve the protocol number of GFS_PROTO_READEX
+
+	* lib/libgfarm/gfarm/gfs_proto.h:
+	re-number the protocol number of GFS_PROTO_READEX
+
+2006-07-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/scp/scp_to_gfarm.sh:
+	test script for "scp host:file /gfarm/foo/file"
+
+	* regress/gfs_hook/tool/scp/scp_from_gfarm.sh:
+	use 'cmp -s' for comparison of files as other scripts
+
+	* regress/gfs_hook/tool/scp/scp_from_gfarm.sh:
+	test script for "scp /gfarm/foo/file host:file"
+
+2006-07-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* configure: regen
+
+	* Makefile.in, configure.ac:
+	use config-gfarm, config-agent and config-gfsd,
+	instead of gneo_gfextra/configure
+
+	* gftool/config-gfarm/config-agent.in, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in:
+	show --help option in usage
+
+	* gftool/config-gfarm/config-gfsd.in:
+	- don't "restart" the service, but "start" it,
+	  if pid file for the service doesn't exist.
+	- add --help option
+
+	add the following features for GNEO:
+	- support to mount loopback filesystem (by --lofs-size, optional)
+	  with passphrase (by --crypt, optional)
+	- support --grid-mapfile option to set $GFARM_GSI_MAPFILE
+
+	* gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in:
+	add the following feature for GNEO:
+	- add --gfmd-type, --gfsd-type, --gfmd-service and --gfsd-service options
+	  to configure GSI credential type and service.
+
+	* gftool/config-gfarm/config-agent.in:
+	- don't "restart" the service, but "start" it,
+	  if pid file for the service doesn't exist.
+	- add --help option
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	- prevent PostgreSQL 7.4 from asking password
+	  by removing "-w" option of pg_ctl, if the version is 7.4.
+	- make pg_hba.conf use netmask instead of CIDR bit length,
+	  to make it actually work with PostgreSQL 7.4
+	  (handling of CIDR bits == 0 is broken in 7.4?)
+
+	add the following feature for GNEO:
+	- support to mount loopback filesystem (by --lofs-size, optional)
+	  with passphrase (by --crypt, optional)
+
+	* gftool/config-gfarm/config-gfarm.in:
+	- don't "restart" the service, but "start" it,
+	  if pid file for the service doesn't exist.
+	- add --usage option
+
+	add the following features for GNEO:
+	- change default authentication type from "sharedsecret" to "gsi_auth"
+	- support to mount loopback filesystem (by --lofs-size, optional)
+	  with passphrase (by --crypt, optional)
+	- support --grid-mapfile option to set $GFARM_GSI_MAPFILE
+	- add --gfmd-type, --gfsd-type, --gfmd-service and --gfsd-service options
+	  to configure GSI credential type and service.
+
+	* gftool/config-gfarm/config-gfarm.ldap:
+	add the following feature for GNEO
+	- support to mount loopback filesystem (by --lofs-size, optional)
+	  with passphrase (by --crypt, optional)
+
+	* gftool/config-gfarm/sysdep/default/gfarm-pgsql.in, gftool/config-gfarm/sysdep/freebsd/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/debian/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/sysdep/netbsd/gfarm-pgsql.in:
+	prevent PostgreSQL 7.4 from asking password
+	by removing "-w" option of pg_ctl, if the version is 7.4.
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	support to mount loopback filesystem with passphrase (optional) for GNEO
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in:
+	- don't use "daemon" function in /etc/init.d/functions,
+	  because it may refer /var/run/${FILE}.pid
+	  instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+	- support to mount loopback filesystem with passphrase (optional) for GNEO
+	- prevent PostgreSQL 7.4 from asking password
+	  by removing "-w" option of pg_ctl, if the version is 7.4.
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in:
+	- don't use "daemon" function in /etc/init.d/functions,
+	  because it may refer /var/run/${FILE}.pid
+	  instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+	- support to mount loopback filesystem with passphrase (optional) for GNEO
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfsd.in:
+	- don't use "daemon" function in /etc/init.d/functions,
+	  because it may refer /var/run/${FILE}.pid
+	  instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+	- set $GFARM_GSI_MAPFILE for GNEO
+	- support to mount loopback filesystem with passphrase (optional) for GNEO
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfmd.in:
+	- don't use "daemon" function in /etc/init.d/functions,
+	  because it may refer /var/run/${FILE}.pid
+	  instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+	- set $GFARM_GSI_MAPFILE for GNEO
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in:
+	don't use "daemon" function in /etc/init.d/functions,
+	because it may refer /var/run/${FILE}.pid
+	instead of $CONFIG_PREFIX/var/run/${FILE}.pid
+
+	* gftool/config-gfarm/sysdep/linux/gneo_gfspool:
+	set $IFS and $PATH at first, due to security reason.
+	XXX - but invoking this script from sudo is still fundamentally insecure.
+
+2006-07-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/sysdep/linux/gneo_gfspool:
+	- do not do "chmod 1777" at mount time
+	- add "-mode <mode>" and "-owner <owner>" option to mkfs
+
+2006-07-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.postgresql: modify comment
+
+	* gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in:
+	fix typo, as the result, these scripts return correct exit code now.
+
+2006-07-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: add gneo_gfspool to libs subpackage,
+	because it will be invoked from both server and fsnode subpackages.
+
+	* gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	bring the following fix from gfarm v1 main trunk:
+	shell function needs to have at least one statement with bash.
+	(Although empty function does work with ash.)
+
+	* gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	shell function needs to have at least one statement with bash.
+	(Although empty function does work with ash.)
+
+	* gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in:
+	GNEO always uses host credential, even if server side is invoked with
+	non-root user privilege.
+
+	* package/redhat/gfarm.spec, package/solaris/gfarm-server.files, INSTALL.RPM.en, INSTALL.RPM.ja, debian/gfmd.install, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql, gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in, package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	merge changes of gfarm_v1 main trunk on 13 July, 2006.
+
+	* package/redhat/gfarm.spec, package/solaris/gfarm-server.files, debian/gfmd.install, package/freebsd/pkg-plist, package/pkgsrc/PLIST:
+	reflect recent changes in config-gfarm
+
+2006-07-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* server/gfsd/gfsd.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/xxx_proto.c, lib/libgfarm/gfutil/hash.c, server/gfmd/gfmd.c:
+	remvoe needless assignment to errno in integer overflow checking
+
+2006-07-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja: - update output of config-gfarm
+	- correct option to specify backend type ("-d" -> "-b")
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	move $BACKEND_DATA_DIR and $BACKEND_LOG_DIR output
+	from display_params to display_backend_params_$BACKEND_TYPE
+
+	* gftool/config-gfarm/config-gfarm.in:
+	correct message about $BACKEND_LOG_DIR
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in:
+	add "-a <auth_type>" option to config-gfarm to specify authentication type,
+	as discussed in the meeting on 2006-07-11
+
+	* gftool/gfkey/gfkey.c:
+	print warning, if both -c and -f option are specified.
+
+2006-07-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	add initialization missed in previous revision
+
+	* lib/libgfarm/gfarm/metadb_ldap.c:
+	fix missing result of checking integer overflow
+
+2006-07-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c:
+	fix warning: implicit declaration of function `getloadavg'
+	on Solaris, reported by Yamamoto-san in [gfarm-developers:00845]
+
+	* configure, include/gfarm/gfarm_config.h.in: regen
+
+	* configure.ac: check <sys/loadavg.h> for Solaris
+
+	* ns/nslib/Makefile.in, ns/nslib/bswap.c, ns/nslib/bswap.h, ns/nslib/comm.c, ns/nslib/file.c, ns/nslib/gflib.c, ns/nslib/nsclnt.c, ns/nslib/nsexec.c, ns/nslib/soc-lxdr.c, ns/nslib/soc.c, ns/nstool/Makefile, ns/nstool/file/Makefile.in, ns/nstool/file/get.c, ns/nstool/file/ns_get.c, ns/nstool/file/ns_lstat.c, ns/nstool/file/ns_mkdir.c, ns/nstool/file/ns_put.c, ns/nstool/file/ns_readdir.c, ns/nstool/file/ns_readlink.c, ns/nstool/file/ns_rename.c, ns/nstool/file/ns_stat.c, ns/nstool/file/ns_symlink.c, ns/nstool/file/ns_unlink.c, ns/nstool/file/ns_unlink_dir.c, ns/nstool/file/put.c, ns/nstool/file/stat.c, ns/Makefile, ns/gfarm/Makefile, ns/gfarm/cmd.h, ns/gfarm/cmd.l, ns/gfarm/cmd.y, ns/gfarm/gfarm.c, ns/gfarmd/Makefile.in, ns/gfarmd/gfarmd.c, ns/gfarmd/gfarmd.h, ns/gfarmd/gfd_auth.c, ns/gfarmd/gfd_cmd.h, ns/gfarmd/gfd_cmd.l, ns/gfarmd/gfd_cmd.y, ns/gfarmd/gfd_file.c, ns/gfarmd/gfd_parse.c, ns/gfarmd/symtab.c, ns/gfarmd/symtab.h, ns/gfarmd/yyerror.c, ns/include/gfarm/Makefile, ns/include/gfarm/comm.h, ns/include/gfarm/debug.h, ns/include/gfarm/gflib.h, ns/include/gfarm/ns.h, ns/include/gfarm/nsclnt.h, ns/include/gfarm/nscom.h, ns/include/gfarm/nsexec.h, ns/include/gfarm/soc-lxdr.h, ns/include/gfarm/soc.h, ns/include/gfarm/type.h:
+	remove ns from GNEO branch, consensus made at meeting on 2006-07-11
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention file/directory owner problem,
+	from [gfarm-developers:00844] by Yamamoto-san
+
+2006-07-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/import_help.c, lib/libgfarm/gfarm/stringlist.c, lib/libgfarm/gfsl/gsi.c, gftool/gfexec/gfexec.c, gftool/gfhost/gfhost.c, gftool/gfrep/gfrep.c:
+	replace realloc() with GFARM_REALLOC_ARRAY() to check integer overflow
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfutil/alloc.c:
+	add GFARM_REALLOC_ARRAY(dst, src, number) to check integer overflow of
+	realloc() arguments
+
+2006-07-11  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/KNOWN_PROBLEMS.ja: remove gfarm-ptool
+
+	* doc/KNOWN_PROBLEMS.ja: add item about the super-user
+
+2006-07-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.ja: remove already fixed problems
+
+	* include/gfarm/gfarm_error.h:
+	define gfarm_error_t as "char *" instead of "const char *" in gfarm v1 for now,
+	because the latter causes too much warnings.
+
+	* gftool/config-gfarm/sysdep/linux/gneo_gfspool: fix typo in comment
+
+	* gftool/config-gfarm/sysdep/linux/gneo_gfspool: New file.
+
+	* gftool/config-gfarm/sysdep/linux/Makefile, gftool/config-gfarm/sysdep/linux/gneo_gfspool:
+	move gneo_gfextra/bin/gneo_gfspool to gftool/config-gfarm/sysdep/linux/
+
+	* gftool/config-gfarm/gfarm.schema:
+	move gneo_gfextra/template/gfarm.schema to gftool/config-gfarm/
+
+2006-07-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* server/gfmd/gfmd.c, server/gfsd/gfsd.c, gftool/gfsched/gfsched.c, gftool/gfsck/gfsck.c, lib/gfs_hook/Makefile, lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/gfs_client_udp.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_lock.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/import_help.c, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/iobuffer.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_localfs.c, lib/libgfarm/gfarm/metadb_pgsql.c, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/stringlist.c, lib/libgfarm/gfarm/url.c, lib/libgfarm/gfarm/xxx_proto.c, lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/gfevent.c, lib/libgfarm/gfutil/hash.c, lib/libgfarm/gfutil/logutil_th.c, gftool/gfmpirun/gfmpirun.c, gftool/gfps/gfps.c, gftool/gfrcmd/gfrcmd.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfrun/gfrun.c, gftool/gfarm_agent/agent_ptable.c, gftool/gfarm_agent/gfarm_agent.c, gftool/gfdump/gfdump.c, gftool/gfexec/gfexec.c, gftool/gfhost/gfhost.c, gftool/gfls/gfls.c, gfptool/gfrepbe_client/gfrepbe_client.c, gfptool/gfrepbe_server/gfrepbe_server.c, gfptool/gfsplck/gfsplck.c, gftool/example/gfimport_fixed/gfimport_fixed.c:
+	replace malloc() with GFARM_MALLOC()/GFARM_MALLOC_ARRAY() and
+	use gfarm_size_add() and gfarm_size_mul() to check integer overflow
+
+2006-07-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/Makefile, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	merge changes of gfarm_v1 main trunk on 11 July, 2006.
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	make it possible to put database logging files on different partition
+	(for performance and recovery reasons).
+	this feature is from GNEO, but implementation is different.
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	suppress verbose output of PostgreSQL initialization as far as possible
+
+	* gftool/config-gfarm/Makefile, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.ldap, gftool/config-gfarm/config-gfarm.postgresql:
+	split backend specific part of config-gfarm into independent modules
+	(i.e. config-gfarm.postgresql and config-gfarm.ldap)
+
+2006-07-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	add GNEO specific commands from Ikezoe Hiroyuki-san @ good-day
+	with the following modification:
+	- gfscramble_param is moved to server subpackage
+	- gneo_agent and gneo_agent.sh is moved to agent subpackage
+
+	* package/redhat/gfarm.spec:
+	merge changes of gfarm_v1 main trunk on 10 July, 2006.
+
+	* package/redhat/gfarm.spec:
+	- specify %defattr to make gfarm RPM buildable by non-root user
+	- add missing include/gfarm/con.h (%{have_ns} case only) and bin/gfchmod
+	from Ikezoe Hiroyuki-san @ good-day
+
+2006-07-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep:
+	remove dead code, it's dead because it should be $BACKEND_DATA_DIR
+	instead of $LDAP_DATADIRECTORY.
+
+	the dead code was trying to use $CONFIG_PREFIX/var/gfarm-ldap on Debian,
+	instead of $CONFIG_PREFIX/var/lib/gfarm-ldap on other operating systems.
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	add more comments about the following correspondence:
+		gfs_client_connect()		<-> gfs_client_disconnect()
+		gfs_client_connection_acquire()	<-> gfs_client_connection_free()
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	really the fix problem in revision 1.36.2.6, pointed out by tatebe-san
+
+	* lib/libgfarm/gfarm/gfs_pio_misc.c:
+	fix merge botch in revision 1.36.2.4,
+	pointed out by Ikezoe Hiroyuki-san @ good-day in [gfarm-developers:00791]
+
+	* regress/regress.sh, regress/tst.sh: print test name before running it
+
+	* regress/gftool/gfkey/gfkey-cl.sh:
+	- do not remove ~/.gfarm_shared_key, and describe the reason
+	- deal with symbolic link ("-L" option for ls)
+
+2006-07-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	fix revision 1.56 differently, by splitting gfs_client_connection_dispose()
+	from gfs_client_disconnect().
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	- add a comment about previous change
+	- make gfs_client_connect_request_multiplexed() use gfs_client_disconnect() too
+
+2006-07-05  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c (gfs_client_connection_alloc):
+	hash_entry needs to be initialized to call gfs_client_connection_is_cached().
+
+2006-07-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-agent.in:
+	correct usage, from Ikezoe Hiroyuki-san @ good-day
+
+2006-07-03  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	need to decrement 'free_connections' to terminate connection_gc_internal() correctly.
+
+	* package/redhat/gfarm.spec: add dependency on %{package_name}-libs
+
+2006-07-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.ja: update status of reconnection handling
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	- split struct gfs_connection from gfarm_hash_entry_data
+	  and make it independent object in cached case (as well as uncached case),
+	  to make gfs_client_purge_from_cache() actually work.
+	  this fixes coredump of gfreg on AIST Gfarm Cluster.
+	- fix file descriptor leak which was introduced in previous my commit.
+	- general cleanup
+
+2006-07-01  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.c:
+	add chmod function entry, although it is not supported
+
+	* lib/libgfarm/gfsl/session.c: new format in gflog functions
+
+2006-07-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/conn_hash.c:
+	- fix memory leak in gfp_conn_hash_lookup(), when no entry is found
+	- reduce number of malloc() calls
+
+2006-06-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfreg/gfreg.c:
+	display error at gfs_pio_close(), this is especially important for smaller
+	files which contents are only written to a disk at closing time.
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	workaround gcc warning: `sock' might be used uninitialized in this function
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_dir.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_rename.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/schedule.c:
+	support gfsd restart
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/conn_hash.c, lib/libgfarm/gfarm/conn_hash.h, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_rename.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/schedule.c:
+	replace gfs_client_connection() API by
+	gfs_client_connection_acquire() & gfs_client_connection_free()
+	from gfarm v2 branch, as a preparation to support gfsd restart.
+
+	* regress/gfs_hook/tool/build/configure.sh:
+	need to specify CONFIG_SHELL=bash on platforms where /bin/sh isn't bash
+
+	* gftool/Makefile:
+	build gneo_agent before gneo commmand, otherwise NetBSD's make command
+	cannot resolve ../gneo_agent/gneo_ops.o in gftool/gneo/Makefile.
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_client_dir.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_rename.c:
+	rename gfs_pio_remote_mkdir_parent_canonical_path()
+	to gfs_client_mk_parent_dir(),
+	and move it from gfs_pio_remote.c to gfs_client_dir.c
+
+	* doc/KNOWN_PROBLEMS.ja:
+	mention that ":" in file/directory names may not work correctly.
+
+2006-06-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.ja:
+	mention when the problems, which were added in previous revision,
+	will be fixed. The answer is "not determined yet", though.
+
+	* doc/KNOWN_PROBLEMS.ja:
+	use EUC-JP like other Japanese documents, instead of ISO-2022-JP
+
+	* doc/KNOWN_PROBLEMS.ja:
+	mention problems which were described in [gfarm-developers:00733]
+
+	* gftool/gfchmod/Makefile, gftool/gfchmod/gfchmod.c, gftool/Makefile:
+	bring gfchmod from main trunk
+
+	* lib/libgfarm/gfarm/error.c, include/gfarm/gfarm_error.h:
+	move "gfarm_v1_gneo_nbase" tag for error handling to the HEAD of main trunk
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c:
+	fix portability problem: <sys/socket.h> is needed to use socklen_t
+
+	* doc/KNOWN_PROBLEMS.ja: mention missing man page of gfchmod
+
+	* gftool/Makefile: build gfchmod
+
+	* gftool/gfchmod/gfchmod.c: support wildcard
+
+	* include/gfarm/gfarm_error.h:
+	add gfarm_error_string() for compatibility with gfarm v2
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c:
+	correct definition of GFARM_ERR_NO_ERROR
+
+	* gftool/gfchmod/Makefile, gftool/gfchmod/gfchmod.c:
+	bring gfchmod from gfarm v2 branch
+
+2006-06-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.ja: correct inaccurate description
+
+	* doc/KNOWN_PROBLEMS.ja: wording
+
+	* doc/KNOWN_PROBLEMS.ja: wording fix
+
+	* doc/KNOWN_PROBLEMS.ja: mention missing manpages
+
+	* doc/KNOWN_PROBLEMS.ja: initial draft
+
+	* lib/libgfarm/gfutil/alloc.c, lib/libgfarm/gfutil/gfutil.h:
+	add gfarm_size_add() and gfarm_size_mul() to check integer overflow of
+	malloc() arguments.
+
+	* bench/nconnect/nconnect.c: fix gcc warning
+
+	* doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1: regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook: change date
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	-P option doesn't take "-" as its argument
+
+2006-06-26  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/agent_proto.c:
+	enable gfarm_agent to work for GNEO extension.
+
+	* gftool/gfdump/gfdump.c: enable gfdump to work for GNEO extension.
+
+2006-06-24  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfreg/gfreg.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/url.c, gftool/gfrmdir/gfrmdir.c:
+	accept path without gfarm prefix
+
+2006-06-22  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/path_info_cache.c: add GNEO extension.
+
+	* lib/libgfarm/gfarm/metadb_localfs.c:
+	enable metadb_localfs to work for GNEO extension.
+
+	* gftool/config-gfarm/gfarm.sql, lib/libgfarm/gfarm/metadb_pgsql.c:
+	enable metadb_pgsql to work for GNEO extension.
+
+2006-06-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/gfs_hook/tool/build/configure.sh:
+	use $shell instead of sh, because only bash can run configure script
+	of autoconf for now.
+
+	* regress/data/ok.sh, regress/gftool/gfrun/gfrun.sh:
+	add data/ok.sh and use it, instead of creating the script on the fly.
+
+2006-06-20  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* util/ptool/Makefile, util/ptool/gfarm-pcp, util/ptool/gfarm-prun, util/ptool/gfarm-ptool, util/ptool/pcat, util/ptool/pcp, util/ptool/pdel, util/ptool/pdiff, util/ptool/pdist, util/ptool/preplace, util/ptool/prun, regress/gftool/gfrm/0byte.sh, regress/gftool/gfrm/1byte.sh, regress/gftool/gfrm/gfrm.sh, regress/gftool/gfrmdir/rmdir.sh, regress/gftool/gfrun/gfrun-u.sh, regress/gftool/gfrun/gfrun.sh, regress/gftool/gfsched/gfsched-N.sh, regress/gftool/gfwhere/noopt.sh, regress/gftool/gfwhere/noopt_+x.sh, regress/gftool/gfwhere/noopt_-x.sh, server/gfmd/gfmd.c, server/gfsd/gfsd.c, server/gfsd/gfsd_subr.h, server/gfsd/loadavg.c, regress/gftool/gfls/notexist.out, regress/gftool/gfls/notexist.sh, regress/gftool/gfls/root.out, regress/gftool/gfls/root.sh, regress/gftool/gfmkdir/mkdir.sh, regress/gftool/gfmv/dir.sh, regress/gftool/gfmv/file.sh, regress/gftool/gfpwd/gfpwd.sh, regress/gftool/gfrcmd/gfrcmd.sh, regress/gftool/gfreg/0byte.sh, regress/gftool/gfreg/1byte.sh, regress/gftool/gfreg/gfreg-h.sh, regress/gftool/gfreg/gfreg.sh, regress/gftool/gfrep/gfrep-N2.sh, regress/gftool/gfrep/gfrep-d.sh, regress/gfs_hook/tool/mv/0byte.sh, regress/gfs_hook/tool/mv/1byte.sh, regress/gfs_hook/tool/mv/mv.sh, regress/gfs_hook/tool/pax/pax-r.sh, regress/gfs_hook/tool/pwd/pwd.sh, regress/gfs_hook/tool/rm/0byte.sh, regress/gfs_hook/tool/rm/1byte.sh, regress/gfs_hook/tool/rm/rm.sh, regress/gfs_hook/tool/rmdir/rmdir.sh, regress/gftool/gfexport/0byte.sh, regress/gftool/gfexport/1byte.sh, regress/gftool/gfexport/gfexport.sh, regress/gftool/gfhost/noopt.sh, regress/gftool/gfkey/gfkey-cl.sh, regress/gfs_hook/tool/cd/cd.sh, regress/gfs_hook/tool/chmod/chmod_644_file.sh, regress/gfs_hook/tool/chmod/chmod_755_file.sh, regress/gfs_hook/tool/cp/0byte.sh, regress/gfs_hook/tool/cp/1byte.sh, regress/gfs_hook/tool/cp/cp.sh, regress/gfs_hook/tool/cp/mode755.sh, regress/gfs_hook/tool/diff/diff-r.sh, regress/gfs_hook/tool/diff/diff.sh, regress/gfs_hook/tool/gzip/gzip-cd.sh, regress/gfs_hook/tool/gzip/gzip-d.sh, regress/gfs_hook/tool/ls/notexist.sh, regress/gfs_hook/tool/ls/root-gfarm.sh, regress/gfs_hook/tool/mkdir/mkdir-p.sh, regress/gfs_hook/tool/mkdir/mkdir.sh, package/solaris/build, package/solaris/gfarm-agent.files, package/solaris/gfarm-client.files, package/solaris/gfarm-server.files, regress/Makefile, regress/README, regress/README.ja, regress/data/0byte, regress/data/1byte, regress/data/gftest-0.0.tar.gz, regress/gfs_hook/tool/build/configure.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/tst.sh, man/man1/gfarm_agent.1, man/man1/gfreg.1, man/man5/gfarm.conf.5, man/man8/gfmd.8, man/man8/gfsd.8, ns/nstool/file/stat.c, package/freebsd/Makefile, package/freebsd/pkg-plist, package/pkgsrc/Makefile, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/redhat/gfmd.in, package/redhat/gfsd.in, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/host.h, lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/metadb_access.h, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_localfs.c, lib/libgfarm/gfarm/metadb_none.c, lib/libgfarm/gfarm/metadb_pgsql.c, lib/libgfarm/gfarm/metadb_sw.c, lib/libgfarm/gfarm/metadb_sw.h, lib/libgfarm/gfarm/path_info_cache.c, lib/libgfarm/gfarm/path_info_cache.h, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfarm/url.c, lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c, lib/libgfarm/gfutil/logutil.h, lib/libgfarm/gfutil/logutil_th.c, lib/libgfarm/gfutil/timer.h, lib/libgfarm/gfutil/tree.h, makes/config.mk.in, makes/var.mk, man/ja/man1/gfarm_agent.1, man/ja/man1/gfreg.1, man/ja/man1/gfrep.1, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, lib/gfs_hook/sysdep/solaris/i386/SYS.h, lib/gfs_hook/sysdep/solaris/sparc/SYS.h, lib/gfs_hook/sysdep/solaris/sparcv9/SYS.h, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/auth_common_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfpath.h, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/gfs_rename.c, lib/libgfarm/gfarm/gfs_unlink.c, include/gfarm/gfarm_config.h.in, include/gfarm/gfarm_error.h, include/gfarm/gfarm_misc.h, include/gfarm/gfs.h, lib/Makefile, lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_64.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/gfs_hook/lseek64.c, lib/gfs_hook/sysdep/solaris/Makefile, lib/gfs_hook/sysdep/solaris/OPENSOLARIS.LICENSE, lib/gfs_hook/sysdep/solaris/amd64/SYS.h, lib/gfs_hook/sysdep/solaris/llseek.S, gftool/gfrep/Makefile, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfsched/Makefile, gftool/gfsched/gfsched.c, gftool/gfstat/gfstat.c, gftool/gfdf/gfdf.c, gftool/gfdump/Makefile, gftool/gfdump/gfdump.c, gftool/gfexec/gfexec.c, gftool/gfhost/gfhost.c, gftool/gfls/gfls.c, gftool/gfrcmd/gfrcmd.c, gftool/gfreg/Makefile, gftool/gfreg/gfreg.c, gftool/config-gfarm/sysdep/linux/default/Makefile, gftool/config-gfarm/sysdep/linux/redhat/Makefile, gftool/config-gfarm/sysdep/linux/redhat/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfmd.in, gftool/config-gfarm/sysdep/linux/redhat/gfsd.in, gftool/config-gfarm/sysdep/linux/suse/Makefile, gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/suse/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/suse/gfarm_agent.in, gftool/config-gfarm/sysdep/netbsd/Makefile, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/gfarm-pgsql.in, gftool/config-gfarm/sysdep/netbsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/netbsd/gfarm_agent.in, gftool/config-gfarm/sysdep/osf1/Makefile, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/Makefile, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/gfarm_agent/Makefile, gftool/gfarm_agent/agent_ptable.c, gftool/gfarm_agent/gfarm_agent.c, gftool/config-gfarm/Makefile, gftool/config-gfarm/config-agent.in, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfsd.in, gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in, gftool/config-gfarm/gfarm.conf.in, gftool/config-gfarm/initial.ldif.in, gftool/config-gfarm/slapd.conf-2.0.in, gftool/config-gfarm/slapd.conf-2.1.in, gftool/config-gfarm/sysdep/aix/Makefile, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/Makefile, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/gfarm-pgsql.in, gftool/config-gfarm/sysdep/default/gfarm-slapd.in, gftool/config-gfarm/sysdep/default/gfarm_agent.in, gftool/config-gfarm/sysdep/freebsd/Makefile, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/gfarm-pgsql.in, gftool/config-gfarm/sysdep/freebsd/gfarm-slapd.in, gftool/config-gfarm/sysdep/freebsd/gfarm_agent.in, gftool/config-gfarm/sysdep/hpux/Makefile, gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/debian/Makefile, gftool/config-gfarm/sysdep/linux/debian/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/debian/gfarm-slapd.in, gftool/config-gfarm/sysdep/linux/debian/gfarm_agent.in, doc/html/en/user/Makefile, doc/html/en/user/index.html, doc/html/en/user/nfs-gfarmfs.html, doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, doc/html/ja/user/nfs-gfarmfs.html, doc/html/ja/user/smboverssh.html, gfptool/Makefile, gftool/Makefile, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfreg.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, debian/changelog, debian/control, debian/control.gsi, debian/control.non-gsi, debian/gfarm-agent.install, debian/gfarm-agent.manpages, debian/gfarm-client.install, debian/gfarm-client.manpages, debian/gfmd.install, debian/gfmd.postinst, debian/gfsd.postinst, debian/libgfarm-dev.install, debian/libgfarm.install, debian/rules, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/README.hook.en, doc/README.hook.ja, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfreg.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfreg.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, bench/fsysbench/Makefile, bench/fsysbench/fsysbench.c, configure.ac, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, LICENSE, Makefile.in, RELNOTES, configure, ChangeLog:
+	merge changes of gfarm_v1 main trunk on 15 June, 2006.
+
+2006-06-20  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.h:
+	gfs_hook_syscall_pread()/_pwrite(): correct type of return value
+
+	* lib/libgfarm/gfarm/agent_client.c:
+	use va_copy() to fix portability problem to x86_64
+
+	* lib/libgfarm/gfarm/xxx_proto.c: remove unnecessary va_copy() call
+
+2006-06-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	fix stupid mistake made in revision 1.36:
+	write_mode and priority_to_local parameters were always ignored. ;-/
+
+2006-06-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/alloc.c:
+	introduce GFARM_MALLOC(ptr) and GFARM_MALLOC_ARRAY(ptr, number)
+	as a preparation of countermeasure against integer overflow attack
+
+2006-06-14  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/agent_client.c:
+	restore state when re-connecting to the agent.  this solves the problem reported by Ishibashi-kun in [gfarm-developers:00572]
+
+2006-06-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/error.c, include/gfarm/gfarm_error.h:
+	define gfarm_error_t and GFARM_ERR_NO_ERROR to share application source code
+	(esp. regression test cases) between gfarm v1 and v2.
+
+	* package/freebsd/Makefile:
+	libpq major version is changed from 3 to 4 at upgrade of PostgreSQL to 8.0.2,
+	thus, FreeBSD-5.x since 5.5 and FreeBSD-6.x since 6.1 now use libpq.4.
+
+	* package/pkgsrc/Makefile:
+	openldap is split into openldap-server and openldap-client in pkgsrc-current
+
+	* include/gfarm/gfs.h:
+	reserve 0x20000000 of gfs_pio_open()/create() flag, to keep ABI compatibility
+	with software derived from gfarm-1.x
+
+2006-06-14  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gfs_hook/tool/rmdir/rmdir.sh
+
+	* regress/gfs_hook/tool/rmdir/rmdir.sh:
+	test script for "rmdir <directory>"
+
+	* regress/schedule: add gfs_hook/tool/build/configure.sh
+
+	* regress/tst.sh:
+	protect standard input of this test harness from test case as regress.sh revision 1.4
+
+2006-06-14  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/agent_wrap.c (gfarm_terminate):
+	do not call gfarm_agent_check().  it is not necessary rather harmful when the connection is already disconnected.
+
+	* gftool/gfexec/gfexec.c: add existence check for a local file
+
+	* lib/gfs_hook/hooks_subr.c (gfs_hook_init):
+	check gfarm_initialized() also.
+	(gfs_hook_get_cwd_is_gfarm): call gfs_hook_init() in case that gfarm_terminate() has been already called.  this may happen in gfexec.
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/config.c:
+	introduce gfarm_initialized() to determine whether the initialization has been successfully done or not.
+
+	* lib/libgfarm/gfarm/agent_wrap.c (gfarm_initialize):
+	do not call gfarm_agent_connect(). it is meaningless since the config file is not read.
+
+2006-06-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/build/configure.sh:
+	uncomment line which removes temporary directory
+
+	* regress/gfs_hook/tool/build/configure.sh:
+	test script for "sh configure".
+	this works on a file system node but fails on a client.
+
+	* regress/schedule: add gfs_hook/tool/cp/mode755.sh
+	    gfs_hook/tool/mkdir/mkdir.sh
+	    gfs_hook/tool/mkdir/mkdir-p.sh
+	    gfs_hook/tool/diff/diff.sh
+	    gfs_hook/tool/diff/diff-r.sh
+	    gfs_hook/tool/pax/pax-r.sh
+
+	* regress/gfs_hook/tool/pax/pax-r.sh: test script for "pax -r"
+
+	* regress/gfs_hook/tool/diff/diff-r.sh:
+	test script for "diff -r <fromdir> <todir>"
+
+	* regress/gfs_hook/tool/diff/diff.sh:
+	test script for "diff <fromfile> <tofile>"
+
+	* regress/gfs_hook/tool/mkdir/mkdir.sh, regress/gfs_hook/tool/mkdir/mkdir-p.sh:
+	test script for "mkdir <directory>"
+
+2006-06-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/hostspec.c:
+	make '*' in hostspec match with hosts which name cannot be resolvable by
+	gethostbyname(3).
+	from Ishibashi-san in [gfarm-developers:00529]
+
+2006-06-12  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	plug memory leak reported by Ishibashi-kun in [gfarm-developers:00520].
+
+2006-06-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	describe some know limitation about system-call hooking library
+
+	* gftool/gfarm_agent/gfarm_agent.c: fix LP64 portability problem
+
+	* lib/gfs_hook/hooks_subr.c:
+	disable gfs_hook before calling gfarm_terminate() from gfs_hook_terminate(),
+	otherwise bad things may happen, if a function in atexit() hook calls
+	file related system calls.
+
+	this fixes core dump in last stage of configure script on NetBSD,
+	when CONFIG_SHELL=..../bash isn't specified. i.e. when /bin/sh was used.
+	CONFIG_SHELL needs to be bash anyway, though.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	fix "Syscall param write(buf) points to uninitialised byte(s)" from valgrind,
+	reported by Ishibashi-san in [gfarm-developers:00520]
+
+	* lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c:
+	fix LP64 portability problem
+
+2006-06-12  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog, RELNOTES: update the release note for version 1.3
+
 2006-06-11  Noriyuki Soda  <soda@sra.co.jp>
 
 	* lib/libgfarm/gfarm/gfs_pio_global.c:
