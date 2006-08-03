@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/test_mode.sh 400 -r 
+$shell $testbase/test_mode.sh 400 -r 

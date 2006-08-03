@@ -28,7 +28,8 @@ while read line; do
 		( printf "$fmt" "$tst"; echo "BEGIN" ) >>$log
 		  printf "$fmt" "$tst"
 
-		sh $tst </dev/null >>$log 2>&1
+		# XXX FIXME: Solaris 9 /bin/sh dumps core with sh/test-d.sh
+		$shell $tst </dev/null >>$log 2>&1
 		exit_code=$?
 
 		case $exit_code in
