@@ -54,6 +54,7 @@ mkdtemp(char *template)
 char *program_name = "gfarm_agent";
 
 int debug_mode = 0;
+int master_mode = 0;
 
 /* this routine should be called before calling exit(). */
 static void
@@ -1528,7 +1529,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "cdf:p:P:sS:v")) != -1) {
+	while ((ch = getopt(argc, argv, "cdf:mp:P:sS:v")) != -1) {
 		switch (ch) {
 		case 'c':
 			shell_type = C_SHELL_LIKE;
@@ -1538,6 +1539,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			config_file = optarg;
+			break;
+		case 'm':
+			master_mode = 1;
 			break;
 		case 'p':
 			agent_port = strtol(optarg, NULL, 0);
@@ -1576,9 +1580,10 @@ main(int argc, char **argv)
 	 */
 	gfarm_agent_disable();
 	gfarm_metadb_share_connection();
-	/* set timeout 500 msec for path_info cache */
-	gfarm_cache_path_info_param_set(500, 0);
-
+	if (master_mode) {
+		/* set timeout 60000 msec (= 1 min) for path_info cache */
+		gfarm_cache_path_info_param_set(60000, 0);
+	}
 	e = gfarm_initialize(NULL, NULL);
 	if (e != NULL)
 		(void)gfarm_terminate();
