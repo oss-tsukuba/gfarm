@@ -90,6 +90,9 @@
 #define FILE_TABLE_LIMIT	2048
 #endif
 
+static const char READONLY_CONFIG_FILE[] = ".readonly";
+static const char IO_SANITY_CHECK_FILE[] = ".GFARMTEST";
+
 char *program_name = "gfsd";
 
 int debug_mode = 0;
@@ -822,6 +825,7 @@ gfs_server_statfs(struct xxx_connection *client)
 	int save_errno = 0;
 	gfarm_int32_t bsize;
 	file_offset_t blocks, bfree, bavail, files, ffree, favail;
+	struct stat st;
 	char *msg = "statfs";
 
 	gfs_server_get_request(client, msg, "s", &dir);
@@ -831,6 +835,12 @@ gfs_server_statfs(struct xxx_connection *client)
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
 	free(path);
+
+	if (save_errno == 0 && stat(READONLY_CONFIG_FILE, &st) == 0) {
+		/* pretend to be disk full, to make this gfsd read-only */
+		bavail -= bfree;
+		bfree = 0;
+	}
 
 	gfs_server_put_reply_with_errno(client, msg, save_errno,
 	    "ioooooo", bsize, blocks, bfree, bavail, files, ffree, favail);
@@ -2350,9 +2360,8 @@ check_spool_directory()
 {
 	int fd;
 	ssize_t rv;
-	char *file = ".GFARMTEST";
 
-	fd = open(file, O_CREAT|O_WRONLY, 0666);
+	fd = open(IO_SANITY_CHECK_FILE, O_CREAT|O_WRONLY, 0666);
 	if (fd == -1)
 		accepting_fatal_errno("creat(2) test");
 	rv = write(fd, "X", 1);
@@ -2364,7 +2373,7 @@ check_spool_directory()
 		accepting_fatal_errno("fsync(2) test");
 	if (close(fd) == -1)
 		accepting_fatal_errno("close(2) test");
-	if (unlink(file) == -1)
+	if (unlink(IO_SANITY_CHECK_FILE) == -1)
 		accepting_fatal_errno("unlink(2) test");
 }
 
