@@ -203,6 +203,9 @@ gfarm_errlist_hashtab_initialize(void)
 	int i, created;
 	struct gfarm_hash_entry *p;
 
+	if (gfarm_errlist_hashtab != NULL)
+		return;
+
 	gfarm_errlist_hashtab = gfarm_hash_table_alloc(ERRLIST_HASHTAB_SIZE,
 	    gfarm_hash_default, gfarm_hash_key_equal_default);
 	if (gfarm_errlist_hashtab == NULL) {
