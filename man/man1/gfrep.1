@@ -22,7 +22,7 @@ gfrep \- replicate Gfarm files
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrep\fR creates a replica of Gfarm files
+\fBgfrep\fR creates replicas of Gfarm files
 specified by the \fIGfarm-URL\fR\&.
 .PP
 If the \fIGfarm-URL\fR parameter is a directory,
@@ -73,7 +73,7 @@ Currently, this works only with -H, -P and -d options.
 \fB-N \fInum-of-replicas\fB\fR
 specifies necessary number of file replicas, counting already
 existing ones.
-If there are enouch number of replicas in the destination nodes,
+If there are enough number of replicas in the destination nodes,
 neither any copy nor any removal will be done.
 This option is used solely, or with the \fB-D\fR,
 \fB-S\fR or \fB-s\fR option.
@@ -87,7 +87,7 @@ an empty set.
 For example, if gfrep is executed with the
 ``\fB-N 3 -S subdomain.example.org -D example.org\fR\&'' option,
 it's guaranteed that there are at least 3 replicas in the hosts belong
-to example.org but not belongs to subdomain.example.org.
+to example.org but except subdomain.example.org.
 .TP
 \fB-P \fIhost-pair-file\fB\fR
 specifies a file which describes hostname pairs of
