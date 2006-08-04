@@ -402,6 +402,12 @@ ls など，stat(2)/lstat(2)/fstat(2) システムコールを用いるプログラムでは，
 
    - 1-1) (1) にあるように，glibc-not-hidden パッケージとあわせて利用する
      必要があります．
+   - /etc/nsswitch.conf の passwd の項目に ldap を指定し，nss_ldap
+     モジュールを利用している環境では，フックのための LD_PRELOAD 変数を
+     設定した状態で gfsd を起動すると，gfsd が動作しなくなることがあり
+     ます．このため，gfsd の起動は LD_PRELOAD 変数を設定していない状態
+     で行なうことをお勧めします．この症状は，少なくとも Fedora Core 3
+     では観察されています．
 
  (2) FreeBSD の場合
 ====================
