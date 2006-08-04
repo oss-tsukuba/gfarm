@@ -1,6 +1,71 @@
 Copyright (c) 2003-2006 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.3.1
+============================
+
+[2006.8.4]
+
+New Features
+
+  * gfchmod(1) - chmod command for Gfarm.
+
+  * gfusage(1) - display total disk space usage of each user.
+
+  * Documentation
+
+  - KNOWN_PROBLEMS - describe known problems for Gfarm 1.3.1.
+
+Update Features
+
+  * libgfarm - add definition of gfarm_error_t and GFARM_ERR_NO_ERROR,
+               add gfarm_error_string() function,
+               and report an error in closing a connection.
+
+  * gfarm_agent(1) - refine initialization and termination procedure,
+                     and add "-m" option for master mode which enables 1-minute-cache of path info.
+
+  * config-gfarm(1) - add "-a <auth_type>" option for specifying an authentication type,
+                      support setup of the PostgreSQL 7.4 based metadata server without password input,
+                      and show usage with "--help" option.
+
+  * config-gfsd(1) - change spool-directory argument to be optional,
+                     and show usage with "--help" option.
+
+  * config-agent(1) - show usage with "--help" option.
+
+  * gfsd(8) - support restart and reconnection,
+              add "-l" option which specifies a listen address,
+              and support read-only mode which will be enabled by creating
+              ".readonly" file by administrators.
+
+  * Configuration file
+
+  - Enable "setsockopt keepalive" by default.
+
+  * Documentation
+
+  - Describe about a file/directory owner problem in README.hook.
+
+  * Bug fix
+  
+  - gfarm_agent(1) - fix a bug of reconnection from a client. 
+
+  - gfsd(8) - fix disk space calculation on FFS on *BSDs.
+
+  - Fix a bug of mkdir(1) via system call hooks on Solaris 9.
+
+  - Countermeasure against integer overflow attack by using malloc() and
+    realloc() in a safe way.
+ 
+  - libgfarm - fix a portability problem to x86_64,
+               plug memory leak in several cases,
+               and remove obsolete code.
+
+Unsupported Features
+
+ * NetBSD 1.6.2 is not supported anymore.
+
 Release note for Gfarm 1.3
 ==========================
 
