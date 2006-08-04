@@ -5,8 +5,7 @@
 >gfrep</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,81 +37,57 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-vm]  -H <TT
+> [-vm]  -H <VAR
 CLASS="REPLACEABLE"
-><I
->hostfile</I
-></TT
->   <TT
+>hostfile</VAR
+>   <VAR
 CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
+>gfarm-URL</VAR
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-v] [-S <TT
+> [-v] [-S <VAR
 CLASS="REPLACEABLE"
-><I
->source-domainname</I
-></TT
->] [-D <TT
+>source-domainname</VAR
+>] [-D <VAR
 CLASS="REPLACEABLE"
-><I
->destination-domainname</I
-></TT
->] [-N <TT
+>destination-domainname</VAR
+>] [-N <VAR
 CLASS="REPLACEABLE"
-><I
->num-of-replicas</I
-></TT
->]  <TT
+>num-of-replicas</VAR
+>]  <VAR
 CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
+>gfarm-URL</VAR
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-vm]  -P <TT
+> [-vm]  -P <VAR
 CLASS="REPLACEABLE"
-><I
->host-pair-file</I
-></TT
->   <TT
+>host-pair-file</VAR
+>   <VAR
 CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
+>gfarm-URL</VAR
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-vm] [-s <TT
+> [-vm] [-s <VAR
 CLASS="REPLACEABLE"
-><I
->source-node</I
-></TT
->] [-d <TT
+>source-node</VAR
+>] [-d <VAR
 CLASS="REPLACEABLE"
-><I
->destination-node</I
-></TT
-> [-I <TT
+>destination-node</VAR
+> [-I <VAR
 CLASS="REPLACEABLE"
-><I
->fragment-index</I
-></TT
->]]  <TT
+>fragment-index</VAR
+>]]  <VAR
 CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
+>gfarm-URL</VAR
 >... </P
 ></DIV
 ><DIV
@@ -147,18 +122,18 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-v</TT
+>-v</VAR
 ></DT
 ><DD
 ><P
 >displays verbose output.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-m</TT
+>-m</VAR
 ></DT
 ><DD
 ><P
@@ -166,9 +141,9 @@ CLASS="OPTION"
 Currently, this works only with -H, -P and -d options.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-H</TT
+>-H</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -206,9 +181,9 @@ CLASS="PARAMETER"
 it will be copied recursively.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-S</TT
+>-S</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -224,9 +199,9 @@ where replicas will be made from.</P
  will be copied from one host registered in meta data.</P
 ><P
 >If a host of in the source domain is also in the destination
-domain specified by <TT
+domain specified by <VAR
 CLASS="OPTION"
->-D</TT
+>-D</VAR
 >, gfrep will not replicate
 on the host.</P
 ><P
@@ -239,9 +214,9 @@ CLASS="PARAMETER"
 it will be copied recursively.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-D</TT
+>-D</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -257,9 +232,9 @@ where replicas will be made on.</P
 the replica will be copied to any of hosts registered in meta data.
 But, in this case, you need to specify the number of replicas greater than
 or equal to 2 using -N option. 
-Please refer the description of the <TT
+Please refer the description of the <VAR
 CLASS="OPTION"
->-N</TT
+>-N</VAR
 > for detail.</P
 ><P
 >If the specified <TT
@@ -271,9 +246,9 @@ CLASS="PARAMETER"
 it will be copied recursively.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-N</TT
+>-N</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -285,17 +260,17 @@ CLASS="PARAMETER"
 >specifies the number of file replicas, counting already existing ones.</P
 ><P
 >Gfrep generate replicas  until this number in hosts that are in destination
-domain specified by <TT
+domain specified by <VAR
 CLASS="OPTION"
->-D</TT
+>-D</VAR
 >(if not specified, all hosts
 registered inmeta data) and are not in source domain specified by
-<TT
+<VAR
 CLASS="OPTION"
->-S</TT
->. If <TT
+>-S</VAR
+>. If <VAR
 CLASS="OPTION"
->-S</TT
+>-S</VAR
 > is not specified, gfrep
 genetate until this number of hosts in destination domain.</P
 ><P
@@ -308,28 +283,28 @@ CLASS="PARAMETER"
 this parameter before replication, the file fragment won't be copied and
 its replicas won't be removed.</P
 ><P
->This option must be sepcified singuraly or with <TT
+>This option must be sepcified singuraly or with <VAR
 CLASS="OPTION"
->-S</TT
+>-S</VAR
 >
-and/or <TT
+and/or <VAR
 CLASS="OPTION"
->-D</TT
+>-D</VAR
 > options.</P
 ><P
->If <TT
+>If <VAR
 CLASS="OPTION"
->-N</TT
+>-N</VAR
 > option is omitted,  this works as if
-<TT
+<VAR
 CLASS="OPTION"
->-N 1</TT
+>-N 1</VAR
 > is specified.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-P</TT
+>-P</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -359,9 +334,9 @@ CLASS="PARAMETER"
 it will be copied recursively.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-d</TT
+>-d</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -372,17 +347,17 @@ CLASS="PARAMETER"
 ><P
 >specifies one destination filesystem node where the file will be
 copied to.
-This option also needs <TT
+This option also needs <VAR
 CLASS="OPTION"
->-I</TT
+>-I</VAR
 > usually,
-but there are conditions that <TT
+but there are conditions that <VAR
 CLASS="OPTION"
->-I</TT
+>-I</VAR
 > option can be omitted.
-Please refer the description of the <TT
+Please refer the description of the <VAR
 CLASS="OPTION"
->-I</TT
+>-I</VAR
 > for detail.</P
 ><P
 >If the specified <TT
@@ -394,9 +369,9 @@ CLASS="PARAMETER"
 it will be copied recursively.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-s</TT
+>-s</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -406,19 +381,27 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >specifies a source filesystem node where the file will be copied from.
-This option is used singuraly or with the <TT
+This option is used solely, or with the <VAR
 CLASS="OPTION"
->-d</TT
+>-D</VAR
+> or
+<VAR
+CLASS="OPTION"
+>-d</VAR
 > option.
-If used singuraly, gfrep replicates on the host other than this one.</P
+If used solely or with the <VAR
+CLASS="OPTION"
+>-D</VAR
+>, gfrep replicates
+on the host other than this one.</P
 ><P
 >If this option is omitted, the source filesystem node is choosed
 automatically.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-I</TT
+>-I</VAR
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -441,9 +424,9 @@ CLASS="PARAMETER"
 ></TT
 > is a program,
 this option specifies an architecture name of the program.
-This option is used with the <TT
+This option is used with the <VAR
 CLASS="OPTION"
->-d</TT
+>-d</VAR
 > option.</P
 ><P
 >It is possible to omit this option in the following cases.
@@ -454,9 +437,9 @@ CLASS="PARAMETER"
 ></TT
 > is an usual file
 and it's consists of just one file fragment, this option can
-be omitted, and works as if option <TT
+be omitted, and works as if option <VAR
 CLASS="OPTION"
->-I 0</TT
+>-I 0</VAR
 > is specified.
 If specified <TT
 CLASS="PARAMETER"
@@ -468,9 +451,9 @@ this works as if the architecture of the destination filesystem node
 is specified.</P
 ></DD
 ><DT
-><TT
+><VAR
 CLASS="OPTION"
->-?</TT
+>-?</VAR
 ></DT
 ><DD
 ><P

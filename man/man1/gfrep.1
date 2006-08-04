@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "27 October 2005" "Gfarm" ""
+.TH "GFREP" "1" "04 August 2006" "Gfarm" ""
+
 .SH NAME
 gfrep \- replicate Gfarm files
 .SH SYNOPSIS
@@ -22,7 +23,7 @@ gfrep \- replicate Gfarm files
 .SH "DESCRIPTION"
 .PP
 \fBgfrep\fR creates a replica of Gfarm files
-specified by the \fIgfarm-URL\fR. 
+specified by the \fIgfarm-URL\fR\&. 
 .SH "OPTIONS"
 .TP
 \fB-v\fR
@@ -79,7 +80,7 @@ specifies the number of file replicas, counting already existing ones.
 Gfrep generate replicas  until this number in hosts that are in destination
 domain specified by \fB-D\fR(if not specified, all hosts
 registered inmeta data) and are not in source domain specified by
-\fB-S\fR. If \fB-S\fR is not specified, gfrep
+\fB-S\fR\&. If \fB-S\fR is not specified, gfrep
 genetate until this number of hosts in destination domain.
 
 If replicas of a \fIGfarm-URL\fR file fragment is more than
@@ -115,8 +116,10 @@ it will be copied recursively.
 .TP
 \fB-s \fIsource-node\fB\fR
 specifies a source filesystem node where the file will be copied from.
-This option is used singuraly or with the \fB-d\fR option.
-If used singuraly, gfrep replicates on the host other than this one.
+This option is used solely, or with the \fB-D\fR or
+\fB-d\fR option.
+If used solely or with the \fB-D\fR, gfrep replicates
+on the host other than this one.
 
 If this option is omitted, the source filesystem node is choosed
 automatically.
