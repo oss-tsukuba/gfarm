@@ -48,6 +48,10 @@ gfs_hook/tool/sh/test-e.sh
 gfs_hook/tool/sh/test-f.sh
 gfs_hook/tool/sh/test-s.sh
 gfs_hook/tool/sh/source.sh
+gfs_hook/tool/touch/touch_create.sh
+gfs_hook/tool/sh/umask_022_file.sh
+gfs_hook/tool/sh/umask_066_file.sh
+gfs_hook/tool/sh/umask_000_file.sh
 gfs_hook/tool/mv/0byte.sh
 gfs_hook/tool/mv/1byte.sh
 gfs_hook/tool/mv/empty-dir.sh
