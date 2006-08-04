@@ -2,7 +2,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>27 Jun 2006</date></refentryinfo>
+<refentryinfo><date>4 Aug 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -179,10 +179,10 @@
 <term><option>-s</option> <parameter>複製元ホスト</parameter></term>
 <listitem>
 <para>ファイルフラグメントの複製元のホストを指定します．
-このオプションは単独で，あるいは，<option>-d</option> オプションと共に
-用います．
-単独で指定された場合は，ここで指定されたホストとは別のいずれかのホストに
-複製を作成します．
+このオプションは単独で，あるいは，<option>-D</option> や
+<option>-d</option> オプションと共に用います．
+単独で指定された場合や -D オプションと共に指定された場合，ここで
+指定されたホストは，複製を作成する対象ホストから除外されます．
 </para>
 <para>
 このオプションを省略した場合，複製元のホストは自動で選ばれます．

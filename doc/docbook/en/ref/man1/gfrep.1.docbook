@@ -3,7 +3,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>27 Oct 2005</date></refentryinfo>
+<refentryinfo><date>4 Aug 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -187,8 +187,10 @@ it will be copied recursively.</para>
 <term><option>-s</option> <parameter>source-node</parameter></term>
 <listitem>
 <para>specifies a source filesystem node where the file will be copied from.
-This option is used singuraly or with the <option>-d</option> option.
-If used singuraly, gfrep replicates on the host other than this one.
+This option is used solely, or with the <option>-D</option> or
+<option>-d</option> option.
+If used solely or with the <option>-D</option>, gfrep replicates
+on the host other than this one.
 </para>
 <para>If this option is omitted, the source filesystem node is choosed
 automatically.
