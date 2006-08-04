@@ -411,6 +411,8 @@ from commands which use stat(2)/lstat(2)/fstat(2) system calls.
 
    - As written in 1-1) (1), you need to use glibc-not-hidden
      package to use the syscall-hooking library.
+   - The dd command dumps core due to infinite number of recursive
+     calls.
    - In an environment where ldap is specified as passwd database
      in /etc/nsswitch.conf and nss_ldap module is used, gfsd
      sometimes stops to work, when you invoke it with the LD_PRELOAD
