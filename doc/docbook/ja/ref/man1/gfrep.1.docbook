@@ -38,8 +38,10 @@
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
-    <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
-    <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'>-S <replaceable>複製元ドメイン名</replaceable></arg>
+      <arg choice='plain'>-s <replaceable>複製元ホスト</replaceable></arg>
+    </group>
     <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
     <arg choice='opt'>-v</arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>

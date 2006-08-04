@@ -40,8 +40,10 @@
 <cmdsynopsis>
   <command>gfrep</command>
     <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
-    <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
-    <arg choice='opt'>-s <replaceable>source-node</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
+      <arg choice='opt'>-s <replaceable>source-node</replaceable></arg>
+    </group>
     <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
     <arg choice='opt'>-v</arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
