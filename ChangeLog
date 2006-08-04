@@ -1,3 +1,162 @@
+2006-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gfs_hook/tool/sh/umask_022_dir.sh
+	    gfs_hook/tool/sh/umask_077_dir.sh
+	    gfs_hook/tool/sh/umask_000_dir.sh
+	    gfs_hook/feature/permission/open_file.sh
+
+	* regress/gfs_hook/feature/permission/open_file.sh:
+	script to test correspondence between permission of opening a file and execution bit of its parent directory
+
+2006-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* man/ja/man1/gfrep.1, man/man1/gfrep.1, doc/html/en/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrep.1.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	forgot to mention the behavior of combination of "-s" option and "-D" option
+
+2006-08-04  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES: *** empty log message ***
+
+2006-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/sh/umask_000_dir.sh, regress/gfs_hook/tool/sh/umask_022_dir.sh, regress/gfs_hook/tool/sh/umask_077_dir.sh, regress/gfs_hook/tool/sh/umask_dir.sh:
+	test script for "umask" and directory permission.
+	this script sets umask, makes a directory, and checks its permisson.
+
+	* regress/schedule: add gfs_hook/tool/touch/touch_create.sh
+	    gfs_hook/tool/sh/umask_022_file.sh
+	    gfs_hook/tool/sh/umask_066_file.sh
+	    gfs_hook/tool/sh/umask_000_file.sh
+
+	* regress/gfs_hook/tool/sh/umask_000_file.sh, regress/gfs_hook/tool/sh/umask_022_file.sh, regress/gfs_hook/tool/sh/umask_066_file.sh:
+	test script for "umask".
+	this script sets umask, creates a file, and checks its permisson.
+
+	* regress/gfs_hook/tool/touch/touch_create.sh:
+	test script for "touch" to create a file
+
+2006-08-04  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES: a draft release notes for gfarm 1.3.1
+
+2006-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/tool/sh/umask_file.sh:
+	test script for "`umask' and check permission of file"
+
+2006-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	document that gfsd may hangs in nss_ldap module, when you invoke gfsd
+	with LD_PRELOAD setting for syscall-hooking. This happens only when
+	ldap is specified in /etc/nsswitch.conf, of course.
+	XXX The reason why this problem happens isn't determined yet.
+
+	* doc/README.hook.ja: fix punctuations
+
+	* doc/README.hook.ja, doc/README.hook.en:
+	document "test -d <pathname>" problem on Solaris
+
+2006-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfps/gfps.sh
+
+	* regress/gftool/gfps/gfps.sh: test script for "gfps"
+
+2006-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/error.c:
+	protect gfarm_errlist_hashtab_initialize() from multiple call,
+	because gfarm_initialize() + gfarm_terminate() pair may be called
+	multiple times, and that makes gfarm_errlist_hashtab_initialize()
+	called multiple times too.
+
+2006-08-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c:
+	add a feature to make a gfsd read-only, by creating ".readonly" file
+	on spool root directory.
+	XXX this doesn't work with some operations which don't use scheduling.
+	    e.g. "gfrep -d <host> <file>...."
+
+	* regress/gfs_hook/tool/sh/test-r.sh, regress/gfs_hook/tool/sh/test-w.sh, regress/gfs_hook/tool/sh/test-x.sh, regress/regress.sh:
+	use bash instead of /bin/sh, because /bin/sh on Solaris 9 dumps core
+	with test-d.sh test in gfs_hook/tool/sh/ and similar tests.
+	XXX It's desirable that /bin/sh just works.
+
+2006-08-03  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: - add some test scripts
+	- replace gfs_hook/tool/build/configure.sh with
+	  gfs_hook/tool/build/configure_make.sh
+
+	* regress/gfs_hook/tool/build/configure.sh, regress/gfs_hook/tool/build/configure_make.sh:
+	replace configure.sh with configure_make.sh
+
+	* regress/gfs_hook/tool/grep/grep.sh:
+	test script for "grep pattern <file>"
+
+	* regress/gfs_hook/tool/sh/source.sh: test script for "source <file>"
+
+	* regress/gfs_hook/tool/sh/test-s.sh: test script for "test -s <file>"
+
+	* regress/gfs_hook/tool/sh/test-f.sh: test script for "test -f <file>"
+
+	* regress/gfs_hook/tool/sh/test-e.sh: test script for "test -e <file>"
+
+	* regress/gfs_hook/tool/sh/test-d.sh:
+	test script for "test -d <directory>"
+
+	* regress/gfs_hook/tool/sh/test-x.sh: test script for "test -x <file>"
+
+	* regress/gfs_hook/tool/sh/test-w.sh: test script for "test -w <file>"
+
+	* regress/gfs_hook/tool/sh/test-r.sh: test script for "test -r <file>"
+
+	* regress/gfs_hook/tool/sh/test_mode.sh:
+	test script for "test -[rwx] <file>"
+
+	* regress/gftool/gfchmod/gfchmod_755_dir.sh:
+	test script for "gfchmod 755 <directory>"
+
+	* regress/gftool/gfchmod/gfchmod_700_dir.sh:
+	test script for "gfchmod 700 <directory>"
+
+	* regress/gftool/gfchmod/gfchmod_dir.sh:
+	test script for "gfchmod <mode> <directory>"
+
+2006-08-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/Makefile: Do not try another backend, if one backend failed.
+
+	* regress/Makefile: fix bug about $PATH setting
+
+2006-08-03  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c: add -m option in usage
+
+	* doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfarm_agent.1.html, man/ja/man1/gfarm_agent.1, man/man1/gfarm_agent.1:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfarm_agent.1.docbook:
+	add description about -m option
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	add -m option for master mode.  In this mode, set timeout of path info
+	cache to 1 min, otherwise, do not use path info cache.
+
+2006-08-03  Noriyuki Soda  <soda@sra.co.jp>
+
+	* ChangeLog:
+	$GFARM_GSI_MAPFILE environment variable doesn't exist on main trunk
+
+2006-08-03  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2006-08-02  Noriyuki Soda  <soda@sra.co.jp>
 
 	* package/redhat/gfarm.spec: revert previous change,
