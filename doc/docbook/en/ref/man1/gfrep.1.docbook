@@ -54,7 +54,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para><command>gfrep</command> creates a replica of Gfarm files
+<para><command>gfrep</command> creates replicas of Gfarm files
 specified by the <parameter>Gfarm-URL</parameter>.</para>
 <para>If the <parameter>Gfarm-URL</parameter> parameter is a directory,
 it will be copied recursively.</para>
@@ -134,7 +134,7 @@ Currently, this works only with -H, -P and -d options.
 <listitem>
 <para>specifies necessary number of file replicas, counting already
 existing ones.
-If there are enouch number of replicas in the destination nodes,
+If there are enough number of replicas in the destination nodes,
 neither any copy nor any removal will be done.
 This option is used solely, or with the <option>-D</option>,
 <option>-S</option> or <option>-s</option> option.</para>
@@ -146,7 +146,7 @@ an empty set.
 For example, if gfrep is executed with the
 ``<option>-N 3 -S subdomain.example.org -D example.org</option>'' option,
 it's guaranteed that there are at least 3 replicas in the hosts belong
-to example.org but not belongs to subdomain.example.org.
+to example.org but except subdomain.example.org.
 </para>
 </listitem>
 </varlistentry>
