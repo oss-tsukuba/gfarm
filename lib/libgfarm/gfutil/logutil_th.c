@@ -70,7 +70,7 @@ gflog_thread_specific_get(void)
 	 * to workaround a problem on SunOS 5.9:
 	 * The following condition never can be true, if pthread_once() works
 	 * correctly. But it becomes true on SunOS 5.9, if the command is not
-	 * linked with pthread library.
+	 * linked with the pthread library.
 	 * We don't protect `gflog_key_created' by a mutex, because this
 	 * only becomes true on a non-threaded program.
 	 */
@@ -82,12 +82,12 @@ gflog_thread_specific_get(void)
 		return (p);
 
 	/*
-	 * The following allocation is per-thread thing (of course).
+	 * The following allocation is a per-thread thing (of course).
 	 * Thus, we cannot allocate it in gflog_key_create() which is
-	 * global thing.
+	 * a global thing.
 	 * Note that we don't have to worry about race condition between
-	 * pthread_getspecific() and pthread_setspecific(), because
-	 * any other thread won't set this per-thread storage.
+	 * the pthread_getspecific() call and the pthread_setspecific()
+	 * call, because any other thread won't set this per-thread storage.
 	 * (Thread-specific value is thread-specific, of course!)
 	 */
 	p = gflog_thread_specific_alloc();
