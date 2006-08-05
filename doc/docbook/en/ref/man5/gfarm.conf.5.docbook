@@ -1025,15 +1025,16 @@ via GSI authentication.
 </para>
 <literallayout>
 spool /var/spool/gfarm
+spool_serverport 600
 metadb_serverhost metadb.example.com
+metadb_serverport 601
 ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 ldap_bind_password "secret-ldap-password"
-auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *
+sockopt keepalive
 </literallayout>
 
 
