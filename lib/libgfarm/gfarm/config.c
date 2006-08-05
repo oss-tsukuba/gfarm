@@ -385,12 +385,14 @@ enum gfarm_metadb_backend_type {
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
+#define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define MISC_DEFAULT -1
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
 static int schedule_write_local_priority = MISC_DEFAULT;
 file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
+int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 
 /* static variables */
 static enum {
@@ -1175,6 +1177,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
+		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
 
 	} else {
 		o = s;
@@ -1347,6 +1351,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
+	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
+		gfarm_gfsd_connection_cache =
+		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
 }
 
 /*

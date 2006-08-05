@@ -91,8 +91,6 @@ static struct gfs_connection connection_list_head = {
 
 static int free_connections = 0;
 
-#define MAXIMUM_FREE_CONNECTIONS 10
-
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
 
 static struct gfarm_hash_table *gfs_server_hashtab = NULL;
@@ -430,7 +428,7 @@ gfs_client_connection_free(struct gfs_connection *gfs_server)
 	}
 
 	++free_connections;
-	gfs_client_connection_gc_internal(MAXIMUM_FREE_CONNECTIONS);
+	gfs_client_connection_gc_internal(gfarm_gfsd_connection_cache);
 
 	return (GFARM_ERR_NO_ERROR);
 }
