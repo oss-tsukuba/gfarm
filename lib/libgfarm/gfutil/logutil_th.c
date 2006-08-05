@@ -81,6 +81,15 @@ gflog_thread_specific_get(void)
 	if (p != NULL)
 		return (p);
 
+	/*
+	 * The following allocation is per-thread thing (of course).
+	 * Thus, we cannot allocate it in gflog_key_create() which is
+	 * global thing.
+	 * Note that we don't have to worry about race condition between
+	 * pthread_getspecific() and pthread_setspecific(), because
+	 * any other thread won't set this per-thread storage.
+	 * (Thread-specific value is thread-specific, of course!)
+	 */
 	p = gflog_thread_specific_alloc();
 	rv = pthread_setspecific(gflog_key, p);
 	if (rv != 0)
