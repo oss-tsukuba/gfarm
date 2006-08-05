@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "06 June 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "05 August 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -386,10 +386,10 @@ PostgreSQL データベースに接続するときの接続オプションを指定します。
 	postgresql_conninfo "sslmode=require connect_timeout=30"
 .fi
 .TP
-\fBauth \fI有効無効\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
+\fBauth \fI有効性\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
 この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
 
-第1引数の\fI有効無効\fR部には、enable ないし disable
+第1引数の\fI有効性\fR部には、enable ないし disable
 キーワードを指定します。
 第2引数の\fI認証方法\fR部には、gsi、
 gsi_auth ないし sharedsecret
@@ -608,7 +608,8 @@ gfarm ライブラリが内部的に保持している、ファイルシステムノードに
 .TP
 \fBschedule_cache_timeout \fI秒数\fB\fR
 gfarm ライブラリが内部的に保持している、ファイルシステムノード
-のスケジューリング処理に関わるキャッシュの有効期限を秒数で指定します。
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
 停止していたファイルシステムノードが復活したような場合、この期限が
 切れるまでは、そのノードがスケジューリングされないことがあります。
 デフォルトは600秒すなわち10分です。
@@ -619,10 +620,24 @@ gfarm ライブラリが内部的に保持している、ファイルシステムノード
 	schedule_cache_timeout 60
 .fi
 .TP
+\fBwrite_local_priority \fI有効性\fB\fR
+gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文で disable と指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
+なります。
+デフォルトは enable です。
+
+例:
+
+.nf
+	write_local_priority disable
+.fi
+.TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
 ファイルシステムノードで必要な最小限度のディスク空き容量を指定
 します。このサイズ以下の空き容量しかないファイルシステムノードは、
-ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+ファイル書き込みを行う可能性のある操作を行う際に、選択されなくなります。
 指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
 することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
@@ -632,6 +647,17 @@ gfarm ライブラリが内部的に保持している、ファイルシステムノード
 
 .nf
 	minimum_free_disk_space 1G
+.fi
+.TP
+\fBgfsd_connection_cache \fIコネクション数\fB\fR
+gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
+
+例:
+
+.nf
+	gfsd_connection_cache 32
 .fi
 .SH "GRAMMAR"
 .PP
@@ -672,7 +698,9 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
-		\~\~<minimum_free_disk_space_statement>
+		\~\~<write_local_priority_statement> |
+		\~\~<minimum_free_disk_space_statement> |
+		\~\~<gfsd_connection_cache_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -705,8 +733,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<postgresql_password_statement> ::= "postgresql_password" <string>
 	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
-		\~\~"auth" <auth_command> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
+		\~\~"auth" <validity> <auth_method> <hostspec>
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
@@ -722,8 +749,11 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
+	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -738,6 +768,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<double_quoted_character> ::=
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
+	<validity> ::= "enable" | "disable"
 .fi
 .SH "EXAMPLES"
 

@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -899,7 +899,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->Í­¸úÌµ¸ú</I
+>Í­¸úÀ­</I
 ></TT
 >  <TT
 CLASS="PARAMETER"
@@ -919,7 +919,7 @@ CLASS="PARAMETER"
 >Âè1°ú¿ô¤Î<TT
 CLASS="PARAMETER"
 ><I
->Í­¸úÌµ¸ú</I
+>Í­¸úÀ­</I
 ></TT
 >Éô¤Ë¤Ï¡¢<SPAN
 CLASS="TOKEN"
@@ -1371,7 +1371,8 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É
-¤Î¥¹¥±¥¸¥å¡¼¥ê¥ó¥°½èÍý¤Ë´Ø¤ï¤ë¥­¥ã¥Ã¥·¥å¤ÎÍ­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£
+¤Î¥¹¥±¥¸¥å¡¼¥ê¥ó¥°½èÍý¤Ë´Ø¤ï¤ë¾ðÊó¡¢¤¹¤Ê¤ï¤Á¥í¡¼¥É¥¢¥Ù¥ì¡¼¥¸¡¢
+¥Ç¥£¥¹¥¯¶õ¤­ÍÆÎÌ¡¢Ç§¾Ú¤¬ÄÌ¤ë¤«ÈÝ¤«Åù¤Î¥­¥ã¥Ã¥·¥å¤ÎÍ­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£
 Ää»ß¤·¤Æ¤¤¤¿¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬Éü³è¤·¤¿¤è¤¦¤Ê¾ì¹ç¡¢¤³¤Î´ü¸Â¤¬
 ÀÚ¤ì¤ë¤Þ¤Ç¤Ï¡¢¤½¤Î¥Î¡¼¥É¤¬¥¹¥±¥¸¥å¡¼¥ê¥ó¥°¤µ¤ì¤Ê¤¤¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£
 ¥Ç¥Õ¥©¥ë¥È¤Ï600ÉÃ¤¹¤Ê¤ï¤Á10Ê¬¤Ç¤¹¡£</P
@@ -1380,6 +1381,30 @@ CLASS="PARAMETER"
 ><P
 CLASS="LITERALLAYOUT"
 >	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_local_priority</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¤Ï¡¢¥Õ¥¡¥¤¥ë¤ò½ñ¤­¹þ¤à¥Î¡¼¥É¤ò·è¤á¤ëºÝ¡¢¤Ç¤­¤ë¸Â¤ê¥í¡¼¥«¥ë
+¥Û¥¹¥È¤òÍ¥Àè¤¹¤ë¤è¤¦¤ËÆ°ºî¤·¤Þ¤¹¡£¤³¤ÎÊ¸¤Ç disable ¤È»ØÄê¤¹¤ë¤³¤È¤Ë¤è¤Ã¤Æ¡¢
+¥í¡¼¥«¥ë¥Û¥¹¥È¤òÂ¾¤Î¥Û¥¹¥È¤ÈÆ±ÍÍ¤Ë°·¤¦¤è¤¦¤ËÊÑ¹¹¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_WRITE_LOCAL_PRIORITY ¤Ë disable ¤ÈÀßÄê¤·¤Æ¤â¡¢Æ±¤¸°ÕÌ£¤Ë
+¤Ê¤ê¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï enable ¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_local_priority&nbsp;disable</P
 ></DD
 ><DT
 ><SPAN
@@ -1395,7 +1420,7 @@ CLASS="PARAMETER"
 ><P
 >¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ÇÉ¬Í×¤ÊºÇ¾®¸ÂÅÙ¤Î¥Ç¥£¥¹¥¯¶õ¤­ÍÆÎÌ¤ò»ØÄê
 ¤·¤Þ¤¹¡£¤³¤Î¥µ¥¤¥º°Ê²¼¤Î¶õ¤­ÍÆÎÌ¤·¤«¤Ê¤¤¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ï¡¢
-¥Õ¥¡¥¤¥ë½ñ¤­¹þ¤ß¤ò¹Ô¤¦²ÄÇ½À­¤Î¤¢¤ëÁàºî¤ò¹Ô¤¦ºÝ¤Ë¡¢ÁªÂò¤µ¤ì¤Ë¤¯¤¯¤Ê¤ê¤Þ¤¹¡£
+¥Õ¥¡¥¤¥ë½ñ¤­¹þ¤ß¤ò¹Ô¤¦²ÄÇ½À­¤Î¤¢¤ëÁàºî¤ò¹Ô¤¦ºÝ¤Ë¡¢ÁªÂò¤µ¤ì¤Ê¤¯¤Ê¤ê¤Þ¤¹¡£
 »ØÄê¤Ï¥Ð¥¤¥ÈÃ±°Ì¤Ç¹Ô¤¤¤Þ¤¹¤¬¡¢¿ô»ú¤ÎËöÈø¤Ë¶õÇò¤ò³«¤±¤º¤Ë k/M/G/T ¤ò»ØÄê
 ¤¹¤ë¤³¤È¤Ç¡¢¤½¤ì¤¾¤ì 1k¥Ð¥¤¥È¡¿1M¥Ð¥¤¥È¡¿1G¥Ð¥¤¥È¡¿1T¥Ð¥¤¥È¤òÃ±°Ì¤È¤¹¤ë
 ¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
@@ -1405,6 +1430,27 @@ CLASS="PARAMETER"
 ><P
 CLASS="LITERALLAYOUT"
 >	minimum_free_disk_space&nbsp;1G</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfsd_connection_cache</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥³¥Í¥¯¥·¥ç¥ó¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ gfsd ¤È¤ÎÄÌ¿®¤ËÍÑ¤¤¤ë¥³¥Í¥¯¥·¥ç¥ó¤ò¡¢¤¤¤¯¤Ä
+¤Þ¤Ç¥­¥ã¥Ã¥·¥å¤¹¤ë¤«¤ò»ØÄê¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï16¥³¥Í¥¯¥·¥ç¥ó¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfsd_connection_cache&nbsp;32</P
 ></DD
 ></DL
 ></DIV
@@ -1454,7 +1500,9 @@ CLASS="LITERALLAYOUT"
 		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
-		  &#60;minimum_free_disk_space_statement&#62;<br>
+		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1487,8 +1535,7 @@ CLASS="LITERALLAYOUT"
 	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
 	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
-		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
-	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+		  "auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
 		  "netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
@@ -1504,8 +1551,11 @@ CLASS="LITERALLAYOUT"
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
@@ -1519,7 +1569,8 @@ CLASS="LITERALLAYOUT"
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
 		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		  "\\"&nbsp;|&nbsp;"\""</P
+		  "\\"&nbsp;|&nbsp;"\""<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

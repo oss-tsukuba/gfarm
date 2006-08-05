@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -977,7 +977,7 @@ CLASS="TOKEN"
 > <TT
 CLASS="PARAMETER"
 ><I
->enable/disable</I
+>validity</I
 ></TT
 >
 <TT
@@ -996,7 +996,7 @@ CLASS="PARAMETER"
 >This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.</P
 ><P
->The first argument should be <SPAN
+>The first argument should be either <SPAN
 CLASS="TOKEN"
 >enable</SPAN
 > or
@@ -1549,12 +1549,48 @@ CLASS="PARAMETER"
 ><P
 >This directive specifies time (in seconds) until cache for
 filesystem node scheduling will be expired.
+The cache holds information of each filesystem node, e.g. load average,
+disk free space and whether authentication succeeds or not.
 The default time is 600 seconds, i.e. ten minutes.</P
 ><P
 >For example,</P
 ><P
 CLASS="LITERALLAYOUT"
 >	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_local_priority</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing <SPAN
+CLASS="TOKEN"
+>disable</SPAN
+> keyword in
+this directive, Gfarm becomes to handle localhost same with other
+filesystem nodes.
+The same thing can be done by specifing <SPAN
+CLASS="TOKEN"
+>disable</SPAN
+>
+as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+The default is <SPAN
+CLASS="TOKEN"
+>enable</SPAN
+>.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_local_priority&nbsp;disable</P
 ></DD
 ><DT
 ><SPAN
@@ -1569,9 +1605,9 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >This directive specifies disk free space (by bytes) which is
-necessary on filesystem nodes. Gfarm scheduler tries to avoid to schedule
-nodes which have free space less than this parameter, when it
-schedules filesystem nodes for jobs which may write files.
+necessary on filesystem nodes. Gfarm scheduler excludes filesystem nodes
+which have free space less than this parameter, when it
+schedules nodes for jobs which may write files.
 The size of free space may have a suffix like ``k'' (kilo bytes), 
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.</P
@@ -1580,6 +1616,26 @@ The default size is 128M bytes.</P
 ><P
 CLASS="LITERALLAYOUT"
 >	minimum_free_disk_space&nbsp;1G</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfsd_connection_cache</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of cached gfsd connections.
+The default is 16.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfsd_connection_cache&nbsp;32</P
 ></DD
 ></DL
 ></DIV
@@ -1630,7 +1686,9 @@ CLASS="LITERALLAYOUT"
 		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
-		  &#60;minimum_free_disk_space_statement&#62;<br>
+		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1663,8 +1721,7 @@ CLASS="LITERALLAYOUT"
 	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
 	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
-		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
-	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+		  "auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
 		  "netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
@@ -1680,8 +1737,11 @@ CLASS="LITERALLAYOUT"
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
@@ -1695,7 +1755,8 @@ CLASS="LITERALLAYOUT"
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
 		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		  "\\"&nbsp;|&nbsp;"\""</P
+		  "\\"&nbsp;|&nbsp;"\""<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

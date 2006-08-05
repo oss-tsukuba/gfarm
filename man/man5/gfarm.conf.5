@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "06 June 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "05 August 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -419,11 +419,11 @@ For example,
 	postgresql_conninfo "sslmode=require connect_timeout=30"
 .fi
 .TP
-\fBauth \fIenable/disable\fB \fImethod\fB \fIHost_specification\fB\fR
+\fBauth \fIvalidity\fB \fImethod\fB \fIHost_specification\fB\fR
 This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.
 
-The first argument should be enable or
+The first argument should be either enable or
 disable keyword.
 The second argument \fIauth method\fR should be
 gsi, gsi_auth or sharedsecret
@@ -662,6 +662,8 @@ For example,
 \fBschedule_cache_timeout \fIseconds\fB\fR
 This directive specifies time (in seconds) until cache for
 filesystem node scheduling will be expired.
+The cache holds information of each filesystem node, e.g. load average,
+disk free space and whether authentication succeeds or not.
 The default time is 600 seconds, i.e. ten minutes.
 
 For example,
@@ -670,11 +672,26 @@ For example,
 	schedule_cache_timeout 60
 .fi
 .TP
+\fBwrite_local_priority \fIvalidity\fB\fR
+Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing disable keyword in
+this directive, Gfarm becomes to handle localhost same with other
+filesystem nodes.
+The same thing can be done by specifing disable
+as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+The default is enable\&.
+
+For example,
+
+.nf
+	write_local_priority disable
+.fi
+.TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
 This directive specifies disk free space (by bytes) which is
-necessary on filesystem nodes. Gfarm scheduler tries to avoid to schedule
-nodes which have free space less than this parameter, when it
-schedules filesystem nodes for jobs which may write files.
+necessary on filesystem nodes. Gfarm scheduler excludes filesystem nodes
+which have free space less than this parameter, when it
+schedules nodes for jobs which may write files.
 The size of free space may have a suffix like ``k'' (kilo bytes), 
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.
@@ -683,6 +700,16 @@ For example,
 
 .nf
 	minimum_free_disk_space 1G
+.fi
+.TP
+\fBgfsd_connection_cache \fInumber\fB\fR
+This directive specifies maximum number of cached gfsd connections.
+The default is 16.
+
+For example,
+
+.nf
+	gfsd_connection_cache 32
 .fi
 .SH "GRAMMAR"
 .PP
@@ -724,7 +751,9 @@ notation.
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
-		\~\~<minimum_free_disk_space_statement>
+		\~\~<write_local_priority_statement> |
+		\~\~<minimum_free_disk_space_statement> |
+		\~\~<gfsd_connection_cache_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -757,8 +786,7 @@ notation.
 	<postgresql_password_statement> ::= "postgresql_password" <string>
 	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
-		\~\~"auth" <auth_command> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
+		\~\~"auth" <validity> <auth_method> <hostspec>
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
@@ -774,8 +802,11 @@ notation.
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
 	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
+	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -790,6 +821,7 @@ notation.
 	<double_quoted_character> ::=
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
+	<validity> ::= "enable" | "disable"
 .fi
 .SH "EXAMPLES"
 
