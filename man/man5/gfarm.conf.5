@@ -824,6 +824,28 @@ notation.
 	<validity> ::= "enable" | "disable"
 .fi
 .SH "EXAMPLES"
+.PP
+The following is an example to use PostgreSQL to store its metadata,
+and allows access from filesystem nodes and clients in IP address
+192.168.0.0/24 via sharedsecret authentication.
+
+.nf
+spool /var/spool/gfarm
+spool_serverport 600
+metadb_serverhost metadb.example.org
+metadb_serverport 601
+postgresql_serverhost metadb.example.org
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
+auth enable sharedsecret 192.168.0.0/24
+sockopt keepalive
+.fi
+.PP
+The following is an example to use LDAP to store its metadata,
+and allows access from filesystem nodes and clients in any IP address
+via GSI authentication.
 
 .nf
 spool /var/spool/gfarm

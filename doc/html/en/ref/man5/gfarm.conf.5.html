@@ -1766,6 +1766,27 @@ NAME="EXAMPLES"
 ><H2
 >EXAMPLES</H2
 ><P
+>The following is an example to use PostgreSQL to store its metadata,
+and allows access from filesystem nodes and clients in IP address
+192.168.0.0/24 via sharedsecret authentication.</P
+><P
+CLASS="LITERALLAYOUT"
+>spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.org<br>
+metadb_serverport&nbsp;601<br>
+postgresql_serverhost&nbsp;metadb.example.org<br>
+postgresql_serverport&nbsp;5432<br>
+postgresql_dbname&nbsp;gfarm<br>
+postgresql_user&nbsp;gfarm<br>
+postgresql_password&nbsp;"secret-postgresql-password"<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+sockopt&nbsp;keepalive</P
+><P
+>The following is an example to use LDAP to store its metadata,
+and allows access from filesystem nodes and clients in any IP address
+via GSI authentication.</P
+><P
 CLASS="LITERALLAYOUT"
 >spool&nbsp;/var/spool/gfarm<br>
 metadb_serverhost&nbsp;metadb.example.com<br>

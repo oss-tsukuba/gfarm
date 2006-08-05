@@ -1580,17 +1580,38 @@ NAME="EXAMPLES"
 ><H2
 >EXAMPLES</H2
 ><P
+>メタデータの保存に PostgreSQL を使い、IPアドレス 192.168.0.0/24 の
+ファイルシステムノードやクライアントに対して、sharedsecret 認証を
+使う例です。</P
+><P
 CLASS="LITERALLAYOUT"
 >spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.org<br>
+metadb_serverport&nbsp;601<br>
+postgresql_serverhost&nbsp;metadb.example.org<br>
+postgresql_serverport&nbsp;5432<br>
+postgresql_dbname&nbsp;gfarm<br>
+postgresql_user&nbsp;gfarm<br>
+postgresql_password&nbsp;"secret-postgresql-password"<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+sockopt&nbsp;keepalive</P
+><P
+>メタデータの保存に LDAP を使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI 認証を使う例です。</P
+><P
+CLASS="LITERALLAYOUT"
+>spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
 metadb_serverhost&nbsp;metadb.example.com<br>
+metadb_serverport&nbsp;601<br>
 ldap_serverhost&nbsp;metadb.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
 ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"<br>
 ldap_bind_password&nbsp;"secret-ldap-password"<br>
-auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
-auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
-auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+auth&nbsp;enable&nbsp;gsi&nbsp;*<br>
+sockopt&nbsp;keepalive</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
