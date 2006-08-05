@@ -5,7 +5,6 @@
 #ifdef _REENTRANT
 
 #include <pthread.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,16 +50,9 @@ static void
 gflog_key_create(void)
 {
 	int rv = pthread_key_create(&gflog_key, free);
-	struct gflog_thread_specific *p;
 
 	if (rv != 0)
 		gflog_thread_fatal("pthread_key_create(): ", strerror(rv));
-
-	p = gflog_thread_specific_alloc();
-	rv = pthread_setspecific(gflog_key, p);
-	if (rv != 0)
-		gflog_thread_fatal("pthread_setspecific(): ", strerror(rv));
-
 	gflog_key_created = 1; /* to workaround a problem on SunOS 5.9 */
 }
 
@@ -86,7 +78,14 @@ gflog_thread_specific_get(void)
 		gflog_key_create();
 
 	p = pthread_getspecific(gflog_key);
-	assert(p != NULL);
+	if (p != NULL)
+		return (p);
+
+	p = gflog_thread_specific_alloc();
+	rv = pthread_setspecific(gflog_key, p);
+	if (rv != 0)
+		gflog_thread_fatal("pthread_setspecific(): ", strerror(rv));
+
 	return (p);
 }
 
