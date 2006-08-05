@@ -38,6 +38,10 @@
 #define WCOREDUMP(status)	((status) & 0x80)
 #endif
 
+#ifndef SHUT_WR		/* some really old OS doesn't define this symbol. */
+#define SHUT_WR	1
+#endif
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
@@ -1588,8 +1592,18 @@ gfs_server_command_io_fd_set(struct xxx_connection *client,
 			gfarm_iobuffer_set_error(cc->iobuffer[FDESC_STDIN],
 			    NULL);
 		}
-		if (gfarm_iobuffer_is_eof(cc->iobuffer[FDESC_STDIN]))
-			close(fd);
+		if (gfarm_iobuffer_is_eof(cc->iobuffer[FDESC_STDIN])) {
+			/*
+			 * We need to use shutdown(2) instead of close(2) here,
+			 * to make bash happy...
+			 * At least on Solaris 9, getpeername(2) returns EINVAL
+			 * if the opposite side of the socketpair is closed,
+			 * and bash doesn't read ~/.bashrc in such case.
+			 * Read the comment about socketpair(2) in
+			 * gfs_server_command() too.
+			 */
+			shutdown(fd, SHUT_WR);
+		}
 	}
 
 	for (i = FDESC_STDOUT; i <= FDESC_STDERR; i++) {
@@ -2061,10 +2075,17 @@ gfs_server_command(struct xxx_connection *client, char *cred_env)
 		free(xauth_command);
 	}
 #if 1	/*
-	 * To make bash execute ~/.bashrc, because bash only reads it, if
+	 * The reason why we use socketpair(2) instead of pipe(2) is
+	 * to make bash read ~/.bashrc. Because the condition that
+	 * bash reads it is as follows:
 	 *   1. $SSH_CLIENT/$SSH2_CLIENT is set, or stdin is a socket.
 	 * and
 	 *   2. $SHLVL < 2
+	 * This condition that bash uses is broken, for example, this
+	 * doesn't actually work with Sun's variant of OpenSSH on Solaris 9.
+	 *
+	 * Read the comment about shutdown(2) in gfs_server_command_io_fd_set()
+	 * too.
 	 * Honestly, people should use zsh instead of bash.
 	 */
 	if (socketpair(PF_UNIX, SOCK_STREAM, 0, stdin_pipe) == -1)
