@@ -294,9 +294,23 @@ CLASS="OPTION"
 CLASS="OPTION"
 >-s</VAR
 >
-option are excluded from the destination nodes, unless the destination
-is a subset of the source, i.e. unless the exclusion makes the destination
-an empty set.
+option are excluded from the destination nodes.
+In other words, it's guaranteed that the number of replicas on
+hosts except those specified by <VAR
+CLASS="OPTION"
+>-S</VAR
+> or <VAR
+CLASS="OPTION"
+>-s</VAR
+>
+option are same or more than the number specified by the <VAR
+CLASS="OPTION"
+>-N</VAR
+>
+option.
+However, when the destination is a subset of the source,
+i.e. when the exclusion makes the destination an empty set,
+this exclusion is not applied.
 For example, if gfrep is executed with the
 ``<VAR
 CLASS="OPTION"

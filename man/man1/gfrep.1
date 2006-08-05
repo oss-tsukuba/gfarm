@@ -81,9 +81,14 @@ This option is used solely, or with the \fB-D\fR,
 If this option is not specified, \fB-N 1\fR is assumed.
 
 The source nodes specified by \fB-S\fR or \fB-s\fR
-option are excluded from the destination nodes, unless the destination
-is a subset of the source, i.e. unless the exclusion makes the destination
-an empty set.
+option are excluded from the destination nodes.
+In other words, it's guaranteed that the number of replicas on
+hosts except those specified by \fB-S\fR or \fB-s\fR
+option are same or more than the number specified by the \fB-N\fR
+option.
+However, when the destination is a subset of the source,
+i.e. when the exclusion makes the destination an empty set,
+this exclusion is not applied.
 For example, if gfrep is executed with the
 ``\fB-N 3 -S subdomain.example.org -D example.org\fR\&'' option,
 it's guaranteed that there are at least 3 replicas in the hosts belong
