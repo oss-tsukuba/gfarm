@@ -947,17 +947,42 @@ IPアドレスを通信に用いるかを指定します。
 </refsect1>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
+
+<para>
+メタデータの保存に PostgreSQL を使い、IPアドレス 192.168.0.0/24 の
+ファイルシステムノードやクライアントに対して、sharedsecret 認証を
+使う例です。
+</para>
 <literallayout>
 spool /var/spool/gfarm
+spool_serverport 600
+metadb_serverhost metadb.example.org
+metadb_serverport 601
+postgresql_serverhost metadb.example.org
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
+auth enable sharedsecret 192.168.0.0/24
+sockopt keepalive
+</literallayout>
+
+<para>
+メタデータの保存に LDAP を使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI 認証を使う例です。
+</para>
+<literallayout>
+spool /var/spool/gfarm
+spool_serverport 600
 metadb_serverhost metadb.example.com
+metadb_serverport 601
 ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
 ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 ldap_bind_password "secret-ldap-password"
-auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
 auth enable gsi *
+sockopt keepalive
 </literallayout>
 
 
