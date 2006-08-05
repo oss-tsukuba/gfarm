@@ -140,9 +140,14 @@ This option is used solely, or with the <option>-D</option>,
 <option>-S</option> or <option>-s</option> option.</para>
 <para>If this option is not specified, <option>-N 1</option> is assumed.</para>
 <para>The source nodes specified by <option>-S</option> or <option>-s</option>
-option are excluded from the destination nodes, unless the destination
-is a subset of the source, i.e. unless the exclusion makes the destination
-an empty set.
+option are excluded from the destination nodes.
+In other words, it's guaranteed that the number of replicas on
+hosts except those specified by <option>-S</option> or <option>-s</option>
+option are same or more than the number specified by the <option>-N</option>
+option.
+However, when the destination is a subset of the source,
+i.e. when the exclusion makes the destination an empty set,
+this exclusion is not applied.
 For example, if gfrep is executed with the
 ``<option>-N 3 -S subdomain.example.org -D example.org</option>'' option,
 it's guaranteed that there are at least 3 replicas in the hosts belong
