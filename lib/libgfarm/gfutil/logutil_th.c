@@ -88,7 +88,7 @@ gflog_thread_specific_get(void)
 	 * Note that we don't have to worry about race condition between
 	 * the pthread_getspecific() call and the pthread_setspecific()
 	 * call, because any other thread won't set this per-thread storage.
-	 * (Thread-specific value is thread-specific, of course!)
+	 * (The thread-specific value is thread-specific, of course!)
 	 */
 	p = gflog_thread_specific_alloc();
 	rv = pthread_setspecific(gflog_key, p);
