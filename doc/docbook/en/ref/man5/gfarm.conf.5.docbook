@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>7 Jun 2006</date></refentryinfo>
+<refentryinfo><date>5 Aug 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -546,13 +546,13 @@ port number of PostgreSQL server.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>enable/disable</parameter>
+<term><token>auth</token> <parameter>validity</parameter>
 <parameter>method</parameter> <parameter>Host_specification</parameter></term>
 <listitem>
 <para>This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.</para>
 
-<para>The first argument should be <token>enable</token> or
+<para>The first argument should be either <token>enable</token> or
 <token>disable</token> keyword.
 The second argument <parameter>auth method</parameter> should be
 <token>gsi</token>, <token>gsi_auth</token> or <token>sharedsecret</token>
@@ -816,6 +816,8 @@ The default time is 600 seconds, i.e. ten minutes.
 <listitem>
 <para>This directive specifies time (in seconds) until cache for
 filesystem node scheduling will be expired.
+The cache holds information of each filesystem node, e.g. load average,
+disk free space and whether authentication succeeds or not.
 The default time is 600 seconds, i.e. ten minutes.
 </para>
 <para>For example,</para>
@@ -826,12 +828,30 @@ The default time is 600 seconds, i.e. ten minutes.
 </varlistentry>
 
 <varlistentry>
+<term><token>write_local_priority</token> <parameter>validity</parameter></term>
+<listitem>
+<para>Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing <token>disable</token> keyword in
+this directive, Gfarm becomes to handle localhost same with other
+filesystem nodes.
+The same thing can be done by specifing <token>disable</token>
+as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+The default is <token>enable</token>.
+</para>
+<para>For example,</para>
+<literallayout>
+	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
 <listitem>
 <para>This directive specifies disk free space (by bytes) which is
-necessary on filesystem nodes. Gfarm scheduler tries to avoid to schedule
-nodes which have free space less than this parameter, when it
-schedules filesystem nodes for jobs which may write files.
+necessary on filesystem nodes. Gfarm scheduler excludes filesystem nodes
+which have free space less than this parameter, when it
+schedules nodes for jobs which may write files.
 The size of free space may have a suffix like ``k'' (kilo bytes), 
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.
@@ -839,6 +859,19 @@ The default size is 128M bytes.
 <para>For example,</para>
 <literallayout>
 	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_cache</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive specifies maximum number of cached gfsd connections.
+The default is 16.
+</para>
+<para>For example,</para>
+<literallayout>
+	gfsd_connection_cache 32
 </literallayout>
 </listitem>
 </varlistentry>
@@ -884,7 +917,9 @@ notation.</para>
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
+		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -917,8 +952,7 @@ notation.</para>
 	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
 	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
-		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
-	&lt;auth_command&gt; ::= "enable" | "disable"
+		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
 	&lt;netparam_statement&gt; ::=
 		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
@@ -934,8 +968,11 @@ notation.</para>
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -956,6 +993,7 @@ notation.</para>
 	&lt;double_quoted_character&gt; ::=
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
+	&lt;validity&gt; ::= "enable" | "disable"
 </literallayout>
 
 </refsect1>

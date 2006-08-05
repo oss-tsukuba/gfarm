@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>7 Jun 2006</date></refentryinfo>
+<refentryinfo><date>5 Aug 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -518,11 +518,11 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>有効無効</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
+<term><token>auth</token> <parameter>有効性</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
 <para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
-<para>第1引数の<parameter>有効無効</parameter>部には、<token>enable</token> ないし <token>disable</token>
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token> ないし <token>disable</token>
 キーワードを指定します。
 第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
 <token>gsi_auth</token> ないし <token>sharedsecret</token>
@@ -763,7 +763,8 @@ IPアドレスを通信に用いるかを指定します。
 <term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
-のスケジューリング処理に関わるキャッシュの有効期限を秒数で指定します。
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
 停止していたファイルシステムノードが復活したような場合、この期限が
 切れるまでは、そのノードがスケジューリングされないことがあります。
 デフォルトは600秒すなわち10分です。
@@ -776,11 +777,28 @@ IPアドレスを通信に用いるかを指定します。
 </varlistentry>
 
 <varlistentry>
+<term><token>write_local_priority</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文で disable と指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
+なります。
+デフォルトは enable です。
+</para>
+<para>例:</para>
+<literallayout>
+	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
 <listitem>
 <para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
 します。このサイズ以下の空き容量しかないファイルシステムノードは、
-ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+ファイル書き込みを行う可能性のある操作を行う際に、選択されなくなります。
 指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
 することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
@@ -789,6 +807,20 @@ IPアドレスを通信に用いるかを指定します。
 <para>例:</para>
 <literallayout>
 	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
+</para>
+<para>例:</para>
+<literallayout>
+	gfsd_connection_cache 32
 </literallayout>
 </listitem>
 </varlistentry>
@@ -833,7 +865,9 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;
+		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -866,8 +900,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
 	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
-		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
-	&lt;auth_command&gt; ::= "enable" | "disable"
+		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
 	&lt;netparam_statement&gt; ::=
 		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
@@ -883,8 +916,11 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
 	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -905,6 +941,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;double_quoted_character&gt; ::=
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
+	&lt;validity&gt; ::= "enable" | "disable"
 </literallayout>
 
 </refsect1>
