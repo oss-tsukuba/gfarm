@@ -21,8 +21,9 @@ Update Features
   * libgfarm
 
   - improve the functionality of connection cache for gfsd to tolerate
-    restart of gfsd, and to improve the performance of gfs_unlink(3)
-    and gfs_rename(3).
+    restart of gfsd, and not to exhaust the file descriptors.  Now,
+    the number of cached connections is managed by the
+    'gfsd_connection_cache' directive in gfarm.conf (default is 16).
 
   - add definition of gfarm_error_t and GFARM_ERR_NO_ERROR, and
     gfarm_error_string(3) function.
