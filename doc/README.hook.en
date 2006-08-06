@@ -194,7 +194,7 @@ In the case of csh or tcsh,
   NOTE: The reason why libresolv.so is needed here is because libgfarm.so
     library, which is included in gfarm binary package for Solaris, has
     statically-linked OpenLDAP library in it, and the OpenLDAP library
-    refers a symbol in libresolv.so. If you are making gfarm from source
+    refers to a symbol in libresolv.so. If you are making gfarm from source
     distribution, it is possible that libresolv.so is not necessary.
 
  (5) MacOS X
@@ -286,7 +286,7 @@ the following "Limitation" section.
 -------------------------------------------------------
 
 When an operating system does not support a preload mechanism, it is
-necessary to re-link with Gfarm syscal-hooking library, gfs_hook.o, to
+necessary to re-link with Gfarm syscall-hooking library, gfs_hook.o, to
 access Gfarm file system.
 
 Note that it is necessary to link with gfs_hook.o statically when you
@@ -392,7 +392,7 @@ but need to use the following command:
 2-4) Limitation about usable shell
 
 If you use a shell other than bash, the shell often doesn't work
-correctly.  We strongly recommmend to use bash for this reason,
+correctly.  We strongly recommend to use bash for this reason,
 when you are using syscall-hooking feature.
 For example, since /bin/sh isn't bash on OSes except Linux,
 you have to use the following command:
@@ -448,11 +448,11 @@ from commands which use stat(2)/lstat(2)/fstat(2) system calls.
  (4) Solaris
 =============
 
-   - Currently, syscall-hooking function for fsat(2) system call isn't
-     implemented. Especially because its fstatat64() and openat64()
-     subfunction aren't implemented, OS-supplied tar command and pax
-     command don't work to extract a tar file. Although you can use
-     GNU tar command for the purpuse instead.
+   - Currently, syscall-hooking function for fstat(2) system call isn't
+     implemented. Especially because the fstatat64() and openat64()
+     subfunctions aren't implemented, OS-supplied tar command and pax
+     command don't work to extract a tar file, although you can use
+     GNU tar command for the purpose instead.
    - If you use the `test' command, a builtin function of /bin/sh,
      with filesystem access options like -d, /bin/sh itself dumps core
      at least on Solaris 9/sparc. You can workaround this problem by
@@ -465,17 +465,17 @@ from commands which use stat(2)/lstat(2)/fstat(2) system calls.
  (5) MacOS X
 =============
 
-   - We haven't done any test on this platfrom.
+   - We haven't done any test on this platform.
 
  (6) HP-UX
 =============
 
-   - We haven't done any test on this platfrom.
+   - We haven't done any test on this platform.
 
  (7) Tru64
 =============
 
-   - We haven't done any test on this platfrom.
+   - We haven't done any test on this platform.
 
 ======================================================================
 
