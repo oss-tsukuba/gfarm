@@ -1,20 +1,19 @@
 #!/bin/sh
 
-. ./regress.conf
+. ./account.sh
 
 log=log
 rm -f $log
+exec >$log
 
 case $# in
 0)	schedule=./schedule;;
 *)	schedule=$*;;
 esac
 
+clear_counters
+fmt_init
 killed=0
-pass=0
-fail=0
-skip=0
-fmt="%-60.60s ... %s"
 
 while read line; do
 	set x $line
@@ -23,53 +22,25 @@ while read line; do
 	case $1 in '#'*) continue;; esac
 
 	tst=$1
-	fin="-------------------------------------------------- --- ----"
 	if [ -f $tst ]; then
-		( printf "$fmt" "$tst"; echo "BEGIN" ) >>$log
-		  printf "$fmt" "$tst"
+		print_header
 
 		# XXX FIXME: Solaris 9 /bin/sh dumps core with sh/test-d.sh
-		$shell $tst </dev/null >>$log 2>&1
-		exit_code=$?
+		$shell $tst </dev/null 2>&1
 
-		case $exit_code in
-		$exit_pass)
-			( printf "$fmt" "$tst"; echo "PASS" ) >>$log
-						echo "PASS"
-			pass=`expr $pass + 1`;;
-		$exit_fail)
-			( printf "$fmt" "$tst"; echo "FAIL" ) >>$log
-						echo "FAIL"
-			fail=`expr $fail + 1`;;
-		*)	case $exit_code in
-			$exit_trap)
-				( printf "$fmt" "$tst"; echo "KILLED" ) >>$log
-							echo "KILLED";;
-			*)	( printf "$fmt" "$tst";
-				  echo "exit code = $exit_code" ) >>$log
-				  echo "exit code = $exit_code";;
-			esac
+		eval_result $?
+		exit_code=$?
+		if [ $exit_code -eq $exit_trap ]; then
 			killed=1
-			break;;
-		esac
-		echo "$fin" >>$log
+			break
+		fi
+		print_footer
 	else
-		( printf "$fmt" "$tst"; echo "SKIPPED" ) >>$log
-					echo "SKIPPED"
-		skip=`expr $skip + 1`
+		treat_as_untested
 	fi
-	
 done < $schedule
 
-echo ""
-echo "Total test: `expr $pass + $fail`"
-echo "  success : $pass"
-echo "  failure : $fail"
+print_summary >&2
 
-if [ $skip != 0 ]; then
-echo ""
-echo "  skipped : $skip"
-fi
-
-case $killed in 1) exit $exit_trap;; esac
-[ $fail = 0 ]
+if [ $killed -eq 1 ]; then exit $exit_trap; fi
+exitcode_by_summary

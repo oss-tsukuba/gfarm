@@ -1,16 +1,20 @@
 #!/bin/sh
 
+. ./account.sh
+
 log=log
-fmt="%-60.60s ... "
+exec >>$log
+
+clear_counters
+fmt_init
 
 for tst
 do
-	printf "$fmt" "$tst"
-	sh $tst </dev/null >>$log 2>&1
+	print_header
+	$shell $tst </dev/null 2>&1
+	eval_result $?
 	exit_code=$?
-	case $exit_code in
-	0)	echo "PASS";;
-	1)	echo "FAIL";;
-	*)	echo "exit code = $exit_code";;
-	esac
+	if [ $exit_code -eq $exit_trap ]; then
+		break
+	fi
 done
