@@ -14,7 +14,7 @@ killed=0
 pass=0
 fail=0
 skip=0
-fmt="%-50.50s ... %s"
+fmt="%-60.60s ... %s"
 
 while read line; do
 	set x $line

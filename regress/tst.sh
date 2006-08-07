@@ -1,7 +1,7 @@
 #!/bin/sh
 
 log=log
-fmt="%-50.50s ... "
+fmt="%-60.60s ... "
 
 for tst
 do
