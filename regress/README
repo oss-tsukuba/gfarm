@@ -11,6 +11,3 @@ TO WRITE TEST
 i.e.
 - each test shouldn't assume the order of the tests.
 - each test should clear the changes made by the test before exiting.
-
-TODO
-- test config-gfarm, config-gfsd
