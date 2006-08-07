@@ -73,5 +73,8 @@ gfs_hook/tool/diff/diff.sh
 gfs_hook/tool/diff/diff-r.sh
 gfs_hook/tool/grep/grep.sh
 gfs_hook/tool/pax/pax-r.sh
+gfs_hook/feature/permission/create_file_in_mode_300_dir.sh
+gfs_hook/feature/permission/create_file_in_mode_200_dir.sh
+gfs_hook/feature/permission/create_file_in_mode_100_dir.sh
+gfs_hook/feature/permission/create_file_in_mode_000_dir.sh
 gfs_hook/tool/build/configure_make.sh
-gfs_hook/feature/permission/open_file.sh
