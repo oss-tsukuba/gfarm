@@ -66,6 +66,8 @@ gfs_hook/tool/sh/test-x.sh
 gfs_hook/tool/mkdir/mkdir.sh
 gfs_hook/tool/mkdir/mkdir-p.sh
 gfs_hook/tool/rmdir/rmdir.sh
+gfs_hook/tool/scp/scp_from_gfarm.sh
+gfs_hook/tool/scp/scp_to_gfarm.sh
 gfs_hook/tool/sh/umask_022_dir.sh
 gfs_hook/tool/sh/umask_077_dir.sh
 gfs_hook/tool/sh/umask_000_dir.sh
