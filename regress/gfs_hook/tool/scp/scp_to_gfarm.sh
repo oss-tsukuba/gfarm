@@ -7,9 +7,11 @@ localtmp=$localtop/`basename $hooktmp`
 
 trap 'rm -f $hooktmp; ssh $host rm -f $localtmp; exit $exit_trap' $trap_sigs
 
-if scp $data/1byte $host:$localtmp &&
-   scp $host:$localtmp $hooktmp &&
-   cmp -s $data/1byte $hooktmp
+if ! ssh-add -l >/dev/null; then
+    exit $exit_untested
+elif scp $data/1byte $host:$localtmp &&
+    scp $host:$localtmp $hooktmp &&
+    cmp -s $data/1byte $hooktmp
 then
     exit_code=$exit_pass
 fi
