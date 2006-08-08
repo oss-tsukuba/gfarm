@@ -186,14 +186,21 @@ rm -rf ${RPM_BUILD_ROOT}
 %postun libs -p /sbin/ldconfig
 
 %post fsnode
-echo copy /etc/gfarm.conf from metadata server and
-echo run %{prefix}/bin/config-gfsd '<spool_directory>'
+if [ ! -f /etc/gfarm.conf ]; then
+	echo copy /etc/gfarm.conf from metadata (cache) server and
+	echo run %{prefix}/bin/config-gfsd
+fi
 
 %post server
-echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
+if [ ! -f /etc/gfarm.conf ]; then
+	echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
+fi
 
 %post agent
-echo run %{prefix}/bin/config-agent to configure Gfarm metadata cache server
+if [ ! -f /etc/gfarm.conf ]; then
+	echo copy /etc/gfarm.conf from metadata server and
+	echo run %{prefix}/bin/config-agent to configure Gfarm metadata cache server
+fi
 
 %preun fsnode
 if [ "$1" = 0 ]
