@@ -190,7 +190,7 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %post fsnode
 if [ ! -f /etc/gfarm.conf ]; then
-	echo copy /etc/gfarm.conf from metadata (cache) server and
+	echo "copy /etc/gfarm.conf from metadata (cache) server and"
 	echo run %{prefix}/bin/config-gfsd
 fi
 
