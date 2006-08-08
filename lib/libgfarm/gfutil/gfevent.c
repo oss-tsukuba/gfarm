@@ -15,10 +15,6 @@
 #include "gfutil.h"
 #include "gfevent.h"
 
-/* select(2) */
-#ifndef howmany
-#define howmany(x, y) (((x) + ((y) - 1)) / (y))
-#endif
 #define MIN_FDS_SIZE	FD_SETSIZE
 
 /* event */
@@ -184,14 +180,23 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 
 	if (fd >= q->fd_set_size) {
 		size_t fds_size, fds_array_length, fds_bytes;
+		int overflow = 0;
 
 		fds_size = q->fd_set_size > 0 ? q->fd_set_size : MIN_FDS_SIZE;
 		for (; fd >= fds_size; fds_size += fds_size)
 			;
-		fds_array_length = howmany(fds_size,
-		    sizeof(fsp->fds_bits[0]) * CHAR_BIT);
-		fds_bytes = fds_array_length * sizeof(fsp->fds_bits[0]);
-
+		/*
+		 * This calculates:
+		 *	howmany(fds_size, sizeof(fsp->fds_bits[0]) * CHAR_BIT);
+		 * where howmany(x, y) == (((x) + ((y) - 1)) / (y))
+		 */
+		fds_array_length = gfarm_size_add(&overflow, fds_size,
+		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT) - 1) /
+		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT);
+		fds_bytes = gfarm_size_mul(&overflow,
+		    fds_array_length, sizeof(fsp->fds_bits[0]));
+		if (overflow)
+			return (0); /* failure */
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->read_fd_set))
 			return (0); /* failure */
