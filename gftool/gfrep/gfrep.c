@@ -790,12 +790,12 @@ get_hosts_have_replica(
 
 	e = gfarm_url_make_path(url, &gfarm_file);
 	if (e != NULL)
-		return (e);
+		goto free_hashtab;
 	e = gfarm_file_section_copy_info_get_all_by_section(
 				 gfarm_file, section, &ncinfos, &cinfos);
 	free(gfarm_file);
 	if (e != NULL)
-		return (e);
+		goto free_hashtab;
 
 	GFARM_MALLOC_ARRAY(hosts, ncinfos);
 	if (hosts == NULL) {
@@ -807,12 +807,14 @@ get_hosts_have_replica(
 		entry = gfarm_hash_lookup(hashtab,
 			  cinfos[i].hostname, strlen(cinfos[i].hostname) + 1);
 		if (entry != NULL)
-			hosts[nhosts++] = cinfos[i].hostname;
+			hosts[nhosts++] = strdup(cinfos[i].hostname);
 	}
-	gfarm_hash_table_free(hashtab);
 	*nrhosts = nhosts;
 	*rhosts = hosts;
-	return (NULL);
+	gfarm_file_section_copy_info_free_all(ncinfos, cinfos);	
+ free_hashtab:	
+	gfarm_hash_table_free(hashtab);
+	return (e);
 }
 
 #define min(a,b) (((a)<(b))?(a):(b))
