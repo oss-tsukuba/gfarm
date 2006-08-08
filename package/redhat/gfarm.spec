@@ -142,6 +142,9 @@ development library for gfarm
 file system browser for gfarm
 
 %changelog
+* Tue Aug  8 2006 SODA Noriyuki <soda@sra.co.jp>
+- restart gfsd, gfmd and gfarm_agent at update, if they are already running.
+
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
 - first public release for version 1.0b1
 
@@ -205,6 +208,7 @@ fi
 %preun fsnode
 if [ "$1" = 0 ]
 then
+	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
 	if [ -f /etc/init.d/gfsd ]; then
 		/sbin/service gfsd stop > /dev/null 2>&1 || :
 		/sbin/chkconfig --del gfsd > /dev/null 2>&1 || :
@@ -234,6 +238,37 @@ then
 	if [ -f /etc/init.d/gfarm_agent ]; then
 		/sbin/service gfarm_agent stop > /dev/null 2>&1 || :
 		/sbin/chkconfig --del gfarm_agent > /dev/null 2>&1 || :
+	fi
+fi
+
+%postun fsnode
+if [ "$1" -ge 1 ]
+then
+	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
+	if [ -f /etc/init.d/gfsd ] && /etc/service gfsd status > /dev/null 2>&1
+	then
+		/sbin/service gfsd restart > /dev/null 2>&1 || :
+	fi
+fi
+
+%postun server
+if [ "$1" -ge 1 ]
+then
+	if [ -f /etc/init.d/gfmd ] && /etc/service gfmd status > /dev/null 2>&1
+	then
+		/sbin/service gfmd restart > /dev/null 2>&1 || :
+	fi
+	# We don't have to restart gfarm-slapd and gfarm-pgsql,
+	# because the binaries aren't included in the gfarm RPMs.
+fi
+
+%postun agent
+if [ "$1" -ge 1 ]
+then
+	if [ -f /etc/init.d/gfarm_agent ] &&
+	   /etc/service gfarm_agent status > /dev/null 2>&1
+	then
+		/sbin/service gfarm_agent restart > /dev/null 2>&1 || :
 	fi
 fi
 
