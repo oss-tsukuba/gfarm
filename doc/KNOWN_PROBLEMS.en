@@ -333,6 +333,15 @@
   Plan to fix:
 	Not determined yet.
 
+- There is no way to stop a replication process.
+
+  Even if you kill a gfrep command, a network copy process cannot be
+  stopped until the copy completes for the ongoing file fragment.
+  The metadata for the replica won't be updated, though.
+
+  Plan to fix:
+	Not determined yet.
+
 - Gfarm library isn't multithread safe.
 
   Plan to fix:
