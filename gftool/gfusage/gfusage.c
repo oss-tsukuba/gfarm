@@ -36,7 +36,7 @@ gfarm_usage_initialize(gfarm_usage *gup)
 {
 	gfarm_usage gu;
 
-	gu = malloc(sizeof(struct gfarm_usage_st));
+	GFARM_MALLOC(gu);
 	if (gu == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -102,7 +102,7 @@ gfarm_usage_pathname_add(gfarm_usage gu, const char *user,
 		ps->nsections = 0;
 		ps->ncopies = 0;
 	}
-	now = malloc(sizeof(struct pathname_list));
+	GFARM_MALLOC(now);
 	if (now == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	now->pathname = strdup(pathname);
@@ -129,7 +129,7 @@ gfarm_usage_all_users_get(gfarm_usage gu, char ***usersp, int *nusersp)
 	int nusers, memlen, keylen;
 
 	memlen = 8;
-	users = malloc(memlen * sizeof(char *));
+	GFARM_MALLOC_ARRAY(users, memlen);
 	if (users == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -141,7 +141,7 @@ gfarm_usage_all_users_get(gfarm_usage gu, char ***usersp, int *nusersp)
 		        break;
 		key = gfarm_hash_entry_key(he);
 		keylen = gfarm_hash_entry_key_length(he);
-		user = calloc(keylen + 1, 1);
+		GFARM_CALLOC_ARRAY(user, keylen + 1);
 		if (user == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			break;
@@ -149,7 +149,7 @@ gfarm_usage_all_users_get(gfarm_usage gu, char ***usersp, int *nusersp)
 		memcpy(user, key, keylen);
 		if (nusers + 1 > memlen) {
 			memlen = memlen * 2;
-			users = realloc(users, memlen * sizeof(char *));
+			GFARM_REALLOC_ARRAY(users, users, memlen);
 			if (users == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				break;
