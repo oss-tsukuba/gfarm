@@ -194,7 +194,7 @@ str_array_to_str_with_space(char **array, int start, int count)
 
 	for (i = start; i < count && array[i] != NULL; i++)
 		len += strlen(array[i]) + 1;
-	str = calloc(len + 1, 1);
+	GFARM_CALLOC_ARRAY(str, len + 1);
 	if (str == NULL)
 		return (NULL);
 	for (i = start; i < count && array[i] != NULL; i++) {
@@ -1314,7 +1314,7 @@ my_find_get_next(
 		if (stat(newpath, &st) != -1 && S_ISDIR(st.st_mode)) {
 #endif
 			my_find_init(newpath, &nextmfp, mfp->filter);
-			nextmfp.saved = calloc(sizeof(struct my_find), 1);
+			GFARM_MALLOC(nextmfp.saved);
 			if (nextmfp.saved == NULL) {
 				mfp->error = GFARM_ERR_NO_MEMORY;
 				free(newpath);
@@ -1396,7 +1396,7 @@ my_find_filter(
 		/* cut PATHINFO_SUFFIX */
 		len = strlen(pathname);
 		sufflen = strlen(PATHINFO_SUFFIX); /* XXX */
-		realpath = calloc((len - sufflen + 1) * sizeof(char), 1);
+		GFARM_CALLOC_ARRAY(realpath, len - sufflen + 1);
 		if (realpath == NULL)
 			return (MY_FIND_IGNORE); /* ignore */
 		strncpy(realpath, pathname, len - sufflen);
