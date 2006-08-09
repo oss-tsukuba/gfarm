@@ -919,16 +919,60 @@ get_mode(char *url, gfarm_mode_t *mode)
 }
 
 static int
+do_any_sections_have_no_copy(char *path, char *domain_name,
+	int nhosts, char **hosts)
+{
+	int no_copy_sections = 0, i;
+	char *e, *p;
+	int nf;
+	struct gfarm_file_section_info *si;
+
+	e = gfarm_url_make_path(path, &p);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s: %s\n", program_name, path, e);
+		return (1);
+	}
+	e = gfarm_file_section_info_get_all_by_file(p, &nf, &si);
+	free(p);
+	if (e != NULL) {
+		fprintf(stderr,	"%s: %s: %s\n",	program_name, path, e);
+		return (1);
+	}
+	for (i = 0; i < nf; i++) {
+		int nrhosts;
+		char **rhosts;
+
+		e = get_hosts_have_replica(
+			path, si[i].section,
+			nhosts, hosts, &nrhosts, &rhosts);
+		if (e != NULL) {
+			fprintf(stderr,
+				"%s: get_hosts_replica_in_domain:"
+				" %s: %s: %s\n",
+				program_name, path, si[i].section, e);
+			break;
+		}
+		if (nrhosts <= 0) {
+			fprintf(stderr,
+				"%s: replicate %s:%s from %s : %s\n",
+				program_name, path, si[i].section,
+				domain_name, GFARM_ERR_NO_SUCH_OBJECT);
+			no_copy_sections++;
+		}
+		gfarm_strings_free_deeply(nrhosts, rhosts);	
+	}	
+	gfarm_file_section_info_free_all(nf, si);
+	return (no_copy_sections > 0);
+}
+
+static int
 replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 	int nshosts, char **shosts,
 	int ndhosts, char **dhosts, int ndhosts_alive, char **dhosts_alive)
 {
 	char *e;
-	int i, j, k, k2, m;
+	int i, j, k, k2, m, error_happend = 1;
 	gfarm_stringlist path_list;
-	int *nfragments;
-	struct gfarm_file_section_info **sinfos;
-	int error_happend = 0;
 	gfarm_mode_t mode;
 
 	/*
@@ -941,48 +985,8 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 	e = get_mode(path, &mode);
 	if (e != NULL)
 		return (1);
-	if (GFARM_S_ISREG(mode)) {
-		char *p;
-		int nf;
-		struct gfarm_file_section_info *si;
-
-		e = gfarm_url_make_path(path, &p);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s: %s\n", program_name, path, e);
-			return (1);
-		}
-		e = gfarm_file_section_info_get_all_by_file(p, &nf, &si);
-		free(p);
-		if (e != NULL) {
-			fprintf(stderr,	"%s: %s: %s\n",	program_name, path, e);
-			return (1);
-		}
-		for (i = 0; i < nf; i++) {
-			int nsrhosts;
-			char **srhosts;
-
-			e = get_hosts_have_replica(
-				path, si[i].section,
-				nshosts, shosts, &nsrhosts, &srhosts);
-			if (e != NULL) {
-				fprintf(stderr,
-					"%s: get_hosts_replica_in_domain:"
-					" %s: %s: %s\n",
-					program_name, path, si[i].section, e);
-				break;
-			}
-			if (nsrhosts <= 0) {
-				fprintf(stderr,
-					"%s: replicate %s:%s from %s : %s\n",
-					program_name, path, si[i].section,
-					src_domain, GFARM_ERR_NO_SUCH_OBJECT);
-				error_happend = 1;
-			}
-			gfarm_strings_free_deeply(nsrhosts, srhosts);	
-		}	
-		gfarm_file_section_info_free_all(nf, si);
-	}
-	if (error_happend == 1)
+	if (GFARM_S_ISREG(mode) && 
+	    do_any_sections_have_no_copy(path, src_domain, nshosts, shosts))
 		return (1);
 
 	e = gfarm_stringlist_init(&path_list);
@@ -990,7 +994,6 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 		fprintf(stderr, "%s %s: %s\n", program_name, path, e);
 		exit(EXIT_FAILURE);
 	}
-
 	if (traverse_file_tree(path, collect_file_paths_callback,
 			       &path_list)) {
 		error_happend = 1;
@@ -999,18 +1002,15 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 	if (gfarm_stringlist_length(&path_list) == 0)
 		goto free_path_list;
 
-	GFARM_MALLOC_ARRAY(nfragments, gfarm_stringlist_length(&path_list));
-	if (nfragments == NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, GFARM_ERR_NO_MEMORY);
-		exit(EXIT_FAILURE);
-	}
-	GFARM_MALLOC_ARRAY(sinfos, gfarm_stringlist_length(&path_list));
-	if (sinfos == NULL) {
-		fprintf(stderr, "%s: %s\n", path, GFARM_ERR_NO_MEMORY);
-		exit(EXIT_FAILURE);
-	}
+	k = 0;
 	for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
-		char *e, *url, *gfarm_file;
+		char *url, *gfarm_file;
+
+		char *file_path, **srhosts, **drhosts;
+		int nsrhosts, ndrhosts;
+
+		int nsinfos;
+		struct gfarm_file_section_info *sinfos;
 
 		url = gfarm_stringlist_elem(&path_list, i);
 		e = gfarm_url_make_path(url, &gfarm_file);
@@ -1019,31 +1019,24 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 			continue;
 		}
 		e = gfarm_file_section_info_get_all_by_file(
-			gfarm_file, &nfragments[i], &sinfos[i]);
+			gfarm_file, &nsinfos, &sinfos);
 		free(gfarm_file);
 		if (e != NULL) {
 			fprintf(stderr,	"%s: %s: %s\n",	program_name, url, e);
-			nfragments[i] = 0;
-			sinfos[i] = NULL;
 			continue;
 		}
-	}
-	k = 0;
-	for (i = 0; i < gfarm_stringlist_length(&path_list); i++) {
-		char *file_path, **srhosts, **drhosts;
-		int nsrhosts, ndrhosts;
 
 		file_path = gfarm_stringlist_elem(&path_list, i);
-		for (j = 0; j < nfragments[i]; j++) {
+		for (j = 0; j < nsinfos; j++) {
 			e = get_hosts_have_replica(
-				file_path, sinfos[i][j].section,
+				file_path, sinfos[j].section,
 				nshosts, shosts, &nsrhosts, &srhosts);
 			if (e != NULL) {
 				fprintf(stderr,
 					"%s: get_hosts_replica_in_domain:"
 					" %s: %s: %s\n",
 					program_name, file_path,
-					sinfos[i][j].section, e);
+					sinfos[j].section, e);
 				continue;
 			}
 			if (nsrhosts <= 0) {
@@ -1052,14 +1045,14 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 			}
 
 			e = get_hosts_have_replica(
-				file_path, sinfos[i][j].section,
+				file_path, sinfos[j].section,
 				ndhosts, dhosts, &ndrhosts, &drhosts);
 			if (e != NULL) {
 				fprintf(stderr,
 					"%s: get_hosts_replica_in_domain:"
 					" %s: %s: %s\n",
 					program_name, file_path,
-					sinfos[i][j].section, e);
+					sinfos[j].section, e);
 				gfarm_strings_free_deeply(nsrhosts, srhosts);
 				continue;
 			}
@@ -1081,19 +1074,19 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 				      "%s: replicating %s:%s from %s to %s\n",
 					  program_name,
 					  file_path, 
-					  sinfos[i][j].section,
+					  sinfos[j].section,
 					  srhosts[0],
 					  dhosts_alive[k]);
 				e = (*act->transfer_from_to)(
 					file_path,
-					sinfos[i][j].section,
+					sinfos[j].section,
 					srhosts[0],
 					dhosts_alive[k]);
 				if (e != NULL) {
 					fprintf(stderr,
 					    "%s: %s %s:%s from %s to %s: %s\n",
 					    program_name, act->action,
-					    file_path, sinfos[i][j].section,
+					    file_path, sinfos[j].section,
 					    srhosts[0], dhosts_alive[k], e);
 					continue;
 				}
@@ -1102,13 +1095,8 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 			gfarm_strings_free_deeply(nsrhosts, srhosts);
 			gfarm_strings_free_deeply(ndrhosts, drhosts);
 		}
+		gfarm_file_section_info_free_all(nsinfos, sinfos);
 	}
-	for (i = 0; i < gfarm_stringlist_length(&path_list); i++)
-		if (sinfos[i] != NULL)
-			gfarm_file_section_info_free_all(nfragments[i],
-						sinfos[i]);
-	free(sinfos);
-	free(nfragments);
  free_path_list:
 	gfarm_stringlist_free_deeply(&path_list);
 	return (error_happend);
