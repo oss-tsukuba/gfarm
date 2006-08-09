@@ -856,12 +856,19 @@ char *
 gfs_fstat(GFS_File gf, struct gfs_stat *status)
 {
 	char *e;
+	file_offset_t size;
 
 	e = gfs_pio_check_view_default(gf);
 	if (e != NULL)
 		return (e);
 
-	return ((*gf->ops->view_stat)(gf, status));
+	e = (*gf->ops->view_stat)(gf, status);
+	if (e != NULL)
+		return (e);
+	if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) != 0 &&
+	    status->st_size < (size = gf->offset + gf->length))
+		status->st_size = size;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static char *
