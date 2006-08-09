@@ -36,7 +36,8 @@ enum gfs_proto_command {
 	GFS_PROTO_FSYNC,
 	GFS_PROTO_OPEN_LOCAL,
 	GFS_PROTO_FSTAT,
-	GFS_PROTO_READEX /* reservation */
+	GFS_PROTO_READEX, /* reservation */
+	GFS_PROTO_SYNC /* reservation */
 };
 
 enum gfs_proto_error {
