@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-host=`gfhost | sed -n '1p'`
+host=`gfhost | grep -v '^localhost$' | sed -n '1p'`
 localtmp=$localtop/`basename $hooktmp`
 
 trap 'rm -f $hooktmp; ssh $host rm -f $localtmp; exit $exit_trap' $trap_sigs
