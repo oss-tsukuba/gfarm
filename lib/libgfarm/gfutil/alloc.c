@@ -24,6 +24,19 @@ gfarm_size_mul(int *overflowp, size_t a, size_t b)
 }
 
 void *
+gfarm_calloc_array(size_t number, size_t size)
+{
+	int overflow = 0;
+
+	gfarm_size_mul(&overflow, number, size);
+	if (overflow) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	return (calloc(number, size));
+}
+
+void *
 gfarm_malloc_array(size_t number, size_t size)
 {
 	int overflow = 0;
