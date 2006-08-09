@@ -83,6 +83,17 @@
   becomes 0777, thus, users can bypass the permission of the directory
   by accessing the gfarm spool directly.
 
+  Another problem happens if write permission of a directory is dropped
+  by the chmod operation.  When a file or directory jsut under the directory
+  has been virtually existed, but it hasn't been replicated to a filesystem
+  node, it cannot be replicated to the filesystem node on the fly after
+  the chmod operation.
+  If it is a directory instead of a file, the problem is worse, you may
+  not be able to create a file under the directory because the directory
+  is missing.
+  This problem is recorded in the following URL:
+  http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=19
+
   Plan to fix:
 	Gfarm v2 doesn't have this problem, because of its spool structure.
 	We don't have a plan to fix this problem in the gfarm v1 branch.
