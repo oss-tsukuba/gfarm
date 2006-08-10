@@ -259,7 +259,7 @@ gfarm_auth_server_cred_config_enter(char *service_tag,
 	conf->type = GFARM_AUTH_CRED_TYPE_DEFAULT;
 	conf->service = NULL;
 	conf->name = NULL;
-	*confp = conf;
+	*confp = *p = conf;
 	return (NULL);
 }
 
