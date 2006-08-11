@@ -391,6 +391,7 @@ int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
 static int schedule_write_local_priority = MISC_DEFAULT;
+static char *schedule_write_target_domain = NULL;
 file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 
@@ -425,6 +426,7 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
 		&gfarm_localfs_datadir,
+		&schedule_write_target_domain,
 	};
 	static void (*funcs[])(void) = {
 		gfarm_agent_name_clear,
@@ -528,6 +530,17 @@ gfarm_schedule_write_local_priority(void)
 	if (strcasecmp(s, "disable") == 0)
 		return (0);
 	return (1);
+}
+
+char *
+gfarm_schedule_write_target_domain(void)
+{
+	char *domain = getenv("GFARM_WRITE_TARGET_DOMAIN");
+
+	if (domain != NULL)
+		return (domain);
+	else
+		return (schedule_write_target_domain);
 }
 
 /*
@@ -1175,6 +1188,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
+	} else if (strcmp(s, o = "write_target_domain") == 0) {
+		e = parse_set_var(p, &schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {

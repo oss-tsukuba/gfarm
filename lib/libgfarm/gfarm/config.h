@@ -43,6 +43,7 @@ extern int gf_on_demand_replication;
 extern int gf_hook_default_global;
 
 int gfarm_schedule_write_local_priority(void);
+char *gfarm_schedule_write_target_domain(void);
 
 /* redirection */
 extern struct gfs_file *gf_stdout, *gf_stderr;

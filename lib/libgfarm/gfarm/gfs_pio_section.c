@@ -494,7 +494,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			 * 'gfsd' on a local host is not running, or
 			 * local host is nearly disk full.
 			 */
-			char *domain = getenv("GFARM_WRITE_TARGET_DOMAIN");
+			char *domain = gfarm_schedule_write_target_domain();
 
 			if (domain == NULL)
 				e = GFARM_ERR_NO_SUCH_OBJECT;

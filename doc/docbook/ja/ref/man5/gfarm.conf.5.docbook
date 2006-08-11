@@ -784,11 +784,32 @@ IPアドレスを通信に用いるかを指定します。
 ローカルホストを他のホストと同様に扱うように変更することができます。
 環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
 なります。
+両方指定した場合は、環境変数が優先されます。
 デフォルトは enable です。
 </para>
 <para>例:</para>
 <literallayout>
 	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
+<listitem>
+<para>gfarm がファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数 GFARM_WRITE_TARGET_DOMAIN でも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+</para>
+<para>例:</para>
+<literallayout>
+	write_target_domain example.org
 </literallayout>
 </listitem>
 </varlistentry>
@@ -866,6 +887,7 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
@@ -918,6 +940,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
 	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
+	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;

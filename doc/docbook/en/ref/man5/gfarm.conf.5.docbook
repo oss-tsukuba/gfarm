@@ -836,11 +836,35 @@ this directive, Gfarm becomes to handle localhost same with other
 filesystem nodes.
 The same thing can be done by specifing <token>disable</token>
 as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
 The default is <token>enable</token>.
 </para>
 <para>For example,</para>
 <literallayout>
 	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_target_domain</token> <parameter>domain</parameter></term>
+<listitem>
+<para>Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be choosed from
+all nodes.
+You can specify this domain by the GFARM_WRITE_TARGET_DOMAIN environment
+variable too.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
+Note that if you specify this directive more than once, only first one
+will be used and the latters are just ignored.
+</para>
+<para>For example,</para>
+<literallayout>
+	write_target_domain example.org
 </literallayout>
 </listitem>
 </varlistentry>
@@ -918,6 +942,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
@@ -970,6 +995,7 @@ notation.</para>
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
 	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
+	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
