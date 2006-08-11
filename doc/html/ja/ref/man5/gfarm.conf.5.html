@@ -1399,12 +1399,40 @@ CLASS="PARAMETER"
 ¥í¡¼¥«¥ë¥Û¥¹¥È¤òÂ¾¤Î¥Û¥¹¥È¤ÈÆ±ÍÍ¤Ë°·¤¦¤è¤¦¤ËÊÑ¹¹¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
 ´Ä¶­ÊÑ¿ô GFARM_WRITE_LOCAL_PRIORITY ¤Ë disable ¤ÈÀßÄê¤·¤Æ¤â¡¢Æ±¤¸°ÕÌ£¤Ë
 ¤Ê¤ê¤Þ¤¹¡£
+Î¾Êý»ØÄê¤·¤¿¾ì¹ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
 ¥Ç¥Õ¥©¥ë¥È¤Ï enable ¤Ç¤¹¡£</P
 ><P
 >Îã:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	write_local_priority&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_target_domain</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥É¥á¥¤¥óÌ¾</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¤¬¥Õ¥¡¥¤¥ë¤ò½ñ¤­¹þ¤à¥Î¡¼¥É¤ò·è¤á¤ëºÝ¡¢¤Ç¤­¤ë¸Â¤ê¤³¤³¤Ç
+»ØÄê¤·¤¿¥É¥á¥¤¥ó¤òÍ¥Àè¤¹¤ë¤è¤¦¤ËÆ°ºî¤·¤Þ¤¹¡£
+¤³¤³¤Ç»ØÄê¤·¤¿¥É¥á¥¤¥ó¤Ë¥Õ¥¡¥¤¥ëºîÀ®²ÄÇ½¤Ê¥Û¥¹¥È¤¬Â¸ºß¤·¤Ê¤¤¾ì¹ç¤ä¡¢
+ÆÃ¤Ë¤³¤Î»ØÄê¤ò¹Ô¤Ê¤ï¤Ê¤«¤Ã¤¿¾ì¹ç¤Ë¤Ï¡¢Á´¥Î¡¼¥É¤¬ÂÐ¾Ý¤È¤Ê¤ê¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_WRITE_TARGET_DOMAIN ¤Ç¤â¡¢Æ±ÍÍ¤Ê»ØÄê¤¬¤Ç¤­¤Þ¤¹¡£
+Î¾Êý»ØÄê¤·¤¿¾ì¹ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
+¤Ê¤ê¤Þ¤¹¡£
+¤³¤Î»ØÄê¤òÊ£¿ô²ó¹Ô¤Ê¤Ã¤Æ¤â¡¢ºÇ½é¤Î»ØÄê¤Î¤ß¤¬ÍøÍÑ¤µ¤ì¡¢ÆóÈÖÌÜ°Ê¹ß¤Ï
+Ã±¤ËÌµ»ë¤µ¤ì¤ë¤Î¤ÇÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_target_domain&nbsp;example.org</P
 ></DD
 ><DT
 ><SPAN
@@ -1501,6 +1529,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
+		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
@@ -1553,6 +1582,7 @@ CLASS="LITERALLAYOUT"
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
+	&#60;write_target_domain_statement&#62;&nbsp;::=&nbsp;"write_target_domain"&nbsp;&#60;string&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>

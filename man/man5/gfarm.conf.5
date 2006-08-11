@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "05 August 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "12 August 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -679,12 +679,33 @@ this directive, Gfarm becomes to handle localhost same with other
 filesystem nodes.
 The same thing can be done by specifing disable
 as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
 The default is enable\&.
 
 For example,
 
 .nf
 	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIdomain\fB\fR
+Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be choosed from
+all nodes.
+You can specify this domain by the GFARM_WRITE_TARGET_DOMAIN environment
+variable too.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
+Note that if you specify this directive more than once, only first one
+will be used and the latters are just ignored.
+
+For example,
+
+.nf
+	write_target_domain example.org
 .fi
 .TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
@@ -752,6 +773,7 @@ notation.
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement>
 	<spool_statement> ::= "spool" <pathname>
@@ -804,6 +826,7 @@ notation.
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>

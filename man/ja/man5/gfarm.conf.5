@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "05 August 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "12 August 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -626,12 +626,30 @@ gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
 ローカルホストを他のホストと同様に扱うように変更することができます。
 環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
 なります。
+両方指定した場合は、環境変数が優先されます。
 デフォルトは enable です。
 
 例:
 
 .nf
 	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIドメイン名\fB\fR
+gfarm がファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数 GFARM_WRITE_TARGET_DOMAIN でも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+
+例:
+
+.nf
+	write_target_domain example.org
 .fi
 .TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
@@ -699,6 +717,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement>
 	<spool_statement> ::= "spool" <pathname>
@@ -751,6 +770,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>

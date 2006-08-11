@@ -1582,6 +1582,8 @@ CLASS="TOKEN"
 >disable</SPAN
 >
 as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
 The default is <SPAN
 CLASS="TOKEN"
 >enable</SPAN
@@ -1591,6 +1593,35 @@ CLASS="TOKEN"
 ><P
 CLASS="LITERALLAYOUT"
 >	write_local_priority&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_target_domain</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>domain</I
+></TT
+></DT
+><DD
+><P
+>Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be choosed from
+all nodes.
+You can specify this domain by the GFARM_WRITE_TARGET_DOMAIN environment
+variable too.
+When both this directive and the environment are specified,
+the value specified by the environment will be used.
+Note that if you specify this directive more than once, only first one
+will be used and the latters are just ignored.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_target_domain&nbsp;example.org</P
 ></DD
 ><DT
 ><SPAN
@@ -1687,6 +1718,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
+		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
@@ -1739,6 +1771,7 @@ CLASS="LITERALLAYOUT"
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
+	&#60;write_target_domain_statement&#62;&nbsp;::=&nbsp;"write_target_domain"&nbsp;&#60;string&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
