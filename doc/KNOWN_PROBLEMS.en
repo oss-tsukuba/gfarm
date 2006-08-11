@@ -84,7 +84,7 @@
   by accessing the gfarm spool directly.
 
   Another problem happens if write permission of a directory is dropped
-  by the chmod operation.  When a file or directory jsut under the directory
+  by the chmod operation.  When a file or directory just under the directory
   has been virtually existed, but it hasn't been replicated to a filesystem
   node, it cannot be replicated to the filesystem node on the fly after
   the chmod operation.
