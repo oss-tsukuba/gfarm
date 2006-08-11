@@ -971,9 +971,10 @@ replicate_files_to_domain(char *path, int min_replicas, char *src_domain,
 	int ndhosts, char **dhosts, int ndhosts_alive, char **dhosts_alive)
 {
 	char *e;
-	int i, j, k, k2, m, error_happend = 1;
+	int i, j, k, k2, m;
 	gfarm_stringlist path_list;
 	gfarm_mode_t mode;
+	int error_happend = 0;
 
 	/*
 	 * If the parameter 'path' is a regular file and none of the copies
