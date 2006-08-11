@@ -108,6 +108,8 @@ char *gfs_pio_readline(GFS_File, char **, size_t *, size_t *);
 char *gfs_pio_readdelim(GFS_File, char **, size_t *, size_t *,
 	const char *, size_t);
 
+void gfs_client_connection_gc(void);
+
 /*
  *  For legacy code
  */
