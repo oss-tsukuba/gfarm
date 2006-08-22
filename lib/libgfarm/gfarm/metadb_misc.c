@@ -80,6 +80,8 @@ gfarm_foreach_section(char *(*op)(struct gfarm_file_section_info *, void *),
 		}
 		gfarm_file_section_info_free_all(nsections, sections);
 	}
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_FRAGMENT_INFORMATION;
 	return (e_save != NULL ? e_save : e);
 }
 

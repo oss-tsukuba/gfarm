@@ -98,6 +98,8 @@ gfs_unlink_internal(const char *gfarm_file)
 
 	e = gfarm_foreach_section(unlink_section_remove,
 		gfarm_file, NULL, NULL);
+	if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
+		e = NULL; /* no fragment information case */
 	e1 = gfarm_path_info_remove(gfarm_file);
 
 	return (e != NULL ? e : e1);
@@ -158,12 +160,26 @@ gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 	return (e1 != NULL ? e1 : e2);
 }
 
+static char *
+gfs_unlink_section_no_fragment_check(const char *gfarm_file)
+{
+	struct gfarm_file_section_info *sections;
+	int nsections;
+	char *e;
+
+	e = gfarm_file_section_info_get_all_by_file(
+		gfarm_file, &nsections, &sections);
+	if (e == NULL)
+		gfarm_file_section_info_free_all(nsections, sections);
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = gfarm_path_info_remove(gfarm_file);
+	return (e);
+}
+
 char *
 gfs_unlink_section(const char *gfarm_url, const char *section)
 {
 	char *e, *gfarm_file;
-	int nsections;
-	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
@@ -174,14 +190,8 @@ gfs_unlink_section(const char *gfarm_url, const char *section)
 		goto free_gfarm_file;
 
 	e = gfs_unlink_section_internal(gfarm_file, section);
-	if (e == NULL) {
-		e = gfarm_file_section_info_get_all_by_file(
-			gfarm_file, &nsections, &sections);
-		if (e == NULL)
-			gfarm_file_section_info_free_all(nsections, sections);
-		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
-			e = gfarm_path_info_remove(gfarm_file);
-	}
+	if (e == NULL)
+		e = gfs_unlink_section_no_fragment_check(gfarm_file);
 
  free_gfarm_file:
 	free(gfarm_file);
@@ -285,11 +295,15 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 		struct gfarm_file_section_copy_info *cps;
 		e = gfarm_file_section_copy_info_get_all_by_section(
 			gfarm_file, section, &ncps, &cps);
-		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 			/* Oh, there is no section copy info. */
 			/* Some filesystem nodes might be down. */
 			e = gfarm_file_section_info_remove(
 				gfarm_file, section);
+			if (e == NULL)
+				e = gfs_unlink_section_no_fragment_check(
+					gfarm_file);
+		}
 		else if (e == NULL)
 			gfarm_file_section_copy_info_free_all(ncps, cps);
 
