@@ -135,16 +135,46 @@ gfs_client_cached_connection_created(struct gfs_connection *gfs_server,
 	connection_list_head.next = gfs_server;
 }
 
+static void
+gfs_client_cached_connection_removed(struct gfs_connection *gfs_server)
+{
+	gfs_server->hash_entry = NULL;
+	gfs_server->next->prev = gfs_server->prev;
+	gfs_server->prev->next = gfs_server->next;
+}
+
+static struct gfs_connection *
+gfs_client_purge_iterator(struct gfarm_hash_iterator *it)
+{
+	struct gfarm_hash_entry *entry;
+	struct gfs_connection *gfs_server;
+
+	entry = gfarm_hash_iterator_access(it);
+	gfs_server = *(struct gfs_connection **)gfarm_hash_entry_data(entry);
+	gfp_conn_hash_iterator_purge(it);
+	gfs_client_cached_connection_removed(gfs_server);
+	return (gfs_server);
+}
+
+static void
+gfs_client_purge_connection(struct gfs_connection *gfs_server)
+{
+	/*
+	 * This must be called before gfs_client_cached_connection_removed(),
+	 * becasue gfs_client_cached_connection_removed() breaks hash_entry.
+	 */
+	gfp_conn_hash_purge(gfs_server_hashtab, gfs_server->hash_entry);
+
+	gfs_client_cached_connection_removed(gfs_server);
+}
+
 void
 gfs_client_purge_from_cache(struct gfs_connection *gfs_server)
 {
 	if (!gfs_client_connection_is_cached(gfs_server))
 		return;
 
-	gfs_server->next->prev = gfs_server->prev;
-	gfs_server->prev->next = gfs_server->next;
-	gfp_conn_hash_purge(gfs_server_hashtab, gfs_server->hash_entry);
-	gfs_server->hash_entry = NULL;
+	gfs_client_purge_connection(gfs_server);
 }
 
 /* update the LRU list to mark this gfs_server recently used */
@@ -192,7 +222,7 @@ gfs_client_connection_gc_internal(int free_target)
 
 		if (gfs_server->acquired <= 0) {
 			/* abandon this free connection */
-			gfs_client_purge_from_cache(gfs_server);
+			gfs_client_purge_connection(gfs_server);
 			gfs_client_disconnect(gfs_server);
 			--free_connections;
 		}
@@ -448,17 +478,13 @@ void
 gfs_client_terminate(void)
 {
 	struct gfarm_hash_iterator it;
-	struct gfarm_hash_entry *entry;
 	struct gfs_connection *gfs_server;
 
 	if (gfs_server_hashtab == NULL)
 		return;
 	for (gfarm_hash_iterator_begin(gfs_server_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it); ) {
-		entry = gfarm_hash_iterator_access(&it);
-		gfs_server =
-		    *(struct gfs_connection **)gfarm_hash_entry_data(entry);
-		gfp_conn_hash_iterator_purge(&it);
+		gfs_server = gfs_client_purge_iterator(&it);
 		gfs_client_connection_dispose(gfs_server);
 	}
 	gfarm_hash_table_free(gfs_server_hashtab);
