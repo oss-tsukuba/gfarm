@@ -155,7 +155,9 @@ veryclean: debug-lib-veryclean
 
 debug-gfs-hooks debug-lib-install debug-lib-clean debug-lib-veryclean:
 	@target=`expr $@ : 'debug-\(.*\)'`; \
-	echo '[' making $@ ']'; set -x; \
+	echo '[' making $@ ']'; \
+	echo \
+	$(MAKE) -f $(srcdir)/Makefile $(DEBUG_MAKEFLAGS) $${target}; \
 	$(MAKE) -f $(srcdir)/Makefile $(DEBUG_MAKEFLAGS) $${target}
 
 ###

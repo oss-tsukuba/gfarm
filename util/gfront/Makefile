@@ -16,8 +16,9 @@ install:
 	@$(MKDIR_P) $(DESTDIR)$(javadir)
 	@for i in -- $(JAR); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DATA) $(srcdir)/$${i} \
-			$(DESTDIR)$(javadir)/$${i} ); \
+		echo \
+		$(INSTALL_DATA) $(srcdir)/$${i} $(DESTDIR)$(javadir)/$${i}; \
+		$(INSTALL_DATA) $(srcdir)/$${i} $(DESTDIR)$(javadir)/$${i}; \
 	done
 
 distclean:

@@ -16,8 +16,9 @@ install:
 	@$(MKDIR_P) $(DESTDIR)$(docdir)
 	@for i in -- $(DOC); do \
 		case $$i in --) continue;; esac; \
-		( set -x; \
-		  $(INSTALL_DOC) $(srcdir)/$${i} \
-			$(DESTDIR)$(docdir)/`basename $${i}` \
-		); \
+		echo \
+		$(INSTALL_DOC) $(srcdir)/$${i} \
+			$(DESTDIR)$(docdir)/`basename $${i}`; \
+		$(INSTALL_DOC) $(srcdir)/$${i} \
+			$(DESTDIR)$(docdir)/`basename $${i}`; \
 	done

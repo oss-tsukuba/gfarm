@@ -20,13 +20,17 @@ html-install:
 	@$(MKDIR_P) $(DESTDIR)$(htmldir)
 	@for i in -- $(HTML); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DOC) $(srcdir)/$${i} \
-			$(DESTDIR)$(htmldir)/$${i} ); \
+		echo \
+		$(INSTALL_DOC) $(srcdir)/$${i} $(DESTDIR)$(htmldir)/$${i}; \
+		$(INSTALL_DOC) $(srcdir)/$${i} $(DESTDIR)$(htmldir)/$${i}; \
 	done
 	@for i in -- $(HTMLSRC); do \
 		case $$i in --) continue;; esac; \
-		( set -x; $(INSTALL_DOC) $(srcdir)/$${i}.html \
-			$(DESTDIR)$(htmldir)/$${i}.html ); \
+		echo \
+		$(INSTALL_DOC) $(srcdir)/$${i}.html \
+			$(DESTDIR)$(htmldir)/$${i}.html; \
+		$(INSTALL_DOC) $(srcdir)/$${i}.html \
+			$(DESTDIR)$(htmldir)/$${i}.html; \
 	done
 
 html-clean:

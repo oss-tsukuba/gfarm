@@ -21,8 +21,11 @@ man-install:
 		case $$i in --) continue;; esac; \
 		suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
 		$(MKDIR_P) $(DESTDIR)$(mandir)/man$$suffix; \
-		( set -x; $(INSTALL_DOC) $(srcdir)/$$i \
-			$(DESTDIR)$(mandir)/man$$suffix/$$i ); \
+		echo \
+		$(INSTALL_DOC) $(srcdir)/$$i \
+			$(DESTDIR)$(mandir)/man$$suffix/$$i; \
+		$(INSTALL_DOC) $(srcdir)/$$i \
+			$(DESTDIR)$(mandir)/man$$suffix/$$i; \
 	done
 
 man-clean:

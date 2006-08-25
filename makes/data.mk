@@ -20,9 +20,10 @@ data-all:
 
 data-install:
 	@$(MKDIR_P) $(DESTDIR)$(datadir)
-	@set -x; \
-	for i in -- $(DATA); do \
+	@for i in -- $(DATA); do \
 		case $$i in --) continue;; esac; \
+		echo \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(datadir)/`basename $$i`; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(datadir)/`basename $$i`; \
 	done
 
