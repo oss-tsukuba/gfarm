@@ -448,7 +448,7 @@ from commands which use stat(2)/lstat(2)/fstat(2) system calls.
  (4) Solaris
 =============
 
-   - Currently, syscall-hooking function for fstat(2) system call isn't
+   - Currently, syscall-hooking function for fsat(2) system call isn't
      implemented. Especially because the fstatat64() and openat64()
      subfunctions aren't implemented, OS-supplied tar command and pax
      command don't work to extract a tar file, although you can use
