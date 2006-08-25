@@ -245,7 +245,7 @@ fi
 if [ "$1" -ge 1 ]
 then
 	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
-	if [ -f /etc/init.d/gfsd ] && /etc/service gfsd status > /dev/null 2>&1
+	if [ -f /etc/init.d/gfsd ] && /sbin/service gfsd status > /dev/null 2>&1
 	then
 		/sbin/service gfsd restart > /dev/null 2>&1 || :
 	fi
@@ -254,7 +254,7 @@ fi
 %postun server
 if [ "$1" -ge 1 ]
 then
-	if [ -f /etc/init.d/gfmd ] && /etc/service gfmd status > /dev/null 2>&1
+	if [ -f /etc/init.d/gfmd ] && /sbin/service gfmd status > /dev/null 2>&1
 	then
 		/sbin/service gfmd restart > /dev/null 2>&1 || :
 	fi
@@ -266,7 +266,7 @@ fi
 if [ "$1" -ge 1 ]
 then
 	if [ -f /etc/init.d/gfarm_agent ] &&
-	   /etc/service gfarm_agent status > /dev/null 2>&1
+	   /sbin/service gfarm_agent status > /dev/null 2>&1
 	then
 		/sbin/service gfarm_agent restart > /dev/null 2>&1 || :
 	fi
