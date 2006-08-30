@@ -283,16 +283,15 @@ remove_files(int nthreads, struct gfrm_arg *arg)
 		pid = fork();
 		if (pid == 0) {
 #endif
-			if (!arg->noexecute)
-				e = gfs_unlink_section_replica(si->file,
-					si->i.section,
-					si->ncopy - arg->nrep, si->copy,
-					arg->force);
-			else {
-				si->ncopy -= arg->nrep;
+			si->ncopy -= arg->nrep;
+			if (arg->verbose || arg->noexecute) {
 				gfarm_section_xinfo_print(si);
 				e = NULL;
 			}
+			if (!arg->noexecute)
+				e = gfs_unlink_section_replica(si->file,
+					si->i.section,
+					si->ncopy, si->copy, arg->force);
 			if (e != NULL) {
 #ifndef LIBGFARM_NOT_MT_SAFE
 				++nerr;
