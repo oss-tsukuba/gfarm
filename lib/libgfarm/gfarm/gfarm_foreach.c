@@ -16,7 +16,7 @@ gfarm_foreach_directory_hierarchy(
 	char *(*op_dir2)(char *, struct gfs_stat *, void *),
 	char *file, void *arg)
 {
-	char *path, *e = NULL, *e_save = NULL;
+	char *path, *e, *e_save = NULL;
 	struct gfs_stat st;
 	GFS_Dir dir;
 	struct gfs_dirent *dent;
@@ -24,6 +24,8 @@ gfarm_foreach_directory_hierarchy(
 	e = gfs_stat(file, &st);
 	if (e != NULL && e != GFARM_ERR_NO_FRAGMENT_INFORMATION)
 		return (e);
+	if (e != NULL)
+		e_save = e;
 
 	if (GFARM_S_ISDIR(st.st_mode)) {
 		if (op_dir1 != NULL) {
