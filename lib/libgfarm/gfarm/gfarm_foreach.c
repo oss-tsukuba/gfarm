@@ -29,7 +29,7 @@ gfarm_foreach_directory_hierarchy(
 
 	if (GFARM_S_ISDIR(st.st_mode)) {
 		if (op_dir1 != NULL) {
-			e = (*op_dir1)(file, &st, arg);
+			e = op_dir1(file, &st, arg);
 			if (e != NULL)
 				goto free_st;
 		}
@@ -61,10 +61,10 @@ gfarm_foreach_directory_hierarchy(
 		if (e_save == NULL)
 			e_save = e;
 		if (op_dir2 != NULL)
-			e = (*op_dir2)(file, &st, arg);
+			e = op_dir2(file, &st, arg);
 	}
 	else if (GFARM_S_ISREG(st.st_mode) && op_file != NULL)
-		e = (*op_file)(file, &st, arg);
+		e = op_file(file, &st, arg);
 free_st:
 	gfs_stat_free(&st);
 	return (e_save == NULL ? e : e_save);
