@@ -7,14 +7,15 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+#include "gfs_misc.h"
 #include "gfarm_foreach.h"
 
 char *program_name = "gfwhere";
 
 static int opt_size;
 
-static void
-display_name(char *name)
+static char *
+display_name(char *name, struct gfs_stat *st, void *arg)
 {
 	static int print_ln;
 
@@ -24,81 +25,55 @@ display_name(char *name)
 		print_ln = 1;
 
 	printf("%s:\n", name);
+	return (NULL);
 }
 
 static char *
-display_section_copies(char *gfarm_file, char *section)
+display_copy(struct gfarm_file_section_copy_info *info, void *arg)
 {
-	int ncopies, j;
-	struct gfarm_file_section_copy_info *copies;
+	printf(" %s", info->hostname);
+	return (NULL);
+}
+
+static char *
+display_section(char *gfarm_file, char *section)
+{
 	struct gfarm_file_section_info sinfo;
-	char *e;
+	char *e = NULL;
 
-	e = gfarm_file_section_copy_info_get_all_by_section(
-		gfarm_file, section, &ncopies, &copies);
-	if (e != NULL)
-		return (e);
-
+	printf("%s", section);
 	if (opt_size) {
 		e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
 		if (e != NULL)
-			goto free_copy_info;
-	}
-	printf("%s", section);
-	if (opt_size) {
+			goto println;
 		printf(" [%" PR_FILE_OFFSET " bytes]", sinfo.filesize);
 		gfarm_file_section_info_free(&sinfo);
 	}
 	printf(":");
-	for (j = 0; j < ncopies; ++j)
-		printf(" %s", copies[j].hostname);
+	gfarm_foreach_copy(display_copy, gfarm_file, section, NULL, NULL);
+
+println:
 	printf("\n");
-free_copy_info:
-	gfarm_file_section_copy_info_free_all(ncopies, copies);
-	return (e);
-}
-
-static char *
-display_replica_catalog_section(
-	char *gfarm_url, struct gfs_stat *st, void *arg)
-{
-	char *gfarm_file, *e;
-	char *section = arg;
-
-	display_name(gfarm_url);
-
-	if (GFARM_S_ISDIR(st->st_mode))
-		return (NULL);
-	if (section == NULL) {
-		e = "invalid section";
-		fprintf(stderr, "%s\n", e);
-		return (e);
-	}
-	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
-	if (e == NULL) {
-		e = display_section_copies(gfarm_file, section);
-		if (e != NULL)
-			fprintf(stderr, "%s: %s\n", section, e);
-		free(gfarm_file);
-	}
 	return (e);
 }
 
 static char *
 display_replica_catalog(char *gfarm_url, struct gfs_stat *st, void *arg)
 {
-	char *gfarm_file, *e, *e_save = NULL;
+	char *gfarm_file, *e = NULL, *e_save = NULL;
 	int i, nsections;
 	struct gfarm_file_section_info *sections;
 	gfarm_mode_t mode;
+	char *section = arg;
 
-	display_name(gfarm_url);
+	display_name(gfarm_url, st, arg);
 
 	mode = st->st_mode;
 	if (GFARM_S_ISDIR(mode))
-		return (NULL);
-	else if (!GFARM_S_ISREG(mode)) {
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!GFARM_S_ISREG(mode))
 		e = "invalid file";
+	if (e != NULL) {
 		fprintf(stderr, "%s\n", e);
 		return (e);
 	}
@@ -109,6 +84,15 @@ display_replica_catalog(char *gfarm_url, struct gfs_stat *st, void *arg)
 		return (e);
 	}
 
+	/* display a speccified section */
+	if (section != NULL) {
+		e = display_section(gfarm_file, section);
+		if (e != NULL)
+			fprintf(stderr, "%s: %s\n", section, e);
+		goto free_gfarm_file;
+	}
+
+	/* display all sections */
 	if ((mode & (S_IXUSR|S_IXGRP|S_IXOTH)) != 0) { /* program? */
 		e = gfarm_file_section_info_get_all_by_file(
 		    gfarm_file, &nsections, &sections);
@@ -121,7 +105,7 @@ display_replica_catalog(char *gfarm_url, struct gfs_stat *st, void *arg)
 		goto free_gfarm_file;
 	}
 	for (i = 0; i < nsections; i++) {
-		e = display_section_copies(gfarm_file, sections[i].section);
+		e = display_section(gfarm_file, sections[i].section);
 		if (e != NULL) {
 			if (e_save == NULL)
 				e_save = e;
@@ -136,32 +120,14 @@ free_gfarm_file:
 	return (e);
 }
 
-char *
-do_single_file(
-	char *(*op_file)(char *, struct gfs_stat *, void *),
-	char *(*op_dir1)(char *, struct gfs_stat *, void *),
-	char *(*op_dir2)(char *, struct gfs_stat *, void *),
-	char *file, void *arg)
+static char *
+display_error_is_a_directory(char *gfarm_url, struct gfs_stat *st, void *arg)
 {
-	struct gfs_stat st;
-	char *e;
+	char *e = GFARM_ERR_IS_A_DIRECTORY;
 
-	e = gfs_stat(file, &st);
-	if (e != NULL) {
-		display_name(file);
-		fprintf(stderr, "%s\n", e);
-		return (e);
-	}
+	display_name(gfarm_url, st, arg);
 
-	if (GFARM_S_ISDIR(st.st_mode)) {
-		display_name(file);
-		e = GFARM_ERR_IS_A_DIRECTORY;
-		fprintf(stderr, "%s\n", e);
-	}
-	else if (GFARM_S_ISREG(st.st_mode))
-		e = (*op_file)(file, &st, arg);
-
-	gfs_stat_free(&st);
+	fprintf(stderr, "%s\n", e);
 	return (e);
 }
 
@@ -170,26 +136,20 @@ gfwhere(gfarm_stringlist *list, char *section, int recursive)
 {
 	int n, i;
 	char *e, *e_save = NULL;
-	char *(*display)(char *, struct gfs_stat *, void *);
-	char *(*foreach)(char *(*)(char *, struct gfs_stat *, void *),
-			 char *(*)(char *, struct gfs_stat *, void *),
-			 char *(*)(char *, struct gfs_stat *, void *),
-			 char *, void *);
+	char *(*display_dir)(char *, struct gfs_stat *, void *);
 
-	if (section != NULL)
-		display = display_replica_catalog_section;
-	else
-		display = display_replica_catalog;
 	if (recursive)
-		foreach = gfarm_foreach_directory_hierarchy;
+		display_dir = display_name;
 	else
-		foreach = do_single_file;
+		display_dir = display_error_is_a_directory;
 
 	n = gfarm_stringlist_length(list);
 	for (i = 0; i < n; i++) {
 		char *p = gfarm_stringlist_elem(list, i);
 
-		e = foreach(display, display, NULL, p, section);
+		e = gfarm_foreach_directory_hierarchy(
+			display_replica_catalog, display_dir, NULL,
+			p, section);
 		if (e_save == NULL)
 			e_save = e;
 	}
