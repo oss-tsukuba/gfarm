@@ -23,7 +23,7 @@ SRCS = \
 	auth_client.c auth_common.c auth_config.c auth_server.c \
 	agent_wrap.c agent_client.c agent_proto.c \
 	config.c conn_hash.c error.c \
-	gfarm_foreach.c \
+	gfarm_foreach.c gfarm_list.c gfarm_xinfo.c \
 	gfm_client.c gfs_chmod.c \
 	gfs_client.c gfs_client_dir.c gfs_client_rep.c \
 	gfs_dir.c gfs_exec.c gfs_lock.c gfs_pio.c gfs_pio_global.c \
@@ -39,7 +39,7 @@ OBJS = \
 	auth_client.lo auth_common.lo auth_config.lo auth_server.lo \
 	agent_wrap.lo agent_client.lo agent_proto.lo \
 	config.lo conn_hash.lo error.lo \
-	gfarm_foreach.lo \
+	gfarm_foreach.lo gfarm_list.lo gfarm_xinfo.lo \
 	gfm_client.lo gfs_chmod.lo \
 	gfs_client.lo gfs_client_dir.lo gfs_client_rep.lo \
 	gfs_dir.lo gfs_exec.lo gfs_lock.lo gfs_pio.lo gfs_pio_global.lo \
@@ -80,6 +80,8 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_chmod.lo: gfs_client.h gfs_misc.h
 gfarm_foreach.lo: gfarm_foreach.h
+gfarm_list.lo: gfarm_list.h
+gfarm_xinfo.lo: gfarm_xinfo.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
