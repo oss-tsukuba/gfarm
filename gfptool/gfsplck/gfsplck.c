@@ -162,13 +162,8 @@ fixfrag_ii(char *pathname, char *gfarm_file, char *sec)
 	if (strstr(sec, ":::lock"))
 		return ("lock file");
 
-	/* check section busy */
-	e = gfs_file_section_check_busy(gfarm_file, sec);
-	/* allow no fragment case */
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT)
-		return (e);
-
-	if (check_all == 0) {
+	if (check_all == 0 && gfs_file_section_check_busy(gfarm_file, sec)
+				!= GFARM_ERR_TEXT_FILE_BUSY) {
 		/* check file size */
 		e = check_file_size(pathname, gfarm_file, sec);
 		if (e != GFARM_ERR_NO_FRAGMENT_INFORMATION && e != NULL)

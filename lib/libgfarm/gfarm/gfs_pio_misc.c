@@ -143,7 +143,8 @@ gfs_pio_set_fragment_info_local(char *filename,
 		e = gfarm_file_section_info_set(gfarm_file, section, &fi);
 	}
 	else if (e == NULL) {
-		if (gfs_file_section_info_check_checksum_unknown(&fi)) {
+		if (gfs_file_section_info_check_checksum_unknown(&fi)
+		    || gfs_file_section_info_check_busy(&fi)) {
 			struct gfarm_file_section_info fi1;
 
 			fi1.filesize = filesize;
@@ -170,6 +171,9 @@ gfs_pio_set_fragment_info_local(char *filename,
 	if (e == NULL) {
 		e = gfarm_file_section_copy_info_set(
 			gfarm_file, section, fci.hostname, &fci);
+		/* permit GFARM_ERR_ALREADY_EXISTS */
+		if (e == GFARM_ERR_ALREADY_EXISTS)
+			e = NULL;
 	}
 	return (e);
 }
