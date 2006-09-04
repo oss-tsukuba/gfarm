@@ -317,7 +317,7 @@ remove_files(int nthreads, struct gfrm_arg *arg)
 			printf("%s\n", dir);
 			e = NULL;
 		}
-		if (e != NULL) {
+		if (arg->force && e != NULL) {
 			++nerr;
 			fprintf(stderr, "%s: %s\n", dir, e);
 		}
@@ -496,8 +496,8 @@ main(int argc, char *argv[])
 	gfrm_arg.hosts = hosts;
 	gfrm_arg.section = section;
 	gfrm_arg.nrep = num_replicas;
-	gfrm_arg.force = force || ((domain[0] == '\0' || hostfile == NULL)
-				   && num_replicas == 0);
+	gfrm_arg.force = force ||
+		(domain[0] == '\0' && hostfile == NULL && num_replicas == 0);
 	gfrm_arg.noexecute = noexecute;
 	gfrm_arg.verbose = verbose;
 
