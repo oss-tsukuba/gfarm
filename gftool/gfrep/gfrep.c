@@ -68,6 +68,7 @@ struct gfrep_arg {
 	int nrep;
 	int noexecute;
 	int verbose;
+	int quiet;
 };
 
 struct add_sec_arg {
@@ -260,6 +261,8 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 		return "no destination node";
 	if (nsrc <= 0)
 		return "no source node";
+	if (ndst < arg->nrep)
+		return "not enough number of destination nodes";
 
 	e = create_file_section_list(list, arg, &nsinfo, &sinfo);
 	if (e != NULL)
@@ -300,6 +303,9 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 		pid_t pid;
 		int s, rv;
 #endif
+		if (!arg->quiet)
+			printf("%s (%s)\n",
+			       sinfo[i]->file, sinfo[i]->i.section);
 		if (arg->verbose)
 			gfarm_section_xinfo_print(sinfo[i]);
 		if (tnum + pi * nth > ndst)
@@ -323,7 +329,7 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 				di = (di + 1) % ndst;
 			}
 			if (arg->verbose) {
-				printf("%02d(%03d): [%s:%s] --> %s\n",
+				printf("%02d(%03d): %s (%s) --> %s\n",
 		 		       tnum, pi, sinfo[i]->file,
 				       sinfo[i]->i.section, dst[di]);
 				gettimeofday(&t1, NULL);
@@ -533,32 +539,12 @@ main(int argc, char *argv[])
 		fflush(stdout);
 	}
 	e = create_hostlist(src_hostfile, src_domain, &nsrchosts, &srchosts);
-#if 0
-	e = gfarm_hosts_in_domain(&nsrchosts, &srchosts, src_domain);
-#endif
 	if (e == NULL)
 		e = gfarm_schedule_search_idle_acyclic_hosts(
 			nsrchosts, srchosts, &nsrchosts, srchosts);
 	error_check(e);
 
 	e = create_hostlist(dst_hostfile, dst_domain, &ndsthosts, &dsthosts);
-#if 0
-	if (dst_hostfile != NULL) {
-		e = gfarm_hostlist_read(
-			dst_hostfile, &ndsthosts, &dsthosts, &error_line);
-		if (e != NULL) {
-			if (error_line != -1)
-				fprintf(stderr, "%s: line %d: %s\n",
-					dst_hostfile, error_line, e);
-			else
-				fprintf(stderr, "%s: %s\n", dst_hostfile, e);
-			exit(EXIT_FAILURE);
-		}
-	}
-	else {
-		e = gfarm_hosts_in_domain(&ndsthosts, &dsthosts, dst_domain);
-	}
-#endif
 	if (e == NULL)
 		e = gfarm_schedule_search_idle_acyclic_hosts_to_write(
 			ndsthosts, dsthosts, &ndsthosts, dsthosts);
@@ -574,6 +560,7 @@ main(int argc, char *argv[])
 	gfrep_arg.nrep = num_replicas;
 	gfrep_arg.noexecute = noexecute;
 	gfrep_arg.verbose = verbose;
+	gfrep_arg.quiet = quiet;
 
 	e = replicate(&allpaths, parallel, &gfrep_arg);
 	error_check(e);
