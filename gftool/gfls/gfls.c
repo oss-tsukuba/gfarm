@@ -293,6 +293,8 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		    (option_type_suffix ? 1 : 0) +
 		    (option_inumber ? INUM_LEN : 0);
 		columns = screen_width / (column_width + 1);
+		if (columns <= 0) /* a pathname is wider than screen_width */
+			columns = 1;
 		lines = n / columns;
 		if (lines * columns < n)
 			lines++;
