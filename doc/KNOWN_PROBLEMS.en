@@ -120,6 +120,11 @@
 	It's not decided whether we will fix this problem in the gfarm
 	v1 branch or not.
 
+- gfs_pio_sync() doesn't really update the metadata for now.
+
+  Plan to fix:
+	Not determined yet.
+
 - It's possible that filesystem consistency isn't maintained correctly,
   when a gfarm client crashes.
 
@@ -239,11 +244,22 @@
 - When a file is renamed or unlinked while the file is opened, 
   a close operation of the file will fail with GFARM_ERR_NO_SUCH_OBJECT.
 
-  This problem is especially serious in the rename case, because filesize,
-  checksum, modified time and accessed time are not updated correctly.
+  This error is negligible in the unlink case, but otherwise it's
+  serious because filesize, checksum, modified time and accessed time
+  are not updated correctly.
 
   If you are using system call hook, the error code will be ENOENT (No such
   file or directory).
+
+  Plan to fix:
+	This problem will be fixed in the first release of the gfarm
+	v2 branch.
+	It's not decided whether we will fix this problem in the gfarm
+	v1 branch or not.
+
+- When the chmod or the utimes operation is performed against a file while
+  the file is opened, the effect of the operation is canceled at the close
+  operation for the file.
 
   Plan to fix:
 	This problem will be fixed in the first release of the gfarm
