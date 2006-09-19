@@ -68,41 +68,72 @@ error_on_close:
 }
 
 void
+check_file_size(FILE *ifp, char *iname, off_t *size)
+{
+	struct stat is;
+
+	if (fstat(fileno(ifp), &is) == -1) {
+		perror(iname);
+		exit(1);
+	}
+	if (!S_ISREG(is.st_mode)) {
+		fprintf(stderr, "%s: size unknown\n", iname);
+		exit(1);
+	}
+	*size = is.st_size;
+}
+
+void
 usage()
 {
 	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-H <hostfile>\n");
+	fprintf(stderr, "\t-N <number of hosts>\n");
 	fprintf(stderr, "\t-f <configfile>\n");
 	fprintf(stderr, "\t-o <output_gfarm_file>\n");
 	exit(1);
 }
 
-int
-main(argc, argv)
-	int argc;
-	char **argv;
+static void
+conflict_check(int *mode_ch_p, int ch)
 {
-	extern char *optarg;
-	extern int optind;
+	if (*mode_ch_p) {
+		fprintf(stderr, "%s: -%c option conflicts with -%c\n",
+			program_name, ch, *mode_ch_p);
+		usage();
+	}
+	*mode_ch_p = ch;
+}
+
+int
+main(int argc, char *argv[])
+{
 	int argc_save = argc;
 	char **argv_save = argv;
 	char *e, *config = NULL, *hostfile = NULL, *output = NULL, *iname;
-	int ch, nhosts, error_line;
+	int ch, nhosts = -1, error_line, mode_ch = 0;
 	FILE *ifp;
 	char **hosttab;
 	file_offset_t *sizetab;
+	off_t filesize;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "H:f:o:")) != -1) {
+	while ((ch = getopt(argc, argv, "H:N:f:o:")) != -1) {
 		switch (ch) {
 		case 'H':
 			hostfile = optarg;
+			conflict_check(&mode_ch, ch);
+			break;
+		case 'N':
+			nhosts = atoi(optarg);
+			conflict_check(&mode_ch, ch);
 			break;
 		case 'f':
 			config = optarg;
+			conflict_check(&mode_ch, ch);
 			break;
 		case 'o':
 			output = optarg;
@@ -142,30 +173,27 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (hostfile != NULL && config != NULL) {
-		fprintf(stderr,
-			"%s: ambiguous. both -H %s and -f %s specified\n",
-			program_name, hostfile, config);
-		exit(1);
-	} else if (config != NULL) {
+	if (config != NULL) {
 		e = gfarm_import_fragment_config_read(
 		    config, &nhosts, &hosttab, &sizetab, &error_line);
-	} else if (hostfile != NULL) {
-		struct stat is;
-
-		if (fstat(fileno(ifp), &is) == -1) {
-			perror(iname);
-			exit(1);
-		}
-		if (!S_ISREG(is.st_mode)) {
-			fprintf(stderr, "%s: size unknown\n", iname);
-			exit(1);
-		}
-		e = gfarm_hostlist_read(hostfile,
-		    &nhosts, &hosttab, &error_line);
+	} else {
+		check_file_size(ifp, iname, &filesize);
+		if (hostfile != NULL) {
+			e = gfarm_hostlist_read(hostfile,
+				&nhosts, &hosttab, &error_line);
+		} else if (nhosts != -1) {
+			GFARM_MALLOC_ARRAY(hosttab, nhosts);
+			if (hosttab == NULL) {
+				fprintf(stderr,
+					"%s: no memory\n", program_name);
+				exit(1);
+			}
+			e = gfarm_schedule_search_idle_by_all(nhosts, hosttab);
+		} else
+			usage();
 		if (e == NULL) {
 			sizetab = gfarm_import_fragment_size_alloc(
-			    is.st_size, nhosts);
+			    filesize, nhosts);
 			if (sizetab == NULL) {
 				fprintf(stderr,
 					"%s: not enough memory for %d hosts\n",
@@ -173,14 +201,9 @@ main(argc, argv)
 				exit(1);
 			}
 		}
-	} else /* if (hostfile == NULL && config == NULL) */ {
-		fprintf(stderr,
-			"%s: either -H <hostfile> or -f <config> expected\n",
-			program_name);
-		exit(1);
 	}
 	if (e != NULL) {
-		if (error_line != -1)
+		if (config != NULL)
 			fprintf(stderr, "%s: line %d: %s\n",
 				config, error_line, e);
 		else
