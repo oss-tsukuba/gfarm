@@ -222,6 +222,9 @@
 - ファイルをオープン中に rename や unlink を行なうと、close 時に
   GFARM_ERR_NO_SUCH_OBJECT でエラーになります。
 
+  特に rename の場合には問題が深刻で、このとき、ファイルサイズやチェックサム、
+  ファイルのアクセス時刻や変更時刻が正しく更新されません。
+
   システムコールフック経由の場合のエラーは ENOENT (No such file or directory)
   です。
 
