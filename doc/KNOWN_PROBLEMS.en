@@ -277,6 +277,12 @@
   st_ino field returns a unique value for each file and directory in
   a process, but it's not unique among multiple processes.
 
+  st_ino originally means an identifier of a file object, and the value
+  is not be changed, when the file is renamed or unlinked.
+  But with gfarm v1, st_ino is an identifier associated with a file name
+  instead of a file object.  Thus the value is changed, when the file is
+  renamed.  And the value is undefined, when the file is 
+
   Plan to fix:
 	This problem will be fixed in the first release of the gfarm
 	v2 branch.
