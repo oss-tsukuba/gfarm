@@ -68,14 +68,14 @@ cleanup(void)
 static void
 log_proto(char *proto, char *status)
 {
-	gflog_notice(proto, status);
+	gflog_notice("%s: %s", proto, status);
 }
 
 static void
 error_proto(char *proto, char *status)
 {
 	cleanup();
-	gflog_error(proto, status);
+	gflog_error("%s: %s", proto, status);
 }
 
 static char *
