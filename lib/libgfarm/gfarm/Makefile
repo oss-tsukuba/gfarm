@@ -83,7 +83,7 @@ gfarm_foreach.lo: gfarm_foreach.h
 gfarm_list.lo: gfarm_list.h
 gfarm_xinfo.lo: gfarm_xinfo.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_client_apply.lo: host.h config.h gfs_client.h gfs_misc.h
+gfs_client_apply.lo: $(GFUTIL_SRCDIR)/gfutil.h host.h config.h gfs_client.h gfs_misc.h schedule.h
 gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/tree.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h gfs_misc.h path_info_cache.h
