@@ -222,7 +222,3 @@ char *gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *,
 	struct gfs_client_get_load_state **);
 char *gfs_client_get_load_result_multiplexed(
 	struct gfs_client_get_load_state *, struct gfs_client_load *);
-
-char *gfs_client_apply_all_hosts(
-	char *(*)(struct gfs_connection *, void *), void *, char *, int,
-	int *);

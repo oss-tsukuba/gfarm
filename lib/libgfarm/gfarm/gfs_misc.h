@@ -21,6 +21,12 @@ char *gfs_file_section_check_busy(char *, char *);
 char *gfs_file_section_set_checksum_unknown(char *, char *, file_offset_t);
 char *gfs_file_section_set_busy(char *, char *, file_offset_t);
 
+/* gfs_client_apply.c */
+struct gfs_connection;
+char *gfs_client_apply_all_hosts(
+	char *(*)(struct gfs_connection *, void *), void *, char *, int,
+	int *);
+
 /* gfs_client_dir.c */
 struct gfs_connection;
 char *gfs_client_mk_parent_dir(struct gfs_connection *, char *);

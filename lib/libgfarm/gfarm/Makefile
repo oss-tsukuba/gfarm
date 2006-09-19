@@ -25,7 +25,7 @@ SRCS = \
 	config.c conn_hash.c error.c \
 	gfarm_foreach.c gfarm_list.c gfarm_xinfo.c \
 	gfm_client.c gfs_chmod.c \
-	gfs_client.c gfs_client_dir.c gfs_client_rep.c \
+	gfs_client.c gfs_client_apply.c gfs_client_dir.c gfs_client_rep.c \
 	gfs_dir.c gfs_exec.c gfs_lock.c gfs_pio.c gfs_pio_global.c \
 	gfs_pio_local.c gfs_pio_misc.c gfs_pio_remote.c gfs_pio_section.c \
 	gfs_proto.c gfs_rename.c gfs_replicate.c gfs_stat.c gfs_unlink.c \
@@ -41,7 +41,7 @@ OBJS = \
 	config.lo conn_hash.lo error.lo \
 	gfarm_foreach.lo gfarm_list.lo gfarm_xinfo.lo \
 	gfm_client.lo gfs_chmod.lo \
-	gfs_client.lo gfs_client_dir.lo gfs_client_rep.lo \
+	gfs_client.lo gfs_client_apply.lo gfs_client_dir.lo gfs_client_rep.lo \
 	gfs_dir.lo gfs_exec.lo gfs_lock.lo gfs_pio.lo gfs_pio_global.lo \
 	gfs_pio_local.lo gfs_pio_misc.lo gfs_pio_remote.lo gfs_pio_section.lo \
 	gfs_proto.lo gfs_rename.lo gfs_replicate.lo gfs_stat.lo gfs_unlink.lo \
@@ -83,6 +83,7 @@ gfarm_foreach.lo: gfarm_foreach.h
 gfarm_list.lo: gfarm_list.h
 gfarm_xinfo.lo: gfarm_xinfo.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h xxx_proto.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
+gfs_client_apply.lo: host.h config.h gfs_client.h gfs_misc.h
 gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/tree.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h gfs_misc.h path_info_cache.h

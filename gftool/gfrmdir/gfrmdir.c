@@ -8,8 +8,11 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <sys/socket.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfs_client.h"
+#include "gfs_misc.h"
 
 char *program_name = "gfrmdir";
 
