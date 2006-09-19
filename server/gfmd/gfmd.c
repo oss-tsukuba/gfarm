@@ -740,10 +740,11 @@ usage(void)
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
-	fprintf(stderr, "\t-v>\n");
+	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
 	exit(1);
 }
 
