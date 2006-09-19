@@ -64,7 +64,7 @@ include $(top_srcdir)/makes/lib.mk
 
 $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
-agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h
+agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h gfs_dir.h
 agent_client.lo: xxx_proto.h io_fd.h config.h sockopt.h agent_proto.h agent_client.h agent_wrap.h
 agent_proto.lo: xxx_proto.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h
@@ -86,7 +86,7 @@ gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRC
 gfs_client_apply.lo: $(GFUTIL_SRCDIR)/gfutil.h host.h config.h gfs_client.h gfs_misc.h schedule.h
 gfs_client_dir.lo: config.h gfs_client.h gfs_misc.h
 gfs_client_rep.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h host.h param.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/tree.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h gfs_misc.h path_info_cache.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/tree.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h gfs_misc.h path_info_cache.h gfs_dir.h
 gfs_exec.lo: config.h gfs_misc.h
 gfs_lock.lo: $(INC_SRCDIR)/gfarm_misc.h
 gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_proto.h gfs_pio.h gfs_misc.h

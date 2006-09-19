@@ -19,6 +19,8 @@
 #include "agent_client.h"
 #include "agent_wrap.h"
 
+#include "gfs_dir.h"
+
 extern char *gfarm_client_initialize(int *, char ***);
 extern char *gfarm_client_terminate(void);
 
@@ -211,6 +213,8 @@ gfarm_agent_connect()
 	return (e);
 }
 
+static void gfarm_agent_dir_invalidate(void);
+
 char *
 gfarm_agent_disconnect()
 {
@@ -223,6 +227,7 @@ gfarm_agent_disconnect()
 	/* reset agent_server even in error case */
 	agent_server = NULL;
 	agent_pid = 0;
+	gfarm_agent_dir_invalidate();
 
 	return (e);
 }
@@ -337,6 +342,144 @@ gfs_get_ino(const char *canonic_path, long *inop)
 	return (gfs_i_get_ino(canonic_path, inop));
 }
 
+/*
+ * GFS_Dir / gfarm_agent
+ */
+
+struct gfs_dir_agent {
+	struct gfs_dir base; /* abstract base class, must be first member */
+	gfarm_int32_t dirdesc;
+
+	int valid;
+	struct gfs_dir_agent *next, *prev; /* doubly linked circular list */
+};
+
+/* doubly linked circular list head which points all struct gfs_dir_agent */
+struct gfs_dir_agent gfs_dir_agent_list_head = {
+	{ NULL },
+	-1,
+	0,
+	&gfs_dir_agent_list_head, &gfs_dir_agent_list_head
+};
+
+static char GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED[] = 
+	"gfarm_agent connection is already closed";
+
+static char *
+gfarm_agent_closedir(GFS_Dir dirbase)
+{
+	struct gfs_dir_agent *dir = (struct gfs_dir_agent *)dirbase;
+	char *e = dir->valid ?
+	    agent_client_closedir(agent_server, dir->dirdesc) :
+	    GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED;
+
+	/* unlink from gfs_dir_agent_list_head */
+	dir->next->prev = dir->prev;
+	dir->prev->next = dir->next;
+
+	free(dir);
+	return (e);
+}
+
+static char *
+gfarm_agent_readdir(GFS_Dir dirbase, struct gfs_dirent **entry)
+{
+	struct gfs_dir_agent *dir = (struct gfs_dir_agent *)dirbase;
+	char *e = dir->valid ?
+	    agent_client_readdir(agent_server, dir->dirdesc, entry) :
+	    GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED;
+
+	return (e);
+}
+
+
+static char *
+gfarm_agent_seekdir(GFS_Dir dirbase, file_offset_t off)
+{
+	struct gfs_dir_agent *dir = (struct gfs_dir_agent *)dirbase;
+	char *e = dir->valid ?
+	    agent_client_seekdir(agent_server, dir->dirdesc, off) :
+	    GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED;
+
+	return (e);
+}
+
+static char *
+gfarm_agent_telldir(GFS_Dir dirbase, file_offset_t *offp)
+{
+	struct gfs_dir_agent *dir = (struct gfs_dir_agent *)dirbase;
+	char *e = dir->valid ?
+	    agent_client_telldir(agent_server, dir->dirdesc, offp) :
+	    GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED;
+
+	return (e);
+}
+
+static char *
+gfarm_agent_dirname(GFS_Dir dirbase)
+{
+	struct gfs_dir_agent *dir = (struct gfs_dir_agent *)dirbase;
+	char *e = dir->valid ?
+	    agent_client_dirname(agent_server, dir->dirdesc) :
+	    GFARM_ERR_AGENT_CONNECTION_ALREADY_CLOSED;
+
+	return (e);
+}
+
+static struct gfs_dir_ops gfarm_agent_dir_ops = {
+	gfarm_agent_closedir,
+	gfarm_agent_readdir,
+	gfarm_agent_seekdir,
+	gfarm_agent_telldir,
+	gfarm_agent_dirname,
+};
+
+static char *
+gfarm_agent_opendir(const char *path, GFS_Dir *dirp)
+{
+	struct gfs_dir_agent *dir;
+	char *e;
+	gfarm_int32_t dirdesc;
+
+	GFARM_MALLOC(dir);
+	if (dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = agent_client_opendir(agent_server, path, &dirdesc);
+	if (e != NULL) {
+		free(dir);
+		return (e);
+	}
+	dir->base.ops = &gfarm_agent_dir_ops;
+	dir->dirdesc = dirdesc;
+	dir->valid = 1;
+
+	/* link to gfs_dir_agent_list_head */
+	dir->next = gfs_dir_agent_list_head.next;
+	dir->prev = &gfs_dir_agent_list_head;
+	gfs_dir_agent_list_head.next->prev = dir;
+	gfs_dir_agent_list_head.next = dir;
+
+	*dirp = &dir->base;
+	return (NULL);
+}
+
+static void
+gfarm_agent_dir_invalidate(void)
+{
+	struct gfs_dir_agent *dir;
+
+	/* traverse gfs_dir_agent_list_head */
+	for (dir = gfs_dir_agent_list_head.next;
+	    dir != &gfs_dir_agent_list_head; dir = dir->next) {
+		dir->valid = 0;
+	}
+}
+
+/*
+ * GFS_Dir wrapper functions
+ */
+
 char *
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
@@ -371,7 +514,7 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 		return (e);
 
 	if (gfarm_agent_check() == NULL) {
-		e = agent_client_opendir(agent_server, path, dirp);
+		e = gfarm_agent_opendir(path, dirp);
 		if (e != GFARM_ERR_CONNECTION_REFUSED)
 			return (e);
 		/* reconnection failed, connect to metadb directly */
@@ -382,61 +525,31 @@ gfs_opendir(const char *path, GFS_Dir *dirp)
 char *
 gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 {
-	if (gfarm_agent_check() == NULL) {
-		char *e = agent_client_readdir(agent_server, dir, entry);
-		if (e != GFARM_ERR_CONNECTION_REFUSED)
-			return (e);
-		/* reconnection failed, connect to metadb directly */
-	}
-	return (gfs_i_readdir(dir, entry));
+	return ((*dir->ops->read)(dir, entry));
 }
 
 char *
 gfs_closedir(GFS_Dir dir)
 {
-	if (gfarm_agent_check() == NULL) {
-		char *e = agent_client_closedir(agent_server, dir);
-		if (e != GFARM_ERR_CONNECTION_REFUSED)
-			return (e);
-		/* reconnection failed, connect to metadb directly */
-	}
-	return (gfs_i_closedir(dir));
+	return ((*dir->ops->close)(dir));
 }
 
 char *
 gfs_dirname(GFS_Dir dir)
 {
-	if (gfarm_agent_check() == NULL) {
-		char *e = agent_client_dirname(agent_server, dir);
-		if (e != GFARM_ERR_CONNECTION_REFUSED)
-			return (e);
-		/* reconnection failed, connect to metadb directly */
-	}
-	return (gfs_i_dirname(dir));
+	return ((*dir->ops->dirname)(dir));
 }
 
 char *
 gfs_seekdir(GFS_Dir dir, file_offset_t off)
 {
-	if (gfarm_agent_check() == NULL) {
-		char *e = agent_client_seekdir(agent_server, dir, off);
-		if (e != GFARM_ERR_CONNECTION_REFUSED)
-			return (e);
-		/* reconnection failed, connect to metadb directly */
-	}
-	return (gfs_i_seekdir(dir, off));
+	return ((*dir->ops->seek)(dir, off));
 }
 
 char *
 gfs_telldir(GFS_Dir dir, file_offset_t *offp)
 {
-	if (gfarm_agent_check() == NULL) {
-		char *e = agent_client_telldir(agent_server, dir, offp);
-		if (e != GFARM_ERR_CONNECTION_REFUSED)
-			return (e);
-		/* reconnection failed, connect to metadb directly */
-	}
-	return (gfs_i_telldir(dir, offp));
+	return ((*dir->ops->tell)(dir, offp));
 }
 
 void
@@ -449,7 +562,9 @@ gfs_uncachedir(void)
 		gfs_i_uncachedir();
 }
 
-/* host info */
+/*
+ * host info
+ */
 
 /*
  * If gfarm_cache_host_info_*() is used once,

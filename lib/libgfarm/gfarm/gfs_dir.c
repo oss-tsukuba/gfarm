@@ -34,6 +34,7 @@
 #include "gfs_misc.h"	/* gfarm_path_expand_home() */
 #include "path_info_cache.h"
 
+#include "gfs_dir.h"
 
 static char *gfarm_current_working_directory;
 
@@ -1427,57 +1428,21 @@ gfs_i_get_ino(const char *canonical_path, long *inop)
  * gfs_opendir()/readdir()/closedir()
  */
 
-struct gfs_dir {
+struct gfs_dir_internal {
+	struct gfs_dir base; /* abstract base class, must be first member */
+
 	struct node *dir;
 	DirIterator iterator;
 	struct gfs_dirent buffer;
 	int index;
 };
 
-char *
-gfs_i_opendir(const char *path, GFS_Dir *dirp)
-{
-	char *e, *canonic_path;
-	struct node *n;
-	struct gfs_dir *dir;
-
-	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
-	if (e != NULL)
-		return (e);
-
-	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
-	    GFARM_INODE_LOOKUP, &n);
-	free(canonic_path);
-	if (e != NULL)
-		return (e);
-
-	/* here, refresh directory cache */
-	if (n->flags & NODE_FLAG_INVALID) {
-		gfs_i_uncachedir();
-		e = gfs_refreshdir();
-		if (e != NULL)
-			return (e);
-		/* NODE_FLAG_INVALID is reset in gfs_cachedir() */
-	}
-
-	GFARM_MALLOC(dir);
-	if (dir == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	dir->dir = n;
-	dir_iterator_init(&dir->iterator, &n->u.d.children);
-	dir->index = 0;
-	*dirp = dir;
-
-	++opendir_count;
-	/* XXX if someone removed a path, while opening a directory... */
-	return (NULL);
-}
-
 #define GFS_DIRENTSIZE	0x100	/* XXX */
 
 char *
-gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
+gfs_i_readdir(GFS_Dir dirbase, struct gfs_dirent **entry)
 {
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)dirbase;
 	struct node *n;
 
 	if (dir->index == 0) {
@@ -1515,16 +1480,19 @@ gfs_i_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 }
 
 char *
-gfs_i_closedir(GFS_Dir dir)
+gfs_i_closedir(GFS_Dir dirbase)
 {
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)dirbase;
+
 	free(dir);
 	--opendir_count;
 	return (NULL);
 }
 
 char *
-gfs_i_seekdir(GFS_Dir dir, file_offset_t off)
+gfs_i_seekdir(GFS_Dir dirbase, file_offset_t off)
 {
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)dirbase;
 	char *e;
 	int new_index;
 	struct gfs_dirent *ent;
@@ -1538,7 +1506,7 @@ gfs_i_seekdir(GFS_Dir dir, file_offset_t off)
 		dir->index = 0;
 	}
 	while (dir->index < new_index) {
-		e = gfs_i_readdir(dir, &ent);
+		e = gfs_i_readdir(&dir->base, &ent);
 		if (e != NULL)
 			return (e);
 		if (ent == NULL)
@@ -1548,18 +1516,65 @@ gfs_i_seekdir(GFS_Dir dir, file_offset_t off)
 }
 
 char *
-gfs_i_telldir(GFS_Dir dir, file_offset_t *offp)
+gfs_i_telldir(GFS_Dir dirbase, file_offset_t *offp)
 {
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)dirbase;
 	*offp = dir->index * GFS_DIRENTSIZE;
 	return (NULL);
 }
 
-/*
- * gfs_dirname()
- */
+char *
+gfs_i_dirname(GFS_Dir dirbase)
+{
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)dirbase;
+  	return (dir->dir->name);
+}
+
+
+static struct gfs_dir_ops gfs_i_dir_ops = {
+	gfs_i_closedir,
+	gfs_i_readdir,
+	gfs_i_seekdir,
+	gfs_i_telldir,
+	gfs_i_dirname,
+};
 
 char *
-gfs_i_dirname(GFS_Dir dir)
+gfs_i_opendir(const char *path, GFS_Dir *dirp)
 {
-  	return (dir->dir->name);
+	char *e, *canonic_path;
+	struct node *n;
+	struct gfs_dir_internal *dir;
+
+	e = gfarm_canonical_path(gfarm_url_prefix_skip(path), &canonic_path);
+	if (e != NULL)
+		return (e);
+
+	e = lookup_relative(root, canonic_path, NODE_FLAG_IS_DIR,
+	    GFARM_INODE_LOOKUP, &n);
+	free(canonic_path);
+	if (e != NULL)
+		return (e);
+
+	/* here, refresh directory cache */
+	if (n->flags & NODE_FLAG_INVALID) {
+		gfs_i_uncachedir();
+		e = gfs_refreshdir();
+		if (e != NULL)
+			return (e);
+		/* NODE_FLAG_INVALID is reset in gfs_cachedir() */
+	}
+
+	GFARM_MALLOC(dir);
+	if (dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	dir->base.ops = &gfs_i_dir_ops;
+	dir->dir = n;
+	dir_iterator_init(&dir->iterator, &n->u.d.children);
+	dir->index = 0;
+	*dirp = &dir->base;
+
+	++opendir_count;
+	/* XXX if someone removed a path, while opening a directory... */
+	return (NULL);
 }

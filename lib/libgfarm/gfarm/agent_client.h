@@ -25,13 +25,16 @@ char *agent_client_realpath_canonical(
 	struct agent_connection *, const char *, char **);
 char *agent_client_get_ino(
 	struct agent_connection *, const char *, gfarm_int32_t *);
-char *agent_client_opendir(struct agent_connection *, const char *, GFS_Dir *);
+char *agent_client_opendir(struct agent_connection *, const char *,
+	gfarm_int32_t *);
 char *agent_client_readdir(
-	struct agent_connection *, GFS_Dir, struct gfs_dirent **);
-char *agent_client_closedir(struct agent_connection *, GFS_Dir);
-char *agent_client_dirname(struct agent_connection *, GFS_Dir);
-char *agent_client_seekdir(struct agent_connection *, GFS_Dir, file_offset_t);
-char *agent_client_telldir(struct agent_connection *, GFS_Dir, file_offset_t*);
+	struct agent_connection *, gfarm_int32_t, struct gfs_dirent **);
+char *agent_client_closedir(struct agent_connection *, gfarm_int32_t);
+char *agent_client_dirname(struct agent_connection *, gfarm_int32_t);
+char *agent_client_seekdir(struct agent_connection *,
+	gfarm_int32_t, file_offset_t);
+char *agent_client_telldir(struct agent_connection *,
+	gfarm_int32_t, file_offset_t*);
 char *agent_client_uncachedir(struct agent_connection *);
 
 char *agent_client_host_info_get(
