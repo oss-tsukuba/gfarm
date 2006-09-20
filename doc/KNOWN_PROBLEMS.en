@@ -293,14 +293,15 @@
 - stat API doesn't return valid values in st_ino, st_nlink and st_group
   fields.
 
-  st_ino field returns a unique value for each file and directory in
-  a process, but it's not unique among multiple processes.
+  st_ino field has a unique value for each file and directory within
+  a process, but it's not the same among multiple processes unless
+  they share the same gfarm_agent.
 
-  st_ino originally means an identifier of a file object, and the value
-  is not be changed, when the file is renamed or unlinked.
+  st_ino should be a unique identifier of a file object, and the value
+  should not be changed even when the file is renamed or unlinked.
   But with gfarm v1, st_ino is an identifier associated with a file name
   instead of a file object.  Thus the value is changed, when the file is
-  renamed.  And the value is undefined, when the file is 
+  renamed.  And the value is undefined, when the file is unlinked.
 
   Plan to fix:
 	This problem will be fixed in the first release of the gfarm
@@ -313,7 +314,7 @@
   the filesystem metadata.
 
   If they are only open operations, such problem practically won't happen,
-  because gfarm has code to keep the consistency.
+  because gfarm keeps the consistency.
 
   But if one of them is a rename operation to a directory or to a file
   which is constituted by multiple sections, or a chmod operation which
