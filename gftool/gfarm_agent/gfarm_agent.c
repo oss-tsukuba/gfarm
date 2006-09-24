@@ -68,7 +68,9 @@ cleanup(void)
 static void
 log_proto(char *proto, char *status)
 {
-	gflog_notice("%s: %s", proto, status);
+	/* avoid too many not critical messages of GFARM_ERR_NO_SUCH_OBJECT */
+	if (debug_mode || status != GFARM_ERR_NO_SUCH_OBJECT)
+		gflog_notice("%s: %s", proto, status);
 }
 
 static void
