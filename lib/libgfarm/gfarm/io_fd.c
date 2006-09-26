@@ -17,6 +17,9 @@
 
 #include <gfarm/gfarm_error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "gfutil.h" /* gfarm_send_no_sigpipe() */
+
 #include "iobuffer.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
@@ -40,7 +43,7 @@ int
 gfarm_iobuffer_nonblocking_write_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
-	ssize_t rv = write(fd, data, length);
+	ssize_t rv = gfarm_send_no_sigpipe(fd, data, length);
 
 	if (rv == -1)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
@@ -105,7 +108,7 @@ gfarm_iobuffer_blocking_write_fd_op(struct gfarm_iobuffer *b,
 	ssize_t rv;
 
 	for (;;) {
-		rv = write(fd, data, length);
+		rv = gfarm_send_no_sigpipe(fd, data, length);
 		if (rv == -1) {
 			if (errno == EINTR)
 				continue;

@@ -2823,7 +2823,7 @@ main(int argc, char **argv)
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
-	signal(SIGPIPE, SIG_IGN);
+	gfarm_sigpipe_ignore();
 	/*
 	 * NOTE: The following signals should match with signals that
 	 * start_server() routine makes them SIG_DFL.

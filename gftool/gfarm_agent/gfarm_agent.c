@@ -18,8 +18,10 @@
 #include <signal.h>
 
 #include <gfarm/gfarm.h>
-#include "metadb_access.h"
+
 #include "gfutil.h"
+
+#include "metadb_access.h"
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "sockopt.h"
@@ -1644,7 +1646,7 @@ main(int argc, char **argv)
 		display_env(stdout_fd, agent_port);
 
 	signal(SIGTERM, sigterm_handler);
-	signal(SIGPIPE, SIG_IGN);
+	gfarm_sigpipe_ignore();
 
 	for (;;) {
 		int err;

@@ -837,7 +837,7 @@ main(int argc, char **argv)
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
-	signal(SIGPIPE, SIG_IGN);
+	gfarm_sigpipe_ignore();
 
 	main_loop(sock);
 

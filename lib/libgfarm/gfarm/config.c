@@ -1577,8 +1577,6 @@ int gf_hook_default_global;
 static int total_nodes = -1, node_index = -1;
 static char *stdout_file = NULL, *stderr_file = NULL;
 
-static struct sigaction old_sigpipe_action;
-
 static char *
 gfarm_parse_env(void)
 {
@@ -1714,7 +1712,6 @@ gfarm_eval_env_arg(void)
 char *
 gfarm_client_initialize(int *argcp, char ***argvp)
 {
-	struct sigaction sigpipe_action;
 	char *e;
 	int syslog_facility;
 #ifdef HAVE_GSI
@@ -1774,18 +1771,6 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 	if (e != NULL)
 		return (e);
 
-	/* We want EPIPE, instead of SIGPIPE */
-	memset(&sigpipe_action, 0, sizeof(sigpipe_action));
-	sigpipe_action.sa_handler = SIG_IGN;
-	if (sigaction(SIGPIPE, &sigpipe_action, &old_sigpipe_action) == -1)
-		return ("cannot set SIGPIPE handler");
-	if (old_sigpipe_action.sa_handler != SIG_DFL &&
-	    old_sigpipe_action.sa_handler != SIG_IGN) {
-		/* make original handler available again */
-		if (sigaction(SIGPIPE, &old_sigpipe_action, NULL) == -1)
-			return ("cannot revert SIGPIPE handler");
-	}
-			
 	gfarm_initialize_done = 1;
 
 	return (NULL);
@@ -1842,18 +1827,6 @@ gfarm_client_terminate(void)
 	/* gfarm_metadb_terminate() will be called in gfarm_terminate() */
 	gfarm_config_clear();
 
-	if (old_sigpipe_action.sa_handler == SIG_DFL) {
-		/*
-		 * We need to recover original sigaction only in this case.
-		 * In other cases, we already have original sigaction at first.
-		 */
-		if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
-			e = gfarm_errno_to_error(errno);
-			if (e_save == NULL)
-				e_save = e;
-		}
-	}
-			
 	gfarm_initialize_done = 0;
 
 	return (e_save);

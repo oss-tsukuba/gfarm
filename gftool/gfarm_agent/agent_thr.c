@@ -2,8 +2,10 @@
  * $Id$
  */
 
-#include <string.h>
 #include <pthread.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "gfutil.h"
 #include "agent_thr.h"
 

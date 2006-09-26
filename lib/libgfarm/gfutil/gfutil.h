@@ -55,6 +55,11 @@ int gflog_auth_get_verbose(void);
 void gflog_auth_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 void gflog_auth_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 
+/* send_no_sigpipe */
+
+void gfarm_sigpipe_ignore(void);
+ssize_t gfarm_send_no_sigpipe(int, const void *, size_t);
+
 /* timeval */
 
 #define GFARM_MILLISEC_BY_MICROSEC	1000
