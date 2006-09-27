@@ -520,7 +520,7 @@ session(char *server_name, struct sockaddr *server_addr,
 			fatal();
 		}
 		/* XXX read-only connection */
-		e = xxx_fd_connection_new(tmp_sock, &tmp_conn);
+		e = xxx_socket_connection_new(tmp_sock, &tmp_conn);
 		if (e != NULL) {
 			fprintf(stderr,
 			    "%s: while allocating memory to %s on %s: %s\n",
@@ -848,13 +848,13 @@ main(int argc, char **argv)
 	}
 
 	/* XXX read-only connection */
-	e = xxx_fd_connection_new(STDIN_FILENO, &from_frontend);
+	e = xxx_socket_connection_new(STDIN_FILENO, &from_frontend);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdin\n", program_name, e);
 		fatal();
 	}
 	/* XXX write-only connection */
-	e = xxx_fd_connection_new(STDOUT_FILENO, &to_frontend);
+	e = xxx_socket_connection_new(STDOUT_FILENO, &to_frontend);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdout\n", program_name, e);
 		fatal();

@@ -407,7 +407,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 		close(sock);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = xxx_fd_connection_new(sock, &gfs_server->conn);
+	e = xxx_socket_connection_new(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gfs_server);
 		close(sock);

@@ -244,16 +244,16 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
  * for "gsi_auth" method
  */
 
-struct xxx_iobuffer_ops xxx_insecure_gsi_session_iobuffer_ops = {
+static struct xxx_iobuffer_ops xxx_insecure_gsi_session_iobuffer_ops = {
 	xxx_iobuffer_close_secsession_op,
 	xxx_iobuffer_export_credential_secsession_op,
 	xxx_iobuffer_delete_credential_secsession_op,
 	xxx_iobuffer_env_for_credential_secsession_op,
 	/* NOTE: the following assumes that these functions don't use cookie */
 	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_fd_op,
+	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_fd_op,
-	gfarm_iobuffer_blocking_write_fd_op
+	gfarm_iobuffer_blocking_write_socket_op
 };
 
 /*

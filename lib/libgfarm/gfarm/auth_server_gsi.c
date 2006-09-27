@@ -215,7 +215,7 @@ gfarm_authorize_gsi_common(struct xxx_connection *conn,
 		if (global_username != NULL)
 			free(global_username);
 		xxx_connection_reset_secsession(conn);
-		xxx_connection_set_fd(conn, fd);
+		xxx_connection_set_socket(conn, fd);
 		return (e);
 	}
 

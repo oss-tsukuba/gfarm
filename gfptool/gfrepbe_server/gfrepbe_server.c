@@ -604,7 +604,7 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 			     program_name, my_name, strerror(errno));
 			fatal();
 		}
-		e = xxx_fd_connection_new(socks[i], &conns[i]);
+		e = xxx_socket_connection_new(socks[i], &conns[i]);
 		if (e != NULL) {
 			fprintf(stderr,
 			    "%s: while allocating connection %d on %s: %s\n",
@@ -805,13 +805,13 @@ main(int argc, char **argv)
 	}
 
 	/* XXX read-only connection */
-	e = xxx_fd_connection_new(STDIN_FILENO, &from_client);
+	e = xxx_socket_connection_new(STDIN_FILENO, &from_client);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdin\n", program_name, e);
 		fatal();
 	}
 	/* XXX write-only connection */
-	e = xxx_fd_connection_new(STDOUT_FILENO, &to_client);
+	e = xxx_socket_connection_new(STDOUT_FILENO, &to_client);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdout\n", program_name, e);
 		fatal();

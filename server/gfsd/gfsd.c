@@ -2212,6 +2212,12 @@ rpc_reply:
 	cc->iobuffer[FDESC_STDOUT] = gfarm_iobuffer_alloc(i);
 	cc->iobuffer[FDESC_STDERR] = gfarm_iobuffer_alloc(i);
 
+	/*
+	 * It's safe to use gfarm_iobuffer_set_nonblocking_write_fd()
+	 * instead of gfarm_iobuffer_set_nonblocking_write_socket() here,
+	 * because we always ignore SIGPIPE in gfsd.
+	 * cf. gfarm_sigpipe_ignore() in main().
+	 */
 	gfarm_iobuffer_set_nonblocking_read_xxx(
 		cc->iobuffer[FDESC_STDIN], client);
 	gfarm_iobuffer_set_nonblocking_write_fd(
@@ -2271,7 +2277,7 @@ server(int client_fd)
 	int eof;
 	gfarm_int32_t request;
 
-	e = xxx_fd_connection_new(client_fd, &client);
+	e = xxx_socket_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
 		gflog_fatal("xxx_connection_new: %s", e);

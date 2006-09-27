@@ -1158,7 +1158,7 @@ server(void *arg)
 	}
 	agent_unlock();
 
-	e = xxx_fd_connection_new(client_fd, &client);
+	e = xxx_socket_connection_new(client_fd, &client);
 	if (e != NULL) {
 		close(client_fd);
 		error_proto("xxx_connection_new", e);

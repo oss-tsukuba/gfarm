@@ -39,8 +39,24 @@ gfarm_iobuffer_nonblocking_read_fd_op(struct gfarm_iobuffer *b,
 
 }
 
-int
+static int
 gfarm_iobuffer_nonblocking_write_fd_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	ssize_t rv = write(fd, data, length);
+
+	if (rv == -1)
+		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
+	return (rv);
+}
+
+/*
+ * We have to distinguish the write operation for sockets from
+ * the operation for file descriptors, because gfarm_send_no_sigpipe()
+ * may only work with sockets, since it may use send(2) internally.
+ */
+int
+gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv = gfarm_send_no_sigpipe(fd, data, length);
@@ -102,7 +118,7 @@ gfarm_iobuffer_blocking_read_fd_op(struct gfarm_iobuffer *b,
 }
 
 int
-gfarm_iobuffer_blocking_write_fd_op(struct gfarm_iobuffer *b,
+gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
@@ -135,23 +151,10 @@ gfarm_iobuffer_blocking_write_fd_op(struct gfarm_iobuffer *b,
 	}
 }
 
-void
-gfarm_iobuffer_set_blocking_read_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_read(b, gfarm_iobuffer_blocking_read_fd_op,
-	    NULL, fd);
-}
-
-void
-gfarm_iobuffer_set_blocking_write_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_write(b, gfarm_iobuffer_blocking_write_fd_op,
-	    NULL, fd);
-}
-
 /*
  * an option for gfarm_iobuffer_set_write_close()
  */
+#if 0 /* currently not used */
 void
 gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd)
@@ -161,6 +164,7 @@ gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 	if (rv == -1 && gfarm_iobuffer_get_error(b) == NULL)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
 }
+#endif /* currently not used */
 
 /*
  * xxx_connection operation
@@ -190,26 +194,26 @@ xxx_iobuffer_env_for_credential_fd_op(void *cookie)
 	return (NULL);
 }
 
-struct xxx_iobuffer_ops xxx_fd_iobuffer_ops = {
+static struct xxx_iobuffer_ops xxx_socket_iobuffer_ops = {
 	xxx_iobuffer_close_fd_op,
 	xxx_iobuffer_export_credential_fd_op,
 	xxx_iobuffer_delete_credential_fd_op,
 	xxx_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_fd_op,
+	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_fd_op,
-	gfarm_iobuffer_blocking_write_fd_op
+	gfarm_iobuffer_blocking_write_socket_op
 };
 
 char *
-xxx_fd_connection_new(int fd, struct xxx_connection **connp)
+xxx_socket_connection_new(int fd, struct xxx_connection **connp)
 {
-	return (xxx_connection_new(&xxx_fd_iobuffer_ops, NULL, fd, connp));
+	return (xxx_connection_new(&xxx_socket_iobuffer_ops, NULL, fd, connp));
 }
 
 char *
-xxx_connection_set_fd(struct xxx_connection *conn, int fd)
+xxx_connection_set_socket(struct xxx_connection *conn, int fd)
 {
-	xxx_connection_set(conn, &xxx_fd_iobuffer_ops, NULL, fd);
+	xxx_connection_set(conn, &xxx_socket_iobuffer_ops, NULL, fd);
 	return (NULL);
 }

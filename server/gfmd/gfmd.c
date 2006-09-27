@@ -671,8 +671,8 @@ main_loop(int accepting_socket)
 #endif
 				    errno != EAGAIN)
 					gflog_warning_errno("accept");
-			} else if ((e = xxx_fd_connection_new(client_socket,
-			    &client_conn)) != NULL) {
+			} else if ((e = xxx_socket_connection_new(
+			    client_socket, &client_conn)) != NULL) {
 				gflog_warning("fd_connection_new: %s", e);
 				close(client_socket);
 			} else if ((e = gfarm_authorize(client_conn, 0,

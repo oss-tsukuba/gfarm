@@ -137,7 +137,7 @@ gfarm_auth_request_gsi(struct xxx_connection *conn,
 	e = xxx_proto_recv(conn, 1, &eof, "i", &error);
 	if (e != NULL || eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
 		xxx_connection_reset_secsession(conn);
-		xxx_connection_set_fd(conn, fd);
+		xxx_connection_set_socket(conn, fd);
 		return (e != NULL ? e :
 		    eof ? GFARM_ERR_PROTOCOL : GFARM_ERR_AUTHENTICATION);
 	}
@@ -188,7 +188,7 @@ gfarm_auth_request_gsi_receive_result(int events, int fd, void *closure,
 		state->error = GFARM_ERR_AUTHENTICATION;
 	if (state->error != NULL) {
 		xxx_connection_reset_secsession(state->conn);
-		xxx_connection_set_fd(state->conn, fd);
+		xxx_connection_set_socket(state->conn, fd);
 	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);

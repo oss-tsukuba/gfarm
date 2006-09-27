@@ -275,7 +275,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 	close(stdout_pipe[1]);
 	free(if_hostname);
 
-	e = xxx_fd_connection_new(stdin_pipe[1], &state->out);
+	e = xxx_socket_connection_new(stdin_pipe[1], &state->out);
 	if (e != NULL) {
 		fprintf(stderr, "%s: allocating memory for pipe to %s: %s\n",
 		    message_prefix, canonical_hostname, e);
@@ -285,7 +285,7 @@ gfs_client_rep_backend_invoke(char *canonical_hostname,
 		free(state);
 		return (e);
 	}
-	e = xxx_fd_connection_new(stdout_pipe[0], &state->in);
+	e = xxx_socket_connection_new(stdout_pipe[0], &state->in);
 	if (e != NULL) {
 		fprintf(stderr, "%s: allocating memory for pipe from %s: %s\n",
 		    message_prefix, canonical_hostname, e);

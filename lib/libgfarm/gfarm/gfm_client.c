@@ -79,7 +79,7 @@ gfm_client_connection0(char *hostname, struct gfm_connection *gfm_server)
 		close(sock);
 		return (gfarm_errno_to_error(errno));
 	}
-	e = xxx_fd_connection_new(sock, &gfm_server->conn);
+	e = xxx_socket_connection_new(sock, &gfm_server->conn);
 	if (e != NULL) {
 		close(sock);
 		return (e);

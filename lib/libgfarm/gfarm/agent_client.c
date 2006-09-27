@@ -50,7 +50,7 @@ agent_client_connection0_unix(
 		close(sock);
 		return (e);
 	}
-	e = xxx_fd_connection_new(sock, &agent_server->conn);
+	e = xxx_socket_connection_new(sock, &agent_server->conn);
 	if (e != NULL) {
 		close(sock);
 		return (e);
@@ -96,7 +96,7 @@ agent_client_connection0_inet(const char *if_hostname,
 		close(sock);
 		return (e);
 	}
-	e = xxx_fd_connection_new(sock, &agent_server->conn);
+	e = xxx_socket_connection_new(sock, &agent_server->conn);
 	if (e != NULL) {
 		close(sock);
 		return (e);
