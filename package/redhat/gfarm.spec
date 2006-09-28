@@ -721,6 +721,8 @@ fi
 %{prefix}/bin/gfssh
 %{prefix}/bin/gfsshl
 %{prefix}/bin/gfstat
+%{prefix}/bin/gfstatus
+%{prefix}/bin/gftest
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
 %{profile_prefix}/gfarm.sh

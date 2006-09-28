@@ -26,5 +26,7 @@
 @PREFIX@/bin/gfssh
 @PREFIX@/bin/gfsshl
 @PREFIX@/bin/gfstat
+@PREFIX@/bin/gfstatus
+@PREFIX@/bin/gftest
 @PREFIX@/bin/gfwhere
 @PREFIX@/bin/gfwhoami

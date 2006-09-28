@@ -41,6 +41,8 @@ bin/gfsplck
 bin/gfssh
 bin/gfsshl
 bin/gfstat
+bin/gfstatus
+bin/gftest
 bin/gfusage
 bin/gfwhere
 bin/gfwhoami

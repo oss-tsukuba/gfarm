@@ -26,5 +26,7 @@ debian/tmp/usr/bin/gfsetdir
 debian/tmp/usr/bin/gfssh
 debian/tmp/usr/bin/gfsshl
 debian/tmp/usr/bin/gfstat
+debian/tmp/usr/bin/gfstatus
+debian/tmp/usr/bin/gftest
 debian/tmp/usr/bin/gfwhere
 debian/tmp/usr/bin/gfwhoami
