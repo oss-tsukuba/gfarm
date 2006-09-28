@@ -28,6 +28,7 @@ SUBDIRS = \
 	gfsetdir \
 	gfstat \
 	gfstatus \
+	gftest \
 	gfmpirun \
 	gfps \
 	gfrun \
