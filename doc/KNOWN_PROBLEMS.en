@@ -49,7 +49,8 @@
 	It's possible to configure LDAP or PostgreSQL to prevent this
 	problem even in the gfarm v1 branch.  But the current config-gfarm
 	does not have this functionality, moreover, no documentation
-	is available.
+	is available for OpenLDAP. The procedure for PostgreSQL is
+	described in Gfarm-FAQ.en 3.3, though.
 
 - Access privilege checks aren't complete.
 
@@ -408,6 +409,21 @@
 	NFS server:			NFS client:
 	Solaris 2.6			Linux 2.4.18 (RedHat 8)
 	NetBSD 3.0			Linux 2.4.18 (RedHat 8)
+
+- If your gfarm library is linked with Globus, programs which are linked
+  with the libgfarm library will ignore the SIGPIPE (broken pipe) signal.
+  Programs which are indirectly linked with the libgfarm will ignore SIGPIPE
+  too. Thus, programs which are linked with the system call hook library
+  will do so too.
+
+  As the result, commands like "program | head -1" may not terminate
+  until the program sends all of its output to the already closed pipe,
+  instead of just after it displays first one line.
+  (This happens only if the program doesn't check the EPIPE error caused
+  by this situation, though.)
+  
+  Plan to fix:
+	Not determined, because Globus library needs to be fixed.
 
 - Gfarm doesn't support any filesystem that doesn't distinguish
   upper case and lower case in its pathname, as a gfarm spool directory
