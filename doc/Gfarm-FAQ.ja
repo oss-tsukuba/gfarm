@@ -30,6 +30,7 @@ Science and Technology (AIST).  All Rights Reserved.
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
   3.2 sharedsecret 認証，gsi_auth 手法，gsi 認証の違いは？
+  3.3 host 情報を一般ユーザからは変更できなくするには？
 
 4. 性能チューニング
   4.1 OpenLDAP サーバで，メタデータの読込み，書込み性能を向上させるには
@@ -302,6 +303,80 @@ Science and Technology (AIST).  All Rights Reserved.
 	--with-globus オプションを指定しないと，有効になりません．
 	GSI に関する詳しい情報は，http://www.globus.org/ を参照し
 	てください．
+
+  3.3 host 情報を一般ユーザからは変更できなくするには？
+
+	この説明では、以下の記法を用います。
+	実際には、これらを適切な値で置き換えてください。
+	$POSTGRESQL_SERVERPORT
+		config-gfarm の -p オプションで指定した、
+		PostgreSQL のポート番号です。
+		gfarm.conf に postgresql_serverport として記録されています。
+		デフォルト値は 10602 です。
+	$ADMIN_USER
+		config-gfarm の -U オプションで指定した、
+		PostgreSQL の管理ユーザ名です。
+		config-gfarm を root 権限で実行した場合のデフォルトは、
+		「postgres」(ただし *BSD では「pgsql」) です。
+		config-gfarm を一般ユーザ権限で実行した場合のデフォルトは、
+		その一般ユーザです。
+	$ADMIN_PASSWORD
+		$ADMIN_USER の PostgreSQL パスワードです。
+		ファイル var/gfarm-pgsql/admin_password に記録されていますので
+		そのファイルの内容を使ってください。
+	$NORMAL_USER
+		config-gfarm の -u オプションで指定した、
+		PostgreSQL へアクセスに使うユーザ名です。
+		gfarm.conf の postgresql_user の項に記録されています。
+		デフォルトは「gfarm」です。
+		The default is "gfarm"
+	$HOSTADMIN_USER
+		ホスト情報の管理ユーザが、PostgreSQL へのアクセスに使う
+		ユーザ名です。
+		例えば「gfarm_admin」のような名前で適宜決めてください。
+	$HOSTADMIN_PASSWORD
+		$HOSTADMIN_USER の PostgreSQL パスワードです。
+		適宜決めて下さい。
+
+	以下は PostgreSQL 向けの説明です。
+	(OpenLDAP 向けの記述は、まだ書かれていません。)
+
+	まず、一般ユーザが、ホスト情報を変更できないようにするには、
+	下記のようにします。
+
+	$ psql -U $ADMIN_USER -p $POSTGRESQL_SERVERPORT -W gfarm
+	Password for user $ADMIN_USER: $ADMIN_PASSWORD
+	gfarm=# REVOKE INSERT, UPDATE, DELETE ON Host, HostAliases FROM $NORMAL_USER;
+	gfarm=# \q
+
+	また、特定の管理者だけは、ホスト情報を変更できるようにするには、
+	下記のようにします。
+
+	$ createuser -q --no-createrole -U $ADMIN_USER -p $POSTGRESQL_SERVERPORT -A -D $HOSTADMIN_USER
+	Password: $ADMIN_PASSWORD
+	$ psql -U $ADMIN_USER -p $POSTGRESQL_SERVERPORT -W gfarm
+	Password for user $ADMIN_USER: $ADMIN_PASSWORD
+	gfarm=# ALTER USER $HOSTADMIN_USER WITH ENCRYPTED PASSWORD '$HOSTADMIN_PASSWORD';
+	gfarm=# GRANT SELECT, INSERT, UPDATE, DELETE ON Host, HostAliases, Path, FileSection, FileSectionCopy TO $HOSTADMIN_USER;
+	gfarm=# \q
+
+	… 次に var/gfarm-pgsql/pg_hba.conf を編集して下記の行を追加します。
+	host	gfarm		$HOSTADMIN_USER	0.0.0.0	0.0.0.0	md5
+
+	… 次に PostgreSQL を再起動して pg_hba.conf の変更を反映させます。
+	# /etc/init.d/gfarm-pgsql restart
+
+	… ホスト情報管理者の ~/.gfarmrc を、下記の内容で作成します。
+	postgresql_user $HOSTADMIN_USER
+	postgresql_password "$HOSTADMIN_PASSWORD"
+
+	… $HOSTADMIN_USER のパスワードが洩れないように保護します。
+	$ chmod 600 ~/.gfarmrc
+
+	なお、このホスト情報管理者は、gfarm_agent を使ってはいけませんので
+	注意してください。特に、/etc/gfarm.conf に gfarm_agent の設定が書か
+	れていると、その設定が自動的に使われてしまいますので、そのような
+	記述のないホストでホスト情報の管理作業を行なう必要があります。
 
 4. 性能チューニング
 *******************
