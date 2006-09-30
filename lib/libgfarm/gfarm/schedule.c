@@ -620,8 +620,11 @@ search_idle_candidate_list_add_host_or_host_info(
 		return (NULL); /* ignore this host, hostname == NULL case */
 
 	e = search_idle_host_state_add_host_or_host_info(host, host_info, &h);
-	if (e != NULL)
+	if (e != NULL) {
+		if (e == GFARM_ERR_UNKNOWN_HOST) /* just ignore this host */
+			return (NULL);
 		return (e);
+	}
 	if ((h->flags & HOST_STATE_FLAG_SCHEDULING) != 0) {
 		/* same host is specified twice or more */
 		return (NULL);
