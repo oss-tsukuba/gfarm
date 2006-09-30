@@ -475,10 +475,15 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
-		    (((gf->open_flags & GFARM_FILE_CREATE) ||
+		   (((gf->open_flags & GFARM_FILE_CREATE) ||
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
-			gf->pi.pathname, vc->section))) {
+			gf->pi.pathname, vc->section)) ||
+		   (gf->open_flags & GFARM_FILE_TRUNC)) {
+		/*
+		 * If GFARM_FILE_TRUNC,
+		 * we don't have to schedule a host which has a replica.
+		 */
 		if (gfarm_schedule_write_local_priority() &&
 		    gfarm_is_active_fsnode_to_write() &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
@@ -542,7 +547,8 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
-	     (flags & GFARM_FILE_REPLICATE) != 0)) {
+	     (flags & GFARM_FILE_REPLICATE) != 0) &&
+	    (gf->open_flags & GFARM_FILE_TRUNC) == 0) {
 		char *canonical_self_name;
 
 		e = replicate_section_to_local(gf, vc->section,
