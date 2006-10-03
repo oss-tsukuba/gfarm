@@ -381,7 +381,7 @@ usage()
 	fprintf(stderr,	"\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
 #ifdef _OPENMP
-	fprintf(stderr, " [-P <#thread>]");
+	fprintf(stderr, " [-j <#thread>]");
 #endif
 	fprintf(stderr,	"\n\t<gfarm_url>...\n");
 	exit(EXIT_FAILURE);
@@ -451,7 +451,7 @@ main(int argc, char *argv[])
 	error_check(e);
 
 #ifdef _OPENMP
-	while ((ch = getopt(argc, argv, "a:h:mnqvS:D:H:I:N:P:?")) != -1) {
+	while ((ch = getopt(argc, argv, "a:h:j:mnqvS:D:H:I:N:?")) != -1) {
 #else
 	while ((ch = getopt(argc, argv, "a:h:mnqvS:D:H:I:N:?")) != -1) {
 #endif
@@ -464,6 +464,11 @@ main(int argc, char *argv[])
 			src_hostfile = optarg;
 			conflict_check(&mode_src_ch, ch);
 			break;
+#ifdef _OPENMP
+		case 'j':
+			parallel = strtol(optarg, NULL, 0);
+			break;
+#endif
 		case 'm':
 			act = &migrate_mode;
 			break;
@@ -491,11 +496,6 @@ main(int argc, char *argv[])
 		case 'N':
 			num_replicas = strtol(optarg, NULL, 0);
 			break;
-#ifdef _OPENMP
-		case 'P':
-			parallel = strtol(optarg, NULL, 0);
-			break;
-#endif
 		case '?':
 		default:
 			usage();
