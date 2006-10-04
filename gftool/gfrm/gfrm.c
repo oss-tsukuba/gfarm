@@ -54,7 +54,7 @@ add_file(char *file, struct gfs_stat *st, void *arg)
 }
 
 static char *
-reject_dir(char *file, struct gfs_stat *st, void *arg)
+is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 {
 	const char *f = gfarm_url_prefix_skip(file);
 	
@@ -64,18 +64,14 @@ reject_dir(char *file, struct gfs_stat *st, void *arg)
 }
 
 static char *
-add_this_dir(char *file, struct gfs_stat *st, void *arg)
+do_not_add_dir(char *file, struct gfs_stat *st, void *arg)
 {
-	struct gfrm_arg *a = arg;
-	char *f, *e;
-	
-	f = strdup(file);
-	if (f == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	
-	e = gfarm_stringlist_add(&a->dirs, f);
+	const char *f = gfarm_url_prefix_skip(file);
+	char *e = GFARM_ERR_IS_A_DIRECTORY;
+
+	fprintf(stderr, "%s: '%s' %s\n", program_name, f, e);
 	/* return error always to prevent further traverse */
-	return (e != NULL ? e : GFARM_ERR_IS_A_DIRECTORY);
+	return (e);
 }
 
 static char *
@@ -255,7 +251,7 @@ remove_files(int nthreads, struct gfrm_arg *arg)
 	e = create_file_section_list(&arg->files, arg, &nsinfo, &sinfo);
 	if (e != NULL)
 		return(e);
-	if (nsinfo <= 0)
+	if (nsinfo + gfarm_stringlist_length(&arg->dirs) <= 0)
 		return (NULL); /* no file */
 
 	if (nthreads <= 0) {
@@ -442,9 +438,9 @@ main(int argc, char *argv[])
 	error_check(e);
 
 	if (recursive)
-		op_dir_before = reject_dir;
+		op_dir_before = is_valid_dir;
 	else
-		op_dir_before = add_this_dir;
+		op_dir_before = do_not_add_dir;
 
 	e = gfarm_stringlist_init(&gfrm_arg.files);
 	error_check(e);
