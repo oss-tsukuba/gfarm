@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/socket.h>
 
 #ifdef _OPENMP
 #include <sys/types.h>
