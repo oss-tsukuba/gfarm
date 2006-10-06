@@ -540,7 +540,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: gfarm_initialize: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
 
@@ -651,5 +651,11 @@ main(int argc, char **argv)
 	}
 	gfarm_stringlist_free_deeply(&paths);
 	gfs_glob_free(&types);
+
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfarm_terminate: %s\n", program_name, e);
+		exit_code = EXIT_FAILURE;
+	}
 	return (exit_code);
 }
