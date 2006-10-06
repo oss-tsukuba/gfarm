@@ -24,6 +24,7 @@ static int omp_get_thread_num(void){ return (0); }
 #include <openssl/evp.h>
 #include "host.h"
 #include "schedule.h"
+#include "gfs_client.h"
 #include "gfs_misc.h"
 #include "gfarm_list.h"
 #include "gfarm_foreach.h"
@@ -288,6 +289,14 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 	}
 	omp_set_num_threads(nthreads);
 
+#ifdef LIBGFARM_NOT_MT_SAFE
+	/*
+	 * XXX - libgfarm is not thread-safe...
+	 * purge the connection cache for gfsd since the connection to
+	 * gfsd cannot be shared among child processes.
+	 */
+	gfs_client_terminate();
+#endif
 #pragma omp parallel reduction(+:nerr) private(pi,tnum,nth)
 	{
 	pi = 0;
@@ -312,7 +321,6 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 			pi = 0;
 
 #ifdef LIBGFARM_NOT_MT_SAFE
-		/* XXX - libgfarm is not thread-safe... */
 		pid = fork();
 		if (pid == 0) {
 #endif
