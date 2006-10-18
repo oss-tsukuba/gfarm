@@ -250,10 +250,25 @@ filesizecmp_inv(const void *a, const void *b)
 	return (0);
 }
 
+static int
+is_enough_space(char *host, file_offset_t size)
+{
+	gfarm_int32_t bsize;
+	file_offset_t blocks, bfree, bavail, files, ffree, favail;
+	char *e;
+
+	e = gfs_statfsnode(host, &bsize,
+	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
+	if (e != NULL || bavail * bsize < size)
+		return (0);
+	return (1);
+}
+
 static char *
 replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 {
 	int i, nsinfo, pi, tnum, nth, nerr = 0;
+	int max_niter;
 	char *e;
 	struct gfarm_section_xinfo **sinfo;
 	int ndst = arg->ndst, nsrc = arg->nsrc;
@@ -326,16 +341,30 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 		if (pid == 0) {
 #endif
 			di = (tnum + pi * nth) % ndst;
-			/* XXX - the destination may conflict */
+			/*
+			 * check whether the destination node already
+			 * has the file replica, or whether the
+			 * destination node has enough disk space.
+			 *
+			 * XXX - the destination may conflict
+			 */
+			max_niter = ndst;
 			while (gfarm_file_section_copy_info_does_exist(
 				sinfo[i]->i.pathname, sinfo[i]->i.section,
-				dst[di])) {
+				dst[di]) || ! is_enough_space(
+					dst[di], sinfo[i]->i.filesize)) {
 				if (arg->verbose)
 					printf("%02d: warning: the destination"
 					       " may conflict: %s -> %s\n",
 					       tnum, dst[di],
 					       dst[(di + 1) % ndst]);
 				di = (di + 1) % ndst;
+				if (--max_niter == 0)
+					break;
+			}
+			if (max_niter == 0) {
+				e = "no filesystem node";
+				goto skip_replication;
 			}
 			if (arg->verbose) {
 				printf("%02d(%03d): %s (%s) --> %s\n",
@@ -359,6 +388,7 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 				       sinfo[i]->file, sinfo[i]->i.section, t,
 				       sinfo[i]->i.filesize / t / 1024 / 1024);
 			}
+		skip_replication:
 			if (e != NULL) {
 #ifndef LIBGFARM_NOT_MT_SAFE
 				++nerr;
