@@ -14,6 +14,7 @@
 
 #include "host.h"
 #include "schedule.h" /* gfarm_strings_expand_cyclic() */
+#include "config.h"
 
 /*
  *  Register a local file to Gfarm filesystem
@@ -110,6 +111,15 @@ get_file_mode(int fd, char *filename, gfarm_mode_t *file_mode_p)
 	else
 		*file_mode_p = 0644; /* XXX, but better than *file_mode_p */
 	return (1);
+}
+
+static void
+set_minimum_free_disk_space(int fd)
+{
+	struct stat s;
+
+	if (!fstat(fd, &s) && S_ISREG(s.st_mode))
+		gfarm_set_minimum_free_disk_space(s.st_size);
 }
 
 static int
@@ -239,6 +249,9 @@ register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
 				program_name, target_url, e);
 			error_happened = 1;
 		} else {
+			/* specify the minimum free disk space */
+			set_minimum_free_disk_space(fd);
+
 			if ((e = gfs_pio_set_view_index(gf, nfragments, index,
 			    hostname, 0)) != NULL) {
 				fprintf(stderr,
@@ -292,6 +305,9 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 				program_name, gfarm_url, e);
 			error_happened = 1;
 		} else {
+			/* specify the minimum free disk space */
+			set_minimum_free_disk_space(fd);
+
 			if (section == NULL) {
 				fprintf(stderr, "%s: missing -a option\n",
 					program_name);
@@ -1051,7 +1067,7 @@ main(int argc, char *argv[])
 
 	/*  Command options  */
 
-	while ((c = getopt(argc, argv, "a:fh:iprD:I:H:N:?")) != -1) {
+	while ((c = getopt(argc, argv, "a:fh:iprs:D:I:H:N:?")) != -1) {
 		switch (c) {
 		case 'I':
 			opt_section = optarg;
@@ -1083,6 +1099,10 @@ main(int argc, char *argv[])
 			break;
 		case 'r':
 			reg_mode = RECURSIVE;
+			break;
+		case 's':
+			gfarm_set_minimum_free_disk_space(
+				strtol(optarg, NULL, 0));
 			break;
 		case '?':
 		default:
