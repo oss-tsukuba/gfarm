@@ -36,7 +36,6 @@ extern char *gfarm_localfs_datadir;
 extern int gfarm_dir_cache_timeout;
 extern int gfarm_host_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
-extern file_offset_t gfarm_minimum_free_disk_space;
 extern int gfarm_gfsd_connection_cache;
 
 extern int gf_on_demand_replication;
@@ -44,6 +43,8 @@ extern int gf_hook_default_global;
 
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
+char *gfarm_set_minimum_free_disk_space(file_offset_t);
+file_offset_t gfarm_get_minimum_free_disk_space(void);
 
 /* redirection */
 extern struct gfs_file *gf_stdout, *gf_stderr;

@@ -106,7 +106,7 @@
  * - load average isn't only condition to see whether the host can be used
  *   or not.
  *   If it's write-mode, we check whether disk free space is enough or not,
- *   by comparing the space against gfarm_minimum_free_disk_space.
+ *   by comparing the space against gfarm_get_minimum_free_disk_space().
  * - invalidation of loadavg cache is a bit complicated.
  *   if the load average is cached in this scheduling process, the cache
  *   won't be invalidated.
@@ -751,7 +751,7 @@ search_idle_count(struct search_idle_state *s,
 
 	if (s->write_mode &&
 	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0 &&
-	    h->bavail * h->bsize < gfarm_minimum_free_disk_space)
+	    h->bavail * h->bsize < gfarm_get_minimum_free_disk_space())
 		ok = 0; /* not enough free space */
 	if (ok)
 		(*usable_numberp)++;
@@ -1894,5 +1894,5 @@ gfarm_is_active_fsnode_to_write(void)
 	if (e != NULL)
 		return (0);
 
-	return (bavail * bsize >= gfarm_minimum_free_disk_space);
+	return (bavail * bsize >= gfarm_get_minimum_free_disk_space());
 }

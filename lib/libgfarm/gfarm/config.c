@@ -392,7 +392,7 @@ int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
 static int schedule_write_local_priority = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
-file_offset_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
+static file_offset_t minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 
 /* static variables */
@@ -521,26 +521,26 @@ set_metadb_type_localfs(enum gfarm_metadb_backend_type *metadb_typep)
 int
 gfarm_schedule_write_local_priority(void)
 {
-	char *s = getenv("GFARM_WRITE_LOCAL_PRIORITY");
-
-	if (s == NULL)
-		return (schedule_write_local_priority);
-	if (isdigit(*(unsigned char *)s))
-		return (atoi(s) != 0);
-	if (strcasecmp(s, "disable") == 0)
-		return (0);
-	return (1);
+	return (schedule_write_local_priority);
 }
 
 char *
 gfarm_schedule_write_target_domain(void)
 {
-	char *domain = getenv("GFARM_WRITE_TARGET_DOMAIN");
+	return (schedule_write_target_domain);
+}
 
-	if (domain != NULL)
-		return (domain);
-	else
-		return (schedule_write_target_domain);
+char *
+gfarm_set_minimum_free_disk_space(file_offset_t size)
+{
+	minimum_free_disk_space = size;
+	return (NULL);
+}
+
+file_offset_t
+gfarm_get_minimum_free_disk_space(void)
+{
+	return (minimum_free_disk_space);
 }
 
 /*
@@ -1191,7 +1191,7 @@ parse_one_line(char *s, char *p, char **op,
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
 		e = parse_set_var(p, &schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
-		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+		e = parse_set_misc_offset(p, &minimum_free_disk_space);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
 
@@ -1200,6 +1200,36 @@ parse_one_line(char *s, char *p, char **op,
 		e = "unknown keyword";
 	}
 	*op = o;
+	return (e);
+}
+
+static int
+parse_write_local_priority(char *s)
+{
+	if (isdigit(*(unsigned char *)s))
+		return (atoi(s) != 0);
+	if (strcasecmp(s, "disable") == 0)
+		return (0);
+	return (1);
+}
+
+static char *
+gfarm_config_env(void)
+{
+	char *s, *e = NULL;
+
+	s = getenv("GFARM_WRITE_LOCAL_PRIORITY");
+	if (s != NULL)
+		schedule_write_local_priority = parse_write_local_priority(s);
+
+	s = getenv("GFARM_WRITE_TARGET_DOMAIN");
+	if (s != NULL)
+		schedule_write_target_domain = strdup(s);
+
+	s = getenv("GFARM_MINIMUM_FREE_DISK_SPACE");
+	if (s != NULL)
+		e = parse_set_misc_offset(s, &minimum_free_disk_space);
+
 	return (e);
 }
 
@@ -1363,8 +1393,8 @@ gfarm_config_set_default_misc(void)
 	if (schedule_write_local_priority == MISC_DEFAULT)
 		schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;
-	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
-		gfarm_minimum_free_disk_space =
+	if (minimum_free_disk_space == MISC_DEFAULT)
+		minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
 	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
 		gfarm_gfsd_connection_cache =
@@ -1400,6 +1430,9 @@ gfarm_config_read(void)
 			"after gfarm_server_config_read() is called. "
 			"something wrong");
 	}
+
+	/* obtain parameters from environment variables */
+	gfarm_config_env();
 
 	rc_need_free = 0;
 	rc = getenv("GFARM_CONFIG_FILE");
@@ -1455,6 +1488,9 @@ gfarm_server_config_read(void)
 	case gfarm_config_server_read:
 		return (NULL);
 	}
+
+	/* obtain parameters from environment variables */
+	gfarm_config_env();
 
 	gfarm_stringlist_init(&local_user_map_file_list);
 	e = gfarm_config_read_file(gfarm_config_file, NULL, &etc_config);
@@ -1578,7 +1614,7 @@ static int total_nodes = -1, node_index = -1;
 static char *stdout_file = NULL, *stderr_file = NULL;
 
 static char *
-gfarm_parse_env(void)
+gfarm_parse_env_client(void)
 {
 	char *env;
 
@@ -1605,7 +1641,7 @@ gfarm_parse_env(void)
  * eliminate arguments added by the gfrun command.
  * this way is only used when the gfarm program is invoked directly,
  * or invoked via "gfrun -S".
- * if the gfarm program is invoked via gfexec, gfarm_parse_env() is
+ * if the gfarm program is invoked via gfexec, gfarm_parse_env_client() is
  * used instead.
  */
 
@@ -1758,7 +1794,7 @@ gfarm_client_initialize(int *argcp, char ***argvp)
 	if (getenv("DISPLAY") != NULL && argvp != NULL)
 		gfarm_debug_initialize((*argvp)[0]);
 
-	e = gfarm_parse_env();
+	e = gfarm_parse_env_client();
 	if (e != NULL)
 		return (e);
 	if (argvp != NULL) { /* not called from gfs_hook */
