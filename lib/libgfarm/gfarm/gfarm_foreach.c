@@ -16,7 +16,8 @@ gfarm_foreach_directory_hierarchy(
 	char *(*op_dir2)(char *, struct gfs_stat *, void *),
 	char *file, void *arg)
 {
-	char *path, *e, *e_save = NULL;
+	char *path, *slash, *e, *e_save = NULL;
+	int file_len;
 	struct gfs_stat st;
 	GFS_Dir dir;
 	struct gfs_dirent *dent;
@@ -26,6 +27,13 @@ gfarm_foreach_directory_hierarchy(
 		return (e);
 	if (e != NULL)
 		e_save = e;
+
+	/* add '/' if necessary */
+	if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(file)))
+		slash = "/";
+	else
+		slash = "";
+	file_len = strlen(file) + strlen(slash);
 
 	if (GFARM_S_ISDIR(st.st_mode)) {
 		if (op_dir1 != NULL) {
@@ -44,13 +52,13 @@ gfarm_foreach_directory_hierarchy(
 					    (d[1] == '.' && d[2] == '\0')))
 				continue;
 
-			path = malloc(strlen(file) + strlen(d) + 2);
+			GFARM_MALLOC_ARRAY(path, file_len + strlen(d) + 1);
 			if (path == NULL) {
 				if (e_save == NULL)
 					e_save = GFARM_ERR_NO_MEMORY;
 				continue;
 			}
-			sprintf(path, "%s/%s", file, d);
+			sprintf(path, "%s%s%s", file, slash, d);
 			e = gfarm_foreach_directory_hierarchy(
 				op_file, op_dir1, op_dir2, path, arg);
 			free(path);
