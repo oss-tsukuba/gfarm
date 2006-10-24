@@ -120,42 +120,6 @@ free_gfarm_file:
 	return (e);
 }
 
-static char *
-display_error_is_a_directory(char *gfarm_url, struct gfs_stat *st, void *arg)
-{
-	char *e = GFARM_ERR_IS_A_DIRECTORY;
-
-	display_name(gfarm_url, st, arg);
-
-	fprintf(stderr, "%s\n", e);
-	return (e);
-}
-
-char *
-gfwhere(gfarm_stringlist *list, char *section, int recursive)
-{
-	int n, i;
-	char *e, *e_save = NULL;
-	char *(*display_dir)(char *, struct gfs_stat *, void *);
-
-	if (recursive)
-		display_dir = display_name;
-	else
-		display_dir = display_error_is_a_directory;
-
-	n = gfarm_stringlist_length(list);
-	for (i = 0; i < n; i++) {
-		char *p = gfarm_stringlist_elem(list, i);
-
-		e = gfarm_foreach_directory_hierarchy(
-			display_replica_catalog, display_dir, NULL,
-			p, section);
-		if (e_save == NULL)
-			e_save = e;
-	}
-	return (e_save);
-}
-
 void
 usage(void)
 {
@@ -175,7 +139,7 @@ main(int argc, char **argv)
 	int argc_save = argc;
 	char **argv_save = argv;
 	char *e, *section = NULL;
-	int i, ch, opt_recursive = 0;
+	int i, n, ch, opt_recursive = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 
@@ -225,7 +189,25 @@ main(int argc, char **argv)
 		gfs_glob(argv[i], &paths, &types);
 	gfs_glob_free(&types);
 
-	(void)gfwhere(&paths, section, opt_recursive);
+	n = gfarm_stringlist_length(&paths);
+	for (i = 0; i < n; i++) {
+		char *p = gfarm_stringlist_elem(&paths, i);
+		struct gfs_stat st;
+
+		if ((e = gfs_stat(p, &st)) != NULL) {
+			fprintf(stderr, "%s: %s\n", p, e);
+		} else {
+			if (GFARM_S_ISREG(st.st_mode)) 
+				display_replica_catalog(p, &st, NULL);
+			else if (opt_recursive)
+				(void)gfarm_foreach_directory_hierarchy(
+					display_replica_catalog, display_name,
+					NULL, p, section);
+			else
+				fprintf(stderr, "%s: not a file\n", p);
+			gfs_stat_free(&st);
+		}
+	}
 
 	gfarm_stringlist_free_deeply(&paths);
 	e = gfarm_terminate();
