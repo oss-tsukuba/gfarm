@@ -2392,8 +2392,13 @@ check_spool_directory()
 	if (fd == -1)
 		accepting_fatal_errno("creat(2) test");
 	rv = write(fd, "X", 1);
-	if (rv == -1)
-		accepting_fatal_errno("write(2) test");
+	if (rv == -1) {
+		/* accept "no space left on device" */
+		if (errno == ENOSPC)
+			gflog_warning_errno("write(2) test");
+		else
+			accepting_fatal_errno("write(2) test");
+	}
 	if (rv == 0)
 		accepting_fatal("write(2) returned 0");
 	if (fsync(fd) == -1)
