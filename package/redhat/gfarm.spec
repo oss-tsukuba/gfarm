@@ -53,7 +53,7 @@
 Summary: Grid Datafarm
 Name: %{package_name}
 Version: %pkgver
-Release: %rel
+Release: %{rel}%{?dist}
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
 Group: Applications/Internet
