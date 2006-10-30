@@ -21,6 +21,7 @@ char *progname = "gfsplck";
 
 static int check_all = 0;
 static int delete_invalid_file = 0;
+static int verbose = 0;
 
 static void
 print_errmsg(const char *path, char *msg)
@@ -149,6 +150,29 @@ check_file_size(char *pathname, char *gfarm_file, char *section)
 }
 
 static char *
+split_file_and_section(char *file_sec, char **secp)
+{
+	char *sec;
+
+	/* split file and section parts. */
+	sec = &file_sec[strlen(file_sec) - 1];
+	while (sec > file_sec && *sec != '/') {
+		if (*sec == ':') {
+			*sec = '\0';
+			++sec;
+			break;
+		}
+		--sec;
+	}
+	if (sec == file_sec || *sec == '/')
+		return ("invalid filename");
+	if (secp != NULL)
+		*secp = sec;
+	return (NULL);
+}
+
+
+static char *
 fixfrag_ii(char *pathname, char *gfarm_file, char *sec)
 {
 	char *hostname, *e;
@@ -194,7 +218,7 @@ fixfrag_ii(char *pathname, char *gfarm_file, char *sec)
 static char *
 fixfrag_i(const char *gfarm_url, char *pathname, char *gfarm_file, char *sec)
 {
-	char *e;
+	char *e, *path;
 
 	e = fixfrag_ii(pathname, gfarm_file, sec);
 	if (e != NULL) {
@@ -202,6 +226,15 @@ fixfrag_i(const char *gfarm_url, char *pathname, char *gfarm_file, char *sec)
 			print_errmsg_with_section(gfarm_url, sec, e);
 			if (e != GFARM_ERR_TEXT_FILE_BUSY)
 				delete_invalid_file_or_directory(pathname);
+		}
+		/* display file name */
+		if (verbose) {
+			path = strdup(pathname);
+			if (path != NULL) {
+				if (split_file_and_section(path, NULL) == NULL)
+					printf("%s\n", path);
+				free(path);
+			}
 		}
 	}
 	else
@@ -314,7 +347,7 @@ fixurl(const char *gfarm_url)
 static int
 fixfrag(char *pathname, const char *gfarm_prefix)
 {
-	char *gfarm_url, *sec, *pname, *gfarm_file, *e;
+	char *gfarm_url, *sec, *gfarm_file, *e;
 	struct gfs_stat gst;
 	int r = 1;
 
@@ -325,18 +358,9 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 	}
 
 	/* divide into file and section parts. */
-	sec = &gfarm_url[strlen(gfarm_url) - 1];
-	pname = sec - strlen(pathname) + 1;
-	while (sec > pname && *sec != '/') {
-		if (*sec == ':') {
-			*sec = '\0';
-			++sec;
-			break;
-		}
-		--sec;
-	}
-	if (sec == pname || *sec == '/') {
-		print_errmsg(pathname, "invalid filename");
+	e = split_file_and_section(gfarm_url, &sec);
+	if (e != NULL) {
+		print_errmsg(pathname, e);
 		delete_invalid_file_or_directory(pathname);
 		goto error_gfarm_url;
 	}
@@ -462,11 +486,13 @@ fixdir(char *dir, const char *gfarm_prefix)
 void
 usage()
 {
-	fprintf(stderr, "usage: %s [ -a ] [ -d ] [ Gfarm directory . . . ]\n",
+	fprintf(stderr, "usage: %s [ -a ] [ -d ] [ -v ] "
+		"[ Gfarm directory . . . ]\n",
 		progname);
 	fprintf(stderr, "options:\n");
 	fprintf(stderr, "\t-a\tcheck all files\n");
 	fprintf(stderr, "\t-d\tdelete invalid files\n");
+	fprintf(stderr, "\t-v\tverbose output\n");
 	exit(1);
 }
 
@@ -486,7 +512,7 @@ main(int argc, char *argv[])
 		print_errmsg(progname, "not a filesystem node");
 		exit(1);
 	}
-	while ((c = getopt(argc, argv, "ad")) != EOF) {
+	while ((c = getopt(argc, argv, "adhv")) != EOF) {
 		switch (c) {
 		case 'a':
 			check_all = 1;
@@ -494,6 +520,10 @@ main(int argc, char *argv[])
 		case 'd':
 			delete_invalid_file = 1;
 			break;
+		case 'v':
+			verbose = 1;
+			break;
+		case 'h':
 		default:
 			usage();
 		}
