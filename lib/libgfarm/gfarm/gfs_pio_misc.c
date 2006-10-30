@@ -168,12 +168,8 @@ gfs_pio_set_fragment_info_local(char *filename,
 		return (e);
 
 	e = gfarm_host_get_canonical_self_name(&fci.hostname);
-	if (e == NULL) {
+	if (e == NULL)
 		e = gfarm_file_section_copy_info_set(
 			gfarm_file, section, fci.hostname, &fci);
-		/* permit GFARM_ERR_ALREADY_EXISTS */
-		if (e == GFARM_ERR_ALREADY_EXISTS)
-			e = NULL;
-	}
 	return (e);
 }
