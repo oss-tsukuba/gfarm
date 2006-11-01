@@ -41,7 +41,7 @@ gfarm_agent_disable(void)
 	gfarm_agent_enabled = 0;
 }
 
-static char *
+char *
 gfarm_agent_check(void)
 {
 	char *e;
@@ -99,6 +99,12 @@ gfarm_agent_name_set(char *name)
 		return (GFARM_ERR_NO_MEMORY);
 
 	return (gfarm_agent_type_set(INET));
+}
+
+char *
+gfarm_agent_name_get(void)
+{
+	return (gfarm_agent_name);
 }
 
 void

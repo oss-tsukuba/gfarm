@@ -3,12 +3,14 @@
  */
 
 void gfarm_agent_disable(void);
+char *gfarm_agent_check(void);
 
 enum agent_type { NO_AGENT, UNIX_DOMAIN, INET };
 
 char *gfarm_agent_type_set(enum agent_type);
 enum agent_type gfarm_agent_type_get(void);
 char *gfarm_agent_name_set(char *);
+char *gfarm_agent_name_get(void);
 char *gfarm_agent_port_set(char *);
 int gfarm_agent_port_get(void);
 char *gfarm_agent_sock_path_set(char *);

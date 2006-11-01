@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <gfarm/gfarm.h>
+#include "agent_wrap.h"
 
 void
 error_check(char *msg, char *e)
@@ -37,6 +38,17 @@ main(int argc, char *argv[])
 	printf("global username: %s\n", gfarm_get_global_username());
 	printf(" local username: %s\n", gfarm_get_local_username());
 	printf(" local home dir: %s\n", gfarm_get_local_homedir());
+
+	puts("");
+	e = gfarm_agent_check();
+	if (e != NULL)
+		printf("metadata cache server: %s\n", e);
+	else {
+		printf("metadata cache server name: %s\n",
+		       gfarm_agent_name_get());
+		printf("metadata cache server port: %d\n",
+		       gfarm_agent_port_get());
+	}		
 
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);
