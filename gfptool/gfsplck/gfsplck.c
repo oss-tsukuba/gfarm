@@ -21,20 +21,31 @@ char *progname = "gfsplck";
 
 static int check_all = 0;
 static int delete_invalid_file = 0;
-static int verbose = 0;
+static int list_local_file = 0;
 
 static void
-print_errmsg(const char *path, char *msg)
+print_msg_common(FILE *out, const char *path, char *section, char *msg)
 {
-	fprintf(stderr, "%s on %s: %s\n",
-		path, gfarm_host_get_self_name(), msg);
+	if (section == NULL)
+		fprintf(out, "%s on %s: %s\n",
+			path, gfarm_host_get_self_name(), msg);
+	else
+		fprintf(out, "%s (%s) on %s: %s\n",
+			path, section, gfarm_host_get_self_name(), msg);
 }
 
 static void
-print_errmsg_with_section(const char *path, char *section, char *msg)
+print_errmsg(const char *path, char *section, char *msg)
 {
-	fprintf(stderr, "%s (%s) on %s: %s\n",
-		path, section, gfarm_host_get_self_name(), msg);
+	print_msg_common(stderr, path, section, msg);
+}
+
+static void
+print_msg(const char *path, char *section, char *msg)
+{
+	/* do not print any message when listing local files */
+	if (!list_local_file)
+		print_msg_common(stdout, path, section, msg);
 }
 
 static int
@@ -68,7 +79,8 @@ unlink_dir(const char *src)
 			GFARM_MALLOC_ARRAY(f, 
 				strlen(src) + 1 + strlen(dp->d_name) + 1);
 			if (f == NULL) {
-				print_errmsg(dp->d_name, "not enough memory");
+				print_errmsg(dp->d_name, NULL,
+					"not enough memory");
 				return (1);
 			}
 			strcpy(f, src);
@@ -98,10 +110,9 @@ delete_invalid_file_or_directory(char *pathname)
 {
 	if (delete_invalid_file) {
 		if (unlink_dir(pathname) == 0)
-			printf("%s on %s: deleted\n",
-			       pathname, gfarm_host_get_self_name());
+			print_msg(pathname, NULL, "deleted");
 		else
-			print_errmsg(pathname, "cannot delete");
+			print_errmsg(pathname, NULL, "cannot delete");
 	}
 }
 
@@ -223,12 +234,12 @@ fixfrag_i(const char *gfarm_url, char *pathname, char *gfarm_file, char *sec)
 	e = fixfrag_ii(pathname, gfarm_file, sec);
 	if (e != NULL) {
 		if (e != GFARM_ERR_ALREADY_EXISTS) {
-			print_errmsg_with_section(gfarm_url, sec, e);
+			print_errmsg(gfarm_url, sec, e);
 			if (e != GFARM_ERR_TEXT_FILE_BUSY)
 				delete_invalid_file_or_directory(pathname);
 		}
 		/* display file name */
-		if (verbose) {
+		if (list_local_file) {
 			path = strdup(pathname);
 			if (path != NULL) {
 				if (split_file_and_section(path, NULL) == NULL)
@@ -238,8 +249,7 @@ fixfrag_i(const char *gfarm_url, char *pathname, char *gfarm_file, char *sec)
 		}
 	}
 	else
-		printf("%s (%s) on %s: fixed\n", gfarm_url, sec,
-		       gfarm_host_get_self_name());
+		print_msg(gfarm_url, sec, "fixed");
 
 	return (e);
 }
@@ -266,7 +276,7 @@ fixurl(const char *gfarm_url)
 			gfarm_url_prefix_skip(gfarm_url), &gfarm_file);
 		if (e != NULL) {
 			/* in this case, give up searching invalid files */
-			print_errmsg(gfarm_url, e);
+			print_errmsg(gfarm_url, NULL, e);
 			return;
 		}
 		is_invalid = 1;
@@ -277,7 +287,7 @@ fixurl(const char *gfarm_url)
 		if (e != NULL) {
 			if (e != GFARM_ERR_NO_FRAGMENT_INFORMATION) {
 				/* maybe permission denied */
-				print_errmsg(gfarm_url, e);
+				print_errmsg(gfarm_url, NULL, e);
 				goto error_gfarm_file;
 			}
 			/* no fragment information case */
@@ -294,7 +304,8 @@ fixurl(const char *gfarm_url)
 	e = gfarm_path_localize(gfarm_file, &local_path);
 	if (e == NULL && stat(local_path, &sb) == 0) {
 		if (is_invalid || !is_directory || !S_ISDIR(sb.st_mode)) {
-			print_errmsg(local_path, "invalid file or directory");
+			print_errmsg(local_path, NULL,
+				"invalid file or directory");
 			delete_invalid_file_or_directory(local_path);
 		}
 		else if (chdir(local_path) == 0)
@@ -302,7 +313,7 @@ fixurl(const char *gfarm_url)
 		/* continue */
 	}
 	if (e != NULL) {
-		print_errmsg(gfarm_url, e);
+		print_errmsg(gfarm_url, NULL, e);
 		goto error_gfarm_file;
 	}
 
@@ -310,7 +321,7 @@ fixurl(const char *gfarm_url)
 	len_path = strlen(local_path);
 	GFARM_MALLOC_ARRAY(pat, len_path + 3);
 	if (pat == NULL) {
-		print_errmsg(gfarm_url, "not enough memory");
+		print_errmsg(gfarm_url, NULL, "not enough memory");
 		free(local_path);
 		goto error_gfarm_file;
 	}
@@ -327,8 +338,7 @@ fixurl(const char *gfarm_url)
 		char *sec = &((*pathp)[len_path + 1]);
 
 		if (is_invalid || is_directory) {
-			print_errmsg_with_section(
-				gfarm_url, sec, "invalid file");
+			print_errmsg(gfarm_url, sec, "invalid file");
 			delete_invalid_file_or_directory(*pathp);
 			++pathp;
 			continue;
@@ -353,14 +363,14 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 
 	gfarm_url = append_prefix_pathname(gfarm_prefix, pathname);
 	if (gfarm_url == NULL) {
-		print_errmsg(pathname, "not enough memory");
+		print_errmsg(pathname, NULL, "not enough memory");
 		return (r);
 	}
 
 	/* divide into file and section parts. */
 	e = split_file_and_section(gfarm_url, &sec);
 	if (e != NULL) {
-		print_errmsg(pathname, e);
+		print_errmsg(pathname, NULL, e);
 		delete_invalid_file_or_directory(pathname);
 		goto error_gfarm_url;
 	}
@@ -369,7 +379,7 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 	if (e == NULL) {
 		if (!GFARM_S_ISREG(gst.st_mode)) {
 			gfs_stat_free(&gst);
-			print_errmsg(gfarm_url, "not a regular file");
+			print_errmsg(gfarm_url, NULL, "not a regular file");
 			delete_invalid_file_or_directory(pathname);
 			goto error_gfarm_url;
 		}
@@ -380,7 +390,7 @@ fixfrag(char *pathname, const char *gfarm_prefix)
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL) {
-		print_errmsg_with_section(gfarm_url, sec, e);
+		print_errmsg(gfarm_url, sec, e);
 		delete_invalid_file_or_directory(pathname);
 		goto error_gfarm_url;
 	}
@@ -418,7 +428,8 @@ fixdir(char *dir, const char *gfarm_prefix)
 		return (fixfrag(dir, gfarm_prefix));
 
 	if (!S_ISDIR(sb.st_mode)) {
-		print_errmsg(dir, "neither a regular file nor a directory");
+		print_errmsg(dir, NULL,
+			"neither a regular file nor a directory");
 		delete_invalid_file_or_directory(dir);
 		return (1);
 	}
@@ -426,13 +437,13 @@ fixdir(char *dir, const char *gfarm_prefix)
 	/* 'dir' is a directory */
 	gfarm_url = append_prefix_pathname(gfarm_prefix, dir);
 	if (gfarm_url == NULL) {
-		print_errmsg(dir, "not enough memory");
+		print_errmsg(dir, NULL, "not enough memory");
 		return (1);
 	}
 
 	e = gfs_stat(gfarm_url, &gs);
 	if (e != NULL) {
-		print_errmsg(gfarm_url, e);
+		print_errmsg(gfarm_url, NULL, e);
 		delete_invalid_file_or_directory(dir);
 		free(gfarm_url);
 		return (1);
@@ -440,7 +451,7 @@ fixdir(char *dir, const char *gfarm_prefix)
 	is_directory = GFARM_S_ISDIR(gs.st_mode);
 	gfs_stat_free(&gs);
 	if (!is_directory) {
-		print_errmsg(gfarm_url, "invalid directory");
+		print_errmsg(gfarm_url, NULL, "invalid directory");
 		delete_invalid_file_or_directory(dir);
 		free(gfarm_url);
 		return (1);
@@ -463,7 +474,7 @@ fixdir(char *dir, const char *gfarm_prefix)
 
 		GFARM_MALLOC_ARRAY(dir1, strlen(dir) + strlen(dp->d_name) + 2);
 		if (dir1 == NULL) {
-			print_errmsg(dp->d_name, "not enough memory");
+			print_errmsg(dp->d_name, NULL, "not enough memory");
 			closedir(dirp);
 			return (1);
 		}
@@ -486,13 +497,13 @@ fixdir(char *dir, const char *gfarm_prefix)
 void
 usage()
 {
-	fprintf(stderr, "usage: %s [ -a ] [ -d ] [ -v ] "
+	fprintf(stderr, "usage: %s [ -a ] [ -d ] [ -l ] "
 		"[ Gfarm directory . . . ]\n",
 		progname);
 	fprintf(stderr, "options:\n");
 	fprintf(stderr, "\t-a\tcheck all files\n");
 	fprintf(stderr, "\t-d\tdelete invalid files\n");
-	fprintf(stderr, "\t-v\tverbose output\n");
+	fprintf(stderr, "\t-l\tlist local fils\n");
 	exit(1);
 }
 
@@ -505,14 +516,14 @@ main(int argc, char *argv[])
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		print_errmsg(progname, e);
+		print_errmsg(progname, NULL, e);
 		exit(1);
 	}
 	if (!gfarm_is_active_file_system_node) {
-		print_errmsg(progname, "not a filesystem node");
+		print_errmsg(progname, NULL, "not a filesystem node");
 		exit(1);
 	}
-	while ((c = getopt(argc, argv, "adhv")) != EOF) {
+	while ((c = getopt(argc, argv, "adhl")) != EOF) {
 		switch (c) {
 		case 'a':
 			check_all = 1;
@@ -520,8 +531,8 @@ main(int argc, char *argv[])
 		case 'd':
 			delete_invalid_file = 1;
 			break;
-		case 'v':
-			verbose = 1;
+		case 'l':
+			list_local_file = 1;
 			break;
 		case 'h':
 		default:
@@ -548,7 +559,7 @@ main(int argc, char *argv[])
  finish:
 	e = gfarm_terminate();
 	if (e != NULL) {
-		print_errmsg(progname, e);
+		print_errmsg(progname, NULL, e);
 		exit(1);
 	}
 	exit(0);
