@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfrm</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfrm&nbsp;--&nbsp;Gfarm ファイル、ディレクトリ、ファイル複製を削除する。</DIV
+>gfrm&nbsp;--&nbsp;Gfarm ファイル，ディレクトリ，ファイル複製を削除する．</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrm</B
-> [-frR] [-I <TT
+> [-frRnqv] [-I <TT
 CLASS="REPLACEABLE"
 ><I
 >ファイルセクション</I
@@ -47,6 +46,26 @@ CLASS="REPLACEABLE"
 CLASS="REPLACEABLE"
 ><I
 >ファイルシステムノード</I
+></TT
+>] [-D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>] [-H <TT
+CLASS="REPLACEABLE"
+><I
+>ホスト指定ファイル</I
+></TT
+>] [-N <TT
+CLASS="REPLACEABLE"
+><I
+>複製数</I
+></TT
+>] [-j <TT
+CLASS="REPLACEABLE"
+><I
+>スレッド数</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
@@ -63,33 +82,45 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Gfarm-URL に指定されたファイルを削除します。
-デフォルトではディレクトリの削除は行いませんが、
-<TT
+>Gfarm-URL に指定されたファイルを削除します．
+デフォルトではディレクトリの削除は行いませんが，
+<CODE
 CLASS="OPTION"
->-r</TT
-> あるいは <TT
+>-r</CODE
+>あるいは<CODE
 CLASS="OPTION"
->-R</TT
+>-R</CODE
 >
-オプションが指定された場合、
-指定されたディレクトリ以下のファイルおよびディレクトリが再帰的に消去されます。
-なお、. あるいは .. が指定された場合はエラーになります。</P
+オプションが指定された場合，
+指定されたディレクトリ以下のファイルおよびディレクトリが再帰的に消去されます．
+なお，. あるいは .. が指定された場合はエラーになります．</P
 ><P
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
->オプションを指定することにより、
-ファイルの特定のファイルセクションを削除することができます。
-ファイルセクションとは、実行形式のファイルの場合はアーキテクチャ名、
-通常ファイルの場合はファイルインデックス番号となります。</P
+>-I</CODE
+>オプションを指定することにより，
+ファイルの特定のファイルセクションを削除することができます．
+ファイルセクションとは，実行形式のファイルの場合はアーキテクチャ名，
+通常ファイルの場合はファイルインデックス番号となります．</P
 ><P
-><TT
+><CODE
 CLASS="OPTION"
->-h</TT
-> オプションでファイルシステムノードを指定することにより、
-指定されたノードに格納されているファイル複製を削除することができます。
-ただし、全てのファイル複製を削除することはできません。</P
+>-h</CODE
+>，<CODE
+CLASS="OPTION"
+>-D</CODE
+>，<CODE
+CLASS="OPTION"
+>-H</CODE
+>
+オプションでファイルシステムノードを指定することにより，
+指定されたノードに格納されているファイル複製を削除することができます．
+デフォルトでは，
+ファイルの削除となってしまう全てのファイル複製の削除はできませんが，
+<CODE
+CLASS="OPTION"
+>-f</CODE
+>オプションをつけることにより削除することができます．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -104,38 +135,89 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-f</CODE
 ></DT
 ><DD
 ><P
->ファイル複製削除の場合に、
-全てのファイル複製を削除することになってもファイル複製を削除します。
-この時、ファイル自体が削除されることになります。
-このオプションは <TT
+>ファイル複製削除の場合に，
+全てのファイル複製を削除することになってもファイル複製を削除します．
+この時，ファイル自体が削除されることになります．
+このオプションは <CODE
 CLASS="OPTION"
->-h</TT
+>-h</CODE
+>，<CODE
+CLASS="OPTION"
+>-D</CODE
+>，
+<CODE
+CLASS="OPTION"
+>-H</CODE
 >
-オプションとともに指定された場合に有効です。</P
+のいずれかのオプションとともに指定された場合に有効です．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-r</TT
->, <TT
-CLASS="OPTION"
->-R</TT
+>-j</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>スレッド数</I
+></TT
 ></DT
 ><DD
 ><P
->引数がディレクトリだった場合、そのディレクトリ以下を
-全て、再帰的に削除します。</P
+>指定されたスレッド数で並列にファイル／ファイル複製を削除します．
+このオプションは gfrm が OpenMP C コンパイラでコンパイルされたときに
+限り有効です．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-h</TT
+>-n</CODE
+></DT
+><DD
+><P
+>消去されるファイルを表示します．
+実際には何も実行されません．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-q</CODE
+></DT
+><DD
+><P
+>余分なメッセージを表示しません．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+>, <CODE
+CLASS="OPTION"
+>-R</CODE
+></DT
+><DD
+><P
+>引数がディレクトリだった場合，そのディレクトリ以下を
+全て，再帰的に削除します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>冗長にメッセージを表示します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -144,15 +226,49 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->複製を削除するファイルシステムノード名を指定します。
-複数のファイルシステムノードか
-ら同じファイル断片の複製を一度に削除するためには，このオ
-プションを複数回指定します．</P
+>複製を削除するファイルシステムノード名を指定します．
+<CODE
+CLASS="OPTION"
+>-I</CODE
+>オプションと共に用いることにより，
+特定のファイルセクションの複製を削除することができます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
+>-D</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ドメイン名</I
+></TT
+></DT
+><DD
+><P
+>複製を削除するファイルシステムノードのドメイン名を指定します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-H</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>複製を削除するファイルシステムノード群を記載したファイル名を指定します．
+ホスト名は，各行に一ホストずつ記述します．</P
+><P
+>ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-I</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -161,19 +277,34 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->削除するファイルセクションを指定します。
-ファイルセクションとは、
-実行形式のファイルの場合は、アーキテクチャ名(例 「sparc-sun-solaris8」)、
-通常ファイルの場合は、ファイルインデックス番号のことです。</P
+>削除するファイルセクションを指定します．
+ファイルセクションとは，
+実行形式のファイルの場合は，アーキテクチャ名(例 「sparc-sun-solaris8」)，
+通常ファイルの場合は，ファイルインデックス番号のことです．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-N</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>複製数</I
+></TT
 ></DT
 ><DD
 ><P
->引数オプションを表示します。</P
+>指定された複製数より多くの複製をもつファイルに対し，
+複製を消去し指定された複製数にします．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV
