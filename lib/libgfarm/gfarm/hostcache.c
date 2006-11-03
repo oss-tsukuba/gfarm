@@ -11,7 +11,7 @@
 #include "metadb_access.h"
 #include "config.h"
 
-#define HOSTCACHE_HASHTAB_SIZE	53	/* prime number */
+#define HOSTCACHE_HASHTAB_SIZE	101	/* prime number */
 
 static struct gfarm_cache_host {
 	struct gfarm_host_info *hosts;
@@ -20,6 +20,21 @@ static struct gfarm_cache_host {
 	int is_invalid;
 	struct timeval last_cache;
 } *host_cache;
+
+static char *
+gfarm_cache_host_info_copy(
+	struct gfarm_host_info *dest, const struct gfarm_host_info *src)
+{
+	*dest = *src;
+	dest->hostname = strdup(src->hostname);
+	/* hostaliases is optional */
+	if (src->hostaliases && src->nhostaliases > 0)
+		dest->hostaliases = gfarm_strarray_dup(src->hostaliases);
+	else
+		dest->hostaliases = NULL;
+	dest->architecture = strdup(src->architecture);
+	return (NULL);
+}
 
 static void
 gfarm_cache_host_info_cache_free(struct gfarm_cache_host *h)
@@ -152,8 +167,7 @@ gfarm_cache_host_info_check()
 void
 gfarm_cache_host_info_free(struct gfarm_host_info *info)
 {
-	/* cached entry will be free'ed when re-caching */
-	return;
+	gfarm_metadb_host_info_free(info);
 }
 
 char *
@@ -170,9 +184,8 @@ gfarm_cache_host_info_get_by_name_alias(
 	entry = gfarm_hash_lookup(
 		host_cache->hash, alias, strlen(alias) + 1);
 	if (entry != NULL) {
-		*info = **(struct gfarm_host_info **)
-				gfarm_hash_entry_data(entry);
-		/* do not free */
+		gfarm_cache_host_info_copy(info,
+		    *(struct gfarm_host_info **)gfarm_hash_entry_data(entry));
 		return (NULL);
 	}
 	else
@@ -229,14 +242,22 @@ gfarm_cache_host_info_free_all(int n, struct gfarm_host_info *infos)
 char *
 gfarm_cache_host_info_get_all(int *np, struct gfarm_host_info **infosp)
 {
+	struct gfarm_host_info *hosts;
+	int i;
 	char *e;
 
 	e = gfarm_cache_host_info_check();
 	if (e != NULL && e != GFARM_ERR_CACHE_EXPIRED)
 		return (e);
 
+	GFARM_MALLOC_ARRAY(hosts, host_cache->nhosts);
+	if (hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	for (i = 0; i < host_cache->nhosts; ++i)
+		gfarm_cache_host_info_copy(&hosts[i], &host_cache->hosts[i]);
+
 	*np = host_cache->nhosts;
-	*infosp = host_cache->hosts; /* do not free */
+	*infosp = hosts;
 
 	return (NULL);
 }

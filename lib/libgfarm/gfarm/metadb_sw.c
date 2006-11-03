@@ -172,7 +172,7 @@ gfarm_metadb_host_info_free(
 {
 	if (info->hostname != NULL)
 		free(info->hostname);
-	if (info->hostaliases != NULL) {
+	if (info->hostaliases != NULL && info->nhostaliases > 0) {
 		gfarm_strarray_free(info->hostaliases);
 		info->nhostaliases = 0;
 	}
