@@ -43,7 +43,7 @@ sed_script=/tmp/cf$$
 admin_password=/tmp/ap$$
 password=/tmp/up$$
 rm -f $sed_script $password $admin_password
-trap 'rm -f $sed_script $password $admin_password; stty echo; exit $status' 0 1 2 15
+trap 'rm -f $sed_script $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
 
 #
 # check whether shell function does work or not.
