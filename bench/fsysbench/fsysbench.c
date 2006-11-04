@@ -428,7 +428,7 @@ test_creat(char *name, void *time)
 	struct stat buf;
 
 	timer = timer_start();
-	fd = creat(name, 0400);
+	fd = creat(name, 0600);
 	if (fd < 0) goto error;
 	e = close(fd);
 	if (e != 0) goto error;
@@ -649,8 +649,16 @@ test_rename_common(char *name, int overwrite, void *time)
 
 	sprintf(newname, "%s_rename", name);
 	if (overwrite && check_mode(newname, 0000) != 0) {
+#if 0
 		e = mknod(newname, 0600|S_IFREG, 0);
 		if (e != 0) return (-1);
+#else
+		e = creat(newname, 0600);
+		if (e >= 0)
+			close(e);
+		else
+			return (-1);
+#endif
 	}
 	timer = timer_start();
 	e = rename(name, newname);
