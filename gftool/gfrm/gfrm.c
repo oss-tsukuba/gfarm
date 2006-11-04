@@ -47,7 +47,7 @@ add_file(char *file, struct gfs_stat *st, void *arg)
 {
 	struct gfrm_arg *a = arg;
 	char *f;
-	
+
 	f = strdup(file);
 	if (f == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -59,7 +59,7 @@ static char *
 is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 {
 	const char *f = gfarm_url_prefix_skip(file);
-	
+
 	if (f[0] == '.' && (f[1] == '\0' || (f[1] == '.' && f[2] == '\0')))
 		return ("cannot remove \'.\' or \'..\'");
 	return (NULL);
@@ -81,11 +81,11 @@ add_dir(char *file, struct gfs_stat *st, void *arg)
 {
 	struct gfrm_arg *a = arg;
 	char *f;
-	
+
 	f = strdup(file);
 	if (f == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	
+
 	return (gfarm_stringlist_add(&a->dirs, f));
 }
 
@@ -101,7 +101,7 @@ add_copy(struct gfarm_file_section_copy_info *info, void *arg)
 {
 	struct add_sec_arg *a = arg;
 	int i;
-	
+
 	/* XXX - linear search */
 	for (i = 0; i < a->a->nhosts; ++i) {
 		if (strcmp(a->a->hosts[i], info->hostname) == 0) {
@@ -208,7 +208,7 @@ create_file_section_list(gfarm_stringlist *list, struct gfrm_arg *gfrm_arg,
 			e = gfs_unlink(file);
 		if (e != NULL)
 			goto free_list;
-	}			
+	}
 	*sinfop = gfarm_array_alloc_from_list(&slist);
 	*nsinfop = gfarm_list_length(&slist);
 	/* do not call list_free_deeply() */
@@ -335,13 +335,13 @@ remove_files(int nthreads, struct gfrm_arg *arg)
 static int
 usage()
 {
-	fprintf(stderr,	"Usage: %s [-frRnqv] [-I <section>] [-h <host>]"
+	fprintf(stderr, "Usage: %s [-frRnqv] [-I <section>] [-h <host>]"
 		" [-D <domain>]\n", program_name);
-	fprintf(stderr,	"\t[-H <hostfile>] [-N <#replica>]");
+	fprintf(stderr, "\t[-H <hostfile>] [-N <#replica>]");
 #ifdef _OPENMP
 	fprintf(stderr, " [-j <#thread>]");
 #endif
-	fprintf(stderr,	" <gfarm_url>...\n");
+	fprintf(stderr, " <gfarm_url>...\n");
 	exit(EXIT_FAILURE);
 }
 
