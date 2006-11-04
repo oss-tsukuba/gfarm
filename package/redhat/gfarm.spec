@@ -707,6 +707,9 @@ fi
 %{prefix}/bin/gfmpirun_p4
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
+%{prefix}/bin/gfq.sh
+%{prefix}/bin/gfq_commit.sh
+%{prefix}/bin/gfq_setup.sh
 %{prefix}/bin/gfrcmd
 %{prefix}/bin/gfreg
 %{prefix}/bin/gfrep

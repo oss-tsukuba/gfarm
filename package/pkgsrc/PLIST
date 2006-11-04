@@ -25,6 +25,9 @@ bin/gfmkdir
 bin/gfmpirun_p4
 bin/gfps
 bin/gfpwd
+bin/gfq.sh
+bin/gfq_commit.sh
+bin/gfq_setup.sh
 bin/gfrcmd
 bin/gfreg
 bin/gfrep

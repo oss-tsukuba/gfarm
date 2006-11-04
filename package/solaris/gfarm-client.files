@@ -12,6 +12,9 @@
 @PREFIX@/bin/gfmpirun_p4
 @PREFIX@/bin/gfps
 @PREFIX@/bin/gfpwd
+@PREFIX@/bin/gfq.sh
+@PREFIX@/bin/gfq_commit.sh
+@PREFIX@/bin/gfq_setup.sh
 @PREFIX@/bin/gfrcmd
 @PREFIX@/bin/gfreg
 @PREFIX@/bin/gfrep

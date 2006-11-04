@@ -31,6 +31,7 @@ SUBDIRS = \
 	gftest \
 	gfmpirun \
 	gfps \
+	gfq \
 	gfrun \
 	gfwhere \
 	gfwhoami \
