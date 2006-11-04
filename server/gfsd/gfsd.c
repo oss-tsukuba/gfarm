@@ -2680,6 +2680,7 @@ main(int argc, char **argv)
 	int ch, i, nfound, max_fd;
 	struct sigaction sa;
 	fd_set requests;
+	struct stat sb;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -2739,6 +2740,12 @@ main(int argc, char **argv)
 		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
 		exit(1);
 	}
+	/* sanity check on a spool directory */
+	if (stat(gfarm_spool_root, &sb) == -1)
+		gflog_fatal_errno(gfarm_spool_root);
+	else if (!S_ISDIR(sb.st_mode))
+		gflog_fatal("%s: %s", gfarm_spool_root,
+			    GFARM_ERR_NOT_A_DIRECTORY);
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
 	if (listen_addrname == NULL)
