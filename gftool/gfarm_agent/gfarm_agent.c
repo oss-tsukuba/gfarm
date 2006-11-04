@@ -70,8 +70,14 @@ cleanup(void)
 static void
 log_proto(char *proto, char *status)
 {
-	/* avoid too many not critical messages of GFARM_ERR_NO_SUCH_OBJECT */
-	if (debug_mode || status != GFARM_ERR_NO_SUCH_OBJECT)
+	/*
+	 * avoid too many not critical messages of
+	 *	GFARM_ERR_NO_SUCH_OBJECT
+	 *	GFARM_ERR_ALREADY_EXISTS
+	 */
+	if (debug_mode ||
+	    (status != GFARM_ERR_NO_SUCH_OBJECT &&
+	     status != GFARM_ERR_ALREADY_EXISTS))
 		gflog_notice("%s: %s", proto, status);
 }
 
