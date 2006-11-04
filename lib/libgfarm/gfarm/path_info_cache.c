@@ -447,12 +447,29 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 }
 
 static int
+timespec_is_valid(struct gfarm_timespec *t, struct gfarm_timespec *b)
+{
+#if 1
+	struct gfarm_timespec tmp;
+
+	if (gfarm_timespec_cmp(t, b) < 0)
+		return (0); /* need updating */
+	tmp = *b;
+	gfarm_timespec_add(&tmp, &update_time_interval);
+	if (gfarm_timespec_cmp(t, &tmp) > 0)
+		return (0); /* need updating */
+#else /* force updating */
+	if (gfarm_timespec_cmp(t, b) != 0)
+		return (0); /* need updating */
+#endif
+	return (1); /* do nothing */
+}
+
+static int
 check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 {
 	char *e;
 	struct gfarm_path_info nowinfo;
-	struct gfarm_timespec tmp;
-	struct gfarm_timespec zero = {0, 0};
 
 	if (update_time_interval.tv_sec == 0 &&
 	    update_time_interval.tv_nsec == 0)
@@ -462,48 +479,13 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
         if (e != NULL)
 		return (0); /* need updating */
 
-	while (compare_path_info_except_time(info, &nowinfo) == 0) {
-#if 1
-		tmp = info->status.st_mtimespec;
-		gfarm_timespec_sub(&tmp, &nowinfo.status.st_mtimespec);
-		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
-		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
-			break;
-#else /* force updating */
-		if (gfarm_timespec_cmp(&info->status.st_mtimespec,
-				       &nowinfo.status.st_mtimespec) != 0) {
-			_debug(("!!! mtime updating.\n"));
-			break;
-		}
-#endif
-
-#if 1
-		tmp = info->status.st_atimespec;
-		gfarm_timespec_sub(&tmp, &nowinfo.status.st_atimespec);
-		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
-		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
-			break;
-#else /* force updating */
-		if (gfarm_timespec_cmp(&info->status.st_atimespec,
-				       &nowinfo.status.st_atimespec) != 0) {
-			_debug(("!!! atime updating.\n"));
-			break;
-		}
-#endif
-
-#if 1
-		tmp = info->status.st_ctimespec;
-		gfarm_timespec_sub(&tmp, &nowinfo.status.st_ctimespec);
-		if (gfarm_timespec_cmp(&tmp, &zero) < 0 ||
-		    gfarm_timespec_cmp(&tmp, &update_time_interval) > 0)
-			break;
-#else /* force updating */
-		if (gfarm_timespec_cmp(&info->status.st_ctimespec,
-				       &nowinfo.status.st_ctimespec) != 0) {
-			_debug(("!!! ctime updating.\n"));
-			break;
-		}
-#endif
+	if (compare_path_info_except_time(info, &nowinfo) == 0 &&
+	    timespec_is_valid(&info->status.st_mtimespec,
+	    &nowinfo.status.st_mtimespec) &&
+	    timespec_is_valid(&info->status.st_atimespec,
+	    &nowinfo.status.st_atimespec) &&
+	    timespec_is_valid(&info->status.st_ctimespec,
+	    &nowinfo.status.st_ctimespec)) {
 		_debug(("! cancel updating mtime/atime/ctime: %s\n",
 			pathname));
 #if 1  /* XXX temporary implements */
