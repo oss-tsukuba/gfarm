@@ -627,7 +627,7 @@ check_arguments(int argc, char *argv[],
 					program_name, argv[i]);
 				exit(EXIT_FAILURE);
 			} else if (reg_mode == RECURSIVE && !is_dest_dir
-				   && file_mode_arg == NULL) {
+				   && file_mode_arg != NULL) {
 				/* gfarm_url is a regular file */
 				fprintf(stderr,
 					"%s: cannot register "
