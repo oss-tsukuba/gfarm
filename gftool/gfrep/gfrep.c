@@ -55,7 +55,7 @@ add_file(char *file, struct gfs_stat *st, void *arg)
 {
 	gfarm_stringlist *list = arg;
 	char *f;
-	
+
 	f = strdup(file);
 	if (f == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -86,7 +86,7 @@ count_src_dst(struct gfarm_file_section_copy_info *info, void *arg)
 {
 	struct add_sec_arg *a = arg;
 	int i;
-	
+
 	/* XXX - linear search */
 	for (i = 0; i < a->a->nsrc; ++i) {
 		if (strcmp(a->a->src[i], info->hostname) == 0) {
@@ -196,7 +196,7 @@ create_file_section_list(gfarm_stringlist *list, struct gfrep_arg *gfrep_arg,
 			continue;
 		if (e != NULL)
 			goto free_list;
-	}			
+	}
 	*sinfop = gfarm_array_alloc_from_list(&slist);
 	*nsinfop = gfarm_list_length(&slist);
 	/* do not call list_free_deeply() */
@@ -363,12 +363,12 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 					break;
 			}
 			if (max_niter == 0) {
-				e = "no filesystem node";
+				e = "not enough free disk space";
 				goto skip_replication;
 			}
 			if (arg->verbose) {
 				printf("%02d(%03d): %s (%s) --> %s\n",
-		 		       tnum, pi, sinfo[i]->file,
+				       tnum, pi, sinfo[i]->file,
 				       sinfo[i]->i.section, dst[di]);
 				gettimeofday(&t1, NULL);
 			}
@@ -415,14 +415,14 @@ replicate(gfarm_stringlist *list, int nthreads, struct gfrep_arg *arg)
 static int
 usage()
 {
-	fprintf(stderr,	"Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
+	fprintf(stderr, "Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
-	fprintf(stderr,	"\t[-h <src_hostlist>] [-H <dst_hostlist>]"
+	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
 #ifdef _OPENMP
 	fprintf(stderr, " [-j <#thread>]");
 #endif
-	fprintf(stderr,	"\n\t<gfarm_url>...\n");
+	fprintf(stderr, "\n\t<gfarm_url>...\n");
 	exit(EXIT_FAILURE);
 }
 
