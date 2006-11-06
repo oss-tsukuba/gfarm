@@ -645,7 +645,7 @@ gfarm_file_section_replicate_from_to_local_with_locking(
 	if (replication_needed) {
 		if (!gfarm_is_active_fsnode())
 			e = "gfsd is not running now";
-		else if (!gfarm_is_active_fsnode_to_write())
+		else if (!gfarm_is_active_fsnode_to_write(sinfo->filesize))
 			e = "not enough free disk space";
 		else
 			e = gfarm_file_section_replicate_without_busy_check(
@@ -685,7 +685,7 @@ gfarm_file_section_replicate_to_local_with_locking(
 	if (replication_needed) {
 		if (!gfarm_is_active_fsnode())
 			e = "gfsd is not running now";
-		else if (!gfarm_is_active_fsnode_to_write())
+		else if (!gfarm_is_active_fsnode_to_write(sinfo->filesize))
 			e = "not enough free disk space";
 		else
 			e = gfarm_file_section_transfer_to_internal(
@@ -865,7 +865,7 @@ gfarm_url_program_register(
 		nreplicas = nhosts;
 
 	if (!gfarm_schedule_write_local_priority() ||
-	    !gfarm_is_active_fsnode_to_write() ||
+	    !gfarm_is_active_fsnode_to_write(0) ||
 	    gfarm_host_get_canonical_self_name(&self_name) != NULL) {
 		e = gfarm_schedule_search_idle_hosts_to_write(
 		    nhosts, hostnames, nreplicas, hostnames);

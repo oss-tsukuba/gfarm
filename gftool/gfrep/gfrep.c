@@ -259,9 +259,7 @@ is_enough_space(char *host, file_offset_t size)
 
 	e = gfs_statfsnode(host, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
-	if (e != NULL || bavail * bsize < size)
-		return (0);
-	return (1);
+	return (e == NULL && bavail * bsize >= size);
 }
 
 static char *

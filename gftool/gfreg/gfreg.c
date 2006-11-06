@@ -113,13 +113,15 @@ get_file_mode(int fd, char *filename, gfarm_mode_t *file_mode_p)
 	return (1);
 }
 
-static void
-set_minimum_free_disk_space(int fd)
+static file_offset_t
+set_minimum_free_disk_space_from_fd(int fd)
 {
 	struct stat s;
+	file_offset_t old_size = gfarm_get_minimum_free_disk_space();
 
 	if (!fstat(fd, &s) && S_ISREG(s.st_mode))
 		gfarm_set_minimum_free_disk_space(s.st_size);
+	return (old_size);
 }
 
 static int
@@ -223,6 +225,7 @@ register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
 	char *target_url;
 	GFS_File gf;
 	char section[GFARM_INT32STRLEN + 1];
+	file_offset_t old_size;
 
 	if (!open_file(filename, &fd, &fd_needs_close))
 		return;
@@ -250,7 +253,7 @@ register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
 			error_happened = 1;
 		} else {
 			/* specify the minimum free disk space */
-			set_minimum_free_disk_space(fd);
+			old_size = set_minimum_free_disk_space_from_fd(fd);
 
 			if ((e = gfs_pio_set_view_index(gf, nfragments, index,
 			    hostname, 0)) != NULL) {
@@ -267,6 +270,7 @@ register_fragment(int is_dest_dir, char *gfarm_url, int index, int nfragments,
 				fprintf(stderr, "%s: closing %s:%d: %s\n",
 				    program_name, target_url, index, e);
 			}
+			gfarm_set_minimum_free_disk_space(old_size);
 		}
 	}
  finish_url:
@@ -284,6 +288,7 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 	int fd, fd_needs_close;
 	GFS_File gf;
 	gfarm_mode_t file_mode;
+	file_offset_t old_size;
 
 	if (!open_file(filename, &fd, &fd_needs_close))
 		return;
@@ -306,7 +311,7 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 			error_happened = 1;
 		} else {
 			/* specify the minimum free disk space */
-			set_minimum_free_disk_space(fd);
+			old_size = set_minimum_free_disk_space_from_fd(fd);
 
 			if (section == NULL) {
 				fprintf(stderr, "%s: missing -a option\n",
@@ -326,6 +331,7 @@ register_file(char *gfarm_url, char *section, char *hostname, char *filename)
 				fprintf(stderr, "%s: closing %s:%s: %s\n",
 				    program_name, gfarm_url, section, e);
 			}
+			gfarm_set_minimum_free_disk_space(old_size);
 		}
 	}
  finish:

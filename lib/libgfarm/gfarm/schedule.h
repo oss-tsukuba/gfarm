@@ -31,4 +31,4 @@ char *gfarm_file_section_host_schedule_with_priority_to_local_to_write(
 	char *, char *, char **);
 
 int gfarm_is_active_fsnode(void);
-int gfarm_is_active_fsnode_to_write(void);
+int gfarm_is_active_fsnode_to_write(file_offset_t);

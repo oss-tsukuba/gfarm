@@ -485,7 +485,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		 * we don't have to schedule a host which has a replica.
 		 */
 		if (gfarm_schedule_write_local_priority() &&
-		    gfarm_is_active_fsnode_to_write() &&
+		    gfarm_is_active_fsnode_to_write(0) &&
 		    gfarm_host_get_canonical_self_name(&if_hostname) == NULL) {
 			vc->canonical_hostname = strdup(if_hostname);
 			if (vc->canonical_hostname == NULL) {
@@ -542,7 +542,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	gfs_pio_set_calc_digest(gf);
 	EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
-	if (!is_local_host && gfarm_is_active_fsnode_to_write() &&
+	if (!is_local_host && gfarm_is_active_fsnode_to_write(0) &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
 	       || gf_on_demand_replication ) &&

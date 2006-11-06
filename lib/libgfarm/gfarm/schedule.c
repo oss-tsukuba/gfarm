@@ -1571,7 +1571,7 @@ file_section_host_schedule_common(char *gfarm_file, char *section,
 	 */
 	if (priority_to_local &&
 	    (write_mode ?
-	     gfarm_is_active_fsnode_to_write() :
+	     gfarm_is_active_fsnode_to_write(0) :
 	     gfarm_is_active_fsnode()) &&
 	    (e = gfarm_host_get_canonical_self_name(&self_name)) == NULL) {
 		for (i = 0; i < ncopies; i++) {
@@ -1875,7 +1875,7 @@ gfarm_is_active_fsnode(void)
 }
 
 int
-gfarm_is_active_fsnode_to_write(void)
+gfarm_is_active_fsnode_to_write(file_offset_t size)
 {
 	char *e, *self_name;
 	gfarm_int32_t bsize;
@@ -1891,8 +1891,7 @@ gfarm_is_active_fsnode_to_write(void)
 
 	e = statfsnode(self_name, 1, &bsize, &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
-	if (e != NULL)
-		return (0);
-
-	return (bavail * bsize >= gfarm_get_minimum_free_disk_space());
+	if (size <= 0)
+		size = gfarm_get_minimum_free_disk_space();
+	return (e == NULL && bavail * bsize >= size);
 }
