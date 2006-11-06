@@ -1496,7 +1496,7 @@ sigjmp_buf sigchld_jmp_buf;
 void
 sigchld_handler(int sig)
 {
-	int pid, status;
+	int pid, status, save_errno = errno;
 
 	for (;;) {
 		pid = waitpid(-1, &status, WNOHANG);
@@ -1505,6 +1505,7 @@ sigchld_handler(int sig)
 		server_command_context.exited_pid = pid;
 		server_command_context.status = status;
 	}
+	errno = save_errno;
 	if (sigchld_jmp_needed) {
 		sigchld_jmp_needed = 0;
 		siglongjmp(sigchld_jmp_buf, 1);
