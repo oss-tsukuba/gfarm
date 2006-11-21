@@ -1084,7 +1084,7 @@ gfarm_ldap_host_info_get_by_name_alias(
 	}
 
 	if (n != 1) {
-		gfarm_metadb_host_info_free_all(n, infos);
+		gfarm_host_info_free_all(n, infos);
 		return (GFARM_ERR_AMBIGUOUS_RESULT);
 	}
 	*info = infos[0];

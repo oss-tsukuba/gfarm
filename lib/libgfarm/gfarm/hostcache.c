@@ -40,7 +40,7 @@ static void
 gfarm_cache_host_info_cache_free(struct gfarm_cache_host *h)
 {
 	gfarm_hash_table_free(h->hash);
-	gfarm_metadb_host_info_free_all(h->nhosts, h->hosts);
+	gfarm_host_info_free_all(h->nhosts, h->hosts);
 	free(h);
 }
 
@@ -130,7 +130,7 @@ gfarm_cache_host_info_cache()
 	gettimeofday(&host_cache->last_cache, NULL);
 	return (e);
 free_hosts:
-	gfarm_metadb_host_info_free_all(nhosts, hosts);
+	gfarm_host_info_free_all(nhosts, hosts);
 	free(host_cache);
 	host_cache = NULL;
 	return (e);
@@ -162,12 +162,6 @@ gfarm_cache_host_info_check()
 	    gfarm_cache_host_info_expired())
 		return gfarm_cache_host_info_cache();
 	return (NULL);
-}
-
-void
-gfarm_cache_host_info_free(struct gfarm_host_info *info)
-{
-	gfarm_metadb_host_info_free(info);
 }
 
 char *
@@ -228,15 +222,6 @@ gfarm_cache_host_info_remove(const char *hostname)
 	gfarm_cache_host_info_invalidate();
 
 	return (gfarm_metadb_host_info_remove(hostname));
-}
-
-void
-gfarm_cache_host_info_free_all(int n, struct gfarm_host_info *infos)
-{
-	int i;
-
-	for (i = 0; i < n; ++i)
-		gfarm_cache_host_info_free(&infos[i]);
 }
 
 char *

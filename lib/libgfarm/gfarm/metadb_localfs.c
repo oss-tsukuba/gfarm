@@ -763,7 +763,7 @@ gfarm_localfs_host_info_remove_hostaliases(const char *hostname)
 	/* cleanup */
 	info.hostaliases = tmp;
 	info.nhostaliases = n;
-	gfarm_metadb_host_info_free(&info);
+	gfarm_host_info_free(&info);
 
 	return (e);
 }
@@ -885,7 +885,7 @@ gfarm_localfs_host_info_get_by_name_alias(
 			}
 		}
 		if (ok == 0)
-			gfarm_metadb_host_info_free(&infos[i]);
+			gfarm_host_info_free(&infos[i]);
 	}
 	free(infos);
 	if (found == 0)
@@ -924,7 +924,7 @@ gfarm_localfs_host_info_get_allhost_by_architecture(
 		if (strcmp(architecture, infos[i].architecture) == 0)
 			newinfos[j++] = infos[i];
 		else
-			gfarm_metadb_host_info_free(&infos[i]);
+			gfarm_host_info_free(&infos[i]);
 	}
 	free(infos);
 	*infosp = newinfos;
