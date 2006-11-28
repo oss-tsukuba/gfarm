@@ -39,20 +39,22 @@ static char *
 display_section(char *gfarm_file, char *section)
 {
 	struct gfarm_file_section_info sinfo;
+	file_offset_t size;
 	char *e = NULL;
 
-	printf("%s", section);
-	if (opt_size) {
-		e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
-		if (e != NULL)
-			goto println;
-		printf(" [%" PR_FILE_OFFSET " bytes]", sinfo.filesize);
-		gfarm_file_section_info_free(&sinfo);
-	}
-	printf(":");
-	gfarm_foreach_copy(display_copy, gfarm_file, section, NULL, NULL);
+	e = gfarm_file_section_info_get(gfarm_file, section, &sinfo);
+	if (e != NULL)
+		return (e);
+	size = sinfo.filesize;
+	gfarm_file_section_info_free(&sinfo);
 
-println:
+	printf("%s", section);
+	if (opt_size)
+		printf(" [%" PR_FILE_OFFSET " bytes]", size);
+	printf(":");
+
+	e = gfarm_foreach_copy(display_copy, gfarm_file, section, NULL, NULL);
+
 	printf("\n");
 	return (e);
 }
@@ -198,7 +200,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "%s: %s\n", p, e);
 		} else {
 			if (GFARM_S_ISREG(st.st_mode)) 
-				display_replica_catalog(p, &st, NULL);
+				display_replica_catalog(p, &st, section);
 			else if (opt_recursive)
 				(void)gfarm_foreach_directory_hierarchy(
 					display_replica_catalog, display_name,
