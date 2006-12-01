@@ -55,21 +55,20 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> is a filesystem daemon for the Gfarm filesystem, which has
-been running on every filesystem node, usually, with a root privilege.</P
+> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with  root privileges.</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfsd</B
 > provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-fast invocation, node resource status monitoring.</P
+fast invocation, and node resource status monitoring.</P
 ><P
 >It is possible for <B
 CLASS="COMMAND"
 >gfsd</B
 > to be executed as a non-privileged user
-process although only the user that executes the <B
+process, although only the user that executes the <B
 CLASS="COMMAND"
 >gfsd</B
 > can be authenticated.
@@ -79,19 +78,19 @@ Other users cannot use it.</P
 CLASS="COMMAND"
 >gfsd</B
 > as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At least, the port number used by <B
+configuration file for a user needs to be specified with the -f option.
+At the very least, the port number used by <B
 CLASS="COMMAND"
 >gfsd</B
 > should be altered to a
-non-privileged port number by spool_serverport statement in the
-configuration file or the -p option.</P
+non-privileged port number using the spool_serverport statement in the
+configuration file, or the -p option.</P
 ><P
 >In this case, the altered port number of <B
 CLASS="COMMAND"
 >gfsd</B
 > should be
-specified by the spool_serverport statement in ~/.gfarmrc or
+specified with the spool_serverport statement in ~/.gfarmrc or
 %%SYSCONFDIR%%/gfarm.conf on a client node.</P
 ></DIV
 ><DIV
@@ -118,7 +117,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a log priority level.  The log output, which priority
+>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm.conf(5) for the priority levels which can be specified
 by this option.</P
@@ -135,7 +134,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file name which records the process ID of gfsd.</P
+>Specifies a file name which records the process ID of gfsd.</P
 ></DD
 ><DT
 ><CODE
@@ -144,11 +143,11 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->makes gfsd not create UNIX domain socket.
-This option is useful when one wants to invoke multiple gfsd
+>Makes gfsd not create a UNIX domain socket.
+This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.
-When new files are created by processes on local host,
-the gfsd which isn't specified this -U option will be used
+When new files are created by processes on the local host,
+the gfsd which doesn't have this -U option specified will be used
 to provide spool directory for the new files.</P
 ></DD
 ><DT
@@ -158,8 +157,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->specifies the debug mode.  With the -d option, gfsd is running as a
-foreground process not a daemon.</P
+>Specifies the debug mode.  With the -d option, gfsd runs as a
+foreground process, not a daemon.</P
 ><P
 >If this option is specified and <CODE
 CLASS="OPTION"
@@ -179,7 +178,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a configuration file that is read instead of the default
+>Specifies a configuration file that is read instead of the default
 configuration file.</P
 ></DD
 ><DT
@@ -194,9 +193,10 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies the IP address that the gfsd accepts TCP and UDP requests.
+>Specifies the IP address from which the gfsd accepts TCP and UDP
+requests.
 The default address is all IP addresses of the host.
-This option is useful when one wants to invoke multiple gfsd
+This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.</P
 ></DD
 ><DT
@@ -211,7 +211,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a port number of TCP and UDP used by gfsd.  By default, 600
+>Specifies a port number for TCP and UDP used by gfsd.  By default, 600
 is used.</P
 ></DD
 ><DT
@@ -226,7 +226,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a spool directory
+>Specifies a spool directory
 for a Gfarm filesystem on this filesystem node.</P
 ></DD
 ><DT
@@ -241,7 +241,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a syslog facility to report errors by gfsd.  By default,
+>Specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.</P
 ></DD
 ><DT
@@ -251,7 +251,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->makes gfsd output verbose log message about authentication.
+>Makes gfsd output verbose log message on authentication.
 This is useful, when one has to resolve an issue about GSI authenticaion.</P
 ></DD
 ><DT
@@ -261,7 +261,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfrep</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -37,60 +37,86 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -H <VAR
+>  -H <TT
 CLASS="REPLACEABLE"
->hostfile</VAR
->  [-vm]  <VAR
+><I
+>hostfile</I
+></TT
+>  [-vm]  <TT
 CLASS="REPLACEABLE"
->gfarm-URL</VAR
+><I
+>gfarm-URL</I
+></TT
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -P <VAR
+>  -P <TT
 CLASS="REPLACEABLE"
->host-pair-file</VAR
->  [-vm]  <VAR
+><I
+>host-pair-file</I
+></TT
+>  [-vm]  <TT
 CLASS="REPLACEABLE"
->gfarm-URL</VAR
+><I
+>gfarm-URL</I
+></TT
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
->  -d <VAR
+>  -d <TT
 CLASS="REPLACEABLE"
->destination-node</VAR
->  [-s <VAR
+><I
+>destination-node</I
+></TT
+>  [-s <TT
 CLASS="REPLACEABLE"
->source-node</VAR
->] [-I <VAR
+><I
+>source-node</I
+></TT
+>] [-I <TT
 CLASS="REPLACEABLE"
->file-section</VAR
->] [-vm]  <VAR
+><I
+>file-section</I
+></TT
+>] [-vm]  <TT
 CLASS="REPLACEABLE"
->gfarm-URL</VAR
+><I
+>gfarm-URL</I
+></TT
 >... </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-D <VAR
+> [-D <TT
 CLASS="REPLACEABLE"
->destination-domainname</VAR
->] [-S <VAR
+><I
+>destination-domainname</I
+></TT
+>] [-S <TT
 CLASS="REPLACEABLE"
->source-domainname</VAR
-> | -s <VAR
+><I
+>source-domainname</I
+></TT
+> | -s <TT
 CLASS="REPLACEABLE"
->source-node</VAR
->] [-N <VAR
+><I
+>source-node</I
+></TT
+>] [-N <TT
 CLASS="REPLACEABLE"
->num-of-replicas</VAR
->] [-v]  <VAR
+><I
+>num-of-replicas</I
+></TT
+>] [-v]  <TT
 CLASS="REPLACEABLE"
->gfarm-URL</VAR
+><I
+>gfarm-URL</I
+></TT
 >... </P
 ></DIV
 ><DIV
@@ -133,9 +159,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-D</VAR
+>-D</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -144,31 +170,31 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a domainname of destination filesystem nodes where replicas
-will be copies to.
-This option is used solely, or with the <VAR
+>Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+This option is used alone, or with the <CODE
 CLASS="OPTION"
->-S</VAR
+>-S</CODE
 >
-or <VAR
+or <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > option.</P
 ><P
->If neither this nor <VAR
+>If neither this nor the <CODE
 CLASS="OPTION"
->-d</VAR
+>-d</CODE
 > option is specified, 
-replicas may be copied to any of hosts registered in the metadata.
-Please refer the description of the <VAR
+replicas may be copied to any of the hosts registered in the metadata.
+Please refer to the description of the <CODE
 CLASS="OPTION"
->-N</VAR
-> option for detail.</P
+>-N</CODE
+> option for details.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-d</VAR
+>-d</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -177,24 +203,24 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies one destination filesystem node where replicas
-will be copied to.
-This option is used solely, or with the <VAR
+>Specifies one destination filesystem node where replicas
+will be copied.
+This option is used alone, or with the <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > 
 option.</P
 ><P
->If neither this nor <VAR
+>If neither this nor the <CODE
 CLASS="OPTION"
->-D</VAR
+>-D</CODE
 > option is specified, 
-replicas may be copied to any of hosts registered in the metadata.</P
+replicas may be copied to any of the hosts registered in the metadata.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-H</VAR
+>-H</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -203,15 +229,15 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file which describes hostnames of
-destination filesystem nodes where the replica will be made on.
+>Specifies a file which describes hostnames of
+destination filesystem nodes on which the replica will be made.
 The <TT
 CLASS="PARAMETER"
 ><I
 >hostfile</I
 ></TT
 > consists of a filesystem node name
-in each line.
+on each line.
 If the number of nodes listed in the <TT
 CLASS="PARAMETER"
 ><I
@@ -224,9 +250,9 @@ it is treated as if the node names are specified repeatedly.</P
 >if ``-'' is specified, standard input is used to read the host list.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-I</VAR
+>-I</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -235,29 +261,29 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file section name to be copied.
-Currently, this option can be specified only with the <VAR
+>Specifies a file section name to be copied.
+Currently, this option can be specified only with the <CODE
 CLASS="OPTION"
->-d</VAR
+>-d</CODE
 >
 option.</P
 ><P
 >It is possible to omit this option.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-m</VAR
+>-m</CODE
 ></DT
 ><DD
 ><P
->lets gfrep command do migrate/move, instead of doing replicate.
-Currently, this works only with -H, -P and -d options.</P
+>Lets gfrep command do a migrate/move, instead of doing replication.
+Currently, this works only with the -H, -P and -d options.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-N</VAR
+>-N</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -266,63 +292,63 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies necessary number of file replicas, counting already
+>Specifies the required number of file replicas, counting already
 existing ones.
-If there are enough number of replicas in the destination nodes,
-neither any copy nor any removal will be done.
-This option is used solely, or with the <VAR
+If there are a sufficient number of replicas in the destination nodes,
+neither any copying nor any removal will be done.
+This option is used alone, or with the <CODE
 CLASS="OPTION"
->-D</VAR
+>-D</CODE
 >,
-<VAR
+<CODE
 CLASS="OPTION"
->-S</VAR
-> or <VAR
+>-S</CODE
+> or <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > option.</P
 ><P
->If this option is not specified, <VAR
+>If this option is not specified, <CODE
 CLASS="OPTION"
->-N 1</VAR
+>-N 1</CODE
 > is assumed.</P
 ><P
->The source nodes specified by <VAR
+>The source nodes specified by the <CODE
 CLASS="OPTION"
->-S</VAR
-> or <VAR
-CLASS="OPTION"
->-s</VAR
+>-S</CODE
 >
-option are excluded from the destination nodes.
+or <CODE
+CLASS="OPTION"
+>-s</CODE
+> option are excluded from the destination nodes.
 In other words, it's guaranteed that the number of replicas on
-hosts except those specified by <VAR
+hosts, except those specified by the <CODE
 CLASS="OPTION"
->-S</VAR
-> or <VAR
+>-S</CODE
+> or <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 >
-option are same or more than the number specified by the <VAR
+option, are the same or more than the number specified by the
+<CODE
 CLASS="OPTION"
->-N</VAR
->
-option.
+>-N</CODE
+> option.
 However, when the destination is a subset of the source,
 i.e. when the exclusion makes the destination an empty set,
 this exclusion is not applied.
 For example, if gfrep is executed with the
-``<VAR
+``<CODE
 CLASS="OPTION"
->-N 3 -S subdomain.example.org -D example.org</VAR
+>-N 3 -S subdomain.example.org -D example.org</CODE
 >'' option,
-it's guaranteed that there are at least 3 replicas in the hosts belong
-to example.org but except subdomain.example.org.</P
+it's guaranteed that there are at least 3 replicas in the hosts belonging
+to example.org, excepting subdomain.example.org.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-P</VAR
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -331,7 +357,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file which describes hostname pairs of
+>Specifies a file which describes hostname pairs of
 source nodes and destination nodes.
 The <TT
 CLASS="PARAMETER"
@@ -339,14 +365,14 @@ CLASS="PARAMETER"
 >host-pair-file</I
 ></TT
 > consists of a pair
-of a source node name and a destination node name in this order in each line.
+of a source node name and a destination node name in this order on each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-S</VAR
+>-S</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -355,31 +381,31 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a domainname of source filesystem nodes where replicas
+>Specifies the domain name of source filesystem nodes where replicas
 will be copied from.
-This option is used solely, or with the <VAR
+This option is used alone, or with the <CODE
 CLASS="OPTION"
->-D</VAR
+>-D</CODE
 >
 option.</P
 ><P
->If neither this nor <VAR
+>If neither this nor the <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > option is specified, 
 the source nodes will be selected from all nodes.</P
 ><P
 >The hosts specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the <VAR
+Please refer to the description of the <CODE
 CLASS="OPTION"
->-N</VAR
-> option for detail.</P
+>-N</CODE
+> option for details.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -388,47 +414,47 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a source filesystem node where replicas
+>Specifies a source filesystem node where replicas
 will be copied from.
-This option is used solely, or with the <VAR
+This option is used alone, or with the <CODE
 CLASS="OPTION"
->-D</VAR
+>-D</CODE
 >
-or <VAR
+or <CODE
 CLASS="OPTION"
->-d</VAR
+>-d</CODE
 > option.</P
 ><P
->If neither this nor <VAR
+>If neither this nor the <CODE
 CLASS="OPTION"
->-s</VAR
+>-s</CODE
 > option is specified, 
 the source nodes will be selected from all nodes.</P
 ><P
 >The host specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the <VAR
+Please refer to the description of the <CODE
 CLASS="OPTION"
->-N</VAR
-> option for detail.</P
+>-N</CODE
+> option for details.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-v</VAR
+>-v</CODE
 ></DT
 ><DD
 ><P
->displays verbose output.</P
+>Displays verbose output.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-?</VAR
+>-?</CODE
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

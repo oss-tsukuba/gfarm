@@ -56,17 +56,17 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfmd</B
 > is a Gfarm filesystem metadata server for accessing
-filesystem metadata of the Gfarm filesystem.  <B
+the filesystem metadata of the Gfarm filesystem.  <B
 CLASS="COMMAND"
 >gfmd</B
-> is needed to
+> must
 be running on a metadata server node in advance.</P
 ><P
 >It is possible for <B
 CLASS="COMMAND"
 >gfmd</B
 > to be executed as a non-privileged user
-process although only the user that executes the <B
+process, although only the user that executes the <B
 CLASS="COMMAND"
 >gfmd</B
 > can be authenticated.
@@ -77,14 +77,14 @@ CLASS="COMMAND"
 >gfmd</B
 > as a non-privileged user process, a
 configuration file for a user needs to be specified by the -f option.
-At least, the port number used by <B
+At the very least, the port number used by <B
 CLASS="COMMAND"
 >gfmd</B
 > should be altered to a
-non-privileged port number by metadb_serverport statement in the
-configuration file or the -p option.</P
+non-privileged port number by the metadb_serverport statement in the
+configuration file or by the -p option.</P
 ><P
->In this case, the altered port number of <B
+>In this case, the altered port number for <B
 CLASS="COMMAND"
 >gfmd</B
 > should be
@@ -92,7 +92,7 @@ specified by the metadb_serverport statement in <TT
 CLASS="FILENAME"
 >~/.gfarmrc</TT
 >
-or <TT
+or in <TT
 CLASS="FILENAME"
 >%%SYSCONFDIR%%/gfarm.conf</TT
 > on a client node.</P
@@ -121,7 +121,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a log priority level.  The log output, which priority
+>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm.conf(5) for the priority levels which can be specified
 by this option.</P
@@ -138,7 +138,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file name which records the process ID of gfmd.</P
+>Specifies a file name to be used to record the process ID of gfmd.</P
 ></DD
 ><DT
 ><CODE
@@ -147,8 +147,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->specifies the debug mode.  With the -d option, gfmd is running as a
-foreground process not a daemon.</P
+>Specifies the debug mode.  With the -d option, gfmd runs as a
+foreground process, not a daemon.</P
 ><P
 >If this option is specified and <CODE
 CLASS="OPTION"
@@ -168,7 +168,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a configuration file that is read instead of the default
+>Specifies a configuration file that is read instead of the default
 configuration file.</P
 ></DD
 ><DT
@@ -183,9 +183,9 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a port number used by gfmd.  By default, 601 is used.</P
+>Specifies a port number to be used by gfmd.  By default, 601 is used.</P
 ><P
->Default port requires the root privilege, although privileged ports
+>The default port requires root privileges, although privileged ports
 are not necessary to execute gfmd.</P
 ></DD
 ><DT
@@ -200,7 +200,8 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a syslog facility to report errors by gfmd.  By default,
+>Specifies a syslog facility to report errors encountered by gfmd.
+By default,
 local0 is used.</P
 ></DD
 ><DT
@@ -215,7 +216,8 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a syslog facility to report errors by gfmd.  By default,
+>Specifies a syslog facility to report errors encountered by gfmd.
+By default,
 local0 is used.</P
 ></DD
 ><DT
@@ -225,7 +227,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

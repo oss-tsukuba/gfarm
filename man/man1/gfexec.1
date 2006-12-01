@@ -3,29 +3,30 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFEXEC" "1" "22 April 2004" "Gfarm" ""
+.TH "GFEXEC" "1" "13 November 2006" "Gfarm" ""
+
 .SH NAME
-gfexec \- execute other commands in Gfarm file system
+gfexec \- execute other commands in the Gfarm filesystem
 .SH SYNOPSIS
 
 \fBgfexec\fR [ \fB-N \fInumber-of-nodes\fB\fR ] [ \fB-I \fInode-index\fB\fR ] [ \fB-s\fR ] \fB\fIcommand\fB\fR [ \fB\fIargs\fB\fR\fI ...\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfexec\fR exeutes the specified command in Gfarm
-file system.  \fBgfexec\fR is needed to be executed on a
-file system node.
+\fBgfexec\fR executes the specified command in Gfarm
+filesystem.  \fBgfexec\fR has to be executed on a
+filesystem node.
 .SH "OPTIONS"
 .TP
 \fB-N \fInumber-of-nodes\fB\fR
-changes the number of nodes for the invoked program to the argument.
+Changes the number of nodes for the invoked program to the argument.
 .TP
 \fB-I \fInode-index\fB\fR
-changes the index of the node for the invoked program to the argument.
+Changes the index of the node for the invoked program to the argument.
 .TP
 \fB-s\fR
-This option is equivalent to 
-``\fB-N\fR \fI1\fR \fB-I\fR \fI0\fR'' option.
+This option is equivalent to the
+``\fB-N\fR \fI1\fR \fB-I\fR \fI0\fR\&'' option.
 .TP
 \fB-?\fR
-prints usage.
+Prints usage.

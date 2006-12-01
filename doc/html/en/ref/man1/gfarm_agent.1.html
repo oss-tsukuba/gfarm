@@ -58,7 +58,7 @@ CLASS="COMMAND"
 > is a cache server for a Gfarm metadata
 server that can be shared by multiple hosts and multiple users.
 The cache server greatly improves performance and response
-time for a Gfarm file system by reducing network communication to a
+time for a Gfarm filesystem by reducing network communication to a
 distant metadata server.</P
 ><P
 >Any number of <B
@@ -93,7 +93,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a log priority level.  The log output, which priority
+>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm.conf(5) for the priority levels which can be specified
 by this option.</P
@@ -110,7 +110,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a file name which records the process ID of
+>Specifies a file name which records the process ID of
 <B
 CLASS="COMMAND"
 >gfarm_agent</B
@@ -128,7 +128,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a syslog facility to report errors by
+>Specifies a syslog facility used to report errors by
 <B
 CLASS="COMMAND"
 >gfarm_agent</B
@@ -141,11 +141,11 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->specifies the debug mode.  <B
+>Specifies the debug mode.  <B
 CLASS="COMMAND"
 >gfarm_agent</B
-> is
-running in the foreground not in the background.</P
+> runs
+in the foreground, not in the background.</P
 ><P
 >If this option is specified and <CODE
 CLASS="OPTION"
@@ -165,7 +165,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a configuration file that is read instead of the default
+>Specifies a configuration file that is read instead of the default
 configuration file.</P
 ></DD
 ><DT
@@ -175,7 +175,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->specifies the master mode.  This improves metadata access
+>Specifies the master mode.  This improves metadata access
   performance by caching the path information.  This option is only
   available when there is a single <B
 CLASS="COMMAND"
@@ -195,7 +195,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a port number of TCP used by gfarm_agent.</P
+>Specifies a port number for TCP, to be used by gfarm_agent.</P
 ></DD
 ><DT
 ><CODE
@@ -204,7 +204,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->displays verbose error messages in authentication.</P
+>Displays verbose error messages in authentication.</P
 ></DD
 ><DT
 ><CODE
@@ -213,7 +213,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

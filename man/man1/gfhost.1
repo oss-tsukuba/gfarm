@@ -3,19 +3,19 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "22 August 2003" "Gfarm" ""
+.TH "GFHOST" "1" "12 November 2006" "Gfarm" ""
 
 .SH NAME
-gfhost \- gfarm host maintenance command
+gfhost \- Gfarm host maintenance command
 .SH SYNOPSIS
 
-\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIarchtecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
+\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-c\fR \fB-a\fIarchitecture\fB\fR [ \fB-n\fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-c\fR \fB-a \fIarchitecture\fB\fR [ \fB-n \fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-m\fR [ \fB-a\fIarchitecture\fB\fR ] [ \fB-n\fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-m\fR [ \fB-a \fIarchitecture\fB\fR ] [ \fB-n \fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
 \fBgfhost\fR \fB-d\fR \fB\fIhostname\fB\fR\fI ...\fR
@@ -27,220 +27,220 @@ gfhost \- gfarm host maintenance command
 .PP
 \fBgfhost\fR is used to display and maintain
 information about filesystem nodes. The function that 
-\fBgfhost\fR does is choosed by its option -c, -d,
+\fBgfhost\fR performs is determined by an option, -c, -d,
 -H, -l, -M, -m, -R.
-Theses functions are mutually exclusive, and only one option
-of them can be specified.
+These functions are mutually exclusive, and only one option
+among them can be specified.
 If none of them is specified, host name will be displayed as
-the default function of \fBgfhost\fR.
+the default function of \fBgfhost\fR\&.
 .SH "FUNCTIONS"
 .PP
-Metadata in LDAP server will be accessed by function -c, -d, -M, -m and
+Metadata in LDAP server will be accessed by function -c, -d, -M, -m or
 -R. These functions add/delete/display/modify/restore host information
 in the metadata.
 .PP
-If -H, -l or -M is specified, or none of functions are specified,
-\fBgfhost\fR displays information of filesystem node.
--M function only accesses information in metadata server.
-Display functions other than -M also access \fBgfsd\fR
+If -H, -l or -M is specified, or none of the functions are specified,
+\fBgfhost\fR displays filesystem node information.
+The -M function only accesses information in the metadata server.
+Display functions other than -M also access \fBgfsd\fR,
 which is running on filesystem nodes. For functions which access
 \fBgfhost\fR, the access option can be specified
-by option -i, -j, -U and -v.
+by options -i, -j, -U and -v.
 .PP
 You don't have to specify hostnames for display functions.
 In that case, all hosts which are registered in metadata will be
-tried to be displayed, and you can limit type of hosts to display
-by -a or -D option.
-By default, hosts are displayed by alphabetical order, but you can
-change this by -L, -p, and -r options. Although -L option is ignored
-in -M function  and default function
-\&.
+displayed, but you can limit the type of hosts displayed 
+by the -a or -D option.
+By default, hosts are displayed in alphabetical order, but you can
+change this by the -L, -p, or -r options. Although the -L option is ignored
+in the -M function  and in the default function.
+.
 .PP
-The followings are the list of functions of \fBgfhost\fR
-command. You shouldn't specify more than one functions at once.
+The following is a list of the functions of the \fBgfhost\fR
+command. You shouldn't specify more than one functions at a time.
 .TP
 \fB<none>\fR
-If you don't specify none of the functions,
+If you don't specify any of the functions,
 \fBgfhost\fR accesses \fBgfsd\fR,
-and displays names of hosts which are available currently,
+and displays the names of hosts which are currently available
 as its default function.
-Hostnames are displayed by alphabetical order, by default.
+Hostnames are displayed in alphabetical order, by default.
 .TP
 \fB-c\fR
-Create metadata information for the host which is specified
+Creates the metadata information for the host that is specified
 in the argument.
-Option -a is mandatory in this function, this option specifies
+Option -a is mandatory for this function, this option specifies
 the architecture of the host.
-Option -n may be used to specify number of CPU of the host,
+Option -n may be used to specify the number of CPUs of the host,
 and 1 CPU is assumed, if -n is omitted.
 
 You can specifiy multiple hostnames in this function.
-In that case, first hostname is treated as the identifier of
+In that case, the first hostname is treated as the identifier of
 the host, and the host identifier is used for replication
-information management. Rest of hostnames are used as aliases
+information management. The rest of the hostnames are used as aliases
 of the host.
 
 If a host has multiple network interfaces, and each interface
-has unique hostname, all of the hostnames must be registered
-as either host identifier or host aliases.
+has a unique hostname, all of the hostnames must be registered
+as either host identifiers or host aliases.
 
-If /etc/hosts or NIS hosts database doesn't contain DNS domain
+If /etc/hosts or the NIS hosts database doesn't contain a DNS domain
 name part in its hostnames (i.e. these hostnames are not Fully
-Qualified Domain Names), you must register host alias.
-In that case, you must register FQDN (hostname which contain
+Qualified Domain Names), you must register a host alias.
+In that case, you must register FQDN (a hostname which contain a
 domain name part) as the host identifier, and 
-register names without domain part as the host alias.
+register names without the domain part as the host alias.
 .TP
 \fB-d\fR
-Delete host information from metadata.
-Currently, even hosts which are refered by
+Deletes host information from metadata.
+Currently, even hosts which are referred by
 replica catalog can be deleted. But be careful, because
-such deletion causes incosistency of metadata.
-Only host identifier can be used as hostname
+such deletions cause inconsistencies of metadata.
+Only a host identifier can be used as a hostname
 in this function.
 .TP
 \fB-H\fR
-Display load average and authentication method.
-With this function, the exact hostname passed by gfhost command
-arguments will be displayed instead of canonical host identifier.
-Also, this function displays the IP address which is used to
+Displays load average and authentication method.
+With this function, the exact hostname passed by the gfhost command
+arguments will be displayed instead of the canonical host identifier.
+Also, this function displays the IP address used to
 access \fBgfsd\fR in parentheses just after the hostname.
 
-If the host cannot be accessed due to machine down or
-network trouble etc., x.xx/x.xx/x.xx will be displayed in
+If the host cannot be accessed due to a machine down or
+network problem, etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
 cannot be accessed by the port number configured in
 %%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
-The next field is the authenticaion method used with the host.
-`G' in this field means GSI authenticaion and encryption,
-`g' means only authenticaion is performed by GSI and
+The next field is the authentication method used with the host.
+`G' in this field means GSI authentication and encryption,
+`g' means only authentication is performed by GSI and
 actual communication is unprotected plain data (gsi_auth),
 `s' means gfarm sharedsecret authentication,
 `x' means that the authentication failed,
 and `-' means that the authentication wasn't actually tried.
-If -U option is specified, this authentication method field
+If the -U option is specified, this authentication method field
 won't be provided.
 
-Hostnames are displayed by alphabetical order, by default.
+Hostnames are displayed in alphabetical order, by default.
 .TP
 \fB-l\fR
-Display with long format.
+Displays in the long format.
 This function displays both information retrieved from gfsd
-and metadata server.
+and the metadata server.
 The types of information retrieved from gfsd are load average and
 authentication method.
-And the types of information retrieved from metadata server are
-architecture name, number of CPUs, host identifier
+And the types of information retrieved from the metadata server are
+architecture name, number of CPUs, host identifier,
 and host aliases (if any).
 IP address will be displayed in parentheses just after the
-hostname used for the access to \fBgfsd\fR.
+hostname used for the access to \fBgfsd\fR\&.
 
-If the host cannot be accessed due to machine down or
-network trouble etc., x.xx/x.xx/x.xx will be displayed in
+If the host cannot be accessed due to a machine down or
+network problem, etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
 cannot be accessed by the port number configured in
 %%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
 displayed.
 
-The next field is the authenticaion method used with the host.
-`G' in this field means GSI authenticaion and encryption,
-`g' means only authenticaion is performed by GSI and
+The next field is the authentication method used with the host.
+`G' in this field means GSI authentication and encryption,
+`g' means only authentication is performed by GSI and
 actual communication is unprotected plain data (gsi_auth),
 `s' means gfarm sharedsecret authentication,
 `x' means that the authentication failed,
 and `-' means that the authentication wasn't actually tried.
-If -U option is specified, this authentication method field
+If that -U option is specified, this authentication method field
 won't be provided.
 
-Hostnames are displayed by alphabetical order, by default.
+Hostnames are displayed in alphabetical order, by default.
 .TP
 \fB-M\fR
-Metadata information of the hosts will be displayed.
-Hostnames are displayed by alphabetical order, by default.
+The metadata information of the hosts will be displayed.
+Hostnames are displayed in alphabetical order, by default.
 .TP
 \fB-m\fR
-Modify metadata information of the host, by specifying
+Modifies metadata information of the host, by specifying
 the host identifier.
--a option and -n option overwrite current value of each option.
+The -a and -n options overwrite the current value of each option.
 By contrast, host aliases will be added in this function by default.
 If you want to replace or delete host aliases, please specify
--A option with this function. In that case, all host aliases
+the -A option with this function. In that case, all host aliases
 will be replaced by specified aliases (if any).
 .TP
 \fB-R\fR
-Restore metadata information read from standard input.
-The format of the metadata is same with the format
-that -M function displays.
+Restores metadata information read from standard input.
+The format of the metadata is same as the format
+that the -M function displays.
 .TP
 \fB-?\fR
-Print usage.
+Prints usage.
 .SH "OPTIONS"
 .TP
 \fB-A\fR
-Alter. This option is used with -m function to replace
-host aliases, rather than adding.
+Alter. This option is used with the -m function to replace,
+rather than add, host aliases. 
 .TP
 \fB-a \fIarchitecture\fB\fR
-This option specifies the CPU architecture by a format like
+This option specifies the CPU architecture using a format like
 sparc-sun-solaris8 or i386-redhat8.0-linux, etc.
-If this option is used with -c or -m function, this means
-the architecture to add/modify the metadata information.
+If this option is used with the -c or -m function, this means
+the architecture used to add/modify the metadata information.
 If this option is used with -H, -l, -M function or default function,
 this limits hosts to the specified architecture.
 .TP
 \fB-D \fIdomain-name\fB\fR
-This option is used with -H, -l, -M function or default function
-to limit hosts to the specified domain.
+This option is used with the -H, -l, -M function or the default
+function to limit hosts to the specified domain.
 .TP
 \fB-i\fR
-There is "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
+There is an "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
 $HOME/.gfarmrc to give priorities of network addresses
 for gfarm access.
-This directive works with \fBgfhost\fR command,
-but will be ignored, if you specified -i option with
-\fBgfhost\fR.
+This directive works with the \fBgfhost\fR command,
+but will be ignored, if you specified the -i option with
+\fBgfhost\fR\&.
 .TP
 \fB-j \fIconcurrency\fB\fR
-This option specifies concurrency used for the access to
-\fBgfsd\fR.
+This option specifies the concurrency used for access to
+\fBgfsd\fR\&.
 The default value is 10.
 .TP
 \fB-L\fR
-Sort by load average order. This option is effective only with
--H and -l function .
+Sorts by load average order. This option is effective only with the
+-H and -l functions.
 .TP
 \fB-n \fInumber-of-CPUs\fB\fR
-This option is used with -c or -m function, and specifies
+This option is used with the -c or -m function, and specifies the
 number of CPUs of the host.
 .TP
 \fB-p\fR
-Plain order. This option stops sorting on -H, -l, -M function
-or default function.
-With -M function, command argument order (if any), or
-order that metadata server answers is used for a display.
-With -H, -l function or default function, the result
-is displayed with the order that each \fBgfsd\fR answers.
+Plain order. This option stops sorting on the -H, -l, -M function
+or the default function.
+With the -M function, command argument order (if any), or
+the order that the metadata server answers is used for display.
+With the -H, -l function or the default function, the result
+is displayed in the order that each \fBgfsd\fR answers.
 .TP
 \fB-r\fR
-Reverse the order of sort.
+Reverses the order of sort.
 .TP
 \fB-U\fR
-Suppress authentication attempts by TCP, and only query
+Suppresses authentication attempts by TCP, and only queries
 load average by UDP.
-This option only makes sense, if you specified -H or -l function,
-or if you don't specify any function. This option has effect to
-make gfhost command run faster.
-If -H or -l function is specified, this option makes the 
+This option only makes sense if you specified the -H or -l function,
+or if you didn't specify any function. This option
+makes the gfhost command run faster.
+If the -H or -l function is specified, this option makes the 
 authentication method field disappear.
 .TP
 \fB-v\fR
--H, -l function and default function don't produce any error
-report about the \fBgfsd\fR accesss.
-Such error report will be produced by this option.
+The -H, -l function and the default function don't produce error
+reports on \fBgfsd\fR accesses;
+these error reports will be produced by this option.
 .SH "SEE ALSO"
 .PP
 \fBgfarm.conf\fR(5),

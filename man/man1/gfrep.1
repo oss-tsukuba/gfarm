@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "05 August 2006" "Gfarm" ""
+.TH "GFREP" "1" "13 November 2006" "Gfarm" ""
 
 .SH NAME
 gfrep \- replicate Gfarm files
@@ -30,29 +30,29 @@ it will be copied recursively.
 .SH "OPTIONS"
 .TP
 \fB-D \fIdestination-domainname\fB\fR
-specifies a domainname of destination filesystem nodes where replicas
-will be copies to.
-This option is used solely, or with the \fB-S\fR
+Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+This option is used alone, or with the \fB-S\fR
 or \fB-s\fR option.
 
-If neither this nor \fB-d\fR option is specified, 
-replicas may be copied to any of hosts registered in the metadata.
-Please refer the description of the \fB-N\fR option for detail.
+If neither this nor the \fB-d\fR option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
 \fB-d \fIdestination-node\fB\fR
-specifies one destination filesystem node where replicas
-will be copied to.
-This option is used solely, or with the \fB-s\fR 
+Specifies one destination filesystem node where replicas
+will be copied.
+This option is used alone, or with the \fB-s\fR 
 option.
 
-If neither this nor \fB-D\fR option is specified, 
-replicas may be copied to any of hosts registered in the metadata.
+If neither this nor the \fB-D\fR option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
 .TP
 \fB-H \fIhostfile\fB\fR
-specifies a file which describes hostnames of
-destination filesystem nodes where the replica will be made on.
+Specifies a file which describes hostnames of
+destination filesystem nodes on which the replica will be made.
 The \fIhostfile\fR consists of a filesystem node name
-in each line.
+on each line.
 If the number of nodes listed in the \fIhostfile\fR
 is less than the total number of file fragments,
 it is treated as if the node names are specified repeatedly.
@@ -60,76 +60,76 @@ it is treated as if the node names are specified repeatedly.
 if ``-'' is specified, standard input is used to read the host list.
 .TP
 \fB-I \fIfile-section\fB\fR
-specifies a file section name to be copied.
+Specifies a file section name to be copied.
 Currently, this option can be specified only with the \fB-d\fR
 option.
 
 It is possible to omit this option.
 .TP
 \fB-m\fR
-lets gfrep command do migrate/move, instead of doing replicate.
-Currently, this works only with -H, -P and -d options.
+Lets gfrep command do a migrate/move, instead of doing replication.
+Currently, this works only with the -H, -P and -d options.
 .TP
 \fB-N \fInum-of-replicas\fB\fR
-specifies necessary number of file replicas, counting already
+Specifies the required number of file replicas, counting already
 existing ones.
-If there are enough number of replicas in the destination nodes,
-neither any copy nor any removal will be done.
-This option is used solely, or with the \fB-D\fR,
+If there are a sufficient number of replicas in the destination nodes,
+neither any copying nor any removal will be done.
+This option is used alone, or with the \fB-D\fR,
 \fB-S\fR or \fB-s\fR option.
 
 If this option is not specified, \fB-N 1\fR is assumed.
 
-The source nodes specified by \fB-S\fR or \fB-s\fR
-option are excluded from the destination nodes.
+The source nodes specified by the \fB-S\fR
+or \fB-s\fR option are excluded from the destination nodes.
 In other words, it's guaranteed that the number of replicas on
-hosts except those specified by \fB-S\fR or \fB-s\fR
-option are same or more than the number specified by the \fB-N\fR
-option.
+hosts, except those specified by the \fB-S\fR or \fB-s\fR
+option, are the same or more than the number specified by the
+\fB-N\fR option.
 However, when the destination is a subset of the source,
 i.e. when the exclusion makes the destination an empty set,
 this exclusion is not applied.
 For example, if gfrep is executed with the
 ``\fB-N 3 -S subdomain.example.org -D example.org\fR\&'' option,
-it's guaranteed that there are at least 3 replicas in the hosts belong
-to example.org but except subdomain.example.org.
+it's guaranteed that there are at least 3 replicas in the hosts belonging
+to example.org, excepting subdomain.example.org.
 .TP
 \fB-P \fIhost-pair-file\fB\fR
-specifies a file which describes hostname pairs of
+Specifies a file which describes hostname pairs of
 source nodes and destination nodes.
 The \fIhost-pair-file\fR consists of a pair
-of a source node name and a destination node name in this order in each line.
+of a source node name and a destination node name in this order on each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.
 .TP
 \fB-S \fIsource-domainname\fB\fR
-specifies a domainname of source filesystem nodes where replicas
+Specifies the domain name of source filesystem nodes where replicas
 will be copied from.
-This option is used solely, or with the \fB-D\fR
+This option is used alone, or with the \fB-D\fR
 option.
 
-If neither this nor \fB-s\fR option is specified, 
+If neither this nor the \fB-s\fR option is specified, 
 the source nodes will be selected from all nodes.
 
 The hosts specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the \fB-N\fR option for detail.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
 \fB-s \fIsource-node\fB\fR
-specifies a source filesystem node where replicas
+Specifies a source filesystem node where replicas
 will be copied from.
-This option is used solely, or with the \fB-D\fR
+This option is used alone, or with the \fB-D\fR
 or \fB-d\fR option.
 
-If neither this nor \fB-s\fR option is specified, 
+If neither this nor the \fB-s\fR option is specified, 
 the source nodes will be selected from all nodes.
 
 The host specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the \fB-N\fR option for detail.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
 \fB-v\fR
-displays verbose output.
+Displays verbose output.
 .TP
 \fB-?\fR
-displays a list of command options.
+Displays a list of command options.

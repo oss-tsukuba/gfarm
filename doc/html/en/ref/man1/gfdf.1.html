@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfdf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -37,17 +37,21 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfdf</B
->  -H <VAR
+>  -H <TT
 CLASS="REPLACEABLE"
->hostfile</VAR
+><I
+>hostfile</I
+></TT
 >  [-i]</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfdf</B
->  -h <VAR
+>  -h <TT
 CLASS="REPLACEABLE"
->hostname</VAR
+><I
+>hostname</I
+></TT
 >...  [-i]</P
 ></DIV
 ><DIV
@@ -77,9 +81,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-H</VAR
+>-H</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -88,21 +92,21 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a list of filesystem nodes. 
+>Specifies a list of filesystem nodes. 
 The <TT
 CLASS="PARAMETER"
 ><I
 >hostfile</I
 ></TT
 > consists of
-a hostname of a filesystem node in each line.  </P
+the hostname of a filesystem node in each line.  </P
 ><P
->if ``-'' is specified, standard input is used to read the host list.</P
+>If ``-'' is specified, standard input is used to read the host list.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-h</VAR
+>-h</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -111,26 +115,26 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a hostname of a filesystem node.
+>Specifies the hostname of a filesystem node.
 This option can be used multple times.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-i</VAR
+>-i</CODE
 ></DT
 ><DD
 ><P
->displays i-node information instead of disk space information.</P
+>Displays i-node information instead of disk space information.</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-?</VAR
+>-?</CODE
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

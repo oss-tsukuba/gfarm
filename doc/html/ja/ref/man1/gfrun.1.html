@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfrun</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -159,9 +158,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-G</TT
+>-G</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -171,12 +170,14 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >gfarm-URL のファイル・アフィニティ・スケジューリングにより
-並列プログラムを実行します．</P
+並列プログラムを実行します．
+ファイル・アフィニティ・スケジューリングの動作については，DESCRIPTION 節を
+参照してください．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-H</TT
+>-H</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -193,9 +194,9 @@ CLASS="PARAMETER"
 読み込みます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -208,9 +209,9 @@ CLASS="PARAMETER"
 ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-r</TT
+>-r</CODE
 ></DT
 ><DD
 ><P
@@ -218,9 +219,9 @@ CLASS="OPTION"
 作成します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-o</TT
+>-o</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -232,9 +233,9 @@ CLASS="PARAMETER"
 >実行される並列プログラムの標準出力を gfarm-URL に書き出します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-e</TT
+>-e</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -246,9 +247,9 @@ CLASS="PARAMETER"
 >実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -258,39 +259,39 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >指定されたフラグメント番号のプロセスだけが実行されます．
-このオプションは，<TT
+このオプションは，<CODE
 CLASS="OPTION"
->-G</TT
+>-G</CODE
 > オプションあるいは引数に与えた Gfarm
 ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
-場合，および <TT
+場合，および <CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > オプションが指定されている場合のみ利
 用可能です．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-v</CODE
 ></DT
 ><DD
 ><P
 >詳細にエラーメッセージを表示します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-p</CODE
 ></DT
 ><DD
 ><P
 >プログラム実行後に Gfarm 並列I/O APIの所要時間を表示します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-g</TT
+>-g</CODE
 ></DT
 ><DD
 ><P
@@ -298,9 +299,9 @@ CLASS="OPTION"
 この結果，プログラムには Gfarm 特有のオプションが渡されます．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-u</TT
+>-u</CODE
 ></DT
 ><DD
 ><P
@@ -308,9 +309,9 @@ CLASS="OPTION"
 この場合，プログラムに Gfarm 特有のオプションが渡されることはありません．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-b</TT
+>-b</CODE
 ></DT
 ><DD
 ><P
@@ -320,9 +321,9 @@ CLASS="OPTION"
 デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -344,9 +345,9 @@ NAME="ENVIROMNENT-VARIABLES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="ENVAR"
->GFRUN_CMD</TT
+>GFRUN_CMD</CODE
 ></DT
 ><DD
 ><P

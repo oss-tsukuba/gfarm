@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSCHED" "1" "22 August 2003" "Gfarm" ""
+.TH "GFSCHED" "1" "12 November 2006" "Gfarm" ""
 
 .SH NAME
 gfsched \- create a host file using file-affinity scheduling
@@ -17,37 +17,37 @@ gfsched \- create a host file using file-affinity scheduling
 .SH "DESCRIPTION"
 .PP
 \fBgfsched\fR creates a host file
-using the file-affinity scheduing of \fIgfarm-URL\fR.
+using the file-affinity scheduling of \fIgfarm-URL\fR\&.
 In other words, \fBgfsched\fR chooses and displays
-hostnames of the same number with the fragments of
-the \fIgfarm-URL\fR, with giving priority to
-the hosts which has the fragment as far as possible.
+hostnames, matching the number with the fragments of
+the \fIgfarm-URL\fR, giving priority, as far as possible to
+the host which has the fragment.
 When \fIoutput-hostfile\fR is omitted,
 \fBgfsched\fR displays to the standard output.
 .PP
 If \fB-N\fR is specified instead of 
 \fIgfarm-URL\fR, \fBgfsched\fR chooses and
-displays specified number of hosts from the hosts in the arguments.
-If no host is specified in the argument, \fBgfsched\fR
+displays a specified number of hosts from the hosts in the arguments.
+If no hosts are specified in the argument, \fBgfsched\fR
 chooses hosts from all registered hosts.
 .SH "OPTIONS"
 .TP
 \fB-I \fIfragment-index\fB\fR
-specifies the fragment index to be scheduled.
+Specifies the fragment index to be scheduled.
 .TP
 \fB-U\fR
-suppresses authentication check.
+Suppresses authentication check.
 Without this option, the scheduler checks whether the user will be 
 successfully authenticated with the hosts or not.
 This option omits the check to make scheduling faster,
-but that makes a risk that hosts which make authentication failure with
+but that creates a risk that hosts which fail authentication with
 the user may be scheduled.
 .TP
 \fB-p \fIprogram-URL\fB\fR
-creates a host file with a program name which will be used
-to process the \fIgfarm-URL\fR.
+Creates a host file with a program name which will be used
+to process the \fIgfarm-URL\fR\&.
 In other words, only hosts which can run the \fIprogram-URL\fR
 will be selected, if this option is specified.
 .TP
 \fB-?\fR
-displays a list of command options.
+Displays a list of command options.
