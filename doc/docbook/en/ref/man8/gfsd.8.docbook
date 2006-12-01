@@ -53,6 +53,17 @@ specified by the spool_serverport statement in ~/.gfarmrc or
 <variablelist>
 
 <varlistentry>
+<term><option>-L</option> <parameter>log-level</parameter></term>
+<listitem>
+<para>specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-P</option> <parameter>pid-file</parameter></term>
 <listitem>
 <para>specifies a file name which records the process ID of gfsd.</para>
@@ -78,6 +89,10 @@ to provide spool directory for the new files.
 <listitem>
 <para>specifies the debug mode.  With the -d option, gfsd is running as a
 foreground process not a daemon.</para>
+<para>
+If this option is specified and <option>-L</option> is not specified,
+the log level is set to "debug".
+</para>
 </listitem>
 </varlistentry>
 

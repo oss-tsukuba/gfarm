@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>5 Aug 2006</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -846,6 +846,25 @@ IPアドレスを通信に用いるかを指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>log_level</token> <parameter>優先度レベル</parameter></term>
+<listitem>
+<para>
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslog や標準エラーへ
+送られません。
+レベルは、優先度の高い順に "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" です。
+デフォルトの出力レベルは "info" です。
+"crit" 以上の優先度を指定することは、お勧めできません。
+</para>
+<para>例:</para>
+<literallayout>
+	log_level debug
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -889,7 +908,8 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
 		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
-		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;log_level_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -944,6 +964,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
+	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -965,6 +986,8 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		&nbsp;&nbsp;"notice" | "info" | "debug"
 </literallayout>
 
 </refsect1>

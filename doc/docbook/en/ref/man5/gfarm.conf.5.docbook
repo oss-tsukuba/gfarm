@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>5 Aug 2006</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -900,6 +900,24 @@ The default is 16.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>log_level</token> <parameter>priority_level</parameter></term>
+<listitem>
+<para>This directive specifies a level of log priority.
+The log output, which priority is inferior to this level, will not be
+sent to syslog or standard error.
+The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
+"info" and "debug" in highest first order.
+The default level is "info".
+It's not recommended to specify a level higher or equal to "crit".
+</para>
+<para>For example,</para>
+<literallayout>
+	log_level debug
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -944,7 +962,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
 		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
-		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;log_level_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1020,6 +1039,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		&nbsp;&nbsp;"notice" | "info" | "debug"
 </literallayout>
 
 </refsect1>

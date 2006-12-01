@@ -14,6 +14,7 @@
 
 static char *log_identifier = "libgfarm";
 static int log_use_syslog = 0;
+static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 
 #ifndef _REENTRANT
 static char *log_auxiliary_info = NULL;
@@ -31,6 +32,9 @@ void
 gflog_vmessage(int priority, const char *format, va_list ap)
 {
 	char buffer[2048];
+
+	if (priority > log_level) /* not worth reporting */
+		return;
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 
@@ -148,6 +152,12 @@ gflog_fatal_errno(const char *format, ...)
 }
 
 void
+gflog_set_priority_level(int priority)
+{
+	log_level = priority;
+}
+
+void
 gflog_set_identifier(char *identifier)
 {
 	log_identifier = identifier;
@@ -173,7 +183,7 @@ gflog_syslog_open(int syslog_option, int syslog_facility)
 }
 
 int
-gflog_syslog_name_to_facility(char *name)
+gflog_syslog_name_to_facility(const char *name)
 {
 	int i;
 	struct {
@@ -209,6 +219,31 @@ gflog_syslog_name_to_facility(char *name)
 	for (i = 0; i < GFARM_ARRAY_LENGTH(syslog_facilities); i++) {
 		if (strcmp(syslog_facilities[i].name, name) == 0)
 			return (syslog_facilities[i].facility);
+	}
+	return (-1); /* not found */
+}
+
+int
+gflog_syslog_name_to_priority(const char *name)
+{
+	int i;
+	struct {
+		char *name;
+		int priority;
+	} syslog_priorities[] = {
+		{ "emerg",	LOG_EMERG },
+		{ "alert",	LOG_ALERT },
+		{ "crit",	LOG_CRIT },
+		{ "err",	LOG_ERR },
+		{ "warning",	LOG_WARNING },
+		{ "notice",	LOG_NOTICE },
+		{ "info",	LOG_INFO },
+		{ "debug",	LOG_DEBUG },
+	};
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(syslog_priorities); i++) {
+		if (strcmp(syslog_priorities[i].name, name) == 0)
+			return (syslog_priorities[i].priority);
 	}
 	return (-1); /* not found */
 }

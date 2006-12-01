@@ -2,7 +2,7 @@
 
 <refentry id='gfarm_agent.1'>
 
-<refentryinfo><date>7 Jun 2006</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_agent</refentrytitle>
@@ -38,8 +38,22 @@ Consistency among multiple cache servers and a metadata server is
 maintained.
 </para>
 
+</refsect1>
+
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-L</option> <parameter>log-level</parameter></term>
+<listitem>
+<para>specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-P</option> <parameter>pid-file</parameter></term>
 <listitem>
@@ -61,6 +75,10 @@ maintained.
 <listitem>
 <para>specifies the debug mode.  <command>gfarm_agent</command> is
 running in the foreground not in the background.</para>
+<para>
+If this option is specified and <option>-L</option> is not specified,
+the log level is set to "debug".
+</para>
 </listitem>
 </varlistentry>
 

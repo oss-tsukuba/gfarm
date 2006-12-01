@@ -57,28 +57,20 @@ char *program_name = "gfarm_agent";
 
 int debug_mode = 0;
 int master_mode = 0;
+int syslog_level = -1;
 
 /* this routine should be called before calling exit(). */
 static void
 cleanup(void)
 {
 	/* disconnect, do logging */
-	if (debug_mode)
-		gflog_notice("disconnected");
+	gflog_debug("disconnected");
 }
 
 static void
 log_proto(char *proto, char *status)
 {
-	/*
-	 * avoid too many not critical messages of
-	 *	GFARM_ERR_NO_SUCH_OBJECT
-	 *	GFARM_ERR_ALREADY_EXISTS
-	 */
-	if (debug_mode ||
-	    (status != GFARM_ERR_NO_SUCH_OBJECT &&
-	     status != GFARM_ERR_ALREADY_EXISTS))
-		gflog_notice("%s: %s", proto, status);
+	gflog_debug("%s: %s", proto, status);
 }
 
 static void
@@ -165,8 +157,7 @@ agent_server_path_info_get(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc); /* protocol error */
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_i_path_info_get(path, &info);
 	agent_unlock();
@@ -201,8 +192,7 @@ agent_server_path_info_set(struct xxx_connection *client)
 		free(pathname);
 		return (e_rpc);
 	}
-	if (debug_mode)
-		log_proto(diag, pathname);
+	log_proto(diag, pathname);
  	info.pathname = pathname;
 	agent_lock();
 	e = gfarm_i_path_info_set(pathname, &info);
@@ -232,8 +222,7 @@ agent_server_path_info_replace(struct xxx_connection *client)
 		free(pathname);
 		return (e_rpc);
 	}
-	if (debug_mode)
-		log_proto(diag, pathname);
+	log_proto(diag, pathname);
 	info.pathname = pathname;
 	agent_lock();
 	e = gfarm_i_path_info_replace(pathname, &info);
@@ -256,8 +245,7 @@ agent_server_path_info_remove(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, pathname);
+	log_proto(diag, pathname);
 	agent_lock();
 	e = gfarm_i_path_info_remove(pathname);
 	agent_unlock();
@@ -279,8 +267,7 @@ agent_server_realpath_canonical(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfs_i_realpath_canonical(path, &abspath);
 	agent_unlock();
@@ -306,8 +293,7 @@ agent_server_get_ino(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfs_i_get_ino(path, &ino);
 	agent_unlock();
@@ -331,8 +317,7 @@ agent_server_opendir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("opendir", path);
+	log_proto("opendir", path);
 	agent_lock();
 	e = gfs_i_opendir(path, &dir);
 	agent_unlock();
@@ -364,8 +349,7 @@ agent_server_readdir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("readdir", "begin");
+	log_proto("readdir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir) {
 		agent_lock();
@@ -400,8 +384,7 @@ agent_server_closedir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("closedir", "begin");
+	log_proto("closedir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir) {
 		agent_lock();
@@ -430,8 +413,7 @@ agent_server_dirname(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("dirname", "begin");
+	log_proto("dirname", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir)
 		name = gfs_i_dirname(dir);
@@ -456,8 +438,7 @@ agent_server_seekdir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("seekdir", "begin");
+	log_proto("seekdir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir) {
 		agent_lock();
@@ -484,8 +465,7 @@ agent_server_telldir(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto("telldir", "begin");
+	log_proto("telldir", "begin");
 	dir = agent_ptable_entry_get(dir_index);
 	if (dir) {
 		agent_lock();
@@ -503,8 +483,7 @@ agent_server_telldir(struct xxx_connection *client)
 static char *
 agent_server_uncachedir(struct xxx_connection *client)
 {
-	if (debug_mode)
-		log_proto("uncachedir", "begin");
+	log_proto("uncachedir", "begin");
 	gfs_i_uncachedir();
 
 	return (agent_server_put_reply(client, "uncachedir", NULL, ""));
@@ -523,8 +502,7 @@ agent_server_host_info_get(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, hostname);
+	log_proto(diag, hostname);
 	agent_lock();
 	e = gfarm_cache_host_info_get(hostname, &info);
 	agent_unlock();
@@ -553,8 +531,7 @@ agent_server_host_info_remove_hostaliases(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, hostname);
+	log_proto(diag, hostname);
 	agent_lock();
 	e = gfarm_cache_host_info_remove_hostaliases(hostname);
 	agent_unlock();
@@ -581,8 +558,7 @@ agent_server_host_info_set(struct xxx_connection *client)
 		error_proto(diag, e_rpc);
 		goto free_hostname;
 	}
-	if (debug_mode)
-		log_proto(diag, hostname);
+	log_proto(diag, hostname);
 	agent_lock();
 	e = gfarm_cache_host_info_set(hostname, &info);
 	agent_unlock();
@@ -611,8 +587,7 @@ agent_server_host_info_replace(struct xxx_connection *client)
 		error_proto(diag, e_rpc);
 		goto free_hostname;
 	}
-	if (debug_mode)
-		log_proto(diag, hostname);
+	log_proto(diag, hostname);
 	agent_lock();
 	e = gfarm_cache_host_info_replace(hostname, &info);
 	agent_unlock();
@@ -636,8 +611,7 @@ agent_server_host_info_remove(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, hostname);
+	log_proto(diag, hostname);
 	agent_lock();
 	e = gfarm_cache_host_info_remove(hostname);
 	agent_unlock();
@@ -657,8 +631,7 @@ agent_server_host_info_get_all(struct xxx_connection *client)
 	char *e, *e_rpc;
 	char *diag = "host_info_get_all";
 
-	if (debug_mode)
-		log_proto(diag, "begin");
+	log_proto(diag, "begin");
 	agent_lock();
 	e = gfarm_cache_host_info_get_all(&np, &hosts);
 	agent_unlock();
@@ -691,8 +664,7 @@ agent_server_host_info_get_by_name_alias(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, alias);
+	log_proto(diag, alias);
 	agent_lock();
 	e = gfarm_cache_host_info_get_by_name_alias(alias, &info);
 	agent_unlock();
@@ -724,8 +696,7 @@ agent_server_host_info_get_allhost_by_architecture(
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, arch);
+	log_proto(diag, arch);
 	agent_lock();
 	e = gfarm_cache_host_info_get_allhost_by_architecture(
 		arch, &np, &hosts);
@@ -762,8 +733,7 @@ agent_server_file_section_info_get(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_info_get(path, section, &info);
 	agent_unlock();
@@ -798,8 +768,7 @@ agent_server_file_section_info_set(struct xxx_connection *client)
 		error_proto(diag, e_rpc);
 		goto free_path;
 	}
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_info_set(path, section, &info);
 	agent_unlock();
@@ -830,8 +799,7 @@ agent_server_file_section_info_replace(struct xxx_connection *client)
 		error_proto(diag, e_rpc);
 		goto free_path;
 	}
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_info_replace(path, section, &info);
 	agent_unlock();
@@ -856,8 +824,7 @@ agent_server_file_section_info_remove(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_info_remove(path, section);
 	agent_unlock();
@@ -882,8 +849,7 @@ agent_server_file_section_info_get_all_by_file(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_info_get_all_by_file(path, &np, &infos);
 	agent_unlock();
@@ -921,8 +887,7 @@ agent_server_file_section_copy_info_get(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_get(path, section, host, &info);
 	agent_unlock();
@@ -955,8 +920,7 @@ agent_server_file_section_copy_info_set(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_set(path, section, host, &info);
 	agent_unlock();
@@ -982,8 +946,7 @@ agent_server_file_section_copy_info_remove(struct xxx_connection *client)
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_remove(path, section, host);
 	agent_unlock();
@@ -1011,8 +974,7 @@ agent_server_file_section_copy_info_get_all_by_file(
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_get_all_by_file(
 		path, &np, &infos);
@@ -1051,8 +1013,7 @@ agent_server_file_section_copy_info_get_all_by_section(
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, path);
+	log_proto(diag, path);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_get_all_by_section(
 		path, section, &np, &infos);
@@ -1091,8 +1052,7 @@ agent_server_file_section_copy_info_get_all_by_host(
 	if (e_rpc != NULL)
 		return (e_rpc);
 
-	if (debug_mode)
-		log_proto(diag, host);
+	log_proto(diag, host);
 	agent_lock();
 	e = gfarm_metadb_file_section_copy_info_get_all_by_host(
 		host, &np, &infos);
@@ -1162,6 +1122,8 @@ server(void *arg)
 			return (NULL);
 		}
 	}
+	if (syslog_level != -1) /* gfarm_initialize() may change log level */
+		gflog_set_priority_level(syslog_level);
 	agent_unlock();
 
 	e = xxx_socket_connection_new(client_fd, &client);
@@ -1512,6 +1474,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-S <syslog-facility>\n");
 	fprintf(stderr, "\t-c\t\tGenerate C-shell commands\n");
@@ -1540,13 +1503,15 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "cdf:mp:P:sS:v")) != -1) {
+	while ((ch = getopt(argc, argv, "cdf:L:mp:P:sS:v")) != -1) {
 		switch (ch) {
 		case 'c':
 			shell_type = C_SHELL_LIKE;
 			break;
 		case 'd':
 			debug_mode = 1;
+			if (syslog_level == -1)
+				syslog_level = LOG_DEBUG;
 			break;
 		case 'f':
 			config_file = optarg;
@@ -1557,6 +1522,12 @@ main(int argc, char **argv)
 		case 'p':
 			agent_port = strtol(optarg, NULL, 0);
 			gfarm_agent_type_set(INET);
+			break;
+		case 'L':
+			syslog_level = gflog_syslog_name_to_priority(optarg);
+			if (syslog_level == -1)
+				gflog_fatal("-L %s: invalid syslog priority", 
+				    optarg);
 			break;
 		case 'P':
 			pid_file = optarg;
@@ -1598,6 +1569,8 @@ main(int argc, char **argv)
 	e = gfarm_initialize(NULL, NULL);
 	if (e != NULL)
 		(void)gfarm_terminate();
+	if (syslog_level != -1) /* gfarm_initialize() may change log level */
+		gflog_set_priority_level(syslog_level);
 
 	/* default is UNIX_DOMAIN */
 	gfarm_agent_type_set(UNIX_DOMAIN);

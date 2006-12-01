@@ -387,6 +387,7 @@ enum gfarm_metadb_backend_type {
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define MISC_DEFAULT -1
+int gfarm_log_level = MISC_DEFAULT;
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
@@ -1058,6 +1059,25 @@ parse_set_func(char *p, char *(*set)(char *))
 }
 
 static char *
+parse_log_level(char *p, int *vp)
+{
+	char *e, *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != NULL)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (NULL);
+	v = gflog_syslog_name_to_priority(s);
+	if (v == -1)
+		return ("invalid syslog priority level");
+	*vp = v;
+	return (NULL);
+}
+
+static char *
 parse_one_line(char *s, char *p, char **op,
 	enum gfarm_metadb_backend_type *metadb_typep)
 {
@@ -1180,6 +1200,8 @@ parse_one_line(char *s, char *p, char **op,
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
 
+	} else if (strcmp(s, o = "log_level") == 0) {
+		e = parse_log_level(p, &gfarm_log_level);
 	} else if (strcmp(s, o = "dir_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_dir_cache_timeout);
 	} else if (strcmp(s, o = "host_cache_timeout") == 0) {
@@ -1383,6 +1405,10 @@ gfarm_config_set_default_spool_on_server(void)
 static void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_log_level == MISC_DEFAULT)
+		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+	gflog_set_priority_level(gfarm_log_level);
+
 	if (gfarm_dir_cache_timeout == MISC_DEFAULT)
 		gfarm_dir_cache_timeout = GFARM_DIR_CACHE_TIMEOUT_DEFAULT;
 	if (gfarm_host_cache_timeout == MISC_DEFAULT)

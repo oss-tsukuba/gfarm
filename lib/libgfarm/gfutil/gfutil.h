@@ -20,6 +20,10 @@ void gfarm_unlimit_nofiles(int *);
 #define GFARM_DEFAULT_FACILITY	LOG_LOCAL0
 #endif
 
+#ifndef GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG
+#define GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG	LOG_INFO
+#endif
+
 #ifdef __GNUC__
 #define GFLOG_PRINTF_ARG(M, N)	__attribute__((__format__(__printf__, M, N)))
 #else
@@ -40,13 +44,16 @@ void gflog_warning_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 void gflog_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 void gflog_fatal_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 
+void gflog_set_priority_level(int);
 void gflog_set_identifier(char *);
 void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int); 
 int gflog_syslog_enabled(void);
 
-int gflog_syslog_name_to_facility(char *);
+int gflog_syslog_name_to_facility(const char *);
+int gflog_syslog_name_to_priority(const char *);
+
 
 /* logutil - gflog_auth_*() */
 

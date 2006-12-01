@@ -2,7 +2,7 @@
 
 <refentry id='gfarm_agent.1'>
 
-<refentryinfo><date>7 Jun 2006</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_agent</refentrytitle>
@@ -39,8 +39,21 @@ Gfarm ファイルシステムに対するレスポンスを大幅に改善します。
 および Gfarm メタデータサーバ間の一貫性は保証されます。
 </para>
 
+</refsect1>
+
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
+<varlistentry>
+<term><option>-L</option> <parameter>ログレベル</parameter></term>
+<listitem>
+<para>
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
@@ -63,6 +76,10 @@ syslog のファシリティを指定します。
 <listitem>
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</para>
+<para>
+このオプションを指定し、かつ <option>-L</option> オプションを指定しなかった
+場合、ログレベルは debug となります。
+</para>
 </listitem>
 </varlistentry>
 

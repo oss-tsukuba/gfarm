@@ -204,8 +204,7 @@ gfs_server_get_request(struct xxx_connection *client, char *diag,
 	char *e;
 	int eof;
 
-	if (debug_mode)
-		gflog_notice("request: %s", diag);
+	gflog_debug("request: %s", diag);
 
 	va_start(ap, format);
 	e = xxx_proto_vrecv(client, 0, &eof, &format, &ap);
@@ -225,9 +224,8 @@ gfs_server_put_reply_common(struct xxx_connection *client, char *diag,
 {
 	char *e;
 
-	if (debug_mode)
-		gflog_notice("reply: %s (%d): %s", diag, ecode,
-			     gfs_proto_error_string(ecode));
+	gflog_debug("reply: %s (%d): %s", diag, ecode,
+	     gfs_proto_error_string(ecode));
 
 	e = xxx_proto_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != NULL)
@@ -2655,6 +2653,7 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-U\t\t\t\t... don't bind UNIX domain socket\n");
 	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
@@ -2675,6 +2674,7 @@ main(int argc, char **argv)
 	char *e, *config_file = NULL;
 	char *listen_addrname = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
+	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	struct in_addr *self_addresses, listen_address;
 	int table_size, self_addresses_count, bind_unix_domain = 1;
@@ -2687,8 +2687,14 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:Udf:l:p:r:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:Udf:l:p:r:s:uv")) != -1) {
 		switch (ch) {
+		case 'L':
+			syslog_level = gflog_syslog_name_to_priority(optarg);
+			if (syslog_level == -1)
+				gflog_fatal("-L %s: invalid syslog priority", 
+				    optarg);
+			break;
 		case 'P':
 			pid_file = optarg;
 			break;
@@ -2697,6 +2703,8 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			debug_mode = 1;
+			if (syslog_level == -1)
+				syslog_level = LOG_DEBUG;
 			break;
 		case 'f':
 			config_file = optarg;
@@ -2741,6 +2749,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "gfarm_server_initialize: %s\n", e);
 		exit(1);
 	}
+	if (syslog_level != -1)
+		gflog_set_priority_level(syslog_level);
 	/* sanity check on a spool directory */
 	if (stat(gfarm_spool_root, &sb) == -1)
 		gflog_fatal_errno(gfarm_spool_root);
