@@ -69,8 +69,10 @@ FUNC___OPEN(const char *path, int oflag, ...)
 		e = gfs_opendir(url, &dir);
 		if (e == NULL) {
 			filedes = gfs_hook_insert_gfs_dir(dir, url);
-			if (filedes == -1)
+			if (filedes == -1) {
 				errno_save = errno;
+				gfs_closedir(dir);
+			}
 			_gfs_hook_debug(
 				gflog_info("GFS: Hooking "
 				    S(FUNC___OPEN) " --> %d", filedes);
