@@ -45,7 +45,7 @@ gfs_pio_view_section_try_to_switch_replica(GFS_File gf)
 	char *e;
 	struct gfs_file_section_context nvc, *ovc = gf->view_context;
 
-	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0 ||
+	if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) != 0 ||
 	    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
 	    (gf->open_flags & GFARM_FILE_TRUNC) != 0)
 		return ("cannot switch to another replica");
@@ -555,7 +555,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto finish;
 		} else if (e != NULL)
 			goto finish;
-		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
+		if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) ||
 		    (((gf->open_flags & GFARM_FILE_CREATE) ||
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
@@ -571,7 +571,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			goto free_host;
 		} else if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
-	} else if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) ||
+	} else if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) ||
 		   (((gf->open_flags & GFARM_FILE_CREATE) ||
 		     (gf->mode & GFS_FILE_MODE_WRITE)) &&
 		     !gfarm_file_section_info_does_exist(
@@ -692,7 +692,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		goto free_digest;
 
 	/* update metadata */
-	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0) {
+	if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) != 0) {
 		e = gfs_set_path_info(gf);
 		if (e != NULL)
 			goto storage_close;
@@ -704,7 +704,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 		 * delete every other file copies
 		 */
 		(void)gfs_pio_view_section_set_busy(gf);
-		if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0)
+		if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) == 0)
 			(void)gfs_unlink_every_other_replicas(
 				gf->pi.pathname, vc->section,
 				vc->canonical_hostname);
@@ -769,7 +769,7 @@ gfs_pio_set_view_index(GFS_File gf, int nfragments, int fragment_index,
 		}
 	} else {
 		if ((gf->mode & GFS_FILE_MODE_NSEGMENTS_FIXED) == 0) {
-			if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) == 0 &&
+			if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) == 0 &&
 			    gf->pi.status.st_nsections > nfragments) {
 				/* GFARM_FILE_TRUNC case */
 				int i;

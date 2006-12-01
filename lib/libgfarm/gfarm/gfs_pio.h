@@ -37,7 +37,7 @@ struct gfs_file {
 #define GFS_FILE_MODE_NSEGMENTS_FIXED	0x01000000
 #define GFS_FILE_MODE_CALC_DIGEST	0x02000000 /* keep updating md_ctx */
 #define GFS_FILE_MODE_UPDATE_METADATA	0x04000000 /* need to update */
-#define GFS_FILE_MODE_FILE_CREATED	0x08000000 /* path_info created */
+#define GFS_FILE_MODE_FILE_WAS_CREATED	0x08000000 /* path_info created */
 #define GFS_FILE_MODE_BUFFER_DIRTY	0x40000000
 
 	/* remember parameter of open/set_view */

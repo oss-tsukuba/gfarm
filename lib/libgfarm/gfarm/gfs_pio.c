@@ -266,7 +266,7 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		gf->pi.status.st_ctimespec.tv_nsec = now.tv_usec * 1000;
 		gf->pi.status.st_size = 0;
 		gf->pi.status.st_nsections = 0;
-		gf->mode |= GFS_FILE_MODE_FILE_CREATED;
+		gf->mode |= GFS_FILE_MODE_FILE_WAS_CREATED;
 	}
 	*gfp = gf;
 

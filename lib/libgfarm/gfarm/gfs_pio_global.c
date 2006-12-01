@@ -346,7 +346,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (e);
 	}
 
-	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0)
+	if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) != 0)
 		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
 
 	if (gf->open_flags & GFARM_FILE_TRUNC) {
