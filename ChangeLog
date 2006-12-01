@@ -1,3 +1,1991 @@
+2006-11-13  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.ja: fix te-ni-wo-ha
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	describe more detailed condtion of the nss_ldap problem:
+	system-supplied pthread library is the cause.
+
+2006-11-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	clarify the nss_ldap problem,
+	from [gfarm-developers:02236] and [gfarm-developers:02238]
+
+	* INSTALL.en, INSTALL.ja:
+	describe conflicts between OpenLDAP and Globus on FreeBSD,
+	as reported in [gfarm-developers:02236]
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	add limitations found in [gfarm-developers:02231]
+
+	* doc/README.hook.en: recover changes which were lost in revision 1.48
+
+	* man/ja/man1/gfrun.1, man/man1/gfrun.1, doc/html/en/ref/man1/gfrun.1.html, doc/html/ja/ref/man1/gfrun.1.html:
+	regen
+
+2006-11-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/KNOWN_PROBLEMS.en, doc/README.hook.en, doc/SETUP.detail.en:
+	change `file system' to `filesystem' for uniformity
+
+2006-11-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook:
+	add the answer for question 2) which was asked in the recent Gfarm seminar.
+	from [gfarm-developers:02122]
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	add answers for question 1) and 6) which were asked in the recent Gfarm seminar
+
+2006-11-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/Gfarm-FAQ.en, doc/KNOWN_PROBLEMS.en, doc/README.hook.en, doc/SETUP.detail.en:
+	correct errors pointed out in native checked file "doc-RewrittenNov06.doc"
+	attached to [gfarm-developers:02171]
+
+	* INSTALL.RPM.en, OVERVIEW.en, SETUP.en:
+	change `file system' to `filesystem' for uniformity
+
+	* doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfdf.1.html, doc/html/en/ref/man1/gfexec.1.html, doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man1/gfkey.1.html, doc/html/en/ref/man1/gfps.1.html, doc/html/en/ref/man1/gfrcmd.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfrm.1.html, doc/html/en/ref/man1/gfront.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man1/gfsched.1.html, doc/html/en/ref/man1/gfstat.1.html, doc/html/en/ref/man1/gfusage.1.html, doc/html/en/ref/man1/gfwhere.1.html, doc/html/en/ref/man1/gfwhoami.1.html, doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/en/ref/man3/gfs_mkdir.3.html, doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/en/ref/man3/gfs_realpath.3.html, doc/html/en/ref/man3/gfs_rename.3.html, doc/html/en/ref/man3/gfs_rmdir.3.html, doc/html/en/ref/man3/gfs_unlink.3.html, doc/html/en/ref/man3/gfs_unlink_section.3.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, man/man1/gfarm_agent.1, man/man1/gfdf.1, man/man1/gfexec.1, man/man1/gfhost.1, man/man1/gfkey.1, man/man1/gfps.1, man/man1/gfrcmd.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfront.1, man/man1/gfrun.1, man/man1/gfsched.1, man/man1/gfstat.1, man/man1/gfusage.1, man/man1/gfwhere.1, man/man1/gfwhoami.1, man/man3/gfs_chmod.3, man/man3/gfs_mkdir.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3, man/man3/gfs_realpath.3, man/man3/gfs_rename.3, man/man3/gfs_rmdir.3, man/man3/gfs_unlink.3, man/man3/gfs_unlink_section.3, man/man5/gfarm.conf.5, man/man8/gfmd.8, man/man8/gfsd.8:
+	regen
+
+	* doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfexec.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfront.1.docbook, doc/docbook/en/ref/man1/gfstat.1.docbook, doc/docbook/en/ref/man3/gfs_chmod.3.docbook, doc/docbook/en/ref/man3/gfs_chown.3.docbook, doc/docbook/en/ref/man3/gfs_mkdir.3.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/en/ref/man3/gfs_realpath.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook, doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/en/ref/man3/gfs_unlink.3.docbook, doc/docbook/en/ref/man3/gfs_unlink_section.3.docbook:
+	change `file system' to `filesystem' for uniformity
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	make corrections missed in previous 2 revisions
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	make corrections missed in previous revision
+
+2006-11-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/freebsd/Makefile:
+	add "--without-openldap", if WITH_GLOBUS is specified.
+	Without this fix, gfarm binaries dump core, when GSI is used.
+
+2006-11-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/docbook/en/ref/man8/gfsd.8.docbook:
+	make corrections missed in previous revision
+
+	* doc/docbook/en/ref/man1/gfrun.1.docbook:
+	make a correction missed in previous revision
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man1/gfhost.1.docbook:
+	make corrections missed in previous revision
+
+	* doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfstat.1.docbook, doc/docbook/en/ref/man1/gfusage.1.docbook, doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/en/ref/man1/gfwhoami.1.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/en/ref/man1/gfps.1.docbook, doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook:
+	correct errors pointed out in native checked file "manRewrittenNov06.doc"
+	attached to [gfarm-developers:02194]
+
+2006-11-12  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES: add the bugzilla number
+
+2006-11-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/en/ref/man1/gfexec.1.docbook:
+	update modified date
+
+	* doc/docbook/en/ref/man1/gfkey.1.docbook:
+	correct errors pointed out in native checked file "manRewrittenNov06.doc"
+	attached to [gfarm-developers:02194]
+
+	* doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfdf.1.docbook, doc/docbook/en/ref/man1/gfexec.1.docbook, doc/docbook/en/ref/man1/gfhost.1.docbook:
+	correct errors pointed out in native checked file "manRewrittenNov06.doc" attached to [gfarm-developers:02194]
+
+2006-11-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/README.ja:
+	more more tips: how to check a test case with all configurations
+
+	* regress/Makefile:
+	record testing mode to "log" file and stderr, instead of stdout
+
+2006-11-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/Makefile, regress/README.ja, regress/config.sh:
+	test gfarm_agent and gsi/gsi_auth authentication
+
+	* regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c:
+	fix portability problem on Solaris
+
+	* regress/Makefile, regress/README.ja:
+	add "make xfail-check" target to see test cases which return "expected failure"
+	($exit_xfail), but the rationale isn't documented in file XFAIL.
+
+	* regress/XFAIL: record expected failures ($exit_xfail) here
+
+	* regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/gzip/gzip-d.sh, regress/gfs_hook/tool/pax/pax-r.sh, regress/gfs_hook/tool/touch/touch_time.sh:
+	change the exit code to "expected failure" ($exit_xfail) for test cases
+	which have documented known problems.
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	note "Bad file descriptor" problem of dd(1) command on Fedora Core 5.
+	The cause of this haven't been investigated yet.
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	note that pthread programs and using syscalls from async-signal-handlers
+	aren't guaranteed to work with gfs_hook.
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	clarify touch(2)/futimes(3) problem which occurs on Fedora Core 5
+
+2006-11-11  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES: fix a typo
+
+2006-11-11  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* RELNOTES: delete unnecessary items.
+	improve wording.
+
+2006-11-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	correct errors pointed out in native checked file "manRewrittenNov06.doc"
+
+	* SETUP.en: typo
+
+	* INSTALL.RPM.en, INSTALL.en, OVERVIEW.en, README.en, SETUP.en:
+	correct errors pointed out in native checked file "GfarmRewrittenNov06.doc"
+
+2006-11-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/solaris/build: postgresql: 8.1.3 -> 8.1.5
+	openldap: 2.3.20 -> 2.3.28
+	openssl: 0.9.7i -> 0.9.8d
+
+	* package/solaris/build:
+	reflect cc and gcc versions of new build machine
+
+	* package/solaris/build: globus is updated from gt-2.4.3 to gt-4.0.3
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	note that touch(1) command and futimes(3) function don't work since glibc-2.3.3.
+
+	* lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c:
+	preserve `errno', if the system call succeeded.
+	this change makes mkdir(1) and rmdir(1) return correct exit code on Solaris.
+
+	* lib/libgfarm/gfarm/schedule.h, include/gfarm/gfarm_misc.h:
+	export *_to_write() version of scheduling functions to users,
+	because gfarm_schedule_search_idle_acyclic_by_domainname_to_write() is
+	necessary for GfarmFS-FUSE.
+
+2006-11-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, man/man1/gfhost.1, man/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook:
+	correct serious errors intdicated by red-letter in native checked file
+	"manRewritten Nov06.doc"
+
+	* doc/KNOWN_PROBLEMS.en, doc/README.hook.en, doc/SETUP.detail.en:
+	correct according to comments in [gfarm-developers:02197] by Tanaka Yoshio san
+
+	* doc/Gfarm-FAQ.en, doc/KNOWN_PROBLEMS.en, doc/README.hook.en, doc/SETUP.detail.en:
+	correct serious errors intdicated by red-letter in native checked file
+	doc-RewrittenNov06.doc
+
+	* INSTALL.en, OVERVIEW.en, SETUP.en:
+	correct serious errors intdicated by red-letter in native checked file
+	GfarmRewrittenNov06.doc
+
+2006-11-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* INSTALL.en: fix a typo
+
+	* doc/KNOWN_PROBLEMS.ja: wording
+
+2006-11-08  Yusuke Tanimura  <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES: Draft release-notes
+
+2006-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* makes/install-doc.in:
+	create temporary file in /tmp, instead of current directory,
+	because current directory may not be writable by root
+	(e.g. in case of NFS home).
+	problem reported by Yamamoto-san in [gfarm-developers:02169]
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	gfs_fstat(): make this return st_atime and st_mtime in GFS_File
+	instead of actual file.  This is at least consistent with what
+	we are doing now in gfs_pio_close().  Although it is possible
+	that the actual file has newer information, e.g. when it was
+	modified by another process.
+
+	* lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/hostcache.c:
+	forgot to change this in previous revision.
+
+	* lib/libgfarm/gfarm/metadb_localfs.c:
+	there is no reason to provide two different implementations of
+	host_info_free routines any more.
+
+	* lib/libgfarm/gfarm/metadb_sw.c:
+	forgot to change this in previous revision.
+
+	* lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/metadb_access.h, lib/libgfarm/gfarm/metadb_sw.c:
+	there is no reason to provide two different implementations of
+	host_info_free routines any more.
+
+	* lib/libgfarm/gfarm/metadb_sw.c:
+	backout previous change, gfarm_strarray_free() must be called even if
+	info->nhostaliases == 0, because info->hostaliases itself needs to be freed.
+
+2006-11-07  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/agent_proto.c:
+	fix memory leak, which is introduced by the revision 1.11 of metadb_sw.c
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
+2006-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	specify not only version number, but also revision number in "Provides:"
+
+	* package/solaris/build, package/freebsd/Makefile, package/pkgsrc/Makefile, package/redhat/gfarm.spec:
+	bump the version number from 1.3.1 to 1.4
+
+	* package/redhat/gfarm.spec: fix syntax error in previous change
+
+2006-11-07  Naotaka Yamamoto  <naotaka@ni.aist.go.jp>
+
+	* debian/changelog: version 1.4
+
+2006-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	- provide "gfarm-libs" and "gfarm-client" as virtual packages even in GSI case.
+	  To use same GfarmFS-FUSE binary package for both GSI and non-GSI version.
+	- strictly specify version number of gfarm-libs subpackage that
+	  all other gfarm sub-packages depend on.
+	  This should fix a problem that gfarm-libs wasn't automatically updated
+	  when gfarm-clients was manually updated to newer version.
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h:
+	- fix st_atime/st_mtime update.
+	  now they are updated only when the file is actually read/written.
+	- support "record_atime disable" directive in gfarm.conf
+	  and gfarm_set_record_atime(0) API, as equivalents to
+	  "noatime" mount option of usual filesystems.
+
+	* regress/gfs_hook/tool/touch/touch_time.sh, regress/schedule:
+	gfs_hook/tool/touch/touch_time.sh:
+	test script to see whether "touch" can change file-modified-time or cannot.
+
+2006-11-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfrep/gfrep-d_dir.sh
+
+	* regress/gftool/gfrep/gfrep-d_dir.sh:
+	test script for "gfrep -d <destination-node>> <gfarm-URL(directory)>"
+
+2006-11-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_section.c:
+	rename GFS_FILE_MODE_FILE_CREATED to GFS_FILE_MODE_FILE_WAS_CREATED
+
+	* man/man8/gfmd.8, man/man8/gfsd.8, man/ja/man1/gfarm_agent.1, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man1/gfarm_agent.1, man/man5/gfarm.conf.5:
+	regen
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	revert changes in revision 1.21, 1.23 and 1.24.
+	Since gfarm_cache_host_info_*() functions now returns malloc()ed memory,
+	we don't need to differentiate between host_info from gfarm_agent and
+	host_info from local cache.
+
+	* lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/metadb_sw.c:
+	merge the following change in the sourceforge subversion repository:
+	Revision: 3215
+	          http://svn.sourceforge.net/gfarm/?rev=3215&view=rev
+	Author:   tatebe
+	Date:     2006-11-03 12:47:30 -0800 (Fri, 03 Nov 2006)
+
+	allocate memory for a returned entry in gfarm_cache_host_info_get{,_get_name_alias}() and gfarm_cache_host_info_get_all() to make consistent with API for metadb.
+
+	* gftool/gfrep/gfrep.c:
+	make stderr line-buffering, to make writing-to-stderr atomic
+	for GfarmFS-FUSE log output.
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	add a comment to describe why gfarm_agent doesn't call exit(2),
+	when gfarm_initialize() fails.
+	the reason was heard from tatebe-san.
+
+	* doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html:
+	regen
+
+	* doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook:
+	fix a syntax error which existed for a while
+
+	* doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook:
+	correct syntax errors
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/logutil.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook, gftool/gfarm_agent/gfarm_agent.c:
+	introduce "log_level" directive to gfarm.conf(5)
+	and "-L <log_level>" option to gfarm_agent, gfsd and gfmd.
+	Logs, which are inferier to this priority, won't be sent to syslog
+	or standard error.
+
+2006-11-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h:
+	when a connection error is observed, always remove the host from
+	available hosts (i.e. hosts that authentication succeeded).
+	so the host won't be choosen from cached available hosts at next scheduling.
+
+	* include/gfarm/gfs.h:
+	change the type of gfs_stat:st_ino from "long" to "unsigned long",
+	to avoid mistakes like described in [gfarm-developers:01896].
+	this shouldn't really break ABI, since its size is same.
+
+	* server/gfsd/gfsd.c:
+	SIGCHLD handler should preserve errno, otherwise select(2) and
+	other system calls may see ECHILD or other errors from waitpid(2).
+	problem pointed out by tatebe-san.
+
+2006-11-04  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* server/gfsd/gfsd.c:
+	add sanity check on a spool directory. [Bugzilla-ja #73]
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c: fix the previous change.
+
+2006-11-03  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global.c:
+	allow fchmod in global mode when permitted
+
+	* doc/html/en/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrm.1.html, man/ja/man1/gfrm.1, man/man1/gfrm.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook:
+	update description for new -D, -H, -N and -j options
+
+2006-11-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	- update a comment to reflect reality
+	- rename a variable
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	merge the following change in revision 1.23 from the main trunk:
+
+	revise revision 1.21.
+	- if host_info isn't acquired via hostcache, keep trying to use gfarm_agent,
+	  as suggested by Ishibashi-san in [gfarm-developers:02100].
+	- if both hostcache and gfarm_agent are used to acquire host_info,
+	  never call the host_info freeing functions, because we don't know
+	  which way is used to acquire each host_info.
+	  XXX this may cause memory leak, but we have no choice for now.
+
+	* lib/libgfarm/gfarm/agent_wrap.c: revise revision 1.21.
+	- if host_info isn't acquired via hostcache, keep trying to use gfarm_agent,
+	  as suggested by Ishibashi-san in [gfarm-developers:02100].
+	- if both hostcache and gfarm_agent are used to acquire host_info,
+	  never call the host_info freeing functions, because we don't know
+	  which way is used to acquire each host_info.
+	  XXX this may cause memory leak, but we have no choice for now.
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	do not log "file_section_copy_info_set: already exists",
+	reported by Ishibashi-san in [gfarm-developers:02066]
+
+2006-11-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfrep/gfrep-D_dir.sh
+	    gftool/gfrep/gfrep-N2_dir.sh
+
+	* regress/gftool/gfrep/gfrep-N2_dir.sh:
+	test script for "gfrep -N <num-of-replicas> <gfarm-URL(directory)>"
+
+	* regress/gftool/gfrep/gfrep-D_dir.sh:
+	test script for "gfrep -D <destination-domainname>> <gfarm-URL(directory)>"
+
+	* regress/gftool/gfrep/gfrep-H.sh:
+	test script for "gfrep -H <hostfile> <gfarm-URL>"
+
+	* regress/schedule: add gftool/gfrep/gfrep-H.sh
+
+2006-10-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfreg/gfreg-r_dir_to_new_url.sh
+	    gftool/gfreg/gfreg-r_program_to_new_url.sh
+	    gftool/gfreg/gfreg-r_file_to_new_url.sh
+
+	* lib/libgfarm/gfarm/path_info_cache.c:
+	stop warning about unused variable
+
+2006-10-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/config.sh:
+	do not use ephemeral port range (*) for daily test.
+	this should fix the test failure in [gfarm-cvs:09151],
+	caused by "bind: Address already in use".
+
+	(*)
+	  old BSDs		1025 ... 5000
+	  Linux until 2.2	1024 ... 4999
+	  Linux since 2.4	32768 ... 61000
+	  NetBSD & FreeBSD	49152 ... 65535
+
+2006-10-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfreg/gfreg-r_program_to_new_url.sh:
+	test script for "gfreg -r <program> <gfarm-URL(does not exist)>"
+
+	* regress/gftool/gfreg/gfreg-r_file_to_new_url.sh:
+	test script for "gfreg -r <localfile> <gfarm-URL(does not exist)>"
+
+	* regress/gftool/gfreg/gfreg-r_file_to_dir_not_exist.sh:
+	rename to gfreg-r_file_to_new_url.sh
+
+	* regress/gftool/gfreg/gfreg-r_dir_to_new_url.sh:
+	test script for "gfreg -r <directory> <gfarm-URL(does not exist)>"
+
+	* regress/gftool/gfreg/gfreg-r_dir_to_dir_not_exist.sh:
+	rename to gfreg-r_dir_to_new_url.sh
+
+	* regress/gftool/gfreg/gfreg-r_file_to_dir_not_exist.sh:
+	test script for "gfreg -r <localfile> <gfarm-URL(does not exist)>"
+
+	* regress/gftool/gfreg/gfreg-r_dir_to_dir_not_exist.sh:
+	test script for "gfreg -r <directory> <gfarm-URL(does not exist)>"
+
+	* gftool/gfreg/gfreg.c:
+	check_arguments(): fix a bug in recursive mode that a new directory cannot be
+	registered as new gfarm-URL
+
+2006-10-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrm/Makefile: $(openssl_includes) is needed.
+
+	* lib/libgfarm/gfarm/path_info_cache.c:
+	revise previous revision (it was wrong).
+
+	* lib/libgfarm/gfarm/path_info_cache.c:
+	check_update_time_interval(): change "while" to "if" to fix
+	warning: "end-of-loop code not reached" from Sun Forte C Compiler.
+
+2006-10-30  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfreg/gfreg-D.sh:
+	forgot to remove temprary file if this script exits in the middle
+
+	* regress/gftool/gfrep/gfrep-D.sh:
+	forgot to remove temprary file if exits in the middle of this script
+
+	* regress/gftool/gfrep/gfrep-D.sh: fix a typo
+
+2006-10-27  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfrm/gfrm-r_file.sh
+	    gftool/gfrm/gfrm-r_dir.sh
+
+	* regress/gftool/gfrm/gfrm-r.sh, regress/gftool/gfrm/gfrm-r_dir.sh, regress/gftool/gfrm/gfrm-r_file.sh:
+	test script for "gfrm -r <gfarm-URL>"
+
+	* regress/gftool/gfrep/gfrep-d.sh, regress/gftool/gfrep/gfrep-D.sh:
+	remove the selection of awk because it is already selected in regress.conf
+
+2006-10-26  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* bench/fsysbench/fsysbench.c:
+	use creat(2) instead of mknod(2). (for FUSE 2.2)
+
+2006-10-26  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfreg/gfreg-N-I.sh:
+	correct condition that fails in case that fragments are registerd on 2 hosts
+
+	* regress/schedule: add gftool/gfrep/gfrep-D.sh
+
+2006-10-26  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* README.en, SETUP.en: typo
+
+	* INSTALL.RPM.en, INSTALL.RPM.ja:
+	add a note regarding the package name.
+
+2006-10-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* OVERVIEW.en, OVERVIEW.ja: add overview of authentication methods
+
+	* SETUP.en, SETUP.ja: mention -a option of config-gfarm command,
+	add some description about firewall settings.
+
+2006-10-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* OVERVIEW.ja, SETUP.ja, doc/SETUP.detail.ja:
+	convert character code from ISO-2022-JP to EUC-JP like other documents
+
+	* package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, README.en, README.ja, doc/Makefile:
+	oops, KNOWN_PROBLEMS.en and KNOWN_PROBLEMS.ja had been forgotten.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	use "gfarm version 2" instead of "next major release",
+	pointed out by Yamamoto-san in [gfarm-developers:01940]
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	mention GfarmFS-FUSE as well as the syscall hook library,
+	about a substitute for gfmv.
+	pointed out by Yamamoto-san in [gfarm-developers:01940]
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	Change the following explanation
+		It's not decided whether we will fix this problem in the gfarm
+		v1 branch or not.
+	to
+		Currently, there is no plan to fix this problem in the gfarm v1
+		branch.
+	pointed out by Yamamoto-san in [gfarm-developers:01940]
+
+	* doc/README.hook.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja, doc/README.hook.en:
+	describe the nss_ldap problem on Fedora Core 3 and 5.
+
+	* OVERVIEW.en, OVERVIEW.ja, SETUP.en, SETUP.ja:
+	apply comments in [gfarm-developers:01868] from grid-support team
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	add more description about trouble shooting of GSI authentication errors
+
+	* doc/Makefile, doc/SETUP.detail.en, doc/SETUP.detail.ja, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, OVERVIEW.en, OVERVIEW.ja, README.en, README.ja, SETUP.en, SETUP.ja:
+	restructure documents
+
+2006-10-25  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfrep/gfrep-D.sh:
+	test script for "gfrep -D <destination-domainname> <gfarm-URL>"
+
+2006-10-24  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	add 2.4 It is not possible to create a file replica by 'gfrep' command, due to "text file busy" error.
+	It is requested by [bugzilla-ja #60].
+
+2006-10-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/config-gfarm/config-gfarm.in:
+	do not display any error of stty at trap handler,
+	because stdin may not be a tty.
+
+	* regress/account.sh: correct summary message
+
+	* gftool/config-gfarm/gfarm.arch.guess: deal with CentOS:
+	convert "CentOS release 4.4 (Final)" in /etc/redhat-release
+	to something like "i386-centos4.4-linux"
+
+2006-10-24  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfreg/gfreg-D.sh
+	    gftool/gfreg/gfreg-a.sh
+	    gftool/gfreg/gfreg-N-I.sh
+	    gftool/gfreg/gfreg-r.sh
+
+	* regress/gftool/gfreg/gfreg-r.sh: remove a statement for debug
+
+	* regress/gftool/gfreg/gfreg-r.sh:
+	test script for "gfreg -r <directory> <gfarm-URL>"
+
+	* regress/gftool/gfreg/gfreg-a.sh:
+	test script for "gfreg -a <architecture> <program> <gfarm-URL>"
+
+	* regress/gftool/gfreg/gfreg-N-I.sh:
+	test script for "gfreg -N <total-num-of-fragments> -I <fragment-index>
+	<localfile> <gfarm_URL>"
+
+	* regress/gftool/gfreg/gfreg-H.sh, regress/gftool/gfreg/gfreg-D.sh:
+	change a temporary file's name to concise one
+
+2006-10-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/Makefile, regress/account.sh, regress/regress.conf, regress/regress.sh, regress/tst.sh:
+	print full total at the end of "make selfcheck",
+	instead of subtotals of each backend.
+
+2006-10-23  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfreg/gfreg-D.sh:
+	test script for "gfhost -D <domainname> <local file> <gfarm_URL>"
+
+	* regress/gftool/gfreg/gfreg-H.sh:
+	remove a needless temporay file from this script
+
+	* regress/gftool/gfreg/gfreg-H.sh: remove temporary files
+
+	* regress/schedule: add gftool/gfreg/gfreg-H.sh
+
+2006-10-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfwhere/gfwhere.c:
+	report error message in the recursive case too,
+	pointed out by tatebe-san
+
+	* lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_pio_section.c:
+	when a gfsd stops to work, retry other gfsd,
+	if the gfs_pio is read-only mode, and other replica is available.
+
+2006-10-21  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/gfarm_foreach.c: eliminate loop common expression
+	use GFARM_MALLOC_ARRAY
+
+2006-10-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfwhere/gfwhere.c:
+	fix the following problem (introduced in revision 1.13):
+	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=71
+		summary: gfwhere doesn't answer "no such object"
+
+	* lib/libgfarm/gfarm/gfarm_foreach.c:
+	gfarm_foreach_directory_hierarchy(): add "/" only if necessary
+
+2006-10-19  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfreg/gfreg-H.sh:
+	test script for "gfreg -H <hostfile> <localfile> <gfarm-URL>"
+
+	* regress/gftool/gfhost/display.sh: recover a commented out statement
+
+2006-10-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfhost/gfhost-l.sh
+	    gftool/gfls/gfls-l.sh
+	rename some scripts
+
+	* regress/gftool/gfls/gfls-l.sh: test script for "gfls -l <file>"
+
+	* regress/gftool/gfexport/gfexport.sh: remove a needless statement
+
+	* regress/gftool/gfimport_text/import_text-H_multilines.sh:
+	test script for "gfimport_text -H <hostfile> <input file>"
+	rename from -H_multilines.sh
+
+	* regress/gftool/gfimport_text/import_text-H_0byte.sh:
+	test script for "gfimport_text -H <hostfile> <input file>"
+	rename from -H_0byte.sh
+
+	* regress/gftool/gfhost/noopt.sh: add a comment
+
+	* regress/gftool/gfhost/gfhost-l.sh: test script for "gfhost -l"
+
+	* regress/gftool/gfhost/noopt.sh: use display.sh
+
+	* regress/gftool/gfhost/display.sh: modify noopt.sh for code_sharing
+
+	* regress/schedule: add gftool/gfimport_text/-H_0byte.sh
+	    gftool/gfimport_text/-H_multilines.sh
+
+	* regress/gftool/gfimport_text/-H_0byte.sh, regress/gftool/gfimport_text/-H_multilines.sh, regress/gftool/gfimport_text/gfimport_text-H.sh:
+	test script for "gfimport_text -H <hostfile> <input file>"
+
+2006-10-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_flush/normal.sh
+	    lib/libgfarm/gfarm/gfs_pio_sync/normal.sh
+	    lib/libgfarm/gfarm/gfs_pio_datasync/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_datasync/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_datasync/datasync.c, regress/lib/libgfarm/gfarm/gfs_pio_datasync/normal.sh:
+	build lib/libgfarm/gfarm/gfs_pio_datasync/datasync, and
+	test  lib/libgfarm/gfarm/gfs_pio_datasync/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_sync/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_sync/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_sync/sync.c:
+	build lib/libgfarm/gfarm/gfs_pio_sync/sync, and
+	test  lib/libgfarm/gfarm/gfs_pio_sync/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_flush/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_flush/flush.c, regress/lib/libgfarm/gfarm/gfs_pio_flush/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh:
+	build lib/libgfarm/gfarm/gfs_pio_flush/flush and
+	test  lib/libgfarm/gfarm/gfs_pio_flush/normal.sh
+
+2006-10-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh
+
+	* regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/Makefile, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/STRINGLIST_STRARRAY.c, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/STRINGLIST_STRARRAY.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh:
+	build lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/STRINGLIST_STRARRAY, and
+	test  lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh
+
+	* regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/Makefile, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/STRINGLIST_ELEM.c, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/STRINGLIST_ELEM.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh:
+	build lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/STRINGLIST_ELEM, and
+	test  lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/stringlist_cat.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/stringlist_cat.sh:
+	build lib/libgfarm/gfarm/gfarm_stringlist_cat/stringlist_cat, and
+	test  lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_glob_add/normal.sh:
+	remove a needless exit statement
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfarm_stringlist_lenght/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_length/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/stringlist_length.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/stringlist_length.sh:
+	build lib/libgfarm/gfarm/gfarm_stringlist_length/stringlist_length, and
+	test  lib/libgfarm/gfarm/gfarm_stringlist_length/normal.sh
+
+2006-10-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfarm_stringlist_init/normal.sh
+	    lib/libgfarm/gfarm/gfarm_stringlist_add/normal.sh
+	    lib/libgfarm/gfarm/gfarm_stringlist_elem/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/stringlist_elem.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/stringlist_elem.sh:
+	build lib/libgfarm/gfarm/gfarm_stringlist_elem/stringlist_elem, and
+	test  lib/libgfarm/gfarm/gfarm_stringlist_elem/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add.c:
+	fix an illegal index of array
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_add/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add.sh:
+	build lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add, and
+	test  lib/libgfarm/gfarm/gfarm_stringlist_add/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfarm_stringlist_init/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_init/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_init/stringlist_init.c:
+	build lib/libgfarm/gfarm/gfarm_stringlist_init/stringlist_init, and
+	test  lib/libgfarm/gfarm/gfarm_stringlist_init/normal.sh
+
+2006-10-12  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_rename/file_normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_rename/Makefile, regress/lib/libgfarm/gfarm/gfs_rename/file_normal.sh, regress/lib/libgfarm/gfarm/gfs_rename/rename.c, regress/lib/libgfarm/gfarm/gfs_rename/rename.sh:
+	build lib/libgfarm/gfarm/gfs_rename/rename.c, and
+	test  lib/libgfarm/gfarm/gfs_rename/file_normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_unlink/normal.sh
+	    lib/libgfarm/gfarm/gfs_unlink_section/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_unlink_section/Makefile, regress/lib/libgfarm/gfarm/gfs_unlink_section/normal.sh, regress/lib/libgfarm/gfarm/gfs_unlink_section/unlink_section.c, regress/lib/libgfarm/gfarm/gfs_unlink_section/unlink_section.sh:
+	build lib/libgfarm/gfarm/gfs_unlink_section/unlink_section, and
+	test  lib/libgfarm/gfarm/gfs_unlink_section/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_unlink/Makefile, regress/lib/libgfarm/gfarm/gfs_unlink/normal.sh, regress/lib/libgfarm/gfarm/gfs_unlink/unlink.c, regress/lib/libgfarm/gfarm/gfs_unlink/unlink.sh:
+	build lib/libgfarm/gfarm/gfs_unlink/unlink, and
+	test  lib/libgfarm/gfarm/gfs_unlink/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.c, regress/lib/libgfarm/gfarm/gfs_pio_puts/puts.c, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.c:
+	shut up a warning
+
+2006-10-11  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* gftool/gfusage/gfusage.c: add help message of -c option
+
+2006-10-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_mkdir/normal.sh
+	    lib/libgfarm/gfarm/gfs_rmdir/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_rmdir/Makefile, regress/lib/libgfarm/gfarm/gfs_rmdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_rmdir/rmdir.c, regress/lib/libgfarm/gfarm/gfs_rmdir/rmdir.sh:
+	build lib/libgfarm/gfarm/gfs_rmdir/rmdir, and
+	test  lib/libgfarm/gfarm/gfs_rmdir/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_mkdir/Makefile, regress/lib/libgfarm/gfarm/gfs_mkdir/mkdir.c, regress/lib/libgfarm/gfarm/gfs_mkdir/mkdir.sh, regress/lib/libgfarm/gfarm/gfs_mkdir/normal.sh:
+	build lib/libgfarm/gfarm/gfs_mkdir/mkdir, and
+	test  lib/libgfarm/gfarm/gfs_mkdir/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_utimes/set_current.sh
+	    lib/libgfarm/gfarm/gfs_utimes/specify_time.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_utimes/Makefile, regress/lib/libgfarm/gfarm/gfs_utimes/set_current.sh, regress/lib/libgfarm/gfarm/gfs_utimes/specify_time.sh, regress/lib/libgfarm/gfarm/gfs_utimes/utimes.c, regress/lib/libgfarm/gfarm/gfs_utimes/utimes.sh:
+	build lib/libgfarm/gfarm/gfs_utimes/utimes, and
+	test  lib/libgfarm/gfarm/gfs_utimes/{specify_time,set_current}.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_truncate/shorter.sh, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_getc.sh, regress/lib/libgfarm/gfarm/gfs_pio_write/normal.sh, regress/lib/libgfarm/gfarm/gfs_readdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_realpath/current.sh, regress/lib/libgfarm/gfarm/gfs_stat/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putc/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putline/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_puts/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_read/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/nop.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/not_eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_error/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_getc/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_gets/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/normal.sh, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh, regress/lib/libgfarm/gfarm/gfs_chdir/current.sh, regress/lib/libgfarm/gfarm/gfs_chdir/root.sh, regress/lib/libgfarm/gfarm/gfs_chmod/file_normal.sh, regress/lib/libgfarm/gfarm/gfs_closedir/current.sh, regress/lib/libgfarm/gfarm/gfs_glob_add/normal.sh, regress/lib/libgfarm/gfarm/gfs_opendir/current.sh, regress/lib/libgfarm/gfarm/gfs_opendir/root.sh, regress/lib/libgfarm/gfarm/gfs_pio_close/normal.sh:
+	correct command argument of trap
+
+	* regress/lib/libgfarm/gfarm/gfs_chmod/chmod.c: add gfs_stat_free()
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_create/normal.sh:
+	correct command argument of trap
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_chmod/file_normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_chmod/Makefile, regress/lib/libgfarm/gfarm/gfs_chmod/chmod.c, regress/lib/libgfarm/gfarm/gfs_chmod/chmod.sh, regress/lib/libgfarm/gfarm/gfs_chmod/file_normal.sh:
+	build lib/libgfarm/gfarm/gfs_chmod/chmod, and
+	test  lib/libgfarm/gfarm/gfs_glob/file_normal.sh
+
+2006-10-10  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* doc/html/en/user/nfs-gfarmfs.html, doc/html/ja/user/nfs-gfarmfs.html:
+	- mention write_local_priority of gfarm.conf
+	- mention README.NFS of FUSE
+
+2006-10-10  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_glob_add/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_glob_add/Makefile, regress/lib/libgfarm/gfarm/gfs_glob_add/glob_add.c, regress/lib/libgfarm/gfarm/gfs_glob_add/glob_add.sh, regress/lib/libgfarm/gfarm/gfs_glob_add/normal.sh:
+	build lib/libgfarm/gfarm/gfs_glob_add/glob_add, and
+	test  lib/libgfarm/gfarm/gfs_glob/normal.sh
+
+2006-10-06  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_glob_init/normal.sh
+	    lib/libgfarm/gfarm/gfs_glob/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_glob/Makefile, regress/lib/libgfarm/gfarm/gfs_glob/glob.c, regress/lib/libgfarm/gfarm/gfs_glob/glob.sh, regress/lib/libgfarm/gfarm/gfs_glob/normal.sh:
+	build lib/libgfarm/gfarm/gfs_glob/glob, and
+	test  lib/libgfarm/gfarm/gfs_glob/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_glob_init/Makefile, regress/lib/libgfarm/gfarm/gfs_glob_init/glob_init.c, regress/lib/libgfarm/gfarm/gfs_glob_init/glob_init.sh, regress/lib/libgfarm/gfarm/gfs_glob_init/normal.sh:
+	build lib/libgfarm/gfarm/gfs_glob_init/glog_init, and
+	test  lib/libgfarm/gfarm/gfs_glog_init/normal.sh
+
+2006-10-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention that the pthread_cancel() function doesn't always work correctly
+	on Linux.
+
+	* gftool/gfrm/gfrm.c:
+	<sys/socket.h> is necessary for socklen_t, since gfs_client.h refers this type.
+
+2006-10-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfrm/Makefile, gftool/gfrm/gfrm.c:
+	merge the following changes in sourceforge svn repository:
+
+2006-10-06  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_readdir/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_readdir/Makefile, regress/lib/libgfarm/gfarm/gfs_readdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_readdir/readdir.c, regress/lib/libgfarm/gfarm/gfs_readdir/readdir.sh:
+	build lib/libgfarm/gfarm/gfs_pio_readdir/readdir, and
+	test  lib/libgfarm/gfarm/gfs_pio_readdir/normal.sh
+
+2006-10-06  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfls/gfls.c:
+	forgot to call gfarm_terminate(), pointed out by tanimura-san
+
+	* lib/libgfarm/gfarm/gfs_client_apply.c:
+	back out previous change about potential race condition,
+	because metadata access is already fork(2)-safe in recent versions of gfarm.
+	pointed out by tatebe-san
+
+	* lib/libgfarm/gfarm/gfs_client_apply.c:
+	merge the following changes from the main trunk:
+
+	revision 1.3:
+	fix portability problem to FreeBSD 4.11
+
+	revision 1.4:
+	fix potential race condition in gfs_client_apply_all_hosts(),
+	metadata server might get confused due to simultaneous accesses from children.
+
+	revision 1.5:
+	add more comment
+
+	* lib/libgfarm/gfarm/gfs_client_apply.c: add more comment
+
+	* lib/libgfarm/gfarm/gfs_client_apply.c:
+	fix potential race condition in gfs_client_apply_all_hosts(),
+	metadata server might get confused due to simultaneous accesses from children.
+
+2006-10-05  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_closedir/current.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_closedir/Makefile, regress/lib/libgfarm/gfarm/gfs_closedir/closedir.c, regress/lib/libgfarm/gfarm/gfs_closedir/closedir.sh, regress/lib/libgfarm/gfarm/gfs_closedir/current.sh:
+	build lib/libgfarm/gfarm/gfs_closedir/closedir, and
+	test  lib/libgfarm/gfarm/gfs_closedir/current.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_opendir/current.sh
+	    lib/libgfarm/gfarm/gfs_opendir/root.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_opendir/Makefile, regress/lib/libgfarm/gfarm/gfs_opendir/current.sh, regress/lib/libgfarm/gfarm/gfs_opendir/opendir.c, regress/lib/libgfarm/gfarm/gfs_opendir/opendir.sh, regress/lib/libgfarm/gfarm/gfs_opendir/root.sh:
+	build lib/libgfarm/gfarm/gfs_opendir/opendir, and
+	test  lib/libgfarm/gfarm/gfs_opendir/{current,root}.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_realpath/current.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_realpath/Makefile, regress/lib/libgfarm/gfarm/gfs_realpath/current.sh, regress/lib/libgfarm/gfarm/gfs_realpath/realpath.c, regress/lib/libgfarm/gfarm/gfs_realpath/realpath.sh:
+	build lib/libgfarm/gfarm/gfs_realpath/realpath, and
+	test  lib/libgfarm/gfarm/gfs_realpath/current.sh
+
+2006-10-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_chdir/current.sh
+	    lib/libgfarm/gfarm/gfs_chdir/root.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_chdir/Makefile, regress/lib/libgfarm/gfarm/gfs_chdir/chdir.c, regress/lib/libgfarm/gfarm/gfs_chdir/chdir.sh, regress/lib/libgfarm/gfarm/gfs_chdir/current.sh, regress/lib/libgfarm/gfarm/gfs_chdir/root.sh:
+	build lib/libgfarm/gfarm/gfs_chdir_/chdir, and
+	test  lib/libgfarm/gfarm/gfs_chdir/{current,root}.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_truncate/shorter.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_truncate/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_truncate/shorter.sh, regress/lib/libgfarm/gfarm/gfs_pio_truncate/truncate.c, regress/lib/libgfarm/gfarm/gfs_pio_truncate/truncate.sh:
+	build lib/libgfarm/gfarm/gfs_pio_truncate/truncate, and
+	test  lib/libgfarm/gfarm/gfs_pio_truncate/shorter.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_stat/stat.sh: correct indentation
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_stat/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.sh, regress/lib/libgfarm/gfarm/gfs_stat/Makefile, regress/lib/libgfarm/gfarm/gfs_stat/normal.sh, regress/lib/libgfarm/gfarm/gfs_stat/stat.c, regress/lib/libgfarm/gfarm/gfs_stat/stat.sh:
+	build lib/libgfarm/gfarm/gfs_stat/stat, and
+	test  lib/libgfarm/gfarm/gfs_pio_stat/normal.sh
+
+2006-10-04  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfarm_list.c, lib/libgfarm/gfarm/gfarm_list.h, lib/libgfarm/gfarm/gfarm_xinfo.c, lib/libgfarm/gfarm/gfarm_xinfo.h:
+	merge the following change in revision 3158 in sourceforge svn repository:
+	parallel version of gfrm in OpenMP
+	add -P <#thread>, -D <domain>, -H <hostfile>, -N <#replica> and -n options.
+
+2006-10-03  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfrm/Makefile, gftool/gfrm/gfrm.c:
+	merge the following changes in revisions 3158, 3159, 3163 and 3194 in sourceforge svn repository:
+	Revision 3158
+	parallel version of gfrm in OpenMP
+	add -P <#thread>, -D <domain>, -H <hostfile>, -N <#replica> and -n options.
+
+	Revision 3159
+	display copies to be unlinked in verbose mode
+
+	Revision 3163
+	fix automatic force-mode condition and suppress unnecessary error messages.
+
+	Revision 3194
+	change -P <#thread> option to -j <#thread>
+
+	* lib/libgfarm/gfarm/gfarm_foreach.c:
+	merge the following change in revision 3157 in sourceforge svn repository:
+	simplify code using gfarm_foreach_copy
+
+	* gftool/gfwhere/gfwhere.c:
+	merge the following change in repository 3156 in sourceforge svn repository:
+	simplify code using gfarm_foreach_copy
+
+	* lib/libgfarm/gfarm/gfarm_foreach.c:
+	merge the following change in revision 3155 in sourceforge svn repository:
+	report GFARM_ERR_NO_FRAGMENT_INFORMATION error
+
+2006-10-03  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_write/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_write/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_write/write.c, regress/lib/libgfarm/gfarm/gfs_pio_write/write.sh:
+	build lib/libgfarm/gfarm/gfs_pio_write/write, and
+	test  lib/libgfarm/gfarm/gfs_pio_write/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_puts/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_puts/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_puts/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_puts/puts.c, regress/lib/libgfarm/gfarm/gfs_pio_puts/puts.sh:
+	build lib/libgfarm/gfarm/gfs_pio_puts/, and
+	test  lib/libgfarm/gfarm/gfs_pio_puts/normal.sh
+
+2006-10-02  Shukuko Moriwake  <mori@suri.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c: o FIX BUG
+	  - fragment checksum check when global_scramble read
+	  - set correct gf->length at fragment write when fragment size > 64KB
+	  - fix typo
+
+2006-10-01  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	merge the following change in revision 1.45 from the main trunk:
+
+	don't treat GFARM_ERR_UNKNOWN_HOST as a fatal error in scheduling functions,
+	just ignore the host instead.
+
+	This actually fixes the following problem:
+	http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=20
+	(pointed out by tatebe-san)
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	merge changes of gfarm_v1 main trunk on 1 October, 2006.
+
+2006-09-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/schedule.c:
+	don't treat GFARM_ERR_UNKNOWN_HOST as a fatal error in scheduling functions,
+	just ignore the host instead.
+
+	This actually fixes the following problem:
+	http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=20
+	(pointed out by tatebe-san)
+
+	* lib/libgfarm/gfarm/gfs_pio_section.c:
+	if GFARM_FILE_TRUNC (O_TRUNC in the system call hook case) is specified,
+	allow the scheduler to choose a filesystem node which doesn't have a replica.
+
+	This fixes http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=20
+
+	* regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh:
+	make this actually detect coredump of fti-unlink
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_local/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_local/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_local/set_local.c, regress/lib/libgfarm/gfarm/gfs_pio_set_local/set_local.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.c, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local.c, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local.sh, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_getc.sh, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/ungetc.c, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/ungetc.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_open/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/open.c, regress/lib/libgfarm/gfarm/gfs_pio_open/open.sh, regress/lib/libgfarm/gfarm/gfs_pio_putc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_putc/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putc/putc.c, regress/lib/libgfarm/gfarm/gfs_pio_putc/putc.sh, regress/lib/libgfarm/gfarm/gfs_pio_putline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_putline/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putline/putline.c, regress/lib/libgfarm/gfarm/gfs_pio_putline/putline.sh, regress/lib/libgfarm/gfarm/gfs_pio_read/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_read/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_read/read.c, regress/lib/libgfarm/gfarm/gfs_pio_read/read.sh, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/readdelim.c, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/readdelim.sh, regress/lib/libgfarm/gfarm/gfs_pio_readline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readline/readline.c, regress/lib/libgfarm/gfarm/gfs_pio_readline/readline.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/nop.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.c, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.sh, regress/lib/libgfarm/gfarm/gfs_pio_close/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_close/close.c, regress/lib/libgfarm/gfarm/gfs_pio_close/close.sh, regress/lib/libgfarm/gfarm/gfs_pio_close/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_create/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_create/create.c, regress/lib/libgfarm/gfarm/gfs_pio_create/create.sh, regress/lib/libgfarm/gfarm/gfs_pio_create/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_eof/eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/not_eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.c, regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_error/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_error/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_error/pio_error.c, regress/lib/libgfarm/gfarm/gfs_pio_error/pio_error.sh, regress/lib/libgfarm/gfarm/gfs_pio_getc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_getc/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getc/getc.c, regress/lib/libgfarm/gfarm/gfs_pio_getc/getc.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_getline/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.c, regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.sh, regress/lib/libgfarm/gfarm/gfs_pio_gets/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_gets/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_gets/gets.c, regress/lib/libgfarm/gfarm/gfs_pio_gets/gets.sh, regress/gfs_hook/tool/dd/dd.sh, regress/lib/libgfarm/gfarm/fork-term-init/Makefile, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh, regress/lib/libgfarm/gfarm/gfarm_initialize/Makefile, regress/lib/libgfarm/gfarm/gfarm_initialize/init.c, regress/lib/libgfarm/gfarm/gfarm_initialize/noarg.sh, regress/gftool/gfreg/0byte.sh, regress/gftool/gfreg/1byte.sh, regress/gftool/gfreg/gfreg-h.sh, regress/gftool/gfrep/gfrep-N2.sh, regress/gftool/gfrep/gfrep-d.sh, regress/gftool/gfrm/0byte.sh, regress/gftool/gfrm/1byte.sh, regress/gftool/gfwhere/noopt.sh, regress/gftool/gfwhere/noopt_+x.sh, regress/gftool/gfwhere/noopt_-x.sh, regress/gfs_hook/tool/mv/0byte.sh, regress/gfs_hook/tool/mv/1byte.sh, regress/gfs_hook/tool/pax/pax-r.sh, regress/gfs_hook/tool/rm/0byte.sh, regress/gfs_hook/tool/rm/1byte.sh, regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh, regress/gfs_hook/tool/sh/umask_000_dir.sh, regress/gfs_hook/tool/sh/umask_000_file.sh, regress/gfs_hook/tool/sh/umask_022_dir.sh, regress/gfs_hook/tool/sh/umask_022_file.sh, regress/gfs_hook/tool/sh/umask_066_file.sh, regress/gfs_hook/tool/sh/umask_077_dir.sh, regress/gftool/gfchmod/gfchmod_644_file.sh, regress/gftool/gfchmod/gfchmod_700_dir.sh, regress/gftool/gfchmod/gfchmod_755_dir.sh, regress/gftool/gfchmod/gfchmod_755_file.sh, regress/gftool/gfexport/0byte.sh, regress/gftool/gfexport/1byte.sh, regress/Makefile, regress/README, regress/README.ja, regress/account.sh, regress/gfs_hook/feature/permission/create_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_dir.sh, regress/gfs_hook/feature/permission/open_file.sh, regress/gfs_hook/feature/permission/open_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/overwrite_000_file.sh, regress/gfs_hook/feature/permission/overwrite_200_file.sh, regress/gfs_hook/feature/permission/overwrite_mode_file.sh, regress/gfs_hook/feature/permission/read_000_dir.sh, regress/gfs_hook/feature/permission/read_000_file.sh, regress/gfs_hook/feature/permission/read_400_dir.sh, regress/gfs_hook/feature/permission/read_400_file.sh, regress/gfs_hook/feature/permission/read_mode_dir.sh, regress/gfs_hook/feature/permission/read_mode_file.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/virtual_dir.sh, regress/gfs_hook/feature/permission/write_000_dir.sh, regress/gfs_hook/feature/permission/write_000_file.sh, regress/gfs_hook/feature/permission/write_200_dir.sh, regress/gfs_hook/feature/permission/write_200_file.sh, regress/gfs_hook/feature/permission/write_mode_dir.sh, regress/gfs_hook/feature/permission/write_mode_file.sh, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/cp/0byte.sh, regress/gfs_hook/tool/cp/1byte.sh, regress/gfs_hook/tool/cp/cp.sh, regress/gfs_hook/tool/diff/diff-r.sh, regress/gfs_hook/tool/diff/diff.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/tst.sh:
+	bring latest regression testsuite from the main trunk
+
+	* lib/libgfarm/gfarm/schedule.c:
+	merge the following change in revision 1.44 from the main trunk:
+	fix a serious bug that
+	gfarm_file_section_host_schedule_with_priority_to_local_to_write() may
+	incorrectly schedule local node which doesn't actually have a replica.
+	This was caused by the fact that file_section_host_schedule_common()
+	indirectly called statfsnode() (via gfarm_is_active_fsnode_to_write())
+	and it incorrectly added local node to the candidate list.
+
+	This fixes http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=66
+	(This bug had existed since gfarm-1.3.)
+
+	* lib/libgfarm/gfarm/schedule.c: fix a serious bug that
+	gfarm_file_section_host_schedule_with_priority_to_local_to_write() may
+	incorrectly schedule local node which doesn't actually have a replica.
+	This was caused by the fact that file_section_host_schedule_common()
+	indirectly called statfsnode() (via gfarm_is_active_fsnode_to_write())
+	and it incorrectly added local node to the candidate list.
+
+	This fixes http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=66
+	(This bug had existed since gfarm-1.3.)
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	note that the host information adminitrators (in 3.3) shouldn't use gfarm_agent.
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	note that the entry 3.3 in Gfarm-FAQ.* describes the way for PostgreSQL
+	to prevent normal users from changing the host information.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	note that the description for OpenLDAP version isn't written yet.
+	(re: 3.3 How to prevent normal users from changing the host information?)
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	describe the way to make the host information read-only from normal users.
+	see http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=20
+
+2006-09-29  Shukuko Moriwake  <mori@suri.co.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfarm_metadb.h, include/gfarm/gfs.h:
+	o Support seek/ftruncate/chmod for scramble file
+	o Cut syslog output of gfarm_agent, if err is GFARM_ERR_NO_SUCH_OBJECT
+	o Optimize scramble file access (reduce meta access, faster random number generation, faster select host etc)
+
+	* doc/scramble-dd-060929.pdf, doc/scramble-dd-060929.ppt: New file.
+
+	* doc/scramble-dd-060929.pdf, doc/scramble-dd-060929.ppt, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.h, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/schedule.c:
+	o Support seek/ftruncate/chmod for scramble file
+	o Cut syslog output of gfarm_agent, if err is GFARM_ERR_NO_SUCH_OBJECT
+	o Optimize scramble file access (reduce meta access, faster random number generation, faster select host etc)
+
+2006-09-29  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_putline/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_putline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_putline/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putline/putline.c, regress/lib/libgfarm/gfarm/gfs_pio_putline/putline.sh:
+	build lib/libgfarm/gfarm/gfs_pio_putline/putline, and
+	test  lib/libgfarm/gfarm/gfs_pio_putline/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh
+	    lib/libgfarm/gfarm/gfs_pio_putc/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_putc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_putc/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putc/putc.c, regress/lib/libgfarm/gfarm/gfs_pio_putc/putc.sh:
+	build lib/libgfarm/gfarm/gfs_pio_putc/putc, and
+	test  lib/libgfarm/gfarm/gfs_pio_putc/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_gets/gets.c: typo
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_readdelim/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/readdelim.c, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/readdelim.sh:
+	build lib/libgfarm/gfarm/gfs_pio_readdelim/readdelim, and
+	test  lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh
+
+2006-09-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_readline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readline/readline.c, regress/lib/libgfarm/gfarm/gfs_pio_readline/readline.sh:
+	build lib/libgfarm/gfarm/gfs_pio_readline/, and
+	test  lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh
+
+2006-09-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	mention that if gfarm is linked with Globus, SIGPIPE will be ignored.
+	Bugzilla-ja#68: http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=68
+
+2006-09-26  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client_apply.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfutil/hash.c, lib/libgfarm/gfutil/logutil.c, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.c:
+	fix portability problem to FreeBSD 4.11
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/io_fd.h, lib/libgfarm/gfarm/io_gfsl.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c, gfptool/gfrepbe_client/gfrepbe_client.c, gfptool/gfrepbe_server/gfrepbe_server.c:
+	fix a problem introduced by previous SIGPIPE related change.
+	i.e. gfrcmd and gfrun don't work on platforms which support MSG_NOSIGNAL
+	(e.g. Linux, FreeBSD since 6.x and NetBSD since 4.x), because send(2) only
+	works with sockets.
+
+	to resolve this problem, distinguish the iobuffer write operation for sockets
+	from the operation for file descriptors, and rename some functions as follows
+	to clarify that these only work with sockets:
+		xxx_fd_connection_new()	-> xxx_socket_connection_new()
+		xxx_connection_set_fd()	-> xxx_connection_set_socket()
+
+	This also removes some unused functions in io_fd.c.
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	merge the following changes from the main trunk:
+
+	revision 1.9:
+	3 seconds aren't enough to wait for postmaster to start up
+	on gfm61.apgrid.org (Fedora Core 5).
+	increase it to 5 seconds.
+
+	revision 1.10:
+	revise previous change:
+	even 5 seconds aren't enough on gfm61.apgrid.org (Fedora Core 5),
+	increase it to 10 seconds.
+
+	* gftool/config-gfarm/config-gfarm.postgresql: revise previous change:
+	even 5 seconds aren't enough on gfm61.apgrid.org (Fedora Core 5),
+	increase it to 10 seconds.
+
+	* gftool/config-gfarm/config-gfarm.postgresql:
+	3 seconds aren't enough to wait for postmaster to start up
+	on gfm61.apgrid.org (Fedora Core 5).
+	increase it to 5 seconds.
+
+2006-09-25  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfsl/tcputil.c, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/send_no_sigpipe.c, lib/libgfarm/gfutil/timeval.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c, gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/io_fd.c:
+	do not call signal(SIGPIPE, SIG_IGN) in gfarm_initialize(),
+	because it makes some programs take long time until finish,
+	when standard output of the programs is closed at early stage
+	(e.g. "program | head -1").
+	The SIG_IGN settings makes write(2) return EPIPE instead of SIGPIPE signal,
+	but such programs don't care the return value.
+
+	This should fix Bugzilla-ja #68:
+	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=68
+
+2006-09-24  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	do not display "no such object" error without -d option since it is too many and not critical.
+
+2006-09-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/README.ja: revise document structure
+
+	* regress/README.ja:
+	mention that scp should work without user interaction
+
+2006-09-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	merge the following change in revision 1.89 from the main trunk:
+	do not realloc() the memory which was passed to putenv() once,
+	because the memory may be still pointed by environ[], and
+	realloc() may break the memory.
+
+	* lib/libgfarm/gfarm/gfs_dir.c:
+	do not realloc() the memory which was passed to putenv() once,
+	because the memory may be still pointed by environ[], and
+	realloc() may break the memory.
+
+2006-09-20  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja: typo
+	clarify the value of st_ino when multiple processes share the same gfarm_agent.
+
+2006-09-19  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c (log_proto, error_proto):
+	use printf(3)-style format for gflog functions.
+
+2006-09-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	add some problems which were pointed out by Ishibashi-san
+	in [gfarm-developers:01580]
+
+2006-09-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_gets/empty.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_gets/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_gets/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_gets/gets.c, regress/lib/libgfarm/gfarm/gfs_pio_gets/gets.sh:
+	build lib/libgfarm/gfarm/gfs_pio_gets/gets, and
+	test  lib/libgfarm/gfarm/gfs_pio_gets/empty.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/normal.sh:
+	- return exit code from subshell
+	- correct argument to set_view_local.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local.c:
+	call gfs_pio_set_local() before gfs_pio_set_view_local() and
+	call gfs_pio_close() after
+
+	* regress/gfs_hook/feature/permission/read_mode_dir.sh, regress/gfs_hook/feature/permission/write_mode_dir.sh:
+	add chmod to trap argmument to remove temporary directory
+
+	* regress/gfs_hook/tool/build/configure_make.sh:
+	cd from temporary directory to remove it
+
+	* regress/gfs_hook/feature/permission/read_mode_dir.sh, regress/gfs_hook/feature/permission/write_mode_dir.sh, regress/gftool/gfchmod/gfchmod_644_file.sh, regress/gftool/gfchmod/gfchmod_755_file.sh:
+	remove temporary file or directory
+
+	* regress/gfs_hook/tool/build/configure_make.sh:
+	remove an ineffective statement
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.c, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.sh:
+	seek.c, seek.sh: to simplyfy the C program("seek.c"), make it always return position value and shell script("seek.sh") check if speciied by parameter
+	get_current.sh: add parameter missed in previous revision
+
+2006-09-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_dir.h:
+	merge the following change from the main trunk:
+	make GFS_Dir functions work even when the return value of gfarm_agent_check()
+	is changed.
+	without this change, the functions may dump core.
+
+	Also, make the following changes:
+	- implement AGENT_PROTO_DIR_GET_NENTRY protocol
+	  to make gfs_dir_get_nentry() work with gfarm_agent
+	- make gfs_dir_get_gf() and gfs_dir_set_gf() work with gfarm_agent
+
+	* lib/libgfarm/gfarm/agent_proto.h:
+	merge the following changes in revision 1.6 from the main trunk,
+	although this is not reservation, but actual implemnetation:
+
+	reserve AGENT_PROTO_DIR_GET_NENTRY protocol for GNEO branch.
+
+	* regress/config.sh: need to specify "-a sharedsecret" explicitly,
+	since sharedsecret is not default in GNEO branch.
+
+	* lib/libgfarm/gfarm/gfs_dir.h:
+	make GFS_Dir functions work even when the return value of gfarm_agent_check()
+	is changed.
+	without this change, the functions may dump core.
+
+	* lib/libgfarm/gfarm/agent_proto.h:
+	reserve AGENT_PROTO_DIR_GET_NENTRY protocol for GNEO branch.
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/gfs_dir.c:
+	make GFS_Dir functions work even when the return value of gfarm_agent_check()
+	is changed.
+	without this change, the functions may dump core.
+
+	* regress/gftool/gfreg/gfreg-h.sh, regress/gftool/gfrep/gfrep-N2.sh, regress/gftool/gfrep/gfrep-d.sh:
+	adapt output format changes in gfwhere.c revision 1.12
+
+	* regress/gftool/gfwhere/noopt.sh:
+	fix a bug: remove gfarm pathname in the first line of gfwhere output
+
+2006-09-06  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_getline/empty.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_getline/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_getline/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.c, regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.sh:
+	build lib/libgfarm/gfarm/gfs_pio_getline/getline, and
+	test  lib/libgfarm/gfarm/gfs_pio_getline/empty.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_read/empty.sh: add a comment
+
+2006-09-04  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfsck/gfsck.c:
+	add -f option to force to remove invalid file section
+
+2006-09-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	note that the problem of "renaming while opening" is how serious.
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	clarify the problems of st_ino.
+
+2006-09-01  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_getc/empty.sh
+	    lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_ungetc.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_ungetc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_getc.sh, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/ungetc.c, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/ungetc.sh:
+	build lib/libgfarm/gfarm/gfs_pio_ungetc/ungetc, and
+	test  lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_getc.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_getc/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_getc/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getc/getc.c, regress/lib/libgfarm/gfarm/gfs_pio_getc/getc.sh:
+	build lib/libgfarm/gfarm/gfs_pio_getc/getc, and
+	test  lib/libgfarm/gfarm/gfs_pio_getc/empty.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_seek/nop.sh
+	    lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_seek/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/nop.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.c, regress/lib/libgfarm/gfarm/gfs_pio_seek/seek.sh:
+	build lib/libgfarm/gfarm/gfs_pio_seek/seek, and
+	test  lib/libgfarm/gfarm/gfs_pio_seek/{nop,get_current}.sh
+
+2006-09-01  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/example/gfimport_text/gfimport_text.c: add -N <#host> option
+
+2006-08-31  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gfptool/gfsplck/gfsplck.c, lib/libgfarm/gfarm/gfs_pio_misc.c:
+	unset text busy flag and register the files as requested by [bugzilla-ja #60]
+
+2006-08-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_read/empty.sh
+	    lib/libgfarm/gfarm/gfs_pio_eof/eof.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_read/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_read/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_read/read.c, regress/lib/libgfarm/gfarm/gfs_pio_read/read.sh:
+	build lib/libgfarm/gfarm/gfs_pio_read/read, and
+	test  lib/libgfarm/gfarm/gfs_pio_read/empty.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_error/normal.sh
+	    lib/libgfarm/gfarm/gfs_pio_eof/not_eof.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_eof/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_eof/eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/not_eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.c, regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.sh:
+	build lib/libgfarm/gfarm/gfs_pio_eof/pio_eof, and
+	test  lib/libgfarm/gfarm/gfs_pio_eof/{eof,not_eof}.sh
+
+2006-08-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfmd/gfmd.c: describe -d option in usage().
+	fix http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=62
+	from Yamamoto-san.
+
+	* server/gfsd/gfsd.c: adjust the messages of usage()
+
+2006-08-31  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_error/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_error/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_error/pio_error.c, regress/lib/libgfarm/gfarm/gfs_pio_error/pio_error.sh:
+	build lib/libgfarm/gfarm/gfs_pio_error/pio_error, and
+	test  lib/libgfarm/gfarm/gfs_pio_error/normal.sh
+
+2006-08-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrmdir/Makefile, gftool/gfrmdir/gfrmdir.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_apply.c, lib/libgfarm/gfarm/gfs_misc.h:
+	merge the following changes from the main trunk:
+
+	split gfs_client_apply_all_hosts() from gfs_client.c,
+	because it really belongs to upper layer instead of the RPC layer.
+	(It already calls metadata function, and will call scheduler eventually.)
+
+	gfs_client_apply_all_hosts():
+	- use scheduling function to avoid connecting to hosts which are down.
+	- to increase concurrency, do not wait all processes synchronously,
+	  instead, wait only one process synchronously and wait others
+	  asynchronously by specifying WNOHANG.
+
+2006-08-30  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.c:
+	correct interface of hostname argument to enable handle NULL
+
+2006-08-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_client_apply.c:
+	gfs_client_apply_all_hosts():
+	- use scheduling function to avoid connecting to hosts which are down.
+	- to increase concurrency, do not wait all processes synchronously,
+	  instead, wait only one process synchronously and wait others
+	  asynchronously by specifying WNOHANG.
+
+2006-08-30  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh:
+	returns exit status from subshell
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_close/close.sh:
+	correct interface with C test program
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_close/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/normal.sh:
+	returns exit status from subshell
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_create/create.sh:
+	correct a syntax error
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_create/normal.sh:
+	returns exit status from subshell
+
+2006-08-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfrmdir/Makefile, gftool/gfrmdir/gfrmdir.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_apply.c, lib/libgfarm/gfarm/gfs_misc.h:
+	split gfs_client_apply_all_hosts() from gfs_client.c,
+	because it really belongs to upper layer instead of the RPC layer.
+	(It already calls metadata function, and will call scheduler eventually.)
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	merge the following change in revision 1.21 from the main trunk:
+	If gfarm_cache_host_info_*() is used once,
+	call gfarm_cache_host_info_*() always,
+	otherwise hostcache might be freed incorrectly.
+
+	This should fix the problem reported by Ishibashi-san
+	in [gfarm-developers:01330]
+
+	* lib/libgfarm/gfarm/agent_wrap.c:
+	If gfarm_cache_host_info_*() is used once,
+	call gfarm_cache_host_info_*() always,
+	otherwise hostcache might be freed incorrectly.
+
+	This should fix the problem reported by Ishibashi-san
+	in [gfarm-developers:01330]
+
+2006-08-30  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_close/normal.sh
+	    lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh
+	    lib/libgfarm/gfarm/gfs_pio_set_view_local/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local.c, regress/lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local.sh:
+	build lib/libgfarm/gfarm/gfs_pio_set_view_local/set_view_local, and
+	test  lib/libgfarm/gfarm/gfs_pio_set_view_local/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.c, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.sh:
+	build lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index, and
+	test  lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_close/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_close/close.c, regress/lib/libgfarm/gfarm/gfs_pio_close/close.sh, regress/lib/libgfarm/gfarm/gfs_pio_close/normal.sh:
+	build lib/libgfarm/gfarm/gfs_pio_close/close, and
+	test  lib/libgfarm/gfarm/gfs_pio_close/normal.sh
+
+2006-08-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c:
+	correct unintended memory leak
+
+	* gftool/gfls/gfls.c:
+	merge the following change in revision 1.23 from the main trunk:
+	prevent "divide by zero" error,
+	when a pathname is wider than the width of the screen.
+
+	* gftool/gfls/gfls.c: prevent "divide by zero" error,
+	when a pathname is wider than the width of the screen.
+
+2006-08-29  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_open/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_open/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_open/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/open.c, regress/lib/libgfarm/gfarm/gfs_pio_open/open.sh:
+	build lib/libgfarm/gfarm/gfs_pio_open/open, and
+	test  lib/libgfarm/gfarm/gfs_pio_open/normal.sh
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_create/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_create/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_create/create.c, regress/lib/libgfarm/gfarm/gfs_pio_create/create.sh, regress/lib/libgfarm/gfarm/gfs_pio_create/normal.sh:
+	build lib/libgfarm/gfarm/gfs_pio_create/create, and
+	test  lib/libgfarm/gfarm/gfs_pio_create/normal.sh
+
+2006-08-28  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/Makefile, regress/schedule:
+	add lib/libgfarm/gfarm/gfs_pio_set_local/normal.sh
+
+	* regress/lib/libgfarm/gfarm/gfs_pio_set_local/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_set_local/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_local/set_local.c, regress/lib/libgfarm/gfarm/gfs_pio_set_local/set_local.sh:
+	build lib/libgfarm/gfarm/gfs_pio_set_local/set_local, and
+	test  lib/libgfarm/gfarm/gfs_pio_set_local/normal.sh
+
+2006-08-25  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* gftool/gfwhere/Makefile, gftool/gfwhere/gfwhere.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/gfarm_foreach.c, lib/libgfarm/gfarm/gfarm_foreach.h (gfwhere.c):
+	add -r and -R options for recursive listing
+
+	* lib/libgfarm/gfarm/gfs_lock.c:
+	use nanosleep(2) instead of usleep(3) since usleep(3) is obsolete.
+
+	* lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/metadb_misc.c (gfs_unlink):
+	fix a bug such that files cannot be deleted if it has no fragment file.
+	(gfs_unlink_section_replica): delete path info when there is no fragment file.
+	(gfarm_foreach_section): return GFARM_ERR_NO_FRAGMENT_INFORMATION when there is a file that has no fragment file.
+	(gfs_stat): initialize st_user and st_group in case of no fragment information to safely call gfs_stat_free(3) afterward since this is a special case.
+
+2006-08-25  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/feature/permission/remove_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_200_dir.sh:
+	remove needless statement
+
+2006-08-25  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* package/redhat/gfarm.spec:
+	fix typo... /etc/service should be /sbin/service
+
+2006-08-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/gfarm_initialize/init.c:
+	<unistd.h> isn't necessary, since getopt(3) isn't used in this file
+
+	* regress/lib/libgfarm/gfarm/gfarm_initialize/init.c:
+	remove unused variables
+
+2006-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	fix typo: it's not fstat(2) but fsat(2) that isn't supported on Solaris.
+
+	* regress/gfs_hook/tool/dd/dd.sh, regress/schedule:
+	add a test for ``dd'' command, a known bug on Linux.
+
+	* regress/Makefile, regress/lib/libgfarm/gfarm/fork-term-init/Makefile, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh, regress/schedule:
+	add the test program for the fork+gfarm_terminate()+gfarm_initialize() problem,
+	originally written by Ishibashi-san in [gfarm-developers:01294],
+	to the regress tree, although lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh
+	cannot actually detect the problem.
+	valgrind is needed to see the invalid access to freed memory.
+
+	* regress/README.ja, regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh, regress/regress.conf:
+	correct my misunderstanding:
+	use $exit_unsupported instead of $exit_untested,
+	when the environment cannot support the test.
+
+	* regress/README.ja: typo
+
+	* regress/README.ja:
+	describe common shell variables which are defined in regress.conf
+
+2006-08-22  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	add gfs_hook/feature/permission/rename_file_in_mode_300_dir.sh
+	    gfs_hook/feature/permission/rename_file_in_mode_200_dir.sh
+	    gfs_hook/feature/permission/rename_file_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/rename_file_in_mode_000_dir.sh
+
+	* regress/gfs_hook/feature/permission/rename_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/rename_file_in_mode_dir.sh:
+	test script for renaming a file in the directory of specific write and execute
+	permission
+
+2006-08-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/gfs_hook/tool/cp/cp.sh: correct missing semicolon
+
+	* regress/tst.sh:
+	missed change to support --srcdir option of configure script
+
+2006-08-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/regress.conf: correct comment
+
+	* regress/README.ja:
+	describe some tips, including $GFARM_TEST_DEBUG environment variable.
+
+	* regress/regress.conf:
+	automatically turn on debug flag (-x) of $shell,
+	if environment variable $GFARM_TEST_DEBUG is set.
+
+	* regress/gfs_hook/tool/rm/0byte.sh, regress/gfs_hook/tool/rm/1byte.sh, regress/gfs_hook/tool/sh/umask_000_dir.sh, regress/gfs_hook/tool/sh/umask_000_file.sh, regress/gfs_hook/tool/sh/umask_022_dir.sh, regress/gfs_hook/tool/sh/umask_022_file.sh, regress/gfs_hook/tool/sh/umask_066_file.sh, regress/gfs_hook/tool/sh/umask_077_dir.sh, regress/gftool/gfchmod/gfchmod_700_dir.sh, regress/gftool/gfchmod/gfchmod_755_dir.sh, regress/gftool/gfexport/0byte.sh, regress/gftool/gfexport/1byte.sh, regress/gftool/gfreg/0byte.sh, regress/gftool/gfreg/1byte.sh, regress/gftool/gfrm/0byte.sh, regress/gftool/gfrm/1byte.sh, regress/gftool/gfwhere/noopt_+x.sh, regress/gftool/gfwhere/noopt_-x.sh, regress/gfs_hook/feature/permission/create_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/overwrite_000_file.sh, regress/gfs_hook/feature/permission/overwrite_200_file.sh, regress/gfs_hook/feature/permission/read_000_dir.sh, regress/gfs_hook/feature/permission/read_000_file.sh, regress/gfs_hook/feature/permission/read_400_dir.sh, regress/gfs_hook/feature/permission/read_400_file.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/write_000_dir.sh, regress/gfs_hook/feature/permission/write_000_file.sh, regress/gfs_hook/feature/permission/write_200_dir.sh, regress/gfs_hook/feature/permission/write_200_file.sh, regress/gfs_hook/tool/cp/0byte.sh, regress/gfs_hook/tool/cp/1byte.sh, regress/gfs_hook/tool/mv/0byte.sh, regress/gfs_hook/tool/mv/1byte.sh:
+	always use "$shell" explicitly,
+	instead of "sh" or implicitly relying on "#!/bin/sh",
+	because bash is only reliably working shell with gfs_hook,
+	and /bin/sh isn't bash except Linux.
+
+	* regress/gfs_hook/feature/permission/make_dir_in_mode_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_dir.sh, regress/gfs_hook/tool/sh/umask_000_file.sh:
+	do not turn on shell debugging flag (-x) by default.
+
+	* regress/gfs_hook/tool/diff/diff-r.sh, regress/gfs_hook/tool/diff/diff.sh, regress/gfs_hook/tool/pax/pax-r.sh, regress/gfs_hook/tool/build/configure_make.sh:
+	do not access "./data" or "`pwd`/data" directory, but always access "$data",
+	because the directory may not be under current directory,
+	when --srcdir option is specified in the configure script.
+
+	* regress/lib/libgfarm/gfarm/gfarm_initialize/Makefile, regress/lib/libgfarm/gfarm/gfarm_initialize/init.c, regress/lib/libgfarm/gfarm/gfarm_initialize/noarg.sh, regress/schedule:
+	build lib/libgfarm/gfarm/gfarm_initialize/init, and
+	test  lib/libgfarm/gfarm/gfarm_initialize/noarg.sh
+
+	* regress/Makefile, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/tst.sh:
+	- support to build binaries before running tests
+	- support --srcdir option of configure script to build binaries
+
+2006-08-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	add gfs_hook/feature/permission/overwrite_200_file.sh
+	    gfs_hook/feature/permission/overwrite_000_file.sh
+
+	* regress/gfs_hook/feature/permission/overwrite_000_file.sh, regress/gfs_hook/feature/permission/overwrite_mode_file.sh, regress/gfs_hook/feature/permission/overwrite_200_file.sh:
+	test script for overwriting a file specific write permission
+
+2006-08-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/Makefile, lib/gfs_hook/Makefile, makes/data.mk, makes/html.mk, makes/include.mk, makes/lib.mk, makes/man.mk, makes/script.mk, ns/include/gfarm/Makefile, ns/nslib/Makefile.in, util/gfront/Makefile:
+	do not output anything to stderr, if there isn't any error or warning.
+
+2006-08-18  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gfs_hook/feature/permission/read_400_file.sh
+	    gfs_hook/feature/permission/read_000_file.sh
+	    gfs_hook/feature/permission/read_400_dir.sh
+	    gfs_hook/feature/permission/read_000_dir.sh
+	    gfs_hook/feature/permission/write_200_file.sh
+	    gfs_hook/feature/permission/write_000_file.sh
+	    gfs_hook/feature/permission/write_200_dir.sh
+	    gfs_hook/feature/permission/write_000_dir.sh
+
+	* regress/gfs_hook/feature/permission/write_000_dir.sh, regress/gfs_hook/feature/permission/write_200_dir.sh, regress/gfs_hook/feature/permission/write_mode_dir.sh:
+	test script for writing a directory of specific write permission
+
+	* regress/gfs_hook/feature/permission/read_000_dir.sh, regress/gfs_hook/feature/permission/read_400_dir.sh, regress/gfs_hook/feature/permission/read_mode_dir.sh:
+	test script for reading a directory of specific read permission
+
+	* regress/gfs_hook/feature/permission/write_000_file.sh, regress/gfs_hook/feature/permission/write_200_file.sh, regress/gfs_hook/feature/permission/write_mode_file.sh:
+	test script for writing a file of specific write permission
+
+	* regress/gfs_hook/feature/permission/read_000_file.sh, regress/gfs_hook/feature/permission/read_400_file.sh, regress/gfs_hook/feature/permission/read_mode_file.sh:
+	test script for reading a file of specific read permission
+
+	* regress/schedule:
+	add gfs_hook/feature/permission/open_file_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/open_file_in_mode_000_dir.sh
+	    gfs_hook/feature/permission/open_dir_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/open_dir_in_mode_000_dir.sh
+
+	* regress/gfs_hook/feature/permission/open_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/open_dir_in_mode_dir.sh:
+	test script for opening a directory in the directory of specific execute
+	permission
+
+	* regress/gfs_hook/feature/permission/open_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/open_file_in_mode_dir.sh:
+	test script for opening a file in the directory of specific execute permission
+
+2006-08-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	add gfs_hook/feature/permission/make_dir_in_mode_300_dir.sh
+	    gfs_hook/feature/permission/make_dir_in_mode_200_dir.sh
+	    gfs_hook/feature/permission/make_dir_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/make_dir_in_mode_000_dir.sh
+	    gfs_hook/feature/permission/remove_file_in_mode_300_dir.sh
+	    gfs_hook/feature/permission/remove_file_in_mode_200_dir.sh
+	    gfs_hook/feature/permission/remove_file_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/remove_file_in_mode_000_dir.sh
+	    gfs_hook/feature/permission/remove_dir_in_mode_300_dir.sh
+	    gfs_hook/feature/permission/remove_dir_in_mode_200_dir.sh
+	    gfs_hook/feature/permission/remove_dir_in_mode_100_dir.sh
+	    gfs_hook/feature/permission/remove_dir_in_mode_000_dir.sh
+	    gfs_hook/feature/permission/virtual_dir.sh
+
+	* regress/gfs_hook/feature/permission/create_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/make_dir_in_mode_dir.sh:
+	test script for making a directory in the directory of specific write and
+	execute permission
+
+	* regress/gfs_hook/feature/permission/create_file_in_mode_dir.sh:
+	remove -x option for /bin/sh
+
+	* regress/gfs_hook/feature/permission/remove_dir_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/remove_dir_in_mode_dir.sh:
+	test script for removing a directory in the directory of specific write and execute permission
+
+	* regress/gfs_hook/feature/permission/remove_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/remove_file_in_mode_dir.sh:
+	test script for removing a file in the directory of specific write and execute
+	permission
+
+2006-08-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	merge the following change in revision 1.62 from the main trunk:
+	do not forget to remove connections from connection_list
+	at gfs_client_terminate().
+	otherwise some calling sequence (e.g. gfs_client_terminate() + fork()
+	+ gfs_client_initialize() + some gfarm API) dumps core.
+	problem reported by Ishibashi-san [gfarm-developers:01294]
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	do not forget to remove connections from connection_list
+	at gfs_client_terminate().
+	otherwise some calling sequence (e.g. gfs_client_terminate() + fork()
+	+ gfs_client_initialize() + some gfarm API) dumps core.
+	problem reported by Ishibashi-san [gfarm-developers:01294]
+
+2006-08-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5, man/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfs_pio_section.c:
+	support "write_target_domain" directive in gfarm.conf,
+	as well as GFARM_WRITE_TARGET_DOMAIN environment variable.
+	requested by http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=57
+
+	* include/gfarm/gfs.h: export gfs_client_connection_gc()
+
+2006-08-11  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gfs_hook/feature/permission/virtual_dir.sh:
+	test case to confirm the problem that virtually existing file or directory
+	cannot be replicated if write permission of its parent dropped.
+	this problem is described in doc/KNOWN_PROBLEMS.{en,ja} in detail.
+
+	* gftool/gfrep/gfrep.c:
+	replicate_files_to_domain(): fix a bug that retruns 'error happened' though it succeeds
+
+	* doc/KNOWN_PROBLEMS.en: typo
+
+2006-08-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_proto.h:
+	add sync protocol to gfsd.
+	will be used by gfs_pio_sync() implementation of scramble mode.
+
+	* lib/libgfarm/gfarm/auth_config.c:
+	merge the following change between revision 1.7 and 1.8 from the main trunk:
+	make credential related configuration directives work again.
+	{metadb,spool}_server_cred_{type,service,name} directives had been broken
+	since previous revision (gfarm-1.3.1).
+
+	* lib/libgfarm/gfarm/auth_config.c:
+	make credential related configuration directives work again.
+	{metadb,spool}_server_cred_{type,service,name} directives had been broken
+	since previous revision (gfarm-1.3.1).
+
+2006-08-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	add new entry: There is no way to stop a replication process.
+
+2006-08-09  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c:
+	replicate_files_to_domain(): reduce memory usage used for file section infos
+
+2006-08-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	mention the problem of http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=19
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	bring the following change from the main trunk:
+	revision 1.52:
+	consider the contents of in-core dirty buffer
+	in filesize calculation of gfs_fstat().
+
+2006-08-09  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, gftool/gfdump/gfdump.c:
+	shut up gcc warining
+
+2006-08-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_proto.h: reserve GFS_PROTO_SYNC protocol
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	consider the contents of in-core dirty buffer
+	in filesize calculation of gfs_fstat().
+
+2006-08-09  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio.h: delete unused gfs_*_time
+
+2006-08-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh:
+	exclude localhost from the host to access via ssh/scp,
+	because its host key may not match.
+	(when another host was already accessed as localhost via ssh/scp)
+
+2006-08-09  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* gftool/gfusage/gfusage.c: use GFARM_*ALLOC_ARRAY
+
+	* include/gfarm/gfarm_misc.h: add GFARM_CALLOC_ARRAY
+
+	* lib/libgfarm/gfarm/metadb_localfs.c: use GFARM_CALLOC_ARRAY
+
+	* lib/libgfarm/gfutil/alloc.c:
+	add gfarm_calloc_array() to check integer overflow of calloc() arguments.
+
+2006-08-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfutil/gfevent.c: more check against integer overflow,
+	pointed out by Ishibashi-san in [gfarm-developers:01178]
+
+2006-08-08  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* regress/gftool/gfrun/gfrun.sh, server/gfmd/gfmd.c, server/gfsd/gfsd.c, server/gfsd/statfs.c, regress/gfs_hook/tool/mv/dir.sh, regress/gfs_hook/tool/mv/empty-dir.sh, regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh, regress/gfs_hook/tool/sh/source.sh, regress/gfs_hook/tool/sh/test-d.sh, regress/gfs_hook/tool/sh/test-e.sh, regress/gfs_hook/tool/sh/test-f.sh, regress/gfs_hook/tool/sh/test-r.sh, regress/gfs_hook/tool/sh/test-s.sh, regress/gfs_hook/tool/sh/test-w.sh, regress/gfs_hook/tool/sh/test-x.sh, regress/gfs_hook/tool/sh/test_mode.sh, regress/gfs_hook/tool/sh/umask_000_dir.sh, regress/gfs_hook/tool/sh/umask_000_file.sh, regress/gfs_hook/tool/sh/umask_022_dir.sh, regress/gfs_hook/tool/sh/umask_022_file.sh, regress/gfs_hook/tool/sh/umask_066_file.sh, regress/gfs_hook/tool/sh/umask_077_dir.sh, regress/gfs_hook/tool/sh/umask_dir.sh, regress/gfs_hook/tool/sh/umask_file.sh, regress/gfs_hook/tool/touch/touch_create.sh, regress/gftool/gfchmod/gfchmod_644_file.sh, regress/gftool/gfchmod/gfchmod_700_dir.sh, regress/gftool/gfchmod/gfchmod_755_dir.sh, regress/gftool/gfchmod/gfchmod_755_file.sh, regress/gftool/gfchmod/gfchmod_dir.sh, regress/gftool/gfkey/gfkey-cl.sh, regress/gftool/gfps/gfps.sh, regress/Makefile, regress/README.ja, regress/config.sh, regress/data/ok.sh, regress/gfs_hook.sh, regress/gfs_hook/feature/permission/open_file.sh, regress/gfs_hook/tool/build/configure.sh, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/grep/grep.sh, regress/regress.sh, regress/schedule, regress/tst.sh, man/man1/gfarm_agent.1, man/man1/gfrep.1, man/man1/gfusage.1, man/man5/gfarm.conf.5, package/freebsd/Makefile, package/freebsd/pkg-plist, package/pkgsrc/Makefile, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/build, package/solaris/gfarm-server.files, lib/libgfarm/gfsl/Makefile, lib/libgfarm/gfsl/auth.c, lib/libgfarm/gfsl/gsi.c, lib/libgfarm/gfsl/scsub.c, lib/libgfarm/gfsl/session.c, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/alloc.c, lib/libgfarm/gfutil/gfevent.c, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/hash.c, lib/libgfarm/gfutil/logutil_th.c, man/ja/man1/gfarm_agent.1, man/ja/man1/gfrep.1, man/ja/man1/gfusage.1, man/ja/man5/gfarm.conf.5, include/gfarm/gfarm_config.h.in, include/gfarm/gfarm_error.h, include/gfarm/gfarm_misc.h, lib/gfs_hook/Makefile, lib/gfs_hook/getcwd.c, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_subr.c, lib/gfs_hook/hooks_subr.h, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/auth_config.c, lib/libgfarm/gfarm/auth_server.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/conn_hash.c, lib/libgfarm/gfarm/conn_hash.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_dir.c, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/gfs_client_udp.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_exec.c, lib/libgfarm/gfarm/gfs_lock.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_global_scramble.c, lib/libgfarm/gfarm/gfs_pio_local.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_remote.c, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_rename.c, lib/libgfarm/gfarm/gfs_replicate.c, lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/host.c, lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/hostspec.c, lib/libgfarm/gfarm/import_help.c, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/iobuffer.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_localfs.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/metadb_pgsql.c, lib/libgfarm/gfarm/param.c, lib/libgfarm/gfarm/path_info_cache.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/stringlist.c, lib/libgfarm/gfarm/url.c, lib/libgfarm/gfarm/xxx_proto.c, gftool/gfrep/gfrep.c, gftool/gfrm/gfrm.c, gftool/gfrmdir/gfrmdir.c, gftool/gfrun/gfrun.c, gftool/gfsched/gfsched.c, gftool/gfsck/gfsck.c, gftool/gfhost/gfhost.c, gftool/gfkey/gfkey.c, gftool/gfls/gfls.c, gftool/gfmpirun/gfmpirun.c, gftool/gfps/gfps.c, gftool/gfrcmd/gfrcmd.c, gftool/gfreg/gfreg.c, gftool/example/gfimport_fixed/gfimport_fixed.c, gftool/gfarm_agent/agent_ptable.c, gftool/gfarm_agent/gfarm_agent.c, gftool/gfdump/gfdump.c, gftool/gfexec/Makefile, gftool/gfexec/gfexec.c, doc/html/ja/ref/index.html, doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfusage.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, gfptool/gfrepbe_client/gfrepbe_client.c, gfptool/gfrepbe_server/gfrepbe_server.c, gfptool/gfsplck/Makefile, gfptool/gfsplck/gfsplck.c, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, doc/html/en/ref/index.html, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfusage.1.html, doc/html/en/ref/man5/gfarm.conf.5.html, bench/nconnect/nconnect.c, debian/changelog, debian/gfmd.install, debian/gfmd.manpages, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja, doc/README.hook.en, doc/README.hook.ja, doc/docbook/en/ref/man1/Makefile.inc, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfusage.1.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man1/Makefile.inc, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfusage.1.docbook, configure.ac, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, LICENSE, RELNOTES, configure, ChangeLog:
+	merge changes of gfarm_v1 main trunk on 7 August, 2006.
+
+2006-08-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* gftool/gfrep/gfrep.c: get_hosts_have_replica(): pluged memory leak
+
+2006-08-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec: correct syntax error
+
+	* package/redhat/gfarm.spec: bump the package release from 0 to 1
+
+	* package/redhat/gfarm.spec:
+	restart gfsd, gfmd and gfarm_agent at update, if they are already running.
+
+	* package/redhat/gfarm.spec:
+	don't display "run config-SOMETHING", if /etc/gfarm.conf already exists
+
+2006-08-08  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gfs_hook/tool/scp/scp_from_gfarm.sh
+	    gfs_hook/tool/scp/scp_to_gfarm.sh
+
+	* regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh:
+	to avoid waiting for key-in, exit if ssh-agent doesn't work or has no identity
+
+2006-08-07  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/account.sh, regress/regress.conf, regress/regress.sh, regress/tst.sh:
+	add more exit codes: XPASS, XFAIL, UNRESOLVED, UNTESTED, UNSUPPORTED.
+	from dejagnu:
+		http://www.gnu.org/software/dejagnu/manual/x397.html
+	 and POSIX 1003.3 standard for test frameworks:
+		http://www.gnu.org/software/dejagnu/manual/x47.html#posix
+
+	* regress/README: remove resolved issues
+
+2006-08-07  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add some scripts and reorder
+
+	* regress/regress.sh, regress/tst.sh:
+	enable to display longer path of test script
+
+	* regress/gfs_hook/feature/permission/create_file_in_mode_000_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_100_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_200_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_300_dir.sh, regress/gfs_hook/feature/permission/create_file_in_mode_dir.sh, regress/gfs_hook/feature/permission/open_file.sh:
+	replace "open_file_sh" with "create_file_in_mode_*_dir.sh"
+
+2006-08-06  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* RELNOTES:
+	mention management of cached connections not to exhaust the file
+	descriptors and 'gfsd_connection_cache' directive.
+
+	* doc/README.hook.en, doc/README.hook.ja: typo
+
+2006-08-05  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1, man/man1/gfrep.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	apply the comment by Yamamoto-san in [gfarm-developers:01142]
+
+	* server/gfsd/gfsd.c:
+	Yet another workaround for the specification bug of bash,
+	this is necessary to make bash read ~/.bashrc on Solaris 9,
+	when it's invoked by "gfrcmd -n".
+
+	NOTE:
+	This symptom doesn't always happen. It depends on the timing
+	when the opposite side of the socketpair is closed.
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: sync more
+
+	* doc/html/en/ref/man5/gfarm.conf.5.html, man/man5/gfarm.conf.5: regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook: wording
+
+	* man/man5/gfarm.conf.5, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	an example of PostgreSQL
+
+	* doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5, man/man5/gfarm.conf.5, doc/html/en/ref/man5/gfarm.conf.5.html:
+	regen
+
+	* doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	describe "write_local_priority" and "gfsd_connection_cache"
+
+	* lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfs_client.c:
+	add "gfsd_connection_cache" parameter to gfarm.conf.
+	this specifies maximum number of cached gfsd connections.
+	also, increase the default value from 10 to 16.
+
+	* lib/libgfarm/gfutil/logutil_th.c: more English correction
+
+	* lib/libgfarm/gfutil/logutil_th.c: English correction in comments.
+
+	* lib/libgfarm/gfutil/logutil_th.c:
+	leave a comment why this is not race condition in spite of its appearance.
+	Although it's obvious from what it is actually doing.
+
+	* lib/libgfarm/gfutil/logutil_th.c: back out previous change.
+	It's my misunderstanding which is just same with revision 1.2. ;-/
+
+2006-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/man1/gfrep.1.html, man/man1/gfrep.1: regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook: more English corrections
+
+	* doc/html/en/ref/man1/gfrep.1.html, man/man1/gfrep.1: regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook: minor english correction
+
+	* man/ja/man1/gfrep.1, man/man1/gfrep.1, doc/html/en/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrep.1.html:
+	regen
+
+	* doc/docbook/ja/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook:
+	refine synopsis
+
+	* doc/README.hook.en, doc/README.hook.ja:
+	mention the dd command problem on Linux. (It works on NetBSD and Solaris.)
+
+	* doc/html/en/ref/man1/gfrep.1.html, doc/html/ja/ref/man1/gfrep.1.html, man/ja/man1/gfrep.1, man/man1/gfrep.1:
+	regen
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook: fix syntax errors
+
+	* doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/ja/ref/man1/gfrep.1.docbook:
+	nearly totally restructured, since many descriptions were obsolete.
+
+2006-08-04  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* doc/KNOWN_PROBLEMS.en: improve the wording
+
+2006-08-04  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/en/ref/index.html, doc/html/ja/ref/index.html:
+	add missing link to gfsetdir(1)
+
+	* doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja:
+	reflect the comments by Tanimura-san in [gfarm-developers:01117]
+
+2006-08-04  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog, RELNOTES: updated relnotes for the version 1.3.1
+
 2006-08-04  Tohru Sotoyama  <sotoyama@sra.co.jp>
 
 	* regress/schedule: add gfs_hook/tool/sh/umask_022_dir.sh
