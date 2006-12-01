@@ -63,7 +63,7 @@ gfarm_usage_terminate(gfarm_usage gu)
 	while (1) {
 		he = gfarm_hash_iterator_access(&iterator);
 		if (he == NULL)
-		        break;
+			break;
 		ps = gfarm_hash_entry_data(he);
 		now = ps->pathnames;
 		while (now) {
@@ -138,7 +138,7 @@ gfarm_usage_all_users_get(gfarm_usage gu, char ***usersp, int *nusersp)
 	while (1) {
 		he = gfarm_hash_iterator_access(&iterator);
 		if (he == NULL)
-		        break;
+			break;
 		key = gfarm_hash_entry_key(he);
 		keylen = gfarm_hash_entry_key_length(he);
 		GFARM_CALLOC_ARRAY(user, keylen + 1);
@@ -381,7 +381,8 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: gfusage [-c]\n");
-
+	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-c\t\ttotal size in consideration of replicas\n");
 	fflush(stderr);
 	exit(1);
 }
@@ -393,11 +394,13 @@ main(int argc, char *argv[])
 	int ncopies_mode = 0;
 	gfarm_usage gu;
 
-	while ((c = getopt(argc, argv, "c")) != -1) {
+	while ((c = getopt(argc, argv, "ch?")) != -1) {
 		switch (c) {
 		case 'c':
 			ncopies_mode = 1;
 			break;
+		case 'h':
+		case '?':
 		default:
 			usage();
 		}
