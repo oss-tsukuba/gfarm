@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -1668,6 +1668,31 @@ The default is 16.</P
 CLASS="LITERALLAYOUT"
 >	gfsd_connection_cache&nbsp;32</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>priority_level</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies a level of log priority.
+The log output, which priority is inferior to this level, will not be
+sent to syslog or standard error.
+The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
+"info" and "debug" in highest first order.
+The default level is "info".
+It's not recommended to specify a level higher or equal to "crit".</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_level&nbsp;debug</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1720,7 +1745,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
 		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
-		  &#60;gfsd_connection_cache_statement&#62;<br>
+		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		  &#60;log_level_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1789,7 +1815,9 @@ CLASS="LITERALLAYOUT"
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
 		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
 		  "\\"&nbsp;|&nbsp;"\""<br>
-	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"</P
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+		  "notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"

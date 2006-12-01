@@ -68,6 +68,7 @@ CLASS="COMMAND"
 different nodes (or even on the same node) at the same time.
 Consistency among multiple cache servers and a metadata server is
 maintained.</P
+></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -80,6 +81,23 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>log-level</I
+></TT
+></DT
+><DD
+><P
+>specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.</P
+></DD
 ><DT
 ><CODE
 CLASS="OPTION"
@@ -128,6 +146,12 @@ CLASS="COMMAND"
 >gfarm_agent</B
 > is
 running in the foreground not in the background.</P
+><P
+>If this option is specified and <CODE
+CLASS="OPTION"
+>-L</CODE
+> is not specified,
+the log level is set to "debug".</P
 ></DD
 ><DT
 ><CODE
@@ -233,7 +257,6 @@ CLASS="REFENTRYTITLE"
 >gfarm.conf</SPAN
 >(5)</SPAN
 ></P
-></DIV
 ></DIV
 ></BODY
 ></HTML

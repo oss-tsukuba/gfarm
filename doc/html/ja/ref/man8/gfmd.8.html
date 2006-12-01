@@ -86,6 +86,21 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ログレベル</I
+></TT
+></DT
+><DD
+><P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
 >-P</CODE
 > <TT
 CLASS="PARAMETER"
@@ -106,6 +121,12 @@ CLASS="OPTION"
 ><P
 >デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</P
+><P
+>このオプションを指定し、かつ <CODE
+CLASS="OPTION"
+>-L</CODE
+> オプションを指定しなかった
+場合、ログレベルは debug となります。</P
 ></DD
 ><DT
 ><CODE

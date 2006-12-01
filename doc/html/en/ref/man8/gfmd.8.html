@@ -112,6 +112,23 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>log-level</I
+></TT
+></DT
+><DD
+><P
+>specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
 >-P</CODE
 > <TT
 CLASS="PARAMETER"
@@ -132,6 +149,12 @@ CLASS="OPTION"
 ><P
 >specifies the debug mode.  With the -d option, gfmd is running as a
 foreground process not a daemon.</P
+><P
+>If this option is specified and <CODE
+CLASS="OPTION"
+>-L</CODE
+> is not specified,
+the log level is set to "debug".</P
 ></DD
 ><DT
 ><CODE

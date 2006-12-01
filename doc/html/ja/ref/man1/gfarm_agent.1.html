@@ -72,6 +72,7 @@ CLASS="COMMAND"
 >gfarm_agent</B
 >
 および Gfarm メタデータサーバ間の一貫性は保証されます。</P
+></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -84,6 +85,21 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ログレベル</I
+></TT
+></DT
+><DD
+><P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
+></DD
 ><DT
 ><CODE
 CLASS="OPTION"
@@ -130,6 +146,12 @@ CLASS="OPTION"
 ><P
 >デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</P
+><P
+>このオプションを指定し、かつ <CODE
+CLASS="OPTION"
+>-L</CODE
+> オプションを指定しなかった
+場合、ログレベルは debug となります。</P
 ></DD
 ><DT
 ><CODE
@@ -233,7 +255,6 @@ CLASS="REFENTRYTITLE"
 >gfarm.conf</SPAN
 >(5)</SPAN
 ></P
-></DIV
 ></DIV
 ></BODY
 ></HTML

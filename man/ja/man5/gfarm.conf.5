@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "12 August 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "07 November 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -677,6 +677,21 @@ gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
 .nf
 	gfsd_connection_cache 32
 .fi
+.TP
+\fBlog_level \fI優先度レベル\fB\fR
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslog や標準エラーへ
+送られません。
+レベルは、優先度の高い順に "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" です。
+デフォルトの出力レベルは "info" です。
+"crit" 以上の優先度を指定することは、お勧めできません。
+
+例:
+
+.nf
+	log_level debug
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -719,7 +734,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<write_local_priority_statement> |
 		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
-		\~\~<gfsd_connection_cache_statement>
+		\~\~<gfsd_connection_cache_statement> |
+		\~\~<log_level_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -774,6 +790,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<log_level_statement> ::= "log_level" <log_priority>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -789,6 +806,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
 	<validity> ::= "enable" | "disable"
+	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		\~\~"notice" | "info" | "debug"
 .fi
 .SH "EXAMPLES"
 .PP

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM_AGENT" "1" "03 August 2006" "Gfarm" ""
+.TH "GFARM_AGENT" "1" "07 November 2006" "Gfarm" ""
 
 .SH NAME
 gfarm_agent \- Gfarm メタデータキャッシュサーバ
@@ -26,6 +26,10 @@ Gfarm ファイルシステムに対するレスポンスを大幅に改善します。
 および Gfarm メタデータサーバ間の一貫性は保証されます。
 .SH "OPTIONS"
 .TP
+\fB-L \fIログレベル\fB\fR
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+.TP
 \fB-P \fIPIDファイル\fB\fR
 \fBgfarm_agent\fR の process ID を、
 指定したファイルに記録します。
@@ -38,6 +42,9 @@ syslog のファシリティを指定します。
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。
+
+このオプションを指定し、かつ \fB-L\fR オプションを指定しなかった
+場合、ログレベルは debug となります。
 .TP
 \fB-f \fI設定ファイル\fB\fR
 起動時に読み込む設定ファイルを指定します。

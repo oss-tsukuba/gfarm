@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFMD" "8" "06 June 2006" "Gfarm" ""
+.TH "GFMD" "8" "07 November 2006" "Gfarm" ""
 
 .SH NAME
 gfmd(8) \- GfarmメタDB・デーモン
@@ -33,12 +33,19 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 す．
 .SH "OPTIONS"
 .TP
+\fB-L \fIログレベル\fB\fR
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+.TP
 \fB-P \fIPIDファイル\fB\fR
 gfmd の process ID を、指定したファイルに記録します。
 .TP
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。
+
+このオプションを指定し、かつ \fB-L\fR オプションを指定しなかった
+場合、ログレベルは debug となります。
 .TP
 \fB-f \fI設定ファイル\fB\fR
 起動時に読み込む設定ファイルを指定します．
