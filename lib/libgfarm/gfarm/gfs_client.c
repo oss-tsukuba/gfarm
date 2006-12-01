@@ -58,7 +58,8 @@
 #define XAUTH_NEXTRACT_MAXLEN	512
 
 #define IS_CONNECTION_ERROR(e) \
-	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF)
+	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF || \
+	 (e) == GFARM_ERR_PROTOCOL)
 
 static char GFARM_ERR_GFSD_ABORTED[] = "gfsd aborted";
 
@@ -95,6 +96,24 @@ static int free_connections = 0;
 
 static struct gfarm_hash_table *gfs_server_hashtab = NULL;
 static int gfsd_version_1_2_or_earlier;
+
+static char *(*gfs_client_hook_for_connection_error)(const char *) = NULL;
+
+/*
+ * Currently this supports only one hook function.
+ * And the function is always gfarm_schedule_host_cache_clear_auth() (or NULL).
+ */
+void
+gfs_client_add_hook_for_connection_error(char *(*hook)(const char *))
+{
+	gfs_client_hook_for_connection_error = hook;
+}
+
+int
+gfs_client_is_connection_error(char *e)
+{
+	return (IS_CONNECTION_ERROR(e));
+}
 
 int
 gfs_client_connection_fd(struct gfs_connection *gfs_server)
@@ -900,8 +919,12 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 	va_start(ap, format);
 	e = xxx_proto_vrpc_request(gfs_server->conn, command, &format, &ap);
 	va_end(ap);
-	if (IS_CONNECTION_ERROR(e))
+	if (IS_CONNECTION_ERROR(e)) {
+		if (gfs_client_hook_for_connection_error != NULL)
+			(*gfs_client_hook_for_connection_error)(
+			    gfs_client_hostname(gfs_server));
 		gfs_client_purge_from_cache(gfs_server);
+	}
 	return (e);
 }
 
@@ -918,8 +941,12 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 				  &error, &format, &ap);
 	va_end(ap);
 
-	if (IS_CONNECTION_ERROR(e))
+	if (IS_CONNECTION_ERROR(e)) {
+		if (gfs_client_hook_for_connection_error != NULL)
+			(*gfs_client_hook_for_connection_error)(
+			    gfs_client_hostname(gfs_server));
 		gfs_client_purge_from_cache(gfs_server);
+	}
 	if (e != NULL)
 		return (e);
 	if (error != 0)
@@ -940,8 +967,12 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 			   command, &error, &format, &ap);
 	va_end(ap);
 
-	if (IS_CONNECTION_ERROR(e))
+	if (IS_CONNECTION_ERROR(e)) {
+		if (gfs_client_hook_for_connection_error != NULL)
+			(*gfs_client_hook_for_connection_error)(
+			    gfs_client_hostname(gfs_server));
 		gfs_client_purge_from_cache(gfs_server);
+	}
 	if (e != NULL)
 		return (e);
 	if (error != 0)

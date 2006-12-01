@@ -225,7 +225,7 @@ struct search_idle_host_state {
 #define HOST_STATE_FLAG_ADDR_AVAIL		0x001
 #define HOST_STATE_FLAG_RTT_TRIED		0x002
 #define HOST_STATE_FLAG_RTT_AVAIL		0x004
-#define HOST_STATE_FLAG_AUTH_TRIED		0x008
+/*#define HOST_STATE_FLAG_AUTH_TRIED		0x008*/ /* not actually used */
 #define HOST_STATE_FLAG_AUTH_SUCCEED		0x010
 #define HOST_STATE_FLAG_STATFS_AVAIL		0x020
 /* The followings are working area during scheduling */
@@ -420,6 +420,8 @@ search_idle_network_list_add(struct sockaddr *addr,
 	return (NULL);
 }
 
+static char *gfarm_schedule_host_cache_clear_auth(const char *);
+
 static char *
 search_idle_host_state_initialize(void)
 {
@@ -430,12 +432,17 @@ search_idle_host_state_initialize(void)
 		return (GFARM_ERR_NO_MEMORY);
 
 	search_idle_network_list_init(); /* ignore any error here */
+
+	/* when a connection error happens, make the host unavailable. */
+	gfs_client_add_hook_for_connection_error(
+		gfarm_schedule_host_cache_clear_auth);
+
 	return (NULL);
 }
 
 static char *
 search_idle_host_state_add_host_or_host_info(
-	char *hostname, struct gfarm_host_info *host_info,
+	const char *hostname, struct gfarm_host_info *host_info,
 	struct search_idle_host_state **hp)
 {
 	char *e;
@@ -519,11 +526,25 @@ search_idle_host_state_add_host_or_host_info(
 }
 
 static char *
-search_idle_host_state_add_host(char *hostname,
+search_idle_host_state_add_host(const char *hostname,
 	struct search_idle_host_state **hp)
 {
 	return (search_idle_host_state_add_host_or_host_info(hostname, NULL,
 	    hp));
+}
+
+/* forget that this user was authenticated by the specified host */
+static char *
+gfarm_schedule_host_cache_clear_auth(const char *hostname)
+{
+	char *e;
+	struct search_idle_host_state *h;
+
+	e = search_idle_host_state_add_host(hostname, &h);
+	if (e != NULL)
+		return (e);
+	h->flags &= ~HOST_STATE_FLAG_AUTH_SUCCEED;
+	return (NULL);
 }
 
 static char *
@@ -930,7 +951,7 @@ search_idle_load_callback(void *closure)
 			/* completed */
 			search_idle_record(c);
 		} else {
-			c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
+			/* c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED; */
 			e = gfs_client_connect_request_multiplexed(c->state->q,
 			    c->h->return_value, &c->h->addr,
 			    search_idle_connect_callback, c,
@@ -1039,7 +1060,10 @@ search_idle_cache_is_available(struct search_idle_state *s,
 	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH:
 		return ((h->flags & HOST_STATE_FLAG_AUTH_SUCCEED) != 0);
 	case GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH_AND_DISKAVAIL:
-		return ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0);
+		return ((h->flags &
+		   (HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL))
+		== (HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL)
+		&& !is_expired(&h->statfs_cache_time, STATFS_EXPIRATION));
 	default:
 		assert(0);
 		return (0);
@@ -1809,7 +1833,8 @@ statfsnode(char *canonical_hostname, int use_cache,
 		if (e != NULL || e2 != NULL)
 			return (e);
 		h->statfs_cache_time = search_idle_now;
-		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
+		h->flags |=
+		    HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL;
 	}
 	*bsizep = h->bsize;
 	*blocksp = h->blocks;

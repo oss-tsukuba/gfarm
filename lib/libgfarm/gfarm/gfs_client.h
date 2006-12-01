@@ -12,6 +12,8 @@ struct stat;
 
 void gfs_client_terminate(void);
 
+int gfs_client_is_connection_error(char *);
+
 int gfs_client_connection_fd(struct gfs_connection *);
 enum gfarm_auth_method gfs_client_connection_auth_method(
 	struct gfs_connection *);
@@ -27,6 +29,8 @@ char *gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *,
 	struct gfs_client_connect_state **);
 char *gfs_client_connect_result_multiplexed(struct gfs_client_connect_state *,
 	struct gfs_connection **);
+
+void gfs_client_add_hook_for_connection_error(char *(*)(const char *));
 
 char *gfs_client_disconnect(struct gfs_connection *);
 char *gfs_client_create(struct gfs_connection *, char *, gfarm_int32_t, int *);

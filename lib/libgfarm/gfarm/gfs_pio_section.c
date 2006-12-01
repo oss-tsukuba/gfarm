@@ -29,6 +29,75 @@
 #include "gfs_misc.h"
 #include "gfs_pio.h"
 
+/*
+ * switch to another replica, when a connection-related error happened.
+ * This only works with read-only mode, because:
+ * - If it's write mode, we don't have a way to access already written data
+ *   (at least when the connection error is not resolved yet).
+ *   XXX It is possible to handle disk full error, though.
+ * - If it's write mode or GFARM_FILE_TRUNC is specified,
+ *   other replicas has been already removed by gfs_pio_set_view_section().
+ *   See the call of gfs_unlink_every_other_replicas() there.
+ */
+static char *
+gfs_pio_view_section_try_to_switch_replica(GFS_File gf)
+{
+	char *e;
+	struct gfs_file_section_context nvc, *ovc = gf->view_context;
+
+	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0 ||
+	    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+	    (gf->open_flags & GFARM_FILE_TRUNC) != 0)
+		return ("cannot switch to another replica");
+	if ((gf->view_flags & GFARM_FILE_NOT_RETRY) != 0 ||
+	    (gf->open_flags & GFARM_FILE_NOT_RETRY) != 0)
+		return ("retry is prohibited");
+
+	nvc = *ovc;
+	gf->view_context = &nvc;
+
+	for (;;) {
+		e = gfarm_file_section_host_schedule_with_priority_to_local(
+		    gf->pi.pathname, nvc.section, &nvc.canonical_hostname);
+		if (e != NULL)
+			break;
+
+		if (gfarm_canonical_hostname_is_local(nvc.canonical_hostname))
+			e = gfs_pio_open_local_section(gf, gf->view_flags);
+		else
+			e = gfs_pio_open_remote_section(gf,
+			    nvc.canonical_hostname, gf->view_flags);
+
+		if (e != NULL) {
+			free(nvc.canonical_hostname);
+
+			if (gfs_client_is_connection_error(e))
+				continue;
+			/*
+			 * FT - inconsistent metadata has been fixed.
+			 * try again.
+			 */
+			if (e == GFARM_ERR_INCONSISTENT_RECOVERABLE)
+				continue;
+		}
+		break;
+	}
+	if (e == NULL) {
+		e = (*nvc.ops->storage_seek)(gf, gf->io_offset,SEEK_SET, NULL);
+		if (e == NULL) {
+			gf->view_context = ovc;
+			(*ovc->ops->storage_close)(gf);
+			free(ovc->canonical_hostname);
+			*ovc = nvc;
+			return (NULL);
+		}
+		(*nvc.ops->storage_close)(gf);
+		free(nvc.canonical_hostname);
+	}
+	gf->view_context = ovc;
+	return (e);
+}
+
 static char *
 gfs_pio_view_section_set_status(GFS_File gf,
 	char *(*modify)(char *, char *, file_offset_t))
@@ -103,6 +172,13 @@ gfs_pio_view_section_close(GFS_File gf)
 			e = (*vc->ops->storage_calculate_digest)(gf,
 			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
 			    &md_len, md_value, &filesize);
+			if (gfs_client_is_connection_error(e) &&
+			    gfs_pio_view_section_try_to_switch_replica(gf) ==
+			    NULL) {
+				e = (*vc->ops->storage_calculate_digest)(gf,
+				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
+				    &md_len, md_value, &filesize);
+			}
 			if (e != NULL) {
 				md_calculated = 0;
 				if (e_save == NULL)
@@ -141,6 +217,13 @@ gfs_pio_view_section_close(GFS_File gf)
 			e = (*vc->ops->storage_calculate_digest)(gf,
 			    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
 			    &md_len, md_value, &filesize);
+			if (gfs_client_is_connection_error(e) &&
+			    gfs_pio_view_section_try_to_switch_replica(gf) ==
+			    NULL) {
+				e = (*vc->ops->storage_calculate_digest)(gf,
+				    GFS_DEFAULT_DIGEST_NAME, sizeof(md_value),
+				    &md_len, md_value, &filesize);
+			}
 			if (e != NULL) {
 				md_calculated = 0;
 				if (e_save == NULL)
@@ -225,6 +308,10 @@ gfs_pio_view_section_read(GFS_File gf, char *buffer, size_t size,
 	struct gfs_file_section_context *vc = gf->view_context;
 	char *e = (*vc->ops->storage_read)(gf, buffer, size, lengthp);
 
+	if (gfs_client_is_connection_error(e) &&
+	    gfs_pio_view_section_try_to_switch_replica(gf) == NULL) {
+		e = (*vc->ops->storage_read)(gf, buffer,size, lengthp);
+	}
 	if (e == NULL && *lengthp > 0 && gfs_pio_check_calc_digest(gf))
 		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
 	return (e);
@@ -235,9 +322,15 @@ gfs_pio_view_section_seek(GFS_File gf, file_offset_t offset, int whence,
 			  file_offset_t *resultp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
+	char *e = (*vc->ops->storage_seek)(gf, offset, whence, resultp);
 
-	gfs_pio_unset_calc_digest(gf);
-	return ((*vc->ops->storage_seek)(gf, offset, whence, resultp));
+	if (gfs_client_is_connection_error(e) &&
+	    gfs_pio_view_section_try_to_switch_replica(gf) == NULL) {
+		e = (*vc->ops->storage_seek)(gf, offset, whence, resultp);
+	}
+	if (e == NULL)
+		gfs_pio_unset_calc_digest(gf);
+	return (e);
 }
 
 static char *
@@ -288,6 +381,10 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 	}
 
 	e = (*vc->ops->storage_fstat)(gf, &st);
+	if (gfs_client_is_connection_error(e) &&
+	    gfs_pio_view_section_try_to_switch_replica(gf) == NULL) {
+		e = (*vc->ops->storage_fstat)(gf, &st);
+	}
 	if (e != NULL) {
 		free(status->st_user);
 		free(status->st_group);
