@@ -22,15 +22,15 @@ GfarmFS-FUSE を使って Gfarm ファイルシステムをマウントし，そのマウントポイントを
 <UL>
 <LI>NFS サーバマシン側
   <UL>
-  <LI>Gfarm のクライアントが利用できる．利用しようと思っている Gfarm の環境にアクセスできる．
-  <LI>認証方法は，sahedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shaed_key を各ノードに配布したり，grid-proxy-init を実行しておかなければならない．
   <LI>FUSE がインストールされている．
-  <LI>Linux カーネル 2.6 環境である．FUSE のマウントポイントを NFS でエクスポートするために必要となっている．
+  <LI>FUSE の README.NFS に目を通しておく．
   <LI>一般ユーザが FUSE でマウントしたマウントポイントに他ユーザがアクセスすることを許可されている．(user_allow_other 設定)
+  <LI>Gfarm 環境にアクセスできる設定が済んでいる．
+  <LI>認証方法は sharedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shared_key を各ノードに配布したり，grid-proxy-init を実行しておかなければならない．
   <LI>GfarmFS-FUSE がインストールされていて，実行できる．
-  <LI>NFS サーバを動かすことができる．または動いている．
-  <LI>この NFS サーバのマシン上で Gfarm のファイルシステムノード(gfsd)を動かしていないことを推奨する．gfsd を動かしている場合に，この NFS を経由して Gfarm 上にファイルを作成した場合は，このファイルシステムノードにしかファイルが作成されない．
-  <LI>一般ユーザが FUSE でマウントした(する予定の)マウントポイントに NFS 経由でアクセスできるような NFS の設定にする．
+  <LI>NFS サーバを動かすことができる．
+  <LI>この NFS サーバのマシン上で Gfarm のファイルシステムノード(gfsd)を動かしている場合は，gfarm.conf の write_local_priority を無効にすることを推奨する．
+  <LI>一般ユーザが FUSE でマウントするマウントポイントに NFS 経由でアクセスできるような NFS の設定にする．
   <LI>FUSE でマウントしてから(しなおした場合も)，nfs restart をする必要がある．
   </UL>
 <LI>NFS クライアントマシン側
@@ -78,7 +78,7 @@ user_allow_other
 
 <H2>3. NFS サーバの設定</H2>
 
-Linux Kernel 2.6 の環境でおこないます．(FUSE の README.NFS に記述されています)
+FUSE の README.NFS を参照してください．FUSE 2.5.3 時点では，Linux カーネル 2.6.14 以降を使用している場合に，FUSE の ./configure に --enable-kernel-module をつけてカーネルモジュールを毎回インストールしなおす必要があります．
 <BR>
 /etc/exports には，マウントポイントを公開する設定に fsid と anonuid の設定も加えます．
 その他，/etc/hosts.allow /etc/hosts.deny などの設定をして，nfs restart します．
