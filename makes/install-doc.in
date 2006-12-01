@@ -19,7 +19,7 @@ globus_flavor="@globus_flavor@"
 : ${globus_flavor:="gcc32"}
 
 INSTALL="@abs_top_srcdir@/makes/install-sh -c"
-tmpfile=insttmp.$$
+tmpfile=/tmp/insttmp.$$
 status=1
 
 trap 'rm -f $tmpfile; exit $status' 0 1 2 15
