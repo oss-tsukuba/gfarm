@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>1 Dec 2003</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -26,25 +26,24 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfsd</command> is a filesystem daemon for the Gfarm filesystem, which has
-been running on every filesystem node, usually, with a root privilege.</para>
+<para><command>gfsd</command> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with  root privileges.</para>
 
 <para><command>gfsd</command> provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-fast invocation, node resource status monitoring.</para>
+fast invocation, and node resource status monitoring.</para>
 
 <para>It is possible for <command>gfsd</command> to be executed as a non-privileged user
-process although only the user that executes the <command>gfsd</command> can be authenticated.
+process, although only the user that executes the <command>gfsd</command> can be authenticated.
 Other users cannot use it.</para>
 
 <para>In order to execute <command>gfsd</command> as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At least, the port number used by <command>gfsd</command> should be altered to a
-non-privileged port number by spool_serverport statement in the
-configuration file or the -p option.</para>
+configuration file for a user needs to be specified with the -f option.
+At the very least, the port number used by <command>gfsd</command> should be altered to a
+non-privileged port number using the spool_serverport statement in the
+configuration file, or the -p option.</para>
 
 <para>In this case, the altered port number of <command>gfsd</command> should be
-specified by the spool_serverport statement in ~/.gfarmrc or
+specified with the spool_serverport statement in ~/.gfarmrc or
 %%SYSCONFDIR%%/gfarm.conf on a client node.</para>
 
 </refsect1>
@@ -55,7 +54,7 @@ specified by the spool_serverport statement in ~/.gfarmrc or
 <varlistentry>
 <term><option>-L</option> <parameter>log-level</parameter></term>
 <listitem>
-<para>specifies a log priority level.  The log output, which priority
+<para>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
 Please refer gfarm.conf(5) for the priority levels which can be specified
 by this option.
@@ -66,7 +65,7 @@ by this option.
 <varlistentry>
 <term><option>-P</option> <parameter>pid-file</parameter></term>
 <listitem>
-<para>specifies a file name which records the process ID of gfsd.</para>
+<para>Specifies a file name which records the process ID of gfsd.</para>
 </listitem>
 </varlistentry>
 
@@ -74,11 +73,11 @@ by this option.
 <term><option>-U</option></term>
 <listitem>
 <para>
-makes gfsd not create UNIX domain socket.
-This option is useful when one wants to invoke multiple gfsd
+Makes gfsd not create a UNIX domain socket.
+This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.
-When new files are created by processes on local host,
-the gfsd which isn't specified this -U option will be used
+When new files are created by processes on the local host,
+the gfsd which doesn't have this -U option specified will be used
 to provide spool directory for the new files.
 </para>
 </listitem>
@@ -87,8 +86,8 @@ to provide spool directory for the new files.
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
-<para>specifies the debug mode.  With the -d option, gfsd is running as a
-foreground process not a daemon.</para>
+<para>Specifies the debug mode.  With the -d option, gfsd runs as a
+foreground process, not a daemon.</para>
 <para>
 If this option is specified and <option>-L</option> is not specified,
 the log level is set to "debug".
@@ -99,7 +98,7 @@ the log level is set to "debug".
 <varlistentry>
 <term><option>-f</option> <parameter>config-file</parameter></term>
 <listitem>
-<para>specifies a configuration file that is read instead of the default
+<para>Specifies a configuration file that is read instead of the default
 configuration file.</para>
 </listitem>
 </varlistentry>
@@ -107,9 +106,10 @@ configuration file.</para>
 <varlistentry>
 <term><option>-l</option> <parameter>IP-address</parameter></term>
 <listitem>
-<para>specifies the IP address that the gfsd accepts TCP and UDP requests.
+<para>Specifies the IP address from which the gfsd accepts TCP and UDP
+requests.
 The default address is all IP addresses of the host.
-This option is useful when one wants to invoke multiple gfsd
+This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.
 </para>
 </listitem>
@@ -118,7 +118,7 @@ to provide multiple spool directories on the host.
 <varlistentry>
 <term><option>-p</option> <parameter>port-number</parameter></term>
 <listitem>
-<para>specifies a port number of TCP and UDP used by gfsd.  By default, 600
+<para>Specifies a port number for TCP and UDP used by gfsd.  By default, 600
 is used.</para>
 </listitem>
 </varlistentry>
@@ -126,7 +126,7 @@ is used.</para>
 <varlistentry>
 <term><option>-r</option> <parameter>directory</parameter></term>
 <listitem>
-<para>specifies a spool directory
+<para>Specifies a spool directory
 for a Gfarm filesystem on this filesystem node.
 </para>
 </listitem>
@@ -135,7 +135,7 @@ for a Gfarm filesystem on this filesystem node.
 <varlistentry>
 <term><option>-s</option> <parameter>syslog-facility</parameter></term>
 <listitem>
-<para>specifies a syslog facility to report errors by gfsd.  By default,
+<para>Specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.</para>
 </listitem>
 </varlistentry>
@@ -143,7 +143,7 @@ local0 is used.</para>
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>makes gfsd output verbose log message about authentication.
+<para>Makes gfsd output verbose log message on authentication.
 This is useful, when one has to resolve an issue about GSI authenticaion.
 </para>
 </listitem>
@@ -152,7 +152,7 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -176,4 +176,3 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 </refsect1>
 
 </refentry>
-

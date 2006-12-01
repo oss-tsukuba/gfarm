@@ -3,7 +3,7 @@
 
 <refentry id='gfrun.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrun</refentrytitle>
@@ -49,29 +49,29 @@ option, the <option>-H</option> option, or the <option>-N</option>
 option.</para>
 
 <para>The <option>-G</option> option specifies the
-<parameter>gfarm-URL</parameter>, which will be used by the
+<parameter>gfarm-URL</parameter>, which will be used by
 file-affinity scheduling.  In this case, <command>gfrun</command>
-schedules the same number of filesystem nodes as the number of the
+schedules the same number of filesystem nodes as the number of
 Gfarm fragments, taking into consideration the physical locations of
-each fragment replicas of the Gfarm file, and filesystem node status.
+each fragment replica of the Gfarm file, and filesystem node status.
 The <option>-H</option> option specifies the
 <parameter>hostfile</parameter> that lists filesystem nodes.  The
 <option>-N</option> option specifies the number of filesystem
 nodes.</para>
 
-<para><option>-G</option>, <option>-H</option>, and
-<option>-N</option> options are exclusive.  When none of
-<option>-G</option>, <option>-H</option>, and <option>-N</option>
-options are not specified, <command>gfrun</command> schedules
-filesystem nodes by the file-affinity scheduling using the first
-existent Gfarm file in the argument list <parameter>args</parameter>.
-If there is no existent Gfarm file in the argument list, an
+<para>The <option>-G</option>, <option>-H</option>, and
+<option>-N</option> options are exclusive.  When none of the
+<option>-G</option>, <option>-H</option>, or <option>-N</option>
+options are specified, <command>gfrun</command> schedules
+filesystem nodes by file-affinity scheduling using the first
+existent Gfarm file in the argument list, <parameter>args</parameter>.
+If there are no existent Gfarm files in the argument list, an
 appropriate filesystem node is selected to be executed.</para>
 
-<para><command>gfrsh</command> and <command>gfssh</command> utilizes
+<para><command>gfrsh</command> and <command>gfssh</command> utilize
 rsh and ssh, respectively, instead of gfrcmd.</para>
 
-<para><parameter>Command</parameter> can be specified by a gfarm-URL
+<para>A <parameter>command</parameter> can be specified by a gfarm-URL
 that is registered using gfreg(1).</para>
 
 </refsect1>
@@ -82,15 +82,18 @@ that is registered using gfreg(1).</para>
 <varlistentry>
 <term><option>-G</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>specifies a Gfarm file <parameter>gfarm-URL</parameter> for
-file-affinity scheduling.</para>
+<para>Specifies a Gfarm file <parameter>gfarm-URL</parameter> for
+file-affinity scheduling.
+Please read the DESCRIPTION section about how file-affinity scheduling
+works.
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>
 <listitem>
-<para>specifies a <parameter>hostfile</parameter> that lists filesystem nodes.
+<para>Specifies a <parameter>hostfile</parameter> that lists filesystem nodes.
 </para>
 <para>
 if ``-'' is specified, standard input is used to read the host list.</para>
@@ -100,23 +103,23 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 <varlistentry>
 <term><option>-N</option> <parameter>np</parameter></term>
 <listitem>
-<para>specifies the number of nodes <parameter>np</parameter>, which
-are selected by the increasing order of load average.</para>
+<para>Specifies the number of nodes, <parameter>np</parameter>, which
+are selected in the increasing order of load average.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>specifies an on-demand replication mode.  In this mode, every
-file will be replicated before it will be accessed remotely.</para>
+<para>Specifies an on-demand replication mode.  In this mode, every
+file will be replicated before it is accessed remotely.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-o</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>specifies a Gfarm file that the standard output of the executed
+<para>Specifies a Gfarm file that the standard output of the executed
 program will be redirected to.</para>
 </listitem>
 </varlistentry>
@@ -124,7 +127,7 @@ program will be redirected to.</para>
 <varlistentry>
 <term><option>-e</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
-<para>specifies a Gfarm file that the standard error of the executed
+<para>Specifies a Gfarm file that the standard error of the executed
 program will be redirected to.</para>
 </listitem>
 </varlistentry>
@@ -132,7 +135,7 @@ program will be redirected to.</para>
 <varlistentry>
 <term><option>-I</option> <parameter>fragment-index</parameter></term>
 <listitem>
-<para>specifies a Gfarm fragment index executed by the gfrun command.
+<para>Specifies a Gfarm fragment index executed by the gfrun command.
 This option is available only when either file-affinity scheduling is
 selected by the <option>-G</option> option or a gfarm file in the
 argument list, or the <option>-N</option> option is specified.</para>
@@ -142,7 +145,7 @@ argument list, or the <option>-N</option> option is specified.</para>
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>displays error message verbosely.
+<para>Displays error message verbosely.
 </para>
 </listitem>
 </varlistentry>
@@ -150,7 +153,7 @@ argument list, or the <option>-N</option> option is specified.</para>
 <varlistentry>
 <term><option>-p</option></term>
 <listitem>
-<para>displays elapsed time of each Gfarm parallel I/O API after the
+<para>Displays the elapsed time of each Gfarm parallel I/O API after the
 program terminates.
 </para>
 </listitem>
@@ -159,7 +162,7 @@ program terminates.
 <varlistentry>
 <term><option>-g</option></term>
 <listitem>
-<para>explicitly specifies that the command is a Gfarm program.
+<para>Explicitly specifies that the command is a Gfarm program.
 Gfarm specific options will be passed to the command as the result.
 </para>
 </listitem>
@@ -168,7 +171,7 @@ Gfarm specific options will be passed to the command as the result.
 <varlistentry>
 <term><option>-u</option></term>
 <listitem>
-<para>explicitly specifies that the command is an usual program, and
+<para>Explicitly specifies that the command is an ordinary program, and
 does not take Gfarm specific options.
 </para>
 </listitem>
@@ -177,8 +180,8 @@ does not take Gfarm specific options.
 <varlistentry>
 <term><option>-b</option></term>
 <listitem>
-<para>specifies global file view as a defult file view for programs
-linked with Gfarm syscall-hooking library.  If this option is not
+<para>Specifies global file view as the default file view for programs
+linked with the Gfarm syscall-hooking library.  If this option is not
 specified, the default is local file view.
 </para>
 </listitem>
@@ -187,7 +190,7 @@ specified, the default is local file view.
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -199,7 +202,7 @@ specified, the default is local file view.
 <varlistentry>
 <term><envar>GFRUN_CMD</envar></term>
 <listitem>
-<para>specifies a remote shell command.  If globus-job-run is specified,
+<para>Specifies a remote shell command.  If globus-job-run is specified,
 gfrun executes each process using globus-job-run.</para>
 </listitem>
 </varlistentry>
@@ -213,4 +216,3 @@ gfrun executes each process using globus-job-run.</para>
 </refsect1>
 
 </refentry>
-

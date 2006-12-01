@@ -1,6 +1,98 @@
 Copyright (c) 2003-2006 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
+Release note for Gfarm 1.4
+==========================
+
+[2006.11.13]
+
+Updated Features
+
+  * gfrm(1)
+
+  - support parallel removal of files to speed up operations if gfrm
+    is compiled in OpenMP C compiler.
+
+  - add -j <#thread>, -D <domain>, -H <hostfile>, -N <#replica>, -n,
+    -q, -v options.  -j option is only available if gfrm is compiled
+    in OpenMP C compiler.
+
+  * gfwhere(1) - add -r and -R options for recursive listing.
+
+  * config-gfarm - support CentOS.
+
+  * gfsplck(1)
+  
+  - add a functionality to release text-busy status.  A file which
+    was being opened by crashed application programs holds
+    text-busy status. (Bugzilla-ja #60)
+
+  * gfimport_text(1) - add -N <#host> option.
+
+  * gfarm_agent(1)
+
+  - surpress too much and unimportant log output to improve
+    performance.
+
+  - add -L <log_level> option to specify a syslog level.
+
+  * gfarm.conf(5)
+
+  - add "level log_level" directive.
+ 
+  - add "record_atime disable" directive.
+
+  * gfmd(8) and gfsd(8) - add -L <log_level> option.
+
+  * libgfarm
+
+  - improve a scheduling algorithm:
+      o when a gfsd stops during reading a file, retry another file
+	replica automatically.
+      o when a connection error to gfsd is observed, remove the host
+	entry from a scheduling cache.
+      o when opening a file with the O_TRUNK flag, schedule a
+	filesystem node regardless of the original location.
+
+  - do not ignore SIGPIPE for applications that do not check return
+    value in write(2).  (Bugzilla-ja #68)
+
+  - Add more check against integer overflow.
+
+  * Documentation
+  
+  - Improved all documents: added more detailed and more exact
+    explanation.
+
+  * Bug fix
+
+  - gfls(1) - fix a bug that a longer pathname than the screen
+              width causes an error.
+  
+  - gfreg(1) - fix a bug in recursive mode that a directory name
+               cannot be changed.
+
+  - config-gfarm(1)
+      o resolve a problem that postmaster fails to start up in
+        some cases.
+
+  - gfmd(8) - add description about -d option in usage display.
+              (Bugzilla-ja #62)
+
+  - gfsd(8) - fix a bug that errno is not preserved by SIGCHLD
+              handler.
+
+  - libgfarm 
+     o fix a bug such that gfs_client_terminate() does not remove
+       connection entries from a connection cache.  This may cause
+       core dump in some calling sequences.
+     o fix a bug that a file cannot be deleted if it has no
+       fragment information.
+     o fix a serious bug in scheduling which may cause libgfarm to
+       hang up.  (Bugzilla-ja #66)
+
+  - fix a package dependency problem in gfarm.spec.
+
 Release note for Gfarm 1.3.1
 ============================
 
@@ -16,7 +108,7 @@ New Features
 
   - KNOWN_PROBLEMS - describe known problems of Gfarm 1.3.1.
 
-Update Features
+Updated Features
 
   * libgfarm
 

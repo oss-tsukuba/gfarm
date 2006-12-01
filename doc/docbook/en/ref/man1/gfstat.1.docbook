@@ -2,7 +2,7 @@
 
 <refentry id='gfstat.1'>
 
-<refentryinfo><date>12 Nov 2003</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstat</refentrytitle>
@@ -27,7 +27,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para><command>gfstat</command> displays information about the
-specified files or directories in Gfarm file system.</para>
+specified files or directories in the Gfarm filesystem.</para>
 
 </refsect1>
 </refentry>

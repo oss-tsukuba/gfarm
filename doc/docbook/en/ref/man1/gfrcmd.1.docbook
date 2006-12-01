@@ -3,7 +3,7 @@
 
 <refentry>
 
-<refentryinfo><date>Aug 29, 2002</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrcmd</refentrytitle>
@@ -28,14 +28,14 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>gfrcmd</command> logs into a filesystem node <parameter>host</parameter> and executes
-<parameter>command</parameter> on the filesystem node.  It provides a similar
-functionality to rsh, while the following is a list of differences.</para>
+<parameter>command</parameter>s on the filesystem node.  It provides a similar
+functionality to rsh.  The following is a list of differences, however.</para>
 
 <para>A remote server is not executed by inetd, but is incorporated with
 gfsd(8).</para>
 
 <para>The user is authenticated and authorized by the Gfarm security
-mechanism.  Since it does not rely on privileged ports of TCP for
+mechanism.  Since this does not rely on privileged TCP ports  for
 authentication like rsh, the maximum number of remote executions is
 not limited by the number of privileged ports.</para>
 
@@ -51,7 +51,7 @@ directory that is often shared using NFS, but a spool directory of the
 Gfarm filesystem, which makes it possible to leave core files on each
 filesystem node when debugging.</para>
 
-<para>It has a functionality to invoke a debugger when a fatal signal
+<para>It has functionality that invokes a debugger when a fatal signal
 occurs.</para>
 
 </refsect1>
@@ -63,36 +63,36 @@ occurs.</para>
 <varlistentry>
 <term><option>-l</option><parameter>username</parameter></term>
 <listitem>
-<para>specifies a username on a remote host.</para>
+<para>Specifies a username on a remote host.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-n</option></term>
 <listitem>
-<para>redirects the standard input from the special device /dev/null.</para>
+<para>Redirects the standard input from the special device /dev/null.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-r</option></term>
 <listitem>
-<para>executes a remote command directly without using a login shell.</para>
+<para>Executes a remote command directly without using a login shell.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-y</option></term>
 <listitem>
-<para>inherits the environment variable DISPLAY.</para>
+<para>Inherits the environment variable, DISPLAY.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-X</option></term>
 <listitem>
-<para>inherits the authentication information of the X Window System.  It
-is useful under the situation such that the home directory is not
+<para>Inherits the authentication information of the X Window System.  It
+is useful in a situation where the home directory is not
 shared.</para>
 </listitem>
 </varlistentry>
@@ -100,7 +100,7 @@ shared.</para>
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>displays error message verbosely.
+<para>Displays error message verbosely.
 </para>
 </listitem>
 </varlistentry>
@@ -108,7 +108,7 @@ shared.</para>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 
@@ -122,7 +122,7 @@ shared.</para>
 <varlistentry>
 <term><envar>GFARM_DEBUG_MODE</envar></term>
 <listitem>
-<para>specifies the debugger command that is invoked when a remotely
+<para>Specifies the debugger command that is invoked when a remotely
 executed command aborts with a fatal signal.  When gdb is specified,
 xterm and the GNU debugger gdb are executed.
 To utilize this functionality, it is necessary to invoke <command>gfrcmd</command>

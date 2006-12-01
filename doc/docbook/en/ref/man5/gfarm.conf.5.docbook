@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+<refentryinfo><date>11 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -19,16 +19,13 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes such as gfmd and gfsd refer to %%SYSCONFDIR%%/gfarm.conf
-by default.  Since this configuration file is only read at the startup
-time, it is necessary to restart servers when updating the content of
-the configuration file.</para>
+Gfarm server processes, such as gfmd and gfsd, refer to %%SYSCONFDIR%%/gfarm.conf by default.  Since this configuration file is only read at startup, it is necessary to restart servers when the contents of the configuration file are updated.</para>
 
-<para>Application programs such as gfls and gfhost refer to both
-%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+<para>Application programs, such as gfls and gfhost, refer to both
+%%SYSCONFDIR%%/gfarm.conf, and a file specified by an environment variable,
 GFARM_CONFIG_FILE. If both configuration files exist, the file
-specified by the environment variable GFARM_CONFIG_FILE is read at
-first. Both files have same grammar.
+specified by the environment variable, GFARM_CONFIG_FILE, is read
+first. Both files have the same grammar.
 If the environment variable GFARM_CONFIG_FILE doesn't exist,
  ~/.gfarmrc in a user's home directory is used instead.
 </para>
@@ -48,7 +45,7 @@ forms.</para>
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter></term>
 <listitem>
-<para>specifies an IP address with four octets from 0 to 255 separated
+<para>Specifies an IP address with four octets from 0 to 255, separated
 by ".".</para>
 </listitem>
 </varlistentry>
@@ -56,7 +53,7 @@ by ".".</para>
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
 <listitem>
-<para>specifies a network address with an IP address and a netmask
+<para>Specifies a network address with an IP address and a netmask
 from 0 to 31 separated by "/".</para>
 </listitem>
 </varlistentry>
@@ -64,21 +61,21 @@ from 0 to 31 separated by "/".</para>
 <varlistentry>
 <term><parameter>domain.name</parameter></term>
 <listitem>
-<para>specifies a host name.</para>
+<para>Specifies a host name.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term> <parameter>.domain.name</parameter></term>
 <listitem>
-<para>specifies all hosts which belong to the domain.name.</para>
+<para>Specifies all hosts which belong to the domain.name.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><emphasis>*</emphasis></term>
 <listitem>
-<para>specifies all hosts.</para>
+<para>Specifies all hosts.</para>
 </listitem>
 </varlistentry>
 
@@ -106,7 +103,7 @@ node, this statement should be specified.</para>
 <term><token>spool_server_listen_address</token> <parameter>IP-address</parameter></term>
 <listitem>
 <para>The <token>spool_server_listen_address</token> statement specifies
-the IP address that the gfsd accepts TCP and UDP requests.
+the IP address at which the gfsd accepts TCP and UDP requests.
 The default address is all IP addresses of the host.
 This option is useful when one wants to invoke multiple gfsd
 to provide multiple spool directories on the host.
@@ -135,24 +132,24 @@ is 600.</para>
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-This statement specifies the type of a credential used by gfsd for GSI
+This statement specifies the type of credential used by gfsd for GSI
 authentication.
-This is just ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
 </para>
 <para>
-If this statement isn't used on a server side, the server uses
-a host certificate, if the server is invoked with root privilege.
+If this statement isn't used on the server side, the server uses
+a host certificate, if the server is invoked with root privileges.
 Or, if the server is invoked as a non-privileged user, the server
-uses the user's certificate. Thus, usually you don't need to use
-this statement on a server side.
+uses the user's certificate. Thus, you usually don't need to use
+this statement on the server side.
 </para>
 <para>
-If this statement isn't used on a client side, the client assumes
-that a server that the client is going to connect is using
+If this statement isn't used on the client side, the client assumes
+that the server that the client is going to connect is using
 a host certificate of the server host. Thus, if the server is not
-invoked with root privilege, but invoked as a user privilege that
-the user is same with the user who invoked the client, the client
+invoked with root privileges, but invoked with user privileges where
+the user is the same as the user who invoked the client, the client
 side needs to specify the following one line.
 </para>
 <para>Example:</para>
@@ -160,21 +157,21 @@ side needs to specify the following one line.
 	spool_server_cred_type self
 </literallayout>
 <para>
-The possible types of the <parameter>cred_type</parameter> are
+The possible types of <parameter>cred_type</parameter> are
 ``<token>self</token>'', 
 ``<token>host</token>'', ``<token>user</token>'' and 
 ``<token>mechanism-specific</token>''.
-And those are used with <token>spool_server_cred_service</token>
-and <token>spool_server_cred_name</token> statement as follows:
+And those are used with the <token>spool_server_cred_service</token>
+and <token>spool_server_cred_name</token> statements as follows:
 </para>
 <variablelist>
 <varlistentry>
 <term><token>self</token></term>
 <listitem>
 <para>
-This keyword specifies that a certificate that currently the user
+This keyword specifies that the certificate that the user currently
 has is used.
-You must not use either
+You must not use either the 
 <token>spool_server_cred_service</token> or
 <token>spool_server_cred_name</token> statement,
 if you are using this type.
@@ -188,7 +185,7 @@ if you are using this type.
 This keyword specifies that a host certificate or a service certificate
 is used.
 To choose a service certificate, the name of the service may be specified
-by <token>spool_server_cred_service</token> statement.
+by the <token>spool_server_cred_service</token> statement.
 If ``<token>host</token>'' is specified as the service name, a host certificate
 in the file ``<filename>/etc/grid-security/hostcert.pem</filename>'' will
 be used.
@@ -199,10 +196,10 @@ will be used.
 If the service name is omitted, ``<token>host</token>'' will be used as
 the service name by default.
 Only the Common Name field of a certificate will be used to check
-the server's identity for a host certificate and a service certificate.
-And the Common Name field must be ``CN=SERVERNAME/HOSTNAME'' format.
-Also the hostname must exactly match with the canonical name configured by
-the <command>gfhost</command> command. Any alias hostnames are not allowed.
+the server's identity for both a host certificate and a service certificate.
+And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME'' format.
+Also, the hostname must match the canonical name configured by
+the <command>gfhost</command> command exactly.  Alias hostnames are not allowed.
 </para>
 <para>
 This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
@@ -220,26 +217,26 @@ This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
 <listitem>
 <para>
 This keyword specifies that a user certificate is used.
-The account name of the user may be specified by 
+The account name of the user may be specified by the
 <token>spool_server_cred_name</token> statement.
 If the account name is omitted, the user who invoked the command
 will be used by default.
-You must not specify a service name by
-<token>spool_server_cred_service</token> statement, if you are using
-any user certificate.
+You must not specify a service name using
+the <token>spool_server_cred_service</token> statement, if you are using
+a user certificate.
 </para>
 <para>
-Currently, there are several implementation limits in this feature.
+Currently, there are several implementation limitations in this feature.
 First, the account name is interpreted as an account on the local host,
 but this is a bug, and will be changed to a gfarm global user name
 in the future.
 Second, to map from the account name to a Distinguished Name of a certificate,
 file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
-Thus, if there isn't such file, or if the user isn't specified in this file,
+Thus, if there isn't such a file, or if the user isn't specified in this file,
 this feature cannot be used.
 Third, if there are multiple Distinguished Names per one account in this file,
-only first Distinguished Name is used, and rest Distinguished Names for
-the account are ignored.
+only the first Distinguished Name is used, and the rest of the Distinguished
+Names for the account are ignored.
 </para>
 <para>
 This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
@@ -257,13 +254,14 @@ This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
 <listitem>
 <para>
 This keyword specifies that <token>spool_server_cred_name</token>
-is treated as a raw X.509 Distinguished Name as a server's certificate.
-You must not specify a service name by
+is treated as a raw X.509 Distinguished Name serving as a server's
+certificate.
+You must not specify a service name using a
 <token>spool_server_cred_service</token> statement, if you are using
 this type.
 </para>
 <para>
-This feature corresponds to a case that GSS_C_NO_OID is specified
+This feature corresponds to a case where GSS_C_NO_OID is specified
 as a Name Type in GSSAPI (RFC2743/RFC2744).
 </para>
 <para>Example:</para>
@@ -284,10 +282,10 @@ as a Name Type in GSSAPI (RFC2743/RFC2744).
 This statement specifies the service name of a service certificate
 used by gfsd for GSI authentication, when ``<token>host</token>'' is specified
 in <token>spool_server_cred_type</token> statement.
-This is just ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
-Please read the description of <token>spool_server_cred_type</token> 
-statement for detail.
+Please read the description of the <token>spool_server_cred_type</token> 
+statement for details.
 </para>
 </listitem>
 </varlistentry>
@@ -296,13 +294,13 @@ statement for detail.
 <term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-This statement specifies a setting of a certificate used by gfsd
-for GSI authentication. What this setting means depends of the type
-specified in <token>spool_server_cred_type</token> statement.
-This is just ignored when you are using <token>sharedsecret</token> 
+This statement specifies the setting of a certificate used by gfsd
+for GSI authentication. What this setting means depends on the type
+specified in the <token>spool_server_cred_type</token> statement.
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
-Please read the description of <token>spool_server_cred_type</token> 
-statement for detail.
+Please read the description of the <token>spool_server_cred_type</token> 
+statement for details.
 </para>
 </listitem>
 </varlistentry>
@@ -337,12 +335,12 @@ port number the gfmd is listening on.  The default port number is
 <term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-This statement specifies the type of a credential used by gfmd
+This statement specifies the type of credential used by gfmd
 for GSI authentication.
-This is just ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
-Please read the description of <token>spool_server_cred_type</token> 
-statement about the configuration of this statement.
+Please read the description of the <token>spool_server_cred_type</token> 
+statement on the configuration of this statement.
 </para>
 </listitem>
 </varlistentry>
@@ -354,10 +352,10 @@ statement about the configuration of this statement.
 This statement specifies the service name of a service certificate
 used by gfmd for GSI authentication, when ``<token>host</token>'' is specified
 in <token>metadb_server_cred_type</token> statement.
-This is just ignored when you are using <token>sharedsecret</token> 
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
-Please read the description of <token>spool_server_cred_type</token> 
-statement about the configuration of this statement.
+Please read the description of the <token>spool_server_cred_type</token> 
+statement on the configuration of this statement.
 </para>
 </listitem>
 </varlistentry>
@@ -366,13 +364,13 @@ statement about the configuration of this statement.
 <term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-This statement specifies a setting of a certificate used by gfmd
-for GSI authentication. What this setting means depends of the type
-specified in <token>metadb_server_cred_type</token> statement.
-This is just ignored when you are using <token>sharedsecret</token> 
+This statement specifies the setting of a certificate used by gfmd
+for GSI authentication. What this setting means depends on the type
+specified in the <token>metadb_server_cred_type</token> statement.
+This is ignored when you are using <token>sharedsecret</token> 
 authentication.
-Please read the description of <token>spool_server_cred_type</token> 
-statement about the configuration of this statement.
+Please read the description of the <token>spool_server_cred_type</token> 
+statement on the configuration of this statement.
 </para>
 </listitem>
 </varlistentry>
@@ -405,7 +403,7 @@ port number the gfarm_agent is listening on.</para>
 <term><token>ldap_serverhost</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>ldap_serverhost</token> statement specifies the host
-name on which LDAP server for filesystem metadata is running.</para>
+name on which the LDAP server for filesystem metadata is running.</para>
 
 <para>For example,</para>
 <literallayout>
@@ -418,7 +416,7 @@ name on which LDAP server for filesystem metadata is running.</para>
 <term><token>ldap_serverport</token> <parameter>port</parameter></term>
 <listitem>
 <para>The <token>ldap_serverport</token> statement specifies the tcp
-port number of LDAP server.</para>
+port number of the LDAP server.</para>
 <para>This statement cannot be omitted
   if <token>ldap_serverhost</token> is specified.</para>
 <para>For example,</para>
@@ -431,8 +429,8 @@ port number of LDAP server.</para>
 <varlistentry>
 <term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
 <listitem>
-<para>The <token>ldap_base_dn</token> statement specifies the base
-distinguished name of LDAP database.</para>
+<para>The <token>ldap_base_dn</token> statement specifies the
+base-distinguished name of the LDAP database.</para>
 <para>This statement cannot be omitted
   if <token>ldap_serverhost</token> is specified.</para>
 <para>For example,</para>
@@ -472,7 +470,7 @@ to the LDAP database.</para>
 <term><token>postgresql_serverhost</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>postgresql_serverhost</token> statement specifies the host
-name on which PostgreSQL server is running.</para>
+name on which the PostgreSQL server is running.</para>
 
 <para>For example,</para>
 <literallayout>
@@ -485,7 +483,7 @@ name on which PostgreSQL server is running.</para>
 <term><token>postgresql_serverport</token> <parameter>port</parameter></term>
 <listitem>
 <para>The <token>postgresql_serverport</token> statement specifies the tcp
-port number of PostgreSQL server.</para>
+port number of the PostgreSQL server.</para>
 <para>This statement cannot be omitted
   if <token>postgresql_serverhost</token> is specified.</para>
 <para>For example,</para>
@@ -499,7 +497,7 @@ port number of PostgreSQL server.</para>
 <term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
 <listitem>
 <para>The <token>postgresql_dbname</token> statement specifies the
-  database name of PostgreSQL database.</para>
+  database name of the PostgreSQL database.</para>
 <para>This statement cannot be omitted
   if <token>postgresql_serverhost</token> is specified.</para>
 <para>For example,</para>
@@ -513,7 +511,7 @@ port number of PostgreSQL server.</para>
 <term><token>postgresql_user</token> <parameter>user</parameter></term>
 <listitem>
 <para>The <token>postgresql_user</token> statement specifies the
-  username to connect PostgreSQL database.</para>
+  username used to connect the PostgreSQL database.</para>
 <para>For example,</para>
 <literallayout>
 	postgresql_user gfarm
@@ -525,7 +523,7 @@ port number of PostgreSQL server.</para>
 <term><token>postgresql_password</token> <parameter>password</parameter></term>
 <listitem>
 <para>The <token>postgresql_password</token> statement specifies the
-  password to connect PostgreSQL database.</para>
+  password used to connect the PostgreSQL database.</para>
 <para>For example,</para>
 <literallayout>
 	postgresql_password gfarm
@@ -537,7 +535,7 @@ port number of PostgreSQL server.</para>
 <term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
 <listitem>
 <para>The <token>postgresql_conninfo</token> statement specifies the
-  connection option to connect PostgreSQL database.</para>
+  connection option used to connect the PostgreSQL database.</para>
 <para>For example,</para>
 <literallayout>
 	postgresql_conninfo "sslmode=require connect_timeout=30"
@@ -552,12 +550,12 @@ port number of PostgreSQL server.</para>
 <para>This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.</para>
 
-<para>The first argument should be either <token>enable</token> or
+<para>The first argument should be either the <token>enable</token> or
 <token>disable</token> keyword.
-The second argument <parameter>auth method</parameter> should be
-<token>gsi</token>, <token>gsi_auth</token> or <token>sharedsecret</token>
+The second argument, <parameter>auth method</parameter>, should be
+the <token>gsi</token>, <token>gsi_auth</token>, or <token>sharedsecret</token>
 keyword.
-The third argument specifies the host(s) by <parameter>Host
+The third argument specifies the host(s) by using <parameter>Host
 specification</parameter>.</para>
 
 <para>The <token>auth</token> statement may be specified any number of
@@ -568,20 +566,20 @@ entry, or when the first corresponding entry has the
 <token>disable</token> keyword, the authentication method does not
 become a candidate.</para>
 
-<para>This process takes place at both client and server sides.
-Candidates for authentication method at both sides will be
+<para>This process takes place on both client and server sides.
+Candidates for authentication method on both sides will be
 tried.</para>
 
 <para>The order of statements with different authentication methods is
-not concerned.  When there are several candidates for authentication
-method for the host, the order the authentication trial is
-<token>sharedsecret</token>, <token>gsi_auth</token>
+not relevant.  When there are several candidates for the authentication
+method for the host, the order of the authentication trial is
+<token>sharedsecret</token>, <token>gsi_auth</token>,
 and then <token>gsi</token>.
 </para>
 
 <para>The GSI methods are available if and only if the
---with-globus option is specified at the configure time.  When the methods are
-not available, the <token>auth</token> statement with
+--with-globus option is specified at configuration.  When the methods are
+not available, an <token>auth</token> statement with
 <token>gsi</token> or <token>gsi_auth</token> will be ignored.</para>
 
 <para>This statement cannot be omitted.</para>
@@ -594,16 +592,16 @@ not available, the <token>auth</token> statement with
 	auth enable gsi *
 </literallayout>
 
-<para>In this example, all hosts which belong to the network address of
-192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
-will be tried to be authenticated by both <token>sharedsecret</token>
-and <token>gsi</token>,
-all hosts which belong to the network address of 10.0.0.0/8 will be
-tried to be authenticated by both
-<token>gsi_auth</token> and <token>gsi</token>,
+<para>In this example, all hosts which belong to the network address
+192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
+will be tested for authenticated by both <token>sharedsecret</token>
+and <token>gsi</token>;
+all hosts which belong to the network address 10.0.0.0/8 will be
+tested for authentication by both
+<token>gsi_auth</token> and <token>gsi</token>;
 and all other hosts will be authenticated by
-<token>gsi</token>.  Note that two hosts of 192.168.0.100 and
-192.168.0.101 will be tried to be authenticated by gsi only.</para>
+<token>gsi</token>.  Note that two hosts, 192.168.0.100 and
+192.168.0.101, will be tested for authentication by gsi only.</para>
 
 </listitem>
 </varlistentry>
@@ -617,35 +615,35 @@ communication parameters listed below.</para>
 <para><token>parallel_streams</token>.  This parameter specifies the
 number of tcp streams.  The default is a single stream.  The
 <token>parallel_streams</token> parameter may improve the file
-transfer performance especially when connecting to a far distant site
-(i.e. high bandwidth-delay product network) such that tcp congestion
-window size will not increase enough.  This parameter is only
-effective on a client node where gfrep(1) command is executed.
+transfer performance, especially when connecting to a distant site
+(i.e., a high bandwidth-delay product network) such that the tcp congestion
+window size will not increase sufficiently.  This parameter is only
+effective on a client node where the gfrep(1) command is executed.
 <parameter>Host_specification</parameter> specifies the source host(s)
-of file replication instead of the destination host(s).</para>
+for file replication instead of the destination host(s).</para>
 
 <para><token>stripe_unit_size</token>.  This parameter specifies how
 to divide the data when utilizing multiple tcp streams.  Without this
 parameter, the data will be divided into
 <token>parallel_streams</token> of contiguous blocks with almost even
 size.  When this parameter is specified, the data is divided in
-round-robin fashion with the specified block size in byte.  Generally
+round-robin fashion with the specified block size in bytes.  Generally
 speaking, the performance of file transfer is improved using this
 parameter.</para>
 
 <para>This parameter is effective only when two or more is specified
-by the <token>parallel_streams</token> parameter.  This parameter is
-only effective on a client node where gfrep(1) command is executed.
+as the <token>parallel_streams</token> parameter.  This parameter is
+only effective on a client node where the gfrep(1) command is executed.
 <parameter>Host_specification</parameter> specifies the source host(s)
-of file replication instead of the destination host(s).</para>
+for file replication instead of the destination host(s).</para>
 
 <para><token>rate_limit</token>.  This parameter specifies the maximum
-transfer rate (bps; bit per second) for a single connection, which is
+transfer rate (bps; bit per second) for a single connection, and is
 introduced experimentally.  The parameter on a source filesystem node
 is effective during parallel file replication.  <parameter>Host
-specification</parameter> specifies the destination host(s) of file
-replication.  Note that this parameter needs to be specified on a
-source filesystem node not on a client host unlike the other
+specification</parameter> specifies the destination host(s) for file
+replication.  Note that this parameter has to be specified on a
+source filesystem node, not on a client host, unlike the other
 parameters.</para>
 
 <para>For example,</para>
@@ -663,37 +661,37 @@ parameters.</para>
 <para>The <token>sockopt</token> parameter specifies the socket option
 <parameter>option</parameter> via the setsockopt(2) system call.</para>
 
-<para>When <token>LISTENER</token> (all capital letter) is specified
+<para>When <token>LISTENER</token> (all capital letters) is specified
 by the second argument, the socket option is applied to any socket
-in server side (accepting side).</para>
+on the server side (accepting side).</para>
 
 <para>When the host_specification is specified by the second argument,
-the socket option is applied to sockets that connect to specified host(s).
+the socket option is applied to sockets that connect to the specified host(s).
 If the second argument is "*", the socket option is applied to any
-hosts in client side (connecting side).
+hosts on the client side (connecting side).
 </para>
 
 <para>If the second argument is omitted, the socket option is applied
 to every socket.</para>
 
-<para>The following socket option can be specified.</para>
+<para>The following socket options can be specified.</para>
 
-<para><token>debug</token>.  <constant>SO_DEBUG</constant> socket
-option is specified.  The <parameter>value</parameter> is not
+<para><token>debug</token>.  The <constant>SO_DEBUG</constant> socket
+option is specified.  A <parameter>value</parameter> is not
 necessary.</para>
 
-<para><token>keepalive</token>.  <constant>SO_KEEPALIVE</constant>
-socket option is specified.  The <parameter>value</parameter> is not
+<para><token>keepalive</token>.  The <constant>SO_KEEPALIVE</constant>
+socket option is specified.  A <parameter>value</parameter> is not
 necessary.</para>
 
-<para><token>sndbuf</token>.  <constant>SO_SNDBUF</constant> socket
-option is specified with the <parameter>value</parameter></para>
+<para><token>sndbuf</token>.  The <constant>SO_SNDBUF</constant> socket
+option is specified with a <parameter>value</parameter>.</para>
 
-<para><token>rcvbuf</token>.  <constant>SO_RCVBUF</constant> socket
-option is specified with the <parameter>value</parameter></para>
+<para><token>rcvbuf</token>.  The <constant>SO_RCVBUF</constant> socket
+option is specified with a <parameter>value</parameter>.</para>
 
-<para><token>tcp_nodelay</token>.  <constant>TCP_NODELAY</constant>
-socket option is specified.  The <parameter>value</parameter> is not
+<para><token>tcp_nodelay</token>.  The <constant>TCP_NODELAY</constant>
+socket option is specified.  A <parameter>value</parameter> is not
 necessary.</para>
 
 <para>For example,</para>
@@ -711,7 +709,7 @@ necessary.</para>
 <term><token>address_use</token> <parameter>Host_specification</parameter></term>
 <listitem>
 <para>The <token>address_use</token> statement specifies an IP address
-or a network address that is preferably used for connection when the
+or a network address that is given preference for connection when the
 target host has several IP addresses.</para>
 <para>For example,</para>
 <literallayout>
@@ -723,15 +721,15 @@ target host has several IP addresses.</para>
 <varlistentry>
 <term><token>client_architecture</token> <parameter>architecture</parameter> <parameter>Host_specification</parameter></term>
 <listitem>
-<para>This directive specifies default architecture name which may be used
+<para>This directive specifies the default architecture name that may be used
 when a client node accesses an executable file.
 This directive only affects client nodes.
-For filesystem nodes, architecture names which are registered in
+For filesystem nodes, architecture names registered in
 the metadata server are used.
 </para>
 <para>
-On the other hand, environment variable GFARM_ARCHITECTURE,
-which specifies default architecture name just like this directive,
+On the other hand, the environment variable, GFARM_ARCHITECTURE,
+which specifies the default architecture name, just as in this directive,
 affects both client nodes and filesystem nodes.
 </para>
 <para>Example:</para>
@@ -750,10 +748,10 @@ affects both client nodes and filesystem nodes.
 <parameter>user-map-file</parameter> for mapping global user names
 to local user names</para>
 
-<para>This directive is optional.  The
-<parameter>user-map-file</parameter> is needed when you need to use
-the sharedsecret authentication method in the case that you have
-different unix account names on different filesystem nodes.  In this
+<para>This directive is optional.
+<parameter>user-map-file</parameter> is needed when you have to use
+the sharedsecret authentication method in the case where you have
+different unix account names on different filesystem nodes.  In such a
 case, the <parameter>user-map-file</parameter> on each filesystem node
 should have an entry from a unique global user name to each local user
 name.
@@ -773,7 +771,7 @@ name, and the second field is a local user name.</para>
 	quux baz
 </literallayout>
 <para>According to the first line of this mapping file, a global user
-name "foobar" is mapped to a local user name "foo" on this node.
+name, "foobar", is mapped to a local user name,  "foo", on this node.
 </para>
 </listitem>
 </varlistentry>
@@ -781,12 +779,12 @@ name "foobar" is mapped to a local user name "foo" on this node.
 <varlistentry>
 <term><token>dir_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
-<para>This directive specifies time (in seconds) until directory cache
-in gfarm library will be expired.
+<para>This directive specifies the time (in seconds) until a directory cache
+in the gfarm library expires.
 The default time is 86,400 seconds, i.e. one day.
-The time can be specified by an environment variable
+The time can be specified by an environment variable,
 GFARM_DIRCACHE_TIMEOUT, too.
-And the environment variable takes precedence over the directive.
+The environment variable takes precedence over the directive.
 </para>
 <para>For example,</para>
 <literallayout>
@@ -798,9 +796,9 @@ And the environment variable takes precedence over the directive.
 <varlistentry>
 <term><token>host_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
-<para>This directive specifies time (in seconds) until metadata cache of
-filesystem nodes in gfarm library will be expired.
-Newly added or removed host might not be seen until this timeout has
+<para>This directive specifies the time (in seconds) until the metadata cache
+of the filesystem nodes in the gfarm library expires.
+Newly added or removed hosts might not be seen until this timeout has
 passed.
 The default time is 600 seconds, i.e. ten minutes.
 </para>
@@ -814,10 +812,10 @@ The default time is 600 seconds, i.e. ten minutes.
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
-<para>This directive specifies time (in seconds) until cache for
-filesystem node scheduling will be expired.
-The cache holds information of each filesystem node, e.g. load average,
-disk free space and whether authentication succeeds or not.
+<para>This directive specifies the time (in seconds) until the cache used for
+filesystem node scheduling expires.
+The cache holds information on each filesystem node, e.g. load average,
+disk free space, and whether authentication succeeds or not.
 The default time is 600 seconds, i.e. ten minutes.
 </para>
 <para>For example,</para>
@@ -831,13 +829,13 @@ The default time is 600 seconds, i.e. ten minutes.
 <term><token>write_local_priority</token> <parameter>validity</parameter></term>
 <listitem>
 <para>Gfarm nearly always chooses localhost, when it selects a filesystem
-node to write a file. By specifing <token>disable</token> keyword in
-this directive, Gfarm becomes to handle localhost same with other
+node to write a file. By specifing the <token>disable</token> keyword in
+this directive, Gfarm handles localhost the same as other
 filesystem nodes.
-The same thing can be done by specifing <token>disable</token>
+The same thing can be achieved by specifying <token>disable</token>
 as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
-When both this directive and the environment are specified,
-the value specified by the environment will be used.
+When both this directive and the environment variable are specified,
+the value specified by the environment variable will be used.
 The default is <token>enable</token>.
 </para>
 <para>For example,</para>
@@ -853,14 +851,14 @@ The default is <token>enable</token>.
 <para>Gfarm tries to choose a filesystem node in the domain specified by
 this directive, when it selects a node to write a file.
 If there is no suitable node for writing in this domain, or if this
-directive is not specified, the filesystem node will be choosed from
-all nodes.
-You can specify this domain by the GFARM_WRITE_TARGET_DOMAIN environment
+directive is not specified, the filesystem node will be chosen from
+among all nodes.
+You can specify this domain with the GFARM_WRITE_TARGET_DOMAIN environment
 variable too.
-When both this directive and the environment are specified,
-the value specified by the environment will be used.
-Note that if you specify this directive more than once, only first one
-will be used and the latters are just ignored.
+When both this directive and the environment variable are specified,
+the value specified by the environment variable will be used.
+Note that if you specify this directive more than once, only the first one
+will be used and the others are ignored.
 </para>
 <para>For example,</para>
 <literallayout>
@@ -872,11 +870,11 @@ will be used and the latters are just ignored.
 <varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
 <listitem>
-<para>This directive specifies disk free space (by bytes) which is
-necessary on filesystem nodes. Gfarm scheduler excludes filesystem nodes
-which have free space less than this parameter, when it
+<para>This directive specifies free disk space (in bytes) which is
+required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
+which have less free space than this parameter, when it
 schedules nodes for jobs which may write files.
-The size of free space may have a suffix like ``k'' (kilo bytes), 
+The free space value may have a suffix like ``k'' (kilo bytes), 
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.
 </para>
@@ -939,7 +937,7 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </refsect1>
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
-<para>This is a grammar of gfarm.conf described by the BNF
+<para>This is a grammar for gfarm.conf described using BNF
 notation.</para>
 <literallayout>
 	&lt;statement&gt; ::=
@@ -1070,9 +1068,9 @@ notation.</para>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-The following is an example to use PostgreSQL to store the metadata,
-and to allow access from filesystem nodes and clients in IP address
-192.168.0.0/24 via sharedsecret authentication.
+The following is an example usin PostgreSQL to store the metadata,
+and to allow access from filesystem nodes and clients at IP address
+192.168.0.0/24, via sharedsecret authentication.
 </para>
 <literallayout>
 spool /var/spool/gfarm
@@ -1089,8 +1087,8 @@ sockopt keepalive
 </literallayout>
 
 <para>
-The following is an example to use LDAP to store the metadata,
-and to allow access from filesystem nodes and clients in any IP address
+The following is an example using LDAP to store the metadata,
+and to allow access from filesystem nodes and clients at any IP address,
 via GSI authentication.
 </para>
 <literallayout>
@@ -1134,4 +1132,3 @@ sockopt keepalive
   <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>
-

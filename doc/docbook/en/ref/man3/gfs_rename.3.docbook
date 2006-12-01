@@ -108,7 +108,7 @@ though <parameter>gfarm_url_from</parameter> is a directory.</para>
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
-<para>The named file resides on a read-only file system.</para>
+<para>The named file resides on a read-only filesystem.</para>
 </listitem>
 </varlistentry>
 -->

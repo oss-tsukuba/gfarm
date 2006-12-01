@@ -3,7 +3,7 @@
 
 <refentry id='gfrm.1'>
 
-<refentryinfo><date>3 Nov 2006</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrm</refentrytitle>
@@ -40,9 +40,9 @@ not remove directories unless the <option>-r</option> or
 </para>
 
 <para>
-When <option>-I</option> option is specified, <command>gfrm</command>
+When the <option>-I</option> option is specified, <command>gfrm</command>
 removes the specified file section.  File section is an architecture
-name for an executable file, or a fragment index for a regular file.
+name for executable files, or a fragment index for a regular file.
 </para>
 
 <para>
@@ -63,7 +63,7 @@ unless the <option>-f</option> option is specified.
 <listitem>
 <para>Even when all file replicas are specified by the
 <option>-h</option>, <option>-D</option>, or <option>-H</option>
-option, force to delete all the file replica.  In
+option, forcibly deletes all the file replica.  In
 this case, the specified file will be deleted.</para>
 </listitem>
 </varlistentry>
@@ -71,7 +71,7 @@ this case, the specified file will be deleted.</para>
 <varlistentry>
 <term><option>-j</option> <parameter>num-of-threads</parameter></term>
 <listitem>
-<para>specifies the number of threads to delete file replicas
+<para>Specifies the number of threads to delete file replicas
 simultaneously.  This option is only available when
 <command>gfrm</command> is compiled by an OpenMP C compiler.
 </para>
@@ -81,7 +81,7 @@ simultaneously.  This option is only available when
 <varlistentry>
 <term><option>-n</option></term>
 <listitem>
-<para>prints file names to be deleted, but does not delete them.
+<para>Prints file names to be deleted, but does not delete them.
 </para>
 </listitem>
 </varlistentry>
@@ -89,7 +89,7 @@ simultaneously.  This option is only available when
 <varlistentry>
 <term><option>-q</option></term>
 <listitem>
-<para>does not print any verbose message.
+<para>Does not print any verbose message.
 </para>
 </listitem>
 </varlistentry>
@@ -97,7 +97,7 @@ simultaneously.  This option is only available when
 <varlistentry>
 <term><option>-r</option>, <option>-R</option></term>
 <listitem>
-<para>removes all entries under the directories specified by the
+<para>Removes all entries under the directories specified by the
 command-line argument recursively.</para>
 </listitem>
 </varlistentry>
@@ -105,14 +105,14 @@ command-line argument recursively.</para>
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>prints verbose messages.</para>
+<para>Prints verbose messages.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-h</option> <parameter>filesystem-node</parameter></term>
 <listitem>
-<para>specifies a filesystem node on which file replicas will be removed.
+<para>Specifies a filesystem node from which file replicas will be removed.
 With the <option>-I</option> option, a file replica of the specified
 file section will be removed.
 </para>
@@ -122,7 +122,7 @@ file section will be removed.
 <varlistentry>
 <term><option>-D</option> <parameter>domain-name</parameter></term>
 <listitem>
-<para>specifies a domain name of file system nodes on which file
+<para>Specifies a domain name of filesystem nodes on which file
 replicas will be removed.  With the <option>-I</option> option, a file
 replica of the specified file section will be removed.
 </para>
@@ -132,7 +132,7 @@ replica of the specified file section will be removed.
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>
 <listitem>
-<para>specifies a <parameter>hostfile</parameter> that lists
+<para>Specifies a <parameter>hostfile</parameter> that lists
 filesystem nodes on which file replicas will be removed.  With the
 <option>-I</option> option, a file replica of the specified file
 section will be removed.
@@ -146,16 +146,16 @@ if ``-'' is specified, standard input is used to read the host list.
 <varlistentry>
 <term><option>-I</option> <parameter>file-section</parameter></term>
 <listitem>
-<para>specifies the file section to be removed.  File section is an
-architecture name such as sparc-sun-solaris8 for executable files, and
-an fragment index for regular files.</para>
+<para>Specifies the file section to be removed.  File section is an
+architecture name, such as sparc-sun-solaris8, for executable files, and
+a fragment index for regular files.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-N</option> <parameter>num-of-replicas</parameter></term>
 <listitem>
-<para>specifies the maximum number of file replicas.  If files has more
+<para>Specifies the maximum number of file replicas.  If files has more
 number of file replicas than specified, reduce the number of file
 replicas.</para>
 </listitem>
@@ -164,11 +164,10 @@ replicas.</para>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 
 </variablelist>
 </refsect1>
 </refentry>
-

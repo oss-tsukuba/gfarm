@@ -82,7 +82,10 @@ Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
 <term><option>-G</option> <parameter>gfarm-URL</parameter></term>
 <listitem>
 <para>gfarm-URL のファイル・アフィニティ・スケジューリングにより
-並列プログラムを実行します．</para>
+並列プログラムを実行します．
+ファイル・アフィニティ・スケジューリングの動作については，DESCRIPTION 節を
+参照してください．
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>

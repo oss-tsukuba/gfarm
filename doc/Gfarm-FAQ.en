@@ -12,35 +12,43 @@ Table of Contents:
 
 2. Trouble Shooting
   2.1 'gfls' results in 'gfarm:.: no such object'.
-  2.2 We cannot connect to file system nodes and/or a metadata server.
+  2.2 We cannot connect to filesystem nodes and/or a metadata server.
   2.3 [GSI authentication] "Authentication error" or "no filesystem
-     node" error happens when executing programs or replicating files.
-  2.4 It is not possible to access files that should be created.
-  2.5 Unregistered or unnecessary files seem to remain in a spool
+     node" error occurs when executing programs or replicating files.
+  2.4 It is not possible to create a file replica with the 'gfrep' command,
+     due to a "text file busy" error.
+  2.5 It is not possible to access files that should be created.
+  2.6 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
-  2.6 Due to disk crash, files in a file system node are lost.  What
-     we need to do?
-  2.7 "Operation not permitted" error happens when accessing or
+  2.7 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
+  2.8 An "Operation not permitted" error occurs when accessing or
      creating a file having execution bits.
-  2.8 Sometimes some gfarm client or gfsd stops without doing anything.
+  2.9 Sometimes a gfarm client or gfsd stops without doing anything.
 
 3. Security
-  3.1 It is safe to use Gfarm in the environment which is NOT protected by
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
     a firewall?
   3.2 What is the difference in sharedsecret authentication,
-    gsi_auth method and gsi authentication?
-  3.3 How to prevent normal users from changing the host information?
+    the gsi_auth method, and gsi authentication?
+  3.3 How can I prevent normal users from changing the host information?
 
 4. Performance Tuning
-  4.1 How to speed up reads and writes to metadata database using an
+  4.1 How can I speed up reads and writes to the metadata database using an
     OpenLDAP server?
 
-5. Limitation
+5. Limitations
   5.1 Where are gfchown and gfmv?
-  5.2 Can I open a file with read-write mode?
-  5.3 Are file names case-sensitive in a Gfarm file system?
+  5.2 Can I open a file in the read-write mode?
+  5.3 Are file names case-sensitive in a Gfarm filesystem?
   5.4 Can a file name include ',' or '+'?
+
+6. How Gfarm works
+  6.1 The manual page of the gfrun(1) command says that filesystem nodes
+    are selected in increasing order of load average.  Where does the
+    decision is made?
+    
 
 1. General
 **********
@@ -52,7 +60,7 @@ Table of Contents:
 
   1.2 Where can I download Gfarm?
 
-	It is delivered from the following URL:
+	It is available at the following URL:
 
 		http://datafarm.apgrid.org/software/
 
@@ -61,80 +69,118 @@ Table of Contents:
   2.1 'gfls' results in 'gfarm:.: no such object'.
 
 	The error message indicates there is no current working
-	directory.  When you start using a Gfarm file system without
-	creating your home directory, you always encounter this error
+	directory.  When you start using a Gfarm filesystem without
+	creating a home directory, you always encounter this error
 	message.  In this case, it is necessary to create a home
 	directory.
 
 		$ gfmkdir gfarm:~
 
-  2.2 We cannot connect to file system nodes and/or a metadata server.
+  2.2 We cannot connect to filesystem nodes and/or a metadata server.
 
-	By default setting, 600/tcp and 600/udp need to be opened for
-	file system nodes, and 601/tcp and 602/tcp need to be opened
+	As the default setting, 600/tcp and 600/udp have to be opened for
+	filesystem nodes, and 601/tcp and 602/tcp have to be opened
 	for a metadata server.
 
-	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these file system
-	nodes cannot be connected by the client using 600/udp.
+	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these filesystem
+	nodes cannot be connected by a client using 600/udp.
 
-	The port number can be specified by a Gfarm configuration file
+	The port number can be specified by a Gfarm configuration file,
 	or a command-line option for gfsd and gfmd.  For details,
 	refer to the installation manual and manual pages of gfsd(8),
-	gfmd(8) and gfarm.conf(5).
+	gfmd(8), and gfarm.conf(5).
 
-  2.3 [GSI authentication] "Authentication error" or "no filesystem
-     node" error happens when executing programs or replicating files.
+  2.3 A [GSI authentication] "Authentication error" or "no filesystem
+     node" error occurs when executing programs or replicating files.
 
-	Verbose error messages are displayed with the -v option of
-	'gfrcmd', which help to find the reason for the authentication
-	error.  Although detailed descriptions are available at
-	http://www.globus.org, here are typical cases for the error:
+	 The following tips help you to find the reason for the
+	authenticationerror.
+	Verbose error messages about gfmd can be displayed by using the
+	following command:
+		gfps -v
+	Verbose error messages about gfsd can be displayed by using the
+	following command:
+		gfrcmd -v FQDN_of_filesystem_node pwd
+	Adding the -v option to gfmd and gfsd makes them record detailed
+	authentication error messages in /var/log/messages (or
+	/var/adm/messages).
+	Detailed descriptions are available at http://www.globus.org.
+
+	Here are some hints on typical cases involving this error:
 
 	(1) Is a valid entry included in the grid-mapfile on file
-	system nodes and file system metadata node?
+	system nodes and filesystem metadata node?
 
-	Note that the subject names displayed for certain certificates
-	changed between Globus Toolkit version 2 (GT2) and the version
-	3 (GT3).  'Email' field in GT2 becomes 'emailAddress' in GT3.
-	'USERID' field in GT2 becomes 'UID' in GT3.  For
+	Note that the subject names displayed for certain certificates have
+	been changed between Globus Toolkit version 2 (GT2) and version
+	3 (GT3).  The 'Email' field in GT2 has become 'emailAddress' in GT3.
+	The 'USERID' field in GT2 has become 'UID' in GT3.  For
 	compatibility, you need to register both entries in
 	grid-mapfile.
 
 	(2) Are permissions of user certificate
 	 (~/.globus/usercert.pem) and/or host certificate
-	 (/etc/grid-security/hostcert.pem) not permissive?  Maximum
-	 allowable permissions are 644.
+	 (/etc/grid-security/hostcert.pem) not permissive?  The maximum
+	 allowable permissions are limited to 644.
 
 	(3) Are both user certificate and host certificates valid, and
-	not expired?
+	not yet expired?
 
 	(4) Is a valid certificate for the CAs that sign user or host
-	certificate, registered in /etc/grid-security/certificates?
-	Is not it expired?
+	certificates, registered in /etc/grid-security/certificates?
+	Has this registration expired?
 
-	Note that CA subject name in signing_policy files is also
-	affected the same as (1).  If you would like to use the same
+	Note that CA subject name in the signing_policy files is also
+	affected in the same way as the items in (1), above.  To  use
+	the same
 	signing_policy file for GT2 and GT3, you need both entries in
-	a signing_policy file.
+	the signing_policy file.
 
-	(5) Are the clocks of all file system nodes, file system
-	metadata node, and a client are synchronized?  The GSI library
-	provided by the Globus fails to authenticate each other when
+	(5) Has the CRL, which is registered in
+	/etc/grid-security/certificates, expired?
+
+	(7) Does the hostname, which is specified by metadb_serverhost
+	in the gfarm.conf file, match the name in the host certificate?
+
+	(7) Do the host identifiers, which are registered by gfhost,
+	match the hostnames which are written in the host certificates?
+
+	(8) Are the clocks of all filesystem nodes, the filesystem
+	metadata node, and the client synchronized?  The GSI library
+	provided by Globus fails to authenticate these properly when
 	the time difference is more than five minutes.
 
-  2.4 It is not possible to access files that should be created.
+  2.4 It is not possible to create a file replica with the 'gfrep' command,
+     due to a "text file busy" error.
 
-	Files that are not closed by a creating process are not
-	registered correctly to metadata since the file close
-	operation in Gfarm I/O library cannot be called.
+	This error message means some process currently opens the file
+	in write mode.  In this case, 'gfrep' is not allowed to create
+	a file replica.
+
+	However, when a Gfarm command or a program accessing Gfarm via
+	a syscall-hooking library has to be killed during the
+	opening of a file in write mode, the file may remain "text file
+	busy" even though no process actually opens.  The following
+	command fixes the problem;
+
+		$ gfrun -G gfarm:file gfsplck gfarm:file
+
+	Note that this problem does not occur when using GfarmFS-FUSE.
+
+  2.5 It is not possible to access files that should be created.
+
+	When a Gfarm command or a program accessing Gfarm via a
+	syscall-hooking library has to be killed during the opening of
+	a file in write mode, the file may have incomplete file
+	system metadata.
 
 	Such files are displayed as "no fragment information" by 'gfls
-	-l', and 'gfwhere'.  To register them, 'gfsplck' command can
+	-l', and 'gfwhere'.	To register them, the 'gfsplck' command can
 	be used.  When gfarm:file needs to be registered, execute
 
 		$ gfhost | gfrun -H - gfsplck gfarm:file
 
-  2.5 Unregistered or unnecessary files seem to remain in a spool
+  2.6 Unregistered or unnecessary files seem to remain in a spool
      directory on filesystem nodes.  How do I delete these
      unregistered files?
 
@@ -143,223 +189,238 @@ Table of Contents:
 	file, unnecessary files may remain in a spool directory on
 	filesystem nodes.
 
-	'gfsplck' is prepared for checking and deleting these
-	unregistered files in a spool directory on filesystem nodes.
-	You can check which files are unregistered or not by
+	'gfsplck' is provided for checking and deleting these
+	unregistered files in spool directories on filesystem nodes.
+	You can check which files are unregistered by using
 
 		$ gfhost | gfrun -H - gfsplck gfarm:~
 
-	After checking files, you can delete them by
+	After checking for these files, you can delete them by using
 
 		$ gfhost | gfrun -H - gfsplck -d gfarm:~
 
 	The above command examples do not check the file integrity.
-	When you want to check it by calculating md5 checksum, execute
-	with the -a option.
+	If you want to check this by calculating an md5 checksum, execute
+	the command with the -a option.
 
 		$ gfhost | gfrun -H - gfsplck -ad gfarm:~
 
-  2.6 Due to disk crash, all files in a file system node are lost.
-     What we need to do?
+  2.7 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
 
-	For all data files including execution programs, there is
-	nothing you need to do when there is at least one file copy.
+	For all data files, including execution programs, there is
+	nothing you have to do when there is at least one file copy.
 	When opening these missing files, the Gfarm system detects
 	that, and opens another file replica automatically, or
 	replicates it dynamically.
 
-	Since invalid metadata of lost file replicas remain in a
-	metadata database, it is necessary to delete these metadata.
-	When a crashed file system node is gfm01.aist.go.jp, run
+	Since invalid metadata of lost file replicas remains in a
+	metadata database, it is necessary to delete this metadata.
+	When the crashed filesystem node is gfm01.aist.go.jp, run
 
 		$ gfrm -h gfm01.aist.go.jp -r gfarm:/
 
-  2.7 "Operation not permitted" error happens when accessing or
+  2.8 An "Operation not permitted" error occurs when accessing or
      creating a file having execution bits.
-	
-	Gfarm file system can store multiple binaries in the same
-	pathname to make it possible to execute the corresponding
-	binary for each different architecture.  For this
-	functionality, it is necessary to determine the architecture
-	name to access files that has execution bits.
 
-	When the client host is a file system node, the architecture
+	A Gfarm filesystem can store multiple binaries in the same
+	pathname to make it possible to execute the corresponding
+	binary for each different architecture.  To achieve this
+	functionality, it is necessary to determine the architecture
+	name to access files that have execution bits.
+
+	When the client host is a filesystem node, the architecture
 	is automatically determined by the Gfarm metadata database.
 	On the other hand, when the registered hostname and the output
-	of hostname command are different, the output of hostname
-	command needs to be registered as a hostname alias.  The
+	of the hostname command are different, the output of the hostname
+	command has to be registered as a hostname alias.  The
 	following example shows to register a hostname alias 'host'
-	to the host 'host.example.com';
+	in the host, 'host.example.com';
 
 		$ gfhost -m host.example.com host
 
-	Otherwise, you need to specify the client architecture
-	explicitly to access files that has execution bits by either
-	the 'client_architecture' directive in the configuration file
-	or the environment variable GFARM_ARCHITECTURE.
+	Otherwise, you will have to specify the client architecture
+	explicitly to access files that have execution bits, either by
+	using the 'client_architecture' directive in the configuration file,
+	or the environment variable, GFARM_ARCHITECTURE.
 
 		$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
-  2.8 Sometimes some gfarm client or gfsd stops without doing anything.
+	To see which architecures are registered for an excecutable file,
+	please look at leftmost field of the following command:
+
+		$ gfwhere gfarm:/user/dir/executable-file	
+
+  2.9 Sometimes a gfarm client or gfsd stops without doing anything.
 
 	If your network interface card or your network itself has a
-	trouble more than few minutes, such symptom may happen.
-	Such possibility increases especially if you are using a wide
-	area network for communcation between a gfarm client and a server.
-	Such stopped gfarm client or gfsd is able to exit automatically
-	with an error, if you add "sockopt keepalive" setting to your
-	gfarm.conf. The config-gfarm command generates such setting
-	by default since gfarm 1.3.1.
+	trouble that lasts more than a few minutes, such symptoms may occur.
+	The possibility increases if you are using a wide
+	area network for communication between a gfarm client and a server.
+	A stopped gfarm client or gfsd is able to exit automatically
+	with an error, if you add a "sockopt keepalive" setting to your
+	gfarm.conf. The config-gfarm command generates this setting
+	by default, since gfarm 1.3.1.
+
+	Or, if you are using "ldap" in /etc/nsswitch.conf on some Linux
+	distributions, this problem may occur too.  This problem is
+	observed in Fedora Core 3, Fedora Coer 5 and CentOS 4.4, but
+	haven't been observed in Red Hat 8.
+	The cause of this problem is a bug of system-supplied libraries.
+	The detailed condition of this bug is described in KNOWN_PROBLEMS.en.
+	For this problem, currently no workaround is known except disabling
+	the "ldap" feature.
 
 3. Security
 ***********
-  3.1 It is safe to use Gfarm in the environment which is NOT protected by
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
     a firewall?
 
-	Currently, there are four problems.
+	Currently, there are four problems involved here.
 
-	First problem is that gfarm_agent doesn't perform authentication
-	for now. When you are using gfarm_agent, all metadata information,
-	that is host information, filenames, owners of files and location
-	of files, are all read and written via gfarm_agent. And because
-	these operations are done without authentication, it's entirely
+	The first problem is that, currently, gfarm_agent doesn't perform
+	authentication.  When you are using gfarm_agent, all metadata
+	information,
+	that is, host information, filenames, owners of files, and location
+	of files, are read and written via gfarm_agent. And because
+	these operations are done without authentication, they're entirely
 	insecure.
-	Due to this problem, we strongly recommend to use gfarm_agent
+	Due to this problem, we strongly recommend that you use gfarm_agent
 	only within a firewall.
 	If you really have to use gfarm_agent outside of a firewall,
-	you should use IPsec to protect the port of gfarm_agent.
+	you should use IPsec to protect the gfarm_agent port.
 	Or perhaps, it might be possible to use packet filtering (e.g.
-	iptable on Linux) to permit access to the port of gfarm_agent
-	only from trusted hosts. But attacks like packet sniffering and
-	TCP session hijacking cannot be avoided by packet filtering.
-	You can use gfarm without gfarm_agent, but performance about
+	iptable on Linux) to permit access to the gfarm_agent port
+	only from trusted hosts. But attacks like packet sniffing and
+	TCP session hijacking cannot be prevented by packet filtering.
+	You can use gfarm without gfarm_agent, but performance involving
 	metadata access decreases in that cases.
 
-	Second problem is about the access right to PostgreSQL server
+	The second problem concerns the access rights to the PostgreSQL
 	or LDAP server, which stores the metadata information mentioned
 	above.
 	Currently, the default configuration, which is automatically
 	generated by the config-gfarm command, uses a secret key which
-	is shared by all gfarm users. Thus, any user who have read access
-	to gfarm.conf file can read and write all metadata information.
-	Although it is possible to configure gfarm to use per-user secret
-	key, such configuration isn't supported by the config-gfarm
+	is shared by all gfarm users. Thus, any user who has read access
+	to the gfarm.conf file can read and write all metadata information.
+	Although it is possible to configure gfarm to use a per-user secret
+	key, such a configuration isn't supported by the config-gfarm
 	command.
-	Also, even if per-user secret key is used, any user who have access
+	Also, even if a per-user secret key is used, any user who has access
 	to metadata information can read and write all metadata information
-	about files and directories.
+	for files and directories.
 	SSL isn't supported for the connection to the LDAP server, thus,
-	the risk of packet sniffering and TCP session hijacking exists.
-	SSL is supported for the connection to the PostgreSQL server,
-	but you must edit configuration files manually to use it. i.e.
-	The default configuration, which is automatically generated by
-	the config-gfarm command, has the risk of packet sniffering and
+	the risk of packet sniffing and TCP session hijacking exists.
+	SSL is supported for the connection to a PostgreSQL server,
+	but you must edit configuration files manually to use it, i.e.
+	the default configuration, which is automatically generated by
+	the config-gfarm command, includes the risk of packet sniffing and
 	TCP session hijacking.
 
-	Third problem is file/directory ownership and mode on
-	creating replica. If replication is done by the owner of
+	The third problem is file/directory ownership and mode upon
+	creating replicas. If replication is done by the owner of
 	the file or directory, there isn't any problem. But if
-	replication is done by different user from its owner,
+	replication is done by a different user from its owner,
 	the ownership of the replica is set to the user who did
-	the replication instead of the original owner. And also
-	the mode of the file/directory isn't maintained in that
-	case, it becomes group/other writable, if replication is
-	done by different user from its owner.
+	the replication instead of the original owner. And also,
+	the mode of the file/directory isn't maintained, in that
+	it becomes group/other writable, if replication is
+	done by a different user from its owner.
 
-	We plan to fix above problems in the next major release.
+	We plan to fix the above problems in gfarm version 2.
 
-	Fourth problem is the way of authentication.
-	Gfarm-1.x supports three authentication methods, namely
-	the sharedsecret authentication, gsi_auth method
-	and the gsi authentication.
-	The sharedsecret authentication and gsi_auth method are
+	The fourth problem is the authentication method.
+	Gfarm-1.x supports three authentication methods, namely,
+	sharedsecret authentication, the gsi_auth method,
+	and gsi authentication.
+	The sharedsecret authentication and gsi_auth methods are
 	not safe enough in the Internet environment.
-	Please refer to the next question about this issue.
+	Please refer to the next question for further information about this
+	issue.
 
   3.2 What is the difference in sharedsecret authentication,
-    gsi_auth method and gsi authentication?
+    the gsi_auth method, and gsi authentication?
 
-	The "sharedsecret" authentication in Gfarm is an authentication
+	The "sharedsecret" authentication method in Gfarm is authentication
 	based on a shared key, which provides only authentication
-	service not data signing and data encryption services. Thus,
-	this method still has risks of packet sniffering and TCP
+	service, not data signing and data encryption services. Thus,
+	this method still has risks of packet sniffing and TCP
 	session hijacking.
-	Due to this reason, we recommend to use the sharedsecret
-	authentication only in a safe environment protected by a
-	firewall.  The reason why we provide this authentication
-	method is that it is fast and it does not need you to acquire
+	For this reason, we recommend that you use the sharedsecret
+	authentication only in a safe environment, protected by a
+	firewall.  The reason we provide this authentication
+	method is that it is fast, and it does not require you to acquire
 	a public key.
 
-	The "gsi" (Grid Security Infrastructure) authentication is an
+	The "gsi" (Grid Security Infrastructure) authentication method is
 	authentication based on a public key infrastructure.  Gfarm uses
-	the Globus GSI library for this authentication.  Because the
+	the Globus GSI library for this authentication.	Because the
 	Globus GSI library supports data encryption, the gsi
 	authentication is considered more secure than the sharedsecret
 	authentication in Gfarm.  But please note that some exportable
-	versions of Globus don't support encryption.  We recommend you
-	to confirm that your Globus version certainly supports
+	versions of Globus don't support encryption.  We recommend that you
+	confirm that your Globus version does, in fact, support
 	encryption.
 
 	The "gsi_auth" method uses the GSI library only for
-	the authentication. And actual data communication is not protected
-	by data signing and data encryption services with this method.
-	Thus, this gsi_auth method has risks of packet sniffering and
-	TCP session hijacking just like sharedsecret authentication.  
-	Due to this reason, we recommend to use the gsi_auth method
-	only in a safe environment protected by a firewall.
-	The reason why we provide this method is that it is fast
-	for data transfer.
+	the authentication. The actual data communication is not protected
+	by data signing or data encryption services with this method.
+	Thus, the gsi_auth method has risks of packet sniffing and
+	TCP session hijacking, just like sharedsecret authentication.
+	For this reason, we recommend you use the gsi_auth method
+	only in a safe environment, protected by a firewall.
+	The reason we provide this method is that it allows for fast
+	data transfer.
 
-	The gsi authentication and gsi_auth method are only
-	available, when you use the --with-globus option at the source
-	code "configure" time.
-	Please look at the following URL about the GSI:
+	The gsi authentication and gsi_auth methods are only
+	available when you use the --with-globus option at thetime you do
+	the source code "configure" operation.
+	Please see the following URL for more about the GSI:
 		http://www.globus.org/
 
-  3.3 How to prevent normal users from changing the host information?
+  3.3 How can I prevent normal users from changing the host information?
 
 	The following notations are used here,
 	please replace these by appropriate values:
 	$POSTGRESQL_SERVERPORT
 		The port number of PostgreSQL,
-		specified by -p option of config-gfarm.
+		specified by the -p option of config-gfarm.
 		This is recorded as postgresql_serverport in gfarm.conf.
 		The default is 10602.
 	$ADMIN_USER
-		The user name of database administrator,
-		specified by -U option of config-gfarm.
-		If you run config-gfarm with root privilege,
+		The user name of the database administrator,
+		specified by the -U option of config-gfarm.
+		If you run config-gfarm with root privileges,
 		the default is "postgres" (or "pgsql" on *BSD).
-		Or if you run config-gfarm with normal user privilege,
-		the default is the user who run config-gfarm.
+		Or, if you run config-gfarm with normal user privileges,
+		the default is the user who ran config-gfarm.
 	$ADMIN_PASSWORD
-		PostgreSQL password of $ADMIN_USER,
-		This is recorded in the file "var/gfarm-pgsql/admin_password",
-		thus, please use the contents of the file as this password.
+		The PostgreSQL password of $ADMIN_USER,
+		this is recorded in the file, "var/gfarm-pgsql/admin_password",
+		thus, please use the contents of this file as the password.
 	$NORMAL_USER
-		The user name which is used to access PostgreSQL,
-		specified by -u option of config-gfarm.
+		The user name that is used to access PostgreSQL,
+		specified by the -u option of config-gfarm.
 		This is recorded as postgresql_user in gfarm.conf.
 		The default is "gfarm"
 	$HOSTADMIN_USER
-		The user name which is used to access PostgreSQL
+		The user name that is used to access PostgreSQL
 		for the administration of the host information.
-		Please choose something appropriate name. e.g. "gfarm_admin"
+		Please choose some appropriate name, e.g., "gfarm_admin".
 	$HOSTADMIN_PASSWORD
 		The PostgreSQL password of $HOSTADMIN_USER.
-		Please choose something appropriate value.
+		Please choose some appropriate value.
 
-	The following is the procedure for PostgreSQL.
-	(The procedure for OpenLDAP isn't written yet.)
+	The following is the procedure needed for PostgreSQL.
+	(The procedure for OpenLDAP hasn't been written yet.)
 
-	You can make the host information read-only from normal users
-	by the following way:
+	You can make the host information read-only for normal users
+	in the following way:
 
 	$ psql -U $ADMIN_USER -p $POSTGRESQL_SERVERPORT -W gfarm
 	Password for user $ADMIN_USER: $ADMIN_PASSWORD
 	gfarm=# REVOKE INSERT, UPDATE, DELETE ON Host, HostAliases FROM $NORMAL_USER;
 	gfarm=# \q
-
 
 	And you can make the host information changeable
 	by certain administrators as follows:
@@ -378,7 +439,7 @@ Table of Contents:
 	... restart the PostgreSQL server to reflect the change in pg_hba.conf:
 	# /etc/init.d/gfarm-pgsql restart
 
-	... create ~/.gfarmrc of the administators with the following contents:
+	... create ~/.gfarmrc of the administrators with the following contents:
 	postgresql_user $HOSTADMIN_USER
 	postgresql_password "$HOSTADMIN_PASSWORD"
 
@@ -386,23 +447,23 @@ Table of Contents:
 	$ chmod 600 ~/.gfarmrc
 
 	Please note that the administrators of the host information must
-	not use gfarm_agent. Especially, please be careful about the fact
-	that if there is gfarm_agent related directives in /etc/gfarm.conf,
+	not use gfarm_agent. Please be especially careful about the fact
+	that if there are gfarm_agent-related directives in /etc/gfarm.conf,
 	gfarm_agent will be used automatically. Thus, the administrators
-	have to do the administrative tasks on hosts which don't have
-	gfarm_agent related directives in /etc/gfarm.conf.
+	have to do their administrative tasks on hosts which don't have
+	gfarm_agent-related directives in /etc/gfarm.conf.
 
 4. Performance Tuning
 *********************
-  4.1 How to speed up reads and writes to metadata database using an
+  4.1 How can I speed up reads and writes to the metadata database using an
     OpenLDAP server?
 
-	When you are using Berkeley DB as database backend, it is
-	possible to improve write performance significantly to tune
-	cache size and not to synchronously flush the log on
-	transaction commit.  These are specified in the
-	/var/gfarm-ldap/DB_CONFIG.  In the following configuration
-	example, the size of the cache is specified as 512 MB.  It is
+	When you are using Berkeley DB as the database backend, it is
+	possible to improve write performance significantly by tuning
+	cache size and not synchronously flushing the log on
+	transaction commit.	These are specified in
+	/var/gfarm-ldap/DB_CONFIG.	In the following configuration
+	example, the size of the cache is specified as 512 MB.	It is
 	necessary to restart slapd after the modification of the
 	configuration file.
 
@@ -411,8 +472,8 @@ set_cachesize 0 536870912 2
 set_flags DB_TXN_NOSYNC
 -------------------------------- END --------------------------------
 
-	When you are using LDBM database backend, it is possible to
-	improve the performance by increasing the size of in-memory
+	When you are using an LDBM database backend, it is possible to
+	improve the performance by increasing the size of the in-memory
 	cache.  The size of entries and the size in bytes of the
 	in-memory cache can be specified by 'cachesize' and
 	'dbcachesize', respectively, in slapd.conf.  The following
@@ -424,31 +485,40 @@ cachesize 10000
 dbcachesize 1000000
 -------------------------------- END --------------------------------
 
-5. Limitation
+5. Limitations
 *************
   5.1 Where are gfchown and gfmv?
 
-	Unfortunately, not implemented yet.  Instead, you can use
-	mv commands by using syscall-hooking library.  Please read
-	README.hook.en for detail.
+	Unfortunately, these commands are not implemented yet.	Instead, you
+	can use	mv commands by using either the syscall-hooking library, or
+	GfarmFS-FUSE.
 
-	We plan to add these commands in the next major release.
+	We plan to add these commands in gfarm version 2.
 
-  5.2 Can I open a file in read-write mode?
+  5.2 Can I open a file in the read-write mode?
 
-	Since the version 1.0.4, a file can be opened in read-write
-	mode.  When there are several replicas of the file, every
-	other replicas except the updated one will be automatically
-	deleted.
+	Since version 1.0.4, a file can be opened in read-write
+	mode.	When there are several replicas of the file, every
+	other replica, except the updated one, will be
+	deleted automatically.
 
-  5.3 Are file names case-sensitive in a Gfarm file system?
+  5.3 Are file names case-sensitive in a Gfarm filesystem?
 
-	If you are using the latest version of openldap 2.1 series or
+	If you are using the latest version of the openldap 2.1 or
 	2.2 series, file names are case-sensitive.  But if you are
-	using old version like openldap 2.0 series, Gfarm cannot
-	distinguish upper case and lower case for file names.
+	using an old version from, for example, the openldap 2.0 series,
+	Gfarm cannot distinguish upper case and lower case for file names.
 
   5.4 Can a file name include ',' or '+'?
 
 	Gfarm version 1.0.2 or later can include '#', ' ', ',', '+',
 	'"', '\', '>', '<', and ';' in a file name.
+
+6. How Gfarm works
+******************
+  6.1 The manual page of the gfrun(1) command says that filesystem nodes
+    are selected in increasing order of load average.  Where does the
+    decision is made?
+
+	The gfrun(1) command itself inquires of filesystem nodes
+	about the load average.

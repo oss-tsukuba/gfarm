@@ -3,7 +3,7 @@
 
 <refentry id='gfsched.1'>
 
-<refentryinfo><date>19 Aug 2003</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsched</refentrytitle>
@@ -42,11 +42,11 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
   <command>gfsched</command> creates a host file
-  using the file-affinity scheduing of <parameter>gfarm-URL</parameter>.
+  using the file-affinity scheduling of <parameter>gfarm-URL</parameter>.
   In other words, <command>gfsched</command> chooses and displays
-  hostnames of the same number with the fragments of
-  the <parameter>gfarm-URL</parameter>, with giving priority to
-  the hosts which has the fragment as far as possible.
+  hostnames, matching the number with the fragments of
+  the <parameter>gfarm-URL</parameter>, giving priority, as far as possible to
+  the host which has the fragment.
   When <parameter>output-hostfile</parameter> is omitted,
   <command>gfsched</command> displays to the standard output.
 </para>
@@ -54,8 +54,8 @@
 <para>
   If <option>-N</option> is specified instead of 
   <parameter>gfarm-URL</parameter>, <command>gfsched</command> chooses and
-  displays specified number of hosts from the hosts in the arguments.
-  If no host is specified in the argument, <command>gfsched</command>
+  displays a specified number of hosts from the hosts in the arguments.
+  If no hosts are specified in the argument, <command>gfsched</command>
   chooses hosts from all registered hosts.
 </para>
 
@@ -67,7 +67,7 @@
 <varlistentry>
 <term><option>-I</option> <parameter>fragment-index</parameter></term>
 <listitem>
-<para>specifies the fragment index to be scheduled.
+<para>Specifies the fragment index to be scheduled.
 <!--
 If the <parameter>gfarm-URL</parameter> is an executable file,
 an architecture name, for example, sparc-sun-solaris8,
@@ -81,11 +81,11 @@ for the architecture.
 <varlistentry>
 <term><option>-U</option></term>
 <listitem>
-<para>suppresses authentication check.
+<para>Suppresses authentication check.
 Without this option, the scheduler checks whether the user will be 
 successfully authenticated with the hosts or not.
 This option omits the check to make scheduling faster,
-but that makes a risk that hosts which make authentication failure with
+but that creates a risk that hosts which fail authentication with
 the user may be scheduled.
 </para>
 </listitem>
@@ -94,7 +94,7 @@ the user may be scheduled.
 <varlistentry>
 <term><option>-p</option> <parameter>program-URL</parameter></term>
 <listitem>
-<para>creates a host file with a program name which will be used
+<para>Creates a host file with a program name which will be used
 to process the <parameter>gfarm-URL</parameter>.
 In other words, only hosts which can run the <parameter>program-URL</parameter>
 will be selected, if this option is specified.
@@ -105,11 +105,10 @@ will be selected, if this option is specified.
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 
 </variablelist>
 </refsect1>
 </refentry>
-

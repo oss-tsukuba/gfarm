@@ -3,7 +3,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>5 Aug 2006</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -67,13 +67,13 @@ it will be copied recursively.</para>
 <varlistentry>
 <term><option>-D</option> <parameter>destination-domainname</parameter></term>
 <listitem>
-<para>specifies a domainname of destination filesystem nodes where replicas
-will be copies to.
-This option is used solely, or with the <option>-S</option>
+<para>Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+This option is used alone, or with the <option>-S</option>
 or <option>-s</option> option.</para>
-<para>If neither this nor <option>-d</option> option is specified, 
-replicas may be copied to any of hosts registered in the metadata.
-Please refer the description of the <option>-N</option> option for detail.
+<para>If neither this nor the <option>-d</option> option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
+Please refer to the description of the <option>-N</option> option for details.
 </para>
 </listitem>
 </varlistentry>
@@ -81,12 +81,12 @@ Please refer the description of the <option>-N</option> option for detail.
 <varlistentry>
 <term><option>-d</option> <parameter>destination-node</parameter></term>
 <listitem>
-<para>specifies one destination filesystem node where replicas
-will be copied to.
-This option is used solely, or with the <option>-s</option> 
+<para>Specifies one destination filesystem node where replicas
+will be copied.
+This option is used alone, or with the <option>-s</option> 
 option.</para>
-<para>If neither this nor <option>-D</option> option is specified, 
-replicas may be copied to any of hosts registered in the metadata.
+<para>If neither this nor the <option>-D</option> option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
 </para>
 </listitem>
 </varlistentry>
@@ -94,10 +94,10 @@ replicas may be copied to any of hosts registered in the metadata.
 <varlistentry>
 <term><option>-H</option> <parameter>hostfile</parameter></term>
 <listitem>
-<para>specifies a file which describes hostnames of
-destination filesystem nodes where the replica will be made on.
+<para>Specifies a file which describes hostnames of
+destination filesystem nodes on which the replica will be made.
 The <parameter>hostfile</parameter> consists of a filesystem node name
-in each line.
+on each line.
 If the number of nodes listed in the <parameter>hostfile</parameter>
 is less than the total number of file fragments,
 it is treated as if the node names are specified repeatedly.
@@ -110,7 +110,7 @@ if ``-'' is specified, standard input is used to read the host list.</para>
 <varlistentry>
 <term><option>-I</option> <parameter>file-section</parameter></term>
 <listitem>
-<para>specifies a file section name to be copied.
+<para>Specifies a file section name to be copied.
 Currently, this option can be specified only with the <option>-d</option>
 option.
 </para>
@@ -123,8 +123,8 @@ It is possible to omit this option.
 <varlistentry>
 <term><option>-m</option></term>
 <listitem>
-<para>lets gfrep command do migrate/move, instead of doing replicate.
-Currently, this works only with -H, -P and -d options.
+<para>Lets gfrep command do a migrate/move, instead of doing replication.
+Currently, this works only with the -H, -P and -d options.
 </para>
 </listitem>
 </varlistentry>
@@ -132,26 +132,26 @@ Currently, this works only with -H, -P and -d options.
 <varlistentry>
 <term><option>-N</option> <parameter>num-of-replicas</parameter></term>
 <listitem>
-<para>specifies necessary number of file replicas, counting already
+<para>Specifies the required number of file replicas, counting already
 existing ones.
-If there are enough number of replicas in the destination nodes,
-neither any copy nor any removal will be done.
-This option is used solely, or with the <option>-D</option>,
+If there are a sufficient number of replicas in the destination nodes,
+neither any copying nor any removal will be done.
+This option is used alone, or with the <option>-D</option>,
 <option>-S</option> or <option>-s</option> option.</para>
 <para>If this option is not specified, <option>-N 1</option> is assumed.</para>
-<para>The source nodes specified by <option>-S</option> or <option>-s</option>
-option are excluded from the destination nodes.
+<para>The source nodes specified by the <option>-S</option>
+or <option>-s</option> option are excluded from the destination nodes.
 In other words, it's guaranteed that the number of replicas on
-hosts except those specified by <option>-S</option> or <option>-s</option>
-option are same or more than the number specified by the <option>-N</option>
-option.
+hosts, except those specified by the <option>-S</option> or <option>-s</option>
+option, are the same or more than the number specified by the
+<option>-N</option> option.
 However, when the destination is a subset of the source,
 i.e. when the exclusion makes the destination an empty set,
 this exclusion is not applied.
 For example, if gfrep is executed with the
 ``<option>-N 3 -S subdomain.example.org -D example.org</option>'' option,
-it's guaranteed that there are at least 3 replicas in the hosts belong
-to example.org but except subdomain.example.org.
+it's guaranteed that there are at least 3 replicas in the hosts belonging
+to example.org, excepting subdomain.example.org.
 </para>
 </listitem>
 </varlistentry>
@@ -159,10 +159,10 @@ to example.org but except subdomain.example.org.
 <varlistentry>
 <term><option>-P</option> <parameter>host-pair-file</parameter></term>
 <listitem>
-<para>specifies a file which describes hostname pairs of
+<para>Specifies a file which describes hostname pairs of
 source nodes and destination nodes.
 The <parameter>host-pair-file</parameter> consists of a pair
-of a source node name and a destination node name in this order in each line.
+of a source node name and a destination node name in this order on each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.
 </para>
@@ -172,15 +172,15 @@ on the source node of the pair.
 <varlistentry>
 <term><option>-S</option> <parameter>source-domainname</parameter></term>
 <listitem>
-<para>specifies a domainname of source filesystem nodes where replicas
+<para>Specifies the domain name of source filesystem nodes where replicas
 will be copied from.
-This option is used solely, or with the <option>-D</option>
+This option is used alone, or with the <option>-D</option>
 option.</para>
-<para>If neither this nor <option>-s</option> option is specified, 
+<para>If neither this nor the <option>-s</option> option is specified, 
 the source nodes will be selected from all nodes.</para>
 <para>The hosts specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the <option>-N</option> option for detail.
+Please refer to the description of the <option>-N</option> option for details.
 </para>
 </listitem>
 </varlistentry>
@@ -188,15 +188,15 @@ Please refer the description of the <option>-N</option> option for detail.
 <varlistentry>
 <term><option>-s</option> <parameter>source-node</parameter></term>
 <listitem>
-<para>specifies a source filesystem node where replicas
+<para>Specifies a source filesystem node where replicas
 will be copied from.
-This option is used solely, or with the <option>-D</option>
+This option is used alone, or with the <option>-D</option>
 or <option>-d</option> option.</para>
-<para>If neither this nor <option>-s</option> option is specified, 
+<para>If neither this nor the <option>-s</option> option is specified, 
 the source nodes will be selected from all nodes.</para>
 <para>The host specified by this option will be excluded from
 the destination nodes.
-Please refer the description of the <option>-N</option> option for detail.
+Please refer to the description of the <option>-N</option> option for details.
 </para>
 </listitem>
 </varlistentry>
@@ -204,7 +204,7 @@ Please refer the description of the <option>-N</option> option for detail.
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>displays verbose output.
+<para>Displays verbose output.
 </para>
 </listitem>
 </varlistentry>
@@ -212,7 +212,7 @@ Please refer the description of the <option>-N</option> option for detail.
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 

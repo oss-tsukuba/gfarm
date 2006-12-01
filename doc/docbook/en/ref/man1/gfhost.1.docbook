@@ -2,7 +2,7 @@
 
 <refentry id='gfhost.1'>
 
-<refentryinfo><date>20 Aug 2003</date></refentryinfo>
+<refentryinfo><date>10 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfhost</refentrytitle>
@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfhost</refname>
-<refpurpose>gfarm host maintenance command</refpurpose>
+<refpurpose>Gfarm host maintenance command</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -24,7 +24,7 @@
       <arg choice='plain'>-M</arg>
     </group>
     <arg choice='opt'>-iLprUv</arg>
-    <arg choice='opt'>-a <replaceable>archtecture</replaceable></arg>
+    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
     <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
     <arg choice='opt'>-j <replaceable>concurrency</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>hostname</replaceable></arg>
@@ -33,8 +33,8 @@
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-c</arg>
-    <arg choice='plain'>-a<replaceable>architecture</replaceable></arg>
-    <arg choice='opt'  >-n<replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice='plain'>-a <replaceable>architecture</replaceable></arg>
+    <arg choice='opt'  >-n <replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
 </cmdsynopsis>
@@ -42,8 +42,8 @@
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-m</arg>
-    <arg choice='opt'>-a<replaceable>architecture</replaceable></arg>
-    <arg choice='opt'>-n<replaceable>number-of-CPUs</replaceable></arg>
+    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
+    <arg choice='opt'>-n <replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='opt'>-A</arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
     <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
@@ -104,10 +104,10 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>gfhost</command> is used to display and maintain
 information about filesystem nodes. The function that 
-<command>gfhost</command> does is choosed by its option -c, -d,
+<command>gfhost</command> performs is determined by an option, -c, -d,
 -H, -l, -M, -m, -R.
-Theses functions are mutually exclusive, and only one option
-of them can be specified.
+These functions are mutually exclusive, and only one option
+among them can be specified.
 If none of them is specified, host name will be displayed as
 the default function of <command>gfhost</command>.
 </para>
@@ -117,32 +117,32 @@ the default function of <command>gfhost</command>.
 <para>
 <!-- XXX "LDAP" should be removed, when metadata features are moved to gfmd -->
   
-  Metadata in LDAP server will be accessed by function -c, -d, -M, -m and
+  Metadata in LDAP server will be accessed by function -c, -d, -M, -m or
   -R. These functions add/delete/display/modify/restore host information
   in the metadata.
 </para>
 <para>
-  If -H, -l or -M is specified, or none of functions are specified,
-  <command>gfhost</command> displays information of filesystem node.
-  -M function only accesses information in metadata server.
-  Display functions other than -M also access <command>gfsd</command>
+  If -H, -l or -M is specified, or none of the functions are specified,
+  <command>gfhost</command> displays filesystem node information.
+  The -M function only accesses information in the metadata server.
+  Display functions other than -M also access <command>gfsd</command>,
   which is running on filesystem nodes. For functions which access
   <command>gfhost</command>, the access option can be specified
-  by option -i, -j, -U and -v.
+  by options -i, -j, -U and -v.
 </para>
 <para>
   You don't have to specify hostnames for display functions.
   In that case, all hosts which are registered in metadata will be
-  tried to be displayed, and you can limit type of hosts to display
-  by -a or -D option.
-  By default, hosts are displayed by alphabetical order, but you can
-  change this by -L, -p, and -r options. Although -L option is ignored
-  in -M function <!-- XXX FIXME BEGIN --> and default function
+  displayed, but you can limit the type of hosts displayed 
+  by the -a or -D option.
+  By default, hosts are displayed in alphabetical order, but you can
+  change this by the -L, -p, or -r options. Although the -L option is ignored
+  in the -M function <!-- XXX FIXME BEGIN --> and in the default function.
   <!-- FIXME END -->.
 </para>
 <para>
-  The followings are the list of functions of <command>gfhost</command>
-  command. You shouldn't specify more than one functions at once.
+  The following is a list of the functions of the <command>gfhost</command>
+  command. You shouldn't specify more than one functions at a time.
 </para>
 <variablelist>
 
@@ -150,11 +150,11 @@ the default function of <command>gfhost</command>.
     <term>&lt;none&gt;</term>
     <listitem>
       <para>
-	If you don't specify none of the functions,
+	If you don't specify any of the functions,
 	<command>gfhost</command> accesses <command>gfsd</command>,
-	and displays names of hosts which are available currently,
+	and displays the names of hosts which are currently available
 	as its default function.
-	Hostnames are displayed by alphabetical order, by default.
+	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
   </varlistentry>
@@ -163,33 +163,33 @@ the default function of <command>gfhost</command>.
     <term><option>-c</option></term>
     <listitem>
       <para>
-	Create metadata information for the host which is specified
+	Creates the metadata information for the host that is specified
 	in the argument.
-	Option -a is mandatory in this function, this option specifies
+	Option -a is mandatory for this function, this option specifies
 	the architecture of the host.
-	Option -n may be used to specify number of CPU of the host,
+	Option -n may be used to specify the number of CPUs of the host,
 	and 1 CPU is assumed, if -n is omitted.
       </para>
       <para>
 	<!-- XXX FIXME check hostname duplication -->
 	You can specifiy multiple hostnames in this function.
-	In that case, first hostname is treated as the identifier of
+	In that case, the first hostname is treated as the identifier of
 	the host, and the host identifier is used for replication
-	information management. Rest of hostnames are used as aliases
+	information management. The rest of the hostnames are used as aliases
 	of the host.
       </para>
       <para>
 	If a host has multiple network interfaces, and each interface
-	has unique hostname, all of the hostnames must be registered
-	as either host identifier or host aliases.
+	has a unique hostname, all of the hostnames must be registered
+	as either host identifiers or host aliases.
       </para>
       <para>
-	If /etc/hosts or NIS hosts database doesn't contain DNS domain
+	If /etc/hosts or the NIS hosts database doesn't contain a DNS domain
 	name part in its hostnames (i.e. these hostnames are not Fully
-	Qualified Domain Names), you must register host alias.
-	In that case, you must register FQDN (hostname which contain
+	Qualified Domain Names), you must register a host alias.
+	In that case, you must register FQDN (a hostname which contain a
 	domain name part) as the host identifier, and 
-	register names without domain part as the host alias.
+	register names without the domain part as the host alias.
       </para>
     </listitem>
   </varlistentry>
@@ -198,16 +198,16 @@ the default function of <command>gfhost</command>.
     <term><option>-d</option></term>
     <listitem>
       <para>
-	Delete host information from metadata.
-	<!-- XXX --> Currently, even hosts which are refered by
+	Deletes host information from metadata.
+	<!-- XXX --> Currently, even hosts which are referred by
 	replica catalog can be deleted. But be careful, because
-	such deletion causes incosistency of metadata.
-	<!-- XXX??? must deny deletion, if the host is refered as replica ???
-	  In that case, provide -f option to delete hosts which are refered,
+	such deletions cause inconsistencies of metadata.
+	<!-- XXX??? must deny deletion, if the host is referred as replica ???
+	  In that case, provide -f option to delete hosts which are referred,
 	  even. Replication information will be deleted by the -f option.
 	  If one want to leave replication information, but don't want to
 	  make accesss to a host, use "temporary unavailable" flag. -->
-	<!-- XXX Currently --> Only host identifier can be used as hostname
+	<!-- XXX Currently --> Only a host identifier can be used as a hostname
 	  in this function.
       </para>
     </listitem>
@@ -217,15 +217,15 @@ the default function of <command>gfhost</command>.
     <term><option>-H</option></term>
     <listitem>
       <para>
-	Display load average and authentication method.
-	With this function, the exact hostname passed by gfhost command
-	arguments will be displayed instead of canonical host identifier.
-	Also, this function displays the IP address which is used to
+	Displays load average and authentication method.
+	With this function, the exact hostname passed by the gfhost command
+	arguments will be displayed instead of the canonical host identifier.
+	Also, this function displays the IP address used to
 	access <command>gfsd</command> in parentheses just after the hostname.
       </para>
       <para>
-	If the host cannot be accessed due to machine down or
-	network trouble etc., x.xx/x.xx/x.xx will be displayed in
+	If the host cannot be accessed due to a machine down or
+	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
 	cannot be accessed by the port number configured in
@@ -233,18 +233,18 @@ the default function of <command>gfhost</command>.
 	displayed.
       </para>
       <para>
-	The next field is the authenticaion method used with the host.
-	`G' in this field means GSI authenticaion and encryption,
-	`g' means only authenticaion is performed by GSI and
+	The next field is the authentication method used with the host.
+	`G' in this field means GSI authentication and encryption,
+	`g' means only authentication is performed by GSI and
 	actual communication is unprotected plain data (gsi_auth),
 	`s' means gfarm sharedsecret authentication,
 	`x' means that the authentication failed,
 	and `-' means that the authentication wasn't actually tried.
-	If -U option is specified, this	authentication method field
+	If the -U option is specified, this authentication method field
 	won't be provided.
       </para>
       <para>
-	Hostnames are displayed by alphabetical order, by default.
+	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
   </varlistentry>
@@ -253,20 +253,20 @@ the default function of <command>gfhost</command>.
     <term><option>-l</option></term>
     <listitem>
       <para>
-	Display with long format.
+	Displays in the long format.
 	This function displays both information retrieved from gfsd
-	and metadata server.
+	and the metadata server.
 	The types of information retrieved from gfsd are load average and
 	authentication method.
-	And the types of information retrieved from metadata server are
-	architecture name, number of CPUs, host identifier
+	And the types of information retrieved from the metadata server are
+	architecture name, number of CPUs, host identifier,
 	and host aliases (if any).
 	IP address will be displayed in parentheses just after the
 	hostname used for the access to <command>gfsd</command>.
       </para>
       <para>
-	If the host cannot be accessed due to machine down or
-	network trouble etc., x.xx/x.xx/x.xx will be displayed in
+	If the host cannot be accessed due to a machine down or
+	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
 	cannot be accessed by the port number configured in
@@ -274,18 +274,18 @@ the default function of <command>gfhost</command>.
 	displayed.
       </para>
       <para>
-	The next field is the authenticaion method used with the host.
-	`G' in this field means GSI authenticaion and encryption,
-	`g' means only authenticaion is performed by GSI and
+	The next field is the authentication method used with the host.
+	`G' in this field means GSI authentication and encryption,
+	`g' means only authentication is performed by GSI and
 	actual communication is unprotected plain data (gsi_auth),
 	`s' means gfarm sharedsecret authentication,
 	`x' means that the authentication failed,
 	and `-' means that the authentication wasn't actually tried.
-	If -U option is specified, this	authentication method field
+	If that -U option is specified, this authentication method field
 	won't be provided.
       </para>
       <para>
-	Hostnames are displayed by alphabetical order, by default.
+	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
   </varlistentry>
@@ -294,8 +294,8 @@ the default function of <command>gfhost</command>.
     <term><option>-M</option></term>
     <listitem>
       <para>
-	Metadata information of the hosts will be displayed.
-	Hostnames are displayed by alphabetical order, by default.
+	The metadata information of the hosts will be displayed.
+	Hostnames are displayed in alphabetical order, by default.
       </para>
     </listitem>
   </varlistentry>
@@ -304,12 +304,12 @@ the default function of <command>gfhost</command>.
     <term><option>-m</option></term>
     <listitem>
       <para>
-	Modify metadata information of the host, by specifying
+	Modifies metadata information of the host, by specifying
 	the host identifier.
-	-a option and -n option overwrite current value of each option.
+	The -a and -n options overwrite the current value of each option.
 	By contrast, host aliases will be added in this function by default.
 	If you want to replace or delete host aliases, please specify
-	-A option with this function. In that case, all host aliases
+	the -A option with this function. In that case, all host aliases
 	will be replaced by specified aliases (if any).
 	<!-- XXX FIXME check hostname duplication -->
       </para>
@@ -320,9 +320,9 @@ the default function of <command>gfhost</command>.
     <term><option>-R</option></term>
     <listitem>
       <para>
-	Restore metadata information read from standard input.
-	The format of the metadata is same with the format
-	that -M function displays.
+	Restores metadata information read from standard input.
+	The format of the metadata is same as the format
+	that the -M function displays.
       </para>
     </listitem>
   </varlistentry>
@@ -330,7 +330,7 @@ the default function of <command>gfhost</command>.
   <varlistentry>
     <term><option>-?</option></term>
     <listitem>
-      <para>Print usage.</para>
+      <para>Prints usage.</para>
     </listitem>
   </varlistentry>
 
@@ -344,8 +344,8 @@ the default function of <command>gfhost</command>.
     <term><option>-A</option></term>
     <listitem>
       <para>
-	Alter. This option is used with -m function to replace
-	host aliases, rather than adding.
+	Alter. This option is used with the -m function to replace,
+	rather than add, host aliases. 
       </para>
     </listitem>
   </varlistentry>
@@ -354,10 +354,10 @@ the default function of <command>gfhost</command>.
     <term><option>-a</option> <parameter>architecture</parameter></term>
     <listitem>
       <para>
-	This option specifies the CPU architecture by a format like
+	This option specifies the CPU architecture using a format like
 	sparc-sun-solaris8 or i386-redhat8.0-linux, etc.
-	If this option is used with -c or -m function, this means
-	the architecture to add/modify the metadata information.
+	If this option is used with the -c or -m function, this means
+	the architecture used to add/modify the metadata information.
 	If this option is used with -H, -l, -M function or default function,
 	this limits hosts to the specified architecture.
       </para>
@@ -368,8 +368,8 @@ the default function of <command>gfhost</command>.
     <term><option>-D</option> <parameter>domain-name</parameter></term>
     <listitem>
       <para>
-	This option is used with -H, -l, -M function or default function
-	to limit hosts to the specified domain.
+	This option is used with the -H, -l, -M function or the default
+	function to limit hosts to the specified domain.
       </para>
     </listitem>
   </varlistentry>
@@ -378,11 +378,11 @@ the default function of <command>gfhost</command>.
     <term><option>-i</option></term>
     <listitem>
       <para>
-	There is "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
+	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
 	$HOME/.gfarmrc to give priorities of network addresses
 	for gfarm access.
-	This directive works with <command>gfhost</command> command,
-	but will be ignored, if you specified -i option with
+	This directive works with the <command>gfhost</command> command,
+	but will be ignored, if you specified the -i option with
 	<command>gfhost</command>.
       </para>
     </listitem>
@@ -392,7 +392,7 @@ the default function of <command>gfhost</command>.
     <term><option>-j</option> <parameter>concurrency</parameter></term>
     <listitem>
       <para>
-	This option specifies concurrency used for the access to
+	This option specifies the concurrency used for access to
 	<command>gfsd</command>.
 	The default value is 10.
       </para>
@@ -403,8 +403,8 @@ the default function of <command>gfhost</command>.
     <term><option>-L</option></term>
     <listitem>
       <para>
-	Sort by load average order. This option is effective only with
-	-H and -l function <!-- XXX FIXME and default function -->.
+	Sorts by load average order. This option is effective only with the
+	-H and -l functions<!-- XXX FIXME and default function -->.
       </para>
     </listitem>
   </varlistentry>
@@ -413,7 +413,7 @@ the default function of <command>gfhost</command>.
     <term><option>-n</option> <parameter>number-of-CPUs</parameter></term>
     <listitem>
       <para>
-	This option is used with -c or -m function, and specifies
+	This option is used with the -c or -m function, and specifies the
 	number of CPUs of the host.
       </para>
     </listitem>
@@ -423,14 +423,14 @@ the default function of <command>gfhost</command>.
     <term><option>-p</option></term>
     <listitem>
       <para>
-	Plain order. This option stops sorting on -H, -l, -M function
-	or default function.
+	Plain order. This option stops sorting on the -H, -l, -M function
+	or the default function.
 
-	With -M function, command argument order (if any), or
-	order that metadata server answers is used for a display.
+	With the -M function, command argument order (if any), or
+	the order that the metadata server answers is used for display.
 
-	With -H, -l function or default function, the result
-	is displayed with the order that each <command>gfsd</command> answers.
+	With the -H, -l function or the default function, the result
+	is displayed in the order that each <command>gfsd</command> answers.
       </para>
     </listitem>
   </varlistentry>
@@ -439,7 +439,7 @@ the default function of <command>gfhost</command>.
     <term><option>-r</option></term>
     <listitem>
       <para>
-	Reverse the order of sort.
+	Reverses the order of sort.
       </para>
     </listitem>
   </varlistentry>
@@ -448,12 +448,12 @@ the default function of <command>gfhost</command>.
     <term><option>-U</option></term>
     <listitem>
       <para>
-	Suppress authentication attempts by TCP, and only query
+	Suppresses authentication attempts by TCP, and only queries
 	load average by UDP.
-	This option only makes sense, if you specified -H or -l function,
-	or if you don't specify any function. This option has effect to
-	make gfhost command run faster.
-	If -H or -l function is specified, this option makes the 
+	This option only makes sense if you specified the -H or -l function,
+	or if you didn't specify any function. This option
+	makes the gfhost command run faster.
+	If the -H or -l function is specified, this option makes the 
 	authentication method field disappear.
       </para>
     </listitem>
@@ -463,9 +463,9 @@ the default function of <command>gfhost</command>.
     <term><option>-v</option></term>
     <listitem>
       <para>
-	-H, -l function and default function don't produce any error
-	report about the <command>gfsd</command> accesss.
-	Such error report will be produced by this option.
+	The -H, -l function and the default function don't produce error
+	reports on <command>gfsd</command> accesses;
+	these error reports will be produced by this option.
       </para>
     </listitem>
   </varlistentry>
