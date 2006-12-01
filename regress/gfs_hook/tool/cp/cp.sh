@@ -8,7 +8,7 @@ case $# in
 	exit $exit_fail;;
 esac
 
-trap 'rm -f $hooktmp exit $exit_trap' $trap_sigs
+trap 'rm -f $hooktmp; exit $exit_trap' $trap_sigs
 
 datasize=`ls -l $datafile | awk '{print $5}'`
 

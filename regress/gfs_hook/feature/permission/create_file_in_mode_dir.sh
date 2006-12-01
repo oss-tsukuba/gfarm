@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 . ./regress.conf
 
@@ -20,11 +20,16 @@ esac
 
 trap 'rm -rf $hooktmp; exit $exit_trap' $trap_sigs
 
-if mkdir $hooktmp && chmod $mode $hooktmp &&
-   ([ x$possibility = x"possible" ] && touch $hooktmp/foo) ||
-   ([ x$possibility = x"impossible" ] && ! touch $hooktmp/foo 2>/dev/null)
+if mkdir $hooktmp &&
+   chmod $mode $hooktmp 
 then
-    exit_code=$exit_pass
+    if ([ x$possibility = x"possible" ] && touch $hooktmp/foo) ||
+       ([ x$possibility = x"impossible" ] && ! touch $hooktmp/foo 2>/dev/null)
+    then
+	exit_code=$exit_pass
+    else    
+	exit_code=$exit_xfail
+    fi	
 fi
 
 chmod 700 $hooktmp

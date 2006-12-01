@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/umask_dir.sh 000 drwxrwxrwx
+$shell $testbase/umask_dir.sh 000 drwxrwxrwx

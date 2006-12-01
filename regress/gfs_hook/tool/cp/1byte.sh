@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/cp.sh $data/1byte
+$shell $testbase/cp.sh $data/1byte

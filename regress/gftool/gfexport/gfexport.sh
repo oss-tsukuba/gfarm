@@ -12,8 +12,6 @@ esac
 
 trap 'rm -f $gfexport_out; gfrm $gftmp; exit $exit_trap' $trap_sigs
 
-datasize=`ls -l $datafile | awk '{print $5}'`
-
 if gfreg $datafile $gftmp &&
    gfexport $gftmp >$gfexport_out &&
    cmp -s $gfexport_out $datafile; then

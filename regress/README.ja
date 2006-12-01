@@ -9,32 +9,42 @@ Gfarm テストスイート
    ・「make」、「make check」ターゲットあるいは regress.sh スクリプト
 	現在存在する gfarm 環境に対して、テストスイートを実行します。
 
-   ・「make selfcheck」、「make selfcheck-postgresql」、「make selfcheck-ldap」
-      ターゲット
-	PostgreSQL バックエンドと LDAP バックエンドそれぞれについて
-	自ホストだけで構成される gfarm 環境を作成し、regress.sh
-	スクリプトを実行します。
-	内部では、下記の config.sh スクリプトを呼び出しています。
+   ・「make selfcheck」、
+     「make selfcheck-バックエンド」、
+     「make selfcheck-バックエンド-認証方式」、
+     「make selfcheck-バックエンド-認証方式-agent利用方式」ターゲット
+	自ホストだけで構成される一時的なテスト用 gfarm 環境を作成し、
+        regress.sh スクリプトを実行します。
 
-   ・config.sh スクリプト
-	hostname コマンドが返すホスト名および localhost の 2 つの
-	gfsd からなるテスト用の gfarm 環境を作成し、引数に与えたを
-	実行します。
-	コマンド引数を省略した場合は ./regress.sh を実行します。
+	すべて組合せでテストを行ないたい場合には「make selfcheck」、
+	特定の組み合わせだけでテストを行ないたい場合には、
+	たとえば「make selfcheck-postgresql-sharedsecret-agent_enable」
+	のようにしてテストすると良いでしょう。
+
+   ・「make xfail-check」ターゲット
+	"expected failure" ($exit_xfail) を返すにも関わらず、その理由が
+	ファイル XFAIL に記述されてないテストケースを調べます。
 
 1. 「make」、「make check」ターゲットあるいは regress.sh スクリプト
 
+   このターゲットは、現在既に設定されている gfarm 環境内で、
+   テストスイートを実行します。
+
 1.1. 実行に必要な準備
 
-   ・システムコールをフックするための設定をします。doc/README.hook.* を
-     参照して、使用する OS/シェルごとに必要な設定を行ってください。
+   ・テスト対象の Gfarm 環境の構築が完了している必要があります。
 
-   ・テスト対象のバイナリを、$PATH に加えてください。
+   ・システムコールをフックするための設定をします。doc/README.hook.* を
+     参照して、使用する OS/シェルごとに必要な設定 (LD_PRELOAD 設定など)
+     を行ってください。
+
+   ・テスト対象のバイナリの bin ディレクトリを、$PATH の先頭に加えてください。
 
    ・"gfhost -l" で、2つ以上のホストが認証可能になっていることを確認して
      ください。
 
-   ・"gfcd" で作業ディレクトリが作成されていることを確認してください。 
+   ・"gfcd" で "gfarm:/ユーザ名" というディレクトリが作成されていることを
+     確認してください。 
 
    ・このテストでは、gfexec/gfrun を用いて、リモートホストでコマンドを
      実行します。このため、下記の点に注意してください。
@@ -48,6 +58,13 @@ Gfarm テストスイート
        参照されること。(対話的に $GFARM_CONFIG_FILE を設定するだけでは
        不十分であり、設定するなら、.bashrc や .cshrc で行なう必要があります。)
 
+   ・このテストでは、scp コマンドを使って、ファイルシステムノードのうちの
+     1台へファイルをコピーします。このため、対話的操作なしで、全ての
+     ファイルシステムノードへ scp できる状態になっている必要があります。
+     これは通常、ssh-agent を実行中であり、かつ ssh-add コマンドでパス
+     フレーズが入力済の環境であり、かつ ssh の known_hosts ファイルに、
+     全ファイルシステムノードが登録済みである必要があります。
+
 1.2. 実行方法
 
    ファイル regress/schedule にテスト対象ファイルのパス名が登録してあります。
@@ -59,19 +76,62 @@ Gfarm テストスイート
 	$ cd regress
 	$ make (または「make check」)
 
-   単に checkout しただけで configure コマンド未実行の CVS 作業スペースで
-   テストスイートを走らせる場合は regress.sh スクリプトを使ってください。
+   あるいは、下記のように regress.sh コマンドを直接使うこともできます。
 
 	$ cd regress
+	$ make all
 	$ ./regress.sh
 
-2. 「make selfcheck」、「make selfcheck-postgresql」、「make selfcheck-ldap」
-   ターゲット
+2. 「make selfcheck」、
+   「make selfcheck-バックエンド」、
+   「make selfcheck-バックエンド-認証方式」、
+   「make selfcheck-バックエンド-認証方式-agent利用方式」ターゲット
+
+   このターゲットは、/var/tmp/`whoami`/ に、自ホストと localhost から
+   なるテスト専用 gfarm 環境を構築し、その環境内でテストを行ないます。
+
+   このため、事前にテスト用 gfarm 環境を構築しておく必要はありません。
+   また LD_PRELOAD 環境変数の設定も自動的に行なうので、テスト前にユーザ
+   が設定する必要はありません。
+
+   selfcheck は、利用可能なすべてのバックエンドに対してテストを行ないます。
+   selfcheck-postgresql および selfcheck-ldap は、それぞれ PostgreSQL
+   バックエンドおよび LDAP バックエンドに対してテストを行ないます。
+
+  「make selfcheck」は、すべての組み合わせでテストを実施します。
+  「make selfcheck-バックエンド」は、
+	指定したバックエンドに対して、すべての認証方式、す
+	べての gfarm_agent 利用方式の組み合わせのテストを行ないます。
+  「make selfcheck-バックエンド-認証方式」は、
+	指定したバックエンドと認証方式に対して、
+	すべての gfarm_agent 利用方式のテストを行ないます。
+  「make selfcheck-バックエンド-認証方式-agent利用方式」は、
+	指定したバックエンド、指定した認証方式、指定した gfarm_agent 利用方式
+	に対してテストを行ないます。
+
+   なお、テスト結果のサマリー表示があるのは、「make selfcheck」のみです。
+   それ以外のターゲットでサマリー表示をしたい場合には、下記のように、
+   テストしたいターゲットの前に selfcheck_clear
+   テストしたいターゲットの後に selfcheck_summary
+   を指定してください。
+	make selfcheck_clear selfcheck-postgresql selfcheck_smmary
+
+  バックエンド、認証方式、gfarm_agent 利用方式のそれぞれには、下記の値が
+  指定できます。
+	バックエンド: postgresql ldap
+	認証方式: sharedsecret gsi gsi_auth
+	gfarm_agent 利用方式: agent_disable agent_enable agent_only
+		agent_disable を指定した場合、gfarm_agent を利用しません。
+		agent_enable を指定した場合、gfarm_agent を使ってテストします。
+		agent_only を指定した場合、gfarm_agent を起動し、クライアント
+			からメタデータバックエンドサーバへのアクセスを禁止して
+			テストします。
 
 2.1. 実行に必要な準備
 
      - テスト対象のバイナリ中の gfexec コマンドが検索されるように、
-       .bashrc や .cshrc の中で環境変数 $PATH を設定していること。
+       .bashrc や .cshrc の中で環境変数 $PATH の先頭に、テスト対象の
+       バイナリの bin ディレクトリを設定していること。
        (gfrcmd や gfrun から呼び出された gfexec は、リモートホストで、
 	絶対パス名の指定なしで実行されますから、対話的に $PATH を設定
 	するだけでは不十分であり、.bashrc や .cshrc で設定する必要があります。)
@@ -84,6 +144,12 @@ Gfarm テストスイート
 	設定が必要です。)
      - Linux の場合は、/usr/lib/gfarm/ 以下に、glibc-not-hidden パッケージ
        附属の shared object がインストールされていること。
+     - このテストでは、scp コマンドを使って、自ホストへファイルをコピー
+       します。このため、対話的操作なしで、自ホストへ scp できる状態に
+       なっている必要があります。これは通常、ssh-agent を実行中であり、
+       かつ ssh-add コマンドでパスフレーズが入力済の環境であり、かつ
+       ssh の known_hosts ファイルに、自ホストが登録済みである必要があり
+       ます。
 
 2.2. 実行方法
 
@@ -92,42 +158,33 @@ Gfarm テストスイート
 	$ cd regress
 	$ make selfcheck
 
-  selfcheck の代わりに selfcheck-postgresql、selfcheck-ldap を指定した
-  場合には、すべてのバックエンドではなく、指定したバックエンドのみテスト
-  します。この場合、「make CONFIG_OPT=-k selfcheck-postgresql」のように
-  「CONFIG_OPT=-k」を指定すれば、テスト完了後、その gfarm 環境を削除せず
-  に残します。
+3. regress ディレクトリの内容
 
-3. config.sh スクリプト
-
-3.1. 実行に必要な準備
-
-   2.1. 「make selfcheck」ターゲットの実行に必要な準備
-   と同じ準備が必要です。
-
-3.2. 実行方法
-
-   下記のように実行します。
-   ただし、--prefix で指定するのは、テスト対象の Gfarm がインストールされ
-   ているディレクトリ (Gfarm の configure 時に --prefix オプションで指定した
-   ディレクトリ) です。
-
-	$ cd regress
-	$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b postgresql
-	$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b ldap
-
-
-4. regress ディレクトリの内容
-
-   regress.sh   引数で指定したファイルにリストされたテストプログラムを
-		順次実行して結果を表示するスクリプト
+   regress.sh   「make check」ターゲットの実体です。
+		引数で指定したファイルにリストされたテストプログラムを
+		順次実行して結果を表示するスクリプト。
 
    schedule     regress.sh がデフォルトで参照するテストプログラムのリスト
 
-   config.sh	メタデータサーバおよび gfsd を起動して、自ホストだけからなる
-		テスト用 gfarm 環境を作成し、引数のコマンドを実行します。
+   config.sh	「make selfcheck」ターゲットの実体です。
+		hostname コマンドが返すホスト名および localhost の 2 つの
+		gfsd と、メタデータサーバからなるテスト用の gfarm 環境を
+		作成し、引数に与えたコマンドを実行します。
+		コマンド引数を省略した場合は ./regress.sh を実行します。
 		-k オプションを与えない限り、終了後、その gfarm 環境を消去
 		します。
+		例えば下記のように引数を指定します。
+		--prefix で指定するのは、テスト対象の Gfarm がインストールされ
+		ているディレクトリ (Gfarm の configure 時に --prefix オプ
+		ションで指定したディレクトリ) です。
+		$ cd regress
+		$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b postgresql
+		$ ./config.sh --prefix /usr --config-prefix /var/tmp/`whoami` -b ldap
+
+   gfs_hook.sh	doc/README.hook.{en,ja} にあるシステムコールフックのための
+		環境設定を行なったのち、引数にあるコマンドを実行するスクリ
+		プト。
+		config.sh の中から呼び出されます。
 
    loop.sh      regress.sh を無限回実行するスクリプト
 
@@ -143,3 +200,120 @@ Gfarm テストスイート
                 シグナルの定義を記述しているファイル
 
    Makefile     regress.sh, loop.sh の実行などに使用する makefile
+
+4. テストケースを書く際に利用する変数
+
+   $data	regress/data/ ディレクトリのパス名。
+		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
+		(もしこれが問題なら、絶対パスに変更するかも…)
+
+   $exit_code	終了コードを保持する変数。テストケースの最終行は、
+			exit $exit_code
+		で終了することを期待されている。
+		設定できる値は下記の通り:
+		$exit_pass		成功
+		$exit_fail		失敗
+		$exit_xpass		成功だが、known bug で失敗する筈だった
+		$exit_xfail		失敗だが、それは既知の問題 (known bug)
+		$exit_unresolved	想定外の状況。成功か失敗か不明。
+		$exit_untested		テストせず (テストケースの作成が未了)
+		$exit_unsupported	テストせず (この環境ではテスト不能)
+		$exit_trap		Control-C などで中断させられた。
+		デフォルトでは、exit_code には $exit_fail が設定されている。
+		なお、これらのシンボルの意味は ($exit_trap 以外) 下記を真似た。
+		dejagnu:
+		    http://www.gnu.org/software/dejagnu/manual/x397.html
+		POSIX 1003.3 standard for test frameworks:
+		    http://www.gnu.org/software/dejagnu/manual/x47.html#posix
+		詳しい解説も、これらの URL を参照のこと。
+
+   $gftmp	gfarm ファイルシステム上に作る、テンポラリファイルや
+		テンポラリディレクトリの名前。
+		複数のテンポラリファイルが必要な場合には、「gfmkdir $gftmp」
+		してから、$gftmp の下にファイルを作ることが期待されている。
+		値は "gfarm:./ホスト名.スクリプト名.$PID" という形式。
+
+   $hooktmp	フックが、gfarm ファイルシステム上に作る、テンポラリファイルや
+		テンポラリディレクトリの名前。
+		複数のテンポラリファイルが必要な場合には、「mkdir $hooktmp」
+		してから、$hooktmp の下にファイルを作ることが期待されている。
+		値は "/gfarm/ユーザ名/ホスト名.スクリプト名.$PID" という形式。
+
+   $localtop	一時ファイルを作成するローカルディレクトリ名。通常は "/tmp"
+
+   $shell	シェル。値は "bash" ないし "bash -x" となっているのが普通。
+		スクリプトは、「sh スクリプト名」のように sh をハードコード
+		して呼び出したり、あるいは「スクリプト名」のように直接呼び
+		出したりするのではなく「$shell スクリプト名」のように
+		呼び出す。
+		こうする必要がある理由は下記の 2点
+		・gfs_hook は、bash でしか安定して動作しないが、
+		  /bin/sh が bash なのは Linux だけ。
+		  といっても、bash をテストケースにハードするのも憚られる。
+		・環境変数 GFARM_TEST_DEBUG を設定して、テストケースの
+		  実行ログをとる機能が、この変数を利用している。
+		  この場合、shell="bash -x" と設定される。
+
+   $testbase	テストスクリプトの存在するディレクトリ名。
+		テストスクリプト固有のデータファイルや共用スクリプトに
+		アクセスするのに用いる。
+		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
+		(もしこれが問題なら、絶対パスに変更するかも…)
+
+   $testbin	テスト用バイナリの存在するディレクトリ名。
+		「$testbase/コマンド名」のようにして、バイナリにアクセスする
+		のに用いる。
+		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
+		(もしこれが問題なら、絶対パスに変更するかも…)
+
+   $trap_sigs	後処理を期待されているシグナルのリスト。
+		テストケースは、下記のように、Control-C で止められた場合
+		にも、一時ファイルを残さずに終了することが期待されている。
+		  trap 'ここで一時ファイルを消去; exit $exit_trap' $trap_sigs
+
+   また、「make selfcheck」から呼び出されている場合には、下記の環境変数から、
+   現在実行中のテストの構成を知ることができます。
+	環境変数		とりうる値
+	$REGRESS_BACKEND	postgresql ldap
+	$REGRESS_AUTH		sharedsecret gsi gsi_auth
+	$REGRESS_AGENT		disable enable only
+   ただし、この環境変数は、「make check」実行時には設定されていません。
+   従って、テストケースは、これらの変数が設定されてない場合でも、動作する
+   必要があります。
+   また「make check」で、$exit_xfail や $exit_unsupported の結果を正しく
+   得たい場合には、手動でこれらの環境変数を設定してやる必要があります。
+
+5. TIPS
+
+   ・環境変数 $GFARM_TEST_DEBUG を設定すると、シェルに -x オプションが
+     付加され、ログにデバッグ出力が記録されるようになります。
+
+   ・自ホストだけからなるテスト環境を、一時的に作成してテストしたい場合:
+     例えば PostgreSQL バックエンド、sharedsecret 認証、gfarm_agent 使用と
+     いう構成の場合、下記のコマンドを実行すると、
+	make TEST_TARGET=bash \
+		selfcheck-postgresql-sharedsecret-agent_enable
+     自ホストだけで構成される一時的なテスト用 gfarm 環境を作成し、
+     その中で bash を起動します。
+     そこで「./tst.sh テストスクリプト」を実行すれば、その一時的
+     環境内で、個々のスクリプトをテストできます。
+
+     ターゲットには selfcheck-postgresql-sharedsecret-agent_enable のみならず、
+     どんなバックエンド、認証方式、gfarm_agent 利用方式の組み合わせでも
+     指定できます。指定できる値については、2. を参照してください。
+
+   ・自ホストだけからなるテスト環境を、恒久的に作成したい場合:
+     例えば PostgreSQL バックエンド、sharedsecret 認証、gfarm_agent 使用の場合
+     下記のコマンドで可能です。
+	make TEST_TARGET=true CONFIG_OPT=-k \
+		selfcheck-postgresql-sharedsecret-agent_enable
+     テスト環境を置くディレクトリを、「/var/tmp/ユーザ名」以外の
+     ディレクトリに変更したい場合には、「CONFIG_PREFIX=ディレクトリ名」
+     という変数設定を、make の引数に加えて下さい。
+
+   ・特定のテストケースを、すべて構成について試験したい場合:
+     make 変数 TEST_TARGET に、そのテストを指定して「make check」します。
+     たとえば gfs_hook/tool/scp/scp_from_gfarm.sh というテストケースを
+     試験したい場合、下記のようにします。
+	make TEST_TARGET='./tst.sh gfs_hook/tool/scp/scp_from_gfarm.sh' \
+		selfcheck

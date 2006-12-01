@@ -16,4 +16,13 @@ if gzip -cd $data/$archive >$gunzipped_file &&
 fi
 
 rm -f $gunzipped_file $hooktmp
+
+case `gfarm.arch.guess` in
+*-*-netbsd*)
+	# documented in README.hook.*, due to chflags(2) hook problem?
+	case $exit_code in
+	$exit_pass)	exit_code=$exit_xpass;;
+	$exit_fail)	exit_code=$exit_xfail;;
+	esac;;
+esac
 exit $exit_code

@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/gfchmod_dir.sh 700 drwx------
+$shell $testbase/gfchmod_dir.sh 700 drwx------

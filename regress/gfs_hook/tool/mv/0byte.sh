@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/mv.sh $data/0byte
+$shell $testbase/mv.sh $data/0byte

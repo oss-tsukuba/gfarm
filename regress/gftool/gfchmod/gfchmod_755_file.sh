@@ -10,5 +10,5 @@ if gfreg $data/1byte $gftmp &&
 	exit_code=$exit_pass
 fi
 
-rm -f $gftmp
+gfrm -f $gftmp
 exit $exit_code

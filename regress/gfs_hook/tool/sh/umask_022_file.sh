@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/umask_file.sh 022 -rw-r--r--
+$shell $testbase/umask_file.sh 022 -rw-r--r--

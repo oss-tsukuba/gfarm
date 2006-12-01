@@ -8,7 +8,7 @@ localtmp=$localtop/`basename $hooktmp`
 trap 'rm -f $hooktmp; ssh $host rm -f $localtmp; exit $exit_trap' $trap_sigs
 
 if ! ssh-add -l >/dev/null; then
-    exit $exit_untested
+    exit $exit_unsupported
 elif scp $data/1byte $host:$localtmp &&
     scp $host:$localtmp $hooktmp &&
     cmp -s $data/1byte $hooktmp

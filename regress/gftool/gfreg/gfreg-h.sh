@@ -8,7 +8,7 @@ host="`gfhost | head -1`"
 
 if gfreg -h $host $data/1byte $gftmp &&
    gfexport $gftmp | cmp -s - $data/1byte &&
-   gfwhere $gftmp | awk '{ if ($2 == "'$host'") exit 0; else exit 1 }'; then
+   gfwhere $gftmp | awk 'NR>1{if ($2 == "'$host'") exit 0; else exit 1}'; then
 	exit_code=$exit_pass
 fi
 

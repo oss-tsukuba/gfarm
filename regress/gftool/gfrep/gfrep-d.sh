@@ -2,17 +2,26 @@
 
 . ./regress.conf
 
+case $# in
+1)	datafile=$1;;
+*)	echo "Usage: $0 <datafile>" >&2
+	exit $exit_fail;;
+esac
+
 trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
 
-if [ -f /usr/bin/nawk ]; then awk=nawk; else awk=awk; fi
+if [ `gfhost | head -2 | wc -l` -ne 2 ]; then
+    exit $exit_unsupported
+fi
 
 shost=`gfhost | sed -n '1p'`
 dhost=`gfhost | sed -n '2p'`
 
-if gfreg -h $shost $data/1byte $gftmp &&
+if gfreg -h $shost $datafile $gftmp &&
    gfrep -d $dhost $gftmp && 
    gfwhere $gftmp | $awk '
-      { if ($2 == "'$shost'" && $3 == "'$dhost'"  || 
+      NR > 1 {
+        if ($2 == "'$shost'" && $3 == "'$dhost'"  || 
 	    $2 == "'$dhost'" && $3 == "'$shost'") 
 	   exit 0
 	else

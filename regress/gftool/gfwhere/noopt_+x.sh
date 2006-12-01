@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/noopt.sh $testbase/noopt.sh
+$shell $testbase/noopt.sh $testbase/noopt.sh

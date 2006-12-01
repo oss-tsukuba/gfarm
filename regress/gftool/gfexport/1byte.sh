@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/gfexport.sh $data/1byte
+$shell $testbase/gfexport.sh $data/1byte

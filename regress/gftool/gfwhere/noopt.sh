@@ -14,7 +14,7 @@ esac
 trap 'gfrm -f $gftmp; rm -f $gfwhere_out $thishost; exit $exit_trap' $trap_sigs
 
 if gfreg $datafile $gftmp &&
-   gfwhere $gftmp >$gfwhere_out
+   gfwhere $gftmp | sed -n '$p' >$gfwhere_out
 then
 	host=`awk '{print $NF}' $gfwhere_out`
 	if [ -x $datafile ]; then

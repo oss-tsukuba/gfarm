@@ -6,11 +6,18 @@ include $(top_srcdir)/makes/var.mk
 
 POSTGRESQL_TARGETS=postgresql
 LDAP_TARGETS=ldap
-backend_candidates=${postgresql_targets} ${ldap_targets}
+backend_targets=$(postgresql_targets) $(ldap_targets)
+
+GLOBUS_TARGETS= gsi gsi_auth
+auth_targets=	sharedsecret $(globus_targets)
+
+agent_targets=	disable enable only
 
 CONFIG_PREFIX=	/var/tmp/`whoami`
 CONFIG_OPT=	# -k
-TEST_TARGET=	${srcdir}/regress.sh
+REGRESS_SH=		$(srcdir)/regress.sh
+TEST_TARGET=		$(REGRESS_SH) -t
+LOG=			log
 
 # These environment settings aren't enough,
 # and .bashrc, .zshenv or .cshrc must be modified to set those environments,
@@ -19,31 +26,160 @@ TEST_TARGET=	${srcdir}/regress.sh
 CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$$PATH
 SELFCHECK_ENV=	LANG=C
 
-check test:
-	@echo ""
+# subdirectories which have to be built
+SUBDIRS=	\
+	lib/libgfarm/gfarm/gfarm_initialize \
+	lib/libgfarm/gfarm/gfs_pio_set_local \
+	lib/libgfarm/gfarm/gfs_pio_create \
+	lib/libgfarm/gfarm/gfs_pio_open \
+	lib/libgfarm/gfarm/gfs_pio_close \
+	lib/libgfarm/gfarm/gfs_pio_set_view_index \
+	lib/libgfarm/gfarm/gfs_pio_set_view_local \
+	lib/libgfarm/gfarm/gfs_pio_error \
+	lib/libgfarm/gfarm/gfs_pio_eof \
+	lib/libgfarm/gfarm/gfs_pio_seek \
+	lib/libgfarm/gfarm/gfs_pio_getc \
+	lib/libgfarm/gfarm/gfs_pio_ungetc \
+	lib/libgfarm/gfarm/gfs_pio_getline \
+	lib/libgfarm/gfarm/gfs_pio_gets \
+	lib/libgfarm/gfarm/gfs_pio_readline \
+	lib/libgfarm/gfarm/gfs_pio_readdelim \
+	lib/libgfarm/gfarm/gfs_pio_read \
+	lib/libgfarm/gfarm/gfs_pio_putc \
+	lib/libgfarm/gfarm/gfs_pio_putline \
+	lib/libgfarm/gfarm/gfs_pio_puts \
+	lib/libgfarm/gfarm/gfs_pio_write \
+	lib/libgfarm/gfarm/gfs_stat \
+	lib/libgfarm/gfarm/gfs_pio_truncate \
+	lib/libgfarm/gfarm/gfs_chdir \
+	lib/libgfarm/gfarm/gfs_realpath \
+	lib/libgfarm/gfarm/gfs_opendir \
+	lib/libgfarm/gfarm/gfs_closedir \
+	lib/libgfarm/gfarm/gfs_readdir \
+	lib/libgfarm/gfarm/gfs_glob_init \
+	lib/libgfarm/gfarm/gfs_glob \
+	lib/libgfarm/gfarm/gfs_glob_add \
+	lib/libgfarm/gfarm/gfs_chmod \
+	lib/libgfarm/gfarm/gfs_utimes \
+	lib/libgfarm/gfarm/gfs_mkdir \
+	lib/libgfarm/gfarm/gfs_rmdir \
+	lib/libgfarm/gfarm/gfs_unlink \
+	lib/libgfarm/gfarm/gfs_unlink_section \
+	lib/libgfarm/gfarm/gfs_rename \
+	lib/libgfarm/gfarm/gfarm_stringlist_init \
+	lib/libgfarm/gfarm/gfarm_stringlist_add \
+	lib/libgfarm/gfarm/gfarm_stringlist_elem \
+	lib/libgfarm/gfarm/gfarm_stringlist_length \
+	lib/libgfarm/gfarm/gfarm_stringlist_cat \
+	lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM \
+	lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY \
+	lib/libgfarm/gfarm/gfs_pio_flush \
+	lib/libgfarm/gfarm/gfs_pio_sync \
+	lib/libgfarm/gfarm/gfs_pio_datasync \
+	lib/libgfarm/gfarm/fork-term-init
+
+check test: all
+	@$(REGRESS_SH) -i
 	@$(CHECK_ENV) $(TEST_TARGET)
 	@echo ""
+	@$(REGRESS_SH) -s
 
-loop:
-	@$(CHECK_ENV) ./loop.sh
+loop: all
+	@$(CHECK_ENV) $(srcdir)/loop.sh
 
-selfcheck:
+selfcheck: selfcheck_clear selfcheck_all_backends selfcheck_summary
+
+selfcheck_clear:
+	@$(REGRESS_SH) -i
+
+selfcheck_all_backends:
 	@echo ""
-	@if [ "`echo ${backend_candidates} | wc -w`" -eq 0 ]; \
+	@if [ "`echo $(backend_targets) | wc -w`" -eq 0 ]; \
 	 then \
 		echo "no usable metadata backend is configured"; \
 		exit 1; \
 	 fi;
-	@for backend in ${backend_candidates}; do \
+	@for backend in $(backend_targets); do \
 		$(MAKE) -f $(srcdir)/Makefile selfcheck-$${backend} || \
 			exit $$?; \
 	 done
-	@echo ""
 
-selfcheck-postgresql selfcheck-ldap:
+selfcheck_summary:
+	@echo ""
+	@$(REGRESS_SH) -s
+
+selfcheck-postgresql \
+selfcheck-ldap:
 	@backend=`expr $@ : 'selfcheck-\(.*\)'`; \
-	echo "Trying -b $$backend"; \
-	$(SELFCHECK_ENV) ${srcdir}/config.sh --prefix ${prefix} -b $$backend \
+	 for auth in $(auth_targets); do \
+		$(MAKE) -f $(srcdir)/Makefile $@-$${auth} || exit $$?; \
+	 done
+
+selfcheck-postgresql-sharedsecret \
+selfcheck-postgresql-gsi \
+selfcheck-postgresql-gsi_auth \
+selfcheck-ldap-sharedsecret \
+selfcheck-ldap-gsi \
+selfcheck-ldap-gsi_auth:
+	@backend=`expr $@ : 'selfcheck-\(.*\)-.*'`; \
+	    auth=`expr $@ : 'selfcheck-.*-\(.*\)'`; \
+	 for agent_mode in $(agent_targets); do \
+		$(MAKE) -f $(srcdir)/Makefile $@-agent_$${agent_mode} \
+			|| exit $$?; \
+	 done
+
+selfcheck-postgresql-sharedsecret-agent_disable \
+selfcheck-postgresql-sharedsecret-agent_enable \
+selfcheck-postgresql-sharedsecret-agent_only \
+selfcheck-postgresql-gsi-agent_disable \
+selfcheck-postgresql-gsi-agent_enable \
+selfcheck-postgresql-gsi-agent_only \
+selfcheck-postgresql-gsi_auth-agent_disable \
+selfcheck-postgresql-gsi_auth-agent_enable \
+selfcheck-postgresql-gsi_auth-agent_only \
+selfcheck-ldap-sharedsecret-agent_disable \
+selfcheck-ldap-sharedsecret-agent_enable \
+selfcheck-ldap-sharedsecret-agent_only \
+selfcheck-ldap-gsi-agent_disable \
+selfcheck-ldap-gsi-agent_enable \
+selfcheck-ldap-gsi-agent_only \
+selfcheck-ldap-gsi_auth-agent_disable \
+selfcheck-ldap-gsi_auth-agent_enable \
+selfcheck-ldap-gsi_auth-agent_only : all
+	@backend=`expr $@ : 'selfcheck-\(.*\)-.*-agent_.*'`; \
+	    auth=`expr $@ : 'selfcheck-.*-\(.*\)-agent_.*'`; \
+	   agent=`expr $@ : 'selfcheck-.*-.*-agent_\(.*\)'`; \
+	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent}" >&2; \
+	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent}" >>$(LOG); \
+	 $(SELFCHECK_ENV) $(srcdir)/config.sh --prefix $(prefix) \
+		-b $${backend} -a $${auth} --agent-$${agent} \
 		--config-prefix $(CONFIG_PREFIX) $(CONFIG_OPT) \
-		${srcdir}/gfs_hook.sh --prefix ${prefix} \
+		$(srcdir)/gfs_hook.sh --prefix $(prefix) \
 			$(TEST_TARGET)
+
+xfail-check:
+	cd $(srcdir) && \
+	if find lib gfs_hook -type f -print | \
+		egrep -v '/.#|/#|~$$' | \
+		awk 'FILENAME=="XFAIL" && /[a-z]/ { documented[$$0]=1 } FILENAME=="-" { if (!documented[$$0]) print $$0 }' XFAIL - | \
+		xargs fgrep -l exit_xfail | tee /dev/tty | grep '^'; \
+	then \
+		echo "Those are expected failures which are not documented"; \
+		exit 1; \
+	else \
+		exit 0; \
+	fi
+
+all: config
+
+config:
+	test -f Makefile || \
+	( \
+	echo "regress=$(srcdir)"; \
+	echo ". $(srcdir)/regress.conf"; \
+	) > regress.conf
+
+clean:
+	-test -f Makefile || $(RM) -f regress.conf
+
+include $(top_srcdir)/makes/subdir.mk

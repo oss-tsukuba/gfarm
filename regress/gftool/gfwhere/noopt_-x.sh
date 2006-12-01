@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$testbase/noopt.sh $data/0byte
+$shell $testbase/noopt.sh $data/0byte
