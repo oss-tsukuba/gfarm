@@ -541,6 +541,9 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	/* make writing-to-stderr atomic, for GfarmFS-FUSE log output */
+	setvbuf(stderr, NULL, _IOLBF, 0);
+
 	e = gfarm_stringlist_init(&paths);
 	if (e == NULL) {
 		e = gfs_glob_init(&types);
