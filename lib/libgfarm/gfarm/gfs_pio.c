@@ -416,6 +416,11 @@ gfs_pio_close_common(GFS_File gf)
 	 * When there is inconsistency, do not update/overwrite the
 	 * metadata. This inconsistency may come from the update by
 	 * other process or oneself such as 'nvi'.
+	 *
+	 * XXX Maybe we should check whether another process already
+	 * updated this metadata or not.  There are race conditions
+	 * that we cannot fix at least until gfarm v2, though.
+	 * Should we pay some effort even if it cannot be complete?
 	 */
 	if (e_save == NULL && (gf->mode & GFS_FILE_MODE_FILE_WAS_ACCESSED))
 		e_save = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
@@ -876,6 +881,14 @@ gfs_fstat(GFS_File gf, struct gfs_stat *status)
 	if ((gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) != 0 &&
 	    status->st_size < (size = gf->offset + gf->length))
 		status->st_size = size;
+
+	/*
+	 * XXX Maybe we should check whether another process already
+	 * updated these time data or not.
+	 * Should we pay some effort even if it cannot be complete?
+	 */
+	status->st_atimespec = gf->pi.status.st_atimespec;
+	status->st_mtimespec = gf->pi.status.st_mtimespec;
 	return (GFARM_ERR_NO_ERROR);
 }
 
