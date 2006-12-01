@@ -6,7 +6,7 @@
 #
 
 PORTNAME=	gfarm
-PORTVERSION=	1.3.1
+PORTVERSION=	1.4
 CATEGORIES=	net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 
@@ -74,6 +74,12 @@ CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
 		--with-globus-flavor=${GLOBUS_FLAVOR}
 
 CONFIGURE_ENV+=	${PERL5LIB_FIX}
+
+# XXX
+# GSI authentication doesn't work, if gfarm is linked with OpenLDAP in ports.
+# Probably this is because of OpenSSL conflicts between Globus and ports
+# (OpenLDAP depends on OpenSSL in ports).
+CONFIGURE_ARGS+=--without-openldap
 
 .endif # WITH_GLOBUS
 

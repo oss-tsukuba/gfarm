@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	1.3.1
-%define rel	1
+%define ver	1.4
+%define rel	0
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -66,47 +66,86 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 %package doc
 Summary: document for gfarm
 Group: Documentation
+# always provide "gfarm-doc" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-doc = %{ver}-%{rel}
+%endif
 
 %package libs
 Summary: runtime libraries for gfarm
 Group: System Environment/Libraries
+# always provide "gfarm-libs" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-libs = %{ver}-%{rel}
+%endif
 
 %package frontend
 Summary: frontends for gfarm
 Group: Applications/Internet
+# always provide "gfarm-frontend" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-frontend = %{ver}-%{rel}
+%endif
 
 %package client
 Summary: clients for gfarm
 Group: Applications/Internet
-Requires: %{package_name}-libs
+# always provide "gfarm-client" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-client = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}
 
 %package gfptool
 Summary: parallel tools installed under gfarm:/bin/
 Group: System Environment/Daemons
-Requires: %{package_name}-client %{package_name}-libs
+# always provide "gfarm-gfptool" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-gfptool = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
-Requires: %{package_name}-client %{package_name}-libs
+# always provide "gfarm-fsnode" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-fsnode = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 
 %package server
 Summary: metadata server for gfarm
 Group: System Environment/Daemons
-Requires: %{package_name}-libs
+# always provide "gfarm-server" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-server = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}
 
 %package agent
 Summary: metadata cache server for gfarm
 Group: System Environment/Daemons
-Requires: %{package_name}-libs
+# always provide "gfarm-agent" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-agent = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}
 
 %package devel
 Summary: development library for gfarm
 Group: Development/Libraries
+%if %{globus}
+Provides: %{pkg}-devel = %{ver}-%{rel}
+%endif
 
 %package gfront
 Summary: file system browser for gfarm
 Group: Applications/Internet
+# always provide "gfarm-gfront" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-gfront = %{ver}-%{rel}
+%endif
 
 %description
 gfarm - Grid datafarm 
@@ -648,10 +687,20 @@ fi
 %{doc_prefix}/INSTALL.RPM.en
 %{doc_prefix}/INSTALL.RPM.ja
 %{doc_prefix}/LICENSE
+%{doc_prefix}/README.en
+%{doc_prefix}/README.ja
 %{doc_prefix}/RELNOTES
+%{doc_prefix}/OVERVIEW.en
+%{doc_prefix}/OVERVIEW.ja
+%{doc_prefix}/SETUP.en
+%{doc_prefix}/SETUP.ja
+%{doc_prefix}/SETUP.detail.en
+%{doc_prefix}/SETUP.detail.ja
 %{doc_prefix}/GUIDE.ja
 %{doc_prefix}/Gfarm-FAQ.en
 %{doc_prefix}/Gfarm-FAQ.ja
+%{doc_prefix}/KNOWN_PROBLEMS.en
+%{doc_prefix}/KNOWN_PROBLEMS.ja
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
 

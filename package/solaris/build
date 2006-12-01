@@ -4,7 +4,7 @@
 PATH=/opt/SUNWspro/bin:/usr/ccs/bin:/usr/local/bin:/usr/bin:/bin:/usr/ucb
 export PATH
 
-version=1.3.1
+version=1.4
 subpkgs='client devel doc fsnode gfptool libs agent server gfront'
 prefix=usr/local/gfarm
 pkg_list='gfarm gfarm-gsi'
@@ -20,23 +20,23 @@ make=/usr/local/bin/make
 tar=/usr/local/bin/tar
 with_prefix=--prefix=/$prefix
 with_sysconfdir=--sysconfdir=/etc
-with_globus=--with-globus=/opt/gt-2.4.3-vendorcc
+with_globus=--with-globus=/opt/GT4/gt-4.0.3-gcc-3.2.3
 with_globus="$with_globus --with-globus-static"
 # XXX --with-mpi needs OPTFLAGS=-O with gcc (an error happens at gfs_hook_mpi).
 # XXX currently, MPICH isn't installed on the build-host.
 # XXX tar warns missing `gfwc', because it isn't built without --with-mpi.
 with_mpi= # --with-mpi=/usr/local/mpich
 
-vendorcc_pkg=/home/soda/install/SunOS-5.9-sparc-SunStudio-9
-with_vendorcc_postgresql=--with-postgresql=$vendorcc_pkg/postgresql-8.1.3
-with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.3.20
-with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.7i
+vendorcc_pkg=/home/soda/install/SunOS-5.9-sparc-SunForte-7
+with_vendorcc_postgresql=--with-postgresql=$vendorcc_pkg/postgresql-8.1.5
+with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.3.28
+with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.8d
 with_vendorcc_globus_flavor= # --with-globus-flavor=vendorcc32 # not necessary
 
-gcc_pkg=/home/soda/install/SunOS-5.9-gcc-3.3.2
-with_gcc_postgresql=--with-postgresql=$gcc_pkg/postgresql-8.1.3
-with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.1.30
-with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.7d
+gcc_pkg=/home/soda/install/SunOS-5.9-gcc-3.2.3
+with_gcc_postgresql=--with-postgresql=$gcc_pkg/postgresql-8.1.5
+with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.3.28
+with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.8d
 with_gcc_globus_flavor= # --with-globus-flavor=gcc32 # not necessary
 
 case `whoami` in
