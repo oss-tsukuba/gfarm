@@ -1567,8 +1567,8 @@ main(int argc, char **argv)
 		gfarm_cache_path_info_param_set(60000, 0);
 	}
 	e = gfarm_initialize(NULL, NULL);
-	if (e != NULL)
-		(void)gfarm_terminate();
+	if (e != NULL) /* metadata server isn't up yet */
+		(void)gfarm_terminate(); /* do NOT exit, try again later */
 	if (syslog_level != -1) /* gfarm_initialize() may change log level */
 		gflog_set_priority_level(syslog_level);
 
