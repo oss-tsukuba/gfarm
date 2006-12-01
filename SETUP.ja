@@ -1,0 +1,549 @@
+[This is written in Japanese, please look at SETUP.en for English version.]
+
+		 Gfarm ファイルシステム設定マニュアル
+
+● 本ドキュメントについて
+=========================
+
+本ドキュメントは Gfarm ファイルシステムの設定方法を記述したものです．
+
+このマニュアルを利用する前に，Gfarm ソフトウェアのインストールを行なって
+ください．インストール方法は，ソースコードからのインストールの場合は
+INSTALL.ja に，RPM バイナリパッケージからのインストールの場合は
+INSTALL.RPM.ja にあります．
+
+なにか問題が生じた場合には，Gfarm-FAQ.ja のトラブル・シューティングの
+項も参照してください．
+
+● 概要
+=================================
+
+Gfarm ファイルシステムの導入にあたり，まず，メタデータサーバ，メタデー
+タ・キャッシュ・サーバを設定し，その後，ファイルシステムノード，クライ
+アントノードの設定を行います．
+
+● メタデータサーバの設定
+=========================
+
+▽ （広域環境で利用する場合のみ）ホスト証明書のインストール
+
+（VPN を含む LAN やクラスタ内など信頼されたネットワークで利用する場合は
+この節の設定は必要ありません．）
+
+広域環境で利用する場合，メタデータサーバとの認証に GSI（グリッド・セキュ
+リティ・インフラストラクチャ）を利用します．そのために，まず適切な CA
+により署名されたホスト証明書を取得する必要があります．
+
+CA は，利用する人々の間で独自に運用しても構いませんし，例えば，以下のよ
+うな ApGrid テストベッドで利用されている CA を利用することもできます．
+
+	https://www.apgrid.org/CA/CertificateAuthorities.html
+
+署名されたホスト証明書と秘密鍵は /etc/grid-security/host{cert,key}.pem
+に保存し，/etc/grid-security/certificates に，信頼する CA の証明書を保
+存します．
+
+さらに，GSI の authorization（認可）の仕組みとして，利用するユーザの証
+明書のサブジェクト名と UNIX ユーザ名の対応を
+/etc/grid-security/grid-mapfile で定義する必要があります．なお，GSI の
+詳細は，下記を参照してください．
+
+	http://www.globus.org/security/
+
+▽ Gfarm ファイルシステムの設定
+
+Gfarm ファイルシステムに必要な設定を行うため，config-gfarm を実行します．
+まず，-t オプションをつけて実行し，デフォルトの設定を確認してください．
+
+	# config-gfarm -t
+	prefix [--prefix]: 
+	metadata backend    [-b]: postgresql
+	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-pgsql
+	metadata log directory    [-L]: /var/gfarm-pgsql/pg_xlog
+	postgresql admin user     [-U]: postgres
+	postgresql admin password [-W]: (auto generated)
+	postgresql user           [-u]: gfarm
+	postgresql password       [-w]: (auto generated)
+	postgresql prefix   [-P]: /usr/bin
+	postgresql version  [-V]: 8.1
+	metaserver hostname [-h]: metadb.example.com
+	portmaster port     [-p]: 10602
+	gfmd port  [-m]: 601
+	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
+
+-b オプションで ldap を選択すると，メタデータバックエンドデータベース
+としてデフォルトの PostgreSQL の代わりに LDAP を用いるようになります．
+
+	# config-gfarm -t -b ldap
+	prefix [--prefix]: 
+	metadata backend    [-b]: ldap
+	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-ldap
+	metadata log directory    [-L]: /var/gfarm-ldap
+	domain name         [-d]: example.com
+	ldap root user      [-U]: cn=root,dc=example,dc=com
+	ldap root password  [-W]: (auto generated)
+	ldap user           [-u]: dc=example,dc=com
+	ldap password       [-w]: (auto generated)
+	openldap prefix     [-P]: /usr/bin
+	openldap version    [-V]: 2.2
+	metaserver hostname [-h]: metadb.example.com
+	slapd port [-p]: 10602
+	gfmd port  [-m]: 601
+	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
+	slapd DB cache size [-c]: 536870912 bytes
+	slapd DB type ($SLAPD_DB): bdb
+
+変更が必要な場合は [ ] 内に表示されたオプションで変更することができます．
+
+例えば，メタデータサーバ上で既に別のプロセスがポート 10602 番を使用しており，
+Gfarm 用のバックエンドデータベースのポート番号を変更したい場合は，-p オプ
+ションで指定し，変更します．
+
+	# config-gfarm -t -p 20602
+
+prefix は，特にユーザ権限で Gfarm ファイルシステムを設定したい場合や，
+同一サーバで複数の Gfarm ファイルシステムに対するメタデータサーバを提供
+する場合などに指定します．この場合，prefix で指定したディレクトリの下に
+設定ファイルが生成されます．
+なお，ユーザ権限で利用する場合には，-p，-m，-s すべてのポート番号に
+1024 以上の値を指定する必要があります．
+PostgreSQL は，「postgresql admin user」の項に表示されたユーザ権限
+(上の表示例では，ユーザ「postgres」) で動作するので，常に 1024 以上の
+値を指定する必要があります．
+
+（注）openldap サーバの 2.0 系列を利用している場合は，2.1 系列以降の最
+      新版を利用することを強くお勧めします．2.0 系列の場合，Gfarm ファ
+      イルシステム上のファイル名は大文字，小文字を区別できません．
+
+問題がなくなれば，-t オプションをはずして config-gfarm を実行します．
+
+	# config-gfarm -p 20602
+
+もし GSI 認証を用いる場合には config-gfarm に「-a gsi」オプションを，
+また gsi_auth を用いる場合には「-a gsi_auth」オプションを，指定する
+ようにしてください．
+
+config-gfarm により，メタデータ保持用ディレクトリ(metadata directory)の
+初期設定，Gfarm 設定ファイル(%%SYSCONFDIR%%/gfarm.conf)の設定などがなされ，slapd
+(LDAP サーバ) および gfmd が起動します．
+
+設定ファイル，ディレクトリが既に存在する場合，config-gfarm は失敗します．
+その場合，それらを待避するか，あるいは config-gfarm に -f オプションを
+指定して実行させ，強制的に消去させることもできます．
+
+なお，%%SYSCONFDIR%%/gfarm.conf のセキュリティに関する設定（auth文）は，クラスタ
+内での利用を想定しています．より高度な設定は，gfarm.conf の man ページ
+をご参照ください．
+
+▽ ファイアウォールの設定
+
+メタデータサーバ上では，config-gfarm の -p オプションで指定したポートと，
+-m オプションで指定したポートについて，TCP でのコネクションを受け付ける
+ように設定しておく必要があります．
+
+● メタデータ・キャッシュ・サーバの設定
+=======================================
+
+メタデータ・キャッシュ・サーバは，メタデータサーバの代理サーバとして機
+能します．メタデータをキャッシュし，メタデータサーバへのアクセス集中を
+防ぐとともに，遠隔からのメタデータ・アクセスを効率的に行うために利用し
+ます．なお，メタデータ・キャッシュ・サーバは必要に応じて複数起動するこ
+とができます．
+
+▽ メタデータ・キャッシュ・サーバの設定
+
+前章の config-gfarm によりメタデータサーバで作成した設定ファイル
+%%SYSCONFDIR%%/gfarm.conf をメタデータ・キャッシュ・サーバにコピーしま
+す．例えば，メタデータサーバが metadb.example.com の場合は，以下のよう
+になります．
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+（注）以下の，config-agent で prefix を指定する場合は，<prefix>/etc に
+      コピーします．
+
+次に，config-agent により，メタデータ・キャッシュ・サーバの設定を行いま
+す．まずは，-t オプションをつけて実行し，デフォルトの設定で問題を確認し
+てください．
+
+	# config-agent -t
+	prefix [--prefix]: 
+	hostname     [-h]: agent.example.com
+	port         [-p]: 603
+
+変更が必要な場合は [ ] のオプションで変更することができます．
+
+問題がなくなれば，-t オプションをはずして config-agent を実行します．
+
+	# config-agent
+
+config-agent により，Gfarm 設定ファイルの更新などがなされ，gfarm_agent
+が起動します．
+
+▽ ファイアウォールの設定
+
+メタデータ・キャッシュ・サーバ上では，config-agent の -p オプションで
+指定したポートについて，TCP でのコネクションを受け付けるように設定して
+おく必要があります．
+
+また，config-gfarm の -p オプションで指定したポートに対して，
+メタデータサーバに対する TCP コネクションを発呼できる必要があります．
+
+● ファイルシステムノード（かつクライアントノード）の設定
+=========================================================
+
+▽ （広域環境で利用する場合のみ）ホスト証明書のインストール
+
+（VPN を含む LAN やクラスタ内など信頼されたネットワークで利用する場合は
+この節の設定は必要ありません．）
+
+前章の「メタデータサーバの設定」と同様に設定します．
+
+▽ ファイルシステムノードの設定
+
+前章の config-agent によりアクセスしたいメタデータ・キャッシュ・サーバ
+で作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をファイルシステムノー
+ドにコピーします．例えば，ファイルシステムノードで実行されるプログラム
+がアクセスしたいメタデータ・キャッシュ・サーバが agent.example.com の
+場合は，以下のようになります．
+
+	# scp -p agent.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+（注）以下の，config-gfsd で prefix を指定する場合は，<prefix>/etc にコ
+      ピーします．
+
+次に，config-gfsd により，Gfarm ファイルシステムのために利用する，ロー
+カルディスク上のディレクトリ（スプール・ディレクトリ）の準備，設定と，
+ファイルシステムノードのメタデータサーバへの登録を行います．
+
+まずは，-t オプションをつけて実行し，デフォルトの設定で問題ないかどうか
+確認してください．
+
+	# config-gfsd -t
+	prefix [--prefix]: 
+	hostname       [-h]: linux-1.example.com
+	listen address [-l]: (all local IP addresses)
+	architecture   [-a]: i386-fedora3-linux
+	ncpu           [-n]: 2
+	spool directory    : /var/gfarm-spool
+	rc script name     : /etc/init.d/gfsd
+
+変更が必要な場合は [ ] のオプションで変更することができます．
+ただし，スプール・ディレクトリについては config-gfsd コマンドの最後の引数で
+指定します．スプール・ディレクトリは，他のノードと共有されない領域を指定し
+てください．
+
+（ヒント）prefix を設定することにより，設定ファイルの保存場所を
+          <prefix>/etc/gfarm.conf に変更することができます． ただし，こ
+          の場合，それぞれのユーザが以下のように ~/.gfarmrc を設定するか，
+          あるいは環境変数 $GFARM_CONFIG_FILE に、そのパス名を設定する
+          必要があります．
+
+		% ln -s <prefix>/etc/gfarm.conf ~/.gfarmrc
+
+問題がなくなれば，-t オプションをはずして config-gfsd を実行します．
+
+	# config-gfsd
+
+config-gfsd により，スプール・ディレクトリの初期設定，Gfarm 設定ファイ
+ルの更新などがなされ，gfsd が起動します．
+
+既にディレクトリが存在する場合は，待避して config-gfsd を実行するか，-f
+オプションを指定して強制的に消去し，新規作成させる必要があります．
+
+▽ ファイアウォールの設定
+
+ファイルシステムノード上では，config-gfarm の -s オプションで指定した
+ポートについて，TCP のコネクションの受け付けと，UDP パケットの着信と
+送信ができる必要があります．
+
+さらに，クライアントノードと同様な設定も必要です。
+
+● クライアントノードの設定
+===========================
+
+前章のファイルシステムノードの設定にクライアントノードの設定は含まれて
+いますが，この章ではクライアントノードだけの設定を説明します．
+
+▽ クライアントノードの設定
+
+メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
+ドの %%SYSCONFDIR%%/gfarm.conf にコピーします．
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+あるいは，次章の「Gfarm 設定ファイルの作成」によりユーザのホームディレ
+クトリに作成することにより，この設定を代用可能です．
+
+▽ ファイアウォールの設定
+
+クライアントノードでは，config-gfarm の -p および -m オプションで指定
+したポートについて，メタデータサーバに対する TCP コネクションを発呼で
+きる必要があります．
+また，config-agent の -p オプションで指定したポートに対して，メタデータ・
+キャッシュ・サーバに対する TCP コネクションを発呼できる必要があります．
+さらに，config-gfarm の -s オプションで指定したポートに対して，
+ファイルシステムノードへ TCP コネクションの発呼と，UDP パケットの
+送受信ができる必要もあります．
+
+● ユーザの設定
+===============
+
+◇ （GSI利用のみ）ユーザ証明書の取得
+
+（この設定は GSI を利用しない場合は必要ありません．）
+
+ホスト証明書と同様に，ユーザ証明書を取得し，それぞれ
+~/.globus/user{cert,key}.pem に保存します．さらに，信頼する CA の証明書
+が /etc/grid-security/certificates に保存されているか確認します．
+
+◇ Gfarm 設定ファイルの作成
+
+（この設定は既に %%SYSCONFDIR%%/gfarm.conf が存在するノードでは必要ありません．）
+
+メタデータサーバで作成した設定ファイル %%SYSCONFDIR%%/gfarm.conf をクライアントノー
+ドのホームディレクトリの ~/.gfarmrc にコピーします．
+
+	% scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
+
+◇ ホームディレクトリの作成
+
+まず，Gfarm ファイルシステムにユーザのホームディレクトリを作成します．
+作成は，どれかのクライアントから一度だけ行えば良く，二度以上行う必要は
+ありません．
+
+	% gfmkdir gfarm:~
+
+このコマンドが失敗する場合は，メタデータサーバの slapd が正しく起動して
+いないか，クライアントの .gfarmrc （あるいは %%SYSCONFDIR%%/gfarm.conf）が正しく
+ない可能性があります．
+
+◇ LD_PRELOAD 環境変数の設定
+
+既存のアプリケーションから Gfarm ファイルシステムを利用するために，（ク
+ライアントとなるファイルシステムノードを含む）全クライアントノードで
+LD_PRELOAD 環境変数を設定します．以下は Linux の場合ですが，詳しくは
+README.hook.ja をご覧ください．
+
+起動シェルが bash の場合は，.bashrc に以下を記述します．
+
+	LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	export LD_PRELOAD
+
+起動シェルが csh (tcsh) の場合は，.cshrc に以下を記述します．
+
+	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+
+● Gfarm ファイルシステムの利用確認
+===================================
+
+Gfarm ファイルシステムは，クライアントの設定をしているノードであれば，
+どのノードでも利用（共有）することができます．
+
+◇ （GSI利用のみ）ユーザ代理証明書の作成
+
+（この設定は GSI を利用しない場合は必要ありません．）
+
+GSI を利用する場合は，まず，ユーザ代理証明書を作成するため，Globus ツー
+ルキットに含まれている，grid-proxy-init を起動します．
+
+	% grid-proxy-init
+
+Globus ツールキットに関しては，http://www.globus.org/ を参照してくださ
+い．
+
+◇ gfls - ディレクトリ・リスティング
+
+正しく Gfarm ファイルシステム上のホームディレクトリが作成されているかど
+うか，gfls コマンドで確認します．
+
+	% gfls -la
+	drwxr-xr-x tatebe   *                 0 Dec 23 23:39 .
+	drwxrwxrwx root     gfarm             0 Jan  1  1970 ..
+
+◇ gfhost - ファイルシステムノード情報の表示
+
+ファイルシステムノードが正しく登録されているかどうか，gfhost コマンドで
+確認します．
+
+	% gfhost -M
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	i386-redhat8.0-linux 1 linux-4.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
+	...
+
+次に，利用可能かどうか確認します．
+
+	% gfhost -lv
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com(10.0.0.4)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
+	...
+
+左から二番目の文字が 's', 'g', 'G' であれば，そのファイルシステムノード
+が利用可能です．'x' の場合は認証に失敗しています．
+
+また，一番左が '-.--/-.--/-.--' と表示される場合は，gfsd が正しく起動し
+ていないことを示しており，'x.xx/x.xx/x.xx' と表示される場合は，そのノー
+ドに接続できない（落ちている）ことを示しています．
+
+◇ gfps - プロセス情報の表示
+
+メタデータサーバの gfmd が正しく起動しているかどうか調べます．
+
+	% gfps
+
+正しく起動されている場合は，gfps はなにも表示せずに，即座に実行を完了し
+ます．
+
+なお，上記コマンドの詳細は，man ページを参照してください．
+
+● 既存アプリケーションによる Gfarm ファイルシステムの利用
+==========================================================
+
+Linux の場合で説明します．それ以外の場合，および詳細は README.hook.ja
+をご参照ください．
+
+まず，「ユーザの設定」の LD_PRELOAD の設定を有効にするためにもう一度
+login し直します．（あるいは，LD_PRELOAD を設定します．）
+
+	% echo $LD_PRELOAD
+	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
+
+以降は，Gfarm ファイルシステムを /gfarm にマウントしているのと同様にア
+クセスすることが可能になります．
+
+	% ls -l /gfarm
+
+（ヒント）Gfarm ファイルシステム上のファイルは gfarm: ではじまる Gfarm
+          URL あるいは，/gfarm 以下のパス名で参照します．これらには，以
+          下のような関係があります．
+		ルートディレクトリ     gfarm:/ = /gfarm
+		ホームディレクトリ     gfarm:~ = /gfarm/~
+		カレントディレクトリ   gfarm:  = /gfarm/.
+
+Gfarm ファイルシステム上のホームディレクトリは /gfarm/~ で参照します．
+
+	% cp .bashrc /gfarm/~/
+	% ls -la /gfarm/~
+
+対話シェル自体で Gfarm ファイルシステムを利用する場合は，LD_PRELOAD を
+有効にしてもう一度立ち上げ直す必要があります．その後，cd やファイル名の
+補完などが利用可能となります．
+
+	% bash
+	% cd /gfarm/~
+	% ls -la
+	% pwd
+
+● Gfarm の進んだ利用
+=====================
+
+▽ ファイルの複製
+
+Gfarm ファイルシステムでは，ファイルはどこかのファイルシステムノードに
+格納されますが，二つ以上のファイルシステムノードにファイルの複製を保持
+することもできます．
+
+ファイルの複製を保持することにより，ファイルシステムノードの障害時でも，
+ファイルアクセスが可能になる他，ファイルアクセスの分散によりファイルア
+クセス性能の劣化を防ぐことができます．
+
+ファイルがどこに格納されているかを知るためには gfwhere コマンドを利用し
+ます．
+
+	% gfwhere .bashrc
+	0: linux-1.example.com
+
+ファイル複製を作成するためには gfrep コマンドが準備されています．例えば，
+もう一つファイル複製を作成したい場合は，以下のようにします．
+
+	% gfrep -N 2 .bashrc
+	% gfwhere .bashrc
+	0: linux-1.example.com linux-2.example.com
+
+この場合，linux-1 と linux-2 に，ファイルが複製されて格納されています．
+
+gfrep では，ファイルの他にディレクトリも指定することができ，この場合，
+指定されたディレクトリ以下の全ファイルについて，指定されたように複製を
+作成します．例えば，Gfarm ファイルシステムのホームディレクトリ以下の全
+ファイルについて最低二つのファイル複製を作成するためには，以下を実行し
+ます．
+
+	% gfrep -N 2 gfarm:~
+
+▽ 並列分散処理
+
+Gfarm ファイルシステムは，クライアントの設定をしている全ノードで共有さ
+れます．そのため，複数のノードからアクセスすることにより，並列分散処理
+が実現できます．
+
+さらに，Gfarm では，ファイルシステムノードもクライアントであるという特
+徴を活かし，ファイルを所持するファイルシステムノードでプログラムを実行
+することにより，更なる高性能を実現できます．そして，そのために遠隔（複
+数）プロセス起動コマンド gfrun が準備されています．
+
+例えば，grep コマンドにより，ファイル gfarm:.bashrc から LD_PRELOAD の
+文字を含む行を検索する処理を遠隔ノードで実行する場合は，以下のようにし
+ます．
+
+	% gfrun grep LD_PRELOAD gfarm:.bashrc
+
+このとき，gfarm:.bashrc のファイル複製が格納されているノードのうち，最
+も CPU 負荷の低いノードが選ばれ，そこで grep が実行されます．このスケ
+ジューリング方式をファイル・アフィニティ・スケジューリングと呼んでいま
+す．
+
+上記のような処理を，並列に実行することにより，並列分散処理が可能です．
+
+さらにもう一歩進んで，例えば，上記の grep 自体の処理を並列分散処理する
+（つまり”並列 grep”を実行する）ことも可能です．そのためには，検索対象
+のファイルを分割して格納します．以下は，textfile を 5 分割して
+gfarm:input に保存する例です．
+
+	% gfsched -N 5 | gfimport_text -H - -o gfarm:input textfile
+
+（ヒント）gf ではじまる Gfarm のコマンド群は，Gfarm ファイルシステムの
+          ファイルを gfarm: ではじまる Gfarm URL で参照します．/gfarm
+          以下のパス名では参照できません．
+
+gfimport_text は，テキスト文章を行単位にほぼ同じくらいのサイズになるよ
+うに分割して格納するユーティリティ・プログラムです．
+
+このとき，例えば，以下のように gfarm:input は 5 分割され，別々のノー
+ドに格納されます．
+
+	% gfwhere gfarm:input
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
+
+ファイルは物理的には分割されていますが，以下のように，通常ファイルのよ
+うに扱うことができ，変更がないことを確認できます．
+
+	% diff gfarm:input textfile
+
+この状態で，先ほどと同様に grep を実行すると，こんどは grep が 5 並列で，
+それぞれ分割されたファイルが格納されているノードで起動し，それぞれ分割
+されたファイルに対して処理を行います．
+
+	% gfrun grep LD_PRELOAD gfarm:input
+
+このままでは，標準出力に見つけた順に表示されてしまいますが，gfrun の
+-o オプションで出力ファイルを指定すると，ファイルに並列で書込むことが可
+能です．
+
+	% gfrun -o gfarm:output grep LD_PRELOAD gfarm:input
+

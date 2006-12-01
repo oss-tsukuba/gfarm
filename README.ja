@@ -1,0 +1,77 @@
+[This is written in Japanese, please look at README.en for English version.]
+
+入門ドキュメントについて
+========================
+
+初めて利用される方は，まず以下の順番でドキュメントを読むことを
+お勧めします．
+
+1. 概要
+  OVERVIEW.ja
+2. インストール方法
+  ソースからインストールされる場合，INSTALL.ja，
+  RPM からインストールされる場合，INSTALL.RPM.ja．
+3. 設定方法
+  SETUP.ja
+4. 利用方法
+  GfarmFS-FUSE を利用される場合，そちらに付属するドキュメント，
+  あるいはシステムコールフック機能を利用する場合は，README.hook.ja．
+
+ドキュメント一覧
+================
+
+- README.en (英語)
+  README.ja (日本語)
+	このドキュメントです．
+
+- LICENSE (英語)
+	Gfarm のライセンス表示です．
+
+- RELNOTES (英語)
+	各バージョンの変更点の概要を説明します．
+
+- OVERVIEW.en (英語)
+  OVERVIEW.ja (日本語)
+	Gfarm の概要や，各ドキュメントで使われる用語等を紹介します．	
+
+- INSTALL.en (英語)
+  INSTALL.ja (日本語)
+	ソースコードからインストールする手順を説明します．
+
+- INSTALL.RPM.en (英語)
+  INSTALL.RPM.ja (日本語)
+	RedHat Linux, Fedora Core, CentOS などで用いられている，
+	RPM バイナリパッケージからのインストール手順を説明します．
+
+- SETUP.en (英語)
+  SETUP.ja (日本語)
+	Gfarm の設定方法を説明します．
+
+- SETUP.detail.en (英語)
+  SETUP.detail.ja (日本語)
+	Gfarm を全て手動で設定する方法を説明します．
+	中見を詳しく知りたい方を除き，参照する必要はありません．
+
+- README.hook.en (英語)
+  README.hook.ja (日本語)
+	システムコールフック機能の利用方法です．
+
+- KNOWN_PROBLEMS.en (英語)
+  KNOWN_PROBLEMS.ja (日本語)
+	Gfarm に関する既知の問題点です．
+
+- Gfarm-FAQ.en (英語)
+  Gfarm-FAQ.ja (日本語)
+	よく聞かれる質問とその答です．
+
+- GUIDE.ja (現在のところ日本語のみ)
+	Gfarm ネイティブコマンドの利用ガイドです．
+
+- HTML 形式ないし UNIX man 形式のリファレンスマニュアル (英語および日本語)
+
+- HTML 形式のユーザマニュアル (英語および日本語)
+
+- ChangeLog (英語のみ)
+	この文書は，すべての変更点を記録しています．
+
+ウェブサイト http://datafarm.apgrid.org/ もご覧下さい．
