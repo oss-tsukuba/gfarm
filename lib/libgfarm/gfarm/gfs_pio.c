@@ -378,24 +378,24 @@ gfs_pio_get_nfragment(GFS_File gf, int *nfragmentsp)
 	return (NULL);
 }
 
-/* XXX this must be done only if the file was really read or written */
 static char *
-gfs_pio_update_times(GFS_File gf)
+gfs_pio_update_time_weak(GFS_File gf, struct gfarm_timespec *tp)
 {
 	struct timeval now;
 
 	gettimeofday(&now, NULL);
-	if (gf->mode & GFS_FILE_MODE_WRITE) {
-		gf->pi.status.st_ctimespec.tv_sec =
-		gf->pi.status.st_mtimespec.tv_sec = now.tv_sec;
-		gf->pi.status.st_ctimespec.tv_nsec =
-		gf->pi.status.st_mtimespec.tv_nsec = now.tv_usec * 1000;
-	}
-	if (gf->mode & GFS_FILE_MODE_READ) {
-		gf->pi.status.st_atimespec.tv_sec = now.tv_sec;
-		gf->pi.status.st_atimespec.tv_nsec = now.tv_usec * 1000;
-	}
-	return (gfarm_path_info_replace(gf->pi.pathname, &gf->pi));
+	tp->tv_sec = now.tv_sec;
+	tp->tv_nsec = now.tv_usec * 1000;
+	/* but not add GFS_FILE_MODE_FILE_WAS_ACCESSED flag */
+	return (NULL);
+}
+
+static char *
+gfs_pio_update_time(GFS_File gf, struct gfarm_timespec *tp)
+{
+	gfs_pio_update_time_weak(gf, tp);
+	gf->mode |= GFS_FILE_MODE_FILE_WAS_ACCESSED;
+	return (NULL);
 }
 
 /* common routine of gfs_pio_close_internal() and gfs_pio_close() */
@@ -417,8 +417,8 @@ gfs_pio_close_common(GFS_File gf)
 	 * metadata. This inconsistency may come from the update by
 	 * other process or oneself such as 'nvi'.
 	 */
-	if (e_save == NULL)
-		e_save = gfs_pio_update_times(gf);
+	if (e_save == NULL && (gf->mode & GFS_FILE_MODE_FILE_WAS_ACCESSED))
+		e_save = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
 
 	gfarm_path_info_free(&gf->pi);
 	gfs_file_free(gf);
@@ -562,6 +562,11 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 	gf->io_offset += len;
 	if (len == 0)
 		gf->error = GFS_FILE_ERROR_EOF;
+
+	if (gfarm_record_atime)
+		gfs_pio_update_time(gf, &gf->pi.status.st_atimespec);
+	else
+		gfs_pio_update_time_weak(gf, &gf->pi.status.st_atimespec);
 	return (NULL);
 }
 
@@ -595,6 +600,7 @@ do_write(GFS_File gf, const char *buffer, size_t length, size_t *writtenp)
 			gf->error = e;
 			break;
 		}
+		gfs_pio_update_time(gf, &gf->pi.status.st_mtimespec);
 	}
 	gf->io_offset += written;
 	*writtenp = written;
@@ -735,6 +741,8 @@ gfs_pio_truncate(GFS_File gf, file_offset_t length)
 	e = (*gf->ops->view_ftruncate)(gf, length);
 	if (e != NULL)
 		gf->error = e;
+	else
+		gfs_pio_update_time(gf, &gf->pi.status.st_mtimespec);
 finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_truncate_time += gfarm_timerval_sub(&t2, &t1));

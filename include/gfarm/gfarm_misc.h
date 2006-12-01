@@ -160,3 +160,5 @@ int gfarm_strarray_length(char **);
 char **gfarm_strarray_dup(char **);
 void gfarm_strarray_free(char **);
 int gfarm_attach_debugger(void);
+
+void gfarm_set_record_atime(int);

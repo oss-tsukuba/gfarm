@@ -865,6 +865,23 @@ IPアドレスを通信に用いるかを指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>record_atime</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+このオプションが enable の場合、最終アクセス時刻をきちんと記録します。
+disable の場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable 設定は、通常のファイルシステムにおける "noatime" オプションに
+相当します。
+</para>
+<para>例:</para>
+<literallayout>
+	record_atime disable
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -909,7 +926,8 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
-		&nbsp;&nbsp;&lt;log_level_statement&gt;
+		&nbsp;&nbsp;&lt;log_level_statement&gt; |
+		&nbsp;&nbsp;&lt;record_atime_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -965,6 +983,7 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
+	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*

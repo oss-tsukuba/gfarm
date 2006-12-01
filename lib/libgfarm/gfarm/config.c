@@ -386,6 +386,7 @@ enum gfarm_metadb_backend_type {
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
+#define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
@@ -395,6 +396,7 @@ static int schedule_write_local_priority = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static file_offset_t minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
+int gfarm_record_atime = MISC_DEFAULT;
 
 /* static variables */
 static enum {
@@ -542,6 +544,12 @@ file_offset_t
 gfarm_get_minimum_free_disk_space(void)
 {
 	return (minimum_free_disk_space);
+}
+
+void
+gfarm_set_record_atime(int boolean)
+{
+	gfarm_record_atime = boolean;
 }
 
 /*
@@ -1216,6 +1224,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_offset(p, &minimum_free_disk_space);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
+	} else if (strcmp(s, o = "record_atime") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_record_atime);
 
 	} else {
 		o = s;
@@ -1425,6 +1435,8 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
 		gfarm_gfsd_connection_cache =
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
+	if (gfarm_record_atime == MISC_DEFAULT)
+		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
 }
 
 /*
