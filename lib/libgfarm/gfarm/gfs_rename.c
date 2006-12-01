@@ -573,6 +573,7 @@ rename_dir(const char *from_url,
 					      nfile, nsection, ncopy,
 					      copies, exist);
 		}
+		e = GFARM_ERR_INPUT_OUTPUT;
 		goto free_hosts;
 	}
 	e = set_meta_data(ndir, nfile, from_canonical_path, to_canonical_path,
