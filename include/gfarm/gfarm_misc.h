@@ -88,20 +88,34 @@ extern char GFARM_URL_PREFIX[];
  */
 void gfarm_schedule_search_mode_use_loadavg(void);
 char *gfarm_schedule_search_idle_hosts(int, char **, int, char **);
+char *gfarm_schedule_search_idle_hosts_to_write(int, char **, int, char **);
+char *gfarm_schedule_search_idle_acyclic_hosts_to_write(
+	int, char **, int *, char **);
 char *gfarm_schedule_search_idle_acyclic_hosts(int, char **, int *, char **);
 char *gfarm_schedule_search_idle_by_all(int, char **);
+char *gfarm_schedule_search_idle_by_all_to_write(int, char **);
 char *gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
+char *gfarm_schedule_search_idle_by_domainname_to_write(
+	const char *, int, char **);
 char *gfarm_schedule_search_idle_acyclic_by_domainname(const char *, int *,
 	char **);
+char *gfarm_schedule_search_idle_acyclic_by_domainname_to_write(
+	const char *, int *, char **);
 char *gfarm_schedule_search_idle_by_program(char *, int, char **);
+char *gfarm_schedule_search_idle_by_program_to_write(char *, int, char **);
 char *gfarm_url_hosts_schedule(const char *, char *, int *, char ***);
 char *gfarm_url_hosts_schedule_by_program(char *, char *, char *,
 	int *, char ***);
 char *gfarm_file_section_host_schedule(char *, char *, char **);
+char *gfarm_file_section_host_schedule_to_write(char *, char *, char **);
 char *gfarm_file_section_host_schedule_by_program(char *, char *, char *,
 	char **);
+char *gfarm_file_section_host_schedule_by_program_to_write(
+	char *, char *, char *, char **);
 char *gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
 	char **);
+char *gfarm_file_section_host_schedule_with_priority_to_local_to_write(
+	char *, char *, char **);
 
 /*
  * MetaDB utility
