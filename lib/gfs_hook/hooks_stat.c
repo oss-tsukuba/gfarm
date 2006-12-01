@@ -14,7 +14,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
-	int nf = -1, np;
+	int nf = -1, np, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___STAT) "(%s)",
 	    path));
@@ -95,6 +95,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
 		gfs_stat_free(&gs);
 
+		errno = errno_save;
 		return (0);
 	}
 
@@ -158,7 +159,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
-	int nf = -1, np;
+	int nf = -1, np, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___XSTAT) "(%s)",
 	    path));
@@ -239,6 +240,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
 		gfs_stat_free(&gs);
 
+		errno = errno_save;
 		return (0);
 	}
 
