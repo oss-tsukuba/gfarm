@@ -12,6 +12,9 @@ debian/tmp/usr/bin/gfmkdir
 debian/tmp/usr/bin/gfmpirun_p4
 debian/tmp/usr/bin/gfps
 debian/tmp/usr/bin/gfpwd
+debian/tmp/usr/bin/gfq.sh
+debian/tmp/usr/bin/gfq_commit.sh
+debian/tmp/usr/bin/gfq_setup.sh
 debian/tmp/usr/bin/gfrcmd
 debian/tmp/usr/bin/gfreg
 debian/tmp/usr/bin/gfrep
