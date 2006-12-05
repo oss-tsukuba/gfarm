@@ -70,7 +70,7 @@ Gfarm テストスイート
    ファイル regress/schedule にテスト対象ファイルのパス名が登録してあります。
    以下の手順でそれらのスクリプトが実行され、結果の一覧が表示されます。
 
-   configure コマンドを実行済みの CVS 作業スペースでは、
+   configure コマンドを実行済みの subversion 作業スペースでは、
   「make」あるいは「make check」ターゲットを使ってください。
 
 	$ cd regress
@@ -153,7 +153,7 @@ Gfarm テストスイート
 
 2.2. 実行方法
 
-   configure コマンドを実行済みの CVS 作業スペースで下記を行ないます。
+   configure コマンドを実行済みの subversion 作業スペースで下記を行ないます。
 
 	$ cd regress
 	$ make selfcheck
