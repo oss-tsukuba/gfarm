@@ -4,6 +4,13 @@
 
 trap 'cd; rm -rf $hooktmp; exit $exit_trap' $trap_sigs
 
+if ! gfhost -M `hostname` >/dev/null
+then
+	# configure does not work on non-filesystem node
+	# this problem in not documented yet    
+	exit $exit_xfail
+fi    
+
 if mkdir $hooktmp &&
    gzip -cd $data/gftest-0.0.tar.gz | ( cd $hooktmp && pax -r ) &&
    cd $hooktmp/gftest-0.0 &&

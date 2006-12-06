@@ -6,6 +6,13 @@ trap 'rm -f $hooktmp; exit $exit_trap' $trap_sigs
 
 ulimit -c 0	# do not dump core
 
+if ! gfhost -M `hostname` >/dev/null
+then
+	# dd issues `Socket operation on non-socket' on non-filesystem node,
+	# this problem is not documented yet
+    	exit $exit_xfail
+fi    
+
 if dd if=$data/1byte of=$hooktmp
 then
 	exit_code=$exit_pass
