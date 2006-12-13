@@ -6,6 +6,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS = gfq.sh gfq_setup.sh gfq_commit.sh
+SCRIPTS = $(srcdir)/gfq.sh $(srcdir)/gfq_setup.sh $(srcdir)/gfq_commit.sh
 
 include $(top_srcdir)/makes/script.mk
