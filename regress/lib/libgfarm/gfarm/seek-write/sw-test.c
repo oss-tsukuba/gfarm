@@ -35,29 +35,37 @@ gfs_pio_pwrite(GFS_File gf, char *buf, size_t size, off_t off, int *lenp)
 
 #define BSIZE 4096
 
-//#define POS 1024
+#if 0
+#define POS 1024
+#else
 #define POS 10
+#endif
 
 int
-main()
+main(int argc, char **argv)
 {
 	char *e;
 	GFS_File gf;
 	int flags;
-	char b1[BSIZE], b2[BSIZE];
+	char b1[BSIZE], b2[BSIZE], *tmpfile = TMPFILE;
 	unsigned long i;
-	int len, len2;
+	int len, len2, exit_code = 2;
 
-	e = gfarm_initialize(NULL,NULL);
+	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL)
 		goto err;
+	if (argc > 1)
+		tmpfile = argv[1];
+
 	for (i = 0; i < BSIZE; i++) {
 		b1[i] = (char) i;
 	}
 	flags = GFARM_FILE_RDWR|GFARM_FILE_TRUNC;
-//	flags |= GFARM_FILE_UNBUFFERED;
+#if 0
+	flags |= GFARM_FILE_UNBUFFERED;
+#endif
 
-	e = gfs_pio_create(TMPFILE, flags, 0600, &gf);
+	e = gfs_pio_create(tmpfile, flags, 0600, &gf);
 	if (e != NULL)
 		goto err;
 	e = gfs_pio_set_view_index(gf, 1, 0, NULL, 0);
@@ -80,15 +88,18 @@ main()
 	if (e != NULL)
 		goto err;
 
-	if (memcmp(b1, b2, 2) == 0 && len == len2)
-		printf("OK\n");
-	else
-		printf("NG: write=%d, read=%d\n", len, len2);
-
+	if (memcmp(b1, b2, 2) == 0 && len == len2) {
+		fprintf(stderr, "OK\n");
+		exit_code = 0;
+	} else {
+		fprintf(stderr, "NG: write=%d, read=%d\n", len, len2);
+		exit_code = 1;
+	}
 	gfs_pio_close(gf);
 
-	return (0);
 err:
-	printf("%s", e);
-	return (1);
+	gfs_unlink(tmpfile);
+	if (e != NULL)
+		fprintf(stderr, "error: %s\n", e);
+	return (exit_code);
 }
