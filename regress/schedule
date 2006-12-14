@@ -52,6 +52,7 @@ lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh
 lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh
 lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh
 lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh
+lib/libgfarm/gfarm/seek-write/sw-test.sh
 # gftool/config-gfarm
 gftool/gfps/gfps.sh
 gftool/gfkey/gfkey-cl.sh
