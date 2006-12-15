@@ -741,7 +741,7 @@ main(int argc, char **argv)
 	gfarm_int32_t ndivisions = 1;
 	int send_stripe_sync = 0;
 	struct xxx_connection *from_client, *to_client;
-	char *e;
+	char *e, *spool_root;
 	int c, n;
 	gfarm_stringlist files, sections;
 
@@ -797,10 +797,10 @@ main(int argc, char **argv)
 	}
 
 	/* makes current directory == spool_root */
-	if (chdir(gfarm_spool_root) == -1) {
+	spool_root = gfarm_spool_root_for_compatibility;
+	if (chdir(spool_root) == -1) {
 		fprintf(stderr, "%s: chdir(%s) on %s: %s\n",
-		    program_name, gfarm_spool_root, my_name,
-		    e);
+		    program_name, spool_root, my_name, e);
 		fatal();
 	}
 

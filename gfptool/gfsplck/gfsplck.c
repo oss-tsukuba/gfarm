@@ -510,7 +510,7 @@ usage()
 int
 main(int argc, char *argv[])
 {
-	char *e, *gfarm_prefix;
+	char *e, *gfarm_prefix, *spool_root = NULL;
 	extern int optind;
 	int c;
 
@@ -523,7 +523,7 @@ main(int argc, char *argv[])
 		print_errmsg(progname, NULL, "not a filesystem node");
 		exit(1);
 	}
-	while ((c = getopt(argc, argv, "adhl")) != EOF) {
+	while ((c = getopt(argc, argv, "adhlr:")) != EOF) {
 		switch (c) {
 		case 'a':
 			check_all = 1;
@@ -533,6 +533,9 @@ main(int argc, char *argv[])
 			break;
 		case 'l':
 			list_local_file = 1;
+			break;
+		case 'r':
+			spool_root = optarg;
 			break;
 		case 'h':
 		default:
@@ -549,7 +552,9 @@ main(int argc, char *argv[])
 	}
 
 	/* fix a whole spool directory. */
-	if (chdir(gfarm_spool_root) == 0)
+	if (spool_root == NULL)
+		spool_root = gfarm_spool_root_for_compatibility;
+	if (chdir(spool_root) == 0)
 		gfarm_prefix = "gfarm:/";
 	else
 		gfarm_prefix = "gfarm:";

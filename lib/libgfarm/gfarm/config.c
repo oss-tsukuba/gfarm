@@ -40,6 +40,7 @@
 #include "gfs_client.h"
 #include "gfs_misc.h"	/* gfarm_redirect_file() */
 #include "agent_wrap.h"
+#include "spool_root.h"
 
 static int gfarm_initialize_done = 0;
 int gfarm_is_active_file_system_node = 0;
@@ -341,8 +342,7 @@ gfarm_set_global_user_for_this_local_account(void)
  */
 /* GFS dependent */
 char *gfarm_spool_server_listen_address = NULL;
-static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
-char *gfarm_spool_root = NULL;
+char *gfarm_spool_root_for_compatibility = NULL;
 static char *gfarm_spool_server_portname = NULL;
 int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
 
@@ -410,6 +410,7 @@ gfarm_config_clear(void)
 {
 	static char **vars[] = {
 		&gfarm_spool_server_listen_address,
+		&gfarm_spool_root_for_compatibility,
 		&gfarm_spool_server_portname,
 		&gfarm_metadb_server_name,
 		&gfarm_metadb_server_portname,
@@ -432,21 +433,13 @@ gfarm_config_clear(void)
 		&schedule_write_target_domain,
 	};
 	static void (*funcs[])(void) = {
+		gfarm_spool_root_clear,
 		gfarm_agent_name_clear,
 		gfarm_agent_port_clear,
 		gfarm_agent_sock_path_clear
 	};
 	int i;
 
-	if (gfarm_spool_root != NULL) {
-		/*
-		 * In case of the default spool root, do not free the
-		 * memory space becase it is statically allocated.
-		 */
-		if (gfarm_spool_root != gfarm_spool_root_default)
-			free(gfarm_spool_root);
-		gfarm_spool_root = NULL;
-	}
 	for (i = 0; i < GFARM_ARRAY_LENGTH(vars); i++) {
 		if (*vars[i] != NULL) {
 			free(*vars[i]);
@@ -1092,7 +1085,7 @@ parse_one_line(char *s, char *p, char **op,
 	char *e, *o;
 
 	if (strcmp(s, o = "spool") == 0) {
-		e = parse_set_var(p, &gfarm_spool_root);
+		e = parse_set_func(p, gfarm_spool_root_set);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_serverport") == 0) {
@@ -1382,33 +1375,15 @@ gfarm_config_set_default_spool_on_client(void)
 	char *host, *e, *e2;
 	/*
 	 * When this node is a filesystem node,
-	 * gfarm_spool_root should be obtained by gfsd
-	 * not by the config file.
+	 * obtain gfarm_spool_root_for_compatibility by gfsd.
 	 */
 	e = gfarm_host_get_canonical_self_name(&host);
 	if (e == NULL && gfarm_host_is_local(host)) {
-		char *old_ptr = gfarm_spool_root;
-
 		e = gfs_client_get_spool_root_with_reconnection(host,
-		    NULL, &e2, &gfarm_spool_root);
+		    NULL, &e2, &gfarm_spool_root_for_compatibility);
 		if (e == NULL && e2 == NULL) {
 			gfarm_is_active_file_system_node = 1;
-			if (old_ptr != NULL &&
-			    old_ptr != gfarm_spool_root_default)
-				free(old_ptr);
 		}
-	}
-	if (gfarm_spool_root == NULL)
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = gfarm_spool_root_default;
-}
-
-static void
-gfarm_config_set_default_spool_on_server(void)
-{
-	if (gfarm_spool_root == NULL) {
-		/* XXX - this case is not recommended. */
-		gfarm_spool_root = gfarm_spool_root_default;
 	}
 }
 
@@ -1862,7 +1837,7 @@ gfarm_server_initialize(void)
 	if (e != NULL)
 		return (e);
 
-	gfarm_config_set_default_spool_on_server();
+	gfarm_spool_root_set_default();
 
 	return (NULL);
 }
@@ -1933,7 +1908,6 @@ main()
 		fprintf(stderr, "gfarm_config_read(): %s\n", e);
 		exit(1);
 	}
-	printf("gfarm_spool_root = <%s>\n", gfarm_spool_root);
 	printf("gfarm_spool_server_port = <%d>\n", gfarm_spool_server_port);
 	printf("gfarm_metadb_server_name = <%s>\n", gfarm_metadb_server_name);
 	printf("gfarm_metadb_server_port = <%d>\n", gfarm_metadb_server_name);

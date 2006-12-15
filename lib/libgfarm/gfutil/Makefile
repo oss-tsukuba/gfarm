@@ -17,6 +17,7 @@ SRCS =	alloc.c \
 	logutil.c \
 	logutil_th.c \
 	send_no_sigpipe.c \
+	str_list.c \
 	timer.c \
 	timeval.c
 OBJS =	alloc.lo \
@@ -27,6 +28,7 @@ OBJS =	alloc.lo \
 	logutil.lo \
 	logutil_th.lo \
 	send_no_sigpipe.lo \
+	str_list.lo \
 	timer.lo \
 	timeval.lo
 
@@ -47,3 +49,4 @@ logutil.lo: gfutil.h logutil.h
 logutil_th.lo: $(INC_SRCDIR)/gfarm_misc.h logutil.h
 timer.lo: timer.h
 timeval.lo: gfutil.h
+str_list.lo: str_list.h

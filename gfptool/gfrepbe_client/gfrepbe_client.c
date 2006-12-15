@@ -747,6 +747,7 @@ main(int argc, char **argv)
 	struct gfarm_path_info *path_infos;
 	gfarm_int32_t *results;
 	struct sockaddr server_addr;
+	char *spool_root;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
@@ -878,10 +879,10 @@ main(int argc, char **argv)
 	}
 
 	/* make current directory == spool_root */
-	if (chdir(gfarm_spool_root) == -1) {
+	spool_root = gfarm_spool_root_for_compatibility;
+	if (chdir(spool_root) == -1) {
 		fprintf(stderr, "%s: chdir(%s) on %s: %s\n",
-		    program_name, gfarm_spool_root, my_name,
-		    e);
+		    program_name, spool_root, my_name, e);
 		fatal();
 	}
 

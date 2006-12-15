@@ -35,4 +35,5 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/auth.h \
 	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfs_proto.h \
-	$(GFARMLIB_SRCDIR)/gfs_client.h
+	$(GFARMLIB_SRCDIR)/gfs_client.h \
+	$(GFARMLIB_SRCDIR)/spool_root.h

@@ -68,6 +68,7 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "gfs_misc.h" /* gfarm_path_dir() */
+#include "spool_root.h"
 
 #include "gfsd_subr.h"
 
@@ -329,7 +330,18 @@ local_path(char *file, char **pathp, char *diag)
 {
 	char *e;
 
-	e = gfarm_path_localize(file, pathp);
+	e = gfarm_spool_path_localize(file, pathp);
+	free(file);
+	if (e != NULL)
+		fatal(diag, e);
+}
+
+void
+local_path_for_write(char *file, char **pathp, char *diag)
+{
+	char *e;
+
+	e = gfarm_spool_path_localize_for_write(file, pathp);
 	free(file);
 	if (e != NULL)
 		fatal(diag, e);
@@ -606,14 +618,20 @@ gfs_server_fsync(struct xxx_connection *client)
 void
 gfs_server_link(struct xxx_connection *client)
 {
-	char *from, *to, *fpath, *tpath;
+	char *from, *to, *fpath, *tpath, *spool;
 	int save_errno = 0;
 	char *msg = "link";
 
 	gfs_server_get_request(client, msg, "ss", &from, &to);
 
-	local_path(from, &fpath, msg);
-	local_path(to, &tpath, msg);
+	/* need to use the same spool directory */
+	spool = gfarm_spool_root_get_for_read(from);
+	fpath = gfarm_spool_path(spool, from);
+	tpath = gfarm_spool_path(spool, to);
+	free(from);
+	free(to);
+	if (spool == NULL || fpath == NULL || tpath == NULL)
+		fatal(msg, GFARM_ERR_NO_MEMORY);
 	if (link(fpath, tpath) == -1)
 		save_errno = errno;
 	free(fpath);
@@ -644,14 +662,20 @@ gfs_server_unlink(struct xxx_connection *client)
 void
 gfs_server_rename(struct xxx_connection *client)
 {
-	char *from, *to, *fpath, *tpath;
+	char *from, *to, *fpath, *tpath, *spool;
 	int save_errno = 0;
 	char *msg = "rename";
 
 	gfs_server_get_request(client, msg, "ss", &from, &to);
 
-	local_path(from, &fpath, msg);
-	local_path(to, &tpath, msg);
+	/* need to use the same spool directory */
+	spool = gfarm_spool_root_get_for_read(from);
+	fpath = gfarm_spool_path(spool, from);
+	tpath = gfarm_spool_path(spool, to);
+	free(from);
+	free(to);
+	if (spool == NULL || fpath == NULL || tpath == NULL)
+		fatal(msg, GFARM_ERR_NO_MEMORY);
 	if (rename(fpath, tpath) == -1)
 		save_errno = errno;
 	free(fpath);
@@ -817,7 +841,7 @@ void
 gfs_server_get_spool_root(struct xxx_connection *client)
 {
 	gfs_server_put_reply(client, "get_spool_root",
-	    GFS_ERROR_NOERROR, "s", gfarm_spool_root);
+	    GFS_ERROR_NOERROR, "s", gfarm_spool_root_get_for_compatibility());
 }
 
 void
@@ -832,7 +856,11 @@ gfs_server_statfs(struct xxx_connection *client)
 
 	gfs_server_get_request(client, msg, "s", &dir);
 
-	local_path(dir, &path, msg);
+	/*
+	 * XXX - currently, return the file system information having
+	 * the most available space.
+	 */
+	local_path_for_write(dir, &path, msg);
 	save_errno = gfsd_statfs(path, &bsize,
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
@@ -1030,7 +1058,7 @@ gfs_server_replicate_file_sequential_common(struct xxx_connection *client,
 			error = gfs_string_to_proto_error(e);
 			gflog_warning("replicate_file_seq:remote_open: %s", e);
 		} else {
-			e = gfarm_path_localize(file, &path);
+			e = gfarm_spool_path_localize(file, &path);
 			if (e != NULL)
 				fatal("replicate_file_seq:path", e);
 			fd = open(path, O_WRONLY|O_CREAT|O_TRUNC, mode);
@@ -1222,7 +1250,7 @@ gfs_server_replicate_file_parallel_common(struct xxx_connection *client,
 	struct hostent *hp;
 	struct sockaddr_in peer_addr;
 
-	e = gfarm_path_localize(file, &path);
+	e = gfarm_spool_path_localize(file, &path);
 	if (e != NULL)
 		fatal("replicate_file_par", e);
 	ofd = open(path, O_WRONLY|O_CREAT|O_TRUNC, mode);
@@ -2431,7 +2459,8 @@ start_server(int sock)
 			return;
 		accepting_fatal_errno("accept");
 	}
-	/* sanity check for spool directory */
+	/* sanity check for io error in a spool directory */
+	/* XXX - need to check all spool directories */
 	check_spool_directory();
 
 #ifndef GFSD_DEBUG
@@ -2681,7 +2710,6 @@ main(int argc, char **argv)
 	int ch, i, nfound, max_fd;
 	struct sigaction sa;
 	fd_set requests;
-	struct stat sb;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -2716,9 +2744,9 @@ main(int argc, char **argv)
 			port_number = optarg;
 			break;
 		case 'r':
-			gfarm_spool_root = strdup(optarg);
-			if (gfarm_spool_root == NULL)
-				gflog_fatal("%s", GFARM_ERR_NO_MEMORY);
+			e = gfarm_spool_root_set(optarg);
+			if (e != NULL)
+				gflog_fatal("%s", e);
 			break;
 		case 's':
 			syslog_facility =
@@ -2752,11 +2780,8 @@ main(int argc, char **argv)
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 	/* sanity check on a spool directory */
-	if (stat(gfarm_spool_root, &sb) == -1)
-		gflog_fatal_errno(gfarm_spool_root);
-	else if (!S_ISDIR(sb.st_mode))
-		gflog_fatal("%s: %s", gfarm_spool_root,
-			    GFARM_ERR_NOT_A_DIRECTORY);
+	gfarm_spool_root_check();
+
 	if (port_number != NULL)
 		gfarm_spool_server_port = strtol(port_number, NULL, 0);
 	if (listen_addrname == NULL)
@@ -2831,8 +2856,8 @@ main(int argc, char **argv)
 	}
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(gfarm_spool_root);
+	if (chdir(gfarm_spool_root_get_for_compatibility()) == -1)
+		gflog_fatal_errno(gfarm_spool_root_get_for_compatibility());
 
 	table_size = FILE_TABLE_LIMIT;
 	gfarm_unlimit_nofiles(&table_size);

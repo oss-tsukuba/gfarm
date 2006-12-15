@@ -31,8 +31,8 @@ SRCS = \
 	gfs_proto.c gfs_rename.c gfs_replicate.c gfs_stat.c gfs_unlink.c \
 	glob.c host.c hostspec.c hostcache.c iobuffer.c \
 	import_help.c metadb_misc.c metadb_none.c metadb_sw.c \
-	param.c schedule.c \
-	sockopt.c stringlist.c url.c xxx_proto.c io_fd.c \
+	param.c schedule.c sockopt.c spool_root.c \
+	stringlist.c url.c xxx_proto.c io_fd.c \
 	path_info_cache.c metadb_localfs.c \
 	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 OBJS = \
@@ -47,8 +47,8 @@ OBJS = \
 	gfs_proto.lo gfs_rename.lo gfs_replicate.lo gfs_stat.lo gfs_unlink.lo \
 	glob.lo host.lo hostspec.lo hostcache.lo iobuffer.lo \
 	import_help.lo metadb_misc.lo metadb_none.lo metadb_sw.lo \
-	param.lo schedule.lo \
-	sockopt.lo stringlist.lo url.lo xxx_proto.lo io_fd.lo \
+	param.lo schedule.lo sockopt.lo spool_root.lo \
+	stringlist.lo url.lo xxx_proto.lo io_fd.lo \
 	path_info_cache.lo metadb_localfs.lo \
 	$(ldap_objs) $(postgresql_objs) $(globus_objs)
 
@@ -74,7 +74,7 @@ auth_common_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $ $(GFSL_SRCDIR)/gfarm_secure_sess
 auth_config.lo: hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h hostspec.h auth.h
 auth_server_gsi.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h $(GFUTIL_SRCDIR)/gfutil.h xxx_proto.h io_fd.h io_gfsl.h auth.h auth_gsi.h
-config.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.h auth.h config.h metadb_access.h gfm_proto.h gfs_proto.h gfs_client.h gfs_misc.h agent_wrap.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
+config.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.h auth.h config.h metadb_access.h gfm_proto.h gfs_proto.h gfs_client.h gfs_misc.h agent_wrap.h spool_root.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h xxx_proto.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
@@ -118,6 +118,7 @@ param.lo: hostspec.h param.h
 path_info_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h metadb_access.h path_info_cache.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h
 sockopt.lo: hostspec.h param.h sockopt.h
+spool_root.lo: $(GFUTIL_SRCDIR)/str_list.h $(GFUTIL_SRCDIR)/gfutil.h gfpath.h spool_root.h
 stringlist.lo:
 url.lo: config.h
 xxx_proto.lo: iobuffer.h xxx_proto.h

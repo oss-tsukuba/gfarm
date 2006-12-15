@@ -1,0 +1,198 @@
+/*
+ * $Id$
+ */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <gfarm/gfarm.h>
+#include "str_list.h"
+#include "gfutil.h"
+#include "gfpath.h"
+#include "spool_root.h"
+
+static char spool_root_default[] = GFARM_SPOOL_ROOT;
+static struct gfarm_str_list *spool_list;
+
+char *
+gfarm_spool_root_set(char *spool)
+{
+	struct gfarm_str_list *s;
+
+	spool = strdup(spool);
+	if (spool == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	s = gfarm_str_list_cons(spool, spool_list);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	spool_list = s;
+	return (NULL);
+}
+
+void
+gfarm_spool_root_clear()
+{
+	gfarm_str_list_free_deeply(spool_list);
+	spool_list = NULL;
+}
+
+void
+gfarm_spool_root_set_default()
+{
+	if (spool_list == NULL) {
+		gfarm_str_list_cons(spool_root_default, spool_list);
+	}
+}
+
+char *
+gfarm_spool_path(char *dir, char *file)
+{
+	char *s, *slash;
+
+	if (dir == NULL || file == NULL)
+		return (NULL);
+
+	/* add '/' if necessary */
+	if (*gfarm_path_dir_skip(gfarm_url_prefix_skip(dir)))
+		slash = "/";
+	else
+		slash = "";
+
+	GFARM_MALLOC_ARRAY(s, strlen(dir) + strlen(slash) + strlen(file) + 1);
+	if (s == NULL)
+		return (s);
+	sprintf(s, "%s%s%s", dir, slash, file);
+	return (s);
+}
+
+/* return the first entry for compatibility */
+char *
+gfarm_spool_root_get_for_compatibility()
+{
+	if (spool_list == NULL)
+		gflog_fatal("gfarm_spool_root_get_for_compatibility(): "
+			    "programming error, "
+			    "gfarm library isn't properly initialized");
+
+	return (gfarm_str_list_car(spool_list));
+}
+
+char *
+gfarm_spool_root_get_for_write()
+{
+	struct statvfs fsb;
+	char *spool, *sp;
+	struct gfarm_str_list *s = spool_list;
+	unsigned long avail, a;
+	
+	if (s == NULL)
+		gflog_fatal("gfarm_spool_root_get_for_write(): "
+			    "programming error, "
+			    "gfarm library isn't properly initialized");
+
+	avail = 0;
+	spool = NULL;
+	while (s) {
+		sp = gfarm_str_list_car(s);
+		if (statvfs(sp, &fsb)) {
+			gflog_warning_errno("%s", sp);
+			s = gfarm_str_list_cdr(s);
+			continue;
+		}
+		a = fsb.f_bsize * fsb.f_bavail;
+		if (avail < a) {
+			avail = a;
+			spool = sp;
+		}
+		s = gfarm_str_list_cdr(s);
+	}
+	return (spool);
+}
+
+char *
+gfarm_spool_root_get_for_read(char *file)
+{
+	struct statvfs fsb;
+	struct stat stb;
+	char *p, *spool, *sp;
+	struct gfarm_str_list *s = spool_list;
+	unsigned long avail, a;
+	int r;
+
+	if (s == NULL)
+		gflog_fatal("gfarm_spool_root_get_for_read(): "
+			    "programming error, "
+			    "gfarm library isn't properly initialized");
+
+	avail = 0;
+	spool = NULL;
+	while (s) {
+		sp = gfarm_str_list_car(s);
+		p = gfarm_spool_path(sp, file);
+		if (p != NULL) {
+			r = stat(p, &stb);
+			free(p);
+			if (r == 0)
+				return (sp);
+		}
+		if (statvfs(sp, &fsb)) {
+			gflog_warning_errno("%s", sp);
+			s = gfarm_str_list_cdr(s);
+			continue;
+		}
+		a = fsb.f_bsize * fsb.f_bavail;
+		if (avail < a) {
+			avail = a;
+			spool = sp;
+		}
+		s = gfarm_str_list_cdr(s);
+	}
+	return (spool);
+}
+
+void
+gfarm_spool_root_check()
+{
+	struct gfarm_str_list *s = spool_list;
+	char *sp;
+	struct stat sb;
+
+	while (s) {
+		sp = gfarm_str_list_car(s);
+		if (stat(sp, &sb) == -1)
+			gflog_fatal_errno(sp);
+		else if (!S_ISDIR(sb.st_mode))
+			gflog_fatal("%s: %s", sp, GFARM_ERR_NOT_A_DIRECTORY);
+		s = gfarm_str_list_cdr(s);
+	}
+}
+
+char *
+gfarm_spool_path_localize_for_write(char *canonic_path, char **abs_pathp)
+{
+	char *s, *spool_root = gfarm_spool_root_get_for_write();
+
+	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
+
+	s = gfarm_spool_path(spool_root, canonic_path);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*abs_pathp = s;
+	return (NULL);
+}
+
+char *
+gfarm_spool_path_localize(char *canonic_path, char **abs_pathp)
+{
+	char *s, *spool_root = gfarm_spool_root_get_for_read(canonic_path);
+
+	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
+
+	s = gfarm_spool_path(spool_root, canonic_path);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*abs_pathp = s;
+	return (NULL);
+}
