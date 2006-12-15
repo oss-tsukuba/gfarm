@@ -26,6 +26,27 @@
 
 char GFS_FILE_ERROR_EOF[] = "end of file";
 
+int
+gfs_pio_eof(GFS_File gf)
+{
+	return (gf->error == GFS_FILE_ERROR_EOF);
+}
+
+#define GFS_PIO_ERROR(gf) \
+	((gf)->error != GFS_FILE_ERROR_EOF ? (gf)->error : NULL)
+
+char *
+gfs_pio_error(GFS_File gf)
+{
+	return (GFS_PIO_ERROR(gf));
+}
+
+void
+gfs_pio_clearerr(GFS_File gf)
+{
+	gf->error = NULL;
+}
+
 char *
 gfs_pio_set_view_default(GFS_File gf)
 {
@@ -50,7 +71,7 @@ gfs_pio_check_view_default(GFS_File gf)
 {
 	char *e;
 
-	e = gfs_pio_error(gf);
+	e = GFS_PIO_ERROR(gf);
 	if (e != NULL)
 		return (e);
 
@@ -344,27 +365,6 @@ free_gf:
 	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
-}
-
-int
-gfs_pio_eof(GFS_File gf)
-{
-	return (gf->error == GFS_FILE_ERROR_EOF);
-}
-
-#define GFS_PIO_ERROR(gf) \
-	((gf)->error != GFS_FILE_ERROR_EOF ? (gf)->error : NULL)
-
-char *
-gfs_pio_error(GFS_File gf)
-{
-	return (GFS_PIO_ERROR(gf));
-}
-
-void
-gfs_pio_clearerr(GFS_File gf)
-{
-	gf->error = NULL;
 }
 
 char *
