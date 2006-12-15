@@ -127,8 +127,10 @@ add_sec(struct gfarm_file_section_info *info, void *arg)
 	e = gfarm_stringlist_init(&a->copylist);
 	if (e != NULL)
 		return (e);
-	gfarm_foreach_copy(add_copy,
+	e = gfarm_foreach_copy(add_copy,
 		info->pathname, info->section, arg, NULL);
+	if (e != NULL)
+		return (e);
 	if (gfarm_stringlist_length(&a->copylist) <= a->a->nrep) {
 		gfarm_stringlist_free_deeply(&a->copylist);
 		return (NULL);
@@ -204,7 +206,8 @@ create_file_section_list(gfarm_stringlist *list, struct gfrm_arg *gfrm_arg,
 			e = do_section(
 				add_sec, path, gfrm_arg->section, &sec_arg);
 		free(path);
-		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
+		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION
+		    || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = gfs_unlink(file);
 		if (e != NULL)
 			goto free_list;
