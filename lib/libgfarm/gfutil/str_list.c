@@ -83,6 +83,23 @@ gfarm_str_list_append(struct gfarm_str_list *ls1, struct gfarm_str_list *ls2)
 			gfarm_str_list_append(gfarm_str_list_cdr(ls1), ls2));
 }
 
+static struct gfarm_str_list *
+gfarm_str_list_reverse_internal(
+	struct gfarm_str_list *ls1, struct gfarm_str_list *ls2)
+{
+	if (ls1 == NULL)
+		return (ls2);
+	else
+		return gfarm_str_list_reverse_internal(gfarm_str_list_cdr(ls1),
+			gfarm_str_list_cons(gfarm_str_list_car(ls1), ls2));
+}
+
+struct gfarm_str_list *
+gfarm_str_list_reverse(struct gfarm_str_list *ls)
+{
+	return (gfarm_str_list_reverse_internal(ls, NULL));
+}
+
 struct gfarm_str_list *
 gfarm_str_list_remove(char *el, struct gfarm_str_list *ls)
 {

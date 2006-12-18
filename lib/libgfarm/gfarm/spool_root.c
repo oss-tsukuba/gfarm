@@ -41,9 +41,14 @@ gfarm_spool_root_clear()
 void
 gfarm_spool_root_set_default()
 {
+	struct gfarm_str_list *l;
+
 	if (spool_list == NULL) {
 		gfarm_str_list_cons(spool_root_default, spool_list);
 	}
+	l = gfarm_str_list_reverse(spool_list);
+	gfarm_str_list_free(spool_list);
+	spool_list = l;
 }
 
 char *
@@ -172,27 +177,17 @@ gfarm_spool_root_check()
 char *
 gfarm_spool_path_localize_for_write(char *canonic_path, char **abs_pathp)
 {
-	char *s, *spool_root = gfarm_spool_root_get_for_write();
+	char *spool_root = gfarm_spool_root_get_for_write();
 
-	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
-
-	s = gfarm_spool_path(spool_root, canonic_path);
-	if (s == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	*abs_pathp = s;
-	return (NULL);
+	*abs_pathp = gfarm_spool_path(spool_root, canonic_path);
+	return (*abs_pathp == NULL ? GFARM_ERR_NO_MEMORY : NULL);
 }
 
 char *
 gfarm_spool_path_localize(char *canonic_path, char **abs_pathp)
 {
-	char *s, *spool_root = gfarm_spool_root_get_for_read(canonic_path);
+	char *spool_root = gfarm_spool_root_get_for_read(canonic_path);
 
-	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
-
-	s = gfarm_spool_path(spool_root, canonic_path);
-	if (s == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	*abs_pathp = s;
-	return (NULL);
+	*abs_pathp = gfarm_spool_path(spool_root, canonic_path);
+	return (*abs_pathp == NULL ? GFARM_ERR_NO_MEMORY : NULL);
 }
