@@ -78,6 +78,7 @@ Group: System Environment/Libraries
 %if %{globus}
 Provides: %{pkg}-libs = %{ver}-%{rel}
 %endif
+BuildRequires: openssl-devel
 
 %package frontend
 Summary: frontends for gfarm
