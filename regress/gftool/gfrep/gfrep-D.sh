@@ -2,52 +2,23 @@
 
 . ./regress.conf
 
-case $# in
-1)	datafile=$1;;
-*)	echo "Usage: $0 <datafile>" >&2
-	exit $exit_fail;;
-esac
+datafile=${1?'parameter <datafile> is needed'}
 
-trap 'rm -f $pair_file; gfrm $gftmp; exit $exit_trap' $trap_sigs
+trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
 
-pair_file=$localtop/RT_gfrep-D_host_and_domain.$$
-
-# search a pair of host and domain that the host is not in the domain
-if gfhost | awk '
-    {
-	pos = index($0, ".")
-	host[pos == 0 ? "" : substr($0, pos + 1)] = $0
-    }
-    END {
-	for (domain in host) { 
-	    for (i in host) {
-		if (domain != "" && match(host[i], domain) == 0) {
-		    printf "%s %s FOUND\n", host[i], domain >"'$pair_file'"
-		    exit 0
-		}
-	    }
-	}
-	printf "%s %s NOT_FOUND\n", host[i], domain >"'$pair_file'"
-	exit 0
-    }
-' && read shost domain is_found <$pair_file
-then
+gfhost | awk -f $testbase/search_host_and_domain.awk | while read shost domain
+do
     if gfreg -h $shost $datafile $gftmp &&
 	gfrep -D $domain $gftmp &&      
-	gfwhere $gftmp | awk 'NR > 1 {
-	    if ("'$is_found'" == "NOT_FOUND" && NF == 2 && $2 == "'$shost'" ||
-		"'$is_found'" == "FOUND" && NF == 3 &&
-		    ($2 == "'$shost'" && match($3, "'$domain'") ||
-		     $3 == "'$shost'" && match($2, "'$domain'")))
-		exit 0
-	    else
-		exit 1
-	}'
+	gfwhere $gftmp | \
+	    awk -f $testbase/check_gfwhere_out_after_-D.awk $shost $domain
     then	
-	exit_code=$exit_pass
+	exit $exit_pass 	# exit from while loop
+    else
+	exit $exit_fail
     fi	
-fi
+done
+exit_code=$?
 
-rm  $pair_file
 gfrm $gftmp
 exit $exit_code
