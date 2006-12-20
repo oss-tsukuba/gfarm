@@ -91,7 +91,7 @@ gfarm_spool_root_get_for_write()
 	char *spool, *sp;
 	struct gfarm_str_list *s = spool_list;
 	unsigned long avail, a;
-	
+
 	if (s == NULL)
 		gflog_fatal("gfarm_spool_root_get_for_write(): "
 			    "programming error, "
