@@ -48,6 +48,9 @@ main(int argc, char *argv[])
 	print_msg(" local home dir", gfarm_get_local_homedir());
 
 	puts("");
+	printf("gfsd server port: %d\n", gfarm_spool_server_port);
+
+	puts("");
 	e = gfarm_agent_check();
 	if (e != NULL)
 		print_msg("metadata cache server", e);
@@ -58,35 +61,35 @@ main(int argc, char *argv[])
 		       gfarm_agent_port_get());
 	}		
 
-	/* backend metadata database server */
-	if (gfarm_ldap_server_name || gfarm_postgresql_server_name ||
-	    gfarm_localfs_datadir)
-		puts("");
-	if (gfarm_ldap_server_name) {
-		print_msg("LDAP server name", gfarm_ldap_server_name);
-		print_msg("LDAP server port", gfarm_ldap_server_port);
-		print_msg("LDAP base dn    ", gfarm_ldap_base_dn);
-		print_msg("LDAP bind dn    ", gfarm_ldap_bind_dn);
-	}
-	if (gfarm_postgresql_server_name) {
-		print_msg("PGSQL server name", gfarm_postgresql_server_name);
-		print_msg("PGSQL server port", gfarm_postgresql_server_port);
-		print_msg("PGSQL dbname     ", gfarm_postgresql_dbname);
-		print_msg("PGSQL user       ", gfarm_postgresql_user);
-		print_msg("PGSQL connection info", gfarm_postgresql_conninfo);
-	}
-	if (gfarm_localfs_datadir) {
-		print_msg("metadata LocalFS datadir", gfarm_localfs_datadir);
-	}
+	/* metadata backend database server */
+	puts("");
+	/* LDAP */
+	print_msg("LDAP server name", gfarm_ldap_server_name);
+	print_msg("LDAP server port", gfarm_ldap_server_port);
+	print_msg("LDAP base dn    ", gfarm_ldap_base_dn);
+	print_msg("LDAP bind dn    ", gfarm_ldap_bind_dn);
+	/* PGSQL */
+	print_msg("PGSQL server name", gfarm_postgresql_server_name);
+	print_msg("PGSQL server port", gfarm_postgresql_server_port);
+	print_msg("PGSQL dbname     ", gfarm_postgresql_dbname);
+	print_msg("PGSQL user       ", gfarm_postgresql_user);
+	print_msg("PGSQL connection info", gfarm_postgresql_conninfo);
+	/* LocalFS */
+	print_msg("LocalFS datadir", gfarm_localfs_datadir);
+	if (!gfarm_ldap_server_name && !gfarm_postgresql_server_name &&
+	    !gfarm_localfs_datadir)
+		print_msg("metadata backend server", "not available");
+		
 
 	/* gfmd */
-	if (gfarm_metadb_server_name)
-		puts("");
+	puts("");
 	if (gfarm_metadb_server_name) {
 		print_msg("gfmd server name", gfarm_metadb_server_name);
 		printf("gfmd server port: %d\n", gfarm_metadb_server_port);
 	}
-
+	else
+		print_msg("gfmd server", "not available");
+		
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);
 
