@@ -6,10 +6,10 @@ hostname=
 REGRESS_AUTH=sharedsecret
 agent_enable=false
 agent_only=false
-AGENT_PORT=30603
-BACKEND_PORT=30602
-GFMD_PORT=30601
-GFSD_PORT=30600
+: ${REGRESS_AGENT_PORT:=30603}
+: ${REGRESS_BACKEND_PORT:=30602}
+: ${REGRESS_GFMD_PORT:=30601}
+: ${REGRESS_GFSD_PORT:=30600}
 wait_seconds=3
 
 usage()
@@ -56,14 +56,14 @@ while	case $1 in
 		shift; true;;
 	-a)	REGRESS_AUTH=${2?"$PROGNAME: -a option requires <auth_type> argument"}
 		shift; true;;
-	-p)	BACKEND_PORT=${2?"$PROGNAME: -p option requires <metadata_backend_port> argument"}
+	-p)	REGRESS_BACKEND_PORT=${2?"$PROGNAME: -p option requires <metadata_backend_port> argument"}
 		shift; true;;
-	-m)	GFMD_PORT=${2?"$PROGNAME: -m option requires <gfmd_port> argument"}
+	-m)	REGRESS_GFMD_PORT=${2?"$PROGNAME: -m option requires <gfmd_port> argument"}
 		shift; true;;
-	-s)	GFSD_PORT=${2?"$PROGNAME: -s option requires <gfsd_port> argument"}
+	-s)	REGRESS_GFSD_PORT=${2?"$PROGNAME: -s option requires <gfsd_port> argument"}
 		shift; true;;
 	--agent-port)
-		AGENT_PORT=${2?"$PROGNAME: --agent-port option requires <agent_port> argument"}
+		REGRESS_AGENT_PORT=${2?"$PROGNAME: --agent-port option requires <agent_port> argument"}
 		shift; true;;
 	--agent-disable) agent_enable=false; true;; # this is default
 	--agent-enable)	 agent_enable=true; true;;
@@ -119,7 +119,8 @@ sysdep_defaults
 set_last_defaults_$REGRESS_BACKEND
 
 config-gfarm --prefix $CONFIG_PREFIX -b $REGRESS_BACKEND $hostname \
-	-a $REGRESS_AUTH -p $BACKEND_PORT -m $GFMD_PORT -s $GFSD_PORT 
+	-a $REGRESS_AUTH -p $REGRESS_BACKEND_PORT \
+	-m $REGRESS_GFMD_PORT -s $REGRESS_GFSD_PORT
 sleep $wait_seconds
 case $REGRESS_AUTH in
 gsi|gsi_auth)
@@ -134,7 +135,7 @@ gsi|gsi_auth)
 	fi;;
 esac
 if $agent_enable; then
-config-agent --prefix $CONFIG_PREFIX -p $AGENT_PORT
+config-agent --prefix $CONFIG_PREFIX -p $REGRESS_AGENT_PORT
 	if $agent_only; then
 		mv	  $CONFIG_PREFIX/etc/gfarm.conf \
 			  $CONFIG_PREFIX/etc/gfarm.conf.org
