@@ -353,6 +353,3 @@ Gfarm テストスイート
 	$REGRESS_BACKEND_PORT	30602		PostgreSQL/OpenLDAPのポート
 	$REGRESS_GFMD_PORT	30601		gfmd のポート
 	$REGRESS_GFSD_PORT	30600		gfsd のポート
-
-
-
