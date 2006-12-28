@@ -198,3 +198,5 @@ gfs_hook/feature/permission/overwrite_200_file.sh
 gfs_hook/feature/permission/overwrite_000_file.sh
 gfs_hook/feature/permission/virtual_dir.sh
 gfs_hook/tool/build/configure_make.sh
+
+gftool/gfarmfs-fuse.sh
