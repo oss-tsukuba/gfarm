@@ -88,14 +88,14 @@ gftool/gfreg/gfreg-r_program_to_new_url.sh
 gftool/gfreg/gfreg-r_file_to_new_url.sh
 gftool/gfrep/gfrep-H_non-exec.sh
 gftool/gfrep/gfrep-H_exec.sh
-gftool/gfrep/gfrep-d_non-exec.sh
-gftool/gfrep/gfrep-d_exec.sh
+#gftool/gfrep/gfrep-d_non-exec.sh
+#gftool/gfrep/gfrep-d_exec.sh
 gftool/gfrep/gfrep-D_non-exec.sh
 gftool/gfrep/gfrep-D_exec.sh
 gftool/gfrep/gfrep-N2_non-exec.sh
 gftool/gfrep/gfrep-N2_exec.sh
 gftool/gfrep/gfrep-H_dir.sh
-gftool/gfrep/gfrep-d_dir.sh
+#gftool/gfrep/gfrep-d_dir.sh
 gftool/gfrep/gfrep-D_dir.sh
 gftool/gfrep/gfrep-N2_dir.sh
 gftool/gfls/gfls-l.sh
