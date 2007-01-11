@@ -179,7 +179,8 @@ config:
 	echo ". $(srcdir)/regress.conf"; \
 	) > regress.conf
 
-clean:
+distclean:
+	-$(RM) -f log
 	-test -f Makefile || $(RM) -f regress.conf
 
 include $(top_srcdir)/makes/subdir.mk
