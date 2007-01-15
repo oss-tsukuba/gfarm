@@ -78,6 +78,7 @@ gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfwhere/noopt_+x.sh
 gftool/gfwhere/noopt_-x.sh
+gftool/gfhost/delete-add.sh
 gftool/gfreg/gfreg-h.sh
 gftool/gfreg/gfreg-H.sh
 gftool/gfreg/gfreg-D.sh
