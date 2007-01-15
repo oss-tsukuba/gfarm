@@ -6,9 +6,14 @@ usage_postgresql()
 sanity_postgresql()
 {
 	rv=0
+	case $SCHEMA_VERSION in
+	1|2)	:;;
+	*)	echo "ERROR: schema version $SCHEMA_VERSION is not supported" >&2
+		rv=1;;
+	esac
 	case $BACKEND_VERSION in
 	[1-6].*|7.[0-3]|unknown)	# 7.3 or before
-		echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION"
+		echo "WARNING: PostgreSQL version 7.4 or later required: $BACKEND_VERSION" >&2
 		rv=1
 		;;
 	esac
@@ -32,6 +37,7 @@ display_backend_params_postgresql()
 	display_backend_data_dir_param
 	display_backend_log_dir_param
 
+	echo "postgresql schema version [-S]: $SCHEMA_VERSION"
 	echo "postgresql admin user     [-U]: $BACKEND_ADMIN_USER"
 	echo "postgresql admin password [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
 	echo "postgresql user           [-u]: $BACKEND_USER"
@@ -54,6 +60,10 @@ display_backend_optional_params_postgresql()
 parse_argument_postgresql()
 {
 	case "$1" in
+	  -S) [ $# -ge 2 ] || usage
+		SCHEMA_VERSION=$2
+		argshift=1
+		true;;
 	  *)	false;;
 	esac
 }
@@ -93,6 +103,7 @@ set_first_defaults_postgresql()
 
 set_last_defaults_postgresql()
 {
+	: ${SCHEMA_VERSION:=2}
 	: ${DB_NAME:="gfarm"}
 
 	if [ -w / ]; then # is root?
@@ -393,11 +404,17 @@ _EOF_
 
 	$PGSQL_BINDIR/createuser -q $createuser_option -A -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb -q $DB_NAME
-	$PGSQL_BINDIR/psql -q -f "$config_dir/gfarm.sql" $DB_NAME
+	$PGSQL_BINDIR/psql -q \
+		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
 		print "	ON Host, HostAliases, Path, FileSection, FileSectionCopy"
 		print "	TO $BACKEND_USER;"
+		if ($SCHEMA_VERSION > 1) {
+			print "GRANT SELECT, UPDATE"
+			print "	ON Host_hostid_seq, Path_pathid_seq"
+			print "	TO $BACKEND_USER;"
+		}
 	}
 	FILENAME == "$admin_password" {
 		print "ALTER USER $BACKEND_ADMIN_USER"

@@ -17,7 +17,8 @@ DATA =	$(srcdir)/config-gfarm.postgresql \
 	$(srcdir)/gfarm.conf-ldap.in \
 	$(srcdir)/slapd.conf-2.0.in \
 	$(srcdir)/slapd.conf-2.1.in \
-	$(srcdir)/gfarm.sql \
+	$(srcdir)/gfarm.schema-1.sql \
+	$(srcdir)/gfarm.schema-2.sql \
 	$(srcdir)/gfarm.schema \
 	$(srcdir)/initial.ldif.in \
 	$(srcdir)/bdb.DB_CONFIG.in

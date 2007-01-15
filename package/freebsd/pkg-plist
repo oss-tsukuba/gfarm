@@ -481,7 +481,8 @@ share/gfarm/config/config-gfarm.sysdep
 share/gfarm/config/gfarm.conf-ldap.in
 share/gfarm/config/gfarm.conf-postgresql.in
 share/gfarm/config/gfarm.schema
-share/gfarm/config/gfarm.sql
+share/gfarm/config/gfarm.schema-1.sql
+share/gfarm/config/gfarm.schema-2.sql
 share/gfarm/config/initial.ldif.in
 share/gfarm/config/gfarm-pgsql.in
 share/gfarm/config/gfarm-slapd.in

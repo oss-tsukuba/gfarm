@@ -108,16 +108,24 @@ selfcheck_summary:
 	@echo ""
 	@$(REGRESS_SH) -s
 
-selfcheck-postgresql \
+selfcheck-postgresql:
+	@$(MAKE) -f $(srcdir)/Makefile selfcheck-postgresql1
+	@$(MAKE) -f $(srcdir)/Makefile selfcheck-postgresql2
+
+selfcheck-postgresql1 \
+selfcheck-postgresql2 \
 selfcheck-ldap:
 	@backend=`expr $@ : 'selfcheck-\(.*\)'`; \
 	 for auth in $(auth_targets); do \
 		$(MAKE) -f $(srcdir)/Makefile $@-$${auth} || exit $$?; \
 	 done
 
-selfcheck-postgresql-sharedsecret \
-selfcheck-postgresql-gsi \
-selfcheck-postgresql-gsi_auth \
+selfcheck-postgresql1-sharedsecret \
+selfcheck-postgresql1-gsi \
+selfcheck-postgresql1-gsi_auth \
+selfcheck-postgresql2-sharedsecret \
+selfcheck-postgresql2-gsi \
+selfcheck-postgresql2-gsi_auth \
 selfcheck-ldap-sharedsecret \
 selfcheck-ldap-gsi \
 selfcheck-ldap-gsi_auth:
@@ -128,15 +136,24 @@ selfcheck-ldap-gsi_auth:
 			|| exit $$?; \
 	 done
 
-selfcheck-postgresql-sharedsecret-agent_disable \
-selfcheck-postgresql-sharedsecret-agent_enable \
-selfcheck-postgresql-sharedsecret-agent_only \
-selfcheck-postgresql-gsi-agent_disable \
-selfcheck-postgresql-gsi-agent_enable \
-selfcheck-postgresql-gsi-agent_only \
-selfcheck-postgresql-gsi_auth-agent_disable \
-selfcheck-postgresql-gsi_auth-agent_enable \
-selfcheck-postgresql-gsi_auth-agent_only \
+selfcheck-postgresql1-sharedsecret-agent_disable \
+selfcheck-postgresql1-sharedsecret-agent_enable \
+selfcheck-postgresql1-sharedsecret-agent_only \
+selfcheck-postgresql1-gsi-agent_disable \
+selfcheck-postgresql1-gsi-agent_enable \
+selfcheck-postgresql1-gsi-agent_only \
+selfcheck-postgresql1-gsi_auth-agent_disable \
+selfcheck-postgresql1-gsi_auth-agent_enable \
+selfcheck-postgresql1-gsi_auth-agent_only \
+selfcheck-postgresql2-sharedsecret-agent_disable \
+selfcheck-postgresql2-sharedsecret-agent_enable \
+selfcheck-postgresql2-sharedsecret-agent_only \
+selfcheck-postgresql2-gsi-agent_disable \
+selfcheck-postgresql2-gsi-agent_enable \
+selfcheck-postgresql2-gsi-agent_only \
+selfcheck-postgresql2-gsi_auth-agent_disable \
+selfcheck-postgresql2-gsi_auth-agent_enable \
+selfcheck-postgresql2-gsi_auth-agent_only \
 selfcheck-ldap-sharedsecret-agent_disable \
 selfcheck-ldap-sharedsecret-agent_enable \
 selfcheck-ldap-sharedsecret-agent_only \
@@ -149,10 +166,15 @@ selfcheck-ldap-gsi_auth-agent_only : all
 	@backend=`expr $@ : 'selfcheck-\(.*\)-.*-agent_.*'`; \
 	    auth=`expr $@ : 'selfcheck-.*-\(.*\)-agent_.*'`; \
 	   agent=`expr $@ : 'selfcheck-.*-.*-agent_\(.*\)'`; \
-	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent}" >&2; \
-	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent}" >>$(LOG); \
+	 opt=; \
+	 case $${backend} in \
+	 postgresql1) backend=postgresql; opt="-S 1";; \
+	 postgresql2) backend=postgresql;; \
+	 esac;\
+	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent} $${opt}" >&2; \
+	 echo "Trying -b $${backend} -a $${auth} --agent-$${agent} $${opt}" >>$(LOG); \
 	 $(SELFCHECK_ENV) $(srcdir)/config.sh --prefix $(prefix) \
-		-b $${backend} -a $${auth} --agent-$${agent} \
+		-b $${backend} -a $${auth} --agent-$${agent} $${opt} \
 		--config-prefix $(CONFIG_PREFIX) $(CONFIG_OPT) \
 		$(srcdir)/gfs_hook.sh --prefix $(prefix) \
 			$(TEST_TARGET)

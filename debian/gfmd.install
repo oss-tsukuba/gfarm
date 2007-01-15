@@ -9,7 +9,8 @@ debian/tmp/usr/share/gfarm/config/config-gfarm.postgresql
 debian/tmp/usr/share/gfarm/config/gfarm.conf-ldap.in
 debian/tmp/usr/share/gfarm/config/gfarm.conf-postgresql.in
 debian/tmp/usr/share/gfarm/config/gfarm.schema
-debian/tmp/usr/share/gfarm/config/gfarm.sql
+debian/tmp/usr/share/gfarm/config/gfarm.schema-1.sql
+debian/tmp/usr/share/gfarm/config/gfarm.schema-2.sql
 debian/tmp/usr/share/gfarm/config/initial.ldif.in
 debian/tmp/usr/share/gfarm/config/linux/debian/gfarm-pgsql.in
 debian/tmp/usr/share/gfarm/config/linux/debian/gfarm-slapd.in

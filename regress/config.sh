@@ -10,6 +10,7 @@ agent_only=false
 : ${REGRESS_BACKEND_PORT:=30602}
 : ${REGRESS_GFMD_PORT:=30601}
 : ${REGRESS_GFSD_PORT:=30600}
+schema_version=
 wait_seconds=3
 
 usage()
@@ -30,6 +31,7 @@ usage()
 	echo >&2 "	--agent-port <agent_port>"
 	echo >&2 "	--agent-enable			: use gfarm_agent"
 	echo >&2 "	--agent-only : disallow access to metadata server from clients"
+	echo >&2 "	-S <schema_version>"
 	exit 2
 }
 
@@ -68,6 +70,8 @@ while	case $1 in
 	--agent-disable) agent_enable=false; true;; # this is default
 	--agent-enable)	 agent_enable=true; true;;
 	--agent-only)	 agent_enable=true; agent_only=true; true;;
+	-S)	schema_version="-S ${2?$PROGNAME: -S option requires <schema_version> argument}"
+		shift; true;;
 	-*)	echo >&2 "$PROGNAME: unknown option $1"
 		usage;;
 	*)	false;;
@@ -120,7 +124,8 @@ set_last_defaults_$REGRESS_BACKEND
 
 config-gfarm --prefix $CONFIG_PREFIX -b $REGRESS_BACKEND $hostname \
 	-a $REGRESS_AUTH -p $REGRESS_BACKEND_PORT \
-	-m $REGRESS_GFMD_PORT -s $REGRESS_GFSD_PORT
+	-m $REGRESS_GFMD_PORT -s $REGRESS_GFSD_PORT \
+	$schema_version
 sleep $wait_seconds
 case $REGRESS_AUTH in
 gsi|gsi_auth)

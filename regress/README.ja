@@ -11,14 +11,15 @@ Gfarm テストスイート
 
    ・「make selfcheck」、
      「make selfcheck-バックエンド」、
-     「make selfcheck-バックエンド-認証方式」、
-     「make selfcheck-バックエンド-認証方式-agent利用方式」ターゲット
+     「make selfcheck-バックエンド版」、
+     「make selfcheck-バックエンド版-認証方式」、
+     「make selfcheck-バックエンド版-認証方式-agent利用方式」ターゲット
 	自ホストだけで構成される一時的なテスト用 gfarm 環境を作成し、
         regress.sh スクリプトを実行します。
 
 	すべて組合せでテストを行ないたい場合には「make selfcheck」、
 	特定の組み合わせだけでテストを行ないたい場合には、
-	たとえば「make selfcheck-postgresql-sharedsecret-agent_enable」
+	たとえば「make selfcheck-postgresql2-sharedsecret-agent_enable」
 	のようにしてテストすると良いでしょう。
 
    ・「make xfail-check」ターゲット
@@ -84,8 +85,9 @@ Gfarm テストスイート
 
 2. 「make selfcheck」、
    「make selfcheck-バックエンド」、
-   「make selfcheck-バックエンド-認証方式」、
-   「make selfcheck-バックエンド-認証方式-agent利用方式」ターゲット
+   「make selfcheck-バックエンド版」、
+   「make selfcheck-バックエンド版-認証方式」、
+   「make selfcheck-バックエンド版-認証方式-agent利用方式」ターゲット
 
    このターゲットは、/var/tmp/`whoami`/ に、自ホストと localhost から
    なるテスト専用 gfarm 環境を構築し、その環境内でテストを行ないます。
@@ -100,14 +102,17 @@ Gfarm テストスイート
 
   「make selfcheck」は、すべての組み合わせでテストを実施します。
   「make selfcheck-バックエンド」は、
-	指定したバックエンドに対して、すべての認証方式、す
-	べての gfarm_agent 利用方式の組み合わせのテストを行ないます。
-  「make selfcheck-バックエンド-認証方式」は、
-	指定したバックエンドと認証方式に対して、
+	指定したバックエンドに対して、すべての認証方式、
+	すべての gfarm_agent 利用方式の組み合わせのテストを行ないます。
+  「make selfcheck-バックエンド版」は、
+	指定したバックエンドの指定した版に対して、すべての認証方式、
+	すべての gfarm_agent 利用方式の組み合わせのテストを行ないます。
+  「make selfcheck-バックエンド版-認証方式」は、
+	指定したバックエンドの指定した版、指定した認証方式に対して、
 	すべての gfarm_agent 利用方式のテストを行ないます。
-  「make selfcheck-バックエンド-認証方式-agent利用方式」は、
-	指定したバックエンド、指定した認証方式、指定した gfarm_agent 利用方式
-	に対してテストを行ないます。
+  「make selfcheck-バックエンド版-認証方式-agent利用方式」は、
+	指定したバックエンドの指定した版、指定した認証方式、
+	指定した gfarm_agent 利用方式に対してテストを行ないます。
 
    なお、テスト結果のサマリー表示があるのは、「make selfcheck」のみです。
    それ以外のターゲットでサマリー表示をしたい場合には、下記のように、
@@ -119,6 +124,7 @@ Gfarm テストスイート
   バックエンド、認証方式、gfarm_agent 利用方式のそれぞれには、下記の値が
   指定できます。
 	バックエンド: postgresql ldap
+	バックエンド版: postgresql1 postgresql2 ldap
 	認証方式: sharedsecret gsi gsi_auth
 	gfarm_agent 利用方式: agent_disable agent_enable agent_only
 		agent_disable を指定した場合、gfarm_agent を利用しません。
@@ -318,25 +324,25 @@ Gfarm テストスイート
      例えば PostgreSQL バックエンド、sharedsecret 認証、gfarm_agent 使用と
      いう構成の場合、下記のコマンドを実行すると、
 	make TEST_TARGET=bash \
-		selfcheck-postgresql-sharedsecret-agent_enable
+		selfcheck-postgresql2-sharedsecret-agent_enable
      自ホストだけで構成される一時的なテスト用 gfarm 環境を作成し、
      その中で bash を起動します。
      そこで「./tst.sh テストスクリプト」を実行すれば、その一時的
      環境内で、個々のスクリプトをテストできます。
 
-     ターゲットは「selfcheck-バックエンド-認証方式-agent利用方式」の
+     ターゲットは「selfcheck-バックエンド版-認証方式-agent利用方式」の
      形式で指定できます。詳細は 2. を参照してください。
 
    ・自ホストだけからなるテスト環境を、恒久的に作成したい場合:
      例えば PostgreSQL バックエンド、sharedsecret 認証、gfarm_agent 使用の場合
      下記のコマンドで可能です。
 	make TEST_TARGET=true CONFIG_OPT=-k \
-		selfcheck-postgresql-sharedsecret-agent_enable
+		selfcheck-postgresql2-sharedsecret-agent_enable
      テスト環境を置くディレクトリを、「/var/tmp/ユーザ名」以外の
      ディレクトリに変更したい場合には、「CONFIG_PREFIX=ディレクトリ名」
      という変数設定を、make の引数に加えて下さい。
 
-     ターゲットは「selfcheck-バックエンド-認証方式-agent利用方式」の
+     ターゲットは「selfcheck-バックエンド版-認証方式-agent利用方式」の
      形式で指定できます。詳細は 2. を参照してください。
 
    ・特定のテストケースを、すべての構成について試験したい場合:

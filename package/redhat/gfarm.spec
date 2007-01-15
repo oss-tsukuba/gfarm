@@ -841,7 +841,8 @@ fi
 %{share_prefix}/config/gfarm.conf-ldap.in
 %{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.schema
-%{share_prefix}/config/gfarm.sql
+%{share_prefix}/config/gfarm.schema-1.sql
+%{share_prefix}/config/gfarm.schema-2.sql
 %{share_prefix}/config/initial.ldif.in
 %{share_prefix}/config/linux/debian/gfarm-pgsql.in
 %{share_prefix}/config/linux/debian/gfarm-slapd.in

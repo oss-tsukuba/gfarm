@@ -8,7 +8,8 @@
 @PREFIX@/share/gfarm/config/gfarm.conf-ldap.in
 @PREFIX@/share/gfarm/config/gfarm.conf-postgresql.in
 @PREFIX@/share/gfarm/config/gfarm.schema
-@PREFIX@/share/gfarm/config/gfarm.sql
+@PREFIX@/share/gfarm/config/gfarm.schema-1.sql
+@PREFIX@/share/gfarm/config/gfarm.schema-2.sql
 @PREFIX@/share/gfarm/config/initial.ldif.in
 @PREFIX@/share/gfarm/config/gfarm-pgsql.in
 @PREFIX@/share/gfarm/config/gfarm-slapd.in

@@ -36,6 +36,8 @@
 
 static PGconn *conn = NULL;
 
+static int use_hostid_and_pathid; /* is schema version 2 ? */
+
 #define	PGSQL_MSG_LEN 1024
 
 static char *
@@ -155,6 +157,20 @@ gfarm_pgsql_initialize(void)
 		/* PQerrorMessage's return value will be freed in PQfinish() */
 		e = save_pgsql_msg(PQerrorMessage(conn));
 		(void)gfarm_metadb_terminate();
+	} else { /* determine the version of the schema */
+		PGresult *res;
+
+		res = PQexecParams(conn,
+		    "SELECT COUNT(*) FROM Host_hostid_seq, Path_pathid_seq",
+		    0, /* number of params */
+		    NULL, /* param types */
+		    NULL, /* params */
+		    NULL, /* param lengths */
+		    NULL, /* param formats */
+		    0); /* dummy parameter for result format */
+		use_hostid_and_pathid = 
+		    PQresultStatus(res) == PGRES_TUPLES_OK;
+		PQclear(res);
 	}
 	return (e);
 }
@@ -353,7 +369,7 @@ gfarm_pgsql_host_info_get(
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
-		"WHERE Host.hostname = $1 "
+		"WHERE Host.hostname = $1 AND Host.available"
 		"ORDER BY Host.hostname, hostalias",
 
 		1,
@@ -456,7 +472,7 @@ gfarm_pgsql_host_info_set(
 	struct gfarm_host_info *info)
 {
 	PGresult *res;
-	const char *paramValues[3];
+	const char *paramValues[4];
 	char *e;
 	char ncpu[GFARM_INT32STRLEN + 1];
 
@@ -479,13 +495,65 @@ gfarm_pgsql_host_info_set(
 	}
 	PQclear(res);
 
-	paramValues[0] = hostname;
 	paramValues[1] = info->architecture;
 	sprintf(ncpu, "%d", info->ncpu);
 	paramValues[2] = ncpu;
+
+	if (use_hostid_and_pathid) {
+		/* see if the hostname once existed */
+		char *old_hostname;
+
+		GFARM_MALLOC_ARRAY(old_hostname, strlen(hostname) + 1 + 1);
+		if (old_hostname == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto end;
+		}
+		sprintf(old_hostname, "#%s", hostname);
+
+		paramValues[0] = old_hostname;
+		res = PQexecParams(conn,
+			"SELECT TRUE FROM Host where hostname = $1",
+			1, /* number of params */
+			NULL, /* param types */
+			paramValues,
+			NULL, /* param lengths */
+			NULL, /* param formats */
+			1); /* ask for binary results */
+
+		if (PQresultStatus(res) == PGRES_TUPLES_OK &&
+		    PQntuples(res) == 1) {
+			PQclear(res);
+
+			paramValues[3] = hostname;
+			res = PQexecParams(conn,
+				"UPDATE Host SET architecture = $2, ncpu = $3,"
+					"hostname = $4, available = TRUE "
+				    "WHERE hostname = $1",
+				4, /* number of params */
+				NULL, /* param types */
+				paramValues,
+				NULL, /* param lengths */
+				NULL, /* param formats */
+				0); /* dummy parameter for result format */
+			if (PQresultStatus(res) == PGRES_COMMAND_OK &&
+			    strtol(PQcmdTuples(res), NULL, 0) > 0) {
+				PQclear(res);
+				free(old_hostname);
+				e = NULL;
+				goto added;
+			}
+		}
+		PQclear(res);
+		free(old_hostname);
+	}
+
+	paramValues[0] = hostname;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"INSERT INTO Host (hostname, architecture, ncpu) "
-		    "VALUES ($1, $2, $3)",
+		    "VALUES ($1, $2, $3)" :
+		"INSERT INTO Host (hostname, architecture, ncpu, available) "
+		    "VALUES ($1, $2, $3, TRUE)",
 		3, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -504,6 +572,7 @@ gfarm_pgsql_host_info_set(
 	}
 	PQclear(res);
 
+ added:
 	e = hostaliases_set(hostname, info);
  end:
 	if (e == NULL)
@@ -587,35 +656,105 @@ static char *
 gfarm_pgsql_host_info_remove(const char *hostname)
 {
 	PGresult *res;
-	const char *paramValues[1];
+	const char *paramValues[2];
 	char *e;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
 
  retry:
-	paramValues[0] = hostname;
-	res = PQexecParams(conn,
-		"DELETE FROM Host WHERE hostname = $1",
-		1, /* number of params */
-		NULL, /* param types */
-		paramValues,
-		NULL, /* param lengths */
-		NULL, /* param formats */
-		0);  /* dummy parameter for result format */
+	if (!use_hostid_and_pathid) {
+		paramValues[0] = hostname;
+		res = PQexecParams(conn,
+			"DELETE FROM Host WHERE hostname = $1",
+			1, /* number of params */
+			NULL, /* param types */
+			paramValues,
+			NULL, /* param lengths */
+			NULL, /* param formats */
+			0);  /* dummy parameter for result format */
 
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
+		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+			if (PQstatus(conn) == CONNECTION_BAD) {
+				PQreset(conn);
+				if (PQstatus(conn) == CONNECTION_OK) {
+					PQclear(res);
+					goto retry;
+				}
 			}
+			e = save_pgsql_msg(PQresultErrorMessage(res));
+		} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+		PQclear(res);
+	} else {
+		/*
+		 * To prevent dangling reference from a FileSectionCopy,
+		 * we do not remove a Host, but make it unavailable.
+		 *
+		 * We also rename the hostname to "#hostname",
+		 * so that replicas which refer this host become
+		 * inaccessible.
+		 * XXX is this really good idea?
+		 */
+		char *new_hostname = NULL;
+
+		res = PQexec(conn, "BEGIN");
+		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+			if (PQstatus(conn) == CONNECTION_BAD) {
+				PQreset(conn);
+				if (PQstatus(conn) == CONNECTION_OK) {
+					PQclear(res);
+					goto retry;
+				}
+			}
+			e = save_pgsql_msg(PQresultErrorMessage(res));
+			PQclear(res);
+			goto end;
 		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
-	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-	PQclear(res);
+		PQclear(res);
+
+		GFARM_MALLOC_ARRAY(new_hostname, strlen(hostname) + 1 + 1);
+		if (new_hostname == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			goto end;
+		}
+		sprintf(new_hostname, "#%s", hostname);
+
+		e = hostaliases_remove(hostname);
+		if (e != NULL)
+			goto end;
+		paramValues[0] = hostname;
+		paramValues[1] = new_hostname;
+		res = PQexecParams(conn,
+			"UPDATE Host SET hostname = $2, available = FALSE "
+			    "WHERE hostname = $1",
+			2, /* number of params */
+			NULL, /* param types */
+			paramValues,
+			NULL, /* param lengths */
+			NULL, /* param formats */
+			0); /* dummy parameter for result format */
+		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+			e = save_pgsql_msg(PQresultErrorMessage(res));
+			PQclear(res);
+			goto end;
+		}
+		if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+			PQclear(res);
+			goto end;
+		}
+		PQclear(res);
+
+		if (e == NULL)
+			res = PQexec(conn, "COMMIT");
+		else
+			res = PQexec(conn, "ROLLBACK");
+		PQclear(res);
+ end:
+		if (new_hostname != NULL)
+			free(new_hostname);
+	}
 
 	return (e);
 }
@@ -720,15 +859,28 @@ gfarm_pgsql_host_info_get_all(
 		return (e);
 
 	return (host_info_get_all(
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
 		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname" :
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE Host.available "
+		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
+		    "ORDER BY Host.hostname, hostalias" :
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE Host.available "
 		    "ORDER BY Host.hostname, hostalias",
 
 		0,
@@ -752,17 +904,32 @@ gfarm_pgsql_host_info_get_by_name_alias(
 
 	paramValues[0] = name_alias;
 	e = host_info_get_all(
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE Host.hostname = $1 OR hostalias = $1 "
 		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname" :
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE (Host.hostname = $1 OR hostalias = $1) "
+			"AND Host.available "
+		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE Host.hostname = $1 OR hostalias = $1 "
+		    "ORDER BY Host.hostname, hostalias" :
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE (Host.hostname = $1 OR hostalias = $1) "
+			"AND Host.available "
 		    "ORDER BY Host.hostname, hostalias",
 
 		1,
@@ -792,17 +959,30 @@ gfarm_pgsql_host_info_get_allhost_by_architecture(const char *architecture,
 
 	paramValues[0] = architecture;
 	return (host_info_get_all(
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, count(hostalias) "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
 		    "WHERE architecture = $1 "
 		    "GROUP BY Host.hostname "
+		    "ORDER BY Host.hostname" :
+		"SELECT Host.hostname, count(hostalias) "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE architecture = $1 AND Host.available"
+		    "GROUP BY Host.hostname "
 		    "ORDER BY Host.hostname",
 
+		!use_hostid_and_pathid ?
 		"SELECT Host.hostname, architecture, ncpu, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
-		    "WHERE architecture = $1 "
+		    "WHERE architecture = $1 " :
+		    "ORDER BY Host.hostname, hostalias"
+		"SELECT Host.hostname, architecture, ncpu, hostalias "
+		    "FROM Host LEFT OUTER JOIN HostAliases "
+			"ON Host.hostname = HostAliases.hostname "
+		    "WHERE architecture = $1 AND Host.available"
 		    "ORDER BY Host.hostname, hostalias",
 
 		1,
@@ -1147,6 +1327,8 @@ path_info_set_field_from_copy_binary(
 
 	info->pathname =
 	    get_value_from_varchar_copy_binary(&buf, &residual);
+	if (use_hostid_and_pathid)
+		get_value_from_int8_copy_binary(&buf, &residual);
 	info->status.st_mode =
 	    get_value_from_integer_copy_binary(&buf, &residual);
 	info->status.st_user =
@@ -1356,8 +1538,14 @@ gfarm_pgsql_file_section_info_get(
 	paramValues[0] = pathname;
 	paramValues[1] = section;
 	res = PQexecParams(conn,
-		"SELECT * FROM FileSection where pathname = $1 "
-		    "AND section = $2",
+		!use_hostid_and_pathid ?
+		"SELECT * FROM FileSection WHERE pathname = $1 "
+		    "AND section = $2" :
+		"SELECT pathname, FileSection.* "
+		    "FROM Path, FileSection WHERE "
+			"pathname = $1 "
+			"AND FileSection.pathid = Path.pathid "
+			"AND section = $2",
 		2, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1408,9 +1596,14 @@ gfarm_pgsql_file_section_info_set(
 	paramValues[3] = info->checksum_type;
 	paramValues[4] = info->checksum;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"INSERT INTO FileSection (pathname, section, filesize,"
-				   "checksumType, checksum) "
-		     "VALUES ($1, $2, $3, $4, $5)",
+			"checksumType, checksum) "
+		     "VALUES ($1, $2, $3, $4, $5)" :
+		"INSERT INTO FileSection (pathid, section, filesize, "
+			"checksumType, checksum) VALUES ("
+			"(SELECT pathid FROM Path WHERE pathname = $1),"
+			"$2, $3, $4, $5)",
 		5, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1457,9 +1650,15 @@ gfarm_pgsql_file_section_info_replace(
 	paramValues[3] = info->checksum_type;
 	paramValues[4] = info->checksum;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"UPDATE FileSection SET filesize = $3, "
 				"checksumType = $4, checksum = $5 "
-		    "WHERE pathname = $1 AND section = $2",
+		    "WHERE pathname = $1 AND section = $2" :
+		"UPDATE FileSection SET filesize = $3, "
+				"checksumType = $4, checksum = $5 "
+		    "WHERE "
+			"pathid=(SELECT pathid from Path WHERE pathname = $1) "
+			"AND section = $2",
 		5, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1496,7 +1695,11 @@ gfarm_pgsql_file_section_info_remove(
 	paramValues[0] = pathname;
 	paramValues[1] = section;
 	res = PQexecParams(conn,
-		"DELETE FROM FileSection WHERE pathname = $1 AND section = $2",
+		!use_hostid_and_pathid ?
+		"DELETE FROM FileSection WHERE pathname = $1 AND section = $2":
+		"DELETE FROM FileSection WHERE "
+			"pathid=(SELECT pathid FROM Path WHERE pathname = $1) "
+			"AND section = $2",
 		2, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1535,7 +1738,10 @@ gfarm_pgsql_file_section_info_get_all_by_file(
  retry:
 	paramValues[0] = pathname;
 	res = PQexecParams(conn,
-		"SELECT * FROM FileSection where pathname = $1",
+		!use_hostid_and_pathid ?
+		"SELECT * FROM FileSection WHERE pathname = $1" :
+		"SELECT Path.pathname, FileSection.* FROM Path, FileSection "
+		    "WHERE pathname = $1 AND FileSection.pathid = Path.pathid",
 		1, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1604,8 +1810,15 @@ gfarm_pgsql_file_section_copy_info_get(
 	paramValues[1] = section;
 	paramValues[2] = hostname;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"SELECT * FROM FileSectionCopy where pathname = $1 "
-		    "AND section = $2 AND hostname = $3",
+		    "AND section = $2 AND hostname = $3" :
+		"SELECT pathname, section, hostname "
+		    "FROM Path, FileSectionCopy, Host "
+		    "WHERE pathname = $1 AND hostname = $3 "
+			"AND FileSectionCopy.pathid = Path.pathid "
+			"AND FileSectionCopy.hostid = Host.hostid "
+			"AND section = $2",
 		3, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1652,8 +1865,14 @@ gfarm_pgsql_file_section_copy_info_set(
 	paramValues[1] = section;
 	paramValues[2] = hostname;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"INSERT INTO FileSectionCopy (pathname, section, hostname) "
-		     "VALUES ($1, $2, $3)",
+		     "VALUES ($1, $2, $3)" :
+		"INSERT INTO FileSectionCopy (pathid, section, hostid) "
+		     "VALUES ("
+			"(SELECT pathid FROM Path WHERE pathname = $1), "
+			"$2, "
+			"(SELECT hostid FROM Host WHERE hostname = $3))",
 		3, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1696,8 +1915,13 @@ gfarm_pgsql_file_section_copy_info_remove(
 	paramValues[1] = section;
 	paramValues[2] = hostname;
 	res = PQexecParams(conn,
+		!use_hostid_and_pathid ?
 		"DELETE FROM FileSectionCopy "
-		    "WHERE pathname = $1 AND section = $2 AND hostname = $3",
+		    "WHERE pathname = $1 AND section = $2 AND hostname = $3" :
+		"DELETE FROM FileSectionCopy WHERE "
+			"pathid=(SELECT pathid FROM Path WHERE pathname = $1) "
+			"AND section = $2 AND "
+			"hostid=(SELECT hostid FROM Host WHERE hostname = $3)",
 		3, /* number of params */
 		NULL, /* param types */
 		paramValues,
@@ -1786,7 +2010,13 @@ gfarm_pgsql_file_section_copy_info_get_all_by_file(
 
 	paramValues[0] = pathname;
 	return (file_section_copy_info_get_all(
-		"SELECT * FROM FileSectionCopy where pathname = $1",
+		!use_hostid_and_pathid ?
+		"SELECT * FROM FileSectionCopy where pathname = $1" :
+		"SELECT pathname, section, hostname "
+		    "FROM Path, FileSectionCopy, Host WHERE "
+			"pathname = $1 "
+			"AND FileSectionCopy.pathid = Path.pathid "
+			"AND Host.hostid = FileSectionCopy.hostid",
 		1,
 		paramValues,
 		np,
@@ -1809,8 +2039,15 @@ gfarm_pgsql_file_section_copy_info_get_all_by_section(
 	paramValues[0] = pathname;
 	paramValues[1] = section;
 	return (file_section_copy_info_get_all(
+		!use_hostid_and_pathid ?
 		"SELECT * FROM FileSectionCopy "
-		    "WHERE pathname = $1 AND section = $2",
+		    "WHERE pathname = $1 AND section = $2" :
+		"SELECT pathname, section, hostname "
+		    "FROM Path, FileSectionCopy, Host WHERE "
+			"pathname = $1 "
+			"AND FileSectionCopy.pathid = Path.pathid "
+			"AND section = $2 "
+			"AND Host.hostid = FileSectionCopy.hostid",
 		2,
 		paramValues,
 		np,
@@ -1831,7 +2068,13 @@ gfarm_pgsql_file_section_copy_info_get_all_by_host(
 
 	paramValues[0] = hostname;
 	return (file_section_copy_info_get_all(
-		"SELECT * FROM FileSectionCopy where hostname = $1",
+		!use_hostid_and_pathid ?
+		"SELECT * FROM FileSectionCopy where hostname = $1" :
+		"SELECT pathname, section, hostname "
+		    "FROM Path, FileSectionCopy, Host WHERE "
+			"hostname = $1 "
+			"AND FileSectionCopy.hostid = Host.hostid "
+			"AND Path.pathid = FileSectionCopy.pathid",
 		1,
 		paramValues,
 		np,
