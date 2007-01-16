@@ -521,6 +521,8 @@ gfs_pio_purge(GFS_File gf)
 #define CHECK_WRITABLE(gf) { \
 	if (((gf)->mode & GFS_FILE_MODE_WRITE) == 0) \
 		return (gfarm_errno_to_error(EBADF)); \
+	else if ((gf)->error == GFS_FILE_ERROR_EOF) \
+		(gf)->error = NULL; \
 }
 /*
  * we check this against gf->open_flags rather than gf->mode,
@@ -544,7 +546,7 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 
 	CHECK_READABLE(gf);
 
-	if (gf->error != NULL)
+	if (gf->error != NULL) /* error or EOF? */
 		return (GFS_PIO_ERROR(gf));
 	if (gf->p < gf->length)
 		return (NULL);
@@ -649,6 +651,9 @@ gfs_pio_seek(GFS_File gf, file_offset_t offset, int whence,
 	e = gfs_pio_check_view_default(gf);
 	if (e != NULL)
 		return (e);
+
+	if (gf->error == GFS_FILE_ERROR_EOF)
+		gf->error = NULL;
 
 	if (whence == SEEK_SET || whence == SEEK_CUR) {
 		file_offset_t tmp_offset = offset;
