@@ -6,7 +6,7 @@
 #define TMPFILE "testfile"
 
 char *
-gfs_pio_pread(GFS_File gf, char *buf, size_t size, off_t off, int *lenp)
+gfs_pio_pread(GFS_File gf, char *buf, size_t size, file_offset_t off, int *lenp)
 {
 	char *e;
 	file_offset_t o;
@@ -20,7 +20,7 @@ gfs_pio_pread(GFS_File gf, char *buf, size_t size, off_t off, int *lenp)
 }
 
 char *
-gfs_pio_pwrite(GFS_File gf, char *buf, size_t size, off_t off, int *lenp)
+gfs_pio_pwrite(GFS_File gf, char *buf, size_t size, file_offset_t off, int *lenp)
 {
 	char *e;
 	file_offset_t o;
