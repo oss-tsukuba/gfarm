@@ -6,13 +6,6 @@ trap 'rm -f $hooktmp; exit $exit_trap' $trap_sigs
 
 ulimit -c 0	# do not dump core
 
-if ! gfhost -M `hostname` >/dev/null
-then
-	# dd issues `Socket operation on non-socket' on non-filesystem node,
-	# this problem is not documented yet
-    	exit $exit_xfail
-fi    
-
 if dd if=$data/1byte of=$hooktmp
 then
 	exit_code=$exit_pass
@@ -24,6 +17,16 @@ elif [ $? -eq 139 ]; then # 139 = 128 + 11 (signal 11 = Segmentation fault)
 fi
 
 rm -f $hooktmp
+
+if [ $exit_code -eq $exit_fail ]; then
+    if gfhost -M `hostname` >/dev/null; then
+	:
+    else
+	# dd issues `Socket operation on non-socket' on non-filesystem node,
+	# this problem is not documented yet
+    	exit $exit_xfail
+    fi
+fi    
 
 case `gfarm.arch.guess` in
 i386-fedora5-linux)
