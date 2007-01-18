@@ -12,8 +12,16 @@ gfs_hook/tool/pax/pax-r.sh
 gfs_hook/tool/touch/touch_time.sh
 	i386-fedora5-linux:
 		documented in README.hook.*, due to futimes(2) hook problem.
+gfs_hook/tool/scp/scp_from_gfarm.sh
+	Linux:
+		documented in README.hook.*, the cause is not investigated yet.
+gfs_hook/tool/scp/scp_to_gfarm.sh
+	Linux:
+		documented in README.hook.*, the cause is not investigated yet.
 gfs_hook/tool/build/configure_make.sh
 	*-*-freebsd*:
 		documented in README.hook.*, the cause is not investigated yet.
 	*-*-solaris*:
 		documented in README.hook.*, due to fsat(2) hook problem.
+	$REGRESS_AUTH == "gsi"
+		documented in README.hook.*
