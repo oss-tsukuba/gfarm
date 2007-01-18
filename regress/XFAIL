@@ -13,7 +13,7 @@ gfs_hook/tool/touch/touch_time.sh
 	i386-fedora5-linux:
 		documented in README.hook.*, due to futimes(2) hook problem.
 gfs_hook/tool/scp/scp_from_gfarm.sh
-	Linux:
+	not Solaris and $REGRESS_AUTH in ["gsi", "gsi_auth"]
 		documented in README.hook.*, the cause is not investigated yet.
 gfs_hook/tool/scp/scp_to_gfarm.sh
 	Linux:
