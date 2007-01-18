@@ -30,7 +30,10 @@
 #include "metadb_access.h"
 #include "metadb_sw.h"
 
-#define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION "23505"
+/* ERROR:  null value in column "...." violates not-null constraint */
+#define GFARM_PGSQL_ERRCODE_NOT_NULL_VIOLATION	"23502"
+
+#define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION	"23505"
 
 /**********************************************************************/
 
@@ -582,6 +585,32 @@ gfarm_pgsql_host_info_set(
 	PQclear(res);
 
 	return (e);
+}
+
+/*
+ * NOTE: the first character of the hostname parameter must be '#'.
+ * this function is only called when `use_hostid_and_pathid'.
+ */
+static int
+removed_host_info_set(char *hostname)
+{
+	int ok;
+	PGresult *res;
+	const char *paramValues[1];
+
+	paramValues[0] = hostname;
+	res = PQexecParams(conn,
+		"INSERT INTO Host (hostname, architecture, ncpu, available) "
+		    "VALUES ($1, 'unknown', 1, FALSE)",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	ok = PQresultStatus(res) == PGRES_COMMAND_OK;
+	PQclear(res);
+	return (ok);
 }
 
 static char *
@@ -1847,24 +1876,15 @@ gfarm_pgsql_file_section_copy_info_get(
 	return (NULL);
 }
 
-static char *
-gfarm_pgsql_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+static PGresult *
+file_section_copy_info_set(char *pathname, char *section, char *hostname)
 {
-	PGresult *res;
 	const char *paramValues[3];
-	char *e;
 
-	if ((e = gfarm_pgsql_check()) != NULL)
-		return (e);
- retry:
 	paramValues[0] = pathname;
 	paramValues[1] = section;
 	paramValues[2] = hostname;
-	res = PQexecParams(conn,
+	return (PQexecParams(conn,
 		!use_hostid_and_pathid ?
 		"INSERT INTO FileSectionCopy (pathname, section, hostname) "
 		     "VALUES ($1, $2, $3)" :
@@ -1878,7 +1898,69 @@ gfarm_pgsql_file_section_copy_info_set(
 		paramValues,
 		NULL, /* param lengths */
 		NULL, /* param formats */
-		0); /* dummy parameter for result format */
+		0) /* dummy parameter for result format */
+	    );
+}
+
+/* this function is only called when `use_hostid_and_pathid' */
+static PGresult *
+file_section_copy_info_set_for_removed_host(
+	char *pathname, char *section, char *hostname)
+{
+	PGresult *res = NULL;
+	char *h = NULL, *n;
+
+	if (hostname[0] == '#') {
+		n = hostname;
+	} else {
+		GFARM_MALLOC_ARRAY(h, strlen(hostname) + 1 + 1);
+		if (h == NULL)
+			return (NULL); /* not enough memory, so... */
+		sprintf(h, "#%s", hostname);
+
+		res = file_section_copy_info_set(pathname, section, h);
+		if (PQresultStatus(res) == PGRES_COMMAND_OK ||
+		    strcmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
+		    GFARM_PGSQL_ERRCODE_NOT_NULL_VIOLATION) != 0) {
+			free(h);
+			return (res);
+		}
+		PQclear(res);
+		res = NULL;
+		n = h;
+	}
+
+	if (removed_host_info_set(n))
+		res = file_section_copy_info_set(pathname, section, n);
+
+	if (h != NULL)
+		free(h);
+	return (res);
+}
+
+static char *
+gfarm_pgsql_file_section_copy_info_set(
+	char *pathname,
+	char *section,
+	char *hostname,
+	struct gfarm_file_section_copy_info *info)
+{
+	PGresult *res;
+	char *e;
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
+	/*
+	 * If this function is called from "gfdump -r", the hostname
+	 * may refer already removed one.  And if the metadata was dump
+	 * from v1 schema, it may have "#" at the top of the hostname.
+	 */
+	if (!use_hostid_and_pathid && hostname[0] == '#')
+		hostname++;
+
+ retry:
+	res = file_section_copy_info_set(pathname, section, hostname);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		if (PQstatus(conn) == CONNECTION_BAD) {
 			PQreset(conn);
@@ -1888,8 +1970,29 @@ gfarm_pgsql_file_section_copy_info_set(
 			}
 		}
 		e = save_pgsql_msg(PQresultErrorMessage(res));
-		if (strcmp(
-			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
+
+		/*
+		 * deal with the case that this function is called from
+		 * "gfrump -r", and this host was removed in the metadata.
+		 */
+		if (use_hostid_and_pathid &&
+		    strcmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
+		    GFARM_PGSQL_ERRCODE_NOT_NULL_VIOLATION) == 0) {
+			PGresult *res2 ;
+
+			/* the column that violated not-null may be "hostid" */
+			res2 = file_section_copy_info_set_for_removed_host(
+			    pathname, section, hostname);
+			if (res2 != NULL) {
+				PQclear(res);
+				res = res2;
+				if (PQresultStatus(res) == PGRES_COMMAND_OK)
+					e = NULL;
+			}
+		}
+
+		if (e != NULL &&
+		    strcmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
 			e = GFARM_ERR_ALREADY_EXISTS;
 		}
