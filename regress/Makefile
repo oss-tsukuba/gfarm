@@ -181,8 +181,8 @@ selfcheck-ldap-gsi_auth-agent_only : all
 			$(TEST_TARGET)
 
 xfail-check:
-	cd $(srcdir) && \
-	if find lib gfs_hook -type f -print | \
+	@cd $(srcdir) && \
+	if find lib gfs_hook -type f -print | fgrep -v .svn | \
 		egrep -v '/.#|/#|~$$' | \
 		awk 'FILENAME=="XFAIL" && /[a-z]/ { documented[$$0]=1 } FILENAME=="-" { if (!documented[$$0]) print $$0 }' XFAIL - | \
 		xargs fgrep -l exit_xfail | tee /dev/tty | grep '^'; \
