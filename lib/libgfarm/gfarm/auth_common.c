@@ -16,7 +16,6 @@
 #include "auth.h"
 
 #define GFARM_AUTH_EXPIRE_DEFAULT	(24 * 60 * 60) /* 1 day */
-#define GFARM_AUTH_SHARED_KEY_BASENAME	".gfarm_shared_key"
 #define PATH_URANDOM			"/dev/urandom"
 
 static int
@@ -144,7 +143,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
 			fclose(fp);
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
+			return (GFARM_AUTH_SHARED_KEY_PRINTNAME
 				": invalid expire field");
 		}
 		expire = ntohl(expire);
@@ -152,15 +151,14 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN)) {
 			fclose(fp);
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
+			return (GFARM_AUTH_SHARED_KEY_PRINTNAME
 				": invalid key field");
 		}
 	}
 	if (fp == NULL) {
 		if (create == GFARM_AUTH_SHARED_KEY_GET) {
 			free(keyfilename);
-			return ("~/" GFARM_AUTH_SHARED_KEY_BASENAME
-				": not exist");
+			return (GFARM_AUTH_SHARED_KEY_PRINTNAME ": not exist");
 		}
 		fp = fopen(keyfilename, "w+");
 		if (fp == NULL) {
