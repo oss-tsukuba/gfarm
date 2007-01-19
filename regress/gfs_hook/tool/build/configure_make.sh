@@ -32,5 +32,12 @@ case `gfarm.arch.guess` in
 	$exit_pass)	exit_code=$exit_xpass;;
 	$exit_fail)	exit_code=$exit_xfail;;
 	esac;;
+*)	# documented in README.hook.*.
+	case $REGRESS_AUTH in
+	gsi)	case $exit_code in
+		$exit_pass)	exit_code=$exit_xpass;;
+		$exit_fail)	exit_code=$exit_xfail;;
+		esac;;
+	esac;;
 esac
 exit $exit_code

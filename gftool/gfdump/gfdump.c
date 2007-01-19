@@ -16,6 +16,51 @@ enum {
 	SECTION_COPY_INFO
 };
 
+static int verbose = 0;
+
+static char *
+print_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
+{
+	fprintf(f, "C:");
+
+	fprintf(f, " %s", info->pathname);
+	fprintf(f, " %s", info->section);
+	fprintf(f, " %s", info->hostname);
+	fputc('\n', f);
+	return (NULL);
+}
+
+static char *
+print_file_section_info(struct gfarm_file_section_info *info, FILE *f)
+{
+	fprintf(f, "S:");
+
+	fprintf(f, " %s", info->pathname);
+	fprintf(f, " %s", info->section);
+	fprintf(f, " %" PR_FILE_OFFSET, info->filesize);
+	fprintf(f, " %s %s", info->checksum_type, info->checksum);
+	fputc('\n', f);
+	return (NULL);
+}
+
+static char *
+print_path_info(struct gfarm_path_info *info, FILE *f)
+{
+	struct gfs_stat *st = &info->status;
+
+	fprintf(f, "P:");
+
+	fprintf(f, " %s", info->pathname);
+	fprintf(f, " %d", st->st_mode);
+	fprintf(f, " %s %s", st->st_user, st->st_group);
+	fprintf(f, " %d %d", st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec);
+	fprintf(f, " %d %d", st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec);
+	fprintf(f, " %d %d", st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
+	fprintf(f, " %d", st->st_nsections);
+	fputc('\n', f);
+	return (NULL);
+}
+
 static void
 dump_int32(gfarm_int32_t i, FILE *f)
 {
@@ -82,6 +127,9 @@ dump_offset_t(file_offset_t o, FILE *f)
 static char *
 dump_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
 {
+	if (verbose)
+		print_file_section_copy_info(info, stderr);
+
 	fputc(SECTION_COPY_INFO, f);
 
 	dump_string(info->pathname, f);
@@ -93,6 +141,9 @@ dump_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
 static char *
 dump_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
+	if (verbose)
+		print_file_section_info(info, stderr);
+
 	fputc(SECTION_INFO, f);
 
 	dump_string(info->pathname, f);
@@ -108,6 +159,9 @@ dump_path_info(struct gfarm_path_info *info, FILE *f)
 {
 	struct gfs_stat *st = &info->status;
 
+	if (verbose)
+		print_path_info(info, stderr);
+
 	fputc(PATH_INFO, f);
 
 	dump_string(info->pathname, f);
@@ -122,57 +176,20 @@ dump_path_info(struct gfarm_path_info *info, FILE *f)
 }
 
 static char *
-print_file_section_copy_info(struct gfarm_file_section_copy_info *info, FILE *f)
-{
-	fprintf(f, "C:");
-
-	fprintf(f, " %s", info->pathname);
-	fprintf(f, " %s", info->section);
-	fprintf(f, " %s", info->hostname);
-	fputc('\n', f);
-	return (NULL);
-}
-
-static char *
-print_file_section_info(struct gfarm_file_section_info *info, FILE *f)
-{
-	fprintf(f, "S:");
-
-	fprintf(f, " %s", info->pathname);
-	fprintf(f, " %s", info->section);
-	fprintf(f, " %" PR_FILE_OFFSET, info->filesize);
-	fprintf(f, " %s %s", info->checksum_type, info->checksum);
-	fputc('\n', f);
-	return (NULL);
-}
-
-static char *
-print_path_info(struct gfarm_path_info *info, FILE *f)
-{
-	struct gfs_stat *st = &info->status;
-
-	fprintf(f, "P:");
-
-	fprintf(f, " %s", info->pathname);
-	fprintf(f, " %d", st->st_mode);
-	fprintf(f, " %s %s", st->st_user, st->st_group);
-	fprintf(f, " %d %d", st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec);
-	fprintf(f, " %d %d", st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec);
-	fprintf(f, " %d %d", st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
-	fprintf(f, " %d", st->st_nsections);
-	fputc('\n', f);
-	return (NULL);
-}
-
-static char *
 restore_path_info(struct gfarm_path_info *info, FILE *f)
 {
+	if (verbose)
+		print_path_info(info, stdout);
+
 	return (gfarm_metadb_path_info_set(info->pathname, info));
 }
 
 static char *
 restore_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
+	if (verbose)
+		print_file_section_info(info, stdout);
+
 	return (gfarm_metadb_file_section_info_set(
 			info->pathname, info->section, info));
 }
@@ -181,6 +198,9 @@ static char *
 restore_file_section_copy_info(
 	struct gfarm_file_section_copy_info *info, FILE *f)
 {
+	if (verbose)
+		print_file_section_copy_info(info, stdout);
+
 	return (gfarm_metadb_file_section_copy_info_set(
 			info->pathname, info->section, info->hostname, info));
 }
@@ -487,8 +507,8 @@ restore_all(const char *filename, struct gfdump_ops *ops)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: gfdump -d [ -f filename ]\n");
-	fprintf(stderr, "       gfdump -r [ -f filename ]\n");
+	fprintf(stderr, "usage: gfdump -d [ -f filename ] [-v]\n");
+	fprintf(stderr, "       gfdump -r [ -f filename ] [-v]\n");
 	fflush(stderr);
 	exit(1);
 }
@@ -500,7 +520,7 @@ main(int argc, char *argv[])
 	static enum { unknown, dump_mode, restore_mode } mode;
 	struct gfdump_ops *ops = NULL;
 
-	while ((c = getopt(argc, argv, "df:rt")) != -1) {
+	while ((c = getopt(argc, argv, "df:rtv")) != -1) {
 		switch (c) {
 		case 'd':
 			mode = dump_mode;
@@ -515,6 +535,9 @@ main(int argc, char *argv[])
 			break;
 		case 't':
 			ops = &print_ops;
+			break;
+		case 'v':
+			verbose = 1;
 			break;
 		default:
 			usage();
@@ -534,6 +557,8 @@ main(int argc, char *argv[])
 		e = dump_all(filename, ops);
 		break;
 	case restore_mode:
+		if (verbose)
+			setvbuf(stdout, NULL, _IOLBF, 0);
 		e = restore_all(filename, ops);
 		break;
 	default:
