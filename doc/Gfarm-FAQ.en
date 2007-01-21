@@ -111,11 +111,12 @@ Table of Contents:
 	(1) Is a valid entry included in the grid-mapfile on file
 	system nodes and filesystem metadata node?
 
-	Note that the subject names displayed for certain certificates have
-	been changed between Globus Toolkit version 2 (GT2) and version
-	3 (GT3).  The 'Email' field in GT2 has become 'emailAddress' in GT3.
-	The 'USERID' field in GT2 has become 'UID' in GT3.  For
-	compatibility, you need to register both entries in
+	Note that the subject names displayed for certain certificates
+	have been changed between Globus Toolkit version 2 (GT2) and
+	version 3 (GT3).  The 'Email' field in GT2 has become
+	'emailAddress' in GT3 or later.
+	The 'USERID' field in GT2 has become 'UID' in GT3 or later.
+	For compatibility, you need to register both entries in
 	grid-mapfile.
 
 	(2) Are permissions of user certificate

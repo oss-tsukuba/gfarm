@@ -113,11 +113,12 @@ Science and Technology (AIST).  All Rights Reserved.
 	リッドマップファイル(/etc/grid-security/grid-mapfile)
 	に正しいエントリが登録されていますか？
 
-	特に，Globus Toolkit version 2 (GT2) と version 3 (GT3) では，
-	サブジェクト名の Email フィールド，USERID フィールドはフィール
-	ド名が変わるので注意が必要です．それぞれ GT3 では emailAddress，
-	UID となります．両方のライブラリを利用する場合は，互換性のため
-	に，両方のエントリを grid-mapfile に登録する必要があります．
+	特に，Globus Toolkit version 2 (GT2) と version 3 (GT3) 以降では，
+	サブジェクト名に違いがあるので必要です．GT2 の Email フィールド
+	は，GT3 以降では emailAddress となります．また GT2 の USERID
+	フィールドは GT3 以降では UID となります．両方のライブラリを利用
+	する場合は，互換性のために，両方のエントリを grid-mapfile に登録
+	する必要があります．
 
 	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
         (/etc/grid-security/hostcert.pem)のパミッションが 0644 になって
