@@ -35,6 +35,9 @@
 
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION	"23505"
 
+/* FATAL:  terminating connection due to administrator command\n
+   could not receive data from server: Bad file number */
+#define GFARM_PGSQL_ERRCODE_ADMIN_SHUTDOWN	"57P01"
 /**********************************************************************/
 
 static PGconn *conn = NULL;
@@ -56,6 +59,34 @@ save_pgsql_msg(char *s)
 	if (len > 0 && msg[len - 1] == '\n')
 		msg[len - 1] = '\0';
 	return(msg);
+}
+
+/*
+ * remark:
+ * 1. This function returns NULL if the caller should retry, not NULL if it
+ *    should  end because of unrecoverable error.
+ * 2. This function calls PQclear() if the caller retries, otherwise does not.
+ */
+static char *
+can_I_retry(PGresult *res, int *fatal_cntp)
+{
+	char *e;
+
+	if (PQstatus(conn) == CONNECTION_BAD && (*fatal_cntp)++ <= 1) {
+		PQreset(conn);
+		if (PQstatus(conn) == CONNECTION_OK) {
+			PQclear(res);
+			return (NULL);
+		}
+	} else if (PQresultStatus(res) == PGRES_FATAL_ERROR &&
+		   strcmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
+			GFARM_PGSQL_ERRCODE_ADMIN_SHUTDOWN) == 0 &&
+		   (*fatal_cntp)++ == 0) {
+		PQclear(res);
+		return (NULL);
+	}
+	e = save_pgsql_msg(PQresultErrorMessage(res));
+	return (e);
 }
 
 static char *
@@ -290,19 +321,15 @@ host_info_get(
 {
 	PGresult *res, *resi, *resc;
 	char *e = NULL;
+	int fatal_cnt = 0;
 
  retry:
 	res = PQexec(conn, "BEGIN");
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		goto end;
 	}
@@ -386,6 +413,7 @@ hostaliases_remove(const char *hostname)
 	PGresult *res;
 	const char *paramValues[1];
 	char *e = NULL;
+	int fatal_cnt = 0;
 
  retry:
 	paramValues[0] = hostname;
@@ -399,14 +427,9 @@ hostaliases_remove(const char *hostname)
 		0); /* dummy parameter for result format */
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	}
 	PQclear(res);
 	return (e);
@@ -478,6 +501,7 @@ gfarm_pgsql_host_info_set(
 	const char *paramValues[4];
 	char *e;
 	char ncpu[GFARM_INT32STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -485,14 +509,9 @@ gfarm_pgsql_host_info_set(
  retry:
 	res = PQexec(conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		goto end;
 	}
@@ -622,6 +641,7 @@ gfarm_pgsql_host_info_replace(
 	const char *paramValues[3];
 	char *e;
 	char ncpu[GFARM_INT32STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -629,14 +649,9 @@ gfarm_pgsql_host_info_replace(
  retry:
 	res = PQexec(conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		goto end;
 	}
@@ -687,6 +702,7 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 	PGresult *res;
 	const char *paramValues[2];
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -704,14 +720,9 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 			0);  /* dummy parameter for result format */
 
 		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-			if (PQstatus(conn) == CONNECTION_BAD) {
-				PQreset(conn);
-				if (PQstatus(conn) == CONNECTION_OK) {
-					PQclear(res);
-					goto retry;
-				}
-			}
-			e = save_pgsql_msg(PQresultErrorMessage(res));
+			e = can_I_retry(res, &fatal_cnt);
+			if (e == NULL)
+				goto retry;
 		} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 		PQclear(res);
@@ -729,14 +740,9 @@ gfarm_pgsql_host_info_remove(const char *hostname)
 
 		res = PQexec(conn, "BEGIN");
 		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-			if (PQstatus(conn) == CONNECTION_BAD) {
-				PQreset(conn);
-				if (PQstatus(conn) == CONNECTION_OK) {
-					PQclear(res);
-					goto retry;
-				}
-			}
-			e = save_pgsql_msg(PQresultErrorMessage(res));
+			e = can_I_retry(res, &fatal_cnt);
+			if (e == NULL)
+				goto retry;
 			PQclear(res);
 			goto end;
 		}
@@ -801,18 +807,14 @@ host_info_get_all(
 	char *e = NULL;
 	int i, startrow;
 	struct gfarm_host_info *ip;
+	int fatal_cnt = 0;
 
  retry:
 	res = PQexec(conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		goto end;
 	}
@@ -1057,6 +1059,7 @@ gfarm_pgsql_path_info_get(
 	const char *paramValues[1];
 	PGresult *res;
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1072,16 +1075,12 @@ gfarm_pgsql_path_info_get(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
-		PQclear(res);
-		return (e);
+		e = can_I_retry(res, &fatal_cnt);
+		if (e != NULL) {
+			PQclear(res);
+			return (e);
+		}	
+		goto retry;
 	}
 	if (PQntuples(res) == 0) {
 		PQclear(res);
@@ -1109,6 +1108,7 @@ gfarm_pgsql_path_info_set(
 	char ctimesec[GFARM_INT64STRLEN + 1];
 	char ctimensec[GFARM_INT32STRLEN + 1];
 	char nsections[GFARM_INT32STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1147,14 +1147,9 @@ gfarm_pgsql_path_info_set(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		if (strcmp(
 			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
@@ -1182,6 +1177,7 @@ gfarm_pgsql_path_info_replace(
 	char ctimesec[GFARM_INT64STRLEN + 1];
 	char ctimensec[GFARM_INT32STRLEN + 1];
 	char nsections[GFARM_INT32STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1220,14 +1216,9 @@ gfarm_pgsql_path_info_replace(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
@@ -1240,6 +1231,7 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 	PGresult *res;
 	const char *paramValues[1];
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1255,14 +1247,9 @@ gfarm_pgsql_path_info_remove(const char *pathname)
 		NULL, /* param formats */
 		0);  /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
@@ -1414,15 +1401,8 @@ gfarm_pgsql_path_info_get_all_foreach(
 	res = PQexec(conn,
 		"COPY Path to STDOUT BINARY");
 	if (PQresultStatus(res) != PGRES_COPY_OUT) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		return (e);
 	}
@@ -1560,6 +1540,7 @@ gfarm_pgsql_file_section_info_get(
 	const char *paramValues[2];
 	PGresult *res;
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1582,14 +1563,9 @@ gfarm_pgsql_file_section_info_get(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		return (e);
 	}
@@ -1613,6 +1589,7 @@ gfarm_pgsql_file_section_info_set(
 	const char *paramValues[5];
 	char *e;
 	char filesize[GFARM_INT64STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1640,14 +1617,9 @@ gfarm_pgsql_file_section_info_set(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		if (strcmp(
 			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
 			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
@@ -1668,6 +1640,7 @@ gfarm_pgsql_file_section_info_replace(
 	const char *paramValues[5];
 	char *e;
 	char filesize[GFARM_INT64STRLEN + 1];
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1695,14 +1668,9 @@ gfarm_pgsql_file_section_info_replace(
 		NULL, /* param formats */
 		0); /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
@@ -1717,6 +1685,7 @@ gfarm_pgsql_file_section_info_remove(
 	PGresult *res;
 	const char *paramValues[2];
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1736,14 +1705,9 @@ gfarm_pgsql_file_section_info_remove(
 		NULL, /* param formats */
 		0);  /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
@@ -1761,6 +1725,7 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 	char *e;
 	struct gfarm_file_section_info *ip;
 	int i;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1778,14 +1743,9 @@ gfarm_pgsql_file_section_info_get_all_by_file(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		return (e);
 	}
@@ -1831,6 +1791,7 @@ gfarm_pgsql_file_section_copy_info_get(
 	const char *paramValues[3];
 	PGresult *res;
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1855,14 +1816,9 @@ gfarm_pgsql_file_section_copy_info_get(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		return (e);
 	}
@@ -1947,6 +1903,7 @@ gfarm_pgsql_file_section_copy_info_set(
 {
 	PGresult *res;
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -1962,14 +1919,9 @@ gfarm_pgsql_file_section_copy_info_set(
  retry:
 	res = file_section_copy_info_set(pathname, section, hostname);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 
 		/*
 		 * deal with the case that this function is called from
@@ -2010,6 +1962,7 @@ gfarm_pgsql_file_section_copy_info_remove(
 	PGresult *res;
 	const char *paramValues[3];
 	char *e;
+	int fatal_cnt = 0;
 
 	if ((e = gfarm_pgsql_check()) != NULL)
 		return (e);
@@ -2032,14 +1985,9 @@ gfarm_pgsql_file_section_copy_info_remove(
 		NULL, /* param formats */
 		0);  /* dummy parameter for result format */
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	PQclear(res);
@@ -2058,6 +2006,7 @@ file_section_copy_info_get_all(
 	char *e;
 	struct gfarm_file_section_copy_info *ip;
 	int i;
+	int fatal_cnt = 0;
 
  retry:
 	res = PQexecParams(conn,
@@ -2069,14 +2018,9 @@ file_section_copy_info_get_all(
 		NULL, /* param formats */
 		1); /* ask for binary results */
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		if (PQstatus(conn) == CONNECTION_BAD) {
-			PQreset(conn);
-			if (PQstatus(conn) == CONNECTION_OK) {
-				PQclear(res);
-				goto retry;
-			}
-		}
-		e = save_pgsql_msg(PQresultErrorMessage(res));
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
 		PQclear(res);
 		return (e);
 	}
