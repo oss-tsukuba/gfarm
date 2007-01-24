@@ -1505,6 +1505,29 @@ CLASS="PARAMETER"
 CLASS="LITERALLAYOUT"
 >	log_level&nbsp;debug</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>record_atime</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>¤³¤Î¥ª¥×¥·¥ç¥ó¤¬ enable ¤Î¾ì¹ç¡¢ºÇ½ª¥¢¥¯¥»¥¹»þ¹ï¤ò¤­¤Á¤ó¤Èµ­Ï¿¤·¤Þ¤¹¡£
+disable ¤Î¾ì¹ç¤Ë¤ÏºÇ½ª¥¢¥¯¥»¥¹»þ¹ï¤Îµ­Ï¿¤ÏÉÔÀµ³Î¤Ë¤Ê¤ê¤Þ¤¹¤¬¡¢
+¥á¥¿¥Ç¡¼¥¿¹¹¿·¤ÎÉé²Ù¤¬²¼¤¬¤ê¡¢À­Ç½¤¬¸þ¾å¤¹¤ë¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£
+disable ÀßÄê¤Ï¡¢ÄÌ¾ï¤Î¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¤Ë¤ª¤±¤ë "noatime" ¥ª¥×¥·¥ç¥ó¤Ë
+ÁêÅö¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	record_atime&nbsp;disable</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1557,7 +1580,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
-		  &#60;log_level_statement&#62;<br>
+		  &#60;log_level_statement&#62;&nbsp;|<br>
+		  &#60;record_atime_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1613,6 +1637,7 @@ CLASS="LITERALLAYOUT"
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;record_atime_statement&#62;&nbsp;::=&nbsp;"record_atime"&nbsp;&#60;validity&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "07 November 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "24 January 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -692,6 +692,19 @@ gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
 .nf
 	log_level debug
 .fi
+.TP
+\fBrecord_atime \fI有効性\fB\fR
+このオプションが enable の場合、最終アクセス時刻をきちんと記録します。
+disable の場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable 設定は、通常のファイルシステムにおける "noatime" オプションに
+相当します。
+
+例:
+
+.nf
+	record_atime disable
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -735,7 +748,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
-		\~\~<log_level_statement>
+		\~\~<log_level_statement> |
+		\~\~<record_atime_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -791,6 +805,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
+	<record_atime_statement> ::= "record_atime" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

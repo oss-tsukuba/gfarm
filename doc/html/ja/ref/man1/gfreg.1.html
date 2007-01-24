@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfreg</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -218,9 +217,10 @@ localfile を指定できます．ファイルの複製が作成されるファイルシス
 フラグメント番号を必ず指定する必要があります．Gfarm-URL がディレクトリ
 の場合は localfile を複数指定することが可能です．ファイルの複製が作成
 されるファイルシステムノードは自動的にCPU負荷により選ばれますが，オプ
-ション -h により明示的に指定することもできます．ただ，ファイルシステム
-ノードで gfreg を実行した場合は常に自ノードが選ばれてしまうため，ファ
-イルを分散させて配置したい場合はオプション -h を指定する必要があります．</P
+ション -h, -H, -D のいずれかによりにより明示的に指定することもできます．
+ただ，ファイルシステムノードで gfreg を実行した場合は常に自ノードが
+選ばれてしまうため，ファイルを分散させて配置したい場合はオプション -h,
+-H, -D のいずれかを指定する必要があります．</P
 ><P
 >第4の形式の場合，directory, program, localfile を gfarm-URL に
 登録します．directory にサブディレクトリやファイルが含まれていれば再帰
@@ -248,18 +248,18 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-f</CODE
 ></DT
 ><DD
 ><P
 >gfarm-URL がファイルとして存在していても，強制的に上書きします．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P

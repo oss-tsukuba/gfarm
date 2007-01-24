@@ -3,21 +3,22 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREG" "1" "05 April 2006" "Gfarm" ""
+.TH "GFREG" "1" "24 January 2007" "Gfarm" ""
+
 .SH NAME
 gfreg \- Gfarm ファイルシステムへのファイル，ファイルフラグメント，ディレクトリの登録
 .SH SYNOPSIS
 
-\fBgfreg\fR [ \fB-p \fR ] [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] \fB\fIprogram\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR [ \fB-p \fR ] [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] \fB\fIprogram\fB\fR \fB\&...\fR \fB\fIgfarm-URL\fB\fR
 
 
-\fBgfreg\fR [ \fB-i \fR ] [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] \fB\fIlocalfile\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR [ \fB-i \fR ] [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] \fB\fIlocalfile\fB\fR \fB\&...\fR \fB\fIgfarm-URL\fB\fR
 
 
-\fBgfreg\fR \fB-N \fIフラグメント総数\fB\fR \fB-I \fIフラグメント番号\fB\fR [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] \fB\fIlocalfile\fB\fR \fB...\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR \fB-N \fIフラグメント総数\fB\fR \fB-I \fIフラグメント番号\fB\fR [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] \fB\fIlocalfile\fB\fR \fB\&...\fR \fB\fIgfarm-URL\fB\fR
 
 
-\fBgfreg\fR \fB-r\fR [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB\fIdirectory\fB\fR | \fB\fIprogram\fB\fR | \fB\fIlocalfile\fB\fR ] \fB...\fR \fB\fIgfarm-URL\fB\fR
+\fBgfreg\fR \fB-r\fR [ \fB-h \fIファイルシステムノード\fB\fR | \fB-H \fIホストファイル名\fB\fR | \fB-D \fIドメイン名\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB\fIdirectory\fB\fR | \fB\fIprogram\fB\fR | \fB\fIlocalfile\fB\fR ] \fB\&...\fR \fB\fIgfarm-URL\fB\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -46,9 +47,10 @@ localfile を指定できます．ファイルの複製が作成されるファイルシス
 フラグメント番号を必ず指定する必要があります．Gfarm-URL がディレクトリ
 の場合は localfile を複数指定することが可能です．ファイルの複製が作成
 されるファイルシステムノードは自動的にCPU負荷により選ばれますが，オプ
-ション -h により明示的に指定することもできます．ただ，ファイルシステム
-ノードで gfreg を実行した場合は常に自ノードが選ばれてしまうため，ファ
-イルを分散させて配置したい場合はオプション -h を指定する必要があります．
+ション -h, -H, -D のいずれかによりにより明示的に指定することもできます．
+ただ，ファイルシステムノードで gfreg を実行した場合は常に自ノードが
+選ばれてしまうため，ファイルを分散させて配置したい場合はオプション -h,
+-H, -D のいずれかを指定する必要があります．
 .PP
 第4の形式の場合，directory, program, localfile を gfarm-URL に
 登録します．directory にサブディレクトリやファイルが含まれていれば再帰
