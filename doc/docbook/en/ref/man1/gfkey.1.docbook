@@ -35,6 +35,7 @@ connecting to gfsd and/or gfmd.</para>
 necessary to use this command.  If not, it is necessary to distribute
 a session key  created with
 the -c or -f option to every filesystem node, in advance.
+</para>
 
 </refsect1>
 
