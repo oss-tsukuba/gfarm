@@ -2,6 +2,9 @@
 
 . ./regress.conf
 
+# "__testfile" is mistakenly created in current directroy,
+# because gfs_hook doesn't work correctly.
+
 trap 'rm -rf $hooktmp; rm -f __testfile; exit $exit_trap' $trap_sigs
 
 if mkdir $hooktmp &&
