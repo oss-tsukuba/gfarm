@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfreg</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREG.1"
+></A
+>gfreg</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfreg&nbsp;--&nbsp;Gfarm ファイルシステムへのファイル，ファイルフラグメント，ディレクトリの登録</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+> [-p ] [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>] [-a <TT
+CLASS="REPLACEABLE"
+><I
+>architecture</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>program</I
+></TT
+>   ...   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+> [-i ] [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>   ...   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+>  -N <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント総数</I
+></TT
+>   -I <TT
+CLASS="REPLACEABLE"
+><I
+>フラグメント番号</I
+></TT
+>  [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>   ...   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfreg</B
+>  -r  [-h <TT
+CLASS="REPLACEABLE"
+><I
+>ファイルシステムノード</I
+></TT
+> | -H <TT
+CLASS="REPLACEABLE"
+><I
+>ホストファイル名</I
+></TT
+> | -D <TT
+CLASS="REPLACEABLE"
+><I
+>ドメイン名</I
+></TT
+>] [-a <TT
+CLASS="REPLACEABLE"
+><I
+>architecture</I
+></TT
+>] [<TT
+CLASS="REPLACEABLE"
+><I
+>directory</I
+></TT
+> | <TT
+CLASS="REPLACEABLE"
+><I
+>program</I
+></TT
+> | <TT
+CLASS="REPLACEABLE"
+><I
+>localfile</I
+></TT
+>]  ...   <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>第1の形式の場合，引数 program に指定したローカルディスク上の
+プログラム・ファイルを，gfarm-URL に登録します．gfarm-URL がディレクト
+リの場合は，複数の program を指定することができます．これ以降，
+gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
+使えるようになります．オプション -p がない場合には，実行が許可されてい
+る program のみ指定できます．ある場合には，実行が許可されていないファイ
+ルも指定できますが，このファイル名を gfrun および gfmpirun_p4 で指定し
+ても，実行できません．オプション -a でプログラムの動作するアーキテ
+クチャを指定しなかった場合，あるいはオプション -h で登録するファイルシ
+ステムノードを指定しなかった場合には，gfreg コマンドを実行したホストの
+アーキテクチャと同じであると仮定します．ただし，そのホストが Gfarm メ
+タサーバに登録されている必要があります．</P
+><P
+>第2の形式の場合，一つ以上の複数のlocalfileをGfarmファイルとして
+登録します．オプション -i がない場合には，実行が許可されていない
+localfile のみを指定できます．ある場合には，実行許可とは無関係に
+localfile を指定できます．ファイルの複製が作成されるファイルシス
+テムノードは自動的にCPU負荷により選ばれますが，オプション -h, -H, -D
+のいずれかにより選択されるファイルシステムノードを制限することができます．</P
+><P
+>第3の形式の場合，localfileをGfarmファイルのフラグメントとして登
+録します．オプション -N と -I で，総フラグメント数と，このlocalfileの
+フラグメント番号を必ず指定する必要があります．Gfarm-URL がディレクトリ
+の場合は localfile を複数指定することが可能です．ファイルの複製が作成
+されるファイルシステムノードは自動的にCPU負荷により選ばれますが，オプ
+ション -h, -H, -D のいずれかによりにより明示的に指定することもできます．
+ただ，ファイルシステムノードで gfreg を実行した場合は常に自ノードが
+選ばれてしまうため，ファイルを分散させて配置したい場合はオプション -h,
+-H, -D のいずれかを指定する必要があります．</P
+><P
+>第4の形式の場合，directory, program, localfile を gfarm-URL に
+登録します．directory にサブディレクトリやファイルが含まれていれば再帰
+的に登録します．ディレクトリに含まれている，あるいは，引数 localfile
+で指定されている非実行ファイルは，一つのフラグメントからなる Gfarmファ
+イルとして登録されます．
+Gfarm-URL がディレクトリとして存在する場合は，複数の directory,
+program, localfile を Gfarm-URL ディレクトリに登録します．
+他の形式と異なり，これらをいっしょに引数として指定することもできます．
+gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
+一つを登録できます．
+ファイルが登録されるファイルシステムノードとオプション -a -h について
+は，上記の第1の形式での説明を参照しください．</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+></DT
+><DD
+><P
+>gfarm-URL がファイルとして存在していても，強制的に上書きします．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します．</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
