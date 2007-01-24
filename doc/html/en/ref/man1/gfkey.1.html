@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfkey</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFKEY.1"
+></A
+>gfkey</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfkey&nbsp;--&nbsp;management of gfsd session keys</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfkey</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfkey</B
+> manages the session key file,
+<TT
+CLASS="FILENAME"
+>$HOME/.gfarm_shared_key</TT
+>,
+that is used for user authentication in a trusted environment when
+connecting to gfsd and/or gfmd.</P
+><P
+>When the home directory is shared among filesystem nodes, it is not
+necessary to use this command.  If not, it is necessary to distribute
+a session key  created with
+the -c or -f option to every filesystem node, in advance.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-c</CODE
+></DT
+><DD
+><P
+>Creates a new session key when there is no valid session key.  If
+a valid session key already exists, no operation is performed.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+></DT
+><DD
+><P
+>Forces the creation of a new session key, even if a valid session
+key already exists.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>period</I
+></TT
+></DT
+><DD
+><P
+>Specifies the term of validity in seconds.  This option has to be
+used with the -c or -f option.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-l</CODE
+></DT
+><DD
+><P
+>Displays the current key.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-e</CODE
+></DT
+><DD
+><P
+>Displays the expiration date of the current key.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>$HOME/.gfarm_shared_key</TT
+></DT
+><DD
+><P
+>a file for a session key</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
