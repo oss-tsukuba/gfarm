@@ -4,7 +4,6 @@
  * This program is based on test.c from FUSE project.
  *     http://fuse.cvs.sourceforge.net/fuse/fuse/test/
  */
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

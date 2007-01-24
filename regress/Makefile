@@ -77,7 +77,8 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfs_pio_sync \
 	lib/libgfarm/gfarm/gfs_pio_datasync \
 	lib/libgfarm/gfarm/fork-term-init \
-	lib/libgfarm/gfarm/seek-write
+	lib/libgfarm/gfarm/seek-write \
+	gfs_hook/lib/fsystest	
 
 check test: all
 	@$(REGRESS_SH) -i
