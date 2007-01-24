@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-trap 'rm -rf $hooktmp; exit $exit_trap' $trap_sigs
+trap 'rm -rf $hooktmp; rm -f __testfile; exit $exit_trap' $trap_sigs
 
 if mkdir $hooktmp &&
     $testbin/fsystest $hooktmp | diff -c - $testbase/index.expected
@@ -11,4 +11,5 @@ then
 fi
 
 rm -rf $hooktmp
+rm -f __testfile
 exit $exit_code
