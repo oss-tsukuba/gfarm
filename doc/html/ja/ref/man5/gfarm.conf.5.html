@@ -1,0 +1,1772 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfarm.conf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM.CONF.5"
+></A
+>gfarm.conf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm.conf&nbsp;--&nbsp;Gfarm └▀─ъе╒ебедеы</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfarm.conf е╒ебедеыд╧бвgfarm е╫еэе░ещерд╬└▀─ъе╒ебедеыд╟д╣бг
+е╡б╝е╨б╝бже╫еэе╗е╣д╟двды gfmd д╚ gfsd д╧бве╟е╒ейеые╚д╟д╧бв
+д│д╬ %%SYSCONFDIR%%/gfarm.conf дЄ└▀─ъе╒ебедеыд╚д╖д╞╗▓╛╚д╖д▐д╣бг
+д╩дкбв└▀─ъ╞т═╞дм╞╔д▀╣■д▐дьдыд╬д╧╡п╞░╗■д└д▒д╩д╬д╟бв
+└▀─ъ╞т═╞дЄ╩╤╣╣д╖д┐╛ь╣чбве╡б╝е╨б╝дЄ║╞╡п╞░д╣ды╔м═╫дмдвдъд▐д╣бг</P
+><P
+>еве╫еъе▒б╝е╖ечеєе╫еэе░ещерд╧бв┤─╢н╩╤┐Ї GFARM_CONFIG_FILE д╟
+╗╪─ъд╖д┐е╒ебедеыд╚бв%%SYSCONFDIR%%/gfarm.conf дЄбв└▀─ъе╒ебедеы
+д╚д╖д╞╗▓╛╚д╖д▐д╣бгд│д╬╞єд─д╬е╒ебедеыд╟д╧бв┤─╢н╩╤┐Ї GFARM_CONFIG_FILE д╟
+╗╪─ъд╖д┐е╒ебедеыд╬└▀─ъд╬╩¤дм═е└шд╡дьд▐д╣бг
+д╔д┴дщд╬└▀─ъе╒ебедеыдтбв╞▒░ьд╬╩╕╦бд╟╡н╜╥д╖д▐д╣бг
+┤─╢н╩╤┐Ї GFARM_CONFIG_FILE дм└▀─ъд╡дьд╞д╩дд╛ь╣чбв┬хдядъд╦
+ецб╝е╢б╝д╬е█б╝ере╟егеьепе╚еъд╦двды .gfarmrc е╒ебедеыдЄ╗╚═╤д╖д▐д╣бг&#13;</P
+><P
+>gfarm.conf д╧бв░ь╣╘д╦░ь╩╕д╬╖┴╝░д╟└▀─ъд╖д▐д╣бг
+д┐д└д╖бв╣╘╦Ўд╦╩╕╗· ``\'' дЄ╡н╜╥д╣дыд│д╚д╦дшд├д╞бв╣╘дЄ╖╤┬│д╡д╗дыд│д╚дм
+д╟днд▐д╣бгд▐д┐бв╩╕╗· ``#'' длдщ╣╘╦Ўд▐д╟д╧бве│есеєе╚д╚д╖д╞░╖дядьбв╠╡╗ы
+д╡дьд▐д╣бг</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="HOSTSPECIFICATION"
+></A
+><H2
+>е█е╣е╚╗╪─ъ</H2
+><P
+>░·┐Їд╚д╖д╞бв<TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+> дЄ╡н╜╥д╟днды╩╕дмдддпд─длдвдъд▐д╣дмбв
+д│д╬╛ь╣чбве█е╣е╚╗╪─ъд╦д╧бв▓╝╡нд╬ддд║дьдлдЄ╡н╜╥д╟днд▐д╣бг</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>III.JJJ.KKK.LLL</I
+></TT
+></DT
+><DD
+><P
+>"." д╟╢ш└┌дщдьд┐ 0б┴255 д▐д╟д╬┐Ї╗· 4 д─д╟бвIP еве╔еье╣дЄ╗╪─ъд╖д▐д╣бг</P
+></DD
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>III.JJJ.KKK.LLL</I
+></TT
+>/<TT
+CLASS="PARAMETER"
+><I
+>MM</I
+></TT
+></DT
+><DD
+><P
+>IP еве╔еье╣д╚бв"/" д╟╢ш└┌дщдьд┐ 0б┴31 д▐д╟д╬┐Ї╗·д╟бве═е├е╚еяб╝епдЄ
+╗╪─ъд╖д▐д╣бг"/" ░╩╣▀д╬┐Ї╗·д╧ netmask д╬е╙е├е╚─╣д╟д╣бг</P
+></DD
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>domain.name</I
+></TT
+></DT
+><DD
+><P
+>е█е╣е╚╠╛дЄе╔еседеє╠╛д╟╗╪─ъд╖д▐д╣бг</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>.</I
+><TT
+CLASS="PARAMETER"
+><I
+>domain.name</I
+></TT
+></DT
+><DD
+><P
+>е╔еседеє╠╛д╬└ш╞мдм "." д╟д╧д╕д▐ды╛ь╣чбвд│д╬е╔еседеє╠╛д╦╜ъ┬░д╣ды┴┤д╞д╬
+е█е╣е╚дЄ░╒╠гд╖д▐д╣бг</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>*</I
+></DT
+><DD
+><P
+>"*" д╚╡н╜╥д╡дьд╞ддды╛ь╣чбв┴┤д╞д╬е█е╣е╚дЄ░╒╠гд╖д▐д╣бг</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>LISTENER</I
+></DT
+><DD
+><P
+>sockopt ╩╕д╬╛ь╣чбв┴┤д╞┬ч╩╕╗·д╟ "LISTENER" д╚╡н╜╥д╣дыд╚бвд╡дьд╞ддды╛ь╣чбв┴┤д╞д╬е█е╣е╚дЄ░╒╠гд╖д▐д╣бг</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="STATEMENT"
+></A
+><H2
+>╩╕</H2
+><P
+>╩╕д╦д╧бв▓╝╡нд╬╝я╬рдмдвдъд▐д╣бг</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfsdе╣е╫б╝еыбже╟егеьепе╚еъ</I
+></TT
+></DT
+><DD
+><P
+>gfsdдмбвgfarmе╒ебедеыд╬╝┬┬╬дЄ╩▌╗¤д╣дые╟егеьепе╚еъ╠╛дЄ
+╗╪─ъд╖д▐д╣бг
+е╒ебедеые╖е╣е╞ере╬б╝е╔д╟д╧д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool&nbsp;/var/spool/gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>IPеве╔еье╣</I
+></TT
+></DT
+><DD
+><P
+>gfsdдмTCPдкдшд╙UDPд╬═╫╡сдЄ╝їд▒╔╒д▒дыIPеве╔еье╣дЄ╗╪─ъд╖д▐д╣бг
+╛╩╬м╗■д╧бвд╜д╬е█е╣е╚д╬┴┤д╞д╬IPеве╔еье╣д╟╝їд▒╔╒д▒д▐д╣бг
+д│д╬еке╫е╖ечеєд╧бв░ьд─д╬е╬б╝е╔д╟╩г┐Їд╬е╣е╫б╝еыдЄ─є╢бд╣ды╛ь╣чд╦бв
+д╜дьд╛дьд╬е╣е╫б╝еыд┤д╚д╦бв╩╠б╣д╬IPеве╔еье╣дЄ╗╚д├д╞gfsdдЄ╡п╞░д╣ды
+д┐дсд╦═╤ддд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_address&nbsp;192.168.121.1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfsdе▌б╝е╚╚╓╣ц</I
+></TT
+></DT
+><DD
+><P
+>gfsdдм═°═╤д╣дыTCPдкдшд╙UDPе▌б╝е╚д╬╚╓╣цдЄ╗╪─ъд╖д▐д╣бг
+╛╩╬м╗■д╬е╟е╒ейеые╚бже▌б╝е╚╚╓╣цд╧600╚╓д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_serverport&nbsp;600</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бвgfsdдм═╤ддды╛┌╠└╜ёд╬╝я╬рдЄ╗╪─ъд╖д▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг</P
+><P
+>е╡б╝е╨┬жд╟д│д╬╗╪─ъдЄ╛╩╬мд╖д┐╛ь╣чбве╡б╝е╨дЄ root ╕в╕┬д╟╡п╞░д╖д┐╛ь╣чд╧
+е█е╣е╚╛┌╠└╜ёдЄ═╤ддд▐д╣бгд▐д┐е╡б╝е╨дЄ░ь╚╠ецб╝е╢╕в╕┬д╟╡п╞░д╖д┐╛ь╣чд╧
+ецб╝е╢╛┌╠└╜ёдЄ═╤ддд▐д╣бгд│д╬д┐дсбве╡б╝е╙е╣╛┌╠└╜ёдЄ═°═╤д╣ды╛ь╣чдЄ
+╜№ддд╞бве╡б╝е╨┬жд╟д╧д│д╬╗╪─ъдЄ╣╘дж╔м═╫д╧─╠╛яд╩ддд╟д╖дчджбг</P
+><P
+>епещедевеєе╚┬жд╟д│д╬╗╪─ъдЄ╛╩╬мд╖д┐╛ь╣чбве╡б╝е╨дме█е╣е╚╛┌╠└╜ёдЄ═°═╤д╖д╞ддды
+д╚▓╛─ъд╖д╞е╡б╝е╨╟з╛┌дЄ╣╘ддд▐д╣бгд│д╬д┐дсе╡б╝е╨дЄепещедевеєе╚д╚╞▒д╕ецб╝е╢
+╕в╕┬д╟╡п╞░д╖д╞ддды╛ь╣чбвепещедевеєе╚┬жд╟д╧бв▓╝╡нд╬░ь╣╘дЄ└▀─ъд╖д╞
+дкдп╔м═╫дмдвдъд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;self</P
+><P
+>╗╪─ъ▓─╟╜д╩ <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+> д╚д╖д╞д╧бв
+б╓<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>б╫бв
+б╓<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>б╫бвб╓<SPAN
+CLASS="TOKEN"
+>user</SPAN
+>б╫бв
+б╓<SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+>б╫дмдвдъбв
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> дкдшд╙
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> д╚┴╚д▀╣чдяд╗д╞
+▓╝╡нд╬дшджд╦═╤ддд▐д╣бг</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>self</SPAN
+></DT
+><DD
+><P
+>д╜д╬ецб╝е╢дм╕╜║▀╜ъ╗¤д╖д╞дддыецб╝е╢╛┌╠└╜ёдЄ═╤дддыд│д╚дЄ╝ид╖д▐д╣бг
+д│д╬╗╪─ъдЄ═°═╤д╣ды║▌д╦д╧бв
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> дкдшд╙
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> д╬
+╗╪─ъдЄ╣╘д├д╞д╧ддд▒д▐д╗дєбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host</SPAN
+></DT
+><DD
+><P
+>е█е╣е╚╛┌╠└╜ёдвдыддд╧е╡б╝е╙е╣╛┌╠└╜ёдЄ═╤дддыд│д╚дЄ╝ид╖д▐д╣бг
+е╡б╝е╙е╣╛┌╠└╜ёдЄ═╤ддды╛ь╣чбвд╜д╬е╡б╝е╙е╣д╬╠╛┴░дЄ
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> д╟╗╪─ъд╖д▐д╣бг
+е╡б╝е╙е╣╠╛д╦б╓<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>б╫дЄ╗╪─ъд╖д┐╛ь╣чбв
+е╒ебедеы ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/hostcert.pem</TT
+>'' д╦
+двдые█е╣е╚╛┌╠└╜ёдЄ═╤ддд▐д╣бг
+д╜дь░╩│░д╬е╡б╝е╙е╣╠╛дЄ╗╪─ъд╖д┐╛ь╣чбв
+е╒ебедеы ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/е╡б╝е╙е╣/е╡б╝е╙е╣cert.pem</TT
+>''
+д╦двдые╡б╝е╙е╣╛┌╠└╜ёдЄ═╤ддд▐д╣бг
+е╡б╝е╙е╣╠╛дЄ╛╩╬мд╖д┐╛ь╣чбвб╓<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>б╫дм╗╪─ъд╡дьд┐д╚д▀д╩д╖д▐д╣бг
+е█е╣е╚╛┌╠└╜ёдкдшд╙е╡б╝е╙е╣╛┌╠└╜ёд╬╛ь╣чбв╛┌╠└╜ёд╬ Common Name ═єд╬д▀дЄ
+╚ц│╙д╖д▐д╣бгCommon Name д╧бвб╓CN=е╡б╝е╙е╣╠╛/е█е╣е╚╠╛б╫д╬╖┴╝░д╟двды╔м═╫дм
+двдъд▐д╣бгд▐д┐бве█е╣е╚╠╛д╧бв<B
+CLASS="COMMAND"
+>gfhost</B
+> е│е▐еєе╔д╟╗╪─ъд╖д┐
+└╡╝░╠╛д╚└╡│╬д╦░ь├╫д╖д╞ддды╔м═╫дмдвдъд▐д╣бге█е╣е╚╩╠╠╛д╧╡Ўд╡дьд▐д╗дєбг</P
+><P
+>д│дьд╧бвGSSAPI (RFC2743/RFC2744) д╬ GSS_C_NT_HOSTBASED_SERVICE д╦
+┬╨▒■д╣ды╡б╟╜д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;host<br>
+	spool_server_cred_service&nbsp;host</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>user</SPAN
+></DT
+><DD
+><P
+>ецб╝е╢╛┌╠└╜ёдЄ═╤дддыд│д╚дЄ╝ид╖д▐д╣бг
+ецб╝е╢д╬евележеєе╚╠╛дЄ <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> д╟╗╪─ъд╖д▐д╣бг
+евележеєе╚╠╛дЄ╛╩╬мд╖д┐╛ь╣чд╦д╧бвд╜д╬е│е▐еєе╔дЄ╡п╞░д╖д┐ецб╝е╢╠╛дм╗╚дядьд▐д╣бг
+д│д╬╗╪─ъдЄ═°═╤д╣ды║▌д╦д╧бв<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> д╬
+╗╪─ъдЄ╣╘д├д╞д╧ддд▒д▐д╗дєбг</P
+><P
+>╕╜╗■┼└д╟д╧бвд│д╬╡б╟╜д╬╝┬┴їд╦бвдддпд─длд╬╝┬┴ї╛хд╬└й╕┬╗Ў╣рдмдвдъд▐д╣бг
+д▐д║бвецб╝е╢╠╛д╧еэб╝елеые█е╣е╚д╬евележеєе╚╠╛д╚д╖д╞▓Є╝сд╡дьд▐д╣дмбв
+д│дьд╧е╨е░д╟двдъбвgfarm д╬е░еэб╝е╨еыецб╝е╢╠╛д╦╩╤╣╣д╡дьды═╜─ъд╟д╣бг
+ецб╝е╢╠╛д╚╛┌╠└╜ёд╬ Distinguished Name д╬┬╨▒■дЄд╚дыд┐дсбв
+``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' дЄ═╤ддд▐д╣бг
+д│д╬д┐дсбвд│д╬е╒ебедеыдм┬╕║▀д╖д╩длд├д┐дъбвдвдыддд╧д│д╬е╒ебедеыд╦┼╨╧┐
+д╡дьд╞д╩ддецб╝е╢д╧бвд│д╬╡б╟╜дЄ═╤дддыд│д╚дмд╟днд▐д╗дєбг
+д╡дщд╦бвд│д╬е╒ебедеы├цд╟бв╞▒░ьд╬ецб╝е╢евележеєе╚д╦┬╨д╖д╞2д─░╩╛хд╬
+Distinguished Name дм└▀─ъд╡дьд╞ддд┐╛ь╣чбв2д─╠╛░╩╣▀д╬└▀─ъд╧╠╡╗ыд╡дьд╞
+д╖д▐ддд▐д╣бг</P
+><P
+>д│дьд╧бвGSSAPI (RFC2743/RFC2744) д╬ GSS_C_NT_USER_NAME д╦┬╨▒■д╣ды╡б╟╜д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;user<br>
+	spool_server_cred_name&nbsp;guest</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+></DT
+><DD
+><P
+>е╡б╝е╨д╬ X.509 Distinguished Name дЄ <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> д╟
+─╛└▄╗╪─ъд╖д▐д╣бг
+д│д╬╗╪─ъдЄ═°═╤д╣ды║▌д╦д╧бв<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> д╬
+╗╪─ъдЄ╣╘д├д╞д╧ддд▒д▐д╗дєбг</P
+><P
+>д│дьд╧бвGSSAPI (RFC2743/RFC2744) д╟ Name Type д╚д╖д╞ GSS_C_NO_OID дЄ
+╗╪─ъд╖д┐╛ь╣чд╦┬╨▒■д╣ды╡б╟╜д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;mechanism-specific<br>
+	spool_server_cred_name&nbsp;"/O=Grid/O=Globus/OU=example.com/CN=John&nbsp;Smith"</P
+></DD
+></DL
+></DIV
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бв<SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╚д╖д╞
+б╓<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>б╫дЄ╗╪─ъд╖д╞ддды╛ь╣чд╦бвgfsd дм═╤дддые╡б╝е╙е╣╛┌╠└╜ёд╬
+╝я╬рдЄ╗╪─ъд╖д▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг
+╛▄д╖дпд╧ <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╬╣рдЄ╗▓╛╚д╖д╞дпд└д╡ддбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бв<SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╟╗╪─ъд╖д┐├═д╦
+▒■д╕д╞бвgfsd дм═╤ддды╛┌╠└╜ёд╬└▀─ъдЄ╣╘ддд▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг
+╛▄д╖дпд╧ <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╬╣рдЄ╗▓╛╚д╖д╞дпд└д╡ддбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfmdе█е╣е╚╠╛</I
+></TT
+></DT
+><DD
+><P
+>gfmdдм╞░║юд╖д╞дддые█е╣е╚╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfmdе▌б╝е╚╚╓╣ц</I
+></TT
+></DT
+><DD
+><P
+>gfmdдм═°═╤д╣дыTCPе▌б╝е╚д╬╚╓╣цдЄ╗╪─ъд╖д▐д╣бг
+╛╩╬м╗■д╬е╟е╒ейеые╚бже▌б╝е╚╚╓╣цд╧601╚╓д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_serverport&nbsp;601</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бвgfmd дм═╤ддды╛┌╠└╜ёд╬╝я╬рдЄ╗╪─ъд╖д▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг
+└▀─ъд╬░╒╠гд╦д─ддд╞д╧  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╬╣рдЄ
+╗▓╛╚д╖д╞дпд└д╡ддбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бв<SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> д╚д╖д╞
+б╓<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>б╫дЄ╗╪─ъд╖д╞ддды╛ь╣чд╦бвgfmd дм═╤дддые╡б╝е╙е╣╛┌╠└╜ёд╬
+╝я╬рдЄ╗╪─ъд╖д▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг
+└▀─ъд╬░╒╠гд╦д─ддд╞д╧  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╬╣рдЄ
+╗▓╛╚д╖д╞дпд└д╡ддбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>GSI╟з╛┌д╦дкддд╞бв<SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> д╟╗╪─ъд╖д┐├═д╦
+▒■д╕д╞бвgfmd дм═╤ддды╛┌╠└╜ёд╬└▀─ъдЄ╣╘ддд▐д╣бг
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> ═°═╤╗■д╦д╧бвд│д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг
+└▀─ъд╬░╒╠гд╦д─ддд╞д╧  <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> д╬╣рдЄ
+╗▓╛╚д╖д╞дпд└д╡ддбг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>agent_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agentе█е╣е╚╠╛</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agentдм╞░║юд╖д╞дддые█е╣е╚╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>agent_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agentе▌б╝е╚╚╓╣ц</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agentдм═°═╤д╣дыTCPе▌б╝е╚д╬╚╓╣цдЄ╗╪─ъд╖д▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>agent_serverhost</SPAN
+>дЄ╗╪─ъд╣ды╛ь╣чд╦д╧бв
+д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverport&nbsp;603</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAPе╡б╝е╨б╝бже█е╣е╚╠╛</I
+></TT
+></DT
+><DD
+><P
+>есе┐е╟б╝е┐д╬е╨е├епеиеєе╔бже╟б╝е┐е┘б╝е╣д╚д╖д╞LDAPе╡б╝е╨дЄ┴к┬Єд╣ды╛ь╣чбв
+LDAP е╡б╝е╨б╝дм╞░║юд╖д╞дддые█е╣е╚╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAPе╡б╝е╨б╝бже▌б╝е╚╚╓╣ц</I
+></TT
+></DT
+><DD
+><P
+>LDAP е╡б╝е╨б╝дм═°═╤д╣дыTCPе▌б╝е╚д╬╚╓╣цдЄ╗╪─ъд╖д▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>дЄ╗╪─ъд╣ды╛ь╣чд╦д╧бв
+д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_serverport&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_base_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_base_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>LDAP е╟б╝е┐е┘б╝е╣д╟╩▌╗¤д╣дые╟б╝е┐д╬енб╝д╬║мд╚д╩дые╬б╝е╔д╬
+╠╛╛╬бвbase distinguished name дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>дЄ╗╪─ъд╣ды╛ь╣чд╦д╧бв
+д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_bind_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>LDAP е╟б╝е┐е┘б╝е╣д╦└▄┬│д╣ды║▌д╬╟з╛┌д╦═╤ддды╠╛╛╬дЄбвdistinguished name д╟╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>LDAP е╟б╝е┐е┘б╝е╣д╦└▄┬│д╣ды║▌д╬╟з╛┌е╤е╣еяб╝е╔дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_password&nbsp;"secret-ldap-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQLе╡б╝е╨б╝бже█е╣е╚╠╛</I
+></TT
+></DT
+><DD
+><P
+>есе┐е╟б╝е┐д╬е╨е├епеиеєе╔бже╟б╝е┐е┘б╝е╣д╚д╖д╞
+PostgreSQL е╡б╝е╨дЄ┴к┬Єд╣ды╛ь╣чбв
+PostgreSQL е╡б╝е╨б╝дм╞░║юд╖д╞дддые█е╣е╚╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverhost&nbsp;postgresql.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQLе╡б╝е╨б╝бже▌б╝е╚╚╓╣ц</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL е╡б╝е╨б╝дм═°═╤д╣дыTCPе▌б╝е╚д╬╚╓╣цдЄ╗╪─ъд╖д▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>дЄ╗╪─ъд╣ды╛ь╣чд╦д╧бв
+д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverport&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>dbname</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL е╟б╝е┐е┘б╝е╣╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>дЄ╗╪─ъд╣ды╛ь╣чд╦д╧бв
+д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_dbname&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL е╟б╝е┐е┘б╝е╣д╦└▄┬│д╣дые╟б╝е┐е┘б╝е╣┤╔═¤▓╝д╬ецб╝е╢╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_user&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL е╟б╝е┐е┘б╝е╣д╦└▄┬│д╣дые╟б╝е┐е┘б╝е╣┤╔═¤▓╝д╬ецб╝е╢д╬е╤е╣еяб╝е╔дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_password&nbsp;"secret-postgresql-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>connection_info</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL е╟б╝е┐е┘б╝е╣д╦└▄┬│д╣дыд╚днд╬└▄┬│еке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_conninfo&nbsp;"sslmode=require&nbsp;connect_timeout=30"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>auth</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>═н╕·└н</I
+></TT
+>а <TT
+CLASS="PARAMETER"
+><I
+>╟з╛┌╩¤╦б</I
+></TT
+>а <TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+></DT
+><DD
+><P
+>д│д╬╩╕д╧бв┬ш3░·┐Їд╟╗╪─ъд╖д┐е█е╣е╚д╚д╬─╠┐од╦═╤ддды╟з╛┌╩¤╦бдЄ└▀─ъд╖д▐д╣бг</P
+><P
+>┬ш1░·┐Їд╬<TT
+CLASS="PARAMETER"
+><I
+>═н╕·└н</I
+></TT
+>╔Їд╦д╧бв<SPAN
+CLASS="TOKEN"
+>enable</SPAN
+> д╩ддд╖ <SPAN
+CLASS="TOKEN"
+>disable</SPAN
+>
+енб╝еяб╝е╔дЄ╗╪─ъд╖д▐д╣бг
+┬ш2░·┐Їд╬<TT
+CLASS="PARAMETER"
+><I
+>╟з╛┌╩¤╦б</I
+></TT
+>╔Їд╦д╧бв<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>бв
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> д╩ддд╖ <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>
+енб╝еяб╝е╔дЄ╗╪─ъд╖д▐д╣бг
+┬ш3░·┐Їд╦д╧бв<TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+>дЄ╡н╜╥д╖д▐д╣бг</P
+><P
+>д│д╬╩╕д╧╩г┐Ї╗╪─ъ▓─╟╜д╟д╣бг│╞╟з╛┌╩¤╦бд┤д╚д╦бв└ш╞мдлдщ╜чд╦е█е╣е╚╗╪─ъд╦
+┼м╣чд╣дыдлд╔дждл─┤д┘бв═н╕·д╟двдыд╚д╬╗╪─ъд╦┼м╣чд╖д┐╛ь╣чбвд╜д╬╟з╛┌╩¤╦бдм
+═°═╤╕ї╩фд╦д╩дъд▐д╣бг═н╕·д╟двдыд╚д╬╗╪─ъд╦┼м╣чд╖д╩дд╛ь╣чдфбвдвдыддд╧
+═н╕·д╟двдыд╚д╬╗╪─ъд╦┼м╣чд╣дыдшдъдт┴░д╦╠╡╕·д╟двдыд╚д╬╗╪─ъд╦┼м╣чд╖д┐
+╛ь╣чбвд╜д╬╟з╛┌╩¤╦бд╧бв╕ї╩фд╦д╩дъд▐д╗дєбг</P
+><P
+>д│д╬╗╪─ъд╧бве╡б╝е╨б╝┬жд╚епещедевеєе╚┬жд╬╬╛╩¤д╟▓Є╝сд╡дьбв
+┴╨╩¤д╚дтд╟═н╕·д╦д╩д├д╞ддды╟з╛┌╩¤╦бд╬д▀дм═╤дддщдьд▐д╣бг</P
+><P
+>╟з╛┌╩¤╦бдм░█д╩дыдтд╬д╦┤╪д╖д╞д╧бв╗╪─ъд╬╜ч╜°д╧░╒╠гдмдвдъд▐д╗дєбг
+╩г┐Їд╬╟з╛┌╩¤╦бдм╕ї╩фд╚д╩д├д┐╛ь╣чбв<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>бв
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>бв<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> ╟з╛┌д╬╜ч╜°д╟╗юд▀д▐д╣бг</P
+><P
+>Gfarm д╬е│еєе╤едеы╗■д╦ globus д╚д╬еъеєепдЄ╗╪─ъд╖д╩длд├д┐╛ь╣чбв
+GSI д╧═°═╤д╟днд▐д╗дєбгд│д╬╛ь╣чбв<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> дкдшд╙
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> ╟з╛┌д╬╗╪─ъд╧├▒д╦╠╡╗ыд╡дьд▐д╣бг</P
+><P
+>д│д╬└▀─ъд╧╔м┐▄д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
+	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
+	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
+	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+><P
+>д│д╬╬уд╟д╧бве█е╣е╚ 192.168.0.100 д╚ 192.168.0.101 д╬ 2 д─д╬е█е╣е╚дЄ
+╜№ддд┐ 192.168.0.0/24 е═е├е╚еяб╝епд╦┬░д╣е█е╣е╚д╦д╧ 
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> д╚ <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> д╬╬╛╩¤дЄбв
+10.0.0.0/8 е═е├е╚еяб╝епд╦┬░д╣е█е╣е╚д╦д╧ <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> дкдшд╙
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> д╬╬╛╩¤дЄбв
+д╜дь░╩│░д╬┴┤д╞д╬е█е╣е╚д╦д╧ <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> ╟з╛┌д╬д▀дЄ╗юд▀д▐д╣бг
+д╣д╩дяд┴бве█е╣е╚ 192.168.0.100 д╚ 192.168.0.101 д╬ 2 д─д╬е█е╣е╚д╧бв
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>╟з╛┌д╬д▀дЄ╗юд▀дыд│д╚д╦д╩дъд▐д╣бг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>netparam</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>е╤ещесб╝е┐</I
+></TT
+><I
+CLASS="EMPHASIS"
+>=</I
+><TT
+CLASS="PARAMETER"
+><I
+>├═</I
+></TT
+> <I
+CLASS="EMPHASIS"
+>[</I
+><TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+><I
+CLASS="EMPHASIS"
+>]</I
+></DT
+><DD
+><P
+>е═е├е╚еяб╝еп─╠┐од╦═╤ддды│╞╝яе╤ещесб╝е┐дЄ╗╪─ъд╖д▐д╣бг
+е╤ещесб╝е┐д╦д╧▓╝╡нд╬дтд╬дмдвдъд▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>parallel_streams</SPAN
+>бгд│д╬е╤ещесб╝е┐д╧бв─╠┐од╦═°═╤д╣ды
+TCPд╬е╣е╚еъб╝ер┐ЇдЄ╗╪─ъд╖д▐д╣бг╛╩╬м╗■д╧1д╟д╣бг
+д│д╬е╤ещесб╝е┐д╧бвTCP д╬─╠┐оежегеєе╔еждм╜╜╩мд╩е╡еде║
+д▐д╟│лдлд╩дддшджд╩▒є╩¤д╚д╬─╠┐од╬║▌д╦бв═н╕·д╩д│д╚дмдвдъд▐д╣бг
+╕╜║▀бвд│д╬е╤ещесб╝е┐д╧е╒ебедеыд╬╩г└╜╡б╟╜д╟д╬д▀═н╕·д╟д╣бг
+╕╜║▀д╬╝┬┴їд╟д╧бвgfrep(1) е│е▐еєе╔дЄ╡п╞░д╖д┐е█е╣е╚д╬ецб╝е╢б╝└▀─ъе╒ебедеыд╬
+╞т═╞дм═╤дддщдьд▐д╣бге█е╣е╚╗╪─ъд╚╚ц│╙д╡дьдыд╬д╧бв╩г└╜└шд╬е█е╣е╚д╟д╧д╩дпбв
+╩г└╜╕╡д╬е█е╣е╚д╟д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>stripe_unit_size</SPAN
+>бгд│д╬е╤ещесб╝е┐д╧бв─╠┐од╦╩г┐Їд╬ TCP е╣е╚еъб╝ер
+дЄ═°═╤д╣ды╛ь╣чд╦бвд╔д╬дшджд╦┼╛┴ў╞т═╞дЄ╩м│фд╣дыдлдЄ╗╪─ъд╖д▐д╣бг
+дтд╖д│д╬╗╪─ъдмд╩дд╛ь╣чбв┼╛┴ў╞т═╞дЄ├▒д╦ <SPAN
+CLASS="TOKEN"
+>parallel_streams</SPAN
+> ╕─д╦
+╩м│фд╖д╞┴ў┐од╖д▐д╣бг
+д│дьд╦┬╨д╖бв<SPAN
+CLASS="TOKEN"
+>stripe_unit_size</SPAN
+> дЄ╗╪─ъд╖д┐╛ь╣чд╧бвд│д╬е╤ещесб╝е┐
+д╟╗╪─ъд╖д┐е╨еде╚┐ЇдЄ├▒░╠д╚д╖д╞е╣е╚ещеде╘еєе░д╖д╞┴ў┐од╖д▐д╣бг
+─╠╛ябв├▒д╩ды╩м│фдшдъдте╣е╚ещеде╘еєе░д╬╩¤дм└н╟╜┼кд╦═н═°д╟д╣бг</P
+><P
+>д│д╬е╤ещесб╝е┐д╧бв╛х╡нд╬ <SPAN
+CLASS="TOKEN"
+>parallel_streams</SPAN
+> д╚д╖д╞ 1 дшдъ┬чднд╩├═
+дЄ╗╪─ъд╖д┐─╠┐од╬д▀д╟═н╕·д╟д╣бг
+╕╜║▀бвд│д╬е╤ещесб╝е┐д╧е╒ебедеыд╬╩г└╜╡б╟╜д╟д╬д▀═н╕·д╟д╣бг
+╕╜║▀д╬╝┬┴їд╟д╧бвgfrep(1) е│е▐еєе╔дЄ╡п╞░д╖д┐е█е╣е╚д╬ецб╝е╢б╝└▀─ъе╒ебедеыд╬
+╞т═╞дм═╤дддщдьд▐д╣бге█е╣е╚╗╪─ъд╚╚ц│╙д╡дьдыд╬д╧бв╩г└╜└шд╬е█е╣е╚д╟д╧д╩дпбв
+╩г└╜╕╡д╬е█е╣е╚д╟д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>rate_limit</SPAN
+>бге│е═епе╖ечеє1╦▄двд┐дъд╬─╠┐ое╨еєе╔╔¤дЄ└й╕┬д╣ды
+╝┬╕│┼кд╩╡б╟╜д╟д╣бг╗╪─ъд╣ды├═д╬├▒░╠д╧ bps (bit per second) д╟д╣бг
+╕╜║▀бвд│д╬е╤ещесб╝е┐д╧е╒ебедеыд╬╩г└╜╡б╟╜д╟д╬д▀═н╕·д╟д╣бг
+╕╜║▀д╬╝┬┴їд╟д╧бв╩г└╜╕╡д╬е█е╣е╚╛хд╬ gfsd д╬└▀─ъе╒ебедеыдм═╤дддщдьд▐д╣бг
+е█е╣е╚╗╪─ъд╚╚ц│╙д╡дьдыд╬д╧бв╩г└╜└шд╬е█е╣е╚д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	netparam&nbsp;parallel_streams=2	10.0.0.0/8<br>
+	netparam&nbsp;stripe_unit_size=8192	10.0.0.0/8<br>
+	netparam&nbsp;rate_limit=750000	192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>sockopt </SPAN
+><TT
+CLASS="PARAMETER"
+><I
+>еке╫е╖ечеє</I
+></TT
+><I
+CLASS="EMPHASIS"
+>[=</I
+><TT
+CLASS="PARAMETER"
+><I
+>├═</I
+></TT
+><I
+CLASS="EMPHASIS"
+>] [<SPAN
+CLASS="TOKEN"
+>LISTENER</SPAN
+> | <TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+>]</I
+></DT
+><DD
+><P
+>─╠┐о socket(2) д╦┬╨д╖д╞бвsetsockopt(2) е╖е╣е╞ере│б╝еыдЄ╗╚д├д╞
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>┬ш2░·┐Їд╦┴┤д╞┬ч╩╕╗·д╟ <SPAN
+CLASS="TOKEN"
+>LISTENER</SPAN
+> дЄ╗╪─ъд╖д┐╛ь╣чбв
+е╡б╝е╨б╝┬ж (├х╕╞┬ж) д╬е╜е▒е├е╚д╦╗╪─ъд╣дыеке╫е╖ечеєд╦д╩дъд▐д╣бг
+д│д╬╛ь╣чбв─╠┐од╣ды┴ъ╝ъд╦┤╪╖╕д╩дпбв
+░ь╬зд╦е╜е▒е├е╚бжеке╫е╖ечеєдм└▀─ъд╡дьд▐д╣бг</P
+><P
+>┬ш2░·┐Їд╦е█е╣е╚╗╪─ъдЄ╡н╜╥д╖д┐╛ь╣чбвепещедевеєе╚┬ж (╚п╕╞┬ж) д╬
+е╜е▒е├е╚д╦╗╪─ъд╣дыеке╫е╖ечеєд╦д╩дъд▐д╣бгд│д╬╛ь╣чбв─╠┐од╣ды┴ъ╝ъ╦шд╦
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╩╤дидыд│д╚дмд╟днд▐д╣бг
+д╩дкбв┬ш2░·┐Їд╦ "*" д╚╡н╜╥д╣дыд╚бвепещедевеєе╚┬ж (╚п╕╞┬ж) д╬┴┤д╞д╬
+е█е╣е╚дЄ░╒╠гд╣дыд│д╚д╦д╩дъбве╡б╝е╨б╝┬ж (├х╕╞┬ж) д╦д╧┼м═╤д╡дьд▐д╗дєбг</P
+><P
+>┬ш2░·┐ЇдЄ╛╩╬мд╖д┐╛ь╣чбве╡б╝е╨б╝┬жд╚епещедевеєе╚┬жд╬╬╛╩¤д╟бв
+┴┤д╞д╬─╠┐о┴ъ╝ъд╦┬╨д╖д╞╞▒д╕е╜е▒е├е╚бжеке╫е╖ечеєдЄ└▀─ъд╖д▐д╣бг</P
+><P
+>╗╪─ъ▓─╟╜д╩е╜е▒е├е╚бжеке╫е╖ечеєд╦д╧╝бд╬дтд╬дмдвдъд▐д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>debug</SPAN
+>бгsetsockopt(2) е╖е╣е╞ере│б╝еыд╟бв<CODE
+CLASS="CONSTANT"
+>SO_DEBUG</CODE
+> е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг├═дЄ╡н╜╥д╣ды╔м═╫д╧двдъд▐д╗дєбг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>keepalive</SPAN
+>бгsetsockopt(2) е╖е╣е╞ере│б╝еыд╟бв<CODE
+CLASS="CONSTANT"
+>SO_KEEPALIVE</CODE
+>
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг├═дЄ╡н╜╥д╣ды╔м═╫д╧двдъд▐д╗дєбг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>sndbuf</SPAN
+>бгsetsockopt(2) е╖е╣е╞ере│б╝еыд╟бв<CODE
+CLASS="CONSTANT"
+>SO_SNDBUF</CODE
+>
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг├═д╬╗╪─ъдм╔м═╫д╟д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>rcvbuf</SPAN
+>бгsetsockopt(2) е╖е╣е╞ере│б╝еыд╟бв<CODE
+CLASS="CONSTANT"
+>SO_RCVBUF</CODE
+>
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг├═д╬╗╪─ъдм╔м═╫д╟д╣бг</P
+><P
+><SPAN
+CLASS="TOKEN"
+>tcp_nodelay</SPAN
+>бгsetsockopt(2) е╖е╣е╞ере│б╝еыд╟бв<CODE
+CLASS="CONSTANT"
+>TCP_NODELAY</CODE
+>
+е╜е▒е├е╚бжеке╫е╖ечеєдЄ╗╪─ъд╖д▐д╣бг├═дЄ╡н╜╥д╣ды╔м═╫д╧двдъд▐д╗дєбг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	sockopt&nbsp;tcp_nodelay&nbsp;192.168.0.0/24<br>
+	sockopt&nbsp;sndbuf=1048576&nbsp;10.0.0.0/8<br>
+	sockopt&nbsp;sndbuf=1048576&nbsp;LISTENER<br>
+	sockopt&nbsp;rcvbuf=1048576&nbsp;10.0.0.0/8<br>
+	sockopt&nbsp;rcvbuf=1048576&nbsp;LISTENER</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>address_use</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+></DT
+><DD
+><P
+>е╒ебедеые╖е╣е╞ере╬б╝е╔д╦╩г┐Їд╬IPеве╔еье╣дмдвды╛ь╣чбвд╜д╬├цд╬д╔д╬
+IPеве╔еье╣дЄ─╠┐од╦═╤дддыдлдЄ╗╪─ъд╖д▐д╣бг
+д│д╬╩╕д╟╗╪─ъд╖д┐еве╔еье╣д╦┼м╣чд╣дыIPеве╔еье╣дЄ═е└шд╖д╞╗╚═╤д╖д▐д╣дмбв
+┼м╣чд╣дыеве╔еье╣дмд╩дд╛ь╣чд╟дтбв─╠┐одЄ╣╘ддд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	address_use&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_architecture</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>евб╝ене╞епе┴еу╠╛</I
+></TT
+>а <TT
+CLASS="PARAMETER"
+><I
+>е█е╣е╚╗╪─ъ</I
+></TT
+></DT
+><DD
+><P
+>епещедевеєе╚е╬б╝е╔дм╝┬╣╘е╒ебедеыд╦евепе╗е╣д╣ды╛ь╣чд╦┴к┬Єд╣ды
+е╟е╒ейеые╚д╬евб╝ене╞епе┴еу╠╛дЄ╗╪─ъд╖д▐д╣бг
+д│д╬╗╪─ъд╧бвепещедевеєе╚е╬б╝е╔д╦д─ддд╞д╬д▀║ю═╤д╖д▐д╣бг
+е╒ебедеые╖е╣е╞ере╬б╝е╔д╦д─ддд╞д╧бвесе┐е╟б╝е┐е╡б╝е╨д╦┼╨╧┐д╡дьд╞ддды
+евб╝ене╞епе┴еу╠╛дм╗╚дядьд▐д╣бг</P
+><P
+>д│дьд╦┬╨д╖бв┤─╢н╩╤┐Ї GFARM_ARCHITECTURE дЄ╗╚джд╚бвепещедевеєе╚е╬б╝е╔д╦┬╨д╖д╞дт
+е╒ебедеые╖е╣е╞ере╬б╝е╔д╦д─ддд╞дтбв╝┬╣╘е╒ебедеыд╬е╟е╒ейеые╚д╬евб╝ене╞епе┴еу╠╛дЄ
+╗╪─ъд╣дыд│д╚дмд╟днд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-1.example.com<br>
+	client_architecture&nbsp;i386-redhat8.0-linux&nbsp;linux-2.example.com<br>
+	client_architecture&nbsp;sparc-sun-solaris8&nbsp;solaris-1.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>local_user_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ецб╝е╢е▐е├е╫е╒ебедеые╤е╣╠╛</I
+></TT
+></DT
+><DD
+><P
+>е░еэб╝е╨еыецб╝е╢╠╛д╚еэб╝елеыецб╝е╢╠╛д╬┬╨▒■┤╪╖╕дЄ╡н╜╥д╖д┐
+ецб╝е╢е▐е├е╫е╒ебедеые╤е╣╠╛дЄ╗╪─ъд╖д▐д╣бг</P
+><P
+>д│д╬└▀─ъд╧╔м┐▄д╟д╧двдъд▐д╗дєдмбв╞▒░ьецб╝е╢б╝д╦┬╨д╖д╞бв
+░█д╩дыевележеєе╚╠╛дЄ═┐дид╞дддые╒ебедеые╖е╣е╞ере╬б╝е╔дмдвды╛ь╣чд╦бв
+д│д╬е╒ебедеыд╟ецб╝е╢б╝╠╛д╬╩╤┤╣дЄ╣╘джд│д╚дмд╟днд▐д╣бгд╜д╬дшджд╩╛ь╣чбв
+д│д╬е╒ебедеыд╟бв│╞е╬б╝е╔д╬еэб╝елеыд╩ецб╝е╢╠╛д╦┬╨д╖д╞бв├▒░ьд╬
+е░еэб╝е╨еыецб╝е╢╠╛дЄ─ъ╡┴д╖д╞дфдыд│д╚д╦дшд├д╞бвUNIX ┼кд╩евележеєе╚╠╛дм
+░█д╩д├д╞дт╞▒░ьецб╝е╢д╚д╖д╞gfarm дЄ═°═╤д╣дыд│д╚дмд╟днд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_user_map&nbsp;/etc/gfarm/gfarm-usermap</P
+><P
+>ецб╝е╢б╝е▐е├е╫е╒ебедеыд╧бве░еэб╝е╨еыецб╝е╢б╝╠╛д╚
+еэб╝елеыецб╝е╢б╝╠╛дЄбв╢ї╟Єд╟╢ш└┌д├д╞│╞╣╘д╦╡н╜╥д╖д▐д╣бг</P
+><P
+>ецб╝е╢е▐е├е╫е╒ебедеыд╬╞т═╞╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	foobar&nbsp;foo<br>
+	quux&nbsp;baz</P
+><P
+>д│д╬╬уд╬1╣╘╠▄д╬╗╪─ъд╟д╧бвд│д╬е╬б╝е╔д╬еэб╝елеыецб╝е╢╠╛ foo д╦
+┬╨д╖д╞е░еэб╝е╨еыецб╝е╢╠╛ foobar дм─ъ╡┴д╡дьд╞ддд▐д╣бг</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>dir_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>╔├┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╟егеьепе╚еъенеуе├е╖ехд╬
+═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бге╟е╒ейеые╚д╧86400╔├д╣д╩дяд┴░ь╞№д╟д╣бг
+д│д╬├═д╧бв┤─╢н╩╤┐Ї GFARM_DIRCACHE_TIMEOUT д╟дт╗╪─ъд╣дыд│д╚дмд╟днд▐д╣бг
+└▀─ъе╒ебедеыд╚┤─╢н╩╤┐Їд╟д╧бв┤─╢н╩╤┐Їд╬╩¤дм═е└шд╡дьд▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	dir_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>╔├┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔д╦
+┤╪д╣дыесе┐е╟б╝е┐енеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
+┐╖д┐д╦е╒ебедеые╖е╣е╞ере╬б╝е╔дЄ─╔▓├д╖д┐дъ║я╜№д╖д┐дъд╖д┐╛ь╣чбвд│д╬┤№╕┬дм
+└┌дьдыд▐д╟д╧бв╩╤╣╣д╡дьд┐е╬б╝е╔дм╕лдид╩ддд│д╚дмдвдъд▐д╣бг
+е╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>╔├┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarm ещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔
+д╬е╣е▒е╕ехб╝еъеєе░╜ш═¤д╦┤╪дяды╛Ё╩єбвд╣д╩дяд┴еэб╝е╔еве┘еьб╝е╕бв
+е╟еге╣еп╢їдн═╞╬╠бв╟з╛┌дм─╠дыдл╚▌дл┼∙д╬енеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
+─ф╗▀д╖д╞ддд┐е╒ебедеые╖е╣е╞ере╬б╝е╔дм╔№│шд╖д┐дшджд╩╛ь╣чбвд│д╬┤№╕┬дм
+└┌дьдыд▐д╟д╧бвд╜д╬е╬б╝е╔дме╣е▒е╕ехб╝еъеєе░д╡дьд╩ддд│д╚дмдвдъд▐д╣бг
+е╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_local_priority</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>═н╕·└н</I
+></TT
+></DT
+><DD
+><P
+>gfarm д╧бве╒ебедеыдЄ╜ёдн╣■дре╬б╝е╔дЄ╖шдсды║▌бвд╟днды╕┬дъеэб╝елеы
+е█е╣е╚дЄ═е└шд╣дыдшджд╦╞░║юд╖д▐д╣бгд│д╬╩╕д╟ disable д╚╗╪─ъд╣дыд│д╚д╦дшд├д╞бв
+еэб╝елеые█е╣е╚дЄ┬╛д╬е█е╣е╚д╚╞▒══д╦░╖дждшджд╦╩╤╣╣д╣дыд│д╚дмд╟днд▐д╣бг
+┤─╢н╩╤┐Ї GFARM_WRITE_LOCAL_PRIORITY д╦ disable д╚└▀─ъд╖д╞дтбв╞▒д╕░╒╠гд╦
+д╩дъд▐д╣бг
+╬╛╩¤╗╪─ъд╖д┐╛ь╣чд╧бв┤─╢н╩╤┐Їдм═е└шд╡дьд▐д╣бг
+е╟е╒ейеые╚д╧ enable д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_local_priority&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_target_domain</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>е╔еседеє╠╛</I
+></TT
+></DT
+><DD
+><P
+>gfarm дме╒ебедеыдЄ╜ёдн╣■дре╬б╝е╔дЄ╖шдсды║▌бвд╟днды╕┬дъд│д│д╟
+╗╪─ъд╖д┐е╔еседеєдЄ═е└шд╣дыдшджд╦╞░║юд╖д▐д╣бг
+д│д│д╟╗╪─ъд╖д┐е╔еседеєд╦е╒ебедеы║ю└о▓─╟╜д╩е█е╣е╚дм┬╕║▀д╖д╩дд╛ь╣чдфбв
+╞├д╦д│д╬╗╪─ъдЄ╣╘д╩дяд╩длд├д┐╛ь╣чд╦д╧бв┴┤е╬б╝е╔дм┬╨╛▌д╚д╩дъд▐д╣бг
+┤─╢н╩╤┐Ї GFARM_WRITE_TARGET_DOMAIN д╟дтбв╞▒══д╩╗╪─ъдмд╟днд▐д╣бг
+╬╛╩¤╗╪─ъд╖д┐╛ь╣чд╧бв┤─╢н╩╤┐Їдм═е└шд╡дьд▐д╣бг
+д╩дъд▐д╣бг
+д│д╬╗╪─ъдЄ╩г┐Ї▓є╣╘д╩д├д╞дтбв║╟╜щд╬╗╪─ъд╬д▀дм═°═╤д╡дьбв╞є╚╓╠▄░╩╣▀д╧
+├▒д╦╠╡╗ыд╡дьдыд╬д╟├э░╒д╖д╞дпд└д╡ддбг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_target_domain&nbsp;example.org</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>minimum_free_disk_space</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>е╨еде╚┐Ї</I
+></TT
+></DT
+><DD
+><P
+>е╒ебедеые╖е╣е╞ере╬б╝е╔д╟╔м═╫д╩║╟╛о╕┬┼┘д╬е╟еге╣еп╢їдн═╞╬╠дЄ╗╪─ъ
+д╖д▐д╣бгд│д╬е╡еде║░╩▓╝д╬╢їдн═╞╬╠д╖длд╩дде╒ебедеые╖е╣е╞ере╬б╝е╔д╧бв
+е╒ебедеы╜ёдн╣■д▀дЄ╣╘дж▓─╟╜└нд╬двды┴р║юдЄ╣╘дж║▌д╦бв┴к┬Єд╡дьд╩дпд╩дъд▐д╣бг
+╗╪─ъд╧е╨еде╚├▒░╠д╟╣╘ддд▐д╣дмбв┐Ї╗·д╬╦Ў╚°д╦╢ї╟ЄдЄ│лд▒д║д╦ k/M/G/T дЄ╗╪─ъ
+д╣дыд│д╚д╟бвд╜дьд╛дь 1kе╨еде╚б┐1Mе╨еде╚б┐1Gе╨еде╚б┐1Tе╨еде╚дЄ├▒░╠д╚д╣ды
+д│д╚дмд╟днд▐д╣бг
+е╟е╒ейеые╚д╧128Mе╨еде╚д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	minimum_free_disk_space&nbsp;1G</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfsd_connection_cache</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>е│е═епе╖ечеє┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarm ещеде╓ещеъдм gfsd д╚д╬─╠┐од╦═╤дддые│е═епе╖ечеєдЄбвдддпд─
+д▐д╟енеуе├е╖ехд╣дыдлдЄ╗╪─ъд╖д▐д╣бг
+е╟е╒ейеые╚д╧16е│е═епе╖ечеєд╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfsd_connection_cache&nbsp;32</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>═е└ш┼┘еье┘еы</I
+></TT
+></DT
+><DD
+><P
+>д╔д╬═е└ш┼┘еье┘еы░╩╛хд╬еэе░дЄ╜╨╬╧д╣дыдлдЄ╗╪─ъд╖д▐д╣бг
+д│д│д╟╗╪─ъд╖д┐еье┘еы╠д╦■д╬═е└ш┼┘д╬еэе░д╧бвsyslog дф╔╕╜реиещб╝д╪
+┴ўдщдьд▐д╗дєбг
+еье┘еыд╧бв═е└ш┼┘д╬╣тдд╜чд╦ "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" д╟д╣бг
+е╟е╒ейеые╚д╬╜╨╬╧еье┘еыд╧ "info" д╟д╣бг
+"crit" ░╩╛хд╬═е└ш┼┘дЄ╗╪─ъд╣дыд│д╚д╧бвдк┤лдсд╟днд▐д╗дєбг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_level&nbsp;debug</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>record_atime</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>═н╕·└н</I
+></TT
+></DT
+><DD
+><P
+>д│д╬еке╫е╖ечеєдм enable д╬╛ь╣чбв║╟╜кевепе╗е╣╗■╣ядЄднд┴дєд╚╡н╧┐д╖д▐д╣бг
+disable д╬╛ь╣чд╦д╧║╟╜кевепе╗е╣╗■╣яд╬╡н╧┐д╧╔╘└╡│╬д╦д╩дъд▐д╣дмбв
+есе┐е╟б╝е┐╣╣┐╖д╬╔щ▓┘дм▓╝дмдъбв└н╟╜дм╕■╛хд╣дыд│д╚дмдвдъд▐д╣бг
+disable └▀─ъд╧бв─╠╛яд╬е╒ебедеые╖е╣е╞ерд╦дкд▒ды "noatime" еке╫е╖ечеєд╦
+┴ъ┼Ўд╖д▐д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	record_atime&nbsp;disable</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="GRAMMAR"
+></A
+><H2
+>GRAMMAR</H2
+><P
+>gfarm.conf д╬╩╕╦бдЄBNFд╟╡н╜╥д╣дыд╚бв▓╝╡нд╬дшджд╦д╩дъд▐д╣бг</P
+><P
+CLASS="LITERALLAYOUT"
+>	&#60;statement&#62;&nbsp;::=<br>
+		аа&#60;spool_statement&#62;&nbsp;|<br>
+		аа&#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+		аа&#60;spool_serverport_statement&#62;&nbsp;|<br>
+		аа&#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+		аа&#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+		аа&#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+		аа&#60;metadb_serverhost_statement&#62;&nbsp;|<br>
+		аа&#60;metadb_serverport_statement&#62;&nbsp;|<br>
+		аа&#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+		аа&#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+		аа&#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		аа&#60;agent_serverhost_statement&#62;&nbsp;|<br>
+		аа&#60;agent_serverport_statement&#62;&nbsp;|<br>
+		аа&#60;ldap_serverhost_statement&#62;&nbsp;|<br>
+		аа&#60;ldap_serverport_statement&#62;&nbsp;|<br>
+		аа&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		аа&#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+		аа&#60;ldap_bind_password_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_serverhost_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_serverport_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_user_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_password_statement&#62;&nbsp;|<br>
+		аа&#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
+		аа&#60;auth_statement&#62;&nbsp;|<br>
+		аа&#60;netparam_statement&#62;&nbsp;|<br>
+		аа&#60;sockopt_statement&#62;&nbsp;|<br>
+		аа&#60;address_use_statement&#62;&nbsp;|<br>
+		аа&#60;client_architecture_statement&#62;&nbsp;|<br>
+		аа&#60;local_user_map_statement&#62;<br>
+		аа&#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
+		аа&#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		аа&#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		аа&#60;write_local_priority_statement&#62;&nbsp;|<br>
+		аа&#60;write_target_domain_statement&#62;&nbsp;|<br>
+		аа&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		аа&#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		аа&#60;log_level_statement&#62;&nbsp;|<br>
+		аа&#60;record_atime_statement&#62;<br>
+	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		аа"spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
+	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
+		аа"spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
+		аа"spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
+		аа"spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_serverhost_statement&#62;&nbsp;::=&nbsp;"metadb_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;metadb_serverport_statement&#62;&nbsp;::=&nbsp;"metadb_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
+		аа"metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
+		аа"metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
+		аа"metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;agent_serverhost_statement&#62;&nbsp;::=&nbsp;"agent_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;agent_serverport_statement&#62;&nbsp;::=&nbsp;"agent_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_serverhost_statement&#62;&nbsp;::=&nbsp;"postgresql_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_serverport_statement&#62;&nbsp;::=&nbsp;"postgresql_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
+	&#60;auth_statement&#62;&nbsp;::=<br>
+		аа"auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
+	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
+	&#60;netparam_statement&#62;&nbsp;::=<br>
+		аа"netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
+	&#60;netparam_option&#62;&nbsp;::=&nbsp;"parallel_streams"&nbsp;|&nbsp;"stripe_unit_size"&nbsp;|<br>
+		аа"rate_limit"<br>
+	&#60;sockopt_statement&#62;&nbsp;::=<br>
+		аа"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
+		аа"tcp_nodelay"<br>
+	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
+	&#60;client_architecture_statement&#62;&nbsp;::=<br>
+		аа"client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
+	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
+	&#60;write_target_domain_statement&#62;&nbsp;::=&nbsp;"write_target_domain"&nbsp;&#60;string&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		аа"minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
+	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;record_atime_statement&#62;&nbsp;::=&nbsp;"record_atime"&nbsp;&#60;validity&#62;<br>
+	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
+		аа&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
+	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
+	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
+	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
+	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
+	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
+	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
+	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
+	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
+	&#60;double_quoted_character&#62;&nbsp;::=<br>
+		аа&#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
+		аа"\\"&nbsp;|&nbsp;"\""<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+		аа"notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><P
+>есе┐е╟б╝е┐д╬╩▌┬╕д╦ PostgreSQL дЄ╗╚ддбвIPеве╔еье╣ 192.168.0.0/24 д╬
+е╒ебедеые╖е╣е╞ере╬б╝е╔дфепещедевеєе╚д╦┬╨д╖д╞бвsharedsecret ╟з╛┌дЄ
+╗╚дж╬уд╟д╣бг</P
+><P
+CLASS="LITERALLAYOUT"
+>spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.org<br>
+metadb_serverport&nbsp;601<br>
+postgresql_serverhost&nbsp;metadb.example.org<br>
+postgresql_serverport&nbsp;5432<br>
+postgresql_dbname&nbsp;gfarm<br>
+postgresql_user&nbsp;gfarm<br>
+postgresql_password&nbsp;"secret-postgresql-password"<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+sockopt&nbsp;keepalive</P
+><P
+>есе┐е╟б╝е┐д╬╩▌┬╕д╦ LDAP дЄ╗╚ддбв╟д░╒д╬IPеве╔еье╣дЄ╗╚дж
+е╒ебедеые╖е╣е╞ере╬б╝е╔дфепещедевеєе╚д╦┬╨д╖д╞бвGSI ╟з╛┌дЄ╗╚дж╬уд╟д╣бг</P
+><P
+CLASS="LITERALLAYOUT"
+>spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.com<br>
+metadb_serverport&nbsp;601<br>
+ldap_serverhost&nbsp;metadb.example.com<br>
+ldap_serverport&nbsp;389<br>
+ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
+ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"<br>
+ldap_bind_password&nbsp;"secret-ldap-password"<br>
+auth&nbsp;enable&nbsp;gsi&nbsp;*<br>
+sockopt&nbsp;keepalive</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>%%SYSCONFDIR%%/gfarm.conf</TT
+></DT
+><DD
+><P
+></P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>$HOME/.gfarmrc</TT
+></DT
+><DD
+><P
+></P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfmd</SPAN
+>(8)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsd</SPAN
+>(8)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_agent</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>setsockopt</SPAN
+>(2)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>
