@@ -650,6 +650,11 @@ main(int argc, char *argv[])
 	struct gfrep_arg gfrep_arg;
 	struct gfarm_section_xinfo **sinfo;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	nsinfo = 0;
+	sinfo = NULL;
+#endif
+
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 

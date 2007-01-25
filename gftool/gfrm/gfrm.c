@@ -591,6 +591,11 @@ main(int argc, char *argv[])
 	struct gfarm_section_xinfo **sinfo;
 	char *(*op_dir_before)(char *, struct gfs_stat *, void *);
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	nsinfo = 0;
+	sinfo = NULL;
+#endif
+
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
