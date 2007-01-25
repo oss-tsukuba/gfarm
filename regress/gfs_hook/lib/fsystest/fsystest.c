@@ -19,6 +19,10 @@
 #include <stdlib.h>
 #include <signal.h>
 
+#ifndef __GNUC__
+# define __attribute__(a)
+#endif
+
 static char testfile[] = "./__testfile";
 static char testfile2[] = "./__testfile2";
 static char testdir[] = "./__testdir";
@@ -74,20 +78,23 @@ start_test(const char *fmt, ...)
 	va_end(ap);
 }
 
-#define PERROR(msg) test_perror(__FUNCTION__, msg)
-#define ERROR(msg, args...) test_error(__FUNCTION__, msg, ##args)
+#if 0 /* This feature is not supported by Sun Forte Developer 7 C 5.4 */
+#define PERROR(msg) test_perror(__func__, msg)
+#define ERROR(msg, args...) test_error(__func__, msg, ##args)
+#endif
 
 static int
 check_size(const char *path, int len)
 {
+	static char func[] = "check_size";
 	struct stat stbuf;
 	int res = stat(path, &stbuf);
 	if (res == -1) {
-		PERROR("stat");
+		test_perror(func, "stat");
 		return -1;
 	}
 	if (stbuf.st_size != len) {
-		ERROR("length %u instead of %u",
+		test_error(func, "length %u instead of %u",
 		      (int) stbuf.st_size, (int) len);
 		return -1;
 	}
@@ -97,14 +104,15 @@ check_size(const char *path, int len)
 static int
 check_type(const char *path, mode_t type)
 {
+	static char func[] = "check_type";
 	struct stat stbuf;
 	int res = lstat(path, &stbuf);
 	if (res == -1) {
-		PERROR("lstat");
+		test_perror(func, "lstat");
 		return -1;
 	}
 	if ((stbuf.st_mode & S_IFMT) != type) {
-		ERROR("type 0%o instead of 0%o", stbuf.st_mode & S_IFMT, type);
+		test_error(func, "type 0%o instead of 0%o", stbuf.st_mode & S_IFMT, type);
 		return -1;
 	}
 	return 0;
@@ -113,14 +121,15 @@ check_type(const char *path, mode_t type)
 static int
 check_mode(const char *path, mode_t mode)
 {
+	static char func[] = "check_mode";
 	struct stat stbuf;
 	int res = lstat(path, &stbuf);
 	if (res == -1) {
-		PERROR("lstat");
+		test_perror(func, "lstat");
 		return -1;
 	}
 	if ((stbuf.st_mode & 07777) != mode) {
-		ERROR("mode 0%o instead of 0%o", stbuf.st_mode & 07777, mode);
+		test_error(func, "mode 0%o instead of 0%o", stbuf.st_mode & 07777, mode);
 		return -1;
 	}
 	return 0;
@@ -129,19 +138,20 @@ check_mode(const char *path, mode_t mode)
 static int
 check_times(const char *path, time_t atime, time_t mtime)
 {
+	static char func[] = "check_times";
 	int err = 0;
 	struct stat stbuf;
 	int res = lstat(path, &stbuf);
 	if (res == -1) {
-		PERROR("lstat");
+		test_perror(func, "lstat");
 		return -1;
 	}
 	if (stbuf.st_atime != atime) {
-		ERROR("different atime");
+		test_error(func, "different atime");
 		err--;
 	}
 	if (stbuf.st_mtime != mtime) {
-		ERROR("different mtime");
+		test_error(func, "different mtime");
 		err--;
 	}
 	if (err)
@@ -152,14 +162,15 @@ check_times(const char *path, time_t atime, time_t mtime)
 static int
 check_nlink(const char *path, nlink_t nlink)
 {
+	static char func[] = "check_nlink";
 	struct stat stbuf;
 	int res = lstat(path, &stbuf);
 	if (res == -1) {
-		PERROR("lstat");
+		test_perror(func, "lstat");
 		return -1;
 	}
 	if (stbuf.st_nlink != nlink) {
-		ERROR("nlink %i instead of %i", stbuf.st_nlink, nlink);
+		test_error(func, "nlink %i instead of %i", stbuf.st_nlink, nlink);
 		return -1;
 	}
 	return 0;
@@ -168,14 +179,15 @@ check_nlink(const char *path, nlink_t nlink)
 static int
 check_nonexist(const char *path)
 {
+	static char func[] = "check_nonexist";
 	struct stat stbuf;
 	int res = lstat(path, &stbuf);
 	if (res == 0) {
-		ERROR("file should not exist");
+		test_error(func, "file should not exist");
 		return -1;
 	}
 	if (errno != ENOENT) {
-		ERROR("file should not exist: %s", strerror(errno));
+		test_error(func, "file should not exist: %s", strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -184,8 +196,9 @@ check_nonexist(const char *path)
 static int
 check_buffer(const char *buf, const char *data, unsigned len)
 {
+	static char func[] = "check_buffer";
 	if (memcmp(buf, data, len) != 0) {
-		ERROR("data mismatch");
+		test_error(func, "data mismatch");
 		return -1;
 	}
 	return 0;
@@ -197,15 +210,16 @@ static int
 do_check_data(const char *path, const char *path_str,
 	      const char *data, int offset, unsigned len)
 {
+	static char func[] = "do_check_data";
 	char buf[4096];
 	int res;
 	int fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	if (lseek(fd, offset, SEEK_SET) == (off_t) -1) {
-		PERROR("lseek");
+		test_perror(func, "lseek");
 		close(fd);
 		return -1;
 	}
@@ -213,12 +227,12 @@ do_check_data(const char *path, const char *path_str,
 		int rdlen = len < sizeof(buf) ? len : sizeof(buf);
 		res = read(fd, buf, rdlen);
 		if (res == -1) {
-			PERROR("read");
+			test_perror(func, "read");
 			close(fd);
 			return -1;
 		}
 		if (res != rdlen) {
-			ERROR("%s: short read: %u instead of %u",
+			test_error(func, "%s: short read: %u instead of %u",
 			      path_str, res, rdlen);
 			close(fd);
 			return -1;
@@ -232,7 +246,7 @@ do_check_data(const char *path, const char *path_str,
 	}
 	res = close(fd);
 	if (res == -1) {
-		PERROR("close");
+		test_perror(func, "close");
 		return -1;
 	}
 	return 0;
@@ -241,6 +255,7 @@ do_check_data(const char *path, const char *path_str,
 static int
 check_dir_contents(const char *path, const char **contents)
 {
+	static char func[] = "check_dir_contents";
 	int i;
 	int res;
 	int err = 0;
@@ -259,7 +274,7 @@ check_dir_contents(const char *path, const char **contents)
 	cont[i] = NULL;
 	dp = opendir(path);
 	if (dp == NULL) {
-		PERROR("opendir");
+		test_perror(func, "opendir");
 		return -1;
 	}
 	memset(found, 0, sizeof(found));
@@ -269,7 +284,7 @@ check_dir_contents(const char *path, const char **contents)
 		de = readdir(dp);
 		if (de == NULL) {
 			if (errno) {
-				PERROR("readdir");
+				test_perror(func, "readdir");
 				closedir(dp);
 				return -1;
 			}
@@ -279,7 +294,7 @@ check_dir_contents(const char *path, const char **contents)
 			assert(i < MAX_ENTRIES);
 			if (strcmp(cont[i], de->d_name) == 0) {
 				if (found[i]) {
-					ERROR("duplicate entry <%s>",
+					test_error(func, "duplicate entry <%s>",
 					      de->d_name);
 					err--;
 				} else
@@ -288,19 +303,19 @@ check_dir_contents(const char *path, const char **contents)
 			}
 		}
 		if (!cont[i]) {
-			ERROR("unexpected entry <%s>", de->d_name);
+			test_error(func, "unexpected entry <%s>", de->d_name);
 			err --;
 		}
 	}
 	for (i = 0; cont[i] != NULL; i++) {
 		if (!found[i]) {
-			ERROR("missing entry <%s>", cont[i]);
+			test_error(func, "missing entry <%s>", cont[i]);
 			err--;
 		}
 	}
 	res = closedir(dp);
 	if (res == -1) {
-		PERROR("closedir");
+		test_perror(func, "closedir");
 		return -1;
 	}
 	if (err)
@@ -311,30 +326,31 @@ check_dir_contents(const char *path, const char **contents)
 static int
 create_file(const char *path, const char *data, int len)
 {
+	static char func[] = "create_file";
 	int res;
 	int fd;
 	unlink(path);
 	fd = creat(path, 0644);
 	if (fd == -1) {
-		PERROR("creat");
+		test_perror(func, "creat");
 		return -1;
 	}
 	if (len) {
 		res = write(fd, data, len);
 		if (res == -1) {
-			PERROR("write");
+			test_perror(func, "write");
 			close(fd);
 			return -1;
 		}
 		if (res != len) {
-			ERROR("write is short: %u instead of %u", res, len);
+			test_error(func, "write is short: %u instead of %u", res, len);
 			close(fd);
 			return -1;
 		}
 	}
 	res = close(fd);
 	if (res == -1) {
-		PERROR("close");
+		test_perror(func, "close");
 		return -1;
 	}
 	res = check_type(path, S_IFREG);
@@ -360,6 +376,7 @@ create_file(const char *path, const char *data, int len)
 static int
 cleanup_dir(const char *path, const char **dir_files, int quiet)
 {
+	static char func[] = "cleanup_dir";
 	int i;
 	int err = 0;
 	for (i = 0; dir_files[i]; i++) {
@@ -368,7 +385,7 @@ cleanup_dir(const char *path, const char **dir_files, int quiet)
 		sprintf(fpath, "%s/%s", path, dir_files[i]);
 		res = unlink(fpath);
 		if (res == -1 && !quiet) {
-			PERROR("unlink");
+			test_perror(func, "unlink");
 			err --;
 		}
 	}
@@ -380,12 +397,13 @@ cleanup_dir(const char *path, const char **dir_files, int quiet)
 static int
 create_dir(const char *path, const char **dir_files)
 {
+	static char func[] = "create_dir";
 	int res;
 	int i;
 	rmdir(path);
 	res = mkdir(path, 0755);
 	if (res == -1) {
-		PERROR("mkdir");
+		test_perror(func, "mkdir");
 		return -1;
 	}
 	res = check_type(path, S_IFDIR);
@@ -414,6 +432,7 @@ create_dir(const char *path, const char **dir_files)
 static int
 test_truncate(int len)
 {
+	static char func[] = "test_truncate";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int res;
@@ -423,7 +442,7 @@ test_truncate(int len)
 		return -1;
 	res = truncate(testfile, len);
 	if (res == -1) {
-		PERROR("truncate");
+		test_perror(func, "truncate");
 		return -1;
 	}
 	res = check_size(testfile, len);
@@ -446,7 +465,7 @@ test_truncate(int len)
 	}
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -459,6 +478,7 @@ test_truncate(int len)
 static int
 test_ftruncate(int len, int mode)
 {
+	static char func[] = "test_ftruncate";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int res;
@@ -469,12 +489,12 @@ test_ftruncate(int len, int mode)
 		return -1;
 	fd = open(testfile, O_WRONLY);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	res = fchmod(fd, mode);
 	if (res == -1) {
-		PERROR("fchmod");
+		test_perror(func, "fchmod");
 		close(fd);
 		return -1;
 	}
@@ -485,7 +505,7 @@ test_ftruncate(int len, int mode)
 	}
 	res = ftruncate(fd, len);
 	if (res == -1) {
-		PERROR("ftruncate");
+		test_perror(func, "ftruncate");
 		close(fd);
 		return -1;
 	}
@@ -510,7 +530,7 @@ test_ftruncate(int len, int mode)
 	}
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -523,6 +543,7 @@ test_ftruncate(int len, int mode)
 static int
 test_utime(void)
 {
+	static char func[] = "test_utime";
 	struct utimbuf utm;
 	time_t atime = 987631200;
 	time_t mtime = 123116400;
@@ -535,7 +556,7 @@ test_utime(void)
 	utm.modtime = mtime;
 	res = utime(testfile, &utm);
 	if (res == -1) {
-		PERROR("utime");
+		test_perror(func, "utime");
 		return -1;
 	}
 	res = check_times(testfile, atime, mtime);
@@ -544,7 +565,7 @@ test_utime(void)
 	}
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -557,6 +578,7 @@ test_utime(void)
 static int
 test_create(void)
 {
+	static char func[] = "test_create";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int err = 0;
@@ -566,23 +588,23 @@ test_create(void)
 	unlink(testfile);
 	fd = creat(testfile, 0644);
 	if (fd == -1) {
-		PERROR("creat");
+		test_perror(func, "creat");
 		return -1;
 	}
 	res = write(fd, data, datalen);
 	if (res == -1) {
-		PERROR("write");
+		test_perror(func, "write");
 		close(fd);
 		return -1;
 	}
 	if (res != datalen) {
-		ERROR("write is short: %u instead of %u", res, datalen);
+		test_error(func, "write is short: %u instead of %u", res, datalen);
 		close(fd);
 		return -1;
 	}
 	res = close(fd);
 	if (res == -1) {
-		PERROR("close");
+		test_perror(func, "close");
 		return -1;
 	}
 	res = check_type(testfile, S_IFREG);
@@ -594,7 +616,7 @@ test_create(void)
 	err += check_data(testfile, data, 0, datalen);
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -611,6 +633,7 @@ test_create(void)
 static int
 do_test_open(int exist, int flags, const char *flags_str, int mode)
 {
+	static char func[] = "do_test_open";
 	char buf[4096];
 	const char *data = testdata;
 	int datalen = testdatalen;
@@ -631,7 +654,7 @@ do_test_open(int exist, int flags, const char *flags_str, int mode)
 	fd = open(testfile, flags, mode);
 	if ((flags & O_CREAT) && (flags & O_EXCL) && exist) {
 		if (fd != -1) {
-			ERROR("open should have failed");
+			test_error(func, "open should have failed");
 			close(fd);
 			return -1;
 		} else if (errno == EEXIST)
@@ -639,14 +662,14 @@ do_test_open(int exist, int flags, const char *flags_str, int mode)
 	}
 	if (!(flags & O_CREAT) && !exist) {
 		if (fd != -1) {
-			ERROR("open should have failed");
+			test_error(func, "open should have failed");
 			close(fd);
 			return -1;
 		} else if (errno == ENOENT)
 			goto succ;
 	}
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	if (flags & O_TRUNC)
@@ -663,10 +686,10 @@ do_test_open(int exist, int flags, const char *flags_str, int mode)
 	res = write(fd, data, datalen);
 	if ((flags & O_ACCMODE) != O_RDONLY) {
 		if (res == -1) {
-			PERROR("write");
+			test_perror(func, "write");
 			err --;
 		} else if (res != datalen) {
-			ERROR("write is short: %u instead of %u",
+			test_error(func, "write is short: %u instead of %u",
 			      res, datalen);
 			err --;
 		} else {
@@ -686,31 +709,31 @@ do_test_open(int exist, int flags, const char *flags_str, int mode)
 		}
 	} else {
 		if (res != -1) {
-			ERROR("write should have failed");
+			test_error(func, "write should have failed");
 			err --;
 		} else if (errno != EBADF) {
-			PERROR("write");
+			test_perror(func, "write");
 			err --;
 		}
 	}
 	off = lseek(fd, SEEK_SET, 0);
 	if (off == (off_t) -1) {
-		PERROR("lseek");
+		test_perror(func, "lseek");
 		err--;
 	} else if (off != 0) {
-		ERROR("offset should have returned 0");
+		test_error(func, "offset should have returned 0");
 		err --;
 	}
 	res = read(fd, buf, sizeof(buf));
 	if ((flags & O_ACCMODE) != O_WRONLY) {
 		if (res == -1) {
-			PERROR("read");
+			test_perror(func, "read");
 			err--;
 		} else {
 			int readsize = currlen < sizeof(buf) ?
 				currlen : sizeof(buf);
 			if (res != readsize) {
-				ERROR("read is short: %i instead of %u",
+				test_error(func, "read is short: %i instead of %u",
 				      res, readsize);
 				err--;
 			} else {
@@ -732,21 +755,21 @@ do_test_open(int exist, int flags, const char *flags_str, int mode)
 		}
 	} else {
 		if (res != -1) {
-			ERROR("read should have failed");
+			test_error(func, "read should have failed");
 			err --;
 		} else if (errno != EBADF) {
-			PERROR("read");
+			test_perror(func, "read");
 			err --;
 		}
 	}
 	res = close(fd);
 	if (res == -1) {
-		PERROR("close");
+		test_perror(func, "close");
 		return -1;
 	}
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -765,6 +788,7 @@ static int
 do_test_open_acc(int flags, const char *flags_str, int mode,
 		 int err, const char *err_str)
 {
+	static char func[] = "do_test_open_acc";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int res;
@@ -777,7 +801,7 @@ do_test_open_acc(int flags, const char *flags_str, int mode,
 		return -1;
 	res = chmod(testfile, mode);
 	if (res == -1) {
-		PERROR("chmod");
+		test_perror(func, "chmod");
 		return -1;
 	}
 	res = check_mode(testfile, mode);
@@ -786,7 +810,7 @@ do_test_open_acc(int flags, const char *flags_str, int mode,
 	fd = open(testfile, flags);
 	if (fd == -1) {
 		if (err != errno) {
-			PERROR("open");
+			test_perror(func, "open");
 			return -1;
 		}
 		res = check_size(testfile, datalen); /* added */
@@ -798,7 +822,7 @@ do_test_open_acc(int flags, const char *flags_str, int mode,
 			return -1;
 	} else {
 		if (err) {
-			ERROR("open should have failed");
+			test_error(func, "open should have failed");
 			close(fd);
 			return -1;
 		}
@@ -816,6 +840,7 @@ do_test_open_acc(int flags, const char *flags_str, int mode,
 static int
 test_symlink(void)
 {
+	static char func[] = "test_symlink";
 	char buf[1024];
 	const char *data = testdata;
 	int datalen = testdatalen;
@@ -829,7 +854,7 @@ test_symlink(void)
 	unlink(testfile2);
 	res = symlink(testfile, testfile2);
 	if (res == -1) {
-		PERROR("symlink");
+		test_perror(func, "symlink");
 		return -1;
 	}
 	res = check_type(testfile2, S_IFLNK);
@@ -839,22 +864,22 @@ test_symlink(void)
 	err += check_nlink(testfile2, 1);
 	res = readlink(testfile2, buf, sizeof(buf));
 	if (res == -1) {
-		PERROR("readlink");
+		test_perror(func, "readlink");
 		err--;
 	}
 	if (res != linklen) {
-		ERROR("short readlink: %u instead of %u", res, linklen);
+		test_error(func, "short readlink: %u instead of %u", res, linklen);
 		err--;
 	}
 	if (memcmp(buf, testfile, linklen) != 0) {
-	    ERROR("link mismatch");
+	    test_error(func, "link mismatch");
 	    err--;
 	}
 	err += check_size(testfile2, datalen);
 	err += check_data(testfile2, data, 0, datalen);
 	res = unlink(testfile2);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile2);
@@ -869,6 +894,7 @@ test_symlink(void)
 static int
 test_link(void)
 {
+	static char func[] = "test_link";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int err = 0;
@@ -880,7 +906,7 @@ test_link(void)
 	unlink(testfile2);
 	res = link(testfile, testfile2);
 	if (res == -1) {
-		PERROR("link");
+		test_perror(func, "link");
 		return -1;
 	}
 	res = check_type(testfile2, S_IFREG);
@@ -892,7 +918,7 @@ test_link(void)
 	err += check_data(testfile2, data, 0, datalen);
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -901,7 +927,7 @@ test_link(void)
 	err += check_nlink(testfile2, 1);
 	res = unlink(testfile2);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile2);
@@ -916,6 +942,7 @@ test_link(void)
 static int
 test_rename_file(void)
 {
+	static char func[] = "test_rename_file";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int err = 0;
@@ -927,7 +954,7 @@ test_rename_file(void)
 	unlink(testfile2);
 	res = rename(testfile, testfile2);
 	if (res == -1) {
-		PERROR("rename");
+		test_perror(func, "rename");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -942,7 +969,7 @@ test_rename_file(void)
 	err += check_data(testfile2, data, 0, datalen);
 	res = unlink(testfile2);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile2);
@@ -957,6 +984,7 @@ test_rename_file(void)
 static int
 test_rename_dir(void)
 {
+	static char func[] = "test_rename_dir";
 	int err = 0;
 	int res;
 	start_test("rename dir");
@@ -966,7 +994,7 @@ test_rename_dir(void)
 	rmdir(testdir2);
 	res = rename(testdir, testdir2);
 	if (res == -1) {
-		PERROR("rename");
+		test_perror(func, "rename");
 		cleanup_dir(testdir, testdir_files, 1);
 		return -1;
 	}
@@ -985,7 +1013,7 @@ test_rename_dir(void)
 	err += cleanup_dir(testdir2, testdir_files, 0);
 	res = rmdir(testdir2);
 	if (res == -1) {
-		PERROR("rmdir");
+		test_perror(func, "rmdir");
 		return -1;
 	}
 	res = check_nonexist(testdir2);
@@ -1000,13 +1028,14 @@ test_rename_dir(void)
 static int
 test_mkfifo(void)
 {
+	static char func[] = "test_mkfifo";
 	int res;
 	int err = 0;
 	start_test("mkfifo");
 	unlink(testfile);
 	res = mkfifo(testfile, 0644);
 	if (res == -1) {
-		PERROR("mkfifo");
+		test_perror(func, "mkfifo");
 		return -1;
 	}
 	res = check_type(testfile, S_IFIFO);
@@ -1016,7 +1045,7 @@ test_mkfifo(void)
 	err += check_nlink(testfile, 1);
 	res = unlink(testfile);
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		return -1;
 	}
 	res = check_nonexist(testfile);
@@ -1031,6 +1060,7 @@ test_mkfifo(void)
 static int
 test_mkdir(void)
 {
+	static char func[] = "test_mkdir";
 	int res;
 	int err = 0;
 	const char *dir_contents[] = {NULL};
@@ -1038,7 +1068,7 @@ test_mkdir(void)
 	rmdir(testdir);
 	res = mkdir(testdir, 0755);
 	if (res == -1) {
-		PERROR("mkdir");
+		test_perror(func, "mkdir");
 		return -1;
 	}
 	res = check_type(testdir, S_IFDIR);
@@ -1049,7 +1079,7 @@ test_mkdir(void)
 	err += check_dir_contents(testdir, dir_contents);
 	res = rmdir(testdir);
 	if (res == -1) {
-		PERROR("rmdir");
+		test_perror(func, "rmdir");
 		return -1;
 	}
 	res = check_nonexist(testdir);
@@ -1066,6 +1096,7 @@ test_mkdir(void)
 static int
 do_test_mmap(int prot, const char *prot_str, int flags, const char *flags_str)
 {
+	static char func[] = "do_test_mmap";
 	int res;
 	int err = 0;
 	int fd;
@@ -1080,13 +1111,13 @@ do_test_mmap(int prot, const char *prot_str, int flags, const char *flags_str)
 	currlen = testdata2len;
 	fd = open(testfile, O_RDWR);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	m = mmap(0, currlen, prot, flags, fd, 0);
 	close(fd);
 	if ((void *) m == MAP_FAILED) {
-		PERROR("mmap");
+		test_perror(func, "mmap");
 		return -1;
 	}
 	if (prot & PROT_READ) {
@@ -1112,6 +1143,7 @@ do_test_mmap(int prot, const char *prot_str, int flags, const char *flags_str)
 static int
 test_seek_eof(int pos)
 {
+	static char func[] = "test_seek_eof";
 	int res;
 	int fd;
 	int i;
@@ -1120,7 +1152,7 @@ test_seek_eof(int pos)
 	unlink(testfile);
 	fd = open(testfile, O_CREAT | O_RDWR, 0644);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	for (i = 0; i < BSIZE; i++)
@@ -1131,7 +1163,7 @@ test_seek_eof(int pos)
 	pwrite(fd, b1, 2, pos); /* Can this write correctly? */
 	res = pread(fd, b2, BSIZE, pos); /* check */
 	if (res != 2) {
-		ERROR("cannot write correctly");
+		test_error(func, "cannot write correctly");
 		return -1;
 	}
 	success();
@@ -1141,6 +1173,7 @@ test_seek_eof(int pos)
 static int
 test_open_size()
 {
+	static char func[] = "test_open_size";
 	int res;
 	int fd;
 	char b = '0';
@@ -1151,7 +1184,7 @@ test_open_size()
 		return -1;
 	fd = open(testfile, O_RDWR | O_CREAT | O_TRUNC, 0600);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	res = check_size(testfile, 0);
@@ -1159,7 +1192,7 @@ test_open_size()
 		return -1;
 	res = write(fd, &b, 1);
 	if (res == -1) {
-		PERROR("write");
+		test_perror(func, "write");
 		return -1;
 	}
 	res = check_size(testfile, 1);
@@ -1178,6 +1211,7 @@ test_open_size()
 static int
 test_open_rename()
 {
+	static char func[] = "test_open_rename";
 	int res, err = 0;
 	int fd1, fd2;
 	struct utimbuf utm;
@@ -1191,12 +1225,12 @@ test_open_rename()
 		return -1;
 	fd1 = open(testfile, O_RDWR);
 	if (fd1 == -1) {
-		PERROR("open_1");
+		test_perror(func, "open_1");
 		return -1;
 	}
 	res = rename(testfile, testfile2);
 	if (res == -1) {
-		PERROR("rename");
+		test_perror(func, "rename");
 		close(fd1);
 		return -1;
 	}
@@ -1205,16 +1239,16 @@ test_open_rename()
 		return -1;
 	fd2 = open(testfile, O_RDWR | O_CREAT | O_EXCL, 0600);
 	if (fd2 == -1) {
-		PERROR("open_2");
+		test_perror(func, "open_2");
 		close(fd1);
 		return -1;
 	}
 	res = write(fd2, testdata2, testdata2len);
 	if (res == -1) {
-		PERROR("write");
+		test_perror(func, "write");
 		err += -1;
 	} else if (res != testdata2len) {
-		ERROR("write is short: %u instead of %u", res, testdata2len);
+		test_error(func, "write is short: %u instead of %u", res, testdata2len);
 		err += -1;
 	}
 	utm.actime = atime;
@@ -1222,12 +1256,12 @@ test_open_rename()
 	res = utime(testfile, &utm);
 	res = 0;
 	if (res == -1) {
-		PERROR("utime_1");
+		test_perror(func, "utime_1");
 		err += -1;
 	}
 	res = utime(testfile2, &utm);
 	if (res == -1) {
-		PERROR("utime_2");
+		test_perror(func, "utime_2");
 		err += -1;
 	}
 	close(fd1);
@@ -1245,6 +1279,7 @@ test_open_rename()
 static int
 test_open_unlink()
 {
+	static char func[] = "test_open_unlink";
 	int res;
 	int fd;
 	char b = '0';
@@ -1255,12 +1290,12 @@ test_open_unlink()
 		return -1;
 	fd = open(testfile, O_RDWR);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	res = unlink(testfile); /* FUSE: RENAME is called */
 	if (res == -1) {
-		PERROR("unlink");
+		test_perror(func, "unlink");
 		close(fd);
 		return -1;
 	}
@@ -1271,7 +1306,7 @@ test_open_unlink()
 		return -1;
 	res = fchmod(fd, 0700);  /* FUSE: renamed hidden file. */
 	if (res == -1)
-		PERROR("fchmod");
+		test_perror(func, "fchmod");
 	close(fd);
 	res = check_nonexist(testfile);
 	if (res == -1)
@@ -1283,6 +1318,7 @@ test_open_unlink()
 static int
 test_open_utime()
 {
+	static char func[] = "test_open_utime";
 	int res;
 	int fd;
 	char b = '0';
@@ -1296,7 +1332,7 @@ test_open_utime()
 		return -1;
 	fd = open(testfile, O_RDWR);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	write(fd, &b, 1);  /* update metadata */
@@ -1304,7 +1340,7 @@ test_open_utime()
 	utm.modtime = mtime;
 	res = utime(testfile, &utm);
 	if (res == -1) {
-		PERROR("utime");
+		test_perror(func, "utime");
 		close(fd);
 		return -1;
 	}
@@ -1322,6 +1358,7 @@ test_open_utime()
 static int
 test_open_chmod(mode_t mode1, mode_t mode2)
 {
+	static char func[] = "test_open_chmod";
 	int res;
 	int fd;
 	char b = '0';
@@ -1332,7 +1369,7 @@ test_open_chmod(mode_t mode1, mode_t mode2)
 		return -1;
 	res = chmod(testfile, mode1);
 	if (res == -1) {
-		PERROR("chmod_1");
+		test_perror(func, "chmod_1");
 		return -1;
 	}
 	res = check_mode(testfile, mode1);
@@ -1340,13 +1377,13 @@ test_open_chmod(mode_t mode1, mode_t mode2)
 		return -1;
 	fd = open(testfile, O_RDWR);
 	if (fd == -1) {
-		PERROR("open");
+		test_perror(func, "open");
 		return -1;
 	}
 	write(fd, &b, 1);  /* update metadata */
 	res = chmod(testfile, mode2);
 	if (res == -1) {
-		PERROR("chmod_2");
+		test_perror(func, "chmod_2");
 		close(fd);
 		return -1;
 	}
@@ -1369,6 +1406,7 @@ do_test_open_open(int creat_mode,
 		  int flags_first, const char *str_first,
 		  int flags_second, const char *str_second)
 {
+	static char func[] = "do_test_open_open";
 	int res;
 	int fd1, fd2;
 	unlink(testfile);
@@ -1376,17 +1414,17 @@ do_test_open_open(int creat_mode,
 		start_test("creat(%s) open(%s)", str_first, str_second);
 		fd1 = open(testfile, O_CREAT | flags_first, 0644);
 		if (fd1 == -1) {
-			PERROR("open_1");
+			test_perror(func, "open_1");
 			return -1;
 		}
 		res = write(fd1, testdata, testdatalen);
 		if (res == -1) {
-			PERROR("write");
+			test_perror(func, "write");
 			close(fd1);
 			return -1;
 		}
 		if (res != testdatalen) {
-			ERROR("write is short: %u instead of %u",
+			test_error(func, "write is short: %u instead of %u",
 			      res, testdatalen);
 			close(fd1);
 			return -1;
@@ -1398,13 +1436,13 @@ do_test_open_open(int creat_mode,
 			return -1;
 		fd1 = open(testfile, flags_first);
 		if (fd1 == -1) {
-			PERROR("open_1");
+			test_perror(func, "open_1");
 			return -1;
 		}
 	}
 	fd2 = open(testfile, flags_second);
 	if (fd2 == -1) {
-		PERROR("open_2");
+		test_perror(func, "open_2");
 		close(fd1);
 		return -1;
 	}

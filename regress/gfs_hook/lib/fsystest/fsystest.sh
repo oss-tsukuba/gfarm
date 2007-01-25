@@ -7,8 +7,13 @@
 
 trap 'rm -rf $hooktmp; rm -f __testfile; exit $exit_trap' $trap_sigs
 
+expected=$testbase/index.`uname`.expected
+if [ ! -f $expected ]
+then
+	exit $exit_unsupported
+fi
 if mkdir $hooktmp &&
-    $testbin/fsystest $hooktmp | diff -c - $testbase/index.expected
+    $testbin/fsystest $hooktmp | diff -c - $expected
 then
 	exit_code=$exit_pass
 fi
