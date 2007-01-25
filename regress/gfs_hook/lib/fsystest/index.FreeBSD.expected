@@ -1,0 +1,95 @@
+OK [create]
+NG [symlink] test_symlink(): symlink: Operation not permitted
+NG [link] test_link(): link: Operation not permitted
+NG [mkfifo] check_type(): lstat: No such file or directory
+NG [mkdir] check_nlink(): nlink 32000 instead of 2
+OK [rename file]
+OK [rename dir]
+OK [utime]
+OK [truncate(0)]
+OK [truncate(13)]
+OK [truncate(26)]
+OK [truncate(126)]
+OK [ftruncate(0) mode=0600]
+OK [ftruncate(13) mode=0600]
+OK [ftruncate(26) mode=0600]
+OK [ftruncate(126) mode=0600]
+OK [ftruncate(0) mode=0400]
+OK [ftruncate(0) mode=0200]
+OK [ftruncate(0) mode=0000]
+OK [open(-, O_RDONLY, 0000)]
+OK [open(+, O_RDONLY, 0000)]
+OK [open(+, O_RDWR, 0000)]
+OK [open(+, O_WRONLY, 0000)]
+NG [open(-, O_RDWR | O_CREAT, 0600)] check_size(): length 0 instead of 26
+OK [open(+, O_RDWR | O_CREAT, 0600)]
+NG [open(-, O_RDWR | O_CREAT | O_TRUNC, 0600)] check_size(): length 0 instead of 26
+NG [open(+, O_RDWR | O_CREAT | O_TRUNC, 0600)] check_size(): length 0 instead of 26
+NG [open(-, O_RDONLY | O_CREAT, 0600)] check_type(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0600)] check_mode(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0600)] check_nlink(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0600)] check_size(): stat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0400)] check_type(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0400)] check_mode(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0400)] check_nlink(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0400)] check_size(): stat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0200)] check_type(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0200)] check_mode(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0200)] check_nlink(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0200)] check_size(): stat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0000)] check_type(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0000)] check_mode(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0000)] check_nlink(): lstat: No such file or directory
+NG [open(-, O_RDONLY | O_CREAT, 0000)] check_size(): stat: No such file or directory
+NG [open(-, O_WRONLY | O_CREAT, 0600)] check_size(): length 0 instead of 26
+NG [open(-, O_WRONLY | O_CREAT, 0400)] check_size(): length 0 instead of 26
+NG [open(-, O_WRONLY | O_CREAT, 0200)] check_size(): length 0 instead of 26
+NG [open(-, O_WRONLY | O_CREAT, 0000)] check_size(): length 0 instead of 26
+NG [open(-, O_RDWR | O_CREAT, 0400)] check_size(): length 0 instead of 26
+NG [open(-, O_RDWR | O_CREAT, 0200)] check_size(): length 0 instead of 26
+NG [open(-, O_RDWR | O_CREAT, 0000)] check_size(): length 0 instead of 26
+NG [open(-, O_RDWR | O_CREAT | O_EXCL, 0600)] check_size(): length 0 instead of 26
+OK [open(+, O_RDWR | O_CREAT | O_EXCL, 0600)]
+NG [open(-, O_RDWR | O_CREAT | O_EXCL, 0000)] check_size(): length 0 instead of 26
+OK [open(+, O_RDWR | O_CREAT | O_EXCL, 0000)]
+OK [open_acc(O_RDONLY) mode=0600 errno=0]
+OK [open_acc(O_WRONLY) mode=0600 errno=0]
+OK [open_acc(O_RDWR) mode=0600 errno=0]
+OK [open_acc(O_RDONLY) mode=0400 errno=0]
+OK [open_acc(O_RDONLY | O_TRUNC) mode=0400 errno=EACCES]
+OK [open_acc(O_WRONLY) mode=0400 errno=EACCES]
+OK [open_acc(O_RDWR) mode=0400 errno=EACCES]
+OK [open_acc(O_RDONLY) mode=0200 errno=EACCES]
+OK [open_acc(O_WRONLY) mode=0200 errno=0]
+OK [open_acc(O_RDWR) mode=0200 errno=EACCES]
+OK [open_acc(O_RDONLY) mode=0000 errno=EACCES]
+OK [open_acc(O_WRONLY) mode=0000 errno=EACCES]
+OK [open_acc(O_RDWR) mode=0000 errno=EACCES]
+OK [open_acc(O_RDONLY | O_TRUNC) mode=0600 errno=0]
+OK [open_acc(O_RDONLY | O_TRUNC) mode=0200 errno=EACCES]
+OK [open_acc(O_WRONLY | O_TRUNC) mode=0200 errno=0]
+OK [open_acc(O_RDWR | O_TRUNC) mode=0200 errno=EACCES]
+OK [mmap(PROT_READ, MAP_SHARED)]
+OK [mmap(PROT_WRITE, MAP_SHARED)]
+OK [mmap(PROT_READ | PROT_WRITE, MAP_SHARED)]
+OK [seek_EOF offset=10]
+NG [open size] check_size(): length 0 instead of 1
+NG [open rename utime close] check_times(): different atime
+NG [open rename utime close] check_times(): different mtime
+NG [open unlink close] test_open_unlink(): fchmod: No such file or directory
+OK [open unlink close]
+NG [open utime close] check_times(): different atime
+NG [open utime close] check_times(): different mtime
+NG [chmod(0600) open chmod(0700) close] check_mode(): mode 0600 instead of 0700
+NG [chmod(0700) open chmod(0600) close] check_mode(): mode 0700 instead of 0600
+NG [open(O_RDONLY) open(O_WRONLY)] check_mode(): mode 0700 instead of 0644
+NG [open(O_RDONLY) open(O_RDWR)] check_mode(): mode 0700 instead of 0644
+NG [open(O_WRONLY) open(O_RDONLY)] check_mode(): mode 0700 instead of 0644
+NG [open(O_WRONLY) open(O_RDWR)] check_mode(): mode 0700 instead of 0644
+NG [open(O_RDWR) open(O_RDONLY)] check_mode(): mode 0700 instead of 0644
+NG [open(O_RDWR) open(O_WRONLY)] check_mode(): mode 0700 instead of 0644
+OK [creat(O_WRONLY) open(O_RDONLY)]
+OK [creat(O_WRONLY) open(O_RDWR)]
+OK [creat(O_RDWR) open(O_RDONLY)]
+OK [creat(O_RDWR) open(O_WRONLY)]
+31 tests failed
