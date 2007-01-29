@@ -1420,7 +1420,13 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 	return (canonical_pathname(n, abspathp));
 }
 
-#define INUMBER(node)	((unsigned long)(node))
+/*
+ * Kluge.
+ * FUSE (at least 2.6.1) on 32bit platform wants (st_ino & (1 << 31)) == 0.
+ * Because every node must be at least 4 byte aligned, we shift 2bits here.
+ * (1bit should be enough, though.)
+ */
+#define INUMBER(node)	((unsigned long)(node) >> 2)
 
 char *
 gfs_i_get_ino(const char *canonical_path, unsigned long *inop)
