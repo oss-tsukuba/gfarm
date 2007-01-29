@@ -35,7 +35,7 @@ char *gfs_client_link_faulttolerant(const char *, char *, char *,
 
 /* gfs_dir.c */
 char *gfs_realpath_canonical(const char *, char **);
-char *gfs_get_ino(const char *, long *);
+char *gfs_get_ino(const char *, unsigned long *);
 
 /* url.c */
 struct gfs_stat;

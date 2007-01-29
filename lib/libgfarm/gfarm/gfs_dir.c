@@ -1129,7 +1129,7 @@ gfs_refreshdir(void)
 static char *
 root_path_info(struct gfarm_path_info *info)
 {
-	long ino;
+	unsigned long ino;
 	char *e;
 
 	e = gfs_get_ino("", &ino);
@@ -1420,10 +1420,10 @@ gfs_i_realpath_canonical(const char *path, char **abspathp)
 	return (canonical_pathname(n, abspathp));
 }
 
-#define INUMBER(node)	((long)(node))
+#define INUMBER(node)	((unsigned long)(node))
 
 char *
-gfs_i_get_ino(const char *canonical_path, long *inop)
+gfs_i_get_ino(const char *canonical_path, unsigned long *inop)
 {
 	struct node *n;
 	char *e;

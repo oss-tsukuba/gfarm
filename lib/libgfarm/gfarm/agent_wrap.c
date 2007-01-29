@@ -332,15 +332,15 @@ gfs_realpath_canonical(const char *path, char **abspathp)
 }
 
 char *
-gfs_get_ino(const char *canonic_path, long *inop)
+gfs_get_ino(const char *canonic_path, unsigned long *inop)
 {
 	char *e;
-	gfarm_int32_t ip;
+	gfarm_uint32_t ip;
 
 	if (gfarm_agent_check() == NULL) {
 		e = agent_client_get_ino(agent_server, canonic_path, &ip);
 		if (e == NULL)
-			*inop = (long)ip;
+			*inop = ip;
 		if (e != GFARM_ERR_CONNECTION_REFUSED)
 			return (e);
 		/* reconnection failed, connect to metadb directly */

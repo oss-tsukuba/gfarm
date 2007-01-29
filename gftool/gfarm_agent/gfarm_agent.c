@@ -285,8 +285,8 @@ static char *
 agent_server_get_ino(struct xxx_connection *client)
 {
 	char *path, *e, *e_rpc;
-	long ino;
-	gfarm_int32_t ino_32;
+	unsigned long ino;
+	gfarm_uint32_t ino_32;
 	char *diag = "get_ino";
 
 	e_rpc = agent_server_get_request(client, diag, "s", &path);

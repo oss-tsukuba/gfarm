@@ -24,7 +24,7 @@ char *agent_client_path_info_remove(struct agent_connection *, const char *);
 char *agent_client_realpath_canonical(
 	struct agent_connection *, const char *, char **);
 char *agent_client_get_ino(
-	struct agent_connection *, const char *, gfarm_int32_t *);
+	struct agent_connection *, const char *, gfarm_uint32_t *);
 char *agent_client_opendir(struct agent_connection *, const char *,
 	gfarm_int32_t *);
 char *agent_client_readdir(

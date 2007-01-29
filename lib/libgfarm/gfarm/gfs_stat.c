@@ -44,7 +44,7 @@ char *
 gfs_stat_canonical_path(char *gfarm_file, struct gfs_stat *s)
 {
 	struct gfarm_path_info pi;
-	long ino;
+	unsigned long ino;
 	char *e;
 
 	e = gfarm_path_info_get(gfarm_file, &pi);
@@ -102,7 +102,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 {
 	char *e, *p;
 	gfarm_timerval_t t1, t2;
-	long ino;
+	unsigned long ino;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -162,7 +162,7 @@ gfs_stat_section(const char *gfarm_url, const char *section, struct gfs_stat *s)
 	char *e, *gfarm_file;
 	struct gfarm_file_section_info sinfo;
 	struct gfarm_path_info pi;
-	long ino;
+	unsigned long ino;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)

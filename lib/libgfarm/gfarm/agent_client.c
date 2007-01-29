@@ -281,7 +281,7 @@ agent_client_realpath_canonical(struct agent_connection *agent_server,
 
 char *
 agent_client_get_ino(struct agent_connection *agent_server,
-	const char *path, gfarm_int32_t *inop)
+	const char *path, gfarm_uint32_t *inop)
 {
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_GET_INO, "s/i",
 				 path, inop));

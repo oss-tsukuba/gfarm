@@ -362,7 +362,7 @@ gfs_pio_view_section_stat(GFS_File gf, struct gfs_stat *status)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct stat st;
-	long ino;
+	unsigned long ino;
 	char *e;
 
 	e = gfs_get_ino(gf->pi.pathname, &ino);
