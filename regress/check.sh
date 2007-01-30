@@ -10,6 +10,7 @@ $regress/regress.sh -t $regress/schedule
 set $regress/regress.sh -t $regress/schedule.hook
 
 print_both "Testing gfs_hook"
+"$@"
 
 if [ "${REGRESS_GFARMFS_FUSE+set}" = "set" ] &&
    [  -d "$REGRESS_GFARMFS_FUSE" ]
@@ -24,5 +25,5 @@ then
 	$regress/fuse_test.sh -O "-nlsu -b" -o "-o direct_io" "$@"
 
 #	$regress/fuse_test.sh -O "-nlsu -b" \
-#		$regress/tst.sh gfs_hook/tool/postgress/make-check.sh
+#		$regress/tst.sh gfs_hook/tool/postgresql/make-check.sh
 fi
