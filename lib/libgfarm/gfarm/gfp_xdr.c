@@ -160,7 +160,6 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 	const char **formatp, va_list *app)
 {
 	const char *format = *formatp;
-	va_list ap = *app;
 	gfarm_uint8_t c;
 	gfarm_int16_t h;
 	gfarm_int32_t i, n;
@@ -174,18 +173,18 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
-			c = va_arg(ap, int);
+			c = va_arg(*app, int);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &c, sizeof(c));
 			break;
 		case 'h':
-			h = va_arg(ap, int);
+			h = va_arg(*app, int);
 			h = htons(h);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &h, sizeof(h));
 			break;
 		case 'i':
-			i = va_arg(ap, gfarm_int32_t);
+			i = va_arg(*app, gfarm_int32_t);
 			i = htonl(i);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
@@ -196,7 +195,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			o = va_arg(ap, gfarm_int64_t);
+			o = va_arg(*app, gfarm_int64_t);
 #if INT64T_IS_FLOAT
 			minus = o < 0;
 			if (minus)
@@ -219,7 +218,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    lv, sizeof(lv));
 			break;
 		case 's':
-			s = va_arg(ap, const char *);
+			s = va_arg(*app, const char *);
 			n = strlen(s);
 			i = htonl(n);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
@@ -228,8 +227,8 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    s, n);
 			break;
 		case 'S':
-			s = va_arg(ap, const char *);
-			n = va_arg(ap, size_t);
+			s = va_arg(*app, const char *);
+			n = va_arg(*app, size_t);
 			i = htonl(n);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
@@ -242,9 +241,9 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			n = va_arg(ap, size_t);
+			n = va_arg(*app, size_t);
 			i = htonl(n);
-			s = va_arg(ap, const char *);
+			s = va_arg(*app, const char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
 			gfarm_iobuffer_put_write(conn->sendbuffer,
@@ -256,7 +255,6 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 	}
  finish:
 	*formatp = format;
-	*app = ap;
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
@@ -265,7 +263,6 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	const char **formatp, va_list *app)
 {
 	const char *format = *formatp;
-	va_list ap = *app;
 	gfarm_int8_t *cp;
 	gfarm_int16_t *hp;
 	gfarm_int32_t *ip, i;
@@ -287,20 +284,20 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	for (; *format; format++) {
 		switch (*format) {
 		case 'c':
-			cp = va_arg(ap, gfarm_int8_t *);
+			cp = va_arg(*app, gfarm_int8_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    cp, sizeof(*cp), just) != sizeof(*cp))
 				return (GFARM_ERR_NO_ERROR);
 			break;
 		case 'h':
-			hp = va_arg(ap, gfarm_int16_t *);
+			hp = va_arg(*app, gfarm_int16_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    hp, sizeof(*hp), just) != sizeof(*hp))
 				return (GFARM_ERR_NO_ERROR);
 			*hp = ntohs(*hp);
 			break;
 		case 'i':
-			ip = va_arg(ap, gfarm_int32_t *);
+			ip = va_arg(*app, gfarm_int32_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    ip, sizeof(*ip), just) != sizeof(*ip))
 				return (GFARM_ERR_NO_ERROR);
@@ -312,7 +309,7 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			op = va_arg(ap, gfarm_int64_t *);
+			op = va_arg(*app, gfarm_int64_t *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    lv, sizeof(lv), just) != sizeof(lv))
 				return (GFARM_ERR_NO_ERROR);
@@ -334,7 +331,7 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 #endif
 			break;
 		case 's':
-			sp = va_arg(ap, char **);
+			sp = va_arg(*app, char **);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (GFARM_ERR_NO_ERROR);
@@ -354,9 +351,9 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			sz = va_arg(ap, size_t);
-			szp = va_arg(ap, size_t *);
-			s = va_arg(ap, char *);
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
 			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (GFARM_ERR_NO_ERROR);
@@ -382,7 +379,6 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	}
  finish:
 	*formatp = format;
-	*app = ap;
 	*eofp = 0;
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
