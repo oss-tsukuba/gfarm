@@ -235,6 +235,16 @@ Gfarm テストスイート
 
 4.2. テストケースを書く際に利用する変数
 
+   $REGRESS_HOOK_MODE
+		"gfs_hook" or "gfarmfs"
+		XXX
+
+   $REGRESS_GFARMFS_OPT
+		XXX
+
+   $REGRESS_FUSE_OPT
+		XXX
+
    $data	regress/data/ ディレクトリのパス名。
 		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
 		(もしこれが問題なら、絶対パスに変更するかも…)

@@ -1,9 +1,6 @@
 #!/bin/sh
 
 . ./regress.conf
-. $regress/account.sh
-
-log=log
 
 do_init=0
 do_test=0
@@ -22,6 +19,9 @@ do
 	shift
 done
 
+# NOTE: this redirects stdout to $log
+. $regress/account.sh
+
 case $# in
 0)	schedule=$regress/schedule;;
 *)	schedule=$*;;
@@ -36,8 +36,6 @@ esac
 case $do_init in
 1)	rm -f $log;;
 esac
-
-exec >>$log
 
 fmt_init
 killed=0

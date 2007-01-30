@@ -1,10 +1,9 @@
 #!/bin/sh
 
 . ./regress.conf
-. $regress/account.sh
 
-log=log
-exec >>$log
+# NOTE: this redirects stdout to $log
+. $regress/account.sh
 
 fmt_init
 

@@ -23,21 +23,32 @@ fi
 cd
 rm -rf $hooktmp
 
-case `gfarm.arch.guess` in
-*-*-freebsd*|*-*-solaris*)
-	# documented in README.hook.*.
-	# FreeBSD: the cause is not investigated yet.
-	# Solaris: due to access(2) hook problem?
-	case $exit_code in
-	$exit_pass)	exit_code=$exit_xpass;;
-	$exit_fail)	exit_code=$exit_xfail;;
-	esac;;
-*)	# documented in README.hook.*.
-	case $REGRESS_AUTH in
-	gsi)	case $exit_code in
+case $REGRESS_HOOK_MODE in
+gfs_hook)
+	case `gfarm.arch.guess` in
+	*-*-freebsd*|*-*-solaris*)
+		# documented in README.hook.*.
+		# FreeBSD: the cause is not investigated yet.
+		# Solaris: due to access(2) hook problem?
+		case $exit_code in
 		$exit_pass)	exit_code=$exit_xpass;;
 		$exit_fail)	exit_code=$exit_xfail;;
 		esac;;
+	*)	# documented in README.hook.*.
+		case $REGRESS_AUTH in
+		gsi)	case $exit_code in
+			$exit_pass)	exit_code=$exit_xpass;;
+			$exit_fail)	exit_code=$exit_xfail;;
+			esac;;
+		esac;;
+	esac;;
+gfarmfs)
+	case $REGRESS_FUSE_OPT in
+	*direct_io*)	case $exit_code in
+			$exit_pass)	exit_code=$exit_xpass;;
+			$exit_fail)	exit_code=$exit_xfail;;
+			esac;;
 	esac;;
 esac
+
 exit $exit_code

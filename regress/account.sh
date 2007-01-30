@@ -2,12 +2,21 @@
 
 . ./regress.conf
 
+log=log
+exec >>$log
+
 fmt_init()
 {
 bgfmt="--- %-60.60s %s\n"
 lgfmt="@:= %-60.60s %s\n"
 fmt="%-60.60s ... "
 fin="------------------------------------------------------------ --- ----"
+}
+
+print_both()
+{
+	echo "$@" >&2
+	echo "$@"
 }
 
 print_header()

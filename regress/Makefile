@@ -16,7 +16,7 @@ agent_targets=	disable enable only
 CONFIG_PREFIX=	/var/tmp/`whoami`
 CONFIG_OPT=	# -k
 REGRESS_SH=		$(srcdir)/regress.sh
-TEST_TARGET=		$(REGRESS_SH) -t
+TEST_TARGET=		$(srcdir)/check.sh
 LOG=			log
 
 # These environment settings aren't enough,
@@ -78,7 +78,7 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfs_pio_datasync \
 	lib/libgfarm/gfarm/fork-term-init \
 	lib/libgfarm/gfarm/seek-write \
-	gfs_hook/lib/fsystest	
+	gfs_hook/lib/fsystest
 
 check test: all
 	@$(REGRESS_SH) -i
