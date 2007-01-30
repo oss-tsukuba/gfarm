@@ -154,7 +154,7 @@ char *gfs_statfsnode_cached(char *,
 
 #define	GFS_MAXNAMLEN	255
 struct gfs_dirent {
-	long d_fileno;
+	unsigned long d_fileno;
 	unsigned short d_reclen;
 	unsigned char d_type;
 	unsigned char d_namlen;
