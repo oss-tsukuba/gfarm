@@ -1,11 +1,9 @@
 #!/bin/sh
 
 . ./regress.conf
-
-# NOTE: this redirects stdout to $log
 . $regress/account.sh
 
-fmt_init
+exec >>$log
 
 for tst
 do

@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
+. $regress/account.sh
 
 gfarmfs_opt=
 fuse_opt=
@@ -22,13 +23,9 @@ case $# in
 	exit 1;;
 esac
 
-# NOTE: this redirects stdout to $log
-. $regress/account.sh
-
 fuse_mount_point=$localtop/fuse_mount_point.$$
 
-fmt_init
-print_both "Testing gfarmfs $gfarmfs_opt $fuse_mount_point $fuse_opt"
+print_both "Testing gfarmfs $gfarmfs_opt $fuse_mount_point $fuse_opt" >>$log
 
 failed=true
 
@@ -49,6 +46,6 @@ then
 fi
 if $failed
 then
-    tst="gfarmfs $@"
-    eval_result $exit_fail
+    tst="gfarmfs $gfarmfs_opt $fuse_mount_point $fuse_opt: $@"
+    print_result $exit_fail >>$log
 fi 

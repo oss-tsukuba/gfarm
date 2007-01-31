@@ -89,7 +89,7 @@ check test: all
 loop: all
 	@$(CHECK_ENV) $(srcdir)/loop.sh
 
-selfcheck: selfcheck_clear selfcheck_all_backends selfcheck_summary
+selfcheck: all selfcheck_clear selfcheck_all_backends selfcheck_summary
 
 selfcheck_clear:
 	@$(REGRESS_SH) -i
@@ -204,7 +204,7 @@ config:
 	) > regress.conf
 
 distclean:
-	-$(RM) -f log
+	-$(RM) -f $(LOG)
 	-test -f Makefile || $(RM) -f regress.conf
 
 include $(top_srcdir)/makes/subdir.mk

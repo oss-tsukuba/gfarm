@@ -1,15 +1,13 @@
 #!/bin/sh
 
 . ./regress.conf
-
-# NOTE: this redirects stdout to $log
 . $regress/account.sh
 
 $regress/regress.sh -t $regress/schedule
 
 set $regress/regress.sh -t $regress/schedule.hook
 
-print_both "Testing gfs_hook"
+print_both "Testing gfs_hook" >>$log
 "$@"
 
 if [ "${REGRESS_GFARMFS_FUSE+set}" = "set" ] &&

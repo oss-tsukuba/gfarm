@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
+. $regress/account.sh
 
 do_init=0
 do_test=0
@@ -19,9 +20,6 @@ do
 	shift
 done
 
-# NOTE: this redirects stdout to $log
-. $regress/account.sh
-
 case $# in
 0)	schedule=$regress/schedule;;
 *)	schedule=$*;;
@@ -37,7 +35,8 @@ case $do_init in
 1)	rm -f $log;;
 esac
 
-fmt_init
+exec >>$log
+
 killed=0
 
 case $do_test in
@@ -70,7 +69,7 @@ esac
 
 case $do_summary in
 1)	print_summary $log >&2;;
-*)	print_summary $log >/dev/null;;
+*)	print_summary $log >/dev/null;; # to set $exit_code
 esac
 
 if [ $killed -eq 1 ]; then exit $exit_trap; fi

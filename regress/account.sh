@@ -2,32 +2,32 @@
 
 . ./regress.conf
 
-log=log
-exec >>$log
-
-fmt_init()
-{
-bgfmt="--- %-60.60s %s\n"
-lgfmt="@:= %-60.60s %s\n"
-fmt="%-60.60s ... "
-fin="------------------------------------------------------------ --- ----"
-}
+# constants
+account_bgfmt="--- %-60.60s %s\n"
+account_lgfmt="@:= %-60.60s %s\n"
+account_fmt="%-60.60s ... "
+account_fin="--- ------------------------------------------------------------ ----"
 
 print_both()
 {
-	echo "$@" >&2
-	echo "$@"
+	printf "%s\n" "$*" >&2
+	printf "%s\n" "$*"
+}
+
+print_header_stderr()
+{
+		printf -- "$account_fmt"   "$tst" >&2
 }
 
 print_header()
 {
-		printf -- "$bgfmt" "$tst" "BEGIN" 
-		printf --   "$fmt" "$tst" >&2
+		printf -- "$account_bgfmt" "$tst" "BEGIN"
+		print_header_stderr
 }
 
 print_footer()
 {
-		echo "$fin"
+		echo "$account_fin"
 }
 
 eval_result()
@@ -36,41 +36,49 @@ eval_result()
 
 	case $exit_code in
 	$exit_pass)
-		printf -- "$lgfmt" "$tst" "PASS"
-		echo			  "PASS" >&2;;
+		printf -- "$account_lgfmt" "$tst" "PASS"
+		echo >&2			  "PASS";;
 	$exit_fail)
-		printf -- "$lgfmt" "$tst" "FAIL"
-		echo			  "FAIL" >&2;;
+		printf -- "$account_lgfmt" "$tst" "FAIL"
+		echo >&2			  "FAIL";;
 	$exit_xpass)
-		printf -- "$lgfmt" "$tst" "XPASS"
-		echo			  "XPASS" >&2;;
+		printf -- "$account_lgfmt" "$tst" "XPASS"
+		echo >&2			  "XPASS";;
 	$exit_xfail)
-		printf -- "$lgfmt" "$tst" "XFAIL"
-		echo			  "XFAIL" >&2;;
+		printf -- "$account_lgfmt" "$tst" "XFAIL"
+		echo >&2			  "XFAIL";;
 	$exit_unresolved)
-		printf -- "$lgfmt" "$tst" "UNRESOLVED"
-		echo			  "UNRESOLVED" >&2;;
+		printf -- "$account_lgfmt" "$tst" "UNRESOLVED"
+		echo >&2			  "UNRESOLVED";;
 	$exit_untested)
-		printf -- "$lgfmt" "$tst" "UNTESTED"
-		echo			  "UNTESTED" >&2;;
+		printf -- "$account_lgfmt" "$tst" "UNTESTED"
+		echo >&2			  "UNTESTED";;
 	$exit_unsupported)
-		printf -- "$lgfmt" "$tst" "UNSUPPORTED"
-		echo			  "UNSUPPORTED" >&2;;
+		printf -- "$account_lgfmt" "$tst" "UNSUPPORTED"
+		echo >&2			  "UNSUPPORTED";;
 	$exit_trap)
-		printf -- "$lgfmt" "$tst" "KILLED"
-		echo			  "KILLED" >&2;;
-	*)	printf -- "$lgfmt" "$tst" "exit code = $exit_code"
-		echo			  "exit code = $exit_code" >&2
+		printf -- "$account_lgfmt" "$tst" "KILLED"
+		echo >&2			  "KILLED";;
+	*)	printf -- "$account_lgfmt" "$tst" "exit code = $exit_code"
+		echo >&2			  "exit code = $exit_code"
 		exit_code=$exit_trap;;
 	esac
 
 	return $exit_code
 }
 
+# do not print header and footer, but only result.
+# currently this function is only called from fuse_test.sh.
+print_result()
+{
+	print_header_stderr
+	eval_result "$@"
+}
+
 treat_as_untested()
 {
-		printf -- "$lgfmt" "$tst" "UNTESTED"
-		echo			  "UNTESTED" >&2
+		printf -- "$account_lgfmt" "$tst" "UNTESTED"
+		echo >&2			  "UNTESTED"
 }
 
 print_summary()
