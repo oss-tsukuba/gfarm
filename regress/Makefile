@@ -89,7 +89,7 @@ check test: all
 loop: all
 	@$(CHECK_ENV) $(srcdir)/loop.sh
 
-selfcheck: all selfcheck_clear selfcheck_all_backends selfcheck_summary
+selfcheck: selfcheck_clear selfcheck_all_backends selfcheck_summary
 
 selfcheck_clear:
 	@$(REGRESS_SH) -i
