@@ -17,12 +17,16 @@ fi
 
 rm -rf $hooktmp
 
-case `gfarm.arch.guess` in
-i386-fedora5-linux)
-	# documented in README.hook.*, its cause haven't been investigated yet.
+case $REGRESS_HOOK_MODE in
+gfs_hook)
+    case `gfarm.arch.guess` in
+    i386-fedora5-linux)
+	# documented in README.hook.*, its cause hasn't been investigated yet.
 	case $exit_code in
 	$exit_pass)	exit_code=$exit_xpass;;
 	$exit_fail)	exit_code=$exit_xfail;;
 	esac;;
+    esac;;
 esac
+
 exit $exit_code

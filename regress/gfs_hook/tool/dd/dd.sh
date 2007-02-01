@@ -28,12 +28,16 @@ if [ $exit_code -eq $exit_fail ]; then
     fi
 fi    
 
-case `gfarm.arch.guess` in
-i386-fedora5-linux)
-	# documented in README.hook.*, the cause is not investigated yet.
+case $REGRESS_HOOK_MODE in
+gfs_hook)
+    case `gfarm.arch.guess` in
+    i386-fedora5-linux)
+	# documented in README.hook.*, its cause hasn't been investigated yet.
 	case $exit_code in
 	$exit_pass)	exit_code=$exit_xpass;;
 	$exit_fail)	exit_code=$exit_xfail;;
 	esac;;
+    esac;;
 esac
+
 exit $exit_code
