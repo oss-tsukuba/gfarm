@@ -11,6 +11,7 @@ SUBDIRS = \
 	gfchmod \
 	gfdf \
 	gfdump \
+	gfifo \
 	gfexec \
 	gfexport \
 	gfhost \
