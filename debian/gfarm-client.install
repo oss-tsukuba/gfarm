@@ -4,6 +4,7 @@ debian/tmp/usr/bin/gfarm-ptool
 debian/tmp/usr/bin/gfdf
 debian/tmp/usr/bin/gfexport
 debian/tmp/usr/bin/gfhost
+debian/tmp/usr/bin/gfifo.sh
 debian/tmp/usr/bin/gfimport_fixed
 debian/tmp/usr/bin/gfimport_text
 debian/tmp/usr/bin/gfkey

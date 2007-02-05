@@ -17,6 +17,7 @@ bin/gfexec
 bin/gfexport
 bin/gfgrep
 bin/gfhost
+bin/gfifo.sh
 bin/gfimport_fixed
 bin/gfimport_text
 bin/gfkey

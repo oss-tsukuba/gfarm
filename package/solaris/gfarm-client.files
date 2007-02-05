@@ -4,6 +4,7 @@
 @PREFIX@/bin/gfdf
 @PREFIX@/bin/gfexport
 @PREFIX@/bin/gfhost
+@PREFIX@/bin/gfifo.sh
 @PREFIX@/bin/gfimport_fixed
 @PREFIX@/bin/gfimport_text
 @PREFIX@/bin/gfkey

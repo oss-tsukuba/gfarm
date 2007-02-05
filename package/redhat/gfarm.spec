@@ -749,6 +749,7 @@ fi
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
+%{prefix}/bin/gfifo.sh
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %{prefix}/bin/gfkey
