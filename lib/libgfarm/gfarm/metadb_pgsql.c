@@ -231,15 +231,27 @@ gfarm_pgsql_terminate(void)
 static char *
 gfarm_pgsql_check(void)
 {
+	char *e;
+	static int error_is_reported = 0;
+
 	/*
 	 * if there is a valid PostgreSQL connection, return.  If not,
 	 * create a new connection.
 	 */
-	if (conn != NULL && gfarm_does_own_metadb_connection())
+	if (conn != NULL && gfarm_does_own_metadb_connection()) {
+		error_is_reported = 0;
 		return (NULL);
+	}
 	/* XXX close the file descriptor for conn, but how? */
 	conn = NULL;
-	return (gfarm_metadb_initialize());
+	e = gfarm_metadb_initialize();
+	if (e == NULL) {
+		error_is_reported = 0;
+	} else if (!error_is_reported && gflog_syslog_enabled()) {
+		error_is_reported = 1;
+		gflog_error("gfarm_pgsql_initialize: %s", e);
+	}
+	return (e);
 }
 
 /**********************************************************************/

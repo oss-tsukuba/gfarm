@@ -17,6 +17,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
+
 #include "config.h"
 #include "metadb_access.h"
 #include "metadb_sw.h"
@@ -602,7 +604,20 @@ gfarm_localfs_check(void)
 		return (NULL);
 }
 #else
-#define gfarm_localfs_check() gfarm_metadb_initialize()
+static char *
+gfarm_localfs_check(void)
+{
+	char *e = gfarm_metadb_initialize();
+	static int error_is_reported = 0;
+
+	if (e == NULL) {
+		error_is_reported = 0;
+	} else if (!error_is_reported && gflog_syslog_enabled()) {
+		error_is_reported = 1;
+		gflog_error("gfarm_localfs_initialize: %s", e);
+	}
+	return (e);
+}
 #endif
 
 /**********************************************************************/

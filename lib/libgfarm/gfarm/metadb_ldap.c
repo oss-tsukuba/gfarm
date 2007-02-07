@@ -471,15 +471,27 @@ gfarm_ldap_terminate(void)
 static char *
 gfarm_ldap_check(void)
 {
+	char *e;
+	static int error_is_reported = 0;
+
 	/*
 	 * if there is a valid LDAP connection, return.  If not,
 	 * create a new connection.
 	 */
-	if (gfarm_ldap_server != NULL && gfarm_does_own_metadb_connection())
+	if (gfarm_ldap_server != NULL && gfarm_does_own_metadb_connection()) {
+		error_is_reported = 0;
 		return (NULL);
+	}
 	/* XXX close the file descriptor for gfarm_ldap_server, but how? */
 	gfarm_ldap_server = NULL;
-	return (gfarm_metadb_initialize());
+	e = gfarm_metadb_initialize();
+	if (e == NULL) {
+		error_is_reported = 0;
+	} else if (!error_is_reported && gflog_syslog_enabled()) {
+		error_is_reported = 1;
+		gflog_error("gfarm_ldap_initialize: %s", e);
+	}
+	return (e);
 }
 
 /**********************************************************************/
