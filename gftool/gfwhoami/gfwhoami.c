@@ -38,7 +38,7 @@ main(int argc, char **argv)
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", program_name, e);
+		fprintf(stderr, "%s: gfarm_initialize: %s\n", program_name, e);
 		exit(EXIT_FAILURE);
 	}
 
@@ -60,10 +60,15 @@ main(int argc, char **argv)
 
 	printf("%s", gfarm_get_global_username());
 #ifdef HAVE_GSI
-	if (verbose_flag == 1)
+	if (verbose_flag)
 		printf(" %s", gfarm_gsi_client_cred_name());
 #endif
 	printf("\n");
 
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfarm_terminate: %s\n", program_name, e);
+		exit(EXIT_FAILURE);
+	}
 	return (0);
 }
