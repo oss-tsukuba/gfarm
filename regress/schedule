@@ -100,6 +100,13 @@ gftool/gfrep/gfrep-H_dir.sh
 gftool/gfrep/gfrep-D_dir.sh
 gftool/gfrep/gfrep-N2_dir.sh
 gftool/gfls/gfls-l.sh
+
+# Do not do this test at the end of schedule, because it takes for a while
+# until the gfarmfs command actually exits after the completion of this test.
+# And clearing the testing environment of "make selfcheck-*" causes the
+# gfarmfs command hang.
+gftool/gfarmfs-fuse.sh
+
 gftool/gfrcmd/gfrcmd.sh
 gftool/gfsched/gfsched.sh
 gftool/gfsched/gfsched-N.sh
@@ -121,5 +128,3 @@ gftool/gfimport_text/import_text-H_multilines.sh
 # gftool/gfkey
 
 gfs_hook/lib/fsystest/fsystest.sh
-
-gftool/gfarmfs-fuse.sh
