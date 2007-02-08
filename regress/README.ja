@@ -370,5 +370,37 @@ Gfarm テストスイート
 	$REGRESS_GFMD_PORT	30601		gfmd のポート
 	$REGRESS_GFSD_PORT	30600		gfsd のポート
 
-   ・環境変数 $REGRESS_GFARMFS_FUSE に、GfarmFS-FUSE のソースディレクトリ
-     を設定しておくと、GfarmFS-FUSE 附属のテストも併せて実行します。
+   ・環境変数 $REGRESS_GFARMFS_FUSE に、GfarmFS-FUSE のソースディレクトリを
+     設定しておくと、GfarmFS-FUSE 附属のテストも併せて実行します。
+     さらに以下の手順で、PostgreSQL のコンパイル済アーカイブファイルを用意し、
+     そのファイルを展開したときに作成されるディレクトリ名を環境変数
+     $REGRESS_POSTGRESQL に設定しておくと、GarmFS-FUSE 上で PostgreSQL 附属の
+     テストも併せて実行します。
+
+     1. PostgreSQL ソースの tar.gz ファイルを用意します。
+	この説明では、例として /raid/src/postgresql-8.1.4.tar.gz という
+	ファイルを用いるものとします。
+
+     2. tar.gz ファイルを展開し configure, make コマンドを実行します。
+
+	$ cd /raid/src
+	$ tar zxf postgresql-8.1.4.tar.gz
+	$ cd postgresql-8.1.4
+	$ ./configure
+	$ make
+
+     3. 作成されたファイルからもとのソース tar.gz ファイルと同名の
+	アーカイブファイルを作成します。	
+
+	$ cd ..
+	(必要ならば、もとのソース tar.gz ファイルがばセーブしておく)
+	$ tar zcf postgresql-8.1.4.tar.gz ./postgresql-8.1.4
+
+     4. 展開されたディレクトリとその下のファイル・ディレクトリを削除します
+
+	$ rm -rf ./postgresql-8.1.4
+
+     5. 展開されたディレクトリパスを環境変数 $REGRESS_POSTGRESQL に設定します。
+	
+	(bash を使っている場合)
+	$ export REGRESS_POSTGRESQL=/raid/src/postgresql-8.1.4

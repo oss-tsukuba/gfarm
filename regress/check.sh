@@ -22,6 +22,9 @@ then
 	$regress/fuse_test.sh -O "-nlsu -b" "$@"
 	$regress/fuse_test.sh -O "-nlsu -b" -o "-o direct_io" "$@"
 
-#	$regress/fuse_test.sh -O "-nlsu -b" \
-#		$regress/tst.sh gfs_hook/tool/postgresql/make-check.sh
+	if [ "${REGRESS_POSTGRESQL+set}" = "set" ]
+	then
+	    $regress/fuse_test.sh -O "-nlsu -b" -m $REGRESS_POSTGRESQL \
+		$regress/tst.sh $regress/gfs_hook/tool/postgresql/make-check.sh
+	fi	
 fi

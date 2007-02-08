@@ -5,10 +5,13 @@
 
 gfarmfs_opt=
 fuse_opt=
+fuse_mount_point=$localtop/fuse_mount_point.$$
 while case $1 in
-	-O)	gfarmfs_opt=${2?"missing <gfarmfs_opt> argument for -O"}
+	-O)	gfarmfs_opt=${2?"missing <gfarmfs_option> argument for -O"}
 		shift; true;;
-	-o)	fuse_opt=${2?"missing <fuse_opt> argument for -o"}
+	-o)	fuse_opt=${2?"missing <fuse_option> argument for -o"}
+		shift; true;;
+	-m)	fuse_mount_point=${2?"missing <fuse_mount_point> argument for -m"}
 		shift; true;;
 	*)	false;;
 	esac
@@ -19,11 +22,10 @@ case $# in
 0)	echo >&2 "Usage: fuse_test.sh " \
 		"[-O <gfarmfs_option>] " \
 		"[-o <fuse_option>] " \
+		"[-m <fuse_mount_point>] " \
 		"<test_command>..."
 	exit 1;;
 esac
-
-fuse_mount_point=$localtop/fuse_mount_point.$$
 
 print_both "Testing gfarmfs $gfarmfs_opt $fuse_mount_point $fuse_opt" >>$log
 
