@@ -1489,6 +1489,38 @@ name, "foobar", is mapped to a local user name,  "foo", on this node.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>identical_user_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When <SPAN
+CLASS="TOKEN"
+>enable</SPAN
+> is specified, the same global
+username is used as the local account name when there is no
+corresponding global user entry in a user map file specified by the
+<SPAN
+CLASS="TOKEN"
+>local_user_map</SPAN
+> directive. 
+The default is <SPAN
+CLASS="TOKEN"
+>enable</SPAN
+>.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	identical_user_map&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >dir_cache_timeout</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1760,7 +1792,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;address_use_statement&#62;&nbsp;|<br>
 		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;option_statement&#62;&nbsp;|<br>
-		  &#60;local_user_map_statement&#62;<br>
+		  &#60;local_user_map_statement&#62;&nbsp;|<br>
+		  &#60;identical_user_map_statement&#62;&nbsp;|<br>
 		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
@@ -1818,6 +1851,7 @@ CLASS="LITERALLAYOUT"
 	&#60;option_statement&#62;&nbsp;::=&nbsp;"option"&nbsp;&#60;an_option&#62;<br>
 	&#60;an_option&#62;&nbsp;::=&nbsp;"noatime"<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;identical_user_map_statement&#62;&nbsp;::=&nbsp;"identical_user_map"&nbsp;&#60;validity&#62;<br>
 	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>

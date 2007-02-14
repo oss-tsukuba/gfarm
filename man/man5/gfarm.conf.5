@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "13 November 2006" "Gfarm" ""
+.TH "GFARM.CONF" "5" "14 February 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -630,6 +630,19 @@ Example of the user mapping file:
 According to the first line of this mapping file, a global user
 name, "foobar", is mapped to a local user name,  "foo", on this node.
 .TP
+\fBidentical_user_map \fIvalidity\fB\fR
+When enable is specified, the same global
+username is used as the local account name when there is no
+corresponding global user entry in a user map file specified by the
+local_user_map directive. 
+The default is enable\&.
+
+For example,
+
+.nf
+	identical_user_map disable
+.fi
+.TP
 \fBdir_cache_timeout \fIseconds\fB\fR
 This directive specifies the time (in seconds) until a directory cache
 in the gfarm library expires.
@@ -795,7 +808,8 @@ notation.
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
 		\~\~<option_statement> |
-		\~\~<local_user_map_statement>
+		\~\~<local_user_map_statement> |
+		\~\~<identical_user_map_statement> |
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
@@ -853,6 +867,7 @@ notation.
 	<option_statement> ::= "option" <an_option>
 	<an_option> ::= "noatime"
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<identical_user_map_statement> ::= "identical_user_map" <validity>
 	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>

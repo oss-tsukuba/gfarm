@@ -1316,6 +1316,31 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>identical_user_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+><SPAN
+CLASS="TOKEN"
+>enable</SPAN
+> ¤ò»ØÄê¤¹¤ë¤³¤È¤Ë¤è¤ê¡¢
+¥æ¡¼¥¶¥Þ¥Ã¥×¥Õ¥¡¥¤¥ë¤ËÂÐ±þ¤¹¤ë¥°¥í¡¼¥Ð¥ë¥æ¡¼¥¶Ì¾¤¬¤Ê¤¤¾ì¹ç¤Ë¡¢
+¥í¡¼¥«¥ë¤Î¥¢¥«¥¦¥ó¥ÈÌ¾¤ò¥°¥í¡¼¥Ð¥ë¥æ¡¼¥¶Ì¾¤È¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï enable ¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	identical_user_map&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >dir_cache_timeout</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1572,7 +1597,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
 		  &#60;address_use_statement&#62;&nbsp;|<br>
 		  &#60;client_architecture_statement&#62;&nbsp;|<br>
-		  &#60;local_user_map_statement&#62;<br>
+		  &#60;local_user_map_statement&#62;&nbsp;|<br>
+		  &#60;identical_user_map_statement&#62;&nbsp;|<br>
 		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
@@ -1628,6 +1654,7 @@ CLASS="LITERALLAYOUT"
 	&#60;client_architecture_statement&#62;&nbsp;::=<br>
 		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;identical_user_map_statement&#62;&nbsp;::=&nbsp;"identical_user_map"&nbsp;&#60;validity&#62;<br>
 	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>

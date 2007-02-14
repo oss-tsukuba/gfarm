@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "24 January 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "14 February 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -581,6 +581,18 @@ IPアドレスを通信に用いるかを指定します。
 この例の1行目の指定では、このノードのローカルユーザ名 foo に
 対してグローバルユーザ名 foobar が定義されています。
 .TP
+\fBidentical_user_map \fI有効性\fB\fR
+enable を指定することにより、
+ユーザマップファイルに対応するグローバルユーザ名がない場合に、
+ローカルのアカウント名をグローバルユーザ名とします。
+デフォルトは enable です。
+
+例:
+
+.nf
+	identical_user_map disable
+.fi
+.TP
 \fBdir_cache_timeout \fI秒数\fB\fR
 gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
 有効期限を秒数で指定します。デフォルトは86400秒すなわち一日です。
@@ -740,7 +752,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<sockopt_statement> |
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
-		\~\~<local_user_map_statement>
+		\~\~<local_user_map_statement> |
+		\~\~<identical_user_map_statement> |
 		\~\~<dir_cache_timeout_statement> |
 		\~\~<host_cache_timeout_statement> |
 		\~\~<schedule_cache_timeout_statement> |
@@ -796,6 +809,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<client_architecture_statement> ::=
 		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<identical_user_map_statement> ::= "identical_user_map" <validity>
 	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
 	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
