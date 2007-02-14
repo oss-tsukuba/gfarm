@@ -61,13 +61,22 @@ gfarm_initialized(void)
 
 /*
  * GFarm username handling
+ *
+ * Initial string values should be NULL, otherwise the value incorrectly
+ * free(3)ed in the gfarm_config_clear() function below.
+ * If you would like to provide default value other than NULL, set the
+ * value at gfarm_config_set_default*().
  */
 
+#define MISC_DEFAULT -1
 static gfarm_stringlist local_user_map_file_list;
+#define GFARM_IDENTICAL_USER_MAP_DEFAULT 1 /* enable */
+static int gfarm_identical_user_map = MISC_DEFAULT;
 
 static char GFARM_ERR_TOO_MANY_ARGUMENTS[] = "too many arguments";
 static char GFARM_ERR_LOCAL_USER_REDEFIEND[] = "local user name redifined";
 static char GFARM_ERR_GLOBAL_USER_REDEFIEND[] = "global user name redifined";
+static char GFARM_ERR_UNKNOWN_GLOBAL_USER[] = "unknown global user";
 
 /* the return value of the following function should be free(3)ed */
 static char *
@@ -114,15 +123,15 @@ map_user(char *from, char **to_p,
 			lineno++;
 			g_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
-				goto finish;
+				goto syntax_error;
 			if (g_user == NULL) /* blank or comment line */
 				continue;
 			l_user = gfarm_strtoken(&bp, &e);
 			if (e != NULL)
-				goto finish;
+				goto syntax_error;
 			if (l_user == NULL) {
 				e = "missing second field (local user)";
-				goto finish;
+				goto syntax_error;
 			}
 			mapped = (*mapping)(from, g_user, l_user);
 			if (mapped != NULL) {
@@ -130,31 +139,37 @@ map_user(char *from, char **to_p,
 				    strcmp(mapped, *to_p) != 0 &&
 				    i == mapfile_mapped_index) {
 					e = error_redefined;
-					goto finish;
+					goto syntax_error;
 				}
 				if (*to_p == NULL) {
 					*to_p = strdup(mapped);
 					if (*to_p == NULL) {
 						e = GFARM_ERR_NO_MEMORY;
-						goto finish;
+						goto syntax_error;
 					}
 				}
 				mapfile_mapped_index = i;
 			}
 			if (gfarm_strtoken(&bp, &e) != NULL) {
 				e = GFARM_ERR_TOO_MANY_ARGUMENTS;
-				goto finish;
+				goto syntax_error;
 			}
 		}
 		fclose(map);
 		map = NULL;
 	}
-	if (*to_p == NULL) { /* not found */
-	 	*to_p = strdup(from);
+	if (*to_p != NULL)
+		return (NULL);
+
+	/* not found */
+	if (gfarm_identical_user_map) {
+		*to_p = strdup(from);
 		if (*to_p == NULL)
-			e = GFARM_ERR_NO_MEMORY;
-	}	
-finish:	
+			return (GFARM_ERR_NO_MEMORY);
+	}
+	else
+		return (GFARM_ERR_UNKNOWN_GLOBAL_USER);
+syntax_error:	
 	if (map != NULL)
 		fclose(map);
 	if (e != NULL) {
@@ -387,7 +402,6 @@ enum gfarm_metadb_backend_type {
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
-#define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
@@ -1198,6 +1212,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_address_use_arguments(p, &o);
 	} else if (strcmp(s, o = "local_user_map") == 0) {
 		e = parse_local_user_map(p, &o);
+	} else if (strcmp(s, o = "identical_user_map") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_identical_user_map);
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
 
@@ -1390,6 +1406,9 @@ gfarm_config_set_default_spool_on_client(void)
 static void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_identical_user_map == MISC_DEFAULT)
+		gfarm_identical_user_map = GFARM_IDENTICAL_USER_MAP_DEFAULT;
+
 	if (gfarm_log_level == MISC_DEFAULT)
 		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_log_level);

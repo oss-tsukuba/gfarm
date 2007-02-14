@@ -729,6 +729,20 @@ IPアドレスを通信に用いるかを指定します。
 </varlistentry>
 
 <varlistentry>
+<term><token>identical_user_map</token> <parameter>有効性</parameter></term>
+<listitem>
+<para><token>enable</token> を指定することにより、
+ユーザマップファイルに対応するグローバルユーザ名がない場合に、
+ローカルのアカウント名をグローバルユーザ名とします。
+デフォルトは enable です。</para>
+<para>例:</para>
+<literallayout>
+	identical_user_map disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>dir_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
@@ -918,7 +932,8 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
-		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
+		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;identical_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
@@ -974,6 +989,7 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 	&lt;client_architecture_statement&gt; ::=
 		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
+	&lt;identical_user_map_statement&gt; ::= "identical_user_map" &lt;validity&gt;
 	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;

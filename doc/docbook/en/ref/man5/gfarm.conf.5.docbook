@@ -777,6 +777,21 @@ name, "foobar", is mapped to a local user name,  "foo", on this node.
 </varlistentry>
 
 <varlistentry>
+<term><token>identical_user_map</token> <parameter>validity</parameter></term>
+<listitem>
+<para>When <token>enable</token> is specified, the same global
+username is used as the local account name when there is no
+corresponding global user entry in a user map file specified by the
+<token>local_user_map</token> directive. 
+The default is <token>enable</token>.</para>
+<para>For example,</para>
+<literallayout>
+	identical_user_map disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>dir_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
 <para>This directive specifies the time (in seconds) until a directory cache
@@ -971,7 +986,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
 		&nbsp;&nbsp;&lt;option_statement&gt; |
-		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
+		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;identical_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;dir_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;host_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
@@ -1029,6 +1045,7 @@ notation.</para>
 	&lt;option_statement&gt; ::= "option" &lt;an_option&gt;
 	&lt;an_option&gt; ::= "noatime"
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
+	&lt;identical_user_map_statement&gt; ::= "identical_user_map" &lt;validity&gt;
 	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
 	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
