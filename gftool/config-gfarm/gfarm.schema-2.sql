@@ -49,7 +49,8 @@ CREATE TABLE FileSectionCopy (
 	pathid		INT8		NOT NULL REFERENCES Path(pathid),
 	section		VARCHAR(256)	NOT NULL,
 	hostid		INTEGER		NOT NULL REFERENCES Host(hostid),
-	PRIMARY KEY(pathid, section, hostid)
+	PRIMARY KEY(pathid, section, hostid),
+	FOREIGN KEY(pathid, section) REFERENCES FileSection
 );
 
 CREATE INDEX fileSectionCopyByPath ON FileSectionCopy (pathid);
