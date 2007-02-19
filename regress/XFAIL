@@ -1,7 +1,7 @@
 	This file describes the rationale of XFAIL
 
 gfs_hook/tool/dd/dd.sh
-	i386-fedora5-linux:
+	i386-fedora[56]-linux:
 		documented in README.hook.*, the cause is not investigated yet.
 gfs_hook/tool/gzip/gzip-d.sh
 	*-*-netbsd*:
@@ -10,7 +10,7 @@ gfs_hook/tool/pax/pax-r.sh
 	*-*-solaris*:
 		documented in README.hook.*, due to access(2) hook problem?
 gfs_hook/tool/touch/touch_time.sh
-	i386-fedora5-linux:
+	i386-fedora[5-9]-linux:
 		documented in README.hook.*, due to futimes(2) hook problem.
 gfs_hook/tool/scp/scp_from_gfarm.sh
 	not Solaris and $REGRESS_AUTH in ["gsi", "gsi_auth"]

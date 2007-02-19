@@ -20,7 +20,7 @@ rm -rf $hooktmp
 case $REGRESS_HOOK_MODE in
 gfs_hook)
     case `gfarm.arch.guess` in
-    i386-fedora5-linux)
+    i386-fedora[5-9]-linux|i386-fedora[1-9][0-9]-linux)
 	# documented in README.hook.*, its cause hasn't been investigated yet.
 	case $exit_code in
 	$exit_pass)	exit_code=$exit_xpass;;

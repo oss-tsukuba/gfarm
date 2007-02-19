@@ -430,9 +430,9 @@ KNOWN_PROBLEMS.ja にもある通り，gfarm ライブラリは現在のところマルチ
      対応していないからです。
    - dd コマンドは，内部で無限に再帰呼び出しを行なう結果，コアダンプして
      しまいます．
-     また，Fedora Core 5 の dd で，of= パラメータに Gfarm ファイルを指定
-     した場合，原因は未調査であるものの，Bad file descriptor エラーとなる
-     ことが確認されています。
+     また，Fedora Core 5 および Fedora Core 6 の dd で，of= パラメータに
+     Gfarm ファイルを指定した場合，原因は未調査であるものの，
+     Bad file descriptor エラーとなることが確認されています。
    - 認証方法として gsi を選択している場合，autoconf の生成した configure
      スクリプトは Gfarm ファイルシステム上では完了しません．認証方法として
      sharedsecret ないし gsi_auth を選択している場合には動作します．
