@@ -687,7 +687,7 @@ main(int argc, char *argv[])
 	gfarm_stringlist_free_deeply(&paths);
 	if (gfarm_stringlist_length(&files.files)
 		+ gfarm_stringlist_length(&files.dirs) <= 0)
-		exit(0); /* no file */
+		error_check("missing operand"); /* no file */
 
 	if (!quiet) {
 		printf("investigating hosts...");

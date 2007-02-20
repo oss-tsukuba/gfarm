@@ -746,7 +746,7 @@ main(int argc, char *argv[])
 	if (verbose)
 		print_stringlist(&allpaths);
 	if (gfarm_stringlist_length(&allpaths) <= 0)
-		exit(0); /* no file */
+		error_check("missing operand"); /* no file */
 
 	if (!quiet) {
 		printf("investigating hosts...");
