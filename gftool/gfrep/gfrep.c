@@ -712,6 +712,7 @@ main(int argc, char *argv[])
 		case 'V':
 			printf("%s %s (%s)\n",
 			    program_name, GFARM_VERSION, GFARM_REVISION);
+			(void)gfarm_terminate();
 			exit(0);
 		case '?':
 		default:
