@@ -4,8 +4,20 @@
 
 #include <gfarm/gfarm_config.h>
 
-#define GFARM_VERSION	"1.4.99"
+#define GFARM_VERSION		"1.4.99"
+#define GFARM_MAJOR_VERSION	1
+#define GFARM_MINOR_VERSION	4
+#define GFARM_PATCH_VERSION	99	/* 99 means development version */
+#define GFARM_MICRO_VERSION	0
+
 #define GFARM_REVISION	"$Revision$"
+
+const char *gfarm_version_string(void);
+int gfarm_major_version(void);
+int gfarm_minor_version(void);
+int gfarm_patch_version(void);
+int gfarm_micro_version(void);
+const char *gfarm_revision_string(void);
 
 /*
  * basic types

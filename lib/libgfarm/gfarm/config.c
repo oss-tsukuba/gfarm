@@ -81,7 +81,7 @@ static char GFARM_ERR_UNKNOWN_GLOBAL_USER[] = "unknown global user";
 /* the return value of the following function should be free(3)ed */
 static char *
 map_user(char *from, char **to_p,
-	char *(mapping)(char *, char *, char *), char *error_redefined)
+	char *(*mapping)(char *, char *, char *), char *error_redefined)
 {
 	FILE *map = NULL;
 	char *mapfile = NULL;
@@ -1907,6 +1907,42 @@ gfarm_server_terminate(void)
 	gfs_client_terminate();
 	gfarm_config_clear();
 	return (NULL);
+}
+
+const char *
+gfarm_version_string(void)
+{
+	return (GFARM_VERSION);
+}
+
+int
+gfarm_major_version(void)
+{
+	return (GFARM_MAJOR_VERSION);
+}
+
+int
+gfarm_minor_version(void)
+{
+	return (GFARM_MINOR_VERSION);
+}
+
+int
+gfarm_patch_version(void)
+{
+	return (GFARM_PATCH_VERSION);
+}
+
+int
+gfarm_micro_version(void)
+{
+	return (GFARM_MICRO_VERSION);
+}
+
+const char *
+gfarm_revision_string(void)
+{
+	return (GFARM_REVISION);
 }
 
 #ifdef CONFIG_TEST
