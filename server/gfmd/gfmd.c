@@ -737,6 +737,7 @@ open_accepting_socket(int port)
 void
 usage(void)
 {
+	fprintf(stderr, "gfmd %s (%s)\n", GFARM_VERSION, GFARM_REVISION);
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-L <syslog-priority-level>\n");

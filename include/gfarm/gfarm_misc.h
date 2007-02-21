@@ -4,6 +4,9 @@
 
 #include <gfarm/gfarm_config.h>
 
+#define GFARM_VERSION	"1.4.99"
+#define GFARM_REVISION	"$Revision$"
+
 /*
  * basic types
  */
