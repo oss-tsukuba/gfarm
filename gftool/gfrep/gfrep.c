@@ -580,6 +580,8 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 static int
 usage()
 {
+	fprintf(stderr, "%s %s (%s)\n",
+	    program_name, GFARM_VERSION, GFARM_REVISION);
 	fprintf(stderr, "Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
 	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
@@ -662,9 +664,9 @@ main(int argc, char *argv[])
 	error_check(e);
 
 #ifdef _OPENMP
-	while ((ch = getopt(argc, argv, "a:h:j:mnqvS:D:H:I:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "a:h:j:mnqvS:D:H:I:N:V?")) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "a:h:mnqvS:D:H:I:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "a:h:mnqvS:D:H:I:N:V?")) != -1) {
 #endif
 		switch (ch) {
 		case 'a':
@@ -707,6 +709,10 @@ main(int argc, char *argv[])
 		case 'N':
 			num_replicas = strtol(optarg, NULL, 0);
 			break;
+		case 'V':
+			printf("%s %s (%s)\n",
+			    program_name, GFARM_VERSION, GFARM_REVISION);
+			exit(0);
 		case '?':
 		default:
 			usage();
