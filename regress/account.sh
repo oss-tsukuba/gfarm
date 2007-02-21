@@ -22,11 +22,13 @@ print_header_stderr()
 print_header()
 {
 		printf -- "$account_bgfmt" "$tst" "BEGIN"
+		echo "@@_ start at `date +'%s'` - `date`"
 		print_header_stderr
 }
 
 print_footer()
 {
+		echo "@@~  end  at `date +'%s'` - `date`"
 		echo "$account_fin"
 }
 
