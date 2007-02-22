@@ -236,14 +236,19 @@ Gfarm テストスイート
 4.2. テストケースを書く際に利用する変数
 
    $REGRESS_HOOK_MODE
-		"gfs_hook" or "gfarmfs"
-		XXX
+		UNIX コマンドのテストがフック/GfarmFS-FUSE のいずれで
+		実行されているかを示す環境変数。
+			とりうる値	意味
+			"gfs_hook"	フックでのテスト
+		 	"gfarmfs"	GfarmFS-FUSE でのテスト
 
    $REGRESS_GFARMFS_OPT
-		XXX
+		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して
+		指定する GfarmFS のオプション
 
    $REGRESS_FUSE_OPT
-		XXX
+		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して
+		指定する FUSE のオプション
 
    $data	regress/data/ ディレクトリのパス名。
 		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
