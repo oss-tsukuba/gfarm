@@ -243,12 +243,12 @@ Gfarm テストスイート
 		 	"gfarmfs"	GfarmFS-FUSE でのテスト
 
    $REGRESS_GFARMFS_OPT
-		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して
-		指定する GfarmFS のオプション
+		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して、
+		どのような GfarmFS のオプションが指定されているかを示す環境変数
 
    $REGRESS_FUSE_OPT
-		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して
-		指定する FUSE のオプション
+		GfarmFS-FUSE でのテストで gfarmfs コマンドに対して、
+		どのような FUSE のオプションが指定されているかを示す環境変数
 
    $data	regress/data/ ディレクトリのパス名。
 		注: 相対パスのことがあるので、cd するとアクセスできなくなる。
