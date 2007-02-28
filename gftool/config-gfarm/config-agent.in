@@ -228,6 +228,9 @@ create_directory()
 
 create_directory $RC_DIR $RUN_DIR
 
+# create some directories
+mkcnf_agent_sysdep
+
 # create configuration files
 grep -v "^agent" $GFARM_CONF > $GFARM_CONF.tmp &&
 echo agent_serverhost $AGENT_HOSTNAME >> $GFARM_CONF.tmp &&

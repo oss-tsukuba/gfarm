@@ -103,6 +103,11 @@ mkcnf_gfmd_sysdep()
 	mkcnf_gfarm_sysdep
 }
 
+mkcnf_agent_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
 mkcnf_gfsd_sysdep()
 {
 	mkcnf_gfarm_sysdep
