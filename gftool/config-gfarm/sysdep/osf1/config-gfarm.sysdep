@@ -36,6 +36,11 @@ config_sysdep()
 	cat ${1+"$@"}
 }
 
+mkcnf_agent_sysdep()
+{
+	: # do nothing
+}
+
 mkcnf_gfmd_sysdep()
 {
 	: # do nothing
