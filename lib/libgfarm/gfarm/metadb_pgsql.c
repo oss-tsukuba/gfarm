@@ -216,6 +216,7 @@ gfarm_pgsql_terminate(void)
 	if (gfarm_does_own_metadb_connection()) {
 		PQfinish(conn);
 	}
+	conn = NULL;
 
 	return (NULL);
 }
