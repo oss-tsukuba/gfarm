@@ -2525,8 +2525,10 @@ datagram_server(int sock)
 
 	rv = recvfrom(sock, buffer, sizeof(buffer), 0,
 	    (struct sockaddr *)&client_addr, &client_addr_size);
-	if (rv == -1)
+	if (rv == -1) {
+		gflog_warning_errno("datagram_server: recvfrom");
 		return;
+	}
 	rv = getloadavg(loadavg, GFARM_ARRAY_LENGTH(loadavg));
 	if (rv == -1) {
 		gflog_warning("datagram_server: cannot get load average");
@@ -2539,6 +2541,12 @@ datagram_server(int sock)
 #endif
 	rv = sendto(sock, nloadavg, sizeof(nloadavg), 0,
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
+	if (rv == -1)
+		gflog_warning_errno("datagfarm_server: %s %f",
+		    inet_ntoa(client_addr.sin_addr), loadavg[0]);
+	else
+		gflog_debug("datagfarm_server: %s %f",
+		    inet_ntoa(client_addr.sin_addr), loadavg[0]);
 }
 
 void
