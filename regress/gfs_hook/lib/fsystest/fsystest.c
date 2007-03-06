@@ -4,6 +4,9 @@
  * This program is based on test.c from FUSE project.
  *     http://fuse.cvs.sourceforge.net/fuse/fuse/test/
  */
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -23,10 +26,16 @@
 # define __attribute__(a)
 #endif
 
-static char testfile[] = "./__testfile";
-static char testfile2[] = "./__testfile2";
-static char testdir[] = "./__testdir";
-static char testdir2[] = "./__testdir2";
+
+#define FILE1 "./__testfile1"
+#define FILE2 "./__testfile2"
+#define DIR1 "./__testdir1"
+#define DIR2 "./__testdir2"
+
+static char *testfile;
+static char *testfile2;
+static char *testdir;
+static char *testdir2;
 static char testname[256];
 static char testdata[] = "abcdefghijklmnopqrstuvwxyz";
 static char testdata2[] = "1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm,./";
@@ -475,19 +484,33 @@ test_truncate(int len)
 	return 0;
 }
 
+#define test_ftruncate(l, m) test_ftruncate_common(l, m, 0, O_WRONLY, NULL, 0, NULL)
+#define test_open_truncate(f, m, l, e) test_ftruncate_common(l, m, 1, f, #f, e, #e)
+
 static int
-test_ftruncate(int len, int mode)
+test_ftruncate_common(int len, int mode, int open_truncate,
+		      int flags, const char *flags_str,
+		      int err, const char *err_str)
 {
-	static char func[] = "test_ftruncate";
+	char *func;
+	static char f1[] = "test_ftruncate";
+	static char f2[] = "test_open_truncate";
 	const char *data = testdata;
 	int datalen = testdatalen;
 	int res;
 	int fd;
-	start_test("ftruncate(%u) mode=0%03o", len, mode);
+	if (open_truncate) {
+		start_test("open(%s) fchmod(0%03o) truncate(%u) errno=%s",
+			   flags_str, mode, len, err_str);
+		func = f2;
+	} else {
+		start_test("ftruncate(%u) mode=0%03o", len, mode);
+		func = f1;
+	}
 	res = create_file(testfile, data, datalen);
 	if (res == -1)
 		return -1;
-	fd = open(testfile, O_WRONLY);
+	fd = open(testfile, flags);
 	if (fd == -1) {
 		test_perror(func, "open");
 		return -1;
@@ -503,11 +526,26 @@ test_ftruncate(int len, int mode)
 		close(fd);
 		return -1;
 	}
-	res = ftruncate(fd, len);
-	if (res == -1) {
-		test_perror(func, "ftruncate");
-		close(fd);
-		return -1;
+	if (open_truncate) {
+		res = truncate(testfile, len);
+		if (res == -1 && err != errno) {
+			test_perror(func, "truncate");
+			close(fd);
+			return -1;
+		} else if (res == 0 && err) {
+			test_error(func, "truncate should have failed");
+			close(fd);
+			return -1;
+		} else if (err) {
+			len = datalen;
+		}
+	} else {
+		res = ftruncate(fd, len);
+		if (res == -1) {
+			test_perror(func, "ftruncate");
+			close(fd);
+			return -1;
+		}
 	}
 	close(fd);
 	res = check_size(testfile, len);
@@ -1455,6 +1493,39 @@ do_test_open_open(int creat_mode,
 	return 0;
 }
 
+static void
+filename_set(char **namep, char *prefix, char *hostname, char *pid)
+{
+	size_t len = (strlen(prefix) + strlen(hostname) + strlen(pid))
+		* sizeof(char *);
+	*namep = malloc(len);
+	if (*namep == NULL)
+		exit(1);
+	snprintf(*namep, len, "%s_%s_%s", prefix, hostname, pid);
+}
+
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
+static void
+test_initialize()
+{
+	char hostname[HOST_NAME_MAX];
+	char pid[16];
+	int res;
+
+	res = gethostname(hostname, HOST_NAME_MAX);
+	if (res == -1)
+		snprintf(hostname, HOST_NAME_MAX, "tmp");
+	snprintf(pid, 16, "%d", (int)getpid());
+
+	filename_set(&testfile, FILE1, hostname, pid);
+	filename_set(&testfile2, FILE2, hostname, pid);
+	filename_set(&testdir, DIR1, hostname, pid);
+	filename_set(&testdir2, DIR2, hostname, pid);
+}
+
 static int
 test_finalize(int err)
 {
@@ -1479,23 +1550,47 @@ signal_exit(int sig)
 	exit(res);
 }
 
+static void
+usage(char *name)
+{
+	fprintf(stderr, "usage: %s [-m] testdir\n", name);
+}
+
 int
 main(int argc, char *argv[])
 {
 	int err = 0;
 	struct sigaction sa;
+	char c;
+	char *progname = argv[0];
+	int enable_mmap = 0;
 
-	if (argc != 2) {
-		fprintf(stderr, "usage: %s testdir\n", argv[0]);
+	while ((c = getopt(argc, argv, "m")) != EOF) {
+		switch(c) {
+		case 'm':
+			enable_mmap = 1;
+			break;
+		default:
+			usage(progname);
+			return 1;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+	if (argc != 1) {
+		usage(progname);
 		return 1;
 	}
 	umask(0);
-	chdir(argv[1]);
-
+	chdir(argv[0]);
+	setvbuf(stdout, NULL, _IOLBF, 0);
+	setvbuf(stderr, NULL, _IOLBF, 0);
 	sa.sa_handler = signal_exit;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 
+	test_initialize();
+#if 1
 	err += test_create();
 	err += test_symlink();
 	err += test_link();
@@ -1557,9 +1652,11 @@ main(int argc, char *argv[])
 	err += test_open_acc(O_RDONLY | O_TRUNC, 0200, EACCES);
 	err += test_open_acc(O_WRONLY | O_TRUNC, 0200, 0);
 	err += test_open_acc(O_RDWR   | O_TRUNC, 0200, EACCES);
-	err += test_mmap(PROT_READ, MAP_SHARED);
-	err += test_mmap(PROT_WRITE, MAP_SHARED);
-	err += test_mmap(PROT_READ | PROT_WRITE, MAP_SHARED);
+	if (enable_mmap) {
+		err += test_mmap(PROT_READ, MAP_SHARED);
+		err += test_mmap(PROT_WRITE, MAP_SHARED);
+		err += test_mmap(PROT_READ | PROT_WRITE, MAP_SHARED);
+	}
 	err += test_seek_eof(10);
 	err += test_open_size();
 	err += test_open_rename();
@@ -1579,6 +1676,13 @@ main(int argc, char *argv[])
 	err += test_creat_open(O_WRONLY, O_RDWR);
 	err += test_creat_open(O_RDWR, O_RDONLY);
 	err += test_creat_open(O_RDWR, O_WRONLY);
+	err += test_open_truncate(O_RDONLY, 0200, 0, 0);
+	/* err += test_open_truncate(O_RDONLY, 0200, 5, 0); -- EBADF */
+	err += test_open_truncate(O_RDONLY, 0600, 5, 0);
+	err += test_open_truncate(O_RDONLY, 0400, 5, EACCES);
+	err += test_open_truncate(O_WRONLY, 0600, 5, 0);
+	err += test_open_truncate(O_WRONLY, 0400, 5, EACCES);
+#endif
 
 	return test_finalize(err);
 }

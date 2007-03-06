@@ -69,9 +69,6 @@ OK [open_acc(O_RDONLY | O_TRUNC) mode=0600 errno=0]
 OK [open_acc(O_RDONLY | O_TRUNC) mode=0200 errno=EACCES]
 OK [open_acc(O_WRONLY | O_TRUNC) mode=0200 errno=0]
 OK [open_acc(O_RDWR | O_TRUNC) mode=0200 errno=EACCES]
-OK [mmap(PROT_READ, MAP_SHARED)]
-OK [mmap(PROT_WRITE, MAP_SHARED)]
-OK [mmap(PROT_READ | PROT_WRITE, MAP_SHARED)]
 OK [seek_EOF offset=10]
 NG [open size] check_size(): length 0 instead of 1
 NG [open rename utime close] check_times(): different atime
@@ -92,4 +89,9 @@ OK [creat(O_WRONLY) open(O_RDONLY)]
 OK [creat(O_WRONLY) open(O_RDWR)]
 OK [creat(O_RDWR) open(O_RDONLY)]
 OK [creat(O_RDWR) open(O_WRONLY)]
-31 tests failed
+NG [open(O_RDONLY) fchmod(0200) truncate(0) errno=0] check_mode(): mode 0700 instead of 0644
+NG [open(O_RDONLY) fchmod(0600) truncate(5) errno=0] check_mode(): mode 0700 instead of 0644
+NG [open(O_RDONLY) fchmod(0400) truncate(5) errno=EACCES] check_mode(): mode 0700 instead of 0644
+NG [open(O_WRONLY) fchmod(0600) truncate(5) errno=0] check_mode(): mode 0700 instead of 0644
+NG [open(O_WRONLY) fchmod(0400) truncate(5) errno=EACCES] check_mode(): mode 0700 instead of 0644
+36 tests failed
