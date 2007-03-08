@@ -443,7 +443,7 @@ isn't guaranteed to work, even for the async-signal-safe syscalls.
    - The dd command dumps core due to an infinite number of recursive
      calls.
      Or, "Bad file descriptor" error is observed on Fedora Core 5 and
-     Fedora Core 6, when a Gfarm file is passed to the of= parameter. 
+     Fedora Core 6, when a Gfarm file is passed to the of= parameter.
      The cause of this problem haven't been investigated yet.
      Or, "Socket operation on non-socket" error is observed on a
      CentOS 4.4 client which is not a Gfarm filesystem node, when
