@@ -110,6 +110,11 @@ selfcheck_summary:
 	@echo ""
 	@$(REGRESS_SH) -s
 
+# this target is used by daily test on sfv100
+selfcheck-postgresql2-and-ldap:
+	@$(MAKE) -f $(srcdir)/Makefile selfcheck-postgresql2
+	@$(MAKE) -f $(srcdir)/Makefile selfcheck-ldap
+
 selfcheck-postgresql:
 	@$(MAKE) -f $(srcdir)/Makefile selfcheck-postgresql1
 	@$(MAKE) -f $(srcdir)/Makefile selfcheck-postgresql2
