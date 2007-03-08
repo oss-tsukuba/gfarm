@@ -420,19 +420,23 @@ KNOWN_PROBLEMS.ja にもある通り，gfarm ライブラリは現在のところマルチ
 
    - 1-1) (1) にあるように，glibc-not-hidden パッケージとあわせて利用する
      必要があります．
-   - pthread_cancel() は必ずしも正しく動作しません。
-     これは現状の glibc-not-hidden パッケージの制限です。
+   - pthread_cancel() は必ずしも正しく動作しません．
+     これは現状の glibc-not-hidden パッケージの制限です．
    - glibc-2.3.3 以降に存在する futimes(3) 関数に対するフック機能は動作し
-     ません。この結果、glibc-2.3.3 以降を利用する Linux ディストリビュー
-     ションでは、touch(1) コマンドで時刻の設定ができなくなります。
-     これは、futimes(3) が、"/proc/self/fd/ディスクリプタ番号" に対する
-     utimes(2) として実装されているのに対し、フックの utimes(2) 機能が
-     対応していないからです。
+     ません．この結果，glibc-2.3.3 以降を利用する Linux ディストリビュー
+     ションでは，touch(1) コマンドで時刻の設定ができなくなります．
+     これは，futimes(3) が，"/proc/self/fd/ディスクリプタ番号" に対する
+     utimes(2) として実装されているのに対し，フックの utimes(2) 機能が
+     対応していないからです．
    - dd コマンドは，内部で無限に再帰呼び出しを行なう結果，コアダンプして
      しまいます．
      また，Fedora Core 5 および Fedora Core 6 の dd で，of= パラメータに
      Gfarm ファイルを指定した場合，原因は未調査であるものの，
-     Bad file descriptor エラーとなることが確認されています。
+     Bad file descriptor エラーとなることが確認されています．
+     また，CentOS 4.4 の ファイルシステムノードないクライアント上で，
+     of= パラメータに Gfarm ファイルを指定して dd を実行すると，
+     Socket operation on non-socket エラーとなることが確認されています．
+     原因は未調査です．
    - 認証方法として gsi を選択している場合，autoconf の生成した configure
      スクリプトは Gfarm ファイルシステム上では完了しません．認証方法として
      sharedsecret ないし gsi_auth を選択している場合には動作します．

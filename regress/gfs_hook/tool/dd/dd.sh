@@ -22,9 +22,11 @@ if [ $exit_code -eq $exit_fail ]; then
     if gfhost -M `hostname` >/dev/null; then
 	:
     else
+	case `gfarm.arch.guess` in
 	# dd issues `Socket operation on non-socket' on non-filesystem node,
-	# this problem is not documented yet
-    	exit $exit_xfail
+	# documented in README.hook.*, its cause hasn't been investigated yet.
+	i386-centos4.4-linux)	exit $exit_xfail;;
+	esac    
     fi
 fi    
 
