@@ -2542,10 +2542,10 @@ datagram_server(int sock)
 	rv = sendto(sock, nloadavg, sizeof(nloadavg), 0,
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 	if (rv == -1)
-		gflog_warning_errno("datagfarm_server: %s %f",
+		gflog_warning_errno("datagram_server: %s %f",
 		    inet_ntoa(client_addr.sin_addr), loadavg[0]);
 	else
-		gflog_debug("datagfarm_server: %s %f",
+		gflog_debug("datagram_server: %s %f",
 		    inet_ntoa(client_addr.sin_addr), loadavg[0]);
 }
 
