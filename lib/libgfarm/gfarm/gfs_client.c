@@ -2853,8 +2853,8 @@ gfs_client_bootstrap_replicate_file_with_reconnection(
  **********************************************************************
  */
 
-int gfs_client_datagram_timeouts[] = {
-	10, 100, 1000, 2000, 4000 /* milli seconds */
+int gfs_client_datagram_timeouts[] = { /* milli seconds */
+	10, 100, 1000, 2000, 4000, 8000, 12000, 18000, 24000, 32000
 };
 int gfs_client_datagram_ntimeouts =
 	GFARM_ARRAY_LENGTH(gfs_client_datagram_timeouts);
