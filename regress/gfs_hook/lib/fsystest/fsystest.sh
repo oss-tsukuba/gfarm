@@ -2,10 +2,10 @@
 
 . ./regress.conf
 
-# "__testfile" is mistakenly created in current directroy,
+# "__testfile*" is mistakenly created in current directroy,
 # because gfs_hook doesn't work correctly.
 
-trap 'rm -rf $hooktmp; rm -f __testfile; exit $exit_trap' $trap_sigs
+trap 'rm -rf $hooktmp; rm -f __testfile*; exit $exit_trap' $trap_sigs
 
 expected=$testbase/index.`uname`.expected
 if [ ! -f $expected ]
@@ -19,5 +19,5 @@ then
 fi
 
 rm -rf $hooktmp
-rm -f __testfile
+rm -f __testfile*
 exit $exit_code
