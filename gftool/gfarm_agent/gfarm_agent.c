@@ -1654,6 +1654,12 @@ main(int argc, char **argv)
 			gflog_warning_errno("agent_schedule");
 			close(client);
 			client_arg_free(arg);
+			/*
+			 * starvation is observed here on Fedora Core 5
+			 * under high load. (errno == ENOMEM)
+			 * give chance to other threads.
+			 */
+			sleep(1);
 		}
 	}
 	/*NOTREACHED*/
