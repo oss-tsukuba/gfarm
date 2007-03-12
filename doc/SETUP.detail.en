@@ -1,0 +1,907 @@
+
+===========================
+How to set up Gfarm manually
+===========================
+
+This document describes how to set up Gfarm in a more detailed manner.
+Please use SETUP.en instead of this document for normal use.
+
+*** Initial configuration
+
+This section describes an initial configuration by an administrator.
+
+This section assumes the following settings.
+
+ - Gfarm installation directory
+
+	/usr/grid
+
+ - Gfarm spool directory on filesystem nodes
+
+	/var/gfarm-spool
+
+
+When using LDAP:
+
+ - OpenLDAP installation directory
+
+	/usr/local/openldap
+
+ - Hostname of an LDAP server
+
+	metadb.example.com
+
+ - TCP port number of the LDAP server
+
+	10602
+
+ - Directory for the configuration files of the LDAP server
+
+	/etc/gfarm-ldap
+
+ - Initial database file for the LDAP database
+
+	/etc/gfarm-ldap/initial.ldif
+
+ - Directory for the LDAP database
+
+	/var/gfarm-ldap
+
+ - Base-distinguished name for the LDAP database
+
+	dc=example,dc=com
+
+	It is recommended that you choose the base distinguishing name by using
+	each component of the fully qualified domain name (FQDN), as
+	a value on the right-hand side of "dc=".
+
+ - Organization name for the LDAP database
+
+	Example Com
+
+
+When you are using PostgreSQL:
+
+ - PostgreSQL installation directory
+
+	/usr/local/pgsql
+
+ - Hostname of a PostgreSQL server
+
+	metadb.example.com
+
+ - TCP port number of the PostgreSQL server
+
+	10602
+
+ - UNIX user name used to run the PostgreSQL database server
+
+	postgres
+
+ - Directory for the PostgreSQL database file
+
+	/var/gfarm-pgsql
+
+ - Database name for PostgreSQL
+
+	gfarm
+
+ - Database user name for PostgreSQL
+
+	gfarm
+
+ - Database user password for PostgreSQL
+
+	secret-postgresql-password
+
+------------------------------------------------------------------------
+
+** Easy Installation Method
+
+0. Prepare a filesystem metadata server node, (several) metadata cache
+   server nodes, and (many) filesystem nodes.
+
+1. If you intend to select PostgreSQL as the metadata backend database,
+  please create the user ("postgresql" in the assumptions above)
+  to be given PostgreSQL database privileges.  Although this user may
+already have
+  been created, especially if you are using a binary package like RPM.
+
+2. Run the following command on the metadata server to see whether
+  appropriate default values will be configured automatically or not:
+	# config-gfarm -t
+
+  If there are some inappropriate default values, you can
+  change those values by specifying displayed options.
+
+  If you chose postgresql as the metadata backend database, you must
+  make sure that the user displayed in the "postgresql admin user"
+  section, actually exists on the system. If that user doesn't exist,
+  either you have to create the user, or you have to specify a valid user
+  as an option of the config-gfarm command.
+
+  Also, you must make sure that three port numbers, which are displayed
+  at the bottom of the config-gfarm command, are not used on your system.
+  If some of them are currently being used, you must specify a free port number
+  as an option of the config-gfarm command.
+  Please note that if you chose postgresql as the backend database,
+  you have to specify a port number higher than 1024.
+
+3. Run the 'config-gfarm' command without the '-t' option, which actually
+  configures gfarm.
+  For example, if you don't have to specify any options in step 1,
+  you can use the following command:
+	# config-gfarm
+
+4. The 'config-gfarm' command should generate /etc/gfarm.conf.
+  (Or, if you are using the FreeBSD binary package, it should generate
+  /usr/local/etc/gfarm.conf. If you are using the NetBSD binary package,
+  it should generate /usr/pkg/etc/gfarm.conf)
+  Please copy this file to /etc of all metadata cache server nodes.
+  (If you are using the FreeBSD binary package on the metadata cache
+  server, please copy it to /usr/local/etc. If you are using the
+  NetBSD binary package on the metadata cache server, copy it to
+  /usr/pkg/etc.)
+
+5. Run the following command on every metadata cache server node to
+  see whether the appropriate default values will be configured
+  automatically or not:
+	# config-agent -t
+
+  If there are some inappropriate default values, you can
+  change those values by specifying displayed options.
+
+6. Run the 'config-agent' command without the '-t' option, which actually
+  configures the gfarm_agent.
+  For example, if you don't have to specify any options in step 5,
+  you can use the following command:
+	# config-agent
+
+7. If you intend to use multiple metadata cache servers, please repeat
+  steps 4 through 6 on each metadata cache server.
+
+8. The 'config-agent' command should update gfarm.conf.
+  Please copy this file from an appropriate metadata cache server node
+  that would be accessible to /etc of the filesystem nodes.
+  (Or, if you are using the FreeBSD binary package on the filesystem node,
+  please copy it to /usr/local/etc. If you are using the NetBSD binary
+  package on the filesystem node, copy it to /usr/pkg/etc.)
+
+9. Run the following command on every filesystem node to see whether
+  appropriate default values will be configured automatically or not:
+	# config-gfsd -t
+
+  If there are some inappropriate default values, you can
+  change those values by specifying displayed options.
+
+10. Run the 'config-gfsd' command without the '-t' option, which actually
+  configures gfsd.
+  For example, if you don't have to specify any options in step 8,
+  you can use the following command:
+	# config-gfsd
+
+11. Please repeat steps 8 through 10 on each filesystem
+  node.
+
+That's all.
+
+The following section describes what the config-gfarm command and
+config-gfsd command actually do.
+If you don't need a detailed description, please skip to the "settings
+for each user" section.
+
+If you'd like to see further usage examples ofconfig-gfarm, config-agent and
+config-gfsd commands, please see INSTALL.RPM.en.
+
+------------------------------------------------------------------------
+
+** LDAP server
+
+In the current distribution, an LDAP server manages the Gfarm
+filesystem metadata.
+
+The Gfarm supports OpenLDAP 2.1.X, and 2.2.X.  Other versions or other
+LDAP servers have not yet been sufficiently tested. OpenLDAP 2.0.X is
+known to work, but OpenLDAP 2.1.X, or later, is strongly recommended,
+because 2.0.X cannot distinguish upper case and lower case letters.
+
+
+ - gfarm.schema
+
+This is a schema file of Gfarm filesystem metadata for the LDAP
+server.  Copy the file gftool/config-gfarm/gfarm.schema in the source
+distribution to /etc/gfarm-ldap/gfarm.schema on metadb.example.com.
+
+In the binary distribution, this file is installed in
+/usr/grid/share/gfarm/config/gfarm.schema by the gfarm-server package.
+
+You do not need to modify this file.
+
+ - slapd.conf
+
+This is a configuration file for an LDAP server included in the
+OpenLDAP distribution.  It is necessary to include a schema file,
+gfarm.schema, for the Gfarm filesystem. Note that the suffix and rootdn
+in this file refer to the base-distinguished name. Because this file
+includes a password, it's better to make this file only readable from
+the user privilege that slapd has been assigned.
+
+	# chmod 600 /etc/gfarm-ldap/slapd.conf
+
+Here are some example files of /etc/gfarm-ldap/slapd.conf on
+metadb.example.com for OpenLDAP versions 2.0.X, 2.1.X and later.  Note
+that the path name of core.schema on line 5 depends on the
+installation of the OpenLDAP.  You need to specify the location of
+core.schema in your installation of OpenLDAP.
+
+--------------------- BEGIN HERE (OpenLDAP-2.0.X)--------------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
+
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
+
+# enable global write access for now. XXX
+defaultaccess write
+
+# unlimit search result
+sizelimit 2000000000
+
+# disable syslog
+loglevel 0
+
+#######################################################################
+# database definitions
+#######################################################################
+
+database	ldbm
+
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
+
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+#
+dbnosync
+-------------------------------- END --------------------------------
+
+---------------- BEGIN HERE (OpenLDAP-2.1.X or later) ---------------
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include		/etc/openldap/schema/core.schema
+include		/etc/gfarm-ldap/gfarm.schema
+
+pidfile		/var/run/gfarm-slapd.pid
+argsfile	/var/run/gfarm-slapd.args
+
+# enable global write access for now. XXX
+allow bind_anon_dn update_anon
+access to * by anonymous write
+
+# unlimit search result
+sizelimit unlimited
+
+# disable syslog
+loglevel 0
+
+#######################################################################
+# database definitions
+#######################################################################
+
+database	bdb
+
+suffix		"dc=example, dc=com"
+rootdn		"cn=root, dc=example, dc=com"
+
+directory	/var/gfarm-ldap
+rootpw		secret-ldap-password
+
+# Indices to maintain
+index	objectClass	eq
+
+index	pathname	pres,eq
+index	section		pres,eq
+index	hostname	pres,eq
+-------------------------------- END --------------------------------
+
+ - Create the initial database file for filesystem metadata
+
+The initial database should contain the root node information for LDAP,
+which includes the base-distinguished name specified by the "dn"
+(distinguished name) attribute, and "top" specified by the
+"objectclass" attribute.
+
+This is a sample database file for /etc/gfarm-ldap/initial.ldif on
+metadb.example.com.
+
+----------------------------- BEGIN HERE -----------------------------
+dn: dc=example, dc=com
+objectclass: dcObject
+objectclass: organization
+objectclass: top
+dc: example
+o: Example Com
+-------------------------------- END --------------------------------
+
+ - Create an LDAP database
+
+The 'slapadd' command creates an initial LDAP database.  The following
+example shows how to create the initial LDAP database using the initial
+entries listed above on metadb.example.com.
+
+	# rm -rf /var/gfarm-ldap
+	# mkdir /var/gfarm-ldap
+	# chmod 700 /var/gfarm-ldap
+	# cd /etc/gfarm-ldap
+	# /usr/local/openldap/sbin/slapadd -f slapd.conf -l initial.ldif
+
+ - Execute an LDAP server invocation
+
+An LDAP server is invoked by the 'slapd' command.
+
+	# cd /usr/local/openldap/libexec/
+	# ./slapd -f /etc/gfarm-ldap/slapd.conf -h ldap://:10602/
+
+The -h option specifies a listening port number on the LDAP server.
+A sample start-up script can be found at package/<arch>/gfarm-slapd.
+If you choose a port number less than 1024, you	have to have root privileges to
+accomplish the above.
+
+ - Test the LDAP server
+
+Try to execute the following commands.  If the same content as that of
+the initial.ldif file is displayed, the LDAP server works fine.
+
+In the case of the Bourne Shell:
+
+	% host=metadb.example.com
+	% port=10602
+	% basedn='dc=example, dc=com'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
+
+In the case of the csh:
+
+	% set host=metadb.example.com
+	% set port=10602
+	% set basedn='dc=example, dc=com'
+	% cd /usr/local/openldap/bin
+	% ./ldapsearch -x -b "$basedn" -L -h $host -p $port
+
+------------------------------------------------------------------------
+
+** PostgreSQL server
+
+ - Configure PostgreSQL
+
+...
+
+ - Creating a database cluster
+
+	# mkdir /var/gfarm-pgsql
+	# chown postgres:postgres /var/gfarm-pgsql
+	# chmod 700 /var/gfarm-pgsql
+	# su - postgres
+	$ initdb -D /var/gfarm-pgsql
+
+ - Starting a database server
+
+...
+
+ - Creating a database
+
+...
+
+------------------------------------------------------------------------
+
+** ~/.gfarmrc
+
+On a client node, you have to create a configuration file ~/.gfarmrc,
+if you do not have /etc/gfarm.conf, or when you need to overwrite the
+configuration of /etc/gfarm.conf.	Here is an example of the
+configuration file.
+
+If you are using LDAP:
+----------------------------- BEGIN HERE -----------------------------
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
+ldap_serverport 10602
+ldap_base_dn "dc=example, dc=com"
+auth disable sharedsecret *
+auth enable gsi *
+-------------------------------- END --------------------------------
+
+If you are using PostgreSQL:
+----------------------------- BEGIN HERE -----------------------------
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
+postgresql_serverport 10602
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
+auth enable sharedsecret *
+-------------------------------- END --------------------------------
+
+The postgresql_user parameter and the postgresql_password parameter above
+may be omitted, if your PostgreSQL authentication configuration doesn't
+actually need these parameters.
+Also, if you need more parameters with regard to PostgreSQL, you
+may be able to use the postgresql_conninfo parameter. For example, if you
+want to specify "require" as the SSL mode, and 30 seconds for connection
+timeout, you can use the following settings:
+----------------------------- BEGIN HERE -----------------------------
+postgresql_conninfo "sslmode=require connect_timeout=30"
+-------------------------------- END --------------------------------
+Please read the following PQconnectdb() function manual page in the libpq
+library of PostgreSQL for detail parameters that you can specify in
+the postgresql_conninfo directive:
+http://www.postgresql.jp/document/pg804doc/html/libpq.html#LIBPQ-CONNECT
+
+** Register filesystem nodes
+
+Every filesystem node needs to be registered in the Gfarm metadata.
+The 'gfhost -c' command is used to register the node information,
+which includes hostname, hostalias, architecture, and ncpu;
+
+% gfhost -c -a <architecture> [ -n <ncpu> ] <hostname> [ <hostalias> ... ]
+
+  -- hostname
+
+    The fully qualified domain name (FQDN) of the host.
+
+  -- hostalias
+
+    If the host has multiple network interfaces that have different
+    hostnames, these hostnames can be specified as hostname aliases by
+    subsequent parameters of the hostname.  This is optional.
+
+  -- architecture
+
+    An architecture name, like sparc-sun-solaris8, which is specified by
+    the -a option.
+
+  -- ncpu
+
+    This is the number of cpus, which is specified by the -n option.  This is
+    optional.
+
+The following are sample commands used to register this information.
+
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-1.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-2.example.com
+	% gfhost -c -a i386-fedora3-linux -n 2 linux-3.example.com
+	% gfhost -c -a i386-redhat8.0-linux linux-4.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-5.example.com
+	% gfhost -c -a i386-debian3.0-linux -n 2 linux-6.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-1.example.com
+	% gfhost -c -a sparc-sun-solaris8 solaris-2.example.com
+	% gfhost -c -a alpha-hp-osf5.0 osf-1.example.com
+	% gfhost -c -a mips-sgi-irix6.5 -n 16 irix-1.example.com
+
+You can confirm the filesystem node information by specifying the -M
+option with the gfhost command:
+
+	% gfhost -M
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	i386-redhat8.0-linux 1 linux-4.example.com
+	i386-debian3.0-linux 2 linux-5.example.com
+	i386-debian3.0-linux 2 linux-6.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
+	alpha-hp-osf5.0 1 osf-1.example.com
+	mips-sgi-irix6.5 16 irix-1.example.com
+
+------------------------------------------------------------------------
+
+** Create a gfsd spool directory on all filesystem nodes
+
+On each filesystem node, create a spool root directory
+/var/gfarm-spool.
+
+	% su
+	Password:
+	# mkdir /var/gfarm-spool
+	# chmod 1777 /var/gfarm-spool
+	# exit
+	%
+
+** /etc/gfarm.conf
+
+Create /etc/gfarm.conf on every filesystem node and metadata server
+node.	Here is an example of the configuration file.
+
+If you are using LDAP:
+----------------------------- BEGIN HERE -----------------------------
+spool /var/gfarm-spool
+metadb_serverhost metadb.example.com
+ldap_serverhost metadb.example.com
+ldap_serverport 10602
+ldap_base_dn "dc=example, dc=com"
+auth disable sharedsecret *
+auth enable gsi *
+-------------------------------- END --------------------------------
+
+If you are using PostgreSQL:
+----------------------------- BEGIN HERE -----------------------------
+spool /var/gfarm-spool
+metadb_serverhost metadb.example.com
+postgresql_serverhost metadb.example.com
+postgresql_serverport 10602
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password secret-postgresql-password
+auth enable sharedsecret *
+-------------------------------- END --------------------------------
+
+In other words, /etc/gfarm.conf on a filesystem node needs the "spool"
+parameter, in addition to the contents of ~/.gfarmrc, on client hosts.
+Please read the ~/.gfarmrc description above for parameters other than
+"spool" in /etc/gfarm.conf.
+
+When filesystem nodes or metadata server nodes are used as a client
+node, client programs read ~/.gfarmrc first, if it exists, and then
+read /etc/gfarm.conf.
+
+** gfmd - Gfarm filesystem metadata server
+
+On a metadata server node, execute gfmd with root privileges.	Gfmd
+reads the configuration file, /etc/gfarm.conf, described above.
+
+If you install from a binary distribution, the following start-up
+script is provided to start and stop gfmd.
+	RedHat Linux:		/etc/rc.d/init.d/gfmd
+	Debian GNU/Linux:	/etc/init.d/gfmd
+	Solaris:		/etc/rc3.d/S90gfmd
+
+If you install from a source distribution, the start-up script will be
+generated and put into package/<OS>/gfmd at configuration.  On the Debian
+GNU/Linux system, the location is debian/gfmd.init.  Copy this script
+to the start-up directory, for example, /etc/rc.d/init.d, /etc/init.d, and
+/etc/rc3.d.
+
+The procedure used to invoke gfmd with this script is as follows:
+	RedHat Linux:
+		% su
+		Password:
+		# /sbin/chkconfig --add gfmd
+		# service gfmd start
+	Debian GNU/Linux:
+		% su
+		Password:
+		# /etc/init.d/gfmd start
+	Solaris:
+		% su
+		Password:
+		# /etc/rc3.d/S90gfmd start
+
+If you would like to execute gfmd directly, you can do so as follows:
+	% su
+	Password:
+	# /usr/grid/sbin/gfmd
+
+For testing purposes, gfmd can be executed as a non-privileged user
+process with the -f option (see man gfmd), although only the user that
+executes the gfmd can be authenticated.
+
+To see whether gfmd has been correctly executed or not, you can use the gfps
+command as follows.	If gfmd is invoked correctly, gfps exits immediately,
+without any warning message.
+
+	% gfps
+
+** gfsd - Gfarm filesystem daemon
+
+On every filesystem node, execute gfsd with root privileges.  Gfsd
+reads the configuration file, /etc/gfarm.conf, described above.
+
+If you install from a binary distribution, the following start-up
+script is provided to start and stop gfsd.
+	RedHat Linux:		/etc/rc.d/init.d/gfsd
+	Debian GNU/Linux:	/etc/init.d/gfsd
+	Solaris:		/etc/rc3.d/S95gfsd
+
+If you install from a source distribution, the start-up script will be
+generated and placed into package/<OS>/gfsd at configuration.  On the
+Debian GNU/Linux system, the location is debian/gfsd.init.  Copy this script
+to the start-up directory, for example, /etc/rc.d/init.d, /etc/init.d, and
+/etc/rc3.d.
+
+The procedure used to invoke gfsd with this script is as follows:
+	RedHat Linux:
+		% su
+		Password:
+		# /sbin/chkconfig --add gfsd
+		# service gfsd start
+	Debian GNU/Linux:
+		% su
+		Password:
+		# /etc/init.d/gfsd start
+	Solaris:
+		% su
+		Password:
+		# /etc/rc3.d/S95gfsd start
+
+If you would like to execute gfsd directly, you can do so as follows:
+	% su
+	Password:
+	# /usr/grid/sbin/gfsd
+
+For testing purposes, gfsd can be executed as a non-privileged user
+process with the -f option (see man gfsd), although only the user that
+executes the gfmd can be authenticated.
+
+To see whether gfsd has executed correctly or not, you can use the
+gfhost command with the -l option, as follows.  The first column shows
+system load averages of the host for the past 1, 5, and 15 minutes.
+The next column shows the authentication method that is used for
+communication with the host.  If an authentication method is shown
+as "x", that means the authentication has failed.
+
+	% gfhost -l
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com(10.0.0.4)
+	0.40/0.45/0.42 s i386-debian3.0-linux 2 linux-5.example.com(10.0.0.5)
+	0.43/0.50/0.40 s i386-debian3.0-linux 2 linux-6.example.com(10.0.0.6)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
+	0.00/0.00/0.00 s alpha-hp-osf5.0 1 osf-1.example.com(10.0.1.17)
+	0.35/0.58/0.21 s mips-sgi-irix6.5 16 irix-1.example.com(10.0.1.18)
+
+In the above example, -.-- of linux-3.example.com shows there is no
+gfsd listening to the specified port on the machine.  x.xx of
+solaris-2.example.com shows that it is impossible to communicate
+with the node.  Usually this means the node or network is down.  Add
+the "-v" option to investigate the reason for such a failure.	This option
+makes error messages appear.
+
+** Settings for each user
+
+Add the following setting to the shell rc file (e.g. .bashrc, .cshrc)
+of each user.
+
+In the case of the Bourne Shell:
+	gfcd() { eval "`gfsetdir -s $1`"; }
+
+In the case of the csh:
+	alias gfcd 'eval `gfsetdir -c \!*`'
+
+Add /usr/grid/bin to the setting of the PATH environment variable.
+
+Then the user can use the gfcd command to change the Gfarm working
+directory,
+as shown in the following example:
+
+	% gfcd foo
+
+The current working directory can be displayed by using the gfpwd command.
+
+	% gfpwd
+
+** Other settings
+
+Every Gfarm user has to create his working directory in a Gfarm
+filesystem.  The system administrator has to register Gfarm parallel
+commands with the Gfarm filesystem.  Both these procedures are
+described in next section.
+
+========================================================================
+
+*** Examples
+
+This section provides examples of execution.
+
+** Sign on
+
+Currently, we support two authentication methods; a shared secret key
+and the Grid Security Infrastructure.  You can select either method by
+means of the configuration file; /etc/gfarm.conf or ~/.gfarmrc.
+
+*** Shared secret key
+
+This authentication method basically assumes a trusted environment
+such that every node shares a home directory.  A shared secret key which
+can be accessed by every node in the shared home directory is
+created automatically if it does not exist, or has expired.  There is
+no need to sign on explicitly.
+
+However, in a global environment, or even a local cluster environment
+that does not share the home directory, the shared secret key should
+be securely distributed by users, explicitly.  First, create a session
+key, ~/.gfarm_shared_key, by means of the gfkey command.
+
+	% gfkey -c
+
+Then, copy the key securely to the home directory on all nodes,
+including filesystem nodes, the metadata server node, and client nodes,
+usually by uisng scp.  Note that this key will expire after 24 hours.
+
+*** Grid Security Infrastructure (GSI)
+
+This authentication method requires a user certificate, and host
+certificates for every filesystem node and the metadata server.
+Moreover, your entry should be listed in a grid map file,
+/etc/grid-security/grid-mapfile, on every node.
+Please see the following WWW page for the details of GSI.
+	http://www.globus.org/security/
+
+Then, create a user proxy certificate.
+
+	% grid-proxy-init
+
+** Create user's working directories in the Gfarm filesystem
+
+Every user has to create a working directory (or a home directory) in
+a Gfarm filesystem, by himself/herself.
+
+	% gfmkdir gfarm:~
+
+** Confirmation
+
+Please try to access filesystem nodes in your system:
+
+	% gfhost | gfrun -H - hostname
+
+** Execute sample programs
+
+This subsection shows several execution examples of sample programs.
+
+ - Importing a group of files
+
+  When there are several files that can be better managed as a
+  ranked group of files, they can be registered in the Gfarm
+  filesystem as a Gfarm file.  For example, there are ten files from
+  'file01' to 'file10', which will be imported to a gfarm:file by the
+  gfreg command.
+
+	% gfreg file?? gfarm:file
+
+  At this time, ten files from 'file01' to 'file10' are grouped, and
+  can be accessed by a single Gfarm file, 'gfarm:file'.
+
+	% gfls -l gfarm:file
+
+  Next, you can check the filesystem nodes on which each file is stored by
+  using the gfexport command.
+
+	% gfwhere gfarm:file
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
+	5: linux-6.example.com
+	6: solaris-1.example.com
+	7: solaris-2.example.com
+	8: osf-1.example.com
+	9: irix-1.example.com
+
+  The part to the left of ':' in the output of gfwhere is called 'the index
+  number' or 'the section name'.  The part on the right of ':' shows
+  filesystem node(s) where the file fragment is stored.
+
+  A Gfarm file can be accessed by a single file to which a ranked
+  group of files are concatenated, or an individual file of a group of
+  files.  Using the gfexport command, the content of a file can be
+  displayed.
+
+	% gfexport gfarm:file
+	% gfexport -I 0 gfarm:file
+
+  A group of files can also be registered by specifying an individual
+  file with the index number and the total number of files.
+
+	% gfreg -I 0 -N 10 [ -h filesystem node ] file01 gfarm:file
+	% gfreg -I 1 -N 10 [ -h filesystem node ] file02 gfarm:file
+	% ...
+	% gfreg -I 9 -N 10 [ -h filesystem node ] file10 gfarm:file
+
+  The filesystem node on which each file is stored will be automatically
+  selected by load average.  It is possible to specify a filesystem
+  node explicitly with the -h option.
+
+  When the gfreg command of this form is executed on a filesystem
+  node, the local filesystem node is always selected, in preference to
+  remote filesystem nodes.	In this case, the -h option helps to store
+  files in a more dispersed manner.
+
+ - Importing a text file
+
+  Gfimport_text is a sample program used for dividing a text file to file
+  fragments by the line, and registering them in the Gfarm filesystem.
+
+	% gfhost | gfimport_text -H - -o gfarm:test.txt textfile
+
+  In this example, a file, textfile, in a local filesystem is divided into file
+  fragments, which will be stored on currently available filesystem
+  nodes, listed by the gfhost command.
+
+	% gfsched -N 8 | gfimport_text -H - -o gfarm:test.txt textfile
+
+  In this example, a file, textfile, in a local filesystem is divided to 8 file
+  fragments, and each fragment file will be stored on one of 8 different hosts,
+  which are chosen by the gfsched command.
+
+  Using the gfwhere command, you can see which filesystem node each
+  file fragment is stored on.
+
+	% gfwhere gfarm:test.txt
+
+  Also, you can browse a directory using the gfls command.
+
+	% gfls -l
+
+  The gfexport command outputs a Gfarm file to the standard output.
+  Using this, you can check whether gfimport_text correctly copies the
+  "textfile" to "gfarm:test.txt" in the Gfarm filesystem.
+
+	% gfexport gfarm:test.txt | diff -c - textfile
+
+ - Importing a fixed-size record file
+
+	% gfsched -N 8 | gfimport_fixed -H - -o gfarm:test.bin \
+			   -l 100 fixed-size-record-file
+
+  You can check whether gfimport_fixed correctly copies the
+  "fixed-size-record-file" to "gfarm:test.bin" in the Gfarm
+  filesystem.
+
+	% gfexport gfarm:test.bin | cmp - fixed-size-record-file
+
+ - gfgrep - parallel grep
+
+  First, you have to register (or copy) the gfgrep program on one
+  of the filesystem nodes.
+
+	% gfreg /usr/bin/gfgrep gfarm:gfgrep
+
+  If you would like to register it on a client node (not on a filesystem
+  node), it is necessary to specify a filesystem node by using the -h
+  option or an architecture name by using the -a option.
+
+	% gfreg -h linux-1.example.com /usr/bin/gfgrep gfarm:gfgrep
+
+  The gfrun command executes a parallel command on filesystem nodes
+  with file-affinity scheduling.
+
+	% gfrun -G gfarm:text.txt gfarm:gfgrep -o gfarm:gfgrep.out \
+		regexp gfarm:test.txt
+
+  You can check the results to compare the following outputs.
+
+	% gfexport gfarm:gfgrep.out
+	% grep regexp textfile
+
+ - gfwc - parallel word counts
+
+  This command only exists if the --with-mpi option is specified at
+  the point of building binaries.
+
+  First, you have to register the gfwc program on one of the file
+  system nodes.
+
+	% gfreg /usr/bin/gfwc gfarm:gfwc
+
+  Since gfwc is an MPI application, it is executed using gfmpirun_p4.
+
+	% gfmpirun_p4 gfarm:gfwc gfarm:test.txt
+
+  You can check the results.
+
+	% wc test.txt
