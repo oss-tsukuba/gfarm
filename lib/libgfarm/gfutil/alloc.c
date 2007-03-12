@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
 size_t
