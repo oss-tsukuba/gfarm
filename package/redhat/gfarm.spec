@@ -55,7 +55,7 @@
 Summary: Grid Datafarm
 Name: %{package_name}
 Version: %pkgver
-Release: %rel
+Release: %{rel}%{?dist}
 Source: %{pkg}-%{ver}.tar.gz
 #Patch: %{pkg}.patch
 #%Patch0: gfarm-1.2-patch1.diff
@@ -73,46 +73,84 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 %package doc
 Summary: document for gfarm
 Group: Documentation
+# always provide "gfarm-doc" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-doc = %{ver}-%{rel}
+%endif
 %endif
 
 %package libs
 Summary: runtime libraries for gfarm
 Group: System Environment/Libraries
+# always provide "gfarm-libs" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-libs = %{ver}-%{rel}
+%endif
+BuildRequires: openssl-devel
 
 %if %{gfarm_v2_not_yet}
 %package frontend
 Summary: frontends for gfarm
 Group: Applications/Internet
+# always provide "gfarm-frontend" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-frontend = %{ver}-%{rel}
+%endif
 %endif
 
 %package client
 Summary: clients for gfarm
 Group: Applications/Internet
+# always provide "gfarm-client" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-client = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}
 
 %if %{gfarm_v2_not_yet}
 %package gfptool
 Summary: parallel tools installed under gfarm:/bin/
 Group: System Environment/Daemons
-Requires: %{package_name}-client
+# always provide "gfarm-gfptool" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-gfptool = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 %endif
 
 %package fsnode
 Summary: gfsd for gfarm
 Group: System Environment/Daemons
-Requires: %{package_name}-client
+# always provide "gfarm-fsnode" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-fsnode = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 
 %package server
 Summary: metadata server for gfarm
 Group: System Environment/Daemons
+# always provide "gfarm-server" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-server = %{ver}-%{rel}
+%endif
+Requires: %{package_name}-libs = %{ver}
 
 %package devel
 Summary: development library for gfarm
 Group: Development/Libraries
+%if %{globus}
+Provides: %{pkg}-devel = %{ver}-%{rel}
+%endif
 
 %if %{gfarm_v2_not_yet}
 %package gfront
 Summary: file system browser for gfarm
 Group: Applications/Internet
+# always provide "gfarm-gfront" as a virtual package.
+%if %{globus}
+Provides: %{pkg}-gfront = %{ver}-%{rel}
+%endif
 %endif
 
 %description
@@ -145,6 +183,9 @@ fsnode for gfarm
 %description server
 metadata server for gfarm
 
+%description agent
+metadata cache server for gfarm
+
 %description devel
 development library for gfarm
 
@@ -154,6 +195,9 @@ file system browser for gfarm
 %endif
 
 %changelog
+* Tue Aug  8 2006 SODA Noriyuki <soda@sra.co.jp>
+- restart gfsd, gfmd and gfarm_agent at update, if they are already running.
+
 * Fri Apr 24 2003 Tohru Sotoyama <sotoyama@sra.co.jp>
 - first public release for version 1.0b1
 
@@ -179,7 +223,6 @@ mkdir -p $RPM_BUILD_ROOT
 	--with-postgresql=/usr \
 	--with-openldap=/usr \
 	--with-openssl=/usr \
-	--with-readline=/usr \
 	`test "%{globus}" -ne 0 && echo	\
 		--with-globus=%{globus_prefix} \
 		--with-globus-flavor=%{globus_flavor}` \
@@ -192,10 +235,6 @@ make
 make DESTDIR=${RPM_BUILD_ROOT} \
 	default_docdir=%{doc_prefix} \
 	default_mandir=%{man_prefix} install
-mkdir -p ${RPM_BUILD_ROOT}%{rc_prefix}
-cp -p package/redhat/gfmd package/redhat/gfsd \
-	${RPM_BUILD_ROOT}%{rc_prefix}
-chmod +x ${RPM_BUILD_ROOT}%{rc_prefix}/*
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
@@ -208,19 +247,24 @@ rm -rf ${RPM_BUILD_ROOT}
 %postun libs -p /sbin/ldconfig
 
 %post fsnode
-/sbin/chkconfig --add gfsd
-echo copy /etc/gfarm.conf from metadata server and
-echo run %{prefix}/bin/config-gfsd '<spool_directory>'
+if [ ! -f /etc/gfarm.conf ]; then
+	echo "copy /etc/gfarm.conf from metadata (cache) server and"
+	echo run %{prefix}/bin/config-gfsd
+fi
 
 %post server
-/sbin/chkconfig --add gfmd
-echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
+if [ ! -f /etc/gfarm.conf ]; then
+	echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
+fi
 
 %preun fsnode
 if [ "$1" = 0 ]
 then
-	/sbin/service gfsd stop > /dev/null 2>&1 || :
-	/sbin/chkconfig --del gfsd
+	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
+	if [ -f /etc/init.d/gfsd ]; then
+		/sbin/service gfsd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfsd > /dev/null 2>&1 || :
+	fi
 fi
 
 %pre fsnode
@@ -234,21 +278,45 @@ useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
 %preun server
 if [ "$1" = 0 ]
 then
-	/sbin/service gfmd stop > /dev/null 2>&1 || :
-	/sbin/chkconfig --del gfmd
-	if [ -f /etc/init.d/gfarm-pgsql ]; then
-		echo do not forget \'service gfarm-pgsql stop\' and
-		echo \'chkconfig gfarm-pgsql --del\'
+	if [ -f /etc/init.d/gfmd ]; then
+		/sbin/service gfmd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfmd > /dev/null 2>&1 || :
 	fi
 	if [ -f /etc/init.d/gfarm-slapd ]; then
-		echo do not forget \'service gfarm-slapd stop\' and
-		echo \'chkconfig gfarm-slapd --del\'
+		/sbin/service gfarm-slapd stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfarm-slapd > /dev/null 2>&1 || :
 	fi
+	if [ -f /etc/init.d/gfarm-pgsql ]; then
+		/sbin/service gfarm-pgsql stop > /dev/null 2>&1 || :
+		/sbin/chkconfig --del gfarm-pgsql > /dev/null 2>&1 || :
+	fi
+fi
+
+%postun fsnode
+if [ "$1" -ge 1 ]
+then
+	# XXX This doesn't deal with /etc/init.d/gfsd-IP_ADDRESS.
+	if [ -f /etc/init.d/gfsd ] && /sbin/service gfsd status > /dev/null 2>&1
+	then
+		/sbin/service gfsd restart > /dev/null 2>&1 || :
+	fi
+fi
+
+%postun server
+if [ "$1" -ge 1 ]
+then
+	if [ -f /etc/init.d/gfmd ] && /sbin/service gfmd status > /dev/null 2>&1
+	then
+		/sbin/service gfmd restart > /dev/null 2>&1 || :
+	fi
+	# We don't have to restart gfarm-slapd and gfarm-pgsql,
+	# because the binaries aren't included in the gfarm RPMs.
 fi
 
 # Part 3  file list
 %if %{gfarm_v2_not_yet}
 %files doc
+%defattr(-,root,root)
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
 %{man_prefix}/man1/gfdf.1.gz
@@ -276,6 +344,7 @@ fi
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
 %{man_prefix}/man1/gfstat.1.gz
+%{man_prefix}/man1/gfusage.1.gz
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
@@ -359,6 +428,7 @@ fi
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
 %{man_prefix}/ja/man1/gfstat.1.gz
+%{man_prefix}/ja/man1/gfusage.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
@@ -453,6 +523,7 @@ fi
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
 %{html_prefix}/en/ref/man1/gfstat.1.html
+%{html_prefix}/en/ref/man1/gfusage.1.html
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
@@ -539,6 +610,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %{html_prefix}/ja/ref/man1/gfstat.1.html
+%{html_prefix}/ja/ref/man1/gfusage.1.html
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
@@ -618,15 +690,26 @@ fi
 %{doc_prefix}/INSTALL.RPM.en
 %{doc_prefix}/INSTALL.RPM.ja
 %{doc_prefix}/LICENSE
+%{doc_prefix}/README.en
+%{doc_prefix}/README.ja
 %{doc_prefix}/RELNOTES
+%{doc_prefix}/OVERVIEW.en
+%{doc_prefix}/OVERVIEW.ja
+%{doc_prefix}/SETUP.en
+%{doc_prefix}/SETUP.ja
+%{doc_prefix}/SETUP.detail.en
+%{doc_prefix}/SETUP.detail.ja
 %{doc_prefix}/GUIDE.ja
 %{doc_prefix}/Gfarm-FAQ.en
 %{doc_prefix}/Gfarm-FAQ.ja
+%{doc_prefix}/KNOWN_PROBLEMS.en
+%{doc_prefix}/KNOWN_PROBLEMS.ja
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
 %endif
 
 %files libs
+%defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.0
 %{lib_prefix}/libgfarm.so.0.0.0
 %if %{gfarm_v2_not_yet}
@@ -657,6 +740,7 @@ fi
 
 %if %{gfarm_v2_not_yet}
 %files frontend
+%defattr(-,root,root)
 
 %if %{have_ns}
 %{prefix}/bin/gfarm
@@ -664,8 +748,8 @@ fi
 %endif
 
 %files client
+%defattr(-,root,root)
 %if %{gfarm_v2_not_yet}
-%{prefix}/bin/gfarm_agent
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
@@ -677,6 +761,7 @@ fi
 %{prefix}/bin/gfexport
 %{prefix}/bin/gfhost
 %if %{gfarm_v2_not_yet}
+%{prefix}/bin/gfifo.sh
 %{prefix}/bin/gfimport_fixed
 %{prefix}/bin/gfimport_text
 %endif
@@ -688,6 +773,9 @@ fi
 %{prefix}/bin/gfmpirun_p4
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
+%{prefix}/bin/gfq.sh
+%{prefix}/bin/gfq_commit.sh
+%{prefix}/bin/gfq_setup.sh
 %{prefix}/bin/gfrcmd
 %endif
 %{prefix}/bin/gfreg
@@ -707,6 +795,8 @@ fi
 %{prefix}/bin/gfssh
 %{prefix}/bin/gfsshl
 %{prefix}/bin/gfstat
+%{prefix}/bin/gfstatus
+%{prefix}/bin/gftest
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
 %endif
@@ -730,6 +820,7 @@ fi
 
 %if %{gfarm_v2_not_yet}
 %files gfptool
+%defattr(-,root,root)
 %{prefix}/bin/gfcombine
 %{prefix}/bin/gfcombine_hook
 %{prefix}/bin/gfcp
@@ -746,6 +837,7 @@ fi
 %endif
 
 %files fsnode
+%defattr(-,root,root)
 %{prefix}/bin/config-gfsd
 %{prefix}/bin/gfarm.arch.guess
 %if %{gfarm_v2_not_yet}
@@ -754,7 +846,6 @@ fi
 %{prefix}/bin/thput-gfpio
 %endif
 %{prefix}/sbin/gfsd
-%{rc_prefix}/gfsd
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/linux/debian/gfsd.in
@@ -763,14 +854,20 @@ fi
 %{share_prefix}/config/linux/suse/gfsd.in
 
 %files server
+%defattr(-,root,root)
 %{prefix}/sbin/gfmd
-%{rc_prefix}/gfmd
 %{prefix}/bin/config-gfarm
+%if %{gfarm_v2_not_yet}
+%{prefix}/bin/gfdump
+%{prefix}/bin/gfusage
+%endif
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
-%{share_prefix}/config/gfarm.conf-postgresql.in
+%{share_prefix}/config/config-gfarm.ldap
+%{share_prefix}/config/config-gfarm.postgresql
 %{share_prefix}/config/gfarm.conf-ldap.in
+%{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.conf.in
 %{share_prefix}/config/gfarm.sql
 %{share_prefix}/config/gfarm.schema
@@ -791,6 +888,7 @@ fi
 %{share_prefix}/config/slapd.conf-2.1.in
 
 %files devel
+%defattr(-,root,root)
 %{prefix}/include/gfarm/gfarm.h
 %{prefix}/include/gfarm/gfarm_config.h
 %{prefix}/include/gfarm/error.h
@@ -840,6 +938,7 @@ fi
 
 %if %{have_ns}
 %{prefix}/include/gfarm/comm.h
+%{prefix}/include/gfarm/con.h
 %{prefix}/include/gfarm/debug.h
 %{prefix}/include/gfarm/gflib.h
 %{prefix}/include/gfarm/ns.h
@@ -859,6 +958,7 @@ fi
 
 %if %{gfarm_v2_not_yet}
 %files gfront
+%defattr(-,root,root)
 %{prefix}/bin/gfront
 %{prefix}/share/java/gfront.jar
 %endif

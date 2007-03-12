@@ -10,13 +10,14 @@ FILE="gfarm-pgsql"
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
 CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
-LOGFILE="$PGDATA/logfile"
 PIDFILE="$PGDATA/portmaster.pid"
-OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
+OPTIONS="@config_gfarm_pgsql_options@"
 PRIVILEGE="@config_gfarm_backend_privilege@"
+# For SELinux we need to use 'runuser' not 'su'
+[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su - $PRIVILEGE";;
+*)	RUN="$SU - $PRIVILEGE";;
 esac
 
 trap "" 1

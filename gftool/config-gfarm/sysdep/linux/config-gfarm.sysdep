@@ -55,7 +55,6 @@ sysdep_defaults()
 	debian)	if [ -f /etc/ldap/schema/core.schema ]; then
 			: ${OPENLDAP_ETC:=/etc/ldap}
 		fi
-		: ${LDAP_DATADIRECTORY=$CONFIG_PREFIX/var/lib/gfarm-ldap}
 		;;
 	redhat)	: ${RC_LOCK_DIR:="$CONFIG_PREFIX/var/lock/subsys"}
 		;;
@@ -63,6 +62,7 @@ sysdep_defaults()
 
 	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
 	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
+	: ${RC_AGENT_IN="$config_dir/linux/$LINUX_RC_TYPE/gfarm_agent.in"}
 	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.in"}
 
 	if [ ! -f "$RC_BACKEND_IN" ]; then
@@ -70,6 +70,9 @@ sysdep_defaults()
 	fi
 	if [ ! -f "$RC_GFMD_IN" ]; then
 		RC_GFMD_IN="$config_dir/linux/default/gfmd.in"
+	fi
+	if [ ! -f "$RC_AGENT_IN" ]; then
+		RC_AGENT_IN="$config_dir/linux/default/gfarm_agent.in"
 	fi
 	if [ ! -f "$RC_GFSD_IN" ]; then
 		RC_GFSD_IN="$config_dir/linux/default/gfsd.in"
@@ -153,13 +156,14 @@ service_ctl_debian()
 
 	service=$1
 	ctl=$2
+	shift 2
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X \
 			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
-		invoke-rc.d $service $ctl
+		invoke-rc.d $service $ctl ${1+"$@"}
 	else
-		"$RC_DIR/$service" $ctl
-	fi || ABORT "cannot $ctl "$service""
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
 }
 
 service_ctl_redhat()
@@ -168,12 +172,13 @@ service_ctl_redhat()
 
 	service=$1
 	ctl=$2
+	shift 2
 
 	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		service "$service" $ctl
+		service "$service" $ctl ${1+"$@"}
 	else
-		"$RC_DIR/$service" $ctl
-	fi || ABORT "cannot $ctl $service"
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
 }
 
 service_ctl_default()
@@ -182,8 +187,9 @@ service_ctl_default()
 
 	service=$1
 	ctl=$2
+	shift 2
 
-	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
+	"$RC_DIR/$service" $ctl ${1+"$@"} || ABORT "cannot $ctl $service $@"
 }
 
 service_add()
@@ -199,9 +205,9 @@ service_add()
 service_ctl()
 {
 	case $LINUX_RC_TYPE in
-	debian)	service_ctl_debian $1 $2;;
-	redhat)	service_ctl_redhat $1 $2;;
-	suse)	service_ctl_default $1 $2;;
-	*)	service_ctl_default $1 $2;;
+	debian)	service_ctl_debian ${1+"$@"};;
+	redhat)	service_ctl_redhat ${1+"$@"};;
+	suse)	service_ctl_default ${1+"$@"};;
+	*)	service_ctl_default ${1+"$@"};;
 	esac
 }

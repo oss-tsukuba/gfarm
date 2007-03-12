@@ -27,7 +27,7 @@ gfs_pio_view_global_close(GFS_File gf)
 	struct gfs_file_global_context *gc = gf->view_context;
 	gfarm_error_t e;
 
-	e = gfs_pio_close(gc->fragment_gf);
+	e = gfs_pio_close_internal(gc->fragment_gf);
 	free(gc->url);
 	free(gc->offsets);
 	free(gc);
@@ -60,11 +60,11 @@ gfs_pio_view_global_move_to(GFS_File gf, int fragment_index)
 	e = gfs_pio_set_view_index(new_fragment, gf->pi.status.st_nsections,
 	    fragment_index, NULL, gf->view_flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_pio_close(new_fragment);
+		gfs_pio_close_internal(new_fragment);
 		return (e);
 	}
 	if (gc->fragment_gf != NULL) {
-		gfs_pio_close(gc->fragment_gf);
+		gfs_pio_close_internal(gc->fragment_gf);
 		/* XXX need a way to report error on here */
 	}
 	gc->fragment_gf = new_fragment;
@@ -222,7 +222,18 @@ gfs_pio_view_global_ftruncate(GFS_File gf, gfarm_off_t length)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	/*
+	 * Before updating path_info, try to update most recent information,
+	 * because the file mode may be updated by e.g. gfs_chmod().
+	 */
+	if (gfarm_path_info_get(gf->pi.pathname, &pi) == NULL) {
+		gfarm_path_info_free(&gf->pi);
+		gf->pi = pi;
+	}
+
+#if 0 /* We don't store file size in gfarm_path_info, this is just ignored */
 	gf->pi.status.st_size = length;
+#endif
 	gf->pi.status.st_nsections = fragment + 1;
 	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -292,7 +303,7 @@ gfs_pio_view_global_stat(GFS_File gf, struct gfs_stat *status)
 static gfarm_error_t
 gfs_pio_view_global_chmod(GFS_File gf, gfarm_mode_t mode)
 {
-	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	return (gfs_chmod_internal(&gf->pi, mode, NULL));
 }
 
 struct gfs_pio_ops gfs_pio_view_global_ops = {
@@ -322,10 +333,14 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		e = gfarm_host_get_self_architecture(&arch);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (gf->error = e);
-		return (gfs_pio_set_view_section(gf, arch, NULL, flags));
+		e = gfs_pio_set_view_section(gf, arch, NULL, flags);
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			e = gfs_pio_set_view_section(
+				gf, "noarch", NULL, flags);
+		return (e);
 	}
 
-	if ((gf->mode & GFS_FILE_MODE_FILE_CREATED) != 0)
+	if ((gf->mode & GFS_FILE_MODE_FILE_WAS_CREATED) != 0)
 		return (gfs_pio_set_view_index(gf, 1, 0, NULL, flags));
 
 	if (gf->open_flags & GFARM_FILE_TRUNC) {
@@ -356,7 +371,7 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gf->error);
 	}
 
-	gc = malloc(sizeof(struct gfs_file_global_context));
+	GFARM_MALLOC(gc);
 	if (gc == NULL) {
 		gf->error = GFARM_ERR_NO_MEMORY;
 		return (gf->error);
@@ -377,8 +392,9 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		return (gf->error);
 	}
 
-	gc->offsets = malloc(sizeof(gfarm_off_t) * (n + 1));
-	gc->url = malloc(sizeof(gfarm_url_prefix) + strlen(gf->pi.pathname));
+	GFARM_MALLOC_ARRAY(gc->offsets, n + 1);
+	GFARM_MALLOC_ARRAY(gc->url,
+	    sizeof(gfarm_url_prefix) + strlen(gf->pi.pathname));
 	if (gc->offsets == NULL || gc->url == NULL) {
 		if (gc->offsets != NULL)
 			free(gc->offsets);

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <openssl/evp.h>
@@ -38,12 +39,21 @@ gfs_chdir_canonical(const char *canonic_dir)
 	static char env_name[] = "GFS_PWD=";
 	static char *env = NULL;
 	static int env_len = 0;
-	int len;
-	char *tmp;
+	int len, old_len;
+	char *e, *tmp, *old_env;
+	struct gfarm_path_info pi;
+
+	e = gfarm_path_info_get(canonic_dir, &pi);
+	if (e == NULL) {
+		e = gfarm_path_info_access(&pi, X_OK);
+		gfarm_path_info_free(&pi);
+	}
+	if (e != NULL)
+		return (e);
 
 	len = 1 + strlen(canonic_dir) + 1;
 	if (cwd_len < len) {
-		tmp = realloc(gfarm_current_working_directory, len);
+		GFARM_REALLOC_ARRAY(tmp, gfarm_current_working_directory, len);
 		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		gfarm_current_working_directory = tmp;
@@ -54,14 +64,24 @@ gfs_chdir_canonical(const char *canonic_dir)
 	len += sizeof(env_name) - 1 + GFARM_URL_PREFIX_LENGTH;
 	tmp = getenv("GFS_PWD");
 	if (tmp == NULL || tmp != env + sizeof(env_name) - 1) {
-		/* changed by an application instead of this func */
-		/* probably already free()ed.  In this case realloc
-		 * does not work well at least using bash.  allocate again. */
+		/*
+		 * changed by an application instead of this function, and
+		 * probably it's already free()ed.  In this case, realloc()
+		 * does not work well at least using bash.  allocate it again.
+		 */
 		env = NULL;
 		env_len = 0;
 	}
+	old_env = env;
+	old_len = env_len;
 	if (env_len < len) {
-		tmp = realloc(env, len);
+		/*
+		 * We cannot use realloc(env, ...) here, because `env' may be
+		 * still pointed by environ[somewhere] (at least with glibc),
+		 * and realloc() may break the memory.  So, allocate different
+		 * memory.
+		 */
+		GFARM_MALLOC_ARRAY(tmp, len);
 		if (tmp == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		env = tmp;
@@ -70,8 +90,15 @@ gfs_chdir_canonical(const char *canonic_dir)
 	sprintf(env, "%s%s%s",
 	    env_name, GFARM_URL_PREFIX, gfarm_current_working_directory);
 
-	if (putenv(env) != 0)
+	if (putenv(env) != 0) {
+		if (env != old_env && env != NULL)
+			free(env);
+		env = old_env;
+		env_len = old_len;
 		return (gfarm_errno_to_error(errno));
+	}
+	if (old_env != env && old_env != NULL)
+		free(old_env);
 
 	return (NULL);
 }
@@ -183,8 +210,9 @@ gfs_dir_alloc(gfarm_int32_t fd, int flags, struct gfs_desc **gdp)
 		gfs_dir_desc_to_file,
 		gfs_dir_desc_to_dir,
 	};
-	GFS_Dir dir = malloc(sizeof(*dir));
+	GFS_Dir dir;
 
+	GFARM_MALLOC(dir);
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

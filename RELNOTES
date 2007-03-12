@@ -1,5 +1,376 @@
-Copyright (c) 2003, 2004, 2005 National Institute of Advanced
-Industrial Science and Technology (AIST).  All Rights Reserved.
+Copyright (c) 2003-2006 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
+
+Release note for Gfarm 1.4
+==========================
+
+[2006.11.13]
+
+Updated Features
+
+  * gfrm(1)
+
+  - support parallel removal of files to speed up operations if gfrm
+    is compiled in OpenMP C compiler.
+
+  - add -j <#thread>, -D <domain>, -H <hostfile>, -N <#replica>, -n,
+    -q, -v options.  -j option is only available if gfrm is compiled
+    in OpenMP C compiler.
+
+  * gfwhere(1) - add -r and -R options for recursive listing.
+
+  * config-gfarm - support CentOS.
+
+  * gfsplck(1)
+  
+  - add a functionality to release text-busy status.  A file which
+    was being opened by crashed application programs holds
+    text-busy status. (Bugzilla-ja #60)
+
+  * gfimport_text(1) - add -N <#host> option.
+
+  * gfarm_agent(1)
+
+  - surpress too much and unimportant log output to improve
+    performance.
+
+  - add -L <log_level> option to specify a syslog level.
+
+  * gfarm.conf(5)
+
+  - add "level log_level" directive.
+ 
+  - add "record_atime disable" directive.
+
+  * gfmd(8) and gfsd(8) - add -L <log_level> option.
+
+  * libgfarm
+
+  - improve a scheduling algorithm:
+      o when a gfsd stops during reading a file, retry another file
+	replica automatically.
+      o when a connection error to gfsd is observed, remove the host
+	entry from a scheduling cache.
+      o when opening a file with the O_TRUNK flag, schedule a
+	filesystem node regardless of the original location.
+
+  - do not ignore SIGPIPE for applications that do not check return
+    value in write(2).  (Bugzilla-ja #68)
+
+  - Add more check against integer overflow.
+
+  * Documentation
+  
+  - Improved all documents: added more detailed and more exact
+    explanation.
+
+  * Bug fix
+
+  - gfls(1) - fix a bug that a longer pathname than the screen
+              width causes an error.
+  
+  - gfreg(1) - fix a bug in recursive mode that a directory name
+               cannot be changed.
+
+  - config-gfarm(1)
+      o resolve a problem that postmaster fails to start up in
+        some cases.
+
+  - gfmd(8) - add description about -d option in usage display.
+              (Bugzilla-ja #62)
+
+  - gfsd(8) - fix a bug that errno is not preserved by SIGCHLD
+              handler.
+
+  - libgfarm 
+     o fix a bug such that gfs_client_terminate() does not remove
+       connection entries from a connection cache.  This may cause
+       core dump in some calling sequences.
+     o fix a bug that a file cannot be deleted if it has no
+       fragment information.
+     o fix a serious bug in scheduling which may cause libgfarm to
+       hang up.  (Bugzilla-ja #66)
+
+  - fix a package dependency problem in gfarm.spec.
+
+Release note for Gfarm 1.3.1
+============================
+
+[2006.8.4]
+
+New Features
+
+  * gfchmod(1) - chmod command for Gfarm.
+
+  * gfusage(1) - display total disk space usage of each user.
+
+  * Documentation
+
+  - KNOWN_PROBLEMS - describe known problems of Gfarm 1.3.1.
+
+Updated Features
+
+  * libgfarm
+
+  - improve the functionality of connection cache for gfsd to tolerate
+    restart of gfsd, and not to exhaust the file descriptors.  Now,
+    the number of cached connections is managed by the
+    'gfsd_connection_cache' directive in gfarm.conf (default is 16).
+
+  - add definition of gfarm_error_t and GFARM_ERR_NO_ERROR, and
+    gfarm_error_string(3) function.
+
+  - report an error in closing a connection.
+
+  - devise a countermeasure against integer overflow attack by using
+    malloc() and realloc() in a safe way.
+ 
+  * gfarm_agent(1)
+
+  - add "-m" option for master mode in case that there is a single
+    gfarm_agent metadata cache server running.  This improves metadata
+    access performance by caching path information also.
+
+  * config-gfarm(1)
+
+  - add "-a <auth_type>" option for specifying an authentication type.
+
+  - support the PostgreSQL 7.4 as a metadata server.
+
+  - show usage with "--help" option.
+
+  - set keepalive option by default to cope with poor networking
+    environment.
+
+  * config-gfsd(1)
+
+  - change spool-directory argument to be optional.
+
+  - add "-l" option which specifies a listen address.
+
+  - show usage with "--help" option.
+
+  * config-agent(1)
+
+  - show usage with "--help" option.
+
+  * gfsd(8)
+
+  - add "-l" option which specifies a listen address,
+
+  - support read-only mode experimentally, which is enabled by
+    creating ".readonly" file in the top spool directory by
+    administrators.
+
+  * Documentation
+
+  - describe about a file/directory owner problem in README.hook.
+
+  * Bug fix
+
+  - fix a big scheduling bug such that local disk does not have
+    priority to be scheduled, introduced by the Gfarm version 1.3.
+
+  - fix a portability problem to x86_64.
+  
+  - fix a bug regarding reconnection to gfarm_agent.
+
+  - gfsd(8) - fix disk space calculation on FFS on *BSDs.
+
+  - fix a bug of mkdir(1) via system call hooks on Solaris 9.
+
+Unsupported Features
+
+ * NetBSD 1.6.2 is not supported anymore.
+
+Release note for Gfarm 1.3
+==========================
+
+[2006.6.6]
+
+Compatibility Note
+
+ * libgfarm uses new protocols for gfsd.  If client library is updated
+   to the version 1.3, gfsd needs to be updated to the version 1.3 and
+   restarted.
+
+New Features
+
+ * Solaris 9 and 10 syscall hooking support.
+
+ * AIX 5.2 partial support.  AIX 5.2 is now supported except
+   libgfs_hook.so syscall hooking library.  It is needed to specify
+   --without-gfshook in configure.
+
+ * gfarm_agent(1) - a cluster-wide metadata cache server.  It has new
+   functionality to share metadata cache among several PC nodes.
+
+ * config-agent(1) - new configuration script to set up gfarm_agent
+   metadata cache server.  For details, refer to INSTALL.RPM document.
+
+ * gfdump(1) - new metadata dump and restore tool;
+	% gfdump -d -f dumpfile   to dump metadata
+	% gfdump -r -f dumpfile   to restore metadata
+   Note that host information is dumped by gfhost not by gfdump.
+
+ * gfs_statfsnode(3) and gfs_statfsnode_cached(3) - new functions to
+   acquire free disk space
+
+ * Environment variable
+
+ - GFARM_WRITE_TARGET_DOMAIN environment variable specifies the domain
+   name that has priority for new files to be created.
+
+ - GFARM_WRITE_LOCAL_PRIORITY environment variable changes policy
+   where a new file is created on a file system node.  By default,
+   local storage is always selected if enough disk space is available.
+   On the other hand, if 0 or 'disable' is set to the environment
+   variable, local storage is not always selected for better load
+   balancing and disk capacity control.
+
+ * gfarm.conf - Gfarm configuration file
+
+ - minimum_free_disk_space directive specifies the minimum free disk
+   space for file system node scheduling.  Any file system node with
+   less free space than specified has low priority in selection.  The
+   default size is 128 MBytes.
+
+ - write_local_priority directive changes policy where a new file is
+   created on a file system node.  See the description of
+   GFARM_WRITE_LOCAL_PRIORITY environment variable above.
+
+ - agent_serverhost and agent_serverport directives specify a
+   gfarm_agent metadata cache server.
+
+ - several directives for cache management.
+
+Updated Features
+
+ * gfreg(1) - the -H and -D options can be specified in all modes
+
+ * configure - the --without-gfshook option is added to disable to
+   build syscall hooking library
+
+ * gfsd(8) - multiple spool directories support by running multiple
+   gfsds with a different virtual IP address on the same server host.
+   Sanity check is added to detect input/output error.
+
+ * libgfarm - add access control for gfs_chdir, gfs_opendir,
+   gfs_unlink, gfs_unlink_section, gfs_unlink_section_replica, and
+   gfs_rename.
+
+ * gfs_fstat(3) - return current file size in section mode.
+
+ * Performance Improvement
+
+ - config-gfarm(1) - use autovacuum functionality for PostgreSQL
+   backend if supported.
+
+ - do not re-calculate checksum at close time in any case.
+
+ - implement new scheduling algorithm which uses RTT (Round Trip Time)
+   and disk free space to make it possible to select near file
+   replicas and near file system nodes and to avoid disk full.
+
+ - reduce memory consumption when using a PostgreSQL backend.
+
+ * Robustness Improvement
+
+ - try to re-connect when the connection to a gfarm_agent server is
+   broken due to rebooting or some other reason.
+
+ - set 5 second timeout in connect() to avoid slow response in
+   unstable lossy networks.
+
+ * Bug fix
+
+ - gfs_pio_create(3) and gfs_mkdir(3) can create a file or a directory
+   with invalid mode.
+
+ - gfls(1) - fix a segmentation fault problem.
+
+ - ctime is not updated.
+
+ - libgfarm (metadb_pgsql.c) - fix memory leak.
+
+ - gfs_chmod(3) - fix a 'chmod +x' bug in OpenLDAP backend.
+
+ - gfs_unlink(3) - fix a bug such that path information in metadata
+   remains when unlinking a binary file that does not have the
+   corresponding physical file.
+
+ - config-gfarm(1) - make it robust for PostgreSQL installation.
+
+ - fix a bug such that '.' and '..' can be registered incorrectly in
+   metadata.
+
+ - plug memory leak.
+
+ - fix a segmentation fault when re-caching the directory cache
+   managed by red-black tree.
+
+Release note for Gfarm 1.2.9
+============================
+
+[2006.1.20]
+
+New Features
+
+ * PostgreSQL support as a backend metadata database server.
+
+Updated Features
+
+ * config-gfarm(1) - PostgreSQL support.  Use password authentication
+   for PostgreSQL and OpenLDAP backend by default.
+
+ * gfrep(1) - add the -m option for replica migration, and the -v
+   option for verbose messages.
+
+ * gfps(1) - add the -v option to display GSI authentication error.
+
+ * gfs_unlink(3) - do not return error when at least one file replica
+   is successfully unlinked.
+
+ * libgfarm - Gfarm library
+
+ - Do not keep a GSI proxy credential since it may be expired.
+
+ - Make netparam statement in gfarm.conf effective in on-demand
+   replication.
+
+ - Fault tolerent support in file replication.
+
+ * Performance Improvement
+
+ - Directory cache is managed by a red-black tree instead of hash to
+   improve performance in large number of files in a directory.
+
+ - Host information cache and path information cache are added to
+   reduce metadata access overhead.
+
+ * Bug fix
+
+ - gfreg -f does not work. (Bugzilla #16)
+
+ - gfsplck(1) - files with no fragment information cannot be fixed.
+
+ - Invalid metadata is created when the corresponding physical file
+   creation fails. (Bugzilla-ja #47)
+
+ - gfrep -N creates more number of replicas than
+   specified. (Bugzilla-ja #44)
+
+ - gfrep(1) - unavailable host can be selected as a source host in
+   replication.
+
+ - gfs_chmod(3) - fix a bug when changing execution bits.
+
+ * Documentation
+
+ - Gfarm-FAQ - add section 2.7: "Operation not permitted" error
+   happens when accessing or creating a file having execution bits.
+
+ - README.hook - update solaris section.
 
 Release note for Gfarm 1.2 (PL4)
 ================================

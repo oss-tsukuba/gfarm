@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
+.TH "GFARM.CONF" "5" "24 January 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -64,6 +64,19 @@ gfsdが、gfarmファイルの実体を保持するディレクトリ名を
 
 .nf
 	spool /var/spool/gfarm
+.fi
+.TP
+\fBspool_server_listen_address \fIIPアドレス\fB\fR
+gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+
+例:
+
+.nf
+	spool_server_listen_address 192.168.121.1
 .fi
 .TP
 \fBspool_serverport \fIgfsdポート番号\fB\fR
@@ -237,10 +250,30 @@ sharedsecret 利用時には、この指定は単に無視されます。
 設定の意味については  spool_server_cred_type の項を
 参照してください。
 .TP
-\fBldap_serverhost \fILDAPサーバー・ホスト名\fB\fR
-LDAP サーバーが動作しているホスト名を指定します。
+\fBagent_serverhost \fIgfarm_agentホスト名\fB\fR
+gfarm_agentが動作しているホスト名を指定します。
 
+例:
+
+.nf
+	agent_serverhost ldap.example.com
+.fi
+.TP
+\fBagent_serverport \fIgfarm_agentポート番号\fB\fR
+gfarm_agentが利用するTCPポートの番号を指定します。
+
+agent_serverhostを指定する場合には、
 この設定は必須です。
+
+例:
+
+.nf
+	agent_serverport 603
+.fi
+.TP
+\fBldap_serverhost \fILDAPサーバー・ホスト名\fB\fR
+メタデータのバックエンド・データベースとしてLDAPサーバを選択する場合、
+LDAP サーバーが動作しているホスト名を指定します。
 
 例:
 
@@ -251,18 +284,20 @@ LDAP サーバーが動作しているホスト名を指定します。
 \fBldap_serverport \fILDAPサーバー・ポート番号\fB\fR
 LDAP サーバーが利用するTCPポートの番号を指定します。
 
-現在のところ、この設定は必須です。
+ldap_serverhostを指定する場合には、
+この設定は必須です。
 
 例:
 
 .nf
-	ldap_serverport 389
+	ldap_serverport 602
 .fi
 .TP
 \fBldap_base_dn \fILDAP_base_distinguished_name\fB\fR
 LDAP データベースで保持するデータのキーの根となるノードの
 名称、base distinguished name を指定します。
 
+ldap_serverhostを指定する場合には、
 この設定は必須です。
 
 例:
@@ -271,10 +306,90 @@ LDAP データベースで保持するデータのキーの根となるノードの
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fI有効無効\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
+\fBldap_bind_dn \fILDAP_bind_distinguished_name\fB\fR
+LDAP データベースに接続する際の認証に用いる名称を、distinguished name で指定します。
+
+例:
+
+.nf
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+.fi
+.TP
+\fBldap_bind_password \fIpassword\fB\fR
+LDAP データベースに接続する際の認証パスワードを指定します。
+
+例:
+
+.nf
+	ldap_bind_password "secret-ldap-password"
+.fi
+.TP
+\fBpostgresql_serverhost \fIPostgreSQLサーバー・ホスト名\fB\fR
+メタデータのバックエンド・データベースとして
+PostgreSQL サーバを選択する場合、
+PostgreSQL サーバーが動作しているホスト名を指定します。
+
+例:
+
+.nf
+	postgresql_serverhost postgresql.example.com
+.fi
+.TP
+\fBpostgresql_serverport \fIPostgreSQLサーバー・ポート番号\fB\fR
+PostgreSQL サーバーが利用するTCPポートの番号を指定します。
+
+postgresql_serverhostを指定する場合には、
+この設定は必須です。
+
+例:
+
+.nf
+	postgresql_serverport 602
+.fi
+.TP
+\fBpostgresql_dbname \fIdbname\fB\fR
+PostgreSQL データベース名を指定します。
+
+postgresql_serverhostを指定する場合には、
+この設定は必須です。
+
+例:
+
+.nf
+	postgresql_dbname gfarm
+.fi
+.TP
+\fBpostgresql_user \fIuser\fB\fR
+PostgreSQL データベースに接続するデータベース管理下のユーザ名を指定します。
+
+例:
+
+.nf
+	postgresql_user gfarm
+.fi
+.TP
+\fBpostgresql_password \fIpassword\fB\fR
+PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。
+
+例:
+
+.nf
+	postgresql_password "secret-postgresql-password"
+.fi
+.TP
+\fBpostgresql_conninfo \fIconnection_info\fB\fR
+PostgreSQL データベースに接続するときの接続オプションを指定します。
+
+例:
+
+.nf
+	postgresql_conninfo "sslmode=require connect_timeout=30"
+.fi
+.TP
+\fBauth \fI有効性\fB\~ \fI認証方法\fB\~ \fIホスト指定\fB\fR
 この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。
 
-第1引数の\fI有効無効\fR部には、enable ないし disable
+第1引数の\fI有効性\fR部には、enable ないし disable
 キーワードを指定します。
 第2引数の\fI認証方法\fR部には、gsi、
 gsi_auth ないし sharedsecret
@@ -465,6 +580,131 @@ IPアドレスを通信に用いるかを指定します。
 
 この例の1行目の指定では、このノードのローカルユーザ名 foo に
 対してグローバルユーザ名 foobar が定義されています。
+.TP
+\fBdir_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ディレクトリキャッシュの
+有効期限を秒数で指定します。デフォルトは86400秒すなわち一日です。
+この値は、環境変数 GFARM_DIRCACHE_TIMEOUT でも指定することができます。
+設定ファイルと環境変数では、環境変数の方が優先されます。
+
+例:
+
+.nf
+	dir_cache_timeout 60
+.fi
+.TP
+\fBhost_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ファイルシステムノードに
+関するメタデータキャッシュの有効期限を秒数で指定します。
+新たにファイルシステムノードを追加したり削除したりした場合、この期限が
+切れるまでは、変更されたノードが見えないことがあります。
+デフォルトは600秒すなわち10分です。
+
+例:
+
+.nf
+	host_cache_timeout 60
+.fi
+.TP
+\fBschedule_cache_timeout \fI秒数\fB\fR
+gfarm ライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+
+例:
+
+.nf
+	schedule_cache_timeout 60
+.fi
+.TP
+\fBwrite_local_priority \fI有効性\fB\fR
+gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文で disable と指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
+なります。
+両方指定した場合は、環境変数が優先されます。
+デフォルトは enable です。
+
+例:
+
+.nf
+	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIドメイン名\fB\fR
+gfarm がファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数 GFARM_WRITE_TARGET_DOMAIN でも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+
+例:
+
+.nf
+	write_target_domain example.org
+.fi
+.TP
+\fBminimum_free_disk_space \fIバイト数\fB\fR
+ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されなくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
+することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
+
+例:
+
+.nf
+	minimum_free_disk_space 1G
+.fi
+.TP
+\fBgfsd_connection_cache \fIコネクション数\fB\fR
+gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
+
+例:
+
+.nf
+	gfsd_connection_cache 32
+.fi
+.TP
+\fBlog_level \fI優先度レベル\fB\fR
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslog や標準エラーへ
+送られません。
+レベルは、優先度の高い順に "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" です。
+デフォルトの出力レベルは "info" です。
+"crit" 以上の優先度を指定することは、お勧めできません。
+
+例:
+
+.nf
+	log_level debug
+.fi
+.TP
+\fBrecord_atime \fI有効性\fB\fR
+このオプションが enable の場合、最終アクセス時刻をきちんと記録します。
+disable の場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable 設定は、通常のファイルシステムにおける "noatime" オプションに
+相当します。
+
+例:
+
+.nf
+	record_atime disable
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -472,6 +712,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 .nf
 	<statement> ::=
 		\~\~<spool_statement> |
+		\~\~<spool_server_listen_address_statement> |
 		\~\~<spool_serverport_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
@@ -481,16 +722,37 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<agent_serverhost_statement> |
+		\~\~<agent_serverport_statement> |
 		\~\~<ldap_serverhost_statement> |
 		\~\~<ldap_serverport_statement> |
 		\~\~<ldap_base_dn_statement> |
+		\~\~<ldap_bind_dn_statement> |
+		\~\~<ldap_bind_password_statement> |
+		\~\~<postgresql_serverhost_statement> |
+		\~\~<postgresql_serverport_statement> |
+		\~\~<postgresql_dbname_statement> |
+		\~\~<postgresql_user_statement> |
+		\~\~<postgresql_password_statement> |
+		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
 		\~\~<local_user_map_statement>
+		\~\~<dir_cache_timeout_statement> |
+		\~\~<host_cache_timeout_statement> |
+		\~\~<schedule_cache_timeout_statement> |
+		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
+		\~\~<minimum_free_disk_space_statement> |
+		\~\~<gfsd_connection_cache_statement> |
+		\~\~<log_level_statement> |
+		\~\~<record_atime_statement>
 	<spool_statement> ::= "spool" <pathname>
+	<spool_server_listen_address_statement> ::=
+		\~\~"spool_server_listen_address" <ipv4_address>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>
@@ -506,12 +768,21 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<agent_serverhost_statement> ::= "agent_serverhost" <hostname>
+	<agent_serverport_statement> ::= "agent_serverport" <portnumber>
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<ldap_bind_dn_statement> ::= "ldap_bind_dn" <string>
+	<ldap_bind_password_statement> ::= "ldap_bind_password" <string>
+	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
+	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
+	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
+	<postgresql_user_statement> ::= "postgresql_user" <string>
+	<postgresql_password_statement> ::= "postgresql_password" <string>
+	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
-		\~\~"auth" <auth_command> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
+		\~\~"auth" <validity> <auth_method> <hostspec>
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
@@ -519,12 +790,22 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~"rate_limit"
 	<sockopt_statement> ::=
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<client_architecture_statement> ::=
 		\~\~"client_architecture" <architecture> <hostspec>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
+	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
+	<minimum_free_disk_space_statement> ::=
+		\~\~"minimum_free_disk_space" <size>
+	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<log_level_statement> ::= "log_level" <log_priority>
+	<record_atime_statement> ::= "record_atime" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -532,24 +813,52 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<hostname> ::= <hostname_character> <hostname_character>*
 	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
 	<portnumber> ::= <number>
+	<size> ::= <number> [ "k" | "M" | "G" | "T" ]
 	<number> ::= <digit> [<digit>*]
 	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	<string> ::= """ <double_quoted_character>* """
 	<double_quoted_character> ::=
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
+	<validity> ::= "enable" | "disable"
+	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		\~\~"notice" | "info" | "debug"
 .fi
 .SH "EXAMPLES"
+.PP
+メタデータの保存に PostgreSQL を使い、IPアドレス 192.168.0.0/24 の
+ファイルシステムノードやクライアントに対して、sharedsecret 認証を
+使う例です。
 
 .nf
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+spool_serverport 600
+metadb_serverhost metadb.example.org
+metadb_serverport 601
+postgresql_serverhost metadb.example.org
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
+auth enable sharedsecret 192.168.0.0/24
+sockopt keepalive
+.fi
+.PP
+メタデータの保存に LDAP を使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI 認証を使う例です。
+
+.nf
+spool /var/spool/gfarm
+spool_serverport 600
+metadb_serverhost metadb.example.com
+metadb_serverport 601
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
-auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable gsi *
+sockopt keepalive
 .fi
 .SH "FILES"
 .TP
@@ -559,4 +868,6 @@ auth enable gsi *
 .SH "SEE ALSO"
 .PP
 \fBgfmd\fR(8),
-\fBgfsd\fR(8), \fBsetsockopt\fR(2)
+\fBgfsd\fR(8),
+\fBgfarm_agent\fR(1),
+\fBsetsockopt\fR(2)

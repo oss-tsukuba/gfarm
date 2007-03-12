@@ -164,6 +164,9 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			    gfarm_error_string(e));
 			if (e_save != GFARM_ERR_NO_ERROR)
 				e_save = e;
+
+			/* mark this stats[i] isn't initialized */
+			stats[i].st_user = stats[i].st_group = NULL;
 			continue;
 		}
 		ls[m].path = files[i];
@@ -257,15 +260,16 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i;
-	struct ls_entry *ls = malloc(sizeof(struct ls_entry) * n);
+	struct ls_entry *ls;
 	struct gfs_stat *stats = NULL;
 
+	GFARM_MALLOC_ARRAY(ls, n);
 	if (ls == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (option_output_format == OF_LONG ||
 	    option_sort_order != SO_NAME ||
 	    option_type_suffix || option_inumber) {
-		stats = malloc(sizeof(struct gfs_stat) * n);
+		GFARM_MALLOC_ARRAY(stats, n);
 		if (stats == NULL) {
 			free(ls);
 			return (GFARM_ERR_NO_MEMORY);
@@ -291,6 +295,8 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		    (option_type_suffix ? 1 : 0) +
 		    (option_inumber ? INUM_LEN : 0);
 		columns = screen_width / (column_width + 1);
+		if (columns <= 0) /* a pathname is wider than screen_width */
+			columns = 1;
 		lines = n / columns;
 		if (lines * columns < n)
 			lines++;
@@ -328,8 +334,11 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 	if (n > 0 || e != GFARM_ERR_NO_ERROR)
 		*need_newline = 1;
 	if (stats != NULL) {
-		for (i = 0; i < n; i++)
-			gfs_stat_free(&stats[i]);
+		for (i = 0; i < n; i++) {
+			if (stats[i].st_user != NULL ||
+			    stats[i].st_group != NULL)
+				gfs_stat_free(&stats[i]);
+		}
 		free(stats);
 	}
 	free(ls);
@@ -349,7 +358,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
 
-	path = malloc(len + 1 + 1);
+	GFARM_MALLOC_ARRAY(path, len + 1 + 1);
 	if (path == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(path, "%s%s", prefix, dirname);
@@ -540,7 +549,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", program_name,
+		fprintf(stderr, "%s: gfarm_initialize: %s\n", program_name,
 		    gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
@@ -655,5 +664,12 @@ main(int argc, char **argv)
 	}
 	gfarm_stringlist_free_deeply(&paths);
 	gfs_glob_free(&types);
+
+	e = gfarm_terminate();
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: gfarm_terminate: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit_code = EXIT_FAILURE;
+	}
 	return (exit_code);
 }

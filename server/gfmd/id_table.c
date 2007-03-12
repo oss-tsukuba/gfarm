@@ -1,8 +1,11 @@
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
+
+#include <gfarm/error.h>
+#include <gfarm/gfarm_misc.h>
+
 #include "id_table.h"
 
 #define ALIGNMENT 16
@@ -52,8 +55,9 @@ struct gfarm_id_table {
 struct gfarm_id_table *
 gfarm_id_table_alloc(struct gfarm_id_table_entry_ops *entry_ops)
 {
-	struct gfarm_id_table *idtab = malloc(sizeof(struct gfarm_id_table));
+	struct gfarm_id_table *idtab;
 
+	GFARM_MALLOC(idtab);
 	if (idtab == NULL)
 		return (NULL);
 

@@ -21,7 +21,6 @@
 #include "auth.h"
 
 #define GFARM_AUTH_EXPIRE_DEFAULT	(24 * 60 * 60) /* 1 day */
-#define GFARM_AUTH_SHARED_KEY_BASENAME	".gfarm_shared_key"
 #define PATH_URANDOM			"/dev/urandom"
 
 static int
@@ -155,7 +154,8 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
 #endif
-	keyfilename = malloc(strlen(home) + sizeof(keyfile_basename));
+	GFARM_MALLOC_ARRAY(keyfilename, 
+		strlen(home) + sizeof(keyfile_basename));
 	if (keyfilename == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(keyfilename, home);

@@ -77,3 +77,9 @@ LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
 
 .c.lo:
 	$(LTCOMPILE) -c $(srcdir)/$*.c
+
+.s.lo:
+	$(LTCOMPILE) -c $(srcdir)/$*.s
+
+.S.lo:
+	$(LTCOMPILE) -c $(srcdir)/$*.S

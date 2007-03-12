@@ -20,7 +20,7 @@
 #define AF_INET4_BIT	32
 
 struct gfarm_hostspec {
-	enum { GFHS_NAME, GFHS_AF_INET4 } type;
+	enum { GFHS_ANY, GFHS_NAME, GFHS_AF_INET4 } type;
 	union gfhs_union {
 		char name[1];
 		struct gfhs_in4_addr {
@@ -30,8 +30,23 @@ struct gfarm_hostspec {
 };
 
 gfarm_error_t
+gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
+{
+	/* allocation size never overflows */
+	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
+	    - sizeof(union gfhs_union));
+
+	if (hsp == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	hsp->type = GFHS_ANY;
+	*hostspecpp = hsp;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 {
+	/* never overflows, because huge name will never be passed here */
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + strlen(name) + 1);
 
@@ -47,6 +62,7 @@ gfarm_error_t
 gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec **hostspecpp)
 {
+	/* allocation size never overvlows */
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + sizeof(struct gfhs_in4_addr));
 
@@ -142,8 +158,7 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 	unsigned long masklen;
 
 	if (strcmp(name, "*") == 0 || strcmp(name, "ALL") == 0) {
-		return (gfarm_hostspec_af_inet4_new(INADDR_ANY, INADDR_ANY,
-		    hostspecpp));
+		return (gfarm_hostspec_any_new(hostspecpp));
 	}
 	if (gfarm_string_to_in4addr(name, &end1p, &addr)
 	    == GFARM_ERR_NO_ERROR) {
@@ -216,6 +231,8 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	const char *name, struct sockaddr *addr)
 {
 	switch (hostspecp->type) {
+	case GFHS_ANY:
+		return (1);
 	case GFHS_NAME:
 		if (name == NULL)
 			return (0);
@@ -226,7 +243,12 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 			return (strcasecmp(name, hostspecp->u.name) == 0);
 		}
 	case GFHS_AF_INET4:
-		if (addr == NULL || addr->sa_family != AF_INET)
+		if (addr == NULL)
+			return (0);
+		/* XXX */
+		if (addr->sa_family == AF_UNIX)
+			return (1);
+		if (addr->sa_family != AF_INET)
 			return (0);
 		return ((((struct sockaddr_in *)addr)->sin_addr.s_addr &
 			 hostspecp->u.in4_addr.mask.s_addr) ==

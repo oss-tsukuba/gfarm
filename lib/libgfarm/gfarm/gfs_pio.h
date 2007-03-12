@@ -1,6 +1,14 @@
 /*
  * $Id$
+ *
+ * This defines internal structure of gfs_pio module.
+ *
+ * Only gfs_pio_{global,section}.c, gfs_pio_{local,remote}.c and gfs_pio.c
+ * are allowed to include this header file.
+ * Every other modules shouldn't include this.
  */
+
+struct stat;
 
 #define	GFS_FILE_IS_PROGRAM(gf) (GFARM_S_IS_PROGRAM(gf->pi.status.st_mode))
 
@@ -109,8 +117,3 @@ struct gfs_file_section_context {
  * switching from reading to writing:
  *	usually, seek is needed.
  */
-
-#if 0 /* not yet in gfarm v2 */
-extern int gf_on_demand_replication;
-extern int gf_hook_default_global;
-#endif /* not yet in gfarm v2 */

@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm.conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -182,6 +182,29 @@ CLASS="PARAMETER"
 ><P
 CLASS="LITERALLAYOUT"
 >	spool&nbsp;/var/spool/gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>IP¥¢¥É¥ì¥¹</I
+></TT
+></DT
+><DD
+><P
+>gfsd¤¬TCP¤ª¤è¤ÓUDP¤ÎÍ×µá¤ò¼õ¤±ÉÕ¤±¤ëIP¥¢¥É¥ì¥¹¤ò»ØÄê¤·¤Þ¤¹¡£
+¾ÊÎ¬»þ¤Ï¡¢¤½¤Î¥Û¥¹¥È¤ÎÁ´¤Æ¤ÎIP¥¢¥É¥ì¥¹¤Ç¼õ¤±ÉÕ¤±¤Þ¤¹¡£
+¤³¤Î¥ª¥×¥·¥ç¥ó¤Ï¡¢°ì¤Ä¤Î¥Î¡¼¥É¤ÇÊ£¿ô¤Î¥¹¥×¡¼¥ë¤òÄó¶¡¤¹¤ë¾ì¹ç¤Ë¡¢
+¤½¤ì¤¾¤ì¤Î¥¹¥×¡¼¥ë¤´¤È¤Ë¡¢ÊÌ¡¹¤ÎIP¥¢¥É¥ì¥¹¤ò»È¤Ã¤Ægfsd¤òµ¯Æ°¤¹¤ë
+¤¿¤á¤ËÍÑ¤¤¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_address&nbsp;192.168.121.1</P
 ></DD
 ><DT
 ><SPAN
@@ -591,6 +614,50 @@ CLASS="TOKEN"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>agent_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agent¥Û¥¹¥ÈÌ¾</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agent¤¬Æ°ºî¤·¤Æ¤¤¤ë¥Û¥¹¥ÈÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverhost&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>agent_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm_agent¥Ý¡¼¥ÈÈÖ¹æ</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agent¤¬ÍøÍÑ¤¹¤ëTCP¥Ý¡¼¥È¤ÎÈÖ¹æ¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+><SPAN
+CLASS="TOKEN"
+>agent_serverhost</SPAN
+>¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	agent_serverport&nbsp;603</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >ldap_serverhost</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -600,9 +667,8 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->LDAP ¥µ¡¼¥Ð¡¼¤¬Æ°ºî¤·¤Æ¤¤¤ë¥Û¥¹¥ÈÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
-><P
->¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+>¥á¥¿¥Ç¡¼¥¿¤Î¥Ð¥Ã¥¯¥¨¥ó¥É¡¦¥Ç¡¼¥¿¥Ù¡¼¥¹¤È¤·¤ÆLDAP¥µ¡¼¥Ð¤òÁªÂò¤¹¤ë¾ì¹ç¡¢
+LDAP ¥µ¡¼¥Ð¡¼¤¬Æ°ºî¤·¤Æ¤¤¤ë¥Û¥¹¥ÈÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
 ><P
 >Îã:</P
 ><P
@@ -623,12 +689,16 @@ CLASS="PARAMETER"
 ><P
 >LDAP ¥µ¡¼¥Ð¡¼¤¬ÍøÍÑ¤¹¤ëTCP¥Ý¡¼¥È¤ÎÈÖ¹æ¤ò»ØÄê¤·¤Þ¤¹¡£</P
 ><P
->¸½ºß¤Î¤È¤³¤í¡¢¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
 ><P
 >Îã:</P
 ><P
 CLASS="LITERALLAYOUT"
->	ldap_serverport&nbsp;389</P
+>	ldap_serverport&nbsp;602</P
 ></DD
 ><DT
 ><SPAN
@@ -645,7 +715,11 @@ CLASS="PARAMETER"
 >LDAP ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ÇÊÝ»ý¤¹¤ë¥Ç¡¼¥¿¤Î¥­¡¼¤Îº¬¤È¤Ê¤ë¥Î¡¼¥É¤Î
 Ì¾¾Î¡¢base distinguished name ¤ò»ØÄê¤·¤Þ¤¹¡£</P
 ><P
->¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+><SPAN
+CLASS="TOKEN"
+>ldap_serverhost</SPAN
+>¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
 ><P
 >Îã:</P
 ><P
@@ -655,11 +729,177 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_bind_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>LDAP ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ËÀÜÂ³¤¹¤ëºÝ¤ÎÇ§¾Ú¤ËÍÑ¤¤¤ëÌ¾¾Î¤ò¡¢distinguished name ¤Ç»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>LDAP ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ËÀÜÂ³¤¹¤ëºÝ¤ÎÇ§¾Ú¥Ñ¥¹¥ï¡¼¥É¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_password&nbsp;"secret-ldap-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQL¥µ¡¼¥Ð¡¼¡¦¥Û¥¹¥ÈÌ¾</I
+></TT
+></DT
+><DD
+><P
+>¥á¥¿¥Ç¡¼¥¿¤Î¥Ð¥Ã¥¯¥¨¥ó¥É¡¦¥Ç¡¼¥¿¥Ù¡¼¥¹¤È¤·¤Æ
+PostgreSQL ¥µ¡¼¥Ð¤òÁªÂò¤¹¤ë¾ì¹ç¡¢
+PostgreSQL ¥µ¡¼¥Ð¡¼¤¬Æ°ºî¤·¤Æ¤¤¤ë¥Û¥¹¥ÈÌ¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverhost&nbsp;postgresql.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverport</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>PostgreSQL¥µ¡¼¥Ð¡¼¡¦¥Ý¡¼¥ÈÈÖ¹æ</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL ¥µ¡¼¥Ð¡¼¤¬ÍøÍÑ¤¹¤ëTCP¥Ý¡¼¥È¤ÎÈÖ¹æ¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_serverport&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>dbname</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL ¥Ç¡¼¥¿¥Ù¡¼¥¹Ì¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+><SPAN
+CLASS="TOKEN"
+>postgresql_serverhost</SPAN
+>¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_dbname&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ËÀÜÂ³¤¹¤ë¥Ç¡¼¥¿¥Ù¡¼¥¹´ÉÍý²¼¤Î¥æ¡¼¥¶Ì¾¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_user&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ËÀÜÂ³¤¹¤ë¥Ç¡¼¥¿¥Ù¡¼¥¹´ÉÍý²¼¤Î¥æ¡¼¥¶¤Î¥Ñ¥¹¥ï¡¼¥É¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_password&nbsp;"secret-postgresql-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>connection_info</I
+></TT
+></DT
+><DD
+><P
+>PostgreSQL ¥Ç¡¼¥¿¥Ù¡¼¥¹¤ËÀÜÂ³¤¹¤ë¤È¤­¤ÎÀÜÂ³¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_conninfo&nbsp;"sslmode=require&nbsp;connect_timeout=30"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >auth</SPAN
 > <TT
 CLASS="PARAMETER"
 ><I
->Í­¸úÌµ¸ú</I
+>Í­¸úÀ­</I
 ></TT
 >  <TT
 CLASS="PARAMETER"
@@ -679,7 +919,7 @@ CLASS="PARAMETER"
 >Âè1°ú¿ô¤Î<TT
 CLASS="PARAMETER"
 ><I
->Í­¸úÌµ¸ú</I
+>Í­¸úÀ­</I
 ></TT
 >Éô¤Ë¤Ï¡¢<SPAN
 CLASS="TOKEN"
@@ -1073,6 +1313,221 @@ CLASS="LITERALLAYOUT"
 >¤³¤ÎÎã¤Î1¹ÔÌÜ¤Î»ØÄê¤Ç¤Ï¡¢¤³¤Î¥Î¡¼¥É¤Î¥í¡¼¥«¥ë¥æ¡¼¥¶Ì¾ foo ¤Ë
 ÂÐ¤·¤Æ¥°¥í¡¼¥Ð¥ë¥æ¡¼¥¶Ì¾ foobar ¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Þ¤¹¡£</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>dir_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Ç¥£¥ì¥¯¥È¥ê¥­¥ã¥Ã¥·¥å¤Î
+Í­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï86400ÉÃ¤¹¤Ê¤ï¤Á°ìÆü¤Ç¤¹¡£
+¤³¤ÎÃÍ¤Ï¡¢´Ä¶­ÊÑ¿ô GFARM_DIRCACHE_TIMEOUT ¤Ç¤â»ØÄê¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+ÀßÄê¥Õ¥¡¥¤¥ë¤È´Ä¶­ÊÑ¿ô¤Ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤ÎÊý¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	dir_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ë
+´Ø¤¹¤ë¥á¥¿¥Ç¡¼¥¿¥­¥ã¥Ã¥·¥å¤ÎÍ­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£
+¿·¤¿¤Ë¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤òÄÉ²Ã¤·¤¿¤êºï½ü¤·¤¿¤ê¤·¤¿¾ì¹ç¡¢¤³¤Î´ü¸Â¤¬
+ÀÚ¤ì¤ë¤Þ¤Ç¤Ï¡¢ÊÑ¹¹¤µ¤ì¤¿¥Î¡¼¥É¤¬¸«¤¨¤Ê¤¤¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï600ÉÃ¤¹¤Ê¤ï¤Á10Ê¬¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	host_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ÆâÉôÅª¤ËÊÝ»ý¤·¤Æ¤¤¤ë¡¢¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É
+¤Î¥¹¥±¥¸¥å¡¼¥ê¥ó¥°½èÍý¤Ë´Ø¤ï¤ë¾ðÊó¡¢¤¹¤Ê¤ï¤Á¥í¡¼¥É¥¢¥Ù¥ì¡¼¥¸¡¢
+¥Ç¥£¥¹¥¯¶õ¤­ÍÆÎÌ¡¢Ç§¾Ú¤¬ÄÌ¤ë¤«ÈÝ¤«Åù¤Î¥­¥ã¥Ã¥·¥å¤ÎÍ­¸ú´ü¸Â¤òÉÃ¿ô¤Ç»ØÄê¤·¤Þ¤¹¡£
+Ää»ß¤·¤Æ¤¤¤¿¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬Éü³è¤·¤¿¤è¤¦¤Ê¾ì¹ç¡¢¤³¤Î´ü¸Â¤¬
+ÀÚ¤ì¤ë¤Þ¤Ç¤Ï¡¢¤½¤Î¥Î¡¼¥É¤¬¥¹¥±¥¸¥å¡¼¥ê¥ó¥°¤µ¤ì¤Ê¤¤¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï600ÉÃ¤¹¤Ê¤ï¤Á10Ê¬¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_local_priority</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¤Ï¡¢¥Õ¥¡¥¤¥ë¤ò½ñ¤­¹þ¤à¥Î¡¼¥É¤ò·è¤á¤ëºÝ¡¢¤Ç¤­¤ë¸Â¤ê¥í¡¼¥«¥ë
+¥Û¥¹¥È¤òÍ¥Àè¤¹¤ë¤è¤¦¤ËÆ°ºî¤·¤Þ¤¹¡£¤³¤ÎÊ¸¤Ç disable ¤È»ØÄê¤¹¤ë¤³¤È¤Ë¤è¤Ã¤Æ¡¢
+¥í¡¼¥«¥ë¥Û¥¹¥È¤òÂ¾¤Î¥Û¥¹¥È¤ÈÆ±ÍÍ¤Ë°·¤¦¤è¤¦¤ËÊÑ¹¹¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_WRITE_LOCAL_PRIORITY ¤Ë disable ¤ÈÀßÄê¤·¤Æ¤â¡¢Æ±¤¸°ÕÌ£¤Ë
+¤Ê¤ê¤Þ¤¹¡£
+Î¾Êý»ØÄê¤·¤¿¾ì¹ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï enable ¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_local_priority&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>write_target_domain</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥É¥á¥¤¥óÌ¾</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¤¬¥Õ¥¡¥¤¥ë¤ò½ñ¤­¹þ¤à¥Î¡¼¥É¤ò·è¤á¤ëºÝ¡¢¤Ç¤­¤ë¸Â¤ê¤³¤³¤Ç
+»ØÄê¤·¤¿¥É¥á¥¤¥ó¤òÍ¥Àè¤¹¤ë¤è¤¦¤ËÆ°ºî¤·¤Þ¤¹¡£
+¤³¤³¤Ç»ØÄê¤·¤¿¥É¥á¥¤¥ó¤Ë¥Õ¥¡¥¤¥ëºîÀ®²ÄÇ½¤Ê¥Û¥¹¥È¤¬Â¸ºß¤·¤Ê¤¤¾ì¹ç¤ä¡¢
+ÆÃ¤Ë¤³¤Î»ØÄê¤ò¹Ô¤Ê¤ï¤Ê¤«¤Ã¤¿¾ì¹ç¤Ë¤Ï¡¢Á´¥Î¡¼¥É¤¬ÂÐ¾Ý¤È¤Ê¤ê¤Þ¤¹¡£
+´Ä¶­ÊÑ¿ô GFARM_WRITE_TARGET_DOMAIN ¤Ç¤â¡¢Æ±ÍÍ¤Ê»ØÄê¤¬¤Ç¤­¤Þ¤¹¡£
+Î¾Êý»ØÄê¤·¤¿¾ì¹ç¤Ï¡¢´Ä¶­ÊÑ¿ô¤¬Í¥Àè¤µ¤ì¤Þ¤¹¡£
+¤Ê¤ê¤Þ¤¹¡£
+¤³¤Î»ØÄê¤òÊ£¿ô²ó¹Ô¤Ê¤Ã¤Æ¤â¡¢ºÇ½é¤Î»ØÄê¤Î¤ß¤¬ÍøÍÑ¤µ¤ì¡¢ÆóÈÖÌÜ°Ê¹ß¤Ï
+Ã±¤ËÌµ»ë¤µ¤ì¤ë¤Î¤ÇÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	write_target_domain&nbsp;example.org</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>minimum_free_disk_space</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥Ð¥¤¥È¿ô</I
+></TT
+></DT
+><DD
+><P
+>¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ÇÉ¬Í×¤ÊºÇ¾®¸ÂÅÙ¤Î¥Ç¥£¥¹¥¯¶õ¤­ÍÆÎÌ¤ò»ØÄê
+¤·¤Þ¤¹¡£¤³¤Î¥µ¥¤¥º°Ê²¼¤Î¶õ¤­ÍÆÎÌ¤·¤«¤Ê¤¤¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤Ï¡¢
+¥Õ¥¡¥¤¥ë½ñ¤­¹þ¤ß¤ò¹Ô¤¦²ÄÇ½À­¤Î¤¢¤ëÁàºî¤ò¹Ô¤¦ºÝ¤Ë¡¢ÁªÂò¤µ¤ì¤Ê¤¯¤Ê¤ê¤Þ¤¹¡£
+»ØÄê¤Ï¥Ð¥¤¥ÈÃ±°Ì¤Ç¹Ô¤¤¤Þ¤¹¤¬¡¢¿ô»ú¤ÎËöÈø¤Ë¶õÇò¤ò³«¤±¤º¤Ë k/M/G/T ¤ò»ØÄê
+¤¹¤ë¤³¤È¤Ç¡¢¤½¤ì¤¾¤ì 1k¥Ð¥¤¥È¡¿1M¥Ð¥¤¥È¡¿1G¥Ð¥¤¥È¡¿1T¥Ð¥¤¥È¤òÃ±°Ì¤È¤¹¤ë
+¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï128M¥Ð¥¤¥È¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	minimum_free_disk_space&nbsp;1G</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfsd_connection_cache</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥³¥Í¥¯¥·¥ç¥ó¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfarm ¥é¥¤¥Ö¥é¥ê¤¬ gfsd ¤È¤ÎÄÌ¿®¤ËÍÑ¤¤¤ë¥³¥Í¥¯¥·¥ç¥ó¤ò¡¢¤¤¤¯¤Ä
+¤Þ¤Ç¥­¥ã¥Ã¥·¥å¤¹¤ë¤«¤ò»ØÄê¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï16¥³¥Í¥¯¥·¥ç¥ó¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfsd_connection_cache&nbsp;32</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í¥ÀèÅÙ¥ì¥Ù¥ë</I
+></TT
+></DT
+><DD
+><P
+>¤É¤ÎÍ¥ÀèÅÙ¥ì¥Ù¥ë°Ê¾å¤Î¥í¥°¤ò½ÐÎÏ¤¹¤ë¤«¤ò»ØÄê¤·¤Þ¤¹¡£
+¤³¤³¤Ç»ØÄê¤·¤¿¥ì¥Ù¥ëÌ¤Ëþ¤ÎÍ¥ÀèÅÙ¤Î¥í¥°¤Ï¡¢syslog ¤äÉ¸½à¥¨¥é¡¼¤Ø
+Á÷¤é¤ì¤Þ¤»¤ó¡£
+¥ì¥Ù¥ë¤Ï¡¢Í¥ÀèÅÙ¤Î¹â¤¤½ç¤Ë "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" ¤Ç¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Î½ÐÎÏ¥ì¥Ù¥ë¤Ï "info" ¤Ç¤¹¡£
+"crit" °Ê¾å¤ÎÍ¥ÀèÅÙ¤ò»ØÄê¤¹¤ë¤³¤È¤Ï¡¢¤ª´«¤á¤Ç¤­¤Þ¤»¤ó¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_level&nbsp;debug</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>record_atime</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>¤³¤Î¥ª¥×¥·¥ç¥ó¤¬ enable ¤Î¾ì¹ç¡¢ºÇ½ª¥¢¥¯¥»¥¹»þ¹ï¤ò¤­¤Á¤ó¤Èµ­Ï¿¤·¤Þ¤¹¡£
+disable ¤Î¾ì¹ç¤Ë¤ÏºÇ½ª¥¢¥¯¥»¥¹»þ¹ï¤Îµ­Ï¿¤ÏÉÔÀµ³Î¤Ë¤Ê¤ê¤Þ¤¹¤¬¡¢
+¥á¥¿¥Ç¡¼¥¿¹¹¿·¤ÎÉé²Ù¤¬²¼¤¬¤ê¡¢À­Ç½¤¬¸þ¾å¤¹¤ë¤³¤È¤¬¤¢¤ê¤Þ¤¹¡£
+disable ÀßÄê¤Ï¡¢ÄÌ¾ï¤Î¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¤Ë¤ª¤±¤ë "noatime" ¥ª¥×¥·¥ç¥ó¤Ë
+ÁêÅö¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	record_atime&nbsp;disable</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1089,6 +1544,7 @@ NAME="GRAMMAR"
 CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
 		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
 		  &#60;spool_serverport_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
@@ -1098,16 +1554,37 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;agent_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;agent_serverport_statement&#62;&nbsp;|<br>
 		  &#60;ldap_serverhost_statement&#62;&nbsp;|<br>
 		  &#60;ldap_serverport_statement&#62;&nbsp;|<br>
 		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_password_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_serverhost_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_serverport_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_user_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_password_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
 		  &#60;auth_statement&#62;&nbsp;|<br>
 		  &#60;netparam_statement&#62;&nbsp;|<br>
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
 		  &#60;address_use_statement&#62;&nbsp;|<br>
 		  &#60;client_architecture_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;<br>
+		  &#60;dir_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;host_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;write_local_priority_statement&#62;&nbsp;|<br>
+		  &#60;write_target_domain_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		  &#60;log_level_statement&#62;&nbsp;|<br>
+		  &#60;record_atime_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
 	&#60;spool_serverport_statement&#62;&nbsp;::=&nbsp;"spool_serverport"&nbsp;&#60;hostname&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
@@ -1123,12 +1600,21 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;agent_serverhost_statement&#62;&nbsp;::=&nbsp;"agent_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;agent_serverport_statement&#62;&nbsp;::=&nbsp;"agent_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_serverhost_statement&#62;&nbsp;::=&nbsp;"ldap_serverhost"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_serverport_statement&#62;&nbsp;::=&nbsp;"ldap_serverport"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_serverhost_statement&#62;&nbsp;::=&nbsp;"postgresql_serverhost"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_serverport_statement&#62;&nbsp;::=&nbsp;"postgresql_serverport"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
 	&#60;auth_statement&#62;&nbsp;::=<br>
-		  "auth"&nbsp;&#60;auth_command&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
-	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+		  "auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
 	&#60;netparam_statement&#62;&nbsp;::=<br>
 		  "netparam"&nbsp;&#60;netparam_option&#62;=&#60;number&#62;&nbsp;[&#60;hostspec&#62;]<br>
@@ -1136,12 +1622,22 @@ CLASS="LITERALLAYOUT"
 		  "rate_limit"<br>
 	&#60;sockopt_statement&#62;&nbsp;::=<br>
 		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
-	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|"rcvbuf"&nbsp;|<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
 	&#60;address_use_statement&#62;&nbsp;::=&nbsp;&nbsp;"address_use"&nbsp;&#60;hostspec&#62;<br>
 	&#60;client_architecture_statement&#62;&nbsp;::=<br>
 		  "client_architecture"&nbsp;&#60;architecture&#62;&nbsp;&#60;hostspec&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;dir_cache_timeout_statement&#62;&nbsp;::=	"dir_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;host_cache_timeout_statement&#62;&nbsp;::=&nbsp;"host_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;write_local_priority_statement&#62;&nbsp;::=&nbsp;"write_local_priority"&nbsp;&#60;validity&#62;<br>
+	&#60;write_target_domain_statement&#62;&nbsp;::=&nbsp;"write_target_domain"&nbsp;&#60;string&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
+	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;record_atime_statement&#62;&nbsp;::=&nbsp;"record_atime"&nbsp;&#60;validity&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
@@ -1149,12 +1645,16 @@ CLASS="LITERALLAYOUT"
 	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
 	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
 	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
 	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
 	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
 	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
 	&#60;double_quoted_character&#62;&nbsp;::=<br>
 		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
-		  "\\"&nbsp;|&nbsp;"\""</P
+		  "\\"&nbsp;|&nbsp;"\""<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+		  "notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -1164,15 +1664,38 @@ NAME="EXAMPLES"
 ><H2
 >EXAMPLES</H2
 ><P
+>¥á¥¿¥Ç¡¼¥¿¤ÎÊÝÂ¸¤Ë PostgreSQL ¤ò»È¤¤¡¢IP¥¢¥É¥ì¥¹ 192.168.0.0/24 ¤Î
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ä¥¯¥é¥¤¥¢¥ó¥È¤ËÂÐ¤·¤Æ¡¢sharedsecret Ç§¾Ú¤ò
+»È¤¦Îã¤Ç¤¹¡£</P
+><P
 CLASS="LITERALLAYOUT"
 >spool&nbsp;/var/spool/gfarm<br>
-metadb_serverhost&nbsp;ldap.example.com<br>
-ldap_serverhost&nbsp;ldap.example.com<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.org<br>
+metadb_serverport&nbsp;601<br>
+postgresql_serverhost&nbsp;metadb.example.org<br>
+postgresql_serverport&nbsp;5432<br>
+postgresql_dbname&nbsp;gfarm<br>
+postgresql_user&nbsp;gfarm<br>
+postgresql_password&nbsp;"secret-postgresql-password"<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+sockopt&nbsp;keepalive</P
+><P
+>¥á¥¿¥Ç¡¼¥¿¤ÎÊÝÂ¸¤Ë LDAP ¤ò»È¤¤¡¢Ç¤°Õ¤ÎIP¥¢¥É¥ì¥¹¤ò»È¤¦
+¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤ä¥¯¥é¥¤¥¢¥ó¥È¤ËÂÐ¤·¤Æ¡¢GSI Ç§¾Ú¤ò»È¤¦Îã¤Ç¤¹¡£</P
+><P
+CLASS="LITERALLAYOUT"
+>spool&nbsp;/var/spool/gfarm<br>
+spool_serverport&nbsp;600<br>
+metadb_serverhost&nbsp;metadb.example.com<br>
+metadb_serverport&nbsp;601<br>
+ldap_serverhost&nbsp;metadb.example.com<br>
 ldap_serverport&nbsp;389<br>
 ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
-auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
-auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
-auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"<br>
+ldap_bind_password&nbsp;"secret-ldap-password"<br>
+auth&nbsp;enable&nbsp;gsi&nbsp;*<br>
+sockopt&nbsp;keepalive</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -1228,7 +1751,15 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfsd</SPAN
 >(8)</SPAN
->, <SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_agent</SPAN
+>(1)</SPAN
+>,
+  <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"

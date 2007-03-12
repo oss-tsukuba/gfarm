@@ -55,7 +55,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 {
 	struct gfp_xdr *conn;
 
-	conn = malloc(sizeof(struct gfp_xdr));
+	GFARM_MALLOC(conn);
 	if (conn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	conn->recvbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
@@ -151,7 +151,7 @@ gfarm_error_t
 gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
-		return (GFARM_ERR_PROTOCOL); /* unexpected eof */
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -273,6 +273,8 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 #endif
 	char **sp, *s;
 	size_t *szp, sz;
+	size_t size;
+	int overflow = 0;
 	gfarm_error_t e;
 
 	e = gfp_xdr_flush(conn);
@@ -336,8 +338,10 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 			    &i, sizeof(i), just) != sizeof(i))
 				return (GFARM_ERR_NO_ERROR);
 			i = ntohl(i);
-			*sp = malloc(i + 1);
-			if (*sp != NULL) {
+			size = gfarm_size_add(&overflow, i, 1);
+			if (!overflow)
+				GFARM_MALLOC_ARRAY(*sp, size);
+			if (!overflow && *sp != NULL) {
 				/* caller should check whether *sp == NULL */
 				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
 				    *sp, i, just) != i)
@@ -458,14 +462,14 @@ gfp_xdr_vrpc_result(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof) /* rpc status missing */
-		return (GFARM_ERR_PROTOCOL);
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	if (*errorp != 0) /* should examine the *errorp in this case */
 		return (GFARM_ERR_NO_ERROR);
 	e = gfp_xdr_vrecv(conn, just, &eof, formatp, app);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (eof)
-		return (GFARM_ERR_PROTOCOL); /* rpc return value missing */
+	if (eof) /* rpc return value missing */
+		return (GFARM_ERR_UNEXPECTED_EOF);
 	return (GFARM_ERR_NO_ERROR);
 }
 

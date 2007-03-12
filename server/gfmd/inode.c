@@ -143,10 +143,17 @@ inode_cksum_set_internal(struct inode *inode,
 	const char *cksum_type, size_t cksum_len, const char *cksum)
 {
 	struct checksum *cs;
+	size_t size;
+	int overflow = 0;
 
-	cs = malloc(sizeof(*cs) - sizeof(cs->sum) + cksum_len +
-	    strlen(cksum_type) + 1);
-	if (cs == NULL)
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	cs = NULL;
+#endif
+	size = gfarm_size_add(&overflow,
+	    sizeof(*cs) - sizeof(cs->sum) + strlen(cksum_type) + 1, cksum_len);
+	if (!overflow)
+		cs = malloc(size);
+	if (overflow || cs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
 	cs->type = cs->sum + cksum_len;
@@ -258,8 +265,9 @@ inode_cksum_get(struct file_opening *fo,
 struct inode_open_state *
 inode_open_state_alloc(void)
 {
-	struct inode_open_state *ios = malloc(sizeof(*ios));
+	struct inode_open_state *ios;
 
+	GFARM_MALLOC(ios);
 	if (ios == NULL)
 		return (NULL);
 	/* make circular list `openings' empty */
@@ -304,7 +312,7 @@ inode_alloc_num(gfarm_ino_t inum)
 			    inode_table_size * INODE_TABLE_SIZE_MULTIPLY;
 		else 
 			new_table_size = inum * INODE_TABLE_SIZE_MULTIPLY;
-		p = realloc(inode_table, sizeof(*p) * new_table_size);
+		GFARM_REALLOC_ARRAY(p, inode_table, new_table_size);
 		if (p == NULL)
 			return (NULL); /* no memory */
 		inode_table = p;
@@ -314,7 +322,7 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode_table_size = new_table_size;
 	}
 	if ((inode = inode_table[inum]) == NULL) {
-		inode = malloc(sizeof(*inode));
+		GFARM_MALLOC(inode);
 		if (inode == NULL)
 			return (NULL); /* no memory */
 		inode->i_number = inum;
@@ -1229,7 +1237,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host)
 		if (copy->host == spool_host)
 			return (GFARM_ERR_ALREADY_EXISTS);
 	}
-	copy = malloc(sizeof(*copy));
+	GFARM_MALLOC(copy);
 	if (copy == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	copy->host = spool_host;
@@ -1369,7 +1377,9 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	DirEntry entry;
 	DirCursor cursor;
 	char *s, *name, *names[GFS_MAX_DIR_DEPTH];
-	int i, namelen, depth = 0, totallen = 0;
+	int i, namelen, depth = 0;
+	size_t totallen = 0;
+	int overflow = 0;
 
 	for (; inode != root; inode = parent) {
 		e = inode_lookup_relative(inode, dotdot, 1, INODE_LOOKUP,
@@ -1400,19 +1410,26 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 			assert(ok);
 		}
 		name = dir_entry_get_name(entry, &namelen);
-		s = malloc(namelen + 1);
+		GFARM_MALLOC_ARRAY(s, namelen + 1);
 		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
 			for (i = 0; i < depth; i++)
 				free(names[i]);
 			return (GFARM_ERR_NO_MEMORY); /* directory too deep */
 		}
 		names[depth++] = s;
-		totallen += namelen;
+		totallen = gfarm_size_add(&overflow, totallen, namelen);
 	}
 	if (depth == 0)
-		s = malloc(1 + 1);
-	else
-		s = malloc(totallen + depth + 1);
+		GFARM_MALLOC_ARRAY(s, 1 + 1);
+	else {
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+		s = NULL;
+#endif
+		totallen = gfarm_size_add(&overflow, totallen, depth + 1);
+		if (!overflow)
+			GFARM_MALLOC_ARRAY(s, totallen);
+
+	}
 	if (s == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 	} else if (depth == 0) {
@@ -1831,7 +1848,7 @@ dir_dump(gfarm_ino_t i_number)
 		if (entry == NULL)
 			break;
 		name = dir_entry_get_name(entry, &namelen);
-		s = malloc(namelen + 1);
+		GFARM_MALLOC_ARRAY(s, namelen + 1);
 		memcpy(s, name, namelen);
 		s[namelen] = '\0';
 		entry_inode = dir_entry_get_inode(entry);

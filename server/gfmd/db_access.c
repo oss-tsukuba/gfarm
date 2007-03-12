@@ -171,11 +171,18 @@ db_host_dup(const struct gfarm_host_info *hi, size_t size)
 	struct gfarm_host_info *r;
 	size_t hsize = strlen(hi->hostname) + 1;
 	size_t asize = strlen(hi->architecture) + 1;
+	size_t sz;
+	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
 	/* XXX FIXME missing hostaliases */
 	/* LDAP needs this extra NULL at the end of r->hostaliases[] */
-	r = malloc(size + hsize + asize);
-	if (r == NULL)
+	sz = gfarm_size_add(&overflow, size, hsize + asize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL)
 		return (NULL);
 	r->hostname = (char *)r + size;
 	r->architecture = r->hostname + hsize;
@@ -245,9 +252,16 @@ db_user_dup(const struct gfarm_user_info *ui, size_t size)
 	size_t rsize = strlen(ui->realname) + 1;
 	size_t hsize = strlen(ui->homedir) + 1;
 	size_t gsize = strlen(ui->gsi_dn) + 1;
+	size_t sz;
+	int overflow = 0;
 
-	r = malloc(size + usize + rsize + hsize + gsize);
-	if (r == NULL)
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, size, usize + rsize + hsize + gsize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL)
 		return (NULL);
 	r->username = (char *)r + size;
 	r->realname = r->username + usize;
@@ -305,16 +319,27 @@ db_group_dup(const struct gfarm_group_info *gi, size_t size)
 	struct gfarm_group_info *r;
 	size_t gsize = strlen(gi->groupname) + 1;
 	size_t users_size;
+	size_t sz;
+	int overflow = 0;
 	int i;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
 	size = ALIGN(size);
 	users_size = 0;
 	for (i = 0; i < gi->nusers; i++)
-		users_size += strlen(gi->usernames[i]) + 1;
+		users_size = gfarm_size_add(&overflow, users_size,
+		    strlen(gi->usernames[i]) + 1);
 	/* LDAP needs this extra NULL at the end of r->usernames[] */
-	r = malloc(size + sizeof(*r->usernames) * (gi->nusers + 1)
-	    + gsize + users_size);
-	if (r == NULL)
+	sz = gfarm_size_add(&overflow, size,
+	    gfarm_size_add(&overflow,
+		gfarm_size_mul(&overflow, sizeof(*r->usernames), 
+		    gfarm_size_add(&overflow, gi->nusers, 1)),
+		gfarm_size_add(&overflow, gsize, users_size)));
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL)
 		return (NULL);
 
 	r->usernames = (char **)((char *)r + size);
@@ -353,20 +378,28 @@ db_group_modify(const struct gfarm_group_info *gi, int modflags,
 	int i;
 	struct db_group_modify_arg *arg;
 	size_t size, users_size;
+	int overflow = 0;
 	char *p;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	users_size = 0;
 	for (i = 0; i < add_count; i++)
-		users_size += strlen(add_users[i]) + 1;
+		users_size = gfarm_size_add(&overflow, users_size,
+		    strlen(add_users[i]) + 1);
 	for (i = 0; i < del_count; i++)
-		users_size += strlen(del_users[i]) + 1;
-	size = ALIGN(sizeof(*arg)) +
-	    sizeof(*arg->add_users) * add_count +
-	    sizeof(*arg->del_users) * del_count +
-	    users_size;
-	
-	arg = db_group_dup(gi, size);
-	if (arg == NULL)
+		users_size = gfarm_size_add(&overflow, users_size,
+		    strlen(del_users[i]) + 1);
+	size = gfarm_size_add(&overflow,
+	    gfarm_size_add(&overflow,
+		gfarm_size_mul(&overflow, sizeof(*arg->add_users), add_count),
+		gfarm_size_mul(&overflow, sizeof(*arg->del_users), del_count)),
+	    gfarm_size_add(&overflow, ALIGN(sizeof(*arg)), users_size));
+
+	if (!overflow)
+		arg = db_group_dup(gi, size);
+	if (overflow || arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->add_users = (char **)((char *)arg + ALIGN(sizeof(*arg)));
 	arg->del_users = (char **)((char *)arg->add_users +
@@ -417,9 +450,16 @@ db_inode_dup(const struct gfs_stat *st, size_t size)
 	struct gfs_stat *r;
 	size_t usize = strlen(st->st_user) + 1;
 	size_t gsize = strlen(st->st_group) + 1;
+	size_t sz;
+	int overflow = 0;
 
-	r = malloc(size + usize + gsize);
-	if (r == NULL)
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, size, usize + gsize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL)
 		return (NULL);
 	r->st_user = (char *)r + size;
 	r->st_group = r->st_user + usize;
@@ -461,8 +501,9 @@ db_inode_modify(const struct gfs_stat *st)
 gfarm_error_t
 db_inode_nlink_modify(gfarm_ino_t inum, gfarm_uint64_t nlink)
 {
-	struct db_inode_uint64_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_uint64_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -474,8 +515,9 @@ db_inode_nlink_modify(gfarm_ino_t inum, gfarm_uint64_t nlink)
 gfarm_error_t
 db_inode_size_modify(gfarm_ino_t inum, gfarm_off_t size)
 {
-	struct db_inode_uint64_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_uint64_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -487,8 +529,9 @@ db_inode_size_modify(gfarm_ino_t inum, gfarm_off_t size)
 gfarm_error_t
 db_inode_mode_modify(gfarm_ino_t inum, gfarm_mode_t mode)
 {
-	struct db_inode_uint32_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_uint32_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -532,8 +575,9 @@ db_inode_group_modify(gfarm_ino_t inum, const char *group)
 gfarm_error_t
 db_inode_atime_modify(gfarm_ino_t inum, struct gfarm_timespec *atime)
 {
-	struct db_inode_timespec_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_timespec_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -545,8 +589,9 @@ db_inode_atime_modify(gfarm_ino_t inum, struct gfarm_timespec *atime)
 gfarm_error_t
 db_inode_mtime_modify(gfarm_ino_t inum, struct gfarm_timespec *mtime)
 {
-	struct db_inode_timespec_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_timespec_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -558,8 +603,9 @@ db_inode_mtime_modify(gfarm_ino_t inum, struct gfarm_timespec *mtime)
 gfarm_error_t
 db_inode_ctime_modify(gfarm_ino_t inum, struct gfarm_timespec *ctime)
 {
-	struct db_inode_timespec_modify_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_timespec_modify_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;
@@ -580,9 +626,18 @@ db_inode_cksum_arg_alloc(gfarm_ino_t inum,
 	const char *type, size_t len, const char *sum)
 {
 	size_t tsize = strlen(type) + 1;
-	struct db_inode_cksum_arg *arg = malloc(sizeof(*arg) + tsize + len+1);
+	size_t sz;
+	int overflow = 0;
+	struct db_inode_cksum_arg *arg;
 
-	if (arg == NULL)
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, sizeof(*arg) + tsize,
+	    gfarm_size_add(&overflow, len, 1));
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (NULL);
 	arg->type = (char *)arg + sizeof(*arg);
 	arg->sum = arg->type + tsize;
@@ -622,8 +677,9 @@ db_inode_cksum_modify(gfarm_ino_t inum,
 gfarm_error_t
 db_inode_cksum_remove(gfarm_ino_t inum)
 {
-	struct db_inode_inum_arg *arg = malloc(sizeof(*arg));
+	struct db_inode_inum_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->inum = inum;

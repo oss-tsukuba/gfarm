@@ -3,7 +3,7 @@
 
 <refentry id='gfps.1'>
 
-<refentryinfo><date>11 Oct 2005</date></refentryinfo>
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfps</refentrytitle>
@@ -39,21 +39,21 @@ ID.</para>
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>lists information about all jobs.</para>
+<para>Lists information about all jobs.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>displays with a long format.</para>
+<para>Displays using the long format.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>displays error message verbosely.
+<para>Displays error messages verbosely.
 </para>
 </listitem>
 </varlistentry>
@@ -61,7 +61,7 @@ ID.</para>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 

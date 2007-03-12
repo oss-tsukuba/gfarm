@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfsd</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -86,9 +85,24 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-P</TT
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ログレベル</I
+></TT
+></DT
+><DD
+><P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -100,19 +114,38 @@ CLASS="PARAMETER"
 >gfsd の process ID を、指定したファイルに記録します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-d</TT
+>-U</CODE
+></DT
+><DD
+><P
+>UNIX ドメインソケットを作成しなくなります。
+このオプションは、一つのノードで複数のスプールを提供するために、
+複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
+場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
+スプールになります。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
 ></DT
 ><DD
 ><P
 >デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</P
+><P
+>このオプションを指定し、かつ <CODE
+CLASS="OPTION"
+>-L</CODE
+> オプションを指定しなかった
+場合、ログレベルは debug となります。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-f</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -124,9 +157,27 @@ CLASS="PARAMETER"
 >起動時に読み込む設定ファイルを指定します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-l</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>IPアドレス</I
+></TT
+></DT
+><DD
+><P
+>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -139,9 +190,23 @@ CLASS="PARAMETER"
 省略した場合には 600 番を使用します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-s</TT
+>-r</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>スプール・ディレクトリ</I
+></TT
+></DT
+><DD
+><P
+>gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-s</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -154,9 +219,19 @@ CLASS="PARAMETER"
 した場合には、local0 を使用します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-v</CODE
+></DT
+><DD
+><P
+>認証処理に関するログを詳しく出力します。
+GSI 認証の問題を解決する場合に有用なオプションです。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -184,7 +259,7 @@ CLASS="FILENAME"
 ></DT
 ><DD
 ><P
->gfmd が参照する設定ファイルです。</P
+>gfsd が参照する設定ファイルです。</P
 ></DD
 ></DL
 ></DIV

@@ -285,8 +285,9 @@ rbdir_entry_delete(Dir dir, DirEntry entry)
 Dir
 dir_alloc(void)
 {
-	Dir dir = malloc(sizeof(*dir));
+	Dir dir;
 
+	GFARM_MALLOC(dir);
 	if (dir == NULL)
 		return (NULL);
 	RB_INIT(dir);
@@ -324,14 +325,15 @@ dir_get_entry_count(Dir dir)
 DirEntry
 dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 {
-	DirEntry entry = malloc(sizeof(*entry));
+	DirEntry entry;
 	DirEntry found;
 	DirEntry prev;
 
+	GFARM_MALLOC(entry);
 	if (entry == NULL)
 		return (NULL); /* no memory */
 	entry->keylen = namelen;
-	entry->key = malloc(namelen);
+	GFARM_MALLOC_ARRAY(entry->key, namelen);
 	if (entry->key == NULL) {
 		free(entry);
 		return (NULL); /* no memory */

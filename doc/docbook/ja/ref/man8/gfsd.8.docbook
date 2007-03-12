@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>1 Dec 2003</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -51,9 +51,32 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <variablelist>
 
 <varlistentry>
+<term><option>-L</option> <parameter>ログレベル</parameter></term>
+<listitem>
+<para>
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
 <para>gfsd の process ID を、指定したファイルに記録します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-U</option></term>
+<listitem>
+<para>
+UNIX ドメインソケットを作成しなくなります。
+このオプションは、一つのノードで複数のスプールを提供するために、
+複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
+場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
+スプールになります。
+</para>
 </listitem>
 </varlistentry>
 
@@ -62,6 +85,10 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <listitem>
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</para>
+<para>
+このオプションを指定し、かつ <option>-L</option> オプションを指定しなかった
+場合、ログレベルは debug となります。
+</para>
 </listitem>
 </varlistentry>
 
@@ -69,6 +96,18 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <term><option>-f</option> <parameter>設定ファイル</parameter></term>
 <listitem>
 <para>起動時に読み込む設定ファイルを指定します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option> <parameter>IPアドレス</parameter></term>
+<listitem>
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+オプション省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+</para>
 </listitem>
 </varlistentry>
 
@@ -81,10 +120,28 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 </varlistentry>
 
 <varlistentry>
+<term><option>-r</option> <parameter>スプール・ディレクトリ</parameter></term>
+<listitem>
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
 <para>gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
 した場合には、local0 を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+認証処理に関するログを詳しく出力します。
+GSI 認証の問題を解決する場合に有用なオプションです。
+</para>
 </listitem>
 </varlistentry>
 
@@ -103,7 +160,7 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <varlistentry>
 <term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
 <listitem>
-<para>gfmd が参照する設定ファイルです。</para>
+<para>gfsd が参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>

@@ -10,7 +10,7 @@
 
 #
 # Add the following lines to /etc/rc.conf to enable gfsd:
-# gfsd_enable (bool):      Set to "NO" by default.
+# @config_gfarm_gfsd_rc_var@_enable (bool):      Set to "NO" by default.
 # gfsd_flags (str):        Set to "" by default.
 #                             Extra flags passed to start command
 #
@@ -27,8 +27,8 @@ CONF="@config_gfarm_gfarm_config@"
 OPTIONS="@config_gfarm_gfsd_option@"
 
 name="gfsd"
-FILE=${name}
-rcvar=`set_rcvar`
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
+rcvar=`set_rcvar @config_gfarm_gfsd_rc_var@`
 
 command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_run_dir@/${FILE}.pid"
@@ -37,8 +37,8 @@ required_files="$CONF"
 command_args="-P $pidfile $OPTIONS"
 globus_location="@config_gfarm_globus_location@"
 
-[ -z "$gfsd_enable" ]       && gfsd_enable="NO"
-[ -z "$gfsd_flags" ]        && gfsd_flags=""
+[ -z "$@config_gfarm_gfsd_rc_var@_enable" ]       && @config_gfarm_gfsd_rc_var@_enable="NO"
+[ -z "$@config_gfarm_gfsd_rc_var@_flags" ]        && @config_gfarm_gfsd_rc_var@_flags=""
 
 load_rc_config ${FILE}
 

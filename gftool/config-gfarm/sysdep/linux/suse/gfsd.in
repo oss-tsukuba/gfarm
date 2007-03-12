@@ -1,14 +1,14 @@
 #! /bin/sh
 # $Id$
 #
-# /etc/init.d/gfsd
+# /etc/init.d/@config_gfarm_gfsd_rc_name@
 #
 #   and its symbolic link
 #
-# /usr/sbin/rcgfsd
+# /usr/sbin/rc@config_gfarm_gfsd_rc_name@
 #
 ### BEGIN INIT INFO
-# Provides: gfsd
+# Provides: @config_gfarm_gfsd_rc_name@
 # Required-Start: $network $syslog
 # Required-Stop: $network $syslog
 # Default-Start: 3 5
@@ -19,7 +19,7 @@
 . /etc/rc.status
 
 prog="gfsd"
-FILE=$prog
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"

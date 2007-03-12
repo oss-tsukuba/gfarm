@@ -3,138 +3,133 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "27 October 2005" "Gfarm" ""
+.TH "GFREP" "1" "13 November 2006" "Gfarm" ""
+
 .SH NAME
 gfrep \- replicate Gfarm files
 .SH SYNOPSIS
 
-\fBgfrep\fR [ \fB-vm\fR ] \fB-H \fIhostfile\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR \fB-H \fIhostfile\fB\fR [ \fB-vm\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-v\fR ] [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR \fB-P \fIhost-pair-file\fB\fR [ \fB-vm\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-vm\fR ] \fB-P \fIhost-pair-file\fB\fR \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR \fB-d \fIdestination-node\fB\fR [ \fB-s \fIsource-node\fB\fR ] [ \fB-I \fIfile-section\fB\fR ] [ \fB-vm\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 
-\fBgfrep\fR [ \fB-vm\fR ] [ \fB-s \fIsource-node\fB\fR ] [ \fB-d \fIdestination-node\fB [ -I \fIfragment-index\fB ]\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-S \fIsource-domainname\fB\fR | \fB-s \fIsource-node\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] [ \fB-v\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
-\fBgfrep\fR creates a replica of Gfarm files
-specified by the \fIgfarm-URL\fR. 
+\fBgfrep\fR creates replicas of Gfarm files
+specified by the \fIGfarm-URL\fR\&.
+.PP
+If the \fIGfarm-URL\fR parameter is a directory,
+it will be copied recursively.
 .SH "OPTIONS"
 .TP
-\fB-v\fR
-displays verbose output.
+\fB-D \fIdestination-domainname\fB\fR
+Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+This option is used alone, or with the \fB-S\fR
+or \fB-s\fR option.
+
+If neither this nor the \fB-d\fR option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
-\fB-m\fR
-lets gfrep command do migrate/move, instead of replicate.
-Currently, this works only with -H, -P and -d options.
+\fB-d \fIdestination-node\fB\fR
+Specifies one destination filesystem node where replicas
+will be copied.
+This option is used alone, or with the \fB-s\fR 
+option.
+
+If neither this nor the \fB-D\fR option is specified, 
+replicas may be copied to any of the hosts registered in the metadata.
 .TP
 \fB-H \fIhostfile\fB\fR
-specifies a file which describes hostnames of
-destination filesystem nodes where the replica will be made on.
+Specifies a file which describes hostnames of
+destination filesystem nodes on which the replica will be made.
 The \fIhostfile\fR consists of a filesystem node name
-in each line.
+on each line.
 If the number of nodes listed in the \fIhostfile\fR
 is less than the total number of file fragments,
 it is treated as if the node names are specified repeatedly.
 
 if ``-'' is specified, standard input is used to read the host list.
-
-If the specified \fIGfarm-URL\fR is a directory,
-it will be copied recursively.
 .TP
-\fB-S \fIsource-domainname\fB\fR
-specifies a domainname of source filesystem nodes
-where replicas will be made from.
+\fB-I \fIfile-section\fB\fR
+Specifies a file section name to be copied.
+Currently, this option can be specified only with the \fB-d\fR
+option.
 
-If none of this and other options for the source host is specified, 
-will be copied from one host registered in meta data.
-
-If a host of in the source domain is also in the destination
-domain specified by \fB-D\fR, gfrep will not replicate
-on the host.
-
-If the specified \fIGfarm-URL\fR is a directory,
-it will be copied recursively.
+It is possible to omit this option.
 .TP
-\fB-D \fIdestination-domainname\fB\fR
-specifies a domainname of destination filesystem nodes
-where replicas will be made on.
-
-If none of this and other options for the destination host is specified, 
-the replica will be copied to any of hosts registered in meta data.
-But, in this case, you need to specify the number of replicas greater than
-or equal to 2 using -N option. 
-Please refer the description of the \fB-N\fR for detail.
-
-If the specified \fIGfarm-URL\fR is a directory,
-it will be copied recursively.
+\fB-m\fR
+Lets gfrep command do a migrate/move, instead of doing replication.
+Currently, this works only with the -H, -P and -d options.
 .TP
 \fB-N \fInum-of-replicas\fB\fR
-specifies the number of file replicas, counting already existing ones.
+Specifies the required number of file replicas, counting already
+existing ones.
+If there are a sufficient number of replicas in the destination nodes,
+neither any copying nor any removal will be done.
+This option is used alone, or with the \fB-D\fR,
+\fB-S\fR or \fB-s\fR option.
 
-Gfrep generate replicas  until this number in hosts that are in destination
-domain specified by \fB-D\fR(if not specified, all hosts
-registered inmeta data) and are not in source domain specified by
-\fB-S\fR. If \fB-S\fR is not specified, gfrep
-genetate until this number of hosts in destination domain.
+If this option is not specified, \fB-N 1\fR is assumed.
 
-If replicas of a \fIGfarm-URL\fR file fragment is more than
-this parameter before replication, the file fragment won't be copied and
-its replicas won't be removed.
-
-This option must be sepcified singuraly or with \fB-S\fR
-and/or \fB-D\fR options.
-
-If \fB-N\fR option is omitted,  this works as if
-\fB-N 1\fR is specified.
+The source nodes specified by the \fB-S\fR
+or \fB-s\fR option are excluded from the destination nodes.
+In other words, it's guaranteed that the number of replicas on
+hosts, except those specified by the \fB-S\fR or \fB-s\fR
+option, are the same or more than the number specified by the
+\fB-N\fR option.
+However, when the destination is a subset of the source,
+i.e. when the exclusion makes the destination an empty set,
+this exclusion is not applied.
+For example, if gfrep is executed with the
+``\fB-N 3 -S subdomain.example.org -D example.org\fR\&'' option,
+it's guaranteed that there are at least 3 replicas in the hosts belonging
+to example.org, excepting subdomain.example.org.
 .TP
 \fB-P \fIhost-pair-file\fB\fR
-specifies a file which describes hostname pairs of
+Specifies a file which describes hostname pairs of
 source nodes and destination nodes.
 The \fIhost-pair-file\fR consists of a pair
-of a source node name and a destination node name in this order in each line.
+of a source node name and a destination node name in this order on each line.
 The replica will be copied to the destination node, only if it exists
 on the source node of the pair.
-
-If the specified \fIGfarm-URL\fR is a directory,
-it will be copied recursively.
 .TP
-\fB-d \fIdestination-node\fB\fR
-specifies one destination filesystem node where the file will be
-copied to.
-This option also needs \fB-I\fR usually,
-but there are conditions that \fB-I\fR option can be omitted.
-Please refer the description of the \fB-I\fR for detail.
+\fB-S \fIsource-domainname\fB\fR
+Specifies the domain name of source filesystem nodes where replicas
+will be copied from.
+This option is used alone, or with the \fB-D\fR
+option.
 
-If the specified \fIGfarm-URL\fR is a directory,
-it will be copied recursively.
+If neither this nor the \fB-s\fR option is specified, 
+the source nodes will be selected from all nodes.
+
+The hosts specified by this option will be excluded from
+the destination nodes.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
 \fB-s \fIsource-node\fB\fR
-specifies a source filesystem node where the file will be copied from.
-This option is used singuraly or with the \fB-d\fR option.
-If used singuraly, gfrep replicates on the host other than this one.
+Specifies a source filesystem node where replicas
+will be copied from.
+This option is used alone, or with the \fB-D\fR
+or \fB-d\fR option.
 
-If this option is omitted, the source filesystem node is choosed
-automatically.
+If neither this nor the \fB-s\fR option is specified, 
+the source nodes will be selected from all nodes.
+
+The host specified by this option will be excluded from
+the destination nodes.
+Please refer to the description of the \fB-N\fR option for details.
 .TP
-\fB-I \fIfragment-index\fB\fR
-specifies a file fragment number,
-if the \fIGfarm-URL\fR is an usual file.
-If the \fIGfarm-URL\fR is a program,
-this option specifies an architecture name of the program.
-This option is used with the \fB-d\fR option.
-
-It is possible to omit this option in the following cases.
-If specified \fIGfarm-URL\fR is an usual file
-and it's consists of just one file fragment, this option can
-be omitted, and works as if option \fB-I 0\fR is specified.
-If specified \fIGfarm-URL\fR is a program,
-this works as if the architecture of the destination filesystem node
-is specified.
+\fB-v\fR
+Displays verbose output.
 .TP
 \fB-?\fR
-displays a list of command options.
+Displays a list of command options.

@@ -17,9 +17,10 @@ import_fixed(FILE *ifp, char *output, int len,
 	int i, n, rv;
 	char *e;
 	struct gfs_file *of;
-	char *buffer = malloc(len);
+	char *buffer;
 	file_offset_t size;
 
+	GFARM_MALLOC_ARRAY(buffer, len);
 	if (buffer == NULL) {
 		fprintf(stderr, "no memory\n");
 		return (GFARM_ERR_NO_MEMORY);

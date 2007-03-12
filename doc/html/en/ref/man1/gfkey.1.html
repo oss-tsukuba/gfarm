@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfkey</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -56,18 +55,18 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfkey</B
-> manages the session key file
+> manages the session key file,
 <TT
 CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
->
+>,
 that is used for user authentication in a trusted environment when
 connecting to gfsd and/or gfmd.</P
 ><P
 >When the home directory is shared among filesystem nodes, it is not
 necessary to use this command.  If not, it is necessary to distribute
-a session key to every filesystem node in advance that is created with
-the -c or -f option.</P
+a session key  created with
+the -c or -f option to every filesystem node, in advance.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -82,29 +81,29 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-c</TT
+>-c</CODE
 ></DT
 ><DD
 ><P
->creates a new session key when there is no valid session key.  If
+>Creates a new session key when there is no valid session key.  If
 a valid session key already exists, no operation is performed.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-f</CODE
 ></DT
 ><DD
 ><P
->forces to create a new session key even if a valid session key already
-exists.</P
+>Forces the creation of a new session key, even if a valid session
+key already exists.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-p</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -113,34 +112,35 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies the term of validity in second.  This option needs to be used with -c or -f option.</P
+>Specifies the term of validity in seconds.  This option has to be
+used with the -c or -f option.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-l</TT
+>-l</CODE
 ></DT
 ><DD
 ><P
->displays the current key.</P
+>Displays the current key.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-e</TT
+>-e</CODE
 ></DT
 ><DD
 ><P
->displays the expiration date of the current key.</P
+>Displays the expiration date of the current key.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

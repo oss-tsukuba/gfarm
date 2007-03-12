@@ -19,6 +19,10 @@
 
 #include <sys/syscall.h>
 
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#define OS_SOLARIS	1
+#endif
+
 /*
  * The following hooks are not implemented:
  *
@@ -143,12 +147,23 @@ gfs_hook_syscall_pwrite64(int filedes, const void *buf, size_t nbyte, off64_t of
 }
 #endif
 
+#if defined(OS_SOLARIS)
+	/*
+	 * do not need xstat64 on Solaris 2.
+	 *
+	 * on sparc, _STAT_VER is not defined.
+	 * on i386, _STAT_VER is defined, but only used for 32bit interface.
+	 */
+#elif defined(_STAT_VER) /* Linux or SVR4 except Solaris */
+#	define NEED_XSTAT64
+#endif	
+
 int
 gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
 {
-#ifndef _STAT_VER
+#ifndef NEED_XSTAT64
 	return (syscall(SYS_stat64, path, buf));
-#else /* SVR4 or Linux */
+#else /* Linux or SVR4, but not Solaris 2 */
 	return (gfs_hook_syscall_xstat64(_STAT_VER, path, buf));
 #endif
 }
@@ -156,9 +171,9 @@ gfs_hook_syscall_stat64(const char *path, struct stat64 *buf)
 int
 gfs_hook_syscall_lstat64(const char *path, struct stat64 *buf)
 {
-#ifndef _STAT_VER
+#ifndef NEED_XSTAT64
 	return (syscall(SYS_lstat64, path, buf));
-#else /* SVR4 or Linux */
+#else /* Linux or SVR4, but not Solaris 2 */
 	return (gfs_hook_syscall_lxstat64(_STAT_VER, path, buf));
 #endif
 }
@@ -166,19 +181,19 @@ gfs_hook_syscall_lstat64(const char *path, struct stat64 *buf)
 int
 gfs_hook_syscall_fstat64(int filedes, struct stat64 *buf)
 {
-#ifndef _STAT_VER
+#ifndef NEED_XSTAT64
 	return (syscall(SYS_fstat64, filedes, buf));
-#else /* SVR4 or Linux */
+#else /* Linux or SVR4, but not Solaris 2 */
 	return (gfs_hook_syscall_fxstat64(_STAT_VER, filedes, buf));
 #endif
 }
 
 /*
- * for SVR4.
+ * for SVR4 except Solaris 2
  *
- * (see sysdep/linux/xstat64.c about Linux)
+ * (see gfs_hook/sysdep/linux/xstat64.c about Linux)
  */
-#if defined(_STAT_VER) && defined(SYS_xstat)
+#if defined(NEED_XSTAT64) && defined(SYS_xstat)
 int
 gfs_hook_syscall_xstat64(int ver, const char *path, struct stat64 *buf)
 {
@@ -208,7 +223,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 	return (gfs_hook_syscall_fxstat(SYS_fxstat, _STAT64_VER, filedes, buf));
 #endif
 }
-#endif
+#endif /* defined(NEED_XSTAT64) && defined(SYS_xstat) */
 
 #define OFF_T off64_t
 
@@ -257,7 +272,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define GFS_STAT_SECTION gfs_stat_section
 #define GFS_STAT_INDEX	gfs_stat_index
 
-#ifdef _STAT_VER /* SVR4 or Linux */
+#ifdef NEED_XSTAT64 /* SVR4 or Linux, but not Solaris 2 */
 #define SYSCALL_XSTAT(ver, path, buf)	\
 	gfs_hook_syscall_xstat64(ver, path, buf)
 #define FUNC___XSTAT	__xstat64
@@ -271,7 +286,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #undef FUNC__STAT
 #undef FUNC_STAT
 #undef GFS_STAT
-#ifdef _STAT_VER /* SVR4 or Linux */
+#ifdef NEED_XSTAT64 /* SVR4 or Linux, but not Solaris 2 */
 #undef SYSCALL_XSTAT
 #undef FUNC___XSTAT
 #undef FUNC__XSTAT
@@ -286,7 +301,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define FUNC_STAT	lstat64
 #define GFS_STAT	gfs_stat /* XXX - gfs_lstat in not implemented yet */
 
-#ifdef _STAT_VER /* SVR4 or Linux */
+#ifdef NEED_XSTAT64 /* SVR4 or Linux, but not Solaris 2 */
 #define SYSCALL_XSTAT(ver, path, buf)	\
 	gfs_hook_syscall_lxstat64(ver, path, buf)
 #define FUNC___XSTAT	__lxstat64
@@ -304,7 +319,7 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 #define FUNC_FSTAT	fstat64
 #define GFS_FSTAT	gfs_fstat
 
-#ifdef _STAT_VER /* SVR4 or Linux */
+#ifdef NEED_XSTAT64 /* SVR4 or Linux, but not Solaris 2 */
 #define SYSCALL_FXSTAT(ver, fd, buf)	\
 	gfs_hook_syscall_fxstat64(ver, fd, buf)
 #define FUNC___FXSTAT	__fxstat64

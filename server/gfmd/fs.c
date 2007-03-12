@@ -678,7 +678,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		} else {
 			alloced = 1;
 			cksum_type = strdup(cksum_type);
-			cksumbuf = malloc(cksum_len);
+			GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
 			memcpy(cksumbuf, cksum, cksum_len);
 		}
 	}
@@ -1036,7 +1036,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 		;
 	else if (n <= 0)
 		e = GFARM_ERR_INVALID_ARGUMENT;
-	else if ((p = malloc(sizeof(*p) * n)) == NULL)
+	else if (GFARM_MALLOC_ARRAY(p,  n) == NULL)
 		e = GFARM_ERR_NO_MEMORY;
 	else {
 		if (key != NULL)
@@ -1052,7 +1052,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			if (entry == NULL)
 				break;
 			name = dir_entry_get_name(entry, &namelen);
-			p[i].s = malloc(namelen + 1);
+			GFARM_MALLOC_ARRAY(p[i].s, namelen + 1);
 			if (p[i].s == NULL)
 				break;
 			memcpy(p[i].s, name, namelen);

@@ -20,15 +20,21 @@
 #include "xxx_proto.h"
 #include "io_fd.h"
 #include "config.h"
+#include "sockopt.h"
 #include "agent_proto.h"
 #include "agent_client.h"
+#include "agent_wrap.h"
+
+#ifndef	va_copy
+#define	va_copy(dst, src)	((dst) = (src))
+#endif
 
 struct agent_connection {
 	struct xxx_connection *conn;
 };
 
 static char *
-agent_client_connection0(
+agent_client_connection0_unix(
 	struct sockaddr_un *peer_addr, struct agent_connection *agent_server)
 {
 	char *e;
@@ -44,7 +50,7 @@ agent_client_connection0(
 		close(sock);
 		return (e);
 	}
-	e = xxx_fd_connection_new(sock, &agent_server->conn);
+	e = xxx_socket_connection_new(sock, &agent_server->conn);
 	if (e != NULL) {
 		close(sock);
 		return (e);
@@ -53,16 +59,62 @@ agent_client_connection0(
 }
 
 char *
-agent_client_connect(struct sockaddr_un *peer_addr,
+agent_client_connect_unix(struct sockaddr_un *peer_addr,
 	struct agent_connection **agent_serverp)
 {
-	struct agent_connection *agent_server =
-		malloc(sizeof(struct agent_connection));
+	struct agent_connection *agent_server;
 	char *e;
 
+	GFARM_MALLOC(agent_server);
 	if (agent_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	e = agent_client_connection0(peer_addr, agent_server);
+	e = agent_client_connection0_unix(peer_addr, agent_server);
+	if (e != NULL) {
+		free(agent_server);
+		return (e);
+	}
+	*agent_serverp = agent_server;
+	return (NULL);
+}
+
+static char *
+agent_client_connection0_inet(const char *if_hostname,
+	struct sockaddr *peer_addr, struct agent_connection *agent_server)
+{
+	char *e;
+	int sock;
+
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	if (sock == -1)
+		return (gfarm_errno_to_error(errno));
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
+	/* XXX - how to report setsockopt(2) failure ? */
+	gfarm_sockopt_apply_by_name_addr(sock, if_hostname, peer_addr);
+	if (connect(sock, peer_addr, sizeof(*peer_addr)) < 0) {
+		e = gfarm_errno_to_error(errno);
+		close(sock);
+		return (e);
+	}
+	e = xxx_socket_connection_new(sock, &agent_server->conn);
+	if (e != NULL) {
+		close(sock);
+		return (e);
+	}
+	return (NULL);
+}
+
+char *
+agent_client_connect_inet(const char *hostname,
+	struct sockaddr *peer_addr, struct agent_connection **agent_serverp)
+{
+	struct agent_connection *agent_server;
+	char *e;
+
+	GFARM_MALLOC(agent_server);
+	if (agent_server == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = agent_client_connection0_inet(hostname, peer_addr, agent_server);
 	if (e != NULL) {
 		free(agent_server);
 		return (e);
@@ -88,12 +140,26 @@ char *
 agent_client_rpc_request(struct agent_connection *agent_server, int command,
 			 char *format, ...)
 {
-	va_list ap;
-	char *e;
+	va_list ap, save_ap;
+	char *e, *save_format;
 
 	va_start(ap, format);
+	save_format = format;
+	va_copy(save_ap, ap);
+retry:
 	e = xxx_proto_vrpc_request(agent_server->conn, command, &format, &ap);
+	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
+		gfarm_agent_disconnect();
+		e = gfarm_agent_connect();
+		if (e == NULL) {
+			format = save_format;
+			va_end(ap);
+			va_copy(ap, save_ap);
+			goto retry;
+		}
+	}
 	va_end(ap);
+	va_end(save_ap);
 	return (e);
 }
 
@@ -121,14 +187,28 @@ char *
 agent_client_rpc(struct agent_connection *agent_server, int just, int command,
 	       char *format, ...)
 {
-	va_list ap;
-	char *e;
+	va_list ap, save_ap;
+	char *e, *save_format;
 	int error;
 
 	va_start(ap, format);
+	save_format = format;
+	va_copy(save_ap, ap);
+retry:
 	e = xxx_proto_vrpc(agent_server->conn, just,
 			   command, &error, &format, &ap);
+	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
+		gfarm_agent_disconnect();
+		e = gfarm_agent_connect();
+		if (e == NULL) {
+			format = save_format;
+			va_end(ap);
+			va_copy(ap, save_ap);
+			goto retry;
+		}
+	}
 	va_end(ap);
+	va_end(save_ap);
 
 	if (e != NULL)
 		return (e);
@@ -201,7 +281,7 @@ agent_client_realpath_canonical(struct agent_connection *agent_server,
 
 char *
 agent_client_get_ino(struct agent_connection *agent_server,
-	const char *path, gfarm_int32_t *inop)
+	const char *path, gfarm_uint32_t *inop)
 {
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_GET_INO, "s/i",
 				 path, inop));
@@ -209,33 +289,27 @@ agent_client_get_ino(struct agent_connection *agent_server,
 
 char *
 agent_client_opendir(struct agent_connection *agent_server,
-	const char *path, GFS_Dir *dirp)
+	const char *path, gfarm_int32_t *dirdescp)
 {
-	gfarm_int32_t p;
-	char *e;
-
-	e = agent_client_rpc(agent_server, 0, AGENT_PROTO_OPENDIR, "s/i",
-			     path, &p);
-	if (e == NULL)
-		/* portability fix for lp64 */
-		*dirp = (GFS_Dir)(long)p;
-	return (e);
+	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_OPENDIR, "s/i",
+	    path, dirdescp));
 }
 
 char *
 agent_client_readdir(struct agent_connection *agent_server,
-	GFS_Dir dir, struct gfs_dirent **entry)
+	gfarm_int32_t dirdesc, struct gfs_dirent **entry)
 {
-	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 	char *e, *name;
 	static struct gfs_dirent de;
+	gfarm_uint32_t ino;
 
 	e = agent_client_rpc(
 		agent_server, 0, AGENT_PROTO_READDIR,
-		"i/ihccs", p,
-		&de.d_fileno, &de.d_reclen,
+		"i/ihccs", dirdesc,
+		&ino, &de.d_reclen,
 		&de.d_type, &de.d_namlen, &name);
 	if (e == NULL) {
+		de.d_fileno = ino;
 		if (*name == '\0')
 			*entry = NULL;
 		else {
@@ -248,25 +322,24 @@ agent_client_readdir(struct agent_connection *agent_server,
 }
 
 char *
-agent_client_closedir(struct agent_connection *agent_server, GFS_Dir dir)
+agent_client_closedir(struct agent_connection *agent_server,
+	gfarm_int32_t dirdesc)
 {
-	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
-
 	return (agent_client_rpc(
 			agent_server, 0, AGENT_PROTO_CLOSEDIR,
-			"i/", p));
+			"i/", dirdesc));
 }
 
 char *
-agent_client_dirname(struct agent_connection *agent_server, GFS_Dir dir)
+agent_client_dirname(struct agent_connection *agent_server,
+	gfarm_int32_t dirdesc)
 {
-	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
 	char *e, *n;
 	static char name[GFS_MAXNAMLEN];
 
 	e = agent_client_rpc(
 		agent_server, 0, AGENT_PROTO_DIRNAME,
-		"i/s", p, &n);
+		"i/s", dirdesc, &n);
 	if (e == NULL) {
 		strcpy(name, n);
 		free(n);
@@ -278,22 +351,18 @@ agent_client_dirname(struct agent_connection *agent_server, GFS_Dir dir)
 
 char *
 agent_client_seekdir(struct agent_connection *agent_server,
-	GFS_Dir dir, file_offset_t off)
+	gfarm_int32_t dirdesc, file_offset_t off)
 {
-	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
-
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_SEEKDIR, "io/",
-	    p, off));
+	    dirdesc, off));
 }
 
 char *
 agent_client_telldir(struct agent_connection *agent_server,
-	GFS_Dir dir, file_offset_t *offp)
+	gfarm_int32_t dirdesc, file_offset_t *offp)
 {
-	gfarm_int32_t p = (gfarm_int32_t)(long)dir;
-
 	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_TELLDIR, "i/o",
-	    p, offp));
+	    dirdesc, offp));
 }
 
 char *
@@ -378,7 +447,7 @@ agent_client_host_info_get_all(struct agent_connection *agent_server,
 		AGENT_PROTO_HOST_INFO_GET_ALL, "/i", np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_host_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -421,7 +490,7 @@ agent_client_host_info_get_allhost_by_architecture(
 		"s/i", architecture, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_host_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -518,7 +587,7 @@ agent_client_file_section_info_get_all_by_file(
 		"s/i", pathname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -593,7 +662,7 @@ agent_client_file_section_copy_info_get_all_by_file(
 		"s/i", pathname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -627,7 +696,7 @@ agent_client_file_section_copy_info_get_all_by_section(
 		"ss/i", pathname, section, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {
@@ -660,7 +729,7 @@ agent_client_file_section_copy_info_get_all_by_host(
 		"s/i", hostname, np);
 	if (e != NULL)
 		return (e);
-	infos = malloc(sizeof(struct gfarm_file_section_copy_info) * *np);
+	GFARM_MALLOC_ARRAY(infos, *np);
 	if (infos == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < *np; ++i) {

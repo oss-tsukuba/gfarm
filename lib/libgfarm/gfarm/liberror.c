@@ -116,6 +116,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 
 	/* gfarm specific errors */
 	"no such object",
+	"unexpected EOF",
 	"can't open",
 	"gfarm URL prefix is missing",
 	"too many jobs",
@@ -160,11 +161,14 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"too many arguments",
 	"integer expected",
 	"invalid character",
+	"\"enable\" or \"disable\" is expected",
+	"invalid syslog priority level",
 	"local user name redifined",
 	"global user name redifined",
 	"missing second field (local user)",
 	"inconsistent configuration, LDAP is specified as metadata backend before",
 	"inconsistent configuration, PostgreSQL is specified as metadata backend before",
+	"inconsistent configuration, localfs is specified as metadata backend before",
 	"unterminated single quote",
 	"unterminated double quote",
 	"incomplete escape: \\",
@@ -385,7 +389,7 @@ gfarm_error_domain_alloc(int min, int max,
 	new->offset = next_error;
 	new->min = min;
 	new->number = max - min + 1;
-	new->errors = malloc(sizeof(*new->errors) * new->number);
+	GFARM_MALLOC_ARRAY(new->errors, new->number);
 	if (new->errors == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	new->code_to_message = c_to_m;
@@ -472,6 +476,10 @@ gfarm_errno_to_error_initialize(void)
 	gfarm_error_t e;
 	int i;
 	struct gfarm_errno_error_map *map;
+
+	/* Solaris calls this function more than once with non-pthread apps */
+	if (gfarm_errno_domain != NULL)
+		return;
 
 	e = gfarm_error_domain_alloc(0, ERRNO_NUMBER,
 	    gfarm_errno_to_string, NULL,

@@ -29,7 +29,12 @@ xxx_proto_recv_host_info_hostaliases(struct xxx_connection *client,
 	char *e, **aliases;
 	int i, eof;
 
-	aliases = malloc((info->nhostaliases + 1) * sizeof(char *));
+	if (info->nhostaliases == 0) {
+		info->hostaliases = NULL;
+		return (NULL);
+	}
+
+	GFARM_MALLOC_ARRAY(aliases, info->nhostaliases + 1);
 	if (aliases == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -127,7 +132,8 @@ xxx_proto_send_path_info(struct xxx_connection *client,
 {
 	return (xxx_proto_send(client, "siissoiiiiiii",
 			info->pathname,
-			info->status.st_ino, info->status.st_mode,
+			(gfarm_uint32_t)info->status.st_ino,
+			info->status.st_mode,
 			info->status.st_user, info->status.st_group,
 			info->status.st_size, info->status.st_nsections,
 			info->status.st_atimespec.tv_sec,
@@ -144,10 +150,11 @@ xxx_proto_recv_path_info(struct xxx_connection *client,
 {
 	char *e;
 	int eof;
+	gfarm_uint32_t ino;
 
 	e = xxx_proto_recv(client, 0, &eof, "siissoiiiiiii",
 		&info->pathname,
-		&info->status.st_ino, &info->status.st_mode,
+		&ino, &info->status.st_mode,
 		&info->status.st_user, &info->status.st_group,
 		&info->status.st_size, &info->status.st_nsections,
 		&info->status.st_atimespec.tv_sec,
@@ -158,6 +165,8 @@ xxx_proto_recv_path_info(struct xxx_connection *client,
 		&info->status.st_ctimespec.tv_nsec);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
+	if (e == NULL)
+		info->status.st_ino = ino;
 	return (e);
 }
 
@@ -167,7 +176,8 @@ xxx_proto_send_path_info_for_set(struct xxx_connection *client,
 {
 	/* do not send info->pathname */
 	return (xxx_proto_send(client, "iissoiiiiiii",
-			info->status.st_ino, info->status.st_mode,
+			(gfarm_uint32_t)info->status.st_ino,
+			info->status.st_mode,
 			info->status.st_user, info->status.st_group,
 			info->status.st_size, info->status.st_nsections,
 			info->status.st_atimespec.tv_sec,
@@ -184,9 +194,10 @@ xxx_proto_recv_path_info_for_set(struct xxx_connection *client,
 {
 	char *e;
 	int eof;
+	gfarm_uint32_t ino;
 
 	e = xxx_proto_recv(client, 0, &eof, "iissoiiiiiii",
-		&info->status.st_ino, &info->status.st_mode,
+		&ino, &info->status.st_mode,
 		&info->status.st_user, &info->status.st_group,
 		&info->status.st_size, &info->status.st_nsections,
 		&info->status.st_atimespec.tv_sec,
@@ -197,8 +208,10 @@ xxx_proto_recv_path_info_for_set(struct xxx_connection *client,
 		&info->status.st_ctimespec.tv_nsec);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
-	if (e == NULL)
+	if (e == NULL) {
 		info->pathname = NULL;
+		info->status.st_ino = ino;
+	}
 	return (e);
 }
 

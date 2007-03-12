@@ -85,6 +85,9 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
 		if (e != GFARM_ERR_NO_ERROR) {
 			e_save = e;
+			gflog_auth_error("while accessing %s: %s",
+			    GFARM_AUTH_SHARED_KEY_PRINTNAME,
+			    gfarm_error_string(e));
 			break;
 		}
 		e = gfp_xdr_send(conn, "i", GFARM_AUTH_SHAREDSECRET_MD5);
@@ -467,6 +470,9 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    GFARM_AUTH_SHARED_KEY_CREATE :
 	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE, 0);
 	if (state->error_save != GFARM_ERR_NO_ERROR) {
+		gflog_auth_error("while accessing %s: %s",
+		    GFARM_AUTH_SHARED_KEY_PRINTNAME,
+		    gfarm_error_string(state->error_save));
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,
 		    closure, t);
 		return;
@@ -512,7 +518,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -786,7 +792,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	if (methods == 0)
 		return (GFARM_ERRMSG_USABLE_AUTH_METHOD_IS_NOT_CONFIGURED);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

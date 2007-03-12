@@ -127,7 +127,7 @@ parallel_transfer_with_parallel_diskio(char *file, int ifd,
 	if (file_read_size >= sizeof(buffer))
 		file_read_size = sizeof(buffer);
 
-	pids = malloc(sizeof(*pids) * ndivisions);
+	GFARM_MALLOC_ARRAY(pids, ndivisions);
 	if (pids == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -255,8 +255,8 @@ parallel_transfer_with_sequential_diskio(char *file, int ifd,
 	if (size == 0) /* nothing to send */
 		return (NULL);
 
-	buffers[0] = malloc(full_stripe_size);
-	buffers[1] = malloc(full_stripe_size);
+	GFARM_MALLOC_ARRAY(buffers[0], full_stripe_size);
+	GFARM_MALLOC_ARRAY(buffers[1], full_stripe_size);
 	if (buffers[0] == NULL || buffers[1] == NULL) {
 		if (buffers[0] != NULL)
 			free(buffers[0]);
@@ -532,7 +532,7 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 	socklen_t listen_addr_len, client_addr_len;
 
 	if (rate_limit != 0) {
-		rinfos = malloc(sizeof(*rinfos) * ndivisions);
+		GFARM_MALLOC_ARRAY(rinfos, ndivisions);
 		if (rinfos == NULL) {
 			fprintf(stderr,
 			    "%s: no memory for %d rate limits "
@@ -553,8 +553,8 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 		}
 	}
 
-	socks = malloc(sizeof(*socks) * ndivisions);
-	conns = malloc(sizeof(*conns) * ndivisions);
+	GFARM_MALLOC_ARRAY(socks, ndivisions);
+	GFARM_MALLOC_ARRAY(conns, ndivisions);
 	if (socks == NULL || conns == NULL) {
 		if (socks != NULL)
 			free(socks);
@@ -604,7 +604,7 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 			     program_name, my_name, strerror(errno));
 			fatal();
 		}
-		e = xxx_fd_connection_new(socks[i], &conns[i]);
+		e = xxx_socket_connection_new(socks[i], &conns[i]);
 		if (e != NULL) {
 			fprintf(stderr,
 			    "%s: while allocating connection %d on %s: %s\n",
@@ -655,7 +655,8 @@ session(struct xxx_connection *from_client, struct xxx_connection *to_client,
 		if (*section == '\0') {
 			pathname = file;
 		} else {
-			pathname = malloc(strlen(file) + strlen(section) + 2);
+			GFARM_MALLOC_ARRAY(pathname,
+				strlen(file) + strlen(section) + 2);
 			if (pathname == NULL) {
 				fprintf(stderr,
 				    "%s: no memory for pathname %s:%s"
@@ -740,7 +741,7 @@ main(int argc, char **argv)
 	gfarm_int32_t ndivisions = 1;
 	int send_stripe_sync = 0;
 	struct xxx_connection *from_client, *to_client;
-	char *e;
+	char *e, *spool_root;
 	int c, n;
 	gfarm_stringlist files, sections;
 
@@ -796,21 +797,21 @@ main(int argc, char **argv)
 	}
 
 	/* makes current directory == spool_root */
-	if (chdir(gfarm_spool_root) == -1) {
+	spool_root = gfarm_spool_root_for_compatibility;
+	if (chdir(spool_root) == -1) {
 		fprintf(stderr, "%s: chdir(%s) on %s: %s\n",
-		    program_name, gfarm_spool_root, my_name,
-		    e);
+		    program_name, spool_root, my_name, e);
 		fatal();
 	}
 
 	/* XXX read-only connection */
-	e = xxx_fd_connection_new(STDIN_FILENO, &from_client);
+	e = xxx_socket_connection_new(STDIN_FILENO, &from_client);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdin\n", program_name, e);
 		fatal();
 	}
 	/* XXX write-only connection */
-	e = xxx_fd_connection_new(STDOUT_FILENO, &to_client);
+	e = xxx_socket_connection_new(STDOUT_FILENO, &to_client);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdout\n", program_name, e);
 		fatal();

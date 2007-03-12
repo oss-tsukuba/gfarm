@@ -21,6 +21,7 @@
 static gfarm_error_t
 gfs_pio_remote_storage_close(GFS_File gf)
 {
+	gfarm_error_t e;
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *gfs_server = vc->storage_context;
 
@@ -32,7 +33,9 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	 */
 	if (vc->pid != getpid())
 		return (GFARM_ERR_NO_ERROR);
-	return (gfs_client_close(gfs_server, gf->fd));
+	e = gfs_client_close(gfs_server, gf->fd);
+	gfs_client_connection_free(gfs_server);
+	return (e);
 }
 
 static gfarm_error_t

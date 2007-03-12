@@ -729,7 +729,12 @@ gfarm_ldap_generic_info_get_all(
 	BerElement *ber;
 	char **vals;
 	char *infos, *tmp_info;
+	size_t size;
+	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	infos = NULL;
+#endif
 	/* search for entries, return all attrs  */
 retry:
 	res = NULL;
@@ -756,8 +761,10 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto msgfree;
 	}
-	infos = malloc(ops->gen_ops->info_size * n);
-	if (infos == NULL) {
+	size = gfarm_size_mul(&overflow, ops->gen_ops->info_size, n);
+	if (!overflow)
+		GFARM_MALLOC_ARRAY(infos, size);
+	if (overflow || infos == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		goto msgfree;
 	}
@@ -813,7 +820,6 @@ msgfree:
 }
 #endif /* not used */
 
-/* XXX - this is for a stopgap implementation of gfs_opendir() */
 static gfarm_error_t
 gfarm_ldap_generic_info_get_foreach(
 	char *dn,
@@ -913,9 +919,10 @@ static char *
 gfarm_ldap_host_info_make_dn(void *vkey)
 {
 	struct gfarm_ldap_host_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_host_info_ops.dn_template) +
-	    strlen(key->hostname) + strlen(gfarm_ldap_base_dn) + 1);
+	char *dn;
 
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_host_info_ops.dn_template) +
+	    strlen(key->hostname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_host_info_ops.dn_template,
@@ -1018,6 +1025,8 @@ gfarm_ldap_host_add(struct gfarm_host_info *info)
 static void
 gfarm_ldap_host_modify(struct db_host_modify_arg *arg)
 {
+	/* XXX FIXME: should use modflags, add_aliases and del_aliases */
+
 	gfarm_ldap_host_info_update(&arg->hi,
 	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify);
 	free(arg);
@@ -1068,9 +1077,10 @@ static char *
 gfarm_ldap_user_info_make_dn(void *vkey)
 {
 	struct gfarm_ldap_user_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_user_info_ops.dn_template) +
-	    strlen(key->username) + strlen(gfarm_ldap_base_dn) + 1);
+	char *dn;
 
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_user_info_ops.dn_template) +
+	    strlen(key->username) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_user_info_ops.dn_template,
@@ -1210,9 +1220,10 @@ static char *
 gfarm_ldap_group_info_make_dn(void *vkey)
 {
 	struct gfarm_ldap_group_info_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_group_info_ops.dn_template) +
-	    strlen(key->groupname) + strlen(gfarm_ldap_base_dn) + 1);
+	char *dn;
 
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_group_info_ops.dn_template) +
+	    strlen(key->groupname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_group_info_ops.dn_template,
@@ -1341,9 +1352,10 @@ static char *
 gfarm_ldap_inode_make_dn(void *vkey)
 {
 	struct gfarm_ldap_inode_key *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_gfs_stat_ops.dn_template) +
-	    INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
+	char *dn;
 
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_gfs_stat_ops.dn_template) +
+	    INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_gfs_stat_ops.dn_template,
@@ -1787,35 +1799,20 @@ gfarm_ldap_inode_cksum_remove(struct db_inode_inum_arg *arg)
 	free(arg);
 }
 
-struct ldap_inode_cksum_trampoline_closure {
-	void *closure;
-	void (*callback)(void *, gfarm_ino_t, char *, size_t, char *);
-};
-
-static void
-ldap_inode_cksum_callback_trampoline(void *closure, void *vinfo)
-{
-	struct ldap_inode_cksum_trampoline_closure *c = closure;
-	struct db_inode_cksum_arg *info = vinfo;
-
-	(*c->callback)(c->closure,
-	    info->inum, info->type, info->len, info->sum);
-}
-
 static gfarm_error_t
 gfarm_ldap_inode_cksum_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, size_t, char *))
 {
 	struct db_inode_cksum_arg tmp_info;
-	struct ldap_inode_cksum_trampoline_closure c;
+	struct db_inode_cksum_trampoline_closure c;
 
 	c.closure = closure;
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_inode_cksum_ops.query_type,
-	    &tmp_info, ldap_inode_cksum_callback_trampoline, &c,
+	    &tmp_info, db_inode_cksum_callback_trampoline, &c,
 	    &gfarm_ldap_inode_cksum_ops));
 }
 
@@ -1837,10 +1834,11 @@ static char *
 gfarm_ldap_db_filecopy_make_dn(void *vkey)
 {
 	struct db_filecopy_arg *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_db_filecopy_ops.dn_template) +
-	    strlen(key->hostname) + INT64STRLEN +
-	    strlen(gfarm_ldap_base_dn) + 1);
+	char *dn;
 
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_db_filecopy_ops.dn_template)
+	    + strlen(key->hostname) + INT64STRLEN +
+	    + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_db_filecopy_ops.dn_template,
@@ -1909,34 +1907,20 @@ gfarm_ldap_filecopy_remove(struct db_filecopy_arg *arg)
 	free(arg);
 }
 
-struct ldap_filecopy_trampoline_closure {
-	void *closure;
-	void (*callback)(void *, gfarm_ino_t, char *);
-};
-
-static void
-ldap_filecopy_callback_trampoline(void *closure, void *vinfo)
-{
-	struct ldap_filecopy_trampoline_closure *c = closure;
-	struct db_filecopy_arg *info = vinfo;
-
-	(*c->callback)(c->closure, info->inum, info->hostname);
-}
-
 static gfarm_error_t
 gfarm_ldap_filecopy_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
 	struct db_filecopy_arg tmp_info;
-	struct ldap_filecopy_trampoline_closure c;
+	struct db_filecopy_trampoline_closure c;
 
 	c.closure = closure;
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_filecopy_ops.query_type,
-	    &tmp_info, ldap_filecopy_callback_trampoline, &c,
+	    &tmp_info, db_filecopy_callback_trampoline, &c,
 	    &gfarm_ldap_db_filecopy_ops));
 }
 
@@ -1959,10 +1943,12 @@ static char *
 gfarm_ldap_db_deadfilecopy_make_dn(void *vkey)
 {
 	struct db_deadfilecopy_arg *key = vkey;
-	char *dn = malloc(strlen(gfarm_ldap_db_deadfilecopy_ops.dn_template) +
+	char *dn;
+
+	GFARM_MALLOC_ARRAY(dn,
+	    strlen(gfarm_ldap_db_deadfilecopy_ops.dn_template) +
 	    strlen(key->hostname) + INT64STRLEN + INT64STRLEN +
 	    strlen(gfarm_ldap_base_dn) + 1);
-
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_db_deadfilecopy_ops.dn_template,
@@ -2038,34 +2024,20 @@ gfarm_ldap_deadfilecopy_remove(struct db_deadfilecopy_arg *arg)
 	free(arg);
 }
 
-struct ldap_deadfilecopy_trampoline_closure {
-	void *closure;
-	void (*callback)(void *, gfarm_ino_t, gfarm_uint64_t, char *);
-};
-
-static void
-ldap_deadfilecopy_callback_trampoline(void *closure, void *vinfo)
-{
-	struct ldap_deadfilecopy_trampoline_closure *c = closure;
-	struct db_deadfilecopy_arg *info = vinfo;
-
-	(*c->callback)(c->closure, info->inum, info->igen, info->hostname);
-}
-
 static gfarm_error_t
 gfarm_ldap_deadfilecopy_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, gfarm_uint64_t, char *))
 {
 	struct db_deadfilecopy_arg tmp_info;
-	struct ldap_deadfilecopy_trampoline_closure c;
+	struct db_deadfilecopy_trampoline_closure c;
 
 	c.closure = closure;
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_deadfilecopy_ops.query_type,
-	    &tmp_info, ldap_deadfilecopy_callback_trampoline, &c,
+	    &tmp_info, db_deadfilecopy_callback_trampoline, &c,
 	    &gfarm_ldap_db_deadfilecopy_ops));
 }
 
@@ -2139,12 +2111,12 @@ gfarm_ldap_db_direntry_make_dn(void *vkey)
 
 	quoted_len =
 	    gfarm_ldap_quote_string_length(key->entry_name, key->entry_len);
-	quoted = malloc(quoted_len);
+	GFARM_MALLOC_ARRAY(quoted, quoted_len);
 	if (quoted == NULL)
 		return (NULL);
 	gfarm_ldap_quote_string(quoted, key->entry_name, key->entry_len);
 
-	dn = malloc(strlen(gfarm_ldap_db_direntry_ops.dn_template) +
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_db_direntry_ops.dn_template) +
 	    quoted_len + INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn != NULL)
 		sprintf(dn, gfarm_ldap_db_direntry_ops.dn_template,
@@ -2228,35 +2200,20 @@ gfarm_ldap_direntry_remove(struct db_direntry_remove_arg *arg)
 	free(arg);
 }
 
-struct ldap_direntry_trampoline_closure {
-	void *closure;
-	void (*callback)(void *, gfarm_ino_t, char *, int, gfarm_ino_t);
-};
-
-static void
-ldap_direntry_callback_trampoline(void *closure, void *vinfo)
-{
-	struct ldap_direntry_trampoline_closure *c = closure;
-	struct db_direntry_arg *info = vinfo;
-
-	(*c->callback)(c->closure, info->dir_inum,
-	    info->entry_name, info->entry_len, info->entry_inum);
-}
-
 static gfarm_error_t
 gfarm_ldap_direntry_load(
 	void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, int, gfarm_ino_t))
 {
 	struct db_direntry_arg tmp_info;
-	struct ldap_direntry_trampoline_closure c;
+	struct db_direntry_trampoline_closure c;
 
 	c.closure = closure;
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
 	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_direntry_ops.query_type,
-	    &tmp_info, ldap_direntry_callback_trampoline, &c,
+	    &tmp_info, db_direntry_callback_trampoline, &c,
 	    &gfarm_ldap_db_direntry_ops));
 }
 

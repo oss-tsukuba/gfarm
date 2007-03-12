@@ -24,15 +24,26 @@
 #include <dirent.h>
 
 #include <errno.h>
-#include <gfarm/gfarm_error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfs.h>
+
+#if !defined(WCOREDUMP) && defined(_AIX)
+#define WCOREDUMP(status)	((status) & 0x80)
+#endif
+
+#include <gfarm/gfarm.h>
+
 #include "gfutil.h"
+
+#include "gfs_misc.h"
+
 #include "hooks_subr.h"
 
 #include <sys/syscall.h>
 #ifdef SYS_fdsync /* Solaris */
 #include <sys/file.h>		/* FSYNC, FDSYNC */
+#endif
+
+#if defined(sun) && (defined(__svr4__) || defined(__SVR4))
+#define OS_SOLARIS	1
 #endif
 
 #ifdef __osf__
@@ -87,7 +98,7 @@ __read(int filedes, void *buf, size_t nbyte)
 {
 	GFS_File gf;
 	char *e;
-	int n;
+	int n, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __read(%d, , %lu)",
 	    filedes, (unsigned long)nbyte));
@@ -111,6 +122,7 @@ __read(int filedes, void *buf, size_t nbyte)
 	if (e == NULL) {
 		_gfs_hook_debug_v(gflog_info(
 		    "GFS: Hooking __read --> %d", n));
+		errno = errno_save;
 		return (n);
 	}
 error:
@@ -151,7 +163,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 {
 	GFS_File gf;
 	char *e;
-	int n;
+	int n, errno_save = errno;
 
 	/* 
 	 * DO NOT put the following line here. This causes infinite loop!
@@ -183,6 +195,7 @@ __write(int filedes, const void *buf, size_t nbyte)
 	if (e == NULL) {
 		_gfs_hook_debug_v(gflog_info(
 		    "GFS: Hooking __write --> %d", n));
+		errno = errno_save;
 		return (n);
 	}
 error:
@@ -227,7 +240,7 @@ int
 __close(int filedes)
 {
 	GFS_File gf;
-	char *e;
+	char *e, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __close(%d)", filedes));
 
@@ -253,8 +266,10 @@ __close(int filedes)
 	}
 
 	e = gfs_hook_clear_gfs_file(filedes);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 	_gfs_hook_debug(gflog_info("GFS: __close: %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
@@ -297,6 +312,7 @@ __unlink(const char *path)
 {
 	const char *e;
 	char *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __unlink(%s)", path));
 
@@ -338,8 +354,10 @@ __unlink(const char *path)
  free_url:
 	free(url);
 
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __unlink: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -368,6 +386,7 @@ int
 __access(const char *path, int type)
 {
 	char *e, *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __access(%s, %d)",
 	    path, type));
@@ -379,8 +398,10 @@ __access(const char *path, int type)
 				path, type));
 	e = gfs_access(url, type);
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __access: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -456,6 +477,7 @@ __dup2(int oldfd, int newfd)
 {
 	struct _gfs_file_descriptor *d;
 	GFS_File gf1, gf2;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __dup2(%d, %d)",
 				  oldfd, newfd));
@@ -473,7 +495,7 @@ __dup2(int oldfd, int newfd)
 		(void)gfs_pio_flush(gf1);
 		if (gf2 == NULL)
 			/* this file may be accessed by the child process */
-			gfs_hook_mode_calc_digest(gf1);
+			gfs_pio_unset_calc_digest(gf1);
 	}
 	d = gfs_hook_dup_descriptor(oldfd);
 	gfs_hook_set_descriptor(newfd, d);
@@ -485,6 +507,7 @@ __dup2(int oldfd, int newfd)
 	if (syscall(SYS_dup2, oldfd, newfd) == -1)
 		return (-1);
 
+	errno = errno_save;
 	return (newfd);
 }
 
@@ -507,7 +530,7 @@ int
 __dup(int oldfd)
 {
 	struct _gfs_file_descriptor *d;
-	int newfd;
+	int newfd, errno_save = errno;
 	GFS_File gf;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __dup(%d)", oldfd));
@@ -520,7 +543,7 @@ __dup(int oldfd)
 	/* flush the buffer */
 	(void)gfs_pio_flush(gf);
 	/* this file may be accessed by the child process */
-	gfs_hook_mode_calc_digest(gf);
+	gfs_pio_unset_calc_digest(gf);
 
 	newfd = syscall(SYS_dup, oldfd);
 	if (newfd == -1)
@@ -528,6 +551,7 @@ __dup(int oldfd)
 	d = gfs_hook_dup_descriptor(oldfd);
 	gfs_hook_set_descriptor(newfd, d);
 
+	errno = errno_save;
 	return (newfd);
 }
 
@@ -566,7 +590,7 @@ __execve(const char *filename, char *const argv [], char *const envp[])
 			/* flush all of buffer */
 			gfs_hook_flush_all();
 			/* all files may be accessed by the child process */
-			gfs_hook_mode_calc_digest_all();
+			gfs_hook_unset_calc_digest_all();
 			pid = fork();
 		}
 		else
@@ -652,13 +676,14 @@ _private_execve(const char *filename, char *const argv [], char *const envp[])
 }
 
 /*
- * utimes & utime
+ * utimes
  */
 
 int
 __utimes(const char *path, const struct timeval *tvp)
 {
 	char *e, *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __utimes(%s, %p)",
 	    path, tvp));
@@ -692,8 +717,10 @@ __utimes(const char *path, const struct timeval *tvp)
 		e = gfs_utimes(url, gt);
 	}
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __utimes: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -714,11 +741,72 @@ utimes(const char *path, const struct timeval *tvp)
 	return (__utimes(path, tvp));
 }
 
+/*
+ * lutimes
+ */
+
+#ifdef SYS_lutimes
+int
+__lutimes(const char *path, const struct timeval *tvp)
+{
+	char *e, *url;
+	int errno_save = errno;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __lutimes(%s, %p)",
+	    path, tvp));
+
+	if (!gfs_hook_is_url(path, &url)) {
+		return syscall(SYS_utimes, path, tvp);
+	}
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __lutimes(%s)", url));
+	if (tvp == NULL)
+		e = gfs_utimes(url, NULL);
+	else {
+		struct gfarm_timespec gt[2];
+
+		gt[0].tv_sec = tvp[0].tv_sec;
+		gt[0].tv_nsec= tvp[0].tv_usec * 1000;
+		gt[1].tv_sec = tvp[1].tv_sec;
+		gt[1].tv_nsec= tvp[1].tv_usec * 1000;
+		e = gfs_utimes(url, gt);
+	}
+	free(url);
+	if (e == NULL) {
+		errno = errno_save;
+		return (0);
+	}
+
+	_gfs_hook_debug(gflog_info("GFS: __lutimes: %s", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_lutimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _lutimes"));
+	return (__lutimes(path, tvp));
+}
+
+int
+lutimes(const char *path, const struct timeval *tvp)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking lutimes"));
+	return (__lutimes(path, tvp));
+}
+#endif /* SYS_lutimes */
+
+/*
+ * utime
+ */
+
 #ifdef SYS_utime
 int
 __utime(const char *path, const struct utimbuf *buf)
 {
 	char *e, *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __utime(%s, %p)",
 	    path, buf));
@@ -739,8 +827,10 @@ __utime(const char *path, const struct utimbuf *buf)
 		e = gfs_utimes(url, gt);
 	}
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __utime: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -771,6 +861,7 @@ __mkdir(const char *path, mode_t mode)
 {
 	const char *e;
 	char *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __mkdir(%s, 0%o)",
 				path, mode));
@@ -782,8 +873,10 @@ __mkdir(const char *path, mode_t mode)
 				path, mode));
 	e = gfs_mkdir(url, mode);
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __mkdir: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -813,6 +906,7 @@ __rmdir(const char *path)
 {
 	const char *e;
 	char *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __rmdir(%s)", path));
 
@@ -822,8 +916,10 @@ __rmdir(const char *path)
 	_gfs_hook_debug(gflog_info("GFS: Hooking __rmdir(%s)", path));
 	e = gfs_rmdir(url);
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __rmdir: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -853,7 +949,7 @@ __chdir(const char *path)
 {
 	const char *e;
 	char *url;
-	int r;
+	int r, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __chdir(%s)", path));
 
@@ -869,6 +965,7 @@ __chdir(const char *path)
 	free(url);
 	if (e == NULL) {
 		gfs_hook_set_cwd_is_gfarm(1);
+		errno = errno_save;
 		return (0);
 	}
 	_gfs_hook_debug(gflog_info("GFS: __chdir: %s", e));
@@ -898,7 +995,7 @@ int
 __fchdir(int filedes)
 {
 	const char *e;
-	int r;
+	int r, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __fchdir(%d)", filedes));
 
@@ -919,6 +1016,7 @@ __fchdir(int filedes)
 	e = gfs_chdir(gfs_hook_get_gfs_url(filedes));
 	if (e == NULL) {
 		gfs_hook_set_cwd_is_gfarm(1);
+		errno = errno_save;
 		return (0);
 	}
 error:
@@ -953,6 +1051,7 @@ __getcwd(char *buf, size_t size)
 	char *p;
 	int alloced = 0;
 	int prefix_size;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info(
 	    "Hooking __getcwd(%p, %lu)", buf, (unsigned long)size));
@@ -965,7 +1064,7 @@ __getcwd(char *buf, size_t size)
 
 	if (buf == NULL) {
 		size = 2048;
-		buf = malloc(size);
+		GFARM_MALLOC_ARRAY(buf, size);
 		if (buf == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			goto error;
@@ -983,10 +1082,11 @@ __getcwd(char *buf, size_t size)
 		    buf[prefix_size] == '/' && buf[prefix_size + 1] == '\0')
 			buf[prefix_size] = '\0';
 		if (alloced) {
-			p = realloc(buf, strlen(buf) + 1);
+			GFARM_REALLOC_ARRAY(p, buf, strlen(buf) + 1);
 			if (p != NULL)
 				return (p);
 		}
+		errno = errno_save;
 		return (buf);
 	}
 error:
@@ -1020,6 +1120,7 @@ __chmod(const char *path, mode_t mode)
 {
 	const char *e;
 	char *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __chmod(%s, 0%o)",
 				path, mode));
@@ -1031,8 +1132,10 @@ __chmod(const char *path, mode_t mode)
 				path, mode));
 	e = gfs_chmod(url, mode);
 	free(url);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __chmod: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1054,6 +1157,54 @@ chmod(const char *path, mode_t mode)
 }
 
 /*
+ * lchmod
+ */
+
+#ifdef SYS_lchmod
+int
+__lchmod(const char *path, mode_t mode)
+{
+	const char *e;
+	char *url;
+	int errno_save = errno;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __lchmod(%s, 0%o)",
+				path, mode));
+
+	if (!gfs_hook_is_url(path, &url))
+		return syscall(SYS_lchmod, path, mode);
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __lchmod(%s, 0%o)",
+				path, mode));
+	e = gfs_chmod(url, mode);
+	free(url);
+	if (e == NULL) {
+		errno = errno_save;
+		return (0);
+	}
+
+	_gfs_hook_debug(gflog_info("GFS: __lchmod: %s", e));
+	errno = gfarm_error_to_errno(e);
+	return (-1);
+}
+
+int
+_lchmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _lchmod"));
+	return (__lchmod(path, mode));
+}
+
+int
+lchmod(const char *path, mode_t mode)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking lchmod"));
+	return (__lchmod(path, mode));
+}
+
+#endif /* SYS_lchmod */
+
+/*
  * fchmod
  */
 
@@ -1062,6 +1213,7 @@ __fchmod(int filedes, mode_t mode)
 {
 	GFS_File gf;
 	char *e, *url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __fchmod(%d, 0%o)",
 				filedes, mode));
@@ -1091,8 +1243,10 @@ __fchmod(int filedes, mode_t mode)
 		errno = EBADF; /* XXX - something broken */
 		return (-1);
 	}
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __fchmod: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1133,6 +1287,7 @@ __chown(const char *path, uid_t owner, gid_t group)
 	const char *e;
 	char *url;
 	struct gfs_stat s;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __chown(%s, %d, %d)",
 				  path, owner, group));
@@ -1150,8 +1305,10 @@ __chown(const char *path, uid_t owner, gid_t group)
 		/* XXX - do nothing */
 		gfs_stat_free(&s);
 	}
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __chown: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1188,6 +1345,7 @@ __lchown(const char *path, uid_t owner, gid_t group)
 	const char *e;
 	char *url;
 	struct gfs_stat s;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __lchown(%s, %d, %d)",
 				  path, owner, group));
@@ -1206,8 +1364,10 @@ __lchown(const char *path, uid_t owner, gid_t group)
 		/* XXX - do nothing */
 		gfs_stat_free(&s);
 	}
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __lchown: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1243,6 +1403,7 @@ __fchown(int fd, uid_t owner, gid_t group)
 {
 	GFS_File gf;
 	const char *e;
+	int errno_save = errno;
 	struct gfs_stat s;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __fchown(%d, %d, %d)",
@@ -1260,8 +1421,10 @@ __fchown(int fd, uid_t owner, gid_t group)
 		/* XXX - do nothing */
 		gfs_stat_free(&s);
 	}
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __fchown: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1283,6 +1446,91 @@ fchown(int fd, uid_t owner, gid_t group)
 }
 
 /*
+ * acl
+ */
+#ifdef SYS_acl
+#ifdef OS_SOLARIS /* make `mv' command work with gfs_hook on Solaris */
+#include <sys/acl.h>
+
+int
+__acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	const char *e;
+	char *url;
+	struct gfs_stat s;
+	gfarm_mode_t mode;
+	int n, errno_save = errno;
+
+	_gfs_hook_debug_v(gflog_info("Hooking __acl(%s, 0x%x)", path, cmd));
+
+	if (!gfs_hook_is_url(path, &url))
+		return (syscall(SYS_acl, path, cmd, nentries, aclbuf));
+
+	_gfs_hook_debug(gflog_info("GFS: Hooking __acl(%s, 0x%x)", path, cmd));
+
+	e = gfs_stat(url, &s);
+	free(url);
+	if (e != NULL) {
+		_gfs_hook_debug(gflog_info("GFS: __acl: %s", e));
+		errno = gfarm_error_to_errno(e);
+		return (-1);
+	}
+	mode = s.st_mode;
+	gfs_stat_free(&s);
+
+	switch (cmd) {
+	case SETACL:
+		errno = ENOSYS;
+		return (-1);
+	case GETACL:
+		if (nentries < 4) {
+			errno = nentries < 3 ? EINVAL : ENOSPC;
+			return (-1);
+		}
+		aclbuf[0].a_type = USER_OBJ;
+		aclbuf[0].a_id = getuid(); /* XXX */
+		aclbuf[0].a_perm = (mode >> 6) & 07;
+
+		aclbuf[1].a_type = GROUP_OBJ;
+		aclbuf[1].a_id = getgid(); /* XXX */
+		aclbuf[1].a_perm = (mode >> 3) & 07;
+
+		aclbuf[2].a_type = CLASS_OBJ;
+		aclbuf[2].a_id = 0; /* ??? */
+		aclbuf[2].a_perm = (mode >> 3) & 07; /* ??? */
+
+		aclbuf[3].a_type = OTHER_OBJ;
+		aclbuf[3].a_id = 0;
+		aclbuf[3].a_perm = mode & 07;
+		errno = errno_save;
+		return (4);
+	case GETACLCNT:
+		errno = errno_save;
+		return (4); /* USER_OBJ, GROUP_OBJ, CLASS_OBJ, OTHER_OBJ */
+	default:
+		errno = EINVAL;
+		return (-1);
+	}
+}
+
+int
+_acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking _acl"));
+	return (__acl(path, cmd, nentries, aclbuf));
+}
+
+int
+acl(const char *path, int cmd, int nentries, aclent_t *aclbuf)
+{
+	_gfs_hook_debug_v(gflog_info("Hooking acl"));
+	return (__acl(path, cmd, nentries, aclbuf));
+}
+
+#endif /* OS_SOLARIS */
+#endif /* acl */
+
+/*
  * rename
  */
 
@@ -1292,6 +1540,7 @@ __rename(const char *oldpath, const char *newpath)
 	const char *e;
 	char *oldurl, *newurl;
 	int old_is_url, new_is_url;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __rename(%s, %s)",
 				  oldpath, newpath));
@@ -1307,6 +1556,7 @@ __rename(const char *oldpath, const char *newpath)
 			errno = EXDEV;
 			return (-1);
 		}
+		errno = errno_save;
 		return (syscall(SYS_rename, oldpath, newpath));
 	}
 
@@ -1316,8 +1566,10 @@ __rename(const char *oldpath, const char *newpath)
 	e = gfs_rename(oldurl, newurl);
 	free(oldurl);
 	free(newurl);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __rename: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1674,6 +1926,7 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 	char *url;
 	struct gfs_stat gs;
 	GFS_File gf;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __mknod"));
 
@@ -1704,6 +1957,9 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 	case S_IFSOCK:
 		errno = EPERM;
 		return (-1);
+#if defined(OS_SOLARIS) || defined(__linux__)
+	case 0:
+#endif
 	case S_IFREG:
 		if ((e = gfs_pio_create(url,
 			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
@@ -1715,6 +1971,7 @@ __mknod(const char *path, mode_t mode, dev_t dev)
 			errno = gfarm_error_to_errno(e);
 			return (-1);
 		}
+		errno = errno_save;
 		return (0);
 	}
 	errno = EINVAL;
@@ -1756,10 +2013,15 @@ _mknod(const char *path, mode_t mode, dev_t dev)
 #endif /* __linux__ */
 
 int
+#ifdef OS_SOLARIS
+__xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
+#else
 __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+#endif
 {
 	const char *e;
 	char *url;
+	int errno_save = errno;
 	struct gfs_stat gs;
 	GFS_File gf;
 
@@ -1796,6 +2058,9 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 	case S_IFSOCK:
 		errno = EPERM;
 		return (-1);
+#if defined(OS_SOLARIS) || defined(__linux__)
+	case 0:
+#endif
 	case S_IFREG:
 		if ((e = gfs_pio_create(url,
 			GFARM_FILE_WRONLY|GFARM_FILE_EXCLUSIVE, mode, &gf))
@@ -1807,6 +2072,7 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 			errno = gfarm_error_to_errno(e);
 			return (-1);
 		}
+		errno = errno_save;
 		return (0);
 	}
 	errno = EINVAL;
@@ -1814,7 +2080,11 @@ __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
 }
 
 int
+#ifdef OS_SOLARIS
+_xmknod(const int ver, const char *path, mode_t mode, dev_t dev)
+#else
 _xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+#endif
 {
 	_gfs_hook_debug_v(gflog_info("Hooking _xmknod"));
 	return (__xmknod(ver, path, mode, dev));
@@ -1831,6 +2101,7 @@ __fcntl(int filedes, int cmd, ...)
 	GFS_File gf;
 	char *e;
 	unsigned long val;
+	int errno_save = errno;
 
 	va_start(ap, cmd);
 	val = va_arg(ap, unsigned long);
@@ -1880,8 +2151,10 @@ __fcntl(int filedes, int cmd, ...)
 		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 		break;
 	}
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __fcntl: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1922,6 +2195,7 @@ __fsync(int filedes)
 {
 	GFS_File gf;
 	char *e;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __fsync(%d)", filedes));
 
@@ -1937,8 +2211,10 @@ __fsync(int filedes)
 				filedes, gfs_pio_fileno(gf)));
 
 	e = gfs_pio_sync(gf);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __fsync: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -1965,6 +2241,7 @@ __fdatasync(int filedes)
 {
 	GFS_File gf;
 	char *e;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking __fdatasync(%d)",
 				  filedes));
@@ -1981,8 +2258,10 @@ __fdatasync(int filedes)
 				filedes, gfs_pio_fileno(gf)));
 
 	e = gfs_pio_datasync(gf);
-	if (e == NULL)
+	if (e == NULL) {
+		errno = errno_save;
 		return (0);
+	}
 
 	_gfs_hook_debug(gflog_info("GFS: __fdatasync: %s", e));
 	errno = gfarm_error_to_errno(e);
@@ -2004,6 +2283,27 @@ fdatasync(int filedes)
 	return (__fdatasync(filedes));
 }
 #endif /* SYS_fdatasync */
+
+#if defined(HAVE_FDOPENDIR) && defined(OS_SOLARIS)
+/*
+ * opendir - this entry is needed to hook opendir on Solaris 9
+ */
+
+DIR *
+opendir(const char *dirname)
+{
+	DIR *dirp;
+	int d;
+
+	d = open(dirname, O_RDONLY | O_NDELAY | O_LARGEFILE, 0);
+	if (d < 0)
+		return (NULL);
+	dirp = fdopendir(d);
+	if (dirp == NULL)
+		(void)close(d);
+	return (dirp);
+}
+#endif /* sun */
 
 /*
  * definitions for "hooks_common.c"
@@ -2032,10 +2332,26 @@ gfs_hook_syscall_lseek(int filedes, off_t offset, int whence)
 }
 
 #ifdef SYS_pread
-int
+ssize_t
 gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_pread, filedes, buf, nbyte, 0, offset);
+#  ifndef WORDS_BIGENDIAN
+	return ((int)q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return ((int)q);
+	else
+		return ((int)((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_pread, filedes, buf, nbyte, 0, offset));
+#else
 	return (syscall(SYS_pread, filedes, buf, nbyte, offset));
+#endif
 }
 
 #define SYSCALL_PREAD(filedes, buf, nbyte, offset)	\
@@ -2046,10 +2362,26 @@ gfs_hook_syscall_pread(int filedes, void *buf, size_t nbyte, off_t offset)
 #endif
 
 #ifdef SYS_pwrite
-int
+ssize_t
 gfs_hook_syscall_pwrite(int filedes, const void *buf, size_t nbyte, off_t offset)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_pwrite, filedes, buf, nbyte, 0, offset);
+#  ifndef WORDS_BIGENDIAN
+	return ((int)q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return ((int)q);
+	else
+		return ((int)((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_pwrite, filedes, buf, nbyte, 0, offset));
+#else
 	return (syscall(SYS_pwrite, filedes, buf, nbyte, offset));
+#endif
 }
 
 #define SYSCALL_PWRITE(filedes, buf, nbyte, offset)	\
@@ -2077,7 +2409,23 @@ gfs_hook_syscall_getdents(int filedes, struct dirent *buf, size_t nbyte)
 int
 gfs_hook_syscall_truncate(const char *path, off_t length)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_truncate, path, 0, length);
+#  ifndef WORDS_BIGENDIAN
+	return (q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return (q);
+	else
+		return (((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_truncate, path, 0, length));
+#else
 	return (syscall(SYS_truncate, path, length));
+#endif
 }
 
 #define SYSCALL_TRUNCATE(path, length) \
@@ -2091,7 +2439,23 @@ gfs_hook_syscall_truncate(const char *path, off_t length)
 int
 gfs_hook_syscall_ftruncate(int filedes, off_t length)
 {
+#if defined(__NetBSD__)
+	int64_t q;
+
+	q = syscall((int64_t)SYS_ftruncate, filedes, 0, length);
+#  ifndef WORDS_BIGENDIAN
+	return (q);
+#  else
+	if (sizeof(int64_t) == sizeof(register_t))
+		return (q);
+	else
+		return (((uint64_t)q >> 32));
+#  endif
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	return (syscall((int64_t)SYS_ftruncate, filedes, 0, length));
+#else
 	return (syscall(SYS_ftruncate, filedes, length));
+#endif
 }
 
 #define SYSCALL_FTRUNCATE(filedes, length) \

@@ -71,8 +71,10 @@ enum gfs_proto_fsync_operation {
 /* used for both gfsd local privilege and global username of sharedsecret */
 #define GFSD_USERNAME	"_gfarmfs"
 
-#define GFSD_LOCAL_SOCKET_DIR	"/tmp/.gfarm-gfsd%d"
+#define GFSD_LOCAL_SOCKET_DIR	"/tmp/.gfarm-gfsd%s-%d"
 #define GFSD_LOCAL_SOCKET_NAME	GFSD_LOCAL_SOCKET_DIR "/sock"
+
+#define GFSD_MAX_PASSING_FD 5
 
 #define FDESC_STDIN	0
 #define FDESC_STDOUT	1

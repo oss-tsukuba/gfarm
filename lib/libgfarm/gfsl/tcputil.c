@@ -342,7 +342,7 @@ gfarmWriteInt8(fd, buf, len)
     int cur = 0;
 
     do {
-	cur = write(fd, buf + sum, len - sum);
+	cur = gfarm_send_no_sigpipe(fd, buf + sum, len - sum);
 	if (cur < 0) {
 	    gflog_error("write: %s", strerror(errno));
 	    return sum;

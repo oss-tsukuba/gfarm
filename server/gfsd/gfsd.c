@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#define _POSIX_PII_SOCKET /* to use struct msghdr on Tru64 */
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/resource.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -33,15 +35,30 @@
 #define HAVE_MSG_CONTROL 1
 #endif
 
+#if !defined(WCOREDUMP) && defined(_AIX)
+#define WCOREDUMP(status)	((status) & 0x80)
+#endif
+
+#ifndef SHUT_WR		/* some really old OS doesn't define this symbol. */
+#define SHUT_WR	1
+#endif
+
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
+
+#ifdef HAVE_SYS_LOADAVG_H
+#include <sys/loadavg.h>	/* getloadavg() on Solaris */
+#endif
+
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/host_info.h>
 
 #define GFLOG_USE_STDARG
 #include "gfutil.h"
+
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -98,7 +115,7 @@ pid_t master_gfsd_pid;
 int restrict_user = 0;
 uid_t restricted_user = 0;
 
-uid_t gfsd_uid;
+uid_t gfsd_uid = -1;
 mode_t command_umask;
 
 char local_sockdir[PATH_MAX];
@@ -187,6 +204,56 @@ fatal_metadb_proto(const char *diag, const char *proto, gfarm_error_t e)
 	      gfarm_error_string(e));
 }
 
+struct local_socket {
+	int sock;
+	char *dir, *name;
+};
+
+struct accepting_sockets {
+	int local_socks_count, udp_socks_count;
+	int tcp_sock, *udp_socks;
+	struct local_socket *local_socks;
+} accepting;
+
+/* this routine should be called before the accepting server calls exit(). */
+void
+cleanup_accepting(void)
+{
+	int i;
+
+	for (i = 0; i < accepting.local_socks_count; i++) {
+		unlink(accepting.local_socks[i].name);
+		rmdir(accepting.local_socks[i].dir);
+	}
+}
+
+void
+accepting_fatal(const char *format, ...)
+{
+	va_list ap;
+
+	cleanup_accepting();
+	va_start(ap, format);
+	gflog_vmessage(LOG_ERR, format, ap);
+	va_end(ap);
+	exit(2);
+}
+
+void
+accepting_fatal_errno(const char *format, ...)
+{
+	int save_errno = errno;
+	char buffer[2048];
+
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buffer, sizeof buffer, format, ap);
+	va_end(ap);
+	accepting_fatal("%s: %s", buffer, strerror(save_errno));
+}
+
+
 static int
 fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 {
@@ -259,7 +326,7 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 	int eof;
 
 	if (debug_mode)
-		gflog_info("<%s> start receiving", diag);
+		gflog_debug("request: %s", diag);
 
 	va_start(ap, format);
 	e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
@@ -280,7 +347,8 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfarm_error_t e;
 
 	if (debug_mode)
-		gflog_info("<%s> sending reply: %d", diag, (int)ecode);
+		gflog_debug("reply: %s: %d (%s)",
+		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	e = gfp_xdr_send(client, "i", ecode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -357,7 +425,7 @@ file_table_init(int table_size)
 {
 	int i;
 
-	file_table = malloc(sizeof(*file_table) * table_size);
+	GFARM_MALLOC_ARRAY(file_table, table_size);
 	if (file_table == NULL) {
 		errno = ENOMEM; fatal_errno("file table");
 	}
@@ -517,8 +585,8 @@ local_path(gfarm_ino_t inum, gfarm_uint64_t gen, char *diag, char **pathp)
 
 	if (length == 0)
 		length = strlen(gfarm_spool_root) + sizeof(template);
-	
-	p = malloc(length);
+
+	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
 		fatal("%s: no memory for %d bytes", diag, length);
 	}
@@ -904,8 +972,9 @@ gfs_server_fsync(struct gfp_xdr *client)
 	int fd;
 	int operation;
 	int save_errno = 0;
+	char *msg = "fsync";
 
-	gfs_server_get_request(client, "fsync", "ii", &fd, &operation);
+	gfs_server_get_request(client, msg, "ii", &fd, &operation);
 
 	switch (operation) {
 	case GFS_PROTO_FSYNC_WITHOUT_METADATA:      
@@ -1439,7 +1508,7 @@ gfs_server_replicate_file_parallel_common(struct gfp_xdr *client,
 
 	limit_division(&ndivisions, file_size);
 
-	divisions = malloc(sizeof(*divisions) * ndivisions);
+	GFARM_MALLOC_ARRAY(divisions, ndivisions);
 	if (divisions == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		goto finish_ofd;
@@ -1659,15 +1728,17 @@ gfs_server_chdir(struct gfp_xdr *client)
 {
 	char *gpath, *path;
 	int save_errno = 0;
+	char *msg = "chdir";
 
-	gfs_server_get_request(client, "chdir", "s", &gpath);
+	gfs_server_get_request(client, msg, "s", &gpath);
 
-	local_path(gpath, &path, "chdir");
+	local_path(gpath, &path, msg);
 	if (chdir(path) == -1)
 		save_errno = errno;
 	free(path);
 
-	gfs_server_put_reply_with_errno(client, "chdir", save_errno, "");
+	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+	check_input_output_error(msg, save_errno);
 }
 
 struct gfs_server_command_context {
@@ -1699,7 +1770,7 @@ sigjmp_buf sigchld_jmp_buf;
 void
 sigchld_handler(int sig)
 {
-	int pid, status;
+	int pid, status, save_errno = errno;
 
 	for (;;) {
 		pid = waitpid(-1, &status, WNOHANG);
@@ -1710,6 +1781,7 @@ sigchld_handler(int sig)
 		server_command_context.status = status;
 #endif /* not yet in gfarm v2 */
 	}
+	errno = save_errno;
 #if 0 /* not yet in gfarm v2 */
 	if (sigchld_jmp_needed) {
 		sigchld_jmp_needed = 0;
@@ -1806,8 +1878,18 @@ gfs_server_command_io_fd_set(struct gfp_xdr *client,
 			gfarm_iobuffer_set_error(cc->iobuffer[FDESC_STDIN],
 			    GFARM_ERR_NO_ERROR);
 		}
-		if (gfarm_iobuffer_is_eof(cc->iobuffer[FDESC_STDIN]))
-			close(fd);
+		if (gfarm_iobuffer_is_eof(cc->iobuffer[FDESC_STDIN])) {
+			/*
+			 * We need to use shutdown(2) instead of close(2) here,
+			 * to make bash happy...
+			 * At least on Solaris 9, getpeername(2) returns EINVAL
+			 * if the opposite side of the socketpair is closed,
+			 * and bash doesn't read ~/.bashrc in such case.
+			 * Read the comment about socketpair(2) in
+			 * gfs_server_command() too.
+			 */
+			shutdown(fd, SHUT_WR);
+		}
 	}
 
 	for (i = FDESC_STDOUT; i <= FDESC_STDERR; i++) {
@@ -2115,8 +2197,9 @@ void
 gfs_server_command(struct gfp_xdr *client, char *cred_env)
 {
 	struct gfs_server_command_context *cc = &server_command_context;
-	gfarm_int32_t argc, nenv, flags, error;
-	char *path, *command, **argv_storage, **argv, **envp, *xauth;
+	gfarm_int32_t argc, argc_opt, nenv, flags, error;
+	char *path, *command, **argv_storage = NULL, **argv = NULL;
+	char **envp, *xauth;
 	int stdin_pipe[2], stdout_pipe[2], stderr_pipe[2];
 	int conn_fd = gfp_xdr_fd(client);
 	int i, eof;
@@ -2137,44 +2220,47 @@ gfs_server_command(struct gfp_xdr *client, char *cred_env)
 	static char xauth_template[] = "/tmp/.xaXXXXXX";
 	static char xauth_filename[sizeof(xauth_template)];
 	int use_xauth_env = 0;
+	size_t size;
+	int overflow = 0;
 
-#ifdef __GNUC__ /* workaround gcc warning: unused variable */
-	envp = NULL; xauth_env = NULL;
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	envp = NULL;
+	user_env = home_env =shell_env = xauth_env = NULL;
 #endif
 	gfs_server_get_request(client, "command", "siii",
 			       &path, &argc, &nenv, &flags);
-	if ((flags & GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND) != 0) {
-		/* "$SHELL" + "-c" */
-		argv_storage = malloc(sizeof(char *) * (argc + 3));
-		argv = argv_storage + 2;
-	} else {
-		argv_storage = malloc(sizeof(char *) * (argc + 1));
-		argv = argv_storage;
-	}
-	if (argv_storage == NULL) {
+	argc_opt = flags & GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND ? 2 : 0;
+	/* 2 for "$SHELL" + "-c" */
+
+	size = gfarm_size_add(&overflow, argc, argc_opt + 1);
+	if (!overflow)
+		GFARM_MALLOC_ARRAY(argv_storage, size);
+	if (overflow || argv_storage == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto rpc_error;
 	}
-
+	argv = argv_storage + argc_opt;
 	if ((flags & GFS_CLIENT_COMMAND_FLAG_XAUTHCOPY) != 0)
 		use_xauth_env = 1;
-	envp = malloc(sizeof(char *) *
-	    (nenv + N_EXTRA_ENV + use_cred_env + use_xauth_env + 1));
-	if (envp == NULL) {
+	size = gfarm_size_add(&overflow, nenv, 
+			N_EXTRA_ENV + use_cred_env + use_xauth_env + 1);
+	if (!overflow)
+		GFARM_MALLOC_ARRAY(envp, size);
+	if (overflow || envp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_argv;
 	}
 
 	user = gfarm_get_local_username();
 	home = gfarm_get_local_homedir();
-	user_env = malloc(sizeof(user_format) + strlen(user));
+	GFARM_MALLOC_ARRAY(user_env, sizeof(user_format) + strlen(user));
 	if (user_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_envp;
 	}
 	sprintf(user_env, user_format, user);
 
-	home_env = malloc(sizeof(home_format) + strlen(home));
+	GFARM_MALLOC_ARRAY(home_env, sizeof(home_format) + strlen(home));
 	if (home_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_user_env;
@@ -2205,7 +2291,7 @@ gfs_server_command(struct gfp_xdr *client, char *cred_env)
 		}
 	}
 
-	shell_env = malloc(sizeof(shell_format) + strlen(shell));
+	GFARM_MALLOC_ARRAY(shell_env, sizeof(shell_format) + strlen(shell));
 	if (shell_env == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_home_env;
@@ -2265,16 +2351,17 @@ gfs_server_command(struct gfp_xdr *client, char *cred_env)
 			goto free_xauth;
 		close(xauth_fd);
 
-		xauth_env = malloc(sizeof(xauth_format) +
-				   sizeof(xauth_filename));
+		GFARM_MALLOC_ARRAY(xauth_env,
+		    sizeof(xauth_format) + sizeof(xauth_filename));
 		if (xauth_env == NULL)
 			goto remove_xauth;
 		sprintf(xauth_env, xauth_format, xauth_filename);
 		envp[nenv + N_EXTRA_ENV + use_cred_env] = xauth_env;
 
-		xauth_command = malloc(sizeof(xauth_command_format) +
-				       strlen(xauth_env) +
-				       strlen(XAUTH_COMMAND));
+		GFARM_MALLOC_ARRAY(xauth_command,
+				   sizeof(xauth_command_format) +
+				   strlen(xauth_env) +
+				   strlen(XAUTH_COMMAND));
 		if (xauth_command == NULL)
 			goto free_xauth_env;
 		sprintf(xauth_command, xauth_command_format,
@@ -2286,10 +2373,17 @@ gfs_server_command(struct gfp_xdr *client, char *cred_env)
 		free(xauth_command);
 	}
 #if 1	/*
-	 * To make bash execute ~/.bashrc, because bash only reads it, if
+	 * The reason why we use socketpair(2) instead of pipe(2) is
+	 * to make bash read ~/.bashrc. Because the condition that
+	 * bash reads it is as follows:
 	 *   1. $SSH_CLIENT/$SSH2_CLIENT is set, or stdin is a socket.
 	 * and
 	 *   2. $SHLVL < 2
+	 * This condition that bash uses is broken, for example, this
+	 * doesn't actually work with Sun's variant of OpenSSH on Solaris 9.
+	 *
+	 * Read the comment about shutdown(2) in gfs_server_command_io_fd_set()
+	 * too.
 	 * Honestly, people should use zsh instead of bash.
 	 */
 	if (socketpair(PF_UNIX, SOCK_STREAM, 0, stdin_pipe) == -1)
@@ -2416,6 +2510,12 @@ rpc_reply:
 	cc->iobuffer[FDESC_STDOUT] = gfarm_iobuffer_alloc(i);
 	cc->iobuffer[FDESC_STDERR] = gfarm_iobuffer_alloc(i);
 
+	/*
+	 * It's safe to use gfarm_iobuffer_set_nonblocking_write_fd()
+	 * instead of gfarm_iobuffer_set_nonblocking_write_socket() here,
+	 * because we always ignore SIGPIPE in gfsd.
+	 * cf. gfarm_sigpipe_ignore() in main().
+	 */
 	gfarm_iobuffer_set_nonblocking_read_xxx(
 		cc->iobuffer[FDESC_STDIN], client);
 	gfarm_iobuffer_set_nonblocking_write_fd(
@@ -2456,6 +2556,9 @@ rpc_reply:
 		free(envp[i]);
 	for (i = 0; i < argc; i++)
 		free(argv[i]);
+	free(shell_env);
+	free(home_env);
+	free(user_env);
 	free(envp);
 	free(argv_storage);
 	free(path);
@@ -2509,7 +2612,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		fatal("rate_limit: %s", gfarm_error_string(e));
 #endif /* not yet in gfarm v2 */
 
-	e = gfp_xdr_new_fd(client_fd, &client);
+	e = gfp_xdr_new_socket(client_fd, &client);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(client_fd);
 		fatal("%s: gfp_xdr_new: %s",
@@ -2529,7 +2632,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("%s: gfarm_authorize: %s",
 		    client_name, gfarm_error_string(e));
-	aux = malloc(strlen(username) + 1 + strlen(client_name) + 1);
+	GFARM_MALLOC_ARRAY(aux, strlen(username)+1 + strlen(client_name)+1);
 	if (aux == NULL)
 		fatal("%s: no memory\n", client_name);
 	sprintf(aux, "%s@%s", username, client_name);
@@ -2584,11 +2687,6 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 }
 
-struct accepting_sockets {
-	int local_sock, tcp_sock, *udp_socks;
-	int udp_socks_count;
-};
-
 void
 start_server(int accepting_sock,
 	struct sockaddr *client_addr_storage, socklen_t client_addr_size,
@@ -2611,7 +2709,8 @@ start_server(int accepting_sock,
 	switch (fork()) {
 	case 0:
 #endif
-		close(accepting->local_sock);
+		for (i = 0; i < accepting->local_socks_count; i++)
+			close(accepting->local_socks[i].sock);
 		close(accepting->tcp_sock);
 		for (i = 0; i < accepting->udp_socks_count; i++)
 			close(accepting->udp_socks[i]);
@@ -2665,7 +2764,7 @@ datagram_server(int sock)
 }
 
 int
-open_accepting_inet_socket(int port)
+open_accepting_tcp_socket(struct in_addr address, int port)
 {
 	gfarm_error_t e;
 	struct sockaddr_in self_addr;
@@ -2674,128 +2773,154 @@ open_accepting_inet_socket(int port)
 
 	memset(&self_addr, 0, sizeof(self_addr));
 	self_addr.sin_family = AF_INET;
-	self_addr.sin_addr.s_addr = INADDR_ANY;
+	self_addr.sin_addr = address;
 	self_addr.sin_port = htons(port);
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		gflog_fatal_errno("accepting socket");
+		accepting_fatal_errno("accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
 		gflog_warning_errno("SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		gflog_fatal_errno("bind accepting socket");
+		accepting_fatal_errno("bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning("setsockopt: %s", gfarm_error_string(e));
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		gflog_fatal_errno("listen");
-	return (sock);
-}
-
-int
-open_accepting_local_socket(int port)
-{
-	socklen_t local_sockname_size;
-	int sock, save_errno;
-	struct stat st;
-
-	memset(&local_sockname, 0, sizeof(local_sockname));
-	local_sockname.sun_family = AF_UNIX;
-	local_sockname_size = snprintf(
-	    local_sockname.sun_path, sizeof local_sockname.sun_path,
-	    GFSD_LOCAL_SOCKET_NAME, port);
-#ifdef SUN_LEN /* derived from 4.4BSD */
-	local_sockname_size = SUN_LEN(&local_sockname);
-#else
-	local_sockname_size +=
-	    sizeof(local_sockname) - sizeof(local_sockname.sun_path);
-#endif
-
-	snprintf(local_sockdir, sizeof local_sockdir,
-	    GFSD_LOCAL_SOCKET_DIR, port);
-	if (mkdir(local_sockdir, LOCAL_SOCKDIR_MODE) == -1) {
-		if (errno != EEXIST) {
-			gflog_fatal("%s: cannot mkdir: %s",
-			    local_sockdir, strerror(errno));
-		} else if (stat(local_sockdir, &st) != 0) {
-			gflog_fatal("stat(%s): %s",
-			    local_sockdir, strerror(errno));
-		} else if (st.st_uid != gfsd_uid) {
-			gflog_fatal("%s: not owned by uid %d",
-			    local_sockdir, gfsd_uid);
-		} else if ((st.st_mode & PERMISSION_MASK) !=
-		    LOCAL_SOCKDIR_MODE &&
-		    chmod(local_sockdir, LOCAL_SOCKDIR_MODE) != 0) {
-			gflog_fatal("%s: cannot chmod to 0%o: %s",
-			    local_sockdir, LOCAL_SOCKDIR_MODE,
-			    strerror(errno));
-		}
-	}
-
-	sock = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (sock < 0) {
-		save_errno = errno;
-		rmdir(local_sockdir);
-		gflog_fatal("creating UNIX domain socket: %s",
-		    strerror(save_errno));
-	}
-	unlink(local_sockname.sun_path);
-	if (bind(sock, (struct sockaddr *)&local_sockname,
-	    local_sockname_size) < 0) {
-		save_errno = errno;
-		rmdir(local_sockdir);
-		gflog_fatal("%s: cannot bind UNIX domain socket: %s",
-		    local_sockname.sun_path, strerror(save_errno));
-	}
-	if (listen(sock, LISTEN_BACKLOG) < 0) {
-		save_errno = errno;
-		unlink(local_sockname.sun_path);
-		rmdir(local_sockdir);
-		gflog_fatal("listen UNIX domain socket: %s",
-		    strerror(save_errno));
-	}
-
-	/* Linux at least since 2.4 needs this. */
-	chmod(local_sockname.sun_path, LOCAL_SOCKET_MODE);
-	chown(local_sockname.sun_path, gfsd_uid, -1);
-	chown(local_sockdir, gfsd_uid, -1);
-
+		accepting_fatal_errno("listen");
 	return (sock);
 }
 
 void
-open_datagram_service_sockets(int port, int *countp, int **socketsp)
+open_accepting_local_socket(struct in_addr address, int port,
+	struct local_socket *result)
 {
-	gfarm_error_t e;
-	int i, self_addresses_count, *sockets, s;
-	struct in_addr *self_addresses;
+	struct sockaddr_un self_addr;
+	socklen_t self_addr_size;
+	int sock, save_errno;
+	char *sock_name, *sock_dir, dir_buf[PATH_MAX];
+	struct stat st;
+
+	memset(&self_addr, 0, sizeof(self_addr));
+	self_addr.sun_family = AF_UNIX;
+	snprintf(self_addr.sun_path, sizeof self_addr.sun_path,
+	    GFSD_LOCAL_SOCKET_NAME, inet_ntoa(address), port);
+	self_addr_size = sizeof(self_addr);
+
+	snprintf(dir_buf, sizeof dir_buf,
+	    GFSD_LOCAL_SOCKET_DIR, inet_ntoa(address), port);
+
+	sock_name = strdup(self_addr.sun_path);
+	sock_dir = strdup(dir_buf);
+	if (sock_name == NULL || sock_dir == NULL)
+		accepting_fatal("not enough memory");
+
+	/* to make sure */
+	unlink(sock_name);
+	rmdir(sock_dir);
+
+	if (mkdir(sock_dir, LOCAL_SOCKDIR_MODE) == -1) {
+		if (errno != EEXIST) {
+			accepting_fatal_errno("%s: cannot mkdir: %s",sock_dir);
+		} else if (stat(sock_dir, &st) != 0) {
+			accepting_fatal_errno("stat(%s)", sock_dir);
+		} else if (st.st_uid != gfsd_uid) {
+			accepting_fatal("%s: not owned by uid %d",
+			    sock_dir, gfsd_uid);
+		} else if ((st.st_mode & PERMISSION_MASK) != LOCAL_SOCKDIR_MODE
+		    && chmod(sock_dir, LOCAL_SOCKDIR_MODE) != 0) {
+			accepting_fatal_errno("%s: cannot chmod to 0%o: %s",
+			    sock_dir, LOCAL_SOCKDIR_MODE);
+		}
+	}
+	chown(sock_dir, gfsd_uid, -1);
+
+	sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (sock < 0) {
+		save_errno = errno;
+		rmdir(sock_dir);
+		accepting_fatal("creating UNIX domain socket: %s",
+		    strerror(save_errno));
+	}
+	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) == -1) {
+		save_errno = errno;
+		rmdir(sock_dir);
+		accepting_fatal("%s: cannot bind UNIX domain socket: %s",
+		    sock_name, strerror(save_errno));
+	}
+	chown(sock_name, gfsd_uid, -1);
+	/* ensure access from all user, Linux at least since 2.4 needs this. */
+	chmod(sock_name, LOCAL_SOCKET_MODE);
+
+	if (listen(sock, LISTEN_BACKLOG) == -1) {
+		save_errno = errno;
+		unlink(sock_name);
+		rmdir(sock_dir);
+		accepting_fatal("listen UNIX domain socket: %s",
+		    strerror(save_errno));
+	}
+
+	result->sock = sock;
+	result->name = sock_name;
+	result->dir = sock_dir;
+}
+
+void
+open_accepting_local_sockets(
+	int self_addresses_count, struct in_addr *self_addresses, int port,
+	struct accepting_sockets *accepting)
+{
+	int i;
+
+	GFARM_MALLOC_ARRAY(accepting->local_socks, self_addresses_count);
+	if (accepting->local_socks == NULL)
+		accepting_fatal("not enough memory for UNIX sockets");
+
+	for (i = 0; i < self_addresses_count; i++) {
+		open_accepting_local_socket(self_addresses[i], port,
+		    &accepting->local_socks[i]);
+
+		/* for cleanup_accepting() */
+		accepting->local_socks_count = i + 1;
+	}
+}
+
+int
+open_udp_socket(struct in_addr address, int port)
+{
 	struct sockaddr_in bind_addr;
 	socklen_t bind_addr_size;
+	int s;
 
-	e = gfarm_get_ip_addresses(&self_addresses_count, &self_addresses);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal("get_ip_addresses: %s", gfarm_error_string(e));
-	sockets = malloc(sizeof(*sockets) * self_addresses_count);
+	memset(&bind_addr, 0, sizeof(bind_addr));
+	bind_addr.sin_family = AF_INET;
+	bind_addr.sin_addr = address;
+	bind_addr.sin_port = ntohs(port);
+	bind_addr_size = sizeof(bind_addr);
+	s = socket(PF_INET, SOCK_DGRAM, 0);
+	if (s < 0)
+		accepting_fatal_errno("UDP socket");
+	if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
+		accepting_fatal_errno("UDP socket bind(%s, %d)",
+		    inet_ntoa(address), port);
+	return (s);
+}
+
+int *
+open_datagram_service_sockets(
+	int self_addresses_count, struct in_addr *self_addresses, int port)
+{
+	int i, *sockets;
+
+	GFARM_MALLOC_ARRAY(sockets, self_addresses_count);
 	if (sockets == NULL)
-		gflog_fatal_errno("malloc datagram sockets");
-	for (i = 0; i < self_addresses_count; i++) {
-		memset(&bind_addr, 0, sizeof(bind_addr));
-		bind_addr.sin_family = AF_INET;
-		bind_addr.sin_addr = self_addresses[i];
-		bind_addr.sin_port = ntohs(port);
-		bind_addr_size = sizeof(bind_addr);
-		s = socket(PF_INET, SOCK_DGRAM, 0);
-		if (s < 0)
-			gflog_fatal_errno("datagram socket");
-		if (bind(s, (struct sockaddr *)&bind_addr, bind_addr_size) < 0)
-			gflog_fatal_errno("datagram bind");
-		sockets[i] = s;
-	}
-	*countp = self_addresses_count;
-	*socketsp = sockets;
-	free(self_addresses);
+		accepting_fatal("no memory for %d datagram sockets",
+		    self_addresses_count);
+	for (i = 0; i < self_addresses_count; i++)
+		sockets[i] = open_udp_socket(self_addresses[i], port);
+	return (sockets);
 }
 
 void
@@ -2803,11 +2928,16 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-U\t\t\t\t... don't bind UNIX domain socket\n");
+	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
+	fprintf(stderr, "\t-l <listen_address>\n");
 	fprintf(stderr, "\t-p <port>\n");
+	fprintf(stderr, "\t-r <spool_root>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
-	fprintf(stderr, "\t-v>\n");
+	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
 	exit(1);
 }
 
@@ -2816,36 +2946,55 @@ main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
-	struct sockaddr_in client_addr, self_addr;
+	struct sockaddr_in client_addr, *self_sockaddr_array;
 	struct sockaddr_un client_local_addr;
-	gfarm_error_t e;
-	char *config_file = NULL, *port_number = NULL, *pid_file = NULL;
+	gfarm_error_t e, e2;
+	char *config_file = NULL;
+	char *listen_addrname = NULL, *pid_file = NULL;
 	char *canonical_self_name;
+	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
+	int syslog_level = -1;
 	struct accepting_sockets accepting;
-	int ch, table_size, i, nfound, max_fd;
+	struct in_addr *self_addresses, listen_address;
+	int table_size, self_addresses_count, ch, i, nfound, max_fd;
 	struct sigaction sa;
 	fd_set requests;
+	struct stat sb;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:df:p:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:df:l:r:s:uv")) != -1) {
 		switch (ch) {
+		case 'L':
+			syslog_level = gflog_syslog_name_to_priority(optarg);
+			if (syslog_level == -1)
+				gflog_fatal("-L %s: invalid syslog priority", 
+				    optarg);
+			break;
 		case 'P':
 			pid_file = optarg;
 			break;
 		case 'd':
 			debug_mode = 1;
+			if (syslog_level == -1)
+				syslog_level = LOG_DEBUG;
 			break;
 		case 'f':
 			config_file = optarg;
 			break;
-		case 'p':
-			port_number = optarg;
+		case 'l':
+			listen_addrname = optarg;
+			break;
+		case 'r':
+			gfarm_spool_root = strdup(optarg);
+			if (gfarm_spool_root == NULL)
+				gflog_fatal("%s",
+				    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			break;
 		case 's':
 			syslog_facility =
@@ -2877,8 +3026,8 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
-	if (port_number != NULL)
-		gfarm_spool_server_port = strtol(port_number, NULL, 0);
+	if (syslog_level != -1)
+		gflog_set_priority_level(syslog_level);
 
 	gfsd_pw = getpwnam(GFSD_USERNAME);
 	if (gfsd_pw == NULL) {
@@ -2887,6 +3036,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	gfsd_uid = gfsd_pw->pw_uid;
+
 	seteuid(gfsd_uid);
 
 	e = gfarm_set_local_user_for_this_local_account();
@@ -2918,38 +3068,86 @@ main(int argc, char **argv)
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
 		exit(1);
 	}
-	e = gfarm_host_address_get(canonical_self_name, 0,
-	    (struct sockaddr *)&self_addr, NULL);
+	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
+	{	
+		const char *n = canonical_self_name;
+
+		e = gfm_client_host_info_get_by_names(gfm_server,
+		    1, &n, &e2, &self_info);
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		e = e2;
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
-		    "cannot get IP address of `%s': %s\n",
+		    "can't find canonical hostname \"%s\" in metadata: %s\n",
 		    canonical_self_name, gfarm_error_string(e));
 		exit(1);
 	}
 
+	/* sanity check on a spool directory */
+	if (stat(gfarm_spool_root, &sb) == -1)
+		gflog_fatal_errno("%s", gfarm_spool_root);
+	else if (!S_ISDIR(sb.st_mode))
+		gflog_fatal("%s: %s", gfarm_spool_root,
+		    gfarm_error_string(GFARM_ERR_NOT_A_DIRECTORY));
+
 	seteuid(0);
 
-	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
-	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(gfarm_spool_root);
+	if (listen_addrname == NULL)
+		listen_addrname = gfarm_spool_server_listen_address;
+	if (listen_addrname == NULL) {
+		e = gfarm_get_ip_addresses(
+		    &self_addresses_count, &self_addresses);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal("get_ip_addresses: %s",
+			    gfarm_error_string(e));
+		listen_address.s_addr = INADDR_ANY;
+	} else {
+		struct hostent *hp = gethostbyname(listen_addrname);
 
-	open_datagram_service_sockets(gfarm_spool_server_port,
-	    &accepting.udp_socks_count, &accepting.udp_socks);
-	accepting.tcp_sock =
-	    open_accepting_inet_socket(gfarm_spool_server_port);
-	accepting.local_sock =
-	    open_accepting_local_socket(gfarm_spool_server_port);
+		if (hp == NULL || hp->h_addrtype != AF_INET)
+			gflog_fatal("listen address can't be resolved: %s",
+			    listen_addrname);
+		self_addresses_count = 1;
+		GFARM_MALLOC(self_addresses);
+		if (self_addresses == NULL)
+			gflog_fatal("%s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
+		listen_address = *self_addresses;
+	}
+	GFARM_MALLOC_ARRAY(self_sockaddr_array, self_addresses_count);
+	if (self_sockaddr_array == NULL)
+		gflog_fatal("%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+	for (i = 0; i < self_addresses_count; i++) {
+		memset(&self_sockaddr_array[i], 0,
+		    sizeof(self_sockaddr_array[i]));
+		self_sockaddr_array[i].sin_family = AF_INET;
+		self_sockaddr_array[i].sin_addr = self_addresses[i];
+		self_sockaddr_array[i].sin_port = htons(self_info.port);
+	}
 
-	seteuid(gfsd_uid);
+	accepting.tcp_sock = open_accepting_tcp_socket(
+	    listen_address, self_info.port);
+	/* sets accepting.local_socks_count and accepting.local_socks */
+	open_accepting_local_sockets(
+	    self_addresses_count, self_addresses, self_info.port,
+	    &accepting);
+	accepting.udp_socks = open_datagram_service_sockets(
+	    self_addresses_count, self_addresses, self_info.port);
+	accepting.udp_socks_count = self_addresses_count;
 
-	max_fd = accepting.tcp_sock > accepting.local_sock ?
-	    accepting.tcp_sock : accepting.local_sock;
+	max_fd = accepting.tcp_sock;
+	for (i = 0; i < accepting.local_socks_count; i++) {
+		if (max_fd < accepting.local_socks[i].sock)
+			max_fd = accepting.local_socks[i].sock;
+	}
 	for (i = 0; i < accepting.udp_socks_count; i++) {
 		if (max_fd < accepting.udp_socks[i])
 			max_fd = accepting.udp_socks[i];
 	}
 	if (max_fd > FD_SETSIZE)
-		gflog_fatal("datagram_service: too big file descriptor");
+		accepting_fatal("too big socket file descriptor: %d", max_fd);
 
 	if (pid_file != NULL) {
 		/*
@@ -2960,8 +3158,11 @@ main(int argc, char **argv)
 		pid_fp = fopen(pid_file, "w");
 		seteuid(gfsd_uid);
 		if (pid_fp == NULL)
-			gflog_fatal_errno(pid_file);
+			accepting_fatal_errno(pid_file);
 	}
+
+	seteuid(gfsd_uid);
+
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		gfarm_daemon(0, 0);
@@ -2980,6 +3181,11 @@ main(int argc, char **argv)
 		fprintf(pid_fp, "%ld\n", (long)master_gfsd_pid);
 		fclose(pid_fp);
 	}
+
+	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
+	/* XXX - kluge for GFS_PROTO_STATFS for now */
+	if (chdir(gfarm_spool_root) == -1)
+		gflog_fatal_errno(gfarm_spool_root);
 
 	table_size = FILE_TABLE_LIMIT;
 	gfarm_unlimit_nofiles(&table_size);
@@ -3006,9 +3212,8 @@ main(int argc, char **argv)
 	 * To deal with race condition which may be caused by RST,
 	 * listening socket must be O_NONBLOCK, if the socket will be
 	 * used as a file descriptor for select(2) .
-	 * See section 15.6 of "UNIX NETWORK PROGRAMMING, Volume1,
-	 * Second Edition" by W. Richard Stevens, for detail.
-	 * We do report such case by gflog_warning_errno("accept");
+	 * See section 16.6 of "UNIX NETWORK PROGRAMMING, Volume1,
+	 * Third Edition" by W. Richard Stevens, for detail.
 	 */
 	if (fcntl(accepting.tcp_sock, F_SETFL,
 	    fcntl(accepting.tcp_sock, F_GETFL, NULL) | O_NONBLOCK) == -1)
@@ -3017,7 +3222,8 @@ main(int argc, char **argv)
 	for (;;) {
 		FD_ZERO(&requests);
 		FD_SET(accepting.tcp_sock, &requests);
-		FD_SET(accepting.local_sock, &requests);
+		for (i = 0; i < accepting.local_socks_count; i++)
+			FD_SET(accepting.local_socks[i].sock, &requests);
 		for (i = 0; i < accepting.udp_socks_count; i++)
 			FD_SET(accepting.udp_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
@@ -3032,12 +3238,15 @@ main(int argc, char **argv)
 			    (struct sockaddr*)&client_addr,sizeof(client_addr),
 			    (struct sockaddr*)&client_addr, NULL, &accepting);
 		}
-		if (FD_ISSET(accepting.local_sock, &requests)) {
-			start_server(accepting.local_sock,
-			    (struct sockaddr*)&client_local_addr,
-			    sizeof(client_local_addr),
-			    (struct sockaddr*)&self_addr, canonical_self_name,
-			    &accepting);
+		for (i = 0; i < accepting.local_socks_count; i++) {
+			if (FD_ISSET(accepting.local_socks[i].sock,&requests)){
+				start_server(accepting.local_socks[i].sock,
+				    (struct sockaddr *)&client_local_addr,
+				    sizeof(client_local_addr),
+				    (struct sockaddr*)&self_sockaddr_array[i],
+				    canonical_self_name,
+				    &accepting);
+			}
 		}
 		for (i = 0; i < accepting.udp_socks_count; i++) {
 			if (FD_ISSET(accepting.udp_socks[i], &requests))

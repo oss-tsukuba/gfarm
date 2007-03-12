@@ -7,7 +7,7 @@
 #
 # processname: gfsd
 # config: @config_gfarm_gfarm_config@
-# pidfile: @config_gfarm_run_dir@/gfsd.pid
+# pidfile: @config_gfarm_run_dir@/@config_gfarm_gfsd_rc_name@.pid
 #
 # $Id$
 
@@ -15,7 +15,7 @@
 . /etc/rc.d/init.d/functions
 
 prog="gfsd"
-FILE=$prog
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
@@ -25,7 +25,15 @@ OPTIONS="@config_gfarm_gfsd_option@"
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
-RETVAL=0
+call_daemon()
+{
+	# initlog is deprecated and warning is displayed since Fedora Core 4.
+	if egrep -q '^[^#]*[     ]initlog' /etc/init.d/functions; then
+		initlog $INITLOG_ARGS -c "$*"
+	else
+		$*
+	fi
+}
 
 # We won't just use "killproc" and "status" function here,
 # because these functions don't allow multiple server processes for
@@ -34,10 +42,11 @@ RETVAL=0
 start()
 {
 	echo -n "Starting $FILE:"
-	daemon "$DAEMON" -P $PIDFILE $OPTIONS
+	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
 	echo
+	return $RETVAL
 }
 
 stop()
@@ -46,14 +55,17 @@ stop()
 	if [ -f "$PIDFILE" ]; then
 		kill -TERM `cat "$PIDFILE"` && success || failure
 		RETVAL=$?
-		rm -f "$PIDFILE"
+		if [ $RETVAL -eq 0 ] ||
+		   [ ! -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
+			rm -f "$PIDFILE" "$LOCKFILE"
+		fi
 	else
 		echo "$FILE is already stopped (no $PIDFILE)"
 		failure
 		RETVAL=1
 	fi
-	[ "$RETVAL" = 0 ] && rm -f "$LOCKFILE"
 	echo
+	return $RETVAL
 }
 
 checkstatus()
@@ -74,23 +86,38 @@ checkstatus()
 	fi
 }
 
-case "$1" in
-	start)
-		start
-		;;
-	stop)
-		stop
-		;;
-	restart)
-		stop
-		start
-		;;
-	status)
-		checkstatus
-		RETVAL=$?
-		;;
-	*)
-		echo $"Usage: $0 {start|stop|restart|status}"
-		RETVAL=1
+usage()
+{
+	echo $"Usage: $0 {start|stop|restart|status}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
 esac
+
 exit $RETVAL

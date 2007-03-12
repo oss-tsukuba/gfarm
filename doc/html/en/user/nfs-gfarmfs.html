@@ -20,11 +20,11 @@ exported Gfarm file system is assumed to be mounted by GfarmFS-FUSE.
 
 <UL>
   <LI>GfarmFS-FUSE
-  <LI>Linux Kernel 2.6
+  <LI>see README.NFS of FUSE
 </UL>
 
-Note that NFS server should *not* be a file system node.  When NFS
-server is a file system node, all new files are stored on this node.
+Note that 'write_local_priority disable' should be set in gfarm.conf
+when NFS server is a file system node.
 
 <h3>1.2 Reference</h3>
 
@@ -62,8 +62,8 @@ privilege.
 
 <h3>2.2 NFS server setting</h3>
 
-To export a GfarmFS-FUSE mounted directory, Linux kernel 2.6 is
-required.
+To export a GfarmFS-FUSE mounted directory,
+please see README.NFS of FUSE.
 <br>
 It is necessary to add <tt>fsid</tt> and <tt>anonuid</tt> in
 <tt>/etc/exports</tt>.  Here is an example of <tt>/etc/exports</tt>.

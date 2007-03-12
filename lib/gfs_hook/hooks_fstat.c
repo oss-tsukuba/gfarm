@@ -6,13 +6,14 @@
 
 extern int gfarm_node;
 
-#ifndef _STAT_VER
+#ifndef FUNC__FXSTAT
 
 int
 FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
 	char *e;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___FSTAT) "(%d)",
 	    filedes));
@@ -64,6 +65,7 @@ FUNC___FSTAT(int filedes, STRUCT_STAT *buf)
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
 	}
+	errno = errno_save;
 	return (0);
 
 error:
@@ -88,7 +90,7 @@ FUNC_FSTAT(int filedes, STRUCT_STAT *buf)
     return (FUNC___FSTAT(filedes, buf));
 }
 
-#else /* defined(_STAT_VER) -- SVR4 or Linux */
+#else /* defined(FUNC__FXSTAT) -- SVR4 or Linux */
 /*
  * SVR4 and Linux do inline stat() and call _xstat/__xstat() with
  * an additional version argument.
@@ -129,6 +131,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 {
 	GFS_File gf;
 	char *e;
+	int errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___FXSTAT) "(%d)",
 	    filedes));
@@ -177,6 +180,7 @@ FUNC___FXSTAT(int ver, int filedes, STRUCT_STAT *buf)
 		buf->st_mtime = gsp->st_mtimespec.tv_sec;
 		buf->st_ctime = gsp->st_ctimespec.tv_sec;
 	}
+	errno = errno_save;
 	return (0);
 
 error:

@@ -20,7 +20,9 @@ SUBDIRS = \
 	config-gfarm
 
 #	gfdf \
+#	gfdump \
 #	gfexec \
+#	gfifo \
 #	gfpwd \
 #	gfrcmd \
 #	gfrep \
@@ -30,7 +32,11 @@ SUBDIRS = \
 #	gfstat \
 #	gfmpirun \
 #	gfps \
+#	gfq \
 #	gfrun \
+#	gfstatus \
+#	gftest \
+#	gfusage \
 #	gfwhere \
 #	gfwhoami \
 #	example \

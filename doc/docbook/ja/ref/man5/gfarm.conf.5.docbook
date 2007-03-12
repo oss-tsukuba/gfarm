@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>26 Aug 2005</date></refentryinfo>
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -106,6 +106,22 @@
 <para>例:</para>
 <literallayout>
 	spool /var/spool/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+  
+<varlistentry>
+<term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
+<listitem>
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_listen_address 192.168.121.1
 </literallayout>
 </listitem>
 </varlistentry>
@@ -344,8 +360,8 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <varlistentry>
 <term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
-<para>LDAP サーバーが動作しているホスト名を指定します。</para>
-<para>この設定は必須です。</para>
+<para>メタデータのバックエンド・データベースとしてLDAPサーバを選択する場合、
+LDAP サーバーが動作しているホスト名を指定します。</para>
 
 <para>例:</para>
 <literallayout>
@@ -358,10 +374,11 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
 <para>LDAP サーバーが利用するTCPポートの番号を指定します。</para>
-<para>現在のところ、この設定は必須です。</para>
+<para><token>ldap_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
-	ldap_server_port 389
+	ldap_server_port 602
 </literallayout>
 </listitem>
 </varlistentry>
@@ -371,7 +388,8 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <listitem>
 <para>LDAP データベースで保持するデータのキーの根となるノードの
 名称、base distinguished name を指定します。</para>
-<para>この設定は必須です。</para>
+<para><token>ldap_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
@@ -380,11 +398,106 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 </varlistentry>
 
 <varlistentry>
-<term><token>auth</token> <parameter>有効無効</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
+<term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
+<listitem>
+<para>LDAP データベースに接続する際の認証に用いる名称を、distinguished name で指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_bind_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>LDAP データベースに接続する際の認証パスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_password "secret-ldap-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverhost</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
+<listitem>
+<para>メタデータのバックエンド・データベースとして
+PostgreSQL サーバを選択する場合、
+PostgreSQL サーバーが動作しているホスト名を指定します。</para>
+
+<para>例:</para>
+<literallayout>
+	postgresql_serverhost postgresql.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_serverport</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
+<listitem>
+<para>PostgreSQL サーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_serverport 602
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
+<listitem>
+<para>PostgreSQL データベース名を指定します。</para>
+<para><token>postgresql_serverhost</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_dbname gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_user</token> <parameter>user</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_user gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_password "secret-postgresql-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
+<listitem>
+<para>PostgreSQL データベースに接続するときの接続オプションを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_conninfo "sslmode=require connect_timeout=30"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>auth</token> <parameter>有効性</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
 <listitem>
 <para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
-<para>第1引数の<parameter>有効無効</parameter>部には、<token>enable</token> ないし <token>disable</token>
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token> ないし <token>disable</token>
 キーワードを指定します。
 第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
 <token>gsi_auth</token> ないし <token>sharedsecret</token>
@@ -590,6 +703,129 @@ IPアドレスを通信に用いるかを指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_local_priority</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文で disable と指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
+なります。
+両方指定した場合は、環境変数が優先されます。
+デフォルトは enable です。
+</para>
+<para>例:</para>
+<literallayout>
+	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
+<listitem>
+<para>gfarm がファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数 GFARM_WRITE_TARGET_DOMAIN でも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+</para>
+<para>例:</para>
+<literallayout>
+	write_target_domain example.org
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されなくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
+することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
+</para>
+<para>例:</para>
+<literallayout>
+	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
+<listitem>
+<para>gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
+</para>
+<para>例:</para>
+<literallayout>
+	gfsd_connection_cache 32
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>log_level</token> <parameter>優先度レベル</parameter></term>
+<listitem>
+<para>
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslog や標準エラーへ
+送られません。
+レベルは、優先度の高い順に "emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug" です。
+デフォルトの出力レベルは "info" です。
+"crit" 以上の優先度を指定することは、お勧めできません。
+</para>
+<para>例:</para>
+<literallayout>
+	log_level debug
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>record_atime</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+このオプションが enable の場合、最終アクセス時刻をきちんと記録します。
+disable の場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable 設定は、通常のファイルシステムにおける "noatime" オプションに
+相当します。
+</para>
+<para>例:</para>
+<literallayout>
+	record_atime disable
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -598,6 +834,7 @@ IPアドレスを通信に用いるかを指定します。
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
@@ -610,13 +847,31 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
 		&nbsp;&nbsp;&lt;netparam_statement&gt; |
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
 		&nbsp;&nbsp;&lt;address_use_statement&gt; |
 		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
-		&nbsp;&nbsp;&lt;local_user_map_statement&gt;
+		&nbsp;&nbsp;&lt;option_statement&gt; |
+		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
+		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;log_level_statement&gt; |
+		&nbsp;&nbsp;&lt;record_atime_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
+	&lt;spool_server_listen_address_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
 	&lt;spool_server_port_statement&gt; ::= "spool_server_port" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
@@ -635,8 +890,16 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
 	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
+	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
+	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
+	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
+	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
+	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
+	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
+	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
 	&lt;auth_statement&gt; ::=
-		&nbsp;&nbsp;"auth" &lt;auth_command&gt; &lt;auth_method&gt; &lt;hostspec&gt;
+		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
 	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
 	&lt;netparam_statement&gt; ::=
@@ -645,12 +908,24 @@ IPアドレスを通信に用いるかを指定します。
 		&nbsp;&nbsp;"rate_limit"
 	&lt;sockopt_statement&gt; ::=
 		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
-	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
 	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
 	&lt;client_architecture_statement&gt; ::=
 		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
+	&lt;option_statement&gt; ::= "option" &lt;an_option&gt;
+	&lt;an_option&gt; ::= "noatime"
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
+	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
+	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
+	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
+	&lt;minimum_free_disk_space_statement&gt; ::=
+		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
+	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
+	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -658,6 +933,7 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
 	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
 	&lt;portnumber&gt; ::= &lt;number&gt;
+	&lt;size&gt; ::= &lt;number&gt; [ "k" | "M" | "G" | "T" ]
 	&lt;number&gt; ::= &lt;digit&gt; [&lt;digit&gt;*]
 	&lt;digit&gt; ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	&lt;string&gt; ::= """ &lt;double_quoted_character&gt;* """
@@ -670,20 +946,47 @@ IPアドレスを通信に用いるかを指定します。
 	&lt;double_quoted_character&gt; ::=
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
+	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		&nbsp;&nbsp;"notice" | "info" | "debug"
 </literallayout>
 
 </refsect1>
 
 <refsect1 id='examples'><title>EXAMPLES</title>
+<para>
+メタデータの保存に PostgreSQL を使い、IPアドレス 192.168.0.0/24 の
+ファイルシステムノードやクライアントに対して、sharedsecret 認証を
+使う例です。
+</para>
 <literallayout>
 spool /var/spool/gfarm
-metadb_server_host ldap.example.com
-ldap_server_host ldap.example.com
-ldap_server_port 389
-ldap_base_dn "dc=example, dc=com"
+metadb_server_host metadb.example.org
+metadb_server_port 601
+postgresql_server_host metadb.example.org
+postgresql_server_port 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
 auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
+sockopt keepalive
+</literallayout>
+
+<para>
+メタデータの保存に LDAP を使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI 認証を使う例です。
+</para>
+<literallayout>
+spool /var/spool/gfarm
+metadb_server_host metadb.example.com
+metadb_server_port 601
+ldap_server_host metadb.example.com
+ldap_server_port 602
+ldap_base_dn "dc=example, dc=com"
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable gsi *
+sockopt keepalive
 </literallayout>
 
 
@@ -708,6 +1011,8 @@ auth enable gsi *
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
+  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfarm_agent</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>

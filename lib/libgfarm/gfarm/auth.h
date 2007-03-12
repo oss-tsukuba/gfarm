@@ -62,6 +62,9 @@ enum gfarm_auth_sharedsecret_request {
 #define GFARM_AUTH_CHALLENGE_LEN	32
 #define GFARM_AUTH_RESPONSE_LEN		16	/* length of MD5 */
 
+#define GFARM_AUTH_SHARED_KEY_BASENAME	".gfarm_shared_key"
+#define GFARM_AUTH_SHARED_KEY_PRINTNAME	"~/" GFARM_AUTH_SHARED_KEY_BASENAME
+
 /* GSI */
 gfarm_error_t gfarm_gsi_server_initialize(void);
 gfarm_error_t gfarm_gsi_client_initialize(void);

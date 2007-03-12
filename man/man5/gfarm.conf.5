@@ -3,23 +3,20 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "26 August 2005" "Gfarm" ""
+.TH "GFARM.CONF" "5" "13 November 2006" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
 .PP
 gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes such as gfmd and gfsd refer to %%SYSCONFDIR%%/gfarm.conf
-by default.  Since this configuration file is only read at the startup
-time, it is necessary to restart servers when updating the content of
-the configuration file.
+Gfarm server processes, such as gfmd and gfsd, refer to %%SYSCONFDIR%%/gfarm.conf by default.  Since this configuration file is only read at startup, it is necessary to restart servers when the contents of the configuration file are updated.
 .PP
-Application programs such as gfls and gfhost refer to both
-%%SYSCONFDIR%%/gfarm.conf and a file specified by an environment variable
+Application programs, such as gfls and gfhost, refer to both
+%%SYSCONFDIR%%/gfarm.conf, and a file specified by an environment variable,
 GFARM_CONFIG_FILE. If both configuration files exist, the file
-specified by the environment variable GFARM_CONFIG_FILE is read at
-first. Both files have same grammar.
+specified by the environment variable, GFARM_CONFIG_FILE, is read
+first. Both files have the same grammar.
 If the environment variable GFARM_CONFIG_FILE doesn't exist,
 ~/.gfarmrc in a user's home directory is used instead.
 .PP
@@ -33,21 +30,21 @@ characters on that line to be ignored.
 forms.
 .TP
 \fB\fIIII.JJJ.KKK.LLL\fB\fR
-specifies an IP address with four octets from 0 to 255 separated
+Specifies an IP address with four octets from 0 to 255, separated
 by ".".
 .TP
 \fB\fIIII.JJJ.KKK.LLL\fB/\fIMM\fB\fR
-specifies a network address with an IP address and a netmask
+Specifies a network address with an IP address and a netmask
 from 0 to 31 separated by "/".
 .TP
 \fB\fIdomain.name\fB\fR
-specifies a host name.
+Specifies a host name.
 .TP
 \fB \fI\&.domain.name\fB\fR
-specifies all hosts which belong to the domain.name.
+Specifies all hosts which belong to the domain.name.
 .TP
 \fB*\fR
-specifies all hosts.
+Specifies all hosts.
 .SH "STATEMENT"
 .PP
 The following statements are supported.
@@ -63,6 +60,19 @@ For example,
 	spool /var/spool/gfarm
 .fi
 .TP
+\fBspool_server_listen_address \fIIP-address\fB\fR
+The spool_server_listen_address statement specifies
+the IP address at which the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.
+
+For example,
+
+.nf
+	spool_server_listen_address 192.168.121.1
+.fi
+.TP
 \fBspool_serverport \fIport\fB\fR
 The spool_serverport statement specifies the tcp
 and udp port number the gfsd is listening on.  The default port number
@@ -75,22 +85,22 @@ For example,
 .fi
 .TP
 \fBspool_server_cred_type \fIcred_type\fB\fR
-This statement specifies the type of a credential used by gfsd for GSI
+This statement specifies the type of credential used by gfsd for GSI
 authentication.
-This is just ignored when you are using sharedsecret 
+This is ignored when you are using sharedsecret 
 authentication.
 
-If this statement isn't used on a server side, the server uses
-a host certificate, if the server is invoked with root privilege.
+If this statement isn't used on the server side, the server uses
+a host certificate, if the server is invoked with root privileges.
 Or, if the server is invoked as a non-privileged user, the server
-uses the user's certificate. Thus, usually you don't need to use
-this statement on a server side.
+uses the user's certificate. Thus, you usually don't need to use
+this statement on the server side.
 
-If this statement isn't used on a client side, the client assumes
-that a server that the client is going to connect is using
+If this statement isn't used on the client side, the client assumes
+that the server that the client is going to connect is using
 a host certificate of the server host. Thus, if the server is not
-invoked with root privilege, but invoked as a user privilege that
-the user is same with the user who invoked the client, the client
+invoked with root privileges, but invoked with user privileges where
+the user is the same as the user who invoked the client, the client
 side needs to specify the following one line.
 
 Example:
@@ -99,18 +109,18 @@ Example:
 	spool_server_cred_type self
 .fi
 
-The possible types of the \fIcred_type\fR are
+The possible types of \fIcred_type\fR are
 ``self\&'', 
 ``host\&'', ``user\&'' and 
 ``mechanism-specific\&''.
-And those are used with spool_server_cred_service
-and spool_server_cred_name statement as follows:
+And those are used with the spool_server_cred_service
+and spool_server_cred_name statements as follows:
 .RS
 .TP
 \fBself\fR
-This keyword specifies that a certificate that currently the user
+This keyword specifies that the certificate that the user currently
 has is used.
-You must not use either
+You must not use either the 
 spool_server_cred_service or
 spool_server_cred_name statement,
 if you are using this type.
@@ -119,7 +129,7 @@ if you are using this type.
 This keyword specifies that a host certificate or a service certificate
 is used.
 To choose a service certificate, the name of the service may be specified
-by spool_server_cred_service statement.
+by the spool_server_cred_service statement.
 If ``host\&'' is specified as the service name, a host certificate
 in the file ``\fI/etc/grid-security/hostcert.pem\fR\&'' will
 be used.
@@ -130,10 +140,10 @@ will be used.
 If the service name is omitted, ``host\&'' will be used as
 the service name by default.
 Only the Common Name field of a certificate will be used to check
-the server's identity for a host certificate and a service certificate.
-And the Common Name field must be ``CN=SERVERNAME/HOSTNAME'' format.
-Also the hostname must exactly match with the canonical name configured by
-the \fBgfhost\fR command. Any alias hostnames are not allowed.
+the server's identity for both a host certificate and a service certificate.
+And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME'' format.
+Also, the hostname must match the canonical name configured by
+the \fBgfhost\fR command exactly.  Alias hostnames are not allowed.
 
 This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
 (RFC2743/RFC2744).
@@ -147,25 +157,25 @@ Example:
 .TP
 \fBuser\fR
 This keyword specifies that a user certificate is used.
-The account name of the user may be specified by 
+The account name of the user may be specified by the
 spool_server_cred_name statement.
 If the account name is omitted, the user who invoked the command
 will be used by default.
-You must not specify a service name by
-spool_server_cred_service statement, if you are using
-any user certificate.
+You must not specify a service name using
+the spool_server_cred_service statement, if you are using
+a user certificate.
 
-Currently, there are several implementation limits in this feature.
+Currently, there are several implementation limitations in this feature.
 First, the account name is interpreted as an account on the local host,
 but this is a bug, and will be changed to a gfarm global user name
 in the future.
 Second, to map from the account name to a Distinguished Name of a certificate,
 file ``\fI/etc/grid-security/grid-mapfile\fR\&'' is used.
-Thus, if there isn't such file, or if the user isn't specified in this file,
+Thus, if there isn't such a file, or if the user isn't specified in this file,
 this feature cannot be used.
 Third, if there are multiple Distinguished Names per one account in this file,
-only first Distinguished Name is used, and rest Distinguished Names for
-the account are ignored.
+only the first Distinguished Name is used, and the rest of the Distinguished
+Names for the account are ignored.
 
 This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
 (RFC2743/RFC2744).
@@ -179,12 +189,13 @@ Example:
 .TP
 \fBmechanism-specific\fR
 This keyword specifies that spool_server_cred_name
-is treated as a raw X.509 Distinguished Name as a server's certificate.
-You must not specify a service name by
+is treated as a raw X.509 Distinguished Name serving as a server's
+certificate.
+You must not specify a service name using a
 spool_server_cred_service statement, if you are using
 this type.
 
-This feature corresponds to a case that GSS_C_NO_OID is specified
+This feature corresponds to a case where GSS_C_NO_OID is specified
 as a Name Type in GSSAPI (RFC2743/RFC2744).
 
 Example:
@@ -199,19 +210,19 @@ Example:
 This statement specifies the service name of a service certificate
 used by gfsd for GSI authentication, when ``host\&'' is specified
 in spool_server_cred_type statement.
-This is just ignored when you are using sharedsecret 
+This is ignored when you are using sharedsecret 
 authentication.
-Please read the description of spool_server_cred_type 
-statement for detail.
+Please read the description of the spool_server_cred_type 
+statement for details.
 .TP
 \fBspool_server_cred_name \fIcred_name\fB\fR
-This statement specifies a setting of a certificate used by gfsd
-for GSI authentication. What this setting means depends of the type
-specified in spool_server_cred_type statement.
-This is just ignored when you are using sharedsecret 
+This statement specifies the setting of a certificate used by gfsd
+for GSI authentication. What this setting means depends on the type
+specified in the spool_server_cred_type statement.
+This is ignored when you are using sharedsecret 
 authentication.
-Please read the description of spool_server_cred_type 
-statement for detail.
+Please read the description of the spool_server_cred_type 
+statement for details.
 .TP
 \fBmetadb_serverhost \fIhostname\fB\fR
 The metadb_serverhost statement specifies the
@@ -227,7 +238,7 @@ For example,
 .TP
 \fBmetadb_serverport \fIport\fB\fR
 The metadb_serverport statement specifies the tcp
-port number the gfsd is listening on.  The default port number is
+port number the gfmd is listening on.  The default port number is
 601.
 
 For example,
@@ -237,36 +248,54 @@ For example,
 .fi
 .TP
 \fBmetadb_server_cred_type \fIcred_type\fB\fR
-This statement specifies the type of a credential used by gfmd
+This statement specifies the type of credential used by gfmd
 for GSI authentication.
-This is just ignored when you are using sharedsecret 
+This is ignored when you are using sharedsecret 
 authentication.
-Please read the description of spool_server_cred_type 
-statement about the configuration of this statement.
+Please read the description of the spool_server_cred_type 
+statement on the configuration of this statement.
 .TP
 \fBmetadb_server_cred_service \fIcred_service\fB\fR
 This statement specifies the service name of a service certificate
 used by gfmd for GSI authentication, when ``host\&'' is specified
 in metadb_server_cred_type statement.
-This is just ignored when you are using sharedsecret 
+This is ignored when you are using sharedsecret 
 authentication.
-Please read the description of spool_server_cred_type 
-statement about the configuration of this statement.
+Please read the description of the spool_server_cred_type 
+statement on the configuration of this statement.
 .TP
 \fBmetadb_server_cred_name \fIcred_name\fB\fR
-This statement specifies a setting of a certificate used by gfmd
-for GSI authentication. What this setting means depends of the type
-specified in metadb_server_cred_type statement.
-This is just ignored when you are using sharedsecret 
+This statement specifies the setting of a certificate used by gfmd
+for GSI authentication. What this setting means depends on the type
+specified in the metadb_server_cred_type statement.
+This is ignored when you are using sharedsecret 
 authentication.
-Please read the description of spool_server_cred_type 
-statement about the configuration of this statement.
+Please read the description of the spool_server_cred_type 
+statement on the configuration of this statement.
+.TP
+\fBagent_serverhost \fIhostname\fB\fR
+The agent_serverhost statement specifies the
+host name on which gfarm_agent is running.
+
+For example,
+
+.nf
+	agent_serverhost ldap.example.com
+.fi
+.TP
+\fBagent_serverport \fIport\fB\fR
+The agent_serverport statement specifies the tcp
+port number the gfarm_agent is listening on.
+
+For example,
+
+.nf
+	agent_serverport 603
+.fi
 .TP
 \fBldap_serverhost \fIhostname\fB\fR
 The ldap_serverhost statement specifies the host
-name on which LDAP server for filesystem metadata is running.
-
-This statement cannot be omitted.
+name on which the LDAP server for filesystem metadata is running.
 
 For example,
 
@@ -276,22 +305,23 @@ For example,
 .TP
 \fBldap_serverport \fIport\fB\fR
 The ldap_serverport statement specifies the tcp
-port number of LDAP server.
+port number of the LDAP server.
 
-This statement cannot be omitted in the current
-implementation.
+This statement cannot be omitted
+if ldap_serverhost is specified.
 
 For example,
 
 .nf
-	ldap_serverport 389
+	ldap_serverport 602
 .fi
 .TP
 \fBldap_base_dn \fILDAP_base_distinguished_name\fB\fR
-The ldap_base_dn statement specifies the base
-distinguished name of LDAP database.
+The ldap_base_dn statement specifies the
+base-distinguished name of the LDAP database.
 
-This statement cannot be omitted.
+This statement cannot be omitted
+if ldap_serverhost is specified.
 
 For example,
 
@@ -299,16 +329,104 @@ For example,
 	ldap_base_dn "dc=example, dc=com"
 .fi
 .TP
-\fBauth \fIenable/disable\fB \fImethod\fB \fIHost_specification\fB\fR
+\fBldap_bind_dn \fILDAP_bind_distinguished_name\fB\fR
+The ldap_bind_dn statement specifies the
+distinguished name for the bind operation which is used for authentication
+to the LDAP database.
+
+For example,
+
+.nf
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+.fi
+.TP
+\fBldap_bind_password \fIpassword\fB\fR
+The ldap_bind_password statement specifies the
+password for the bind operation which is used for authentication
+to the LDAP database.
+
+For example,
+
+.nf
+	ldap_bind_password "secret-ldap-password"
+.fi
+.TP
+\fBpostgresql_serverhost \fIhostname\fB\fR
+The postgresql_serverhost statement specifies the host
+name on which the PostgreSQL server is running.
+
+For example,
+
+.nf
+	postgresql_serverhost postgresql.example.com
+.fi
+.TP
+\fBpostgresql_serverport \fIport\fB\fR
+The postgresql_serverport statement specifies the tcp
+port number of the PostgreSQL server.
+
+This statement cannot be omitted
+if postgresql_serverhost is specified.
+
+For example,
+
+.nf
+	postgresql_serverport 602
+.fi
+.TP
+\fBpostgresql_dbname \fIdbname\fB\fR
+The postgresql_dbname statement specifies the
+database name of the PostgreSQL database.
+
+This statement cannot be omitted
+if postgresql_serverhost is specified.
+
+For example,
+
+.nf
+	postgresql_dbname gfarm
+.fi
+.TP
+\fBpostgresql_user \fIuser\fB\fR
+The postgresql_user statement specifies the
+username used to connect the PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_user gfarm
+.fi
+.TP
+\fBpostgresql_password \fIpassword\fB\fR
+The postgresql_password statement specifies the
+password used to connect the PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_password gfarm
+.fi
+.TP
+\fBpostgresql_conninfo \fIconnection_info\fB\fR
+The postgresql_conninfo statement specifies the
+connection option used to connect the PostgreSQL database.
+
+For example,
+
+.nf
+	postgresql_conninfo "sslmode=require connect_timeout=30"
+.fi
+.TP
+\fBauth \fIvalidity\fB \fImethod\fB \fIHost_specification\fB\fR
 This statement specifies the authentication method when
 communicating with the host(s) specified by the third argument.
 
-The first argument should be enable or
+The first argument should be either the enable or
 disable keyword.
-The second argument \fIauth method\fR should be
-gsi, gsi_auth or sharedsecret
+The second argument, \fIauth method\fR, should be
+the gsi, gsi_auth, or sharedsecret
 keyword.
-The third argument specifies the host(s) by \fIHost
+The third argument specifies the host(s) by using \fIHost
 specification\fR\&.
 
 The auth statement may be specified any number of
@@ -319,19 +437,19 @@ entry, or when the first corresponding entry has the
 disable keyword, the authentication method does not
 become a candidate.
 
-This process takes place at both client and server sides.
-Candidates for authentication method at both sides will be
+This process takes place on both client and server sides.
+Candidates for authentication method on both sides will be
 tried.
 
 The order of statements with different authentication methods is
-not concerned.  When there are several candidates for authentication
-method for the host, the order the authentication trial is
-sharedsecret, gsi_auth
+not relevant.  When there are several candidates for the authentication
+method for the host, the order of the authentication trial is
+sharedsecret, gsi_auth,
 and then gsi\&.
 
 The GSI methods are available if and only if the
---with-globus option is specified at the configure time.  When the methods are
-not available, the auth statement with
+--with-globus option is specified at configuration.  When the methods are
+not available, an auth statement with
 gsi or gsi_auth will be ignored.
 
 This statement cannot be omitted.
@@ -346,16 +464,16 @@ For example,
 	auth enable gsi *
 .fi
 
-In this example, all hosts which belong to the network address of
-192.168.0.0/24 except two hosts of 192.168.0.100 and 192.168.0.101
-will be tried to be authenticated by both sharedsecret
-and gsi,
-all hosts which belong to the network address of 10.0.0.0/8 will be
-tried to be authenticated by both
-gsi_auth and gsi,
+In this example, all hosts which belong to the network address
+192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
+will be tested for authenticated by both sharedsecret
+and gsi;
+all hosts which belong to the network address 10.0.0.0/8 will be
+tested for authentication by both
+gsi_auth and gsi;
 and all other hosts will be authenticated by
-gsi\&.  Note that two hosts of 192.168.0.100 and
-192.168.0.101 will be tried to be authenticated by gsi only.
+gsi\&.  Note that two hosts, 192.168.0.100 and
+192.168.0.101, will be tested for authentication by gsi only.
 .TP
 \fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost_specification\fB]\fR
 The netparam statement specifies several
@@ -364,35 +482,35 @@ communication parameters listed below.
 parallel_streams\&.  This parameter specifies the
 number of tcp streams.  The default is a single stream.  The
 parallel_streams parameter may improve the file
-transfer performance especially when connecting to a far distant site
-(i.e. high bandwidth-delay product network) such that tcp congestion
-window size will not increase enough.  This parameter is only
-effective on a client node where gfrep(1) command is executed.
+transfer performance, especially when connecting to a distant site
+(i.e., a high bandwidth-delay product network) such that the tcp congestion
+window size will not increase sufficiently.  This parameter is only
+effective on a client node where the gfrep(1) command is executed.
 \fIHost_specification\fR specifies the source host(s)
-of file replication instead of the destination host(s).
+for file replication instead of the destination host(s).
 
 stripe_unit_size\&.  This parameter specifies how
 to divide the data when utilizing multiple tcp streams.  Without this
 parameter, the data will be divided into
 parallel_streams of contiguous blocks with almost even
 size.  When this parameter is specified, the data is divided in
-round-robin fashion with the specified block size in byte.  Generally
+round-robin fashion with the specified block size in bytes.  Generally
 speaking, the performance of file transfer is improved using this
 parameter.
 
 This parameter is effective only when two or more is specified
-by the parallel_streams parameter.  This parameter is
-only effective on a client node where gfrep(1) command is executed.
+as the parallel_streams parameter.  This parameter is
+only effective on a client node where the gfrep(1) command is executed.
 \fIHost_specification\fR specifies the source host(s)
-of file replication instead of the destination host(s).
+for file replication instead of the destination host(s).
 
 rate_limit\&.  This parameter specifies the maximum
-transfer rate (bps; bit per second) for a single connection, which is
+transfer rate (bps; bit per second) for a single connection, and is
 introduced experimentally.  The parameter on a source filesystem node
 is effective during parallel file replication.  \fIHost
-specification\fR specifies the destination host(s) of file
-replication.  Note that this parameter needs to be specified on a
-source filesystem node not on a client host unlike the other
+specification\fR specifies the destination host(s) for file
+replication.  Note that this parameter has to be specified on a
+source filesystem node, not on a client host, unlike the other
 parameters.
 
 For example,
@@ -407,36 +525,36 @@ For example,
 The sockopt parameter specifies the socket option
 \fIoption\fR via the setsockopt(2) system call.
 
-When LISTENER (all capital letter) is specified
+When LISTENER (all capital letters) is specified
 by the second argument, the socket option is applied to any socket
-in server side (accepting side).
+on the server side (accepting side).
 
 When the host_specification is specified by the second argument,
-the socket option is applied to sockets that connect to specified host(s).
+the socket option is applied to sockets that connect to the specified host(s).
 If the second argument is "*", the socket option is applied to any
-hosts in client side (connecting side).
+hosts on the client side (connecting side).
 
 If the second argument is omitted, the socket option is applied
 to every socket.
 
-The following socket option can be specified.
+The following socket options can be specified.
 
-debug\&.  SO_DEBUG socket
-option is specified.  The \fIvalue\fR is not
+debug\&.  The SO_DEBUG socket
+option is specified.  A \fIvalue\fR is not
 necessary.
 
-keepalive\&.  SO_KEEPALIVE
-socket option is specified.  The \fIvalue\fR is not
+keepalive\&.  The SO_KEEPALIVE
+socket option is specified.  A \fIvalue\fR is not
 necessary.
 
-sndbuf\&.  SO_SNDBUF socket
-option is specified with the \fIvalue\fR
+sndbuf\&.  The SO_SNDBUF socket
+option is specified with a \fIvalue\fR\&.
 
-rcvbuf\&.  SO_RCVBUF socket
-option is specified with the \fIvalue\fR
+rcvbuf\&.  The SO_RCVBUF socket
+option is specified with a \fIvalue\fR\&.
 
-tcp_nodelay\&.  TCP_NODELAY
-socket option is specified.  The \fIvalue\fR is not
+tcp_nodelay\&.  The TCP_NODELAY
+socket option is specified.  A \fIvalue\fR is not
 necessary.
 
 For example,
@@ -451,7 +569,7 @@ For example,
 .TP
 \fBaddress_use \fIHost_specification\fB\fR
 The address_use statement specifies an IP address
-or a network address that is preferably used for connection when the
+or a network address that is given preference for connection when the
 target host has several IP addresses.
 
 For example,
@@ -461,14 +579,14 @@ For example,
 .fi
 .TP
 \fBclient_architecture \fIarchitecture\fB \fIHost_specification\fB\fR
-This directive specifies default architecture name which may be used
+This directive specifies the default architecture name that may be used
 when a client node accesses an executable file.
 This directive only affects client nodes.
-For filesystem nodes, architecture names which are registered in
+For filesystem nodes, architecture names registered in
 the metadata server are used.
 
-On the other hand, environment variable GFARM_ARCHITECTURE,
-which specifies default architecture name just like this directive,
+On the other hand, the environment variable, GFARM_ARCHITECTURE,
+which specifies the default architecture name, just as in this directive,
 affects both client nodes and filesystem nodes.
 
 Example:
@@ -484,10 +602,10 @@ This directive specifies a file name
 \fIuser-map-file\fR for mapping global user names
 to local user names
 
-This directive is optional.  The
-\fIuser-map-file\fR is needed when you need to use
-the sharedsecret authentication method in the case that you have
-different unix account names on different filesystem nodes.  In this
+This directive is optional.
+\fIuser-map-file\fR is needed when you have to use
+the sharedsecret authentication method in the case where you have
+different unix account names on different filesystem nodes.  In such a
 case, the \fIuser-map-file\fR on each filesystem node
 should have an entry from a unique global user name to each local user
 name.
@@ -510,15 +628,145 @@ Example of the user mapping file:
 .fi
 
 According to the first line of this mapping file, a global user
-name "foobar" is mapped to a local user name "foo" on this node.
+name, "foobar", is mapped to a local user name,  "foo", on this node.
+.TP
+\fBdir_cache_timeout \fIseconds\fB\fR
+This directive specifies the time (in seconds) until a directory cache
+in the gfarm library expires.
+The default time is 86,400 seconds, i.e. one day.
+The time can be specified by an environment variable,
+GFARM_DIRCACHE_TIMEOUT, too.
+The environment variable takes precedence over the directive.
+
+For example,
+
+.nf
+	dir_cache_timeout 60
+.fi
+.TP
+\fBhost_cache_timeout \fIseconds\fB\fR
+This directive specifies the time (in seconds) until the metadata cache
+of the filesystem nodes in the gfarm library expires.
+Newly added or removed hosts might not be seen until this timeout has
+passed.
+The default time is 600 seconds, i.e. ten minutes.
+
+For example,
+
+.nf
+	host_cache_timeout 60
+.fi
+.TP
+\fBschedule_cache_timeout \fIseconds\fB\fR
+This directive specifies the time (in seconds) until the cache used for
+filesystem node scheduling expires.
+The cache holds information on each filesystem node, e.g. load average,
+disk free space, and whether authentication succeeds or not.
+The default time is 600 seconds, i.e. ten minutes.
+
+For example,
+
+.nf
+	schedule_cache_timeout 60
+.fi
+.TP
+\fBwrite_local_priority \fIvalidity\fB\fR
+Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing the disable keyword in
+this directive, Gfarm handles localhost the same as other
+filesystem nodes.
+The same thing can be achieved by specifying disable
+as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
+When both this directive and the environment variable are specified,
+the value specified by the environment variable will be used.
+The default is enable\&.
+
+For example,
+
+.nf
+	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIdomain\fB\fR
+Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be chosen from
+among all nodes.
+You can specify this domain with the GFARM_WRITE_TARGET_DOMAIN environment
+variable too.
+When both this directive and the environment variable are specified,
+the value specified by the environment variable will be used.
+Note that if you specify this directive more than once, only the first one
+will be used and the others are ignored.
+
+For example,
+
+.nf
+	write_target_domain example.org
+.fi
+.TP
+\fBminimum_free_disk_space \fIbytes\fB\fR
+This directive specifies free disk space (in bytes) which is
+required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
+which have less free space than this parameter, when it
+schedules nodes for jobs which may write files.
+The free space value may have a suffix like ``k'' (kilo bytes), 
+``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
+The default size is 128M bytes.
+
+For example,
+
+.nf
+	minimum_free_disk_space 1G
+.fi
+.TP
+\fBgfsd_connection_cache \fInumber\fB\fR
+This directive specifies maximum number of cached gfsd connections.
+The default is 16.
+
+For example,
+
+.nf
+	gfsd_connection_cache 32
+.fi
+.TP
+\fBlog_level \fIpriority_level\fB\fR
+This directive specifies a level of log priority.
+The log output, which priority is inferior to this level, will not be
+sent to syslog or standard error.
+The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
+"info" and "debug" in highest first order.
+The default level is "info".
+It's not recommended to specify a level higher or equal to "crit".
+
+For example,
+
+.nf
+	log_level debug
+.fi
+.TP
+\fBrecord_atime \fIvalidity\fB\fR
+When "enabled" is specified, Gfarm records last access time strictly.
+When "disabled" is specified, the access time becomes inaccurate, but
+such setting reduces the load of metadata updates, and may improve
+performance.
+The "disable" setting corresponds to "noatime" setting in usual filesystem.
+
+Example:
+
+.nf
+	record_atime disable
+.fi
 .SH "GRAMMAR"
 .PP
-This is a grammar of gfarm.conf described by the BNF
+This is a grammar for gfarm.conf described using BNF
 notation.
 
 .nf
 	<statement> ::=
 		\~\~<spool_statement> |
+		\~\~<spool_server_listen_address_statement> |
 		\~\~<spool_serverport_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
@@ -528,16 +776,38 @@ notation.
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<agent_serverhost_statement> |
+		\~\~<agent_serverport_statement> |
 		\~\~<ldap_serverhost_statement> |
 		\~\~<ldap_serverport_statement> |
 		\~\~<ldap_base_dn_statement> |
+		\~\~<ldap_bind_dn_statement> |
+		\~\~<ldap_bind_password_statement> |
+		\~\~<postgresql_serverhost_statement> |
+		\~\~<postgresql_serverport_statement> |
+		\~\~<postgresql_dbname_statement> |
+		\~\~<postgresql_user_statement> |
+		\~\~<postgresql_password_statement> |
+		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
 		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<address_use_statement> |
 		\~\~<client_architecture_statement> |
+		\~\~<option_statement> |
 		\~\~<local_user_map_statement>
+		\~\~<dir_cache_timeout_statement> |
+		\~\~<host_cache_timeout_statement> |
+		\~\~<schedule_cache_timeout_statement> |
+		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
+		\~\~<minimum_free_disk_space_statement> |
+		\~\~<gfsd_connection_cache_statement> |
+		\~\~<log_level_statement> |
+		\~\~<record_atime_statement>
 	<spool_statement> ::= "spool" <pathname>
+	<spool_server_listen_address_statement> ::=
+		\~\~"spool_server_listen_address" <ipv4_address>
 	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>
@@ -553,12 +823,21 @@ notation.
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<agent_serverhost_statement> ::= "agent_serverhost" <hostname>
+	<agent_serverport_statement> ::= "agent_serverport" <portnumber>
 	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
 	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
+	<ldap_bind_dn_statement> ::= "ldap_bind_dn" <string>
+	<ldap_bind_password_statement> ::= "ldap_bind_password" <string>
+	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
+	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
+	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
+	<postgresql_user_statement> ::= "postgresql_user" <string>
+	<postgresql_password_statement> ::= "postgresql_password" <string>
+	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
-		\~\~"auth" <auth_command> <auth_method> <hostspec>
-	<auth_command> ::= "enable" | "disable"
+		\~\~"auth" <validity> <auth_method> <hostspec>
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
 	<netparam_statement> ::=
 		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
@@ -566,12 +845,24 @@ notation.
 		\~\~"rate_limit"
 	<sockopt_statement> ::=
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
-	<socket_option> = "debug" | "keepalive" | "sndbuf" |"rcvbuf" |
+	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<address_use_statement> ::=  "address_use" <hostspec>
 	<client_architecture_statement> ::=
 		\~\~"client_architecture" <architecture> <hostspec>
+	<option_statement> ::= "option" <an_option>
+	<an_option> ::= "noatime"
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
+	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
+	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
+	<minimum_free_disk_space_statement> ::=
+		\~\~"minimum_free_disk_space" <size>
+	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<log_level_statement> ::= "log_level" <log_priority>
+	<record_atime_statement> ::= "record_atime" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -579,24 +870,53 @@ notation.
 	<hostname> ::= <hostname_character> <hostname_character>*
 	<hostname_character> ::= <alphabet> | <digit> | "-" | "."
 	<portnumber> ::= <number>
+	<size> ::= <number> [ "k" | "M" | "G" | "T" ]
 	<number> ::= <digit> [<digit>*]
 	<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 	<string> ::= """ <double_quoted_character>* """
 	<double_quoted_character> ::=
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
+	<validity> ::= "enable" | "disable"
+	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		\~\~"notice" | "info" | "debug"
 .fi
 .SH "EXAMPLES"
+.PP
+The following is an example usin PostgreSQL to store the metadata,
+and to allow access from filesystem nodes and clients at IP address
+192.168.0.0/24, via sharedsecret authentication.
 
 .nf
 spool /var/spool/gfarm
-metadb_serverhost ldap.example.com
-ldap_serverhost ldap.example.com
+spool_serverport 600
+metadb_serverhost metadb.example.org
+metadb_serverport 601
+postgresql_serverhost metadb.example.org
+postgresql_serverport 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
+auth enable sharedsecret 192.168.0.0/24
+sockopt keepalive
+.fi
+.PP
+The following is an example using LDAP to store the metadata,
+and to allow access from filesystem nodes and clients at any IP address,
+via GSI authentication.
+
+.nf
+spool /var/spool/gfarm
+spool_serverport 600
+metadb_serverhost metadb.example.com
+metadb_serverport 601
+ldap_serverhost metadb.example.com
 ldap_serverport 389
 ldap_base_dn "dc=example, dc=com"
-auth enable sharedsecret 192.168.0.0/24
-auth enable gsi_auth 10.0.0.0/8
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
 auth enable gsi *
+sockopt keepalive
 .fi
 .SH "FILES"
 .TP
@@ -606,4 +926,6 @@ auth enable gsi *
 .SH "SEE ALSO"
 .PP
 \fBgfmd\fR(8),
-\fBgfsd\fR(8), \fBsetsockopt\fR(2)
+\fBgfsd\fR(8),
+\fBgfarm_agent\fR(1),
+\fBsetsockopt\fR(2)

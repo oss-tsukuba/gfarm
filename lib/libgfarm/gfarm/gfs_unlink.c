@@ -3,8 +3,16 @@
  */
 
 #include <stddef.h>
+#include <unistd.h>
 
 #include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+#include "timer.h"
+
+#include "gfs_profile.h"
+
+static double gfs_unlink_time;
 
 gfarm_error_t
 gfs_unlink(const char *path)
@@ -12,6 +20,9 @@ gfs_unlink(const char *path)
 	gfarm_error_t e;
 	struct gfs_stat st;
 	int is_dir;
+	gfarm_timerval_t t1, t2;
+
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_stat(path, &st);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -23,6 +34,9 @@ gfs_unlink(const char *path)
 
 	/* XXX FIXME there is race condition here */
 
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
+
 	return (gfs_remove(path));
 }
 
@@ -31,114 +45,137 @@ gfs_unlink(const char *path)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <openssl/evp.h>
+#include <unistd.h>
+
 #include <gfarm/gfarm.h>
-#include "config.h"
-#include "gfs_client.h"
-#include "gfs_pio.h"	/* gfs_profile */
-#include "gfs_misc.h"	/* gfs_unlink_replica_internal() */
+
 #include "timer.h"
+#include "gfutil.h"
+
+#include "host.h"
+#include "config.h"	/* gfs_profile */
+#include "gfs_client.h"
+#include "gfs_misc.h"	/* gfs_unlink_replica_internal() */
+
+/*  */
 
 char *
 gfs_unlink_replica_internal(const char *gfarm_file, const char *section,
 	const char *hostname)
 {
-	char *path_section, *e;
-	struct gfs_connection *gfs_server;
-	struct sockaddr peer_addr;
+	char *path_section, *e, *e_int, *e_int2;
 
-	e = gfarm_path_section(gfarm_file, section, &path_section);
-	if (e != NULL)
-		goto finish;
-
+	/* metadata part */
 	e = gfarm_file_section_copy_info_remove(gfarm_file, section, hostname);
 	if (e != NULL)
-		goto finish_path_section;
+		return (e);
 
-	e = gfarm_host_address_get(hostname, gfarm_spool_server_port,
-		&peer_addr, NULL);
-	if (e != NULL)
-		goto finish_path_section;
+	/* physical file part */
+	e_int = gfarm_path_section(gfarm_file, section, &path_section);
+	if (e_int == NULL) {
+		e_int = gfs_client_unlink_with_reconnection(hostname,
+		    path_section, NULL, &e_int2);
+		free(path_section);
+	}
+	/*
+	 * how to report e_int{,2}?  This usually results in a junk file
+	 * unless it is GFARM_ERR_NO_SUCH_OBJECT.
+	 */
+	return (NULL);
+}
 
-	e = gfs_client_connection(hostname, &peer_addr, &gfs_server);
-	if (e != NULL)
-		goto finish_path_section;
+static char *
+unlink_copy_remove(struct gfarm_file_section_copy_info *info, void *arg)
+{
+	return (gfs_unlink_replica_internal(
+			info->pathname, info->section, info->hostname));
+}
 
-	e = gfs_client_unlink(gfs_server, path_section);
+static char *
+unlink_section_remove(struct gfarm_file_section_info *info, void *arg)
+{
+	gfarm_foreach_copy(unlink_copy_remove,
+		info->pathname, info->section, arg, NULL);
+	return (gfarm_file_section_info_remove(info->pathname, info->section));
+}
 
-finish_path_section:
-	free(path_section);
-finish:
+char *
+gfs_unlink_check_perm(char *gfarm_file)
+{
+	struct gfarm_path_info pi;
+	char *e, *parent;
+
+	parent = gfarm_path_dirname(gfarm_file);
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if (parent == '\0') {
+		/*
+		 * XXX - we always grant access for the root directory
+		 * because we do not have the metadata.
+		 */
+		free(parent);
+		return (NULL);
+	}
+	e = gfarm_path_info_get(parent, &pi);
+	if (e == NULL) {
+		e = gfarm_path_info_access(&pi, W_OK);
+		gfarm_path_info_free(&pi);
+	}
+	free(parent);
 	return (e);
 }
 
-double gfs_unlink_time;
+static double gfs_unlink_time;
+
+char *
+gfs_unlink_internal(const char *gfarm_file)
+{
+	char *e, *e1;
+
+	e = gfarm_foreach_section(unlink_section_remove,
+		gfarm_file, NULL, NULL);
+	if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION)
+		e = NULL; /* no fragment information case */
+	e1 = gfarm_path_info_remove(gfarm_file);
+
+	return (e != NULL ? e : e1);
+}
 
 char *
 gfs_unlink(const char *gfarm_url)
 {
-	char *gfarm_file, *e, *e_save = NULL;
-	int i, j, nsections;
+	char *gfarm_file, *e;
 	struct gfarm_path_info pi;
-	struct gfarm_file_section_info *sections;
+	gfarm_mode_t mode;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		goto finish_unlink;
 
-	e = gfarm_path_info_get(gfarm_file, &pi);
+	e = gfs_unlink_check_perm(gfarm_file);
 	if (e != NULL)
 		goto finish_free_gfarm_file;
 
-	if (GFARM_S_ISDIR(pi.status.st_mode)) {
-		gfarm_path_info_free(&pi);
-		e = GFARM_ERR_IS_A_DIRECTORY;
+	e = gfarm_path_info_get(gfarm_file, &pi);
+	if (e != NULL)
 		goto finish_free_gfarm_file;
-	}
+	mode = pi.status.st_mode;
 	gfarm_path_info_free(&pi);
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file,
-	    &nsections, &sections);
-	if (e != NULL) {
-		if (e != GFARM_ERR_NO_SUCH_OBJECT)
-			goto finish_free_gfarm_file;
-		/* no fragment information */
-		nsections = 0;
-		sections = NULL;
-	}
-	/* XXX - should unlink in parallel. */
-	for (i = 0; i < nsections; i++) {
-		int ncopies;
-		struct gfarm_file_section_copy_info *copies;
 
-		e = gfarm_file_section_copy_info_get_all_by_section(
-		    gfarm_file, sections[i].section, &ncopies, &copies);
-		if (e != NULL) {
-			if (e_save == NULL)
-				e_save = e;
-			continue;
-		}
-		for (j = 0; j < ncopies; j++) {
-			e = gfs_unlink_replica_internal(gfarm_file,
-				sections[i].section, copies[j].hostname);
-			if (e != NULL && e_save == NULL)
-				e_save = e;
-		}
-		gfarm_file_section_copy_info_free_all(ncopies, copies);
-	}
-	if (sections != NULL) {
-		gfarm_file_section_info_free_all(nsections, sections);
-		e = gfarm_file_section_info_remove_all_by_file(gfarm_file);
-		if (e != NULL && e_save == NULL)
-			e_save = e;
-	}
-	e = gfarm_path_info_remove(gfarm_file);
-	if (e != NULL && e_save == NULL)
-		e_save = e;
+	if (GFARM_S_ISDIR(mode))
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!GFARM_S_ISREG(mode))
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	else
+		e = gfs_unlink_internal(gfarm_file);
 
 finish_free_gfarm_file:
 	free(gfarm_file);
@@ -147,69 +184,55 @@ finish_unlink:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_unlink_time += gfarm_timerval_sub(&t2, &t1));
 
-	return (e_save != NULL ? e_save : e);
+	return (e);
 }
 
 /* internal use in the gfarm library */
 char *
 gfs_unlink_section_internal(const char *gfarm_file, const char *section)
 {
-	char *e, *e_save = NULL;
-	int j, ncopies;
-	struct gfarm_file_section_copy_info *copies;
+	char *e1, *e2;
 
-	e = gfarm_file_section_copy_info_get_all_by_section(
-		gfarm_file, section, &ncopies, &copies);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		/* if there is the section info, remove it */
-		(void)gfarm_file_section_info_remove(gfarm_file, section);
-		return (e);
-	}
-	if (e != NULL)
-		return (e);
+	e1 = gfarm_foreach_copy(unlink_copy_remove,
+		gfarm_file, section, NULL, NULL);
+	e2 = gfarm_file_section_info_remove(gfarm_file, section);
 
-	for (j = 0; j < ncopies; j++) {
-		e = gfs_unlink_replica_internal(gfarm_file, section,
-			copies[j].hostname);
-		if (e != NULL) {
-			if (e_save == NULL)
-				e_save = e;
-			continue;
-		}
-	}
-	gfarm_file_section_copy_info_free_all(ncopies, copies);
+	return (e1 != NULL ? e1 : e2);
+}
 
-	(void)gfarm_file_section_copy_info_remove_all_by_section(
-		gfarm_file, section);
-	e = gfarm_file_section_info_remove(gfarm_file, section);
+static char *
+gfs_unlink_section_no_fragment_check(const char *gfarm_file)
+{
+	struct gfarm_file_section_info *sections;
+	int nsections;
+	char *e;
 
-	if (e != NULL && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		if (e_save == NULL)
-			e_save = e;
-	}
-
-	return (e_save != NULL ? e_save : e);
+	e = gfarm_file_section_info_get_all_by_file(
+		gfarm_file, &nsections, &sections);
+	if (e == NULL)
+		gfarm_file_section_info_free_all(nsections, sections);
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = gfarm_path_info_remove(gfarm_file);
+	return (e);
 }
 
 char *
 gfs_unlink_section(const char *gfarm_url, const char *section)
 {
 	char *e, *gfarm_file;
-	int nsections;
-	struct gfarm_file_section_info *sections;
 
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
-	e = gfarm_file_section_info_get_all_by_file(gfarm_file, &nsections,
-						    &sections);
+
+	e = gfs_unlink_check_perm(gfarm_file);
 	if (e != NULL)
 		goto free_gfarm_file;
-	e = gfs_unlink_section_internal(gfarm_file, section);
-	if (e == NULL && nsections <= 1)
-		e = gfarm_path_info_remove(gfarm_file);
 
-	gfarm_file_section_info_free_all(nsections, sections);
+	e = gfs_unlink_section_internal(gfarm_file, section);
+	if (e == NULL)
+		e = gfs_unlink_section_no_fragment_check(gfarm_file);
+
  free_gfarm_file:
 	free(gfarm_file);
 	return (e);
@@ -230,6 +253,10 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 	if (e != NULL)
 		goto finish;
 
+	e = gfs_unlink_check_perm(gfarm_file);
+	if (e != NULL)
+		goto finish_gfarm_file;
+
 	e = gfarm_file_section_copy_info_get_all_by_section(
 	    gfarm_file, section, &ncopies, &copies);
 	if (e != NULL) {
@@ -249,7 +276,7 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 		goto finish_copies;
 	}
 
-	do_delete = malloc(ncopies);
+	GFARM_MALLOC_ARRAY(do_delete, ncopies);
 	if (do_delete == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto finish_copies;
@@ -308,11 +335,15 @@ gfs_unlink_section_replica(const char *gfarm_url, const char *section,
 		struct gfarm_file_section_copy_info *cps;
 		e = gfarm_file_section_copy_info_get_all_by_section(
 			gfarm_file, section, &ncps, &cps);
-		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 			/* Oh, there is no section copy info. */
 			/* Some filesystem nodes might be down. */
 			e = gfarm_file_section_info_remove(
 				gfarm_file, section);
+			if (e == NULL)
+				e = gfs_unlink_section_no_fragment_check(
+					gfarm_file);
+		}
 		else if (e == NULL)
 			gfarm_file_section_copy_info_free_all(ncps, cps);
 
@@ -348,6 +379,10 @@ gfs_unlink_replica(const char *gfarm_url,
 	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
 	if (e != NULL)
 		return (e);
+
+	e_save = gfs_unlink_check_perm(gfarm_file);
+	if (e_save != NULL)
+		goto free_gfarm_file;
 
 	e_save = gfarm_file_section_info_get_all_by_file(gfarm_file,
 	    &nsections, &sections);
@@ -405,4 +440,88 @@ gfs_unlink_every_other_replicas(const char *gfarm_file, const char *section,
 	return (e_save);
 }
 
+char *
+gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
+{
+	char *e, *gfarm_file, **canonical_hostnames;
+	int i, j, nfrags, ncopies;
+	struct gfarm_file_section_info *frags;
+	struct gfarm_file_section_copy_info *copies;
+
+	e = gfarm_url_make_path(gfarm_url, &gfarm_file);
+	if (e != NULL)
+		return (e);
+	e = gfarm_file_section_info_get_all_by_file(
+		gfarm_file, &nfrags, &frags);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (NULL);
+	}
+	gfarm_file_section_info_free_all(nfrags, frags);
+	if (nfrags == nhosts) {
+		free(gfarm_file);
+		return (NULL); /* complete */
+	}
+
+	e = gfarm_host_get_canonical_names(nhosts, hosts,
+	    &canonical_hostnames);
+	if (e != NULL) {
+		free(gfarm_file);
+		return (e);
+	}
+
+	/*
+	 * do removal
+	 */
+	/* remove gfarm_file_fragment_copy_info and actual copy */
+	for (i = 0; i < nhosts; i++) {
+		char *path_section;
+		char section_string[GFARM_INT32STRLEN + 1];
+
+		sprintf(section_string, "%d", i);
+		e = gfarm_path_section(gfarm_file, section_string,
+		    &path_section);
+		if (e != NULL)
+			continue;
+		/* remove copy */
+		gfs_client_unlink_with_reconnection(canonical_hostnames[i],
+		    path_section, NULL, NULL);
+
+		e = gfarm_file_section_copy_info_get_all_by_section(
+		    gfarm_file, section_string, &ncopies, &copies);
+		if (e != NULL) {
+			free(path_section);
+			continue;
+		}
+		for (j = 0; j < ncopies; j++) {
+			/*
+			 * equivalent to
+			 * gfarm_file_section_copy_info_remove_all_by_section()
+			 */
+			gfarm_file_section_copy_info_remove(gfarm_file,
+			    section_string, copies[j].hostname);
+
+			/* remove actual copies */
+			if (strcasecmp(copies[j].hostname,
+			    canonical_hostnames[i]) == 0)
+				continue;
+			gfs_client_unlink_with_reconnection(
+			    copies[j].hostname, path_section, NULL, NULL);
+		}
+		free(path_section);
+		gfarm_file_section_copy_info_free_all(ncopies, copies);
+	}
+	gfarm_file_section_info_remove_all_by_file(gfarm_file);
+	gfarm_path_info_remove(gfarm_file);
+	gfarm_strings_free_deeply(nhosts, canonical_hostnames);
+	free(gfarm_file);
+	return (NULL);
+}
+
 #endif
+
+void
+gfs_unlink_display_timers(void)
+{
+	gflog_info("gfs_unlink      : %g sec\n", gfs_unlink_time);
+}

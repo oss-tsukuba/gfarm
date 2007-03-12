@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>	/* config.h needs FILE */
+#include <unistd.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>

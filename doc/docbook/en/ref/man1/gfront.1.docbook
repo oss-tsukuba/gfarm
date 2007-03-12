@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfront</refname>
-<refpurpose>Gfarm file system browser</refpurpose>
+<refpurpose>Gfarm filesystem browser</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -25,7 +25,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>GFront is a graphical user interface for a Gfarm file system.
+<para>GFront is a graphical user interface for a Gfarm filesystem.
 It provides functionalities for browsing a directory tree, and
 manupulating Gfarm files and directories.</para>
 

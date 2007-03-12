@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets gfshook_srcs gfshook_objs gfshook_cflags gfshook_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1045,6 +1045,9 @@ Optional Packages:
 				[default=guessed]
   --with-globus=GLOBUS_ROOT	globus root directory
 				[default=disable]
+  --with-gfshook		build libgfs_hook.so syscall hooking library
+				[default]
+  --without-gfshook             disable to build syscall hooking library
   --with-mpi=MPI_ROOT		MPI root directory
 				[default=disable]
   --with-readline=READLINE_ROOT	readline root directory
@@ -1607,9 +1610,10 @@ host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 
 
 
-# "linux-gnu" -> "linux", "netbsdelf" -> "netbsd"
+# "linux-gnu" -> "linux", "netbsdelf" -> "netbsd", "osf5.1b" -> "osf1"
 host_os_nickname=`echo $host_os |
-	sed -e 's/-.*//' -e 's/[0-9.]*$//' -e 's/^netbsdelf$/netbsd/'`
+	sed -e 's/-.*//' -e 's/[0-9.]*$//' \
+		-e 's/^netbsdelf$/netbsd/' -e 's/osf0-9.*/osf1/'`
 
 ######
 ###### Checks for programs.
@@ -3363,7 +3367,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3366 "configure"' > conftest.$ac_ext
+  echo '#line 3370 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -4833,7 +4837,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4836:" \
+echo "$as_me:4840:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5935,11 +5939,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:5938: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:5942: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:5942: \$? = $ac_status" >&5
+   echo "$as_me:5946: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6197,11 +6201,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6200: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6204: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6204: \$? = $ac_status" >&5
+   echo "$as_me:6208: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6259,11 +6263,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6262: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6266: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6266: \$? = $ac_status" >&5
+   echo "$as_me:6270: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8499,7 +8503,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8502 "configure"
+#line 8506 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8597,7 +8601,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8600 "configure"
+#line 8604 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10849,11 +10853,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10852: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10856: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10856: \$? = $ac_status" >&5
+   echo "$as_me:10860: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10911,11 +10915,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10914: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10918: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10918: \$? = $ac_status" >&5
+   echo "$as_me:10922: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12280,7 +12284,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12283 "configure"
+#line 12287 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12378,7 +12382,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12381 "configure"
+#line 12385 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13263,11 +13267,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13266: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13270: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13270: \$? = $ac_status" >&5
+   echo "$as_me:13274: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13325,11 +13329,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13328: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13332: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13332: \$? = $ac_status" >&5
+   echo "$as_me:13336: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15451,11 +15455,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15454: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15458: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15458: \$? = $ac_status" >&5
+   echo "$as_me:15462: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15713,11 +15717,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15716: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15720: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15720: \$? = $ac_status" >&5
+   echo "$as_me:15724: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15775,11 +15779,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15778: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15782: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15782: \$? = $ac_status" >&5
+   echo "$as_me:15786: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18015,7 +18019,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18018 "configure"
+#line 18022 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18113,7 +18117,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18116 "configure"
+#line 18120 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20310,8 +20314,8 @@ echo "$as_me: error: cannot automatically find include/\${GLOBUS_FLAVOR}/gssapi.
  echo "$as_me:$LINENO: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
 echo "${ECHO_T}found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&6
 
- globus_includes='-I$(globus_location)/include/$(globus_flavor)'
- globus_libdir='$(globus_location)/lib'
+ globus_includes="-I${globus_location}/include/${globus_flavor}"
+ globus_libdir="${globus_location}/lib"
 
  cfgmhtmp=/tmp/cfgmh$$
  echo "$as_me:$LINENO: checking globus library names" >&5
@@ -20346,12 +20350,12 @@ echo "$as_me: error: Globus installation is incomplete, aborted." >&2;}
  globus_cflags='${GLOBUS_CFLAGS}'
  globus_targets='${GLOBUS_TARGETS}'
 
- openssl_includes='$(globus_includes)'
+ openssl_includes="${globus_includes}"
  case ${globus_static} in
- yes)	openssl_libs="${globus_libdir}"'/libssl_$(globus_flavor).a '"${globus_libdir}"'/libcrypto_$(globus_flavor).a'
+ yes)	openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
 	echo "$as_me:$LINENO: result: using globus static library: yes" >&5
 echo "${ECHO_T}using globus static library: yes" >&6;;
- *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} "'-lssl_$(globus_flavor) -lcrypto_$(globus_flavor)'
+ *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
 	echo "$as_me:$LINENO: result: using globus static library: no" >&5
 echo "${ECHO_T}using globus static library: no" >&6;;
  esac
@@ -20388,6 +20392,41 @@ fi;
 
 
 ###
+### --with-gfshook
+###
+
+
+# Check whether --with-gfshook or --without-gfshook was given.
+if test "${with_gfshook+set}" = set; then
+  withval="$with_gfshook"
+
+fi;
+
+if test x${with_gfshook} != xno
+then
+ gfshook_srcs='${GFSHOOK_SRCS}'
+ gfshook_objs='${GFSHOOK_OBJS}'
+ gfshook_cflags='${GFSHOOK_CFLAGS}'
+ gfshook_targets='${GFSHOOK_TARGETS}'
+else
+ echo "$as_me:$LINENO: checking gfshook" >&5
+echo $ECHO_N "checking gfshook... $ECHO_C" >&6
+ echo "$as_me:$LINENO: result: disable" >&5
+echo "${ECHO_T}disable" >&6
+
+ gfshook_srcs=
+ gfshook_objs=
+ gfshook_cflags=
+ gfshook_targets=
+fi
+
+# for conditional compilation related to syscall hooking library
+
+
+
+
+
+###
 ### --with-mpi=MPI_ROOT
 ###
 
@@ -20409,7 +20448,7 @@ echo "${ECHO_T}using \"${mpicc}\"" >&6
  # for conditional compilation which depends on whether MPI is enabled or not
  mpi_srcs='${MPI_SRCS}'
  mpi_objs='${MPI_OBJS}'
- mpi_srcs='${MPI_CFLAGS}'
+ mpi_cflags='${MPI_CFLAGS}'
  mpi_targets='${MPI_TARGETS}'
 
 else
@@ -20854,6 +20893,8 @@ echo "${ECHO_T}linker option error on: \"$ac_link\"" >&6
 	exit 1
 fi
 
+# We need to add those libraries to $LIBS at first,
+# otherwise some libraries (e.g. OpenLDAP) cannot be linked.
 
 echo "$as_me:$LINENO: checking for gethostname in -lnsl" >&5
 echo $ECHO_N "checking for gethostname in -lnsl... $ECHO_C" >&6
@@ -20927,7 +20968,7 @@ _ACEOF
   LIBS="-lnsl $LIBS"
 
 fi
-
+	# SVR4 and derived
 
 echo "$as_me:$LINENO: checking for socket in -lsocket" >&5
 echo $ECHO_N "checking for socket in -lsocket... $ECHO_C" >&6
@@ -21001,7 +21042,7 @@ _ACEOF
   LIBS="-lsocket $LIBS"
 
 fi
-
+	# SVR4 and derived
 
 echo "$as_me:$LINENO: checking for crypt in -lcrypt" >&5
 echo $ECHO_N "checking for crypt in -lcrypt... $ECHO_C" >&6
@@ -21075,7 +21116,7 @@ _ACEOF
   LIBS="-lcrypt $LIBS"
 
 fi
-
+	# 4.4BSD and derived
 
 echo "$as_me:$LINENO: checking for cuserid in -lcompat" >&5
 echo $ECHO_N "checking for cuserid in -lcompat... $ECHO_C" >&6
@@ -21149,7 +21190,7 @@ _ACEOF
   LIBS="-lcompat $LIBS"
 
 fi
-
+	# NetBSD
 
 echo "$as_me:$LINENO: checking for basename in -lgen" >&5
 echo $ECHO_N "checking for basename in -lgen... $ECHO_C" >&6
@@ -21223,7 +21264,7 @@ _ACEOF
   LIBS="-lgen $LIBS"
 
 fi
-
+	# IRIX
 
 echo "$as_me:$LINENO: checking for fdatasync in -lrt" >&5
 echo $ECHO_N "checking for fdatasync in -lrt... $ECHO_C" >&6
@@ -21297,7 +21338,220 @@ _ACEOF
   LIBS="-lrt $LIBS"
 
 fi
+	# Solaris
 
+echo "$as_me:$LINENO: checking for seteuid in -lcext" >&5
+echo $ECHO_N "checking for seteuid in -lcext... $ECHO_C" >&6
+if test "${ac_cv_lib_cext_seteuid+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcext  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char seteuid ();
+int
+main ()
+{
+seteuid ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_cext_seteuid=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_cext_seteuid=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_cext_seteuid" >&5
+echo "${ECHO_T}$ac_cv_lib_cext_seteuid" >&6
+if test $ac_cv_lib_cext_seteuid = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCEXT 1
+_ACEOF
+
+  LIBS="-lcext $LIBS"
+
+fi
+	# HP-UX
+
+echo "$as_me:$LINENO: checking for perfstat_cpu_total in -lperfstat" >&5
+echo $ECHO_N "checking for perfstat_cpu_total in -lperfstat... $ECHO_C" >&6
+if test "${ac_cv_lib_perfstat_perfstat_cpu_total+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lperfstat  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char perfstat_cpu_total ();
+int
+main ()
+{
+perfstat_cpu_total ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_perfstat_perfstat_cpu_total=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_perfstat_perfstat_cpu_total=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_perfstat_perfstat_cpu_total" >&5
+echo "${ECHO_T}$ac_cv_lib_perfstat_perfstat_cpu_total" >&6
+if test $ac_cv_lib_perfstat_perfstat_cpu_total = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPERFSTAT 1
+_ACEOF
+
+  LIBS="-lperfstat $LIBS"
+
+fi
+ # AIX, to implement getloadavg()
+
+# Since gfarm-1.3, libgfarm calls pthread functions internally,
+# thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
+# e.g. using 3rd party pthread library, FreeBSD-4.x, or NetBSD-2.x
+echo "$as_me:$LINENO: checking whether libc supplies weak symbols for pthread" >&5
+echo $ECHO_N "checking whether libc supplies weak symbols for pthread... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <pthread.h>
+
+void init(void){}
+int
+main ()
+{
+
+    pthread_once_t once;
+    pthread_once(&once, init);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+	echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	echo "$as_me:$LINENO: result: no. WARNING: always link pthread" >&5
+echo "${ECHO_T}no. WARNING: always link pthread" >&6
+	LIBS="${LIBS} ${pthread_libs}"
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
 
 ### use 64bit off_t, if possible.
 
@@ -21505,7 +21759,8 @@ else
     LIBS_SAVE="$LIBS"
     CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
-    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} $LIBS_SAVE"
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'` ${libs} ${extra_lib} ${openssl_libs} $LIBS_SAVE"
+	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21688,7 +21943,8 @@ rm -f conftest.err conftest.$ac_objext \
     LIBS_SAVE="$LIBS"
     CPPFLAGS="${ldap_includes} $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
-    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'`   $LIBS_SAVE"
+    LIBS="`echo ${ldap_libs} | sed 's/-R[^ ]*//g'`   ${openssl_libs} $LIBS_SAVE"
+	# OpenLDAP may need OpenSSL due to its SSL/TLS support.
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21923,17 +22179,17 @@ fi;
 postgresql_specified=
 case ${with_postgresql} in
 /*)
-  if test -f "${with_postgresql}"/include/libpq-fe.h; then
+  if test -f "${with_postgresql}"/bin/pg_config; then
 	postgresql_specified=explicit
   else
 	{ { echo "$as_me:$LINENO: error: not found in \"${with_postgresql}\", aborted" >&5
 echo "$as_me: error: not found in \"${with_postgresql}\", aborted" >&2;}
    { (exit 1); exit 1; }; }
   fi;;
-yas|'')
+yes|'')
   for d in /usr/local/pgsql /usr/local /usr/pkg /usr
   do
-    if test -f $d/include/libpq-fe.h; then
+    if test -f $d/bin/pg_config; then
 	with_postgresql=$d
 	postgresql_specified=yes
 	break
@@ -21951,20 +22207,28 @@ if test x"${postgresql_specified}" = x""; then
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 else
-  case ${with_postgresql} in
-  /usr)
-	postgresql_includes=
-	postgresql_libs="-lpq"
-	;;
-  /*)
-	postgresql_includes="-I${with_postgresql}/include"
-	postgresql_libs="-R${with_postgresql}/lib -L${with_postgresql}/lib -lpq"
-	;;
-  *)
-	postgresql_includes="${with_postgresql}"
-	postgresql_libs="${with_postgresql}"
-	;;
-  esac
+  if test -x ${with_postgresql}/bin/pg_config; then
+    if ! ${with_postgresql}/bin/pg_config --version > /dev/null 2>&1; then
+	echo "$as_me:$LINENO: result: failed to call ${with_postgresql}/bin/pg_config command." >&5
+echo "${ECHO_T}failed to call ${with_postgresql}/bin/pg_config command." >&6
+	{ { echo "$as_me:$LINENO: error: PostgreSQL installation is incomplete, aborted." >&5
+echo "$as_me: error: PostgreSQL installation is incomplete, aborted." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    postgresql_include_dir=`${with_postgresql}/bin/pg_config --includedir`
+    postgresql_lib_dir=`${with_postgresql}/bin/pg_config --libdir`
+    case ${postgresql_include_dir} in
+    /usr/include) postgresql_includes= ;;
+    *) postgresql_includes="-I${postgresql_include_dir}" ;;
+    esac
+    case ${postgresql_lib_dir} in
+    /usr/lib) postgresql_libs="-lpq" ;;
+    *) postgresql_libs="-R${postgresql_lib_dir} -L${postgresql_lib_dir} -lpq" ;;
+    esac
+  else
+    postgresql_includes="${with_postgresql}"
+    postgresql_libs="${with_postgresql}"
+  fi
 
   CPPFLAGS_SAVE="$CPPFLAGS"
   LIBS_SAVE="$LIBS"
@@ -21980,12 +22244,14 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include <libpq-fe.h>
 int
 main ()
 {
 
 	PGconn *conn = PQconnectdb("");
+	PGresult *res = PQexecParams(conn, "", 0, NULL, NULL, NULL, NULL, 0);
 
   ;
   return 0;
@@ -22076,15 +22342,8 @@ esac
 
 if test x"${ldap_usable}" != x"yes" && test x"${postgresql_usable}" != x"yes"
 then
-	{ { echo "$as_me:$LINENO: error: neither LDAP or PostgreSQL is found, aborted" >&5
-echo "$as_me: error: neither LDAP or PostgreSQL is found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-# XXX this should be removed, when PostgreSQL support is completed.
-if test x"${ldap_usable}" != x"yes"; then
-	{ { echo "$as_me:$LINENO: error: LDAP is not found, aborted" >&5
-echo "$as_me: error: LDAP is not found, aborted" >&2;}
-   { (exit 1); exit 1; }; }
+	echo "$as_me:$LINENO: result: WARNING: neither LDAP or PostgreSQL is found" >&5
+echo "${ECHO_T}WARNING: neither LDAP or PostgreSQL is found" >&6
 fi
 
 ######
@@ -22096,7 +22355,8 @@ fi
 
 
 
-for ac_header in inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h
+
+for ac_header in inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h sys/loadavg.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -23677,7 +23937,8 @@ fi
 
 
 
-for ac_func in getdents fdatasync poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
+
+for ac_func in getdents fdatasync fdopendir poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -24051,7 +24312,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                                                        ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd package/redhat/gfmd package/redhat/gfsd util/gfront/gfront"
+                                                                                                    ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd util/gfront/gfront"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -24587,8 +24848,6 @@ do
   "gfptool/util/gfregister" ) CONFIG_FILES="$CONFIG_FILES gfptool/util/gfregister" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
   "package/solaris/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
-  "package/redhat/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfmd" ;;
-  "package/redhat/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/redhat/gfsd" ;;
   "util/gfront/gfront" ) CONFIG_FILES="$CONFIG_FILES util/gfront/gfront" ;;
   "include/gfarm/gfarm_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/gfarm/gfarm_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -24732,6 +24991,10 @@ s,@globus_srcs@,$globus_srcs,;t t
 s,@globus_objs@,$globus_objs,;t t
 s,@globus_cflags@,$globus_cflags,;t t
 s,@globus_targets@,$globus_targets,;t t
+s,@gfshook_srcs@,$gfshook_srcs,;t t
+s,@gfshook_objs@,$gfshook_objs,;t t
+s,@gfshook_cflags@,$gfshook_cflags,;t t
+s,@gfshook_targets@,$gfshook_targets,;t t
 s,@mpicc@,$mpicc,;t t
 s,@mpi_srcs@,$mpi_srcs,;t t
 s,@mpi_objs@,$mpi_objs,;t t

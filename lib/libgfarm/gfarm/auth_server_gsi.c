@@ -180,13 +180,16 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    auth_method_name,
 		    userinfo->authData.userAuth.localName,
 		    userinfo->distName, dne);
-		if (switch_to && (aux = malloc(strlen(global_username) + 1 +
-		    strlen(hostname) + 1)) == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
-			gflog_error("(%s@%s) authorize_gsi: %s",
-			    global_username, hostname,
-			    gfarm_error_string(e));
+		if (switch_to) {
+			GFARM_MALLOC_ARRAY(aux, strlen(global_username) + 1 +
+			    strlen(hostname) + 1);
+			if (aux == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
+				gflog_error("(%s@%s) authorize_gsi: %s",
+				    global_username, hostname,
+				    gfarm_error_string(e));
+			}
 		}
 	}
 
@@ -206,7 +209,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		if (aux != NULL)
 			free(aux);
 		gfp_xdr_reset_secsession(conn);
-		gfp_xdr_set_fd(conn, fd);
+		gfp_xdr_set_socket(conn, fd);
 		return (e);
 	}
 

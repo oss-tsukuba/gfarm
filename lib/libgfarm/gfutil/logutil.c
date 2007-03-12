@@ -14,11 +14,21 @@
 static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
+static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+
+int
+gflog_syslog_enabled(void)
+{
+	return (log_use_syslog);
+}
 
 void
 gflog_vmessage(int priority, const char *format, va_list ap)
 {
 	char buffer[2048];
+
+	if (priority > log_level) /* not worth reporting */
+		return;
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 
@@ -101,6 +111,7 @@ gflog_debug(const char *format, ...)
 void
 gflog_warning_errno(const char *format, ...)
 {
+	int save_errno = errno;
 	char buffer[2048];
 
 	va_list ap;
@@ -108,7 +119,7 @@ gflog_warning_errno(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	gflog_warning("%s: %s", buffer, strerror(errno));
+	gflog_warning("%s: %s", buffer, strerror(save_errno));
 }
 
 void
@@ -128,6 +139,7 @@ gflog_fatal(const char *format, ...)
 void
 gflog_fatal_errno(const char *format, ...)
 {
+	int save_errno = errno;
 	char buffer[2048];
 
 	va_list ap;
@@ -135,7 +147,13 @@ gflog_fatal_errno(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	gflog_fatal("%s: %s", buffer, strerror(errno));
+	gflog_fatal("%s: %s", buffer, strerror(save_errno));
+}
+
+void
+gflog_set_priority_level(int priority)
+{
+	log_level = priority;
 }
 
 void
@@ -200,6 +218,31 @@ gflog_syslog_name_to_facility(const char *name)
 	for (i = 0; i < GFARM_ARRAY_LENGTH(syslog_facilities); i++) {
 		if (strcmp(syslog_facilities[i].name, name) == 0)
 			return (syslog_facilities[i].facility);
+	}
+	return (-1); /* not found */
+}
+
+int
+gflog_syslog_name_to_priority(const char *name)
+{
+	int i;
+	struct {
+		char *name;
+		int priority;
+	} syslog_priorities[] = {
+		{ "emerg",	LOG_EMERG },
+		{ "alert",	LOG_ALERT },
+		{ "crit",	LOG_CRIT },
+		{ "err",	LOG_ERR },
+		{ "warning",	LOG_WARNING },
+		{ "notice",	LOG_NOTICE },
+		{ "info",	LOG_INFO },
+		{ "debug",	LOG_DEBUG },
+	};
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(syslog_priorities); i++) {
+		if (strcmp(syslog_priorities[i].name, name) == 0)
+			return (syslog_priorities[i].priority);
 	}
 	return (-1); /* not found */
 }

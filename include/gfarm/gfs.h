@@ -112,6 +112,8 @@ gfarm_error_t gfs_desc_stat(GFS_Desc, struct gfs_stat *);
 
 void gfs_stat_free(struct gfs_stat *);
 
+void gfs_client_connection_gc(void);
+
 /*
  * File operations
  */
@@ -226,3 +228,5 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFS_R_OK	4
 
 gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
+
+/* XXX need gfs_statfsnode() equivalent */

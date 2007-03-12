@@ -201,8 +201,9 @@ gfarm_error_t
 gfp_xdr_set_secsession(struct gfp_xdr *conn,
 	gfarmSecSession *secsession, gss_cred_id_t cred_to_be_freed)
 {
-	struct io_gfsl *io = malloc(sizeof(struct io_gfsl));
+	struct io_gfsl *io;
 
+	GFARM_MALLOC(io);
 	if (io == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	io->session = secsession;
@@ -244,16 +245,16 @@ gfarm_iobuffer_write_close_secsession_op(struct gfarm_iobuffer *b,
  * for "gsi_auth" method
  */
 
-struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
+static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 	gfp_iobuffer_close_secsession_op,
 	gfp_iobuffer_export_credential_secsession_op,
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,
 	/* NOTE: the following assumes that these functions don't use cookie */
 	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_fd_op,
+	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_fd_op,
-	gfarm_iobuffer_blocking_write_fd_op
+	gfarm_iobuffer_blocking_write_socket_op
 };
 
 /*

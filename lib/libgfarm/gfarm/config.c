@@ -35,8 +35,7 @@
 #include "config.h"
 #include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
 #include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
-
-int gfarm_is_active_file_system_node = 0;
+#include "gfs_profile.h"
 
 char *gfarm_config_file = GFARM_CONFIG;
 
@@ -58,7 +57,8 @@ static gfarm_stringlist local_user_map_file_list;
 /* the return value of the following function should be free(3)ed */
 static gfarm_error_t
 map_user(char *from, char **to_p,
-	char *(mapping)(char *, char *, char *), gfarm_error_t error_redefined)
+	char *(*mapping)(char *, char *, char *),
+	gfarm_error_t error_redefined)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	FILE *map = NULL;
@@ -130,19 +130,10 @@ finish:
 	if (map != NULL)
 		fclose(map);
 	if (e != GFARM_ERR_NO_ERROR) {
-		char *msgbuf = malloc(strlen(mapfile) + 6 /* " line " */
-		    + GFARM_INT64STRLEN + 1);
-
 		if (*to_p != NULL)	 
 			free(*to_p);
-		if (msgbuf == NULL) {
-			gflog_error("gfarm: map_user: %s",
-			    gfarm_error_string(e));
-		} else {
-			sprintf(msgbuf, "%s line %d", mapfile, lineno);
-			gflog_error(msgbuf, gfarm_error_string(e));
-			free(msgbuf);
-		}
+		gflog_error("%s line %d: %s", mapfile, lineno,
+		    gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -271,18 +262,19 @@ gfarm_set_local_user_for_this_local_account(void)
 /*
  * GFarm Configurations.
  *
- * These initial values should be NULL, otherwise the value incorrectly
- * free(3)ed in the get_one_argument() function below.
+ * Initial string values should be NULL, otherwise the value incorrectly
+ * free(3)ed in the gfarm_config_clear() function below.
  * If you would like to provide default value other than NULL, set the
  * value at gfarm_config_set_default*().
  */
 /* GFS dependent */
+char *gfarm_spool_server_listen_address = NULL;
 char *gfarm_spool_root = NULL;
-static char *gfarm_spool_server_portname = NULL;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
 static char *gfarm_metadb_server_portname = NULL;
+int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 enum gfarm_backend_db_type gfarm_backend_db_type =
 	GFARM_BACKEND_DB_TYPE_UNKNOWN;
 
@@ -307,22 +299,30 @@ char *gfarm_postgresql_user = NULL;
 char *gfarm_postgresql_password = NULL;
 char *gfarm_postgresql_conninfo = NULL;
 
-static char gfarm_spool_root_default[] = GFARM_SPOOL_ROOT;
-int gfarm_spool_server_port = GFSD_DEFAULT_PORT;
-int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
+/* LocalFS dependent */
+char *gfarm_localfs_datadir = NULL;
 
 /* miscellaneous */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
+#define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
+#define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define MISC_DEFAULT -1
+int gfarm_log_level = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
+static char *schedule_write_target_domain = NULL;
+static int schedule_write_local_priority = MISC_DEFAULT;
 gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
+int gfarm_gfsd_connection_cache = MISC_DEFAULT;
+int gfarm_record_atime = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
 {
 	static char **vars[] = {
-		&gfarm_spool_server_portname,
+		&gfarm_spool_server_listen_address,
+		&gfarm_spool_root,
 		&gfarm_metadb_server_name,
 		&gfarm_metadb_server_portname,
 		&gfarm_metadb_admin_user,
@@ -341,18 +341,11 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_user,
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
+		&gfarm_localfs_datadir,
+		&schedule_write_target_domain,
 	};
 	int i;
 
-	if (gfarm_spool_root != NULL) {
-		/*
-		 * In case of the default spool root, do not free the
-		 * memory space becase it is statically allocated.
-		 */
-		if (gfarm_spool_root != gfarm_spool_root_default)
-			free(gfarm_spool_root);
-		gfarm_spool_root = NULL;
-	}
 	for (i = 0; i < GFARM_ARRAY_LENGTH(vars); i++) {
 		if (*vars[i] != NULL) {
 			free(*vars[i]);
@@ -378,6 +371,8 @@ set_backend_db_type(enum gfarm_backend_db_type set)
 		return (GFARM_ERRMSG_BACKEND_ALREADY_LDAP);
 	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
 		return (GFARM_ERRMSG_BACKEND_ALREADY_POSTGRESQL);
+	case GFARM_BACKEND_DB_TYPE_LOCALFS:
+		return (GFARM_ERRMSG_BACKEND_ALREADY_LOCALFS);
 	default:
 		assert(0);
 		return (GFARM_ERR_UNKNOWN); /* workaround compiler warning */
@@ -394,6 +389,36 @@ static gfarm_error_t
 set_backend_db_type_postgresql(void)
 {
 	return (set_backend_db_type(GFARM_BACKEND_DB_TYPE_POSTGRESQL));
+}
+
+static gfarm_error_t
+set_backend_db_type_localfs(void)
+{
+	return (set_backend_db_type(GFARM_BACKEND_DB_TYPE_LOCALFS));
+}
+
+int
+gfarm_schedule_write_local_priority(void)
+{
+	return (schedule_write_local_priority);
+}
+
+char *
+gfarm_schedule_write_target_domain(void)
+{
+	return (schedule_write_target_domain);
+}
+
+gfarm_off_t
+gfarm_get_minimum_free_disk_space(void)
+{
+	return (gfarm_minimum_free_disk_space);
+}
+
+void
+gfarm_set_record_atime(int boolean)
+{
+	gfarm_record_atime = boolean;
 }
 
 /*
@@ -891,6 +916,29 @@ parse_set_misc_offset(char *p, gfarm_off_t *vp)
 }
 
 static gfarm_error_t
+parse_set_misc_enabled(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	if (strcmp(s, "enable") == 0)
+		v = 1;
+	else if (strcmp(s, "disable") == 0)
+		v = 0;
+	else
+		return (GFARM_ERRMSG_ENABLED_OR_DISABLED_EXPECTED);
+	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_cred_config(char *p, char *service,
 	gfarm_error_t (*set)(char *, char *))
 {
@@ -905,6 +953,26 @@ parse_cred_config(char *p, char *service,
 }
 
 static gfarm_error_t
+parse_log_level(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	v = gflog_syslog_name_to_priority(s);
+	if (v == -1)
+		return (GFARM_ERRMSG_INVALID_SYSLOG_PRIORITY_LEVEL);
+	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
 	gfarm_error_t e;
@@ -912,8 +980,8 @@ parse_one_line(char *s, char *p, char **op)
 
 	if (strcmp(s, o = "spool") == 0) {
 		e = parse_set_var(p, &gfarm_spool_root);
-	} else if (strcmp(s, o = "spool_server_port") == 0) {
-		e = parse_set_var(p, &gfarm_spool_server_portname);
+	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
+		e = parse_set_var(p, &gfarm_spool_server_listen_address);
 	} else if (strcmp(s, o = "spool_server_cred_type") == 0) {
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_type_set_by_string);
@@ -1002,6 +1070,11 @@ parse_one_line(char *s, char *p, char **op)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = set_backend_db_type_postgresql();
 
+	} else if (strcmp(s, o = "localfs_datadir") == 0) {
+		e = parse_set_var(p, &gfarm_localfs_datadir);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = set_backend_db_type_localfs();
+
 	} else if (strcmp(s, o = "auth") == 0) {
 		e = parse_auth_arguments(p, &o);
 	} else if (strcmp(s, o = "netparam") == 0) {
@@ -1019,10 +1092,20 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_client_architecture(p, &o);
 #endif
 
+	} else if (strcmp(s, o = "log_level") == 0) {
+		e = parse_log_level(p, &gfarm_log_level);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
+	} else if (strcmp(s, o = "write_local_priority") == 0) {
+		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
+	} else if (strcmp(s, o = "write_target_domain") == 0) {
+		e = parse_set_var(p, &schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
+	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
+		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
+	} else if (strcmp(s, o = "record_atime") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_record_atime);
 
 	} else {
 		o = s;
@@ -1076,16 +1159,6 @@ gfarm_config_set_default_ports(void)
 		gflog_fatal("metadb_serverhost isn't specified in "
 		    GFARM_CONFIG " file");
 
-	if (gfarm_spool_server_portname != NULL) {
-		int p = strtol(gfarm_spool_server_portname, NULL, 0);
-		struct servent *sp =
-			getservbyname(gfarm_spool_server_portname, "tcp");
-
-		if (sp != NULL)
-			gfarm_spool_server_port = ntohs(sp->s_port);
-		else if (p != 0)
-			gfarm_spool_server_port = p;
-	}
 	if (gfarm_metadb_server_portname != NULL) {
 		int p = strtol(gfarm_metadb_server_portname, NULL, 0);
 		struct servent *sp =
@@ -1101,12 +1174,37 @@ gfarm_config_set_default_ports(void)
 void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_log_level == MISC_DEFAULT)
+		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+	gflog_set_priority_level(gfarm_log_level);
+
 	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
 		gfarm_schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (schedule_write_local_priority == MISC_DEFAULT)
+		schedule_write_local_priority =
+		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;
 	if (gfarm_minimum_free_disk_space == MISC_DEFAULT)
 		gfarm_minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
+	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
+		gfarm_gfsd_connection_cache =
+		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
+	if (gfarm_record_atime == MISC_DEFAULT)
+		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
+}
+
+int gf_profile;
+
+void
+gfs_display_timers(void)
+{
+	gfs_pio_display_timers();
+#if 0
+	gfs_pio_section_display_timers();
+#endif
+	gfs_stat_display_timers();
+	gfs_unlink_display_timers();
 }
 
 #ifdef STRTOKEN_TEST

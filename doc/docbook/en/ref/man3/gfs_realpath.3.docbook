@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_realpath</refname>
-<refpurpose>resolve pathname in Gfarm file system</refpurpose>
+<refpurpose>resolve pathname in Gfarm filesystem</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>

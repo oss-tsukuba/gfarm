@@ -47,14 +47,23 @@ linux)	ARCH=
 		#	Red Hat Linux Advanced Server release 2.1AS (Pensacola)
 		#	Red Hat Enterprise Linux WS release 4 (Nahant)
 		#	Red Hat Enterprise Linux ES release 4 (Nahant Update 1)
-		ARCH=$MACHINE-redhat`
-		sed 's/([^()]*) *$//' /etc/redhat-release |
-		awk 'NR == 1 {
-			if ($3 != "Linux") {
-			  printf "%c%c", substr($3,1,1), substr($4,1,1)
-			}
-			print $NF
-		}'`-$KERNEL
+		#	CentOS release 4.4 (Final)
+		if grep '^Red Hat' /etc/redhat-release >/dev/null; then
+			ARCH=$MACHINE-redhat`
+			sed 's/([^()]*) *$//' /etc/redhat-release |
+			awk 'NR == 1 {
+				if ($3 != "Linux") {
+				  printf "%c%c", substr($3,1,1), substr($4,1,1)
+				}
+				print $NF
+			}'`-$KERNEL
+		else
+			ARCH=$MACHINE-`
+			  sed -e 's/release//' -e 's/(.*)//' \
+			   -e 's/[ 	][ 	]*//g' \
+			   -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' \
+				/etc/redhat-release`-$KERNEL
+		fi
 	fi
 	if [ X"$ARCH"  = X ]; then
 		# /etc/debian_version: 3.0

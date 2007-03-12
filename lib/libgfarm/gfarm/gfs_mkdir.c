@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <unistd.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>

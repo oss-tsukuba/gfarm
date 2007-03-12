@@ -53,8 +53,9 @@ static struct file_opening *
 file_opening_alloc(struct inode *inode,
 	struct peer *peer, struct host *spool_host, int flag)
 {
-	struct file_opening *fo = malloc(sizeof(*fo));
+	struct file_opening *fo;
 
+	GFARM_MALLOC(fo);
 	if (fo == NULL)
 		return (NULL);
 	fo->inode = inode;
@@ -106,7 +107,7 @@ process_alloc(struct user *user,
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
 	    keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET)
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	filetab = malloc(sizeof(*filetab) * FILETAB_INITIAL);
+	GFARM_MALLOC_ARRAY(filetab, FILETAB_INITIAL);
 	if (filetab == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	process = gfarm_id_alloc(process_id_table, &pid32);

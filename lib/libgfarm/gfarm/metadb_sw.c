@@ -1,5 +1,15 @@
 /*
- * $Id$
+ * Copyright (c) 2003-2006 National Institute of Advanced
+ * Industrial Science and Technology (AIST).  All rights reserved.
+ *
+ * Copyright (c) 2006 National Institute of Informatics in Japan,
+ * All rights reserved.
+ *
+ * This file or a portion of this file is licensed under the terms of
+ * the NAREGI Public License, found at
+ * http://www.naregi.org/download/index.html.
+ * If you redistribute this file, with or without modifications, you
+ * must include this notice in the file.
  */
 
 #include <stdlib.h>
@@ -18,26 +28,22 @@
  * always report "metadb is not correctly initialized".
  */
 static const struct gfarm_metadb_internal_ops *metadb_ops =
-#ifdef HAVE_LDAP
-	&gfarm_ldap_metadb_ops;
-#else
-	&gfarm_pgsql_metadb_ops;
-#endif
+	&gfarm_none_metadb_ops;
 
 char *
-gfarm_metab_use_ldap(void)
+gfarm_metadb_use_ldap(void)
 {
 #ifdef HAVE_LDAP
 	metadb_ops = &gfarm_ldap_metadb_ops;
 	return (NULL);
 #else
-	return ("gfarm.conf: postgresql is specified, "
+	return ("gfarm.conf: ldap is specified, "
 	    "but it is not linked into the gfarm library");
 #endif
 }
 
 char *
-gfarm_metab_use_postgresql(void)
+gfarm_metadb_use_postgresql(void)
 {
 #ifdef HAVE_POSTGRESQL
 	metadb_ops = &gfarm_pgsql_metadb_ops;
@@ -46,6 +52,20 @@ gfarm_metab_use_postgresql(void)
 	return ("gfarm.conf: postgresql is specified, "
 	    "but it is not linked into the gfarm library");
 #endif
+}
+
+char *
+gfarm_metadb_use_localfs(void)
+{
+	metadb_ops = &gfarm_localfs_metadb_ops;
+	return (NULL);
+}
+
+char *
+gfarm_metadb_use_none(void)
+{
+	metadb_ops = &gfarm_none_metadb_ops;
+	return (NULL);
 }
 
 static pid_t gfarm_metadb_client_pid = 0;
@@ -111,7 +131,7 @@ static int gfarm_base_host_info_validate(void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_host_info_ops = {
 	sizeof(struct gfarm_host_info),
-	(void (*)(void *))gfarm_metadb_host_info_free,
+	(void (*)(void *))gfarm_host_info_free,
 	gfarm_base_host_info_clear,
 	gfarm_base_host_info_validate,
 };
@@ -143,7 +163,7 @@ gfarm_base_host_info_validate(void *vinfo)
 }
 
 void
-gfarm_metadb_host_info_free(
+gfarm_host_info_free(
 	struct gfarm_host_info *info)
 {
 	if (info->hostname != NULL)
@@ -198,7 +218,7 @@ gfarm_metadb_host_info_remove(const char *hostname)
 }
 
 void
-gfarm_metadb_host_info_free_all(
+gfarm_host_info_free_all(
 	int n,
 	struct gfarm_host_info *infos)
 {

@@ -75,8 +75,7 @@ job_table_init(int table_size)
 {
 	int i;
 
-	job_table = malloc(sizeof(struct job_table_entry *)
-			   * table_size);
+	GFARM_MALLOC_ARRAY(job_table, table_size);
 	if (job_table == NULL) {
 		errno = ENOMEM; gflog_fatal_errno("job table");
 	}
@@ -101,7 +100,7 @@ job_table_add(struct gfarm_job_info *info,
 	}
 
 	id = job_table_free;
-	job_table[id] = malloc(sizeof(struct job_table_entry));
+	GFARM_MALLOC(job_table[id]);
 	if (job_table[id] == NULL)
 		return (-1);
 	job_table[id]->id = id;
@@ -177,7 +176,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t flags, total_nodes, argc, error, job_id = 0;
 	struct gfarm_job_info *info;
 
-	info = malloc(sizeof(*info));
+	GFARM_MALLOC(info);
 	if (info == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	gfarm_job_info_clear(info, 1);
@@ -194,8 +193,8 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	/* XXX - currently `flags' is just igored */
 	info->total_nodes = total_nodes;
 	info->argc = argc;
-	info->argv = malloc(sizeof(char *) * (argc + 1));
-	info->nodes = malloc(sizeof(struct gfarm_job_node_info) * total_nodes);
+	GFARM_MALLOC_ARRAY(info->argv, argc + 1);
+	GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
 	if (info->argv == NULL || info->nodes == NULL) {
 		free(info->job_type);
 		free(info->originate_host);
@@ -410,7 +409,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	jobs = malloc(sizeof(*jobs) * n);
+	GFARM_MALLOC_ARRAY(jobs, n);
 	if (jobs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

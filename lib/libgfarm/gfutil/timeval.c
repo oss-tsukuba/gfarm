@@ -1,4 +1,6 @@
 #include <sys/time.h>
+#include <unistd.h>
+
 #include "gfutil.h"
 
 int

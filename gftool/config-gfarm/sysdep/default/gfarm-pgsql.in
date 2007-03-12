@@ -20,29 +20,29 @@
 # Description: PostgreSQL daemon for Gfarm
 ### END INIT INFO
 
-PROG="pg_ctl"
 FILE="gfarm-pgsql"
 
 PGPORT="@config_gfarm_backend_port@"
 PGDATA="@config_gfarm_backend_data_dir@"
-DAEMON="@config_gfarm_pgsql_bindir@/$PROG"
-LOGFILE="$PGDATA/logfile"
-OPTIONS="-s -w -m fast -D $PGDATA -l $LOGFILE"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+OPTIONS="@config_gfarm_pgsql_options@"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	RUN="su - $PRIVILEGE";;
+*)	# We don't use "su -" here,
+	# because it makes Solaris and HP-UX display /etc/motd.
+	RUN="su $PRIVILEGE";;
 esac
 export PGPORT
 export PGDATA
 
 case $1 in 
 start)
-	if [ ! -x "$DAEMON" ]; then
-		echo -n "$DAEMON is not installed"
+	if [ ! -x "$CTL" ]; then
+		echo -n "$CTL is not installed"
 		exit 1
 	fi
-	$RUN -c "$DAEMON $OPTIONS start"
+	$RUN -c "$CTL $OPTIONS start"
 	;;
 
 stop)

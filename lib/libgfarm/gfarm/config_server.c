@@ -1,9 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#include <gfarm/gfarm_config.h>
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h>
-#include <gfarm/gfarm_stringlist.h>
+#include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 #include "liberror.h"

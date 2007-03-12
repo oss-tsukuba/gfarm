@@ -118,7 +118,8 @@ gfarm_path_expand_home(const char *gfarm_file, char **pathp)
 		if (user == NULL)
 			return ("gfarm_path_expand_home(): programming error, "
 				"gfarm library isn't properly initialized");
-		s = malloc(strlen(user) + strlen(&gfarm_file[1]) + 2);
+		GFARM_MALLOC_ARRAY(s,
+			strlen(user) + strlen(&gfarm_file[1]) + 2);
 		if (s == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		sprintf(s, "/%s%s", user, &gfarm_file[1]);
@@ -199,6 +200,12 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 	}
 
 	basename = gfarm_path_dir_skip(p1);
+	/* '.' or '..' - we do not have that entry. */
+	if (basename[0] == '.' && (basename[1] == '\0' ||
+		(basename[1] == '.' && basename[2] == '\0'))) {
+		e = gfarm_canonical_path(p1, canonic_pathp);
+		goto free_p1;
+	}
 	if (basename == p1)	     /* "filename" */
 		dir = ".";
 	else if (basename == p1 + 1) /* "/filename" */
@@ -233,8 +240,8 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			goto free_dir_canonic;
 	}
 
-	*canonic_pathp = malloc(strlen(dir_canonic) + 1 +
-				strlen(basename) + 1); 
+	GFARM_MALLOC_ARRAY(*canonic_pathp, 
+		strlen(dir_canonic) + 1 + strlen(basename) + 1); 
 	if (*canonic_pathp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_dir_canonic;
@@ -261,9 +268,9 @@ gfarm_url_make_path(const char *gfarm_url, char **canonic_pathp)
 {
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	if (!gfarm_is_url(gfarm_url))
-		return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
-	gfarm_url += GFARM_URL_PREFIX_LENGTH;
+	if (gfarm_url == NULL)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	gfarm_url = gfarm_url_prefix_skip(gfarm_url);
 
 	return (gfarm_canonical_path(gfarm_url, canonic_pathp));
 }
@@ -273,9 +280,9 @@ gfarm_url_make_path_for_creation(const char *gfarm_url, char **canonic_pathp)
 {
 	*canonic_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	if (!gfarm_is_url(gfarm_url))
-		return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
-	gfarm_url += GFARM_URL_PREFIX_LENGTH;
+	if (gfarm_url == NULL)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	gfarm_url = gfarm_url_prefix_skip(gfarm_url);
 
 	return (gfarm_canonical_path_for_creation(gfarm_url, canonic_pathp));
 }
@@ -297,7 +304,8 @@ gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
 
 	*gfarm_url = NULL;
 
-	url = malloc(GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
+	GFARM_MALLOC_ARRAY(url, 
+		GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
 	if (url == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -347,7 +355,7 @@ gfarm_path_section(const char *pathname, const char *section,
 
 	*section_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	s = malloc(strlen(pathname) + 1 + strlen(section) + 1);
+	GFARM_MALLOC_ARRAY(s, strlen(pathname) + 1 + strlen(section) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	sprintf(s, "%s:%s", pathname, section);
@@ -374,7 +382,7 @@ gfarm_full_path_file_section(
 
 	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	s = malloc(strlen(spool_root) + 1 + strlen(canonic_path) +
+	GFARM_MALLOC_ARRAY(s, strlen(spool_root) + 1 + strlen(canonic_path) +
 		   1 + strlen(section) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -397,18 +405,19 @@ gfarm_full_path_file_section(
 char *
 gfarm_path_localize(char *canonic_path, char **abs_pathp)
 {
-	char *s;
+	char *s, *spool_root = gfarm_spool_root_for_compatibility;
 
 	*abs_pathp = NULL; /* cause SEGV, if return value is ignored */
 
-	if (gfarm_spool_root == NULL)
+	if (spool_root == NULL)
 		return ("gfarm_path_localize(): programming error, "
 			"gfarm library isn't properly initialized");
 
-	s = malloc(strlen(gfarm_spool_root) + 1 + strlen(canonic_path) + 1);
+	GFARM_MALLOC_ARRAY(s,
+		strlen(spool_root) + 1 + strlen(canonic_path) + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	sprintf(s, "%s/%s", gfarm_spool_root, canonic_path);
+	sprintf(s, "%s/%s", spool_root, canonic_path);
 	*abs_pathp = s;
 	return (NULL);
 }
@@ -425,16 +434,19 @@ gfarm_path_localize(char *canonic_path, char **abs_pathp)
  *	input2: section
  *	output: ${gfarm_spool_root}/path/name:section
  */
+
 char *
 gfarm_path_localize_file_section(char *canonic_path, char *section,
 				 char **abs_pathp)
 {
-	if (gfarm_spool_root == NULL)
+	char *spool_root = gfarm_spool_root_for_compatibility;
+
+	if (spool_root == NULL)
 		return ("gfarm_path_localize_file_section(): "
 			"programming error, "
 			"gfarm library isn't properly initialized");
 
-	return (gfarm_full_path_file_section(gfarm_spool_root,
+	return (gfarm_full_path_file_section(spool_root,
 	    canonic_path, section, abs_pathp));
 }
 
@@ -465,7 +477,7 @@ gfarm_url_remove_suffix(char *gfarm_url, char *suffix, char **out_urlp)
 		if (memcmp(gfarm_url + ulen - slen, suffix, slen) == 0)
 			ulen -= slen;
 	}
-	r = malloc(ulen + 1);
+	GFARM_MALLOC_ARRAY(r, ulen + 1);
 	if (r == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	memcpy(r, gfarm_url, ulen);
@@ -489,8 +501,9 @@ gfarm_url_prefix_skip(const char *gfarm_url)
 char *
 gfarm_url_prefix_add(const char *s)
 {
-	char *p = malloc(GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
+	char *p;
 
+	GFARM_MALLOC_ARRAY(p, GFARM_URL_PREFIX_LENGTH + strlen(s) + 1);
 	if (p == NULL)
 		return (NULL);
 	memcpy(p, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH);
@@ -513,6 +526,57 @@ gfarm_path_dir_skip(const char *path)
 			base = path + 1;
 	}
 	return (base);
+}
+
+/* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
+char *
+gfarm_path_dir(const char *pathname)
+{
+	char *dir, *p;
+	const char dot[] = ".";
+
+	if (pathname[0] == '\0')
+		return (strdup(dot));
+	dir = strdup(pathname);
+	if (dir == NULL)
+		return (NULL);
+		
+	/* remove trailing '/' */
+	p = dir + strlen(dir) - 1;
+	while (p > dir && *p == '/')
+		--p;
+	p[1] = '\0';
+
+	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
+	if (p == dir) { /* i.e. no slash */
+		free(dir);
+		return (strdup(dot));
+	}
+	--p;
+
+	/* remove trailing '/' */
+	while (p > dir && *p == '/')
+		--p;
+	p[1] = '\0';
+	return (dir);
+}
+
+char *
+gfarm_path_dirname(const char *pathname)
+{
+	char *parent = strdup(pathname), *b;
+
+	if (parent == NULL)
+		return (NULL);
+
+	/* create parent directory canonic path */
+	for (b = (char *)gfarm_path_dir_skip(parent);
+	    b > parent && b[-1] == '/'; --b)
+		;
+	*b = '\0';
+
+	/* note that the root directory is '\0'. */
+	return (parent);
 }
 
 #if 0

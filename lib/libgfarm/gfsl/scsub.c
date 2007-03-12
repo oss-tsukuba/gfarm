@@ -186,7 +186,7 @@ doClient(hostname, port, acceptorName, deleCred, deleCheck)
     /*
      * Now, we can communicate securely.
      */
-    sBuf = (char *)malloc(sizeof(char *) * testBufSize);
+    GFARM_MALLOC_ARRAY(sBuf, testBufSize);
     if (sBuf == NULL) {
 	fprintf(stderr, "can't allocate test buffer.\n");
 	goto Done;

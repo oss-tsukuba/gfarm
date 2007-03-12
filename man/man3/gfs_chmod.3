@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_CHMOD" "3" "23 February 2005" "Gfarm" ""
+.TH "GFS_CHMOD" "3" "13 November 2006" "Gfarm" ""
+
 .SH NAME
 gfs_chmod \- change permissions of a file
 .SH SYNOPSIS
@@ -15,7 +16,7 @@ char *gfs_chmod (char * \fIgfarm_url\fB, mode_t \fImode\fB);
 .SH "DESCRIPTION"
 .PP
 \fBgfs_chmod()\fR changes the mode of the file
-given by \fIgfarm_url\fR.  Permission bit masks of
+given by \fIgfarm_url\fR\&.  Permission bit masks of
 \fImode\fR are similar to ones of mode parameter to
 \fBchmod(2)\fR, though only the least 9 bit are
 effective.

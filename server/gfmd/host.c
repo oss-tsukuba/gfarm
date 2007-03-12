@@ -158,8 +158,9 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
-	struct host *h = malloc(sizeof(*h));
+	struct host *h;
 
+	GFARM_MALLOC(h);
 	if (h == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	h->hi = *hi;
@@ -236,8 +237,9 @@ host_is_up(struct host *host)
 gfarm_error_t
 host_remove_replica(struct host *host, gfarm_ino_t inum, gfarm_uint64_t igen)
 {
-	struct dead_file_copy *dfc = malloc(sizeof(*dfc));
+	struct dead_file_copy *dfc;
 
+	GFARM_MALLOC(dfc);
 	if (dfc == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	dfc->inum = inum;
@@ -442,7 +444,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	hosts = malloc(sizeof(*hosts) * nhosts);
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL)
 		no_memory = 1;
 	for (i = 0; i < nhosts; i++) {

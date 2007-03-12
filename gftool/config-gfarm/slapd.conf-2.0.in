@@ -8,8 +8,10 @@ include		@config_gfarm_ldap_schema@
 pidfile		@config_gfarm_run_dir@/gfarm-slapd.pid
 argsfile	@config_gfarm_run_dir@/gfarm-slapd.args
 
-# enable global write access for now. XXX
-defaultaccess write
+# disable anonymous access
+defaultaccess none
+disallow bind_anon
+require LDAPv3 authc
 
 # unlimit search result
 sizelimit 2000000000
@@ -30,6 +32,12 @@ rootdn		"@config_gfarm_backend_admin_user@"
 rootpw		@config_gfarm_backend_admin_password@
 
 directory	@config_gfarm_backend_data_dir@
+
+access to dn="@config_gfarm_backend_user@" attrs=userPassword
+	by * auth
+
+access to dn="(.*,)?@config_gfarm_ldap_base_dn@"
+	by users write
 
 # Indices to maintain
 index	objectClass	eq

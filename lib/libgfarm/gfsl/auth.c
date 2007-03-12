@@ -9,6 +9,7 @@
 #include <pwd.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gfarm_misc.h>
 #include "hash.h"
 #include "gfutil.h"
 
@@ -164,7 +165,7 @@ gfarmAuthInitialize(usermapFile)
 				  " Ignored.", localName);
 		    continue;
 		}
-		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
+		GFARM_MALLOC(aePtr);
 		if (aePtr == NULL) {
 		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;
@@ -197,7 +198,7 @@ gfarmAuthInitialize(usermapFile)
 		}
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 	    } else if (strcmp(mode, "@host@") == 0) {
-		aePtr = (gfarmAuthEntry *)malloc(sizeof(gfarmAuthEntry));
+		GFARM_MALLOC(aePtr);
 		if (aePtr == NULL) {
 		    gflog_auth_error("gfarmAuthInitialize(): no memory");
 		    ret = -1;

@@ -17,6 +17,9 @@
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "gfutil.h" /* gfarm_send_no_sigpipe() */
+
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -36,11 +39,27 @@ gfarm_iobuffer_nonblocking_read_fd_op(struct gfarm_iobuffer *b,
 
 }
 
-int
+static int
 gfarm_iobuffer_nonblocking_write_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv = write(fd, data, length);
+
+	if (rv == -1)
+		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
+	return (rv);
+}
+
+/*
+ * We have to distinguish the write operation for sockets from
+ * the operation for file descriptors, because gfarm_send_no_sigpipe()
+ * may only work with sockets, since it may use send(2) internally.
+ */
+int
+gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	ssize_t rv = gfarm_send_no_sigpipe(fd, data, length);
 
 	if (rv == -1)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
@@ -99,13 +118,13 @@ gfarm_iobuffer_blocking_read_fd_op(struct gfarm_iobuffer *b,
 }
 
 int
-gfarm_iobuffer_blocking_write_fd_op(struct gfarm_iobuffer *b,
+gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
 
 	for (;;) {
-		rv = write(fd, data, length);
+		rv = gfarm_send_no_sigpipe(fd, data, length);
 		if (rv == -1) {
 			if (errno == EINTR)
 				continue;
@@ -132,23 +151,10 @@ gfarm_iobuffer_blocking_write_fd_op(struct gfarm_iobuffer *b,
 	}
 }
 
-void
-gfarm_iobuffer_set_blocking_read_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_read(b, gfarm_iobuffer_blocking_read_fd_op,
-	    NULL, fd);
-}
-
-void
-gfarm_iobuffer_set_blocking_write_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_write(b, gfarm_iobuffer_blocking_write_fd_op,
-	    NULL, fd);
-}
-
 /*
  * an option for gfarm_iobuffer_set_write_close()
  */
+#if 0 /* currently not used */
 void
 gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd)
@@ -158,6 +164,7 @@ gfarm_iobuffer_write_close_fd_op(struct gfarm_iobuffer *b,
 	if (rv == -1 && gfarm_iobuffer_get_error(b) == GFARM_ERR_NO_ERROR)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
 }
+#endif /* currently not used */
 
 /*
  * gfp_xdr operation
@@ -189,26 +196,26 @@ gfp_iobuffer_env_for_credential_fd_op(void *cookie)
 	return (NULL);
 }
 
-struct gfp_iobuffer_ops gfp_xdr_fd_iobuffer_ops = {
+struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_close_fd_op,
 	gfp_iobuffer_export_credential_fd_op,
 	gfp_iobuffer_delete_credential_fd_op,
 	gfp_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_fd_op,
+	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_fd_op,
-	gfarm_iobuffer_blocking_write_fd_op
+	gfarm_iobuffer_blocking_write_socket_op
 };
 
 gfarm_error_t
-gfp_xdr_new_fd(int fd, struct gfp_xdr **connp)
+gfp_xdr_new_socket(int fd, struct gfp_xdr **connp)
 {
-	return (gfp_xdr_new(&gfp_xdr_fd_iobuffer_ops, NULL, fd, connp));
+	return (gfp_xdr_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd, connp));
 }
 
 gfarm_error_t
-gfp_xdr_set_fd(struct gfp_xdr *conn, int fd)
+gfp_xdr_set_socket(struct gfp_xdr *conn, int fd)
 {
-	gfp_xdr_set(conn, &gfp_xdr_fd_iobuffer_ops, NULL, fd);
+	gfp_xdr_set(conn, &gfp_xdr_socket_iobuffer_ops, NULL, fd);
 	return (GFARM_ERR_NO_ERROR);
 }

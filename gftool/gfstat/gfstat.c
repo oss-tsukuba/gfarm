@@ -17,6 +17,8 @@
 void
 display_stat(char *fn, struct gfs_stat *st, int nfrags)
 {
+	time_t clock;
+
 	printf("  File: \"%s\"\n", fn);
 	printf("  Size: %-12" PR_FILE_OFFSET " Filetype: ", st->st_size);
 	switch (st->st_mode & GFARM_S_IFMT) {
@@ -34,9 +36,9 @@ display_stat(char *fn, struct gfs_stat *st, int nfrags)
 	       st->st_mode & GFARM_S_ALLPERM,
 	       st->st_user, st->st_group);
 
-	printf("Access: %s", ctime((time_t *)&st->st_atimespec.tv_sec));
-	printf("Modify: %s", ctime((time_t *)&st->st_mtimespec.tv_sec));
-	printf("Change: %s", ctime((time_t *)&st->st_ctimespec.tv_sec));
+	clock = st->st_atimespec.tv_sec; printf("Access: %s", ctime(&clock));
+	clock = st->st_mtimespec.tv_sec; printf("Modify: %s", ctime(&clock));
+	clock = st->st_ctimespec.tv_sec; printf("Change: %s", ctime(&clock));
 }
 
 void

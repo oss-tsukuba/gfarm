@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfrcmd</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -72,14 +71,14 @@ CLASS="PARAMETER"
 ><I
 >command</I
 ></TT
-> on the filesystem node.  It provides a similar
-functionality to rsh, while the following is a list of differences.</P
+>s on the filesystem node.  It provides a similar
+functionality to rsh.  The following is a list of differences, however.</P
 ><P
 >A remote server is not executed by inetd, but is incorporated with
 gfsd(8).</P
 ><P
 >The user is authenticated and authorized by the Gfarm security
-mechanism.  Since it does not rely on privileged ports of TCP for
+mechanism.  Since this does not rely on privileged TCP ports  for
 authentication like rsh, the maximum number of remote executions is
 not limited by the number of privileged ports.</P
 ><P
@@ -101,7 +100,7 @@ directory that is often shared using NFS, but a spool directory of the
 Gfarm filesystem, which makes it possible to leave core files on each
 filesystem node when debugging.</P
 ><P
->It has a functionality to invoke a debugger when a fatal signal
+>It has functionality that invokes a debugger when a fatal signal
 occurs.</P
 ></DIV
 ><DIV
@@ -117,9 +116,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-l</TT
+>-l</CODE
 ><TT
 CLASS="PARAMETER"
 ><I
@@ -128,63 +127,63 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies a username on a remote host.</P
+>Specifies a username on a remote host.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-n</TT
+>-n</CODE
 ></DT
 ><DD
 ><P
->redirects the standard input from the special device /dev/null.</P
+>Redirects the standard input from the special device /dev/null.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-r</TT
+>-r</CODE
 ></DT
 ><DD
 ><P
->executes a remote command directly without using a login shell.</P
+>Executes a remote command directly without using a login shell.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-y</TT
+>-y</CODE
 ></DT
 ><DD
 ><P
->inherits the environment variable DISPLAY.</P
+>Inherits the environment variable, DISPLAY.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-X</TT
+>-X</CODE
 ></DT
 ><DD
 ><P
->inherits the authentication information of the X Window System.  It
-is useful under the situation such that the home directory is not
+>Inherits the authentication information of the X Window System.  It
+is useful in a situation where the home directory is not
 shared.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-v</CODE
 ></DT
 ><DD
 ><P
->displays error message verbosely.</P
+>Displays error message verbosely.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV
@@ -202,13 +201,13 @@ NAME="ENVIRONMENT-VARIABLES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="ENVAR"
->GFARM_DEBUG_MODE</TT
+>GFARM_DEBUG_MODE</CODE
 ></DT
 ><DD
 ><P
->specifies the debugger command that is invoked when a remotely
+>Specifies the debugger command that is invoked when a remotely
 executed command aborts with a fatal signal.  When gdb is specified,
 xterm and the GNU debugger gdb are executed.
 To utilize this functionality, it is necessary to invoke <B

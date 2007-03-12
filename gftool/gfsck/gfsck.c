@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <gfarm/gfarm.h>
 
+static int option_force;
 static int option_verbose;
 static char GFARM_MSG_DELETED[] = "deleted";
 
@@ -137,7 +138,9 @@ gfsck_file(char *gfarm_url)
 				e = NULL;
 				continue;
 			}
-			else if (e == GFARM_ERR_NO_ROUTE_TO_HOST) {
+			else if (option_force
+				 || e == GFARM_ERR_NO_ROUTE_TO_HOST
+				 || e == GFARM_ERR_NO_SUCH_OBJECT) {
 				e = section_copy_info_remove(gfarm_url,
 					gfarm_file, section, hostname, e);
 				if (e != NULL && e_save == NULL)
@@ -145,7 +148,6 @@ gfsck_file(char *gfarm_url)
 				continue;
 			}
 			else if (e != NULL) {
-				/* need to delete metadata? */
 				fprintf(stderr, "%s (%s) on %s: %s\n",
 					gfarm_url, section, hostname, e);
 				if (e_save == NULL)
@@ -195,7 +197,7 @@ gfsck_dir(char *gfarm_dir, char *file)
 	GFS_Dir gdir;
 	struct gfs_dirent *gdent;
 
-	gfarm_url = malloc(strlen(gfarm_dir) + strlen(file) + 2);
+	GFARM_MALLOC_ARRAY(gfarm_url, strlen(gfarm_dir) + strlen(file) + 2);
 	if (gfarm_url == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (gfarm_dir[0] == '\0')
@@ -256,7 +258,7 @@ char *program_name = "gfsck";
 static void
 usage()
 {
-	fprintf(stderr, "Usage: %s [-vh] path ...\n", program_name);
+	fprintf(stderr, "Usage: %s [-fhv] path ...\n", program_name);
 	exit(1);
 }
 
@@ -273,8 +275,11 @@ main(int argc, char *argv[])
 		usage();
 	program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "hv?")) != EOF) {
+	while ((c = getopt(argc, argv, "fhv?")) != EOF) {
 		switch (c) {
+		case 'f':
+			option_force = 1;
+			break;
 		case 'v':
 			option_verbose = 1;
 			break;

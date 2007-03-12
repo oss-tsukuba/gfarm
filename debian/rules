@@ -25,6 +25,7 @@ GFMD_PKG = gfmd
 GFSD_PKG=gfsd
 DEV_PKG = libgfarm-dev
 LIBS_PKG = libgfarm
+AGENT_PKG = gfarm-agent
 
 CLIENT_GSI_PKG = gfarm-gsi-client
 GFPTOOL_GSI_PKG = gfarm-gsi-gfptool
@@ -216,6 +217,7 @@ ifeq ($(non-globus),yes)
 	dh_install -p$(GFSD_PKG)
 	dh_install -p$(DEV_PKG)
 	dh_install -p$(LIBS_PKG)
+	dh_install -p$(AGENT_PKG)
 endif
 
 ifeq ($(build_both),yes)
@@ -296,7 +298,7 @@ endif
 	dh_installchangelogs
 ifeq ($(globus_static),yes)
    ifeq ($(non-globus),yes)
-	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG); do \
+	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
           dh_strip -p$$pkg; \
 	done
    endif
@@ -318,7 +320,7 @@ ifeq ($(build_both),yes)
 	dh_builddeb
 else
    ifeq ($(non-globus),yes)
-	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG); do \
+	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
           dh_builddeb -p$$pkg; \
 	done
    else

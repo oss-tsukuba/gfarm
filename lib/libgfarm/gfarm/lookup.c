@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/error.h>

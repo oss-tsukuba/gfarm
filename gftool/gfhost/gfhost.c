@@ -576,8 +576,8 @@ output_add(struct output *o)
 			output_space = OUTPUT_INITIAL_SPACE;
 		else
 			output_space += output_space;
-		output_buffer = realloc(output_buffer,
-		    sizeof(*output_buffer) * output_space);
+		GFARM_REALLOC_ARRAY(output_buffer,
+				output_buffer, output_space);
 		if (output_buffer == NULL) {
 			fprintf(stderr, "no memory to record %d hosts\n",
 			    output_number);
@@ -644,7 +644,7 @@ gfarm_paraccess_alloc(
 	struct gfarm_paraccess *pa;
 	int i;
 
-	pa = malloc(sizeof(*pa));
+	GFARM_MALLOC(pa);
 	if (pa == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -654,7 +654,7 @@ gfarm_paraccess_alloc(
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-        pa->access_state = malloc(sizeof(*pa->access_state) * concurrency);
+	GFARM_MALLOC_ARRAY(pa->access_state, concurrency);
 	if (pa->access_state == NULL) {
 		gfarm_eventqueue_free(pa->q);
 		free(pa);
@@ -707,14 +707,14 @@ gfarm_paraccess_connect_finish(void *closure)
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
 
-	e = gfs_client_connection_acquire_result_multiplexed(a->protocol_state,
+	e = gfs_client_connect_result_multiplexed(a->protocol_state,
 	    &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(a->pa, a, &a->load, NULL, e);
 		return;
 	}
 	gfarm_paraccess_callback(a->pa, a, &a->load, gfs_server, e);
-	gfs_client_connection_free(gfs_server);
+	gfs_client_disconnect(gfs_server);
 }
 
 static void
@@ -722,7 +722,7 @@ gfarm_paraccess_connect_request(void *closure)
 {
 	struct gfarm_access *a = closure;
 	gfarm_error_t e;
-	struct gfs_client_connection_acquire_state *cs;
+	struct gfs_client_connect_state *cs;
 
 	e = gfs_client_get_load_result_multiplexed(a->protocol_state,
 	    &a->load);
@@ -730,8 +730,8 @@ gfarm_paraccess_connect_request(void *closure)
 		gfarm_paraccess_callback(a->pa, a, NULL, NULL, e);
 		return;
 	}
-	e = gfs_client_connection_acquire_request_multiplexed(a->pa->q,
-	    a->canonical_hostname, a->port, &a->peer_addr,
+	e = gfs_client_connect_request_multiplexed(a->pa->q,
+	    a->canonical_hostname, &a->peer_addr,
 	    gfarm_paraccess_connect_finish, a,
 	    &cs);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -931,7 +931,7 @@ request_long_format(struct gfarm_host_info *host_info,
 	struct long_format_parameter *param;
 	struct gfarm_host_info *info;
 
-	param = malloc(sizeof(*param));
+	GFARM_MALLOC(param);
 	if (param == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		fprintf(stderr, "%s: %s\n", program_name,
@@ -1393,9 +1393,6 @@ main(int argc, char **argv)
 		 *
 		 * XXX	should describe this in the manual?
 		 *	or use explicit and different option?
-		 *
-		 * NOTE: We have to call gfarm_initialize() anyway
-		 *	to initialize gfarm_spool_server_port.
 		 */
 		opt_use_metadb = 0;
 		opt_resolv_addr = resolv_addr_without_metadb;
@@ -1404,17 +1401,20 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
-	if (opt_port == 0)
-		opt_port = gfarm_spool_server_port;
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
 		if (argc > 0) {
+			if (opt_port == 0) {
+				fprintf(stderr, "%s: option -p <port> is "
+				    "mandatory with -c\n", program_name);
+				usage();
+			}
 			e_save = add_host(argv[0], opt_port, &argv[1],
 			    opt_architecture, opt_ncpu, opt_flags);
 			if (e_save != GFARM_ERR_NO_ERROR)
-				fprintf(stderr, "%s: %s\n", argv[0],
-				    gfarm_error_string(e_save));
+				fprintf(stderr, "%s: %s: %s\n", program_name,
+				    argv[0], gfarm_error_string(e_save));
 		}
 		break;
 	case OP_MODIFY_ENTRY:
@@ -1423,8 +1423,8 @@ main(int argc, char **argv)
 			    opt_architecture, opt_ncpu, opt_flags,
 			    !opt_alter_aliases);
 			if (e_save != GFARM_ERR_NO_ERROR)
-				fprintf(stderr, "%s: %s\n", argv[0],
-				    gfarm_error_string(e_save));
+				fprintf(stderr, "%s: %s: %s\n", program_name,
+				    argv[0], gfarm_error_string(e_save));
 		}
 		break;
 	case OP_DELETE_ENTRY:

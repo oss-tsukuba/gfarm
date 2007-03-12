@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "10 August 2004" "Gfarm" ""
+.TH "GFSD" "8" "13 November 2006" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
@@ -13,50 +13,84 @@ gfsd(8) \- Gfarm filesystem daemon
 
 .SH "DESCRIPTION"
 .PP
-\fBgfsd\fR is a filesystem daemon for the Gfarm filesystem, which has
-been running on every filesystem node, usually, with a root privilege.
+\fBgfsd\fR is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with  root privileges.
 .PP
 \fBgfsd\fR provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-fast invocation, node resource status monitoring.
+fast invocation, and node resource status monitoring.
 .PP
 It is possible for \fBgfsd\fR to be executed as a non-privileged user
-process although only the user that executes the \fBgfsd\fR can be authenticated.
+process, although only the user that executes the \fBgfsd\fR can be authenticated.
 Other users cannot use it.
 .PP
 In order to execute \fBgfsd\fR as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At least, the port number used by \fBgfsd\fR should be altered to a
-non-privileged port number by spool_serverport statement in the
-configuration file or the -p option.
+configuration file for a user needs to be specified with the -f option.
+At the very least, the port number used by \fBgfsd\fR should be altered to a
+non-privileged port number using the spool_serverport statement in the
+configuration file, or the -p option.
 .PP
 In this case, the altered port number of \fBgfsd\fR should be
-specified by the spool_serverport statement in ~/.gfarmrc or
+specified with the spool_serverport statement in ~/.gfarmrc or
 %%SYSCONFDIR%%/gfarm.conf on a client node.
 .SH "OPTIONS"
 .TP
+\fB-L \fIlog-level\fB\fR
+Specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.
+.TP
 \fB-P \fIpid-file\fB\fR
-specifies a file name which records the process ID of gfsd.
+Specifies a file name which records the process ID of gfsd.
+.TP
+\fB-U\fR
+Makes gfsd not create a UNIX domain socket.
+This option is useful to invoke multiple instances of gfsd
+to provide multiple spool directories on the host.
+When new files are created by processes on the local host,
+the gfsd which doesn't have this -U option specified will be used
+to provide spool directory for the new files.
 .TP
 \fB-d\fR
-specifies the debug mode.  With the -d option, gfsd is running as a
-foreground process not a daemon.
+Specifies the debug mode.  With the -d option, gfsd runs as a
+foreground process, not a daemon.
+
+If this option is specified and \fB-L\fR is not specified,
+the log level is set to "debug".
 .TP
 \fB-f \fIconfig-file\fB\fR
-specifies a configuration file that is read instead of the default
+Specifies a configuration file that is read instead of the default
 configuration file.
 .TP
+\fB-l \fIIP-address\fB\fR
+Specifies the IP address from which the gfsd accepts TCP and UDP
+requests.
+The default address is all IP addresses of the host.
+This option is useful to invoke multiple instances of gfsd
+to provide multiple spool directories on the host.
+.TP
 \fB-p \fIport-number\fB\fR
-specifies a port number of TCP and UDP used by gfsd.  By default, 600
+Specifies a port number for TCP and UDP used by gfsd.  By default, 600
 is used.
 .TP
+\fB-r \fIdirectory\fB\fR
+Specifies a spool directory
+for a Gfarm filesystem on this filesystem node.
+.TP
 \fB-s \fIsyslog-facility\fB\fR
-specifies a syslog facility to report errors by gfsd.  By default,
+Specifies a syslog facility to report errors by gfsd.  By default,
 local0 is used.
 .TP
+\fB-v\fR
+Makes gfsd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+.TP
 \fB-?\fR
-displays a list of command options.
+Displays a list of command options.
 .SH "FILES"
 .TP
 \fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
 configuration file
+.SH "SEE ALSO"
+.PP
+\fBgfarm.conf\fR(5)

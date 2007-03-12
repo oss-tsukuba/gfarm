@@ -598,11 +598,13 @@ usage(void)
 {
 	fprintf(stderr, "Usage: %s [option]\n", program_name);
 	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
+	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
-	fprintf(stderr, "\t-v>\n");
+	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
 	exit(1);
 }
 
@@ -614,6 +616,7 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	char *config_file = NULL, *port_number = NULL, *pid_file = NULL;
 	FILE *pid_fp = NULL;
+	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t termsigs;
@@ -622,13 +625,21 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "P:df:p:s:v")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:df:p:s:v")) != -1) {
 		switch (ch) {
+		case 'L':
+			syslog_level = gflog_syslog_name_to_priority(optarg);
+			if (syslog_level == -1)
+				gflog_fatal("-L %s: invalid syslog priority", 
+				    optarg);
+			break;
 		case 'P':
 			pid_file = optarg;
 			break;
 		case 'd':
 			debug_mode = 1;
+			if (syslog_level == -1)
+				syslog_level = LOG_DEBUG;
 			break;
 		case 'f':
 			config_file = optarg;
@@ -668,6 +679,8 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
+	if (syslog_level != -1)
+		gflog_set_priority_level(syslog_level);
 	if (port_number != NULL)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	sock = open_accepting_socket(gfarm_metadb_server_port);
@@ -742,7 +755,7 @@ main(int argc, char **argv)
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
-	signal(SIGPIPE, SIG_IGN);
+	gfarm_sigpipe_ignore();
 
 	sigemptyset(&termsigs);
 	sigaddset(&termsigs, SIGINT);

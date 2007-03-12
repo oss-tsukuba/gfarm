@@ -173,7 +173,7 @@ directory.</para>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
 <listitem>
 <para>
-The named file resides on a read\-only file system.
+The named file resides on a read\-only filesystem.
 </para>
 <para>
 <parameter>gfarm_url</parameter> refers to a file on a read-only filesystem and

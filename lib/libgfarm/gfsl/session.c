@@ -539,7 +539,9 @@ static gfarmSecSession *
 allocSecSession(which)
      int which;
 {
-    gfarmSecSession *ret = (gfarmSecSession *)malloc(sizeof(gfarmSecSession));
+    gfarmSecSession *ret;
+
+    GFARM_MALLOC(ret);
     if (ret == NULL) {
 	return NULL;
     }
@@ -1537,10 +1539,11 @@ gfarmSecSessionSendInt32(ssPtr, buf, n)
      gfarm_int32_t *buf;
      int n;
 {
-    gfarm_int32_t *lBuf = malloc(GFARM_OCTETS_PER_32BIT * n);
+    gfarm_int32_t *lBuf;
     int i;
     int ret = -1;
 
+    GFARM_MALLOC_ARRAY(lBuf, n);
     if (lBuf == NULL) {
 	ssPtr->gssLastStat = GSS_S_FAILURE;
 	return ret;
@@ -1583,7 +1586,7 @@ gfarmSecSessionReceiveInt32(ssPtr, bufPtr, lenPtr)
     }
     n = len / GFARM_OCTETS_PER_32BIT;
 
-    retBuf = malloc(GFARM_OCTETS_PER_32BIT * n);
+    GFARM_MALLOC_ARRAY(retBuf, n);
     if (retBuf == NULL) {
 	goto Done;
     }
@@ -1616,10 +1619,11 @@ gfarmSecSessionSendInt16(ssPtr, buf, n)
      gfarm_int16_t *buf;
      int n;
 {
-    gfarm_int16_t *lBuf = malloc(GFARM_OCTETS_PER_16BIT * n);
+    gfarm_int16_t *lBuf;
     int i;
     int ret = -1;
 
+    GFARM_MALLOC_ARRAY(lBuf, n);
     if (lBuf == NULL) {
 	ssPtr->gssLastStat = GSS_S_FAILURE;
 	return ret;
@@ -1662,7 +1666,7 @@ gfarmSecSessionReceiveInt16(ssPtr, bufPtr, lenPtr)
     }
     n = len / GFARM_OCTETS_PER_16BIT;
 
-    retBuf = malloc(GFARM_OCTETS_PER_16BIT * n);
+    GFARM_MALLOC_ARRAY(retBuf, n);
     if (retBuf == NULL) {
 	goto Done;
     }
@@ -1882,7 +1886,7 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
 	gflog_auth_error("gfarmSecSession: "
 			 "negotiateConfigParamInitiatorRequest(): "
 			 "no context");
-    } else if ((state = malloc(sizeof(*state))) == NULL) {
+    } else if (GFARM_MALLOC(state) == NULL) {
 	gflog_auth_error("gfarmSecSession: "
 			 "negotiateConfigParamInitiatorRequest(): "
 			 "no memory");
@@ -2174,7 +2178,7 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
     if (initiatorInitialized == 0) {
 	gflog_auth_error("gfarm:secSessionInitiateRequest(): "
 			 "not initialized");
-    } else if ((state = malloc(sizeof(*state))) == NULL) {
+    } else if (GFARM_MALLOC(state) == NULL) {
 	gflog_auth_error("gfarm:secSessionInitiateRequest(): no memory");
     } else if ((ret = allocSecSession(GFARM_SS_INITIATOR)) == NULL) {
 	gflog_auth_error("gfarm:secSessionInitiateRequest(): no memory");

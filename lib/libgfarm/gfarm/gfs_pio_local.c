@@ -111,6 +111,7 @@ gfs_pio_local_storage_close(GFS_File gf)
 	if (vc->pid != getpid())
 		return (e);
 	e2 = gfs_client_close(gfs_server, gf->fd);
+	gfs_client_connection_free(gfs_server);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 

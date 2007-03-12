@@ -36,7 +36,7 @@ command="@config_gfarm_pgsql_bindir@/pg_ctl"
 pidfile="$PGDATA/portmaster.pid"
 required_dirs="$PGDATA"
 # add more flags through ${${name}_flags}
-command_args="-s -w -m fast -D $PGDATA -l $PGDATA/logfile"
+command_args="@config_gfarm_pgsql_options@"
 export PGPORT
 export PGDATA
 

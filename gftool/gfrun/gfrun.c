@@ -397,7 +397,7 @@ schedule(char *command_name, struct gfrun_options *options,
 			nhosts = 1;
 		else
 			nhosts = options->nprocs;
-		hosts = malloc(sizeof(*hosts) * nhosts);
+		GFARM_MALLOC_ARRAY(hosts, nhosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: not enough memory for %d hosts",
 			    program_name, nhosts);
@@ -433,7 +433,7 @@ schedule(char *command_name, struct gfrun_options *options,
 			char *gfarm_file;
 
 			nhosts = 1;
-			hosts = malloc(sizeof(*hosts));
+			GFARM_MALLOC(hosts);
 			if (hosts == NULL) {
 				fprintf(stderr, "%s: not enough memory",
 					program_name);
@@ -471,7 +471,7 @@ schedule(char *command_name, struct gfrun_options *options,
 		}
 	} else { /* Serial execution */
 		nhosts = 1;
-		hosts = malloc(sizeof(*hosts));
+		GFARM_MALLOC(hosts);
 		if (hosts == NULL) {
 			fprintf(stderr, "%s: not enough memory", program_name);
 			exit(1);

@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfsched</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -92,7 +91,7 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfsched</B
 > creates a host file
-  using the file-affinity scheduing of <TT
+  using the file-affinity scheduling of <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
@@ -102,14 +101,14 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfsched</B
 > chooses and displays
-  hostnames of the same number with the fragments of
+  hostnames, matching the number with the fragments of
   the <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
->, with giving priority to
-  the hosts which has the fragment as far as possible.
+>, giving priority, as far as possible to
+  the host which has the fragment.
   When <TT
 CLASS="PARAMETER"
 ><I
@@ -121,9 +120,9 @@ CLASS="COMMAND"
 >gfsched</B
 > displays to the standard output.</P
 ><P
->  If <TT
+>  If <CODE
 CLASS="OPTION"
->-N</TT
+>-N</CODE
 > is specified instead of 
   <TT
 CLASS="PARAMETER"
@@ -134,8 +133,8 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfsched</B
 > chooses and
-  displays specified number of hosts from the hosts in the arguments.
-  If no host is specified in the argument, <B
+  displays a specified number of hosts from the hosts in the arguments.
+  If no hosts are specified in the argument, <B
 CLASS="COMMAND"
 >gfsched</B
 >
@@ -154,9 +153,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
+>-I</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -165,26 +164,26 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->specifies the fragment index to be scheduled.</P
+>Specifies the fragment index to be scheduled.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-U</TT
+>-U</CODE
 ></DT
 ><DD
 ><P
->suppresses authentication check.
+>Suppresses authentication check.
 Without this option, the scheduler checks whether the user will be 
 successfully authenticated with the hosts or not.
 This option omits the check to make scheduling faster,
-but that makes a risk that hosts which make authentication failure with
+but that creates a risk that hosts which fail authentication with
 the user may be scheduled.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-p</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -193,7 +192,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->creates a host file with a program name which will be used
+>Creates a host file with a program name which will be used
 to process the <TT
 CLASS="PARAMETER"
 ><I
@@ -209,13 +208,13 @@ CLASS="PARAMETER"
 will be selected, if this option is specified.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
->displays a list of command options.</P
+>Displays a list of command options.</P
 ></DD
 ></DL
 ></DIV

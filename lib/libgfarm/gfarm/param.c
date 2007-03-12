@@ -69,9 +69,9 @@ gfarm_param_config_add_long(
 	struct gfarm_param_config ***config_list_lastp,
 	int param_type_index, long value, struct gfarm_hostspec *hsp)
 {
-	struct gfarm_param_config *pcp =
-	    malloc(sizeof(struct gfarm_param_config));
+	struct gfarm_param_config *pcp;
 
+	GFARM_MALLOC(pcp);
 	if (pcp == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	pcp->next = NULL;

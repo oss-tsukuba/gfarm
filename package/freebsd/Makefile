@@ -6,16 +6,11 @@
 #
 
 PORTNAME=	gfarm
-PORTVERSION=	1.2
+PORTVERSION=	1.4
 CATEGORIES=	net
 MASTER_SITES=	http://datafarm.apgrid.org/software/${PORTVERSION}/
 
 PATCH_SITES=	${MASTER_SITES}
-PATCHFILES=	gfarm-1.2-patch1.diff.gz \
-		gfarm-1.2-patch2.diff.gz \
-		gfarm-1.2-patch3.diff.gz \
-		gfarm-1.2-patch4.diff.gz
-PATCH_DIST_STRIP= -p1
 
 MAINTAINER=	soda@sra.co.jp
 COMMENT=	User-level grid filesystem and parallel process management
@@ -28,6 +23,9 @@ USE_LIBTOOL_VER=15
 INSTALLS_SHLIB= yes
 SYSCONFDIR?=	${PREFIX}/etc
 CONFIGURE_ARGS+=--sysconfdir=${SYSCONFDIR}
+
+LIB_DEPENDS=	pq.4:${PORTSDIR}/${POSTGRESQL_PORT}
+POSTGRESQL_PORT?=	databases/postgresql80-client
 
 USE_RC_SUBR=	yes
 RC_SCRIPTS_SUB=	PREFIX=${PREFIX} SYSCONFDIR=${SYSCONFDIR} RC_SUBR=${RC_SUBR}
@@ -76,6 +74,12 @@ CONFIGURE_ARGS+=--with-globus=${GLOBUS_LOCATION} \
 		--with-globus-flavor=${GLOBUS_FLAVOR}
 
 CONFIGURE_ENV+=	${PERL5LIB_FIX}
+
+# XXX
+# GSI authentication doesn't work, if gfarm is linked with OpenLDAP in ports.
+# Probably this is because of OpenSSL conflicts between Globus and ports
+# (OpenLDAP depends on OpenSSL in ports).
+CONFIGURE_ARGS+=--without-openldap
 
 .endif # WITH_GLOBUS
 

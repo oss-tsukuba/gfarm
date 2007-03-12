@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <gfarm/gfarm_config.h>
+
+#include <gfarm/gfarm.h>
+
+#include "gfsd_subr.h"
 
 /*
  * getloadavg() function may require root user or kmem group privilege
@@ -43,6 +46,7 @@ getloadavg(double *loadavg, int n)
 #endif /* __linux__ */
 
 #if defined(__osf__)
+
 #include <sys/table.h>
 
 int
@@ -87,6 +91,27 @@ getloadavg(double *loadavg, int n)
 }
 
 #endif /* __hpux */
+
+#if defined(_AIX)
+
+#include <libperfstat.h>
+#include <sys/proc.h>
+
+int
+getloadavg(double *loadavg, int n)
+{	
+	int i;
+	perfstat_cpu_total_t pct;
+
+	if (perfstat_cpu_total(NULL, &pct, sizeof(pct), 1) == -1)
+		return (-1);
+
+	for (i = 0; i < n; i++)
+		loadavg[i] = (double)pct.loadavg[i] / (1 << SBITS);
+
+	return n;
+}
+#endif /* _AIX */
 
 #endif /* !HAVE_GETLOADAVG */
 

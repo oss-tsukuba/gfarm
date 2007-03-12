@@ -3,7 +3,7 @@
 
 <refentry id='gfwhere.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>12 Mov 2006</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfwhere</refentrytitle>
@@ -56,7 +56,7 @@ architecture: filesystem node ...
 <term><option>-I</option> <parameter>fragment-index</parameter>
 </term>
 <listitem>
-<para>specifies the fragment index to be displayed.  If the <parameter>gfarm-URL</parameter>
+<para>Specifies the fragment index to be displayed.  If the <parameter>gfarm-URL</parameter>
 is an executable file, an architecture name, for example,
 sparc-sun-solaris8, can be used to specify the executable architecture
 to be displayed.</para>
@@ -67,14 +67,14 @@ to be displayed.</para>
 <term><option>-s</option>
 </term>
 <listitem>
-<para>displays the size of each file fragment.</para>
+<para>Displays the size of each file fragment.</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
-<para>displays a list of command options.</para>
+<para>Displays a list of command options.</para>
 </listitem>
 </varlistentry>
 

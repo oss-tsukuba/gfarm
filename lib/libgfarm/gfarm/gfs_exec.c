@@ -10,8 +10,8 @@
 #include <sys/wait.h>
 
 #include <gfarm/gfarm.h>
-#include <openssl/evp.h>/* EVP_MD_CTX */
-#include "gfs_pio.h"	/* gfs_profile */
+
+#include "config.h"	/* gfs_profile */
 #include "gfs_misc.h"
 
 char *
@@ -59,6 +59,8 @@ gfarm_url_execfile_replicate_to_local(const char *url, char **local_pathp)
 
 	/* check the metadata */
 	e = gfarm_file_section_info_get(gfarm_file, arch, &sinfo);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = gfarm_file_section_info_get(gfarm_file, "noarch", &sinfo);
 	free(gfarm_file);
 	if (e != NULL)
 		return (e);

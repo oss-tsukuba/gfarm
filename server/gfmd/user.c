@@ -91,8 +91,9 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
-	struct user *u = malloc(sizeof(*u));
+	struct user *u;
 
+	GFARM_MALLOC(u);
 	if (u == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	u->ui = *ui;
@@ -306,7 +307,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	    "i", &nusers);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	users = malloc(sizeof(*users) * nusers);
+	GFARM_MALLOC_ARRAY(users, nusers);
 	if (users == NULL)
 		error = GFARM_ERR_NO_MEMORY;
 	for (i = 0; i < nusers; i++) {

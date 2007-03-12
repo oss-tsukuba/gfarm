@@ -1,5 +1,6 @@
 @comment $FreeBSD$
 bin/config-gfarm
+bin/config-agent
 bin/config-gfsd
 bin/gfarm.arch.guess
 bin/gfarm_agent
@@ -11,10 +12,12 @@ bin/gfcombine_hook
 bin/gfcp
 bin/gfcp_hook
 bin/gfdf
+bin/gfdump
 bin/gfexec
 bin/gfexport
 bin/gfgrep
 bin/gfhost
+bin/gfifo.sh
 bin/gfimport_fixed
 bin/gfimport_text
 bin/gfkey
@@ -23,6 +26,9 @@ bin/gfmkdir
 bin/gfmpirun_p4
 bin/gfps
 bin/gfpwd
+bin/gfq.sh
+bin/gfq_commit.sh
+bin/gfq_setup.sh
 bin/gfrcmd
 bin/gfreg
 bin/gfrep
@@ -39,6 +45,9 @@ bin/gfsplck
 bin/gfssh
 bin/gfsshl
 bin/gfstat
+bin/gfstatus
+bin/gftest
+bin/gfusage
 bin/gfwhere
 bin/gfwhoami
 bin/thput-gfpio
@@ -102,6 +111,7 @@ man/ja/man1/gfsched.1
 man/ja/man1/gfsetdir.1
 man/ja/man1/gfssh.1
 man/ja/man1/gfstat.1
+man/ja/man1/gfusage.1
 man/ja/man1/gfwc.1
 man/ja/man1/gfwhere.1
 man/ja/man1/gfwhoami.1
@@ -196,6 +206,7 @@ man/man1/gfsched.1
 man/man1/gfsetdir.1
 man/man1/gfssh.1
 man/man1/gfstat.1
+man/man1/gfusage.1
 man/man1/gfwc.1
 man/man1/gfwhere.1
 man/man1/gfwhoami.1
@@ -262,10 +273,20 @@ share/doc/gfarm/INSTALL.RPM.en
 share/doc/gfarm/INSTALL.RPM.ja
 share/doc/gfarm/INSTALL.en
 share/doc/gfarm/INSTALL.ja
+share/doc/gfarm/KNOWN_PROBLEMS.en
+share/doc/gfarm/KNOWN_PROBLEMS.ja
 share/doc/gfarm/LICENSE
+share/doc/gfarm/OVERVIEW.en
+share/doc/gfarm/OVERVIEW.ja
+share/doc/gfarm/README.en
+share/doc/gfarm/README.ja
 share/doc/gfarm/README.hook.en
 share/doc/gfarm/README.hook.ja
 share/doc/gfarm/RELNOTES
+share/doc/gfarm/SETUP.detail.en
+share/doc/gfarm/SETUP.detail.ja
+share/doc/gfarm/SETUP.en
+share/doc/gfarm/SETUP.ja
 share/doc/gfarm/html/en/ref/index.html
 share/doc/gfarm/html/en/ref/man1/gfarm_agent.1.html
 share/doc/gfarm/html/en/ref/man1/gfcd.1.html
@@ -292,6 +313,7 @@ share/doc/gfarm/html/en/ref/man1/gfrun.1.html
 share/doc/gfarm/html/en/ref/man1/gfsched.1.html
 share/doc/gfarm/html/en/ref/man1/gfsetdir.1.html
 share/doc/gfarm/html/en/ref/man1/gfstat.1.html
+share/doc/gfarm/html/en/ref/man1/gfusage.1.html
 share/doc/gfarm/html/en/ref/man1/gfwc.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhoami.1.html
@@ -378,6 +400,7 @@ share/doc/gfarm/html/ja/ref/man1/gfrun.1.html
 share/doc/gfarm/html/ja/ref/man1/gfsched.1.html
 share/doc/gfarm/html/ja/ref/man1/gfsetdir.1.html
 share/doc/gfarm/html/ja/ref/man1/gfstat.1.html
+share/doc/gfarm/html/ja/ref/man1/gfusage.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwc.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhoami.1.html
@@ -453,12 +476,19 @@ share/doc/gfarm/html/ja/user/samba-hook.html
 share/doc/gfarm/html/ja/user/smboverssh.html
 share/doc/gfarm/html/pic/gfarm-logo.gif
 share/gfarm/config/bdb.DB_CONFIG.in
+share/gfarm/config/config-gfarm.ldap
+share/gfarm/config/config-gfarm.postgresql
 share/gfarm/config/config-gfarm.sysdep
-share/gfarm/config/gfarm.conf.in
+share/gfarm/config/gfarm.conf-ldap.in
+share/gfarm/config/gfarm.conf-postgresql.in
 share/gfarm/config/gfarm.schema
+share/gfarm/config/gfarm.schema-1.sql
+share/gfarm/config/gfarm.schema-2.sql
 share/gfarm/config/initial.ldif.in
+share/gfarm/config/gfarm-pgsql.in
 share/gfarm/config/gfarm-slapd.in
 share/gfarm/config/gfmd.in
+share/gfarm/config/gfarm_agent.in
 share/gfarm/config/gfsd.in
 share/gfarm/config/slapd.conf-2.0.in
 share/gfarm/config/slapd.conf-2.1.in

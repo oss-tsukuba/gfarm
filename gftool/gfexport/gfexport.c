@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <libgen.h>
 
 #include <gfarm/gfarm.h>
@@ -10,7 +8,7 @@
 char *program_name = "gfexport";
 
 gfarm_error_t
-gfexport(GFS_File gf, FILE *ofp)
+gfprint(GFS_File gf, FILE *ofp)
 {
 	int c;
 
@@ -19,46 +17,35 @@ gfexport(GFS_File gf, FILE *ofp)
 	return (gfs_pio_error(gf));
 }
 
-#if 0 /* XXX v2 not yet */
+#if 0 /* not yet in gfarm v2 */
 gfarm_error_t
-gfexport_by_hosts(char *gfarm_url, int nhosts, char **hostlist, FILE *ofp)
+gfexport(char *gfarm_url, char *section, char *host, FILE *ofp, int explicit)
 {
-	gfarm_error_t e, e2;
+	char *e, *e2;
 	GFS_File gf;
-	int i, nfrags;
 
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != NULL)
 		return (e);
-	e = gfs_pio_get_nfragment(gf, &nfrags);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_pio_close(gf);
-		return (e);
-	}
 
-	if (hostlist != NULL && nhosts != nfrags) {
-		fprintf(stderr, "%s: specified hostlist are ignored, because "
-			"the number of hosts %d doesn't match "
-			"the number of fragments %d.\n",
-			program_name, nhosts, nfrags);
-		hostlist = NULL;
-	}
+	if (section)
+		/* section view */
+		e = gfs_pio_set_view_section(
+			gf, section, host, GFARM_FILE_SEQUENTIAL);
+	else if (explicit)
+		/* global mode is default, but call explicitly */
+		e = gfs_pio_set_view_global(gf, GFARM_FILE_SEQUENTIAL);
+	if (e != NULL)
+		goto gfs_pio_close;
 
-	for (i = 0; i < nfrags; i++) {
-		e = gfs_pio_set_view_index(gf, nfrags, i, hostlist[i % nhosts],
-		    GFARM_FILE_SEQUENTIAL);
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
-		e = gfexport(gf, ofp);
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
-	}
+	e = gfprint(gf, ofp);
+ gfs_pio_close:
 	e2 = gfs_pio_close(gf);
-	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+	return (e != NULL ? e : e2);
 }
-
+#else
 gfarm_error_t
-gfexport_section(char *gfarm_url, char *section, FILE *ofp)
+gfexport(char *gfarm_url, FILE *ofp)
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
@@ -66,107 +53,82 @@ gfexport_section(char *gfarm_url, char *section, FILE *ofp)
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfs_pio_set_view_section(gf, section, NULL, GFARM_FILE_SEQUENTIAL);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfs_pio_close(gf);
-		return (e);
-	}
-	e = gfexport(gf, ofp);
+
+	e = gfprint(gf, ofp);
 	e2 = gfs_pio_close(gf);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
-
-/* just a test routine for global view */
-gfarm_error_t
-gfexport_global(char *gfarm_url, FILE *ofp)
-{
-	gfarm_error_t e, e2;
-	GFS_File gf;
-
-	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	/*
-	 * global mode is default,
-	 * so, we don't have to call pio_set_view_global() explicitly.
-	 */
-	e = gfs_pio_set_view_global(gf, GFARM_FILE_SEQUENTIAL);
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfexport(gf, ofp);
-
-	e2 = gfs_pio_close(gf);
-	return (e != GFARM_ERR_NO_ERROR ? e : e2);
-}
-#endif /* XXX v2 not yet */
-
-/* just a test routine for default view */
-gfarm_error_t
-gfexport_default(char *gfarm_url, FILE *ofp)
-{
-	gfarm_error_t e, e2;
-	GFS_File gf;
-
-	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	e = gfexport(gf, ofp);
-	e2 = gfs_pio_close(gf);
-	return (e != GFARM_ERR_NO_ERROR ? e : e2);
-}
+#endif
 
 void
-usage(void)
+usage()
 {
 	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
-#if 0 /* XXX v2 not yet */
+#if 0 /* not yet in gfarm v2 */
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-H <hostfile>\n");
 	fprintf(stderr, "\t-I <fragment>\n");
+	fprintf(stderr, "\t-h <hostname>\n");
 #endif
 	exit(1);
 }
+
+#if 0 /* not yet in gfarm v2 */
+static void
+error_check(char *file, char* section, char *e)
+{
+	if (e == NULL)
+		return;
+
+	fprintf(stderr, "%s", program_name);
+	if (file != NULL) {
+		fprintf(stderr, ": %s", file);
+		if (section != NULL)
+			fprintf(stderr, " (%s)", section);
+	}
+	fprintf(stderr, ": %s\n", e);
+	exit(1);
+}
+#endif
 
 int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern char *optarg;
-	extern int optind;
 	gfarm_error_t e;
-	int ch;
-	char *gfarm_url;
-#if 0 /* XXX v2 not yet */
-	char *hostfile = NULL, *section = NULL;
+	char *url;
+#if 0 /* not yet in gfarm v2 */
+	char *section = NULL, *hostname = NULL;
 	int global_view = 0;
 #endif
+	int ch;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", program_name,
+		fprintf(stderr, "%s: gfarm_initialize(): %s\n", program_name,
 		    gfarm_error_string(e));
 		exit(1);
 	}
 
-
-#if 0 /* XXX v2 not yet */
-	while ((ch = getopt(argc, argv, "H:I:g?")) != -1)
+#if 0 /* not yet in gfarm v2 */
+	while ((ch = getopt(argc, argv, "a:gh:I:?")) != -1)
 #else
 	while ((ch = getopt(argc, argv, "?")) != -1)
 #endif
 	{
 		switch (ch) {
-#if 0 /* XXX v2 not yet */
-		case 'H':
-			hostfile = optarg;
-			break;
+#if 0
+		case 'a':
 		case 'I':
 			section = optarg;
 			break;
 		case 'g':
 			global_view = 1;
+			break;
+		case 'h':
+			hostname = optarg;
 			break;
 #endif
 		case '?':
@@ -176,54 +138,31 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc != 1)
+	if (argc != 1) {
+		fprintf(stderr, "%s: error: only one input file name expected",
+		    program_name);
 		usage();
-	gfarm_url = argv[0];
+	}
 
-#if 1 /* XXX v2 not yet */
-	e = gfexport_default(gfarm_url, stdout);
+	url = argv[0];
+
+#if 0 /* not yet in gfarm v2 */
+	e = gfexport(url, section, hostname, stdout, global_view);
 #else
-	if (hostfile != NULL && section != NULL) {
-		fprintf(stderr,
-			"%s: error: option -H and option -I are exclusive\n",
-			program_name);
-		exit(1);
-	}
-
-	if (hostfile != NULL) {
-		int error_line, n;
-		char **hostlist;
-
-		e = gfarm_hostlist_read(hostfile, &n, &hostlist, &error_line);
-		if (e != GFARM_ERR_NO_ERROR) {
-			if (error_line != -1)
-				fprintf(stderr, "%s: %s: line %d: %s\n",
-				    program_name, hostfile, error_line, e);
-			else
-				fprintf(stderr, "%s: %s: %s\n",
-				    program_name, hostfile, e);
-			exit(1);
-		}
-		e = gfexport_by_hosts(gfarm_url, n, hostlist, stdout);
-	} else if (section != NULL) {
-		e = gfexport_section(gfarm_url, section, stdout);
-	} else if (global_view) {
-		e = gfexport_global(gfarm_url, stdout);
-	} else {
-		e = gfexport_default(gfarm_url, stdout);
-	}
+	e = gfexport(url, stdout);
 #endif
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s: %s\n", program_name, gfarm_url,
+		fprintf(stderr, "%s: %s: %s\n", program_name, url,
 		    gfarm_error_string(e));
 		exit(1);
 	}
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", program_name,
+		fprintf(stderr, "%s: gfarm_terminate(): %s\n", program_name,
 		    gfarm_error_string(e));
 		exit(1);
 	}
+
 	return (0);
 }

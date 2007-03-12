@@ -6,7 +6,7 @@
 
 extern int gfarm_node;
 
-#ifndef _STAT_VER
+#ifndef FUNC__XSTAT
 
 int
 FUNC___STAT(const char *path, STRUCT_STAT *buf)
@@ -14,7 +14,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
-	int nf = -1, np;
+	int nf = -1, np, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___STAT) "(%s)",
 	    path));
@@ -72,7 +72,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	if (e == NULL) {
 		struct passwd *p;
 
-		memchr(buf, 0, sizeof(*buf));
+		memset(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
@@ -95,6 +95,7 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
 		gfs_stat_free(&gs);
 
+		errno = errno_save;
 		return (0);
 	}
 
@@ -117,7 +118,7 @@ FUNC_STAT(const char *path, STRUCT_STAT *buf)
     return (FUNC___STAT(path, buf));
 }
 
-#else /* defined(_STAT_VER) -- SVR4 or Linux */
+#else /* defined(FUNC__XSTAT) -- SVR4 or Linux */
 /*
  * SVR4 and Linux do inline stat() and call _xstat/__xstat() with
  * an additional version argument.
@@ -158,7 +159,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	const char *e;
 	char *url;
 	struct gfs_stat gs;
-	int nf = -1, np;
+	int nf = -1, np, errno_save = errno;
 
 	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___XSTAT) "(%s)",
 	    path));
@@ -216,7 +217,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	if (e == NULL) {
 		struct passwd *p;
 
-		memchr(buf, 0, sizeof(*buf));
+		memset(buf, 0, sizeof(*buf));
 		buf->st_dev = GFS_DEV;	  
 		buf->st_ino = gs.st_ino;
 		buf->st_mode = gs.st_mode;
@@ -239,6 +240,7 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		buf->st_ctime = gs.st_ctimespec.tv_sec;
 		gfs_stat_free(&gs);
 
+		errno = errno_save;
 		return (0);
 	}
 

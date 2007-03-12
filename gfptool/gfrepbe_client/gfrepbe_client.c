@@ -466,8 +466,8 @@ session(char *server_name, struct sockaddr *server_addr,
 #ifdef __GNUC__ /* workaround gcc warning:  might be used uninitialized */
 	ofd = -1;
 #endif
-	socks = malloc(sizeof(*socks) * ndivisions);
-	conns = malloc(sizeof(*conns) * ndivisions);
+	GFARM_MALLOC_ARRAY(socks, ndivisions);
+	GFARM_MALLOC_ARRAY(conns, ndivisions);
 	if (socks == NULL || conns == NULL) {
 		fprintf(stderr,
 		    "%s: no memory for %d connections to %s on %s\n",
@@ -520,7 +520,7 @@ session(char *server_name, struct sockaddr *server_addr,
 			fatal();
 		}
 		/* XXX read-only connection */
-		e = xxx_fd_connection_new(tmp_sock, &tmp_conn);
+		e = xxx_socket_connection_new(tmp_sock, &tmp_conn);
 		if (e != NULL) {
 			fprintf(stderr,
 			    "%s: while allocating memory to %s on %s: %s\n",
@@ -569,7 +569,8 @@ session(char *server_name, struct sockaddr *server_addr,
 		if (*section == '\0') {
 			pathname = file;
 		} else {
-			pathname = malloc(strlen(file) + strlen(section) + 2);
+			GFARM_MALLOC_ARRAY(pathname,
+				strlen(file) + strlen(section) + 2);
 			if (pathname == NULL) {
 				fprintf(stderr,
 				    "%s: no memory for pathname %s:%s"
@@ -746,6 +747,7 @@ main(int argc, char **argv)
 	struct gfarm_path_info *path_infos;
 	gfarm_int32_t *results;
 	struct sockaddr server_addr;
+	char *spool_root;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != NULL) {
@@ -847,13 +849,13 @@ main(int argc, char **argv)
 	}
 
 	/* XXX read-only connection */
-	e = xxx_fd_connection_new(STDIN_FILENO, &from_frontend);
+	e = xxx_socket_connection_new(STDIN_FILENO, &from_frontend);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdin\n", program_name, e);
 		fatal();
 	}
 	/* XXX write-only connection */
-	e = xxx_fd_connection_new(STDOUT_FILENO, &to_frontend);
+	e = xxx_socket_connection_new(STDOUT_FILENO, &to_frontend);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s for stdout\n", program_name, e);
 		fatal();
@@ -869,7 +871,7 @@ main(int argc, char **argv)
 	if (e != NULL)
 		fatal();
 
-	results = malloc(sizeof(*results) * n);
+	GFARM_MALLOC_ARRAY(results, n);
 	if (results == NULL) {
 		fprintf(stderr, "%s: no memory for %d ints on %s\n",
 		    program_name, n, my_name);
@@ -877,14 +879,14 @@ main(int argc, char **argv)
 	}
 
 	/* make current directory == spool_root */
-	if (chdir(gfarm_spool_root) == -1) {
+	spool_root = gfarm_spool_root_for_compatibility;
+	if (chdir(spool_root) == -1) {
 		fprintf(stderr, "%s: chdir(%s) on %s: %s\n",
-		    program_name, gfarm_spool_root, my_name,
-		    e);
+		    program_name, spool_root, my_name, e);
 		fatal();
 	}
 
-	path_infos = malloc(sizeof(*path_infos) * n);
+	GFARM_MALLOC_ARRAY(path_infos, n);
 	if (results == NULL) {
 		fprintf(stderr, "%s: no memory for %d path_info on %s\n",
 		    program_name, n, my_name);

@@ -1,7 +1,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
+
 #include <gfarm/gfarm.h>
+#include "gfutil.h"
 
 #include "liberror.h"
 
@@ -13,7 +16,7 @@ gfs_glob_init(gfs_glob_t *listp)
 {
 	unsigned char *v;
 
-	v = malloc(sizeof(*v) * GFS_GLOB_INITIAL);
+	GFARM_MALLOC_ARRAY(v, GFS_GLOB_INITIAL);
 	if (v == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	listp->size = GFS_GLOB_INITIAL;
@@ -40,9 +43,9 @@ gfs_glob_add(gfs_glob_t *listp, int dtype)
 
 	if (length >= listp->size) {
 		int n = listp->size + GFS_GLOB_DELTA;
-		unsigned char *t = realloc(listp->array,
-		    sizeof(unsigned char) * n);
+		unsigned char *t;
 
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -326,8 +329,10 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 	char *p = NULL;
 	int n = gfarm_stringlist_length(paths);
 	char path_buffer[GLOB_PATH_BUFFER_SIZE + 1];
-
 #if 0 /* XXX FIXME - "~" handling isn't implemented on v2, yet */
+	size_t size;
+	int overflow = 0;
+
 	const char *s;
 	int len;
 
@@ -345,8 +350,10 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 			len = strcspn(s, "/");
 			pattern += 1 + len;
 		}
-		p = malloc(1 + len + strlen(pattern) + 1);
-		if (p == NULL) {
+		size = gfarm_size_add(&overflow, 1 + len, strlen(pattern) + 1);
+		if (!overflow)
+			GFARM_MALLOC_ARRAY(p, size);
+		if (overflow || p == NULL) {
 			e = GFARM_ERR_FILE_NAME_TOO_LONG;
 		} else {
 			p[0] = '/';

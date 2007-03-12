@@ -77,6 +77,12 @@ globus_objs = @globus_objs@
 globus_cflags = @globus_cflags@
 globus_targets = @globus_targets@
 
+# for conditional compilation related to syscall hooking library
+gfshook_srcs = @gfshook_srcs@
+gfshook_objs = @gfshook_objs@
+gfshook_cflags = @gfshook_cflags@
+gfshook_targets = @gfshook_targets@
+
 MPICC = @mpicc@
 # for conditional compilation which depends on whether MPI is enabled or not
 mpi_srcs = @mpi_srcs@

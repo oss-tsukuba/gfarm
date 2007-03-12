@@ -25,7 +25,7 @@ write_hex(FILE *fp, void *buffer, size_t length)
 }
 
 void
-usage()
+usage(void)
 {
 	fprintf(stderr, "Usage: %s [-c|-f] [-p <period>]\n", program_name);
 	fprintf(stderr, "       %s [-l|-e]\n", program_name);
@@ -37,6 +37,17 @@ usage()
 	fprintf(stderr, "\t-l\t\tlist existing key\n");
 	fprintf(stderr, "\t-e\t\treport expire time\n");
 	exit(1);
+}
+
+void
+exclusive(void)
+{
+	fprintf(stderr,
+	    "%s: warning: -c option and -f are mutually exclusive\n",
+	    program_name);
+#if 0 /* XXX maybe we should exit here? although this is not fatal error. */
+	exit(1);
+#endif
 }
 
 int
@@ -59,12 +70,16 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "ceflp:?")) != -1) {
 		switch (ch) {
 		case 'c':
+			if (mode == GFARM_AUTH_SHARED_KEY_CREATE_FORCE)
+				exclusive();
 			mode = GFARM_AUTH_SHARED_KEY_CREATE;
 			break;
 		case 'e':
 			do_expire_report = 1;
 			break;
 		case 'f':
+			if (mode == GFARM_AUTH_SHARED_KEY_CREATE)
+				exclusive();
 			mode = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
 			break;
 		case 'l':

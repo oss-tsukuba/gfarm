@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include <stdio.h> /* for config.h */
 #include <stddef.h>
 #include <stdarg.h>
@@ -76,7 +72,7 @@ gfm_client_connection0(const char *hostname, int port,
 		close(sock);
 		return (gfarm_errno_to_error(errno));
 	}
-	e = gfp_xdr_new_fd(sock, &gfm_server->conn);
+	e = gfp_xdr_new_socket(sock, &gfm_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(sock);
 		return (e);
@@ -248,7 +244,7 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
 	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	hosts = malloc(sizeof(*hosts) * nhosts);
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) /* XXX this breaks gfm protocol */
 		return (GFARM_ERR_NO_MEMORY);
 	if ((e = get_nhosts(gfm_server, nhosts, hosts)) != GFARM_ERR_NO_ERROR)
@@ -384,7 +380,7 @@ gfm_client_user_info_get_all(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_USER_INFO_GET_ALL,
 	    "/i", &nusers)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	users = malloc(sizeof(*users) * nusers);
+	GFARM_MALLOC_ARRAY(users, nusers);
 	if (users == NULL) /* XXX this breaks gfm protocol */
 		return (GFARM_ERR_NO_MEMORY);
 	if ((e = get_nusers(gfm_server, nusers, users)) != GFARM_ERR_NO_ERROR)
@@ -460,8 +456,7 @@ get_ngroups(struct gfm_connection *gfm_server,
 			return (e); /* XXX */
 		if (eof)
 			return (GFARM_ERR_PROTOCOL); /* XXX */
-		groups[i].usernames = malloc(sizeof(groups[i].usernames) *
-		    groups[i].nusers);
+		GFARM_MALLOC_ARRAY(groups[i].usernames, groups[i].nusers);
 		 /* XXX this breaks gfm protocol */
 		if (groups[i].usernames == NULL)
 			return (GFARM_ERR_NO_MEMORY); /* XXX */
@@ -505,7 +500,7 @@ gfm_client_group_info_get_all(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_GROUP_INFO_GET_ALL,
 	    "/i", &ngroups)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	groups = malloc(sizeof(*groups) * ngroups);
+	GFARM_MALLOC_ARRAY(groups, ngroups);
 	if (groups == NULL) /* XXX this breaks gfm protocol */
 		return (GFARM_ERR_NO_MEMORY);
 	if ((e = get_ngroups(gfm_server, ngroups, groups)) !=
@@ -637,8 +632,7 @@ gfm_client_group_names_get_by_users(struct gfm_connection *gfm_server,
 		errors[i] = e = gfm_client_rpc_result(gfm_server, 0, "i",
 		    &assignments->ngroups);
 		if (e == GFARM_ERR_NO_ERROR) {
-			assignments->groupnames = malloc(
-			    sizeof(assignments->groupnames) *
+			GFARM_MALLOC_ARRAY(assignments->groupnames,
 			    assignments->ngroups);
 			if (assignments->groupnames == NULL) {
 				errors[i] = GFARM_ERR_NO_MEMORY;
@@ -995,7 +989,7 @@ get_schedule_result(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "i", &nhosts)) !=
 	    GFARM_ERR_NO_ERROR)
 		return (e);
-	infos = malloc(sizeof(*infos) * nhosts);
+	GFARM_MALLOC_ARRAY(infos, nhosts);
 	if (infos == NULL) /* XXX this breaks gfm protocol */
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -1380,8 +1374,8 @@ gfm_client_replica_list_by_name_result(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	hosts = malloc(sizeof(*hosts) * n);
-	ports = malloc(sizeof(*ports) * n);
+	GFARM_MALLOC_ARRAY(hosts, n);
+	GFARM_MALLOC_ARRAY(ports, n);
 	if (hosts == NULL || ports == NULL) {
 		if (hosts != NULL)
 			free(hosts);
@@ -1426,7 +1420,7 @@ gfm_client_replica_list_by_host_result(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	inodes = malloc(sizeof(*inodes) * n);
+	GFARM_MALLOC_ARRAY(inodes, n);
 	if (inodes == NULL)
 		return (GFARM_ERR_NO_MEMORY); /* XXX not graceful */
 	for (i = 0; i < n; i++) {
@@ -1614,7 +1608,7 @@ gfj_client_list(struct gfm_connection *gfm_server, char *user,
 	e = gfm_client_rpc(gfm_server, 0, GFJ_PROTO_LIST, "s/i", user, &n);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	jobs = malloc(sizeof(int) * n);
+	GFARM_MALLOC_ARRAY(jobs, n);
 	if (jobs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < n; i++) {
@@ -1653,8 +1647,8 @@ gfj_client_info_entry(struct gfp_xdr *conn,
 		return (e);
 	if (eof)
 		return (GFARM_ERR_PROTOCOL);
-	info->argv = malloc(sizeof(char *) * (argc + 1));
-	info->nodes = malloc(sizeof(struct gfarm_job_node_info) * total_nodes);
+	GFARM_MALLOC_ARRAY(info->argv, argc + 1);
+	GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
 	if (info->argv == NULL || info->nodes == NULL) {
 		free(info->job_type);
 		free(info->originate_host);
@@ -1800,7 +1794,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	job_info.gfarm_url_for_scheduling = sched_file;
 	job_info.argc = argc;
 	job_info.argv = argv;
-	job_info.nodes = malloc(sizeof(struct gfarm_job_node_info) * nusers);
+	GFARM_MALLOC_ARRAY(job_info.nodes, nusers);
 	if (job_info.nodes == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < nusers; i++) {

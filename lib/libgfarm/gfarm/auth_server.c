@@ -266,7 +266,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	    global_username, hostname, local_username);
 
 	if (switch_to) {
-		aux = malloc(
+		GFARM_MALLOC_ARRAY(aux,
 		    strlen(global_username) + 1 + strlen(hostname) + 1);
 		if (aux == NULL) {
 			gflog_error("(%s@%s) authorize_sharedsecret: %s",

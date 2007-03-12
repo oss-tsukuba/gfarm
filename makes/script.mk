@@ -20,9 +20,10 @@ script-all:
 
 script-install:
 	@$(MKDIR_P) $(DESTDIR)$(bindir)
-	@set -x; \
-	for i in -- $(SCRIPTS); do \
+	@for i in -- $(SCRIPTS); do \
 		case $$i in --) continue;; esac; \
+		echo \
+		$(INSTALL_SCRIPT) $$i $(DESTDIR)$(bindir)/`basename $$i`; \
 		$(INSTALL_SCRIPT) $$i $(DESTDIR)$(bindir)/`basename $$i`; \
 	done
 

@@ -35,8 +35,9 @@ static struct gfarm_hash_table *group_hashtab = NULL;
 gfarm_error_t
 grpassign_add(struct user *u, struct group *g)
 {
-	struct group_assignment *ga = malloc(sizeof(*ga));
+	struct group_assignment *ga;
 
+	GFARM_MALLOC(ga);
 	if (ga == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -111,8 +112,9 @@ group_enter(char *groupname, struct group **gpp)
 {
 	struct gfarm_hash_entry *entry;
 	int created;
-	struct group *g = malloc(sizeof(*g));
+	struct group *g;
 
+	GFARM_MALLOC(g);
 	if (g == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	g->groupname = groupname;
@@ -239,7 +241,7 @@ group_add_user_and_record(struct group *g, const char *username)
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
 		n++;
 	gi.nusers = n;
-	gi.usernames = malloc(sizeof(*gi.usernames) * n);
+	GFARM_MALLOC_ARRAY(gi.usernames, n);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
 		gi.usernames[n] = user_name(ga->u);
@@ -277,7 +279,7 @@ group_init(void)
 
 		gi.groupname = strdup(ADMIN_GROUP_NAME);
 		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
-		gi.usernames = malloc(sizeof(*gi.usernames) * gi.nusers);
+		GFARM_MALLOC_ARRAY(gi.usernames, gi.nusers);
 		gi.usernames[0] = strdup(ADMIN_USER_NAME);
 		if (gfarm_metadb_admin_user != NULL)
 			gi.usernames[1] = strdup(gfarm_metadb_admin_user);
@@ -384,7 +386,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	    "i", &ngroups);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	groups = malloc(sizeof(*groups) * ngroups);
+	GFARM_MALLOC_ARRAY(groups, ngroups);
 	if (groups == NULL)
 		no_memory = 1;
 	for (i = 0; i < ngroups; i++) {

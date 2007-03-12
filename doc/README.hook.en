@@ -1,12 +1,12 @@
 		File access from existing applications
 		 (README for syscall-hooking library)
 
-Gfarm syscall-hooking library (libgfs_hook.so or gfs_hook.o) enables
-every existing (binary) program to access Gfarm file system as if it
+The Gfarm syscall-hooking library (libgfs_hook.so or gfs_hook.o) enables
+any existing (binary) program to access the Gfarm filesystem as if it
 were mounted on /gfarm.
 
 Basically the syscall-hooking library traps every system call for file
-access.  When a file is under the mount point /gfarm or a Gfarm URL
+access.  When a file is under the mount point /gfarm or uses a Gfarm URL
 starting with 'gfarm:' or 'gfarm@', appropriate Gfarm I/O APIs are
 called.
 
@@ -17,19 +17,23 @@ Contents
 
   1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X and HP-UX
 
-  Every existing program can access Gfarm file system without any
+  Any existing program can access Gfarm filesystem without
   modification.
 
-  1-2) AIX
+  1-2) Operating systems without library preload mechanisms
 
-  Just re-linking with the syscall-hooking library, every existing
-  program can access Gfarm file system.
+  By simply re-linking with the syscall-hooking library, any existing
+  program can access the Gfarm filesystem.
 
-  1-3) Other systems
+  1-3) AIX
+
+  AIX is not supported.
+
+  1-4) Other systems
 
   Contact datafarm@apgrid.org.
 
-2) Limitation of syscall-hooking library
+2) Limitations of the syscall-hooking library
 
 3) Semantics and extended APIs
 
@@ -40,24 +44,24 @@ Contents
 1-1) Linux, FreeBSD, NetBSD, Solaris, Mac OS X, HP-UX and Tru64
 ---------------------------------------------------------------
 
-Exploiting a preload mechanism that loads specified shared libraries
-before executing application, every existing program can access Gfarm
-file system without any modification.
+Exploiting a preload mechanism tha loads specified shared libraries
+before executing an application, any existing program can access Gfarm
+filesystem without modification.
 
  (1) Linux
 ===========
 
 It is necessary to install a glibc-not-hidden package to enable
-necessary system calls to hook properly.
+the required system calls to carry out the hook properly.
 http://datafarm.apgrid.org/software/sycall-hook.en.html#glibc-not-hidden
 
-If you cannot install glibc-not-hidden package, it is necessary to
-re-link syscall-hooking library statically described in Section 2.
+If you cannot install the glibc-not-hidden package, it is necessary to
+re-link the syscall-hooking library statically, as described in Section 2.
 Or, you can use GfarmFS-FUSE.
-       http://datafarm.apgrid.org/software/gfarmfs-fuse.en.html
+	http://datafarm.apgrid.org/software/gfarmfs-fuse.en.html
 
 Specify libgfs_hook.so.0 and glib{rt,pthread,c}-not-hidden.so in
-LD_PRELOAD environment variable.
+your LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -68,23 +72,22 @@ In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD '%%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
 
-After specifying LD_PRELOAD environment variable, every application
-can access Gfarm file system as if it were mounted on /gfarm.
+After specifying an LD_PRELOAD environment variable, any application
+can access the Gfarm filesystem as if it were mounted on /gfarm.
 
-Make sure that the above setting does work by invoking your
-login shell. e.g.
+Make sure that the above setting works, by invoking your
+login shell, e.g.,
 
 	% bash
 
-When using GSI-enabled Gfarm, some programs, which are linked with
-libgssapi based on Kerberos, may cause segmentation fault or cannot
-access Gfarm file system.  In this case, you need to add libgssapi
-based on GSI and libssl in LD_PRELOAD environment variable as well.
-For example, scp and wget sometimes fit this sort of programs.
+When using GSI-enabled Gfarm, some programs that are linked with
+libgssapi based on Kerberos may cause a segmentation fault or cannot
+access the Gfarm filesystem.  In this case, you have to add libgssapi
+based on GSI, and libssl in the LD_PRELOAD environment variable, as well.
+For example, scp and wget sometimes fit this profile.
 
-If the globus flavor name which is linked with Gfarm is %%GLOBUS_FLAVOR%%,
-You need to specify $GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0
-and $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 as follows.
+If the globus flavor name that is linked with Gfarm is %%GLOBUS_FLAVOR%%,
+you have to specify $GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 and $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 as follows.
 
 	$ LD_PRELOAD="$GLOBUS_LOCATION/lib/libglobus_gssapi_gsi_%%GLOBUS_FLAVOR%%.so.0 $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 %%LIBDIR%%/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so"
 	$ export LD_PRELOAD
@@ -93,7 +96,7 @@ and $GLOBUS_LOCATION/lib/libssl_%%GLOBUS_FLAVOR%%.so.0 as follows.
  (2) FreeBSD
 =============
 
-Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
+Specify libgfs_hook.so.0 in the LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -108,7 +111,7 @@ Note that this LD_PRELOAD setting won't work with commands in /bin
 when using FreeBSD 4.X or earlier, because the commands are statically
 linked.  If you are using such a release, it's better to create
 dynamically linked executables for these commands in a directory like
-/usr/local/dynbin, and add the directory to your $PATH, by the
+/usr/local/dynbin, and add the directory to your $PATH, using the
 following procedures;
 
 (1) extract sbin.?? and subin.?? in the source distribution
@@ -116,11 +119,11 @@ following procedures;
 	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/sbin.?? | tar zpxf -
 	# cat ${FREEBSD_RELEASE_DIRECTORY}/src/subin.?? | tar zpxf -
 
-(2) change the configuration from static to dynamic linkage
+(2) change the configuration from a static to a dynamic linkage
 	# cd bin
 	# vi Makefile.inc
 	  ... comment out the following line
-		NOSHARED?=	YES
+		NOSHARED?=   YES
 
 (3) build, and install to an appropriate directory (/usr/local/dynbin
   in this example)
@@ -132,10 +135,10 @@ from
 
 https://datafarm.apgrid.org/software/freebsd/bin-FreeBSD-4.11-i386.tar.gz
 
- 3) NetBSD
+ (3) NetBSD
 ===========
 
-Specify libgfs_hook.so.0 in LD_PRELOAD environment variable.
+Specify libgfs_hook.so.0 in the LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -150,18 +153,18 @@ Note that this LD_PRELOAD setting won't work with commands in /bin
 when using NetBSD 1.X or earlier, because the commands are statically
 linked.  If you are using such a release, it's better to create
 dynamically linked executables for these commands in a directory like
-/usr/local/dynbin, and add the directory to your $PATH, by the
+/usr/local/dynbin, and add the directory to your $PATH, using the
 following procedures;
 
 (1) extract src.tgz in the source distribution
 	# cd /
 	# tar zpxf ${NETBSD_RELEASE_DIRECTORY}/source/sets/src.tgz
 
-(2) change the configuration from static to dynamic linkage
+(2) change the configuration from a static to a dynamic linkage
 	# cd usr/src/bin
 	# vi Makefile.inc
 	  ... comment out the following line
-		LDSTATIC?=	-static
+		LDSTATIC?=   -static
 
 (3) build, and install to an appropriate directory (/usr/local/dynbin
   in this example)
@@ -176,29 +179,33 @@ https://datafarm.apgrid.org/software/netbsd/bin-NetBSD-1.6.2-i386.tar.gz
  (4) Solaris
 =============
 
-Specify libgfs_hook.so.0 in LD_PRELOAD_32 environment variable.
+Specify libgfs_hook.so.0 in the LD_PRELOAD_32 environment variable.
 
 In the case of sh or bash,
 
-	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0
+	$ LD_PRELOAD_32=%%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
 	$ export LD_PRELOAD_32
 
 In the case of csh or tcsh,
 
-	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0
+	% setenv LD_PRELOAD_32 %%LIBDIR%%/libgfs_hook.so.0:/usr/lib/libresolv.so
 
-Solaris is not tested well.  At least, we know there is a restriction
-such that directory access via opendir(3) doesn't work.
+  NOTE: The reason libresolv.so is needed here is because the libgfarm.so
+    library that is included in the gfarm binary package for Solaris has a
+    statically-linked OpenLDAP library in it, and the OpenLDAP library
+    refers to a symbol in libresolv.so. If you are building gfarm from
+    a source distribution, it is possible that libresolv.so may not be
+    necessary.
 
  (5) MacOS X
 =============
 
-Specify libgfs_hook.dynlib in DYLD_INSERT_LIBRARIES environment variable,
-and also set DYLD_FORCE_FLAT_NAMESPACE environment variable as well.
+Specify libgfs_hook.dynlib in the DYLD_INSERT_LIBRARIES environment variable,
+and also set the DYLD_FORCE_FLAT_NAMESPACE environment variable, as well.
 To specify multiple libraries in DYLD_INSERT_LIBRARIES, each library
-should be separated by ":" (colon).
-You can specify any value to the DYLD_FORCE_FLAT_NAMESPACE,
-the existence of the variable itself makes an effect.
+should be separated by a ":" (colon).
+You can specify any value for the DYLD_FORCE_FLAT_NAMESPACE, just
+the existence of the variable itself has an effect.
 
 In the case of sh or bash,
 
@@ -211,12 +218,12 @@ In the case of csh or tcsh,
 	% setenv DYLD_INSERT_LIBRARIES %%LIBDIR%%/libgfs_hook.dylib
 	% setenv DYLD_FORCE_FLAT_NAMESPACE ""
 
-MacOS X is barely tested.
+MacOS X not yet been thoroughly tested.
 
  (6) HP-UX
 =============
 
-Specify libgfs_hook.sl in LD_PRELOAD environment variable.
+Specify libgfs_hook.sl in the LD_PRELOAD environment variable.
 
 In the case of sh or bash,
 
@@ -227,15 +234,16 @@ In the case of csh or tcsh,
 
 	% setenv LD_PRELOAD %%LIBDIR%%/libgfs_hook.sl
 
-HP-UX is barely tested.  At least, we know there is a restriction
+HP-UX has not yet been thoroughly tested.  At this point, however, we know
+there is a restriction
 such that directory access via readdir(3) doesn't work.
 
  (7) Tru64
 =============
 
-Specify libgfs_hook.so.0 in _RLD_LIST environment variable.
+Specify libgfs_hook.so.0 in the _RLD_LIST environment variable.
 To specify multiple libraries in _RLD_LIST, each library should be
-separated by ":" (colon).
+separated by a ":" (colon).
 Also, ":DEFAULT" is needed at the end of the variable.
 
 In the case of sh or bash,
@@ -247,120 +255,256 @@ In the case of csh or tcsh,
 
 	% setenv _RLD_LIST %%LIBDIR%%/libgfs_hook.so.0:DEFAULT
 
-It is known that gfhost command and scheduling functions do not
-correctly work on Tru64. Also, we know there is a restriction
+It is known that the gfhost command and scheduling functions do not
+work correctly on Tru64. Also, we know there is a restriction
 such that directory access via readdir(3) doesn't work.
 
  (8) OS-independent settings
 =============================
 
-It is useful to specify the above in the shell rc file such as .bashrc
-and .cshrc.  We recommend to use bash because it is well tested.
+It is useful to specify the above in shell rc files such as .bashrc
+and .cshrc.  We recommend the use of bash, because it is well tested.
 
-If you would like to access Gfarm file system in your interactive
+If you would like to access the Gfarm filesystem in your interactive
 shell, just execute the shell again.
 
 	% exec bash -l
 
-Now, you can change the current working directory to /gfarm, and you
+Then, you can change the current working directory to /gfarm, and you
 can use filename completion in the shell.
 
 	bash$ cd /gfarm
 
 For MPI applications, it is necessary to generate libgfs_hook.so for
-MPI library in your environment, or follow the Section 2.
+the MPI library in your environment, or follow the instructions in Section 2.
 
-There are some limitations of system-call hooking library.  Refer to
-the following "Limitation" section.
+There are some limitations with the system-call hooking library.  Refer to
+the following "Limitations" section.
 
 -----------------------------------------------------------------------
 
-1-2) AIX
---------
+1-2) Operating systems without library preload mechanisms
+-------------------------------------------------------
 
 When an operating system does not support a preload mechanism, it is
-necessary to re-link with Gfarm syscal-hooking library, gfs_hook.o, to
-access Gfarm file system.
+necessary to re-link with the Gfarm syscall-hooking library, gfs_hook.o, to
+access the Gfarm filesystem.
 
 Note that it is necessary to link with gfs_hook.o statically when you
-are using GNU C library (glibc) typically in Linux to hook necessary
-system calls properly.
+are using the GNU C library  (glibc), typically in Linux, to hook the
+required system calls properly.
 
-* C program
+* C programs
 
-Re-create applications by linking with gfs_hook.o and -lgfarm.
+Re-create applications by linking to gfs_hook.o and -lgfarm.
 
 	% cc prog.o %%LIBDIR%%/gfs_hook.o -lgfarm
 
-For static linking, you can use libtool with the -all-static option.
+For static linking, you can use libtool, with the -all-static option.
 
-	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_%%GLOBUS_FLAVOR%% -lsasl 
+	% libtool --mode=link cc -all-static prog.c -o prog %%LIBDIR%%/gfs_hook.o -lgfarm -lglobus_gssapi_gsi_%%GLOBUS_FLAVOR%% -lsasl
 
-Note that static linking results in segmentation fault when using LDAP
+Note that static linking results in a segmentation fault when using LDAP
 authentication in RedHat-8.0 and RedHat-7.3.
 
-* Fortran or C++ program
+* Fortran or C++ programs
 
-Follows the section for 'C program' and links with gfs_hook.o and
--lgfarm but with an appropriate compiler.
+Follow the information given in the section for 'C programs' and link to
+gfs_hook.o and -lgfarm, but with an appropriate compiler.
 
-* MPI program
+* MPI programs
 
-In the case of MPI programs, link with gfs_hook_no_init.o and
+In the case of an MPI programs, link to gfs_hook_no_init.o and
 hooks_init_mpi.c instead of gfs_hook.o.
 
-	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c \
-		-lgfarm
+	% mpicc prog.o %%LIBDIR%%/gfs_hook_no_init.o %%LIBDIR%%/hooks_init_mpi.c -lgfarm
 
 -----------------------------------------------------------------------
 
-1-3) Other systems
+1-3) AIX
+--------
+
+AIX is not supported.
+
+-----------------------------------------------------------------------
+
+1-4) Other systems
 ------------------
 
 Contact datafarm@apgrid.org.
 
 ======================================================================
 
-2) Limitation of syscall-hooking library
+2) Limitations of the syscall-hooking library
 ----------------------------------------
 
-(This limitation is not applied to GfarmFS-FUSE.)
+(This limitation does not apply to GfarmFS-FUSE.)
 
-2-1) Access limitation from a client (that is not a file system node)
+2-1) Access limitations from a client that is not a filesystem node
 
-There are some limitations for access to files, programs, and shared
-libraries in Gfarm file system from a client node that is not a file
-system node.  The following is not supported for now.
+There are some limitations on access to files, programs, and shared
+libraries in the Gfarm filesystem from a client node that is not a file
+system node. For now, the following are not supported.
 
  - program execution
  - shared library linking
  - file creation by a child process via a redirection
  - file input via a redirection
 
-Access for programs, i.e. creating a file with execution bits, and/or
-reading a file which has execution bits, are possible even on a client
-node, by setting an environment variable as follows, or configuring
-~/.gfarmrc.  Please look at gfarm.conf(5) man page about the
+Access for programs, i.e., creating a file with execution bits, and/or
+reading a file which has execution bits, are possible, even on a client
+node, by setting an environment variable as follows, or by configuring
+~/.gfarmrc.  Please see the gfarm.conf(5) man page about the
 ~/.gfarmrc configuration.
 
 	$ export GFARM_ARCHITECTURE=`gfarm.arch.guess`
 
-2-2) Access limitation from a file system node
+2-2) Access limitations from a filesystem node
 
 There are some limitations for access to files via a redirection in
-Gfarm file system from a file system node.
+the Gfarm filesystem from a filesystem node.
 
 Regarding file creation via a redirection, it is supported only when
 it creates a new file.
 
 Regarding file input via a redirection, it is supported only when
-GFARM_FLAGS is specified to enable on-demand replication feature,
+GFARM_FLAGS is specified to enable the on-demand replication feature,
 
 	bash$ export GFARM_FLAGS=r
 
-In this case, every file will be replicated to the local file system
-on demand instead of accessing remotely.  For example, 'tar zxfp
+In this case, each file will be replicated to the local filesystem
+on demand, instead of via remote access. For example, 'tar zxfp
 foo.tar.gz' requires this setting.
+
+2-3) Limitations to access command names from scripts
+
+When you put a script on a Gfarm filesystem, the script may not
+be able to access its filename (e.g. $0, $argv[0]).
+In that case, you can make it work by using its interpreter with
+the script name as the argument, instead of invoking the script
+directly.
+For example, configure scripts generated by GNU autoconf are
+scripts of this type. Thus you cannot use the following command:
+	bash$ ./configure
+so you must use the following command:
+	bash$ sh ./configure
+
+2-4) Limitations concerning shells
+
+If you use a shell other than bash, the shell often doesn't work
+correctly.  We strongly recommend the use of bash for this reason,
+especially when you are using the syscall-hooking feature.
+For example, since /bin/sh isn't bash on OSes other than Linux,
+you have to use the following command:
+	bash$ env CONFIG_SHELL=`which bash` bash ./configure
+Please see 2-3), above, too.
+
+2-5) User ID and Group ID
+
+All files and directories look like they are owned by the user herself/himself,
+from commands which use stat(2)/lstat(2)/fstat(2) system calls.
+
+2-6) Multithreading
+
+As written in KNOWN_PROBLEMS.en, The Gfarm library isn't currently
+multithread safe.  Thus, programs which are using pthread aren't
+guaranteed to work.
+
+2-7) Asynchronous signal processing
+
+Many system calls can be used from asynchronous signal handlers,
+but when the Gfarm syscall-hooking library is used, such use
+isn't guaranteed to work, even for the async-signal-safe syscalls.
+
+2-8) Command-specific limitations
+
+   - When gsi or gsi_auth is selected as the authentication method,
+     an error may occur while accessing the Gfarm filesystem via
+     the scp command.
+     This symptom haven't been observed on Solaris.
+
+2-9) OS-dependent limitations
+
+ (1) Linux
+===========
+
+   - As stated in 1-1) (1), above, you have to use the glibc-not-hidden
+     package to use the syscall-hooking library.
+   - The pthread_cancel() function doesn't always work correctly,
+     due to an implementation limitation of the current glibc-not-hidden
+     package.
+   - Currently, the syscall-hooking function for futimes(3), which was
+     introduced in glibc-2.3.3, doesn't work.  As the result, touch(1)
+     command cannot set file access/modification time on linux
+     distributions which are using glibc-2.3.3 or later.  This is
+     because futimes(3) function is implemented as a utimes(2) call for
+     "/proc/self/fd/DESCRIPTOR-NUMBER", and the syscall-hooking function
+     for utimes(2) doesn't support such pathnames.
+   - The dd command dumps core due to an infinite number of recursive
+     calls.
+     Or, "Bad file descriptor" error is observed on Fedora Core 5,
+     when a Gfile file is passed to the of= parameter.  The cause of
+     this problem haven't been investigated yet.
+   - The configure script generated by autoconf doesn't work on a Gfarm
+     filesystem, when gsi is selected as the authentication method.
+     It does work with both sharedsecret and gsi_auth methods, though.
+
+ (2) FreeBSD
+=============
+
+   - Currently, the syscall-hooking function for the pathconf(2) systemcall
+     isn't implemented. Thus, the "ls -l" command displays warning
+     messages on FreeBSD-5.x or later, although the command
+     does work.
+   - Currently, the syscall-hooking functions for chflags(2), lchflags(2),
+     and fchflags(2) aren't implemented.
+   - Currently, the configure script generated by autoconf doesn't work
+     on a Gfarm filesystem, even if you are using bash.
+
+ (3) NetBSD
+===========
+
+   - Currently, the syscall-hooking function for pathconf(2) system-calls
+     isn't implemented.
+   - Currently, the syscall-hooking functions for chflags(2), lchflags(2),
+     and fchflags(2) aren't implemented. Thus, the "install" command and
+     "gunzip" command on NetBSD-3.0, or later, displays an error message,
+     although the command itself is working almost correctly.
+   - You have to use the following command line to use a configure script
+     generated by autoconf on a Gfarm filesystem, as stated in 2-4):
+	bash$ env CONFIG_SHELL=`which bash` bash ./configure
+
+ (4) Solaris
+=============
+
+   - Currently, the syscall-hooking function for fsat(2) system calls isn't
+     implemented, yet. And because the fstatat64() and openat64()
+     subfunctions aren't implemented, the OS-supplied tar commands and pax
+     commands don't work to extract a tar file, although you can use
+     GNU tars command for the purpose, instead.
+   - If you use the `test' command, a built-in function of /bin/sh,
+     with filesystem access options like -d, /bin/sh itself dumps core,
+     at least on Solaris 9/sparc. You can work around this problem by
+     using bash instead of /bin/sh.
+   - Currently, a configure script generated by autoconf doesn't work
+     on a Gfarm filesystem, even if you are using bash.
+     It seems one of the reasons for this is because the access(2) system-
+     call cannot be hooked correctly, in some cases.
+
+ (5) MacOS X
+=============
+
+   - We haven't done any testing on this platform.
+
+ (6) HP-UX
+=============
+
+   - We haven't done any testing on this platform.
+
+ (7) Tru64
+=============
+
+   - We haven't done any testing on this platform.
 
 ======================================================================
 
@@ -370,22 +514,22 @@ foo.tar.gz' requires this setting.
 3-1) File view semantics
 
 For newly created files, the default file view is a local file view.
-For existent files, if the number of processes and the number of file
+For existing files, if the number of processes and the number of file
 fragments are the same, the default file view is a local file view,
 otherwise, the default view is a global view.
 
 When you execute 'gfrun' with the -b option, you can change the
-default view to the global file view.
+default view to a global file view.
 
 3-2) Extended Gfarm URL
 
-Some applications like ROOT I/O cut off the filename before ':'
-without any investigation.  We provide a variety of Gfarm URL;
-'gfarm@'.  For example, 'gfarm:~/foo.txt' is also referred to by
+Some applications, like ROOT I/O, cut off the filename before ':'
+without any investigation.	We provide a variety of Gfarm URL;, namely
+'gfarm@'.  For example, 'gfarm:~/foo.txt' can also be referred to by
 'gfarm@~/foo.txt'.
 
-Moreover, we provide a (quasi) mount point for a Gfarm file system;
-'/gfarm'.  A home directory in Gfarm file system and the current
+Moreover, we provide a (quasi) mount point for a Gfarm filesystem;
+'/gfarm'.  A home directory in a Gfarm filesystem and the current
 working directory can be specified by '/gfarm/~' and '/gfarm/.',
 respectively.
 
@@ -399,22 +543,22 @@ specifies the first fragment of 'gfarm:foo.txt'.
 Gfs_hook APIs are provided for further manipulation of file views
 beyond the default semantics.
 
-3-3-1 default file view
+3-3-1 Default file view
 
 The following APIs change the default file view of the succeeding file
-opening or creating operations.
+opening or file creating operations.
 
 void gfs_hook_set_default_view_local(void);
 void gfs_hook_set_default_view_index(int index, int nfrags);
 void gfs_hook_set_default_view_section(char *section);
 void gfs_hook_set_default_view_global(void);
 
-3-3-2 changing file view
+3-3-2 Changing a file view
 
 The following APIs change the file view of a file specified by a file
-descriptor 'fd'.  The semantics is same as gfs_pio_set_view_local(3),
+descriptor, 'fd'.  The semantics are the same as for gfs_pio_set_view_local(3),
 gfs_pio_set_view_index(3), gfs_pio_set_view_section(3), and
-gfs_pio_set_view_global(3), respectively, except the first argument.
+gfs_pio_set_view_global(3), respectively, except for the first argument.
 
 char *
 gfs_hook_set_view_local(int fd, int flags);

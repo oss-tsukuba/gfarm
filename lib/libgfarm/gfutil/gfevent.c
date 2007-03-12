@@ -11,13 +11,12 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <gfarm/error.h>
+#include <gfarm/gfarm_misc.h>
+
 #include "gfutil.h"
 #include "gfevent.h"
 
-/* select(2) */
-#ifndef howmany
-#define howmany(x, y) (((x) + ((y) - 1)) / (y))
-#endif
 #define MIN_FDS_SIZE	FD_SETSIZE
 
 /* event */
@@ -49,8 +48,9 @@ gfarm_fd_event_alloc(int filter, int fd,
 	void (*callback)(int, int, void *, const struct timeval *),
 	void *closure)
 {
-	struct gfarm_event *ev = malloc(sizeof(*ev));
+	struct gfarm_event *ev;
 
+	GFARM_MALLOC(ev);
 	if (ev == NULL)
 		return (NULL);
 	ev->next = ev->prev = NULL; /* to be sure */
@@ -75,8 +75,9 @@ struct gfarm_event *
 gfarm_timer_event_alloc(
 	void (*callback)(void *, const struct timeval *), void *closure)
 {
-	struct gfarm_event *ev = malloc(sizeof(*ev));
+	struct gfarm_event *ev;
 
+	GFARM_MALLOC(ev);
 	if (ev == NULL)
 		return (NULL);
 	ev->next = ev->prev = NULL; /* to be sure */
@@ -114,8 +115,9 @@ struct gfarm_eventqueue {
 struct gfarm_eventqueue *
 gfarm_eventqueue_alloc(void)
 {
-	struct gfarm_eventqueue *q = malloc(sizeof(*q));
+	struct gfarm_eventqueue *q;
 
+	GFARM_MALLOC(q);
 	if (q == NULL)
 		return (NULL);
 
@@ -179,15 +181,26 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 	fd_set *fsp;
 
 	if (fd >= q->fd_set_size) {
-		size_t fds_size, fds_array_length, fds_bytes;
+		size_t fds_size, fds_array_length, fds_bytes, fd_set_size;
+		int overflow = 0;
 
 		fds_size = q->fd_set_size > 0 ? q->fd_set_size : MIN_FDS_SIZE;
 		for (; fd >= fds_size; fds_size += fds_size)
 			;
-		fds_array_length = howmany(fds_size,
-		    sizeof(fsp->fds_bits[0]) * CHAR_BIT);
-		fds_bytes = fds_array_length * sizeof(fsp->fds_bits[0]);
-
+		/*
+		 * This calculates:
+		 *	howmany(fds_size, sizeof(fsp->fds_bits[0]) * CHAR_BIT);
+		 * where howmany(x, y) == (((x) + ((y) - 1)) / (y))
+		 */
+		fds_array_length = gfarm_size_add(&overflow, fds_size,
+		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT) - 1) /
+		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT);
+		fds_bytes = gfarm_size_mul(&overflow,
+		    fds_array_length, sizeof(fsp->fds_bits[0]));
+		fd_set_size = gfarm_size_mul(&overflow,
+		    fds_bytes, CHAR_BIT);
+		if (overflow)
+			return (0); /* failure */
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->read_fd_set))
 			return (0); /* failure */
@@ -199,7 +212,7 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 			return (0); /* failure */
 
 		q->fd_set_bytes = fds_bytes;
-		q->fd_set_size = fds_bytes * CHAR_BIT;
+		q->fd_set_size = fd_set_size;
 	}
 	if (*fd_setpp == NULL) {
 		/*
@@ -541,9 +554,10 @@ proto1_request_multiplexed(struct gfarm_eventqueue *q, int peer_socket,
 	void (*continuation)(void *), void *closure,
 	struct proto1_state **statepp)
 {
-	struct proto1_state *state = malloc(sizeof(*state));
+	struct proto1_state *state;
 	int rv = ENOMEM;
 
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (ENOMEM);
 	state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE, peer_socket,

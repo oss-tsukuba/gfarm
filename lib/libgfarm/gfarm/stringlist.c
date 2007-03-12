@@ -16,7 +16,7 @@ gfarm_stringlist_init(gfarm_stringlist *listp)
 {
 	char **v;
 
-	v = malloc(sizeof(char *) * GFARM_STRINGLIST_INITIAL);
+	GFARM_MALLOC_ARRAY(v, GFARM_STRINGLIST_INITIAL);
 	if (v == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	listp->size = GFARM_STRINGLIST_INITIAL;
@@ -61,7 +61,7 @@ gfarm_stringlist_add_strings(gfarm_stringlist *listp, int al, char **av)
 		do {
 			n += GFARM_STRINGLIST_DELTA;
 		} while (ll + al > n);
-		t = realloc(listp->array, sizeof(char *) * n);
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -86,8 +86,9 @@ gfarm_stringlist_add(gfarm_stringlist *listp, char *s)
 
 	if (length >= listp->size) {
 		int n = listp->size + GFARM_STRINGLIST_DELTA;
-		char **t = realloc(listp->array, sizeof(char *) * n);
-
+		char **t;
+		
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -132,8 +133,9 @@ char **
 gfarm_strings_alloc_from_stringlist(gfarm_stringlist *listp)
 {
 	int n = gfarm_stringlist_length(listp);
-	char **t = malloc(sizeof(char *) * n);
+	char **t;
 
+	GFARM_MALLOC_ARRAY(t, n);
 	if (t == NULL)
 		return (NULL);
 	memcpy(t, listp->array, sizeof(char *) * n);
@@ -168,8 +170,9 @@ char **
 gfarm_strarray_dup(char **array)
 {
 	int n = gfarm_strarray_length(array);
-	char **v = malloc(sizeof(char *) * (n + 1));
+	char **v;
 
+	GFARM_MALLOC_ARRAY(v, n + 1);
 	if (v == NULL)
 		return (v);
 	if (gfarm_fixedstrings_dup(n, v, array) != GFARM_ERR_NO_ERROR)

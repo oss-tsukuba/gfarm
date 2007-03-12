@@ -15,7 +15,7 @@ int gfsd_statfs(char *path, gfarm_int32_t *bsizep,
 
 	if (statvfs(path, &buf) == -1)
 		return (errno);
-	*bsizep = buf.f_bsize;
+	*bsizep = buf.f_frsize;
 	*blocksp = buf.f_blocks;
 	*bfreep = buf.f_bfree;
 	*bavailp = buf.f_bavail;

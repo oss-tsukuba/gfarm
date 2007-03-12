@@ -9,9 +9,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
+
+#include <gfarm/gfarm_misc.h>
 
 #define GFARM_LOCKFILE_SUF	":::lock"
-#define GFARM_USLEEP_INTERVAL	100	/* 100 msec */
 
 static int
 gfs_i_lockfile(char *file, char **lockfile)
@@ -22,7 +24,7 @@ gfs_i_lockfile(char *file, char **lockfile)
 	if (file == NULL)
 		return (-1);
 
-	lfile = malloc(strlen(file) + sizeof(GFARM_LOCKFILE_SUF));
+	GFARM_MALLOC_ARRAY(lfile, strlen(file) + sizeof(GFARM_LOCKFILE_SUF));
 	if (lfile == NULL)
 		return (-1);
 	sprintf(lfile, "%s%s", file, GFARM_LOCKFILE_SUF);
@@ -61,9 +63,11 @@ gfs_i_lock(char *file)
 int
 gfs_lock_local_path_section(char *localpath)
 {
+	const struct timespec interval = { 0, 100000000 }; /* 100 msec */
 	int r;
+
 	while ((r = gfs_i_lock(localpath)) == -1) {
-		usleep(GFARM_USLEEP_INTERVAL);
+		nanosleep(&interval, NULL);
 	}
 	return (r);
 }

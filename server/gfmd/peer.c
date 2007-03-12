@@ -77,7 +77,7 @@ peer_init(int max_peers)
 	int i;
 	struct peer *peer;
 
-	peer_table = malloc(max_peers * sizeof(*peer_table));
+	GFARM_MALLOC_ARRAY(peer_table, max_peers);
 	if (peer_table == NULL)
 		gflog_fatal("peer table: %s", strerror(ENOMEM));
 	peer_table_size = max_peers;
@@ -116,7 +116,7 @@ peer_alloc(int fd, struct peer **peerp)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	/* XXX FIXME gfp_xdr requires too much memory */
-	e = gfp_xdr_new_fd(fd, &peer->conn);
+	e = gfp_xdr_new_socket(fd, &peer->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		peer_table_unlock();
 		return (e);

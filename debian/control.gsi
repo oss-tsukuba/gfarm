@@ -12,7 +12,7 @@ Package: gfmd-gsi
 Section: net
 Architecture: i386 amd64
 Depends: libgfarm-gsi (= ${Source-Version})
-Suggests: slapd
+Suggests: postgresql, slapd
 Conflicts: gfmd
 Description: The Gfarm metadata server with GSI
  The Gfarm filesystem metadata server for accessing 

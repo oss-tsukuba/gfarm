@@ -1,13 +1,15 @@
 extern char *gfarm_config_file;
 
 /* gfsd dependent */
+/* GFS dependent */
+extern char *gfarm_spool_server_listen_address;
 extern char *gfarm_spool_root;
-extern int gfarm_spool_server_port;
 
 enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_UNKNOWN,
 	GFARM_BACKEND_DB_TYPE_LDAP,
-	GFARM_BACKEND_DB_TYPE_POSTGRESQL
+	GFARM_BACKEND_DB_TYPE_POSTGRESQL,
+	GFARM_BACKEND_DB_TYPE_LOCALFS
 };
 
 extern enum gfarm_backend_db_type gfarm_backend_db_type;
@@ -36,6 +38,28 @@ extern char *gfarm_postgresql_dbname;
 extern char *gfarm_postgresql_user;
 extern char *gfarm_postgresql_password;
 extern char *gfarm_postgresql_conninfo;
+
+/* LocalFS dependent */
+extern char *gfarm_localfs_datadir;
+
+/* miscellaneous configurations */
+extern int gfarm_log_level; /* syslog priority level to log */
+#define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */
+extern int gfarm_dir_cache_timeout;
+extern int gfarm_host_cache_timeout;
+extern int gfarm_schedule_cache_timeout;
+extern int gfarm_gfsd_connection_cache;
+extern int gfarm_record_atime;
+
+extern int gf_on_demand_replication;
+extern int gf_hook_default_global;
+
+int gfarm_schedule_write_local_priority(void);
+char *gfarm_schedule_write_target_domain(void);
+gfarm_off_t gfarm_get_minimum_free_disk_space(void);
+
+/* redirection */
+extern struct gfs_file *gf_stdout, *gf_stderr;
 
 /* miscellaneous */
 extern int gfarm_schedule_cache_timeout;

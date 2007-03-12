@@ -12,6 +12,8 @@
 #include "config.h"
 #include "lookup.h"
 
+static double gfs_stat_time;
+
 gfarm_error_t
 gfs_stat(const char *path, struct gfs_stat *s)
 {
@@ -69,4 +71,10 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
+}
+
+void
+gfs_stat_display_timers(void)
+{
+	gflog_info("gfs_stat        : %g sec\n", gfs_stat_time);
 }

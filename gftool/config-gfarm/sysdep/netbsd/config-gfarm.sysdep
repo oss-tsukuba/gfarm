@@ -2,7 +2,7 @@ fq_hostname()
 {
 	case `hostname` in
 	*.*)	hostname;;
-	*)	host "`hostname`" | awk 'NR==1 {print $1; exit}';;
+	*)	host "`hostname`" 2>/dev/null | awk 'NR==1 {print $1; exit}';;
 	esac
 }
 

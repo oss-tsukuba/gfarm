@@ -15,8 +15,8 @@ CONF="@config_gfarm_gfarm_config@"
 OPTIONS="@config_gfarm_gfsd_option@"
 
 name="gfsd"
-FILE=${name}
-rcvar=${name}
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
+rcvar=@config_gfarm_gfsd_rc_var@
 command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_run_dir@/${FILE}.pid"
 required_files="$CONF"
@@ -27,6 +27,6 @@ if [ -f /etc/rc.subr ]; then
 	load_rc_config ${FILE}
 	run_rc_command "$1"
 else
-	echo -n " ${name}"
+	echo -n " ${FILE}"
 	${command} ${gfsd_flags} ${command_args}
 fi

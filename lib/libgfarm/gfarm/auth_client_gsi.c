@@ -137,7 +137,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR || eof ||
 	    error != GFARM_AUTH_ERROR_NO_ERROR) {
 		gfp_xdr_reset_secsession(conn);
-		gfp_xdr_set_fd(conn, fd);
+		gfp_xdr_set_socket(conn, fd);
 		return (e != GFARM_ERR_NO_ERROR ? e :
 		    eof ? GFARM_ERR_PROTOCOL : GFARM_ERR_AUTHENTICATION);
 	}
@@ -189,7 +189,7 @@ gfarm_auth_request_gsi_receive_result(int events, int fd, void *closure,
 		state->error = GFARM_ERR_AUTHENTICATION;
 	if (state->error != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_reset_secsession(state->conn);
-		gfp_xdr_set_fd(state->conn, fd);
+		gfp_xdr_set_socket(state->conn, fd);
 	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
@@ -261,7 +261,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	state = malloc(sizeof(*state));
+	GFARM_MALLOC(state);
 	if (state == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 

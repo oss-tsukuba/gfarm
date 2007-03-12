@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "31 October 2004" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "13 November 2006" "Gfarm" ""
 
 .SH NAME
 gfs_pio_create \- create a Gfarm file
@@ -18,8 +18,8 @@ char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB
 \fBgfs_pio_create()\fR creates a new Gfarm file whose name is the
 string pointed to by \fIgfarm_url\fR with the access mode \fImode\fR,
 and returns a \fIGFS_File\fR structure to the address pointed to by
-\fIgfp\fR.  \fIMode\fR specifies the file permissions to be created,
-and is modified by the process's umask.
+\fIgfp\fR\&.  \fIMode\fR specifies the file permissions to be created,
+and is modified by the process's umask\&.
 .PP
 The
 \fIflags\fR
@@ -31,7 +31,7 @@ such that exactly one of
 \fIGFARM_FILE_RDWR\fR
 should be specified.
 In addition, it is possible to specify
-\fIGFARM_FILE_EXCLUSIVE\fR.
+\fIGFARM_FILE_EXCLUSIVE\fR\&.
 With this flag, 
 \fBgfs_pio_create()\fR
 will fail when the file already exists.
@@ -45,7 +45,7 @@ Although this was implicitly assumed before.
 .PP
 When \fBgfs_pio_create()\fR is used by parallel processes executed by
 gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
-value for \fImode\fR.  The returned GFS_File structure of each
+value for \fImode\fR\&.  The returned GFS_File structure of each
 process has individual file pointers among parallel processes.
 .SH "RETURN VALUES"
 .TP
