@@ -1404,6 +1404,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 	uint32_t header_flags, extension_area_len;
 	int16_t trailer;
 	struct gfarm_path_info info;
+	int fatal_cnt = 0;
 
 	static const char binary_signature[COPY_BINARY_SIGNATURE_LEN] =
 		"PGCOPY\n\377\r\n\0";
@@ -1414,6 +1415,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 	res = PQexec(conn,
 		"COPY Path to STDOUT BINARY");
 	if (PQresultStatus(res) != PGRES_COPY_OUT) {
+		e = can_I_retry(res, &fatal_cnt);
 		if (e == NULL)
 			goto retry;
 		PQclear(res);
@@ -1490,11 +1492,10 @@ gfarm_pgsql_path_info_get_all_foreach(
 	}
 	res = PQgetResult(conn);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		e = save_pgsql_msg(PQerrorMessage(conn));
-		return (e);
+		e = save_pgsql_msg(PQresultErrorMessage(res));
 	}
 	PQclear(res);
-	return (NULL);
+	return (e);
 }
 
 #if 0 /* GFarmFile history isn't actually used yet */
