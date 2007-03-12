@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/error.h>
