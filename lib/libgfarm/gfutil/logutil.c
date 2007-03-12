@@ -117,6 +117,7 @@ gflog_debug(const char *format, ...)
 void
 gflog_warning_errno(const char *format, ...)
 {
+	int save_errno = errno;
 	char buffer[2048];
 
 	va_list ap;
@@ -124,7 +125,7 @@ gflog_warning_errno(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	gflog_warning("%s: %s", buffer, strerror(errno));
+	gflog_warning("%s: %s", buffer, strerror(save_errno));
 }
 
 void
@@ -141,6 +142,7 @@ gflog_fatal(const char *format, ...)
 void
 gflog_fatal_errno(const char *format, ...)
 {
+	int save_errno = errno;
 	char buffer[2048];
 
 	va_list ap;
@@ -148,7 +150,7 @@ gflog_fatal_errno(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	gflog_fatal("%s: %s", buffer, strerror(errno));
+	gflog_fatal("%s: %s", buffer, strerror(save_errno));
 }
 
 void
