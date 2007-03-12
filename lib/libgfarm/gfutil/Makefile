@@ -16,7 +16,6 @@ SRCS =	alloc.c \
 	limit.c \
 	logutil.c \
 	send_no_sigpipe.c \
-	str_list.c \
 	timer.c \
 	timeval.c
 OBJS =	alloc.lo \
@@ -26,7 +25,6 @@ OBJS =	alloc.lo \
 	limit.lo \
 	logutil.lo \
 	send_no_sigpipe.lo \
-	str_list.lo \
 	timer.lo \
 	timeval.lo
 
@@ -46,4 +44,3 @@ limit.lo: gfutil.h
 logutil.lo: gfutil.h
 timer.lo: timer.h
 timeval.lo: gfutil.h
-str_list.lo: str_list.h
