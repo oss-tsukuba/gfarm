@@ -1,0 +1,569 @@
+		Gfarm Filesystem Setup Manual
+
+About this document
+===================
+
+This document describes how to configure the Gfarm filesystem.
+
+Please install the Gfarm software before using this manual,
+By using either INSTALL.en, for installation from the source code,
+or INSTALL.RPM.en, for installation from the RPM binary packages.
+
+If problems occur, please refer to the Trouble Shooting section
+in Gfarm-FAQ.en.
+
+Overview
+========
+
+To introduce the Gfarm filesystem, a metadata server, metadata cache
+servers, and filesystem nodes have to be configured.
+
+Configuration of a Gfarm metadata server
+========================================
+
+o (For wide area use) Installation of a host certificate
+
+(This section is not necessary for internal use within a trusted local
+area network, including a virtual private network, or on a single PC
+cluster.)
+
+For wide area use, Gfarm uses the Grid security infrastructure (GSI) for
+authentication and authorization between a client and a metadata
+server.  It is necessary to obtain a host certificate signed by an
+appropriate Certificate Authority (CA).
+
+You can use your own CA, or, for example, one of the CAs for the ApGrid
+testbed listed in the following URL.
+
+	https://www.apgrid.org/CA/CertificateAuthorities.html
+
+The signed host certificate and the corresponding secret key have to be
+stored at /etc/grid-security/host{cert,key}.pem. A Trusted CA
+certificate needs to be stored in /etc/grid-security/certificates.
+
+For authorization, it is necessary to set up the
+/etc/grid-security/grid-mapfile file that includes a list of mappings
+between a subject name of the user certificate and a UNIX user name.  For
+details on GSI, refer to http://www.globus.org/security/.
+
+o Configuration of the Gfarm filesystem
+
+Run 'config-gfarm' to configure a Gfarm filesystem.  First, make
+sure of the default setting with the -t option.  With the -t option,
+nothing is really executed except for the display of the settings for
+configuration.
+
+	# config-gfarm -t
+	prefix [--prefix]:
+	metadata backend    [-b]: postgresql
+	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-pgsql
+	metadata log directory    [-L]: /var/gfarm-pgsql/pg_xlog
+	postgresql admin user     [-U]: postgres
+	postgresql admin password [-W]: (auto generated)
+	postgresql user           [-u]: gfarm
+	postgresql password       [-w]: (auto generated)
+	postgresql prefix   [-P]: /usr/bin
+	postgresql version  [-V]: 8.1
+	metaserver hostname [-h]: metadb.example.com
+	portmaster port     [-p]: 10602
+	gfmd port  [-m]: 601
+	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
+
+When you specify "ldap" with the -b option, LDAP will be used as the metadata
+backend database, instead of the default PostgreSQL.
+
+	# config-gfarm -t -b ldap
+	prefix [--prefix]:
+	metadata backend    [-b]: ldap
+	(supported backend: postgresql ldap)
+	metadata     directory    [-l]: /var/gfarm-ldap
+	metadata log directory    [-L]: /var/gfarm-ldap
+	domain name         [-d]: example.com
+	ldap root user      [-U]: cn=root,dc=example,dc=com
+	ldap root password  [-W]: (auto generated)
+	ldap user           [-u]: dc=example,dc=com
+	ldap password       [-w]: (auto generated)
+	openldap prefix     [-P]: /usr/bin
+	openldap version    [-V]: 2.2
+	metaserver hostname [-h]: metadb.example.com
+	slapd port [-p]: 10602
+	gfmd port  [-m]: 601
+	gfsd port  [-s]: 600
+	auth type  [-a]: sharedsecret
+	slapd DB cache size [-c]: 536870912 bytes
+	slapd DB type ($SLAPD_DB): bdb
+
+You can modify any default parameter with the option shown in [ ].  For
+example, to change the port for slapd because there is another LDAP
+server running, you can change the port with the -p option.
+
+	# config-gfarm -t -p 20602
+
+'prefix' is used to configure several Gfarm filesystems, or to
+configure it with user privileges. It generates all configuration files
+under the specified directory.
+Note that if you want to use Gfarm with user privileges, you have to
+specify 1024 or higher values for the port numbers.
+If you select PostgreSQL, it will be invoked with the user privileges
+displayed in the "postgresql admin user" section (user "postgres"
+in the example above), thus, you must always specify 1024 or a higher
+value.
+
+Note: If you are using an openldap server from the version 2.0 series or
+      earlier, we strongly recommend that you change to the version 2.1
+      series or later.  Otherwise, file names in the Gfarm filesystem
+      will be case-insensitive.
+
+To confirm the parameters, run 'config-gfarm' without the -t option.
+
+	# config-gfarm -p 20602
+
+If you want to use GSI authentication, please add the "-a gsi" option to
+The config-gfarm command, or if you want to use gsi_auth, please add
+the "-a gsi_auth" option.
+
+config-gfarm sets up the metadata directory that keeps the filesystem
+metadata, creates a Gfarm configuration file, %%SYSCONFDIR%%/gfarm.conf,
+and executes slapd (LDAP server) and gfmd.
+
+If the metadata directory or the configuration file already exists,
+config-gfarm fails.  You can rename the file or directory before
+running config-gfarm, or execute config-gfarm with the -f option.
+With the -f option, config-gfarm deletes previous directories, etc.,
+and creates a new metadata directory and/or a configuration file.
+
+The created %%SYSCONFDIR%%/gfarm.conf assumes security in the cluster or 
+LAN environment.  For further information, refer to the man page for
+gfarm.conf.
+
+o Firewall configuration
+
+The Gfarm metadata server should be able to accept TCP connections at
+both ports that are specified by the -p and -m options of the
+config-gfarm command.
+
+Configuration of a Gfarm metadata cache server
+==============================================
+
+A Gfarm metadata cache server serves as a proxy server for the Gfarm
+metadata server. It also caches metadata to prevent access concentrations
+of metadata, and to help access metadata efficiently in a wide-area
+environment.
+It is possible to set up multiple Gfarm metadata cache servers if needed.
+
+o Configuration of a metadata cache server
+
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server that is created by
+'config-gfarm' as described in the previous section.  For example,
+when the metadata server is 'metadb.example.com', you can copy it from
+the server using scp.
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+Note: The location of the Gfarm configuration file can be specified by
+      'prefix' of config-gfsd, as described below.
+
+Run 'config-agent' to configure the metadata cache server.  First,
+make sure of the default setting with the -t option.  With the -t option,
+nothing is really executed, except display of the settings for
+configuration.
+
+	# config-agent -t
+	prefix [--prefix]:
+	hostname     [-h]: agent.example.com
+	port         [-p]: 603
+
+You can modify any default parameter by using the option shown in [ ].
+
+When you have confirmed the parameter, run 'config-agent' without the -t
+option.
+
+	# config-agent
+
+config-agent updates the Gfarm configuration file to access the
+metadata cache server, and executes gfarm_agent.
+
+o Firewall configuration
+
+A Gfarm metadata cache server should be able to accept TCP connections
+at the port which is specified by the -p option of the config-agent
+command.
+
+Also, it should be able to initiate TCP connections to the metadata
+server, at the port specified by the -p option of the config-gfarm command.
+
+Configuration of a Gfarm filesystem node (and client node)
+==========================================================
+
+o (For wide area use) Installation of the host certificate
+
+(This section is not necessary for internal use within a trusted local
+area network, including a virtual private network, or within a single PC
+cluster.)
+
+Refer to the metadata server section.
+
+o Configuration of a filesystem node
+
+Copy %%SYSCONFDIR%%/gfarm.conf from an appropriate metadata cache
+server that is created by 'config-agent', as described in the previous
+section.  For example, when client programs on the filesystem node
+often access a metadata cache server called 'agent.example.com', you can
+copy it from the server using scp.
+
+	# scp -p agent.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+Note: The location of the Gfarm configuration file can be specified by
+      'prefix' of config-gfsd, as described below.
+
+Run 'config-gfsd' to set up a spool directory in a local filesystem
+on the filesystem node, and register it in the metadata server.
+First, make sure of the default setting with the -t option.  With the -t
+option, nothing is really executed except for display of the settings for
+configuration.
+
+	# config-gfsd -t
+	prefix [--prefix]:
+	hostname       [-h]: linux-1.example.com
+	listen address [-l]: (all local IP addresses)
+	architecture   [-a]: i386-fedora3-linux
+	ncpu           [-n]: 2
+	spool directory    : /var/gfarm-spool
+	rc script name     : /etc/init.d/gfsd
+
+You can modify any default parameter by using the option shown in [ ].
+The spool directory is the only exception, and you can modify it
+by the last argument of the config-gfsd commmand. Note that the
+spool directory should be a non-shared area among filesystem nodes.
+
+Note: When 'prefix' is specified, it is possible to change the
+      location of the Gfarm configuration file to
+      <prefix>/etc/gfarm.conf.  In this case, every user has to
+      create ~/.gfarmrc in their home directory, or has to set
+      the environment variable $GFARM_CONFIG_FILE to the pathname.
+
+		% ln -s <prefix>/etc/gfarm.conf ~/.gfarmrc
+
+When you have confirmed the parameter, run 'config-gfsd' without the -t
+option.
+
+	# config-gfsd
+
+config-gfsd initializes the spool directory, updates the Gfarm
+configuration file for the filesystem node, and executes gfsd.
+
+If the spool directory already exists, config-gfsd fails.  You can
+move the directory before running config-gfsd, or execute config-gfsd
+with the -f option.  With the -f option, config-gfsd deletes previous
+directories, etc., and creates a new spool directory.
+
+o Firewall configuration
+
+Filesystem nodes should be able to accept TCP connections and
+UDP packet reception and transmission at the port that is
+specified by the -s option of the config-gfarm command.
+
+Also, it requires the same settings as those of the client nodes.
+
+Configuration of a Gfarm client node
+====================================
+
+This chapter describes configuration only for a client node.
+
+o Configuration of a client node
+
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to the client node.
+ For
+example, when the metadata server is 'metadb.example.com', you can copy
+it from the server using scp.
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf /etc
+
+Note: This setting can be substituted for copying to ~/.gfarmrc, as
+      described in the next chapter.
+
+o Firewall configuration
+
+Client nodes should be able to initiate TCP connections to the metadata
+server, at the port specified by the -p option of the config-gfarm command.
+They also should be able to initiate TCP connections to the metadata
+cache server, at the port specified by the -p option of the config-agent
+command.
+Furthermore, they should be able to initiate TCP connections and
+should be able to send/receive UDP packets to filesystem nodes, from the
+port specified by the -s option of the config-gfarm command.
+
+Settings for each user
+======================
+
+o Installation of a user certificate (GSI only)
+
+(This set up is only necessary for GSI.)
+
+You need to obtain a user certificate signed by an appropriate CA, as
+described in the section "Installation of a host certificate".  A signed
+user certificate and the corresponding secret key have to be stored at
+~/.globus/user{cert,key}.pem.  A trusted CA certificate has to be
+stored in /etc/grid-security/certificates.
+
+o Configuration of a client node
+
+(This section is not necessary when %%SYSCONFDIR%%/gfarm.conf already
+exists.)
+
+Copy %%SYSCONFDIR%%/gfarm.conf from the metadata server to ~/.gfarmrc on
+the client node.  For example, when the metadata server is
+'metadb.example.com', you can copy it from the server using scp.
+
+	# scp -p metadb.example.com:%%SYSCONFDIR%%/gfarm.conf ~/.gfarmrc
+
+o Creation of a home directory in the Gfarm filesystem
+
+Before everything else, you have to create a home directory in the Gfarm
+filesystem.
+
+	% gfmkdir gfarm:~
+
+The home directory has to be created only once by any client since
+it is shared by every client.  You do not have to create the home
+directory more than once.
+
+If this command fails, slapd on the metadata server will not be executed
+correctly, or the Gfarm configuration file (~/.gfarmrc or
+%%SYSCONFDIR%%/gfarm.conf) on the client will not be correct.
+
+o LD_PRELOAD environment variable
+
+Existing dynamically linked executables on every client node can
+access the Gfarm filesystem by specifying an LD_PRELOAD environment
+variable.  The following setting is for Linux.  For any other
+operating system, or for further details, refer to README.hook.en.
+
+When the login shell is bash, add the following to .bashrc,
+
+	 LD_PRELOAD='/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+	 export LD_PRELOAD
+
+When the login shell is csh or tcsh, add the following to .cshrc,
+
+	setenv LD_PRELOAD '/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so'
+
+Testing of the Gfarm filesystem
+===============================
+
+You can check whether the Gfarm filesystem works or not uisng any client,
+since it can be accessed (or shared) by every client node.
+
+o Creation of a user proxy certificate (GSI only)
+
+(This set up is only necessary for GSI.)
+
+Run 'grid-proxy-init' to create a user proxy certificate.  This is
+included in the Globus toolkit.
+
+	% grid-proxy-init
+
+For details on the Globus toolkit, refer to http://www.globus.org/
+
+o gfls - Directory listing
+
+'gfls' lists the contents of a directory.
+
+	% gfls -la
+	drwxr-xr-x tatebe   *                 0 Dec 23 23:39 .
+	drwxrwxrwx root     gfarm             0 Jan  1  1970 ..
+
+o gfhost - Filesystem node information
+
+'gfhost -M' displays the information for filesystem nodes registered
+with the metadata server.
+
+	% gfhost -M
+	i386-fedora3-linux 2 linux-1.example.com
+	i386-fedora3-linux 2 linux-2.example.com
+	i386-fedora3-linux 2 linux-3.example.com
+	i386-redhat8.0-linux 1 linux-4.example.com
+	sparc-sun-solaris8 1 solaris-1.example.com
+	sparc-sun-solaris8 1 solaris-2.example.com
+	...
+
+'gfhost -l' displays the status of the filesystem nodes.
+
+	% gfhost -l
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com(10.0.0.4)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com(10.0.1.2)
+	...
+
+The second field shows the status of authentication with the filesystem
+node.  's', 'g', and 'G' show successful authentication, while 'x'
+shows an authentication failure.
+
+'-.--/-.--/-.--' in the first field shows that gfsd has not executed
+correctly, and 'x.xx/x.xx/x.xx' shows the filesystem node is probably
+down.
+
+o gfps - Process information
+
+'gfps' shows the process information obtained by accessing gfmd on the
+metadata server.
+
+	% gfps
+
+gfps exits immediately without any message if gfmd is correctly
+executed.
+
+For details of the above Gfarm commands, refer to the respective man page.
+
+Access from existing applications
+=================================
+
+This section explains how to access the Gfarm filesystem from existing
+applications in Linux.  For any other operating system, or for further
+details, refer to README.hook.en.
+
+To enable the setting of LD_PRELOAD in the section "Settings for each
+user", log in again, or, set the LD_PRELOAD environment variable.
+
+	% echo $LD_PRELOAD
+	/usr/lib/libgfs_hook.so.0 /usr/lib/gfarm/librt-not-hidden.so /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so
+
+After that, any program can access the Gfarm filesystem as if it
+were mounted on /gfarm.
+
+	% ls -l /gfarm
+
+Note: A file in the Gfarm filesystem can be specified by a Gfarm URL
+      starting with 'gfarm:', or a path name under /gfarm.  There are
+      the following relationships between the Gfarm URL and the path
+      name;
+		root directory      gfarm:/ = /gfarm
+		home directory      gfarm:~ = /gfarm/~
+		current directory   gfarm:  = /gfarm/.
+
+The home directory in the Gfarm filesystem can be specified by /gfarm/~
+
+	% cp .bashrc /gfarm/~/
+	% ls -la /gfarm/~
+
+When you want to access the Gfarm filesystem via an interactive
+shell, it is necessary to re-run the shell after setting the
+LD_PRELOAD environment.  After that, you can run 'cd' and enable
+filename completion.
+
+	% bash
+	% cd /gfarm/~
+	% ls -la
+	% pwd
+
+Further examples of advanced functionality
+==========================================
+
+o File replica creation
+
+Each file in the Gfarm filesystem can have several file copies that
+can be stored on two and more filesystem nodes.
+
+Multiple file copies of the same file enables access to the file even
+when one of the filesystem nodes is down.  Moreover, it enables
+prevention of access performance deterioration by allowing access to
+different file copies.
+
+The 'gfwhere' command displays the location of file copies, or a replica
+catalog, of the specified files.
+
+	% gfwhere .bashrc
+	0: linux-1.example.com
+
+The 'gfrep' command creates file copies.  For example, 'gfrep -N 2'
+creates two file copies.
+
+	% gfrep -N 2 .bashrc
+	% gfwhere .bashrc
+	0: linux-1.example.com linux-2.example.com
+
+In this case, '.bashrc' has two copies; one is stored on
+linux-1.example.com and the other is stored on linux-2.example.com.
+
+When the directory is specified, file copies will be created for all
+files under the directory.  For example, when you want to create
+at least two file copies for all files under the home directory in the
+Gfarm filesystem, run
+
+	% gfrep -N 2 gfarm:~
+
+o Parallel and distributed processing
+
+Since the Gfarm filesystem can be shared among every client node,
+multiple processes running on different nodes can share the same file
+system.  Distributed makes with several instances of parallelism is an
+example of parallel and distributed processing.
+
+Moreover, further high-performance file access can be achieved by the
+unique features of Gfarm such that each filesystem node is also a
+client node. The key idea is 'moving the program to the data' and
+'executing the program on the node that has the data'.  'gfrun' is a
+remote process execution command with this 'file-affinity' process
+scheduling capability.
+
+The following example executes 'grep' (an existing application) on the
+node where the target file, 'gfarm:target_file', is stored.
+
+	% gfrun grep target_string gfarm:target_file
+
+gfrun automatically selects the least busy node among nodes that have
+a file copy of 'target_file', and executes grep on that node.
+
+You can execute gfrun in parallel for parallel and distributed
+processing.
+
+In addition, it is possible to execute grep itself in parallel, that is,
+"parallel grep".  For parallel execution, a target file has to be
+divided and stored on multiple nodes.  The following example shows a
+case where 'textfile' is divided into 5 fragments and stored in
+'gfarm:input'.
+
+	% gfsched -N 5 | gfimport_text -H - -o gfarm:input textfile
+
+Note: Gfarm commands starting with 'gf' access files in the Gfarm file
+      system by means of a Gfarm URL starting with 'gfarm:'.  A path name such
+      as /gfarm/~/foo cannot be used by Gfarm commands.
+
+'gfimport_text' is a utility program that divides a text file into
+multiple fragments by the line, and stores them in a file specified by the
+-o option.  Each file fragment has almost the same size.
+
+In this case, for example, 'gfarm:input' is divided into 5 fragments,
+and stored on different nodes from linux-1.example.com to
+linux-5.example.com.
+
+	% gfwhere gfarm:input
+	0: linux-1.example.com
+	1: linux-2.example.com
+	2: linux-3.example.com
+	3: linux-4.example.com
+	4: linux-5.example.com
+
+Note that the file can be accessed normally, even though it is
+physically divided.
+
+	% diff gfarm:input textfile
+
+At this time, when you execute grep via gfrun as described above, grep
+is executed in parallel, on nodes that have a copy of the file
+fragment.  Each grep command searches for a 'target_string' from each file
+fragment.
+
+	% gfrun grep target_string gfarm:input
+
+When the -o option is specified in gfrun, the standard output can be
+redirected to the specified file.
+
+	% gfrun -o gfarm:output grep target_string gfarm:input
+
+For details, refer to the gfrun manual page.
