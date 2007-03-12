@@ -4,7 +4,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <gfarm/gfarm_error.h>
+#include <gfarm/gfarm_misc.h>
+
 #include "gfarm_list.h"
 
 #define GFARM_LIST_INITIAL	50
@@ -17,7 +20,7 @@ gfarm_list_init(gfarm_list *listp)
 {
 	void **v;
 
-	v = malloc(sizeof(void *) * GFARM_LIST_INITIAL);
+	GFARM_MALLOC_ARRAY(v, GFARM_LIST_INITIAL);
 	if (v == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	listp->size = GFARM_LIST_INITIAL;
@@ -62,7 +65,7 @@ gfarm_list_add_array(gfarm_list *listp, int al, void **av)
 		do {
 			n += GFARM_LIST_DELTA;
 		} while (ll + al > n);
-		t = realloc(listp->array, sizeof(void *) * n);
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -87,8 +90,9 @@ gfarm_list_add(gfarm_list *listp, void *s)
 
 	if (length >= listp->size) {
 		int n = listp->size + GFARM_LIST_DELTA;
-		void **t = realloc(listp->array, sizeof(void *) * n);
+		void **t;
 
+		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		listp->size = n;
@@ -126,8 +130,9 @@ void *
 gfarm_array_alloc_from_list(gfarm_list *listp)
 {
 	int n = gfarm_list_length(listp);
-	void **t = malloc(sizeof(void *) * n);
+	void **t;
 
+	GFARM_MALLOC_ARRAY(t, n);
 	if (t == NULL)
 		return (NULL);
 	memcpy(t, listp->array, sizeof(void *) * n);

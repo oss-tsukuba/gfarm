@@ -5,13 +5,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <gfarm/gfarm_misc.h>
 #include "str_list.h"
 
 struct gfarm_str_list *
 gfarm_str_list_cons(char *el, struct gfarm_str_list *ls)
 {
-	struct gfarm_str_list *t = malloc(sizeof(struct gfarm_str_list));
+	struct gfarm_str_list *t;
 
+	GFARM_MALLOC(t);
 	if (t == NULL)
 		return (NULL);
 	t->next = ls;
