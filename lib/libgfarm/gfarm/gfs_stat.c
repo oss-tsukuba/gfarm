@@ -20,6 +20,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))

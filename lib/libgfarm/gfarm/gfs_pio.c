@@ -201,6 +201,7 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	struct gfs_desc *gd;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfs_desc_create(url, flags, mode, &gd)) != GFARM_ERR_NO_ERROR)
@@ -220,6 +221,7 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	struct gfs_desc *gd;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfs_desc_open(url, flags, &gd)) != GFARM_ERR_NO_ERROR)
@@ -253,6 +255,7 @@ gfs_pio_close(GFS_File gf)
 	gfarm_error_t e, e_save;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e_save = gfs_pio_check_view_default(gf);
@@ -399,6 +402,7 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 	gfarm_off_t where;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -478,6 +482,7 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -516,6 +521,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	int length;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -563,6 +569,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	size_t written;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_check_view_default(gf);
@@ -622,6 +629,7 @@ sync_internal(GFS_File gf, int operation, double *time)
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_flush(gf);
@@ -765,6 +773,7 @@ gfs_pio_gets(GFS_File gf, char *s, size_t size)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -802,6 +811,7 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -870,6 +880,7 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */
@@ -949,6 +960,7 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 #ifdef __GNUC__ /* workaround gcc warning: unused variable */

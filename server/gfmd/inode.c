@@ -947,6 +947,9 @@ inode_lookup_relative(struct inode *n, char *name,
 	int len = strlen(name);
 	struct inode *nn;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	nn = NULL;
+#endif
 	if (!inode_is_dir(n))
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	if ((e = inode_access(n, user, GFS_X_OK)) != GFARM_ERR_NO_ERROR)
