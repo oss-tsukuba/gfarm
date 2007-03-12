@@ -1,0 +1,271 @@
+usage_ldap()
+{
+	echo >&2 "	[-c berkeley_DB_cachesize]"
+	return 0 # backend-specific option(s) exist(s)
+}
+
+sanity_ldap()
+{
+	rv=0
+	if [ ! -x "$OPENLDAP_SLAPADD" ]; then
+		echo "WARNING: command not found: slapadd" >&2
+		rv=1
+	fi
+	if [ ! -x "$OPENLDAP_LIBEXEC/slapd" ]; then
+		echo "WARNING: command not found: slapd" >&2
+		rv=1
+	fi
+	if [ ! -f "$OPENLDAP_ETC/schema/core.schema" ]; then
+		echo "WARNING: file not found:" \
+			"$OPENLDAP_ETC/schema/core.schema" >&2
+		rv=1
+	fi
+	return $rv
+}
+
+display_backend_params_ldap()
+{
+	display_backend_data_dir_param
+	display_backend_log_dir_param
+
+	echo "domain name         [-d]: $DOMAIN_NAME"
+	echo "ldap root user      [-U]: $BACKEND_ADMIN_USER"
+	echo "ldap root password  [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
+	echo "ldap user           [-u]: $BACKEND_USER"
+	echo "ldap password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
+	echo "openldap prefix     [-P]: $BACKEND_PREFIX"
+	echo "openldap version    [-V]: $BACKEND_VERSION"
+}
+
+display_backend_port_params_ldap()
+{
+	echo "slapd port [-p]: $BACKEND_PORT"
+}
+
+display_backend_optional_params_ldap()
+{
+	echo 'slapd DB cache size [-c]:' `
+	case $SLAPD_DB in
+	bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
+	*)	echo '(this option is only available for SLAPD_DB="bdb")';;
+	esac`
+	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
+}
+
+# $argshift is an output parameter, if this function returns success.
+parse_argument_ldap()
+{
+	case "$1" in
+	  -c) [ $# -ge 2 ] || usage
+		SLAPD_BDB_CACHESIZE=$2
+		argshift=1
+		true;;
+	  *)	false;;
+	esac
+}
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_perfix_ldap()
+{
+	if [ -z "${BACKEND_PREFIX-}" ]; then
+		OIFS=$IFS
+		IFS=":"
+		set $search_path
+		IFS=$OIFS
+		for d
+		do
+			if [ -x "$d/slapadd" ]; then
+				BACKEND_PREFIX=`dirname "$d"`
+				: ${OPENLDAP_SLAPADD:="$d/slapadd"}
+				break
+			fi
+		done
+	fi
+	if [ -z "${BACKEND_PREFIX-}" ]; then
+		OIFS=$IFS
+		IFS=":"
+		set $search_path
+		IFS=$OIFS
+		for d
+		do
+			b=`dirname "$d"`
+			if [ -x "$b/sbin/slapadd" ]; then
+				BACKEND_PREFIX=$b
+				: ${OPENLDAP_SLAPADD:="$b/sbin/slapadd"}
+				break
+			fi
+		done
+	fi
+}
+
+#
+# default values
+#
+
+# NOTE: This needs to set $RC_BACKEND_BASENAME, at least.
+set_first_defaults_ldap()
+{
+	: ${RC_BACKEND_BASENAME=gfarm-slapd}
+	if [ -f "$BACKEND_PREFIX/etc/openldap/schema/core.schema" ]; then
+		: ${OPENLDAP_ETC:="$BACKEND_PREFIX/etc/openldap"}
+	fi
+	if [ -x "$BACKEND_PREFIX/sbin/slapadd" ]; then
+		: ${OPENLDAP_SLAPADD:="$BACKEND_PREFIX/sbin/slapadd"}
+	fi
+}
+
+# set_first_defaults_ldap or sysdep_defaults may already set $OPENLDAP_ETC.
+set_last_defaults_ldap()
+{
+	# We currently don't use ${BACKEND_PRIVILEGE} with LDAP
+	: ${BACKEND_PRIVILEGE:=""}
+
+	# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+	: ${DOMAIN_NAME:=`dns_domainname`}
+	[ X"$DOMAIN_NAME" = X ] && ABORT 'cannot determine DNS domain name'
+
+	# official LDAP port number is 389
+	: ${BACKEND_PORT:="10602"}
+
+	: ${LDAP_BASE_DN="dc=`echo ${DOMAIN_NAME} | sed -e 's/\./,dc=/g'`"}
+	: ${LDAP_LEAF_DC="`echo $LDAP_BASE_DN | sed -e 's/,.*//' -e 's/dc=//'`"}
+	: ${BACKEND_ADMIN_USER:="cn=root,$LDAP_BASE_DN"}
+	: ${BACKEND_USER:="$LDAP_BASE_DN"}
+
+	: ${OPENLDAP_ETC:="/etc/openldap"}
+
+	if [ -x "$BACKEND_PREFIX/sbin/slapd" ]; then
+		: ${OPENLDAP_LIBEXEC:="$BACKEND_PREFIX/sbin"}
+	else
+		: ${OPENLDAP_LIBEXEC:="$BACKEND_PREFIX/libexec"}
+	fi
+
+	if [ -z "${BACKEND_VERSION-}" ]; then
+		if [ -x "$BACKEND_PREFIX/bin/ldapsearch" ]; then
+			BACKEND_VERSION=`"$BACKEND_PREFIX/bin/ldapsearch" -Vxn 2>&1 |
+			  sed -n 's/.*ldapsearch \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+			if [ -z "$BACKEND_VERSION" ]
+			then
+				BACKEND_VERSION="2.0" # assumes older version
+			elif expr "$BACKEND_VERSION" : '[0-9][0-9]*\.[0-9][0-9]*' \
+					>/dev/null; then
+				:
+			else
+				BACKEND_VERSION="unknown"
+			fi
+		else
+			BACKEND_VERSION="unknown"
+		fi
+	fi
+
+	case $BACKEND_VERSION in
+	[01].*|2.0)	# 2.0.X or before
+		: ${SLAPD_DB:="ldbm"}
+		: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.0.in"}
+		;;
+	*)		# 2.1.X or later
+		: ${SLAPD_DB:="bdb"}
+		: ${SLAPD_CONF_IN:="$config_dir/slapd.conf-2.1.in"}
+		;;
+	esac
+
+	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-ldap"}
+	: ${BACKEND_LOG_DIR:="$BACKEND_DATA_DIR"}
+	: ${LDAP_CONF_DIR:="$CONFIG_PREFIX/etc/gfarm-ldap"}
+	: ${SLAPD_CONF:="$LDAP_CONF_DIR/slapd.conf"}
+	: ${LDAP_SCHEMA:="$LDAP_CONF_DIR/gfarm.schema"}
+	: ${INITIAL_LDIF:="$LDAP_CONF_DIR/initial.ldif"}
+
+	# Debian uses dynamic loading for backend db module.
+	# (e.g. /usr/lib/ldap/back_bdb.so)
+	# We need "\" at the end-of-line, because this is used for
+	# s/// statement for sed.
+	if [ -f "$BACKEND_PREFIX/lib/openldap/back_$SLAPD_DB.so" ]; then
+		: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$BACKEND_PREFIX/openlib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+	elif [ -f "$BACKEND_PREFIX/lib/ldap/back_$SLAPD_DB.so" ]; then
+		: ${SLAPD_CONF_HOOK:='\
+modulepath	'"$BACKEND_PREFIX/lib/ldap"'\
+moduleload	back_'"$SLAPD_DB"}
+	fi
+
+	: ${SLAPD_CONF_HOOK:=""}
+
+	: ${SLAPD_BDB_CACHESIZE:="`memory_size|$awk '{printf "%.0f\n",$NF/2*1024*1024}'`"}
+	: ${SLAPD_BDB_NCACHE:="2"} # 0/1: contiguous memory, >1: non-contiguous memory
+}
+
+#
+# do configuration
+#
+
+init_replace_ldap()
+{
+	init_replace_common
+
+	cat <<_EOF_
+s|@config_gfarm_ldap_base_dn@|$LDAP_BASE_DN|g
+s|@config_gfarm_ldap_leaf_dc@|$LDAP_LEAF_DC|g
+s|@config_gfarm_ldap_conf_dir@|$LDAP_CONF_DIR|g
+s|@config_gfarm_ldap_schema@|$LDAP_SCHEMA|g
+s|@config_gfarm_slapd_config@|$SLAPD_CONF|g
+s|@config_gfarm_slapd_config_hook@|$SLAPD_CONF_HOOK|g
+s|@config_gfarm_slapd_database@|$SLAPD_DB|g
+s|@config_gfarm_slapd_bdb_cachesize@|$SLAPD_BDB_CACHESIZE|g
+s|@config_gfarm_slapd_bdb_ncache@|$SLAPD_BDB_NCACHE|g
+s|@config_gfarm_openldap_libexec@|$OPENLDAP_LIBEXEC|g
+s|@config_gfarm_openldap_etc@|$OPENLDAP_ETC|g
+_EOF_
+}
+
+make_configuration_directory_ldap()
+{
+	create_directory "$LDAP_CONF_DIR"
+}
+
+make_configuration_file_ldap()
+{
+	mkcnf "$LDAP_SCHEMA"	cat "$config_dir/gfarm.schema"
+	(
+	umask 077
+	mkcnf "$INITIAL_LDIF"	replace "$config_dir/initial.ldif.in"
+	mkcnf "$SLAPD_CONF"	replace "$SLAPD_CONF_IN"
+	)
+	case $SLAPD_DB in
+	bdb) mkcnf "$BACKEND_DATA_DIR/DB_CONFIG" \
+				replace "$config_dir/bdb.DB_CONFIG.in"
+	     if [ "$BACKEND_DATA_DIR" != "$BACKEND_LOG_DIR" ]; then
+		echo "set_lg_dir $BACKEND_LOG_DIR" \
+			>> "$BACKEND_DATA_DIR/DB_CONFIG" 
+		mkdir "$BACKEND_LOG_DIR"
+		chmod 700 "$BACKEND_LOG_DIR"
+		[ -n "$BACKEND_PRIVILEGE" ] &&
+			chown "$BACKEND_PRIVILEGE" "$BACKEND_LOG_DIR"
+	     fi
+	     ;;
+	esac
+
+	# add initial data
+	"${OPENLDAP_SLAPADD}" -f $SLAPD_CONF -l $INITIAL_LDIF &&
+		echo add initial metadata ||
+		ABORT "cannot add initial metadata"
+}
+
+apply_configuration_ldap()
+{
+	:
+}
+
+service_start_ldap()
+{
+	service_start_common ${1+"$@"}
+}
+
+service_stop_ldap()
+{
+	service_ctl $RC_BACKEND_BASENAME stop ${1+"$@"}
+}
