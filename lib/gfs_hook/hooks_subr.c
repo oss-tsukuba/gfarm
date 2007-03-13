@@ -601,12 +601,27 @@ gfs_hook_is_null_or_slash_or_colon(const char c)
 }
 
 static int
-gfs_hook_is_mount_point(const char *path)
+gfs_hook_is_mount_point0(const char *path)
 {
 	return (*path == '/' &&
 		memcmp(path, gfs_mntdir, sizeof(gfs_mntdir) - 1) == 0 &&
 		gfs_hook_is_null_or_slash_or_colon(
 			path[sizeof(gfs_mntdir) - 1]));
+}
+
+static int
+gfs_hook_is_mount_point(const char *path, int *sizeof_prefix)
+{
+	const char *p = path;
+	int ret;
+
+	while (*p == '/')
+		++p;
+	--p;
+	ret = gfs_hook_is_mount_point0(p);
+	if (ret && sizeof_prefix)
+		*sizeof_prefix = sizeof(gfs_mntdir) + p - path;
+	return (ret);
 }
 
 static int
@@ -681,7 +696,7 @@ set_received_prefix(const char *path)
 		free(received_prefix);
 		received_prefix = NULL;
 	}
-	if (gfs_hook_is_mount_point(path)) {
+	if (gfs_hook_is_mount_point(path, NULL)) {
 		received_prefix = strdup(gfs_mntdir);
 		if (received_prefix == NULL)
 			return (0); /* XXX - should return ENOMEM */
@@ -785,10 +800,8 @@ gfs_hook_is_url(const char *path, char **urlp)
 	gfs_hook_enable_hook();
 
 	path_save = path;
-	if (gfs_hook_is_mount_point(path)) {
+	if (gfs_hook_is_mount_point(path, &sizeof_prefix))
 		is_mount_point = 1;
-		sizeof_prefix = sizeof(gfs_mntdir);
-	}
 	if (is_mount_point || gfarm_is_url(path) ||
 	    /* ROOT patch */
 	    memcmp(path, gfarm_url_prefix_for_root,
