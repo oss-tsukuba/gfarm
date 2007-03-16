@@ -6,7 +6,7 @@ Gfarm テストスイート
    用意しています。
    それぞれのターゲットの用途は下記の通りです。
 
-   ・「make」、「make check」ターゲットあるいは regress.sh スクリプト
+   ・「make」、「make check」ターゲットあるいは check.sh スクリプト
 	現在存在する gfarm 環境に対して、テストスイートを実行します。
 
    ・「make selfcheck」、
@@ -15,7 +15,7 @@ Gfarm テストスイート
      「make selfcheck-バックエンド版-認証方式」、
      「make selfcheck-バックエンド版-認証方式-agent利用方式」ターゲット
 	自ホストだけで構成される一時的なテスト用 gfarm 環境を作成し、
-        regress.sh スクリプトを実行します。
+        check.sh スクリプトを実行します。
 
 	すべて組合せでテストを行ないたい場合には「make selfcheck」、
 	特定の組み合わせだけでテストを行ないたい場合には、
@@ -26,7 +26,7 @@ Gfarm テストスイート
 	"expected failure" ($exit_xfail) を返すにも関わらず、その理由が
 	ファイル XFAIL に記述されてないテストケースを調べます。
 
-1. 「make」、「make check」ターゲットあるいは regress.sh スクリプト
+1. 「make」、「make check」ターゲットあるいは check.sh スクリプト
 
    このターゲットは、現在既に設定されている gfarm 環境内で、
    テストスイートを実行します。
@@ -77,11 +77,11 @@ Gfarm テストスイート
 	$ cd regress
 	$ make (または「make check」)
 
-   あるいは、下記のように regress.sh コマンドを直接使うこともできます。
+   あるいは、下記のように check.sh コマンドを直接使うこともできます。
 
 	$ cd regress
 	$ make all
-	$ ./regress.sh
+	$ ./check.sh --prefix インストールプリフィックス
 
 2. 「make selfcheck」、
    「make selfcheck-バックエンド」、
@@ -166,17 +166,28 @@ Gfarm テストスイート
 
 3. regress ディレクトリの内容
 
-   regress.sh   「make check」ターゲットの実体です。
-		引数で指定したファイルにリストされたテストプログラムを
-		順次実行して結果を表示するスクリプト。
+   check.sh	「make check」ターゲットの実体です。
+		下記の regress.sh を何回か呼び出すスクリプトです。
 
-   schedule     regress.sh がデフォルトで参照するテストプログラムのリスト
+   regress.sh   引数で指定したファイルにリストされたテストプログラムを
+		順次実行して結果を表示するスクリプトです。
+
+   schedule     regress.sh がデフォルトで参照するテストプログラムのリストです。
+		gfarm 本体に附属するコマンドやライブラリのテストがリストされて
+		います。
+
+   schedule.hook
+		schedule ファイルの代わりに、regress.sh に指定する
+		テストプログラムのリストです。
+		OS 附属のコマンド群に対するテストがリストされています。
+		check.sh は、gfs_hook や GfarmFS-FUSE の環境設定を行なった後、
+		このテストを実行します。
 
    config.sh	「make selfcheck」ターゲットの実体です。
 		hostname コマンドが返すホスト名および localhost の 2 つの
 		gfsd と、メタデータサーバからなるテスト用の gfarm 環境を
 		作成し、引数に与えたコマンドを実行します。
-		コマンド引数を省略した場合は ./regress.sh を実行します。
+		コマンド引数を省略した場合は check.sh を実行します。
 		-k オプションを与えない限り、終了後、その gfarm 環境を消去
 		します。
 		例えば下記のように引数を指定します。
@@ -190,9 +201,9 @@ Gfarm テストスイート
    gfs_hook.sh	doc/README.hook.{en,ja} にあるシステムコールフックのための
 		環境設定を行なったのち、引数にあるコマンドを実行するスクリ
 		プト。
-		config.sh の中から呼び出されます。
+		check.sh の中から呼び出されます。
 
-   loop.sh      regress.sh を無限回実行するスクリプト
+   loop.sh      check.sh を無限回実行するスクリプト
 
    tst.sh       引数で与えられたテストプログラムを実行して結果を表示する
                 スクリプト
@@ -205,7 +216,7 @@ Gfarm テストスイート
    regress.conf 各スクリプト、プログラムが参照するディレクトリ、ファイル、
                 シグナルの定義を記述しているファイル
 
-   Makefile     regress.sh, loop.sh の実行などに使用する makefile
+   Makefile     check.sh, loop.sh の実行などに使用する makefile
 
 4. テストケースの書き方
 
