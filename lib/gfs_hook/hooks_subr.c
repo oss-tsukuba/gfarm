@@ -617,7 +617,8 @@ gfs_hook_is_mount_point(const char *path, int *sizeof_prefix)
 
 	while (*p == '/')
 		++p;
-	--p;
+	if (p > path)
+		--p;
 	ret = gfs_hook_is_mount_point0(p);
 	if (ret && sizeof_prefix)
 		*sizeof_prefix = sizeof(gfs_mntdir) + p - path;
