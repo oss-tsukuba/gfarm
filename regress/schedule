@@ -126,5 +126,3 @@ gftool/gfimport_text/import_text-H_multilines.sh
 # gftool/gfchown
 # gftool/gfuser
 # gftool/gfkey
-
-gfs_hook/lib/fsystest/fsystest.sh

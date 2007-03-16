@@ -14,4 +14,5 @@ do
 	if [ $exit_code -eq $exit_trap ]; then
 		break
 	fi
+	print_footer
 done

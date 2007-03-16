@@ -101,7 +101,7 @@ if [ -z "$REGRESS_BACKEND" ]; then
 fi
 
 case $# in
-0)	set ./gfs_hook.sh --prefix "$prefix" ./regress.sh;;
+0)	set ./check.sh --prefix "$prefix";;
 esac
 
 PATH="$prefix/bin:$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin"

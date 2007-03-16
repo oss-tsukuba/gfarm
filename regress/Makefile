@@ -16,7 +16,7 @@ agent_targets=	disable enable only
 CONFIG_PREFIX=	/var/tmp/`whoami`
 CONFIG_OPT=	# -k
 REGRESS_SH=		$(srcdir)/regress.sh
-TEST_TARGET=		$(srcdir)/check.sh
+TEST_TARGET=		$(srcdir)/check.sh --prefix $(prefix)
 LOG=			log
 
 # These environment settings aren't enough,
@@ -183,7 +183,6 @@ selfcheck-ldap-gsi_auth-agent_only : all
 	 $(SELFCHECK_ENV) $(srcdir)/config.sh --prefix $(prefix) \
 		-b $${backend} -a $${auth} --agent-$${agent} $${opt} \
 		--config-prefix $(CONFIG_PREFIX) $(CONFIG_OPT) \
-		$(srcdir)/gfs_hook.sh --prefix $(prefix) \
 			$(TEST_TARGET)
 
 xfail-check:
