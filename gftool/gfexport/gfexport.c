@@ -10,14 +10,23 @@
 
 char *program_name = "gfexport";
 
+/* from GFS_FILE_BUFSIZE in lib/libgfarm/gfarm/gfs_pio.h */
+#define BUFFER_SIZE 65536
+
 char *
 gfprint(GFS_File gf, FILE *ofp)
 {
-	int c;
+	char *e;
+	char buffer[BUFFER_SIZE];
+	int n;
 
-	while ((c = gfs_pio_getc(gf)) != EOF)
-		putc(c, ofp);
-	return (gfs_pio_error(gf));
+	while ((e = gfs_pio_read(gf, buffer, sizeof buffer, &n)) == NULL) {
+		if (n == 0) /* EOF */
+			break;
+		if (fwrite(buffer, 1, n, ofp) != n)
+			return ("error at writing, possibly diskfull");
+	}
+	return (e);
 }
 
 char *
