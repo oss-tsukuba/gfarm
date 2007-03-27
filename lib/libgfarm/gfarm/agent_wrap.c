@@ -57,7 +57,7 @@ gfarm_agent_check(void)
 		else
 			gfarm_agent_disconnect();
 	}
-	while ((e = gfarm_agent_connect()) != NULL && retry > 0) {
+	while ((e = gfarm_agent_connect(NULL)) != NULL && retry > 0) {
 		nanosleep(&t, NULL);
 		--retry;
 	}
@@ -177,7 +177,7 @@ gfarm_agent_eval_env()
 }
 
 char *
-gfarm_agent_connect()
+gfarm_agent_connect(struct agent_connection **rvp)
 {
 	struct sockaddr_un unix_addr;
 	struct sockaddr inet_addr;
@@ -216,6 +216,8 @@ gfarm_agent_connect()
 	default:
 		e = GFARM_AGENT_ERR_NO_AGENT;
 	}
+	if (e == NULL && rvp != NULL)
+		*rvp = agent_server;
 	return (e);
 }
 

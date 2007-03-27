@@ -18,7 +18,8 @@ void gfarm_agent_name_clear(void);
 void gfarm_agent_port_clear(void);
 void gfarm_agent_sock_path_clear(void);
 
-char *gfarm_agent_connect(void);
+struct agent_connection;
+char *gfarm_agent_connect(struct agent_connection **);
 char *gfarm_agent_disconnect(void);
 
 /* for direct access without agent */

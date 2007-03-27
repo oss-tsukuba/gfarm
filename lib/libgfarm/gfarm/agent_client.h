@@ -12,8 +12,6 @@ char *agent_client_disconnect(struct agent_connection *);
 
 /* agent_client RPC */
 
-char *agent_client_rpc(struct agent_connection *, int, int, char *, ...);
-
 char *agent_client_path_info_get(
 	struct agent_connection *, const char *, struct gfarm_path_info *);
 char *agent_client_path_info_set(

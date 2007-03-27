@@ -137,7 +137,7 @@ agent_client_disconnect(struct agent_connection *agent_server)
  */
 
 char *
-agent_client_rpc_request(struct agent_connection *agent_server, int command,
+agent_client_rpc_request(struct agent_connection **agent_serverp, int command,
 			 char *format, ...)
 {
 	va_list ap, save_ap;
@@ -147,10 +147,12 @@ agent_client_rpc_request(struct agent_connection *agent_server, int command,
 	save_format = format;
 	va_copy(save_ap, ap);
 retry:
-	e = xxx_proto_vrpc_request(agent_server->conn, command, &format, &ap);
+	e = xxx_proto_vrpc_request((*agent_serverp)->conn,
+	    command, &format, &ap);
 	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
 		gfarm_agent_disconnect();
-		e = gfarm_agent_connect();
+		/* note that gfarm_agent_connect() changes `*agent_serverp' */
+		e = gfarm_agent_connect(agent_serverp);
 		if (e == NULL) {
 			format = save_format;
 			va_end(ap);
@@ -184,8 +186,8 @@ agent_client_rpc_result(struct agent_connection *agent_server, int just,
 }
 
 char *
-agent_client_rpc(struct agent_connection *agent_server, int just, int command,
-	       char *format, ...)
+agent_client_rpc(struct agent_connection **agent_serverp,
+	int just, int command, char *format, ...)
 {
 	va_list ap, save_ap;
 	char *e, *save_format;
@@ -195,11 +197,12 @@ agent_client_rpc(struct agent_connection *agent_server, int just, int command,
 	save_format = format;
 	va_copy(save_ap, ap);
 retry:
-	e = xxx_proto_vrpc(agent_server->conn, just,
+	e = xxx_proto_vrpc((*agent_serverp)->conn, just,
 			   command, &error, &format, &ap);
 	if (e == GFARM_ERR_BROKEN_PIPE || e == GFARM_ERR_UNEXPECTED_EOF) {
 		gfarm_agent_disconnect();
-		e = gfarm_agent_connect();
+		/* note that gfarm_agent_connect() changes `*agent_serverp' */
+		e = gfarm_agent_connect(agent_serverp);
 		if (e == NULL) {
 			format = save_format;
 			va_end(ap);
@@ -223,7 +226,7 @@ agent_client_path_info_get(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_PATH_INFO_GET, "s/", path);
 	if (e != NULL)
 		return (e);
@@ -236,7 +239,7 @@ agent_client_path_info_set(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_PATH_INFO_SET, "s", path);
 	if (e != NULL)
 		return (e);
@@ -252,7 +255,7 @@ agent_client_path_info_replace(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_PATH_INFO_REPLACE, "s", path);
 	if (e != NULL)
 		return (e);
@@ -266,7 +269,7 @@ char *
 agent_client_path_info_remove(struct agent_connection *agent_server,
 	const char *path)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_PATH_INFO_REMOVE,
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_PATH_INFO_REMOVE,
 				 "s/", path));
 }
 
@@ -274,7 +277,7 @@ char *
 agent_client_realpath_canonical(struct agent_connection *agent_server,
 	const char *path, char **abspathp)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_REALPATH_CANONICAL, "s/s",
 			path, abspathp));
 }
@@ -283,7 +286,7 @@ char *
 agent_client_get_ino(struct agent_connection *agent_server,
 	const char *path, gfarm_uint32_t *inop)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_GET_INO, "s/i",
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_GET_INO, "s/i",
 				 path, inop));
 }
 
@@ -291,7 +294,7 @@ char *
 agent_client_opendir(struct agent_connection *agent_server,
 	const char *path, gfarm_int32_t *dirdescp)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_OPENDIR, "s/i",
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_OPENDIR, "s/i",
 	    path, dirdescp));
 }
 
@@ -304,7 +307,7 @@ agent_client_readdir(struct agent_connection *agent_server,
 	gfarm_uint32_t ino;
 
 	e = agent_client_rpc(
-		agent_server, 0, AGENT_PROTO_READDIR,
+		&agent_server, 0, AGENT_PROTO_READDIR,
 		"i/ihccs", dirdesc,
 		&ino, &de.d_reclen,
 		&de.d_type, &de.d_namlen, &name);
@@ -326,7 +329,7 @@ agent_client_closedir(struct agent_connection *agent_server,
 	gfarm_int32_t dirdesc)
 {
 	return (agent_client_rpc(
-			agent_server, 0, AGENT_PROTO_CLOSEDIR,
+			&agent_server, 0, AGENT_PROTO_CLOSEDIR,
 			"i/", dirdesc));
 }
 
@@ -338,7 +341,7 @@ agent_client_dirname(struct agent_connection *agent_server,
 	static char name[GFS_MAXNAMLEN];
 
 	e = agent_client_rpc(
-		agent_server, 0, AGENT_PROTO_DIRNAME,
+		&agent_server, 0, AGENT_PROTO_DIRNAME,
 		"i/s", dirdesc, &n);
 	if (e == NULL) {
 		strcpy(name, n);
@@ -353,7 +356,7 @@ char *
 agent_client_seekdir(struct agent_connection *agent_server,
 	gfarm_int32_t dirdesc, file_offset_t off)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_SEEKDIR, "io/",
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_SEEKDIR, "io/",
 	    dirdesc, off));
 }
 
@@ -361,14 +364,14 @@ char *
 agent_client_telldir(struct agent_connection *agent_server,
 	gfarm_int32_t dirdesc, file_offset_t *offp)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_TELLDIR, "i/o",
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_TELLDIR, "i/o",
 	    dirdesc, offp));
 }
 
 char *
 agent_client_uncachedir(struct agent_connection *agent_server)
 {
-	return (agent_client_rpc(agent_server, 0, AGENT_PROTO_UNCACHEDIR, "/"));
+	return (agent_client_rpc(&agent_server, 0, AGENT_PROTO_UNCACHEDIR, "/"));
 }
 
 /* host info */
@@ -379,7 +382,7 @@ agent_client_host_info_get(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_HOST_INFO_GET, "s/", host);
 	if (e != NULL)
 		return (e);
@@ -390,7 +393,7 @@ char *
 agent_client_host_info_remove_hostaliases(
 	struct agent_connection *agent_server, const char *hostname)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_HOST_INFO_REMOVE_HOSTALIASES, "s/",
 			hostname));
 }
@@ -401,7 +404,7 @@ agent_client_host_info_set(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_HOST_INFO_SET, "s", hostname);
 	if (e != NULL)
 		return (e);
@@ -417,7 +420,7 @@ agent_client_host_info_replace(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_HOST_INFO_REPLACE, "s", hostname);
 	if (e != NULL)
 		return (e);
@@ -431,7 +434,7 @@ char *
 agent_client_host_info_remove(struct agent_connection *agent_server,
 	const char *hostname)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_HOST_INFO_REMOVE, "s/", hostname));
 }
 
@@ -443,7 +446,7 @@ agent_client_host_info_get_all(struct agent_connection *agent_server,
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_HOST_INFO_GET_ALL, "/i", np);
 	if (e != NULL)
 		return (e);
@@ -469,7 +472,7 @@ agent_client_host_info_get_by_name_alias(struct agent_connection *agent_server,
 {
 	char *e;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_HOST_INFO_GET_BY_NAME_ALIAS, "s/", name_alias);
 	if (e != NULL)
 		return (e);
@@ -485,7 +488,7 @@ agent_client_host_info_get_allhost_by_architecture(
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_HOST_INFO_GET_ALLHOST_BY_ARCHITECTURE,
 		"s/i", architecture, np);
 	if (e != NULL)
@@ -517,7 +520,7 @@ agent_client_file_section_info_get(
 {
 	char *e;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_INFO_GET, "ss/", pathname, section);
 	if (e != NULL)
 		return (e);
@@ -533,7 +536,7 @@ agent_client_file_section_info_set(
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_FILE_SECTION_INFO_SET, "ss", pathname, section);
 	if (e != NULL)
 		return (e);
@@ -552,7 +555,7 @@ agent_client_file_section_info_replace(
 {
 	char *e;
 
-	e = agent_client_rpc_request(agent_server,
+	e = agent_client_rpc_request(&agent_server,
 		AGENT_PROTO_FILE_SECTION_INFO_REPLACE, "ss", pathname, section);
 	if (e != NULL)
 		return (e);
@@ -566,7 +569,7 @@ char *
 agent_client_file_section_info_remove(struct agent_connection *agent_server,
 	const char *pathname, const char *section)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_FILE_SECTION_INFO_REMOVE, "ss/",
 			pathname, section));
 }
@@ -582,7 +585,7 @@ agent_client_file_section_info_get_all_by_file(
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_INFO_GET_ALL_BY_FILE,
 		"s/i", pathname, np);
 	if (e != NULL)
@@ -616,7 +619,7 @@ agent_client_file_section_copy_info_get(
 {
 	char *e;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_COPY_INFO_GET,
 		"sss/", pathname, section, hostname);
 	if (e != NULL)
@@ -631,7 +634,7 @@ agent_client_file_section_copy_info_set(
 	char *pathname, char *section, char *hostname,
 	struct gfarm_file_section_copy_info *info)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_FILE_SECTION_COPY_INFO_SET,
 			"sss/", pathname, section, hostname));
 }
@@ -641,7 +644,7 @@ agent_client_file_section_copy_info_remove(
 	struct agent_connection *agent_server,
 	const char *pathname, const char *section, const char *hostname)
 {
-	return (agent_client_rpc(agent_server, 0,
+	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_FILE_SECTION_COPY_INFO_REMOVE, "sss/",
 			pathname, section, hostname));
 }
@@ -657,7 +660,7 @@ agent_client_file_section_copy_info_get_all_by_file(
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_FILE,
 		"s/i", pathname, np);
 	if (e != NULL)
@@ -691,7 +694,7 @@ agent_client_file_section_copy_info_get_all_by_section(
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_SECTION,
 		"ss/i", pathname, section, np);
 	if (e != NULL)
@@ -724,7 +727,7 @@ agent_client_file_section_copy_info_get_all_by_host(
 	char *e;
 	int i;
 
-	e = agent_client_rpc(agent_server, 0,
+	e = agent_client_rpc(&agent_server, 0,
 		AGENT_PROTO_FILE_SECTION_COPY_INFO_GET_ALL_BY_HOST,
 		"s/i", hostname, np);
 	if (e != NULL)
