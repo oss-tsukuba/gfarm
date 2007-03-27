@@ -53,6 +53,7 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
+#define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
 
 #define XAUTH_NEXTRACT_MAXLEN	512
@@ -258,8 +259,7 @@ connect_wait(int s)
 
 	FD_ZERO(&wset);
 	FD_SET(s, &wset);
-	/* timeout: 5 sec */
-	timeout.tv_sec = 5;
+	timeout.tv_sec = GFS_CLIENT_CONNECT_TIMEOUT;
 	timeout.tv_usec = 0;
 
 	rv = select(s + 1, NULL, &wset, NULL, &timeout);
@@ -2854,7 +2854,7 @@ gfs_client_bootstrap_replicate_file_with_reconnection(
  */
 
 int gfs_client_datagram_timeouts[] = { /* milli seconds */
-	10, 100, 1000, 2000, 4000, 8000, 12000, 18000, 24000, 32000
+	8000, 12000, 18000, 27000
 };
 int gfs_client_datagram_ntimeouts =
 	GFARM_ARRAY_LENGTH(gfs_client_datagram_timeouts);
