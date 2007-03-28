@@ -57,7 +57,11 @@ char GFARM_ERR_AUTHENTICATION[] = "authentication error";
 char GFARM_ERR_EXPIRED[] = "expired";
 char GFARM_ERR_PROTOCOL_NOT_SUPPORTED[] = "protocol not supported";
 char GFARM_ERR_PROTOCOL[] = "protocol error";
+char GFARM_ERR_NETWORK_IS_DOWN[] = "network is down";
 char GFARM_ERR_NETWORK_IS_UNREACHABLE[] = "network is unreachable";
+char GFARM_ERR_NETWORK_DROPPED_CONNECTION_ON_RESET[] = 
+	"network dropped connection on reset";
+char GFARM_ERR_HOST_IS_DOWN[] = "host is down";
 char GFARM_ERR_NO_ROUTE_TO_HOST[] = "no route to host";
 char GFARM_ERR_CONNECTION_TIMED_OUT[] = "connection timed out";
 char GFARM_ERR_CONNECTION_REFUSED[] = "connection refused";
@@ -163,7 +167,10 @@ struct {
 	/* but EPROTONOSUPPORT will be mapped into GFARM_ERR_PROTOCOL_NOT_SUPPORTED. */
 	{ EPROTONOSUPPORT, GFARM_ERR_PROTOCOL },
 #endif
+	{ ENETDOWN,	GFARM_ERR_NETWORK_IS_DOWN },
 	{ ENETUNREACH,	GFARM_ERR_NETWORK_IS_UNREACHABLE },
+	{ ENETRESET,	GFARM_ERR_NETWORK_DROPPED_CONNECTION_ON_RESET },
+	{ EHOSTDOWN,	GFARM_ERR_HOST_IS_DOWN },
 	{ EHOSTUNREACH,	GFARM_ERR_NO_ROUTE_TO_HOST },
 	{ ETIMEDOUT,	GFARM_ERR_CONNECTION_TIMED_OUT },
 	{ ECONNREFUSED,	GFARM_ERR_CONNECTION_REFUSED },

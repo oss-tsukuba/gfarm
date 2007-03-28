@@ -58,10 +58,6 @@
 
 #define XAUTH_NEXTRACT_MAXLEN	512
 
-#define IS_CONNECTION_ERROR(e) \
-	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF || \
-	 (e) == GFARM_ERR_PROTOCOL)
-
 static char GFARM_ERR_GFSD_ABORTED[] = "gfsd aborted";
 
 struct gfs_connection {
@@ -113,7 +109,18 @@ gfs_client_add_hook_for_connection_error(char *(*hook)(const char *))
 int
 gfs_client_is_connection_error(char *e)
 {
-	return (IS_CONNECTION_ERROR(e));
+	return (
+	    e == GFARM_ERR_BROKEN_PIPE ||
+	    e == GFARM_ERR_PROTOCOL ||
+	    e == GFARM_ERR_NETWORK_IS_DOWN ||
+	    e == GFARM_ERR_NETWORK_IS_UNREACHABLE ||
+	    e == GFARM_ERR_NETWORK_DROPPED_CONNECTION_ON_RESET ||
+	    e == GFARM_ERR_HOST_IS_DOWN ||
+	    e == GFARM_ERR_NO_ROUTE_TO_HOST ||
+	    e == GFARM_ERR_CONNECTION_TIMED_OUT ||
+	    e == GFARM_ERR_CONNECTION_REFUSED ||
+	    e == GFARM_ERR_CONNECTION_RESET_BY_PEER ||
+	    e == GFARM_ERR_UNEXPECTED_EOF);
 }
 
 int
@@ -919,7 +926,7 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 	va_start(ap, format);
 	e = xxx_proto_vrpc_request(gfs_server->conn, command, &format, &ap);
 	va_end(ap);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
 			(*gfs_client_hook_for_connection_error)(
 			    gfs_client_hostname(gfs_server));
@@ -941,7 +948,7 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 				  &error, &format, &ap);
 	va_end(ap);
 
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
 			(*gfs_client_hook_for_connection_error)(
 			    gfs_client_hostname(gfs_server));
@@ -967,7 +974,7 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 			   command, &error, &format, &ap);
 	va_end(ap);
 
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
 			(*gfs_client_hook_for_connection_error)(
 			    gfs_client_hostname(gfs_server));
@@ -2606,7 +2613,7 @@ gfs_client_open_with_reconnect_addr(
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_open(gfs_server, gfarm_file, flag, mode, fdp);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire(hostname, peer_addr,
 		    &gfs_server);
@@ -2649,7 +2656,7 @@ gfs_client_open_local_with_reconnection(const char *hostname,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_open_local(gfs_server, gfarm_file, flag, mode, fdp);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2674,7 +2681,7 @@ gfs_client_link_with_reconnection(const char *hostname, char *from, char *to,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_link(gfs_server, from, to);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2698,7 +2705,7 @@ gfs_client_unlink_with_reconnection(const char *hostname, char *path,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_unlink(gfs_server, path);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2722,7 +2729,7 @@ gfs_client_rename_with_reconnection(const char *hostname, char *from, char *to,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_rename(gfs_server, from, to);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2747,7 +2754,7 @@ gfs_client_chmod_with_reconnection(const char *hostname,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_chmod(gfs_server, path, mode);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2772,7 +2779,7 @@ gfs_client_get_spool_root_with_reconnection(const char *hostname,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_get_spool_root(gfs_server, spool_rootp);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire_by_host(hostname,
 		    &gfs_server);
@@ -2801,7 +2808,7 @@ gfs_client_statfs_with_reconnect_addr(
 		return (e);
 	e = gfs_client_statfs(gfs_server, path,
 	    bsizep, blocksp, bfreep, bavailp, filesp, ffreep, favailp);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(gfs_server);
 		e = gfs_client_connection_acquire(hostname, peer_addr,
 		    &gfs_server);
@@ -2832,7 +2839,7 @@ gfs_client_bootstrap_replicate_file_with_reconnection(
 	e = gfs_client_bootstrap_replicate_file(dst_gfs_server,
 	    gfarm_file, mode, file_size,
 	    src_canonical_hostname, src_if_hostname);
-	if (IS_CONNECTION_ERROR(e)) {
+	if (gfs_client_is_connection_error(e)) {
 		gfs_client_connection_free(dst_gfs_server);
 		e = gfs_client_connection_acquire_by_host(
 		    dst_canonical_hostname, &dst_gfs_server);
