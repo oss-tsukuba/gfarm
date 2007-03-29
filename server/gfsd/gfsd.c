@@ -476,9 +476,10 @@ gfs_server_open_local(struct xxx_connection *client)
 	buf[0] = 0;
 	rv = gfarm_fd_send_message(xxx_connection_fd(client),
 		buf, sizeof(buf), 1, &fd);
-	close(fd);
 	if (rv != 0)
-		gflog_fatal("%s: %s", msg, strerror(rv));
+		gflog_error("%s: %s: sendmsg", msg, strerror(rv));
+	if (close(fd) == -1)
+		gflog_error("%s: %s: close", msg, strerror(errno));
 }
 
 void
