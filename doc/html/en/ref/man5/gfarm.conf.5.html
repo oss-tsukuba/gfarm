@@ -1113,6 +1113,104 @@ CLASS="TOKEN"
 >gsi</SPAN
 >.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.</P
+><P
+>Limitation:</P
+><P
+>You cannot mix <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> authenticaion and
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> authentication in most cases.
+You cannot mix <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> and <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>
+in most	cases either.</P
+><P
+>This is because when a gfarm client like gfrcmd, gfrun, gfrep or
+gfarmfs with automatic replication enabled (gfarmfs -N) accesses
+a gfarm filesystem node, the gfarm filesystem node accesses another
+gfarm filesystem node.
+If <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> authentication is performed at the access
+to the first filesystem node, and if <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>
+(or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) authentication is required at the access
+to the second filesystem node, the access to the second filesystem node
+will fail, because the gfarm client doesn't pass its GSI proxy certificate
+to the first gfarm filesystem node (since it doesn't use
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> but
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>), thus the first filesystem node cannot use
+any GSI proxy certificate to access the second filesystem node.</P
+><P
+>That means you can mix <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> and
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> (or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) in certain
+cases, if the second access never will use <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>
+(or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) authentication.  For example,
+if there is only one PC cluster in your system, and if all nodes
+in the cluster share users' home directories via NFS, and
+if all gfarm filesystem nodes belong to the cluster,
+then you can use <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> authentication within the
+cluster, and gfarm clients at outside of the cluster can access the
+gfarm filesystem nodes in the cluster by using <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>
+(or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) authentication.
+The following gfarm.conf setting is an example of such configuration,
+assuming that the cluster is using 192.168.0.0/24 as its IP address,
+and requiring <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> authentication from outside of the
+cluster.</P
+><P
+CLASS="LITERALLAYOUT"
+>		auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+		auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ></DD
 ><DT
 ><SPAN

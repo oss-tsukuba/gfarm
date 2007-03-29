@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "14 February 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "29 March 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -474,6 +474,48 @@ gsi_auth and gsi;
 and all other hosts will be authenticated by
 gsi\&.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.
+
+Limitation:
+
+You cannot mix gsi authenticaion and
+sharedsecret authentication in most cases.
+You cannot mix gsi_auth and sharedsecret
+in most cases either.
+
+This is because when a gfarm client like gfrcmd, gfrun, gfrep or
+gfarmfs with automatic replication enabled (gfarmfs -N) accesses
+a gfarm filesystem node, the gfarm filesystem node accesses another
+gfarm filesystem node.
+If sharedsecret authentication is performed at the access
+to the first filesystem node, and if gsi
+(or gsi_auth) authentication is required at the access
+to the second filesystem node, the access to the second filesystem node
+will fail, because the gfarm client doesn't pass its GSI proxy certificate
+to the first gfarm filesystem node (since it doesn't use
+gsi or gsi_auth but
+sharedsecret), thus the first filesystem node cannot use
+any GSI proxy certificate to access the second filesystem node.
+
+That means you can mix sharedsecret and
+gsi (or gsi_auth) in certain
+cases, if the second access never will use gsi
+(or gsi_auth) authentication.  For example,
+if there is only one PC cluster in your system, and if all nodes
+in the cluster share users' home directories via NFS, and
+if all gfarm filesystem nodes belong to the cluster,
+then you can use sharedsecret authentication within the
+cluster, and gfarm clients at outside of the cluster can access the
+gfarm filesystem nodes in the cluster by using gsi
+(or gsi_auth) authentication.
+The following gfarm.conf setting is an example of such configuration,
+assuming that the cluster is using 192.168.0.0/24 as its IP address,
+and requiring gsi authentication from outside of the
+cluster.
+
+.nf
+		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi *
+.fi
 .TP
 \fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost_specification\fB]\fR
 The netparam statement specifies several

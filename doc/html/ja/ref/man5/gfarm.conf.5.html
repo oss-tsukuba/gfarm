@@ -1022,6 +1022,103 @@ CLASS="TOKEN"
 CLASS="TOKEN"
 >gsi</SPAN
 >認証のみを試みることになります。</P
+><P
+>制限:</P
+><P
+><SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> 認証と <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 認証の混在は、
+基本的には不可能です。同様に <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> 認証と
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 認証の混在も、基本的には不可能です。</P
+><P
+>この理由は、gfrcmd、gfrun、gfrep や、自動複製機能を有効にした gfarmfs
+(gfarmfs -N) のような gfarm クライアントが gfarm ファイルシステムノードに
+アクセスした場合、その gfarm ファイルシステムノードは、さらに別の
+gfarm ファイルシステムノードへアクセスするからです。
+ここで、最初のファイルシステムノードへのアクセスが
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 認証で行なわれ、さらに二番目の
+ファイルシステムノードへのアクセスで <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>
+(あるいは <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) 認証が要求された場合、
+二番目のファイルシステムノードへのアクセスは失敗します。これは、
+gfarm クライアントは最初の gfarm ファイルシステムノードへ
+GSI proxy 証明書を渡してないため(これは、最初のアクセスで
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> や <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> ではなく<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> が使われているからです)、
+最初のファイルシステムノードは、二番目のファイルシステムノードへ渡すための
+GSI proxy 証明書を所持していないからです。</P
+><P
+>逆に言うと、二番目へのアクセスで決して <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> や
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> 認証が使われないのであれば、
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> と <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> (ないし
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) を混在させることができます。たとえば、
+もしもただ一つの PCクラスタから構成されたシステムがあり、そのクラスタ内の
+全てのノードが NFS でユーザのホームディレクトリを共有しており、
+かつ gfarm ファイルシステムノードは、すべてそのクラスタに
+所属しているとすると、クラスタ内では <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>認証を
+用い、クラスタ外の gfarm クライアントがクラスタ内の gfarm
+ファイルシステムノードにアクセスする際には <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>
+(ないし <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>) 認証を使うといったことができます。
+下記は、そのような構成で、クラスタが 192.168.0.0/24 というアドレスを
+使っていて、クラスタ外からのアクセスには <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> 認証を
+要求する場合の gfarm.conf の設定例です。</P
+><P
+CLASS="LITERALLAYOUT"
+>		auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+		auth&nbsp;enable&nbsp;gsi&nbsp;*</P
 ></DD
 ><DT
 ><SPAN

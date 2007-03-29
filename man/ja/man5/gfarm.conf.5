@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "14 February 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "29 March 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -433,6 +433,47 @@ gsi の両方を、
 それ以外の全てのホストには gsi 認証のみを試みます。
 すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
 gsi認証のみを試みることになります。
+
+制限:
+
+gsi 認証と sharedsecret 認証の混在は、
+基本的には不可能です。同様に gsi_auth 認証と
+sharedsecret 認証の混在も、基本的には不可能です。
+
+この理由は、gfrcmd、gfrun、gfrep や、自動複製機能を有効にした gfarmfs
+(gfarmfs -N) のような gfarm クライアントが gfarm ファイルシステムノードに
+アクセスした場合、その gfarm ファイルシステムノードは、さらに別の
+gfarm ファイルシステムノードへアクセスするからです。
+ここで、最初のファイルシステムノードへのアクセスが
+sharedsecret 認証で行なわれ、さらに二番目の
+ファイルシステムノードへのアクセスで gsi
+(あるいは gsi_auth) 認証が要求された場合、
+二番目のファイルシステムノードへのアクセスは失敗します。これは、
+gfarm クライアントは最初の gfarm ファイルシステムノードへ
+GSI proxy 証明書を渡してないため(これは、最初のアクセスで
+gsi や gsi_auth ではなくsharedsecret が使われているからです)、
+最初のファイルシステムノードは、二番目のファイルシステムノードへ渡すための
+GSI proxy 証明書を所持していないからです。
+
+逆に言うと、二番目へのアクセスで決して gsi や
+gsi_auth 認証が使われないのであれば、
+sharedsecret と gsi (ないし
+gsi_auth) を混在させることができます。たとえば、
+もしもただ一つの PCクラスタから構成されたシステムがあり、そのクラスタ内の
+全てのノードが NFS でユーザのホームディレクトリを共有しており、
+かつ gfarm ファイルシステムノードは、すべてそのクラスタに
+所属しているとすると、クラスタ内では sharedsecret認証を
+用い、クラスタ外の gfarm クライアントがクラスタ内の gfarm
+ファイルシステムノードにアクセスする際には gsi
+(ないし gsi_auth) 認証を使うといったことができます。
+下記は、そのような構成で、クラスタが 192.168.0.0/24 というアドレスを
+使っていて、クラスタ外からのアクセスには gsi 認証を
+要求する場合の gfarm.conf の設定例です。
+
+.nf
+		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi *
+.fi
 .TP
 \fBnetparam \fIパラメータ\fB=\fI値\fB [\fIホスト指定\fB]\fR
 ネットワーク通信に用いる各種パラメータを指定します。
