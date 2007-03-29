@@ -547,25 +547,8 @@ GSI は利用できません。この場合、<token>gsi</token> および
 <token>gsi_auth</token> 認証の指定は単に無視されます。</para>
 
 <para>この設定は必須です。</para>
-<para>例:</para>
-<literallayout>
-	auth disable sharedsecret 192.168.0.100
-	auth disable sharedsecret 192.168.0.101
-	auth enable sharedsecret 192.168.0.0/24
-	auth enable gsi_auth 10.0.0.0/8
-	auth enable gsi *
-</literallayout>
 
-<para>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
-除いた 192.168.0.0/24 ネットワークに属すホストには 
-<token>sharedsecret</token> と <token>gsi</token> の両方を、
-10.0.0.0/8 ネットワークに属すホストには <token>gsi_auth</token> および
-<token>gsi</token> の両方を、
-それ以外の全てのホストには <token>gsi</token> 認証のみを試みます。
-すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
-<token>gsi</token>認証のみを試みることになります。</para>
-
-<para>制限:</para>
+<para>制限事項:</para>
 
 <para><token>gsi</token> 認証と <token>sharedsecret</token> 認証の混在は、
 基本的には不可能です。同様に <token>gsi_auth</token> 認証と
@@ -604,6 +587,31 @@ GSI proxy 証明書を所持していないからです。</para>
 		auth enable sharedsecret 192.168.0.0/24
 		auth enable gsi *
 </literallayout>
+
+<para>例:</para>
+
+<literallayout>
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
+	auth enable gsi *
+</literallayout>
+
+<para>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
+除いた 192.168.0.0/24 ネットワークに属すホストには 
+<token>sharedsecret</token> と <token>gsi</token> の両方を、
+10.0.0.0/8 ネットワークに属すホストには <token>gsi_auth</token> および
+<token>gsi</token> の両方を、
+それ以外の全てのホストには <token>gsi</token> 認証のみを試みます。
+すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+<token>gsi</token>認証のみを試みることになります。</para>
+
+<para>
+制限事項に記述されている理由から、この例の場合、ファイルシステム
+ノードは全て、192.168.0.100 や 192.168.0.101 を除く 192.168.0.0/24 
+のアドレス範囲に属す必要があることにご注意ください。
+</para>
 
 </listitem>
 </varlistentry>

@@ -583,27 +583,9 @@ not available, an <token>auth</token> statement with
 <token>gsi</token> or <token>gsi_auth</token> will be ignored.</para>
 
 <para>This statement cannot be omitted.</para>
-<para>For example,</para>
-<literallayout>
-	auth disable sharedsecret 192.168.0.100
-	auth disable sharedsecret 192.168.0.101
-	auth enable sharedsecret 192.168.0.0/24
-	auth enable gsi_auth 10.0.0.0/8
-	auth enable gsi *
-</literallayout>
-
-<para>In this example, all hosts which belong to the network address
-192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
-will be tested for authenticated by both <token>sharedsecret</token>
-and <token>gsi</token>;
-all hosts which belong to the network address 10.0.0.0/8 will be
-tested for authentication by both
-<token>gsi_auth</token> and <token>gsi</token>;
-and all other hosts will be authenticated by
-<token>gsi</token>.  Note that two hosts, 192.168.0.100 and
-192.168.0.101, will be tested for authentication by gsi only.</para>
 
 <para>Limitation:</para>
+
 <para>You cannot mix <token>gsi</token> authenticaion and
 <token>sharedsecret</token> authentication in most cases.
 You cannot mix <token>gsi_auth</token> and <token>sharedsecret</token>
@@ -642,6 +624,33 @@ cluster.</para>
 		auth enable sharedsecret 192.168.0.0/24
 		auth enable gsi *
 </literallayout>
+
+<para>Example:</para>
+
+<literallayout>
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
+	auth enable gsi *
+</literallayout>
+
+<para>In this example, all hosts which belong to the network address
+192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
+will be tested for authenticated by both <token>sharedsecret</token>
+and <token>gsi</token>;
+all hosts which belong to the network address 10.0.0.0/8 will be
+tested for authentication by both
+<token>gsi_auth</token> and <token>gsi</token>;
+and all other hosts will be authenticated by
+<token>gsi</token>.  Note that two hosts, 192.168.0.100 and
+192.168.0.101, will be tested for authentication by gsi only.</para>
+
+<para>
+Please note that all filesystem nodes must belong to the IP address range
+192.168.0.0/24 except 192.168.0.100 and 192.168.0.101 in this example,
+due to the reason described in the limitation section.
+</para>
 
 </listitem>
 </varlistentry>
