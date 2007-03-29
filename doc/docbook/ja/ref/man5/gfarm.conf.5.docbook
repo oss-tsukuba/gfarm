@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.conf.5'>
 
-<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+<refentryinfo><date>29 Mar 2007</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm.conf</refentrytitle>
@@ -564,6 +564,46 @@ GSI は利用できません。この場合、<token>gsi</token> および
 それ以外の全てのホストには <token>gsi</token> 認証のみを試みます。
 すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
 <token>gsi</token>認証のみを試みることになります。</para>
+
+<para>制限:</para>
+
+<para><token>gsi</token> 認証と <token>sharedsecret</token> 認証の混在は、
+基本的には不可能です。同様に <token>gsi_auth</token> 認証と
+<token>sharedsecret</token> 認証の混在も、基本的には不可能です。</para>
+
+<para>この理由は、gfrcmd、gfrun、gfrep や、自動複製機能を有効にした gfarmfs
+(gfarmfs -N) のような gfarm クライアントが gfarm ファイルシステムノードに
+アクセスした場合、その gfarm ファイルシステムノードは、さらに別の
+gfarm ファイルシステムノードへアクセスするからです。
+ここで、最初のファイルシステムノードへのアクセスが
+<token>sharedsecret</token> 認証で行なわれ、さらに二番目の
+ファイルシステムノードへのアクセスで <token>gsi</token>
+(あるいは <token>gsi_auth</token>) 認証が要求された場合、
+二番目のファイルシステムノードへのアクセスは失敗します。これは、
+gfarm クライアントは最初の gfarm ファイルシステムノードへ
+GSI proxy 証明書を渡してないため(これは、最初のアクセスで
+<token>gsi</token> や <token>gsi_auth</token> ではなく<token>sharedsecret</token> が使われているからです)、
+最初のファイルシステムノードは、二番目のファイルシステムノードへ渡すための
+GSI proxy 証明書を所持していないからです。</para>
+
+<para>逆に言うと、二番目へのアクセスで決して <token>gsi</token> や
+<token>gsi_auth</token> 認証が使われないのであれば、
+<token>sharedsecret</token> と <token>gsi</token> (ないし
+<token>gsi_auth</token>) を混在させることができます。たとえば、
+もしもただ一つの PCクラスタから構成されたシステムがあり、そのクラスタ内の
+全てのノードが NFS でユーザのホームディレクトリを共有しており、
+かつ gfarm ファイルシステムノードは、すべてそのクラスタに
+所属しているとすると、クラスタ内では <token>sharedsecret</token>認証を
+用い、クラスタ外の gfarm クライアントがクラスタ内の gfarm
+ファイルシステムノードにアクセスする際には <token>gsi</token>
+(ないし <token>gsi_auth</token>) 認証を使うといったことができます。
+下記は、そのような構成で、クラスタが 192.168.0.0/24 というアドレスを
+使っていて、クラスタ外からのアクセスには <token>gsi</token> 認証を
+要求する場合の gfarm.conf の設定例です。</para>
+<literallayout>
+		auth enable sharedsecret 192.168.0.0/24
+		auth enable gsi *
+</literallayout>
 
 </listitem>
 </varlistentry>
