@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "29 March 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "30 March 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -415,26 +415,7 @@ gsi_auth 認証の指定は単に無視されます。
 
 この設定は必須です。
 
-例:
-
-.nf
-	auth disable sharedsecret 192.168.0.100
-	auth disable sharedsecret 192.168.0.101
-	auth enable sharedsecret 192.168.0.0/24
-	auth enable gsi_auth 10.0.0.0/8
-	auth enable gsi *
-.fi
-
-この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
-除いた 192.168.0.0/24 ネットワークに属すホストには 
-sharedsecret と gsi の両方を、
-10.0.0.0/8 ネットワークに属すホストには gsi_auth および
-gsi の両方を、
-それ以外の全てのホストには gsi 認証のみを試みます。
-すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
-gsi認証のみを試みることになります。
-
-制限:
+制限事項:
 
 gsi 認証と sharedsecret 認証の混在は、
 基本的には不可能です。同様に gsi_auth 認証と
@@ -474,6 +455,29 @@ gsi_auth) を混在させることができます。たとえば、
 		auth enable sharedsecret 192.168.0.0/24
 		auth enable gsi *
 .fi
+
+例:
+
+.nf
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
+	auth enable gsi *
+.fi
+
+この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
+除いた 192.168.0.0/24 ネットワークに属すホストには 
+sharedsecret と gsi の両方を、
+10.0.0.0/8 ネットワークに属すホストには gsi_auth および
+gsi の両方を、
+それ以外の全てのホストには gsi 認証のみを試みます。
+すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+gsi認証のみを試みることになります。
+
+制限事項に記述されている理由から、この例の場合、ファイルシステム
+ノードは全て、192.168.0.100 や 192.168.0.101 を除く 192.168.0.0/24 
+のアドレス範囲に属す必要があることにご注意ください。
 .TP
 \fBnetparam \fIパラメータ\fB=\fI値\fB [\fIホスト指定\fB]\fR
 ネットワーク通信に用いる各種パラメータを指定します。

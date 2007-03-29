@@ -987,43 +987,7 @@ CLASS="TOKEN"
 ><P
 >この設定は必須です。</P
 ><P
->例:</P
-><P
-CLASS="LITERALLAYOUT"
->	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
-	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
-	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
-	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
-	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
-><P
->この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
-除いた 192.168.0.0/24 ネットワークに属すホストには 
-<SPAN
-CLASS="TOKEN"
->sharedsecret</SPAN
-> と <SPAN
-CLASS="TOKEN"
->gsi</SPAN
-> の両方を、
-10.0.0.0/8 ネットワークに属すホストには <SPAN
-CLASS="TOKEN"
->gsi_auth</SPAN
-> および
-<SPAN
-CLASS="TOKEN"
->gsi</SPAN
-> の両方を、
-それ以外の全てのホストには <SPAN
-CLASS="TOKEN"
->gsi</SPAN
-> 認証のみを試みます。
-すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
-<SPAN
-CLASS="TOKEN"
->gsi</SPAN
->認証のみを試みることになります。</P
-><P
->制限:</P
+>制限事項:</P
 ><P
 ><SPAN
 CLASS="TOKEN"
@@ -1119,6 +1083,46 @@ CLASS="TOKEN"
 CLASS="LITERALLAYOUT"
 >		auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
 		auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
+	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
+	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
+	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+><P
+>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
+除いた 192.168.0.0/24 ネットワークに属すホストには 
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> と <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> の両方を、
+10.0.0.0/8 ネットワークに属すホストには <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> および
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> の両方を、
+それ以外の全てのホストには <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> 認証のみを試みます。
+すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>認証のみを試みることになります。</P
+><P
+>制限事項に記述されている理由から、この例の場合、ファイルシステム
+ノードは全て、192.168.0.100 や 192.168.0.101 を除く 192.168.0.0/24 
+のアドレス範囲に属す必要があることにご注意ください。</P
 ></DD
 ><DT
 ><SPAN

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "29 March 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "30 March 2007" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -454,27 +454,6 @@ gsi or gsi_auth will be ignored.
 
 This statement cannot be omitted.
 
-For example,
-
-.nf
-	auth disable sharedsecret 192.168.0.100
-	auth disable sharedsecret 192.168.0.101
-	auth enable sharedsecret 192.168.0.0/24
-	auth enable gsi_auth 10.0.0.0/8
-	auth enable gsi *
-.fi
-
-In this example, all hosts which belong to the network address
-192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
-will be tested for authenticated by both sharedsecret
-and gsi;
-all hosts which belong to the network address 10.0.0.0/8 will be
-tested for authentication by both
-gsi_auth and gsi;
-and all other hosts will be authenticated by
-gsi\&.  Note that two hosts, 192.168.0.100 and
-192.168.0.101, will be tested for authentication by gsi only.
-
 Limitation:
 
 You cannot mix gsi authenticaion and
@@ -516,6 +495,31 @@ cluster.
 		auth enable sharedsecret 192.168.0.0/24
 		auth enable gsi *
 .fi
+
+Example:
+
+.nf
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
+	auth enable gsi *
+.fi
+
+In this example, all hosts which belong to the network address
+192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
+will be tested for authenticated by both sharedsecret
+and gsi;
+all hosts which belong to the network address 10.0.0.0/8 will be
+tested for authentication by both
+gsi_auth and gsi;
+and all other hosts will be authenticated by
+gsi\&.  Note that two hosts, 192.168.0.100 and
+192.168.0.101, will be tested for authentication by gsi only.
+
+Please note that all filesystem nodes must belong to the IP address range
+192.168.0.0/24 except 192.168.0.100 and 192.168.0.101 in this example,
+due to the reason described in the limitation section.
 .TP
 \fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost_specification\fB]\fR
 The netparam statement specifies several
