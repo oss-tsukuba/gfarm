@@ -465,8 +465,8 @@ gfarm_pgsql_host_info_remove_hostaliases(const char *hostname)
 
 static char *
 hostaliases_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	PGresult *res;
 	const char *paramValues[2];
@@ -507,8 +507,8 @@ hostaliases_set(
 
 static char *
 gfarm_pgsql_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	PGresult *res;
 	const char *paramValues[4];
@@ -624,7 +624,7 @@ gfarm_pgsql_host_info_set(
  * this function is only called when `use_hostid_and_pathid'.
  */
 static int
-removed_host_info_set(char *hostname)
+removed_host_info_set(const char *hostname)
 {
 	int ok;
 	PGresult *res;
@@ -647,8 +647,8 @@ removed_host_info_set(char *hostname)
 
 static char *
 gfarm_pgsql_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	PGresult *res;
 	const char *paramValues[3];
@@ -1107,8 +1107,8 @@ gfarm_pgsql_path_info_get(
 
 static char *
 gfarm_pgsql_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	PGresult *res;
 	const char *paramValues[11];
@@ -1176,8 +1176,8 @@ gfarm_pgsql_path_info_set(
 
 static char *
 gfarm_pgsql_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	PGresult *res;
 	const char *paramValues[11];
@@ -1503,7 +1503,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 /* get GFarmFiles which were created by the program */
 static char *
 gfarm_pgsql_file_history_get_allfile_by_program(
-	char *program,
+	const char *program,
 	int *np,
 	char ***gfarm_files_p)
 {
@@ -1517,7 +1517,7 @@ gfarm_pgsql_file_history_get_allfile_by_program(
 /* get GFarmFiles which were created from the file as a input */
 static char *
 gfarm_pgsql_file_history_get_allfile_by_file(
-	char *input_gfarm_file,
+	const char *input_gfarm_file,
 	int *np,
 	char ***gfarm_files_p)
 {
@@ -1595,9 +1595,9 @@ gfarm_pgsql_file_section_info_get(
 
 static char *
 gfarm_pgsql_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	PGresult *res;
 	const char *paramValues[5];
@@ -1646,9 +1646,9 @@ gfarm_pgsql_file_section_info_set(
 
 static char *
 gfarm_pgsql_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	PGresult *res;
 	const char *paramValues[5];
@@ -1847,7 +1847,8 @@ gfarm_pgsql_file_section_copy_info_get(
 }
 
 static PGresult *
-file_section_copy_info_set(char *pathname, char *section, char *hostname)
+file_section_copy_info_set(
+	const char *pathname, const char *section, const char *hostname)
 {
 	const char *paramValues[3];
 
@@ -1875,10 +1876,11 @@ file_section_copy_info_set(char *pathname, char *section, char *hostname)
 /* this function is only called when `use_hostid_and_pathid' */
 static PGresult *
 file_section_copy_info_set_for_removed_host(
-	char *pathname, char *section, char *hostname)
+	const char *pathname, const char *section, const char *hostname)
 {
 	PGresult *res = NULL;
-	char *h = NULL, *n;
+	char *h = NULL;
+	const char *n;
 
 	if (hostname[0] == '#') {
 		n = hostname;
@@ -1910,10 +1912,10 @@ file_section_copy_info_set_for_removed_host(
 
 static char *
 gfarm_pgsql_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	PGresult *res;
 	char *e;
@@ -2148,7 +2150,7 @@ gfarm_pgsql_file_section_copy_info_get_all_by_host(
 
 static char *
 gfarm_pgsql_file_history_get(
-	char *gfarm_file,
+	const char *gfarm_file,
 	struct gfarm_file_history *info)
 {
 	char *e;
@@ -2160,8 +2162,8 @@ gfarm_pgsql_file_history_get(
 
 static char *
 gfarm_pgsql_file_history_set(
-	char *gfarm_file,
-	struct gfarm_file_history *info)
+	const char *gfarm_file,
+	const struct gfarm_file_history *info)
 {
 	char *e;
 
@@ -2171,7 +2173,7 @@ gfarm_pgsql_file_history_set(
 }
 
 static char *
-gfarm_pgsql_file_history_remove(char *gfarm_file)
+gfarm_pgsql_file_history_remove(const char *gfarm_file)
 {
 	char *e;
 

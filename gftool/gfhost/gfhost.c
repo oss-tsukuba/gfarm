@@ -28,7 +28,7 @@ char *program_name = "gfhost";
 static char *
 update_host(char *hostname, int nhostaliases, char **hostaliases,
 	char *architecture, int ncpu,
-	char *(*update_op)(char *, struct gfarm_host_info *))
+	char *(*update_op)(const char *, const struct gfarm_host_info *))
 {
 	struct gfarm_host_info hi;
 

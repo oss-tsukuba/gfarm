@@ -131,7 +131,7 @@ gfarm_base_generic_info_free_all(
 /**********************************************************************/
 
 static void gfarm_base_host_info_clear(void *info);
-static int gfarm_base_host_info_validate(void *info);
+static int gfarm_base_host_info_validate(const void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_host_info_ops = {
 	sizeof(struct gfarm_host_info),
@@ -154,9 +154,9 @@ gfarm_base_host_info_clear(void *vinfo)
 }
 
 static int
-gfarm_base_host_info_validate(void *vinfo)
+gfarm_base_host_info_validate(const void *vinfo)
 {
-	struct gfarm_host_info *info = vinfo;
+	const struct gfarm_host_info *info = vinfo;
 
 	/* info->hostaliases may be NULL */
 	return (
@@ -201,16 +201,16 @@ gfarm_metadb_host_info_remove_hostaliases(const char *hostname)
 
 char *
 gfarm_metadb_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return ((*metadb_ops->host_info_set)(hostname, info));
 }
 
 char *
 gfarm_metadb_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return ((*metadb_ops->host_info_replace)(hostname, info));
 }
@@ -257,7 +257,7 @@ gfarm_metadb_host_info_get_allhost_by_architecture(const char *architecture,
 /**********************************************************************/
 
 static void gfarm_base_path_info_clear(void *info);
-static int gfarm_base_path_info_validate(void *info);
+static int gfarm_base_path_info_validate(const void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_path_info_ops = {
 	sizeof(struct gfarm_path_info),
@@ -275,9 +275,9 @@ gfarm_base_path_info_clear(void *vinfo)
 }
 
 static int
-gfarm_base_path_info_validate(void *vinfo)
+gfarm_base_path_info_validate(const void *vinfo)
 {
-	struct gfarm_path_info *info = vinfo;
+	const struct gfarm_path_info *info = vinfo;
 
 	/* XXX - should check all fields are filled */
 	return (
@@ -310,16 +310,16 @@ gfarm_metadb_path_info_get(
 
 char *
 gfarm_metadb_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return ((*metadb_ops->path_info_set)(pathname, info));
 }
 
 char *
 gfarm_metadb_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return ((*metadb_ops->path_info_replace)(pathname, info));
 }
@@ -362,7 +362,7 @@ gfarm_file_history_free_allfile(int n, char **v)
 /**********************************************************************/
 
 static void gfarm_base_file_section_info_clear(void *info);
-static int gfarm_base_file_section_info_validate(void *info);
+static int gfarm_base_file_section_info_validate(const void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_file_section_info_ops = {
 	sizeof(struct gfarm_file_section_info),
@@ -380,9 +380,9 @@ gfarm_base_file_section_info_clear(void *vinfo)
 }
 
 static int
-gfarm_base_file_section_info_validate(void *vinfo)
+gfarm_base_file_section_info_validate(const void *vinfo)
 {
-	struct gfarm_file_section_info *info = vinfo;
+	const struct gfarm_file_section_info *info = vinfo;
 
 	/* XXX - should check all fields are filled */
 	return (
@@ -414,18 +414,18 @@ gfarm_metadb_file_section_info_get(
 
 char *
 gfarm_metadb_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return ((*metadb_ops->file_section_info_set)(pathname, section, info));
 }
 
 char *
 gfarm_metadb_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return ((*metadb_ops->file_section_info_replace)(pathname, section,
 	    info));
@@ -461,7 +461,7 @@ gfarm_metadb_file_section_info_get_all_by_file(
 /**********************************************************************/
 
 static void gfarm_base_file_section_copy_info_clear(void *info);
-static int gfarm_base_file_section_copy_info_validate(void *info);
+static int gfarm_base_file_section_copy_info_validate(const void *info);
 
 const struct gfarm_base_generic_info_ops
 	gfarm_base_file_section_copy_info_ops =
@@ -481,9 +481,9 @@ gfarm_base_file_section_copy_info_clear(void *vinfo)
 }
 
 static int
-gfarm_base_file_section_copy_info_validate(void *vinfo)
+gfarm_base_file_section_copy_info_validate(const void *vinfo)
 {
-	struct gfarm_file_section_copy_info *info = vinfo;
+	const struct gfarm_file_section_copy_info *info = vinfo;
 
 	return (
 	    info->pathname != NULL &&
@@ -517,10 +517,10 @@ gfarm_metadb_file_section_copy_info_get(
 
 char *
 gfarm_metadb_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	return ((*metadb_ops->file_section_copy_info_set)(
 	    pathname, section, hostname, info));
@@ -581,7 +581,7 @@ gfarm_metadb_file_section_copy_info_get_all_by_host(
 #if 0 /* GFarmFile history isn't actually used yet */
 
 static void gfarm_base_file_history_clear(void *info);
-static int gfarm_base_file_history_validate(void *info);
+static int gfarm_base_file_history_validate(const void *info);
 
 const struct gfarm_base_generic_info_ops gfarm_base_file_history_ops = {
 	sizeof(struct gfarm_file_history),
@@ -599,9 +599,9 @@ gfarm_base_file_history_clear(void *vinfo)
 }
 
 static int
-gfarm_base_file_history_validate(void *vinfo)
+gfarm_base_file_history_validate(const void *vinfo)
 {
-	struct gfarm_file_history *info = vinfo;
+	const struct gfarm_file_history *info = vinfo;
 
 	return (
 	    info->program != NULL &&

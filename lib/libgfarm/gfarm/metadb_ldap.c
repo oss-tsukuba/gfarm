@@ -505,14 +505,14 @@ static void
 set_string_mod(
 	LDAPMod **modp,
 	int op,
-	char *type,
-	char *value,
+	const char *type,
+	const char *value,
 	struct ldap_string_modify *storage)
 {
-	storage->str[0] = value;
+	storage->str[0] = (char *)value; /* UNCONST */
 	storage->str[1] = NULL;
 	storage->mod.mod_op = op;
-	storage->mod.mod_type = type;
+	storage->mod.mod_type = (char *)type; /* UNCONST */
 	storage->mod.mod_vals.modv_strvals = storage->str;
 	*modp = &storage->mod;
 }
@@ -936,8 +936,8 @@ gfarm_ldap_host_info_get(
 
 static char *
 gfarm_ldap_host_info_update(
-	char *hostname,
-	struct gfarm_host_info *info,
+	const char *hostname,
+	const struct gfarm_host_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
 	    const struct gfarm_ldap_generic_info_ops *))
@@ -1015,8 +1015,8 @@ gfarm_ldap_host_info_remove_hostaliases(const char *hostname)
 
 static char *
 gfarm_ldap_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return (gfarm_ldap_host_info_update(hostname, info,
 	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
@@ -1024,8 +1024,8 @@ gfarm_ldap_host_info_set(
 
 static char *
 gfarm_ldap_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return (gfarm_ldap_host_info_update(hostname, info,
 	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
@@ -1268,8 +1268,8 @@ gfarm_ldap_path_info_set_field(
 
 static char *
 gfarm_ldap_path_info_update(
-	char *pathname,
-	struct gfarm_path_info *info,
+	const char *pathname,
+	const struct gfarm_path_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
 	    const struct gfarm_ldap_generic_info_ops *))
@@ -1369,8 +1369,8 @@ gfarm_ldap_path_info_get(
 
 static char *
 gfarm_ldap_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return (gfarm_ldap_path_info_update(pathname, info,
 	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
@@ -1378,8 +1378,8 @@ gfarm_ldap_path_info_set(
 
 static char *
 gfarm_ldap_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return (gfarm_ldap_path_info_update(pathname, info,
 	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
@@ -1415,7 +1415,7 @@ gfarm_ldap_path_info_get_all_foreach(
 /* get GFarmFiles which were created by the program */
 static char *
 gfarm_ldap_file_history_get_allfile_by_program(
-	char *program,
+	const char *program,
 	int *np,
 	char ***gfarm_files_p)
 {
@@ -1446,7 +1446,7 @@ gfarm_ldap_file_history_get_allfile_by_program(
 /* get GFarmFiles which were created from the file as a input */
 static char *
 gfarm_ldap_file_history_get_allfile_by_file(
-	char *input_gfarm_file,
+	const char *input_gfarm_file,
 	int *np,
 	char ***gfarm_files_p)
 {
@@ -1560,9 +1560,9 @@ gfarm_ldap_file_section_info_get(
 
 static char *
 gfarm_ldap_file_section_info_update(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info,
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info,
 	int mod_op,
 	char *(*update_op)(void *, LDAPMod **,
 	    const struct gfarm_ldap_generic_info_ops *))
@@ -1610,9 +1610,9 @@ gfarm_ldap_file_section_info_update(
 
 static char *
 gfarm_ldap_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return (gfarm_ldap_file_section_info_update(pathname, section, info,
 	    LDAP_MOD_ADD, gfarm_ldap_generic_info_set));
@@ -1620,9 +1620,9 @@ gfarm_ldap_file_section_info_set(
 
 static char *
 gfarm_ldap_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return (gfarm_ldap_file_section_info_update(pathname, section, info,
 	    LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
@@ -1762,10 +1762,10 @@ gfarm_ldap_file_section_copy_info_get(
 
 static char *
 gfarm_ldap_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	int i;
 	LDAPMod *modv[5];
@@ -1911,7 +1911,7 @@ static void gfarm_ldap_file_history_set_field(void *info, char *attribute,
 	char **vals);
 
 struct gfarm_ldap_file_history_key {
-	char *gfarm_file;
+	const char *gfarm_file;
 };
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_file_history_ops = {
@@ -1958,7 +1958,7 @@ gfarm_ldap_file_history_set_field(
 
 static char *
 gfarm_ldap_file_history_get(
-	char *gfarm_file,
+	const char *gfarm_file,
 	struct gfarm_file_history *info)
 {
 	struct gfarm_ldap_file_history_key key;
@@ -1971,8 +1971,8 @@ gfarm_ldap_file_history_get(
 
 static char *
 gfarm_ldap_file_history_set(
-	char *gfarm_file,
-	struct gfarm_file_history *info)
+	const char *gfarm_file,
+	const struct gfarm_file_history *info)
 {
 	int i;
 	LDAPMod *modv[4];
@@ -2012,7 +2012,7 @@ gfarm_ldap_file_history_set(
 }
 
 static char *
-gfarm_ldap_file_history_remove(char *gfarm_file)
+gfarm_ldap_file_history_remove(const char *gfarm_file)
 {
 	struct gfarm_ldap_file_history_key key;
 

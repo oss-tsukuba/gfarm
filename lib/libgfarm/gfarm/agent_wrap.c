@@ -271,7 +271,7 @@ gfarm_path_info_get(const char *path, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_path_info_set(char *path, struct gfarm_path_info *info)
+gfarm_path_info_set(const char *path, const struct gfarm_path_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_path_info_set(agent_server, path, info);
@@ -283,7 +283,7 @@ gfarm_path_info_set(char *path, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_path_info_replace(char *path, struct gfarm_path_info *info)
+gfarm_path_info_replace(const char *path, const struct gfarm_path_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_path_info_replace(
@@ -601,7 +601,7 @@ gfarm_host_info_remove_hostaliases(const char *hostname)
 }
 
 char *
-gfarm_host_info_set(char *hostname, struct gfarm_host_info *info)
+gfarm_host_info_set(const char *hostname, const struct gfarm_host_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_host_info_set(
@@ -614,7 +614,8 @@ gfarm_host_info_set(char *hostname, struct gfarm_host_info *info)
 }
 
 char *
-gfarm_host_info_replace(char *hostname, struct gfarm_host_info *info)
+gfarm_host_info_replace(const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_host_info_replace(
@@ -718,9 +719,9 @@ gfarm_file_section_info_get(
 
 char *
 gfarm_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_file_section_info_set(
@@ -734,9 +735,9 @@ gfarm_file_section_info_set(
 
 char *
 gfarm_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_file_section_info_replace(
@@ -876,10 +877,10 @@ gfarm_file_section_copy_info_get(
 
 char *
 gfarm_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	if (gfarm_agent_check() == NULL) {
 		char *e = agent_client_file_section_copy_info_set(agent_server,

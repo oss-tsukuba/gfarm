@@ -9,7 +9,7 @@
 
 static char *
 xxx_proto_send_host_info_hostaliases(struct xxx_connection *client,
-	struct gfarm_host_info *info)
+	const struct gfarm_host_info *info)
 {
 	int i;
 	char *e = NULL;
@@ -57,7 +57,7 @@ xxx_proto_recv_host_info_hostaliases(struct xxx_connection *client,
 
 char *
 xxx_proto_send_host_info(struct xxx_connection *client,
-	struct gfarm_host_info *info)
+	const struct gfarm_host_info *info)
 {
 	char *e;
 
@@ -92,7 +92,7 @@ xxx_proto_recv_host_info(struct xxx_connection *client,
 
 char *
 xxx_proto_send_host_info_for_set(struct xxx_connection *client,
-	struct gfarm_host_info *info)
+	const struct gfarm_host_info *info)
 {
 	char *e;
 
@@ -128,7 +128,7 @@ xxx_proto_recv_host_info_for_set(struct xxx_connection *client,
 
 char *
 xxx_proto_send_path_info(struct xxx_connection *client,
-	struct gfarm_path_info *info)
+	const struct gfarm_path_info *info)
 {
 	return (xxx_proto_send(client, "siissoiiiiiii",
 			info->pathname,
@@ -172,7 +172,7 @@ xxx_proto_recv_path_info(struct xxx_connection *client,
 
 char *
 xxx_proto_send_path_info_for_set(struct xxx_connection *client,
-	struct gfarm_path_info *info)
+	const struct gfarm_path_info *info)
 {
 	/* do not send info->pathname */
 	return (xxx_proto_send(client, "iissoiiiiiii",
@@ -217,7 +217,7 @@ xxx_proto_recv_path_info_for_set(struct xxx_connection *client,
 
 char *
 xxx_proto_send_file_section_info(struct xxx_connection *client,
-	struct gfarm_file_section_info *info)
+	const struct gfarm_file_section_info *info)
 {
 	return (xxx_proto_send(client, "ssoss", info->pathname, info->section,
 			info->filesize, info->checksum_type, info->checksum));
@@ -240,7 +240,7 @@ xxx_proto_recv_file_section_info(struct xxx_connection *client,
 
 char *
 xxx_proto_send_file_section_info_for_set(struct xxx_connection *client,
-	struct gfarm_file_section_info *info)
+	const struct gfarm_file_section_info *info)
 {
 	/* do not send info->pathname and info->section */
 	return (xxx_proto_send(client, "oss",
@@ -265,7 +265,7 @@ xxx_proto_recv_file_section_info_for_set(struct xxx_connection *client,
 
 char *
 xxx_proto_send_file_section_copy_info(struct xxx_connection *client,
-	struct gfarm_file_section_copy_info *info)
+	const struct gfarm_file_section_copy_info *info)
 {
 	return (xxx_proto_send(client, "sss", info->pathname, info->section,
 			info->hostname));

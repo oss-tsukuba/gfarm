@@ -1025,7 +1025,7 @@ gfs_dircache_modify_parent(const char *pathname)
 
 static char *
 gfs_dircache_enter_path(enum gfarm_node_lookup_op op,
-	const char *pathname, struct gfarm_path_info *info)
+	const char *pathname, const struct gfarm_path_info *info)
 {
 	struct node *n;
 	char *e = lookup_relative(root, pathname,
@@ -1223,7 +1223,7 @@ gfarm_i_path_info_get(const char *pathname, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_i_path_info_set(char *pathname, struct gfarm_path_info *info)
+gfarm_i_path_info_set(const char *pathname, const struct gfarm_path_info *info)
 {
 	char *e = gfs_refreshdir();
 
@@ -1238,7 +1238,8 @@ gfarm_i_path_info_set(char *pathname, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_i_path_info_replace(char *pathname, struct gfarm_path_info *info)
+gfarm_i_path_info_replace(const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e = gfs_refreshdir();
 

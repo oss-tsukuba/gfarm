@@ -109,7 +109,7 @@ gfarm_stringlist_cat(gfarm_stringlist *listp, char **v)
 /* gfarm_fixedstrings: fixed length array of dynamically allocated strings */
 
 char *
-gfarm_fixedstrings_dup(int n, char **dst, char **src)
+gfarm_fixedstrings_dup(int n, char **dst, char *const *src)
 {
 	int i;
 
@@ -157,7 +157,7 @@ gfarm_strings_free_deeply(int n, char **strings)
 /* gfarm_array: NULL terminated gfarm_strings */
 
 int
-gfarm_strarray_length(char **array)
+gfarm_strarray_length(char *const *array)
 {
 	int i;
 
@@ -167,7 +167,7 @@ gfarm_strarray_length(char **array)
 }
 
 char **
-gfarm_strarray_dup(char **array)
+gfarm_strarray_dup(char *const *array)
 {
 	int n = gfarm_strarray_length(array);
 	char **v;

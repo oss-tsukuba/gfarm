@@ -235,7 +235,7 @@ agent_client_path_info_get(struct agent_connection *agent_server,
 
 char *
 agent_client_path_info_set(struct agent_connection *agent_server,
-	char *path, struct gfarm_path_info *info)
+	const char *path, const struct gfarm_path_info *info)
 {
 	char *e;
 
@@ -251,7 +251,7 @@ agent_client_path_info_set(struct agent_connection *agent_server,
 
 char *
 agent_client_path_info_replace(struct agent_connection *agent_server,
-	char *path, struct gfarm_path_info *info)
+	const char *path, const struct gfarm_path_info *info)
 {
 	char *e;
 
@@ -400,7 +400,7 @@ agent_client_host_info_remove_hostaliases(
 
 char *
 agent_client_host_info_set(struct agent_connection *agent_server,
-	char *hostname, struct gfarm_host_info *info)
+	const char *hostname, const struct gfarm_host_info *info)
 {
 	char *e;
 
@@ -416,7 +416,7 @@ agent_client_host_info_set(struct agent_connection *agent_server,
 
 char *
 agent_client_host_info_replace(struct agent_connection *agent_server,
-	char *hostname, struct gfarm_host_info *info)
+	const char *hostname, const struct gfarm_host_info *info)
 {
 	char *e;
 
@@ -530,9 +530,9 @@ agent_client_file_section_info_get(
 char *
 agent_client_file_section_info_set(
 	struct agent_connection *agent_server,
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	char *e;
 
@@ -549,9 +549,9 @@ agent_client_file_section_info_set(
 char *
 agent_client_file_section_info_replace(
 	struct agent_connection *agent_server,
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	char *e;
 
@@ -631,8 +631,8 @@ agent_client_file_section_copy_info_get(
 char *
 agent_client_file_section_copy_info_set(
 	struct agent_connection *agent_server,
-	char *pathname, char *section, char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname, const char *section, const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	return (agent_client_rpc(&agent_server, 0,
 			AGENT_PROTO_FILE_SECTION_COPY_INFO_SET,

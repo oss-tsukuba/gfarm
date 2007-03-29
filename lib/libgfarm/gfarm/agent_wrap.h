@@ -25,8 +25,8 @@ char *gfarm_agent_disconnect(void);
 /* for direct access without agent */
 
 char *gfarm_i_path_info_get(const char *, struct gfarm_path_info *);
-char *gfarm_i_path_info_set(char *, struct gfarm_path_info *);
-char *gfarm_i_path_info_replace(char *,	struct gfarm_path_info *);
+char *gfarm_i_path_info_set(const char *, const struct gfarm_path_info *);
+char *gfarm_i_path_info_replace(const char *, const struct gfarm_path_info *);
 char *gfarm_i_path_info_remove(const char *);
 char *gfs_i_realpath_canonical(const char *, char **);
 char *gfs_i_get_ino(const char *, unsigned long *);
@@ -44,8 +44,9 @@ char *gfarm_cache_host_info_get(const char *, struct gfarm_host_info *);
 char *gfarm_cache_host_info_get_by_name_alias(
 	const char *, struct gfarm_host_info *);
 char *gfarm_cache_host_info_remove_hostaliases(const char *);
-char *gfarm_cache_host_info_set(char *, struct gfarm_host_info *);
-char *gfarm_cache_host_info_replace(char *, struct gfarm_host_info *);
+char *gfarm_cache_host_info_set(const char *, const struct gfarm_host_info *);
+char *gfarm_cache_host_info_replace(const char *,
+	const struct gfarm_host_info *);
 char *gfarm_cache_host_info_remove(const char *);
 char *gfarm_cache_host_info_get_all(int *, struct gfarm_host_info **);
 char *gfarm_cache_host_info_get_allhost_by_architecture(const char *,

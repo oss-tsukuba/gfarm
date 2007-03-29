@@ -55,16 +55,16 @@ gfarm_none_host_info_remove_hostaliases(const char *hostname)
 
 static char *
 gfarm_none_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return (gfarm_none_report_error());
 }
 
 static char *
 gfarm_none_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	return (gfarm_none_report_error());
 }
@@ -108,16 +108,16 @@ gfarm_none_path_info_get(
 
 static char *
 gfarm_none_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return (gfarm_none_report_error());
 }
 
 static char *
 gfarm_none_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	return (gfarm_none_report_error());
 }
@@ -148,18 +148,18 @@ gfarm_none_file_section_info_get(
 
 static char *
 gfarm_none_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return (gfarm_none_report_error());
 }
 
 static char *
 gfarm_none_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	return (gfarm_none_report_error());
 }
@@ -193,10 +193,10 @@ gfarm_none_file_section_copy_info_get(
 
 static char *
 gfarm_none_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	return (gfarm_none_report_error());
 }

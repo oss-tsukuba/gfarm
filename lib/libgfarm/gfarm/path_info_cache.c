@@ -43,7 +43,7 @@ struct path_info_cache {
 };
 
 static char *
-gfs_stat_dup(struct gfs_stat *src, struct gfs_stat *dest)
+gfs_stat_dup(const struct gfs_stat *src, struct gfs_stat *dest)
 {
 	*dest = *src;
 
@@ -65,7 +65,7 @@ gfs_stat_dup(struct gfs_stat *src, struct gfs_stat *dest)
 
 static char *
 gfarm_path_info_dup(const char *pathname,
-		    struct gfarm_path_info *src, struct gfarm_path_info *dest)
+	const struct gfarm_path_info *src, struct gfarm_path_info *dest)
 {
 	char *e;
 
@@ -234,7 +234,7 @@ cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 }
 
 static char *
-cache_path_info_put(const char *pathname, struct gfarm_path_info *info)
+cache_path_info_put(const char *pathname, const struct gfarm_path_info *info)
 {
 	struct gfarm_hash_entry *he;
 	int pathlen;
@@ -317,7 +317,8 @@ cache_path_info_remove(const char *pathname)
 /**********************************************************************/
 
 int
-gfarm_timespec_cmp(struct gfarm_timespec *t1, struct gfarm_timespec *t2)
+gfarm_timespec_cmp(
+	const struct gfarm_timespec *t1, const struct gfarm_timespec *t2)
 {
 	if (t1->tv_sec > t2->tv_sec)
 		return (1);
@@ -376,10 +377,10 @@ gfarm_timespec_add_microsec(struct gfarm_timespec *t, long microsec)
 /**********************************************************************/
 
 static int
-compare_path_info_except_time(struct gfarm_path_info *info1,
-			      struct gfarm_path_info *info2)
+compare_path_info_except_time(const struct gfarm_path_info *info1,
+			      const struct gfarm_path_info *info2)
 {
-	struct gfs_stat *s1 = &info1->status, *s2 = &info2->status;
+	const struct gfs_stat *s1 = &info1->status, *s2 = &info2->status;
 
 #if 0  /* for debug */
 	_debug(("mtime 1: %u %u\n",
@@ -447,7 +448,8 @@ compare_path_info_except_time(struct gfarm_path_info *info1,
 }
 
 static int
-timespec_is_valid(struct gfarm_timespec *t, struct gfarm_timespec *b)
+timespec_is_valid(
+	const struct gfarm_timespec *t, const struct gfarm_timespec *b)
 {
 #if 1
 	struct gfarm_timespec tmp;
@@ -466,7 +468,8 @@ timespec_is_valid(struct gfarm_timespec *t, struct gfarm_timespec *b)
 }
 
 static int
-check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
+check_update_time_interval(const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 	struct gfarm_path_info nowinfo;
@@ -488,11 +491,6 @@ check_update_time_interval(const char *pathname, struct gfarm_path_info *info)
 	    &nowinfo.status.st_ctimespec)) {
 		_debug(("! cancel updating mtime/atime/ctime: %s\n",
 			pathname));
-#if 1  /* XXX temporary implements */
-		info->status.st_mtimespec = nowinfo.status.st_mtimespec;
-		info->status.st_atimespec = nowinfo.status.st_atimespec;
-		info->status.st_ctimespec = nowinfo.status.st_ctimespec;
-#endif
 
 		gfarm_path_info_free(&nowinfo);
 		return (1); /* do nothing */
@@ -553,7 +551,8 @@ gfarm_cache_path_info_get(const char *pathname, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_cache_path_info_set(char *pathname, struct gfarm_path_info *info)
+gfarm_cache_path_info_set(const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 
@@ -567,7 +566,8 @@ gfarm_cache_path_info_set(char *pathname, struct gfarm_path_info *info)
 }
 
 char *
-gfarm_cache_path_info_replace(char *pathname, struct gfarm_path_info *info)
+gfarm_cache_path_info_replace(const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 

@@ -183,10 +183,10 @@ void *gfarm_calloc_array(size_t, size_t);
 void *gfarm_malloc_array(size_t, size_t);
 void *gfarm_realloc_array(void *, size_t, size_t);
 
-char *gfarm_fixedstrings_dup(int, char **, char **);
+char *gfarm_fixedstrings_dup(int, char **, char *const *);
 void gfarm_strings_free_deeply(int, char **);
-int gfarm_strarray_length(char **);
-char **gfarm_strarray_dup(char **);
+int gfarm_strarray_length(char *const *);
+char **gfarm_strarray_dup(char *const *);
 void gfarm_strarray_free(char **);
 int gfarm_attach_debugger(void);
 

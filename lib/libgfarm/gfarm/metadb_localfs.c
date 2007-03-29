@@ -188,7 +188,7 @@ join_str3(const char *str1, const char *str2, const char *str3)
 
 /* separated by a space */
 static char *
-str_array_to_str_with_space(char **array, int start, int count)
+str_array_to_str_with_space(const char *const *array, int start, int count)
 {
 	int len = 0;
 	char *str = NULL;
@@ -267,7 +267,7 @@ ltoa(long i)
 
 
 static char *
-timespectoa(struct gfarm_timespec *time)
+timespectoa(const struct gfarm_timespec *time)
 {
 	static char ts[32];
 
@@ -700,12 +700,14 @@ localfs_host_info_get(
 static char *
 localfs_host_info_data_write(
 	FILE *fp,
-	struct gfarm_host_info *info)
+	const struct gfarm_host_info *info)
 {
 	char *tmp;
 
-	tmp = str_array_to_str_with_space(info->hostaliases, 0,
-					  info->nhostaliases);
+	tmp = str_array_to_str_with_space(
+	    /* CONSTIFY: C++ doesn't need cast here, but C does ;-/ */
+	    (const char *const *)info->hostaliases, 0,
+	    info->nhostaliases);
 	line_value_put(fp, HOSTALIASES, tmp); /* 1 */
 	if (tmp != NULL)
 		free(tmp);
@@ -717,8 +719,8 @@ localfs_host_info_data_write(
 
 static char *
 localfs_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	char *e;
 	FILE *fp;
@@ -731,8 +733,8 @@ localfs_host_info_set(
 
 static char *
 localfs_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	char *e;
 	FILE *fp;
@@ -785,8 +787,8 @@ gfarm_localfs_host_info_remove_hostaliases(const char *hostname)
 
 static char *
 gfarm_localfs_host_info_set(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -796,8 +798,8 @@ gfarm_localfs_host_info_set(
 
 static char *
 gfarm_localfs_host_info_replace(
-	char *hostname,
-	struct gfarm_host_info *info)
+	const char *hostname,
+	const struct gfarm_host_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -1072,7 +1074,8 @@ free_pi_real:
 	return (e);
 }
 
-static char *localfs_path_info_replace(char *, struct gfarm_path_info *);
+static char *localfs_path_info_replace(const char *,
+	const struct gfarm_path_info *);
 
 static char *
 localfs_path_info_get(
@@ -1148,7 +1151,7 @@ localfs_path_info_get(
 static char *
 localfs_path_info_data_write(
 	FILE *fp,
-	struct gfarm_path_info *info)
+	const struct gfarm_path_info *info)
 {
 	line_value_put(fp, ST_MODE, itoa(info->status.st_mode)); /* 1 */
 	line_value_put(fp, ST_USER, info->status.st_user);       /* 2 */
@@ -1167,8 +1170,8 @@ localfs_path_info_data_write(
 
 static char *
 localfs_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 	FILE *fp;
@@ -1191,8 +1194,8 @@ localfs_path_info_set(
 
 static char *
 localfs_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 	FILE *fp;
@@ -1220,8 +1223,8 @@ gfarm_localfs_path_info_get(
 
 static char *
 gfarm_localfs_path_info_set(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -1231,8 +1234,8 @@ gfarm_localfs_path_info_set(
 
 static char *
 gfarm_localfs_path_info_replace(
-	char *pathname,
-	struct gfarm_path_info *info)
+	const char *pathname,
+	const struct gfarm_path_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -1715,7 +1718,7 @@ localfs_file_section_info_data_open(
 
 static char *
 localfs_file_section_info_validate(
-	struct gfarm_file_section_info *info)
+	const struct gfarm_file_section_info *info)
 {
 	if (info->pathname == NULL || info->section == NULL ||
 	    info->checksum == NULL || info->checksum_type == NULL)
@@ -1769,8 +1772,8 @@ localfs_file_section_info_get(
 static char *
 localfs_file_section_info_data_write(
 	FILE *fp,
-	struct gfarm_file_section_info *info,
-	int ncopyhosts, char **copyhosts)
+	const struct gfarm_file_section_info *info,
+	int ncopyhosts, const char *const *copyhosts)
 {
 	line_value_put(fp, FILESIZE, ltoa(info->filesize));    /* 1 */
 	line_value_put(fp, CHECKSUM, info->checksum);          /* 2 */
@@ -1789,22 +1792,19 @@ localfs_file_section_info_data_write(
 
 static char *
 localfs_file_section_info_set(
-	char *pathname, char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname, const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	char *e;
 	FILE *fp;
 #ifdef CREATE_FSCI_WITHOUT_FSI
 	int ncopies = 0;
 	char **copies;
-#endif
 	struct gfarm_file_section_info fsi;
+#endif
 	char *pi_data;
 
-	fsi = *info;
-	fsi.pathname = pathname;
-	fsi.section = section;
-	e = localfs_file_section_info_validate(&fsi);
+	e = localfs_file_section_info_validate(info);
 	if (e != NULL)
 		return (e);
 
@@ -1840,7 +1840,9 @@ localfs_file_section_info_set(
 					       OPEN_NOCHECK, &fp);
 	if (e != NULL)
 		return (e);
-	e = localfs_file_section_info_data_write(fp, info, ncopies, copies);
+	e = localfs_file_section_info_data_write(fp, info, ncopies,
+	    /* CONSTIFY: C++ doesn't need cast here, but C does ;-/ */
+	    (const char *const *)copies);
 	if (ncopies > 0)
 		gfarm_strarray_free(copies);
 
@@ -1865,9 +1867,9 @@ localfs_file_section_info_set(
 /* ncopies < 0: file_section_copy info is not modified */
 static char *
 localfs_file_section_info_replace(
-	char *pathname, char *section,
-	struct gfarm_file_section_info *info,
-	int ncopies, char **copies)
+	const char *pathname, const char *section,
+	const struct gfarm_file_section_info *info,
+	int ncopies, const char *const *copies)
 {
 	char *e;
 	FILE *fp;
@@ -1875,10 +1877,7 @@ localfs_file_section_info_replace(
 	int ncopies2 = 0;
 	char **copies2;
 
-	fsi = *info;
-	fsi.pathname = pathname;
-	fsi.section = section;
-	e = localfs_file_section_info_validate(&fsi);
+	e = localfs_file_section_info_validate(info);
 	if (e != NULL)
 		return (e);
 
@@ -1889,19 +1888,27 @@ localfs_file_section_info_replace(
 		if (e != NULL)
 			return (e);
 		gfarm_file_section_info_free(&fsi);
-		ncopies = ncopies2;
-		copies = copies2;
-	} else if (ncopies == 0) /* delete all file_section_copy info */
-		copies = NULL;
 
-	e = localfs_file_section_info_data_open(pathname, section, "w",
-					       OPEN_NEEDEXIST, &fp);
-	if (e != NULL)
-		goto free_copies2;
-	e = localfs_file_section_info_data_write(fp, info, ncopies, copies);
-free_copies2:
-	if (ncopies2 > 0)
+		e = localfs_file_section_info_data_open(pathname, section, "w",
+						       OPEN_NEEDEXIST, &fp);
+		if (e == NULL)
+			e = localfs_file_section_info_data_write(
+			    fp, info, ncopies2,
+			    /* CONSTIFY: C++ doesn't need cast here, but C does ;-/ */
+			    (const char *const *)copies2);
+
+
 		gfarm_strarray_free(copies2);
+	} else {
+		if (ncopies == 0) /* delete all file_section_copy info */
+			copies = NULL;
+		e = localfs_file_section_info_data_open(pathname, section, "w",
+						       OPEN_NEEDEXIST, &fp);
+		if (e == NULL)
+			e = localfs_file_section_info_data_write(
+			    fp, info, ncopies, copies);
+	}
+
 	return (e);
 }
 
@@ -1946,9 +1953,9 @@ gfarm_localfs_file_section_info_get(
 
 static char *
 gfarm_localfs_file_section_info_set(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -1958,9 +1965,9 @@ gfarm_localfs_file_section_info_set(
 
 static char *
 gfarm_localfs_file_section_info_replace(
-	char *pathname,
-	char *section,
-	struct gfarm_file_section_info *info)
+	const char *pathname,
+	const char *section,
+	const struct gfarm_file_section_info *info)
 {
 	char *e;
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -2088,15 +2095,16 @@ gfarm_localfs_file_section_copy_info_get(
 
 static char *
 gfarm_localfs_file_section_copy_info_set(
-	char *pathname,
-	char *section,
-	char *hostname,
-	struct gfarm_file_section_copy_info *info)
+	const char *pathname,
+	const char *section,
+	const char *hostname,
+	const struct gfarm_file_section_copy_info *info)
 {
 	char *e;
 	struct gfarm_file_section_info fsi;
 	int nhosts, i;
-	char **hosts, **tmp;
+	char **hosts;
+	const char **tmp;
 	int dummymode = 0;
 
 	if ((e = gfarm_localfs_check()) != NULL)
@@ -2153,7 +2161,8 @@ gfarm_localfs_file_section_copy_info_remove(
 	char *e;
 	struct gfarm_file_section_info fsi;
 	int nhosts, i, j;
-	char **hosts, **tmp;
+	char **hosts;
+	const char **tmp;
 
 	if ((e = gfarm_localfs_check()) != NULL)
 		return (e);
