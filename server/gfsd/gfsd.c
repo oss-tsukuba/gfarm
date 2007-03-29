@@ -194,7 +194,7 @@ void
 accepting_sigterm_handler(int sig)
 {
 	cleanup_accepting();
-	exit(1);
+	_exit(1);
 }
 
 void
