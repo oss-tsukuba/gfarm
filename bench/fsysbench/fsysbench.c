@@ -155,8 +155,11 @@ times_init(void(*time_initializer)(void**))
 
 static void
 timer_interrupt_handler(int sig){
+	char msg[] =
+	    "*** Interrupt! (cleanup) (following values may be invalid)\n";
+
 	timer_interrupt = 1;
-	printf("*** Interrupt! (cleanup) (following values may be invalid)\n");
+	write(1, msg, sizeof(msg) - 1); /* printf(3) isn't async-signal-safe */
 }
 
 /**********************************************************************/
