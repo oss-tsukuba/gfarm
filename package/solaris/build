@@ -20,7 +20,7 @@ make=/usr/local/bin/make
 tar=/usr/local/bin/tar
 with_prefix=--prefix=/$prefix
 with_sysconfdir=--sysconfdir=/etc
-with_globus=--with-globus=/opt/GT4/gt-4.0.3-gcc-3.2.3
+with_globus=--with-globus=/opt/GT4/gt-4.0.3
 with_globus="$with_globus --with-globus-static"
 # XXX --with-mpi needs OPTFLAGS=-O with gcc (an error happens at gfs_hook_mpi).
 # XXX currently, MPICH isn't installed on the build-host.
