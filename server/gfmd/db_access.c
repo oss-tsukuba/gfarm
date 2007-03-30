@@ -33,10 +33,21 @@ struct dbq {
 gfarm_error_t
 dbq_init(struct dbq *q)
 {
-	pthread_mutex_init(&q->mutex, NULL);
-	pthread_cond_init(&q->nonempty, NULL);
-	pthread_cond_init(&q->nonfull, NULL);
-	pthread_cond_init(&q->finished, NULL);
+	int err;
+	const char msg[] = "dbq_init";
+
+	err = pthread_mutex_init(&q->mutex, NULL);
+	if (err != 0)
+		gflog_fatal("%s: mutex: %s", msg, strerror(err));
+	err = pthread_cond_init(&q->nonempty, NULL);
+	if (err != 0)
+		gflog_fatal("%s: condvar: %s", msg, strerror(err));
+	err = pthread_cond_init(&q->nonfull, NULL);
+	if (err != 0)
+		gflog_fatal("%s: condvar: %s", msg, strerror(err));
+	err = pthread_cond_init(&q->finished, NULL);
+	if (err != 0)
+		gflog_fatal("%s: condvar: %s", msg, strerror(err));
 	q->n = q->in = q->out = q->quitting = q->quited = 0;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -44,22 +55,39 @@ dbq_init(struct dbq *q)
 gfarm_error_t
 dbq_wait_to_finish(struct dbq *q)
 {
-	pthread_mutex_lock(&q->mutex);
+	int err;
+	const char msg[] = "dbq_wait_to_finish";
+
+	err = pthread_mutex_lock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
 	q->quitting = 1;
 	while (!q->quited) {
-		pthread_cond_signal(&q->nonempty);
-		pthread_cond_wait(&q->finished, &q->mutex);
+		err = pthread_cond_signal(&q->nonempty);
+		if (err != 0)
+			gflog_fatal("%s: nonempty signal: %s",
+			    msg, strerror(err));
+		err = pthread_cond_wait(&q->finished, &q->mutex);
+		if (err != 0)
+			gflog_fatal("%s: condwait finished: %s",
+			    msg, strerror(err));
 	}
-	pthread_mutex_unlock(&q->mutex);
+	err = pthread_mutex_unlock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 {
+	int err;
 	gfarm_error_t e;
+	const char msg[] = "dbq_enter";
 
-	pthread_mutex_lock(&q->mutex);
+	err = pthread_mutex_lock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
 	if (q->quitting) {
 		/*
 		 * Because dbq_wait_to_finish() is only called while
@@ -67,46 +95,77 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		 * So, we this shouldn't cause inconsistent metadata.
 		 */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		if (q->n <= 0)
-			pthread_cond_signal(&q->nonempty);
+		if (q->n <= 0) {
+			err = pthread_cond_signal(&q->nonempty);
+			if (err != 0)
+				gflog_fatal("%s: nonempty signal: %s",
+				    msg, strerror(err));
+		}
 	} else {
 		e = GFARM_ERR_NO_ERROR;
-		while (q->n >= DBQ_SIZE)
-			pthread_cond_wait(&q->nonfull, &q->mutex);
+		while (q->n >= DBQ_SIZE) {
+			err = pthread_cond_wait(&q->nonfull, &q->mutex);
+			if (err != 0)
+				gflog_fatal("%s: condwait nonfull: %s",
+				    msg, strerror(err));
+		}
 		q->entries[q->in].func = func;
 		q->entries[q->in].data = data;
 		q->in++;
 		if (q->in >= DBQ_SIZE)
 			q->in = 0;
-		if (q->n++ == 0)
-			pthread_cond_signal(&q->nonempty);
+		if (q->n++ == 0) {
+			err = pthread_cond_signal(&q->nonempty);
+			if (err != 0)
+				gflog_fatal("%s: nonempty signal: %s",
+				    msg, strerror(err));
+		}
 	}
-	pthread_mutex_unlock(&q->mutex);
+	err = pthread_mutex_unlock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
 	return (e);
 }
 
 gfarm_error_t
 dbq_delete(struct dbq *q, struct dbq_entry *entp)
 {
+	int err;
 	gfarm_error_t e;
+	const char msg[] = "dbq_delete";
 
-	pthread_mutex_lock(&q->mutex);
-	while (q->n <= 0 && !q->quitting)
-		pthread_cond_wait(&q->nonempty, &q->mutex);
+	err = pthread_mutex_lock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
+	while (q->n <= 0 && !q->quitting) {
+		err = pthread_cond_wait(&q->nonempty, &q->mutex);
+		if (err != 0)
+			gflog_fatal("%s: condwait nonempty: %s",
+			    msg, strerror(err));
+	}
 	if (q->n <= 0) {
 		assert(q->quitting);
 		q->quited = 1;
-		pthread_cond_signal(&q->finished);
+		err = pthread_cond_signal(&q->finished);
+		if (err != 0)
+			gflog_fatal("%s: finished signal: %s",
+			    msg, strerror(err));
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else { /* (q->n > 0) */
 		e = GFARM_ERR_NO_ERROR;
 		*entp = q->entries[q->out++];
 		if (q->out >= DBQ_SIZE)
 			q->out = 0;
-		if (q->n-- >= DBQ_SIZE)
-			pthread_cond_signal(&q->nonfull);
+		if (q->n-- >= DBQ_SIZE) {
+			err = pthread_cond_signal(&q->nonfull);
+			if (err != 0)
+				gflog_fatal("%s: nonfull signal: %s",
+				    msg, strerror(err));
+		}
 	}
-	pthread_mutex_unlock(&q->mutex);
+	err = pthread_mutex_unlock(&q->mutex);
+	if (err != 0)
+		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
 	return (e);
 }
 
