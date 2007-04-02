@@ -12,7 +12,7 @@ struct stat;
 
 void gfs_client_terminate(void);
 
-int gfs_client_is_connection_error(char *);
+int gfs_client_is_connection_error(const char *);
 
 int gfs_client_connection_fd(struct gfs_connection *);
 enum gfarm_auth_method gfs_client_connection_auth_method(

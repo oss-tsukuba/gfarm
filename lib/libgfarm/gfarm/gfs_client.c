@@ -107,7 +107,7 @@ gfs_client_add_hook_for_connection_error(char *(*hook)(const char *))
 }
 
 int
-gfs_client_is_connection_error(char *e)
+gfs_client_is_connection_error(const char *e)
 {
 	return (
 	    e == GFARM_ERR_BROKEN_PIPE ||
@@ -291,13 +291,13 @@ gfs_client_connection_gc(void)
 }
 
 static int
-sockaddr_is_local(struct sockaddr *peer_addr)
+sockaddr_is_local(const struct sockaddr *peer_addr)
 {
 	static int self_ip_asked = 0;
 	static int self_ip_count = 0;
 	static struct in_addr *self_ip_list;
 
-	struct sockaddr_in *peer_in;
+	const struct sockaddr_in *peer_in;
 	int i;
 
 	if (!self_ip_asked) {
@@ -310,7 +310,7 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 	}
 	if (peer_addr->sa_family != AF_INET)
 		return (0);
-	peer_in = (struct sockaddr_in *)peer_addr;
+	peer_in = (const struct sockaddr_in *)peer_addr;
 	/* XXX if there are lots of IP address on this host, this is slow */
 	for (i = 0; i < self_ip_count; i++) {
 		if (peer_in->sin_addr.s_addr == self_ip_list[i].s_addr)
