@@ -131,7 +131,7 @@ concat(int argc, char **argv)
 }
 
 int passing_signals[] = { SIGINT, SIGQUIT, SIGTERM };
-volatile int send_signal = 0;
+volatile sig_atomic_t send_signal = 0;
 
 void
 record_signal(int sig)
