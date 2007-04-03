@@ -15,7 +15,13 @@
   ていますが、Red Hat 8 では確認されていません。
 
   対処予定:
-	現在のところ、有効な対策が不明なため対処の予定はありません。
+	各 Linux ディストリビューション作成側に依存します。
+	RedHat Enterprise Linux に関しては下記のバグデータベースを
+	参照ください。
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+	nss_ldap の開発元に関しては、下記のバグデータベースを参照
+	ください。
+		http://bugzilla.padl.com/show_bug.cgi?id=271
 
 - Gfarm ファイルシステムに対する特権ユーザはいません。
 
