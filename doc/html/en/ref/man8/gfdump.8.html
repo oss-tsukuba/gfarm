@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfdump</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFDUMP.8"
+></A
+>gfdump</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfdump(8)&nbsp;--&nbsp;Dump and restore Gfarm file system metadata</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdump</B
+>  -d  [-v] [-f <VAR
+CLASS="REPLACEABLE"
+>filename</VAR
+>]</P
+><P
+><B
+CLASS="COMMAND"
+>gfdump</B
+>  -r  [-v] [-f <VAR
+CLASS="REPLACEABLE"
+>filename</VAR
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfdump</B
+> dumps or restores Gfarm file system
+metadata including directory information, file information, and
+replica copy information.</P
+><P
+><B
+CLASS="COMMAND"
+>gfdump</B
+> does not dump and restore file system
+node information in Gfarm metadata.  That is why <B
+CLASS="COMMAND"
+>gfhost
+-M</B
+> and <B
+CLASS="COMMAND"
+>gfhost -R</B
+> are required to dump and
+restore the complete file system metadata in Gfarm file system,
+respectively.</P
+><P
+>Note that <B
+CLASS="COMMAND"
+>gfdump</B
+> accesses to the Gfarm
+metadata server directly regardless of setting of a Gfarm metadata
+cache server, it is needed to be executed on a client host that can
+access to the Gfarm metadata server.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-d</VAR
+></DT
+><DD
+><P
+>Dump the Gfarm file system metadata.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-r</VAR
+></DT
+><DD
+><P
+>Restore Gfarm file system metadata.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-f</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>filename</I
+></TT
+></DT
+><DD
+><P
+>Dump to the specified <TT
+CLASS="PARAMETER"
+><I
+>filename</I
+></TT
+>, or
+restore from the specified <TT
+CLASS="PARAMETER"
+><I
+>filename</I
+></TT
+>.  When
+<VAR
+CLASS="OPTION"
+>-f</VAR
+> is not specified, stdout or stdin is
+assumed.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-v</VAR
+></DT
+><DD
+><P
+>display verbose output.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfhost</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>
