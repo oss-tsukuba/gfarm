@@ -1,0 +1,101 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id: gfmd.8.docbook 3261 2006-12-02 07:16:30Z tatebe $ -->
+
+<refentry id='gfdump.8'>
+
+<refentryinfo><date>3 Feb 2007</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfdump</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfdump(8)</refname>
+<refpurpose>Gfarmメタデータをダンプ・リストアする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfdump</command>
+    <arg choice='plain'>-d</arg>
+    <arg choice='opt'>-v</arg>
+    <arg choice='opt'>-f <replaceable>filename</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfdump</command>
+    <arg choice='plain'>-r</arg>
+    <arg choice='opt'>-v</arg>
+    <arg choice='opt'>-f <replaceable>filename</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm ファイルシステムのディレクトリ情報，ファイル情報，
+複製情報などのメタデータをダンプ・リストアします．</para>
+
+<para>
+gfdump がダンプ・リストアするメタデータにはファイルシステム・
+ノードの情報は含まれません．そのため，完全にメタデータのダンプ・
+リストアを行うためには，gfhost -M あるいは gfhost -R により別途
+ファイルシステム・ノード情報をダンプ・リストアする必要があります．
+</para>
+
+<para>
+なお，gfdump は，メタデータ・キャッシュサーバではなくメタデータ・
+サーバを直接参照するため，メタデータ・サーバにアクセス可能なホスト
+で実行する必要があります．
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+Gfarm ファイルシステム・メタデータのダンプを行います．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+Gfarm ファイルシステム・メタデータのリストアを行います．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>filename</parameter></term>
+<listitem>
+<para>指定された filename にダンプ，あるいは指定された filename
+からリストアを行います．<option>-f</option>オプションが指定されない
+場合は，標準入出力が利用されます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>詳細な情報を表示します．</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>
