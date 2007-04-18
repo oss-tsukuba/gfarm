@@ -34,7 +34,7 @@
 #define FILE_SUFFIX ".file"
 #define TEST_MAX  20
 
-static int timer_interrupt = 0;
+volatile sig_atomic_t timer_interrupt = 0;
 
 /**********************************************************************/
 
