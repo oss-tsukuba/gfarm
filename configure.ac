@@ -1224,4 +1224,7 @@ AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	package/solaris/gfmd package/solaris/gfsd
 	util/gfront/gfront
 )
+# configure external packages
+AC_CONFIG_SUBDIRS([bench/thput-fsys])
+
 AC_OUTPUT
