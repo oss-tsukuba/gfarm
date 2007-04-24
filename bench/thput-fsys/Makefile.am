@@ -1,2 +1,8 @@
+ACLOCAL_AMFLAGS = -I m4
+
 bin_PROGRAMS = thput-fsys
 thput_fsys_SOURCES = thput-fsys.c
+
+if MPI
+SUBDIRS = mpi
+endif
