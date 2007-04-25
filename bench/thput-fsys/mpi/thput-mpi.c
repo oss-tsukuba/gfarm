@@ -102,7 +102,7 @@ alloc_aligned_memory(size_t size, int alignment)
 	if (p == NULL) {
 		fprintf(stderr, "no memory for %ld bytes\n",
 			(long)size + alignment - 1);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	if (((long)p & (alignment - 1)) != 0)
 		p += alignment - ((long)p & (alignment - 1));
@@ -129,7 +129,7 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	gettimerval(&tm_write_open_1);
 	if (fd == -1) {
 		perror(ofile);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	gettimerval(&tm_write_write_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
@@ -178,7 +178,7 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	gettimerval(&tm_read_open_1);
 	if (fd == -1) {
 		perror(ifile);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	gettimerval(&tm_read_read_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
@@ -223,12 +223,12 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 	ifd = open(ifile, O_RDONLY);
 	if (ifd == -1) {
 		perror(ifile);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	ofd = open(ofile, O_CREAT|O_TRUNC|O_WRONLY, 0666);
 	if (ofd == -1) {
 		perror(ofile);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	for (residual = file_size; residual > 0; residual -= rv) {
 		rv = read(ifd, buffer,
@@ -299,7 +299,7 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 	default:
 		fprintf(stderr, "[%03d] ??? wrong test_mode: %d\n",
 			node_index, test_mode);
-		exit(1);
+		MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	gettimeofday(&t2, NULL);
 
