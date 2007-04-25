@@ -379,7 +379,7 @@ main(int argc, char **argv)
 	off_t file_size = 1024;
 	int flags = 0;
 
-	while ((c = getopt(argc, argv, "b:s:wrcmp")) != -1) {
+	while ((c = getopt(argc, argv, "b:s:wrcmpv")) != -1) {
 		switch (c) {
 		case 'b':
 			if (buffer_sizec >= MAX_BUFFER_SIZE_NUMBER) {
@@ -411,6 +411,9 @@ main(int argc, char **argv)
 		case 'p':
 			flags |= FLAG_DONT_REMOVE;
 			break;
+		case 'v':
+			puts(PACKAGE " version " PACKAGE_VERSION);
+			exit(0);
 		case '?':
 		default:
 			fprintf(stderr,
@@ -422,7 +425,8 @@ main(int argc, char **argv)
 				"\t-w			: write test\n"
 				"\t-r			: read test\n"
 				"\t-c			: copy test\n"
-				"\t-p			: don't remove\n");
+				"\t-p			: don't remove\n"
+				"\t-v			: display version\n");
 			exit(1);
 		}
 	}
