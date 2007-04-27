@@ -39,7 +39,14 @@
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>Display pathnames whose names begin with ``.''.</para>
+<para>Do not hide entries starting with ``.''.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>Do not list ``.'' and ``..''.</para>
 </listitem>
 </varlistentry>
 

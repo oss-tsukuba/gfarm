@@ -27,10 +27,16 @@ enum sort_order {
 	SO_SIZE,
 	SO_MTIME
 } option_sort_order = SO_NAME;		/* -S/-t */
+enum option_all_kind {
+	OA_NONE = 0,
+	OA_ALL,
+	OA_ALMOST_ALL
+} option_all = OA_NONE;			/* -a/-A */
+#define is_option_all		(option_all == OA_ALL)
+#define is_option_almost_all	(option_all == OA_ALMOST_ALL)
 int option_type_suffix = 0;		/* -F */
 int option_recursive = 0;		/* -R */
 int option_complete_time = 0;		/* -T */
-int option_all = 0;			/* -a */
 int option_directory_itself = 0;	/* -d */
 int option_inumber = 0;			/* -i */
 int option_reverse_sort = 0;		/* -r */
@@ -345,6 +351,9 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 
 char *list_dirs(char *, int, char **, int *);
 
+#define is_dot_or_dot_dot(s) \
+	(s[0] == '.' && (s[1] == '\0' || (s[1] == '.' && s[2] == '\0')))
+
 char *
 list_dir(char *prefix, char *dirname, int *need_newline)
 {
@@ -383,6 +392,8 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	while ((e = gfs_readdir(dir, &entry)) == NULL && entry != NULL) {
 		if (!option_all && entry->d_name[0] == '.')
 			continue;
+		if (is_option_almost_all && is_dot_or_dot_dot(entry->d_name))
+			continue;
 		s = strdup(entry->d_name);
 		if (s == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
@@ -409,8 +420,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 
 		for (i = 0; i < gfarm_stringlist_length(&names); i++) {
 			s = GFARM_STRINGLIST_STRARRAY(names)[i];
-			if (s[0] == '.' && (s[1] == '\0' ||
-			    (s[1] == '.' && s[2] == '\0')))
+			if (is_dot_or_dot_dot(s))
 				continue; /* "." or ".." */
 			if (!option_all && s[0] == '.')
 				continue;
@@ -524,7 +534,8 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1CFRSTadilrt] <path>...\n", program_name);
+	fprintf(stderr, "Usage: %s [-1ACFRSTadilrt] <path>...\n",
+		program_name);
 	exit(EXIT_FAILURE);
 }
 
@@ -561,15 +572,16 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1CFRSTadilrt?")) != -1) {
+	while ((c = getopt(argc, argv, "1ACFRSTadilrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
+		case 'A': option_all = OA_ALMOST_ALL; break;
 		case 'C': option_output_format = OF_MULTI_COLUMN; break;
 		case 'F': option_type_suffix = 1; break;
 		case 'R': option_recursive = 1; break;
 		case 'S': option_sort_order = SO_SIZE; break;
 		case 'T': option_complete_time = 1; break;
-		case 'a': option_all = 1; break;
+		case 'a': option_all = OA_ALL; break;
 		case 'd': option_directory_itself = 1; break;
 		case 'i': option_inumber = 1; break;
 		case 'l': option_output_format = OF_LONG; break;
