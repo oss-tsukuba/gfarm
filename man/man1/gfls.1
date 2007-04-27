@@ -3,7 +3,8 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFLS" "1" "30 September 2004" "Gfarm" ""
+.TH "GFLS" "1" "27 April 2007" "Gfarm" ""
+
 .SH NAME
 gfls \- list contents of Gfarm directory
 .SH SYNOPSIS
@@ -13,11 +14,14 @@ gfls \- list contents of Gfarm directory
 .SH "DESCRIPTION"
 .PP
 List information of files or contents of directories specified by
-\fIGfarm-URL\fR.
+\fIGfarm-URL\fR\&.
 .SH "OPTIONS"
 .TP
 \fB-a\fR
-Display pathnames whose names begin with ``.''.
+Do not hide entries starting with ``.''.
+.TP
+\fB-A\fR
+Do not list ``.'' and ``..''.
 .TP
 \fB-C\fR
 Multi-column output.  This is the default output format.
