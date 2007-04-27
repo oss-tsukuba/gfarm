@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <gfarm/gfarm.h>
 #include "config.h"
+#include "auth.h"
 #include "agent_wrap.h"
 
 void
@@ -46,6 +47,9 @@ main(int argc, char *argv[])
 	print_msg("global username", gfarm_get_global_username());
 	print_msg(" local username", gfarm_get_local_username());
 	print_msg(" local home dir", gfarm_get_local_homedir());
+#ifdef HAVE_GSI
+	print_msg("credential name", gfarm_gsi_client_cred_name());
+#endif
 
 	puts("");
 	printf("gfsd server port: %d\n", gfarm_spool_server_port);
