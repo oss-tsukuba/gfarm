@@ -83,7 +83,6 @@ main(int argc, char *argv[])
 	if (!gfarm_ldap_server_name && !gfarm_postgresql_server_name &&
 	    !gfarm_localfs_datadir)
 		print_msg("metadata backend server", "not available");
-		
 
 	/* gfmd */
 	puts("");
