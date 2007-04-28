@@ -30,6 +30,9 @@ int
 main(int argc, char *argv[])
 {
 	char *e, *name, *arch;
+#ifdef HAVE_GSI
+	char *cred;
+#endif
 	extern int gfarm_is_active_file_system_node;
 
 	e = gfarm_initialize(&argc, &argv);
@@ -48,7 +51,8 @@ main(int argc, char *argv[])
 	print_msg(" local username", gfarm_get_local_username());
 	print_msg(" local home dir", gfarm_get_local_homedir());
 #ifdef HAVE_GSI
-	print_msg("credential name", gfarm_gsi_client_cred_name());
+	cred = gfarm_gsi_client_cred_name();
+	print_msg("credential name", cred ? cred : "no credential");
 #endif
 
 	puts("");
@@ -63,7 +67,7 @@ main(int argc, char *argv[])
 			  gfarm_agent_name_get());
 		printf("metadata cache server port: %d\n",
 		       gfarm_agent_port_get());
-	}		
+	}
 
 	/* metadata backend database server */
 	puts("");
@@ -92,7 +96,7 @@ main(int argc, char *argv[])
 	}
 	else
 		print_msg("gfmd server", "not available");
-		
+
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);
 
