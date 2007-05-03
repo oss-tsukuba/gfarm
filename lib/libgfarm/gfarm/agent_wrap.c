@@ -209,7 +209,7 @@ gfarm_agent_connect(struct agent_connection **rvp)
 		 * do not use gfarm_host_address_get() to avoid indefinite
 		 * loop when address_use directive is used.
 		 */
-		e = host_address_get(
+		e = gfarm_host_address_get_bare(
 			gfarm_agent_name, gfarm_agent_port,
 			&inet_addr, &if_hostname);
 		if (e != NULL)
