@@ -8,6 +8,8 @@ struct sockaddr;
 struct gfarm_hostspec;
 char *gfarm_host_address_use(struct gfarm_hostspec *);
 char *gfarm_set_client_architecture(char *, struct gfarm_hostspec *);
+/* for agent_wrap.c */
+char *host_address_get(const char *, int, struct sockaddr *, char **);
 
 struct gfarm_host_info;
 char *gfarm_host_info_address_get(const char *, int, struct gfarm_host_info *,

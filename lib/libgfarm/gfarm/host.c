@@ -427,7 +427,7 @@ gfarm_host_address_use(struct gfarm_hostspec *hsp)
 	return (NULL);
 }
 
-static char *
+char *
 host_address_get(const char *name, int port,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {

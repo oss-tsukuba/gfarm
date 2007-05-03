@@ -64,7 +64,7 @@ include $(top_srcdir)/makes/lib.mk
 
 $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
-agent_wrap.lo: agent_client.h agent_wrap.h metadb_access.h gfs_dir.h
+agent_wrap.lo: metadb_access.h gfs_misc.h host.h agent_client.h agent_wrap.h gfs_dir.h
 agent_client.lo: xxx_proto.h io_fd.h config.h sockopt.h agent_proto.h agent_client.h agent_wrap.h
 agent_proto.lo: xxx_proto.h
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h xxx_proto.h auth.h

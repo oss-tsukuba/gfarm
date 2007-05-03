@@ -16,6 +16,7 @@
 #include <gfarm/gfarm.h>
 #include "metadb_access.h"
 #include "gfs_misc.h"
+#include "host.h"
 #include "agent_client.h"
 #include "agent_wrap.h"
 
@@ -204,7 +205,11 @@ gfarm_agent_connect(struct agent_connection **rvp)
 		e = agent_client_connect_unix(&unix_addr, &agent_server);
 		break;
 	case INET:
-		e = gfarm_host_address_get(
+		/*
+		 * do not use gfarm_host_address_get() to avoid indefinite
+		 * loop when address_use directive is used.
+		 */
+		e = host_address_get(
 			gfarm_agent_name, gfarm_agent_port,
 			&inet_addr, &if_hostname);
 		if (e != NULL)
