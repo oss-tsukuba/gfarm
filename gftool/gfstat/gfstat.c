@@ -15,12 +15,12 @@
  */
 
 void
-display_stat(char *fn, struct gfs_stat *st, int nfrags)
+display_stat(char *fn, struct gfs_stat *st)
 {
 	time_t clock;
 
 	printf("  File: \"%s\"\n", fn);
-	printf("  Size: %-12" PR_FILE_OFFSET " Filetype: ", st->st_size);
+	printf("  Size: %-12" GFARM_PRId64 " Filetype: ", st->st_size);
 	switch (st->st_mode & GFARM_S_IFMT) {
 	case GFARM_S_IFREG:
 		puts("regular file");
@@ -31,10 +31,12 @@ display_stat(char *fn, struct gfs_stat *st, int nfrags)
 	default:
 		printf("unknown\n");
 	}
-	printf("  Num of sections: %d/%d\n", st->st_nsections, nfrags);
 	printf("  Mode: (%04o) Uid: (%8s) Gid: (%8s)\n",
 	       st->st_mode & GFARM_S_ALLPERM,
 	       st->st_user, st->st_group);
+	printf(" Inode: %-12lld Gen: %-12lld Links: %-12lld\n",
+	       st->st_ino, st->st_gen, st->st_nlink);
+	printf(" Ncopy: %-12lld\n", st->st_ncopy);
 
 	clock = st->st_atimespec.tv_sec; printf("Access: %s", ctime(&clock));
 	clock = st->st_mtimespec.tv_sec; printf("Modify: %s", ctime(&clock));
@@ -56,8 +58,8 @@ usage(char *prog_name)
 int
 main(int argc, char *argv[])
 {
-	char *prog_name = basename(argv[0]);
-	char c, *e;
+	char *prog_name = basename(argv[0]), c;
+	gfarm_error_t e;
 	extern int optind;
 	int r = 0;
 
@@ -76,49 +78,29 @@ main(int argc, char *argv[])
 		usage(prog_name);
 
 	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", prog_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", prog_name, gfarm_error_string(e));
 		exit(1);
 	}
 
 	for (; *argv; ++argv) {
 		struct gfs_stat st;
-		char *url;
-		int nfrags;
 
-		e = gfs_realpath(*argv, &url);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", *argv, e);
+		e = gfs_stat(*argv, &st);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", *argv,
+				gfarm_error_string(e));
 			r = 1;
 			continue;
 		}
-
-		e = gfs_stat(url, &st);
-		if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", url, e);
-			r = 1;
-			free(url);
-			continue;
-		}
-		e = gfarm_url_fragment_number(url, &nfrags);
-		if (e == GFARM_ERR_OPERATION_NOT_PERMITTED)
-			nfrags = 1;
-		else if (e != NULL) {
-			fprintf(stderr, "%s: %s\n", url, e);
-			r = 1;
-			gfs_stat_free(&st);
-			free(url);
-			continue;
-		}
-		display_stat(url, &st, nfrags);
+		display_stat(*argv, &st);
 
 		gfs_stat_free(&st);
-		free(url);
 	}
 
 	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: %s\n", prog_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", prog_name, gfarm_error_string(e));
 		exit(1);
 	}
 

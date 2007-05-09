@@ -16,6 +16,7 @@ SUBDIRS = \
 	gfreg \
 	gfrm \
 	gfrmdir \
+	gfstat \
 	gfuser \
 	config-gfarm
 
@@ -29,7 +30,6 @@ SUBDIRS = \
 #	gfsched \
 #	gfsck \
 #	gfsetdir \
-#	gfstat \
 #	gfmpirun \
 #	gfps \
 #	gfq \
