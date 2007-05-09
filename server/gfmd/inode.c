@@ -813,6 +813,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			}
 			*inp = dir_entry_get_inode(entry);
 			*createdp = 0;
+			(*inp)->i_nlink--;
 			dir_remove_entry(parent->u.c.s.d.entries, name, len);
 			inode_modified(parent);
 
@@ -1178,7 +1179,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		    INODE_REMOVE, process_get_user(process), &inode, &tmp);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		if (--inode->i_nlink > 0) {
+		if (inode->i_nlink > 0) {
 			e = db_inode_nlink_modify(inode->i_number,
 			    inode->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
