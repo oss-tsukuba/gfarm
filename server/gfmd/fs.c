@@ -769,11 +769,14 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 		    == GFARM_ERR_NO_ERROR,
 		    inode_is_creating_file(inode), "schedule_file");
 
+		free(domain);
 		giant_unlock();
 		return (e);
 	}
 
 	assert(e != GFARM_ERR_NO_ERROR);
+	free(domain);
+	giant_unlock();
 	return (gfm_server_put_reply(peer, "schedule_file", e, ""));
 }
 
@@ -955,7 +958,7 @@ gfm_server_readlink(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e_rpc;
 
 	struct process *process;
 	gfarm_int32_t cfd;
@@ -978,10 +981,10 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 		e = inode_getdirpath(dir, process, &s);
 
 	giant_unlock();
-	e = gfm_server_put_reply(peer, "getdirpath", e, "s", s);
+	e_rpc = gfm_server_put_reply(peer, "getdirpath", e, "s", s);
 	if (e == GFARM_ERR_NO_ERROR)
 		free(s);
-	return (e);
+	return (e_rpc);
 }
 
 gfarm_error_t
@@ -1093,7 +1096,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 				gflog_warning("%s@%s: getdirent: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
-				    gfarm_error_string(e));
+				    gfarm_error_string(e2));
 				break;
 			}
 		}
