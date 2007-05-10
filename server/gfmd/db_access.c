@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -885,18 +889,11 @@ db_direntry_add(gfarm_ino_t dir_inum, const char *entry_name, int entry_len,
 gfarm_error_t
 db_direntry_remove(gfarm_ino_t dir_inum, const char *entry_name, int entry_len)
 {
-	struct db_direntry_remove_arg *arg =
-	    malloc(sizeof(*arg) + entry_len + 1);
+	struct db_direntry_arg *arg =
+	    db_direntry_arg_alloc(dir_inum, entry_name, entry_len, 0);
 
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	arg->entry_name = (char *)arg + sizeof(*arg);
-
-	arg->dir_inum = dir_inum;
-	memcpy(arg->entry_name, entry_name, entry_len);
-	arg->entry_name[entry_len] = '\0';
-	arg->entry_len = entry_len;
-
 	return (dbq_enter(&dbq,
 	    (dbq_entry_func_t)ops->direntry_remove, arg));
 }

@@ -12,6 +12,10 @@
  * must include this notice in the file.
  */
 
+/*
+ * $Id$
+ */
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1840,7 +1844,7 @@ gfarm_pgsql_direntry_add(struct db_direntry_arg *arg)
 }
 
 static void
-gfarm_pgsql_direntry_remove(struct db_direntry_remove_arg *arg)
+gfarm_pgsql_direntry_remove(struct db_direntry_arg *arg)
 {
 	const char *paramValues[2];
 	char dir_inumber[GFARM_INT64STRLEN + 1];

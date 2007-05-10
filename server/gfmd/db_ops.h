@@ -85,12 +85,6 @@ struct db_direntry_arg {
 	int entry_len;
 };
 
-struct db_direntry_remove_arg {
-	gfarm_ino_t dir_inum;
-	char *entry_name;
-	int entry_len;
-};
-
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -144,7 +138,7 @@ struct db_ops {
 		void (*)(void *, gfarm_ino_t, gfarm_uint64_t, char *));
 
 	void (*direntry_add)(struct db_direntry_arg *);
-	void (*direntry_remove)(struct db_direntry_remove_arg *);
+	void (*direntry_remove)(struct db_direntry_arg *);
 	gfarm_error_t (*direntry_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *, int, gfarm_ino_t));
 };

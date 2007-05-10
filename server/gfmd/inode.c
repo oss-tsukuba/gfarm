@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -413,6 +417,11 @@ inode_remove(struct inode *inode)
 				    gfarm_error_string(e));
 			cn = copy->host_next;
 			free(copy);
+			if ((e = db_filecopy_remove(
+				inode->i_number, host_name(copy->host))) !=
+			    GFARM_ERR_NO_ERROR)
+				gflog_error("db_filecopy_remove: %s",
+				    gfarm_error_string(e));
 		}
 		inode_cksum_remove(inode);
 	} else if (inode_is_dir(inode)) {
@@ -913,17 +922,21 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	 * due to LDAP DN hierarchy.
 	 * See the comment in inode_init_dir() too.
 	 */
-	e = db_direntry_add(n->i_number, dot, DOT_LEN, n->i_number);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_direntry_add(%" GFARM_PRId64
-		    ", \".\", %" GFARM_PRId64 "): %s",
-		    parent->i_number, n->i_number, gfarm_error_string(e));
-	e = db_direntry_add(n->i_number, dotdot, DOTDOT_LEN, parent->i_number);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_direntry_add(%" GFARM_PRId64
-		    ", \"..\", %" GFARM_PRId64 "): %s",
-		    parent->i_number, n->i_number, gfarm_error_string(e));
-
+	if (is_dir) {
+		e = db_direntry_add(n->i_number, dot, DOT_LEN, n->i_number);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_direntry_add(%" GFARM_PRId64
+			    ", \".\", %" GFARM_PRId64 "): %s",
+			    parent->i_number, n->i_number,
+			    gfarm_error_string(e));
+		e = db_direntry_add(
+			n->i_number, dotdot, DOTDOT_LEN, parent->i_number);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_direntry_add(%" GFARM_PRId64
+			    ", \"..\", %" GFARM_PRId64 "): %s",
+			    parent->i_number, n->i_number,
+			    gfarm_error_string(e));
+	}
 	e = db_direntry_add(parent->i_number, name, len, n->i_number);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("db_direntry_add(%" GFARM_PRId64
@@ -1259,7 +1272,7 @@ inode_add_replica(struct inode *inode, struct host *spool_host)
 		return (e);
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_add_filecopy(%" GFARM_PRId64 ", %s): %s",
+		gflog_error("db_filecopy_add(%" GFARM_PRId64 ", %s): %s",
 		    inode->i_number, host_name(spool_host),
 		    gfarm_error_string(e));
 	return (GFARM_ERR_NO_ERROR);
@@ -1269,16 +1282,25 @@ gfarm_error_t
 inode_remove_replica(struct inode *inode, struct host *spool_host)
 {
 	struct file_copy **copyp, *copy;
+	gfarm_error_t e;
 
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
 	    copyp = &copy->host_next) {
 		if (copy->host == spool_host) {
 			*copyp = copy->host_next;
 			free(copy);
-			return (GFARM_ERR_NO_ERROR);
+			goto delete_db_filecopy;
 		}
 	}
 	return (GFARM_ERR_NO_SUCH_OBJECT);
+
+delete_db_filecopy:
+	e = db_filecopy_remove(inode->i_number, host_name(spool_host));
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("db_filecopy_remove(%" GFARM_PRId64 ", %s): %s",
+		    inode->i_number, host_name(spool_host),
+		    gfarm_error_string(e));
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

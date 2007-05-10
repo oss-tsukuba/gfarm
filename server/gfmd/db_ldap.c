@@ -558,7 +558,6 @@ retry:
 	res = NULL;
 	rv = ldap_search_s(gfarm_ldap_server, dn,
 	    LDAP_SCOPE_BASE, ops->query_type, NULL, 0, &res);
-	free(dn);
 	if (rv != LDAP_SUCCESS) {
 		switch (rv) {
 		case LDAP_SERVER_DOWN:
@@ -604,6 +603,7 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 	}
 msgfree:
+	free(dn);
 	/* free the search results */
 	if (res != NULL)
 		ldap_msgfree(res);
@@ -628,21 +628,24 @@ retry:
 		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_add_s(gfarm_ldap_server, dn, modv);
 
-	free(dn);
 	switch (rv) {
 	case LDAP_SUCCESS:
-		return (GFARM_ERR_NO_ERROR);
+		error = GFARM_ERR_NO_ERROR;
+		break;
 	case LDAP_SERVER_DOWN:
 		error = gfarm_ldap_initialize();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
-		return (error);
+		break;
 	case LDAP_ALREADY_EXISTS:
-		return (GFARM_ERR_ALREADY_EXISTS);
+		error = GFARM_ERR_ALREADY_EXISTS;
+		break;
 	default:
 		gflog_error("ldap_add_s(%s): %s", dn, ldap_err2string(rv));
-		return (GFARM_ERR_UNKNOWN);
+		error = GFARM_ERR_UNKNOWN;
 	}
+	free(dn);
+	return (error);
 }
 
 static gfarm_error_t
@@ -660,24 +663,28 @@ retry:
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_modify_s(gfarm_ldap_server, dn, modv);
-	free(dn);
 
 	switch (rv) {
 	case LDAP_SUCCESS:
-		return (GFARM_ERR_NO_ERROR);
+		error = GFARM_ERR_NO_ERROR;
+		break;
 	case LDAP_SERVER_DOWN:
 		error = gfarm_ldap_initialize();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
-		return (error);
+		break;
 	case LDAP_NO_SUCH_OBJECT:
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		break;
 	case LDAP_ALREADY_EXISTS:
-		return (GFARM_ERR_ALREADY_EXISTS);
+		error = GFARM_ERR_ALREADY_EXISTS;
+		break;
 	default:
 		gflog_error("ldap_modify_s(%s): %s", dn, ldap_err2string(rv));
-		return (GFARM_ERR_UNKNOWN);
+		error = GFARM_ERR_UNKNOWN;
 	}
+	free(dn);
+	return (error);
 }
 
 static gfarm_error_t
@@ -694,22 +701,25 @@ retry:
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	rv = ldap_delete_s(gfarm_ldap_server, dn);
-	free(dn);
 
 	switch (rv) {
 	case LDAP_SUCCESS:
-		return (GFARM_ERR_NO_ERROR);
+		error = GFARM_ERR_NO_ERROR;
+		break;
 	case LDAP_SERVER_DOWN:
 		error = gfarm_ldap_initialize();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
-		return (error);
+		break;
 	case LDAP_NO_SUCH_OBJECT:
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		break;
 	default:
 		gflog_error("ldap_delete_s(%s): %s", dn, ldap_err2string(rv));
-		return (GFARM_ERR_UNKNOWN);
+		error = GFARM_ERR_UNKNOWN;
 	}
+	free(dn);
+	return (error);
 }
 
 #if 0 /* not used */
@@ -1919,7 +1929,7 @@ gfarm_ldap_filecopy_load(
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_filecopy_ops.query_type,
+	    LDAP_SCOPE_SUBTREE, gfarm_ldap_db_filecopy_ops.query_type,
 	    &tmp_info, db_filecopy_callback_trampoline, &c,
 	    &gfarm_ldap_db_filecopy_ops));
 }
@@ -2036,7 +2046,7 @@ gfarm_ldap_deadfilecopy_load(
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_deadfilecopy_ops.query_type,
+	    LDAP_SCOPE_SUBTREE, gfarm_ldap_db_deadfilecopy_ops.query_type,
 	    &tmp_info, db_deadfilecopy_callback_trampoline, &c,
 	    &gfarm_ldap_db_deadfilecopy_ops));
 }
@@ -2050,7 +2060,7 @@ static void gfarm_ldap_db_direntry_set_field(void *info, char *attribute,
 static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_direntry_ops = {
 	&db_base_direntry_arg_ops,
-	"(objectclass=GFarmDirDntry)",
+	"(objectclass=GFarmDirEntry)",
 	"entryName=%s, inumber=%" GFARM_PRId64 ", %s",
 	gfarm_ldap_db_direntry_make_dn,
 	gfarm_ldap_db_direntry_set_field,
@@ -2105,7 +2115,7 @@ gfarm_ldap_quote_string_length(const char *string, int slen)
 static char *
 gfarm_ldap_db_direntry_make_dn(void *vkey)
 {
-	struct db_direntry_remove_arg *key = vkey;
+	struct db_direntry_arg *key = vkey;
 	char *dn, *quoted;
 	int quoted_len;
 
@@ -2157,7 +2167,7 @@ gfarm_ldap_db_direntry_update(
 	char ino_string[INT64STRLEN + 1];
 	char entry_ino_string[INT64STRLEN + 1];
 
-	struct db_direntry_remove_arg key;
+	struct db_direntry_arg key;
 
 	key.dir_inum = info->dir_inum;
 	key.entry_name = info->entry_name;
@@ -2194,7 +2204,7 @@ gfarm_ldap_direntry_add(struct db_direntry_arg *info)
 }
 
 static void
-gfarm_ldap_direntry_remove(struct db_direntry_remove_arg *arg)
+gfarm_ldap_direntry_remove(struct db_direntry_arg *arg)
 {
 	gfarm_ldap_generic_info_remove(arg, &gfarm_ldap_db_direntry_ops);
 	free(arg);
@@ -2212,7 +2222,7 @@ gfarm_ldap_direntry_load(
 	c.callback = callback;
 
 	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
-	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_direntry_ops.query_type,
+	    LDAP_SCOPE_SUBTREE, gfarm_ldap_db_direntry_ops.query_type,
 	    &tmp_info, db_direntry_callback_trampoline, &c,
 	    &gfarm_ldap_db_direntry_ops));
 }
