@@ -28,6 +28,13 @@ char *gfarm_metadb_path_info_remove(const char *);
 char *gfarm_metadb_path_info_get_all_foreach(
 	void (*)(void *, struct gfarm_path_info *), void *);
 
+char *gfarm_metadb_path_info_xattr_get(
+	const char *, struct gfarm_path_info_xattr *);
+char *gfarm_metadb_path_info_xattr_set(const struct gfarm_path_info_xattr *);
+char *gfarm_metadb_path_info_xattr_replace(
+	const struct gfarm_path_info_xattr *);
+char *gfarm_metadb_path_info_xattr_remove(const char *);
+
 char *gfarm_metadb_file_section_info_get(
 	const char *, const char *, struct gfarm_file_section_info *);
 char *gfarm_metadb_file_section_info_set(

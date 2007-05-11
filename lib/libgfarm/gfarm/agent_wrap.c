@@ -704,6 +704,62 @@ gfarm_host_info_get_architecture_by_host(const char *hostname)
 	return (arch);
 }
 
+/* extended attribute */
+
+char *
+gfarm_path_info_xattr_get(
+	const char *pathname,
+	struct gfarm_path_info_xattr *info)
+{
+	if (gfarm_agent_check() == NULL) {
+		char *e = agent_client_path_info_xattr_get(
+				agent_server, pathname, info);
+		if (e != GFARM_ERR_CONNECTION_REFUSED)
+			return (e);
+		/* reconnection failed, connect to metadb directly */
+	}
+	return (gfarm_metadb_path_info_xattr_get(pathname, info));
+}
+
+char *
+gfarm_path_info_xattr_set(const struct gfarm_path_info_xattr *info)
+{
+	if (gfarm_agent_check() == NULL) {
+		char *e = agent_client_path_info_xattr_set(
+				agent_server, info);
+		if (e != GFARM_ERR_CONNECTION_REFUSED)
+			return (e);
+		/* reconnection failed, connect to metadb directly */
+	}
+	return (gfarm_metadb_path_info_xattr_set(info));
+}
+
+char *
+gfarm_path_info_xattr_replace(const struct gfarm_path_info_xattr *info)
+{
+	if (gfarm_agent_check() == NULL) {
+		char *e = agent_client_path_info_xattr_replace(
+				agent_server, info);
+		if (e != GFARM_ERR_CONNECTION_REFUSED)
+			return (e);
+		/* reconnection failed, connect to metadb directly */
+	}
+	return (gfarm_metadb_path_info_xattr_replace(info));
+}
+
+char *
+gfarm_path_info_xattr_remove(const char *pathname)
+{
+	if (gfarm_agent_check() == NULL) {
+		char *e = agent_client_path_info_xattr_remove(
+				agent_server, pathname);
+		if (e != GFARM_ERR_CONNECTION_REFUSED)
+			return (e);
+		/* reconnection failed, connect to metadb directly */
+	}
+	return (gfarm_metadb_path_info_xattr_remove(pathname));
+}
+
 /* file section info */
 
 char *

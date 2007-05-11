@@ -56,6 +56,16 @@ char *agent_client_host_info_get_allhost_by_architecture(
 	struct agent_connection *,
 	const char *, int *, struct gfarm_host_info **);
 
+char *agent_client_path_info_xattr_get(
+	struct agent_connection *,
+	const char *, struct gfarm_path_info_xattr *);
+char *agent_client_path_info_xattr_set(
+	struct agent_connection *, const struct gfarm_path_info_xattr *);
+char *agent_client_path_info_xattr_replace(
+	struct agent_connection *, const struct gfarm_path_info_xattr *);
+char *agent_client_path_info_xattr_remove(
+	struct agent_connection *, const char *);
+
 char *agent_client_file_section_info_get(
 	struct agent_connection *, const char *, const char *,
 	struct gfarm_file_section_info *);

@@ -66,6 +66,17 @@ char *gfarm_path_info_get_all_foreach(
 void gfarm_path_free_all(int, char **);
 char *gfarm_path_get_all_children(const char *, int *, char ***);
 
+/* extended attribute */
+struct gfarm_path_info_xattr {
+	char *pathname;
+	char *xattr;
+};
+
+void gfarm_path_info_xattr_free(struct gfarm_path_info_xattr *);
+char *gfarm_path_info_xattr_get(const char *, struct gfarm_path_info_xattr *);
+char *gfarm_path_info_xattr_set(const struct gfarm_path_info_xattr *);
+char *gfarm_path_info_xattr_remove(const char *);
+
 /* ---------------------------------------- */
 
 /*

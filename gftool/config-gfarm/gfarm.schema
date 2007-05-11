@@ -73,6 +73,10 @@ attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.19 NAME 'checksum'
 	EQUALITY caseExactIA5Match
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
 
+attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.20 NAME 'xattribute'
+	EQUALITY caseExactMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+
 # Object Class Definitions
 # 1.3.6.1.4.1.13122.2.1.2924.100.3.x
 
@@ -88,7 +92,8 @@ objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.2
 		atimesec $ atimensec $
 		mtimesec $ mtimensec $
 		ctimesec $ ctimensec $
-		nsections ) )
+		nsections $
+		xattribute ) )
 
 objectclass ( 1.3.6.1.4.1.13122.2.1.2924.100.3.3
 	NAME 'GFarmFileSection' SUP top STRUCTURAL

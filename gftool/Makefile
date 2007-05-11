@@ -36,6 +36,7 @@ SUBDIRS = \
 	gfrun \
 	gfwhere \
 	gfwhoami \
+	gfxattr \
 	example \
 	config-gfarm
 

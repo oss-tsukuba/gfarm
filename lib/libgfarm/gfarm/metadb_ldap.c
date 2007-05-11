@@ -218,7 +218,7 @@ static char *
 gfarm_ldap_set_ssl_context(void)
 {
 	int rv;
-	
+
 	if (ldap_ssl_context == NULL) {
 		char *e = gfarm_ldap_new_default_ctx(&ldap_ssl_context);
 
@@ -517,7 +517,6 @@ set_string_mod(
 	*modp = &storage->mod;
 }
 
-#if 0
 static void
 set_delete_mod(
 	LDAPMod **modp,
@@ -529,7 +528,6 @@ set_delete_mod(
 	storage->mod_vals.modv_strvals = NULL;
 	*modp = storage;
 }
-#endif
 
 struct gfarm_ldap_generic_info_ops {
 	const struct gfarm_base_generic_info_ops *gen_ops;
@@ -1146,7 +1144,7 @@ struct gfarm_ldap_path_info_key {
 static int
 gfarm_ldap_need_escape(char c)
 {
-	/* According to RFC 2253 (Section 2.4 and 3), following characters 
+	/* According to RFC 2253 (Section 2.4 and 3), following characters
 	 * must be escaped.
 	 * Note: '#' should also be escaped. But it seems to be unnecessary
 	 *       when using OpenLDAP 2.2.x.
@@ -1170,7 +1168,7 @@ gfarm_ldap_escape_pathname(const char *pathname)
 	/* if pathname is a null string, return immediately */
 	if (*s == '\0')
 		return (NULL);
-	
+
 	size = gfarm_size_mul(&overflow, strlen(pathname), 3);
 	if (!overflow)
 		GFARM_MALLOC_ARRAY(escaped_pathname, size);
@@ -1201,10 +1199,13 @@ gfarm_ldap_escape_pathname(const char *pathname)
 	return (escaped_pathname);
 }
 
+static char PATH_QUERY_TYPE[] = "(objectclass=GFarmPath)";
+static char PATH_DN_TEMPLATE[] = "pathname=%s, %s";
+
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_path_info_ops = {
 	&gfarm_base_path_info_ops,
-	"(objectclass=GFarmPath)",
-	"pathname=%s, %s",
+	PATH_QUERY_TYPE,
+	PATH_DN_TEMPLATE,
 	gfarm_ldap_path_info_make_dn,
 	gfarm_ldap_path_info_set_field,
 };
@@ -1479,6 +1480,117 @@ gfarm_ldap_file_history_get_allfile_by_file(
 
 /**********************************************************************/
 
+static void gfarm_ldap_path_info_xattr_set_field(void *, char *, char **);
+
+static const struct gfarm_ldap_generic_info_ops
+	gfarm_ldap_path_info_xattr_ops = {
+	&gfarm_base_path_info_xattr_ops,
+	PATH_QUERY_TYPE,
+	PATH_DN_TEMPLATE,
+	gfarm_ldap_path_info_make_dn,
+	gfarm_ldap_path_info_xattr_set_field,
+};
+
+static void
+gfarm_ldap_path_info_xattr_set_field(
+	void *vinfo,
+	char *attribute,
+	char **vals)
+{
+	struct gfarm_path_info_xattr *info = vinfo;
+
+	if (strcasecmp(attribute, "pathname") == 0) {
+		info->pathname = strdup(vals[0]);
+	} else if (strcasecmp(attribute, "xattribute") == 0) {
+		info->xattr = strdup(vals[0]);
+	}
+}
+
+static gfarm_error_t
+gfarm_ldap_path_info_xattr_update(
+	const struct gfarm_path_info_xattr *info,
+	int mod_op,
+	gfarm_error_t (*update_op)(void *, LDAPMod **,
+	    const struct gfarm_ldap_generic_info_ops *))
+{
+	int i;
+	LDAPMod *modv[2];
+	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
+
+	struct gfarm_ldap_path_info_key key;
+
+	key.pathname = info->pathname;
+
+	i = 0;
+	set_string_mod(&modv[i], mod_op,
+	    "xattribute", info->xattr, &storage[i]);
+	i++;
+
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	return ((*update_op)(&key, modv, &gfarm_ldap_path_info_xattr_ops));
+}
+
+static char *
+gfarm_ldap_path_info_xattr_get(
+	const char *pathname,
+	struct gfarm_path_info_xattr *info)
+{
+	struct gfarm_ldap_path_info_key key;
+
+	/*
+	 * This case intends to investigate the root directory.  Because
+	 * Gfarm-1.0.x does not have an entry for the root directory, and
+	 * moreover, because OpenLDAP-2.1.X does not accept a dn such as
+	 * 'pathname=, dc=xxx', return immediately with an error.
+	 */
+	if (pathname[0] == '\0')
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	else
+		key.pathname = pathname;
+
+	return (gfarm_ldap_generic_info_get(&key, info,
+	    &gfarm_ldap_path_info_xattr_ops));
+}
+
+static char *
+gfarm_ldap_path_info_xattr_set(const struct gfarm_path_info_xattr *arg)
+{
+	return (gfarm_ldap_path_info_xattr_update(
+			arg, LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
+}
+
+static char *
+gfarm_ldap_path_info_xattr_replace(const struct gfarm_path_info_xattr *arg)
+{
+	return (gfarm_ldap_path_info_xattr_update(
+			arg, LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify));
+}
+
+static char *
+gfarm_ldap_path_info_xattr_remove(const char *pathname)
+{
+	int i;
+	LDAPMod *modv[2];
+	LDAPMod storage[ARRAY_LENGTH(modv) - 1];
+
+	struct gfarm_ldap_path_info_key key;
+
+	key.pathname = pathname;
+
+	i = 0;
+	set_delete_mod(&modv[i], "xattribute", &storage[i]);
+	i++;
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	return (gfarm_ldap_generic_info_modify(
+			&key, modv, &gfarm_ldap_path_info_xattr_ops));
+}
+
+/**********************************************************************/
+
 static char *gfarm_ldap_file_section_info_make_dn(void *vkey);
 static void gfarm_ldap_file_section_info_set_field(void *info, char *attribute,
 	char **vals);
@@ -1508,7 +1620,7 @@ gfarm_ldap_file_section_info_make_dn(void *vkey)
 	if (escaped_pathname == NULL)
 		return (NULL);
 
-	GFARM_MALLOC_ARRAY(dn, 
+	GFARM_MALLOC_ARRAY(dn,
 		    strlen(gfarm_ldap_file_section_info_ops.dn_template) +
 		    strlen(key->section) + strlen(escaped_pathname) +
 		    strlen(gfarm_ldap_base_dn) + 1);
@@ -1927,8 +2039,8 @@ gfarm_ldap_file_history_make_dn(void *vkey)
 {
 	struct gfarm_ldap_file_history_key *key = vkey;
 	char *dn;
-	
-	GFARM_MALLOC_ARRAY(dn, 
+
+	GFARM_MALLOC_ARRAY(dn,
 			  strlen(gfarm_ldap_file_history_ops.dn_template) +
 			  strlen(key->gfarm_file) +
 			  strlen(gfarm_ldap_base_dn) + 1);
@@ -2057,4 +2169,9 @@ const struct gfarm_metadb_internal_ops gfarm_ldap_metadb_ops = {
 	gfarm_ldap_file_section_copy_info_get_all_by_file,
 	gfarm_ldap_file_section_copy_info_get_all_by_section,
 	gfarm_ldap_file_section_copy_info_get_all_by_host,
+
+	gfarm_ldap_path_info_xattr_get,
+	gfarm_ldap_path_info_xattr_set,
+	gfarm_ldap_path_info_xattr_replace,
+	gfarm_ldap_path_info_xattr_remove,
 };

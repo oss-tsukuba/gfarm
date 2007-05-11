@@ -1,0 +1,85 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfxattr.1'>
+
+<refentryinfo><date>11 May 2007</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfxattr</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfxattr</refname>
+<refpurpose>Manipulate extended attribute of file in Gfarm file system</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfxattr</command>
+    <group choice='opt'>
+      <arg choice='plain'>-s</arg>
+      <arg choice='plain'>-g</arg>
+      <arg choice='plain'>-r</arg>
+    </group>
+    <arg choice='opt'>-f <replaceable>xattrfile</replaceable></arg>
+    <arg choice='plain'><replaceable>file</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>gfxattr manipulates an extended attribute of the specified file.
+  The extended attribute is any string.  It is typically assumed to be
+  an XML document as an application metadata.
+  When the -s option is specified, it sets the extended attribute.
+  When the -g option is specified, it reads the extended attribute.
+  When the -r option is specified, it removes the extended attribute.
+  Either -s, -g, or -r option should be specified.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>sets an extended attribute.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>reads an extended attribute.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>removes an extended attribute.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-f</option> xattrfile</term>
+<listitem>
+<para>
+With the -s option, reads an extended attribute from the specified
+xattrfile instead of from the standard input.  With the -g option,
+writes the extended attribute to the specified xattrfile instead of to
+the standard output.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays usage.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>

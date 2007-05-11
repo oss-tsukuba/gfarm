@@ -202,7 +202,7 @@ gfarm_pgsql_initialize(void)
 		    NULL, /* param lengths */
 		    NULL, /* param formats */
 		    0); /* dummy parameter for result format */
-		use_hostid_and_pathid = 
+		use_hostid_and_pathid =
 		    PQresultStatus(res) == PGRES_TUPLES_OK;
 		PQclear(res);
 	}
@@ -1092,7 +1092,7 @@ gfarm_pgsql_path_info_get(
 		if (e != NULL) {
 			PQclear(res);
 			return (e);
-		}	
+		}
 		goto retry;
 	}
 	if (PQntuples(res) == 0) {
@@ -1447,7 +1447,7 @@ gfarm_pgsql_path_info_get_all_foreach(
 		    ret, extension_area_len);
 	bp  += extension_area_len;
 	ret -= extension_area_len;
-	
+
 	for (;;) {
 		if (ret < COPY_BINARY_TRAILER_LEN)
 			gflog_fatal("gfarm_pgsql_path_info_get_all_foreach: "
@@ -1529,6 +1529,181 @@ gfarm_pgsql_file_history_get_allfile_by_file(
 }
 
 #endif /* GFarmFile history isn't actually used yet */
+
+/**********************************************************************/
+
+static void
+path_info_xattr_set_field(
+	PGresult *res,
+	int row,
+	struct gfarm_path_info_xattr *info)
+{
+	info->pathname = pgsql_get_string(res, row, "pathname");
+	info->xattr = pgsql_get_string(res, row, "xattribute");
+}
+
+static char *
+gfarm_pgsql_path_info_xattr_get(
+	const char *pathname,
+	struct gfarm_path_info_xattr *info)
+{
+	const char *paramValues[1];
+	PGresult *res;
+	char *e;
+	int fatal_cnt = 0;
+
+	if (!use_hostid_and_pathid)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
+ retry:
+	paramValues[0] = pathname;
+	res = PQexecParams(conn,
+		"SELECT pathname, PathXattr.* "
+		    "FROM Path, PathXAttr WHERE "
+		    "pathname = $1 AND PathXAttr.pathid = Path.pathid",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		1); /* ask for binary results */
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		e = can_I_retry(res, &fatal_cnt);
+		if (e != NULL) {
+			PQclear(res);
+			return (e);
+		}
+		goto retry;
+	}
+	if (PQntuples(res) == 0) {
+		PQclear(res);
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
+	gfarm_base_path_info_xattr_ops.clear(info);
+	path_info_xattr_set_field(res, 0, info);
+	PQclear(res);
+	return (NULL);
+}
+
+static char *
+gfarm_pgsql_path_info_xattr_set(
+	const struct gfarm_path_info_xattr *info)
+{
+	PGresult *res;
+	const char *paramValues[2];
+	char *e;
+	int fatal_cnt = 0;
+
+	if (!use_hostid_and_pathid)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
+ retry:
+	paramValues[0] = info->pathname;
+	paramValues[1] = info->xattr;
+
+	res = PQexecParams(conn,
+		"INSERT INTO PathXAttr (pathid, xattribute) VALUES ("
+			"(SELECT pathid FROM Path WHERE pathname = $1), $2)",
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
+		if (strcmp(
+			   PQresultErrorField(res, PG_DIAG_SQLSTATE),
+			   GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+		}
+	}
+	PQclear(res);
+	return (e);
+}
+
+static char *
+gfarm_pgsql_path_info_xattr_replace(
+	const struct gfarm_path_info_xattr *info)
+{
+	PGresult *res;
+	const char *paramValues[2];
+	char *e;
+	int fatal_cnt = 0;
+
+	if (!use_hostid_and_pathid)
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
+ retry:
+	paramValues[0] = info->pathname;
+	paramValues[1] = info->xattr;
+
+	res = PQexecParams(conn,
+		"UPDATE PathXAttr SET xattribute = $2 "
+		    "WHERE "
+			"pathid=(SELECT pathid from Path WHERE pathname = $1) ",
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0); /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
+}
+
+static char *
+gfarm_pgsql_path_info_xattr_remove(const char *pathname)
+{
+	PGresult *res;
+	const char *paramValues[1];
+	char *e;
+	int fatal_cnt = 0;
+
+	if (!use_hostid_and_pathid)
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+	if ((e = gfarm_pgsql_check()) != NULL)
+		return (e);
+
+ retry:
+	paramValues[0] = pathname;
+	res = PQexecParams(conn,
+		"DELETE FROM PathXAttr "
+		    "WHERE "
+			"pathid=(SELECT pathid from Path WHERE pathname = $1) ",
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0);  /* dummy parameter for result format */
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		e = can_I_retry(res, &fatal_cnt);
+		if (e == NULL)
+			goto retry;
+	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	PQclear(res);
+	return (e);
+}
 
 /**********************************************************************/
 
@@ -2217,4 +2392,9 @@ const struct gfarm_metadb_internal_ops gfarm_pgsql_metadb_ops = {
 	gfarm_pgsql_file_section_copy_info_get_all_by_file,
 	gfarm_pgsql_file_section_copy_info_get_all_by_section,
 	gfarm_pgsql_file_section_copy_info_get_all_by_host,
+
+	gfarm_pgsql_path_info_xattr_get,
+	gfarm_pgsql_path_info_xattr_set,
+	gfarm_pgsql_path_info_xattr_replace,
+	gfarm_pgsql_path_info_xattr_remove,
 };

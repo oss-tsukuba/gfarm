@@ -27,4 +27,5 @@ DOCBOOK = \
 	gfusage.1 \
 	gfwc.1 \
 	gfwhere.1 \
-	gfwhoami.1
+	gfwhoami.1 \
+	gfxattr.1

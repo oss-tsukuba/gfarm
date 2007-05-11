@@ -509,6 +509,53 @@ agent_client_host_info_get_allhost_by_architecture(
 	return (NULL);
 }
 
+/* extended attribute */
+
+char *
+agent_client_path_info_xattr_get(struct agent_connection *agent_server,
+	const char *path, struct gfarm_path_info_xattr *info)
+{
+	return (agent_client_rpc(&agent_server, 0,
+			AGENT_PROTO_PATH_INFO_XATTR_GET, "s/ss",
+			path, &info->pathname, &info->xattr));
+}
+
+char *
+agent_client_path_info_xattr_set(struct agent_connection *agent_server,
+	const struct gfarm_path_info_xattr *info)
+{
+	char *e;
+
+	e = agent_client_rpc_request(&agent_server,
+		AGENT_PROTO_PATH_INFO_XATTR_SET,
+		"ss", info->pathname, info->xattr);
+	if (e != NULL)
+		return (e);
+	return (agent_client_rpc_result(agent_server, 0, ""));
+}
+
+char *
+agent_client_path_info_xattr_replace(struct agent_connection *agent_server,
+	const struct gfarm_path_info_xattr *info)
+{
+	char *e;
+
+	e = agent_client_rpc_request(&agent_server,
+		AGENT_PROTO_PATH_INFO_XATTR_REPLACE,
+		"ss", info->pathname, info->xattr);
+	if (e != NULL)
+		return (e);
+	return (agent_client_rpc_result(agent_server, 0, ""));
+}
+
+char *
+agent_client_path_info_xattr_remove(struct agent_connection *agent_server,
+	const char *path)
+{
+	return (agent_client_rpc(&agent_server, 0,
+			AGENT_PROTO_PATH_INFO_XATTR_REMOVE, "s/", path));
+}
+
 /* file section info */
 
 char *

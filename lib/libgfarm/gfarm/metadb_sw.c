@@ -361,6 +361,73 @@ gfarm_file_history_free_allfile(int n, char **v)
 
 /**********************************************************************/
 
+static void gfarm_base_path_info_xattr_clear(void *info);
+static int gfarm_base_path_info_xattr_validate(const void *info);
+
+const struct gfarm_base_generic_info_ops gfarm_base_path_info_xattr_ops = {
+	sizeof(struct gfarm_path_info_xattr),
+	(void (*)(void *))gfarm_path_info_xattr_free,
+	gfarm_base_path_info_xattr_clear,
+	gfarm_base_path_info_xattr_validate,
+};
+
+static void
+gfarm_base_path_info_xattr_clear(void *vinfo)
+{
+	struct gfarm_path_info_xattr *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+gfarm_base_path_info_xattr_validate(const void *vinfo)
+{
+	const struct gfarm_path_info_xattr *info = vinfo;
+
+	return (
+	    info->pathname != NULL &&
+	    info->xattr != NULL
+	);
+}
+
+void
+gfarm_path_info_xattr_free(
+	struct gfarm_path_info_xattr *info)
+{
+	if (info->pathname != NULL)
+		free(info->pathname);
+	if (info->xattr != NULL)
+		free(info->xattr);
+}
+
+char *
+gfarm_metadb_path_info_xattr_get(
+	const char *pathname,
+	struct gfarm_path_info_xattr *info)
+{
+	return ((*metadb_ops->path_info_xattr_get)(pathname, info));
+}
+
+char *
+gfarm_metadb_path_info_xattr_set(const struct gfarm_path_info_xattr *info)
+{
+	return ((*metadb_ops->path_info_xattr_set)(info));
+}
+
+char *
+gfarm_metadb_path_info_xattr_replace(const struct gfarm_path_info_xattr *info)
+{
+	return ((*metadb_ops->path_info_xattr_replace)(info));
+}
+
+char *
+gfarm_metadb_path_info_xattr_remove(const char *pathname)
+{
+	return ((*metadb_ops->path_info_xattr_remove)(pathname));
+}
+
+/**********************************************************************/
+
 static void gfarm_base_file_section_info_clear(void *info);
 static int gfarm_base_file_section_info_validate(const void *info);
 

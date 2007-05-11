@@ -68,6 +68,12 @@ struct gfarm_metadb_internal_ops {
 		const char *, int *, struct gfarm_file_section_copy_info **);
 	char *(*file_section_copy_info_get_all_by_host)(
 		const char *, int *, struct gfarm_file_section_copy_info **);
+
+	char *(*path_info_xattr_get)(
+		const char *, struct gfarm_path_info_xattr *);
+	char *(*path_info_xattr_set)(const struct gfarm_path_info_xattr *);
+	char *(*path_info_xattr_replace)(const struct gfarm_path_info_xattr *);
+	char *(*path_info_xattr_remove)(const char *);
 };
 
 extern const struct gfarm_metadb_internal_ops gfarm_none_metadb_ops;
@@ -87,6 +93,7 @@ struct gfarm_base_generic_info_ops {
 extern const struct gfarm_base_generic_info_ops
 	gfarm_base_host_info_ops,
 	gfarm_base_path_info_ops,
+	gfarm_base_path_info_xattr_ops,
 	gfarm_base_file_section_info_ops,
 	gfarm_base_file_section_copy_info_ops;
 

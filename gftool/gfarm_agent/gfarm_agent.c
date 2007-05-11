@@ -720,6 +720,109 @@ agent_server_host_info_get_allhost_by_architecture(
 	return (e_rpc);
 }
 
+/* extended attribute */
+
+static char *
+agent_server_path_info_xattr_get(struct xxx_connection *client)
+{
+	char *path, *e, *e_rpc;
+	struct gfarm_path_info_xattr info;
+	char *diag = "path_info_xattr_get";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_path_info_xattr_get(path, &info);
+	agent_unlock();
+	free(path);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "s", info.xattr);
+	if (e == NULL)
+		gfarm_path_info_xattr_free(&info);
+	else
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_path_info_xattr_set(struct xxx_connection *client)
+{
+	char *path, *xattr, *e, *e_rpc;
+	struct gfarm_path_info_xattr info;
+	char *diag = "path_info_xattr_set";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &xattr);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	info.pathname = path;
+	info.xattr = xattr;
+
+	log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_path_info_xattr_set(&info);
+	agent_unlock();
+	free(path);
+	free(xattr);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_path_info_xattr_replace(struct xxx_connection *client)
+{
+	char *path, *xattr, *e, *e_rpc;
+	struct gfarm_path_info_xattr info;
+	char *diag = "path_info_xattr_replace";
+
+	e_rpc = agent_server_get_request(client, diag, "ss", &path, &xattr);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	info.pathname = path;
+	info.xattr = xattr;
+
+	log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_path_info_xattr_replace(&info);
+	agent_unlock();
+	free(path);
+	free(xattr);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
+static char *
+agent_server_path_info_xattr_remove(struct xxx_connection *client)
+{
+	char *path, *e, *e_rpc;
+	char *diag = "path_info_xattr_remove";
+
+	e_rpc = agent_server_get_request(client, diag, "s", &path);
+	if (e_rpc != NULL)
+		return (e_rpc);
+
+	log_proto(diag, path);
+	agent_lock();
+	e = gfarm_metadb_path_info_xattr_remove(path);
+	agent_unlock();
+	free(path);
+
+	e_rpc = agent_server_put_reply(client, diag, e, "");
+	if (e != NULL)
+		log_proto(diag, e);
+	return (e_rpc);
+}
+
 /* file section info */
 
 static char *
@@ -1221,6 +1324,22 @@ server(void *arg)
 			cmd = "host_info_get_allhost_by_architecture";
 			e = agent_server_host_info_get_allhost_by_architecture(
 				client);
+			break;
+		case AGENT_PROTO_PATH_INFO_XATTR_GET:
+			cmd = "path_info_xattr_get";
+			e = agent_server_path_info_xattr_get(client);
+			break;
+		case AGENT_PROTO_PATH_INFO_XATTR_SET:
+			cmd = "path_info_xattr_set";
+			e = agent_server_path_info_xattr_set(client);
+			break;
+		case AGENT_PROTO_PATH_INFO_XATTR_REPLACE:
+			cmd = "path_info_xattr_replace";
+			e = agent_server_path_info_xattr_replace(client);
+			break;
+		case AGENT_PROTO_PATH_INFO_XATTR_REMOVE:
+			cmd = "path_info_xattr_remove";
+			e = agent_server_path_info_xattr_remove(client);
 			break;
 		case AGENT_PROTO_FILE_SECTION_INFO_GET:
 			cmd = "file_section_info_get";

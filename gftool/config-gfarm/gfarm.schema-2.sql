@@ -32,6 +32,11 @@ CREATE TABLE Path (
 
 CREATE INDEX PathByPathid ON Path (pathid);
 
+CREATE TABLE PathXAttr (
+	pathid		INT8		PRIMARY KEY
+		REFERENCES Path(pathid) ON DELETE CASCADE,
+	xattribute	VARCHAR
+);
 
 CREATE TABLE FileSection (
 	pathid		INT8		NOT NULL REFERENCES Path(pathid),

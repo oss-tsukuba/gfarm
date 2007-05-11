@@ -6,6 +6,7 @@
 
 struct gfarm_host_info;
 struct gfarm_path_info;
+struct gfarm_path_info_xattr;
 struct gfarm_file_section_info;
 struct gfarm_file_section_copy_info;
 
@@ -133,6 +134,34 @@ static char *
 gfarm_none_path_info_get_all_foreach(
 	void (*callback)(void *, struct gfarm_path_info *),
 	void *closure)
+{
+	return (gfarm_none_report_error());
+}
+
+static char *
+gfarm_none_path_info_xattr_get(
+	const char *pathname,
+	struct gfarm_path_info_xattr *info)
+{
+	return (gfarm_none_report_error());
+}
+
+static char *
+gfarm_none_path_info_xattr_set(
+	const struct gfarm_path_info_xattr *info)
+{
+	return (gfarm_none_report_error());
+}
+
+static char *
+gfarm_none_path_info_xattr_replace(
+	const struct gfarm_path_info_xattr *info)
+{
+	return (gfarm_none_report_error());
+}
+
+static char *
+gfarm_none_path_info_xattr_remove(const char *pathname)
 {
 	return (gfarm_none_report_error());
 }
@@ -271,4 +300,9 @@ const struct gfarm_metadb_internal_ops gfarm_none_metadb_ops = {
 	gfarm_none_file_section_copy_info_get_all_by_file,
 	gfarm_none_file_section_copy_info_get_all_by_section,
 	gfarm_none_file_section_copy_info_get_all_by_host,
+
+	gfarm_none_path_info_xattr_get,
+	gfarm_none_path_info_xattr_set,
+	gfarm_none_path_info_xattr_replace,
+	gfarm_none_path_info_xattr_remove,
 };
