@@ -515,9 +515,18 @@ char *
 agent_client_path_info_xattr_get(struct agent_connection *agent_server,
 	const char *path, struct gfarm_path_info_xattr *info)
 {
-	return (agent_client_rpc(&agent_server, 0,
-			AGENT_PROTO_PATH_INFO_XATTR_GET, "s/ss",
-			path, &info->pathname, &info->xattr));
+	char *e;
+
+	e = agent_client_rpc(&agent_server, 0,
+		AGENT_PROTO_PATH_INFO_XATTR_GET, "s/s", path, &info->xattr);
+	if (e == GFARM_ERR_NO_ERROR) {
+		info->pathname = strdup(path);
+		if (info->pathname == NULL) {
+			gfarm_path_info_xattr_free(info);
+			e = GFARM_ERR_NO_MEMORY;
+		}
+	}
+	return (e);
 }
 
 char *

@@ -153,13 +153,16 @@ main(int argc, char *argv[])
 
 	switch (mode) {
 	case SET_MODE:
-		e = set_xattr(c_path, filename);
+		if ((e = gfs_access(*argv, W_OK)) == GFARM_ERR_NO_ERROR)
+			e = set_xattr(c_path, filename);
 		break;
 	case GET_MODE:
-		e = get_xattr(c_path, filename);
+		if ((e = gfs_access(*argv, R_OK)) == GFARM_ERR_NO_ERROR)
+			e = get_xattr(c_path, filename);
 		break;
 	case REMOVE_MODE:
-		e = gfarm_path_info_xattr_remove(c_path);
+		if ((e = gfs_access(*argv, W_OK)) == GFARM_ERR_NO_ERROR)
+			e = gfarm_path_info_xattr_remove(c_path);
 		break;
 	default:
 		usage(prog_name);
