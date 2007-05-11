@@ -12,6 +12,7 @@
 
 enum {
 	PATH_INFO,
+	PATH_INFO_XATTR,
 	SECTION_INFO,
 	SECTION_COPY_INFO
 };
@@ -39,6 +40,17 @@ print_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 	fprintf(f, " %s", info->section);
 	fprintf(f, " %" PR_FILE_OFFSET, info->filesize);
 	fprintf(f, " %s %s", info->checksum_type, info->checksum);
+	fputc('\n', f);
+	return (NULL);
+}
+
+static char *
+print_path_info_xattr(struct gfarm_path_info_xattr *info, FILE *f)
+{
+	fprintf(f, "X:");
+
+	fprintf(f, " %s", info->pathname);
+	fprintf(f, " %s", info->xattr);
 	fputc('\n', f);
 	return (NULL);
 }
@@ -155,6 +167,19 @@ dump_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 }
 
 static char *
+dump_path_info_xattr(struct gfarm_path_info_xattr *info, FILE *f)
+{
+	if (verbose)
+		print_path_info_xattr(info, stderr);
+
+	fputc(PATH_INFO_XATTR, f);
+
+	dump_string(info->pathname, f);
+	dump_string(info->xattr, f);
+	return (NULL);
+}
+
+static char *
 dump_path_info(struct gfarm_path_info *info, FILE *f)
 {
 	struct gfs_stat *st = &info->status;
@@ -185,6 +210,15 @@ restore_path_info(struct gfarm_path_info *info, FILE *f)
 }
 
 static char *
+restore_path_info_xattr(struct gfarm_path_info_xattr *info, FILE *f)
+{
+	if (verbose)
+		print_path_info_xattr(info, stdout);
+
+	return (gfarm_metadb_path_info_xattr_set(info));
+}
+
+static char *
 restore_file_section_info(struct gfarm_file_section_info *info, FILE *f)
 {
 	if (verbose)
@@ -207,6 +241,7 @@ restore_file_section_copy_info(
 
 struct gfdump_ops {
 	char *(*path_info)(struct gfarm_path_info *, FILE *);
+	char *(*path_info_xattr)(struct gfarm_path_info_xattr *, FILE *);
 	char *(*file_section_info)(struct gfarm_file_section_info *, FILE *);
 	char *(*file_section_copy_info)(
 		struct gfarm_file_section_copy_info *, FILE *);
@@ -219,16 +254,19 @@ struct gfdump_args {
 
 struct gfdump_ops print_ops = {
 	print_path_info,
+	print_path_info_xattr,
 	print_file_section_info,
 	print_file_section_copy_info
 };
 struct gfdump_ops dump_ops = {
 	dump_path_info,
+	dump_path_info_xattr,
 	dump_file_section_info,
 	dump_file_section_copy_info
 };
 struct gfdump_ops restore_ops = {
 	restore_path_info,
+	restore_path_info_xattr,
 	restore_file_section_info,
 	restore_file_section_copy_info
 };
@@ -248,12 +286,21 @@ dump_section_info_all(struct gfdump_args *a)
 {
 	char *e, *pathname;
 	int i, j, k, nsections, ncopies;
+	struct gfarm_path_info_xattr xattr;
 	struct gfarm_file_section_info *sections;
 	struct gfarm_file_section_copy_info *copies;
 	FILE *f = a->f;
 
 	for (i = 0; i < gfarm_stringlist_length(a->listp); ++i) {
 		pathname = gfarm_stringlist_elem(a->listp, i);
+
+		/* extended attribute */
+		e = gfarm_path_info_xattr_get(pathname, &xattr);
+		if (e == GFARM_ERR_NO_ERROR) {
+			a->ops->path_info_xattr(&xattr, f);
+			gfarm_path_info_xattr_free(&xattr);
+		}
+
 		e = gfarm_file_section_info_get_all_by_file(
 			pathname, &nsections, &sections);
 		if (e != NULL)
@@ -305,7 +352,7 @@ dump_all(char *filename, struct gfdump_ops *ops)
 	dump_section_info_all(&a);
 	gfarm_stringlist_free_deeply(&list);
 fclose_f:
-	if (f != stdin)
+	if (f != stdout)
 		fclose(f);
 	return (e);
 }
@@ -428,6 +475,22 @@ read_file_section_info(struct gfdump_ops *ops, FILE *f)
 }
 
 static char *
+read_path_info_xattr(struct gfdump_ops *ops, FILE *f)
+{
+	static struct gfarm_path_info_xattr path_info_xattr;
+	char *e;
+
+	e = read_string(&path_info_xattr.pathname, f);
+	if (e != NULL)
+		return (e);
+	e = read_string(&path_info_xattr.xattr, f);
+	if (e != NULL)
+		return (e);
+
+	return (ops->path_info_xattr(&path_info_xattr, stdout));
+}
+
+static char *
 read_path_info(struct gfdump_ops *ops, FILE *f)
 {
 	static struct gfarm_path_info path_info;
@@ -485,6 +548,9 @@ restore_all(const char *filename, struct gfdump_ops *ops)
 		switch (type) {
 		case PATH_INFO:
 			e = read_path_info(ops, f);
+			break;
+		case PATH_INFO_XATTR:
+			e = read_path_info_xattr(ops, f);
 			break;
 		case SECTION_INFO:
 			e = read_file_section_info(ops, f);
