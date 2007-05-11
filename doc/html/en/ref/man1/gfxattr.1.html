@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfxattr</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFXATTR.1"
+></A
+>gfxattr</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfxattr&nbsp;--&nbsp;Manipulate extended attribute of file in Gfarm file system</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfxattr</B
+> [-s | -g | -r] [-f <VAR
+CLASS="REPLACEABLE"
+>xattrfile</VAR
+>]  <VAR
+CLASS="REPLACEABLE"
+>file</VAR
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfxattr manipulates an extended attribute of the specified file.
+  The extended attribute is any string.  It is typically assumed to be
+  an XML document as an application metadata.
+  When the -s option is specified, it sets the extended attribute.
+  When the -g option is specified, it reads the extended attribute.
+  When the -r option is specified, it removes the extended attribute.
+  Either -s, -g, or -r option should be specified.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-s</VAR
+></DT
+><DD
+><P
+>sets an extended attribute.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-g</VAR
+></DT
+><DD
+><P
+>reads an extended attribute.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-r</VAR
+></DT
+><DD
+><P
+>removes an extended attribute.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-f</VAR
+> xattrfile</DT
+><DD
+><P
+>With the -s option, reads an extended attribute from the specified
+xattrfile instead of from the standard input.  With the -g option,
+writes the extended attribute to the specified xattrfile instead of to
+the standard output.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-?</VAR
+></DT
+><DD
+><P
+>displays usage.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
