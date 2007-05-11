@@ -34,3 +34,4 @@ debian/tmp/usr/bin/gfstatus
 debian/tmp/usr/bin/gftest
 debian/tmp/usr/bin/gfwhere
 debian/tmp/usr/bin/gfwhoami
+debian/tmp/usr/bin/gfxattr

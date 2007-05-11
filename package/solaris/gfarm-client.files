@@ -34,3 +34,4 @@
 @PREFIX@/bin/gftest
 @PREFIX@/bin/gfwhere
 @PREFIX@/bin/gfwhoami
+@PREFIX@/bin/gfxattr

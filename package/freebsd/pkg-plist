@@ -50,6 +50,7 @@ bin/gftest
 bin/gfusage
 bin/gfwhere
 bin/gfwhoami
+bin/gfxattr
 bin/thput-gfpio
 etc/rc.d/gfmd.sh
 etc/rc.d/gfsd.sh
@@ -115,6 +116,7 @@ man/ja/man1/gfusage.1
 man/ja/man1/gfwc.1
 man/ja/man1/gfwhere.1
 man/ja/man1/gfwhoami.1
+man/ja/man1/gfxattr.1
 man/ja/man3/gfarm.3
 man/ja/man3/gfarm_hostlist_read.3
 man/ja/man3/gfarm_import_fragment_config_read.3
@@ -211,6 +213,7 @@ man/man1/gfusage.1
 man/man1/gfwc.1
 man/man1/gfwhere.1
 man/man1/gfwhoami.1
+man/man1/gfxattr.1
 man/man3/gfarm.3
 man/man3/gfarm_initialize.3
 man/man3/gfarm_strings_free_deeply.3
@@ -319,6 +322,7 @@ share/doc/gfarm/html/en/ref/man1/gfusage.1.html
 share/doc/gfarm/html/en/ref/man1/gfwc.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/en/ref/man1/gfwhoami.1.html
+share/doc/gfarm/html/en/ref/man1/gfxattr.1.html
 share/doc/gfarm/html/en/ref/man3/gfarm.3.html
 share/doc/gfarm/html/en/ref/man3/gfarm_initialize.3.html
 share/doc/gfarm/html/en/ref/man3/gfarm_strings_free_deeply.3.html
@@ -407,6 +411,7 @@ share/doc/gfarm/html/ja/ref/man1/gfusage.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwc.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhere.1.html
 share/doc/gfarm/html/ja/ref/man1/gfwhoami.1.html
+share/doc/gfarm/html/ja/ref/man1/gfxattr.1.html
 share/doc/gfarm/html/ja/ref/man3/gfarm.3.html
 share/doc/gfarm/html/ja/ref/man3/gfarm_hostlist_read.3.html
 share/doc/gfarm/html/ja/ref/man3/gfarm_import_fragment_config_read.3.html

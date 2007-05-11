@@ -346,6 +346,7 @@ fi
 %{man_prefix}/man1/gfwc.1.gz
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
+%{man_prefix}/man1/gfxattr.1.gz
 %{man_prefix}/man3/gfarm.3.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
@@ -431,6 +432,7 @@ fi
 %{man_prefix}/ja/man1/gfwc.1.gz
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
+%{man_prefix}/ja/man1/gfxattr.1.gz
 %{man_prefix}/ja/man3/gfarm.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
 %{man_prefix}/ja/man3/gfarm_import_fragment_config_read.3.gz
@@ -527,6 +529,7 @@ fi
 %{html_prefix}/en/ref/man1/gfwc.1.html
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
+%{html_prefix}/en/ref/man1/gfxattr.1.html
 %{html_prefix}/en/ref/man3/gfarm.3.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
@@ -615,6 +618,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfwc.1.html
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
+%{html_prefix}/ja/ref/man1/gfxattr.1.html
 %{html_prefix}/ja/ref/man3/gfarm.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
 %{html_prefix}/ja/ref/man3/gfarm_import_fragment_config_read.3.html
@@ -783,6 +787,7 @@ fi
 %{prefix}/bin/gftest
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
+%{prefix}/bin/gfxattr
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
 
