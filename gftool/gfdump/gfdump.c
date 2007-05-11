@@ -12,9 +12,9 @@
 
 enum {
 	PATH_INFO,
-	PATH_INFO_XATTR,
 	SECTION_INFO,
-	SECTION_COPY_INFO
+	SECTION_COPY_INFO,
+	PATH_INFO_XATTR,
 };
 
 static int verbose = 0;
