@@ -48,7 +48,9 @@
 <varlistentry>
 <term><option>-s</option></term>
 <listitem>
-<para>拡張属性を設定します．</para>
+<para>拡張属性を設定します．
+すでに拡張属性が設定されている場合は上書きされます．
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>

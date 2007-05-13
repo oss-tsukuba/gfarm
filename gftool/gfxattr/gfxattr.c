@@ -56,6 +56,8 @@ set_xattr(char *path, char *filename)
 	attr.pathname = path;
 	attr.xattr = buf;
 	e = gfarm_path_info_xattr_set(&attr);
+	if (e == GFARM_ERR_ALREADY_EXISTS)
+		e = gfarm_path_info_xattr_replace(&attr);
 free_buf:
 	free(buf);
 	return (e);

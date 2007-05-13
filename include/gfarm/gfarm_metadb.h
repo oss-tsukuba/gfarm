@@ -75,6 +75,7 @@ struct gfarm_path_info_xattr {
 void gfarm_path_info_xattr_free(struct gfarm_path_info_xattr *);
 char *gfarm_path_info_xattr_get(const char *, struct gfarm_path_info_xattr *);
 char *gfarm_path_info_xattr_set(const struct gfarm_path_info_xattr *);
+char *gfarm_path_info_xattr_replace(const struct gfarm_path_info_xattr *);
 char *gfarm_path_info_xattr_remove(const char *);
 
 /* ---------------------------------------- */

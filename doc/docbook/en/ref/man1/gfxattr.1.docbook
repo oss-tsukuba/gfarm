@@ -48,7 +48,9 @@
 <varlistentry>
 <term><option>-s</option></term>
 <listitem>
-<para>sets an extended attribute.</para>
+<para>sets an extended attribute.
+If some value is already set, it is overwritten.
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>
