@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFXATTR" "1" "11 May 2007" "Gfarm" ""
+.TH "GFXATTR" "1" "13 May 2007" "Gfarm" ""
 
 .SH NAME
 gfxattr \- Manipulate extended attribute of file in Gfarm file system
@@ -24,6 +24,7 @@ Either -s, -g, or -r option should be specified.
 .TP
 \fB-s\fR
 sets an extended attribute.
+If some value is already set, it is overwritten.
 .TP
 \fB-g\fR
 reads an extended attribute.
