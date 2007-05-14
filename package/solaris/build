@@ -4,7 +4,7 @@
 PATH=/opt/SUNWspro/bin:/usr/ccs/bin:/usr/local/bin:/usr/bin:/bin:/usr/ucb
 export PATH
 
-version=1.4
+version=1.4.99
 subpkgs='client devel doc fsnode gfptool libs agent server gfront'
 prefix=usr/local/gfarm
 pkg_list='gfarm gfarm-gsi'
