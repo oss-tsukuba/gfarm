@@ -1,3 +1,1040 @@
+2007-03-31  Noriyuki Soda  <soda@sra.co.jp>
+
+	* RELNOTES
+	avoid an expression which may be misinterpreted as a security problem.
+
+2007-03-31  Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
+
+	* RELNOTES
+	correct description
+
+2007-03-30  Tohru Sotoyama <sotoyama@sra.co.jp>
+
+	* package/solaris/build
+	change globus root directory
+
+2007-03-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* ChangeLog LICENSE RELNOTES
+	merge changes in the CVS main trunk until gfarm-1.4.1 to the GNEO
+	branch
+	
+	* ChangeLog
+	Catched up with the current ChangeLog.
+
+	* ChangeLog
+	recover missed log messages in previous commit
+	
+	* doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man5/gfarm.conf.5.html man/ja/man5/gfarm.conf.5 man/man5/gfarm.conf.5:
+	regen
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook:
+	merge the following changes in the SourceForge Subversion repository:
+
+	Revision: 3674
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3674&view=rev
+	Author:   sotoyama
+	Date:     2007-03-29 02:34:39 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	add limitation about mixing gsi authentication with sharedsecret
+	found in [gfarm-developers:02814]
+
+	Revision: 3676
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3676&view=rev
+	Author:   sotoyama
+	Date:     2007-03-29 04:46:11 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	add limitation about mixing gsi authentication with sharedsecret
+	found in [gfarm-developers:02814] to `auth' statement
+
+	Revision: 3682
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3682&view=rev
+	Author:   n-soda
+	Date:     2007-03-29 11:03:31 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	swap section order of limitation and example of the "auth" directive,
+	and add a paragraph to describe the example.
+
+2007-03-30  yusuke Tanimura <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES:
+	proofreading
+
+2007-03-29  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c:
+	merge the follownig change from the SourceForge Subversion repository:
+
+	Revision: 3681
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3681&view=rev
+	Author:   n-soda
+	Date:     2007-03-29 07:37:36 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	report error status of close(2) in gfs_server_open_local(),
+	problem reported by Markus Elfring as:
+	http://sourceforge.net/tracker/index.php?func=detail&aid=1687850&group_id=172718&atid=862742
+
+	Also, treat an error at sendmsg(2) as just an error instead of
+	fatal one.
+
+	* bench/fsysbench/fsysbench.c:
+	merge the follownig change from the SourceForge Subversion repository:
+
+	Revision: 3679
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3679&view=rev
+	Author:   n-soda
+	Date:     2007-03-29 05:13:05 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	timer_interrupt_handler() shouldn't call printf(3), but write(2),
+	because the former is not async-signal-safe.
+	c.f.
+	https://sourceforge.net/tracker/?func=detail&atid=862742&aid=1687842&group_id=172718
+	
+	* ftool/gfarm_agent/gfarm_agent.c:
+	merge the follownig change from the SourceForge Subversion repository:
+
+	Revision: 3678
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3678&view=rev
+	Author:   n-soda
+	Date:     2007-03-29 04:59:54 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	sigterm_handler() shouldn't call exit(3), but _exit(2), because
+	the former is not async-signal-safe.
+	c.f.
+	https://sourceforge.net/tracker/?func=detail&atid=862742&aid=1687842&group_id=172718
+	
+	* server/gfsd/gfsd.c:
+	merge the follownig change from the SourceForge Subversion repository:
+
+	Revision: 3675
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3675&view=rev
+	Author:   n-soda
+	Date:     2007-03-29 03:30:02 -0700 (Thu, 29 Mar 2007)
+	Log Message:
+	do not call exit(3) but _exit(2) in accepting_sigterm_handler(),
+	because the former is not async-signal-safe.
+	problem reported by Markus Elfring in
+	http://sourceforge.net/tracker/index.php?func=detail&aid=1687842&group_id=172718&atid=862742
+
+2007-03-29  yusuke Tanimura <yusuke.tanimura@aist.go.jp>
+
+	* RELNOTES, LICENSE:
+	update release notes and the copyright display for the version 1.4.1
+
+2007-03-28  Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog:
+	Catched up with the current ChangeLog.
+
+2007-03-28  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_misc.h, package/freebsd/Makefile,	package/pkgsrc/Makefile, package/redhat/gfarm.spec, package/solaris/build:
+	increase version number to 1.4.1
+
+	* include/gfarm/gfarm_error.h, lib/libgfarm/gfarm/error.c, lib/libgfarm/gfarm/gfs_client.c:
+	merge the following change from the SourceForge Subversion repository:
+
+	Revision: 3673
+		  http://gfarm.svn.sourceforge.net/gfarm/?rev=3673&view=rev
+	Author:   n-soda
+	Date:     2007-03-28 07:11:37 -0700 (Wed, 28 Mar 2007)
+	Log Message:
+	make gfsd reconnection feature work against more network errors.
+	this fixes a problem reported by Yamamoto Naotaka-san
+	in [gfarm-developers:03456] which was caused by ECONNRESET.
+
+	introduce ENETDOWN, EHOSTDOWN and ENETRESET as gfarm native errors
+	for this purpose. (although ENETRESET will be nearly never used)
+
+	* gftool/gneo/gneo.c:
+	just a portability fix
+
+	* regress/gfs_hook/lib/fsystest/index.FreeBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected, regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.SunOS.expected:
+	results are different on the GNEO branch with gfs_hook
+
+	* regress/Makefile, regress/README.ja, regress/XFAIL, regress/account.sh, regress/config.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/tst.sh, regress/check.sh, regress/fuse_test.sh, regress/schedule.hook, regress/gfs_hook/lib/fsystest/Makefile, regress/gfs_hook/lib/fsystest/fsystest.c, regress/gfs_hook/lib/fsystest/fsystest.sh, regress/gfs_hook/lib/fsystest/index.FreeBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected, regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.SunOS.expected, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/postgresql/make-check.sh, regress/gfs_hook/tool/touch/touch_time.sh, regress/gftool/gfrep/gfrep-D_dir.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh:
+	merge changes in the Subversion repository to the GNEO branch
+	
+	* regress/Makefile, regress/README.ja, regress/XFAIL, regress/account.sh, regress/config.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/tst.sh, regress/check.sh, regress/fuse_test.sh, regress/schedule.hook, regress/gfs_hook/lib/fsystest/Makefile, regress/gfs_hook/lib/fsystest/fsystest.c, regress/gfs_hook/lib/fsystest/fsystest.sh, regress/gfs_hook/lib/fsystest/index.FreeBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected, regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.SunOS.expected, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/postgresql/make-check.sh, regress/gfs_hook/tool/touch/touch_time.sh, regress/gftool/gfrep/gfrep-D_dir.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh:
+	merge changes in the Subversion repository to the CVS main trunk	
+
+2007-03-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3672
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3672&view=rev
+	Author:   sotoyama
+	Date:     2007-03-27 04:10:57 -0700 (Tue, 27 Mar 2007)
+	Log Message:
+	gfsd TCP timeout:
+		5 seconds -> 30 seconds, since it was too short.
+	gfsd UDP timeout:
+		first timeout: 10ms -> 8 seconds, since it was too short.
+		change number of retries to 3 times, just like the TCP case.
+		total UDP timeout is now 65 seconds.
+
+	* regress/gfs_hook/lib/fsystest/index.SunOS.expected, regress/gfs_hook/lib/fsystest/index.FreeBSD.expected:
+	results are different on the GNEO branch with gfs_hook
+
+	* gftool/gneo/gneo.c: just a portability fix
+
+	* regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected:
+	results are different on the GNEO branch with gfs_hook
+
+	* regress/gftool/gfrep/gfrep-D_dir.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh, regress/Makefile, regress/README.ja, regress/XFAIL, regress/account.sh, regress/check.sh, regress/config.sh, regress/fuse_test.sh, regress/gfs_hook/lib/fsystest/Makefile, regress/gfs_hook/lib/fsystest/fsystest.c, regress/gfs_hook/lib/fsystest/fsystest.sh, regress/gfs_hook/lib/fsystest/index.FreeBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected, regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.SunOS.expected, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/postgresql/make-check.sh, regress/gfs_hook/tool/touch/touch_time.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/schedule.hook, regress/tst.sh:
+	merge changes in the Subversion repository to the GNEO branch
+
+	* regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/postgresql/make-check.sh, regress/gfs_hook/tool/touch/touch_time.sh, regress/gftool/gfrep/gfrep-D_dir.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh, regress/Makefile, regress/README.ja, regress/XFAIL, regress/account.sh, regress/check.sh, regress/config.sh, regress/fuse_test.sh, regress/gfs_hook/lib/fsystest/Makefile, regress/gfs_hook/lib/fsystest/fsystest.c, regress/gfs_hook/lib/fsystest/fsystest.sh, regress/gfs_hook/lib/fsystest/index.FreeBSD.expected, regress/gfs_hook/lib/fsystest/index.Linux.expected, regress/gfs_hook/lib/fsystest/index.NetBSD.expected, regress/gfs_hook/lib/fsystest/index.SunOS.expected, regress/gfs_hook/tool/build/configure_make.sh, regress/loop.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/schedule.hook, regress/tst.sh:
+	merge changes in the Subversion repository to the CVS main trunk
+
+	* lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h:
+	merge the following change from SourceForge Subversion repository:
+
+	Revision: 3671
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3671&view=rev
+	Author:   n-soda
+	Date:     2007-03-26 19:46:10 -0700 (Mon, 26 Mar 2007)
+	Log Message:
+	fix a problem which leads segmentation fault.
+	agent_server may be changed during agent_client_rpc(),
+	if the RPC returns GFARM_ERR_BROKEN_PIPE or GFARM_ERR_UNEXPECTED_EOF.
+	and in that case, subsequent RPC would refer stale agent_server
+	without this fix.
+
+2007-03-23  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gneo_gfextra/bin/config-gneo.in:
+	forgot to support -S option, when it was introduced by
+	revision 1.3.2.8 of gftool/config-gfarm/config-gfarm.postgresql on 2007-01-15
+	with the following log:
+	introduce version 2 schema to the PostgreSQL backend.
+	based on the implementation by Yamamoto Naotaka-san in [gfarm-developers:02485]
+
+2007-03-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/gfs_hook/hooks_subr.c:
+	merge the following changes in the SourceForge subversion repository:
+
+	Revision: 3657
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3657&view=rev
+	Author:   tatebe
+	Date:     2007-03-12 23:14:58 -0700 (Mon, 12 Mar 2007)
+	Log Message:
+	accept //gfarm
+
+	Revision: 3664
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3664&view=rev
+	Author:   tatebe
+	Date:     2007-03-15 17:18:57 -0700 (Thu, 15 Mar 2007)
+	Log Message:
+	fix a bug introduced by r3657.
+
+	* lib/libgfarm/gfarm/gfarm_list.c:
+	merge the following integer overflow check
+	from the SourceForge subversion repository:
+
+	Revision: 3655
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3655&view=rev
+	Author:   n-soda
+	Date:     2007-03-12 03:19:18 -0700 (Mon, 12 Mar 2007)
+	Log Message:
+	check integer overflow, for files newly added to the SourceForge
+	repository
+
+	* gftool/gfexport/gfexport.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3669
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3669&view=rev
+	Author:   n-soda
+	Date:     2007-03-19 05:15:10 (Mon, 19 Mar 2007)
+	Log Message:
+	make gfexport faster, problem reported by Yamamoto Naotaka-san
+
+	* server/gfsd/gfsd.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3614
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3614&view=rev
+	Author:   n-soda
+	Date:     2007-03-08 19:50:14 -0800 (Thu, 08 Mar 2007)
+	Log Message:
+	typo in message
+
+	* gftool/config-gfarm/sysdep/hpux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/linux/config-gfarm.sysdep, gftool/config-gfarm/sysdep/netbsd/config-gfarm.sysdep, gftool/config-gfarm/sysdep/osf1/config-gfarm.sysdep, gftool/config-gfarm/sysdep/solaris/config-gfarm.sysdep, gftool/config-gfarm/config-agent.in, gftool/config-gfarm/sysdep/aix/config-gfarm.sysdep, gftool/config-gfarm/sysdep/default/config-gfarm.sysdep, gftool/config-gfarm/sysdep/freebsd/config-gfarm.sysdep:
+	merge the following changes from the SourceForge subversion repository:
+
+	Revision: 3593
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3593&view=rev
+	Author:   tatebe
+	Date:     2007-02-28 14:49:16 -0800 (Wed, 28 Feb 2007)
+	Log Message:
+	add mkcnf_agent_sysdep to create some directories needed to run
+	gfarm_agent
+
+	* lib/gfs_hook/sysdep/linux/getdents.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3567
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3567&view=rev
+	Author:   n-soda
+	Date:     2007-02-19 06:46:24 -0800 (Mon, 19 Feb 2007)
+	Log Message:
+	offsetof() doesn't have to be defined here, because <stddef.h> is
+	already included by this file.
+	This problem came from glibc-2.3.1 itself, but haven't be exposed since
+	system-supplied <stddef.h> has same definition with this file.
+	But Fedora Core 6 exposes this with warning: "offsetof" redefined
+
+	* gftool/config-gfarm/gfarm.schema-2.sql:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3566
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3566&view=rev
+	Author:   n-soda
+	Date:     2007-02-19 02:36:29 -0800 (Mon, 19 Feb 2007)
+	Log Message:
+	disallow removing a FileSection, if it is still referenced by a
+	FileSectionCopy.  this shouldn't harm anything, because the LDAP
+	schema already has this constraint.
+
+	* lib/libgfarm/gfarm/metadb_none.c, lib/libgfarm/gfarm/metadb_pgsql.c, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_localfs.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3544
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3544&view=rev
+	Author:   n-soda
+	Date:     2007-02-07 01:39:42 -0800 (Wed, 07 Feb 2007)
+	Log Message:
+	if syslog is enabled (i.e. it's a daemon), report metadb
+	initialization error at the first time when the error occurrs.
+
+	The intention of this change is to make gfarm_agent report such
+	errors.  Until now, such errors weren't usually reported, because
+	the errors are passed to log_proto() in gfarm_agent.c.
+	(debug-level messages aren't displayed by the default "log_level"
+	setting.)
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3543
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3543&view=rev
+	Author:   n-soda
+	Date:     2007-02-07 01:31:21 -0800 (Wed, 07 Feb 2007)
+	Log Message:
+	report error at gfarm_initialize() to deal with the problem reported
+	by Yamamoto-san in [gfarm-developers:02961]
+
+	* gftool/gfwhoami/gfwhoami.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3542
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3542&view=rev
+	Author:   n-soda
+	Date:     2007-02-07 00:32:04 -0800 (Wed, 07 Feb 2007)
+	Log Message:
+	supply missing gfarm_terminate()
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	merge following change in the SourceForge subversion repository.
+	this fixes http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=75
+
+	Revision: 3595
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3595&view=rev
+	Author:   sotoyama
+	Date:     2007-02-28 20:26:14 -0800 (Wed, 28 Feb 2007)
+	Log Message:
+	gfarm_pgsql_terminate(): add missed clearing static connection
+
+2007-03-12  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	fix the following problems in gfarm_pgsql_path_info_get_all_foreach():
+	- missing retry against closed connection
+	- memory leak in error case
+	from gfarm v2
+
+	* lib/libgfarm/gfutil/logutil.c:
+	preserve errno, because vsnprintf() may change it.
+	from gfarm v2.
+
+2007-03-09  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_client.c:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3616
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3616&view=rev
+	Author:   n-soda
+	Date:     2007-03-09 00:59:27 -0800 (Fri, 09 Mar 2007)
+	Log Message:
+	increase default UDP timeout from 7.11sec to 101.11sec.
+	because maximum roundtrip was 79.9sec
+	(average was 7.95sec and median was 6.55sec)
+	under a load generated by test script provided by Ishibashi-san
+	in [gfarm-developers:03283] (500 parallel gfexport * 4 parallel hosts,
+	all hosts were in AIST Gfarm cluster).
+
+	It seems the cause of this problem is UDP packet loss, because
+	local client doesn't need to increase the timeout, and
+	some TCP connect(2) to gfsd also took very long time (more than 60sec).
+
+	* gftool/gfarm_agent/gfarm_agent.c:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3615
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3615&view=rev
+	Author:   n-soda
+	Date:     2007-03-09 00:46:15 -0800 (Fri, 09 Mar 2007)
+	Log Message:
+	do sleep(1), when pthread_create() failed.  this fixes starvation
+	observed on Fedora Core 5 (kernel 2.6.19-1.2288.fc5smp)
+	(pthread_create() returned errno=ENOMEM and only the main thread
+	runs).
+
+2007-03-02  Noriyuki Soda  <soda@sra.co.jp>
+
+	* server/gfsd/gfsd.c:
+	merge the following change from SourceForge subversion repository,
+	via CVS main trunk:
+
+	Revision: 3596
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3596&view=rev
+	Author:   n-soda
+	Date:     2007-03-02 07:08:39 -0800 (Fri, 02 Mar 2007)
+	Log Message:
+	be more verbose, when any error occurrs during UDP processing.
+
+	* server/gfsd/gfsd.c:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3596
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3596&view=rev
+	Author:   n-soda
+	Date:     2007-03-02 07:08:39 -0800 (Fri, 02 Mar 2007)
+	Log Message:
+	be more verbose, when any error occurrs during UDP processing.
+
+2007-02-21  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/config.c, server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	define GFARM_VERSION (="1.4.0.99 GNEO") and display the information as usage of
+	gfmd, gfsd and gfarm_agent.
+	also introduce the following functions, requested by Ishibashi-san:
+		gfarm_version_string()
+		gfarm_major_version()
+		gfarm_minor_version()
+		gfarm_patch_version()
+		gfarm_micro_version()
+	Note that GNEO branch has " GNEO" as the suffix of GFARM_VERSION.
+
+	* include/gfarm/gfarm_misc.h, lib/libgfarm/gfarm/config.c:
+	introduce the following functions, requested by Ishibashi-san:
+		gfarm_version_string()
+		gfarm_major_version()
+		gfarm_minor_version()
+		gfarm_patch_version()
+		gfarm_micro_version()
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfarm_misc.h, server/gfmd/gfmd.c, server/gfsd/gfsd.c:
+	define GFARM_VERSION (=1.4.0.99) and display the information as usage of
+	gfmd, gfsd and gfarm_agent.
+
+2007-02-08  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/schedule:
+	mv "gftool/gfarmfs-fuse.sh" test from the end of schedule to the middle,
+	because it takes for a while until the gfarmfs command actually exits
+	after the completion of "gftool/gfarmfs-fuse.sh", and clearing the testing
+	environment of "make selfcheck-*" causes the gfarmfs command hang.
+
+2007-01-30  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gneo_gfextra/README.txt:
+	add note how to use gfarm-pgsql script from root privilege
+	(e.g. as a rc script).
+	config-gneo has to be invoked by root in that case.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_common.c, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_scramble.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/metadb_pgsql.c:
+	merge changes of gfarm_v1 cvs main trunk on 30 January, 2007.
+
+	* doc/Gfarm-FAQ.ja: use TAB
+
+	* gftool/gfarm_agent/gfarm_agent.c, include/gfarm/gfs.h, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_client.h, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/gfs_dir.c, lib/libgfarm/gfarm/gfs_misc.h, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_stat.c:
+	merge the following changes from SourceForge subversion repository:
+
+	Revision: 3514
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3514&view=rev
+	Author:   n-soda
+	Date:     2007-01-28 23:59:01 -0800 (Sun, 28 Jan 2007)
+	Log Message:
+	missing changes to make inode numbers unsigned
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3490
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3490&view=rev
+	Author:   sotoyama
+	Date:     2007-01-22 00:14:06 -0800 (Mon, 22 Jan 2007)
+	Log Message:
+	In previous revision, gfarm_pgsql_path_info_get() did not retry if
+	PostgreSQL returns error status means "terminate due to admin
+	command", and this causes "invalid argument" error in the first
+	access after restart PostgreSQL.  This problem was reported in
+	[gfarm-developers:02643] by Naotaka YAMAMOTO-san.
+
+	* doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3489
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3489&view=rev
+	Author:   n-soda
+	Date:     2007-01-21 08:40:33 -0800 (Sun, 21 Jan 2007)
+	Log Message:
+	clarify subject name difference between GT2 and GT3
+
+	* lib/libgfarm/gfarm/auth.h, lib/libgfarm/gfarm/auth_client.c, lib/libgfarm/gfarm/auth_common.c:
+	merge the following change from SourceForge subversion repository:
+
+	Revision: 3488
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3488&view=rev
+	Author:   n-soda
+	Date:     2007-01-19 11:39:55 -0800 (Fri, 19 Jan 2007)
+	Log Message:
+	be more verbose when a critical error happened while accessing
+	~/.gfarm_shared_key.
+	In the case in [gfarm-developers:02814] and [gfarm-developers:02820],
+	the user's home directory didn't exist.
+
+	XXX In this case, another authenticaion method won't be tried.
+	Is this OK?
+
+2007-01-24  Noriyuki Soda  <soda@sra.co.jp>
+
+	* doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5, man/man1/gfkey.1, doc/docbook/en/ref/man1/gfkey.1.docbook, doc/html/en/ref/man1/gfkey.1.html, doc/html/ja/ref/man1/gfreg.1.html:
+	merge the following changes in the CVS main trunk to the GNEO branch:
+	[gfarm-cvs:09901]: add missing </para> to gfkey.1.docbook
+	[gfarm-cvs:09902] ... [gfarm-cvs:09903]: regen
+	[gfarm-cvs:09904] ... [gfarm-cvs:09906]: missed regen
+
+	* doc/html/ja/ref/man1/gfreg.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, man/ja/man5/gfarm.conf.5:
+	missed regn
+
+	* man/man1/gfkey.1, doc/html/en/ref/man1/gfkey.1.html: regen
+
+	* doc/docbook/en/ref/man1/gfkey.1.docbook:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3492
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3492&view=rev
+	Author:   n-soda
+	Date:     2007-01-23 22:59:47 -0800 (Tue, 23 Jan 2007)
+	Log Message:
+	add missing </para>
+
+2007-01-19  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gftool/gfdump/gfdump.c:
+	merge the following change from the CVS main repository:
+	add -v option to see what's going on
+
+	* gftool/gfdump/gfdump.c:
+	merge the following change from the SourceForge Subversion repository:
+
+	Revision: 3478
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3478&view=rev
+	Author:   n-soda
+	Date:     2007-01-18 00:33:21 -0800 (Thu, 18 Jan 2007)
+	Log Message:
+	add -v option to see what's going on
+
+	* regress/Makefile, regress/XFAIL, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh:
+	merge the following change from the CVS main trunk:
+	tests which are known to fail with GSI
+
+	* regress/Makefile, regress/XFAIL, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/scp/scp_from_gfarm.sh, regress/gfs_hook/tool/scp/scp_to_gfarm.sh:
+	merge the following change from the SourceForge Subversion repository:
+
+	Revision: 3484
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3484&view=rev
+	Author:   n-soda
+	Date:     2007-01-18 15:13:42 -0800 (Thu, 18 Jan 2007)
+	Log Message:
+	tests which are known to fail with GSI
+
+2007-01-18  Noriyuki Soda  <soda@sra.co.jp>
+
+	* LICENSE: update copyright year
+
+	* regress/config.sh:
+	make GSI configuration actually work with the testsuite in the GNEO branch.
+
+	* gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/gfarm.conf-ldap.in, gftool/config-gfarm/gfarm.conf-postgresql.in:
+	make it possible to eliminate metadb_server_cred_service and
+	spool_server_cred_service directive in gfarm.conf,
+	by specifying "" or "-" as --gfmd-service and --gfsd-service option.
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	merge the following change from the CVS main trunk:
+	deal with the case that some of file_section_copy metadata used for "gfdump -r"
+	refer removed filesystem nodes.
+	this problem was reported by Yamamoto-san in [gfarm-developers:02789].
+
+	* lib/libgfarm/gfarm/metadb_pgsql.c:
+	merge the following change from the SourceForge subversion repository:
+
+	Revision: 3479
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3479&view=rev
+	Author:   n-soda
+	Date:     2007-01-18 03:04:35 -0800 (Thu, 18 Jan 2007)
+	Log Message:
+	deal with the case that some of file_section_copy metadata used
+	for "gfdump -r" refer removed filesystem nodes.  this problem was
+	reported by Yamamoto-san in [gfarm-developers:02789].
+
+2007-01-17  Noriyuki Soda  <soda@sra.co.jp>
+
+	* include/gfarm/gfarm_config.h.in, configure:
+	use autoconf-2.59 instead of 2.60, to shut up the following messages:
+	config.status: WARNING:  makes/config.mk.in seems to ignore the --datarootdir setting
+	config.status: WARNING:  gftool/config-gfarm/config-gfarm.in seems to ignore the --datarootdir setting
+	config.status: WARNING:  gftool/config-gfarm/config-gfsd.in seems to ignore the --datarootdir setting
+	config.status: WARNING:  gftool/config-gfarm/config-agent.in seems to ignore the --datarootdir setting
+
+	problem reported by Ishibashi-san in [gfarm-developers:02763]
+
+2007-01-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/lib/libgfarm/gfarm/seek-write/sw-test.c:
+	merge the folowing change from the CVS main trunk:
+	use file_offset_t instead of off_t for gfarm.
+	this fixes a compile error on FreeBSD.
+
+	* regress/lib/libgfarm/gfarm/seek-write/sw-test.c:
+	merge the following change in the SourceForge subversion repository:
+	Revision: 3475
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3475&view=rev
+	Author:   n-soda
+	Date:     2007-01-16 14:20:25 -0800 (Tue, 16 Jan 2007)
+	Log Message:
+	use file_offset_t instead of off_t for gfarm.
+	this fixes a compile error on FreeBSD.
+
+	* regress/Makefile, regress/lib/libgfarm/gfarm/seek-write/Makefile, regress/lib/libgfarm/gfarm/seek-write/sw-test.c, regress/lib/libgfarm/gfarm/seek-write/sw-test.sh:
+	merge the following change from the main trunk:
+	clear EOF state, if gfs_pio_seek() is called or any writing operation is used.
+	this fixes http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=78
+	reported by Ishibashi-san
+
+	* regress/gfs_hook/tool/dd/dd.sh:
+	merge the following change from the CVS main trunk:
+
+	do not return XFAIL blindly, because this test may return PASS
+	on some platforms even in the remote case.
+
+	this change was mistakenly committed as part of revision 3472 in the
+	SourceForge subversion repository.
+
+	* regress/gfs_hook/tool/dd/dd.sh:
+	do not return XFAIL blindly, because this test may return PASS
+	on some platforms even in the remote case.
+
+	this change was mistakenly committed as part of revision 3472 in the
+	SourceForge subversion repository.
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	merge the following change from the main trunk:
+	clear EOF state, if gfs_pio_seek() is called or any writing operation is used.
+	this fixes http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=78
+	reported by Ishibashi-san
+
+	* regress/Makefile, regress/lib/libgfarm/gfarm/seek-write/sw-test.sh, lib/libgfarm/gfarm/gfs_pio.c:
+	merge the following change from the SourceForce subversion repository:
+
+	Revision: 3472
+	          http://gfarm.svn.sourceforge.net/gfarm/?rev=3472&view=rev
+	Author:   n-soda
+	Date:     2007-01-16 10:56:49 -0800 (Tue, 16 Jan 2007)
+	Log Message:
+	clear EOF state, if gfs_pio_seek() is called or any writing
+	operation is used.  this fixes
+	http://datafarm.apgrid.org/bugzilla-ja/show_bug.cgi?id=78
+	reported by Ishibashi-san
+
+2007-01-15  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/sh/test-d.sh, regress/gftool/gfhost/delete-add.sh, regress/gftool/gfreg/gfreg-N-I.sh, regress/gftool/gfrep/check_gfwhere_out_after_-D.awk, regress/gftool/gfrep/gfrep-D.sh, regress/gftool/gfrep/search_host_and_domain.awk, regress/lib/libgfarm/gfarm/gfs_readdir/normal.sh, package/freebsd/pkg-plist, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/gfarm-server.files, regress/Makefile, regress/README.ja, regress/config.sh, regress/gfs_hook/tool/build/configure_make.sh, regress/schedule, debian/gfmd.install, gftool/config-gfarm/Makefile, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/config-gfarm.postgresql, gftool/config-gfarm/gfarm.schema-1.sql, gftool/config-gfarm/gfarm.schema-2.sql, gftool/config-gfarm/gfarm.sql, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/suse/gfarm_agent.in, gftool/gfrm/gfrm.c, gftool/gfwhere/gfwhere.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/metadb_pgsql.c, ChangeLog:
+	merge changes of gfarm_v1 CVS main trunk on 15 January, 2007.
+	this is mostly bug fixes
+	 + the intrduction of version 2 schema of the PostgreSQL backend which is based
+	   on the implementation by Yamamoto Naotaka-san in [gfarm-developers:02485]
+
+	* package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/gfarm-server.files, regress/Makefile, regress/README.ja, regress/config.sh, debian/gfmd.install, gftool/config-gfarm/Makefile, gftool/config-gfarm/config-gfarm.postgresql, gftool/config-gfarm/gfarm.schema-1.sql, gftool/config-gfarm/gfarm.schema-2.sql, gftool/config-gfarm/gfarm.sql, lib/libgfarm/gfarm/metadb_pgsql.c, package/freebsd/pkg-plist:
+	merge the following change from the SourceForge subversion repository:
+
+	r3468 | n-soda | 2007-01-15 18:54:24 +0900 (Mon, 15 Jan 2007) |
+
+	introduce version 2 schema to the PostgreSQL backend.
+	based on the implementation by Yamamoto Naotaka-san in [gfarm-developers:02485]
+	with the following modifications:
+	- do not use "postgresql_schema_version" directive in gfarm.conf,
+	  determinie the version on the fly instead.
+	- do not actually delete a Host, because that causes a dangling reference
+	  from a FileSectionCopyInfo to the Host.
+	  introduce "available" flag to see whether the host is really available
+	  or not.
+	  Also, rename the hostname of the virtually deleted Host, so that the
+	  FileSection will be inaccessible while the Host is deleted.
+	  (XXX Is this really good idea?)
+	- config-gfarm:
+	  make it possible to create version 1 backend database,
+	  this is especially necessary to run the testsuite against the version 1
+	  database to keep backward compatibility.
+
+	* gftool/gfwhere/gfwhere.c:
+	merge the following changes from the SourceForge subversion repository:
+
+	r3236 | tatebe | 2006-11-28 23:57:50 +0900 (Tue, 28 Nov 2006) | 3 lines
+
+	fix a bug such that -I option does not work for files, which is introduced
+	by the previous commit.
+	display error message when specified file section does not exist.
+
+	* gftool/gfrm/gfrm.c:
+	merge the following changes from the SourceForge subversion repository:
+
+	r3280 | tatebe | 2006-12-15 19:46:55 +0900 (Fri, 15 Dec 2006) | 2 lines
+
+	fix a bug such that gfrm cannot delete a file that does not have any file sectio
+	n copy information.
+
+
+	* regress/README.ja, regress/config.sh, regress/gftool/gfarmfs-fuse.sh, regress/schedule:
+	merge the following changes from the SourceForge subversion repository:
+
+
+	* regress/gftool/gfhost/delete-add.sh, regress/schedule:
+	merge the following change from the SourceForge subversion repository:
+
+	r3467 | n-soda | 2007-01-15 18:33:51 +0900 (Mon, 15 Jan 2007) | 2 lines
+
+	add a test case that a patch in [gfarm-developers:02485] makes it fail.
+
+	* regress/lib/libgfarm/gfarm/seek-write/Makefile, regress/lib/libgfarm/gfarm/seek-write/sw-test.c, regress/lib/libgfarm/gfarm/seek-write/sw-test.sh, regress/schedule:
+	merge the following changes from the SourceForge subversion repository:
+
+
+	* regress/lib/libgfarm/gfarm/gfs_readdir/normal.sh:
+	merge the following changes from the SourceForge subversion repository:
+
+	r3271 | sotoyama | 2006-12-12 17:28:31 +0900 (Tue, 12 Dec 2006) | 2 lines
+
+	return not UNSUPPORTED but FAIL, if this fails to make a directory or file
+
+
+	* regress/gftool/gfrep/check_gfwhere_out_after_-D.awk, regress/gftool/gfrep/gfrep-D.sh, regress/gftool/gfrep/search_host_and_domain.awk:
+	merge the following changes from the SourceForge subversion repository:
+
+	r3285 | sotoyama | 2006-12-19 19:58:09 +0900 (Tue, 19 Dec 2006) | 2 lines
+
+	cut out awk routines for common use
+
+
+	* regress/gftool/gfreg/gfreg-N-I.sh:
+	merge the following changes from the SourceForge subversion repository:
+
+	r3272 | sotoyama | 2006-12-12 17:44:27 +0900 (Tue, 12 Dec 2006) | 2 lines
+
+	return not UNSUPPORTED but FAIL if none of the hosts is available
+
+
+	* regress/gfs_hook/tool/sh/test-d.sh:
+	merge the following change from the SourceForge subversion repository:
+
+	r3266 | sotoyama | 2006-12-05 20:04:07 +0900 (Tue, 05 Dec 2006) | 3 lines
+
+	fix a bug that removes already existing gfarm files,
+	reported in [gfarm-developers:02487] by Yamamoto-san
+
+	* regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh:
+	merge the following change from the SourceForge subversion repository:
+
+	r3268 | sotoyama | 2006-12-06 15:13:58 +0900 (Wed, 06 Dec 2006) | 3 lines
+
+	return `expected fail', if these tests don't run on a filesystem node,
+	from the report [gfarm-developers:02489] by Yamamoto-san
+
+	* regress/Makefile:
+	merge the following change from the SourceForge subversion repository:
+
+	r3466 | n-soda | 2007-01-11 23:04:12 +0900 (Thu, 11 Jan 2007) | 2 lines
+
+	remove "log" file at "make distclean"
+
+	* lib/libgfarm/gfarm/gfs_pio.c:
+	merge the following change from the SourceForge subversion repository:
+
+	r3282 | n-soda | 2006-12-15 23:59:28 +0900 (Fri, 15 Dec 2006) | 2 lines
+
+	no functional change. just change the order of functions.
+
+	* gftool/config-gfarm/sysdep/linux/suse/gfarm-pgsql.in, gftool/config-gfarm/sysdep/linux/suse/gfarm_agent.in, gftool/config-gfarm/sysdep/linux/redhat/gfarm_agent.in:
+	merge the following change from the SourceForge subversion repository:
+
+	r3202 | tatebe | 2006-10-17 09:45:42 +0900 (Tue, 17 Oct 2006) | 2 lines
+
+	increase the maximum number of open file descriptors
+
+	* gftool/config-gfarm/config-gfarm.in:
+	merge the following change from the SourceForge subversion repository:
+
+	r3279 | tatebe | 2006-12-15 12:41:23 +0900 (Fri, 15 Dec 2006) | 1 line
+
+	remove redundant directories in search_path
+
+	* ChangeLog: remove unnecessary Carridge Return
+
+2007-01-11  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/Makefile:
+	bring the following change from the SourceForge subversion repository:
+
+	r3466 | n-soda | 2007-01-11 23:04:12 +0900 (Thu, 11 Jan 2007) | 2 lines
+
+	remove "log" file at "make distclean"
+
+2007-01-10  Noriyuki Soda  <soda@sra.co.jp>
+
+	* gneo_gfextra/Makefile:
+	use explicit "echo" instead of "set -x", to remove garbage from daily output
+
+	* regress/config.sh: run gfscramble_param after config-gfarm
+
+	* Makefile.in: forgot to remove some files at "make distclean"
+
+	* include/gfarm/gfarm_config.h.in, configure: regen
+
+	* configure.ac: gfgneo_extra is obsolete
+
+	* regress/gftool/gfarmfs-fuse.sh: New file.
+
+	* regress/README.ja, regress/gftool/gfarmfs-fuse.sh, regress/schedule:
+	merge the following change from the SourceForge subversion repository:
+
+	r3450 | n-soda | 2006-12-28 19:29:42 +0900 (Thu, 28 Dec 2006) | 3 lines
+
+	if $REGRESS_GFARMFS_FUSE points the source directory of GfarmFS-FUSE,
+	run the testsuite in it.
+
+	* regress/README.ja:
+	merge the following changes from the SourceForge subversion repository:
+
+
+	* regress/config.sh:
+	bring the following change from the SourceForge subversion repository:
+
+	r3444 | n-soda | 2006-12-26 07:25:42 +0900 (Tue, 26 Dec 2006) | 7 lines
+
+	make it possible to specify different port numbers
+	by the following environment variables:
+	$REGRESS_AGENT_PORT
+	$REGRESS_BACKEND_PORT
+	$REGRESS_GFMD_PORT
+	$REGRESS_GFSD_PORT
+
+	* regress/XFAIL, regress/gfs_hook/tool/build/configure_make.sh, doc/README.hook.en, doc/README.hook.ja:
+	gfs_hook + configure script doesn't work on GNEO branch
+
+2006-12-19  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* gneo_gfextra/bin/config-gneo.in:
+	cut the limiter of scramble parameters.
+
+2006-11-28  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_rename.c, regress/README.ja, regress/config.sh, regress/gftool/gfsched/gfsched.sh, regress/gftool/gfstat/gfstat.sh, regress/gftool/gfusage/gfusage.sh, regress/schedule:
+	merge changes of gfarm_v1 main trunk on 28 November, 2006.
+
+2006-11-27  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_chmod.c, lib/libgfarm/gfarm/gfs_pio_scramble.c:
+	enable the owner to always read/write spool-files.
+
+	* lib/gfs_hook/hooks_common.c:
+	make the difference of main trunk and gneo branch small.
+
+	* lib/libgfarm/gfarm/Makefile: add config.h for gfs_dir.c.
+
+	* lib/gfs_hook/hooks_common.c: add gfs_closedir() in error case.
+
+2006-11-27  Noriyuki Soda  <soda@sra.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_rename.c:
+	gfs_rename() didn't return an error, when a directory rename operation
+	failed and it did undo.
+	problem pointed out by Ishibashi-san
+
+2006-11-22  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* util/gfront/Makefile, regress/lib/libgfarm/gfarm/gfs_rmdir/Makefile, regress/lib/libgfarm/gfarm/gfs_rmdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_rmdir/rmdir.c, regress/lib/libgfarm/gfarm/gfs_rmdir/rmdir.sh, regress/lib/libgfarm/gfarm/gfs_stat/Makefile, regress/lib/libgfarm/gfarm/gfs_stat/normal.sh, regress/lib/libgfarm/gfarm/gfs_stat/stat.c, regress/lib/libgfarm/gfarm/gfs_stat/stat.sh, regress/lib/libgfarm/gfarm/gfs_unlink/Makefile, regress/lib/libgfarm/gfarm/gfs_unlink/normal.sh, regress/lib/libgfarm/gfarm/gfs_unlink/unlink.c, regress/lib/libgfarm/gfarm/gfs_unlink/unlink.sh, regress/lib/libgfarm/gfarm/gfs_unlink_section/Makefile, regress/lib/libgfarm/gfarm/gfs_unlink_section/normal.sh, regress/lib/libgfarm/gfarm/gfs_unlink_section/unlink_section.c, regress/lib/libgfarm/gfarm/gfs_unlink_section/unlink_section.sh, regress/lib/libgfarm/gfarm/gfs_utimes/Makefile, regress/lib/libgfarm/gfarm/gfs_utimes/set_current.sh, regress/lib/libgfarm/gfarm/gfs_utimes/specify_time.sh, regress/lib/libgfarm/gfarm/gfs_utimes/utimes.c, regress/lib/libgfarm/gfarm/gfs_utimes/utimes.sh, server/gfmd/gfmd.c, server/gfsd/gfsd.c, regress/lib/libgfarm/gfarm/gfs_pio_sync/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_sync/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_sync/sync.c, regress/lib/libgfarm/gfarm/gfs_pio_truncate/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_truncate/shorter.sh, regress/lib/libgfarm/gfarm/gfs_pio_truncate/truncate.c, regress/lib/libgfarm/gfarm/gfs_pio_truncate/truncate.sh, regress/lib/libgfarm/gfarm/gfs_pio_ungetc/not_follow_getc.sh, regress/lib/libgfarm/gfarm/gfs_pio_write/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_write/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_write/write.c, regress/lib/libgfarm/gfarm/gfs_pio_write/write.sh, regress/lib/libgfarm/gfarm/gfs_readdir/Makefile, regress/lib/libgfarm/gfarm/gfs_readdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_readdir/readdir.c, regress/lib/libgfarm/gfarm/gfs_readdir/readdir.sh, regress/lib/libgfarm/gfarm/gfs_realpath/Makefile, regress/lib/libgfarm/gfarm/gfs_realpath/current.sh, regress/lib/libgfarm/gfarm/gfs_realpath/realpath.c, regress/lib/libgfarm/gfarm/gfs_realpath/realpath.sh, regress/lib/libgfarm/gfarm/gfs_rename/Makefile, regress/lib/libgfarm/gfarm/gfs_rename/file_normal.sh, regress/lib/libgfarm/gfarm/gfs_rename/rename.c, regress/lib/libgfarm/gfarm/gfs_rename/rename.sh, regress/lib/libgfarm/gfarm/gfs_pio_putline/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_puts/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_puts/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_puts/puts.c, regress/lib/libgfarm/gfarm/gfs_pio_puts/puts.sh, regress/lib/libgfarm/gfarm/gfs_pio_read/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readdelim/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_readline/dynamic_alloc_read_empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/get_current.sh, regress/lib/libgfarm/gfarm/gfs_pio_seek/nop.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_set_view_index/set_view_index.c, regress/lib/libgfarm/gfarm/gfs_pio_error/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_flush/flush.c, regress/lib/libgfarm/gfarm/gfs_pio_flush/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_flush/write_buffered.sh, regress/lib/libgfarm/gfarm/gfs_pio_getc/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_getline/getline.sh, regress/lib/libgfarm/gfarm/gfs_pio_gets/empty.sh, regress/lib/libgfarm/gfarm/gfs_pio_open/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_putc/normal.sh, regress/lib/libgfarm/gfarm/gfs_mkdir/Makefile, regress/lib/libgfarm/gfarm/gfs_mkdir/mkdir.c, regress/lib/libgfarm/gfarm/gfs_mkdir/mkdir.sh, regress/lib/libgfarm/gfarm/gfs_mkdir/normal.sh, regress/lib/libgfarm/gfarm/gfs_opendir/Makefile, regress/lib/libgfarm/gfarm/gfs_opendir/current.sh, regress/lib/libgfarm/gfarm/gfs_opendir/opendir.c, regress/lib/libgfarm/gfarm/gfs_opendir/opendir.sh, regress/lib/libgfarm/gfarm/gfs_opendir/root.sh, regress/lib/libgfarm/gfarm/gfs_pio_close/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_create/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_datasync/Makefile, regress/lib/libgfarm/gfarm/gfs_pio_datasync/datasync.c, regress/lib/libgfarm/gfarm/gfs_pio_datasync/normal.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/not_eof.sh, regress/lib/libgfarm/gfarm/gfs_pio_eof/pio_eof.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/stringlist_length.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_length/stringlist_length.sh, regress/lib/libgfarm/gfarm/gfs_chdir/Makefile, regress/lib/libgfarm/gfarm/gfs_chdir/chdir.c, regress/lib/libgfarm/gfarm/gfs_chdir/chdir.sh, regress/lib/libgfarm/gfarm/gfs_chdir/current.sh, regress/lib/libgfarm/gfarm/gfs_chdir/root.sh, regress/lib/libgfarm/gfarm/gfs_chmod/Makefile, regress/lib/libgfarm/gfarm/gfs_chmod/chmod.c, regress/lib/libgfarm/gfarm/gfs_chmod/chmod.sh, regress/lib/libgfarm/gfarm/gfs_chmod/file_normal.sh, regress/lib/libgfarm/gfarm/gfs_closedir/Makefile, regress/lib/libgfarm/gfarm/gfs_closedir/closedir.c, regress/lib/libgfarm/gfarm/gfs_closedir/closedir.sh, regress/lib/libgfarm/gfarm/gfs_closedir/current.sh, regress/lib/libgfarm/gfarm/gfs_glob/Makefile, regress/lib/libgfarm/gfarm/gfs_glob/glob.c, regress/lib/libgfarm/gfarm/gfs_glob/glob.sh, regress/lib/libgfarm/gfarm/gfs_glob/normal.sh, regress/lib/libgfarm/gfarm/gfs_glob_add/Makefile, regress/lib/libgfarm/gfarm/gfs_glob_add/glob_add.c, regress/lib/libgfarm/gfarm/gfs_glob_add/glob_add.sh, regress/lib/libgfarm/gfarm/gfs_glob_add/normal.sh, regress/lib/libgfarm/gfarm/gfs_glob_init/Makefile, regress/lib/libgfarm/gfarm/gfs_glob_init/glob_init.c, regress/lib/libgfarm/gfarm/gfs_glob_init/glob_init.sh, regress/lib/libgfarm/gfarm/gfs_glob_init/normal.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/Makefile, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/STRINGLIST_ELEM.c, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/STRINGLIST_ELEM.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/Makefile, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/STRINGLIST_STRARRAY.c, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/STRINGLIST_STRARRAY.sh, regress/lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.c, regress/lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_add/stringlist_add.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/stringlist_cat.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_cat/stringlist_cat.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/stringlist_elem.c, regress/lib/libgfarm/gfarm/gfarm_stringlist_elem/stringlist_elem.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_init/Makefile, regress/lib/libgfarm/gfarm/gfarm_stringlist_init/normal.sh, regress/lib/libgfarm/gfarm/gfarm_stringlist_init/stringlist_init.c, regress/gftool/gfhost/display.sh, regress/gftool/gfhost/gfhost-l.sh, regress/gftool/gfhost/noopt.sh, regress/gftool/gfimport_text/-H_0byte.sh, regress/gftool/gfimport_text/-H_multilines.sh, regress/gftool/gfimport_text/gfimport_text-H.sh, regress/gftool/gfimport_text/import_text-H_0byte.sh, regress/gftool/gfimport_text/import_text-H_multilines.sh, regress/gftool/gfls/gfls-l.sh, regress/gftool/gfreg/gfreg-D.sh, regress/gftool/gfreg/gfreg-H.sh, regress/gftool/gfreg/gfreg-N-I.sh, regress/gftool/gfreg/gfreg-a.sh, regress/gftool/gfreg/gfreg-r.sh, regress/gftool/gfreg/gfreg-r_dir_to_new_url.sh, regress/gftool/gfreg/gfreg-r_file_to_new_url.sh, regress/gftool/gfreg/gfreg-r_program_to_new_url.sh, regress/gftool/gfrep/gfrep-D.sh, regress/gftool/gfrep/gfrep-D_dir.sh, regress/gftool/gfrep/gfrep-D_exec.sh, regress/gftool/gfrep/gfrep-D_non-exec.sh, regress/gftool/gfrep/gfrep-H.sh, regress/gftool/gfrep/gfrep-H_dir.sh, regress/gftool/gfrep/gfrep-H_exec.sh, regress/gftool/gfrep/gfrep-H_non-exec.sh, regress/gftool/gfrep/gfrep-N2.sh, regress/gftool/gfrep/gfrep-N2_dir.sh, regress/gftool/gfrep/gfrep-N2_exec.sh, regress/gftool/gfrep/gfrep-N2_non-exec.sh, regress/gftool/gfrep/gfrep-d.sh, regress/gftool/gfrep/gfrep-d_dir.sh, regress/gftool/gfrep/gfrep-d_exec.sh, regress/gftool/gfrep/gfrep-d_non-exec.sh, regress/gftool/gfrep/grep-N2_non-exec.sh, regress/gftool/gfrm/gfrm-r.sh, regress/gftool/gfrm/gfrm-r_dir.sh, regress/gftool/gfrm/gfrm-r_file.sh, regress/gfs_hook/tool/build/configure_make.sh, regress/gfs_hook/tool/dd/dd.sh, regress/gfs_hook/tool/gzip/gzip-d.sh, regress/gfs_hook/tool/pax/pax-r.sh, regress/gfs_hook/tool/touch/touch_time.sh, regress/gftool/gfdf/gfdf-H.sh, regress/gftool/gfdf/gfdf-h.sh, regress/gftool/gfdf/gfdf.sh, regress/gftool/gfexport/gfexport.sh, package/freebsd/Makefile, package/freebsd/pkg-plist, package/pkgsrc/Makefile, package/pkgsrc/PLIST, package/redhat/gfarm.spec, package/solaris/build, regress/Makefile, regress/README.ja, regress/XFAIL, regress/account.sh, regress/config.sh, regress/regress.conf, regress/regress.sh, regress/schedule, regress/tst.sh, man/ja/man1/gfarm_agent.1, man/ja/man1/gfrm.1, man/ja/man1/gfrun.1, man/ja/man5/gfarm.conf.5, man/ja/man8/gfmd.8, man/ja/man8/gfsd.8, man/man1/gfarm_agent.1, man/man1/gfdf.1, man/man1/gfexec.1, man/man1/gfhost.1, man/man1/gfkey.1, man/man1/gfps.1, man/man1/gfrcmd.1, man/man1/gfrep.1, man/man1/gfrm.1, man/man1/gfront.1, man/man1/gfrun.1, man/man1/gfsched.1, man/man1/gfstat.1, man/man1/gfusage.1, man/man1/gfwhere.1, man/man1/gfwhoami.1, man/man3/gfs_chmod.3, man/man3/gfs_mkdir.3, man/man3/gfs_pio_create.3, man/man3/gfs_pio_open.3, man/man3/gfs_realpath.3, man/man3/gfs_rename.3, man/man3/gfs_rmdir.3, man/man3/gfs_unlink.3, man/man3/gfs_unlink_section.3, man/man5/gfarm.conf.5, man/man8/gfmd.8, man/man8/gfsd.8, lib/gfs_hook/Makefile, lib/gfs_hook/hooks.c, lib/gfs_hook/hooks_common.c, lib/gfs_hook/hooks_fstat.c, lib/gfs_hook/hooks_stat.c, lib/libgfarm/gfarm/Makefile, lib/libgfarm/gfarm/agent_client.c, lib/libgfarm/gfarm/agent_proto.c, lib/libgfarm/gfarm/agent_wrap.c, lib/libgfarm/gfarm/agent_wrap.h, lib/libgfarm/gfarm/auth_client_gsi.c, lib/libgfarm/gfarm/auth_server_gsi.c, lib/libgfarm/gfarm/config.c, lib/libgfarm/gfarm/config.h, lib/libgfarm/gfarm/gfarm_foreach.c, lib/libgfarm/gfarm/gfarm_foreach.h, lib/libgfarm/gfarm/gfarm_list.c, lib/libgfarm/gfarm/gfarm_list.h, lib/libgfarm/gfarm/gfarm_xinfo.c, lib/libgfarm/gfarm/gfarm_xinfo.h, lib/libgfarm/gfarm/gfm_client.c, lib/libgfarm/gfarm/gfs_client.c, lib/libgfarm/gfarm/gfs_client.h, lib/libgfarm/gfarm/gfs_client_rep.c, lib/libgfarm/gfarm/gfs_lock.c, lib/libgfarm/gfarm/gfs_pio.c, lib/libgfarm/gfarm/gfs_pio.h, lib/libgfarm/gfarm/gfs_pio_global.c, lib/libgfarm/gfarm/gfs_pio_misc.c, lib/libgfarm/gfarm/gfs_pio_section.c, lib/libgfarm/gfarm/gfs_proto.h, lib/libgfarm/gfarm/gfs_stat.c, lib/libgfarm/gfarm/gfs_unlink.c, lib/libgfarm/gfarm/glob.c, lib/libgfarm/gfarm/hostcache.c, lib/libgfarm/gfarm/io_fd.c, lib/libgfarm/gfarm/io_fd.h, lib/libgfarm/gfarm/io_gfsl.c, lib/libgfarm/gfarm/metadb_access.h, lib/libgfarm/gfarm/metadb_ldap.c, lib/libgfarm/gfarm/metadb_localfs.c, lib/libgfarm/gfarm/metadb_misc.c, lib/libgfarm/gfarm/metadb_sw.c, lib/libgfarm/gfarm/path_info_cache.c, lib/libgfarm/gfarm/schedule.c, lib/libgfarm/gfarm/schedule.h, lib/libgfarm/gfsl/tcputil.c, lib/libgfarm/gfutil/Makefile, lib/libgfarm/gfutil/alloc.c, lib/libgfarm/gfutil/gfevent.c, lib/libgfarm/gfutil/gfutil.h, lib/libgfarm/gfutil/hash.c, lib/libgfarm/gfutil/logutil.c, lib/libgfarm/gfutil/send_no_sigpipe.c, lib/libgfarm/gfutil/timeval.c, makes/data.mk, makes/html.mk, makes/include.mk, makes/install-doc.in, makes/lib.mk, makes/man.mk, makes/script.mk, gftool/gfrm/Makefile, gftool/gfrm/gfrm.c, gftool/gfsck/gfsck.c, gftool/gfusage/gfusage.c, gftool/gfwhere/Makefile, gftool/gfwhere/gfwhere.c, gftool/gneo/gneo_client.c, gftool/gneo_agent/gneo_agent.c, include/gfarm/gfarm_misc.h, include/gfarm/gfs.h, gfptool/gfsplck/gfsplck.c, gftool/config-gfarm/config-gfarm.in, gftool/config-gfarm/gfarm.arch.guess, gftool/example/gfimport_text/gfimport_text.c, gftool/gfarm_agent/agent_thr.c, gftool/gfarm_agent/gfarm_agent.c, gftool/gfls/gfls.c, gftool/gfreg/gfreg.c, gftool/gfrep/gfrep.c, doc/html/ja/ref/man1/gfarm_agent.1.html, doc/html/ja/ref/man1/gfrm.1.html, doc/html/ja/ref/man1/gfrun.1.html, doc/html/ja/ref/man5/gfarm.conf.5.html, doc/html/ja/ref/man8/gfmd.8.html, doc/html/ja/ref/man8/gfsd.8.html, doc/html/ja/user/nfs-gfarmfs.html, gfptool/gfrepbe_client/gfrepbe_client.c, gfptool/gfrepbe_server/gfrepbe_server.c, doc/docbook/ja/ref/man8/gfmd.8.docbook, doc/docbook/ja/ref/man8/gfsd.8.docbook, doc/html/en/ref/man1/gfarm_agent.1.html, doc/html/en/ref/man1/gfdf.1.html, doc/html/en/ref/man1/gfexec.1.html, doc/html/en/ref/man1/gfhost.1.html, doc/html/en/ref/man1/gfkey.1.html, doc/html/en/ref/man1/gfps.1.html, doc/html/en/ref/man1/gfrcmd.1.html, doc/html/en/ref/man1/gfrep.1.html, doc/html/en/ref/man1/gfrm.1.html, doc/html/en/ref/man1/gfront.1.html, doc/html/en/ref/man1/gfrun.1.html, doc/html/en/ref/man1/gfsched.1.html, doc/html/en/ref/man1/gfstat.1.html, doc/html/en/ref/man1/gfusage.1.html, doc/html/en/ref/man1/gfwhere.1.html, doc/html/en/ref/man1/gfwhoami.1.html, doc/html/en/ref/man3/gfs_chmod.3.html, doc/html/en/ref/man3/gfs_mkdir.3.html, doc/html/en/ref/man3/gfs_pio_create.3.html, doc/html/en/ref/man3/gfs_pio_open.3.html, doc/html/en/ref/man3/gfs_realpath.3.html, doc/html/en/ref/man3/gfs_rename.3.html, doc/html/en/ref/man3/gfs_rmdir.3.html, doc/html/en/ref/man3/gfs_unlink.3.html, doc/html/en/ref/man3/gfs_unlink_section.3.html, doc/html/en/ref/man5/gfarm.conf.5.html, doc/html/en/ref/man8/gfmd.8.html, doc/html/en/ref/man8/gfsd.8.html, doc/html/en/user/nfs-gfarmfs.html, doc/docbook/ja/ref/man1/gfarm_agent.1.docbook, doc/docbook/ja/ref/man1/gfrm.1.docbook, doc/docbook/ja/ref/man1/gfrun.1.docbook, doc/docbook/ja/ref/man5/gfarm.conf.5.docbook, debian/changelog, doc/Gfarm-FAQ.en, doc/Gfarm-FAQ.ja, doc/KNOWN_PROBLEMS.en, doc/KNOWN_PROBLEMS.ja, doc/Makefile, doc/README.hook.en, doc/README.hook.ja, doc/SETUP.detail.en, doc/SETUP.detail.ja, doc/docbook/en/ref/man1/gfarm_agent.1.docbook, doc/docbook/en/ref/man1/gfdf.1.docbook, doc/docbook/en/ref/man1/gfexec.1.docbook, doc/docbook/en/ref/man1/gfhost.1.docbook, doc/docbook/en/ref/man1/gfkey.1.docbook, doc/docbook/en/ref/man1/gfps.1.docbook, doc/docbook/en/ref/man1/gfrcmd.1.docbook, doc/docbook/en/ref/man1/gfrep.1.docbook, doc/docbook/en/ref/man1/gfrm.1.docbook, doc/docbook/en/ref/man1/gfront.1.docbook, doc/docbook/en/ref/man1/gfrun.1.docbook, doc/docbook/en/ref/man1/gfsched.1.docbook, doc/docbook/en/ref/man1/gfstat.1.docbook, doc/docbook/en/ref/man1/gfusage.1.docbook, doc/docbook/en/ref/man1/gfwhere.1.docbook, doc/docbook/en/ref/man1/gfwhoami.1.docbook, doc/docbook/en/ref/man3/gfs_chmod.3.docbook, doc/docbook/en/ref/man3/gfs_chown.3.docbook, doc/docbook/en/ref/man3/gfs_mkdir.3.docbook, doc/docbook/en/ref/man3/gfs_pio_create.3.docbook, doc/docbook/en/ref/man3/gfs_pio_open.3.docbook, doc/docbook/en/ref/man3/gfs_realpath.3.docbook, doc/docbook/en/ref/man3/gfs_rename.3.docbook, doc/docbook/en/ref/man3/gfs_rmdir.3.docbook, doc/docbook/en/ref/man3/gfs_unlink.3.docbook, doc/docbook/en/ref/man3/gfs_unlink_section.3.docbook, doc/docbook/en/ref/man5/gfarm.conf.5.docbook, doc/docbook/en/ref/man8/gfmd.8.docbook, doc/docbook/en/ref/man8/gfsd.8.docbook, bench/fsysbench/fsysbench.c, ChangeLog, INSTALL.RPM.en, INSTALL.RPM.ja, INSTALL.en, INSTALL.ja, OVERVIEW.en, OVERVIEW.ja, README.en, README.ja, RELNOTES, SETUP.en, SETUP.ja:
+	merge changes of gfarm_v1 main trunk on 20 November, 2006.
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.c:
+	- enable gfs_pio_scramble_chmod() to work.
+	- merge changes of gfarm_v1 main trunk on 20 November, 2006.
+
+	* lib/libgfarm/gfarm/gfs_chmod.c:
+	change the permission of spool-entries in scramble view too. (bugfix)
+
+2006-11-22  Noriyuki Soda  <soda@sra.co.jp>
+
+	* regress/README.ja, regress/config.sh:
+	set characteristics of the test environment to
+	$REGRESS_BACKEND, $REGRESS_AUTH and $REGRESS_AGENT.
+	Currently $REGRESS_AGENT is used by gftool/gfusage/gfusage.sh.
+
+	Note that each test should run even if these environment variables aren't set.
+
+	* regress/gftool/gfusage/gfusage.sh:
+	return $exit_unsupported, if this test runs within "agent_only" environment,
+	because gfusage doesn't support such environment.
+
+	* regress/gftool/gfusage/gfusage.sh:
+	make this test work in an environment which isn't within "make selfcheck" one.
+
+	XXX this test still has race condition, if another process is running
+	    concurrently.
+
+2006-11-21  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add  gftool/gfstat/gfstat.sh
+	     gftool/gfusage/gfusage.sh
+	     gftool/gfsched/gfsched.sh
+
+	* regress/gftool/gfusage/gfusage.sh: test script for "gfusage"
+
+	* regress/gftool/gfstat/gfstat.sh: test script for "gfstat <gfarm-URL>"
+
+	* regress/gftool/gfsched/gfsched.sh:
+	test script for "gfsched <gfarm-URL>"
+
+2006-11-20  Takuya Ishibashi  <takuya@soum.co.jp>
+
+	* lib/libgfarm/gfarm/gfs_pio_scramble.h, include/gfarm/gfs.h:
+	- export gfs_scramble_make_replica() to gfs.h.
+	- export gfs_scramble_param_set() and gfs_scramble_param_get() to gfs.h.
+
+2006-11-17  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	- replace gftool/gfrep/gfrep-D.sh with gftool/gfrep/gfrep-D_{,non}-exec.sh
+	- add gftool/gfrep/gfrep-H_dir.sh
+
+	* regress/gftool/gfrep/gfrep-H_dir.sh:
+	add removing the gfarm temporary directory missed in the previous revision
+
+	* regress/gftool/gfrep/gfrep-H_dir.sh:
+	test script for "gfrep -H <hostfile> <gfarm-URL(directory)>"
+
+	* regress/gftool/gfrep/gfrep-D_non-exec.sh:
+	test script for "gfrep -D <destination-domainname> <gfarm-URL(non-executable file)>
+
+	* regress/gftool/gfrep/gfrep-D_exec.sh:
+	test script for "gfrep -D <destination-domainname> <gfarm-URL(executable file)>"
+
+	* regress/gftool/gfrep/gfrep-D.sh:
+	rewrite to a common script that takes an argument as file
+
+	* doc/Gfarm-FAQ.en, doc/KNOWN_PROBLEMS.en, doc/README.hook.en, doc/SETUP.detail.en, SETUP.en:
+	formatting fix
+
+2006-11-16  Noriyuki Soda  <soda@sra.co.jp>
+
+	* README.en, doc/Gfarm-FAQ.en: formatting fix
+
+2006-11-16  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	- replace gftool/gfrep/gfrep-d.sh with gftool/gfrep/gfrep-d_{,non-}exec.sh
+	- add gftool/gfdf/gfdf.sh
+	      gftool/gfdf/gfdf-H.sh
+	      gftool/gfdf/gfdf-h.sh
+
+	* regress/gftool/gfdf/gfdf-h.sh: test script for "gfdf -h <hostname>"
+
+	* regress/gftool/gfdf/gfdf-H.sh: test script for "gfdf -H <hostfile>"
+
+	* regress/gftool/gfdf/gfdf.sh:
+	add check on the number of available hosts
+
+	* regress/gftool/gfdf/gfdf.sh: test script for "gfdf"
+
+	* regress/gftool/gfrep/gfrep-d_exec.sh:
+	test script for "gfrep -d <destination-node> <gfarm-URL(executable file)>"
+
+	* regress/gftool/gfrep/gfrep-d_non-exec.sh:
+	test script for "gfrep -d <destination-node> <gfarm-URL(non-executable file)>"
+
+	* regress/gftool/gfrep/gfrep-d.sh:
+	rewrite to a common script that takes an argument as file
+
+2006-11-15  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule:
+	- replace gftool/gfrep/gfrep-N2.sh with gftool/gfrep/gfrep-N2_non-exec.sh
+	- add gftool/gfrep/gfrep-N2_exec.sh
+
+	* regress/gftool/gfrep/gfrep-N2_non-exec.sh:
+	test script for "gfrep -N2 <gfarm-URL(non-executable file)>"
+
+	* regress/gftool/gfrep/gfrep-N2_exec.sh:
+	test script for "gfrep -N2 <gfarm-URL(executable file)>"
+
+	* regress/gftool/gfrep/grep-N2_non-exec.sh:
+	test script for "gfrep -N2 <hostfile> <gfarm-URL(non-executable file)>
+
+	* regress/gftool/gfrep/gfrep-N2.sh:
+	rewrite to a common script that takes an argument as file
+
+	* regress/gftool/gfrep/gfrep-D.sh, regress/gftool/gfrep/gfrep-N2.sh, regress/gftool/gfrep/gfrep-N2_dir.sh, regress/gftool/gfrep/gfrep-d.sh, regress/gftool/gfrep/gfrep-d_dir.sh:
+	add check on the number of available hosts
+
+	* regress/schedule:
+	replace gftool/gfrep/gfrep-H.sh with gftool/gfrep/gfrep-H_non-exec.sh
+
+	* regress/gftool/gfrep/gfrep-H_exec.sh:
+	call the common script, gfrep-H.sh
+
+	* regress/gftool/gfrep/gfrep-H_non-exec.sh:
+	test script for "gfrep -H <hostfile> <gfarm-URL(non-executable file>)
+
+	* regress/gftool/gfrep/gfrep-H.sh:
+	rewrite to a common script that takes an argument as file
+
+2006-11-14  Noriyuki Soda  <soda@sra.co.jp>
+
+	* package/redhat/gfarm.spec:
+	provide every gfarm-SUBPACKAGE-%{ver}-%{rel} virtual package in GSI case.
+	since gfarm-devel-%{ver}-%{rel} is requested by Ishibashi-san
+	in [gfarm-developers:02256]
+
+2006-11-14  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/schedule: add gftool/gfrep/gfrep-H_exec.sh
+
+2006-11-13  Tohru Sotoyama  <sotoyama@sra.co.jp>
+
+	* regress/gftool/gfrep/gfrep-H_exec.sh:
+	test script for "gfrep -H <hostfile> <gfarm-URL(program)>"
+
+2006-11-13  Osamu Tatebe  <tatebe@cs.tsukuba.ac.jp>
+
+	* ChangeLog: Catched up with the current ChangeLog.
+
 2006-11-13  Noriyuki Soda  <soda@sra.co.jp>
 
 	* doc/KNOWN_PROBLEMS.ja: fix te-ni-wo-ha

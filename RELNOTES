@@ -1,5 +1,74 @@
-Copyright (c) 2003-2006 National Institute of Advanced Industrial
+Copyright (c) 2003-2007 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
+
+Copyright (c) 2006-2007 Osamu Tatebe.  All Rights Reserved.
+
+Release note for Gfarm 1.4.1
+============================
+
+[2007.3.31]
+
+Updated Features
+
+  * Backend database
+
+  - support a new data schema to reduce data amount in the
+    PostgreSQL server.  Note that backward compatibility
+    with the old database schema is supported.
+
+  * gfexport(1) - improve the performance of gfexport.
+
+  * gfdump(1) - add -v option to see the progress of gfdump.
+
+  * gfarm_agent(1) - report initialization error when it fails to read
+    the configuration file. (Bugzilla-ja #75)
+
+  * libgfarm
+
+  - print verbose error messages in UDP processing.
+
+  - improve UDP re-transmission scheme to avoid aggressive
+    re-transmission that may make UDP packets dropped.  The first
+    timeout is changed from 10 milliseconds to 8 seconds.
+
+  - increase default TCP connection timeout from 5 seconds to 30
+    seconds.
+
+  - make a reconnection mechanism to gfsd robust against more network
+    error cases.
+
+  * Bug fix
+
+  - gfrm(1) - fix a bug that gfrm cannot delete a file that does
+              not have any file section copy information.
+
+  - gfwhoami(1) - fix a bug that gfarm_terminate() is not executed.
+
+  - gfarm_agent(1)
+      o fix a bug that gfarm_agent might consume 100% of CPU when
+        pthread_create() fails, at least, in Fedora Core 5
+        (kernel 2.6.19-1.2288.fc5smp).
+
+  - libgfarm
+      o fix a bug that gfs_rename() doesn't return an error when
+        a directory rename operation fails and undoes.
+        (Bugzilla-ja #76)
+      o fix a bug that gfs_pio_seek() does not work in some
+        situations.  (Bugzilla-ja #78)
+      o fix a bug that a client may cause segmentation fault after
+        re-connecting to a gfarm_agent metadata cache server.
+      o fix a bug that gfarm_pgsql_path_info_get() does not retry
+        just after a PostgreSQL server is restarted.
+      o fix a bug that gfarm_pgsql_terminate() does not close the
+        connection.
+
+  - configure - use autoconf-2.59 instead of 2.60 to suppress
+                harmless WARNING messages.
+
+  - Syscall hooking library
+      o remove redefinition of "offsetof," which is exposed in
+        glibc-2.3.1 in Fedora Core 6.
+      o accept //gfarm also as a mount directory.
 
 Release note for Gfarm 1.4
 ==========================
