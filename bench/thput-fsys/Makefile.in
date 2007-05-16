@@ -171,7 +171,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 ACLOCAL_AMFLAGS = -I m4
-dist_pkgdata_DATA = LICENSE
+dist_pkgdata_DATA = README LICENSE
 thput_fsys_SOURCES = thput-fsys.c
 @MPI_TRUE@SUBDIRS = mpi
 all: config.h
