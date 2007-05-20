@@ -212,6 +212,8 @@ static double gfs_pio_write_time;
 static double gfs_pio_sync_time;
 static double gfs_pio_datasync_time;
 static double gfs_pio_getline_time;
+static double gfs_pio_getc_time;
+static double gfs_pio_putc_time;
 
 char *
 gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
@@ -937,9 +939,14 @@ gfs_pio_datasync(GFS_File gf)
 int
 gfs_pio_getc(GFS_File gf)
 {
-	char *e = gfs_pio_check_view_default(gf);
+	char *e;
 	int c;
+	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
 	if (e != NULL) {
 		gf->error = e;
 		return (EOF);
@@ -950,14 +957,21 @@ gfs_pio_getc(GFS_File gf)
 	if (gf->p >= gf->length) {
 		if (gfs_pio_fillbuf(gf,
 		    gf->open_flags & GFARM_FILE_UNBUFFERED ?
-		    1 : GFS_FILE_BUFSIZE) != NULL)
-			return (EOF); /* can get reason via gfs_pio_error() */
-		if (gf->error != NULL)
-			return (EOF);
+		    1 : GFS_FILE_BUFSIZE) != NULL) {
+			c = EOF; /* can get reason via gfs_pio_error() */
+			goto finish;
+		}
+		if (gf->error != NULL) {
+			c = EOF;
+			goto finish;
+		}
 	}
 	c = ((unsigned char *)gf->buffer)[gf->p++];
 	if (gf->open_flags & GFARM_FILE_UNBUFFERED)
 		gfs_pio_purge(gf);
+ finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_getc_time += gfarm_timerval_sub(&t2, &t1));
 	return (c);
 }
 
@@ -988,7 +1002,12 @@ char *
 gfs_pio_putc(GFS_File gf, int c)
 {
 	char *e = gfs_pio_check_view_default(gf);
+	gfarm_timerval_t t1, t2;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_check_view_default(gf);
 	if (e != NULL)
 		return (e);
 
@@ -998,7 +1017,7 @@ gfs_pio_putc(GFS_File gf, int c)
 		char *e = gfs_pio_flush(gf); /* this does purge too */
 
 		if (e != NULL)
-			return (e);
+			goto finish;
 	}
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
 	gf->buffer[gf->p++] = c;
@@ -1009,9 +1028,11 @@ gfs_pio_putc(GFS_File gf, int c)
 		e = gfs_pio_flush(gf);
 		if (gf->open_flags & GFARM_FILE_UNBUFFERED)
 			gfs_pio_purge(gf);
-		return (e);
 	}
-	return (NULL);
+ finish:
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_pio_putc_time += gfarm_timerval_sub(&t2, &t1));
+	return (e);
 }
 
 /* mostly compatible with fgets(3) */
@@ -1330,13 +1351,16 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 void
 gfs_pio_display_timers(void)
 {
-	gflog_info("gfs_pio_create  : %g sec\n", gfs_pio_create_time);
-	gflog_info("gfs_pio_open    : %g sec\n", gfs_pio_open_time);
-	gflog_info("gfs_pio_close   : %g sec\n", gfs_pio_close_time);
-	gflog_info("gfs_pio_seek    : %g sec\n", gfs_pio_seek_time);
-	gflog_info("gfs_pio_truncate : %g sec\n", gfs_pio_truncate_time);
-	gflog_info("gfs_pio_read    : %g sec\n", gfs_pio_read_time);
-	gflog_info("gfs_pio_write   : %g sec\n", gfs_pio_write_time);
-	gflog_info("gfs_pio_sync    : %g sec\n", gfs_pio_sync_time);
-	gflog_info("gfs_pio_getline : %g sec\n", gfs_pio_getline_time);
+	gflog_info("gfs_pio_create  : %g sec", gfs_pio_create_time);
+	gflog_info("gfs_pio_open    : %g sec", gfs_pio_open_time);
+	gflog_info("gfs_pio_close   : %g sec", gfs_pio_close_time);
+	gflog_info("gfs_pio_seek    : %g sec", gfs_pio_seek_time);
+	gflog_info("gfs_pio_truncate : %g sec", gfs_pio_truncate_time);
+	gflog_info("gfs_pio_read    : %g sec", gfs_pio_read_time);
+	gflog_info("gfs_pio_write   : %g sec", gfs_pio_write_time);
+	gflog_info("gfs_pio_sync    : %g sec", gfs_pio_sync_time);
+	gflog_info("gfs_pio_getline : %g sec (this calls getc)",
+			gfs_pio_getline_time);
+	gflog_info("gfs_pio_getc : %g sec", gfs_pio_getc_time);
+	gflog_info("gfs_pio_putc : %g sec", gfs_pio_putc_time);
 }

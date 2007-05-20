@@ -845,6 +845,6 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info("gfs_pio_set_view_section : %g sec\n",
+	gflog_info("gfs_pio_set_view_section : %g sec",
 		gfs_pio_set_view_section_time);
 }

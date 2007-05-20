@@ -215,5 +215,5 @@ gfs_stat_index(char *gfarm_url, int index, struct gfs_stat *s)
 void
 gfs_stat_display_timers(void)
 {
-	gflog_info("gfs_stat        : %g sec\n", gfs_stat_time);
+	gflog_info("gfs_stat        : %g sec", gfs_stat_time);
 }

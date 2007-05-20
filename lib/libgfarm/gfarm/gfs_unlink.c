@@ -481,5 +481,5 @@ gfarm_url_fragment_cleanup(char *gfarm_url, int nhosts, char **hosts)
 void
 gfs_unlink_display_timers(void)
 {
-	gflog_info("gfs_unlink      : %g sec\n", gfs_unlink_time);
+	gflog_info("gfs_unlink      : %g sec", gfs_unlink_time);
 }
