@@ -49,8 +49,8 @@ lib/libgfarm/gfarm/gfarm_stringlist_add/normal.sh
 lib/libgfarm/gfarm/gfarm_stringlist_elem/normal.sh
 lib/libgfarm/gfarm/gfarm_stringlist_length/normal.sh
 lib/libgfarm/gfarm/gfarm_stringlist_cat/normal.sh
-lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM/normal.sh
-lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY/normal.sh
+lib/libgfarm/gfarm/GGFARM_STRINGLIST_ELEM/normal.sh
+lib/libgfarm/gfarm/GGFARM_STRINGLIST_STRARRAY/normal.sh
 lib/libgfarm/gfarm/fork-term-init/fti-unlink.sh
 lib/libgfarm/gfarm/seek-write/sw-test.sh
 # gftool/config-gfarm
@@ -80,7 +80,7 @@ gftool/gfwhere/noopt_+x.sh
 gftool/gfwhere/noopt_-x.sh
 gftool/gfhost/delete-add.sh
 gftool/gfreg/gfreg-h.sh
-gftool/gfreg/gfreg-H.sh
+gftool/gfreg/gfreg-HH.sh
 gftool/gfreg/gfreg-D.sh
 gftool/gfreg/gfreg-N-I.sh
 gftool/gfreg/gfreg-r.sh
@@ -91,13 +91,13 @@ gftool/gfrep/gfrep-H_non-exec.sh
 gftool/gfrep/gfrep-H_exec.sh
 #gftool/gfrep/gfrep-d_non-exec.sh		# -d option is obsolete
 #gftool/gfrep/gfrep-d_exec.sh			# -d option is obsolete
-gftool/gfrep/gfrep-D_non-exec.sh
-gftool/gfrep/gfrep-D_exec.sh
+gftool/gfrep/gfrep-DD_non-exec.sh
+gftool/gfrep/gfrep-DD_exec.sh
 gftool/gfrep/gfrep-N2_non-exec.sh
 gftool/gfrep/gfrep-N2_exec.sh
 gftool/gfrep/gfrep-H_dir.sh
 #gftool/gfrep/gfrep-d_dir.sh			# -d option is obsolete
-gftool/gfrep/gfrep-D_dir.sh
+gftool/gfrep/gfrep-DD_dir.sh
 gftool/gfrep/gfrep-N2_dir.sh
 gftool/gfls/gfls-l.sh
 

@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$shell $testbase/gfrep-D.sh $data/ok.sh
+$shell $testbase/gfrep-DD.sh $data/ok.sh

@@ -71,8 +71,8 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfarm_stringlist_elem \
 	lib/libgfarm/gfarm/gfarm_stringlist_length \
 	lib/libgfarm/gfarm/gfarm_stringlist_cat \
-	lib/libgfarm/gfarm/GFARM_STRINGLIST_ELEM \
-	lib/libgfarm/gfarm/GFARM_STRINGLIST_STRARRAY \
+	lib/libgfarm/gfarm/GGFARM_STRINGLIST_ELEM \
+	lib/libgfarm/gfarm/GGFARM_STRINGLIST_STRARRAY \
 	lib/libgfarm/gfarm/gfs_pio_flush \
 	lib/libgfarm/gfarm/gfs_pio_sync \
 	lib/libgfarm/gfarm/gfs_pio_datasync \

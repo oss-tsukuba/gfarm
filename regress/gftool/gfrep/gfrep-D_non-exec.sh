@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-$shell $testbase/gfrep-D.sh $data/1byte
+$shell $testbase/gfrep-DD.sh $data/1byte
