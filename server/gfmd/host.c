@@ -585,10 +585,24 @@ gfarm_error_t
 gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	char *hostname, *architecture;
+	gfarm_int32_t ncpu, port, flags;
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error("host_info_modify: not implemented");
 
+	e = gfm_server_get_request(peer, "host_info_modify", "ssiii",
+	    &hostname, &architecture, &ncpu, &port, &flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(hostname);
+		free(architecture);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	free(hostname);
+	free(architecture);
 	e = gfm_server_put_reply(peer, "host_info_modify",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
@@ -599,10 +613,20 @@ gfarm_error_t
 gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	char *hostname;
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error("host_info_remove: not implemented");
 
+	e = gfm_server_get_request(peer, "host_info_remove", "s", &hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(hostname);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	free(hostname);
 	e = gfm_server_put_reply(peer, "host_info_remove",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
