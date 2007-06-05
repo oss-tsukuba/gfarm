@@ -690,7 +690,7 @@ gfarm_error_t
 gfm_client_compound_on_error_request(struct gfm_connection *gfm_server,
 	gfarm_error_t error)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_COMPOUND_END,
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_COMPOUND_ON_ERROR,
 	    "i", error));
 }
 
@@ -1112,7 +1112,7 @@ gfm_client_symlink_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
-gfm_client_readlink(struct gfm_connection *gfm_server)
+gfm_client_readlink_request(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_READLINK, ""));
 }
@@ -1276,7 +1276,7 @@ gfm_client_unlock_request(struct gfm_connection *gfm_server,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_LOCK, "llii",
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_UNLOCK, "llii",
 	    start, len, type, whence));
 }
 
@@ -1291,7 +1291,7 @@ gfm_client_lock_info_request(struct gfm_connection *gfm_server,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_LOCK, "llii",
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_LOCK_INFO, "llii",
 	    start, len, type, whence));
 }
 
@@ -1521,8 +1521,8 @@ gfm_client_process_alloc_child(struct gfm_connection *gfm_server,
 	gfarm_pid_t *pidp)
 {
 	return (gfm_client_rpc(gfm_server, 0,
-	    GFM_PROTO_PROCESS_ALLOC, "iblib/l", parent_keytype,
-	    parent_sharedkey_size, parent_sharedkey,parent_pid,
+	    GFM_PROTO_PROCESS_ALLOC_CHILD, "iblib/l", parent_keytype,
+	    parent_sharedkey_size, parent_sharedkey, parent_pid,
 	    keytype, sharedkey_size, sharedkey, pidp));
 }
 
