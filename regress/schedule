@@ -59,7 +59,7 @@ gftool/gfkey/gfkey-cl.sh
 gftool/gfhost/noopt.sh
 gftool/gfhost/gfhost-l.sh
 gftool/gfdf/gfdf.sh
-gftool/gfdf/gfdf-H.sh
+gftool/gfdf/gfdf-HH.sh
 gftool/gfdf/gfdf-h.sh
 gftool/gfpwd/gfpwd.sh
 gftool/gfls/root.sh
