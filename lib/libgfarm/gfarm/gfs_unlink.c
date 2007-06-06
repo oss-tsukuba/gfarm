@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include <gfarm/gfarm.h>
 
