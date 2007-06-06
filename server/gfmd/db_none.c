@@ -220,7 +220,7 @@ gfarm_none_direntry_add(struct db_direntry_arg *arg)
 }
 
 static void
-gfarm_none_direntry_remove(struct db_direntry_remove_arg *arg)
+gfarm_none_direntry_remove(struct db_direntry_arg *arg)
 {
 	free(arg);
 }
