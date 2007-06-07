@@ -112,12 +112,12 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"expired",
 	"protocol error",
 	"unknown host",
-	"cannot resolve an IP address into a hostname"
+	"cannot resolve an IP address into a hostname",
 
 	/* gfarm specific errors */
 	"no such object",
-	"unexpected EOF",
 	"can't open",
+	"unexpected EOF",
 	"gfarm URL prefix is missing",
 	"too many jobs",
 	"file migrated",
