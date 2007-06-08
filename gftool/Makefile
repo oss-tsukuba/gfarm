@@ -14,6 +14,7 @@ SUBDIRS = \
 	gfmkdir \
 	gfmv \
 	gfreg \
+	gfrep \
 	gfrm \
 	gfrmdir \
 	gfstat \
@@ -26,7 +27,6 @@ SUBDIRS = \
 #	gfifo \
 #	gfpwd \
 #	gfrcmd \
-#	gfrep \
 #	gfsched \
 #	gfsck \
 #	gfsetdir \

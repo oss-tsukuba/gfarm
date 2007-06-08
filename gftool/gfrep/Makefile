@@ -6,8 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SRCS = gfrep.c
-OBJS = gfrep.o
+SRCS = gfrep_simple.c
+OBJS = gfrep_simple.o
 PROGRAM = gfrep
 #CC = omcc
 #OMPFLAGS = -fopenmp
@@ -21,4 +21,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/schedule.h $(GFARMLIB_SRCDIR)/gfs_client.h $(GFARMLIB_SRCDIR)/gfs_misc.h $(GFARMLIB_SRCDIR)/gfarm_list.h $(GFARMLIB_SRCDIR)/gfarm_foreach.h $(GFARMLIB_SRCDIR)/gfarm_xinfo.h $(GFUTIL_SRCDIR)/hash.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/metadb_server.h

@@ -472,7 +472,7 @@ process_reopen_file(struct process *process,
 		    spool_host, to_create))
 			return (GFARM_ERR_FILE_MIGRATED);
 		if (to_create) {
-			e = inode_add_replica(fo->inode, spool_host);
+			e = inode_add_replica(fo->inode, spool_host, 1);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 		}
@@ -665,6 +665,70 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	return (process_open_file(process, fo->inode, fo->flag,
 	    (fo->flag & GFARM_FILE_CREATE) != 0, peer, spool_host, fdp));
+}
+
+gfarm_error_t
+process_replica_adding(struct process *process,
+	struct peer *peer, struct host *spool_host, int fd,
+	gfarm_ino_t *inump, gfarm_uint64_t *genp,
+	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
+{
+	struct file_opening *fo;
+	struct gfarm_timespec *mtime;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!inode_is_file(fo->inode)) /* i.e. is a directory */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (inode_is_creating_file(fo->inode)) /* no file copy */
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	if (inode_has_replica(fo->inode, spool_host))
+		return (GFARM_ERR_ALREADY_EXISTS);
+
+	e = inode_add_replica(fo->inode, spool_host, 0);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * do not set spool_opener and spool_host.  This file
+	 * descriptor will be REOPENed by a source file system node.
+	 */
+	*inump = inode_get_number(fo->inode);
+	*genp = inode_get_gen(fo->inode);
+	mtime = inode_get_mtime(fo->inode);
+	*mtime_secp = mtime->tv_sec;
+	*mtime_nsecp = mtime->tv_nsec;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_replica_added(struct process *process,
+	struct peer *peer, struct host *spool_host, int fd,
+	int flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+{
+	struct file_opening *fo;
+	struct gfarm_timespec *mtime;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!inode_is_file(fo->inode)) /* i.e. is a directory */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (fo->u.f.spool_opener == NULL) /* not yet REOPENed */
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (inode_is_creating_file(fo->inode)) /* no file copy */
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	if (inode_has_replica(fo->inode, spool_host))
+		return (GFARM_ERR_ALREADY_EXISTS);
+
+	mtime = inode_get_mtime(fo->inode);
+	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec)
+		return (inode_remove_replica(fo->inode, spool_host));
+
+	return (inode_add_replica(fo->inode, spool_host, 1));
 }
 
 /*

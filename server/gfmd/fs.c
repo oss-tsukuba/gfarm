@@ -212,7 +212,7 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (created && !from_client) {
-		e = inode_add_replica(inode, spool_host);
+		e = inode_add_replica(inode, spool_host, 1);
 		if (e != GFARM_ERR_NO_ERROR) {
 			process_close_file(process, peer, fd);
 			inode_unlink(base, name, process);
@@ -1567,25 +1567,43 @@ gfarm_error_t
 gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+	gfarm_int64_t mtime_sec;
+	gfarm_int32_t fd, mtime_nsec;
+	struct host *spool_host;
+	struct process *process;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_adding: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "replica_adding",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (from_client) /* from gfsd only */
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = process_replica_adding(process, peer, spool_host, fd,
+		    &inum, &gen, &mtime_sec, &mtime_nsec);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "replica_adding", e, "llli",
+	    inum, gen, mtime_sec, mtime_nsec));
 }
 
 gfarm_error_t
 gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_int32_t flags, mtime_nsec;
+	gfarm_int32_t fd, flags, mtime_nsec;
 	gfarm_int64_t mtime_sec;
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_added: not implemented");
+	struct host *spool_host;
+	struct process *process;
 
 	e = gfm_server_get_request(peer, "replica_added", "ili",
 	    &flags, &mtime_sec, &mtime_nsec);
@@ -1593,11 +1611,23 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "replica_added",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (from_client) /* from gfsd only */
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = process_replica_added(process, peer, spool_host, fd,
+		    flags, mtime_sec, mtime_nsec);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "replica_added", e, ""));
 }
 
 gfarm_error_t

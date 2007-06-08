@@ -227,6 +227,8 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFS_W_OK	2
 #define GFS_R_OK	4
 
+gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
+
 gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
 
 /* XXX need gfs_statfsnode() equivalent */

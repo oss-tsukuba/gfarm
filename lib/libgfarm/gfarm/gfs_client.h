@@ -70,7 +70,11 @@ gfarm_error_t gfs_client_unlock(struct gfs_connection *, gfarm_int32_t,
 gfarm_error_t gfs_client_lock_info(struct gfs_connection *, gfarm_int32_t,
 	gfarm_off_t, gfarm_off_t, gfarm_int32_t, gfarm_int32_t,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char**, gfarm_pid_t **);
-gfarm_error_t gfs_client_replica_add(struct gfs_connection *, gfarm_int32_t);
+gfarm_error_t gfs_client_replica_add_from(struct gfs_connection *,
+	gfarm_int32_t, size_t, const char *, gfarm_pid_t,
+	char *, gfarm_int32_t, gfarm_int32_t);
+gfarm_error_t gfs_client_replica_recv(struct gfs_connection *,
+	gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
 	gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,

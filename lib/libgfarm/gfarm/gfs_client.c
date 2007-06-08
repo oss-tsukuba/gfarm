@@ -1200,12 +1200,14 @@ gfs_client_lock_info(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 }
 
 gfarm_error_t
-gfs_client_replica_add(struct gfs_connection *gfs_server, gfarm_int32_t fd)
+gfs_client_replica_add_from(struct gfs_connection *gfs_server,
+	gfarm_int32_t type, size_t length, const char *key, gfarm_pid_t pid,
+	char *host, gfarm_int32_t port, gfarm_int32_t fd)
 {
 	gfs_client_connection_used(gfs_server);
 
-	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD, "i/",
-	    fd));
+	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD_FROM,
+	    "iblsii/", type, length, key, pid, host, port, fd));
 }
 
 gfarm_error_t
@@ -1369,8 +1371,80 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 
 /*
  * GFS_PROTO_REPLICA_RECV is only used by gfsd,
- * thus, we define the client protocol at gfsd instead of here.
+ * but defined here for better maintainability.
  */
+
+gfarm_error_t
+gfs_client_replica_recv(struct gfs_connection *gfs_server,
+	gfarm_int32_t net_fd, gfarm_int32_t local_fd)
+{
+	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR, e_rpc;
+	int i, rv, eof;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+
+	gfs_client_connection_used(gfs_server);
+
+	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "i",
+	    net_fd);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	for (;;) {
+		gfarm_int32_t size;
+		int skip = 0;
+
+		/* XXX - FIXME layering violation */
+		e = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i", &size);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+		if (eof) {
+			e = GFARM_ERR_PROTOCOL;
+			break;
+		}
+		if (size <= 0)
+			break;
+		do {
+			/* XXX - FIXME layering violation */
+			int partial = gfp_xdr_recv_partial(gfs_server->conn, 0,
+				buffer, size);
+
+			if (partial <= 0)
+				return (GFARM_ERR_PROTOCOL);
+			size -= partial;
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+			rv = 0;
+#endif
+			i = 0;
+			if (skip) /* write(2) returns error */
+				i = partial;
+			for (; i < partial; i += rv) {
+				rv = write(local_fd, buffer + i, partial - i);
+				if (rv <= 0)
+					break;
+			}
+			if (i < partial) {
+				/*
+				 * write(2) never returns 0,
+				 * so the following rv == 0 case is
+				 * just warm fuzzy.
+				 */
+				e_write = gfarm_errno_to_error(
+						rv == 0 ? ENOSPC : errno);
+				/*
+				 * we should receive rest of data,
+				 * even if write(2) fails.
+				 */
+				skip = 1;
+			}
+		} while (size > 0);
+	}
+	e_rpc = gfs_client_rpc_result(gfs_server, 0, "");
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e_write;
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e_rpc;
+	return (e);
+}
 
 /*
  **********************************************************************

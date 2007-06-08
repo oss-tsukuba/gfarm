@@ -94,13 +94,10 @@ gfs_pio_check_view_default(GFS_File gf)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* gfs_pio_fileno returns a network-wide file descriptor in Gfarm v2 */
 int gfs_pio_fileno(GFS_File gf)
 {
-	gfarm_error_t e = gfs_pio_check_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (-1);
-
-	return ((*gf->ops->view_fd)(gf));
+	return (gf == NULL ? -1 : gf->fd);
 }
 
 static gfarm_error_t
@@ -258,11 +255,16 @@ gfs_pio_close(GFS_File gf)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e_save = gfs_pio_check_view_default(gf);
-	if (e_save == GFARM_ERR_NO_ERROR) {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
-			e_save = gfs_pio_flush(gf);
-
+	/*
+	 * no need to check and set the default file view here
+	 * because neither gfs_pio_flush nor view_close is not
+	 * needed unless the file view is specified by some
+	 * operation.
+	 */
+	e_save = GFARM_ERR_NO_ERROR;
+	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+		e_save = gfs_pio_flush(gf);
+	if (gf->ops != NULL) {
 		e = (*gf->ops->view_close)(gf);
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;

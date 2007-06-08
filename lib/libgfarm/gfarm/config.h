@@ -80,3 +80,5 @@ void gfarm_config_set_default_misc(void);
 /* for client */
 struct gfs_connection;
 gfarm_error_t gfarm_client_process_set(struct gfs_connection *);
+gfarm_error_t gfarm_client_replica_add_from(struct gfs_connection *,
+	char *, gfarm_int32_t, gfarm_int32_t);

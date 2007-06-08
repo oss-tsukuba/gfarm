@@ -79,7 +79,7 @@ gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
 
-gfarm_error_t process_cksum_set(struct process *, struct peer *, int ,
+gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 	const char *, size_t, const char *,
 	gfarm_int32_t, struct gfarm_timespec *);
 gfarm_error_t process_cksum_get(struct process *, struct peer *, int,
@@ -93,3 +93,9 @@ gfarm_error_t gfm_server_process_set(struct peer *, int, int);
 
 gfarm_error_t gfm_server_bequeath_fd(struct peer *, int, int);
 gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
+
+gfarm_error_t process_replica_adding(struct process *, struct peer *,
+	struct host *, int, gfarm_ino_t *, gfarm_uint64_t *,
+	gfarm_int64_t *, gfarm_int32_t *);
+gfarm_error_t process_replica_added(struct process *, struct peer *,
+	struct host *, int, int, gfarm_int64_t, gfarm_int32_t);
