@@ -273,7 +273,8 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 #define TESTMODE_READ	2
 #define TESTMODE_COPY	4
 
-#define FLAG_MEASURE_PRIMITIVES	2
+#define FLAG_REPORT_PERFORMANCE_OF_EACH_PROCESS	1
+#define FLAG_MEASURE_PRIMITIVES			2
 
 void
 test_title(char *msg, int test_mode, off_t file_size, int flags)
@@ -288,6 +289,48 @@ test_title(char *msg, int test_mode, off_t file_size, int flags)
 		printf(" %10s   ", "copy");
 	printf("\n");
 	fflush(stdout);
+}
+
+/*
+ * etime[0]    - elapsed time of write test
+ * etime[1]    - elapsed time of read test
+ * etime[2]    - elapsed time of copy test
+ */
+void
+display_timing(int test_mode, int buffer_size, off_t file_size, int flags,
+	double etime[3])
+{
+	printf("[%04d] %8d %10.0f%3s",
+		node_index, buffer_size, file_size / etime[0], "");
+	if (test_mode & TESTMODE_READ)
+		printf(" %10.0f%3s", file_size / etime[1], "");
+	if (test_mode & TESTMODE_COPY)
+		printf(" %10.0f%3s", file_size / etime[2], "");
+	printf(" %s\n", hostname);
+	fflush(stdout);
+
+	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
+		fprintf(stderr, "[%04d]", node_index);
+		if (test_mode & TESTMODE_WRITE)
+			fprintf(stderr, " write %11g %11g %11g %11g",
+			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
+			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
+			    timerval_sub(&tm_write_write_all_1,
+					 &tm_write_write_all_0),
+			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
+			);
+		if (test_mode & TESTMODE_READ)
+			fprintf(stderr, " read %11g %11g %11g %11g",
+			    timerval_sub(&tm_read_open_1, &tm_read_open_0),
+			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
+			    timerval_sub(&tm_read_read_all_1,
+					 &tm_read_read_all_0),
+			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
+			);
+		tm_write_write_measured = tm_read_read_measured = 0;
+		fprintf(stderr, "\n");
+		fflush(stderr);
+	}
 }
 
 void
@@ -320,37 +363,9 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 	etime[2] = timeval_sub(&t6, &t5);
 
 	file_size /= 1024;
-	printf("[%04d] %8d %10.0f%3s",
-		node_index, buffer_size, file_size / etime[0], "");
-	if (test_mode & TESTMODE_READ)
-		printf(" %10.0f%3s", file_size / etime[1], "");
-	if (test_mode & TESTMODE_COPY)
-		printf(" %10.0f%3s", file_size / etime[2], "");
-	printf(" %s\n", hostname);
-	fflush(stdout);
-
-	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
-		fprintf(stderr, "[%04d]", node_index);
-		if (test_mode & TESTMODE_WRITE)
-			fprintf(stderr, " write %11g %11g %11g %11g",
-			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
-			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
-			    timerval_sub(&tm_write_write_all_1,
-					 &tm_write_write_all_0),
-			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
-			);
-		if (test_mode & TESTMODE_READ)
-			fprintf(stderr, " read %11g %11g %11g %11g",
-			    timerval_sub(&tm_read_open_1, &tm_read_open_0),
-			    timerval_sub(&tm_read_read_1, &tm_read_read_0),
-			    timerval_sub(&tm_read_read_all_1,
-					 &tm_read_read_all_0),
-			    timerval_sub(&tm_read_close_1, &tm_read_close_0)
-			);
-		tm_write_write_measured = tm_read_read_measured = 0;
-		fprintf(stderr, "\n");
-		fflush(stderr);
-	}
+	if ((flags & FLAG_REPORT_PERFORMANCE_OF_EACH_PROCESS) != 0)
+		display_timing(
+			test_mode, buffer_size, file_size, flags, etime);
 
 	MPI_Reduce(etime, gtime, 3, MPI_DOUBLE, MPI_MAX, 0, comm);
 	file_size *= node_size;
@@ -389,7 +404,7 @@ main(int argc, char **argv)
 	 */
 	MPI_Init(&argc, &argv);
 
-	while ((c = getopt(argc, argv, "b:s:wrcmh?")) != -1) {
+	while ((c = getopt(argc, argv, "b:s:wrcvmh?")) != -1) {
 		switch (c) {
 		case 'b':
 			buffer_size = strtol(optarg, NULL, 0);
@@ -406,6 +421,9 @@ main(int argc, char **argv)
 		case 'c':
 			test_mode |= TESTMODE_COPY;
 			break;
+		case 'v':
+			flags |= FLAG_REPORT_PERFORMANCE_OF_EACH_PROCESS;
+			break;
 		case 'm':
 			flags |= FLAG_MEASURE_PRIMITIVES;
 			timerval_calibrate();
@@ -419,8 +437,9 @@ main(int argc, char **argv)
 				"options:\n"
 				"\t-b block-size\n"
 				"\t-s file-size\n"
-				"\t-r		: do read test additionally\n"
-				"\t-c		: do copy test additionally\n");
+				"\t-v\t\t: report bandwidth of each process\n"
+				"\t-r\t\t: do read test additionally\n"
+				"\t-c\t\t: do copy test additionally\n");
 			MPI_Finalize();
 			exit(1);
 		}
@@ -447,7 +466,8 @@ main(int argc, char **argv)
 
 	buffer = alloc_aligned_memory(buffer_size, ALIGNMENT, MPI_COMM_WORLD);
 
-	if (node_index == 0)
+	if ((flags & FLAG_REPORT_PERFORMANCE_OF_EACH_PROCESS) != 0
+	    && node_index == 0)
 		test_title("Individual parallel I/O Bandwidth",
 			test_mode, file_size, flags);
 

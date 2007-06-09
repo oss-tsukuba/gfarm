@@ -50,13 +50,14 @@ Example:
 
 *** Manual page for thput-mpi
 
-thput-mpi [ -s filesize ] [ -b blocksize ] [ -rc ] [ file1 [ file2 ]]
+thput-mpi [ -s filesize ] [ -b blocksize ] [ -rc ] [ -v ] [ file1 [ file2 ]]
 
 Options:
 	-s	specify a file size in MByte to be measured
 	-b	specify a block size in byte for each write(2) and read(2)
 	-r	do read test also
 	-c	do copy test also
+	-v	report bandwidth of each process
 
 thput-mpi measures parallel file I/O bandwidth for
 sequential writing, sequential reading, and file
