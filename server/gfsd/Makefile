@@ -27,7 +27,6 @@ $(OBJS): $(DEPGFARMINC) \
 	$(srcdir)/gfsd_subr.h \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFARMLIB_SRCDIR)/iobuffer.h \
-	$(GFARMLIB_SRCDIR)/xxx_proto.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/param.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
