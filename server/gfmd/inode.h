@@ -80,6 +80,9 @@ struct peer;
 gfarm_error_t inode_schedule_file_reply(struct inode *, struct peer *,
 	int, int, const char *);
 
+gfarm_error_t inode_replica_list_by_name(struct inode *,
+	gfarm_int32_t *, char ***);
+
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);

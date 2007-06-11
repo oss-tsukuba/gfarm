@@ -19,6 +19,7 @@ SUBDIRS = \
 	gfrmdir \
 	gfstat \
 	gfuser \
+	gfwhere \
 	config-gfarm
 
 #	gfdf \
@@ -37,7 +38,6 @@ SUBDIRS = \
 #	gfstatus \
 #	gftest \
 #	gfusage \
-#	gfwhere \
 #	gfwhoami \
 #	example \
 

@@ -1363,40 +1363,36 @@ gfm_client_replica_list_by_name_request(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_replica_list_by_name_result(struct gfm_connection *gfm_server,
-	gfarm_int32_t *n_replicasp, char ***replica_hosts, int **replica_ports)
+	gfarm_int32_t *n_replicasp, char ***replica_hosts)
 {
 	gfarm_error_t e;
 	int eof, i;
 	gfarm_int32_t n;
 	char **hosts;
-	int *ports;
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	GFARM_MALLOC_ARRAY(hosts, n);
-	GFARM_MALLOC_ARRAY(ports, n);
-	if (hosts == NULL || ports == NULL) {
-		if (hosts != NULL)
-			free(hosts);
-		if (ports != NULL)
-			free(ports);
+	if (hosts == NULL)
 		return (GFARM_ERR_NO_MEMORY); /* XXX not graceful */
-	}
+
 	for (i = 0; i < n; i++) {
-		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "si",
-		    &hosts[i], &ports[i]);
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "s", &hosts[i]);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
-			free(hosts);
-			free(ports);
-			return (e);
+			break;
 		}
+	}
+	if (i < n) {
+		for (; i >= 0; --i)
+			free(hosts[i]);
+		free(hosts);
+		return (e);
 	}
 	*n_replicasp = n;
 	*replica_hosts = hosts;
-	*replica_ports = ports;
 	return (GFARM_ERR_NO_ERROR);
 }
 

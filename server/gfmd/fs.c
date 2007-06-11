@@ -1501,14 +1501,43 @@ gfarm_error_t
 gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	struct host *spool_host;
+	struct process *process;
+	int fd, i;
+	gfarm_int32_t n;
+	struct inode *inode;
+	char **hosts;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_list_by_name: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "replica_list_by_name",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR)
+		;
+	else 
+		e = inode_replica_list_by_name(inode, &n, &hosts);
+
+	giant_unlock();
+	e = gfm_server_put_reply(peer, "replica_list_by_name", e, "i", n);
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; ++i) {
+			e = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+		while (--i >= 0)
+			free(hosts[i]);
+		free(hosts);
+	}
+	return (e);
 }
 
 gfarm_error_t

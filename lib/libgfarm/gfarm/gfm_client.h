@@ -213,7 +213,7 @@ gfarm_error_t gfm_client_lock_info_result(struct gfm_connection *,
 /* replica management from client */
 gfarm_error_t gfm_client_replica_list_by_name_request(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_list_by_name_result(struct gfm_connection *,
-	gfarm_int32_t *, char ***, int **);
+	gfarm_int32_t *, char ***);
 gfarm_error_t gfm_client_replica_list_by_host_request(struct gfm_connection *,
 	const char *, gfarm_int32_t);
 gfarm_error_t gfm_client_replica_list_by_host_result(struct gfm_connection *,

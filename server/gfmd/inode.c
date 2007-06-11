@@ -1597,6 +1597,46 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	return (e_save);
 }
 
+gfarm_error_t
+inode_replica_list_by_name(struct inode *inode,
+	gfarm_int32_t *np, char ***hostsp)
+{
+	struct file_copy *copy;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int n, i;
+	char **hosts;
+
+	if (!inode_is_file(inode))
+		gflog_fatal("inode_has_replica: not a file");
+
+	n = inode_get_ncopy(inode);
+	GFARM_MALLOC_ARRAY(hosts, n);
+	if (hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	i = 0;
+	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
+	    copy = copy->host_next) {
+		if (copy->valid) {
+			hosts[i] = strdup(host_name(copy->host));
+			if (hosts[i] == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				break;
+			}
+			++i;
+		}
+	}
+	if (i < n) {
+		while (--i >= 0)
+			free(hosts[i]);
+		free(hosts);
+	}
+	else {
+		*np = n;
+		*hostsp = hosts;
+	}
+	return (e);
+}
 
 /*
  * loading metadata from persistent storage.

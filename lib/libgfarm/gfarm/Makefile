@@ -50,6 +50,7 @@ SRCS = \
 	gfs_rmdir.c \
 	gfs_remove.c \
 	gfs_rename.c \
+	gfs_replica.c \
 	gfs_replicate.c \
 	gfs_unlink.c \
 	glob.c \
@@ -99,6 +100,7 @@ OBJS = \
 	gfs_rmdir.lo \
 	gfs_remove.lo \
 	gfs_rename.lo \
+	gfs_replica.lo \
 	gfs_replicate.lo \
 	gfs_unlink.lo \
 	glob.lo \
@@ -146,6 +148,7 @@ gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $
 gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h
 gfs_proto.lo: gfs_proto.h
+gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 glob.lo:
