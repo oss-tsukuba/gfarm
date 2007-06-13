@@ -29,7 +29,8 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode)
 	gfarm_error_t e, e2;
 	GFS_File gf;
 
-	e = gfs_pio_create(gfarm_url, GFARM_FILE_WRONLY, mode, &gf);
+	e = gfs_pio_create(
+		gfarm_url, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, mode, &gf);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
 		return (e);
