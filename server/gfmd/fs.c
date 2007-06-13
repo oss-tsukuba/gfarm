@@ -724,8 +724,10 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	    &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (skip)
+	if (skip) {
+		free(cksum_type);
 		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 
 	if (from_client) /* from gfsd only */
@@ -741,6 +743,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 		e = process_cksum_set(process, peer, fd,
 		    cksum_type, cksum_len, cksum, flags, &mtime);
 
+	free(cksum_type);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "cksum_set", e, ""));
 }
