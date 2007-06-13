@@ -48,5 +48,6 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
+	$(GFARMLIB_SRCDIR)/timespec.h \
 	subr.h id_table.h user.h group.h host.h peer.h process.h job.h \
 	dir.h inode.h fs.h

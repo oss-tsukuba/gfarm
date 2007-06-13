@@ -11,6 +11,7 @@
 #include "gfutil.h"
 #include "auth.h"
 #include "gfm_proto.h"
+#include "timespec.h"
 
 #include "subr.h"
 #include "peer.h"
@@ -585,6 +586,12 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
+
+		/* invalidate file replicas if updated */
+		if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
+			inode_remove_every_other_replicas(
+				fo->inode, fo->u.f.spool_host);
+
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
 		inode_set_size(fo->inode, size);

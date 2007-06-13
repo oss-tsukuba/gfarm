@@ -55,6 +55,7 @@ SRCS = \
 	gfs_unlink.c \
 	glob.c \
 	schedule.c \
+	timespec.c \
 	url.c
 
 #	gfs_pio_global.c \
@@ -105,6 +106,7 @@ OBJS = \
 	gfs_unlink.lo \
 	glob.lo \
 	schedule.lo \
+	timespec.lo \
 	url.lo
 
 #	gfs_pio_global.lo \
@@ -163,4 +165,5 @@ param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h
 sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:
+timespec.lo: timespec.h
 url.lo: config.h gfs_pio.h

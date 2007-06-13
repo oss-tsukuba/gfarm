@@ -662,7 +662,7 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 
 	inode->i_mtimespec = *mtime;
 
-	e = db_inode_mtime_modify(inode->i_number, &inode->i_mtimespec);
+	e = db_inode_mtime_modify(inode->i_number, inode_get_mtime(inode));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("db_inode_mtime_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
@@ -1324,6 +1324,24 @@ inode_remove_replica(struct inode *inode, struct host *spool_host)
 
 	e = remove_replica_internal(inode, copy);
 	free(copy);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host)
+{
+	struct file_copy **copyp, *copy;
+	gfarm_error_t e;
+
+	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;) {
+		if (copy->host != spool_host) {
+			*copyp = copy->host_next;
+			e = remove_replica_internal(inode, copy);
+			free(copy);
+			continue;
+		}
+		copyp = &copy->host_next;
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
