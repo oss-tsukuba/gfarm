@@ -1349,6 +1349,54 @@ gfs_server_replica_recv(struct gfp_xdr *client)
 	gfs_server_put_reply(client, diag, error, "");
 }
 
+/* from gfmd */
+
+void
+gfs_server_fhstat(struct gfp_xdr *conn)
+{
+	struct stat st;
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
+	gfarm_off_t size = 0;
+	gfarm_int64_t atime_sec = 0, mtime_sec = 0;
+	gfarm_int32_t atime_nsec = 0, mtime_nsec = 0;
+	int save_errno = 0;
+	char *path;
+
+	gfs_server_get_request(conn, "fhstat", "ll", &ino, &gen);
+
+	local_path(ino, gen, "fhstat", &path);
+	if (stat(path, &st) == -1)
+		save_errno = errno;
+	else {
+		size = st.st_size;
+		atime_sec = st.st_atime;
+		/* XXX FIXME st_atimespec.tv_nsec */
+		mtime_sec = st.st_mtime;
+		/* XXX FIXME st_mtimespec.tv_nsec */
+	}
+
+	gfs_server_put_reply_with_errno(conn, "fhstat", save_errno,
+	    "llili", size, atime_sec, atime_nsec, mtime_sec, mtime_nsec);
+}
+
+void
+gfs_server_fhremove(struct gfp_xdr *conn)
+{
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
+	int save_errno = 0;
+	char *path;
+
+	gfs_server_get_request(conn, "fhremove", "ll", &ino, &gen);
+
+	local_path(ino, gen, "fhremove", &path);
+	if (unlink(path) == -1)
+		save_errno = errno;
+
+	gfs_server_put_reply_with_errno(conn, "fhremove", save_errno, "");
+}
+
 #if 0 /* not yet in gfarm v2 */
 
 void
@@ -2950,6 +2998,34 @@ datagram_server(int sock)
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
+void
+back_channel_protocol(void)
+{
+	gfarm_error_t e;
+	struct gfp_xdr *conn = gfm_client_connection_conn(gfm_server);
+	int eof;
+	gfarm_int32_t request;
+
+	e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning("(gfmd) request number: %s",
+		    gfarm_error_string(e));
+		return;
+	}
+	if (eof) {
+		/* XXX - try to reconnect */
+		accepting_fatal("back channel disconnected");
+	}
+	switch (request) {
+	case GFS_PROTO_FHSTAT:
+		gfs_server_fhstat(conn); break;
+	case GFS_PROTO_FHREMOVE:
+		gfs_server_fhremove(conn); break;
+	default:
+		gflog_warning("(gfmd) unknown request %d", (int)request);
+	}
+}
+
 int
 open_accepting_tcp_socket(struct in_addr address, int port)
 {
@@ -3333,6 +3409,8 @@ main(int argc, char **argv)
 		if (max_fd < accepting.udp_socks[i])
 			max_fd = accepting.udp_socks[i];
 	}
+	if (max_fd < gfm_client_connection_fd(gfm_server))
+		max_fd = gfm_client_connection_fd(gfm_server);
 	if (max_fd > FD_SETSIZE)
 		accepting_fatal("too big socket file descriptor: %d", max_fd);
 
@@ -3408,6 +3486,7 @@ main(int argc, char **argv)
 
 	for (;;) {
 		FD_ZERO(&requests);
+		FD_SET(gfm_client_connection_fd(gfm_server), &requests);
 		FD_SET(accepting.tcp_sock, &requests);
 		for (i = 0; i < accepting.local_socks_count; i++)
 			FD_SET(accepting.local_socks[i].sock, &requests);
@@ -3420,6 +3499,8 @@ main(int argc, char **argv)
 			fatal_errno("select");
 		}
 
+		if (FD_ISSET(gfm_client_connection_fd(gfm_server), &requests))
+			back_channel_protocol();
 		if (FD_ISSET(accepting.tcp_sock, &requests)) {
 			start_server(accepting.tcp_sock,
 			    (struct sockaddr*)&client_addr,sizeof(client_addr),

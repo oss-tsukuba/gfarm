@@ -39,6 +39,18 @@ struct gfm_connection {
 
 static struct gfarm_hash_table *gfm_server_hashtab = NULL;
 
+struct gfp_xdr *
+gfm_client_connection_conn(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->conn);
+}
+
+int
+gfm_client_connection_fd(struct gfm_connection *gfm_server)
+{
+	return (gfp_xdr_fd(gfm_server->conn));
+}
+
 static gfarm_error_t
 gfm_client_connection0(const char *hostname, int port,
 	struct gfm_connection *gfm_server)
