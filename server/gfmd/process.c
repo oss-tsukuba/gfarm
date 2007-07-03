@@ -699,10 +699,8 @@ process_replica_adding(struct process *process,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	/*
-	 * do not set spool_opener and spool_host.  This file
-	 * descriptor will be REOPENed by a source file system node.
-	 */
+	fo->u.f.spool_opener = peer;
+	fo->u.f.spool_host = spool_host;
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
 	mtime = inode_get_mtime(fo->inode);
@@ -724,7 +722,7 @@ process_replica_added(struct process *process,
 		return (e);
 	if (!inode_is_file(fo->inode)) /* i.e. is a directory */
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if (fo->u.f.spool_opener == NULL) /* not yet REOPENed */
+	if (fo->u.f.spool_opener != peer)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (inode_is_creating_file(fo->inode)) /* no file copy */
 		return (GFARM_ERR_NO_SUCH_OBJECT);

@@ -1130,14 +1130,15 @@ gfs_server_statfs(struct gfp_xdr *client)
 
 static gfarm_error_t
 replica_adding(gfarm_int32_t net_fd,
-	char **pathp, gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
+	gfarm_ino_t *inop, gfarm_uint64_t *genp,
+	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
 {
 	gfarm_error_t e;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	gfarm_int64_t mtime_sec;
 	gfarm_int32_t mtime_nsec;
-	char *path, *diag = "replica_adding";
+	char *diag = "replica_adding";
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -1169,8 +1170,8 @@ replica_adding(gfarm_int32_t net_fd,
 		fatal_metadb_proto("compound_end result", diag, e);
 
 	else {
-		local_path(ino, gen, diag, &path);
-		*pathp = path;
+		*inop = ino;
+		*genp = gen;
 		*mtime_secp = mtime_sec;
 		*mtime_nsecp = mtime_nsec;
 	}
@@ -1221,27 +1222,20 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 {
 	gfarm_int32_t net_fd, local_fd, port, mtime_nsec;
 	gfarm_int64_t mtime_sec;
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	gfarm_error_t e;
 	char *host, *path, *diag = "replica_add_from";
 	struct gfs_connection *server;
 	int flags = 0; /* XXX - for now */
-	gfarm_pid_t pid;
-	gfarm_int32_t keytype;
-	size_t keylen;
-	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 
-	gfs_server_get_request(client, diag, "iblsii",
-	    &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid,
-	    &host, &port, &net_fd);
+	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
 
-	e = gfm_client_process_set(gfm_server,
-	    keytype, sharedkey, keylen, pid);
+	e = replica_adding(net_fd, &ino, &gen, &mtime_sec, &mtime_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_host;
 
-	e = replica_adding(net_fd, &path, &mtime_sec, &mtime_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto free_host;
+	local_path(ino, gen, diag, &path);
 
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
@@ -1253,10 +1247,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	e = gfs_client_connection_acquire_by_host(host, port, &server);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto close;
-	e = gfs_client_process_set(server, keytype, keylen, sharedkey, pid);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto connection_free;
-	e = gfs_client_replica_recv(server, net_fd, local_fd);
+	e = gfs_client_replica_recv(server, ino, gen, local_fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto connection_free;
 	e = replica_added(net_fd, flags, mtime_sec, mtime_nsec);
@@ -1275,22 +1266,21 @@ void
 gfs_server_replica_recv(struct gfp_xdr *client)
 {
 	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
-	gfarm_int32_t fd;
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	ssize_t rv;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
 #if 0 /* not yet in gfarm v2 */
 	struct gfs_client_rep_rate_info *rinfo = NULL;
 #endif
 	char *diag = "replica_recv", *path;
-	int local_fd, local_flags;
+	int local_fd;
 
-	gfs_server_get_request(client, diag, "i", &fd);
+	gfs_server_get_request(client, diag, "ll", &ino, &gen);
 
-	error = gfs_server_reopen(diag, fd, &path, &local_flags);
-	if (error != GFARM_ERR_NO_ERROR)
-		goto send_eof;
+	local_path(ino, gen, diag, &path);
 
-	local_fd = open_data(path, local_flags);
+	local_fd = open_data(path, O_RDONLY);
 	free(path);
 	if (local_fd < 0) {
 		error = gfarm_errno_to_error(errno);

@@ -24,8 +24,13 @@ gfs_replicate_from_to(char *file, char *srchost, int srcport,
 		return (e);
 
 	e = gfs_client_connection_acquire_by_host(dsthost, dstport, &server);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (gfs_client_pid(server) == 0)
+		e = gfarm_client_process_set(server);
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfarm_client_replica_add_from(
+		e = gfs_client_replica_add_from(
 			server, srchost, srcport, gfs_pio_fileno(gf));
 		gfs_client_connection_free(server);
 	}

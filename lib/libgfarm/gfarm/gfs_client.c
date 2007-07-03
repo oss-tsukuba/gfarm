@@ -1201,13 +1201,12 @@ gfs_client_lock_info(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 
 gfarm_error_t
 gfs_client_replica_add_from(struct gfs_connection *gfs_server,
-	gfarm_int32_t type, size_t length, const char *key, gfarm_pid_t pid,
 	char *host, gfarm_int32_t port, gfarm_int32_t fd)
 {
 	gfs_client_connection_used(gfs_server);
 
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD_FROM,
-	    "iblsii/", type, length, key, pid, host, port, fd));
+	    "sii/", host, port, fd));
 }
 
 gfarm_error_t
@@ -1376,7 +1375,7 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 
 gfarm_error_t
 gfs_client_replica_recv(struct gfs_connection *gfs_server,
-	gfarm_int32_t net_fd, gfarm_int32_t local_fd)
+	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int32_t local_fd)
 {
 	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR, e_rpc;
 	int i, rv, eof;
@@ -1384,8 +1383,8 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 
 	gfs_client_connection_used(gfs_server);
 
-	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "i",
-	    net_fd);
+	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "ll",
+	    ino, gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
