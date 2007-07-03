@@ -432,17 +432,6 @@ gfarm_client_process_set(struct gfs_connection *gfs_server)
 	    gfarm_client_pid));
 }
 
-gfarm_error_t
-gfarm_client_replica_add_from(struct gfs_connection *gfs_server,
-	char *host, gfarm_int32_t port, gfarm_int32_t fd)
-{
-	return (gfs_client_replica_add_from(gfs_server,
-	    gfarm_client_pid_key_type,
-	    gfarm_client_pid_key_len, gfarm_client_pid_key,
-	    gfarm_client_pid,
-	    host, port, fd));
-}
-
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
