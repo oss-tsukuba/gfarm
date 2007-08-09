@@ -1605,9 +1605,15 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, mtime_nsec;
 	struct host *spool_host;
 	struct process *process;
+	char *src_host;
 
-	if (skip)
+	e = gfm_server_get_request(peer, "replica_adding", "s", &src_host);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(src_host);
 		return (GFARM_ERR_NO_ERROR);
+	}
 	giant_lock();
 
 	if (from_client) /* from gfsd only */
@@ -1620,9 +1626,10 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR)
 		;
 	else
-		e = process_replica_adding(process, peer, spool_host, fd,
-		    &inum, &gen, &mtime_sec, &mtime_nsec);
+		e = process_replica_adding(process, peer, spool_host,
+		    src_host, fd, &inum, &gen, &mtime_sec, &mtime_nsec);
 
+	free(src_host);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "replica_adding", e, "llli",
 	    inum, gen, mtime_sec, mtime_nsec));
