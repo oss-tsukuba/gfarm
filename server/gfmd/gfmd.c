@@ -520,6 +520,12 @@ main_loop(int accepting_socket)
 			gflog_warning("create_detached_thread: %s",
 			    gfarm_error_string(e));
 			peer_free(peer);
+			/*
+			 * starvation is observed here on Fedora Core 5
+			 * under high load. (errno == ENOMEM)
+			 * give chance to other threads.
+			 */
+			sleep(1);
 		}
 	}
 }
