@@ -1316,6 +1316,13 @@ gfm_client_lock_info_result(struct gfm_connection *gfm_server,
 	    startp, lenp, typep, hostp, pidp));
 }
 
+gfarm_error_t
+gfm_client_switch_back_channel(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_SWITCH_BACK_CHANNEL, "/"));
+}
+
 /*
  * gfs_pio from client
  */

@@ -21,6 +21,18 @@ struct gfp_iobuffer_ops {
 
 struct gfp_xdr;
 
+#define IS_CONNECTION_ERROR(e) \
+	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF || \
+	 (e) == GFARM_ERR_PROTOCOL || \
+	 (e) == GFARM_ERR_NETWORK_IS_DOWN || \
+	 (e) == GFARM_ERR_NETWORK_IS_UNREACHABLE || \
+	 (e) == GFARM_ERR_CONNECTION_ABORTED || \
+	 (e) == GFARM_ERR_CONNECTION_RESET_BY_PEER || \
+	 (e) == GFARM_ERR_SOCKET_IS_NOT_CONNECTED || \
+	 (e) == GFARM_ERR_OPERATION_TIMED_OUT || \
+	 (e) == GFARM_ERR_CONNECTION_REFUSED || \
+	 (e) == GFARM_ERR_NO_ROUTE_TO_HOST)
+
 gfarm_error_t gfp_xdr_new(struct gfp_iobuffer_ops *, void *, int,
 	struct gfp_xdr **);
 gfarm_error_t gfp_xdr_free(struct gfp_xdr *);

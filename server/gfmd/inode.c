@@ -1287,15 +1287,10 @@ remove_replica_internal(struct inode *inode, struct file_copy *copy)
 {
 	gfarm_error_t e, e2 = GFARM_ERR_NO_ERROR;
 
-	e = host_remove_replica(copy->host, inode->i_number, inode->i_gen);
+	e = host_remove_replica_enq(copy->host, inode->i_number, inode->i_gen);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("host_remove_replica(%" GFARM_PRId64 ", %s): %s",
-		    inode->i_number, host_name(copy->host),
-		    gfarm_error_string(e));
-	else if (copy->valid && (e = db_deadfilecopy_add(inode->i_number,
-	    inode->i_gen, host_name(copy->host))) != GFARM_ERR_NO_ERROR)
-		gflog_error("db_deadfilecopy_add(%" GFARM_PRId64 ", %s): %s",
-		    inode->i_number, host_name(copy->host),
+		gflog_error("host_remove_replica_enq(%" GFARM_PRId64
+		    ", %s): %s", inode->i_number, host_name(copy->host),
 		    gfarm_error_string(e));
 
 	if (copy->valid && (e2 = db_filecopy_remove(inode->i_number,
@@ -1769,9 +1764,9 @@ dead_file_copy_add_one(void *closure,
 		    inum);
 	} else if (host == NULL) {
 		gflog_error("dead_file_copy_add_one: no host %s", hostname);
-	} else if ((e = host_remove_replica(host,
+	} else if ((e = host_remove_replica_enq(host,
 	    inode->i_number, inode->i_gen)) != GFARM_ERR_NO_ERROR) {
-		gflog_error("dead_file_copy_add_one: record dead replica: %s",
+		gflog_error("host_remove_replica_enq: record dead replica: %s",
 		    gfarm_error_string(e));
 	} else {
 		return;

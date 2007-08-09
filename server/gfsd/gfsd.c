@@ -1117,7 +1117,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 
 	/* XXX FIXME: is it OK to pass `dir'? */
-	gfs_server_get_request(client, "stafs", "s", &dir);
+	gfs_server_get_request(client, "statfs", "s", &dir);
 
 	save_errno = gfsd_statfs(dir, &bsize,
 	    &blocks, &bfree, &bavail,
@@ -2989,30 +2989,54 @@ datagram_server(int sock)
 }
 
 void
-back_channel_protocol(void)
+back_channel_server(void)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *conn = gfm_client_connection_conn(gfm_server);
 	int eof;
 	gfarm_int32_t request;
 
-	e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("(gfmd) request number: %s",
-		    gfarm_error_string(e));
-		return;
+	e = gfm_client_switch_back_channel(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR)
+		fatal("switch_back_channel: %s", gfarm_error_string(e));
+
+	gflog_debug("back channel mode");
+	for (;;) {
+		e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
+		if (e != GFARM_ERR_NO_ERROR)
+			fatal("(back channel) request number: %s",
+			      gfarm_error_string(e));
+		if (eof) {
+			/* XXX - try to reconnect */
+			fatal("back channel disconnected");
+		}
+		switch (request) {
+		case GFS_PROTO_FHSTAT:
+			gfs_server_fhstat(conn); break;
+		case GFS_PROTO_FHREMOVE:
+			gfs_server_fhremove(conn); break;
+		default:
+			gflog_warning("(back channel) unknown request %d",
+				      (int)request);
+			cleanup(0);
+			exit(1);
+		}
 	}
-	if (eof) {
-		/* XXX - try to reconnect */
-		accepting_fatal("back channel disconnected");
-	}
-	switch (request) {
-	case GFS_PROTO_FHSTAT:
-		gfs_server_fhstat(conn); break;
-	case GFS_PROTO_FHREMOVE:
-		gfs_server_fhremove(conn); break;
+}
+
+void
+start_back_channel_server(void)
+{
+	switch (fork()) {
+	case 0:
+		back_channel_server();
+		/*NOTREACHED*/
+	case -1:
+		gflog_warning_errno("fork");
+		/*FALLTHROUGH*/
 	default:
-		gflog_warning("(gfmd) unknown request %d", (int)request);
+		/* do not free the gfm connection */
+		break;
 	}
 }
 
@@ -3336,6 +3360,8 @@ main(int argc, char **argv)
 		    canonical_self_name, gfarm_error_string(e));
 		exit(1);
 	}
+	/* start back channel server */
+	start_back_channel_server();
 
 	/* sanity check on a spool directory */
 	if (stat(gfarm_spool_root, &sb) == -1)
@@ -3399,8 +3425,6 @@ main(int argc, char **argv)
 		if (max_fd < accepting.udp_socks[i])
 			max_fd = accepting.udp_socks[i];
 	}
-	if (max_fd < gfm_client_connection_fd(gfm_server))
-		max_fd = gfm_client_connection_fd(gfm_server);
 	if (max_fd > FD_SETSIZE)
 		accepting_fatal("too big socket file descriptor: %d", max_fd);
 
@@ -3476,7 +3500,6 @@ main(int argc, char **argv)
 
 	for (;;) {
 		FD_ZERO(&requests);
-		FD_SET(gfm_client_connection_fd(gfm_server), &requests);
 		FD_SET(accepting.tcp_sock, &requests);
 		for (i = 0; i < accepting.local_socks_count; i++)
 			FD_SET(accepting.local_socks[i].sock, &requests);
@@ -3489,8 +3512,6 @@ main(int argc, char **argv)
 			fatal_errno("select");
 		}
 
-		if (FD_ISSET(gfm_client_connection_fd(gfm_server), &requests))
-			back_channel_protocol();
 		if (FD_ISSET(accepting.tcp_sock, &requests)) {
 			start_server(accepting.tcp_sock,
 			    (struct sockaddr*)&client_addr,sizeof(client_addr),

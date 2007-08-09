@@ -24,11 +24,11 @@ POSTGRESQL_OBJS = db_pgsql.lo
 
 SRCS =	gfmd.c \
 	subr.c id_table.c user.c group.c host.c peer.c process.c job.c \
-	dir.c inode.c fs.c metadb_if.c \
+	dir.c inode.c fs.c back_channel.c metadb_if.c \
 	db_access.c db_common.c db_none.c $(ldap_srcs) $(postgresql_srcs)
 OBJS =	gfmd.o \
 	subr.o id_table.o user.o group.o host.o peer.o process.o job.o \
-	dir.o inode.o fs.o metadb_if.o \
+	dir.o inode.o fs.o back_channel.o metadb_if.o \
 	db_access.o db_common.o db_none.o $(ldap_objs) $(postgresql_objs)
 
 all: $(PROGRAM)
@@ -50,4 +50,4 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
 	subr.h id_table.h user.h group.h host.h peer.h process.h job.h \
-	dir.h inode.h fs.h
+	dir.h inode.h fs.h back_channel.h

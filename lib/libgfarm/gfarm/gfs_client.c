@@ -53,10 +53,6 @@
 
 #define XAUTH_NEXTRACT_MAXLEN	512
 
-#define IS_CONNECTION_ERROR(e) \
-	((e) == GFARM_ERR_BROKEN_PIPE || (e) == GFARM_ERR_UNEXPECTED_EOF || \
-	 (e) == GFARM_ERR_PROTOCOL)
-
 struct gfs_connection {
 	struct gfs_connection *next, *prev; /* doubly linked circular list */
 	struct gfarm_hash_entry *hash_entry;

@@ -209,6 +209,7 @@ gfarm_error_t gfm_client_lock_info_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_off_t, gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfm_client_lock_info_result(struct gfm_connection *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_int32_t *, char **, gfarm_pid_t *);
+gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 
 /* gfs_pio from client */
 /*XXX*/

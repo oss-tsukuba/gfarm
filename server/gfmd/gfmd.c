@@ -52,6 +52,7 @@
 #include "process.h"
 #include "fs.h"
 #include "job.h"
+#include "back_channel.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -279,6 +280,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_LOCK_INFO:
 		e = gfm_server_lock_info(peer, from_client, skip);
+		break;
+	case GFM_PROTO_SWITCH_BACK_CHANNEL:
+		e = gfm_server_switch_back_channel(peer, from_client, skip);
 		break;
 	case GFM_PROTO_GLOB:
 		e = gfm_server_glob(peer, from_client, skip);
@@ -578,6 +582,9 @@ termsigs_handler(void *p)
 	/* we never release the giant lock until exit */
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
+
+	gflog_info("dumping dead file copies");
+	host_remove_replica_dump_all();
 
 	gflog_info("shutting down peers");
 	peer_shutdown_all();

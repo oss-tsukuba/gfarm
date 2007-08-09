@@ -1,3 +1,7 @@
+/*
+ * $Id$
+ */
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,22 +13,22 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <pthread.h>
+
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 #include "hash.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "gfm_proto.h" /* GFM_PROTO_SCHED_FLAG_* */
 
 #include "subr.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
 #include "peer.h"
-
-#include "db_access.h"
-
-#include "gfm_proto.h" /* GFM_PROTO_SCHED_FLAG_* */
+#include "back_channel.h"
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
@@ -37,8 +41,11 @@ struct dead_file_copy {
 /* in-core gfarm_host_info */
 struct host {
 	struct gfarm_host_info hi;
-
+	struct peer *peer;
 	struct dead_file_copy *to_be_removed;
+	pthread_mutex_t removed_copy_mutex;
+	pthread_cond_t removed_copy_cond;
+	volatile int is_active;
 
 	gfarm_time_t last_report;
 	double loadavg_1min, loadavg_5min, loadavg_15min;
@@ -176,11 +183,15 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 		free(h);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+	h->peer = NULL;
 	h->to_be_removed = NULL;
+	h->is_active = 0;
 	h->last_report = 0;
 	h->loadavg_1min =
 	h->loadavg_5min =
 	h->loadavg_15min = 0.0;
+	pthread_mutex_init(&h->removed_copy_mutex, NULL);
+	pthread_cond_init(&h->removed_copy_cond, NULL);
 	/* XXX FIXME */
 	h->report_flags =
 	    GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
@@ -215,6 +226,26 @@ host_remove(const char *hostname)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+host_peer_connect(struct host *h, struct peer *p)
+{
+	h->peer = p;
+	h->is_active = 1;
+}
+
+void
+host_peer_disconnect(struct host *h)
+{
+	h->peer = NULL;
+	h->is_active = 0;
+}
+
+struct peer *
+host_peer(struct host *h)
+{
+	return (h->peer);
+}
+
 char *
 host_name(struct host *h)
 {
@@ -228,14 +259,14 @@ host_port(struct host *h)
 }
 
 int
-host_is_up(struct host *host)
+host_is_up(struct host *h)
 {
-	/* XXX FIXME: need to check expiration */
-	return (1);
+	return (h->is_active);
 }
 
 gfarm_error_t
-host_remove_replica(struct host *host, gfarm_ino_t inum, gfarm_uint64_t igen)
+host_remove_replica_enq(
+	struct host *host, gfarm_ino_t inum, gfarm_uint64_t igen)
 {
 	struct dead_file_copy *dfc;
 
@@ -244,10 +275,71 @@ host_remove_replica(struct host *host, gfarm_ino_t inum, gfarm_uint64_t igen)
 		return (GFARM_ERR_NO_MEMORY);
 	dfc->inum = inum;
 	dfc->igen = igen;
+	pthread_mutex_lock(&host->removed_copy_mutex);
 	dfc->next = host->to_be_removed;
 	host->to_be_removed = dfc;
+	pthread_cond_broadcast(&host->removed_copy_cond);
+	pthread_mutex_unlock(&host->removed_copy_mutex);
 	/* db_deadfilecopy_add() is done by the caller of this function */
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+host_remove_replica(struct host *host)
+{
+	struct dead_file_copy *r;
+	gfarm_error_t e;
+
+	pthread_mutex_lock(&host->removed_copy_mutex);
+	while (host->to_be_removed == NULL && host_is_up(host))
+		pthread_cond_wait(
+			&host->removed_copy_cond, &host->removed_copy_mutex);
+	if (!host_is_up(host)) {
+		pthread_mutex_unlock(&host->removed_copy_mutex);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	r = host->to_be_removed;
+	host->to_be_removed = host->to_be_removed->next;
+	pthread_mutex_unlock(&host->removed_copy_mutex);
+
+	e = gfs_client_fhremove(host_peer(host), r->inum, r->igen);
+	if (e != GFARM_ERR_NO_ERROR)
+		e = host_remove_replica_enq(host, r->inum, r->igen);
+	return (e);
+}
+
+gfarm_error_t
+host_remove_replica_dump(struct host *host)
+{
+	gfarm_error_t e;
+	struct dead_file_copy *r;
+
+	pthread_mutex_lock(&host->removed_copy_mutex);
+	r = host->to_be_removed;
+	while (r != NULL) {
+		e = db_deadfilecopy_add(r->inum, r->igen, host_name(host));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_deadfilecopy_add(%" GFARM_PRId64
+				    ", %s): %s", r->inum, host_name(host),
+				    gfarm_error_string(e));
+		r = r->next;
+	}
+	pthread_mutex_unlock(&host->removed_copy_mutex);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+host_remove_replica_dump_all(void)
+{
+	struct gfarm_hash_iterator it;
+	gfarm_error_t e;
+
+	FOR_ALL_HOSTS(&it) {
+		e = host_remove_replica_dump(host_iterator_access(&it));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_warning("host_remove_replica_dump_all: %s",
+				      gfarm_error_string(e));
+	}
 }
 
 /*
