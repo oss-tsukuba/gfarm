@@ -1620,7 +1620,7 @@ inode_replica_list_by_name(struct inode *inode,
 	char **hosts;
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_has_replica: not a file");
+		gflog_fatal("inode_replica_list_by_name: not a file");
 
 	n = inode_get_ncopy(inode);
 	GFARM_MALLOC_ARRAY(hosts, n);

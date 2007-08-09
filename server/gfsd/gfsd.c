@@ -1129,7 +1129,7 @@ gfs_server_statfs(struct gfp_xdr *client)
 }
 
 static gfarm_error_t
-replica_adding(gfarm_int32_t net_fd,
+replica_adding(gfarm_int32_t net_fd, char *src_host,
 	gfarm_ino_t *inop, gfarm_uint64_t *genp,
 	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
 {
@@ -1146,7 +1146,7 @@ replica_adding(gfarm_int32_t net_fd,
 	else if ((e = gfm_client_put_fd_request(gfm_server, net_fd))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto("put_fd request", diag, e);
-	else if ((e = gfm_client_replica_adding_request(gfm_server))
+	else if ((e = gfm_client_replica_adding_request(gfm_server, src_host))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto("replica_adding request", diag, e);
 	else if ((e = gfm_client_compound_end_request(gfm_server))
@@ -1231,7 +1231,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
 
-	e = replica_adding(net_fd, &ino, &gen, &mtime_sec, &mtime_nsec);
+	e = replica_adding(net_fd, host, &ino, &gen, &mtime_sec, &mtime_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_host;
 

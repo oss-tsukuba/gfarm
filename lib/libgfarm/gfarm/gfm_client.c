@@ -1471,10 +1471,11 @@ gfm_client_replica_remove_by_host_result(struct gfm_connection *gfm_server)
  */
 
 gfarm_error_t
-gfm_client_replica_adding_request(struct gfm_connection *gfm_server)
+gfm_client_replica_adding_request(struct gfm_connection *gfm_server,
+	char *src_host)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_REPLICA_ADDING, ""));
+	    GFM_PROTO_REPLICA_ADDING, "s", src_host));
 }
 
 gfarm_error_t

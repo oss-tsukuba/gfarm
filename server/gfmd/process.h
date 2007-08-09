@@ -95,7 +95,7 @@ gfarm_error_t gfm_server_bequeath_fd(struct peer *, int, int);
 gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
 
 gfarm_error_t process_replica_adding(struct process *, struct peer *,
-	struct host *, int, gfarm_ino_t *, gfarm_uint64_t *,
+	struct host *, char *, int, gfarm_ino_t *, gfarm_uint64_t *,
 	gfarm_int64_t *, gfarm_int32_t *);
 gfarm_error_t process_replica_added(struct process *, struct peer *,
 	struct host *, int, int, gfarm_int64_t, gfarm_int32_t);

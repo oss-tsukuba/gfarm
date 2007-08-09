@@ -18,6 +18,7 @@
 #include "inode.h"
 #include "process.h"
 #include "id_table.h"
+#include "host.h"
 
 #define FILETAB_INITIAL		16
 #define FILETAB_MULTIPLY	2
@@ -676,7 +677,7 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 
 gfarm_error_t
 process_replica_adding(struct process *process,
-	struct peer *peer, struct host *spool_host, int fd,
+	struct peer *peer, struct host *spool_host, char *src_host, int fd,
 	gfarm_ino_t *inump, gfarm_uint64_t *genp,
 	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
 {
@@ -691,6 +692,8 @@ process_replica_adding(struct process *process,
 	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (inode_is_creating_file(fo->inode)) /* no file copy */
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	if (!inode_has_replica(fo->inode, host_lookup(src_host)))
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if (inode_has_replica(fo->inode, spool_host))
 		return (GFARM_ERR_ALREADY_EXISTS);

@@ -228,7 +228,8 @@ gfarm_error_t gfm_client_replica_remove_by_host_result(
 	struct gfm_connection *);
 
 /* replica management from gfsd */
-gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *);
+gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,
+	char *);
 gfarm_error_t gfm_client_replica_adding_result(struct gfm_connection *,
 	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int64_t *, gfarm_int32_t *);
 gfarm_error_t gfm_client_replica_added_request(struct gfm_connection *,
