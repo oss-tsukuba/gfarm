@@ -1944,7 +1944,8 @@ static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_deadfilecopy_ops = {
 	&db_base_deadfilecopy_arg_ops,
 	"(objectclass=GFarmDeadFileCopy)",
-	"hostname=%s, igen=%" GFARM_PRId64 ", inumber=%" GFARM_PRId64 ", %s",
+	/* There should not be two entries for the same inumber */
+	"hostname=%s, inumber=%" GFARM_PRId64 ", %s",
 	gfarm_ldap_db_deadfilecopy_make_dn,
 	gfarm_ldap_db_deadfilecopy_set_field,
 };
@@ -1957,12 +1958,12 @@ gfarm_ldap_db_deadfilecopy_make_dn(void *vkey)
 
 	GFARM_MALLOC_ARRAY(dn,
 	    strlen(gfarm_ldap_db_deadfilecopy_ops.dn_template) +
-	    strlen(key->hostname) + INT64STRLEN + INT64STRLEN +
+	    strlen(key->hostname) + INT64STRLEN +
 	    strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_db_deadfilecopy_ops.dn_template,
-	    key->hostname, key->igen, key->inum, gfarm_ldap_base_dn);
+	    key->hostname, key->inum, gfarm_ldap_base_dn);
 	return (dn);
 }
 

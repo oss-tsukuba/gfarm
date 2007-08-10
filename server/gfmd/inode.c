@@ -1753,22 +1753,20 @@ dead_file_copy_add_one(void *closure,
 	gfarm_ino_t inum, gfarm_uint64_t igen, char *hostname)
 {
 	gfarm_error_t e;
-	struct inode *inode = inode_lookup(inum);
 	struct host *host = host_lookup(hostname);
+	char *funcname = "dead_file_copy_add_one";
 
-	if (inode == NULL) {
-		gflog_error("dead_file_copy_add_one: no inode %" GFARM_PRId64,
-		    inum);
-	} else if (!inode_is_file(inode)) {
-		gflog_error("dead_file_copy_add_one: not file %" GFARM_PRId64,
-		    inum);
-	} else if (host == NULL) {
-		gflog_error("dead_file_copy_add_one: no host %s", hostname);
+	if (host == NULL) {
+		gflog_error("%s: no host %s", funcname, hostname);
 	} else if ((e = host_remove_replica_enq(host,
-	    inode->i_number, inode->i_gen)) != GFARM_ERR_NO_ERROR) {
-		gflog_error("host_remove_replica_enq: record dead replica: %s",
+	    inum, igen)) != GFARM_ERR_NO_ERROR) {
+		gflog_error("%s: record dead replica: %s", funcname,
 		    gfarm_error_string(e));
 	} else {
+		e = db_deadfilecopy_remove(inum, igen, hostname);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("%s: db_deadfilecopy_remove: %s", funcname,
+			    gfarm_error_string(e));
 		return;
 	}
 	free(hostname);
