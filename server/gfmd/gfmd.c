@@ -354,8 +354,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		gflog_warning("unknown request: %d", request);
 		e = GFARM_ERR_PROTOCOL;
 	}
-	if (e == GFARM_ERR_NO_ERROR) {
-		/* XXX FIXME this shouldn't be done while COMPOUND loop. */
+	if (e == GFARM_ERR_NO_ERROR &&
+	    ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
+	     || request == GFM_PROTO_COMPOUND_END)) {
+		/* flush only when a COMPOUND loop is done */
+		if (debug_mode)
+			gflog_debug("gfp_xdr_flush");
 		e = gfp_xdr_flush(peer_get_conn(peer));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_warning("protocol flush: %s",
