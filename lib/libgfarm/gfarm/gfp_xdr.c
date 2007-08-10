@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
@@ -168,6 +169,12 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
+	double d;
+#ifndef WORDS_BIGENDIAN
+	struct { char c[8]; } nd;
+#else
+#	define nd d
+#endif
 	const char *s;
 
 	for (; *format; format++) {
@@ -249,6 +256,15 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
 			break;
+		case 'f':
+			d = va_arg(*app, double);
+#ifndef WORDS_BIGENDIAN
+			swab(&d, &nd, sizeof(nd));
+#endif
+			gfarm_iobuffer_put_write(conn->sendbuffer,
+			    &nd, sizeof(nd));
+			break;
+
 		default:
 			goto finish;
 		}
@@ -270,6 +286,10 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	gfarm_uint32_t lv[2];
 #if INT64T_IS_FLOAT
 	int minus;
+#endif
+	double *dp;
+#ifndef WORDS_BIGENDIAN
+	struct { char c[8]; } nd;
 #endif
 	char **sp, *s;
 	size_t *szp, sz;
@@ -376,6 +396,16 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 				    conn->recvbuffer, i - sz, just) != i - sz)
 					return (GFARM_ERR_NO_ERROR);
 			}
+			break;
+		case 'f':
+			dp = va_arg(*app, double *);
+			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
+			    dp, sizeof(*dp), just) != sizeof(*dp))
+				return (GFARM_ERR_NO_ERROR);
+#ifndef WORDS_BIGENDIAN
+			swab(dp, &nd, sizeof(nd));
+			*dp = *(double *)&nd;
+#endif
 			break;
 		default:
 			goto finish;
