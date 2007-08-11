@@ -282,8 +282,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_lock_info(peer, from_client, skip);
 		break;
 	case GFM_PROTO_SWITCH_BACK_CHANNEL:
-		e = gfm_server_switch_back_channel(peer, from_client, skip);
-		break;
+		return (gfm_server_switch_back_channel(
+				peer, from_client, skip));
 	case GFM_PROTO_GLOB:
 		e = gfm_server_glob(peer, from_client, skip);
 		break;

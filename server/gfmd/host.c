@@ -43,8 +43,8 @@ struct host {
 	struct gfarm_host_info hi;
 	struct peer *peer;
 	struct dead_file_copy *to_be_removed;
-	pthread_mutex_t removed_copy_mutex;
-	pthread_cond_t removed_copy_cond;
+	pthread_mutex_t remover_mutex;
+	pthread_cond_t remover_cond;
 	volatile int is_active;
 
 	gfarm_time_t last_report;
@@ -190,12 +190,9 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->loadavg_1min =
 	h->loadavg_5min =
 	h->loadavg_15min = 0.0;
-	pthread_mutex_init(&h->removed_copy_mutex, NULL);
-	pthread_cond_init(&h->removed_copy_cond, NULL);
-	/* XXX FIXME */
-	h->report_flags =
-	    GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
-	    GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
+	pthread_mutex_init(&h->remover_mutex, NULL);
+	pthread_cond_init(&h->remover_cond, NULL);
+	h->report_flags = 0;
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	if (hpp != NULL)
 		*hpp = h;
@@ -227,17 +224,24 @@ host_remove(const char *hostname)
 }
 
 void
-host_peer_connect(struct host *h, struct peer *p)
+host_peer_set(struct host *h, struct peer *p)
 {
+	pthread_mutex_lock(&h->remover_mutex);
 	h->peer = p;
 	h->is_active = 1;
+	pthread_mutex_unlock(&h->remover_mutex);
 }
 
 void
-host_peer_disconnect(struct host *h)
+host_peer_unset(struct host *h)
 {
+	pthread_mutex_lock(&h->remover_mutex);
 	h->peer = NULL;
 	h->is_active = 0;
+	/* terminate a remover thread */
+	pthread_cond_broadcast(&h->remover_cond);
+	pthread_mutex_unlock(&h->remover_mutex);
+	/* XXX - need to wait to finish the remover thread ??? */
 }
 
 struct peer *
@@ -264,6 +268,17 @@ host_is_up(struct host *h)
 	return (h->is_active);
 }
 
+void
+host_remove_replica_enq_copy(
+	struct host *host, struct dead_file_copy *dfc)
+{
+	pthread_mutex_lock(&host->remover_mutex);
+	dfc->next = host->to_be_removed;
+	host->to_be_removed = dfc;
+	pthread_cond_broadcast(&host->remover_cond);
+	pthread_mutex_unlock(&host->remover_mutex);
+}
+
 gfarm_error_t
 host_remove_replica_enq(
 	struct host *host, gfarm_ino_t inum, gfarm_uint64_t igen)
@@ -275,46 +290,56 @@ host_remove_replica_enq(
 		return (GFARM_ERR_NO_MEMORY);
 	dfc->inum = inum;
 	dfc->igen = igen;
-	pthread_mutex_lock(&host->removed_copy_mutex);
-	dfc->next = host->to_be_removed;
-	host->to_be_removed = dfc;
-	pthread_cond_broadcast(&host->removed_copy_cond);
-	pthread_mutex_unlock(&host->removed_copy_mutex);
-	/* db_deadfilecopy_add() is done by the caller of this function */
+	host_remove_replica_enq_copy(host, dfc);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-host_remove_replica(struct host *host)
+host_remove_replica(struct host *host, struct timespec *timeout)
 {
 	struct dead_file_copy *r;
 	gfarm_error_t e;
+	int retcode = 0;
 
-	pthread_mutex_lock(&host->removed_copy_mutex);
-	while (host->to_be_removed == NULL && host_is_up(host))
-		pthread_cond_wait(
-			&host->removed_copy_cond, &host->removed_copy_mutex);
+	pthread_mutex_lock(&host->remover_mutex);
+	while (host->to_be_removed == NULL && host_is_up(host) &&
+	       retcode != ETIMEDOUT)
+		retcode = pthread_cond_timedwait(
+			&host->remover_cond, &host->remover_mutex,
+			timeout);
+	if (retcode == ETIMEDOUT) {
+		pthread_mutex_unlock(&host->remover_mutex);
+		return (GFARM_ERR_OPERATION_TIMED_OUT);
+	}
 	if (!host_is_up(host)) {
-		pthread_mutex_unlock(&host->removed_copy_mutex);
+		pthread_mutex_unlock(&host->remover_mutex);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	r = host->to_be_removed;
 	host->to_be_removed = host->to_be_removed->next;
-	pthread_mutex_unlock(&host->removed_copy_mutex);
+	pthread_mutex_unlock(&host->remover_mutex);
 
 	e = gfs_client_fhremove(host_peer(host), r->inum, r->igen);
-	if (e != GFARM_ERR_NO_ERROR)
-		e = host_remove_replica_enq(host, r->inum, r->igen);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (!host_is_up(host))
+			host_remove_replica_enq_copy(host, r);
+		else {
+			gflog_error("host_remove_replica: dead copy lost");
+			free(r);
+		}
+	}
+	else
+		free(r);
 	return (e);
 }
 
-gfarm_error_t
+static gfarm_error_t
 host_remove_replica_dump(struct host *host)
 {
 	gfarm_error_t e;
-	struct dead_file_copy *r;
+	struct dead_file_copy *r, *nr;
 
-	pthread_mutex_lock(&host->removed_copy_mutex);
+	pthread_mutex_lock(&host->remover_mutex);
 	r = host->to_be_removed;
 	while (r != NULL) {
 		e = db_deadfilecopy_add(r->inum, r->igen, host_name(host));
@@ -322,9 +347,15 @@ host_remove_replica_dump(struct host *host)
 			gflog_error("db_deadfilecopy_add(%" GFARM_PRId64
 				    ", %s): %s", r->inum, host_name(host),
 				    gfarm_error_string(e));
-		r = r->next;
+		else if (debug_mode)
+			gflog_debug("db_deadfilecopy_add(%" GFARM_PRId64
+				    ", %s): added", r->inum, host_name(host));
+		nr = r->next;
+		free(r);
+		r = nr;
 	}
-	pthread_mutex_unlock(&host->removed_copy_mutex);
+	host->to_be_removed = NULL;
+	pthread_mutex_unlock(&host->remover_mutex);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -340,6 +371,27 @@ host_remove_replica_dump_all(void)
 			gflog_warning("host_remove_replica_dump_all: %s",
 				      gfarm_error_string(e));
 	}
+}
+
+gfarm_error_t
+host_update_status(struct host *host)
+{
+	gfarm_error_t e;
+
+	e = gfs_client_status(host_peer(host),
+		&host->loadavg_1min, &host->loadavg_5min,
+		&host->loadavg_15min,
+		&host->disk_used, &host->disk_avail);
+	if (e == GFARM_ERR_NO_ERROR) {
+		host->last_report = time(NULL);
+		host->report_flags =
+			GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
+			GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
+	}
+	else {
+		host->report_flags = 0;
+	}
+	return (e);
 }
 
 /*

@@ -35,7 +35,8 @@ enum gfs_proto_command {
 	/* from gfmd */
 
 	GFS_PROTO_FHSTAT,
-	GFS_PROTO_FHREMOVE
+	GFS_PROTO_FHREMOVE,
+	GFS_PROTO_STATUS
 };
 
 #define GFS_PROTO_MAX_IOSIZE	65536

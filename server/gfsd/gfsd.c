@@ -1387,6 +1387,31 @@ gfs_server_fhremove(struct gfp_xdr *conn)
 	gfs_server_put_reply_with_errno(conn, "fhremove", save_errno, "");
 }
 
+void
+gfs_server_status(struct gfp_xdr *conn)
+{
+	int save_errno = 0;
+	double loadavg[3];
+	gfarm_int32_t bsize;
+	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+	gfarm_off_t used = 0, avail = 0;
+
+	if (getloadavg(loadavg, GFARM_ARRAY_LENGTH(loadavg)) == -1) {
+		save_errno = EPERM; /* XXX */
+		gflog_warning("gfs_server_status: cannot get load average");
+	}
+	else {
+		save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
+			&blocks, &bfree, &bavail, &files, &ffree, &favail);
+		if (save_errno == 0) {
+			used = (blocks - bfree) * bsize / 1024;
+			avail = bavail * bsize / 1024;
+		}
+	}
+	gfs_server_put_reply_with_errno(conn, "status", save_errno, "fffll",
+		loadavg[0], loadavg[1], loadavg[2], used, avail);
+}
+
 #if 0 /* not yet in gfarm v2 */
 
 void
@@ -2939,8 +2964,6 @@ start_server(int accepting_sock,
 		close(accepting->tcp_sock);
 		for (i = 0; i < accepting->udp_socks_count; i++)
 			close(accepting->udp_socks[i]);
-		gfm_client_connection_free(gfm_server);
-		gfm_server = NULL;
 
 		server(client, client_name, client_addr);
 		/*NOTREACHED*/
@@ -3015,6 +3038,8 @@ back_channel_server(void)
 			gfs_server_fhstat(conn); break;
 		case GFS_PROTO_FHREMOVE:
 			gfs_server_fhremove(conn); break;
+		case GFS_PROTO_STATUS:
+			gfs_server_status(conn); break;
 		default:
 			gflog_warning("(back channel) unknown request %d",
 				      (int)request);
@@ -3035,7 +3060,8 @@ start_back_channel_server(void)
 		gflog_warning_errno("fork");
 		/*FALLTHROUGH*/
 	default:
-		/* do not free the gfm connection */
+		gfm_client_connection_free(gfm_server);
+		gfm_server = NULL;
 		break;
 	}
 }

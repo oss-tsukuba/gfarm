@@ -173,16 +173,9 @@ peer_authorized(struct peer *peer,
 	if (id_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
 		if (peer->host == NULL)
 			gflog_warning("unknown host: %s", hostname);
-		/* XXX - need to check still active peer or not */
-		else if (host_peer(peer->host) == NULL) {
-			gflog_debug("gfsd (master) connected from %s",
+		else
+			gflog_debug("gfsd connected from %s",
 				    host_name(peer->host));
-			host_peer_connect(peer->host, peer);
-		}
-		else {
-			gflog_debug("gfsd (child) connected from %s",
-				    host_name(peer->host));
-		}
 	}
 	/* We don't record auth_method for now */
 }
