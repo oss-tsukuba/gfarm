@@ -1817,7 +1817,7 @@ inode_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("loading inode: %s", gfarm_error_string(e));
 	e = db_inode_cksum_load(NULL, inode_cksum_add_one);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT /* XXX */)
 		gflog_error("loading inode cksum: %s", gfarm_error_string(e));
 
 	root = inode_lookup(ROOT_INUMBER);
@@ -1875,7 +1875,7 @@ dead_file_copy_init(void)
 	gfarm_error_t e;
 
 	e = db_deadfilecopy_load(NULL, dead_file_copy_add_one);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT)
 		gflog_error("loading deadfilecopy: %s", gfarm_error_string(e));
 }
 
