@@ -140,7 +140,7 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		va_end(ap);
-		gflog_warning(diag, gfarm_error_string(e));
+		gflog_warning("%s: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
@@ -148,12 +148,12 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 		e = gfp_xdr_vsend(client, &format, &ap);
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
-			gflog_warning(diag, gfarm_error_string(e));
+			gflog_warning("%s: %s", diag, gfarm_error_string(e));
 			peer_record_protocol_error(peer);
 			return (e);
 		}
 		if (*format != '\0')
-			gflog_fatal(diag,
+			gflog_fatal("%s: %s", diag,
 			    "invalid format character to put reply");
 	}
 	va_end(ap);
