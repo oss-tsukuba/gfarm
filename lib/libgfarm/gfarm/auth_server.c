@@ -205,7 +205,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
-	char *global_username, *local_username, *aux, *buf;
+	char *global_username, *local_username, *aux, *buf = NULL;
 	int eof;
 	enum gfarm_auth_id_type peer_type;
 	struct passwd pwbuf, *pwd;
@@ -274,6 +274,8 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		if (local_username != NULL)
 			free(local_username);
 		free(global_username);
+		if (buf != NULL)
+			free(buf);
 		return (e);
 	}
 	assert(local_username != NULL);
@@ -291,6 +293,8 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			free(local_username);
 			free(global_username);
+			if (buf != NULL)
+				free(buf);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		sprintf(aux, "%s@%s", global_username, hostname);
@@ -322,6 +326,8 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		*global_usernamep = global_username;
 	else
 		free(global_username);
+	if (buf != NULL)
+		free(buf);
 	return (GFARM_ERR_NO_ERROR);
 }
 
