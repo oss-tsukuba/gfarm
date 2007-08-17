@@ -111,6 +111,7 @@ char *program_name = "gfsd";
 
 int debug_mode = 0;
 pid_t master_gfsd_pid;
+pid_t back_channel_gfsd_pid;
 
 int restrict_user = 0;
 uid_t restricted_user = 0;
@@ -138,6 +139,8 @@ cleanup(int sighandler)
 	if (getpid() == master_gfsd_pid) {
 		unlink(local_sockname.sun_path);
 		rmdir(local_sockdir);
+		/* send terminate signal to a back channel process */
+		kill(back_channel_gfsd_pid, SIGTERM);
 	}
 
 	if (credential_exported != NULL)
@@ -3052,7 +3055,10 @@ back_channel_server(void)
 void
 start_back_channel_server(void)
 {
-	switch (fork()) {
+	pid_t pid;
+
+	pid = fork();
+	switch (pid) {
 	case 0:
 		back_channel_server();
 		/*NOTREACHED*/
@@ -3060,6 +3066,7 @@ start_back_channel_server(void)
 		gflog_warning_errno("fork");
 		/*FALLTHROUGH*/
 	default:
+		back_channel_gfsd_pid = pid;
 		gfm_client_connection_free(gfm_server);
 		gfm_server = NULL;
 		break;
@@ -3386,8 +3393,6 @@ main(int argc, char **argv)
 		    canonical_self_name, gfarm_error_string(e));
 		exit(1);
 	}
-	/* start back channel server */
-	start_back_channel_server();
 
 	/* sanity check on a spool directory */
 	if (stat(gfarm_spool_root, &sb) == -1)
@@ -3491,6 +3496,9 @@ main(int argc, char **argv)
 	/* XXX - kluge for GFS_PROTO_STATFS for now */
 	if (chdir(gfarm_spool_root) == -1)
 		gflog_fatal_errno(gfarm_spool_root);
+
+	/* start back channel server */
+	start_back_channel_server();
 
 	table_size = FILE_TABLE_LIMIT;
 	gfarm_unlimit_nofiles(&table_size);
