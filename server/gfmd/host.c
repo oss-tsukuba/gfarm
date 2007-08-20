@@ -321,12 +321,13 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 
 	e = gfs_client_fhremove(host_peer(host), r->inum, r->igen);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (!host_is_up(host))
-			host_remove_replica_enq_copy(host, r);
-		else {
-			gflog_error("host_remove_replica: dead copy lost");
+		gflog_error("host_remove_replica(%" GFARM_PRId64
+			    "): %s", r->inum, gfarm_error_string(e));
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			/* already removed by some reason */
 			free(r);
-		}
+		else
+			host_remove_replica_enq_copy(host, r);
 	}
 	else
 		free(r);
