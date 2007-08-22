@@ -1194,8 +1194,6 @@ gfarm_config_set_default_misc(void)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
 }
 
-int gf_profile;
-
 void
 gfs_display_timers(void)
 {

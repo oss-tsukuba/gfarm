@@ -186,7 +186,6 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
  */
 
 static GFS_File gf_stdout, gf_stderr;
-int gf_profile;
 int gf_on_demand_replication;
 
 gfarm_error_t
@@ -230,7 +229,7 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 				stderr_file = *argv;
 		}
 		else if (strcmp(&argv[0][2], "gfarm_profile") == 0)
-			gf_profile = 1;
+			gfs_profile_set();
 		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
 			gf_on_demand_replication = 1;
 		else if (strcmp(&argv[0][2], "gfarm_cwd") == 0) {
@@ -263,7 +262,6 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 		}
-		gfs_profile(gfarm_timerval_calibrate());
 
 		++argc;
 		--argv;

@@ -11,7 +11,7 @@
 
 #include <gfarm/gfarm.h>
 
-#include "config.h"	/* gfs_profile */
+#include "gfs_profile.h"
 #include "gfs_misc.h"
 
 char *
@@ -109,7 +109,7 @@ gfs_execve(const char *filename, char *const argv[], char *const envp[])
 	 * because we need to keep the LDAP connection.
 	 */
 	/* clean up the client environment */
-	gfs_profile(gf_profile = 0); /* not to display profile statistics */
+	gfs_profile_unset(); /* not to display profile statistics */
 	(void)gfarm_terminate();
 #endif
 	execve(path, argv, envp);

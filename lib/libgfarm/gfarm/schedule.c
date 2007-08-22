@@ -27,6 +27,7 @@
 #include "gfutil.h"	/* timeval */
 #include "gfevent.h"
 #include "hash.h"
+#include "timer.h"
 
 #include "liberror.h"
 #include "host.h" /* gfarm_host_info_address_get() */
@@ -35,6 +36,7 @@
 #include "gfm_client.h"
 #include "gfs_client.h"
 #include "schedule.h"
+#include "gfs_profile.h"
 
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -311,7 +313,7 @@ search_idle_network_list_init(void)
 	assert(search_idle_network_list == NULL);
 	e = gfarm_host_get_canonical_self_name(&self_name);
 	if (e != GFARM_ERR_NO_ERROR)
-		self_name =gfarm_host_get_self_name();
+		self_name = gfarm_host_get_self_name();
 	/* XXX FIXME this port number (0) is dummy */
 	e = gfarm_host_address_get(self_name, 0, &peer_addr, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -663,7 +665,6 @@ search_idle_candidate_list_add(struct gfarm_host_sched_info *info)
 	}
 #endif
 
-#if 0 /* XXX FIXME: this isn't available until backchannel is implemented */
 	if (info->flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		if ((h->flags & HOST_STATE_FLAG_RTT_AVAIL) == 0 ||
 		    h->loadavg_cache_time.tv_sec < info->cache_time) {
@@ -677,7 +678,6 @@ search_idle_candidate_list_add(struct gfarm_host_sched_info *info)
 		h->diskavail = info->disk_avail;
 		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
 	}
-#endif
 
 	h->flags |= HOST_STATE_FLAG_SCHEDULING;
 	h->net->flags |= NET_FLAG_SCHEDULING;
@@ -1051,7 +1051,7 @@ search_idle_cache_should_be_used(struct search_idle_host_state *h)
 		return (1); /* IP address isn't resolvable, even */
 
 	return ((h->flags & HOST_STATE_FLAG_RTT_TRIED) != 0 &&
-	    !is_expired(&h->rtt_cache_time, LOADAVG_EXPIRATION));
+	    !is_expired(&h->loadavg_cache_time, LOADAVG_EXPIRATION));
 
 }
 
@@ -1067,7 +1067,7 @@ search_idle_cache_is_available(struct search_idle_state *s,
 		return (0);
 
 	if ((h->flags & HOST_STATE_FLAG_RTT_TRIED) == 0 ||
-	    is_expired(&h->rtt_cache_time, LOADAVG_EXPIRATION))
+	    is_expired(&h->loadavg_cache_time, LOADAVG_EXPIRATION))
 		return (0);
 
 	switch (s->mode) {
@@ -1294,11 +1294,19 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	struct search_idle_state s;
 	struct search_idle_host_state *h, **results;
 	int i, n;
+	gfarm_timerval_t t1, t2, t3, t4;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
+
+	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_init_state(&s, *nohostsp, default_search_method,
 	    write_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	gfs_profile(gfarm_gettimerval(&t2));
 
 	/*
 	 * 2. at first, search hosts on the local network
@@ -1306,11 +1314,19 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	 */
 	if (search_idle_local_net != NULL)
 		search_idle_in_networks(&s, 1, &search_idle_local_net);
+	gfs_profile(gfarm_gettimerval(&t3));
 
 	if (!search_idle_is_satisfied(&s)) {
 		search_idle_examine_rtt_of_all_networks(&s);
 		e = search_idle_by_rtt_order(&s);
 	}
+	gfs_profile(gfarm_gettimerval(&t4));
+
+	gfs_profile(
+		gflog_info("(schedule_idle) init %g, local %g, all %g",
+			   gfarm_timerval_sub(&t2, &t1),
+			   gfarm_timerval_sub(&t3, &t2),
+			   gfarm_timerval_sub(&t4, &t3)));
 
 	gfarm_eventqueue_free(s.q);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1379,15 +1395,25 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	char *host;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
+	gfarm_timerval_t t1, t2, t3, t4, t5;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
+
+	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_candidate_list_init();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	gfs_profile(gfarm_gettimerval(&t2));
 	for (i = 0; i < nhosts; i++) {
 		e = search_idle_candidate_list_add(&infos[i]);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
+	gfs_profile(gfarm_gettimerval(&t3));
 	n = 1;
 	e = search_idle(&n, &host, write_mode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1397,6 +1423,7 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	host = strdup(host);
 	if (host == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+	gfs_profile(gfarm_gettimerval(&t4));
 
 	entry = gfarm_hash_lookup(search_idle_hosts_state,
 	    host, strlen(host) + 1);
@@ -1405,6 +1432,16 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	h = gfarm_hash_entry_data(entry);
 	*hostp = host;
 	*portp = h->port;
+	gfs_profile(gfarm_gettimerval(&t5));
+
+	gfs_profile(
+		gflog_info("(select_host) init %g, add %g, schedule %g, "
+			   "lookup %g",
+			   gfarm_timerval_sub(&t2, &t1),
+			   gfarm_timerval_sub(&t3, &t2),
+			   gfarm_timerval_sub(&t4, &t3),
+			   gfarm_timerval_sub(&t5, &t4)));
+
 	return (GFARM_ERR_NO_ERROR);
 }
 

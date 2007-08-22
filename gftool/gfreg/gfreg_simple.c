@@ -11,6 +11,9 @@
 
 #include <gfarm/gfarm.h>
 
+#include "timer.h"
+#include "gfs_profile.h"
+
 char *program_name = "gfreg";
 
 gfarm_error_t
@@ -28,21 +31,36 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode)
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
+	gfarm_timerval_t t1, t2, t3, t4;
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
+
+	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfs_pio_create(
 		gfarm_url, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, mode, &gf);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
 		return (e);
 	}
+	gfs_profile(gfarm_gettimerval(&t2));
 	e = gfimport(ifp, gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "writing to %s: %s\n", gfarm_url,
 		    gfarm_error_string(e));
+	gfs_profile(gfarm_gettimerval(&t3));
 	e2 = gfs_pio_close(gf);
 	if (e2 != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "closing %s: %s\n", gfarm_url,
 		    gfarm_error_string(e2));
+	gfs_profile(gfarm_gettimerval(&t4));
+	gfs_profile(fprintf(stderr, "create %g, import %g, close %g\n",
+			    gfarm_timerval_sub(&t2, &t1),
+			    gfarm_timerval_sub(&t3, &t2),
+			    gfarm_timerval_sub(&t4, &t3)));
+
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
@@ -71,8 +89,9 @@ gfimport_from_to(const char *ifile, char *gfarm_url)
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s <src_file> <dst_gfarm_file>...\n",
+	fprintf(stderr, "Usage: %s [-p] <src_file> <dst_gfarm_file>...\n",
 	    program_name);
+	fprintf(stderr, "\t%s\t%s\n", "-p", "turn on profiling");
 	exit(1);
 }
 
@@ -92,8 +111,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "h?")) != -1) {
+	while ((c = getopt(argc, argv, "hp?")) != -1) {
 		switch (c) {
+		case 'p':
+			gfs_profile_set();
+			break;
 		case 'h':
 		case '?':
 		default:

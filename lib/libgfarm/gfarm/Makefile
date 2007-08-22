@@ -43,6 +43,7 @@ SRCS = \
 	gfs_pio.c \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
+	gfs_profile.c \
 	gfs_chmod.c \
 	gfs_chown.c \
 	gfs_stat.c \
@@ -94,6 +95,7 @@ OBJS = \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
+	gfs_profile.lo \
 	gfs_chmod.lo \
 	gfs_chown.lo \
 	gfs_stat.lo \
@@ -162,7 +164,7 @@ io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
 metadb_common.lo: metadb_common.h
 param.lo: hostspec.h param.h
-schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h
+schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h gfs_profile.h
 sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:
 timespec.lo: timespec.h
