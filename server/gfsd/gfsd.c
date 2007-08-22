@@ -3018,15 +3018,19 @@ static void
 try_to_reconnect()
 {
 	gfarm_error_t e;
-	unsigned int sleep_interval = 600; /* 10 min */
+	unsigned int sleep_interval = 10;	/* 10 sec */
+	unsigned int sleep_max_interval = 640;	/* about 10 min */
 
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfm_server);
 	while (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("reconnection failed: %s", gfarm_error_string(e));
+		gflog_error("reconnection failed, sleep %d sec: %s",
+			sleep_interval, gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 			gfarm_metadb_server_port, &gfm_server);
+		if (sleep_interval < sleep_max_interval)
+			sleep_interval *= 2;
 	}
 	gfarm_metadb_set_server(gfm_server);
 }
