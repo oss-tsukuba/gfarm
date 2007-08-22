@@ -10,14 +10,7 @@ distribution.  You can skip this document if you use a binary
 distribution.
 
 To build the Gfarm system, the OpenSSL library and either the OpenLDAP
-library, or the PostgreSQL library are required.  To utilize the Grid Security
-Infrastructure (GSI) as the authentication method, the GSSAPI library is
-needed.  Currently, the GSSAPI library provided by the Globus toolkit
-version 2, 3, and 4 (GT2, GT3, and GT4) is supported by the
-configuration.  When building a gfs_hook_mpi.o syscall-hook library for
-executing legacy MPI applications on the Gfarm filesystem, and when
-building sample MPI applications in this distribution, an MPI library
-is needed.
+library, or the PostgreSQL library are required.
 
 The following is the installation procedure for the Gfarm system.
 Please use GNU make on operating systems other than Linux and NetBSD.
@@ -50,32 +43,6 @@ Options for configure:
   directory is /usr.
 
 
-  --with-mpi=directory
-
-  Specifies an installation directory for MPI to build sample MPI
-  applications and a syscall-hook library for MPI applications.  If
-  the directory is specified, ${directory}/bin/mpicc is used to
-  compile MPI applications.  Otherwise, mpicc is used.  This is
-  optional.
-
-
-  --with-globus=directory
-
-  Specifies an installation directory for the Globus Toolkit to utilize the
-  GSI authentication  method.  When a directory is not specified, the
-  environment variable, GLOBUS_LOCATION is used.  This is optional.
-  The flavor of the Globus library is searched for automatically.
-  If you need to specify a flavor, specify it with the
-  --with-globus-flavor=flavor option.
-
-
-  --without-gfshook
-
-  Disables building of a syscall-hook library, such as gfs_hook.o or
-  libgfs_hook.so.  It is needed for AIX, on which the syscall-hook library
-  is not supported.
-
-
   --prefix=directory
 
   Specifies a destination directory for installation.  The default is
@@ -84,7 +51,7 @@ Options for configure:
 
   --sysconfdir=directory
 
-  Specifies a directory where the ``gfarm.conf'' configuration file is
+  Specifies a directory where the ``gfarm2.conf'' configuration file is
   located.  The default is the ``etc'' directory under the directory
   specified in the above --prefix option.  This document assumes
   that --sysconfdir=/etc is specified.  This is optional.
@@ -93,20 +60,5 @@ When you need to specify a compiler program explicitly, use the
 environment variable, CC.  This is an example using gcc.
 
 	% env CC=gcc ./configure [options]
-
-======
-Notice
-======
-
-- On FreeBSD, if either gsi or gsi_auth is selected as the authentication
-  method, and if Gfarm is linked with OpenLDAP in ports system,
-  a segmentation fault happens in OpenSSL library, and Gfarm programs
-  dump core.  Thus, if you will use gsi or gsi_auth method,
-  you have to specify "--without-openldap" in the configure option,
-  and have to use PostgreSQL to store the Gfarm metadata.
-  The cause of this is probably because OpenSSL library included in Globus
-  conflicts with OpenSSL library in ports, due to their version mismatch.
-
-
 
 $Id$

@@ -11,13 +11,7 @@
 構築に関しては NetBSD, Solaris 上でテストされています．
 
 システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちら
-か片方と OpenSSL ライブラリが必要です．認証方式として GSI を利用するた
-めには，GSSAPI ライブラリが必要となります．現在の configure では
-GSSAPI ライブラリとして Globus toolkit version 2 (GT2)，version 3
-(GT3)，あるいは version 4 (GT4) に含まれるライブラリをサポートしていま
-す．また，既存の MPI アプリケーションで Gfarm ファイルシステムを利用す
-るためのライブラリ gfs_hook_mpi.o の構築，および MPI サンプルアプリケー
-ションの構築，実行するためには MPI が必要となります．
+か片方と OpenSSL ライブラリが必要です．
 
 システムを構築するには，下記のようにします．
 Linux と NetBSD 以外の OS では，GNU make を使ってください．
@@ -47,32 +41,6 @@ configure コマンドには，下記のオプションがあります．
   OpenSSL のインストールされているディレクトリを指定します．
   オプション省略時は /usr が指定されます．
 
-・--with-mpi=ディレクトリ
-
-  MPI アプリケーションのサンプルプログラムおよび MPI プログラムのシス
-  テムコールをフックするためのライブラリをコンパイルします．ディレクト
-  リを指定した場合はコンパイラとして ${ディレクトリ}/bin/mpicc が利用
-  され，省略時は mpicc は利用されます．このオプションは省略可能です．
-  現在サポートされている MPI の実装は，MPICH/p4 のみです．
-
-・--with-globus=ディレクトリ
-
-  認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
-  インストールされているディレクトリを指定します．
-  Globus toolkit のうち GSSAPI ライブラリが必要となります．ディレクト
-  リを指定しないと，環境変数 GLOBUS_LOCATION の示すディレクトリが利用
-  されます．
-  このオプションは省略可能です．
-  デフォールトでは，インストールされている flavor を自動的に検索します
-  が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
-  ともできます．
-
-・--without-gfshook
-
-  既存アプリケーションで Gfarm ファイルシステムを利用するためのライブラ
-  リ gfs_hook.o、libgfs_hook.so の構築を行いません．AIX など，
-  gfs_hook.o ライブラリがサポートされていない場合に必要となります．
-
 ・--prefix=ディレクトリ
 
   インストール先のディレクトリを指定します．このオプションを省略した場
@@ -81,7 +49,7 @@ configure コマンドには，下記のオプションがあります．
 
 ・--sysconfdir=ディレクトリ
 
-  設定ファイル「gfarm.conf」を置くディレクトリを指定します．このオプショ
+  設定ファイル「gfarm2.conf」を置くディレクトリを指定します．このオプショ
   ンを省略した場合は上記の --prefix オプションで指定したディレクトリの
   下の「etc」ディレクトリが指定されたものとみなします．本文書は，オプ
   ション --sysconfdir=/etc が指定されたものと仮定して記述してあります．
@@ -93,19 +61,5 @@ configure コマンドには，下記のオプションがあります．
 例です．
 
 	% env CC=gcc ./configure [options]
-
-========
-注意事項
-========
-
-- FreeBSD 上で gsi ないし gsi_auth 認証を用いる場合，ports の openldap
-  とリンクすると，OpenSSL ライブラリのなかで segmentation fault が生じ，
-  コアダンプしてしまいます．このため，もし gsi ないし gsi_auth 認証を
-  使う場合，「--without-openldap」オプションを configure コマンドに指定
-  して OpenLDAP をリンクしないようにし，PostgreSQL にメタデータを保存
-  する必要が生じます．
-  この原因は，GSI 機能を提供する Globus が内部的に OpenSSL ライブラリを
-  抱えており，これが OpenLDAP ライブラリの依存する別のバージョンの
-  OpenSSL ライブラリと矛盾を起こしているからのようです．
 
 $Id$
