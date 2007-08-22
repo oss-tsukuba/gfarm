@@ -386,6 +386,21 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	return (e);
 }
 
+static gfarm_error_t
+choose_trivial_one(struct gfarm_host_sched_info *info,
+	char **hostp, gfarm_int32_t *portp)
+{
+	char *host;
+
+	/* no choice */
+	host = strdup(info->host);
+	if (host == NULL)
+		return(GFARM_ERR_NO_MEMORY);
+
+	*hostp = host;
+	*portp = info->port;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 static gfarm_error_t
 schedule_and_open(GFS_File gf)
@@ -417,8 +432,11 @@ schedule_and_open(GFS_File gf)
 		for (i = 0; i < nhosts; ++i)
 			gflog_info("<%s>", infos[i].host));
 
-	e = gfarm_schedule_select_host(nhosts, infos,
-	    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
+	if (nhosts == 1)
+		e = choose_trivial_one(&infos[0], &host, &port);
+	else
+		e = gfarm_schedule_select_host(nhosts, infos,
+		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	gfs_profile(gfarm_gettimerval(&t3));
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
