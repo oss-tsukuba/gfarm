@@ -824,4 +824,20 @@ host_schedule_reply_all(struct peer *peer, const char *diag)
 	return (e_save);
 }
 
+gfarm_error_t
+host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
+{
+	gfarm_error_t e, e_save;
+	struct host *h = peer_get_host(peer);
+
+	/* give the top priority to the local host */
+	if (h != NULL && host_is_up(h)) {
+		e_save = host_schedule_reply_n(peer, 1, diag);
+		e = host_schedule_reply(h, peer, diag);
+		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
+	}
+	else
+		return (host_schedule_reply_all(peer, diag));
+}
+
 #endif /* TEST */

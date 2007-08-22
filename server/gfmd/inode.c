@@ -1562,7 +1562,7 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 		gflog_fatal("inode_schedule_file_reply: not a file");
 
 	if (creating)
-		return (host_schedule_reply_all(peer, diag));
+		return (host_schedule_reply_one_or_all(peer, diag));
 	if (writable && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 		n = 0;
