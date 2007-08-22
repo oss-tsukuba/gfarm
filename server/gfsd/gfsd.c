@@ -3014,6 +3014,23 @@ datagram_server(int sock)
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
+static void
+try_to_reconnect()
+{
+	gfarm_error_t e;
+	unsigned int sleep_interval = 600; /* 10 min */
+
+	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+	    gfarm_metadb_server_port, &gfm_server);
+	while (e != GFARM_ERR_NO_ERROR) {
+		gflog_error("reconnection failed: %s", gfarm_error_string(e));
+		sleep(sleep_interval);
+		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+			gfarm_metadb_server_port, &gfm_server);
+	}
+	gfarm_metadb_set_server(gfm_server);
+}
+
 void
 back_channel_server(void)
 {
@@ -3022,6 +3039,7 @@ back_channel_server(void)
 	int eof;
 	gfarm_int32_t request;
 
+retry:
 	e = gfm_client_switch_back_channel(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("switch_back_channel: %s", gfarm_error_string(e));
@@ -3029,13 +3047,16 @@ back_channel_server(void)
 	gflog_debug("back channel mode");
 	for (;;) {
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
-		if (e != GFARM_ERR_NO_ERROR)
-			fatal("(back channel) request number: %s",
-			      gfarm_error_string(e));
-		if (eof) {
-			/* XXX - try to reconnect */
-			fatal("back channel disconnected");
+		if (IS_CONNECTION_ERROR(e) || eof) {
+			gflog_error("back channel disconnected");
+			gfm_client_connection_free(gfm_server);
+			gfm_server = NULL;
+			try_to_reconnect();
+			goto retry;
 		}
+		else if (e != GFARM_ERR_NO_ERROR)
+			fatal("(back channel) request error, died: %s",
+			      gfarm_error_string(e));
 		switch (request) {
 		case GFS_PROTO_FHSTAT:
 			gfs_server_fhstat(conn); break;
