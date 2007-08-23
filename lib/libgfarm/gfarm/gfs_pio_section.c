@@ -455,7 +455,7 @@ schedule_and_open(GFS_File gf)
 
 	gfs_profile(
 		gflog_info("(sched_and_open) schedule %g, select %g, "
-			   "free %g, connect %g, connect %g\n",
+			   "free %g, connect %g, connect %g",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
 			   gfarm_timerval_sub(&t4, &t3),
