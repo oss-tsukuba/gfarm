@@ -3039,7 +3039,7 @@ void
 back_channel_server(void)
 {
 	gfarm_error_t e;
-	struct gfp_xdr *conn = gfm_client_connection_conn(gfm_server);
+	struct gfp_xdr *conn;
 	int eof;
 	gfarm_int32_t request;
 
@@ -3047,6 +3047,7 @@ retry:
 	e = gfm_client_switch_back_channel(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("switch_back_channel: %s", gfarm_error_string(e));
+	conn = gfm_client_connection_conn(gfm_server);
 
 	gflog_debug("back channel mode");
 	for (;;) {
