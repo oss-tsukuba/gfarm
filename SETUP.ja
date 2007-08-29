@@ -56,24 +56,18 @@ config-gfarm コマンドによって、/etc/gfarm2.conf や /etc/gfmd.conf など
 トリに、認証鍵ファイルを置き、gfmd が gfsd の認証を行なうために必要で
 す。
 
-	# useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-		-c "Gfarm gfsd" -u 600 _gfarmfs
-
-ユーザ「_gfarmfs|」のホームディレクトリを作成します。
+	# useradd -c "Gfarm gfsd" _gfarmfs
 
   もし、メタデータサーバとファイルシステムノードが、NFS でディスクを共
   有しているならば、ユーザ _gfarmfs のホームディレクトリを NFS 上に置
   き、認証鍵を NFS で共有することをお勧めします。
-
-	# mkdir /home/_gfarmfs
-	# chown _gfarmfs /home/_gfarmfs
 
 ユーザ「_gfarmfs」権限で、ホームディレクトリに認証鍵ファイル
 「.gfarm_shared_secret」を作成します。
 
 	# su _gfarmfs
 	$ gfkey -c -p 31536000
-	$ ls -l /home/_gfarmfs/.gfarm_shared_key 
+	$ ls -l ~/.gfarm_shared_key 
 
   ここでは、認証鍵の期限を、ほぼ1年(31536000秒) に設定しています。
 
@@ -109,26 +103,19 @@ config-gfarm コマンドによって、/etc/gfarm2.conf や /etc/gfmd.conf など
 
 ▽ ファイルシステムノードの設定
 
-ユーザ「_gfarmfs」を作成します。
+ユーザ「_gfarmfs」が無い場合は作成します。
 
-	# useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-		-c "Gfarm gfsd" -u 600 _gfarmfs
-
-ユーザ「_gfarmfs」のホームディレクトリを作成します。
-
-	# mkdir /home/_gfarmfs
-	# chown _gfarmfs /home/_gfarmfs
-
-  もし、メタデータサーバとファイルシステムノードが、NFS でディスクを
-  共有している場合は、作成は行なわず、単に NFS パーティションを
-  参照するように /etc/passwd を設定します。
+	# useradd -c "Gfarm gfsd" _gfarmfs
 
 ユーザ「_gfarmfs」のホームディレクトリに、認証鍵ファイル
 「.gfarm_shared_secret」をコピーします。
 
-  メタデータサーバから、「.gfarm_shared_secret」をコピーしてく
-  ださい。この際、ファイルのモードが「0600」、ファイルの所有者が
-  「_gfarmfs」となっているかどうか注意してください。
+  メタデータサーバとファイルシステムノードが、NFS でホームディレ
+  クトリを共有している場合は、既に存在するためコピーする必要はあ
+  りません
+
+  「.gfarm_shared_secret」のファイルのモードが「0600」、ファイル
+  の所有者が「_gfarmfs」となっているかどうか確認してください。
 
 次に、メタデータサーバで生成された /etc/gfarm2.conf ファイルをファイル
 システムノードの /etc にコピーします。
@@ -148,8 +135,8 @@ config-gfarm コマンドによって、/etc/gfarm2.conf や /etc/gfmd.conf など
 適切な設定になったら、config-gfsd コマンドのオプションから -t を取り除
 いて実行します。
 
-  特にオプションを指定する必要がなかったのであれば、以下を実行すること
-  になります。
+  特にオプションを指定する必要がないのであれば、以下を実行することにな
+  ります。
 
 	# config-gfsd /var/gfarm
 

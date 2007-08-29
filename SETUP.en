@@ -48,21 +48,15 @@ config-gfarm creates a Gfarm configuration file, /etc/gfarm2.conf and
 Create a '_gfarmfs' user.  This user is used to authenticate between
 gfsd and gfmd.
 
-	# useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-		-c "Gfarm gfsd" -u 600 _gfarmfs
-
-Create a home directory for '_gfarmfs'.
+	# useradd -c "Gfarm gfsd" _gfarmfs
 
   We recommend to create a home directory in NFS if available.
-
-	# mkdir /home/_gfarmfs
-	# chown _gfarmfs /home/_gfarmfs
 
 Create a shared secret key in the home directory.
 
 	# su _gfarmfs
 	$ gfkey -c -p 31536000
-	$ ls -l /home/_gfarmfs/.gfarm_shared_key 
+	$ ls -l ~/.gfarm_shared_key 
 
   This example sets up an expiration date of about one year (31536000
   seconds).
@@ -78,19 +72,14 @@ Configuration of a Gfarm filesystem node
 
 o Configuration of a filesystem node
 
-Create a '_gfarmfs' user.  This user is used to authenticate between
-gfsd and gfmd.
+Create a '_gfarmfs' user if not exist.  This user is used to
+authenticate between gfsd and gfmd.
 
-	# useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-		-c "Gfarm gfsd" -u 600 _gfarmfs
-
-Create a home directory for '_gfarmfs'.
-
-	# mkdir /home/_gfarmfs
-	# chown _gfarmfs /home/_gfarmfs
+	# useradd -c "Gfarm gfsd" _gfarmfs
 
 Copy the shared secret key .gfarm_shared_key in the _gfarmfs's
-directory from the metadata server.
+directory from the metadata server if the home directory is not
+shared.
 
   Note that the permission of .gfarm_shared_secret should be '0600'
   and the owner should be '_gfarmfs'.
@@ -161,7 +150,7 @@ port specified by the -p option of the config-gfsd command.
 Testing of the Gfarm filesystem
 ===============================
 
-You can check whether the Gfarm filesystem works or not uisng any client,
+You can check whether the Gfarm filesystem works or not using any client,
 since it can be accessed (or shared) by every client node.
 
 o gfls - Directory listing
