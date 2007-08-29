@@ -102,24 +102,28 @@ void
 writetest(char *ofile, int buffer_size, off_t file_size)
 {
 	GFS_File gf;
-	char *e;
+	gfarm_error_t e;
 	int rv;
 	off_t residual;
 
 	gettimerval(&tm_write_open_0);
 	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
 	    &gf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
-			node_index, ofile, e, gfarm_host_get_self_name());
+			node_index, ofile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#if 0 /* not yet in gfarm v2 */
 	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
-			node_index, ofile, e, gfarm_host_get_self_name());
+			node_index, ofile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#endif /* not yet in gfarm v2 */
 	gettimerval(&tm_write_open_1);
 	gettimerval(&tm_write_write_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
@@ -137,9 +141,10 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 				buffer_size : residual,
 				&rv);
 		}
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "[%03d] write test: %s on %s\n",
-				node_index, e, gfarm_host_get_self_name());
+				node_index, gfarm_error_string(e),
+				gfarm_host_get_self_name());
 			break;
 		}
 		if (rv != (buffer_size <= residual ? buffer_size : residual))
@@ -153,9 +158,10 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	gettimerval(&tm_write_close_0);
 	e = gfs_pio_close(gf);
 	gettimerval(&tm_write_close_1);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] write test close failed: %s on %s\n",
-			node_index, e, gfarm_host_get_self_name());
+			node_index, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 	}
 }
 
@@ -164,29 +170,34 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 {
 	GFS_File gf;
 	struct gfs_stat status;
-	char *e;
+	gfarm_error_t e;
 	int rv;
 	off_t residual;
 
 	gettimerval(&tm_read_open_0);
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &gf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#if 0 /* not yet in gfarm v2 */
 	e = gfs_pio_set_view_local(gf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#endif /* not yet in gfarm v2 */
 	gettimerval(&tm_read_open_1);
 
-	e = gfs_fstat(gf, &status);
-	if (e != NULL) {
-		fprintf(stderr, "[%03d] fstat(%s): %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+	e = gfs_stat(ifile, &status);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
 	if (file_size == 0)
@@ -211,9 +222,10 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 				buffer_size : residual,
 				&rv);
 		}
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "[%03d] read test: %s on %s\n",
-				node_index, e, gfarm_host_get_self_name());
+				node_index, gfarm_error_string(e),
+				gfarm_host_get_self_name());
 			break;
 		}
 		if (rv == 0)
@@ -229,9 +241,10 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	gettimerval(&tm_read_close_0);
 	e = gfs_pio_close(gf);
 	gettimerval(&tm_read_close_1);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] read test close failed: %s on %s\n",
-			node_index, e, gfarm_host_get_self_name());
+			node_index, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 	}
 	return (file_size - residual);
 }
@@ -241,40 +254,48 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 {
 	GFS_File igf, ogf;
 	struct gfs_stat status;
-	char *e;
+	gfarm_error_t e;
 	int rv, osize;
 	off_t residual;
 
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &igf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#if 0 /* not yet in gfarm v2 */
 	e = gfs_pio_set_view_local(igf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#endif /* not yet in gfarm v2 */
 	e = gfs_pio_create(ofile, GFARM_FILE_WRONLY|GFARM_FILE_TRUNC, 0666,
 	    &ogf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
-			node_index, ofile, e, gfarm_host_get_self_name());
+			node_index, ofile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
+#if 0 /* not yet in gfarm v2 */
 	e = gfs_pio_set_view_local(ogf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] set_view_local(%s): %s on %s\n",
-			node_index, ofile, e, gfarm_host_get_self_name());
+			node_index, ofile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
-
-	e = gfs_fstat(igf, &status);
-	if (e != NULL) {
-		fprintf(stderr, "[%03d] fstat(%s): %s on %s\n",
-			node_index, ifile, e, gfarm_host_get_self_name());
+#endif /* not yet in gfarm v2 */
+	e = gfs_stat(ifile, &status);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
 	if (file_size == 0)
@@ -285,9 +306,10 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 
 	for (residual = file_size; residual > 0; residual -= rv) {
 		e = gfs_pio_read(igf, buffer, buffer_size, &rv);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "[%03d] copytest read: %s on %s\n",
-				node_index, e, gfarm_host_get_self_name());
+				node_index, gfarm_error_string(e),
+				gfarm_host_get_self_name());
 			break;
 		}
 		if (rv == 0)
@@ -297,9 +319,10 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 
 		osize = rv;
 		e = gfs_pio_write(ogf, buffer, osize, &rv);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "[%03d] copytest write: %s on %s\n",
-				node_index, e, gfarm_host_get_self_name());
+				node_index, gfarm_error_string(e),
+				gfarm_host_get_self_name());
 			break;
 		}
 		if (rv != osize)
@@ -310,14 +333,16 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 			node_index, (long)residual, gfarm_host_get_self_name());
 	}
 	e = gfs_pio_close(ogf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] copy test write close failed: %s on %s\n",
-			node_index, e, gfarm_host_get_self_name());
+			node_index, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 	}
 	e = gfs_pio_close(igf);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] copy test read close failed: %s on %s\n",
-			node_index, e, gfarm_host_get_self_name());
+			node_index, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 	}
 	return (file_size - residual);
 }
@@ -360,15 +385,15 @@ test(enum testmode test_mode, char *file1, char *file2,
 	}
 	gettimeofday(&t2, NULL);
 
-	printf("[%03d] %" PR_FILE_OFFSET " %7d %-5s %10.0f %s\n",
-	       node_index, CAST_PR_FILE_OFFSET (file_offset_t)file_size,
+	printf("[%03d] %" GFARM_PRId64 " %7d %-5s %10.0f %s\n",
+	       node_index, (gfarm_off_t)file_size,
 	       buffer_size, label,
 	       file_size / timeval_sub(&t2, &t1), gfarm_host_get_self_name());
 	fflush(stdout);
 
 	if ((flags & FLAG_MEASURE_PRIMITIVES) != 0) {
-		fprintf(stderr, "[%03d] %" PR_FILE_OFFSET " %7d %-5s",
-		    node_index, CAST_PR_FILE_OFFSET (file_offset_t)file_size,
+		fprintf(stderr, "[%03d] %" GFARM_PRId64 " %7d %-5s",
+		    node_index, (gfarm_off_t)file_size,
 		    buffer_size, label);
 		if (test_mode == TESTMODE_WRITE)
 			fprintf(stderr, " %11g %11g %11g %11g\n",
@@ -395,21 +420,21 @@ test(enum testmode test_mode, char *file1, char *file2,
 int
 main(int argc, char **argv)
 {
-	char *file1 = "gfarm:test.file1";
-	char *file2 = "gfarm:test.file2";
+	char *file1 = "test.file1";
+	char *file2 = "test.file2";
 	int c, buffer_size = 1024 * 1024;
-	off_t file_size = 0;
+	off_t file_size = -1;
 	enum testmode test_mode = TESTMODE_WRITE;
 	int flags = 0;
-	char *e;
+	gfarm_error_t e;
 
 	if (argc > 0)
 		program_name = argv[0];
 
 	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfarm_initalize(): %s\n",
-			program_name, e);
+			program_name, gfarm_error_string(e));
 		exit(1);
 	}
 
@@ -441,8 +466,8 @@ main(int argc, char **argv)
 		case '?':
 		default:
 			fprintf(stderr,
-				"Usage: gfrun %s [options]"
-				" [gfarm_url1 [gfarm_url2]]\n"
+				"Usage: %s [options]"
+				" [create-file [copy-file]]\n"
 				"options:\n"
 				"\t-b block-size\n"
 				"\t-s file-size\n"
@@ -456,13 +481,16 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+#if 0 /* not yet in gfarm v2 */
 	e = gfs_pio_get_node_rank(&node_index);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfs_pio_get_node_rank(): %s\n",
 			program_name, e);
 		exit(1);
 	}
-
+#else
+	node_index = 0;
+#endif /* not yet in gfarm v2 */
 	if (argc > 0)
 		file1 = argv[0];
 	if (argc > 1)
@@ -471,7 +499,7 @@ main(int argc, char **argv)
 	if (flags & FLAG_MEASURE_PRIMITIVES)
 		timerval_calibrate();
 
-	if (file_size == 0 && test_mode == TESTMODE_WRITE)
+	if (file_size == -1 && test_mode == TESTMODE_WRITE)
 		file_size = DEFAULT_FILE_SIZE;
 
 	file_size *= 1024 * 1024;
@@ -480,9 +508,10 @@ main(int argc, char **argv)
 	test(test_mode, file1, file2, buffer_size, file_size, flags);
 
 	e = gfarm_terminate();
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfarm_terminiate(): %s on %s\n",
-			program_name, e, gfarm_host_get_self_name());
+			program_name, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 		exit(1);
 	}
 	return (0);
