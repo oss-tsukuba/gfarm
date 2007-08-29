@@ -166,6 +166,10 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	gfarm_error_t e;
 	int errcode;
 
+	e = gfp_xdr_flush(gfm_server->conn);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrpc_result(gfm_server->conn, just,
 	    &errcode, &format, &ap);

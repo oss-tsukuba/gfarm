@@ -91,6 +91,8 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 			break;
 		}
 		e = gfp_xdr_send(conn, "i", GFARM_AUTH_SHAREDSECRET_MD5);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &error);
@@ -111,6 +113,8 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		    response);
 		e = gfp_xdr_send(conn, "ib",
 		    expire, sizeof(response), response);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
@@ -124,6 +128,8 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	    error == GFARM_AUTH_ERROR_EXPIRED);
 
 	e = gfp_xdr_send(conn, "i", GFARM_AUTH_SHAREDSECRET_GIVEUP);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfp_xdr_recv(conn, 0, &eof, "i", &error_ignore);
@@ -188,6 +194,8 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		    (methods & server_methods & (1 << method)) == 0)
 			continue;
 		e = gfp_xdr_send(conn, "i", method);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);

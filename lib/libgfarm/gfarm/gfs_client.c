@@ -943,6 +943,10 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	gfarm_error_t e;
 	int errcode;
 
+	e = gfp_xdr_flush(gfs_server->conn);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrpc_result(gfs_server->conn, just,
 				  &errcode, &format, &ap);
@@ -1381,6 +1385,8 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 
 	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "ll",
 	    ino, gen);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 

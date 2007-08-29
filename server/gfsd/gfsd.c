@@ -354,13 +354,12 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		    diag, (int)ecode, gfarm_error_string(ecode));
 
 	e = gfp_xdr_send(client, "i", ecode);
+	if (ecode == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_vsend(client, &format, app);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(client);
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("%s: %s", diag, gfarm_error_string(e));
-	if (ecode == GFARM_ERR_NO_ERROR) {
-		e = gfp_xdr_vsend(client, &format, app);
-		if (e != GFARM_ERR_NO_ERROR)
-			fatal("%s: %s", diag, gfarm_error_string(e));
-	}
 
 	if (ecode == GFARM_ERR_NO_ERROR && *format != '\0')
 		fatal("%s: invalid format character `%c' to put reply",

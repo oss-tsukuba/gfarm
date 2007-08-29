@@ -127,6 +127,8 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn, struct passwd *pwd)
 
 		gfarm_auth_random(challenge, sizeof(challenge));
 		e = gfp_xdr_send(conn, "b", sizeof(challenge), challenge);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error("auth_sharedsecret: challenge: %s",
 			    gfarm_error_string(e));
@@ -383,6 +385,8 @@ gfarm_authorize(struct gfp_xdr *conn,
 			methods_buffer[nmethods++] = i;
 	}
 	e = gfp_xdr_send(conn, "b", nmethods, methods_buffer);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error("%s: %s", hostname, gfarm_error_string(e));
 		return (e);

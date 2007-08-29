@@ -295,12 +295,9 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	size_t *szp, sz;
 	size_t size;
 	int overflow = 0;
-	gfarm_error_t e;
 
-	e = gfp_xdr_flush(conn);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 
+	/* do not call gfp_xdr_flush() here for a compound procedure */
 	*eofp = 1;
 
 	for (; *format; format++) {
@@ -516,6 +513,8 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	 * send request
 	 */
 	e = gfp_xdr_vrpc_request(conn, command, formatp, app);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
