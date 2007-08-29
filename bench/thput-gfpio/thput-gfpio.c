@@ -75,6 +75,7 @@ int tm_write_write_measured = 0;
 timerval_t tm_write_open_0, tm_write_open_1;
 timerval_t tm_write_write_0, tm_write_write_1;
 timerval_t tm_write_write_all_0, tm_write_write_all_1;
+timerval_t tm_write_sync_0, tm_write_sync_1;
 timerval_t tm_write_close_0, tm_write_close_1;
 
 int tm_read_read_measured = 0;
@@ -154,6 +155,14 @@ writetest(char *ofile, int buffer_size, off_t file_size)
 	if (residual > 0) {
 		fprintf(stderr, "[%03d] write test failed, residual = %ld on %s\n",
 			node_index, (long)residual, gfarm_host_get_self_name());
+	}
+	gettimerval(&tm_write_sync_0);
+ 	e = gfs_pio_sync(gf);
+	gettimerval(&tm_write_sync_1);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "[%03d] write test sync failed: %s on %s\n",
+			node_index, gfarm_error_string(e),
+			gfarm_host_get_self_name());
 	}
 	gettimerval(&tm_write_close_0);
 	e = gfs_pio_close(gf);
@@ -396,11 +405,12 @@ test(enum testmode test_mode, char *file1, char *file2,
 		    node_index, (gfarm_off_t)file_size,
 		    buffer_size, label);
 		if (test_mode == TESTMODE_WRITE)
-			fprintf(stderr, " %11g %11g %11g %11g\n",
+			fprintf(stderr, " %11g %11g %11g %11g %11g\n",
 			    timerval_sub(&tm_write_open_1, &tm_write_open_0),
 			    timerval_sub(&tm_write_write_1, &tm_write_write_0),
 			    timerval_sub(&tm_write_write_all_1,
 					 &tm_write_write_all_0),
+			    timerval_sub(&tm_write_sync_1, &tm_write_sync_0),
 			    timerval_sub(&tm_write_close_1, &tm_write_close_0)
 			);
 		if (test_mode == TESTMODE_READ)
