@@ -135,6 +135,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 			    gfarm_error_string(e));
 	}
 
+	/* XXX FIXME - make sure there is at most one running remover thread */
 	if (e == GFARM_ERR_NO_ERROR && e2 == GFARM_ERR_NO_ERROR)
 		e2 = remover(h);
 	return (e2);
