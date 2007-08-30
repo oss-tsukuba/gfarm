@@ -722,7 +722,9 @@ gfarm_pgsql_generic_load(
 		(*set_fields_from_copy_binary)(bp, ret, tmp_info);
 		if ((*base_ops->validate)(tmp_info))
 			(*callback)(closure, tmp_info);
+#if 0		/* the (*callback)() routine frees this memory */
 		(*base_ops->free)(tmp_info);
+#endif
 		PQfreemem(buf);
 
 		ret = PQgetCopyData(conn, &buf, 0);
