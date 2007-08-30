@@ -1297,10 +1297,6 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
-
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_init_state(&s, *nohostsp, default_search_method,
 	    write_mode);
@@ -1323,7 +1319,7 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	gfs_profile(gfarm_gettimerval(&t4));
 
 	gfs_profile(
-		gflog_info("(schedule_idle) init %g, local %g, all %g",
+		gflog_info("(search_idle) init %f, local %f, all %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
 			   gfarm_timerval_sub(&t4, &t3)));
@@ -1398,11 +1394,6 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	gfarm_timerval_t t1, t2, t3, t4, t5;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
-
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_candidate_list_init();
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1435,8 +1426,8 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	gfs_profile(gfarm_gettimerval(&t5));
 
 	gfs_profile(
-		gflog_info("(select_host) init %g, add %g, schedule %g, "
-			   "lookup %g",
+		gflog_info("(select_host) init %f, add %f, schedule %f, "
+			   "lookup %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
 			   gfarm_timerval_sub(&t4, &t3),

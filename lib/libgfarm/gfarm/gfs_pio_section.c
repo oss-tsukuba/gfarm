@@ -346,13 +346,9 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
 	int is_local_host;
-	gfarm_timerval_t t1, t2, t3, t4, t5;
+	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
-
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfs_client_connection_acquire_by_host(hostname, port, &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -370,18 +366,16 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 		else
 			e = gfs_pio_open_remote_section(gf, gfs_server);
 	}
-	gfs_profile(gfarm_gettimerval(&t4));
 	if (e != GFARM_ERR_NO_ERROR)
 		gfs_client_connection_free(gfs_server);
-	gfs_profile(gfarm_gettimerval(&t5));
+	gfs_profile(gfarm_gettimerval(&t4));
 
 	gfs_profile(
-		gflog_info("(conn_and_open) acquire %g, process_set %g, "
-			   "connect %g, free %g",
+		gflog_info("(connect_and_open) connection_acquire %f, "
+			   "process_set %f, open %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
-			   gfarm_timerval_sub(&t4, &t3),
-			   gfarm_timerval_sub(&t5, &t4)));
+			   gfarm_timerval_sub(&t4, &t3)));
 
 	return (e);
 }
@@ -410,18 +404,12 @@ schedule_and_open(GFS_File gf)
 	struct gfarm_host_sched_info *infos;
 	char *host;
 	gfarm_int32_t port;
-	gfarm_timerval_t t1, t2, t3, t4, t5, t6;
+	gfarm_timerval_t t1, t2, t3, t4, t5;
 	int i;
 	/*
 	 * XXX FIXME: Or, call replicate_section_to_local(), if that's prefered
 	 */
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t6);
-
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfm_schedule_file(gf->fd, &nhosts, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -437,30 +425,28 @@ schedule_and_open(GFS_File gf)
 	else
 		e = gfarm_schedule_select_host(nhosts, infos,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
-	gfs_profile(gfarm_gettimerval(&t3));
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gflog_info("host -> %s", host));
-	gfs_profile(gfarm_gettimerval(&t4));
+	gfs_profile(gfarm_gettimerval(&t3));
 
 	e = connect_and_open(gf, host, port);
-	gfs_profile(gfarm_gettimerval(&t5));
+	gfs_profile(gfarm_gettimerval(&t4));
 
 	if (gfs_client_is_connection_error(e))
 		e = connect_and_open(gf, host, port);
-	gfs_profile(gfarm_gettimerval(&t6));
+	gfs_profile(gfarm_gettimerval(&t5));
 
 	free(host);
 
 	gfs_profile(
-		gflog_info("(sched_and_open) schedule %g, select %g, "
-			   "free %g, connect %g, connect %g",
+		gflog_info("(schedule_and_open) schedule %f, select %f, "
+			   "connect %f, connect again %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
 			   gfarm_timerval_sub(&t4, &t3),
-			   gfarm_timerval_sub(&t5, &t4),
-			   gfarm_timerval_sub(&t6, &t5)));
+			   gfarm_timerval_sub(&t5, &t4)));
 
 	/* XXX FIXME: if failed, try to reschedule another host */
 	return (e);
@@ -839,7 +825,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info("gfs_pio_set_view_section : %g sec",
+	gflog_info("gfs_pio_set_view_section : %f sec",
 		gfs_pio_set_view_section_time);
 }
 
