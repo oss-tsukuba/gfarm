@@ -3,7 +3,7 @@
 
 <refentry id='gfls.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>27 Apr 2007</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -39,7 +39,14 @@
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>Display pathnames whose names begin with ``.''.</para>
+<para>Do not hide entries starting with ``.''.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>Do not list ``.'' and ``..''.</para>
 </listitem>
 </varlistentry>
 

@@ -2,7 +2,7 @@
 
 <refentry id='gfls.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>27 Apr 2007</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfls</refentrytitle>
@@ -34,7 +34,13 @@
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>``.'' で始まるパス名も表示します。</para>
+<para>``.''で始まるパス名も表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-A</option></term>
+<listitem>
+<para>``.''と``..''は表示しません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>

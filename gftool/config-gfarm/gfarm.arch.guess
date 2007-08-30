@@ -173,4 +173,5 @@ sunos)	case `uname -r` in
 *)	ARCH="$MACHINE-unknown-$KERNEL$RELEASE";;
 esac
 
-echo $ARCH
+# translate '/' to '_' just in case since gfarm v1 does not allow '/' in $ARCH
+echo $ARCH | tr '/' '_'

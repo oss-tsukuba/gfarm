@@ -34,7 +34,7 @@
 #define FILE_SUFFIX ".file"
 #define TEST_MAX  20
 
-static int timer_interrupt = 0;
+volatile sig_atomic_t timer_interrupt = 0;
 
 /**********************************************************************/
 
@@ -155,8 +155,11 @@ times_init(void(*time_initializer)(void**))
 
 static void
 timer_interrupt_handler(int sig){
+	char msg[] =
+	    "*** Interrupt! (cleanup) (following values may be invalid)\n";
+
 	timer_interrupt = 1;
-	printf("*** Interrupt! (cleanup) (following values may be invalid)\n");
+	write(1, msg, sizeof(msg) - 1); /* printf(3) isn't async-signal-safe */
 }
 
 /**********************************************************************/

@@ -49,6 +49,7 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
+#define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
 
 #define XAUTH_NEXTRACT_MAXLEN	512
@@ -264,8 +265,7 @@ connect_wait(int s)
 
 	FD_ZERO(&wset);
 	FD_SET(s, &wset);
-	/* timeout: 5 sec */
-	timeout.tv_sec = 5;
+	timeout.tv_sec = GFS_CLIENT_CONNECT_TIMEOUT;
 	timeout.tv_usec = 0;
 
 	rv = select(s + 1, NULL, &wset, NULL, &timeout);
@@ -379,6 +379,10 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
 
+	/*
+	 * this fcntl should never fail, or even if this fails, that's OK
+	 * because its only effect is that TCP timeout becomes longer.
+	 */
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 	rv = connect(sock, peer_addr, sizeof(*peer_addr));
 	if (rv < 0) {
@@ -390,7 +394,7 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	} else {
 		*connection_in_progress_p = 0;
 	}
-	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK */
+	fcntl(sock, F_SETFL, 0); /* clear O_NONBLOCK, this should never fail */
 	*sockp = sock;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2258,8 +2262,8 @@ gfs_client_statfs_with_reconnection(
  **********************************************************************
  */
 
-int gfs_client_datagram_timeouts[] = {
-	10, 100, 1000, 2000, 4000 /* milli seconds */
+int gfs_client_datagram_timeouts[] = { /* milli seconds */
+	8000, 12000
 };
 int gfs_client_datagram_ntimeouts =
 	GFARM_ARRAY_LENGTH(gfs_client_datagram_timeouts);

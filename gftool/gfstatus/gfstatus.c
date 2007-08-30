@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <gfarm/gfarm.h>
 #include "config.h"
+#include "auth.h"
 #include "agent_wrap.h"
 
 void
@@ -29,6 +30,9 @@ int
 main(int argc, char *argv[])
 {
 	char *e, *name, *arch;
+#ifdef HAVE_GSI
+	char *cred;
+#endif
 	extern int gfarm_is_active_file_system_node;
 
 	e = gfarm_initialize(&argc, &argv);
@@ -46,6 +50,10 @@ main(int argc, char *argv[])
 	print_msg("global username", gfarm_get_global_username());
 	print_msg(" local username", gfarm_get_local_username());
 	print_msg(" local home dir", gfarm_get_local_homedir());
+#ifdef HAVE_GSI
+	cred = gfarm_gsi_client_cred_name();
+	print_msg("credential name", cred ? cred : "no credential");
+#endif
 
 	puts("");
 	printf("gfsd server port: %d\n", gfarm_spool_server_port);
@@ -59,7 +67,7 @@ main(int argc, char *argv[])
 			  gfarm_agent_name_get());
 		printf("metadata cache server port: %d\n",
 		       gfarm_agent_port_get());
-	}		
+	}
 
 	/* metadata backend database server */
 	puts("");
@@ -79,7 +87,6 @@ main(int argc, char *argv[])
 	if (!gfarm_ldap_server_name && !gfarm_postgresql_server_name &&
 	    !gfarm_localfs_datadir)
 		print_msg("metadata backend server", "not available");
-		
 
 	/* gfmd */
 	puts("");
@@ -89,7 +96,7 @@ main(int argc, char *argv[])
 	}
 	else
 		print_msg("gfmd server", "not available");
-		
+
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);
 

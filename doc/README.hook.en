@@ -422,6 +422,7 @@ isn't guaranteed to work, even for the async-signal-safe syscalls.
      an error may occur while accessing the Gfarm filesystem via
      the scp command.
      This symptom haven't been observed on Solaris.
+   - Configure does not work on non-filesystem node.
 
 2-9) OS-dependent limitations
 

@@ -44,14 +44,19 @@ export PGDATA
 
 rc_reset
 
+call_pg_ctl()
+{
+	$RUN -c "$CTL $OPTIONS $*"
+}
+
 case $1 in
     start)
 	echo -n "Starting $FILE"
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
-	if [ ! -x "$DAEMON" ]; then
+	if [ ! -x "$CTL" ]; then
 		rc_failed 5 # program is not installed
-	elif "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"; then
+	elif call_pg_ctl start; then
 		:
 	else
 		rc_failed 1 # generic or unspecified error
@@ -60,17 +65,7 @@ case $1 in
 	;;
     stop)
 	echo -n "Shutting down $FILE"
-	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
-		:
-	elif [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
-	then
-		rc_failed 4 # user had insufficient privileges
-	else
-		if [ -f "$PIDFILE" ]; then
-			echo -n "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
-		fi
-		rc_failed 7 # program is not running
-	fi
+	call_pg_ctl stop || rc_failed 1
 	rc_status -v
 	;;
     try-restart)
@@ -97,14 +92,7 @@ case $1 in
 	;;
     status)
 	echo -n "Checking for service $FILE: "
-	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
-	then
-		:
-	elif [ -f "$PIDFILE" ]; then
-		rc_failed 1 # service dead, but pid file exists
-	else
-		rc_failed 3 # service not running (unused)
-	fi
+	call_pg_ctl status || rc_failed 1
 	rc_status -v
 	;;
     *)

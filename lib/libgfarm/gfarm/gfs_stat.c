@@ -77,5 +77,5 @@ gfs_stat(const char *path, struct gfs_stat *s)
 void
 gfs_stat_display_timers(void)
 {
-	gflog_info("gfs_stat        : %g sec\n", gfs_stat_time);
+	gflog_info("gfs_stat        : %g sec", gfs_stat_time);
 }
