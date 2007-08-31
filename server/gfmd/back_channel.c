@@ -92,7 +92,8 @@ remover(void *h)
 		timeout.tv_nsec = now.tv_usec * 1000;
 
 		e = host_remove_replica(host, &timeout);
-		if (e == GFARM_ERR_OPERATION_TIMED_OUT)
+		if (e == GFARM_ERR_OPERATION_TIMED_OUT ||
+		    e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			continue;
 		if (e != GFARM_ERR_NO_ERROR)
 			break;

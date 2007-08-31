@@ -323,7 +323,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error("host_remove_replica(%" GFARM_PRId64
 			    "): %s", r->inum, gfarm_error_string(e));
-		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			/* already removed by some reason */
 			free(r);
 		else
