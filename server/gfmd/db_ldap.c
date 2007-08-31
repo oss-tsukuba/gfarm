@@ -74,19 +74,62 @@
 
 LDAP *gfarm_ldap_server = NULL;
 
+static gfarm_error_t gfarm_ldap_initialize(void);
+static gfarm_error_t gfarm_ldap_terminate(void);
+
+static int
+just_a_minute()
+{
+	struct timespec t;
+	/* wait 10 msec */
+	t.tv_sec = 0;
+	t.tv_nsec = 10000000;
+	return (nanosleep(&t, NULL));
+}
+
+static int
+reconnect_to_ldap_server()
+{
+	gfarm_error_t error;
+	int i;
+
+	gflog_warning("reconnect");
+	error = gfarm_ldap_terminate();
+	if (error != GFARM_ERR_NO_ERROR)
+		return (error);
+
+	for (i = 1;; ++i) {
+		/*
+		 * When OpenLDAP server is heavily loaded,
+		 * it returns LDAP_SERVER_DOWN.  The first
+		 * attempt to reconnect tends to fail.
+		 * As a workaround, wait a minute and try
+		 * to reconnect several times.
+		 */
+		just_a_minute();
+		error = gfarm_ldap_initialize();
+		if (error == GFARM_ERR_NO_ERROR)
+			return (error);
+		gflog_warning("reconnect [%d] failed", i);
+		/* try again and again */
+	}
+}
+
 void
 gfarm_ldap_sanity(void)
 {
 	int rv;
 	LDAPMessage *res = NULL;
 
+retry:
 	rv = ldap_search_s(gfarm_ldap_server, gfarm_ldap_base_dn,
 	    LDAP_SCOPE_BASE, "objectclass=top", NULL, 0, &res);
 	if (rv != LDAP_SUCCESS) {
 		switch (rv) {
 		case LDAP_SERVER_DOWN:
-			gflog_fatal("can't contact LDAP server for gfarm");
-			break;
+			if (reconnect_to_ldap_server() != GFARM_ERR_NO_ERROR)
+				gflog_fatal("can't contact LDAP server for gfarm");
+			goto retry;
 		case LDAP_NO_SUCH_OBJECT:
 			gflog_fatal("gfarm LDAP base dn (%s) not found",
 			    gfarm_ldap_base_dn);
@@ -296,8 +339,6 @@ gfarm_ldap_switch_ssl_context(LDAP *ld)
 #define gfarm_ldap_restore_ssl_context()
 #define gfarm_ldap_switch_ssl_context(ld)
 #endif /* OPENLDAP_TLS_USABLE */
-
-static gfarm_error_t gfarm_ldap_terminate(void);
 
 static gfarm_error_t
 gfarm_ldap_initialize(void)
@@ -622,10 +663,10 @@ gfarm_ldap_generic_info_add(
 	int rv;
 	char *dn;
 
-retry:
 	dn = ops->make_dn(key);
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+retry:
 	rv = ldap_add_s(gfarm_ldap_server, dn, modv);
 
 	switch (rv) {
@@ -633,7 +674,7 @@ retry:
 		error = GFARM_ERR_NO_ERROR;
 		break;
 	case LDAP_SERVER_DOWN:
-		error = gfarm_ldap_initialize();
+		error = reconnect_to_ldap_server();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
 		break;
@@ -658,10 +699,10 @@ gfarm_ldap_generic_info_modify(
 	int rv;
 	char *dn;
 
-retry:
 	dn = ops->make_dn(key);
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+retry:
 	rv = ldap_modify_s(gfarm_ldap_server, dn, modv);
 
 	switch (rv) {
@@ -669,7 +710,7 @@ retry:
 		error = GFARM_ERR_NO_ERROR;
 		break;
 	case LDAP_SERVER_DOWN:
-		error = gfarm_ldap_initialize();
+		error = reconnect_to_ldap_server();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
 		break;
@@ -696,10 +737,10 @@ gfarm_ldap_generic_info_remove(
 	int rv;
 	char *dn;
 
-retry:
 	dn = ops->make_dn(key);
 	if (dn == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+retry:
 	rv = ldap_delete_s(gfarm_ldap_server, dn);
 
 	switch (rv) {
@@ -707,7 +748,7 @@ retry:
 		error = GFARM_ERR_NO_ERROR;
 		break;
 	case LDAP_SERVER_DOWN:
-		error = gfarm_ldap_initialize();
+		error = reconnect_to_ldap_server();
 		if (error == GFARM_ERR_NO_ERROR)
 			goto retry;
 		break;
