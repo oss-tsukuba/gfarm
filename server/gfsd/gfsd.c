@@ -2894,6 +2894,10 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		if (e != GFARM_ERR_NO_ERROR)
 			fatal("request number: %s", gfarm_error_string(e));
 		if (eof) {
+			/*
+			 * XXX FIXME update metadata of all opened
+			 * file descriptor before exit.
+			 */
 			cleanup(0);
 			exit(0);
 		}
@@ -3023,8 +3027,10 @@ try_to_reconnect()
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfm_server);
 	while (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("reconnection failed, sleep %d sec: %s",
-			sleep_interval, gfarm_error_string(e));
+		/* suppress excessive log */
+		if (sleep_interval < sleep_max_interval)
+			gflog_error("reconnection failed, sleep %d sec: %s",
+				    sleep_interval, gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 			gfarm_metadb_server_port, &gfm_server);
