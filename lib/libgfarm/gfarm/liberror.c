@@ -203,6 +203,9 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"gfarm_auth_request_sharedsecret_multiplexed: implementaton error",
 	"gfarm_auth_request_multiplexed: implementation error",
 
+	/* refered only from gfarm/auth_server.c */
+	"gfarm_auth_sharedsecret_md5_response: key mismatch, continue",
+
 	/* refered only from gfarm/auth_client_gsi.c */
 	"GSI credential initialization failed",
 	"GSI initialization failed",
