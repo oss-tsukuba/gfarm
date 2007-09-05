@@ -139,8 +139,8 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 	if (argc != 1) {
-		fprintf(stderr, "%s: error: only one input file name expected",
-		    program_name);
+		fprintf(stderr, "%s: %s\n", program_name,
+		    "error: only one input file name expected");
 		usage();
 	}
 
