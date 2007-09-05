@@ -49,6 +49,10 @@ struct gfs_file {
 
 	gfarm_off_t io_offset;
 
+/*
+ * GFS_FILE_BUFSIZE should be equal to or less than
+ * GFS_PROTO_MAX_IOSIZE defined in gfs_proto.h.
+ */
 #define GFS_FILE_BUFSIZE (262144 - 8)
 	char *buffer;
 	int p;
