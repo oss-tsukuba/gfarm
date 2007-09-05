@@ -49,7 +49,7 @@ struct gfs_file {
 
 	gfarm_off_t io_offset;
 
-#define GFS_FILE_BUFSIZE 65536
+#define GFS_FILE_BUFSIZE (262144 - 8)
 	char *buffer;
 	int p;
 	int length;

@@ -39,7 +39,7 @@ enum gfs_proto_command {
 	GFS_PROTO_STATUS
 };
 
-#define GFS_PROTO_MAX_IOSIZE	65536
+#define GFS_PROTO_MAX_IOSIZE	(262144 - 8)
 
 /*
  * sub protocols of GFS_PROTO_COMMAND
