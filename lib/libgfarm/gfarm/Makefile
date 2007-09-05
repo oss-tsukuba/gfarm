@@ -54,6 +54,7 @@ SRCS = \
 	gfs_replica.c \
 	gfs_replicate.c \
 	gfs_unlink.c \
+	gfs_utimes.c \
 	glob.c \
 	schedule.c \
 	timespec.c \
@@ -106,6 +107,7 @@ OBJS = \
 	gfs_replica.lo \
 	gfs_replicate.lo \
 	gfs_unlink.lo \
+	gfs_utimes.lo \
 	glob.lo \
 	schedule.lo \
 	timespec.lo \
@@ -155,6 +157,7 @@ gfs_proto.lo: gfs_proto.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
+gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h 
 glob.lo:
 host.lo: hostspec.h host.h
 hostspec.lo: hostspec.h
