@@ -1297,6 +1297,9 @@ search_idle(int *nohostsp, char **ohosts, int write_mode)
 	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_init_state(&s, *nohostsp, default_search_method,
 	    write_mode);
@@ -1394,6 +1397,10 @@ gfarm_schedule_select_host(int nhosts, struct gfarm_host_sched_info *infos,
 	gfarm_timerval_t t1, t2, t3, t4, t5;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
+
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_candidate_list_init();
 	if (e != GFARM_ERR_NO_ERROR)

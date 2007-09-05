@@ -349,6 +349,9 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfs_client_connection_acquire_by_host(hostname, port, &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -410,6 +413,11 @@ schedule_and_open(GFS_File gf)
 	 * XXX FIXME: Or, call replicate_section_to_local(), if that's prefered
 	 */
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
+
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfm_schedule_file(gf->fd, &nhosts, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
