@@ -159,5 +159,5 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	va_end(ap);
 	/* do not call gfp_xdr_flush() here for a compound protocol */
 
-	return (e);
+	return (ecode);
 }

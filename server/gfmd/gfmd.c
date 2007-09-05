@@ -77,7 +77,7 @@ gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	int eof;
 	gfarm_int32_t request;
 
@@ -354,16 +354,17 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		gflog_warning("unknown request: %d", request);
 		e = GFARM_ERR_PROTOCOL;
 	}
-	if (e == GFARM_ERR_NO_ERROR &&
-	    ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
-	     || request == GFM_PROTO_COMPOUND_END)) {
+	if ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
+	    || request == GFM_PROTO_COMPOUND_END) {
 		/* flush only when a COMPOUND loop is done */
 		if (debug_mode)
 			gflog_debug("gfp_xdr_flush");
-		e = gfp_xdr_flush(peer_get_conn(peer));
-		if (e != GFARM_ERR_NO_ERROR)
+		e2 = gfp_xdr_flush(peer_get_conn(peer));
+		if (e2 != GFARM_ERR_NO_ERROR)
 			gflog_warning("protocol flush: %s",
-			    gfarm_error_string(e));
+			    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
 	}
 
 	*requestp = request;
