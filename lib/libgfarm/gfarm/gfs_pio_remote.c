@@ -92,6 +92,17 @@ gfs_pio_remote_storage_fsync(GFS_File gf, int operation)
 	return (gfs_client_fsync(gfs_server, gf->fd, operation));
 }
 
+static gfarm_error_t
+gfs_pio_remote_storage_fstat(GFS_File gf, struct gfs_stat *st)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	return (gfs_client_fstat(gfs_server, gf->fd,
+	    &st->st_size, &st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec,
+	    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec));
+}
+
 static int
 gfs_pio_remote_storage_fd(GFS_File gf)
 {
@@ -109,6 +120,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_pwrite,
 	gfs_pio_remote_storage_ftruncate,
 	gfs_pio_remote_storage_fsync,
+	gfs_pio_remote_storage_fstat,
 };
 
 gfarm_error_t

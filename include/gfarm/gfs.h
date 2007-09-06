@@ -166,6 +166,8 @@ gfarm_error_t gfs_pio_readline(GFS_File, char **, size_t *, size_t *);
 gfarm_error_t gfs_pio_readdelim(GFS_File, char **, size_t *, size_t *,
 	const char *, size_t);
 
+gfarm_error_t gfs_pio_stat(GFS_File, struct gfs_stat *);
+
 /*
  * Directory operations
  */
@@ -216,6 +218,7 @@ gfarm_error_t gfs_utimes(const char *, const struct gfarm_timespec *);
 gfarm_error_t gfs_rename(const char *, const char *);
 
 gfarm_error_t gfs_stat(const char *, struct gfs_stat *);
+gfarm_error_t gfs_fstat(GFS_File, struct gfs_stat *);
 #if 0
 gfarm_error_t gfs_stat_section(const char *, const char *, struct gfs_stat *);
 gfarm_error_t gfs_stat_index(char *, int, struct gfs_stat *);

@@ -235,6 +235,14 @@ gfs_pio_view_section_fsync(GFS_File gf, int operation)
 	return ((*vc->ops->storage_fsync)(gf, operation));
 }
 
+static gfarm_error_t
+gfs_pio_view_section_fstat(GFS_File gf, struct gfs_stat *st)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return ((*vc->ops->storage_fstat)(gf, st));
+}
+
 static int
 gfs_pio_view_section_fd(GFS_File gf)
 {
@@ -250,6 +258,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_pwrite,
 	gfs_pio_view_section_ftruncate,
 	gfs_pio_view_section_fsync,
+	gfs_pio_view_section_fstat,
 };
 
 

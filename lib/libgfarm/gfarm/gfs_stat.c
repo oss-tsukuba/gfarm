@@ -74,6 +74,49 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	return (e);
 }
 
+gfarm_error_t
+gfs_fstat(GFS_File gf, struct gfs_stat *s)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_put_fd_request(
+			  gfarm_metadb_server, gfs_pio_fileno(gf)))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("put_fd request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fstat_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("fstat request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_end request: %s",
+		    gfarm_error_string(e));
+
+	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("put_fd result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_fstat_result(gfarm_metadb_server, s))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("fstat result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_end result: %s",
+		    gfarm_error_string(e));
+
+	return (e);
+}
+
 void
 gfs_stat_display_timers(void)
 {

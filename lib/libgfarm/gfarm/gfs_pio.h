@@ -22,6 +22,7 @@ struct gfs_pio_ops {
 		const char *, size_t, gfarm_off_t, size_t *);
 	gfarm_error_t (*view_ftruncate)(GFS_File, gfarm_off_t);
 	gfarm_error_t (*view_fsync)(GFS_File, int);
+	gfarm_error_t (*view_fstat)(GFS_File, struct gfs_stat *);
 };
 
 struct gfs_file {
@@ -82,6 +83,7 @@ struct gfs_storage_ops {
 		const char *, size_t, gfarm_off_t, size_t *);
 	gfarm_error_t (*storage_ftruncate)(GFS_File, gfarm_off_t);
 	gfarm_error_t (*storage_fsync)(GFS_File, int);
+	gfarm_error_t (*storage_fstat)(GFS_File, struct gfs_stat *);
 };
 
 #define GFS_DEFAULT_DIGEST_NAME	"md5"

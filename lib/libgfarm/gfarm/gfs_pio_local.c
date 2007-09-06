@@ -195,6 +195,25 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct stat sb;
+
+	if (fstat(vc->fd, &sb) == 0) {
+		st->st_size = sb.st_size;
+		st->st_atimespec.tv_sec = sb.st_atime;
+		st->st_atimespec.tv_nsec = 0; /* XXX */
+		st->st_mtimespec.tv_sec = sb.st_mtime;
+		st->st_mtimespec.tv_nsec = 0; /* XXX */
+	}
+	else
+		return (gfarm_errno_to_error(errno));
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static int
 gfs_pio_local_storage_fd(GFS_File gf)
 {
@@ -210,6 +229,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_pwrite,
 	gfs_pio_local_storage_ftruncate,
 	gfs_pio_local_storage_fsync,
+	gfs_pio_local_storage_fstat,
 };
 
 gfarm_error_t

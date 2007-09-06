@@ -75,7 +75,6 @@ gfs_pio_set_view_default(GFS_File gf)
 	return (e_save);
 }
 
-
 static gfarm_error_t
 gfs_pio_check_view_default(GFS_File gf)
 {
@@ -272,7 +271,7 @@ gfs_pio_close(GFS_File gf)
 			e_save = e;
 	}
 
-	e = gfm_close_fd(gf->fd);
+	e = gfm_close_fd(gfs_pio_fileno(gf));
 	if (e_save == GFARM_ERR_NO_ERROR)
 		e_save = e;
 	gfs_file_free(gf);
@@ -1081,6 +1080,30 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 	*lenp = len;
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * fstat
+ */
+
+gfarm_error_t
+gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
+{
+	gfarm_error_t e;
+
+	e = gfs_pio_check_view_default(gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfs_fstat(gf, st);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = (*gf->ops->view_fstat)(gf, st);
+	if (e != GFARM_ERR_NO_ERROR)
+		gf->error = e;
+
+	return (e);
 }
 
 void
