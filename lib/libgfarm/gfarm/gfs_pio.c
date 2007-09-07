@@ -54,12 +54,18 @@ gfs_pio_clearerr(GFS_File gf)
 	gf->error = GFARM_ERR_NO_ERROR;
 }
 
+static gfarm_error_t
+gfs_pio_is_view_set(GFS_File gf)
+{
+	return (gf->view_context != NULL);
+}
+
 gfarm_error_t
 gfs_pio_set_view_default(GFS_File gf)
 {
 	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 
-	if (gf->view_context != NULL) {
+	if (gfs_pio_is_view_set(gf)) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
@@ -84,7 +90,7 @@ gfs_pio_check_view_default(GFS_File gf)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (gf->view_context == NULL) /* view isn't set yet */
+	if (!gfs_pio_is_view_set(gf)) /* view isn't set yet */
 #if 0 /* not yet in gfarm v2 */
 		return (gfs_pio_set_view_global(gf, 0));
 #else /* not yet in gfarm v2 */
@@ -263,9 +269,9 @@ gfs_pio_close(GFS_File gf)
 	 * operation.
 	 */
 	e_save = GFARM_ERR_NO_ERROR;
-	if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
-		e_save = gfs_pio_flush(gf);
-	if (gf->ops != NULL) {
+	if (gfs_pio_is_view_set(gf)) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
+			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
@@ -1091,18 +1097,15 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 {
 	gfarm_error_t e;
 
-	e = gfs_pio_check_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
 	e = gfs_fstat(gf, st);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	e = (*gf->ops->view_fstat)(gf, st);
-	if (e != GFARM_ERR_NO_ERROR)
-		gf->error = e;
-
+	if (gfs_pio_is_view_set(gf)) {
+		e = (*gf->ops->view_fstat)(gf, st);
+		if (e != GFARM_ERR_NO_ERROR)
+			gf->error = e;
+	}
 	return (e);
 }
 
