@@ -1,0 +1,83 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfsck.8'>
+
+<refentryinfo><date>14 Sep 2007</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsck</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfsck(8)</refname>
+<refpurpose>Repare the metadata of Gfarm file system</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfsck</command>
+    <arg choice='opt'>-v</arg>
+    <arg choice='opt'>-f</arg>
+    <arg choice='opt'>-h <replaceable>hostname</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+gfsck checks metadata of specified files or all files under specified
+directories in Gfarm file system, and deletes the metadata if the
+corresponding physical file has been lost.
+</para>
+
+<para>
+Note that gfsck checks the existence of physical files but does not
+check any validity of a file.  If the validity check is required, use
+gfsplck(8) command.
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>
+delete metadata if the file system node is not available.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter>hostname</parameter></term>
+<listitem>
+<para>
+check metadata whose corresponding physical file is stored on the
+specified node.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>display verbose information.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfsplck</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>

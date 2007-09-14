@@ -1,0 +1,96 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfsck.8'>
+
+<refentryinfo><date>12 Sep 2007</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsck</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfsck(8)</refname>
+<refpurpose>Gfarmファイルシステムのメタデータを修復する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfsck</command>
+    <arg choice='opt'>-v</arg>
+    <arg choice='opt'>-f</arg>
+    <arg choice='opt'>-h <replaceable>hostname</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+gfsck は Gfarm ファイルシステムの指定されたファイル，
+あるいは指定されたディレクトリ以下の全ファイルを対象に，
+ファイル複製を保持する全ホストに対し，
+対応する実際のファイルが存在するかどうか調べます．
+ファイルが存在しない場合はそのメタデータを消去し，
+メタデータと実際のファイルの間の一貫性を保ちます．
+Gfarm ファイルシステムに対する通常のファイルアクセス時でも，
+同様のメタデータの修復は自動的に行われますが，
+gfsck は指定された全ファイル，
+全ファイル複製保持ホストに対して検査を行います．
+</para>
+
+<para>
+なお，gfsck は実ファイルの存在を検査しますが，
+メタデータに登録されているファイルかどうかの検査は行いません．
+その検査が必要な場合は gfsplck を用います．
+</para>
+
+<para>
+なお，gfsck は，メタデータ・キャッシュサーバではなくメタデータ・
+サーバを直接参照するため，メタデータ・サーバにアクセス可能なホスト
+で実行する必要があります．
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-f</option></term>
+<listitem>
+<para>
+実際のファイルが存在しない時だけではなく，
+ホストが落ちている場合もメタデータを消去します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter>hostname</parameter></term>
+<listitem>
+<para>
+検査するホストを hostname で指定されたホストに限ります．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>詳細な情報を表示します．</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfsplck</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>

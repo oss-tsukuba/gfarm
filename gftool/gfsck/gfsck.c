@@ -12,6 +12,7 @@
 
 static int option_force;
 static int option_verbose;
+static char *option_host;
 static char GFARM_MSG_DELETED[] = "deleted";
 
 static char *
@@ -125,6 +126,14 @@ gfsck_file(char *gfarm_url)
 		for (j = 0; j < ncopies; ++j) {
 			char *hostname = copies[j].hostname;
 
+			if (option_host &&
+			    strcmp(hostname, option_host) != 0) {
+				if (option_verbose)
+					printf("%s (%s) on %s: skipped\n",
+					       gfarm_url, section, hostname);
+				++valid_ncopies;
+				continue;
+			}
 			if (option_verbose)
 				printf("%s (%s) on %s\n", gfarm_url, section,
 				       hostname);
@@ -138,9 +147,9 @@ gfsck_file(char *gfarm_url)
 				e = NULL;
 				continue;
 			}
-			else if (option_force
-				 || e == GFARM_ERR_NO_ROUTE_TO_HOST
-				 || e == GFARM_ERR_NO_SUCH_OBJECT) {
+			else if (option_force &&
+				 (e == GFARM_ERR_NO_ROUTE_TO_HOST ||
+				  e == GFARM_ERR_NO_SUCH_OBJECT)) {
 				e = section_copy_info_remove(gfarm_url,
 					gfarm_file, section, hostname, e);
 				if (e != NULL && e_save == NULL)
@@ -258,7 +267,7 @@ char *program_name = "gfsck";
 static void
 usage()
 {
-	fprintf(stderr, "Usage: %s [-fhv] path ...\n", program_name);
+	fprintf(stderr, "Usage: %s [-fv] [-h host] path ...\n", program_name);
 	exit(1);
 }
 
@@ -269,13 +278,13 @@ main(int argc, char *argv[])
 	int c, i, error = 0;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	char *e;
+	char *e, *opt_host = NULL;
 
 	if (argc <= 1)
 		usage();
 	program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "fhv?")) != EOF) {
+	while ((c = getopt(argc, argv, "fh:v?")) != EOF) {
 		switch (c) {
 		case 'f':
 			option_force = 1;
@@ -284,6 +293,8 @@ main(int argc, char *argv[])
 			option_verbose = 1;
 			break;
 		case 'h':
+			opt_host = optarg;
+			break;
 		case '?':
 		default:
 			usage();
@@ -298,6 +309,13 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (opt_host) {
+		e = gfarm_host_get_canonical_name(opt_host, &option_host);
+		if (e != NULL) {
+			fprintf(stderr, "%s: %s\n", opt_host, e);
+			exit(1);
+		}
+	}
 	e = gfarm_stringlist_init(&paths);
 	if (e != NULL) {
 		fprintf(stderr, "%s: %s\n", program_name, e);
