@@ -181,6 +181,7 @@ man/ja/man3/gfs_utimes.3
 man/ja/man5/gfarm.conf.5
 man/ja/man8/gfdump.8
 man/ja/man8/gfmd.8
+man/ja/man8/gfsck.8
 man/ja/man8/gfsd.8
 man/man1/gfarm_agent.1
 man/man1/gfcd.1
@@ -267,6 +268,7 @@ man/man3/gfs_utimes.3
 man/man5/gfarm.conf.5
 man/man8/gfdump.8
 man/man8/gfmd.8
+man/man8/gfsck.8
 man/man8/gfsd.8
 sbin/gfmd
 sbin/gfregister
@@ -376,6 +378,7 @@ share/doc/gfarm/html/en/ref/man3/gfs_utimes.3.html
 share/doc/gfarm/html/en/ref/man5/gfarm.conf.5.html
 share/doc/gfarm/html/en/ref/man8/gfdump.8.html
 share/doc/gfarm/html/en/ref/man8/gfmd.8.html
+share/doc/gfarm/html/en/ref/man8/gfsck.8.html
 share/doc/gfarm/html/en/ref/man8/gfsd.8.html
 share/doc/gfarm/html/en/user/index.html
 share/doc/gfarm/html/en/user/nfs-gfarmfs.html
@@ -476,6 +479,7 @@ share/doc/gfarm/html/ja/ref/man3/gfs_utimes.3.html
 share/doc/gfarm/html/ja/ref/man5/gfarm.conf.5.html
 share/doc/gfarm/html/ja/ref/man8/gfdump.8.html
 share/doc/gfarm/html/ja/ref/man8/gfmd.8.html
+share/doc/gfarm/html/ja/ref/man8/gfsck.8.html
 share/doc/gfarm/html/ja/ref/man8/gfsd.8.html
 share/doc/gfarm/html/ja/user/export-gfarm.html
 share/doc/gfarm/html/ja/user/index.html

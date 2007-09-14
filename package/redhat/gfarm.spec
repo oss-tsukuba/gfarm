@@ -400,6 +400,7 @@ fi
 %{man_prefix}/man5/gfarm.conf.5.gz
 %{man_prefix}/man8/gfdump.8.gz
 %{man_prefix}/man8/gfmd.8.gz
+%{man_prefix}/man8/gfsck.8.gz
 %{man_prefix}/man8/gfsd.8.gz
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
@@ -497,6 +498,7 @@ fi
 %{man_prefix}/ja/man5/gfarm.conf.5.gz
 %{man_prefix}/ja/man8/gfdump.8.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
+%{man_prefix}/ja/man8/gfsck.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
 %{html_prefix}/index.html
 %{html_prefix}/en/ref/index.html
@@ -583,6 +585,7 @@ fi
 %{html_prefix}/en/ref/man5/gfarm.conf.5.html
 %{html_prefix}/en/ref/man8/gfdump.8.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
+%{html_prefix}/en/ref/man8/gfsck.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
 %{html_prefix}/en/user/nfs-gfarmfs.html
@@ -683,6 +686,7 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm.conf.5.html
 %{html_prefix}/ja/ref/man8/gfdump.8.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
+%{html_prefix}/ja/ref/man8/gfsck.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/index.html
