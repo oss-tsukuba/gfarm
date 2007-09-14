@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfsck</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFSCK.8"
+></A
+>gfsck</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfsck(8)&nbsp;--&nbsp;Repare the metadata of Gfarm file system</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfsck</B
+> [-v] [-f] [-h <VAR
+CLASS="REPLACEABLE"
+>hostname</VAR
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfsck checks metadata of specified files or all files under specified
+directories in Gfarm file system, and deletes the metadata if the
+corresponding physical file has been lost.</P
+><P
+>Note that gfsck checks the existence of physical files but does not
+check any validity of a file.  If the validity check is required, use
+gfsplck(8) command.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><VAR
+CLASS="OPTION"
+>-f</VAR
+></DT
+><DD
+><P
+>delete metadata if the file system node is not available.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-h</VAR
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>check metadata whose corresponding physical file is stored on the
+specified node.</P
+></DD
+><DT
+><VAR
+CLASS="OPTION"
+>-v</VAR
+></DT
+><DD
+><P
+>display verbose information.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsplck</SPAN
+>(8)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>
