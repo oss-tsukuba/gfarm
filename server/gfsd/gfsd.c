@@ -1367,6 +1367,7 @@ gfs_server_fhstat(struct gfp_xdr *conn)
 		mtime_sec = st.st_mtime;
 		/* XXX FIXME st_mtimespec.tv_nsec */
 	}
+	free(path);
 
 	gfs_server_put_reply_with_errno(conn, "fhstat", save_errno,
 	    "llili", size, atime_sec, atime_nsec, mtime_sec, mtime_nsec);
@@ -1385,6 +1386,7 @@ gfs_server_fhremove(struct gfp_xdr *conn)
 	local_path(ino, gen, "fhremove", &path);
 	if (unlink(path) == -1)
 		save_errno = errno;
+	free(path);
 
 	gfs_server_put_reply_with_errno(conn, "fhremove", save_errno, "");
 }

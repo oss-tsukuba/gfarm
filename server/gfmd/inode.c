@@ -1697,6 +1697,7 @@ inode_add_one(void *closure, struct gfs_stat *st)
 	inode->i_atimespec = st->st_atimespec;
 	inode->i_mtimespec = st->st_mtimespec;
 	inode->i_ctimespec = st->st_ctimespec;
+	gfs_stat_free(st);
 }
 
 /* The memory owner of `type' and `sum' is changed to inode.c */
@@ -1717,7 +1718,6 @@ inode_cksum_add_one(void *closure,
 		    inum);
 	} else {
 		inode_cksum_set_internal(inode, type, len, sum);
-		return;
 	}
 	free(type);
 	free(sum);
@@ -1741,8 +1741,6 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 	    GFARM_ERR_NO_ERROR){
 		gflog_error("file_copy_add_one: add_replica: %s",
 		    gfarm_error_string(e));
-	} else {
-		return;
 	}
 	free(hostname);
 }
@@ -1767,7 +1765,6 @@ dead_file_copy_add_one(void *closure,
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error("%s: db_deadfilecopy_remove: %s", funcname,
 			    gfarm_error_string(e));
-		return;
 	}
 	free(hostname);
 }
