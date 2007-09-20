@@ -385,7 +385,7 @@ gfs_server_put_reply_with_errno(struct gfp_xdr *client, const char *diag,
 	gfarm_int32_t ecode = gfarm_errno_to_error(eno);
 
 	if (ecode == GFARM_ERR_UNKNOWN)
-		gflog_info("%s: %s", diag, strerror(eno));
+		gflog_warning("%s: %s", diag, strerror(eno));
 	va_start(ap, format);
 	gfs_server_put_reply_common(client, diag, ecode, format, &ap);
 	va_end(ap);
