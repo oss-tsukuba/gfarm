@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #ifdef i386
 
@@ -266,6 +267,28 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 		(t2->tv_sec + t2->tv_usec * .000001));
 }
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
+static char *
+host_get_self_name(void)
+{
+	static int initialized;
+	static char hostname[HOST_NAME_MAX + 1];
+
+	if (!initialized) {
+		hostname[0] = hostname[HOST_NAME_MAX] = 0;
+		/* gethostname(2) almost shouldn't fail */
+		gethostname(hostname, HOST_NAME_MAX);
+		if (hostname[0] == '\0')
+			strcpy(hostname, "hostname-not-set");
+		initialized = 1;
+	}
+
+	return (hostname);
+}
+
 #define TESTMODE_WRITE	1
 #define TESTMODE_READ	2
 #define TESTMODE_COPY	4
@@ -276,15 +299,16 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 void
 test_title(int test_mode, off_t file_size, int flags)
 {
-	fprintf(stdout, "testing with %d MB file\n", (int)file_size);
+	fprintf(stdout, "testing with %d MB file [bytes/sec]\n",
+		(int)file_size);
 	printf("%-8s", "bufsize");
 	if (test_mode & TESTMODE_WRITE)
-		printf(" %20s", "write [bytes/sec]");
+		printf(" %12s%3s", "write", "");
 	if (test_mode & TESTMODE_READ)
-		printf(" %20s", "read [bytes/sec]");
+		printf(" %12s%3s", "read", "");
 	if (test_mode & TESTMODE_COPY)
-		printf(" %20s", "copy [bytes/sec]");
-	printf("\n");
+		printf(" %12s%3s", "copy", "");
+	printf(" hostname\n");
 	fflush(stdout);
 }
 
@@ -314,12 +338,12 @@ test(int test_mode, char *file1, char *file2, int buffer_size, off_t file_size,
 
 	printf("%7d ", buffer_size);
 	if (test_mode & TESTMODE_WRITE)
-		printf(" %10.0f%10s", file_size / timeval_sub(&t2, &t1), "");
+		printf(" %12.0f%3s", file_size / timeval_sub(&t2, &t1), "");
 	if (test_mode & TESTMODE_READ)
-		printf(" %10.0f%10s", file_size / timeval_sub(&t3, &t2), "");
+		printf(" %12.0f%3s", file_size / timeval_sub(&t3, &t2), "");
 	if (test_mode & TESTMODE_COPY)
-		printf(" %10.0f%10s", file_size / timeval_sub(&t4, &t3), "");
-	printf("\n");
+		printf(" %12.0f%3s", file_size / timeval_sub(&t4, &t3), "");
+	printf(" %s\n", host_get_self_name());
 	fflush(stdout);
 
 	if ((flags & FLAG_DONT_REMOVE) == 0) {
