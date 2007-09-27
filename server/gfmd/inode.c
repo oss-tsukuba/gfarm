@@ -1829,8 +1829,8 @@ inode_init(void)
 	st.st_nlink = 2;
 	st.st_size = 4;
 	st.st_mode = GFARM_S_IFDIR | 0775;
-	st.st_user = ADMIN_USER_NAME;
-	st.st_group = ADMIN_GROUP_NAME;
+	st.st_user = strdup(ADMIN_USER_NAME);
+	st.st_group = strdup(ADMIN_GROUP_NAME);
 	touch(&st.st_atimespec);
  	st.st_ctimespec = st.st_mtimespec = st.st_atimespec;
 	inode_add_one(NULL, &st);
