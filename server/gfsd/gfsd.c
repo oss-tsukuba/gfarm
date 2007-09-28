@@ -3287,14 +3287,12 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	extern char *optarg;
-	extern int optind;
 	struct sockaddr_in client_addr, *self_sockaddr_array;
 	struct sockaddr_un client_local_addr;
 	gfarm_error_t e, e2;
 	char *config_file = NULL;
 	char *listen_addrname = NULL, *pid_file = NULL;
-	char *canonical_self_name;
+	char *canonical_self_name, *local_gfsd_user;
 	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
@@ -3372,10 +3370,16 @@ main(int argc, char **argv)
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 
-	gfsd_pw = getpwnam(GFSD_USERNAME);
+	e = gfarm_global_to_local_username(GFSD_USERNAME, &local_gfsd_user);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "no local user for the global `%s' user.\n",
+		    GFSD_USERNAME);
+		exit(1);
+	}
+	gfsd_pw = getpwnam(local_gfsd_user);
 	if (gfsd_pw == NULL) {
 		fprintf(stderr, "user `%s' is necessary, but doesn't exist.\n",
-		    GFSD_USERNAME);
+		    local_gfsd_user);
 		exit(1);
 	}
 	gfsd_uid = gfsd_pw->pw_uid;
@@ -3385,9 +3389,10 @@ main(int argc, char **argv)
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "acquiring information about user `%s': %s\n",
-		    GFSD_USERNAME, gfarm_error_string(e));
+		    local_gfsd_user, gfarm_error_string(e));
 		exit(1);
 	}
+	free(local_gfsd_user);
 	e = gfarm_set_global_username(GFSD_USERNAME);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, ": gfarm_set_global_username: %s\n",
