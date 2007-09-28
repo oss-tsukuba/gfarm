@@ -1833,8 +1833,9 @@ inode_init(void)
 	st.st_group = strdup(ADMIN_GROUP_NAME);
 	touch(&st.st_atimespec);
  	st.st_ctimespec = st.st_mtimespec = st.st_atimespec;
-	inode_add_one(NULL, &st);
+	/* inode_add_one will free(st). need to call db_inode_add before it */
 	e = db_inode_add(&st);
+	inode_add_one(NULL, &st);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("failed to store root inode to storage: %s",
 		    gfarm_error_string(e));
