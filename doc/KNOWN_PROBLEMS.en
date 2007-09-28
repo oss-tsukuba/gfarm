@@ -1,4 +1,3 @@
-
 *** General problems with Gfarm
 
 - On some Linux distributions, gfarm programs and gfsd sometimes hang,
@@ -20,173 +19,16 @@
 	There is no plan to fix this problem, because we haven't yet found
 	any valid countermeasure.
 
-- There is no "privileged user".
-
-  Because of this problem, operations which require such privileges
-  aren't implemented.  For example, there is no way to change the owner of
-  a file.
+- Group permission is implemented, but there is no command for group
+  management.
 
   Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	It's not yet decided whether we will fix this problem in the gfarm
-	v1 branch, or not.
-
-- gfarm_agent doesn't perform client authentication.
-
-  gfarm_agent reads and writes metadata to cache it.
-  This means any user who can reach gfarm_agent via a network, can modify
-  any metadata, if gfarm is configured to use gfarm_agent.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem because gfmd takes the place
-	of gfarm_agent in client authentication.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
-
-- Filesystem metadata isn't really protected on a per-user basis.
-
-  Any filesystem metadata can be modified by any user simply by bypassing
-  checks in the gfarm library and accessing LDAP or the PostgreSQL server
-  directly, if the user is a legitimate gfarm user.
-  This only applies to users who can access gfarm.conf, because
-  access to the LDAP and PostgreSQL servers is protected by
-  a password written in the gfarm.conf file.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	We don't plan to fix this problem in the gfarm v1 branch.
-
-- Host metadata isn't really protected on a per-user basis.
-
-  Any host metadata can be modified by any user, if the user is
-  a legitimate gfarm user.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	It's possible to configure LDAP or PostgreSQL to prevent this
-	Problem, even in the gfarm v1 branch.  But the current config-gfarm
-	does not have this functionality. Moreover, no documentation
-	is available for OpenLDAP. The procedure for PostgreSQL is
-	described in Gfarm-FAQ.en 3.3, though.
-
-- Access privilege checks aren't complete.
-
-  For example, when a user tries to write a file, gfarm checks whether
-  the parent directory of the file can be written to by the user or not,
-  but doesn't check whether ancestor directories of the file are
-  accessible or not.  As a result, users may be able to modify files
-  which they should not be allowed to.
-
-  On the other hand, it is also possible that some legitimate operation
-  may be denied.  For example, if a user tries to create a file, but
-  the file already exists, the user must be allowed to access the file
-  even if that user doesn't have write-permission to the parent directory
-  of the file.  But the current implementation denies the access.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
-
-- There are some problems in setting permission	for directories in gfarm spools
-  on filesystem nodes.
-
-  The owner of directories in gfarm spool may become inconsistent with
-  the owner of the original files.  A directory in a gfarm spool is
-  created on demand by operations such as file creation and file
-  replication, which require the directory.  A user executing these
-  operations becomes the owner of the directory in a gfarm spool.
-  In such cases, there is another problem in that the mode of the directory
-  becomes 0777, thus, users can bypass the permission set for the directory
-  by accessing the gfarm spool directly.
-
-  Another problem happens if write permission of a directory is dropped
-  by the chmod  operation.  When a file or directory just under that directory
-  has existed virtually, but hasn't been replicated to a filesystem
-  node, it cannot be replicated to the filesystem node on the fly after
-  the chmod operation.
-  If it is a directory instead of a file, the problem is worse: you may
-  not be able to create a file under the directory because the directory
-  is missing.
-  This problem is recorded and explained in the following URL:
-  http://datafarm.apgrid.org/bugzilla/show_bug.cgi?id=19
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	We don't plan to fix this problem in the gfarm v1 branch.
-
-- There are some problems in setting permission for files in gfarm spools
-  on filesystem nodes.
-
-  The owner data for files in gfarm spools may become inaccurate.
-  A file in a gfarm spool may have been created by file replication.  In that
-  case, the owner of the file becomes the user who replicates the file, instead
-  of the rightful owner of the file.
-  In such a case, the mode of the file becomes 0777, thus, users can bypass
-  the permission set for the file by accessing the gfarm spool directly.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	We don't plan to fix this problem in the gfarm v1 branch.
-
-- Group permission isn't implemented yet.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
+	Not determined yet.
 
 - gfs_pio_sync() doesn't really update the metadata now.
 
   Plans for fixes:
 	Not determined yet.
-
-- It's possible that filesystem consistency isn't maintained correctly,
-  when a gfarm client crashes.
-
-  Because gfarm clients modify filesystem metadata in the gfarm
-  v1 branch directly, it's possible that some inconsistency is introduced to
-  the metadata, when a gfarm client is kill(2)ed or crashes.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	We don't plan to fix this problem in the gfarm v1 branch,
-	but it's possible to fix the inconsistency by using the gfsck
-command
-	which removes such inconsistent metadata, or by using gfsplck,
-	which removes unreferenced files.
-
-- It's possible that some removed files aren't really removed, and remain
-  in a gfarm spool.
-
-  Gfarm v1 doesn't have metadata storing information on files to be
-  removed.  Thus, some garbage files may remain in a gfarm spool, not only
-  when a gfarm client crashes, but also when gfsd is down accidentally,
-  or a network problem occurs at the time when the file is removed.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	We don't plan to fix this problem in the gfarm v1 branch,
-	but it's possible to remove such files by using gfsplck, as explained
-	in Gfarm-FAQ.en.
-
-- Gfarm may not work correctly when a file or directory name contains the
-  ":" character.
-
-  To be exact, when a pathname contains ":" and names after ":" consist
-  only of strings of digits (except strings of digits which begin with "0"),
-  or with the same architecture name as a gfarm filesystem node, such
-  problems may occur.
-  This is because such names conflict with file names in gfarm spools.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	We don't plan to fix this problem in the gfarm v1 branch.
 
 - When a gfsd is stopped unexpectedly while the gfsd is being used to access
   a file via an OPEN operation, the access stops working.
@@ -199,157 +41,15 @@ command
   Plans for fixes:
 	Not determined yet.
 
-- The truncate mode of the open function may not work correctly with a global
- view.
-
-  When a gfarm client visits a section only once, this problem won't
-  occur.  But if the client visits another section, and visits an already
-  accessed section again, gfarm truncates the section again, and the
-  written contents will be lost.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The append mode of the open function isn't implemented yet for a global view.
-
-  Plans for fixes:
-	Not determined yet.
-
-- If a file mode is changed after the file was opened in a global view,
-  some operations on the opened file may fail.
-
-  This is because gfarm may re-open sections (i.e. fragments) which
-  constitute the global view, so such re-open operations may fail,
-  when the new mode of the file doesn't allow you to open it.
-  Please note that the default view of an open operation is the	global view,
-  thus, this also may occur, when the type of the view isn't explicitly
-  specified.
-
-  Plans for fixes:
-	Currently, this limitation is part of the specifications.
-	Thus, we don't plan to relax this limitation for now.
-	You may be able to workaround this problem by using
-	gfs_pio_set_view_global() explicitly, just after the open operation,
-	when the global view consists of only one section.
-
-- In gfarm API, it's not always certain what an error means to a global view.
- 
-  The Gfarm API to a global view that is comprised of more than one
-  section, may be a combination of 3 operations, for example, a close
-operation
-  for a section that has been accessed until that time, an open operation
-  for a section which will be accessed after that time, and the actual
-  operation specified by the API.
-  Also, the current implementation has a problem in that the caller of the API
-  isn't notified of an error that occurs during the close operation.
-
-  Plans for fixes:
-	Currently, this limitation is part of the specifications,
-	thus we don't plan to relax this limitation for now,
-	except for the problem of the error notification of the close
-	operation.  We will fix the problem with the close operation,
-	but the time has not been determined yet.
-
-- It's not certain what an error means when gfs_pio_set_view_*() APIs are
-  called multiple times.
-
-  The gfs_pio_set_view_*() API, except for its first call, includes two
-  operations, a close operation for a section which has been
-  accessed until that time, and an open operation for a section which will be
-  accessed after that time.  Thus, there is no way to see an error that occurs
-  in either the close operation or the open operation.
-
-  Plans for fixes:
-	Currently, this limitation is part of the specifications.
-	Thus, we don't plan to relax this limitation for now.
-	If you want to see the error more precisely, you have to use
-	only one gfs_pio_set_view_*() call per one open operation.
-
-- When a file is renamed or unlinked while the file is opened,
-  a close operation on the file will fail with GFARM_ERR_NO_SUCH_OBJECT.
-
-  This error is negligible in the unlink case, but otherwise, it's
-  serious because filesize, checksum, modified time, and accessed time
-  are not updated correctly.
-
-  If you are using a system call hook, the error code will be ENOENT (No such
-  file or directory).
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
-
-- When the chmod or the utimes operation is performed against a file while
-  the file is opened, the effect of the operation is canceled at the close
-  operation for the file.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
-
-- You cannot change the mode of a file from executable to non-executable,
-  or non-executable to executable, if the file consists of
-  more than one file section (i.e., more than one file fragment).
-
-  If the number of sections (fragments) is more than 1,
-   a GFARM_ERR_OPERATION_NOT_PERMITTED error will occur.
-  If you are using system call hooks, the error code will be EPERM
-  (Operation not permitted).
+- File view is not implemented.
 
   Plans for fixes:
 	Not determined yet.
 
 - The stat API doesn't return the exact file size until the file is closed.
 
-  You can work around this problem by using the gfs_pio_stat() API, if you
-  are using a section view (or an index view), but that doesn't work
-  with a global view.
-  Note: fstat() is the corresponding API to gfs_pio_stat() in system
-  call hooks.
-
   Plans for fixes:
 	Not determined yet.
-
-- The stat API doesn't return valid values in st_ino, st_nlink and st_group
-  fields.
-
-  The st_ino field has a unique value for each file and directory within
-  a process, but it's not the same among multiple processes unless
-  they share the same gfarm_agent.
-
-  st_ino should be a unique identifier of a file object, and the value
-  should not be changed, even when the file is renamed or unlinked.
-  But with gfarm v1, st_ino is an identifier associated with a file name,
-  instead of a file object.  Thus the value is changed when the file is
-  renamed.  And the value is undefined when the file is unlinked.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
-
-- When multiple processes perform some operations on the same file or directory
-  hierarchy, it's possible that some inconsistency is introduced to
-  the filesystem metadata.
-
-  If the operations are only open operations, such problems almost never
-  happen, because gfarm keeps the consistency.
-
-  But if one of them is a rename operation for a directory or a file
-  which consists of multiple sections, or a chmod operation which
-  changes the executable bits of a file, the possibility of this problem
-  increases.
-
-  Plans for fixes:
-	This problem will be fixed in the first release of the gfarm
-	v2 branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
 
 - If a program, which has already begun to use the gfarm library, makes a
   fork(2) system call, either the parent process or child process is allowed
@@ -398,10 +98,7 @@ call
 - The Gfarm library isn't multithread safe.
 
   Plans for fixes:
-	This problem will be fixed in a future release of the gfarm v2
-branch.
-	Currently, there are no plans to fix this problem in the gfarm v1
-	branch.
+	Not determined yet.
 
 - The Gfarm library doesn't support a process that uses multiple user
   privileges with setuid(), seteuid(), setgid() or setegid().
@@ -438,33 +135,6 @@ command.
 	Solaris 2.6			Linux 2.4.18 (RedHat 8)
 	NetBSD 3.0			Linux 2.4.18 (RedHat 8)
 
-- If your gfarm library is linked with Globus, programs which are linked
-  with the libgfarm library will ignore the SIGPIPE (broken pipe) signal.
-  Programs which are indirectly linked with the libgfarm will also ignore
-  SIGPIPE.  Thus, programs linked with the system call hook library
-  will do so, too.
-
-  As a result, commands like "program | head -1" may not terminate
-  until the program sends all of its output to the already closed pipe,
-  instead of just after it displays the first one line.
-  (This happens only if the program doesn't check the EPIPE error caused
-  by this situation, though.)
-
-  Plans for fixes:
-	Not determined, because the Globus library needs to be fixed.
-
-- Gfarm doesn't support any filesystem that doesn't distinguish
-  upper case and lower case in its pathname, such as a gfarm spool directory
-  on a filesystem node.
-
-  Filesystems on the MacOS and cygwin have this problem.
-  FAT and NTFS have it, too.
-
-  Plans for fixes:
-	Gfarm v2 doesn't have this problem, because of its spool structure.
-	In the gfarm v1	branch, this limitation	is part of the specifications,
-	and we don't plan to relax this limitation.
-
 - We don't have manual pages about environment variables supported by Gfarm.
 
   Plans for fixes:
@@ -473,59 +143,18 @@ command.
 
 *** Problems with gfarm commands
 
-- The "-l" option of the "gfrcmd" command isn't implemented yet.
+- The following commands are not provided yet:
 
-  Plans for fixes:
-	Not determined yet.
-
-- The "gfrep" command checks filesystem free space at start-up to select
-  target filesystem nodes, and does not check after that.  That is why
-  it is a possible to choose a filesystem node with less free space
-  than the minimum free	disk space specified by the "minimum_free_disk_space"
-  clause in gfarm.conf (or 100 MB by default) during file replication.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The "gfrep" command chooses a source filesystem node for replication in
-  load average order at the start time (light load average is preferred).
-  Thus, if multiple "gfrep" commands are invoked at exactly the same time,
-  this filesystem node selection may become one-sided, and the chosen hosts
-  will be heavy-loaded.
-
-  There is a workaround for this problem, by invoking each command
-  at brief intervals, instead of invoking all of them at once.
-
-  This problem only applies to the source nodes for replication, and doesn't
-  apply to destination nodes, because the destination nodes will be chosen
-  in round robin order.
-
-  Plans for fixes:
-	Not determined yet.
-
-- The "gfmpirun" command only supports MPICH/p4, and it assumes that all
-  filesystem nodes are the same architecture, and all nodes use the same
-  absolute pathname as a gfarm spool.
-
-  The reason only MPICH/p4 is supported is that the current gfmpirun
-  implementation uses the "-nolocal" option which MPICH/p4 provides.
+  gfdf, gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfuage, gfwhoami
 
   Plans for fixes:
 	Not determined yet.
 
 - There is no reference manual for the following commands:
 
-  config-agent, config-gfarm, config-gfsd, gfarm-pcp, gfarm-prun,
-  gfarm.arch.guess, gfchmod, gfcombine, gfcombine_hook,
-  gfcp, gfcp_hook, gfdump, gfrshl, gfsck, gfsplck, gfsshl, thput-gfpio
+  config-gfarm, config-gfsd, gfarm-pcp, gfarm-prun, gfarm.arch.guess,
+  gfchmod, gfchown, gfexport, gfmv, gfreg, gfrep, gfrm,
+  gfuser, gfwhere
 
   Plans for fixes:
 	Not determined yet.
-
-
-*** Problems with system call hooks.
-
-  Limitations with libgfs_hook are described in README.hook.en.
-  Please read it for the information you need.
-  A schedule for solving each problem listed in README.hook.en has not been
-  determined yet.
