@@ -285,7 +285,7 @@ create_directory $RC_DIR $RUN_DIR
 create_directory $SPOOL_DIRECTORY
 [ X"`ls -ld $SPOOL_DIRECTORY | awk '{print $1}'`" = X"drwx------" ] ||
 	chmod 0700 $SPOOL_DIRECTORY ||
-	ABORT "chmod 0777 $SPOOL_DIRECTORY, failed"
+	ABORT "chmod 0700 $SPOOL_DIRECTORY, failed"
 if [ `id -u` -eq 0 ]; then
 	chown $spool_owner $SPOOL_DIRECTORY ||
 	ABORT "chown $spool_owner $SPOOL_DIRECTORY, failed. User '$spool_owner' is needed"
@@ -310,9 +310,13 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 fi
 
 echo "$PROGNAME success"
-echo Please invoke the following command by admin_user:
+echo
+echo Please ask admin_user to register your host by the following command:
+echo
 echo "$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME
-echo Then, please invoke the following command by root:
+echo
+echo After that, start gfsd by the following command as a root:
+echo
 # XXX FIXME should use "forcestart" instead of "start" on NetBSD and FreeBSD.
 echo "$RC_DIR/$RC_NAME start"
 exit 0
