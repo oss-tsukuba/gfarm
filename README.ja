@@ -15,7 +15,6 @@
   SETUP.ja
 4. 利用方法
   GfarmFS-FUSE を利用される場合，そちらに付属するドキュメント，
-  あるいはシステムコールフック機能を利用する場合は，README.hook.ja．
 
 ドキュメント一覧
 ================
@@ -47,14 +46,10 @@
   SETUP.ja (日本語)
 	Gfarm の設定方法を説明します．
 
-- SETUP.detail.en (英語)
-  SETUP.detail.ja (日本語)
-	Gfarm を全て手動で設定する方法を説明します．
-	中見を詳しく知りたい方を除き，参照する必要はありません．
-
-- README.hook.en (英語)
-  README.hook.ja (日本語)
-	システムコールフック機能の利用方法です．
+- SETUP.private.en (英語)
+  SETUP.private.ja (日本語)
+	Gfarm をユーザ権限で動作させる方法を説明します．
+	この場合，設定したユーザ専用となります．
 
 - KNOWN_PROBLEMS.en (英語)
   KNOWN_PROBLEMS.ja (日本語)
@@ -63,9 +58,6 @@
 - Gfarm-FAQ.en (英語)
   Gfarm-FAQ.ja (日本語)
 	よく聞かれる質問とその答です．
-
-- GUIDE.ja (現在のところ日本語のみ)
-	Gfarm ネイティブコマンドの利用ガイドです．
 
 - HTML 形式ないし UNIX man 形式のリファレンスマニュアル (英語および日本語)
 
