@@ -245,7 +245,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	int eof;
 	enum gfarm_auth_id_type peer_type;
 	struct passwd pwbuf, *pwd;
-	static int bufsize = 0;
+	static int bufsz = 0;
 #	define BUFSIZE_MAX 2048
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
@@ -281,12 +281,12 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		local_username = NULL;
 		pwd = NULL;
 	} else {
-		if (bufsize == 0) {
-			bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
-			if (bufsize == -1)
-				bufsize = BUFSIZE_MAX;
+		if (bufsz == 0) {
+			bufsz = sysconf(_SC_GETPW_R_SIZE_MAX);
+			if (bufsz == -1)
+				bufsz = BUFSIZE_MAX;
 		}
-		buf = malloc(bufsize);
+		buf = malloc(bufsz);
 		if (buf == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_error("(%s@%s) %s: authorize_sharedsecret: %s",
@@ -296,8 +296,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			free(global_username);
 			return (e);
 		}
-		if (getpwnam_r(local_username, &pwbuf, buf, bufsize, &pwd)
-		    == -1 || pwd == NULL)
+		if (getpwnam_r(local_username, &pwbuf, buf, bufsz, &pwd) != 0)
 			gflog_error("(%s@%s) %s: authorize_sharedsecret: "
 			    "local account doesn't exist",
 			    global_username, hostname, local_username);
