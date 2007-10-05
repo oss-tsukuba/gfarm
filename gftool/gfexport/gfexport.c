@@ -5,6 +5,12 @@
 
 #include <gfarm/gfarm.h>
 
+#include "metadb_server.h" /* gfarm_host_info_get_by_name_alias */
+
+/* INTERNAL FUNCTION */
+gfarm_error_t gfs_pio_internal_set_view_section(
+	GFS_File, char *, gfarm_int32_t);
+
 char *program_name = "gfexport";
 
 gfarm_error_t
@@ -45,7 +51,7 @@ gfexport(char *gfarm_url, char *section, char *host, FILE *ofp, int explicit)
 }
 #else
 gfarm_error_t
-gfexport(char *gfarm_url, FILE *ofp)
+gfexport(char *gfarm_url, char *host, gfarm_int32_t port, FILE *ofp)
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
@@ -53,8 +59,12 @@ gfexport(char *gfarm_url, FILE *ofp)
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	e = gfs_pio_internal_set_view_section(gf, host, port);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto close;
 
 	e = gfprint(gf, ofp);
+ close:
 	e2 = gfs_pio_close(gf);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
@@ -64,10 +74,10 @@ void
 usage()
 {
 	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
-#if 0 /* not yet in gfarm v2 */
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-I <fragment>\n");
 	fprintf(stderr, "\t-h <hostname>\n");
+#if 0 /* not yet in gfarm v2 */
+	fprintf(stderr, "\t-I <fragment>\n");
 #endif
 	exit(1);
 }
@@ -90,15 +100,28 @@ error_check(char *file, char* section, char *e)
 }
 #endif
 
-int
-main(argc, argv)
-	int argc;
-	char **argv;
+static gfarm_error_t
+get_port(char *host, gfarm_int32_t *portp)
 {
 	gfarm_error_t e;
-	char *url;
+	struct gfarm_host_info hinfo;
+
+	e = gfarm_host_info_get_by_name_alias(host, &hinfo);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*portp = hinfo.port;
+		gfarm_host_info_free(&hinfo);
+	}
+	return (e);
+}
+
+int
+main(int argc, char *argv[])
+{
+	gfarm_error_t e;
+	char *url, *hostname = NULL;
+	gfarm_int32_t port = 0;
 #if 0 /* not yet in gfarm v2 */
-	char *section = NULL, *hostname = NULL;
+	char *section = NULL;
 	int global_view = 0;
 #endif
 	int ch;
@@ -115,7 +138,7 @@ main(argc, argv)
 #if 0 /* not yet in gfarm v2 */
 	while ((ch = getopt(argc, argv, "a:gh:I:?")) != -1)
 #else
-	while ((ch = getopt(argc, argv, "?")) != -1)
+	while ((ch = getopt(argc, argv, "h:?")) != -1)
 #endif
 	{
 		switch (ch) {
@@ -127,10 +150,10 @@ main(argc, argv)
 		case 'g':
 			global_view = 1;
 			break;
+#endif
 		case 'h':
 			hostname = optarg;
 			break;
-#endif
 		case '?':
 		default:
 			usage();
@@ -143,13 +166,20 @@ main(argc, argv)
 		    "error: only one input file name expected");
 		usage();
 	}
-
+	if (hostname != NULL) {
+		e = get_port(hostname, &port);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", hostname,
+				gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
+	}
 	url = argv[0];
 
 #if 0 /* not yet in gfarm v2 */
 	e = gfexport(url, section, hostname, stdout, global_view);
 #else
-	e = gfexport(url, stdout);
+	e = gfexport(url, hostname, port, stdout);
 #endif
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, url,

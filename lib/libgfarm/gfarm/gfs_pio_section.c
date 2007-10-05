@@ -408,15 +408,16 @@ choose_trivial_one(struct gfarm_host_sched_info *info,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* *hostp needs to free'ed if succeed */
 static gfarm_error_t
-schedule_and_open(GFS_File gf)
+schedule_host(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 {
 	gfarm_error_t e;
 	int nhosts;
 	struct gfarm_host_sched_info *infos;
 	char *host;
 	gfarm_int32_t port;
-	gfarm_timerval_t t1, t2, t3, t4, t5;
+	gfarm_timerval_t t1, t2, t3;
 	int i;
 	/*
 	 * XXX FIXME: Or, call replicate_section_to_local(), if that's prefered
@@ -424,8 +425,6 @@ schedule_and_open(GFS_File gf)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t4);
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t5);
 
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfm_schedule_file(gf->fd, &nhosts, &infos);
@@ -448,31 +447,32 @@ schedule_and_open(GFS_File gf)
 	gfs_profile(gflog_info("host -> %s", host));
 	gfs_profile(gfarm_gettimerval(&t3));
 
-	e = connect_and_open(gf, host, port);
-	gfs_profile(gfarm_gettimerval(&t4));
+	gfs_profile(
+		gflog_info("(schedule_host) schedule %f, select %f",
+			   gfarm_timerval_sub(&t2, &t1),
+			   gfarm_timerval_sub(&t3, &t2)));
+	*hostp = host;
+	*portp = port;
 
+	return (e);
+}
+
+static gfarm_error_t
+connect_and_open_with_reconnection(GFS_File gf, char *host, gfarm_int32_t port)
+{
+	gfarm_error_t e;
+
+	e = connect_and_open(gf, host, port);
 	if (gfs_client_is_connection_error(e))
 		e = connect_and_open(gf, host, port);
-	gfs_profile(gfarm_gettimerval(&t5));
 
-	free(host);
-
-	gfs_profile(
-		gflog_info("(schedule_and_open) schedule %f, select %f, "
-			   "connect %f, connect again %f",
-			   gfarm_timerval_sub(&t2, &t1),
-			   gfarm_timerval_sub(&t3, &t2),
-			   gfarm_timerval_sub(&t4, &t3),
-			   gfarm_timerval_sub(&t5, &t4)));
-
-	/* XXX FIXME: if failed, try to reschedule another host */
 	return (e);
 }
 
 static double gfs_pio_set_view_section_time;
 
 gfarm_error_t
-gfs_pio_internal_set_view_section(GFS_File gf)
+gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 {
 	struct gfs_file_section_context *vc;
 	gfarm_error_t e;
@@ -482,36 +482,48 @@ gfs_pio_internal_set_view_section(GFS_File gf)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_pio_set_view_default(gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto finish;
+	GFARM_MALLOC(vc);
+	if (vc == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto finish;
+	}
+	gf->view_context = vc;
+
+	if (host == NULL) {
+		e = schedule_host(gf, &host, &port);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = connect_and_open_with_reconnection(gf, host, port);
+			free(host);
+		}
+	}
+	else
+		e = connect_and_open_with_reconnection(gf, host, port);
+	/* XXX FIXME: if failed, try to reschedule another host */
 	if (e == GFARM_ERR_NO_ERROR) {
-		GFARM_MALLOC(vc);
-		if (vc != NULL) {
-			gf->view_context = vc;
-			e = schedule_and_open(gf);
-			if (e == GFARM_ERR_NO_ERROR) {
-				gf->ops = &gfs_pio_view_section_ops;
-				gf->p = gf->length = 0;
-				gf->io_offset = gf->offset = 0;
+		gf->ops = &gfs_pio_view_section_ops;
+		gf->p = gf->length = 0;
+		gf->io_offset = gf->offset = 0;
 
 #if 1 /* not yet in gfarm v2  */
-				goto finish;
+		goto finish;
 #else /* not yet in gfarm v2  */
-				gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
-				EVP_DigestInit(&vc->md_ctx,
-				    GFS_DEFAULT_DIGEST_MODE);
+		gf->mode |= GFS_FILE_MODE_CALC_DIGEST;
+		EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
-				if (gf->open_flags & GFARM_FILE_APPEND) {
-					e = gfs_pio_seek(gf, 0,SEEK_END, NULL);
-					if (e == GFARM_ERR_NO_ERROR)
-						goto finish;
-					(*vc->ops->storage_close)(gf);
-				}
-#endif /* not yet in gfarm v2 */
-			}
-			free(vc);
+		if (gf->open_flags & GFARM_FILE_APPEND) {
+			e = gfs_pio_seek(gf, 0,SEEK_END, NULL);
+			if (e == GFARM_ERR_NO_ERROR)
+				goto finish;
+			(*vc->ops->storage_close)(gf);
 		}
-		gf->view_context = NULL;
-		gfs_pio_set_view_default(gf);
+#endif /* not yet in gfarm v2 */
 	}
+	free(vc);
+
+	gf->view_context = NULL;
+	gfs_pio_set_view_default(gf);
 finish:
 	gf->error = e;
 
