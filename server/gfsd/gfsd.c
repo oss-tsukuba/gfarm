@@ -422,6 +422,31 @@ struct file_entry {
 #define FILE_FLAG_READ		0x10
 } *file_table;
 
+static void
+file_entry_set_atime(struct file_entry *fe,
+	gfarm_time_t sec, gfarm_int32_t nsec)
+{
+	fe->flags |= FILE_FLAG_READ;
+	fe->atime = sec;
+	/* XXX FIXME st_atimespec.tv_nsec */
+}
+
+static void
+file_entry_set_mtime(struct file_entry *fe,
+	gfarm_time_t sec, gfarm_int32_t nsec)
+{
+	fe->flags |= FILE_FLAG_WRITTEN;
+	fe->mtime = sec;
+	/* XXX FIXME st_mtimespec.tv_nsec */
+}
+
+static void
+file_entry_set_size(struct file_entry *fe, gfarm_off_t size)
+{
+	fe->flags |= FILE_FLAG_WRITTEN;
+	fe->size = size;
+}
+
 void
 file_table_init(int table_size)
 {
@@ -501,7 +526,7 @@ file_table_entry(gfarm_int32_t net_fd)
 		return (NULL);
 }
 
-void
+static void
 file_table_set_flag(gfarm_int32_t net_fd, int flags)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
@@ -510,30 +535,30 @@ file_table_set_flag(gfarm_int32_t net_fd, int flags)
 		fe->flags |= flags;
 }
 
-void
+static void
 file_table_set_read(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
 	struct timeval now;
 
-	fe->flags |= FILE_FLAG_READ;
+	if (fe == NULL)
+		return;
 
 	gettimeofday(&now, NULL);
-	fe->atime = now.tv_sec;
-	/* XXX FIXME st_atimespec.tv_nsec */
+	file_entry_set_atime(fe, now.tv_sec, 0);
 }
 
-void
+static void
 file_table_set_written(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
 	struct timeval now;
 
-	fe->flags |= FILE_FLAG_WRITTEN;
+	if (fe == NULL)
+		return;
 
 	gettimeofday(&now, NULL);
-	fe->mtime = now.tv_sec;
-	/* XXX FIXME st_mtimespec.tv_nsec */
+	file_entry_set_mtime(fe, now.tv_sec, 0);
 }
 
 int
@@ -842,20 +867,15 @@ gfs_server_close(struct gfp_xdr *client)
 			    fd, strerror(errno));
 		} else {
 			stat_is_done = 1;
-			if (st.st_atime != fe->atime) {
-				fe->atime = st.st_atime;
-				fe->flags |= FILE_FLAG_READ;
-			}
 			/* XXX FIXME st_atimespec.tv_nsec */
-
-			if (st.st_mtime != fe->mtime ||
-			    st.st_size != fe->size) {
-				fe->mtime = st.st_mtime;
-				fe->size = st.st_size;
-				fe->flags |= FILE_FLAG_WRITTEN;
-				/* XXX FIXME this may be caused by others */
-			}
+			if (st.st_atime != fe->atime)
+				file_entry_set_atime(fe, st.st_atime, 0);
 			/* XXX FIXME st_mtimespec.tv_nsec */
+			if (st.st_mtime != fe->mtime)
+				file_entry_set_mtime(fe, st.st_mtime, 0);
+			if (st.st_size != fe->size)
+				file_entry_set_size(fe, st.st_size);
+			/* XXX FIXME this may be caused by others */
 		}
 		if ((fe->flags & FILE_FLAG_WRITTEN) != 0 && !stat_is_done) {
 			if (fstat(fe->local_fd, &st) == -1)
