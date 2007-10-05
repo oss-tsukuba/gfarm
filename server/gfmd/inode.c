@@ -1246,6 +1246,8 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 		if (copy->host == spool_host) {
 			if (copy->valid)
 				return (GFARM_ERR_ALREADY_EXISTS);
+			else if (valid == 0)
+				return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
 			else {
 				copy->valid = valid;
 				return (GFARM_ERR_NO_ERROR);
