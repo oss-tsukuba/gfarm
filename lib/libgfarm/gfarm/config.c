@@ -244,18 +244,33 @@ gfarm_error_t
 gfarm_set_local_user_for_this_local_account(void)
 {
 	gfarm_error_t error;
-	struct passwd *pwd;
+	struct passwd pwbuf, *pwd;
+	char *buf;
+	static int bufsize = 0;
+#	define BUFSIZE_MAX 2048
 
-	pwd = getpwuid(geteuid());
-	if (pwd == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-
+	if (bufsize == 0) {
+		bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+		if (bufsize == -1)
+			bufsize = BUFSIZE_MAX;
+	}
+	buf = malloc(bufsize);
+	if (buf == NULL) {
+		error = GFARM_ERR_NO_MEMORY;
+		gflog_error("gfarm_set_local_user: %s",
+			gfarm_error_string(error));
+		return (error);
+	}
+	if (getpwuid_r(geteuid(), &pwbuf, buf, bufsize, &pwd) != 0) {
+		gflog_error("local account doesn't exist");
+		error = GFARM_ERR_NO_SUCH_OBJECT;
+		goto error;
+	}
 	error = gfarm_set_local_username(pwd->pw_name);
-	if (error != GFARM_ERR_NO_ERROR)
-		return (error);
-	error = gfarm_set_local_homedir(pwd->pw_dir);
-	if (error != GFARM_ERR_NO_ERROR)
-		return (error);
+	if (error == GFARM_ERR_NO_ERROR)
+		error = gfarm_set_local_homedir(pwd->pw_dir);
+ error:
+	free(buf);
 	return (error);
 }
 
