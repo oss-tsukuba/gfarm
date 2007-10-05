@@ -458,7 +458,7 @@ process_reopen_file(struct process *process,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	int to_create;
+	int to_create, is_creating_file_replica;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -468,9 +468,15 @@ process_reopen_file(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
 	to_create = inode_is_creating_file(fo->inode);
+	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || to_create) {
-		if (!inode_schedule_confirm_for_write(fo->inode,
+		if (is_creating_file_replica) {
+			e = inode_add_replica(fo->inode, spool_host, 0);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+		}
+		else if (!inode_schedule_confirm_for_write(fo->inode,
 		    spool_host, to_create))
 			return (GFARM_ERR_FILE_MIGRATED);
 		if (to_create) {
@@ -489,7 +495,7 @@ process_reopen_file(struct process *process,
 	*genp = inode_get_gen(fo->inode);
 	*modep = inode_get_mode(fo->inode);
 	*flagsp = fo->flag & GFARM_FILE_USER_MODE;
-	*to_createp = to_create;
+	*to_createp = to_create || is_creating_file_replica;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -575,6 +581,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	struct host *spool_host;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -586,15 +593,25 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
 	if (fo->opener != peer && fo->opener != NULL) {
+		spool_host = fo->u.f.spool_host;
 		/* closing REOPENed file, but the client is still opening */
-
-		/* invalidate file replicas if updated */
-		if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
-			inode_remove_every_other_replicas(
-				fo->inode, fo->u.f.spool_host);
-
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
+		/*
+		 * GFARM_FILE_CREATE_REPLICA means just to create a
+		 * file replica.
+		 */
+		if ((fo->flag & GFARM_FILE_CREATE_REPLICA) != 0) {
+			e = inode_add_replica(fo->inode, spool_host, 1);
+			/* if this is not the first replica, return */
+			if (e != GFARM_ERR_ALREADY_EXISTS)
+				return (e);
+		}
+		else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
+			/* invalidate file replicas if updated */
+			inode_remove_every_other_replicas(
+				fo->inode, spool_host);
+
 		inode_set_size(fo->inode, size);
 		inode_set_atime(fo->inode, atime);
 		inode_set_mtime(fo->inode, mtime);
