@@ -138,7 +138,6 @@ user_remove(const char *username)
 	/* free group_assignment */
 	while ((ga = u->groups.group_next) != &u->groups)
 		grpassign_remove(ga);
-
 #if 0
 	/*
 	 * As long as the primary key is a username, REMOVED_USER_NAME
@@ -413,7 +412,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = db_user_add(&ui);
 			if (e != GFARM_ERR_NO_ERROR) {
-				db_user_remove(ui.username);
+				user_remove(ui.username);
 				ui.username = ui.realname = ui.homedir =
 				    ui.gsi_dn = NULL;
 			}
