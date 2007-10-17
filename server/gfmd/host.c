@@ -213,13 +213,19 @@ host_remove(const char *hostname)
 	gfarm_hash_purge(host_hashtab, &hostname, sizeof(hostname));
 
 	/* free gfarm_host_info */
-	free(h->hi.hostname);
-	free(h->hi.architecture);
-
+	gfarm_host_info_free(&h->hi);
+#if 0
+	/*
+	 * As long as the primary key is a hostname, REMOVED_HOST_NAME
+	 * cannot be used.  This entry is not referred to any more.
+	 */
 	/* mark this as removed */
 	h->hi.hostname = REMOVED_HOST_NAME;
 	h->hi.architecture = NULL;
 	/* XXX We should have a list which points all removed hosts */
+#else
+	free(h);
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -730,38 +736,55 @@ gfarm_error_t
 gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	char *hostname, *architecture;
-	gfarm_int32_t ncpu, port, flags;
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("host_info_modify: not implemented");
+	struct user *user = peer_get_user(peer);
+	struct gfarm_host_info hi;
+	struct host *h;
+	int needs_free = 0;
 
 	e = gfm_server_get_request(peer, "host_info_modify", "ssiii",
-	    &hostname, &architecture, &ncpu, &port, &flags);
+	    &hi.hostname, &hi.architecture, &hi.ncpu, &hi.port, &hi.flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
-		free(hostname);
-		free(architecture);
+		free(hi.hostname);
+		free(hi.architecture);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	free(hostname);
-	free(architecture);
-	e = gfm_server_put_reply(peer, "host_info_modify",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	/* XXX should we disconnect a back channel to the host? */
+	giant_lock();
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		needs_free = 1;
+	} else if ((h = host_lookup(hi.hostname)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		needs_free = 1;
+	} else if ((e = db_host_modify(&hi,
+	    DB_HOST_MOD_ARCHITECTURE|DB_HOST_MOD_NCPU|DB_HOST_MOD_FLAGS,
+	    /* XXX */ 0, NULL, 0, NULL)) != GFARM_ERR_NO_ERROR) {
+		needs_free = 1;
+	} else {
+		free(h->hi.architecture);
+		h->hi.architecture = hi.architecture;
+		h->hi.ncpu = hi.ncpu;
+		h->hi.flags = hi.flags;
+		free(hi.hostname);
+	}
+	if (needs_free) {
+		free(hi.hostname);
+		free(hi.architecture);
+	}
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, "host_info_modify", e, ""));
 }
 
 gfarm_error_t
 gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
+	struct user *user = peer_get_user(peer);
 	char *hostname;
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("host_info_remove: not implemented");
 
 	e = gfm_server_get_request(peer, "host_info_remove", "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -770,12 +793,23 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 		free(hostname);
 		return (GFARM_ERR_NO_ERROR);
 	}
-
+	/*
+	 * XXX should we remove all file copy entries stored on the
+	 * specified host?  should we disconnect a back channel to the host?
+	 */
+	giant_lock();
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
+		e2 = db_host_remove(hostname);
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_error("protocol db_host_remove db: %s",
+			    gfarm_error_string(e2));
+	}
 	free(hostname);
-	e = gfm_server_put_reply(peer, "host_info_remove",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, "host_info_remove", e, ""));
 }
 
 /* called from inode.c:inode_schedule_file_reply() */
