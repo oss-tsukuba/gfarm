@@ -139,12 +139,20 @@ user_remove(const char *username)
 	while ((ga = u->groups.group_next) != &u->groups)
 		grpassign_remove(ga);
 
+#if 0
+	/*
+	 * As long as the primary key is a username, REMOVED_USER_NAME
+	 * cannot be used.  This entry is not referred to any more.
+	 */
 	/* mark this as removed */
 	u->ui.username = REMOVED_USER_NAME;
 	u->ui.realname = NULL;
 	u->ui.homedir = NULL;
 	u->ui.gsi_dn = NULL;
 	/* XXX We should have a list which points all removed users */
+#else
+	free(u);
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -494,8 +502,9 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = user_remove(username)) == GFARM_ERR_NO_ERROR) {
 		e2 = db_user_remove(username);
-		gflog_error("protocol USER_INFO_REMOVE db: %s",
-		    gfarm_error_string(e2));
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_error("protocol USER_INFO_REMOVE db: %s",
+			    gfarm_error_string(e2));
 	}
 	free(username);
 	giant_unlock();
