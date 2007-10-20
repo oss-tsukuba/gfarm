@@ -354,7 +354,7 @@ process_set_dir_key(struct process *process, struct peer *peer,
 	s = malloc(keylen + 1);
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	memcpy(s, key, keylen + 1);
+	memcpy(s, key, keylen);
 	s[keylen] = '\0';
 
 	if (fo->u.d.key != NULL)
