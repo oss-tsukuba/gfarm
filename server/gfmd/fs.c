@@ -1129,6 +1129,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 		/* remember current position */
 		if (!ok ||
 		    (entry = dir_cursor_get_entry(dir, &cursor)) == NULL) {
+			process_clear_dir_key(process, peer, fd);
 			dir_offset = dir_get_entry_count(dir);
 		} else {
 			name = dir_entry_get_name(entry, &namelen);
