@@ -503,7 +503,8 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 		st.st_user = user_name(inode_get_user(inode));
 		st.st_group = group_name(inode_get_group(inode));
 		st.st_size = inode_get_size(inode);
-		st.st_ncopy = inode_get_ncopy(inode);
+		if (inode_is_file(inode))
+			st.st_ncopy = inode_get_ncopy(inode);
 		st.st_atimespec = *inode_get_atime(inode);
 		st.st_mtimespec = *inode_get_mtime(inode);
 		st.st_ctimespec = *inode_get_ctime(inode);
