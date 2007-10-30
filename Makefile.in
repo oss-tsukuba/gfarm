@@ -5,12 +5,12 @@ srcdir = @srcdir@
 include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
+	doc \
 	include/gfarm \
 	lib \
 	server \
 	gftool
 
-#	doc \
 #	man \
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \

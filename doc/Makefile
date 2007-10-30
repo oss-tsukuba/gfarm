@@ -4,14 +4,16 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = html
+SUBDIRS = #html
 
 DOC =	../LICENSE ../RELNOTES \
 	../README.en ../README.ja ../OVERVIEW.en ../OVERVIEW.ja \
-	../INSTALL.en ../INSTALL.ja ../INSTALL.RPM.en ../INSTALL.RPM.ja \
-	../SETUP.en ../SETUP.ja SETUP.detail.en SETUP.detail.ja \
-	GUIDE.ja Gfarm-FAQ.en Gfarm-FAQ.ja README.hook.en README.hook.ja \
+	../INSTALL.en ../INSTALL.ja  \
+	../SETUP.en ../SETUP.ja SETUP.private.en SETUP.private.ja \
+	Gfarm-FAQ.en Gfarm-FAQ.ja \
 	KNOWN_PROBLEMS.en KNOWN_PROBLEMS.ja
+
+#	../INSTALL.RPM.en ../INSTALL.RPM.ja
 
 include $(top_srcdir)/makes/subdir.mk
 
