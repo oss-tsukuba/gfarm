@@ -86,14 +86,14 @@ etc/gfsd.conf を作成します．
 下記を実行して、PostgreSQL サーバおよび gfmd が動作していることを
 確認してください。
 
-	% /etc/init.d/gfarm-pgsql status
-	% /etc/init.d/gfmd status
+	% etc/init.d/gfarm-pgsql status
+	% etc/init.d/gfmd status
 
 上記作業によって作成されたファイルを消去したい場合には、
 下記のコマンドで PostgreSQL サーバおよび gfmd を停止させたのち、
 
-	% /etc/init.d/gfarm-pgsql stop
-	% /etc/init.d/gfmd stop
+	% etc/init.d/gfarm-pgsql stop
+	% etc/init.d/gfmd stop
 	(場合によっては % killall gfmd)
 
 下記のコマンドで削除できます。
@@ -129,8 +129,8 @@ etc/gfsd.conf を作成します．
 
   config-gfsd コマンドの最後の引数は Gfarm ファイルシステムの実体ファ
   イルが格納されるスプール・ディレクトリです．スプール・ディレクトリは，
-  他のファイルシステムノードと共有されない領域を指定してください．
-  省略すると，$PREFIX/var/gfarm-spool になります．
+  他のファイルシステムノードと共有されない領域をフルパスで指定してくだ
+  さい．省略すると，$PREFIX/var/gfarm-spool になります．
 
 この最後に、「gfhost」コマンドの実行をうながす表示が行なわれた筈です。
 その実行を行い，ホストを登録してください．例えば下記のようになります．
