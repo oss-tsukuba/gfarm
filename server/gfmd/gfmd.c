@@ -778,7 +778,7 @@ main(int argc, char **argv)
 	sigemptyset(&termsigs);
 	sigaddset(&termsigs, SIGINT);
 	sigaddset(&termsigs, SIGTERM);
-	sigprocmask(SIG_BLOCK, &termsigs, NULL);
+	pthread_sigmask(SIG_BLOCK, &termsigs, NULL);
 	e = create_detached_thread(termsigs_handler, &termsigs);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal("create_detached_thread(termsigs_handler): %s",
