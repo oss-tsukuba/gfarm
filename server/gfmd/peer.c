@@ -133,6 +133,7 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->u.client.jobs = NULL;
 
 	/* deal with reboots or network problems */
+	sockopt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &sockopt, sizeof(sockopt))
 	    == -1)
 		gflog_warning_errno("SO_KEEPALIVE");
