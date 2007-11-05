@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	2.0
-%define rel	0
+%define rel	1
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -52,7 +52,7 @@
 %define package_name	%{pkg}
 %endif
 
-Summary: Grid Datafarm
+Summary: Gfarm File System 2 
 Name: %{package_name}
 Version: %pkgver
 Release: %{rel}%{?dist}
@@ -64,23 +64,21 @@ Source: %{pkg}-%{ver}.tar.gz
 #%Patch3: gfarm-1.2-patch4.diff
 Group: Applications/Internet
 License: BSD
-Vendor: National Institute of Advanced Industrial Science and Technology
+Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
 URL: http://datafarm.apgrid.org/
-Packager: Tohru Sotoyama <sotoyama@sra.co.jp>
+Packager: Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
-%if %{gfarm_v2_not_yet}
 %package doc
-Summary: document for gfarm
+Summary: Document for Gfarm file system
 Group: Documentation
 # always provide "gfarm-doc" as a virtual package.
 %if %{globus}
 Provides: %{pkg}-doc = %{ver}-%{rel}
 %endif
-%endif
 
 %package libs
-Summary: runtime libraries for gfarm
+Summary: Runtime libraries for Gfarm file system
 Group: System Environment/Libraries
 # always provide "gfarm-libs" as a virtual package.
 %if %{globus}
@@ -88,18 +86,8 @@ Provides: %{pkg}-libs = %{ver}-%{rel}
 %endif
 BuildRequires: openssl-devel
 
-%if %{gfarm_v2_not_yet}
-%package frontend
-Summary: frontends for gfarm
-Group: Applications/Internet
-# always provide "gfarm-frontend" as a virtual package.
-%if %{globus}
-Provides: %{pkg}-frontend = %{ver}-%{rel}
-%endif
-%endif
-
 %package client
-Summary: clients for gfarm
+Summary: Clients for Gfarm file system
 Group: Applications/Internet
 # always provide "gfarm-client" as a virtual package.
 %if %{globus}
@@ -109,8 +97,8 @@ Requires: %{package_name}-libs = %{ver}
 
 %if %{gfarm_v2_not_yet}
 %package gfptool
-Summary: parallel tools installed under gfarm:/bin/
-Group: System Environment/Daemons
+Summary: Parallel tools for Gfarm file system
+Group: Applications/Internet
 # always provide "gfarm-gfptool" as a virtual package.
 %if %{globus}
 Provides: %{pkg}-gfptool = %{ver}-%{rel}
@@ -119,7 +107,7 @@ Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 %endif
 
 %package fsnode
-Summary: gfsd for gfarm
+Summary: File system daemon for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-fsnode" as a virtual package.
 %if %{globus}
@@ -128,7 +116,7 @@ Provides: %{pkg}-fsnode = %{ver}-%{rel}
 Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
 
 %package server
-Summary: metadata server for gfarm
+Summary: Metadata server for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-server" as a virtual package.
 %if %{globus}
@@ -137,7 +125,7 @@ Provides: %{pkg}-server = %{ver}-%{rel}
 Requires: %{package_name}-libs = %{ver}
 
 %package devel
-Summary: development library for gfarm
+Summary: Development header files and libraries for Gfarm file system
 Group: Development/Libraries
 %if %{globus}
 Provides: %{pkg}-devel = %{ver}-%{rel}
@@ -145,7 +133,7 @@ Provides: %{pkg}-devel = %{ver}-%{rel}
 
 %if %{gfarm_v2_not_yet}
 %package gfront
-Summary: file system browser for gfarm
+Summary: File system browser for Gfarm file system
 Group: Applications/Internet
 # always provide "gfarm-gfront" as a virtual package.
 %if %{globus}
@@ -154,23 +142,23 @@ Provides: %{pkg}-gfront = %{ver}-%{rel}
 %endif
 
 %description
-gfarm - Grid datafarm 
+The Gfarm filesystem is a distributed filesystem consisting of the
+local storage of commodity PCs.  PCs in a local area network, compute
+nodes in a single cluster, multiple clusters in wide area, comprise a
+large-scale, high-performance shared network filesystem.  The Gfarm
+filesystem solves performance and reliability problems in NFS and AFS
+by means of multiple file replicas. It not only prevents performance
+degradation due to access concentration, but also supports fault
+tolerance and disaster recovery.
 
-%if %{gfarm_v2_not_yet}
 %description doc
-doc for gfarm
-%endif
+Documentation for Gfarm file system
 
 %description libs
-runtime libraries for gfarm
-
-%if %{gfarm_v2_not_yet}
-%description frontend
-frontends for gfarm
-%endif
+Runtime libraries for Gfarm file system
 
 %description client
-clients for gfarm
+Clients for Gfarm file system
 
 %if %{gfarm_v2_not_yet}
 %description gfptool
@@ -178,16 +166,18 @@ parallel tools installed under gfarm:/bin
 %endif
 
 %description fsnode
-fsnode for gfarm
+File system daemon for Gfarm file system
 
 %description server
-metadata server for gfarm
+Metadata server for Gfarm file system
 
+%if %{gfarm_v2_not_yet}
 %description agent
-metadata cache server for gfarm
+Metadata cache server for Gfarm file system
+%endif
 
 %description devel
-development library for gfarm
+Development header files and libraries for Gfarm file system
 
 %if %{gfarm_v2_not_yet}
 %description gfront
@@ -195,6 +185,9 @@ file system browser for gfarm
 %endif
 
 %changelog
+* Fri Nov 2 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
+- first preview release of Gfarm file system version 2
+
 * Tue Aug  8 2006 SODA Noriyuki <soda@sra.co.jp>
 - restart gfsd, gfmd and gfarm_agent at update, if they are already running.
 
@@ -235,9 +228,11 @@ make
 make DESTDIR=${RPM_BUILD_ROOT} \
 	default_docdir=%{doc_prefix} \
 	default_mandir=%{man_prefix} install
+%if %{gfarm_v2_not_yet}
 mkdir -p ${RPM_BUILD_ROOT}%{profile_prefix}
 cp -p package/redhat/gfarm.{csh,sh} ${RPM_BUILD_ROOT}%{profile_prefix}
 chmod +x ${RPM_BUILD_ROOT}%{profile_prefix}/*
+%endif
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
@@ -247,13 +242,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %postun libs -p /sbin/ldconfig
 
 %post fsnode
-if [ ! -f /etc/gfarm.conf ]; then
-	echo "copy /etc/gfarm.conf from metadata (cache) server and"
+if [ ! -f /etc/gfarm2.conf ]; then
+	echo "copy /etc/gfarm2.conf from a metadata server and"
 	echo run %{prefix}/bin/config-gfsd
 fi
 
 %post server
-if [ ! -f /etc/gfarm.conf ]; then
+if [ ! -f /etc/gfmd.conf ]; then
 	echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 fi
 
@@ -268,12 +263,10 @@ then
 fi
 
 %pre fsnode
-useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-	-c "Gfarm gfsd" -u 600 _gfarmfs >/dev/null 2>&1 || :
+useradd -c "Gfarm gfsd" _gfarmfs >/dev/null 2>&1 || :
 
 %pre server
-useradd -M -n -o -r -d /home/_gfarmfs -s /bin/bash \
-	-c "Gfarm gfsd" -u 600 _gfarmfs >/dev/null 2>&1 || :
+useradd -c "Gfarm gfsd" _gfarmfs >/dev/null 2>&1 || :
 
 %preun server
 if [ "$1" = 0 ]
@@ -314,9 +307,9 @@ then
 fi
 
 # Part 3  file list
-%if %{gfarm_v2_not_yet}
 %files doc
 %defattr(-,root,root)
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
 %{man_prefix}/man1/gfdf.1.gz
@@ -685,6 +678,7 @@ fi
 %{html_prefix}/ja/user/samba-hook.html
 %{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/pic/gfarm-logo.gif
+%endif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
@@ -697,13 +691,13 @@ fi
 %{doc_prefix}/OVERVIEW.ja
 %{doc_prefix}/SETUP.en
 %{doc_prefix}/SETUP.ja
-%{doc_prefix}/SETUP.detail.en
-%{doc_prefix}/SETUP.detail.ja
-%{doc_prefix}/GUIDE.ja
+%{doc_prefix}/SETUP.private.en
+%{doc_prefix}/SETUP.private.ja
 %{doc_prefix}/Gfarm-FAQ.en
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/KNOWN_PROBLEMS.en
 %{doc_prefix}/KNOWN_PROBLEMS.ja
+%if %{gfarm_v2_not_yet}
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
 %endif
@@ -738,15 +732,6 @@ fi
 %{lib_prefix}/libnsexec.so.0.0.0
 %endif
 
-%if %{gfarm_v2_not_yet}
-%files frontend
-%defattr(-,root,root)
-
-%if %{have_ns}
-%{prefix}/bin/gfarm
-%endif
-%endif
-
 %files client
 %defattr(-,root,root)
 %if %{gfarm_v2_not_yet}
@@ -779,9 +764,7 @@ fi
 %{prefix}/bin/gfrcmd
 %endif
 %{prefix}/bin/gfreg
-%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrep
-%endif
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
 %{prefix}/bin/gfuser
@@ -794,14 +777,18 @@ fi
 %{prefix}/bin/gfsetdir
 %{prefix}/bin/gfssh
 %{prefix}/bin/gfsshl
+%endif
 %{prefix}/bin/gfstat
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfstatus
 %{prefix}/bin/gftest
-%{prefix}/bin/gfwhere
-%{prefix}/bin/gfwhoami
 %endif
+%{prefix}/bin/gfwhere
+%if %{gfarm_v2_not_yet}
+%{prefix}/bin/gfwhoami
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
+%endif
 
 %if %{have_ns}
 %{prefix}/sbin/gfarmd
