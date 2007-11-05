@@ -11,7 +11,6 @@ datadir=$(default_datadir)/gfarm/config/linux/debian
 DATA =	$(srcdir)/gfarm-pgsql.in \
 	$(srcdir)/gfarm-slapd.in \
 	$(srcdir)/gfmd.in \
-	$(srcdir)/gfarm_agent.in \
 	$(srcdir)/gfsd.in
 
 include $(top_srcdir)/makes/data.mk
