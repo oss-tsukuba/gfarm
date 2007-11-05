@@ -12,9 +12,8 @@
 ● 概要
 =================================
 
-Gfarm ファイルシステムの導入にあたり，メタデータサーバ，メタデータ・
-キャッシュ・サーバ，ファイルシステムノード，クライアントノードに必要な
-パッケージをインストールします．
+Gfarm ファイルシステムの導入にあたり，メタデータサーバ，ファイルシステ
+ムノード，クライアントノードに必要なパッケージをインストールします．
 
 以下では，それぞれ異なるホストとして説明していますが，同一のホストに全
 てをインストールすることもできます．
@@ -24,53 +23,46 @@ Gfarm ファイルシステムの導入にあたり，メタデータサーバ，メタデータ・
 
 メタデータサーバ用の RPM パッケージをインストールします．
 
-	# rpm -Uvh gfarm-gsi-server-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-libs-X.X.X-X.ARCH.rpm
+	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm
 
-（注）上記では gfarm-gsi-* という RPM パッケージをインストールしていま
-      すが，GSI 認証が含まれないパッケージの場合はパッケージ名が 
-      gfarm-* となります．
-
-● メタデータ・キャッシュ・サーバのインストール
-===============================================
-
-メタデータ・キャッシュ・サーバ用の RPM パッケージをインストールします．
-
-	# rpm -Uvh gfarm-gsi-agent-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-libs-X.X.X-X.ARCH.rpm
+（注）上記では gfarm-* という RPM パッケージをインストールしていま
+      すが，GSI 認証が含まれるパッケージの場合はパッケージ名が 
+      gfarm-gsi-* となります．
 
 ● ファイルシステムノード（かつクライアントノード）のインストール
 =================================================================
 
 ファイルシステムノード用の RPM パッケージをインストールします．
 
-	# rpm -Uvh gfarm-gsi-fsnode-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-libs-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-client-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-doc-X.X.X-X.ARCH.rpm
+	# rpm -Uvh gfarm-fsnode-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
 
 Gfarm では，ファイルシステムノードは通常クライアントにもなりますので，
 client パッケージもインストールします．doc パッケージは任意です．
 
-さらに，クライアントとして，システムコールフックライブラリを利用する場合，
-Linux では glibc-not-hidden パッケージのインストールも必要です．
+さらに，クライアントとして，GfarmFS-FUSE (gfarm2fs)を利用し，Gfarm ファ
+イルシステムを mount する場合，gfarm2fs パッケージのインストールも必要
+です．
 
-	# rpm -Uvh glibc-not-hidden-X.X.X-X.ARCH.rpm
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
 
 ● クライアントノードのインストール
 ===================================
 
 ファイルシステムノード用の RPM パッケージをインストールします．
 
-	# rpm -Uvh gfarm-gsi-client-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-libs-X.X.X-X.ARCH.rpm \
-		   gfarm-gsi-doc-X.X.X-X.ARCH.rpm
+	# rpm -Uvh gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
 
 doc パッケージは任意です．
 
-Linux でシステムコールフック機能を利用する場合には，glibc-not-hidden
-パッケージのインストールも必要です．
+GfarmFS-FUSEを利用し，Gfarm ファイルシステムを mount する場合，
+gfarm2fs パッケージのインストールも必要です．
 
-	# rpm -Uvh glibc-not-hidden-X.X.X-X.ARCH.rpm
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
 
 $Id$
