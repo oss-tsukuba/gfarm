@@ -1675,20 +1675,60 @@ gfarm_error_t
 gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	gfarm_ino_t inode;
+	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
+	struct host *spool_host;
+	struct inode *inode;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("replica_remove: not implemented");
-
-	e = gfm_server_get_request(peer, "replica_remove", "ll", &inode, &gen);
+	e = gfm_server_get_request(peer, "replica_remove", "ll", &inum, &gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_put_reply(peer, "replica_remove",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_lock();
+	if (from_client) /* from gfsd only */
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((inode = inode_lookup(inum)) == NULL)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else if (inode_get_gen(inode) != gen)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else
+		e = inode_remove_replica(inode, spool_host);
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, "replica_remove", e, ""));
+}
+
+gfarm_error_t
+gfm_server_replica_add(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+	struct host *spool_host;
+	struct inode *inode;
+
+	e = gfm_server_get_request(peer, "replica_add", "ll", &inum, &gen);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	if (from_client) /* from gfsd only */
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((inode = inode_lookup(inum)) == NULL)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else if (inode_get_gen(inode) != gen)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else
+		e = inode_add_replica(inode, spool_host, 1);
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, "replica_add", e, ""));
 }

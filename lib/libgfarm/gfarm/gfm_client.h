@@ -238,6 +238,9 @@ gfarm_error_t gfm_client_replica_added_result(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_remove_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t);
 gfarm_error_t gfm_client_replica_remove_result(struct gfm_connection *);
+gfarm_error_t gfm_client_replica_add_request(struct gfm_connection *,
+	gfarm_ino_t, gfarm_uint64_t);
+gfarm_error_t gfm_client_replica_add_result(struct gfm_connection *);
 
 /* process management */
 gfarm_error_t gfm_client_process_alloc(struct gfm_connection *,

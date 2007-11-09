@@ -63,3 +63,4 @@ gfarm_error_t gfm_server_replica_remove_by_host(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_adding(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_added(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_remove(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_add(struct peer *, int, int);
