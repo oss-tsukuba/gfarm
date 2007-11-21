@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
-AC_CONFIG_SRCDIR(ChangeLog)
+AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
 AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
 
