@@ -72,19 +72,19 @@ config-gfarm コマンドによって、/etc/gfarm2.conf や /etc/gfmd.conf など
   ここでは、認証鍵の期限を、ほぼ1年(31536000秒) に設定しています。
 
 以上で、メタデータサーバー上での設定は完了です。
-下記を実行して、PostgreSQL サーバおよび gfmd が動作していることを
-確認してください。
+下記を実行して、gfmd が動作していることを確認してください。
 
-	# /etc/init.d/gfarm-pgsql status
 	# /etc/init.d/gfmd status
 
 必要なら、chkconfig コマンドを用いて、自動起動の設定も行ないます。
 
-上記作業によって作成されたファイルを消去したい場合には、
-下記のコマンドで PostgreSQL サーバおよび gfmd を停止させたのち、
+上記作業によって作成されたファイルを消去したい場合には、下記のコマンド
+で gfmd およびバックエンドデータベースサーバを停止させたのち、
 
-	# /etc/init.d/gfarm-pgsql stop
 	# /etc/init.d/gfmd stop
+	(場合によっては # killall gfmd)
+	# /etc/init.d/gfarm-pgsql stop
+	(あるいは # /etc/init.d/gfarm-slapd stop)
 
 下記のコマンドで削除できます。
 
