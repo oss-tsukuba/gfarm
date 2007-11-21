@@ -247,7 +247,6 @@ host_peer_unset(struct host *h)
 	/* terminate a remover thread */
 	pthread_cond_broadcast(&h->remover_cond);
 	pthread_mutex_unlock(&h->remover_mutex);
-	/* XXX - need to wait to finish the remover thread ??? */
 }
 
 struct peer *
@@ -271,7 +270,12 @@ host_port(struct host *h)
 int
 host_is_up(struct host *h)
 {
-	return (h->is_active);
+	int is_active;
+
+	pthread_mutex_lock(&h->remover_mutex);
+	is_active = h->is_active;
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (is_active);
 }
 
 void
@@ -305,10 +309,11 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 {
 	struct dead_file_copy *r;
 	gfarm_error_t e;
-	int retcode = 0;
+	int retcode = 0, is_up = host_is_up(host);
 
 	pthread_mutex_lock(&host->remover_mutex);
-	while (host->to_be_removed == NULL && host_is_up(host) &&
+	while (host->to_be_removed == NULL &&
+	       (is_up = host_is_up(host)) &&
 	       retcode != ETIMEDOUT)
 		retcode = pthread_cond_timedwait(
 			&host->remover_cond, &host->remover_mutex,
@@ -317,7 +322,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 		pthread_mutex_unlock(&host->remover_mutex);
 		return (GFARM_ERR_OPERATION_TIMED_OUT);
 	}
-	if (!host_is_up(host)) {
+	if (!is_up) {
 		pthread_mutex_unlock(&host->remover_mutex);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}

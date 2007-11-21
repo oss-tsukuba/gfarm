@@ -74,16 +74,16 @@ gfs_client_status(struct peer *peer,
 }
 
 gfarm_error_t
-remover(void *h)
+remover(struct peer *peer, struct host *host)
 {
-	struct host *host = h;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
 	struct timeval now;
 	struct timespec timeout;
 
-	while (host_is_up(host)) {
+	while (1) {
 		e = host_update_status(host);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (peer_had_protocol_error(peer) ||
+		    e != GFARM_ERR_NO_ERROR)
 			break;
 
 		/* timeout: 3 min */
@@ -92,6 +92,8 @@ remover(void *h)
 		timeout.tv_nsec = now.tv_usec * 1000;
 
 		e = host_remove_replica(host, &timeout);
+		if (peer_had_protocol_error(peer))
+			break;
 		if (e == GFARM_ERR_OPERATION_TIMED_OUT ||
 		    e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			continue;
@@ -114,6 +116,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
+	giant_lock();
 	if (from_client)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((h = peer_get_host(peer)) == NULL)
@@ -126,6 +129,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 		host_peer_set(h, peer);
 		e = GFARM_ERR_NO_ERROR;
 	}
+	giant_unlock();
 	e2 = gfm_server_put_reply(peer, "switch_back_channel", e, "");
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
@@ -138,6 +142,6 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME - make sure there is at most one running remover thread */
 	if (e == GFARM_ERR_NO_ERROR && e2 == GFARM_ERR_NO_ERROR)
-		e2 = remover(h);
+		e2 = remover(peer, h);
 	return (e2);
 }
