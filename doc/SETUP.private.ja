@@ -47,29 +47,16 @@ Gfarm ファイルシステムをソースから構築し，その後，メタデータサーバ，
 
 次に，config-gfarm により Gfarm ファイルシステムの構築を行います．
 
-	% config-gfarm --prefix $PREFIX -m <gfmd_port> -p <db_port> -N
+	% config-gfarm --prefix $PREFIX -S -m <gfmd_port> -p <db_port>
 
   ここで，<gfmd_port> は gfmd が listen するポート番号で，db_port はバッ
   クエンドのデータベースが listen するポート番号です．ユーザ権限で利用
-  するためには，1024 以上のポート番号を利用する必要があります．
-  <gfmd_port> は TCP で外からアクセスできる必要があります．-N は，デー
-  モンを自動的に起動しないオプションです．
+  するため，1024 以上のポート番号を利用する必要があります．
+  <gfmd_port> は TCP で外からアクセスできる必要があります．
+  -S は，プライベートな Gfarm を構成するためのオプションです．
 
 config-gfarm コマンドによって、$PREFIX/etc/gfarm2.conf や 
 $PREFIX/etc/gfmd.conf などが作成された筈です。
-
-バックエンドデータベースを起動します．
-
-	% etc/init.d/gfarm-pgsql start
-	(あるいは % etc/init.d/gfarm-slapd start)
-
-_gfarmfs グローバルユーザを自ユーザにマッピングするための設定を行い，
-etc/gfsd.conf を作成します．
-
-	% echo _gfarmfs `whoami` > etc/usermap
-	% cp etc/gfarm2.conf etc/gfsd.conf
-	% echo local_user_map $PREFIX/etc/usermap >> etc/gfmd.conf
-	% echo local_user_map $PREFIX/etc/usermap >> etc/gfsd.conf
 
 ホームディレクトリに認証鍵ファイル「.gfarm_shared_key」を作成します。
 
@@ -78,28 +65,24 @@ etc/gfsd.conf を作成します．
 
   ここでは、認証鍵の期限を、ほぼ1年(31536000秒) に設定しています。
 
-メタデータサーバを起動します。
-
-	% etc/init.d/gfmd start
-
 以上で、メタデータサーバー上での設定は完了です。
-下記を実行して、PostgreSQL サーバおよび gfmd が動作していることを
-確認してください。
+下記を実行して、gfmd が動作していることを確認してください。
 
-	% etc/init.d/gfarm-pgsql status
 	% etc/init.d/gfmd status
 
-上記作業によって作成されたファイルを消去したい場合には、
-下記のコマンドで PostgreSQL サーバおよび gfmd を停止させたのち、
+上記作業によって作成されたファイルを消去したい場合には、下記のコマンド
+で gfmd およびバックエンドデータベースサーバを停止させたのち、
 
-	% etc/init.d/gfarm-pgsql stop
 	% etc/init.d/gfmd stop
 	(場合によっては % killall gfmd)
+	% etc/init.d/gfarm-pgsql stop
+	(あるいは % etc/init.d/gfarm-slapd stop)
 
 下記のコマンドで削除できます。
 
 	% cd $PREFIX
 	% rm -f etc/gfarm2.conf etc/gfmd.conf
+	% rm -f etc/gfsd.conf etc/usermap
 	% rm -f etc/init.d/gfarm-* etc/init.d/gfmd
 	% rm -rf var/gfarm-*
 
@@ -115,31 +98,24 @@ etc/gfsd.conf を作成します．
 ▽ ファイルシステムノードの設定
 
 メタデータサーバとファイルシステムノードで $PREFIX が共有されていない
-場合は，メタデータサーバで生成された $PREFIX/etc/{gfarm2,gfsd}.conf ファ
-イルをファイルシステムノードの $PREFIX/etc にコピーします。
+場合は，メタデータサーバで生成された $PREFIX/etc/gfarm2.conf と
+$PREFIX/etc/gfarm2.conf をファイルシステムノードの $PREFIX/etc にコピー
+します。
 
 ファイルシステムノード上で以下のコマンドを実行して、ファイルシステムノー
 ドの設定を行います．
 
-	% GFARM_CONF=$PREFIX/etc/gfsd.conf config-gfsd --prefix $PREFIX -p <gfsd_port> <spool_directory>
+	% config-gfsd --prefix $PREFIX -S -p <gfsd_port> <spool_directory>
 
   <gfsd_port> は gfsd が listen するポート番号です．ユーザ権限で利用す
-  るためには，1024 以上のポート番号を利用する必要があります．
+  るため，1024 以上のポート番号を利用する必要があります．
   <gfsd_port> は TCP と UDP で外からアクセスできる必要があります．
+  -S は，プライベートな Gfarm を構成するためのオプションです．
 
   config-gfsd コマンドの最後の引数は Gfarm ファイルシステムの実体ファ
   イルが格納されるスプール・ディレクトリです．スプール・ディレクトリは，
   他のファイルシステムノードと共有されない領域をフルパスで指定してくだ
   さい．省略すると，$PREFIX/var/gfarm-spool になります．
-
-この最後に、「gfhost」コマンドの実行をうながす表示が行なわれた筈です。
-その実行を行い，ホストを登録してください．例えば下記のようになります．
-
-	$ $PREFIX/bin/gfhost -c -a i386-fedora5-linux -p 10610 -n 2 node1.example.org
-
-下記のコマンドで gfsd を起動します。
-
-	% $PREFIX/etc/init.d/gfsd start
 
 以上で設定は完了です。
 
@@ -153,7 +129,8 @@ etc/gfsd.conf を作成します．
 
 	% rm -f $PREFIX/etc/{gfarm2,gfsd}.conf
 	% rm -f $PREFIX/etc/init.d/gfsd
-	% rm -rf $PREFIX/var/gfarm
+	% rm -rf $PREFIX/var/gfarm-spool
+	(あるいは指定したスプールディレクトリを消去)
 
 ▽ ファイアウォールの設定
 

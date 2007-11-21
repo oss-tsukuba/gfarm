@@ -120,6 +120,9 @@ while [ $# -gt 0 ] ; do
 	  --help)
 		usage
 		;;
+	  -S)
+		PRIVATE_MODE=true
+		;;
 	  -N)
 		START_SERVICE=false
 		;;
@@ -157,6 +160,7 @@ esac
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
 
+: ${PRIVATE_MODE:=false}
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
 : ${DISPLAY_PARAMS:=false}
@@ -168,15 +172,23 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+if $PRIVATE_MODE; then
+	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
+else
+	: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+fi
+: ${GFARM_CLIENT_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 
 : ${FQ_HOSTNAME:=`fq_hostname`}
 
 : ${GFSD_HOSTNAME:="$FQ_HOSTNAME"}
 [ X"$GFSD_HOSTNAME" = X ] && ABORT 'cannot determine gfsd hostname, please specify it by -h option'
 
-: ${GFSD_PORT:="600"}
-
+if $PRIVATE_MODE; then
+	: ${GFSD_PORT:="10600"}
+else
+	: ${GFSD_PORT:="600"}
+fi
 : ${NCPU:=`number_of_cpus`}
 [ X"$NCPU" = X ] && ABORT 'cannot determine number of CPUs'
 
@@ -305,9 +317,30 @@ then
 	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
 if [ X"$CONFIG_PREFIX" != X ]; then
-	GFARM_CONFIG_FILE="$GFARM_CONF"
+	GFARM_CONFIG_FILE="$GFARM_CLIENT_CONF"
 	export GFARM_CONFIG_FILE
 fi
+
+
+if $PRIVATE_MODE; then
+# only private mode
+
+if $FORCE; then
+	"$prefix/bin/gfhost" -d $GFSD_HOSTNAME > /dev/null 2>&1
+fi
+"$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME &&
+echo gfhost $GFSD_HOSTNAME: succeeded ||
+echo >&2 "gfhost -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME: failed"
+
+if $START_SERVICE; then
+	if [ -f $RUN_DIR/$RC_NAME.pid ]; then ctl=restart; else ctl=start; fi
+	service_add $RC_NAME &&
+		service_ctl $RC_NAME $ctl ||
+		ABORT "failed to $ctl $RC_NAME"
+fi
+echo "$PROGNAME success"
+
+else # non private mode
 
 echo "$PROGNAME success"
 echo
@@ -319,21 +352,6 @@ echo After that, start gfsd by the following command as a root:
 echo
 # XXX FIXME should use "forcestart" instead of "start" on NetBSD and FreeBSD.
 echo "$RC_DIR/$RC_NAME start"
-exit 0
 
-# XXX not yet in gfarm v2
-if $FORCE; then
-	"$prefix/bin/gfhost" -d $GFSD_HOSTNAME > /dev/null 2>&1
 fi
-"$prefix/bin/gfhost" -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME &&
-echo gfhost $GFSD_HOSTNAME: succeeded ||
-echo >&2 "gfhost -c -a $ARCH -n $NCPU $GFSD_HOSTNAME: failed"
-
-if $START_SERVICE; then
-	if [ -f $RUN_DIR/$RC_NAME.pid ]; then ctl=restart; else ctl=start; fi
-	service_add $RC_NAME &&
-		service_ctl $RC_NAME $ctl ||
-		ABORT "failed to $ctl $RC_NAME"
-fi
-echo "$PROGNAME success"
 exit 0

@@ -279,6 +279,9 @@ while [ $# -gt 0 ] ; do
 	  --help)
 		usage
 		;;
+	  -S)
+		PRIVATE_MODE=true
+		;;
 	  -N)
 		START_SERVICE=false
 		;;
@@ -341,6 +344,7 @@ set_first_defaults_$BACKEND_TYPE
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
 
+: ${PRIVATE_MODE:=false}
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
 : ${DISPLAY_PARAMS:=false}
@@ -359,7 +363,11 @@ fi
 
 : ${AUTH_TYPE:="sharedsecret"}
 
-: ${GFMD_PORT:="601"}
+if $PRIVATE_MODE; then
+	: ${GFMD_PORT:="10601"}
+else
+	: ${GFMD_PORT:="601"}
+fi
 : ${RC_GFMD_IN="$config_dir/gfmd.in"}
 
 : ${RC_BACKEND_IN="$config_dir/$RC_BACKEND_BASENAME.in"}
@@ -545,6 +553,16 @@ mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 chmod 600 "$GFMD_CONF"
 
 make_configuration_file_$BACKEND_TYPE
+
+# private user mode
+if $PRIVATE_MODE; then
+	GFSD_CONF="$GFARM_CONF_DIR/gfsd.conf"
+	USERMAP_FILE="$GFARM_CONF_DIR/usermap"
+	echo _gfarmfs `whoami` > $USERMAP_FILE
+	cp $GFARM_CONF $GFSD_CONF
+	echo local_user_map $USERMAP_FILE >> $GFMD_CONF
+	echo local_user_map $USERMAP_FILE >> $GFSD_CONF
+fi
 
 # create run scripts
 mkscript "$RC_DIR/$RC_BACKEND_BASENAME"	replace "$RC_BACKEND_IN"
