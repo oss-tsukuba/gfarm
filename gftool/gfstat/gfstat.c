@@ -34,9 +34,10 @@ display_stat(char *fn, struct gfs_stat *st)
 	printf("  Mode: (%04o) Uid: (%8s) Gid: (%8s)\n",
 	       st->st_mode & GFARM_S_ALLPERM,
 	       st->st_user, st->st_group);
-	printf(" Inode: %-12lld Gen: %-12lld Links: %-12lld\n",
+	printf(" Inode: %-12" GFARM_PRId64 " Gen: %-12" GFARM_PRId64
+	       " Links: %-12" GFARM_PRId64 "\n",
 	       st->st_ino, st->st_gen, st->st_nlink);
-	printf(" Ncopy: %-12lld\n", st->st_ncopy);
+	printf(" Ncopy: %-12" GFARM_PRId64 "\n", st->st_ncopy);
 
 	clock = st->st_atimespec.tv_sec; printf("Access: %s", ctime(&clock));
 	clock = st->st_mtimespec.tv_sec; printf("Modify: %s", ctime(&clock));
