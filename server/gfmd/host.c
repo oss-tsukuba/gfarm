@@ -270,12 +270,11 @@ host_port(struct host *h)
 int
 host_is_up(struct host *h)
 {
-	int is_active;
-
-	pthread_mutex_lock(&h->remover_mutex);
-	is_active = h->is_active;
-	pthread_mutex_unlock(&h->remover_mutex);
-	return (is_active);
+	/*
+	 * XXX - should be called with mutex h->remover_mutex,
+	 * but it is not always satisfied.
+	 */
+	return (h->is_active);
 }
 
 void
@@ -309,7 +308,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 {
 	struct dead_file_copy *r;
 	gfarm_error_t e;
-	int retcode = 0, is_up = host_is_up(host);
+	int retcode = 0, is_up;
 
 	pthread_mutex_lock(&host->remover_mutex);
 	while (host->to_be_removed == NULL &&
