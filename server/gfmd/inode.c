@@ -306,7 +306,7 @@ inode_alloc_num(gfarm_ino_t inum)
 
 	if (inum < ROOT_INUMBER)
 		return (NULL); /* we don't use 0 and 1 as i_number */
-	if (inode_table_size < inum) {
+	if (inode_table_size <= inum) {
 		gfarm_ino_t new_table_size;
 		struct inode **p;
 
