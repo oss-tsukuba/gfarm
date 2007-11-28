@@ -177,7 +177,6 @@ Table of Contents:
      supported yet.
 
 	Deletion of a file replica
-	Deletion of a registered filesystem node
 	File view
 
   4.2 The following functionality supported by Gfarm-1.x is not

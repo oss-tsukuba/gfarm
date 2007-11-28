@@ -5,6 +5,9 @@ About this document
 
 This document describes how to configure the Gfarm filesystem.
 
+For users who would like to configure a private Gfarm filesystem by a
+non privileged user, refer to SETUP.private.en.
+
 Please install the Gfarm software before using this manual,
 By using either INSTALL.en, for installation from the source code,
 or INSTALL.RPM.en, for installation from the RPM binary packages.

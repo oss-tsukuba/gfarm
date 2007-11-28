@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.0
+%define ver	2.0.0
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -185,8 +185,8 @@ file system browser for gfarm
 %endif
 
 %changelog
-* Fri Nov 2 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp>
-- first preview release of Gfarm file system version 2
+* Fri Nov 28 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.0.0-1
+- first release of Gfarm file system version 2
 
 * Tue Aug  8 2006 SODA Noriyuki <soda@sra.co.jp>
 - restart gfsd, gfmd and gfarm_agent at update, if they are already running.
