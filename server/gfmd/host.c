@@ -308,22 +308,21 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 {
 	struct dead_file_copy *r;
 	gfarm_error_t e;
-	int retcode = 0, is_up;
+	int retcode;
 
 	pthread_mutex_lock(&host->remover_mutex);
-	while (host->to_be_removed == NULL &&
-	       (is_up = host_is_up(host)) &&
-	       retcode != ETIMEDOUT)
+	while (host->to_be_removed == NULL) {
 		retcode = pthread_cond_timedwait(
 			&host->remover_cond, &host->remover_mutex,
 			timeout);
-	if (retcode == ETIMEDOUT) {
-		pthread_mutex_unlock(&host->remover_mutex);
-		return (GFARM_ERR_OPERATION_TIMED_OUT);
-	}
-	if (!is_up) {
-		pthread_mutex_unlock(&host->remover_mutex);
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		if (retcode == ETIMEDOUT) {
+			pthread_mutex_unlock(&host->remover_mutex);
+			return (GFARM_ERR_OPERATION_TIMED_OUT);
+		}
+		if (!host_is_up(host)) {
+			pthread_mutex_unlock(&host->remover_mutex);
+			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		}
 	}
 	r = host->to_be_removed;
 	host->to_be_removed = host->to_be_removed->next;
@@ -845,6 +844,12 @@ host_schedule_reply_all(struct peer *peer, const char *diag)
 	struct host *h;
 	int n = 0;
 
+	/*
+	 * XXX - should call host_is_up(h) with mutex h->remover_mutex.
+	 * Moreover, there is no guarantee that the second
+	 * host_is_up(h) call returns the same value as the first call
+	 * returns.
+	 */
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
 		if (host_is_up(h))
