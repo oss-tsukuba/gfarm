@@ -385,9 +385,6 @@ apply_configuration_postgresql()
 		-D $BACKEND_DATA_DIR -l $BACKEND_DATA_DIR/logfile start
 _EOF_
 
-	# wait until portmaster actually starts. XXX are 10 seconds enough?
-	sleep 10
-
 	case "$BACKEND_VERSION" in
 	[1-7].*|8.0)
 		createuser_option=;;
@@ -402,6 +399,18 @@ _EOF_
 	unset PGDATABASE PGUSER PGPASSWORD PGSERVICE
 	unset PGREALM PGOPTIONS PGSSLMODE PGREQUIRESSL PGCONNECT_TIMEOUT
 
+	# wait for postmaster to start up
+	iter=0
+	while ! $PGSQL_BINDIR/psql -l >/dev/null 2>&1
+	do
+		iter=\`expr \$iter + 1\`
+		if [ \$iter -gt 6 ]; then
+			echo give up
+			exit 1
+		fi
+		echo wait 5 seconds for postmaster to start up
+		sleep 5
+	done
 	$PGSQL_BINDIR/createuser -q $createuser_option -A -D $BACKEND_USER
 	$PGSQL_BINDIR/createdb -q $DB_NAME
 #	$PGSQL_BINDIR/psql -q \
