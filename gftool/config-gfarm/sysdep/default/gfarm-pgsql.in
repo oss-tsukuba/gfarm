@@ -35,6 +35,7 @@ case $PRIVILEGE in
 esac
 export PGPORT
 export PGDATA
+unset LANG
 
 case $1 in 
 start)

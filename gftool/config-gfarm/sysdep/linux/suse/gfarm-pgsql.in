@@ -37,6 +37,7 @@ esac
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 export PGPORT
 export PGDATA
+unset LANG
 
 # We won't just use "checkproc", "startproc" and "killproc" here,
 # because these functions don't allow multiple server processes for

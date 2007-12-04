@@ -28,6 +28,7 @@ esac
 . /etc/sysconfig/network
 export PGPORT
 export PGDATA
+unset LANG
 
 # Check that networking is up.
 if [ ${NETWORKING} = "no" ]
