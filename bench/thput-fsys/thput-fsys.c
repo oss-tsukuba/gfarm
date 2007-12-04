@@ -300,7 +300,7 @@ host_get_self_name(void)
 void
 test_title(int test_mode, off_t file_size, int flags)
 {
-	fprintf(stdout, "testing with %d MB file [bytes/sec]\n",
+	fprintf(stdout, "testing with %d MiByte file [byte/sec]\n",
 		(int)file_size);
 	printf("%-8s", "bufsize");
 	if (test_mode & TESTMODE_WRITE)
@@ -445,8 +445,8 @@ main(int argc, char **argv)
 				"Usage: thput-fsys [options]"
 				" [file1 [file2]]\n"
 				"options:\n"
-				"\t-b block-size\n"
-				"\t-s file-size\n"
+				"\t-b block-size (Byte)\n"
+				"\t-s file-size (MiByte)\n"
 				"\t-w			: write test\n"
 				"\t-r			: read test\n"
 				"\t-c			: copy test\n"

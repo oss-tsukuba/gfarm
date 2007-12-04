@@ -279,7 +279,7 @@ timeval_sub(struct timeval *t1, struct timeval *t2)
 void
 test_title(char *msg, int test_mode, off_t file_size, int flags)
 {
-	printf("%s with %d MB file [KByte/sec]\n", msg, (int)file_size);
+	printf("%s with %d MiByte file [KiByte/sec]\n", msg, (int)file_size);
 	printf("[%4s] %8s", "RANK", "bufsize");
 	if (test_mode & TESTMODE_WRITE)
 		printf(" %10s   ", "write");
@@ -435,8 +435,8 @@ main(int argc, char **argv)
 				"Usage: thput-mpi [options]"
 				" [file1 [file2]]\n"
 				"options:\n"
-				"\t-b block-size\n"
-				"\t-s file-size\n"
+				"\t-b block-size (Byte)\n"
+				"\t-s file-size (MiByte)\n"
 				"\t-v\t\t: report bandwidth of each process\n"
 				"\t-r\t\t: do read test additionally\n"
 				"\t-c\t\t: do copy test additionally\n");
