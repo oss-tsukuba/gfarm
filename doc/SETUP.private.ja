@@ -98,9 +98,13 @@ $PREFIX/etc/gfmd.conf などが作成された筈です。
 ▽ ファイルシステムノードの設定
 
 メタデータサーバとファイルシステムノードで $PREFIX が共有されていない
-場合は，メタデータサーバで生成された $PREFIX/etc/gfarm2.conf と
-$PREFIX/etc/gfarm2.conf をファイルシステムノードの $PREFIX/etc にコピー
-します。
+場合は，メタデータサーバで生成された
+
+	$PREFIX/etc/gfarm2.conf
+	$PREFIX/etc/gfsd.conf
+	$PREFIX/etc/usermap
+
+をファイルシステムノードの $PREFIX/etc にコピーします。
 
 ファイルシステムノード上で以下のコマンドを実行して、ファイルシステムノー
 ドの設定を行います．

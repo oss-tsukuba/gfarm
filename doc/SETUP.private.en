@@ -79,8 +79,12 @@ o Configuration of a filesystem node
 
 When the $PREFIX directory is not shared among the metadata server and
 a filesystem node, it is necessary to copy
-$PREFIX/etc/{gfarm2,gfsd}.conf to a $PREFIX/etc directory on the
-filesystem node.
+
+	$PREFIX/etc/gfarm2.conf
+	$PREFIX/etc/gfsd.conf
+	$PREFIX/etc/usermap
+
+to a $PREFIX/etc directory on the filesystem node.
 
 Execute the following command to configure the filesystem node.
 
