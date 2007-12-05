@@ -308,6 +308,18 @@ mkcnf_gfsd_sysdep
 # create run scripts
 mkscript $RC_DIR/$RC_NAME	config "$RC_GFSD_IN"
 
+if $PRIVATE_MODE; then
+# only private mode
+
+# update configuration file
+USERMAP_FILE="$GFARM_CONF_DIR/usermap"
+[ -f $USERMAP_FILE ] || ABORT "$USERMAP_FILE: no such file"
+grep -v "^local_user_map" $GFARM_CONF > $GFARM_CONF.tmp &&
+echo local_user_map $USERMAP_FILE >> $GFARM_CONF.tmp &&
+mv $GFARM_CONF.tmp $GFARM_CONF &&
+echo $GFARM_CONF: updated ||
+ABORT "$GFARM_CONF: cannot append local_user_map statements"
+
 # gfhost
 if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
    [ -f "$globus_location/etc/globus-user-env.sh" ]
@@ -320,10 +332,6 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 	GFARM_CONFIG_FILE="$GFARM_CLIENT_CONF"
 	export GFARM_CONFIG_FILE
 fi
-
-
-if $PRIVATE_MODE; then
-# only private mode
 
 if $FORCE; then
 	"$prefix/bin/gfhost" -d $GFSD_HOSTNAME > /dev/null 2>&1

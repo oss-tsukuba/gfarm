@@ -561,7 +561,6 @@ if $PRIVATE_MODE; then
 	echo _gfarmfs `whoami` > $USERMAP_FILE
 	cp $GFARM_CONF $GFSD_CONF
 	echo local_user_map $USERMAP_FILE >> $GFMD_CONF
-	echo local_user_map $USERMAP_FILE >> $GFSD_CONF
 fi
 
 # create run scripts
