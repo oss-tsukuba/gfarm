@@ -38,4 +38,8 @@ Features
 
    GfarmFS-FUSE enables to mount a Gfarm file system in userspace.
 
+Unsupported features
+
+ * GSI authentication
+
 $Id$
