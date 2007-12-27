@@ -70,8 +70,8 @@
 #endif
 
 char *program_name = "gfmd";
-
 struct protoent *tcp_proto;
+static char *pid_file;
 
 gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
@@ -568,12 +568,32 @@ open_accepting_socket(int port)
 	return (sock);
 }
 
+static void
+write_pid()
+{
+	FILE *pid_fp;
+
+	if (pid_file == NULL)
+		return;
+
+	pid_fp = fopen(pid_file, "w");
+	if (pid_fp == NULL)
+		gflog_fatal_errno(pid_file);
+
+	fprintf(pid_fp, "%ld\n", (long)getpid());
+	fclose(pid_fp);
+}
+
 void *
 termsigs_handler(void *p)
 {
 	sigset_t *termsigs = p;
 	int sig;
 
+#ifdef __linux__
+	/* A Linux Thread is a process having its own process id. */
+	write_pid(pid_file);
+#endif
 	for (;;) {
 		if (sigwait(termsigs, &sig) == -1)
 			gflog_warning("termsigs_handler: %s", strerror(errno));
@@ -635,8 +655,7 @@ main(int argc, char **argv)
 	extern char *optarg;
 	extern int optind;
 	gfarm_error_t e;
-	char *config_file = NULL, *port_number = NULL, *pid_file = NULL;
-	FILE *pid_fp = NULL;
+	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
@@ -706,27 +725,11 @@ main(int argc, char **argv)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	sock = open_accepting_socket(gfarm_metadb_server_port);
 
-	if (pid_file != NULL) {
-		/*
-		 * We do this before calling gfarm_daemon()
-		 * to print the error message to stderr.
-		 */
-		pid_fp = fopen(pid_file, "w");
-		if (pid_fp == NULL)
-			gflog_fatal_errno(pid_file);
-	}
-	if (!debug_mode) {
-		gflog_syslog_open(LOG_PID, syslog_facility);
-		gfarm_daemon(0, 0);
-	}
-	if (pid_file != NULL) {
-		/*
-		 * We do this after calling gfarm_daemon(),
-		 * because it changes pid.
-		 */
-		fprintf(pid_fp, "%ld\n", (long)getpid());
-		fclose(pid_fp);
-	}
+	/*
+	 * We do this before calling gfarm_daemon()
+	 * to print the error message to stderr.
+	 */
+	write_pid(pid_file);
 
 	giant_init();
 
@@ -735,6 +738,10 @@ main(int argc, char **argv)
 	if (table_size > GFMD_CONNECTION_LIMIT)
 		table_size = GFMD_CONNECTION_LIMIT;
 
+	/*
+	 * We do this before calling gfarm_daemon()
+	 * to print the error message to stderr.
+	 */
 	switch (gfarm_backend_db_type) {
 	case GFARM_BACKEND_DB_TYPE_LDAP:
 #ifdef HAVE_LDAP
@@ -761,6 +768,16 @@ main(int argc, char **argv)
 		gflog_fatal("database initialization failed: %s",
 		    gfarm_error_string(e));
 	}
+
+	if (!debug_mode) {
+		gflog_syslog_open(LOG_PID, syslog_facility);
+		gfarm_daemon(0, 0);
+	}
+	/*
+	 * We do this after calling gfarm_daemon(),
+	 * because it changes pid.
+	 */
+	write_pid(pid_file);
 
 	host_init();
 	user_init();
