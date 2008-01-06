@@ -7,3 +7,5 @@ int getloadavg(double *, int);
 int gfsd_statfs(char *, gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+
+gfarm_error_t gfsd_spool_check(int);

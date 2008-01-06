@@ -3324,12 +3324,13 @@ main(int argc, char **argv)
 	struct sigaction sa;
 	fd_set requests;
 	struct stat sb;
+	int spool_check_level = 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:df:l:r:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:dcf:l:r:s:uv")) != -1) {
 		switch (ch) {
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
@@ -3339,6 +3340,9 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			pid_file = optarg;
+			break;
+		case 'c':
+			++spool_check_level;
 			break;
 		case 'd':
 			debug_mode = 1;
@@ -3554,6 +3558,10 @@ main(int argc, char **argv)
 	/* XXX - kluge for GFS_PROTO_STATFS for now */
 	if (chdir(gfarm_spool_root) == -1)
 		gflog_fatal_errno(gfarm_spool_root);
+
+	/* spool check */
+	if (spool_check_level > 0)
+		gfsd_spool_check(spool_check_level);
 
 	/* start back channel server */
 	start_back_channel_server();

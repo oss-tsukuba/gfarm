@@ -14,8 +14,8 @@ LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfsd
-SRCS =	gfsd.c loadavg.c statfs.c
-OBJS =	gfsd.o loadavg.o statfs.o
+SRCS =	gfsd.c loadavg.c statfs.c spck.c
+OBJS =	gfsd.o loadavg.o statfs.o spck.o
 
 all: $(PROGRAM)
 
