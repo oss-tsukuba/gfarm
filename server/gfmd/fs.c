@@ -1708,10 +1708,12 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
+	gfarm_off_t size;
 	struct host *spool_host;
 	struct inode *inode;
 
-	e = gfm_server_get_request(peer, "replica_add", "ll", &inum, &gen);
+	e = gfm_server_get_request(peer, "replica_add", "lll",
+		&inum, &gen, &size);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
@@ -1726,6 +1728,8 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	else if (inode_get_gen(inode) != gen)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else if (inode_get_size(inode) != size)
+		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	else
 		e = inode_add_replica(inode, spool_host, 1);
 	giant_unlock();

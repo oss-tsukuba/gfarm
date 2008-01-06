@@ -1521,10 +1521,10 @@ gfm_client_replica_remove_result(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_replica_add_request(struct gfm_connection *gfm_server,
-	gfarm_ino_t inum, gfarm_uint64_t gen)
+	gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_REPLICA_ADD, "ll", inum, gen));
+	    GFM_PROTO_REPLICA_ADD, "lll", inum, gen, size));
 }
 
 gfarm_error_t

@@ -750,9 +750,11 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_ALREADY_EXISTS);
 
 	mtime = inode_get_mtime(fo->inode);
-	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec)
-		return (inode_remove_replica(fo->inode, spool_host));
-
+	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec) {
+		e = inode_remove_replica(fo->inode, spool_host);
+		return (e == GFARM_ERR_NO_ERROR ?
+			GFARM_ERR_INVALID_FILE_REPLICA : e);
+	}
 	return (inode_add_replica(fo->inode, spool_host, 1));
 }
 
