@@ -1621,8 +1621,10 @@ inode_replica_list_by_name(struct inode *inode,
 	int n, i;
 	char **hosts;
 
-	if (!inode_is_file(inode))
-		gflog_fatal("inode_replica_list_by_name: not a file");
+	if (inode_is_dir(inode))
+		return (GFARM_ERR_IS_A_DIRECTORY);
+	else if (!inode_is_file(inode))
+		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	n = inode_get_ncopy(inode);
 	GFARM_MALLOC_ARRAY(hosts, n);
