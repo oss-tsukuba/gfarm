@@ -3,6 +3,7 @@ void user_init(void);
 struct user;
 struct user *user_lookup(const char *);
 char *user_name(struct user *);
+char *user_gsi_dn(struct user *);
 
 extern char ADMIN_USER_NAME[];
 
@@ -13,6 +14,7 @@ int user_is_admin(struct user *);
 struct peer;
 gfarm_error_t gfm_server_user_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_get_by_names(struct peer *, int, int);
+gfarm_error_t gfm_server_user_info_get_by_gsi_dn(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_set(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_user_info_remove(struct peer *, int, int);

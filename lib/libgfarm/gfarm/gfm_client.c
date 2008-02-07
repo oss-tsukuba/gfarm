@@ -435,6 +435,15 @@ gfm_client_user_info_get_by_names(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *gfm_server,
+	const char *gsi_dn, struct gfarm_user_info *user)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s/ssss", gsi_dn,
+	    &user->username, &user->realname, &user->homedir, &user->gsi_dn));
+}
+
+gfarm_error_t
 gfm_client_user_info_set(struct gfm_connection *gfm_server,
 	const struct gfarm_user_info *user)
 {

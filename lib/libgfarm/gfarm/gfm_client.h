@@ -56,6 +56,8 @@ gfarm_error_t gfm_client_user_info_get_all(struct gfm_connection *,
 	int *, struct gfarm_user_info **);
 gfarm_error_t gfm_client_user_info_get_by_names(struct gfm_connection *,
 	int, const char **, gfarm_error_t *, struct gfarm_user_info *);
+gfarm_error_t gfm_client_user_info_get_by_gsi_dn(struct gfm_connection *,
+	const char *, struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_set(struct gfm_connection *,
 	const struct gfarm_user_info *);
 gfarm_error_t gfm_client_user_info_modify(struct gfm_connection *,

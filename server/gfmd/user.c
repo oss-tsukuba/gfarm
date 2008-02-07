@@ -86,6 +86,26 @@ user_lookup(const char *username)
 	return (*(struct user **)gfarm_hash_entry_data(entry));
 }
 
+/* XXX linear search */
+struct user *
+user_lookup_gsi_dn(const char *gsi_dn)
+{
+	struct gfarm_hash_iterator it;
+	struct user **u;
+
+	if (gsi_dn == NULL)
+		return (NULL);
+
+	for (gfarm_hash_iterator_begin(user_hashtab, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
+		if (strcmp(gsi_dn, user_gsi_dn(*u)) == 0)
+			return (*u);
+	}
+	return (NULL);
+}
+
 gfarm_error_t
 user_enter(struct gfarm_user_info *ui, struct user **upp)
 {
@@ -159,6 +179,12 @@ char *
 user_name(struct user *u)
 {
 	return (u->ui.username);
+}
+
+char *
+user_gsi_dn(struct user *u)
+{
+	return (u->ui.gsi_dn);
 }
 
 int
@@ -381,6 +407,41 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < nusers; i++)
 		free(users[i]);
 	free(users);
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_user_info_get_by_gsi_dn(
+	struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	char *gsi_dn;
+	struct user *u;
+	struct gfarm_user_info *ui;
+
+	e = gfm_server_get_request(peer, "USER_INFO_GET_BY_GSI_DN",
+	    "s", &gsi_dn);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(gsi_dn);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	/* XXX FIXME too long giant lock */
+	giant_lock();
+	u = user_lookup_gsi_dn(gsi_dn);
+	if (u == NULL)
+		e = gfm_server_put_reply(peer, "user_info_get_by_gsi_dn",
+			GFARM_ERR_NO_SUCH_OBJECT, "");
+	else {
+		ui = &u->ui;
+		e = gfm_server_put_reply(peer, "user_info_get_by_gsi_dn", e,
+			"ssss", ui->username, ui->realname, ui->homedir,
+			ui->gsi_dn);
+	}
+	giant_unlock();
+	free(gsi_dn);
 	return (e);
 }
 
