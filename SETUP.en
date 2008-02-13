@@ -200,6 +200,38 @@ down.
 
 For details of the above Gfarm commands, refer to the respective man page.
 
+User registration
+=================
+
+Every user needs to be registered to access Gfarm file system by a
+Gfarm administrator.
+
+  A Gfarm administrator that executes config-gfarm is automatically
+  registered during config-gfarm.
+
+For user registration, execute gfuser command;
+
+	% gfuser -c global_username realname homedir gsi_dn
+
+'global_username' is a global user name in Gfarm file system.
+'realname' is a name to identify the user.  'homedir' is a home
+directory in Gfarm.  'gsi_dn' is a subject DN of a user certificate
+used in GSI authentication.
+
+  'homedir' and 'gsi_dn' are not used for now.
+
+When 'realname' includes a space, it is necessary to quote.  The
+following example registers a global user 'foo';
+
+	% gfuser -c foo "foo bar" /home/foo ""
+
+Next, it is necessary to create a home directory for the user.  In the
+case of the above example, 
+
+	% gfmkdir /home
+	% gfmkdir /home/foo
+	% gfchown foo /home/foo
+
 Further examples of advanced functionality
 ==========================================
 

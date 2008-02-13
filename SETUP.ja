@@ -258,6 +258,37 @@ Gfarm ファイルシステムは，クライアントの設定をしているノードであれば，
 
 なお，上記コマンドの詳細は，man ページを参照してください．
 
+● 利用ユーザの登録
+===================
+
+Gfarm ファイルシステムを利用するためには，Gfarm の特権ユーザが利用ユー
+ザを登録する必要があります．
+
+  config-gfarm を実行したユーザは，自動的に特権ユーザとして登録される
+  ため，登録の必要はありません．
+
+登録には gfuser コマンドを利用します．
+
+	% gfuser -c global_username realname homedir gsi_dn
+
+global_username は，Gfarm ファイルシステム上のグローバルなユーザ名，
+realname は人間がユーザを識別できる名前，homedir は Gfarm 上のホームディ
+レクトリ，gsi_dn は GSI 認証におけるユーザ証明書の Subject DN です．
+
+  ホームディレクトリおよび gsi_dn は 2008年2月現在利用されていません．
+
+realname などに space を含む場合は，ダブルクオートなどで括ります．例え
+ば，以下のようにしてグローバルユーザ foo を登録します．
+
+	% gfuser -c foo "foo bar" /home/foo ""
+
+その後，ユーザのホームディレクトリを作成します．上記の場合，以下の様に
+なります．
+
+	% gfmkdir /home
+	% gfmkdir /home/foo
+	% gfchown foo /home/foo
+
 ● Gfarm の進んだ利用
 =====================
 
