@@ -489,7 +489,7 @@ fi
 %{man_prefix}/ja/man3/gfs_unlink_section.3.gz
 %{man_prefix}/ja/man3/gfs_utimes.3.gz
 %endif
-%{man_prefix}/ja/man5/gfarm.conf.5.gz
+%{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
 %if %{gfarm_v2_not_yet}
