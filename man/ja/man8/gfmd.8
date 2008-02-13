@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFMD" "8" "07 November 2006" "Gfarm" ""
+.TH "GFMD" "8" "14 2月 2008" "Gfarm" ""
 
 .SH NAME
 gfmd(8) \- GfarmメタDB・デーモン
@@ -13,60 +13,56 @@ gfmd(8) \- GfarmメタDB・デーモン
 
 .SH "DESCRIPTION"
 .PP
-gfmd は、Gfarm ライブラリと協調して動作し、Gfarm 並列ファイルシステ
+gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
 ムのメタデータへのアクセスを提供するデーモンプログラムです。
-gfmd は Gfarm のメタDBサーバー・ホスト上で、 
+gfmdはGfarmのメタDBサーバー・ホスト上で、
 あらかじめ立ち上げておく必要があります。
 .PP
-gfmd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfmd を利用することができません．
+gfmdはユーザ権限で動作させることも可能ですが、この場合他のユーザはこ
+のgfmdを利用することができません。
+詳細はSETUP.private.jaを参照してください。
 .PP
-ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
-で指定して gfmd を立ち上げます．ユーザ権限による gfmd の起動には少なく
-とも gfmd が利用するポート番号を変更する必要があります．このためには設
-定ファイル内の metadb_serverport あるいは起動時の -p オプションを利用
-します．
-.PP
-デフォルト以外のポート番号で立ち上がっている gfmd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
-metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
+gfmdを利用するためには，
+クライアントノードの~/.gfarm2rcあるいは%%SYSCONFDIR%%/gfarm2.confの
+metadb_server_hostで利用したいgfmdのホスト名，
+metadb_server_portでポート番号を指定する必要がありま
 す．
 .SH "OPTIONS"
 .TP
 \fB-L \fIログレベル\fB\fR
 このオプションで指定したレベル以上の優先度のログを出力します。
-指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
 .TP
 \fB-P \fIPIDファイル\fB\fR
-gfmd の process ID を、指定したファイルに記録します。
+gfmdのprocess IDを、指定したファイルに記録します。
 .TP
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。
 
-このオプションを指定し、かつ \fB-L\fR オプションを指定しなかった
-場合、ログレベルは debug となります。
+このオプションを指定し、かつ\fB-L\fRオプションを指定しなかった
+場合、ログレベルはdebugとなります。
 .TP
 \fB-f \fI設定ファイル\fB\fR
 起動時に読み込む設定ファイルを指定します．
 .TP
 \fB-p \fIポート番号\fB\fR
-gfmd が利用する TCP のポート番号を指定します。
-
-省略した場合には 601 番を使用します。
-この場合、gfmd の起動はルート権限で行なう必要があります。
-ただし、動作するユーザー権限は任意のもので構いません。
+gfmdが利用するTCPのポート番号を指定します。
 .TP
 \fB-s \fIsyslogファシリティ\fB\fR
-gfmd がエラー報告に用いる syslog のファシリティを指定します。省略
-した場合には、local0 を使用します。
+gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。
+.TP
+\fB-v\fR
+認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。
 .TP
 \fB-?\fR
 引数オプションを表示します。
 .SH "FILES"
 .TP
-\fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
-gfmd が参照する設定ファイルです。
+\fB\fI%%SYSCONFDIR%%/gfmd.conf\fB\fR
+gfmdが参照する設定ファイルです。
 .SH "SEE ALSO"
 .PP
-\fBgfarm.conf\fR(5)
+\fBgfarm2.conf\fR(5)

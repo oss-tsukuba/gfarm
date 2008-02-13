@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFMD" "8" "12 November 2006" "Gfarm" ""
+.TH "GFMD" "8" "14 2·î 2008" "Gfarm" ""
 
 .SH NAME
 gfmd(8) \- Gfarm metadata server
@@ -20,22 +20,20 @@ be running on a metadata server node in advance.
 It is possible for \fBgfmd\fR to be executed as a non-privileged user
 process, although only the user that executes the \fBgfmd\fR can be authenticated.
 Other users cannot use it.
+For details, see SETUP.private.en document
 .PP
-In order to execute \fBgfmd\fR as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At the very least, the port number used by \fBgfmd\fR should be altered to a
-non-privileged port number by the metadb_serverport statement in the
-configuration file or by the -p option.
-.PP
-In this case, the altered port number for \fBgfmd\fR should be
-specified by the metadb_serverport statement in \fI~/.gfarmrc\fR
-or in \fI%%SYSCONFDIR%%/gfarm.conf\fR on a client node.
+To access gfmd, 
+the hostname and the port number should be
+specified by the metadb_server_host and metadb_server_port statements,
+respectively, in \fI~/.gfarm2rc\fR
+or in \fI%%SYSCONFDIR%%/gfarm2.conf\fR
+on a client node.
 .SH "OPTIONS"
 .TP
 \fB-L \fIlog-level\fB\fR
 Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
-Please refer gfarm.conf(5) for the priority levels which can be specified
+Please refer gfarm2.conf(5) for the priority levels which can be specified
 by this option.
 .TP
 \fB-P \fIpid-file\fB\fR
@@ -53,27 +51,23 @@ Specifies a configuration file that is read instead of the default
 configuration file.
 .TP
 \fB-p \fIport\fB\fR
-Specifies a port number to be used by gfmd.  By default, 601 is used.
-
-The default port requires root privileges, although privileged ports
-are not necessary to execute gfmd.
+Specifies a port number to be used by gfmd.
 .TP
 \fB-s \fIsyslog-facility\fB\fR
 Specifies a syslog facility to report errors encountered by gfmd.
 By default,
 local0 is used.
 .TP
-\fB-u \fI\fB\fR
-Specifies a syslog facility to report errors encountered by gfmd.
-By default,
-local0 is used.
+\fB-v\fR
+Makes gfmd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
 .TP
 \fB-?\fR
 Displays a list of command options.
 .SH "FILES"
 .TP
-\fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
+\fB\fI%%SYSCONFDIR%%/gfmd.conf\fB\fR
 configuration file
 .SH "SEE ALSO"
 .PP
-\fBgfarm.conf\fR(5)
+\fBgfarm2.conf\fR(5)

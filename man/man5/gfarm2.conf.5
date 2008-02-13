@@ -3,24 +3,28 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "13 November 2006" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "14 2·î 2008" "Gfarm" ""
 
 .SH NAME
-gfarm.conf \- Gfarm configuration file
+gfarm2.conf \- Gfarm configuration file
 .SH "DESCRIPTION"
 .PP
-gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes, such as gfmd and gfsd, refer to %%SYSCONFDIR%%/gfarm.conf by default.  Since this configuration file is only read at startup, it is necessary to restart servers when the contents of the configuration file are updated.
+gfarm2.conf is a text file that contains a Gfarm configuration.  
+Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
+and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
+Since this configuration file is only read at startup, it is necessary
+to restart servers when the contents of the configuration file are
+updated.
 .PP
 Application programs, such as gfls and gfhost, refer to both
-%%SYSCONFDIR%%/gfarm.conf, and a file specified by an environment variable,
+%%SYSCONFDIR%%/gfarm2.conf, and a file specified by an environment variable,
 GFARM_CONFIG_FILE. If both configuration files exist, the file
 specified by the environment variable, GFARM_CONFIG_FILE, is read
 first. Both files have the same grammar.
 If the environment variable GFARM_CONFIG_FILE doesn't exist,
-~/.gfarmrc in a user's home directory is used instead.
+~/.gfarm2rc in a user's home directory is used instead.
 .PP
-Each line of gfarm.conf consists of one statement.  When the
+Each line of gfarm2.conf consists of one statement.  When the
 line ends with the character ``\\'', the line continues for the next
 line.  A word beginning with ``#'' causes that word and all remaining
 characters on that line to be ignored.
@@ -51,8 +55,7 @@ The following statements are supported.
 .TP
 \fBspool \fIdirectory\fB\fR
 The spool statement specifies a spool directory
-for a Gfarm filesystem on this filesystem node.  On the filesystem
-node, this statement should be specified.
+for a Gfarm filesystem on this filesystem node.
 
 For example,
 
@@ -73,17 +76,6 @@ For example,
 	spool_server_listen_address 192.168.121.1
 .fi
 .TP
-\fBspool_serverport \fIport\fB\fR
-The spool_serverport statement specifies the tcp
-and udp port number the gfsd is listening on.  The default port number
-is 600.
-
-For example,
-
-.nf
-	spool_serverport 600
-.fi
-.TP
 \fBspool_server_cred_type \fIcred_type\fB\fR
 This statement specifies the type of credential used by gfsd for GSI
 authentication.
@@ -93,8 +85,7 @@ authentication.
 If this statement isn't used on the server side, the server uses
 a host certificate, if the server is invoked with root privileges.
 Or, if the server is invoked as a non-privileged user, the server
-uses the user's certificate. Thus, you usually don't need to use
-this statement on the server side.
+uses the user's certificate.
 
 If this statement isn't used on the client side, the client assumes
 that the server that the client is going to connect is using
@@ -165,17 +156,10 @@ You must not specify a service name using
 the spool_server_cred_service statement, if you are using
 a user certificate.
 
-Currently, there are several implementation limitations in this feature.
-First, the account name is interpreted as an account on the local host,
-but this is a bug, and will be changed to a gfarm global user name
-in the future.
-Second, to map from the account name to a Distinguished Name of a certificate,
+To map from the account name to a Distinguished Name of a certificate,
 file ``\fI/etc/grid-security/grid-mapfile\fR\&'' is used.
 Thus, if there isn't such a file, or if the user isn't specified in this file,
 this feature cannot be used.
-Third, if there are multiple Distinguished Names per one account in this file,
-only the first Distinguished Name is used, and the rest of the Distinguished
-Names for the account are ignored.
 
 This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
 (RFC2743/RFC2744).
@@ -224,8 +208,8 @@ authentication.
 Please read the description of the spool_server_cred_type 
 statement for details.
 .TP
-\fBmetadb_serverhost \fIhostname\fB\fR
-The metadb_serverhost statement specifies the
+\fBmetadb_server_host \fIhostname\fB\fR
+The metadb_server_host statement specifies the
 host name on which gfmd is running.
 
 This statement cannot be omitted.
@@ -233,18 +217,18 @@ This statement cannot be omitted.
 For example,
 
 .nf
-	metadb_serverhost ldap.example.com
+	metadb_server_host ldap.example.com
 .fi
 .TP
-\fBmetadb_serverport \fIport\fB\fR
-The metadb_serverport statement specifies the tcp
+\fBmetadb_server_port \fIport\fB\fR
+The metadb_server_port statement specifies the tcp
 port number the gfmd is listening on.  The default port number is
 601.
 
 For example,
 
 .nf
-	metadb_serverport 601
+	metadb_server_port 601
 .fi
 .TP
 \fBmetadb_server_cred_type \fIcred_type\fB\fR
@@ -273,47 +257,29 @@ authentication.
 Please read the description of the spool_server_cred_type 
 statement on the configuration of this statement.
 .TP
-\fBagent_serverhost \fIhostname\fB\fR
-The agent_serverhost statement specifies the
-host name on which gfarm_agent is running.
+\fBldap_server_host \fIhostname\fB\fR
+The ldap_server_host statement specifies the host
+name on which an LDAP server is running.  This statement is required
+when the LDAP server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.
 
 For example,
 
 .nf
-	agent_serverhost ldap.example.com
+	ldap_server_host ldap.example.com
 .fi
 .TP
-\fBagent_serverport \fIport\fB\fR
-The agent_serverport statement specifies the tcp
-port number the gfarm_agent is listening on.
-
-For example,
-
-.nf
-	agent_serverport 603
-.fi
-.TP
-\fBldap_serverhost \fIhostname\fB\fR
-The ldap_serverhost statement specifies the host
-name on which the LDAP server for filesystem metadata is running.
-
-For example,
-
-.nf
-	ldap_serverhost ldap.example.com
-.fi
-.TP
-\fBldap_serverport \fIport\fB\fR
-The ldap_serverport statement specifies the tcp
+\fBldap_server_port \fIport\fB\fR
+The ldap_server_port statement specifies the tcp
 port number of the LDAP server.
 
 This statement cannot be omitted
-if ldap_serverhost is specified.
+if ldap_server_host is specified.
 
 For example,
 
 .nf
-	ldap_serverport 602
+	ldap_server_port 602
 .fi
 .TP
 \fBldap_base_dn \fILDAP_base_distinguished_name\fB\fR
@@ -321,7 +287,7 @@ The ldap_base_dn statement specifies the
 base-distinguished name of the LDAP database.
 
 This statement cannot be omitted
-if ldap_serverhost is specified.
+if ldap_server_host is specified.
 
 For example,
 
@@ -351,27 +317,29 @@ For example,
 	ldap_bind_password "secret-ldap-password"
 .fi
 .TP
-\fBpostgresql_serverhost \fIhostname\fB\fR
-The postgresql_serverhost statement specifies the host
-name on which the PostgreSQL server is running.
+\fBpostgresql_server_host \fIhostname\fB\fR
+The postgresql_server_host statement specifies the host
+name on which a PostgreSQL server is running.  This statement is required
+when the PostgreSQL server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.
 
 For example,
 
 .nf
-	postgresql_serverhost postgresql.example.com
+	postgresql_server_host postgresql.example.com
 .fi
 .TP
-\fBpostgresql_serverport \fIport\fB\fR
-The postgresql_serverport statement specifies the tcp
+\fBpostgresql_server_port \fIport\fB\fR
+The postgresql_server_port statement specifies the tcp
 port number of the PostgreSQL server.
 
 This statement cannot be omitted
-if postgresql_serverhost is specified.
+if postgresql_server_host is specified.
 
 For example,
 
 .nf
-	postgresql_serverport 602
+	postgresql_server_port 602
 .fi
 .TP
 \fBpostgresql_dbname \fIdbname\fB\fR
@@ -379,7 +347,7 @@ The postgresql_dbname statement specifies the
 database name of the PostgreSQL database.
 
 This statement cannot be omitted
-if postgresql_serverhost is specified.
+if postgresql_server_host is specified.
 
 For example,
 
@@ -475,52 +443,6 @@ and all other hosts will be authenticated by
 gsi\&.  Note that two hosts, 192.168.0.100 and
 192.168.0.101, will be tested for authentication by gsi only.
 .TP
-\fBnetparam \fIparameter\fB=\fIvalue\fB [\fIHost_specification\fB]\fR
-The netparam statement specifies several
-communication parameters listed below.
-
-parallel_streams\&.  This parameter specifies the
-number of tcp streams.  The default is a single stream.  The
-parallel_streams parameter may improve the file
-transfer performance, especially when connecting to a distant site
-(i.e., a high bandwidth-delay product network) such that the tcp congestion
-window size will not increase sufficiently.  This parameter is only
-effective on a client node where the gfrep(1) command is executed.
-\fIHost_specification\fR specifies the source host(s)
-for file replication instead of the destination host(s).
-
-stripe_unit_size\&.  This parameter specifies how
-to divide the data when utilizing multiple tcp streams.  Without this
-parameter, the data will be divided into
-parallel_streams of contiguous blocks with almost even
-size.  When this parameter is specified, the data is divided in
-round-robin fashion with the specified block size in bytes.  Generally
-speaking, the performance of file transfer is improved using this
-parameter.
-
-This parameter is effective only when two or more is specified
-as the parallel_streams parameter.  This parameter is
-only effective on a client node where the gfrep(1) command is executed.
-\fIHost_specification\fR specifies the source host(s)
-for file replication instead of the destination host(s).
-
-rate_limit\&.  This parameter specifies the maximum
-transfer rate (bps; bit per second) for a single connection, and is
-introduced experimentally.  The parameter on a source filesystem node
-is effective during parallel file replication.  \fIHost
-specification\fR specifies the destination host(s) for file
-replication.  Note that this parameter has to be specified on a
-source filesystem node, not on a client host, unlike the other
-parameters.
-
-For example,
-
-.nf
-	netparam parallel_streams=2	10.0.0.0/8
-	netparam stripe_unit_size=8192	10.0.0.0/8
-	netparam rate_limit=750000	192.168.0.0/24
-.fi
-.TP
 \fBsockopt \fIoption\fB[=\fIvalue\fB] [LISTENER | \fIHost_specification\fB]\fR
 The sockopt parameter specifies the socket option
 \fIoption\fR via the setsockopt(2) system call.
@@ -567,47 +489,22 @@ For example,
 	sockopt rcvbuf=1048576 LISTENER
 .fi
 .TP
-\fBaddress_use \fIHost_specification\fB\fR
-The address_use statement specifies an IP address
-or a network address that is given preference for connection when the
-target host has several IP addresses.
-
-For example,
-
-.nf
-	address_use 192.168.0.0/24
-.fi
-.TP
-\fBclient_architecture \fIarchitecture\fB \fIHost_specification\fB\fR
-This directive specifies the default architecture name that may be used
-when a client node accesses an executable file.
-This directive only affects client nodes.
-For filesystem nodes, architecture names registered in
-the metadata server are used.
-
-On the other hand, the environment variable, GFARM_ARCHITECTURE,
-which specifies the default architecture name, just as in this directive,
-affects both client nodes and filesystem nodes.
-
-Example:
-
-.nf
-	client_architecture i386-redhat8.0-linux linux-1.example.com
-	client_architecture i386-redhat8.0-linux linux-2.example.com
-	client_architecture sparc-sun-solaris8 solaris-1.example.com
-.fi
+\fBadmin_user \fIuser\fB\fR
+This directive specifies an administrator user name, which is
+specified in gfmd.conf.
 .TP
 \fBlocal_user_map \fIuser-map-file\fB\fR
 This directive specifies a file name
-\fIuser-map-file\fR for mapping global user names
-to local user names
+\fIuser-map-file\fR for mapping local user names to
+global user names.  This map file is used only for sharedsecret
+authentication.  When this file is not specified, a global user name
+is assumed to be same as the local user name.
 
-This directive is optional.
 \fIuser-map-file\fR is needed when you have to use
 the sharedsecret authentication method in the case where you have
 different unix account names on different filesystem nodes.  In such a
 case, the \fIuser-map-file\fR on each filesystem node
-should have an entry from a unique global user name to each local user
+should have an entry from each local user name to a unique global user
 name.
 
 Example:
@@ -629,82 +526,6 @@ Example of the user mapping file:
 
 According to the first line of this mapping file, a global user
 name, "foobar", is mapped to a local user name,  "foo", on this node.
-.TP
-\fBdir_cache_timeout \fIseconds\fB\fR
-This directive specifies the time (in seconds) until a directory cache
-in the gfarm library expires.
-The default time is 86,400 seconds, i.e. one day.
-The time can be specified by an environment variable,
-GFARM_DIRCACHE_TIMEOUT, too.
-The environment variable takes precedence over the directive.
-
-For example,
-
-.nf
-	dir_cache_timeout 60
-.fi
-.TP
-\fBhost_cache_timeout \fIseconds\fB\fR
-This directive specifies the time (in seconds) until the metadata cache
-of the filesystem nodes in the gfarm library expires.
-Newly added or removed hosts might not be seen until this timeout has
-passed.
-The default time is 600 seconds, i.e. ten minutes.
-
-For example,
-
-.nf
-	host_cache_timeout 60
-.fi
-.TP
-\fBschedule_cache_timeout \fIseconds\fB\fR
-This directive specifies the time (in seconds) until the cache used for
-filesystem node scheduling expires.
-The cache holds information on each filesystem node, e.g. load average,
-disk free space, and whether authentication succeeds or not.
-The default time is 600 seconds, i.e. ten minutes.
-
-For example,
-
-.nf
-	schedule_cache_timeout 60
-.fi
-.TP
-\fBwrite_local_priority \fIvalidity\fB\fR
-Gfarm nearly always chooses localhost, when it selects a filesystem
-node to write a file. By specifing the disable keyword in
-this directive, Gfarm handles localhost the same as other
-filesystem nodes.
-The same thing can be achieved by specifying disable
-as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
-When both this directive and the environment variable are specified,
-the value specified by the environment variable will be used.
-The default is enable\&.
-
-For example,
-
-.nf
-	write_local_priority disable
-.fi
-.TP
-\fBwrite_target_domain \fIdomain\fB\fR
-Gfarm tries to choose a filesystem node in the domain specified by
-this directive, when it selects a node to write a file.
-If there is no suitable node for writing in this domain, or if this
-directive is not specified, the filesystem node will be chosen from
-among all nodes.
-You can specify this domain with the GFARM_WRITE_TARGET_DOMAIN environment
-variable too.
-When both this directive and the environment variable are specified,
-the value specified by the environment variable will be used.
-Note that if you specify this directive more than once, only the first one
-will be used and the others are ignored.
-
-For example,
-
-.nf
-	write_target_domain example.org
-.fi
 .TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
 This directive specifies free disk space (in bytes) which is
@@ -745,124 +566,85 @@ For example,
 .nf
 	log_level debug
 .fi
-.TP
-\fBrecord_atime \fIvalidity\fB\fR
-When "enabled" is specified, Gfarm records last access time strictly.
-When "disabled" is specified, the access time becomes inaccurate, but
-such setting reduces the load of metadata updates, and may improve
-performance.
-The "disable" setting corresponds to "noatime" setting in usual filesystem.
-
-Example:
-
-.nf
-	record_atime disable
-.fi
 .SH "GRAMMAR"
 .PP
-This is a grammar for gfarm.conf described using BNF
+This is a grammar of gfarm2.conf described by the BNF
 notation.
 
 .nf
 	<statement> ::=
 		\~\~<spool_statement> |
 		\~\~<spool_server_listen_address_statement> |
-		\~\~<spool_serverport_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
 		\~\~<spool_server_cred_name_statement> |
-		\~\~<metadb_serverhost_statement> |
-		\~\~<metadb_serverport_statement> |
+		\~\~<metadb_server_host_statement> |
+		\~\~<metadb_server_port_statement> |
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
-		\~\~<agent_serverhost_statement> |
-		\~\~<agent_serverport_statement> |
-		\~\~<ldap_serverhost_statement> |
-		\~\~<ldap_serverport_statement> |
+		\~\~<ldap_server_host_statement> |
+		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
 		\~\~<ldap_bind_dn_statement> |
 		\~\~<ldap_bind_password_statement> |
-		\~\~<postgresql_serverhost_statement> |
-		\~\~<postgresql_serverport_statement> |
+		\~\~<postgresql_server_host_statement> |
+		\~\~<postgresql_server_port_statement> |
 		\~\~<postgresql_dbname_statement> |
 		\~\~<postgresql_user_statement> |
 		\~\~<postgresql_password_statement> |
 		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
-		\~\~<netparam_statement> |
 		\~\~<sockopt_statement> |
-		\~\~<address_use_statement> |
-		\~\~<client_architecture_statement> |
-		\~\~<option_statement> |
-		\~\~<local_user_map_statement>
-		\~\~<dir_cache_timeout_statement> |
-		\~\~<host_cache_timeout_statement> |
+		\~\~<admin_user_statement> |
+		\~\~<local_user_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
-		\~\~<write_local_priority_statement> |
-		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<log_level_statement> |
-		\~\~<record_atime_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
-	<spool_serverport_statement> ::= "spool_serverport" <hostname>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>
 	<spool_server_cred_service_statement> ::=
 		\~\~"spool_server_cred_service" <cred_service>
 	<spool_server_cred_name_statement> ::=
 		\~\~"spool_server_cred_name" <cred_name>
-	<metadb_serverhost_statement> ::= "metadb_serverhost" <hostname>
-	<metadb_serverport_statement> ::= "metadb_serverport" <portnumber>
+	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
+	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
 	<metadb_server_cred_type_statement> ::=
 		\~\~"metadb_server_cred_type" <cred_type>
 	<metadb_server_cred_service_statement> ::=
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
-	<agent_serverhost_statement> ::= "agent_serverhost" <hostname>
-	<agent_serverport_statement> ::= "agent_serverport" <portnumber>
-	<ldap_serverhost_statement> ::= "ldap_serverhost" <hostname>
-	<ldap_serverport_statement> ::= "ldap_serverport" <portnumber>
+	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
+	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
 	<ldap_bind_dn_statement> ::= "ldap_bind_dn" <string>
 	<ldap_bind_password_statement> ::= "ldap_bind_password" <string>
-	<postgresql_serverhost_statement> ::= "postgresql_serverhost" <hostname>
-	<postgresql_serverport_statement> ::= "postgresql_serverport" <portnumber>
+	<postgresql_server_host_statement> ::= "postgresql_server_host" <hostname>
+	<postgresql_server_port_statement> ::= "postgresql_server_port" <portnumber>
 	<postgresql_dbname_statement> ::= "postgresql_dbname" <string>
 	<postgresql_user_statement> ::= "postgresql_user" <string>
 	<postgresql_password_statement> ::= "postgresql_password" <string>
 	<postgresql_conninfo_statement> ::= "postgresql_conninfo" <string>
 	<auth_statement> ::=
 		\~\~"auth" <validity> <auth_method> <hostspec>
+	<auth_command> ::= "enable" | "disable"
 	<auth_method> ::= "gsi" | "gsi_auth" | "sharedsecret"
-	<netparam_statement> ::=
-		\~\~"netparam" <netparam_option>=<number> [<hostspec>]
-	<netparam_option> ::= "parallel_streams" | "stripe_unit_size" |
-		\~\~"rate_limit"
 	<sockopt_statement> ::=
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
 	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
-	<address_use_statement> ::=  "address_use" <hostspec>
-	<client_architecture_statement> ::=
-		\~\~"client_architecture" <architecture> <hostspec>
-	<option_statement> ::= "option" <an_option>
-	<an_option> ::= "noatime"
+	<admin_user_statement> ::=  <string>
 	<local_user_map_statement> ::=  "local_user_map" <pathname>
-	<dir_cache_timeout_statement> ::=	"dir_cache_timeout" <number>
-	<host_cache_timeout_statement> ::= "host_cache_timeout" <number>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
-	<write_local_priority_statement> ::= "write_local_priority" <validity>
-	<write_target_domain_statement> ::= "write_target_domain" <string>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
-	<record_atime_statement> ::= "record_atime" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
@@ -889,11 +671,10 @@ and to allow access from filesystem nodes and clients at IP address
 
 .nf
 spool /var/spool/gfarm
-spool_serverport 600
-metadb_serverhost metadb.example.org
-metadb_serverport 601
-postgresql_serverhost metadb.example.org
-postgresql_serverport 5432
+metadb_server_host metadb.example.org
+metadb_server_port 601
+postgresql_server_host metadb.example.org
+postgresql_server_port 5432
 postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password "secret-postgresql-password"
@@ -907,11 +688,10 @@ via GSI authentication.
 
 .nf
 spool /var/spool/gfarm
-spool_serverport 600
-metadb_serverhost metadb.example.com
-metadb_serverport 601
-ldap_serverhost metadb.example.com
-ldap_serverport 389
+metadb_server_host metadb.example.com
+metadb_server_port 601
+ldap_server_host metadb.example.com
+ldap_server_port 602
 ldap_base_dn "dc=example, dc=com"
 ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 ldap_bind_password "secret-ldap-password"
@@ -920,12 +700,11 @@ sockopt keepalive
 .fi
 .SH "FILES"
 .TP
-\fB\fI%%SYSCONFDIR%%/gfarm.conf\fB\fR
+\fB\fI%%SYSCONFDIR%%/gfarm2.conf\fB\fR
 .TP
-\fB\fI$HOME/.gfarmrc\fB\fR
+\fB\fI$HOME/.gfarm2rc\fB\fR
 .SH "SEE ALSO"
 .PP
 \fBgfmd\fR(8),
 \fBgfsd\fR(8),
-\fBgfarm_agent\fR(1),
 \fBsetsockopt\fR(2)
