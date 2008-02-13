@@ -6,12 +6,12 @@ include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
 	doc \
+	man \
 	include/gfarm \
 	lib \
 	server \
 	gftool
 
-#	man \
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \
 #	util/gfront \
