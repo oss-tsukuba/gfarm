@@ -1,63 +1,76 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
-<refentry id='gfarm.conf.5'>
+<refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
-<refentrytitle>gfarm.conf</refentrytitle>
+<refentrytitle>gfarm2.conf</refentrytitle>
 <manvolnum>5</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfarm.conf</refname>
-<refpurpose>Gfarm 設定ファイル</refpurpose>
+<refname>gfarm2.conf</refname>
+<refpurpose>Gfarm設定ファイル</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfarm.conf ファイルは、gfarm プログラムの設定ファイルです。
-サーバー・プロセスである gfmd と gfsd は、デフォルトでは、
-この %%SYSCONFDIR%%/gfarm.conf を設定ファイルとして参照します。
+<para>
+gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
+サーバー・プロセスであるgfsdは、デフォルトでは、
+この%%SYSCONFDIR%%/gfarm2.confを設定ファイルとして参照します。
+メタデータサーバー・プロセスであるgfmdは、%%SYSCONFDIR%%/gfmd.confを
+読み込みます。gfmd.confの形式は、gfarm2.confと同一です。
 なお、設定内容が読み込まれるのは起動時だけなので、
-設定内容を変更した場合、サーバーを再起動する必要があります。</para>
-
-<para>アプリケーションプログラムは、環境変数 GFARM_CONFIG_FILE で
-指定したファイルと、%%SYSCONFDIR%%/gfarm.conf を、設定ファイル
-として参照します。この二つのファイルでは、環境変数 GFARM_CONFIG_FILE で
-指定したファイルの設定の方が優先されます。
-どちらの設定ファイルも、同一の文法で記述します。
-環境変数 GFARM_CONFIG_FILE が設定されてない場合、代わりに
-ユーザーのホームディレクトリにある .gfarmrc ファイルを使用します。
-
+設定内容を変更した場合、サーバーを再起動する必要があります。
 </para>
 
-<para>gfarm.conf は、一行に一文の形式で設定します。
-ただし、行末に文字 ``\'' を記述することによって、行を継続させることが
-できます。また、文字 ``#'' から行末までは、コメントとして扱われ、無視
-されます。</para>
+<para>
+アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで
+指定したファイルと、%%SYSCONFDIR%%/gfarm2.confを、設定ファイル
+として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで
+指定したファイルの設定の方が先に読み込まれます。
+どちらの設定ファイルも、同一の文法で記述します。
+同一の指定文が複数あった場合には、先に指定されていた方が優先されます。
+環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに
+ユーザーのホームディレクトリにある.gfarm2rcファイルを使用します。
+</para>
+
+<para>
+gfarm2.confは、一行に一文の形式で設定します。
+ただし、行末に文字``\''を記述することによって、行を継続させることが
+できます。また、文字``#''から行末までは、コメントとして扱われ、無視
+されます。
+</para>
 
 </refsect1>
 
 <refsect1 id='hostspecification'><title>ホスト指定</title>
-<para>引数として、<parameter>ホスト指定</parameter> を記述できる文がいくつかありますが、
-この場合、ホスト指定には、下記のいずれかを記述できます。</para>
+<para>
+引数として、<parameter>ホスト指定</parameter>を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。
+</para>
 <variablelist>
 
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter></term>
 <listitem>
-<para>"." で区切られた 0〜255 までの数字 4 つで、IP アドレスを指定します。</para>
+<para>
+"."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
 <listitem>
-<para>IP アドレスと、"/" で区切られた 0〜31 までの数字で、ネットワークを
-指定します。"/" 以降の数字は netmask のビット長です。</para>
+<para>
+IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+指定します。"/"以降の数字はnetmaskのビット長です。
+</para>
 </listitem>
 </varlistentry>
 
@@ -71,7 +84,7 @@
 <varlistentry>
 <term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
 <listitem>
-<para>ドメイン名の先頭が "." ではじまる場合、このドメイン名に所属する全ての
+<para>ドメイン名の先頭が"."ではじまる場合、このドメイン名に所属する全ての
 ホストを意味します。</para>
 </listitem>
 </varlistentry>
@@ -79,14 +92,17 @@
 <varlistentry>
 <term><emphasis>*</emphasis></term>
 <listitem>
-<para>"*" と記述されている場合、全てのホストを意味します。</para>
+<para>"*"と記述されている場合、全てのホストを意味します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><emphasis>LISTENER</emphasis></term>
 <listitem>
-<para>sockopt 文の場合、全て大文字で "LISTENER" と記述すると、されている場合、全てのホストを意味します。</para>
+<para>
+全て大文字で"LISTENER"と記述すると、通信する相手に関係なく、
+サーバー側(着呼側)のソケットを意味します。
+</para>
 </listitem>
 </varlistentry>
 
@@ -102,14 +118,14 @@
 <listitem>
 <para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
 指定します。
-ファイルシステムノードではこの設定は必須です。</para>
+</para>
 <para>例:</para>
 <literallayout>
 	spool /var/spool/gfarm
 </literallayout>
 </listitem>
 </varlistentry>
-  
+
 <varlistentry>
 <term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
 <listitem>
@@ -127,29 +143,16 @@
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_port</token> <parameter>gfsdポート番号</parameter></term>
-<listitem>
-<para>gfsdが利用するTCPおよびUDPポートの番号を指定します。
-省略時のデフォルト・ポート番号は600番です。</para>
-<para>例:</para>
-<literallayout>
-	spool_server_port 600
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
 GSI認証において、gfsdが用いる証明書の種類を指定します。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
 </para>
 <para>
-サーバ側でこの指定を省略した場合、サーバを root 権限で起動した場合は
+サーバ側でこの指定を省略した場合、サーバをroot権限で起動した場合は
 ホスト証明書を用います。またサーバを一般ユーザ権限で起動した場合は
-ユーザ証明書を用います。このため、サービス証明書を利用する場合を
-除いて、サーバ側ではこの指定を行う必要は通常ないでしょう。
+ユーザ証明書を用います。
 </para>
 <para>
 クライアント側でこの指定を省略した場合、サーバがホスト証明書を利用している
@@ -162,12 +165,12 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 	spool_server_cred_type self
 </literallayout>
 <para>
-指定可能な <parameter>cred_type</parameter> としては、
+指定可能な<parameter>cred_type</parameter>としては、
 「<token>self</token>」、
 「<token>host</token>」、「<token>user</token>」、
 「<token>mechanism-specific</token>」があり、
-<token>spool_server_cred_service</token> および
-<token>spool_server_cred_name</token> と組み合わせて
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>と組み合わせて
 下記のように用います。
 </para>
 <variablelist>
@@ -177,8 +180,8 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 <para>
 そのユーザが現在所持しているユーザ証明書を用いることを示します。
 この指定を利用する際には、
-<token>spool_server_cred_service</token> および
-<token>spool_server_cred_name</token> の
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>の
 指定を行ってはいけません。
 </para>
 </listitem>
@@ -189,21 +192,21 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 <para>
 ホスト証明書あるいはサービス証明書を用いることを示します。
 サービス証明書を用いる場合、そのサービスの名前を
-<token>spool_server_cred_service</token> で指定します。
+<token>spool_server_cred_service</token>で指定します。
 サービス名に「<token>host</token>」を指定した場合、
-ファイル ``<filename>/etc/grid-security/hostcert.pem</filename>'' に
+ファイル``<filename>/etc/grid-security/hostcert.pem</filename>''に
 あるホスト証明書を用います。
 それ以外のサービス名を指定した場合、
-ファイル ``<filename>/etc/grid-security/サービス/サービスcert.pem</filename>''
+ファイル``<filename>/etc/grid-security/サービス/サービスcert.pem</filename>''
 にあるサービス証明書を用います。
 サービス名を省略した場合、「<token>host</token>」が指定されたとみなします。
-ホスト証明書およびサービス証明書の場合、証明書の Common Name 欄のみを
-比較します。Common Name は、「CN=サービス名/ホスト名」の形式である必要が
-あります。また、ホスト名は、<command>gfhost</command> コマンドで指定した
+ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを
+比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が
+あります。また、ホスト名は、<command>gfhost</command>コマンドで指定した
 正式名と正確に一致している必要があります。ホスト別名は許されません。
 </para>
 <para>
-これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_HOSTBASED_SERVICE に
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに
 対応する機能です。
 </para>
 <para>例:</para>
@@ -218,25 +221,19 @@ GSI認証において、gfsdが用いる証明書の種類を指定します。
 <listitem>
 <para>
 ユーザ証明書を用いることを示します。
-ユーザのアカウント名を <token>spool_server_cred_name</token> で指定します。
+ユーザのアカウント名を<token>spool_server_cred_name</token>で指定します。
 アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
-この指定を利用する際には、<token>spool_server_cred_service</token> の
+この指定を利用する際には、<token>spool_server_cred_service</token>の
 指定を行ってはいけません。
 </para>
 <para>
-現時点では、この機能の実装に、いくつかの実装上の制限事項があります。
-まず、ユーザ名はローカルホストのアカウント名として解釈されますが、
-これはバグであり、gfarm のグローバルユーザ名に変更される予定です。
-ユーザ名と証明書の Distinguished Name の対応をとるため、
-``<filename>/etc/grid-security/grid-mapfile</filename>'' を用います。
+ユーザ名と証明書のDistinguished Nameの対応をとるため、
+``<filename>/etc/grid-security/grid-mapfile</filename>''を用います。
 このため、このファイルが存在しなかったり、あるいはこのファイルに登録
 されてないユーザは、この機能を用いることができません。
-さらに、このファイル中で、同一のユーザアカウントに対して2つ以上の
-Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
-しまいます。
 </para>
 <para>
-これは、GSSAPI (RFC2743/RFC2744) の GSS_C_NT_USER_NAME に対応する機能です。
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
 </para>
 <para>例:</para>
 <literallayout>
@@ -249,13 +246,13 @@ Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
 <term><token>mechanism-specific</token></term>
 <listitem>
 <para>
-サーバの X.509 Distinguished Name を <token>spool_server_cred_name</token> で
+サーバのX.509 Distinguished Nameを<token>spool_server_cred_name</token>で
 直接指定します。
-この指定を利用する際には、<token>spool_server_cred_service</token> の
+この指定を利用する際には、<token>spool_server_cred_service</token>の
 指定を行ってはいけません。
 </para>
 <para>
-これは、GSSAPI (RFC2743/RFC2744) で Name Type として GSS_C_NO_OID を
+これは、GSSAPI (RFC2743/RFC2744)でName TypeとしてGSS_C_NO_OIDを
 指定した場合に対応する機能です。
 </para>
 <para>例:</para>
@@ -273,11 +270,11 @@ Distinguished Name が設定されていた場合、2つ名以降の設定は無視されて
 <term><token>spool_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-GSI認証において、<token>spool_server_cred_type</token> として
-「<token>host</token>」を指定している場合に、gfsd が用いるサービス証明書の
+GSI認証において、<token>spool_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfsdが用いるサービス証明書の
 種類を指定します。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
-詳しくは <token>spool_server_cred_type</token> の項を参照してください。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -286,10 +283,10 @@ GSI認証において、<token>spool_server_cred_type</token> として
 <term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-GSI認証において、<token>spool_server_cred_type</token> で指定した値に
-応じて、gfsd が用いる証明書の設定を行います。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
-詳しくは <token>spool_server_cred_type</token> の項を参照してください。
+GSI認証において、<token>spool_server_cred_type</token>で指定した値に
+応じて、gfsdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -322,9 +319,9 @@ GSI認証において、<token>spool_server_cred_type</token> で指定した値に
 <term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
-GSI認証において、gfmd が用いる証明書の種類を指定します。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
-設定の意味については  <token>spool_server_cred_type</token> の項を
+GSI認証において、gfmdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
 参照してください。
 </para>
 </listitem>
@@ -334,11 +331,11 @@ GSI認証において、gfmd が用いる証明書の種類を指定します。
 <term><token>metadb_server_cred_service</token> <parameter>cred_service</parameter></term>
 <listitem>
 <para>
-GSI認証において、<token>metadb_server_cred_type</token> として
-「<token>host</token>」を指定している場合に、gfmd が用いるサービス証明書の
+GSI認証において、<token>metadb_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfmdが用いるサービス証明書の
 種類を指定します。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
-設定の意味については  <token>spool_server_cred_type</token> の項を
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
 参照してください。
 </para>
 </listitem>
@@ -348,10 +345,10 @@ GSI認証において、<token>metadb_server_cred_type</token> として
 <term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
 <listitem>
 <para>
-GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
-応じて、gfmd が用いる証明書の設定を行います。
-<token>sharedsecret</token> 利用時には、この指定は単に無視されます。
-設定の意味については  <token>spool_server_cred_type</token> の項を
+GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
+応じて、gfmdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
 参照してください。
 </para>
 </listitem>
@@ -360,8 +357,12 @@ GSI認証において、<token>metadb_server_cred_type</token> で指定した値に
 <varlistentry>
 <term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
 <listitem>
-<para>メタデータのバックエンド・データベースとしてLDAPサーバを選択する場合、
-LDAP サーバーが動作しているホスト名を指定します。</para>
+<para>
+gfmdのバックエンド・データベースとして
+LDAPサーバを選択する場合、
+LDAPサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
 
 <para>例:</para>
 <literallayout>
@@ -373,8 +374,8 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
 <listitem>
-<para>LDAP サーバーが利用するTCPポートの番号を指定します。</para>
-<para><token>ldap_serverhost</token>を指定する場合には、
+<para>LDAPサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
 この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
@@ -386,9 +387,9 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
 <listitem>
-<para>LDAP データベースで保持するデータのキーの根となるノードの
-名称、base distinguished name を指定します。</para>
-<para><token>ldap_serverhost</token>を指定する場合には、
+<para>LDAPデータベースで保持するデータのキーの根となるノードの
+名称、base distinguished nameを指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
 この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
@@ -400,7 +401,7 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
 <listitem>
-<para>LDAP データベースに接続する際の認証に用いる名称を、distinguished name で指定します。</para>
+<para>LDAPデータベースに接続する際の認証に用いる名称を、distinguished nameで指定します。</para>
 <para>例:</para>
 <literallayout>
 	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
@@ -411,7 +412,7 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>ldap_bind_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>LDAP データベースに接続する際の認証パスワードを指定します。</para>
+<para>LDAPデータベースに接続する際の認証パスワードを指定します。</para>
 <para>例:</para>
 <literallayout>
 	ldap_bind_password "secret-ldap-password"
@@ -420,28 +421,31 @@ LDAP サーバーが動作しているホスト名を指定します。</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_serverhost</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
+<term><token>postgresql_server_host</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
 <listitem>
-<para>メタデータのバックエンド・データベースとして
-PostgreSQL サーバを選択する場合、
-PostgreSQL サーバーが動作しているホスト名を指定します。</para>
+<para>
+gfmdのバックエンド・データベースとして
+PostgreSQLサーバを選択する場合、
+PostgreSQLサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
 
 <para>例:</para>
 <literallayout>
-	postgresql_serverhost postgresql.example.com
+	postgresql_server_host postgresql.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_serverport</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
+<term><token>postgresql_server_port</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
 <listitem>
-<para>PostgreSQL サーバーが利用するTCPポートの番号を指定します。</para>
-<para><token>postgresql_serverhost</token>を指定する場合には、
+<para>PostgreSQLサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
 この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
-	postgresql_serverport 602
+	postgresql_server_port 602
 </literallayout>
 </listitem>
 </varlistentry>
@@ -449,8 +453,8 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
 <listitem>
-<para>PostgreSQL データベース名を指定します。</para>
-<para><token>postgresql_serverhost</token>を指定する場合には、
+<para>PostgreSQLデータベース名を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
 この設定は必須です。</para>
 <para>例:</para>
 <literallayout>
@@ -462,7 +466,7 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>postgresql_user</token> <parameter>user</parameter></term>
 <listitem>
-<para>PostgreSQL データベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザ名を指定します。</para>
 <para>例:</para>
 <literallayout>
 	postgresql_user gfarm
@@ -473,7 +477,7 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>postgresql_password</token> <parameter>password</parameter></term>
 <listitem>
-<para>PostgreSQL データベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
 <para>例:</para>
 <literallayout>
 	postgresql_password "secret-postgresql-password"
@@ -484,7 +488,7 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <varlistentry>
 <term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
 <listitem>
-<para>PostgreSQL データベースに接続するときの接続オプションを指定します。</para>
+<para>PostgreSQLデータベースに接続するときの接続オプションを指定します。</para>
 <para>例:</para>
 <literallayout>
 	postgresql_conninfo "sslmode=require connect_timeout=30"
@@ -497,10 +501,10 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 <listitem>
 <para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
 
-<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token> ないし <token>disable</token>
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
 キーワードを指定します。
 第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
-<token>gsi_auth</token> ないし <token>sharedsecret</token>
+<token>gsi_auth</token>ないし<token>sharedsecret</token>
 キーワードを指定します。
 第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
 
@@ -515,11 +519,11 @@ PostgreSQL サーバーが動作しているホスト名を指定します。</para>
 
 <para>認証方法が異なるものに関しては、指定の順序は意味がありません。
 複数の認証方法が候補となった場合、<token>sharedsecret</token>、
-<token>gsi_auth</token>、<token>gsi</token> 認証の順序で試みます。</para>
+<token>gsi_auth</token>、<token>gsi</token>認証の順序で試みます。</para>
 
-<para>Gfarm のコンパイル時に globus とのリンクを指定しなかった場合、
-GSI は利用できません。この場合、<token>gsi</token> および
-<token>gsi_auth</token> 認証の指定は単に無視されます。</para>
+<para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
+GSIは利用できません。この場合、<token>gsi</token>および
+<token>gsi_auth</token>認証の指定は単に無視されます。</para>
 
 <para>この設定は必須です。</para>
 <para>例:</para>
@@ -531,18 +535,19 @@ GSI は利用できません。この場合、<token>gsi</token> および
 	auth enable gsi *
 </literallayout>
 
-<para>この例では、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストを
-除いた 192.168.0.0/24 ネットワークに属すホストには 
-<token>sharedsecret</token> と <token>gsi</token> の両方を、
-10.0.0.0/8 ネットワークに属すホストには <token>gsi_auth</token> および
-<token>gsi</token> の両方を、
-それ以外の全てのホストには <token>gsi</token> 認証のみを試みます。
-すなわち、ホスト 192.168.0.100 と 192.168.0.101 の 2 つのホストは、
+<para>この例では、ホスト192.168.0.100と192.168.0.101の2つのホストを
+除いた192.168.0.0/24ネットワークに属すホストには
+<token>sharedsecret</token>と<token>gsi</token>の両方を、
+10.0.0.0/8ネットワークに属すホストには<token>gsi_auth</token>および
+<token>gsi</token>の両方を、
+それ以外の全てのホストには<token>gsi</token>認証のみを試みます。
+すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
 <token>gsi</token>認証のみを試みることになります。</para>
 
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>netparam</token> <parameter>パラメータ</parameter><emphasis>=</emphasis><parameter>値</parameter> <emphasis>[</emphasis><parameter>ホスト指定</parameter><emphasis>]</emphasis></term>
 <listitem>
@@ -551,33 +556,33 @@ GSI は利用できません。この場合、<token>gsi</token> および
 
 <para><token>parallel_streams</token>。このパラメータは、通信に利用する
 TCPのストリーム数を指定します。省略時は1です。
-このパラメータは、TCP の通信ウィンドウが十分なサイズ
+このパラメータは、TCPの通信ウィンドウが十分なサイズ
 まで開かないような遠方との通信の際に、有効なことがあります。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep(1) コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザー設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
-<para><token>stripe_unit_size</token>。このパラメータは、通信に複数の TCP ストリーム
+<para><token>stripe_unit_size</token>。このパラメータは、通信に複数のTCPストリーム
 を利用する場合に、どのように転送内容を分割するかを指定します。
-もしこの指定がない場合、転送内容を単に <token>parallel_streams</token> 個に
+もしこの指定がない場合、転送内容を単に<token>parallel_streams</token>個に
 分割して送信します。
-これに対し、<token>stripe_unit_size</token> を指定した場合は、このパラメータ
+これに対し、<token>stripe_unit_size</token>を指定した場合は、このパラメータ
 で指定したバイト数を単位としてストライピングして送信します。
 通常、単なる分割よりもストライピングの方が性能的に有利です。
 </para>
 <para>
-このパラメータは、上記の <token>parallel_streams</token> として 1 より大きな値
+このパラメータは、上記の<token>parallel_streams</token>として1より大きな値
 を指定した通信のみで有効です。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep(1) コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザー設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
 <para><token>rate_limit</token>。コネクション1本あたりの通信バンド幅を制限する
-実験的な機能です。指定する値の単位は bps (bit per second) です。
+実験的な機能です。指定する値の単位はbps (bit per second)です。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、複製元のホスト上の gfsd の設定ファイルが用いられます。
+現在の実装では、複製元のホスト上のgfsdの設定ファイルが用いられます。
 ホスト指定と比較されるのは、複製先のホストです。</para>
 
 <para>例:</para>
@@ -588,23 +593,24 @@ TCPのストリーム数を指定します。省略時は1です。
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 <varlistentry>
 <term><token>sockopt </token><parameter>オプション</parameter><emphasis>[=</emphasis><parameter>値</parameter><emphasis>] [<token>LISTENER</token> | <parameter>ホスト指定</parameter>]</emphasis></term>
 <listitem>
-<para>通信 socket(2) に対して、setsockopt(2) システムコールを使って
+<para>通信socket(2)に対して、setsockopt(2)システムコールを使って
 ソケット・オプションを指定します。</para>
 
-<para>第2引数に全て大文字で <token>LISTENER</token> を指定した場合、
-サーバー側 (着呼側) のソケットに指定するオプションになります。
+<para>第2引数に全て大文字で<token>LISTENER</token>を指定した場合、
+サーバー側(着呼側)のソケットに指定するオプションになります。
 この場合、通信する相手に関係なく、
 一律にソケット・オプションが設定されます。</para>
 <para>
-第2引数にホスト指定を記述した場合、クライアント側 (発呼側) の
+第2引数にホスト指定を記述した場合、クライアント側(発呼側)の
 ソケットに指定するオプションになります。この場合、通信する相手毎に
 ソケット・オプションを変えることができます。
-なお、第2引数に "*" と記述すると、クライアント側 (発呼側) の全ての
-ホストを意味することになり、サーバー側 (着呼側) には適用されません。
+なお、第2引数に"*"と記述すると、クライアント側(発呼側)の全ての
+ホストを意味することになり、サーバー側(着呼側)には適用されません。
 </para>
 <para>
 第2引数を省略した場合、サーバー側とクライアント側の両方で、
@@ -612,18 +618,18 @@ TCPのストリーム数を指定します。省略時は1です。
 
 <para>指定可能なソケット・オプションには次のものがあります。</para>
 
-<para><token>debug</token>。setsockopt(2) システムコールで、<constant>SO_DEBUG</constant> ソケット・オプションを指定します。値を記述する必要はありません。</para>
+<para><token>debug</token>。setsockopt(2)システムコールで、<constant>SO_DEBUG</constant>ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>keepalive</token>。setsockopt(2) システムコールで、<constant>SO_KEEPALIVE</constant>
+<para><token>keepalive</token>。setsockopt(2)システムコールで、<constant>SO_KEEPALIVE</constant>
 ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
-<para><token>sndbuf</token>。setsockopt(2) システムコールで、<constant>SO_SNDBUF</constant>
+<para><token>sndbuf</token>。setsockopt(2)システムコールで、<constant>SO_SNDBUF</constant>
 ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>rcvbuf</token>。setsockopt(2) システムコールで、<constant>SO_RCVBUF</constant>
+<para><token>rcvbuf</token>。setsockopt(2)システムコールで、<constant>SO_RCVBUF</constant>
 ソケット・オプションを指定します。値の指定が必要です。</para>
 
-<para><token>tcp_nodelay</token>。setsockopt(2) システムコールで、<constant>TCP_NODELAY</constant>
+<para><token>tcp_nodelay</token>。setsockopt(2)システムコールで、<constant>TCP_NODELAY</constant>
 ソケット・オプションを指定します。値を記述する必要はありません。</para>
 
 <para>例:</para>
@@ -637,6 +643,7 @@ TCPのストリーム数を指定します。省略時は1です。
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>address_use</token> <parameter>ホスト指定</parameter></term>
 <listitem>
@@ -662,7 +669,7 @@ IPアドレスを通信に用いるかを指定します。
 アーキテクチャ名が使われます。
 </para>
 <para>
-これに対し、環境変数 GFARM_ARCHITECTURE を使うと、クライアントノードに対しても
+これに対し、環境変数GFARM_ARCHITECTUREを使うと、クライアントノードに対しても
 ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
 指定することができます。
 </para>
@@ -674,18 +681,34 @@ IPアドレスを通信に用いるかを指定します。
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
+
+<varlistentry>
+<term><token>admin_user</token> <parameter>ユーザ名</parameter></term>
+<listitem>
+<para>
+gfmd.conf内のこの文で指定されたユーザが、
+デフォルトの特権ユーザとなります。
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter></term>
 <listitem>
-<para>グローバルユーザ名とローカルユーザ名の対応関係を記述した
-ユーザマップファイルパス名を指定します。</para>
-<para>この設定は必須ではありませんが、同一ユーザーに対して、
-異なるアカウント名を与えているファイルシステムノードがある場合に、
-このファイルでユーザー名の変換を行うことができます。そのような場合、
+<para>
+sharedsecret認証において、
+グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。
+この設定は必須ではありませんが、
+その場合ローカルユーザ名がグローバルユーザ名に変換されます。
+</para>
+<para>
+同一ユーザーに対して、
+異なるローカルアカウント名を与えているファイルシステムノードがある場合や、
+ローカルユーザ名とは異なるグローバルユーザ名を利用したい場合、
 このファイルで、各ノードのローカルなユーザ名に対して、単一の
-グローバルユーザ名を定義してやることによって、UNIX 的なアカウント名が
-異なっても同一ユーザとしてgfarm を利用することができます。</para>
+グローバルユーザ名を定義します。</para>
 <para>例:</para>
 <literallayout>
 	local_user_map /etc/gfarm/gfarm-usermap
@@ -698,15 +721,16 @@ IPアドレスを通信に用いるかを指定します。
 	foobar foo
 	quux baz
 </literallayout>
-<para>この例の1行目の指定では、このノードのローカルユーザ名 foo に
-対してグローバルユーザ名 foobar が定義されています。</para>
+<para>この例の1行目の指定では、このノードのローカルユーザ名fooに
+対してグローバルユーザ名foobarが定義されています。</para>
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
-<para>gfarm ライブラリが内部的に保持している、ファイルシステムノード
+<para>gfarmライブラリが内部的に保持している、ファイルシステムノード
 のスケジューリング処理に関わる情報、すなわちロードアベレージ、
 ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
 停止していたファイルシステムノードが復活したような場合、この期限が
@@ -723,13 +747,13 @@ IPアドレスを通信に用いるかを指定します。
 <varlistentry>
 <term><token>write_local_priority</token> <parameter>有効性</parameter></term>
 <listitem>
-<para>gfarm は、ファイルを書き込むノードを決める際、できる限りローカル
-ホストを優先するように動作します。この文で disable と指定することによって、
+<para>gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文でdisableと指定することによって、
 ローカルホストを他のホストと同様に扱うように変更することができます。
-環境変数 GFARM_WRITE_LOCAL_PRIORITY に disable と設定しても、同じ意味に
+環境変数GFARM_WRITE_LOCAL_PRIORITYにdisableと設定しても、同じ意味に
 なります。
 両方指定した場合は、環境変数が優先されます。
-デフォルトは enable です。
+デフォルトはenableです。
 </para>
 <para>例:</para>
 <literallayout>
@@ -741,11 +765,11 @@ IPアドレスを通信に用いるかを指定します。
 <varlistentry>
 <term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
 <listitem>
-<para>gfarm がファイルを書き込むノードを決める際、できる限りここで
+<para>gfarmがファイルを書き込むノードを決める際、できる限りここで
 指定したドメインを優先するように動作します。
 ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
 特にこの指定を行なわなかった場合には、全ノードが対象となります。
-環境変数 GFARM_WRITE_TARGET_DOMAIN でも、同様な指定ができます。
+環境変数GFARM_WRITE_TARGET_DOMAINでも、同様な指定ができます。
 両方指定した場合は、環境変数が優先されます。
 なります。
 この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
@@ -757,15 +781,16 @@ IPアドレスを通信に用いるかを指定します。
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 <varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
 <listitem>
 <para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
 します。このサイズ以下の空き容量しかないファイルシステムノードは、
-ファイル書き込みを行う可能性のある操作を行う際に、選択されなくなります。
-指定はバイト単位で行いますが、数字の末尾に空白を開けずに k/M/G/T を指定
-することで、それぞれ 1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
 ことができます。
 デフォルトは128Mバイトです。
 </para>
@@ -779,7 +804,7 @@ IPアドレスを通信に用いるかを指定します。
 <varlistentry>
 <term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
 <listitem>
-<para>gfarm ライブラリが gfsd との通信に用いるコネクションを、いくつ
+<para>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
 までキャッシュするかを指定します。
 デフォルトは16コネクションです。
 </para>
@@ -795,12 +820,12 @@ IPアドレスを通信に用いるかを指定します。
 <listitem>
 <para>
 どの優先度レベル以上のログを出力するかを指定します。
-ここで指定したレベル未満の優先度のログは、syslog や標準エラーへ
+ここで指定したレベル未満の優先度のログは、syslogや標準エラーへ
 送られません。
-レベルは、優先度の高い順に "emerg", "alert", "crit", "err", "warning",
-"notice", "info", "debug" です。
-デフォルトの出力レベルは "info" です。
-"crit" 以上の優先度を指定することは、お勧めできません。
+レベルは、優先度の高い順に"emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug"です。
+デフォルトの出力レベルは"info"です。
+"crit"以上の優先度を指定することは、お勧めできません。
 </para>
 <para>例:</para>
 <literallayout>
@@ -809,14 +834,15 @@ IPアドレスを通信に用いるかを指定します。
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>record_atime</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
-このオプションが enable の場合、最終アクセス時刻をきちんと記録します。
-disable の場合には最終アクセス時刻の記録は不正確になりますが、
+このオプションがenableの場合、最終アクセス時刻をきちんと記録します。
+disableの場合には最終アクセス時刻の記録は不正確になりますが、
 メタデータ更新の負荷が下がり、性能が向上することがあります。
-disable 設定は、通常のファイルシステムにおける "noatime" オプションに
+disable設定は、通常のファイルシステムにおける"noatime"オプションに
 相当します。
 </para>
 <para>例:</para>
@@ -825,17 +851,17 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 </variablelist>
 </refsect1>
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
-<para>gfarm.conf の文法をBNFで記述すると、下記のようになります。</para>
+<para>gfarm2.confの文法をBNFで記述すると、下記のようになります。</para>
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
@@ -849,30 +875,30 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
-		&nbsp;&nbsp;&lt;netparam_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;netparam_statement&gt; | -->
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
-		&nbsp;&nbsp;&lt;address_use_statement&gt; |
-		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
-		&nbsp;&nbsp;&lt;option_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;address_use_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
+		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
-		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
-		&nbsp;&nbsp;&lt;record_atime_statement&gt;
+<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; -->
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
-	&lt;spool_server_port_statement&gt; ::= "spool_server_port" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
@@ -892,8 +918,8 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
 	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
 	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
-	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
-	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
+	&lt;postgresql_server_host_statement&gt; ::= "postgresql_server_host" &lt;hostname&gt;
+	&lt;postgresql_server_port_statement&gt; ::= "postgresql_server_port" &lt;portnumber&gt;
 	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
 	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
 	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
@@ -902,30 +928,31 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
 	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
-	&lt;netparam_statement&gt; ::=
-		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
-	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" |
-		&nbsp;&nbsp;"rate_limit"
+<!--	&lt;netparam_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;] -->
+<!--	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" | -->
+<!--		&nbsp;&nbsp;"rate_limit" -->
 	&lt;sockopt_statement&gt; ::=
 		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
-	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
-	&lt;client_architecture_statement&gt; ::=
-		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
-	&lt;option_statement&gt; ::= "option" &lt;an_option&gt;
-	&lt;an_option&gt; ::= "noatime"
+<!--	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt; -->
+<!--	&lt;client_architecture_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
+<!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
+<!--	&lt;an_option&gt; ::= "noatime" -->
+	&lt;admin_user_statement&gt; ::=  &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
-	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
-	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+<!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
+<!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
-	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
-	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
+<!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
+<!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
-	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt;
+<!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -955,8 +982,8 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-メタデータの保存に PostgreSQL を使い、IPアドレス 192.168.0.0/24 の
-ファイルシステムノードやクライアントに対して、sharedsecret 認証を
+メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
+ファイルシステムノードやクライアントに対して、sharedsecret認証を
 使う例です。
 </para>
 <literallayout>
@@ -973,8 +1000,8 @@ sockopt keepalive
 </literallayout>
 
 <para>
-メタデータの保存に LDAP を使い、任意のIPアドレスを使う
-ファイルシステムノードやクライアントに対して、GSI 認証を使う例です。
+メタデータの保存にLDAPを使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI認証を使う例です。
 </para>
 <literallayout>
 spool /var/spool/gfarm
@@ -996,12 +1023,12 @@ sockopt keepalive
 <variablelist>
 
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>$HOME/.gfarmrc</filename></term>
+<term><filename>$HOME/.gfarm2rc</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
@@ -1012,7 +1039,6 @@ sockopt keepalive
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfarm_agent</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>

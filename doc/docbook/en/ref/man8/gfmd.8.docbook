@@ -3,7 +3,7 @@
 
 <refentry id='gfmd.8'>
 
-<refentryinfo><date>12 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmd</refentrytitle>
@@ -32,17 +32,16 @@ be running on a metadata server node in advance.</para>
 
 <para>It is possible for <command>gfmd</command> to be executed as a non-privileged user
 process, although only the user that executes the <command>gfmd</command> can be authenticated.
-Other users cannot use it.</para>
+Other users cannot use it.
+For details, see SETUP.private.en document
+</para>
 
-<para>In order to execute <command>gfmd</command> as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At the very least, the port number used by <command>gfmd</command> should be altered to a
-non-privileged port number by the metadb_serverport statement in the
-configuration file or by the -p option.</para>
-
-<para>In this case, the altered port number for <command>gfmd</command> should be
-specified by the metadb_serverport statement in <filename>~/.gfarmrc</filename>
-or in <filename>%%SYSCONFDIR%%/gfarm.conf</filename> on a client node.</para>
+<para>To access gfmd, 
+the hostname and the port number should be
+specified by the metadb_server_host and metadb_server_port statements,
+respectively, in <filename>~/.gfarm2rc</filename>
+or in <filename>%%SYSCONFDIR%%/gfarm2.conf</filename>
+on a client node.</para>
 
 </refsect1>
 
@@ -54,7 +53,7 @@ or in <filename>%%SYSCONFDIR%%/gfarm.conf</filename> on a client node.</para>
 <listitem>
 <para>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
-Please refer gfarm.conf(5) for the priority levels which can be specified
+Please refer gfarm2.conf(5) for the priority levels which can be specified
 by this option.
 </para>
 </listitem>
@@ -90,9 +89,7 @@ configuration file.</para>
 <varlistentry>
 <term><option>-p</option> <parameter>port</parameter></term>
 <listitem>
-<para>Specifies a port number to be used by gfmd.  By default, 601 is used.</para>
-<para>The default port requires root privileges, although privileged ports
-are not necessary to execute gfmd.</para>
+<para>Specifies a port number to be used by gfmd.</para>
 </listitem>
 </varlistentry>
 
@@ -106,11 +103,11 @@ local0 is used.</para>
 </varlistentry>
 
 <varlistentry>
-<term><option>-u</option> <parameter></parameter></term>
+<term><option>-v</option></term>
 <listitem>
-<para>Specifies a syslog facility to report errors encountered by gfmd.
-By default,
-local0 is used.</para>
+<para>Makes gfmd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+</para>
 </listitem>
 </varlistentry>
 
@@ -126,7 +123,7 @@ local0 is used.</para>
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>
@@ -136,10 +133,7 @@ local0 is used.</para>
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<!--
-<citerefentry><refentrytitle>gfmd.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
--->
-<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>
 </refsect1>
 

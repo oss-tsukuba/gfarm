@@ -1,39 +1,48 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
-<refentry id='gfarm.conf.5'>
+<refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>11 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
-<refentrytitle>gfarm.conf</refentrytitle>
+<refentrytitle>gfarm2.conf</refentrytitle>
 <manvolnum>5</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfarm.conf</refname>
+<refname>gfarm2.conf</refname>
 <refpurpose>Gfarm configuration file</refpurpose>
 </refnamediv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfarm.conf is a text file that contains a Gfarm configuration.  
-Gfarm server processes, such as gfmd and gfsd, refer to %%SYSCONFDIR%%/gfarm.conf by default.  Since this configuration file is only read at startup, it is necessary to restart servers when the contents of the configuration file are updated.</para>
+<para>
+gfarm2.conf is a text file that contains a Gfarm configuration.  
+Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
+and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
+Since this configuration file is only read at startup, it is necessary
+to restart servers when the contents of the configuration file are
+updated.
+</para>
 
-<para>Application programs, such as gfls and gfhost, refer to both
-%%SYSCONFDIR%%/gfarm.conf, and a file specified by an environment variable,
+<para>
+Application programs, such as gfls and gfhost, refer to both
+%%SYSCONFDIR%%/gfarm2.conf, and a file specified by an environment variable,
 GFARM_CONFIG_FILE. If both configuration files exist, the file
 specified by the environment variable, GFARM_CONFIG_FILE, is read
 first. Both files have the same grammar.
 If the environment variable GFARM_CONFIG_FILE doesn't exist,
- ~/.gfarmrc in a user's home directory is used instead.
+ ~/.gfarm2rc in a user's home directory is used instead.
 </para>
 
-<para>Each line of gfarm.conf consists of one statement.  When the
+<para>
+Each line of gfarm2.conf consists of one statement.  When the
 line ends with the character ``\'', the line continues for the next
 line.  A word beginning with ``#'' causes that word and all remaining
-characters on that line to be ignored.</para>
+characters on that line to be ignored.
+</para>
 
 </refsect1>
 
@@ -90,8 +99,7 @@ from 0 to 31 separated by "/".</para>
 <term><token>spool</token> <parameter>directory</parameter></term>
 <listitem>
 <para>The <token>spool</token> statement specifies a spool directory
-for a Gfarm filesystem on this filesystem node.  On the filesystem
-node, this statement should be specified.</para>
+for a Gfarm filesystem on this filesystem node.</para>
 <para>For example,</para>
 <literallayout>
 	spool /var/spool/gfarm
@@ -116,19 +124,6 @@ to provide multiple spool directories on the host.
 </varlistentry>
 
 <varlistentry>
-<term><token>spool_server_port</token> <parameter>port</parameter></term>
-<listitem>
-<para>The <token>spool_server_port</token> statement specifies the tcp
-and udp port number the gfsd is listening on.  The default port number
-is 600.</para>
-<para>For example,</para>
-<literallayout>
-	spool_server_port 600
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
@@ -141,8 +136,7 @@ authentication.
 If this statement isn't used on the server side, the server uses
 a host certificate, if the server is invoked with root privileges.
 Or, if the server is invoked as a non-privileged user, the server
-uses the user's certificate. Thus, you usually don't need to use
-this statement on the server side.
+uses the user's certificate.
 </para>
 <para>
 If this statement isn't used on the client side, the client assumes
@@ -226,17 +220,10 @@ the <token>spool_server_cred_service</token> statement, if you are using
 a user certificate.
 </para>
 <para>
-Currently, there are several implementation limitations in this feature.
-First, the account name is interpreted as an account on the local host,
-but this is a bug, and will be changed to a gfarm global user name
-in the future.
-Second, to map from the account name to a Distinguished Name of a certificate,
+To map from the account name to a Distinguished Name of a certificate,
 file ``<filename>/etc/grid-security/grid-mapfile</filename>'' is used.
 Thus, if there isn't such a file, or if the user isn't specified in this file,
 this feature cannot be used.
-Third, if there are multiple Distinguished Names per one account in this file,
-only the first Distinguished Name is used, and the rest of the Distinguished
-Names for the account are ignored.
 </para>
 <para>
 This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
@@ -379,8 +366,9 @@ statement on the configuration of this statement.
 <term><token>ldap_server_host</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>ldap_server_host</token> statement specifies the host
-name on which the LDAP server for filesystem metadata is running.</para>
-<para>This statement cannot be omitted.</para>
+name on which an LDAP server is running.  This statement is required
+when the LDAP server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.</para>
 
 <para>For example,</para>
 <literallayout>
@@ -395,7 +383,7 @@ name on which the LDAP server for filesystem metadata is running.</para>
 <para>The <token>ldap_server_port</token> statement specifies the tcp
 port number of the LDAP server.</para>
 <para>This statement cannot be omitted
-  if <token>ldap_serverhost</token> is specified.</para>
+  if <token>ldap_server_host</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
 	ldap_server_port 602
@@ -409,7 +397,7 @@ port number of the LDAP server.</para>
 <para>The <token>ldap_base_dn</token> statement specifies the
 base-distinguished name of the LDAP database.</para>
 <para>This statement cannot be omitted
-  if <token>ldap_serverhost</token> is specified.</para>
+  if <token>ldap_server_host</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
 	ldap_base_dn "dc=example, dc=com"
@@ -444,28 +432,30 @@ to the LDAP database.</para>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_serverhost</token> <parameter>hostname</parameter></term>
+<term><token>postgresql_server_host</token> <parameter>hostname</parameter></term>
 <listitem>
-<para>The <token>postgresql_serverhost</token> statement specifies the host
-name on which the PostgreSQL server is running.</para>
+<para>The <token>postgresql_server_host</token> statement specifies the host
+name on which a PostgreSQL server is running.  This statement is required
+when the PostgreSQL server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.</para>
 
 <para>For example,</para>
 <literallayout>
-	postgresql_serverhost postgresql.example.com
+	postgresql_server_host postgresql.example.com
 </literallayout>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>postgresql_serverport</token> <parameter>port</parameter></term>
+<term><token>postgresql_server_port</token> <parameter>port</parameter></term>
 <listitem>
-<para>The <token>postgresql_serverport</token> statement specifies the tcp
+<para>The <token>postgresql_server_port</token> statement specifies the tcp
 port number of the PostgreSQL server.</para>
 <para>This statement cannot be omitted
-  if <token>postgresql_serverhost</token> is specified.</para>
+  if <token>postgresql_server_host</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
-	postgresql_serverport 602
+	postgresql_server_port 602
 </literallayout>
 </listitem>
 </varlistentry>
@@ -476,7 +466,7 @@ port number of the PostgreSQL server.</para>
 <para>The <token>postgresql_dbname</token> statement specifies the
   database name of the PostgreSQL database.</para>
 <para>This statement cannot be omitted
-  if <token>postgresql_serverhost</token> is specified.</para>
+  if <token>postgresql_server_host</token> is specified.</para>
 <para>For example,</para>
 <literallayout>
 	postgresql_dbname gfarm
@@ -583,6 +573,7 @@ and all other hosts will be authenticated by
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>netparam</token> <parameter>parameter</parameter><emphasis>=</emphasis><parameter>value</parameter> <emphasis>[</emphasis><parameter>Host_specification</parameter><emphasis>]</emphasis></term>
 <listitem>
@@ -631,6 +622,7 @@ parameters.</para>
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 <varlistentry>
 <term><token>sockopt </token><parameter>option</parameter><emphasis>[=</emphasis><parameter>value</parameter><emphasis>] [<token>LISTENER</token> | <parameter>Host_specification</parameter>]</emphasis></term>
@@ -682,6 +674,7 @@ necessary.</para>
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>address_use</token> <parameter>Host_specification</parameter></term>
 <listitem>
@@ -717,20 +710,33 @@ affects both client nodes and filesystem nodes.
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
+
+<varlistentry>
+<term><token>admin_user</token> <parameter>user</parameter></term>
+<listitem>
+<para>
+This directive specifies an administrator user name, which is
+specified in gfmd.conf.
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><token>local_user_map</token> <parameter>user-map-file</parameter></term>
 <listitem>
 <para>This directive specifies a file name
-<parameter>user-map-file</parameter> for mapping global user names
-to local user names</para>
+<parameter>user-map-file</parameter> for mapping local user names to
+global user names.  This map file is used only for sharedsecret
+authentication.  When this file is not specified, a global user name
+is assumed to be same as the local user name.</para>
 
-<para>This directive is optional.
+<para>
 <parameter>user-map-file</parameter> is needed when you have to use
 the sharedsecret authentication method in the case where you have
 different unix account names on different filesystem nodes.  In such a
 case, the <parameter>user-map-file</parameter> on each filesystem node
-should have an entry from a unique global user name to each local user
+should have an entry from each local user name to a unique global user
 name.
 </para>
 <para>Example:</para>
@@ -753,6 +759,7 @@ name, "foobar", is mapped to a local user name,  "foo", on this node.
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
@@ -810,6 +817,7 @@ will be used and the others are ignored.
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 <varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
@@ -860,6 +868,7 @@ It's not recommended to specify a level higher or equal to "crit".
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>record_atime </token><parameter>validity</parameter></term>
 <listitem>
@@ -876,18 +885,18 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 </variablelist>
 </refsect1>
 
 <refsect1 id='grammar'><title>GRAMMAR</title>
-<para>This is a grammar of gfarm.conf described by the BNF
+<para>This is a grammar of gfarm2.conf described by the BNF
 notation.</para>
 <literallayout>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
-		&nbsp;&nbsp;&lt;spool_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
@@ -901,30 +910,30 @@ notation.</para>
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_serverhost_statement&gt; |
-		&nbsp;&nbsp;&lt;postgresql_serverport_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
 		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
 		&nbsp;&nbsp;&lt;auth_statement&gt; |
-		&nbsp;&nbsp;&lt;netparam_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;netparam_statement&gt; | -->
 		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
-		&nbsp;&nbsp;&lt;address_use_statement&gt; |
-		&nbsp;&nbsp;&lt;client_architecture_statement&gt; |
-		&nbsp;&nbsp;&lt;option_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;address_use_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
+		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
-		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
-		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
-		&nbsp;&nbsp;&lt;record_atime_statement&gt;
+<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; -->
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
-	&lt;spool_server_port_statement&gt; ::= "spool_server_port" &lt;hostname&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
@@ -944,8 +953,8 @@ notation.</para>
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
 	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
 	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
-	&lt;postgresql_serverhost_statement&gt; ::= "postgresql_serverhost" &lt;hostname&gt;
-	&lt;postgresql_serverport_statement&gt; ::= "postgresql_serverport" &lt;portnumber&gt;
+	&lt;postgresql_server_host_statement&gt; ::= "postgresql_server_host" &lt;hostname&gt;
+	&lt;postgresql_server_port_statement&gt; ::= "postgresql_server_port" &lt;portnumber&gt;
 	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
 	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
 	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
@@ -954,30 +963,31 @@ notation.</para>
 		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
 	&lt;auth_command&gt; ::= "enable" | "disable"
 	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
-	&lt;netparam_statement&gt; ::=
-		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;]
-	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" |
-		&nbsp;&nbsp;"rate_limit"
+<!--	&lt;netparam_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;] -->
+<!--	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" | -->
+<!--		&nbsp;&nbsp;"rate_limit" -->
 	&lt;sockopt_statement&gt; ::=
 		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
-	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt;
-	&lt;client_architecture_statement&gt; ::=
-		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt;
-	&lt;option_statement&gt; ::= "option" &lt;an_option&gt;
-	&lt;an_option&gt; ::= "noatime"
+<!--	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt; -->
+<!--	&lt;client_architecture_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
+<!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
+<!--	&lt;an_option&gt; ::= "noatime" -->
+	&lt;admin_user_statement&gt; ::=  &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
-	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt;
-	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt;
+<!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
+<!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
-	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
-	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
+<!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
+<!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
-	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt;
+<!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
@@ -1049,12 +1059,12 @@ sockopt keepalive
 <variablelist>
 
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
 <varlistentry>
-<term><filename>$HOME/.gfarmrc</filename></term>
+<term><filename>$HOME/.gfarm2rc</filename></term>
 <listitem><para></para></listitem>
 </varlistentry>
 
@@ -1065,7 +1075,6 @@ sockopt keepalive
 <para>
   <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>gfarm_agent</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
 </refsect1>
 </refentry>

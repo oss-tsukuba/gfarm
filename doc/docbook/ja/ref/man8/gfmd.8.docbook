@@ -3,7 +3,7 @@
 
 <refentry id='gfmd.8'>
 
-<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmd</refentrytitle>
@@ -26,23 +26,21 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfmd は、Gfarm ライブラリと協調して動作し、Gfarm 並列ファイルシステ
+<para>gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
 ムのメタデータへのアクセスを提供するデーモンプログラムです。
-gfmd は Gfarm のメタDBサーバー・ホスト上で、 
+gfmdはGfarmのメタDBサーバー・ホスト上で、
 あらかじめ立ち上げておく必要があります。</para>
 
-<para>gfmd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfmd を利用することができません．</para>
+<para>
+gfmdはユーザ権限で動作させることも可能ですが、この場合他のユーザはこ
+のgfmdを利用することができません。
+詳細はSETUP.private.jaを参照してください。
+</para>
 
-<para>ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
-で指定して gfmd を立ち上げます．ユーザ権限による gfmd の起動には少なく
-とも gfmd が利用するポート番号を変更する必要があります．このためには設
-定ファイル内の metadb_serverport あるいは起動時の -p オプションを利用
-します．</para>
-
-<para>デフォルト以外のポート番号で立ち上がっている gfmd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
-metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
+<para>gfmdを利用するためには，
+クライアントノードの~/.gfarm2rcあるいは%%SYSCONFDIR%%/gfarm2.confの
+metadb_server_hostで利用したいgfmdのホスト名，
+metadb_server_portでポート番号を指定する必要がありま
 す．</para>
 
 </refsect1>
@@ -55,7 +53,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <listitem>
 <para>
 このオプションで指定したレベル以上の優先度のログを出力します。
-指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -63,7 +61,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <varlistentry>
 <term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
-<para>gfmd の process ID を、指定したファイルに記録します。</para>
+<para>gfmdのprocess IDを、指定したファイルに記録します。</para>
 </listitem>
 </varlistentry>
 
@@ -73,8 +71,8 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</para>
 <para>
-このオプションを指定し、かつ <option>-L</option> オプションを指定しなかった
-場合、ログレベルは debug となります。
+このオプションを指定し、かつ<option>-L</option>オプションを指定しなかった
+場合、ログレベルはdebugとなります。
 </para>
 </listitem>
 </varlistentry>
@@ -89,18 +87,25 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <varlistentry>
 <term><option>-p</option> <parameter>ポート番号</parameter></term>
 <listitem>
-<para>gfmd が利用する TCP のポート番号を指定します。</para>
-<para>省略した場合には 601 番を使用します。
-この場合、gfmd の起動はルート権限で行なう必要があります。
-ただし、動作するユーザー権限は任意のもので構いません。</para>
+<para>gfmdが利用するTCPのポート番号を指定します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
-<para>gfmd がエラー報告に用いる syslog のファシリティを指定します。省略
-した場合には、local0 を使用します。</para>
+<para>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。
+</para>
 </listitem>
 </varlistentry>
 
@@ -117,9 +122,9 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfmd.conf</filename></term>
 <listitem>
-<para>gfmd が参照する設定ファイルです。</para>
+<para>gfmdが参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -127,10 +132,7 @@ metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<!--
-<citerefentry><refentrytitle>gfmd.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
--->
-<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>
 </refsect1>
 

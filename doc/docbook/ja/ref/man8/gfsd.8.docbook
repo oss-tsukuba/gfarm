@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -12,7 +12,7 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfsd(8)</refname>
-<refpurpose>Gfarm 並列ファイルシステム・デーモン</refpurpose>
+<refpurpose>Gfarmファイルシステム・デーモン</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -25,25 +25,22 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfsd は、Gfarm ライブラリと協調して動作し、Gfarm 並列ファイルシステ
-ムを実現するデーモンプログラムです。gfsd は計算プールの全ホスト上で、 
-root 権限であらかじめ立ち上げておく必要があります。</para>
+<para>
+gfsdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
+ムを実現するデーモンプログラムです。
+gfsdはファイルシステムノードの全ホスト上で、
+root権限であらかじめ立ち上げておく必要があります。</para>
 
-<para>gfsd が提供するのは、ファイル・フラグメントの実体へのアクセスです。</para>
+<para>
+gfsdが提供するのは、ファイルの実体へのアクセスです。
+gfsd が利用するポート番号は、gfmd が管理するメタデータから取得します。
+</para>
 
-<para>gfsd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfsd を利用することができません．</para>
-
-<para>ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
-で指定して gfsd を立ち上げます．ユーザ権限による gfsd の起動には少なく
-とも gfsd が利用するポート番号を変更する必要があります．このためには設
-定ファイル内の spool_serverport あるいは起動時の -p オプションを利用し
-ます．</para>
-
-<para>デフォルト以外のポート番号で立ち上がっている gfsd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
-spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
-す．</para>
+<para>
+gfsdはユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
+のgfsdを利用することができません。
+詳細はSETUP.private.jaを参照してください。
+</para>
 
 </refsect1>
 
@@ -55,7 +52,7 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <listitem>
 <para>
 このオプションで指定したレベル以上の優先度のログを出力します。
-指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
 </para>
 </listitem>
 </varlistentry>
@@ -63,19 +60,21 @@ spool_serverport で利用したい gfsd のポート番号を指定する必要がありま
 <varlistentry>
 <term><option>-P</option> <parameter>PIDファイル</parameter></term>
 <listitem>
-<para>gfsd の process ID を、指定したファイルに記録します。</para>
+<para>gfsdのprocess IDを、指定したファイルに記録します。</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-U</option></term>
+<term><option>-c</option></term>
 <listitem>
 <para>
-UNIX ドメインソケットを作成しなくなります。
-このオプションは、一つのノードで複数のスプールを提供するために、
-複数の gfsd を起動する場合に用います。ローカルにファイルを作成する
-場合に選択されるのは、このオプションを指定しなかった gfsd が提供する
-スプールになります。
+起動時に、スプールディレクトリの検査を行います。
+ファイルシステムノードのホスト名が変わったときに利用すると、
+正しく格納されているファイルをメタデータに登録することができます。
+</para>
+<para>
+<option>-c</option>オプションをもう一度指定すると、
+無効なファイルなどを消去することができます。
 </para>
 </listitem>
 </varlistentry>
@@ -86,8 +85,8 @@ UNIX ドメインソケットを作成しなくなります。
 <para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</para>
 <para>
-このオプションを指定し、かつ <option>-L</option> オプションを指定しなかった
-場合、ログレベルは debug となります。
+このオプションを指定し、かつ<option>-L</option>オプションを指定しなかった
+場合、ログレベルはdebugとなります。
 </para>
 </listitem>
 </varlistentry>
@@ -95,7 +94,7 @@ UNIX ドメインソケットを作成しなくなります。
 <varlistentry>
 <term><option>-f</option> <parameter>設定ファイル</parameter></term>
 <listitem>
-<para>起動時に読み込む設定ファイルを指定します．</para>
+<para>起動時に読み込む設定ファイルを指定します。</para>
 </listitem>
 </varlistentry>
 
@@ -112,17 +111,9 @@ UNIX ドメインソケットを作成しなくなります。
 </varlistentry>
 
 <varlistentry>
-<term><option>-p</option> <parameter>ポート番号</parameter></term>
-<listitem>
-<para>gfsd が利用する TCP および UDP のポート番号を指定します。
-省略した場合には 600 番を使用します。</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
 <term><option>-r</option> <parameter>スプール・ディレクトリ</parameter></term>
 <listitem>
-<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を指定します。
+<para>gfsdが、ファイルの実体を保持するディレクトリ名を指定します。
 </para>
 </listitem>
 </varlistentry>
@@ -130,8 +121,8 @@ UNIX ドメインソケットを作成しなくなります。
 <varlistentry>
 <term><option>-s</option> <parameter>syslogファシリティ</parameter></term>
 <listitem>
-<para>gfsd がエラー報告に用いる syslog のファシリティを指定します。省略
-した場合には、local0 を使用します。</para>
+<para>gfsdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</para>
 </listitem>
 </varlistentry>
 
@@ -140,7 +131,7 @@ UNIX ドメインソケットを作成しなくなります。
 <listitem>
 <para>
 認証処理に関するログを詳しく出力します。
-GSI 認証の問題を解決する場合に有用なオプションです。
+GSI認証の問題を解決する場合に有用なオプションです。
 </para>
 </listitem>
 </varlistentry>
@@ -158,9 +149,9 @@ GSI 認証の問題を解決する場合に有用なオプションです。
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem>
-<para>gfsd が参照する設定ファイルです。</para>
+<para>gfsdが参照する設定ファイルです。</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -168,7 +159,7 @@ GSI 認証の問題を解決する場合に有用なオプションです。
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>
 </refsect1>
 

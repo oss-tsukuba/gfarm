@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>12 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -26,25 +26,17 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfsd</command> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with  root privileges.</para>
+<para><command>gfsd</command> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</para>
 
 <para><command>gfsd</command> provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-fast invocation, and node resource status monitoring.</para>
+and node resource status monitoring.</para>
 
 <para>It is possible for <command>gfsd</command> to be executed as a non-privileged user
 process, although only the user that executes the <command>gfsd</command> can be authenticated.
-Other users cannot use it.</para>
-
-<para>In order to execute <command>gfsd</command> as a non-privileged user process, a
-configuration file for a user needs to be specified with the -f option.
-At the very least, the port number used by <command>gfsd</command> should be altered to a
-non-privileged port number using the spool_serverport statement in the
-configuration file, or the -p option.</para>
-
-<para>In this case, the altered port number of <command>gfsd</command> should be
-specified with the spool_serverport statement in ~/.gfarmrc or
-%%SYSCONFDIR%%/gfarm.conf on a client node.</para>
+Other users cannot use it.
+For details, see SETUP.private.en document.
+</para>
 
 </refsect1>
 
@@ -56,7 +48,7 @@ specified with the spool_serverport statement in ~/.gfarmrc or
 <listitem>
 <para>Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
-Please refer gfarm.conf(5) for the priority levels which can be specified
+Please refer gfarm2.conf(5) for the priority levels which can be specified
 by this option.
 </para>
 </listitem>
@@ -70,15 +62,18 @@ by this option.
 </varlistentry>
 
 <varlistentry>
-<term><option>-U</option></term>
+<term><option>-c</option></term>
 <listitem>
 <para>
-Makes gfsd not create a UNIX domain socket.
-This option is useful to invoke multiple instances of gfsd
-to provide multiple spool directories on the host.
-When new files are created by processes on the local host,
-the gfsd which doesn't have this -U option specified will be used
-to provide spool directory for the new files.
+When starting up, gfsd investigates all files stored in a spool
+directory.  This option is useful when a hostname of a file system
+node is changed.   Valid file copies will be registered to the
+metadata server.
+</para>
+<para>
+When the <option>-c</option> option is specified more than once,
+invalid file copies that are not registered in the metadata server are
+deleted.
 </para>
 </listitem>
 </varlistentry>
@@ -112,14 +107,6 @@ The default address is all IP addresses of the host.
 This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.
 </para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-p</option> <parameter>port-number</parameter></term>
-<listitem>
-<para>Specifies a port number for TCP and UDP used by gfsd.  By default, 600
-is used.</para>
 </listitem>
 </varlistentry>
 
@@ -161,7 +148,7 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 <refsect1 id='files'><title>FILES</title>
 <variablelist>
 <varlistentry>
-<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
 <listitem>
 <para>configuration file</para>
 </listitem>
@@ -171,7 +158,7 @@ This is useful, when one has to resolve an issue about GSI authenticaion.
 
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
-<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 </para>
 </refsect1>
 

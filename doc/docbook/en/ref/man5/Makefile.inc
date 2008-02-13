@@ -1,2 +1,2 @@
 DOCBOOK = \
-	gfarm.conf.5
+	gfarm2.conf.5
