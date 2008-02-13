@@ -391,9 +391,11 @@ fi
 %{man_prefix}/man3/gfs_unlink.3.gz
 %{man_prefix}/man3/gfs_unlink_section.3.gz
 %{man_prefix}/man3/gfs_utimes.3.gz
-%{man_prefix}/man5/gfarm.conf.5.gz
+%endif
+%{man_prefix}/man5/gfarm2.conf.5.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
@@ -486,9 +488,11 @@ fi
 %{man_prefix}/ja/man3/gfs_unlink.3.gz
 %{man_prefix}/ja/man3/gfs_unlink_section.3.gz
 %{man_prefix}/ja/man3/gfs_utimes.3.gz
+%endif
 %{man_prefix}/ja/man5/gfarm.conf.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/index.html
 %{html_prefix}/en/ref/index.html
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
