@@ -99,6 +99,13 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option> <parameter>ホスト名</parameter></term>
+<listitem>
+<para>自ホストのカノニカルなホスト名を指定します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-l</option> <parameter>IPアドレス</parameter></term>
 <listitem>
 <para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。

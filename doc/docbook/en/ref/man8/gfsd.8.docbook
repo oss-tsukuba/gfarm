@@ -99,6 +99,13 @@ configuration file.</para>
 </varlistentry>
 
 <varlistentry>
+<term><option>-h</option> <parameter>hostname</parameter></term>
+<listitem>
+<para>Specifies my own canonical host name.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-l</option> <parameter>IP-address</parameter></term>
 <listitem>
 <para>Specifies the IP address from which the gfsd accepts TCP and UDP

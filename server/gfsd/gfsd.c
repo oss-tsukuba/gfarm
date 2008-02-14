@@ -3312,7 +3312,7 @@ main(int argc, char **argv)
 	gfarm_error_t e, e2;
 	char *config_file = NULL;
 	char *listen_addrname = NULL, *pid_file = NULL;
-	char *canonical_self_name, *local_gfsd_user;
+	char *canonical_self_name = NULL, *local_gfsd_user;
 	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
@@ -3330,7 +3330,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:dcf:l:r:s:uv")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:dcf:h:l:r:s:uv")) != -1) {
 		switch (ch) {
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
@@ -3351,6 +3351,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			config_file = optarg;
+			break;
+		case 'h':
+			canonical_self_name = optarg;
 			break;
 		case 'l':
 			listen_addrname = optarg;
@@ -3433,8 +3436,9 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	gfarm_metadb_set_server(gfm_server);
-	e = gfarm_host_get_canonical_self_name(&canonical_self_name);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (canonical_self_name == NULL &&
+	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name))
+	    != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
 		    "cannot get canonical hostname of this node (%s): %s\n",
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
