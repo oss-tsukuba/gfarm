@@ -226,7 +226,7 @@ config()
 	-e "s|@config_gfarm_prefix@|$prefix|g" \
 	-e "s|@config_gfarm_globus_location@|${GLOBUS_LOCATION:-$globus_location}|g" \
 	-e "s|@config_gfarm_gfarm_config@|$GFARM_CONF|g" \
-	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF -r $SPOOL_DIRECTORY$GFSD_EXTRA_OPTIONS|g" \
+	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF -h $GFSD_HOSTNAME -r $SPOOL_DIRECTORY$GFSD_EXTRA_OPTIONS|g" \
 	-e "s|@config_gfarm_gfsd_rc_name@|$RC_NAME|g" \
 	-e "s|@config_gfarm_gfsd_rc_var@|$RC_VAR|g" \
 	-e "s|@config_gfarm_run_dir@|$RUN_DIR|g" \
