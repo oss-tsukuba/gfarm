@@ -123,6 +123,7 @@ char local_sockdir[PATH_MAX];
 struct sockaddr_un local_sockname;
 
 struct gfm_connection *gfm_server;
+char *canonical_self_name;
 char *username; /* gfarm global user name */
 
 struct gfp_xdr *credential_exported = NULL;
@@ -2847,6 +2848,11 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("connecting to gfmd: %s", gfarm_error_string(e));
 	gfarm_metadb_set_server(gfm_server);
+	/* set the hostname just in case */
+	e = gfm_client_hostname_set(gfm_server, canonical_self_name);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("cannot set canonical hostname of this node "
+		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
 
 	if (client_name == NULL) { /* i.e. not UNIX domain socket case */
 		char *s;
@@ -3060,6 +3066,11 @@ try_to_reconnect()
 			sleep_interval *= 2;
 	}
 	gfarm_metadb_set_server(gfm_server);
+	/* set the hostname just in case */
+	e = gfm_client_hostname_set(gfm_server, canonical_self_name);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("cannot set canonical hostname of this node "
+		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
 }
 
 void
@@ -3312,7 +3323,7 @@ main(int argc, char **argv)
 	gfarm_error_t e, e2;
 	char *config_file = NULL;
 	char *listen_addrname = NULL, *pid_file = NULL;
-	char *canonical_self_name = NULL, *local_gfsd_user;
+	char *local_gfsd_user;
 	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
