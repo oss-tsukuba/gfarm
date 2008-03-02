@@ -14,6 +14,7 @@ gfarm_error_t peer_free_by_fd(int);
 
 struct gfp_xdr *peer_get_conn(struct peer *);
 int peer_get_fd(struct peer *);
+gfarm_error_t peer_set_host(struct peer *, char *);
 char *peer_get_username(struct peer *);
 char *peer_get_hostname(struct peer *);
 

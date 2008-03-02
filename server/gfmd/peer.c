@@ -27,9 +27,7 @@
 struct peer {
 	struct gfp_xdr *conn;
 
-#if 0 /* We don't use id_type for now */
 	enum gfarm_auth_id_type id_type;
-#endif
 	char *username, *hostname;
 	struct user *user;
 	struct host *host;
@@ -149,9 +147,7 @@ peer_authorized(struct peer *peer,
 	enum gfarm_auth_id_type id_type, char *username, char *hostname,
 	struct sockaddr *addr, enum gfarm_auth_method auth_method)
 {
-#if 0 /* We don't record id_type for now */
 	peer->id_type = id_type;
-#endif
 	if (id_type == GFARM_AUTH_ID_TYPE_USER) {
 		peer->user = user_lookup(username);
 		if (peer->user != NULL) {
@@ -282,6 +278,30 @@ peer_get_fd(struct peer *peer)
 	return (fd);
 }
 #endif
+
+/*
+ * This funciton is experimentally introduced to accept a host in
+ * private networks.
+ */
+gfarm_error_t
+peer_set_host(struct peer *peer, char *hostname)
+{
+	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	if (peer->host != NULL) /* already set */
+		return (GFARM_ERR_NO_ERROR);
+
+	peer->host = host_lookup(hostname);
+	if (peer->host == NULL)
+		return (GFARM_ERR_UNKNOWN_HOST);
+
+	if (peer->hostname != NULL) {
+		free(peer->hostname);
+		peer->hostname = NULL;
+	}
+	gflog_debug("gfsd connected from %s", host_name(peer->host));
+	return (GFARM_ERR_NO_ERROR);
+}
 
 char *
 peer_get_username(struct peer *peer)

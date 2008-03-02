@@ -1383,6 +1383,17 @@ gfm_client_pio_visit(struct gfm_connection *gfm_server)
 }
 
 /*
+ * misc operations from gfsd
+ */
+
+gfarm_error_t
+gfm_client_hostname_set(struct gfm_connection *gfm_server, char *hostname)
+{
+	return (gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_HOSTNAME_SET, "s/", hostname));
+}
+
+/*
  * replica management from client
  */
 

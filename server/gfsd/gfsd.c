@@ -3436,6 +3436,19 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	gfarm_metadb_set_server(gfm_server);
+	/*
+	 * if canonical_self_name is specified by the command-line
+	 * argument, send the hostname to gfmd for gfmd to accept a
+	 * connection from a gfsd in private networks.
+	 */
+	if (canonical_self_name != NULL &&
+	    (e = gfm_client_hostname_set(gfm_server, canonical_self_name))
+	    != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr,
+		    "cannot set canonical hostname of this node (%s): %s\n",
+		    canonical_self_name, gfarm_error_string(e));
+		exit(1);
+	}
 	if (canonical_self_name == NULL &&
 	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name))
 	    != GFARM_ERR_NO_ERROR) {

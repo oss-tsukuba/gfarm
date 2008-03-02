@@ -216,6 +216,9 @@ gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 /* gfs_pio from client */
 /*XXX*/
 
+/* misc operations from gfsd */
+gfarm_error_t gfm_client_hostname_set(struct gfm_connection *, char *);
+
 /* replica management from client */
 gfarm_error_t gfm_client_replica_list_by_name_request(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_list_by_name_result(struct gfm_connection *,

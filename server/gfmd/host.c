@@ -883,4 +883,29 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 		return (host_schedule_reply_all(peer, diag));
 }
 
+gfarm_error_t
+gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
+{
+	gfarm_int32_t e;
+	char *hostname;
+
+	e = gfm_server_get_request(peer, "hostname_set", "s", &hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(hostname);
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	giant_lock();
+	if (from_client) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		e = peer_set_host(peer, hostname);
+	}
+	giant_unlock();
+	free(hostname);
+	return (gfm_server_put_reply(peer, "hostname_set", e, ""));
+}
+
 #endif /* TEST */

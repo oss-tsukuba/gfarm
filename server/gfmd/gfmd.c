@@ -306,6 +306,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_PIO_VISIT:
 		e = gfm_server_pio_visit(peer, from_client, skip);
 		break;
+	case GFM_PROTO_HOSTNAME_SET:
+		e = gfm_server_hostname_set(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REPLICA_LIST_BY_NAME:
 		e = gfm_server_replica_list_by_name(peer, from_client, skip);
 		break;
