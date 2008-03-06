@@ -14,6 +14,8 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include <gfarm/error.h>
+
 #include "tcputil.h"
 
 #include "gfarm_secure_session.h"

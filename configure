@@ -19781,7 +19781,7 @@ rm -f conftest.err conftest.$ac_objext \
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="${pthread_includes} -mt $CPPFLAGS_SAVE"
+    CPPFLAGS="${pthread_includes} -mt -D_POSIX_PTHREAD_SEMANTICS $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
     LIBS="`echo -mt -lpthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat >conftest.$ac_ext <<_ACEOF
@@ -19828,7 +19828,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
   	ax_cv_have_pthread=yes
-	pthread_includes="${pthread_includes} -mt"
+	pthread_includes="${pthread_includes} -mt -D_POSIX_PTHREAD_SEMANTICS"
 	pthread_libs="${pthread_libs} -mt -lpthread"
 
 else

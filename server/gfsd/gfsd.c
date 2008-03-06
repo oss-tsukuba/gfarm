@@ -2842,6 +2842,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	int eof;
 	gfarm_int32_t request;
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
+	enum gfarm_auth_id_type peer_type;
 
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfm_server);
@@ -2894,17 +2895,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		fatal("%s: gfp_xdr_new: %s",
 		    client_name, gfarm_error_string(e));
 	}
-	/*
-	 * The following function switches deamon's privilege
-	 * to the authenticated user.
-	 * This also enables gfarm_get_global_username() and
-	 * gfarm_get_local_homedir() which are necessary for
-	 * gfs_client_connect() called from gfs_server_replicate_file().
-	 */
-	seteuid(0);
+
 	e = gfarm_authorize(client, 0, GFS_SERVICE_TAG,
-	    client_name, client_addr, NULL, &username, NULL);
-	seteuid(gfsd_uid);
+	    client_name, client_addr, &peer_type, &username, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("%s: gfarm_authorize: %s",
 		    client_name, gfarm_error_string(e));
@@ -3438,6 +3431,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
 	/* XXX FIXME - if failed, should report it to syslog, and retry */
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfm_server);

@@ -45,7 +45,7 @@ gfarm_set_global_user_for_this_local_account(void)
 	local_user = gfarm_gsi_client_cred_name();
 	if (local_user != NULL) {
 		e = gfarm_local_to_global_username(local_user, &global_user);
-		if (e == NULL)
+		if (e == GFARM_ERR_NO_ERROR)
 			if (strcmp(local_user, global_user) == 0)
 				free(global_user);
 				/* continue to the next method */
@@ -374,10 +374,11 @@ gfarm_initialize(int *argcp, char ***argvp)
 	 * Suppress verbose error messages.  The message will be
 	 * displayed later in gfarm_auth_request_gsi().
 	 */
-	saved_auth_verb = gfarm_authentication_verbose;
-	gfarm_authentication_verbose = 0;
-	(void*)gfarm_gsi_client_initialize();
-	gfarm_authentication_verbose = saved_auth_verb;
+	saved_auth_verb = gflog_auth_set_verbose(0);
+
+	(void)gfarm_gsi_client_initialize();
+
+	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	e = gfarm_set_global_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR)

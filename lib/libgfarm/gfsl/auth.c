@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,6 +10,7 @@
 #include <pwd.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "hash.h"
 #include "gfutil.h"
@@ -17,12 +19,19 @@
 #include "gfarm_auth.h"
 #include "misc.h"
 
+#include "../gfarm/gfpath.h"	/* for GRID_MAPFILE */
+
 #define AUTH_TABLE_SIZE       139
 static struct gfarm_hash_table *authTable = NULL;
 
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 static struct gfarm_hash_table *userToDNTable = NULL;
 #endif
+
+pthread_mutex_t authTable_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static struct stat last_map_st;	/* keep last modified time of mapfile */
+pthread_mutex_t map_mtime_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #if 0
 static void
@@ -56,6 +65,18 @@ gfarmAuthInitialize(usermapFile)
      char *usermapFile;
 {
     int ret = 1;
+
+    pthread_mutex_lock(&map_mtime_mutex);
+    /* get modified time of GRID_MAPFILE */
+    if (last_map_st.st_mtime == 0) {
+        if (stat(GRID_MAPFILE, &last_map_st) < 0) {
+	    gflog_auth_error("stat failed %s.", GRID_MAPFILE);
+        }
+	    gflog_auth_error("stat  %ld", last_map_st.st_mtime);
+    }
+    pthread_mutex_unlock(&map_mtime_mutex);
+
+    pthread_mutex_lock(&authTable_mutex);
     if (authTable == NULL) {
 	char mapFile[PATH_MAX];
 	FILE *mFd = NULL;
@@ -229,7 +250,9 @@ gfarmAuthInitialize(usermapFile)
 				     localName, strlen(localName) + 1);
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 		aePtr->orphaned = 1;
+	        pthread_mutex_unlock(&authTable_mutex);
 		gfarmAuthDestroyUserEntry(aePtr);
+                pthread_mutex_lock(&authTable_mutex);
 		goto initDone;
 	    }
 	    if (!isNew) {
@@ -240,7 +263,9 @@ gfarmAuthInitialize(usermapFile)
 				     localName, strlen(localName) + 1);
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
 		aePtr->orphaned = 1;
+	        pthread_mutex_unlock(&authTable_mutex);
 		gfarmAuthDestroyUserEntry(aePtr);
+                pthread_mutex_lock(&authTable_mutex);
 		continue;
 	    }
 	    *(gfarmAuthEntry **)gfarm_hash_entry_data(ePtr) = aePtr;
@@ -262,7 +287,9 @@ gfarmAuthInitialize(usermapFile)
 		aePtr = *(gfarmAuthEntry **)gfarm_hash_entry_data(
 			gfarm_hash_iterator_access(&it));
 		aePtr->orphaned = 1;
+	        pthread_mutex_unlock(&authTable_mutex);
 		gfarmAuthDestroyUserEntry(aePtr);
+                pthread_mutex_lock(&authTable_mutex);
 	    }
 	    gfarm_hash_table_free(authTable);
 	    authTable = NULL;
@@ -274,6 +301,7 @@ gfarmAuthInitialize(usermapFile)
     }
 
     done:
+    pthread_mutex_unlock(&authTable_mutex);
     return ret;
 }
 
@@ -281,6 +309,7 @@ gfarmAuthInitialize(usermapFile)
 void
 gfarmAuthFinalize()
 {
+    pthread_mutex_lock(&authTable_mutex);
     if (authTable != NULL) {
 	gfarmAuthEntry *aePtr;
 	struct gfarm_hash_iterator it;
@@ -294,7 +323,9 @@ gfarmAuthFinalize()
 		 * If any sessions reffer this entry, don't free it.
 		 */
 		aePtr->orphaned = 1;
+	        pthread_mutex_unlock(&authTable_mutex);
 		gfarmAuthDestroyUserEntry(aePtr);
+                pthread_mutex_lock(&authTable_mutex);
 	    } else {
 		aePtr->orphaned = 1;
 	    }
@@ -306,6 +337,7 @@ gfarmAuthFinalize()
 	userToDNTable = NULL;
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     }
+    pthread_mutex_unlock(&authTable_mutex);
 }
 
 
@@ -314,6 +346,28 @@ gfarmAuthGetUserEntry(distUserName)
      char *distUserName;
 {
     gfarmAuthEntry *ret = NULL;
+    struct stat new_map_st;
+    int update = 0;
+
+    /*
+     * checks the last modification time.
+     * if new_map_st.st_mtime value is newer than last_map_st.st_mtime,
+     * force reloading the GRID-MAPFILE.
+     */
+    if (stat(GRID_MAPFILE, &new_map_st) < 0) {
+	gflog_auth_error("stat failed %s.", GRID_MAPFILE);
+    }
+    
+    pthread_mutex_lock(&map_mtime_mutex);
+    update = (last_map_st.st_mtime < new_map_st.st_mtime);
+    last_map_st = new_map_st;
+    pthread_mutex_unlock(&map_mtime_mutex);
+    if (update) {
+	gfarmAuthFinalize();
+	(void)gfarmAuthInitialize(GRID_MAPFILE);
+    }
+
+    pthread_mutex_lock(&authTable_mutex);
     if (authTable != NULL) {
 	struct gfarm_hash_entry *ePtr = gfarm_hash_lookup(authTable,
 		distUserName, strlen(distUserName) + 1);
@@ -324,6 +378,7 @@ gfarmAuthGetUserEntry(distUserName)
 #endif
 	}
     }
+    pthread_mutex_unlock(&authTable_mutex);
     return ret;
 }
 
@@ -334,6 +389,28 @@ gfarmAuthGetLocalUserEntry(localUserName)
      char *localUserName;
 {
     gfarmAuthEntry *ret = NULL;
+    struct stat new_map_st;
+    int update = 0;
+
+    /*
+     * checks the last modification time.
+     * if new_map_st.st_mtime value is newer than last_map_st.st_mtime,
+     * force reloading the GRID-MAPFILE.
+     */
+    if (stat(GRID_MAPFILE, &new_map_st) < 0) {
+	gflog_auth_error("stat failed %s.", GRID_MAPFILE);
+    }
+    
+    pthread_mutex_lock(&map_mtime_mutex);
+    update = (last_map_st.st_mtime < new_map_st.st_mtime);
+    last_map_st = new_map_st;
+    pthread_mutex_unlock(&map_mtime_mutex);
+    if (update) {
+	gfarmAuthFinalize();
+	(void)gfarmAuthInitialize(GRID_MAPFILE);
+    }
+
+    pthread_mutex_lock(&authTable_mutex);
     if (userToDNTable != NULL) {
 	struct gfarm_hash_entry *ePtr = gfarm_hash_lookup(userToDNTable,
 		localUserName, strlen(localUserName) + 1);
@@ -344,6 +421,7 @@ gfarmAuthGetLocalUserEntry(localUserName)
 #endif
 	}
     }
+    pthread_mutex_unlock(&authTable_mutex);
     return ret;
 }
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
@@ -353,12 +431,16 @@ int
 gfarmAuthGetAuthEntryType(aePtr)
      gfarmAuthEntry *aePtr;
 {
+    int authType;
     if (aePtr == NULL) {
 	return GFARM_AUTH_UNKNOWN;
     } else {
-	if (aePtr->authType == GFARM_AUTH_USER ||
-	    aePtr->authType == GFARM_AUTH_HOST) {
-	    return aePtr->authType;
+	pthread_mutex_lock(&authTable_mutex);
+	authType = aePtr->authType;
+	pthread_mutex_unlock(&authTable_mutex);
+	if (authType == GFARM_AUTH_USER ||
+	    authType == GFARM_AUTH_HOST) {
+	    return authType;
 	} else {
 	    return GFARM_AUTH_UNKNOWN;
 	}
@@ -370,6 +452,7 @@ void
 gfarmAuthDestroyUserEntry(aePtr)
      gfarmAuthEntry *aePtr;
 {
+    pthread_mutex_lock(&authTable_mutex);
     if (aePtr->sesRefCount == 0 &&
 	aePtr->orphaned == 1) {
 	if (aePtr->distName != NULL) {
@@ -397,6 +480,7 @@ gfarmAuthDestroyUserEntry(aePtr)
 	}
 	(void)free(aePtr);
     }
+    pthread_mutex_unlock(&authTable_mutex);
 }
 
 
@@ -418,7 +502,9 @@ void
 gfarmAuthMakeThisAlone(laePtr)
      gfarmAuthEntry *laePtr;
 {
+    pthread_mutex_lock(&authTable_mutex);
     if (laePtr->orphaned == 1) {
+	pthread_mutex_unlock(&authTable_mutex);
 	return;
     } else {
 	gfarmAuthEntry *aePtr;
@@ -446,7 +532,9 @@ gfarmAuthMakeThisAlone(laePtr)
 			break;
 		    }
 		}
+	        pthread_mutex_unlock(&authTable_mutex);
 		gfarmAuthDestroyUserEntry(aePtr);
+                pthread_mutex_lock(&authTable_mutex);
 	    }
 	}
 	gfarm_hash_table_free(authTable);
@@ -456,4 +544,5 @@ gfarmAuthMakeThisAlone(laePtr)
 	userToDNTable = NULL;
 #endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     }
+    pthread_mutex_unlock(&authTable_mutex);
 }

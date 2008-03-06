@@ -28,6 +28,10 @@
 #include "auth.h"
 #include "auth_gsi.h"
 
+#include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
+
+
+
 /*
  * server side authentication
  */
@@ -84,10 +88,10 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    cred_type, cred_service, cred_name,
 		    gfarm_host_get_self_name(),
 		    &desired_name);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_auth_error(
 			    "Server credential configuration for %s:%s: %s",
-			    service_tag, hostname, e);
+			    service_tag, hostname, gfarm_error_string(e));
 			return (e);
 		}
 		rv = gfarmGssAcquireCredential(&cred,
@@ -170,16 +174,13 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
-		sprintf(msg, "%s%s%s%s%s%s%s",
-		    method_prefix, auth_method_name,
-		    user_prefix, userinfo->authData.userAuth.localName,
-		    dnb, userinfo->distName, dne);
 		gflog_notice(
 		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
 		    global_username, hostname,
 		    auth_method_name,
 		    userinfo->authData.userAuth.localName,
-		    userinfo->distName, dne);
+		    userinfo->distName);
+
 		if (switch_to) {
 			GFARM_MALLOC_ARRAY(aux, strlen(global_username) + 1 +
 			    strlen(hostname) + 1);
@@ -242,9 +243,14 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    gfarmSecSessionGetDelegatedCredential(session));
 	}
 
-	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
-	if (peer_typep != NULL)
-		*peer_typep = GFARM_AUTH_ID_TYPE_USER;
+	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
+	if (peer_typep != NULL) {
+		if (strcmp(global_username, GFSD_USERNAME) == 0) {
+		     *peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+		} else  {
+		     *peer_typep = GFARM_AUTH_ID_TYPE_USER;
+		}
+	}
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
 	else

@@ -26,13 +26,14 @@
 #include "auth.h"
 #include "auth_gsi.h"
 
+#include "gfs_proto.h" /* for GFS_SERVICE_TAG, XXX layering violation */
 /*
  * client side authentication
  */
 
 gfarm_error_t
 gfarm_auth_request_gsi(struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type)
+	const char *service_tag, const char *hostname, enum gfarm_auth_id_type self_type)
 {
 	int fd = gfp_xdr_fd(conn);
 	gfarm_error_t e;
@@ -40,7 +41,10 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	    gfarm_auth_server_cred_type_get(service_tag);
 	char *serv_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *serv_name = gfarm_auth_server_cred_name_get(service_tag);
+	enum gfarm_auth_cred_type spool_servicetype;
+	char *spool_servicename = NULL;
 	gss_name_t acceptor_name = GSS_C_NO_NAME;
+	gss_name_t initiator_name = GSS_C_NO_NAME;
 	gss_cred_id_t cred;
 	OM_uint32 e_major;
 	OM_uint32 e_minor;
@@ -56,22 +60,52 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
 	    serv_service, serv_name,
-	    hostname,
+	    (char *)hostname,
 	    &acceptor_name);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_auth_error(
 		    "Server credential configuration for %s:%s: %s",
-		    service_tag, hostname, e);
+		    service_tag, hostname, gfarm_error_string(e));
 		return (e);
 	}
 	cred = gfarm_gsi_get_delegated_cred();
+
 	if (cred == GSS_C_NO_CREDENTIAL) { /* if not delegated */
+		switch (self_type) {
+		  case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+			/* 
+			 * If spool_server_cred_service is specified,
+			 * a service certificate is used.
+			 */
+			spool_servicetype = gfarm_auth_server_cred_type_get(
+						GFS_SERVICE_TAG);
+			spool_servicename = gfarm_auth_server_cred_service_get(
+						GFS_SERVICE_TAG);
+			e = gfarm_gsi_cred_config_convert_to_name(
+			    spool_servicetype != GFARM_AUTH_CRED_TYPE_DEFAULT ?
+			    spool_servicetype : GFARM_AUTH_CRED_TYPE_HOST,
+			    spool_servicename, NULL,
+			    (char *)hostname,
+			    &initiator_name);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_auth_error(
+				    "Service credential configuration for %s: %s",
+				    spool_servicename, gfarm_error_string(e));
+				return (e);
+			}
+			break;
+		  case GFARM_AUTH_ID_TYPE_USER: /* from client */
+			break;
+		  default:
+			break;
+		}
+
 		/*
 		 * always re-acquire my credential, otherwise we cannot deal
 		 * with credential expiration.
 		 */
 		if (gfarmGssAcquireCredential(&cred,
-		    GSS_C_NO_NAME, GSS_C_INITIATE,
+		    initiator_name, GSS_C_INITIATE,
 		    &e_major, &e_minor, NULL) < 0) {
 			if (gflog_auth_get_verbose()) {
 				gflog_error("Can't acquire my credentail "
@@ -81,6 +115,8 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			}
 			if (acceptor_name != GSS_C_NO_NAME)
 				gfarmGssDeleteName(&acceptor_name, NULL, NULL);
+			if (initiator_name != GSS_C_NO_NAME)
+				gfarmGssDeleteName(&initiator_name, NULL, NULL);
 #if 0
 			return (GFARM_ERR_AUTHENTICATION);
 #else
@@ -93,9 +129,11 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			 * continue gracefully in this case.
 			 * So, just kill this connection.
 			 */
-			return (GFARM_ERR_CANNOT_ACQUIRE_CLIENT_CRED);
+			return (GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED);
 #endif
 		}
+		if (initiator_name != GSS_C_NO_NAME)
+			gfarmGssDeleteName(&initiator_name, NULL, NULL);
 		cred_acquired = 1;
 	}
 	/* XXX NOTYET deal with self_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
@@ -245,7 +283,7 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 gfarm_error_t
 gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type,
+	const char *service_tag, const char *hostname, enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -282,12 +320,12 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    serv_type != GFARM_AUTH_CRED_TYPE_DEFAULT ?
 	    serv_type : GFARM_AUTH_CRED_TYPE_HOST,
 	    serv_service, serv_name,
-	    hostname,
+	    (char *)hostname,
 	    &state->acceptor_name);
-	if (e != NULL) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_auth_error(
 		    "Server credential configuration for %s:%s: %s",
-		    service_tag, hostname, e);
+		    service_tag, hostname, gfarm_error_string(e));
 		goto error_free_readable;
 	}
 
@@ -319,7 +357,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 			 * continue gracefully in this case.
 			 * So, just kill this connection.
 			 */
-			e = GFARM_ERR_CANNOT_ACQUIRE_CLIENT_CRED;
+			e = GFARM_ERRMSG_CANNOT_ACQUIRE_CLIENT_CRED;
 #endif
 			goto error_free_acceptor_name;
 		}
@@ -383,7 +421,7 @@ gfarm_auth_result_gsi_multiplexed(void *sp)
 
 gfarm_error_t
 gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type)
+	const char *service_tag, const char *hostname, enum gfarm_auth_id_type self_type)
 {
 	gfarm_error_t e = gfarm_auth_request_gsi(conn,
 	    service_tag, hostname, self_type);
@@ -396,7 +434,7 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 gfarm_error_t
 gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_xdr *conn,
-	char *service_tag, char *hostname, enum gfarm_auth_id_type self_type,
+	const char *service_tag, const char *hostname, enum gfarm_auth_id_type self_type,
 	void (*continuation)(void *), void *closure,
 	void **statepp)
 {
@@ -411,7 +449,7 @@ gfarm_auth_result_gsi_auth_multiplexed(void *sp)
 	struct gfarm_auth_request_gsi_state *state = sp;
 	/* sp will be free'ed in gfarm_auth_result_gsi_multiplexed().
 	 * state->conn should be saved before calling it. */
-	struct struct gfp_xdr *conn = state->conn;
+	struct gfp_xdr *conn = state->conn;
 	gfarm_error_t e = gfarm_auth_result_gsi_multiplexed(sp);
 
 	if (e == GFARM_ERR_NO_ERROR)

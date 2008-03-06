@@ -58,7 +58,8 @@ SRCS = \
 	glob.c \
 	schedule.c \
 	timespec.c \
-	url.c
+	url.c \
+	$(globus_srcs)
 
 #	gfs_pio_global.c \
 #	gfs_pio_misc.c \
@@ -111,7 +112,8 @@ OBJS = \
 	glob.lo \
 	schedule.lo \
 	timespec.lo \
-	url.lo
+	url.lo \
+	$(globus_objs)
 
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo \

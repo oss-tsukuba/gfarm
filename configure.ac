@@ -124,7 +124,7 @@ void *foo(void *p){ return 0; }],[
 	if test x"$GCC" = x"yes"; then
 		AC_TRY_PTHREAD(-pthread,-pthread,)
 	else
-		AC_TRY_PTHREAD(-mt,-mt -lpthread,)
+		AC_TRY_PTHREAD(-mt -D_POSIX_PTHREAD_SEMANTICS,-mt -lpthread,)
 	fi;;
     *-*-sysv5uw7*) # UnixWare 7
 	if test x"$GCC" = x"yes"; then

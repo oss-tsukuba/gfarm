@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +21,7 @@
 #include <sys/time.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/error.h>
 
 #include "gfevent.h"
 #include "gfutil.h"
@@ -38,6 +40,9 @@ static gss_cred_id_t acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 
 static int initiatorInitialized = 0;
 static int acceptorInitialized = 0;
+
+pthread_mutex_t initiator_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t acceptor_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Communication option read from configuration file.
@@ -668,6 +673,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
     OM_uint32 majStat = GSS_S_COMPLETE;
     OM_uint32 minStat = GSS_S_COMPLETE;
 
+    pthread_mutex_lock(&acceptor_mutex);
     if (acceptorInitialized == 0) {
 	char confFile[PATH_MAX];
 
@@ -733,6 +739,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    acceptorInitialized = 1;
 	}
     }
+    pthread_mutex_unlock(&acceptor_mutex);
 
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
@@ -747,8 +754,14 @@ int
 gfarmSecSessionGetInitiatorInitialCredential(credPtr)
      gss_cred_id_t *credPtr;
 {
+    int initiator_Initialized;
+
+    pthread_mutex_lock(&initiator_mutex);
     *credPtr = initiatorInitialCred;
-    return initiatorInitialized ? 1 : -1;
+    initiator_Initialized = initiatorInitialized ? 1 : -1;
+    pthread_mutex_unlock(&initiator_mutex);
+
+    return initiator_Initialized;
 }
 
 int
@@ -762,6 +775,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
     OM_uint32 majStat = GSS_S_COMPLETE;
     OM_uint32 minStat = GSS_S_COMPLETE;
 
+    pthread_mutex_lock(&initiator_mutex);
     if (initiatorInitialized == 0) {
 	char confFile[PATH_MAX];
 
@@ -831,6 +845,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    initiatorInitialized = 1;
 	}
     }
+    pthread_mutex_unlock(&initiator_mutex);
 
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
@@ -868,6 +883,8 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
      *	other GSSAPI implementation, a major change could be needed.
      */
 
+    pthread_mutex_lock(&initiator_mutex);
+    pthread_mutex_lock(&acceptor_mutex);
     if (initiatorInitialized == 0 && acceptorInitialized == 0) {
 	char confFile[PATH_MAX];
 	char *confDir = NULL;
@@ -960,6 +977,8 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    acceptorInitialized = 1;
 	}
     }
+    pthread_mutex_unlock(&acceptor_mutex);
+    pthread_mutex_unlock(&initiator_mutex);
 
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
@@ -974,6 +993,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 void
 gfarmSecSessionFinalizeInitiator()
 {
+    pthread_mutex_lock(&initiator_mutex);
     if (initiatorInitialized == 1) {
 	if (initiatorInitialCred != GSS_C_NO_CREDENTIAL) {
 	    gfarmGssDeleteCredential(&initiatorInitialCred, NULL, NULL);
@@ -981,12 +1001,14 @@ gfarmSecSessionFinalizeInitiator()
 	}
 	initiatorInitialized = 0;
     }
+    pthread_mutex_unlock(&initiator_mutex);
 }
 
 
 void
 gfarmSecSessionFinalizeAcceptor()
 {
+    pthread_mutex_lock(&acceptor_mutex);
     if (acceptorInitialized == 1) {
 	if (acceptorInitialCred != GSS_C_NO_CREDENTIAL) {
 	    gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
@@ -995,12 +1017,15 @@ gfarmSecSessionFinalizeAcceptor()
 	gfarmAuthFinalize();
 	acceptorInitialized = 0;
     }
+    pthread_mutex_unlock(&acceptor_mutex);
 }
 
 
 void
 gfarmSecSessionFinalizeBoth()
 {
+    pthread_mutex_lock(&initiator_mutex);
+    pthread_mutex_lock(&acceptor_mutex);
     if (initiatorInitialized == 1 && acceptorInitialized == 1) {
 	if (acceptorInitialCred != GSS_C_NO_CREDENTIAL) {
 	    gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
@@ -1011,6 +1036,8 @@ gfarmSecSessionFinalizeBoth()
 	acceptorInitialized = 0;
 	initiatorInitialized = 0;
     }
+    pthread_mutex_unlock(&acceptor_mutex);
+    pthread_mutex_unlock(&initiator_mutex);
 }
 
 
@@ -1043,18 +1070,22 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     unsigned int maxTransSize;
     unsigned int config;
 
+    pthread_mutex_lock(&acceptor_mutex);
     if (acceptorInitialized == 0) {
+	pthread_mutex_unlock(&acceptor_mutex);
 	gflog_auth_error("gfarmSecSessionAccept(): not initialized");
 	goto Fail;
     }
 
     ret = allocSecSession(GFARM_SS_ACCEPTOR);
     if (ret == NULL) {
+	pthread_mutex_unlock(&acceptor_mutex);
 	gflog_auth_error("gfarmSecSessionAccept(): no memory");
 	goto Fail;
     }
 
     if (canonicSecSessionOpt(GFARM_SS_ACCEPTOR, ssOptPtr, &canOpt) < 0) {
+	pthread_mutex_unlock(&acceptor_mutex);
 	goto Fail;
     }
 
@@ -1072,6 +1103,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     if (cred == GSS_C_NO_CREDENTIAL) {
 	cred = acceptorInitialCred;
     }
+    pthread_mutex_unlock(&acceptor_mutex);
 
     /*
      * Phase 1: Accept a security context.
@@ -1223,18 +1255,22 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     unsigned int maxTransSize;
     unsigned int config;
 
+    pthread_mutex_lock(&initiator_mutex);
     if (initiatorInitialized == 0) {
+	pthread_mutex_unlock(&initiator_mutex);
 	gflog_auth_error("gfarm:secSessionInitiate(): not initialized");
 	goto Fail;
     }
 
     ret = allocSecSession(GFARM_SS_INITIATOR);
     if (ret == NULL) {
+	pthread_mutex_unlock(&initiator_mutex);
 	gflog_auth_error("gfarm:secSessionInitiate(): no memory");
 	goto Fail;
     }
 
     if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt) < 0) {
+	pthread_mutex_unlock(&initiator_mutex);
 	goto Fail;
     }
 
@@ -1252,6 +1288,7 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     if (cred == GSS_C_NO_CREDENTIAL) {
 	cred = initiatorInitialCred;
     }
+    pthread_mutex_unlock(&initiator_mutex);
 
     /*
      * Phase 1: Initiate a security context.

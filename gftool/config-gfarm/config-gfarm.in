@@ -549,6 +549,18 @@ mkcnf_gfmd_sysdep
 
 # create configuration files
 mkcnf "$GFARM_CONF"	replace "$config_dir/gfarm.conf.in"
+
+# for GSI authentication  (a service certificate is used)
+case $AUTH_TYPE in
+gsi_auth|gsi)
+	echo "spool_server_cred_type host" >> $GFARM_CONF
+	echo "spool_server_cred_service gfsd" >> $GFARM_CONF
+	;;
+*)
+	;;
+esac
+;;
+
 mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 chmod 600 "$GFMD_CONF"
 

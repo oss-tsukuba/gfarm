@@ -41,6 +41,9 @@
 #include "config.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
+#include "gfpath.h"
+
+#include "../gfsl/gfarm_auth.h"
 
 #include "subr.h"
 #include "db_access.h"
@@ -464,7 +467,7 @@ protocol_main(void *arg)
 	int rv;
 	struct peer *peer = arg;
 	enum gfarm_auth_id_type id_type;
-	char *username, *hostname;
+	char *username = NULL, *hostname;
 	enum gfarm_auth_method auth_method;
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
@@ -601,6 +604,11 @@ termsigs_handler(void *p)
 	/* A Linux Thread is a process having its own process id. */
 	write_pid(pid_file);
 #endif
+	sigemptyset(termsigs);
+	sigaddset(termsigs, SIGHUP);
+	sigaddset(termsigs, SIGINT);
+	sigaddset(termsigs, SIGTERM);
+
 	for (;;) {
 		if (sigwait(termsigs, &sig) == -1)
 			gflog_warning("termsigs_handler: %s", strerror(errno));
@@ -615,6 +623,17 @@ termsigs_handler(void *p)
 			continue;
 		}
 #endif
+		switch (sig) {
+		case SIGHUP: /* reload the grid-mapfile */
+			giant_lock();
+			gfarmAuthFinalize();
+			(void)gfarmAuthInitialize(GRID_MAPFILE);
+			giant_unlock();
+			continue;
+			break;
+		default:
+			break;
+		}
 		break;
 	}
 
@@ -803,6 +822,7 @@ main(int argc, char **argv)
 	gfarm_sigpipe_ignore();
 
 	sigemptyset(&termsigs);
+	sigaddset(&termsigs, SIGHUP);
 	sigaddset(&termsigs, SIGINT);
 	sigaddset(&termsigs, SIGTERM);
 	pthread_sigmask(SIG_BLOCK, &termsigs, NULL);

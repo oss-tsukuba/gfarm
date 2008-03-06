@@ -18,6 +18,8 @@
 
 #include <gfarm/gfarm_config.h>
 
+#include <gfarm/error.h>
+
 #include "gfutil.h"
 
 #include "tcputil.h"

@@ -219,7 +219,7 @@ gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
 
 struct gfarm_auth_cred_config {
 	struct gfarm_auth_cred_config *next;
-	char *service_tag;
+	const char *service_tag;
 	enum gfarm_auth_cred_type type;
 	char *service;
 	char *name;
@@ -228,7 +228,7 @@ struct gfarm_auth_cred_config {
 struct gfarm_auth_cred_config *gfarm_auth_server_cred_config_list = NULL;
 
 static struct gfarm_auth_cred_config **
-gfarm_auth_server_cred_config_lookup(char *service_tag)
+gfarm_auth_server_cred_config_lookup(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf, **p;
 
@@ -265,7 +265,7 @@ gfarm_auth_server_cred_config_enter(char *service_tag,
 }
 
 enum gfarm_auth_cred_type
-gfarm_auth_server_cred_type_get(char *service_tag)
+gfarm_auth_server_cred_type_get(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf = 
 	    *gfarm_auth_server_cred_config_lookup(service_tag);
@@ -276,7 +276,7 @@ gfarm_auth_server_cred_type_get(char *service_tag)
 }
 
 char *
-gfarm_auth_server_cred_service_get(char *service_tag)
+gfarm_auth_server_cred_service_get(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf = 
 	    *gfarm_auth_server_cred_config_lookup(service_tag);
@@ -287,7 +287,7 @@ gfarm_auth_server_cred_service_get(char *service_tag)
 }
 
 char *
-gfarm_auth_server_cred_name_get(char *service_tag)
+gfarm_auth_server_cred_name_get(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf = 
 	    *gfarm_auth_server_cred_config_lookup(service_tag);

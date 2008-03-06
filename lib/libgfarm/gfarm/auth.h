@@ -111,9 +111,9 @@ gfarm_int32_t gfarm_auth_method_get_enabled_by_name_addr(
 gfarm_int32_t gfarm_auth_method_get_available(void);
 
 gfarm_error_t gfarm_auth_cred_type_parse(char *, enum gfarm_auth_cred_type *);
-enum gfarm_auth_cred_type gfarm_auth_server_cred_type_get(char *);
-char *gfarm_auth_server_cred_service_get(char *);
-char *gfarm_auth_server_cred_name_get(char *);
+enum gfarm_auth_cred_type gfarm_auth_server_cred_type_get(const char *);
+char *gfarm_auth_server_cred_service_get(const char *);
+char *gfarm_auth_server_cred_name_get(const char *);
 gfarm_error_t gfarm_auth_server_cred_type_set_by_string(char *, char *);
 gfarm_error_t gfarm_auth_server_cred_type_set(char *, enum gfarm_auth_cred_type);
 gfarm_error_t gfarm_auth_server_cred_service_set(char *, char *);

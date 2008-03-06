@@ -14,6 +14,7 @@
 #include <netdb.h>
 #include <limits.h>
 
+#include <gfarm/error.h>
 #include <gfarm/gfarm_config.h>
 
 #include "gfutil.h"

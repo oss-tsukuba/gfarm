@@ -235,6 +235,22 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 
 	/* refered only from gfarm/schedule.c */
 	"no filesystem node",
+
+	/* refered only from gfarm/auth_common_gsi.c */
+	"cred_type is not set, but cred_name is set",
+	"cred_type is not set, but cred_service is set",
+	"internal error: missing GSS_C_NO_CREDENTIAL check",
+	"cred_type is \"no-name\", but cred_name is set",
+	"cred_type is \"no-name\", but cred_service is set",
+	"cred_type is \"mechanism-specific\", but cred_name is not set",
+	"cred_type is \"mechanism-specific\", but cred_service is set",
+	"cred_type is \"user\", but cred_service is set",
+	"cred_type is \"self\", but cred_name is set",
+	"cred_type is \"self\", but cred_service is set",
+	"cred_type is \"self\", but not initialized as an initiator",
+	"internal error - invalid cred_type",
+	"invalid credential configuration",
+
 };
 
 /*

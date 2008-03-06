@@ -7,6 +7,8 @@
 #include <gssapi.h>
 #include <limits.h>
 
+#include <gfarm/error.h>
+
 #include "gfutil.h"
 
 #include "tcputil.h"

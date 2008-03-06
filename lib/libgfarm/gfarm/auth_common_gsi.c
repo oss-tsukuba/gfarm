@@ -5,7 +5,7 @@
 #include <gssapi.h>
 
 #include <gfarm/gfarm_config.h>
-#include <gfarm/gfarm_error.h>
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
 #include "gfutil.h"
@@ -13,6 +13,7 @@
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
+#include "liberror.h"
 #include "gfpath.h"
 #include "auth.h"
 #include "auth_gsi.h"
@@ -20,7 +21,7 @@
 static int gsi_initialized;
 static int gsi_server_initialized;
 
-char *
+gfarm_error_t
 gfarm_gsi_client_initialize(void)
 {
 	OM_uint32 e_major;
@@ -28,7 +29,7 @@ gfarm_gsi_client_initialize(void)
 	int rv;
 
 	if (gsi_initialized)
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 
 	rv = gfarmSecSessionInitializeInitiator(NULL, GRID_MAPFILE,
 	    &e_major, &e_minor);
@@ -40,11 +41,11 @@ gfarm_gsi_client_initialize(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarmSecSessionFinalizeInitiator();
-		return ("GSI credential initialization failed"); /* XXX */
+		return (GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED);
 	}
 	gsi_initialized = 1;
 	gsi_server_initialized = 0;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 char *
@@ -86,7 +87,7 @@ gfarm_gsi_client_cred_name(void)
 	return (dn);
 }
 
-char *
+gfarm_error_t
 gfarm_gsi_server_initialize(void)
 {
 	OM_uint32 e_major;
@@ -95,7 +96,7 @@ gfarm_gsi_server_initialize(void)
 
 	if (gsi_initialized) {
 		if (gsi_server_initialized)
-			return (NULL);
+			return (GFARM_ERR_NO_ERROR);
 		gfarmSecSessionFinalizeInitiator();
 		gsi_initialized = 0;
 	}
@@ -110,11 +111,11 @@ gfarm_gsi_server_initialize(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 		gfarmSecSessionFinalizeBoth();
-		return ("GSI initialization failed"); /* XXX */
+		return (GFARM_ERRMSG_GSI_INITIALIZATION_FAILED);
 	}
 	gsi_initialized = 1;
 	gsi_server_initialized = 1;
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -157,7 +158,7 @@ gfarm_gsi_get_delegated_cred()
  *	(HOST, service, NULL) is equivalent to (HOST, service, peer_host)
  */
 
-char *
+gfarm_error_t
 gfarm_gsi_cred_config_convert_to_name(
 	enum gfarm_auth_cred_type type, char *service, char *name,
 	char *hostname,
@@ -172,27 +173,22 @@ gfarm_gsi_cred_config_convert_to_name(
 	case GFARM_AUTH_CRED_TYPE_DEFAULT:
 		/* special. equivalent to GSS_C_NO_CREDENTIAL */
 		if (name != NULL)
-			return ("cred_type is not set, but cred_name is set");
+			return (GFARM_ERRMSG_CRED_TYPE_DEFAULT_INVALID_CRED_NAME);
 		if (service != NULL)
-			return ("cred_type is not set, but cred_service is set"
-			    );
-		return ("internal error: missing GSS_C_NO_CREDENTIAL check");
+			return (GFARM_ERRMSG_CRED_TYPE_DEFAULT_INVALID_CRED_SERVICE);
+		return (GFARM_ERRMSG_CRED_TYPE_DEFAULT_INTERNAL_ERROR);
 	case GFARM_AUTH_CRED_TYPE_NO_NAME:
 		if (name != NULL)
-			return ("cred_type is \"no-name\", "
-			    "but cred_name is set");
+			return (GFARM_ERRMSG_CRED_TYPE_NO_NAME_INVALID_CRED_NAME);
 		if (service != NULL)
-			return ("cred_type is \"no-name\", "
-			    "but cred_service is set");
+			return (GFARM_ERRMSG_CRED_TYPE_NO_NAME_INVALID_CRED_SERVICE);
 		*namep = GSS_C_NO_NAME;
-		return (NULL);
+		return (GFARM_ERR_NO_ERROR);
 	case GFARM_AUTH_CRED_TYPE_MECHANISM_SPECIFIC:
 		if (name == NULL)
-			return ("cred_type is \"mechanism-specific\", "
-			    "but cred_name is not set");
+			return (GFARM_ERRMSG_CRED_TYPE_MECHANISM_SPECIFIC_INVALID_CRED_NAME);
 		if (service != NULL)
-			return ("cred_type is \"mechanism-specific\", "
-			    "but cred_service is set");
+			return (GFARM_ERRMSG_CRED_TYPE_MECHANISM_SPECIFIC_INVALID_CRED_SERVICE);
 		rv = gfarmGssImportName(namep, name, strlen(name),
 		    GSS_C_NO_OID, &e_major, &e_minor);
 		break;
@@ -209,8 +205,7 @@ gfarm_gsi_cred_config_convert_to_name(
 		break;
 	case GFARM_AUTH_CRED_TYPE_USER:
 		if (service != NULL)
-			return ("cred_type is \"user\", "
-			    "but cred_service is set");
+			return (GFARM_ERRMSG_CRED_TYPE_USER_CRED_INVALID_CRED_SERVICE);
 		/*
 		 * XXX FIXME: `name' must be converted from global_username
 		 * to local_username, but there is no such function for now.
@@ -223,18 +218,16 @@ gfarm_gsi_cred_config_convert_to_name(
 	case GFARM_AUTH_CRED_TYPE_SELF:
 		/* special. there is no corresponding name_type in GSSAPI */
 		if (name != NULL)
-			return ("cred_type is \"self\", but cred_name is set");
+			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_NAME);
 		if (service != NULL)
-			return ("cred_type is \"self\", "
-			    "but cred_service is set");
+			return (GFARM_ERRMSG_CRED_TYPE_SELF_CRED_INVALID_CRED_SERVICE);
 		if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0 ||
 		    cred == GSS_C_NO_CREDENTIAL)
-			return ("cred_type is \"self\", "
-			    "but not initialized as an initiator");
+			return (GFARM_ERRMSG_CRED_TYPE_SELF_NOT_INITIALIZED_AS_AN_INITIATOR);
 		rv = gfarmGssNewCredentialName(namep, cred, &e_major,&e_minor);
 		break;
 	default:
-		return ("internal error - invalid cred_type");
+		return (GFARM_ERRMSG_INVALID_CRED_TYPE);
 	}
 	if (rv < 0) {
 		if (gflog_auth_get_verbose()) {
@@ -243,7 +236,7 @@ gfarm_gsi_cred_config_convert_to_name(
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		return ("invalid credential configuration");
+		return (GFARM_ERRMSG_INVALID_CREDENTIAL_CONFIGURATION);
 	}
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 }

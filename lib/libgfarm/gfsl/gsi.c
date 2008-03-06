@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -7,6 +8,8 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
+
+#include <gfarm/error.h>
 
 #include "gssapi.h"
 
@@ -21,6 +24,7 @@
 #include "gfarm_auth.h"
 #endif
 
+pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 
@@ -577,6 +581,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 	    break;
 	}
 
+	pthread_mutex_lock(&gss_mutex);
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
@@ -589,6 +594,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 					 &timeRet,
 					 &remCred);
 
+	pthread_mutex_unlock(&gss_mutex);
 	if (itPtr->length > 0) {
 	    (void)gss_release_buffer(&minStat2, itPtr);
 	}
@@ -686,6 +692,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
     }
 
     while (1) {
+	pthread_mutex_lock(&gss_mutex);
 	majStat = gss_init_sec_context(&minStat,
 				       cred,
 				       scPtr,
@@ -699,6 +706,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 				       otPtr,
 				       &retFlag,
 				       &timeRet);
+	pthread_mutex_unlock(&gss_mutex);
 	
 	if (itPtr->length > 0) {
 	    (void)gss_release_buffer(&minStat2, itPtr);
@@ -1084,8 +1092,9 @@ gfarmGssEnvForExportedCredential(exportedCred)
 }
 
 void
-gfarmGssDeleteExportedCredential(exportedCred, int sigHandler)
+gfarmGssDeleteExportedCredential(exportedCred, sigHandler)
     gfarmExportedCredential *exportedCred;
+    int sigHandler;
 {
     if (exportedCred->filename != NULL)
 	unlink(exportedCred->filename);
@@ -1168,6 +1177,7 @@ gssInitiateSecurityContextNext(state)
     OM_uint32 minStat2;
     int rv;
 
+    pthread_mutex_lock(&gss_mutex);
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
 					  &state->sc,
@@ -1181,6 +1191,7 @@ gssInitiateSecurityContextNext(state)
 					  state->otPtr,
 					  &state->retFlag,
 					  &state->timeRet);
+    pthread_mutex_unlock(&gss_mutex);
 
     if (state->itPtr->length > 0) {
 	(void)gss_release_buffer(&minStat2, state->itPtr);

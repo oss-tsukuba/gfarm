@@ -4,6 +4,7 @@
 
 #include <gssapi.h>
 
+#include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "gfarm_gsi.h"
 #include "misc.h"
