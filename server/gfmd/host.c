@@ -837,33 +837,102 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 }
 
 gfarm_error_t
+host_copy(struct host **dstp, const struct host *src)
+{
+	struct host *dst;
+
+	GFARM_MALLOC(dst);
+	if (dst == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	*dst = *src;
+	if ((dst->hi.hostname = strdup(dst->hi.hostname)) == NULL) {
+		free(dst);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*dstp = dst;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+host_free(struct host *h)
+{
+	if (h == NULL)
+		return;
+	if (h->hi.hostname != NULL)
+		free(h->hi.hostname);
+	free(h);
+	return;
+}
+
+void
+host_free_all(int n, struct host **h)
+{
+	int i;
+
+	for (i = 0; i < n; ++i)
+		host_free(h[i]);
+	free(h);
+}
+
+gfarm_error_t
+host_active_hosts(int *nhostsp, struct host ***hostsp)
+{
+	struct gfarm_hash_iterator it;
+	struct host **hosts, *h;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int i, n;
+
+	n = 0;
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		pthread_mutex_lock(&h->remover_mutex);
+		if (host_is_up(h))
+			++n;
+	}
+	GFARM_MALLOC_ARRAY(hosts, n);
+	if (hosts == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+
+	i = 0;
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		if (hosts != NULL && host_is_up(h)) {
+			e = host_copy(&hosts[i], h);
+			if (e != GFARM_ERR_NO_ERROR) {
+				host_free_all(i, hosts);
+				hosts = NULL;
+				/* skip all the rest except unlock */
+			}
+			++i;
+		}
+		pthread_mutex_unlock(&h->remover_mutex);
+	}
+	if (i == n) {
+		*nhostsp = n;
+		*hostsp = hosts;
+	}		
+	return (e);
+}
+
+gfarm_error_t
 host_schedule_reply_all(struct peer *peer, const char *diag)
 {
 	gfarm_error_t e, e_save;
-	struct gfarm_hash_iterator it;
-	struct host *h;
-	int n = 0;
+	struct host **hosts;
+	int i, n;
 
-	/*
-	 * XXX - should call host_is_up(h) with mutex h->remover_mutex.
-	 * Moreover, there is no guarantee that the second
-	 * host_is_up(h) call returns the same value as the first call
-	 * returns.
-	 */
-	FOR_ALL_HOSTS(&it) {
-		h = host_iterator_access(&it);
-		if (host_is_up(h))
-			n++;
-	}
+	e = host_active_hosts(&n, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		n = 0;
+
 	e_save = host_schedule_reply_n(peer, n, diag);
-	FOR_ALL_HOSTS(&it) {
-		h = host_iterator_access(&it);
-		if (host_is_up(h)) {
-			e = host_schedule_reply(h, peer, diag);
-			if (e_save == GFARM_ERR_NO_ERROR)
-				e_save = e;
-		}
+	for (i = 0; i < n; ++i)
+		e = host_schedule_reply(hosts[i], peer, diag); {
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
 	}
+	host_free_all(n, hosts);
 	return (e_save);
 }
 
@@ -906,6 +975,20 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	free(hostname);
 	return (gfm_server_put_reply(peer, "hostname_set", e, ""));
+}
+
+gfarm_error_t
+gfm_server_schedule_host_all(struct peer *peer, int from_client, int skip)
+{
+	gfarm_int32_t e;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	e = host_schedule_reply_all(peer, "schedule_host_all");
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "schedule_host_all", e, ""));
 }
 
 #endif /* TEST */
