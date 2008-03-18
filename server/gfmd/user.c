@@ -150,10 +150,7 @@ user_remove(const char *username)
 	gfarm_hash_purge(user_hashtab, &username, sizeof(username));
 
 	/* free gfarm_user_info */
-	free(u->ui.username);
-	free(u->ui.realname);
-	free(u->ui.homedir);
-	free(u->ui.gsi_dn);
+	gfarm_user_info_free(&u->ui);
 
 	/* free group_assignment */
 	while ((ga = u->groups.group_next) != &u->groups)
@@ -457,10 +454,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
+		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
@@ -479,16 +473,8 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 			}
 		}
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
-		if (ui.username != NULL)
-			free(ui.username);
-		if (ui.realname != NULL)
-			free(ui.realname);
-		if (ui.homedir != NULL)
-			free(ui.homedir);
-		if (ui.gsi_dn != NULL)
-			free(ui.gsi_dn);
-	}
+	if (e != GFARM_ERR_NO_ERROR)
+		gfarm_user_info_free(&ui);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "USER_INFO_SET", e, ""));
 }
@@ -506,10 +492,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
+		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
@@ -532,12 +515,8 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		u->ui.gsi_dn = ui.gsi_dn;
 		free(ui.username);
 	}
-	if (needs_free) {
-		free(ui.username);
-		free(ui.realname);
-		free(ui.homedir);
-		free(ui.gsi_dn);
-	}
+	if (needs_free)
+		gfarm_user_info_free(&ui);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "USER_INFO_MODIFY", e, ""));
 }
