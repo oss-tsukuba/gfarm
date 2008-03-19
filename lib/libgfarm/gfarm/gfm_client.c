@@ -51,6 +51,12 @@ gfm_client_connection_fd(struct gfm_connection *gfm_server)
 	return (gfp_xdr_fd(gfm_server->conn));
 }
 
+enum gfarm_auth_method
+gfm_client_connection_auth_method(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->auth_method);
+}
+
 static gfarm_error_t
 gfm_client_connection0(const char *hostname, int port,
 	struct gfm_connection *gfm_server)

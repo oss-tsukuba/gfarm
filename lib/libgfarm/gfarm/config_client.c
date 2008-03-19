@@ -30,43 +30,45 @@
  */
 struct gfm_connection *gfarm_metadb_server;
 
-gfarm_error_t
-gfarm_set_global_user_for_this_local_account(void)
+static gfarm_error_t
+gfarm_set_global_user_for_sharedsecret(void)
 {
 	gfarm_error_t e;
 	char *local_user, *global_user;
 
-#ifdef HAVE_GSI
 	/*
-	 * Global user name determined by the distinguished name.
-	 *
-	 * XXX - Currently, a local user map is used.
+	 * Sharedsecret authentication requires to send a global user
+	 * name when connecting to gfmd, which is determined by the
+	 * local user account.
 	 */
-	local_user = gfarm_gsi_client_cred_name();
-	if (local_user != NULL) {
-		e = gfarm_local_to_global_username(local_user, &global_user);
-		if (e == GFARM_ERR_NO_ERROR)
-			if (strcmp(local_user, global_user) == 0)
-				free(global_user);
-				/* continue to the next method */
-			else
-				goto set_global_username;
-		else
-			return (e);
-	}
-#endif
-	/* Global user name determined by the local user account. */
 	local_user = gfarm_get_local_username();
 	e = gfarm_local_to_global_username(local_user, &global_user);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-#ifdef HAVE_GSI
- set_global_username:
-#endif
+
 	e = gfarm_set_global_username(global_user);
 	free(global_user);
-#if 0 /* Unlink Gfarm Version 1, we won't free this */
-	gfarm_stringlist_free_deeply(&local_user_map_file_list);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_set_global_user_by_gsi(void)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+#ifdef HAVE_GSI
+	struct gfarm_user_info user;
+	char *gsi_dn;
+
+	/* Global user name determined by the distinguished name. */
+	gsi_dn = gfarm_gsi_client_cred_name();
+	if (gsi_dn != NULL) {
+		e = gfm_client_user_info_get_by_gsi_dn(gfarm_metadb_server,
+			gsi_dn, &user);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = gfarm_set_global_username(user.username);
+			gfarm_user_info_free(&user);
+		}
+	}
 #endif
 	return (e);
 }
@@ -359,6 +361,7 @@ gfarm_error_t
 gfarm_initialize(int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
+	enum gfarm_auth_method auth_method;
 #ifdef HAVE_GSI
 	int saved_auth_verb;
 #endif
@@ -380,7 +383,11 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
-	e = gfarm_set_global_user_for_this_local_account();
+	/*
+	 * In sharedsecret authentication, a global user name is
+	 * required to be set to access a metadata server.
+	 */
+	e = gfarm_set_global_user_for_sharedsecret();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -397,6 +404,13 @@ gfarm_initialize(int *argcp, char ***argvp)
 	}
 	gfarm_metadb_set_server(gfarm_metadb_server);
 
+	/* metadb access is required to obtain a global user name by GSI */
+	auth_method = gfm_client_connection_auth_method(gfarm_metadb_server);
+	if (GFARM_IS_AUTH_GSI(auth_method)) {
+		e = gfarm_set_global_user_by_gsi();
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
 	if (argvp != NULL) {
 #if 0 /* not yet in gfarm v2 */
 		if (getenv("DISPLAY") != NULL)

@@ -69,6 +69,10 @@ enum gfarm_auth_sharedsecret_request {
 gfarm_error_t gfarm_gsi_server_initialize(void);
 gfarm_error_t gfarm_gsi_client_initialize(void);
 
+#define GFARM_IS_AUTH_GSI(auth) \
+	(((auth) == GFARM_AUTH_METHOD_GSI) || \
+	 ((auth) == GFARM_AUTH_METHOD_GSI_AUTH))
+
 /* auth_client */
 
 struct gfp_xdr;

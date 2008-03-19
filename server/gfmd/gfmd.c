@@ -475,6 +475,7 @@ protocol_main(void *arg)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 	char addr_string[GFARM_SOCKADDR_STRLEN];
+	struct user *u;
 
 	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
 	rv = 1;
@@ -501,6 +502,23 @@ protocol_main(void *arg)
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
 	    hostname, &addr,
 	    &id_type, &username, &auth_method);
+	/*
+	 * In GSI, username will be a DN, which needs to be mapped to
+	 * a global user name.
+	 */
+	if (e == GFARM_ERR_NO_ERROR && id_type == GFARM_AUTH_ID_TYPE_USER &&
+	    GFARM_IS_AUTH_GSI(auth_method)) {
+		giant_lock();
+		if ((u = user_lookup_gsi_dn(username)) == NULL)
+			e = GFARM_ERR_NO_SUCH_USER;
+		else {
+			free(username);
+			username = strdup(user_name(u));
+			if (username == NULL)
+				e = GFARM_ERR_NO_MEMORY;
+		}
+		giant_unlock();
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning("authorize: %s", gfarm_error_string(e));
 	} else {

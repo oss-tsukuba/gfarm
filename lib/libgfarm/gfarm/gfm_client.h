@@ -27,6 +27,8 @@ void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
 int gfm_client_connection_fd(struct gfm_connection *);
+enum gfarm_auth_method gfm_client_connection_auth_method(
+	struct gfm_connection *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);

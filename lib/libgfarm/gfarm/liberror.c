@@ -125,6 +125,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"is a symbolic link",
 	"unknown error",
 	"invalid file replica",
+	"no such user",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

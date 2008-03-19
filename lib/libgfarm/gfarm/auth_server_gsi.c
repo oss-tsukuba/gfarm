@@ -135,17 +135,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	}
 	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
-#if 0 /* XXX - global name should be distinguished by DN (distinguish name) */
-	e = gfarm_local_to_global_username(
-	    userinfo->authData.userAuth.localName, &global_username);
-	if (e != GFARM_ERR_NO_ERROR) {
-		global_username = NULL;
-		error = GFARM_AUTH_ERROR_DENIED;
-		gflog_error("authorize_gsi: "
-		    "cannot map global username into local username: %s",
-		    userinfo->authData.userAuth.localName);
-	}
-#else
+#if 0
 	/*
 	 * We DO need GSI authentication to access user database in this case,
 	 * otherwise GSI authentcation depends on weak protocol.
@@ -169,6 +159,22 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    "cannot map DN into global username: %s",
 		    userinfo->distName);
 	}
+#else
+	/*
+	 * DN is used as a global user name for now since a gfmd
+	 * cannot call an RPC to itself.  It should be mapped to the
+	 * global user name by a caller when gfarm_authorize()
+	 * successfully returned.
+	 */
+	global_username = strdup(userinfo->distName);
+	if (global_username == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		error = GFARM_AUTH_ERROR_DENIED;
+		gflog_error("authorize_gsi: DN=\"%s\": no memory",
+		    userinfo->distName);
+	}
+	else
+		e = GFARM_ERR_NO_ERROR;
 #endif
 	if (e == GFARM_ERR_NO_ERROR) {
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
@@ -178,7 +184,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
 		    global_username, hostname,
 		    auth_method_name,
-		    userinfo->authData.userAuth.localName,
+		    gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_USER ?
+		    userinfo->authData.userAuth.localName : "@host@",
 		    userinfo->distName);
 
 		if (switch_to) {
@@ -214,7 +221,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		return (e);
 	}
 
-	if (switch_to) {
+	if (switch_to &&
+	    gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_USER) {
 		sprintf(aux, "%s@%s", global_username, hostname);
 		gflog_set_auxiliary_info(aux);
 
@@ -245,11 +253,10 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 
 	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	if (peer_typep != NULL) {
-		if (strcmp(global_username, GFSD_USERNAME) == 0) {
+		if (gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_HOST)
 		     *peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
-		} else  {
+		else
 		     *peer_typep = GFARM_AUTH_ID_TYPE_USER;
-		}
 	}
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
