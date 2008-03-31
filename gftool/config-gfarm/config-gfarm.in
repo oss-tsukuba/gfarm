@@ -197,6 +197,7 @@ display_params()
 
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
     echo     "matadata admin user [-A]: $METADATA_ADMIN_USER"
+    echo     "matadata admin dn   [-D]: $METADATA_ADMIN_USER_GSI_DN"
 
     display_backend_port_params_$BACKEND_TYPE
 
@@ -258,6 +259,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -A) shift; [ $# -ge 1 ] || usage
 		METADATA_ADMIN_USER=$1
+		;;
+	  -D) shift; [ $# -ge 1 ] || usage
+		METADATA_ADMIN_USER_GSI_DN=$1
 		;;
 	  -p) shift; [ $# -ge 1 ] || usage
 		BACKEND_PORT=$1
@@ -562,6 +566,10 @@ esac
 
 mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 chmod 600 "$GFMD_CONF"
+# for GSI authentication
+if [ X$METADATA_ADMIN_USER_GSI_DN != X ]; then
+	echo "admin_user_gsi_dn $METADATA_ADMIN_USER_GSI_DN" >> $GFMD_CONF
+fi
 
 make_configuration_file_$BACKEND_TYPE
 
