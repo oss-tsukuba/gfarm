@@ -294,6 +294,7 @@ enum gfarm_backend_db_type gfarm_backend_db_type =
 	GFARM_BACKEND_DB_TYPE_UNKNOWN;
 
 char *gfarm_metadb_admin_user = NULL;
+char *gfarm_metadb_admin_user_gsi_dn = NULL;
 
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
@@ -341,6 +342,7 @@ gfarm_config_clear(void)
 		&gfarm_metadb_server_name,
 		&gfarm_metadb_server_portname,
 		&gfarm_metadb_admin_user,
+		&gfarm_metadb_admin_user_gsi_dn,
 		&gfarm_ldap_server_name,
 		&gfarm_ldap_server_port,
 		&gfarm_ldap_base_dn,
@@ -1013,6 +1015,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_var(p, &gfarm_metadb_server_portname);
 	} else if (strcmp(s, o = "admin_user") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_admin_user);
+	} else if (strcmp(s, o = "admin_user_gsi_dn") == 0) {
+		e = parse_set_var(p, &gfarm_metadb_admin_user_gsi_dn);
 	} else if (strcmp(s, o = "metadb_server_cred_type") == 0) {
 		e = parse_cred_config(p, GFM_SERVICE_TAG,
 		    gfarm_auth_server_cred_type_set_by_string);

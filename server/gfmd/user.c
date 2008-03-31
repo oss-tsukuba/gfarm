@@ -224,7 +224,7 @@ user_add_one(void *closure, struct gfarm_user_info *ui)
 }
 
 void
-create_user(const char *username)
+create_user(const char *username, const char *gsi_dn)
 {
 	gfarm_error_t e;
 	struct gfarm_user_info ui;
@@ -234,7 +234,7 @@ create_user(const char *username)
 	ui.username = strdup(username);
 	ui.realname = strdup("Gfarm administrator");
 	ui.homedir = strdup("/");
-	ui.gsi_dn = strdup("");
+	ui.gsi_dn = strdup(gsi_dn == NULL ? "" : gsi_dn);
 	user_add_one(NULL, &ui);
 	e = db_user_add(&ui);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -258,10 +258,11 @@ user_init(void)
 		gflog_error("loading users: %s", gfarm_error_string(e));
 
 	if (user_lookup(ADMIN_USER_NAME) == NULL)
-		create_user(ADMIN_USER_NAME);
+		create_user(ADMIN_USER_NAME, NULL);
 	if (gfarm_metadb_admin_user != NULL &&
 	    user_lookup(gfarm_metadb_admin_user) == NULL)
-		create_user(gfarm_metadb_admin_user);
+		create_user(gfarm_metadb_admin_user,
+		    gfarm_metadb_admin_user_gsi_dn);
 }
 
 #ifndef TEST

@@ -19,6 +19,7 @@ extern char *gfarm_metadb_server_name;
 extern int gfarm_metadb_server_port;
 
 extern char *gfarm_metadb_admin_user;
+extern char *gfarm_metadb_admin_user_gsi_dn;
 
 /* LDAP dependent */
 extern char *gfarm_ldap_server_name;
