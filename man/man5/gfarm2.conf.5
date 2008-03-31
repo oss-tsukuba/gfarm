@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "14 2·î 2008" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "01 April 2008" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -491,6 +491,10 @@ For example,
 .TP
 \fBadmin_user \fIuser\fB\fR
 This directive specifies an administrator user name, which is
+specified in gfmd.conf.
+.TP
+\fBadmin_user_gsi_dn \fIuser_gsi_dn\fB\fR
+This directive specifies a subject DN of an administrator, which is
 specified in gfmd.conf.
 .TP
 \fBlocal_user_map \fIuser-map-file\fB\fR

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "14 2月 2008" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "01 April 2008" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -449,6 +449,9 @@ tcp_nodelay。setsockopt(2)システムコールで、TCP_NODELAY
 \fBadmin_user \fIユーザ名\fB\fR
 gfmd.conf内のこの文で指定されたユーザが、
 デフォルトの特権ユーザとなります。
+.TP
+\fBadmin_user_gsi_dn \fIDN\fB\fR
+gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
 .TP
 \fBlocal_user_map \fIユーザマップファイルパス名\fB\fR
 sharedsecret認証において、
