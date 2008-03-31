@@ -1287,7 +1287,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 }
 
 void
-gfs_server_replica_recv(struct gfp_xdr *client)
+gfs_server_replica_recv(struct gfp_xdr *client,
+	enum gfarm_auth_id_type peer_type)
 {
 	gfarm_error_t e, error = GFARM_ERR_NO_ERROR;
 	gfarm_ino_t ino;
@@ -1301,6 +1302,11 @@ gfs_server_replica_recv(struct gfp_xdr *client)
 	int local_fd;
 
 	gfs_server_get_request(client, diag, "ll", &ino, &gen);
+	/* from gfsd only */
+	if (peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
+		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		goto send_eof;
+	}
 
 	local_path(ino, gen, diag, &path);
 
@@ -2974,7 +2980,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_REPLICA_ADD_FROM:
 			gfs_server_replica_add_from(client); break;
 		case GFS_PROTO_REPLICA_RECV:
-			gfs_server_replica_recv(client); break;
+			gfs_server_replica_recv(client, peer_type); break;
 		default:
 			gflog_warning("unknown request %d", (int)request);
 			cleanup(0);
