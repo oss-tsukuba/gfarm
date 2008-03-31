@@ -559,7 +559,6 @@ gsi_auth|gsi)
 *)
 	;;
 esac
-;;
 
 mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 chmod 600 "$GFMD_CONF"
