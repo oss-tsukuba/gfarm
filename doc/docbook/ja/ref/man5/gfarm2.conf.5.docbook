@@ -694,6 +694,15 @@ gfmd.conf内のこの文で指定されたユーザが、
 </varlistentry>
 
 <varlistentry>
+<term><token>admin_user_gsi_dn</token> <parameter>DN</parameter></term>
+<listitem>
+<para>
+gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter></term>
 <listitem>
 <para>

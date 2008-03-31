@@ -723,6 +723,16 @@ specified in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>admin_user_gsi_dn</token> <parameter>user_gsi_dn</parameter></term>
+<listitem>
+<para>
+This directive specifies a subject DN of an administrator, which is
+specified in gfmd.conf.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>local_user_map</token> <parameter>user-map-file</parameter></term>
 <listitem>
 <para>This directive specifies a file name
