@@ -646,10 +646,12 @@ termsigs_handler(void *p)
 #endif
 		switch (sig) {
 		case SIGHUP: /* reload the grid-mapfile */
+#ifdef HAVE_GSI
 			giant_lock();
 			gfarmAuthFinalize();
 			(void)gfarmAuthInitialize(GRID_MAPFILE);
 			giant_unlock();
+#endif
 			continue;
 			break;
 		default:
