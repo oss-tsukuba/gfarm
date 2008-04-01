@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "30 March 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "01 April 2008" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm 設定ファイル
@@ -762,6 +762,16 @@ disable 設定は、通常のファイルシステムにおける "noatime" オプションに
 .nf
 	record_atime disable
 .fi
+.TP
+\fBroot_directory_access \fI有効性\fB\fR
+このオプションが disable の場合、Gfarmファイルシステムの
+ルートディレクトリに対する新規ファイル、ディレクトリの作成を禁止します。
+
+例:
+
+.nf
+	root_directory_access disable
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm.conf の文法をBNFで記述すると、下記のようになります。
@@ -807,7 +817,8 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<log_level_statement> |
-		\~\~<record_atime_statement>
+		\~\~<record_atime_statement> |
+		\~\~<root_directory_access_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -865,6 +876,7 @@ gfarm.conf の文法をBNFで記述すると、下記のようになります。
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<record_atime_statement> ::= "record_atime" <validity>
+	<root_directory_access_statement> ::= "root_directory_access" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

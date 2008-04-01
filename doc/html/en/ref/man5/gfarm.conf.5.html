@@ -1848,6 +1848,28 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.</P
 CLASS="LITERALLAYOUT"
 >	record_atime&nbsp;disable</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>root_directory_access </SPAN
+><TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "disable" is specified, any file or directory cannot be
+created in the root directory of a Gfarm file system.  This helps to
+prevent from creating unintended files or directories in the root
+directory.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	root_directory_access&nbsp;disable</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1904,7 +1926,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		  &#60;log_level_statement&#62;&nbsp;|<br>
-		  &#60;record_atime_statement&#62;<br>
+		  &#60;record_atime_statement&#62;&nbsp;|<br>
+		  &#60;root_directory_access_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1964,6 +1987,7 @@ CLASS="LITERALLAYOUT"
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
 	&#60;record_atime_statement&#62;&nbsp;::=&nbsp;"record_atime"&nbsp;&#60;validity&#62;<br>
+	&#60;root_directory_access_statement&#62;&nbsp;::=&nbsp;"root_directory_access"&nbsp;&#60;validity&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

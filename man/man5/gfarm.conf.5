@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM.CONF" "5" "30 March 2007" "Gfarm" ""
+.TH "GFARM.CONF" "5" "01 April 2008" "Gfarm" ""
 
 .SH NAME
 gfarm.conf \- Gfarm configuration file
@@ -817,6 +817,18 @@ Example:
 .nf
 	record_atime disable
 .fi
+.TP
+\fBroot_directory_access \fIvalidity\fB\fR
+When "disable" is specified, any file or directory cannot be
+created in the root directory of a Gfarm file system.  This helps to
+prevent from creating unintended files or directories in the root
+directory.
+
+Example:
+
+.nf
+	root_directory_access disable
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar for gfarm.conf described using BNF
@@ -864,7 +876,8 @@ notation.
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<log_level_statement> |
-		\~\~<record_atime_statement>
+		\~\~<record_atime_statement> |
+		\~\~<root_directory_access_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -924,6 +937,7 @@ notation.
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<record_atime_statement> ::= "record_atime" <validity>
+	<root_directory_access_statement> ::= "root_directory_access" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
