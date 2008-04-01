@@ -402,6 +402,7 @@ enum gfarm_metadb_backend_type {
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
+#define GFARM_ROOT_DIRECTORY_ACCESS_DEFAULT 1 /* enable */
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_dir_cache_timeout = MISC_DEFAULT;
 int gfarm_host_cache_timeout = MISC_DEFAULT;
@@ -411,6 +412,7 @@ static char *schedule_write_target_domain = NULL;
 static file_offset_t minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
+int gfarm_root_directory_access = MISC_DEFAULT;
 
 /* static variables */
 static enum {
@@ -1235,6 +1237,8 @@ parse_one_line(char *s, char *p, char **op,
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
 	} else if (strcmp(s, o = "record_atime") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_record_atime);
+	} else if (strcmp(s, o = "root_directory_access") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_root_directory_access);
 
 	} else {
 		o = s;
@@ -1431,6 +1435,9 @@ gfarm_config_set_default_misc(void)
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
 	if (gfarm_record_atime == MISC_DEFAULT)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
+	if (gfarm_root_directory_access == MISC_DEFAULT)
+		gfarm_root_directory_access =
+		    GFARM_ROOT_DIRECTORY_ACCESS_DEFAULT;
 }
 
 /*

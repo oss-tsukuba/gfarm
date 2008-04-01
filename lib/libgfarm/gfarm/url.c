@@ -236,6 +236,14 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		if (e != NULL)
 			goto free_dir_canonic;
 	}
+	else if (!gfarm_root_directory_access) {
+		/*
+		 * disallow any file or directory creation in the root
+		 * directory
+		 */
+		e = GFARM_ERR_PERMISSION_DENIED;
+		goto free_dir_canonic;
+	}
 
 	GFARM_MALLOC_ARRAY(*canonic_pathp, 
 		strlen(dir_canonic) + 1 + strlen(basename) + 1); 

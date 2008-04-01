@@ -39,6 +39,7 @@ extern int gfarm_host_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;
+extern int gfarm_root_directory_access;
 
 extern int gf_on_demand_replication;
 extern int gf_hook_default_global;
