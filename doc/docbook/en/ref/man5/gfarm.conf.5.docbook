@@ -997,6 +997,22 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>root_directory_access </token><parameter>validity</parameter></term>
+<listitem>
+<para>When "disable" is specified, any file or directory cannot be
+created in the root directory of a Gfarm file system.  This helps to
+prevent from creating unintended files or directories in the root
+directory.
+</para>
+
+<para>Example:</para>
+<literallayout>
+	root_directory_access disable
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1045,7 +1061,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
-		&nbsp;&nbsp;&lt;record_atime_statement&gt;
+		&nbsp;&nbsp;&lt;record_atime_statement&gt; |
+		&nbsp;&nbsp;&lt;root_directory_access_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1105,6 +1122,7 @@ notation.</para>
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt;
+	&lt;root_directory_access_statement&gt; ::= "root_directory_access" &lt;validity&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
