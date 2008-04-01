@@ -897,6 +897,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
+		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
@@ -945,13 +946,14 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
 	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		&nbsp;&nbsp;"tcp_nodelay"
-<!--	&lt;address_use_statement&gt; ::=  "address_use" &lt;hostspec&gt; -->
+<!--	&lt;address_use_statement&gt; ::= "address_use" &lt;hostspec&gt; -->
 <!--	&lt;client_architecture_statement&gt; ::= -->
 <!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
 <!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
 <!--	&lt;an_option&gt; ::= "noatime" -->
-	&lt;admin_user_statement&gt; ::=  &lt;string&gt;
-	&lt;local_user_map_statement&gt; ::=  "local_user_map" &lt;pathname&gt;
+	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
+	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
+	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
