@@ -567,8 +567,8 @@ esac
 mkcnf "$GFMD_CONF"	replace "$config_dir/gfarm.conf-$BACKEND_TYPE.in"
 chmod 600 "$GFMD_CONF"
 # for GSI authentication
-if [ X$METADATA_ADMIN_USER_GSI_DN != X ]; then
-	echo "admin_user_gsi_dn $METADATA_ADMIN_USER_GSI_DN" >> $GFMD_CONF
+if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
+	echo "admin_user_gsi_dn \"$METADATA_ADMIN_USER_GSI_DN\"" >> $GFMD_CONF
 fi
 
 make_configuration_file_$BACKEND_TYPE
