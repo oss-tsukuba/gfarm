@@ -674,8 +674,9 @@ search_idle_candidate_list_add(struct gfarm_host_sched_info *info)
 		}
 		h->statfs_cache_time.tv_sec = info->cache_time;
 		h->statfs_cache_time.tv_usec = 0;
-		h->diskused = info->disk_used;
-		h->diskavail = info->disk_avail;
+		/* convert KiByte to Byte */
+		h->diskused = info->disk_used * 1024;
+		h->diskavail = info->disk_avail * 1024;
 		h->flags |= HOST_STATE_FLAG_STATFS_AVAIL;
 	}
 
