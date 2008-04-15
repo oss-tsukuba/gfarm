@@ -98,7 +98,7 @@ gfarm_spool_root_get_for_write()
 			    "gfarm library isn't properly initialized");
 
 	avail = 0;
-	spool = NULL;
+	spool = gfarm_spool_root_get_for_compatibility();
 	while (s) {
 		sp = gfarm_str_list_car(s);
 		if (statvfs(sp, &fsb)) {
@@ -132,7 +132,7 @@ gfarm_spool_root_get_for_read(char *file)
 			    "gfarm library isn't properly initialized");
 
 	avail = 0;
-	spool = NULL;
+	spool = gfarm_spool_root_get_for_compatibility();
 	while (s) {
 		sp = gfarm_str_list_car(s);
 		p = gfarm_spool_path(sp, file);
