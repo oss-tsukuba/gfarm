@@ -1831,7 +1831,7 @@ statfsnode(char *canonical_hostname, int use_cache,
 		    &h->blocks, &h->bfree, &h->bavail,
 		    &h->files, &h->ffree, &h->favail);
 		if (e != NULL || e2 != NULL)
-			return (e);
+			return (e != NULL ? e : e2);
 		h->statfs_cache_time = search_idle_now;
 		h->flags |=
 		    HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL;
