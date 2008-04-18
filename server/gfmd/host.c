@@ -876,7 +876,8 @@ host_free_all(int n, struct host **h)
 }
 
 gfarm_error_t
-host_active_hosts(int *nhostsp, struct host ***hostsp)
+host_active_hosts(int (*filter)(struct host *, void *), void *arg,
+	int *nhostsp, struct host ***hostsp)
 {
 	struct gfarm_hash_iterator it;
 	struct host **hosts, *h;
@@ -887,7 +888,7 @@ host_active_hosts(int *nhostsp, struct host ***hostsp)
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
 		pthread_mutex_lock(&h->remover_mutex);
-		if (host_is_up(h))
+		if (host_is_up(h) && filter(h, arg))
 			++n;
 	}
 	GFARM_MALLOC_ARRAY(hosts, n);
@@ -897,7 +898,7 @@ host_active_hosts(int *nhostsp, struct host ***hostsp)
 	i = 0;
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (hosts != NULL && host_is_up(h)) {
+		if (hosts != NULL && host_is_up(h) && filter(h, arg)) {
 			e = host_copy(&hosts[i], h);
 			if (e != GFARM_ERR_NO_ERROR) {
 				host_free_all(i, hosts);
@@ -915,14 +916,21 @@ host_active_hosts(int *nhostsp, struct host ***hostsp)
 	return (e);
 }
 
+static int
+null_filter(struct host *host, void *arg)
+{
+	return (1);
+}
+
 gfarm_error_t
-host_schedule_reply_all(struct peer *peer, const char *diag)
+host_schedule_reply_all(struct peer *peer, const char *diag,
+	int (*filter)(struct host *, void *), void *arg)
 {
 	gfarm_error_t e, e_save;
 	struct host **hosts;
 	int i, n;
 
-	e = host_active_hosts(&n, &hosts);
+	e = host_active_hosts(filter, arg, &n, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		n = 0;
 
@@ -949,7 +957,8 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
 	}
 	else
-		return (host_schedule_reply_all(peer, diag));
+		return (host_schedule_reply_all(
+				peer, diag, null_filter, NULL));
 }
 
 gfarm_error_t
@@ -977,18 +986,30 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, "hostname_set", e, ""));
 }
 
+static int
+domain_filter(struct host *h, void *d)
+{
+	const char *domain = d;
+
+	return (gfarm_host_is_in_domain(host_name(h), domain));
+}
+
 gfarm_error_t
-gfm_server_schedule_host_all(struct peer *peer, int from_client, int skip)
+gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
+	char *domain, *msg = "schedule_host_domain";
 
+	e = gfm_server_get_request(peer, msg, "s", &domain);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	giant_lock();
-	e = host_schedule_reply_all(peer, "schedule_host_all");
+	e = host_schedule_reply_all(peer, msg, domain_filter, domain);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "schedule_host_all", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 #endif /* TEST */

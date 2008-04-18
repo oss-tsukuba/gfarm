@@ -312,8 +312,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_HOSTNAME_SET:
 		e = gfm_server_hostname_set(peer, from_client, skip);
 		break;
-	case GFM_PROTO_SCHEDULE_HOST_ALL:
-		e = gfm_server_schedule_host_all(peer, from_client, skip);
+	case GFM_PROTO_SCHEDULE_HOST_DOMAIN:
+		e = gfm_server_schedule_host_domain(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_LIST_BY_NAME:
 		e = gfm_server_replica_list_by_name(peer, from_client, skip);

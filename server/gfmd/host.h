@@ -33,8 +33,9 @@ gfarm_error_t gfm_server_host_info_remove(struct peer *, int, int);
 
 gfarm_error_t host_schedule_reply_n(struct peer *, gfarm_int32_t,const char *);
 gfarm_error_t host_schedule_reply(struct host *, struct peer *, const char *);
-gfarm_error_t host_schedule_reply_all(struct peer *, const char *);
+gfarm_error_t host_schedule_reply_all(struct peer *, const char *,
+	int (*)(struct host *, void *), void *);
 gfarm_error_t host_schedule_reply_one_or_all(struct peer *, const char *);
 
 gfarm_error_t gfm_server_hostname_set(struct peer *, int, int);
-gfarm_error_t gfm_server_schedule_host_all(struct peer *, int, int);
+gfarm_error_t gfm_server_schedule_host_domain(struct peer *, int, int);
