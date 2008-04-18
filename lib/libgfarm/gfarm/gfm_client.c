@@ -1074,6 +1074,20 @@ gfm_client_schedule_file_with_program_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
+	const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
+{
+	gfarm_error_t e;
+
+	e = gfm_client_rpc_request(gfm_server,
+		GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", domain);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (get_schedule_result(gfm_server, nhostsp, infosp));
+}
+
+gfarm_error_t
 gfm_client_remove_request(struct gfm_connection *gfm_server, const char *name)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_REMOVE, "s",

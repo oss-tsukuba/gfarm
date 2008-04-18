@@ -7,6 +7,7 @@ include $(top_srcdir)/makes/var.mk
 SUBDIRS = \
 	gfchmod \
 	gfchown \
+	gfdf \
 	gfexport \
 	gfhost \
 	gfkey \
@@ -22,7 +23,6 @@ SUBDIRS = \
 	gfwhere \
 	config-gfarm
 
-#	gfdf \
 #	gfdump \
 #	gfexec \
 #	gfifo \
