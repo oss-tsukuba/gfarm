@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
 #include <sys/time.h>
+#include <pthread.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/error.h>
@@ -95,11 +96,26 @@ gfarm_ino_t inode_free_index = ROOT_INUMBER;
 struct inode inode_free_list; /* dummy header of doubly linked circular list */
 int inode_free_list_initialized = 0;
 
+static pthread_mutex_t total_num_inodes_mutex = PTHREAD_MUTEX_INITIALIZER;
+static gfarm_uint64_t total_num_inodes;
+
 static char dot[] = ".";
 static char dotdot[] = "..";
 
 #define DOT_LEN		(sizeof(dot) - 1)
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
+
+gfarm_uint64_t
+inode_total_num(void)
+{
+	gfarm_uint64_t num_inodes;
+
+	pthread_mutex_lock(&total_num_inodes_mutex);
+	num_inodes = total_num_inodes;
+	pthread_mutex_unlock(&total_num_inodes_mutex);
+
+	return (num_inodes);
+}
 
 void
 inode_cksum_clear(struct inode *inode)
@@ -352,6 +368,9 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode->i_gen++;
 	}
 	inode->u.c.state = NULL;
+	pthread_mutex_lock(&total_num_inodes_mutex);
+	++total_num_inodes;
+	pthread_mutex_unlock(&total_num_inodes_mutex);
 	return (inode);
 }
 
@@ -377,6 +396,9 @@ inode_clear(struct inode *inode)
 	inode->u.l.next = inode_free_list.u.l.next;
 	inode->u.l.next->u.l.prev = inode;
 	inode_free_list.u.l.next = inode;
+	pthread_mutex_lock(&total_num_inodes_mutex);
+	--total_num_inodes;
+	pthread_mutex_unlock(&total_num_inodes_mutex);
 }
 
 void

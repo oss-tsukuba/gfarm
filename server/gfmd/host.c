@@ -28,6 +28,7 @@
 #include "host.h"
 #include "user.h"
 #include "peer.h"
+#include "inode.h"
 #include "back_channel.h"
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
@@ -37,6 +38,9 @@ struct dead_file_copy {
 	gfarm_ino_t inum;
 	gfarm_uint64_t igen;
 };
+
+static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
+static gfarm_off_t total_disk_used, total_disk_avail;
 
 /* in-core gfarm_host_info */
 struct host {
@@ -387,7 +391,12 @@ gfarm_error_t
 host_update_status(struct host *host)
 {
 	gfarm_error_t e;
+	gfarm_uint64_t saved_used = 0, saved_avail = 0;
 
+	if (host->report_flags | GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		saved_used = host->disk_used;
+		saved_avail = host->disk_avail;
+	}
 	e = gfs_client_status(host_peer(host),
 		&host->loadavg_1min, &host->loadavg_5min,
 		&host->loadavg_15min,
@@ -397,6 +406,10 @@ host_update_status(struct host *host)
 		host->report_flags =
 			GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
 			GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
+		pthread_mutex_lock(&total_disk_mutex);
+		total_disk_used += host->disk_used - saved_used;
+		total_disk_avail += host->disk_avail - saved_avail;
+		pthread_mutex_unlock(&total_disk_mutex);
 	}
 	else {
 		host->report_flags = 0;
@@ -1010,6 +1023,25 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 	e = host_schedule_reply_all(peer, msg, domain_filter, domain);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, msg, e, ""));
+}
+
+gfarm_error_t
+gfm_server_statfs(struct peer *peer, int from_client, int skip)
+{
+	char *msg = "statfs";
+	gfarm_uint64_t used, avail, files;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	files = inode_total_num();
+	pthread_mutex_lock(&total_disk_mutex);
+	used = total_disk_used;
+	avail = total_disk_avail;
+	pthread_mutex_unlock(&total_disk_mutex);
+
+	return (gfm_server_put_reply(peer, msg, GFARM_ERR_NO_ERROR, "lll",
+		    used, avail, files));
 }
 
 #endif /* TEST */

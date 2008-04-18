@@ -297,6 +297,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_SCHEDULE:
 		e = gfm_server_schedule(peer, from_client, skip);
 		break;
+	case GFM_PROTO_STATFS:
+		e = gfm_server_statfs(peer, from_client, skip);
+		break;
 	case GFM_PROTO_PIO_OPEN:
 		e = gfm_server_pio_open(peer, from_client, skip);
 		break;

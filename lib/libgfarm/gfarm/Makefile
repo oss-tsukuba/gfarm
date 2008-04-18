@@ -47,6 +47,7 @@ SRCS = \
 	gfs_chmod.c \
 	gfs_chown.c \
 	gfs_stat.c \
+	gfs_statfs.c \
 	gfs_mkdir.c \
 	gfs_rmdir.c \
 	gfs_remove.c \
@@ -101,6 +102,7 @@ OBJS = \
 	gfs_chmod.lo \
 	gfs_chown.lo \
 	gfs_stat.lo \
+	gfs_statfs.lo \
 	gfs_mkdir.lo \
 	gfs_rmdir.lo \
 	gfs_remove.lo \

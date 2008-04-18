@@ -39,3 +39,4 @@ gfarm_error_t host_schedule_reply_one_or_all(struct peer *, const char *);
 
 gfarm_error_t gfm_server_hostname_set(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_host_domain(struct peer *, int, int);
+gfarm_error_t gfm_server_statfs(struct peer *, int, int);

@@ -196,6 +196,9 @@ gfarm_error_t gfm_client_getdirents_result(struct gfm_connection *,
 gfarm_error_t gfm_client_seek_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_int32_t);
 gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);
+gfarm_error_t gfm_client_statfs(struct gfm_connection *,
+	gfarm_uint64_t *, gfarm_uint64_t *, gfarm_uint64_t *);
+
 
 /* gfs from gfsd */
 gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);

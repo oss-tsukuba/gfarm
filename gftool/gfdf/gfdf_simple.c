@@ -15,18 +15,37 @@ char *program_name = "gfdf";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-d domain]\n", program_name);
+	fprintf(stderr, "Usage: %s [-a] [-d domain]\n", program_name);
 	exit(1);
 }
 
 gfarm_error_t
-display_statfs(const char *domain)
+display_statfs(const char *dummy)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t used, avail, files;
+
+	e = gfm_client_statfs(gfarm_metadb_server, &used, &avail, &files);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	printf("%12s%12s%12s%9s%12s\n",
+	       "1K-blocks", "Used", "Avail", "Capacity", "Files");
+	printf("%12lld%12lld%12lld   %3.0f%%  %12lld\n",
+	       used + avail, used, avail,
+	       (double)used / (used + avail) * 100, files);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+display_statfs_nodes(const char *domain)
 {
 	gfarm_error_t e;
 	int nhosts, i;
 	struct gfarm_host_sched_info *hosts;
-	gfarm_int64_t used, avail;
-	gfarm_int64_t total_used = 0, total_avail = 0;
+	gfarm_uint64_t used, avail;
+	gfarm_uint64_t total_used = 0, total_avail = 0;
 
 	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
 		&nhosts, &hosts);
@@ -58,6 +77,7 @@ main(int argc, char *argv[])
 {
 	gfarm_error_t e;
 	char c, *domain = "";
+	gfarm_error_t (*statfs)(const char *) = display_statfs_nodes;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -69,8 +89,11 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "d:?")) != -1) {
+	while ((c = getopt(argc, argv, "ad:?")) != -1) {
 		switch (c) {
+		case 'a':
+			statfs = display_statfs;
+			break;
 		case 'd':
 			domain = optarg;
 			break;
@@ -79,7 +102,7 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
-	e = display_statfs(domain);
+	e = statfs(domain);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));

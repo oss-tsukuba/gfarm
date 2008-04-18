@@ -3,6 +3,8 @@ void dir_entry_init(void);
 void file_copy_init(void);
 void dead_file_copy_init(void);
 
+gfarm_uint64_t inode_total_num(void);
+
 struct inode;
 
 struct host;

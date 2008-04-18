@@ -233,7 +233,7 @@ gfarm_error_t gfs_access(const char *, int);
 
 gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
-
+#if 0
 gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
-
-/* XXX need gfs_statfsnode() equivalent */
+#endif
+gfarm_error_t gfs_statfs(gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
