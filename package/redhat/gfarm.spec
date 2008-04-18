@@ -742,8 +742,8 @@ fi
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
-%{prefix}/bin/gfdf
 %endif
+%{prefix}/bin/gfdf
 %{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
