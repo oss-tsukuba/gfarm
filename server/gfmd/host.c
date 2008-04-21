@@ -194,9 +194,11 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->loadavg_1min =
 	h->loadavg_5min =
 	h->loadavg_15min = 0.0;
+	h->disk_used =
+	h->disk_avail = 0;
+	h->report_flags = 0;
 	pthread_mutex_init(&h->remover_mutex, NULL);
 	pthread_cond_init(&h->remover_cond, NULL);
-	h->report_flags = 0;
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	if (hpp != NULL)
 		*hpp = h;
@@ -413,6 +415,10 @@ host_update_status(struct host *host)
 	}
 	else {
 		host->report_flags = 0;
+		pthread_mutex_lock(&total_disk_mutex);
+		total_disk_used -= saved_used;
+		total_disk_avail -= saved_avail;
+		pthread_mutex_unlock(&total_disk_mutex);
 	}
 	return (e);
 }
