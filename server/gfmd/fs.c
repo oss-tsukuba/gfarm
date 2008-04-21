@@ -1598,6 +1598,49 @@ gfm_server_replica_remove_by_host(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
+gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	char *hostname;
+	struct process *process;
+	gfarm_int32_t cfd;
+	struct inode *inode;
+	struct host *host, *spool_host;
+	char *msg = "replica_remove_by_file";
+
+	e = gfm_server_get_request(peer, msg, "s", &hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(hostname);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if (process_get_user(process) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, cfd, &inode)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((host = host_lookup(hostname)) == NULL)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else if ((spool_host = inode_writing_spool_host(inode)) != NULL &&
+		 spool_host == host)
+		e = GFARM_ERR_TEXT_FILE_BUSY;
+	else
+		e = inode_remove_replica(inode, host, 1);
+
+	free(hostname);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, ""));
+}
+
+gfarm_error_t
 gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -1696,7 +1739,7 @@ gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
 	else if (inode_get_gen(inode) != gen)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	else
-		e = inode_remove_replica(inode, spool_host);
+		e = inode_remove_replica(inode, spool_host, 0);
 	giant_unlock();
 
 	return (gfm_server_put_reply(peer, "replica_remove", e, ""));

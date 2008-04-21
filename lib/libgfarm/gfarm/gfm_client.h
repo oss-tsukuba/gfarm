@@ -238,6 +238,10 @@ gfarm_error_t gfm_client_replica_remove_by_host_request(
 	struct gfm_connection *, const char *, gfarm_int32_t);
 gfarm_error_t gfm_client_replica_remove_by_host_result(
 	struct gfm_connection *);
+gfarm_error_t gfm_client_replica_remove_by_file_request(
+	struct gfm_connection *, const char *);
+gfarm_error_t gfm_client_replica_remove_by_file_result(
+	struct gfm_connection *);
 
 /* replica management from gfsd */
 gfarm_error_t gfm_client_replica_adding_request(struct gfm_connection *,

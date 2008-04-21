@@ -68,3 +68,49 @@ gfs_replica_list_by_name(const char *path, int *np, char ***hostsp)
 	}
 	return (e);
 }
+
+gfarm_error_t
+gfs_replica_remove_by_file(const char *path, const char *host)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
+	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+		gflog_warning("tmp_open(%s) request: %s", path,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_replica_remove_by_file_request(
+			  gfarm_metadb_server, host))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("replica_remove_by_file request: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_end request: %s",
+		    gfarm_error_string(e));
+
+	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("compound_begin result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("tmp_open(%s) result: %s", path,
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_replica_remove_by_file_result(
+			  gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_warning("replica_remove_by_file result: %s",
+		    gfarm_error_string(e));
+	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning("compound_end result: %s",
+		    gfarm_error_string(e));
+	}
+	/* NOTE: the opened descriptor is automatically closed by gfmd */
+
+	return (e);
+}

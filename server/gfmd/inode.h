@@ -57,7 +57,7 @@ gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
-gfarm_error_t inode_remove_replica(struct inode *, struct host *);
+gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_remove_every_other_replicas(struct inode *, struct host *);
 
 struct file_opening;
@@ -78,6 +78,7 @@ int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
 struct host *inode_schedule_host_for_read(struct inode *, struct host *);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);
+struct host *inode_writing_spool_host(struct inode *);
 int inode_schedule_confirm_for_write(struct inode *, struct host *, int);
 struct peer;
 gfarm_error_t inode_schedule_file_reply(struct inode *, struct peer *,

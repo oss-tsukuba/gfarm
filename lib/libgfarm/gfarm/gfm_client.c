@@ -1518,6 +1518,20 @@ gfm_client_replica_remove_by_host_result(struct gfm_connection *gfm_server)
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
+gfarm_error_t
+gfm_client_replica_remove_by_file_request(struct gfm_connection *gfm_server,
+	const char *host)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_REPLICA_REMOVE_BY_FILE, "s", host));
+}
+
+gfarm_error_t
+gfm_client_replica_remove_by_file_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
 /*
  * replica management from gfsd
  */

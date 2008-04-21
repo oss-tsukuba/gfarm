@@ -14,7 +14,7 @@ char *program_name = "gfrm";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s file...\n", program_name);
+	fprintf(stderr, "Usage: %s [-h hostname] file...\n", program_name);
 	exit(1);
 }
 
@@ -23,7 +23,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int i, c, status = 0;
-	extern int optind;
+	char *host = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -34,9 +34,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "h?")) != -1) {
+	while ((c = getopt(argc, argv, "h:?")) != -1) {
 		switch (c) {
 		case 'h':
+			host = optarg;
+			break;
 		case '?':
 		default:
 			usage();
@@ -48,7 +50,10 @@ main(int argc, char **argv)
 		usage();
 
 	for (i = 0; i < argc; i++) {
-		e = gfs_unlink(argv[i]);
+		if (host == NULL)
+			e = gfs_unlink(argv[i]);
+		else
+			e = gfs_replica_remove_by_file(argv[i], host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));

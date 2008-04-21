@@ -1326,7 +1326,8 @@ remove_replica_internal(struct inode *inode, struct file_copy *copy)
 }
 
 gfarm_error_t
-inode_remove_replica(struct inode *inode, struct host *spool_host)
+inode_remove_replica(struct inode *inode, struct host *spool_host,
+	int do_not_delete_last)
 {
 	struct file_copy **copyp, *copy;
 	gfarm_error_t e;
@@ -1334,6 +1335,8 @@ inode_remove_replica(struct inode *inode, struct host *spool_host)
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
 	    copyp = &copy->host_next) {
 		if (copy->host == spool_host) {
+			if (do_not_delete_last && copy->host_next == NULL)
+				return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 			*copyp = copy->host_next;
 			break;
 		}
@@ -1536,6 +1539,25 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	for (i = 0; i < depth; i++)
 		free(names[i]);
 	return (e);
+}
+
+struct host *
+inode_writing_spool_host(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+	struct file_opening *fo;
+
+	if (!inode_is_file(inode))
+		return (NULL); /* not a file */
+	if (ios != NULL &&
+	    (fo = ios->openings.opening_next) != &ios->openings) {
+		for (; fo != &ios->openings; fo = fo->opening_next) {
+			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
+			    fo->u.f.spool_host != NULL)
+				return (fo->u.f.spool_host);
+		}
+	}
+	return (NULL);
 }
 
 int

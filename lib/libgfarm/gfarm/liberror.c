@@ -126,6 +126,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"unknown error",
 	"invalid file replica",
 	"no such user",
+	"cannot remove the last replica",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -374,6 +375,9 @@ static struct gfarm_errno_error_map {
 #else
 	{ EPROTONOSUPPORT, GFARM_ERR_PROTOCOL }, /* "<-" only */
 #endif
+
+	/* gfarm specific errors */
+	{ EPERM,	GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA },
 };
 
 struct gfarm_error_domain {

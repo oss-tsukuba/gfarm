@@ -297,9 +297,6 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_SCHEDULE:
 		e = gfm_server_schedule(peer, from_client, skip);
 		break;
-	case GFM_PROTO_STATFS:
-		e = gfm_server_statfs(peer, from_client, skip);
-		break;
 	case GFM_PROTO_PIO_OPEN:
 		e = gfm_server_pio_open(peer, from_client, skip);
 		break;
@@ -318,6 +315,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_SCHEDULE_HOST_DOMAIN:
 		e = gfm_server_schedule_host_domain(peer, from_client, skip);
 		break;
+	case GFM_PROTO_STATFS:
+		e = gfm_server_statfs(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REPLICA_LIST_BY_NAME:
 		e = gfm_server_replica_list_by_name(peer, from_client, skip);
 		break;
@@ -326,6 +326,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
 		e = gfm_server_replica_remove_by_host(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_REMOVE_BY_FILE:
+		e = gfm_server_replica_remove_by_file(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_ADDING:
 		e = gfm_server_replica_adding(peer, from_client, skip);
