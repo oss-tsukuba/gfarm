@@ -1,9 +1,9 @@
 Gfarm FAQ - Frequently Asked Questions about Gfarm
 
-Copyright (c) 2003-2007 National Institute of Advanced Industrial
+Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2007 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 
 Table of Contents:
 ******************
@@ -174,7 +174,6 @@ Table of Contents:
   4.1 The following functionalities supported by Gfarm-1.x are not
      supported yet.
 
-	Deletion of a file replica
 	File view
 
   4.2 The following functionality supported by Gfarm-1.x is not

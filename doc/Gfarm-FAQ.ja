@@ -1,9 +1,9 @@
 Gfarm FAQ - Gfarm に関するよくある質問
 
-Copyright (c) 2003-2007 National Institute of Advanced Industrial
+Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2007 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 
 目次:
 *****
@@ -163,7 +163,6 @@ Copyright (c) 2006-2007 Osamu Tatebe.  All Rights Reserved.
   4.2 Gfarm-1.xでサポートされていた以下の機能はまだサポートされていま
      せん．
 
-	ファイル複製の削除
 	ファイルビュー，ファイルの分割格納
 
   4.3 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
