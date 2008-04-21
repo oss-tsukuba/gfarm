@@ -145,7 +145,7 @@ command.
 
 - The following commands are not provided yet:
 
-  gfdf, gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami,
+  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami,
   gfarm-pcp, gfarm-prun
 
   Plans for fixes:
@@ -154,7 +154,7 @@ command.
 - There is no reference manual for the following commands:
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
-  gfchmod, gfchown, gfexport, gfmv, gfreg, gfrep, gfrm,
+  gfchmod, gfchown, gfdf, gfexport, gfmv, gfreg, gfrep, gfrm,
   gfuser, gfwhere
 
   Plans for fixes:

@@ -43,6 +43,16 @@ Options for configure:
   directory is /usr.
 
 
+  --with-globus=directory
+
+  Specifies an installation directory for the Globus Toolkit to utilize the
+  GSI authentication  method.  When a directory is not specified, the
+  environment variable, GLOBUS_LOCATION is used.  This is optional.
+  The flavor of the Globus library is searched for automatically.
+  If you need to specify a flavor, specify it with the
+  --with-globus-flavor=flavor option.
+
+
   --prefix=directory
 
   Specifies a destination directory for installation.  The default is

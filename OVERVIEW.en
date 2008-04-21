@@ -118,8 +118,7 @@ The Gfarm filesystem consists of the following software:
 About authentication
 ====================
 
-gfmd and gfsd support, currently, a sharedsecret authentication out of
-the following three authentication methods.
+gfmd and gfsd support the following three authentication methods.
 Please read the security section in Gfarm-FAQ.en, too.
 
 1. sharedsecret
