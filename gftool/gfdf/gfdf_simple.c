@@ -64,10 +64,14 @@ display_statfs_nodes(const char *domain)
 		total_used += used;
 		total_avail += avail;
 	}
-	puts("");
-	printf("%12lld%12lld%12lld   %3.0f%%   %s\n",
-	       total_used + total_avail, total_used, total_avail,
-	       (double)total_used / (total_used + total_avail) * 100, "");
+	if (nhosts > 0) {
+		puts("---------------------------------------------");
+		printf("%12lld%12lld%12lld   %3.0f%%\n",
+		       total_used + total_avail, total_used, total_avail,
+		       (double)total_used / (total_used + total_avail) * 100);
+	}
+	else
+		puts("No file system node");
 
 	return (GFARM_ERR_NO_ERROR);
 }
