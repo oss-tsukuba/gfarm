@@ -155,10 +155,17 @@ group_remove(const char *groupname)
 	/* free group_assignment */
 	while ((ga = g->users.user_next) != &g->users)
 		grpassign_remove(ga);
-
+#if 0
+	/*
+	 * As long as the primary key is a groupname, REMOVED_GROUP_NAME
+	 * cannot be used.  This entry is not referred to any more.
+	 */
 	/* mark this as removed */
 	g->groupname = REMOVED_GROUP_NAME;
 	/* XXX We should have a list which points all removed groups */
+#else
+	free(g);
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -244,7 +251,7 @@ group_add_user_and_record(struct group *g, const char *username)
 	GFARM_MALLOC_ARRAY(gi.usernames, n);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		gi.usernames[n] = user_name(ga->u);
+		gi.usernames[n++] = user_name(ga->u);
 
 	e = db_group_modify(&gi, 0, 1, &username, 0, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
