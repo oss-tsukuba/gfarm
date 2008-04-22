@@ -1248,7 +1248,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	gfarm_int64_t mtime_sec;
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	char *host, *path, *diag = "replica_add_from";
 	struct gfs_connection *server;
 	int flags = 0; /* XXX - for now */
@@ -1260,26 +1260,30 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto free_host;
 
 	local_path(ino, gen, diag, &path);
-
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd < 0) {
 		e = gfarm_errno_to_error(errno);
-		goto free_host;
+		/* invalidate the creating file replica */
+		mtime_sec = mtime_nsec = 0;
+		goto adding_cancel;
 	}
 
 	e = gfs_client_connection_acquire_by_host(host, port, &server);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto close;
+	}
 	e = gfs_client_replica_recv(server, ino, gen, local_fd);
 	if (e != GFARM_ERR_NO_ERROR)
-		goto connection_free;
-	e = replica_added(net_fd, flags, mtime_sec, mtime_nsec);
-
- connection_free:
+		mtime_sec = mtime_nsec = 0; /* invalidate */
 	gfs_client_connection_free(server);
  close:
 	close(local_fd);
+ adding_cancel:
+	e2 = replica_added(net_fd, flags, mtime_sec, mtime_nsec);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = e2;
  free_host:
 	free(host);
 	gfs_server_put_reply(client, diag, e, "");
@@ -1309,7 +1313,6 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	}
 
 	local_path(ino, gen, diag, &path);
-
 	local_fd = open_data(path, O_RDONLY);
 	free(path);
 	if (local_fd < 0) {
