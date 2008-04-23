@@ -643,8 +643,9 @@ termsigs_handler(void *p)
 		/* 
 		 * On linux-2.6.11 on Fedora Core 4,
 		 * spurious signal sig=8195840 arrives.
+		 * On debian-etch 4.0, signal 0 arrives.
 		 */
-		if (sig >= 16) {
+		if (sig == 0 || sig >= 16) {
 			gflog_info("spurious signal %d received: ignoring...",
 			    sig);
 			continue;
