@@ -784,6 +784,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 		free(h->hi.architecture);
 		h->hi.architecture = hi.architecture;
 		h->hi.ncpu = hi.ncpu;
+		h->hi.port = hi.port;
 		h->hi.flags = hi.flags;
 		free(hi.hostname);
 	}
