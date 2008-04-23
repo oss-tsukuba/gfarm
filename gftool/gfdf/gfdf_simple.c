@@ -23,7 +23,7 @@ gfarm_error_t
 display_statfs(const char *dummy)
 {
 	gfarm_error_t e;
-	gfarm_uint64_t used, avail, files;
+	gfarm_off_t used, avail, files;
 
 	e = gfm_client_statfs(gfarm_metadb_server, &used, &avail, &files);
 	if (e != GFARM_ERR_NO_ERROR)

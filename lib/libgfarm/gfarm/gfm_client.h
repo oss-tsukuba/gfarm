@@ -197,7 +197,7 @@ gfarm_error_t gfm_client_seek_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_int32_t);
 gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);
 gfarm_error_t gfm_client_statfs(struct gfm_connection *,
-	gfarm_uint64_t *, gfarm_uint64_t *, gfarm_uint64_t *);
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 
 
 /* gfs from gfsd */

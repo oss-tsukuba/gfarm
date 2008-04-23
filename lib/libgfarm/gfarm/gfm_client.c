@@ -1089,7 +1089,7 @@ gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_statfs(struct gfm_connection *gfm_server,
-	gfarm_uint64_t *used, gfarm_uint64_t *avail, gfarm_uint64_t *files)
+	gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 {
 	return (gfm_client_rpc(gfm_server, 0,
 		    GFM_PROTO_STATFS, "/lll", used, avail, files));
