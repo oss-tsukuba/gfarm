@@ -149,6 +149,7 @@ group_remove(const char *groupname)
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	g = *(struct group **)gfarm_hash_entry_data(entry);
+	gfarm_hash_purge(group_hashtab, &groupname, sizeof(groupname));
 
 	free(g->groupname);
 
@@ -459,18 +460,82 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
+{
+	gfarm_error_t e;
+	int i, eof;
+
+	e = gfm_server_get_request(peer, diag, "si",
+		&gp->groupname, &gp->nusers);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	GFARM_MALLOC_ARRAY(gp->usernames, gp->nusers);
+	if (gp->usernames == NULL) {
+		free(gp->groupname);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < gp->nusers; ++i) {
+		e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "s",
+			&gp->usernames[i]);
+		if (e != GFARM_ERR_NO_ERROR) {
+			for (--i; i >= 0; --i)
+				free(&gp->usernames[i]);
+			free(gp->usernames);
+			free(gp->groupname);
+			return (e);
+		}
+	}
+	return (e);
+}
+
 gfarm_error_t
 gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	const char *msg = "group_info_set";
+	struct gfarm_group_info gi;
+	struct user *user = peer_get_user(peer);
+	int need_free;
+	char *saved_groupname;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_set: not implemented");
+	e = get_group(peer, msg, &gi);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		gfarm_group_info_free(&gi);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	need_free = 1;
+	giant_lock();
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (group_lookup(gi.groupname) != NULL) {
+		e = GFARM_ERR_ALREADY_EXISTS;
+	} else {
+		/*
+		 * We have to call this before group_add_one(),
+		 * because group_add_one() frees the memory of gi
+		 */
+		e = db_group_add(&gi);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(
+			    "failed to store group '%s' to storage: %s",
+			    gi.groupname, gfarm_error_string(e));
 
-	e = gfm_server_put_reply(peer, "group_info_set",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+		saved_groupname = strdup(gi.groupname);
+		group_add_one(NULL, &gi);
+		if (saved_groupname != NULL) {
+			if (group_lookup(saved_groupname) == NULL)
+				e = GFARM_ERR_INVALID_ARGUMENT;
+			free(saved_groupname);
+		}
+		need_free = 0;
+	}
+	if (need_free)
+		gfarm_group_info_free(&gi);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 gfarm_error_t
@@ -490,15 +555,30 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	char *groupname;
+	gfarm_error_t e, e2;
+	struct user *user = peer_get_user(peer);
+	const char *msg = "group_info_remove";
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_remove: not implemented");
-
-	e = gfm_server_put_reply(peer, "group_info_remove",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_get_request(peer, msg, "s", &groupname);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(groupname);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = group_remove(groupname)) == GFARM_ERR_NO_ERROR) {
+		e2 = db_group_remove(groupname);
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_error("protocol %s db: %s", msg,
+			    gfarm_error_string(e2));
+	}
+	free(groupname);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 gfarm_error_t

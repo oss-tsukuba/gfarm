@@ -748,6 +748,7 @@ fi
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfexport
+%{prefix}/bin/gfgroup
 %{prefix}/bin/gfhost
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfifo.sh

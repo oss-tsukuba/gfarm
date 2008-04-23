@@ -9,6 +9,7 @@ SUBDIRS = \
 	gfchown \
 	gfdf \
 	gfexport \
+	gfgroup \
 	gfhost \
 	gfkey \
 	gfls \
