@@ -635,7 +635,7 @@ gfm_client_group_info_remove_users(struct gfm_connection *gfm_server,
 	int nusers, const char **usernames, gfarm_error_t *errors)
 {
 	return (gfm_client_group_info_users_op_common(gfm_server,
-	    GFM_PROTO_GROUP_INFO_ADD_USERS, groupname, nusers, usernames,
+	    GFM_PROTO_GROUP_INFO_REMOVE_USERS, groupname, nusers, usernames,
 	    errors));
 }
 
