@@ -155,17 +155,12 @@ group_remove(const char *groupname)
 	/* free group_assignment */
 	while ((ga = g->users.user_next) != &g->users)
 		grpassign_remove(ga);
-#if 0
-	/*
-	 * As long as the primary key is a groupname, REMOVED_GROUP_NAME
-	 * cannot be used.  This entry is not referred to any more.
-	 */
+
+	/* This entry can be referred to by struct inode */
 	/* mark this as removed */
 	g->groupname = REMOVED_GROUP_NAME;
 	/* XXX We should have a list which points all removed groups */
-#else
-	free(g);
-#endif
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -194,6 +189,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL) {
 			group_remove(gi->groupname);
+			gi->groupname = NULL; /* prevent double free */
 			gflog_warning("group_add_one: unknown user %s",
 			    gi->usernames[i]);
 			gfarm_group_info_free(gi);
@@ -202,6 +198,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
 			group_remove(gi->groupname);
+			gi->groupname = NULL; /* prevent double free */
 			gflog_warning("group_add_one: grpassign(%s, %s): %s",
 			    gi->usernames[i], gi->groupname,
 			    gfarm_error_string(e));

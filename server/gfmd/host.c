@@ -220,18 +220,13 @@ host_remove(const char *hostname)
 
 	/* free gfarm_host_info */
 	gfarm_host_info_free(&h->hi);
-#if 0
-	/*
-	 * As long as the primary key is a hostname, REMOVED_HOST_NAME
-	 * cannot be used.  This entry is not referred to any more.
-	 */
+
+	/* This entry can be referred to by struct peer */
 	/* mark this as removed */
 	h->hi.hostname = REMOVED_HOST_NAME;
 	h->hi.architecture = NULL;
 	/* XXX We should have a list which points all removed hosts */
-#else
-	free(h);
-#endif
+
 	return (GFARM_ERR_NO_ERROR);
 }
 

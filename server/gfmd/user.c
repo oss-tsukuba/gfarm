@@ -155,20 +155,15 @@ user_remove(const char *username)
 	/* free group_assignment */
 	while ((ga = u->groups.group_next) != &u->groups)
 		grpassign_remove(ga);
-#if 0
-	/*
-	 * As long as the primary key is a username, REMOVED_USER_NAME
-	 * cannot be used.  This entry is not referred to any more.
-	 */
+
+	/* This entry can be referred to by struct peer, process and inode */
 	/* mark this as removed */
 	u->ui.username = REMOVED_USER_NAME;
 	u->ui.realname = NULL;
 	u->ui.homedir = NULL;
 	u->ui.gsi_dn = NULL;
 	/* XXX We should have a list which points all removed users */
-#else
-	free(u);
-#endif
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
