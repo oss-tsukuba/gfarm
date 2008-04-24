@@ -738,11 +738,9 @@ fi
 
 %files client
 %defattr(-,root,root)
-%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfarm-pcp
 %{prefix}/bin/gfarm-prun
 %{prefix}/bin/gfarm-ptool
-%endif
 %{prefix}/bin/gfdf
 %{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod

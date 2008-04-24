@@ -10,12 +10,12 @@ SUBDIRS = \
 	include/gfarm \
 	lib \
 	server \
-	gftool
+	gftool \
+	util/ptool
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \
 #	util/gfront \
-#	util/ptool \
 #	bench/thput-gfpio
 
 all:
