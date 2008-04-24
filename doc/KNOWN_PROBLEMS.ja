@@ -144,8 +144,7 @@
 
 - 下記のコマンドが存在しません。
 
-  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami,
-  gfarm-pcp, gfarm-prun
+  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami
 
   対処予定:
 	未定です。
@@ -155,7 +154,7 @@
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
   gfchmod, gfchown, gfdf, gfexport, gfmv, gfreg, gfrep, gfrm,
-  gfuser, gfwhere
+  gfuser, gfwhere, gfarm-pcp, gfarm-prun
 
   対処予定:
 	未定です。

@@ -145,8 +145,7 @@ command.
 
 - The following commands are not provided yet:
 
-  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami,
-  gfarm-pcp, gfarm-prun
+  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage, gfwhoami
 
   Plans for fixes:
 	Not determined yet.
@@ -155,7 +154,7 @@ command.
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
   gfchmod, gfchown, gfdf, gfexport, gfmv, gfreg, gfrep, gfrm,
-  gfuser, gfwhere
+  gfuser, gfwhere, gfarm-pcp, gfarm-prun
 
   Plans for fixes:
 	Not determined yet.
