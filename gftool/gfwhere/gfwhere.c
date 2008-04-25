@@ -52,7 +52,7 @@ display_replica_catalog(char *path, struct gfs_stat *st, void *arg)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	gfarm_mode_t mode;
-	int do_not_display_name = (int)arg;
+	int do_not_display_name = *(int *)arg;
 
 	if (!do_not_display_name)
 		display_name(path, st, arg);
@@ -137,17 +137,20 @@ main(int argc, char **argv)
 	for (i = 0; i < n; i++) {
 		char *p = gfarm_stringlist_elem(&paths, i);
 		struct gfs_stat st;
+		int do_not_display = 0;
 
 		if ((e = gfs_stat(p, &st)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", p, gfarm_error_string(e));
 		} else {
-			if (GFARM_S_ISREG(st.st_mode)) 
+			if (GFARM_S_ISREG(st.st_mode)) {
+				do_not_display = (n == 1);
 				e = display_replica_catalog(p, &st,
-					(void *)(n == 1));
+					&do_not_display);
+			}
 			else if (opt_recursive)
 				e = gfarm_foreach_directory_hierarchy(
-					display_replica_catalog, display_name,
-					NULL, p, 0);
+					display_replica_catalog, NULL, NULL,
+					p, &do_not_display);
 			else
 				fprintf(stderr, "%s: not a file\n", p);
 			gfs_stat_free(&st);
