@@ -998,6 +998,7 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 	free(hostname);
+
 	return (gfm_server_put_reply(peer, "hostname_set", e, ""));
 }
 
@@ -1018,12 +1019,16 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, msg, "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (skip)
+	if (skip) {
+		free(domain);
 		return (GFARM_ERR_NO_ERROR);
+	}
 
 	giant_lock();
 	e = host_schedule_reply_all(peer, msg, domain_filter, domain);
 	giant_unlock();
+	free(domain);
+
 	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
