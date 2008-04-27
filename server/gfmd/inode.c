@@ -571,7 +571,7 @@ inode_get_ncopy(struct inode *inode)
 
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-		if (copy->valid)
+		if (copy->valid && host_is_up(copy->host))
 			n++;
 	}
 	return (n);
@@ -1678,7 +1678,7 @@ inode_replica_list_by_name(struct inode *inode,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		if (copy->valid) {
+		if (copy->valid && host_is_up(copy->host)) {
 			hosts[i] = strdup(host_name(copy->host));
 			if (hosts[i] == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
@@ -1687,13 +1687,13 @@ inode_replica_list_by_name(struct inode *inode,
 			++i;
 		}
 	}
-	if (i < n) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		while (--i >= 0)
 			free(hosts[i]);
 		free(hosts);
 	}
 	else {
-		*np = n;
+		*np = i;
 		*hostsp = hosts;
 	}
 	return (e);
