@@ -6,8 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SRCS = gfwhere.c gfarm_foreach.c
-OBJS = gfwhere.o gfarm_foreach.o
+SRCS = gfwhere.c
+OBJS = gfwhere.o
 PROGRAM = gfwhere
 CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) gfarm_foreach.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfarm_foreach.h

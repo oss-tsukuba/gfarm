@@ -56,6 +56,7 @@ SRCS = \
 	gfs_replicate.c \
 	gfs_unlink.c \
 	gfs_utimes.c \
+	gfarm_foreach.c \
 	glob.c \
 	schedule.c \
 	timespec.c \
@@ -111,6 +112,7 @@ OBJS = \
 	gfs_replicate.lo \
 	gfs_unlink.lo \
 	gfs_utimes.lo \
+	gfarm_foreach.lo \
 	glob.lo \
 	schedule.lo \
 	timespec.lo \
@@ -120,7 +122,7 @@ OBJS = \
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo \
 #	gfs_exec.lo \
-#	import_help.lo schedule.lo \
+#	import_help.lo \
 
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
@@ -162,6 +164,7 @@ gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h 
+gfarm_foreach.lo: gfarm_foreach.h
 glob.lo:
 host.lo: hostspec.h host.h
 hostspec.lo: hostspec.h
