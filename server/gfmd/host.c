@@ -1024,12 +1024,13 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	}
 
+	/* XXX FIXME too long giant lock */
 	giant_lock();
 	e = host_schedule_reply_all(peer, msg, domain_filter, domain);
 	giant_unlock();
 	free(domain);
 
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (e);
 }
 
 gfarm_error_t
