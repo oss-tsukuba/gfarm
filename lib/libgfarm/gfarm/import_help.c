@@ -6,6 +6,9 @@
 #include <time.h>
 #include <gfarm/gfarm.h>
 
+#include "liberror.h"
+
+#if 0 /* not yet in gfarm v2 */
 #define TABLE_SIZE_INITIAL 128
 #define TABLE_SIZE_DELTA 128
 
@@ -151,6 +154,7 @@ gfarm_import_fragment_size_alloc(file_offset_t total_size, int n)
 	sizetab[n] = FILE_OFFSET_T_MAX;
 	return (sizetab);
 }
+#endif /* not yet in gfarm v2 */
 
 /*
  * NOTE:
@@ -162,18 +166,19 @@ gfarm_import_fragment_size_alloc(file_offset_t total_size, int n)
  *	   :
  */
 
-char *
+gfarm_error_t
 gfarm_hostlist_read(char *filename,
 	int *np, char ***host_table_p, int *error_linep)
 {
 	gfarm_stringlist host_list;
 	FILE *fp;
 	int i;
-	char *e, line[1024];
+	char line[1024];
+	gfarm_error_t e;
 
 	*error_linep = -1;
 	e = gfarm_stringlist_init(&host_list);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (strcmp(filename, "-") == 0) {
 		fp = stdin;
@@ -190,7 +195,7 @@ gfarm_hostlist_read(char *filename,
 		for (s = line; isspace(*(unsigned char *)s); s++)
 			;
 		if (*s == '\0') {
-			e = "hostname expected";
+			e = GFARM_ERRMSG_HOSTNAME_EXPECTED;
 			*error_linep = i + 1;
 			goto error;
 		}
@@ -204,19 +209,19 @@ gfarm_hostlist_read(char *filename,
 			goto error;
 		}
 		e = gfarm_stringlist_add(&host_list, host);
-		if (e != NULL) {
+		if (e != GFARM_ERR_NO_ERROR) {
 			free(host);
 			*error_linep = i + 1;
 			goto error;
 		}
 	}
 	if (i == 0) {
-		e = "empty file";
+		e = GFARM_ERRMSG_EMPTY_FILE;
 		goto error;
 	}
 	*np = gfarm_stringlist_length(&host_list);
 	*host_table_p = gfarm_strings_alloc_from_stringlist(&host_list);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		goto error;
 	/*
 	 * do not call gfarm_stringlist_free_deeply() here,
@@ -225,7 +230,7 @@ gfarm_hostlist_read(char *filename,
 	gfarm_stringlist_free(&host_list);
 	if (strcmp(filename, "-") != 0)
 		fclose(fp);
-	return (NULL);
+	return (GFARM_ERR_NO_ERROR);
 
 error:
 	if (strcmp(filename, "-") != 0)

@@ -253,6 +253,9 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"internal error - invalid cred_type",
 	"invalid credential configuration",
 
+	/* refered only from gfarm/import_help.c */
+	"hostname expected",
+	"empty file",
 };
 
 /*

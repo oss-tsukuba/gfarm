@@ -25,6 +25,7 @@ SRCS = \
 	config.c \
 	config_server.c \
 	config_client.c \
+	import_help.c \
 	iobuffer.c \
 	gfp_xdr.c \
 	gfs_proto.c \
@@ -81,6 +82,7 @@ OBJS = \
 	config.lo \
 	config_server.lo \
 	config_client.lo \
+	import_help.lo \
 	iobuffer.lo \
 	gfp_xdr.lo \
 	gfs_proto.lo \
@@ -168,7 +170,7 @@ gfarm_foreach.lo: gfarm_foreach.h
 glob.lo:
 host.lo: hostspec.h host.h
 hostspec.lo: hostspec.h
-import_help.lo:
+import_help.lo: liberror.h
 io_fd.lo: iobuffer.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
