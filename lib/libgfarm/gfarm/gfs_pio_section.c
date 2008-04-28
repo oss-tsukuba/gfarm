@@ -409,8 +409,8 @@ choose_trivial_one(struct gfarm_host_sched_info *info,
 }
 
 /* *hostp needs to free'ed if succeed */
-static gfarm_error_t
-schedule_host(GFS_File gf, char **hostp, gfarm_int32_t *portp)
+gfarm_error_t
+gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 {
 	gfarm_error_t e;
 	int nhosts;
@@ -448,7 +448,7 @@ schedule_host(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	gfs_profile(gfarm_gettimerval(&t3));
 
 	gfs_profile(
-		gflog_info("(schedule_host) schedule %f, select %f",
+		gflog_info("(gfarm_schedule_file) schedule %f, select %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2)));
 	*hostp = host;
@@ -492,7 +492,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 	gf->view_context = vc;
 
 	if (host == NULL) {
-		e = schedule_host(gf, &host, &port);
+		e = gfarm_schedule_file(gf, &host, &port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = connect_and_open_with_reconnection(gf, host, port);
 			free(host);

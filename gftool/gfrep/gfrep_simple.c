@@ -16,7 +16,7 @@ char *program_name = "gfrep";
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s -s srchost -d dsthost file\n",
+	fprintf(stderr, "Usage: %s [-s srchost] -d dsthost file\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
@@ -54,13 +54,16 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (src == NULL || dst == NULL)
+	if (dst == NULL)
 		usage();
 
-	e = gfarm_host_info_get_by_name_alias(src, &sinfo);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", src, gfarm_error_string(e));
-		exit(EXIT_FAILURE);
+	if (src != NULL) {
+		e = gfarm_host_info_get_by_name_alias(src, &sinfo);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", src,
+				gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
 	}
 	e = gfarm_host_info_get_by_name_alias(dst, &dinfo);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -74,7 +77,8 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: %s\n", f, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
-	gfarm_host_info_free(&sinfo);
+	if (src != NULL)
+		gfarm_host_info_free(&sinfo);
 	gfarm_host_info_free(&dinfo);
 
 	e = gfarm_terminate();
