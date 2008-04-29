@@ -7,7 +7,6 @@
 #include <libgen.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/socket.h>
 
 #ifdef _OPENMP
 #include <sys/types.h>
@@ -22,15 +21,11 @@ static int omp_get_thread_num(void){ return (0); }
 #endif
 
 #include <gfarm/gfarm.h>
-#include <openssl/evp.h>
-#include "host.h"
-#include "schedule.h"
-#include "gfs_client.h"
-#include "gfs_misc.h"
-#include "gfarm_list.h"
-#include "gfarm_foreach.h"
-#include "gfarm_xinfo.h"
 #include "hash.h"
+#include "config.h"
+#include "gfm_client.h"
+#include "gfarm_foreach.h"
+#include "gfarm_list.h"
 
 #define HOSTHASH_SIZE	101
 
@@ -38,178 +33,183 @@ static char *program_name = "gfrep";
 
 struct action {
 	char *action;
-	char *(*transfer_to)(const char *, char *, char *);
+	gfarm_error_t (*transfer_to)(char *, char *, int);
 };
 
 struct action replicate_mode = {
 	"replicate",
-	gfarm_url_section_replicate_to
+	gfs_replicate_to
 };
 
+#if 0 /* not yet in gfarm v2 */
 struct action migrate_mode = {
 	"migrate",
-	gfarm_url_section_migrate_to
+	gfs_migrate_to
 };
+#endif
 
 struct action *act = &replicate_mode;
 
 struct gfrep_arg {
-	char *src_domain;
-	struct gfarm_hash_table *src_hosthash;
-	int nsrc, ndst;
-	char **src, **dst;
-	char *section;
+	int ndst, nsrc;
+	char **dst, **src;
+	int *dst_port;
+	int num_replicas;
+	int noexecute, verbose, quiet;
+};
+
+struct file_info {
+	char *pathname;
+	gfarm_off_t filesize;
 	int ncopy;
-	int noexecute;
-	int verbose;
-	int quiet;
+	char **copy;
 };
 
-struct host_copy {
-	struct gfrep_arg *a;
-	struct gfarm_hash_table *hosthash;
+struct flist_arg {
+	char *src_domain, *dst_domain;
+
+	/* hash table from the input host file */
+	struct gfarm_hash_table *src_hosthash, *dst_hosthash;
+
+	/* hash table to count the num of source nodes */
+	struct gfarm_hash_table *srchash;
+
+	int num_replicas;
+
+	/* file_info list */
 	gfarm_list *slist;
-	char *file;
-	int nsrccopy;
-	gfarm_stringlist copylist;
 };
 
-static char *
-add_file(char *file, struct gfs_stat *st, void *arg)
+static void
+file_info_free(struct file_info *info)
 {
-	gfarm_stringlist *list = arg;
-	char *f;
-
-	f = strdup(file);
-	if (f == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	return (gfarm_stringlist_add(list, f));
+	if (info->pathname != NULL)
+		free(info->pathname);
+	if (info->copy != NULL)
+		gfarm_strings_free_deeply(info->ncopy, info->copy);
+	free(info);
 }
 
-static char *
-gfarm_list_add_xinfo(char *file, int ncopy, char **copy,
-	struct gfarm_file_section_info *info, gfarm_list *list)
+static struct file_info *
+file_info_alloc(void)
 {
-	struct gfarm_section_xinfo *i;
-	char **newcopy, *e;
+	struct file_info *i;
 
 	GFARM_MALLOC(i);
 	if (i == NULL)
+		return (NULL);
+
+	i->pathname = NULL;
+	i->copy = NULL;
+	return (i);
+}
+
+static gfarm_error_t
+gfarm_list_add_file_info(char *pathname, gfarm_off_t filesize,
+	int ncopy, char **copy, gfarm_list *list)
+{
+	struct file_info *info;
+	gfarm_error_t e;
+	int i;
+
+	info = file_info_alloc();
+	if (info == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	GFARM_MALLOC_ARRAY(newcopy, ncopy);
-	if (newcopy == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		goto free_i;
-	}
-	e = gfarm_fixedstrings_dup(ncopy, newcopy, copy);
-	if (e != NULL)
-		goto free_newcopy;
-
-	i->file = strdup(file);
-	i->ncopy = ncopy;
-	i->copy = newcopy;
-	i->i = *info;
-	i->i.pathname = strdup(info->pathname);
-	i->i.section = strdup(info->section);
-	i->i.checksum_type = NULL;
-	i->i.checksum = NULL;
-
-	if (i->file == NULL || i->i.pathname == NULL || i->i.section == NULL) {
-		gfarm_section_xinfo_free(i);
+	info->pathname = strdup(pathname);
+	if (info->pathname == NULL) {
+		file_info_free(info);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-
-	e = gfarm_list_add(list, i);
-	if (e != NULL)
-		gfarm_section_xinfo_free(i);
-	return (e);
-
- free_newcopy:
-	free(newcopy);
- free_i:
-	free(i);
-	return (e);
-}
-
-static char *
-gfarm_list_add_xinfo2(struct gfarm_section_xinfo *xinfo, gfarm_list *list)
-{
-	return (gfarm_list_add_xinfo(xinfo->file, xinfo->ncopy, xinfo->copy,
-			&xinfo->i, list));
-}
-
-static char *
-add_host_and_copy(struct gfarm_file_section_copy_info *info, void *arg)
-{
-	struct host_copy *a = arg;
-	char *s = info->hostname;
-
-	if ((a->a->src_hosthash && gfarm_hash_lookup(
-			a->a->src_hosthash, s, strlen(s) + 1))
-	    || (!a->a->src_hosthash && gfarm_host_is_in_domain(
-			s, a->a->src_domain))) {
-		/* add info->hostname to a->hash */
-		gfarm_hash_enter(a->hosthash, s, strlen(s) + 1, 0, NULL);
-		++a->nsrccopy;
+	GFARM_MALLOC_ARRAY(info->copy, ncopy);
+	if (info->copy == NULL) {
+		file_info_free(info);
+		return (GFARM_ERR_NO_MEMORY);
 	}
-	gfarm_stringlist_add(&a->copylist, strdup(s));
-	return (NULL);
+	for (i = 0; i < ncopy; ++i) {
+		info->copy[i] = strdup(copy[i]);
+		if (info->copy[i] == NULL) {
+			gfarm_strings_free_deeply(i, info->copy);
+			info->copy = NULL;
+			file_info_free(info);
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	info->ncopy = ncopy;
+	info->filesize = filesize;
+	e = gfarm_list_add(list, info);
+	if (e != GFARM_ERR_NO_ERROR)
+		file_info_free(info);
+	return (e);
 }
 
-static char *
-add_sec(struct gfarm_file_section_info *info, void *arg)
+static gfarm_error_t
+create_filelist(char *file, struct gfs_stat *st, void *arg)
 {
-	struct host_copy *a = arg;
-	int ncopy;
-	char **copy, *e;
+	struct flist_arg *a = arg;
+	int i, j, ncopy, src_ncopy = 0, dst_ncopy = 0;
+	char **copy;
+	gfarm_error_t e;
 
-	a->nsrccopy = 0;
-	e = gfarm_stringlist_init(&a->copylist);
-	if (e != NULL)
+	e = gfs_replica_list_by_name(file, &ncopy, &copy);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfarm_foreach_copy(add_host_and_copy,
-		info->pathname, info->section, arg, NULL);
-	/* if there is no replica in specified domain, do not add. */
-	if (e != NULL || a->nsrccopy == 0)
-		goto stringlist_free;
-
-	/* add a file section */
-	ncopy = gfarm_stringlist_length(&a->copylist);
-	copy = a->copylist.array;
-	e = gfarm_list_add_xinfo(a->file, ncopy, copy, info, a->slist);
- stringlist_free:
-	gfarm_stringlist_free_deeply(&a->copylist);
-	return (e);
-}
-
-static char *
-do_section(char *(*op)(struct gfarm_file_section_info *, void *),
-	const char *gfarm_file, const char *section, void *arg)
-{
-	char *e;
-	struct gfarm_file_section_info info;
-
-	e = gfarm_file_section_info_get(gfarm_file, section, &info);
-	if (e == NULL) {
-		e = op(&info, arg);
-		gfarm_file_section_info_free(&info);
+	for (i = 0; i < ncopy; ++i) {
+		if ((a->src_hosthash == NULL || gfarm_hash_lookup(
+			a->src_hosthash, copy[i], strlen(copy[i]) + 1)) &&
+		    gfarm_host_is_in_domain(copy[i], a->src_domain)) {
+			++src_ncopy;
+		}
+		if ((a->dst_hosthash == NULL || gfarm_hash_lookup(
+			a->dst_hosthash, copy[i], strlen(copy[i]) + 1)) &&
+		    gfarm_host_is_in_domain(copy[i], a->dst_domain)) {
+			++dst_ncopy;
+		}
 	}
+	/*
+	 * if there is no replica in a set of source nodes or enough
+	 * number of replicas in a set of destination nodes, do not add.
+	 */
+	if (src_ncopy == 0 || dst_ncopy >= a->num_replicas) {
+		e = GFARM_ERR_NO_ERROR;
+		goto free_copy;
+	}
+
+	/* add source nodes to srchash to count the number of source nodes */
+	for (i = 0; i < ncopy; ++i) {
+		char *s = copy[i];
+
+		if ((a->src_hosthash == NULL || gfarm_hash_lookup(
+			a->src_hosthash, s, strlen(s) + 1)) &&
+		    gfarm_host_is_in_domain(s, a->src_domain))
+			gfarm_hash_enter(a->srchash, s, strlen(s)+1, 0, NULL);
+	}
+
+	/* add a file info to slist */
+	for (j = 0; j < a->num_replicas - dst_ncopy; ++j) {
+		e = gfarm_list_add_file_info(file, st->st_size, ncopy, copy,
+			a->slist);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+	}
+ free_copy:
+	gfarm_strings_free_deeply(ncopy, copy);
+
 	return (e);
 }
 
-static char *
+static gfarm_error_t
 gfarm_hash_to_string_array(struct gfarm_hash_table *hash,
 	int *array_lengthp, char ***arrayp)
 {
 	struct gfarm_hash_iterator iter;
 	struct gfarm_hash_entry *entry;
 	gfarm_stringlist ls;
-	char *ent, **array, *e;
+	char *ent, **array;
+	gfarm_error_t e;
 
 	e = gfarm_stringlist_init(&ls);
-	if (e != NULL)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	for (gfarm_hash_iterator_begin(hash, &iter);
@@ -223,7 +223,7 @@ gfarm_hash_to_string_array(struct gfarm_hash_table *hash,
 			else
 				e = gfarm_stringlist_add(&ls, ent);
 		}
-		if (e != NULL)
+		if (e != GFARM_ERR_NO_ERROR)
 			goto stringlist_free;
 	}
 	array = gfarm_strings_alloc_from_stringlist(&ls);
@@ -234,91 +234,14 @@ gfarm_hash_to_string_array(struct gfarm_hash_table *hash,
 	*array_lengthp = gfarm_stringlist_length(&ls);
 	*arrayp = array;
  stringlist_free:
-	if (e == NULL)
+	if (e == GFARM_ERR_NO_ERROR)
 		gfarm_stringlist_free(&ls);
 	else
 		gfarm_stringlist_free_deeply(&ls);
 	return (e);
 }
 
-static char *
-create_host_and_file_section_list(
-	gfarm_stringlist *list, struct gfrep_arg *gfrep_arg,
-	int *nhosts, char ***hosts,
-	int *nsinfop, struct gfarm_section_xinfo ***sinfop)
-{
-	gfarm_list slist;
-	struct gfarm_hash_table *hosthash;
-	char *file, *path, *e;
-	struct host_copy host_copy;
-	int i;
-
-	e = gfarm_list_init(&slist);
-	if (e != NULL)
-		return (e);
-
-	hosthash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
-		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
-	if (hosthash == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		goto free_list;
-	}
-	host_copy.slist = &slist;
-	host_copy.hosthash = hosthash;
-	host_copy.a = gfrep_arg;
-
-	for (i = 0; i < gfarm_stringlist_length(list); i++) {
-		file = gfarm_stringlist_elem(list, i);
-		e = gfarm_url_make_path(file, &path);
-		if (e != NULL)
-			goto free_hash;
-
-		host_copy.file = file;
-		if (gfrep_arg->section == NULL)
-			e = gfarm_foreach_section(
-				add_sec, path, &host_copy, NULL);
-		else
-			e = do_section(
-				add_sec, path, gfrep_arg->section, &host_copy);
-		free(path);
-		if (e == GFARM_ERR_NO_FRAGMENT_INFORMATION) {
-			e = NULL;
-			continue;
-		}
-		if (e != NULL)
-			goto free_hash;
-	}
-	*sinfop = gfarm_array_alloc_from_list(&slist);
-	*nsinfop = gfarm_list_length(&slist);
-
-	/* hash to array */
-	gfarm_hash_to_string_array(hosthash, nhosts, hosts);
- free_hash:
-	gfarm_hash_table_free(hosthash);
- free_list:
-	if (e == NULL)
-		gfarm_list_free(&slist);
-	else
-		gfarm_list_free_deeply(&slist,
-			(void (*)(void *))gfarm_section_xinfo_free);
-	return (e);
-}
-
-static int
-count_copy(struct gfarm_section_xinfo *xinfo, struct gfarm_hash_table *hash)
-{
-	int i, count = 0;
-	char *s;
-
-	for (i = 0; i < xinfo->ncopy; ++i) {
-		s = xinfo->copy[i];
-		if (gfarm_hash_lookup(hash, s, strlen(s) + 1))
-			++count;
-	}
-	return (count);
-}
-
-static char *
+static gfarm_error_t
 create_hash_table_from_string_list(int array_length, char **array,
 	int hashsize, struct gfarm_hash_table **hashp)
 {
@@ -333,56 +256,7 @@ create_hash_table_from_string_list(int array_length, char **array,
 	for (i = 0; i < array_length; ++i)
 		gfarm_hash_enter(hash, array[i], strlen(array[i])+1, 0, NULL);
 	*hashp = hash;
-	return (NULL);
-}
-
-static char *
-refine_file_section_list(int *nsinfop, struct gfarm_section_xinfo ***sinfop,
-	struct gfrep_arg *arg)
-{
-	int i, j, nsinfo = *nsinfop, src_ncopy, dst_ncopy;
-	struct gfarm_section_xinfo **sinfo = *sinfop;
-	struct gfarm_hash_table *src_hosthash, *dst_hosthash;
-	gfarm_list slist;
-	char *e;
-
-	e = create_hash_table_from_string_list(arg->nsrc, arg->src,
-		HOSTHASH_SIZE, &src_hosthash);
-	if (e != NULL)
-		return (e);
-	e = create_hash_table_from_string_list(arg->ndst, arg->dst,
-		HOSTHASH_SIZE, &dst_hosthash);
-	if (e != NULL)
-		goto free_src_hosthash;
-	e = gfarm_list_init(&slist);
-	if (e != NULL)
-		goto free_dst_hosthash;
-
-	for (i = 0; i < nsinfo; gfarm_section_xinfo_free(sinfo[i++])) {
-		src_ncopy = count_copy(sinfo[i], src_hosthash);
-		dst_ncopy = count_copy(sinfo[i], dst_hosthash);
-		if (src_ncopy == 0 || dst_ncopy >= arg->ncopy)
-			continue;
-		for (j = 0; j < arg->ncopy - dst_ncopy; ++j) {
-			e = gfarm_list_add_xinfo2(sinfo[i], &slist);
-			if (e != NULL)
-				goto free_list;
-		}
-	}
-	free(sinfo);
-	*sinfop = gfarm_array_alloc_from_list(&slist);
-	*nsinfop = gfarm_list_length(&slist);
- free_list:
-	if (e == NULL)
-		gfarm_list_free(&slist);
-	else
-		gfarm_list_free_deeply(&slist,
-			(void (*)(void *))gfarm_section_xinfo_free);
- free_dst_hosthash:
-	gfarm_hash_table_free(dst_hosthash);
- free_src_hosthash:
-	gfarm_hash_table_free(src_hosthash);
-	return (e);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 #include <sys/time.h>
@@ -400,24 +274,36 @@ print_gfrep_arg(struct gfrep_arg *arg)
 		printf("%s\n", arg->src[i]);
 	printf("ndst = %d\n", arg->ndst);
 	for (i = 0; i < arg->ndst; ++i)
-		printf("%s\n", arg->dst[i]);
-	printf("ncopy = %d\n", arg->ncopy);
+		printf("%s:%d\n", arg->dst[i], arg->dst_port[i]);
+	printf("num_replicas = %d\n", arg->num_replicas);
 }
 
 static void
-print_stringlist(struct gfarm_stringlist *list)
+print_file_info(struct file_info *info)
 {
 	int i;
 
-	for (i= 0; i < gfarm_stringlist_length(list); ++i)
-		printf("%s\n", gfarm_stringlist_elem(list, i));
+	printf("file: %s, size: %" GFARM_PRId64 "\n",
+	       info->pathname, info->filesize);
+	printf("ncopy = %d\n", info->ncopy);
+	for (i = 0; i < info->ncopy; ++i)
+		printf("%s\n", info->copy[i]);
+}
+
+static void
+print_file_list(struct gfarm_list *list)
+{
+	int i;
+
+	for (i= 0; i < gfarm_list_length(list); ++i)
+		print_file_info(gfarm_stringlist_elem(list, i));
 }
 
 static int
 filesizecmp_inv(const void *a, const void *b)
 {
-	struct gfarm_section_xinfo * const *aa = a, * const *bb = b;
-	file_offset_t aaa = (*aa)->i.filesize, bbb = (*bb)->i.filesize;
+	struct file_info * const *aa = a, * const *bb = b;
+	gfarm_off_t aaa = (*aa)->filesize, bbb = (*bb)->filesize;
 
 	if (aaa < bbb)
 		return (1);
@@ -427,40 +313,56 @@ filesizecmp_inv(const void *a, const void *b)
 }
 
 static int
-is_enough_space(char *host, file_offset_t size)
+is_enough_space(char *host, gfarm_off_t size)
 {
+#if 0 /* not yet in gfarm v2 */
 	gfarm_int32_t bsize;
-	file_offset_t blocks, bfree, bavail, files, ffree, favail;
-	char *e;
+	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
+	gfarm_error_t e;
 
 	e = gfs_statfsnode(host, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
-	return (e == NULL && bavail * bsize >= size);
+	return (e == GFARM_ERR_NO_ERROR && bavail * bsize >= size);
+#endif
+	return (1);
 }
 
-static char *
-replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
+static int
+file_copy_does_exist(struct file_info *info, char *host)
+{
+	int i;
+
+	for (i = 0; i < info->ncopy; ++i)
+		if (strcmp(info->copy[i], host) == 0)
+			return (1);
+	return (0);
+}
+
+static const char *
+replicate(int nfinfo, struct file_info **finfo,
 	  int nthreads, struct gfrep_arg *arg)
 {
 	int i, pi, tnum, nth, nerr = 0;
 	int max_niter;
-	char *e;
+	gfarm_error_t e;
 	int ndst = arg->ndst, nsrc = arg->nsrc;
 	char **dst = arg->dst;
+	const char *errmsg;
+	int *dst_port = arg->dst_port;
 
 	if (ndst <= 0)
-		return "no destination node";
+		return ("no destination node");
 	if (nsrc <= 0)
-		return "no source node";
-	if (ndst < arg->ncopy)
-		return "not enough number of destination nodes";
-	if (nsinfo <= 0)
+		return ("no source node");
+	if (ndst < arg->num_replicas)
+		return ("not enough number of destination nodes");
+	if (nfinfo <= 0)
 		return (NULL); /* no file */
 	/* sort 'sinfo' in descending order wrt file size */
-	qsort(sinfo, nsinfo, sizeof(*sinfo), filesizecmp_inv);
+	qsort(finfo, nfinfo, sizeof(*finfo), filesizecmp_inv);
 
 	if (nthreads <= 0) {
-		nthreads = nsinfo;
+		nthreads = nfinfo;
 		if (ndst < nthreads)
 			nthreads = ndst;
 		if (nsrc < nthreads)
@@ -468,7 +370,7 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 	}
 	if (arg->verbose) {
 		print_gfrep_arg(arg);
-		printf("files: %d\n", nsinfo);
+		printf("files: %d\n", nfinfo);
 #ifdef _OPENMP
 		printf("parallel replication using %d streams\n", nthreads);
 #endif
@@ -490,19 +392,19 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 	nth = omp_get_num_threads();
 
 #pragma omp for schedule(dynamic)
-	for (i = 0; i < nsinfo; ++i) {
+	for (i = 0; i < nfinfo; ++i) {
 		int di;
 		struct timeval t1, t2;
 		double t;
-		struct gfarm_section_xinfo *si = sinfo[i];
+		struct file_info *fi = finfo[i];
 #ifdef LIBGFARM_NOT_MT_SAFE
 		pid_t pid;
 		int s, rv;
 #endif
 		if (!arg->quiet)
-			printf("%s (%s)\n", si->file, si->i.section);
+			printf("%s\n", fi->pathname);
 		if (arg->verbose)
-			gfarm_section_xinfo_print(si);
+			print_file_info(fi);
 		if (tnum + pi * nth > ndst)
 			pi = 0;
 
@@ -519,9 +421,8 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 			 * XXX - the destination may conflict
 			 */
 			max_niter = ndst;
-			while (gfarm_file_section_copy_info_does_exist(
-				si->i.pathname, si->i.section, dst[di])
-			       || ! is_enough_space(dst[di], si->i.filesize)) {
+			while (file_copy_does_exist(fi, dst[di])
+			       || ! is_enough_space(dst[di], fi->filesize)) {
 				if (arg->verbose)
 					printf("%02d: warning: the destination"
 					       " may conflict: %s -> %s\n",
@@ -532,40 +433,43 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 					break;
 			}
 			if (max_niter == 0) {
-				e = "not enough free disk space";
+				e = GFARM_ERR_NO_SPACE;
+				errmsg = "not enough free disk space";
 				goto skip_replication;
 			}
 			if (arg->verbose) {
-				printf("%02d(%03d): %s (%s) --> %s\n",
-				       tnum, pi, si->file,
-				       si->i.section, dst[di]);
+				printf("%02d(%03d): %s --> %s\n",
+				       tnum, pi, fi->pathname, dst[di]);
 				gettimeofday(&t1, NULL);
 			}
-			if (!arg->noexecute)
-				e = act->transfer_to(si->file, si->i.section,
-					dst[di]);
+			if (!arg->noexecute) {
+				e = act->transfer_to(fi->pathname,
+					dst[di], dst_port[di]);
+				errmsg = gfarm_error_string(e);
+			}
 			else {
-				printf("%s (%s): %s to %s\n", act->action,
-				       si->file, si->i.section, dst[di]);
-				e = NULL;
+				printf("%s (%s) to %s\n", act->action,
+				       fi->pathname, dst[di]);
+				e = GFARM_ERR_NO_ERROR;
+				errmsg = gfarm_error_string(e);
 			}
 			if (arg->verbose) {
 				gettimeofday(&t2, NULL);
 				t = gfarm_timerval_sub(&t2, &t1);
-				printf("%s (%s): %f sec  %f MB/sec\n",
-				       si->file, si->i.section, t,
-				       si->i.filesize / t / 1024 / 1024);
+				printf("%s: %f sec  %f MB/sec\n",
+				       fi->pathname, t,
+				       fi->filesize / t / 1024 / 1024);
 			}
 		skip_replication:
-			if (e != NULL) {
+			if (e != GFARM_ERR_NO_ERROR) {
 #ifndef LIBGFARM_NOT_MT_SAFE
 				++nerr;
 #endif
-				fprintf(stderr, "%s (%s): %s\n",
-					si->file, si->i.section, e);
+				fprintf(stderr, "%s: %s\n",
+					fi->pathname, errmsg);
 			}
 #ifdef LIBGFARM_NOT_MT_SAFE
-			_exit(e == NULL ? 0 : 1);
+			_exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 		}
 		while ((rv = waitpid(pid, &s, 0)) == -1 && errno == EINTR);
 		if (rv == -1 || (WIFEXITED(s) && WEXITSTATUS(s) != 0))
@@ -592,11 +496,11 @@ usage()
 }
 
 static int
-error_check(char *e)
+error_check(gfarm_error_t e)
 {
-	if (e == NULL)
+	if (e == GFARM_ERR_NO_ERROR)
 		return (0);
-	fprintf(stderr, "%s: %s\n", program_name, e);
+	fprintf(stderr, "%s: %s\n", program_name, gfarm_error_string(e));
 	exit(EXIT_FAILURE);
 }
 
@@ -611,48 +515,105 @@ conflict_check(int *mode_ch_p, int ch)
 	*mode_ch_p = ch;
 }
 
-static char *
-create_hostlist(char *hostfile, char *domain, int *nhosts, char ***hosts)
+static gfarm_error_t
+create_hosthash_from_file(char *hostfile,
+	int hashsize, struct gfarm_hash_table **hashp)
 {
-	int error_line = -1;
-	char *e;
+	int error_line = -1, nhosts;
+	gfarm_error_t e;
+	char **hosts;
 
-	if (hostfile != NULL) {
-		e = gfarm_hostlist_read(
-			hostfile, nhosts, hosts, &error_line);
-		if (e != NULL) {
-			if (error_line != -1)
-				fprintf(stderr, "%s: line %d: %s\n",
-					hostfile, error_line, e);
-			else
-				fprintf(stderr, "%s: %s\n", hostfile, e);
-			exit(EXIT_FAILURE);
+	if (hostfile == NULL) {
+		*hashp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	e = gfarm_hostlist_read(hostfile, &nhosts, &hosts, &error_line);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (error_line != -1)
+			fprintf(stderr, "%s: line %d: %s\n", hostfile,
+				error_line, gfarm_error_string(e));
+		else
+			fprintf(stderr, "%s: %s\n", hostfile,
+				gfarm_error_string(e));
+		exit(EXIT_FAILURE);
+	}
+	e = create_hash_table_from_string_list(nhosts, hosts,
+			HOSTHASH_SIZE, hashp);
+	gfarm_strings_free_deeply(nhosts, hosts);
+	return (e);
+}
+
+static gfarm_error_t
+create_hostlist_by_domain_and_hash(char *domain,
+	struct gfarm_hash_table *hosthash,
+	int *nhostsp, char ***hostsp, int **portsp)
+{
+	int ninfo, i, j, *ports;
+	struct gfarm_host_sched_info *infos;
+	char **hosts;
+	gfarm_error_t e;
+
+	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
+		&ninfo, &infos);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	/* XXX - abandon CPU load and available capacity */
+	GFARM_MALLOC_ARRAY(hosts, ninfo);
+	if (hosts == NULL) {
+		gfarm_host_sched_info_free(ninfo, infos);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	GFARM_MALLOC_ARRAY(ports, ninfo);
+	if (ports == NULL) {
+		free(hosts);
+		gfarm_host_sched_info_free(ninfo, infos);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0, j = 0; i < ninfo; ++i) {
+		char *host = infos[i].host;
+
+		if (hosthash == NULL ||
+		    gfarm_hash_lookup(hosthash, host, strlen(host) + 1)) {
+			hosts[j] = strdup(host);
+			ports[j] = infos[i].port;
+			if (hosts[j] == NULL) {
+				gfarm_strings_free_deeply(j, hosts);
+				return (GFARM_ERR_NO_MEMORY);
+			}
+			++j;
 		}
 	}
-	else {
-		e = gfarm_hosts_in_domain(nhosts, hosts, domain);
-	}
+	gfarm_host_sched_info_free(ninfo, infos);
+	*hostsp = hosts;
+	*portsp = ports;
+	*nhostsp = j;
+
 	return (e);
 }
 
 int
 main(int argc, char *argv[])
 {
-	char *src_domain = "", *dst_domain = "", *section = NULL;
+	char *src_domain = "", *dst_domain = "";
 	char *src_hostfile = NULL, *dst_hostfile = NULL;
-	struct gfarm_hash_table *src_hosthash = NULL;
-	gfarm_stringlist paths, allpaths;
+	struct gfarm_hash_table *src_hosthash = NULL, *dst_hosthash = NULL;
+	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int mode_src_ch = 0, mode_dst_ch = 0, num_replicas = 1, parallel = -1;
 	int noexecute = 0, quiet = 0, verbose = 0;
-	int i, nsrchosts, ndsthosts, nsinfo;
-	char **srchosts, **dsthosts, ch, *e;
+	int i, src_nhosts, dst_nhosts, nfinfo, *dst_ports;
+	char **src_hosts, **dst_hosts, ch;
+	gfarm_error_t e;
+	const char *errmsg;
 	struct gfrep_arg gfrep_arg;
-	struct gfarm_section_xinfo **sinfo;
+	struct flist_arg flist_arg;
+	struct file_info **finfo;
+	gfarm_list slist;
+	struct gfarm_hash_table *srchash;
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-	nsinfo = 0;
-	sinfo = NULL;
+	nfinfo = 0;
+	finfo = NULL;
 #endif
 
 	if (argc >= 1)
@@ -662,15 +623,11 @@ main(int argc, char *argv[])
 	error_check(e);
 
 #ifdef _OPENMP
-	while ((ch = getopt(argc, argv, "a:h:j:mnqvS:D:H:I:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "h:j:mnqvS:D:H:N:?")) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "a:h:mnqvS:D:H:I:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "h:mnqvS:D:H:N:?")) != -1) {
 #endif
 		switch (ch) {
-		case 'a':
-		case 'I':
-			section = optarg;
-			break;
 		case 'h':
 			src_hostfile = optarg;
 			conflict_check(&mode_src_ch, ch);
@@ -680,9 +637,11 @@ main(int argc, char *argv[])
 			parallel = strtol(optarg, NULL, 0);
 			break;
 #endif
+#if 0
 		case 'm':
 			act = &migrate_mode;
 			break;
+#endif
 		case 'n':
 			noexecute = 1;
 			break;
@@ -718,10 +677,15 @@ main(int argc, char *argv[])
 	/* make writing-to-stderr atomic, for GfarmFS-FUSE log output */
 	setvbuf(stderr, NULL, _IOLBF, 0);
 
+	if (!quiet) {
+		printf("constructing file list...");
+		fflush(stdout);
+	}
+
 	e = gfarm_stringlist_init(&paths);
-	if (e == NULL) {
+	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_glob_init(&types);
-		if (e == NULL) {
+		if (e == GFARM_ERR_NO_ERROR) {
 			for (i = 0; i < argc; i++)
 				gfs_glob(argv[i], &paths, &types);
 			gfs_glob_free(&types);
@@ -729,78 +693,82 @@ main(int argc, char *argv[])
 	}
 	error_check(e);
 
-	e = gfarm_stringlist_init(&allpaths);
+	e = gfarm_list_init(&slist);
 	error_check(e);
-	if (!quiet) {
-		printf("constructing file list...");
-		fflush(stdout);
-	}
+	srchash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
+		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
+	if (srchash == NULL)
+		error_check(GFARM_ERR_NO_MEMORY);
+
+	e = create_hosthash_from_file(src_hostfile,
+		HOSTHASH_SIZE, &src_hosthash);
+	error_check(e);
+	e = create_hosthash_from_file(dst_hostfile,
+		HOSTHASH_SIZE, &dst_hosthash);
+	error_check(e);
+	flist_arg.src_domain = src_domain;
+	flist_arg.src_hosthash = src_hosthash;
+	flist_arg.dst_domain = dst_domain;
+	flist_arg.dst_hosthash = dst_hosthash;
+	flist_arg.num_replicas = num_replicas;
+	flist_arg.slist = &slist;
+	flist_arg.srchash = srchash;
+
 	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 		char *file = gfarm_stringlist_elem(&paths, i);
-		gfarm_foreach_directory_hierarchy(
-			add_file, NULL, NULL, file, &allpaths);
+
+		e = gfarm_foreach_directory_hierarchy(
+			create_filelist, NULL, NULL, file, &flist_arg);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
 	}
 	gfarm_stringlist_free_deeply(&paths);
+	error_check(e);
+
 	if (!quiet)
 		printf(" done\n");
 	if (verbose)
-		print_stringlist(&allpaths);
-	if (gfarm_stringlist_length(&allpaths) <= 0)
+		print_file_list(flist_arg.slist);
+	if (gfarm_list_length(flist_arg.slist) <= 0)
 		exit(0); /* no file */
+
+	finfo = gfarm_array_alloc_from_list(flist_arg.slist);
+	nfinfo = gfarm_list_length(flist_arg.slist);
+	gfarm_list_free(flist_arg.slist);
+	e = gfarm_hash_to_string_array(
+		flist_arg.srchash, &src_nhosts, &src_hosts);
+	error_check(e);
+	gfarm_hash_table_free(flist_arg.srchash);
 
 	if (!quiet) {
 		printf("investigating hosts...");
 		fflush(stdout);
 	}
-
-	if (src_hostfile != NULL) {
-		e = create_hostlist(src_hostfile, NULL, &nsrchosts, &srchosts);
-		error_check(e);
-		e = create_hash_table_from_string_list(nsrchosts, srchosts,
-			HOSTHASH_SIZE, &src_hosthash);
-		error_check(e);
-		gfarm_strings_free_deeply(nsrchosts, srchosts);
-	}
-	gfrep_arg.src_domain = src_domain;
-	gfrep_arg.src_hosthash = src_hosthash;
-	gfrep_arg.section = section;
-	e = create_host_and_file_section_list(&allpaths, &gfrep_arg,
-		&nsrchosts, &srchosts, &nsinfo, &sinfo);
-	if (src_hosthash != NULL)
-		gfarm_hash_table_free(src_hosthash);
-	if (e == NULL)
-		e = gfarm_schedule_search_idle_acyclic_hosts(
-			nsrchosts, srchosts, &nsrchosts, srchosts);
-	error_check(e);
-
-	e = create_hostlist(dst_hostfile, dst_domain, &ndsthosts, &dsthosts);
-	if (e == NULL)
-		e = gfarm_schedule_search_idle_acyclic_hosts_to_write(
-			ndsthosts, dsthosts, &ndsthosts, dsthosts);
-	error_check(e);
-
-	gfrep_arg.nsrc = nsrchosts;
-	gfrep_arg.ndst = ndsthosts;
-	gfrep_arg.src = srchosts;
-	gfrep_arg.dst = dsthosts;
-	gfrep_arg.ncopy = num_replicas;
-	e = refine_file_section_list(&nsinfo, &sinfo, &gfrep_arg);
+	e = create_hostlist_by_domain_and_hash(dst_domain, dst_hosthash,
+		&dst_nhosts, &dst_hosts, &dst_ports);
 	error_check(e);
 	if (!quiet)
 		printf(" done\n");
 
+	gfrep_arg.nsrc = src_nhosts;
+	gfrep_arg.src = src_hosts;
+	gfrep_arg.ndst = dst_nhosts;
+	gfrep_arg.dst = dst_hosts;
+	gfrep_arg.dst_port = dst_ports;
+	gfrep_arg.num_replicas = num_replicas;
 	gfrep_arg.noexecute = noexecute;
 	gfrep_arg.verbose = verbose;
 	gfrep_arg.quiet = quiet;
 
-	e = replicate(nsinfo, sinfo, parallel, &gfrep_arg);
-	error_check(e);
+	errmsg = replicate(nfinfo, finfo, parallel, &gfrep_arg);
+	if (errmsg != NULL)
+		fprintf(stderr, "%s\n", errmsg), exit(EXIT_FAILURE);
 
-	gfarm_array_free_deeply(nsinfo, sinfo,
-		(void (*)(void *))gfarm_section_xinfo_free);
-	gfarm_strings_free_deeply(nsrchosts, srchosts);
-	gfarm_strings_free_deeply(ndsthosts, dsthosts);
-	gfarm_stringlist_free_deeply(&allpaths);
+	gfarm_array_free_deeply(nfinfo, finfo,
+		(void (*)(void *))file_info_free);
+	gfarm_strings_free_deeply(src_nhosts, src_hosts);
+	gfarm_strings_free_deeply(dst_nhosts, dst_hosts);
+	free(dst_ports);
 	e = gfarm_terminate();
 	error_check(e);
 
