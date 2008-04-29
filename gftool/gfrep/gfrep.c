@@ -612,8 +612,9 @@ main(int argc, char *argv[])
 	struct gfarm_hash_table *srchash;
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-	nfinfo = 0;
-	finfo = NULL;
+	src_nhosts = dst_nhosts = 0;
+	src_hosts = dst_hosts = NULL;
+	dst_ports = NULL;
 #endif
 
 	if (argc >= 1)
