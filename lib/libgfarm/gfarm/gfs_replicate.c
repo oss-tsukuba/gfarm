@@ -49,6 +49,7 @@ gfs_replicate_to(char *file, char *dsthost, int dstport)
 		goto close;
 	e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		dsthost, dstport);
+	free(srchost);
  close:
 	e2 = gfs_pio_close(gf);
 
