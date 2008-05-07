@@ -100,6 +100,7 @@ remover(struct peer *peer, struct host *host)
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
+	host_peer_unset(host);
 	return (e);
 }
 
