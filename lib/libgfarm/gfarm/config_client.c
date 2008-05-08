@@ -473,10 +473,10 @@ gfarm_terminate(void)
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
-	e = gfarm_metadb_terminate();
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 #endif /* not yet in gfarm v2 */
+	gfarm_free_user_map();
+	gfs_client_terminate();
+	gfm_client_connection_free(gfarm_metadb_server);
 
 	return (GFARM_ERR_NO_ERROR);
 }

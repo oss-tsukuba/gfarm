@@ -377,14 +377,6 @@ replicate(int nfinfo, struct file_info **finfo,
 	}
 	omp_set_num_threads(nthreads);
 
-#ifdef LIBGFARM_NOT_MT_SAFE
-	/*
-	 * XXX - libgfarm is not thread-safe...
-	 * purge the connection cache for gfsd since the connection to
-	 * gfsd cannot be shared among child processes.
-	 */
-	gfs_client_terminate();
-#endif
 #pragma omp parallel reduction(+:nerr) private(pi,tnum,nth)
 	{
 	pi = 0;
@@ -411,6 +403,13 @@ replicate(int nfinfo, struct file_info **finfo,
 #ifdef LIBGFARM_NOT_MT_SAFE
 		pid = fork();
 		if (pid == 0) {
+			e = gfarm_terminate();
+			if (e == GFARM_ERR_NO_ERROR)
+				e = gfarm_initialize(NULL, NULL);
+			if (e != GFARM_ERR_NO_ERROR) {
+				errmsg = gfarm_error_string(e);
+				goto skip_replication;
+			}
 #endif
 			di = (tnum + pi * nth) % ndst;
 			/*
@@ -484,7 +483,7 @@ replicate(int nfinfo, struct file_info **finfo,
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
+	fprintf(stderr, "Usage: %s [-nqv] [-I <section>] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
 	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
@@ -638,7 +637,7 @@ main(int argc, char *argv[])
 			parallel = strtol(optarg, NULL, 0);
 			break;
 #endif
-#if 0
+#if 0 /* not yet in gfarm v2 */
 		case 'm':
 			act = &migrate_mode;
 			break;

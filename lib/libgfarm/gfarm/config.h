@@ -75,6 +75,7 @@ void gfarm_config_clear(void);
 gfarm_error_t gfarm_config_read_file(FILE *, int *);
 #endif
 gfarm_error_t gfarm_init_user_map(void);
+gfarm_error_t gfarm_free_user_map(void);
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
 

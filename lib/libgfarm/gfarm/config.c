@@ -1142,6 +1142,13 @@ gfarm_init_user_map(void)
 }
 
 gfarm_error_t
+gfarm_free_user_map(void)
+{
+	gfarm_stringlist_free_deeply(&local_user_map_file_list);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfarm_config_read_file(FILE *config, int *lineno_p)
 {
 	gfarm_error_t e;
