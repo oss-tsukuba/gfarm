@@ -787,8 +787,8 @@ fi
 %{prefix}/bin/gftest
 %endif
 %{prefix}/bin/gfwhere
-%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfwhoami
+%if %{gfarm_v2_not_yet}
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
 %endif

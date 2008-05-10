@@ -7,7 +7,9 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <gfarm/gfarm.h>
+#ifdef HAVE_GSI
 #include "auth.h"
+#endif
 
 char *program_name = "gfwhoami";
 
@@ -27,7 +29,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	char *e;
+	gfarm_error_t e;
 	int c;
 #ifdef HAVE_GSI
 	int verbose_flag = 0;
@@ -37,8 +39,9 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 
 	e = gfarm_initialize(&argc, &argv);
-	if (e != NULL) {
-		fprintf(stderr, "%s: gfarm_initialize: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: gfarm_initialize: %s\n", program_name,
+			gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 
@@ -66,8 +69,9 @@ main(int argc, char **argv)
 	printf("\n");
 
 	e = gfarm_terminate();
-	if (e != NULL) {
-		fprintf(stderr, "%s: gfarm_terminate: %s\n", program_name, e);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: gfarm_terminate: %s\n", program_name,
+			gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
 	return (0);

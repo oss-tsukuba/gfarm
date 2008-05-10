@@ -22,6 +22,7 @@ SUBDIRS = \
 	gfstat \
 	gfuser \
 	gfwhere \
+	gfwhoami \
 	config-gfarm
 
 #	gfdump \
@@ -39,7 +40,6 @@ SUBDIRS = \
 #	gfstatus \
 #	gftest \
 #	gfusage \
-#	gfwhoami \
 #	example \
 
 include $(top_srcdir)/makes/subdir.mk
