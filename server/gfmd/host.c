@@ -390,7 +390,7 @@ host_update_status(struct host *host)
 	gfarm_error_t e;
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
 
-	if (host->report_flags | GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = host->disk_used;
 		saved_avail = host->disk_avail;
 	}
