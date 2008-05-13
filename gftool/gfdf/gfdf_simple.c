@@ -15,7 +15,7 @@ char *program_name = "gfdf";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-a] [-d domain]\n", program_name);
+	fprintf(stderr, "Usage: %s [-a] [-D domain]\n", program_name);
 	exit(1);
 }
 
@@ -96,12 +96,12 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "ad:?")) != -1) {
+	while ((c = getopt(argc, argv, "aD:?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
 			break;
-		case 'd':
+		case 'D':
 			domain = optarg;
 			break;
 		case '?':
