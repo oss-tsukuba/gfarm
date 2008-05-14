@@ -312,7 +312,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
+%endif
 %{man_prefix}/man1/gfdf.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfexec.1.gz
 %{man_prefix}/man1/gfexport.1.gz
 %{man_prefix}/man1/gfgrep.1.gz
@@ -398,7 +400,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
+%endif
 %{man_prefix}/ja/man1/gfdf.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfexec.1.gz
 %{man_prefix}/ja/man1/gfexport.1.gz
 %{man_prefix}/ja/man1/gfgrep.1.gz
