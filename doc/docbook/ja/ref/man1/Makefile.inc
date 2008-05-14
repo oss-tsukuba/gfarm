@@ -1,5 +1,7 @@
 DOCBOOK = \
-	gfdf.1
+	gfdf.1 \
+	gfwhere.1 \
+	gfwhoami.1
 
 #	gfarm_agent.1 \
 #	gfcd.1 \
@@ -27,5 +29,3 @@ DOCBOOK = \
 #	gfstat.1 \
 #	gfusage.1 \
 #	gfwc.1 \
-#	gfwhere.1 \
-#	gfwhoami.1

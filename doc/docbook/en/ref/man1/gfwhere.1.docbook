@@ -13,61 +13,33 @@
 
 <refnamediv id='name'>
 <refname>gfwhere</refname>
-<refpurpose>print a replica catalog of each Gfarm fragment</refpurpose>
+<refpurpose>print replica locations</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfwhere</command>
-    <arg choice='opt'>-I <replaceable>fragment-index</replaceable></arg>
-    <arg choice='opt'>-s</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt'>-r, -R</arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfwhere</command> prints a replica catalog of a Gfarm file specified by
-<parameter>gfarm-URL</parameter>.  When the Gfarm file is a regular fragmented file,
-<command>gfwhere</command> prints in the following format.</para>
-
-<!-- .in +.5i -->
-<literallayout>
-fragment index: filesystem node ...
-</literallayout>
-<!-- .in -->
-
-<para>When the Gfarm file is an executable file, <command>gfwhere</command> prints in the
-following format.</para>
-
-<!-- .in +.5i -->
-<literallayout>
-architecture: filesystem node ...
-</literallayout>
-<!-- .in -->
-
+<para><command>gfwhere</command> prints replica locations of specified
+files.  When -r or -R option is specified, prints replica locations of
+subentries in specified directories recursively.</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-I</option> <parameter>fragment-index</parameter>
+<term><option>-r, -R</option>
 </term>
 <listitem>
-<para>Specifies the fragment index to be displayed.  If the <parameter>gfarm-URL</parameter>
-is an executable file, an architecture name, for example,
-sparc-sun-solaris8, can be used to specify the executable architecture
-to be displayed.</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-s</option>
-</term>
-<listitem>
-<para>Displays the size of each file fragment.</para>
+<para>Displays subdirectories recursively.</para>
 </listitem>
 </varlistentry>
 
