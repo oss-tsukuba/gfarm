@@ -2,7 +2,7 @@
 
 <refentry id='gfdf.1'>
 
-<refentryinfo><date>31 Oct 2003</date></refentryinfo>
+<refentryinfo><date>14 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdf</refentrytitle>
@@ -18,18 +18,13 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfdf</command>
-    <arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    <arg choice='opt'>-i</arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfdf</command>
-    <arg choice='plain' rep=repeat>-h <replaceable>ホスト</replaceable></arg>
-    <arg choice='opt'>-i</arg>
+    <arg choice='opt'>-a</arg>
+    <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfdf</command> は、指定した gfarm のファイルシステムノードの
+<para><command>gfdf</command> は、Gfarmファイルシステムの
 ディスク空き容量を表示します。
 </para>
 </refsect1>
@@ -37,33 +32,21 @@
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<term><option>-a</option></term>
 <listitem>
-<para>
-ファイルシステムノードのホスト名のリストを記載したファイル名を指定します。
-ホスト名は、各行に一ホストずつ記述します。
-</para>
-<para>
-ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。
-</para>
+<para>Gfarmファイルシステム全体のディスク容量を表示します．</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
-<term><option>-h</option> <parameter>ホスト名</parameter></term>
+<term><option>-D</option> <parameter>ドメイン名</parameter></term>
 <listitem>
 <para>
-指定したファイルシステムノードの表示を行います。
-このオプションは、複数回指定することができます。
+指定したドメイン名に含まれるファイルシステムノードの状態を表示します．
 </para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><option>-i</option></term>
-<listitem>
-<para>ディスク容量の代わりに、i-node の使用状況を表示します。</para>
-</listitem>
-</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
@@ -79,7 +62,7 @@
   <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
-  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>

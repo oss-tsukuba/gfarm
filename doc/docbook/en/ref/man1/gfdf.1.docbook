@@ -2,7 +2,7 @@
 
 <refentry id='gfdf.1'>
 
-<refentryinfo><date>10 Nov 2006</date></refentryinfo>
+<refentryinfo><date>14 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdf</refentrytitle>
@@ -18,53 +18,37 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfdf</command>
-    <arg choice='plain'>-H <replaceable>hostfile</replaceable></arg>
-    <arg choice='opt'>-i</arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfdf</command>
-    <arg choice='plain' rep=repeat>-h <replaceable>hostname</replaceable></arg>
-    <arg choice='opt'>-i</arg>
+    <arg choice='opt'>-a</arg>
+    <arg choice='plain'>-D <replaceable>domainname</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
 <command>gfdf</command> displays disk usage and free space of
-specified gfarm filesystem node.
+Gfarm file system.
 </para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-H</option> <parameter>hostfile</parameter></term>
+<term><option>-a</option></term>
 <listitem>
-<para>
-Specifies a list of filesystem nodes. 
-The <parameter>hostfile</parameter> consists of
-the hostname of a filesystem node in each line.  
-</para>
-<para>
-If ``-'' is specified, standard input is used to read the host list.
-</para>
+<para>Displays only summary information of the Gfarm file system.</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
-<term><option>-h</option> <parameter>hostname</parameter></term>
+<term><option>-D</option> <parameter>domainname</parameter></term>
 <listitem>
 <para>
-Specifies the hostname of a filesystem node.
-This option can be used multple times.
+Specifies a domain name of filesystem nodes to list the status
+of disk free space. 
 </para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><option>-i</option></term>
-<listitem>
-<para>Displays i-node information instead of disk space information.</para>
-</listitem>
-</varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
@@ -80,7 +64,7 @@ This option can be used multple times.
   <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>,
   <citerefentry>
-  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>
