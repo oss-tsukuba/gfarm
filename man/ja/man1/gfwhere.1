@@ -3,40 +3,25 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFWHERE" "1" "01 November 2004" "Gfarm" ""
+.TH "GFWHERE" "1" "14 May 2008" "Gfarm" ""
 
 .SH NAME
 gfwhere \- Gfarm ファイルのレプリカの所在を表示する。
 .SH SYNOPSIS
 
-\fBgfwhere\fR [ \fB-I \fIフラグメント番号\fB\fR ] [ \fB-s\fR ] \fB\fIgfarm-URL\fB\fR\fI ...\fR
+\fBgfwhere\fR [ \fB-r, -R\fR ] \fB\fIpath\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
-指定した Gfarm-URL を構成するファイルについて、レプリカの所在を表示
-します。
-.PP
-フラグメント化されたファイルの場合、各行は、下記の形式になります。
-
-.nf
-フラグメント番号: レプリカのあるホスト名....
-.fi
-.PP
-また、実行ファイルの場合、各行は、下記の形式になります。
-
-.nf
-アーキテクチャ: レプリカのあるホスト名....
-.fi
+指定したファイルについて、レプリカの所在を表示します。
+-r あるいは -R オプションを付けると、
+指定されたディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。
 .SH "OPTIONS"
 .TP
-\fB-I \fIフラグメント番号\fB\fR
-レプリカの所在を表示するフラグメントを指定します。
-実行形式のファイルの場合には、このオプションで実行アーキ
-テクチャ(例 「sparc-sun-solaris8」) を指定することによっ
-て、指定したアーキテクチャのレプリカの所在を表示できます。
-.TP
-\fB-s\fR
-ファイル・フラグメントのサイズも表示します。
+\fB-r, -R\fR
+ディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。
 .TP
 \fB-?\fR
 引数オプションを表示します。
