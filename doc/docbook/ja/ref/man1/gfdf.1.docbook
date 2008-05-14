@@ -19,7 +19,7 @@
 <cmdsynopsis>
   <command>gfdf</command>
     <arg choice='opt'>-a</arg>
-    <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
