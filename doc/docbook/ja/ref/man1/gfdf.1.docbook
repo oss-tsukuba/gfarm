@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfdf</refname>
-<refpurpose>gfarm ディスク空き容量取得</refpurpose>
+<refpurpose>ディスク空き容量取得</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -34,7 +34,7 @@
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
-<para>Gfarmファイルシステム全体のディスク容量を表示します．</para>
+<para>Gfarmファイルシステム全体のディスク空き容量を表示します。</para>
 </listitem>
 </varlistentry>
 
@@ -42,7 +42,7 @@
 <term><option>-D</option> <parameter>ドメイン名</parameter></term>
 <listitem>
 <para>
-指定したドメイン名に含まれるファイルシステムノードの状態を表示します．
+指定したドメイン名に含まれるファイルシステムノードの状態を表示します。
 </para>
 </listitem>
 </varlistentry>

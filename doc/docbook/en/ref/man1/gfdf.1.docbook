@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfdf</refname>
-<refpurpose>display gfarm filesystem disk free space</refpurpose>
+<refpurpose>display disk free space of Gfarm file system</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
