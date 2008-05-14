@@ -341,8 +341,10 @@ fi
 %{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfusage.1.gz
 %{man_prefix}/man1/gfwc.1.gz
+%endif
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man3/gfarm.3.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_strings_free_deeply.3.gz
@@ -429,8 +431,10 @@ fi
 %{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfusage.1.gz
 %{man_prefix}/ja/man1/gfwc.1.gz
+%endif
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man3/gfarm.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
 %{man_prefix}/ja/man3/gfarm_import_fragment_config_read.3.gz
