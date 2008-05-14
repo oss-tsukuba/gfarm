@@ -3,40 +3,30 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "12 November 2006" "Gfarm" ""
+.TH "GFDF" "1" "14 May 2008" "Gfarm" ""
 
 .SH NAME
-gfdf \- display gfarm filesystem disk free space
+gfdf \- display disk free space of Gfarm file system
 .SH SYNOPSIS
 
-\fBgfdf\fR \fB-H \fIhostfile\fB\fR [ \fB-i\fR ]
-
-
-\fBgfdf\fR \fB-h \fIhostname\fB\fR\fI ...\fR [ \fB-i\fR ]
+\fBgfdf\fR [ \fB-a\fR ] [ \fB-D \fIdomainname\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
 \fBgfdf\fR displays disk usage and free space of
-specified gfarm filesystem node.
+Gfarm file system.
 .SH "OPTIONS"
 .TP
-\fB-H \fIhostfile\fB\fR
-Specifies a list of filesystem nodes. 
-The \fIhostfile\fR consists of
-the hostname of a filesystem node in each line.  
-
-If ``-'' is specified, standard input is used to read the host list.
+\fB-a\fR
+Displays only summary information of the Gfarm file system.
 .TP
-\fB-h \fIhostname\fB\fR
-Specifies the hostname of a filesystem node.
-This option can be used multple times.
-.TP
-\fB-i\fR
-Displays i-node information instead of disk space information.
+\fB-D \fIdomainname\fB\fR
+Specifies a domain name of filesystem nodes to list the status
+of disk free space. 
 .TP
 \fB-?\fR
 Displays a list of command options.
 .SH "SEE ALSO"
 .PP
 \fBgfhost\fR(1),
-\fBgfarm.conf\fR(5)
+\fBgfarm2.conf\fR(5)
