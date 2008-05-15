@@ -41,12 +41,10 @@ struct action replicate_mode = {
 	gfs_replicate_to
 };
 
-#if 0 /* not yet in gfarm v2 */
 struct action migrate_mode = {
 	"migrate",
 	gfs_migrate_to
 };
-#endif
 
 struct action *act = &replicate_mode;
 
@@ -483,14 +481,14 @@ replicate(int nfinfo, struct file_info **finfo,
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s [-nqv] [-I <section>] [-S <src_domain>]"
+	fprintf(stderr, "Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
 	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
 #ifdef _OPENMP
 	fprintf(stderr, " [-j <#thread>]");
 #endif
-	fprintf(stderr, "\n\t<gfarm_url>...\n");
+	fprintf(stderr, "\n\t<gfarm_path>...\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -637,11 +635,9 @@ main(int argc, char *argv[])
 			parallel = strtol(optarg, NULL, 0);
 			break;
 #endif
-#if 0 /* not yet in gfarm v2 */
 		case 'm':
 			act = &migrate_mode;
 			break;
-#endif
 		case 'n':
 			noexecute = 1;
 			break;

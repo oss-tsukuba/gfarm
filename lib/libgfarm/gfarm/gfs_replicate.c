@@ -33,8 +33,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	return (e);
 }
 
-gfarm_error_t
-gfs_replicate_to(char *file, char *dsthost, int dstport)
+static gfarm_error_t
+gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
 {
 	char *srchost;
 	int srcport;
@@ -50,11 +50,25 @@ gfs_replicate_to(char *file, char *dsthost, int dstport)
 		goto close;
 	e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		dsthost, dstport);
+	if (e == GFARM_ERR_NO_ERROR && migrate)
+		e = gfs_replica_remove_by_file(file, srchost);
 	free(srchost);
  close:
 	e2 = gfs_pio_close(gf);
 
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+}
+
+gfarm_error_t
+gfs_replicate_to(char *file, char *dsthost, int dstport)
+{
+	return (gfs_replicate_to_internal(file, dsthost, dstport, 0));
+}
+
+gfarm_error_t
+gfs_migrate_to(char *file, char *dsthost, int dstport)
+{
+	return (gfs_replicate_to_internal(file, dsthost, dstport, 1));
 }
 
 gfarm_error_t
@@ -76,4 +90,15 @@ gfs_replicate_from_to(char *file, char *srchost, int srcport,
 	e2 = gfs_pio_close(gf);
 
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+}
+
+gfarm_error_t
+gfs_migrate_from_to(char *file, char *srchost, int srcport,
+	char *dsthost, int dstport)
+{
+	gfarm_error_t e;
+
+	e = gfs_replicate_from_to(file, srchost, srcport, dsthost, dstport);
+	return (e != GFARM_ERR_NO_ERROR ? e :
+		gfs_replica_remove_by_file(file, srchost));
 }

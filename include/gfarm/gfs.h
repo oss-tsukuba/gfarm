@@ -233,6 +233,8 @@ gfarm_error_t gfs_access(const char *, int);
 
 gfarm_error_t gfs_replicate_to(char *, char *, int);
 gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
+gfarm_error_t gfs_migrate_to(char *, char *, int);
+gfarm_error_t gfs_migrate_from_to(char *, char *, int, char *, int);
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
 gfarm_error_t gfs_replica_remove_by_file(const char *, const char *);
 #if 0
