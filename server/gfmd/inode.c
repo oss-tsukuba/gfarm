@@ -1331,15 +1331,19 @@ inode_remove_replica(struct inode *inode, struct host *spool_host,
 {
 	struct file_copy **copyp, *copy;
 	gfarm_error_t e;
+	int num_replica = 0;
 
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
 	    copyp = &copy->host_next) {
 		if (copy->host == spool_host) {
-			if (do_not_delete_last && copy->host_next == NULL)
+			if (do_not_delete_last && num_replica == 0 &&
+			    copy->host_next == NULL)
 				return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 			*copyp = copy->host_next;
 			break;
 		}
+		if (copy->valid)
+			++num_replica;
 	}
 	if (copy == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
