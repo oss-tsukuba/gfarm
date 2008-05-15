@@ -685,61 +685,78 @@ gfs_server_rename(struct xxx_connection *client)
 	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 }
 
+static int
+gfs_mkdir_(char *f, void *a)
+{
+	mode_t mode = (mode_t)a;
+
+	return (mkdir(f, mode));
+}
+
 void
 gfs_server_mkdir(struct xxx_connection *client)
 {
-	char *gpath, *path;
+	char *gpath;
 	gfarm_int32_t mode;
 	int save_errno = 0;
 	char *msg = "mkdir";
 
 	gfs_server_get_request(client, msg, "si", &gpath, &mode);
 
-	local_path(gpath, &path, msg);
-	if (mkdir(path, mode) == -1)
-		save_errno = errno;
-	free(path);
+	save_errno = gfarm_spool_root_foreach(gfs_mkdir_, gpath, (void *)mode);
+	free(gpath);
 
 	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 	check_input_output_error(msg, save_errno);
 }
 
+static int
+gfs_rmdir_(char *f, void *a)
+{
+	return (rmdir(f));
+}
+
 void
 gfs_server_rmdir(struct xxx_connection *client)
 {
-	char *gpath, *path;
+	char *gpath;
 	int save_errno = 0;
 	char *msg = "rmdir";
 
 	gfs_server_get_request(client, msg, "s", &gpath);
 
-	local_path(gpath, &path, msg);
-	if (rmdir(path) == -1)
-		save_errno = errno;
-	free(path);
+	save_errno = gfarm_spool_root_foreach(gfs_rmdir_, gpath, NULL);
+	free(gpath);
 
 	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
+}
+
+static int
+gfs_chmod_(char *f, void *a)
+{
+	mode_t mode = (mode_t)a;
+
+	return (chmod(f, mode));
 }
 
 void
 gfs_server_chmod(struct xxx_connection *client)
 {
-	char *file, *path;
+	char *file;
 	gfarm_int32_t mode;
 	int save_errno = 0;
 	char *msg = "chmod";
 
 	gfs_server_get_request(client, msg, "si", &file, &mode);
 
-	local_path(file, &path, msg);
-	if (chmod(path, mode) == -1)
-		save_errno = errno;
-	free(path);
+	save_errno = gfarm_spool_root_foreach(gfs_chmod_, file, (void *)mode);
+	free(file);
 
 	gfs_server_put_reply_with_errno(client, msg, save_errno, "");
 	check_input_output_error(msg, save_errno);
 }
 
+/* XXX -- it does not work correctly */
 void
 gfs_server_chgrp(struct xxx_connection *client)
 {

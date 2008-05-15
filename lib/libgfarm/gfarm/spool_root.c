@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <errno.h>
 #include <gfarm/gfarm.h>
 #include "str_list.h"
 #include "gfutil.h"
@@ -84,6 +85,33 @@ gfarm_spool_root_get_for_compatibility()
 	return (gfarm_str_list_car(spool_list));
 }
 
+int
+gfarm_spool_root_foreach(int (*func)(char *, void *), char *file, void *a)
+{
+	char *sp, *p;
+	struct gfarm_str_list *s = spool_list;
+	int err = -1, saved_errno = 0;
+
+	if (s == NULL)
+		gflog_fatal("gfarm_spool_root_foreach(): "
+			    "programming error, "
+			    "gfarm library isn't properly initialized");
+
+	while (s) {
+		sp = gfarm_str_list_car(s);
+		p = gfarm_spool_path(sp, file);
+		if (func(p, a) == 0)
+			err = 0;
+		else if (saved_errno == 0)
+			saved_errno = errno;
+		free(p);
+		s = gfarm_str_list_cdr(s);
+	}
+	return (err == 0 ? err : -saved_errno);
+}
+
+#define GFARM_SPOOL_BLOCK_UNIT	1024
+
 char *
 gfarm_spool_root_get_for_write()
 {
@@ -106,7 +134,7 @@ gfarm_spool_root_get_for_write()
 			s = gfarm_str_list_cdr(s);
 			continue;
 		}
-		a = fsb.f_bsize * fsb.f_bavail;
+		a = fsb.f_bsize / GFARM_SPOOL_BLOCK_UNIT * fsb.f_bavail;
 		if (avail < a) {
 			avail = a;
 			spool = sp;
@@ -147,7 +175,7 @@ gfarm_spool_root_get_for_read(char *file)
 			s = gfarm_str_list_cdr(s);
 			continue;
 		}
-		a = fsb.f_bsize * fsb.f_bavail;
+		a = fsb.f_bsize / GFARM_SPOOL_BLOCK_UNIT * fsb.f_bavail;
 		if (avail < a) {
 			avail = a;
 			spool = sp;
