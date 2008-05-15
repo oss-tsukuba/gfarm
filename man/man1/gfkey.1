@@ -3,10 +3,10 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFKEY" "1" "24 January 2007" "Gfarm" ""
+.TH "GFKEY" "1" "15 May 2008" "Gfarm" ""
 
 .SH NAME
-gfkey \- management of gfsd session keys
+gfkey \- management of Gfarm session keys
 .SH SYNOPSIS
 
 \fBgfkey\fR [ \fB\fIoptions\fB\fR ]
@@ -15,7 +15,8 @@ gfkey \- management of gfsd session keys
 .PP
 \fBgfkey\fR manages the session key file,
 \fI$HOME/.gfarm_shared_key\fR,
-that is used for user authentication in a trusted environment when
+that is used for user authentication by a shared secret key
+in a trusted environment when
 connecting to gfsd and/or gfmd.
 .PP
 When the home directory is shared among filesystem nodes, it is not
