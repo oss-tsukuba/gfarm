@@ -2,7 +2,7 @@
 
 <refentry id='gfmkdir.1'>
 
-<refentryinfo><date>3 Jul 2003</date></refentryinfo>
+<refentryinfo><date>15 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmkdir</refentrytitle>
@@ -18,7 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmkdir</command>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -26,7 +26,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>gfmkdir</command> makes directories specified in
-the arguments. The arguments must be Gfarm-URL.</para>
+the arguments. The arguments must be a pathname in Gfarm file system.</para>
 
 </refsect1>
 

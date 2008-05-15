@@ -2,7 +2,7 @@
 
 <refentry id='gfkey.1'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>15 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -11,7 +11,7 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfkey</refname>
-<refpurpose>gfsd のセッション・キー管理コマンド</refpurpose>
+<refpurpose>Gfarm セッション・キー管理コマンド</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -24,8 +24,8 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>信頼された環境で gfsd、gfmd をアクセスするのに必要なセッション・
-キー・ファイル 
+<para>信頼された環境で gfsd、gfmd を共有秘密鍵認証でアクセスするのに
+必要なセッション・キー・ファイル 
 <option>$HOME/.gfarm_shared_key</option>
 を扱うコマンドです。</para>
 

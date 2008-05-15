@@ -3,7 +3,7 @@
 
 <refentry id='gfkey.1'>
 
-<refentryinfo><date>12 Nov 2006</date></refentryinfo>
+<refentryinfo><date>15 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfkey</refname>
-<refpurpose>management of gfsd session keys</refpurpose>
+<refpurpose>management of Gfarm session keys</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -28,7 +28,8 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>gfkey</command> manages the session key file,
 <filename>$HOME/.gfarm_shared_key</filename>,
-that is used for user authentication in a trusted environment when
+that is used for user authentication by a shared secret key
+in a trusted environment when
 connecting to gfsd and/or gfmd.</para>
 
 <para>When the home directory is shared among filesystem nodes, it is not

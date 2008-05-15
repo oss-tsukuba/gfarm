@@ -2,7 +2,7 @@
 
 <refentry id='gfmkdir.1'>
 
-<refentryinfo><date>3 Jul 2003</date></refentryinfo>
+<refentryinfo><date>15 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfmkdir</refentrytitle>
@@ -18,14 +18,14 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmkdir</command>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>gfarmパス</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm-URL に指定したディレクトリを作成します。</para>
+<para>Gfarmパスに指定したディレクトリを作成します。</para>
 
 </refsect1>
 

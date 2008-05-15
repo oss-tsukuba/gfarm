@@ -1,5 +1,8 @@
 DOCBOOK = \
 	gfdf.1 \
+	gfkey.1 \
+	gfmkdir.1 \
+	gfrmdir.1 \
 	gfwhere.1 \
 	gfwhoami.1
 
@@ -11,9 +14,7 @@ DOCBOOK = \
 #	gfhost.1 \
 #	gfimport_fixed.1 \
 #	gfimport_text.1 \
-#	gfkey.1 \
 #	gfls.1 \
-#	gfmkdir.1 \
 #	gfmpirun_p4.1 \
 #	gfps.1 \
 #	gfpwd.1 \
@@ -21,7 +22,6 @@ DOCBOOK = \
 #	gfreg.1 \
 #	gfrep.1 \
 #	gfrm.1 \
-#	gfrmdir.1 \
 #	gfront.1 \
 #	gfrun.1 \
 #	gfsched.1 \
