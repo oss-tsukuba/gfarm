@@ -321,9 +321,13 @@ fi
 %{man_prefix}/man1/gfhost.1.gz
 %{man_prefix}/man1/gfimport_fixed.1.gz
 %{man_prefix}/man1/gfimport_text.1.gz
+%endif
 %{man_prefix}/man1/gfkey.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfls.1.gz
+%endif
 %{man_prefix}/man1/gfmkdir.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfmpirun_p4.1.gz
 %{man_prefix}/man1/gfps.1.gz
 %{man_prefix}/man1/gfpwd.1.gz
@@ -331,7 +335,9 @@ fi
 %{man_prefix}/man1/gfreg.1.gz
 %{man_prefix}/man1/gfrep.1.gz
 %{man_prefix}/man1/gfrm.1.gz
+%endif
 %{man_prefix}/man1/gfrmdir.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfront.1.gz
 %{man_prefix}/man1/gfrsh.1.gz
 %{man_prefix}/man1/gfrun.1.gz
@@ -411,9 +417,13 @@ fi
 %{man_prefix}/ja/man1/gfhost.1.gz
 %{man_prefix}/ja/man1/gfimport_fixed.1.gz
 %{man_prefix}/ja/man1/gfimport_text.1.gz
+%endif
 %{man_prefix}/ja/man1/gfkey.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfls.1.gz
+%endif
 %{man_prefix}/ja/man1/gfmkdir.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfmpirun_p4.1.gz
 %{man_prefix}/ja/man1/gfps.1.gz
 %{man_prefix}/ja/man1/gfpwd.1.gz
@@ -421,7 +431,9 @@ fi
 %{man_prefix}/ja/man1/gfreg.1.gz
 %{man_prefix}/ja/man1/gfrep.1.gz
 %{man_prefix}/ja/man1/gfrm.1.gz
+%endif
 %{man_prefix}/ja/man1/gfrmdir.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfront.1.gz
 %{man_prefix}/ja/man1/gfrsh.1.gz
 %{man_prefix}/ja/man1/gfrun.1.gz
