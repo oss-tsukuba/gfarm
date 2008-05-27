@@ -1,3 +1,44 @@
+Release note for Gfarm 2.1.0
+============================
+
+[2008.5.27]
+
+New Feature
+* Grid Security Infrastructure (GSI) support
+
+New Command
+* gfgroup - manage groups
+* gfdf - report usage of Gfarm file system
+
+New API
+* gfs_statfs(3)
+* gfs_replicate_to(3), gfs_migrate_to(3), gfs_migrate_from_to(3)
+
+Documentation
+* manual pages - gfdf(1), gfmkdir(1), gfrmdir(1), gfwhere(1), gfwhoami(1),
+  gfkey(1), gfarm2.conf(5), gfsd(8), and gfmd(8).
+* SETUP, Gfarm-FAQ
+
+Performance enhancement
+* enlarge the block size of remote I/O from 256KB to 1MB to improve
+  remote read/write performance from a distant location
+
+Updated feature
+* gfrep - full feature support
+* gfrm - support deletion of a file replica
+* gfsd - support a feature to check a spool directory when starting up
+* config-gfarm - support of a private mode and GSI
+
+Bug fix
+* gfhost - port number cannot be modified
+* gfrep - recover the state when replica creation fails
+  [sf.net tracker bugs #1929840]
+* a security hole of GFS_PROTO_REPLICA_RECV, pointed out by
+  [gfarm-discuss-ja:03295]
+* possible segfault when deleting a user or a host
+* default available capacity is set accidentally to 100GB
+* fix race condition when obtaining all host information
+
 Release note for Gfarm 2.0.0
 ============================
 

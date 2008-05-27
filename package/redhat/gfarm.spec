@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.0.0
+%define ver	2.1.0
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
