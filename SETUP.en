@@ -48,9 +48,12 @@ sure of the default setting with the -t option.  With the -t option,
 nothing is really executed except for the display of the settings for
 configuration.
 
-	# config-gfarm -t -A <global_admin_name> -D <Subject DN>
+	# config-gfarm -t -A <global_admin_name> -a gsi_auth -D <Subject DN>
 
-The -D option is required only for GSI authentication.
+The -a and -D options are only required for GSI authentication.  The
+-a option specifies the authentication method in Gfarm file system.
+For details, refer to a manual page of gfarm2.conf(5) and
+Gfarm-FAQ.en.
 
 You can modify any default parameter with the option shown in [ ].
 
