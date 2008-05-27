@@ -54,7 +54,7 @@ struct gfs_file {
  * GFS_FILE_BUFSIZE should be equal to or less than
  * GFS_PROTO_MAX_IOSIZE defined in gfs_proto.h.
  */
-#define GFS_FILE_BUFSIZE (262144 - 8)
+#define GFS_FILE_BUFSIZE (1048576 - 8)
 	char *buffer;
 	int p;
 	int length;
