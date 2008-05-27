@@ -27,7 +27,7 @@ Table of Contents:
      the gsi_auth method, and gsi authentication?
 
 4. Limitations
-  4.1 The following functionality is not supported yet.
+  4.1 The following functionality is partially supported.
   4.2 The following functionalities supported by Gfarm-1.x are not
      supported yet.
   4.3 The following functionality supported by Gfarm-1.x is not
@@ -167,7 +167,7 @@ Table of Contents:
 
 4. Limitations
 *************
-  4.1 The following functionality is not supported yet.
+  4.1 The following functionality is partially supported.
 
 	Group management command
 
