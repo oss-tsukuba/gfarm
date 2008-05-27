@@ -503,7 +503,7 @@ replicate(int nsinfo, struct gfarm_section_xinfo **sinfo,
 			printf("%s (%s)\n", si->file, si->i.section);
 		if (arg->verbose)
 			gfarm_section_xinfo_print(si);
-		if (tnum + pi * nth > ndst)
+		if (tnum + pi * nth >= ndst)
 			pi = 0;
 
 #ifdef LIBGFARM_NOT_MT_SAFE
