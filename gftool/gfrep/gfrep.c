@@ -395,7 +395,7 @@ replicate(int nfinfo, struct file_info **finfo,
 			printf("%s\n", fi->pathname);
 		if (arg->verbose)
 			print_file_info(fi);
-		if (tnum + pi * nth > ndst)
+		if (tnum + pi * nth >= ndst)
 			pi = 0;
 
 #ifdef LIBGFARM_NOT_MT_SAFE
