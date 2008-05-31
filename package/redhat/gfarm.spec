@@ -333,7 +333,9 @@ fi
 %{man_prefix}/man1/gfpwd.1.gz
 %{man_prefix}/man1/gfrcmd.1.gz
 %{man_prefix}/man1/gfreg.1.gz
+%endif
 %{man_prefix}/man1/gfrep.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfrm.1.gz
 %endif
 %{man_prefix}/man1/gfrmdir.1.gz
@@ -429,7 +431,9 @@ fi
 %{man_prefix}/ja/man1/gfpwd.1.gz
 %{man_prefix}/ja/man1/gfrcmd.1.gz
 %{man_prefix}/ja/man1/gfreg.1.gz
+%endif
 %{man_prefix}/ja/man1/gfrep.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfrm.1.gz
 %endif
 %{man_prefix}/ja/man1/gfrmdir.1.gz
