@@ -2,6 +2,7 @@ DOCBOOK = \
 	gfdf.1 \
 	gfkey.1 \
 	gfmkdir.1 \
+	gfrep.1 \
 	gfrmdir.1 \
 	gfwhere.1 \
 	gfwhoami.1
@@ -20,7 +21,6 @@ DOCBOOK = \
 #	gfpwd.1 \
 #	gfrcmd.1 \
 #	gfreg.1 \
-#	gfrep.1 \
 #	gfrm.1 \
 #	gfront.1 \
 #	gfrun.1 \

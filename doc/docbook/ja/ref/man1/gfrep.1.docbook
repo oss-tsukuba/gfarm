@@ -2,7 +2,7 @@
 
 <refentry id='gfrep.1'>
 
-<refentryinfo><date>5 Aug 2006</date></refentryinfo>
+<refentryinfo><date>31 May 2008</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfrep</refentrytitle>
@@ -17,108 +17,80 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='plain'>-H <replaceable>ホスト指定ファイル</replaceable></arg>
-    <arg choice='opt'>-vm</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrep</command>
-    <arg choice='plain'>-P <replaceable>ホスト対指定ファイル</replaceable></arg>
-    <arg choice='opt'>-vm</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrep</command>
-    <arg choice='plain'>-d <replaceable>複製先ホスト</replaceable></arg>
-    <arg choice='opt'>-s <replaceable>複製元ホスト</replaceable></arg>
-    <arg choice='opt'>-I <replaceable>ファイルセクション</replaceable></arg>
-    <arg choice='opt'>-vm</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfrep</command>
+    <arg choice='opt'>-mnqv</arg>
+    <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
     <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
-    <group choice='opt'>
-      <arg choice='plain'>-S <replaceable>複製元ドメイン名</replaceable></arg>
-      <arg choice='plain'>-s <replaceable>複製元ホスト</replaceable></arg>
-    </group>
+    <arg choice='opt'>-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-H <replaceable>複製先ホスト指定ファイル</replaceable></arg>
     <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
-    <arg choice='opt'>-v</arg>
-    <arg choice='plain' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>並列数</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>引数 <parameter>Gfarm-URL</parameter> で指定したファイルの複製を，
-指定されたホストに作成します．</para>
-<para><parameter>Gfarm-URL</parameter> がディレクトリの場合，
-そのディレクトリを再帰的に複製します．</para>
+<para>引数 <parameter>path</parameter> で指定したファイルの複製を，
+指定されたホスト群に，指定された複製の数だけ作成します．
+複製作成元のホスト群が指定された場合，
+そのホスト群にファイルの複製があるときに限り，
+複製が作成されます．
+ホスト群は，ドメイン名とホスト指定ファイルにより指定可能ですが，
+両方が指定された場合は両方の条件を満たすホスト群が指定されたことになります．
+</para>
+<para><parameter>path</parameter> がディレクトリの場合，
+そのディレクトリ以下のファイルの複製を再帰的に作成します．</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 
 <varlistentry>
-<term><option>-D</option> <parameter>複製先ドメイン名</parameter></term>
+<term><option>-S</option> <parameter>複製元ドメイン名</parameter></term>
 <listitem>
-<para>ファイルの複製を作成する先のホストのドメイン名を指定します．
-このオプションは単独で，あるいは，<option>-S</option>
-や <option>-s</option> オプションと共に用います．</para>
-<para>このオプションも <option>-d</option> オプションも指定しない場合，
-メタデータに登録された全ホストのいずれかに複製を作成します．
-<option>-N</option> オプションの項も参照してください．</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-d</option> <parameter>複製先ホスト</parameter></term>
-<listitem>
-<para>複製作成先のホスト名を1つだけ指定します．
-このオプションは単独で，あるいは，<option>-s</option> 
-オプションと共に用います．</para>
-<para>このオプションも <option>-D</option> オプションも指定しない場合，
-メタデータに登録された全ホストのいずれかに複製を作成します．
+<para>
+ファイル複製元のホストのドメイン名を指定します．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<term><option>-D</option> <parameter>複製先ドメイン名</parameter></term>
 <listitem>
-<para>各フラグメントの複製を作成するホスト名のリストを記述した
+<para>
+ファイル複製作成先のホストのドメイン名を指定します．
+</para>
+<para>このオプションも <option>-H</option> オプションも指定しない場合，
+利用可能な全ホスト群を対象としてファイル複製を作成します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter>複製元ホスト指定ファイル</parameter></term>
+<listitem>
+<para>ファイル複製元のホスト名のリストを記述した
 ファイル名を指定します．
 ホスト名は，ファイル中の各行に一ホストずつ記述します．
-指定したホスト名の数がフラグメントの数よりも少ない場合，
-フラグメントの数と一致するまでホスト名のリストを繰り返し指定した
-ものと見なします．
 </para>
 <para>
 ファイル名として ``-'' を指定した場合，標準入力からホス
-ト名のリストを読み込みます．</para>
+ト名のリストを読み込みます．
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-I</option> <parameter>ファイルセクション</parameter></term>
+<term><option>-H</option> <parameter>複製先ホスト指定ファイル</parameter></term>
 <listitem>
-<para>このオプションで指定した名前のセクションのみ，複製を作成します．
-現在のところ，このオプションは，<option>-d</option> オプションを指定した
-場合にしか動作しません．
+<para>ファイルの複製を作成するホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
 </para>
 <para>
-このオプションは省略できます．
-</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><option>-m</option></term>
-<listitem>
-<para>複製ではなく移動を行ないます．
-現在のところ，このオプションは，<option>-H</option>，<option>-P</option>,
-<option>-d</option> オプションを指定した場合にしか動作しません．
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．
 </para>
 </listitem>
 </varlistentry>
@@ -126,73 +98,62 @@
 <varlistentry>
 <term><option>-N</option> <parameter>複製数</parameter></term>
 <listitem>
-<para>必要な複製の数を指定します．
+<para>
+必要な複製の数を指定します．
 複製先に，指定された数以上の複製が既に存在する場合は，
 複製の作成も削除も行いません．
-このオプションは単独で，あるいは <option>-D</option>，
-<option>-S</option>，<option>-s</option> オプションと共に用います．</para>
-<para>このオプションを省略すると <option>-N 1</option> と指定された
-ものとみなされます．</para>
-<para><option>-S</option> オプションあるいは <option>-s</option>
-オプションで指定された複製元のホストは，複製を作成する対象ホストから
-除外されます．
-つまり，<option>-S</option> オプションあるいは <option>-s</option>
-オプションで指定された以外のホストに，<option>-N</option> で指定した
-数以上の複製が存在することを保証します．
-ただし，複製対象のホストが，複製元のホストの部分集合である
-場合には除外されません．複製対象が存在しなくなってしまうからです．
-例えば「-N 3 -S subdomain.example.org -D example.org」と指定して実行すると，
-結果として，example.org に属すが subdomain.example.org には属さないホストに，
-3つ以上の複製が存在することが保証されます．
+</para>
+<para>
+このオプションを省略すると <option>-N 1</option>
+と指定されたものとみなされます．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-P</option> <parameter>ホスト対ファイル</parameter></term>
+<term><option>-j</option> <parameter>並列数</parameter></term>
 <listitem>
-<para>複製元のホストと複製先のホストの対のリストを記述した
-ファイル名を指定します．
-ファイルの各行には，複製元ホストと複製先ホストを，この順で空白で
-区切って指定します．
-指定した Gfarm-URL を構成するファイルが，複製元ホストに存在する場合のみ，
-そのファイルを複製先ホストにコピーします．
+<para>指定された並列数でファイル複製を作成します．
+このオプションは OpenMP C コンパイラでコンパイルされたときに
+限り有効です．デフォルトでは，指定された総ファイル数，
+複製元ホスト数，複製先ホスト数のうちの最小となります．
 </para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-S</option> <parameter>複製元ドメイン名</parameter></term>
+<term><option>-m</option></term>
 <listitem>
-<para>ファイル複製元のホストのドメイン名を指定します．
-このオプションは単独で，あるいは，<option>-D</option>
-オプションと共に用います．</para>
-<para>このオプションも <option>-s</option> オプションも指定しない場合，
-複製元のホストは，全ノードから選ばれます．</para>
-<para>また，このオプションで指定されたホストは，複製を作成する対象ホスト
-から除外されます．
-詳しくは <option>-N</option> オプションの項を参照してください．</para>
+<para>
+複製ではなく移動を行います．
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><option>-s</option> <parameter>複製元ホスト</parameter></term>
+<term><option>-n</option></term>
 <listitem>
-<para>ファイル複製元のホスト名を指定します．
-このオプションは単独で，あるいは，<option>-D</option>
-や <option>-d</option> オプションと共に用います．</para>
-<para>このオプションも <option>-s</option> オプションも指定しない場合，
-複製元のホストは，全ノードから選ばれます．</para>
-<para>また，このオプションで指定されたホストは，複製を作成する対象ホスト
-から除外されます．
-詳しくは <option>-N</option> オプションの項を参照してください．</para>
+<para>
+ファイル複製が作成されるファイルを表示します．
+実際には何も実行されません．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+エラーではないメッセージの出力を行いません．
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
 <term><option>-v</option></term>
 <listitem>
-<para>複製処理に関して，冗長な表示を行ないます，
+<para>
+複製処理に関して，冗長な表示を行います，
 </para>
 </listitem>
 </varlistentry>
@@ -205,5 +166,14 @@
 </varlistentry>
 
 </variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>
+複製作成元となるホストは，
+実際には複製作成元として指定されたホスト群から選ばれるとは限りません．
+従って，移動により消去されるファイル複製は複製作成元として
+指定されたホスト群の複製とは限りません．
+</para>
 </refsect1>
 </refentry>
