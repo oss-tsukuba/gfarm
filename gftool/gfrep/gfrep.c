@@ -286,6 +286,7 @@ print_file_info(struct file_info *info)
 	printf("ncopy = %d\n", info->ncopy);
 	for (i = 0; i < info->ncopy; ++i)
 		printf("%s\n", info->copy[i]);
+	fflush(stdout);
 }
 
 static void
@@ -437,6 +438,7 @@ replicate(int nfinfo, struct file_info **finfo,
 			if (arg->verbose) {
 				printf("%02d(%03d): %s --> %s\n",
 				       tnum, pi, fi->pathname, dst[di]);
+				fflush(stdout);
 				gettimeofday(&t1, NULL);
 			}
 			if (!arg->noexecute) {
@@ -450,7 +452,7 @@ replicate(int nfinfo, struct file_info **finfo,
 				e = GFARM_ERR_NO_ERROR;
 				errmsg = gfarm_error_string(e);
 			}
-			if (arg->verbose) {
+			if (arg->verbose && e == GFARM_ERR_NO_ERROR) {
 				gettimeofday(&t2, NULL);
 				t = gfarm_timerval_sub(&t2, &t1);
 				printf("%s: %f sec  %f MB/sec\n",
@@ -466,6 +468,8 @@ replicate(int nfinfo, struct file_info **finfo,
 					fi->pathname, errmsg);
 			}
 #ifdef LIBGFARM_NOT_MT_SAFE
+			fflush(stdout);
+			sync();
 			_exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 		}
 		while ((rv = waitpid(pid, &s, 0)) == -1 && errno == EINTR);
@@ -481,7 +485,7 @@ replicate(int nfinfo, struct file_info **finfo,
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s [-mnqv] [-I <section>] [-S <src_domain>]"
+	fprintf(stderr, "Usage: %s [-mnqv] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
 	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
