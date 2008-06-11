@@ -871,8 +871,8 @@ fi
 %defattr(-,root,root)
 %{prefix}/sbin/gfmd
 %{prefix}/bin/config-gfarm
+%{prefix}/bin/gfdump.postgresql
 %if %{gfarm_v2_not_yet}
-%{prefix}/bin/gfdump
 %{prefix}/bin/gfusage
 %endif
 %dir %{share_prefix}
