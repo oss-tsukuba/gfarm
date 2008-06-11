@@ -1,0 +1,100 @@
+#!/bin/sh
+
+PROG=gfdump.postgresql
+
+usage() {
+	echo "usage: $PROG -d [ -f filename ]"
+	echo "       $PROG -r [ -f filename ]"
+	exit 1
+}
+
+# environment variable
+#	CONFIG_DIR	configuration directory	[$PREFIX/etc]
+#	DATA_DIR	data directory of pgsql	[$PREFIX/var/gfarm-pgsql]
+
+PREFIX=@prefix@
+: ${CONFIG_DIR:="$PREFIX/etc"}
+: ${DATA_DIR:="$PREFIX/var/gfarm-pgsql"}
+GFMDCONF=$CONFIG_DIR/gfmd.conf
+DUMPF=db.out
+MODE=UNKNOWN
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+	    -d) MODE=DUMP ;;
+	    -r) MODE=RESTORE ;;
+	    -f) shift; DUMPF=$1 ;;
+	    -*) echo "unknown option: $1"
+		usage ;;
+	    *) usage ;;
+	esac
+	shift
+done
+[ X"$MODE" = XUNKNOWN ] && usage
+
+getvalue() {
+	KEY=$1
+	if [ X"$KEY" != X ]; then
+		value=`egrep "^$KEY " $GFMDCONF | awk '{ print $2 }'`
+	else
+		value=
+	fi
+	echo $value
+}
+
+err() {
+	echo >&2 $*
+	exit 1
+}
+
+HOST=`getvalue postgresql_server_host`
+PORT=`getvalue postgresql_server_port`
+DBNAME=`getvalue postgresql_dbname`
+USER=`getvalue postgresql_user`
+PASSWD=`getvalue postgresql_password | awk -F\" '{ print $2 }'`
+
+[ X"$HOST" = X -o X"$PORT" = X -o X"$DBNAME" = X \
+	-o X"$USER" = X -o X"$PASSWD" = X ] &&
+	err "postgresql backend is not configured"
+
+# XXX - from config-gfarm.postgresql
+if [ -w / ]; then # is root?
+	case `uname` in
+	*BSD|DragonFly)
+		: ${ADMIN_USER:="pgsql"};;
+	*)	: ${ADMIN_USER:="postgres"};;
+	esac
+else
+	: ${ADMIN_USER:="`whoami`"}
+fi
+ADMIN_PASSWD=`cat $DATA_DIR/admin_password`
+
+if [ X$MODE = XRESTORE ]; then
+	[ X"$ADMIN_PASSWD" = X ] &&
+		err "password for postgresql administrator cannot be read"
+	[ ! -f "$DUMPF" ] &&
+		err "$DUMPF: database dump file not exist"
+fi
+
+# XXX - always overwrite ~/.pgpass
+PGPASS=~/.pgpass
+touch $PGPASS || err "$PGPASS: cannot create"
+chmod 0600 $PGPASS || err "$PGPASS: cannot change mode"
+cat > $PGPASS <<EOF
+$HOST:$PORT:$DBNAME:$USER:$PASSWD
+*:$PORT:$DBNAME:$ADMIN_USER:$ADMIN_PASSWD
+EOF
+
+case $MODE in
+    DUMP)
+	pg_dump -F c -h $HOST -p $PORT -U $USER -f $DUMPF $DBNAME ||
+		err "pg_dump fails" ;;
+    RESTORE)
+	$CONFIG_DIR/init.d/gfmd stop
+	pg_restore -c -p $PORT -U $ADMIN_USER -d $DBNAME $DUMPF > /dev/null ||
+		err "pg_restore fails"
+	$CONFIG_DIR/init.d/gfmd start ;;
+    *)
+	usage ;;
+esac

@@ -8,6 +8,7 @@ SUBDIRS = \
 	gfchmod \
 	gfchown \
 	gfdf \
+	gfdump \
 	gfexport \
 	gfgroup \
 	gfhost \
@@ -25,7 +26,6 @@ SUBDIRS = \
 	gfwhoami \
 	config-gfarm
 
-#	gfdump \
 #	gfexec \
 #	gfifo \
 #	gfpwd \

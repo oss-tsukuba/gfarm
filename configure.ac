@@ -1209,8 +1209,7 @@ test -d util || mkdir util
 AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
 	${ns_makefiles}
 	gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd
-	gfptool/util/gfregister
+	gftool/gfdump/gfdump.postgresql
 	package/solaris/gfmd package/solaris/gfsd
-	util/gfront/gfront/gfront
 )
 AC_OUTPUT

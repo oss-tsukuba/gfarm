@@ -6,18 +6,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = gfdump
-SRCS = $(PROGRAM).c
-OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
-LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
-DEPLIBS = $(DEPGFARMLIB)
+SCRIPTS = gfdump.postgresql
 
-all: $(PROGRAM)
-
-include $(top_srcdir)/makes/prog.mk
-
-###
-
-$(OBJS): $(DEPGFARMINC) \
-	$(GFARMLIB_SRCDIR)/metadb_access.h
+include $(top_srcdir)/makes/script.mk
