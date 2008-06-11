@@ -24312,7 +24312,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                                    ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gfptool/util/gfregister package/solaris/gfmd package/solaris/gfsd util/gfront/gfront/gfront"
+                                                                                          ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gftool/gfdump/gfdump.postgresql package/solaris/gfmd package/solaris/gfsd"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -24845,10 +24845,9 @@ do
   "${ns_makefiles}" ) CONFIG_FILES="$CONFIG_FILES ${ns_makefiles}" ;;
   "gftool/config-gfarm/config-gfarm" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfarm" ;;
   "gftool/config-gfarm/config-gfsd" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfsd" ;;
-  "gfptool/util/gfregister" ) CONFIG_FILES="$CONFIG_FILES gfptool/util/gfregister" ;;
+  "gftool/gfdump/gfdump.postgresql" ) CONFIG_FILES="$CONFIG_FILES gftool/gfdump/gfdump.postgresql" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
   "package/solaris/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;
-  "util/gfront/gfront/gfront" ) CONFIG_FILES="$CONFIG_FILES util/gfront/gfront/gfront" ;;
   "include/gfarm/gfarm_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/gfarm/gfarm_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
