@@ -24,6 +24,7 @@ usage(void)
 
 	fprintf(stderr, "Usage:\t%s [-l]\n", program);
 	fprintf(stderr, "\t%s -c groupname user1 user2 ...\n", program);
+	fprintf(stderr, "\t%s -m groupname user1 user2 ...\n", program);
 	fprintf(stderr, "\t%s -d groupname\n", program);
 	exit(1);
 }

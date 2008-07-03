@@ -145,7 +145,7 @@ user_remove(const char *username)
 
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
 	if (entry == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return (GFARM_ERR_NO_SUCH_USER);
 	u = *(struct user **)gfarm_hash_entry_data(entry);
 	gfarm_hash_purge(user_hashtab, &username, sizeof(username));
 
@@ -381,7 +381,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 					    users[i]);
 				e = gfm_server_put_reply(peer,
 				    "USER_INFO_GET_BY_NAMES/no-user",
-				    GFARM_ERR_NO_SUCH_OBJECT, "");
+				    GFARM_ERR_NO_SUCH_USER, "");
 			} else {
 				if (debug_mode)
 					gflog_info("user lookup <%s>: ok",
@@ -426,7 +426,7 @@ gfm_server_user_info_get_by_gsi_dn(
 	u = user_lookup_gsi_dn(gsi_dn);
 	if (u == NULL)
 		e = gfm_server_put_reply(peer, "user_info_get_by_gsi_dn",
-			GFARM_ERR_NO_SUCH_OBJECT, "");
+			GFARM_ERR_NO_SUCH_USER, "");
 	else {
 		ui = &u->ui;
 		e = gfm_server_put_reply(peer, "user_info_get_by_gsi_dn", e,
@@ -496,7 +496,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		needs_free = 1;
 	} else if ((u = user_lookup(ui.username)) == NULL) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
+		e = GFARM_ERR_NO_SUCH_USER;
 		needs_free = 1;
 	} else if ((e = db_user_modify(&ui,
 	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=

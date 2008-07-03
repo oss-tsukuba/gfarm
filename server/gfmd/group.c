@@ -218,7 +218,7 @@ group_add_user(struct group *g, const char *username)
 	struct user *u = user_lookup(username);
 
 	if (u == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return (GFARM_ERR_NO_SUCH_USER);
 	if (user_in_group(u, g))
 		return (GFARM_ERR_ALREADY_EXISTS);
 	return (grpassign_add(u, g));
@@ -538,18 +538,77 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
+static gfarm_error_t
+group_user_check(struct gfarm_group_info *gi, const char *msg)
+{
+	int i;
+
+	for (i = 0; i < gi->nusers; i++) {
+		if (user_lookup(gi->usernames[i]) == NULL) {
+			gflog_warning("%s: unknown user %s", msg,
+				    gi->usernames[i]);
+			return (GFARM_ERR_NO_SUCH_USER);
+		}
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
 gfarm_error_t
 gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	const char *msg = "group_info_modify";
+	struct gfarm_group_info gi;
+	struct user *user = peer_get_user(peer);
+	struct group *group;
+	struct group_assignment *ga;
+	int i;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("group_info_modify: not implemented");
+	e = get_group(peer, msg, &gi);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		gfarm_group_info_free(&gi);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+	if (!from_client || user == NULL || !user_is_admin(user)) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((group = group_lookup(gi.groupname)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if ((e = group_user_check(&gi, msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
+		/* free group_assignment */
+		while ((ga = group->users.user_next) != &group->users)
+			grpassign_remove(ga);
 
-	e = gfm_server_put_reply(peer, "group_info_modify",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+		for (i = 0; i < gi.nusers; i++) {
+			struct user *u = user_lookup(gi.usernames[i]);
+
+			if (u == NULL) {
+				gflog_warning("%s: unknown user %s", msg,
+				    gi.usernames[i]);
+				continue;
+			}
+			e = grpassign_add(u, group);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_warning("%s: grpassign(%s, %s): %s", msg,
+				    gi.usernames[i], gi.groupname,
+				    gfarm_error_string(e));
+				break; /* XXX - no memory */
+			}
+		}
+
+		/* change all entries */
+		e = db_group_modify(&gi, 0, 0, NULL, 0, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(
+			    "failed to modify group '%s' in db: %s",
+			    gi.groupname, gfarm_error_string(e));
+	}
+	gfarm_group_info_free(&gi);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 gfarm_error_t
