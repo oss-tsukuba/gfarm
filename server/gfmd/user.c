@@ -170,19 +170,19 @@ user_remove(const char *username)
 char *
 user_name(struct user *u)
 {
-	return (u->ui.username);
+	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
 }
 
 char *
 user_gsi_dn(struct user *u)
 {
-	return (u->ui.gsi_dn);
+	return (u != NULL ? u->ui.gsi_dn : REMOVED_USER_NAME);
 }
 
 int
 user_is_removed(struct user *u)
 {
-	return (u->ui.username == REMOVED_USER_NAME);
+	return (u == NULL || u->ui.username == REMOVED_USER_NAME);
 }
 
 int

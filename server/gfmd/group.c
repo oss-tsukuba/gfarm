@@ -168,7 +168,7 @@ group_remove(const char *groupname)
 char *
 group_name(struct group *g)
 {
-	return (g->groupname);
+	return (g != NULL ? g->groupname : REMOVED_GROUP_NAME);
 }
 
 /* The memory owner of `*gi' is changed to group.c */
