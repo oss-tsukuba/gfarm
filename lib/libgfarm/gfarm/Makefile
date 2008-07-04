@@ -47,6 +47,7 @@ SRCS = \
 	gfs_profile.c \
 	gfs_chmod.c \
 	gfs_chown.c \
+	gfs_link.c \
 	gfs_stat.c \
 	gfs_statfs.c \
 	gfs_mkdir.c \
@@ -104,6 +105,7 @@ OBJS = \
 	gfs_profile.lo \
 	gfs_chmod.lo \
 	gfs_chown.lo \
+	gfs_link.lo \
 	gfs_stat.lo \
 	gfs_statfs.lo \
 	gfs_mkdir.lo \
@@ -155,6 +157,7 @@ gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRC
 gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h
 gfs_exec.lo: gfs_pio.h
 gfs_io.lo: gfs_io.h
+gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_pio.h

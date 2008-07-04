@@ -215,6 +215,7 @@ gfarm_error_t gfs_chdir(const char *);
 gfarm_error_t gfs_getcwd(char *, int);
 gfarm_error_t gfs_chown(const char *, const char *, const char *);
 gfarm_error_t gfs_chmod(const char *, gfarm_mode_t);
+gfarm_error_t gfs_link(const char *, const char *);
 gfarm_error_t gfs_utimes(const char *, const struct gfarm_timespec *);
 gfarm_error_t gfs_rename(const char *, const char *);
 

@@ -910,9 +910,9 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	char *name;
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("flink: not implemented");
+	struct process *process;
+	gfarm_int32_t sfd, dfd;
+	struct inode *src, *base;
 
 	e = gfm_server_get_request(peer, "flink", "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -921,12 +921,31 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 		free(name);
 		return (GFARM_ERR_NO_ERROR);
 	}
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if (process_get_user(process) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_saved(peer, &sfd)) != GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, sfd, &src))
+	    != GFARM_ERR_NO_ERROR)
+		;
+	else if (inode_is_dir(src))
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if ((e = peer_fdpair_get_current(peer, &dfd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, dfd, &base))
+	    != GFARM_ERR_NO_ERROR)
+		;
+	else
+                e = inode_create_link(base, name, process, src);
 
 	free(name);
-	e = gfm_server_put_reply(peer, "flink",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "flink", e, ""));
 }
 
 gfarm_error_t
