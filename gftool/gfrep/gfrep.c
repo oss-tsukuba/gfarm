@@ -447,8 +447,6 @@ replicate(int nfinfo, struct file_info **finfo,
 				errmsg = gfarm_error_string(e);
 			}
 			else {
-				printf("%s (%s) to %s\n", act->action,
-				       fi->pathname, dst[di]);
 				e = GFARM_ERR_NO_ERROR;
 				errmsg = gfarm_error_string(e);
 			}
