@@ -135,6 +135,13 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 		return (h);
 	if (addr->sa_family != AF_INET)
 		return (NULL);
+
+	return (NULL); 
+	/*
+	 * skip the following case since it is extraordinarily slow
+	 * when there are some nodes that cannot be resolved.
+	 */
+
 	addr_in = (struct sockaddr_in *)addr;
 
 	/* XXX FIXME - this is too damn slow */
