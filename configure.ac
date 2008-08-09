@@ -318,13 +318,22 @@ AC_ARG_WITH(globus,
  globus_cflags='${GLOBUS_CFLAGS}'
  globus_targets='${GLOBUS_TARGETS}'
 
- openssl_includes="${globus_includes}"
- case ${globus_static} in
- yes)	openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
+ # replace openssl library with that included in globus
+ if test -x ${globus_location}/bin/globus-version; then
+   globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
+   case ${globus_version} in
+   4.0*|3*|2*)
+     openssl_includes="${globus_includes}"
+     case ${globus_static} in
+     yes) openssl_libs="${globus_libdir}/libssl_${globus_flavor}.a ${globus_libdir}/libcrypto_${globus_flavor}.a"
 	AC_MSG_RESULT([using globus static library: yes]);;
- *)	openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
+     *)	  openssl_libs="-R${globus_libdir} -L${globus_libdir} -lssl_${globus_flavor} -lcrypto_${globus_flavor}"
 	AC_MSG_RESULT([using globus static library: no]);;
- esac
+     esac;;
+   *) # after 4.2.0, globus does not include openssl libarary.
+     ;;
+   esac
+ fi
 
  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
 ],
