@@ -100,6 +100,8 @@ remover(struct peer *peer, struct host *host)
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
+	gflog_warning("remover: %s", peer_had_protocol_error(peer) ?
+		"protocol error" : gfarm_error_string(e));
 	host_peer_unset(host);
 	return (e);
 }
