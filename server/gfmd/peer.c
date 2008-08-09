@@ -303,6 +303,12 @@ peer_set_host(struct peer *peer, char *hostname)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+enum gfarm_auth_id_type
+peer_get_auth_id_type(struct peer *peer)
+{
+	return (peer->id_type);
+}
+
 char *
 peer_get_username(struct peer *peer)
 {

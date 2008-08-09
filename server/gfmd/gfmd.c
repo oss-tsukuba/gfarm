@@ -73,7 +73,7 @@
 #endif
 
 char *program_name = "gfmd";
-struct protoent *tcp_proto;
+static struct protoent *tcp_proto;
 static char *pid_file;
 
 gfarm_error_t
@@ -448,33 +448,38 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 	}
 }
 
-void
-protocol_service(struct peer *peer, int from_client)
+void *
+protocol_service(void *arg)
 {
+	struct peer *peer = arg;
 	gfarm_error_t e, current_block = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t request;
+	int from_client;
 
+	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
 	for (;;) {
 		peer_fdpair_clear(peer);
 		e = protocol_switch(peer, from_client, 0, 0,
 		    &request, &current_block);
 		if (peer_had_protocol_error(peer))
-			return; /* finish */
+			break; /* finish */
 		if (e == GFARM_ERR_NO_ERROR &&
 		    request == GFM_PROTO_COMPOUND_BEGIN) {
 			compound_loop(peer, from_client, 0, 1);
 			if (peer_had_protocol_error(peer))
-				return; /* finish */
+				break; /* finish */
 		}
 	}
+	peer_free(peer);
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
 }
 
-void *
-protocol_main(void *arg)
+gfarm_error_t
+peer_authorize(struct peer *peer)
 {
 	gfarm_error_t e;
-	int rv;
-	struct peer *peer = arg;
+	int rv, saved_errno;
 	enum gfarm_auth_id_type id_type;
 	char *username = NULL, *hostname;
 	enum gfarm_auth_method auth_method;
@@ -490,8 +495,9 @@ protocol_main(void *arg)
 
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
+		saved_errno = errno;
 		gflog_error("authorize: getpeername: %s", strerror(errno));
-		return (NULL);
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	e = gfarm_sockaddr_to_name(&addr, &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -502,9 +508,13 @@ protocol_main(void *arg)
 		if (hostname == NULL) {
 			gflog_warning("%s: %s", addr_string,
 			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (NULL);
+			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
+	/*
+	 * XXX gfarm_authorize should be called in a detached thread
+	 * for a client not a thread for the main loop.
+	 */
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
 	    hostname, &addr,
 	    &id_type, &username, &auth_method);
@@ -525,18 +535,15 @@ protocol_main(void *arg)
 		}
 		giant_unlock();
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("authorize: %s", gfarm_error_string(e));
-	} else {
+	if (e == GFARM_ERR_NO_ERROR) {
 		giant_lock();
 		peer_authorized(peer,
 		    id_type, username, hostname, &addr, auth_method);
 		giant_unlock();
-		protocol_service(peer, id_type == GFARM_AUTH_ID_TYPE_USER);
 	}
-	peer_free(peer);
-	/* this return value won't be used, because this thread is detached */
-	return (NULL);
+	else /* e != GFARM_ERR_NO_ERROR */
+		gflog_warning("authorize: %s", gfarm_error_string(e));
+	return (e);
 }
 
 void
@@ -560,8 +567,12 @@ main_loop(int accepting_socket)
 		    GFARM_ERR_NO_ERROR) {
 			gflog_warning("peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
-		} else if ((e = create_detached_thread(protocol_main, peer)) !=
-		    GFARM_ERR_NO_ERROR) {
+		} else if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
+			gflog_warning("peer_authorize: %s",
+			    gfarm_error_string(e));
+			peer_free(peer);
+		} else if ((e = create_detached_thread(protocol_service, peer))
+		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning("create_detached_thread: %s",
 			    gfarm_error_string(e));
 			peer_free(peer);
