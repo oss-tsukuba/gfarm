@@ -1147,8 +1147,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 		acknack = GFARM_SS_AUTH_ACK;
 		(void)gfarmWriteInt32(fd, &acknack, 1);
 	    } else {
-		gflog_auth_error("%s: hostname doesn't match",
-		    initiatorDistName);
+		gflog_auth_error("%s: hostname doesn't match: "
+		    "peer %s, expected %s", initiatorDistName, peerName,
+		    entry->authData.hostAuth.FQDN);
 		majStat = GSS_S_UNAUTHORIZED;
 		/* Send NACK. */
 		acknack = GFARM_SS_AUTH_NACK;
