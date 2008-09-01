@@ -1,6 +1,7 @@
 命名規則
 	〜Get〜()	解放してはいけない構造を取得する関数。
-			ただし gfarmIPGetHostOfAddress() と gfarmGetEtcDir() は
+			ただし gfarmGetPeernameOfSocket() と
+			gfarmGetEtcDir() は
 			例外で、free() してやる必要がある。
 	〜New〜()	解放する必要がある構造を取得する関数。
 			ただし、別の名称を使う構造体も多い。
@@ -358,19 +359,6 @@ gfarmSecSession *	gfarmSecSessionInitiate(int fd,
 	境でのみ、initiator から delegation された credential を cred 
 	に指定して session を initiate すること。
 
-gfarmSecSession *	gfarmSecSessionInitiateByAddr(
-						unsigned long rAddr,
-						int port,
-						const gss_name_t acceptorName,
-						gss_cred_id_t cred,
-						OM_uint32 reqFlag,
-						gfarmSecSessionOption *ssOptPtr,
-						OM_uint32 *majStatPtr,
-						OM_uint32 *minStatPtr);
-	IP address rAddr, port 番号 port を利用して connect(2) した後、
-	connect(2) で生成された fd と cred を使用して、session を 
-	initiate する。以下 gfarmSecSessionInitiate() と同様。
-
 gfarmSecSession *	gfarmSecSessionInitiateByName(
 						char *hostname,
 						int port,
@@ -384,7 +372,7 @@ gfarmSecSession *	gfarmSecSessionInitiateByName(
 	ホスト名 hostname, port 番号 port を利用して、hostname:port に 
 	connect(2) した後、connect(2) で生成された fd と cred を使用し
 	て、session を initiate する。以下 
-	gfarmSecSessionInitiateByAddr() と同様。
+	gfarmSecSessionInitiate() と同様。
 
 void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
 	initiate/accept した session ssPtr を終了する。

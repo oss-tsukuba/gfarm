@@ -70,8 +70,6 @@ main(argc, argv)
     socklen_t remLen = sizeof(struct sockaddr_in);
     int fd = -1;
     OM_uint32 majStat, minStat;
-    unsigned long int rAddr;
-    char *rHost;
     char myHostname[4096];
     gss_cred_id_t myCred;
 
@@ -131,7 +129,7 @@ main(argc, argv)
 	gfarmSecSessionFinalizeBoth();
 	return 1;
     }
-    (void)gfarmIPGetNameOfSocket(bindFd, &port);
+    (void)gfarmGetNameOfSocket(bindFd, &port);
     fprintf(stderr, "Accepting port: %d\n", port);
 
     /*
@@ -139,16 +137,18 @@ main(argc, argv)
      */
     while (1) {
 	pid_t pid;
+	struct hostent *hptr;
+
 	fd = accept(bindFd, (struct sockaddr *)&remote, &remLen);
 	if (fd < 0) {
 	    perror("accept");
 	    (void)close(bindFd);
 	    return 1;
 	}
-	rAddr = ntohl(remote.sin_addr.s_addr);
-	rHost = gfarmIPGetHostOfAddress(rAddr);
-	fprintf(stderr, "Connected from %s\n", rHost);
-	(void)free(rHost);
+	hptr = gethostbyaddr(
+		&remote.sin_addr, sizeof(remote.sin_addr), AF_INET);
+	if (hptr != NULL)
+	    fprintf(stderr, "Connected from %s\n", hptr->h_name);
 	pid = fork();
 	if (pid < 0) {
 	    (void)close(fd);

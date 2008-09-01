@@ -3,15 +3,10 @@
 #define	GFARM_OCTETS_PER_32BIT	4	/* 32/8 */
 #define	GFARM_OCTETS_PER_16BIT	2	/* 16/8 */
 
-extern int	gfarmTCPConnectPort(unsigned long addr, int port);
+extern int	gfarmTCPConnectPortByHost(char *, int port);
 extern int	gfarmTCPBindPort(int port);
-extern unsigned long int
-		gfarmIPGetAddressOfHost(char *host);
-extern char *	gfarmIPGetHostOfAddress(unsigned long int addr);
-extern unsigned long int
-		gfarmIPGetNameOfSocket(int sock, int *portPtr);
-extern unsigned long int
-		gfarmIPGetPeernameOfSocket(int sock, int *portPtr);
+extern int	gfarmGetNameOfSocket(int sock, int *portPtr);
+int	gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr);
 
 extern int	gfarmWaitReadable(int fd);
 extern int	gfarmReadInt8(int fd, gfarm_int8_t *buf, int len);

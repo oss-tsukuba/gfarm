@@ -1053,7 +1053,6 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
     gfarmAuthEntry *entry = NULL;
 
-    unsigned long int rAddr = INADDR_ANY;
     int rPort = 0;
     char *peerName = NULL;
 
@@ -1092,9 +1091,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     /*
      * Get a peer information.
      */
-    rAddr = gfarmIPGetPeernameOfSocket(fd, &rPort);
-    if (rAddr != 0 && rPort != 0) {
-	peerName = gfarmIPGetHostOfAddress(rAddr);
+    if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
+	pthread_mutex_unlock(&acceptor_mutex);
+	goto Fail;
     }
 
     /*
@@ -1177,7 +1176,6 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      * Success: Fill all members of session struct out.
      */
     ret->fd = fd;
-    ret->rAddr = rAddr;
     ret->rPort = rPort;
     ret->peerName = peerName;
     ret->cred = cred;
@@ -1239,7 +1237,6 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
 
-    unsigned long int rAddr = INADDR_ANY;
     int rPort = 0;
     char *peerName = NULL;
 
@@ -1277,9 +1274,9 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     /*
      * Get a peer information.
      */
-    rAddr = gfarmIPGetPeernameOfSocket(fd, &rPort);
-    if (rAddr != 0 && rPort != 0) {
-	peerName = gfarmIPGetHostOfAddress(rAddr);
+    if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
+	pthread_mutex_unlock(&initiator_mutex);
+	goto Fail;
     }
 
     /*
@@ -1343,7 +1340,6 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
      */
     ret->fd = fd;
     ret->needClose = needClose;
-    ret->rAddr = rAddr;
     ret->rPort = rPort;
     ret->peerName = peerName;
     ret->cred = cred;
@@ -1402,8 +1398,8 @@ gfarmSecSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, m
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByAddr(rAddr, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
-     unsigned long rAddr;
+gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
+     char *hostname;
      int port;
      const gss_name_t acceptorName;
      gss_cred_id_t cred;
@@ -1412,7 +1408,8 @@ gfarmSecSessionInitiateByAddr(rAddr, port, acceptorName, cred, reqFlag, ssOptPtr
      OM_uint32 *majStatPtr;
      OM_uint32 *minStatPtr;
 {
-    int fd = gfarmTCPConnectPort(rAddr, port);
+    int fd = gfarmTCPConnectPortByHost(hostname, port);
+
     if (fd < 0) {
 	if (majStatPtr != NULL) {
 	    *majStatPtr = GSS_S_FAILURE;
@@ -1424,33 +1421,6 @@ gfarmSecSessionInitiateByAddr(rAddr, port, acceptorName, cred, reqFlag, ssOptPtr
     }
     return secSessionInitiate(fd, acceptorName, cred, reqFlag,
 			      ssOptPtr, majStatPtr, minStatPtr, 1);
-}
-
-
-gfarmSecSession *
-gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
-     char *hostname;
-     int port;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-{
-    unsigned long rAddr = gfarmIPGetAddressOfHost(hostname);
-    if (rAddr == ~0L || rAddr == 0L) {
-	if (majStatPtr != NULL) {
-	    *majStatPtr = GSS_S_FAILURE;
-	}
-	if (minStatPtr != NULL) {
-	    *minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
-	}
-	return NULL;
-    }
-    return gfarmSecSessionInitiateByAddr(rAddr, port,
-					 acceptorName, cred, reqFlag,
-					 ssOptPtr, majStatPtr, minStatPtr);
 }
 
 
@@ -2055,7 +2025,6 @@ struct gfarmSecSessionInitiateState {
 
     gfarmSecSessionOption canOpt;
 
-    unsigned long int rAddr;
     int rPort;
     char *peerName;
     struct gfarm_event *readable;
@@ -2231,7 +2200,6 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 
 	state->canOpt = canOpt;
 
-	state->rAddr = INADDR_ANY;
 	state->rPort = 0;
 	state->peerName = NULL;
 
@@ -2247,10 +2215,7 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 	/*
 	 * Get a peer information.
 	 */
-	state->rAddr = gfarmIPGetPeernameOfSocket(fd, &state->rPort);
-	if (state->rAddr != 0 && state->rPort != 0) {
-	    state->peerName = gfarmIPGetHostOfAddress(state->rAddr);
-	}
+	(void)gfarmGetPeernameOfSocket(fd, &state->rPort, &state->peerName);
 
 	/*
 	 * Check the credential.
@@ -2338,7 +2303,6 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
 	 */
 	ret->fd = state->fd;
 	ret->needClose = state->needClose;
-	ret->rAddr = state->rAddr;
 	ret->rPort = state->rPort;
 	ret->peerName = state->peerName;
 	ret->cred = state->cred;

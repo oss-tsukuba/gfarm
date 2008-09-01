@@ -50,45 +50,61 @@ isNonBlock(fd)
 
 
 int
-gfarmTCPConnectPort(addr, port)
-     unsigned long addr;
+gfarmTCPConnectPortByHost(host, port)
+     char *host;
      int port;
 {
+    struct hostent *h;
     struct sockaddr_in sin;
     int sock;
 
-    memset((void *)&sin, 0, sizeof(struct sockaddr_in));
+    /* XXX - thread unsafe */
+    h = gethostbyname(host);
+    if (h == NULL) {
+	gflog_warning("gethostbyname: %s: %s", host, hstrerror(h_errno));
+	return (-1);
+    }
+    if (h->h_addrtype != AF_INET) {
+	gflog_warning("gethostbyname: %s: unsupported address family", host);
+	return (-1);
+    }
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = h->h_addrtype;
+    memcpy(&sin.sin_addr, h->h_addr, sizeof(sin.sin_addr));
+    sin.sin_port = htons(port);
 
     if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
 	gflog_error("socket: %s", strerror(errno));
-	return -1;
+	return (-1);
     }
+    fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(port);
-    sin.sin_addr.s_addr = htonl(addr);
+    /* XXX - set socket options */
 
     ReConnect:
     errno = 0;
     if (connect(sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-	if (errno == EINTR) {
+	int saved_errno = errno;
+
+	if (saved_errno == EINTR) {
 	    goto ReConnect;
-	} else if (errno == EINPROGRESS) {
+	} else if (saved_errno == EINPROGRESS) {
 	    if (isNonBlock(sock) == 0) {
 		goto Error;
 	    } else {
+		/* XXX - should wait explicitly instead of sleep blindly */
 		sleep(1);
-		return sock;
+		return (sock);
 	    }
 	} else {
 	    Error:
-	    gflog_error("connect: %s", strerror(errno));
-	    return -1;
+	    close(sock);
+	    gflog_error("connect: %s", strerror(saved_errno));
+	    return (-1);
 	}
     }
-    return sock;
+    return (sock);
 }
-
 
 int
 gfarmTCPBindPort(port)
@@ -131,92 +147,32 @@ gfarmTCPBindPort(port)
 }
 
 
-unsigned long int
-gfarmIPGetAddressOfHost(host)
-     char *host;
-{
-    struct hostent *h = gethostbyname(host);
-    if (h != NULL) {
-	return ntohl(*(unsigned long *)(h->h_addr));
-    } else {
-	/*
-	 * maybe host is XXX.XXX.XXX.XXX format.
-	 */
-	return ntohl(inet_addr(host));
-    }
-}
-
-
-char *
-gfarmIPGetHostOfAddress(addr)
-     unsigned long int addr;
-{
-    /*
-     * addr must be Host Byte Order.
-     */
-    char *ret = NULL;
-    unsigned long caddr = htonl(addr);
-    struct hostent *h = NULL;
-
-#ifndef USE_GLOBUS_LIBC_HOOK
-    h = gethostbyaddr((void *)&caddr, sizeof(unsigned long int), AF_INET);
-#else
-    {
-	struct hostent gH;
-	char gBuf[4096];
-	int gh_errno = 0;
-	h = globus_libc_gethostbyaddr_r((void *)&caddr, sizeof(unsigned long int),
-					AF_INET, &gH, gBuf, 4096, &gh_errno);
-    }
-#endif /* USE_GLOBUS_LIBC_HOOK */
-
-    if (h != NULL) {
-	ret = strdup(h->h_name);
-    } else {
-	char hostBuf[4096];
-#ifdef HAVE_SNPRINTF
-	snprintf(hostBuf, sizeof hostBuf, "%d.%d.%d.%d",
-		(int)((addr & 0xff000000) >> 24),
-		(int)((addr & 0x00ff0000) >> 16),
-		(int)((addr & 0x0000ff00) >> 8),
-		(int)(addr & 0x000000ff));
-#else
-	sprintf(hostBuf, "%d.%d.%d.%d",
-		(int)((addr & 0xff000000) >> 24),
-		(int)((addr & 0x00ff0000) >> 16),
-		(int)((addr & 0x0000ff00) >> 8),
-		(int)(addr & 0x000000ff));
-#endif
-	ret = strdup(hostBuf);
-    }
-    return ret;
-}
-
-
-unsigned long int
-gfarmIPGetPeernameOfSocket(sock, portPtr)
+int
+gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
      int sock;
      int *portPtr;
+     char **hostPtr;
 {
     struct sockaddr_in sin;
     socklen_t slen = sizeof(sin);
+    struct hostent *hptr;
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	gflog_error("getpeername: %s", strerror(errno));
-	if (portPtr != NULL) {
-	    *portPtr = 0;
-	}
-	return 0;
+	return (-1);
     }
-    if (portPtr != NULL) {
+    if (portPtr != NULL)
 	*portPtr = (int)ntohs(sin.sin_port);
-    }
-    return ntohl(sin.sin_addr.s_addr);
+    if (hostPtr != NULL &&
+	(hptr = gethostbyaddr(&sin.sin_addr, sizeof(sin.sin_addr), AF_INET))
+	!= NULL)
+	*hostPtr = strdup(hptr->h_name);
+    return (0);
 }
 
 
-unsigned long int
-gfarmIPGetNameOfSocket(sock, portPtr)
+int
+gfarmGetNameOfSocket(sock, portPtr)
      int sock;
      int *portPtr;
 {
@@ -225,15 +181,11 @@ gfarmIPGetNameOfSocket(sock, portPtr)
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	gflog_error("getsockname: %s", strerror(errno));
-	if (portPtr != NULL) {
-	    *portPtr = 0;
-	}
-	return 0;
+	return (-1);
     }
-    if (portPtr != NULL) {
+    if (portPtr != NULL)
 	*portPtr = (int)ntohs(sin.sin_port);
-    }
-    return ntohl(sin.sin_addr.s_addr);
+    return (0);
 }
 
 

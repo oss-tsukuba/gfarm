@@ -110,7 +110,7 @@ main(argc, argv)
     if (bindFd < 0) {
 	goto Done;
     }
-    (void)gfarmIPGetNameOfSocket(bindFd, &port);
+    (void)gfarmGetNameOfSocket(bindFd, &port);
     fprintf(stderr, "Accepting port: %d\n", port);
 
     fd0 = accept(bindFd, (struct sockaddr *)&remote, &remLen);  

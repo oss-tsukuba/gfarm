@@ -16,7 +16,6 @@ typedef struct gfarmSecSession {
 				   session. */
     int needClose;		/* Need to close above fd or not
 				   when terminate this session. */
-    unsigned long int rAddr;	/* IP address of a peer. */
     int rPort;			/* Port # of the peer. */
     char *peerName;		/* FQDN of the peer. Heap alloc'd. */
 

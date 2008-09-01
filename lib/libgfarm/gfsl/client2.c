@@ -20,7 +20,6 @@
 
 #include "scarg.h"
 
-static unsigned long int addr = 0L;
 static char *hostname = NULL;
 
 static int
@@ -33,11 +32,6 @@ ParseArgs(argc, argv)
     while ((c = getopt(argc, argv, "h:"  COMMON_OPTIONS)) != -1) {
 	switch (c) {
 	case 'h':
-	    addr = gfarmIPGetAddressOfHost(optarg);
-	    if (addr == ~0L || addr == 0L) {
-		fprintf(stderr, "Invalid hostname.\n");
-		return -1;
-	    }
 	    hostname = optarg;
 	    break;
 	default:
@@ -52,7 +46,7 @@ ParseArgs(argc, argv)
 	return -1;
     }
 
-    if (addr == 0L) {
+    if (hostname == NULL) {
 	fprintf(stderr, "hostname is not specified.\n");
 	return -1;
     }
@@ -100,7 +94,7 @@ main(argc, argv)
 	}
     }
 
-    ss0 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+    ss0 = gfarmSecSessionInitiateByName(hostname, port, acceptorName,
 					GSS_C_NO_CREDENTIAL,
 					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
 					NULL,
@@ -111,7 +105,7 @@ main(argc, argv)
 	gfarmGssPrintMinorStatus(minStat);
 	goto Done;
     }
-    ss1 = gfarmSecSessionInitiateByAddr(addr, port, acceptorName,
+    ss1 = gfarmSecSessionInitiateByName(hostname, port, acceptorName,
 					GSS_C_NO_CREDENTIAL,
 					GFARM_GSS_DEFAULT_SECURITY_SETUP_FLAG,
 					NULL,

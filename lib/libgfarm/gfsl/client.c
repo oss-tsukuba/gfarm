@@ -22,7 +22,6 @@
 extern void	doClient(char *host, int port, gss_name_t acceptorName,
 			 gss_cred_id_t deleCred, gfarm_int32_t deleCheck);
 
-static unsigned long int addr = 0L;
 static char *hostname = NULL;
 
 extern int testBufSize;
@@ -48,11 +47,6 @@ ParseArgs(argc, argv)
 	    testBufSize = tmp;
 	    break;
 	case 'h':
-	    addr = gfarmIPGetAddressOfHost(optarg);
-	    if (addr == ~0L || addr == 0L) {
-		fprintf(stderr, "Invalid hostname.\n");
-		return -1;
-	    }
 	    hostname = optarg;
 	    break;
 	default:
@@ -67,7 +61,7 @@ ParseArgs(argc, argv)
 	return -1;
     }
 
-    if (addr == 0L) {
+    if (hostname == NULL) {
 	fprintf(stderr, "hostname is not specified.\n");
 	return -1;
     }
